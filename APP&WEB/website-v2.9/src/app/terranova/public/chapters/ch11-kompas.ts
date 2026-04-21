@@ -12,7 +12,7 @@ const chapter: BookChapter = {
   sectionsCs: [
     {
       heading: 'Přehled: Od roku 2026 ke hvězdám',
-      body: 'Zlatý Kompas je akcelerační mapa celého projektu Terra Nova. Pět fází, konkrétní milníky, jasné cíle — od genesis bloku po hvězdné cestování.\n\n2026 → L1 GENESIS MAINNET — blockchain žije, bloky se těží\n2027 → L2 DeFi · DAO · Komunity — ekonomie funguje\n2028 → L3 AI NCL · WARP · OASIS — síť myslí a hraje\n2030 → L5 FREE WORLD · Zlatá republika — komunity kvetou\n2040+ → L6 ISSOBELLA · Hvězdy — lidstvo dosáhlo ke hvězdám',
+      body: 'Zlatý Kompas je akcelerační mapa celého projektu Terra Nova. Pět fází, konkrétní milníky, jasné cíle — od genesis bloku po hvězdné cestování.\n\n2026 → L1 GENESIS MAINNET — blockchain žije, bloky se těží\n2027 → L2 BRIDGE · DAO · DeFi — ekonomie a governance fungují\n2028 → L3 AI NATIVE · WARP · NCL — síť myslí, reléuje a počítá\n2030 → L5 FREE WORLD · Zlatá republika — komunity kvetou\n2040+ → L6 ISSOBELLA · Hvězdy — lidstvo dosáhlo ke hvězdám',
     },
     {
       heading: '🟡 Fáze 1: L1 Genesis (2026)',
@@ -50,7 +50,7 @@ const chapter: BookChapter = {
   sectionsEn: [
     {
       heading: 'Overview: From 2026 to the Stars',
-      body: 'The Golden Compass is the acceleration map for the entire Terra Nova project. Five phases, concrete milestones, clear goals — from the genesis block to interstellar travel.\n\n2026 → L1 GENESIS MAINNET — blockchain lives, blocks are mined\n2027 → L2 DeFi · DAO · Communities — the economy works\n2028 → L3 AI NCL · WARP · OASIS — the network thinks and plays\n2030 → L5 FREE WORLD · Golden Republic — communities flourish\n2040+ → L6 ISSOBELLA · Stars — humanity reaches for the stars',
+      body: 'The Golden Compass is the acceleration map for the entire Terra Nova project. Five phases, concrete milestones, clear goals — from the genesis block to interstellar travel.\n\n2026 → L1 GENESIS MAINNET — blockchain lives, blocks are mined\n2027 → L2 BRIDGE · DAO · DeFi — the economic and governance rails work\n2028 → L3 AI NATIVE · WARP · NCL — the network thinks, relays, and computes\n2030 → L5 FREE WORLD · Golden Republic — communities flourish\n2040+ → L6 ISSOBELLA · Stars — humanity reaches for the stars',
     },
     {
       heading: '🟡 Phase 1: L1 Genesis (2026)',

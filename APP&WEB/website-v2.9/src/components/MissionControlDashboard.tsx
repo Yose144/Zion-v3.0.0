@@ -3007,8 +3007,8 @@ export default function MissionControlDashboard() {
               <div className="space-y-3 sm:space-y-4 overflow-x-auto">
                 {[
                   { layer: cs ? 'L1 Blockchain' : 'L1 Blockchain', period: '2026', phases: cs ? 'Spec freeze · Test mainnet · Launch gate · Produkce' : 'Spec Freeze · Test Mainnet · Launch Gate · Production', color: 'from-emerald-400 to-lime-400', width: '48%', offset: '0%' },
-                  { layer: 'L2 NCL / Neural Conscious', period: 'Post-L1', phases: 'wZION Bridge · Base Sepolia', color: 'from-blue-400 to-cyan-400', width: '22%', offset: '50%' },
-                  { layer: 'L3 ZION DAO', period: 'Post-L1', phases: 'WARP Protocol · NCL · AI', color: 'from-purple-400 to-pink-400', width: '22%', offset: '60%' },
+                  { layer: cs ? 'L2 Bridge / DAO / DeFi' : 'L2 Bridge / DAO / DeFi', period: 'Post-L1', phases: cs ? 'wZION Bridge · Treasury rails · Governance' : 'wZION Bridge · Treasury rails · Governance', color: 'from-blue-400 to-cyan-400', width: '22%', offset: '50%' },
+                  { layer: cs ? 'L3 AI Native / WARP / NCL' : 'L3 AI Native / WARP / NCL', period: 'Post-L1', phases: cs ? 'Hiranyagarbha · WARP relay · NCL compute' : 'Hiranyagarbha · WARP relay · NCL compute', color: 'from-purple-400 to-pink-400', width: '22%', offset: '60%' },
                   { layer: 'L4 Oasis', period: '2029+', phases: 'UE5 · Play-to-Mine · Beta', color: 'from-yellow-400 to-orange-400', width: '18%', offset: '68%' },
                   { layer: 'L5 Free World', period: '2030+', phases: 'Governance · Sovereignty', color: 'from-amber-400 to-yellow-400', width: '18%', offset: '72%' },
                   { layer: 'L6 Issobella', period: '2040+', phases: 'Orbital Station · Fund', color: 'from-rose-400 to-red-400', width: '12%', offset: '88%' }

@@ -162,13 +162,15 @@ fn ssh_exec(host: &str, key: &str, user: &str, remote_cmd: &str) -> Result<()> {
 
 fn map_service(service: &str) -> String {
     match service {
-        "node" | "core" => "zion-core".into(),
-        "pool" => "zion-pool".into(),
-        "miner" => "zion-miner".into(),
-        "agent" => "zion-ai-native".into(),
-        "website" => "zion-website".into(),
-        "redis" => "zion-redis".into(),
-        "monitoring" => "zion-prometheus zion-grafana zion-node-exporter".into(),
+        "node" | "core" => "core".into(),
+        "pool" => "pool".into(),
+        "miner" => "miner".into(),
+        "agent" | "ai-native" => "ai-native".into(),
+        "website" => "website".into(),
+        "redis" => "redis".into(),
+        "bridge" => "bridge".into(),
+        "dao" => "dao".into(),
+        "monitoring" => "prometheus grafana node-exporter redis-exporter alertmanager".into(),
         _ => service.into(), // "all" passes through, docker compose handles it
     }
 }
