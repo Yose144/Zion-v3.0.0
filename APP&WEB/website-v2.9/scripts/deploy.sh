@@ -73,10 +73,20 @@ REMOTE_COMPOSE_RSYNC="'$REMOTE_COMPOSE'"
 
 cd "$ROOT_DIR"
 
-# --- Local TypeScript check ---
-log "Running local TypeScript check"
-if command -v npx >/dev/null 2>&1; then
-  npx tsc --noEmit || { echo "Error: TypeScript check failed" >&2; exit 1; }
+# --- Local dependency bootstrap + build preflight ---
+if [[ ! -d node_modules ]]; then
+  log "node_modules missing; installing local dependencies"
+  if command -v npm >/dev/null 2>&1; then
+    npm ci || { echo "Error: npm ci failed" >&2; exit 1; }
+  else
+    echo "Error: npm is required to bootstrap website dependencies" >&2
+    exit 1
+  fi
+fi
+
+log "Running local build preflight"
+if command -v npm >/dev/null 2>&1; then
+  npm run build || { echo "Error: local build preflight failed" >&2; exit 1; }
 fi
 
 # --- Rsync source to server ---
