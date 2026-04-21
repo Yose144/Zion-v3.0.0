@@ -167,6 +167,7 @@ provision_server() {
         ufw allow 9115/tcp  comment 'Metrics'
         ufw allow 3333/tcp  comment 'Stratum'
         ufw allow 8080/tcp  comment 'Pool API'
+        ufw allow 8001/tcp  comment 'AI Native API'
         ufw --force enable
         ufw status numbered
     "

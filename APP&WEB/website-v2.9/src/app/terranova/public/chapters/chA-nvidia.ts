@@ -28,7 +28,7 @@ const chapter: BookChapter = {
     },
     {
       heading: 'ZION compute stack — mapování L0–L6',
-      body: 'Jak se NVIDIA pyramida mapuje na ZION vrstvy:\n\nL0 (Hardware) → Jetson, RTX, DGX, Vera Rubin — fyzický compute\nL1 (Blockchain) → Mining na RTX/DGX, Ekam Deeksha PoW\nL2 (DeFi) → Smart contract execution na L2 EVM nodes\nL3 (Neural) → NCL inference přes DGX Spark/Station, Dynamo orchestrace\nL4 (OASIS) → Game rendering, AI NPC, Sacred Avatars přes NIM\nL5 (Free World) → Medical Table AI (Jetson), komunitní monitoring\nL6 (Issobella) → Vera Rubin exascale, orbitální inference, SETI\n\nKaždá vrstva ZION má svůj compute tier. Žádná vrstva není závislá na centrální autoritě.',
+      body: 'Jak se NVIDIA pyramida mapuje na ZION vrstvy:\n\nL0 (Hardware) → Jetson, RTX, DGX, Vera Rubin — fyzický compute\nL1 (Blockchain) → Mining na RTX/DGX, Ekam Deeksha PoW\nL2 (Bridge/DAO/DeFi) → Smart contract execution, bridge relaye a governance nodes\nL3 (AI Native / Neural) → Hiranyagarbha, NCL inference přes DGX Spark/Station, WARP orchestrace\nL4 (OASIS) → Game rendering, AI NPC, Sacred Avatars přes NIM\nL5 (Free World) → Medical Table AI (Jetson), komunitní monitoring\nL6 (Issobella) → Vera Rubin exascale, orbitální inference, SETI\n\nKaždá vrstva ZION má svůj compute tier. Žádná vrstva není závislá na centrální autoritě.',
     },
     {
       heading: 'Feynman — příští generace za Vera Rubin',
@@ -62,7 +62,7 @@ const chapter: BookChapter = {
     },
     {
       heading: 'ZION compute stack — L0–L6 mapping',
-      body: 'How the NVIDIA pyramid maps to ZION layers:\n\nL0 (Hardware) → Jetson, RTX, DGX, Vera Rubin\nL1 (Blockchain) → Mining on RTX/DGX, Ekam Deeksha PoW\nL2 (DeFi) → Smart contract execution on L2 EVM nodes\nL3 (Neural) → NCL inference via DGX, Dynamo orchestration\nL4 (OASIS) → Game rendering, AI NPC, Sacred Avatars via NIM\nL5 (Free World) → Medical Table AI (Jetson), community monitoring\nL6 (Issobella) → Vera Rubin exascale, orbital inference, SETI\n\nEvery ZION layer has its compute tier. No layer depends on central authority.',
+      body: 'How the NVIDIA pyramid maps to ZION layers:\n\nL0 (Hardware) → Jetson, RTX, DGX, Vera Rubin\nL1 (Blockchain) → Mining on RTX/DGX, Ekam Deeksha PoW\nL2 (Bridge/DAO/DeFi) → smart contract execution, bridge relays, and governance nodes\nL3 (AI Native / Neural) → Hiranyagarbha, NCL inference via DGX Spark/Station, WARP orchestration\nL4 (OASIS) → Game rendering, AI NPC, Sacred Avatars via NIM\nL5 (Free World) → Medical Table AI (Jetson), community monitoring\nL6 (Issobella) → Vera Rubin exascale, orbital inference, SETI\n\nEvery ZION layer has its compute tier. No layer depends on central authority.',
     },
     {
       heading: 'Feynman — next generation after Vera Rubin',
