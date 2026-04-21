@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { ArrowDownToLine, Server, Wallet, Zap } from 'lucide-react';
+import { ArrowDownToLine, Server, TerminalSquare, Wallet, Zap } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { SITE_POOL_PRIMARY } from '@/lib/site';
 
@@ -37,6 +37,15 @@ function getPlatforms(cs: boolean): CLIBuild[] {
 function getTools(cs: boolean): ToolInfo[] {
   return [
     {
+      name: 'CLI',
+      id: 'cli',
+      desc: cs ? 'Sjednoceny operator gateway pro node, pool, miner, agent, bridge, dao, deploy a monitoring.' : 'Unified operator gateway for node, pool, miner, agent, bridge, dao, deploy, and monitoring.',
+      icon: <TerminalSquare className="h-6 w-6" />,
+      prefix: 'zion-cli',
+      color: 'text-white',
+      quickCmd: 'zion --help',
+    },
+    {
       name: 'Miner',
       id: 'miner',
       desc: cs ? 'CPU/GPU miner s Cosmic Harmony v3 — pripojte se k poolu a zacte vydelavat ZION' : 'CPU/GPU miner with Cosmic Harmony v3 — connect to pool and start earning ZION',
@@ -67,7 +76,7 @@ function getTools(cs: boolean): ToolInfo[] {
 }
 
 export default function DownloadToolBrowser({ cs }: { cs: boolean }) {
-  const [activeTool, setActiveTool] = useState('miner');
+  const [activeTool, setActiveTool] = useState('cli');
   const platforms = getPlatforms(cs);
   const tools = getTools(cs);
   const tool = tools.find((item) => item.id === activeTool) || tools[0];
@@ -76,7 +85,7 @@ export default function DownloadToolBrowser({ cs }: { cs: boolean }) {
     <section className="space-y-6">
       <div className="flex flex-col gap-2">
         <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Nativni Rust CLI' : 'Native Rust CLI'}</p>
-        <h2 className="text-3xl font-semibold text-white">Miner · Wallet · Node</h2>
+        <h2 className="text-3xl font-semibold text-white">CLI · Miner · Wallet · Node</h2>
       </div>
 
       <div className="flex gap-2 flex-wrap">
