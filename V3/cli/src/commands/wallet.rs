@@ -59,13 +59,16 @@ pub async fn run(cfg: &Config, cmd: WalletCmd) -> Result<()> {
             let result = crate::rpc::node_rpc::call(
                 &cfg.node.rpc_host,
                 cfg.node.rpc_port,
-                "get_balance",
+                "getBalance",
                 serde_json::json!({ "address": addr }),
             ).await;
             match result {
                 Ok(v) => {
-                    let balance = v["balance"].as_f64().unwrap_or(0.0);
-                    ui::print_row("Balance", &format!("{:.8} ZION", balance));
+                    let balance = v["balance_flowers"].as_str()
+                        .and_then(|s| s.parse::<f64>().ok())
+                        .map(|f| f / 1_000_000.0)
+                        .unwrap_or(0.0);
+                    ui::print_row("Balance", &format!("{:.6} ZION", balance));
                 }
                 Err(e) => ui::print_warn(&format!("Cannot fetch balance: {}", e)),
             }
@@ -97,7 +100,7 @@ pub async fn run(cfg: &Config, cmd: WalletCmd) -> Result<()> {
             let result = crate::rpc::node_rpc::call(
                 &cfg.node.rpc_host,
                 cfg.node.rpc_port,
-                "submit_tx",
+                "submitTransaction",
                 params,
             ).await;
             match result {
