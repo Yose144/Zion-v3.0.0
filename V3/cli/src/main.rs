@@ -132,6 +132,8 @@ enum ConfigCmd {
     Set { key: String, value: String },
     /// Show config file path
     Path,
+    /// Validate current config values
+    Validate,
     /// Re-run onboarding wizard
     Init,
 }
@@ -177,6 +179,24 @@ async fn main() -> Result<()> {
                 Ok(())
             }
             ConfigCmd::Set { key, value } => config::set_value(&key, &value),
+            ConfigCmd::Validate => {
+                ui::print_header("Config Validation");
+                let report = config::validate(&cfg);
+
+                for warning in &report.warnings {
+                    ui::print_warn(warning);
+                }
+                for error in &report.errors {
+                    ui::print_err(error);
+                }
+
+                if report.is_ok() {
+                    ui::print_ok("Config is valid");
+                    Ok(())
+                } else {
+                    anyhow::bail!("Config validation failed with {} error(s)", report.errors.len())
+                }
+            }
             ConfigCmd::Init => onboard::run(&cfg).await,
         },
     }
