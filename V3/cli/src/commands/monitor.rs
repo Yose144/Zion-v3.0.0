@@ -127,11 +127,15 @@ async fn refresh(state: &mut MonitorState, host: &str, port: u16, agent_url: &st
     state.error = None;
 
     // Node stats
-    match node_rpc::call0(host, port, "get_stats").await {
+    match node_rpc::call0(host, port, "getChainInfo").await {
         Ok(v) => {
-            state.height = v["height"].as_u64().unwrap_or(state.height);
-            state.peers = v["peer_count"].as_u64().unwrap_or(0);
+            state.height = v["chain_height"].as_u64().unwrap_or(state.height);
+            state.peers = 0; // will fetch from getNodeInfo
             state.tip_hash = v["tip_hash"].as_str().unwrap_or("").into();
+            // peers
+            if let Ok(ni) = node_rpc::call0(host, port, "getNodeInfo").await {
+                state.peers = ni["known_peers"].as_u64().unwrap_or(0);
+            }
         }
         Err(e) => {
             state.error = Some(format!("Node: {}", e));
@@ -139,10 +143,10 @@ async fn refresh(state: &mut MonitorState, host: &str, port: u16, agent_url: &st
     }
 
     // Pool stats
-    match node_rpc::call0(host, port, "get_pool_stats").await {
+    match node_rpc::call0(host, port, "getMempoolInfo").await {
         Ok(v) => {
-            state.miners = v["connected_miners"].as_u64().unwrap_or(0);
-            state.hashrate = v["total_hashrate"].as_f64().unwrap_or(0.0);
+            state.miners = v["mempool_transactions"].as_u64().unwrap_or(0);
+            state.hashrate = 0.0; // hashrate from pool HTTP API, not node RPC
         }
         Err(_) => {
             // pool may not be running — leave values as-is
