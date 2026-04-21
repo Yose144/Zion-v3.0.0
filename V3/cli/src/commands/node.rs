@@ -66,7 +66,7 @@ pub async fn run(cfg: &Config, cmd: NodeCmd) -> Result<()> {
 async fn node_status(host: &str, port: u16) -> Result<()> {
     ui::print_header("Node Status");
 
-    let stats = node_rpc::call0(host, port, "get_stats").await;
+    let stats = node_rpc::call0(host, port, "getChainInfo").await;
     match stats {
         Ok(v) => {
             let height = v["height"].as_u64().unwrap_or(0);
@@ -90,7 +90,7 @@ async fn node_status(host: &str, port: u16) -> Result<()> {
 
 async fn node_peers(host: &str, port: u16) -> Result<()> {
     ui::print_header("Peers");
-    let result = node_rpc::call0(host, port, "get_peers").await?;
+    let result = node_rpc::call0(host, port, "getPeerInfo").await?;
     if let Some(peers) = result.as_array() {
         if peers.is_empty() {
             ui::print_warn("No peers connected");
@@ -110,11 +110,11 @@ async fn node_peers(host: &str, port: u16) -> Result<()> {
 async fn node_blocks(host: &str, port: u16, n: u64) -> Result<()> {
     ui::print_header(&format!("Last {} blocks", n));
 
-    let stats = node_rpc::call0(host, port, "get_stats").await?;
-    let tip = stats["height"].as_u64().unwrap_or(0);
+    let stats = node_rpc::call0(host, port, "getChainInfo").await?;
+    let height = stats["chain_height"].as_u64().unwrap_or(0);
 
-    for h in (tip.saturating_sub(n - 1)..=tip).rev() {
-        let block = node_rpc::call(host, port, "get_block_by_height", json!({ "height": h })).await;
+    for h in (height.saturating_sub(n - 1)..=height).rev() {
+        let block = node_rpc::call(host, port, "getBlockByHeight", json!({ "height": h })).await;
         match block {
             Ok(b) => {
                 let hash = b["hash"].as_str().unwrap_or("?");
@@ -134,9 +134,9 @@ async fn node_block(host: &str, port: u16, id: &str) -> Result<()> {
     ui::print_header(&format!("Block {}", id));
     let result = if id.chars().all(|c| c.is_ascii_digit()) {
         let h: u64 = id.parse()?;
-        node_rpc::call(host, port, "get_block_by_height", json!({ "height": h })).await?
+        node_rpc::call(host, port, "getBlockByHeight", json!({ "height": h })).await?
     } else {
-        node_rpc::call(host, port, "get_block", json!({ "hash": id })).await?
+        node_rpc::call(host, port, "getBlock", json!({ "hash": id })).await?
     };
     println!("{}", serde_json::to_string_pretty(&result)?);
     println!();
@@ -153,7 +153,7 @@ async fn node_tx(host: &str, port: u16, txid: &str) -> Result<()> {
 
 async fn node_mempool(host: &str, port: u16) -> Result<()> {
     ui::print_header("Mempool");
-    let result = node_rpc::call0(host, port, "get_mempool").await?;
+    let result = node_rpc::call0(host, port, "getMempoolInfo").await?;
     let txs = result.as_array().map(|a| a.len()).unwrap_or(0);
     ui::print_row("Pending txs", &txs.to_string());
     if txs > 0 {
