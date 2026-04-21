@@ -6,10 +6,11 @@ mod config;
 mod rpc;
 mod ui;
 
-use commands::{agent, bridge, dao, deploy, explorer, mine, node, onboard, pool, status, wallet};
+use commands::{agent, bridge, completions, dao, deploy, explorer, mine, monitor, ncl, node, onboard, pool, status, wallet, warp};
 
 #[allow(unused_imports)]
 use toml;
+use clap_complete::Shell;
 
 #[derive(Parser)]
 #[command(
@@ -104,6 +105,23 @@ enum Commands {
     },
     /// Block explorer TUI
     Explorer,
+    /// Live stack monitor TUI (all layers)
+    Monitor,
+    /// L3 Warp cross-chain relay
+    Warp {
+        #[command(subcommand)]
+        cmd: warp::WarpCmd,
+    },
+    /// L3 NCL Neural Compute Layer
+    Ncl {
+        #[command(subcommand)]
+        cmd: ncl::NclCmd,
+    },
+    /// Print shell completion script
+    Completions {
+        /// Shell: bash | zsh | fish | powershell
+        shell: Shell,
+    },
 }
 
 #[derive(Subcommand)]
@@ -144,6 +162,10 @@ async fn main() -> Result<()> {
         Commands::Bridge { cmd } => bridge::run(&cfg, cmd).await,
         Commands::Dao { cmd } => dao::run(&cfg, cmd).await,
         Commands::Explorer => explorer::run(&cfg).await,
+        Commands::Monitor => monitor::run(&cfg).await,
+        Commands::Warp { cmd } => warp::run(&cfg, cmd).await,
+        Commands::Ncl { cmd } => ncl::run(&cfg, cmd).await,
+        Commands::Completions { shell } => completions::run(shell),
         Commands::Config { cmd } => match cmd {
             ConfigCmd::Show => {
                 let text = toml::to_string_pretty(&cfg)?;
