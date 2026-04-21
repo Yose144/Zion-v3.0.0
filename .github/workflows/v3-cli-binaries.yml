@@ -1,0 +1,74 @@
+name: V3 CLI Public Binaries
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: V3
+
+jobs:
+  build:
+    name: Build ${{ matrix.artifact_name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            artifact_name: zion-cli-linux-x86_64
+            binary_name: zion
+            build_kind: linux-native
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            artifact_name: zion-cli-linux-arm64
+            binary_name: zion
+            build_kind: linux-arm64-cross
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact_name: zion-cli-windows-x86_64.exe
+            binary_name: zion.exe
+            build_kind: windows-native
+          - os: macos-14
+            target: aarch64-apple-darwin
+            artifact_name: zion-cli-macos-arm64
+            binary_name: zion
+            build_kind: macos-native
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: V3
+
+      - name: Install Linux build dependencies
+        if: startsWith(matrix.os, 'ubuntu')
+        run: sudo apt-get update && sudo apt-get install -y build-essential pkg-config cmake gcc-aarch64-linux-gnu g++-aarch64-linux-gnu libc6-dev-arm64-cross
+
+      - name: Build zion-cli
+        env:
+          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
+          CC_aarch64_unknown_linux_gnu: aarch64-linux-gnu-gcc
+          AR_aarch64_unknown_linux_gnu: aarch64-linux-gnu-ar
+        run: cargo build -p zion-cli --release --target ${{ matrix.target }}
+
+      - name: Package binary
+        shell: bash
+        run: |
+          mkdir -p ../cli-dist
+          cp target/${{ matrix.target }}/release/${{ matrix.binary_name }} ../cli-dist/${{ matrix.artifact_name }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: cli-dist/${{ matrix.artifact_name }}
