@@ -33,7 +33,7 @@ export const BOOK_META = {
   editionCs: 'Čtenářská edice · Praha, duben 2026',
   editionEn: 'Reader\'s Edition · Prague, April 2026',
   dedicationCs:
-    'Pro Sarah Issobel, Maitreya Buddha, Radhu & Situ i Meriam /EnaMaTara/,\npřátele, rodinu, svobodné lidstvo a všechny děti tohoto světa:\nZION je váš. Stavte lepší svět, kde dosáhnete ke hvězdám.\nZlatý věk začíná.',
+    'Pro Sarah Issobel, Maitreyu Buddhu, Radhu & Situ i Meriam,\npřátele, rodinu, svobodné lidstvo a všechny děti tohoto světa:\nZION je váš. Stavte lepší svět, a dosáhnete ke hvězdám.\nZlatý věk začíná.',
   dedicationEn:
     'For Sarah Issobel, Maitreya Buddha, Radhu & Situ and Meriam /EnaMaTara/,\nfriends, family, free humanity, and all the children of this world:\nZION is yours. Build a better world where you reach for the stars.\nThe Golden Age begins.',
   aboutCs:
