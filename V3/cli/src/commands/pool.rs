@@ -64,7 +64,7 @@ async fn pool_stats(cfg: &Config) -> Result<()> {
     let result = node_rpc::call0(
         &cfg.node.rpc_host,
         cfg.node.rpc_port,
-        "get_pool_stats",
+        "getMempoolInfo",
     ).await;
 
     match result {
@@ -102,7 +102,7 @@ async fn pool_miners(cfg: &Config) -> Result<()> {
     let result = node_rpc::call0(
         &cfg.node.rpc_host,
         cfg.node.rpc_port,
-        "get_miners",
+        "getPeerInfo",
     ).await;
 
     match result {
