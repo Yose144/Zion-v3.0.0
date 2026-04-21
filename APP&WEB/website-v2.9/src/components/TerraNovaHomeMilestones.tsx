@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
+import { ArrowDownToLine, ArrowRight } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 
 const BRAILLE_TREE = `⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
@@ -100,6 +100,18 @@ export default function TerraNovaHomeMilestones() {
                 <span className="inline-block w-2 h-3 bg-green-400 align-middle animate-pulse" />
               </p>
             </div>
+          </div>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <Link
+              href="/download#downloads"
+              className="inline-flex items-center gap-2 rounded-2xl border border-zion-cyan/30 bg-zion-cyan/10 px-5 py-3 text-sm font-semibold text-zion-cyan hover:bg-zion-cyan/20 transition-all duration-300"
+            >
+              <ArrowDownToLine className="w-4 h-4" />
+              {cs ? 'Download ZION CLI' : 'Download ZION CLI'}
+            </Link>
+            <p className="text-sm text-gray-400">
+              {cs ? 'Veřejné binárky pro Windows, Linux a macOS jsou živé.' : 'Public Windows, Linux, and macOS binaries are live.'}
+            </p>
           </div>
         </div>
 

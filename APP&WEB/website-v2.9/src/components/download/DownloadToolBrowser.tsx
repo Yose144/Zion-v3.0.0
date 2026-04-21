@@ -34,6 +34,21 @@ function getPlatforms(cs: boolean): CLIBuild[] {
   ];
 }
 
+function getPlatformShortLabel(platform: CLIBuild): string {
+  switch (platform.suffix) {
+    case 'windows-x86_64.exe':
+      return 'Windows';
+    case 'linux-x86_64':
+      return 'Linux x64';
+    case 'linux-arm64':
+      return 'Linux ARM64';
+    case 'macos-arm64':
+      return 'macOS';
+    default:
+      return platform.os;
+  }
+}
+
 function getTools(cs: boolean): ToolInfo[] {
   return [
     {
@@ -110,6 +125,25 @@ export default function DownloadToolBrowser({ cs }: { cs: boolean }) {
         <p className="text-gray-300 mt-1">{tool.desc}</p>
         <div className="mt-3 rounded-xl bg-black/60 p-3 font-mono text-xs text-gray-300 overflow-x-auto">
           <span className="text-gray-500">$</span> {tool.quickCmd}
+        </div>
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          {platforms.map((platform) => {
+            const filename = `${tool.prefix}-${platform.suffix}`;
+            const url = `${DL}/${filename}`;
+
+            return (
+              <Link
+                key={`${tool.id}-${platform.suffix}-quick`}
+                href={url}
+                className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/5 px-4 py-2 text-xs font-semibold text-white hover:bg-white/10 transition-colors"
+              >
+                <ArrowDownToLine className="h-3.5 w-3.5" />
+                {tool.id === 'cli'
+                  ? `${cs ? 'Download ZION CLI' : 'Download ZION CLI'} · ${getPlatformShortLabel(platform)}`
+                  : `${cs ? 'Stahnout' : 'Download'} ${tool.name} · ${getPlatformShortLabel(platform)}`}
+              </Link>
+            );
+          })}
         </div>
       </div>
 
