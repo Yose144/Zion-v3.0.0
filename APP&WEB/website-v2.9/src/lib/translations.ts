@@ -322,8 +322,8 @@ const t = {
   features: {
     heading: { cs: 'Vrstvy protokolu', en: 'Protocol Layers' },
     subheading: {
-      cs: 'Šestisložková architektura: L1 Rust jádro, L2 NCL, L3 DAO, L4 Oasis, L5 Free World, L6 Issobella.',
-      en: 'Six-layer architecture: L1 Rust core, L2 NCL, L3 DAO, L4 Oasis, L5 Free World, L6 Issobella.',
+      cs: 'Šestisložková architektura: L1 Rust jádro, L2 Bridge · DAO · DeFi, L3 AI Native · WARP · NCL, L4 Oasis, L5 Free World, L6 Issobella.',
+      en: 'Six-layer architecture: L1 Rust core, L2 Bridge · DAO · DeFi, L3 AI Native · WARP · NCL, L4 Oasis, L5 Free World, L6 Issobella.',
     },
     tracks: {
       chv3: {
@@ -345,16 +345,24 @@ const t = {
       dao: {
         title: { cs: 'DAO Správa', en: 'DAO Governance' },
         desc:  {
-          cs: 'On-chain hlasování pro správu pokladnice, upgrady protokolu a komunitní návrhy. Plánováno pro Fázi 3.',
-          en: 'On-chain voting for treasury allocation, protocol upgrades, and community proposals. Planned for Phase 3.',
+          cs: 'L2 governance vrstva pro správu treasury, bridge politik a komunitních návrhů nad ekonomickou a validační infrastrukturou.',
+          en: 'L2 governance layer for treasury control, bridge policy, and community proposals over the economic and validation rails.',
         },
-        badge: { cs: 'Plánováno', en: 'Planned' },
+        badge: { cs: 'L2 · Governance', en: 'L2 · Governance' },
+      },
+      ai_native: {
+        title: { cs: 'AI Native · Hiranyagarbha', en: 'AI Native · Hiranyagarbha' },
+        desc:  {
+          cs: 'L3 orchestrace agenta: Hiranyagarbha runtime, RAG paměť, tasky, NCL compute lane a napojení na WARP relay.',
+          en: 'L3 agent orchestration: Hiranyagarbha runtime, RAG memory, task execution, the NCL compute lane, and WARP relay integration.',
+        },
+        badge: { cs: 'L3 · AI Runtime', en: 'L3 · AI Runtime' },
       },
       warp: {
         title: { cs: 'WARP Mosty', en: 'WARP Bridges' },
         desc:  {
-          cs: 'Meziřetězcové mosty (ETH, SOL, Cosmos) přes HTLC a relay protokoly. Plánováno pro L3 vrstvu (2027+).',
-          en: 'Cross-chain bridges (ETH, SOL, Cosmos) via HTLC and relay protocols. Planned for L3 layer (2027+).',
+          cs: 'L3 meziřetězcové relaye a HTLC mosty pro ETH, SOL a další sítě, řízené nad AI Native a DAO guard rails.',
+          en: 'L3 cross-chain relays and HTLC bridges for ETH, SOL, and other networks, operated above AI Native and DAO guard rails.',
         },
         badge: { cs: 'L3 · 2027+', en: 'L3 · 2027+' },
       },
@@ -400,8 +408,8 @@ const t = {
     },
     upgrade_heading: { cs: 'Vývoj upgradu · Timeline', en: 'Upgrade development · Timeline' },
     community_cta: {
-      cs: 'Governance DAO otevírá na L3 (2028). Přidej se k diskuzi na GitHub’u — navrhuj funkce, odměny nebo upgrady protokolu.',
-      en: 'DAO governance opens at L3 (2028). Join the discussion on GitHub — propose features, bounties, or protocol upgrades.',
+      cs: 'DAO governance patří do L2 a nad ní roste L3 vrstva AI Native, NCL a WARP. Přidej se k diskuzi na GitHub’u a navrhuj funkce, guard rails nebo upgrady protokolu.',
+      en: 'DAO governance belongs in L2, with the L3 AI Native, NCL, and WARP layer rising above it. Join the discussion on GitHub and propose features, guard rails, or protocol upgrades.',
     },
   },
 

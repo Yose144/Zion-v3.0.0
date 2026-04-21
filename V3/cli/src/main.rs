@@ -33,17 +33,17 @@ struct Cli {
 enum Commands {
     /// First-time setup wizard
     Onboard,
-    /// Start service(s): all | node | pool | miner | agent | website
+    /// Start service(s): all | node | pool | miner | agent | ai-native | bridge | dao | website | redis | monitoring
     Start {
         #[arg(default_value = "all")]
         service: String,
     },
-    /// Stop service(s)
+    /// Stop service(s): all | node | pool | miner | agent | ai-native | bridge | dao | website | redis | monitoring
     Stop {
         #[arg(default_value = "all")]
         service: String,
     },
-    /// Restart service(s)
+    /// Restart service(s): all | node | pool | miner | agent | ai-native | bridge | dao | website | redis | monitoring
     Restart {
         #[arg(default_value = "all")]
         service: String,

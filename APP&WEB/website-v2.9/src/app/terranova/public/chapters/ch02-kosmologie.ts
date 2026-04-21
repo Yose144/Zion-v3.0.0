@@ -36,7 +36,7 @@ const chapter: BookChapter = {
     },
     {
       heading: 'Mapa šesti vrstev Nové Země',
-      body: 'L1 ⛓️ TERRANOVA — Základní kámen (2026): Blockchain, PoW, UTXO, 144B zásobník světla\nL2 💱 DeFi + DAO — Ekonomie lásky (2026+): wZION bridge, staking, governance\nL3 🧠 NCL + AI — Neurální vrstva (2027): AI Native, WARP mosty, vědomá síť\nL4 🎮 OASIS — Hra Života (2028+): Golden Egg, XP ekonomie, vědomá zábava\nL5 🌍 FREE WORLD — Svobodný svět (2030+): Humanitární mise, volná energie, komunitní sítě\nL6 🔭 ISSOBELLA — Orbitální observatoř (2040+): Hvězdná brána, první kontakt\n\nKaždá vrstva je funkční sama o sobě. Ale smysl získávají až dohromady — jako orgány jednoho těla.',
+      body: 'L1 ⛓️ TERRANOVA — Základní kámen (2026): Blockchain, PoW, UTXO, 144B zásobník světla\nL2 💱 BRIDGE + DAO + DeFi — Ekonomie a guard rails (2026+): wZION bridge, staking, governance, treasury\nL3 🧠 AI NATIVE + WARP + NCL — Neurální vrstva (2027): Hiranyagarbha, WARP mosty, výpočetní orchestr, vědomá síť\nL4 🎮 OASIS — Hra Života (2028+): Golden Egg, XP ekonomie, vědomá zábava\nL5 🌍 FREE WORLD — Svobodný svět (2030+): Humanitární mise, volná energie, komunitní sítě\nL6 🔭 ISSOBELLA — Orbitální observatoř (2040+): Hvězdná brána, první kontakt\n\nKaždá vrstva je funkční sama o sobě. Ale smysl získávají až dohromady — jako orgány jednoho těla.',
     },
     {
       heading: 'Tři hodnoty hard-coded v kódu',
@@ -70,7 +70,7 @@ const chapter: BookChapter = {
     },
     {
       heading: 'Map of six layers of the New Earth',
-      body: 'L1 ⛓️ TERRANOVA — Foundation (2026): Blockchain, PoW, UTXO, 144B supply of light\nL2 💱 DeFi + DAO — Economy of love (2026+): wZION bridge, staking, governance\nL3 🧠 NCL + AI — Neural layer (2027): AI Native, WARP bridges, conscious network\nL4 🎮 OASIS — Game of Life (2028+): Golden Egg, XP economy, conscious entertainment\nL5 🌍 FREE WORLD — Free world (2030+): Humanitarian missions, free energy, community networks\nL6 🔭 ISSOBELLA — Orbital observatory (2040+): Star gate, first contact\n\nEach layer is functional on its own. But they gain meaning only together — like organs of one body.',
+      body: 'L1 ⛓️ TERRANOVA — Foundation (2026): Blockchain, PoW, UTXO, 144B supply of light\nL2 💱 BRIDGE + DAO + DeFi — Economy and guard rails (2026+): wZION bridge, staking, governance, treasury\nL3 🧠 AI NATIVE + WARP + NCL — Neural layer (2027): Hiranyagarbha, WARP bridges, compute orchestration, conscious network\nL4 🎮 OASIS — Game of Life (2028+): Golden Egg, XP economy, conscious entertainment\nL5 🌍 FREE WORLD — Free world (2030+): Humanitarian missions, free energy, community networks\nL6 🔭 ISSOBELLA — Orbital observatory (2040+): Star gate, first contact\n\nEach layer is functional on its own. But they gain meaning only together — like organs of one body.',
     },
     {
       heading: 'Three values hard-coded in code',
