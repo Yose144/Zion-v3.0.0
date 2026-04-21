@@ -10,6 +10,7 @@ Use it when you need concrete operator examples for the current `zion` surface.
 
 ```bash
 zion status
+zion doctor
 zion logs node
 zion logs ai-native
 zion dashboard
@@ -101,12 +102,15 @@ zion deploy prune
 zion config show
 zion config path
 zion config validate
+zion doctor
 zion config set node.rpc_host 91.98.122.165
 
 zion monitor
 zion explorer
 zion completions zsh
 ```
+
+`zion doctor` is the one-shot preflight for operator installs: config sanity, local miner binary detection, node RPC reachability, and AI Native reachability.
 
 ## Recommended operator order
 
