@@ -257,6 +257,16 @@ zion onboard
 
 ## Operator Notes
 
+## Companion Docs
+
+Use these together:
+
+- `V3/docs/CLI_REFERENCE.md` for command examples,
+- `V3/docs/CLI_TROUBLESHOOTING.md` for incident response,
+- `V3/docs/CLI_DEPLOY_PLAYBOOK.md` for rollout and validation flow.
+
+## Operator Notes
+
 ### AI Native posture
 
 Right now, `zion agent` should be understood as an operator-facing orchestration gateway.

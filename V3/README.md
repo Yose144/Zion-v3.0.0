@@ -14,6 +14,9 @@ Revenue system detail: `V3/docs/REVENUE_SYSTEM.md`.
 Native libs gap audit: `V3/docs/NATIVE_LIBS_GAP_V3.md`.
 Unified CLI operator guide: `V3/docs/CLI_GUIDE.md`.
 Unified CLI FAQ: `V3/docs/CLI_FAQ.md`.
+Unified CLI command reference: `V3/docs/CLI_REFERENCE.md`.
+Unified CLI troubleshooting: `V3/docs/CLI_TROUBLESHOOTING.md`.
+Unified CLI deploy playbook: `V3/docs/CLI_DEPLOY_PLAYBOOK.md`.
 
 Pure-code scope for the bootstrap:
 
