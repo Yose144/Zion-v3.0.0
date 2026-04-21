@@ -103,6 +103,7 @@ const sectionTitles: Record<string, LocalizedText> = {
   'whitepaper': { cs: 'Whitepaper', en: 'Whitepaper' },
   'architecture': { cs: 'Architektura', en: 'Architecture' },
   'mainnet': { cs: 'Veřejná launch cesta', en: 'Public Launch Path' },
+  'zion-cli': { cs: 'ZION CLI', en: 'ZION CLI' },
   'books': { cs: 'Knihy', en: 'Books' },
   'listing': { cs: 'Listing / CoinGecko', en: 'Listing / CoinGecko' },
   'ai-native': { cs: 'AI / výzkumný archiv', en: 'AI / Research Archive' },
@@ -439,13 +440,22 @@ const sections: Section[] = [
     accentBorder: 'border-emerald-400/30',
     docs: [
       { id: 'mainnet-plan', title: 'Public Launch Path', file: 'mainnet/README.md' },
+      { id: 'roadmap-lite', title: 'Roadmap Lite — launch readiness', file: 'roadmap-lite.md' },
+      { id: 'mainnet-checklist', title: 'Public Launch Gate Checklist (archive)', file: 'v2.9.7/mainnet-gate.md' },
+    ],
+  },
+  {
+    id: 'zion-cli',
+    title: 'ZION CLI',
+    icon: LayoutList,
+    accentText: 'text-zion-cyan',
+    accentBorder: 'border-zion-cyan/30',
+    docs: [
       { id: 'cli-guide', title: 'ZION CLI Guide', file: 'mainnet/cli-guide.md' },
       { id: 'cli-faq', title: 'ZION CLI FAQ', file: 'mainnet/cli-faq.md' },
       { id: 'cli-reference', title: 'ZION CLI Reference', file: 'mainnet/cli-reference.md' },
       { id: 'cli-troubleshooting', title: 'ZION CLI Troubleshooting', file: 'mainnet/cli-troubleshooting.md' },
       { id: 'cli-deploy-playbook', title: 'ZION CLI Deploy Playbook', file: 'mainnet/cli-deploy-playbook.md' },
-      { id: 'roadmap-lite', title: 'Roadmap Lite — launch readiness', file: 'roadmap-lite.md' },
-      { id: 'mainnet-checklist', title: 'Public Launch Gate Checklist (archive)', file: 'v2.9.7/mainnet-gate.md' },
     ],
   },
   {
