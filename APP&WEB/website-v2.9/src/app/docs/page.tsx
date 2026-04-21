@@ -149,6 +149,8 @@ const docTitles: Record<string, LocalizedText> = {
   'arch-overview': { cs: '6vrstvý stack', en: '6-Layer Stack' },
   'arch-consensus': { cs: 'Roadmapa CHv3 -> CHv4', en: 'CHv3 -> CHv4 Roadmap' },
   'mainnet-plan': { cs: 'Veřejná launch cesta', en: 'Public Launch Path' },
+  'cli-guide': { cs: 'ZION CLI Guide', en: 'ZION CLI Guide' },
+  'cli-faq': { cs: 'ZION CLI FAQ', en: 'ZION CLI FAQ' },
   'roadmap-lite': { cs: 'Roadmap Lite — launch readiness', en: 'Roadmap Lite — launch readiness' },
   'mainnet-checklist': { cs: 'Checklist launch gate (archiv)', en: 'Public Launch Gate Checklist (archive)' },
   'book-genesis': { cs: 'Genesis — Kniha probuzení', en: 'Genesis — Book of Awakening' },
@@ -434,6 +436,8 @@ const sections: Section[] = [
     accentBorder: 'border-emerald-400/30',
     docs: [
       { id: 'mainnet-plan', title: 'Public Launch Path', file: 'mainnet/README.md' },
+      { id: 'cli-guide', title: 'ZION CLI Guide', file: 'mainnet/cli-guide.md' },
+      { id: 'cli-faq', title: 'ZION CLI FAQ', file: 'mainnet/cli-faq.md' },
       { id: 'roadmap-lite', title: 'Roadmap Lite — launch readiness', file: 'roadmap-lite.md' },
       { id: 'mainnet-checklist', title: 'Public Launch Gate Checklist (archive)', file: 'v2.9.7/mainnet-gate.md' },
     ],

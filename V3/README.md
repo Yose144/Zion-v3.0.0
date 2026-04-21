@@ -12,6 +12,8 @@ Comprehensive mainnet completion plan (L1 finish + L2/L3 migration): `V3/PLAN.md
 Production upgrade plan (miner hardening, monitoring, infra, public release): `V3/docs/UPGRADE_PLAN.md`.
 Revenue system detail: `V3/docs/REVENUE_SYSTEM.md`.
 Native libs gap audit: `V3/docs/NATIVE_LIBS_GAP_V3.md`.
+Unified CLI operator guide: `V3/docs/CLI_GUIDE.md`.
+Unified CLI FAQ: `V3/docs/CLI_FAQ.md`.
 
 Pure-code scope for the bootstrap:
 
@@ -37,6 +39,7 @@ Out of scope for the bootstrap:
 ## Current Status
 
 - workspace version: `3.0.0`
+- **Unified `zion` CLI operator baseline (2026-04-21):** top-level gateway now spans L1/L2/L3 plus deploy, explorer, and monitor surfaces; canonical operator docs published in `V3/docs/CLI_GUIDE.md` and `V3/docs/CLI_FAQ.md`.
 - **Phase 18 UTXO coinbase + pool payout E2E deployed (2026-04-01):** `getBalance` combines account+UTXO for zion1 addresses (previously returned 0). `build_template()` generates UTXO coinbase with 4 outputs (89/5/5/1 split). Pool payout pipeline deployed with Ed25519 UTXO signing. Chain height 6801, miner balance 14.12B ZION.
 - **Humanitarian tithe verified on-chain (2026-04-01):** Per-block fee split is exact to the flower: 89% miner, 5% humanitarian ([12] zion1m4v5z...), 5% issobella ([13] zion170a37...), 1% pool_fee ([14] zion1y5u65...). Cumulative balances consistent across all tithe wallets.
 - **BaseScan verification (2026-04-01):** All 3 Base mainnet contracts (wZION, ZIONBridge, ZIONAtomicSwap) verified on BaseScan.

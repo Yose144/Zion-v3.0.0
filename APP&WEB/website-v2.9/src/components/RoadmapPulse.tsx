@@ -43,12 +43,12 @@ const getTimeline = (cs: boolean) => [
     focus: cs ? 'Mainnet genesis, Cosmic Harmony v3/v4, UTXO, zasoba 144B ZION' : 'MainNet Genesis, Cosmic Harmony v3/v4, UTXO, 144B ZION supply',
   },
   {
-    title: '🧠 L2 NCL & DeFi · 2026–2027',
-    focus: cs ? 'wZION DEX na Base Mainnet (live), Bridge relay, NCL AI-native protokol' : 'wZION DEX on Base Mainnet (live), Bridge relay, NCL AI-native protocol',
+    title: '🌉 L2 Bridge, DAO & DeFi · 2026–2027',
+    focus: cs ? 'wZION DEX na Base Mainnet, bridge relay, treasury rails a DAO governance vrstva' : 'wZION DEX on Base Mainnet, bridge relay, treasury rails, and the DAO governance layer',
   },
   {
-    title: '🏛️ L3 DAO · 2028',
-    focus: cs ? 'Komunitni governance, treasury 4B ZION, on-chain hlasovani' : 'Community governance, Treasury 4B ZION, on-chain voting',
+    title: '🧠 L3 AI Native, WARP & NCL · 2027–2028',
+    focus: cs ? 'Hiranyagarbha runtime, NCL compute lane, WARP relaye a agenticka orchestrace nad L1/L2' : 'Hiranyagarbha runtime, the NCL compute lane, WARP relays, and agentic orchestration above L1/L2',
   },
   {
     title: '🎮 L4 Oasis · 2029',

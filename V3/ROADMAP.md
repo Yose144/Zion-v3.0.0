@@ -78,6 +78,7 @@ This roadmap follows the release progression already defined in the repository d
 
 ### Latest Verified Runtime Milestone
 
+- **Unified CLI documentation baseline (2026-04-21):** `V3/cli` is now documented as the canonical operator gateway across L1, L2, L3, deploy, explorer, and monitor surfaces. Public-safe CLI guide and FAQ are now part of the documentation rollout path.
 - **Phase 18 UTXO coinbase + pool payout E2E (2026-04-01):** `getBalance` now combines account+UTXO for zion1 addresses (was returning 0). `build_template()` generates UTXO coinbase with 4 outputs (89/5/5/1 split). Pool payout pipeline: `execute_pool_payout()` with Ed25519 UTXO signing. Deployed to Prague, chain height 6801, miner balance 14.12B ZION, template utxo_tx_count=1.
 - **Humanitarian tithe verified on-chain (2026-04-01):** Per-block split is exact: miner 4,806,059,630,000,000 flowers (89%), humanitarian 270,003,350,000,000 (5%), issobella 270,003,350,000,000 (5%), pool_fee 54,000,670,000,000 (1%). Total = block subsidy. Cumulative balances ~93% of theoretical max (early blocks pre-config).
 - **BaseScan verification (2026-04-01):** All 3 Base mainnet contracts (wZION, ZIONBridge, ZIONAtomicSwap) verified on BaseScan via Etherscan V2 API.
