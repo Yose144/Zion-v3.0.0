@@ -236,15 +236,17 @@ fn find_miner_binary() -> Result<String> {
         return Ok(p);
     }
 
-    for candidate in miner_binary_candidates() {
-        if candidate.exists() {
-            return Ok(candidate.display().to_string());
-        }
+    if let Some(candidate) = discover_miner_binary() {
+        return Ok(candidate.display().to_string());
     }
 
     anyhow::bail!(
         "zion-miner binary not found. Build with:\n  cd V3 && cargo build -p zion-miner --release"
     )
+}
+
+pub(crate) fn discover_miner_binary() -> Option<PathBuf> {
+    miner_binary_candidates().into_iter().find(|candidate| candidate.exists())
 }
 
 fn miner_binary_candidates() -> Vec<PathBuf> {
