@@ -96,8 +96,12 @@ Use for miner runtime control and quick performance checks.
 
 ```bash
 zion mine start
+zion mine start --backend opencl
+zion mine start --backend cuda --profile dual
 zion mine status
 zion mine bench
+zion mine bench --gpu --backend metal --work-size 262144
+zion mine bench --ekam --backend opencl --work-size 8192
 zion mine dcr
 zion mine stop
 ```
@@ -105,7 +109,10 @@ zion mine stop
 Operational notes:
 
 - use `bench` before assuming a host is suitable for mining,
+- `--ekam` now invokes the miner's real `--ekam-bench` path instead of only setting a benchmark profile,
+- `--backend opencl|cuda|metal` is now wired through to the miner instead of being reduced to a generic GPU flag,
 - use `status` before and after config changes,
+- `mine start` now maps the ZION wallet to `ZION_MINER_ID` and keeps `miner.btc_wallet` separate for dual DCR payout flow,
 - `dcr` belongs to miner diagnostics, not deployment.
 
 ### `zion wallet`
@@ -255,8 +262,10 @@ Use for effective config inspection and updates.
 ```bash
 zion config show
 zion config path
-zion config set server.host 91.98.122.165
+zion config validate
+zion config set node.rpc_host 91.98.122.165
 zion config set node.rpc_port 8443
+zion config set miner.btc_wallet bc1qexample
 zion config init
 ```
 
@@ -264,6 +273,7 @@ Operational notes:
 
 - `show` is the first config sanity check,
 - `path` matters when the operator is unsure which file is active,
+- `validate` checks backend/profile/URL/SSH key sanity before runtime,
 - `init` re-runs onboarding when the file is incomplete or stale.
 
 ### TUI and shell helpers
