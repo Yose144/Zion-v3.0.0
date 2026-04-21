@@ -21,6 +21,21 @@ export interface NewsArticle {
 
 export const NEWS_ARTICLES: NewsArticle[] = [
   {
+    slug: 'zion-cli-rollout',
+    date: '2026-04-21',
+    tag: { cs: 'CLI', en: 'CLI' },
+    tagColor: 'text-zion-cyan',
+    title: {
+      cs: 'ZION CLI je nově součástí veřejného webu, dokumentace a download surface',
+      en: 'ZION CLI is now part of the public website, docs, and download surface',
+    },
+    summary: {
+      cs: 'Nový sjednocený operátorský gateway pro node, pool, miner, agent, bridge, DAO, deploy a monitoring má vlastní docs sekci, zmínku na homepage a samostatný blok na download page. Veřejné binární release artefakty teď doháníme jako další krok.',
+      en: 'The new unified operator gateway for node, pool, miner, agent, bridge, DAO, deploy, and monitoring now has its own docs section, homepage mention, and dedicated block on the download page. Public binary release artifacts are the next step now catching up.',
+    },
+    href: '/download',
+  },
+  {
     slug: 'terranova-book',
     date: '2026-04-20',
     tag: { cs: 'Kniha', en: 'Book' },
