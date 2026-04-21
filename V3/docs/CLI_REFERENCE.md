@@ -12,6 +12,7 @@ Use it when you need practical examples for the existing CLI surface rather than
 
 ```bash
 zion status
+zion doctor
 zion logs node
 zion logs ai-native
 zion dashboard
@@ -20,6 +21,7 @@ zion dashboard
 What these do:
 
 - `zion status` runs the broad stack health view,
+- `zion doctor` runs the operator preflight across config sanity, local miner readiness, and endpoint reachability,
 - `zion logs <service>` tails deploy-managed service logs,
 - `zion dashboard` opens the web dashboard at the configured node host on port `3000`.
 
@@ -263,6 +265,7 @@ Use for effective config inspection and updates.
 zion config show
 zion config path
 zion config validate
+zion doctor
 zion config set node.rpc_host 91.98.122.165
 zion config set node.rpc_port 8443
 zion config set miner.btc_wallet bc1qexample
@@ -274,6 +277,7 @@ Operational notes:
 - `show` is the first config sanity check,
 - `path` matters when the operator is unsure which file is active,
 - `validate` checks backend/profile/URL/SSH key sanity before runtime,
+- `doctor` is the wider preflight when you also need node reachability, local binary discovery, and agent reachability,
 - `init` re-runs onboarding when the file is incomplete or stale.
 
 ### TUI and shell helpers

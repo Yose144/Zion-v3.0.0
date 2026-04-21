@@ -6,7 +6,7 @@ mod config;
 mod rpc;
 mod ui;
 
-use commands::{agent, bridge, completions, dao, deploy, explorer, mine, monitor, ncl, node, onboard, pool, status, wallet, warp};
+use commands::{agent, bridge, completions, dao, deploy, doctor, explorer, mine, monitor, ncl, node, onboard, pool, status, wallet, warp};
 
 #[allow(unused_imports)]
 use toml;
@@ -50,6 +50,8 @@ enum Commands {
     },
     /// Health check — all layers
     Status,
+    /// Run preflight diagnostics for config, local tools, and endpoints
+    Doctor,
     /// Tail logs for a service
     Logs {
         #[arg(default_value = "node")]
@@ -146,6 +148,7 @@ async fn main() -> Result<()> {
     match cli.command {
         Commands::Onboard => onboard::run(&cfg).await,
         Commands::Status => status::run(&cfg).await,
+        Commands::Doctor => doctor::run(&cfg).await,
         Commands::Dashboard => {
             let url = format!("http://{}:3000", cfg.node.rpc_host);
             ui::print_info(&format!("Opening {}", url));

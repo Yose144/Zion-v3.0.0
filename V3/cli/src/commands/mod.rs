@@ -3,6 +3,7 @@ pub mod bridge;
 pub mod completions;
 pub mod dao;
 pub mod deploy;
+pub mod doctor;
 pub mod explorer;
 pub mod mine;
 pub mod monitor;

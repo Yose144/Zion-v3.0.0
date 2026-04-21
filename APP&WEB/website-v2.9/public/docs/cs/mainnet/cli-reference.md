@@ -10,6 +10,7 @@ Použij ho, když potřebuješ konkrétní operátorské příklady pro aktuáln
 
 ```bash
 zion status
+zion doctor
 zion logs node
 zion logs ai-native
 zion dashboard
@@ -101,12 +102,15 @@ zion deploy prune
 zion config show
 zion config path
 zion config validate
+zion doctor
 zion config set node.rpc_host 91.98.122.165
 
 zion monitor
 zion explorer
 zion completions zsh
 ```
+
+`zion doctor` je one-shot preflight pro operátorské instalace: config sanity, detekce lokální miner binárky, reachability node RPC a reachability AI Native.
 
 ## Doporučené pořadí operátora
 
