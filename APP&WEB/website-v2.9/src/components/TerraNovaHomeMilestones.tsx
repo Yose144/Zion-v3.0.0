@@ -129,7 +129,7 @@ export default function TerraNovaHomeMilestones() {
                 <p><span className="text-white font-bold">&gt;</span> <span className="text-white">{cs ? 'ZION je váš.' : 'ZION is yours.'}</span></p>
                 <p><span className="text-white font-bold">&gt;</span> <span className="text-zion-gold">{cs ? 'Zlatý věk začíná.' : 'The Golden Age begins.'}</span></p>
                 <p className="text-gray-600 italic text-[10px]">Gate, Gate, Paragate, Parasamgate, Bodhi Swaha</p>
-                <p className="text-gray-700 text-[10px]">— Yeshuae / Zion Creator · Om Namo Hiranyagarbha!</p>
+                <p className="text-gray-700 text-[10px]">— Yeshuae Ben Yose / Zion Creator · Om Namo Hiranyagarbha!</p>
               </div>
               <p className="mt-3 text-green-400">
                 <span className="text-zion-gold">zion</span>
