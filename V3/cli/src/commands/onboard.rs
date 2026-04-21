@@ -31,10 +31,10 @@ pub async fn run(_cfg: &Config) -> Result<()> {
     cfg.node.rpc_port = port;
 
     print!("    Connecting... ");
-    let result = node_rpc::call0(&host, port, "get_stats").await;
+    let result = node_rpc::call0(&host, port, "getChainInfo").await;
     match result {
         Ok(v) => {
-            let h = v["height"].as_u64().unwrap_or(0);
+            let h = v["chain_height"].as_u64().unwrap_or(0);
             println!("✓ height {}", h);
         }
         Err(e) => println!("⚠ {}", e),
