@@ -66,6 +66,8 @@ zion deploy status
 
 If the wrong service name is used, the CLI may still pass it through, but the underlying compose action may not do what you intended.
 
+Current expected behavior is stricter: unsupported lifecycle targets should fail locally with a clear supported-target list before any SSH call is attempted.
+
 ## 4. `zion logs <service>` is empty or unhelpful
 
 Check whether the target service is really the affected layer.
