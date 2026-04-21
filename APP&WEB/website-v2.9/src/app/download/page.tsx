@@ -4,7 +4,7 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import {
   ArrowDownToLine, CheckCircle2, Cpu, Shield, TerminalSquare,
-  Package, Monitor, ExternalLink, Github,
+  Package, Monitor, ExternalLink,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { SITE_POOL_PRIMARY, SITE_RELEASE_LABEL, SITE_VERSION } from '@/lib/site';
@@ -12,8 +12,7 @@ import { SITE_POOL_PRIMARY, SITE_RELEASE_LABEL, SITE_VERSION } from '@/lib/site'
 const DownloadToolBrowser = dynamic(() => import('@/components/download/DownloadToolBrowser'));
 const DownloadFaq = dynamic(() => import('@/components/download/DownloadFaq'));
 
-const DL = 'https://zionterranova.com/api/downloads';
-const GH_RELEASE = 'https://zionterranova.com/api/downloads';
+const DOCS_URL = 'https://github.com/Zion-TerraNova/2.9.6/blob/main/docs/QUICK_START.md';
 
 const getDesktopAgentFeatures = (cs: boolean) => [
   cs ? 'GUI dashboard s hashratem a zustatkem v realnem case' : 'GUI Dashboard with real-time hashrate & balance',
@@ -51,29 +50,6 @@ const getSteps = (cs: boolean) => [
   },
 ];
 
-const getCliPlatforms = (cs: boolean) => [
-  {
-    os: 'Windows 10 / 11 — x64',
-    command: 'cargo build -p zion-cli --release && .\\target\\release\\zion.exe --help',
-    note: cs ? 'Aktuální jistota: build ze zdroje a lokální běh CLI na Windows.' : 'Current guaranteed path: build from source and run the CLI locally on Windows.',
-  },
-  {
-    os: 'Linux — Intel / AMD',
-    command: 'cargo build -p zion-cli --release && ./target/release/zion --help',
-    note: cs ? 'Doporučená operator cesta pro servery a workstationy.' : 'Recommended operator path for servers and workstations.',
-  },
-  {
-    os: 'Linux — ARM64 (RPi)',
-    command: 'cargo build -p zion-cli --release && ./target/release/zion --help',
-    note: cs ? 'Stejný source flow pro ARM64 uzly a lehké operátorské stroje.' : 'The same source flow for ARM64 nodes and light operator machines.',
-  },
-  {
-    os: 'macOS — Apple Silicon',
-    command: 'cargo build -p zion-cli --release && ./target/release/zion --help',
-    note: cs ? 'Lokální build je dnes nejpoctivější veřejně garantovaná cesta pro macOS.' : 'Local build is the most honest publicly guaranteed path for macOS today.',
-  },
-];
-
 /* ───────────────────────── component ───────────────────────── */
 
 export default function DownloadPage() {
@@ -81,7 +57,6 @@ export default function DownloadPage() {
   const cs = lang === 'cs';
   const desktopAgentFeatures = getDesktopAgentFeatures(cs);
   const steps = getSteps(cs);
-  const cliPlatforms = getCliPlatforms(cs);
 
   return (
     <div className="zion-shell min-h-screen pt-28 md:pt-32 pb-24 overflow-x-hidden">
@@ -95,29 +70,27 @@ export default function DownloadPage() {
               {SITE_RELEASE_LABEL}
             </div>
             <div>
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{cs ? '12 nativnich Rust binarek · 4 platformy' : '12 native Rust binaries · 4 platforms'}</p>
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{cs ? '16 nativnich Rust binarek · 4 platformy' : '16 native Rust binaries · 4 platforms'}</p>
               <h1 className="text-3xl sm:text-5xl font-semibold text-gradient leading-tight">
                 {cs ? 'Stahni. Tez. Vydelavej.' : 'Download. Mine. Earn.'}
               </h1>
             </div>
             <p className="text-lg text-gray-300">
-              {cs ? `ZION CLI bootstrap bundle pro verejnou rehearsal linii ${SITE_VERSION} — ` : `ZION CLI bootstrap bundle for the public rehearsal line ${SITE_VERSION} — `}<span className="text-zion-gold font-semibold">Miner</span>,{' '}
+              {cs ? `ZION CLI bootstrap bundle pro verejnou rehearsal linii ${SITE_VERSION} — ` : `ZION CLI bootstrap bundle for the public rehearsal line ${SITE_VERSION} — `}<span className="text-white font-semibold">CLI</span>,{' '}
+              <span className="text-zion-gold font-semibold">Miner</span>,{' '}
               <span className="text-zion-cyan font-semibold">Wallet</span> {cs ? 'a' : '&'}{' '}
               <span className="text-zion-purple font-semibold">Node</span>{cs ? ' — pro Windows, Linux a macOS. Predkompilovane nativni Rust binarky. Aktualni download artefakty jsou stale hostovane pod release tagem v2.9.6, ale zustavaji kompatibilni s verejnou linii v2.9.9 Pure Code nad kanonickou runtime cestou v2.9.8.' : ' — for Windows, Linux & macOS. Pre-compiled native Rust binaries. Current download artifacts are still hosted under the v2.9.6 release tag, but remain compatible with the public v2.9.9 Pure Code line on top of the canonical v2.9.8 runtime path.'}
             </p>
             <div className="flex flex-wrap gap-3">
               <Link
-                href={GH_RELEASE}
-                target="_blank"
-                rel="noreferrer"
+                href="#downloads"
                 className="inline-flex items-center gap-2 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/20 px-5 py-2.5 text-sm font-semibold text-white transition-colors"
               >
-                <Github className="h-4 w-4" />
-                {cs ? 'GitHub release' : 'GitHub Release'}
-                <ExternalLink className="h-3 w-3" />
+                <ArrowDownToLine className="h-4 w-4" />
+                {cs ? 'Verejne downloady' : 'Public Downloads'}
               </Link>
               <Link
-                href="https://github.com/Zion-TerraNova/2.9.6/blob/main/docs/QUICK_START.md"
+                href={DOCS_URL}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-2 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 px-5 py-2.5 text-sm font-semibold text-gray-300 transition-colors"
@@ -135,27 +108,9 @@ export default function DownloadPage() {
             <h2 className="text-3xl font-semibold text-white">ZION CLI · Windows · Linux · macOS</h2>
             <p className="text-gray-400 max-w-3xl">
               {cs
-                ? 'ZION CLI je sjednocený vstup do celého stacku: node, pool, miner, agent, bridge, dao, deploy a monitoring. Veřejná dokumentace už je hotová; veřejné binární release artefakty pro všechny OS teď teprve doháníme, takže dnešní garantovaná cesta je build ze zdroje.'
-                : 'ZION CLI is the unified entrypoint for the whole stack: node, pool, miner, agent, bridge, dao, deploy, and monitoring. The public docs are already in place; public binary release artifacts for all OSes are still catching up, so today the guaranteed path is building from source.'}
+                ? 'ZION CLI je sjednocený vstup do celého stacku: node, pool, miner, agent, bridge, dao, deploy a monitoring. Veřejné binárky pro Windows, Linux x86_64, Linux ARM64 a macOS Apple Silicon jsou teď živé přímo v download surface níže.'
+                : 'ZION CLI is the unified entrypoint for the whole stack: node, pool, miner, agent, bridge, dao, deploy, and monitoring. Public binaries for Windows, Linux x86_64, Linux ARM64, and macOS Apple Silicon are now live directly in the download surface below.'}
             </p>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            {cliPlatforms.map((platform) => (
-              <div key={platform.os} className="rounded-3xl border border-white/10 bg-black/40 p-5">
-                <div className="flex items-center justify-between gap-3">
-                  <h3 className="text-xl font-semibold text-white">{platform.os}</h3>
-                  <span className="rounded-full border border-zion-gold/20 bg-zion-gold/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em] text-zion-gold">
-                    ZION CLI
-                  </span>
-                </div>
-                <p className="mt-3 text-sm text-gray-400">{platform.note}</p>
-                <div className="mt-4 rounded-xl bg-black/60 p-3 font-mono text-xs text-gray-300 overflow-x-auto">
-                  <span className="text-gray-500">$</span>{' '}
-                  {platform.command}
-                </div>
-              </div>
-            ))}
           </div>
 
           <div className="rounded-2xl border border-zion-cyan/20 bg-zion-cyan/5 p-5">
@@ -163,12 +118,14 @@ export default function DownloadPage() {
               <span className="text-zion-cyan font-semibold">{cs ? 'Zdroj pravdy:' : 'Source of truth:'}</span>{' '}
               {cs ? 'operátorské příkazy, guide, FAQ, reference a troubleshooting jsou v sekci ' : 'operator commands, guide, FAQ, reference, and troubleshooting live in the '}
               <Link href="/docs" className="text-zion-cyan underline hover:no-underline">ZION CLI</Link>
-              {cs ? ' v dokumentaci.' : ' section of the docs.'}
+              {cs ? ' v dokumentaci. Pokud chcete checksum verifikaci, ke každé binárce je na serveru i odpovídající soubor .sha256.' : ' section of the docs. If you want checksum verification, each binary also has a matching .sha256 file on the server.'}
             </p>
           </div>
         </section>
 
-        <DownloadToolBrowser cs={cs} />
+        <section id="downloads">
+          <DownloadToolBrowser cs={cs} />
+        </section>
 
         {/* ─── Desktop Agent — placeholder ─── */}
         <section className="space-y-6">
@@ -327,13 +284,11 @@ export default function DownloadPage() {
               {cs ? 'Dokumentace' : 'Documentation'}
             </Link>
             <Link
-              href={GH_RELEASE}
-              target="_blank"
-              rel="noreferrer"
+              href="#downloads"
               className="inline-flex items-center gap-2 rounded-2xl bg-white/10 border border-white/20 px-6 py-3 text-sm font-semibold text-white"
             >
-              <Github className="h-4 w-4" />
-              GitHub
+              <ArrowDownToLine className="h-4 w-4" />
+              {cs ? 'Verejne downloady' : 'Public Downloads'}
             </Link>
           </div>
         </section>

@@ -7,6 +7,7 @@ import * as path from 'node:path';
 const DOWNLOADS_DIR = process.env.ZION_DOWNLOADS_DIR || '/opt/zion/downloads';
 
 const ALLOWED_EXTENSIONS = new Set(['.tar.gz', '.gz', '.sha256', '.exe', '.zip']);
+const ALLOWED_RAW_BINARIES = /^(zion-(miner|wallet|node|cli|core|pool))-(linux-(x86_64|arm64)|macos-arm64)$/;
 
 function isSafeFilename(name: string): boolean {
   // Reject path traversal, null bytes, and absolute paths
@@ -16,11 +17,22 @@ function isSafeFilename(name: string): boolean {
 }
 
 function hasAllowedExtension(name: string): boolean {
+  if (!path.extname(name) && ALLOWED_RAW_BINARIES.test(name)) {
+    return true;
+  }
+
   return ALLOWED_EXTENSIONS.has(
     name.endsWith('.tar.gz') ? '.tar.gz' :
     name.endsWith('.sha256') ? '.sha256' :
     path.extname(name),
   );
+}
+
+function getContentType(name: string): string {
+  if (name.endsWith('.sha256')) return 'text/plain';
+  if (name.endsWith('.tar.gz') || name.endsWith('.gz')) return 'application/gzip';
+  if (name.endsWith('.zip')) return 'application/zip';
+  return 'application/octet-stream';
 }
 
 export async function GET(
@@ -55,14 +67,10 @@ export async function GET(
     },
   });
 
-  const ct = filename.endsWith('.sha256') ? 'text/plain' :
-             filename.endsWith('.exe') ? 'application/octet-stream' :
-             'application/gzip';
-
   return new NextResponse(readable, {
     status: 200,
     headers: {
-      'Content-Type': ct,
+      'Content-Type': getContentType(filename),
       'Content-Disposition': `attachment; filename="${filename}"`,
       'Content-Length': String(stat.size),
       'Cache-Control': 'public, max-age=86400',
