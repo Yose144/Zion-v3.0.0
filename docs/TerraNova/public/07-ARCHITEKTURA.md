@@ -111,7 +111,19 @@ DeFi v Terra Nova neslouží spekulaci — slouží financování reálných pro
 
 L3 je vrstva inteligence — kde blockchain získává vědomí.
 
-V dubnu 2026 je L3 přesně tam, kde má být: jako architektonický záměr s jasnou implementační cestou, ne jako hotová live vrstva. Mainnet musí nejdřív stát pevně — pak přijde inteligence na vrch.
+V dubnu 2026 už L3 není jen idea na papíře. Základní AI Native runtime, operátorské endpointy a CLI orchestrace existují. Zároveň ale ještě nejde o plně rozvinutou civilizační vrstvu v cílovém významu Terra Nova. Mainnet a veřejný launch musí nejdřív stát pevně, teprve nad nimi může vyrůst plná inteligentní nadstavba.
+
+### Současný stav L3
+
+```
+AI NATIVE RUNTIME:
+├── běžící control-plane / orchestration surface
+├── health, status, config, memory, task a RAG endpointy
+├── zion CLI integrace pro operátory a správce runtime
+└── fallback / degraded mode i bez plně připojeného lokálního model backendu
+```
+
+Jinými slovy: L3 už dnes umí řídit, propojovat a diagnostikovat. Ještě ale nepředstavuje konečný stav "živé nervové sítě civilizace", který Terra Nova popisuje jako dlouhodobý horizont.
 
 ### NCL (Neural Conscious Layer)
 
@@ -138,6 +150,8 @@ ZION L1 ←→ WARP ←→ Bitcoin (BTC atomic swap)
 ```
 
 *Bridging value není jen technický problém — je to filozofický postoj: žádná síť není ostrov. Síla je v propojení, ne v izolaci.*
+
+Aktuální implementační pořadí je záměrně střízlivé: nejdřív operator runtime, observability, bridge-aware orchestrace a bezpečný surface pro CLI. Teprve potom hlubší automatizace, agentní paměť a plná cross-chain inteligence.
 
 ---
 

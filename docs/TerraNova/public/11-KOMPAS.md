@@ -7,13 +7,13 @@
 ## Přehled: Od roku 2026 ke hvězdám
 
 ```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- 2026          2027      2028      2030      2035      2040+
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  L1             L2        L3        L5        L5+       L6
-  GENESIS        DeFi      AI NCL    FREE      Zlatá     ISSOBELLA
-  MAINNET        DAO       WARP      WORLD     republika ↑ hvězdy
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 2026          2027         2028         2029         2030+   2040+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  L1             L2           L3           L4           L5      L6
+  GENESIS        EKOSYSTÉM    AI NATIVE    OASIS        FREE    ISSOBELLA
+  MAINNET        DeFi / DAO   NCL / WARP   WORLD        WORLD   ↑ hvězdy
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
 ---
@@ -35,17 +35,24 @@
 - [ ] Externí bezpečnostní audit
 - [ ] **VEŘEJNÝ LAUNCH ← Q4 2026**
 
-### 🔵 Fáze 2: L2/L3 Ekosystém (2027)
+### 🔵 Fáze 2: L2 Ekosystém (2027)
 
 - [ ] Veřejná wZION likvidita na Base mainnet
 - [ ] DAO governance — první hlasování komunity
-- [ ] Hiranyagarbha AI v2 — pokročilý jazykový model s pamětí
-- [ ] NCL vrstva — AI orchestrace celé sítě
-- [ ] WARP bridges — cross-chain propojení s ETH a BTC
+- [ ] Bridge status a veřejné DeFi surface stabilní po launchi
 - [ ] Listing na CoinGecko a CoinMarketCap
 - [ ] 10+ aktivních Terra Nova komunit
 
-### 🟢 Fáze 3: L4 OASIS (2028–2029)
+### 🟣 Fáze 3: L3 AI Native (2028)
+
+- [ ] Hiranyagarbha AI v2 — pokročilý jazykový model s pamětí
+- [ ] AI Native runtime veřejně zdokumentovaný a provozně stabilní
+- [ ] NCL vrstva — AI orchestrace celé sítě
+- [ ] WARP bridges — cross-chain propojení s ETH a BTC
+- [ ] Memory, tasks, RAG a operator control-plane sjednocené
+- [ ] Guardian compute jako koordinovaná síťová inteligence
+
+### 🟢 Fáze 4: L4 OASIS (2029)
 
 - [ ] OASIS whitepaper a design dokument
 - [ ] Fotorealistický prototyp v Unreal Engine 5
@@ -55,7 +62,7 @@
 - [ ] Consciousness Level systém v OASIS funkční
 - [ ] CL9 přístup k Issobella simulaci
 
-### 🌍 Fáze 4: L5 Free World (2030–2035)
+### 🌍 Fáze 5: L5 Free World (2030+)
 
 - [ ] 100 Terra Nova komunit na všech kontinentech
 - [ ] Humanitární fond: $1M+ měsíčně distribuováno automaticky
@@ -65,7 +72,7 @@
 - [ ] Terra Nova DAO — globální governance bez politiků
 - [ ] Zlatá republika — první plně soběstačná komuna
 
-### 🔭 Fáze 5: L6 Issobella (2040+)
+### 🔭 Fáze 6: L6 Issobella (2040+)
 
 - [ ] Issobella fond: hardware partnerství s výzkumnými institucemi
 - [ ] Orbitální studie proveditelnosti (NASA/ESA/ISRO spolupráce)
