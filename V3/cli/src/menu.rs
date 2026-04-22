@@ -51,7 +51,7 @@ fn print_intro(show_genesis: bool) {
     }
     ui::print_info("Arrow keys navigate, Enter runs, Esc leaves the current menu.");
     ui::print_row("Health", "doctor, status, node, pool, agent");
-    ui::print_row("Stack", "services, config, deploy views");
+    ui::print_row("Stack", "services, deploy, config, version");
     ui::print_row("L1", "node and pool inspection");
     ui::print_row("Mine", "miner start, bench, stop, wallet send");
     ui::print_row("L2", "bridge transfers and dao vote paths");
@@ -61,7 +61,7 @@ fn print_intro(show_genesis: bool) {
 
 fn stack_operations_menu() -> Result<Option<Vec<String>>> {
     loop {
-        let items = ["Service lifecycle", "Config", "Views & TUI", BACK];
+        let items = ["Service lifecycle", "Guided deploy", "Config", "Views & TUI", "Version & release info", BACK];
 
         let Some(choice) = select("Stack operations", &items)? else {
             return Ok(None);
@@ -69,8 +69,10 @@ fn stack_operations_menu() -> Result<Option<Vec<String>>> {
 
         let selected = match choice {
             0 => service_menu()?,
-            1 => config_menu()?,
-            2 => views_menu()?,
+            1 => Some(guided_deploy_workflow()?),
+            2 => config_menu()?,
+            3 => views_menu()?,
+            4 => Some(args(&["version"])),
             _ => return Ok(None),
         };
 
@@ -142,16 +144,17 @@ fn l2_menu() -> Result<Option<Vec<String>>> {
 
 fn l3_menu() -> Result<Option<Vec<String>>> {
     loop {
-        let items = ["Agent", "Warp", "NCL", BACK];
+        let items = ["Guided agent workflow", "Agent", "Warp", "NCL", BACK];
 
         let Some(choice) = select("L3 agent, warp & NCL", &items)? else {
             return Ok(None);
         };
 
         let selected = match choice {
-            0 => agent_menu()?,
-            1 => warp_menu()?,
-            2 => ncl_menu()?,
+            0 => Some(guided_agent_workflow()?),
+            1 => agent_menu()?,
+            2 => warp_menu()?,
+            3 => ncl_menu()?,
             _ => return Ok(None),
         };
 
@@ -566,6 +569,83 @@ fn views_menu() -> Result<Option<Vec<String>>> {
             _ => return Ok(None),
         }
     }
+}
+
+fn guided_deploy_workflow() -> Result<Vec<String>> {
+    let items = [
+        "Deploy full server stack",
+        "Deploy website",
+        "Refresh running containers",
+        "Remote container status",
+        "Open SSH session",
+        "docker system prune",
+    ];
+
+    let Some(choice) = select("Guided deploy workflow", &items)? else {
+        return Ok(args(&["deploy", "status"]));
+    };
+
+    Ok(match choice {
+        0 => {
+            let host = optional_input("Host override (blank = config default)", None)?;
+            let mut argv = args(&["deploy", "server"]);
+            apply_optional_flag(&mut argv, "--host", host);
+            argv
+        }
+        1 => args(&["deploy", "website"]),
+        2 => args(&["deploy", "update"]),
+        3 => args(&["deploy", "status"]),
+        4 => args(&["deploy", "ssh"]),
+        5 => args(&["deploy", "prune"]),
+        _ => args(&["deploy", "status"]),
+    })
+}
+
+fn guided_agent_workflow() -> Result<Vec<String>> {
+    let items = [
+        "Agent status",
+        "Ask one question",
+        "RAG query",
+        "Start agent",
+        "Restart agent",
+        "Stop agent",
+        "Agent logs",
+        "Agent config",
+        "Agent tasks",
+        "Memory list",
+        "Memory flush",
+        "Warp integration",
+        "NCL integration",
+        "Oasis bridge status",
+    ];
+
+    let Some(choice) = select("Guided agent workflow", &items)? else {
+        return Ok(args(&["agent", "status"]));
+    };
+
+    Ok(match choice {
+        0 => args(&["agent", "status"]),
+        1 => {
+            let question = required_input("Question for Hiranyagarbha", None)?;
+            args_owned(vec!["agent".into(), "ask".into(), question])
+        }
+        2 => {
+            let question = required_input("RAG query", None)?;
+            args_owned(vec!["agent".into(), "rag".into(), "query".into(), question])
+        }
+        3 => args(&["agent", "start"]),
+        4 => args(&["agent", "restart"]),
+        5 => args(&["agent", "stop"]),
+        6 => args(&["agent", "logs"]),
+        7 => args(&["agent", "config"]),
+        8 => args(&["agent", "tasks"]),
+        9 => args(&["agent", "memory", "ls"]),
+        10 => args(&["agent", "memory", "flush"]),
+        11 => args(&["agent", "warp"]),
+        12 => args(&["agent", "ncl"]),
+        13 => args(&["agent", "oasis"]),
+        _ => args(&["agent", "status"]),
+    })
 }
 
 fn guided_mine_start() -> Result<Vec<String>> {
