@@ -11,43 +11,29 @@ pub fn run(show_genesis: bool) -> Result<Option<Vec<String>>> {
 
     loop {
         let items = [
-            "Quick status & health",
-            "Service lifecycle",
-            "Node",
-            "Pool",
-            "Mining",
-            "Wallet",
-            "Agent",
-            "Bridge",
-            "DAO",
-            "Warp",
-            "NCL",
-            "Config",
-            "Views & TUI",
+            "Health & fast checks",
+            "Stack operations",
+            "L1 node & pool",
+            "Mining & wallet",
+            "L2 bridge & DAO",
+            "L3 agent, warp & NCL",
             "Onboarding",
             EXIT,
         ];
 
-        let Some(choice) = select("ZION operator menu", &items)? else {
+        let Some(choice) = select("ZION operator dashboard", &items)? else {
             return Ok(None);
         };
 
         let selected = match choice {
             0 => quick_status_menu()?,
-            1 => service_menu()?,
-            2 => node_menu()?,
-            3 => pool_menu()?,
-            4 => mine_menu()?,
-            5 => wallet_menu()?,
-            6 => agent_menu()?,
-            7 => bridge_menu()?,
-            8 => dao_menu()?,
-            9 => warp_menu()?,
-            10 => ncl_menu()?,
-            11 => config_menu()?,
-            12 => views_menu()?,
-            13 => Some(args(&["onboard"])),
-            14 => return Ok(None),
+            1 => stack_operations_menu()?,
+            2 => l1_menu()?,
+            3 => mining_wallet_menu()?,
+            4 => l2_menu()?,
+            5 => l3_menu()?,
+            6 => Some(args(&["onboard"])),
+            7 => return Ok(None),
             _ => None,
         };
 
@@ -61,10 +47,118 @@ fn print_intro(show_genesis: bool) {
     if show_genesis {
         ui::print_genesis_banner();
     } else {
-        ui::print_header("ZION operator menu");
+        ui::print_header("ZION operator dashboard");
     }
     ui::print_info("Arrow keys navigate, Enter runs, Esc leaves the current menu.");
+    ui::print_row("Health", "doctor, status, node, pool, agent");
+    ui::print_row("Stack", "services, config, deploy views");
+    ui::print_row("L1", "node and pool inspection");
+    ui::print_row("Mine", "miner start, bench, stop, wallet send");
+    ui::print_row("L2", "bridge transfers and dao vote paths");
+    ui::print_row("L3", "agent, warp, ncl orchestration");
     println!();
+}
+
+fn stack_operations_menu() -> Result<Option<Vec<String>>> {
+    loop {
+        let items = ["Service lifecycle", "Config", "Views & TUI", BACK];
+
+        let Some(choice) = select("Stack operations", &items)? else {
+            return Ok(None);
+        };
+
+        let selected = match choice {
+            0 => service_menu()?,
+            1 => config_menu()?,
+            2 => views_menu()?,
+            _ => return Ok(None),
+        };
+
+        if selected.is_some() {
+            return Ok(selected);
+        }
+    }
+}
+
+fn l1_menu() -> Result<Option<Vec<String>>> {
+    loop {
+        let items = ["Node", "Pool", BACK];
+
+        let Some(choice) = select("L1 node & pool", &items)? else {
+            return Ok(None);
+        };
+
+        let selected = match choice {
+            0 => node_menu()?,
+            1 => pool_menu()?,
+            _ => return Ok(None),
+        };
+
+        if selected.is_some() {
+            return Ok(selected);
+        }
+    }
+}
+
+fn mining_wallet_menu() -> Result<Option<Vec<String>>> {
+    loop {
+        let items = ["Mining", "Wallet", BACK];
+
+        let Some(choice) = select("Mining & wallet", &items)? else {
+            return Ok(None);
+        };
+
+        let selected = match choice {
+            0 => mine_menu()?,
+            1 => wallet_menu()?,
+            _ => return Ok(None),
+        };
+
+        if selected.is_some() {
+            return Ok(selected);
+        }
+    }
+}
+
+fn l2_menu() -> Result<Option<Vec<String>>> {
+    loop {
+        let items = ["Bridge", "DAO", BACK];
+
+        let Some(choice) = select("L2 bridge & DAO", &items)? else {
+            return Ok(None);
+        };
+
+        let selected = match choice {
+            0 => bridge_menu()?,
+            1 => dao_menu()?,
+            _ => return Ok(None),
+        };
+
+        if selected.is_some() {
+            return Ok(selected);
+        }
+    }
+}
+
+fn l3_menu() -> Result<Option<Vec<String>>> {
+    loop {
+        let items = ["Agent", "Warp", "NCL", BACK];
+
+        let Some(choice) = select("L3 agent, warp & NCL", &items)? else {
+            return Ok(None);
+        };
+
+        let selected = match choice {
+            0 => agent_menu()?,
+            1 => warp_menu()?,
+            2 => ncl_menu()?,
+            _ => return Ok(None),
+        };
+
+        if selected.is_some() {
+            return Ok(selected);
+        }
+    }
 }
 
 fn quick_status_menu() -> Result<Option<Vec<String>>> {
