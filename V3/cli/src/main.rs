@@ -35,6 +35,8 @@ struct Cli {
 enum Commands {
     /// Open interactive arrow-key operator menu
     Menu,
+    /// Print release metadata and manual update guidance
+    Version,
     /// First-time setup wizard
     Onboard,
     /// Start service(s): all | node | pool | miner | agent | ai-native | bridge | dao | website | redis | monitoring
@@ -199,6 +201,7 @@ async fn dispatch(cli: Cli) -> Result<()> {
 
     match command {
         Commands::Menu => unreachable!("interactive menu is resolved before dispatch"),
+        Commands::Version => print_version_surface(&cfg),
         Commands::Onboard => onboard::run(&cfg).await,
         Commands::Status => status::run(&cfg).await,
         Commands::Doctor => doctor::run(&cfg).await,
@@ -256,6 +259,27 @@ async fn dispatch(cli: Cli) -> Result<()> {
             ConfigCmd::Init => onboard::run(&cfg).await,
         },
     }
+}
+
+fn print_version_surface(cfg: &config::Config) -> Result<()> {
+    ui::print_header("ZION CLI Version");
+    ui::print_row("Binary", "zion");
+    ui::print_row("Version", env!("CARGO_PKG_VERSION"));
+    ui::print_row("Release", "v2.9.9 Pure Code operator line");
+    ui::print_row("Workspace", "V3 clean-room mainnet track");
+    ui::print_row("Node host", &cfg.node.rpc_host);
+    ui::print_row("Agent model", &cfg.agent.model);
+    if let Ok(path) = config::config_path() {
+        ui::print_row("Config", &path.display().to_string());
+    }
+    println!();
+    ui::print_warn("Automated self-update is not shipped yet.");
+    ui::print_info("Manual update paths:");
+    println!("  1. Download the latest binary from https://zionterranova.com/download");
+    println!("  2. Or rebuild locally with: cargo build -p zion-cli --release");
+    println!("  3. Re-run this command to confirm the active version after replacement");
+    println!();
+    Ok(())
 }
 
 fn open_browser(url: &str) -> Result<()> {
