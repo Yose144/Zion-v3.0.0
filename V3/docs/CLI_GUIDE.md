@@ -49,7 +49,8 @@ You can also open the launcher explicitly:
 zion menu
 ```
 
-The menu is intended as the operator-first entrypoint for routine flows. It uses arrow keys plus Enter, then dispatches the same canonical commands that remain available in typed form.
+The menu is intended as the operator-first entrypoint for routine flows. It now starts on a grouped operator dashboard so you choose between health checks, stack operations, L1, mining and wallet, L2, L3, and onboarding before dropping into narrower submenus.
+It uses arrow keys plus Enter, then dispatches the same canonical commands that remain available in typed form.
 After a command finishes, the launcher now waits and returns you back into the menu instead of dropping straight to the shell.
 
 ## Top-Level Commands
@@ -207,7 +208,7 @@ Mining notes:
 zion
 ```
 
-Use this when you want OpenClaw-style navigation instead of remembering subcommands. The launcher covers the common operator surfaces: health checks, service lifecycle, node, pool, mining, wallet, agent, bridge, dao, warp, ncl, config, and TUI views.
+Use this when you want OpenClaw-style navigation instead of remembering subcommands. The launcher now starts from a grouped dashboard with higher-signal categories, then fans into the common operator surfaces: health checks, service lifecycle, node, pool, mining, wallet, agent, bridge, dao, warp, ncl, config, and TUI views.
 The launcher also stays alive across commands, so routine operator work can happen inside one continuous session.
 
 ### Full-stack status check

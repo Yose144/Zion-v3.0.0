@@ -18,6 +18,7 @@ zion menu
 What this does:
 
 - opens an arrow-key operator menu instead of requiring you to remember the whole command tree,
+- starts from a grouped operator dashboard before drilling into narrower submenus,
 - dispatches the same canonical typed commands under the hood,
 - returns you to the menu after command completion instead of dumping you straight back to the shell,
 - works best in a real interactive terminal,
