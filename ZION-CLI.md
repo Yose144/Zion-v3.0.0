@@ -22,6 +22,7 @@ OpenClaw note: the inspiration here is the gateway-first operator UX of OpenClaw
 The CLI entry now has a dedicated Genesis presentation layer:
 
 - the interactive launcher opens with the Genesis tree and ZION mainnet banner
+- the launcher now opens on a grouped operator dashboard instead of a flat all-surfaces list
 - onboarding opens with the same Genesis entry banner
 - the launcher now stays alive across commands and returns the operator back into the menu after each completed action
 - typed commands still remain the canonical execution surface underneath the launcher
@@ -64,7 +65,7 @@ The website documentation should mirror these under one clean section named `ZIO
 |------|--------|---------|
 | AI Native runtime posture | Partial | The CLI integrates with the live AI Native service, but current production posture is orchestrator/control-plane first. Heavy local inference is not the default assumption. |
 | Doctor diagnostics | Partial | `zion doctor` already helps, but it does not yet cover deeper SSH/deploy readiness, compose state, or richer mining environment diagnostics. |
-| OpenClaw-inspired operator UX | Partial | The gateway-first direction is now materially better: menu-first launcher, guided command generation, Genesis entry banner, and persistent return-to-menu flow are real. The remaining gap is tighter grouped dashboards, richer guided forms, and deeper in-app navigation without bouncing through plain command output. |
+| OpenClaw-inspired operator UX | Partial | The gateway-first direction is now materially better: menu-first launcher, grouped operator dashboard, guided command generation, Genesis entry banner, and persistent return-to-menu flow are real. The remaining gap is richer guided forms and deeper in-app navigation without bouncing through plain command output. |
 | Download-ready distribution | Partial | The CLI is usable from source builds today, but release packaging and public install flow are still not finished. |
 
 ---
@@ -177,10 +178,11 @@ zion status
 Current practical operator flow:
 
 1. Start with `zion`
-2. Use arrows to choose the area
-3. Let the launcher generate the canonical command
-4. Review the output and press Enter to return into the launcher
-5. Drop to typed subcommands only for narrower advanced work
+2. Land on the grouped operator dashboard
+3. Use arrows to choose the area
+4. Let the launcher generate the canonical command
+5. Review the output and press Enter to return into the launcher
+6. Drop to typed subcommands only for narrower advanced work
 
 ---
 
@@ -274,11 +276,10 @@ Those files should not be mixed into `Public Launch Path` anymore.
 
 The next sensible CLI milestones are:
 
-1. grouped operator dashboard screen with higher-signal categories and less raw list feeling
-2. wider `doctor` coverage for SSH, deploy, compose, and mining environment checks
-3. richer guided forms for mining, wallet send, deploy, and agent workflows
-4. release-oriented metadata and install surface such as `zion version` and update strategy
-5. more polished download-ready packaging for public operator distribution
+1. wider `doctor` coverage for SSH, deploy, compose, and mining environment checks
+2. richer guided forms for mining, wallet send, deploy, and agent workflows
+3. release-oriented metadata and install surface such as `zion version` and update strategy
+4. more polished download-ready packaging for public operator distribution
 
 ## Current UX Plan
 
@@ -287,8 +288,9 @@ The CLI is now on a clearer path:
 - Phase 1 done: real command surface, RPC wiring, deploy flows, doctor, TUI views
 - Phase 2 done: menu-first arrow launcher and Genesis entry banner
 - Phase 3 done: persistent in-app navigation and post-command return flow
-- Phase 4 next: richer guided forms for mining, wallet send, deploy, and agent workflows
-- Phase 5 later: release polish, version/update surface, public install ergonomics
+- Phase 4 done: grouped operator dashboard with higher-signal categories
+- Phase 5 next: richer guided forms for mining, wallet send, deploy, and agent workflows
+- Phase 6 later: release polish, version/update surface, public install ergonomics
 
 ---
 
