@@ -14,6 +14,7 @@ OpenClaw note: the inspiration here is the gateway-first operator UX of OpenClaw
 `zion` already works as a real operator entrypoint for:
 
 - a menu-first arrow-key launcher when you start `zion` with no subcommand
+- a real `zion version` command for release metadata and manual update guidance
 - L1 node, pool, miner, and wallet flows
 - L2 bridge and DAO gateway flows
 - L3 AI Native, Warp, and NCL status/gateway flows
@@ -25,6 +26,7 @@ The CLI entry now has a dedicated Genesis presentation layer:
 - the launcher now opens on a grouped operator dashboard instead of a flat all-surfaces list
 - onboarding opens with the same Genesis entry banner
 - the launcher now stays alive across commands and returns the operator back into the menu after each completed action
+- guided workflows now cover mining, wallet send, deploy actions, and common agent paths
 - typed commands still remain the canonical execution surface underneath the launcher
 
 Canonical operator docs now live in:
@@ -53,8 +55,10 @@ The website documentation should mirror these under one clean section named `ZIO
 | Config management | Done | `show`, `set`, `path`, `init`, and `validate` now exist. |
 | Doctor preflight | Done | `zion doctor` checks config sanity, local miner binary readiness, node RPC reachability, and AI Native reachability. |
 | Deploy lifecycle | Done | SSH and compose-backed start/stop/restart/logs flow exists with local target validation before remote compose calls. |
+| Guided operator workflows | Done | Menu-guided flows now cover miner start, wallet send, deploy actions, and common agent operations. |
 | L2 gateway | Done | `zion bridge` and `zion dao` are part of the shipped surface. |
 | L3 gateway | Done | `zion agent`, `zion warp`, and `zion ncl` are part of the shipped surface. |
+| Version and release surface | Done | `zion version` prints binary metadata, release line, config path, and manual update guidance. |
 | Website docs mirrors | Done | Guide, FAQ, Reference, Troubleshooting, and Deploy Playbook already exist in EN and CS public docs. |
 
 ---
@@ -65,8 +69,9 @@ The website documentation should mirror these under one clean section named `ZIO
 |------|--------|---------|
 | AI Native runtime posture | Partial | The CLI integrates with the live AI Native service, but current production posture is orchestrator/control-plane first. Heavy local inference is not the default assumption. |
 | Doctor diagnostics | Partial | `zion doctor` already helps, but it does not yet cover deeper SSH/deploy readiness, compose state, or richer mining environment diagnostics. |
-| OpenClaw-inspired operator UX | Partial | The gateway-first direction is now materially better: menu-first launcher, grouped operator dashboard, guided command generation, Genesis entry banner, and persistent return-to-menu flow are real. The remaining gap is richer guided forms and deeper in-app navigation without bouncing through plain command output. |
+| OpenClaw-inspired operator UX | Partial | The gateway-first direction is now materially better: menu-first launcher, grouped operator dashboard, guided command generation, richer workflow forms, Genesis entry banner, and persistent return-to-menu flow are real. The remaining gap is deeper in-app navigation without bouncing through plain command output. |
 | Download-ready distribution | Partial | The CLI is usable from source builds today, but release packaging and public install flow are still not finished. |
+| Update ergonomics | Partial | `zion version` now gives operators the release and manual update path, but automated self-update and package-manager delivery are still not shipped. |
 
 ---
 
@@ -74,7 +79,6 @@ The website documentation should mirror these under one clean section named `ZIO
 
 These items appeared in older drafts or still belong to the roadmap, but they are not current contract and should not be documented as if they already exist:
 
-- `zion version`
 - `zion update`
 - `zion swap`
 - public package install flow like Homebrew or `cargo install zion-cli` from a published crate
@@ -91,6 +95,7 @@ Top-level commands currently exposed by the real CLI:
 
 ```text
 menu
+version
 onboard
 start
 stop
@@ -277,9 +282,8 @@ Those files should not be mixed into `Public Launch Path` anymore.
 The next sensible CLI milestones are:
 
 1. wider `doctor` coverage for SSH, deploy, compose, and mining environment checks
-2. richer guided forms for mining, wallet send, deploy, and agent workflows
-3. release-oriented metadata and install surface such as `zion version` and update strategy
-4. more polished download-ready packaging for public operator distribution
+2. public install and update ergonomics beyond the current manual guidance surface
+3. more polished download-ready packaging for public operator distribution
 
 ## Current UX Plan
 
@@ -289,8 +293,10 @@ The CLI is now on a clearer path:
 - Phase 2 done: menu-first arrow launcher and Genesis entry banner
 - Phase 3 done: persistent in-app navigation and post-command return flow
 - Phase 4 done: grouped operator dashboard with higher-signal categories
-- Phase 5 next: richer guided forms for mining, wallet send, deploy, and agent workflows
-- Phase 6 later: release polish, version/update surface, public install ergonomics
+- Phase 5 done: richer guided forms for mining, wallet send, deploy, and agent workflows
+- Phase 6 done: version command and manual update guidance surface
+- Phase 7 next: wider doctor coverage for SSH, deploy, compose, and mining environment checks
+- Phase 8 later: public install ergonomics and automated update story
 
 ---
 

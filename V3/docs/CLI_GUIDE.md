@@ -57,6 +57,7 @@ After a command finishes, the launcher now waits and returns you back into the m
 
 ```text
 menu         Open interactive arrow-key operator menu
+version      Print release metadata and manual update guidance
 onboard      First-time setup wizard
 start        Start service(s): all | node | pool | miner | agent | ai-native | bridge | dao | website | redis | monitoring
 stop         Stop service(s): all | node | pool | miner | agent | ai-native | bridge | dao | website | redis | monitoring
@@ -210,6 +211,15 @@ zion
 
 Use this when you want OpenClaw-style navigation instead of remembering subcommands. The launcher now starts from a grouped dashboard with higher-signal categories, then fans into the common operator surfaces: health checks, service lifecycle, node, pool, mining, wallet, agent, bridge, dao, warp, ncl, config, and TUI views.
 The launcher also stays alive across commands, so routine operator work can happen inside one continuous session.
+The current guided workflows now cover miner start, wallet send, deploy actions, and common agent operations.
+
+### Version and manual updates
+
+```bash
+zion version
+```
+
+Use this to print the active CLI version, release line, config path, and the current manual update path. Automated self-update is still intentionally not part of the shipped surface.
 
 ### Full-stack status check
 
@@ -253,6 +263,14 @@ zion agent status
 zion agent ask "What is the current L3 state?"
 zion agent rag query "bridge" 
 ```
+
+### Guided deploy and agent flows
+
+```bash
+zion
+```
+
+From the grouped dashboard, choose `Stack operations` for the guided deploy workflow or `L3 agent, warp & NCL` for the guided agent workflow.
 
 ## Service Semantics
 
