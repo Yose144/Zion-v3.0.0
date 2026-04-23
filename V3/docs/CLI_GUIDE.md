@@ -58,6 +58,7 @@ After a command finishes, the launcher now waits and returns you back into the m
 ```text
 menu         Open interactive arrow-key operator menu
 version      Print release metadata and manual update guidance
+update       Check for and install the latest published CLI artifact
 onboard      First-time setup wizard
 start        Start service(s): all | node | pool | miner | agent | ai-native | bridge | dao | website | redis | monitoring
 stop         Stop service(s): all | node | pool | miner | agent | ai-native | bridge | dao | website | redis | monitoring
@@ -211,15 +212,19 @@ zion
 
 Use this when you want OpenClaw-style navigation instead of remembering subcommands. The launcher now starts from a grouped dashboard with higher-signal categories, then fans into the common operator surfaces: health checks, service lifecycle, node, pool, mining, wallet, agent, bridge, dao, warp, ncl, config, and TUI views.
 The launcher also stays alive across commands, so routine operator work can happen inside one continuous session.
-The current guided workflows now cover miner start, wallet send, deploy actions, and common agent operations.
+The current guided workflows now cover miner start, wallet send, deploy actions, common agent operations, and direct entry into CLI auto-update.
 
-### Version and manual updates
+### Version and update surface
 
 ```bash
 zion version
+zion update --check
+zion update --yes
 ```
 
-Use this to print the active CLI version, release line, config path, and the current manual update path. Automated self-update is still intentionally not part of the shipped surface.
+Use `zion version` to print the active CLI version, release line, config path, and the update distinction between the local CLI binary and remote stack operations.
+Use `zion update --check` to compare the current executable against the latest published platform artifact, and `zion update --yes` to download, checksum-verify, and replace the local binary.
+Do not confuse it with `zion deploy update`, which refreshes remote containers on the configured server.
 
 ### Full-stack status check
 
@@ -271,6 +276,7 @@ zion
 ```
 
 From the grouped dashboard, choose `Stack operations` for the guided deploy workflow or `L3 agent, warp & NCL` for the guided agent workflow.
+The same `Stack operations` group now also exposes `Version & release info` and `Auto update CLI`.
 
 ## Service Semantics
 
