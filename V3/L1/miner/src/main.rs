@@ -816,7 +816,7 @@ fn run_local_session(config: &MinerConfig, metrics: &Arc<Mutex<MinerMetricsSnaps
         last_job_id = job.job_id;
         // GPU-first, CPU-fallback nonce scan
         let scan_result = if let Some(ref mut g) = gpu {
-            gpu_backend::gpu_scan_job(g.as_mut(), job)
+            gpu_backend::gpu_scan_job(g.as_mut(), job).solution
         } else {
             parallel::parallel_scan_nonce_range(job, threads)
         };
@@ -1121,7 +1121,7 @@ fn run_remote_session(config: &MinerConfig, pool_addr: &str, metrics: &Arc<Mutex
             None => false,
         };
         let scan_result = if can_gpu {
-            gpu_backend::gpu_scan_job(gpu.as_deref_mut().unwrap(), job)
+            gpu_backend::gpu_scan_job(gpu.as_deref_mut().unwrap(), job).solution
         } else {
             parallel::parallel_scan_nonce_range(job, threads)
         };
