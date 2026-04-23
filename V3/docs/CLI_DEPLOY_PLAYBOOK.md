@@ -6,6 +6,11 @@ This document describes the operator flow for deploy, update, restart, validatio
 
 It is based on the current compose-backed V3 mainnet stack and the orchestrator-first L3 runtime posture.
 
+Important scope note:
+
+- `zion update` is the local CLI self-update path,
+- `zion deploy update` is the remote container refresh path covered by this playbook.
+
 ## Safe Default Sequence
 
 For any runtime-changing operation, use this baseline order:
