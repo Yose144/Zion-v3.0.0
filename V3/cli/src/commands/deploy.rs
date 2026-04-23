@@ -1,8 +1,11 @@
 use anyhow::Result;
 use clap::Subcommand;
+use std::path::{Path, PathBuf};
 
 use crate::config::{self, Config};
 use crate::ui;
+
+pub const SERVER_DEPLOY_SCRIPT: &str = "scripts/deploy-v3-mainnet.sh";
 
 #[derive(Subcommand)]
 pub enum DeployCmd {
@@ -28,7 +31,7 @@ pub async fn run(cfg: &Config, cmd: DeployCmd) -> Result<()> {
         DeployCmd::Server { host } => {
             let h = host.unwrap_or_else(|| cfg.node.rpc_host.clone());
             ui::print_header(&format!("Deploying to {}", h));
-            run_local_script("scripts/deploy.sh", &cfg)
+            run_local_script(SERVER_DEPLOY_SCRIPT, &cfg)
         }
         DeployCmd::Website => {
             ui::print_header("Deploying Website");
@@ -144,13 +147,30 @@ async fn remote_status(cfg: &Config) -> Result<()> {
 }
 
 fn run_local_script(script: &str, _cfg: &Config) -> Result<()> {
-    if !std::path::Path::new(script).exists() {
-        anyhow::bail!("Script not found: {}", script);
-    }
+    let resolved = resolve_local_path(script)
+        .ok_or_else(|| anyhow::anyhow!("Script not found from current working directory upward: {}", script))?;
     std::process::Command::new("bash")
-        .arg(script)
+        .arg(&resolved)
         .status()?;
     Ok(())
+}
+
+pub fn resolve_local_path(relative: &str) -> Option<PathBuf> {
+    let direct = Path::new(relative);
+    if direct.exists() {
+        return Some(direct.to_path_buf());
+    }
+
+    let mut current = std::env::current_dir().ok()?;
+    loop {
+        let candidate = current.join(relative);
+        if candidate.exists() {
+            return Some(candidate);
+        }
+        if !current.pop() {
+            return None;
+        }
+    }
 }
 
 fn ssh_exec(host: &str, key: &str, user: &str, remote_cmd: &str) -> Result<()> {
