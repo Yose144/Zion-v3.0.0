@@ -1,6 +1,8 @@
 use anyhow::Result;
-use dialoguer::{Input, Select};
+use dialoguer::{Confirm, Input, Password, Select};
+use std::path::PathBuf;
 
+use crate::commands::wallet;
 use crate::config::{self, Config};
 use crate::rpc::{agent_rpc, node_rpc};
 use crate::ui;
@@ -43,16 +45,74 @@ pub async fn run(_cfg: &Config) -> Result<()> {
 
     // Step 2: Mining wallet
     println!("  Step 2/4  Mining wallet");
-    let wallet: String = Input::new()
-        .with_prompt("    Wallet address (leave blank to skip)")
-        .default("".into())
-        .allow_empty(true)
-        .interact_text()?;
-    if !wallet.is_empty() {
-        cfg.miner.wallet = wallet;
-        ui::print_ok("Wallet set");
-    } else {
-        ui::print_warn("No wallet — set later with: zion config set miner.wallet <addr>");
+    let wallet_mode = &["Use existing address", "Generate new mnemonic wallet", "Skip for now"];
+    let wallet_idx = Select::new()
+        .with_prompt("    Wallet setup")
+        .items(wallet_mode)
+        .default(0)
+        .interact()?;
+    match wallet_idx {
+        0 => {
+            let wallet: String = Input::new()
+                .with_prompt("    Wallet address")
+                .default("".into())
+                .allow_empty(true)
+                .interact_text()?;
+            if !wallet.is_empty() {
+                cfg.miner.wallet = wallet;
+                ui::print_ok("Wallet set");
+            } else {
+                ui::print_warn("No wallet — set later with: zion config set miner.wallet <addr>");
+            }
+        }
+        1 => {
+            let wallet_path: String = Input::new()
+                .with_prompt("    Wallet file path")
+                .default("zion-wallet.json".into())
+                .interact_text()?;
+            let wallet_path = PathBuf::from(wallet_path);
+            let overwrite = if wallet_path.exists() {
+                Confirm::new()
+                    .with_prompt(format!("    {} exists. Overwrite?", wallet_path.display()))
+                    .default(false)
+                    .interact()?
+            } else {
+                false
+            };
+            let encrypt = Confirm::new()
+                .with_prompt("    Encrypt wallet file with a password?")
+                .default(true)
+                .interact()?;
+            let password = if encrypt {
+                Some(
+                    Password::new()
+                        .with_prompt("    Wallet password")
+                        .with_confirmation("    Confirm wallet password", "Passwords do not match")
+                        .allow_empty_password(false)
+                        .interact()?,
+                )
+            } else {
+                None
+            };
+            let generated = wallet::create_wallet_at(
+                &wallet_path,
+                true,
+                24,
+                overwrite,
+                password.as_deref(),
+            )?;
+            cfg.miner.wallet = generated.address().to_string();
+            ui::print_ok(&format!("Wallet generated at {}", wallet_path.display()));
+            ui::print_ok(&format!("Mining wallet set to {}", generated.address()));
+            if generated.is_encrypted() {
+                ui::print_ok("Wallet secrets were encrypted in the wallet file.");
+            } else {
+                ui::print_warn("Wallet file contains plaintext secrets; move it somewhere safe.");
+            }
+        }
+        _ => {
+            ui::print_warn("No wallet — set later with: zion config set miner.wallet <addr>");
+        }
     }
     println!();
 
