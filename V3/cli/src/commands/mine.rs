@@ -22,8 +22,8 @@ pub enum MineCmd {
         #[arg(long)]
         backend: Option<String>,
         /// Profile: pool | solo | benchmark | dual
-        #[arg(long, default_value = "pool")]
-        profile: String,
+        #[arg(long)]
+        profile: Option<String>,
     },
     /// Stop the mining process
     Stop,
@@ -66,24 +66,17 @@ pub enum DcrCmd {
 pub async fn run(cfg: &Config, cmd: MineCmd) -> Result<()> {
     match cmd {
         MineCmd::Start { pool, wallet, threads, backend, profile } => {
-            let normalized_profile = normalize_profile(&profile)?;
-            let pool_addr = pool.unwrap_or_else(|| {
-                format!("{}:{}", cfg.pool.host, cfg.pool.port)
-            });
-            let wallet_addr = wallet.unwrap_or_else(|| cfg.miner.wallet.clone());
-            let thread_count = threads.unwrap_or_else(|| cfg.miner.threads.clone());
-            let requested_backend = backend.unwrap_or_else(|| cfg.miner.backend.clone());
-            let normalized_backend = normalize_backend(&requested_backend, true)?;
+            let start = resolve_start_options(cfg, pool, wallet, threads, backend, profile)?;
 
             ui::print_header("Starting Miner");
-            ui::print_row("Pool", &pool_addr);
-            ui::print_row("Wallet", if wallet_addr.is_empty() { "(not set)" } else { &wallet_addr });
-            ui::print_row("Backend", normalized_backend.display_name);
-            ui::print_row("Threads", &thread_count);
-            ui::print_row("Profile", normalized_profile);
+            ui::print_row("Pool", &start.pool_addr);
+            ui::print_row("Wallet", if start.wallet_addr.is_empty() { "(not set)" } else { &start.wallet_addr });
+            ui::print_row("Backend", &start.backend_display_name);
+            ui::print_row("Threads", &start.thread_count);
+            ui::print_row("Profile", &start.normalized_profile);
             println!();
 
-            if wallet_addr.is_empty() {
+            if start.wallet_addr.is_empty() {
                 ui::print_warn("No wallet set. Run: zion config set miner.wallet <address>");
                 ui::print_warn("Or: zion wallet new");
                 return Ok(());
@@ -91,17 +84,17 @@ pub async fn run(cfg: &Config, cmd: MineCmd) -> Result<()> {
 
             // Build env for miner binary
             let mut env_args = vec![
-                ("ZION_POOL_ADDR", pool_addr.clone()),
-                ("ZION_PROFILE", normalized_profile.to_string()),
-                ("ZION_MINER_ID", wallet_addr.clone()),
+                ("ZION_POOL_ADDR", start.pool_addr.clone()),
+                ("ZION_PROFILE", start.normalized_profile.clone()),
+                ("ZION_MINER_ID", start.wallet_addr.clone()),
             ];
-            if thread_count != "auto" {
-                env_args.push(("ZION_THREADS", thread_count.clone()));
+            if start.thread_count != "auto" {
+                env_args.push(("ZION_THREADS", start.thread_count.clone()));
             }
-            if let Some(env_backend) = normalized_backend.env_backend {
-                env_args.push(("ZION_BACKEND", env_backend.to_string()));
+            if let Some(env_backend) = &start.backend_env {
+                env_args.push(("ZION_BACKEND", env_backend.clone()));
             }
-            if normalized_profile == "dual" {
+            if start.normalized_profile == "dual" {
                 if !cfg.miner.btc_wallet.trim().is_empty() {
                     env_args.push(("ZION_BTC_WALLET", cfg.miner.btc_wallet.clone()));
                     ui::print_info("Dual profile: using configured BTC payout wallet for DCR sidecar.");
@@ -118,7 +111,7 @@ pub async fn run(cfg: &Config, cmd: MineCmd) -> Result<()> {
             for (k, v) in &env_args {
                 cmd_proc.env(k, v);
             }
-            if let Some(cli_backend) = normalized_backend.cli_gpu_arg {
+            if let Some(cli_backend) = &start.backend_cli_gpu_arg {
                 cmd_proc.args(["--gpu", cli_backend]);
             }
             cmd_proc.status()?;
@@ -128,13 +121,14 @@ pub async fn run(cfg: &Config, cmd: MineCmd) -> Result<()> {
         MineCmd::Bench { gpu, ekam, backend, work_size, secs } => {
             ui::print_header("Benchmark");
             let benchmark_mode = determine_benchmark_mode(gpu, ekam)?;
+            let allow_cpu_backend = matches!(benchmark_mode, BenchmarkMode::CpuBlake3);
             let normalized_backend = normalize_backend(
                 backend.as_deref().unwrap_or(if matches!(benchmark_mode, BenchmarkMode::CpuBlake3) {
                     "cpu"
                 } else {
                     "auto"
                 }),
-                false,
+                allow_cpu_backend,
             )?;
 
             if matches!(benchmark_mode, BenchmarkMode::CpuBlake3) && normalized_backend.mode != BackendMode::Cpu {
@@ -317,6 +311,50 @@ struct NormalizedBackend<'a> {
     cli_gpu_arg: Option<&'a str>,
 }
 
+#[derive(Debug)]
+struct ResolvedStartOptions {
+    pool_addr: String,
+    wallet_addr: String,
+    thread_count: String,
+    backend_display_name: String,
+    backend_env: Option<String>,
+    backend_cli_gpu_arg: Option<String>,
+    normalized_profile: String,
+}
+
+fn resolve_start_options(
+    cfg: &Config,
+    pool: Option<String>,
+    wallet: Option<String>,
+    threads: Option<String>,
+    backend: Option<String>,
+    profile: Option<String>,
+) -> Result<ResolvedStartOptions> {
+    let requested_profile = profile.as_deref().unwrap_or(cfg.miner.profile.as_str());
+    let normalized_profile = normalize_profile(requested_profile)?;
+    let pool_addr = pool.unwrap_or_else(|| format!("{}:{}", cfg.pool.host, cfg.pool.port));
+    let wallet_addr = wallet.unwrap_or_else(|| cfg.miner.wallet.clone());
+    if !wallet_addr.trim().is_empty() && !zion_core::crypto::is_valid_address(wallet_addr.trim()) {
+        anyhow::bail!(
+            "Invalid mining wallet '{}'. Expected a valid zion1... address.",
+            wallet_addr.trim()
+        );
+    }
+    let thread_count = threads.unwrap_or_else(|| cfg.miner.threads.clone());
+    let requested_backend = backend.unwrap_or_else(|| cfg.miner.backend.clone());
+    let normalized_backend = normalize_backend(&requested_backend, true)?;
+
+    Ok(ResolvedStartOptions {
+        pool_addr,
+        wallet_addr,
+        thread_count,
+        backend_display_name: normalized_backend.display_name.to_string(),
+        backend_env: normalized_backend.env_backend.map(ToString::to_string),
+        backend_cli_gpu_arg: normalized_backend.cli_gpu_arg.map(ToString::to_string),
+        normalized_profile: normalized_profile.to_string(),
+    })
+}
+
 fn normalize_backend<'a>(backend: &'a str, allow_cpu: bool) -> Result<NormalizedBackend<'a>> {
     match backend.trim().to_ascii_lowercase().as_str() {
         "auto" => Ok(NormalizedBackend {
@@ -379,6 +417,7 @@ fn normalize_profile(profile: &str) -> Result<&str> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::config::{Config, MinerConfig, PoolConfig};
 
     #[test]
     fn bench_mode_rejects_conflicting_flags() {
@@ -402,9 +441,57 @@ mod tests {
     }
 
     #[test]
+    fn cpu_benchmark_accepts_default_cpu_backend() {
+        let benchmark_mode = determine_benchmark_mode(false, false).expect("cpu benchmark mode");
+        let allow_cpu_backend = matches!(benchmark_mode, BenchmarkMode::CpuBlake3);
+        let normalized = normalize_backend("cpu", allow_cpu_backend).expect("cpu backend should be accepted");
+
+        assert_eq!(normalized.mode, BackendMode::Cpu);
+    }
+
+    #[test]
     fn miner_binary_candidates_include_workspace_target() {
         let candidates = miner_binary_candidates();
         assert!(candidates.iter().any(|path| path.ends_with("target/release/zion-miner")));
         assert!(candidates.iter().any(|path| path.ends_with("target/debug/zion-miner")));
+    }
+
+    #[test]
+    fn start_options_use_config_profile_when_flag_missing() {
+        let cfg = Config {
+            pool: PoolConfig {
+                host: "127.0.0.1".into(),
+                port: 3333,
+            },
+            miner: MinerConfig {
+                wallet: "zion16853d8r885l4g4u8p8t7v5n8u6v7e0f445dr3f8".into(),
+                btc_wallet: String::new(),
+                threads: "auto".into(),
+                backend: "auto".into(),
+                profile: "dual".into(),
+            },
+            ..Config::default()
+        };
+
+        let resolved = resolve_start_options(&cfg, None, None, None, None, None)
+            .expect("start options should resolve from config");
+
+        assert_eq!(resolved.normalized_profile, "dual");
+    }
+
+    #[test]
+    fn start_options_reject_invalid_wallet_address() {
+        let cfg = Config {
+            miner: MinerConfig {
+                wallet: "not-a-zion-address".into(),
+                ..MinerConfig::default()
+            },
+            ..Config::default()
+        };
+
+        let error = resolve_start_options(&cfg, None, None, None, None, None)
+            .expect_err("invalid wallet should fail preflight");
+
+        assert!(error.to_string().contains("Invalid mining wallet"));
     }
 }
