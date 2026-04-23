@@ -247,9 +247,14 @@ zion logs website
 ### Node and wallet operations
 
 ```bash
+zion wallet new --set-default
+zion wallet info --wallet zion-wallet.json
+ZION_WALLET_PASSWORD='strong-passphrase' zion wallet reveal --wallet zion-wallet.json --password-env ZION_WALLET_PASSWORD
 zion node peers
 zion node block 6801
 zion wallet balance
+zion update --check
+zion update --yes
 ```
 
 ### L2 and L3 checks
