@@ -51,7 +51,7 @@ fn print_intro(show_genesis: bool) {
     }
     ui::print_info("Arrow keys navigate, Enter runs, Esc leaves the current menu.");
     ui::print_row("Health", "doctor, status, node, pool, agent");
-    ui::print_row("Stack", "services, deploy, config, version");
+    ui::print_row("Stack", "services, deploy, config, version, update");
     ui::print_row("L1", "node and pool inspection");
     ui::print_row("Mine", "miner start, bench, stop, wallet send");
     ui::print_row("L2", "bridge transfers and dao vote paths");
@@ -61,7 +61,7 @@ fn print_intro(show_genesis: bool) {
 
 fn stack_operations_menu() -> Result<Option<Vec<String>>> {
     loop {
-        let items = ["Service lifecycle", "Guided deploy", "Config", "Views & TUI", "Version & release info", BACK];
+        let items = ["Service lifecycle", "Guided deploy", "Config", "Views & TUI", "Version & release info", "Auto update CLI", BACK];
 
         let Some(choice) = select("Stack operations", &items)? else {
             return Ok(None);
@@ -73,6 +73,7 @@ fn stack_operations_menu() -> Result<Option<Vec<String>>> {
             2 => config_menu()?,
             3 => views_menu()?,
             4 => Some(args(&["version"])),
+            5 => Some(args(&["update"])),
             _ => return Ok(None),
         };
 
