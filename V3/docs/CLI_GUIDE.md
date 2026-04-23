@@ -117,6 +117,8 @@ Mining notes:
 
 - `zion mine start --backend opencl|metal|cuda` now forwards the selected backend explicitly to `zion-miner`,
 - `zion mine bench --ekam` now invokes the miner's real Ekam benchmark mode,
+- `zion mine start` now uses `miner.profile` from config unless you explicitly pass `--profile`,
+- `zion mine start` now fails fast when `miner.wallet` is not a valid `zion1...` address,
 - `zion mine start --profile dual` keeps the ZION wallet and BTC payout wallet separate via `miner.wallet` and `miner.btc_wallet`.
 
 `zion wallet`
