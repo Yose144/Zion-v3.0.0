@@ -28,6 +28,8 @@ What this does:
 
 ```bash
 zion version
+zion update --check
+zion update --yes
 ```
 
 What this does:
@@ -35,8 +37,14 @@ What this does:
 - prints the active CLI binary version,
 - shows the current release line and workspace track,
 - shows the resolved config path when available,
-- prints the current manual update path,
-- does not attempt automated self-update.
+- provides the local CLI update entrypoint,
+- compares the local binary with the published platform artifact,
+- can download and replace the local binary after checksum verification.
+
+Important distinction:
+
+- `zion update` targets the local CLI binary on the current machine,
+- `zion deploy update` targets remote compose-managed containers on the configured server.
 
 ### Global health and visibility
 
@@ -52,6 +60,7 @@ What these do:
 
 - `zion` opens the interactive launcher when no subcommand is provided,
 - `zion version` prints release metadata plus manual update guidance,
+- `zion update` checks or installs the latest published CLI binary for the current platform,
 - `zion status` runs the broad stack health view,
 - `zion doctor` runs the operator preflight across config sanity, local miner readiness, and endpoint reachability,
 - `zion logs <service>` tails deploy-managed service logs,
