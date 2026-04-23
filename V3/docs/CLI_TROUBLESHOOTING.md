@@ -180,3 +180,27 @@ Use this exact order when speed matters:
 6. the narrow layer command
 
 That keeps triage factual and prevents random service restarts from becoming the first move.
+
+## 11. `zion update` vs `zion deploy update` feels confusing
+
+These two commands do different jobs.
+
+Use:
+
+```bash
+zion update --check
+zion version
+```
+
+when you mean the local CLI binary on your current machine.
+
+Use:
+
+```bash
+zion deploy status
+zion deploy update
+```
+
+when you mean remote containers on the configured host.
+
+If you run the wrong one, you may update your local operator binary without touching the server runtime, or refresh the server runtime without changing your local CLI install.
