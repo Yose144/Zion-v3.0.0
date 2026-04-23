@@ -154,6 +154,8 @@ Operational notes:
 - use `bench` before assuming a host is suitable for mining,
 - `--ekam` now invokes the miner's real `--ekam-bench` path instead of only setting a benchmark profile,
 - `--backend opencl|cuda|metal` is now wired through to the miner instead of being reduced to a generic GPU flag,
+- `mine start` now falls back to `miner.profile` from config when `--profile` is omitted,
+- `mine start` now rejects malformed mining wallet addresses before launching the miner,
 - use `status` before and after config changes,
 - `mine start` now maps the ZION wallet to `ZION_MINER_ID` and keeps `miner.btc_wallet` separate for dual DCR payout flow,
 - `dcr` belongs to miner diagnostics, not deployment.
