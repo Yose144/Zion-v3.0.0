@@ -163,15 +163,26 @@ Operational notes:
 Use for local wallet and payment operations.
 
 ```bash
-zion wallet new
+zion wallet new --set-default
+zion wallet new --mnemonic --words 24 --set-default
+ZION_WALLET_PASSWORD='strong-passphrase' zion wallet new --mnemonic --password-env ZION_WALLET_PASSWORD
+zion wallet import-mnemonic --mnemonic "abandon ..." --set-default
+zion wallet import-secret-key --secret-key-hex deadbeef...
+zion wallet info --wallet zion-wallet.json
+zion wallet export --wallet zion-wallet.json
+ZION_WALLET_PASSWORD='strong-passphrase' zion wallet reveal --wallet zion-wallet.json --password-env ZION_WALLET_PASSWORD
 zion wallet address
-zion wallet balance
-zion wallet send zion1example 1.25
-zion wallet tithe 0.05
+zion wallet balance --address zion1example
+zion wallet send --to zion1example --amount 1.25
+zion wallet tithe
 ```
 
 Operational notes:
 
+- use `--set-default` when the generated/imported address should become the active miner payout destination,
+- use `--password-env` when you want the wallet file to store encrypted secrets instead of plaintext JSON,
+- `export` prints the stored wallet JSON as-is, which is useful for backup or external password-manager storage,
+- `reveal` decrypts an encrypted wallet file back to structured JSON for backup/recovery workflows,
 - check `balance` before any payout or tithe action,
 - prefer explicit verification around address handling,
 - treat send flows as operator actions that deserve manual confirmation.
