@@ -1,6 +1,7 @@
 use anyhow::Result;
 use clap::Subcommand;
 use serde_json::json;
+use std::net::ToSocketAddrs;
 
 use crate::config::Config;
 use crate::rpc::node_rpc;
@@ -60,72 +61,76 @@ pub async fn run(cfg: &Config, cmd: PoolCmd) -> Result<()> {
 async fn pool_stats(cfg: &Config) -> Result<()> {
     ui::print_header("Pool Stats");
 
-    // Try pool stats via node RPC (pool and core co-located on same host)
-    let result = node_rpc::call0(
+    // The V3 pool is a pure TCP stratum server — no HTTP stats API.
+    // Probe liveness via TCP, then show node-side mempool context.
+    let host = &cfg.pool.host;
+    let port = cfg.pool.port;
+    let alive = tcp_probe(host, port, std::time::Duration::from_secs(3));
+
+    ui::print_row("Pool host", &format!("{}:{}", host, port));
+    ui::print_row("Algorithm", "cosmic_harmony_ekam_deeksha_v2 (EkamDeeksha)");
+    ui::print_row("Protocol", "ZION stratum v3 (TCP)");
+
+    if alive {
+        ui::print_ok(&format!("Pool stratum reachable ({}:{})", host, port));
+    } else {
+        ui::print_warn(&format!("Pool stratum not reachable ({}:{}) — start with: zion start pool", host, port));
+    }
+
+    // Pull chain context from node to show block template info
+    let node_result = node_rpc::call0(
         &cfg.node.rpc_host,
         cfg.node.rpc_port,
         "getMempoolInfo",
     ).await;
-
-    match result {
-        Ok(v) => {
-            let miners = v["connected_miners"].as_u64().unwrap_or(0);
-            let hashrate = v["total_hashrate"].as_f64().unwrap_or(0.0);
-            let accepted = v["accepted_shares"].as_u64().unwrap_or(0);
-            let rejected = v["rejected_shares"].as_u64().unwrap_or(0);
-            let total = accepted + rejected;
-            let ratio = if total > 0 {
-                format!("{:.1}%", accepted as f64 / total as f64 * 100.0)
-            } else {
-                "—".into()
-            };
-
-            ui::print_row("Port", &format!("{} (stratum v3)", cfg.pool.port));
-            ui::print_row("Miners", &format!("{} connected", miners));
-            ui::print_row("Hashrate", &format!("{:.1} kH/s", hashrate / 1000.0));
-            ui::print_row("Shares", &format!("{} accepted / {} rejected ({})", accepted, rejected, ratio));
-            ui::print_row("Algorithm", "cosmic_harmony_ekam_deeksha_v2");
-            ui::print_ok("Pool reachable");
-        }
-        Err(e) => {
-            ui::print_warn(&format!("Pool stats unavailable: {}", e));
-            ui::print_info(&format!("Pool stratum at {}:{}", cfg.pool.host, cfg.pool.port));
-        }
+    if let Ok(v) = node_result {
+        let size = v["size"].as_u64().unwrap_or(0);
+        let tmpl_txs = v["template_transactions"].as_u64().unwrap_or(0);
+        ui::print_row("Mempool txs", &format!("{} pending", size));
+        ui::print_row("Template txs", &tmpl_txs.to_string());
     }
+
     println!();
     Ok(())
 }
 
 async fn pool_miners(cfg: &Config) -> Result<()> {
-    ui::print_header("Active Miners");
+    ui::print_header("Active Workers");
 
-    let result = node_rpc::call0(
-        &cfg.node.rpc_host,
-        cfg.node.rpc_port,
-        "getPeerInfo",
-    ).await;
+    // Pool is stratum-only; get template info from node as proxy indicator
+    ui::print_info(&format!("Pool stratum: {}:{}", cfg.pool.host, cfg.pool.port));
 
-    match result {
-        Ok(v) => {
-            if let Some(miners) = v.as_array() {
-                if miners.is_empty() {
-                    ui::print_warn("No miners connected");
-                } else {
-                    println!("  {:<24} {:<16} {}", "Worker", "Hashrate", "Shares");
-                    println!("  {}", "─".repeat(52));
-                    for m in miners {
-                        let worker = m["worker_name"].as_str().unwrap_or("?");
-                        let hs = m["hashrate"].as_f64().unwrap_or(0.0);
-                        let shares = m["accepted_shares"].as_u64().unwrap_or(0);
-                        println!("  {:<24} {:<16} {}", worker, format!("{:.1} kH/s", hs / 1000.0), shares);
-                    }
-                }
-            } else {
-                println!("{}", serde_json::to_string_pretty(&v)?);
-            }
-        }
-        Err(e) => ui::print_warn(&format!("Cannot fetch miners: {}", e)),
+    let alive = tcp_probe(&cfg.pool.host, cfg.pool.port, std::time::Duration::from_secs(3));
+    if !alive {
+        ui::print_warn("Pool stratum not reachable — cannot query worker sessions");
+        println!();
+        return Ok(());
     }
+
+    // Pool does not expose an HTTP session API; worker list would require
+    // pool internal state. Show node block template as proxy for current work.
+    let tmpl = node_rpc::call0(&cfg.node.rpc_host, cfg.node.rpc_port, "getBlockTemplate").await;
+    match tmpl {
+        Ok(v) => {
+            let height = v["height"].as_u64().unwrap_or(0);
+            let difficulty = v["difficulty"].as_u64().unwrap_or(0);
+            ui::print_ok("Pool stratum is accepting connections");
+            ui::print_row("Current template height", &height.to_string());
+            ui::print_row("Current difficulty", &difficulty.to_string());
+            ui::print_info("Live per-worker session info requires pool metrics endpoint (Phase 4).");
+        }
+        Err(e) => ui::print_warn(&format!("Node block template unavailable: {}", e)),
+    }
+
     println!();
     Ok(())
+}
+
+/// Non-async TCP probe: returns true if a TCP connection can be established.
+fn tcp_probe(host: &str, port: u16, timeout: std::time::Duration) -> bool {
+    let addr = format!("{}:{}", host, port);
+    match addr.to_socket_addrs() {
+        Ok(mut addrs) => addrs.any(|a| std::net::TcpStream::connect_timeout(&a, timeout).is_ok()),
+        Err(_) => false,
+    }
 }
