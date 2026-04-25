@@ -66,18 +66,29 @@ pub async fn run(cfg: &Config, cmd: NodeCmd) -> Result<()> {
 async fn node_status(host: &str, port: u16) -> Result<()> {
     ui::print_header("Node Status");
 
-    let stats = node_rpc::call0(host, port, "getChainInfo").await;
-    match stats {
+    let chain = node_rpc::call0(host, port, "getChainInfo").await;
+    let node = node_rpc::call0(host, port, "getNodeInfo").await;
+    match chain {
         Ok(v) => {
-            let height = v["height"].as_u64().unwrap_or(0);
+            // getChainInfo: chain_height, tip_hash, network, protocol_version, mempool_transactions
+            let height = v["chain_height"].as_u64().unwrap_or(0);
             let hash = v["tip_hash"].as_str().unwrap_or("unknown");
-            let peers = v["peer_count"].as_u64().unwrap_or(0);
-            let version = v["version"].as_str().unwrap_or("v3");
+            let network = v["network"].as_str().unwrap_or("mainnet");
+            let proto = v["protocol_version"].as_u64().unwrap_or(0);
+            let mempool = v["mempool_transactions"].as_u64().unwrap_or(0);
+            // getNodeInfo: known_peers (count), pool_bind
+            let peers = node.as_ref().ok()
+                .and_then(|n| n["known_peers"].as_u64()).unwrap_or(0);
+            let pool_bind = node.as_ref().ok()
+                .and_then(|n| n["pool_bind"].as_str()).unwrap_or("?");
 
-            ui::print_row("Node", &format!("zion-core {}", version));
+            ui::print_row("Network", network);
+            ui::print_row("Protocol", &format!("v{}", proto));
             ui::print_row("Height", &format!("{}", height));
             ui::print_row("Tip", &format!("{}...", &hash[..hash.len().min(16)]));
             ui::print_row("Peers", &format!("{} connected", peers));
+            ui::print_row("Pool bind", pool_bind);
+            ui::print_row("Mempool", &format!("{} pending txs", mempool));
             ui::print_ok("Reachable");
         }
         Err(e) => {
@@ -91,16 +102,20 @@ async fn node_status(host: &str, port: u16) -> Result<()> {
 async fn node_peers(host: &str, port: u16) -> Result<()> {
     ui::print_header("Peers");
     let result = node_rpc::call0(host, port, "getPeerInfo").await?;
-    if let Some(peers) = result.as_array() {
+    // getPeerInfo returns { "peers": [{host, port, address}], "count": N }
+    let peer_arr = result["peers"].as_array().cloned();
+    if let Some(peers) = peer_arr {
         if peers.is_empty() {
             ui::print_warn("No peers connected");
         }
-        for p in peers {
-            let addr = p["addr"].as_str().unwrap_or("unknown");
+        for p in &peers {
+            let addr = p["address"].as_str()
+                .or_else(|| p["host"].as_str()).unwrap_or("unknown");
             let height = p["height"].as_u64().unwrap_or(0);
             println!("  {} height={}", addr, height);
         }
     } else {
+        // Fallback: raw dump
         println!("{}", serde_json::to_string_pretty(&result)?);
     }
     println!();
@@ -117,7 +132,7 @@ async fn node_blocks(host: &str, port: u16, n: u64) -> Result<()> {
         let block = node_rpc::call(host, port, "getBlockByHeight", json!({ "height": h })).await;
         match block {
             Ok(b) => {
-                let hash = b["hash"].as_str().unwrap_or("?");
+                let hash = b["hash_hex"].as_str().unwrap_or("?");
                 let ts = b["timestamp"].as_u64().unwrap_or(0);
                 let txs = b["transactions"].as_array().map(|a| a.len()).unwrap_or(0);
                 let short_hash = if hash.len() > 16 { &hash[..16] } else { hash };
@@ -145,8 +160,15 @@ async fn node_block(host: &str, port: u16, id: &str) -> Result<()> {
 
 async fn node_tx(host: &str, port: u16, txid: &str) -> Result<()> {
     ui::print_header(&format!("Transaction {}", txid));
-    let result = node_rpc::call(host, port, "get_transaction", json!({ "txid": txid })).await?;
-    println!("{}", serde_json::to_string_pretty(&result)?);
+    // Try UTXO tx first, then account-model tx
+    let result = match node_rpc::call(host, port, "getTransaction", json!({ "txid": txid })).await {
+        Ok(v) => Ok(v),
+        Err(_) => node_rpc::call(host, port, "getAccountTransaction", json!({ "txid": txid })).await,
+    };
+    match result {
+        Ok(v) => println!("{}", serde_json::to_string_pretty(&v)?),
+        Err(e) => ui::print_err(&format!("{}", e)),
+    }
     println!();
     Ok(())
 }
@@ -154,11 +176,14 @@ async fn node_tx(host: &str, port: u16, txid: &str) -> Result<()> {
 async fn node_mempool(host: &str, port: u16) -> Result<()> {
     ui::print_header("Mempool");
     let result = node_rpc::call0(host, port, "getMempoolInfo").await?;
-    let txs = result.as_array().map(|a| a.len()).unwrap_or(0);
+    // getMempoolInfo returns { "size": N, "template_transactions": N, "template_total_fees_zion": N }
+    let txs = result["size"].as_u64().unwrap_or(0);
+    let tmpl_txs = result["template_transactions"].as_u64().unwrap_or(0);
+    let fees = result["template_total_fees_zion"].as_str().unwrap_or("0");
     ui::print_row("Pending txs", &txs.to_string());
+    ui::print_row("Template txs", &tmpl_txs.to_string());
+    ui::print_row("Template fees", &format!("{} ZION", fees));
     if txs > 0 {
-        println!("{}", serde_json::to_string_pretty(&result)?);
-    }
     println!();
     Ok(())
 }
