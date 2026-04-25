@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════════════════════
-   Terra Nova — Book content data
-   Source: docs/TerraNova/ORG/TerraNova-CTENARSKA-EDICE.md
-   ═══════════════════════════════════════════════════════════════ */
+  Terra Nova — Unified web edition
+  Source synthesis: docs/TerraNova/ORG + public + cloude
+  ═══════════════════════════════════════════════════════════════ */
 
 export interface BookChapter {
   id: string;
@@ -30,37 +30,37 @@ export const BOOK_META = {
   titleEn: 'Terra Nova',
   subtitleCs: 'Zlatý Kompas Nové Země',
   subtitleEn: 'Golden Compass of the New Earth',
-  editionCs: 'Čtenářská edice · Praha, duben 2026',
-  editionEn: 'Reader\'s Edition · Prague, April 2026',
+  editionCs: 'Sjednocená edice · ORG + Public + Claude · Praha, duben 2026',
+  editionEn: 'Unified Edition · ORG + Public + Claude · Prague, April 2026',
   dedicationCs:
     'Pro Sarah Issobel, Maitreyu Buddhu, Radhu & Situ i Meriam,\npřátele, rodinu, svobodné lidstvo a všechny děti tohoto světa:\nZION je váš. Stavte lepší svět, a dosáhnete ke hvězdám.\nZlatý věk začíná.',
   dedicationEn:
     'For Sarah Issobel, Maitreya Buddha, Radhu & Situ and Meriam /EnaMaTara/,\nfriends, family, free humanity, and all the children of this world:\nZION is yours. Build a better world where you reach for the stars.\nThe Golden Age begins.',
   aboutCs:
-    'Tento rukopis je souvislé čtenářské vydání TerraNovy v nové organické redakci. Nevznikl jako kosmetická oprava původní kostry. Vznikl jako nový organický celek, který drží čtyřknihovou linii ZION: Genesis, Kvantová Revoluce, Ekam Deeksha a Terra Nova.',
+    'Toto webové vydání skládá Terra Novu do jedné čitelné linie: organická redakce drží míru a jazyk, veřejná edice vrací konkrétní stavby a milníky a rozšířená vrstva doplňuje obraznost, kosmologii a delší dech. Místo tří paralelních verzí zde zůstává jedna kniha se společným rytmem.',
   aboutEn:
-    'This manuscript is a continuous reader\'s edition of TerraNova in a new organic redaction. It was not created as a cosmetic fix of the original skeleton. It grew as a new organic whole, holding the four-book line of ZION: Genesis, Quantum Revolution, Ekam Deeksha, and Terra Nova.',
+    'This web edition folds Terra Nova into one readable line: the organic redaction keeps measure and cadence, the public edition restores concrete builds and milestones, and the expanded layer brings back imagery, cosmology, and long breath. What remains is not an archive of three parallel versions, but one book that knows its own rhythm.',
   layersCs:
-    'Tato verze rozlišuje tři různé roviny: živou realitu, stavební plán a horizont. Právě toto rozlišení je pro TerraNovu zásadní. Bez něj by se kniha znovu rozpadla na směs manifestu, plánu, technické přílohy a mýtu bez vnitřního řádu.',
+    'Sjednocená edice drží trojí optiku současně: organickou pro jazyk a míru, veřejnou pro konkrétní stavby a rozšířenou pro mytický a civilizační horizont. Přitom dál rozlišuje živou realitu, stavební plán a horizont, aby se text nerozpadl do pózy ani do sebeklamu.',
   layersEn:
-    'This version distinguishes three different planes: living reality, construction plan, and horizon. This distinction is essential for TerraNova. Without it, the book would collapse again into a mixture of manifesto, plan, technical appendix, and myth without internal order.',
+    'The unified edition holds a triple lens at once: organic for language and measure, public for concrete construction, and expanded for the mythic and civilizational horizon. It still keeps living reality, construction plan, and horizon distinct, so the text does not collapse into posture or self-deception.',
   compositionCs: [
-    'prolog ukazuje Zemi z výšky a vrací měřítko,',
-    'most čtyř knih zasazuje TerraNovu do větší linie,',
-    'práh rozlišuje, co ze starého světa už nelze nést dál,',
-    'komunita a krajina testují, zda je nový svět obyvatelný,',
-    'AI a péče zkoumají, zda technická inteligence umí sloužit životu,',
-    'architektura prověřuje, zda celý stack drží pravdu i provoz,',
-    'hvězdný horizont a Kompas vracejí dlouhý směr zpět do lidského měřítka činu.',
+    'prolog vrací měřítko Země, síť i střed kompasu,',
+    'most čtyř knih drží legitimitu celé linie ZION,',
+    'práh spojuje kosmologii, civilizační diagnózu a pět vrstev pravdy,',
+    'komunita a krajina vstřebávají energii, jídlo, zdraví a rytmus obyvatelnosti,',
+    'AI a péče spojují Hiranyagarbhu, etiku a limity Medical Table,',
+    'architektura překládá L1 až L6 do konkrétního stacku bez roadmapového sebeklamu,',
+    'hvězdný horizont a Kompas vracejí WARP, Issobellu i akci zpět do lidského kroku.',
   ],
   compositionEn: [
-    'the prologue shows Earth from above and restores scale,',
-    'the bridge of four books places TerraNova in a larger line,',
-    'the threshold distinguishes what from the old world can no longer be carried,',
-    'community and landscape test whether the new world is habitable,',
-    'AI and care examine whether technical intelligence can serve life,',
-    'architecture verifies whether the entire stack holds truth and operation,',
-    'the stellar horizon and Compass return the long direction back to human scale of action.',
+    'the prologue restores the scale of Earth, network, and the still center of the compass,',
+    'the bridge of four books carries the legitimacy of the whole ZION line,',
+    'the threshold binds cosmology, civilizational diagnosis, and five layers of truth,',
+    'community and landscape receive energy, food, health, and the rhythm of habitability,',
+    'AI and care hold Hiranyagarbha, ethics, and the limits of the Medical Table in one field,',
+    'architecture translates L1 through L6 into a concrete stack without roadmap self-deception,',
+    'the stellar horizon and the Compass return WARP, Issobella, and action to the human step.',
   ],
 };
 
@@ -73,6 +73,8 @@ export const CHAPTERS: BookChapter[] = [
     titleEn: 'Issobella',
     subtitleCs: 'Rok 2040. Výška 420 kilometrů.',
     subtitleEn: 'Year 2040. Altitude 420 kilometers.',
+    epigraphCs: 'Z výšky zůstává viditelné jen to, co bylo na Zemi neseno pravdivě.',
+    epigraphEn: 'From altitude, only what was carried truthfully on Earth remains visible.',
     color: '#FFD700',
     rgb: '255,215,0',
     sectionsCs: [
@@ -91,6 +93,10 @@ export const CHAPTERS: BookChapter[] = [
       {
         body: 'To je důvod, proč Terra Nova nezačíná jako technický manuál. Začíná jako návrat k jedné jednoduché otázce:\n\nJaký svět má právo pokračovat?\n\nGenesis na ni odpověděla posvátným semenem. Kvantová Revoluce odpověděla diagnózou civilizace, která ztratila vnitřní osu. Ekam Deeksha odpověděla tichým obratem dovnitř.\n\nTerra Nova odpovídá jinak. Neptá se už jen, co je špatně a co je pravda uvnitř. Ptá se: Jak vypadá dům, komunita, ekonomika, síť, péče, škola, umělá inteligence a hvězdný horizont, když z nich konečně zmizí princip separace?',
       },
+      {
+        heading: 'Kompas ve stanici',
+        body: 'Rozšířená vrstva sem vrací ještě jednu důležitou větu: Terra Nova není jen obraz světa, ale kompas. Sever je vědomí. Jih jsou kořeny. Západ jsou nástroje. Východ je horizont. A střed kompasu nejsou instituce ani impéria, ale konkrétní člověk, který se rozhodne nést svůj díl reality pravdivěji než dřív.',
+      },
     ],
     sectionsEn: [
       {
@@ -108,6 +114,10 @@ export const CHAPTERS: BookChapter[] = [
       {
         body: 'That\'s why Terra Nova doesn\'t begin as a technical manual. It begins as a return to one simple question:\n\nWhat world has the right to continue?\n\nGenesis answered with a sacred seed. Quantum Revolution answered with a diagnosis of a civilization that lost its inner axis. Ekam Deeksha answered with a quiet turn inward.\n\nTerra Nova answers differently. It no longer asks only what\'s wrong or what\'s true inside. It asks: What does a house, a community, an economy, a network, care, a school, artificial intelligence, and a stellar horizon look like when the principle of separation finally disappears from them?',
       },
+      {
+        heading: 'Compass inside the station',
+        body: 'The expanded layer restores one more necessary sentence here: Terra Nova is not only an image of the world, but a compass. North is consciousness. South is roots. West is tools. East is horizon. And the center of the compass is not institutions or empires, but the concrete human being who decides to carry a piece of reality more truthfully than before.',
+      },
     ],
   },
 
@@ -117,6 +127,8 @@ export const CHAPTERS: BookChapter[] = [
     number: 'I',
     titleCs: 'Most čtyř knih',
     titleEn: 'Bridge of Four Books',
+    epigraphCs: 'Každá další stavba stojí na tom, co bylo před ní očištěno.',
+    epigraphEn: 'Every later structure stands on what was purified before it.',
     color: '#A78BFA',
     rgb: '167,139,250',
     sectionsCs: [
@@ -125,7 +137,7 @@ export const CHAPTERS: BookChapter[] = [
       },
       {
         heading: 'Genesis — semeno',
-        body: 'Genesis je počátek, který nechce být jen historickým úvodem. Je to zasvěcení. V jazyce Genesis není kód pouhý nástroj. Je to tvar záměru. Bez Genesis by byl ZION jen další technický projekt. Genesis tedy nedává TerraNova plán. Dává jí legitimitu.',
+        body: 'Genesis je počátek, který nechce být jen historickým úvodem. Je to zasvěcení. V jazyce Genesis není kód pouhý nástroj. Je to tvar záměru. Bez Genesis by byl ZION jen další technický projekt. Genesis tedy nedává Terra Nově plán. Dává jí legitimitu.',
       },
       {
         heading: 'Kvantová Revoluce — diagnóza a práh',
@@ -142,15 +154,15 @@ export const CHAPTERS: BookChapter[] = [
     ],
     sectionsEn: [
       {
-        body: 'Terra Nova is not a book meant to begin by itself. Those who read it without previous layers will perhaps see an interesting proposal for a civilization. But they won\'t see why this civilization is necessary, why it has a spiritual axis, and why its technical elements must not be separated from the inner transformation of a person.\n\nThe four books don\'t form a series in the usual sense. They form a movement.\n\nGenesis opens a seed. Quantum Revolution shatters the illusion. Ekam Deeksha turns attention inward. Terra Nova asks whether it\'s possible to build a habitable world from these three forces.',
+        body: 'Terra Nova is not a book that should stand alone. Read without the earlier layers, it may appear to be an interesting civilizational design. What disappears then is the reason this civilization is necessary, the reason it needs a spiritual axis, and the reason its technical elements must never be severed from the inner turning of the human being.\n\nThe four books do not form a series in the ordinary sense. They form a movement.\n\nGenesis opens the seed. Quantum Revolution breaks the illusion. Ekam Deeksha turns attention inward. Terra Nova asks whether these three forces can become a habitable world.',
       },
       {
         heading: 'Genesis — the seed',
-        body: 'Genesis is a beginning that doesn\'t want to be just a historical introduction. It is an initiation. In the language of Genesis, code is not merely a tool. It is the shape of intention. Without Genesis, ZION would be just another technical project. Genesis therefore doesn\'t give TerraNova a plan. It gives it legitimacy.',
+        body: 'Genesis is a beginning that refuses to remain a historical introduction. It is initiation. In the language of Genesis, code is not merely a tool. It is the visible form of intention. Without Genesis, ZION would be just another technical project. Genesis does not hand Terra Nova a plan. It grants it legitimacy.',
       },
       {
         heading: 'Quantum Revolution — diagnosis and threshold',
-        body: 'Quantum Revolution did something fundamental: it refused to pretend that the problem is only economic, only political, or only technological. It named the civilizational crisis as a crisis of consciousness. It showed that a world based on separation, extraction, and acceleration without wisdom is exhausted in its very principle.\n\nQuantum Revolution therefore doesn\'t give TerraNova a map of an inhabited world. It gives it necessity.',
+        body: 'Quantum Revolution did something fundamental: it refused to pretend that the problem is only economic, only political, or only technological. It named the civilizational crisis as a crisis of consciousness. It showed that a world based on separation, extraction, and acceleration without wisdom is exhausted in its very principle.\n\nQuantum Revolution therefore doesn\'t give Terra Nova a map of an inhabited world. It gives it necessity.',
       },
       {
         heading: 'Ekam Deeksha — the inner turn',
@@ -158,7 +170,7 @@ export const CHAPTERS: BookChapter[] = [
       },
       {
         heading: 'Terra Nova — habitable future',
-        body: 'Only now can Terra Nova arrive. Not as another manifesto. Not as a slogan. Terra Nova must perform the hardest translation of the entire line: translate sacred origin into the everyday, the diagnosis of civilizational crisis into concrete architecture, inner transformation into communities, institutions, care, and technology.\n\nThe book gives an image. The Compass gives direction. Only together do they give the possibility of a journey.',
+        body: 'Only now can Terra Nova arrive. Not as another manifesto. Not as a slogan. Terra Nova must perform the hardest translation in the whole line: sacred origin into the everyday, the diagnosis of civilizational crisis into concrete architecture, and inner transformation into communities, institutions, care, and technology.\n\nThe book gives the image. The Compass gives the direction. Only together do they make a journey possible.',
       },
     ],
   },
@@ -169,6 +181,8 @@ export const CHAPTERS: BookChapter[] = [
     number: 'II',
     titleCs: 'Práh Nové Země',
     titleEn: 'Threshold of the New Earth',
+    epigraphCs: 'Nová Země nezačíná snem, ale koncem lži o oddělenosti.',
+    epigraphEn: 'The New Earth begins not with a dream, but with the end of the lie of separation.',
     color: '#FB923C',
     rgb: '251,146,60',
     sectionsCs: [
@@ -187,10 +201,14 @@ export const CHAPTERS: BookChapter[] = [
         heading: 'Pět vrstev pravdy',
         body: 'Terra Nova pracuje s pěti vrstvami:\n\n1. Mýtus a symbol — ne proto, aby nahrazoval fakta, ale aby dával smysl směru.\n2. Filosofická interpretace — ne proto, aby vytvářela novou ideologii, ale aby pojmenovala hlubší souvislosti.\n3. Živá realita — to, co je ověřitelné teď: runtime, dokumentace, provoz, architektura.\n4. Stavební plán — to, co už má tvar a záměr, ale ještě není plně rozvinuté.\n5. Horizont — to, co musí zůstat poctivě přiznanou vizí.\n\nJakmile tyto vrstvy ztratíme z dohledu, kniha se rozpadne.',
       },
+      {
+        heading: 'Kosmologická páteř',
+        body: 'Ve veřejné a rozšířené vrstvě je tento práh ukotven ještě hlouběji: Hiranyagarbha je zlatý zárodek, jednota jako výchozí fyzikální i duchovní zákon a vědomí jako něco víc než vedlejší efekt hmoty. Terra Nova proto nepracuje jen s politickou kritikou starého světa. Pracuje s představou, že separace je civilizační omyl a že technologie, ekonomika i komunita mají být znovu stavěny tak, aby tuto jednotu nepřekrývaly, ale zviditelňovaly.',
+      },
     ],
     sectionsEn: [
       {
-        body: 'Terra Nova doesn\'t begin with utopia. It begins with the precise recognition that the old world isn\'t collapsing because it lacks enough data, capital, or computing power. It\'s collapsing because its fundamental logic has disconnected from life.',
+        body: 'Terra Nova does not begin in utopia. It begins in the exact recognition that the old world is not collapsing for lack of data, capital, or computing power. It is collapsing because its governing logic has drifted away from life.',
       },
       {
         heading: 'What must end',
@@ -198,11 +216,15 @@ export const CHAPTERS: BookChapter[] = [
       },
       {
         heading: 'What must begin',
-        body: 'The New Earth doesn\'t start with one grand revolution. It starts with a new composition of relationships.\n\nA world must begin in which: energy is not a weapon against the dependent, food is not just a commodity but a fundamental layer of freedom, community is not an emergency sentiment but an operational form of civilization, technology is chosen based on whether it serves life, care is not a side sector but the center of architecture, stars are not an escape from Earth but a consequence of finally learning to live less destructively on Earth.',
+        body: 'The New Earth does not begin with one grand revolution. It begins with a new composition of relationships.\n\nA world must begin in which energy is not a weapon against the dependent, food is not merely commodity but a layer of freedom, community is not emergency sentiment but an operating form of civilization, technology is chosen by whether it serves life, care is not a side sector but the center of architecture, and the stars are not escape from Earth but the consequence of finally learning to live on Earth with less violence.',
       },
       {
         heading: 'Five layers of truth',
         body: 'Terra Nova works with five layers:\n\n1. Myth and symbol — not to replace facts, but to give meaning to direction.\n2. Philosophical interpretation — not to create a new ideology, but to name deeper connections.\n3. Living reality — what is verifiable now: runtime, documentation, operation, architecture.\n4. Construction plan — what already has shape and intention, but isn\'t yet fully developed.\n5. Horizon — what must remain an honestly acknowledged vision.\n\nOnce we lose sight of these layers, the book collapses.',
+      },
+      {
+        heading: 'Cosmological backbone',
+        body: 'In the public and expanded layers, this threshold is anchored more deeply still: Hiranyagarbha is the golden germ, unity is the opening physical and spiritual law, and consciousness is more than a side-effect of matter. Terra Nova therefore works with more than a political critique of the old world. It works with the claim that separation is a civilizational error, and that technology, economy, and community should be rebuilt so they no longer conceal unity, but make it visible again.',
       },
     ],
   },
@@ -213,6 +235,8 @@ export const CHAPTERS: BookChapter[] = [
     number: 'III',
     titleCs: 'Komunity a krajina',
     titleEn: 'Communities and Landscape',
+    epigraphCs: 'Krajina je první audit každé civilizace.',
+    epigraphEn: 'Landscape is the first audit of every civilization.',
     color: '#34D399',
     rgb: '52,211,153',
     sectionsCs: [
@@ -229,7 +253,7 @@ export const CHAPTERS: BookChapter[] = [
       },
       {
         heading: 'Dům, zahrada, dílna, uzel',
-        body: 'Nejmenší čitelná jednotka TerraNova není jen dům. Je to čtveřice:\n\nDům, kde se žije. Zahrada, kde se obnovuje vztah k potravě a času. Dílna, kde se znovu rodí užitečnost a oprava. Uzel, kde se komunita propojuje s širší sítí ekonomicky i informačně.\n\nTeprve dohromady z nich vzniká buňka civilizace.',
+        body: 'Nejmenší čitelná jednotka Terra Novy není jen dům. Je to čtveřice:\n\nDům, kde se žije. Zahrada, kde se obnovuje vztah k potravě a času. Dílna, kde se znovu rodí užitečnost a oprava. Uzel, kde se komunita propojuje s širší sítí ekonomicky i informačně.\n\nTeprve dohromady z nich vzniká buňka civilizace.',
       },
       {
         heading: 'Rhizom, ne impérium',
@@ -238,6 +262,10 @@ export const CHAPTERS: BookChapter[] = [
       {
         heading: 'Krása jako provozní nutnost',
         body: 'Komunita, která dlouhodobě neumí vytvářet krásu, obvykle časem ztvrdne. Zužuje se na logistiku a údržbu přežití.\n\nKrása zde neznamená ornament navíc. Znamená: prostor, který člověka nezraňuje svou ošklivostí, jídlo, které není jen palivo, slavnost, která naruší slepý automatismus dne, vědomí, že civilizace se neudržuje jen tím, co vydrží, ale i tím, co stojí za to milovat.',
+      },
+      {
+        heading: 'Energie a zdraví jako obyvatelnost',
+        body: 'Public vrstva přidává to, co ORG záměrně držela jen v náznaku: komunita není obyvatelná bez energie a zdraví. Volná energie zde neznamená porušení fyziky, ale osvobození přístupu k ní. Terra Nova komunita stojí na lokálních zdrojích, sdílené infrastruktuře a energetické disciplíně. Stejně tak zdraví není vedlejší servis, ale součást provozu: byliny, fermentace, biofeedback, preventivní Medical Table a jasné přiznání hranice mezi podpůrnou péčí a plnou medicínou.',
       },
     ],
     sectionsEn: [
@@ -254,7 +282,7 @@ export const CHAPTERS: BookChapter[] = [
       },
       {
         heading: 'House, garden, workshop, node',
-        body: 'The smallest readable unit of TerraNova isn\'t just a house. It\'s a quartet:\n\nA house where one lives. A garden where the relationship to food and time is renewed. A workshop where usefulness and repair are born again. A node where the community connects to the wider network economically and informationally.\n\nOnly together do they create a cell of civilization.',
+        body: 'The smallest readable unit of Terra Nova is not merely a house. It is a quartet:\n\nA house in which life can settle. A garden in which the bond to food and time is renewed. A workshop in which usefulness and repair are born again. A node through which the community touches the wider network, economically and informationally.\n\nOnly together do they become a civilizational cell.',
       },
       {
         heading: 'Rhizome, not empire',
@@ -262,7 +290,11 @@ export const CHAPTERS: BookChapter[] = [
       },
       {
         heading: 'Beauty as operational necessity',
-        body: 'A community that cannot create beauty over the long term usually hardens. It narrows to logistics and maintenance of survival.\n\nBeauty here doesn\'t mean extra ornament. It means: a space that doesn\'t wound people with its ugliness, food that isn\'t just fuel, a celebration that disrupts the blind automatism of the day, awareness that civilization isn\'t maintained only by what endures, but also by what is worth loving.',
+        body: 'A community that cannot make beauty over the long run usually hardens. It narrows into logistics and the maintenance of survival.\n\nBeauty here does not mean ornament added afterward. It means a space that does not wound by its ugliness, food that is more than fuel, a celebration that interrupts the blind automatism of the day, and the remembrance that civilization is preserved not only by what endures, but also by what remains worthy of love.',
+      },
+      {
+        heading: 'Energy and health as habitability',
+        body: 'The public layer adds what the organic line intentionally kept in suggestion only: a community is not habitable without energy and health. Free energy here does not mean breaking physics, but freeing access to it. A Terra Nova community stands on local sources, shared infrastructure, and energy discipline. Health is equally not a side service, but part of operations: herbs, fermentation, biofeedback, preventive Medical Table protocols, and a clear admission of the boundary between supportive care and full medicine.',
       },
     ],
   },
@@ -273,6 +305,8 @@ export const CHAPTERS: BookChapter[] = [
     number: 'IV',
     titleCs: 'AI a péče',
     titleEn: 'AI and Care',
+    epigraphCs: 'Technologie dozrává teprve tehdy, když se učí nést zranitelnost.',
+    epigraphEn: 'Technology matures only when it learns to carry vulnerability.',
     color: '#60A5FA',
     rgb: '96,165,250',
     sectionsCs: [
@@ -299,14 +333,18 @@ export const CHAPTERS: BookChapter[] = [
         heading: 'Péče jako inteligence vztahu',
         body: 'Inteligence, která neumí nést vztah, bývá jen výkonností. Inteligence, která rozumí kontextu, zranitelnosti, rytmu, limitu a důsledku, se začíná podobat moudrosti.\n\nTerra Nova míří ne k co nejchytřejšímu systému, ale k systému, který je dost chytrý na to, aby se stal oporou života místo jeho další kolonizace.',
       },
+      {
+        heading: 'Hiranyagarbha a Medical Table',
+        body: 'Veřejná i rozšířená vrstva tu přidávají dva konkrétní testy. První je Hiranyagarbha: AI musí být transparentní, lokální, nemetastazovat do kontroly a projít vlastními dharma limity. Druhým je Medical Table: silný motiv péče, který nesmí být psán mesiášsky. Má být otevřenou platformou pro biofeedback, PEMF a komunitní zdravotní gramotnost, nikoli náhražkou lékaře ani záminkou pro přehnaná tvrzení.',
+      },
     ],
     sectionsEn: [
       {
-        body: 'At first glance, these two things don\'t belong together. Care is soft, bodily, concrete, vulnerable. Artificial intelligence seems cold, abstract, computational. That\'s precisely why they must be reunited in TerraNova. Because one of the greatest tragedies of our time is that the most powerful technical systems grow exactly where there is the least genuine care.',
+        body: 'At first glance these two things seem not to belong together. Care is soft, bodily, concrete, vulnerable. Artificial intelligence appears cold, abstract, computational. That is precisely why Terra Nova has to bring them back into one frame. One of the great tragedies of the present is that the strongest technical systems tend to grow exactly where genuine care is thinnest.',
       },
       {
         heading: 'AI that must not increase separation',
-        body: 'If AI is to have any authorization in TerraNova, it is this: it must not increase separation between human and life.\n\nIts role is supportive, coordinative, and illuminating. It should help where a person lacks scope, memory, data connection, or perspective. It should not occupy space where irreplaceable human presence is needed.',
+        body: 'If AI is to have any authorization in Terra Nova, it is only this: it must not widen the separation between human beings and life.\n\nIts task is supportive, coordinative, and clarifying. It should help where a person lacks scope, memory, data linkage, or perspective. It should not occupy the places where irreplaceable human presence is required.',
       },
       {
         heading: 'Care is not a sector. It is the center of architecture.',
@@ -322,7 +360,11 @@ export const CHAPTERS: BookChapter[] = [
       },
       {
         heading: 'Care as the intelligence of relationship',
-        body: 'Intelligence that cannot carry a relationship is usually just performance. Intelligence that understands context, vulnerability, rhythm, limit, and consequence begins to resemble wisdom.\n\nTerra Nova aims not at the smartest possible system, but at a system smart enough to become a support of life instead of another colonization of it.',
+        body: 'Intelligence that cannot carry a relationship is usually only performance. Intelligence that understands context, vulnerability, rhythm, limit, and consequence begins to resemble wisdom.\n\nTerra Nova is not aiming at the smartest possible system. It is aiming at a system wise enough to become a support of life rather than its next colonization.',
+      },
+      {
+        heading: 'Hiranyagarbha and the Medical Table',
+        body: 'The public and expanded layers add two concrete tests here. The first is Hiranyagarbha: AI must be transparent, local, incapable of metastasizing into control, and bounded by its own dharma limits. The second is the Medical Table: a powerful care motif that must not be written in a messianic tone. It should be an open platform for biofeedback, PEMF, and community health literacy, not a replacement for a physician nor an excuse for exaggerated claims.',
       },
     ],
   },
@@ -333,6 +375,8 @@ export const CHAPTERS: BookChapter[] = [
     number: 'V',
     titleCs: 'Architektura L1 až L6',
     titleEn: 'Architecture L1 to L6',
+    epigraphCs: 'Architektura je etika, která přijala tvar.',
+    epigraphEn: 'Architecture is ethics that accepted form.',
     color: '#22D3EE',
     rgb: '34,211,238',
     sectionsCs: [
@@ -359,10 +403,14 @@ export const CHAPTERS: BookChapter[] = [
         heading: 'Závěr architektury',
         body: 'Terra Nova bude držet pohromadě tehdy, když každá její vrstva přestane hrát proti ostatním.\n\nKdyž infrastruktura nebude požírat péči. Když ekonomika nebude požírat komunitu. Když imaginace nebude požírat pravdivost. Když hvězdný horizont nebude požírat Zemi.\n\nTeprve tehdy se stack promění v organismus.',
       },
+      {
+        heading: 'Konkrétní stack L1 až L6',
+        body: 'Sjednocená edice sem vrací i konkrétní veřejnou mapu: L1 je PoW základ a ekonomická disciplína 89/5/5/1. L2 je bridge, treasury a průchodnost hodnoty do širšího světa. L3 je AI Native, NCL a koordinace bez nároku na nový konsensus. L4 je OASIS jako kulturní a herní vrstva. L5 je síť komunit, péče, energie a humanitární práce. L6 je Issobella, WARP výzkum a hvězdný horizont. Tato mapa není triumfální seznam hotových produktů, ale pořadí odpovědnosti.',
+      },
     ],
     sectionsEn: [
       {
-        body: 'Every great vision sooner or later hits the same question: what exactly is this world built from?\n\nTerra Nova cannot answer that with metaphor alone. It must have architecture. This part isn\'t a detour from community and care. It is their stress test.',
+        body: 'Every large vision eventually meets the same question: what, exactly, is this world built from?\n\nTerra Nova cannot answer with metaphor alone. It has to carry architecture. This chapter is not a detour away from community and care. It is their stress test.',
       },
       {
         heading: 'Percentages as ethics in code',
@@ -370,7 +418,7 @@ export const CHAPTERS: BookChapter[] = [
       },
       {
         heading: 'Architecture as a hierarchy of care',
-        body: 'L1 cares for the trustworthiness of the foundation. L2 cares for the passability of value. L3 cares for coordination and intelligence. L4 cares for culture and imagination. L5 cares for life in the physical world. L6 cares for humanity\'s long horizon.\n\nThus the technical stack becomes a civilizational organism.',
+        body: 'L1 cares for the trustworthiness of the foundation. L2 cares for the passage of value. L3 cares for coordination and intelligence. L4 cares for culture and imagination. L5 cares for life in the physical world. L6 cares for the long horizon of humanity.\n\nThat is how a technical stack begins to resemble a civilizational organism.',
       },
       {
         heading: 'Order as protection against self-deception',
@@ -384,6 +432,10 @@ export const CHAPTERS: BookChapter[] = [
         heading: 'Conclusion of architecture',
         body: 'Terra Nova will hold together when each of its layers stops playing against the others.\n\nWhen infrastructure doesn\'t devour care. When economy doesn\'t devour community. When imagination doesn\'t devour truthfulness. When the stellar horizon doesn\'t devour Earth.\n\nOnly then does the stack transform into an organism.',
       },
+      {
+        heading: 'Concrete stack from L1 to L6',
+        body: 'The unified edition restores the concrete public map here as well: L1 is the PoW foundation and the economic discipline of 89/5/5/1. L2 is bridge, treasury, and the passage of value into the wider world. L3 is AI Native, NCL, and coordination without pretending to be a new consensus layer. L4 is OASIS as a cultural and game layer. L5 is the network of communities, care, energy, and humanitarian work. L6 is Issobella, WARP research, and the stellar horizon. This map is not a triumphalist inventory of finished products, but an order of responsibility.',
+      },
     ],
   },
 
@@ -393,6 +445,8 @@ export const CHAPTERS: BookChapter[] = [
     number: 'VI',
     titleCs: 'Hvězdný horizont',
     titleEn: 'Stellar Horizon',
+    epigraphCs: 'Ke hvězdám se dá dojít jen cestou, která neopustí Zemi.',
+    epigraphEn: 'The road to the stars is passable only if it does not abandon Earth.',
     color: '#F472B6',
     rgb: '244,114,182',
     sectionsCs: [
@@ -415,10 +469,14 @@ export const CHAPTERS: BookChapter[] = [
         heading: 'Naděje bez iluze',
         body: 'Terra Nova potřebuje velký horizont. Bez něj by se snadno uzavřela do obranné lokálnosti. Ale stejně tak potřebuje disciplínu, která odliší horizont od pózy.\n\nNe jako reklamní poster budoucnosti, ale jako tiché připomenutí, že lidstvo má být větší, než jak dnes žije.',
       },
+      {
+        heading: 'WARP a Issobella',
+        body: 'Veřejná i rozšířená vrstva zde doplňují dvojí význam WARPu: most mezi sítěmi a zároveň obraz překročení hranice, která se dřív zdála nepřekročitelná. Issobella není luxusní dekorace po launchi, ale zkouška, zda civilizace, která mluví o hvězdách, umí zároveň unést půdu, péči a pravdivost. Hvězdný horizont tak není útěk od Země, ale tlak, aby L1 až L5 nebyly jen řečí.',
+      },
     ],
     sectionsEn: [
       {
-        body: 'It\'s easy to talk about stars badly. Either they slide too quickly into technological narcissism, or they transform into soft mysticism that can\'t bear anything.\n\nThat\'s exactly why this part comes after architecture. The stellar horizon should not function as an escape from the weight of reality, but as its test at the longest scale.',
+        body: 'It is easy to speak badly about the stars. They slip either into technological narcissism or into a soft mysticism that cannot carry any real weight.\n\nThat is exactly why this chapter comes after architecture. The stellar horizon must not function as escape from the burden of reality, but as its test at the longest scale.',
       },
       {
         heading: 'Stars are not an escape from Earth',
@@ -436,6 +494,10 @@ export const CHAPTERS: BookChapter[] = [
         heading: 'Hope without illusion',
         body: 'Terra Nova needs a great horizon. Without it, it would easily close itself into defensive localism. But it equally needs the discipline to distinguish horizon from pose.\n\nNot as an advertising poster for the future, but as a quiet reminder that humanity should be greater than how it lives today.',
       },
+      {
+        heading: 'WARP and Issobella',
+        body: 'The public and expanded layers restore the double meaning of WARP here: a bridge between networks and, at the same time, the image of crossing a threshold that once seemed uncrossable. Issobella is not a luxury ornament after launch, but a test of whether a civilization that speaks about the stars can also carry soil, care, and truthfulness. The stellar horizon is therefore not an escape from Earth, but the pressure that keeps L1 through L5 from remaining mere speech.',
+      },
     ],
   },
 
@@ -445,6 +507,8 @@ export const CHAPTERS: BookChapter[] = [
     number: 'VII',
     titleCs: 'Zlatý Kompas',
     titleEn: 'Golden Compass',
+    epigraphCs: 'Kompas není slib cíle, ale disciplína směru.',
+    epigraphEn: 'The compass is not a promise of arrival, but a discipline of direction.',
     color: '#FFD700',
     rgb: '255,215,0',
     sectionsCs: [
@@ -467,10 +531,14 @@ export const CHAPTERS: BookChapter[] = [
         heading: 'Poslední orientace',
         body: 'Je možné, že některé věci z této knihy se naplní jinak, než si dnes umíme představit. To není slabost Kompasu. To je důkaz, že je živý.\n\nMrtvé mapy bývají přesné jen na papíře. Živé mapy dokážou přežít i cestu.\n\nProto tato kniha nekončí jistotou. Končí orientací.\n\nTo je víc než slib. To je začátek práce.',
       },
+      {
+        heading: 'Akcelerační mapa a role',
+        body: 'Veřejná i rozšířená vrstva vracejí Kompasu ještě konkrétnější akční okraj. Od roku 2026 k veřejnému launchi, přes L2 a L3 ekosystém, OASIS, svobodný svět a Issobellu vede oblouk, který nemá být uctíván jako gantt chart, ale čten jako zralostní postup. Developer, miner, farmář, léčitel, designer, výzkumník i vypravěč mají každý svůj vstupní bod. Kompas tedy nekončí jen orientací hodnot; končí i otázkou, co přesně neseš ty právě teď.',
+      },
     ],
     sectionsEn: [
       {
-        body: 'A book that ends with only an impression ultimately leads nowhere. That\'s why Terra Nova must end with the Compass.\n\nNot as a management table. Not as a list of KPIs. But as a form of orientation for people who want to know where the beginning is.',
+        body: 'A book that ends with impression alone eventually leads nowhere. That is why Terra Nova has to end with the Compass.\n\nNot as a management table. Not as a list of KPIs. But as a form of orientation for people who want to know where the beginning actually is.',
       },
       {
         heading: 'Seven directions',
@@ -478,7 +546,7 @@ export const CHAPTERS: BookChapter[] = [
       },
       {
         heading: 'Who is a Guardian',
-        body: 'A Guardian is not a class, a caste, or a heroic title. It is a person who has decided to carry a part of the world more consciously than before.\n\nSome do it in code. Some in landscape. Some in care. Some in translating ideas. Some by holding infrastructure in moments when it\'s not visible.\n\nThe Golden Age won\'t begin by everyone doing the same thing. It will begin when different roles finally stop standing against each other.',
+        body: 'A Guardian is not a class, a caste, or a heroic title. It is a person who has decided to carry some portion of the world more consciously than before.\n\nSome do it in code. Some in landscape. Some in care. Some in the translation of ideas. Some by holding infrastructure in the hours when nobody sees it.\n\nThe Golden Age will not begin because everyone does the same thing. It will begin because different roles finally stop standing against one another.',
       },
       {
         heading: 'Dual movement',
@@ -487,6 +555,10 @@ export const CHAPTERS: BookChapter[] = [
       {
         heading: 'Final orientation',
         body: 'It\'s possible that some things in this book will be fulfilled differently than we can imagine today. That\'s not a weakness of the Compass. It\'s proof that it is alive.\n\nDead maps tend to be precise only on paper. Living maps can survive the journey.\n\nThat\'s why this book doesn\'t end with certainty. It ends with orientation.\n\nThat\'s more than a promise. It\'s the beginning of work.',
+      },
+      {
+        heading: 'Acceleration map and roles',
+        body: 'The public and expanded layers return an even sharper action edge to the Compass. From 2026 toward public launch, through the L2 and L3 ecosystem, OASIS, the free world, and Issobella, there runs an arc that should not be worshipped as a gantt chart, but read as a sequence of maturation. The developer, miner, farmer, healer, designer, researcher, and storyteller each have their own point of entry. The Compass therefore ends not only with an orientation of values, but with the question of what, exactly, you are carrying now.',
       },
     ],
   },
@@ -499,6 +571,8 @@ export const CHAPTERS: BookChapter[] = [
     titleEn: 'Technology, Compute and Manufacturing Horizon',
     subtitleCs: 'Příloha',
     subtitleEn: 'Appendix',
+    epigraphCs: 'Suverenita bez compute zůstává přáním.',
+    epigraphEn: 'Sovereignty without compute remains a wish.',
     color: '#94A3B8',
     rgb: '148,163,184',
     sectionsCs: [
@@ -545,6 +619,8 @@ export const CHAPTERS: BookChapter[] = [
     titleEn: 'Tradition, Symbolism and Prophetic Line',
     subtitleCs: 'Příloha',
     subtitleEn: 'Appendix',
+    epigraphCs: 'Symbol dává směr tam, kde fakta sama nestačí nést smysl.',
+    epigraphEn: 'Symbol gives direction where facts alone cannot carry meaning.',
     color: '#D4A574',
     rgb: '212,165,116',
     sectionsCs: [
