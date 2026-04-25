@@ -182,18 +182,11 @@ pub async fn run(cfg: &Config, cmd: MineCmd) -> Result<()> {
 
         MineCmd::Status => {
             ui::print_header("Miner Status");
-            // Check if a miner process is running
-            let output = std::process::Command::new("pgrep")
-                .arg("-f")
-                .arg("zion-miner")
-                .output();
-            match output {
-                Ok(o) if o.status.success() => {
-                    ui::print_ok("Miner is running");
-                    let pids = String::from_utf8_lossy(&o.stdout);
-                    ui::print_row("PIDs", pids.trim());
-                }
-                _ => ui::print_warn("No miner process detected"),
+            let running = is_miner_running();
+            if running {
+                ui::print_ok("Miner is running");
+            } else {
+                ui::print_warn("No miner process detected");
             }
             println!();
             Ok(())
@@ -411,6 +404,31 @@ fn normalize_profile(profile: &str) -> Result<&str> {
             "Unsupported miner profile '{}'. Supported profiles: pool, solo, benchmark, dual",
             other
         ),
+    }
+}
+
+/// Cross-platform miner process detection.
+/// On Unix: uses `pgrep -f zion-miner`.
+/// On Windows: uses `tasklist /FI "IMAGENAME eq zion-miner.exe"`.
+fn is_miner_running() -> bool {
+    #[cfg(windows)]
+    {
+        let out = std::process::Command::new("tasklist")
+            .args(["/FI", "IMAGENAME eq zion-miner.exe", "/NH"])
+            .output();
+        if let Ok(o) = out {
+            let stdout = String::from_utf8_lossy(&o.stdout);
+            return stdout.contains("zion-miner.exe");
+        }
+        false
+    }
+    #[cfg(not(windows))]
+    {
+        std::process::Command::new("pgrep")
+            .args(["-f", "zion-miner"])
+            .output()
+            .map(|o| o.status.success())
+            .unwrap_or(false)
     }
 }
 
