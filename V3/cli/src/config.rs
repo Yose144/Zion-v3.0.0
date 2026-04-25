@@ -200,11 +200,15 @@ pub fn set_value(key: &str, value: &str) -> Result<()> {
         ["miner", "threads"] => cfg.miner.threads = value.into(),
         ["miner", "backend"] => cfg.miner.backend = value.into(),
         ["miner", "profile"] => cfg.miner.profile = value.into(),
+        ["miner", "btc_wallet"] => cfg.miner.btc_wallet = value.into(),
         ["agent", "url"] => cfg.agent.url = value.into(),
         ["agent", "model"] => cfg.agent.model = value.into(),
+        ["deploy", "default_server"] => cfg.deploy.default_server = value.into(),
         ["deploy", "ssh_key"] => cfg.deploy.ssh_key = value.into(),
         ["deploy", "ssh_user"] => cfg.deploy.ssh_user = value.into(),
-        _ => anyhow::bail!("Unknown config key: {}", key),
+        ["bridge", "port"] => cfg.bridge.port = value.parse()?,
+        ["dao", "port"] => cfg.dao.port = value.parse()?,
+        _ => anyhow::bail!("Unknown config key: {}. Valid keys: node.rpc_host, node.rpc_port, node.p2p_port, pool.host, pool.port, miner.wallet, miner.btc_wallet, miner.threads, miner.backend, miner.profile, agent.url, agent.model, deploy.ssh_key, deploy.ssh_user, deploy.default_server, bridge.port, dao.port", key),
     }
     save(&cfg)?;
     println!("✓ {} = {}", key, value);

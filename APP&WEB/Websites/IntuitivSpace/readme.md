@@ -1,11 +1,34 @@
-Intuitive Space v 0.1 Mockup
+Intuitive Space v1.0
 
-Complet Project for Petra Klecova Photograph. 
+Statický prezentační web byl rozšířen o Node server, sdílené API a oddělenou admin stránku.
 
-Website basic html, meaby App for the futrure. Intuitive space for Arts, Consious, Buissness, Health, Psychologi.
+Co je součástí:
 
-// Tento projekt je o propojení byznysu, umění, vědomí, zdraví i psychologie. 
-“Vědomá intuitivní cesta k lehčímu životu…❤️” // 
+- veřejný web na index.html
+- chráněná admin stránka na admin.html
+- sdílený obsah novinek a galerie uložený v data/content.json
+- upload obrázků do galerie přes src/uploads/
 
+Spuštění lokálně:
 
-Napojime na Discortt Chanell a vytvoříme Instagram plus fb stránku 
+1. npm install
+2. npm start
+3. otevřít http://localhost:3000
+
+Admin rozhraní:
+
+- URL: http://localhost:3000/admin.html
+- heslo se čte z proměnné ADMIN_PASSWORD
+- pokud ADMIN_PASSWORD není nastavené, výchozí heslo je intuitive-space-admin
+
+Doporučené proměnné prostředí:
+
+- ADMIN_PASSWORD=tvuj-silny-heslo
+- SESSION_SECRET=nahodny-dlouhy-retezec
+- PORT=3000
+
+Poznámky:
+
+- veřejný web čte novinky i galerii z /api/content
+- admin změny jsou sdílené pro všechny návštěvníky, protože se zapisují do serverového JSON souboru
+- nahrané obrázky se ukládají do src/uploads/ a z .gitignore jsou vyloučené z repozitáře

@@ -1,0 +1,10 @@
+{
+  "format": "zion_wallet_ed25519",
+  "format_version": 1,
+  "public_key_hex": "4a37bb5b733d2d9d3ba9da28358a0cd5194c076107421321f1631bbd778885d6",
+  "address": "zion16853d8r885l4g4u8p8t7v5n8u6v7e0f445dr3f8",
+  "mnemonic_present": true,
+  "secret_key_hex": "bb0ada41b422c1ed530b9e40cc9d4b6c492c63191fae8f626f0f248e5348bcdf",
+  "mnemonic": "crash alien motor warm million happy lion ladder squirrel grab gather portion orient sniff athlete oval regret giraffe flame marriage gravity chronic rain leader",
+  "created_at_utc": "2026-04-23T18:34:32.928186+00:00"
+}
