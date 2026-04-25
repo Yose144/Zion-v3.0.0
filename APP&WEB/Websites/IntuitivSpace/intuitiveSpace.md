@@ -61,3 +61,5 @@ Kolik strachů a programů lze vidět během pár dnů samoty a v kontaktu s pom
 Od iluzí k pravdě a o tom, že vibrace jsou stále s námi, ať jsme kdekoliv a že bojovat nemá smysl ❤️
 
 
+
+
