@@ -7,6 +7,8 @@ import {
   ChevronLeft,
   ChevronRight,
   List,
+  Sparkles,
+  Terminal,
   X,
   Compass,
   ArrowRight,
@@ -14,23 +16,162 @@ import {
 import Link from 'next/link';
 import { useLang } from '@/contexts/LanguageContext';
 import { BOOK_META, CHAPTERS } from './bookData';
-import type { BookChapter, Section } from './bookData';
+import type { BookChapter } from './bookData';
 
 /* ═══════════════════════════════════════════════════════════
    Terra Nova — Public Book Reader
    Full bilingual reader with chapter navigation
    ═══════════════════════════════════════════════════════════ */
 
+const GENESIS_BANNER = [
+  '████████╗██╗ ██████╗███╗   ██╗',
+  '╚══███╔╝██║██╔═══██╗████╗  ██║',
+  '  ███╔╝ ██║██║   ██║██╔██╗ ██║',
+  ' ███╔╝  ██║██║   ██║██║╚██╗██║',
+  '███████╗██║╚██████╔╝██║ ╚████║',
+  '╚══════╝╚═╝ ╚═════╝ ╚═╝  ╚═══╝',
+].join('\n');
+
+const GENESIS_TREE = [
+  '⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀',
+  '⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡀⣀⢂⣁⣧⣖⡖⠠⢠⠀⠀⢤⡀⢀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀',
+  '⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢼⣶⡭⣛⠫⡞⠡⠀⡤⢦⠆⠨⠀⠀⢸⠋⠬⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀',
+  '⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡀⠀⠒⢈⠀⢭⣉⠂⡄⢠⠖⣸⠑⣆⡦⠊⢀⠀⡂⢉⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀',
+  '⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠍⠚⣁⣀⡀⣤⣰⢶⢷⢼⣿⠏⡡⢠⢗⡙⣶⣞⠛⣍⣪⣼⡠⠠⢶⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀',
+  '⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠀⠀⠀⢄⣎⡠⢠⠉⠋⠓⠉⠋⢨⠘⠚⢉⡄⠁⢾⡌⣗⢿⠛⠲⠛⠋⡝⠑⠀⠌⡤⠄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀',
+  '⠀⠀⠀⠀⠀⠀⠀⠘⠥⠄⡚⣜⢣⣴⡨⢁⡀⣈⡅⠀⣀⠀⠈⣄⣀⢿⣯⡔⢊⢺⣷⠆⣷⠶⠂⠀⠀⠀⢀⡀⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀',
+  '⠀⠀⠀⠀⠀⠀⠀⠘⢁⣨⡅⠨⣤⣭⣵⣿⢿⢏⠿⠯⡁⠹⣿⡯⡜⠫⢯⢿⡾⣻⡅⣠⣆⣄⣰⡐⠲⠼⢶⠒⠯⠅⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀',
+  '⠀⠀⠀⠀⠀⠀⠂⢈⠙⡋⣟⡛⣷⠴⢼⠓⠋⣺⣴⣷⣷⢾⣿⡿⣡⣠⣸⠗⠻⠹⠿⣟⢥⠯⣿⠻⢅⢴⢎⠄⠀⡄⢠⣀⠀⡀⠀⢄⠀⠀⠀⠀',
+  '⠀⠀⠀⠀⠀⠀⠀⢘⠳⠋⣤⣶⡿⢜⣳⢦⢶⣌⣩⠶⢠⣤⣯⠷⠈⠬⡉⠎⠎⣀⡌⠟⣝⣿⠇⡚⠒⠔⢀⣴⣍⣾⢲⠋⠟⠈⠙⠑⠉⢀⠄⠀',
+  '⠀⠀⠀⡀⣽⠿⠻⡈⠱⢻⣽⡟⣶⣚⡻⢏⢹⡋⠁⣀⣂⣤⣴⠄⢤⣐⣴⡾⣶⠯⣄⣉⢓⡭⢍⡆⡀⣈⣿⣷⡷⠶⠒⢂⣠⣠⢶⣾⣳⣯⣵⡄',
+  '⠀⠀⠀⠰⠴⠀⢘⢉⣧⣥⣏⠳⢈⣫⠞⣿⣷⢤⣤⣿⣿⣾⣧⣾⣿⣿⣿⣗⣿⣿⣿⠋⣚⡃⠿⡭⠹⣷⣿⠾⡿⢤⣤⣜⢿⣯⡿⣷⠯⣽⣿⡾',
+  '⠀⠀⠀⠀⠀⠐⠞⠻⣿⢟⣿⢿⠷⠥⣼⣷⢷⣯⠟⠻⠙⢉⡿⣿⢻⣹⣿⣿⢉⢳⣿⣿⣯⡶⡄⡶⢦⣷⣶⣿⡬⢥⠨⣭⣹⠏⠁⡘⢫⠉⠈⠀',
+  '⠀⠀⠔⣼⢂⠬⢌⠧⢋⡛⢡⣮⡡⠈⠓⣃⢀⣒⣊⣽⠻⣛⠟⢿⢸⣯⣿⣓⣿⡟⣷⣟⣿⣿⣿⣿⣻⣷⣟⣒⡺⠏⢰⡿⠿⣶⣶⡻⠒⡿⠦⡀',
+  '⠀⢆⣀⣆⣸⣿⠋⡴⢲⡁⡋⠀⢴⣮⣷⠟⠫⠿⣿⢶⢅⢴⣇⣸⣷⣿⣿⣧⣾⣿⣿⣿⣿⣿⣿⣿⣿⢿⢿⣟⣲⢦⠦⢋⡀⢿⣾⣷⣶⣤⠋⠆',
+  '⠈⠘⠛⠼⠿⡝⣻⠛⠻⠀⠀⠐⠛⢹⣱⣟⣽⣯⣿⡟⡊⣿⣷⣖⢽⣿⣿⣿⢿⣿⠀⠀⠘⠋⠃⠁⠀⠀⠨⠟⠿⡷⣥⣉⠁⠘⠉⠊⠚⠚⠓⠀',
+  '⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠋⠀⠀⠀⠀⠈⠋⠹⣎⢻⣿⠟⠀⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠛⢳⡕⠀⠀⠀⠀⠀⠀⠀⠀',
+  '⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀',
+  '⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀',
+  '⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀',
+  '⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣾⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀',
+  '⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣹⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀',
+  '⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠚⠛⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀',
+].join('\n');
+
+const CLI_PRESET = [
+  'zion status --layer all',
+  'zion l1 start node --profile mainnet',
+  'zion mine bench --backend cpu',
+  'zion doctor',
+  'zion logs --tail 64',
+  'zion dashboard',
+];
+
+const BOOT_SEQUENCE = [
+  {
+    command: 'zion version',
+    responseCs: 'zion v2.9.8 "Deeksha" · mainnet · build 2026-04-01',
+    responseEn: 'zion v2.9.8 "Deeksha" · mainnet · build 2026-04-01',
+  },
+  {
+    command: 'zion status --layer all',
+    responseCs: 'node ✓  pool ✓  miner ✓  bridge ✓',
+    responseEn: 'node ✓  pool ✓  miner ✓  bridge ✓',
+  },
+  {
+    command: 'zion l1 start node --profile mainnet',
+    responseCs: 'node synced · height 22 410 · 3 peers',
+    responseEn: 'node synced · height 22 410 · 3 peers',
+  },
+  {
+    command: 'zion doctor',
+    responseCs: 'all checks passed · env clean · no drift',
+    responseEn: 'all checks passed · env clean · no drift',
+  },
+];
+
+const LIVE_TERMINAL_CMDS = [
+  { cmd: 'zion version', resp: 'zion v2.9.8 "Deeksha" · mainnet · build 2026-04-01' },
+  { cmd: 'zion status --layer all', resp: 'node ✓  pool ✓  miner ✓  bridge ✓  all nominal' },
+  { cmd: 'zion l1 start node --profile mainnet', resp: 'node synced · height 22 410 · 3 peers · 12 ms' },
+  { cmd: 'zion mine bench --backend cpu', resp: '14.7 H/s · best-share 0x1f2a · 0 rejects · 8 threads' },
+  { cmd: 'zion doctor', resp: 'all checks passed · env clean · no drift detected' },
+  { cmd: 'zion logs --tail 8', resp: '[pool] share accepted · worker deeksha-01 · 0 ms latency' },
+];
+
 export default function TerraNovaBookClient() {
   const { lang } = useLang();
   const cs = lang === 'cs';
 
   const [activeChapter, setActiveChapter] = useState<number>(0);
+  const [activeSection, setActiveSection] = useState<number>(0);
   const [tocOpen, setTocOpen] = useState(false);
+  const [overlayMode, setOverlayMode] = useState<'genesis' | 'cli' | null>(null);
+  const [visibleBootLines, setVisibleBootLines] = useState(1);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  const [twCmdText, setTwCmdText] = useState('');
+  const [twRespText, setTwRespText] = useState('');
+  const twRef = useRef({ cmdIdx: 0, charIdx: 0, phase: 'typing' as string, pauseTicks: 0 });
   const contentRef = useRef<HTMLDivElement>(null);
+  const sectionRefs = useRef<Array<HTMLDivElement | null>>([]);
 
   const chapter = CHAPTERS[activeChapter];
   const sections = cs ? chapter.sectionsCs : chapter.sectionsEn;
+  const chapterEpigraph = cs ? chapter.epigraphCs : chapter.epigraphEn;
+  const sectionLabels = sections.map(
+    (section, index) => section.heading ?? `${cs ? 'Úsek' : 'Section'} ${index + 1}`,
+  );
+  const progress = ((activeChapter + 1) / CHAPTERS.length) * 100;
+  const overlayOpen = overlayMode !== null;
+  const chapterLabel =
+    chapter.number === 'Prolog'
+      ? cs
+        ? 'Prolog'
+        : 'Prologue'
+      : chapter.number === 'A' || chapter.number === 'B'
+      ? `${cs ? 'Příloha' : 'Appendix'} ${chapter.number}`
+      : `${cs ? 'Část' : 'Part'} ${chapter.number}`;
+  const introSignals = ['Genesis.md', 'ZION CLI v2.9.8', 'Terra Nova IV'];
+  const introLead = cs
+    ? 'Síť žije. Uzel synchronizuje. Miner hledá. Stojíte na prahu příběhu, který se právě stává skutečností.'
+    : 'The network is live. The node syncs. The miner searches. You stand at the threshold of a story becoming real.';
+  const introBody = cs
+    ? 'Terra Nova není manifest budoucnosti — je to pracovní mapa. Jak ZION funguje dnes, jak poroste zítra, a kdo stojí vedle vás při budování lepšího světa.'
+    : 'Terra Nova is not a manifesto of the future — it is a working map. How ZION operates today, how it will grow tomorrow, and who stands beside you in building a better world.';
+  const introNotes = cs
+    ? [
+        'Genesis drží počátek, jazyk a posvátnou paměť spuštění v2.9.8 Deeksha.',
+        'ZION CLI je každodenní nástroj — od zion version po zion mine bench.',
+        'Terra Nova spojuje obě vrstvy do živé knihy čtvrté civilizace.',
+      ]
+    : [
+        'Genesis holds the origin, language, and sacred memory of the v2.9.8 Deeksha launch.',
+        'ZION CLI is the daily instrument — from zion version to zion mine bench.',
+        'Terra Nova binds both layers into a living book of the fourth civilization.',
+      ];
+  const introQuote = cs
+    ? 'Gate, Gate, Paragate, Parasamgate, Bodhi Swaha'
+    : 'Gate, Gate, Paragate, Parasamgate, Bodhi Swaha';
+  const introDedication =
+    'For Sarah Issobel, Maitreya Buddha, Radha & Sita & Meriam /EnaMaTara/, Friends, Family, Freedom Humanity and all the children of this world: ZION is yours. Build a better world where you reach for the stars. The Golden Age begins. Peace & One Love 4ever.';
+  const genesisOverlayLines = cs
+    ? [
+        'Genesis není jen předmluva. Je to okamžik, kdy se jazyk, síť a závazek poprvé dotknou stejného horizontu.',
+        'Proto má Terra Nova na vstupu nést i ceremoniální tíhu počátku, nejen čtecí komfort.',
+      ]
+    : [
+        'Genesis is not only a foreword. It is the instant when language, network, and commitment first touch the same horizon.',
+        'That is why Terra Nova should carry ceremonial weight at the entrance, not only reading comfort.',
+      ];
+  const cliOverlayLines = cs
+    ? [
+        'CLI je zde jako provozní svědomí projektu: připomíná, že vize musí být spustitelná, měřitelná a udržitelná.',
+        'Overlay drží příkazy, boot sekvenci a orientační vrstvu, aby se intro neztratilo po prvním scrollu.',
+      ]
+    : [
+        'The CLI is here as the operational conscience of the project: a reminder that vision must remain runnable, measurable, and sustainable.',
+        'The overlay keeps the commands, boot sequence, and orientation layer present even after the first scroll.',
+      ];
 
   const goTo = useCallback(
     (i: number) => {
@@ -42,19 +183,140 @@ export default function TerraNovaBookClient() {
     [],
   );
 
-  const prev = () => activeChapter > 0 && goTo(activeChapter - 1);
-  const next = () => activeChapter < CHAPTERS.length - 1 && goTo(activeChapter + 1);
+  const prev = useCallback(() => {
+    if (activeChapter > 0) goTo(activeChapter - 1);
+  }, [activeChapter, goTo]);
+
+  const next = useCallback(() => {
+    if (activeChapter < CHAPTERS.length - 1) goTo(activeChapter + 1);
+  }, [activeChapter, goTo]);
 
   /* Keyboard nav */
   useEffect(() => {
+    const interval = window.setInterval(() => {
+      setVisibleBootLines((current) =>
+        current >= BOOT_SEQUENCE.length ? 1 : current + 1,
+      );
+    }, 1150);
+
+    return () => window.clearInterval(interval);
+  }, []);
+
+  /* Typewriter live terminal */
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      const s = twRef.current;
+      const cmd = LIVE_TERMINAL_CMDS[s.cmdIdx];
+      if (s.phase === 'typing') {
+        s.charIdx++;
+        setTwCmdText(cmd.cmd.slice(0, s.charIdx));
+        if (s.charIdx >= cmd.cmd.length) {
+          s.phase = 'resp';
+          s.pauseTicks = 0;
+        }
+      } else if (s.phase === 'resp') {
+        s.pauseTicks++;
+        if (s.pauseTicks === 5) {
+          setTwRespText(cmd.resp);
+          s.phase = 'pause';
+          s.pauseTicks = 0;
+        }
+      } else if (s.phase === 'pause') {
+        s.pauseTicks++;
+        if (s.pauseTicks >= 30) {
+          s.cmdIdx = (s.cmdIdx + 1) % LIVE_TERMINAL_CMDS.length;
+          s.charIdx = 0;
+          s.phase = 'typing';
+          s.pauseTicks = 0;
+          setTwCmdText('');
+          setTwRespText('');
+        }
+      }
+    }, 70);
+    return () => window.clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setTocOpen(false);
+        setOverlayMode(null);
+        return;
+      }
+      if (overlayOpen) {
+        return;
+      }
       if (e.key === 'ArrowLeft') prev();
       if (e.key === 'ArrowRight') next();
-      if (e.key === 'Escape') setTocOpen(false);
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  });
+  }, [next, overlayOpen, prev]);
+
+  useEffect(() => {
+    const onScroll = () => {
+      setShowScrollTop(window.scrollY > 520);
+    };
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    const shouldLock = tocOpen || overlayOpen;
+    if (shouldLock) {
+      document.body.style.overflow = 'hidden';
+    }
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [tocOpen, overlayOpen]);
+
+  useEffect(() => {
+    setActiveSection(0);
+    sectionRefs.current = [];
+  }, [activeChapter, cs]);
+
+  useEffect(() => {
+    const nodes = sectionRefs.current.filter(
+      (node): node is HTMLDivElement => Boolean(node),
+    );
+
+    if (!nodes.length) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((left, right) => right.intersectionRatio - left.intersectionRatio)[0];
+
+        if (!visible) {
+          return;
+        }
+
+        const index = Number((visible.target as HTMLElement).dataset.sectionIndex);
+        if (!Number.isNaN(index)) {
+          setActiveSection(index);
+        }
+      },
+      {
+        rootMargin: '-18% 0px -52% 0px',
+        threshold: [0.15, 0.35, 0.6],
+      },
+    );
+
+    nodes.forEach((node) => observer.observe(node));
+
+    return () => observer.disconnect();
+  }, [activeChapter, cs]);
+
+  const goToSection = useCallback((index: number) => {
+    setActiveSection(index);
+    sectionRefs.current[index]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, []);
 
   const meta = BOOK_META;
 
@@ -68,6 +330,183 @@ export default function TerraNovaBookClient() {
       </div>
 
       <div className="relative z-10 zion-container max-w-5xl">
+        <motion.section
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.65 }}
+          className="mb-12 md:mb-16"
+        >
+          <div className="relative overflow-hidden rounded-4xl border border-zion-gold/15 bg-[radial-gradient(circle_at_top,rgba(251,191,36,0.14),rgba(8,7,12,0.96)_54%,rgba(2,4,10,0.98)_100%)] p-5 shadow-[0_28px_120px_rgba(0,0,0,0.45)] sm:p-6 md:p-8">
+            <div className="pointer-events-none absolute -right-14 -top-14 h-44 w-44 rounded-full bg-zion-gold/10 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-20 left-10 h-52 w-52 rounded-full bg-zion-cyan/8 blur-3xl" />
+
+            <div className="relative grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-start">
+              <div className="space-y-5">
+                <div className="flex flex-wrap gap-2">
+                  {introSignals.map((signal) => (
+                    <span
+                      key={signal}
+                      className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-gray-300"
+                    >
+                      <Sparkles className="h-3 w-3 text-zion-gold" />
+                      {signal}
+                    </span>
+                  ))}
+                </div>
+
+                <div className="space-y-3">
+                  <p className="text-[11px] uppercase tracking-[0.35em] text-zion-gold/80">
+                    {cs ? 'ZION mainnet · v2.9.8 Deeksha · Terra Nova' : 'ZION Mainnet · v2.9.8 Deeksha · Terra Nova'}
+                  </p>
+                  <h2 className="max-w-3xl text-3xl font-semibold leading-tight text-white sm:text-4xl md:text-5xl">
+                    {cs
+                      ? 'ZION je živý. Síť běží. Čtvrtá kniha začíná tady.'
+                      : 'ZION is live. The network runs. The fourth book begins here.'}
+                  </h2>
+                </div>
+
+                <p className="max-w-2xl text-base leading-relaxed text-gray-200 md:text-lg">
+                  {introLead}
+                </p>
+                <p className="max-w-2xl text-sm leading-relaxed text-gray-400 md:text-base">
+                  {introBody}
+                </p>
+
+                <div className="grid gap-2 sm:grid-cols-3">
+                  {introNotes.map((note, index) => (
+                    <div
+                      key={note}
+                      className="rounded-2xl border border-white/8 bg-white/4 p-4"
+                    >
+                      <p className="mb-2 text-[10px] uppercase tracking-[0.28em] text-gray-500">
+                        {`${cs ? 'Vrstva' : 'Layer'} ${index + 1}`}
+                      </p>
+                      <p className="text-sm leading-relaxed text-gray-300">{note}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    onClick={() => {
+                      setTocOpen(false);
+                      setOverlayMode('genesis');
+                    }}
+                      className="inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-zion-gold/90 to-amber-500/80 px-5 py-3 text-sm font-semibold text-black shadow-[0_0_40px_rgba(251,191,36,0.2)] transition-all hover:-translate-y-0.5 hover:shadow-[0_0_60px_rgba(251,191,36,0.35)]"
+                  >
+                    <BookOpen className="h-4 w-4" />
+                    {cs ? 'Otevřít Genesis' : 'Open Genesis'}
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => {
+                      setTocOpen(false);
+                      setOverlayMode('cli');
+                    }}
+                    className="inline-flex items-center gap-2 rounded-2xl border border-zion-cyan/20 bg-zion-cyan/8 px-5 py-3 text-sm font-semibold text-zion-cyan transition-all hover:-translate-y-0.5 hover:bg-zion-cyan/12"
+                  >
+                    <Terminal className="h-4 w-4" />
+                    {cs ? 'Visual Zion CLI panel' : 'Visual ZION CLI Panel'}
+                  </button>
+                  <button
+                    onClick={() => setTocOpen(true)}
+                    className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-white/10"
+                  >
+                    <List className="h-4 w-4" />
+                    {cs ? 'Obsah Terra Novy' : 'Terra Nova Contents'}
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="overflow-hidden rounded-[1.75rem] border border-zion-cyan/20 bg-[#06080d]/90 shadow-[0_20px_80px_rgba(2,8,18,0.6)]">
+                  <div className="flex items-center justify-between border-b border-white/8 px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <span className="h-2.5 w-2.5 rounded-full bg-rose-400" />
+                      <span className="h-2.5 w-2.5 rounded-full bg-amber-300" />
+                      <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
+                    </div>
+                    <div className="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-gray-500">
+                      <Terminal className="h-3.5 w-3.5 text-zion-cyan" />
+                      {cs ? 'Visual Zion CLI' : 'Visual ZION CLI'}
+                    </div>
+                  </div>
+
+                  <div className="space-y-4 px-4 py-4">
+                    <div className="rounded-2xl border border-zion-cyan/15 bg-zion-cyan/6 p-4">
+                      <p className="mb-2 text-[10px] uppercase tracking-[0.28em] text-zion-cyan/70">
+                        {cs ? 'Mainnet launch pulse' : 'Mainnet launch pulse'}
+                      </p>
+                      <pre className="overflow-x-auto whitespace-pre font-mono text-[11px] leading-relaxed text-zion-cyan/90" style={{ fontFamily: '"Courier New", Courier, monospace' }}>
+{GENESIS_BANNER}
+                      </pre>
+                    </div>
+
+                    <div className="rounded-2xl border border-white/8 bg-black/40 p-4">
+                      <p className="mb-3 text-[10px] uppercase tracking-[0.28em] text-gray-500">
+                        {cs ? 'Živý terminál — ZION CLI' : 'Live Terminal — ZION CLI'}
+                      </p>
+                      <div className="min-h-[5.5rem] space-y-2 font-mono text-[12px] text-gray-300">
+                        <div className="rounded-xl bg-white/3 px-3 py-2.5">
+                          <div className="flex gap-3">
+                            <span className="text-zion-gold">$</span>
+                            <span className="break-all">
+                              {twCmdText}
+                              <span className="inline-block w-[2px] h-[13px] bg-zion-cyan/80 animate-pulse align-middle ml-px" />
+                            </span>
+                          </div>
+                          {twRespText && (
+                            <div className="mt-1.5 pl-6 text-[11px] text-emerald-300/80">
+                              ▸ {twRespText}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 px-1 text-[11px] uppercase tracking-[0.24em] text-gray-500">
+                          <span className="inline-block h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                          {cs ? 'orbitální reader online' : 'orbital reader online'}
+                        </div>
+                      </div>
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        <button
+                          onClick={() => setOverlayMode('cli')}
+                          className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/18 bg-zion-cyan/8 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-zion-cyan transition-colors hover:bg-zion-cyan/12"
+                        >
+                          <Terminal className="h-3.5 w-3.5" />
+                          {cs ? 'Rozbalit CLI overlay' : 'Expand CLI Overlay'}
+                        </button>
+                        <Link
+                          href="/docs"
+                          className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/4 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-gray-400 transition-colors hover:text-white hover:bg-white/8"
+                        >
+                          <ArrowRight className="h-3.5 w-3.5" />
+                          Real ZION CLI →
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-[1.75rem] border border-zion-gold/15 bg-[linear-gradient(180deg,rgba(255,215,0,0.08),rgba(255,255,255,0.02))] p-5 shadow-[0_18px_70px_rgba(0,0,0,0.32)]">
+                  <p className="text-[10px] uppercase tracking-[0.32em] text-zion-gold/70">
+                    Genesis.md
+                  </p>
+                  <pre className="mt-3 overflow-x-auto whitespace-pre text-[7px] leading-tight text-zion-gold/30 sm:text-[8px]">{GENESIS_TREE}</pre>
+                  <pre className="mt-3 overflow-x-auto whitespace-pre font-mono text-[10px] leading-relaxed text-zion-gold/85 sm:text-[11px]" style={{ fontFamily: '"Courier New", Courier, monospace' }}>{GENESIS_BANNER}</pre>
+                  <blockquote className="mt-4 border-l-2 border-zion-gold/35 pl-4 text-xs italic leading-relaxed text-gray-300 sm:text-sm">
+                    {introDedication}
+                  </blockquote>
+                  <p className="mt-3 text-[10px] uppercase tracking-[0.28em] text-gray-500">
+                    {introQuote}
+                  </p>
+                  <p className="mt-2 text-[10px] italic text-gray-600">
+                    — Yeshuae / Zion Creator
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.section>
+
         {/* ═══════ BOOK HEADER ═══════ */}
         <motion.header
           initial={{ opacity: 0, y: 20 }}
@@ -197,16 +636,123 @@ export default function TerraNovaBookClient() {
         </motion.section>
 
         {/* ═══════ CHAPTER READER ═══════ */}
-        <div ref={contentRef}>
-          <AnimatePresence mode="wait">
-            <motion.article
-              key={chapter.id}
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.4 }}
-              className="zion-panel rounded-3xl md:rounded-4xl p-6 md:p-10 lg:p-14 relative overflow-hidden"
-            >
+        <div ref={contentRef} className="grid gap-4 md:gap-6 lg:grid-cols-[240px_minmax(0,1fr)] lg:items-start">
+          <div className="lg:hidden sticky top-24 z-20 -mx-1 mb-2">
+            <div className="rounded-2xl border border-white/10 bg-black/70 px-4 py-3 shadow-[0_18px_50px_rgba(0,0,0,0.28)] backdrop-blur-xl">
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-[10px] uppercase tracking-[0.28em] text-gray-500">
+                    {cs ? 'Čtecí režim' : 'Reading Mode'}
+                  </p>
+                  <p className="truncate text-sm font-semibold text-white">
+                    {cs ? chapter.titleCs : chapter.titleEn}
+                  </p>
+                </div>
+                <p className="shrink-0 text-[10px] uppercase tracking-[0.26em] text-gray-500">
+                  {activeChapter + 1} / {CHAPTERS.length}
+                </p>
+              </div>
+
+              <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/6">
+                <div
+                  className="h-full rounded-full transition-all duration-500"
+                  style={{ width: `${progress}%`, backgroundColor: chapter.color }}
+                />
+              </div>
+
+              <button
+                onClick={() => goToSection(activeSection)}
+                className="mt-3 inline-flex max-w-full items-center rounded-full border border-white/10 bg-white/3 px-3 py-1.5 text-[11px] uppercase tracking-[0.24em] text-gray-300"
+              >
+                <span className="truncate">{sectionLabels[activeSection]}</span>
+              </button>
+            </div>
+          </div>
+
+          <aside className="hidden lg:block lg:sticky lg:top-32">
+            <div className="zion-panel rounded-3xl border border-white/10 bg-black/50 p-5 space-y-5 shadow-[0_18px_60px_rgba(0,0,0,0.28)]">
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.35em] text-gray-500">
+                  {cs ? 'Čtecí režim' : 'Reading Mode'}
+                </p>
+                <p className="mt-2 text-sm font-semibold text-white">{chapterLabel}</p>
+                <p className="text-xs text-gray-500">{activeChapter + 1} / {CHAPTERS.length}</p>
+              </div>
+
+              <div className="space-y-2">
+                <div className="h-1.5 rounded-full bg-white/6 overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{ width: `${progress}%`, backgroundColor: chapter.color }}
+                  />
+                </div>
+                <p className="text-[11px] leading-relaxed text-gray-400">
+                  {cs
+                    ? 'Každá kapitola drží jiný rytmus, ale stejnou disciplínu: realita, plán, horizont.'
+                    : 'Each chapter holds a different rhythm, but the same discipline: reality, plan, horizon.'}
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-white/8 bg-white/3 p-4">
+                <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500 mb-2">
+                  {cs ? 'Aktivní kapitola' : 'Current Chapter'}
+                </p>
+                <p className="text-sm font-semibold" style={{ color: chapter.color }}>
+                  {cs ? chapter.titleCs : chapter.titleEn}
+                </p>
+                {chapterEpigraph && (
+                  <p className="mt-3 text-xs leading-relaxed text-gray-400 italic">
+                    {chapterEpigraph}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">
+                  {cs ? 'Sekce kapitoly' : 'Chapter Sections'}
+                </p>
+                <div className="space-y-1.5">
+                  {sectionLabels.map((label, index) => {
+                    const isActive = activeSection === index;
+                    return (
+                      <button
+                        key={`${chapter.id}-section-${index}`}
+                        onClick={() => goToSection(index)}
+                        className="flex w-full items-center gap-2 rounded-2xl px-3 py-2 text-left transition-colors"
+                        style={{
+                          backgroundColor: isActive
+                            ? `rgba(${chapter.rgb},0.1)`
+                            : 'rgba(255,255,255,0.02)',
+                          color: isActive ? chapter.color : 'rgba(255,255,255,0.68)',
+                        }}
+                      >
+                        <span className="text-[10px] font-mono text-gray-500">
+                          {(index + 1).toString().padStart(2, '0')}
+                        </span>
+                        <span className="min-w-0 truncate text-xs">{label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="text-[11px] leading-relaxed text-gray-500 space-y-1">
+                <p>{cs ? 'Sipky vlevo/vpravo: další kapitoly' : 'Left/right arrows: next chapters'}</p>
+                <p>{cs ? 'Esc: zavřít obsah' : 'Esc: close contents'}</p>
+              </div>
+            </div>
+          </aside>
+
+          <div>
+            <AnimatePresence mode="wait">
+              <motion.article
+                key={chapter.id}
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                transition={{ duration: 0.4 }}
+                className="zion-panel relative overflow-hidden rounded-3xl border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.015))] p-5 sm:p-6 md:rounded-4xl md:p-10 lg:p-14 shadow-[0_28px_100px_rgba(0,0,0,0.35)]"
+              >
               {/* Accent glow */}
               <div
                 className="absolute -top-20 -right-20 h-48 w-48 rounded-full blur-[100px] opacity-20"
@@ -214,8 +760,8 @@ export default function TerraNovaBookClient() {
               />
 
               {/* Chapter header */}
-              <div className="relative mb-10">
-                <div className="flex items-center gap-3 mb-4">
+              <div className="relative mb-8 md:mb-10">
+                <div className="flex flex-wrap items-center gap-3 mb-4">
                   <span
                     className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em]"
                     style={{
@@ -226,11 +772,10 @@ export default function TerraNovaBookClient() {
                   >
                     {chapter.subtitleCs && (cs ? chapter.subtitleCs : chapter.subtitleEn)}
                     {!chapter.subtitleCs &&
-                      (chapter.number === 'Prolog'
-                        ? cs
-                          ? 'Prolog'
-                          : 'Prologue'
-                        : `${cs ? 'Část' : 'Part'} ${chapter.number}`)}
+                      chapterLabel}
+                  </span>
+                  <span className="inline-flex items-center rounded-full border border-white/10 bg-white/3 px-3 py-1 text-[10px] uppercase tracking-[0.28em] text-gray-500">
+                    {cs ? meta.editionCs : meta.editionEn}
                   </span>
                   <span className="text-[10px] text-gray-600">
                     {activeChapter + 1} / {CHAPTERS.length}
@@ -238,7 +783,7 @@ export default function TerraNovaBookClient() {
                 </div>
 
                 <h2
-                  className="text-3xl md:text-4xl font-bold"
+                  className="text-2xl sm:text-3xl md:text-4xl font-bold"
                   style={{ color: chapter.color }}
                 >
                   {cs ? chapter.titleCs : chapter.titleEn}
@@ -250,25 +795,94 @@ export default function TerraNovaBookClient() {
                       {cs ? chapter.subtitleCs : chapter.subtitleEn}
                     </p>
                   )}
+
+                {chapterEpigraph && (
+                  <blockquote className="mt-5 max-w-2xl border-l-2 pl-4 text-sm italic leading-relaxed text-gray-300 sm:pl-5 md:text-base" style={{ borderColor: `${chapter.color}66` }}>
+                    {chapterEpigraph}
+                  </blockquote>
+                )}
+
+                <div className="mt-6 space-y-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-[10px] uppercase tracking-[0.32em] text-gray-500">
+                      {cs ? 'Navigace kapitolou' : 'Chapter Navigation'}
+                    </p>
+                    <button
+                      onClick={() => goToSection(activeSection)}
+                      className="text-[10px] uppercase tracking-[0.24em] text-gray-500 hover:text-white transition-colors"
+                    >
+                      {cs ? 'Aktivní sekce' : 'Current section'}
+                    </button>
+                  </div>
+                  <div className="flex gap-2 overflow-x-auto pb-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                    {sectionLabels.map((label, index) => {
+                      const isActive = activeSection === index;
+                      return (
+                        <button
+                          key={`${chapter.id}-pill-${index}`}
+                          onClick={() => goToSection(index)}
+                          className="shrink-0 rounded-full border px-3 py-2 text-[11px] uppercase tracking-[0.22em] transition-colors"
+                          style={{
+                            borderColor: isActive
+                              ? `rgba(${chapter.rgb},0.35)`
+                              : 'rgba(255,255,255,0.08)',
+                            backgroundColor: isActive
+                              ? `rgba(${chapter.rgb},0.12)`
+                              : 'rgba(255,255,255,0.02)',
+                            color: isActive ? chapter.color : 'rgba(255,255,255,0.62)',
+                          }}
+                        >
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
 
               {/* Chapter body */}
-              <div className="relative space-y-8 max-w-3xl">
+              <div className="relative max-w-3xl space-y-7 md:space-y-8">
                 {sections.map((sec, si) => (
-                  <div key={si}>
+                  <div
+                    key={si}
+                    ref={(node) => {
+                      sectionRefs.current[si] = node;
+                    }}
+                    data-section-index={si}
+                    id={`${chapter.id}-section-${si}`}
+                    className="scroll-mt-36"
+                  >
                     {sec.heading && (
-                      <h3 className="text-lg md:text-xl font-semibold text-white mb-3">
+                      <h3 className="mb-3 text-base font-semibold text-white sm:text-lg md:text-xl">
                         {sec.heading}
                       </h3>
                     )}
-                    {sec.body.split('\n\n').map((para, pi) => (
-                      <p
-                        key={pi}
-                        className="text-gray-300 leading-[1.85] text-[15px] md:text-base mb-4 last:mb-0"
-                      >
-                        {para}
-                      </p>
-                    ))}
+                    {sec.body.split('\n\n').map((para, pi) => {
+                      const isLeadParagraph = si === 0 && pi === 0;
+                      const leadCharacter = para.charAt(0);
+                      const body = para.slice(1);
+
+                      return (
+                        <p
+                          key={pi}
+                          className={`mb-4 text-[15px] leading-[1.9] text-gray-300 last:mb-0 sm:text-[16px] md:text-[17px] md:leading-[1.92] ${isLeadParagraph ? 'text-gray-200' : ''}`}
+                        >
+                          {isLeadParagraph ? (
+                            <>
+                              <span
+                                className="float-left mr-3 mt-1 text-4xl font-semibold leading-none sm:text-5xl md:text-6xl"
+                                style={{ color: chapter.color }}
+                              >
+                                {leadCharacter}
+                              </span>
+                              {body}
+                            </>
+                          ) : (
+                            para
+                          )}
+                        </p>
+                      );
+                    })}
                   </div>
                 ))}
               </div>
@@ -290,7 +904,7 @@ export default function TerraNovaBookClient() {
               )}
 
               {/* ── Chapter navigation ── */}
-              <div className="mt-12 pt-6 border-t border-white/5 flex items-center justify-between">
+              <div className="mt-10 flex items-center justify-between border-t border-white/5 pt-6 md:mt-12">
                 <button
                   onClick={prev}
                   disabled={activeChapter === 0}
@@ -325,8 +939,9 @@ export default function TerraNovaBookClient() {
                   <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
-            </motion.article>
-          </AnimatePresence>
+              </motion.article>
+            </AnimatePresence>
+          </div>
         </div>
 
         {/* ═══════ FOOTER ═══════ */}
@@ -433,6 +1048,220 @@ export default function TerraNovaBookClient() {
               </div>
             </motion.div>
           </>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {overlayMode && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-60 bg-black/72 backdrop-blur-md"
+              onClick={() => setOverlayMode(null)}
+            />
+            <motion.div
+              initial={{ opacity: 0, y: 24, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 16, scale: 0.98 }}
+              transition={{ duration: 0.24 }}
+              className="fixed inset-x-3 top-[6vh] z-70 mx-auto max-h-[88vh] w-full max-w-4xl overflow-hidden rounded-4xl border border-white/10 bg-[#04060b]/95 shadow-[0_30px_120px_rgba(0,0,0,0.58)] sm:inset-x-4 sm:top-[8vh] sm:max-h-[84vh]"
+            >
+              <div className="flex flex-wrap items-start justify-between gap-3 border-b border-white/8 px-4 py-4 sm:px-6">
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">
+                    {cs ? 'Terra Nova overlay' : 'Terra Nova Overlay'}
+                  </p>
+                  <h3 className="mt-1 text-lg font-semibold text-white">
+                    {overlayMode === 'genesis'
+                      ? cs
+                        ? 'Genesis panel uvnitř Terra Novy'
+                        : 'Genesis Panel Inside Terra Nova'
+                      : cs
+                        ? 'Visual Zion CLI panel'
+                        : 'Visual ZION CLI Panel'}
+                  </h3>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={() => setOverlayMode('genesis')}
+                    className="rounded-full border px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.22em] transition-colors"
+                    style={{
+                      borderColor:
+                        overlayMode === 'genesis' ? 'rgba(251,191,36,0.35)' : 'rgba(255,255,255,0.1)',
+                      backgroundColor:
+                        overlayMode === 'genesis' ? 'rgba(251,191,36,0.12)' : 'rgba(255,255,255,0.03)',
+                      color: overlayMode === 'genesis' ? 'rgb(251,191,36)' : 'rgba(255,255,255,0.75)',
+                    }}
+                  >
+                    Genesis.md
+                  </button>
+                  <button
+                    onClick={() => setOverlayMode('cli')}
+                    className="rounded-full border px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.22em] transition-colors"
+                    style={{
+                      borderColor:
+                        overlayMode === 'cli' ? 'rgba(34,211,238,0.35)' : 'rgba(255,255,255,0.1)',
+                      backgroundColor:
+                        overlayMode === 'cli' ? 'rgba(34,211,238,0.12)' : 'rgba(255,255,255,0.03)',
+                      color: overlayMode === 'cli' ? 'rgb(34,211,238)' : 'rgba(255,255,255,0.75)',
+                    }}
+                  >
+                    ZION CLI
+                  </button>
+                  <button
+                    onClick={() => setOverlayMode(null)}
+                    className="rounded-xl border border-white/10 p-2 text-gray-400 transition-colors hover:text-white"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="max-h-[calc(84vh-84px)] overflow-y-auto px-5 py-5 sm:px-6 sm:py-6">
+                {overlayMode === 'genesis' ? (
+                  <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]">
+                    <div className="rounded-3xl border border-zion-gold/18 bg-[linear-gradient(180deg,rgba(251,191,36,0.08),rgba(255,255,255,0.02))] p-5">
+                      <p className="text-[10px] uppercase tracking-[0.32em] text-zion-gold/70">
+                        Genesis.md
+                      </p>
+                      <pre className="mt-3 overflow-x-auto whitespace-pre text-[7px] leading-tight text-zion-gold/28 sm:text-[8px]">{GENESIS_TREE}</pre>
+                      <pre className="mt-4 overflow-x-auto whitespace-pre font-mono text-[10px] leading-relaxed text-zion-gold/90 sm:text-[11px]" style={{ fontFamily: '"Courier New", Courier, monospace' }}>
+{GENESIS_BANNER}
+                      </pre>
+                      <blockquote className="mt-5 border-l-2 border-zion-gold/35 pl-4 text-sm italic leading-relaxed text-gray-300">
+                        {introDedication}
+                      </blockquote>
+                      <p className="mt-4 text-xs uppercase tracking-[0.28em] text-gray-500">
+                        {introQuote}
+                      </p>
+                      <p className="mt-2 text-[11px] italic text-gray-600">
+                        — Yeshuae / Zion Creator | Om Namo Hiranyagarbha
+                      </p>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="rounded-3xl border border-white/10 bg-white/3 p-5">
+                        <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">
+                          {cs ? 'Proč je to tady' : 'Why It Lives Here'}
+                        </p>
+                        <div className="mt-4 space-y-3 text-sm leading-relaxed text-gray-300">
+                          {genesisOverlayLines.map((line) => (
+                            <p key={line}>{line}</p>
+                          ))}
+                        </div>
+                      </div>
+
+                      <Link
+                        href="/genesis"
+                        className="inline-flex items-center gap-2 rounded-2xl border border-zion-gold/20 bg-zion-gold/8 px-4 py-3 text-sm font-semibold text-zion-gold transition-colors hover:bg-zion-gold/12"
+                        onClick={() => setOverlayMode(null)}
+                      >
+                        <BookOpen className="h-4 w-4" />
+                        {cs ? 'Přejít na plnou Genesis stránku' : 'Open Full Genesis Page'}
+                        <ArrowRight className="h-4 w-4" />
+                      </Link>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]">
+                    <div className="overflow-hidden rounded-3xl border border-zion-cyan/20 bg-[#050910]">
+                      <div className="flex items-center justify-between border-b border-white/8 px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <span className="h-2.5 w-2.5 rounded-full bg-rose-400" />
+                          <span className="h-2.5 w-2.5 rounded-full bg-amber-300" />
+                          <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
+                        </div>
+                        <div className="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-zion-cyan/70">
+                          <Terminal className="h-3.5 w-3.5" />
+                          {cs ? 'Visual Zion CLI' : 'Visual ZION CLI'}
+                        </div>
+                      </div>
+                      <div className="space-y-3 p-4 font-mono text-[12px] text-gray-200">
+                        {BOOT_SEQUENCE.map((line) => (
+                          <div key={line.command} className="rounded-2xl border border-white/7 bg-white/3 px-3 py-3">
+                            <div className="flex gap-3">
+                              <span className="text-zion-gold">$</span>
+                              <span className="break-all">{line.command}</span>
+                            </div>
+                            <div className="mt-2 pl-6 text-[11px] uppercase tracking-[0.22em] text-emerald-300/75">
+                              {cs ? line.responseCs : line.responseEn}
+                            </div>
+                          </div>
+                        ))}
+
+                        <div className="rounded-2xl border border-zion-cyan/15 bg-zion-cyan/7 p-4">
+                          <p className="text-[10px] uppercase tracking-[0.3em] text-zion-cyan/75">
+                            {cs ? 'Ruční příkazy' : 'Manual Commands'}
+                          </p>
+                          <div className="mt-3 space-y-2 text-gray-300">
+                            {CLI_PRESET.map((line) => (
+                              <div key={line} className="flex gap-3">
+                                <span className="text-zion-gold">$</span>
+                                <span className="break-all">{line}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="rounded-3xl border border-white/10 bg-white/3 p-5">
+                        <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">
+                          {cs ? 'Proč je to tady' : 'Why It Lives Here'}
+                        </p>
+                        <div className="mt-4 space-y-3 text-sm leading-relaxed text-gray-300">
+                          {cliOverlayLines.map((line) => (
+                            <p key={line}>{line}</p>
+                          ))}
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          setOverlayMode(null);
+                          setTocOpen(true);
+                        }}
+                        className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10"
+                      >
+                        <List className="h-4 w-4" />
+                        {cs ? 'Přejít do obsahu Terra Novy' : 'Open Terra Nova Contents'}
+                      </button>
+
+                      <Link
+                        href="/docs"
+                        className="inline-flex items-center gap-2 rounded-2xl border border-zion-cyan/20 bg-zion-cyan/8 px-4 py-3 text-sm font-semibold text-zion-cyan transition-colors hover:bg-zion-cyan/12"
+                        onClick={() => setOverlayMode(null)}
+                      >
+                        <Terminal className="h-4 w-4" />
+                        {cs ? 'Real ZION CLI dokumentace' : 'Real ZION CLI Docs'}
+                        <ArrowRight className="h-4 w-4" />
+                      </Link>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showScrollTop && !tocOpen && !overlayOpen && (
+          <motion.button
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 12 }}
+            transition={{ duration: 0.2 }}
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            className="fixed bottom-5 right-5 z-30 inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/70 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-gray-200 shadow-[0_10px_35px_rgba(0,0,0,0.35)] backdrop-blur-lg transition-colors hover:bg-black/80"
+          >
+            <ChevronLeft className="h-3.5 w-3.5 rotate-90" />
+            {cs ? 'Nahoru' : 'Top'}
+          </motion.button>
         )}
       </AnimatePresence>
     </div>
