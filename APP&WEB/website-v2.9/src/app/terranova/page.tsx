@@ -2,13 +2,13 @@ import type { Metadata } from 'next';
 import TerraNovaBookClient from './TerraNovaBookClient';
 
 export const metadata: Metadata = {
-  title: 'Terra Nova — Zlatý Kompas Nové Země · ZION',
+  title: 'Terra Nova — více edic knihy ZION · ZION',
   description:
-    'Terra Nova: sjednocená webová edice knihy ZION, která slučuje ORG, Public a Claude vrstvu do jedné čitelné knihy od prahu Nové Země až po Issobellu a Zlatý Kompas.',
+    'Terra Nova ve webové čtečce ZION: organická ORG větev, technická FINAL/Cloud edice a sci-fi Gemini odysea v jednom lokálním readeru.',
   openGraph: {
-    title: 'Terra Nova — Zlatý Kompas Nové Země',
+    title: 'Terra Nova — ORG, FINAL a Gemini',
     description:
-      'Sjednocená Terra Nova edice na webu: ORG + Public + Claude v jedné čtečce.',
+      'Lokální čtečka Terra Novy se třemi verzemi: ORG, FINAL/Cloud a Gemini sci-fi odysea.',
   },
 };
 
