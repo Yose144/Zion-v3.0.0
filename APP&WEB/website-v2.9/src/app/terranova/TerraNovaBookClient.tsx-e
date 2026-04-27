@@ -15,145 +15,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useLang } from '@/contexts/LanguageContext';
-import { CHAPTERS } from './bookData';
-import { EDITIONS_DATA } from './generatedEditions';
-import type { BookChapter } from './bookData';
-
-type EditionKey = 'org' | 'final' | 'gemini';
-
-type EditionMeta = {
-  titleCs: string;
-  titleEn: string;
-  subtitleCs: string;
-  subtitleEn: string;
-  editionCs: string;
-  editionEn: string;
-  aboutCs: string;
-  aboutEn: string;
-  layersCs: string;
-  layersEn: string;
-  dedicationCs: string;
-  dedicationEn: string;
-};
-
-const APPENDIX_NUMBERS = new Set(['A', 'B', 'C', 'D']);
-
-const EDITION_OPTIONS: Array<{
-  id: EditionKey;
-  nameCs: string;
-  nameEn: string;
-  color: string;
-  bg: string;
-  border: string;
-}> = [
-  {
-    id: 'org',
-    nameCs: 'ORG větev',
-    nameEn: 'ORG Branch',
-    color: '#32CD32',
-    bg: 'rgba(50,205,50,0.1)',
-    border: 'rgba(50,205,50,0.3)',
-  },
-  {
-    id: 'final',
-    nameCs: 'Cloud / FINAL',
-    nameEn: 'Cloud / FINAL',
-    color: '#00BFFF',
-    bg: 'rgba(0,191,255,0.1)',
-    border: 'rgba(0,191,255,0.3)',
-  },
-  {
-    id: 'gemini',
-    nameCs: 'Gemini Odysea',
-    nameEn: 'Gemini Odyssey',
-    color: '#8A2BE2',
-    bg: 'rgba(138,43,226,0.15)',
-    border: 'rgba(138,43,226,0.4)',
-  },
-];
-
-const EDITION_META: Record<EditionKey, EditionMeta> = {
-  org: {
-    titleCs: 'Terra Nova',
-    titleEn: 'Terra Nova',
-    subtitleCs: 'Organická redakce původní linie',
-    subtitleEn: 'Organic redaction of the original line',
-    editionCs: 'ORG edice · uhlazená organická větev · Praha, duben 2026',
-    editionEn: 'ORG edition · polished organic branch · Prague, April 2026',
-    aboutCs:
-      'Tato větev drží Terra Novu v nejklidnější a nejorganictější podobě. Text je očištěnější, méně explikuje technologické detaily a víc nese rytmus knihy jako civilizačního kompasu.',
-    aboutEn:
-      'This branch keeps Terra Nova in its calmest and most organic form. The text is cleaner, less explicit about technical details, and carries the rhythm of the book as a civilizational compass.',
-    layersCs:
-      'ORG verze je vhodná tam, kde má čtenář nejdřív vstoupit do jazyka, směru a vnitřní osy projektu. Technická vrstva zůstává přítomná, ale nepřebíjí hlas knihy.',
-    layersEn:
-      'The ORG version works where the reader should first enter the language, direction, and inner axis of the project. The technical layer stays present, but does not overpower the voice of the book.',
-    dedicationCs:
-      'Pro Sarah Issobel, Maitreyu Buddhu, Radhu & Situ i Meriam,\npřátele, rodinu, svobodné lidstvo a všechny děti tohoto světa:\nZION je váš. Stavte lepší svět, a dosáhnete ke hvězdám.\nZlatý věk začíná.',
-    dedicationEn:
-      'For Sarah Issobel, Maitreya Buddha, Radhu & Situ and Meriam /EnaMaTara/,\nfriends, family, free humanity, and all the children of this world:\nZION is yours. Build a better world where you reach for the stars.\nThe Golden Age begins.',
-  },
-  final: {
-    titleCs: 'Terra Nova',
-    titleEn: 'Terra Nova',
-    subtitleCs: 'Technická a realistická cloudová větev',
-    subtitleEn: 'Technical and realistic cloud branch',
-    editionCs: 'FINAL edice · technická větev od Claude/Cloud · Praha, duben 2026',
-    editionEn: 'FINAL edition · technical branch from Claude/Cloud · Prague, April 2026',
-    aboutCs:
-      'FINAL větev drží Terra Novu jako provozně čitelnou knihu. Přibližuje architekturu, stavby, roadmapovou disciplínu a to, co je v síti skutečně realizovatelné už nyní.',
-    aboutEn:
-      'The FINAL branch keeps Terra Nova as an operationally readable book. It leans into architecture, builds, roadmap discipline, and what is realistically executable in the network now.',
-    layersCs:
-      'Tahle verze je vhodná pro inženýrské čtení: víc uzemněná, konkrétnější a méně mytická. Pořád však zůstává součástí stejné civilizační linie.',
-    layersEn:
-      'This version fits engineering-oriented reading: more grounded, more concrete, and less mythic. It still remains part of the same civilizational line.',
-    dedicationCs:
-      'Pro Sarah Issobel, Maitreyu Buddhu, Radhu & Situ i Meriam,\npřátele, rodinu, svobodné lidstvo a všechny děti tohoto světa:\nZION je váš. Stavte lepší svět, a dosáhnete ke hvězdám.\nZlatý věk začíná.',
-    dedicationEn:
-      'For Sarah Issobel, Maitreya Buddha, Radhu & Situ and Meriam /EnaMaTara/,\nfriends, family, free humanity, and all the children of this world:\nZION is yours. Build a better world where you reach for the stars.\nThe Golden Age begins.',
-  },
-  gemini: {
-    titleCs: 'Terra Nova',
-    titleEn: 'Terra Nova',
-    subtitleCs: 'Vesmírná odysea a sci-fi příběh projektu ZION',
-    subtitleEn: 'Space odyssey and sci-fi narrative of the ZION project',
-    editionCs: 'Gemini edice · sci-fi příběh přímo v UI · Praha, duben 2026',
-    editionEn: 'Gemini edition · sci-fi story directly in the UI · Prague, April 2026',
-    aboutCs:
-      'Gemini větev bere stejné ideje a nechává je dýchat jako kosmický příběh. Je nejvíc narativní, obrazná a mytická, ale pořád ukotvená ve stejné ose Terra Novy.',
-    aboutEn:
-      'The Gemini branch takes the same ideas and lets them breathe as a cosmic story. It is the most narrative, visual, and mythic edition, while still anchored in the same Terra Nova axis.',
-    layersCs:
-      'Tato verze slouží tam, kde má UI nést i sci-fi rozměr projektu. Čtenáře vede přes příběh, ne přes specifikaci, a proto potřebuje vlastní hlavičku i tón.',
-    layersEn:
-      'This version serves where the UI should also carry the project’s sci-fi dimension. It guides the reader through story rather than specification, so it needs its own header and tone.',
-    dedicationCs:
-      'Pro Sarah Issobel, Maitreyu Buddhu, Radhu & Situ i Meriam,\npřátele, rodinu, svobodné lidstvo a všechny děti tohoto světa:\nZION je váš. Stavte lepší svět, a dosáhnete ke hvězdám.\nZlatý věk začíná.',
-    dedicationEn:
-      'For Sarah Issobel, Maitreya Buddha, Radhu & Situ and Meriam /EnaMaTara/,\nfriends, family, free humanity, and all the children of this world:\nZION is yours. Build a better world where you reach for the stars.\nThe Golden Age begins.',
-  },
-};
-
-const EDITION_CHAPTERS: Record<EditionKey, BookChapter[]> = {
-  org: EDITIONS_DATA.org ?? CHAPTERS,
-  final: EDITIONS_DATA.final ?? CHAPTERS,
-  gemini: EDITIONS_DATA.gemini ?? CHAPTERS,
-};
-
-function formatChapterLabel(chapter: BookChapter, cs: boolean) {
-  const title = cs ? chapter.titleCs : chapter.titleEn;
-
-  if (chapter.number === 'Prolog') {
-    return `${cs ? 'Prolog' : 'Prologue'} — ${title}`;
-  }
-
-  if (APPENDIX_NUMBERS.has(chapter.number)) {
-    return `${cs ? 'Příloha' : 'Appendix'} ${chapter.number} — ${title}`;
-  }
-
-  return `${cs ? 'Část' : 'Part'} ${chapter.number} — ${title}`;
-}
+// Import removed
 
 /* ═══════════════════════════════════════════════════════════
    L1-L6 Acceleration Map (Issobella Compass)
@@ -377,6 +239,10 @@ function IssobellaCompass({ selected, onSelect }: { selected: number | null, onS
   );
 }
 
+import { BOOK_META, CHAPTERS } from './bookData';
+import { EDITIONS_DATA } from './generatedEditions';
+import type { BookChapter } from './bookData';
+
 /* ═══════════════════════════════════════════════════════════
    Terra Nova — Public Book Reader
    Full bilingual reader with chapter navigation
@@ -506,11 +372,6 @@ const VISION_20Y_STEPS = [
 export default function TerraNovaBookClient() {
   const { lang } = useLang();
   const cs = lang === 'cs';
-
-  const [activeEdition, setActiveEdition] = useState<EditionKey>('final');
-  const currentChapters = EDITION_CHAPTERS[activeEdition];
-  const meta = EDITION_META[activeEdition];
-  const compositionLines = currentChapters.map((entry) => formatChapterLabel(entry, cs));
 
   const [activeChapter, setActiveChapter] = useState<number>(0);
   const [activeSection, setActiveSection] = useState<number>(0);
@@ -687,13 +548,7 @@ export default function TerraNovaBookClient() {
   useEffect(() => {
     setActiveSection(0);
     sectionRefs.current = [];
-  }, [activeChapter, activeEdition, cs]);
-
-  useEffect(() => {
-    if (activeChapter >= currentChapters.length) {
-      setActiveChapter(0);
-    }
-  }, [activeChapter, currentChapters.length]);
+  }, [activeChapter, cs]);
 
   useEffect(() => {
     const nodes = sectionRefs.current.filter(
@@ -734,6 +589,8 @@ export default function TerraNovaBookClient() {
     setActiveSection(index);
     sectionRefs.current[index]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, []);
+
+  const meta = BOOK_META;
 
   return (
     <div className="zion-shell min-h-screen pt-24 md:pt-28 pb-24 overflow-x-hidden">
@@ -861,13 +718,13 @@ export default function TerraNovaBookClient() {
                       <p className="mb-3 text-[10px] uppercase tracking-[0.28em] text-gray-500">
                         {cs ? 'Živý terminál — ZION CLI' : 'Live Terminal — ZION CLI'}
                       </p>
-                      <div className="min-h-22 space-y-2 font-mono text-[12px] text-gray-300">
+                      <div className="min-h-[5.5rem] space-y-2 font-mono text-[12px] text-gray-300">
                         <div className="rounded-xl bg-white/3 px-3 py-2.5">
                           <div className="flex gap-3">
                             <span className="text-zion-gold">$</span>
                             <span className="break-all">
                               {twCmdText}
-                              <span className="inline-block h-[13px] w-0.5 bg-zion-cyan/80 animate-pulse align-middle ml-px" />
+                              <span className="inline-block w-[2px] h-[13px] bg-zion-cyan/80 animate-pulse align-middle ml-px" />
                             </span>
                           </div>
                           {twRespText && (
@@ -1182,7 +1039,7 @@ export default function TerraNovaBookClient() {
                 {cs ? 'Kompoziční mapa' : 'Compositional Map'}
               </p>
               <ol className="space-y-1.5">
-                {compositionLines.map((line, i) => (
+                {(cs ? meta.compositionCs : meta.compositionEn).map((line, i) => (
                   <li key={i} className="text-sm text-gray-400 flex items-start gap-2">
                     <span className="text-zion-gold/60 font-mono text-xs mt-0.5">{i + 1}.</span>
                     <span>{line}</span>
@@ -1190,49 +1047,6 @@ export default function TerraNovaBookClient() {
                 ))}
               </ol>
             </div>
-          </div>
-        </motion.section>
-
-        {/* ═══════ EDITION SELECTOR ═══════ */}
-        <motion.section
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4, duration: 0.6 }}
-          className="mb-12 border-y border-white/5 py-8"
-        >
-          <div className="text-center mb-6">
-            <h3 className="text-[10px] uppercase tracking-[0.4em] text-zion-gold/80 font-mono mb-3">
-              {cs ? 'Režim čtení' : 'Reading Mode'}
-            </h3>
-            <p className="text-sm text-gray-400 max-w-2xl mx-auto leading-relaxed">
-              {cs
-                ? 'Přepínejte mezi třemi skutečnými verzemi Terra Novy: organickou, technickou a sci-fi narativní. Hlavička i obsah se teď přepínají spolu.'
-                : 'Switch between the three actual Terra Nova editions: organic, technical, and sci-fi narrative. The header and contents now switch together.'}
-            </p>
-          </div>
-
-          <div className="flex flex-wrap justify-center gap-3">
-            {EDITION_OPTIONS.map((ed) => (
-              <button
-                key={ed.id}
-                onClick={() => {
-                  setActiveEdition(ed.id);
-                  setActiveChapter(0);
-                  setActiveSection(0);
-                }}
-                className="px-5 py-3 rounded-2xl border text-sm font-medium transition-all flex items-center gap-2 relative overflow-hidden"
-                style={{
-                  backgroundColor: activeEdition === ed.id ? ed.bg : 'rgba(0,0,0,0.4)',
-                  borderColor: activeEdition === ed.id ? ed.border : 'rgba(255,255,255,0.08)',
-                  color: activeEdition === ed.id ? ed.color : 'rgba(255,255,255,0.5)',
-                }}
-              >
-                {activeEdition === ed.id && (
-                  <motion.div layoutId="activeEditionGlow" className="absolute inset-0 bg-white/5 opacity-50" />
-                )}
-                <span className="relative z-10">{cs ? ed.nameCs : ed.nameEn}</span>
-              </button>
-            ))}
           </div>
         </motion.section>
 
@@ -1280,7 +1094,11 @@ export default function TerraNovaBookClient() {
                       className="text-sm font-semibold truncate transition-colors"
                       style={{ color: isActive ? ch.color : 'rgba(255,255,255,0.65)' }}
                     >
-                      {formatChapterLabel(ch, cs)}
+                      {isAppendix
+                        ? `${cs ? 'Příloha' : 'Appendix'} ${ch.number} — ${cs ? ch.titleCs : ch.titleEn}`
+                        : ch.number === 'Prolog'
+                        ? `${cs ? 'Prolog' : 'Prologue'} — ${cs ? ch.titleCs : ch.titleEn}`
+                        : `${cs ? 'Část' : 'Part'} ${ch.number} — ${cs ? ch.titleCs : ch.titleEn}`}
                     </p>
                   </div>
                 </button>
