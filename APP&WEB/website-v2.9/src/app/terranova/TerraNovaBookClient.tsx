@@ -15,8 +15,367 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useLang } from '@/contexts/LanguageContext';
-import { BOOK_META, CHAPTERS } from './bookData';
+import { CHAPTERS } from './bookData';
+import { EDITIONS_DATA } from './generatedEditions';
 import type { BookChapter } from './bookData';
+
+type EditionKey = 'org' | 'final' | 'gemini';
+
+type EditionMeta = {
+  titleCs: string;
+  titleEn: string;
+  subtitleCs: string;
+  subtitleEn: string;
+  editionCs: string;
+  editionEn: string;
+  aboutCs: string;
+  aboutEn: string;
+  layersCs: string;
+  layersEn: string;
+  dedicationCs: string;
+  dedicationEn: string;
+};
+
+const APPENDIX_NUMBERS = new Set(['A', 'B', 'C', 'D']);
+
+const EDITION_OPTIONS: Array<{
+  id: EditionKey;
+  nameCs: string;
+  nameEn: string;
+  color: string;
+  bg: string;
+  border: string;
+}> = [
+  {
+    id: 'org',
+    nameCs: 'ORG větev',
+    nameEn: 'ORG Branch',
+    color: '#32CD32',
+    bg: 'rgba(50,205,50,0.1)',
+    border: 'rgba(50,205,50,0.3)',
+  },
+  {
+    id: 'final',
+    nameCs: 'Cloud / FINAL',
+    nameEn: 'Cloud / FINAL',
+    color: '#00BFFF',
+    bg: 'rgba(0,191,255,0.1)',
+    border: 'rgba(0,191,255,0.3)',
+  },
+  {
+    id: 'gemini',
+    nameCs: 'Gemini Odysea',
+    nameEn: 'Gemini Odyssey',
+    color: '#8A2BE2',
+    bg: 'rgba(138,43,226,0.15)',
+    border: 'rgba(138,43,226,0.4)',
+  },
+];
+
+const EDITION_META: Record<EditionKey, EditionMeta> = {
+  org: {
+    titleCs: 'Terra Nova',
+    titleEn: 'Terra Nova',
+    subtitleCs: 'Organická redakce původní linie',
+    subtitleEn: 'Organic redaction of the original line',
+    editionCs: 'ORG edice · uhlazená organická větev · Praha, duben 2026',
+    editionEn: 'ORG edition · polished organic branch · Prague, April 2026',
+    aboutCs:
+      'Tato větev drží Terra Novu v nejklidnější a nejorganictější podobě. Text je očištěnější, méně explikuje technologické detaily a víc nese rytmus knihy jako civilizačního kompasu.',
+    aboutEn:
+      'This branch keeps Terra Nova in its calmest and most organic form. The text is cleaner, less explicit about technical details, and carries the rhythm of the book as a civilizational compass.',
+    layersCs:
+      'ORG verze je vhodná tam, kde má čtenář nejdřív vstoupit do jazyka, směru a vnitřní osy projektu. Technická vrstva zůstává přítomná, ale nepřebíjí hlas knihy.',
+    layersEn:
+      'The ORG version works where the reader should first enter the language, direction, and inner axis of the project. The technical layer stays present, but does not overpower the voice of the book.',
+    dedicationCs:
+      'Pro Sarah Issobel, Maitreyu Buddhu, Radhu & Situ i Meriam,\npřátele, rodinu, svobodné lidstvo a všechny děti tohoto světa:\nZION je váš. Stavte lepší svět, a dosáhnete ke hvězdám.\nZlatý věk začíná.',
+    dedicationEn:
+      'For Sarah Issobel, Maitreya Buddha, Radhu & Situ and Meriam /EnaMaTara/,\nfriends, family, free humanity, and all the children of this world:\nZION is yours. Build a better world where you reach for the stars.\nThe Golden Age begins.',
+  },
+  final: {
+    titleCs: 'Terra Nova',
+    titleEn: 'Terra Nova',
+    subtitleCs: 'Technická a realistická cloudová větev',
+    subtitleEn: 'Technical and realistic cloud branch',
+    editionCs: 'FINAL edice · technická větev od Claude/Cloud · Praha, duben 2026',
+    editionEn: 'FINAL edition · technical branch from Claude/Cloud · Prague, April 2026',
+    aboutCs:
+      'FINAL větev drží Terra Novu jako provozně čitelnou knihu. Přibližuje architekturu, stavby, roadmapovou disciplínu a to, co je v síti skutečně realizovatelné už nyní.',
+    aboutEn:
+      'The FINAL branch keeps Terra Nova as an operationally readable book. It leans into architecture, builds, roadmap discipline, and what is realistically executable in the network now.',
+    layersCs:
+      'Tahle verze je vhodná pro inženýrské čtení: víc uzemněná, konkrétnější a méně mytická. Pořád však zůstává součástí stejné civilizační linie.',
+    layersEn:
+      'This version fits engineering-oriented reading: more grounded, more concrete, and less mythic. It still remains part of the same civilizational line.',
+    dedicationCs:
+      'Pro Sarah Issobel, Maitreyu Buddhu, Radhu & Situ i Meriam,\npřátele, rodinu, svobodné lidstvo a všechny děti tohoto světa:\nZION je váš. Stavte lepší svět, a dosáhnete ke hvězdám.\nZlatý věk začíná.',
+    dedicationEn:
+      'For Sarah Issobel, Maitreya Buddha, Radhu & Situ and Meriam /EnaMaTara/,\nfriends, family, free humanity, and all the children of this world:\nZION is yours. Build a better world where you reach for the stars.\nThe Golden Age begins.',
+  },
+  gemini: {
+    titleCs: 'Terra Nova',
+    titleEn: 'Terra Nova',
+    subtitleCs: 'Vesmírná odysea a sci-fi příběh projektu ZION',
+    subtitleEn: 'Space odyssey and sci-fi narrative of the ZION project',
+    editionCs: 'Gemini edice · sci-fi příběh přímo v UI · Praha, duben 2026',
+    editionEn: 'Gemini edition · sci-fi story directly in the UI · Prague, April 2026',
+    aboutCs:
+      'Gemini větev bere stejné ideje a nechává je dýchat jako kosmický příběh. Je nejvíc narativní, obrazná a mytická, ale pořád ukotvená ve stejné ose Terra Novy.',
+    aboutEn:
+      'The Gemini branch takes the same ideas and lets them breathe as a cosmic story. It is the most narrative, visual, and mythic edition, while still anchored in the same Terra Nova axis.',
+    layersCs:
+      'Tato verze slouží tam, kde má UI nést i sci-fi rozměr projektu. Čtenáře vede přes příběh, ne přes specifikaci, a proto potřebuje vlastní hlavičku i tón.',
+    layersEn:
+      'This version serves where the UI should also carry the project’s sci-fi dimension. It guides the reader through story rather than specification, so it needs its own header and tone.',
+    dedicationCs:
+      'Pro Sarah Issobel, Maitreyu Buddhu, Radhu & Situ i Meriam,\npřátele, rodinu, svobodné lidstvo a všechny děti tohoto světa:\nZION je váš. Stavte lepší svět, a dosáhnete ke hvězdám.\nZlatý věk začíná.',
+    dedicationEn:
+      'For Sarah Issobel, Maitreya Buddha, Radhu & Situ and Meriam /EnaMaTara/,\nfriends, family, free humanity, and all the children of this world:\nZION is yours. Build a better world where you reach for the stars.\nThe Golden Age begins.',
+  },
+};
+
+const EDITION_CHAPTERS: Record<EditionKey, BookChapter[]> = {
+  org: EDITIONS_DATA.org ?? CHAPTERS,
+  final: EDITIONS_DATA.final ?? CHAPTERS,
+  gemini: EDITIONS_DATA.gemini ?? CHAPTERS,
+};
+
+function formatChapterLabel(chapter: BookChapter, cs: boolean) {
+  const title = cs ? chapter.titleCs : chapter.titleEn;
+
+  if (chapter.number === 'Prolog') {
+    return `${cs ? 'Prolog' : 'Prologue'} — ${title}`;
+  }
+
+  if (APPENDIX_NUMBERS.has(chapter.number)) {
+    return `${cs ? 'Příloha' : 'Appendix'} ${chapter.number} — ${title}`;
+  }
+
+  return `${cs ? 'Část' : 'Part'} ${chapter.number} — ${title}`;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   L1-L6 Acceleration Map (Issobella Compass)
+   ═══════════════════════════════════════════════════════════ */
+export interface AccelerationDirection {
+  id: string;
+  titleCs: string;
+  titleEn: string;
+  descCs: string;
+  descEn: string;
+  color: string;
+  rgb: string;
+  symbol: string;
+}
+
+export const ACCELERATION_DIRECTIONS: AccelerationDirection[] = [
+  {
+    id: 'l1',
+    titleCs: 'L1 Genesis (2026)',
+    titleEn: 'L1 Genesis (2026)',
+    descCs: 'Čistý Rust codebase, Mainnet launch, stabilní runtime a desktop agent.',
+    descEn: 'Clean Rust codebase, Mainnet launch, stable runtime and desktop agent.',
+    color: '#FFD700',
+    rgb: '255,215,0',
+    symbol: 'L1',
+  },
+  {
+    id: 'l2',
+    titleCs: 'L2 Ekosystém (2027)',
+    titleEn: 'L2 Ecosystem (2027)',
+    descCs: 'DeFi infrastruktura, wZION likvidita na Base, DAO governance.',
+    descEn: 'DeFi infrastructure, wZION liquidity on Base, DAO governance.',
+    color: '#34D399',
+    rgb: '52,211,153',
+    symbol: 'L2',
+  },
+  {
+    id: 'l3',
+    titleCs: 'L3 AI Native (2028)',
+    titleEn: 'L3 AI Native (2028)',
+    descCs: 'Hiranyagarbha AI v2, NCL orchestrace sítě, WARP bridges a Guardian compute.',
+    descEn: 'Hiranyagarbha AI v2, NCL network orchestration, WARP bridges and Guardian compute.',
+    color: '#60A5FA',
+    rgb: '96,165,250',
+    symbol: 'L3',
+  },
+  {
+    id: 'l4',
+    titleCs: 'L4 Oasis (2029)',
+    titleEn: 'L4 Oasis (2029)',
+    descCs: 'OASIS prototyp v Unreal Engine 5, Golden Egg hunt a Sacred Avatars.',
+    descEn: 'OASIS prototype in Unreal Engine 5, Golden Egg hunt and Sacred Avatars.',
+    color: '#A78BFA',
+    rgb: '167,139,250',
+    symbol: 'L4',
+  },
+  {
+    id: 'l5',
+    titleCs: 'L5 Free World (2030+)',
+    titleEn: 'L5 Free World (2030+)',
+    descCs: '100 Terra Nova komunit, Humanitární fond, Medical Tables a Free Energy výzkum.',
+    descEn: '100 Terra Nova communities, Humanitarian fund, Medical Tables and Free Energy research.',
+    color: '#F472B6',
+    rgb: '244,114,182',
+    symbol: 'L5',
+  },
+  {
+    id: 'l6',
+    titleCs: 'L6 Issobella (2040+)',
+    titleEn: 'L6 Issobella (2040+)',
+    descCs: 'Orbitální stanice Issobella, WARP propulze, SETI program a spojení s hvězdami.',
+    descEn: 'Orbital station Issobella, WARP propulsion, SETI program and stellar connection.',
+    color: '#22D3EE',
+    rgb: '34,211,238',
+    symbol: 'L6',
+  }
+];
+
+function IssobellaCompass({ selected, onSelect }: { selected: number | null, onSelect: (i: number | null) => void }) {
+  const [hovered, setHovered] = useState<number | null>(null);
+  const highlighted = selected ?? hovered;
+  const [rotation, setRotation] = useState(0);
+
+  useEffect(() => {
+    let raf: number;
+    let start: number | null = null;
+    const tick = (ts: number) => {
+      if (!start) start = ts;
+      setRotation(((ts - start) / 120) % 360);
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  const CX = 350;
+  const CY = 350;
+  const R_OUTER = 290;
+  const R_RING = 270;
+  const R_NODES = 220;
+  const R_INNER = 130;
+  const NODE_R = 34;
+
+  const pt = (cx: number, cy: number, r: number, angleDeg: number) => {
+    const rad = (angleDeg - 90) * (Math.PI / 180);
+    return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+  };
+
+  const total = ACCELERATION_DIRECTIONS.length;
+  const nodePos = (i: number) => pt(CX, CY, R_NODES, i * (360 / total));
+  
+  const polyStr = ACCELERATION_DIRECTIONS.map((_, i) => `${nodePos(i).x},${nodePos(i).y}`).join(' ');
+  const starStr1 = [0, 2, 4].map(i => `${nodePos(i).x},${nodePos(i).y}`).join(' ');
+  const starStr2 = [1, 3, 5].map(i => `${nodePos(i).x},${nodePos(i).y}`).join(' ');
+
+  return (
+    <svg viewBox="0 0 700 700" className="w-full h-auto select-none" role="img">
+      <defs>
+        <radialGradient id="zk-center-acc" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="rgba(255,215,0,0.25)" />
+          <stop offset="40%" stopColor="rgba(147,51,234,0.08)" />
+          <stop offset="100%" stopColor="rgba(0,0,0,0)" />
+        </radialGradient>
+        <filter id="zk-glow-acc" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="8" result="b" />
+          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+        <filter id="zk-glow-sm-acc" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur stdDeviation="3" result="b" />
+          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+        {ACCELERATION_DIRECTIONS.map((d) => (
+          <linearGradient key={`lg-acc-${d.id}`} id={`lg-acc-${d.id}`} x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="rgba(255,215,0,0.15)" />
+            <stop offset="100%" stopColor={`rgba(${d.rgb},0.5)`} />
+          </linearGradient>
+        ))}
+      </defs>
+
+      <circle cx={CX} cy={CY} r={280} fill="url(#zk-center-acc)" />
+
+      <g style={{ transform: `rotate(${rotation}deg)`, transformOrigin: `${CX}px ${CY}px` }}>
+        {Array.from({ length: 72 }).map((_, i) => {
+          const a = i * (360 / 72);
+          const major = i % 6 === 0;
+          const p1 = pt(CX, CY, R_OUTER, a);
+          const p2 = pt(CX, CY, R_OUTER - (major ? 14 : 7), a);
+          return (
+            <line
+              key={`tick-${i}`}
+              x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y}
+              stroke={major ? 'rgba(255,215,0,0.3)' : 'rgba(255,255,255,0.08)'}
+              strokeWidth={major ? 1.5 : 0.8}
+            />
+          );
+        })}
+      </g>
+
+      <circle cx={CX} cy={CY} r={R_RING} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
+      <circle cx={CX} cy={CY} r={R_RING - 4} fill="none" stroke="rgba(255,215,0,0.06)" strokeWidth="0.5" strokeDasharray="2 6" />
+      <circle cx={CX} cy={CY} r={R_INNER} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="0.8" />
+      <circle cx={CX} cy={CY} r={R_INNER - 20} fill="none" stroke="rgba(147,51,234,0.06)" strokeWidth="0.5" strokeDasharray="3 8" />
+
+      <polygon points={polyStr} fill="rgba(255,215,0,0.015)" stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
+      <polygon points={starStr1} fill="none" stroke="rgba(255,215,0,0.08)" strokeWidth="0.8" />
+      <polygon points={starStr2} fill="none" stroke="rgba(255,215,0,0.08)" strokeWidth="0.8" />
+
+      {ACCELERATION_DIRECTIONS.map((d, i) => {
+        const p = nodePos(i);
+        const isHl = highlighted === i;
+        const gid = `spoke-g-acc-${d.id}`;
+        return (
+          <g key={`spoke-${d.id}`}>
+            <linearGradient id={gid} x1={CX / 700} y1={CY / 700} x2={p.x / 700} y2={p.y / 700} gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stopColor={isHl ? `rgba(${d.rgb},0.5)` : 'rgba(255,215,0,0.08)'} />
+              <stop offset="100%" stopColor={isHl ? `rgba(${d.rgb},0.8)` : `rgba(${d.rgb},0.15)`} />
+            </linearGradient>
+            <line x1={CX} y1={CY} x2={p.x} y2={p.y} stroke={`url(#${gid})`} strokeWidth={isHl ? 2.5 : 1.2} filter={isHl ? 'url(#zk-glow-sm-acc)' : undefined} style={{ transition: 'stroke-width 0.4s' }} />
+            <circle cx={CX + (p.x - CX) * 0.55} cy={CY + (p.y - CY) * 0.55} r={isHl ? 2.5 : 1.5} fill={isHl ? d.color : 'rgba(255,255,255,0.12)'} style={{ transition: 'all 0.3s' }} />
+          </g>
+        );
+      })}
+
+      <g>
+        <circle cx={CX} cy={CY} r={42} fill="rgba(0,0,0,0.5)" stroke="rgba(255,215,0,0.25)" strokeWidth="1.5" />
+        <circle cx={CX} cy={CY} r={36} fill="rgba(0,0,0,0.7)" stroke="rgba(255,215,0,0.15)" strokeWidth="1" />
+        {[0, 90, 180, 270].map((a) => (
+          <line key={`arm-${a}`} x1={pt(CX, CY, 10, a).x} y1={pt(CX, CY, 10, a).y} x2={pt(CX, CY, 30, a).x} y2={pt(CX, CY, 30, a).y} stroke={a === 0 ? 'rgba(255,215,0,0.7)' : 'rgba(255,255,255,0.2)'} strokeWidth={a === 0 ? 2 : 1} />
+        ))}
+        <polygon points={`${CX},${CY - 32} ${CX - 6},${CY - 18} ${CX + 6},${CY - 18}`} fill="rgba(255,215,0,0.8)" filter="url(#zk-glow-sm-acc)" />
+        <polygon points={`${CX},${CY + 32} ${CX - 5},${CY + 20} ${CX + 5},${CY + 20}`} fill="rgba(255,255,255,0.15)" />
+        <polygon points={`${CX},${CY - 6} ${CX + 6},${CY} ${CX},${CY + 6} ${CX - 6},${CY}`} fill="#FFD700" opacity={0.9} />
+        <text x={CX} y={CY - 39} textAnchor="middle" fill="rgba(255,215,0,0.6)" fontSize="9" fontWeight="700" fontFamily="var(--font-mono), monospace">N</text>
+        <text x={CX} y={CY + 47} textAnchor="middle" fill="rgba(255,255,255,0.2)" fontSize="8" fontWeight="600" fontFamily="var(--font-mono), monospace">S</text>
+      </g>
+
+      {ACCELERATION_DIRECTIONS.map((d, i) => {
+        const p = nodePos(i);
+        const isHl = highlighted === i;
+        const isActive = selected === i;
+        const angle = i * (360 / total);
+        const lp = pt(CX, CY, R_NODES + 52, angle);
+
+        return (
+          <g key={d.id} className="cursor-pointer" onClick={() => onSelect(isActive ? null : i)} onMouseEnter={() => setHovered(i)} onMouseLeave={() => setHovered(null)}>
+            {isActive && (
+              <circle cx={p.x} cy={p.y} r={NODE_R + 16} fill="none" stroke={d.color} strokeWidth="1" opacity={0.3}>
+                <animate attributeName="r" from={String(NODE_R + 10)} to={String(NODE_R + 24)} dur="2s" repeatCount="indefinite" />
+                <animate attributeName="opacity" from="0.4" to="0" dur="2s" repeatCount="indefinite" />
+              </circle>
+            )}
+            <circle cx={p.x} cy={p.y} r={NODE_R + 10} fill="none" stroke={`rgba(${d.rgb},${isHl ? 0.35 : 0})`} strokeWidth="1.5" style={{ transition: 'stroke 0.4s' }} />
+            <circle cx={p.x} cy={p.y} r={NODE_R} fill={isHl ? `rgba(${d.rgb},0.12)` : 'rgba(0,0,0,0.65)'} stroke={isHl ? d.color : 'rgba(255,255,255,0.12)'} strokeWidth={isHl ? 2.5 : 1.2} filter={isHl ? 'url(#zk-glow-acc)' : undefined} style={{ transition: 'all 0.35s' }} />
+            <text x={p.x} y={p.y + 1} textAnchor="middle" dominantBaseline="central" fill={isHl ? d.color : 'rgba(255,255,255,0.7)'} fontSize="18" fontWeight="600" fontFamily="var(--font-mono), monospace" style={{ transition: 'fill 0.3s' }}>{d.symbol}</text>
+            <text x={lp.x} y={lp.y} textAnchor="middle" dominantBaseline="central" fill={isHl ? d.color : 'rgba(255,255,255,0.45)'} fontSize="13" fontWeight={isHl ? '700' : '500'} letterSpacing="0.04em" style={{ transition: 'fill 0.3s' }}>{d.titleCs}</text>
+            {isHl && <line x1={p.x + (pt(CX, CY, R_NODES + 34, angle).x - p.x) * 0.7} y1={p.y + (pt(CX, CY, R_NODES + 34, angle).y - p.y) * 0.7} x2={pt(CX, CY, R_NODES + 34, angle).x} y2={pt(CX, CY, R_NODES + 34, angle).y} stroke={`rgba(${d.rgb},0.35)`} strokeWidth="1" strokeDasharray="2 3" />}
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
 
 /* ═══════════════════════════════════════════════════════════
    Terra Nova — Public Book Reader
@@ -99,9 +458,59 @@ const LIVE_TERMINAL_CMDS = [
   { cmd: 'zion logs --tail 8', resp: '[pool] share accepted · worker deeksha-01 · 0 ms latency' },
 ];
 
+const VISION_20Y_STEPS = [
+  {
+    year: '2026',
+    titleCs: 'L1 Genesis',
+    titleEn: 'L1 Genesis',
+    descCs: 'Mainnet základ a veřejný launch.',
+    descEn: 'Mainnet baseline and public launch.',
+  },
+  {
+    year: '2028',
+    titleCs: 'L2/L3 Ekosystém',
+    titleEn: 'L2/L3 Ecosystem',
+    descCs: 'Bridge, DAO, DeFi, AI Native integrace.',
+    descEn: 'Bridge, DAO, DeFi, AI Native integration.',
+  },
+  {
+    year: '2030',
+    titleCs: 'L4 OASIS',
+    titleEn: 'L4 OASIS',
+    descCs: 'Herní a vědomostní vrstva komunity.',
+    descEn: 'Game and consciousness layer for communities.',
+  },
+  {
+    year: '2033',
+    titleCs: 'L5 Svět Svobody',
+    titleEn: 'L5 Free World',
+    descCs: 'Komunity, energie, zdravotní piloty.',
+    descEn: 'Communities, energy, medical pilots.',
+  },
+  {
+    year: '2038',
+    titleCs: 'Issobella Program',
+    titleEn: 'Issobella Program',
+    descCs: 'Orbitální příprava, hardware partnerství.',
+    descEn: 'Orbital preparation, hardware partnerships.',
+  },
+  {
+    year: '2046',
+    titleCs: 'Hvězdný Horizont',
+    titleEn: 'Stellar Horizon',
+    descCs: 'L6 mise, observatoř a první dlouhý výhled.',
+    descEn: 'L6 missions, observatory, and first long-range horizon.',
+  },
+];
+
 export default function TerraNovaBookClient() {
   const { lang } = useLang();
   const cs = lang === 'cs';
+
+  const [activeEdition, setActiveEdition] = useState<EditionKey>('final');
+  const currentChapters = EDITION_CHAPTERS[activeEdition];
+  const meta = EDITION_META[activeEdition];
+  const compositionLines = currentChapters.map((entry) => formatChapterLabel(entry, cs));
 
   const [activeChapter, setActiveChapter] = useState<number>(0);
   const [activeSection, setActiveSection] = useState<number>(0);
@@ -109,28 +518,30 @@ export default function TerraNovaBookClient() {
   const [overlayMode, setOverlayMode] = useState<'genesis' | 'cli' | null>(null);
   const [visibleBootLines, setVisibleBootLines] = useState(1);
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [compassDir, setCompassDir] = useState<number | null>(null);
   const [twCmdText, setTwCmdText] = useState('');
   const [twRespText, setTwRespText] = useState('');
   const twRef = useRef({ cmdIdx: 0, charIdx: 0, phase: 'typing' as string, pauseTicks: 0 });
   const contentRef = useRef<HTMLDivElement>(null);
   const sectionRefs = useRef<Array<HTMLDivElement | null>>([]);
 
-  const chapter = CHAPTERS[activeChapter];
+  const chapter = currentChapters[activeChapter];
   const sections = cs ? chapter.sectionsCs : chapter.sectionsEn;
   const chapterEpigraph = cs ? chapter.epigraphCs : chapter.epigraphEn;
   const sectionLabels = sections.map(
     (section, index) => section.heading ?? `${cs ? 'Úsek' : 'Section'} ${index + 1}`,
   );
-  const progress = ((activeChapter + 1) / CHAPTERS.length) * 100;
+  const progress = ((activeChapter + 1) / currentChapters.length) * 100;
   const overlayOpen = overlayMode !== null;
   const chapterLabel =
     chapter.number === 'Prolog'
       ? cs
         ? 'Prolog'
         : 'Prologue'
-      : chapter.number === 'A' || chapter.number === 'B'
+      : chapter.number === 'A' || chapter.number === 'B' || chapter.number === 'C' || chapter.number === 'D'
       ? `${cs ? 'Příloha' : 'Appendix'} ${chapter.number}`
       : `${cs ? 'Část' : 'Part'} ${chapter.number}`;
+  const selectedDirection = compassDir !== null ? ACCELERATION_DIRECTIONS[compassDir] : null;
   const introSignals = ['Genesis.md', 'ZION CLI v2.9.8', 'Terra Nova IV'];
   const introLead = cs
     ? 'Síť žije. Uzel synchronizuje. Miner hledá. Stojíte na prahu příběhu, který se právě stává skutečností.'
@@ -188,7 +599,7 @@ export default function TerraNovaBookClient() {
   }, [activeChapter, goTo]);
 
   const next = useCallback(() => {
-    if (activeChapter < CHAPTERS.length - 1) goTo(activeChapter + 1);
+    if (activeChapter < currentChapters.length - 1) goTo(activeChapter + 1);
   }, [activeChapter, goTo]);
 
   /* Keyboard nav */
@@ -276,7 +687,13 @@ export default function TerraNovaBookClient() {
   useEffect(() => {
     setActiveSection(0);
     sectionRefs.current = [];
-  }, [activeChapter, cs]);
+  }, [activeChapter, activeEdition, cs]);
+
+  useEffect(() => {
+    if (activeChapter >= currentChapters.length) {
+      setActiveChapter(0);
+    }
+  }, [activeChapter, currentChapters.length]);
 
   useEffect(() => {
     const nodes = sectionRefs.current.filter(
@@ -317,8 +734,6 @@ export default function TerraNovaBookClient() {
     setActiveSection(index);
     sectionRefs.current[index]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, []);
-
-  const meta = BOOK_META;
 
   return (
     <div className="zion-shell min-h-screen pt-24 md:pt-28 pb-24 overflow-x-hidden">
@@ -446,13 +861,13 @@ export default function TerraNovaBookClient() {
                       <p className="mb-3 text-[10px] uppercase tracking-[0.28em] text-gray-500">
                         {cs ? 'Živý terminál — ZION CLI' : 'Live Terminal — ZION CLI'}
                       </p>
-                      <div className="min-h-[5.5rem] space-y-2 font-mono text-[12px] text-gray-300">
+                      <div className="min-h-22 space-y-2 font-mono text-[12px] text-gray-300">
                         <div className="rounded-xl bg-white/3 px-3 py-2.5">
                           <div className="flex gap-3">
                             <span className="text-zion-gold">$</span>
                             <span className="break-all">
                               {twCmdText}
-                              <span className="inline-block w-[2px] h-[13px] bg-zion-cyan/80 animate-pulse align-middle ml-px" />
+                              <span className="inline-block h-[13px] w-0.5 bg-zion-cyan/80 animate-pulse align-middle ml-px" />
                             </span>
                           </div>
                           {twRespText && (
@@ -501,6 +916,206 @@ export default function TerraNovaBookClient() {
                   <p className="mt-2 text-[10px] italic text-gray-600">
                     — Yeshuae / Zion Creator
                   </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.section>
+
+        {/* ═══════ ISSOBELLA COMPASS DECK ═══════ */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.18, duration: 0.6 }}
+          className="mb-14 md:mb-16"
+        >
+          <div className="mb-6 text-center">
+            <p className="text-[10px] uppercase tracking-[0.36em] text-zion-gold/70">
+              {cs ? 'Issobella Vision Deck' : 'Issobella Vision Deck'}
+            </p>
+            <h2 className="mt-2 text-2xl font-semibold text-white sm:text-3xl">
+              {cs ? 'Zlatý Kompas v orbitální stanici' : 'Golden Compass on the Orbital Station'}
+            </h2>
+            <p className="mt-2 text-sm text-gray-400 sm:text-base">
+              {cs
+                ? 'Výhled na Zemi z observatoře Issobella a hlavní panel navigace sedmi směrů.'
+                : 'Earth view from Issobella observatory and the main navigation panel of seven directions.'}
+            </p>
+          </div>
+
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+            <div className="relative min-h-[420px] overflow-hidden rounded-4xl border border-[#1e293b] bg-[#02040a] p-5 shadow-[0_0_80px_rgba(0,0,0,0.8)_inset,0_24px_90px_rgba(0,0,0,0.45)] md:p-6">
+              
+              {/* Starry background layer */}
+              <div className="pointer-events-none absolute inset-0">
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(56,189,248,0.04)_0%,rgba(0,0,0,0)_100%)]" />
+                {Array.from({ length: 40 }).map((_, i) => (
+                  <div
+                    key={`star-${i}`}
+                    className="absolute rounded-full bg-white"
+                    style={{
+                      top: `${Math.random() * 100}%`,
+                      left: `${Math.random() * 100}%`,
+                      width: `${Math.random() * 2 + 0.5}px`,
+                      height: `${Math.random() * 2 + 0.5}px`,
+                      opacity: Math.random() * 0.7 + 0.1,
+                    }}
+                  />
+                ))}
+              </div>
+
+              {/* Sci-fi HUD overlay */}
+              <div className="pointer-events-none absolute inset-0 text-sky-400/15">
+                <svg width="100%" height="100%" className="absolute inset-0">
+                  <line x1="12%" y1="0" x2="12%" y2="100%" stroke="currentColor" strokeWidth="1" strokeDasharray="4 8" />
+                  <line x1="88%" y1="0" x2="88%" y2="100%" stroke="currentColor" strokeWidth="1" strokeDasharray="4 8" />
+                  <line x1="0" y1="20%" x2="100%" y2="20%" stroke="currentColor" strokeWidth="1" strokeDasharray="4 8" />
+                  <line x1="0" y1="75%" x2="100%" y2="75%" stroke="currentColor" strokeWidth="1" strokeDasharray="4 8" />
+                  <circle cx="50%" cy="50%" r="140" fill="none" stroke="currentColor" strokeWidth="0.5" />
+                  <circle cx="50%" cy="50%" r="220" fill="none" stroke="currentColor" strokeWidth="0.5" strokeDasharray="2 12" />
+                  {/* Crosshairs */}
+                  <line x1="48.5%" y1="50%" x2="51.5%" y2="50%" stroke="rgba(56,189,248,0.4)" strokeWidth="1.5" />
+                  <line x1="50%" y1="48.5%" x2="50%" y2="51.5%" stroke="rgba(56,189,248,0.4)" strokeWidth="1.5" />
+                </svg>
+              </div>
+
+              {/* Glowing Earth Horizon */}
+              <div className="pointer-events-none absolute -bottom-[420px] left-1/2 h-[600px] w-[150%] -translate-x-1/2 rounded-[50%] bg-[radial-gradient(ellipse_at_top,rgba(14,165,233,0.25)_0%,rgba(5,25,50,0.95)_50%,rgba(0,0,0,1)_100%)] shadow-[0_-20px_100px_rgba(14,165,233,0.35)]" />
+              <div className="pointer-events-none absolute -bottom-[420px] left-1/2 h-[600px] w-[150%] -translate-x-1/2 rounded-[50%] border-t-[3px] border-sky-300/40 shadow-[0_-4px_30px_rgba(56,189,248,0.6),inset_0_20px_40px_rgba(14,165,233,0.2)] blur-[1px]" />
+              <div className="pointer-events-none absolute -bottom-[423px] left-1/2 h-[600px] w-[150%] -translate-x-1/2 rounded-[50%] border-t border-white/60 blur-[0.3px]" />
+
+              <div className="relative z-10 space-y-3">
+                <p className="text-[10px] uppercase tracking-[0.3em] font-mono text-cyan-300/80">
+                  {cs ? 'ISSOBELLA // MODUL VÝHLEDU' : 'ISSOBELLA // OBSERVATION DECK'}
+                </p>
+                <p className="max-w-[85%] text-sm leading-relaxed text-gray-200 drop-shadow-md">
+                  {cs
+                    ? 'Tady se drží měřítko zítřka: pod tebou Země, nad tebou nekonečný oceán hvězd. Mezi tím naše rozhodnutí.'
+                    : 'This is where tomorrow scale applies: Earth below, an endless ocean of stars above. In between, our choices.'}
+                </p>
+              </div>
+
+              {/* HUD Info bottom plate */}
+              <div className="pointer-events-none absolute bottom-5 left-5 right-5 flex items-end justify-between rounded-xl border border-sky-400/15 bg-black/30 p-3 backdrop-blur-md shadow-lg">
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.3em] font-mono text-sky-300">
+                    ALT: 420.05 KM
+                  </p>
+                  <p className="text-[10px] uppercase tracking-[0.3em] font-mono text-sky-300 mt-1">
+                    VEL: 7.66 KM/S
+                  </p>
+                </div>
+                <div className="flex gap-1.5 opacity-80">
+                  <div className="h-5 w-1.5 bg-sky-300 shadow-[0_0_8px_rgba(125,211,252,0.8)] rounded-[1px]"></div>
+                  <div className="h-5 w-1.5 bg-sky-400/70 shadow-[0_0_8px_rgba(56,189,248,0.6)] rounded-[1px]"></div>
+                  <div className="h-5 w-1.5 bg-sky-500/40 rounded-[1px]"></div>
+                  <div className="h-5 w-1.5 bg-sky-600/20 rounded-[1px]"></div>
+                </div>
+              </div>
+            </div>
+
+            <div className="overflow-hidden rounded-4xl border border-zion-gold/20 bg-[linear-gradient(180deg,rgba(255,215,0,0.09),rgba(6,8,14,0.96)_52%,rgba(3,5,10,0.98)_100%)] p-4 shadow-[0_24px_90px_rgba(0,0,0,0.45)] md:p-6">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.3em] text-zion-gold/70">
+                    {cs ? 'Main Panel · Issobella Station' : 'Main Panel · Issobella Station'}
+                  </p>
+                  <p className="mt-1 text-sm text-gray-300">
+                    {cs ? 'Interaktivní Zlatý Kompas' : 'Interactive Golden Compass'}
+                  </p>
+                </div>
+                <div className="inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1.5 text-[10px] uppercase tracking-[0.24em] text-emerald-200">
+                  <span className="h-2 w-2 rounded-full bg-emerald-300 animate-pulse" />
+                  {cs ? 'Navigace online' : 'Navigation online'}
+                </div>
+              </div>
+
+              <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)]">
+                <div className="rounded-3xl border border-white/10 bg-black/35 p-3 md:p-4">
+                  <IssobellaCompass selected={compassDir} onSelect={setCompassDir} />
+                </div>
+
+                <div className="space-y-3">
+                  <div className="rounded-2xl border border-white/10 bg-black/35 p-4 min-h-[168px]">
+                    {selectedDirection ? (
+                      <>
+                        <p className="text-[10px] uppercase tracking-[0.28em]" style={{ color: selectedDirection.color }}>
+                          {cs ? 'Zvolený směr' : 'Selected Direction'}
+                        </p>
+                        <h3 className="mt-2 text-lg font-semibold" style={{ color: selectedDirection.color }}>
+                          {cs ? selectedDirection.titleCs : selectedDirection.titleEn}
+                        </h3>
+                        <p className="mt-2 text-sm leading-relaxed text-gray-300">
+                          {cs ? selectedDirection.descCs : selectedDirection.descEn}
+                        </p>
+                      </>
+                    ) : (
+                      <div className="h-full min-h-[136px] flex items-center justify-center text-center text-sm text-gray-500">
+                        {cs ? 'Klikni na směr v kompasu a otevři detail.' : 'Click a compass direction to open detail.'}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    {ACCELERATION_DIRECTIONS.map((direction, index) => {
+                      const isActive = compassDir === index;
+                      return (
+                        <button
+                          key={direction.id}
+                          onClick={() => setCompassDir(isActive ? null : index)}
+                          className="rounded-xl border px-3 py-2 text-left transition-colors"
+                          style={{
+                            borderColor: isActive
+                              ? `rgba(${direction.rgb},0.42)`
+                              : 'rgba(255,255,255,0.1)',
+                            backgroundColor: isActive
+                              ? `rgba(${direction.rgb},0.12)`
+                              : 'rgba(255,255,255,0.02)',
+                            color: isActive ? direction.color : 'rgba(255,255,255,0.72)',
+                          }}
+                        >
+                          <span className="text-[11px] font-semibold uppercase tracking-[0.2em]">
+                            {direction.symbol} {cs ? direction.titleCs : direction.titleEn}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 rounded-3xl border border-zion-gold/18 bg-black/30 p-4 md:p-5">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <p className="text-[10px] uppercase tracking-[0.3em] text-zion-gold/75">
+                    {cs ? '20letá liniová vize' : '20-Year Linear Vision'}
+                  </p>
+                  <p className="text-[10px] uppercase tracking-[0.24em] text-gray-500">
+                    2026 → 2046
+                  </p>
+                </div>
+
+                <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                  {VISION_20Y_STEPS.map((step, index) => (
+                    <div
+                      key={`${step.year}-${step.titleEn}`}
+                      className="rounded-2xl border border-white/10 bg-white/4 p-3"
+                    >
+                      <div className="mb-2 flex items-center gap-2">
+                        <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full border border-zion-gold/30 bg-zion-gold/10 px-1.5 text-[10px] font-semibold text-zion-gold">
+                          {index + 1}
+                        </span>
+                        <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-zion-gold/80">
+                          {step.year}
+                        </span>
+                      </div>
+                      <p className="text-xs font-semibold text-white">
+                        {cs ? step.titleCs : step.titleEn}
+                      </p>
+                      <p className="mt-1 text-[11px] leading-relaxed text-gray-400">
+                        {cs ? step.descCs : step.descEn}
+                      </p>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -567,7 +1182,7 @@ export default function TerraNovaBookClient() {
                 {cs ? 'Kompoziční mapa' : 'Compositional Map'}
               </p>
               <ol className="space-y-1.5">
-                {(cs ? meta.compositionCs : meta.compositionEn).map((line, i) => (
+                {compositionLines.map((line, i) => (
                   <li key={i} className="text-sm text-gray-400 flex items-start gap-2">
                     <span className="text-zion-gold/60 font-mono text-xs mt-0.5">{i + 1}.</span>
                     <span>{line}</span>
@@ -575,6 +1190,49 @@ export default function TerraNovaBookClient() {
                 ))}
               </ol>
             </div>
+          </div>
+        </motion.section>
+
+        {/* ═══════ EDITION SELECTOR ═══════ */}
+        <motion.section
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4, duration: 0.6 }}
+          className="mb-12 border-y border-white/5 py-8"
+        >
+          <div className="text-center mb-6">
+            <h3 className="text-[10px] uppercase tracking-[0.4em] text-zion-gold/80 font-mono mb-3">
+              {cs ? 'Režim čtení' : 'Reading Mode'}
+            </h3>
+            <p className="text-sm text-gray-400 max-w-2xl mx-auto leading-relaxed">
+              {cs
+                ? 'Přepínejte mezi třemi skutečnými verzemi Terra Novy: organickou, technickou a sci-fi narativní. Hlavička i obsah se teď přepínají spolu.'
+                : 'Switch between the three actual Terra Nova editions: organic, technical, and sci-fi narrative. The header and contents now switch together.'}
+            </p>
+          </div>
+
+          <div className="flex flex-wrap justify-center gap-3">
+            {EDITION_OPTIONS.map((ed) => (
+              <button
+                key={ed.id}
+                onClick={() => {
+                  setActiveEdition(ed.id);
+                  setActiveChapter(0);
+                  setActiveSection(0);
+                }}
+                className="px-5 py-3 rounded-2xl border text-sm font-medium transition-all flex items-center gap-2 relative overflow-hidden"
+                style={{
+                  backgroundColor: activeEdition === ed.id ? ed.bg : 'rgba(0,0,0,0.4)',
+                  borderColor: activeEdition === ed.id ? ed.border : 'rgba(255,255,255,0.08)',
+                  color: activeEdition === ed.id ? ed.color : 'rgba(255,255,255,0.5)',
+                }}
+              >
+                {activeEdition === ed.id && (
+                  <motion.div layoutId="activeEditionGlow" className="absolute inset-0 bg-white/5 opacity-50" />
+                )}
+                <span className="relative z-10">{cs ? ed.nameCs : ed.nameEn}</span>
+              </button>
+            ))}
           </div>
         </motion.section>
 
@@ -589,9 +1247,9 @@ export default function TerraNovaBookClient() {
             {cs ? 'Obsah' : 'Contents'}
           </p>
           <div className="grid gap-2 sm:grid-cols-2">
-            {CHAPTERS.map((ch, i) => {
+            {currentChapters.map((ch, i) => {
               const isActive = activeChapter === i;
-              const isAppendix = ch.number === 'A' || ch.number === 'B';
+              const isAppendix = ch.number === 'A' || ch.number === 'B' || ch.number === 'C' || ch.number === 'D';
               return (
                 <button
                   key={ch.id}
@@ -622,11 +1280,7 @@ export default function TerraNovaBookClient() {
                       className="text-sm font-semibold truncate transition-colors"
                       style={{ color: isActive ? ch.color : 'rgba(255,255,255,0.65)' }}
                     >
-                      {isAppendix
-                        ? `${cs ? 'Příloha' : 'Appendix'} ${ch.number} — ${cs ? ch.titleCs : ch.titleEn}`
-                        : ch.number === 'Prolog'
-                        ? `${cs ? 'Prolog' : 'Prologue'} — ${cs ? ch.titleCs : ch.titleEn}`
-                        : `${cs ? 'Část' : 'Part'} ${ch.number} — ${cs ? ch.titleCs : ch.titleEn}`}
+                      {formatChapterLabel(ch, cs)}
                     </p>
                   </div>
                 </button>
@@ -649,7 +1303,7 @@ export default function TerraNovaBookClient() {
                   </p>
                 </div>
                 <p className="shrink-0 text-[10px] uppercase tracking-[0.26em] text-gray-500">
-                  {activeChapter + 1} / {CHAPTERS.length}
+                  {activeChapter + 1} / {currentChapters.length}
                 </p>
               </div>
 
@@ -676,7 +1330,7 @@ export default function TerraNovaBookClient() {
                   {cs ? 'Čtecí režim' : 'Reading Mode'}
                 </p>
                 <p className="mt-2 text-sm font-semibold text-white">{chapterLabel}</p>
-                <p className="text-xs text-gray-500">{activeChapter + 1} / {CHAPTERS.length}</p>
+                <p className="text-xs text-gray-500">{activeChapter + 1} / {currentChapters.length}</p>
               </div>
 
               <div className="space-y-2">
@@ -778,7 +1432,7 @@ export default function TerraNovaBookClient() {
                     {cs ? meta.editionCs : meta.editionEn}
                   </span>
                   <span className="text-[10px] text-gray-600">
-                    {activeChapter + 1} / {CHAPTERS.length}
+                    {activeChapter + 1} / {currentChapters.length}
                   </span>
                 </div>
 
@@ -913,7 +1567,7 @@ export default function TerraNovaBookClient() {
                   <ChevronLeft className="w-4 h-4" />
                   {activeChapter > 0 && (
                     <span className="hidden sm:inline">
-                      {cs ? CHAPTERS[activeChapter - 1].titleCs : CHAPTERS[activeChapter - 1].titleEn}
+                      {cs ? currentChapters[activeChapter - 1].titleCs : currentChapters[activeChapter - 1].titleEn}
                     </span>
                   )}
                 </button>
@@ -928,12 +1582,12 @@ export default function TerraNovaBookClient() {
 
                 <button
                   onClick={next}
-                  disabled={activeChapter === CHAPTERS.length - 1}
+                  disabled={activeChapter === currentChapters.length - 1}
                   className="flex items-center gap-2 text-sm text-gray-400 hover:text-white disabled:opacity-25 disabled:cursor-not-allowed transition-colors"
                 >
-                  {activeChapter < CHAPTERS.length - 1 && (
+                  {activeChapter < currentChapters.length - 1 && (
                     <span className="hidden sm:inline">
-                      {cs ? CHAPTERS[activeChapter + 1].titleCs : CHAPTERS[activeChapter + 1].titleEn}
+                      {cs ? currentChapters[activeChapter + 1].titleCs : currentChapters[activeChapter + 1].titleEn}
                     </span>
                   )}
                   <ChevronRight className="w-4 h-4" />
@@ -1006,9 +1660,9 @@ export default function TerraNovaBookClient() {
               </div>
 
               <nav className="space-y-1">
-                {CHAPTERS.map((ch, i) => {
+                {currentChapters.map((ch, i) => {
                   const isActive = activeChapter === i;
-                  const isAppendix = ch.number === 'A' || ch.number === 'B';
+                  const isAppendix = ch.number === 'A' || ch.number === 'B' || ch.number === 'C' || ch.number === 'D';
                   return (
                     <button
                       key={ch.id}

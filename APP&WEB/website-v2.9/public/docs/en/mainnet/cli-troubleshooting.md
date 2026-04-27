@@ -1,20 +1,61 @@
-# ZION CLI Troubleshooting
+# ZION CLI Troubleshooting (for beginners)
 
-## 1. `zion status` is unhealthy
+Use this when something "just doesn't work".
 
-Run:
+## 0) Universal first step
 
 ```bash
 zion status
+zion doctor
+```
+
+If `zion` is unavailable:
+
+```bash
+cargo run --manifest-path V3/Cargo.toml -p zion-cli -- status
+cargo run --manifest-path V3/Cargo.toml -p zion-cli -- doctor
+```
+
+---
+
+## 1) `zion status` shows errors
+
+Continue in this order:
+
+```bash
 zion node status
+zion pool stats
 zion agent status
 ```
 
-If both node and agent fail, suspect host or deploy-level issues first.
+Then check logs for affected service:
 
-## 2. `zion agent` is in fallback mode
+```bash
+zion logs node
+zion logs pool
+zion logs ai-native
+```
 
-That usually means the service is alive but the model backend is unavailable.
+---
+
+## 2) Explorer has no blocks / web shows missing chain data
+
+Most often this is a node RPC issue.
+
+Check:
+
+```bash
+zion node status
+zion logs node
+```
+
+If node is down/restarting, explorer has no blockchain source.
+
+---
+
+## 3) Agent is degraded or fallback
+
+This does not always mean service crash.
 
 Check:
 
@@ -24,50 +65,50 @@ zion agent config
 zion logs ai-native
 ```
 
-## 3. Lifecycle commands seem to hit the wrong target
+Interpretation:
 
-The CLI maps to compose service names, not guessed container labels.
+- service up + backend unavailable = expected fallback,
+- service down = restart/deploy intervention needed.
 
-Important examples:
+---
 
-- `node` or `core` -> `core`
-- `agent` or `ai-native` -> `ai-native`
-- `monitoring` -> monitoring bundle
+## 4) start/stop/restart does not affect expected service
 
-Unsupported lifecycle targets should now fail locally with a clear supported-target list before any SSH call is attempted.
+Use service targets (`node`, `pool`, `agent`, `bridge`, ...), not raw container labels.
 
-## 4. Public docs are missing after a docs change
-
-The website reads markdown from the website public docs tree.
-
-Repo docs alone are not enough.
-
-Validate with:
+Example:
 
 ```bash
-cd APP&WEB/website-v2.9
-npm run build
+zion restart node
+zion logs node
 ```
 
-## 5. Config changes do not seem active
+---
 
-Check the active file first:
+## 5) Config changes do not apply
 
 ```bash
 zion config path
 zion config show
+zion config validate
 ```
 
-Then re-apply the intended setting or re-run:
+Then set again:
 
 ```bash
-zion config init
+zion config set node.rpc_host 91.98.122.165
 ```
 
-## 6. Fast triage order
+---
+
+## 6) Not sure what to do first
+
+Use this anti-chaos order:
 
 1. `zion status`
 2. `zion node status`
 3. `zion pool stats`
 4. `zion agent status`
-5. `zion logs <affected-service>`
+5. `zion logs <service>`
+
+Do not begin with random full-stack restarts.

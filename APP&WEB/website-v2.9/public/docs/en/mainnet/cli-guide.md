@@ -1,87 +1,183 @@
-# ZION CLI Guide
+# ZION CLI Guide (for complete beginners)
 
-## What `zion` is
+## What ZION CLI is
 
-`zion` is the unified operator CLI for the ZION stack.
+`zion` is the main command-line gateway for the ZION stack.
 
-It spans:
+With one tool, you can operate:
 
-- L1 node, pool, miner, wallet,
-- L2 bridge and DAO,
-- L3 AI Native, WARP, and NCL,
-- deploy, monitor, and explorer workflows.
+- L1: node, pool, miner, wallet,
+- L2: bridge and DAO,
+- L3: AI Native, WARP, NCL,
+- Ops: status checks, logs, deploy, monitoring.
 
-## Current position
+If you're brand new, think of it as a "terminal control panel".
 
-For the current production phase, the CLI and AI Native should be understood primarily as an orchestration layer.
+---
 
-That means:
+## What you need before first run
 
-- service control, health, and status first,
-- model backend integrations second,
-- not the other way around.
+Minimum requirements:
 
-## Core commands
+1. Open Terminal (macOS/Linux) or PowerShell (Windows).
+2. Have the repository (`2.9.6`) available locally.
+3. Have Rust installed (`cargo`) or use a machine where CLI build is already available.
+
+Quick check:
 
 ```bash
+cargo --version
+```
+
+If you see a version, you can continue.
+
+---
+
+## Easiest first run (without installing binary to PATH)
+
+From repository root:
+
+```bash
+cargo run --manifest-path V3/Cargo.toml -p zion-cli -- --help
+```
+
+First practical commands:
+
+```bash
+cargo run --manifest-path V3/Cargo.toml -p zion-cli -- status
+cargo run --manifest-path V3/Cargo.toml -p zion-cli -- doctor
+```
+
+This is the safest beginner path: no PATH setup needed.
+
+---
+
+## Running with the interactive menu
+
+After building the CLI you can use menu mode:
+
+```bash
+zion
+```
+
+Or explicitly:
+
+```bash
+zion menu
+```
+
+Controls:
+
+- arrows = move,
+- Enter = confirm,
+- menu returns you back after each action.
+
+---
+
+## Absolute first workflow (copy/paste)
+
+If you don't know where to start, use this order:
+
+```bash
+zion config validate
+zion doctor
 zion status
 zion node status
 zion pool stats
-zion wallet balance
 zion agent status
-zion bridge status
-zion dao treasury
-zion warp stats
-zion ncl workers
 ```
 
-## Lifecycle targets
+What each one does:
 
-Current top-level service targets for `start`, `stop`, and `restart`:
+- `config validate` checks config format,
+- `doctor` runs preflight checks,
+- `status` shows global service health,
+- `node/pool/agent status` narrows to one layer.
 
-- `all`
-- `node` or `core`
-- `pool`
-- `miner`
-- `agent` or `ai-native`
-- `bridge`
-- `dao`
-- `website`
-- `redis`
-- `monitoring`
+---
 
-Examples:
+## If `zion` command is not found
+
+Use cargo fallback:
 
 ```bash
-zion start ai-native
-zion restart bridge
-zion logs website
+cargo run --manifest-path V3/Cargo.toml -p zion-cli -- status
 ```
 
-## L3 agent
+Same for other commands:
 
-`zion agent` is the entry point for the Hiranyagarbha runtime.
+```bash
+cargo run --manifest-path V3/Cargo.toml -p zion-cli -- node status
+cargo run --manifest-path V3/Cargo.toml -p zion-cli -- pool stats
+```
 
-Typical usage:
+---
+
+## Most useful commands for regular users
+
+### Health and status
+
+```bash
+zion status
+zion doctor
+zion logs node
+```
+
+### Node / chain
+
+```bash
+zion node status
+zion node peers
+zion node block 6801
+```
+
+### Pool / mining
+
+```bash
+zion pool stats
+zion mine status
+zion mine bench
+```
+
+### Agent (L3)
 
 ```bash
 zion agent status
-zion agent ask "What is the current L3 state?"
-zion agent logs
+zion agent config
+zion agent ask "What is current L3 state?"
 ```
 
-## Important limitation
+---
 
-The current production host is not sized for heavyweight local AI inference.
+## Important 2026 reality
 
-So the canonical interpretation today is:
+AI Native currently acts primarily as orchestrator/control-plane.
 
-- AI Native = orchestrator and control plane,
-- LLM backend = optional integration,
-- fallback mode is acceptable if it is explicit and truthful.
+That means:
 
-## Related docs
+- service can be healthy even with fallback model mode,
+- fallback is better than silent failure,
+- always verify services first (`status`, `doctor`, `logs`) before model tuning.
 
+---
+
+## Safe incident sequence
+
+Use this exact order:
+
+1. `zion status`
+2. `zion node status`
+3. `zion pool stats`
+4. `zion agent status`
+5. `zion logs <service>`
+
+Do not start by randomly restarting everything.
+
+---
+
+## Read next
+
+- `ZION CLI FAQ`
 - `ZION CLI Reference`
 - `ZION CLI Troubleshooting`
 - `ZION CLI Deploy Playbook`
