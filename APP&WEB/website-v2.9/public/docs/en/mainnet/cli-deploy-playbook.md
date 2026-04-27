@@ -1,33 +1,28 @@
-# ZION CLI Deploy Playbook
+# ZION CLI Deploy Playbook (safe workflow)
 
-## Safe default order
+This playbook is designed for operators who want reliable, low-risk deploy steps.
 
-For runtime-changing actions, prefer this order:
+## Safety rule
 
-1. inspect current state,
-2. make the smallest deploy action,
-3. validate the affected layer.
+Inspect current state first, apply the smallest possible change, then validate.
 
-Baseline sequence:
+---
 
-```bash
-zion deploy status
-zion deploy update
-zion status
-zion agent status
-```
-
-## Common deploy flows
-
-### Full server update
+## 1) Before deploy
 
 ```bash
 zion deploy status
-zion deploy server
 zion status
+zion doctor
 ```
 
-### Website-only rollout
+If runtime is already failing, stabilize runtime first, then deploy.
+
+---
+
+## 2) Common deploy scenarios
+
+### A) Website-only deploy
 
 ```bash
 zion deploy status
@@ -35,15 +30,32 @@ zion deploy website
 zion logs website
 ```
 
-### Targeted L3 restart
+Post-deploy endpoint checks:
 
 ```bash
-zion restart ai-native
-zion agent status
-zion logs ai-native
+curl -sS https://zionterranova.com/api/health
+curl -sS "https://zionterranova.com/api/blockchain/blocks?limit=3"
 ```
 
-## Validation after deploy
+### B) Server runtime update
+
+```bash
+zion deploy status
+zion deploy server
+zion status
+```
+
+### C) Targeted restart for one service
+
+```bash
+zion restart node
+zion logs node
+zion node status
+```
+
+---
+
+## 3) Mandatory post-deploy validation
 
 ```bash
 zion status
@@ -52,13 +64,41 @@ zion pool stats
 zion agent status
 ```
 
-If website source changed locally, also run:
+Website data sanity:
 
 ```bash
-cd APP&WEB/website-v2.9
-npm run build
+curl -sS https://zionterranova.com/api/health
+curl -sS "https://zionterranova.com/api/blockchain/blocks?limit=3"
 ```
 
-## Operational note
+---
 
-AI Native should currently be interpreted as a service control plane. A degraded model backend does not automatically mean the deployment failed.
+## 4) When to run prune
+
+Use prune for disk pressure or stale build cache cleanup.
+
+Do not use prune as your first incident action.
+
+```bash
+zion deploy prune
+```
+
+---
+
+## 5) Emergency rollback mindset
+
+If one layer breaks after deploy:
+
+1. stop escalation,
+2. return service to last healthy state,
+3. analyze root cause afterward.
+
+Practical starting checks:
+
+```bash
+zion logs website
+zion logs node
+zion status
+```
+
+Rollback mechanics vary by service, but diagnosis entrypoint is always the same.

@@ -41,14 +41,14 @@
 - [ ] DAO governance — první hlasování komunity
 - [ ] Bridge status a veřejné DeFi surface stabilní po launchi
 - [ ] Listing na CoinGecko a CoinMarketCap
-- [ ] 10+ aktivních Terra Nova komunit
+- [ ] 5+ aktivních Terra Nova komunit
 
 ### 🟣 Fáze 3: L3 AI Native (2028)
 
 - [ ] Hiranyagarbha AI v2 — pokročilý jazykový model s pamětí
 - [ ] AI Native runtime veřejně zdokumentovaný a provozně stabilní
 - [ ] NCL vrstva — AI orchestrace celé sítě
-- [ ] WARP bridges — cross-chain propojení s ETH a BTC
+- [ ] WARP bridges — cross-multichain propojení s ETH, BTC, SOL ...
 - [ ] Memory, tasks, RAG a operator control-plane sjednocené
 - [ ] Guardian compute jako koordinovaná síťová inteligence
 
