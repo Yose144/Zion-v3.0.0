@@ -1,10 +1,10 @@
-# ZION CLI Reference (practical cheat sheet)
+# ZION CLI Reference (praktická)
 
-This document is a command cheat sheet with copy/paste examples.
+Tento dokument je "tahák" s konkrétními příkazy.
 
-If you're a beginner, read `CLI Guide` first, then use this reference.
+Pokud jsi začátečník, používej nejdřív `Guide`, potom tento seznam.
 
-## 1) Basic stack checks
+## 1) Základní kontrola stacku
 
 ```bash
 zion status
@@ -13,22 +13,22 @@ zion logs node
 zion logs ai-native
 ```
 
-## 2) Lifecycle commands (start/stop/restart)
+## 2) Životní cyklus služeb (start/stop/restart)
 
-Supported targets:
+Podporované cíle:
 
 - `all`
-- `node` or `core`
+- `node` nebo `core`
 - `pool`
 - `miner`
-- `agent` or `ai-native`
+- `agent` nebo `ai-native`
 - `bridge`
 - `dao`
 - `website`
 - `redis`
 - `monitoring`
 
-Examples:
+Příklady:
 
 ```bash
 zion start ai-native
@@ -100,7 +100,7 @@ zion ncl status
 zion ncl workers
 ```
 
-## 9) Deploy and ops
+## 9) Deploy a operace
 
 ```bash
 zion deploy status
@@ -118,9 +118,9 @@ zion config validate
 zion config set node.rpc_host 91.98.122.165
 ```
 
-## 11) If `zion` is not in PATH
+## 11) Když `zion` není v PATH
 
-Use cargo fallback with the same command:
+Použij stejný příkaz přes cargo:
 
 ```bash
 cargo run --manifest-path V3/Cargo.toml -p zion-cli -- status
