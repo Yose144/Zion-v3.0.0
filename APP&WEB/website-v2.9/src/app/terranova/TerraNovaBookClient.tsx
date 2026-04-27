@@ -1822,14 +1822,14 @@ export default function TerraNovaBookClient() {
         <div className="mt-12 text-center select-none">
           <motion.svg
             viewBox="0 0 120 120"
-            className="mx-auto w-20 h-20 cursor-pointer"
-            whileHover={{ scale: 1.12 }}
+            className="mx-auto w-36 h-36 cursor-pointer"
+            whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
             animate={{
               filter: [
-                'drop-shadow(0 0 5px rgba(255,160,180,0.25))',
-                'drop-shadow(0 0 18px rgba(255,160,180,0.6))',
-                'drop-shadow(0 0 5px rgba(255,160,180,0.25))',
+                'drop-shadow(0 0 6px rgba(255,160,180,0.2))',
+                'drop-shadow(0 0 24px rgba(255,160,180,0.65))',
+                'drop-shadow(0 0 6px rgba(255,160,180,0.2))',
               ],
             }}
             transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
@@ -1855,8 +1855,8 @@ export default function TerraNovaBookClient() {
             <circle cx="60" cy="60" r="6.5" fill="rgba(255,238,150,0.75)" />
             <circle cx="60" cy="60" r="2.8" fill="rgba(255,255,255,0.88)" />
           </motion.svg>
-          <p className="mt-3 text-[10px] italic text-pink-200/22 tracking-[0.22em]">
-            jen pro tebe ♡
+          <p className="mt-4 text-sm italic text-pink-200/35 tracking-[0.18em]">
+            pro tebe ♡
           </p>
         </div>
       </div>
