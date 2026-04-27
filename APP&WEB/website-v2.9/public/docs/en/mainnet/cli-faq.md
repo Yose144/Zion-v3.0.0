@@ -1,22 +1,24 @@
-# ZION CLI FAQ
+# ZION CLI FAQ (simple answers)
 
-## Is `zion` just a wrapper around the node?
+## Is ZION CLI only a wrapper around node?
 
-No. The target is a single operator gateway for L1, L2, L3, and deployment workflows.
+No.
 
-## Does `zion agent` require a local GPU?
+`zion` is a unified operator gateway across L1, L2, L3, and Ops.
 
-No. The agent must remain useful without a local GPU and without a large model running on the same host.
+## Do I need a GPU to use CLI?
 
-## Why is AI Native described as an orchestrator?
+No.
 
-Because that matches both the current infrastructure and the intended architecture:
+Core operations (`status`, `doctor`, `node`, `pool`, `deploy`) work without GPU.
 
-- we need service control first,
-- health and cross-stack visibility first,
-- not a pretend heavyweight inference runtime on hardware that does not support it.
+## What does fallback mode mean in `zion agent`?
 
-## What is the canonical layer mapping now?
+Service is alive, but model backend is unavailable.
+
+This is expected and transparent behavior.
+
+## What is the current layer mapping?
 
 - L1 = blockchain, pool, miner
 - L2 = bridge, DAO, DeFi
@@ -25,12 +27,52 @@ Because that matches both the current infrastructure and the intended architectu
 - L5 = Free World
 - L6 = Issobella
 
-## What does fallback mean for `zion agent`?
+## What's the first command a beginner should run?
 
-It means the L3 runtime is alive and explicitly reports that the model backend is not currently available. That is better than silent failure.
+```bash
+zion doctor
+```
 
-## What should come next?
+If `zion` is not in PATH:
 
-1. expand the reference across all command groups,
-2. add troubleshooting and deploy flows,
-3. keep website docs synchronized with the CLI surface.
+```bash
+cargo run --manifest-path V3/Cargo.toml -p zion-cli -- doctor
+```
+
+## Why do lifecycle commands use service targets, not container names?
+
+Because CLI works against compose service names (source of truth), not accidental container naming.
+
+## How can I tell if missing explorer data is a node issue?
+
+Run:
+
+```bash
+zion node status
+zion logs node
+```
+
+If node is down or restarting, website explorer usually has no blockchain data source.
+
+## Can I use CLI without the interactive menu?
+
+Yes.
+
+Menu is optional convenience. Typed commands are fully supported:
+
+```bash
+zion status
+zion node status
+zion pool stats
+```
+
+## What is the difference between `zion update` and `zion deploy update`?
+
+- `zion update` = updates local CLI binary.
+- `zion deploy update` = updates remote runtime/services.
+
+## What is the safest beginner routine before major actions?
+
+1. `zion config validate`
+2. `zion doctor`
+3. `zion status`
