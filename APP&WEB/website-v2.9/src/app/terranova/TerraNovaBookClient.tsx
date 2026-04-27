@@ -36,6 +36,21 @@ type EditionMeta = {
   dedicationEn: string;
 };
 
+type EditionIntro = {
+  signalsCs: string[];
+  signalsEn: string[];
+  eyebrowCs: string;
+  eyebrowEn: string;
+  headlineCs: string;
+  headlineEn: string;
+  leadCs: string;
+  leadEn: string;
+  bodyCs: string;
+  bodyEn: string;
+  notesCs: string[];
+  notesEn: string[];
+};
+
 const APPENDIX_NUMBERS = new Set(['A', 'B', 'C', 'D']);
 
 const EDITION_OPTIONS: Array<{
@@ -135,11 +150,119 @@ const EDITION_META: Record<EditionKey, EditionMeta> = {
   },
 };
 
+const EDITION_INTRO: Record<EditionKey, EditionIntro> = {
+  org: {
+    signalsCs: ['ORG manuscript', 'Civilizační kompas', 'Organická větev'],
+    signalsEn: ['ORG manuscript', 'Civilizational compass', 'Organic branch'],
+    eyebrowCs: 'Terra Nova · organická redakce',
+    eyebrowEn: 'Terra Nova · organic redaction',
+    headlineCs: 'Klidnější větev. Stejný kompas. Čitelnější tok.',
+    headlineEn: 'A calmer branch. The same compass. A clearer flow.',
+    leadCs:
+      'Tahle vrstva čistí jazyk a drží míru knihy. Terra Nova tu mluví klidněji, ale pořád nese stejnou osu projektu.',
+    leadEn:
+      'This layer cleans the language and preserves the measure of the book. Terra Nova speaks more calmly here while carrying the same project axis.',
+    bodyCs:
+      'Pokud má čtenář nejdřív vstoupit do hlasu knihy, ne do specifikace, začíná tady. Organická větev vede přes rytmus, směr a vnitřní osu.',
+    bodyEn:
+      'If the reader should first enter the voice of the book rather than the specification, this is the place to start. The organic branch leads through rhythm, direction, and inner axis.',
+    notesCs: [
+      'Jazyk je uhlazenější a méně technicky agresivní.',
+      'Projekt zůstává čitelný jako civilizační kompas.',
+      'Dobrá vstupní vrstva pro čtení celé linie Terra Novy.',
+    ],
+    notesEn: [
+      'The language is smoother and less technically aggressive.',
+      'The project remains readable as a civilizational compass.',
+      'A strong entry layer for reading the whole Terra Nova line.',
+    ],
+  },
+  final: {
+    signalsCs: ['Genesis.md', 'ZION CLI v2.9.8', 'Terra Nova IV'],
+    signalsEn: ['Genesis.md', 'ZION CLI v2.9.8', 'Terra Nova IV'],
+    eyebrowCs: 'ZION mainnet · v2.9.8 Deeksha · Terra Nova',
+    eyebrowEn: 'ZION Mainnet · v2.9.8 Deeksha · Terra Nova',
+    headlineCs: 'ZION je živý. Síť běží. Čtvrtá kniha začíná tady.',
+    headlineEn: 'ZION is live. The network runs. The fourth book begins here.',
+    leadCs:
+      'Síť žije. Uzel synchronizuje. Miner hledá. Stojíte na prahu příběhu, který se právě stává skutečností.',
+    leadEn:
+      'The network is live. The node syncs. The miner searches. You stand at the threshold of a story becoming real.',
+    bodyCs:
+      'Terra Nova není manifest budoucnosti. Je to pracovní mapa toho, jak ZION funguje dnes, jak poroste zítra a kde končí fantasy a začíná stavební disciplína.',
+    bodyEn:
+      'Terra Nova is not a manifesto of the future. It is a working map of how ZION operates today, how it grows tomorrow, and where fantasy ends and build discipline begins.',
+    notesCs: [
+      'Genesis drží počátek a jazyk spuštění v2.9.8 Deeksha.',
+      'ZION CLI je provozní nástroj, ne dekorace.',
+      'Terra Nova tu funguje jako realistická stavební kniha.',
+    ],
+    notesEn: [
+      'Genesis holds the beginning and language of the v2.9.8 Deeksha launch.',
+      'ZION CLI is an operational tool, not decoration.',
+      'Terra Nova works here as a realistic construction book.',
+    ],
+  },
+  gemini: {
+    signalsCs: ['Issobella deck', 'Sci-fi odysea', 'Hvězdný horizont'],
+    signalsEn: ['Issobella deck', 'Sci-fi odyssey', 'Stellar horizon'],
+    eyebrowCs: 'Terra Nova · gemini odysea',
+    eyebrowEn: 'Terra Nova · gemini odyssey',
+    headlineCs: 'Orbitální příběh je otevřený. Čtvrtá kniha dýchá jako sci-fi.',
+    headlineEn: 'The orbital story is open. The fourth book breathes as sci-fi.',
+    leadCs:
+      'Tady Terra Nova nevede čtenáře přes specifikaci, ale přes obraz, atmosféru a hvězdný horizont projektu ZION.',
+    leadEn:
+      'Here Terra Nova does not lead the reader through specification, but through image, atmosphere, and the stellar horizon of the ZION project.',
+    bodyCs:
+      'Gemini větev je narativní vrstva přímo v UI. Má nést kosmický rozměr knihy, aniž by ztratila technickou osu, ze které vyrůstá.',
+    bodyEn:
+      'The Gemini branch is the narrative layer directly in the UI. It is meant to carry the cosmic dimension of the book without losing the technical axis it grows from.',
+    notesCs: [
+      'Issobella a hvězdný horizont jsou v popředí čtenářského toku.',
+      'Příběh je obraznější, ale stále navázaný na stejné vrstvy projektu.',
+      'Nejvhodnější větev pro atmosféru, vizi a sci-fi přenos do UI.',
+    ],
+    notesEn: [
+      'Issobella and the stellar horizon move to the front of the reading flow.',
+      'The story is more visual, but still bound to the same project layers.',
+      'The best branch for atmosphere, vision, and sci-fi transfer into the UI.',
+    ],
+  },
+};
+
 const EDITION_CHAPTERS: Record<EditionKey, BookChapter[]> = {
   org: EDITIONS_DATA.org ?? CHAPTERS,
   final: EDITIONS_DATA.final ?? CHAPTERS,
   gemini: EDITIONS_DATA.gemini ?? CHAPTERS,
 };
+
+const EDITION_COMPOSITION_LINES: Record<EditionKey, { cs: string[]; en: string[] }> = {
+  org: {
+    cs: EDITION_CHAPTERS.org.map((chapter) => formatChapterLabel(chapter, true)),
+    en: EDITION_CHAPTERS.org.map((chapter) => formatChapterLabel(chapter, false)),
+  },
+  final: {
+    cs: EDITION_CHAPTERS.final.map((chapter) => formatChapterLabel(chapter, true)),
+    en: EDITION_CHAPTERS.final.map((chapter) => formatChapterLabel(chapter, false)),
+  },
+  gemini: {
+    cs: EDITION_CHAPTERS.gemini.map((chapter) => formatChapterLabel(chapter, true)),
+    en: EDITION_CHAPTERS.gemini.map((chapter) => formatChapterLabel(chapter, false)),
+  },
+};
+
+const STARFIELD_POINTS = Array.from({ length: 40 }, (_, index) => ({
+  top: `${((index * 17.23) + 11) % 100}%`,
+  left: `${((index * 29.71) + 7) % 100}%`,
+  size: `${(0.7 + ((index * 11) % 18) / 10).toFixed(2)}px`,
+  opacity: Number((0.16 + (((index * 13) % 9) * 0.07)).toFixed(2)),
+}));
+
+function chapterDigit(num: string): string {
+  const d = num.replace(/\D/g, '');
+  return d || num;
+}
 
 function formatChapterLabel(chapter: BookChapter, cs: boolean) {
   const title = cs ? chapter.titleCs : chapter.titleEn;
@@ -149,10 +272,10 @@ function formatChapterLabel(chapter: BookChapter, cs: boolean) {
   }
 
   if (APPENDIX_NUMBERS.has(chapter.number)) {
-    return `${cs ? 'Příloha' : 'Appendix'} ${chapter.number} — ${title}`;
+    return title;
   }
 
-  return `${cs ? 'Část' : 'Part'} ${chapter.number} — ${title}`;
+  return title;
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -164,6 +287,10 @@ export interface AccelerationDirection {
   titleEn: string;
   descCs: string;
   descEn: string;
+  techCs: string;
+  techEn: string;
+  checklistCs: string[];
+  checklistEn: string[];
   color: string;
   rgb: string;
   symbol: string;
@@ -176,6 +303,28 @@ export const ACCELERATION_DIRECTIONS: AccelerationDirection[] = [
     titleEn: 'L1 Genesis (2026)',
     descCs: 'Čistý Rust codebase, Mainnet launch, stabilní runtime a desktop agent.',
     descEn: 'Clean Rust codebase, Mainnet launch, stable runtime and desktop agent.',
+    techCs: 'Node, pool a miner runtime v čistém Rustu.',
+    techEn: 'Node, pool, and miner runtime in clean Rust.',
+    checklistCs: [
+      'V3 codebase — čistý Rust, auditovatelný',
+      'Desktop-agent funkční (macOS / Win / Linux)',
+      'Website + docs live',
+      'Base mainnet bridge contracts verified + Prague relay aktivní',
+      'Finální whitepaper PDF',
+      'Genesis freeze — signed, checksummed',
+      'External security audit',
+      'PUBLIC LAUNCH ← Q4 2026',
+    ],
+    checklistEn: [
+      'V3 codebase — clean Rust, auditable',
+      'Desktop-agent running (macOS / Win / Linux)',
+      'Website + docs live',
+      'Base mainnet bridge contracts verified + Prague relay active',
+      'Final whitepaper PDF',
+      'Genesis freeze — signed, checksummed',
+      'External security audit',
+      'PUBLIC LAUNCH ← Q4 2026',
+    ],
     color: '#FFD700',
     rgb: '255,215,0',
     symbol: 'L1',
@@ -186,6 +335,22 @@ export const ACCELERATION_DIRECTIONS: AccelerationDirection[] = [
     titleEn: 'L2 Ecosystem (2027)',
     descCs: 'DeFi infrastruktura, wZION likvidita na Base, DAO governance.',
     descEn: 'DeFi infrastructure, wZION liquidity on Base, DAO governance.',
+    techCs: 'Bridge, DAO a likviditní vrstva nad hlavním řetězcem.',
+    techEn: 'Bridge, DAO, and liquidity layer above the main chain.',
+    checklistCs: [
+      'Veřejná wZION likvidita na Base mainnet',
+      'DAO governance — první hlasování',
+      'WARP bridges (ETH, BTC atomic swap)',
+      'CoinGecko + CoinMarketCap listing',
+      '10+ Terra Nova komunit aktivních',
+    ],
+    checklistEn: [
+      'Public wZION liquidity on Base mainnet',
+      'DAO governance — first vote',
+      'WARP bridges (ETH, BTC atomic swap)',
+      'CoinGecko + CoinMarketCap listing',
+      '10+ Terra Nova communities active',
+    ],
     color: '#34D399',
     rgb: '52,211,153',
     symbol: 'L2',
@@ -196,6 +361,20 @@ export const ACCELERATION_DIRECTIONS: AccelerationDirection[] = [
     titleEn: 'L3 AI Native (2028)',
     descCs: 'Hiranyagarbha AI v2, NCL orchestrace sítě, WARP bridges a Guardian compute.',
     descEn: 'Hiranyagarbha AI v2, NCL network orchestration, WARP bridges and Guardian compute.',
+    techCs: 'AI orchestrace, Guardian compute a WARP protokoly.',
+    techEn: 'AI orchestration, Guardian compute, and WARP protocols.',
+    checklistCs: [
+      'Hiranyagarbha AI v2 (70B model, RAG, multi-turn)',
+      'NCL vrstva — AI orchestrace sítě',
+      'WARP bridges — první cross-chain propojení',
+      'Guardian compute — decentralizovaný výpočetní stack',
+    ],
+    checklistEn: [
+      'Hiranyagarbha AI v2 (70B model, RAG, multi-turn)',
+      'NCL layer — AI network orchestration',
+      'WARP bridges — first cross-chain integration',
+      'Guardian compute — decentralized compute stack',
+    ],
     color: '#60A5FA',
     rgb: '96,165,250',
     symbol: 'L3',
@@ -206,6 +385,24 @@ export const ACCELERATION_DIRECTIONS: AccelerationDirection[] = [
     titleEn: 'L4 Oasis (2029)',
     descCs: 'OASIS prototyp v Unreal Engine 5, Golden Egg hunt a Sacred Avatars.',
     descEn: 'OASIS prototype in Unreal Engine 5, Golden Egg hunt and Sacred Avatars.',
+    techCs: 'Interaktivní svět, engine a vědomá herní vrstva.',
+    techEn: 'Interactive world, engine, and conscious game layer.',
+    checklistCs: [
+      'OASIS whitepaper + design doc',
+      'Unreal Engine 5 prototype — první island',
+      'Golden Egg hunt — 108 indicií připraveno',
+      'Sacred Avatars — prvních 10 designů',
+      'OASIS beta — 10 000 hráčů',
+      'Consciousness Level v OASIS funkční',
+    ],
+    checklistEn: [
+      'OASIS whitepaper + design doc',
+      'Unreal Engine 5 prototype — first island',
+      'Golden Egg hunt — 108 clues prepared',
+      'Sacred Avatars — first 10 designs',
+      'OASIS beta — 10,000 players',
+      'Consciousness Level in OASIS functional',
+    ],
     color: '#A78BFA',
     rgb: '167,139,250',
     symbol: 'L4',
@@ -216,6 +413,24 @@ export const ACCELERATION_DIRECTIONS: AccelerationDirection[] = [
     titleEn: 'L5 Free World (2030+)',
     descCs: '100 Terra Nova komunit, Humanitární fond, Medical Tables a Free Energy výzkum.',
     descEn: '100 Terra Nova communities, Humanitarian fund, Medical Tables and Free Energy research.',
+    techCs: 'Komunitní infrastruktura, medical stack a free-energy piloty.',
+    techEn: 'Community infrastructure, medical stack, and free-energy pilots.',
+    checklistCs: [
+      '100 Terra Nova komunit globálně',
+      'Humanitarian fund: $1M+ měsíčně distribuováno',
+      '10 Medical Table prototypů v komunitách',
+      'Free Energy Research: 3 aktivní výzkumné linie',
+      'Seed Library network: 50 regionálních knihoven',
+      'Terra Nova DAO — globální governance',
+    ],
+    checklistEn: [
+      '100 Terra Nova communities globally',
+      'Humanitarian fund: $1M+ distributed monthly',
+      '10 Medical Table prototypes in communities',
+      'Free Energy Research: 3 active research lines',
+      'Seed Library network: 50 regional libraries',
+      'Terra Nova DAO — global governance',
+    ],
     color: '#F472B6',
     rgb: '244,114,182',
     symbol: 'L5',
@@ -226,6 +441,26 @@ export const ACCELERATION_DIRECTIONS: AccelerationDirection[] = [
     titleEn: 'L6 Issobella (2040+)',
     descCs: 'Orbitální stanice Issobella, WARP propulze, SETI program a spojení s hvězdami.',
     descEn: 'Orbital station Issobella, WARP propulsion, SETI program and stellar connection.',
+    techCs: 'Orbitální observatoř, WARP pohon a hvězdná telemetrie.',
+    techEn: 'Orbital observatory, WARP drive, and stellar telemetry.',
+    checklistCs: [
+      'Issobella fund: hardware partnerství',
+      'Orbital feasibility study (NASA/ESA/ISRO spolupráce)',
+      'WARP Research Engine — první fyzikální prototyp',
+      'Station Module 1 — launch',
+      'SETI program aktivní',
+      'První rezidentní výzkumníci z Guardian komunity',
+      'METI — první zpráva odeslaná',
+    ],
+    checklistEn: [
+      'Issobella fund: hardware partnerships',
+      'Orbital feasibility study (NASA/ESA/ISRO cooperation)',
+      'WARP Research Engine — first physical prototype',
+      'Station Module 1 — launch',
+      'SETI program active',
+      'First resident researchers from Guardian community',
+      'METI — first message transmitted',
+    ],
     color: '#22D3EE',
     rgb: '34,211,238',
     symbol: 'L6',
@@ -236,6 +471,8 @@ function IssobellaCompass({ selected, onSelect }: { selected: number | null, onS
   const [hovered, setHovered] = useState<number | null>(null);
   const highlighted = selected ?? hovered;
   const [rotation, setRotation] = useState(0);
+
+  const roundCoord = (value: number) => Number(value.toFixed(3));
 
   useEffect(() => {
     let raf: number;
@@ -259,7 +496,10 @@ function IssobellaCompass({ selected, onSelect }: { selected: number | null, onS
 
   const pt = (cx: number, cy: number, r: number, angleDeg: number) => {
     const rad = (angleDeg - 90) * (Math.PI / 180);
-    return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+    return {
+      x: roundCoord(cx + r * Math.cos(rad)),
+      y: roundCoord(cy + r * Math.sin(rad)),
+    };
   };
 
   const total = ACCELERATION_DIRECTIONS.length;
@@ -509,28 +749,27 @@ export default function TerraNovaBookClient() {
 
   const [activeEdition, setActiveEdition] = useState<EditionKey>('final');
   const currentChapters = EDITION_CHAPTERS[activeEdition];
+  const currentEdition = EDITION_OPTIONS.find((option) => option.id === activeEdition) ?? EDITION_OPTIONS[1];
   const meta = EDITION_META[activeEdition];
-  const compositionLines = currentChapters.map((entry) => formatChapterLabel(entry, cs));
+  const intro = EDITION_INTRO[activeEdition];
+  const compositionLines = cs
+    ? EDITION_COMPOSITION_LINES[activeEdition].cs
+    : EDITION_COMPOSITION_LINES[activeEdition].en;
 
   const [activeChapter, setActiveChapter] = useState<number>(0);
-  const [activeSection, setActiveSection] = useState<number>(0);
   const [tocOpen, setTocOpen] = useState(false);
   const [overlayMode, setOverlayMode] = useState<'genesis' | 'cli' | null>(null);
   const [visibleBootLines, setVisibleBootLines] = useState(1);
   const [showScrollTop, setShowScrollTop] = useState(false);
-  const [compassDir, setCompassDir] = useState<number | null>(null);
+  const [compassDir, setCompassDir] = useState<number | null>(0);
   const [twCmdText, setTwCmdText] = useState('');
   const [twRespText, setTwRespText] = useState('');
   const twRef = useRef({ cmdIdx: 0, charIdx: 0, phase: 'typing' as string, pauseTicks: 0 });
   const contentRef = useRef<HTMLDivElement>(null);
-  const sectionRefs = useRef<Array<HTMLDivElement | null>>([]);
 
   const chapter = currentChapters[activeChapter];
   const sections = cs ? chapter.sectionsCs : chapter.sectionsEn;
   const chapterEpigraph = cs ? chapter.epigraphCs : chapter.epigraphEn;
-  const sectionLabels = sections.map(
-    (section, index) => section.heading ?? `${cs ? 'Úsek' : 'Section'} ${index + 1}`,
-  );
   const progress = ((activeChapter + 1) / currentChapters.length) * 100;
   const overlayOpen = overlayMode !== null;
   const chapterLabel =
@@ -542,24 +781,10 @@ export default function TerraNovaBookClient() {
       ? `${cs ? 'Příloha' : 'Appendix'} ${chapter.number}`
       : `${cs ? 'Část' : 'Part'} ${chapter.number}`;
   const selectedDirection = compassDir !== null ? ACCELERATION_DIRECTIONS[compassDir] : null;
-  const introSignals = ['Genesis.md', 'ZION CLI v2.9.8', 'Terra Nova IV'];
-  const introLead = cs
-    ? 'Síť žije. Uzel synchronizuje. Miner hledá. Stojíte na prahu příběhu, který se právě stává skutečností.'
-    : 'The network is live. The node syncs. The miner searches. You stand at the threshold of a story becoming real.';
-  const introBody = cs
-    ? 'Terra Nova není manifest budoucnosti — je to pracovní mapa. Jak ZION funguje dnes, jak poroste zítra, a kdo stojí vedle vás při budování lepšího světa.'
-    : 'Terra Nova is not a manifesto of the future — it is a working map. How ZION operates today, how it will grow tomorrow, and who stands beside you in building a better world.';
-  const introNotes = cs
-    ? [
-        'Genesis drží počátek, jazyk a posvátnou paměť spuštění v2.9.8 Deeksha.',
-        'ZION CLI je každodenní nástroj — od zion version po zion mine bench.',
-        'Terra Nova spojuje obě vrstvy do živé knihy čtvrté civilizace.',
-      ]
-    : [
-        'Genesis holds the origin, language, and sacred memory of the v2.9.8 Deeksha launch.',
-        'ZION CLI is the daily instrument — from zion version to zion mine bench.',
-        'Terra Nova binds both layers into a living book of the fourth civilization.',
-      ];
+  const introSignals = cs ? intro.signalsCs : intro.signalsEn;
+  const introLead = cs ? intro.leadCs : intro.leadEn;
+  const introBody = cs ? intro.bodyCs : intro.bodyEn;
+  const introNotes = cs ? intro.notesCs : intro.notesEn;
   const introQuote = cs
     ? 'Gate, Gate, Paragate, Parasamgate, Bodhi Swaha'
     : 'Gate, Gate, Paragate, Parasamgate, Bodhi Swaha';
@@ -685,55 +910,10 @@ export default function TerraNovaBookClient() {
   }, [tocOpen, overlayOpen]);
 
   useEffect(() => {
-    setActiveSection(0);
-    sectionRefs.current = [];
-  }, [activeChapter, activeEdition, cs]);
-
-  useEffect(() => {
     if (activeChapter >= currentChapters.length) {
       setActiveChapter(0);
     }
   }, [activeChapter, currentChapters.length]);
-
-  useEffect(() => {
-    const nodes = sectionRefs.current.filter(
-      (node): node is HTMLDivElement => Boolean(node),
-    );
-
-    if (!nodes.length) {
-      return;
-    }
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort((left, right) => right.intersectionRatio - left.intersectionRatio)[0];
-
-        if (!visible) {
-          return;
-        }
-
-        const index = Number((visible.target as HTMLElement).dataset.sectionIndex);
-        if (!Number.isNaN(index)) {
-          setActiveSection(index);
-        }
-      },
-      {
-        rootMargin: '-18% 0px -52% 0px',
-        threshold: [0.15, 0.35, 0.6],
-      },
-    );
-
-    nodes.forEach((node) => observer.observe(node));
-
-    return () => observer.disconnect();
-  }, [activeChapter, cs]);
-
-  const goToSection = useCallback((index: number) => {
-    setActiveSection(index);
-    sectionRefs.current[index]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, []);
 
   return (
     <div className="zion-shell min-h-screen pt-24 md:pt-28 pb-24 overflow-x-hidden">
@@ -771,12 +951,10 @@ export default function TerraNovaBookClient() {
 
                 <div className="space-y-3">
                   <p className="text-[11px] uppercase tracking-[0.35em] text-zion-gold/80">
-                    {cs ? 'ZION mainnet · v2.9.8 Deeksha · Terra Nova' : 'ZION Mainnet · v2.9.8 Deeksha · Terra Nova'}
+                    {cs ? intro.eyebrowCs : intro.eyebrowEn}
                   </p>
                   <h2 className="max-w-3xl text-3xl font-semibold leading-tight text-white sm:text-4xl md:text-5xl">
-                    {cs
-                      ? 'ZION je živý. Síť běží. Čtvrtá kniha začíná tady.'
-                      : 'ZION is live. The network runs. The fourth book begins here.'}
+                    {cs ? intro.headlineCs : intro.headlineEn}
                   </h2>
                 </div>
 
@@ -938,33 +1116,69 @@ export default function TerraNovaBookClient() {
             </h2>
             <p className="mt-2 text-sm text-gray-400 sm:text-base">
               {cs
-                ? 'Výhled na Zemi z observatoře Issobella a hlavní panel navigace sedmi směrů.'
-                : 'Earth view from Issobella observatory and the main navigation panel of seven directions.'}
+                ? 'Výhled na Zemi z observatoře Issobella a hlavní panel navigace šesti vrstvami L1 až L6.'
+                : 'Earth view from the Issobella observatory and the main navigation panel across the six L1 to L6 layers.'}
             </p>
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-            <div className="relative min-h-[420px] overflow-hidden rounded-4xl border border-[#1e293b] bg-[#02040a] p-5 shadow-[0_0_80px_rgba(0,0,0,0.8)_inset,0_24px_90px_rgba(0,0,0,0.45)] md:p-6">
-              
-              {/* Starry background layer */}
+          <div className="mb-6 rounded-4xl border border-white/10 bg-black/35 p-4 shadow-[0_20px_70px_rgba(0,0,0,0.24)] md:p-5">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="max-w-2xl">
+                <p className="text-[10px] uppercase tracking-[0.34em] text-zion-gold/75">
+                  {cs ? 'Čtecí větev Terra Novy' : 'Terra Nova Reading Branch'}
+                </p>
+                <p className="mt-2 text-sm leading-relaxed text-gray-400">
+                  {cs
+                    ? 'Přepnutí je teď navázané přímo na kompas a čtecí tok. Vyber větev a hned pod ní vidíš aktivní orientaci L1 až L6.'
+                    : 'Switching is now tied directly to the compass and reading flow. Pick a branch and immediately below it you see the active L1 to L6 orientation.'}
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-2 lg:justify-end">
+                {EDITION_OPTIONS.map((ed) => {
+                  const isActive = activeEdition === ed.id;
+                  return (
+                    <button
+                      key={`compass-edition-${ed.id}`}
+                      onClick={() => {
+                        setActiveEdition(ed.id);
+                        setActiveChapter(0);
+                      }}
+                      className="rounded-2xl border px-4 py-3 text-xs font-semibold uppercase tracking-[0.26em] transition-all"
+                      style={{
+                        backgroundColor: isActive ? ed.bg : 'rgba(255,255,255,0.03)',
+                        borderColor: isActive ? ed.border : 'rgba(255,255,255,0.08)',
+                        color: isActive ? ed.color : 'rgba(255,255,255,0.72)',
+                        boxShadow: isActive ? `0 0 30px ${ed.bg}` : 'none',
+                      }}
+                    >
+                      {cs ? ed.nameCs : ed.nameEn}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-4">
+            <div className="relative min-h-[300px] overflow-hidden rounded-4xl border border-[#1e293b] bg-[#02040a] p-5 shadow-[0_0_80px_rgba(0,0,0,0.8)_inset,0_24px_90px_rgba(0,0,0,0.45)] md:p-6 md:min-h-[340px]">
               <div className="pointer-events-none absolute inset-0">
                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(56,189,248,0.04)_0%,rgba(0,0,0,0)_100%)]" />
-                {Array.from({ length: 40 }).map((_, i) => (
+                {STARFIELD_POINTS.map((star, i) => (
                   <div
                     key={`star-${i}`}
                     className="absolute rounded-full bg-white"
                     style={{
-                      top: `${Math.random() * 100}%`,
-                      left: `${Math.random() * 100}%`,
-                      width: `${Math.random() * 2 + 0.5}px`,
-                      height: `${Math.random() * 2 + 0.5}px`,
-                      opacity: Math.random() * 0.7 + 0.1,
+                      top: star.top,
+                      left: star.left,
+                      width: star.size,
+                      height: star.size,
+                      opacity: star.opacity,
                     }}
                   />
                 ))}
               </div>
 
-              {/* Sci-fi HUD overlay */}
               <div className="pointer-events-none absolute inset-0 text-sky-400/15">
                 <svg width="100%" height="100%" className="absolute inset-0">
                   <line x1="12%" y1="0" x2="12%" y2="100%" stroke="currentColor" strokeWidth="1" strokeDasharray="4 8" />
@@ -973,13 +1187,11 @@ export default function TerraNovaBookClient() {
                   <line x1="0" y1="75%" x2="100%" y2="75%" stroke="currentColor" strokeWidth="1" strokeDasharray="4 8" />
                   <circle cx="50%" cy="50%" r="140" fill="none" stroke="currentColor" strokeWidth="0.5" />
                   <circle cx="50%" cy="50%" r="220" fill="none" stroke="currentColor" strokeWidth="0.5" strokeDasharray="2 12" />
-                  {/* Crosshairs */}
                   <line x1="48.5%" y1="50%" x2="51.5%" y2="50%" stroke="rgba(56,189,248,0.4)" strokeWidth="1.5" />
                   <line x1="50%" y1="48.5%" x2="50%" y2="51.5%" stroke="rgba(56,189,248,0.4)" strokeWidth="1.5" />
                 </svg>
               </div>
 
-              {/* Glowing Earth Horizon */}
               <div className="pointer-events-none absolute -bottom-[420px] left-1/2 h-[600px] w-[150%] -translate-x-1/2 rounded-[50%] bg-[radial-gradient(ellipse_at_top,rgba(14,165,233,0.25)_0%,rgba(5,25,50,0.95)_50%,rgba(0,0,0,1)_100%)] shadow-[0_-20px_100px_rgba(14,165,233,0.35)]" />
               <div className="pointer-events-none absolute -bottom-[420px] left-1/2 h-[600px] w-[150%] -translate-x-1/2 rounded-[50%] border-t-[3px] border-sky-300/40 shadow-[0_-4px_30px_rgba(56,189,248,0.6),inset_0_20px_40px_rgba(14,165,233,0.2)] blur-[1px]" />
               <div className="pointer-events-none absolute -bottom-[423px] left-1/2 h-[600px] w-[150%] -translate-x-1/2 rounded-[50%] border-t border-white/60 blur-[0.3px]" />
@@ -993,23 +1205,33 @@ export default function TerraNovaBookClient() {
                     ? 'Tady se drží měřítko zítřka: pod tebou Země, nad tebou nekonečný oceán hvězd. Mezi tím naše rozhodnutí.'
                     : 'This is where tomorrow scale applies: Earth below, an endless ocean of stars above. In between, our choices.'}
                 </p>
+                <div
+                  className="inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.28em]"
+                  style={{
+                    borderColor: currentEdition.border,
+                    backgroundColor: currentEdition.bg,
+                    color: currentEdition.color,
+                  }}
+                >
+                  <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: currentEdition.color }} />
+                  {cs ? currentEdition.nameCs : currentEdition.nameEn}
+                </div>
               </div>
 
-              {/* HUD Info bottom plate */}
               <div className="pointer-events-none absolute bottom-5 left-5 right-5 flex items-end justify-between rounded-xl border border-sky-400/15 bg-black/30 p-3 backdrop-blur-md shadow-lg">
                 <div>
                   <p className="text-[10px] uppercase tracking-[0.3em] font-mono text-sky-300">
                     ALT: 420.05 KM
                   </p>
-                  <p className="text-[10px] uppercase tracking-[0.3em] font-mono text-sky-300 mt-1">
+                  <p className="mt-1 text-[10px] uppercase tracking-[0.3em] font-mono text-sky-300">
                     VEL: 7.66 KM/S
                   </p>
                 </div>
                 <div className="flex gap-1.5 opacity-80">
-                  <div className="h-5 w-1.5 bg-sky-300 shadow-[0_0_8px_rgba(125,211,252,0.8)] rounded-[1px]"></div>
-                  <div className="h-5 w-1.5 bg-sky-400/70 shadow-[0_0_8px_rgba(56,189,248,0.6)] rounded-[1px]"></div>
-                  <div className="h-5 w-1.5 bg-sky-500/40 rounded-[1px]"></div>
-                  <div className="h-5 w-1.5 bg-sky-600/20 rounded-[1px]"></div>
+                  <div className="h-5 w-1.5 rounded-[1px] bg-sky-300 shadow-[0_0_8px_rgba(125,211,252,0.8)]"></div>
+                  <div className="h-5 w-1.5 rounded-[1px] bg-sky-400/70 shadow-[0_0_8px_rgba(56,189,248,0.6)]"></div>
+                  <div className="h-5 w-1.5 rounded-[1px] bg-sky-500/40"></div>
+                  <div className="h-5 w-1.5 rounded-[1px] bg-sky-600/20"></div>
                 </div>
               </div>
             </div>
@@ -1027,6 +1249,53 @@ export default function TerraNovaBookClient() {
                 <div className="inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1.5 text-[10px] uppercase tracking-[0.24em] text-emerald-200">
                   <span className="h-2 w-2 rounded-full bg-emerald-300 animate-pulse" />
                   {cs ? 'Navigace online' : 'Navigation online'}
+                </div>
+              </div>
+
+              <div className="mb-4 rounded-3xl border border-white/10 bg-black/25 p-3 md:p-4">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">
+                    {cs ? 'Body kompasu L1 až L6' : 'L1 to L6 Compass Nodes'}
+                  </p>
+                  <p className="text-[10px] uppercase tracking-[0.24em]" style={{ color: selectedDirection?.color ?? '#FFD700' }}>
+                    {selectedDirection ? `${selectedDirection.symbol} · ${cs ? selectedDirection.titleCs : selectedDirection.titleEn}` : ''}
+                  </p>
+                </div>
+
+                <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                  {ACCELERATION_DIRECTIONS.map((direction, index) => {
+                    const isActive = compassDir === index;
+                    return (
+                      <button
+                        key={`node-${direction.id}`}
+                        onClick={() => setCompassDir(index)}
+                        className="rounded-2xl border px-3 py-3 text-left transition-all"
+                        style={{
+                          borderColor: isActive ? `rgba(${direction.rgb},0.42)` : 'rgba(255,255,255,0.08)',
+                          backgroundColor: isActive ? `rgba(${direction.rgb},0.12)` : 'rgba(255,255,255,0.02)',
+                          color: isActive ? direction.color : 'rgba(255,255,255,0.72)',
+                        }}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="inline-flex h-7 min-w-7 items-center justify-center rounded-full border px-1.5 text-[10px] font-bold"
+                            style={{
+                              borderColor: isActive ? `rgba(${direction.rgb},0.45)` : 'rgba(255,255,255,0.12)',
+                              backgroundColor: isActive ? `rgba(${direction.rgb},0.18)` : 'rgba(255,255,255,0.03)',
+                            }}
+                          >
+                            {direction.symbol}
+                          </span>
+                          <span className="text-[11px] font-semibold uppercase tracking-[0.18em]">
+                            {cs ? direction.titleCs : direction.titleEn}
+                          </span>
+                        </div>
+                        <p className="mt-2 text-[11px] leading-relaxed text-gray-400">
+                          {cs ? direction.techCs : direction.techEn}
+                        </p>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -1048,6 +1317,27 @@ export default function TerraNovaBookClient() {
                         <p className="mt-2 text-sm leading-relaxed text-gray-300">
                           {cs ? selectedDirection.descCs : selectedDirection.descEn}
                         </p>
+                        <div className="mt-3 rounded-2xl border border-white/8 bg-white/4 px-3 py-2">
+                          <p className="text-[10px] uppercase tracking-[0.24em] text-gray-500">
+                            {cs ? 'Technický bod' : 'Technical Point'}
+                          </p>
+                          <p className="mt-1 text-sm leading-relaxed text-gray-300">
+                            {cs ? selectedDirection.techCs : selectedDirection.techEn}
+                          </p>
+                        </div>
+                        <div className="mt-3 rounded-2xl border border-white/8 bg-white/4 px-3 py-2.5">
+                          <p className="text-[10px] uppercase tracking-[0.24em] text-gray-500">
+                            {cs ? 'Checklist fáze' : 'Phase Checklist'}
+                          </p>
+                          <ul className="mt-2 space-y-1.5">
+                            {(cs ? selectedDirection.checklistCs : selectedDirection.checklistEn).map((item) => (
+                              <li key={item} className="flex items-start gap-2 text-[12px] leading-snug text-gray-300">
+                                <span className="mt-[3px] h-2 w-2 shrink-0 rounded-full border" style={{ borderColor: selectedDirection.color, backgroundColor: `${selectedDirection.color}22` }} />
+                                {item}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
                       </>
                     ) : (
                       <div className="h-full min-h-[136px] flex items-center justify-center text-center text-sm text-gray-500">
@@ -1055,32 +1345,11 @@ export default function TerraNovaBookClient() {
                       </div>
                     )}
                   </div>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    {ACCELERATION_DIRECTIONS.map((direction, index) => {
-                      const isActive = compassDir === index;
-                      return (
-                        <button
-                          key={direction.id}
-                          onClick={() => setCompassDir(isActive ? null : index)}
-                          className="rounded-xl border px-3 py-2 text-left transition-colors"
-                          style={{
-                            borderColor: isActive
-                              ? `rgba(${direction.rgb},0.42)`
-                              : 'rgba(255,255,255,0.1)',
-                            backgroundColor: isActive
-                              ? `rgba(${direction.rgb},0.12)`
-                              : 'rgba(255,255,255,0.02)',
-                            color: isActive ? direction.color : 'rgba(255,255,255,0.72)',
-                          }}
-                        >
-                          <span className="text-[11px] font-semibold uppercase tracking-[0.2em]">
-                            {direction.symbol} {cs ? direction.titleCs : direction.titleEn}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
+                  <p className="text-[11px] leading-relaxed text-gray-500">
+                    {cs
+                      ? 'Každý bod kompasu je zároveň aktivní uzel roadmapy. Klikni na L1 až L6 nahoře nebo přímo do SVG.'
+                      : 'Each compass point is also an active roadmap node. Click L1 to L6 above or directly inside the SVG.'}
+                  </p>
                 </div>
               </div>
 
@@ -1193,49 +1462,6 @@ export default function TerraNovaBookClient() {
           </div>
         </motion.section>
 
-        {/* ═══════ EDITION SELECTOR ═══════ */}
-        <motion.section
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4, duration: 0.6 }}
-          className="mb-12 border-y border-white/5 py-8"
-        >
-          <div className="text-center mb-6">
-            <h3 className="text-[10px] uppercase tracking-[0.4em] text-zion-gold/80 font-mono mb-3">
-              {cs ? 'Režim čtení' : 'Reading Mode'}
-            </h3>
-            <p className="text-sm text-gray-400 max-w-2xl mx-auto leading-relaxed">
-              {cs
-                ? 'Přepínejte mezi třemi skutečnými verzemi Terra Novy: organickou, technickou a sci-fi narativní. Hlavička i obsah se teď přepínají spolu.'
-                : 'Switch between the three actual Terra Nova editions: organic, technical, and sci-fi narrative. The header and contents now switch together.'}
-            </p>
-          </div>
-
-          <div className="flex flex-wrap justify-center gap-3">
-            {EDITION_OPTIONS.map((ed) => (
-              <button
-                key={ed.id}
-                onClick={() => {
-                  setActiveEdition(ed.id);
-                  setActiveChapter(0);
-                  setActiveSection(0);
-                }}
-                className="px-5 py-3 rounded-2xl border text-sm font-medium transition-all flex items-center gap-2 relative overflow-hidden"
-                style={{
-                  backgroundColor: activeEdition === ed.id ? ed.bg : 'rgba(0,0,0,0.4)',
-                  borderColor: activeEdition === ed.id ? ed.border : 'rgba(255,255,255,0.08)',
-                  color: activeEdition === ed.id ? ed.color : 'rgba(255,255,255,0.5)',
-                }}
-              >
-                {activeEdition === ed.id && (
-                  <motion.div layoutId="activeEditionGlow" className="absolute inset-0 bg-white/5 opacity-50" />
-                )}
-                <span className="relative z-10">{cs ? ed.nameCs : ed.nameEn}</span>
-              </button>
-            ))}
-          </div>
-        </motion.section>
-
         {/* ═══════ TABLE OF CONTENTS (inline) ═══════ */}
         <motion.section
           initial={{ opacity: 0, y: 16 }}
@@ -1254,30 +1480,30 @@ export default function TerraNovaBookClient() {
                 <button
                   key={ch.id}
                   onClick={() => goTo(i)}
-                  className="group rounded-2xl border p-4 text-left transition-all duration-300 flex items-center gap-3"
+                  className="group flex items-start gap-3 rounded-2xl border p-4 text-left transition-all duration-300"
                   style={{
                     borderColor: isActive ? `rgba(${ch.rgb},0.35)` : 'rgba(255,255,255,0.06)',
                     backgroundColor: isActive ? `rgba(${ch.rgb},0.06)` : 'rgba(0,0,0,0.3)',
                   }}
                 >
                   <span
-                    className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold border transition-colors"
+                    className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center self-start rounded-xl border text-xs font-bold transition-colors"
                     style={{
                       borderColor: `rgba(${ch.rgb},${isActive ? 0.4 : 0.15})`,
                       color: isActive ? ch.color : 'rgba(255,255,255,0.4)',
                       backgroundColor: `rgba(${ch.rgb},${isActive ? 0.1 : 0.03})`,
                     }}
                   >
-                    {isAppendix ? ch.number : ch.number === 'Prolog' ? '✦' : ch.number}
+                    {isAppendix ? ch.number : ch.number === 'Prolog' ? '✦' : chapterDigit(ch.number)}
                   </span>
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1 overflow-hidden">
                     {ch.subtitleCs && (
-                      <p className="text-[9px] uppercase tracking-[0.2em] text-gray-600">
+                      <p className="line-clamp-2 text-[9px] uppercase tracking-[0.2em] text-gray-600 wrap-break-word">
                         {cs ? ch.subtitleCs : ch.subtitleEn}
                       </p>
                     )}
                     <p
-                      className="text-sm font-semibold truncate transition-colors"
+                      className="mt-1 text-sm font-semibold leading-snug text-wrap transition-colors wrap-break-word"
                       style={{ color: isActive ? ch.color : 'rgba(255,255,255,0.65)' }}
                     >
                       {formatChapterLabel(ch, cs)}
@@ -1314,12 +1540,6 @@ export default function TerraNovaBookClient() {
                 />
               </div>
 
-              <button
-                onClick={() => goToSection(activeSection)}
-                className="mt-3 inline-flex max-w-full items-center rounded-full border border-white/10 bg-white/3 px-3 py-1.5 text-[11px] uppercase tracking-[0.24em] text-gray-300"
-              >
-                <span className="truncate">{sectionLabels[activeSection]}</span>
-              </button>
             </div>
           </div>
 
@@ -1361,35 +1581,6 @@ export default function TerraNovaBookClient() {
                 )}
               </div>
 
-              <div className="space-y-2">
-                <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">
-                  {cs ? 'Sekce kapitoly' : 'Chapter Sections'}
-                </p>
-                <div className="space-y-1.5">
-                  {sectionLabels.map((label, index) => {
-                    const isActive = activeSection === index;
-                    return (
-                      <button
-                        key={`${chapter.id}-section-${index}`}
-                        onClick={() => goToSection(index)}
-                        className="flex w-full items-center gap-2 rounded-2xl px-3 py-2 text-left transition-colors"
-                        style={{
-                          backgroundColor: isActive
-                            ? `rgba(${chapter.rgb},0.1)`
-                            : 'rgba(255,255,255,0.02)',
-                          color: isActive ? chapter.color : 'rgba(255,255,255,0.68)',
-                        }}
-                      >
-                        <span className="text-[10px] font-mono text-gray-500">
-                          {(index + 1).toString().padStart(2, '0')}
-                        </span>
-                        <span className="min-w-0 truncate text-xs">{label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
               <div className="text-[11px] leading-relaxed text-gray-500 space-y-1">
                 <p>{cs ? 'Sipky vlevo/vpravo: další kapitoly' : 'Left/right arrows: next chapters'}</p>
                 <p>{cs ? 'Esc: zavřít obsah' : 'Esc: close contents'}</p>
@@ -1415,9 +1606,9 @@ export default function TerraNovaBookClient() {
 
               {/* Chapter header */}
               <div className="relative mb-8 md:mb-10">
-                <div className="flex flex-wrap items-center gap-3 mb-4">
+                <div className="mb-4 flex flex-wrap items-start gap-3">
                   <span
-                    className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.25em]"
+                    className="inline-flex max-w-full items-center rounded-2xl border px-3 py-2 text-left text-xs font-semibold uppercase leading-snug tracking-[0.22em] wrap-break-word"
                     style={{
                       borderColor: `rgba(${chapter.rgb},0.3)`,
                       color: chapter.color,
@@ -1428,7 +1619,7 @@ export default function TerraNovaBookClient() {
                     {!chapter.subtitleCs &&
                       chapterLabel}
                   </span>
-                  <span className="inline-flex items-center rounded-full border border-white/10 bg-white/3 px-3 py-1 text-[10px] uppercase tracking-[0.28em] text-gray-500">
+                  <span className="inline-flex max-w-full items-center rounded-2xl border border-white/10 bg-white/3 px-3 py-2 text-left text-[10px] uppercase leading-snug tracking-[0.24em] text-gray-500 wrap-break-word">
                     {cs ? meta.editionCs : meta.editionEn}
                   </span>
                   <span className="text-[10px] text-gray-600">
@@ -1456,42 +1647,6 @@ export default function TerraNovaBookClient() {
                   </blockquote>
                 )}
 
-                <div className="mt-6 space-y-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-[10px] uppercase tracking-[0.32em] text-gray-500">
-                      {cs ? 'Navigace kapitolou' : 'Chapter Navigation'}
-                    </p>
-                    <button
-                      onClick={() => goToSection(activeSection)}
-                      className="text-[10px] uppercase tracking-[0.24em] text-gray-500 hover:text-white transition-colors"
-                    >
-                      {cs ? 'Aktivní sekce' : 'Current section'}
-                    </button>
-                  </div>
-                  <div className="flex gap-2 overflow-x-auto pb-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-                    {sectionLabels.map((label, index) => {
-                      const isActive = activeSection === index;
-                      return (
-                        <button
-                          key={`${chapter.id}-pill-${index}`}
-                          onClick={() => goToSection(index)}
-                          className="shrink-0 rounded-full border px-3 py-2 text-[11px] uppercase tracking-[0.22em] transition-colors"
-                          style={{
-                            borderColor: isActive
-                              ? `rgba(${chapter.rgb},0.35)`
-                              : 'rgba(255,255,255,0.08)',
-                            backgroundColor: isActive
-                              ? `rgba(${chapter.rgb},0.12)`
-                              : 'rgba(255,255,255,0.02)',
-                            color: isActive ? chapter.color : 'rgba(255,255,255,0.62)',
-                          }}
-                        >
-                          {label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
               </div>
 
               {/* Chapter body */}
@@ -1499,11 +1654,6 @@ export default function TerraNovaBookClient() {
                 {sections.map((sec, si) => (
                   <div
                     key={si}
-                    ref={(node) => {
-                      sectionRefs.current[si] = node;
-                    }}
-                    data-section-index={si}
-                    id={`${chapter.id}-section-${si}`}
                     className="scroll-mt-36"
                   >
                     {sec.heading && (
@@ -1677,7 +1827,7 @@ export default function TerraNovaBookClient() {
                         className="text-xs font-mono w-5 text-center shrink-0"
                         style={{ color: isActive ? ch.color : 'rgba(255,255,255,0.3)' }}
                       >
-                        {isAppendix ? ch.number : ch.number === 'Prolog' ? '✦' : ch.number}
+                        {isAppendix ? ch.number : ch.number === 'Prolog' ? '✦' : chapterDigit(ch.number)}
                       </span>
                       <span
                         className="text-sm truncate"
