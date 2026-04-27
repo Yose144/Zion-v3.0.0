@@ -1,24 +1,21 @@
-# ZION CLI Reference
+# ZION CLI Reference (practical cheat sheet)
 
-## Purpose
+This document is a command cheat sheet with copy/paste examples.
 
-This is the command-oriented companion to the main CLI guide.
+If you're a beginner, read `CLI Guide` first, then use this reference.
 
-Use it when you need concrete operator examples for the current `zion` surface.
-
-## Core runtime control
+## 1) Basic stack checks
 
 ```bash
 zion status
 zion doctor
 zion logs node
 zion logs ai-native
-zion dashboard
 ```
 
-## Lifecycle targets
+## 2) Lifecycle commands (start/stop/restart)
 
-Current top-level lifecycle targets:
+Supported targets:
 
 - `all`
 - `node` or `core`
@@ -39,85 +36,92 @@ zion restart bridge
 zion stop monitoring
 ```
 
-If you pass an unsupported target, the CLI should fail locally with the supported target list before it reaches remote compose operations.
-
-## L1 examples
+## 3) L1: Node
 
 ```bash
 zion node status
 zion node peers
+zion node blocks
 zion node block 6801
+zion node mempool
 zion node rpc getChainInfo
+```
 
+## 4) L1: Pool
+
+```bash
 zion pool stats
 zion pool miners
+zion pool config
+```
 
+## 5) L1: Miner
+
+```bash
 zion mine status
 zion mine bench
 zion mine bench --ekam --backend opencl --work-size 8192
+zion mine start --backend opencl
+zion mine stop
+```
 
+## 6) Wallet
+
+```bash
+zion wallet new --set-default
+zion wallet address
 zion wallet balance
 zion wallet send zion1example 1.25
 ```
 
-`zion mine start` now forwards explicit backends like `opencl`, `metal`, and `cuda` to the miner correctly, and `zion mine bench --ekam` now hits the real Ekam benchmark mode.
-
-## L2 examples
+## 7) L2: Bridge + DAO
 
 ```bash
 zion bridge status
 zion bridge pending
-zion bridge transfer base zion1example 10
 
 zion dao status
 zion dao treasury
-zion dao vote 7 yes
+zion dao proposals
 ```
 
-## L3 examples
+## 8) L3: Agent + WARP + NCL
 
 ```bash
 zion agent status
 zion agent config
 zion agent memory
-zion agent rag query "bridge"
-zion agent ask "What is the current L3 state?"
+zion agent ask "What is current L3 state?"
 
 zion warp status
 zion warp stats
 
 zion ncl status
 zion ncl workers
-zion ncl submit ./job.json
 ```
 
-## Operations examples
+## 9) Deploy and ops
 
 ```bash
 zion deploy status
 zion deploy server
 zion deploy website
 zion deploy prune
-
-zion config show
-zion config path
-zion config validate
-zion doctor
-zion config set node.rpc_host 91.98.122.165
-
-zion monitor
-zion explorer
-zion completions zsh
 ```
 
-`zion doctor` is the one-shot preflight for operator installs: config sanity, local miner binary detection, node RPC reachability, and AI Native reachability.
+## 10) Config
 
-## Recommended operator order
+```bash
+zion config path
+zion config show
+zion config validate
+zion config set node.rpc_host 91.98.122.165
+```
 
-When something is wrong, the shortest factual sequence is usually:
+## 11) If `zion` is not in PATH
 
-1. `zion status`
-2. `zion node status`
-3. `zion agent status`
-4. `zion logs <affected-service>`
-5. the narrow command group for the failing layer
+Use cargo fallback with the same command:
+
+```bash
+cargo run --manifest-path V3/Cargo.toml -p zion-cli -- status
+```
