@@ -467,7 +467,7 @@ export const ACCELERATION_DIRECTIONS: AccelerationDirection[] = [
   }
 ];
 
-function IssobellaCompass({ selected, onSelect }: { selected: number | null, onSelect: (i: number | null) => void }) {
+function IssobellaCompass({ selected, onSelect, cs }: { selected: number | null, onSelect: (i: number | null) => void, cs: boolean }) {
   const [hovered, setHovered] = useState<number | null>(null);
   const highlighted = selected ?? hovered;
   const [rotation, setRotation] = useState(0);
@@ -508,6 +508,29 @@ function IssobellaCompass({ selected, onSelect }: { selected: number | null, onS
   const polyStr = ACCELERATION_DIRECTIONS.map((_, i) => `${nodePos(i).x},${nodePos(i).y}`).join(' ');
   const starStr1 = [0, 2, 4].map(i => `${nodePos(i).x},${nodePos(i).y}`).join(' ');
   const starStr2 = [1, 3, 5].map(i => `${nodePos(i).x},${nodePos(i).y}`).join(' ');
+
+  // ── Sacred geometry: Semeno života + Metatronova kostka ──
+  const SOL_R = 50;
+  const MET_R2 = 100;
+  const sacredAngles1 = [0, 60, 120, 180, 240, 300];
+  const sacredAngles2 = [30, 90, 150, 210, 270, 330];
+  const metPts: [number, number][] = [
+    [CX, CY],
+    ...sacredAngles1.map((a): [number, number] => {
+      const rad = (a - 90) * Math.PI / 180;
+      return [roundCoord(CX + SOL_R * Math.cos(rad)), roundCoord(CY + SOL_R * Math.sin(rad))];
+    }),
+    ...sacredAngles2.map((a): [number, number] => {
+      const rad = (a - 90) * Math.PI / 180;
+      return [roundCoord(CX + MET_R2 * Math.cos(rad)), roundCoord(CY + MET_R2 * Math.sin(rad))];
+    }),
+  ];
+  const metEdges: [number, number, number, number][] = [];
+  for (let i = 0; i < metPts.length; i++) {
+    for (let j = i + 1; j < metPts.length; j++) {
+      metEdges.push([metPts[i][0], metPts[i][1], metPts[j][0], metPts[j][1]]);
+    }
+  }
 
   return (
     <svg viewBox="0 0 700 700" className="w-full h-auto select-none" role="img">
@@ -561,6 +584,31 @@ function IssobellaCompass({ selected, onSelect }: { selected: number | null, onS
       <polygon points={starStr1} fill="none" stroke="rgba(255,215,0,0.08)" strokeWidth="0.8" />
       <polygon points={starStr2} fill="none" stroke="rgba(255,215,0,0.08)" strokeWidth="0.8" />
 
+      {/* ── Holografická Metatronova kostka ── */}
+      <g opacity="0.07" stroke="rgba(255,215,0,0.55)" fill="none">
+        {metEdges.map(([x1, y1, x2, y2], idx) => (
+          <line key={`mc-${idx}`} x1={x1} y1={y1} x2={x2} y2={y2} strokeWidth="0.4" />
+        ))}
+      </g>
+
+      {/* ── Holografické Semeno života ── */}
+      <g opacity="0.14" fill="none">
+        <circle cx={CX} cy={CY} r={SOL_R} stroke="rgba(180,220,255,0.75)" strokeWidth="0.9" />
+        {sacredAngles1.map(a => {
+          const rad = (a - 90) * Math.PI / 180;
+          return (
+            <circle
+              key={`sol-${a}`}
+              cx={roundCoord(CX + SOL_R * Math.cos(rad))}
+              cy={roundCoord(CY + SOL_R * Math.sin(rad))}
+              r={SOL_R}
+              stroke="rgba(140,200,255,0.65)"
+              strokeWidth="0.8"
+            />
+          );
+        })}
+      </g>
+
       {ACCELERATION_DIRECTIONS.map((d, i) => {
         const p = nodePos(i);
         const isHl = highlighted === i;
@@ -608,7 +656,7 @@ function IssobellaCompass({ selected, onSelect }: { selected: number | null, onS
             <circle cx={p.x} cy={p.y} r={NODE_R + 10} fill="none" stroke={`rgba(${d.rgb},${isHl ? 0.35 : 0})`} strokeWidth="1.5" style={{ transition: 'stroke 0.4s' }} />
             <circle cx={p.x} cy={p.y} r={NODE_R} fill={isHl ? `rgba(${d.rgb},0.12)` : 'rgba(0,0,0,0.65)'} stroke={isHl ? d.color : 'rgba(255,255,255,0.12)'} strokeWidth={isHl ? 2.5 : 1.2} filter={isHl ? 'url(#zk-glow-acc)' : undefined} style={{ transition: 'all 0.35s' }} />
             <text x={p.x} y={p.y + 1} textAnchor="middle" dominantBaseline="central" fill={isHl ? d.color : 'rgba(255,255,255,0.7)'} fontSize="18" fontWeight="600" fontFamily="var(--font-mono), monospace" style={{ transition: 'fill 0.3s' }}>{d.symbol}</text>
-            <text x={lp.x} y={lp.y} textAnchor="middle" dominantBaseline="central" fill={isHl ? d.color : 'rgba(255,255,255,0.45)'} fontSize="13" fontWeight={isHl ? '700' : '500'} letterSpacing="0.04em" style={{ transition: 'fill 0.3s' }}>{d.titleCs}</text>
+            <text x={lp.x} y={lp.y} textAnchor="middle" dominantBaseline="central" fill={isHl ? d.color : 'rgba(255,255,255,0.45)'} fontSize="13" fontWeight={isHl ? '700' : '500'} letterSpacing="0.04em" style={{ transition: 'fill 0.3s' }}>{cs ? d.titleCs : d.titleEn}</text>
             {isHl && <line x1={p.x + (pt(CX, CY, R_NODES + 34, angle).x - p.x) * 0.7} y1={p.y + (pt(CX, CY, R_NODES + 34, angle).y - p.y) * 0.7} x2={pt(CX, CY, R_NODES + 34, angle).x} y2={pt(CX, CY, R_NODES + 34, angle).y} stroke={`rgba(${d.rgb},0.35)`} strokeWidth="1" strokeDasharray="2 3" />}
           </g>
         );
@@ -744,7 +792,7 @@ const VISION_20Y_STEPS = [
 ];
 
 export default function TerraNovaBookClient() {
-  const { lang } = useLang();
+  const { lang, setLang } = useLang();
   const cs = lang === 'cs';
 
   const [activeEdition, setActiveEdition] = useState<EditionKey>('final');
@@ -788,8 +836,9 @@ export default function TerraNovaBookClient() {
   const introQuote = cs
     ? 'Gate, Gate, Paragate, Parasamgate, Bodhi Swaha'
     : 'Gate, Gate, Paragate, Parasamgate, Bodhi Swaha';
-  const introDedication =
-    'For Sarah Issobel, Maitreya Buddha, Radha & Sita & Meriam /EnaMaTara/, Friends, Family, Freedom Humanity and all the children of this world: ZION is yours. Build a better world where you reach for the stars. The Golden Age begins. Peace & One Love 4ever.';
+  const introDedication = cs
+    ? 'Pro Sarah Issobel, Maitreyu Buddhu, Radhu & Situ i Meriam,\npřátele, rodinu, svobodné lidstvo a všechny děti tohoto světa:\nZION je váš. Stavte lepší svět, a dosáhnete ke hvězdám.\nZlatý věk začíná.'
+    : 'For Sarah Issobel, Maitreya Buddha, Radha & Sita & Meriam /EnaMaTara/,\nfriends, family, free humanity and all the children of this world:\nZION is yours. Build a better world where you reach for the stars.\nThe Golden Age begins. Peace & One Love 4ever.';
   const genesisOverlayLines = cs
     ? [
         'Genesis není jen předmluva. Je to okamžik, kdy se jazyk, síť a závazek poprvé dotknou stejného horizontu.',
@@ -1121,42 +1170,65 @@ export default function TerraNovaBookClient() {
             </p>
           </div>
 
-          <div className="mb-6 rounded-4xl border border-white/10 bg-black/35 p-4 shadow-[0_20px_70px_rgba(0,0,0,0.24)] md:p-5">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div className="max-w-2xl">
-                <p className="text-[10px] uppercase tracking-[0.34em] text-zion-gold/75">
-                  {cs ? 'Čtecí větev Terra Novy' : 'Terra Nova Reading Branch'}
-                </p>
-                <p className="mt-2 text-sm leading-relaxed text-gray-400">
-                  {cs
-                    ? 'Přepnutí je teď navázané přímo na kompas a čtecí tok. Vyber větev a hned pod ní vidíš aktivní orientaci L1 až L6.'
-                    : 'Switching is now tied directly to the compass and reading flow. Pick a branch and immediately below it you see the active L1 to L6 orientation.'}
-                </p>
-              </div>
-
-              <div className="flex flex-wrap gap-2 lg:justify-end">
-                {EDITION_OPTIONS.map((ed) => {
-                  const isActive = activeEdition === ed.id;
-                  return (
-                    <button
-                      key={`compass-edition-${ed.id}`}
-                      onClick={() => {
-                        setActiveEdition(ed.id);
-                        setActiveChapter(0);
-                      }}
-                      className="rounded-2xl border px-4 py-3 text-xs font-semibold uppercase tracking-[0.26em] transition-all"
-                      style={{
-                        backgroundColor: isActive ? ed.bg : 'rgba(255,255,255,0.03)',
-                        borderColor: isActive ? ed.border : 'rgba(255,255,255,0.08)',
-                        color: isActive ? ed.color : 'rgba(255,255,255,0.72)',
-                        boxShadow: isActive ? `0 0 30px ${ed.bg}` : 'none',
-                      }}
+          {/* ── Edition switcher ── */}
+          <div className="mb-6 overflow-hidden rounded-4xl border border-white/10 bg-black/40 shadow-[0_20px_70px_rgba(0,0,0,0.32)]">
+            <div className="border-b border-white/6 px-5 py-3 flex items-center justify-between gap-3">
+              <p className="text-[10px] uppercase tracking-[0.4em] text-zion-gold/60">
+                {cs ? 'Čtecí větev Terra Novy — vyber edici' : 'Terra Nova Reading Branch — choose edition'}
+              </p>
+              <button
+                onClick={() => setLang(lang === 'cs' ? 'en' : 'cs')}
+                className="shrink-0 flex items-center gap-1 rounded-lg border border-white/15 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.22em] text-gray-400 hover:border-zion-gold/40 hover:text-zion-gold transition-colors"
+                title={lang === 'cs' ? 'Switch to English' : 'Přepnout do češtiny'}
+              >
+                {lang === 'cs' ? 'EN' : 'CS'}
+              </button>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3">
+              {EDITION_OPTIONS.map((ed, idx) => {
+                const isActive = activeEdition === ed.id;
+                const icons = ['◈', '◉', '◆'];
+                const subtitlesCs = ['Organická · Praha', 'Technická · Cloud', 'AI · Gemini'];
+                const subtitlesEn = ['Organic · Prague', 'Technical · Cloud', 'AI · Gemini'];
+                return (
+                  <button
+                    key={`compass-edition-${ed.id}`}
+                    onClick={() => { setActiveEdition(ed.id); setActiveChapter(0); }}
+                    className="relative flex flex-col items-center gap-1.5 border-b sm:border-b-0 sm:border-r border-white/6 last:border-0 px-5 py-5 transition-all duration-300 group"
+                    style={{
+                      backgroundColor: isActive ? `rgba(${ed.id === 'org' ? '50,205,50' : ed.id === 'final' ? '0,191,255' : '138,43,226'},0.07)` : 'transparent',
+                    }}
+                  >
+                    {isActive && (
+                      <span
+                        className="pointer-events-none absolute inset-0 rounded-none"
+                        style={{ boxShadow: `inset 0 0 60px rgba(${ed.id === 'org' ? '50,205,50' : ed.id === 'final' ? '0,191,255' : '138,43,226'},0.12)` }}
+                      />
+                    )}
+                    {isActive && (
+                      <span
+                        className="absolute bottom-0 left-0 right-0 h-[2px] rounded-full"
+                        style={{ backgroundColor: ed.color, boxShadow: `0 0 12px ${ed.color}` }}
+                      />
+                    )}
+                    <span
+                      className="text-2xl transition-all duration-300"
+                      style={{ color: isActive ? ed.color : 'rgba(255,255,255,0.2)', filter: isActive ? `drop-shadow(0 0 8px ${ed.color})` : 'none' }}
+                    >
+                      {icons[idx]}
+                    </span>
+                    <span
+                      className="text-sm font-bold uppercase tracking-[0.22em] transition-colors duration-300"
+                      style={{ color: isActive ? ed.color : 'rgba(255,255,255,0.55)' }}
                     >
                       {cs ? ed.nameCs : ed.nameEn}
-                    </button>
-                  );
-                })}
-              </div>
+                    </span>
+                    <span className="text-[10px] uppercase tracking-[0.2em] text-gray-600 group-hover:text-gray-400 transition-colors">
+                      {cs ? subtitlesCs[idx] : subtitlesEn[idx]}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -1301,7 +1373,7 @@ export default function TerraNovaBookClient() {
 
               <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)]">
                 <div className="rounded-3xl border border-white/10 bg-black/35 p-3 md:p-4">
-                  <IssobellaCompass selected={compassDir} onSelect={setCompassDir} />
+                  <IssobellaCompass selected={compassDir} onSelect={setCompassDir} cs={cs} />
                 </div>
 
                 <div className="space-y-3">
@@ -1353,40 +1425,6 @@ export default function TerraNovaBookClient() {
                 </div>
               </div>
 
-              <div className="mt-4 rounded-3xl border border-zion-gold/18 bg-black/30 p-4 md:p-5">
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <p className="text-[10px] uppercase tracking-[0.3em] text-zion-gold/75">
-                    {cs ? '20letá liniová vize' : '20-Year Linear Vision'}
-                  </p>
-                  <p className="text-[10px] uppercase tracking-[0.24em] text-gray-500">
-                    2026 → 2046
-                  </p>
-                </div>
-
-                <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-                  {VISION_20Y_STEPS.map((step, index) => (
-                    <div
-                      key={`${step.year}-${step.titleEn}`}
-                      className="rounded-2xl border border-white/10 bg-white/4 p-3"
-                    >
-                      <div className="mb-2 flex items-center gap-2">
-                        <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full border border-zion-gold/30 bg-zion-gold/10 px-1.5 text-[10px] font-semibold text-zion-gold">
-                          {index + 1}
-                        </span>
-                        <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-zion-gold/80">
-                          {step.year}
-                        </span>
-                      </div>
-                      <p className="text-xs font-semibold text-white">
-                        {cs ? step.titleCs : step.titleEn}
-                      </p>
-                      <p className="mt-1 text-[11px] leading-relaxed text-gray-400">
-                        {cs ? step.descCs : step.descEn}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
             </div>
           </div>
         </motion.section>
@@ -1415,21 +1453,6 @@ export default function TerraNovaBookClient() {
             {cs ? meta.editionCs : meta.editionEn}
           </p>
         </motion.header>
-
-        {/* ═══════ DEDICATION ═══════ */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3, duration: 0.8 }}
-          className="mb-12 text-center"
-        >
-          <blockquote className="text-sm md:text-base text-gray-400 italic leading-relaxed whitespace-pre-line max-w-2xl mx-auto">
-            {cs ? meta.dedicationCs : meta.dedicationEn}
-          </blockquote>
-          <p className="mt-3 text-xs text-gray-600">
-            — Yeshuae Ben Yose / Zion Creator
-          </p>
-        </motion.div>
 
         {/* ═══════ ABOUT + COMPOSITION ═══════ */}
         <motion.section
@@ -1528,9 +1551,17 @@ export default function TerraNovaBookClient() {
                     {cs ? chapter.titleCs : chapter.titleEn}
                   </p>
                 </div>
-                <p className="shrink-0 text-[10px] uppercase tracking-[0.26em] text-gray-500">
-                  {activeChapter + 1} / {currentChapters.length}
-                </p>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => setLang(lang === 'cs' ? 'en' : 'cs')}
+                    className="rounded-lg border border-white/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 hover:border-zion-gold/40 hover:text-zion-gold transition-colors"
+                  >
+                    {lang === 'cs' ? 'EN' : 'CS'}
+                  </button>
+                  <p className="text-[10px] uppercase tracking-[0.26em] text-gray-500">
+                    {activeChapter + 1} / {currentChapters.length}
+                  </p>
+                </div>
               </div>
 
               <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/6">
@@ -1546,10 +1577,19 @@ export default function TerraNovaBookClient() {
           <aside className="hidden lg:block lg:sticky lg:top-32">
             <div className="zion-panel rounded-3xl border border-white/10 bg-black/50 p-5 space-y-5 shadow-[0_18px_60px_rgba(0,0,0,0.28)]">
               <div>
-                <p className="text-[10px] uppercase tracking-[0.35em] text-gray-500">
-                  {cs ? 'Čtecí režim' : 'Reading Mode'}
-                </p>
-                <p className="mt-2 text-sm font-semibold text-white">{chapterLabel}</p>
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-[10px] uppercase tracking-[0.35em] text-gray-500">
+                    {cs ? 'Čtecí režim' : 'Reading Mode'}
+                  </p>
+                  <button
+                    onClick={() => setLang(lang === 'cs' ? 'en' : 'cs')}
+                    className="rounded-lg border border-white/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 hover:border-zion-gold/40 hover:text-zion-gold transition-colors"
+                    title={lang === 'cs' ? 'Switch to English' : 'Přepnout do češtiny'}
+                  >
+                    {lang === 'cs' ? 'EN' : 'CS'}
+                  </button>
+                </div>
+                <p className="mt-1 text-sm font-semibold text-white">{chapterLabel}</p>
                 <p className="text-xs text-gray-500">{activeChapter + 1} / {currentChapters.length}</p>
               </div>
 
@@ -1777,6 +1817,48 @@ export default function TerraNovaBookClient() {
             </Link>
           </div>
         </motion.footer>
+
+        {/* ── pro Eričku ── */}
+        <div className="mt-12 text-center select-none">
+          <motion.svg
+            viewBox="0 0 120 120"
+            className="mx-auto w-20 h-20 cursor-pointer"
+            whileHover={{ scale: 1.12 }}
+            whileTap={{ scale: 0.95 }}
+            animate={{
+              filter: [
+                'drop-shadow(0 0 5px rgba(255,160,180,0.25))',
+                'drop-shadow(0 0 18px rgba(255,160,180,0.6))',
+                'drop-shadow(0 0 5px rgba(255,160,180,0.25))',
+              ],
+            }}
+            transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+          >
+            {/* outer petals – 6× @ 60° */}
+            {[0, 60, 120, 180, 240, 300].map(a => (
+              <g key={`op-${a}`} transform={`rotate(${a}, 60, 60)`}>
+                <ellipse cx="60" cy="32" rx="9" ry="23"
+                  fill="rgba(255,175,200,0.32)"
+                  stroke="rgba(255,140,170,0.18)" strokeWidth="0.6" />
+              </g>
+            ))}
+            {/* inner petals – 6× @ 30° offset */}
+            {[30, 90, 150, 210, 270, 330].map(a => (
+              <g key={`ip-${a}`} transform={`rotate(${a}, 60, 60)`}>
+                <ellipse cx="60" cy="40" rx="7" ry="16"
+                  fill="rgba(255,195,215,0.52)"
+                  stroke="rgba(255,150,180,0.2)" strokeWidth="0.5" />
+              </g>
+            ))}
+            {/* center */}
+            <circle cx="60" cy="60" r="11" fill="rgba(255,210,0,0.42)" />
+            <circle cx="60" cy="60" r="6.5" fill="rgba(255,238,150,0.75)" />
+            <circle cx="60" cy="60" r="2.8" fill="rgba(255,255,255,0.88)" />
+          </motion.svg>
+          <p className="mt-3 text-[10px] italic text-pink-200/22 tracking-[0.22em]">
+            jen pro tebe ♡
+          </p>
+        </div>
       </div>
 
       {/* ═══════ FLOATING TOC OVERLAY ═══════ */}
@@ -1935,15 +2017,33 @@ export default function TerraNovaBookClient() {
                       <pre className="mt-4 overflow-x-auto whitespace-pre font-mono text-[10px] leading-relaxed text-zion-gold/90 sm:text-[11px]" style={{ fontFamily: '"Courier New", Courier, monospace' }}>
 {GENESIS_BANNER}
                       </pre>
-                      <blockquote className="mt-5 border-l-2 border-zion-gold/35 pl-4 text-sm italic leading-relaxed text-gray-300">
+                      <blockquote className="mt-5 border-l-2 border-zion-gold/35 pl-4 text-sm italic leading-relaxed text-gray-300 whitespace-pre-line">
                         {introDedication}
                       </blockquote>
+                      <p className="mt-3 text-[11px] italic text-gray-600">
+                        — Yeshuae Ben Yose / Zion Creator | Om Namo Hiranyagarbha
+                      </p>
                       <p className="mt-4 text-xs uppercase tracking-[0.28em] text-gray-500">
                         {introQuote}
                       </p>
-                      <p className="mt-2 text-[11px] italic text-gray-600">
-                        — Yeshuae / Zion Creator | Om Namo Hiranyagarbha
-                      </p>
+
+                      {/* ── Premine Genesis ── */}
+                      <div className="mt-5 rounded-2xl border border-zion-gold/15 bg-black/30 px-4 py-4">
+                        <p className="mb-3 text-[10px] uppercase tracking-[0.32em] text-zion-gold/70">
+                          {cs ? 'Genesis premine · 16 280 000 000 ZION' : 'Genesis Premine · 16,280,000,000 ZION'}
+                        </p>
+                        <div className="space-y-1.5 font-mono text-[10px] text-gray-400">
+                          <div className="flex justify-between gap-2"><span className="text-gray-500">OASIS Golden Egg ×5</span><span className="text-zion-gold/80">8.25B ZION</span></div>
+                          <div className="flex justify-between gap-2"><span className="text-gray-500">{cs ? 'DAO Pokladna' : 'DAO Treasury'} ×3</span><span className="text-zion-gold/80">4.00B ZION</span></div>
+                          <div className="flex justify-between gap-2"><span className="text-gray-500">{cs ? 'Infrastruktura + Vývoj' : 'Infrastructure + Dev'} ×2</span><span className="text-zion-gold/80">2.00B ZION</span></div>
+                          <div className="flex justify-between gap-2"><span className="text-gray-500">{cs ? 'Genesis Creator (nájem)' : 'Genesis Creator (rent)'}</span><span className="text-zion-gold/80">0.59B ZION</span></div>
+                          <div className="flex justify-between gap-2"><span className="text-gray-500">{cs ? 'Humanitární DAO' : 'Humanitarian DAO'}</span><span className="text-zion-gold/80">1.44B ZION</span></div>
+                          <div className="border-t border-white/8 pt-1.5 flex justify-between gap-2"><span className="text-gray-400 font-semibold">{cs ? 'Celkem genesis' : 'Total genesis'}</span><span className="text-zion-gold font-bold">16.28B ZION</span></div>
+                        </div>
+                        <p className="mt-3 text-[9px] uppercase tracking-[0.24em] text-gray-600">
+                          {cs ? 'Split bloků: 89% miner · 5% humanitární · 5% Issobella · 1% pool' : 'Block split: 89% miner · 5% humanitarian · 5% Issobella · 1% pool'}
+                        </p>
+                      </div>
                     </div>
 
                     <div className="space-y-4">
@@ -2021,6 +2121,39 @@ export default function TerraNovaBookClient() {
                           {cliOverlayLines.map((line) => (
                             <p key={line}>{line}</p>
                           ))}
+                        </div>
+                      </div>
+
+                      {/* ── Premine tabulka ── */}
+                      <div className="rounded-3xl border border-zion-cyan/15 bg-[#050a10] p-5">
+                        <p className="text-[10px] uppercase tracking-[0.3em] text-zion-cyan/70">
+                          {cs ? 'Genesis Premine · 16.28B ZION' : 'Genesis Premine · 16.28B ZION'}
+                        </p>
+                        <div className="mt-3 space-y-1.5 font-mono text-[10px]">
+                          {[
+                            { label: cs ? 'OASIS Golden Egg ×5' : 'OASIS Golden Egg ×5', amount: '8.25B' },
+                            { label: cs ? 'DAO Pokladna ×3' : 'DAO Treasury ×3', amount: '4.00B' },
+                            { label: cs ? 'Infrastruktura + Vývoj ×2' : 'Infrastructure + Dev ×2', amount: '2.00B' },
+                            { label: cs ? 'Humanitární DAO' : 'Humanitarian DAO', amount: '1.44B' },
+                            { label: cs ? 'Genesis Creator (nájem)' : 'Genesis Creator (rent)', amount: '0.59B' },
+                          ].map(({ label, amount }) => (
+                            <div key={label} className="flex items-center justify-between gap-2">
+                              <span className="flex items-center gap-1.5 text-gray-500">
+                                <span className="text-zion-cyan/40">▸</span>
+                                {label}
+                              </span>
+                              <span className="text-zion-cyan/80 tabular-nums">{amount}</span>
+                            </div>
+                          ))}
+                          <div className="border-t border-white/8 pt-1.5 flex justify-between gap-2">
+                            <span className="text-gray-400 font-semibold">{cs ? 'Celkem' : 'Total'}</span>
+                            <span className="text-zion-cyan font-bold tabular-nums">16.28B ZION</span>
+                          </div>
+                        </div>
+                        <div className="mt-3 rounded-xl border border-white/6 bg-white/3 px-3 py-2">
+                          <p className="font-mono text-[9px] uppercase tracking-[0.22em] text-gray-600">
+                            {cs ? 'split/blok: 89% miner · 5% humanitární · 5% issobella · 1% pool' : 'per-block split: 89% miner · 5% humanitarian · 5% issobella · 1% pool'}
+                          </p>
                         </div>
                       </div>
 
