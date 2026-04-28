@@ -284,7 +284,9 @@ pub fn validate_premine() -> Result<(), String> {
         .map(|o| o.amount_flowers)
         .sum();
     if humanitarian != 1_440_000_000_000_000_000_000 {
-        return Err(format!("Humanitarian total {humanitarian} != 1.44B flowers"));
+        return Err(format!(
+            "Humanitarian total {humanitarian} != 1.44B flowers"
+        ));
     }
 
     let grand_total: u128 = PREMINE_OUTPUTS.iter().map(|o| o.amount_flowers).sum();
@@ -420,14 +422,20 @@ mod tests {
 
     #[test]
     fn dao_treasury_locked_until_525600() {
-        for output in PREMINE_OUTPUTS.iter().filter(|o| o.category == "dao_treasury") {
+        for output in PREMINE_OUTPUTS
+            .iter()
+            .filter(|o| o.category == "dao_treasury")
+        {
             assert_eq!(output.unlock_height, Some(DAO_TREASURY_LOCK_HEIGHT));
         }
     }
 
     #[test]
     fn non_dao_premine_unlocked() {
-        for output in PREMINE_OUTPUTS.iter().filter(|o| o.category != "dao_treasury") {
+        for output in PREMINE_OUTPUTS
+            .iter()
+            .filter(|o| o.category != "dao_treasury")
+        {
             assert_eq!(output.unlock_height, None);
         }
     }
@@ -507,7 +515,11 @@ mod tests {
         let block = genesis_block();
         let mut seen = std::collections::HashSet::new();
         for tx in &block.transactions {
-            assert!(seen.insert(&tx.tx_id), "duplicate genesis tx_id: {}", tx.tx_id);
+            assert!(
+                seen.insert(&tx.tx_id),
+                "duplicate genesis tx_id: {}",
+                tx.tx_id
+            );
         }
     }
 
@@ -531,9 +543,7 @@ mod tests {
         // because it includes GENESIS_MESSAGE in its tag
         let block = genesis_block();
         let plain_tag = "genesis-premine-00";
-        let plain_hash = crate::hex(
-            &cosmic_harmony_ekam_deeksha(plain_tag.as_bytes(), 0).data,
-        );
+        let plain_hash = crate::hex(&cosmic_harmony_ekam_deeksha(plain_tag.as_bytes(), 0).data);
         assert_ne!(
             block.transactions[0].tx_id, plain_hash,
             "coinbase tx_id must include genesis message"

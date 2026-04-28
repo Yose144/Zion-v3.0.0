@@ -57,7 +57,9 @@ impl TransferDb {
     /// Open or create a file-backed database.
     pub fn open(path: &str) -> WarpResult<Self> {
         let conn = Connection::open(path).map_err(db_err)?;
-        let db = Self { conn: Arc::new(Mutex::new(conn)) };
+        let db = Self {
+            conn: Arc::new(Mutex::new(conn)),
+        };
         db.init()?;
         Ok(db)
     }
@@ -65,7 +67,9 @@ impl TransferDb {
     /// Create an in-memory database (useful for tests and dev mode).
     pub fn in_memory() -> WarpResult<Self> {
         let conn = Connection::open_in_memory().map_err(db_err)?;
-        let db = Self { conn: Arc::new(Mutex::new(conn)) };
+        let db = Self {
+            conn: Arc::new(Mutex::new(conn)),
+        };
         db.init()?;
         Ok(db)
     }
@@ -82,9 +86,8 @@ impl TransferDb {
 
     /// Persist a transfer (insert or replace).
     pub fn save(&self, t: &WarpTransfer) -> WarpResult<()> {
-        let data_json = serde_json::to_string(t).map_err(|e| {
-            WarpError::Database(format!("serialize transfer: {e}"))
-        })?;
+        let data_json = serde_json::to_string(t)
+            .map_err(|e| WarpError::Database(format!("serialize transfer: {e}")))?;
         let conn = self.conn.lock().unwrap();
         conn.execute(
             r#"INSERT OR REPLACE INTO transfers
@@ -114,13 +117,19 @@ impl TransferDb {
     }
 
     /// Update just the status and updated_at for an existing transfer.
-    pub fn update_status(&self, id: &Uuid, status: WarpStatus, updated_json: &str) -> WarpResult<()> {
+    pub fn update_status(
+        &self,
+        id: &Uuid,
+        status: WarpStatus,
+        updated_json: &str,
+    ) -> WarpResult<()> {
         let conn = self.conn.lock().unwrap();
-        let changed = conn.execute(
-            "UPDATE transfers SET status=?1, data_json=?2 WHERE id=?3",
-            params![status.to_string(), updated_json, id.to_string()],
-        )
-        .map_err(db_err)?;
+        let changed = conn
+            .execute(
+                "UPDATE transfers SET status=?1, data_json=?2 WHERE id=?3",
+                params![status.to_string(), updated_json, id.to_string()],
+            )
+            .map_err(db_err)?;
         if changed == 0 {
             return Err(WarpError::TransferNotFound(id.to_string()));
         }
@@ -140,9 +149,8 @@ impl TransferDb {
         let mut rows = stmt.query(params![id.to_string()]).map_err(db_err)?;
         if let Some(row) = rows.next().map_err(db_err)? {
             let json: String = row.get(0).map_err(db_err)?;
-            let t: WarpTransfer = serde_json::from_str(&json).map_err(|e| {
-                WarpError::Database(format!("deserialize transfer: {e}"))
-            })?;
+            let t: WarpTransfer = serde_json::from_str(&json)
+                .map_err(|e| WarpError::Database(format!("deserialize transfer: {e}")))?;
             Ok(Some(t))
         } else {
             Ok(None)
@@ -193,11 +201,12 @@ impl TransferDb {
     pub fn purge_old(&self, days: u32) -> WarpResult<usize> {
         let conn = self.conn.lock().unwrap();
         let cutoff = chrono::Utc::now() - chrono::Duration::days(days as i64);
-        let n = conn.execute(
-            "DELETE FROM transfers WHERE status IN ('completed','failed') AND created_at < ?1",
-            params![cutoff.to_rfc3339()],
-        )
-        .map_err(db_err)?;
+        let n = conn
+            .execute(
+                "DELETE FROM transfers WHERE status IN ('completed','failed') AND created_at < ?1",
+                params![cutoff.to_rfc3339()],
+            )
+            .map_err(db_err)?;
         Ok(n)
     }
 
@@ -215,9 +224,8 @@ impl TransferDb {
         let mut out = Vec::new();
         for r in rows {
             let json = r.map_err(db_err)?;
-            let t: WarpTransfer = serde_json::from_str(&json).map_err(|e| {
-                WarpError::Database(format!("deserialize: {e}"))
-            })?;
+            let t: WarpTransfer = serde_json::from_str(&json)
+                .map_err(|e| WarpError::Database(format!("deserialize: {e}")))?;
             out.push(t);
         }
         Ok(out)
@@ -299,7 +307,8 @@ mod tests {
         t.updated_at = chrono::Utc::now();
         let updated_json = serde_json::to_string(&t).unwrap();
 
-        db.update_status(&id, WarpStatus::Completed, &updated_json).unwrap();
+        db.update_status(&id, WarpStatus::Completed, &updated_json)
+            .unwrap();
 
         let loaded = db.load(&id).unwrap().unwrap();
         assert_eq!(loaded.status, WarpStatus::Completed);

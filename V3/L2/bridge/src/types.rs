@@ -281,10 +281,7 @@ pub mod conversion {
 
         #[test]
         fn test_display_fractional() {
-            assert_eq!(
-                flowers_to_zion_display(5_400_067_000_000_000),
-                "5400.067"
-            );
+            assert_eq!(flowers_to_zion_display(5_400_067_000_000_000), "5400.067");
         }
 
         #[test]

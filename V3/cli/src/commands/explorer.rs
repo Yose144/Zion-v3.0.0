@@ -1,6 +1,6 @@
 use anyhow::Result;
-use std::time::Duration;
 use std::io;
+use std::time::Duration;
 
 use crossterm::{
     event::{self, Event, KeyCode, KeyModifiers},
@@ -89,7 +89,9 @@ pub async fn run(cfg: &Config) -> Result<()> {
     loop {
         terminal.draw(|f| draw(f, &mut state))?;
 
-        let timeout = tick.checked_sub(last_tick.elapsed()).unwrap_or(Duration::ZERO);
+        let timeout = tick
+            .checked_sub(last_tick.elapsed())
+            .unwrap_or(Duration::ZERO);
 
         if event::poll(timeout)? {
             if let Event::Key(key) = event::read()? {
@@ -145,14 +147,25 @@ async fn refresh_data(state: &mut ExplorerState, host: &str, port: u16) {
             port,
             "getBlockByHeight",
             serde_json::json!({ "height": h }),
-        ).await;
+        )
+        .await;
         if let Ok(b) = res {
-            let hash = b["hash_hex"].as_str().or_else(|| b["hash"].as_str()).unwrap_or("").into();
-            let txs = b["tx_count"].as_u64()
+            let hash = b["hash_hex"]
+                .as_str()
+                .or_else(|| b["hash"].as_str())
+                .unwrap_or("")
+                .into();
+            let txs = b["tx_count"]
+                .as_u64()
                 .or_else(|| b["transactions"].as_array().map(|a| a.len() as u64))
                 .unwrap_or(0);
             let time = b["timestamp"].as_str().unwrap_or("").into();
-            blocks.push(BlockRow { height: h, hash, txs, time });
+            blocks.push(BlockRow {
+                height: h,
+                hash,
+                txs,
+                time,
+            });
         }
     }
     state.blocks = blocks;
@@ -174,7 +187,12 @@ fn draw(f: &mut Frame, state: &mut ExplorerState) {
 
     // ── Header ────────────────────────────────────────────────────
     let title = Paragraph::new(Line::from(vec![
-        Span::styled("  ZION ", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
+        Span::styled(
+            "  ZION ",
+            Style::default()
+                .fg(Color::Yellow)
+                .add_modifier(Modifier::BOLD),
+        ),
         Span::styled("Block Explorer", Style::default().fg(Color::White)),
         if state.loading {
             Span::styled("  ⟳ loading...", Style::default().fg(Color::DarkGray))
@@ -182,14 +200,22 @@ fn draw(f: &mut Frame, state: &mut ExplorerState) {
             Span::raw("")
         },
     ]))
-    .block(Block::default().borders(Borders::ALL).border_style(Style::default().fg(Color::Yellow)));
+    .block(
+        Block::default()
+            .borders(Borders::ALL)
+            .border_style(Style::default().fg(Color::Yellow)),
+    );
     f.render_widget(title, chunks[0]);
 
     // ── Stats bar ─────────────────────────────────────────────────
     let stats_text = if let Some(ref e) = state.error {
         format!("  ✗ {}", e)
     } else {
-        let short = if state.tip_hash.len() > 16 { &state.tip_hash[..16] } else { &state.tip_hash };
+        let short = if state.tip_hash.len() > 16 {
+            &state.tip_hash[..16]
+        } else {
+            &state.tip_hash
+        };
         format!(
             "  Height: {}   Tip: {}…   Peers: {}",
             state.height, short, state.peers
@@ -200,25 +226,38 @@ fn draw(f: &mut Frame, state: &mut ExplorerState) {
     } else {
         Style::default().fg(Color::Cyan)
     };
-    let stats = Paragraph::new(stats_text).style(stats_style)
+    let stats = Paragraph::new(stats_text)
+        .style(stats_style)
         .block(Block::default().borders(Borders::ALL).title("Chain"));
     f.render_widget(stats, chunks[1]);
 
     // ── Block table ───────────────────────────────────────────────
-    let header_cells = ["Height", "Hash", "TXs", "Timestamp"]
-        .iter()
-        .map(|h| Cell::from(*h).style(Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)));
+    let header_cells = ["Height", "Hash", "TXs", "Timestamp"].iter().map(|h| {
+        Cell::from(*h).style(
+            Style::default()
+                .fg(Color::Yellow)
+                .add_modifier(Modifier::BOLD),
+        )
+    });
     let header = Row::new(header_cells).height(1).bottom_margin(0);
 
-    let rows: Vec<Row> = state.blocks.iter().map(|b| {
-        let short_hash = if b.hash.len() > 20 { format!("{}...", &b.hash[..20]) } else { b.hash.clone() };
-        Row::new(vec![
-            Cell::from(b.height.to_string()),
-            Cell::from(short_hash),
-            Cell::from(b.txs.to_string()),
-            Cell::from(b.time.clone()),
-        ])
-    }).collect();
+    let rows: Vec<Row> = state
+        .blocks
+        .iter()
+        .map(|b| {
+            let short_hash = if b.hash.len() > 20 {
+                format!("{}...", &b.hash[..20])
+            } else {
+                b.hash.clone()
+            };
+            Row::new(vec![
+                Cell::from(b.height.to_string()),
+                Cell::from(short_hash),
+                Cell::from(b.txs.to_string()),
+                Cell::from(b.time.clone()),
+            ])
+        })
+        .collect();
 
     let widths = [
         Constraint::Length(10),
@@ -228,8 +267,16 @@ fn draw(f: &mut Frame, state: &mut ExplorerState) {
     ];
     let table = Table::new(rows, widths)
         .header(header)
-        .block(Block::default().borders(Borders::ALL).title("Blocks (↑↓/jk to scroll, r refresh, q quit)"))
-        .row_highlight_style(Style::default().bg(Color::DarkGray).add_modifier(Modifier::BOLD))
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("Blocks (↑↓/jk to scroll, r refresh, q quit)"),
+        )
+        .row_highlight_style(
+            Style::default()
+                .bg(Color::DarkGray)
+                .add_modifier(Modifier::BOLD),
+        )
         .highlight_symbol("▶ ");
 
     f.render_stateful_widget(table, chunks[2], &mut state.table_state);

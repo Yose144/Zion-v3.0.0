@@ -422,9 +422,18 @@ mod tests {
 
     #[test]
     fn normalize_rpc_addr_strips_scheme_and_path() {
-        assert_eq!(normalize_rpc_addr("http://127.0.0.1:8443/jsonrpc"), "127.0.0.1:8443");
-        assert_eq!(normalize_rpc_addr("https://91.98.122.165:8443/"), "91.98.122.165:8443");
-        assert_eq!(normalize_rpc_addr("tcp://5.78.194.94:8443"), "5.78.194.94:8443");
+        assert_eq!(
+            normalize_rpc_addr("http://127.0.0.1:8443/jsonrpc"),
+            "127.0.0.1:8443"
+        );
+        assert_eq!(
+            normalize_rpc_addr("https://91.98.122.165:8443/"),
+            "91.98.122.165:8443"
+        );
+        assert_eq!(
+            normalize_rpc_addr("tcp://5.78.194.94:8443"),
+            "5.78.194.94:8443"
+        );
     }
 
     #[test]

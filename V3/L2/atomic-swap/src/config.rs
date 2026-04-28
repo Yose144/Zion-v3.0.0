@@ -1,7 +1,7 @@
 //! Atomic-swap daemon configuration.
 
-use serde::{Deserialize, Serialize};
 use crate::evm_watcher::EvmWatcherConfig;
+use serde::{Deserialize, Serialize};
 
 /// Top-level daemon configuration (loaded from TOML).
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -50,9 +50,9 @@ impl Default for SwapIdentity {
         Self {
             name: "ZION Atomic Swap Service".into(),
             network: "mainnet".into(),
-            min_lock_flowers: 1_000_000_000_000,           // 1 ZION
-            max_lock_atomic: 10_000_000_000_000,  // 10 000 ZION
-            release_fee_atomic: 2_000,             // 0.002 ZION
+            min_lock_flowers: 1_000_000_000_000, // 1 ZION
+            max_lock_atomic: 10_000_000_000_000, // 10 000 ZION
+            release_fee_atomic: 2_000,           // 0.002 ZION
         }
     }
 }
