@@ -11,6 +11,9 @@
 *.swp
 *.swo
 *~
+!tools/vscode-devin-chat/.vscode/
+!tools/vscode-devin-chat/.vscode/launch.json
+!tools/vscode-devin-chat/.vscode/tasks.json
 
 # OS
 .DS_Store

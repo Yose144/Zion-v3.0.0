@@ -2,12 +2,45 @@
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { ArrowLeft, MapPin, Leaf, Sun, Waves, Users, Zap, Globe, TreePine, Droplets } from 'lucide-react';
+import {
+  ArrowLeft,
+  ArrowRight,
+  Droplets,
+  Globe,
+  Landmark,
+  Leaf,
+  LucideIcon,
+  MapPin,
+  Network,
+  Sprout,
+  Sun,
+  Trees,
+  Users,
+  Waves,
+  Zap,
+} from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 
-const FEATURES = [
+type FeatureItem = {
+  icon: LucideIcon;
+  titleCs: string;
+  titleEn: string;
+  descCs: string;
+  descEn: string;
+  status: 'open' | 'active' | 'planned';
+  color: string;
+  rgb: string;
+};
+
+type IntegrationItem = {
+  label: string;
+  status: 'active' | 'planned' | 'tbd';
+  icon: LucideIcon;
+};
+
+const FEATURES: FeatureItem[] = [
   {
-    icon: '🏕️',
+    icon: Leaf,
     titleCs: 'Glamping',
     titleEn: 'Glamping',
     descCs: 'Pohodlné stany uprostřed přírody — komfort bez kompromisu. Ubytování pro hosty a long-stay farmáře.',
@@ -17,7 +50,7 @@ const FEATURES = [
     rgb: '52,211,153',
   },
   {
-    icon: '🌱',
+    icon: Sprout,
     titleCs: 'Organická farma',
     titleEn: 'Organic Farm',
     descCs: 'Pestrá škála organických plodin, obnova biodiverzity, sezónní sklizně. Každý návštěvník může přiložit ruku k dílu.',
@@ -27,7 +60,7 @@ const FEATURES = [
     rgb: '16,185,129',
   },
   {
-    icon: '🌳',
+    icon: Trees,
     titleCs: 'Sázení stromů',
     titleEn: 'Tree Planting',
     descCs: 'Každý strom, který tu vyroste, bude tu dál, když tenhle tým dávno odejde. Budujeme dědictví v biologickém čase.',
@@ -37,7 +70,7 @@ const FEATURES = [
     rgb: '5,150,105',
   },
   {
-    icon: '🏄',
+    icon: Waves,
     titleCs: 'Surf škola',
     titleEn: 'Surf School',
     descCs: 'Propojení oceánu, pohybu a vědomého stylu. Surf jako praxe přítomnosti — vlna jako učitel.',
@@ -47,7 +80,7 @@ const FEATURES = [
     rgb: '6,182,212',
   },
   {
-    icon: '☀️',
+    icon: Sun,
     titleCs: 'Solar & Off-grid',
     titleEn: 'Solar & Off-grid',
     descCs: 'Fotovoltaický systém, sběr dešťové vody, kompostování. Fyzická manifestace energetické svobody.',
@@ -57,7 +90,7 @@ const FEATURES = [
     rgb: '245,158,11',
   },
   {
-    icon: '🌀',
+    icon: Network,
     titleCs: 'Komunitní setkání',
     titleEn: 'Community Gatherings',
     descCs: 'Workshopy, retreaty, ceremonie a festivaly. Prostor kde se lidé setkávají s autentickým záměrem.',
@@ -76,13 +109,19 @@ const PHASES = [
   { num: 4, cs: 'Výzařování', en: 'Radiance', descCs: 'Surf škola, retreaty, vzdělávací centrum', descEn: 'Surf school, retreats, education center', done: false },
 ];
 
-const ZION_ITEMS = [
-  { label: 'ZION Node', status: 'planned', icon: '🔵' },
-  { label: 'Guardian Wallet', status: 'tbd', icon: '💰' },
-  { label: 'Medical Table', status: 'planned', icon: '🩺' },
-  { label: 'LoRa / Meshtastic', status: 'planned', icon: '📡' },
-  { label: 'Seed Library', status: 'active', icon: '🌿' },
-  { label: 'Proof-of-Care DAO', status: 'planned', icon: '🗳️' },
+const ZION_ITEMS: IntegrationItem[] = [
+  { label: 'ZION Node', status: 'planned', icon: Network },
+  { label: 'Guardian Wallet', status: 'tbd', icon: Landmark },
+  { label: 'Medical Table', status: 'planned', icon: Zap },
+  { label: 'LoRa / Meshtastic', status: 'planned', icon: Globe },
+  { label: 'Seed Library', status: 'active', icon: Sprout },
+  { label: 'Proof-of-Care DAO', status: 'planned', icon: Users },
+];
+
+const SIGNALS = [
+  { icon: Sun, value: '320+', labelCs: 'Slunečné dny', labelEn: 'Sunny days' },
+  { icon: Droplets, value: 'Off-grid', labelCs: 'Voda & retence', labelEn: 'Water & retention' },
+  { icon: Trees, value: 'Base Camp', labelCs: 'Farma & stromy', labelEn: 'Farm & trees' },
 ];
 
 const STATUS_LABEL = {
@@ -135,14 +174,23 @@ export default function ZahradaGenesisPage() {
           <div className="relative zion-panel rounded-3xl md:rounded-4xl p-8 md:p-12 overflow-hidden border border-emerald-500/20">
             {/* BG gradient */}
             <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/30 via-teal-900/10 to-transparent" />
+            <motion.div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-y-0 -left-1/3 w-1/2 bg-gradient-to-r from-transparent via-white/10 to-transparent"
+              animate={{ x: ['0%', '220%'] }}
+              transition={{ duration: 7, repeat: Infinity, repeatDelay: 2.5, ease: 'easeInOut' }}
+            />
             <div className="absolute -top-24 -right-24 w-64 h-64 rounded-full blur-[100px] bg-emerald-500/15" />
             <div className="absolute -bottom-16 -left-16 w-48 h-48 rounded-full blur-[80px] bg-teal-500/10" />
 
             <div className="relative z-10 flex flex-col md:flex-row md:items-center gap-8">
               {/* Icon column */}
               <div className="shrink-0">
-                <div className="w-24 h-24 rounded-3xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/20 to-emerald-900/40 flex items-center justify-center text-5xl shadow-lg shadow-emerald-900/30">
-                  🌿
+                <div className="relative flex h-28 w-28 items-center justify-center rounded-[32px] border border-emerald-400/25 bg-gradient-to-br from-emerald-400/18 via-emerald-950/50 to-black shadow-[0_0_60px_rgba(16,185,129,0.16)]">
+                  <div className="absolute inset-3 rounded-[26px] border border-emerald-300/15" />
+                  <div className="absolute h-20 w-20 rounded-full bg-emerald-400/12 blur-2xl" />
+                  <Leaf className="relative z-10 h-10 w-10 text-emerald-300" />
+                  <Sprout className="absolute bottom-5 right-5 h-4 w-4 text-teal-300" />
                 </div>
               </div>
 
@@ -172,6 +220,23 @@ export default function ZahradaGenesisPage() {
                     ? '"One love, one heart. Společně tvoříme budoucnost, kde je člověk a Země opět v harmonii."'
                     : '"One love, one heart. Together we create a future where humanity and Earth are in harmony again."'}
                 </blockquote>
+
+                <div className="grid gap-3 pt-3 sm:grid-cols-3">
+                  {SIGNALS.map((signal) => {
+                    const Icon = signal.icon;
+                    return (
+                      <div key={signal.labelCs} className="rounded-2xl border border-emerald-400/12 bg-emerald-400/6 px-3 py-3 backdrop-blur-sm">
+                        <div className="flex items-center gap-2 text-emerald-300">
+                          <Icon className="h-4 w-4" />
+                          <span className="text-sm font-semibold">{signal.value}</span>
+                        </div>
+                        <p className="mt-1 text-[11px] uppercase tracking-[0.18em] text-gray-500">
+                          {cs ? signal.labelCs : signal.labelEn}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </div>
@@ -196,6 +261,7 @@ export default function ZahradaGenesisPage() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {FEATURES.map((f, i) => {
               const s = STATUS_LABEL[f.status];
+              const Icon = f.icon;
               return (
                 <motion.div
                   key={f.titleCs}
@@ -208,8 +274,10 @@ export default function ZahradaGenesisPage() {
                   <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full blur-[50px] opacity-20 group-hover:opacity-35 transition-opacity duration-500"
                     style={{ backgroundColor: f.color }} />
 
-                  <div className="flex items-start justify-between relative z-10">
-                    <span className="text-2xl">{f.icon}</span>
+                  <div className="flex items-start justify-between relative z-10 gap-3">
+                    <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-black/20">
+                      <Icon className="h-5 w-5" style={{ color: f.color }} />
+                    </span>
                     <span
                       className="rounded-full border px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.15em]"
                       style={{ color: s.color, borderColor: s.border, backgroundColor: s.bg }}
@@ -322,7 +390,9 @@ export default function ZahradaGenesisPage() {
                   key={item.label}
                   className="flex items-center gap-3 rounded-xl border border-white/5 bg-white/3 p-3"
                 >
-                  <span className="text-xl shrink-0">{item.icon}</span>
+                  <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-emerald-400/12 bg-emerald-400/8">
+                    <item.icon className="h-4 w-4 text-emerald-300" />
+                  </span>
                   <div>
                     <p className="text-sm font-semibold text-white/80">{item.label}</p>
                     <p className="text-[10px] text-gray-600 capitalize">
@@ -392,7 +462,7 @@ export default function ZahradaGenesisPage() {
           className="flex items-center justify-between"
         >
           <Link
-            href="/terranova/public"
+            href="/terranova"
             className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-emerald-400 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -402,7 +472,8 @@ export default function ZahradaGenesisPage() {
             href="/terranova/dharma-temple"
             className="inline-flex items-center gap-2 rounded-xl border border-violet-500/25 bg-violet-500/10 hover:bg-violet-500/20 px-4 py-2 text-sm text-violet-300 transition-all duration-300"
           >
-            {cs ? 'Dharma Temple →' : 'Dharma Temple →'}
+            <span>{cs ? 'Dharma Temple' : 'Dharma Temple'}</span>
+            <ArrowRight className="w-4 h-4" />
           </Link>
         </motion.div>
 
