@@ -35,6 +35,6 @@ pub use api::{create_router, NclAppState};
 pub use error::{NclError, NclResult};
 pub use pricing::PricingEngine;
 pub use reputation::{ReputationRecord, ReputationRegistry};
-pub use store::JobStore;
 pub use scheduler::JobScheduler;
+pub use store::JobStore;
 pub use types::{ComputeBackend, NclJob, NclJobStatus, NclTaskType, NclWorker};

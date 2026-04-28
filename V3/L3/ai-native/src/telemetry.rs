@@ -122,7 +122,7 @@ impl PoolRawStats {
             shares_accepted: self.shares.valid,
             shares_rejected: self.shares.invalid,
             shares_stale: self.shares.stale,
-            blocks_24h: 0,           // not available in this endpoint
+            blocks_24h: 0, // not available in this endpoint
             estimated_daily_reward: 0,
         }
     }
@@ -140,10 +140,20 @@ impl PoolRawStats {
             node_name: "MockNode".into(),
             node_url: "http://mock:8080".into(),
             ok: true,
-            hashrate: RawHashrate { pool: hashrate, pool_24h: hashrate * 0.95 },
-            miners: RawMiners { active: active_miners, total: active_miners + 5 },
+            hashrate: RawHashrate {
+                pool: hashrate,
+                pool_24h: hashrate * 0.95,
+            },
+            miners: RawMiners {
+                active: active_miners,
+                total: active_miners + 5,
+            },
             blocks: RawBlocks { found: 100 },
-            shares: RawShares { valid: 100_000, invalid: 50, stale: 30 },
+            shares: RawShares {
+                valid: 100_000,
+                invalid: 50,
+                stale: 30,
+            },
             uptime: uptime_hours * 3600,
             latency_ms,
             fetched_at: Utc::now(),
@@ -300,10 +310,20 @@ mod tests {
             node_name: "Helsinki (EU-North)".into(),
             node_url: "http://77.42.31.72:8080".into(),
             ok: true,
-            hashrate: RawHashrate { pool: 1_500_000_000.0, pool_24h: 1_400_000_000.0 },
-            miners: RawMiners { active: 12, total: 40 },
+            hashrate: RawHashrate {
+                pool: 1_500_000_000.0,
+                pool_24h: 1_400_000_000.0,
+            },
+            miners: RawMiners {
+                active: 12,
+                total: 40,
+            },
             blocks: RawBlocks { found: 7200 },
-            shares: RawShares { valid, invalid, stale: 10 },
+            shares: RawShares {
+                valid,
+                invalid,
+                stale: 10,
+            },
             uptime: uptime_h * 3600,
             latency_ms: latency,
             fetched_at: Utc::now(),
