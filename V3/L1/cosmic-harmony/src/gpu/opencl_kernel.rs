@@ -1,5 +1,4 @@
-pub const COSMIC_HARMONY_DEEKSHA_KERNEL: &str =
-    include_str!("kernels/cosmic_harmony_deeksha.cl");
+pub const COSMIC_HARMONY_DEEKSHA_KERNEL: &str = include_str!("kernels/cosmic_harmony_deeksha.cl");
 
 pub const EKAM_DEEKSHA_KERNEL_NAME: &str = "ekam_deeksha_mine";
 pub const EKAM_DEEKSHA_S4_KERNEL_NAME: &str = "ekam_deeksha_mine_s4";

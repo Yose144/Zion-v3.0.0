@@ -20,7 +20,9 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 use crate::error::{DaoError, DaoResult};
-use crate::types::{Guardian, DAILY_SPEND_LIMIT, FLOWERS_PER_ZION, MULTISIG_THRESHOLD, MULTISIG_TOTAL};
+use crate::types::{
+    Guardian, DAILY_SPEND_LIMIT, FLOWERS_PER_ZION, MULTISIG_THRESHOLD, MULTISIG_TOTAL,
+};
 
 // ---------------------------------------------------------------------------
 // Treasury Operation

@@ -48,14 +48,16 @@ pub async fn run(cfg: &Config, cmd: NodeCmd) -> Result<()> {
             ui::print_info("Triggering peer sync...");
             let result = node_rpc::call0(host, port, "sync_peers").await;
             match result {
-                Ok(v) => { ui::print_ok("Sync triggered"); println!("  {}", v); }
+                Ok(v) => {
+                    ui::print_ok("Sync triggered");
+                    println!("  {}", v);
+                }
                 Err(e) => ui::print_err(&format!("{}", e)),
             }
             Ok(())
         }
         NodeCmd::Rpc { method, params } => {
-            let params_val: serde_json::Value = serde_json::from_str(&params)
-                .unwrap_or(json!({}));
+            let params_val: serde_json::Value = serde_json::from_str(&params).unwrap_or(json!({}));
             let result = node_rpc::call(host, port, &method, params_val).await?;
             println!("{}", serde_json::to_string_pretty(&result)?);
             Ok(())
@@ -77,10 +79,16 @@ async fn node_status(host: &str, port: u16) -> Result<()> {
             let proto = v["protocol_version"].as_u64().unwrap_or(0);
             let mempool = v["mempool_transactions"].as_u64().unwrap_or(0);
             // getNodeInfo: known_peers (count), pool_bind
-            let peers = node.as_ref().ok()
-                .and_then(|n| n["known_peers"].as_u64()).unwrap_or(0);
-            let pool_bind = node.as_ref().ok()
-                .and_then(|n| n["pool_bind"].as_str()).unwrap_or("?");
+            let peers = node
+                .as_ref()
+                .ok()
+                .and_then(|n| n["known_peers"].as_u64())
+                .unwrap_or(0);
+            let pool_bind = node
+                .as_ref()
+                .ok()
+                .and_then(|n| n["pool_bind"].as_str())
+                .unwrap_or("?");
 
             ui::print_row("Network", network);
             ui::print_row("Protocol", &format!("v{}", proto));
@@ -109,8 +117,10 @@ async fn node_peers(host: &str, port: u16) -> Result<()> {
             ui::print_warn("No peers connected");
         }
         for p in &peers {
-            let addr = p["address"].as_str()
-                .or_else(|| p["host"].as_str()).unwrap_or("unknown");
+            let addr = p["address"]
+                .as_str()
+                .or_else(|| p["host"].as_str())
+                .unwrap_or("unknown");
             let height = p["height"].as_u64().unwrap_or(0);
             println!("  {} height={}", addr, height);
         }
@@ -163,7 +173,9 @@ async fn node_tx(host: &str, port: u16, txid: &str) -> Result<()> {
     // Try UTXO tx first, then account-model tx
     let result = match node_rpc::call(host, port, "getTransaction", json!({ "txid": txid })).await {
         Ok(v) => Ok(v),
-        Err(_) => node_rpc::call(host, port, "getAccountTransaction", json!({ "txid": txid })).await,
+        Err(_) => {
+            node_rpc::call(host, port, "getAccountTransaction", json!({ "txid": txid })).await
+        }
     };
     match result {
         Ok(v) => println!("{}", serde_json::to_string_pretty(&v)?),
