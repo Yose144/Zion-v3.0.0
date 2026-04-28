@@ -201,11 +201,11 @@ async fn node_mempool(host: &str, port: u16) -> Result<()> {
     } else if tmpl_txs == 0 {
         ui::print_warn("Pending transactions are not included in the active template");
     } else {
+        ui::print_warn("Mempool has pending transactions; templates may change frequently.");
         ui::print_ok(&format!(
             "{} of {} pending transactions are template-ready",
             tmpl_txs, txs
         ));
-        println!("{}", serde_json::to_string_pretty(&result)?);
     }
     println!();
     Ok(())
