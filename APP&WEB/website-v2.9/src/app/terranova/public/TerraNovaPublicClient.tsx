@@ -366,83 +366,6 @@ export default function TerraNovaPublicClient() {
               </div>
             </div>
           </div>
-
-          {/* ── MILNÍKY ── */}
-          <div className="text-center mb-6">
-            <p className="text-[10px] uppercase tracking-[0.45em] text-gray-500">
-              {cs ? 'Akcelerační mapa · Milníky' : 'Acceleration Map · Milestones'}
-            </p>
-          </div>
-
-          {/* Timeline strip */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-8">
-            {MILESTONES.map((m) => {
-              const total = m.checks.length;
-              const done = m.checks.filter((c) => c.done).length;
-              const pct = Math.round((done / total) * 100);
-              return (
-                <div
-                  key={m.year}
-                  className="rounded-2xl border p-4 text-center space-y-2 transition-all duration-300 hover:scale-[1.02]"
-                  style={{ borderColor: `rgba(${m.rgb},0.2)`, backgroundColor: `rgba(${m.rgb},0.04)` }}
-                >
-                  <div className="text-2xl">{m.emoji}</div>
-                  <p className="text-xs font-bold tracking-wider" style={{ color: m.color }}>{m.year}</p>
-                  <p className="text-xs font-semibold text-white/80">{cs ? m.labelCs : m.labelEn}</p>
-                  {/* progress bar */}
-                  <div className="w-full h-1 rounded-full bg-white/5 overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all"
-                      style={{ width: `${pct}%`, backgroundColor: m.color }}
-                    />
-                  </div>
-                  <p className="text-[10px]" style={{ color: m.color }}>{done}/{total}</p>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Detailed checklist phases */}
-          <div className="grid md:grid-cols-2 gap-4">
-            {MILESTONES.map((m) => (
-              <div
-                key={m.year + '-detail'}
-                className="rounded-2xl border p-5 space-y-3"
-                style={{ borderColor: `rgba(${m.rgb},0.15)`, backgroundColor: `rgba(${m.rgb},0.03)` }}
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-lg">{m.emoji}</span>
-                  <span className="text-xs font-bold tracking-widest" style={{ color: m.color }}>
-                    {m.year}
-                  </span>
-                  <span className="text-sm font-semibold text-white/80">
-                    {cs ? m.labelCs : m.labelEn}
-                  </span>
-                </div>
-                <ul className="space-y-1.5">
-                  {m.checks.map((c, ci) => (
-                    <li key={ci} className="flex items-start gap-2">
-                      <span
-                        className="shrink-0 mt-0.5 text-sm"
-                        style={{ color: c.done ? m.color : 'rgba(255,255,255,0.15)' }}
-                      >
-                        {c.done ? '✅' : '⬜'}
-                      </span>
-                      <span
-                        className="text-[11px] leading-snug"
-                        style={{
-                          color: c.done ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.35)',
-                          fontWeight: c.text.startsWith('★') ? 700 : 400,
-                        }}
-                      >
-                        {c.text}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
         </motion.section>
 
         {/* ═══════ L5 PIONEER PROJEKTY ═══════ */}
@@ -644,6 +567,91 @@ export default function TerraNovaPublicClient() {
               </div>
             </motion.div>
 
+          </div>
+        </motion.section>
+
+        {/* ═══════ MILNÍKY — AKCELERAČNÍ MAPA ═══════ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.45, duration: 0.7 }}
+          className="mb-20"
+        >
+          {/* ── MILNÍKY ── */}
+          <div className="text-center mb-6">
+            <p className="text-[10px] uppercase tracking-[0.45em] text-gray-500">
+              {cs ? 'Akcelerační mapa · Milníky' : 'Acceleration Map · Milestones'}
+            </p>
+          </div>
+
+          {/* Timeline strip */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-8">
+            {MILESTONES.map((m) => {
+              const total = m.checks.length;
+              const done = m.checks.filter((c) => c.done).length;
+              const pct = Math.round((done / total) * 100);
+              return (
+                <div
+                  key={m.year}
+                  className="rounded-2xl border p-4 text-center space-y-2 transition-all duration-300 hover:scale-[1.02]"
+                  style={{ borderColor: `rgba(${m.rgb},0.2)`, backgroundColor: `rgba(${m.rgb},0.04)` }}
+                >
+                  <div className="text-2xl">{m.emoji}</div>
+                  <p className="text-xs font-bold tracking-wider" style={{ color: m.color }}>{m.year}</p>
+                  <p className="text-xs font-semibold text-white/80">{cs ? m.labelCs : m.labelEn}</p>
+                  {/* progress bar */}
+                  <div className="w-full h-1 rounded-full bg-white/5 overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all"
+                      style={{ width: `${pct}%`, backgroundColor: m.color }}
+                    />
+                  </div>
+                  <p className="text-[10px]" style={{ color: m.color }}>{done}/{total}</p>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Detailed checklist phases */}
+          <div className="grid md:grid-cols-2 gap-4">
+            {MILESTONES.map((m) => (
+              <div
+                key={m.year + '-detail'}
+                className="rounded-2xl border p-5 space-y-3"
+                style={{ borderColor: `rgba(${m.rgb},0.15)`, backgroundColor: `rgba(${m.rgb},0.03)` }}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-lg">{m.emoji}</span>
+                  <span className="text-xs font-bold tracking-widest" style={{ color: m.color }}>
+                    {m.year}
+                  </span>
+                  <span className="text-sm font-semibold text-white/80">
+                    {cs ? m.labelCs : m.labelEn}
+                  </span>
+                </div>
+                <ul className="space-y-1.5">
+                  {m.checks.map((c, ci) => (
+                    <li key={ci} className="flex items-start gap-2">
+                      <span
+                        className="shrink-0 mt-0.5 text-sm"
+                        style={{ color: c.done ? m.color : 'rgba(255,255,255,0.15)' }}
+                      >
+                        {c.done ? '✅' : '⬜'}
+                      </span>
+                      <span
+                        className="text-[11px] leading-snug"
+                        style={{
+                          color: c.done ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.35)',
+                          fontWeight: c.text.startsWith('★') ? 700 : 400,
+                        }}
+                      >
+                        {c.text}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
           </div>
         </motion.section>
 
