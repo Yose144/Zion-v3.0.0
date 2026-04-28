@@ -38,7 +38,9 @@ pub fn estimate_tx_size(num_inputs: usize, num_outputs: usize) -> usize {
 
 /// Fee rate in flowers per byte.
 pub fn fee_rate(fee: u64, tx_size_bytes: usize) -> u64 {
-    if tx_size_bytes == 0 { return 0; }
+    if tx_size_bytes == 0 {
+        return 0;
+    }
     fee / tx_size_bytes as u64
 }
 
@@ -79,12 +81,18 @@ pub fn validate_outputs(outputs: &[(u64, &str)]) -> Result<(), String> {
             return Err(format!("output {} has zero amount", i));
         }
         if amount > MAX_OUTPUT_AMOUNT {
-            return Err(format!("output {} amount {} exceeds max {}", i, amount, MAX_OUTPUT_AMOUNT));
+            return Err(format!(
+                "output {} amount {} exceeds max {}",
+                i, amount, MAX_OUTPUT_AMOUNT
+            ));
         }
         total += amount as u128;
     }
     if total > MAX_OUTPUT_AMOUNT as u128 {
-        return Err(format!("total output {} exceeds max {}", total, MAX_OUTPUT_AMOUNT));
+        return Err(format!(
+            "total output {} exceeds max {}",
+            total, MAX_OUTPUT_AMOUNT
+        ));
     }
     Ok(())
 }

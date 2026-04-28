@@ -159,10 +159,7 @@ mod tests {
         // Last block of decade 1 still has decade-1 reward.
         assert_eq!(block_subsidy(BLOCKS_PER_DECADE), BASE_REWARD);
         // First block of decade 2 has decayed reward.
-        assert_eq!(
-            block_subsidy(BLOCKS_PER_DECADE + 1),
-            BASE_REWARD * 4 / 5
-        );
+        assert_eq!(block_subsidy(BLOCKS_PER_DECADE + 1), BASE_REWARD * 4 / 5);
     }
 
     #[test]
@@ -204,7 +201,15 @@ mod tests {
 
     #[test]
     fn reward_never_zero_after_genesis() {
-        for h in [1, 100, 1_000_000, 52_560_000, 52_560_001, 100_000_000, u64::MAX] {
+        for h in [
+            1,
+            100,
+            1_000_000,
+            52_560_000,
+            52_560_001,
+            100_000_000,
+            u64::MAX,
+        ] {
             assert!(block_subsidy(h) > 0, "reward at height {h} should be > 0");
         }
     }
@@ -272,7 +277,10 @@ mod tests {
         let subsidy = BASE_REWARD;
         let (miner, humanitarian, issobella, pool_fee) = fee_split(subsidy);
         // 89%
-        assert_eq!(miner, subsidy - subsidy * 5 / 100 - subsidy * 5 / 100 - subsidy * 1 / 100);
+        assert_eq!(
+            miner,
+            subsidy - subsidy * 5 / 100 - subsidy * 5 / 100 - subsidy * 1 / 100
+        );
         // 5%
         assert_eq!(humanitarian, subsidy * 5 / 100);
         assert_eq!(issobella, subsidy * 5 / 100);
