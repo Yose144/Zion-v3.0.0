@@ -9,12 +9,12 @@ use axum::{Json, Router};
 use chrono::Utc;
 use serde::Deserialize;
 use serde_json::{json, Value};
+use zion_ai_native::llm_backend::RemoteHttpBackend;
+use zion_ai_native::rag::EmbeddingInputType;
 use zion_ai_native::{
     AgentMemory, EchoBackend, EmbeddingBackend, LlmBackend, LlmRequest, MemoryEntry,
     MemoryEventKind, MmlModality, MockEmbeddingBackend, RagDocument, VectorStore,
 };
-use zion_ai_native::llm_backend::RemoteHttpBackend;
-use zion_ai_native::rag::EmbeddingInputType;
 
 struct RagIndexState {
     store: VectorStore,
@@ -51,8 +51,7 @@ struct RagQueryRequest {
 async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt()
         .with_env_filter(
-            tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "info".into()),
+            tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into()),
         )
         .init();
 
@@ -87,10 +86,14 @@ async fn main() -> anyhow::Result<()> {
 impl AppState {
     fn from_env() -> Self {
         let model = std::env::var("LLM_MODEL").unwrap_or_else(|_| "zion-expert".to_string());
-        let base_url = std::env::var("LLM_BASE_URL").ok().filter(|v| !v.trim().is_empty());
-        let api_key = std::env::var("NVIDIA_API_KEY").ok().filter(|v| !v.trim().is_empty());
-        let backend_pref = std::env::var("HIRANYAGARBHA_BACKEND")
-            .unwrap_or_else(|_| "auto".to_string());
+        let base_url = std::env::var("LLM_BASE_URL")
+            .ok()
+            .filter(|v| !v.trim().is_empty());
+        let api_key = std::env::var("NVIDIA_API_KEY")
+            .ok()
+            .filter(|v| !v.trim().is_empty());
+        let backend_pref =
+            std::env::var("HIRANYAGARBHA_BACKEND").unwrap_or_else(|_| "auto".to_string());
 
         let remote_backend = if backend_pref.eq_ignore_ascii_case("echo") {
             None
@@ -176,12 +179,20 @@ fn uptime_string(started_at: Instant) -> String {
     format!("{:02}h {:02}m {:02}s", hours, minutes, seconds)
 }
 
-fn record_event(state: &AppState, kind: MemoryEventKind, summary: impl Into<String>, importance: f32) {
+fn record_event(
+    state: &AppState,
+    kind: MemoryEventKind,
+    summary: impl Into<String>,
+    importance: f32,
+) {
     let mut memory = state.memory.lock().expect("memory lock poisoned");
     memory.record(MemoryEntry::simple(kind, summary).with_importance(importance));
 }
 
-fn generate_answer(state: &AppState, prompt: String) -> Result<(String, String, Option<String>), String> {
+fn generate_answer(
+    state: &AppState,
+    prompt: String,
+) -> Result<(String, String, Option<String>), String> {
     let request = LlmRequest::new(MmlModality::Text, prompt.clone())
         .with_system_prompt(
             "Jsi Hiranyagarbha, AI Native agent ZION site. Odpovidej presne, technicky a cesky. Kdyz chybi LLM backend, rekni to pravdive a drz se overenych faktu.",
@@ -269,10 +280,7 @@ async fn config(State(state): State<Arc<AppState>>) -> Json<Value> {
     }))
 }
 
-async fn chat(
-    State(state): State<Arc<AppState>>,
-    Json(payload): Json<ChatRequest>,
-) -> Json<Value> {
+async fn chat(State(state): State<Arc<AppState>>, Json(payload): Json<ChatRequest>) -> Json<Value> {
     let prompt = payload.message.trim().to_string();
     if prompt.is_empty() {
         return Json(json!({ "error": "empty message" }));
@@ -280,13 +288,19 @@ async fn chat(
 
     state.request_count.fetch_add(1, Ordering::Relaxed);
     state.session_count.fetch_add(1, Ordering::Relaxed);
-    record_event(&state, MemoryEventKind::MessageReceived, format!("user: {}", prompt), 0.35);
+    record_event(
+        &state,
+        MemoryEventKind::MessageReceived,
+        format!("user: {}", prompt),
+        0.35,
+    );
 
     let state_for_gen = state.clone();
-    let result = tokio::task::spawn_blocking(move || generate_answer(&state_for_gen, prompt.clone()))
-        .await
-        .map_err(|e| e.to_string())
-        .and_then(|r| r);
+    let result =
+        tokio::task::spawn_blocking(move || generate_answer(&state_for_gen, prompt.clone()))
+            .await
+            .map_err(|e| e.to_string())
+            .and_then(|r| r);
 
     match result {
         Ok((response, backend_id, degraded_reason)) => {
@@ -338,7 +352,12 @@ async fn memory_flush(State(state): State<Arc<AppState>>) -> Json<Value> {
 async fn rag_index(State(state): State<Arc<AppState>>) -> Json<Value> {
     match seed_rag(&state) {
         Ok(()) => {
-            record_event(&state, MemoryEventKind::Custom("rag_index".to_string()), "rag index rebuilt", 0.5);
+            record_event(
+                &state,
+                MemoryEventKind::Custom("rag_index".to_string()),
+                "rag index rebuilt",
+                0.5,
+            );
             let rag = state.rag.lock().expect("rag lock poisoned");
             Json(json!({
                 "ok": true,

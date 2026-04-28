@@ -146,9 +146,7 @@ impl EvmHttpClient {
 
     /// Broadcast a signed raw transaction, returning the tx hash.
     pub async fn send_raw_transaction(&self, raw_tx: &str) -> Result<String> {
-        let result = self
-            .call("eth_sendRawTransaction", json!([raw_tx]))
-            .await?;
+        let result = self.call("eth_sendRawTransaction", json!([raw_tx])).await?;
         result
             .as_str()
             .map(|s| s.to_string())

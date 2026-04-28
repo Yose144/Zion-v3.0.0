@@ -100,7 +100,10 @@ mod tests {
     #[test]
     fn test_timelock_flowers() {
         let config = WarpConfig::default();
-        assert_eq!(config.timelock_threshold_flowers(), 1_000_000_000_000_000_000);
+        assert_eq!(
+            config.timelock_threshold_flowers(),
+            1_000_000_000_000_000_000
+        );
     }
 
     #[test]
