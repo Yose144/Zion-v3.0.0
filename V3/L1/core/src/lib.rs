@@ -1,3 +1,4 @@
+use k256::ecdsa::{signature::Verifier as _, Signature as EcdsaSignature, VerifyingKey};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::{BTreeMap, HashMap, HashSet};
@@ -42,6 +43,90 @@ pub const MAX_MEMPOOL_TRANSACTIONS: usize = 4_096;
 pub const MAX_TEMPLATE_UTXO_TRANSACTIONS: usize = 16;
 
 const BRIDGE_UNLOCK_MEMO_PREFIX: &str = "BRIDGE_UNLOCK:";
+/// Separator between the replay-key body and the multisig proofs payload in a
+/// bridge unlock memo.
+const BRIDGE_PROOFS_DELIMITER: char = '|';
+/// Prefix introducing the multisig proofs payload after the replay-key body.
+const BRIDGE_PROOFS_PREFIX: &str = "PROOFS=";
+/// Required minimum number of distinct verified validator proofs that a
+/// bridge unlock transaction must carry. This is the protocol-level floor
+/// enforced by every node (peer-block import, mempool ingress, RPC entry).
+/// The runtime threshold may be raised via
+/// [`required_bridge_validator_threshold`] but never lowered below this.
+pub const BRIDGE_MIN_VALIDATOR_PROOFS: usize = 3;
+/// Hard ceiling on the number of validator proofs accepted in a single
+/// bridge unlock memo. Prevents pathological tx sizes / quadratic
+/// verification cost.
+const BRIDGE_MAX_VALIDATOR_PROOFS: usize = 16;
+/// Hard ceiling on bridge unlock memo size (bytes). The replay-key body plus
+/// up to [`BRIDGE_MAX_VALIDATOR_PROOFS`] proofs comfortably fit well under
+/// this limit; anything larger is rejected as malformed.
+const BRIDGE_MAX_MEMO_LEN: usize = 8192;
+
+/// A single validator multisig proof carried by a bridge unlock transaction.
+///
+/// Constructed via [`BridgeValidatorProof::new`] (which enforces the canonical
+/// hex / ID shape) and consumed by the protocol-level verifier
+/// [`verify_bridge_proofs`].
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BridgeValidatorProof {
+    /// Free-form identifier (alphanumeric, underscore, dash). Used only for
+    /// diagnostics and de-duplication of proofs that share an identity.
+    validator_id: String,
+    /// secp256k1 SEC1-encoded compressed public key, lowercase hex (66 chars).
+    pubkey_hex: String,
+    /// 64-byte ECDSA signature over `bridge_operation_message`, lowercase hex
+    /// (128 chars).
+    signature_hex: String,
+}
+
+impl BridgeValidatorProof {
+    /// Construct a proof from raw fields, normalising hex casing and
+    /// rejecting malformed inputs early. Validation here mirrors the
+    /// stricter parser used during peer-block import so the RPC surface
+    /// rejects bad shapes before they ever hit the chain.
+    pub fn new(
+        validator_id: impl Into<String>,
+        pubkey_hex: impl Into<String>,
+        signature_hex: impl Into<String>,
+    ) -> Result<Self, String> {
+        let validator_id = validator_id.into();
+        let pubkey_hex = pubkey_hex
+            .into()
+            .trim_start_matches("0x")
+            .to_ascii_lowercase();
+        let signature_hex = signature_hex
+            .into()
+            .trim_start_matches("0x")
+            .to_ascii_lowercase();
+        if validator_id.is_empty() {
+            return Err("bridge validator proof has empty validator_id".to_string());
+        }
+        if !validator_id
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
+            || validator_id.len() > 64
+        {
+            return Err(
+                "bridge validator proof validator_id has illegal characters or is too long"
+                    .to_string(),
+            );
+        }
+        if pubkey_hex.len() != 66 || !pubkey_hex.chars().all(|c| c.is_ascii_hexdigit()) {
+            return Err(
+                "bridge validator proof pubkey must be 66 hex chars (compressed SEC1)".to_string(),
+            );
+        }
+        if signature_hex.len() != 128 || !signature_hex.chars().all(|c| c.is_ascii_hexdigit()) {
+            return Err("bridge validator proof signature must be 128 hex chars".to_string());
+        }
+        Ok(Self {
+            validator_id,
+            pubkey_hex,
+            signature_hex,
+        })
+    }
+}
 
 fn bridge_unlock_replay_key(source_chain: &str, burn_id: &str, evm_tx_hash: &str) -> String {
     format!("{source_chain}:{burn_id}:{evm_tx_hash}")
@@ -54,16 +139,255 @@ fn bridge_unlock_memo(source_chain: &str, burn_id: &str, evm_tx_hash: &str) -> S
     )
 }
 
-fn parse_bridge_unlock_memo(memo: &str) -> Option<(&str, &str, &str)> {
+/// Build the canonical bridge unlock memo carrying multisig proofs.
+///
+/// The format is:
+/// `BRIDGE_UNLOCK:<source>:<burn_id>:<evm_tx>|PROOFS=<id1>:<pk1>:<sig1>,...`
+///
+/// The replay-key body before the `|` is stable and matches
+/// [`bridge_unlock_memo`] exactly, so callers tracking replay protection by
+/// the body-only memo continue to work unchanged.
+fn bridge_unlock_memo_with_proofs(
+    source_chain: &str,
+    burn_id: &str,
+    evm_tx_hash: &str,
+    proofs: &[BridgeValidatorProof],
+) -> String {
+    let body = bridge_unlock_memo(source_chain, burn_id, evm_tx_hash);
+    if proofs.is_empty() {
+        return body;
+    }
+    let payload = proofs
+        .iter()
+        .map(|p| format!("{}:{}:{}", p.validator_id, p.pubkey_hex, p.signature_hex))
+        .collect::<Vec<_>>()
+        .join(",");
+    format!("{body}{BRIDGE_PROOFS_DELIMITER}{BRIDGE_PROOFS_PREFIX}{payload}")
+}
+
+/// Parse a bridge unlock memo into its replay-key components plus, when
+/// present, the raw proofs slice.
+///
+/// Returns `Some((source_chain, burn_id, evm_tx_hash, Some(proofs_raw)))`
+/// when the memo carries a `|PROOFS=...` suffix, or
+/// `Some((source_chain, burn_id, evm_tx_hash, None))` when only the body is
+/// present. Returns `None` on a malformed memo (missing prefix, empty
+/// fields, oversized).
+fn parse_bridge_unlock_memo(memo: &str) -> Option<(&str, &str, &str, Option<&str>)> {
+    if memo.len() > BRIDGE_MAX_MEMO_LEN {
+        return None;
+    }
     let rest = memo.strip_prefix(BRIDGE_UNLOCK_MEMO_PREFIX)?;
-    let mut parts = rest.splitn(3, ':');
+    let (body, proofs_raw) = match rest.split_once(BRIDGE_PROOFS_DELIMITER) {
+        Some((body, suffix)) => {
+            let proofs_raw = suffix.strip_prefix(BRIDGE_PROOFS_PREFIX)?;
+            (body, Some(proofs_raw))
+        }
+        None => (rest, None),
+    };
+    let mut parts = body.splitn(3, ':');
     let source_chain = parts.next()?;
     let burn_id = parts.next()?;
     let evm_tx_hash = parts.next()?;
     if source_chain.is_empty() || burn_id.is_empty() || evm_tx_hash.is_empty() {
         return None;
     }
-    Some((source_chain, burn_id, evm_tx_hash))
+    if source_chain.contains(BRIDGE_PROOFS_DELIMITER)
+        || burn_id.contains(BRIDGE_PROOFS_DELIMITER)
+        || evm_tx_hash.contains(BRIDGE_PROOFS_DELIMITER)
+    {
+        return None;
+    }
+    Some((source_chain, burn_id, evm_tx_hash, proofs_raw))
+}
+
+/// Parse the raw `PROOFS=...` payload into structured proofs.
+fn parse_bridge_proofs(raw: &str) -> Result<Vec<BridgeValidatorProof>, String> {
+    if raw.is_empty() {
+        return Err("bridge unlock proofs payload is empty".to_string());
+    }
+    let chunks: Vec<&str> = raw.split(',').collect();
+    if chunks.len() > BRIDGE_MAX_VALIDATOR_PROOFS {
+        return Err(format!(
+            "bridge unlock memo carries {} proofs, exceeding limit {}",
+            chunks.len(),
+            BRIDGE_MAX_VALIDATOR_PROOFS,
+        ));
+    }
+    let mut proofs = Vec::with_capacity(chunks.len());
+    for (i, chunk) in chunks.iter().enumerate() {
+        let mut parts = chunk.splitn(3, ':');
+        let validator_id = parts
+            .next()
+            .ok_or_else(|| format!("bridge unlock proof {i} is missing validator_id"))?;
+        let pubkey_hex = parts
+            .next()
+            .ok_or_else(|| format!("bridge unlock proof {i} is missing pubkey"))?;
+        let signature_hex = parts
+            .next()
+            .ok_or_else(|| format!("bridge unlock proof {i} is missing signature"))?;
+        if validator_id.is_empty() {
+            return Err(format!("bridge unlock proof {i} has empty validator_id"));
+        }
+        if !validator_id
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
+            || validator_id.len() > 64
+        {
+            return Err(format!(
+                "bridge unlock proof {i} validator_id has illegal characters or is too long"
+            ));
+        }
+        if pubkey_hex.len() != 66 || !pubkey_hex.chars().all(|c| c.is_ascii_hexdigit()) {
+            return Err(format!(
+                "bridge unlock proof {i} pubkey must be 66 lowercase hex chars (compressed SEC1)"
+            ));
+        }
+        if signature_hex.len() != 128 || !signature_hex.chars().all(|c| c.is_ascii_hexdigit()) {
+            return Err(format!(
+                "bridge unlock proof {i} signature must be 128 lowercase hex chars"
+            ));
+        }
+        proofs.push(BridgeValidatorProof {
+            validator_id: validator_id.to_string(),
+            pubkey_hex: pubkey_hex.to_ascii_lowercase(),
+            signature_hex: signature_hex.to_ascii_lowercase(),
+        });
+    }
+    Ok(proofs)
+}
+
+/// Verify multisig proofs over `operation_message`.
+///
+/// - Each proof's secp256k1 signature must verify against its embedded pubkey.
+/// - Each proof's pubkey must appear in `allowed_pubkeys`.
+/// - Pubkeys must be unique (no double-counting one signer to satisfy threshold).
+/// - At least `threshold` proofs must verify.
+fn verify_bridge_proofs(
+    proofs: &[BridgeValidatorProof],
+    operation_message: &str,
+    allowed_pubkeys: &HashSet<String>,
+    threshold: usize,
+) -> Result<(), String> {
+    if allowed_pubkeys.is_empty() {
+        return Err(
+            "bridge validator allowlist is empty (set ZION_BRIDGE_VALIDATOR_PUBKEYS)".to_string(),
+        );
+    }
+    if threshold < BRIDGE_MIN_VALIDATOR_PROOFS {
+        return Err(format!(
+            "bridge validator threshold {threshold} is below protocol minimum {BRIDGE_MIN_VALIDATOR_PROOFS}"
+        ));
+    }
+    if proofs.len() < threshold {
+        return Err(format!(
+            "bridge unlock has {} proofs, need at least {}",
+            proofs.len(),
+            threshold,
+        ));
+    }
+    let mut verified = HashSet::new();
+    for (i, proof) in proofs.iter().enumerate() {
+        if !allowed_pubkeys.contains(&proof.pubkey_hex) {
+            return Err(format!(
+                "bridge unlock proof {i} ({}) pubkey is not in core allowlist",
+                proof.validator_id,
+            ));
+        }
+        let pubkey_bytes = hex::decode(&proof.pubkey_hex).map_err(|_| {
+            format!(
+                "bridge unlock proof {i} ({}) has invalid pubkey hex",
+                proof.validator_id,
+            )
+        })?;
+        let verifying_key = VerifyingKey::from_sec1_bytes(&pubkey_bytes).map_err(|_| {
+            format!(
+                "bridge unlock proof {i} ({}) pubkey is not a valid secp256k1 point",
+                proof.validator_id,
+            )
+        })?;
+        let sig_bytes = hex::decode(&proof.signature_hex).map_err(|_| {
+            format!(
+                "bridge unlock proof {i} ({}) has invalid signature hex",
+                proof.validator_id,
+            )
+        })?;
+        let signature = EcdsaSignature::from_slice(&sig_bytes).map_err(|_| {
+            format!(
+                "bridge unlock proof {i} ({}) signature is not canonical ECDSA",
+                proof.validator_id,
+            )
+        })?;
+        verifying_key
+            .verify(operation_message.as_bytes(), &signature)
+            .map_err(|_| {
+                format!(
+                    "bridge unlock proof {i} ({}) failed secp256k1 signature verification",
+                    proof.validator_id,
+                )
+            })?;
+        if !verified.insert(proof.pubkey_hex.clone()) {
+            return Err(format!(
+                "bridge unlock has duplicate pubkey for proof {i} ({}); each signer must be unique",
+                proof.validator_id,
+            ));
+        }
+    }
+    if verified.len() < threshold {
+        return Err(format!(
+            "bridge unlock verified only {} distinct signers, need {}",
+            verified.len(),
+            threshold,
+        ));
+    }
+    Ok(())
+}
+
+/// Read the L1-enforced bridge validator allowlist from
+/// `ZION_BRIDGE_VALIDATOR_PUBKEYS` (comma-separated, hex-encoded compressed
+/// SEC1 secp256k1 pubkeys).
+fn load_bridge_validator_pubkey_allowlist() -> HashSet<String> {
+    std::env::var("ZION_BRIDGE_VALIDATOR_PUBKEYS")
+        .ok()
+        .map(|raw| {
+            raw.split(',')
+                .map(str::trim)
+                .filter(|v| !v.is_empty())
+                .map(|v| v.trim_start_matches("0x").to_ascii_lowercase())
+                .collect::<HashSet<_>>()
+        })
+        .unwrap_or_default()
+}
+
+/// Read the L1-enforced bridge unlock multisig threshold from
+/// `ZION_BRIDGE_VALIDATOR_THRESHOLD`. Defaults to (and is floored at)
+/// [`BRIDGE_MIN_VALIDATOR_PROOFS`].
+fn required_bridge_validator_threshold() -> usize {
+    std::env::var("ZION_BRIDGE_VALIDATOR_THRESHOLD")
+        .ok()
+        .and_then(|v| v.parse::<usize>().ok())
+        .filter(|v| *v >= BRIDGE_MIN_VALIDATOR_PROOFS)
+        .unwrap_or(BRIDGE_MIN_VALIDATOR_PROOFS)
+}
+
+/// Canonical operation message that all validator proofs must sign.
+///
+/// This is the byte-for-byte preimage used by both the JSON-RPC entrypoint
+/// (`submitBridgeUnlock`) and the peer-block / mempool validation path. Any
+/// deviation between the producer's signed message and what this function
+/// reconstructs from the on-chain transaction will fail signature
+/// verification.
+pub fn bridge_operation_message(
+    recipient: &str,
+    amount_flowers: u64,
+    source_chain: &str,
+    burn_id: &str,
+    evm_tx_hash: &str,
+) -> String {
+    format!(
+        "unlock|recipient={}|amount={}|chain={}|burn_id={}|evm_tx={}",
+        recipient, amount_flowers, source_chain, burn_id, evm_tx_hash
+    )
 }
 
 fn bridge_unlock_replay_key_from_transaction(transaction: &tx::Transaction) -> Option<String> {
@@ -72,7 +396,7 @@ fn bridge_unlock_replay_key_from_transaction(transaction: &tx::Transaction) -> O
         .iter()
         .filter_map(|output| output.memo.as_deref())
         .find_map(|memo| {
-            let (source_chain, burn_id, evm_tx_hash) = parse_bridge_unlock_memo(memo)?;
+            let (source_chain, burn_id, evm_tx_hash, _proofs) = parse_bridge_unlock_memo(memo)?;
             Some(bridge_unlock_replay_key(source_chain, burn_id, evm_tx_hash))
         })
 }
@@ -120,6 +444,37 @@ fn validate_bridge_unlock_transaction_shape_with_utxos(
             "bridge unlock recipient output must not point back to the bridge vault".to_string(),
         );
     }
+
+    // Step 1: parse the unlock memo into its replay-key body and (mandatory)
+    // multisig proofs. The proofs payload is required — every node enforces
+    // ≥ BRIDGE_MIN_VALIDATOR_PROOFS distinct, allow-listed secp256k1
+    // signatures over the canonical operation message reconstructed from
+    // the transaction itself.
+    let memo_str = recipient_output
+        .memo
+        .as_deref()
+        .expect("memo presence guaranteed by filter above");
+    let (source_chain, burn_id, evm_tx_hash, proofs_raw) = parse_bridge_unlock_memo(memo_str)
+        .ok_or_else(|| "bridge unlock memo is malformed".to_string())?;
+    let raw = proofs_raw.ok_or_else(|| {
+        "bridge unlock memo is missing required validator proofs (PROOFS=...)".to_string()
+    })?;
+    let proofs = parse_bridge_proofs(raw)?;
+
+    // Step 2: reconstruct the canonical operation message from the
+    // transaction itself (recipient, amount, source/burn/evm metadata).
+    // Validators must have signed exactly this message; mutating any of
+    // these fields after signing breaks verification.
+    let operation_message = bridge_operation_message(
+        &recipient_output.address,
+        recipient_output.amount,
+        source_chain,
+        burn_id,
+        evm_tx_hash,
+    );
+    let allowed_pubkeys = load_bridge_validator_pubkey_allowlist();
+    let threshold = required_bridge_validator_threshold();
+    verify_bridge_proofs(&proofs, &operation_message, &allowed_pubkeys, threshold)?;
 
     let outputs_for_validation: Vec<(u64, &str)> = transaction
         .outputs
@@ -1432,8 +1787,15 @@ impl NodeRuntime {
         }
     }
 
-    pub fn submit_bridge_unlock(&mut self, request: BridgeUnlockRequest) -> RpcResponse {
-        match self.chain_state.build_bridge_unlock_transaction(&request) {
+    pub fn submit_bridge_unlock(
+        &mut self,
+        request: BridgeUnlockRequest,
+        proofs: Vec<BridgeValidatorProof>,
+    ) -> RpcResponse {
+        match self
+            .chain_state
+            .build_bridge_unlock_transaction(&request, &proofs)
+        {
             Ok(transaction) => self.submit_utxo_transaction_rpc(transaction),
             Err(reason) => RpcResponse::TransactionResult {
                 accepted: false,
@@ -1925,6 +2287,7 @@ impl ChainState {
     fn build_bridge_unlock_transaction(
         &self,
         request: &BridgeUnlockRequest,
+        proofs: &[BridgeValidatorProof],
     ) -> Result<tx::Transaction, String> {
         if request.amount_flowers == 0 {
             return Err("bridge unlock amount must be greater than zero".to_string());
@@ -1932,6 +2295,22 @@ impl ChainState {
         if !crypto::is_valid_address(&request.recipient) {
             return Err("bridge unlock recipient must be a valid zion1 address".to_string());
         }
+
+        // Validate that the proofs sign the canonical operation message
+        // *before* persisting anything. The same checks run again in
+        // `validate_bridge_unlock_transaction_shape_with_utxos` (peer block /
+        // mempool path), so this is defence in depth — and a clearer error
+        // surface for the JSON-RPC submitter.
+        let operation_message = bridge_operation_message(
+            &request.recipient,
+            request.amount_flowers,
+            &request.source_chain,
+            &request.burn_id,
+            &request.evm_tx_hash,
+        );
+        let allowed_pubkeys = load_bridge_validator_pubkey_allowlist();
+        let threshold = required_bridge_validator_threshold();
+        verify_bridge_proofs(proofs, &operation_message, &allowed_pubkeys, threshold)?;
 
         let replay_key = bridge_unlock_replay_key(
             &request.source_chain,
@@ -1984,10 +2363,11 @@ impl ChainState {
         let mut outputs = vec![tx::TxOutput {
             amount: request.amount_flowers,
             address: request.recipient.clone(),
-            memo: Some(bridge_unlock_memo(
+            memo: Some(bridge_unlock_memo_with_proofs(
                 &request.source_chain,
                 &request.burn_id,
                 &request.evm_tx_hash,
+                proofs,
             )),
         }];
 
@@ -5861,5 +6241,247 @@ mod tests {
         let result = node.handle_p2p_message(msg);
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("network mismatch"));
+    }
+
+    // ───────────────────────────────────────────────────────────────────
+    // F4 — bridge unlock multisig L1 enforcement (audit ref: V3 audit F4)
+    //
+    // These tests assert the protocol-level invariant that a bridge unlock
+    // transaction can only be accepted if its memo carries ≥
+    // BRIDGE_MIN_VALIDATOR_PROOFS distinct, allow-listed secp256k1
+    // signatures over the canonical operation message reconstructed from
+    // the transaction itself. The previous design verified signatures only
+    // at the JSON-RPC entrypoint and discarded them, leaving peer-block
+    // import unable to distinguish a real unlock from a forged one.
+    // ───────────────────────────────────────────────────────────────────
+
+    use k256::ecdsa::signature::Signer as _;
+    use k256::ecdsa::{Signature as F4Signature, SigningKey};
+
+    /// Generate `count` deterministic secp256k1 keypairs, plus the
+    /// `ZION_BRIDGE_VALIDATOR_PUBKEYS` allowlist string they imply.
+    fn f4_make_signing_keys(count: u8) -> (Vec<SigningKey>, String) {
+        let mut keys = Vec::with_capacity(usize::from(count));
+        let mut pubkeys_hex = Vec::with_capacity(usize::from(count));
+        for i in 0..count {
+            let bytes = [i + 0x21; 32];
+            let key = SigningKey::from_slice(&bytes).expect("valid signing key");
+            let sec1 = key.verifying_key().to_encoded_point(true);
+            pubkeys_hex.push(hex::encode(sec1.as_bytes()));
+            keys.push(key);
+        }
+        (keys, pubkeys_hex.join(","))
+    }
+
+    /// Build `count` proofs over `operation_message` from the supplied keys.
+    fn f4_make_proofs(keys: &[SigningKey], operation_message: &str) -> Vec<BridgeValidatorProof> {
+        keys.iter()
+            .enumerate()
+            .map(|(i, key)| {
+                let sig: F4Signature = key.sign(operation_message.as_bytes());
+                let sec1 = key.verifying_key().to_encoded_point(true);
+                BridgeValidatorProof::new(
+                    format!("v{}", i + 1),
+                    hex::encode(sec1.as_bytes()),
+                    hex::encode(sig.to_bytes()),
+                )
+                .expect("proof shape valid")
+            })
+            .collect()
+    }
+
+    #[test]
+    fn f4_memo_with_proofs_round_trips_through_parser() {
+        let (keys, _allowlist) = f4_make_signing_keys(3);
+        let recipient = crypto::derive_address(&[0xAA; 32]);
+        let amount: u64 = 1_000_000_000_000;
+        let op = bridge_operation_message(&recipient, amount, "base", "burn-7", "0xfeed");
+        let proofs = f4_make_proofs(&keys, &op);
+        let memo = bridge_unlock_memo_with_proofs("base", "burn-7", "0xfeed", &proofs);
+
+        let (src, burn, evm, raw) = parse_bridge_unlock_memo(&memo).expect("memo parses");
+        assert_eq!(src, "base");
+        assert_eq!(burn, "burn-7");
+        assert_eq!(evm, "0xfeed");
+        let parsed = parse_bridge_proofs(raw.expect("proofs present")).expect("proofs parse");
+        assert_eq!(parsed, proofs);
+        assert_eq!(
+            bridge_unlock_replay_key_from_transaction_with_memo(&memo),
+            Some("base:burn-7:0xfeed".to_string())
+        );
+    }
+
+    /// Adapter: extract replay key from a memo string (used by the test
+    /// above without constructing a full Transaction).
+    fn bridge_unlock_replay_key_from_transaction_with_memo(memo: &str) -> Option<String> {
+        let (s, b, e, _) = parse_bridge_unlock_memo(memo)?;
+        Some(bridge_unlock_replay_key(s, b, e))
+    }
+
+    #[test]
+    fn f4_verify_proofs_accepts_threshold_valid_signatures() {
+        let (keys, allowlist_csv) = f4_make_signing_keys(3);
+        let allowlist: HashSet<String> = allowlist_csv.split(',').map(str::to_string).collect();
+        let op = "unlock|recipient=zion1xxx|amount=42|chain=base|burn_id=b|evm_tx=0x1";
+        let proofs = f4_make_proofs(&keys, op);
+        verify_bridge_proofs(&proofs, op, &allowlist, 3).expect("3/3 valid signatures accepted");
+    }
+
+    #[test]
+    fn f4_verify_proofs_rejects_below_threshold() {
+        let (keys, allowlist_csv) = f4_make_signing_keys(3);
+        let allowlist: HashSet<String> = allowlist_csv.split(',').map(str::to_string).collect();
+        let op = "unlock|recipient=zion1xxx|amount=42|chain=base|burn_id=b|evm_tx=0x1";
+        let proofs = f4_make_proofs(&keys[..2], op); // only 2 signatures
+        let err = verify_bridge_proofs(&proofs, op, &allowlist, 3).unwrap_err();
+        assert!(
+            err.contains("need at least 3"),
+            "expected threshold error, got: {err}"
+        );
+    }
+
+    #[test]
+    fn f4_verify_proofs_rejects_pubkey_not_in_allowlist() {
+        let (keys, _) = f4_make_signing_keys(3);
+        // Allowlist contains different pubkeys than the signers.
+        let (other_keys, other_csv) = f4_make_signing_keys(3);
+        let _ = other_keys; // keep them in scope so seeds differ
+        let mut allowlist: HashSet<String> = other_csv.split(',').map(str::to_string).collect();
+        // Tweak last byte to force a non-overlapping allowlist.
+        let any = allowlist.iter().next().cloned().unwrap_or_default();
+        allowlist.remove(&any);
+        let op = "unlock|recipient=zion1xxx|amount=42|chain=base|burn_id=b|evm_tx=0x1";
+        let proofs = f4_make_proofs(&keys, op);
+        let err = verify_bridge_proofs(&proofs, op, &allowlist, 3).unwrap_err();
+        assert!(
+            err.contains("not in core allowlist"),
+            "expected allowlist error, got: {err}"
+        );
+    }
+
+    #[test]
+    fn f4_verify_proofs_rejects_duplicate_signers() {
+        let (keys, allowlist_csv) = f4_make_signing_keys(2);
+        let allowlist: HashSet<String> = allowlist_csv.split(',').map(str::to_string).collect();
+        let op = "unlock|recipient=zion1xxx|amount=42|chain=base|burn_id=b|evm_tx=0x1";
+        // Replicate one signer to fake a 3rd proof under a different
+        // validator_id; the verifier must catch the pubkey reuse.
+        let mut proofs = f4_make_proofs(&keys, op);
+        let dup = proofs[0].clone();
+        proofs.push(BridgeValidatorProof {
+            validator_id: "v3-impostor".to_string(),
+            ..dup
+        });
+        let err = verify_bridge_proofs(&proofs, op, &allowlist, 3).unwrap_err();
+        assert!(
+            err.contains("duplicate pubkey"),
+            "expected duplicate-pubkey error, got: {err}"
+        );
+    }
+
+    #[test]
+    fn f4_verify_proofs_rejects_signature_for_wrong_message() {
+        let (keys, allowlist_csv) = f4_make_signing_keys(3);
+        let allowlist: HashSet<String> = allowlist_csv.split(',').map(str::to_string).collect();
+        let signed_op = "unlock|recipient=zion1xxx|amount=42|chain=base|burn_id=b|evm_tx=0x1";
+        let tampered_op = "unlock|recipient=zion1xxx|amount=999999|chain=base|burn_id=b|evm_tx=0x1";
+        let proofs = f4_make_proofs(&keys, signed_op);
+        let err = verify_bridge_proofs(&proofs, tampered_op, &allowlist, 3).unwrap_err();
+        assert!(
+            err.contains("failed secp256k1 signature verification"),
+            "expected signature failure, got: {err}"
+        );
+    }
+
+    #[test]
+    fn f4_verify_proofs_rejects_empty_allowlist() {
+        let (keys, _) = f4_make_signing_keys(3);
+        let op = "unlock|recipient=zion1xxx|amount=42|chain=base|burn_id=b|evm_tx=0x1";
+        let proofs = f4_make_proofs(&keys, op);
+        let err =
+            verify_bridge_proofs(&proofs, op, &HashSet::new(), 3).expect_err("empty allowlist");
+        assert!(
+            err.contains("allowlist is empty"),
+            "expected empty-allowlist error, got: {err}"
+        );
+    }
+
+    #[test]
+    fn f4_parse_proofs_rejects_too_many_proofs() {
+        let mut payload = String::new();
+        for i in 0..(BRIDGE_MAX_VALIDATOR_PROOFS + 1) {
+            if i > 0 {
+                payload.push(',');
+            }
+            payload.push_str(&format!("v{i}:{}:{}", "0".repeat(66), "0".repeat(128)));
+        }
+        let err = parse_bridge_proofs(&payload).unwrap_err();
+        assert!(err.contains("exceeding limit"), "got: {err}");
+    }
+
+    #[test]
+    fn f4_parse_proofs_rejects_bad_pubkey_length() {
+        let payload = format!("v1:{}:{}", "0".repeat(64), "0".repeat(128));
+        let err = parse_bridge_proofs(&payload).unwrap_err();
+        assert!(err.contains("66"), "got: {err}");
+    }
+
+    #[test]
+    fn f4_parse_proofs_rejects_bad_signature_length() {
+        let payload = format!("v1:{}:{}", "0".repeat(66), "0".repeat(64));
+        let err = parse_bridge_proofs(&payload).unwrap_err();
+        assert!(err.contains("128"), "got: {err}");
+    }
+
+    #[test]
+    fn f4_parse_memo_rejects_oversize_input() {
+        let blob = "x".repeat(BRIDGE_MAX_MEMO_LEN + 1);
+        let memo = format!("BRIDGE_UNLOCK:base:burn:0xa|PROOFS={blob}");
+        assert!(parse_bridge_unlock_memo(&memo).is_none());
+    }
+
+    #[test]
+    fn f4_parse_memo_supports_legacy_body_only_form_for_replay_key() {
+        // Body-only form must still parse so a node restoring journal data
+        // tagged before this commit can extract the replay key. (Such a
+        // memo will fail later at the proofs check, but replay-key
+        // tracking must not silently lose entries.)
+        let memo = "BRIDGE_UNLOCK:base:burn-1:0xdeadbeef";
+        let (s, b, e, raw) = parse_bridge_unlock_memo(memo).expect("body-only memo parses");
+        assert_eq!((s, b, e), ("base", "burn-1", "0xdeadbeef"));
+        assert!(raw.is_none());
+    }
+
+    #[test]
+    fn f4_validate_bridge_unlock_rejects_tx_without_proofs_payload() {
+        let recipient = crypto::derive_address(&[0xCC; 32]);
+        let utxos = HashMap::new();
+        // Build a minimal bridge-unlock tx with the legacy body-only memo
+        // (no |PROOFS=...). Because we have no UTXO entry, the function
+        // would normally fail later on input lookup — but we're asserting
+        // here that the proofs-missing check fires *first*, which is what
+        // protects peers from accepting unsigned unlocks.
+        let tx = tx::Transaction {
+            id: [0u8; 32],
+            version: 1,
+            inputs: vec![tx::TxInput {
+                prev_tx_hash: [0u8; 32],
+                output_index: 0,
+                signature: Vec::new(),
+                public_key: Vec::new(),
+            }],
+            outputs: vec![tx::TxOutput {
+                amount: 1_000,
+                address: recipient.clone(),
+                memo: Some(bridge_unlock_memo("base", "burn-x", "0xnope")),
+            }],
+            fee: 100,
+            timestamp: 0,
+        };
+        let err = validate_bridge_unlock_transaction_shape_with_utxos(&tx, &utxos).unwrap_err();
+        assert!(
+            err.contains("missing required validator proofs"),
+            "expected proofs-missing rejection, got: {err}",
+        );
     }
 }
