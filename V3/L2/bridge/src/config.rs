@@ -64,8 +64,8 @@ pub struct AnkrConfig {
 impl Default for AnkrConfig {
     fn default() -> Self {
         Self {
-            enabled: true,  // Ankr is the preferred default
-            api_key: None,  // free tier
+            enabled: true, // Ankr is the preferred default
+            api_key: None, // free tier
         }
     }
 }
@@ -269,13 +269,19 @@ impl BridgeConfig {
 
         for chain in self.active_chains() {
             if mainnet {
-                if chain.wzion_address.eq_ignore_ascii_case("0x0000000000000000000000000000000000000000") {
+                if chain
+                    .wzion_address
+                    .eq_ignore_ascii_case("0x0000000000000000000000000000000000000000")
+                {
                     anyhow::bail!(
                         "mainnet chain '{}' has zero wzion_address; deploy contract first",
                         chain.chain_id
                     );
                 }
-                if chain.bridge_contract_address.eq_ignore_ascii_case("0x0000000000000000000000000000000000000000") {
+                if chain
+                    .bridge_contract_address
+                    .eq_ignore_ascii_case("0x0000000000000000000000000000000000000000")
+                {
                     anyhow::bail!(
                         "mainnet chain '{}' has zero bridge_contract_address; deploy contract first",
                         chain.chain_id
@@ -516,7 +522,10 @@ log_level = "info"
     fn test_ankr_effective_api_key_from_env() {
         let _guard = ENV_MUTEX.lock().unwrap();
         std::env::set_var("ANKR_API_KEY", "env_key_test");
-        let ankr = AnkrConfig { enabled: true, api_key: None };
+        let ankr = AnkrConfig {
+            enabled: true,
+            api_key: None,
+        };
         assert_eq!(ankr.effective_api_key(), Some("env_key_test".into()));
         std::env::remove_var("ANKR_API_KEY");
     }
@@ -556,11 +565,11 @@ log_level = "info"
     #[test]
     fn test_effective_rpc_url_no_key_no_override() {
         let chain = make_chain_cfg("base", None);
-        let ankr = AnkrConfig { enabled: true, api_key: None };
-        assert_eq!(
-            chain.effective_rpc_url(&ankr),
-            "https://rpc.ankr.com/base"
-        );
+        let ankr = AnkrConfig {
+            enabled: true,
+            api_key: None,
+        };
+        assert_eq!(chain.effective_rpc_url(&ankr), "https://rpc.ankr.com/base");
     }
 
     #[test]

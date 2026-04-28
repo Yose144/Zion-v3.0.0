@@ -54,11 +54,7 @@ pub fn sha3_512_64_64_64_8_8(
 }
 
 #[inline(always)]
-pub fn sha3_512_64_64_64(
-    input_a: &[u8; 64],
-    input_b: &[u8; 64],
-    input_c: &[u8; 64],
-) -> Hash64 {
+pub fn sha3_512_64_64_64(input_a: &[u8; 64], input_b: &[u8; 64], input_c: &[u8; 64]) -> Hash64 {
     let mut hasher = Sha3_512::new();
     hasher.update(input_a);
     hasher.update(input_b);

@@ -52,29 +52,31 @@ pub struct EvmWatcherConfig {
     pub start_block: u64,
 }
 
-fn default_poll() -> u64 { 12 }
+fn default_poll() -> u64 {
+    12
+}
 
 // ─── DB schema ───────────────────────────────────────────────────────────────
 
 /// All columns we track for an EVM-side lock.
 #[derive(Debug, Clone, Serialize)]
 pub struct EvmLock {
-    pub lock_id:            String,  // bytes32 hex (0x…)
-    pub initiator:          String,  // address
-    pub recipient:          String,  // address (may be ZeroAddress)
-    pub token:              String,  // address  (ZeroAddress = native ETH)
-    pub amount:             String,  // uint256 as decimal string
-    pub hashlock:           String,  // bytes32 hex
-    pub timelock:           u64,     // unix timestamp
+    pub lock_id: String,   // bytes32 hex (0x…)
+    pub initiator: String, // address
+    pub recipient: String, // address (may be ZeroAddress)
+    pub token: String,     // address  (ZeroAddress = native ETH)
+    pub amount: String,    // uint256 as decimal string
+    pub hashlock: String,  // bytes32 hex
+    pub timelock: u64,     // unix timestamp
     pub counterparty_chain: String,
-    pub counterparty_addr:  String,
-    pub state:              String,  // "pending" | "claimed" | "refunded"
-    pub preimage:           Option<String>,
-    pub claimed_by:         Option<String>,
-    pub block_number:       u64,
-    pub tx_hash:            String,
-    pub created_at:         String,
-    pub updated_at:         String,
+    pub counterparty_addr: String,
+    pub state: String, // "pending" | "claimed" | "refunded"
+    pub preimage: Option<String>,
+    pub claimed_by: Option<String>,
+    pub block_number: u64,
+    pub tx_hash: String,
+    pub created_at: String,
+    pub updated_at: String,
 }
 
 /// Apply the EVM watcher migration to an open Connection.
@@ -118,16 +120,18 @@ fn keccak256_topic(sig: &str) -> String {
 
 /// Pre-compute the three topics we care about.
 pub struct Topics {
-    pub locked:   String,   // Locked(bytes32,address,address,address,uint256,bytes32,uint256,string,string)
-    pub claimed:  String,   // Claimed(bytes32,address,bytes32)
-    pub refunded: String,   // Refunded(bytes32,address)
+    pub locked: String, // Locked(bytes32,address,address,address,uint256,bytes32,uint256,string,string)
+    pub claimed: String, // Claimed(bytes32,address,bytes32)
+    pub refunded: String, // Refunded(bytes32,address)
 }
 
 impl Topics {
     pub fn new() -> Self {
         Self {
-            locked:   keccak256_topic("Locked(bytes32,address,address,address,uint256,bytes32,uint256,string,string)"),
-            claimed:  keccak256_topic("Claimed(bytes32,address,bytes32)"),
+            locked: keccak256_topic(
+                "Locked(bytes32,address,address,address,uint256,bytes32,uint256,string,string)",
+            ),
+            claimed: keccak256_topic("Claimed(bytes32,address,bytes32)"),
             refunded: keccak256_topic("Refunded(bytes32,address)"),
         }
     }
@@ -138,12 +142,12 @@ impl Topics {
 #[derive(Debug, Deserialize)]
 struct RpcResponse<T> {
     result: Option<T>,
-    error:  Option<RpcError>,
+    error: Option<RpcError>,
 }
 
 #[derive(Debug, Deserialize)]
 struct RpcError {
-    code:    i64,
+    code: i64,
     message: String,
 }
 
@@ -151,14 +155,14 @@ struct RpcError {
 #[derive(Debug, Deserialize)]
 #[allow(dead_code)]
 struct EthLog {
-    address:          String,
-    topics:           Vec<String>,
-    data:             String,
+    address: String,
+    topics: Vec<String>,
+    data: String,
     #[serde(rename = "blockNumber")]
-    block_number:     String,     // hex
+    block_number: String, // hex
     #[serde(rename = "transactionHash")]
     transaction_hash: String,
-    removed:          Option<bool>,
+    removed: Option<bool>,
 }
 
 // ─── RPC helpers ─────────────────────────────────────────────────────────────
@@ -169,8 +173,12 @@ async fn eth_block_number(client: &reqwest::Client, rpc: &str) -> Result<u64> {
         "method": "eth_blockNumber", "params": []
     });
     let resp: RpcResponse<String> = client.post(rpc).json(&body).send().await?.json().await?;
-    if let Some(e) = resp.error { return Err(anyhow!("eth_blockNumber error: {}", e.message)); }
-    let hex = resp.result.ok_or_else(|| anyhow!("eth_blockNumber: no result"))?;
+    if let Some(e) = resp.error {
+        return Err(anyhow!("eth_blockNumber error: {}", e.message));
+    }
+    let hex = resp
+        .result
+        .ok_or_else(|| anyhow!("eth_blockNumber: no result"))?;
     Ok(u64::from_str_radix(hex.trim_start_matches("0x"), 16)?)
 }
 
@@ -193,7 +201,9 @@ async fn eth_get_logs(
         }]
     });
     let resp: RpcResponse<Vec<EthLog>> = client.post(rpc).json(&body).send().await?.json().await?;
-    if let Some(e) = resp.error { return Err(anyhow!("eth_getLogs error {}: {}", e.code, e.message)); }
+    if let Some(e) = resp.error {
+        return Err(anyhow!("eth_getLogs error {}: {}", e.code, e.message));
+    }
     Ok(resp.result.unwrap_or_default())
 }
 
@@ -220,16 +230,20 @@ fn hex_to_u64(h: &str) -> u64 {
 /// slot 7  — length of counterpartyChain
 /// slot 8… — counterpartyChain bytes
 /// …
-fn decode_locked_data(data_hex: &str) -> Option<(String, String, String, String, u64, String, String)> {
+fn decode_locked_data(
+    data_hex: &str,
+) -> Option<(String, String, String, String, u64, String, String)> {
     let raw = hex::decode(data_hex.trim_start_matches("0x")).ok()?;
-    if raw.len() < 7 * 32 { return None; }
+    if raw.len() < 7 * 32 {
+        return None;
+    }
 
-    let slot = |i: usize| &raw[i*32 .. (i+1)*32];
+    let slot = |i: usize| &raw[i * 32..(i + 1) * 32];
 
     // recipient: last 20 bytes of slot 0
     let recipient = format!("0x{}", hex::encode(&slot(0)[12..]));
     // token: last 20 bytes of slot 1
-    let token     = format!("0x{}", hex::encode(&slot(1)[12..]));
+    let token = format!("0x{}", hex::encode(&slot(1)[12..]));
     // amount: full slot 2 as decimal
     let amount_bytes: [u8; 32] = slot(2).try_into().ok()?;
     let amount = {
@@ -237,50 +251,61 @@ fn decode_locked_data(data_hex: &str) -> Option<(String, String, String, String,
         n.to_string()
     };
     // hashlock: slot 3
-    let hashlock  = format!("0x{}", hex::encode(slot(3)));
+    let hashlock = format!("0x{}", hex::encode(slot(3)));
     // timelock: slot 4
     let timelock_bytes: [u8; 8] = slot(4)[24..].try_into().ok()?;
     let timelock = u64::from_be_bytes(timelock_bytes);
 
     // Dynamic strings: offsets at slot 5 and slot 6
     let chain_offset = usize::try_from(u64::from_be_bytes(slot(5)[24..].try_into().ok()?)).ok()?;
-    let addr_offset  = usize::try_from(u64::from_be_bytes(slot(6)[24..].try_into().ok()?)).ok()?;
+    let addr_offset = usize::try_from(u64::from_be_bytes(slot(6)[24..].try_into().ok()?)).ok()?;
 
     let read_string = |offset: usize| -> Option<String> {
-        if raw.len() < offset + 32 { return None; }
+        if raw.len() < offset + 32 {
+            return None;
+        }
         let len = usize::try_from(u64::from_be_bytes(
-            raw[offset..offset+32].get(24..32)?.try_into().ok()?
-        )).ok()?;
+            raw[offset..offset + 32].get(24..32)?.try_into().ok()?,
+        ))
+        .ok()?;
         let start = offset + 32;
-        let bytes = raw.get(start..start+len)?;
+        let bytes = raw.get(start..start + len)?;
         String::from_utf8(bytes.to_vec()).ok()
     };
 
     let counterparty_chain = read_string(chain_offset)?;
-    let counterparty_addr  = read_string(addr_offset)?;
+    let counterparty_addr = read_string(addr_offset)?;
 
-    Some((recipient, token, amount, hashlock, timelock, counterparty_chain, counterparty_addr))
+    Some((
+        recipient,
+        token,
+        amount,
+        hashlock,
+        timelock,
+        counterparty_chain,
+        counterparty_addr,
+    ))
 }
 
 // ─── Event processing ─────────────────────────────────────────────────────────
 
-fn process_locked(
-    conn: &Connection,
-    log: &EthLog,
-    _topics: &Topics,
-) -> Result<()> {
-    let lock_id  = log.topics.get(1).cloned().unwrap_or_default();
+fn process_locked(conn: &Connection, log: &EthLog, _topics: &Topics) -> Result<()> {
+    let lock_id = log.topics.get(1).cloned().unwrap_or_default();
     let initiator = {
         let raw = log.topics.get(2).cloned().unwrap_or_default();
-        format!("0x{}", raw.get(raw.len().saturating_sub(40)..).unwrap_or("").to_lowercase())
+        format!(
+            "0x{}",
+            raw.get(raw.len().saturating_sub(40)..)
+                .unwrap_or("")
+                .to_lowercase()
+        )
     };
 
-    let (recipient, token, amount, hashlock, timelock, chain, addr) =
-        decode_locked_data(&log.data)
-            .ok_or_else(|| anyhow!("decode_locked_data failed for tx {}", log.transaction_hash))?;
+    let (recipient, token, amount, hashlock, timelock, chain, addr) = decode_locked_data(&log.data)
+        .ok_or_else(|| anyhow!("decode_locked_data failed for tx {}", log.transaction_hash))?;
 
     let block = hex_to_u64(&log.block_number);
-    let now   = Utc::now().to_rfc3339();
+    let now = Utc::now().to_rfc3339();
 
     conn.execute(
         r#"INSERT OR IGNORE INTO evm_htlc_locks
@@ -290,19 +315,27 @@ fn process_locked(
         params![lock_id, initiator, recipient, token, amount, hashlock, timelock,
                 chain, addr, block as i64, log.transaction_hash, now],
     )?;
-    info!("EVM Locked  txn={} lock_id={} amount={} chain={}", log.transaction_hash, lock_id, amount, chain);
+    info!(
+        "EVM Locked  txn={} lock_id={} amount={} chain={}",
+        log.transaction_hash, lock_id, amount, chain
+    );
     Ok(())
 }
 
 fn process_claimed(conn: &Connection, log: &EthLog) -> Result<()> {
-    let lock_id    = log.topics.get(1).cloned().unwrap_or_default();
+    let lock_id = log.topics.get(1).cloned().unwrap_or_default();
     let claimed_by = {
         let raw = log.topics.get(2).cloned().unwrap_or_default();
-        format!("0x{}", raw.get(raw.len().saturating_sub(40)..).unwrap_or("").to_lowercase())
+        format!(
+            "0x{}",
+            raw.get(raw.len().saturating_sub(40)..)
+                .unwrap_or("")
+                .to_lowercase()
+        )
     };
     // preimage is in topics[3] (indexed bytes32)
-    let preimage   = log.topics.get(3).cloned().unwrap_or_default();
-    let now        = Utc::now().to_rfc3339();
+    let preimage = log.topics.get(3).cloned().unwrap_or_default();
+    let now = Utc::now().to_rfc3339();
 
     conn.execute(
         r#"UPDATE evm_htlc_locks
@@ -310,19 +343,25 @@ fn process_claimed(conn: &Connection, log: &EthLog) -> Result<()> {
            WHERE lock_id=?1"#,
         params![lock_id, preimage, claimed_by, now],
     )?;
-    info!("EVM Claimed  txn={} lock_id={}", log.transaction_hash, lock_id);
+    info!(
+        "EVM Claimed  txn={} lock_id={}",
+        log.transaction_hash, lock_id
+    );
     Ok(())
 }
 
 fn process_refunded(conn: &Connection, log: &EthLog) -> Result<()> {
     let lock_id = log.topics.get(1).cloned().unwrap_or_default();
-    let now     = Utc::now().to_rfc3339();
+    let now = Utc::now().to_rfc3339();
 
     conn.execute(
         r#"UPDATE evm_htlc_locks SET state='refunded', updated_at=?2 WHERE lock_id=?1"#,
         params![lock_id, now],
     )?;
-    info!("EVM Refunded txn={} lock_id={}", log.transaction_hash, lock_id);
+    info!(
+        "EVM Refunded txn={} lock_id={}",
+        log.transaction_hash, lock_id
+    );
     Ok(())
 }
 
@@ -352,10 +391,7 @@ fn set_last_block(conn: &Connection, block: u64) -> Result<()> {
 /// Spawn the EVM watcher as a long-running Tokio task.
 ///
 /// db_conn must already have `migrate()` applied.
-pub async fn run(
-    cfg: EvmWatcherConfig,
-    db_conn: Arc<std::sync::Mutex<Connection>>,
-) -> Result<()> {
+pub async fn run(cfg: EvmWatcherConfig, db_conn: Arc<std::sync::Mutex<Connection>>) -> Result<()> {
     if !cfg.enabled {
         info!("EVM watcher disabled — skipping");
         return Ok(());
@@ -364,7 +400,10 @@ pub async fn run(
     let topics = Topics::new();
     info!("EVM watcher starting");
     info!("  RPC:        {}", cfg.rpc_url);
-    info!("  RPC backup: {}", cfg.rpc_url_backup.as_deref().unwrap_or("(none)"));
+    info!(
+        "  RPC backup: {}",
+        cfg.rpc_url_backup.as_deref().unwrap_or("(none)")
+    );
     info!("  Contract: {}", cfg.contract_addr);
     info!("  Locked topic:   {}", topics.locked);
     info!("  Claimed topic:  {}", topics.claimed);
@@ -390,9 +429,9 @@ pub async fn run(
 }
 
 async fn poll_once(
-    cfg:     &EvmWatcherConfig,
-    client:  &reqwest::Client,
-    topics:  &Topics,
+    cfg: &EvmWatcherConfig,
+    client: &reqwest::Client,
+    topics: &Topics,
     db_conn: &Arc<std::sync::Mutex<Connection>>,
 ) -> Result<usize> {
     // ── Block number: primary RPC → backup fallback ───────────────────────
@@ -401,7 +440,8 @@ async fn poll_once(
         Err(e) => {
             if let Some(backup) = &cfg.rpc_url_backup {
                 debug!("Primary RPC block_number failed ({}) — trying backup", e);
-                eth_block_number(client, backup).await
+                eth_block_number(client, backup)
+                    .await
                     .context("eth_blockNumber (primary + backup both failed)")?
             } else {
                 return Err(e).context("eth_blockNumber");
@@ -429,7 +469,9 @@ async fn poll_once(
         &[&topics.locked, &topics.claimed, &topics.refunded],
         from_block + 1,
         to_block,
-    ).await {
+    )
+    .await
+    {
         Ok(l) => l,
         Err(e) => {
             if let Some(backup) = &cfg.rpc_url_backup {
@@ -441,7 +483,9 @@ async fn poll_once(
                     &[&topics.locked, &topics.claimed, &topics.refunded],
                     from_block + 1,
                     to_block,
-                ).await.context("eth_getLogs (primary + backup both failed)")?
+                )
+                .await
+                .context("eth_getLogs (primary + backup both failed)")?
             } else {
                 return Err(e).context("eth_getLogs");
             }
@@ -450,14 +494,21 @@ async fn poll_once(
 
     let count = logs.len();
     if count > 0 {
-        debug!("EVM watcher: {} logs in blocks {}..{}", count, from_block + 1, to_block);
+        debug!(
+            "EVM watcher: {} logs in blocks {}..{}",
+            count,
+            from_block + 1,
+            to_block
+        );
     }
 
     {
         let conn = db_conn.lock().unwrap();
         for log in &logs {
             // Skip removed (re-org) logs
-            if log.removed.unwrap_or(false) { continue; }
+            if log.removed.unwrap_or(false) {
+                continue;
+            }
 
             let topic0 = log.topics.first().map(String::as_str).unwrap_or("");
             let result = if topic0 == topics.locked {
@@ -472,7 +523,10 @@ async fn poll_once(
             };
 
             if let Err(e) = result {
-                error!("EVM watcher: error processing log {}: {}", log.transaction_hash, e);
+                error!(
+                    "EVM watcher: error processing log {}: {}",
+                    log.transaction_hash, e
+                );
             }
         }
         set_last_block(&conn, to_block)?;
@@ -489,29 +543,30 @@ pub fn get_evm_locks_by_state(conn: &Connection, state: &str) -> Result<Vec<EvmL
         "SELECT lock_id, initiator, recipient, token, amount, hashlock, timelock,
                 counterparty_chain, counterparty_addr, state, preimage, claimed_by,
                 block_number, tx_hash, created_at, updated_at
-         FROM   evm_htlc_locks WHERE state = ?1 ORDER BY block_number DESC"
+         FROM   evm_htlc_locks WHERE state = ?1 ORDER BY block_number DESC",
     )?;
     let rows = stmt.query_map(params![state], |row| {
         Ok(EvmLock {
-            lock_id:            row.get(0)?,
-            initiator:          row.get(1)?,
-            recipient:          row.get(2)?,
-            token:              row.get(3)?,
-            amount:             row.get(4)?,
-            hashlock:           row.get(5)?,
-            timelock:           row.get::<_, i64>(6)? as u64,
+            lock_id: row.get(0)?,
+            initiator: row.get(1)?,
+            recipient: row.get(2)?,
+            token: row.get(3)?,
+            amount: row.get(4)?,
+            hashlock: row.get(5)?,
+            timelock: row.get::<_, i64>(6)? as u64,
             counterparty_chain: row.get(7)?,
-            counterparty_addr:  row.get(8)?,
-            state:              row.get(9)?,
-            preimage:           row.get(10)?,
-            claimed_by:         row.get(11)?,
-            block_number:       row.get::<_, i64>(12)? as u64,
-            tx_hash:            row.get(13)?,
-            created_at:         row.get(14)?,
-            updated_at:         row.get(15)?,
+            counterparty_addr: row.get(8)?,
+            state: row.get(9)?,
+            preimage: row.get(10)?,
+            claimed_by: row.get(11)?,
+            block_number: row.get::<_, i64>(12)? as u64,
+            tx_hash: row.get(13)?,
+            created_at: row.get(14)?,
+            updated_at: row.get(15)?,
         })
     })?;
-    rows.collect::<std::result::Result<Vec<_>, _>>().map_err(Into::into)
+    rows.collect::<std::result::Result<Vec<_>, _>>()
+        .map_err(Into::into)
 }
 
 /// Look up a single EVM HTLC by lock_id.
@@ -524,22 +579,22 @@ pub fn get_evm_lock(conn: &Connection, lock_id: &str) -> Result<Option<EvmLock>>
         params![lock_id],
         |row| {
             Ok(EvmLock {
-                lock_id:            row.get(0)?,
-                initiator:          row.get(1)?,
-                recipient:          row.get(2)?,
-                token:              row.get(3)?,
-                amount:             row.get(4)?,
-                hashlock:           row.get(5)?,
-                timelock:           row.get::<_, i64>(6)? as u64,
+                lock_id: row.get(0)?,
+                initiator: row.get(1)?,
+                recipient: row.get(2)?,
+                token: row.get(3)?,
+                amount: row.get(4)?,
+                hashlock: row.get(5)?,
+                timelock: row.get::<_, i64>(6)? as u64,
                 counterparty_chain: row.get(7)?,
-                counterparty_addr:  row.get(8)?,
-                state:              row.get(9)?,
-                preimage:           row.get(10)?,
-                claimed_by:         row.get(11)?,
-                block_number:       row.get::<_, i64>(12)? as u64,
-                tx_hash:            row.get(13)?,
-                created_at:         row.get(14)?,
-                updated_at:         row.get(15)?,
+                counterparty_addr: row.get(8)?,
+                state: row.get(9)?,
+                preimage: row.get(10)?,
+                claimed_by: row.get(11)?,
+                block_number: row.get::<_, i64>(12)? as u64,
+                tx_hash: row.get(13)?,
+                created_at: row.get(14)?,
+                updated_at: row.get(15)?,
             })
         },
     )
@@ -565,8 +620,8 @@ mod tests {
     fn test_topics_deterministic() {
         let t1 = Topics::new();
         let t2 = Topics::new();
-        assert_eq!(t1.locked,   t2.locked);
-        assert_eq!(t1.claimed,  t2.claimed);
+        assert_eq!(t1.locked, t2.locked);
+        assert_eq!(t1.claimed, t2.claimed);
         assert_eq!(t1.refunded, t2.refunded);
         // Must be valid 0x…66hex chars
         assert!(t1.locked.starts_with("0x"));
@@ -617,8 +672,8 @@ mod tests {
         ).unwrap();
 
         let lock = get_evm_lock(&conn, "0xabc").unwrap().unwrap();
-        assert_eq!(lock.state,        "pending");
-        assert_eq!(lock.amount,       "1000000");
+        assert_eq!(lock.state, "pending");
+        assert_eq!(lock.amount, "1000000");
         assert_eq!(lock.counterparty_chain, "zion");
 
         let pending = get_evm_locks_by_state(&conn, "pending").unwrap();
@@ -643,7 +698,7 @@ mod tests {
         ).unwrap();
 
         let lock = get_evm_lock(&conn, "0xid").unwrap().unwrap();
-        assert_eq!(lock.state,    "claimed");
+        assert_eq!(lock.state, "claimed");
         assert_eq!(lock.preimage, Some("0xpre".into()));
     }
 }

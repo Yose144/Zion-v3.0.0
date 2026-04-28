@@ -87,14 +87,14 @@ impl WarpState {
 
 pub fn create_router(state: WarpState) -> Router {
     Router::new()
-        .route("/health",              get(health))
-        .route("/metrics",             get(metrics))
-        .route("/chains",              get(chains))
-        .route("/transfers",           get(list_transfers))
-        .route("/transfers/pending",   get(list_pending))
-        .route("/transfers/outbound",  post(initiate_outbound))
-        .route("/transfers/inbound",   post(initiate_inbound))
-        .route("/transfers/:id",       get(get_transfer))
+        .route("/health", get(health))
+        .route("/metrics", get(metrics))
+        .route("/chains", get(chains))
+        .route("/transfers", get(list_transfers))
+        .route("/transfers/pending", get(list_pending))
+        .route("/transfers/outbound", post(initiate_outbound))
+        .route("/transfers/inbound", post(initiate_inbound))
+        .route("/transfers/:id", get(get_transfer))
         .route("/transfers/:id/advance", post(advance_transfer))
         .with_state(state)
 }
@@ -146,14 +146,14 @@ pub enum WarpStatusInput {
 impl From<WarpStatusInput> for WarpStatus {
     fn from(s: WarpStatusInput) -> Self {
         match s {
-            WarpStatusInput::Detected        => WarpStatus::Detected,
+            WarpStatusInput::Detected => WarpStatus::Detected,
             WarpStatusInput::AwaitingFinality => WarpStatus::AwaitingFinality,
-            WarpStatusInput::Validating      => WarpStatus::Validating,
-            WarpStatusInput::QuorumReached   => WarpStatus::QuorumReached,
-            WarpStatusInput::Executing       => WarpStatus::Executing,
-            WarpStatusInput::Completed       => WarpStatus::Completed,
-            WarpStatusInput::Failed          => WarpStatus::Failed,
-            WarpStatusInput::TimelockHold    => WarpStatus::TimelockHold,
+            WarpStatusInput::Validating => WarpStatus::Validating,
+            WarpStatusInput::QuorumReached => WarpStatus::QuorumReached,
+            WarpStatusInput::Executing => WarpStatus::Executing,
+            WarpStatusInput::Completed => WarpStatus::Completed,
+            WarpStatusInput::Failed => WarpStatus::Failed,
+            WarpStatusInput::TimelockHold => WarpStatus::TimelockHold,
         }
     }
 }
@@ -180,7 +180,10 @@ impl ApiErr {
     fn new(msg: impl Into<String>) -> (StatusCode, Json<ApiErr>) {
         (
             StatusCode::BAD_REQUEST,
-            Json(ApiErr { ok: false, error: msg.into() }),
+            Json(ApiErr {
+                ok: false,
+                error: msg.into(),
+            }),
         )
     }
 }
@@ -207,7 +210,13 @@ async fn metrics(State(s): State<WarpState>) -> impl IntoResponse {
 
 async fn chains(State(s): State<WarpState>) -> impl IntoResponse {
     let r = s.router.lock().await;
-    Json(ApiOk::new(r.registry.list_enabled().into_iter().cloned().collect::<Vec<_>>()))
+    Json(ApiOk::new(
+        r.registry
+            .list_enabled()
+            .into_iter()
+            .cloned()
+            .collect::<Vec<_>>(),
+    ))
 }
 
 async fn list_transfers(State(s): State<WarpState>) -> impl IntoResponse {
@@ -220,16 +229,16 @@ async fn list_pending(State(s): State<WarpState>) -> impl IntoResponse {
     Json(ApiOk::new(r.list_pending()))
 }
 
-async fn get_transfer(
-    State(s): State<WarpState>,
-    Path(id): Path<Uuid>,
-) -> impl IntoResponse {
+async fn get_transfer(State(s): State<WarpState>, Path(id): Path<Uuid>) -> impl IntoResponse {
     let r = s.router.lock().await;
     match r.get_transfer(&id) {
         Some(t) => Json(ApiOk::new(t.clone())).into_response(),
         None => (
             StatusCode::NOT_FOUND,
-            Json(ApiErr { ok: false, error: format!("Transfer {} not found", id) }),
+            Json(ApiErr {
+                ok: false,
+                error: format!("Transfer {} not found", id),
+            }),
         )
             .into_response(),
     }
@@ -282,7 +291,10 @@ async fn advance_transfer(
                 let json = serde_json::to_string(t).unwrap_or_default();
                 let _ = db.update_status(&id, new_status, &json);
             }
-            Json(ApiOk::new(serde_json::json!({ "transfer_id": id, "advanced": true }))).into_response()
+            Json(ApiOk::new(
+                serde_json::json!({ "transfer_id": id, "advanced": true }),
+            ))
+            .into_response()
         }
         Err(e) => ApiErr::new(e.to_string()).into_response(),
     }
@@ -295,8 +307,8 @@ async fn advance_transfer(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use axum::http::Request;
     use axum::body::Body;
+    use axum::http::Request;
     use tower::ServiceExt;
 
     fn make_state() -> WarpState {
@@ -307,7 +319,12 @@ mod tests {
     async fn test_health_endpoint() {
         let app = create_router(make_state());
         let res = app
-            .oneshot(Request::builder().uri("/health").body(Body::empty()).unwrap())
+            .oneshot(
+                Request::builder()
+                    .uri("/health")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
             .await
             .unwrap();
         assert_eq!(res.status(), StatusCode::OK);
@@ -317,7 +334,12 @@ mod tests {
     async fn test_metrics_endpoint() {
         let app = create_router(make_state());
         let res = app
-            .oneshot(Request::builder().uri("/metrics").body(Body::empty()).unwrap())
+            .oneshot(
+                Request::builder()
+                    .uri("/metrics")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
             .await
             .unwrap();
         assert_eq!(res.status(), StatusCode::OK);
@@ -327,7 +349,12 @@ mod tests {
     async fn test_chains_endpoint() {
         let app = create_router(make_state());
         let res = app
-            .oneshot(Request::builder().uri("/chains").body(Body::empty()).unwrap())
+            .oneshot(
+                Request::builder()
+                    .uri("/chains")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
             .await
             .unwrap();
         assert_eq!(res.status(), StatusCode::OK);
@@ -337,7 +364,12 @@ mod tests {
     async fn test_list_transfers_empty() {
         let app = create_router(make_state());
         let res = app
-            .oneshot(Request::builder().uri("/transfers").body(Body::empty()).unwrap())
+            .oneshot(
+                Request::builder()
+                    .uri("/transfers")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
             .await
             .unwrap();
         assert_eq!(res.status(), StatusCode::OK);
@@ -363,7 +395,12 @@ mod tests {
     async fn test_list_pending_empty() {
         let app = create_router(make_state());
         let res = app
-            .oneshot(Request::builder().uri("/transfers/pending").body(Body::empty()).unwrap())
+            .oneshot(
+                Request::builder()
+                    .uri("/transfers/pending")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
             .await
             .unwrap();
         assert_eq!(res.status(), StatusCode::OK);

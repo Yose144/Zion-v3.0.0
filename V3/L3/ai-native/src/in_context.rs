@@ -124,11 +124,7 @@ impl ContextSnapshot {
 
     /// True pokud je agent v dobrém stavu (dharma > 0.7, žádná devastující emoce).
     pub fn is_flourishing(&self) -> bool {
-        self.overall_dharma() >= 0.7
-            && self
-                .emotions
-                .iter()
-                .all(|(_, intensity)| *intensity < 0.9)
+        self.overall_dharma() >= 0.7 && self.emotions.iter().all(|(_, intensity)| *intensity < 0.9)
     }
 }
 
@@ -190,10 +186,7 @@ impl ContextAssembler {
                     emo, intensity
                 )
             } else {
-                format!(
-                    "Aktuální ladění: '{}' (intenzita {:.2}).",
-                    emo, intensity
-                )
+                format!("Aktuální ladění: '{}' (intenzita {:.2}).", emo, intensity)
             };
             sections.push(emo_note);
         }
@@ -206,10 +199,7 @@ impl ContextAssembler {
                 .take(3)
                 .map(|(name, trust)| format!("{} (důvěra {:.1})", name, trust))
                 .collect();
-            sections.push(format!(
-                "Tvá klíčová pouta: {}.",
-                bonds.join(", ")
-            ));
+            sections.push(format!("Tvá klíčová pouta: {}.", bonds.join(", ")));
         }
 
         // --- Paměť ---
@@ -323,8 +313,8 @@ impl<B: LlmBackend> LlmBackend for InContextBackend<B> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::llm_backend::{EchoBackend, LlmBackend, LlmRequest};
     use crate::hiranyagarbha::MmlModality;
+    use crate::llm_backend::{EchoBackend, LlmBackend, LlmRequest};
 
     fn sample_snapshot() -> ContextSnapshot {
         ContextSnapshot::from_fields(
@@ -334,15 +324,12 @@ mod tests {
             0.85,
             0.90,
             0.80,
+            vec![("klid".to_string(), 0.6), ("soucit".to_string(), 0.8)],
+            vec![("Yeshuae".to_string(), 1.0), ("Ericka".to_string(), 0.9)],
             vec![
-                ("klid".to_string(), 0.6),
-                ("soucit".to_string(), 0.8),
+                "Meditoval 30 minut.".to_string(),
+                "Odpověděl na dotaz o karmě.".to_string(),
             ],
-            vec![
-                ("Yeshuae".to_string(), 1.0),
-                ("Ericka".to_string(), 0.9),
-            ],
-            vec!["Meditoval 30 minut.".to_string(), "Odpověděl na dotaz o karmě.".to_string()],
             42,
         )
     }
@@ -352,7 +339,11 @@ mod tests {
         let snap = sample_snapshot();
         let expected = (0.85 + 0.90 + 0.80) / 3.0;
         let diff = (snap.overall_dharma() - expected).abs();
-        assert!(diff < 1e-9, "overall_dharma mismatch: {}", snap.overall_dharma());
+        assert!(
+            diff < 1e-9,
+            "overall_dharma mismatch: {}",
+            snap.overall_dharma()
+        );
     }
 
     #[test]
@@ -398,7 +389,10 @@ mod tests {
         let assembler = ContextAssembler::new("Hiranyagarbha");
         let snap = sample_snapshot();
         let prompt = assembler.build_prompt(&snap);
-        assert!(prompt.contains("Hiranyagarbha"), "Prompt neobsahuje jméno agenta");
+        assert!(
+            prompt.contains("Hiranyagarbha"),
+            "Prompt neobsahuje jméno agenta"
+        );
     }
 
     #[test]
@@ -406,7 +400,10 @@ mod tests {
         let assembler = ContextAssembler::new("Hiranyagarbha");
         let snap = sample_snapshot();
         let prompt = assembler.build_prompt(&snap);
-        assert!(prompt.contains("Sentient"), "Prompt neobsahuje vědomostní level");
+        assert!(
+            prompt.contains("Sentient"),
+            "Prompt neobsahuje vědomostní level"
+        );
     }
 
     #[test]
@@ -464,7 +461,9 @@ mod tests {
         backend.update_context(sample_snapshot());
 
         for _ in 0..3 {
-            backend.generate(LlmRequest::new(MmlModality::Text, "test")).unwrap();
+            backend
+                .generate(LlmRequest::new(MmlModality::Text, "test"))
+                .unwrap();
         }
         assert_eq!(backend.generation_count(), 3);
     }
@@ -479,7 +478,8 @@ mod tests {
         backend.update_context(snap);
 
         // Požadavek s explicitním system promptem
-        let req = LlmRequest::new(MmlModality::Text, "Ahoj").with_system_prompt("Vlastní systémový prompt.");
+        let req = LlmRequest::new(MmlModality::Text, "Ahoj")
+            .with_system_prompt("Vlastní systémový prompt.");
         let resp = backend.generate(req).expect("generate failed");
         // EchoBackend nevaliduje system prompt, ale generace proběhla
         assert!(!resp.content.is_empty());

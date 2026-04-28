@@ -10,10 +10,7 @@ pub fn print_banner(threads: usize) {
     // Version + consensus
     println!("version=3.0.0-dev");
     println!("consensus={}", zion_core::consensus_profile());
-    println!(
-        "protocol_version={}",
-        zion_pool::protocol_version()
-    );
+    println!("protocol_version={}", zion_pool::protocol_version());
 
     // CPU info
     let logical_cpus = num_cpus::get();
