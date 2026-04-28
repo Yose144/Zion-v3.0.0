@@ -9,6 +9,7 @@ import {
   Globe,
   Landmark,
   Leaf,
+  Lock,
   LucideIcon,
   MapPin,
   Network,
@@ -468,13 +469,19 @@ export default function ZahradaGenesisPage() {
             <ArrowLeft className="w-4 h-4" />
             {cs ? 'Zpět na Terra Nova' : 'Back to Terra Nova'}
           </Link>
-          <Link
-            href="/terranova/dharma-temple"
-            className="inline-flex items-center gap-2 rounded-xl border border-violet-500/25 bg-violet-500/10 hover:bg-violet-500/20 px-4 py-2 text-sm text-violet-300 transition-all duration-300"
-          >
-            <span>{cs ? 'Dharma Temple' : 'Dharma Temple'}</span>
-            <ArrowRight className="w-4 h-4" />
-          </Link>
+          <div className="relative inline-flex items-center gap-3 overflow-hidden rounded-xl border border-violet-500/25 bg-violet-500/10 px-4 py-2 text-sm text-violet-300/85 saturate-75">
+            <div className="pointer-events-none absolute inset-0 bg-[repeating-linear-gradient(135deg,rgba(255,255,255,0.03)_0,rgba(255,255,255,0.03)_10px,transparent_10px,transparent_22px)] opacity-70" />
+            <div className="relative z-10">
+              <span>{cs ? 'Dharma Temple' : 'Dharma Temple'}</span>
+              <p className="mt-1 text-[11px] text-violet-200/55">
+                {cs ? 'Sealed mock · doplníme později' : 'Sealed mock · details later'}
+              </p>
+            </div>
+            <div className="relative z-10 inline-flex items-center gap-2 rounded-full border border-violet-300/15 bg-black/35 px-2.5 py-1 text-[10px] uppercase tracking-[0.22em] text-violet-100/80">
+              <Lock className="w-3.5 h-3.5" />
+              Sealed
+            </div>
+          </div>
         </motion.div>
 
       </div>
