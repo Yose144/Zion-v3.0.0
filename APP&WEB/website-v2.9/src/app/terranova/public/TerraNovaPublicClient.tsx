@@ -8,7 +8,10 @@ import {
   ChevronRight,
   List,
   X,
+  ArrowRight,
+  MapPin,
 } from 'lucide-react';
+import Link from 'next/link';
 import { useLang } from '@/contexts/LanguageContext';
 import ZlatyKompas, { DIRECTIONS } from '@/components/ZlatyKompas';
 import { CHAPTERS_PUBLIC } from './chapters';
@@ -439,6 +442,208 @@ export default function TerraNovaPublicClient() {
                 </ul>
               </div>
             ))}
+          </div>
+        </motion.section>
+
+        {/* ═══════ L5 PIONEER PROJEKTY ═══════ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.35, duration: 0.7 }}
+          className="mb-20"
+        >
+          <div className="text-center mb-10">
+            <p className="text-[10px] uppercase tracking-[0.45em] text-gray-500 mb-2">
+              {cs ? 'L5 — Fyzické komunity Terra Nova' : 'L5 — Terra Nova Physical Communities'}
+            </p>
+            <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">
+              {cs ? 'Pioneer Projekty' : 'Pioneer Projects'}
+            </h2>
+            <p className="text-gray-500 text-sm max-w-2xl mx-auto">
+              {cs
+                ? 'První fyzické uzly sítě — off-grid komunity, kde se vize stává realitou stromu, semen a kódu'
+                : 'First physical nodes of the network — off-grid communities where vision becomes reality of tree, seed and code'}
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6">
+
+            {/* ── ZAHRADA GENESIS ── */}
+            <motion.div
+              whileHover={{ scale: 1.025, y: -6 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 22 }}
+              className="relative group rounded-3xl overflow-hidden border border-emerald-500/20 cursor-pointer"
+            >
+              {/* Hologram atmosphere */}
+              <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/40 via-teal-900/20 to-black/60" />
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700"
+                style={{ background: 'radial-gradient(ellipse at 20% 10%, rgba(52,211,153,0.18), transparent 65%)' }} />
+              <div className="absolute -top-32 -right-32 w-64 h-64 rounded-full blur-[100px] bg-emerald-500/15 group-hover:bg-emerald-500/30 transition-all duration-700" />
+              <div className="absolute -bottom-20 -left-20 w-48 h-48 rounded-full blur-[80px] bg-teal-500/10 group-hover:bg-teal-500/20 transition-all duration-500" />
+              <div className="absolute inset-0 rounded-3xl border border-emerald-400/0 group-hover:border-emerald-400/20 transition-colors duration-500" />
+
+              <div className="relative z-10 p-7 md:p-8 space-y-5">
+                {/* Header */}
+                <div className="flex items-start justify-between">
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-3xl">🌿</span>
+                      <span className="inline-flex items-center gap-1 rounded-full border border-yellow-500/30 bg-yellow-500/10 px-2.5 py-0.5 text-[10px] font-semibold tracking-[0.2em] text-yellow-400 uppercase">
+                        🟡 {cs ? 'Aktivní' : 'Active'}
+                      </span>
+                    </div>
+                    <h3 className="text-xl font-bold text-white">Zahrada Genesis</h3>
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <MapPin className="w-3 h-3 text-emerald-500" />
+                      <p className="text-sm text-emerald-400 font-medium">Algarve · Portugalsko</p>
+                    </div>
+                  </div>
+                  <div className="shrink-0 w-12 h-12 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 flex items-center justify-center text-xl">
+                    🇵🇹
+                  </div>
+                </div>
+
+                {/* Description */}
+                <p className="text-gray-400 text-sm leading-relaxed">
+                  {cs
+                    ? 'Eko farma na atlantickém pobřeží — glamping, organická farma, surf a off-grid komunitní život. První fyzický uzel Terra Nova v Evropě.'
+                    : 'Eco farm on the Atlantic coast — glamping, organic farming, surf and off-grid community life. First Terra Nova physical node in Europe.'}
+                </p>
+
+                {/* Feature tags */}
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { label: cs ? '🏕️ Glamping' : '🏕️ Glamping', done: true },
+                    { label: cs ? '🌱 Organická farma' : '🌱 Organic Farm', done: true },
+                    { label: cs ? '🏄 Surf škola' : '🏄 Surf School', done: false },
+                    { label: cs ? '☀️ Solar' : '☀️ Solar', done: true },
+                    { label: cs ? '🌳 Sázení stromů' : '🌳 Tree planting', done: true },
+                    { label: 'ZION node', done: false },
+                  ].map((f) => (
+                    <span
+                      key={f.label}
+                      className={`rounded-full border px-2.5 py-1 text-[10px] transition-colors ${
+                        f.done
+                          ? 'border-emerald-500/25 bg-emerald-500/10 text-emerald-300'
+                          : 'border-white/10 bg-white/5 text-gray-500'
+                      }`}
+                    >
+                      {f.label}
+                    </span>
+                  ))}
+                </div>
+
+                {/* Stats row */}
+                <div className="grid grid-cols-3 gap-3 pt-1">
+                  {[
+                    { val: 'L5', sub: cs ? 'Vrstva' : 'Layer' },
+                    { val: '2026', sub: cs ? 'Fáze 1' : 'Phase 1' },
+                    { val: '🌐', sub: 'Node' },
+                  ].map((s) => (
+                    <div key={s.sub} className="text-center p-2 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
+                      <p className="text-emerald-400 font-bold text-sm">{s.val}</p>
+                      <p className="text-gray-600 text-[10px]">{s.sub}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* CTA */}
+                <Link
+                  href="/terranova/genesis"
+                  className="flex items-center justify-between w-full rounded-2xl border border-emerald-500/25 bg-emerald-500/10 hover:bg-emerald-500/20 px-5 py-3 text-sm font-semibold text-emerald-300 transition-all duration-300 group/btn"
+                >
+                  <span>{cs ? 'Vstoupit do Zahrady Genesis' : 'Enter Zahrada Genesis'}</span>
+                  <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover/btn:translate-x-1" />
+                </Link>
+              </div>
+            </motion.div>
+
+            {/* ── DHARMA TEMPLE ── */}
+            <motion.div
+              whileHover={{ scale: 1.025, y: -6 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 22 }}
+              className="relative group rounded-3xl overflow-hidden border border-violet-500/20 cursor-pointer"
+            >
+              {/* Hologram atmosphere */}
+              <div className="absolute inset-0 bg-gradient-to-br from-violet-900/40 via-purple-900/20 to-black/60" />
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700"
+                style={{ background: 'radial-gradient(ellipse at 80% 10%, rgba(167,139,250,0.18), transparent 65%)' }} />
+              <div className="absolute -top-32 -left-32 w-64 h-64 rounded-full blur-[100px] bg-violet-500/15 group-hover:bg-violet-500/30 transition-all duration-700" />
+              <div className="absolute -bottom-20 -right-20 w-48 h-48 rounded-full blur-[80px] bg-purple-500/10 group-hover:bg-purple-500/20 transition-all duration-500" />
+              <div className="absolute inset-0 rounded-3xl border border-violet-400/0 group-hover:border-violet-400/20 transition-colors duration-500" />
+
+              <div className="relative z-10 p-7 md:p-8 space-y-5">
+                {/* Header */}
+                <div className="flex items-start justify-between">
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-3xl">🕌</span>
+                      <span className="inline-flex items-center gap-1 rounded-full border border-blue-500/30 bg-blue-500/10 px-2.5 py-0.5 text-[10px] font-semibold tracking-[0.2em] text-blue-400 uppercase">
+                        🔵 {cs ? 'Příprava' : 'Planning'}
+                      </span>
+                    </div>
+                    <h3 className="text-xl font-bold text-white">Dharma Temple</h3>
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <MapPin className="w-3 h-3 text-violet-500" />
+                      <p className="text-sm text-violet-400 font-medium">La Palma · Kanárské ostrovy</p>
+                    </div>
+                  </div>
+                  <div className="shrink-0 w-12 h-12 rounded-2xl border border-violet-500/20 bg-violet-500/10 flex items-center justify-center text-xl">
+                    🇪🇸
+                  </div>
+                </div>
+
+                {/* Description */}
+                <p className="text-gray-400 text-sm leading-relaxed">
+                  {cs
+                    ? 'Spirituální centrum a off-grid komunita na vulkanickém ostrově. Meditace, syntropic zahrada a dharma circle v srdci La Palmy.'
+                    : 'Spiritual center and off-grid community on a volcanic island. Meditation, syntropic garden and dharma circle in the heart of La Palma.'}
+                </p>
+
+                {/* Feature tags */}
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { label: cs ? '🧘 Meditace' : '🧘 Meditation', done: false },
+                    { label: cs ? '🌿 Syntropic zahrada' : '🌿 Syntropic Garden', done: false },
+                    { label: cs ? '🔮 Retreaty' : '🔮 Retreats', done: false },
+                    { label: cs ? '🌋 Vulkán' : '🌋 Volcano', done: false },
+                    { label: cs ? '🌧️ Déšť' : '🌧️ Rain', done: false },
+                    { label: 'ZION node', done: false },
+                  ].map((f) => (
+                    <span
+                      key={f.label}
+                      className="rounded-full border border-violet-500/20 bg-violet-500/5 px-2.5 py-1 text-[10px] text-violet-300/70"
+                    >
+                      {f.label}
+                    </span>
+                  ))}
+                </div>
+
+                {/* Stats row */}
+                <div className="grid grid-cols-3 gap-3 pt-1">
+                  {[
+                    { val: 'L5', sub: cs ? 'Vrstva' : 'Layer' },
+                    { val: '2027', sub: cs ? 'Fáze 0' : 'Phase 0' },
+                    { val: '🌐', sub: 'Node' },
+                  ].map((s) => (
+                    <div key={s.sub} className="text-center p-2 rounded-xl bg-violet-500/5 border border-violet-500/10">
+                      <p className="text-violet-400 font-bold text-sm">{s.val}</p>
+                      <p className="text-gray-600 text-[10px]">{s.sub}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* CTA */}
+                <Link
+                  href="/terranova/dharma-temple"
+                  className="flex items-center justify-between w-full rounded-2xl border border-violet-500/25 bg-violet-500/10 hover:bg-violet-500/20 px-5 py-3 text-sm font-semibold text-violet-300 transition-all duration-300 group/btn"
+                >
+                  <span>{cs ? 'Vstoupit do Dharma Temple' : 'Enter Dharma Temple'}</span>
+                  <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover/btn:translate-x-1" />
+                </Link>
+              </div>
+            </motion.div>
+
           </div>
         </motion.section>
 
