@@ -79,9 +79,14 @@ function processEdition(ed) {
   return files.map(file => {
     const raw = fs.readFileSync(path.join(ed.dir, file), 'utf8');
     const parsed = parseMarkdownToSections(raw);
+
+    // Look for optional EN translation: docs/TerraNova/<edition>/en/<file>.md
+    const enFile = path.join(ed.dir, 'en', file);
+    const parsedEn = fs.existsSync(enFile)
+      ? parseMarkdownToSections(fs.readFileSync(enFile, 'utf8'))
+      : parsed; // fallback to CZ when no EN file exists yet
     
-    // Extrahovat císlo z nazvu
-    // 00-PROLOG...
+    // Extrahovat číslo z názvu: 00-PROLOG…, A-NVIDIA…
     const match = file.match(/^(\d{2}|[A-Z])-(.*)\.md$/);
     const shortId = file.replace('.md', '');
     let number = '';
@@ -98,13 +103,13 @@ function processEdition(ed) {
       id: shortId,
       number: number,
       titleCs: parsed.title || shortId,
-      titleEn: parsed.title || shortId,
+      titleEn: parsedEn.title || parsed.title || shortId,
       epigraphCs: parsed.epigraph,
-      epigraphEn: parsed.epigraph,
+      epigraphEn: parsedEn.epigraph || parsed.epigraph,
       color: ed.color,
       rgb: ed.rgb,
       sectionsCs: parsed.sections,
-      sectionsEn: parsed.sections, // For MVP fallback
+      sectionsEn: parsedEn.sections,
     };
   });
 }
