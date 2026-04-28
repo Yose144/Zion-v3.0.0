@@ -1,9 +1,0 @@
-{
-  "format": "zion_wallet_ed25519",
-  "format_version": 1,
-  "public_key_hex": "18faea4a2afe3ba9ea2aedc9d5deb3d36c3706117fbe8cb282e063e4771b9bca",
-  "address": "zion196u5p7u0559055g4x8685245q2d2c7a7g24n4t7",
-  "mnemonic_present": false,
-  "secret_key_hex": "6154732cfac24528da30f6a87c02f6b13f0bba978ef675c439312fcd8ca64c47",
-  "created_at_utc": "2026-04-23T18:53:56.150972+00:00"
-}
