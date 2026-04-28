@@ -3,10 +3,10 @@ use std::sync::Arc;
 use std::thread;
 use std::time::{Duration, Instant};
 
-use crate::dcr_hash::{hash_meets_target, NONCE_OFFSET};
-use crate::dcr_stratum::DcrStratumClient;
 #[cfg(any(feature = "gpu", feature = "gpu-opencl"))]
 use crate::dcr_gpu::{autotune_best_work_size, load_saved_work_size, save_work_size, GpuDcrMiner};
+use crate::dcr_hash::{hash_meets_target, NONCE_OFFSET};
+use crate::dcr_stratum::DcrStratumClient;
 
 const DEFAULT_BTC_WALLET: &str = "bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw";
 const DEFAULT_DCR_POOL: &str = "dcr.2miners.com:3333";
@@ -152,8 +152,7 @@ impl DcrConfig {
 ///
 /// Returns (join_handles, shared_stats).
 pub fn spawn_dcr_worker(
-    #[allow(unused_mut)]
-    mut config: DcrConfig,
+    #[allow(unused_mut)] mut config: DcrConfig,
     stop: Arc<AtomicBool>,
 ) -> (Vec<thread::JoinHandle<()>>, Arc<DcrStats>) {
     #[cfg(any(feature = "gpu", feature = "gpu-opencl"))]
@@ -169,7 +168,9 @@ pub fn spawn_dcr_worker(
             candidates.sort_unstable();
             candidates.dedup();
 
-            if let Ok((device, ws, mhps)) = autotune_best_work_size(&candidates, config.gpu_autotune_secs) {
+            if let Ok((device, ws, mhps)) =
+                autotune_best_work_size(&candidates, config.gpu_autotune_secs)
+            {
                 let stored = load_saved_work_size(&device).unwrap_or(0);
                 let chosen = ws.max(stored);
                 config.gpu_work_size = chosen;
@@ -192,12 +193,10 @@ pub fn spawn_dcr_worker(
 
         let handle = thread::Builder::new()
             .name(format!("dcr-worker-{thread_id}"))
-            .spawn(move || {
-                match cfg.backend {
-                    DcrBackend::Cpu => mine_loop_cpu(&cfg, thread_id, &stop, &stats),
-                    DcrBackend::Gpu => mine_loop_gpu_or_fallback(&cfg, thread_id, &stop, &stats, false),
-                    DcrBackend::Auto => mine_loop_gpu_or_fallback(&cfg, thread_id, &stop, &stats, true),
-                }
+            .spawn(move || match cfg.backend {
+                DcrBackend::Cpu => mine_loop_cpu(&cfg, thread_id, &stop, &stats),
+                DcrBackend::Gpu => mine_loop_gpu_or_fallback(&cfg, thread_id, &stop, &stats, false),
+                DcrBackend::Auto => mine_loop_gpu_or_fallback(&cfg, thread_id, &stop, &stats, true),
             })
             .expect("spawn DCR worker thread");
 
@@ -328,8 +327,7 @@ fn mine_loop_cpu(config: &DcrConfig, thread_id: usize, stop: &AtomicBool, stats:
                     header[NONCE_OFFSET..NONCE_OFFSET + 4].copy_from_slice(&nonce.to_le_bytes());
                     dcr_hash_runtime(&header)
                 } else {
-                    tail[TAIL_NONCE..TAIL_NONCE + 4]
-                        .copy_from_slice(&nonce.to_le_bytes());
+                    tail[TAIL_NONCE..TAIL_NONCE + 4].copy_from_slice(&nonce.to_le_bytes());
 
                     let mut h = base_hasher.clone();
                     h.update(&tail);
@@ -484,7 +482,9 @@ fn mine_loop_gpu(
                 Err(_) => break 'mining,
             };
 
-            stats.total_hashes.fetch_add(batch as u64, Ordering::Relaxed);
+            stats
+                .total_hashes
+                .fetch_add(batch as u64, Ordering::Relaxed);
             batch_hashes += batch as u64;
 
             for found_nonce in found {

@@ -50,7 +50,9 @@ pub async fn run(cfg: &Config) -> Result<()> {
 
     ui::print_header("Mining Environment");
     if cfg.miner.wallet.trim().is_empty() {
-        ui::print_warn("Mining wallet  not configured; set with `zion config set miner.wallet <address>`");
+        ui::print_warn(
+            "Mining wallet  not configured; set with `zion config set miner.wallet <address>`",
+        );
     } else {
         ui::print_ok("Mining wallet  configured");
     }
@@ -77,8 +79,14 @@ pub async fn run(cfg: &Config) -> Result<()> {
     }
 
     match tcp_probe(&cfg.pool.host, cfg.pool.port, Duration::from_secs(3)) {
-        Ok(()) => ui::print_ok(&format!("Pool target    {}:{} reachable", cfg.pool.host, cfg.pool.port)),
-        Err(err) => ui::print_warn(&format!("Pool target    {}:{} — {}", cfg.pool.host, cfg.pool.port, err)),
+        Ok(()) => ui::print_ok(&format!(
+            "Pool target    {}:{} reachable",
+            cfg.pool.host, cfg.pool.port
+        )),
+        Err(err) => ui::print_warn(&format!(
+            "Pool target    {}:{} — {}",
+            cfg.pool.host, cfg.pool.port, err
+        )),
     }
 
     ui::print_header("Deploy Readiness");
@@ -107,16 +115,25 @@ pub async fn run(cfg: &Config) -> Result<()> {
     }
 
     match tcp_probe(&cfg.node.rpc_host, SSH_PORT, Duration::from_secs(3)) {
-        Ok(()) => ui::print_ok(&format!("SSH port       {}:{} reachable", cfg.node.rpc_host, SSH_PORT)),
+        Ok(()) => ui::print_ok(&format!(
+            "SSH port       {}:{} reachable",
+            cfg.node.rpc_host, SSH_PORT
+        )),
         Err(err) => {
             hard_failures += 1;
-            ui::print_err(&format!("SSH port       {}:{} — {}", cfg.node.rpc_host, SSH_PORT, err));
+            ui::print_err(&format!(
+                "SSH port       {}:{} — {}",
+                cfg.node.rpc_host, SSH_PORT, err
+            ));
         }
     }
 
     if command_exists("ssh") && std::path::Path::new(&ssh_key).exists() {
         match ssh_probe(&cfg.node.rpc_host, &ssh_key, &cfg.deploy.ssh_user, "true") {
-            Ok(None) => ui::print_ok(&format!("SSH auth       {}@{}", cfg.deploy.ssh_user, cfg.node.rpc_host)),
+            Ok(None) => ui::print_ok(&format!(
+                "SSH auth       {}@{}",
+                cfg.deploy.ssh_user, cfg.node.rpc_host
+            )),
             Ok(Some(detail)) => {
                 hard_failures += 1;
                 ui::print_err(&format!("SSH auth       {}", detail));
@@ -161,7 +178,10 @@ pub async fn run(cfg: &Config) -> Result<()> {
         }
         Err(err) => {
             hard_failures += 1;
-            ui::print_err(&format!("Node RPC      {}:{} — {}", cfg.node.rpc_host, cfg.node.rpc_port, err));
+            ui::print_err(&format!(
+                "Node RPC      {}:{} — {}",
+                cfg.node.rpc_host, cfg.node.rpc_port, err
+            ));
         }
     }
 
@@ -194,19 +214,26 @@ fn validate_threads_setting(threads: &str) -> Result<String, String> {
     match trimmed.parse::<usize>() {
         Ok(0) => Err("must be greater than 0 or `auto`".to_string()),
         Ok(value) => Ok(value.to_string()),
-        Err(_) => Err(format!("has unsupported value '{}'; use a positive integer or `auto`", trimmed)),
+        Err(_) => Err(format!(
+            "has unsupported value '{}'; use a positive integer or `auto`",
+            trimmed
+        )),
     }
 }
 
 fn backend_runtime_note(backend: &str) -> BackendDoctorNote {
     match backend.trim().to_ascii_lowercase().as_str() {
         "auto" | "cpu" => BackendDoctorNote::Ok(backend.trim().to_string()),
-        "gpu" => BackendDoctorNote::Warn("generic gpu selected; runtime support depends on the actual miner host".to_string()),
+        "gpu" => BackendDoctorNote::Warn(
+            "generic gpu selected; runtime support depends on the actual miner host".to_string(),
+        ),
         "metal" => {
             if cfg!(target_os = "macos") {
                 BackendDoctorNote::Ok("metal requested on macOS host".to_string())
             } else {
-                BackendDoctorNote::Warn("metal is configured but this host is not macOS".to_string())
+                BackendDoctorNote::Warn(
+                    "metal is configured but this host is not macOS".to_string(),
+                )
             }
         }
         "opencl" | "ocl" => {
@@ -223,7 +250,9 @@ fn backend_runtime_note(backend: &str) -> BackendDoctorNote {
                 BackendDoctorNote::Warn("cuda selected but `nvidia-smi` was not found; verify NVIDIA runtime on the miner host".to_string())
             }
         }
-        other => BackendDoctorNote::Warn(format!("unsupported backend '{}' in runtime probe", other)),
+        other => {
+            BackendDoctorNote::Warn(format!("unsupported backend '{}' in runtime probe", other))
+        }
     }
 }
 
@@ -287,12 +316,16 @@ fn ssh_probe(host: &str, key: &str, user: &str, remote_cmd: &str) -> Result<Opti
 }
 
 fn summarize_process_failure(output: &Output) -> String {
-    let stderr = String::from_utf8_lossy(&output.stderr).trim().replace('\n', " ");
+    let stderr = String::from_utf8_lossy(&output.stderr)
+        .trim()
+        .replace('\n', " ");
     if !stderr.is_empty() {
         return stderr;
     }
 
-    let stdout = String::from_utf8_lossy(&output.stdout).trim().replace('\n', " ");
+    let stdout = String::from_utf8_lossy(&output.stdout)
+        .trim()
+        .replace('\n', " ");
     if !stdout.is_empty() {
         return stdout;
     }
@@ -311,7 +344,10 @@ mod tests {
 
     #[test]
     fn thread_setting_accepts_auto_and_positive_values() {
-        assert_eq!(validate_threads_setting("auto").expect("auto should pass"), "auto");
+        assert_eq!(
+            validate_threads_setting("auto").expect("auto should pass"),
+            "auto"
+        );
         assert_eq!(validate_threads_setting("8").expect("8 should pass"), "8");
     }
 

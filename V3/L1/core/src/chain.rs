@@ -104,7 +104,13 @@ impl ForkChoice {
 
     /// Register a new block on top of an existing entry.
     /// Returns the cumulative total_work of the new entry.
-    pub fn insert(&mut self, hash: [u8; 32], prev_hash: [u8; 32], height: u64, difficulty: u64) -> Option<u128> {
+    pub fn insert(
+        &mut self,
+        hash: [u8; 32],
+        prev_hash: [u8; 32],
+        height: u64,
+        difficulty: u64,
+    ) -> Option<u128> {
         let parent = self.entries.get(&prev_hash)?;
         let total_work = parent.total_work.saturating_add(difficulty as u128);
         let entry = ChainEntry {
@@ -120,12 +126,17 @@ impl ForkChoice {
 
     /// Return the currently active tip.
     pub fn active_tip(&self) -> &ChainEntry {
-        self.entries.get(&self.active_tip).expect("active tip must exist")
+        self.entries
+            .get(&self.active_tip)
+            .expect("active tip must exist")
     }
 
     /// Check whether `candidate_tip` is strictly stronger than the active tip.
     pub fn is_stronger(&self, candidate_tip: &[u8; 32]) -> Result<bool, ReorgError> {
-        let candidate = self.entries.get(candidate_tip).ok_or(ReorgError::UnknownTip)?;
+        let candidate = self
+            .entries
+            .get(candidate_tip)
+            .ok_or(ReorgError::UnknownTip)?;
         let active = self.active_tip();
         // Strictly greater — ties keep the current chain (audit P1-01).
         Ok(candidate.total_work > active.total_work)
@@ -152,7 +163,8 @@ impl ForkChoice {
     /// Find the fork point between the active chain and a candidate tip.
     /// Returns `(fork_hash, depth_to_rollback)`.
     pub fn find_fork_point(&self, candidate_tip: &[u8; 32]) -> Result<([u8; 32], u64), ReorgError> {
-        let active_ancestors = self.ancestor_set(&self.active_tip, MAX_REORG_DEPTH + SOFT_FINALITY_DEPTH);
+        let active_ancestors =
+            self.ancestor_set(&self.active_tip, MAX_REORG_DEPTH + SOFT_FINALITY_DEPTH);
         let mut current = *candidate_tip;
         let mut depth: u64 = 0;
         loop {
@@ -182,16 +194,15 @@ impl ForkChoice {
     /// Evaluate whether a reorg to `candidate_tip` should proceed.
     /// Returns the list of block hashes to disconnect (active side) and
     /// connect (candidate side) if the reorg is valid.
-    pub fn evaluate_reorg(
-        &self,
-        candidate_tip: &[u8; 32],
-    ) -> Result<ReorgPlan, ReorgError> {
+    pub fn evaluate_reorg(&self, candidate_tip: &[u8; 32]) -> Result<ReorgPlan, ReorgError> {
         if !self.is_stronger(candidate_tip)? {
             return Err(ReorgError::NotStronger);
         }
         let (fork_hash, rollback_depth) = self.find_fork_point(candidate_tip)?;
         if rollback_depth > MAX_REORG_DEPTH {
-            return Err(ReorgError::TooDeep { depth: rollback_depth });
+            return Err(ReorgError::TooDeep {
+                depth: rollback_depth,
+            });
         }
         // Collect disconnect (active side, newest first).
         let disconnect = self.ancestors(&self.active_tip, &fork_hash);
@@ -439,13 +450,19 @@ mod tests {
             height: 5,
             hash: hash(5),
             spent_utxos: vec![RestoredUtxo {
-                outpoint: Outpoint { tx_hash: hash(1), index: 0 },
+                outpoint: Outpoint {
+                    tx_hash: hash(1),
+                    index: 0,
+                },
                 amount: 1000,
                 address: "zion1test".into(),
                 created_height: 2,
                 is_coinbase: false,
             }],
-            created_outpoints: vec![Outpoint { tx_hash: hash(5), index: 0 }],
+            created_outpoints: vec![Outpoint {
+                tx_hash: hash(5),
+                index: 0,
+            }],
         };
         let mut restored = Vec::new();
         let mut removed = Vec::new();
@@ -482,8 +499,16 @@ mod tests {
                 public_key: vec![],
             }],
             outputs: vec![
-                TxOutput { amount: 900, address: "zion1a".into(), memo: None },
-                TxOutput { amount: 100, address: "zion1b".into(), memo: None },
+                TxOutput {
+                    amount: 900,
+                    address: "zion1a".into(),
+                    memo: None,
+                },
+                TxOutput {
+                    amount: 100,
+                    address: "zion1b".into(),
+                    memo: None,
+                },
             ],
             fee: 0,
             timestamp: 0,
@@ -491,7 +516,10 @@ mod tests {
         let undo = build_undo_block(5, hash(5), &[tx], |tx_hash, idx| {
             if *tx_hash == hash(10) && idx == 0 {
                 Some(RestoredUtxo {
-                    outpoint: Outpoint { tx_hash: *tx_hash, index: idx },
+                    outpoint: Outpoint {
+                        tx_hash: *tx_hash,
+                        index: idx,
+                    },
                     amount: 1000,
                     address: "zion1sender".into(),
                     created_height: 1,

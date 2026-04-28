@@ -10,9 +10,7 @@
 //!                          to, value, data, access_list, y_parity, r, s])
 
 use anyhow::{anyhow, Context, Result};
-use k256::{
-    ecdsa::{signature::hazmat::PrehashSigner, RecoveryId, Signature, SigningKey},
-};
+use k256::ecdsa::{signature::hazmat::PrehashSigner, RecoveryId, Signature, SigningKey};
 use sha3::{Digest, Keccak256};
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -69,8 +67,8 @@ pub fn encode_submit_lock_proof(
     if recip_hex.len() != 40 {
         return Err(anyhow!("Invalid EVM address length: {}", recipient));
     }
-    let recip_bytes = hex::decode(recip_hex)
-        .with_context(|| format!("Invalid recipient hex: {}", recipient))?;
+    let recip_bytes =
+        hex::decode(recip_hex).with_context(|| format!("Invalid recipient hex: {}", recipient))?;
 
     // Parse amount as u128 (covers up to ~340 undecillion wei = more than enough)
     let amount_u128: u128 = amount_wzion_wei
@@ -152,8 +150,8 @@ pub fn encode_confirm_burn_release(
     if burner_hex.len() != 40 {
         return Err(anyhow!("Invalid EVM burner address length: {}", evm_burner));
     }
-    let burner_bytes = hex::decode(burner_hex)
-        .with_context(|| format!("Invalid burner hex: {}", evm_burner))?;
+    let burner_bytes =
+        hex::decode(burner_hex).with_context(|| format!("Invalid burner hex: {}", evm_burner))?;
 
     // Parse amount as u128
     let amount_u128: u128 = amount_wei
@@ -212,8 +210,8 @@ pub fn encode_confirm_burn_release(
 ///   3. keccak256(64 bytes) → 32 bytes
 ///   4. EVM address = last 20 bytes, checksummed
 pub fn derive_evm_address(private_key_hex: &str) -> Result<String> {
-    let pk_bytes = hex::decode(private_key_hex.trim_start_matches("0x"))
-        .context("Invalid private key hex")?;
+    let pk_bytes =
+        hex::decode(private_key_hex.trim_start_matches("0x")).context("Invalid private key hex")?;
     let signing_key = SigningKey::from_slice(&pk_bytes).context("Invalid secp256k1 key")?;
     let verifying_key = signing_key.verifying_key();
     let pubkey_point = verifying_key.to_encoded_point(false); // uncompressed
@@ -310,16 +308,18 @@ pub fn build_and_sign_eip1559_tx(
     private_key_hex: &str,
 ) -> Result<String> {
     // --- Parse private key ---
-    let pk_bytes = hex::decode(private_key_hex.trim_start_matches("0x"))
-        .context("Invalid private key hex")?;
-    let signing_key =
-        SigningKey::from_slice(&pk_bytes).context("Invalid secp256k1 private key")?;
+    let pk_bytes =
+        hex::decode(private_key_hex.trim_start_matches("0x")).context("Invalid private key hex")?;
+    let signing_key = SigningKey::from_slice(&pk_bytes).context("Invalid secp256k1 private key")?;
 
     // --- Parse `to` address ---
     let to_bytes = hex::decode(to.trim_start_matches("0x"))
         .with_context(|| format!("Invalid `to` address: {}", to))?;
     if to_bytes.len() != 20 {
-        return Err(anyhow!("`to` address must be 20 bytes, got {}", to_bytes.len()));
+        return Err(anyhow!(
+            "`to` address must be 20 bytes, got {}",
+            to_bytes.len()
+        ));
     }
 
     // --- Helper: encode chain_id as RLP uint ---
@@ -398,14 +398,18 @@ fn build_tx_rlp_items(
         rlp_uint(max_priority_fee),
         rlp_uint(max_fee),
         rlp_uint(gas_limit),
-        rlp_bytes(to),          // 20-byte address
-        vec![0x80],             // value = 0
-        rlp_bytes(calldata),    // ABI-encoded calldata
-        vec![0xc0],             // access_list = [] (empty RLP list)
+        rlp_bytes(to),       // 20-byte address
+        vec![0x80],          // value = 0
+        rlp_bytes(calldata), // ABI-encoded calldata
+        vec![0xc0],          // access_list = [] (empty RLP list)
     ];
 
     if let Some((y_parity, r, s)) = sig {
-        items.push(if y_parity == 0 { vec![0x80] } else { vec![0x01] }); // y_parity
+        items.push(if y_parity == 0 {
+            vec![0x80]
+        } else {
+            vec![0x01]
+        }); // y_parity
         items.push(rlp_u256(&r));
         items.push(rlp_u256(&s));
     }
