@@ -23,8 +23,8 @@ use sha3::{Digest, Keccak256};
 
 use crate::algorithms_opt::Hash64;
 use crate::hic::{BACKWARD_PASSES, HIC, KABALA_READS, KEY_ROUNDS};
-use crate::sha3_fast;
 use crate::hugepages::with_huge_page_scratchpad;
+use crate::sha3_fast;
 
 /// Execute `f` with a thread-local scratchpad buffer.
 ///
@@ -99,7 +99,11 @@ fn mix_block_ekam(pad: &mut [u8], index: usize, pass: u64, forward: bool) {
 
     let cur_off = index * BLOCK_SIZE;
     let prev_index = if forward {
-        if index == 0 { blocks - 1 } else { index - 1 }
+        if index == 0 {
+            blocks - 1
+        } else {
+            index - 1
+        }
     } else if index + 1 == blocks {
         0
     } else {
@@ -118,11 +122,11 @@ fn mix_block_ekam(pad: &mut [u8], index: usize, pass: u64, forward: bool) {
 
     // Blake3 XOF mixing (replaces SHA3-512 — ~2-3× faster)
     let mut hasher = blake3::Hasher::new();
-    hasher.update(&pad[cur_off..cur_off + BLOCK_SIZE]);     // current block
-    hasher.update(&pad[prev_off..prev_off + BLOCK_SIZE]);   // previous block
-    hasher.update(&pad[rand_off..rand_off + BLOCK_SIZE]);   // random block
-    hasher.update(&pass.to_le_bytes());                      // pass metadata
-    hasher.update(&(index as u64).to_le_bytes());            // index metadata
+    hasher.update(&pad[cur_off..cur_off + BLOCK_SIZE]); // current block
+    hasher.update(&pad[prev_off..prev_off + BLOCK_SIZE]); // previous block
+    hasher.update(&pad[rand_off..rand_off + BLOCK_SIZE]); // random block
+    hasher.update(&pass.to_le_bytes()); // pass metadata
+    hasher.update(&(index as u64).to_le_bytes()); // index metadata
     let mut mixed = [0u8; BLOCK_SIZE];
     hasher.finalize_xof().fill(&mut mixed);
 
@@ -434,13 +438,21 @@ pub fn memory_hard_transform_ekam_v3(input: &[u8; 64]) -> Hash64 {
 #[cfg(target_arch = "x86_64")]
 fn prefetch_next(pad: &[u8], index: usize, pass: u64, forward: bool, blocks: usize) {
     let next_index = if forward {
-        if index + 1 < blocks { index + 1 } else { return; }
+        if index + 1 < blocks {
+            index + 1
+        } else {
+            return;
+        }
     } else {
-        if index > 0 { index - 1 } else { return; }
+        if index > 0 {
+            index - 1
+        } else {
+            return;
+        }
     };
 
     unsafe {
-        use std::arch::x86_64::{_MM_HINT_T0, _mm_prefetch};
+        use std::arch::x86_64::{_mm_prefetch, _MM_HINT_T0};
         let mut idx_bytes = [0u8; 8];
         let next_off = next_index * BLOCK_SIZE;
         idx_bytes.copy_from_slice(&pad[next_off..next_off + 8]);
@@ -463,7 +475,9 @@ fn xor_block_in_place(dest: &mut [u8], src: &[u8]) {
     #[cfg(target_arch = "x86_64")]
     {
         if std::is_x86_feature_detected!("avx2") {
-            unsafe { xor_avx2(dest.as_mut_ptr(), src.as_ptr()); }
+            unsafe {
+                xor_avx2(dest.as_mut_ptr(), src.as_ptr());
+            }
             return;
         }
     }
@@ -533,7 +547,10 @@ mod tests {
         input_b[0] = 1;
         let a = memory_hard_transform_ekam(&input_a);
         let b = memory_hard_transform_ekam(&input_b);
-        assert_ne!(a.data, b.data, "Different inputs must produce different outputs");
+        assert_ne!(
+            a.data, b.data,
+            "Different inputs must produce different outputs"
+        );
     }
 
     #[test]
@@ -581,7 +598,10 @@ mod tests {
         let input = [7u8; 64];
         let v1 = memory_hard_transform_ekam_light(&input);
         let v2 = memory_hard_transform_ekam_light_v2(&input);
-        assert_ne!(v1.data, v2.data, "v2 must differ from v1 (different params)");
+        assert_ne!(
+            v1.data, v2.data,
+            "v2 must differ from v1 (different params)"
+        );
     }
 
     #[test]
@@ -592,14 +612,20 @@ mod tests {
         b_in[0] = 1;
         let a = memory_hard_transform_ekam_light_v2(&a_in);
         let b = memory_hard_transform_ekam_light_v2(&b_in);
-        assert_ne!(a.data, b.data, "v2 avalanche: different inputs → different outputs");
+        assert_ne!(
+            a.data, b.data,
+            "v2 avalanche: different inputs → different outputs"
+        );
     }
 
     #[test]
     fn test_ekam_v2_nonzero() {
         let input = [42u8; 64];
         let result = memory_hard_transform_ekam_v2(&input);
-        assert!(result.data.iter().any(|&b| b != 0), "v2 output must not be all zeros");
+        assert!(
+            result.data.iter().any(|&b| b != 0),
+            "v2 output must not be all zeros"
+        );
     }
 
     // ================================================================
@@ -622,14 +648,20 @@ mod tests {
         b_in[0] = 1;
         let a = memory_hard_transform_ekam_v3(&a_in);
         let b = memory_hard_transform_ekam_v3(&b_in);
-        assert_ne!(a.data, b.data, "v3 avalanche: different inputs → different outputs");
+        assert_ne!(
+            a.data, b.data,
+            "v3 avalanche: different inputs → different outputs"
+        );
     }
 
     #[test]
     fn test_v3_nonzero() {
         let input = [42u8; 64];
         let result = memory_hard_transform_ekam_v3(&input);
-        assert!(result.data.iter().any(|&b| b != 0), "v3 output must not be all zeros");
+        assert!(
+            result.data.iter().any(|&b| b != 0),
+            "v3 output must not be all zeros"
+        );
     }
 
     #[test]
@@ -637,7 +669,10 @@ mod tests {
         let input = [7u8; 64];
         let v2 = memory_hard_transform_ekam_v2(&input);
         let v3 = memory_hard_transform_ekam_v3(&input);
-        assert_ne!(v2.data, v3.data, "v3 dual-spin must differ from v2 (extra forward HIC passes)");
+        assert_ne!(
+            v2.data, v3.data,
+            "v3 dual-spin must differ from v2 (extra forward HIC passes)"
+        );
     }
 
     #[test]
@@ -655,7 +690,9 @@ mod tests {
         let input = [99u8; 64];
         let v2_full = memory_hard_transform_ekam_v2(&input);
         let v3_full = memory_hard_transform_ekam_v3(&input);
-        assert_ne!(v2_full.data, v3_full.data,
-            "Dual-spin must produce different output from backward-only Merkabah");
+        assert_ne!(
+            v2_full.data, v3_full.data,
+            "Dual-spin must produce different output from backward-only Merkabah"
+        );
     }
 }

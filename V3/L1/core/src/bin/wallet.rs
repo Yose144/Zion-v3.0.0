@@ -22,7 +22,6 @@ use std::time::Duration;
 use ed25519_dalek::SigningKey;
 use serde_json::{json, Value};
 
-
 fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() < 2 {
@@ -38,12 +37,16 @@ fn main() {
                 eprintln!("Usage: wallet send <to_address> <amount_zion> [--fee <fee_flowers>]");
                 process::exit(1);
             }
-            let fee = parse_flag(&args, "--fee").and_then(|v| v.parse::<u64>().ok()).unwrap_or(1_000);
+            let fee = parse_flag(&args, "--fee")
+                .and_then(|v| v.parse::<u64>().ok())
+                .unwrap_or(1_000);
             cmd_send(&args[2], &args[3], fee);
         }
         "bridge-lock" => {
             if args.len() < 4 {
-                eprintln!("Usage: wallet bridge-lock <evm_recipient> <amount_zion> [--chain <chain>]");
+                eprintln!(
+                    "Usage: wallet bridge-lock <evm_recipient> <amount_zion> [--chain <chain>]"
+                );
                 process::exit(1);
             }
             let chain = parse_flag(&args, "--chain").unwrap_or_else(|| "base".to_string());
@@ -88,8 +91,8 @@ fn load_signing_key() -> SigningKey {
         die("set ZION_WALLET_SK_HEX or ZION_WALLET_KEY_FILE");
     };
 
-    let bytes = zion_core::crypto::from_hex(&sk_hex)
-        .unwrap_or_else(|| die("invalid hex in secret key"));
+    let bytes =
+        zion_core::crypto::from_hex(&sk_hex).unwrap_or_else(|| die("invalid hex in secret key"));
     if bytes.len() != 32 {
         die(&format!("secret key must be 32 bytes, got {}", bytes.len()));
     }
@@ -123,13 +126,15 @@ fn rpc_call(method: &str, params: Value) -> Value {
     });
     let mut line = serde_json::to_string(&request).expect("json serialize");
     line.push('\n');
-    stream.write_all(line.as_bytes())
+    stream
+        .write_all(line.as_bytes())
         .unwrap_or_else(|e| die(&format!("write to {addr}: {e}")));
     stream.flush().ok();
 
     let mut reader = BufReader::new(stream);
     let mut resp_line = String::new();
-    reader.read_line(&mut resp_line)
+    reader
+        .read_line(&mut resp_line)
         .unwrap_or_else(|e| die(&format!("read from {addr}: {e}")));
 
     let resp: Value = serde_json::from_str(&resp_line)
@@ -147,12 +152,17 @@ const FLOWERS_PER_ZION: u64 = 1_000_000_000_000;
 
 fn parse_zion_amount(s: &str) -> u64 {
     if let Some((whole, frac)) = s.split_once('.') {
-        let whole_flowers: u64 = whole.parse::<u64>().unwrap_or_else(|_| die("invalid amount")) * FLOWERS_PER_ZION;
+        let whole_flowers: u64 = whole
+            .parse::<u64>()
+            .unwrap_or_else(|_| die("invalid amount"))
+            * FLOWERS_PER_ZION;
         let padded = format!("{:0<12}", frac);
         if padded.len() > 12 {
             die("amount has too many decimal places (max 12)");
         }
-        let frac_flowers: u64 = padded[..12].parse().unwrap_or_else(|_| die("invalid fractional amount"));
+        let frac_flowers: u64 = padded[..12]
+            .parse()
+            .unwrap_or_else(|_| die("invalid fractional amount"));
         whole_flowers + frac_flowers
     } else {
         s.parse::<u64>().unwrap_or_else(|_| die("invalid amount")) * FLOWERS_PER_ZION
@@ -235,7 +245,10 @@ fn cmd_send(to: &str, amount_str: &str, fee: u64) {
 
     println!("from:   {address}");
     println!("to:     {to}");
-    println!("amount: {} ZION ({amount_flowers} flowers)", format_zion(amount_flowers));
+    println!(
+        "amount: {} ZION ({amount_flowers} flowers)",
+        format_zion(amount_flowers)
+    );
     println!("fee:    {fee} flowers");
 
     // Fetch UTXOs
@@ -245,19 +258,22 @@ fn cmd_send(to: &str, amount_str: &str, fee: u64) {
         die("no spendable UTXOs for this address");
     }
 
-    let available: Vec<zion_core::wallet::SpendableUtxo> = utxo_list.iter().map(|u| {
-        let hash_hex = u["tx_hash"].as_str().unwrap_or("");
-        let hash_bytes = zion_core::crypto::from_hex(hash_hex).unwrap_or_else(|| vec![0u8; 32]);
-        let mut arr = [0u8; 32];
-        let len = hash_bytes.len().min(32);
-        arr[..len].copy_from_slice(&hash_bytes[..len]);
-        zion_core::wallet::SpendableUtxo {
-            tx_hash: arr,
-            output_index: u["output_index"].as_u64().unwrap_or(0) as u32,
-            amount: u["amount"].as_u64().unwrap_or(0),
-            address: address.clone(),
-        }
-    }).collect();
+    let available: Vec<zion_core::wallet::SpendableUtxo> = utxo_list
+        .iter()
+        .map(|u| {
+            let hash_hex = u["tx_hash"].as_str().unwrap_or("");
+            let hash_bytes = zion_core::crypto::from_hex(hash_hex).unwrap_or_else(|| vec![0u8; 32]);
+            let mut arr = [0u8; 32];
+            let len = hash_bytes.len().min(32);
+            arr[..len].copy_from_slice(&hash_bytes[..len]);
+            zion_core::wallet::SpendableUtxo {
+                tx_hash: arr,
+                output_index: u["output_index"].as_u64().unwrap_or(0) as u32,
+                amount: u["amount"].as_u64().unwrap_or(0),
+                address: address.clone(),
+            }
+        })
+        .collect();
 
     let params = zion_core::wallet::SendParams {
         to_address: to.to_string(),
@@ -293,7 +309,10 @@ fn cmd_bridge_lock(evm_recipient: &str, amount_str: &str, chain: &str) {
 
     println!("from:      {address}");
     println!("vault:     {vault}");
-    println!("amount:    {} ZION ({amount_flowers} flowers)", format_zion(amount_flowers));
+    println!(
+        "amount:    {} ZION ({amount_flowers} flowers)",
+        format_zion(amount_flowers)
+    );
     println!("chain:     {chain}");
     println!("recipient: {evm_recipient}");
     println!("memo:      {memo}");
@@ -305,23 +324,28 @@ fn cmd_bridge_lock(evm_recipient: &str, amount_str: &str, chain: &str) {
         die("no spendable UTXOs for this address");
     }
 
-    let available: Vec<zion_core::wallet::SpendableUtxo> = utxo_list.iter().map(|u| {
-        let hash_hex = u["tx_hash"].as_str().unwrap_or("");
-        let hash_bytes = zion_core::crypto::from_hex(hash_hex).unwrap_or_else(|| vec![0u8; 32]);
-        let mut arr = [0u8; 32];
-        let len = hash_bytes.len().min(32);
-        arr[..len].copy_from_slice(&hash_bytes[..len]);
-        zion_core::wallet::SpendableUtxo {
-            tx_hash: arr,
-            output_index: u["output_index"].as_u64().unwrap_or(0) as u32,
-            amount: u["amount"].as_u64().unwrap_or(0),
-            address: address.clone(),
-        }
-    }).collect();
+    let available: Vec<zion_core::wallet::SpendableUtxo> = utxo_list
+        .iter()
+        .map(|u| {
+            let hash_hex = u["tx_hash"].as_str().unwrap_or("");
+            let hash_bytes = zion_core::crypto::from_hex(hash_hex).unwrap_or_else(|| vec![0u8; 32]);
+            let mut arr = [0u8; 32];
+            let len = hash_bytes.len().min(32);
+            arr[..len].copy_from_slice(&hash_bytes[..len]);
+            zion_core::wallet::SpendableUtxo {
+                tx_hash: arr,
+                output_index: u["output_index"].as_u64().unwrap_or(0) as u32,
+                amount: u["amount"].as_u64().unwrap_or(0),
+                address: address.clone(),
+            }
+        })
+        .collect();
 
     // Build a transaction sending to vault with BRIDGE memo
     // We need to build manually since build_and_sign doesn't support memos
-    let target = amount_flowers.checked_add(fee).unwrap_or_else(|| die("amount overflow"));
+    let target = amount_flowers
+        .checked_add(fee)
+        .unwrap_or_else(|| die("amount overflow"));
     let (selected, total) = select_utxos_largest_first(&available, target);
     let change = total - target;
 
@@ -339,14 +363,15 @@ fn cmd_bridge_lock(evm_recipient: &str, amount_str: &str, chain: &str) {
         });
     }
 
-    let inputs: Vec<zion_core::tx::TxInput> = selected.iter().map(|utxo| {
-        zion_core::tx::TxInput {
+    let inputs: Vec<zion_core::tx::TxInput> = selected
+        .iter()
+        .map(|utxo| zion_core::tx::TxInput {
             prev_tx_hash: utxo.tx_hash,
             output_index: utxo.output_index,
             signature: vec![],
             public_key: vk.as_bytes().to_vec(),
-        }
-    }).collect();
+        })
+        .collect();
 
     let now = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
@@ -385,7 +410,10 @@ fn cmd_bridge_lock(evm_recipient: &str, amount_str: &str, chain: &str) {
     }
 }
 
-fn select_utxos_largest_first(available: &[zion_core::wallet::SpendableUtxo], target: u64) -> (Vec<&zion_core::wallet::SpendableUtxo>, u64) {
+fn select_utxos_largest_first(
+    available: &[zion_core::wallet::SpendableUtxo],
+    target: u64,
+) -> (Vec<&zion_core::wallet::SpendableUtxo>, u64) {
     let mut sorted: Vec<&zion_core::wallet::SpendableUtxo> = available.iter().collect();
     sorted.sort_by(|a, b| b.amount.cmp(&a.amount));
     let mut selected = Vec::new();
