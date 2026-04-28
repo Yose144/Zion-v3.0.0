@@ -1425,6 +1425,41 @@ export default function TerraNovaBookClient() {
                 </div>
               </div>
 
+              <div className="mt-4 rounded-3xl border border-white/10 bg-black/30 p-4 md:p-5">
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">
+                    {cs ? 'L5 projekty pod kompasem' : 'L5 projects under the compass'}
+                  </p>
+                  <p className="text-[11px] text-gray-600">
+                    {cs ? 'Přímý vstup do obou lokalit' : 'Direct access to both locations'}
+                  </p>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-2">
+                  <Link
+                    href="/terranova/genesis"
+                    className="group flex items-center justify-between rounded-2xl border border-emerald-500/25 bg-emerald-500/10 px-4 py-3 text-sm font-semibold text-emerald-300 transition-all duration-300 hover:bg-emerald-500/18"
+                  >
+                    <div>
+                      <p className="text-[10px] uppercase tracking-[0.2em] text-emerald-500/80">L5 · Portugal</p>
+                      <p>{cs ? 'Zahrada Genesis' : 'Zahrada Genesis'}</p>
+                    </div>
+                    <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+                  </Link>
+
+                  <Link
+                    href="/terranova/dharma-temple"
+                    className="group flex items-center justify-between rounded-2xl border border-violet-500/25 bg-violet-500/10 px-4 py-3 text-sm font-semibold text-violet-300 transition-all duration-300 hover:bg-violet-500/18"
+                  >
+                    <div>
+                      <p className="text-[10px] uppercase tracking-[0.2em] text-violet-400/80">L5 · La Palma</p>
+                      <p>{cs ? 'Dharma Temple' : 'Dharma Temple'}</p>
+                    </div>
+                    <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+                  </Link>
+                </div>
+              </div>
+
             </div>
           </div>
         </motion.section>
