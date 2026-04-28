@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
+  Lock,
   BookOpen,
   ChevronLeft,
   ChevronRight,
@@ -385,13 +386,19 @@ export default function TerraNovaPublicClient() {
                     <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
                   </Link>
 
-                  <Link
-                    href="/terranova/dharma-temple"
-                    className="group flex items-center justify-between rounded-xl border border-violet-500/25 bg-violet-500/8 px-4 py-3 text-sm font-semibold text-violet-300 transition-all duration-300 hover:bg-violet-500/14"
-                  >
-                    <span>{cs ? 'Dharma Temple' : 'Dharma Temple'}</span>
-                    <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
-                  </Link>
+                  <div className="relative flex items-center justify-between overflow-hidden rounded-xl border border-violet-500/25 bg-violet-500/8 px-4 py-3 text-sm font-semibold text-violet-300/85 saturate-75">
+                    <div className="pointer-events-none absolute inset-0 bg-[repeating-linear-gradient(135deg,rgba(255,255,255,0.03)_0,rgba(255,255,255,0.03)_10px,transparent_10px,transparent_22px)] opacity-70" />
+                    <div className="relative z-10">
+                      <span>{cs ? 'Dharma Temple' : 'Dharma Temple'}</span>
+                      <p className="mt-1 text-[11px] font-normal text-violet-200/55">
+                        {cs ? 'Sealed mock · lokalita neznámá' : 'Sealed mock · location unknown'}
+                      </p>
+                    </div>
+                    <div className="relative z-10 inline-flex items-center gap-2 rounded-full border border-violet-300/15 bg-black/35 px-2.5 py-1 text-[10px] uppercase tracking-[0.22em] text-violet-100/80">
+                      <Lock className="w-3.5 h-3.5" />
+                      Sealed
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
