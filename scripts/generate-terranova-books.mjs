@@ -71,7 +71,10 @@ function processEdition(ed) {
     console.error(`Dir not found: ${ed.dir}`);
     return [];
   }
-  const files = fs.readdirSync(ed.dir).filter(f => f.endsWith('.md') && f !== 'README.md').sort();
+  // Exclude README, full-book files (Full.md, full.md, TerraNova-CTENARSKA-EDICE.md) — these are navigation aids that
+  // duplicate individual chapter content and would cause repeated entries in generatedEditions.ts
+  const EXCLUDED = new Set(['README.md', 'Full.md', 'full.md', 'TerraNova-CTENARSKA-EDICE.md']);
+  const files = fs.readdirSync(ed.dir).filter(f => f.endsWith('.md') && !EXCLUDED.has(f)).sort();
   
   return files.map(file => {
     const raw = fs.readFileSync(path.join(ed.dir, file), 'utf8');
