@@ -23,11 +23,11 @@
 //! ```
 
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
 use std::fs;
+use std::path::{Path, PathBuf};
 
-use crate::rag::{RagRetriever};
 use crate::llm_backend::LlmError;
+use crate::rag::RagRetriever;
 
 // ─── Konfigurace ─────────────────────────────────────────────────────────────
 
@@ -79,12 +79,13 @@ impl Default for KnowledgeConfig {
         Self {
             max_chunk_size: 1500,
             chunk_overlap: 200,
-            extensions: vec![
-                "md".into(), "rs".into(), "toml".into(), "py".into(),
-            ],
+            extensions: vec!["md".into(), "rs".into(), "toml".into(), "py".into()],
             skip_dirs: vec![
-                "target".into(), "node_modules".into(), ".git".into(),
-                "outputs".into(), "opencl_sdk".into(),
+                "target".into(),
+                "node_modules".into(),
+                ".git".into(),
+                "outputs".into(),
+                "opencl_sdk".into(),
             ],
         }
     }
@@ -146,7 +147,9 @@ impl KnowledgeBase {
                     self.indexed_files.push(file_path.display().to_string());
                 }
                 Err(e) => {
-                    result.errors.push(format!("{}: {}", file_path.display(), e));
+                    result
+                        .errors
+                        .push(format!("{}: {}", file_path.display(), e));
                 }
             }
         }
@@ -185,7 +188,9 @@ impl KnowledgeBase {
                         self.indexed_files.push(path.display().to_string());
                     }
                     Err(err) => {
-                        aggregate.errors.push(format!("{}: {}", path.display(), err));
+                        aggregate
+                            .errors
+                            .push(format!("{}: {}", path.display(), err));
                     }
                 }
             }
@@ -219,9 +224,7 @@ impl KnowledgeBase {
             return Ok(0);
         }
 
-        let ext = path.extension()
-            .and_then(|e| e.to_str())
-            .unwrap_or("");
+        let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
 
         let processed = match ext {
             "rs" => extract_rust_docs(&content),
@@ -233,8 +236,13 @@ impl KnowledgeBase {
             return Ok(0);
         }
 
-        let chunks = chunk_text(&processed, self.config.max_chunk_size, self.config.chunk_overlap);
-        let file_id = path.file_name()
+        let chunks = chunk_text(
+            &processed,
+            self.config.max_chunk_size,
+            self.config.chunk_overlap,
+        );
+        let file_id = path
+            .file_name()
             .and_then(|f| f.to_str())
             .unwrap_or("unknown");
 
@@ -248,7 +256,8 @@ impl KnowledgeBase {
             } else {
                 format!("{file_id}#chunk{i}")
             };
-            self.retriever.index_with_metadata(&chunk_id, chunk, metadata.clone())?;
+            self.retriever
+                .index_with_metadata(&chunk_id, chunk, metadata.clone())?;
         }
 
         Ok(chunks.len())
@@ -340,9 +349,17 @@ fn chunk_text(text: &str, max_size: usize, overlap: usize) -> Vec<String> {
         if actual_end >= bytes.len() {
             break;
         }
-        let new_start = if actual_end > overlap { actual_end - overlap } else { actual_end };
+        let new_start = if actual_end > overlap {
+            actual_end - overlap
+        } else {
+            actual_end
+        };
         // Zajisti forward progress — overlap nesmí vrátit start na předchozí pozici
-        start = if new_start <= start { actual_end } else { new_start };
+        start = if new_start <= start {
+            actual_end
+        } else {
+            new_start
+        };
     }
 
     chunks
@@ -378,10 +395,19 @@ fn safe_slice(text: &str, start: usize, end: usize) -> &str {
     let e = end.min(text.len());
 
     // Zarovnej na UTF-8 boundary
-    let s = (s..text.len()).find(|&i| text.is_char_boundary(i)).unwrap_or(text.len());
-    let e = (0..=e).rev().find(|&i| text.is_char_boundary(i)).unwrap_or(s);
+    let s = (s..text.len())
+        .find(|&i| text.is_char_boundary(i))
+        .unwrap_or(text.len());
+    let e = (0..=e)
+        .rev()
+        .find(|&i| text.is_char_boundary(i))
+        .unwrap_or(s);
 
-    if s >= e { "" } else { &text[s..e] }
+    if s >= e {
+        ""
+    } else {
+        &text[s..e]
+    }
 }
 
 // ─── Extraktory dokumentace ──────────────────────────────────────────────────
@@ -417,7 +443,7 @@ fn extract_python_docs(content: &str) -> String {
                 in_docstring = true;
                 // Jednořádkový docstring?
                 if trimmed.len() > 3 && trimmed[3..].contains(docstring_delim) {
-                    docs.push(trimmed[3..trimmed.len()-3].to_string());
+                    docs.push(trimmed[3..trimmed.len() - 3].to_string());
                     in_docstring = false;
                 } else {
                     docs.push(trimmed[3..].to_string());
@@ -474,7 +500,8 @@ mod tests {
         let mut kb = test_kb();
         let mut meta = HashMap::new();
         meta.insert("source".into(), "README.md".into());
-        kb.add_text_with_metadata("readme", "ZION readme", meta).unwrap();
+        kb.add_text_with_metadata("readme", "ZION readme", meta)
+            .unwrap();
         assert_eq!(kb.document_count(), 1);
     }
 

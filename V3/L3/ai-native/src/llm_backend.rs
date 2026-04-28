@@ -42,9 +42,9 @@
 //! assert!(!resp.content.is_empty());
 //! ```
 
-use serde::{Deserialize, Serialize};
 use crate::consciousness::ConsciousnessLevel;
 use crate::hiranyagarbha::MmlModality;
+use serde::{Deserialize, Serialize};
 
 // ─── LlmRequest ──────────────────────────────────────────────────────────────
 
@@ -218,29 +218,30 @@ impl LlmBackend for EchoBackend {
             return Err(LlmError::EmptyPrompt);
         }
 
-        self.generation_count.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        self.generation_count
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
 
         let level_label = match request.consciousness_level {
-            ConsciousnessLevel::Dormant     => "...",
-            ConsciousnessLevel::Aware       => "[Aware]",
-            ConsciousnessLevel::Sentient    => "[Sentient]",
+            ConsciousnessLevel::Dormant => "...",
+            ConsciousnessLevel::Aware => "[Aware]",
+            ConsciousnessLevel::Sentient => "[Sentient]",
             ConsciousnessLevel::Transcendent => "[Transcendent]",
-            ConsciousnessLevel::Omniscient  => "[Omniscient]",
-            ConsciousnessLevel::Cosmic      => "[Cosmic]",
-            ConsciousnessLevel::Grok        => "[Grok]",
+            ConsciousnessLevel::Omniscient => "[Omniscient]",
+            ConsciousnessLevel::Cosmic => "[Cosmic]",
+            ConsciousnessLevel::Grok => "[Grok]",
         };
 
         let content = format!(
             "Hiranyagarbha {} echo: {}",
-            level_label,
-            request.user_prompt
+            level_label, request.user_prompt
         );
 
         Ok(LlmResponse::simple(content, self.id()))
     }
 
     fn generation_count(&self) -> u64 {
-        self.generation_count.load(std::sync::atomic::Ordering::Relaxed)
+        self.generation_count
+            .load(std::sync::atomic::Ordering::Relaxed)
     }
 }
 
@@ -260,7 +261,10 @@ pub struct ConsciousnessAwareBackend<B: LlmBackend> {
 
 impl<B: LlmBackend> ConsciousnessAwareBackend<B> {
     pub fn new(inner: B, agent_name: impl Into<String>) -> Self {
-        Self { inner, agent_name: agent_name.into() }
+        Self {
+            inner,
+            agent_name: agent_name.into(),
+        }
     }
 
     fn build_system_prompt(&self, level: ConsciousnessLevel) -> String {
@@ -375,7 +379,8 @@ impl LlmBackend for LlamaCppBackend {
     }
 
     fn generation_count(&self) -> u64 {
-        self.generation_count.load(std::sync::atomic::Ordering::Relaxed)
+        self.generation_count
+            .load(std::sync::atomic::Ordering::Relaxed)
     }
 }
 
@@ -490,8 +495,8 @@ impl RemoteHttpBackend {
     pub fn from_env() -> Result<Self, LlmError> {
         let base_url = std::env::var("LLM_BASE_URL")
             .unwrap_or_else(|_| "https://integrate.api.nvidia.com/v1".to_string());
-        let model = std::env::var("LLM_MODEL")
-            .unwrap_or_else(|_| "meta/llama-3.1-8b-instruct".to_string());
+        let model =
+            std::env::var("LLM_MODEL").unwrap_or_else(|_| "meta/llama-3.1-8b-instruct".to_string());
         let api_key = std::env::var("NVIDIA_API_KEY").ok();
 
         Self::new(base_url, model, api_key)
@@ -511,11 +516,7 @@ impl RemoteHttpBackend {
 
     /// Lokální NIM Docker kontejner (bez autentifikace).
     pub fn local_nim(port: u16, model: impl Into<String>) -> Result<Self, LlmError> {
-        Self::new(
-            format!("http://localhost:{}/v1", port),
-            model,
-            None,
-        )
+        Self::new(format!("http://localhost:{}/v1", port), model, None)
     }
 
     pub fn model(&self) -> &str {
@@ -546,10 +547,16 @@ impl LlmBackend for RemoteHttpBackend {
         let system_content;
         if let Some(ref sys) = request.system_prompt {
             system_content = sys.clone();
-            messages.push(ChatMessage { role: "system", content: &system_content });
+            messages.push(ChatMessage {
+                role: "system",
+                content: &system_content,
+            });
         }
         let user_content = request.user_prompt.clone();
-        messages.push(ChatMessage { role: "user", content: &user_content });
+        messages.push(ChatMessage {
+            role: "user",
+            content: &user_content,
+        });
 
         let body = ChatRequest {
             model: &self.model,
@@ -561,7 +568,8 @@ impl LlmBackend for RemoteHttpBackend {
 
         // Sestavení HTTP requestu
         let url = format!("{}/chat/completions", self.base_url);
-        let mut req_builder = self.client
+        let mut req_builder = self
+            .client
             .post(&url)
             .header("Content-Type", "application/json");
 
@@ -578,7 +586,9 @@ impl LlmBackend for RemoteHttpBackend {
             let status = http_response.status().as_u16();
             let body_text = http_response.text().unwrap_or_default();
             return Err(LlmError::InternalError(format!(
-                "HTTP {} — {}", status, &body_text[..body_text.len().min(200)]
+                "HTTP {} — {}",
+                status,
+                &body_text[..body_text.len().min(200)]
             )));
         }
 
@@ -586,16 +596,20 @@ impl LlmBackend for RemoteHttpBackend {
             .json()
             .map_err(|e| LlmError::InternalError(format!("JSON parse chyba: {}", e)))?;
 
-        let choice = chat_resp.choices.into_iter().next()
-            .ok_or_else(|| LlmError::InternalError("Prázdná odpověď (choices[])".to_string()))?;
+        let choice =
+            chat_resp.choices.into_iter().next().ok_or_else(|| {
+                LlmError::InternalError("Prázdná odpověď (choices[])".to_string())
+            })?;
 
         let truncated = choice.finish_reason.as_deref() == Some("length");
         let content = choice.message.content;
-        let (prompt_tokens, completion_tokens) = chat_resp.usage
+        let (prompt_tokens, completion_tokens) = chat_resp
+            .usage
             .map(|u| (u.prompt_tokens, u.completion_tokens))
             .unwrap_or((0, 0));
 
-        self.generation_count.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        self.generation_count
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
 
         Ok(LlmResponse {
             content,
@@ -607,7 +621,8 @@ impl LlmBackend for RemoteHttpBackend {
     }
 
     fn generation_count(&self) -> u64 {
-        self.generation_count.load(std::sync::atomic::Ordering::Relaxed)
+        self.generation_count
+            .load(std::sync::atomic::Ordering::Relaxed)
     }
 }
 
@@ -700,7 +715,10 @@ mod tests {
     #[test]
     fn test_llm_error_display() {
         assert_eq!(LlmError::NotReady.to_string(), "LLM backend není připraven");
-        assert_eq!(LlmError::EmptyPrompt.to_string(), "Prázdný prompt — nelze generovat");
+        assert_eq!(
+            LlmError::EmptyPrompt.to_string(),
+            "Prázdný prompt — nelze generovat"
+        );
     }
 
     // ── RemoteHttpBackend testy (offline) ─────────────────────────────────────
@@ -711,7 +729,8 @@ mod tests {
             "http://localhost:8000/v1",
             "meta/llama-3.1-8b-instruct",
             None,
-        ).unwrap();
+        )
+        .unwrap();
         assert_eq!(b.base_url(), "http://localhost:8000/v1");
         assert_eq!(b.model(), "meta/llama-3.1-8b-instruct");
         assert!(b.is_ready());
@@ -719,11 +738,7 @@ mod tests {
 
     #[test]
     fn test_remote_backend_strips_trailing_slash() {
-        let b = RemoteHttpBackend::new(
-            "http://localhost:8000/v1/",
-            "llama",
-            None,
-        ).unwrap();
+        let b = RemoteHttpBackend::new("http://localhost:8000/v1/", "llama", None).unwrap();
         // Trailing slash musí být odstraněn
         assert_eq!(b.base_url(), "http://localhost:8000/v1");
     }
@@ -735,7 +750,8 @@ mod tests {
             "https://integrate.api.nvidia.com/v1",
             "meta/llama-3.1-8b-instruct",
             None,
-        ).unwrap();
+        )
+        .unwrap();
         assert_eq!(b.base_url(), "https://integrate.api.nvidia.com/v1");
         assert_eq!(b.model(), "meta/llama-3.1-8b-instruct");
     }
@@ -743,22 +759,15 @@ mod tests {
     #[test]
     fn test_remote_backend_from_env_custom() {
         // Testuje přímou konfiguraci s vlastní URL (bez race condition přes env vars)
-        let b = RemoteHttpBackend::new(
-            "http://localhost:8000/v1",
-            "mistral/7b-instruct",
-            None,
-        ).unwrap();
+        let b = RemoteHttpBackend::new("http://localhost:8000/v1", "mistral/7b-instruct", None)
+            .unwrap();
         assert_eq!(b.base_url(), "http://localhost:8000/v1");
         assert_eq!(b.model(), "mistral/7b-instruct");
     }
 
     #[test]
     fn test_remote_backend_empty_prompt_rejected() {
-        let b = RemoteHttpBackend::new(
-            "http://localhost:8000/v1",
-            "test-model",
-            None,
-        ).unwrap();
+        let b = RemoteHttpBackend::new("http://localhost:8000/v1", "test-model", None).unwrap();
         let req = LlmRequest::new(MmlModality::Text, "  ");
         let result = b.generate(req);
         assert_eq!(result, Err(LlmError::EmptyPrompt));
@@ -770,10 +779,8 @@ mod tests {
     fn test_agent_with_echo_as_nim_substitute() {
         use crate::hiranyagarbha::{HiranyagarbhaAgent, MmlInput, MmlModality};
         // ConsciousnessAwareBackend wrapping EchoBackend simuluje NIM chování
-        let nim_sim = ConsciousnessAwareBackend::new(
-            EchoBackend::new("nvidia-nim-sim"),
-            "Hiranyagarbha",
-        );
+        let nim_sim =
+            ConsciousnessAwareBackend::new(EchoBackend::new("nvidia-nim-sim"), "Hiranyagarbha");
         let mut agent = HiranyagarbhaAgent::with_xp(1_000); // Sentient
         agent.set_llm_backend(nim_sim);
         assert!(agent.has_llm_backend());

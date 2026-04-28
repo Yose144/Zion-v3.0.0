@@ -215,10 +215,14 @@ impl L1Scanner {
 
     /// Returns `true` if this TX contained a valid DAO memo that was processed.
     async fn process_tx(&self, tx: &UtxoTransaction, block_height: u64) -> DaoResult<bool> {
-        let sender = tx.inputs.first()
+        let sender = tx
+            .inputs
+            .first()
             .filter(|input| input.public_key.len() == 32)
             .map(|input| zion_address_from_public_key(&input.public_key))
-            .ok_or_else(|| DaoError::Internal("DAO memo tx missing valid sender public key".into()))?;
+            .ok_or_else(|| {
+                DaoError::Internal("DAO memo tx missing valid sender public key".into())
+            })?;
 
         let txid = bytes_to_hex(&tx.id);
 

@@ -108,7 +108,10 @@ impl MlpWeights {
 
         // b1 [128]
         let mut b1 = [0i8; 128];
-        for i in 0..128 { b1[i] = bytes[pos] as i8; pos += 1; }
+        for i in 0..128 {
+            b1[i] = bytes[pos] as i8;
+            pos += 1;
+        }
 
         // W2 [64][128]
         let mut w2 = Box::new([[0i8; 128]; 64]);
@@ -121,7 +124,10 @@ impl MlpWeights {
 
         // b2 [64]
         let mut b2 = [0i8; 64];
-        for i in 0..64 { b2[i] = bytes[pos] as i8; pos += 1; }
+        for i in 0..64 {
+            b2[i] = bytes[pos] as i8;
+            pos += 1;
+        }
 
         // scale1 [128] — Q8: values 200..312 (≈ 0.78..1.22 multiplier)
         let mut scale1 = [256i16; 128];
@@ -138,7 +144,14 @@ impl MlpWeights {
             pos += 1;
         }
 
-        Self { w1, b1, w2, b2, scale1, scale2 }
+        Self {
+            w1,
+            b1,
+            w2,
+            b2,
+            scale1,
+            scale2,
+        }
     }
 }
 
@@ -178,10 +191,13 @@ fn layer_norm_int8(data: &mut [i32], scale: &[i16]) {
     let mean = (sum / n as i64) as i32;
 
     // Variance (simplified: sum of (x - mean)^2 / n, integer)
-    let var_sum: i64 = data.iter().map(|&x| {
-        let d = (x - mean) as i64;
-        d * d
-    }).sum();
+    let var_sum: i64 = data
+        .iter()
+        .map(|&x| {
+            let d = (x - mean) as i64;
+            d * d
+        })
+        .sum();
     let std_approx = ((var_sum / n as i64) as f64).sqrt() as i32 + 1; // +1 prevent /0
 
     // Normalizace a scale aplikace (Q8: scale/256)
@@ -286,12 +302,7 @@ fn npu_mixing_cpu_int8(scratchpad: &[u8; 64]) -> [u8; 64] {
 
 /// Linear Layer 1: h[i] = clamp(Σ W1[i][j] * input[j] + b1[i], -128, 127)
 #[inline]
-fn layer1_scalar(
-    input: &[i32; 64],
-    w1: &[[i8; 64]; 128],
-    b1: &[i8; 128],
-    hidden: &mut [i32; 128],
-) {
+fn layer1_scalar(input: &[i32; 64], w1: &[[i8; 64]; 128], b1: &[i8; 128], hidden: &mut [i32; 128]) {
     for i in 0..128 {
         let mut acc: i32 = b1[i] as i32 * 32; // bias upscale (Q5) pro přesnost
         for j in 0..64 {
@@ -304,12 +315,7 @@ fn layer1_scalar(
 
 /// Linear Layer 2: out[i] = clamp(Σ W2[i][j] * hidden[j] + b2[i], -128, 127)
 #[inline]
-fn layer2_scalar(
-    hidden: &[i32; 128],
-    w2: &[[i8; 128]; 64],
-    b2: &[i8; 64],
-    output: &mut [i32; 64],
-) {
+fn layer2_scalar(hidden: &[i32; 128], w2: &[[i8; 128]; 64], b2: &[i8; 64], output: &mut [i32; 64]) {
     for i in 0..64 {
         let mut acc: i32 = b2[i] as i32 * 32;
         for j in 0..128 {
@@ -341,22 +347,22 @@ pub unsafe fn layer1_neon(
             let in1 = vld1q_s32(input.as_ptr().add(j + 4));
             let in2 = vld1q_s32(input.as_ptr().add(j + 8));
             let in3 = vld1q_s32(input.as_ptr().add(j + 12));
-            
+
             let w_v = vld1q_s8(w1[i].as_ptr().add(j));
-            
+
             let w_low16 = vmovl_s8(vget_low_s8(w_v));
             let w_high16 = vmovl_s8(vget_high_s8(w_v));
-            
+
             let w0 = vmovl_s16(vget_low_s16(w_low16));
             let w1_vec = vmovl_s16(vget_high_s16(w_low16));
             let w2 = vmovl_s16(vget_low_s16(w_high16));
             let w3 = vmovl_s16(vget_high_s16(w_high16));
-            
+
             sum_vec = vmlaq_s32(sum_vec, in0, w0);
             sum_vec = vmlaq_s32(sum_vec, in1, w1_vec);
             sum_vec = vmlaq_s32(sum_vec, in2, w2);
             sum_vec = vmlaq_s32(sum_vec, in3, w3);
-            
+
             j += 16;
         }
         let acc: i32 = vaddvq_s32(sum_vec) + (b1[i] as i32 * 32);
@@ -380,22 +386,22 @@ pub unsafe fn layer2_neon(
             let in1 = vld1q_s32(hidden.as_ptr().add(j + 4));
             let in2 = vld1q_s32(hidden.as_ptr().add(j + 8));
             let in3 = vld1q_s32(hidden.as_ptr().add(j + 12));
-            
+
             let w_v = vld1q_s8(w2[i].as_ptr().add(j));
-            
+
             let w_low16 = vmovl_s8(vget_low_s8(w_v));
             let w_high16 = vmovl_s8(vget_high_s8(w_v));
-            
+
             let w0 = vmovl_s16(vget_low_s16(w_low16));
             let w1_vec = vmovl_s16(vget_high_s16(w_low16));
             let w2_vec = vmovl_s16(vget_low_s16(w_high16));
             let w3 = vmovl_s16(vget_high_s16(w_high16));
-            
+
             sum_vec = vmlaq_s32(sum_vec, in0, w0);
             sum_vec = vmlaq_s32(sum_vec, in1, w1_vec);
             sum_vec = vmlaq_s32(sum_vec, in2, w2_vec);
             sum_vec = vmlaq_s32(sum_vec, in3, w3);
-            
+
             j += 16;
         }
         let acc: i32 = vaddvq_s32(sum_vec) + (b2[i] as i32 * 32);
@@ -449,10 +455,10 @@ pub struct ChV4WeightsFlat {
 pub fn chv4_npu_weights_flat() -> ChV4WeightsFlat {
     let w = get_weights();
     ChV4WeightsFlat {
-        w1:     w.w1.iter().flat_map(|row| row.iter().copied()).collect(),
-        b1:     w.b1.to_vec(),
-        w2:     w.w2.iter().flat_map(|row| row.iter().copied()).collect(),
-        b2:     w.b2.to_vec(),
+        w1: w.w1.iter().flat_map(|row| row.iter().copied()).collect(),
+        b1: w.b1.to_vec(),
+        w2: w.w2.iter().flat_map(|row| row.iter().copied()).collect(),
+        b2: w.b2.to_vec(),
         scale1: w.scale1.to_vec(),
         scale2: w.scale2.to_vec(),
     }
@@ -468,15 +474,16 @@ pub fn chv4_npu_weights_flat_epoch(epoch: u64) -> ChV4WeightsFlat {
     assert!(
         weights.topology == MlpTopology::Standard,
         "GPU kernel only supports Standard (64→128→64) topology, got {:?} for epoch {}",
-        weights.topology, epoch
+        weights.topology,
+        epoch
     );
     let layer0 = &weights.layers[0];
     let layer1 = &weights.layers[1];
     ChV4WeightsFlat {
-        w1:     layer0.weights.clone(),
-        b1:     layer0.bias.clone(),
-        w2:     layer1.weights.clone(),
-        b2:     layer1.bias.clone(),
+        w1: layer0.weights.clone(),
+        b1: layer0.bias.clone(),
+        w2: layer1.weights.clone(),
+        b2: layer1.bias.clone(),
         scale1: layer0.scale.clone(),
         scale2: layer1.scale.clone(),
     }
@@ -508,7 +515,12 @@ pub fn chv4_npu_weights_packed(epoch: u64) -> ChV4WeightsPacked {
         meta.push(layer.in_dim as u32);
         meta.push(layer.out_dim as u32);
     }
-    ChV4WeightsPacked { weights: w_all, biases: b_all, scales: s_all, meta }
+    ChV4WeightsPacked {
+        weights: w_all,
+        biases: b_all,
+        scales: s_all,
+        meta,
+    }
 }
 
 // ============================================================================
@@ -566,19 +578,19 @@ impl MlpTopology {
     /// Layer dimensions: (in_dim, out_dim) for each linear layer.
     fn layer_dims(&self) -> &[(usize, usize)] {
         match self {
-            Self::Standard =>    &[(64, 128), (128, 64)],
-            Self::ThreeLayer =>  &[(64, 96), (96, 128), (128, 64)],
-            Self::Wide =>        &[(64, 256), (256, 64)],
-            Self::Deep =>        &[(64, 64), (64, 64), (64, 64)],
+            Self::Standard => &[(64, 128), (128, 64)],
+            Self::ThreeLayer => &[(64, 96), (96, 128), (128, 64)],
+            Self::Wide => &[(64, 256), (256, 64)],
+            Self::Deep => &[(64, 64), (64, 64), (64, 64)],
         }
     }
 }
 
 /// A single MLP layer with dynamic dimensions.
 struct EpochMlpLayer {
-    weights: Vec<i8>,    // [out_dim * in_dim], row-major
-    bias: Vec<i8>,       // [out_dim]
-    scale: Vec<i16>,     // [out_dim]
+    weights: Vec<i8>, // [out_dim * in_dim], row-major
+    bias: Vec<i8>,    // [out_dim]
+    scale: Vec<i16>,  // [out_dim]
     in_dim: usize,
     out_dim: usize,
 }
@@ -622,16 +634,10 @@ impl EpochMlpWeights {
 
         for &(in_dim, out_dim) in dims {
             let w_len = out_dim * in_dim;
-            let weights: Vec<i8> = bytes[pos..pos + w_len]
-                .iter()
-                .map(|&b| b as i8)
-                .collect();
+            let weights: Vec<i8> = bytes[pos..pos + w_len].iter().map(|&b| b as i8).collect();
             pos += w_len;
 
-            let bias: Vec<i8> = bytes[pos..pos + out_dim]
-                .iter()
-                .map(|&b| b as i8)
-                .collect();
+            let bias: Vec<i8> = bytes[pos..pos + out_dim].iter().map(|&b| b as i8).collect();
             pos += out_dim;
 
             let scale: Vec<i16> = bytes[pos..pos + out_dim]
@@ -771,7 +777,11 @@ pub struct NpuSelfTestError {
 
 impl std::fmt::Display for NpuSelfTestError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "NPU self-test failed [{}]: {}", self.backend, self.detail)
+        write!(
+            f,
+            "NPU self-test failed [{}]: {}",
+            self.backend, self.detail
+        )
     }
 }
 
@@ -836,7 +846,7 @@ impl NpuBackend for CpuNpuBackend {
 // -----------------------------------------------------------------------
 
 #[cfg(feature = "native-npu")]
-use ort::{session::{Session, builder::GraphOptimizationLevel}};
+use ort::session::{builder::GraphOptimizationLevel, Session};
 
 #[cfg(feature = "native-npu")]
 pub struct OnnxNpuBackend {
@@ -847,24 +857,29 @@ pub struct OnnxNpuBackend {
 impl OnnxNpuBackend {
     pub fn new() -> Result<Self, String> {
         // Inicializace ORT prostředí globálně (lze volat jen jednou)
-        let _ = ort::init()
-            .with_name("DeekshaNPU")
-            .commit(); // typ v ort 2.0+ vrací jiny typ, ignorujeme vysledek
-            
+        let _ = ort::init().with_name("DeekshaNPU").commit(); // typ v ort 2.0+ vrací jiny typ, ignorujeme vysledek
+
         // Načíst model
         let model_path = "deeksha_mlp.onnx";
-        
+
         // V ort 2.0 se execution providers nastavuji trochu jinak
-        let mut builder = Session::builder().map_err(|e| e.to_string())?
-            .with_optimization_level(GraphOptimizationLevel::Level3).map_err(|e| e.to_string())?
-            .with_intra_threads(1).map_err(|e| e.to_string())?;
-            
+        let mut builder = Session::builder()
+            .map_err(|e| e.to_string())?
+            .with_optimization_level(GraphOptimizationLevel::Level3)
+            .map_err(|e| e.to_string())?
+            .with_intra_threads(1)
+            .map_err(|e| e.to_string())?;
+
         // Pro jednoduchost zatim jedeme na defaulte (na macos to zkusí CoreML pres append_execution_provider)
         // builder = builder.with_coreml(Default::default())? ... pokročilé
-            
-        let session = builder.commit_from_file(model_path).map_err(|e| e.to_string())?;
 
-        Ok(Self { session: std::sync::Mutex::new(session) })
+        let session = builder
+            .commit_from_file(model_path)
+            .map_err(|e| e.to_string())?;
+
+        Ok(Self {
+            session: std::sync::Mutex::new(session),
+        })
     }
 }
 
@@ -876,39 +891,39 @@ impl NpuBackend for OnnxNpuBackend {
         for i in 0..64 {
             input_i64[i] = (input[i] as i8) as i64;
         }
-        
+
         let shape = vec![1, 64];
-        
+
         // Zpracování do ONNX tenzoru (ort 2.0 pouziva ndarray nebo Tensor::from_array)
         let input_tensor = match ort::value::Tensor::from_array((shape, input_i64)) {
             Ok(v) => v,
             Err(_) => return npu_mixing_cpu_int8(input),
         };
-        
-        // V ort 2.0.0 inputs makro vraci literal Vec 
+
+        // V ort 2.0.0 inputs makro vraci literal Vec
         let inputs_vec = ort::inputs!["input" => input_tensor];
-        
+
         // Ziskani zamku (byl odmazan predchozim prikazem)
         let mut session_lock = self.session.lock().unwrap();
         let outputs = match session_lock.run(inputs_vec) {
             Ok(v) => v,
             Err(_) => return npu_mixing_cpu_int8(input),
         };
-        
+
         // Extrakce
         let extracted = outputs["output"].try_extract_tensor::<i64>();
         let out_tensor = match extracted {
             Ok(v) => v,
             Err(_) => return npu_mixing_cpu_int8(input),
         };
-        
+
         // Zpět do u8 - v ort 2.0 out_tensor je tuple (Shape, &[T])
         let flat_data = out_tensor.1;
         let mut result = [0u8; 64];
         for i in 0..64 {
             result[i] = (flat_data[i] as i32).clamp(-128, 127) as u8;
         }
-        
+
         result
     }
 
@@ -920,11 +935,15 @@ impl NpuBackend for OnnxNpuBackend {
         let zeros = [0u8; 64];
         let onnx_out = self.mix(&zeros);
         let cpu_out = npu_mixing_cpu_int8(&zeros);
-        
+
         if onnx_out != cpu_out {
             return Err(NpuSelfTestError {
                 backend: self.name(),
-                detail: format!("deterministic unity failed! ONNX {:?} != CPU {:?}", &onnx_out[..4], &cpu_out[..4]),
+                detail: format!(
+                    "deterministic unity failed! ONNX {:?} != CPU {:?}",
+                    &onnx_out[..4],
+                    &cpu_out[..4]
+                ),
             });
         }
         Ok(())
@@ -938,8 +957,8 @@ impl NpuBackend for OnnxNpuBackend {
 use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
 
 /// Stav circuit breakeru.
-const CB_CLOSED: u32 = 0;   // normální provoz
-const CB_OPEN: u32 = 1;     // chyba: používá fallback
+const CB_CLOSED: u32 = 0; // normální provoz
+const CB_OPEN: u32 = 1; // chyba: používá fallback
 const CB_HALF_OPEN: u32 = 2; // zkouší recovery
 
 /// Práh chyb před otevřením (Open stav).
@@ -1134,7 +1153,10 @@ mod tests {
         let input2 = [0xFFu8; 64];
         let out1 = npu_mixing_step(&input1);
         let out2 = npu_mixing_step(&input2);
-        assert_ne!(out1, out2, "Different inputs must produce different outputs");
+        assert_ne!(
+            out1, out2,
+            "Different inputs must produce different outputs"
+        );
     }
 
     #[test]
@@ -1148,7 +1170,11 @@ mod tests {
         let out2 = npu_mixing_step(&input2);
 
         let diff_bytes = out1.iter().zip(out2.iter()).filter(|(a, b)| a != b).count();
-        assert!(diff_bytes >= 1, "Avalanche: at least 1 byte should differ, got {}", diff_bytes);
+        assert!(
+            diff_bytes >= 1,
+            "Avalanche: at least 1 byte should differ, got {}",
+            diff_bytes
+        );
     }
 
     #[test]
@@ -1181,10 +1207,10 @@ mod tests {
         // u8=128 → i8=-128 (ne 0 jako dřív)
         // u8=255 → i8=-1  (ne 127 jako dřív)
         let mut test_input = [0u8; 64];
-        test_input[0]  = 0;
-        test_input[1]  = 128;
-        test_input[2]  = 255;
-        test_input[3]  = 127;
+        test_input[0] = 0;
+        test_input[1] = 128;
+        test_input[2] = 255;
+        test_input[3] = 127;
 
         let out = npu_mixing_step(&test_input);
         // Hlavní test: výsledek musí být deterministický a ne všechny nuly
@@ -1192,15 +1218,29 @@ mod tests {
         assert!(nonzero, "NPU output should not be all zeros");
 
         // Ověřit konverzi: (0u8 as i8) as i32 = 0, (128u8 as i8) as i32 = -128
-        assert_eq!((0u8 as i8) as i32,   0,    "u8=0 must map to i32=0 (C parity)");
-        assert_eq!((128u8 as i8) as i32, -128, "u8=128 must map to i32=-128 (C parity)");
-        assert_eq!((255u8 as i8) as i32, -1,   "u8=255 must map to i32=-1 (C parity)");
+        assert_eq!((0u8 as i8) as i32, 0, "u8=0 must map to i32=0 (C parity)");
+        assert_eq!(
+            (128u8 as i8) as i32,
+            -128,
+            "u8=128 must map to i32=-128 (C parity)"
+        );
+        assert_eq!(
+            (255u8 as i8) as i32,
+            -1,
+            "u8=255 must map to i32=-1 (C parity)"
+        );
 
         // Ověřit reverse: v as u8 === (uint8_t)(v & 0xFF) jako v C
         let v: i32 = -128;
-        assert_eq!(v as u8, 128u8, "i32=-128 as u8 must be 128 (C two's complement parity)");
+        assert_eq!(
+            v as u8, 128u8,
+            "i32=-128 as u8 must be 128 (C two's complement parity)"
+        );
         let v: i32 = -1;
-        assert_eq!(v as u8, 255u8, "i32=-1 as u8 must be 255 (C two's complement parity)");
+        assert_eq!(
+            v as u8, 255u8,
+            "i32=-1 as u8 must be 255 (C two's complement parity)"
+        );
     }
 
     #[test]
@@ -1218,8 +1258,9 @@ mod tests {
 
     #[test]
     fn test_layer_norm_reduces_range() {
-        let mut data = [100i32, -50, 80, -30, 0, 127, -128, 60,
-                        10, 20, 30, 40, 50, 60, 70, 80];
+        let mut data = [
+            100i32, -50, 80, -30, 0, 127, -128, 60, 10, 20, 30, 40, 50, 60, 70, 80,
+        ];
         let scale = [256i16; 16];
         layer_norm_int8(&mut data, &scale);
         // Po normalizaci by data měla být v ±127
@@ -1320,7 +1361,10 @@ mod tests {
         let out1 = npu_mixing_step_epoch(&input, 1);
         let out2 = npu_mixing_step_epoch(&input, 2);
         let out3 = npu_mixing_step_epoch(&input, 3);
-        assert_ne!(out0, out1, "Different epochs must produce different outputs");
+        assert_ne!(
+            out0, out1,
+            "Different epochs must produce different outputs"
+        );
         assert_ne!(out1, out2);
         assert_ne!(out2, out3);
         assert_ne!(out0, out3);
@@ -1334,7 +1378,11 @@ mod tests {
         let out1 = npu_mixing_step_epoch(&input1, 0);
         let out2 = npu_mixing_step_epoch(&input2, 0);
         let diff = out1.iter().zip(out2.iter()).filter(|(a, b)| a != b).count();
-        assert!(diff >= 1, "Avalanche: at least 1 byte should differ, got {}", diff);
+        assert!(
+            diff >= 1,
+            "Avalanche: at least 1 byte should differ, got {}",
+            diff
+        );
     }
 
     #[test]
@@ -1349,8 +1397,10 @@ mod tests {
         let input = [0x42u8; 64];
         let genesis_out = npu_mixing_step(&input);
         let epoch0_out = npu_mixing_step_epoch(&input, 0);
-        assert_ne!(genesis_out, epoch0_out,
-            "Epoch 0 NPU uses different key derivation than genesis — outputs must differ");
+        assert_ne!(
+            genesis_out, epoch0_out,
+            "Epoch 0 NPU uses different key derivation than genesis — outputs must differ"
+        );
     }
 
     #[test]
@@ -1369,6 +1419,9 @@ mod tests {
         let first_in_epoch1 = NPU_EPOCH_LENGTH;
         let w0 = get_epoch_weights(epoch_from_height(last_in_epoch0));
         let w1 = get_epoch_weights(epoch_from_height(first_in_epoch1));
-        assert!(!Arc::ptr_eq(&w0, &w1), "Different epochs must use different weight sets");
+        assert!(
+            !Arc::ptr_eq(&w0, &w1),
+            "Different epochs must use different weight sets"
+        );
     }
 }

@@ -6,17 +6,20 @@
 use crate::config::BridgeConfig;
 use crate::config::ValidatorConfig;
 use crate::evm_rpc::EvmHttpClient;
-use crate::evm_tx::{build_and_sign_eip1559_tx, derive_evm_address, encode_confirm_burn_release, encode_submit_lock_proof, hash_to_bytes32};
+use crate::evm_tx::{
+    build_and_sign_eip1559_tx, derive_evm_address, encode_confirm_burn_release,
+    encode_submit_lock_proof, hash_to_bytes32,
+};
 use crate::metrics::BridgeMetrics;
-use crate::rate_limiter::{RateLimiter, RateLimitResult};
+use crate::rate_limiter::{RateLimitResult, RateLimiter};
 use crate::types::{EvmBurnEvent, L1LockEvent};
 use anyhow::Result;
 use k256::ecdsa::{signature::Signer, Signature, SigningKey};
-use serde::Deserialize;
 use serde::de::DeserializeOwned;
-use serde_json::{Value, json};
-use std::sync::Arc;
+use serde::Deserialize;
+use serde_json::{json, Value};
 use std::sync::atomic::Ordering;
+use std::sync::Arc;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::TcpStream;
 use tokio::sync::mpsc;
@@ -148,10 +151,16 @@ impl Relayer {
                 self.metrics.errors.fetch_add(1, Ordering::Relaxed);
                 anyhow::bail!(
                     "🚫 Rate limit: global hourly limit reached ({}/{}) — skipping lock TX: {}",
-                    current, max, lock.l1_tx_hash,
+                    current,
+                    max,
+                    lock.l1_tx_hash,
                 );
             }
-            RateLimitResult::AddressLimitReached { address, current, max } => {
+            RateLimitResult::AddressLimitReached {
+                address,
+                current,
+                max,
+            } => {
                 self.metrics.errors.fetch_add(1, Ordering::Relaxed);
                 anyhow::bail!(
                     "🚫 Rate limit: address {} exceeded per-address limit ({}/{}) — skipping lock TX: {}",
@@ -161,26 +170,36 @@ impl Relayer {
         }
 
         // ── Validate recipient EVM address format ─────────────────────
-        validate_evm_address(&lock.evm_recipient)
-            .map_err(|e| anyhow::anyhow!("🚫 Invalid evm_recipient: {} — TX: {}", e, lock.l1_tx_hash))?;
+        validate_evm_address(&lock.evm_recipient).map_err(|e| {
+            anyhow::anyhow!("🚫 Invalid evm_recipient: {} — TX: {}", e, lock.l1_tx_hash)
+        })?;
 
         // ── Amount security checks ────────────────────────────────────
         let wei: u128 = lock.amount_wzion_wei.parse().unwrap_or(0);
-        let max_single: u128 = self.config.security.max_single_amount.parse().unwrap_or(u128::MAX);
+        let max_single: u128 = self
+            .config
+            .security
+            .max_single_amount
+            .parse()
+            .unwrap_or(u128::MAX);
         let min_amount: u128 = self.config.security.min_bridge_amount.parse().unwrap_or(0);
 
         if wei < min_amount {
             self.metrics.errors.fetch_add(1, Ordering::Relaxed);
             anyhow::bail!(
                 "🚫 Amount below minimum: {} < {} (min_bridge_amount) — TX: {}",
-                lock.amount_wzion_wei, self.config.security.min_bridge_amount, lock.l1_tx_hash,
+                lock.amount_wzion_wei,
+                self.config.security.min_bridge_amount,
+                lock.l1_tx_hash,
             );
         }
         if wei > max_single {
             self.metrics.errors.fetch_add(1, Ordering::Relaxed);
             anyhow::bail!(
                 "🚫 Amount exceeds max_single_amount: {} > {} — TX: {}",
-                lock.amount_wzion_wei, self.config.security.max_single_amount, lock.l1_tx_hash,
+                lock.amount_wzion_wei,
+                self.config.security.max_single_amount,
+                lock.l1_tx_hash,
             );
         }
 
@@ -190,10 +209,18 @@ impl Relayer {
             .evm_chains
             .iter()
             .find(|c| c.chain_id == lock.target_chain && c.enabled)
-            .ok_or_else(|| anyhow::anyhow!("Target chain '{}' not configured or disabled", lock.target_chain))?;
+            .ok_or_else(|| {
+                anyhow::anyhow!(
+                    "Target chain '{}' not configured or disabled",
+                    lock.target_chain
+                )
+            })?;
 
         // ── Reject bridge contract as recipient (prevents self-mint) ──
-        if lock.evm_recipient.eq_ignore_ascii_case(&chain_config.bridge_contract_address) {
+        if lock
+            .evm_recipient
+            .eq_ignore_ascii_case(&chain_config.bridge_contract_address)
+        {
             anyhow::bail!(
                 "🚫 evm_recipient is the bridge contract itself ({}). \
                  Lock TX memo must contain the user's EVM wallet, not the bridge address. \
@@ -202,7 +229,10 @@ impl Relayer {
                 lock.l1_tx_hash,
             );
         }
-        if lock.evm_recipient.eq_ignore_ascii_case(&chain_config.wzion_address) {
+        if lock
+            .evm_recipient
+            .eq_ignore_ascii_case(&chain_config.wzion_address)
+        {
             anyhow::bail!(
                 "🚫 evm_recipient is the wZION token contract ({}). \
                  Lock TX memo must contain the user's EVM wallet, not the token address. \
@@ -235,32 +265,44 @@ impl Relayer {
         );
 
         // ── Setup EVM HTTP client ─────────────────────────────────────
-        let rpc_url = chain_config
-            .effective_rpc_url(&self.config.ankr);
+        let rpc_url = chain_config.effective_rpc_url(&self.config.ankr);
         let evm = EvmHttpClient::from_rpc_url(&rpc_url);
 
         // ── Get nonce ─────────────────────────────────────────────────
-        let nonce = evm.get_nonce(&validator_address).await
+        let nonce = evm
+            .get_nonce(&validator_address)
+            .await
             .map_err(|e| anyhow::anyhow!("Failed to get nonce: {}", e))?;
         info!("   Nonce: {}", nonce);
 
         // ── Get gas params ────────────────────────────────────────────
         let base_fee = evm.get_gas_price().await.unwrap_or(2_000_000_000); // 2 gwei default
         let priority_fee = evm.get_max_priority_fee().await.unwrap_or(1_500_000_000); // 1.5 gwei default
-        // max_fee = 2 * base_fee + priority_fee (common formula), capped at MAX_GAS_GWEI
+                                                                                      // max_fee = 2 * base_fee + priority_fee (common formula), capped at MAX_GAS_GWEI
         let max_fee_cap = MAX_GAS_GWEI * 1_000_000_000;
         let max_fee = (2 * base_fee + priority_fee).min(max_fee_cap);
         let max_priority = priority_fee.min(max_fee);
-        info!("   Gas: base_fee={} gwei, priority={} gwei, max_fee={} gwei",
-            base_fee / 1_000_000_000, priority_fee / 1_000_000_000, max_fee / 1_000_000_000);
+        info!(
+            "   Gas: base_fee={} gwei, priority={} gwei, max_fee={} gwei",
+            base_fee / 1_000_000_000,
+            priority_fee / 1_000_000_000,
+            max_fee / 1_000_000_000
+        );
 
         // ── Estimate gas ──────────────────────────────────────────────
         let gas_estimate = evm
-            .estimate_gas(&validator_address, &chain_config.bridge_contract_address, &calldata_hex)
+            .estimate_gas(
+                &validator_address,
+                &chain_config.bridge_contract_address,
+                &calldata_hex,
+            )
             .await
             .unwrap_or(200_000); // fallback to 200k gas if estimation fails
         let gas_limit = gas_estimate * GAS_MARGIN_NUM / GAS_MARGIN_DEN;
-        info!("   Gas estimate: {} → limit with margin: {}", gas_estimate, gas_limit);
+        info!(
+            "   Gas estimate: {} → limit with margin: {}",
+            gas_estimate, gas_limit
+        );
 
         // ── Build + sign EIP-1559 TX ──────────────────────────────────
         let raw_tx = build_and_sign_eip1559_tx(
@@ -276,16 +318,18 @@ impl Relayer {
         info!("   Signed TX: {} bytes (0x02...)", raw_tx.len() / 2);
 
         // ── Submit TX ─────────────────────────────────────────────────
-        let tx_hash = evm.send_raw_transaction(&raw_tx).await
+        let tx_hash = evm
+            .send_raw_transaction(&raw_tx)
+            .await
             .map_err(|e| anyhow::anyhow!("Failed to submit submitLockProof TX: {}", e))?;
 
         info!(
             "   ✅ submitLockProof TX submitted! hash: {} | chain: {} | bridge: {}",
-            tx_hash,
-            chain_config.name,
-            chain_config.bridge_contract_address,
+            tx_hash, chain_config.name, chain_config.bridge_contract_address,
         );
-        self.metrics.evm_mints_submitted.fetch_add(1, Ordering::Relaxed);
+        self.metrics
+            .evm_mints_submitted
+            .fetch_add(1, Ordering::Relaxed);
 
         // ── Poll for receipt ──────────────────────────────────────────
         tokio::spawn({
@@ -301,10 +345,16 @@ impl Relayer {
                         Ok(Some(receipt)) => {
                             let status = receipt["status"].as_str().unwrap_or("0x0");
                             if status == "0x1" {
-                                info!("   🟢 submitLockProof CONFIRMED on {} (attempt {}) — tx: {}", chain_name, attempt, tx);
+                                info!(
+                                    "   🟢 submitLockProof CONFIRMED on {} (attempt {}) — tx: {}",
+                                    chain_name, attempt, tx
+                                );
                                 metrics.evm_mints_confirmed.fetch_add(1, Ordering::Relaxed);
                             } else {
-                                error!("   🔴 submitLockProof REVERTED on {} (attempt {}) — tx: {}", chain_name, attempt, tx);
+                                error!(
+                                    "   🔴 submitLockProof REVERTED on {} (attempt {}) — tx: {}",
+                                    chain_name, attempt, tx
+                                );
                                 metrics.errors.fetch_add(1, Ordering::Relaxed);
                             }
                             return;
@@ -340,10 +390,16 @@ impl Relayer {
                 self.metrics.errors.fetch_add(1, Ordering::Relaxed);
                 anyhow::bail!(
                     "🚫 Rate limit: global hourly limit reached ({}/{}) — skipping burn: {}",
-                    current, max, burn.burn_id,
+                    current,
+                    max,
+                    burn.burn_id,
                 );
             }
-            RateLimitResult::AddressLimitReached { address, current, max } => {
+            RateLimitResult::AddressLimitReached {
+                address,
+                current,
+                max,
+            } => {
                 self.metrics.errors.fetch_add(1, Ordering::Relaxed);
                 anyhow::bail!(
                     "🚫 Rate limit: address {} exceeded per-address limit ({}/{}) — skipping burn: {}",
@@ -353,26 +409,36 @@ impl Relayer {
         }
 
         // ── Validate L1 recipient address format ──────────────────────
-        validate_l1_address(&burn.l1_recipient)
-            .map_err(|e| anyhow::anyhow!("🚫 Invalid l1_recipient: {} — burn_id: {}", e, burn.burn_id))?;
+        validate_l1_address(&burn.l1_recipient).map_err(|e| {
+            anyhow::anyhow!("🚫 Invalid l1_recipient: {} — burn_id: {}", e, burn.burn_id)
+        })?;
 
         // ── Amount security checks ────────────────────────────────────
         let wei: u128 = burn.amount_wzion_wei.parse().unwrap_or(0);
-        let max_single: u128 = self.config.security.max_single_amount.parse().unwrap_or(u128::MAX);
+        let max_single: u128 = self
+            .config
+            .security
+            .max_single_amount
+            .parse()
+            .unwrap_or(u128::MAX);
         let min_amount: u128 = self.config.security.min_bridge_amount.parse().unwrap_or(0);
 
         if wei < min_amount {
             self.metrics.errors.fetch_add(1, Ordering::Relaxed);
             anyhow::bail!(
                 "🚫 Burn amount below minimum: {} < {} — burn_id: {}",
-                burn.amount_wzion_wei, self.config.security.min_bridge_amount, burn.burn_id,
+                burn.amount_wzion_wei,
+                self.config.security.min_bridge_amount,
+                burn.burn_id,
             );
         }
         if wei > max_single {
             self.metrics.errors.fetch_add(1, Ordering::Relaxed);
             anyhow::bail!(
                 "🚫 Burn amount exceeds max_single_amount: {} > {} — burn_id: {}",
-                burn.amount_wzion_wei, self.config.security.max_single_amount, burn.burn_id,
+                burn.amount_wzion_wei,
+                self.config.security.max_single_amount,
+                burn.burn_id,
             );
         }
 
@@ -411,9 +477,11 @@ impl Relayer {
             l1_tx_hash,
             crate::types::conversion::flowers_to_zion_display(l1_amount),
         );
-        self.metrics.l1_unlocks_submitted.fetch_add(1, Ordering::Relaxed);
+        self.metrics
+            .l1_unlocks_submitted
+            .fetch_add(1, Ordering::Relaxed);
 
-// ── Step 2: Confirm burn release on ZIONBridge EVM contract via Ankr ──
+        // ── Step 2: Confirm burn release on ZIONBridge EVM contract via Ankr ──
         let chain_config = self
             .config
             .evm_chains
@@ -421,8 +489,7 @@ impl Relayer {
             .find(|c| c.chain_id == burn.evm_chain && c.enabled)
             .ok_or_else(|| anyhow::anyhow!("Burn chain '{}' not configured", burn.evm_chain))?;
 
-        let rpc_url = chain_config
-            .effective_rpc_url(&self.config.ankr);
+        let rpc_url = chain_config.effective_rpc_url(&self.config.ankr);
         let evm = EvmHttpClient::from_rpc_url(&rpc_url);
 
         // Verify burn tx receipt exists on EVM
@@ -455,9 +522,8 @@ impl Relayer {
         }
 
         // ── Step 3: Submit confirmBurnRelease() to ZIONBridge EVM contract ──
-        let key = load_validator_key(&self.config.validator).map_err(|e| {
-            anyhow::anyhow!("Failed to load validator key: {}", e)
-        })?;
+        let key = load_validator_key(&self.config.validator)
+            .map_err(|e| anyhow::anyhow!("Failed to load validator key: {}", e))?;
         let validator_address = derive_evm_address(key.as_str())?;
         info!("   Validator address: {}", validator_address);
 
@@ -485,7 +551,9 @@ impl Relayer {
         let evm = EvmHttpClient::from_rpc_url(rpc_url);
 
         // Get nonce + gas params
-        let nonce = evm.get_nonce(&validator_address).await
+        let nonce = evm
+            .get_nonce(&validator_address)
+            .await
             .map_err(|e| anyhow::anyhow!("confirmBurnRelease: get_nonce failed: {}", e))?;
         let base_fee = evm.get_gas_price().await.unwrap_or(2_000_000_000);
         let priority_fee = evm.get_max_priority_fee().await.unwrap_or(1_500_000_000);
@@ -494,7 +562,11 @@ impl Relayer {
         let max_priority = priority_fee.min(max_fee);
 
         let gas_estimate = evm
-            .estimate_gas(&validator_address, &chain_config.bridge_contract_address, &calldata_hex)
+            .estimate_gas(
+                &validator_address,
+                &chain_config.bridge_contract_address,
+                &calldata_hex,
+            )
             .await
             .unwrap_or(150_000);
         let gas_limit = gas_estimate * GAS_MARGIN_NUM / GAS_MARGIN_DEN;
@@ -520,15 +592,14 @@ impl Relayer {
             key.as_str(),
         )?;
 
-        let cbr_tx_hash = evm.send_raw_transaction(&raw_tx).await
+        let cbr_tx_hash = evm
+            .send_raw_transaction(&raw_tx)
+            .await
             .map_err(|e| anyhow::anyhow!("confirmBurnRelease TX submit failed: {}", e))?;
 
         info!(
             "   ✅ confirmBurnRelease TX submitted! hash: {} | chain: {} | burn_id: {} | L1 TX: {}",
-            cbr_tx_hash,
-            chain_config.name,
-            burn.burn_id,
-            l1_tx_hash,
+            cbr_tx_hash, chain_config.name, burn.burn_id, l1_tx_hash,
         );
 
         // Poll for receipt in background
@@ -557,7 +628,9 @@ impl Relayer {
                             return;
                         }
                         Ok(None) => {
-                            if attempt < 20 { continue; }
+                            if attempt < 20 {
+                                continue;
+                            }
                             warn!("   ⏱️ confirmBurnRelease receipt not found after 20 attempts — tx: {}", tx);
                         }
                         Err(e) => {
@@ -577,11 +650,7 @@ impl Relayer {
 
         let operation_message = format!(
             "unlock|recipient={}|amount={}|chain={}|burn_id={}|evm_tx={}",
-            burn.l1_recipient,
-            amount_flowers,
-            burn.evm_chain,
-            burn.burn_id,
-            burn.evm_tx_hash,
+            burn.l1_recipient, amount_flowers, burn.evm_chain, burn.burn_id, burn.evm_tx_hash,
         );
 
         let signer_keys = self.load_validator_signers().unwrap_or_default();
@@ -593,7 +662,9 @@ impl Relayer {
             );
         }
 
-        for (index, (validator_id, signing_key)) in signer_keys.into_iter().enumerate().take(threshold) {
+        for (index, (validator_id, signing_key)) in
+            signer_keys.into_iter().enumerate().take(threshold)
+        {
             let validator_address = self
                 .config
                 .validator
@@ -659,7 +730,12 @@ impl Relayer {
                 .map(|ids| ids.split(',').map(|v| v.trim().to_string()).collect())
                 .unwrap_or_default();
 
-            for (index, raw_key) in extra_raw.split(',').map(str::trim).filter(|k| !k.is_empty()).enumerate() {
+            for (index, raw_key) in extra_raw
+                .split(',')
+                .map(str::trim)
+                .filter(|k| !k.is_empty())
+                .enumerate()
+            {
                 let id = extra_ids
                     .get(index)
                     .cloned()
@@ -828,7 +904,13 @@ mod tests {
     #[test]
     fn test_normalize_rpc_addr() {
         assert_eq!(normalize_rpc_addr("tcp://127.0.0.1:8443"), "127.0.0.1:8443");
-        assert_eq!(normalize_rpc_addr("http://127.0.0.1:8443/jsonrpc"), "127.0.0.1:8443");
-        assert_eq!(normalize_rpc_addr("91.98.122.165:8443"), "91.98.122.165:8443");
+        assert_eq!(
+            normalize_rpc_addr("http://127.0.0.1:8443/jsonrpc"),
+            "127.0.0.1:8443"
+        );
+        assert_eq!(
+            normalize_rpc_addr("91.98.122.165:8443"),
+            "91.98.122.165:8443"
+        );
     }
 }

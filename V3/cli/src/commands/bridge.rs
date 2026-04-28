@@ -52,9 +52,7 @@ pub async fn run(cfg: &Config, cmd: BridgeCmd) -> Result<()> {
                         ui::print_row("Pending txs", &pending.to_string());
                     }
                     if let Some(chains) = v["supported_chains"].as_array() {
-                        let names: Vec<&str> = chains.iter()
-                            .filter_map(|c| c.as_str())
-                            .collect();
+                        let names: Vec<&str> = chains.iter().filter_map(|c| c.as_str()).collect();
                         ui::print_row("Chains", &names.join(", "));
                     }
                     if let Some(vol) = v["total_volume"].as_f64() {
@@ -118,7 +116,12 @@ pub async fn run(cfg: &Config, cmd: BridgeCmd) -> Result<()> {
             println!();
             Ok(())
         }
-        BridgeCmd::Transfer { from_chain, to_chain, amount, token } => {
+        BridgeCmd::Transfer {
+            from_chain,
+            to_chain,
+            amount,
+            token,
+        } => {
             ui::print_header("Bridge Transfer (dry-run)");
             ui::print_row("From", &from_chain);
             ui::print_row("To", &to_chain);

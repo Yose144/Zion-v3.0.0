@@ -5,17 +5,16 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 use zion_cosmic_harmony::{
-    cosmic_harmony_ekam_deeksha, cosmic_harmony_with_height, profile_name,
-    RevenueCollector, RevenueEvent, RevenueStats,
-    CHV_EKAM_FORK_HEIGHT, EKAM_FUSION_ROUNDS,
+    cosmic_harmony_ekam_deeksha, cosmic_harmony_with_height, profile_name, RevenueCollector,
+    RevenueEvent, RevenueStats, CHV_EKAM_FORK_HEIGHT, EKAM_FUSION_ROUNDS,
 };
 
-pub use zion_cosmic_harmony::RevenueSource;
 pub use zion_cosmic_harmony::ExternalCoin;
+pub use zion_cosmic_harmony::RevenueSource;
 
-pub mod crypto;
 pub mod chain;
 pub mod checkpoint;
+pub mod crypto;
 pub mod difficulty;
 pub mod discovery;
 pub mod emission;
@@ -110,12 +109,16 @@ fn validate_bridge_unlock_transaction_shape_with_utxos(
         })
         .collect();
     if memo_outputs.len() != 1 {
-        return Err("bridge unlock transaction must contain exactly one unlock memo output".to_string());
+        return Err(
+            "bridge unlock transaction must contain exactly one unlock memo output".to_string(),
+        );
     }
 
     let recipient_output = memo_outputs[0];
     if recipient_output.address == fee::BRIDGE_VAULT_ADDRESS {
-        return Err("bridge unlock recipient output must not point back to the bridge vault".to_string());
+        return Err(
+            "bridge unlock recipient output must not point back to the bridge vault".to_string(),
+        );
     }
 
     let outputs_for_validation: Vec<(u64, &str)> = transaction
@@ -125,8 +128,12 @@ fn validate_bridge_unlock_transaction_shape_with_utxos(
         .collect();
     fee::validate_outputs(&outputs_for_validation)?;
     for output in &transaction.outputs {
-        if output.address != fee::BRIDGE_VAULT_ADDRESS && !crypto::is_valid_address(&output.address) {
-            return Err(format!("bridge unlock output address is invalid: {}", output.address));
+        if output.address != fee::BRIDGE_VAULT_ADDRESS && !crypto::is_valid_address(&output.address)
+        {
+            return Err(format!(
+                "bridge unlock output address is invalid: {}",
+                output.address
+            ));
         }
         if output.memo.is_some() && output.address == fee::BRIDGE_VAULT_ADDRESS {
             return Err("bridge unlock change output must not carry a memo".to_string());
@@ -140,7 +147,10 @@ fn validate_bridge_unlock_transaction_shape_with_utxos(
     let mut total_input = 0u64;
     for input in &transaction.inputs {
         if !input.signature.is_empty() || !input.public_key.is_empty() {
-            return Err("bridge unlock inputs must use the dedicated keyless bridge authorization path".to_string());
+            return Err(
+                "bridge unlock inputs must use the dedicated keyless bridge authorization path"
+                    .to_string(),
+            );
         }
         if !seen_inputs.insert((input.prev_tx_hash, input.output_index)) {
             return Err("bridge unlock transaction contains duplicate inputs".to_string());
@@ -167,9 +177,7 @@ fn validate_bridge_unlock_transaction_shape_with_utxos(
     if total_input != required_input {
         return Err(format!(
             "bridge unlock input total {} does not match outputs {} plus fee {}",
-            total_input,
-            total_output,
-            transaction.fee,
+            total_input, total_output, transaction.fee,
         ));
     }
 
@@ -416,14 +424,21 @@ pub struct BlockTemplate {
 mod serde_u128 {
     use serde::{self, Deserialize, Deserializer, Serializer};
     pub fn serialize<S>(value: &u128, serializer: S) -> Result<S::Ok, S::Error>
-    where S: Serializer {
+    where
+        S: Serializer,
+    {
         serializer.serialize_str(&value.to_string())
     }
     pub fn deserialize<'de, D>(deserializer: D) -> Result<u128, D::Error>
-    where D: Deserializer<'de> {
+    where
+        D: Deserializer<'de>,
+    {
         #[derive(Deserialize)]
         #[serde(untagged)]
-        enum StringOrNum { Str(String), Num(u64) }
+        enum StringOrNum {
+            Str(String),
+            Num(u64),
+        }
         match StringOrNum::deserialize(deserializer)? {
             StringOrNum::Str(s) => s.parse::<u128>().map_err(serde::de::Error::custom),
             StringOrNum::Num(n) => Ok(n as u128),
@@ -745,12 +760,8 @@ struct ChainStore {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 enum ChainJournalEntry {
-    TransactionAccepted {
-        transaction: RuntimeTransaction,
-    },
-    BlockAccepted {
-        block: AcceptedBlock,
-    },
+    TransactionAccepted { transaction: RuntimeTransaction },
+    BlockAccepted { block: AcceptedBlock },
 }
 
 pub struct CoreRuntime {
@@ -829,7 +840,11 @@ impl CoreRuntime {
         None
     }
 
-    pub fn validate_solution(&self, job: MiningJob, solution: MiningSolution) -> Option<SealedBlock> {
+    pub fn validate_solution(
+        &self,
+        job: MiningJob,
+        solution: MiningSolution,
+    ) -> Option<SealedBlock> {
         if solution.job_id != job.job_id || solution.candidate.header != job.header {
             return None;
         }
@@ -1104,7 +1119,10 @@ impl NodeRuntime {
         let count = peers.len();
         self.register_peers(peers);
         self.prune_known_peers();
-        println!("peers_loaded count={count} total={}", self.known_peers.len());
+        println!(
+            "peers_loaded count={count} total={}",
+            self.known_peers.len()
+        );
     }
 
     /// Number of known peers (for diagnostics).
@@ -1280,13 +1298,11 @@ impl NodeRuntime {
                             status: self.status(),
                         })
                     }
-                    RpcResponse::TransactionResult { reason, .. } => {
-                        Err(format!(
-                            "tx {} rejected: {}",
-                            tx_id,
-                            reason.as_deref().unwrap_or("unknown")
-                        ))
-                    }
+                    RpcResponse::TransactionResult { reason, .. } => Err(format!(
+                        "tx {} rejected: {}",
+                        tx_id,
+                        reason.as_deref().unwrap_or("unknown")
+                    )),
                     _ => Err("unexpected response from submit_submitted_transaction".into()),
                 }
             }
@@ -1297,7 +1313,10 @@ impl NodeRuntime {
     /// Handle an `AnnounceBlock` from a peer. Returns the newly accepted
     /// block if it was new (for relay), or `None` if it was a duplicate.
     /// The caller is responsible for relaying to other peers.
-    pub fn handle_announce_block(&mut self, block: AcceptedBlock) -> Result<Option<AcceptedBlock>, String> {
+    pub fn handle_announce_block(
+        &mut self,
+        block: AcceptedBlock,
+    ) -> Result<Option<AcceptedBlock>, String> {
         self.import_peer_block(block)
     }
 
@@ -1319,7 +1338,8 @@ impl NodeRuntime {
     /// duplicate, or `Err` on validation failure.
     fn import_peer_block(&mut self, block: AcceptedBlock) -> Result<Option<AcceptedBlock>, String> {
         let height_before = self.chain_state.height;
-        self.chain_state.import_peer_block(&self.node_id, &self.core, block)?;
+        self.chain_state
+            .import_peer_block(&self.node_id, &self.core, block)?;
         self.persist_chain_state()?;
         if self.chain_state.height > height_before {
             Ok(self.chain_state.accepted_blocks.last().cloned())
@@ -1379,10 +1399,7 @@ impl NodeRuntime {
         }
     }
 
-    fn submit_utxo_transaction_rpc(
-        &mut self,
-        transaction: tx::Transaction,
-    ) -> RpcResponse {
+    fn submit_utxo_transaction_rpc(&mut self, transaction: tx::Transaction) -> RpcResponse {
         let tx_id = hex(&transaction.id);
         match self
             .chain_state
@@ -1415,10 +1432,7 @@ impl NodeRuntime {
         }
     }
 
-    pub fn submit_bridge_unlock(
-        &mut self,
-        request: BridgeUnlockRequest,
-    ) -> RpcResponse {
+    pub fn submit_bridge_unlock(&mut self, request: BridgeUnlockRequest) -> RpcResponse {
         match self.chain_state.build_bridge_unlock_transaction(&request) {
             Ok(transaction) => self.submit_utxo_transaction_rpc(transaction),
             Err(reason) => RpcResponse::TransactionResult {
@@ -1496,7 +1510,11 @@ impl NodeRuntime {
             };
         }
 
-        let candidate = BlockCandidate { header, nonce, height: active_template.height };
+        let candidate = BlockCandidate {
+            header,
+            nonce,
+            height: active_template.height,
+        };
         let hash = self.core.hash_candidate(candidate);
         let sealed = self.core.validate_candidate(candidate, target);
         let accepted = sealed.is_some();
@@ -1538,10 +1556,12 @@ impl NodeRuntime {
                     .collect(),
                 utxo_transactions: template_utxo_transactions,
             };
-            if let Err(reason) = self
-                .chain_state
-                .accept_block(&self.node_id, &self.core, accepted_block, sealed_block)
-            {
+            if let Err(reason) = self.chain_state.accept_block(
+                &self.node_id,
+                &self.core,
+                accepted_block,
+                sealed_block,
+            ) {
                 return RpcResponse::SubmitResult {
                     accepted: false,
                     template_id,
@@ -1567,22 +1587,31 @@ impl NodeRuntime {
             template_id,
             block_height: accepted.then_some(self.chain_state.height),
             hash_hex: hex(&hash),
-            reason: if accepted { None } else { Some("low difficulty".to_string()) },
+            reason: if accepted {
+                None
+            } else {
+                Some("low difficulty".to_string())
+            },
         }
     }
 
     fn submit_transaction_rpc(&mut self, transaction: Transaction) -> RpcResponse {
         let tx_id = transaction.tx_id.clone();
-        match self.chain_state.insert_transaction(&self.node_id, &self.core, transaction) {
+        match self
+            .chain_state
+            .insert_transaction(&self.node_id, &self.core, transaction)
+        {
             Ok(()) => {
-                if let Err(error) = self.persist_chain_update(&ChainJournalEntry::TransactionAccepted {
-                    transaction: self
-                        .chain_state
-                        .mempool_by_id
-                        .get(&tx_id)
-                        .cloned()
-                        .expect("accepted mempool transaction should be indexed"),
-                }) {
+                if let Err(error) =
+                    self.persist_chain_update(&ChainJournalEntry::TransactionAccepted {
+                        transaction: self
+                            .chain_state
+                            .mempool_by_id
+                            .get(&tx_id)
+                            .cloned()
+                            .expect("accepted mempool transaction should be indexed"),
+                    })
+                {
                     eprintln!("node_state_persist_error={error}");
                 }
                 RpcResponse::TransactionResult {
@@ -1637,10 +1666,7 @@ impl TemplateState {
             total_fees_zion: self.total_fees_zion,
             body_hash_hex: body_hash_hex(&account_transactions),
             estimated_miner_reward_zion,
-            utxo_transaction_ids: utxo_transactions
-                .iter()
-                .map(|tx| hex(&tx.id))
-                .collect(),
+            utxo_transaction_ids: utxo_transactions.iter().map(|tx| hex(&tx.id)).collect(),
             utxo_transaction_count: utxo_transactions.len(),
             total_utxo_fees: utxo_transactions.iter().map(|tx| tx.fee).sum(),
         }
@@ -1792,8 +1818,19 @@ impl ChainState {
         let genesis_hash = parse_fixed_hex::<32>(&genesis.hash_hex, "genesis hash")
             .expect("genesis hash must be valid hex");
         let mempool = Vec::new();
-        let template =
-            Self::build_template(node_id, core, 0, genesis_hash, 1, &mempool, std::slice::from_ref(&genesis), "", "", "", "");
+        let template = Self::build_template(
+            node_id,
+            core,
+            0,
+            genesis_hash,
+            1,
+            &mempool,
+            std::slice::from_ref(&genesis),
+            "",
+            "",
+            "",
+            "",
+        );
         let mut accepted_by_height = BTreeMap::new();
         accepted_by_height.insert(0, genesis.clone());
         Self {
@@ -1879,12 +1916,7 @@ impl ChainState {
         chain_state.rebuild_mempool_index();
         chain_state.active_template.transactions = persisted_transaction_ids
             .iter()
-            .filter_map(|tx_id| {
-                chain_state
-                    .mempool_by_id
-                    .get(tx_id)
-                    .cloned()
-            })
+            .filter_map(|tx_id| chain_state.mempool_by_id.get(tx_id).cloned())
             .collect();
         chain_state.sanitize_recovered_state(node_id, core)?;
         Ok(chain_state)
@@ -1907,7 +1939,9 @@ impl ChainState {
             &request.evm_tx_hash,
         );
         if self.bridge_unlock_replay_keys.contains(&replay_key) {
-            return Err(format!("bridge unlock replay key already used: {replay_key}"));
+            return Err(format!(
+                "bridge unlock replay key already used: {replay_key}"
+            ));
         }
 
         let mut spendable = self.spendable_utxos(fee::BRIDGE_VAULT_ADDRESS);
@@ -1943,9 +1977,7 @@ impl ChainState {
         if total_input < required_total {
             return Err(format!(
                 "bridge vault balance {} is insufficient for unlock amount {} plus fee {}",
-                total_input,
-                request.amount_flowers,
-                required_fee,
+                total_input, request.amount_flowers, required_fee,
             ));
         }
 
@@ -2177,7 +2209,10 @@ impl ChainState {
         let mut expected_parent_hex = hex(&self.tip_hash);
         for block in &blocks {
             if !seen_heights.insert(block.height) {
-                return Err(format!("duplicate peer block height {} in batch", block.height));
+                return Err(format!(
+                    "duplicate peer block height {} in batch",
+                    block.height
+                ));
             }
             if !seen_template_ids.insert(block.template_id) {
                 return Err(format!(
@@ -2259,15 +2294,15 @@ impl ChainState {
         // ── PoW verification (when header is available) ────────────────
         let block_hash = parse_fixed_hex::<32>(&block.hash_hex, "peer block hash")?;
         if !block.header_hex.is_empty() {
-            let header_bytes = parse_fixed_hex::<HEADER_SIZE>(
-                &block.header_hex,
-                "peer block header",
-            )?;
+            let header_bytes =
+                parse_fixed_hex::<HEADER_SIZE>(&block.header_hex, "peer block header")?;
             let header = MiningHeader::from_bytes(header_bytes);
 
             // Header fields must be consistent with block metadata
             if header.timestamp != block.timestamp {
-                return Err("peer block header timestamp does not match block timestamp".to_string());
+                return Err(
+                    "peer block header timestamp does not match block timestamp".to_string()
+                );
             }
             let expected_target = difficulty::difficulty_to_target(block.difficulty);
             let expected_bits = difficulty::target_to_compact(&expected_target);
@@ -2336,7 +2371,9 @@ impl ChainState {
             .map(|transaction| transaction.tx_id.clone())
             .collect::<Vec<_>>();
         if expected_ids != block.transaction_ids {
-            return Err("peer block transaction ids do not match serialized transactions".to_string());
+            return Err(
+                "peer block transaction ids do not match serialized transactions".to_string(),
+            );
         }
         let mut seen_tx_ids = HashSet::new();
         let mut seen_sender_nonces = HashSet::new();
@@ -2493,7 +2530,9 @@ impl ChainState {
             return Err("peer block contains more than four coinbase transactions".to_string());
         }
         if !block.miner_address.is_empty() && coinbase_count == 0 {
-            return Err("peer block miner_address is set but coinbase transaction is missing".to_string());
+            return Err(
+                "peer block miner_address is set but coinbase transaction is missing".to_string(),
+            );
         }
         if has_all_fee_addresses && coinbase_count != 4 {
             return Err(
@@ -2541,7 +2580,10 @@ impl ChainState {
         let expected_difficulty = if self.accepted_blocks.is_empty() {
             difficulty::GENESIS_DIFFICULTY
         } else {
-            let start = self.accepted_blocks.len().saturating_sub(difficulty::LWMA_WINDOW + 1);
+            let start = self
+                .accepted_blocks
+                .len()
+                .saturating_sub(difficulty::LWMA_WINDOW + 1);
             let window: Vec<difficulty::BlockInfo> = self.accepted_blocks[start..]
                 .iter()
                 .map(|b| difficulty::BlockInfo {
@@ -2624,16 +2666,19 @@ impl ChainState {
     ) -> Result<(), String> {
         transaction.validate()?;
         if self.mempool.len() >= MAX_MEMPOOL_TRANSACTIONS {
-            return Err(format!("mempool capacity reached: {MAX_MEMPOOL_TRANSACTIONS}"));
+            return Err(format!(
+                "mempool capacity reached: {MAX_MEMPOOL_TRANSACTIONS}"
+            ));
         }
         if self.mempool_by_id.contains_key(&transaction.tx_id) {
             return Err(format!("duplicate transaction id: {}", transaction.tx_id));
         }
-        if self
-            .accepted_blocks
-            .iter()
-            .any(|block| block.transaction_ids.iter().any(|tx_id| tx_id == &transaction.tx_id))
-        {
+        if self.accepted_blocks.iter().any(|block| {
+            block
+                .transaction_ids
+                .iter()
+                .any(|tx_id| tx_id == &transaction.tx_id)
+        }) {
             return Err(format!("transaction {} already mined", transaction.tx_id));
         }
         if self
@@ -2659,9 +2704,12 @@ impl ChainState {
             ));
         }
 
-        self.mempool.push(RuntimeTransaction::from(transaction.clone()));
-        self.mempool_by_id
-            .insert(transaction.tx_id.clone(), RuntimeTransaction::from(transaction.clone()));
+        self.mempool
+            .push(RuntimeTransaction::from(transaction.clone()));
+        self.mempool_by_id.insert(
+            transaction.tx_id.clone(),
+            RuntimeTransaction::from(transaction.clone()),
+        );
         let miner_addr = self.miner_address.clone();
         let humanitarian_addr = self.humanitarian_address.clone();
         let issobella_addr = self.issobella_address.clone();
@@ -2691,17 +2739,20 @@ impl ChainState {
         if transaction.id != transaction.calculate_hash() {
             return Err("UTXO transaction id does not match calculated hash".to_string());
         }
-        let bridge_unlock_replay_key = match self.validate_bridge_unlock_transaction_shape(&transaction)? {
-            Some(replay_key) => Some(replay_key),
-            None => {
-                if !transaction.verify_signatures() {
-                    return Err("UTXO transaction signature verification failed".to_string());
+        let bridge_unlock_replay_key =
+            match self.validate_bridge_unlock_transaction_shape(&transaction)? {
+                Some(replay_key) => Some(replay_key),
+                None => {
+                    if !transaction.verify_signatures() {
+                        return Err("UTXO transaction signature verification failed".to_string());
+                    }
+                    None
                 }
-                None
-            }
-        };
+            };
         if self.mempool.len() >= MAX_MEMPOOL_TRANSACTIONS {
-            return Err(format!("mempool capacity reached: {MAX_MEMPOOL_TRANSACTIONS}"));
+            return Err(format!(
+                "mempool capacity reached: {MAX_MEMPOOL_TRANSACTIONS}"
+            ));
         }
         let tx_id = hex(&transaction.id);
         if self.mempool_by_id.contains_key(&tx_id) {
@@ -2709,12 +2760,16 @@ impl ChainState {
         }
         if let Some(replay_key) = &bridge_unlock_replay_key {
             if self.bridge_unlock_replay_keys.contains(replay_key) {
-                return Err(format!("bridge unlock replay key already used: {replay_key}"));
+                return Err(format!(
+                    "bridge unlock replay key already used: {replay_key}"
+                ));
             }
         }
-        if self.accepted_blocks.iter().any(|block| {
-            block.utxo_transaction_ids.iter().any(|id| id == &tx_id)
-        }) {
+        if self
+            .accepted_blocks
+            .iter()
+            .any(|block| block.utxo_transaction_ids.iter().any(|id| id == &tx_id))
+        {
             return Err(format!("UTXO transaction {} already mined", tx_id));
         }
         for input in &transaction.inputs {
@@ -2788,7 +2843,11 @@ impl ChainState {
         }
     }
 
-    fn sanitize_recovered_state(&mut self, node_id: &str, core: &CoreRuntime) -> Result<(), String> {
+    fn sanitize_recovered_state(
+        &mut self,
+        node_id: &str,
+        core: &CoreRuntime,
+    ) -> Result<(), String> {
         self.rebuild_indexes();
 
         let mined_ids: HashSet<&str> = self
@@ -2877,7 +2936,11 @@ impl ChainState {
             .active_template
             .transactions
             .iter()
-            .filter_map(|transaction| transaction.as_account().map(|transaction| transaction.fee_zion))
+            .filter_map(|transaction| {
+                transaction
+                    .as_account()
+                    .map(|transaction| transaction.fee_zion)
+            })
             .sum();
 
         if self.active_template.height != self.height.saturating_add(1) {
@@ -2932,7 +2995,10 @@ impl ChainState {
     ) -> TemplateState {
         let next_height = current_height.saturating_add(1);
         let mut selected_transactions = select_template_transactions(mempool);
-        let total_fees_zion: u64 = selected_transactions.iter().map(|transaction| transaction.fee_zion).sum();
+        let total_fees_zion: u64 = selected_transactions
+            .iter()
+            .map(|transaction| transaction.fee_zion)
+            .sum();
 
         let mut selected_utxo_transactions = select_template_utxo_transactions(mempool);
 
@@ -2962,32 +3028,59 @@ impl ChainState {
                 };
 
                 // Insert in reverse order so positions are: 0=miner, 1=humanitarian, 2=issobella, 3=pool_fee
-                selected_transactions.insert(0, mk_coinbase("coinbase_pool_fee", pool_fee_address, pool_fee_amt));
-                selected_transactions.insert(0, mk_coinbase("coinbase_issobella", issobella_address, issobella_amt));
-                selected_transactions.insert(0, mk_coinbase("coinbase_humanitarian", humanitarian_address, humanitarian_amt));
+                selected_transactions.insert(
+                    0,
+                    mk_coinbase("coinbase_pool_fee", pool_fee_address, pool_fee_amt),
+                );
+                selected_transactions.insert(
+                    0,
+                    mk_coinbase("coinbase_issobella", issobella_address, issobella_amt),
+                );
+                selected_transactions.insert(
+                    0,
+                    mk_coinbase(
+                        "coinbase_humanitarian",
+                        humanitarian_address,
+                        humanitarian_amt,
+                    ),
+                );
                 selected_transactions.insert(0, mk_coinbase("coinbase", miner_address, miner_amt));
 
                 // Phase 18: Also generate UTXO coinbase outputs so rewards are
                 // spendable via the UTXO transaction model (pool payouts, wallet sends).
-                let mut utxo_coinbase_outputs = vec![
-                    tx::TxOutput { amount: miner_amt, address: miner_address.to_string(), memo: Some("coinbase".into()) },
-                ];
+                let mut utxo_coinbase_outputs = vec![tx::TxOutput {
+                    amount: miner_amt,
+                    address: miner_address.to_string(),
+                    memo: Some("coinbase".into()),
+                }];
                 if !humanitarian_address.is_empty() {
-                    utxo_coinbase_outputs.push(tx::TxOutput { amount: humanitarian_amt, address: humanitarian_address.to_string(), memo: Some("coinbase_humanitarian".into()) });
+                    utxo_coinbase_outputs.push(tx::TxOutput {
+                        amount: humanitarian_amt,
+                        address: humanitarian_address.to_string(),
+                        memo: Some("coinbase_humanitarian".into()),
+                    });
                 }
                 if !issobella_address.is_empty() {
-                    utxo_coinbase_outputs.push(tx::TxOutput { amount: issobella_amt, address: issobella_address.to_string(), memo: Some("coinbase_issobella".into()) });
+                    utxo_coinbase_outputs.push(tx::TxOutput {
+                        amount: issobella_amt,
+                        address: issobella_address.to_string(),
+                        memo: Some("coinbase_issobella".into()),
+                    });
                 }
                 if !pool_fee_address.is_empty() {
-                    utxo_coinbase_outputs.push(tx::TxOutput { amount: pool_fee_amt, address: pool_fee_address.to_string(), memo: Some("coinbase_pool_fee".into()) });
+                    utxo_coinbase_outputs.push(tx::TxOutput {
+                        amount: pool_fee_amt,
+                        address: pool_fee_address.to_string(),
+                        memo: Some("coinbase_pool_fee".into()),
+                    });
                 }
                 let mut utxo_coinbase = tx::Transaction {
                     id: [0u8; 32],
                     version: 1,
-                    inputs: vec![],  // coinbase: no inputs
+                    inputs: vec![], // coinbase: no inputs
                     outputs: utxo_coinbase_outputs,
                     fee: 0,
-                    timestamp: next_height,  // deterministic: use height as timestamp for reproducibility
+                    timestamp: next_height, // deterministic: use height as timestamp for reproducibility
                 };
                 utxo_coinbase.finalize_id();
                 selected_utxo_transactions.insert(0, utxo_coinbase);
@@ -3011,7 +3104,11 @@ impl ChainState {
                     id: [0u8; 32],
                     version: 1,
                     inputs: vec![],
-                    outputs: vec![tx::TxOutput { amount: subsidy, address: miner_address.to_string(), memo: Some("coinbase".into()) }],
+                    outputs: vec![tx::TxOutput {
+                        amount: subsidy,
+                        address: miner_address.to_string(),
+                        memo: Some("coinbase".into()),
+                    }],
                     fee: 0,
                     timestamp: next_height,
                 };
@@ -3041,7 +3138,9 @@ impl ChainState {
         let next_difficulty = if accepted_blocks.is_empty() {
             difficulty::GENESIS_DIFFICULTY
         } else {
-            let start = accepted_blocks.len().saturating_sub(difficulty::LWMA_WINDOW + 1);
+            let start = accepted_blocks
+                .len()
+                .saturating_sub(difficulty::LWMA_WINDOW + 1);
             let window: Vec<difficulty::BlockInfo> = accepted_blocks[start..]
                 .iter()
                 .map(|b| difficulty::BlockInfo {
@@ -3079,8 +3178,12 @@ impl ChainStore {
             return Ok(None);
         }
 
-        let raw = fs::read_to_string(&self.path)
-            .map_err(|error| format!("failed to read chain state {}: {error}", self.path.display()))?;
+        let raw = fs::read_to_string(&self.path).map_err(|error| {
+            format!(
+                "failed to read chain state {}: {error}",
+                self.path.display()
+            )
+        })?;
         let snapshot = serde_json::from_str::<ChainStateSnapshot>(&raw).map_err(|error| {
             format!(
                 "failed to decode chain state {}: {error}",
@@ -3122,30 +3225,40 @@ impl ChainStore {
     fn append_journal_entry(&self, entry: &ChainJournalEntry) -> Result<(), String> {
         if let Some(parent) = self.path.parent() {
             fs::create_dir_all(parent).map_err(|error| {
-                format!("failed to create chain state dir {}: {error}", parent.display())
+                format!(
+                    "failed to create chain state dir {}: {error}",
+                    parent.display()
+                )
             })?;
         }
         let path = journal_path(&self.path);
-        let line = encode_json_line(entry)
-            .map_err(|error| format!("failed to encode chain journal entry {}: {error}", path.display()))?;
+        let line = encode_json_line(entry).map_err(|error| {
+            format!(
+                "failed to encode chain journal entry {}: {error}",
+                path.display()
+            )
+        })?;
         use std::io::Write as _;
         let mut file = fs::OpenOptions::new()
             .create(true)
             .append(true)
             .open(&path)
             .map_err(|error| format!("failed to open chain journal {}: {error}", path.display()))?;
-        file.write_all(line.as_bytes())
-            .map_err(|error| format!("failed to append chain journal {}: {error}", path.display()))?;
-        file.flush()
-            .map_err(|error| format!("failed to flush chain journal {}: {error}", path.display()))?;
+        file.write_all(line.as_bytes()).map_err(|error| {
+            format!("failed to append chain journal {}: {error}", path.display())
+        })?;
+        file.flush().map_err(|error| {
+            format!("failed to flush chain journal {}: {error}", path.display())
+        })?;
         Ok(())
     }
 
     fn clear_journal(&self) -> Result<(), String> {
         let path = journal_path(&self.path);
         if path.exists() {
-            fs::remove_file(&path)
-                .map_err(|error| format!("failed to remove chain journal {}: {error}", path.display()))?;
+            fs::remove_file(&path).map_err(|error| {
+                format!("failed to remove chain journal {}: {error}", path.display())
+            })?;
         }
         Ok(())
     }
@@ -3165,7 +3278,10 @@ impl ChainStore {
     fn save_snapshot(&self, snapshot: &ChainStateSnapshot) -> Result<(), String> {
         if let Some(parent) = self.path.parent() {
             fs::create_dir_all(parent).map_err(|error| {
-                format!("failed to create chain state dir {}: {error}", parent.display())
+                format!(
+                    "failed to create chain state dir {}: {error}",
+                    parent.display()
+                )
             })?;
         }
 
@@ -3177,7 +3293,10 @@ impl ChainStore {
         })?;
         let temp_path = snapshot_temp_path(&self.path);
         fs::write(&temp_path, encoded).map_err(|error| {
-            format!("failed to write temp chain state {}: {error}", temp_path.display())
+            format!(
+                "failed to write temp chain state {}: {error}",
+                temp_path.display()
+            )
         })?;
         fs::rename(&temp_path, &self.path).map_err(|error| {
             format!(
@@ -3338,10 +3457,10 @@ fn parse_fixed_hex<const N: usize>(raw: &str, label: &str) -> Result<[u8; N], St
 
     let mut bytes = [0u8; N];
     for (index, chunk) in normalized.as_bytes().chunks(2).enumerate() {
-        let pair = std::str::from_utf8(chunk)
-            .map_err(|_| format!("{label} contains non-utf8 hex"))?;
-        bytes[index] =
-            u8::from_str_radix(pair, 16).map_err(|_| format!("invalid hex byte '{pair}' in {label}"))?;
+        let pair =
+            std::str::from_utf8(chunk).map_err(|_| format!("{label} contains non-utf8 hex"))?;
+        bytes[index] = u8::from_str_radix(pair, 16)
+            .map_err(|_| format!("invalid hex byte '{pair}' in {label}"))?;
     }
     Ok(bytes)
 }
@@ -3467,7 +3586,9 @@ mod tests {
             height: 0,
         };
 
-        let solution = runtime.scan_nonce_range(job).expect("max target must find a solution");
+        let solution = runtime
+            .scan_nonce_range(job)
+            .expect("max target must find a solution");
         assert_eq!(solution.job_id, 1);
         assert_eq!(solution.candidate.nonce, 100);
         assert_eq!(solution.hash, solution.candidate.hash());
@@ -3485,7 +3606,9 @@ mod tests {
             height: 0,
         };
 
-        let solution = runtime.scan_nonce_range(job).expect("solution should exist");
+        let solution = runtime
+            .scan_nonce_range(job)
+            .expect("solution should exist");
         let sealed = runtime
             .validate_solution(job, solution)
             .expect("matching job solution must validate");
@@ -3508,7 +3631,11 @@ mod tests {
         );
         let target = DifficultyTarget::from_hex(&template.target_hex).unwrap();
         for nonce in 0..10_000_000 {
-            let candidate = BlockCandidate { header, nonce, height: template.height };
+            let candidate = BlockCandidate {
+                header,
+                nonce,
+                height: template.height,
+            };
             if target.allows(&candidate.hash()) {
                 return nonce;
             }
@@ -3525,7 +3652,11 @@ mod tests {
             parse_fixed_hex::<HEADER_SIZE>(&template.header_hex, "template header")
                 .expect("template header bytes"),
         );
-        let candidate = BlockCandidate { header, nonce, height: template.height };
+        let candidate = BlockCandidate {
+            header,
+            nonce,
+            height: template.height,
+        };
 
         let response = runtime.handle_rpc_request(RpcRequest::SubmitCandidate {
             template_id: template.template_id,
@@ -3597,8 +3728,14 @@ mod tests {
         assert_eq!(template.transaction_count, 1);
         assert_eq!(template.transaction_ids, vec![transaction.tx_id]);
         assert_eq!(template.total_fees_zion, 9);
-        assert_eq!(template.body_hash_hex, body_hash_hex(&[sample_transaction("tx-a", 9, 1)]));
-        assert_eq!(template.estimated_miner_reward_zion, emission::block_subsidy(1));
+        assert_eq!(
+            template.body_hash_hex,
+            body_hash_hex(&[sample_transaction("tx-a", 9, 1)])
+        );
+        assert_eq!(
+            template.estimated_miner_reward_zion,
+            emission::block_subsidy(1)
+        );
 
         let status = runtime.status();
         assert_eq!(status.mempool_transactions, 1);
@@ -3700,7 +3837,10 @@ mod tests {
             transaction: mined_transaction.clone(),
         });
         let first_template = runtime.active_template();
-        assert_eq!(first_template.transaction_ids, vec![mined_transaction.tx_id.clone()]);
+        assert_eq!(
+            first_template.transaction_ids,
+            vec![mined_transaction.tx_id.clone()]
+        );
         let nonce = find_valid_nonce(&first_template);
 
         let response = runtime.handle_rpc_request(RpcRequest::SubmitCandidate {
@@ -3710,15 +3850,30 @@ mod tests {
             target_hex: first_template.target_hex.clone(),
         });
 
-        assert!(matches!(response, RpcResponse::SubmitResult { accepted: true, .. }));
+        assert!(matches!(
+            response,
+            RpcResponse::SubmitResult { accepted: true, .. }
+        ));
         assert_eq!(runtime.status().chain_height, 1);
         assert_eq!(runtime.accepted_blocks().len(), 2); // genesis + mined
-        assert_ne!(runtime.active_template().template_id, first_template.template_id);
+        assert_ne!(
+            runtime.active_template().template_id,
+            first_template.template_id
+        );
         assert_eq!(runtime.active_template().height, 2);
         assert!(runtime.active_template().transaction_ids.is_empty());
-        assert_eq!(runtime.accepted_blocks()[1].transaction_ids, vec![mined_transaction.tx_id]);
-        assert_eq!(runtime.accepted_blocks()[1].subsidy_zion, emission::block_subsidy(1));
-        assert_eq!(runtime.accepted_blocks()[1].miner_reward_zion, emission::block_subsidy(1));
+        assert_eq!(
+            runtime.accepted_blocks()[1].transaction_ids,
+            vec![mined_transaction.tx_id]
+        );
+        assert_eq!(
+            runtime.accepted_blocks()[1].subsidy_zion,
+            emission::block_subsidy(1)
+        );
+        assert_eq!(
+            runtime.accepted_blocks()[1].miner_reward_zion,
+            emission::block_subsidy(1)
+        );
     }
 
     #[test]
@@ -3742,9 +3897,7 @@ mod tests {
 
         match stale_response {
             RpcResponse::SubmitResult {
-                accepted,
-                reason,
-                ..
+                accepted, reason, ..
             } => {
                 assert!(!accepted);
                 assert!(reason.expect("stale reason").contains("stale template"));
@@ -3854,7 +4007,9 @@ mod tests {
         let block = source.accepted_blocks()[1].clone(); // skip genesis
         let mut target = NodeRuntime::new("node-target", NodeConfig::mainnet());
         let response = target
-            .handle_p2p_message(P2pMessage::AnnounceBlock { block: block.clone() })
+            .handle_p2p_message(P2pMessage::AnnounceBlock {
+                block: block.clone(),
+            })
             .expect("announce block response");
 
         match response {
@@ -3934,8 +4089,14 @@ mod tests {
         assert_eq!(imported, 2); // genesis skipped, 2 new blocks imported
         assert_eq!(target.chain_height(), 2);
         assert_eq!(target.accepted_blocks().len(), 3); // genesis + 2
-        assert_eq!(target.accepted_blocks()[1].transaction_ids, vec![first_tx.tx_id]);
-        assert_eq!(target.accepted_blocks()[2].transaction_ids, vec![second_tx.tx_id]);
+        assert_eq!(
+            target.accepted_blocks()[1].transaction_ids,
+            vec![first_tx.tx_id]
+        );
+        assert_eq!(
+            target.accepted_blocks()[2].transaction_ids,
+            vec![second_tx.tx_id]
+        );
         assert_eq!(target.active_template().height, 3);
     }
 
@@ -3982,7 +4143,10 @@ mod tests {
             target_hex: template.target_hex,
         });
 
-        assert!(matches!(response, RpcResponse::SubmitResult { accepted: true, .. }));
+        assert!(matches!(
+            response,
+            RpcResponse::SubmitResult { accepted: true, .. }
+        ));
         let by_height = runtime
             .accepted_block_by_height(1)
             .expect("accepted block should be indexed by height");
@@ -4001,12 +4165,9 @@ mod tests {
             std::process::id(),
             now_secs()
         ));
-        let mut runtime = NodeRuntime::with_chain_store(
-            "node-persist",
-            NodeConfig::mainnet(),
-            &state_path,
-        )
-        .expect("runtime with chain store");
+        let mut runtime =
+            NodeRuntime::with_chain_store("node-persist", NodeConfig::mainnet(), &state_path)
+                .expect("runtime with chain store");
         let persisted_transaction = sample_transaction("tx-persist", 5, 1);
         let _ = runtime.handle_rpc_request(RpcRequest::SubmitTransaction {
             transaction: persisted_transaction.clone(),
@@ -4020,20 +4181,25 @@ mod tests {
             nonce,
             target_hex: template.target_hex,
         });
-        assert!(matches!(response, RpcResponse::SubmitResult { accepted: true, .. }));
+        assert!(matches!(
+            response,
+            RpcResponse::SubmitResult { accepted: true, .. }
+        ));
 
-        let mut restored = NodeRuntime::with_chain_store(
-            "node-persist",
-            NodeConfig::mainnet(),
-            &state_path,
-        )
-        .expect("restored runtime with chain store");
+        let mut restored =
+            NodeRuntime::with_chain_store("node-persist", NodeConfig::mainnet(), &state_path)
+                .expect("restored runtime with chain store");
 
         assert_eq!(restored.status().chain_height, 1);
         assert_eq!(restored.accepted_blocks().len(), 2); // genesis + 1
         assert!(restored.accepted_block_by_height(1).is_some());
-        assert!(restored.accepted_block_by_template_id(template.template_id).is_some());
-        assert_eq!(restored.accepted_blocks()[1].transaction_ids, vec![persisted_transaction.tx_id]);
+        assert!(restored
+            .accepted_block_by_template_id(template.template_id)
+            .is_some());
+        assert_eq!(
+            restored.accepted_blocks()[1].transaction_ids,
+            vec![persisted_transaction.tx_id]
+        );
         assert!(matches!(
             restored.handle_rpc_request(RpcRequest::GetMempool),
             RpcResponse::Mempool { ref transactions } if transactions.is_empty()
@@ -4064,10 +4230,7 @@ mod tests {
                 transaction_ids: vec![tx_dup.tx_id.clone(), tx_mined.tx_id.clone()],
                 transaction_count: 2,
                 total_fees_zion: 8,
-                body_hash_hex: body_hash_hex(&[
-                    tx_dup.clone(),
-                    tx_mined.clone(),
-                ]),
+                body_hash_hex: body_hash_hex(&[tx_dup.clone(), tx_mined.clone()]),
                 estimated_miner_reward_zion: emission::block_subsidy(2),
                 utxo_transaction_ids: vec![],
                 utxo_transaction_count: 0,
@@ -4095,11 +4258,7 @@ mod tests {
                 utxo_transaction_ids: vec![],
                 utxo_transactions: vec![],
             }],
-            mempool: vec![
-                tx_dup.clone(),
-                tx_dup.clone(),
-                tx_mined.clone(),
-            ],
+            mempool: vec![tx_dup.clone(), tx_dup.clone(), tx_mined.clone()],
             utxo_mempool: vec![],
             bridge_unlock_replay_keys: vec![],
         };
@@ -4109,12 +4268,9 @@ mod tests {
         )
         .expect("write recovery snapshot");
 
-        let restored = NodeRuntime::with_chain_store(
-            "node-recovery",
-            NodeConfig::mainnet(),
-            &state_path,
-        )
-        .expect("restored runtime with sanitized state");
+        let restored =
+            NodeRuntime::with_chain_store("node-recovery", NodeConfig::mainnet(), &state_path)
+                .expect("restored runtime with sanitized state");
 
         match restored.active_template() {
             BlockTemplate {
@@ -4174,12 +4330,9 @@ mod tests {
             .collect::<String>();
         fs::write(journal_path(&state_path), journal_body).expect("write journal file");
 
-        let restored = NodeRuntime::with_chain_store(
-            "node-journal",
-            NodeConfig::mainnet(),
-            &state_path,
-        )
-        .expect("restore from journal");
+        let restored =
+            NodeRuntime::with_chain_store("node-journal", NodeConfig::mainnet(), &state_path)
+                .expect("restore from journal");
 
         assert_eq!(restored.status().chain_height, 1);
         assert_eq!(restored.accepted_blocks().len(), 2); // genesis + journal block
@@ -4197,12 +4350,8 @@ mod tests {
         let config = test_config_without_seed_allowlist();
 
         // Create runtime with chain store, add some peers
-        let mut runtime = NodeRuntime::with_chain_store(
-            "node-peers",
-            config.clone(),
-            &state_path,
-        )
-        .expect("create runtime");
+        let mut runtime = NodeRuntime::with_chain_store("node-peers", config.clone(), &state_path)
+            .expect("create runtime");
 
         // Register new peers beyond the seeds
         runtime.register_peer(PeerEndpoint::new("10.0.0.1", 8333));
@@ -4217,20 +4366,22 @@ mod tests {
         assert!(peers_path.exists(), "peers.json should exist");
 
         // Create a new runtime from the same state path — peers should be loaded
-        let restored = NodeRuntime::with_chain_store(
-            "node-peers-2",
-            config,
-            &state_path,
-        )
-        .expect("restore runtime");
+        let restored = NodeRuntime::with_chain_store("node-peers-2", config, &state_path)
+            .expect("restore runtime");
 
         assert_eq!(restored.known_peers().len(), saved_count);
         assert!(
-            restored.known_peers().iter().any(|p| p.address() == "10.0.0.1:8333"),
+            restored
+                .known_peers()
+                .iter()
+                .any(|p| p.address() == "10.0.0.1:8333"),
             "should contain persisted peer 10.0.0.1"
         );
         assert!(
-            restored.known_peers().iter().any(|p| p.address() == "10.0.0.3:8333"),
+            restored
+                .known_peers()
+                .iter()
+                .any(|p| p.address() == "10.0.0.3:8333"),
             "should contain persisted peer 10.0.0.3"
         );
     }
@@ -4356,7 +4507,10 @@ mod tests {
         let mut runtime = NodeRuntime::new("node-hdr", NodeConfig::mainnet());
         mine_one_block(&mut runtime);
         let block = &runtime.accepted_blocks()[1];
-        assert!(!block.header_hex.is_empty(), "mined block must have header_hex");
+        assert!(
+            !block.header_hex.is_empty(),
+            "mined block must have header_hex"
+        );
         assert_eq!(block.header_hex.len(), HEADER_SIZE * 2); // 80 bytes = 160 hex chars
     }
 
@@ -4399,11 +4553,8 @@ mod tests {
 
         let mut block = source.accepted_blocks()[1].clone();
         // Tamper with header timestamp field (make it inconsistent with block.timestamp)
-        let mut header_bytes = parse_fixed_hex::<HEADER_SIZE>(
-            &block.header_hex,
-            "test header",
-        )
-        .unwrap();
+        let mut header_bytes =
+            parse_fixed_hex::<HEADER_SIZE>(&block.header_hex, "test header").unwrap();
         // Overwrite timestamp bytes (offset 68..76) with a different value
         header_bytes[68..76].copy_from_slice(&(block.timestamp + 999).to_le_bytes());
         block.header_hex = hex(&header_bytes);
@@ -4427,18 +4578,19 @@ mod tests {
         let far_future = now_secs() + validation::MAX_TIMESTAMP_DRIFT + 3_600;
         block.timestamp = far_future;
         // Rebuild header with the far-future timestamp so header consistency passes
-        let mut header_bytes = parse_fixed_hex::<HEADER_SIZE>(
-            &block.header_hex,
-            "test header",
-        )
-        .unwrap();
+        let mut header_bytes =
+            parse_fixed_hex::<HEADER_SIZE>(&block.header_hex, "test header").unwrap();
         header_bytes[68..76].copy_from_slice(&far_future.to_le_bytes());
         let header = MiningHeader::from_bytes(header_bytes);
         // Re-mine to get a valid hash for the tampered header
         let target_val = difficulty::difficulty_to_target(block.difficulty);
         let mut found = false;
         for nonce in 0..10_000_000u64 {
-            let candidate = BlockCandidate { header, nonce, height: block.height };
+            let candidate = BlockCandidate {
+                header,
+                nonce,
+                height: block.height,
+            };
             let h = candidate.hash();
             if target_val.allows(&h) {
                 block.nonce = nonce;
@@ -4481,7 +4633,10 @@ mod tests {
     #[test]
     fn genesis_block_has_header_hex() {
         let genesis = genesis::genesis_block();
-        assert!(!genesis.header_hex.is_empty(), "genesis must have header_hex");
+        assert!(
+            !genesis.header_hex.is_empty(),
+            "genesis must have header_hex"
+        );
         assert_eq!(genesis.header_hex.len(), HEADER_SIZE * 2);
     }
 
@@ -4527,7 +4682,10 @@ mod tests {
         let mut runtime = NodeRuntime::new("node-prevh", NodeConfig::mainnet());
         mine_one_block(&mut runtime);
         let block = &runtime.accepted_blocks()[1]; // height 1
-        assert!(!block.previous_hash_hex.is_empty(), "mined block must have previous_hash_hex");
+        assert!(
+            !block.previous_hash_hex.is_empty(),
+            "mined block must have previous_hash_hex"
+        );
         // previous_hash should be genesis hash
         let genesis = genesis::genesis_block();
         assert_eq!(block.previous_hash_hex, genesis.hash_hex);
@@ -4615,7 +4773,8 @@ mod tests {
         let block = &source.accepted_blocks()[1];
 
         // Extract previous_hash from header_hex
-        let header_bytes = parse_fixed_hex::<HEADER_SIZE>(&block.header_hex, "test header").unwrap();
+        let header_bytes =
+            parse_fixed_hex::<HEADER_SIZE>(&block.header_hex, "test header").unwrap();
         let header = MiningHeader::from_bytes(header_bytes);
         let header_prev = hex(&header.previous_hash);
 
@@ -4660,7 +4819,10 @@ mod tests {
         let template = runtime.active_template();
 
         // Template should have exactly one transaction: the coinbase
-        assert_eq!(template.transaction_count, 1, "template should have coinbase tx");
+        assert_eq!(
+            template.transaction_count, 1,
+            "template should have coinbase tx"
+        );
         assert_eq!(template.transaction_ids.len(), 1);
     }
 
@@ -4752,7 +4914,10 @@ mod tests {
             hash_hex: hex(&[0x11; 32]),
             header_hex: String::new(),
             previous_hash_hex: hex(&source.chain_state.tip_hash),
-            transaction_ids: transactions.iter().map(|transaction| transaction.tx_id.clone()).collect(),
+            transaction_ids: transactions
+                .iter()
+                .map(|transaction| transaction.tx_id.clone())
+                .collect(),
             transactions: transactions.clone(),
             total_fees_zion: template.total_fees_zion,
             body_hash_hex: body_hash_hex(&transactions),
@@ -4785,14 +4950,21 @@ mod tests {
         assert_eq!(block.transactions[0].to, "alice-wallet");
         assert_eq!(block.transactions[0].amount_zion, miner_amount as u128);
         assert_eq!(block.transactions[1].to, "human-wallet");
-        assert_eq!(block.transactions[1].amount_zion, humanitarian_amount as u128);
+        assert_eq!(
+            block.transactions[1].amount_zion,
+            humanitarian_amount as u128
+        );
         assert_eq!(block.transactions[2].to, "issobella-wallet");
         assert_eq!(block.transactions[2].amount_zion, issobella_amount as u128);
         assert_eq!(block.transactions[3].to, "pool-wallet");
         assert_eq!(block.transactions[3].amount_zion, pool_fee_amount as u128);
 
         assert_eq!(
-            block.transactions.iter().map(|transaction| transaction.amount_zion).sum::<u128>(),
+            block
+                .transactions
+                .iter()
+                .map(|transaction| transaction.amount_zion)
+                .sum::<u128>(),
             block.subsidy_zion as u128
         );
     }
@@ -4815,14 +4987,17 @@ mod tests {
             target_hex: template.target_hex,
         });
 
-        assert!(matches!(
-            response,
-            RpcResponse::SubmitResult {
-                accepted: false,
-                reason: Some(ref reason),
-                ..
-            } if reason.contains("failed validation") && reason.contains("coinbase amount")
-        ), "unexpected submit response: {response:?}");
+        assert!(
+            matches!(
+                response,
+                RpcResponse::SubmitResult {
+                    accepted: false,
+                    reason: Some(ref reason),
+                    ..
+                } if reason.contains("failed validation") && reason.contains("coinbase amount")
+            ),
+            "unexpected submit response: {response:?}"
+        );
     }
 
     #[test]
@@ -4874,8 +5049,8 @@ mod tests {
         let t2 = runtime.active_template();
         assert_eq!(t2.height, 2);
         assert_eq!(t2.transaction_count, 1); // coinbase only
-        // Coinbase nonce should be the height.
-        // We can verify by checking the tx_id is different from block 1's coinbase.
+                                             // Coinbase nonce should be the height.
+                                             // We can verify by checking the tx_id is different from block 1's coinbase.
         assert_ne!(t2.transaction_ids[0], b1.transactions[0].tx_id);
     }
 
@@ -5003,12 +5178,17 @@ mod tests {
     fn utxo_transaction_submits_to_mempool() {
         let mut runtime = NodeRuntime::new("node-utxo-mempool", NodeConfig::mainnet());
         let (fund_id, _addr, vk, sk) = seed_utxo_funding(&mut runtime, 1_000_000_000_000);
-        let utxo = make_signed_utxo_tx_spending(fund_id, 0, 1_000_000_000_000, &sk, &vk, "zion1destmempool");
+        let utxo = make_signed_utxo_tx_spending(
+            fund_id,
+            0,
+            1_000_000_000_000,
+            &sk,
+            &vk,
+            "zion1destmempool",
+        );
         let tx_id = hex(&utxo.id);
 
-        let resp = runtime.submit_submitted_transaction(
-            SubmittedTransaction::Utxo(utxo),
-        );
+        let resp = runtime.submit_submitted_transaction(SubmittedTransaction::Utxo(utxo));
         assert!(matches!(
             resp,
             RpcResponse::TransactionResult { accepted: true, .. }
@@ -5021,7 +5201,8 @@ mod tests {
     fn utxo_transaction_appears_in_template() {
         let mut runtime = NodeRuntime::new("node-utxo-tmpl", NodeConfig::mainnet());
         let (fund_id, _addr, vk, sk) = seed_utxo_funding(&mut runtime, 1_000_000_000_000);
-        let utxo = make_signed_utxo_tx_spending(fund_id, 0, 1_000_000_000_000, &sk, &vk, "zion1desttmpl");
+        let utxo =
+            make_signed_utxo_tx_spending(fund_id, 0, 1_000_000_000_000, &sk, &vk, "zion1desttmpl");
         let tx_id = hex(&utxo.id);
 
         runtime.submit_submitted_transaction(SubmittedTransaction::Utxo(utxo));
@@ -5036,7 +5217,8 @@ mod tests {
     fn utxo_transaction_mined_in_block() {
         let mut runtime = NodeRuntime::new("node-utxo-mine", NodeConfig::mainnet());
         let (fund_id, _addr, vk, sk) = seed_utxo_funding(&mut runtime, 1_000_000_000_000);
-        let utxo = make_signed_utxo_tx_spending(fund_id, 0, 1_000_000_000_000, &sk, &vk, "zion1destmine");
+        let utxo =
+            make_signed_utxo_tx_spending(fund_id, 0, 1_000_000_000_000, &sk, &vk, "zion1destmine");
         let tx_id = hex(&utxo.id);
 
         runtime.submit_submitted_transaction(SubmittedTransaction::Utxo(utxo.clone()));
@@ -5056,9 +5238,7 @@ mod tests {
         let mut utxo = make_signed_utxo_tx();
         utxo.id = [0xBB; 32]; // tamper with ID
 
-        let resp = runtime.submit_submitted_transaction(
-            SubmittedTransaction::Utxo(utxo),
-        );
+        let resp = runtime.submit_submitted_transaction(SubmittedTransaction::Utxo(utxo));
         assert!(matches!(
             resp,
             RpcResponse::TransactionResult {
@@ -5076,9 +5256,7 @@ mod tests {
         utxo.inputs[0].signature = vec![0u8; 64]; // zero out signature
         utxo.finalize_id(); // re-hash so ID matches
 
-        let resp = runtime.submit_submitted_transaction(
-            SubmittedTransaction::Utxo(utxo),
-        );
+        let resp = runtime.submit_submitted_transaction(SubmittedTransaction::Utxo(utxo));
         assert!(matches!(
             resp,
             RpcResponse::TransactionResult {
@@ -5093,16 +5271,16 @@ mod tests {
     fn utxo_transaction_rejects_duplicate_id() {
         let mut runtime = NodeRuntime::new("node-utxo-dup", NodeConfig::mainnet());
         let (fund_id, _addr, vk, sk) = seed_utxo_funding(&mut runtime, 1_000_000_000_000);
-        let utxo = make_signed_utxo_tx_spending(fund_id, 0, 1_000_000_000_000, &sk, &vk, "zion1destdup");
+        let utxo =
+            make_signed_utxo_tx_spending(fund_id, 0, 1_000_000_000_000, &sk, &vk, "zion1destdup");
 
-        let first = runtime.submit_submitted_transaction(
-            SubmittedTransaction::Utxo(utxo.clone()),
-        );
-        assert!(matches!(first, RpcResponse::TransactionResult { accepted: true, .. }));
+        let first = runtime.submit_submitted_transaction(SubmittedTransaction::Utxo(utxo.clone()));
+        assert!(matches!(
+            first,
+            RpcResponse::TransactionResult { accepted: true, .. }
+        ));
 
-        let second = runtime.submit_submitted_transaction(
-            SubmittedTransaction::Utxo(utxo),
-        );
+        let second = runtime.submit_submitted_transaction(SubmittedTransaction::Utxo(utxo));
         assert!(matches!(
             second,
             RpcResponse::TransactionResult {
@@ -5117,17 +5295,18 @@ mod tests {
     fn utxo_transaction_rejects_double_spend() {
         let mut runtime = NodeRuntime::new("node-utxo-dblspend", NodeConfig::mainnet());
         let (fund_id, _addr, vk, sk) = seed_utxo_funding(&mut runtime, 1_000_000_000_000);
-        let tx1 = make_signed_utxo_tx_spending(fund_id, 0, 1_000_000_000_000, &sk, &vk, "zion1destdbl1");
-        let tx2 = make_signed_utxo_tx_spending(fund_id, 0, 1_000_000_000_000, &sk, &vk, "zion1destdbl2"); // same input
+        let tx1 =
+            make_signed_utxo_tx_spending(fund_id, 0, 1_000_000_000_000, &sk, &vk, "zion1destdbl1");
+        let tx2 =
+            make_signed_utxo_tx_spending(fund_id, 0, 1_000_000_000_000, &sk, &vk, "zion1destdbl2"); // same input
 
-        let first = runtime.submit_submitted_transaction(
-            SubmittedTransaction::Utxo(tx1),
-        );
-        assert!(matches!(first, RpcResponse::TransactionResult { accepted: true, .. }));
+        let first = runtime.submit_submitted_transaction(SubmittedTransaction::Utxo(tx1));
+        assert!(matches!(
+            first,
+            RpcResponse::TransactionResult { accepted: true, .. }
+        ));
 
-        let second = runtime.submit_submitted_transaction(
-            SubmittedTransaction::Utxo(tx2),
-        );
+        let second = runtime.submit_submitted_transaction(SubmittedTransaction::Utxo(tx2));
         assert!(matches!(
             second,
             RpcResponse::TransactionResult {
@@ -5143,7 +5322,14 @@ mod tests {
         let mut runtime = NodeRuntime::new("node-utxo-coexist", NodeConfig::mainnet());
         let account_tx = sample_transaction("tx-coexist", 5, 1);
         let (fund_id, _addr, vk, sk) = seed_utxo_funding(&mut runtime, 1_000_000_000_000);
-        let utxo = make_signed_utxo_tx_spending(fund_id, 0, 1_000_000_000_000, &sk, &vk, "zion1destcoexist");
+        let utxo = make_signed_utxo_tx_spending(
+            fund_id,
+            0,
+            1_000_000_000_000,
+            &sk,
+            &vk,
+            "zion1destcoexist",
+        );
 
         runtime.handle_rpc_request(RpcRequest::SubmitTransaction {
             transaction: account_tx.clone(),
@@ -5162,7 +5348,8 @@ mod tests {
     fn utxo_mined_block_passes_peer_import() {
         let mut source = NodeRuntime::new("node-utxo-src", NodeConfig::mainnet());
         let (fund_id, _addr, vk, sk) = seed_utxo_funding(&mut source, 1_000_000_000_000);
-        let utxo = make_signed_utxo_tx_spending(fund_id, 0, 1_000_000_000_000, &sk, &vk, "zion1destpeer");
+        let utxo =
+            make_signed_utxo_tx_spending(fund_id, 0, 1_000_000_000_000, &sk, &vk, "zion1destpeer");
 
         source.submit_submitted_transaction(SubmittedTransaction::Utxo(utxo.clone()));
         mine_one_block(&mut source);
@@ -5179,7 +5366,14 @@ mod tests {
     fn peer_import_rejects_utxo_with_bad_signature() {
         let mut source = NodeRuntime::new("node-utxo-badsig-src", NodeConfig::mainnet());
         let (fund_id, _addr, vk, sk) = seed_utxo_funding(&mut source, 1_000_000_000_000);
-        let utxo = make_signed_utxo_tx_spending(fund_id, 0, 1_000_000_000_000, &sk, &vk, "zion1destbadsig");
+        let utxo = make_signed_utxo_tx_spending(
+            fund_id,
+            0,
+            1_000_000_000_000,
+            &sk,
+            &vk,
+            "zion1destbadsig",
+        );
         source.submit_submitted_transaction(SubmittedTransaction::Utxo(utxo));
         mine_one_block(&mut source);
 
@@ -5223,9 +5417,7 @@ mod tests {
         let mut runtime = NodeRuntime::new("node-utxo-noexist", NodeConfig::mainnet());
         let utxo = make_signed_utxo_tx(); // uses fake [0xAA; 32] input
 
-        let resp = runtime.submit_submitted_transaction(
-            SubmittedTransaction::Utxo(utxo),
-        );
+        let resp = runtime.submit_submitted_transaction(SubmittedTransaction::Utxo(utxo));
         assert!(matches!(
             resp,
             RpcResponse::TransactionResult {
@@ -5281,10 +5473,7 @@ mod tests {
         }
 
         assert_eq!(node_b.chain_height(), 3);
-        assert_eq!(
-            node_a.status().tip_hash_hex,
-            node_b.status().tip_hash_hex,
-        );
+        assert_eq!(node_a.status().tip_hash_hex, node_b.status().tip_hash_hex,);
     }
 
     #[test]
@@ -5328,7 +5517,10 @@ mod tests {
             transaction: tx.clone(),
         });
         assert!(
-            matches!(&response, RpcResponse::TransactionResult { accepted: true, .. }),
+            matches!(
+                &response,
+                RpcResponse::TransactionResult { accepted: true, .. }
+            ),
             "tx submit failed: {response:?}"
         );
 
@@ -5432,10 +5624,7 @@ mod tests {
             .handle_p2p_message(P2pMessage::AnnounceBlock { block })
             .expect("sync");
         assert_eq!(node_b.chain_height(), 1);
-        assert_eq!(
-            node_a.status().tip_hash_hex,
-            node_b.status().tip_hash_hex,
-        );
+        assert_eq!(node_a.status().tip_hash_hex, node_b.status().tip_hash_hex,);
     }
 
     #[test]

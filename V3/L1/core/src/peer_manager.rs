@@ -122,7 +122,8 @@ impl PeerManager {
 
     /// Outbound peer count.
     pub fn outbound_count(&self) -> usize {
-        self.peers.values()
+        self.peers
+            .values()
             .filter(|p| !p.banned && p.direction == PeerDirection::Outbound)
             .count()
     }
@@ -130,7 +131,8 @@ impl PeerManager {
     /// Count how many peers share a /16 subnet with the given IP.
     fn subnet_count(&self, addr: &IpAddr) -> usize {
         let prefix = subnet_prefix(addr);
-        self.peers.values()
+        self.peers
+            .values()
             .filter(|p| !p.banned && subnet_prefix(&p.addr) == prefix)
             .count()
     }
@@ -154,20 +156,23 @@ impl PeerManager {
             return false;
         }
 
-        self.peers.insert(peer_id.to_string(), PeerState {
-            addr,
-            port,
-            peer_id: peer_id.to_string(),
-            direction,
-            score: INITIAL_SCORE,
-            connected_at: now,
-            last_seen: now,
-            best_height: 0,
-            bytes_sent: 0,
-            bytes_received: 0,
-            latency_ms: None,
-            banned: false,
-        });
+        self.peers.insert(
+            peer_id.to_string(),
+            PeerState {
+                addr,
+                port,
+                peer_id: peer_id.to_string(),
+                direction,
+                score: INITIAL_SCORE,
+                connected_at: now,
+                last_seen: now,
+                best_height: 0,
+                bytes_sent: 0,
+                bytes_received: 0,
+                latency_ms: None,
+                banned: false,
+            },
+        );
         true
     }
 
@@ -229,7 +234,8 @@ impl PeerManager {
 
     /// Get best known height across all peers.
     pub fn best_peer_height(&self) -> u64 {
-        self.peers.values()
+        self.peers
+            .values()
             .filter(|p| !p.banned)
             .map(|p| p.best_height)
             .max()
@@ -238,9 +244,7 @@ impl PeerManager {
 
     /// Get peers sorted by score (highest first) for block download.
     pub fn peers_by_score(&self) -> Vec<&PeerState> {
-        let mut peers: Vec<&PeerState> = self.peers.values()
-            .filter(|p| !p.banned)
-            .collect();
+        let mut peers: Vec<&PeerState> = self.peers.values().filter(|p| !p.banned).collect();
         peers.sort_by(|a, b| b.score.cmp(&a.score));
         peers
     }
@@ -254,7 +258,9 @@ impl PeerManager {
         let mut to_ban = Vec::new();
 
         for (peer_id, peer) in &self.peers {
-            if peer.banned { continue; }
+            if peer.banned {
+                continue;
+            }
 
             // Dead peer detection
             if now.duration_since(peer.last_seen) >= PEER_IDLE_TIMEOUT {
@@ -269,7 +275,10 @@ impl PeerManager {
         }
 
         for (peer_id, reason) in to_disconnect {
-            actions.push(PeerAction::Disconnect { peer_id: peer_id.clone(), reason });
+            actions.push(PeerAction::Disconnect {
+                peer_id: peer_id.clone(),
+                reason,
+            });
             self.peers.remove(&peer_id);
         }
 
@@ -284,13 +293,18 @@ impl PeerManager {
         if self.outbound_count() < MIN_OUTBOUND && !self.seeds.is_empty() {
             let deficit = MIN_OUTBOUND - self.outbound_count();
             for _ in 0..deficit {
-                if self.seeds.is_empty() { break; }
+                if self.seeds.is_empty() {
+                    break;
+                }
                 let idx = self.seed_index % self.seeds.len();
                 let (addr, port) = self.seeds[idx];
                 self.seed_index += 1;
 
                 // Skip if already connected to this address
-                let already = self.peers.values().any(|p| p.addr == addr && p.port == port);
+                let already = self
+                    .peers
+                    .values()
+                    .any(|p| p.addr == addr && p.port == port);
                 if !already {
                     actions.push(PeerAction::ConnectOutbound { addr, port });
                 }
@@ -335,7 +349,9 @@ mod tests {
     use super::*;
     use std::net::Ipv4Addr;
 
-    fn now() -> Instant { Instant::now() }
+    fn now() -> Instant {
+        Instant::now()
+    }
 
     fn ip(a: u8, b: u8, c: u8, d: u8) -> IpAddr {
         IpAddr::V4(Ipv4Addr::new(a, b, c, d))
@@ -366,16 +382,22 @@ mod tests {
         // All in 10.0.x.x /16 — should hit MAX_PER_SUBNET
         for i in 0..MAX_PER_SUBNET as u8 {
             assert!(pm.register_peer(
-                &format!("p{i}"), ip(10, 0, i, 1), 8333, PeerDirection::Inbound, t
+                &format!("p{i}"),
+                ip(10, 0, i, 1),
+                8333,
+                PeerDirection::Inbound,
+                t
             ));
         }
         // Next one from same subnet should be rejected
-        assert!(!pm.register_peer(
-            "p_extra", ip(10, 0, 99, 1), 8333, PeerDirection::Inbound, t
-        ));
+        assert!(!pm.register_peer("p_extra", ip(10, 0, 99, 1), 8333, PeerDirection::Inbound, t));
         // Different subnet should work
         assert!(pm.register_peer(
-            "p_diff", ip(192, 168, 1, 1), 8333, PeerDirection::Inbound, t
+            "p_diff",
+            ip(192, 168, 1, 1),
+            8333,
+            PeerDirection::Inbound,
+            t
         ));
     }
 
@@ -392,7 +414,8 @@ mod tests {
         assert!(pm.get_score("p1").unwrap() <= BAN_THRESHOLD);
 
         let actions = pm.heartbeat(t);
-        let bans: Vec<_> = actions.iter()
+        let bans: Vec<_> = actions
+            .iter()
             .filter(|a| matches!(a, PeerAction::Ban { .. }))
             .collect();
         assert_eq!(bans.len(), 1);
@@ -424,7 +447,8 @@ mod tests {
 
         let later = t + PEER_IDLE_TIMEOUT + Duration::from_secs(1);
         let actions = pm.heartbeat(later);
-        let disconnects: Vec<_> = actions.iter()
+        let disconnects: Vec<_> = actions
+            .iter()
             .filter(|a| matches!(a, PeerAction::Disconnect { .. }))
             .collect();
         assert_eq!(disconnects.len(), 1);
@@ -437,7 +461,8 @@ mod tests {
         let t = now();
 
         let actions = pm.heartbeat(t);
-        let connects: Vec<_> = actions.iter()
+        let connects: Vec<_> = actions
+            .iter()
             .filter(|a| matches!(a, PeerAction::ConnectOutbound { .. }))
             .collect();
         assert!(!connects.is_empty());
@@ -489,7 +514,9 @@ mod tests {
         // Peer should not be idle-disconnected since we updated last_seen
         let check = later + Duration::from_secs(60);
         let actions = pm.heartbeat(check);
-        assert!(actions.iter().all(|a| !matches!(a, PeerAction::Disconnect { .. })));
+        assert!(actions
+            .iter()
+            .all(|a| !matches!(a, PeerAction::Disconnect { .. })));
     }
 
     #[test]

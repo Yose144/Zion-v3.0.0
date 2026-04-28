@@ -126,7 +126,11 @@ impl HardenedMempool {
         }
 
         // 5. Output validation.
-        let output_pairs: Vec<(u64, &str)> = tx.outputs.iter().map(|o| (o.amount, o.address.as_str())).collect();
+        let output_pairs: Vec<(u64, &str)> = tx
+            .outputs
+            .iter()
+            .map(|o| (o.amount, o.address.as_str()))
+            .collect();
         if let Err(e) = fee::validate_outputs(&output_pairs) {
             return Err(MempoolError::InvalidOutput(format!("{:?}", e)));
         }
@@ -167,11 +171,14 @@ impl HardenedMempool {
             }
         }
         self.total_bytes += est_size;
-        self.entries.insert(tx.id, MempoolEntry {
-            tx,
-            size: est_size,
-            fee_rate: rate,
-        });
+        self.entries.insert(
+            tx.id,
+            MempoolEntry {
+                tx,
+                size: est_size,
+                fee_rate: rate,
+            },
+        );
 
         Ok(())
     }
@@ -400,7 +407,10 @@ mod tests {
         let removed = pool.remove_transaction(&hash(1));
         assert!(removed.is_some());
         assert_eq!(pool.len(), 0);
-        assert!(!pool.is_outpoint_spent(&Outpoint { tx_hash: hash(10), index: 0 }));
+        assert!(!pool.is_outpoint_spent(&Outpoint {
+            tx_hash: hash(10),
+            index: 0
+        }));
     }
 
     #[test]
@@ -412,7 +422,10 @@ mod tests {
         pool.add_transaction(tx2).unwrap();
         assert_eq!(pool.len(), 2);
         // Confirm outpoint (10,0) in a block — tx1 should be evicted.
-        let confirmed = vec![Outpoint { tx_hash: hash(10), index: 0 }];
+        let confirmed = vec![Outpoint {
+            tx_hash: hash(10),
+            index: 0,
+        }];
         let removed = pool.remove_conflicting(&confirmed);
         assert_eq!(removed.len(), 1);
         assert_eq!(pool.len(), 1);
@@ -502,7 +515,10 @@ mod tests {
     #[test]
     fn test_outpoint_tracking() {
         let mut pool = HardenedMempool::new();
-        let op = Outpoint { tx_hash: hash(10), index: 0 };
+        let op = Outpoint {
+            tx_hash: hash(10),
+            index: 0,
+        };
         assert!(!pool.is_outpoint_spent(&op));
         let tx = make_tx(1, 2000, vec![(10, 0)], 5000);
         pool.add_transaction(tx).unwrap();
