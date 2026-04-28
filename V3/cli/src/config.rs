@@ -153,8 +153,7 @@ impl Default for Config {
 }
 
 pub fn config_path() -> Result<PathBuf> {
-    let home = dirs_next()
-        .context("Cannot determine home directory")?;
+    let home = dirs_next().context("Cannot determine home directory")?;
     Ok(home.join(".zion").join("zion.toml"))
 }
 
@@ -170,8 +169,8 @@ pub fn load(override_path: Option<&str>) -> Result<Config> {
 
     let text = std::fs::read_to_string(&path)
         .with_context(|| format!("Cannot read config: {}", path.display()))?;
-    let cfg: Config = toml::from_str(&text)
-        .with_context(|| format!("Invalid config: {}", path.display()))?;
+    let cfg: Config =
+        toml::from_str(&text).with_context(|| format!("Invalid config: {}", path.display()))?;
     Ok(cfg)
 }
 
@@ -274,14 +273,19 @@ pub fn validate(cfg: &Config) -> ValidationReport {
     if ssh_key.trim().is_empty() {
         errors.push("deploy.ssh_key must not be empty".to_string());
     } else if !std::path::Path::new(&ssh_key).exists() {
-        warnings.push(format!("deploy.ssh_key does not exist on disk: {}", ssh_key));
+        warnings.push(format!(
+            "deploy.ssh_key does not exist on disk: {}",
+            ssh_key
+        ));
     }
 
     if cfg.deploy.ssh_user.trim().is_empty() {
         errors.push("deploy.ssh_user must not be empty".to_string());
     }
 
-    if cfg.miner.profile.trim().eq_ignore_ascii_case("dual") && cfg.miner.btc_wallet.trim().is_empty() {
+    if cfg.miner.profile.trim().eq_ignore_ascii_case("dual")
+        && cfg.miner.btc_wallet.trim().is_empty()
+    {
         warnings.push("miner.profile is dual but miner.btc_wallet is empty; DCR sidecar will rely on env or fallback BTC payout wallet".to_string());
     }
 

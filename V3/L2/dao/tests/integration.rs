@@ -162,13 +162,19 @@ fn test_db_vote_deduplication() {
     let proposal = make_proposal_treasury(2);
     db.insert_proposal(&proposal).unwrap();
 
-    let r1 = db.record_vote(2, "zion1voter01", VoteChoice::Yes, 1_000_000, None).unwrap();
+    let r1 = db
+        .record_vote(2, "zion1voter01", VoteChoice::Yes, 1_000_000, None)
+        .unwrap();
     assert!(r1, "First vote should be recorded");
 
-    let r2 = db.record_vote(2, "zion1voter01", VoteChoice::No, 1_000_000, None).unwrap();
+    let r2 = db
+        .record_vote(2, "zion1voter01", VoteChoice::No, 1_000_000, None)
+        .unwrap();
     assert!(!r2, "Duplicate vote should be ignored");
 
-    let r3 = db.record_vote(2, "zion1voter02", VoteChoice::No, 2_000_000, None).unwrap();
+    let r3 = db
+        .record_vote(2, "zion1voter02", VoteChoice::No, 2_000_000, None)
+        .unwrap();
     assert!(r3, "Different voter should succeed");
 }
 
@@ -178,10 +184,14 @@ fn test_db_vote_totals() {
     let proposal = make_proposal_treasury(3);
     db.insert_proposal(&proposal).unwrap();
 
-    db.record_vote(3, "zion1v1", VoteChoice::Yes,     5_000_000, None).unwrap();
-    db.record_vote(3, "zion1v2", VoteChoice::Yes,     3_000_000, None).unwrap();
-    db.record_vote(3, "zion1v3", VoteChoice::No,      1_000_000, None).unwrap();
-    db.record_vote(3, "zion1v4", VoteChoice::Abstain, 500_000,   None).unwrap();
+    db.record_vote(3, "zion1v1", VoteChoice::Yes, 5_000_000, None)
+        .unwrap();
+    db.record_vote(3, "zion1v2", VoteChoice::Yes, 3_000_000, None)
+        .unwrap();
+    db.record_vote(3, "zion1v3", VoteChoice::No, 1_000_000, None)
+        .unwrap();
+    db.record_vote(3, "zion1v4", VoteChoice::Abstain, 500_000, None)
+        .unwrap();
 
     let (yes, no, abstain) = db.vote_totals(3).unwrap();
     assert_eq!(yes, 8_000_000);
@@ -223,9 +233,33 @@ fn test_voting_engine_add_votes() {
     let mut proposal = make_proposal_treasury(10);
     let mut engine = VotingEngine::new();
 
-    engine.cast_vote(&mut proposal, "zion1v1".into(), VoteChoice::Yes,     6_000_000, None).unwrap();
-    engine.cast_vote(&mut proposal, "zion1v2".into(), VoteChoice::No,      3_000_000, None).unwrap();
-    engine.cast_vote(&mut proposal, "zion1v3".into(), VoteChoice::Abstain, 1_000_000, None).unwrap();
+    engine
+        .cast_vote(
+            &mut proposal,
+            "zion1v1".into(),
+            VoteChoice::Yes,
+            6_000_000,
+            None,
+        )
+        .unwrap();
+    engine
+        .cast_vote(
+            &mut proposal,
+            "zion1v2".into(),
+            VoteChoice::No,
+            3_000_000,
+            None,
+        )
+        .unwrap();
+    engine
+        .cast_vote(
+            &mut proposal,
+            "zion1v3".into(),
+            VoteChoice::Abstain,
+            1_000_000,
+            None,
+        )
+        .unwrap();
 
     assert_eq!(proposal.votes_for, 6_000_000);
     assert_eq!(proposal.votes_against, 3_000_000);
@@ -239,8 +273,22 @@ fn test_voting_engine_deduplication() {
     let mut proposal = make_proposal_treasury(11);
     let mut engine = VotingEngine::new();
 
-    engine.cast_vote(&mut proposal, "zion1v1".into(), VoteChoice::Yes, 1_000_000, None).unwrap();
-    let r = engine.cast_vote(&mut proposal, "zion1v1".into(), VoteChoice::No, 1_000_000, None);
+    engine
+        .cast_vote(
+            &mut proposal,
+            "zion1v1".into(),
+            VoteChoice::Yes,
+            1_000_000,
+            None,
+        )
+        .unwrap();
+    let r = engine.cast_vote(
+        &mut proposal,
+        "zion1v1".into(),
+        VoteChoice::No,
+        1_000_000,
+        None,
+    );
     assert!(r.is_err(), "Duplicate vote should fail");
     assert_eq!(proposal.voter_count, 1);
 }
@@ -251,7 +299,13 @@ fn test_voting_engine_rejected_if_closed() {
     proposal.status = ProposalStatus::Passed;
     let mut engine = VotingEngine::new();
 
-    let r = engine.cast_vote(&mut proposal, "zion1v1".into(), VoteChoice::Yes, 1_000_000, None);
+    let r = engine.cast_vote(
+        &mut proposal,
+        "zion1v1".into(),
+        VoteChoice::Yes,
+        1_000_000,
+        None,
+    );
     assert!(r.is_err(), "Cannot vote on non-Active proposal");
 }
 
@@ -267,7 +321,14 @@ fn test_quorum_treasury_met() {
     let mut engine = VotingEngine::new();
 
     // 20 voters × 1M ZION = 20M = 20% → above 15% treasury quorum
-    vote_n(&mut engine, &mut proposal, 20, VoteChoice::Yes, 1_000_000_000_000, "zion1t");
+    vote_n(
+        &mut engine,
+        &mut proposal,
+        20,
+        VoteChoice::Yes,
+        1_000_000_000_000,
+        "zion1t",
+    );
 
     assert!(check_quorum(&proposal, circulating).is_ok());
 }
@@ -279,9 +340,19 @@ fn test_quorum_not_met() {
     let mut engine = VotingEngine::new();
 
     // Only 5 voters × 1M = 5M = 5% → below 15% treasury quorum
-    vote_n(&mut engine, &mut proposal, 5, VoteChoice::Yes, 1_000_000_000_000, "zion1q");
+    vote_n(
+        &mut engine,
+        &mut proposal,
+        5,
+        VoteChoice::Yes,
+        1_000_000_000_000,
+        "zion1q",
+    );
 
-    assert!(check_quorum(&proposal, circulating).is_err(), "5% < 15% quorum");
+    assert!(
+        check_quorum(&proposal, circulating).is_err(),
+        "5% < 15% quorum"
+    );
 }
 
 #[test]
@@ -292,7 +363,14 @@ fn test_quorum_parameter_lower() {
     let mut engine = VotingEngine::new();
 
     // 11 voters × 1M = 11M = 11% → above 10%
-    vote_n(&mut engine, &mut proposal, 11, VoteChoice::Yes, 1_000_000_000_000, "zion1r");
+    vote_n(
+        &mut engine,
+        &mut proposal,
+        11,
+        VoteChoice::Yes,
+        1_000_000_000_000,
+        "zion1r",
+    );
 
     assert!(check_quorum(&proposal, circulating).is_ok());
 }
@@ -305,9 +383,19 @@ fn test_quorum_emergency_higher() {
     let mut engine = VotingEngine::new();
 
     // 15 voters × 1M = 15M = 15% → below 20% emergency quorum
-    vote_n(&mut engine, &mut proposal, 15, VoteChoice::Yes, 1_000_000_000_000, "zion1e");
+    vote_n(
+        &mut engine,
+        &mut proposal,
+        15,
+        VoteChoice::Yes,
+        1_000_000_000_000,
+        "zion1e",
+    );
 
-    assert!(check_quorum(&proposal, circulating).is_err(), "Emergency needs 20%, got 15%");
+    assert!(
+        check_quorum(&proposal, circulating).is_err(),
+        "Emergency needs 20%, got 15%"
+    );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -322,7 +410,14 @@ fn test_executor_treasury_spend() {
     let mut treasury = make_treasury(100_000_000_000_000);
     let mut config = DaoConfig::default();
 
-    let result = execute_proposal(&mut proposal, &mut timelock, &mut treasury, &mut config, "zion1guardian01").unwrap();
+    let result = execute_proposal(
+        &mut proposal,
+        &mut timelock,
+        &mut treasury,
+        &mut config,
+        "zion1guardian01",
+    )
+    .unwrap();
     assert!(result.contains("Treasury spend submitted"));
     assert_eq!(proposal.status, ProposalStatus::Executed);
     assert!(proposal.executed_at.is_some());
@@ -336,7 +431,14 @@ fn test_executor_humanitarian_grant() {
     let mut treasury = make_treasury(100_000_000_000_000);
     let mut config = DaoConfig::default();
 
-    let result = execute_proposal(&mut proposal, &mut timelock, &mut treasury, &mut config, "zion1guardian01").unwrap();
+    let result = execute_proposal(
+        &mut proposal,
+        &mut timelock,
+        &mut treasury,
+        &mut config,
+        "zion1guardian01",
+    )
+    .unwrap();
     assert!(result.contains("Humanitarian grant submitted"));
     assert_eq!(proposal.status, ProposalStatus::Executed);
 }
@@ -350,7 +452,14 @@ fn test_executor_parameter_change() {
     let mut config = DaoConfig::default();
     assert_eq!(config.quorum_percent, 10.0);
 
-    let result = execute_proposal(&mut proposal, &mut timelock, &mut treasury, &mut config, "zion1guardian01").unwrap();
+    let result = execute_proposal(
+        &mut proposal,
+        &mut timelock,
+        &mut treasury,
+        &mut config,
+        "zion1guardian01",
+    )
+    .unwrap();
     assert!(result.contains("15"));
     assert_eq!(config.quorum_percent, 15.0);
     assert_eq!(proposal.status, ProposalStatus::Executed);
@@ -384,8 +493,17 @@ fn test_executor_emergency_valid() {
 
 #[test]
 fn test_executor_emergency_all_valid_actions() {
-    for action in &["pause_bridge", "unpause_bridge", "freeze_treasury", "halt_validator"] {
-        assert!(execute_emergency_action(action, "test").is_ok(), "Action {} should work", action);
+    for action in &[
+        "pause_bridge",
+        "unpause_bridge",
+        "freeze_treasury",
+        "halt_validator",
+    ] {
+        assert!(
+            execute_emergency_action(action, "test").is_ok(),
+            "Action {} should work",
+            action
+        );
     }
 }
 
@@ -402,7 +520,13 @@ fn test_executor_rejects_non_timelocked() {
     let mut treasury = make_treasury(100_000_000_000_000);
     let mut config = DaoConfig::default();
 
-    let r = execute_proposal(&mut proposal, &mut timelock, &mut treasury, &mut config, "zion1guardian01");
+    let r = execute_proposal(
+        &mut proposal,
+        &mut timelock,
+        &mut treasury,
+        &mut config,
+        "zion1guardian01",
+    );
     assert!(r.is_err(), "Non-Timelocked proposal should be rejected");
 }
 
@@ -414,7 +538,13 @@ fn test_executor_rejects_active_timelock() {
     let mut treasury = make_treasury(100_000_000_000_000);
     let mut config = DaoConfig::default();
 
-    let r = execute_proposal(&mut proposal, &mut timelock, &mut treasury, &mut config, "zion1guardian01");
+    let r = execute_proposal(
+        &mut proposal,
+        &mut timelock,
+        &mut treasury,
+        &mut config,
+        "zion1guardian01",
+    );
     assert!(r.is_err(), "Active timelock should block execution");
 }
 
@@ -437,10 +567,23 @@ fn test_full_e2e_treasury_proposal() {
 
     // --- 3. Vote: 20 voters × 1M ZION = 20% > 15% treasury quorum ---
     for i in 1..=20 {
-        let choice = if i <= 15 { VoteChoice::Yes } else { VoteChoice::No };
+        let choice = if i <= 15 {
+            VoteChoice::Yes
+        } else {
+            VoteChoice::No
+        };
         let voter = format!("zion1voter{:03}", i);
-        engine.cast_vote(&mut proposal, voter.clone(), choice, 1_000_000_000_000, None).unwrap();
-        db.record_vote(100, &voter, choice, 1_000_000, None).unwrap();
+        engine
+            .cast_vote(
+                &mut proposal,
+                voter.clone(),
+                choice,
+                1_000_000_000_000,
+                None,
+            )
+            .unwrap();
+        db.record_vote(100, &voter, choice, 1_000_000, None)
+            .unwrap();
     }
 
     // --- 4. Quorum check ---
@@ -455,7 +598,14 @@ fn test_full_e2e_treasury_proposal() {
 
     // --- 6. Execute (timelock expired) ---
     let mut timelock = expired_timelock(100);
-    let result = execute_proposal(&mut proposal, &mut timelock, &mut treasury, &mut config, "zion1guardian01").unwrap();
+    let result = execute_proposal(
+        &mut proposal,
+        &mut timelock,
+        &mut treasury,
+        &mut config,
+        "zion1guardian01",
+    )
+    .unwrap();
 
     assert!(result.contains("Treasury spend submitted"));
     assert_eq!(proposal.status, ProposalStatus::Executed);
@@ -478,13 +628,27 @@ fn test_full_e2e_parameter_proposal() {
     let mut config = DaoConfig::default();
 
     // 12% → above 10% standard quorum
-    vote_n(&mut engine, &mut proposal, 12, VoteChoice::Yes, 1_000_000_000_000, "zion1p");
+    vote_n(
+        &mut engine,
+        &mut proposal,
+        12,
+        VoteChoice::Yes,
+        1_000_000_000_000,
+        "zion1p",
+    );
     assert!(check_quorum(&proposal, circulating).is_ok());
 
     proposal.status = ProposalStatus::Timelocked;
     let mut timelock = expired_timelock(101);
 
-    let result = execute_proposal(&mut proposal, &mut timelock, &mut treasury, &mut config, "zion1guardian01").unwrap();
+    let result = execute_proposal(
+        &mut proposal,
+        &mut timelock,
+        &mut treasury,
+        &mut config,
+        "zion1guardian01",
+    )
+    .unwrap();
     assert!(result.contains("14"));
     assert_eq!(config.voting_period_days, 14);
     assert_eq!(proposal.status, ProposalStatus::Executed);
@@ -499,13 +663,27 @@ fn test_full_e2e_emergency_proposal() {
     let mut config = DaoConfig::default();
 
     // 21% → above 20% emergency quorum
-    vote_n(&mut engine, &mut proposal, 21, VoteChoice::Yes, 1_000_000_000_000, "zion1em");
+    vote_n(
+        &mut engine,
+        &mut proposal,
+        21,
+        VoteChoice::Yes,
+        1_000_000_000_000,
+        "zion1em",
+    );
     assert!(check_quorum(&proposal, circulating).is_ok());
 
     proposal.status = ProposalStatus::Timelocked;
     let mut timelock = expired_timelock(99);
 
-    let result = execute_proposal(&mut proposal, &mut timelock, &mut treasury, &mut config, "zion1guardian01").unwrap();
+    let result = execute_proposal(
+        &mut proposal,
+        &mut timelock,
+        &mut treasury,
+        &mut config,
+        "zion1guardian01",
+    )
+    .unwrap();
     assert!(result.contains("pause_bridge"));
     assert_eq!(proposal.status, ProposalStatus::Executed);
 }

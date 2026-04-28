@@ -138,7 +138,10 @@ pub async fn run(_cfg: &Config, check: bool, yes: bool) -> Result<()> {
 
     #[allow(unreachable_code)]
     {
-        ui::print_info(&format!("Updated binary staged at {}", staged_path.display()));
+        ui::print_info(&format!(
+            "Updated binary staged at {}",
+            staged_path.display()
+        ));
         println!();
         Ok(())
     }
@@ -183,10 +186,20 @@ async fn fetch_expected_sha256(client: &Client, artifact: &str) -> Result<String
         .await
         .with_context(|| format!("Cannot fetch checksum for {}", artifact))?
         .error_for_status()
-        .with_context(|| format!("Checksum endpoint returned a non-success status for {}", artifact))?
+        .with_context(|| {
+            format!(
+                "Checksum endpoint returned a non-success status for {}",
+                artifact
+            )
+        })?
         .text()
         .await
-        .with_context(|| format!("Checksum endpoint returned unreadable content for {}", artifact))?;
+        .with_context(|| {
+            format!(
+                "Checksum endpoint returned unreadable content for {}",
+                artifact
+            )
+        })?;
 
     parse_checksum(&sha_text)
 }
@@ -258,8 +271,12 @@ fn write_staged_binary(current_exe: &Path, bytes: &[u8]) -> Result<PathBuf> {
     let permissions = fs::metadata(current_exe)
         .with_context(|| format!("Cannot read permissions from {}", current_exe.display()))?
         .permissions();
-    fs::set_permissions(&staged_path, permissions)
-        .with_context(|| format!("Cannot set executable permissions on {}", staged_path.display()))?;
+    fs::set_permissions(&staged_path, permissions).with_context(|| {
+        format!(
+            "Cannot set executable permissions on {}",
+            staged_path.display()
+        )
+    })?;
 
     Ok(staged_path)
 }
@@ -314,7 +331,7 @@ fn sibling_path(current_exe: &Path, suffix: &str) -> Result<PathBuf> {
 
 #[cfg(test)]
 mod tests {
-    use super::{parse_checksum, sibling_path, short_hash};
+    use super::{parse_checksum, short_hash, sibling_path};
     use std::path::Path;
 
     #[test]

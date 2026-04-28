@@ -8,9 +8,9 @@
 //
 // Audit reference: Phase 8 — genesis ceremony, restart hardening
 
+use crate::difficulty;
 use crate::emission;
 use crate::genesis;
-use crate::difficulty;
 
 // ── Frozen Genesis Hash ────────────────────────────────────────────────
 
@@ -38,15 +38,13 @@ pub fn verify_genesis_integrity() -> Result<(), String> {
         ));
     }
     if block.subsidy_zion != 0 {
-        return Err(format!(
-            "genesis subsidy {} != 0",
-            block.subsidy_zion
-        ));
+        return Err(format!("genesis subsidy {} != 0", block.subsidy_zion));
     }
     if block.timestamp != genesis::GENESIS_TIMESTAMP {
         return Err(format!(
             "genesis timestamp {} != {}",
-            block.timestamp, genesis::GENESIS_TIMESTAMP
+            block.timestamp,
+            genesis::GENESIS_TIMESTAMP
         ));
     }
 
@@ -142,14 +140,17 @@ pub fn launch_readiness() -> Vec<ReadinessCheck> {
     checks.push(ReadinessCheck {
         name: "emission_initial_reward",
         passed: reward_ok,
-        detail: format!("block_subsidy(1) = {initial_reward}, expected {}", emission::BASE_REWARD),
+        detail: format!(
+            "block_subsidy(1) = {initial_reward}, expected {}",
+            emission::BASE_REWARD
+        ),
     });
 
     // 3. Decade decay correctness (first block of decade 2)
     let decade2_start = emission::BLOCKS_PER_DECADE + 1;
     let decade1 = emission::block_subsidy(decade2_start);
-    let expected_decade1 = emission::BASE_REWARD * emission::DECAY_NUMERATOR
-        / emission::DECAY_DENOMINATOR;
+    let expected_decade1 =
+        emission::BASE_REWARD * emission::DECAY_NUMERATOR / emission::DECAY_DENOMINATOR;
     let decay_ok = decade1 == expected_decade1;
     checks.push(ReadinessCheck {
         name: "emission_decade_decay",
@@ -158,7 +159,8 @@ pub fn launch_readiness() -> Vec<ReadinessCheck> {
     });
 
     // 4. Tail emission
-    let tail = emission::block_subsidy(emission::BLOCKS_PER_DECADE * emission::MAX_DECAY_DECADES + 1);
+    let tail =
+        emission::block_subsidy(emission::BLOCKS_PER_DECADE * emission::MAX_DECAY_DECADES + 1);
     let tail_ok = tail == emission::TAIL_REWARD;
     checks.push(ReadinessCheck {
         name: "emission_tail",
@@ -179,7 +181,10 @@ pub fn launch_readiness() -> Vec<ReadinessCheck> {
     checks.push(ReadinessCheck {
         name: "dao_treasury_lock",
         passed: lock_ok,
-        detail: format!("DAO_TREASURY_LOCK_HEIGHT = {}", genesis::DAO_TREASURY_LOCK_HEIGHT),
+        detail: format!(
+            "DAO_TREASURY_LOCK_HEIGHT = {}",
+            genesis::DAO_TREASURY_LOCK_HEIGHT
+        ),
     });
 
     // 7. Premine address count
@@ -271,7 +276,10 @@ mod tests {
 
     #[test]
     fn checkpoint_rejects_bad_hash() {
-        let result = verify_checkpoint(0, "0000000000000000000000000000000000000000000000000000000000000bad");
+        let result = verify_checkpoint(
+            0,
+            "0000000000000000000000000000000000000000000000000000000000000bad",
+        );
         assert!(result.is_err());
     }
 
@@ -316,8 +324,10 @@ mod tests {
     fn checkpoints_are_sorted() {
         let cps = checkpoints();
         for pair in cps.windows(2) {
-            assert!(pair[0].height < pair[1].height,
-                "checkpoints must be sorted by height");
+            assert!(
+                pair[0].height < pair[1].height,
+                "checkpoints must be sorted by height"
+            );
         }
     }
 }

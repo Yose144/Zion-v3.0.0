@@ -154,9 +154,9 @@ fn build_mint_to_message(
     // ── Account keys (compact-u16 length + 32-byte keys each) ───────────────
     write_compact_u16(&mut msg, 4);
     msg.extend_from_slice(authority_pubkey); // index 0 — signer
-    msg.extend_from_slice(mint);             // index 1 — writable
-    msg.extend_from_slice(dest_ata);         // index 2 — writable
-    msg.extend_from_slice(&token_prog);      // index 3 — program (read-only)
+    msg.extend_from_slice(mint); // index 1 — writable
+    msg.extend_from_slice(dest_ata); // index 2 — writable
+    msg.extend_from_slice(&token_prog); // index 3 — program (read-only)
 
     // ── Recent blockhash ────────────────────────────────────────────────────
     msg.extend_from_slice(recent_blockhash);
@@ -221,10 +221,12 @@ impl SolanaSigner {
     /// - 64-byte keypair (seed || pubkey) as produced by `solana-keygen`
     /// - 32-byte seed only
     pub fn from_base58(key_b58: &str) -> WarpResult<Self> {
-        let bytes = bs58::decode(key_b58).into_vec().map_err(|e| WarpError::AdapterError {
-            chain: "solana".into(),
-            reason: format!("base58 decode failed: {}", e),
-        })?;
+        let bytes = bs58::decode(key_b58)
+            .into_vec()
+            .map_err(|e| WarpError::AdapterError {
+                chain: "solana".into(),
+                reason: format!("base58 decode failed: {}", e),
+            })?;
         let seed: [u8; 32] = if bytes.len() == 64 {
             bytes[..32].try_into().unwrap()
         } else if bytes.len() == 32 {
@@ -235,13 +237,17 @@ impl SolanaSigner {
                 reason: format!("key must be 32 or 64 bytes, got {}", bytes.len()),
             });
         };
-        Ok(Self { key: SigningKey::from_bytes(&seed) })
+        Ok(Self {
+            key: SigningKey::from_bytes(&seed),
+        })
     }
 
     /// Test helper — construct from a raw 32-byte seed without base58 round-trip.
     #[cfg(test)]
     pub fn from_seed(seed: [u8; 32]) -> Self {
-        Self { key: SigningKey::from_bytes(&seed) }
+        Self {
+            key: SigningKey::from_bytes(&seed),
+        }
     }
 
     /// The Ed25519 public key (Solana base58 address).
@@ -273,19 +279,23 @@ impl SolanaSigner {
         let authority_bytes = self.pubkey();
 
         // ── Derive destination ATA ──────────────────────────────────────────
-        let ata_bytes = derive_ata(&recipient_bytes, &mint_bytes).map_err(|e| {
-            WarpError::AdapterError {
+        let ata_bytes =
+            derive_ata(&recipient_bytes, &mint_bytes).map_err(|e| WarpError::AdapterError {
                 chain: "solana".into(),
                 reason: format!("ATA derivation failed: {}", e),
-            }
-        })?;
+            })?;
 
         // ── Fetch recent blockhash ──────────────────────────────────────────
         let blockhash = get_latest_blockhash(client, rpc_url).await?;
 
         // ── Build + sign message ────────────────────────────────────────────
-        let message =
-            build_mint_to_message(&authority_bytes, &mint_bytes, &ata_bytes, &blockhash, amount);
+        let message = build_mint_to_message(
+            &authority_bytes,
+            &mint_bytes,
+            &ata_bytes,
+            &blockhash,
+            amount,
+        );
 
         // Solana: sign the raw message bytes (ed25519 internally hashes with SHA-512)
         let sig = self.key.sign(&message);
@@ -303,10 +313,12 @@ impl SolanaSigner {
     // ── Private helpers ────────────────────────────────────────────────────
 
     fn decode_pubkey(addr: &str, label: &str) -> WarpResult<[u8; 32]> {
-        let v = bs58::decode(addr).into_vec().map_err(|e| WarpError::AdapterError {
-            chain: "solana".into(),
-            reason: format!("{} address base58 error: {}", label, e),
-        })?;
+        let v = bs58::decode(addr)
+            .into_vec()
+            .map_err(|e| WarpError::AdapterError {
+                chain: "solana".into(),
+                reason: format!("{} address base58 error: {}", label, e),
+            })?;
         v.try_into().map_err(|_| WarpError::AdapterError {
             chain: "solana".into(),
             reason: format!("{} address must be 32 bytes", label),
@@ -577,7 +589,11 @@ mod tests {
         // header(3) + compact_u16(1) + 4*32 accounts(128) + blockhash(32)
         // + compact_u16(1) + prog_idx(1) + compact_u16(1)+3acct_idxs(3)
         // + compact_u16(1)+data(9) = 3+1+128+32+1+1+1+3+1+9 = 180
-        assert!(msg.len() >= 100, "message must be at least 100 bytes, got {}", msg.len());
+        assert!(
+            msg.len() >= 100,
+            "message must be at least 100 bytes, got {}",
+            msg.len()
+        );
     }
 
     #[test]
@@ -594,8 +610,13 @@ mod tests {
         let msg = build_mint_to_message(&[0u8; 32], &[1u8; 32], &[2u8; 32], &[0u8; 32], 12345678);
         let expected_amount = 12345678u64.to_le_bytes();
         // Find [7u8] followed by the amount bytes in the message
-        let pos = msg.windows(9).position(|w| w[0] == 7 && &w[1..9] == expected_amount);
-        assert!(pos.is_some(), "mintTo discriminator + amount not found in message");
+        let pos = msg
+            .windows(9)
+            .position(|w| w[0] == 7 && &w[1..9] == expected_amount);
+        assert!(
+            pos.is_some(),
+            "mintTo discriminator + amount not found in message"
+        );
     }
 
     #[test]

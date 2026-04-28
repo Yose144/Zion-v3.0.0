@@ -44,8 +44,7 @@ impl DaoDb {
 
     /// In-memory database for tests.
     pub fn in_memory() -> DaoResult<Self> {
-        let conn =
-            Connection::open_in_memory().map_err(|e| DaoError::Internal(e.to_string()))?;
+        let conn = Connection::open_in_memory().map_err(|e| DaoError::Internal(e.to_string()))?;
         let db = Self { conn };
         db.init_schema()?;
         Ok(db)
@@ -331,8 +330,8 @@ impl DaoDb {
         operation: &TreasuryOperation,
         submitted_by: &str,
     ) -> DaoResult<()> {
-        let op_json = serde_json::to_string(operation)
-            .map_err(|e| DaoError::Internal(e.to_string()))?;
+        let op_json =
+            serde_json::to_string(operation).map_err(|e| DaoError::Internal(e.to_string()))?;
 
         self.conn
             .execute(
@@ -366,11 +365,9 @@ impl DaoDb {
     pub fn last_scanned_block(&self) -> DaoResult<u64> {
         let h: i64 = self
             .conn
-            .query_row(
-                "SELECT last_block FROM scan_state WHERE id=1",
-                [],
-                |row| row.get(0),
-            )
+            .query_row("SELECT last_block FROM scan_state WHERE id=1", [], |row| {
+                row.get(0)
+            })
             .map_err(|e| DaoError::Internal(e.to_string()))?;
         Ok(h as u64)
     }
@@ -447,10 +444,14 @@ mod tests {
             [],
         ).unwrap();
 
-        let first = db.record_vote(1, "zion1voter1", VoteChoice::Yes, 1_000_000, None).unwrap();
+        let first = db
+            .record_vote(1, "zion1voter1", VoteChoice::Yes, 1_000_000, None)
+            .unwrap();
         assert!(first, "First vote should succeed");
 
-        let dup = db.record_vote(1, "zion1voter1", VoteChoice::No, 1_000_000, None).unwrap();
+        let dup = db
+            .record_vote(1, "zion1voter1", VoteChoice::No, 1_000_000, None)
+            .unwrap();
         assert!(!dup, "Duplicate vote should be ignored");
     }
 
@@ -464,13 +465,16 @@ mod tests {
             [],
         ).unwrap();
 
-        db.record_vote(2, "zion1a", VoteChoice::Yes,     5_000_000, None).unwrap();
-        db.record_vote(2, "zion1b", VoteChoice::No,      2_000_000, None).unwrap();
-        db.record_vote(2, "zion1c", VoteChoice::Abstain, 1_000_000, None).unwrap();
+        db.record_vote(2, "zion1a", VoteChoice::Yes, 5_000_000, None)
+            .unwrap();
+        db.record_vote(2, "zion1b", VoteChoice::No, 2_000_000, None)
+            .unwrap();
+        db.record_vote(2, "zion1c", VoteChoice::Abstain, 1_000_000, None)
+            .unwrap();
 
         let (yes, no, abs) = db.vote_totals(2).unwrap();
         assert_eq!(yes, 5_000_000);
-        assert_eq!(no,  2_000_000);
+        assert_eq!(no, 2_000_000);
         assert_eq!(abs, 1_000_000);
     }
 
@@ -485,7 +489,8 @@ mod tests {
         ).unwrap();
 
         assert!(!db.has_voted(3, "zion1voter").unwrap());
-        db.record_vote(3, "zion1voter", VoteChoice::Yes, 100, None).unwrap();
+        db.record_vote(3, "zion1voter", VoteChoice::Yes, 100, None)
+            .unwrap();
         assert!(db.has_voted(3, "zion1voter").unwrap());
     }
 }

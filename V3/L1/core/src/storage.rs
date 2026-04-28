@@ -16,12 +16,12 @@
 //   hash_to_height  — block_hash → height
 //   meta            — chain metadata + known_peers (Phase 11 peer persistence)
 
-use std::path::Path;
-use heed::{Env, EnvOpenOptions, Database};
 use heed::types::{Bytes, Str};
+use heed::{Database, Env, EnvOpenOptions};
 use serde::{Deserialize, Serialize};
+use std::path::Path;
 
-use crate::chain::{UndoBlock, Outpoint};
+use crate::chain::{Outpoint, UndoBlock};
 use crate::tx;
 
 // ── Constants ──────────────────────────────────────────────────────────
@@ -117,8 +117,10 @@ impl std::fmt::Display for StorageError {
             Self::Heed(e) => write!(f, "LMDB error: {e}"),
             Self::Serde(e) => write!(f, "serialization error: {e}"),
             Self::NotFound(k) => write!(f, "not found: {k}"),
-            Self::SchemaVersionMismatch { expected, found } =>
-                write!(f, "schema version mismatch: expected {expected}, found {found}"),
+            Self::SchemaVersionMismatch { expected, found } => write!(
+                f,
+                "schema version mismatch: expected {expected}, found {found}"
+            ),
         }
     }
 }
@@ -126,7 +128,9 @@ impl std::fmt::Display for StorageError {
 impl std::error::Error for StorageError {}
 
 impl From<heed::Error> for StorageError {
-    fn from(e: heed::Error) -> Self { Self::Heed(e) }
+    fn from(e: heed::Error) -> Self {
+        Self::Heed(e)
+    }
 }
 
 // ── Helper: encode/decode via serde_json ───────────────────────────────
@@ -175,8 +179,7 @@ impl ChainDb {
 
     /// Open with a custom map size (useful for tests).
     pub fn open_with_map_size(path: &Path, map_size: usize) -> Result<Self, StorageError> {
-        std::fs::create_dir_all(path)
-            .map_err(|e| StorageError::Serde(format!("mkdir: {e}")))?;
+        std::fs::create_dir_all(path).map_err(|e| StorageError::Serde(format!("mkdir: {e}")))?;
 
         let env = unsafe {
             EnvOpenOptions::new()
@@ -197,8 +200,15 @@ impl ChainDb {
         wtxn.commit()?;
 
         let db = Self {
-            env, blocks, utxos, tx_index, balance_cache,
-            undo_blocks, height_to_hash, hash_to_height, meta,
+            env,
+            blocks,
+            utxos,
+            tx_index,
+            balance_cache,
+            undo_blocks,
+            height_to_hash,
+            hash_to_height,
+            meta,
         };
 
         // Check or initialize schema version
@@ -256,8 +266,10 @@ impl ChainDb {
         self.blocks.put(&mut wtxn, &block.hash, &block_bytes)?;
 
         // 2. Height ↔ hash indexes
-        self.height_to_hash.put(&mut wtxn, &height_key(block.height), &block.hash)?;
-        self.hash_to_height.put(&mut wtxn, &block.hash, &height_key(block.height))?;
+        self.height_to_hash
+            .put(&mut wtxn, &height_key(block.height), &block.hash)?;
+        self.hash_to_height
+            .put(&mut wtxn, &block.hash, &height_key(block.height))?;
 
         // 3. Remove spent UTXOs and update balance cache
         for op in spent_outpoints {
@@ -280,14 +292,18 @@ impl ChainDb {
 
         // 5. Index transactions
         for (idx, tx) in block.transactions.iter().enumerate() {
-            let loc = TxLocation { block_hash: block.hash, index: idx as u32 };
+            let loc = TxLocation {
+                block_hash: block.hash,
+                index: idx as u32,
+            };
             let loc_bytes = encode(&loc)?;
             self.tx_index.put(&mut wtxn, &tx.id, &loc_bytes)?;
         }
 
         // 6. Store undo block
         let undo_bytes = encode(undo)?;
-        self.undo_blocks.put(&mut wtxn, &height_key(undo.height), &undo_bytes)?;
+        self.undo_blocks
+            .put(&mut wtxn, &height_key(undo.height), &undo_bytes)?;
 
         // 7. Update chain tip metadata
         let meta_bytes = encode(new_tip_meta)?;
@@ -308,12 +324,16 @@ impl ChainDb {
 
         // 1. Get undo block
         let hk = height_key(height);
-        let undo_bytes = self.undo_blocks.get(&wtxn, &hk)?
+        let undo_bytes = self
+            .undo_blocks
+            .get(&wtxn, &hk)?
             .ok_or_else(|| StorageError::NotFound(format!("undo block at height {height}")))?;
         let undo: StoredUndoBlock = decode(undo_bytes)?;
 
         // 2. Get block hash at this height
-        let block_hash_bytes = self.height_to_hash.get(&wtxn, &hk)?
+        let block_hash_bytes = self
+            .height_to_hash
+            .get(&wtxn, &hk)?
             .ok_or_else(|| StorageError::NotFound(format!("hash at height {height}")))?;
         let mut block_hash = [0u8; 32];
         block_hash.copy_from_slice(block_hash_bytes);
@@ -371,7 +391,9 @@ impl ChainDb {
     /// Get chain metadata (tip hash, height, total_work).
     pub fn get_meta(&self) -> Result<ChainMeta, StorageError> {
         let rtxn = self.env.read_txn()?;
-        let bytes = self.meta.get(&rtxn, "chain_meta")?
+        let bytes = self
+            .meta
+            .get(&rtxn, "chain_meta")?
             .ok_or_else(|| StorageError::NotFound("chain_meta".to_string()))?;
         decode(bytes)
     }
@@ -407,7 +429,11 @@ impl ChainDb {
     }
 
     /// Get a UTXO by outpoint.
-    pub fn get_utxo(&self, tx_hash: &[u8; 32], index: u32) -> Result<Option<StoredUtxo>, StorageError> {
+    pub fn get_utxo(
+        &self,
+        tx_hash: &[u8; 32],
+        index: u32,
+    ) -> Result<Option<StoredUtxo>, StorageError> {
         let rtxn = self.env.read_txn()?;
         let key = outpoint_key(tx_hash, index);
         match self.utxos.get(&rtxn, &key)? {
@@ -456,7 +482,11 @@ impl ChainDb {
     // ── Export / Import (JSON snapshot compatibility) ───────────────────
 
     /// Export all blocks as a JSON-compatible vector (for debugging / migration).
-    pub fn export_blocks(&self, start_height: u64, end_height: u64) -> Result<Vec<StoredBlock>, StorageError> {
+    pub fn export_blocks(
+        &self,
+        start_height: u64,
+        end_height: u64,
+    ) -> Result<Vec<StoredBlock>, StorageError> {
         let rtxn = self.env.read_txn()?;
         let mut blocks = Vec::new();
         for h in start_height..=end_height {
@@ -471,7 +501,12 @@ impl ChainDb {
 
     // ── Internal helpers ───────────────────────────────────────────────
 
-    fn adjust_balance(&self, wtxn: &mut heed::RwTxn, address: &str, delta: i128) -> Result<(), StorageError> {
+    fn adjust_balance(
+        &self,
+        wtxn: &mut heed::RwTxn,
+        address: &str,
+        delta: i128,
+    ) -> Result<(), StorageError> {
         let current = match self.balance_cache.get(wtxn, address)? {
             Some(bytes) if bytes.len() == 16 => {
                 let mut buf = [0u8; 16];
@@ -481,7 +516,8 @@ impl ChainDb {
             _ => 0i128,
         };
         let new_val = current + delta;
-        self.balance_cache.put(wtxn, address, &new_val.to_le_bytes())?;
+        self.balance_cache
+            .put(wtxn, address, &new_val.to_le_bytes())?;
         Ok(())
     }
 
@@ -514,18 +550,26 @@ impl From<&UndoBlock> for StoredUndoBlock {
         Self {
             height: ub.height,
             hash: ub.hash,
-            spent_utxos: ub.spent_utxos.iter().map(|su| StoredRestoredUtxo {
-                tx_hash: su.outpoint.tx_hash,
-                output_index: su.outpoint.index,
-                amount: su.amount,
-                address: su.address.clone(),
-                created_height: su.created_height,
-                is_coinbase: su.is_coinbase,
-            }).collect(),
-            created_outpoints: ub.created_outpoints.iter().map(|op| StoredOutpoint {
-                tx_hash: op.tx_hash,
-                output_index: op.index,
-            }).collect(),
+            spent_utxos: ub
+                .spent_utxos
+                .iter()
+                .map(|su| StoredRestoredUtxo {
+                    tx_hash: su.outpoint.tx_hash,
+                    output_index: su.outpoint.index,
+                    amount: su.amount,
+                    address: su.address.clone(),
+                    created_height: su.created_height,
+                    is_coinbase: su.is_coinbase,
+                })
+                .collect(),
+            created_outpoints: ub
+                .created_outpoints
+                .iter()
+                .map(|op| StoredOutpoint {
+                    tx_hash: op.tx_hash,
+                    output_index: op.index,
+                })
+                .collect(),
         }
     }
 }
@@ -590,7 +634,8 @@ mod tests {
             total_work: 1000,
         };
 
-        db.save_block_and_apply_utxos(&block, &undo, &[], &[], &meta).unwrap();
+        db.save_block_and_apply_utxos(&block, &undo, &[], &[], &meta)
+            .unwrap();
 
         let got = db.get_block(&hash).unwrap().unwrap();
         assert_eq!(got.height, 1);
@@ -613,7 +658,8 @@ mod tests {
             tip_height: 5,
             total_work: 5000,
         };
-        db.save_block_and_apply_utxos(&block, &undo, &[], &[], &meta).unwrap();
+        db.save_block_and_apply_utxos(&block, &undo, &[], &[], &meta)
+            .unwrap();
 
         assert_eq!(db.get_hash_by_height(5).unwrap(), Some(hash));
         assert_eq!(db.get_hash_by_height(6).unwrap(), None);
@@ -641,7 +687,8 @@ mod tests {
             is_coinbase: false,
         };
 
-        db.save_block_and_apply_utxos(&block, &undo, &[(op.clone(), utxo.clone())], &[], &meta).unwrap();
+        db.save_block_and_apply_utxos(&block, &undo, &[(op.clone(), utxo.clone())], &[], &meta)
+            .unwrap();
 
         let got = db.get_utxo(&tx_hash, 0).unwrap().unwrap();
         assert_eq!(got.amount, 100_000_000);
@@ -657,7 +704,8 @@ mod tests {
             tip_height: 2,
             total_work: 2000,
         };
-        db.save_block_and_apply_utxos(&block2, &undo2, &[], &[op], &meta2).unwrap();
+        db.save_block_and_apply_utxos(&block2, &undo2, &[], &[op], &meta2)
+            .unwrap();
 
         assert!(db.get_utxo(&tx_hash, 0).unwrap().is_none());
         assert_eq!(db.get_balance("zion1test").unwrap(), 0);
@@ -677,14 +725,33 @@ mod tests {
         };
 
         let addr = "zion1alice";
-        let u1 = (Outpoint { tx_hash: [11u8; 32], index: 0 }, StoredUtxo {
-            amount: 500, address: addr.to_string(), created_height: 1, is_coinbase: false,
-        });
-        let u2 = (Outpoint { tx_hash: [12u8; 32], index: 0 }, StoredUtxo {
-            amount: 300, address: addr.to_string(), created_height: 1, is_coinbase: false,
-        });
+        let u1 = (
+            Outpoint {
+                tx_hash: [11u8; 32],
+                index: 0,
+            },
+            StoredUtxo {
+                amount: 500,
+                address: addr.to_string(),
+                created_height: 1,
+                is_coinbase: false,
+            },
+        );
+        let u2 = (
+            Outpoint {
+                tx_hash: [12u8; 32],
+                index: 0,
+            },
+            StoredUtxo {
+                amount: 300,
+                address: addr.to_string(),
+                created_height: 1,
+                is_coinbase: false,
+            },
+        );
 
-        db.save_block_and_apply_utxos(&block, &undo, &[u1, u2], &[], &meta).unwrap();
+        db.save_block_and_apply_utxos(&block, &undo, &[u1, u2], &[], &meta)
+            .unwrap();
         assert_eq!(db.get_balance(addr).unwrap(), 800);
     }
 
@@ -720,7 +787,8 @@ mod tests {
             total_work: 1000,
         };
 
-        db.save_block_and_apply_utxos(&block, &undo, &[], &[], &meta).unwrap();
+        db.save_block_and_apply_utxos(&block, &undo, &[], &[], &meta)
+            .unwrap();
 
         let loc = db.get_tx_location(&tx_id).unwrap().unwrap();
         assert_eq!(loc.block_hash, hash);
@@ -734,7 +802,10 @@ mod tests {
         // Block 1: create a UTXO
         let hash1 = [7u8; 32];
         let block1 = make_test_block(1, hash1, [0u8; 32]);
-        let op = Outpoint { tx_hash: [20u8; 32], index: 0 };
+        let op = Outpoint {
+            tx_hash: [20u8; 32],
+            index: 0,
+        };
         let utxo = StoredUtxo {
             amount: 1_000,
             address: "zion1bob".to_string(),
@@ -748,7 +819,8 @@ mod tests {
             tip_height: 1,
             total_work: 1000,
         };
-        db.save_block_and_apply_utxos(&block1, &undo1, &[(op.clone(), utxo)], &[], &meta1).unwrap();
+        db.save_block_and_apply_utxos(&block1, &undo1, &[(op.clone(), utxo)], &[], &meta1)
+            .unwrap();
 
         // Block 2: spend that UTXO
         let hash2 = [8u8; 32];
@@ -772,7 +844,8 @@ mod tests {
             tip_height: 2,
             total_work: 2000,
         };
-        db.save_block_and_apply_utxos(&block2, &undo2, &[], &[op.clone()], &meta2).unwrap();
+        db.save_block_and_apply_utxos(&block2, &undo2, &[], &[op.clone()], &meta2)
+            .unwrap();
 
         // UTXO should be gone
         assert!(db.get_utxo(&[20u8; 32], 0).unwrap().is_none());
@@ -806,7 +879,8 @@ mod tests {
             tip_height: 3,
             total_work: 3000,
         };
-        db.save_block_and_apply_utxos(&block, &undo, &[], &[], &meta).unwrap();
+        db.save_block_and_apply_utxos(&block, &undo, &[], &[], &meta)
+            .unwrap();
 
         let got = db.get_block_by_height(3).unwrap().unwrap();
         assert_eq!(got.hash, hash);
@@ -828,7 +902,8 @@ mod tests {
                 tip_height: h,
                 total_work: h as u128 * 1000,
             };
-            db.save_block_and_apply_utxos(&block, &undo, &[], &[], &meta).unwrap();
+            db.save_block_and_apply_utxos(&block, &undo, &[], &[], &meta)
+                .unwrap();
             prev = hash;
         }
 
@@ -875,7 +950,8 @@ mod tests {
             tip_height: 10,
             total_work: 10_000,
         };
-        db.save_block_and_apply_utxos(&block, &undo, &[], &[], &meta).unwrap();
+        db.save_block_and_apply_utxos(&block, &undo, &[], &[], &meta)
+            .unwrap();
         assert_eq!(db.tip_height().unwrap(), 10);
     }
 

@@ -187,7 +187,10 @@ fn test_decimal_conversion_full_roundtrip() {
 
     // Display (12-decimal precision)
     let display = flowers_to_zion_display(recovered);
-    assert!(display.starts_with("1234.56789"), "display should show 1234.56789..., got {display}");
+    assert!(
+        display.starts_with("1234.56789"),
+        "display should show 1234.56789..., got {display}"
+    );
 }
 
 // ──────────────────────────────────────────────
