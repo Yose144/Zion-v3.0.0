@@ -75,10 +75,23 @@ PREMINE_WALLETS_BACKUP.json
 **/PREMINE_WALLETS_BACKUP*
 MYSTERIUM_KEYS_BACKUP.json
 scripts/_decrypt_myst.py
+# Wallet exports (Ed25519 secret_key_hex / mnemonic must NEVER be committed)
+zion-wallet.json
+**/zion-wallet*.json
+*.wallet.json
+*.wallet
+*.keystore
+*.mnemonic
+**/seed.txt
+**/seed.json
 
 # Temporary deploy/patch artifacts
 V3_deploy.tar
 V3_full.tar
+V3_upload.zip
+V3-src.tar
+V3-src*.tar
+V3-src*.zip
 fix_lmdb_dup.py
 patch_server.py
 patch_validation_v2.py
