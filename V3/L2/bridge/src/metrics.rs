@@ -88,39 +88,72 @@ impl BridgeMetrics {
         let mut out = String::with_capacity(1024);
 
         let metrics: &[(&str, &str, &str, u64)] = &[
-            ("counter", "zion_bridge_uptime_seconds",
-             "Bridge relay uptime in seconds",
-             snap.uptime_secs),
-            ("counter", "zion_bridge_l1_locks_detected_total",
-             "Total L1 lock transactions detected",
-             snap.l1_locks_detected),
-            ("counter", "zion_bridge_l1_locks_finalized_total",
-             "Total L1 lock transactions finalized (enough confirmations)",
-             snap.l1_locks_finalized),
-            ("counter", "zion_bridge_evm_mints_submitted_total",
-             "Total wZION mint transactions submitted on EVM",
-             snap.evm_mints_submitted),
-            ("counter", "zion_bridge_evm_mints_confirmed_total",
-             "Total wZION mint transactions confirmed on EVM",
-             snap.evm_mints_confirmed),
-            ("counter", "zion_bridge_evm_burns_detected_total",
-             "Total wZION burn events detected on EVM",
-             snap.evm_burns_detected),
-            ("counter", "zion_bridge_l1_unlocks_submitted_total",
-             "Total L1 unlock transactions submitted",
-             snap.l1_unlocks_submitted),
-            ("counter", "zion_bridge_l1_unlocks_confirmed_total",
-             "Total L1 unlock transactions confirmed",
-             snap.l1_unlocks_confirmed),
-            ("counter", "zion_bridge_errors_total",
-             "Total bridge relay errors",
-             snap.errors),
-            ("gauge", "zion_bridge_last_l1_height",
-             "Last processed L1 block height",
-             snap.last_l1_height),
-            ("gauge", "zion_bridge_last_evm_block",
-             "Last processed EVM block number",
-             snap.last_evm_block),
+            (
+                "counter",
+                "zion_bridge_uptime_seconds",
+                "Bridge relay uptime in seconds",
+                snap.uptime_secs,
+            ),
+            (
+                "counter",
+                "zion_bridge_l1_locks_detected_total",
+                "Total L1 lock transactions detected",
+                snap.l1_locks_detected,
+            ),
+            (
+                "counter",
+                "zion_bridge_l1_locks_finalized_total",
+                "Total L1 lock transactions finalized (enough confirmations)",
+                snap.l1_locks_finalized,
+            ),
+            (
+                "counter",
+                "zion_bridge_evm_mints_submitted_total",
+                "Total wZION mint transactions submitted on EVM",
+                snap.evm_mints_submitted,
+            ),
+            (
+                "counter",
+                "zion_bridge_evm_mints_confirmed_total",
+                "Total wZION mint transactions confirmed on EVM",
+                snap.evm_mints_confirmed,
+            ),
+            (
+                "counter",
+                "zion_bridge_evm_burns_detected_total",
+                "Total wZION burn events detected on EVM",
+                snap.evm_burns_detected,
+            ),
+            (
+                "counter",
+                "zion_bridge_l1_unlocks_submitted_total",
+                "Total L1 unlock transactions submitted",
+                snap.l1_unlocks_submitted,
+            ),
+            (
+                "counter",
+                "zion_bridge_l1_unlocks_confirmed_total",
+                "Total L1 unlock transactions confirmed",
+                snap.l1_unlocks_confirmed,
+            ),
+            (
+                "counter",
+                "zion_bridge_errors_total",
+                "Total bridge relay errors",
+                snap.errors,
+            ),
+            (
+                "gauge",
+                "zion_bridge_last_l1_height",
+                "Last processed L1 block height",
+                snap.last_l1_height,
+            ),
+            (
+                "gauge",
+                "zion_bridge_last_evm_block",
+                "Last processed EVM block number",
+                snap.last_evm_block,
+            ),
         ];
 
         for (kind, name, help, value) in metrics {
@@ -150,7 +183,10 @@ pub async fn serve_metrics(metrics: Arc<BridgeMetrics>, port: u16) {
                     let txt = m.render_prometheus();
                     async move {
                         (
-                            [(axum::http::header::CONTENT_TYPE, "text/plain; version=0.0.4")],
+                            [(
+                                axum::http::header::CONTENT_TYPE,
+                                "text/plain; version=0.0.4",
+                            )],
                             txt,
                         )
                     }

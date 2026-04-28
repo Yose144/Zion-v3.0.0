@@ -125,7 +125,10 @@ impl NodeHandle {
             .seed_peers
             .iter()
             .filter_map(|ep| {
-                ep.host.parse::<std::net::IpAddr>().ok().map(|ip| (ip, ep.port))
+                ep.host
+                    .parse::<std::net::IpAddr>()
+                    .ok()
+                    .map(|ip| (ip, ep.port))
             })
             .collect();
         peer_manager.add_seeds(&seeds);
@@ -182,7 +185,13 @@ impl NodeHandle {
     }
 
     /// Register a new peer connection.
-    pub fn register_peer(&mut self, peer_id: &str, addr: std::net::IpAddr, port: u16, best_height: u64) {
+    pub fn register_peer(
+        &mut self,
+        peer_id: &str,
+        addr: std::net::IpAddr,
+        port: u16,
+        best_height: u64,
+    ) {
         self.peer_manager.register_peer(
             peer_id,
             addr,
@@ -360,6 +369,9 @@ mod tests {
     #[test]
     fn mainnet_config_has_seed_peers() {
         let cfg = NodeConfig::mainnet();
-        assert!(!cfg.seed_peers.is_empty(), "mainnet needs at least 1 seed peer");
+        assert!(
+            !cfg.seed_peers.is_empty(),
+            "mainnet needs at least 1 seed peer"
+        );
     }
 }

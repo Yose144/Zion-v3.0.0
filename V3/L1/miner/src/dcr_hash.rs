@@ -12,23 +12,25 @@ pub fn dcr_hash(header: &[u8; 180]) -> [u8; 32] {
 #[inline(always)]
 pub fn hash_meets_target(hash: &[u8; 32], target: &[u8; 32]) -> bool {
     let h_hi = u128::from_be_bytes([
-        hash[0], hash[1], hash[2], hash[3], hash[4], hash[5], hash[6], hash[7],
-        hash[8], hash[9], hash[10], hash[11], hash[12], hash[13], hash[14], hash[15],
+        hash[0], hash[1], hash[2], hash[3], hash[4], hash[5], hash[6], hash[7], hash[8], hash[9],
+        hash[10], hash[11], hash[12], hash[13], hash[14], hash[15],
     ]);
     let t_hi = u128::from_be_bytes([
         target[0], target[1], target[2], target[3], target[4], target[5], target[6], target[7],
-        target[8], target[9], target[10], target[11], target[12], target[13], target[14], target[15],
+        target[8], target[9], target[10], target[11], target[12], target[13], target[14],
+        target[15],
     ]);
     if h_hi != t_hi {
         return h_hi < t_hi;
     }
     let h_lo = u128::from_be_bytes([
-        hash[16], hash[17], hash[18], hash[19], hash[20], hash[21], hash[22], hash[23],
-        hash[24], hash[25], hash[26], hash[27], hash[28], hash[29], hash[30], hash[31],
+        hash[16], hash[17], hash[18], hash[19], hash[20], hash[21], hash[22], hash[23], hash[24],
+        hash[25], hash[26], hash[27], hash[28], hash[29], hash[30], hash[31],
     ]);
     let t_lo = u128::from_be_bytes([
-        target[16], target[17], target[18], target[19], target[20], target[21], target[22], target[23],
-        target[24], target[25], target[26], target[27], target[28], target[29], target[30], target[31],
+        target[16], target[17], target[18], target[19], target[20], target[21], target[22],
+        target[23], target[24], target[25], target[26], target[27], target[28], target[29],
+        target[30], target[31],
     ]);
     h_lo <= t_lo
 }
@@ -195,7 +197,9 @@ mod tests {
         for seed in 0u8..=255 {
             let hash = dcr_hash(&[seed; 180]);
             let mut t = hash;
-            if t[31] < 255 { t[31] += 1; }
+            if t[31] < 255 {
+                t[31] += 1;
+            }
             assert!(hash_meets_target(&hash, &t));
         }
     }

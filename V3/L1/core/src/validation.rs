@@ -68,21 +68,54 @@ pub fn merkle_root(tx_hashes: &[[u8; 32]]) -> [u8; 32] {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ValidationError {
     EmptyBlock,
-    BlockTooLarge { size: usize, max: usize },
+    BlockTooLarge {
+        size: usize,
+        max: usize,
+    },
     PowInvalid,
-    DifficultyMismatch { expected: u64, got: u64 },
-    TimestampTooFarFuture { timestamp: u64, max: u64 },
-    TimestampTooOld { timestamp: u64, min: u64 },
-    MerkleRootMismatch { expected: [u8; 32], got: [u8; 32] },
-    InvalidSignature { tx_index: usize },
-    DoubleSpend { tx_index: usize, input_index: usize },
-    ImmatureCoinbase { tx_index: usize, input_index: usize, age: u64 },
-    FeeTooLow { tx_index: usize },
-    SubsidyExceeded { coinbase_output: u64, max_reward: u64 },
+    DifficultyMismatch {
+        expected: u64,
+        got: u64,
+    },
+    TimestampTooFarFuture {
+        timestamp: u64,
+        max: u64,
+    },
+    TimestampTooOld {
+        timestamp: u64,
+        min: u64,
+    },
+    MerkleRootMismatch {
+        expected: [u8; 32],
+        got: [u8; 32],
+    },
+    InvalidSignature {
+        tx_index: usize,
+    },
+    DoubleSpend {
+        tx_index: usize,
+        input_index: usize,
+    },
+    ImmatureCoinbase {
+        tx_index: usize,
+        input_index: usize,
+        age: u64,
+    },
+    FeeTooLow {
+        tx_index: usize,
+    },
+    SubsidyExceeded {
+        coinbase_output: u64,
+        max_reward: u64,
+    },
     NoCoinbase,
     CoinbaseHasInputs,
     /// Spending from a time-locked premine address before its unlock height.
-    LockedPremine { tx_index: usize, address: String, unlock_height: u64 },
+    LockedPremine {
+        tx_index: usize,
+        address: String,
+        unlock_height: u64,
+    },
 }
 
 impl std::fmt::Display for ValidationError {
@@ -91,27 +124,47 @@ impl std::fmt::Display for ValidationError {
             Self::EmptyBlock => write!(f, "block has no transactions"),
             Self::BlockTooLarge { size, max } => write!(f, "block {size} bytes exceeds {max}"),
             Self::PowInvalid => write!(f, "PoW hash does not meet target"),
-            Self::DifficultyMismatch { expected, got } =>
-                write!(f, "difficulty mismatch: expected {expected}, got {got}"),
-            Self::TimestampTooFarFuture { timestamp, max } =>
-                write!(f, "timestamp {timestamp} too far in future (max {max})"),
-            Self::TimestampTooOld { timestamp, min } =>
-                write!(f, "timestamp {timestamp} too old (min {min})"),
+            Self::DifficultyMismatch { expected, got } => {
+                write!(f, "difficulty mismatch: expected {expected}, got {got}")
+            }
+            Self::TimestampTooFarFuture { timestamp, max } => {
+                write!(f, "timestamp {timestamp} too far in future (max {max})")
+            }
+            Self::TimestampTooOld { timestamp, min } => {
+                write!(f, "timestamp {timestamp} too old (min {min})")
+            }
             Self::MerkleRootMismatch { .. } => write!(f, "merkle root mismatch"),
-            Self::InvalidSignature { tx_index } =>
-                write!(f, "invalid signature in tx {tx_index}"),
-            Self::DoubleSpend { tx_index, input_index } =>
-                write!(f, "double-spend in tx {tx_index} input {input_index}"),
-            Self::ImmatureCoinbase { tx_index, input_index, age } =>
-                write!(f, "immature coinbase in tx {tx_index} input {input_index} (age {age})"),
-            Self::FeeTooLow { tx_index } =>
-                write!(f, "fee too low in tx {tx_index}"),
-            Self::SubsidyExceeded { coinbase_output, max_reward } =>
-                write!(f, "coinbase output {coinbase_output} exceeds reward {max_reward}"),
+            Self::InvalidSignature { tx_index } => write!(f, "invalid signature in tx {tx_index}"),
+            Self::DoubleSpend {
+                tx_index,
+                input_index,
+            } => write!(f, "double-spend in tx {tx_index} input {input_index}"),
+            Self::ImmatureCoinbase {
+                tx_index,
+                input_index,
+                age,
+            } => write!(
+                f,
+                "immature coinbase in tx {tx_index} input {input_index} (age {age})"
+            ),
+            Self::FeeTooLow { tx_index } => write!(f, "fee too low in tx {tx_index}"),
+            Self::SubsidyExceeded {
+                coinbase_output,
+                max_reward,
+            } => write!(
+                f,
+                "coinbase output {coinbase_output} exceeds reward {max_reward}"
+            ),
             Self::NoCoinbase => write!(f, "block has no coinbase transaction"),
             Self::CoinbaseHasInputs => write!(f, "coinbase transaction has inputs"),
-            Self::LockedPremine { tx_index, address, unlock_height } =>
-                write!(f, "tx {tx_index} spends locked premine address {address} (unlock at {unlock_height})"),
+            Self::LockedPremine {
+                tx_index,
+                address,
+                unlock_height,
+            } => write!(
+                f,
+                "tx {tx_index} spends locked premine address {address} (unlock at {unlock_height})"
+            ),
         }
     }
 }
@@ -210,9 +263,7 @@ pub fn validate_signatures(transactions: &[Transaction]) -> Result<(), Validatio
 }
 
 /// Step 7: Check for double-spends within the block.
-pub fn validate_no_double_spend(
-    transactions: &[Transaction],
-) -> Result<(), ValidationError> {
+pub fn validate_no_double_spend(transactions: &[Transaction]) -> Result<(), ValidationError> {
     let mut spent: std::collections::HashSet<([u8; 32], u32)> = std::collections::HashSet::new();
     for (tx_i, tx) in transactions.iter().enumerate().skip(1) {
         for (inp_i, input) in tx.inputs.iter().enumerate() {
@@ -259,7 +310,12 @@ pub fn validate_fees(
     transactions: &[Transaction],
     estimated_sizes: &[usize],
 ) -> Result<(), ValidationError> {
-    for (i, (tx, &size)) in transactions.iter().zip(estimated_sizes.iter()).enumerate().skip(1) {
+    for (i, (tx, &size)) in transactions
+        .iter()
+        .zip(estimated_sizes.iter())
+        .enumerate()
+        .skip(1)
+    {
         if fee::validate_fee(tx.fee, size).is_err() {
             return Err(ValidationError::FeeTooLow { tx_index: i });
         }
@@ -268,10 +324,7 @@ pub fn validate_fees(
 }
 
 /// Step 10: Validate coinbase subsidy — coinbase output ≤ block reward.
-pub fn validate_subsidy(
-    coinbase: &Transaction,
-    block_height: u64,
-) -> Result<(), ValidationError> {
+pub fn validate_subsidy(coinbase: &Transaction, block_height: u64) -> Result<(), ValidationError> {
     if !coinbase.is_coinbase() {
         return Err(ValidationError::CoinbaseHasInputs);
     }
@@ -335,11 +388,7 @@ pub fn validate_block(
     // Steps 2-3: PoW + difficulty — done externally
 
     // Step 4: Timestamp
-    validate_timestamp(
-        block_timestamp,
-        ctx.median_time_past,
-        ctx.current_time,
-    )?;
+    validate_timestamp(block_timestamp, ctx.median_time_past, ctx.current_time)?;
 
     // Step 5: Merkle root
     validate_merkle_root(merkle_root_expected, transactions)?;
@@ -374,7 +423,7 @@ pub fn validate_block(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::crypto::{generate_keypair, sign, derive_address};
+    use crate::crypto::{derive_address, generate_keypair, sign};
     use crate::tx::{TxInput, TxOutput};
 
     fn make_coinbase(height: u64) -> Transaction {
@@ -545,7 +594,10 @@ mod tests {
         tx2.inputs[0].prev_tx_hash = tx1.inputs[0].prev_tx_hash;
         tx2.inputs[0].output_index = tx1.inputs[0].output_index;
         let err = validate_no_double_spend(&[cb, tx1, tx2]).unwrap_err();
-        assert!(matches!(err, ValidationError::DoubleSpend { tx_index: 2, .. }));
+        assert!(matches!(
+            err,
+            ValidationError::DoubleSpend { tx_index: 2, .. }
+        ));
     }
 
     // ── Step 8: Coinbase maturity ──────────────────────────────────
@@ -580,7 +632,10 @@ mod tests {
         };
         // Current height 100, coinbase at 50 → age 50 < 100
         let err = validate_coinbase_maturity(&[cb, tx], 100, &lookup).unwrap_err();
-        assert!(matches!(err, ValidationError::ImmatureCoinbase { age: 50, .. }));
+        assert!(matches!(
+            err,
+            ValidationError::ImmatureCoinbase { age: 50, .. }
+        ));
     }
 
     // ── Step 10: Subsidy ───────────────────────────────────────────

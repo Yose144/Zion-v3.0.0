@@ -28,9 +28,9 @@
 
 use crate::error::{WarpError, WarpResult};
 use k256::ecdsa::SigningKey;
+use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 use sha3::Keccak256;
-use serde_json::{json, Value};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Address helpers
@@ -69,10 +69,12 @@ pub fn tron_base58check_encode(payload: &[u8]) -> String {
 
 /// Decode a base58check Tron address into 21 bytes (version 0x41 + 20 bytes).
 pub fn tron_base58check_decode(addr: &str) -> WarpResult<[u8; 21]> {
-    let full = bs58::decode(addr).into_vec().map_err(|e| WarpError::AdapterError {
-        chain: "tron".into(),
-        reason: format!("Tron base58check decode '{}': {}", addr, e),
-    })?;
+    let full = bs58::decode(addr)
+        .into_vec()
+        .map_err(|e| WarpError::AdapterError {
+            chain: "tron".into(),
+            reason: format!("Tron base58check decode '{}': {}", addr, e),
+        })?;
     if full.len() < 5 {
         return Err(WarpError::AdapterError {
             chain: "tron".into(),
@@ -149,12 +151,12 @@ pub fn tron_sign_txid(key: &SigningKey, txid_hex: &str) -> WarpResult<String> {
         });
     }
 
-    let (sig, recid) = key
-        .sign_prehash_recoverable(&txid_bytes)
-        .map_err(|e| WarpError::AdapterError {
-            chain: "tron".into(),
-            reason: format!("secp256k1 sign: {}", e),
-        })?;
+    let (sig, recid) =
+        key.sign_prehash_recoverable(&txid_bytes)
+            .map_err(|e| WarpError::AdapterError {
+                chain: "tron".into(),
+                reason: format!("secp256k1 sign: {}", e),
+            })?;
 
     let mut out = [0u8; 65];
     out[..64].copy_from_slice(&sig.to_bytes());
@@ -198,7 +200,9 @@ impl TronSigner {
     /// Test helper: construct from raw 32-byte seed.
     #[cfg(test)]
     pub fn from_bytes(seed: &[u8; 32]) -> Self {
-        Self { key: SigningKey::from_slice(seed).unwrap() }
+        Self {
+            key: SigningKey::from_slice(seed).unwrap(),
+        }
     }
 
     /// The Tron base58check address for this key.
@@ -373,8 +377,9 @@ mod tests {
 
     #[test]
     fn test_base58check_roundtrip() {
-        let payload = [0x41, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
-                       11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
+        let payload = [
+            0x41, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+        ];
         let encoded = tron_base58check_encode(&payload);
         assert!(encoded.starts_with('T'));
         let decoded = tron_base58check_decode(&encoded).unwrap();
@@ -408,7 +413,11 @@ mod tests {
         let addr = signer.address();
         let hex = abi_encode_mint_params(&addr, 1_000_000).unwrap();
         // 64 bytes → 128 hex chars
-        assert_eq!(hex.len(), 128, "ABI encoded params must be 64 bytes (128 hex chars)");
+        assert_eq!(
+            hex.len(),
+            128,
+            "ABI encoded params must be 64 bytes (128 hex chars)"
+        );
     }
 
     #[test]
@@ -418,7 +427,11 @@ mod tests {
         let hex = abi_encode_mint_params(&addr, 0).unwrap();
         let bytes = hex::decode(&hex).unwrap();
         // First 12 bytes of address slot must be zero (padding)
-        assert_eq!(&bytes[..12], &[0u8; 12], "address slot padding must be zeros");
+        assert_eq!(
+            &bytes[..12],
+            &[0u8; 12],
+            "address slot padding must be zeros"
+        );
     }
 
     #[test]
@@ -484,7 +497,11 @@ mod tests {
         let sig = tron_sign_txid(&s.key, &txid).unwrap();
         let sig_bytes = hex::decode(&sig).unwrap();
         // Tron v byte must be 0 or 1 (not 27/28)
-        assert!(sig_bytes[64] <= 1, "recovery id must be 0 or 1, got {}", sig_bytes[64]);
+        assert!(
+            sig_bytes[64] <= 1,
+            "recovery id must be 0 or 1, got {}",
+            sig_bytes[64]
+        );
     }
 
     #[test]
