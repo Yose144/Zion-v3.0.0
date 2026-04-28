@@ -41,9 +41,7 @@ pub const MAX_ANNOUNCE_AGE: u64 = 600;
 pub const DNS_SEEDS: &[&str] = &[];
 
 /// Well-known bootstrap nodes for UDP announcements.
-pub const BOOTSTRAP_NODES: &[(&str, u16)] = &[
-    ("91.98.122.165", 8335),
-];
+pub const BOOTSTRAP_NODES: &[(&str, u16)] = &[("91.98.122.165", 8335)];
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -207,7 +205,14 @@ impl DiscoveryEngine {
         height: Option<u64>,
         now_secs: u64,
     ) {
-        self.upsert(addr, port, DiscoverySource::PeerExchange, None, height, now_secs);
+        self.upsert(
+            addr,
+            port,
+            DiscoverySource::PeerExchange,
+            None,
+            height,
+            now_secs,
+        );
     }
 
     /// Process an incoming UDP node_announce message.
@@ -352,8 +357,8 @@ impl DiscoveryEngine {
 
     /// Load previously persisted peers from JSON.
     pub fn load_persisted(&mut self, json: &str) -> Result<usize, String> {
-        let peers: Vec<DiscoveredPeer> = serde_json::from_str(json)
-            .map_err(|e| format!("invalid peers JSON: {e}"))?;
+        let peers: Vec<DiscoveredPeer> =
+            serde_json::from_str(json).map_err(|e| format!("invalid peers JSON: {e}"))?;
         let count = peers.len();
         for mut p in peers {
             p.source = DiscoverySource::Persisted;
@@ -393,24 +398,26 @@ impl DiscoveryEngine {
                 existing.height = Some(h);
             }
         } else if self.peers.len() < MAX_DISCOVERED {
-            self.peers.insert(key, DiscoveredPeer {
-                addr,
-                port,
-                first_seen_secs: now_secs,
-                last_seen_secs: now_secs,
-                source,
-                version,
-                height,
-                services: None,
-            });
+            self.peers.insert(
+                key,
+                DiscoveredPeer {
+                    addr,
+                    port,
+                    first_seen_secs: now_secs,
+                    last_seen_secs: now_secs,
+                    source,
+                    version,
+                    height,
+                    services: None,
+                },
+            );
         }
     }
 
     fn prune(&mut self, now_secs: u64) {
         let expiry_secs = PEER_EXPIRY.as_secs();
-        self.peers.retain(|_, p| {
-            now_secs.saturating_sub(p.last_seen_secs) < expiry_secs
-        });
+        self.peers
+            .retain(|_, p| now_secs.saturating_sub(p.last_seen_secs) < expiry_secs);
     }
 }
 
@@ -573,12 +580,14 @@ mod tests {
         let now = Instant::now();
         let cmds = engine.tick(now, 1000, &["peer1".into()], 0, 8);
 
-        let dns: Vec<_> = cmds.iter()
+        let dns: Vec<_> = cmds
+            .iter()
             .filter(|c| matches!(c, DiscoveryCommand::ResolveDns { .. }))
             .collect();
         assert!(!dns.is_empty());
 
-        let announces: Vec<_> = cmds.iter()
+        let announces: Vec<_> = cmds
+            .iter()
             .filter(|c| matches!(c, DiscoveryCommand::SendAnnounce { .. }))
             .collect();
         assert!(!announces.is_empty());
@@ -593,7 +602,8 @@ mod tests {
         let now = Instant::now();
         let cmds = engine.tick(now, 1000, &[], 0, 8);
 
-        let connects: Vec<_> = cmds.iter()
+        let connects: Vec<_> = cmds
+            .iter()
             .filter(|c| matches!(c, DiscoveryCommand::TryConnect { .. }))
             .collect();
         assert!(!connects.is_empty());

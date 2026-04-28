@@ -11,9 +11,7 @@
 ///   5. RLP-encode final TX with (v, r, s)
 ///   6. Broadcast via eth_sendRawTransaction
 use hex;
-use k256::ecdsa::{
-    signature::hazmat::PrehashSigner, RecoveryId, SigningKey,
-};
+use k256::ecdsa::{signature::hazmat::PrehashSigner, RecoveryId, SigningKey};
 use rlp::RlpStream;
 use sha3::{Digest, Keccak256};
 
@@ -23,11 +21,7 @@ use crate::error::{WarpError, WarpResult};
 // Nonce / gasPrice helpers (raw JSON-RPC)
 // ─────────────────────────────────────────────────────────────────────────────
 
-pub async fn eth_nonce(
-    client: &reqwest::Client,
-    rpc_url: &str,
-    address: &str,
-) -> WarpResult<u64> {
+pub async fn eth_nonce(client: &reqwest::Client, rpc_url: &str, address: &str) -> WarpResult<u64> {
     let body = serde_json::json!({
         "jsonrpc": "2.0",
         "method": "eth_getTransactionCount",
@@ -53,10 +47,7 @@ pub async fn eth_nonce(
     Ok(hex_to_u64(hex))
 }
 
-pub async fn eth_gas_price(
-    client: &reqwest::Client,
-    rpc_url: &str,
-) -> WarpResult<u64> {
+pub async fn eth_gas_price(client: &reqwest::Client, rpc_url: &str) -> WarpResult<u64> {
     let body = serde_json::json!({
         "jsonrpc": "2.0",
         "method": "eth_gasPrice",
@@ -116,10 +107,7 @@ pub async fn eth_send_raw_tx(
         });
     }
 
-    let tx_hash = resp["result"]
-        .as_str()
-        .unwrap_or("")
-        .to_string();
+    let tx_hash = resp["result"].as_str().unwrap_or("").to_string();
 
     if tx_hash.is_empty() {
         return Err(WarpError::AdapterError {
@@ -145,11 +133,10 @@ impl EvmSigner {
     /// Load from a hex private key (with or without 0x prefix).
     /// Reads `WARP_EVM_RELAY_KEY` env var.
     pub fn from_env() -> WarpResult<Self> {
-        let raw = std::env::var("WARP_EVM_RELAY_KEY")
-            .map_err(|_| WarpError::AdapterError {
-                chain: "evm".into(),
-                reason: "WARP_EVM_RELAY_KEY not set — EVM signing disabled".into(),
-            })?;
+        let raw = std::env::var("WARP_EVM_RELAY_KEY").map_err(|_| WarpError::AdapterError {
+            chain: "evm".into(),
+            reason: "WARP_EVM_RELAY_KEY not set — EVM signing disabled".into(),
+        })?;
         Self::from_hex(&raw)
     }
 
@@ -164,7 +151,10 @@ impl EvmSigner {
             reason: format!("Invalid secp256k1 key: {}", e),
         })?;
         let address = public_key_to_address(signing_key.verifying_key());
-        Ok(Self { signing_key, address })
+        Ok(Self {
+            signing_key,
+            address,
+        })
     }
 
     /// Sign and broadcast a call to `to` with `calldata`.
@@ -186,7 +176,8 @@ impl EvmSigner {
         let gas_price = gas_price + gas_price / 5;
 
         // 2. Build and sign
-        let raw = self.sign_legacy_tx(chain_id, nonce, gas_price, gas_limit, to, value, calldata)?;
+        let raw =
+            self.sign_legacy_tx(chain_id, nonce, gas_price, gas_limit, to, value, calldata)?;
         let raw_hex = hex::encode(&raw);
 
         // 3. Broadcast
@@ -200,8 +191,8 @@ impl EvmSigner {
         nonce: u64,
         gas_price: u64,
         gas_limit: u64,
-        to: &str,          // hex address "0x..."
-        value: u64,        // wei
+        to: &str,   // hex address "0x..."
+        value: u64, // wei
         data: &[u8],
     ) -> WarpResult<Vec<u8>> {
         let to_bytes = decode_address(to)?;
@@ -215,8 +206,10 @@ impl EvmSigner {
         let hash: [u8; 32] = Keccak256::digest(&pre_sign).into();
 
         // ── ECDSA sign ──
-        let (signature, recid): (k256::ecdsa::Signature, RecoveryId) =
-            self.signing_key.sign_prehash(&hash).map_err(|e| WarpError::AdapterError {
+        let (signature, recid): (k256::ecdsa::Signature, RecoveryId) = self
+            .signing_key
+            .sign_prehash(&hash)
+            .map_err(|e| WarpError::AdapterError {
                 chain: "evm".into(),
                 reason: format!("ECDSA sign error: {}", e),
             })?;
@@ -228,8 +221,7 @@ impl EvmSigner {
 
         // ── Final signed RLP ──
         Ok(encode_legacy_signed(
-            nonce, gas_price, gas_limit, &to_bytes, value, data,
-            v, &r_bytes, &s_bytes,
+            nonce, gas_price, gas_limit, &to_bytes, value, data, v, &r_bytes, &s_bytes,
         ))
     }
 }
@@ -249,15 +241,15 @@ fn encode_legacy_pre_sign(
     chain_id: u64,
 ) -> Vec<u8> {
     let mut stream = RlpStream::new_list(9);
-    stream.append(&int_to_minimal_bytes(nonce));        // nonce
-    stream.append(&int_to_minimal_bytes(gas_price));    // gasPrice
-    stream.append(&int_to_minimal_bytes(gas_limit));    // gasLimit
-    stream.append(&to.to_vec());                        // to (20 bytes, not stripped)
-    stream.append(&int_to_minimal_bytes(value));        // value
-    stream.append(&data.to_vec());                      // data
-    stream.append(&int_to_minimal_bytes(chain_id));     // chainId (EIP-155)
-    stream.append(&int_to_minimal_bytes(0u64));         // 0
-    stream.append(&int_to_minimal_bytes(0u64));         // 0
+    stream.append(&int_to_minimal_bytes(nonce)); // nonce
+    stream.append(&int_to_minimal_bytes(gas_price)); // gasPrice
+    stream.append(&int_to_minimal_bytes(gas_limit)); // gasLimit
+    stream.append(&to.to_vec()); // to (20 bytes, not stripped)
+    stream.append(&int_to_minimal_bytes(value)); // value
+    stream.append(&data.to_vec()); // data
+    stream.append(&int_to_minimal_bytes(chain_id)); // chainId (EIP-155)
+    stream.append(&int_to_minimal_bytes(0u64)); // 0
+    stream.append(&int_to_minimal_bytes(0u64)); // 0
     stream.out().freeze().to_vec()
 }
 
@@ -281,8 +273,8 @@ fn encode_legacy_signed(
     stream.append(&int_to_minimal_bytes(value));
     stream.append(&data.to_vec());
     stream.append(&int_to_minimal_bytes(v));
-    stream.append(&strip_leading_zeros(r));  // r: minimal bytes
-    stream.append(&strip_leading_zeros(s));  // s: minimal bytes
+    stream.append(&strip_leading_zeros(r)); // r: minimal bytes
+    stream.append(&strip_leading_zeros(s)); // s: minimal bytes
     stream.out().freeze().to_vec()
 }
 
@@ -407,7 +399,10 @@ mod tests {
         let addr = "0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186";
         let bytes = decode_address(addr).unwrap();
         assert_eq!(bytes.len(), 20);
-        assert_eq!(hex::encode(bytes), "dde17506bc2d2dce1d594bd1d85b0babb389d186");
+        assert_eq!(
+            hex::encode(bytes),
+            "dde17506bc2d2dce1d594bd1d85b0babb389d186"
+        );
     }
 
     #[test]
@@ -437,7 +432,8 @@ mod tests {
             "0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186",
             1_000_000,
             &msg_hash,
-        ).unwrap();
+        )
+        .unwrap();
         // 4 (selector) + 32 (addr) + 32 (amount) + 32 (hash) = 100 bytes
         assert_eq!(data.len(), 100);
     }
@@ -448,10 +444,16 @@ mod tests {
         let signer = EvmSigner::from_hex(key).unwrap();
         let to = "0x2c7536E3605D9C16a7a3D7b1898e529396a65c23";
         let data = b"test";
-        let raw = signer.sign_legacy_tx(84532, 0, 1_000_000_000, 100_000, to, 0, data).unwrap();
+        let raw = signer
+            .sign_legacy_tx(84532, 0, 1_000_000_000, 100_000, to, 0, data)
+            .unwrap();
         // Raw tx is RLP-encoded — just check it's non-empty and decodable
         assert!(!raw.is_empty());
         // First byte should be >= 0xc0 (RLP list prefix)
-        assert!(raw[0] >= 0xc0, "Expected RLP list prefix, got 0x{:02x}", raw[0]);
+        assert!(
+            raw[0] >= 0xc0,
+            "Expected RLP list prefix, got 0x{:02x}",
+            raw[0]
+        );
     }
 }

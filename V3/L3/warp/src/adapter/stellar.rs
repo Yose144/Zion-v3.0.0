@@ -13,24 +13,24 @@ use tracing::{debug, info, warn};
 // ─────────────────────────────────────────────────────────────────────────────
 fn wzion_contract(network: &str) -> Option<&'static str> {
     match network {
-        "mainnet"  => Some("CZIONXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"),
-        "testnet"  => Some("CZIONTEXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"),
+        "mainnet" => Some("CZIONXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"),
+        "testnet" => Some("CZIONTEXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"),
         _ => None,
     }
 }
 
 fn default_horizon(network: &str) -> &'static str {
     match network {
-        "testnet"  => "https://horizon-testnet.stellar.org",
+        "testnet" => "https://horizon-testnet.stellar.org",
         "futurenet" => "https://horizon-futurenet.stellar.org",
-        _           => "https://horizon.stellar.org",
+        _ => "https://horizon.stellar.org",
     }
 }
 
 fn default_soroban(network: &str) -> &'static str {
     match network {
-        "testnet"  => "https://soroban-testnet.stellar.org",
-        _           => "https://mainnet.sorobanrpc.com",
+        "testnet" => "https://soroban-testnet.stellar.org",
+        _ => "https://mainnet.sorobanrpc.com",
     }
 }
 
@@ -98,7 +98,9 @@ pub struct StellarAdapter {
 }
 
 impl Default for StellarAdapter {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl StellarAdapter {
@@ -121,13 +123,24 @@ impl StellarAdapter {
 
     async fn latest_ledger(&self) -> WarpResult<u64> {
         let url = format!("{}/ledgers?order=desc&limit=1", self.horizon_url);
-        let resp: HorizonLedgerPage = self.client.get(&url)
+        let resp: HorizonLedgerPage = self
+            .client
+            .get(&url)
             .header("Accept", "application/json")
-            .send().await
-            .map_err(|e| WarpError::AdapterError { chain: "stellar".into(), reason: e.to_string() })?
-            .json().await
-            .map_err(|e| WarpError::AdapterError { chain: "stellar".into(), reason: e.to_string() })?;
-        Ok(resp._embedded
+            .send()
+            .await
+            .map_err(|e| WarpError::AdapterError {
+                chain: "stellar".into(),
+                reason: e.to_string(),
+            })?
+            .json()
+            .await
+            .map_err(|e| WarpError::AdapterError {
+                chain: "stellar".into(),
+                reason: e.to_string(),
+            })?;
+        Ok(resp
+            ._embedded
             .and_then(|e| e.records.into_iter().next())
             .map(|l| l.sequence)
             .unwrap_or(0))
@@ -154,11 +167,22 @@ impl StellarAdapter {
                 "pagination": { "limit": 50 }
             }),
         };
-        let resp: SorobanRpcResp = self.client.post(&self.soroban_url)
-            .json(&body).send().await
-            .map_err(|e| WarpError::AdapterError { chain: "stellar".into(), reason: e.to_string() })?
-            .json().await
-            .map_err(|e| WarpError::AdapterError { chain: "stellar".into(), reason: e.to_string() })?;
+        let resp: SorobanRpcResp = self
+            .client
+            .post(&self.soroban_url)
+            .json(&body)
+            .send()
+            .await
+            .map_err(|e| WarpError::AdapterError {
+                chain: "stellar".into(),
+                reason: e.to_string(),
+            })?
+            .json()
+            .await
+            .map_err(|e| WarpError::AdapterError {
+                chain: "stellar".into(),
+                reason: e.to_string(),
+            })?;
 
         let result = match resp.result {
             Some(r) => r,
@@ -166,7 +190,9 @@ impl StellarAdapter {
         };
         let latest = result.latestLedger.unwrap_or(start_ledger);
 
-        let proofs: Vec<DepositProof> = result.events.iter()
+        let proofs: Vec<DepositProof> = result
+            .events
+            .iter()
             .filter_map(|e| self.parse_soroban_event(e, latest))
             .collect();
         Ok(proofs)
@@ -176,16 +202,22 @@ impl StellarAdapter {
     /// Expected value: { "amount": "<u64>", "dest": "<zion_addr>", "from": "<stellar_addr>" }
     fn parse_soroban_event(&self, ev: &SorobanEvent, latest_ledger: u64) -> Option<DepositProof> {
         let val = ev.value.as_ref()?;
-        let amount: u64 = val["amount"].as_str()
+        let amount: u64 = val["amount"]
+            .as_str()
             .and_then(|s| s.parse().ok())
             .or_else(|| val["amount"].as_u64())
             .unwrap_or(0);
-        if amount == 0 { return None; }
+        if amount == 0 {
+            return None;
+        }
 
         let dest = val["dest"].as_str().unwrap_or("").to_string();
         let from = val["from"].as_str().unwrap_or("").to_string();
         let ledger = ev.ledger.unwrap_or(latest_ledger);
-        let tx = ev.txHash.clone().unwrap_or_else(|| format!("stellar-ev-{}", ev.id));
+        let tx = ev
+            .txHash
+            .clone()
+            .unwrap_or_else(|| format!("stellar-ev-{}", ev.id));
 
         Some(DepositProof {
             tx_hash: tx,
@@ -201,26 +233,43 @@ impl StellarAdapter {
 
 #[async_trait]
 impl ChainAdapter for StellarAdapter {
-    fn family(&self) -> ChainFamily { ChainFamily::Stellar }
-    fn name(&self) -> &str { "stellar" }
+    fn family(&self) -> ChainFamily {
+        ChainFamily::Stellar
+    }
+    fn name(&self) -> &str {
+        "stellar"
+    }
 
     async fn health_check(&self) -> WarpResult<bool> {
         match self.latest_ledger().await {
-            Ok(l) => { info!("[WARP][stellar] Health OK — ledger {}", l); Ok(true) }
-            Err(e) => { warn!("[WARP][stellar] Health FAIL: {}", e); Ok(false) }
+            Ok(l) => {
+                info!("[WARP][stellar] Health OK — ledger {}", l);
+                Ok(true)
+            }
+            Err(e) => {
+                warn!("[WARP][stellar] Health FAIL: {}", e);
+                Ok(false)
+            }
         }
     }
 
     async fn watch_events(&self) -> WarpResult<Vec<DepositProof>> {
         let contract = match wzion_contract(&self.network) {
             Some(c) => c,
-            None => { debug!("[WARP][stellar] No wZION contract configured"); return Ok(vec![]); }
+            None => {
+                debug!("[WARP][stellar] No wZION contract configured");
+                return Ok(vec![]);
+            }
         };
         let ledger = self.latest_ledger().await?;
         let start = ledger.saturating_sub(100); // look back ~100 ledgers (~8 mins)
         let proofs = self.get_bridge_burn_events(contract, start).await?;
-        info!("[WARP][stellar] {} BridgeBurn events (ledgers {}-{})",
-            proofs.len(), start, ledger);
+        info!(
+            "[WARP][stellar] {} BridgeBurn events (ledgers {}-{})",
+            proofs.len(),
+            start,
+            ledger
+        );
         Ok(proofs)
     }
 
@@ -244,11 +293,18 @@ impl ChainAdapter for StellarAdapter {
 
         info!(
             "[WARP][stellar] execute_mint: {} stroops → {} (relay: {})",
-            amount_stroops, instruction.recipient, signer.address()
+            amount_stroops,
+            instruction.recipient,
+            signer.address()
         );
 
         signer
-            .send_payment(&self.client, &self.horizon_url, &instruction.recipient, amount_stroops)
+            .send_payment(
+                &self.client,
+                &self.horizon_url,
+                &instruction.recipient,
+                amount_stroops,
+            )
             .await
     }
 
@@ -259,12 +315,22 @@ impl ChainAdapter for StellarAdapter {
     async fn confirmations(&self, tx_hash: &str) -> WarpResult<u64> {
         // GET /transactions/{hash} → ledger, compare to latest
         let url = format!("{}/transactions/{}", self.horizon_url, tx_hash);
-        let resp: Value = self.client.get(&url)
+        let resp: Value = self
+            .client
+            .get(&url)
             .header("Accept", "application/json")
-            .send().await
-            .map_err(|e| WarpError::AdapterError { chain: "stellar".into(), reason: e.to_string() })?
-            .json().await
-            .map_err(|e| WarpError::AdapterError { chain: "stellar".into(), reason: e.to_string() })?;
+            .send()
+            .await
+            .map_err(|e| WarpError::AdapterError {
+                chain: "stellar".into(),
+                reason: e.to_string(),
+            })?
+            .json()
+            .await
+            .map_err(|e| WarpError::AdapterError {
+                chain: "stellar".into(),
+                reason: e.to_string(),
+            })?;
         let tx_ledger = resp["ledger"].as_u64().unwrap_or(0);
         let latest = self.latest_ledger().await.unwrap_or(tx_ledger);
         Ok(latest.saturating_sub(tx_ledger))
@@ -314,7 +380,11 @@ mod tests {
     fn test_parse_soroban_event_zero_amount_skipped() {
         let adapter = StellarAdapter::new();
         let ev = SorobanEvent {
-            id: "ev2".into(), ledger: Some(1), txHash: None, contractId: None, topic: None,
+            id: "ev2".into(),
+            ledger: Some(1),
+            txHash: None,
+            contractId: None,
+            topic: None,
             value: Some(json!({ "amount": "0", "dest": "zion1x", "from": "GA..." })),
         };
         assert!(adapter.parse_soroban_event(&ev, 10).is_none());
@@ -323,8 +393,11 @@ mod tests {
     #[tokio::test]
     async fn test_stellar_execute_mint_is_err() {
         let inst = MintInstruction {
-            dest_chain: "stellar".into(), recipient: "GADDR".into(),
-            amount_dest_atomic: 100, signatures: vec![], warp_message_hash: String::new(),
+            dest_chain: "stellar".into(),
+            recipient: "GADDR".into(),
+            amount_dest_atomic: 100,
+            signatures: vec![],
+            warp_message_hash: String::new(),
         };
         assert!(StellarAdapter::new().execute_mint(&inst).await.is_err());
     }
