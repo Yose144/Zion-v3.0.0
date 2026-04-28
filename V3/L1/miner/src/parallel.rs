@@ -21,32 +21,30 @@ pub fn parallel_scan_nonce_range(job: MiningJob, threads: usize) -> Option<Minin
 
     let cancelled = Arc::new(AtomicBool::new(false));
 
-    let result: Option<MiningSolution> = (0..threads)
-        .into_par_iter()
-        .find_map_any(|thread_idx| {
-            let start = job.start_nonce.wrapping_add(thread_idx as u64 * chunk_size);
-            let count = if thread_idx == threads - 1 {
-                // Last thread gets the remainder
-                job.nonce_count - (thread_idx as u64 * chunk_size)
-            } else {
-                chunk_size
-            };
+    let result: Option<MiningSolution> = (0..threads).into_par_iter().find_map_any(|thread_idx| {
+        let start = job.start_nonce.wrapping_add(thread_idx as u64 * chunk_size);
+        let count = if thread_idx == threads - 1 {
+            // Last thread gets the remainder
+            job.nonce_count - (thread_idx as u64 * chunk_size)
+        } else {
+            chunk_size
+        };
 
-            let sub_job = MiningJob {
-                job_id: job.job_id,
-                header: job.header,
-                target: job.target,
-                start_nonce: start,
-                nonce_count: count,
-                height: job.height,
-            };
+        let sub_job = MiningJob {
+            job_id: job.job_id,
+            header: job.header,
+            target: job.target,
+            start_nonce: start,
+            nonce_count: count,
+            height: job.height,
+        };
 
-            let sol = sequential_scan(sub_job, &cancelled);
-            if sol.is_some() {
-                cancelled.store(true, Ordering::Relaxed);
-            }
-            sol
-        });
+        let sol = sequential_scan(sub_job, &cancelled);
+        if sol.is_some() {
+            cancelled.store(true, Ordering::Relaxed);
+        }
+        sol
+    });
 
     result
 }
@@ -133,10 +131,7 @@ mod tests {
         let seq = sequential_scan(job, &AtomicBool::new(false));
         let par = parallel_scan_nonce_range(job, 1);
 
-        assert_eq!(
-            seq.unwrap().candidate.nonce,
-            par.unwrap().candidate.nonce,
-        );
+        assert_eq!(seq.unwrap().candidate.nonce, par.unwrap().candidate.nonce,);
     }
 
     #[test]

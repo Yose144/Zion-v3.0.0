@@ -40,9 +40,9 @@
 //! assert_eq!(results[0].id, "dharma_doc");
 //! ```
 
-use std::collections::HashMap;
-use serde::{Deserialize, Serialize};
 use crate::llm_backend::{LlmBackend, LlmError, LlmRequest, LlmResponse};
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 // ─── RagDocument ─────────────────────────────────────────────────────────────
 
@@ -144,7 +144,11 @@ fn cosine_similarity(a: &[f32], b: &[f32]) -> f32 {
     if len == 0 {
         return 0.0;
     }
-    let dot: f32 = a[..len].iter().zip(b[..len].iter()).map(|(x, y)| x * y).sum();
+    let dot: f32 = a[..len]
+        .iter()
+        .zip(b[..len].iter())
+        .map(|(x, y)| x * y)
+        .sum();
     let norm_a: f32 = a[..len].iter().map(|x| x * x).sum::<f32>().sqrt();
     let norm_b: f32 = b[..len].iter().map(|x| x * x).sum::<f32>().sqrt();
     if norm_a == 0.0 || norm_b == 0.0 {
@@ -178,7 +182,11 @@ impl EmbeddingInputType {
 /// Abstrakce embedding backendu — umožňuje swap NIM ↔ Ollama ↔ Mock.
 pub trait EmbeddingBackend: Send + Sync {
     fn name(&self) -> &str;
-    fn embed(&self, texts: &[&str], input_type: EmbeddingInputType) -> Result<Vec<Vec<f32>>, LlmError>;
+    fn embed(
+        &self,
+        texts: &[&str],
+        input_type: EmbeddingInputType,
+    ) -> Result<Vec<Vec<f32>>, LlmError>;
     fn embedding_dim(&self) -> usize;
 }
 
@@ -201,19 +209,25 @@ impl EmbeddingBackend for MockEmbeddingBackend {
         "MockEmbedding"
     }
 
-    fn embed(&self, texts: &[&str], _input_type: EmbeddingInputType) -> Result<Vec<Vec<f32>>, LlmError> {
+    fn embed(
+        &self,
+        texts: &[&str],
+        _input_type: EmbeddingInputType,
+    ) -> Result<Vec<Vec<f32>>, LlmError> {
         // Deterministický embedding: průměr ASCII normalizovaný na [0.0, 1.0]
-        Ok(texts.iter().map(|text| {
-            let base: f32 = if text.is_empty() {
-                0.5
-            } else {
-                text.chars().map(|c| c as u32 as f32).sum::<f32>()
-                    / (text.len() as f32 * 256.0)
-            };
-            (0..self.dim)
-                .map(|i| (base + i as f32 * 0.001).clamp(0.0, 1.0))
-                .collect()
-        }).collect())
+        Ok(texts
+            .iter()
+            .map(|text| {
+                let base: f32 = if text.is_empty() {
+                    0.5
+                } else {
+                    text.chars().map(|c| c as u32 as f32).sum::<f32>() / (text.len() as f32 * 256.0)
+                };
+                (0..self.dim)
+                    .map(|i| (base + i as f32 * 0.001).clamp(0.0, 1.0))
+                    .collect()
+            })
+            .collect())
     }
 
     fn embedding_dim(&self) -> usize {
@@ -271,7 +285,11 @@ impl EmbeddingBackend for NimEmbeddingBackend {
         "NimEmbedding"
     }
 
-    fn embed(&self, texts: &[&str], input_type: EmbeddingInputType) -> Result<Vec<Vec<f32>>, LlmError> {
+    fn embed(
+        &self,
+        texts: &[&str],
+        input_type: EmbeddingInputType,
+    ) -> Result<Vec<Vec<f32>>, LlmError> {
         let client = reqwest::blocking::Client::builder()
             .timeout(std::time::Duration::from_secs(30))
             .build()
@@ -314,9 +332,9 @@ impl EmbeddingBackend for NimEmbeddingBackend {
                     .and_then(|arr| {
                         arr.iter()
                             .map(|v| {
-                                v.as_f64()
-                                    .map(|f| f as f32)
-                                    .ok_or_else(|| LlmError::InternalError("Non-float in embedding".into()))
+                                v.as_f64().map(|f| f as f32).ok_or_else(|| {
+                                    LlmError::InternalError("Non-float in embedding".into())
+                                })
                             })
                             .collect::<Result<Vec<f32>, _>>()
                     })
@@ -353,9 +371,15 @@ impl RagRetriever {
     }
 
     /// Indexuje nový dokument: embed → uloží do VectorStore.
-    pub fn index(&mut self, id: impl Into<String>, content: impl Into<String>) -> Result<(), LlmError> {
+    pub fn index(
+        &mut self,
+        id: impl Into<String>,
+        content: impl Into<String>,
+    ) -> Result<(), LlmError> {
         let content = content.into();
-        let mut embeddings = self.embedding.embed(&[content.as_str()], EmbeddingInputType::Passage)?;
+        let mut embeddings = self
+            .embedding
+            .embed(&[content.as_str()], EmbeddingInputType::Passage)?;
         let embedding = embeddings
             .drain(..)
             .next()
@@ -373,7 +397,9 @@ impl RagRetriever {
     ) -> Result<(), LlmError> {
         let content = content.into();
         let id = id.into();
-        let mut embeddings = self.embedding.embed(&[content.as_str()], EmbeddingInputType::Passage)?;
+        let mut embeddings = self
+            .embedding
+            .embed(&[content.as_str()], EmbeddingInputType::Passage)?;
         let embedding = embeddings
             .drain(..)
             .next()
@@ -430,8 +456,7 @@ impl RagBackend {
         Self {
             retriever,
             inner,
-            context_template:
-                "[KONTEXT Z KNOWLEDGE BASE]\n{context}\n\n[DOTAZ]\n{query}".into(),
+            context_template: "[KONTEXT Z KNOWLEDGE BASE]\n{context}\n\n[DOTAZ]\n{query}".into(),
         }
     }
 
@@ -517,9 +542,21 @@ mod tests {
     #[test]
     fn test_store_add_and_search() {
         let mut store = VectorStore::new();
-        store.add(RagDocument::new("dharma", "dharma je zákon", vec![1.0, 0.0, 0.0]));
-        store.add(RagDocument::new("karma", "karma je odměna", vec![0.0, 1.0, 0.0]));
-        store.add(RagDocument::new("moksha", "moksha je osvobození", vec![0.0, 0.0, 1.0]));
+        store.add(RagDocument::new(
+            "dharma",
+            "dharma je zákon",
+            vec![1.0, 0.0, 0.0],
+        ));
+        store.add(RagDocument::new(
+            "karma",
+            "karma je odměna",
+            vec![0.0, 1.0, 0.0],
+        ));
+        store.add(RagDocument::new(
+            "moksha",
+            "moksha je osvobození",
+            vec![0.0, 0.0, 1.0],
+        ));
 
         assert_eq!(store.len(), 3);
         let results = store.search(&[1.0, 0.0, 0.0], 1);
@@ -587,7 +624,9 @@ mod tests {
     #[test]
     fn test_mock_embedding_dimensions() {
         let backend = MockEmbeddingBackend::new(8);
-        let results = backend.embed(&["hello", "world"], EmbeddingInputType::Query).unwrap();
+        let results = backend
+            .embed(&["hello", "world"], EmbeddingInputType::Query)
+            .unwrap();
         assert_eq!(results.len(), 2);
         assert_eq!(results[0].len(), 8);
         assert_eq!(results[1].len(), 8);
@@ -596,8 +635,12 @@ mod tests {
     #[test]
     fn test_mock_embedding_deterministic() {
         let backend = MockEmbeddingBackend::new(4);
-        let r1 = backend.embed(&["dharma"], EmbeddingInputType::Query).unwrap();
-        let r2 = backend.embed(&["dharma"], EmbeddingInputType::Query).unwrap();
+        let r1 = backend
+            .embed(&["dharma"], EmbeddingInputType::Query)
+            .unwrap();
+        let r2 = backend
+            .embed(&["dharma"], EmbeddingInputType::Query)
+            .unwrap();
         assert_eq!(r1, r2);
     }
 
@@ -617,9 +660,15 @@ mod tests {
         let embedding = Box::new(MockEmbeddingBackend::new(4));
         let mut retriever = RagRetriever::new(embedding).with_top_k(2);
 
-        retriever.index("zion", "ZION je blockchain s důkazem práce").unwrap();
-        retriever.index("ekam", "EkamField je P2P síť vědomí").unwrap();
-        retriever.index("dharma", "DharmaScore měří etické chování").unwrap();
+        retriever
+            .index("zion", "ZION je blockchain s důkazem práce")
+            .unwrap();
+        retriever
+            .index("ekam", "EkamField je P2P síť vědomí")
+            .unwrap();
+        retriever
+            .index("dharma", "DharmaScore měří etické chování")
+            .unwrap();
 
         let results = retriever.retrieve("Co je ZION?").unwrap();
         assert!(!results.is_empty());
@@ -653,12 +702,14 @@ mod tests {
 
     #[test]
     fn test_rag_backend_augments_prompt() {
-        use crate::llm_backend::EchoBackend;
         use crate::hiranyagarbha::MmlModality;
+        use crate::llm_backend::EchoBackend;
 
         let embedding = Box::new(MockEmbeddingBackend::new(4));
         let mut retriever = RagRetriever::new(embedding).with_top_k(1);
-        retriever.index("zion_doc", "ZION mining používá SHA3-512 algoritmus").unwrap();
+        retriever
+            .index("zion_doc", "ZION mining používá SHA3-512 algoritmus")
+            .unwrap();
 
         let inner = Box::new(EchoBackend::new("test"));
         let backend = RagBackend::new(retriever, inner);
@@ -671,8 +722,8 @@ mod tests {
 
     #[test]
     fn test_rag_backend_empty_store_passthrough() {
-        use crate::llm_backend::EchoBackend;
         use crate::hiranyagarbha::MmlModality;
+        use crate::llm_backend::EchoBackend;
 
         let retriever = RagRetriever::new(Box::new(MockEmbeddingBackend::new(4)));
         let inner = Box::new(EchoBackend::new("test"));
@@ -704,8 +755,7 @@ mod tests {
     #[test]
     #[ignore]
     fn test_nim_embedding_live() {
-        let api_key = std::env::var("NVIDIA_API_KEY")
-            .expect("Nastav NVIDIA_API_KEY=nvapi-...");
+        let api_key = std::env::var("NVIDIA_API_KEY").expect("Nastav NVIDIA_API_KEY=nvapi-...");
         let backend = NimEmbeddingBackend::new(api_key);
         let texts = ["Co je dharma?", "ZION blockchain těžba SHA3-512"];
         let result = backend.embed(&texts, EmbeddingInputType::Query).unwrap();
@@ -713,7 +763,11 @@ mod tests {
         assert_eq!(result[0].len(), 1024); // nv-embedqa-e5-v5 = 1024 dim
         let sim = cosine_similarity(&result[0], &result[1]);
         println!("Cosine similarity (dharma vs mining): {sim:.4}");
-        println!("Dim: {}, první hodnota: {:.6}", result[0].len(), result[0][0]);
+        println!(
+            "Dim: {}, první hodnota: {:.6}",
+            result[0].len(),
+            result[0][0]
+        );
     }
 
     /// Live test RAG pipeline — embeduje ZION docs, pak dotaz v češtině.
@@ -724,8 +778,7 @@ mod tests {
     #[test]
     #[ignore]
     fn test_nim_rag_pipeline_live() {
-        let api_key = std::env::var("NVIDIA_API_KEY")
-            .expect("Nastav NVIDIA_API_KEY=nvapi-...");
+        let api_key = std::env::var("NVIDIA_API_KEY").expect("Nastav NVIDIA_API_KEY=nvapi-...");
         let embedding = Box::new(NimEmbeddingBackend::new(api_key));
         let mut retriever = RagRetriever::new(embedding).with_top_k(2);
 

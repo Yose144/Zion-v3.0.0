@@ -127,7 +127,7 @@ impl EkamFieldNode {
     pub fn contribution_score(&self) -> f64 {
         let activity = (self.sent_deeksha_count as f64 * 0.3
             + (self.received_deeksha_xp as f64 / 1_000.0).min(0.7))
-            .min(1.0);
+        .min(1.0);
         self.coefficient * (1.0 + activity * 0.2)
     }
 }
@@ -453,7 +453,10 @@ mod tests {
         net.join(EkamFieldNode::from_xp("A", XP_GROK));
         net.join(EkamFieldNode::from_xp("B", XP_GROK));
         let coh = net.field_coherence();
-        assert!(coh > DeekshaNetwork::PHI_THRESHOLD, "Grok síť musí překročit zlatý řez");
+        assert!(
+            coh > DeekshaNetwork::PHI_THRESHOLD,
+            "Grok síť musí překročit zlatý řez"
+        );
     }
 
     #[test]

@@ -5,12 +5,12 @@
 
 use crate::config::L1Config;
 use crate::types::{BridgeStatus, L1LockEvent};
-use anyhow::{Context, Result, anyhow};
+use anyhow::{anyhow, Context, Result};
 use chrono::Utc;
 use ripemd::Ripemd160;
-use serde::Deserialize;
 use serde::de::DeserializeOwned;
-use serde_json::{Value, json};
+use serde::Deserialize;
+use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 use std::collections::HashMap;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
@@ -192,9 +192,7 @@ impl L1Watcher {
                     l1_block_height: block.height,
                     l1_sender: sender,
                     amount_flowers: output.amount,
-                    amount_wzion_wei: crate::types::conversion::flowers_to_wzion_wei(
-                        output.amount,
-                    ),
+                    amount_wzion_wei: crate::types::conversion::flowers_to_wzion_wei(output.amount),
                     target_chain,
                     evm_recipient,
                     detected_at: Utc::now(),
@@ -237,7 +235,8 @@ impl L1Watcher {
     }
 
     async fn get_block(&self, height: u64) -> Result<L1Block> {
-        self.rpc("getBlockByHeight", json!({ "height": height })).await
+        self.rpc("getBlockByHeight", json!({ "height": height }))
+            .await
     }
 
     async fn rpc<T: DeserializeOwned>(&self, method: &str, params: Value) -> Result<T> {
@@ -438,8 +437,14 @@ mod tests {
 
     #[test]
     fn test_normalize_rpc_addr() {
-        assert_eq!(normalize_rpc_addr("http://127.0.0.1:8443/jsonrpc"), "127.0.0.1:8443");
-        assert_eq!(normalize_rpc_addr("https://91.98.122.165:8443/"), "91.98.122.165:8443");
+        assert_eq!(
+            normalize_rpc_addr("http://127.0.0.1:8443/jsonrpc"),
+            "127.0.0.1:8443"
+        );
+        assert_eq!(
+            normalize_rpc_addr("https://91.98.122.165:8443/"),
+            "91.98.122.165:8443"
+        );
     }
 
     #[test]

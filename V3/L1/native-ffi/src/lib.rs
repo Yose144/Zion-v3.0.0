@@ -58,19 +58,35 @@ pub mod etchash {
     pub fn hash(header: &[u8], nonce: u64, height: u32) -> [u8; 32] {
         let mut out = [0u8; 32];
         unsafe {
-            ethash_hash(header.as_ptr(), header.len(), nonce, height, out.as_mut_ptr());
+            ethash_hash(
+                header.as_ptr(),
+                header.len(),
+                nonce,
+                height,
+                out.as_mut_ptr(),
+            );
         }
         out
     }
 
     /// Returns `true` if the computed hash is below `target` (LE big-int comparison).
     pub fn verify(header: &[u8], nonce: u64, height: u32, target: &[u8; 32]) -> bool {
-        unsafe { ethash_verify(header.as_ptr(), header.len(), nonce, height, target.as_ptr()) == 1 }
+        unsafe {
+            ethash_verify(
+                header.as_ptr(),
+                header.len(),
+                nonce,
+                height,
+                target.as_ptr(),
+            ) == 1
+        }
     }
 
     /// Run a quick initialisation for epoch 0 (safe to call multiple times).
     pub fn init() {
-        unsafe { ethash_init(); }
+        unsafe {
+            ethash_init();
+        }
     }
 
     /// Hash/s estimate over `iterations` single-hash invocations.
@@ -100,7 +116,7 @@ pub mod kawpow {
             nonce: u64,
             height: u32,
             epoch: u32,
-            expected_mix: *const u8,  // may be null
+            expected_mix: *const u8, // may be null
             target: *const u8,
         ) -> i32;
         pub fn kawpow_get_epoch(height: u32) -> u32;
@@ -114,17 +130,37 @@ pub mod kawpow {
         let mut out = [0u8; 32];
         let epoch = unsafe { kawpow_get_epoch(height) };
         unsafe {
-            kawpow_hash(header.as_ptr(), nonce, height, epoch, mix.as_mut_ptr(), out.as_mut_ptr());
+            kawpow_hash(
+                header.as_ptr(),
+                nonce,
+                height,
+                epoch,
+                mix.as_mut_ptr(),
+                out.as_mut_ptr(),
+            );
         }
         (mix, out)
     }
 
     /// Verify with difficulty target; pass `None` for `expected_mix` to skip mix check.
-    pub fn verify(header: &[u8; 32], nonce: u64, height: u32, expected_mix: Option<&[u8; 32]>, target: &[u8; 32]) -> bool {
+    pub fn verify(
+        header: &[u8; 32],
+        nonce: u64,
+        height: u32,
+        expected_mix: Option<&[u8; 32]>,
+        target: &[u8; 32],
+    ) -> bool {
         let epoch = unsafe { kawpow_get_epoch(height) };
         let mix_ptr = expected_mix.map_or(std::ptr::null(), |m| m.as_ptr());
         unsafe {
-            kawpow_verify(header.as_ptr(), nonce, height, epoch, mix_ptr, target.as_ptr()) == 1
+            kawpow_verify(
+                header.as_ptr(),
+                nonce,
+                height,
+                epoch,
+                mix_ptr,
+                target.as_ptr(),
+            ) == 1
         }
     }
 
@@ -163,16 +199,20 @@ pub mod autolykos {
     pub fn hash(header: &[u8], nonce: u64, height: u32) -> [u8; 32] {
         let mut out = [0u8; 32];
         unsafe {
-            autolykos_hash(header.as_ptr(), header.len(), nonce, height, out.as_mut_ptr());
+            autolykos_hash(
+                header.as_ptr(),
+                header.len(),
+                nonce,
+                height,
+                out.as_mut_ptr(),
+            );
         }
         out
     }
 
     /// Returns `true` if the hash value (first 8 bytes as LE u64) is below `target`.
     pub fn verify_u64(header: &[u8], nonce: u64, height: u32, target: u64) -> bool {
-        unsafe {
-            autolykos_verify(header.as_ptr(), header.len(), nonce, height, target) == 1
-        }
+        unsafe { autolykos_verify(header.as_ptr(), header.len(), nonce, height, target) == 1 }
     }
 
     pub fn benchmark(iterations: i32) -> f64 {
@@ -188,12 +228,7 @@ pub mod autolykos {
 pub mod kheavyhash {
     unsafe extern "C" {
         pub fn kheavyhash_hash(input: *const u8, len: usize, output: *mut u8);
-        pub fn kheavyhash_mine(
-            header: *const u8,
-            header_len: usize,
-            nonce: u64,
-            output: *mut u8,
-        );
+        pub fn kheavyhash_mine(header: *const u8, header_len: usize, nonce: u64, output: *mut u8);
         pub fn kheavyhash_verify(
             header: *const u8,
             header_len: usize,
@@ -206,13 +241,17 @@ pub mod kheavyhash {
 
     pub fn hash(input: &[u8]) -> [u8; 32] {
         let mut out = [0u8; 32];
-        unsafe { kheavyhash_hash(input.as_ptr(), input.len(), out.as_mut_ptr()); }
+        unsafe {
+            kheavyhash_hash(input.as_ptr(), input.len(), out.as_mut_ptr());
+        }
         out
     }
 
     pub fn mine(header: &[u8], nonce: u64) -> [u8; 32] {
         let mut out = [0u8; 32];
-        unsafe { kheavyhash_mine(header.as_ptr(), header.len(), nonce, out.as_mut_ptr()); }
+        unsafe {
+            kheavyhash_mine(header.as_ptr(), header.len(), nonce, out.as_mut_ptr());
+        }
         out
     }
 
@@ -235,12 +274,7 @@ pub mod kheavyhash {
 pub mod blake3_algo {
     unsafe extern "C" {
         pub fn blake3_hash(input: *const u8, input_len: usize, output: *mut u8);
-        pub fn blake3_mine(
-            header: *const u8,
-            header_len: usize,
-            nonce: u64,
-            output: *mut u8,
-        );
+        pub fn blake3_mine(header: *const u8, header_len: usize, nonce: u64, output: *mut u8);
         pub fn blake3_verify(
             header: *const u8,
             header_len: usize,
@@ -253,13 +287,17 @@ pub mod blake3_algo {
 
     pub fn hash(input: &[u8]) -> [u8; 32] {
         let mut out = [0u8; 32];
-        unsafe { blake3_hash(input.as_ptr(), input.len(), out.as_mut_ptr()); }
+        unsafe {
+            blake3_hash(input.as_ptr(), input.len(), out.as_mut_ptr());
+        }
         out
     }
 
     pub fn mine(header: &[u8], nonce: u64) -> [u8; 32] {
         let mut out = [0u8; 32];
-        unsafe { blake3_mine(header.as_ptr(), header.len(), nonce, out.as_mut_ptr()); }
+        unsafe {
+            blake3_mine(header.as_ptr(), header.len(), nonce, out.as_mut_ptr());
+        }
         out
     }
 
@@ -329,12 +367,7 @@ pub mod cosmic_harmony {
 pub mod verushash {
     unsafe extern "C" {
         pub fn verushash_init();
-        pub fn verushash_hash(
-            header: *const u8,
-            header_len: usize,
-            nonce: u64,
-            output: *mut u8,
-        );
+        pub fn verushash_hash(header: *const u8, header_len: usize, nonce: u64, output: *mut u8);
         pub fn verushash_verify(
             header: *const u8,
             header_len: usize,
@@ -349,7 +382,9 @@ pub mod verushash {
     static INIT: Once = Once::new();
 
     pub fn init() {
-        INIT.call_once(|| unsafe { verushash_init(); });
+        INIT.call_once(|| unsafe {
+            verushash_init();
+        });
     }
 
     pub fn hash(header: &[u8], nonce: u64) -> [u8; 32] {
@@ -363,9 +398,7 @@ pub mod verushash {
 
     pub fn verify(header: &[u8], nonce: u64, target: &[u8; 32]) -> bool {
         init();
-        unsafe {
-            verushash_verify(header.as_ptr(), header.len(), nonce, target.as_ptr()) == 1
-        }
+        unsafe { verushash_verify(header.as_ptr(), header.len(), nonce, target.as_ptr()) == 1 }
     }
 
     pub fn benchmark(iterations: i32) -> f64 {
@@ -382,12 +415,7 @@ pub mod verushash {
 pub mod randomx {
     unsafe extern "C" {
         pub fn randomx_zion_init();
-        pub fn randomx_zion_hash(
-            header: *const u8,
-            header_len: usize,
-            nonce: u64,
-            output: *mut u8,
-        );
+        pub fn randomx_zion_hash(header: *const u8, header_len: usize, nonce: u64, output: *mut u8);
         pub fn randomx_zion_verify(
             header: *const u8,
             header_len: usize,
@@ -402,7 +430,9 @@ pub mod randomx {
     static INIT: Once = Once::new();
 
     pub fn init() {
-        INIT.call_once(|| unsafe { randomx_zion_init(); });
+        INIT.call_once(|| unsafe {
+            randomx_zion_init();
+        });
     }
 
     pub fn hash(header: &[u8], nonce: u64) -> [u8; 32] {
@@ -416,9 +446,7 @@ pub mod randomx {
 
     pub fn verify(header: &[u8], nonce: u64, target: &[u8; 32]) -> bool {
         init();
-        unsafe {
-            randomx_zion_verify(header.as_ptr(), header.len(), nonce, target.as_ptr()) == 1
-        }
+        unsafe { randomx_zion_verify(header.as_ptr(), header.len(), nonce, target.as_ptr()) == 1 }
     }
 
     pub fn benchmark(iterations: i32) -> f64 {
@@ -434,14 +462,38 @@ pub mod randomx {
 /// Returns the list of native algorithm names compiled into this build.
 pub fn compiled_algorithms() -> Vec<&'static str> {
     let mut v = Vec::new();
-    #[cfg(feature = "native-etchash")]        { v.push("etchash"); }
-    #[cfg(feature = "native-kawpow")]         { v.push("kawpow"); }
-    #[cfg(feature = "native-autolykos")]      { v.push("autolykos"); }
-    #[cfg(feature = "native-kheavyhash")]     { v.push("kheavyhash"); }
-    #[cfg(feature = "native-blake3-algo")]    { v.push("blake3"); }
-    #[cfg(feature = "native-cosmic-harmony")] { v.push("cosmic-harmony"); }
-    #[cfg(feature = "native-verushash")]      { v.push("verushash"); }
-    #[cfg(feature = "native-randomx")]        { v.push("randomx"); }
+    #[cfg(feature = "native-etchash")]
+    {
+        v.push("etchash");
+    }
+    #[cfg(feature = "native-kawpow")]
+    {
+        v.push("kawpow");
+    }
+    #[cfg(feature = "native-autolykos")]
+    {
+        v.push("autolykos");
+    }
+    #[cfg(feature = "native-kheavyhash")]
+    {
+        v.push("kheavyhash");
+    }
+    #[cfg(feature = "native-blake3-algo")]
+    {
+        v.push("blake3");
+    }
+    #[cfg(feature = "native-cosmic-harmony")]
+    {
+        v.push("cosmic-harmony");
+    }
+    #[cfg(feature = "native-verushash")]
+    {
+        v.push("verushash");
+    }
+    #[cfg(feature = "native-randomx")]
+    {
+        v.push("randomx");
+    }
     v
 }
 
@@ -477,8 +529,13 @@ pub fn runtime_self_test() -> Vec<AlgoTestResult> {
         let h2 = etchash::hash(&header, 1, 0);
         let ok = h1 != [0u8; 32] && h1 == h2;
         results.push(AlgoTestResult {
-            name, passed: ok,
-            detail: if ok { "deterministic, non-zero".into() } else { "FAILED: zero or non-deterministic".into() },
+            name,
+            passed: ok,
+            detail: if ok {
+                "deterministic, non-zero".into()
+            } else {
+                "FAILED: zero or non-deterministic".into()
+            },
         });
     }
 
@@ -490,8 +547,13 @@ pub fn runtime_self_test() -> Vec<AlgoTestResult> {
         let (_, h2) = kawpow::hash(&header, 1, 0);
         let ok = h1 != [0u8; 32] && h1 == h2;
         results.push(AlgoTestResult {
-            name, passed: ok,
-            detail: if ok { "deterministic, non-zero".into() } else { "FAILED: zero or non-deterministic".into() },
+            name,
+            passed: ok,
+            detail: if ok {
+                "deterministic, non-zero".into()
+            } else {
+                "FAILED: zero or non-deterministic".into()
+            },
         });
     }
 
@@ -503,8 +565,13 @@ pub fn runtime_self_test() -> Vec<AlgoTestResult> {
         let h2 = autolykos::hash(&header, 1, 700_000);
         let ok = h1 != [0u8; 32] && h1 == h2;
         results.push(AlgoTestResult {
-            name, passed: ok,
-            detail: if ok { "deterministic, non-zero".into() } else { "FAILED: zero or non-deterministic".into() },
+            name,
+            passed: ok,
+            detail: if ok {
+                "deterministic, non-zero".into()
+            } else {
+                "FAILED: zero or non-deterministic".into()
+            },
         });
     }
 
@@ -516,8 +583,13 @@ pub fn runtime_self_test() -> Vec<AlgoTestResult> {
         let h2 = kheavyhash::mine(&header, 1);
         let ok = h1 != [0u8; 32] && h1 == h2;
         results.push(AlgoTestResult {
-            name, passed: ok,
-            detail: if ok { "deterministic, non-zero".into() } else { "FAILED: zero or non-deterministic".into() },
+            name,
+            passed: ok,
+            detail: if ok {
+                "deterministic, non-zero".into()
+            } else {
+                "FAILED: zero or non-deterministic".into()
+            },
         });
     }
 
@@ -529,8 +601,13 @@ pub fn runtime_self_test() -> Vec<AlgoTestResult> {
         let h2 = blake3_algo::mine(&header, 1);
         let ok = h1 != [0u8; 32] && h1 == h2;
         results.push(AlgoTestResult {
-            name, passed: ok,
-            detail: if ok { "deterministic, non-zero".into() } else { "FAILED: zero or non-deterministic".into() },
+            name,
+            passed: ok,
+            detail: if ok {
+                "deterministic, non-zero".into()
+            } else {
+                "FAILED: zero or non-deterministic".into()
+            },
         });
     }
 
@@ -542,8 +619,13 @@ pub fn runtime_self_test() -> Vec<AlgoTestResult> {
         let h2 = cosmic_harmony::mine(&header, 1);
         let ok = h1 != [0u8; 32] && h1 == h2;
         results.push(AlgoTestResult {
-            name, passed: ok,
-            detail: if ok { "deterministic, non-zero".into() } else { "FAILED: zero or non-deterministic".into() },
+            name,
+            passed: ok,
+            detail: if ok {
+                "deterministic, non-zero".into()
+            } else {
+                "FAILED: zero or non-deterministic".into()
+            },
         });
     }
 
@@ -555,8 +637,13 @@ pub fn runtime_self_test() -> Vec<AlgoTestResult> {
         let h2 = verushash::hash(&header, 1);
         let ok = h1 != [0u8; 32] && h1 == h2;
         results.push(AlgoTestResult {
-            name, passed: ok,
-            detail: if ok { "deterministic, non-zero".into() } else { "FAILED: zero or non-deterministic".into() },
+            name,
+            passed: ok,
+            detail: if ok {
+                "deterministic, non-zero".into()
+            } else {
+                "FAILED: zero or non-deterministic".into()
+            },
         });
     }
 
@@ -568,8 +655,13 @@ pub fn runtime_self_test() -> Vec<AlgoTestResult> {
         let h2 = randomx::hash(&header, 1);
         let ok = h1 != [0u8; 32] && h1 == h2;
         results.push(AlgoTestResult {
-            name, passed: ok,
-            detail: if ok { "deterministic, non-zero".into() } else { "FAILED: zero or non-deterministic".into() },
+            name,
+            passed: ok,
+            detail: if ok {
+                "deterministic, non-zero".into()
+            } else {
+                "FAILED: zero or non-deterministic".into()
+            },
         });
     }
 
@@ -601,8 +693,17 @@ mod tests {
         let results = runtime_self_test();
         println!("runtime_self_test: {} algos tested", results.len());
         for r in &results {
-            println!("  {} — {} ({})", r.name, if r.passed { "OK" } else { "FAIL" }, r.detail);
-            assert!(r.passed, "algorithm {} failed self-test: {}", r.name, r.detail);
+            println!(
+                "  {} — {} ({})",
+                r.name,
+                if r.passed { "OK" } else { "FAIL" },
+                r.detail
+            );
+            assert!(
+                r.passed,
+                "algorithm {} failed self-test: {}",
+                r.name, r.detail
+            );
         }
     }
 
@@ -615,7 +716,10 @@ mod tests {
     fn self_test_count_matches_compiled() {
         let compiled = compiled_algorithms().len();
         let tested = runtime_self_test().len();
-        assert_eq!(compiled, tested, "every compiled algo must have a self-test");
+        assert_eq!(
+            compiled, tested,
+            "every compiled algo must have a self-test"
+        );
     }
 
     #[cfg(feature = "native-etchash")]
@@ -669,7 +773,10 @@ mod tests {
     fn cosmic_harmony_smoke() {
         let header = [0x06u8; 80];
         let hash = cosmic_harmony::mine(&header, 7890);
-        assert_ne!(hash, [0u8; 32], "cosmic-harmony must produce non-zero output");
+        assert_ne!(
+            hash, [0u8; 32],
+            "cosmic-harmony must produce non-zero output"
+        );
         let h2 = cosmic_harmony::mine(&header, 7890);
         assert_eq!(hash, h2, "cosmic-harmony must be deterministic");
         println!("cosmic-harmony smoke: {:02x?}", &hash[..8]);

@@ -119,7 +119,12 @@ pub fn is_valid_address(address: &str) -> bool {
     if !address.starts_with("zion1") || address.len() != 44 {
         return false;
     }
-    if !address.as_bytes().iter().skip(5).all(|b| matches!(b, b'0'..=b'9' | b'a'..=b'z')) {
+    if !address
+        .as_bytes()
+        .iter()
+        .skip(5)
+        .all(|b| matches!(b, b'0'..=b'9' | b'a'..=b'z'))
+    {
         return false;
     }
     let body = &address[5..40];
@@ -250,7 +255,10 @@ mod tests {
     fn address_checksum_roundtrip() {
         for seed in 0u8..=255 {
             let addr = derive_address(&[seed; 32]);
-            assert!(is_valid_address(&addr), "Checksum failed for seed {seed}: {addr}");
+            assert!(
+                is_valid_address(&addr),
+                "Checksum failed for seed {seed}: {addr}"
+            );
         }
     }
 
@@ -279,10 +287,14 @@ mod tests {
 
     #[test]
     fn invalid_addresses_rejected() {
-        assert!(!is_valid_address("btc1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
+        assert!(!is_valid_address(
+            "btc1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        ));
         assert!(!is_valid_address("zion1short"));
         assert!(!is_valid_address(""));
-        assert!(!is_valid_address("zion1AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"));
+        assert!(!is_valid_address(
+            "zion1AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+        ));
     }
 
     #[test]
@@ -308,7 +320,11 @@ mod tests {
     fn bridge_vault_address_is_valid_and_deterministic() {
         let addr = bridge_vault_address();
         assert!(is_valid_address(&addr), "vault address is invalid: {addr}");
-        assert_eq!(addr, bridge_vault_address(), "vault address is not deterministic");
+        assert_eq!(
+            addr,
+            bridge_vault_address(),
+            "vault address is not deterministic"
+        );
         eprintln!("BRIDGE_VAULT_ADDRESS = {addr}");
     }
 

@@ -6,12 +6,24 @@ fn main() {
         let manifest_path = std::path::Path::new(&manifest_dir);
 
         // V3/target/ — primary location
-        if let Some(workspace_target) = manifest_path.parent().and_then(|p| p.parent()).map(|p| p.join("target")) {
-            println!("cargo:rustc-link-search=native={}", workspace_target.display());
+        if let Some(workspace_target) = manifest_path
+            .parent()
+            .and_then(|p| p.parent())
+            .map(|p| p.join("target"))
+        {
+            println!(
+                "cargo:rustc-link-search=native={}",
+                workspace_target.display()
+            );
         }
 
         // opencl_sdk/ — repo-bundled SDK
-        if let Some(opencl_sdk) = manifest_path.parent().and_then(|p| p.parent()).and_then(|p| p.parent()).map(|p| p.join("opencl_sdk")) {
+        if let Some(opencl_sdk) = manifest_path
+            .parent()
+            .and_then(|p| p.parent())
+            .and_then(|p| p.parent())
+            .map(|p| p.join("opencl_sdk"))
+        {
             if opencl_sdk.exists() {
                 println!("cargo:rustc-link-search=native={}", opencl_sdk.display());
             }

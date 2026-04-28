@@ -8,14 +8,13 @@ use crate::config::SwapConfig;
 use crate::db::SwapDb;
 use crate::error::{SwapError, SwapResult};
 use crate::types::{
-    L1SpendableUtxo, L1TxInput, L1TxOutput, L1UtxoTransaction, RpcResponse,
-    SwapHash, SwapPreimage, bytes_to_hex, canonical_utxo_tx_hash,
-    normalize_rpc_addr, zion_address_from_public_key,
+    bytes_to_hex, canonical_utxo_tx_hash, normalize_rpc_addr, zion_address_from_public_key,
+    L1SpendableUtxo, L1TxInput, L1TxOutput, L1UtxoTransaction, RpcResponse, SwapHash, SwapPreimage,
 };
 use ed25519_dalek::{Signer, SigningKey};
-use serde::Deserialize;
 use serde::de::DeserializeOwned;
-use serde_json::{Value, json};
+use serde::Deserialize;
+use serde_json::{json, Value};
 use std::sync::Arc;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::TcpStream;
@@ -34,29 +33,34 @@ pub struct SwapExecutor {
 impl SwapExecutor {
     /// Create executor — reads escrow key from config / env.
     pub fn new(cfg: Arc<SwapConfig>) -> SwapResult<Self> {
-        let key_hex = cfg.escrow_key_hex().ok_or_else(|| SwapError::InvalidEscrowKey {
-            msg: "ZION_SWAP_ESCROW_KEY not set".into(),
-        })?;
+        let key_hex = cfg
+            .escrow_key_hex()
+            .ok_or_else(|| SwapError::InvalidEscrowKey {
+                msg: "ZION_SWAP_ESCROW_KEY not set".into(),
+            })?;
         if key_hex.len() != 64 {
             return Err(SwapError::InvalidEscrowKey {
                 msg: "Key must be 64 hex chars (32 bytes)".into(),
             });
         }
-        let key_bytes: Vec<u8> = hex::decode(&key_hex).map_err(|_| SwapError::InvalidEscrowKey {
-            msg: "Key is not valid hex".into(),
-        })?;
-        let signing_key_bytes: [u8; 32] = key_bytes
-            .try_into()
-            .map_err(|_| SwapError::InvalidEscrowKey {
-                msg: "Key must be exactly 32 bytes".into(),
+        let key_bytes: Vec<u8> =
+            hex::decode(&key_hex).map_err(|_| SwapError::InvalidEscrowKey {
+                msg: "Key is not valid hex".into(),
             })?;
+        let signing_key_bytes: [u8; 32] =
+            key_bytes
+                .try_into()
+                .map_err(|_| SwapError::InvalidEscrowKey {
+                    msg: "Key must be exactly 32 bytes".into(),
+                })?;
 
         let signing_key = SigningKey::from_bytes(&signing_key_bytes);
         let pk = signing_key.verifying_key();
-        let escrow_address = zion_address_from_public_key(pk.as_bytes())
-            .ok_or_else(|| SwapError::InvalidEscrowKey {
+        let escrow_address = zion_address_from_public_key(pk.as_bytes()).ok_or_else(|| {
+            SwapError::InvalidEscrowKey {
                 msg: "Escrow key produced invalid zion1 address".into(),
-            })?;
+            }
+        })?;
 
         Ok(Self {
             cfg,
@@ -99,14 +103,13 @@ impl SwapExecutor {
 
         // 4. Verify preimage
         let preimage_bytes = hex::decode(preimage_hex)?;
-        let preimage_arr: [u8; 32] = preimage_bytes.try_into().map_err(|_| {
-            SwapError::Internal("Preimage must be 32 bytes".into())
-        })?;
+        let preimage_arr: [u8; 32] = preimage_bytes
+            .try_into()
+            .map_err(|_| SwapError::Internal("Preimage must be 32 bytes".into()))?;
         let preimage = SwapPreimage(preimage_arr);
         let computed_hash = preimage.hash();
-        let expected_hash = SwapHash::from_hex(hash_hex).ok_or_else(|| {
-            SwapError::Internal("Invalid hash_hex".into())
-        })?;
+        let expected_hash = SwapHash::from_hex(hash_hex)
+            .ok_or_else(|| SwapError::Internal("Invalid hash_hex".into()))?;
         if computed_hash != expected_hash {
             return Err(SwapError::PreimageMismatch);
         }
@@ -120,9 +123,7 @@ impl SwapExecutor {
 
         // 6. Persist
         db.mark_claimed(hash_hex, &tx_id, recipient, preimage_hex)?;
-        info!(
-            "✅ CLAIM settled hash={hash_hex} → recipient={recipient} tx={tx_id}"
-        );
+        info!("✅ CLAIM settled hash={hash_hex} → recipient={recipient} tx={tx_id}");
         Ok(())
     }
 
@@ -278,7 +279,9 @@ impl SwapExecutor {
             .await?;
         if !response.accepted {
             warn!("sendRawTransaction returned accepted=false");
-            return Err(SwapError::L1Rpc("sendRawTransaction returned accepted=false".into()));
+            return Err(SwapError::L1Rpc(
+                "sendRawTransaction returned accepted=false".into(),
+            ));
         }
         Ok(if response.tx_id.is_empty() {
             bytes_to_hex(&transaction.id)
@@ -333,7 +336,7 @@ impl SwapExecutor {
 
 fn decode_tx_hash(value: &str) -> SwapResult<[u8; 32]> {
     let bytes = hex::decode(value)?;
-    bytes.try_into().map_err(|_| {
-        SwapError::Internal(format!("Invalid UTXO tx hash length for {value}"))
-    })
+    bytes
+        .try_into()
+        .map_err(|_| SwapError::Internal(format!("Invalid UTXO tx hash length for {value}")))
 }

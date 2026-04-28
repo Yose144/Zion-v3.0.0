@@ -167,7 +167,9 @@ impl IbdEngine {
         // Cancel any inflight requests to this peer
         self.inflight.retain(|_, req| req.peer_id != peer_id);
         // Recalculate best_peer_height from remaining peers
-        self.best_peer_height = self.peers.iter()
+        self.best_peer_height = self
+            .peers
+            .iter()
             .map(|p| p.best_height)
             .max()
             .unwrap_or(self.local_height);
@@ -180,7 +182,9 @@ impl IbdEngine {
         let mut commands = Vec::new();
 
         // Check for stalled requests
-        let stalled: Vec<u64> = self.inflight.iter()
+        let stalled: Vec<u64> = self
+            .inflight
+            .iter()
             .filter(|(_, req)| now.duration_since(req.issued_at) >= IBD_STALL_TIMEOUT)
             .map(|(h, _)| *h)
             .collect();
@@ -190,7 +194,10 @@ impl IbdEngine {
                 if req.retries >= IBD_MAX_RETRIES {
                     commands.push(IbdCommand::DemotePeer {
                         peer_id: req.peer_id.clone(),
-                        reason: format!("stalled after {} retries for batch at height {}", IBD_MAX_RETRIES, height),
+                        reason: format!(
+                            "stalled after {} retries for batch at height {}",
+                            IBD_MAX_RETRIES, height
+                        ),
                     });
                     // Mark peer unavailable
                     if let Some(p) = self.peers.iter_mut().find(|p| p.peer_id == req.peer_id) {
@@ -222,8 +229,11 @@ impl IbdEngine {
             while self.inflight.len() < IBD_MAX_INFLIGHT
                 && self.next_request_height <= self.best_peer_height
             {
-                let count = IBD_BATCH_SIZE.min(self.best_peer_height - self.next_request_height + 1);
-                if count == 0 { break; }
+                let count =
+                    IBD_BATCH_SIZE.min(self.best_peer_height - self.next_request_height + 1);
+                if count == 0 {
+                    break;
+                }
 
                 if let Some(peer_id) = self.pick_peer() {
                     commands.push(IbdCommand::RequestBatch {
@@ -231,13 +241,16 @@ impl IbdEngine {
                         start_height: self.next_request_height,
                         count,
                     });
-                    self.inflight.insert(self.next_request_height, BatchRequest {
-                        peer_id,
-                        start_height: self.next_request_height,
-                        count,
-                        issued_at: now,
-                        retries: 0,
-                    });
+                    self.inflight.insert(
+                        self.next_request_height,
+                        BatchRequest {
+                            peer_id,
+                            start_height: self.next_request_height,
+                            count,
+                            issued_at: now,
+                            retries: 0,
+                        },
+                    );
                     self.next_request_height += count;
                 } else {
                     break; // No available peers
@@ -281,7 +294,9 @@ impl IbdEngine {
     }
 
     fn pick_peer(&mut self) -> Option<String> {
-        let available: Vec<&PeerInfo> = self.peers.iter()
+        let available: Vec<&PeerInfo> = self
+            .peers
+            .iter()
             .filter(|p| p.available && p.best_height > self.local_height)
             .collect();
         if available.is_empty() {
@@ -338,7 +353,8 @@ mod tests {
 
         let cmds = engine.tick(now);
         // Should issue up to IBD_MAX_INFLIGHT batch requests
-        let requests: Vec<_> = cmds.iter()
+        let requests: Vec<_> = cmds
+            .iter()
             .filter(|c| matches!(c, IbdCommand::RequestBatch { .. }))
             .collect();
         assert_eq!(requests.len(), IBD_MAX_INFLIGHT);
@@ -380,7 +396,8 @@ mod tests {
         let cmds = engine.tick(later);
 
         // Should have retry requests
-        let retries: Vec<_> = cmds.iter()
+        let retries: Vec<_> = cmds
+            .iter()
             .filter(|c| matches!(c, IbdCommand::RequestBatch { .. }))
             .collect();
         assert!(!retries.is_empty());
@@ -405,7 +422,8 @@ mod tests {
         // After MAX_RETRIES, the peer should be demoted
         let t_final = t + IBD_STALL_TIMEOUT + Duration::from_secs(1);
         let cmds = engine.tick(t_final);
-        let demotions: Vec<_> = cmds.iter()
+        let demotions: Vec<_> = cmds
+            .iter()
             .filter(|c| matches!(c, IbdCommand::DemotePeer { .. }))
             .collect();
         assert!(!demotions.is_empty());

@@ -43,8 +43,7 @@ pub struct PoolStats {
 impl PoolStats {
     /// Stale-share rate as a percentage (0–100).
     pub fn stale_rate(&self) -> f64 {
-        let total =
-            (self.shares_accepted + self.shares_rejected + self.shares_stale) as f64;
+        let total = (self.shares_accepted + self.shares_rejected + self.shares_stale) as f64;
         if total == 0.0 {
             0.0
         } else {
@@ -54,8 +53,7 @@ impl PoolStats {
 
     /// Reject-share rate as a percentage (0–100).
     pub fn reject_rate(&self) -> f64 {
-        let total =
-            (self.shares_accepted + self.shares_rejected + self.shares_stale) as f64;
+        let total = (self.shares_accepted + self.shares_rejected + self.shares_stale) as f64;
         if total == 0.0 {
             0.0
         } else {
@@ -155,7 +153,9 @@ impl PoolOptimizer {
 
     /// Smoothed health score for a pool (simple rolling average).
     pub fn smoothed_score(&self, url: &str) -> f64 {
-        let Some(hist) = self.history.get(url) else { return 0.0 };
+        let Some(hist) = self.history.get(url) else {
+            return 0.0;
+        };
         if hist.is_empty() {
             return 0.0;
         }
@@ -321,11 +321,14 @@ mod tests {
         opt.update_pool(pool("old:3333", "Old", 400.0, 70.0));
         opt.update_pool(pool("new:3333", "New", 110.0, 99.0));
         opt.recommend(); // selects New (first time)
-        // Inject an even better pool
+                         // Inject an even better pool
         opt.update_pool(pool("even_faster:3333", "EF", 90.0, 100.0));
         let before = opt.switches;
         opt.recommend();
-        assert!(opt.switches >= before, "should have recorded at least as many switches");
+        assert!(
+            opt.switches >= before,
+            "should have recorded at least as many switches"
+        );
     }
 
     #[test]
