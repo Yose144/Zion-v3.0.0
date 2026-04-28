@@ -165,7 +165,10 @@ impl NodeMetrics {
             ($name:expr, $help:expr, $field:expr) => {
                 out.push_str(&format!(
                     "# HELP {} {}\n# TYPE {} counter\n{} {}\n",
-                    $name, $help, $name, $name,
+                    $name,
+                    $help,
+                    $name,
+                    $name,
                     $field.load(Ordering::Relaxed)
                 ));
             };
@@ -174,36 +177,137 @@ impl NodeMetrics {
             ($name:expr, $help:expr, $field:expr, $ty:ty) => {
                 out.push_str(&format!(
                     "# HELP {} {}\n# TYPE {} gauge\n{} {}\n",
-                    $name, $help, $name, $name,
+                    $name,
+                    $help,
+                    $name,
+                    $name,
                     $field.load(Ordering::Relaxed) as $ty
                 ));
             };
         }
 
-        counter!("zion_blocks_accepted_total", "Total blocks accepted", self.blocks_accepted);
-        counter!("zion_blocks_rejected_total", "Total blocks rejected", self.blocks_rejected);
-        counter!("zion_txs_processed_total", "Total transactions processed", self.txs_processed);
-        counter!("zion_txs_rejected_total", "Total transactions rejected", self.txs_rejected);
+        counter!(
+            "zion_blocks_accepted_total",
+            "Total blocks accepted",
+            self.blocks_accepted
+        );
+        counter!(
+            "zion_blocks_rejected_total",
+            "Total blocks rejected",
+            self.blocks_rejected
+        );
+        counter!(
+            "zion_txs_processed_total",
+            "Total transactions processed",
+            self.txs_processed
+        );
+        counter!(
+            "zion_txs_rejected_total",
+            "Total transactions rejected",
+            self.txs_rejected
+        );
         counter!("zion_bytes_sent_total", "Total bytes sent", self.bytes_sent);
-        counter!("zion_bytes_received_total", "Total bytes received", self.bytes_received);
-        counter!("zion_reorgs_total", "Total chain reorganizations", self.reorgs_executed);
+        counter!(
+            "zion_bytes_received_total",
+            "Total bytes received",
+            self.bytes_received
+        );
+        counter!(
+            "zion_reorgs_total",
+            "Total chain reorganizations",
+            self.reorgs_executed
+        );
 
-        gauge!("zion_chain_height", "Current chain tip height", self.chain_height, u64);
-        gauge!("zion_mempool_size", "Number of transactions in mempool", self.mempool_size, i64);
-        gauge!("zion_mempool_bytes", "Total bytes of transactions in mempool", self.mempool_bytes, i64);
-        gauge!("zion_peer_count", "Total connected peers", self.peer_count, i64);
-        gauge!("zion_inbound_peers", "Inbound peer connections", self.inbound_peers, i64);
-        gauge!("zion_outbound_peers", "Outbound peer connections", self.outbound_peers, i64);
-        gauge!("zion_difficulty", "Current mining difficulty", self.difficulty, u64);
-        gauge!("zion_last_block_time", "Timestamp of the last accepted block", self.last_block_time_secs, u64);
-        gauge!("zion_ibd_progress_pct", "IBD progress in percent x100 (0-10000)", self.ibd_progress_pct, u64);
+        gauge!(
+            "zion_chain_height",
+            "Current chain tip height",
+            self.chain_height,
+            u64
+        );
+        gauge!(
+            "zion_mempool_size",
+            "Number of transactions in mempool",
+            self.mempool_size,
+            i64
+        );
+        gauge!(
+            "zion_mempool_bytes",
+            "Total bytes of transactions in mempool",
+            self.mempool_bytes,
+            i64
+        );
+        gauge!(
+            "zion_peer_count",
+            "Total connected peers",
+            self.peer_count,
+            i64
+        );
+        gauge!(
+            "zion_inbound_peers",
+            "Inbound peer connections",
+            self.inbound_peers,
+            i64
+        );
+        gauge!(
+            "zion_outbound_peers",
+            "Outbound peer connections",
+            self.outbound_peers,
+            i64
+        );
+        gauge!(
+            "zion_difficulty",
+            "Current mining difficulty",
+            self.difficulty,
+            u64
+        );
+        gauge!(
+            "zion_last_block_time",
+            "Timestamp of the last accepted block",
+            self.last_block_time_secs,
+            u64
+        );
+        gauge!(
+            "zion_ibd_progress_pct",
+            "IBD progress in percent x100 (0-10000)",
+            self.ibd_progress_pct,
+            u64
+        );
 
-        gauge!("zion_checkpoint_height", "Highest verified checkpoint height", self.checkpoint_height, u64);
-        gauge!("zion_discovered_peers", "Number of peers in discovery pool", self.discovered_peers, u64);
-        counter!("zion_udp_announcements_total", "Total UDP announcements processed", self.udp_announcements);
-        gauge!("zion_uptime_seconds", "Node uptime in seconds", self.uptime_secs, u64);
-        gauge!("zion_network_hashrate", "Estimated network hash rate", self.network_hashrate, u64);
-        gauge!("zion_best_peer_height", "Best known peer chain height", self.best_peer_height, u64);
+        gauge!(
+            "zion_checkpoint_height",
+            "Highest verified checkpoint height",
+            self.checkpoint_height,
+            u64
+        );
+        gauge!(
+            "zion_discovered_peers",
+            "Number of peers in discovery pool",
+            self.discovered_peers,
+            u64
+        );
+        counter!(
+            "zion_udp_announcements_total",
+            "Total UDP announcements processed",
+            self.udp_announcements
+        );
+        gauge!(
+            "zion_uptime_seconds",
+            "Node uptime in seconds",
+            self.uptime_secs,
+            u64
+        );
+        gauge!(
+            "zion_network_hashrate",
+            "Estimated network hash rate",
+            self.network_hashrate,
+            u64
+        );
+        gauge!(
+            "zion_best_peer_height",
+            "Best known peer chain height",
+            self.best_peer_height,
+            u64
+        );
 
         out
     }
@@ -222,7 +326,11 @@ impl NodeMetrics {
         let ibd_pct = self.ibd_progress_pct.load(Ordering::Relaxed);
         let last_block = self.last_block_time_secs.load(Ordering::Relaxed);
 
-        let sync_lag = if best_peer > height { best_peer - height } else { 0 };
+        let sync_lag = if best_peer > height {
+            best_peer - height
+        } else {
+            0
+        };
         let sync_status = if ibd_pct < 10_000 && sync_lag > 50 {
             "ibd"
         } else if sync_lag > 0 {
@@ -238,8 +346,18 @@ impl NodeMetrics {
                 r#""sync_status":"{}","checkpoint_height":{},"discovered_peers":{},"#,
                 r#""network_hashrate":{},"last_block_time":{}}}"#,
             ),
-            height, peers, mempool, difficulty, uptime, best_peer, sync_lag,
-            sync_status, checkpoint, discovered, hashrate, last_block
+            height,
+            peers,
+            mempool,
+            difficulty,
+            uptime,
+            best_peer,
+            sync_lag,
+            sync_status,
+            checkpoint,
+            discovered,
+            hashrate,
+            last_block
         )
     }
 }

@@ -8,9 +8,7 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
 use zion_core::{CoreRuntime, DifficultyTarget, MiningHeader, MiningJob, RevenueSource};
-use zion_pool::{
-    decode_message, encode_message, MiningPool, PoolMessage, ShareStatus,
-};
+use zion_pool::{decode_message, encode_message, MiningPool, PoolMessage, ShareStatus};
 
 mod banner;
 mod dcr_hash;
@@ -21,9 +19,9 @@ mod parallel;
 
 /// Gate verbose wire_* / iteration= debug output (--verbose or ZION_MINER_VERBOSE=1).
 static VERBOSE: AtomicBool = AtomicBool::new(false);
-mod reconnect;
 #[cfg(any(feature = "gpu", feature = "gpu-opencl"))]
 mod dcr_gpu;
+mod reconnect;
 
 #[derive(Debug, Clone)]
 struct MinerMetricsSnapshot {
@@ -69,8 +67,15 @@ impl MinerMetricsSnapshot {
             last_update_at: now,
             miner_id: config.miner_id.clone(),
             worker_name: config.worker_name.clone(),
-            mode: if config.pool_addr.is_some() { "remote".to_string() } else { "local".to_string() },
-            pool_addr: config.pool_addr.clone().unwrap_or_else(|| "local-runtime".to_string()),
+            mode: if config.pool_addr.is_some() {
+                "remote".to_string()
+            } else {
+                "local".to_string()
+            },
+            pool_addr: config
+                .pool_addr
+                .clone()
+                .unwrap_or_else(|| "local-runtime".to_string()),
             backend: "cpu".to_string(),
             status: "starting".to_string(),
             loop_target: config.loop_count,
@@ -149,7 +154,11 @@ impl MinerMetricsSnapshot {
         self.best_batch_ms = telemetry.best_batch_ms;
         self.remote_ttl_ms = remote_job_ttl_ms.unwrap_or(0);
         // Track peak hashrate (prefer 10s window, fallback to overall)
-        let current_peak = if self.hashrate_10s_hps > 0.0 { self.hashrate_10s_hps } else { self.hashrate_hps };
+        let current_peak = if self.hashrate_10s_hps > 0.0 {
+            self.hashrate_10s_hps
+        } else {
+            self.hashrate_hps
+        };
         if current_peak > self.hashrate_max {
             self.hashrate_max = current_peak;
         }
@@ -220,32 +229,132 @@ fn build_miner_prometheus_payload(snapshot: &MinerMetricsSnapshot) -> String {
 
     let mut body = String::new();
     let _ = writeln!(body, "zion_miner_up{{{labels}}} 1");
-    let _ = writeln!(body, "zion_miner_session_active{{{labels}}} {}", if snapshot.session_active { 1 } else { 0 });
+    let _ = writeln!(
+        body,
+        "zion_miner_session_active{{{labels}}} {}",
+        if snapshot.session_active { 1 } else { 0 }
+    );
     let _ = writeln!(body, "zion_miner_threads{{{labels}}} {}", snapshot.threads);
-    let _ = writeln!(body, "zion_miner_loop_target{{{labels}}} {}", snapshot.loop_target);
-    let _ = writeln!(body, "zion_miner_iteration{{{labels}}} {}", snapshot.current_iteration);
-    let _ = writeln!(body, "zion_miner_last_job_id{{{labels}}} {}", snapshot.last_job_id);
-    let _ = writeln!(body, "zion_miner_nonce_window{{{labels}}} {}", snapshot.nonce_window);
-    let _ = writeln!(body, "zion_miner_accepted_shares_total{{{labels}}} {}", snapshot.accepted_shares);
-    let _ = writeln!(body, "zion_miner_rejected_shares_total{{{labels}}} {}", snapshot.rejected_shares);
-    let _ = writeln!(body, "zion_miner_attempted_hashes_total{{{labels}}} {}", snapshot.attempted_hashes);
-    let _ = writeln!(body, "zion_miner_hashrate_hps{{{labels}}} {:.2}", snapshot.hashrate_hps);
-    let _ = writeln!(body, "zion_miner_hashrate_10s_hps{{{labels}}} {:.2}", snapshot.hashrate_10s_hps);
-    let _ = writeln!(body, "zion_miner_hashrate_60s_hps{{{labels}}} {:.2}", snapshot.hashrate_60s_hps);
-    let _ = writeln!(body, "zion_miner_hashrate_15m_hps{{{labels}}} {:.2}", snapshot.hashrate_15m_hps);
-    let _ = writeln!(body, "zion_miner_accept_rate_pct{{{labels}}} {:.4}", snapshot.accept_rate_pct);
-    let _ = writeln!(body, "zion_miner_no_solution_iterations_total{{{labels}}} {}", snapshot.no_solution_iterations);
-    let _ = writeln!(body, "zion_miner_local_skip_likely_stale_total{{{labels}}} {}", snapshot.local_skip_likely_stale);
-    let _ = writeln!(body, "zion_miner_submit_avg_latency_ms{{{labels}}} {:.2}", snapshot.submit_avg_latency_ms);
-    let _ = writeln!(body, "zion_miner_submit_max_latency_ms{{{labels}}} {}", snapshot.submit_max_latency_ms);
-    let _ = writeln!(body, "zion_miner_gpu_hashrate_hps{{{labels}}} {:.2}", snapshot.gpu_hashrate_hps);
-    let _ = writeln!(body, "zion_miner_current_epoch{{{labels}}} {}", snapshot.current_epoch);
-    let _ = writeln!(body, "zion_miner_pool_height{{{labels}}} {}", snapshot.pool_height);
-    let _ = writeln!(body, "zion_miner_best_batch_ms{{{labels}}} {}", snapshot.best_batch_ms);
-    let _ = writeln!(body, "zion_miner_remote_ttl_ms{{{labels}}} {}", snapshot.remote_ttl_ms);
-    let _ = writeln!(body, "zion_miner_hashrate_max{{{labels}}} {:.2}", snapshot.hashrate_max);
-    let _ = writeln!(body, "zion_miner_uptime_seconds{{{labels}}} {}", snapshot.uptime_seconds());
-    let _ = writeln!(body, "zion_miner_seconds_since_update{{{labels}}} {}", snapshot.seconds_since_update());
+    let _ = writeln!(
+        body,
+        "zion_miner_loop_target{{{labels}}} {}",
+        snapshot.loop_target
+    );
+    let _ = writeln!(
+        body,
+        "zion_miner_iteration{{{labels}}} {}",
+        snapshot.current_iteration
+    );
+    let _ = writeln!(
+        body,
+        "zion_miner_last_job_id{{{labels}}} {}",
+        snapshot.last_job_id
+    );
+    let _ = writeln!(
+        body,
+        "zion_miner_nonce_window{{{labels}}} {}",
+        snapshot.nonce_window
+    );
+    let _ = writeln!(
+        body,
+        "zion_miner_accepted_shares_total{{{labels}}} {}",
+        snapshot.accepted_shares
+    );
+    let _ = writeln!(
+        body,
+        "zion_miner_rejected_shares_total{{{labels}}} {}",
+        snapshot.rejected_shares
+    );
+    let _ = writeln!(
+        body,
+        "zion_miner_attempted_hashes_total{{{labels}}} {}",
+        snapshot.attempted_hashes
+    );
+    let _ = writeln!(
+        body,
+        "zion_miner_hashrate_hps{{{labels}}} {:.2}",
+        snapshot.hashrate_hps
+    );
+    let _ = writeln!(
+        body,
+        "zion_miner_hashrate_10s_hps{{{labels}}} {:.2}",
+        snapshot.hashrate_10s_hps
+    );
+    let _ = writeln!(
+        body,
+        "zion_miner_hashrate_60s_hps{{{labels}}} {:.2}",
+        snapshot.hashrate_60s_hps
+    );
+    let _ = writeln!(
+        body,
+        "zion_miner_hashrate_15m_hps{{{labels}}} {:.2}",
+        snapshot.hashrate_15m_hps
+    );
+    let _ = writeln!(
+        body,
+        "zion_miner_accept_rate_pct{{{labels}}} {:.4}",
+        snapshot.accept_rate_pct
+    );
+    let _ = writeln!(
+        body,
+        "zion_miner_no_solution_iterations_total{{{labels}}} {}",
+        snapshot.no_solution_iterations
+    );
+    let _ = writeln!(
+        body,
+        "zion_miner_local_skip_likely_stale_total{{{labels}}} {}",
+        snapshot.local_skip_likely_stale
+    );
+    let _ = writeln!(
+        body,
+        "zion_miner_submit_avg_latency_ms{{{labels}}} {:.2}",
+        snapshot.submit_avg_latency_ms
+    );
+    let _ = writeln!(
+        body,
+        "zion_miner_submit_max_latency_ms{{{labels}}} {}",
+        snapshot.submit_max_latency_ms
+    );
+    let _ = writeln!(
+        body,
+        "zion_miner_gpu_hashrate_hps{{{labels}}} {:.2}",
+        snapshot.gpu_hashrate_hps
+    );
+    let _ = writeln!(
+        body,
+        "zion_miner_current_epoch{{{labels}}} {}",
+        snapshot.current_epoch
+    );
+    let _ = writeln!(
+        body,
+        "zion_miner_pool_height{{{labels}}} {}",
+        snapshot.pool_height
+    );
+    let _ = writeln!(
+        body,
+        "zion_miner_best_batch_ms{{{labels}}} {}",
+        snapshot.best_batch_ms
+    );
+    let _ = writeln!(
+        body,
+        "zion_miner_remote_ttl_ms{{{labels}}} {}",
+        snapshot.remote_ttl_ms
+    );
+    let _ = writeln!(
+        body,
+        "zion_miner_hashrate_max{{{labels}}} {:.2}",
+        snapshot.hashrate_max
+    );
+    let _ = writeln!(
+        body,
+        "zion_miner_uptime_seconds{{{labels}}} {}",
+        snapshot.uptime_seconds()
+    );
+    let _ = writeln!(
+        body,
+        "zion_miner_seconds_since_update{{{labels}}} {}",
+        snapshot.seconds_since_update()
+    );
     body
 }
 
@@ -490,7 +599,11 @@ fn main() -> Result<()> {
 
         println!("--- Ekam Deeksha GPU benchmark ---");
         let mut gpu = gpu_backend::create_gpu_backend(
-            if backend == gpu_backend::GpuBackendKind::Cpu { gpu_backend::GpuBackendKind::Auto } else { backend },
+            if backend == gpu_backend::GpuBackendKind::Cpu {
+                gpu_backend::GpuBackendKind::Auto
+            } else {
+                backend
+            },
             work_size,
         )?;
         println!("device={}", gpu.device_name());
@@ -522,7 +635,9 @@ fn main() -> Result<()> {
 
         // Verify precompute correctness first
         let mut test_header = [0u8; 180];
-        for i in 0..180 { test_header[i] = i as u8; }
+        for i in 0..180 {
+            test_header[i] = i as u8;
+        }
         if dcr_gpu::verify_precompute(&test_header) {
             println!("precompute_verify=OK");
         } else {
@@ -562,8 +677,10 @@ fn main() -> Result<()> {
             .and_then(|v| v.parse().ok())
             .unwrap_or(5.0);
 
-        println!("blake3_bench simd={} threads={threads} duration={secs:.0}s",
-                 dcr_hash::detect_simd());
+        println!(
+            "blake3_bench simd={} threads={threads} duration={secs:.0}s",
+            dcr_hash::detect_simd()
+        );
 
         // Single-thread: compare full-header vs precomputed-state
         println!("--- single-thread comparison ---");
@@ -572,7 +689,11 @@ fn main() -> Result<()> {
         let (_, _, mhps_pre) = dcr_hash::bench_blake3_precompute(secs);
         println!("precomputed:   {mhps_pre:.2} MH/s");
 
-        let best_fn = if mhps_pre > mhps_full { "precomputed" } else { "full_header" };
+        let best_fn = if mhps_pre > mhps_full {
+            "precomputed"
+        } else {
+            "full_header"
+        };
         let best_rate = mhps_full.max(mhps_pre);
         println!("winner: {best_fn} ({best_rate:.2} MH/s)");
 
@@ -675,7 +796,14 @@ fn main() -> Result<()> {
             let reconnect_enabled = parse_bool_env("ZION_RECONNECT", true);
             let max_reconnect = parse_env_u32("ZION_MAX_RECONNECT", 0)?; // 0 = infinite
             if reconnect_enabled {
-                println!("reconnect=enabled max_attempts={}", if max_reconnect == 0 { "infinite".to_string() } else { max_reconnect.to_string() });
+                println!(
+                    "reconnect=enabled max_attempts={}",
+                    if max_reconnect == 0 {
+                        "infinite".to_string()
+                    } else {
+                        max_reconnect.to_string()
+                    }
+                );
                 reconnect::with_reconnect(
                     max_reconnect,
                     reconnect::Backoff::default_reconnect(),
@@ -710,7 +838,10 @@ fn main() -> Result<()> {
     println!("hashrate_fmt={}", fmt_hashrate(outcome.hashrate_hps));
     println!("revenue_total_usd={:.2}", outcome.revenue_total_usd);
     println!("no_solution_iterations={}", outcome.no_solution_iterations);
-    println!("local_skip_likely_stale={}", outcome.local_skip_likely_stale);
+    println!(
+        "local_skip_likely_stale={}",
+        outcome.local_skip_likely_stale
+    );
     println!("submit_avg_latency_ms={:.2}", outcome.submit_avg_latency_ms);
     println!("submit_max_latency_ms={}", outcome.submit_max_latency_ms);
 
@@ -741,7 +872,10 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn run_local_session(config: &MinerConfig, metrics: &Arc<Mutex<MinerMetricsSnapshot>>) -> Result<SessionOutcome> {
+fn run_local_session(
+    config: &MinerConfig,
+    metrics: &Arc<Mutex<MinerMetricsSnapshot>>,
+) -> Result<SessionOutcome> {
     let mut pool = MiningPool::with_job_ttl(CoreRuntime::default(), config.job_ttl_ms);
     let started_at = Instant::now();
     let mut attempted_hashes = 0u64;
@@ -828,7 +962,11 @@ fn run_local_session(config: &MinerConfig, metrics: &Arc<Mutex<MinerMetricsSnaps
             if VERBOSE.load(Ordering::Relaxed) {
                 println!("iteration={}", iteration + 1);
                 println!("job_id={}", job.job_id);
-                println!("nonce_range={}..{}", job.start_nonce, job.start_nonce + job.nonce_count);
+                println!(
+                    "nonce_range={}..{}",
+                    job.start_nonce,
+                    job.start_nonce + job.nonce_count
+                );
                 println!("share_status=\"NoSolutionInWindow\"");
             }
 
@@ -905,7 +1043,13 @@ fn run_local_session(config: &MinerConfig, metrics: &Arc<Mutex<MinerMetricsSnaps
         telemetry.record_submit_latency(submit_started_at.elapsed());
         last_result_line = Some(result_line.clone());
 
-        log_solution(iteration + 1, job, solution.candidate.nonce, &solution.hash, &decision.status);
+        log_solution(
+            iteration + 1,
+            job,
+            solution.candidate.nonce,
+            &solution.hash,
+            &decision.status,
+        );
         if VERBOSE.load(Ordering::Relaxed) {
             println!("wire_job={}", job_line.trim());
             println!("wire_submit={}", submit_line.trim());
@@ -1006,7 +1150,11 @@ fn run_local_session(config: &MinerConfig, metrics: &Arc<Mutex<MinerMetricsSnaps
     })
 }
 
-fn run_remote_session(config: &MinerConfig, pool_addr: &str, metrics: &Arc<Mutex<MinerMetricsSnapshot>>) -> Result<SessionOutcome> {
+fn run_remote_session(
+    config: &MinerConfig,
+    pool_addr: &str,
+    metrics: &Arc<Mutex<MinerMetricsSnapshot>>,
+) -> Result<SessionOutcome> {
     let started_at = Instant::now();
     let mut attempted_hashes = 0u64;
     let mut accepted_iterations = 0u64;
@@ -1105,16 +1253,26 @@ fn run_remote_session(config: &MinerConfig, pool_addr: &str, metrics: &Arc<Mutex
         last_job_id = job.job_id;
         telemetry.pool_height = job.height;
         telemetry.current_epoch = job.height / 100;
-        println!("[{}] new job  height {}  nonces {}..{}  job_id={}",
-            log_timestamp(), job.height, job.start_nonce, job.start_nonce + job.nonce_count, job.job_id,
+        println!(
+            "[{}] new job  height {}  nonces {}..{}  job_id={}",
+            log_timestamp(),
+            job.height,
+            job.start_nonce,
+            job.start_nonce + job.nonce_count,
+            job.job_id,
         );
-        if VERBOSE.load(Ordering::Relaxed) { println!("wire_job={job_line}"); }
+        if VERBOSE.load(Ordering::Relaxed) {
+            println!("wire_job={job_line}");
+        }
         // GPU-first, CPU-fallback nonce scan
         let can_gpu = match gpu.as_mut() {
             Some(g) => match g.update_epoch(job.height) {
                 Ok(()) => true,
                 Err(e) => {
-                    println!("gpu_epoch_fallback height={} reason=\"{e}\" using=cpu", job.height);
+                    println!(
+                        "gpu_epoch_fallback height={} reason=\"{e}\" using=cpu",
+                        job.height
+                    );
                     false
                 }
             },
@@ -1137,9 +1295,14 @@ fn run_remote_session(config: &MinerConfig, pool_addr: &str, metrics: &Arc<Mutex
             telemetry.record_attempted_hashes(attempted_hashes);
             telemetry.record_no_solution();
             // Always log scan result for operational visibility
-            println!("[{}] no_solution  iteration={}  height={}  nonces={}..{}  elapsed_ms={}",
-                log_timestamp(), iteration + 1, job.height,
-                job.start_nonce, job.start_nonce + job.nonce_count, batch_ms,
+            println!(
+                "[{}] no_solution  iteration={}  height={}  nonces={}..{}  elapsed_ms={}",
+                log_timestamp(),
+                iteration + 1,
+                job.height,
+                job.start_nonce,
+                job.start_nonce + job.nonce_count,
+                batch_ms,
             );
             if VERBOSE.load(Ordering::Relaxed) {
                 println!("wire_job={job_line}");
@@ -1163,7 +1326,9 @@ fn run_remote_session(config: &MinerConfig, pool_addr: &str, metrics: &Arc<Mutex
                     if accepted {
                         accepted_iterations += 1;
                     }
-                    if VERBOSE.load(Ordering::Relaxed) { println!("pool_status={status}"); }
+                    if VERBOSE.load(Ordering::Relaxed) {
+                        println!("pool_status={status}");
+                    }
                 }
                 other => return Err(anyhow!("expected result from pool, got {other:?}")),
             }
@@ -1198,9 +1363,14 @@ fn run_remote_session(config: &MinerConfig, pool_addr: &str, metrics: &Arc<Mutex
 
         // Always log found nonce for operational visibility
         let search_depth = solution.candidate.nonce.saturating_sub(job.start_nonce) + 1;
-        println!("[{}] found_nonce={}  height={}  depth={}/{}  elapsed_ms={}",
-            log_timestamp(), solution.candidate.nonce, job.height,
-            search_depth, job.nonce_count, batch_ms,
+        println!(
+            "[{}] found_nonce={}  height={}  depth={}/{}  elapsed_ms={}",
+            log_timestamp(),
+            solution.candidate.nonce,
+            job.height,
+            search_depth,
+            job.nonce_count,
+            batch_ms,
         );
 
         if config.sleep_ms > 0 {
@@ -1237,17 +1407,30 @@ fn run_remote_session(config: &MinerConfig, pool_addr: &str, metrics: &Arc<Mutex
                 if accepted {
                     accepted_iterations += 1;
                     let total = accepted_iterations + rejected_iterations;
-                    let pct = if total > 0 { (accepted_iterations as f64 / total as f64) * 100.0 } else { 100.0 };
-                    println!("[{}] accepted {}/{} (+1) diff {} [{}ms] ({:.1}%)",
-                        log_timestamp(), accepted_iterations, rejected_iterations,
-                        job.height, latency_ms, pct,
+                    let pct = if total > 0 {
+                        (accepted_iterations as f64 / total as f64) * 100.0
+                    } else {
+                        100.0
+                    };
+                    println!(
+                        "[{}] accepted {}/{} (+1) diff {} [{}ms] ({:.1}%)",
+                        log_timestamp(),
+                        accepted_iterations,
+                        rejected_iterations,
+                        job.height,
+                        latency_ms,
+                        pct,
                     );
                 } else {
                     rejected_iterations += 1;
                     let total = accepted_iterations + rejected_iterations;
-                    println!("[{}] rejected {}/{} — {} ({} ms)",
-                        log_timestamp(), rejected_iterations, total,
-                        &status, latency_ms,
+                    println!(
+                        "[{}] rejected {}/{} — {} ({} ms)",
+                        log_timestamp(),
+                        rejected_iterations,
+                        total,
+                        &status,
+                        latency_ms,
                     );
                 }
                 status
@@ -1255,7 +1438,13 @@ fn run_remote_session(config: &MinerConfig, pool_addr: &str, metrics: &Arc<Mutex
             other => return Err(anyhow!("expected result from pool, got {other:?}")),
         };
 
-        log_solution(iteration + 1, job, solution.candidate.nonce, &solution.hash, &status);
+        log_solution(
+            iteration + 1,
+            job,
+            solution.candidate.nonce,
+            &solution.hash,
+            &status,
+        );
         if VERBOSE.load(Ordering::Relaxed) {
             println!("wire_job={job_line}");
             println!("wire_submit={submit_line}");
@@ -1472,7 +1661,11 @@ impl SessionTelemetry {
 
     fn gpu_hashrate_hps(&self) -> f64 {
         let elapsed = self.status_started_at.elapsed().as_secs_f64();
-        if elapsed > 0.0 { self.gpu_hashes as f64 / elapsed } else { 0.0 }
+        if elapsed > 0.0 {
+            self.gpu_hashes as f64 / elapsed
+        } else {
+            0.0
+        }
     }
 
     fn submit_avg_latency_ms(&self) -> f64 {
@@ -1503,7 +1696,10 @@ impl SessionTelemetry {
             return;
         }
 
-        let uptime = now.duration_since(self.status_started_at).as_secs_f64().max(0.001);
+        let uptime = now
+            .duration_since(self.status_started_at)
+            .as_secs_f64()
+            .max(0.001);
         let overall_hps = attempted_hashes as f64 / uptime;
         let total_decisions = accepted.saturating_add(rejected);
         let accept_pct = if total_decisions > 0 {
@@ -1526,7 +1722,11 @@ impl SessionTelemetry {
             .map(|ttl| ttl.to_string())
             .unwrap_or_else(|| "n/a".to_string());
         let ts = log_timestamp();
-        let backend_label = if self.gpu_backend_name.is_empty() { "cpu" } else { &self.gpu_backend_name };
+        let backend_label = if self.gpu_backend_name.is_empty() {
+            "cpu"
+        } else {
+            &self.gpu_backend_name
+        };
 
         // ── Machine-parseable status line (for desktop agent stdout parser) ──
         println!(
@@ -1556,12 +1756,18 @@ impl SessionTelemetry {
         };
         println!(
             "[{ts}] speed 10s/60s/15m  {:.2}  {:.2}  {:.2} {unit_label}  max {:.2} {unit_label}",
-            hr_10s / divisor, hr_60s / divisor, hr_15m / divisor, self.hashrate_max / divisor,
+            hr_10s / divisor,
+            hr_60s / divisor,
+            hr_15m / divisor,
+            self.hashrate_max / divisor,
         );
         println!(
             "[{ts}] shares A:{accepted} R:{rejected} ({accept_pct:.1}%) | hashes {attempted_hashes} | pool latency {submit_avg:.0}ms | uptime {uptime_h}h {uptime_m}m {uptime_s}s",
         );
-        { use std::io::Write; let _ = std::io::stdout().flush(); }
+        {
+            use std::io::Write;
+            let _ = std::io::stdout().flush();
+        }
 
         // ── Stats file (atomic write for desktop agent polling) ──
         if let Some(path) = stats_file {
@@ -1670,7 +1876,11 @@ fn log_solution<T: std::fmt::Debug>(
 ) {
     println!("iteration={iteration}");
     println!("job_id={}", job.job_id);
-    println!("nonce_range={}..{}", job.start_nonce, job.start_nonce + job.nonce_count);
+    println!(
+        "nonce_range={}..{}",
+        job.start_nonce,
+        job.start_nonce + job.nonce_count
+    );
     println!("found_nonce={found_nonce}");
     println!("hash={}", hex(hash));
     println!("share_status={status:?}");
@@ -1683,21 +1893,12 @@ fn hex(bytes: &[u8]) -> String {
 fn parse_header_hex(raw: &str) -> Result<MiningHeader> {
     let bytes = parse_fixed_hex::<80>(raw, "job header")?;
 
-    let version = u32::from_le_bytes(
-        bytes[0..4].try_into().context("header version slice")?,
-    );
-    let previous_hash: [u8; 32] = bytes[4..36]
-        .try_into()
-        .context("previous hash slice")?;
-    let merkle_root: [u8; 32] = bytes[36..68]
-        .try_into()
-        .context("merkle root slice")?;
-    let timestamp = u64::from_le_bytes(
-        bytes[68..76].try_into().context("timestamp slice")?,
-    );
-    let difficulty_bits = u32::from_le_bytes(
-        bytes[76..80].try_into().context("difficulty bits slice")?,
-    );
+    let version = u32::from_le_bytes(bytes[0..4].try_into().context("header version slice")?);
+    let previous_hash: [u8; 32] = bytes[4..36].try_into().context("previous hash slice")?;
+    let merkle_root: [u8; 32] = bytes[36..68].try_into().context("merkle root slice")?;
+    let timestamp = u64::from_le_bytes(bytes[68..76].try_into().context("timestamp slice")?);
+    let difficulty_bits =
+        u32::from_le_bytes(bytes[76..80].try_into().context("difficulty bits slice")?);
 
     Ok(MiningHeader {
         version,
@@ -1716,7 +1917,8 @@ fn parse_fixed_hex<const N: usize>(raw: &str, label: &str) -> Result<[u8; N]> {
 
     let mut bytes = [0u8; N];
     for (index, chunk) in normalized.as_bytes().chunks(2).enumerate() {
-        let pair = std::str::from_utf8(chunk).with_context(|| format!("{label} contains non-utf8 hex"))?;
+        let pair =
+            std::str::from_utf8(chunk).with_context(|| format!("{label} contains non-utf8 hex"))?;
         bytes[index] = u8::from_str_radix(pair, 16)
             .with_context(|| format!("invalid hex byte '{pair}' in {label}"))?;
     }
@@ -1838,7 +2040,9 @@ impl MinerConfig {
                     println!("All options can also be set via ZION_* environment variables.");
                     std::process::exit(0);
                 }
-                _ => { i += 1; } // skip unknown flags (bench flags handled earlier)
+                _ => {
+                    i += 1;
+                } // skip unknown flags (bench flags handled earlier)
             }
         }
 
@@ -1853,7 +2057,9 @@ impl MinerConfig {
         Ok(Self {
             miner_id: env_or_default("ZION_MINER_ID", "local-miner"),
             worker_name: env_or_default("ZION_WORKER_NAME", "cpu-rig-0"),
-            pool_addr: std::env::var("ZION_POOL_ADDR").ok().filter(|value| !value.trim().is_empty()),
+            pool_addr: std::env::var("ZION_POOL_ADDR")
+                .ok()
+                .filter(|value| !value.trim().is_empty()),
             loop_count: parse_env_u32("ZION_LOOP_COUNT", 1)?,
             job_ttl_ms: parse_env_u64("ZION_JOB_TTL_MS", 15_000)?,
             nonce_stride: parse_env_u64("ZION_NONCE_STRIDE", 1_024)?,
@@ -1863,10 +2069,15 @@ impl MinerConfig {
             nonce_count_min: parse_env_u64("ZION_NONCE_COUNT_MIN", 10_000)?,
             nonce_count_max: parse_env_u64("ZION_NONCE_COUNT_MAX", 5_000_000)?,
             nonce_adjust_percent: parse_env_u64("ZION_NONCE_ADJUST_PCT", 50)?,
-            remote_ttl_guard_percent: parse_env_u64("ZION_REMOTE_TTL_GUARD_PCT", 90)?.clamp(10, 100),
+            remote_ttl_guard_percent: parse_env_u64("ZION_REMOTE_TTL_GUARD_PCT", 90)?
+                .clamp(10, 100),
             metrics_report_every_secs: parse_env_u64("ZION_METRICS_REPORT_SECS", 30)?,
-            metrics_bind: std::env::var("ZION_MINER_METRICS_BIND").ok().filter(|value| !value.trim().is_empty()),
-            stats_file: std::env::var("ZION_STATS_FILE").ok().filter(|value| !value.trim().is_empty()),
+            metrics_bind: std::env::var("ZION_MINER_METRICS_BIND")
+                .ok()
+                .filter(|value| !value.trim().is_empty()),
+            stats_file: std::env::var("ZION_STATS_FILE")
+                .ok()
+                .filter(|value| !value.trim().is_empty()),
             sleep_ms: parse_env_u64("ZION_SLEEP_MS", 0)?,
             timestamp: parse_env_u64("ZION_TIMESTAMP", 1_762_000_200)?,
             target: parse_target_env("ZION_TARGET")?,
@@ -2016,20 +2227,38 @@ mod tests {
 
     fn env_test_guard() -> MutexGuard<'static, ()> {
         static ENV_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
-        ENV_LOCK.get_or_init(|| Mutex::new(())).lock().expect("env test lock")
+        ENV_LOCK
+            .get_or_init(|| Mutex::new(()))
+            .lock()
+            .expect("env test lock")
     }
 
     #[test]
     fn revenue_source_parser_accepts_aliases() {
-        assert!(matches!(parse_revenue_source("zion"), Ok(RevenueSource::Zion)));
+        assert!(matches!(
+            parse_revenue_source("zion"),
+            Ok(RevenueSource::Zion)
+        ));
         assert!(matches!(
             parse_revenue_source("profit_switch"),
             Ok(RevenueSource::ProfitSwitch)
         ));
-        assert!(matches!(parse_revenue_source("ncl"), Ok(RevenueSource::NclAi)));
-        assert!(matches!(parse_revenue_source("dcr"), Ok(RevenueSource::Blake3External)));
-        assert!(matches!(parse_revenue_source("alph"), Ok(RevenueSource::Blake3External)));
-        assert!(matches!(parse_revenue_source("blake3_external"), Ok(RevenueSource::Blake3External)));
+        assert!(matches!(
+            parse_revenue_source("ncl"),
+            Ok(RevenueSource::NclAi)
+        ));
+        assert!(matches!(
+            parse_revenue_source("dcr"),
+            Ok(RevenueSource::Blake3External)
+        ));
+        assert!(matches!(
+            parse_revenue_source("alph"),
+            Ok(RevenueSource::Blake3External)
+        ));
+        assert!(matches!(
+            parse_revenue_source("blake3_external"),
+            Ok(RevenueSource::Blake3External)
+        ));
     }
 
     #[test]
@@ -2142,7 +2371,10 @@ mod tests {
     fn parse_bool_env_falsy_values() {
         for val in ["0", "false", "no", "off", "FALSE", "Off"] {
             std::env::set_var("ZION_TEST_BOOL_F", val);
-            assert!(!parse_bool_env("ZION_TEST_BOOL_F", true), "'{val}' should be falsy");
+            assert!(
+                !parse_bool_env("ZION_TEST_BOOL_F", true),
+                "'{val}' should be falsy"
+            );
         }
         std::env::remove_var("ZION_TEST_BOOL_F");
     }
@@ -2151,7 +2383,10 @@ mod tests {
     fn parse_bool_env_truthy_values() {
         for val in ["1", "true", "yes", "on", "TRUE", "anything"] {
             std::env::set_var("ZION_TEST_BOOL_T", val);
-            assert!(parse_bool_env("ZION_TEST_BOOL_T", false), "'{val}' should be truthy");
+            assert!(
+                parse_bool_env("ZION_TEST_BOOL_T", false),
+                "'{val}' should be truthy"
+            );
         }
         std::env::remove_var("ZION_TEST_BOOL_T");
     }
@@ -2258,13 +2493,21 @@ mod tests {
         let reconnect = std::env::var("ZION_RECONNECT").unwrap_or_default();
         assert!(loop_count == "1000000" || loop_count.is_empty(),
             "expected ZION_LOOP_COUNT to be '1000000' or removed by parallel test, got '{loop_count}'");
-        assert!(reconnect == "true" || reconnect.is_empty(),
-            "expected ZION_RECONNECT to be 'true' or removed by parallel test, got '{reconnect}'");
+        assert!(
+            reconnect == "true" || reconnect.is_empty(),
+            "expected ZION_RECONNECT to be 'true' or removed by parallel test, got '{reconnect}'"
+        );
         // cleanup
-        for k in ["ZION_PROFILE", "ZION_LOOP_COUNT", "ZION_RECONNECT",
-                   "ZION_NONCE_AUTOTUNE", "ZION_NONCE_COUNT",
-                   "ZION_NONCE_COUNT_MIN", "ZION_NONCE_COUNT_MAX",
-                   "ZION_METRICS_REPORT_SECS"] {
+        for k in [
+            "ZION_PROFILE",
+            "ZION_LOOP_COUNT",
+            "ZION_RECONNECT",
+            "ZION_NONCE_AUTOTUNE",
+            "ZION_NONCE_COUNT",
+            "ZION_NONCE_COUNT_MIN",
+            "ZION_NONCE_COUNT_MAX",
+            "ZION_METRICS_REPORT_SECS",
+        ] {
             std::env::remove_var(k);
         }
     }
@@ -2276,8 +2519,14 @@ mod tests {
         std::env::set_var("ZION_PROFILE", "benchmark");
         apply_profile_defaults();
         assert_eq!(std::env::var("ZION_NONCE_AUTOTUNE").unwrap(), "false");
-        for k in ["ZION_PROFILE", "ZION_NONCE_AUTOTUNE", "ZION_LOOP_COUNT",
-                   "ZION_NONCE_COUNT", "ZION_METRICS_REPORT_SECS", "ZION_SLEEP_MS"] {
+        for k in [
+            "ZION_PROFILE",
+            "ZION_NONCE_AUTOTUNE",
+            "ZION_LOOP_COUNT",
+            "ZION_NONCE_COUNT",
+            "ZION_METRICS_REPORT_SECS",
+            "ZION_SLEEP_MS",
+        ] {
             std::env::remove_var(k);
         }
     }
@@ -2289,9 +2538,15 @@ mod tests {
         std::env::set_var("ZION_PROFILE", "dual");
         apply_profile_defaults();
         assert_eq!(std::env::var("ZION_DCR_ENABLED").unwrap(), "true");
-        for k in ["ZION_PROFILE", "ZION_DCR_ENABLED", "ZION_LOOP_COUNT",
-                   "ZION_NONCE_AUTOTUNE", "ZION_NONCE_COUNT",
-                   "ZION_RECONNECT", "ZION_METRICS_REPORT_SECS"] {
+        for k in [
+            "ZION_PROFILE",
+            "ZION_DCR_ENABLED",
+            "ZION_LOOP_COUNT",
+            "ZION_NONCE_AUTOTUNE",
+            "ZION_NONCE_COUNT",
+            "ZION_RECONNECT",
+            "ZION_METRICS_REPORT_SECS",
+        ] {
             std::env::remove_var(k);
         }
     }
@@ -2308,10 +2563,16 @@ mod tests {
         let val = std::env::var("ZION_LOOP_COUNT").unwrap_or_default();
         assert!(val == "42" || val.is_empty(),
             "expected ZION_LOOP_COUNT to be '42' (explicit) or removed by parallel test, got '{val}'");
-        for k in ["ZION_PROFILE", "ZION_LOOP_COUNT", "ZION_RECONNECT",
-                   "ZION_NONCE_AUTOTUNE", "ZION_NONCE_COUNT",
-                   "ZION_NONCE_COUNT_MIN", "ZION_NONCE_COUNT_MAX",
-                   "ZION_METRICS_REPORT_SECS"] {
+        for k in [
+            "ZION_PROFILE",
+            "ZION_LOOP_COUNT",
+            "ZION_RECONNECT",
+            "ZION_NONCE_AUTOTUNE",
+            "ZION_NONCE_COUNT",
+            "ZION_NONCE_COUNT_MIN",
+            "ZION_NONCE_COUNT_MAX",
+            "ZION_METRICS_REPORT_SECS",
+        ] {
             std::env::remove_var(k);
         }
     }
@@ -2334,8 +2595,14 @@ mod tests {
         std::env::set_var("ZION_PROFILE", "bench");
         apply_profile_defaults();
         assert_eq!(std::env::var("ZION_NONCE_AUTOTUNE").unwrap(), "false");
-        for k in ["ZION_PROFILE", "ZION_NONCE_AUTOTUNE", "ZION_LOOP_COUNT",
-                   "ZION_NONCE_COUNT", "ZION_METRICS_REPORT_SECS", "ZION_SLEEP_MS"] {
+        for k in [
+            "ZION_PROFILE",
+            "ZION_NONCE_AUTOTUNE",
+            "ZION_LOOP_COUNT",
+            "ZION_NONCE_COUNT",
+            "ZION_METRICS_REPORT_SECS",
+            "ZION_SLEEP_MS",
+        ] {
             std::env::remove_var(k);
         }
     }

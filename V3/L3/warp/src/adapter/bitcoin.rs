@@ -16,7 +16,7 @@ const WARP_OP_RETURN_PREFIX: &str = "WARP_INBOUND:bitcoin:";
 
 fn htlc_address(network: &str) -> Option<&'static str> {
     match network {
-        "mainnet" => Some("bc1qzionhtlcxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"),  // TODO mainnet
+        "mainnet" => Some("bc1qzionhtlcxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"), // TODO mainnet
         "testnet" => Some("tb1qzionhtlctest0000000000000000000000000000"),    // TODO testnet
         _ => None,
     }
@@ -25,8 +25,8 @@ fn htlc_address(network: &str) -> Option<&'static str> {
 fn default_api(network: &str) -> &'static str {
     match network {
         "testnet" => "https://mempool.space/testnet/api",
-        "signet"  => "https://mempool.space/signet/api",
-        _         => "https://mempool.space/api",
+        "signet" => "https://mempool.space/signet/api",
+        _ => "https://mempool.space/api",
     }
 }
 
@@ -74,14 +74,16 @@ pub struct BitcoinAdapter {
 }
 
 impl Default for BitcoinAdapter {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl BitcoinAdapter {
     pub fn new() -> Self {
         let network = std::env::var("BITCOIN_NETWORK").unwrap_or_else(|_| "mainnet".into());
-        let api_url = std::env::var("WARP_BITCOIN_API")
-            .unwrap_or_else(|_| default_api(&network).to_string());
+        let api_url =
+            std::env::var("WARP_BITCOIN_API").unwrap_or_else(|_| default_api(&network).to_string());
         Self {
             network,
             api_url,
@@ -94,22 +96,47 @@ impl BitcoinAdapter {
 
     async fn get_tip_height(&self) -> WarpResult<u64> {
         let url = format!("{}/blocks/tip/height", self.api_url);
-        let text = self.client.get(&url).send().await
-            .map_err(|e| WarpError::AdapterError { chain: "bitcoin".into(), reason: e.to_string() })?
-            .text().await
-            .map_err(|e| WarpError::AdapterError { chain: "bitcoin".into(), reason: e.to_string() })?;
-        text.trim().parse::<u64>().map_err(|_| WarpError::AdapterError {
-            chain: "bitcoin".into(), reason: format!("tip height parse error: '{}'", text.trim())
-        })
+        let text = self
+            .client
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| WarpError::AdapterError {
+                chain: "bitcoin".into(),
+                reason: e.to_string(),
+            })?
+            .text()
+            .await
+            .map_err(|e| WarpError::AdapterError {
+                chain: "bitcoin".into(),
+                reason: e.to_string(),
+            })?;
+        text.trim()
+            .parse::<u64>()
+            .map_err(|_| WarpError::AdapterError {
+                chain: "bitcoin".into(),
+                reason: format!("tip height parse error: '{}'", text.trim()),
+            })
     }
 
     async fn get_address_txs(&self, address: &str) -> WarpResult<Vec<MempoolTx>> {
         // mempool.space returns max 50 confirmed + unconfirmed txs
         let url = format!("{}/address/{}/txs", self.api_url, address);
-        let txs: Vec<MempoolTx> = self.client.get(&url).send().await
-            .map_err(|e| WarpError::AdapterError { chain: "bitcoin".into(), reason: e.to_string() })?
-            .json().await
-            .map_err(|e| WarpError::AdapterError { chain: "bitcoin".into(), reason: e.to_string() })?;
+        let txs: Vec<MempoolTx> = self
+            .client
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| WarpError::AdapterError {
+                chain: "bitcoin".into(),
+                reason: e.to_string(),
+            })?
+            .json()
+            .await
+            .map_err(|e| WarpError::AdapterError {
+                chain: "bitcoin".into(),
+                reason: e.to_string(),
+            })?;
         Ok(txs)
     }
 
@@ -117,10 +144,12 @@ impl BitcoinAdapter {
     /// OP_RETURN ASM format: "OP_RETURN OP_PUSHBYTES_N <hex>"
     fn parse_op_return(asm: &str) -> Option<String> {
         let hex_part = asm.split_whitespace().last()?;
-        if hex_part.len() < 2 { return None; }
+        if hex_part.len() < 2 {
+            return None;
+        }
         let bytes = (0..hex_part.len())
             .step_by(2)
-            .filter_map(|i| u8::from_str_radix(&hex_part[i..i+2], 16).ok())
+            .filter_map(|i| u8::from_str_radix(&hex_part[i..i + 2], 16).ok())
             .collect::<Vec<u8>>();
         let s = String::from_utf8(bytes).ok()?;
         if s.starts_with("WARP_INBOUND:bitcoin:") {
@@ -133,21 +162,31 @@ impl BitcoinAdapter {
     fn tx_to_proof(&self, tx: &MempoolTx, tip: u64) -> Option<DepositProof> {
         let status = tx.status.as_ref()?;
         // Only confirmed transactions
-        if !status.confirmed { return None; }
+        if !status.confirmed {
+            return None;
+        }
 
         // Find OP_RETURN output with WARP_INBOUND prefix
         let vouts = tx.vout.as_deref()?;
-        let zion_addr = vouts.iter()
+        let zion_addr = vouts
+            .iter()
             .filter(|v| v.scriptpubkey_type.as_deref() == Some("op_return"))
-            .filter_map(|v| v.scriptpubkey_asm.as_deref().and_then(Self::parse_op_return))
+            .filter_map(|v| {
+                v.scriptpubkey_asm
+                    .as_deref()
+                    .and_then(Self::parse_op_return)
+            })
             .next()?;
 
         // Sum value sent to HTLC address (all non-OP_RETURN outputs — simplification)
-        let amount_sats: u64 = vouts.iter()
+        let amount_sats: u64 = vouts
+            .iter()
             .filter(|v| v.scriptpubkey_type.as_deref() != Some("op_return"))
             .map(|v| v.value)
             .sum();
-        if amount_sats == 0 { return None; }
+        if amount_sats == 0 {
+            return None;
+        }
 
         let block_height = status.block_height.unwrap_or(0);
         let confirms = tip.saturating_sub(block_height).min(6); // display max 6
@@ -166,27 +205,45 @@ impl BitcoinAdapter {
 
 #[async_trait]
 impl ChainAdapter for BitcoinAdapter {
-    fn family(&self) -> ChainFamily { ChainFamily::Bitcoin }
-    fn name(&self) -> &str { "bitcoin" }
+    fn family(&self) -> ChainFamily {
+        ChainFamily::Bitcoin
+    }
+    fn name(&self) -> &str {
+        "bitcoin"
+    }
 
     async fn health_check(&self) -> WarpResult<bool> {
         match self.get_tip_height().await {
-            Ok(h) => { info!("[WARP][bitcoin] Health OK — block #{}", h); Ok(true) }
-            Err(e) => { warn!("[WARP][bitcoin] Health FAIL: {}", e); Ok(false) }
+            Ok(h) => {
+                info!("[WARP][bitcoin] Health OK — block #{}", h);
+                Ok(true)
+            }
+            Err(e) => {
+                warn!("[WARP][bitcoin] Health FAIL: {}", e);
+                Ok(false)
+            }
         }
     }
 
     async fn watch_events(&self) -> WarpResult<Vec<DepositProof>> {
         let address = match htlc_address(&self.network) {
             Some(a) => a,
-            None => { debug!("[WARP][bitcoin] No HTLC address configured"); return Ok(vec![]); }
+            None => {
+                debug!("[WARP][bitcoin] No HTLC address configured");
+                return Ok(vec![]);
+            }
         };
         let tip = self.get_tip_height().await?;
         let txs = self.get_address_txs(address).await?;
-        let proofs: Vec<_> = txs.iter()
+        let proofs: Vec<_> = txs
+            .iter()
             .filter_map(|tx| self.tx_to_proof(tx, tip))
             .collect();
-        info!("[WARP][bitcoin] {} HTLC deposits found in {} txs", proofs.len(), txs.len());
+        info!(
+            "[WARP][bitcoin] {} HTLC deposits found in {} txs",
+            proofs.len(),
+            txs.len()
+        );
         Ok(proofs)
     }
 
@@ -197,9 +254,9 @@ impl ChainAdapter for BitcoinAdapter {
         let network_str = std::env::var("BITCOIN_NETWORK").unwrap_or_else(|_| "mainnet".into());
         let network = match network_str.as_str() {
             "testnet" => Network::Testnet,
-            "signet"  => Network::Signet,
+            "signet" => Network::Signet,
             "regtest" => Network::Regtest,
-            _         => Network::Bitcoin,
+            _ => Network::Bitcoin,
         };
 
         let signer = match BtcSigner::from_env() {
@@ -219,10 +276,19 @@ impl ChainAdapter for BitcoinAdapter {
 
         info!(
             "[WARP][bitcoin] execute_mint: {} sats → {} (relay: {})",
-            amount_sats, instruction.recipient, signer.address()
+            amount_sats,
+            instruction.recipient,
+            signer.address()
         );
 
-        signer.send_btc(&self.client, &self.api_url, &instruction.recipient, amount_sats).await
+        signer
+            .send_btc(
+                &self.client,
+                &self.api_url,
+                &instruction.recipient,
+                amount_sats,
+            )
+            .await
     }
 
     async fn current_height(&self) -> WarpResult<u64> {
@@ -231,11 +297,24 @@ impl ChainAdapter for BitcoinAdapter {
 
     async fn confirmations(&self, tx_hash: &str) -> WarpResult<u64> {
         let url = format!("{}/tx/{}/status", self.api_url, tx_hash);
-        let status: MempoolTxStatus = self.client.get(&url).send().await
-            .map_err(|e| WarpError::AdapterError { chain: "bitcoin".into(), reason: e.to_string() })?
-            .json().await
-            .map_err(|e| WarpError::AdapterError { chain: "bitcoin".into(), reason: e.to_string() })?;
-        if !status.confirmed { return Ok(0); }
+        let status: MempoolTxStatus = self
+            .client
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| WarpError::AdapterError {
+                chain: "bitcoin".into(),
+                reason: e.to_string(),
+            })?
+            .json()
+            .await
+            .map_err(|e| WarpError::AdapterError {
+                chain: "bitcoin".into(),
+                reason: e.to_string(),
+            })?;
+        if !status.confirmed {
+            return Ok(0);
+        }
         let tx_block = status.block_height.unwrap_or(0);
         let tip = self.get_tip_height().await.unwrap_or(tx_block);
         Ok(tip.saturating_sub(tx_block) + 1)
@@ -259,8 +338,10 @@ mod tests {
 
     #[test]
     fn test_parse_op_return_valid() {
-        let hex: String = "WARP_INBOUND:bitcoin:zion1btcabc".bytes()
-            .map(|b| format!("{:02x}", b)).collect();
+        let hex: String = "WARP_INBOUND:bitcoin:zion1btcabc"
+            .bytes()
+            .map(|b| format!("{:02x}", b))
+            .collect();
         let asm = format!("OP_RETURN OP_PUSHBYTES_36 {}", hex);
         let result = BitcoinAdapter::parse_op_return(&asm);
         assert_eq!(result, Some("zion1btcabc".to_string()));
@@ -268,8 +349,10 @@ mod tests {
 
     #[test]
     fn test_parse_op_return_wrong_prefix() {
-        let hex: String = "RANDOM_DATA:bitcoin:zion1x".bytes()
-            .map(|b| format!("{:02x}", b)).collect();
+        let hex: String = "RANDOM_DATA:bitcoin:zion1x"
+            .bytes()
+            .map(|b| format!("{:02x}", b))
+            .collect();
         let asm = format!("OP_RETURN OP_PUSHBYTES_30 {}", hex);
         assert!(BitcoinAdapter::parse_op_return(&asm).is_none());
     }
@@ -277,8 +360,10 @@ mod tests {
     #[test]
     fn test_tx_to_proof_confirmed() {
         let adapter = BitcoinAdapter::new();
-        let hex_memo: String = "WARP_INBOUND:bitcoin:zion1btcuser".bytes()
-            .map(|b| format!("{:02x}", b)).collect();
+        let hex_memo: String = "WARP_INBOUND:bitcoin:zion1btcuser"
+            .bytes()
+            .map(|b| format!("{:02x}", b))
+            .collect();
         let tx = MempoolTx {
             txid: "BTCTXID".into(),
             status: Some(MempoolTxStatus {
@@ -287,7 +372,11 @@ mod tests {
                 block_hash: Some("hash123".into()),
             }),
             vout: Some(vec![
-                MempoolVout { value: 100_000, scriptpubkey_type: Some("p2wpkh".into()), scriptpubkey_asm: None },
+                MempoolVout {
+                    value: 100_000,
+                    scriptpubkey_type: Some("p2wpkh".into()),
+                    scriptpubkey_asm: None,
+                },
                 MempoolVout {
                     value: 0,
                     scriptpubkey_type: Some("op_return".into()),
@@ -306,7 +395,11 @@ mod tests {
         let adapter = BitcoinAdapter::new();
         let tx = MempoolTx {
             txid: "TX".into(),
-            status: Some(MempoolTxStatus { confirmed: false, block_height: None, block_hash: None }),
+            status: Some(MempoolTxStatus {
+                confirmed: false,
+                block_height: None,
+                block_hash: None,
+            }),
             vout: Some(vec![]),
             vin: None,
         };
@@ -316,8 +409,11 @@ mod tests {
     #[tokio::test]
     async fn test_bitcoin_execute_mint_is_err() {
         let inst = MintInstruction {
-            dest_chain: "bitcoin".into(), recipient: "bc1q...".into(),
-            amount_dest_atomic: 100, signatures: vec![], warp_message_hash: String::new(),
+            dest_chain: "bitcoin".into(),
+            recipient: "bc1q...".into(),
+            amount_dest_atomic: 100,
+            signatures: vec![],
+            warp_message_hash: String::new(),
         };
         assert!(BitcoinAdapter::new().execute_mint(&inst).await.is_err());
     }

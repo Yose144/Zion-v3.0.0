@@ -65,12 +65,25 @@ pub enum DcrCmd {
 
 pub async fn run(cfg: &Config, cmd: MineCmd) -> Result<()> {
     match cmd {
-        MineCmd::Start { pool, wallet, threads, backend, profile } => {
+        MineCmd::Start {
+            pool,
+            wallet,
+            threads,
+            backend,
+            profile,
+        } => {
             let start = resolve_start_options(cfg, pool, wallet, threads, backend, profile)?;
 
             ui::print_header("Starting Miner");
             ui::print_row("Pool", &start.pool_addr);
-            ui::print_row("Wallet", if start.wallet_addr.is_empty() { "(not set)" } else { &start.wallet_addr });
+            ui::print_row(
+                "Wallet",
+                if start.wallet_addr.is_empty() {
+                    "(not set)"
+                } else {
+                    &start.wallet_addr
+                },
+            );
             ui::print_row("Backend", &start.backend_display_name);
             ui::print_row("Threads", &start.thread_count);
             ui::print_row("Profile", &start.normalized_profile);
@@ -97,7 +110,9 @@ pub async fn run(cfg: &Config, cmd: MineCmd) -> Result<()> {
             if start.normalized_profile == "dual" {
                 if !cfg.miner.btc_wallet.trim().is_empty() {
                     env_args.push(("ZION_BTC_WALLET", cfg.miner.btc_wallet.clone()));
-                    ui::print_info("Dual profile: using configured BTC payout wallet for DCR sidecar.");
+                    ui::print_info(
+                        "Dual profile: using configured BTC payout wallet for DCR sidecar.",
+                    );
                 } else {
                     ui::print_warn("Dual profile selected but miner.btc_wallet is not set.");
                     ui::print_warn("Set it with: zion config set miner.btc_wallet <bc1...>");
@@ -118,20 +133,30 @@ pub async fn run(cfg: &Config, cmd: MineCmd) -> Result<()> {
             Ok(())
         }
 
-        MineCmd::Bench { gpu, ekam, backend, work_size, secs } => {
+        MineCmd::Bench {
+            gpu,
+            ekam,
+            backend,
+            work_size,
+            secs,
+        } => {
             ui::print_header("Benchmark");
             let benchmark_mode = determine_benchmark_mode(gpu, ekam)?;
             let allow_cpu_backend = matches!(benchmark_mode, BenchmarkMode::CpuBlake3);
             let normalized_backend = normalize_backend(
-                backend.as_deref().unwrap_or(if matches!(benchmark_mode, BenchmarkMode::CpuBlake3) {
-                    "cpu"
-                } else {
-                    "auto"
-                }),
+                backend.as_deref().unwrap_or(
+                    if matches!(benchmark_mode, BenchmarkMode::CpuBlake3) {
+                        "cpu"
+                    } else {
+                        "auto"
+                    },
+                ),
                 allow_cpu_backend,
             )?;
 
-            if matches!(benchmark_mode, BenchmarkMode::CpuBlake3) && normalized_backend.mode != BackendMode::Cpu {
+            if matches!(benchmark_mode, BenchmarkMode::CpuBlake3)
+                && normalized_backend.mode != BackendMode::Cpu
+            {
                 anyhow::bail!("CPU benchmark does not accept GPU backends. Use --gpu or --ekam for GPU benchmark modes.");
             }
 
@@ -148,7 +173,7 @@ pub async fn run(cfg: &Config, cmd: MineCmd) -> Result<()> {
 
             match benchmark_mode {
                 BenchmarkMode::EkamDeeksha => {
-                ui::print_info("Mode: Cosmic Harmony Ekam Deeksha v2");
+                    ui::print_info("Mode: Cosmic Harmony Ekam Deeksha v2");
                     ui::print_row("Backend", normalized_backend.display_name);
                     if let Some(work_size) = work_size {
                         ui::print_row("Work Size", &work_size.to_string());
@@ -175,7 +200,10 @@ pub async fn run(cfg: &Config, cmd: MineCmd) -> Result<()> {
 
         MineCmd::Stop => {
             // Best-effort: kill any zion-miner process
-            let _ = std::process::Command::new("pkill").arg("-f").arg("zion-miner").status();
+            let _ = std::process::Command::new("pkill")
+                .arg("-f")
+                .arg("zion-miner")
+                .status();
             ui::print_ok("Sent stop signal to miner processes");
             Ok(())
         }
@@ -209,7 +237,10 @@ pub async fn run(cfg: &Config, cmd: MineCmd) -> Result<()> {
                 Ok(())
             }
             DcrCmd::Stop => {
-                let _ = std::process::Command::new("pkill").arg("-f").arg("zion-miner").status();
+                let _ = std::process::Command::new("pkill")
+                    .arg("-f")
+                    .arg("zion-miner")
+                    .status();
                 ui::print_ok("Sent stop signal");
                 Ok(())
             }
@@ -233,7 +264,9 @@ fn find_miner_binary() -> Result<String> {
 }
 
 pub(crate) fn discover_miner_binary() -> Option<PathBuf> {
-    miner_binary_candidates().into_iter().find(|candidate| candidate.exists())
+    miner_binary_candidates()
+        .into_iter()
+        .find(|candidate| candidate.exists())
 }
 
 fn miner_binary_candidates() -> Vec<PathBuf> {
@@ -249,8 +282,14 @@ fn miner_binary_candidates() -> Vec<PathBuf> {
 
     let manifest_dir = Path::new(env!("CARGO_MANIFEST_DIR"));
     if let Some(workspace_root) = manifest_dir.parent() {
-        push_unique_path(&mut candidates, workspace_root.join("target/release/zion-miner"));
-        push_unique_path(&mut candidates, workspace_root.join("target/debug/zion-miner"));
+        push_unique_path(
+            &mut candidates,
+            workspace_root.join("target/release/zion-miner"),
+        );
+        push_unique_path(
+            &mut candidates,
+            workspace_root.join("target/debug/zion-miner"),
+        );
     }
 
     candidates
@@ -455,14 +494,18 @@ mod tests {
 
     #[test]
     fn profile_normalization_supports_bench_alias() {
-        assert_eq!(normalize_profile("bench").expect("bench alias"), "benchmark");
+        assert_eq!(
+            normalize_profile("bench").expect("bench alias"),
+            "benchmark"
+        );
     }
 
     #[test]
     fn cpu_benchmark_accepts_default_cpu_backend() {
         let benchmark_mode = determine_benchmark_mode(false, false).expect("cpu benchmark mode");
         let allow_cpu_backend = matches!(benchmark_mode, BenchmarkMode::CpuBlake3);
-        let normalized = normalize_backend("cpu", allow_cpu_backend).expect("cpu backend should be accepted");
+        let normalized =
+            normalize_backend("cpu", allow_cpu_backend).expect("cpu backend should be accepted");
 
         assert_eq!(normalized.mode, BackendMode::Cpu);
     }
@@ -470,8 +513,12 @@ mod tests {
     #[test]
     fn miner_binary_candidates_include_workspace_target() {
         let candidates = miner_binary_candidates();
-        assert!(candidates.iter().any(|path| path.ends_with("target/release/zion-miner")));
-        assert!(candidates.iter().any(|path| path.ends_with("target/debug/zion-miner")));
+        assert!(candidates
+            .iter()
+            .any(|path| path.ends_with("target/release/zion-miner")));
+        assert!(candidates
+            .iter()
+            .any(|path| path.ends_with("target/debug/zion-miner")));
     }
 
     #[test]
