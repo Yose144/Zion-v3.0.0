@@ -230,12 +230,7 @@ impl AnkrClient {
         if !response.status().is_success() {
             let status = response.status();
             let body = response.text().await.unwrap_or_default();
-            return Err(anyhow!(
-                "Ankr/{} HTTP {}: {}",
-                chain,
-                status,
-                body
-            ));
+            return Err(anyhow!("Ankr/{} HTTP {}: {}", chain, status, body));
         }
 
         let body: Value = response
@@ -294,7 +289,9 @@ impl AnkrClient {
 
             debug!(
                 "Ankr eth_getLogs {}: blocks {} → {} (chunk {}/{})",
-                chain, chunk_from, chunk_to,
+                chain,
+                chunk_from,
+                chunk_to,
                 chunk_from / MAX_LOG_BLOCK_RANGE + 1,
                 (filter.to_block - filter.from_block) / MAX_LOG_BLOCK_RANGE + 1,
             );
@@ -302,7 +299,12 @@ impl AnkrClient {
             let result = self
                 .call_rpc(chain, "eth_getLogs", json!([filter_obj]))
                 .await
-                .with_context(|| format!("eth_getLogs failed for {}:{}-{}", chain, chunk_from, chunk_to))?;
+                .with_context(|| {
+                    format!(
+                        "eth_getLogs failed for {}:{}-{}",
+                        chain, chunk_from, chunk_to
+                    )
+                })?;
 
             let chunk_logs: Vec<AnkrLog> = serde_json::from_value(result)
                 .context("Failed to deserialize eth_getLogs result")?;
@@ -322,10 +324,12 @@ impl AnkrClient {
             .call_rpc(chain, "eth_sendRawTransaction", json!([raw_tx]))
             .await?;
 
-        result
-            .as_str()
-            .map(|s| s.to_string())
-            .ok_or_else(|| anyhow!("eth_sendRawTransaction: expected hash string, got {:?}", result))
+        result.as_str().map(|s| s.to_string()).ok_or_else(|| {
+            anyhow!(
+                "eth_sendRawTransaction: expected hash string, got {:?}",
+                result
+            )
+        })
     }
 
     /// `eth_getTransactionReceipt` — fetch a transaction receipt by hash.
@@ -500,10 +504,13 @@ mod tests {
 
     #[test]
     fn test_keccak256_topic_bridge_burn() {
-        let topic =
-            keccak256_topic(b"BridgeBurn(address,uint256,string,bytes32,uint256)");
+        let topic = keccak256_topic(b"BridgeBurn(address,uint256,string,bytes32,uint256)");
         assert!(topic.starts_with("0x"), "Topic must start with 0x");
-        assert_eq!(topic.len(), 66, "Topic must be 0x + 32 hex bytes = 66 chars");
+        assert_eq!(
+            topic.len(),
+            66,
+            "Topic must be 0x + 32 hex bytes = 66 chars"
+        );
         // Verify against the known constant
         assert_eq!(
             topic, BRIDGE_BURN_TOPIC,

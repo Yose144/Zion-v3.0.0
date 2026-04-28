@@ -47,7 +47,8 @@ pub async fn run(cfg: &Config, cmd: PoolCmd) -> Result<()> {
                 cfg.node.rpc_port,
                 "get_miner_stats",
                 json!({ "address": addr }),
-            ).await;
+            )
+            .await;
             match result {
                 Ok(v) => println!("{}", serde_json::to_string_pretty(&v)?),
                 Err(e) => ui::print_warn(&format!("Pool earnings not available: {}", e)),
@@ -74,15 +75,15 @@ async fn pool_stats(cfg: &Config) -> Result<()> {
     if alive {
         ui::print_ok(&format!("Pool stratum reachable ({}:{})", host, port));
     } else {
-        ui::print_warn(&format!("Pool stratum not reachable ({}:{}) — start with: zion start pool", host, port));
+        ui::print_warn(&format!(
+            "Pool stratum not reachable ({}:{}) — start with: zion start pool",
+            host, port
+        ));
     }
 
     // Pull chain context from node to show block template info
-    let node_result = node_rpc::call0(
-        &cfg.node.rpc_host,
-        cfg.node.rpc_port,
-        "getMempoolInfo",
-    ).await;
+    let node_result =
+        node_rpc::call0(&cfg.node.rpc_host, cfg.node.rpc_port, "getMempoolInfo").await;
     if let Ok(v) = node_result {
         let size = v["size"].as_u64().unwrap_or(0);
         let tmpl_txs = v["template_transactions"].as_u64().unwrap_or(0);
@@ -98,9 +99,16 @@ async fn pool_miners(cfg: &Config) -> Result<()> {
     ui::print_header("Active Workers");
 
     // Pool is stratum-only; get template info from node as proxy indicator
-    ui::print_info(&format!("Pool stratum: {}:{}", cfg.pool.host, cfg.pool.port));
+    ui::print_info(&format!(
+        "Pool stratum: {}:{}",
+        cfg.pool.host, cfg.pool.port
+    ));
 
-    let alive = tcp_probe(&cfg.pool.host, cfg.pool.port, std::time::Duration::from_secs(3));
+    let alive = tcp_probe(
+        &cfg.pool.host,
+        cfg.pool.port,
+        std::time::Duration::from_secs(3),
+    );
     if !alive {
         ui::print_warn("Pool stratum not reachable — cannot query worker sessions");
         println!();
@@ -117,7 +125,9 @@ async fn pool_miners(cfg: &Config) -> Result<()> {
             ui::print_ok("Pool stratum is accepting connections");
             ui::print_row("Current template height", &height.to_string());
             ui::print_row("Current difficulty", &difficulty.to_string());
-            ui::print_info("Live per-worker session info requires pool metrics endpoint (Phase 4).");
+            ui::print_info(
+                "Live per-worker session info requires pool metrics endpoint (Phase 4).",
+            );
         }
         Err(e) => ui::print_warn(&format!("Node block template unavailable: {}", e)),
     }
