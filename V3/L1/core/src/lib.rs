@@ -2655,6 +2655,91 @@ impl ChainState {
                 }
             }
         }
+
+        // ── UTXO conservation-of-value pipeline (F1) ───────────────────
+        //
+        // Before this hook the peer-block path verified structure,
+        // signatures, and within-block double-spends, but never confirmed
+        // that the inputs each UTXO transaction references actually exist
+        // in the chain's UTXO set, that the spend conserved value
+        // (∑inputs ≥ ∑outputs + fee), that every transaction met the fee
+        // floor, or that DAO Treasury addresses were past their unlock
+        // height. The mempool insertion path covered the existence check
+        // for new transactions but never re-checked anything for blocks
+        // arriving from peers, which meant a malicious peer could mint
+        // coins by submitting a forged block whose UTXO transactions
+        // resolved to nothing or printed value out of thin air.
+        //
+        // Bridge-unlock transactions are kept on their dedicated
+        // `validate_bridge_unlock_transaction_shape` path (they spend the
+        // keyless bridge vault, see line ~90), so we skip them here.
+        if !block.utxo_transactions.is_empty() {
+            let utxo_snapshot = self.utxo_set();
+            let utxo_lookup = |hash: &[u8; 32], idx: u32| -> Option<validation::UtxoInfo> {
+                utxo_snapshot
+                    .get(&(hex(hash), idx))
+                    .map(|spendable| validation::UtxoInfo {
+                        amount: spendable.amount,
+                        address: spendable.address.clone(),
+                        created_height: spendable.height,
+                        // Coinbase maturity enforcement is deferred to a
+                        // follow-up PR (requires tracking is_coinbase in
+                        // SpendableUtxo). For now we conservatively report
+                        // false; consumers that need maturity must opt in
+                        // explicitly.
+                        is_coinbase: false,
+                    })
+            };
+            let is_bridge_unlock = |transaction: &tx::Transaction| -> bool {
+                bridge_unlock_replay_key_from_transaction(transaction).is_some()
+            };
+
+            validation::validate_inputs_exist(
+                &block.utxo_transactions,
+                &utxo_lookup,
+                &is_bridge_unlock,
+            )
+            .map_err(|err| format!("peer block UTXO input check failed: {err}"))?;
+
+            validation::validate_value_conservation(
+                &block.utxo_transactions,
+                &utxo_lookup,
+                &is_bridge_unlock,
+            )
+            .map_err(|err| format!("peer block UTXO value conservation failed: {err}"))?;
+
+            // DAO Treasury timelock — premine outputs cannot be spent
+            // before their `unlock_height`. Bridge-unlock spends only the
+            // keyless vault, so this still flags general transactions
+            // that try to drain time-locked treasury balances.
+            validation::validate_premine_locks(
+                &block.utxo_transactions,
+                block.height,
+                &utxo_lookup,
+            )
+            .map_err(|err| format!("peer block premine lock violation: {err}"))?;
+
+            // UTXO fee floor for non-coinbase, non-bridge-unlock
+            // transactions. Bridge-unlock transactions already validate
+            // their fee inside `validate_bridge_unlock_transaction_shape`,
+            // and coinbase has no fee to validate.
+            for (tx_i, utxo_tx) in block.utxo_transactions.iter().enumerate() {
+                if utxo_tx.is_coinbase() {
+                    continue;
+                }
+                if is_bridge_unlock(utxo_tx) {
+                    continue;
+                }
+                let tx_size = fee::estimate_tx_size(utxo_tx.inputs.len(), utxo_tx.outputs.len());
+                fee::validate_fee(utxo_tx.fee, tx_size).map_err(|err| {
+                    format!(
+                        "peer block UTXO transaction {} fee invalid (tx_index {tx_i}): {err}",
+                        hex(&utxo_tx.id)
+                    )
+                })?;
+            }
+        }
+
         Ok(())
     }
 
@@ -5088,28 +5173,47 @@ mod tests {
         let addr = crypto::derive_address(vk.as_bytes());
         let vk_bytes = vk.as_bytes().to_vec();
 
-        // Create a coinbase-like funding tx (empty inputs → the UTXO set
-        // builder treats outputs as new UTXOs regardless of inputs).
+        let funding = build_synthetic_funding_tx(amount, &addr);
+        inject_funding_into_genesis(runtime, &funding);
+
+        (funding.id, addr, vk_bytes, sk)
+    }
+
+    /// Build a coinbase-like funding tx (empty inputs → the UTXO set builder
+    /// treats outputs as new UTXOs regardless of inputs). Pure constructor so
+    /// that both source and target test runtimes can be seeded with the
+    /// **same** funding UTXO when peer-import flows are exercised.
+    fn build_synthetic_funding_tx(amount: u64, address: &str) -> tx::Transaction {
         let mut funding = tx::Transaction {
             id: [0u8; 32],
             version: 1,
-            inputs: vec![], // coinbase: no inputs
+            inputs: vec![],
             outputs: vec![tx::TxOutput {
                 amount,
-                address: addr.clone(),
+                address: address.to_string(),
                 memo: None,
             }],
             fee: 0,
             timestamp: now_secs(),
         };
         funding.finalize_id();
+        funding
+    }
 
-        // Manually inject the funding tx into an accepted block.
+    /// Inject a synthetic funding tx into the runtime's genesis block so the
+    /// UTXO set sees it. Idempotent: re-seeding the same tx is a no-op.
+    fn inject_funding_into_genesis(runtime: &mut NodeRuntime, funding: &tx::Transaction) {
         let block = &mut runtime.chain_state.accepted_blocks[0];
+        let id_hex = hex(&funding.id);
+        if block
+            .utxo_transaction_ids
+            .iter()
+            .any(|existing| existing == &id_hex)
+        {
+            return;
+        }
         block.utxo_transactions.push(funding.clone());
-        block.utxo_transaction_ids.push(hex(&funding.id));
-
-        (funding.id, addr, vk_bytes, sk)
+        block.utxo_transaction_ids.push(id_hex);
     }
 
     fn make_signed_utxo_tx_spending(
@@ -5344,6 +5448,23 @@ mod tests {
         assert_eq!(runtime.status().mempool_transactions, 2);
     }
 
+    /// Look up the funding tx that a previous `seed_utxo_funding` call
+    /// injected into the runtime's genesis. Returns the cloned tx so callers
+    /// can replicate the same UTXO into a fresh target runtime when peer
+    /// import flows are exercised.
+    fn extract_funding_tx_from_genesis(
+        runtime: &NodeRuntime,
+        fund_id: &[u8; 32],
+    ) -> tx::Transaction {
+        let block = &runtime.chain_state.accepted_blocks[0];
+        block
+            .utxo_transactions
+            .iter()
+            .find(|tx| &tx.id == fund_id)
+            .expect("funding tx must already be seeded into genesis")
+            .clone()
+    }
+
     #[test]
     fn utxo_mined_block_passes_peer_import() {
         let mut source = NodeRuntime::new("node-utxo-src", NodeConfig::mainnet());
@@ -5354,12 +5475,89 @@ mod tests {
         source.submit_submitted_transaction(SubmittedTransaction::Utxo(utxo.clone()));
         mine_one_block(&mut source);
 
+        // The target node must see the same funding UTXO that the source
+        // spent, otherwise the F1 input-existence check correctly rejects
+        // the imported block. Replicate the deterministic funding tx so
+        // both runtimes share the genesis UTXO set.
         let mut target = NodeRuntime::new("node-utxo-tgt", NodeConfig::mainnet());
+        let funding = extract_funding_tx_from_genesis(&source, &fund_id);
+        inject_funding_into_genesis(&mut target, &funding);
+
         let imported = target
             .import_peer_blocks(source.accepted_blocks().to_vec())
             .expect("peer import with UTXO should succeed");
         assert_eq!(imported, 1);
         assert_eq!(target.accepted_blocks()[1].utxo_transactions.len(), 1);
+    }
+
+    /// F1 regression: a locally minted block whose UTXO transaction outputs
+    /// (plus fee) exceed the value of its referenced inputs MUST be rejected
+    /// by `validate_peer_block`. Before F1 the conservation-of-value check
+    /// was dead code, so the same candidate would be accepted and the
+    /// supply silently inflated by the difference.
+    #[test]
+    fn submit_candidate_rejects_utxo_inflating_supply() {
+        let mut runtime = NodeRuntime::new("node-f1-inflate", NodeConfig::mainnet());
+        let funding_amount: u64 = 1_000_000;
+        let (fund_id, _addr, vk, sk) = seed_utxo_funding(&mut runtime, funding_amount);
+
+        // Forge a UTXO transaction whose outputs are exactly the input value
+        // but the fee is positive — outputs+fee > inputs, the simplest
+        // possible "money printing" case. The signature is valid (we sign
+        // the inflated tx with the genuine key) so only conservation can
+        // catch this.
+        let fee: u64 = 1_000;
+        let mut utxo = tx::Transaction {
+            id: [0u8; 32],
+            version: 1,
+            inputs: vec![tx::TxInput {
+                prev_tx_hash: fund_id,
+                output_index: 0,
+                signature: vec![],
+                public_key: vk.clone(),
+            }],
+            outputs: vec![tx::TxOutput {
+                amount: funding_amount,
+                address: "zion1destinflated".to_string(),
+                memo: None,
+            }],
+            fee,
+            timestamp: now_secs(),
+        };
+        utxo.finalize_id();
+        let sig = crypto::sign(&sk, &utxo.id);
+        utxo.inputs[0].signature = sig.to_vec();
+
+        runtime.submit_submitted_transaction(SubmittedTransaction::Utxo(utxo));
+
+        // Mine via SubmitCandidate so we can inspect the validation
+        // failure without relying on the helper's panic assertion.
+        let template = runtime.active_template();
+        let nonce = find_valid_nonce(&template);
+        let response = runtime.handle_rpc_request(RpcRequest::SubmitCandidate {
+            template_id: template.template_id,
+            header_hex: template.header_hex.clone(),
+            nonce,
+            target_hex: template.target_hex.clone(),
+        });
+        match response {
+            RpcResponse::SubmitResult {
+                accepted: false,
+                reason: Some(reason),
+                ..
+            } => {
+                assert!(
+                    reason.contains("value conservation") || reason.contains("ValueNotConserved"),
+                    "expected value-conservation rejection, got: {reason}",
+                );
+            }
+            RpcResponse::SubmitResult { accepted: true, .. } => {
+                panic!(
+                    "F1 regression: candidate with inflating UTXO transaction was accepted (response: {response:?})",
+                );
+            }
+            other => panic!("unexpected submit response: {other:?}"),
+        }
     }
 
     #[test]
@@ -5382,6 +5580,12 @@ mod tests {
         block.utxo_transactions[0].inputs[0].signature = vec![0u8; 64];
 
         let mut target = NodeRuntime::new("node-utxo-badsig-tgt", NodeConfig::mainnet());
+        // Replicate the same funding UTXO on the target so the
+        // input-existence check passes and the validator reaches the
+        // signature step.
+        let funding = extract_funding_tx_from_genesis(&source, &fund_id);
+        inject_funding_into_genesis(&mut target, &funding);
+
         let err = target
             .import_peer_blocks(vec![block])
             .expect_err("bad UTXO signature should be rejected");
