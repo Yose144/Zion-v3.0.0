@@ -1,0 +1,117 @@
+{
+  "name": "zion-devin-chat",
+  "displayName": "ZION Devin Chat",
+  "description": "VS Code chat participant that routes @devin requests through the local Devin CLI using a persistent Claude 4.7 default model.",
+  "version": "0.1.0",
+  "publisher": "zionterranova",
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Yose144/2.9.6.git"
+  },
+  "engines": {
+    "vscode": "^1.100.0"
+  },
+  "files": [
+    "out/**",
+    "README.md",
+    "LICENSE.txt"
+  ],
+  "categories": [
+    "AI",
+    "Chat"
+  ],
+  "activationEvents": [
+    "onChatParticipant:zion-devin.chat",
+    "onCommand:zionDevin.setModel",
+    "onCommand:zionDevin.showStatus"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "zionDevin.setModel",
+        "title": "ZION Devin: Set Model"
+      },
+      {
+        "command": "zionDevin.showStatus",
+        "title": "ZION Devin: Show Status"
+      }
+    ],
+    "configuration": {
+      "title": "ZION Devin Chat",
+      "properties": {
+        "devinChat.cliPath": {
+          "type": "string",
+          "default": "devin",
+          "description": "Path to the Devin CLI binary."
+        },
+        "devinChat.model": {
+          "type": "string",
+          "default": "claude-opus-4.7",
+          "description": "Default Devin model used by the @devin chat participant."
+        },
+        "devinChat.permissionMode": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "dangerous"
+          ],
+          "default": "auto",
+          "description": "Permission mode passed to the Devin CLI."
+        },
+        "devinChat.extraArgs": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "description": "Additional CLI arguments appended to every Devin invocation."
+        },
+        "devinChat.systemPrompt": {
+          "type": "string",
+          "default": "You are Devin running inside VS Code for the ZION repository. Be concise, practical, and codebase-aware.",
+          "description": "System prompt prefix prepended before the chat history and the latest user prompt."
+        },
+        "devinChat.configurationTarget": {
+          "type": "string",
+          "enum": [
+            "workspace",
+            "global"
+          ],
+          "default": "workspace",
+          "description": "Where the Set Model command stores the chosen model."
+        }
+      }
+    },
+    "chatParticipants": [
+      {
+        "id": "zion-devin.chat",
+        "name": "devin",
+        "fullName": "Devin Claude",
+        "description": "Route chat requests through the local Devin CLI.",
+        "isSticky": true,
+        "commands": [
+          {
+            "name": "model",
+            "description": "Show or update the persisted Devin model."
+          },
+          {
+            "name": "status",
+            "description": "Show Devin CLI auth and configuration status."
+          }
+        ]
+      }
+    ]
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "vscode:prepublish": "npm run compile"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.3",
+    "@types/vscode": "^1.100.0",
+    "typescript": "^5.8.3"
+  }
+}
