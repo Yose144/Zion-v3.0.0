@@ -116,6 +116,31 @@ pub enum ValidationError {
         address: String,
         unlock_height: u64,
     },
+    /// A transaction input refers to a UTXO that does not exist (or is
+    /// already spent) in the resolver's view. Bridge unlock transactions
+    /// are validated separately and excluded from this check.
+    InputNotFound {
+        tx_index: usize,
+        input_index: usize,
+        prev_tx_hash: [u8; 32],
+        output_index: u32,
+    },
+    /// A non-coinbase, non-bridge-unlock transaction's outputs (plus fee)
+    /// exceed the total value of its referenced inputs
+    /// (∑inputs < ∑outputs + fee). This is the core "no money printing"
+    /// rule: the consensus must never accept a UTXO transfer that would
+    /// create value out of thin air.
+    ValueNotConserved {
+        tx_index: usize,
+        inputs_sum: u64,
+        outputs_plus_fee: u64,
+    },
+    /// Numeric overflow while summing UTXO inputs or outputs. Treated as
+    /// a hard rejection to avoid masking malformed data with wrap-around
+    /// arithmetic.
+    ValueOverflow {
+        tx_index: usize,
+    },
 }
 
 impl std::fmt::Display for ValidationError {
@@ -164,6 +189,29 @@ impl std::fmt::Display for ValidationError {
             } => write!(
                 f,
                 "tx {tx_index} spends locked premine address {address} (unlock at {unlock_height})"
+            ),
+            Self::InputNotFound {
+                tx_index,
+                input_index,
+                prev_tx_hash,
+                output_index,
+            } => write!(
+                f,
+                "tx {tx_index} input {input_index} references missing/spent UTXO {}:{}",
+                crate::hex(prev_tx_hash),
+                output_index,
+            ),
+            Self::ValueNotConserved {
+                tx_index,
+                inputs_sum,
+                outputs_plus_fee,
+            } => write!(
+                f,
+                "tx {tx_index} attempts to mint value: inputs={inputs_sum}, outputs+fee={outputs_plus_fee}"
+            ),
+            Self::ValueOverflow { tx_index } => write!(
+                f,
+                "tx {tx_index} arithmetic overflow while summing inputs or outputs"
             ),
         }
     }
@@ -363,6 +411,96 @@ pub fn validate_premine_locks(
                     });
                 }
             }
+        }
+    }
+    Ok(())
+}
+
+/// Step 7b: Verify every non-coinbase, non-bridge-unlock transaction's inputs
+/// resolve to UTXOs that currently exist (and are not already spent) in the
+/// caller-provided view of the UTXO set.
+///
+/// Coinbase transactions (`tx.is_coinbase()`) are skipped because they have no
+/// inputs. Bridge-unlock transactions are validated separately by the runtime
+/// because they spend the keyless bridge vault, so they are skipped here when
+/// the caller's predicate marks them.
+pub fn validate_inputs_exist(
+    transactions: &[Transaction],
+    utxo_lookup: &dyn Fn(&[u8; 32], u32) -> Option<UtxoInfo>,
+    is_bridge_unlock: &dyn Fn(&Transaction) -> bool,
+) -> Result<(), ValidationError> {
+    for (tx_i, tx) in transactions.iter().enumerate() {
+        if tx.is_coinbase() {
+            continue;
+        }
+        if is_bridge_unlock(tx) {
+            continue;
+        }
+        for (inp_i, input) in tx.inputs.iter().enumerate() {
+            if utxo_lookup(&input.prev_tx_hash, input.output_index).is_none() {
+                return Err(ValidationError::InputNotFound {
+                    tx_index: tx_i,
+                    input_index: inp_i,
+                    prev_tx_hash: input.prev_tx_hash,
+                    output_index: input.output_index,
+                });
+            }
+        }
+    }
+    Ok(())
+}
+
+/// Step 12: Conservation of value — for every non-coinbase, non-bridge-unlock
+/// transaction, the sum of input UTXO amounts must be ≥ outputs + fee.
+///
+/// This is the core "no money printing" rule. Bridge-unlock transactions are
+/// validated separately by the runtime (they spend the keyless bridge vault and
+/// have their own conservation check that requires `inputs == outputs + fee`).
+///
+/// Returns `Ok(())` when every relevant transaction conserves value. Errors out
+/// of the loop on the first offender to mirror the style of the other steps.
+pub fn validate_value_conservation(
+    transactions: &[Transaction],
+    utxo_lookup: &dyn Fn(&[u8; 32], u32) -> Option<UtxoInfo>,
+    is_bridge_unlock: &dyn Fn(&Transaction) -> bool,
+) -> Result<(), ValidationError> {
+    for (tx_i, tx) in transactions.iter().enumerate() {
+        if tx.is_coinbase() {
+            continue;
+        }
+        if is_bridge_unlock(tx) {
+            continue;
+        }
+
+        let mut inputs_sum: u64 = 0;
+        for input in &tx.inputs {
+            // Missing inputs are surfaced by `validate_inputs_exist`. Here we
+            // tolerate the absence and short-circuit so the error type stays
+            // descriptive and stable for callers that run the steps in order.
+            let Some(utxo) = utxo_lookup(&input.prev_tx_hash, input.output_index) else {
+                return Err(ValidationError::InputNotFound {
+                    tx_index: tx_i,
+                    input_index: 0,
+                    prev_tx_hash: input.prev_tx_hash,
+                    output_index: input.output_index,
+                });
+            };
+            inputs_sum = inputs_sum
+                .checked_add(utxo.amount)
+                .ok_or(ValidationError::ValueOverflow { tx_index: tx_i })?;
+        }
+
+        let outputs_sum = tx.total_output();
+        let outputs_plus_fee = outputs_sum
+            .checked_add(tx.fee)
+            .ok_or(ValidationError::ValueOverflow { tx_index: tx_i })?;
+
+        if inputs_sum < outputs_plus_fee {
+            return Err(ValidationError::ValueNotConserved {
+                tx_index: tx_i,
+                inputs_sum,
+                outputs_plus_fee,
+            });
         }
     }
     Ok(())
@@ -820,5 +958,179 @@ mod tests {
         // height 0 — should be allowed for non-DAO
         let result = validate_premine_locks(&[make_coinbase(0), tx], 0, &lookup);
         assert!(result.is_ok());
+    }
+
+    // ── Step 7b / 12: Inputs exist + Conservation of value (F1) ─────
+
+    fn no_bridge_unlocks(_tx: &Transaction) -> bool {
+        false
+    }
+
+    fn lookup_with_amount(amount: u64) -> impl Fn(&[u8; 32], u32) -> Option<UtxoInfo> {
+        move |_h: &[u8; 32], _i: u32| {
+            Some(UtxoInfo {
+                amount,
+                address: "zion1producer".to_string(),
+                created_height: 0,
+                is_coinbase: false,
+            })
+        }
+    }
+
+    fn empty_lookup(_h: &[u8; 32], _i: u32) -> Option<UtxoInfo> {
+        None
+    }
+
+    /// A non-coinbase, non-bridge-unlock UTXO transaction whose outputs+fee
+    /// exceed the value of its referenced inputs MUST be rejected — this is
+    /// the "no money printing" rule. Reproduces the dead-validation gap that
+    /// allowed a peer to inflate supply through a forged block.
+    #[test]
+    fn validate_value_conservation_rejects_inflation() {
+        let cb = make_coinbase(1);
+        // make_signed_tx outputs 1_000_000 + fee 2_000 = needs 1_002_000 inputs.
+        // Lookup returns 500_000 → must fail.
+        let tx = make_signed_tx([0xAA; 32]);
+        let txs = vec![cb, tx];
+        let lookup = lookup_with_amount(500_000);
+
+        let err = validate_value_conservation(&txs, &lookup, &no_bridge_unlocks).unwrap_err();
+        assert!(
+            matches!(err, ValidationError::ValueNotConserved { tx_index: 1, .. }),
+            "expected ValueNotConserved, got {err:?}",
+        );
+    }
+
+    /// A non-coinbase, non-bridge-unlock UTXO transaction whose inputs cover
+    /// exactly the outputs+fee MUST pass conservation.
+    #[test]
+    fn validate_value_conservation_accepts_balanced_spend() {
+        let cb = make_coinbase(1);
+        let tx = make_signed_tx([0xBB; 32]); // outputs 1_000_000 + fee 2_000
+        let txs = vec![cb, tx];
+        // Inputs sum to exactly 1_002_000 → ok.
+        let lookup = lookup_with_amount(1_002_000);
+
+        validate_value_conservation(&txs, &lookup, &no_bridge_unlocks)
+            .expect("balanced UTXO transfer must validate");
+    }
+
+    /// Excess input value (e.g. when miner takes the change as fee) is allowed
+    /// because conservation only forbids minting (∑inputs < ∑outputs + fee),
+    /// not over-payment. This mirrors how Bitcoin handles "burned" change.
+    #[test]
+    fn validate_value_conservation_accepts_overpayment() {
+        let cb = make_coinbase(1);
+        let tx = make_signed_tx([0xCC; 32]);
+        let txs = vec![cb, tx];
+        // Lookup returns 5_000_000 (>> outputs+fee = 1_002_000) → ok.
+        let lookup = lookup_with_amount(5_000_000);
+
+        validate_value_conservation(&txs, &lookup, &no_bridge_unlocks)
+            .expect("overpaying inputs must validate");
+    }
+
+    /// Coinbase transactions have no inputs and must be skipped by the
+    /// conservation check; otherwise empty inputs would always trigger the
+    /// minting error and prevent any block from validating.
+    #[test]
+    fn validate_value_conservation_skips_coinbase() {
+        let cb = make_coinbase(1);
+        let lookup = empty_lookup;
+
+        validate_value_conservation(&[cb], &lookup, &no_bridge_unlocks)
+            .expect("coinbase must be skipped by value conservation");
+    }
+
+    /// Bridge-unlock transactions have their conservation enforced by
+    /// `validate_bridge_unlock_transaction_shape` in lib.rs (which asserts
+    /// `total_input == outputs + fee`). The general validator must skip them
+    /// when the predicate marks them, otherwise the keyless inputs would fail
+    /// the input-existence step.
+    #[test]
+    fn validate_value_conservation_skips_bridge_unlocks() {
+        let cb = make_coinbase(1);
+        let tx = make_signed_tx([0xDD; 32]);
+        let txs = vec![cb, tx];
+        let lookup = empty_lookup; // would fail without skip
+        let always_bridge = |_tx: &Transaction| true;
+
+        validate_value_conservation(&txs, &lookup, &always_bridge)
+            .expect("bridge-unlock predicate must skip the conservation check");
+    }
+
+    /// A transaction whose input refers to a UTXO that does not exist (or has
+    /// already been spent) MUST be rejected with `InputNotFound`. Without this
+    /// check a peer could submit a block whose UTXO transactions resolved to
+    /// nothing and still get accepted.
+    #[test]
+    fn validate_inputs_exist_rejects_missing_utxo() {
+        let cb = make_coinbase(1);
+        let tx = make_signed_tx([0xEE; 32]);
+        let txs = vec![cb, tx];
+
+        let err = validate_inputs_exist(&txs, &empty_lookup, &no_bridge_unlocks).unwrap_err();
+        assert!(
+            matches!(err, ValidationError::InputNotFound { tx_index: 1, .. }),
+            "expected InputNotFound, got {err:?}",
+        );
+    }
+
+    /// All-resolved inputs must validate.
+    #[test]
+    fn validate_inputs_exist_accepts_resolved_utxo() {
+        let cb = make_coinbase(1);
+        let tx = make_signed_tx([0xFF; 32]);
+        let txs = vec![cb, tx];
+        let lookup = lookup_with_amount(1_500_000);
+
+        validate_inputs_exist(&txs, &lookup, &no_bridge_unlocks)
+            .expect("resolvable inputs must validate");
+    }
+
+    /// Sentinel: u64 overflow on input sums must be reported as
+    /// `ValueOverflow`, not silently wrapped. Defends against malformed peer
+    /// blocks crafted to bypass conservation via wrap-around arithmetic.
+    #[test]
+    fn validate_value_conservation_detects_overflow() {
+        let (sk, vk) = generate_keypair();
+        let addr = derive_address(vk.as_bytes());
+        let mut tx = Transaction {
+            id: [0u8; 32],
+            version: 1,
+            inputs: vec![
+                TxInput {
+                    prev_tx_hash: [0xAA; 32],
+                    output_index: 0,
+                    signature: vec![],
+                    public_key: vk.as_bytes().to_vec(),
+                },
+                TxInput {
+                    prev_tx_hash: [0xBB; 32],
+                    output_index: 0,
+                    signature: vec![],
+                    public_key: vk.as_bytes().to_vec(),
+                },
+            ],
+            outputs: vec![TxOutput {
+                amount: 1,
+                address: addr,
+                memo: None,
+            }],
+            fee: 0,
+            timestamp: 1_700_000_000,
+        };
+        tx.finalize_id();
+        let sig = sign(&sk, &tx.id);
+        tx.inputs[0].signature = sig.to_vec();
+        tx.inputs[1].signature = sig.to_vec();
+
+        let cb = make_coinbase(1);
+        let txs = vec![cb, tx];
+        // Each input claims max u64 → sum overflows.
+        let lookup = lookup_with_amount(u64::MAX);
+
+        let err = validate_value_conservation(&txs, &lookup, &no_bridge_unlocks).unwrap_err();
+        assert_eq!(err, ValidationError::ValueOverflow { tx_index: 1 });
     }
 }
