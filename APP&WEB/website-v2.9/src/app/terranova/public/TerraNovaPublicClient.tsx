@@ -364,6 +364,35 @@ export default function TerraNovaPublicClient() {
                   );
                 })}
               </div>
+
+              <div className="rounded-2xl border border-white/8 bg-black/25 p-3 md:p-4">
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <p className="text-[10px] uppercase tracking-[0.35em] text-gray-500">
+                    {cs ? 'Přímé odkazy na projekty' : 'Direct project links'}
+                  </p>
+                  <p className="text-[11px] text-gray-600">
+                    {cs ? 'L5 Terra Nova' : 'L5 Terra Nova'}
+                  </p>
+                </div>
+
+                <div className="grid sm:grid-cols-2 gap-2">
+                  <Link
+                    href="/terranova/genesis"
+                    className="group flex items-center justify-between rounded-xl border border-emerald-500/25 bg-emerald-500/8 px-4 py-3 text-sm font-semibold text-emerald-300 transition-all duration-300 hover:bg-emerald-500/14"
+                  >
+                    <span>{cs ? 'Zahrada Genesis' : 'Zahrada Genesis'}</span>
+                    <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
+                  </Link>
+
+                  <Link
+                    href="/terranova/dharma-temple"
+                    className="group flex items-center justify-between rounded-xl border border-violet-500/25 bg-violet-500/8 px-4 py-3 text-sm font-semibold text-violet-300 transition-all duration-300 hover:bg-violet-500/14"
+                  >
+                    <span>{cs ? 'Dharma Temple' : 'Dharma Temple'}</span>
+                    <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
+                  </Link>
+                </div>
+              </div>
             </div>
           </div>
         </motion.section>
