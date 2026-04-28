@@ -2,3 +2,20 @@
 /.idea/
 /.vscode/
 Cargo.lock
+
+# Wallet exports must NEVER be committed
+zion-wallet.json
+**/zion-wallet*.json
+*.wallet.json
+*.wallet
+*.keystore
+*.mnemonic
+seed.txt
+seed.json
+
+# Local node/pool runtime data
+data/
+*.lmdb
+*.lmdb-lock
+peers.json
+chain-journal.bin
