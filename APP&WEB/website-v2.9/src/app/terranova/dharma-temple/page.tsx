@@ -2,12 +2,44 @@
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { ArrowLeft, MapPin, Users, Zap, Globe } from 'lucide-react';
+import {
+  ArrowLeft,
+  ArrowRight,
+  Droplets,
+  Globe,
+  Landmark,
+  LucideIcon,
+  MapPin,
+  Mountain,
+  Network,
+  Orbit,
+  Sprout,
+  Trees,
+  Users,
+  Zap,
+} from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 
-const FEATURES = [
+type FeatureItem = {
+  icon: LucideIcon;
+  titleCs: string;
+  titleEn: string;
+  descCs: string;
+  descEn: string;
+  status: 'planned' | 'place';
+  color: string;
+  rgb: string;
+};
+
+type IntegrationItem = {
+  label: string;
+  status: 'active' | 'planned' | 'tbd';
+  icon: LucideIcon;
+};
+
+const FEATURES: FeatureItem[] = [
   {
-    icon: '🧘',
+    icon: Orbit,
     titleCs: 'Meditace & Ticho',
     titleEn: 'Meditation & Silence',
     descCs: 'Denní praxe, silence retreaty, meditační buňky v přírodě. Místo kde se vnitřní práce stává rutinou.',
@@ -17,7 +49,7 @@ const FEATURES = [
     rgb: '167,139,250',
   },
   {
-    icon: '🌿',
+    icon: Sprout,
     titleCs: 'Syntropic zahrada',
     titleEn: 'Syntropic Garden',
     descCs: 'Vícevrstvý agroforestry systém na vulkanické půdě La Palmy — jedné z nejúrodnějších půd Atlantiku.',
@@ -27,7 +59,7 @@ const FEATURES = [
     rgb: '52,211,153',
   },
   {
-    icon: '🔮',
+    icon: Network,
     titleCs: 'Retreaty & Dharma',
     titleEn: 'Retreats & Dharma',
     descCs: 'Spirituální programy, dharma circle, ceremonie. Mezinárodní hosté přicházejí pro hlubší zastavení.',
@@ -37,7 +69,7 @@ const FEATURES = [
     rgb: '192,132,252',
   },
   {
-    icon: '🌋',
+    icon: Mountain,
     titleCs: 'Vulkanická energie',
     titleEn: 'Volcanic Energy',
     descCs: 'La Palma — ostrov UNESCO bioreservace. Vulkanická krajina jako přirozený partner spirituální praxe.',
@@ -47,7 +79,7 @@ const FEATURES = [
     rgb: '249,115,22',
   },
   {
-    icon: '💧',
+    icon: Droplets,
     titleCs: 'Off-grid voda & Energie',
     titleEn: 'Off-grid Water & Energy',
     descCs: 'Solar + mikrohydro ze srážek. La Palma má vydatné deště a výškový profil ideální pro průtočné turbíny.',
@@ -57,7 +89,7 @@ const FEATURES = [
     rgb: '6,182,212',
   },
   {
-    icon: '☯️',
+    icon: Landmark,
     titleCs: 'Dharma Governance',
     titleEn: 'Dharma Governance',
     descCs: 'Sociokracie + dharma council. Kruhové rozhodování bez hierarchie. Přijímání nových členů přes DAO.',
@@ -76,13 +108,19 @@ const PHASES = [
   { num: 4, cs: 'Výzařování', en: 'Radiance', descCs: 'Retreaty, výukové programy, mezinárodní hosté', descEn: 'Retreats, educational programs, international guests' },
 ];
 
-const ZION_ITEMS = [
-  { label: 'ZION Node', status: 'planned', icon: '🔵' },
-  { label: 'Guardian Wallet', status: 'tbd', icon: '💰' },
-  { label: 'Medical Table', status: 'planned', icon: '🩺' },
-  { label: 'LoRa / Meshtastic', status: 'planned', icon: '📡' },
-  { label: 'Seed Library Exchange', status: 'planned', icon: '🌱' },
-  { label: 'Knowledge Commons', status: 'planned', icon: '📚' },
+const ZION_ITEMS: IntegrationItem[] = [
+  { label: 'ZION Node', status: 'planned', icon: Network },
+  { label: 'Guardian Wallet', status: 'tbd', icon: Landmark },
+  { label: 'Medical Table', status: 'planned', icon: Zap },
+  { label: 'LoRa / Meshtastic', status: 'planned', icon: Globe },
+  { label: 'Seed Library Exchange', status: 'planned', icon: Sprout },
+  { label: 'Knowledge Commons', status: 'planned', icon: Trees },
+];
+
+const SIGNALS = [
+  { icon: Mountain, value: 'UNESCO', labelCs: 'Bioreservace', labelEn: 'Biosphere' },
+  { icon: Droplets, value: '700–1500', labelCs: 'mm srážek', labelEn: 'mm rainfall' },
+  { icon: Orbit, value: 'Retreat', labelCs: 'Ticho & praxe', labelEn: 'Silence & practice' },
 ];
 
 const COMPARE = [
@@ -140,14 +178,23 @@ export default function DharmaTemplePage() {
 
           <div className="relative zion-panel rounded-3xl md:rounded-4xl p-8 md:p-12 overflow-hidden border border-violet-500/20">
             <div className="absolute inset-0 bg-gradient-to-br from-violet-900/30 via-purple-900/10 to-transparent" />
+            <motion.div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-y-0 -left-1/3 w-1/2 bg-gradient-to-r from-transparent via-white/10 to-transparent"
+              animate={{ x: ['0%', '220%'] }}
+              transition={{ duration: 7.5, repeat: Infinity, repeatDelay: 2.5, ease: 'easeInOut' }}
+            />
             <div className="absolute -top-24 -left-24 w-64 h-64 rounded-full blur-[100px] bg-violet-500/15" />
             <div className="absolute -bottom-16 -right-16 w-48 h-48 rounded-full blur-[80px] bg-purple-500/10" />
 
             <div className="relative z-10 flex flex-col md:flex-row md:items-center gap-8">
               {/* Icon column */}
               <div className="shrink-0">
-                <div className="w-24 h-24 rounded-3xl border border-violet-500/30 bg-gradient-to-br from-violet-500/20 to-violet-900/40 flex items-center justify-center text-5xl shadow-lg shadow-violet-900/30">
-                  🕌
+                <div className="relative flex h-28 w-28 items-center justify-center rounded-[32px] border border-violet-400/25 bg-gradient-to-br from-violet-400/16 via-violet-950/55 to-black shadow-[0_0_60px_rgba(168,85,247,0.18)]">
+                  <div className="absolute inset-3 rounded-[26px] border border-violet-300/15" />
+                  <div className="absolute h-20 w-20 rounded-full bg-violet-400/14 blur-2xl" />
+                  <Orbit className="relative z-10 h-10 w-10 text-violet-200" />
+                  <Mountain className="absolute bottom-5 right-5 h-4 w-4 text-fuchsia-300" />
                 </div>
               </div>
 
@@ -177,6 +224,23 @@ export default function DharmaTemplePage() {
                     ? '"Dharma není cesta od světa. Je to způsob, jak být ve světě jinak."'
                     : '"Dharma is not a path away from the world. It is a way of being in the world differently."'}
                 </blockquote>
+
+                <div className="grid gap-3 pt-3 sm:grid-cols-3">
+                  {SIGNALS.map((signal) => {
+                    const Icon = signal.icon;
+                    return (
+                      <div key={signal.labelCs} className="rounded-2xl border border-violet-400/12 bg-violet-400/6 px-3 py-3 backdrop-blur-sm">
+                        <div className="flex items-center gap-2 text-violet-200">
+                          <Icon className="h-4 w-4" />
+                          <span className="text-sm font-semibold">{signal.value}</span>
+                        </div>
+                        <p className="mt-1 text-[11px] uppercase tracking-[0.18em] text-gray-500">
+                          {cs ? signal.labelCs : signal.labelEn}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </div>
@@ -245,6 +309,7 @@ export default function DharmaTemplePage() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {FEATURES.map((f, i) => {
               const s = STATUS_LABEL[f.status];
+              const Icon = f.icon;
               return (
                 <motion.div
                   key={f.titleCs}
@@ -257,8 +322,10 @@ export default function DharmaTemplePage() {
                   <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full blur-[50px] opacity-20 group-hover:opacity-35 transition-opacity duration-500"
                     style={{ backgroundColor: f.color }} />
 
-                  <div className="flex items-start justify-between relative z-10">
-                    <span className="text-2xl">{f.icon}</span>
+                  <div className="flex items-start justify-between relative z-10 gap-3">
+                    <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-black/20">
+                      <Icon className="h-5 w-5" style={{ color: f.color }} />
+                    </span>
                     <span
                       className="rounded-full border px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.15em]"
                       style={{ color: s.color, borderColor: s.border, backgroundColor: s.bg }}
@@ -408,7 +475,9 @@ export default function DharmaTemplePage() {
                   key={item.label}
                   className="flex items-center gap-3 rounded-xl border border-white/5 bg-white/3 p-3"
                 >
-                  <span className="text-xl shrink-0">{item.icon}</span>
+                  <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-violet-400/12 bg-violet-400/8">
+                    <item.icon className="h-4 w-4 text-violet-200" />
+                  </span>
                   <div>
                     <p className="text-sm font-semibold text-white/80">{item.label}</p>
                     <p className="text-[10px] text-gray-600 capitalize">
@@ -478,14 +547,15 @@ export default function DharmaTemplePage() {
             href="/terranova/genesis"
             className="inline-flex items-center gap-2 rounded-xl border border-emerald-500/25 bg-emerald-500/10 hover:bg-emerald-500/20 px-4 py-2 text-sm text-emerald-300 transition-all duration-300"
           >
-            ← {cs ? 'Zahrada Genesis' : 'Zahrada Genesis'}
+            <ArrowLeft className="w-4 h-4" />
+            <span>{cs ? 'Zahrada Genesis' : 'Zahrada Genesis'}</span>
           </Link>
           <Link
-            href="/terranova/public"
+            href="/terranova"
             className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-violet-400 transition-colors"
           >
-            <ArrowLeft className="w-4 h-4" />
-            {cs ? 'Terra Nova' : 'Terra Nova'}
+            <span>{cs ? 'Terra Nova' : 'Terra Nova'}</span>
+            <ArrowRight className="w-4 h-4" />
           </Link>
         </motion.div>
 

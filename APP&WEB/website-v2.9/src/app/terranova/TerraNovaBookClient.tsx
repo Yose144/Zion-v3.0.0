@@ -17,6 +17,7 @@ import Link from 'next/link';
 import { useLang } from '@/contexts/LanguageContext';
 import { CHAPTERS } from './bookData';
 import { EDITIONS_DATA } from './generatedEditions';
+import PioneerProjectCards from './components/PioneerProjectCards';
 import type { BookChapter } from './bookData';
 
 type EditionKey = 'org' | 'final' | 'gemini';
@@ -1434,30 +1435,7 @@ export default function TerraNovaBookClient() {
                     {cs ? 'Přímý vstup do obou lokalit' : 'Direct access to both locations'}
                   </p>
                 </div>
-
-                <div className="grid gap-3 md:grid-cols-2">
-                  <Link
-                    href="/terranova/genesis"
-                    className="group flex items-center justify-between rounded-2xl border border-emerald-500/25 bg-emerald-500/10 px-4 py-3 text-sm font-semibold text-emerald-300 transition-all duration-300 hover:bg-emerald-500/18"
-                  >
-                    <div>
-                      <p className="text-[10px] uppercase tracking-[0.2em] text-emerald-500/80">L5 · Portugal</p>
-                      <p>{cs ? 'Zahrada Genesis' : 'Zahrada Genesis'}</p>
-                    </div>
-                    <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
-                  </Link>
-
-                  <Link
-                    href="/terranova/dharma-temple"
-                    className="group flex items-center justify-between rounded-2xl border border-violet-500/25 bg-violet-500/10 px-4 py-3 text-sm font-semibold text-violet-300 transition-all duration-300 hover:bg-violet-500/18"
-                  >
-                    <div>
-                      <p className="text-[10px] uppercase tracking-[0.2em] text-violet-400/80">L5 · La Palma</p>
-                      <p>{cs ? 'Dharma Temple' : 'Dharma Temple'}</p>
-                    </div>
-                    <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
-                  </Link>
-                </div>
+                <PioneerProjectCards cs={cs} />
               </div>
 
             </div>
