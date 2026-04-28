@@ -57,21 +57,19 @@ impl HugePageScratchpad {
     /// The buffer is zero-initialized and memory-locked.
     pub fn new(size: usize) -> Result<Self, String> {
         let mapped_size = align_to_huge_page(size);
-        
-        // Try huge pages first, then fall back to regular mmap
-        let (ptr, huge_pages) = alloc_huge_pages(mapped_size)
-            .unwrap_or_else(|| {
-                let p = alloc_regular(mapped_size);
-                // Try transparent huge pages as a middle ground
-                if let Some(p) = p {
-                    advise_huge_pages(p, mapped_size);
-                }
-                (p, false)
-            });
 
-        let ptr = ptr.ok_or_else(|| {
-            format!("Failed to allocate {} KiB scratchpad memory", size / 1024)
-        })?;
+        // Try huge pages first, then fall back to regular mmap
+        let (ptr, huge_pages) = alloc_huge_pages(mapped_size).unwrap_or_else(|| {
+            let p = alloc_regular(mapped_size);
+            // Try transparent huge pages as a middle ground
+            if let Some(p) = p {
+                advise_huge_pages(p, mapped_size);
+            }
+            (p, false)
+        });
+
+        let ptr =
+            ptr.ok_or_else(|| format!("Failed to allocate {} KiB scratchpad memory", size / 1024))?;
 
         // Lock memory to prevent swapping (best-effort)
         let locked = mlock(ptr, mapped_size);
@@ -148,7 +146,11 @@ impl Drop for HugePageScratchpad {
                     #[link(name = "kernel32")]
                     extern "system" {
                         fn VirtualUnlock(lp_address: *mut std::ffi::c_void, dw_size: usize) -> i32;
-                        fn VirtualFree(lp_address: *mut std::ffi::c_void, dw_size: usize, dw_free_type: u32) -> i32;
+                        fn VirtualFree(
+                            lp_address: *mut std::ffi::c_void,
+                            dw_size: usize,
+                            dw_free_type: u32,
+                        ) -> i32;
                     }
                     const MEM_RELEASE: u32 = 0x8000;
                     unsafe {
@@ -158,8 +160,10 @@ impl Drop for HugePageScratchpad {
                         if self.huge_pages {
                             VirtualFree(self.ptr as *mut std::ffi::c_void, 0, MEM_RELEASE);
                         } else {
-                            use std::alloc::{Layout, dealloc};
-                            if let Ok(layout) = Layout::from_size_align(self.mapped_size, HUGE_PAGE_SIZE) {
+                            use std::alloc::{dealloc, Layout};
+                            if let Ok(layout) =
+                                Layout::from_size_align(self.mapped_size, HUGE_PAGE_SIZE)
+                            {
                                 dealloc(self.ptr, layout);
                             }
                         }
@@ -167,7 +171,7 @@ impl Drop for HugePageScratchpad {
                 }
                 #[cfg(not(target_os = "windows"))]
                 {
-                    use std::alloc::{Layout, dealloc};
+                    use std::alloc::{dealloc, Layout};
                     if let Ok(layout) = Layout::from_size_align(self.mapped_size, HUGE_PAGE_SIZE) {
                         unsafe { dealloc(self.ptr, layout) };
                     }
@@ -190,7 +194,7 @@ pub fn is_huge_pages_available() -> HugePagesInfo {
         #[cfg(target_arch = "aarch64")]
         let available = false; // superpages not supported on arm64 macOS
         #[cfg(not(target_arch = "aarch64"))]
-        let available = true;  // x86_64 macOS supports superpages
+        let available = true; // x86_64 macOS supports superpages
 
         HugePagesInfo {
             available,
@@ -440,10 +444,14 @@ fn alloc_regular(size: usize) -> Option<*mut u8> {
 /// Windows fallback: aligned allocation via std::alloc.
 #[cfg(not(unix))]
 fn alloc_regular(size: usize) -> Option<*mut u8> {
-    use std::alloc::{Layout, alloc_zeroed};
+    use std::alloc::{alloc_zeroed, Layout};
     let layout = Layout::from_size_align(size, HUGE_PAGE_SIZE).ok()?;
     let ptr = unsafe { alloc_zeroed(layout) };
-    if ptr.is_null() { None } else { Some(ptr) }
+    if ptr.is_null() {
+        None
+    } else {
+        Some(ptr)
+    }
 }
 
 /// Try to enable transparent huge pages for a memory region (Linux only).
@@ -530,11 +538,17 @@ where
         if opt.is_none() || opt.as_ref().map(|hp| hp.len()) != Some(size) {
             match HugePageScratchpad::new(size) {
                 Ok(hp) => {
-                    let status = if hp.is_huge_pages() { "HUGE PAGES" } else { "regular pages" };
+                    let status = if hp.is_huge_pages() {
+                        "HUGE PAGES"
+                    } else {
+                        "regular pages"
+                    };
                     let lock = if hp.is_locked() { "+locked" } else { "" };
                     log::info!(
                         "Scratchpad allocated: {} KiB on {} {}",
-                        size / 1024, status, lock
+                        size / 1024,
+                        status,
+                        lock
                     );
                     *opt = Some(hp);
                 }
@@ -553,7 +567,10 @@ where
 /// Check if the current thread's scratchpad is using huge pages.
 pub fn current_thread_has_huge_pages() -> bool {
     HP_SCRATCHPAD.with(|cell| {
-        cell.borrow().as_ref().map(|hp| hp.is_huge_pages()).unwrap_or(false)
+        cell.borrow()
+            .as_ref()
+            .map(|hp| hp.is_huge_pages())
+            .unwrap_or(false)
     })
 }
 
@@ -591,7 +608,11 @@ pub fn memory_status_line(scratchpad_size: usize) -> String {
         "{} KiB scratchpad | {} KiB pages | {} | {}",
         scratchpad_size / 1024,
         info.page_size / 1024,
-        if info.available { "HUGEPAGES ready" } else { "mmap fallback" },
+        if info.available {
+            "HUGEPAGES ready"
+        } else {
+            "mmap fallback"
+        },
         platform_note,
     )
 }

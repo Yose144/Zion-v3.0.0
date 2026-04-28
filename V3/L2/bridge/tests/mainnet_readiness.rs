@@ -12,11 +12,11 @@
 //!
 //! Run: cargo test --test mainnet_readiness -- --nocapture
 
+use chrono::Utc;
 use tempfile::TempDir;
 use zion_bridge::config::{BridgeConfig, BridgeIdentity, EvmChainConfig};
 use zion_bridge::db::BridgeDb;
 use zion_bridge::types::{conversion::*, BridgeStatus, EvmBurnEvent, L1LockEvent};
-use chrono::Utc;
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
@@ -120,13 +120,20 @@ fn test_l1_block_real_tx_format() {
     let v: serde_json::Value = serde_json::from_str(json).unwrap();
     let height = v["block"]["header"]["height"].as_u64().unwrap();
     let tx_id = v["block"]["transactions"][0]["id"].as_str().unwrap();
-    let output_addr = v["block"]["transactions"][0]["outputs"][0]["address"].as_str().unwrap();
-    let memo = v["block"]["transactions"][0]["outputs"][0]["memo"].as_str().unwrap();
+    let output_addr = v["block"]["transactions"][0]["outputs"][0]["address"]
+        .as_str()
+        .unwrap();
+    let memo = v["block"]["transactions"][0]["outputs"][0]["memo"]
+        .as_str()
+        .unwrap();
 
     assert_eq!(height, 4574);
     assert_eq!(tx_id, "abcdef1234567890abcdef1234567890");
     assert_eq!(output_addr, "zion1wn5nv4snxzjjlqb48z5zatungtvr4ruz6yjd4c5");
-    assert_eq!(memo, "BRIDGE:base:0x1234567890abcdef1234567890abcdef12345678");
+    assert_eq!(
+        memo,
+        "BRIDGE:base:0x1234567890abcdef1234567890abcdef12345678"
+    );
 }
 
 #[test]
@@ -153,7 +160,10 @@ fn test_l1_block_empty_inputs_field() {
     let tx = &v["block"]["transactions"][0];
     // inputs is null/missing → treated as empty array
     assert!(tx["inputs"].is_null() || tx["inputs"].is_array());
-    assert_eq!(tx["outputs"][0]["amount"].as_u64().unwrap(), 5_400_000_000_000);
+    assert_eq!(
+        tx["outputs"][0]["amount"].as_u64().unwrap(),
+        5_400_000_000_000
+    );
 }
 
 // ─── 2. Testnet vs Mainnet config ──────────────────────────────────────────
@@ -187,8 +197,8 @@ fn base_mainnet_chain() -> EvmChainConfig {
         finality_blocks: 12, // Base mainnet: 12 blocks ≈ 24s
         enabled: false,      // NOT enabled until contracts deployed
         gas_strategy: "eip1559".into(),
-        max_gas_gwei: 200,   // Higher gas limit for mainnet
-        start_block: None,   // Will be set after mainnet deployment
+        max_gas_gwei: 200, // Higher gas limit for mainnet
+        start_block: None, // Will be set after mainnet deployment
     }
 }
 
@@ -198,7 +208,10 @@ fn test_testnet_chain_id() {
     assert_eq!(chain.evm_chain_id, 84532, "Base Sepolia testnet chain ID");
     assert_eq!(chain.chain_id, "base-sepolia");
     assert!(chain.enabled, "Testnet chain should be enabled for testing");
-    assert!(chain.start_block.is_some(), "Start block must be set to skip genesis scan");
+    assert!(
+        chain.start_block.is_some(),
+        "Start block must be set to skip genesis scan"
+    );
     assert_eq!(chain.start_block.unwrap(), 38_057_800);
 }
 
@@ -207,11 +220,13 @@ fn test_mainnet_chain_id() {
     let chain = base_mainnet_chain();
     assert_eq!(chain.evm_chain_id, 8453, "Base mainnet chain ID");
     assert_eq!(chain.chain_id, "base");
-    assert!(!chain.enabled, "Mainnet chain must be DISABLED until contracts deployed");
+    assert!(
+        !chain.enabled,
+        "Mainnet chain must be DISABLED until contracts deployed"
+    );
     // Contracts not yet deployed
     assert_eq!(
-        chain.bridge_contract_address,
-        "0x0000000000000000000000000000000000000000",
+        chain.bridge_contract_address, "0x0000000000000000000000000000000000000000",
         "Mainnet bridge contract not yet deployed — must be zero address"
     );
 }
@@ -365,7 +380,11 @@ fn test_evm_chunking_large_range_no_gaps_or_overlaps() {
         prev_end = *chunk_to;
     }
 
-    assert_eq!(covered, to - from + 1, "Total covered blocks must equal range");
+    assert_eq!(
+        covered,
+        to - from + 1,
+        "Total covered blocks must equal range"
+    );
     assert_eq!(prev_end, to, "Last chunk must end exactly at 'to'");
 }
 
@@ -407,23 +426,33 @@ fn test_evm_chunking_single_block() {
 fn test_duplicate_lock_rejected() {
     let (db, _dir) = open_db();
 
-    let l = lock("tx_dup_001", 1000, "base", "0x1234567890abcdef1234567890abcdef12345678");
+    let l = lock(
+        "tx_dup_001",
+        1000,
+        "base",
+        "0x1234567890abcdef1234567890abcdef12345678",
+    );
     db.insert_lock(&l).unwrap();
 
     // Mark as Completed (simulating a successful bridge operation)
-    db.update_lock_status("tx_dup_001", BridgeStatus::Completed).unwrap();
+    db.update_lock_status("tx_dup_001", BridgeStatus::Completed)
+        .unwrap();
 
     // Attacker replays the same TX: INSERT OR IGNORE silently ignores it
     // The existing Completed row must NOT be reset to Pending
     let mut lock2 = l.clone();
     lock2.status = BridgeStatus::Pending; // attacker tries to reset status
     let result = db.insert_lock(&lock2);
-    assert!(result.is_ok(), "INSERT OR IGNORE should succeed (not error)");
+    assert!(
+        result.is_ok(),
+        "INSERT OR IGNORE should succeed (not error)"
+    );
 
     // The status in DB must still be Completed, not reset to Pending
     let pending = db.get_pending_locks().unwrap();
     assert_eq!(
-        pending.len(), 0,
+        pending.len(),
+        0,
         "Completed lock must not reappear as Pending after duplicate insert — replay protection"
     );
 }
@@ -432,18 +461,27 @@ fn test_duplicate_lock_rejected() {
 fn test_duplicate_burn_rejected() {
     let (db, _dir) = open_db();
 
-    let b = burn("burn_dup_001", 500, "zion1qrecipient000000000000000000000000001");
+    let b = burn(
+        "burn_dup_001",
+        500,
+        "zion1qrecipient000000000000000000000000001",
+    );
     db.insert_burn(&b).unwrap();
-    db.update_burn_status("burn_dup_001", BridgeStatus::Completed).unwrap();
+    db.update_burn_status("burn_dup_001", BridgeStatus::Completed)
+        .unwrap();
 
     // EVM watcher re-scans old blocks after restart — tries to insert same burn again
     let result = db.insert_burn(&b); // INSERT OR IGNORE → silently skipped
-    assert!(result.is_ok(), "INSERT OR IGNORE should succeed (not error)");
+    assert!(
+        result.is_ok(),
+        "INSERT OR IGNORE should succeed (not error)"
+    );
 
     // Completed burn must stay Completed — not reset to Pending
     let pending = db.get_pending_burns().unwrap();
     assert_eq!(
-        pending.len(), 0,
+        pending.len(),
+        0,
         "Completed burn must not reappear as Pending after watcher restart — replay protection"
     );
 }
@@ -453,8 +491,20 @@ fn test_different_tx_hashes_accepted() {
     let (db, _dir) = open_db();
 
     // Two different lock TXs must both be accepted
-    db.insert_lock(&lock("tx_a", 100, "base", "0x1234567890abcdef1234567890abcdef12345678")).unwrap();
-    db.insert_lock(&lock("tx_b", 200, "base", "0x1234567890abcdef1234567890abcdef12345678")).unwrap();
+    db.insert_lock(&lock(
+        "tx_a",
+        100,
+        "base",
+        "0x1234567890abcdef1234567890abcdef12345678",
+    ))
+    .unwrap();
+    db.insert_lock(&lock(
+        "tx_b",
+        200,
+        "base",
+        "0x1234567890abcdef1234567890abcdef12345678",
+    ))
+    .unwrap();
 
     let pending = db.get_pending_locks().unwrap();
     assert_eq!(pending.len(), 2);
@@ -483,13 +533,23 @@ fn parse_memo(memo: Option<&str>) -> Option<(String, String)> {
 
 #[test]
 fn test_memo_valid_base() {
-    let r = parse_memo(Some("BRIDGE:base:0x1234567890abcdef1234567890abcdef12345678"));
-    assert_eq!(r, Some(("base".into(), "0x1234567890abcdef1234567890abcdef12345678".into())));
+    let r = parse_memo(Some(
+        "BRIDGE:base:0x1234567890abcdef1234567890abcdef12345678",
+    ));
+    assert_eq!(
+        r,
+        Some((
+            "base".into(),
+            "0x1234567890abcdef1234567890abcdef12345678".into()
+        ))
+    );
 }
 
 #[test]
 fn test_memo_valid_arbitrum() {
-    let r = parse_memo(Some("BRIDGE:arbitrum:0xAbCdEf1234567890aBcDeF1234567890AbCdEf12"));
+    let r = parse_memo(Some(
+        "BRIDGE:arbitrum:0xAbCdEf1234567890aBcDeF1234567890AbCdEf12",
+    ));
     assert!(r.is_some());
     let (chain, _) = r.unwrap();
     assert_eq!(chain, "arbitrum");
@@ -498,7 +558,9 @@ fn test_memo_valid_arbitrum() {
 #[test]
 fn test_memo_chain_lowercased() {
     // Chain name must be normalized to lowercase
-    let r = parse_memo(Some("BRIDGE:BASE:0x1234567890abcdef1234567890abcdef12345678"));
+    let r = parse_memo(Some(
+        "BRIDGE:BASE:0x1234567890abcdef1234567890abcdef12345678",
+    ));
     assert!(r.is_some());
     assert_eq!(r.unwrap().0, "base");
 }
@@ -519,17 +581,26 @@ fn test_memo_address_too_short() {
 #[test]
 fn test_memo_address_too_long() {
     // 43 chars after 0x → total > 42
-    let r = parse_memo(Some("BRIDGE:base:0x1234567890abcdef1234567890abcdef123456789"));
+    let r = parse_memo(Some(
+        "BRIDGE:base:0x1234567890abcdef1234567890abcdef123456789",
+    ));
     assert!(r.is_none(), "Long address must be rejected");
 }
 
 #[test]
 fn test_memo_wrong_prefix() {
-    let r = parse_memo(Some("TRANSFER:base:0x1234567890abcdef1234567890abcdef12345678"));
+    let r = parse_memo(Some(
+        "TRANSFER:base:0x1234567890abcdef1234567890abcdef12345678",
+    ));
     assert!(r.is_none());
 
-    let r2 = parse_memo(Some("bridge:base:0x1234567890abcdef1234567890abcdef12345678"));
-    assert!(r2.is_none(), "Lowercase 'bridge' prefix must be rejected — strict uppercase only");
+    let r2 = parse_memo(Some(
+        "bridge:base:0x1234567890abcdef1234567890abcdef12345678",
+    ));
+    assert!(
+        r2.is_none(),
+        "Lowercase 'bridge' prefix must be rejected — strict uppercase only"
+    );
 }
 
 #[test]
@@ -553,14 +624,21 @@ fn test_memo_only_prefix() {
 fn test_memo_zero_address() {
     // Zero address (0x000...000) is technically valid format but semantically dangerous
     // The parser should accept it (format is OK), but application should reject it separately
-    let r = parse_memo(Some("BRIDGE:base:0x0000000000000000000000000000000000000000"));
-    assert!(r.is_some(), "Zero address has valid format — format parser accepts it");
+    let r = parse_memo(Some(
+        "BRIDGE:base:0x0000000000000000000000000000000000000000",
+    ));
+    assert!(
+        r.is_some(),
+        "Zero address has valid format — format parser accepts it"
+    );
 }
 
 #[test]
 fn test_memo_mainnet_chain() {
     // On mainnet the chain will be "base" (not "base-sepolia")
-    let r = parse_memo(Some("BRIDGE:base:0xDeadBeef1234567890DeadBeef1234567890DEAD"));
+    let r = parse_memo(Some(
+        "BRIDGE:base:0xDeadBeef1234567890DeadBeef1234567890DEAD",
+    ));
     assert!(r.is_some());
     let (chain, addr) = r.unwrap();
     assert_eq!(chain, "base"); // This is what mainnet bridge will receive
@@ -599,7 +677,10 @@ fn test_amount_just_below_timelock() {
     // 999_999 ZION (1 below 1M timelock threshold)
     let just_under = flowers_to_wzion_wei(999_999_000_000_000_000); // 999,999 ZION
     let wei: u128 = just_under.parse().unwrap();
-    assert!(wei < threshold, "999,999 ZION should be below timelock threshold");
+    assert!(
+        wei < threshold,
+        "999,999 ZION should be below timelock threshold"
+    );
 }
 
 #[test]
@@ -610,7 +691,10 @@ fn test_amount_exactly_at_timelock() {
     // 1M ZION = timelock threshold
     let exactly = flowers_to_wzion_wei(1_000_000_000_000_000_000); // 1M ZION
     let wei: u128 = exactly.parse().unwrap();
-    assert_eq!(wei, threshold, "1M ZION should equal exactly the timelock threshold");
+    assert_eq!(
+        wei, threshold,
+        "1M ZION should equal exactly the timelock threshold"
+    );
 }
 
 #[test]
@@ -633,11 +717,17 @@ fn test_daily_limit_enforcement() {
     // 2 × max_single should exceed daily limit (if daily = 10M and max_single = 5M)
     // In practice: 3 × 4M = 12M > 10M daily limit
     let three_ops: u128 = 3 * (4_000_000u128 * 1_000_000_000_000_000_000u128);
-    assert!(three_ops > daily, "3 × 4M ZION should exceed 10M daily limit");
+    assert!(
+        three_ops > daily,
+        "3 × 4M ZION should exceed 10M daily limit"
+    );
 
     // A single 4M transfer is below max_single but below daily on its own
     let one_op: u128 = 4_000_000u128 * 1_000_000_000_000_000_000u128;
-    assert!(one_op < max_single, "4M ZION should be below 5M single limit");
+    assert!(
+        one_op < max_single,
+        "4M ZION should be below 5M single limit"
+    );
     assert!(one_op < daily, "4M ZION should be below 10M daily limit");
 }
 
@@ -650,9 +740,24 @@ fn test_security_limit_ordering() {
     let daily: u128 = cfg.security.daily_limit.parse().unwrap();
 
     // Invariant: min < timelock < max_single < daily
-    assert!(min < timelock, "min ({}) must be < timelock ({})", min, timelock);
-    assert!(timelock < max_single, "timelock ({}) must be < max_single ({})", timelock, max_single);
-    assert!(max_single < daily, "max_single ({}) must be < daily ({})", max_single, daily);
+    assert!(
+        min < timelock,
+        "min ({}) must be < timelock ({})",
+        min,
+        timelock
+    );
+    assert!(
+        timelock < max_single,
+        "timelock ({}) must be < max_single ({})",
+        timelock,
+        max_single
+    );
+    assert!(
+        max_single < daily,
+        "max_single ({}) must be < daily ({})",
+        max_single,
+        daily
+    );
 }
 
 // ─── 7. Multi-chain routing ────────────────────────────────────────────────
@@ -698,7 +803,10 @@ fn test_multi_chain_routing_exact_match() {
     ];
 
     // "base" lock cannot be processed if only "base-sepolia" is configured
-    let matched = cfg.evm_chains.iter().find(|c| c.chain_id == "base" && c.enabled);
+    let matched = cfg
+        .evm_chains
+        .iter()
+        .find(|c| c.chain_id == "base" && c.enabled);
     assert!(
         matched.is_none(),
         "Lock to 'base' mainnet must fail if only 'base-sepolia' testnet is configured"
@@ -711,7 +819,10 @@ fn test_chain_lookup_disabled_chain() {
     cfg.evm_chains = vec![base_mainnet_chain()]; // disabled!
 
     // Routing must skip disabled chains
-    let matched = cfg.evm_chains.iter().find(|c| c.chain_id == "base" && c.enabled);
+    let matched = cfg
+        .evm_chains
+        .iter()
+        .find(|c| c.chain_id == "base" && c.enabled);
     assert!(
         matched.is_none(),
         "Disabled 'base' mainnet chain must not be routable"
@@ -729,11 +840,7 @@ fn test_chain_lookup_disabled_chain() {
 #[test]
 fn test_supply_invariant_basic() {
     // 3 locks, 1 burn completed
-    let locks: Vec<(u64, &str)> = vec![
-        (1000, "lock_a"),
-        (2000, "lock_b"),
-        (500, "lock_c"),
-    ];
+    let locks: Vec<(u64, &str)> = vec![(1000, "lock_a"), (2000, "lock_b"), (500, "lock_c")];
     let burns: Vec<u64> = vec![800]; // 800 ZION burned back
 
     let total_locked: u64 = locks.iter().map(|(a, _)| *a).sum();
@@ -743,7 +850,10 @@ fn test_supply_invariant_basic() {
 
     assert_eq!(total_locked, 3500, "Total locked: 3500 ZION");
     assert_eq!(outstanding, 2700, "Outstanding wZION: 2700 ZION worth");
-    assert!(total_locked >= outstanding, "Supply invariant: locked ≥ outstanding");
+    assert!(
+        total_locked >= outstanding,
+        "Supply invariant: locked ≥ outstanding"
+    );
 }
 
 #[test]
@@ -765,14 +875,26 @@ fn test_supply_invariant_with_db() {
     // Insert 3 locks
     let lock_ops: &[(&str, u64)] = &[("lock_s1", 1000), ("lock_s2", 2000), ("lock_s3", 500)];
     for &(tx_hash, zion) in lock_ops {
-        db.insert_lock(&lock(tx_hash, zion, "base", "0x1234567890abcdef1234567890abcdef12345678")).unwrap();
+        db.insert_lock(&lock(
+            tx_hash,
+            zion,
+            "base",
+            "0x1234567890abcdef1234567890abcdef12345678",
+        ))
+        .unwrap();
     }
 
     // Insert 1 burn (800 ZION worth)
-    db.insert_burn(&burn("b1", 800, "zion1qrecipient000000000000000000000000001")).unwrap();
+    db.insert_burn(&burn(
+        "b1",
+        800,
+        "zion1qrecipient000000000000000000000000001",
+    ))
+    .unwrap();
 
     // Complete the burn
-    db.update_burn_status("b1", BridgeStatus::Completed).unwrap();
+    db.update_burn_status("b1", BridgeStatus::Completed)
+        .unwrap();
 
     let stats = db.get_stats().unwrap();
     // total_operations counts completed operations only
@@ -804,32 +926,56 @@ fn test_supply_invariant_conversion_precision() {
 fn test_mainnet_deployment_checklist() {
     // 1. L1 finality: 60 blocks ≈ 10 minutes (safe for ZION)
     let cfg = BridgeConfig::default();
-    assert_eq!(cfg.l1.finality_blocks, 60, "L1 finality must be 60+ blocks for mainnet safety");
+    assert_eq!(
+        cfg.l1.finality_blocks, 60,
+        "L1 finality must be 60+ blocks for mainnet safety"
+    );
 
     // 2. Validator threshold ≥ 2 (already enforced by ValidatorSet::new)
-    assert!(cfg.validator.threshold >= 2, "Validator threshold must be ≥ 2");
+    assert!(
+        cfg.validator.threshold >= 2,
+        "Validator threshold must be ≥ 2"
+    );
 
     // 3. Auto-pause on anomaly must be enabled on mainnet
-    assert!(cfg.security.auto_pause_on_anomaly, "Auto-pause must be enabled!");
+    assert!(
+        cfg.security.auto_pause_on_anomaly,
+        "Auto-pause must be enabled!"
+    );
 
     // 4. Min bridge amount: 100 ZION (100 × 1e18 = 1e20 wei)
     let min: u128 = cfg.security.min_bridge_amount.parse().unwrap();
-    assert!(min >= 100 * 1_000_000_000_000_000_000u128, "Min must be ≥ 100 wZION");
+    assert!(
+        min >= 100 * 1_000_000_000_000_000_000u128,
+        "Min must be ≥ 100 wZION"
+    );
 
     // 5. Daily limit: ≥ 1M ZION
     let daily: u128 = cfg.security.daily_limit.parse().unwrap();
-    assert!(daily >= 1_000_000 * 1_000_000_000_000_000_000u128, "Daily limit must be ≥ 1M wZION");
+    assert!(
+        daily >= 1_000_000 * 1_000_000_000_000_000_000u128,
+        "Daily limit must be ≥ 1M wZION"
+    );
 
     // 6. Base mainnet chain ID
     let base_mainnet = base_mainnet_chain();
-    assert_eq!(base_mainnet.evm_chain_id, 8453, "Base mainnet chain ID = 8453");
+    assert_eq!(
+        base_mainnet.evm_chain_id, 8453,
+        "Base mainnet chain ID = 8453"
+    );
 
     // 7. Mainnet chain must start disabled until contracts deployed
-    assert!(!base_mainnet.enabled, "Mainnet chain disabled until contracts deployed");
+    assert!(
+        !base_mainnet.enabled,
+        "Mainnet chain disabled until contracts deployed"
+    );
 
     println!("✅ Mainnet deployment checklist PASSED");
     println!("   L1 finality: {} blocks", cfg.l1.finality_blocks);
-    println!("   Validator threshold: {}/{}", cfg.validator.threshold, cfg.validator.total_validators);
+    println!(
+        "   Validator threshold: {}/{}",
+        cfg.validator.threshold, cfg.validator.total_validators
+    );
     println!("   Auto-pause: {}", cfg.security.auto_pause_on_anomaly);
     println!("   Base mainnet chain ID: {}", base_mainnet.evm_chain_id);
     println!("   ❗ TODO: Deploy wZION + ZIONBridge on Base mainnet");

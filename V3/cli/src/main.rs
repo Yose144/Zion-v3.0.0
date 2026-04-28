@@ -8,11 +8,14 @@ mod menu;
 mod rpc;
 mod ui;
 
-use commands::{agent, bridge, completions, dao, deploy, doctor, explorer, mine, monitor, ncl, node, onboard, pool, status, update, wallet, warp};
+use commands::{
+    agent, bridge, completions, dao, deploy, doctor, explorer, mine, monitor, ncl, node, onboard,
+    pool, status, update, wallet, warp,
+};
 
+use clap_complete::Shell;
 #[allow(unused_imports)]
 use toml;
-use clap_complete::Shell;
 
 #[derive(Parser)]
 #[command(
@@ -263,7 +266,10 @@ async fn dispatch(cli: Cli) -> Result<()> {
                     ui::print_ok("Config is valid");
                     Ok(())
                 } else {
-                    anyhow::bail!("Config validation failed with {} error(s)", report.errors.len())
+                    anyhow::bail!(
+                        "Config validation failed with {} error(s)",
+                        report.errors.len()
+                    )
                 }
             }
             ConfigCmd::Init => onboard::run(&cfg).await,
@@ -277,6 +283,8 @@ fn open_browser(url: &str) -> Result<()> {
     #[cfg(target_os = "linux")]
     std::process::Command::new("xdg-open").arg(url).spawn()?;
     #[cfg(target_os = "windows")]
-    std::process::Command::new("cmd").args(["/c", "start", url]).spawn()?;
+    std::process::Command::new("cmd")
+        .args(["/c", "start", url])
+        .spawn()?;
     Ok(())
 }

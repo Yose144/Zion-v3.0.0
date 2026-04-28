@@ -12,7 +12,7 @@ use tracing::{debug, info, warn};
 // ─────────────────────────────────────────────────────────────────────────────
 fn wzion_contract(network: &str) -> Option<&'static str> {
     match network {
-        "cosmoshub-4"  => Some("cosmos1zionwarpxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"),
+        "cosmoshub-4" => Some("cosmos1zionwarpxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"),
         "theta-testnet-001" => Some("cosmos1ziontexxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"),
         _ => None,
     }
@@ -21,7 +21,7 @@ fn wzion_contract(network: &str) -> Option<&'static str> {
 fn default_rest(network: &str) -> &'static str {
     match network {
         "theta-testnet-001" => "https://rest.cosmos.directory/cosmoshubtestnet",
-        _                   => "https://rest.cosmos.directory/cosmoshub",
+        _ => "https://rest.cosmos.directory/cosmoshub",
     }
 }
 
@@ -89,7 +89,9 @@ pub struct CosmosAdapter {
 }
 
 impl Default for CosmosAdapter {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl CosmosAdapter {
@@ -108,12 +110,29 @@ impl CosmosAdapter {
     }
 
     async fn latest_height(&self) -> WarpResult<u64> {
-        let url = format!("{}/cosmos/base/tendermint/v1beta1/blocks/latest", self.rest_url);
-        let resp: CosmosBlockResp = self.client.get(&url).send().await
-            .map_err(|e| WarpError::AdapterError { chain: "cosmos".into(), reason: e.to_string() })?
-            .json().await
-            .map_err(|e| WarpError::AdapterError { chain: "cosmos".into(), reason: e.to_string() })?;
-        Ok(resp.block.and_then(|b| b.header).and_then(|h| h.height)
+        let url = format!(
+            "{}/cosmos/base/tendermint/v1beta1/blocks/latest",
+            self.rest_url
+        );
+        let resp: CosmosBlockResp = self
+            .client
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| WarpError::AdapterError {
+                chain: "cosmos".into(),
+                reason: e.to_string(),
+            })?
+            .json()
+            .await
+            .map_err(|e| WarpError::AdapterError {
+                chain: "cosmos".into(),
+                reason: e.to_string(),
+            })?;
+        Ok(resp
+            .block
+            .and_then(|b| b.header)
+            .and_then(|h| h.height)
             .and_then(|s| s.parse::<u64>().ok())
             .unwrap_or(0))
     }
@@ -129,16 +148,29 @@ impl CosmosAdapter {
             "{}/cosmos/tx/v1beta1/txs?events={}&pagination.limit=50&order_by=ORDER_BY_DESC",
             self.rest_url, events_query
         );
-        let resp: CosmosTxsResp = self.client.get(&url).send().await
-            .map_err(|e| WarpError::AdapterError { chain: "cosmos".into(), reason: e.to_string() })?
-            .json().await
-            .map_err(|e| WarpError::AdapterError { chain: "cosmos".into(), reason: e.to_string() })?;
+        let resp: CosmosTxsResp = self
+            .client
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| WarpError::AdapterError {
+                chain: "cosmos".into(),
+                reason: e.to_string(),
+            })?
+            .json()
+            .await
+            .map_err(|e| WarpError::AdapterError {
+                chain: "cosmos".into(),
+                reason: e.to_string(),
+            })?;
         Ok(resp.tx_responses.unwrap_or_default())
     }
 
     fn parse_tx_response(&self, tx: &CosmosRawTxResp, tip: u64) -> Option<DepositProof> {
         let tx_hash = tx.txhash.clone()?;
-        let height: u64 = tx.height.as_deref()
+        let height: u64 = tx
+            .height
+            .as_deref()
             .and_then(|s| s.parse().ok())
             .unwrap_or(0);
 
@@ -152,9 +184,15 @@ impl CosmosAdapter {
                 if event.type_ == "wasm" {
                     for attr in &event.attributes {
                         match attr.key.as_str() {
-                            "amount"   => { amount_flowers = attr.value.as_deref().and_then(|v| v.parse().ok()); }
-                            "dest_addr" | "destAddr" => { dest_addr = attr.value.clone().unwrap_or_default(); }
-                            "sender"   => { sender = attr.value.clone().unwrap_or_default(); }
+                            "amount" => {
+                                amount_flowers = attr.value.as_deref().and_then(|v| v.parse().ok());
+                            }
+                            "dest_addr" | "destAddr" => {
+                                dest_addr = attr.value.clone().unwrap_or_default();
+                            }
+                            "sender" => {
+                                sender = attr.value.clone().unwrap_or_default();
+                            }
                             _ => {}
                         }
                     }
@@ -163,7 +201,9 @@ impl CosmosAdapter {
         }
 
         let amount = amount_flowers?;
-        if amount == 0 || dest_addr.is_empty() { return None; }
+        if amount == 0 || dest_addr.is_empty() {
+            return None;
+        }
 
         Some(DepositProof {
             tx_hash,
@@ -179,24 +219,38 @@ impl CosmosAdapter {
 
 #[async_trait]
 impl ChainAdapter for CosmosAdapter {
-    fn family(&self) -> ChainFamily { ChainFamily::Cosmos }
-    fn name(&self) -> &str { "cosmos" }
+    fn family(&self) -> ChainFamily {
+        ChainFamily::Cosmos
+    }
+    fn name(&self) -> &str {
+        "cosmos"
+    }
 
     async fn health_check(&self) -> WarpResult<bool> {
         match self.latest_height().await {
-            Ok(h) => { info!("[WARP][cosmos] Health OK — height {}", h); Ok(true) }
-            Err(e) => { warn!("[WARP][cosmos] Health FAIL: {}", e); Ok(false) }
+            Ok(h) => {
+                info!("[WARP][cosmos] Health OK — height {}", h);
+                Ok(true)
+            }
+            Err(e) => {
+                warn!("[WARP][cosmos] Health FAIL: {}", e);
+                Ok(false)
+            }
         }
     }
 
     async fn watch_events(&self) -> WarpResult<Vec<DepositProof>> {
         let contract = match wzion_contract(&self.network) {
             Some(c) => c,
-            None => { debug!("[WARP][cosmos] No wZION contract configured"); return Ok(vec![]); }
+            None => {
+                debug!("[WARP][cosmos] No wZION contract configured");
+                return Ok(vec![]);
+            }
         };
         let tip = self.latest_height().await?;
         let txs = self.query_bridge_burn_txs(contract).await?;
-        let proofs: Vec<_> = txs.iter()
+        let proofs: Vec<_> = txs
+            .iter()
             .filter_map(|tx| self.parse_tx_response(tx, tip))
             .collect();
         info!("[WARP][cosmos] {} BridgeBurn txs", proofs.len());
@@ -219,12 +273,25 @@ impl ChainAdapter for CosmosAdapter {
 
     async fn confirmations(&self, tx_hash: &str) -> WarpResult<u64> {
         let url = format!("{}/cosmos/tx/v1beta1/txs/{}", self.rest_url, tx_hash);
-        let resp: Value = self.client.get(&url).send().await
-            .map_err(|e| WarpError::AdapterError { chain: "cosmos".into(), reason: e.to_string() })?
-            .json().await
-            .map_err(|e| WarpError::AdapterError { chain: "cosmos".into(), reason: e.to_string() })?;
-        let tx_height: u64 = resp["tx_response"]["height"].as_str()
-            .and_then(|s| s.parse().ok()).unwrap_or(0);
+        let resp: Value = self
+            .client
+            .get(&url)
+            .send()
+            .await
+            .map_err(|e| WarpError::AdapterError {
+                chain: "cosmos".into(),
+                reason: e.to_string(),
+            })?
+            .json()
+            .await
+            .map_err(|e| WarpError::AdapterError {
+                chain: "cosmos".into(),
+                reason: e.to_string(),
+            })?;
+        let tx_height: u64 = resp["tx_response"]["height"]
+            .as_str()
+            .and_then(|s| s.parse().ok())
+            .unwrap_or(0);
         let tip = self.latest_height().await.unwrap_or(tx_height);
         Ok(tip.saturating_sub(tx_height))
     }
@@ -260,9 +327,18 @@ mod tests {
                 events: Some(vec![CosmosEvent {
                     type_: "wasm".into(),
                     attributes: vec![
-                        CosmosAttr { key: "amount".into(), value: Some("4000000".into()) },
-                        CosmosAttr { key: "dest_addr".into(), value: Some("zion1cosmos".into()) },
-                        CosmosAttr { key: "sender".into(), value: Some("cosmos1abc".into()) },
+                        CosmosAttr {
+                            key: "amount".into(),
+                            value: Some("4000000".into()),
+                        },
+                        CosmosAttr {
+                            key: "dest_addr".into(),
+                            value: Some("zion1cosmos".into()),
+                        },
+                        CosmosAttr {
+                            key: "sender".into(),
+                            value: Some("cosmos1abc".into()),
+                        },
                     ],
                 }]),
             }]),
@@ -276,8 +352,11 @@ mod tests {
     #[tokio::test]
     async fn test_cosmos_execute_mint_is_err() {
         let inst = MintInstruction {
-            dest_chain: "cosmos".into(), recipient: "cosmos1abc".into(),
-            amount_dest_atomic: 100, signatures: vec![], warp_message_hash: String::new(),
+            dest_chain: "cosmos".into(),
+            recipient: "cosmos1abc".into(),
+            amount_dest_atomic: 100,
+            signatures: vec![],
+            warp_message_hash: String::new(),
         };
         assert!(CosmosAdapter::new().execute_mint(&inst).await.is_err());
     }

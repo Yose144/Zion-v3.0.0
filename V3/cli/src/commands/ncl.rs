@@ -72,7 +72,11 @@ pub async fn run(cfg: &Config, cmd: NclCmd) -> Result<()> {
             println!();
             Ok(())
         }
-        NclCmd::Submit { model, input, max_price } => {
+        NclCmd::Submit {
+            model,
+            input,
+            max_price,
+        } => {
             ui::print_header("NCL — Submit Job");
             ui::print_row("Model", &model);
             ui::print_row("Max price", &format!("{} ZION", max_price));
@@ -137,7 +141,9 @@ pub async fn run(cfg: &Config, cmd: NclCmd) -> Result<()> {
                             let cap = w["capacity"].as_str().unwrap_or("-");
                             println!("  {id}  reputation={rep:.1}  {cap}");
                         }
-                        if arr.is_empty() { ui::print_info("No workers registered."); }
+                        if arr.is_empty() {
+                            ui::print_info("No workers registered.");
+                        }
                     } else {
                         println!("{}", serde_json::to_string_pretty(&v)?);
                     }

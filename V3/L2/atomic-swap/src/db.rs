@@ -24,7 +24,7 @@
 use crate::error::{SwapError, SwapResult};
 use crate::types::{HtlcRecord, SwapState};
 use chrono::Utc;
-use rusqlite::{Connection, OptionalExtension, params};
+use rusqlite::{params, Connection, OptionalExtension};
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 
@@ -44,9 +44,8 @@ impl SwapDb {
         // Ensure parent directory exists
         if let Some(parent) = Path::new(path).parent() {
             if !parent.as_os_str().is_empty() {
-                std::fs::create_dir_all(parent).map_err(|e| {
-                    SwapError::Internal(format!("Cannot create DB dir: {e}"))
-                })?;
+                std::fs::create_dir_all(parent)
+                    .map_err(|e| SwapError::Internal(format!("Cannot create DB dir: {e}")))?;
             }
         }
         let conn = Connection::open(path)?;
@@ -165,7 +164,13 @@ impl SwapDb {
                SET state = 'claimed', release_tx_id = ?1, release_recipient = ?2,
                    preimage_hex = ?3, updated_at = ?4
                WHERE hash_hex = ?5"#,
-            params![release_tx_id, release_recipient, preimage_hex, now, hash_hex],
+            params![
+                release_tx_id,
+                release_recipient,
+                preimage_hex,
+                now,
+                hash_hex
+            ],
         )?;
         Ok(())
     }
@@ -266,8 +271,7 @@ impl SwapDb {
     pub fn conn_for_evm_watcher(&self) -> std::sync::Arc<std::sync::Mutex<rusqlite::Connection>> {
         {
             let conn = self.conn.lock().unwrap();
-            crate::evm_watcher::migrate(&conn)
-                .expect("EVM watcher migration failed");
+            crate::evm_watcher::migrate(&conn).expect("EVM watcher migration failed");
         }
         Arc::clone(&self.conn)
     }
