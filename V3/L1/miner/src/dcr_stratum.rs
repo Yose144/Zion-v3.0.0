@@ -108,8 +108,7 @@ impl DcrStratumClient {
         match self.reader.read_line(&mut line) {
             Ok(0) => bail!("DCR pool closed connection"),
             Ok(_) => {
-                let msg: Value =
-                    serde_json::from_str(line.trim()).context("parse pool message")?;
+                let msg: Value = serde_json::from_str(line.trim()).context("parse pool message")?;
                 if let Some(method) = msg.get("method").and_then(|m| m.as_str()) {
                     if method == "mining.notify" {
                         return Ok(Some(self.parse_notify(&msg)?));
@@ -207,10 +206,7 @@ impl DcrStratumClient {
             });
         }
 
-        bail!(
-            "unsupported mining.notify format ({} params)",
-            params.len()
-        );
+        bail!("unsupported mining.notify format ({} params)", params.len());
     }
 
     fn handle_notification(&mut self, msg: &Value) {

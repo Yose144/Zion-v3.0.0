@@ -5,8 +5,8 @@ use std::collections::HashMap;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use zion_core::{
-    consensus_profile, BlockCandidate, BlockTemplate, CoreRuntime, DifficultyTarget,
-    MiningHeader, MiningJob, MiningSolution, RevenueSnapshot, RevenueSource, SealedBlock,
+    consensus_profile, BlockCandidate, BlockTemplate, CoreRuntime, DifficultyTarget, MiningHeader,
+    MiningJob, MiningSolution, RevenueSnapshot, RevenueSource, SealedBlock,
 };
 
 pub const PROTOCOL_VERSION: &str = "zion-v3-stratum/0.2";
@@ -503,8 +503,8 @@ pub fn parse_fixed_hex<const N: usize>(raw: &str, label: &str) -> Result<[u8; N]
 
     let mut bytes = [0u8; N];
     for (index, chunk) in normalized.as_bytes().chunks(2).enumerate() {
-        let pair = std::str::from_utf8(chunk)
-            .map_err(|_| format!("{label} contains non-utf8 hex"))?;
+        let pair =
+            std::str::from_utf8(chunk).map_err(|_| format!("{label} contains non-utf8 hex"))?;
         bytes[index] = u8::from_str_radix(pair, 16)
             .map_err(|_| format!("invalid hex byte '{pair}' in {label}"))?;
     }
@@ -677,7 +677,10 @@ mod tests {
             difficulty_bits: 0x1f00ffff,
         };
         let job = pool.issue_job(header, DifficultyTarget::MAX, 100, 8);
-        let solution = pool.runtime().scan_nonce_range(job).expect("solution exists");
+        let solution = pool
+            .runtime()
+            .scan_nonce_range(job)
+            .expect("solution exists");
 
         let decision = pool.submit_solution_with(
             "miner-3".to_string(),
@@ -725,7 +728,10 @@ mod tests {
             difficulty_bits: 0x1f00ffff,
         };
         let job = pool.issue_job(header, DifficultyTarget::MAX, 10, 8);
-        let solution = pool.runtime().scan_nonce_range(job).expect("solution exists");
+        let solution = pool
+            .runtime()
+            .scan_nonce_range(job)
+            .expect("solution exists");
         let decision = pool.submit_solution(
             "miner-4".to_string(),
             "rig-d".to_string(),
@@ -764,8 +770,14 @@ mod tests {
         let encoded_welcome = encode_message(&welcome).expect("encode welcome");
         let encoded_cancel = encode_message(&cancel).expect("encode cancel");
 
-        assert_eq!(decode_message(&encoded_welcome).expect("decode welcome"), welcome);
-        assert_eq!(decode_message(&encoded_cancel).expect("decode cancel"), cancel);
+        assert_eq!(
+            decode_message(&encoded_welcome).expect("decode welcome"),
+            welcome
+        );
+        assert_eq!(
+            decode_message(&encoded_cancel).expect("decode cancel"),
+            cancel
+        );
     }
 
     #[test]
@@ -889,7 +901,11 @@ mod tests {
             algorithm: "a".to_string(),
         };
         let encoded = encode_message(&msg).unwrap();
-        assert_eq!(encoded.matches('\n').count(), 1, "exactly one trailing newline");
+        assert_eq!(
+            encoded.matches('\n').count(),
+            1,
+            "exactly one trailing newline"
+        );
         assert!(encoded.ends_with('\n'));
     }
 
@@ -1049,7 +1065,12 @@ mod tests {
         };
         let job = pool.issue_job(header, DifficultyTarget::MAX, 0, 64);
         let msg = pool.job_message(job);
-        if let PoolMessage::Job { header_hex, target_hex, .. } = msg {
+        if let PoolMessage::Job {
+            header_hex,
+            target_hex,
+            ..
+        } = msg
+        {
             assert_eq!(header_hex.len(), 160, "80 bytes = 160 hex chars");
             assert_eq!(target_hex.len(), 64, "32 bytes = 64 hex chars");
         } else {

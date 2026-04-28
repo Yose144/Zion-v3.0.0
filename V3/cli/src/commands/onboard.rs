@@ -45,7 +45,11 @@ pub async fn run(_cfg: &Config) -> Result<()> {
 
     // Step 2: Mining wallet
     println!("  Step 2/4  Mining wallet");
-    let wallet_mode = &["Use existing address", "Generate new mnemonic wallet", "Skip for now"];
+    let wallet_mode = &[
+        "Use existing address",
+        "Generate new mnemonic wallet",
+        "Skip for now",
+    ];
     let wallet_idx = Select::new()
         .with_prompt("    Wallet setup")
         .items(wallet_mode)
@@ -94,13 +98,8 @@ pub async fn run(_cfg: &Config) -> Result<()> {
             } else {
                 None
             };
-            let generated = wallet::create_wallet_at(
-                &wallet_path,
-                true,
-                24,
-                overwrite,
-                password.as_deref(),
-            )?;
+            let generated =
+                wallet::create_wallet_at(&wallet_path, true, 24, overwrite, password.as_deref())?;
             cfg.miner.wallet = generated.address().to_string();
             ui::print_ok(&format!("Wallet generated at {}", wallet_path.display()));
             ui::print_ok(&format!("Mining wallet set to {}", generated.address()));

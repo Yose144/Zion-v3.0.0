@@ -33,11 +33,7 @@ impl GpuBackendKind {
         let val = std::env::var("ZION_BACKEND")
             .or_else(|_| std::env::var("ZION_GPU_BACKEND"))
             .unwrap_or_default();
-        match val
-            .trim()
-            .to_ascii_lowercase()
-            .as_str()
-        {
+        match val.trim().to_ascii_lowercase().as_str() {
             "opencl" | "ocl" => Self::OpenCL,
             "cuda" => Self::Cuda,
             "metal" => Self::Metal,
@@ -75,7 +71,9 @@ pub trait GpuMiner: Send {
 
     /// Update NPU weights for the given block height's epoch.
     /// No-op if the epoch hasn't changed since the last call.
-    fn update_epoch(&mut self, _height: u64) -> Result<()> { Ok(()) }
+    fn update_epoch(&mut self, _height: u64) -> Result<()> {
+        Ok(())
+    }
 
     /// Mine a batch of nonces starting from `nonce_start`.
     /// Returns any solutions found that meet the target.
@@ -92,10 +90,7 @@ pub trait GpuMiner: Send {
 }
 
 /// Try to create the best available GPU backend.
-pub fn create_gpu_backend(
-    kind: GpuBackendKind,
-    work_size: usize,
-) -> Result<Box<dyn GpuMiner>> {
+pub fn create_gpu_backend(kind: GpuBackendKind, work_size: usize) -> Result<Box<dyn GpuMiner>> {
     match kind {
         GpuBackendKind::Cpu => {
             anyhow::bail!("GPU backend requested but kind=cpu — use CPU mining path instead");
@@ -116,7 +111,9 @@ pub fn create_gpu_backend(
             #[cfg(not(feature = "gpu-opencl"))]
             {
                 if kind == GpuBackendKind::OpenCL {
-                    anyhow::bail!("OpenCL support not compiled — rebuild with --features gpu-opencl");
+                    anyhow::bail!(
+                        "OpenCL support not compiled — rebuild with --features gpu-opencl"
+                    );
                 }
             }
 
@@ -138,7 +135,9 @@ pub fn create_gpu_backend(
                 }
             }
 
-            anyhow::bail!("no GPU backend available — compile with gpu-opencl, gpu-cuda, or gpu-metal");
+            anyhow::bail!(
+                "no GPU backend available — compile with gpu-opencl, gpu-cuda, or gpu-metal"
+            );
         }
         GpuBackendKind::Cuda => {
             #[cfg(feature = "gpu-cuda")]
@@ -194,11 +193,16 @@ pub fn gpu_scan_job(gpu: &mut dyn GpuMiner, job: MiningJob) -> GpuScanOutcome {
                     let count = MISMATCH_COUNT.fetch_add(1, Ordering::Relaxed) + 1;
                     // Print first 5 mismatches and then every 50th
                     if count <= 5 || count % 50 == 0 {
-                        let hex = |b: &[u8]| -> String { b.iter().map(|x| format!("{:02x}", x)).collect() };
+                        let hex = |b: &[u8]| -> String {
+                            b.iter().map(|x| format!("{:02x}", x)).collect()
+                        };
                         println!(
                             "GPU_MISMATCH #{} nonce={} h={} gpu={} cpu={}",
-                            count, nonce, job.height,
-                            hex(&hash[..8]), hex(&verified_hash[..8]),
+                            count,
+                            nonce,
+                            job.height,
+                            hex(&hash[..8]),
+                            hex(&verified_hash[..8]),
                         );
                     }
                 }
@@ -262,8 +266,8 @@ pub fn gpu_scan_job(gpu: &mut dyn GpuMiner, job: MiningJob) -> GpuScanOutcome {
 #[cfg(feature = "gpu-opencl")]
 pub mod opencl_deeksha {
     use super::*;
-    use ocl::{Buffer, Device, Kernel, Platform, ProQue};
     use ocl::builders::ProgramBuilder;
+    use ocl::{Buffer, Device, Kernel, Platform, ProQue};
     use std::time::Instant;
     use zion_cosmic_harmony::gpu::opencl_kernel;
 
@@ -300,7 +304,8 @@ pub mod opencl_deeksha {
     /// Each thread needs SCRATCHPAD_BYTES (256 KiB).
     /// Reserve VRAM for NPU buffers, driver overhead, and other allocations.
     fn vram_aware_work_size(device: &Device, requested: usize) -> usize {
-        let global_mem = device.info(ocl::enums::DeviceInfo::GlobalMemSize)
+        let global_mem = device
+            .info(ocl::enums::DeviceInfo::GlobalMemSize)
             .ok()
             .and_then(|v| match v {
                 ocl::enums::DeviceInfoResult::GlobalMemSize(n) => Some(n as usize),
@@ -326,10 +331,14 @@ pub mod opencl_deeksha {
         // GCN devices (Vega, Polaris) cap at 128 work items to reduce register
         // spill pressure and memory contention with the 256 KiB scratchpad.
         let dev = device.name().unwrap_or_default().to_ascii_lowercase();
-        let gcn_cap = if dev.contains("vega") || dev.contains("polaris")
-            || dev.contains("fiji") || dev.contains("ellesmere")
-            || dev.contains("gfx6") || dev.contains("gfx7")
-            || dev.contains("gfx8") || dev.contains("gfx9")
+        let gcn_cap = if dev.contains("vega")
+            || dev.contains("polaris")
+            || dev.contains("fiji")
+            || dev.contains("ellesmere")
+            || dev.contains("gfx6")
+            || dev.contains("gfx7")
+            || dev.contains("gfx8")
+            || dev.contains("gfx9")
         {
             128
         } else {
@@ -347,16 +356,22 @@ pub mod opencl_deeksha {
     /// RDNA can safely use the full flag set.
     fn amd_build_opts(device_name: &str) -> String {
         let dev = device_name.to_ascii_lowercase();
-        let is_amd = dev.contains("gfx") || dev.contains("radeon")
-            || dev.contains("amd") || dev.contains("rdna");
+        let is_amd = dev.contains("gfx")
+            || dev.contains("radeon")
+            || dev.contains("amd")
+            || dev.contains("rdna");
         if !is_amd {
             return String::new();
         }
         // GCN (gfx6/7/8/9, Vega, Polaris, Fiji): safe integer-only flags
-        let is_gcn = dev.contains("vega") || dev.contains("polaris")
-            || dev.contains("fiji") || dev.contains("ellesmere")
-            || dev.contains("gfx6") || dev.contains("gfx7")
-            || dev.contains("gfx8") || dev.contains("gfx9");
+        let is_gcn = dev.contains("vega")
+            || dev.contains("polaris")
+            || dev.contains("fiji")
+            || dev.contains("ellesmere")
+            || dev.contains("gfx6")
+            || dev.contains("gfx7")
+            || dev.contains("gfx8")
+            || dev.contains("gfx9");
         if is_gcn {
             "-cl-std=CL1.2 -cl-mad-enable".to_string()
         } else {
@@ -408,7 +423,10 @@ pub mod opencl_deeksha {
         if !opts.is_empty() {
             opts.push(' ');
         }
-        opts.push_str(&format!("-DNPU_MAX_DIM={} -DWGS={}", npu_max_dim, local_wgs));
+        opts.push_str(&format!(
+            "-DNPU_MAX_DIM={} -DWGS={}",
+            npu_max_dim, local_wgs
+        ));
         opts
     }
 
@@ -453,7 +471,8 @@ pub mod opencl_deeksha {
                 .ok()
                 .and_then(|v| v.trim().parse::<usize>().ok());
 
-            let mut candidates: Vec<(i64, usize, usize, Platform, Device, String, String)> = Vec::new();
+            let mut candidates: Vec<(i64, usize, usize, Platform, Device, String, String)> =
+                Vec::new();
 
             for (pidx, platform) in platforms.into_iter().enumerate() {
                 if let Some(only_idx) = platform_idx_override {
@@ -462,12 +481,18 @@ pub mod opencl_deeksha {
                     }
                 }
 
-                let platform_name = platform.name().unwrap_or_else(|_| "unknown-platform".to_string());
-                let gpus = Device::list(platform, Some(ocl::flags::DeviceType::GPU))
-                    .map_err(|e| anyhow::anyhow!("OpenCL device list on platform {platform_name}: {e}"))?;
+                let platform_name = platform
+                    .name()
+                    .unwrap_or_else(|_| "unknown-platform".to_string());
+                let gpus =
+                    Device::list(platform, Some(ocl::flags::DeviceType::GPU)).map_err(|e| {
+                        anyhow::anyhow!("OpenCL device list on platform {platform_name}: {e}")
+                    })?;
 
                 for (didx, device) in gpus.into_iter().enumerate() {
-                    let device_name = device.name().unwrap_or_else(|_| "unknown-device".to_string());
+                    let device_name = device
+                        .name()
+                        .unwrap_or_else(|_| "unknown-device".to_string());
                     let score = Self::device_score(&platform_name, &device_name);
                     candidates.push((
                         score,
@@ -497,7 +522,8 @@ pub mod opencl_deeksha {
             }
 
             candidates.sort_by(|a, b| b.0.cmp(&a.0));
-            let (_, pidx, didx, platform, device, platform_name, device_name) = candidates.swap_remove(0);
+            let (_, pidx, didx, platform, device, platform_name, device_name) =
+                candidates.swap_remove(0);
             println!(
                 "gpu_opencl_pick mode=auto platform_idx={} device_idx={} platform=\"{}\" device=\"{}\"",
                 pidx, didx, platform_name, device_name
@@ -536,40 +562,47 @@ pub mod opencl_deeksha {
             let q = pro_que.queue().clone();
 
             // ── Core buffers ────────────────────────────────────────────
-            let header_buf = Buffer::<u8>::builder()
-                .queue(q.clone()).len(128).build()?;
+            let header_buf = Buffer::<u8>::builder().queue(q.clone()).len(128).build()?;
 
             let scratchpad_buf = Buffer::<u8>::builder()
                 .queue(q.clone())
                 .len(actual_work_size * SCRATCHPAD_BYTES)
                 .build()
-                .map_err(|e| anyhow::anyhow!(
-                    "scratchpad alloc failed ({} MiB): {e}",
-                    actual_work_size * SCRATCHPAD_BYTES / (1024 * 1024)
-                ))?;
+                .map_err(|e| {
+                    anyhow::anyhow!(
+                        "scratchpad alloc failed ({} MiB): {e}",
+                        actual_work_size * SCRATCHPAD_BYTES / (1024 * 1024)
+                    )
+                })?;
 
-            let result_nonce_buf = Buffer::<u64>::builder()
-                .queue(q.clone()).len(1).build()?;
+            let result_nonce_buf = Buffer::<u64>::builder().queue(q.clone()).len(1).build()?;
 
-            let result_hash_buf = Buffer::<u8>::builder()
-                .queue(q.clone()).len(32).build()?;
+            let result_hash_buf = Buffer::<u8>::builder().queue(q.clone()).len(32).build()?;
 
             // ── NPU weight buffers (packed variable-topology) ────────────
             let init_epoch = 0u64;
             let packed = zion_cosmic_harmony::algorithms_npu::chv4_npu_weights_packed(init_epoch);
 
             let npu_weights = Buffer::<i8>::builder()
-                .queue(q.clone()).len(packed.weights.len().max(1))
-                .copy_host_slice(&packed.weights).build()?;
+                .queue(q.clone())
+                .len(packed.weights.len().max(1))
+                .copy_host_slice(&packed.weights)
+                .build()?;
             let npu_biases = Buffer::<i8>::builder()
-                .queue(q.clone()).len(packed.biases.len().max(1))
-                .copy_host_slice(&packed.biases).build()?;
+                .queue(q.clone())
+                .len(packed.biases.len().max(1))
+                .copy_host_slice(&packed.biases)
+                .build()?;
             let npu_scales = Buffer::<i16>::builder()
-                .queue(q.clone()).len(packed.scales.len().max(1))
-                .copy_host_slice(&packed.scales).build()?;
+                .queue(q.clone())
+                .len(packed.scales.len().max(1))
+                .copy_host_slice(&packed.scales)
+                .build()?;
             let npu_meta = Buffer::<u32>::builder()
-                .queue(q.clone()).len(packed.meta.len())
-                .copy_host_slice(&packed.meta).build()?;
+                .queue(q.clone())
+                .len(packed.meta.len())
+                .copy_host_slice(&packed.meta)
+                .build()?;
 
             // ── Kernel: ekam_deeksha_mine (12 args) ─────────────────────
             // Signature:
@@ -587,18 +620,18 @@ pub mod opencl_deeksha {
             //  11: npu_meta      (__global const uint*)
             let kernel = pro_que
                 .kernel_builder(opencl_kernel::EKAM_DEEKSHA_KERNEL_NAME)
-                .arg(&header_buf)          // 0
-                .arg(80u32)                // 1: header_len
-                .arg(0u64)                 // 2: nonce_base (updated per batch)
+                .arg(&header_buf) // 0
+                .arg(80u32) // 1: header_len
+                .arg(0u64) // 2: nonce_base (updated per batch)
                 .arg(actual_work_size as u32) // 3: nonce_count
-                .arg(&scratchpad_buf)      // 4
-                .arg(0u32)                 // 5: target_u32 (updated per batch)
-                .arg(&result_nonce_buf)    // 6
-                .arg(&result_hash_buf)     // 7
-                .arg(&npu_weights)         // 8
-                .arg(&npu_biases)          // 9
-                .arg(&npu_scales)          // 10
-                .arg(&npu_meta)            // 11
+                .arg(&scratchpad_buf) // 4
+                .arg(0u32) // 5: target_u32 (updated per batch)
+                .arg(&result_nonce_buf) // 6
+                .arg(&result_hash_buf) // 7
+                .arg(&npu_weights) // 8
+                .arg(&npu_biases) // 9
+                .arg(&npu_scales) // 10
+                .arg(&npu_meta) // 11
                 .build()
                 .map_err(|e| anyhow::anyhow!("kernel build failed: {e}"))?;
 
@@ -606,10 +639,14 @@ pub mod opencl_deeksha {
 
             // Detect GCN devices for s4-only mode (CPU-side NPU+fusion)
             let dev_lower = device_name.to_ascii_lowercase();
-            let is_gcn = dev_lower.contains("vega") || dev_lower.contains("polaris")
-                || dev_lower.contains("fiji") || dev_lower.contains("ellesmere")
-                || dev_lower.contains("gfx6") || dev_lower.contains("gfx7")
-                || dev_lower.contains("gfx8") || dev_lower.contains("gfx9");
+            let is_gcn = dev_lower.contains("vega")
+                || dev_lower.contains("polaris")
+                || dev_lower.contains("fiji")
+                || dev_lower.contains("ellesmere")
+                || dev_lower.contains("gfx6")
+                || dev_lower.contains("gfx7")
+                || dev_lower.contains("gfx8")
+                || dev_lower.contains("gfx9");
 
             let (s4_kernel, s4_out_buf) = if is_gcn {
                 let s4_out = Buffer::<u8>::builder()
@@ -620,18 +657,16 @@ pub mod opencl_deeksha {
 
                 let s4k = pro_que
                     .kernel_builder(opencl_kernel::EKAM_DEEKSHA_S4_KERNEL_NAME)
-                    .arg(&header_buf)              // 0: header
-                    .arg(80u32)                    // 1: header_len
-                    .arg(0u64)                     // 2: nonce_base
-                    .arg(actual_work_size as u32)  // 3: nonce_count
-                    .arg(&scratchpad_buf)          // 4: scratchpad_pool
-                    .arg(&s4_out)                  // 5: s4_out
+                    .arg(&header_buf) // 0: header
+                    .arg(80u32) // 1: header_len
+                    .arg(0u64) // 2: nonce_base
+                    .arg(actual_work_size as u32) // 3: nonce_count
+                    .arg(&scratchpad_buf) // 4: scratchpad_pool
+                    .arg(&s4_out) // 5: s4_out
                     .build()
                     .map_err(|e| anyhow::anyhow!("s4 kernel build failed: {e}"))?;
 
-                println!(
-                    "gpu_gcn_s4_mode enabled — GPU stages 1-4, CPU does NPU+fusion+target",
-                );
+                println!("gpu_gcn_s4_mode enabled — GPU stages 1-4, CPU does NPU+fusion+target",);
                 (Some(s4k), Some(s4_out))
             } else {
                 (None, None)
@@ -694,26 +729,27 @@ pub mod opencl_deeksha {
 
             // Stage output buffer: 32 + 64 + 64 + 64 + 64 + 32 = 320 bytes
             let q = self.pro_que.queue().clone();
-            let stage_buf = Buffer::<u8>::builder()
-                .queue(q).len(320).build()?;
+            let stage_buf = Buffer::<u8>::builder().queue(q).len(320).build()?;
 
             // Build and run debug kernel (single work item)
-            let debug_kernel = self.pro_que
+            let debug_kernel = self
+                .pro_que
                 .kernel_builder("ekam_deeksha_debug")
-                .arg(&self.header_buf)              // 0: header
-                .arg(header_bytes.len() as u32)     // 1: header_len
-                .arg(test_nonce)                    // 2: nonce
-                .arg(&self.scratchpad_buf)           // 3: scratchpad_pool
-                .arg(&stage_buf)                     // 4: stage_out
-                .arg(&self.npu_weights)              // 5
-                .arg(&self.npu_biases)               // 6
-                .arg(&self.npu_scales)               // 7
-                .arg(&self.npu_meta)                 // 8
+                .arg(&self.header_buf) // 0: header
+                .arg(header_bytes.len() as u32) // 1: header_len
+                .arg(test_nonce) // 2: nonce
+                .arg(&self.scratchpad_buf) // 3: scratchpad_pool
+                .arg(&stage_buf) // 4: stage_out
+                .arg(&self.npu_weights) // 5
+                .arg(&self.npu_biases) // 6
+                .arg(&self.npu_scales) // 7
+                .arg(&self.npu_meta) // 8
                 .build()
                 .map_err(|e| anyhow::anyhow!("debug kernel build: {e}"))?;
 
             unsafe {
-                debug_kernel.cmd()
+                debug_kernel
+                    .cmd()
                     .global_work_size(1)
                     .local_work_size(1)
                     .enq()?;
@@ -723,10 +759,10 @@ pub mod opencl_deeksha {
             stage_buf.read(&mut gpu).enq()?;
 
             // CPU computation
-            use zion_cosmic_harmony::algorithms_opt::{
-                keccak256_opt, sha3_512_opt, golden_matrix_opt, cosmic_fusion_opt_rounds,
-            };
             use zion_cosmic_harmony::algorithms_npu::{epoch_from_height, npu_mixing_step_epoch};
+            use zion_cosmic_harmony::algorithms_opt::{
+                cosmic_fusion_opt_rounds, golden_matrix_opt, keccak256_opt, sha3_512_opt,
+            };
             use zion_cosmic_harmony::scratchpad_ekam::memory_hard_transform_ekam_light_v2;
 
             let mut input = [0u8; 88];
@@ -745,12 +781,12 @@ pub mod opencl_deeksha {
 
             // Compare each stage
             let stages: [(&str, &[u8], &[u8]); 6] = [
-                ("s1_keccak256", &gpu[0..32],    &cpu_s1.data),
-                ("s2_sha3_512",  &gpu[32..96],   &cpu_s2.data),
-                ("s3_golden",    &gpu[96..160],  &cpu_s3.data),
-                ("s4_memhard",   &gpu[160..224], &cpu_s4.data),
-                ("s5_npu",       &gpu[224..288], &cpu_s5),
-                ("s6_fusion",    &gpu[288..320], &cpu_hash.data),
+                ("s1_keccak256", &gpu[0..32], &cpu_s1.data),
+                ("s2_sha3_512", &gpu[32..96], &cpu_s2.data),
+                ("s3_golden", &gpu[96..160], &cpu_s3.data),
+                ("s4_memhard", &gpu[160..224], &cpu_s4.data),
+                ("s5_npu", &gpu[224..288], &cpu_s5),
+                ("s6_fusion", &gpu[288..320], &cpu_hash.data),
             ];
 
             let mut all_ok = true;
@@ -768,8 +804,11 @@ pub mod opencl_deeksha {
             }
 
             if all_ok {
-                println!("SELF_TEST gpu_hash={} cpu_hash={} MATCH",
-                    hex(&gpu[288..320]), hex(&cpu_hash.data));
+                println!(
+                    "SELF_TEST gpu_hash={} cpu_hash={} MATCH",
+                    hex(&gpu[288..320]),
+                    hex(&cpu_hash.data)
+                );
             }
             println!("=== GPU SELF-TEST END ===");
             Ok(())
@@ -778,10 +817,10 @@ pub mod opencl_deeksha {
         /// Run a full pipeline self-test at a specific epoch.
         /// Re-uses current NPU buffers (must be called after they are updated).
         fn self_test_at_epoch(&self, epoch: u64) -> Result<()> {
-            use zion_cosmic_harmony::algorithms_opt::{
-                keccak256_opt, sha3_512_opt, golden_matrix_opt, cosmic_fusion_opt_rounds,
-            };
             use zion_cosmic_harmony::algorithms_npu::npu_mixing_step_epoch;
+            use zion_cosmic_harmony::algorithms_opt::{
+                cosmic_fusion_opt_rounds, golden_matrix_opt, keccak256_opt, sha3_512_opt,
+            };
             use zion_cosmic_harmony::scratchpad_ekam::memory_hard_transform_ekam_light_v2;
 
             println!("=== GPU EPOCH SELF-TEST epoch={} ===", epoch);
@@ -799,10 +838,10 @@ pub mod opencl_deeksha {
             self.header_buf.write(&header_bytes[..]).enq()?;
 
             let q = self.pro_que.queue().clone();
-            let stage_buf = Buffer::<u8>::builder()
-                .queue(q).len(320).build()?;
+            let stage_buf = Buffer::<u8>::builder().queue(q).len(320).build()?;
 
-            let debug_kernel = self.pro_que
+            let debug_kernel = self
+                .pro_que
                 .kernel_builder("ekam_deeksha_debug")
                 .arg(&self.header_buf)
                 .arg(header_bytes.len() as u32)
@@ -817,7 +856,8 @@ pub mod opencl_deeksha {
                 .map_err(|e| anyhow::anyhow!("debug kernel build: {e}"))?;
 
             unsafe {
-                debug_kernel.cmd()
+                debug_kernel
+                    .cmd()
                     .global_work_size(1)
                     .local_work_size(1)
                     .enq()?;
@@ -841,18 +881,23 @@ pub mod opencl_deeksha {
             let hex = |b: &[u8]| -> String { b.iter().map(|x| format!("{:02x}", x)).collect() };
 
             let stages: [(&str, &[u8], &[u8]); 6] = [
-                ("s1_keccak256", &gpu[0..32],    &cpu_s1.data),
-                ("s2_sha3_512",  &gpu[32..96],   &cpu_s2.data),
-                ("s3_golden",    &gpu[96..160],  &cpu_s3.data),
-                ("s4_memhard",   &gpu[160..224], &cpu_s4.data),
-                ("s5_npu",       &gpu[224..288], &cpu_s5),
-                ("s6_fusion",    &gpu[288..320], &cpu_hash.data),
+                ("s1_keccak256", &gpu[0..32], &cpu_s1.data),
+                ("s2_sha3_512", &gpu[32..96], &cpu_s2.data),
+                ("s3_golden", &gpu[96..160], &cpu_s3.data),
+                ("s4_memhard", &gpu[160..224], &cpu_s4.data),
+                ("s5_npu", &gpu[224..288], &cpu_s5),
+                ("s6_fusion", &gpu[288..320], &cpu_hash.data),
             ];
 
             let mut all_ok = true;
             for (name, g, c) in &stages {
                 let ok = *g == *c;
-                println!("EPOCH_TEST e={} {}={}", epoch, name, if ok { "OK" } else { "FAIL" });
+                println!(
+                    "EPOCH_TEST e={} {}={}",
+                    epoch,
+                    name,
+                    if ok { "OK" } else { "FAIL" }
+                );
                 if !ok {
                     all_ok = false;
                     let glen = g.len().min(32);
@@ -864,7 +909,11 @@ pub mod opencl_deeksha {
             }
 
             if all_ok {
-                println!("EPOCH_TEST e={} MATCH gpu_hash={}", epoch, hex(&gpu[288..320]));
+                println!(
+                    "EPOCH_TEST e={} MATCH gpu_hash={}",
+                    epoch,
+                    hex(&gpu[288..320])
+                );
                 Ok(())
             } else {
                 anyhow::bail!("GPU-CPU mismatch at epoch {}", epoch)
@@ -882,9 +931,13 @@ pub mod opencl_deeksha {
             use zion_cosmic_harmony::algorithms_npu::npu_mixing_step_epoch;
             use zion_cosmic_harmony::algorithms_opt::cosmic_fusion_opt_rounds;
 
-            let s4_kernel = self.s4_kernel.as_ref()
+            let s4_kernel = self
+                .s4_kernel
+                .as_ref()
                 .ok_or_else(|| anyhow::anyhow!("s4 kernel not initialized"))?;
-            let s4_out_buf = self.s4_out_buf.as_ref()
+            let s4_out_buf = self
+                .s4_out_buf
+                .as_ref()
                 .ok_or_else(|| anyhow::anyhow!("s4 output buffer not initialized"))?;
 
             let header_bytes = header.to_bytes();
@@ -908,7 +961,8 @@ pub mod opencl_deeksha {
                 s4_kernel.set_arg(3, chunk as u32)?;
 
                 unsafe {
-                    s4_kernel.cmd()
+                    s4_kernel
+                        .cmd()
                         .global_work_size(global_size)
                         .local_work_size(local_size)
                         .enq()?;
@@ -960,8 +1014,10 @@ pub mod opencl_deeksha {
             self.header_buf.write(&header_bytes[..]).enq()?;
 
             let target_u32 = u32::from_be_bytes([
-                target.bytes[0], target.bytes[1],
-                target.bytes[2], target.bytes[3],
+                target.bytes[0],
+                target.bytes[1],
+                target.bytes[2],
+                target.bytes[3],
             ]);
 
             let mut all_solutions = Vec::new();
@@ -983,7 +1039,8 @@ pub mod opencl_deeksha {
                 self.kernel.set_arg(5, target_u32)?;
 
                 unsafe {
-                    self.kernel.cmd()
+                    self.kernel
+                        .cmd()
                         .global_work_size(global_size)
                         .local_work_size(local_size)
                         .enq()?;
@@ -1034,7 +1091,8 @@ pub mod opencl_deeksha {
 
             // If topology changed max dimension, recompile kernel for optimal register usage
             if new_max_dim != self.current_npu_max_dim {
-                let build_opts = full_build_opts(&self.device_name_cached, new_max_dim, self.local_work_size);
+                let build_opts =
+                    full_build_opts(&self.device_name_cached, new_max_dim, self.local_work_size);
                 println!(
                     "gpu_opencl_recompile epoch={} npu_max_dim={}->{} opts=\"{}\"",
                     epoch, self.current_npu_max_dim, new_max_dim, build_opts
@@ -1055,16 +1113,13 @@ pub mod opencl_deeksha {
 
                 // Reallocate ALL buffers on new ProQue
                 let q = self.pro_que.queue().clone();
-                self.header_buf = Buffer::<u8>::builder()
-                    .queue(q.clone()).len(128).build()?;
+                self.header_buf = Buffer::<u8>::builder().queue(q.clone()).len(128).build()?;
                 self.scratchpad_buf = Buffer::<u8>::builder()
                     .queue(q.clone())
                     .len(self.work_size * SCRATCHPAD_BYTES)
                     .build()?;
-                self.result_nonce_buf = Buffer::<u64>::builder()
-                    .queue(q.clone()).len(1).build()?;
-                self.result_hash_buf = Buffer::<u8>::builder()
-                    .queue(q.clone()).len(32).build()?;
+                self.result_nonce_buf = Buffer::<u64>::builder().queue(q.clone()).len(1).build()?;
+                self.result_hash_buf = Buffer::<u8>::builder().queue(q.clone()).len(32).build()?;
 
                 // Rebuild s4 kernel/buffer if GCN mode
                 if self.is_gcn {
@@ -1072,16 +1127,18 @@ pub mod opencl_deeksha {
                         .queue(q.clone())
                         .len(self.work_size * 64)
                         .build()?;
-                    self.s4_kernel = Some(self.pro_que
-                        .kernel_builder(opencl_kernel::EKAM_DEEKSHA_S4_KERNEL_NAME)
-                        .arg(&self.header_buf)
-                        .arg(80u32)
-                        .arg(0u64)
-                        .arg(self.work_size as u32)
-                        .arg(&self.scratchpad_buf)
-                        .arg(&s4_out)
-                        .build()
-                        .map_err(|e| anyhow::anyhow!("s4 kernel rebuild failed: {e}"))?);
+                    self.s4_kernel = Some(
+                        self.pro_que
+                            .kernel_builder(opencl_kernel::EKAM_DEEKSHA_S4_KERNEL_NAME)
+                            .arg(&self.header_buf)
+                            .arg(80u32)
+                            .arg(0u64)
+                            .arg(self.work_size as u32)
+                            .arg(&self.scratchpad_buf)
+                            .arg(&s4_out)
+                            .build()
+                            .map_err(|e| anyhow::anyhow!("s4 kernel rebuild failed: {e}"))?,
+                    );
                     self.s4_out_buf = Some(s4_out);
                 }
             }
@@ -1089,20 +1146,29 @@ pub mod opencl_deeksha {
             // Reallocate NPU buffers (topology-dependent sizes)
             let q = self.pro_que.queue().clone();
             self.npu_weights = Buffer::<i8>::builder()
-                .queue(q.clone()).len(packed.weights.len().max(1))
-                .copy_host_slice(&packed.weights).build()?;
+                .queue(q.clone())
+                .len(packed.weights.len().max(1))
+                .copy_host_slice(&packed.weights)
+                .build()?;
             self.npu_biases = Buffer::<i8>::builder()
-                .queue(q.clone()).len(packed.biases.len().max(1))
-                .copy_host_slice(&packed.biases).build()?;
+                .queue(q.clone())
+                .len(packed.biases.len().max(1))
+                .copy_host_slice(&packed.biases)
+                .build()?;
             self.npu_scales = Buffer::<i16>::builder()
-                .queue(q.clone()).len(packed.scales.len().max(1))
-                .copy_host_slice(&packed.scales).build()?;
+                .queue(q.clone())
+                .len(packed.scales.len().max(1))
+                .copy_host_slice(&packed.scales)
+                .build()?;
             self.npu_meta = Buffer::<u32>::builder()
-                .queue(q.clone()).len(packed.meta.len())
-                .copy_host_slice(&packed.meta).build()?;
+                .queue(q.clone())
+                .len(packed.meta.len())
+                .copy_host_slice(&packed.meta)
+                .build()?;
 
             // Rebuild kernel with current buffers
-            self.kernel = self.pro_que
+            self.kernel = self
+                .pro_que
                 .kernel_builder(opencl_kernel::EKAM_DEEKSHA_KERNEL_NAME)
                 .arg(&self.header_buf)
                 .arg(80u32)
@@ -1170,12 +1236,7 @@ pub mod opencl_deeksha {
             let mut nonce_start = 0u64;
 
             while start.elapsed().as_secs_f64() < secs {
-                let result = self.mine_batch(
-                    header,
-                    target,
-                    nonce_start,
-                    self.work_size as u64,
-                )?;
+                let result = self.mine_batch(header, target, nonce_start, self.work_size as u64)?;
                 total_hashes += result.nonces_tested;
                 nonce_start = nonce_start.wrapping_add(self.work_size as u64);
             }
@@ -1212,15 +1273,15 @@ pub mod cuda_deeksha {
         work_size: usize,
         device_name_cached: String,
         // Pre-allocated GPU buffers
-        header_buf:     CudaSlice<u8>,
+        header_buf: CudaSlice<u8>,
         scratchpad_buf: CudaSlice<u8>,
-        result_nonce:   CudaSlice<u64>,
-        result_hash:    CudaSlice<u8>,
+        result_nonce: CudaSlice<u64>,
+        result_hash: CudaSlice<u8>,
         // NPU packed weight buffers (variable topology)
         npu_weights: CudaSlice<i8>,
-        npu_biases:  CudaSlice<i8>,
-        npu_scales:  CudaSlice<i16>,
-        npu_meta:    CudaSlice<u32>,
+        npu_biases: CudaSlice<i8>,
+        npu_scales: CudaSlice<i16>,
+        npu_meta: CudaSlice<u32>,
         current_epoch: u64,
     }
 
@@ -1231,24 +1292,33 @@ pub mod cuda_deeksha {
     //  Deep:       w=12288 b=192 s=192  (3 layers: 64→64→64→64)
     const MAX_NPU_WEIGHTS: usize = 32768;
     const MAX_NPU_BIASES: usize = 320;
-    const MAX_NPU_SCALES: usize = 320;  // i16 count
-    const MAX_NPU_META: usize = 8;      // u32 count (1 + 2*max_layers)
+    const MAX_NPU_SCALES: usize = 320; // i16 count
+    const MAX_NPU_META: usize = 8; // u32 count (1 + 2*max_layers)
 
     impl CudaDeekshaMiner {
         pub fn new(work_size: usize) -> Result<Self> {
-            let dev = CudaDevice::new(0)
-                .map_err(|e| anyhow::anyhow!("CUDA device init failed: {e}"))?;
+            let dev =
+                CudaDevice::new(0).map_err(|e| anyhow::anyhow!("CUDA device init failed: {e}"))?;
 
-            let device_name = dev.name()
+            let device_name = dev
+                .name()
                 .unwrap_or_else(|_| "unknown CUDA device".to_string());
 
             // Compile PTX with fast-math (integer-safe; helps sqrtf in NPU LayerNorm)
-            let ptx = compile_ptx_with_opts(CUDA_KERNEL_SRC, CompileOptions {
-                options: vec!["--use_fast_math".to_string()],
-                ..Default::default()
-            }).map_err(|e| anyhow::anyhow!("NVRTC compile failed: {e}"))?;
-            dev.load_ptx(ptx, "deeksha", &["deeksha_mine", "ekam_deeksha_mine", "ekam_deeksha_debug"])
-                .map_err(|e| anyhow::anyhow!("PTX load failed: {e}"))?;
+            let ptx = compile_ptx_with_opts(
+                CUDA_KERNEL_SRC,
+                CompileOptions {
+                    options: vec!["--use_fast_math".to_string()],
+                    ..Default::default()
+                },
+            )
+            .map_err(|e| anyhow::anyhow!("NVRTC compile failed: {e}"))?;
+            dev.load_ptx(
+                ptx,
+                "deeksha",
+                &["deeksha_mine", "ekam_deeksha_mine", "ekam_deeksha_debug"],
+            )
+            .map_err(|e| anyhow::anyhow!("PTX load failed: {e}"))?;
 
             // Conservative work size cap
             let work_cap = std::env::var("ZION_CUDA_WORK_CAP")
@@ -1259,13 +1329,17 @@ pub mod cuda_deeksha {
             let actual_work_size = work_size.min(work_cap).max(64);
 
             // Allocate fixed buffers
-            let header_buf = dev.alloc_zeros::<u8>(80)
+            let header_buf = dev
+                .alloc_zeros::<u8>(80)
                 .map_err(|e| anyhow::anyhow!("header alloc: {e}"))?;
-            let scratchpad_buf = dev.alloc_zeros::<u8>(actual_work_size * SCRATCHPAD_BYTES)
+            let scratchpad_buf = dev
+                .alloc_zeros::<u8>(actual_work_size * SCRATCHPAD_BYTES)
                 .map_err(|e| anyhow::anyhow!("scratchpad alloc: {e}"))?;
-            let result_nonce = dev.htod_copy(vec![SENTINEL])
+            let result_nonce = dev
+                .htod_copy(vec![SENTINEL])
                 .map_err(|e| anyhow::anyhow!("result_nonce alloc: {e}"))?;
-            let result_hash = dev.alloc_zeros::<u8>(32)
+            let result_hash = dev
+                .alloc_zeros::<u8>(32)
                 .map_err(|e| anyhow::anyhow!("result_hash alloc: {e}"))?;
 
             // NPU packed buffers — allocate max size, upload epoch 0 weights
@@ -1274,22 +1348,26 @@ pub mod cuda_deeksha {
 
             let mut w_padded = packed.weights;
             w_padded.resize(MAX_NPU_WEIGHTS, 0);
-            let npu_weights = dev.htod_copy(w_padded)
+            let npu_weights = dev
+                .htod_copy(w_padded)
                 .map_err(|e| anyhow::anyhow!("npu_weights alloc: {e}"))?;
 
             let mut b_padded = packed.biases;
             b_padded.resize(MAX_NPU_BIASES, 0);
-            let npu_biases = dev.htod_copy(b_padded)
+            let npu_biases = dev
+                .htod_copy(b_padded)
                 .map_err(|e| anyhow::anyhow!("npu_biases alloc: {e}"))?;
 
             let mut s_padded = packed.scales;
             s_padded.resize(MAX_NPU_SCALES, 0);
-            let npu_scales = dev.htod_copy(s_padded)
+            let npu_scales = dev
+                .htod_copy(s_padded)
                 .map_err(|e| anyhow::anyhow!("npu_scales alloc: {e}"))?;
 
             let mut m_padded = packed.meta;
             m_padded.resize(MAX_NPU_META, 0);
-            let npu_meta = dev.htod_copy(m_padded)
+            let npu_meta = dev
+                .htod_copy(m_padded)
                 .map_err(|e| anyhow::anyhow!("npu_meta alloc: {e}"))?;
 
             println!(
@@ -1334,26 +1412,33 @@ pub mod cuda_deeksha {
 
             let mut w_padded = packed.weights;
             w_padded.resize(MAX_NPU_WEIGHTS, 0);
-            self.dev.htod_sync_copy_into(&w_padded, &mut self.npu_weights)
+            self.dev
+                .htod_sync_copy_into(&w_padded, &mut self.npu_weights)
                 .map_err(|e| anyhow::anyhow!("npu_weights update: {e}"))?;
 
             let mut b_padded = packed.biases;
             b_padded.resize(MAX_NPU_BIASES, 0);
-            self.dev.htod_sync_copy_into(&b_padded, &mut self.npu_biases)
+            self.dev
+                .htod_sync_copy_into(&b_padded, &mut self.npu_biases)
                 .map_err(|e| anyhow::anyhow!("npu_biases update: {e}"))?;
 
             let mut s_padded = packed.scales;
             s_padded.resize(MAX_NPU_SCALES, 0);
-            self.dev.htod_sync_copy_into(&s_padded, &mut self.npu_scales)
+            self.dev
+                .htod_sync_copy_into(&s_padded, &mut self.npu_scales)
                 .map_err(|e| anyhow::anyhow!("npu_scales update: {e}"))?;
 
             let mut m_padded = packed.meta;
             m_padded.resize(MAX_NPU_META, 0);
-            self.dev.htod_sync_copy_into(&m_padded, &mut self.npu_meta)
+            self.dev
+                .htod_sync_copy_into(&m_padded, &mut self.npu_meta)
                 .map_err(|e| anyhow::anyhow!("npu_meta update: {e}"))?;
 
             let topo = zion_cosmic_harmony::algorithms_npu::MlpTopology::for_epoch(epoch);
-            println!("gpu_cuda_npu_epoch_update epoch={} height={} topology={:?}", epoch, height, topo);
+            println!(
+                "gpu_cuda_npu_epoch_update epoch={} height={} topology={:?}",
+                epoch, height, topo
+            );
             self.current_epoch = epoch;
             Ok(())
         }
@@ -1366,13 +1451,16 @@ pub mod cuda_deeksha {
             batch_size: u64,
         ) -> Result<GpuBatchResult> {
             let header_bytes = header.to_bytes();
-            self.dev.htod_sync_copy_into(&header_bytes[..], &mut self.header_buf)
+            self.dev
+                .htod_sync_copy_into(&header_bytes[..], &mut self.header_buf)
                 .map_err(|e| anyhow::anyhow!("header upload: {e}"))?;
 
             // Target: LE u32 from first 4 bytes of target
             let target_u32 = u32::from_le_bytes([
-                target.bytes[0], target.bytes[1],
-                target.bytes[2], target.bytes[3],
+                target.bytes[0],
+                target.bytes[1],
+                target.bytes[2],
+                target.bytes[3],
             ]);
 
             let mut all_solutions = Vec::new();
@@ -1380,7 +1468,9 @@ pub mod cuda_deeksha {
             let mut current_nonce = nonce_start;
             let mut left = batch_size;
 
-            let func = self.dev.get_func("deeksha", "ekam_deeksha_mine")
+            let func = self
+                .dev
+                .get_func("deeksha", "ekam_deeksha_mine")
                 .ok_or_else(|| anyhow::anyhow!("ekam_deeksha_mine kernel not found"))?;
 
             let threads_per_block: u32 = std::env::var("ZION_CUDA_TPB")
@@ -1398,32 +1488,42 @@ pub mod cuda_deeksha {
                 };
 
                 // Reset sentinel
-                self.dev.htod_sync_copy_into(&[SENTINEL], &mut self.result_nonce)
+                self.dev
+                    .htod_sync_copy_into(&[SENTINEL], &mut self.result_nonce)
                     .map_err(|e| anyhow::anyhow!("reset sentinel: {e}"))?;
 
                 unsafe {
-                    func.clone().launch(cfg, (
-                        &self.header_buf,
-                        header_bytes.len() as u32,
-                        current_nonce,
-                        chunk,
-                        &self.scratchpad_buf,
-                        target_u32,
-                        &mut self.result_nonce,
-                        &mut self.result_hash,
-                        &self.npu_weights,
-                        &self.npu_biases,
-                        &self.npu_scales,
-                        &self.npu_meta,
-                    )).map_err(|e| anyhow::anyhow!("kernel launch: {e}"))?;
+                    func.clone()
+                        .launch(
+                            cfg,
+                            (
+                                &self.header_buf,
+                                header_bytes.len() as u32,
+                                current_nonce,
+                                chunk,
+                                &self.scratchpad_buf,
+                                target_u32,
+                                &mut self.result_nonce,
+                                &mut self.result_hash,
+                                &self.npu_weights,
+                                &self.npu_biases,
+                                &self.npu_scales,
+                                &self.npu_meta,
+                            ),
+                        )
+                        .map_err(|e| anyhow::anyhow!("kernel launch: {e}"))?;
                 }
 
                 // Sync and read result
-                let nonce_result = self.dev.dtoh_sync_copy(&self.result_nonce)
+                let nonce_result = self
+                    .dev
+                    .dtoh_sync_copy(&self.result_nonce)
                     .map_err(|e| anyhow::anyhow!("read result_nonce: {e}"))?;
 
                 if nonce_result[0] != SENTINEL {
-                    let hash_result = self.dev.dtoh_sync_copy(&self.result_hash)
+                    let hash_result = self
+                        .dev
+                        .dtoh_sync_copy(&self.result_hash)
                         .map_err(|e| anyhow::anyhow!("read result_hash: {e}"))?;
                     let mut hash = [0u8; 32];
                     hash.copy_from_slice(&hash_result[..32]);
@@ -1457,12 +1557,7 @@ pub mod cuda_deeksha {
             let mut nonce_start = 0u64;
 
             while start.elapsed().as_secs_f64() < secs {
-                let result = self.mine_batch(
-                    header,
-                    target,
-                    nonce_start,
-                    self.work_size as u64,
-                )?;
+                let result = self.mine_batch(header, target, nonce_start, self.work_size as u64)?;
                 total_hashes += result.nonces_tested;
                 nonce_start = nonce_start.wrapping_add(self.work_size as u64);
             }
@@ -1512,8 +1607,8 @@ pub mod metal_deeksha {
 
     impl MetalDeekshaMiner {
         pub fn new(work_size: usize) -> Result<Self> {
-            let device = Device::system_default()
-                .ok_or_else(|| anyhow::anyhow!("no Metal device found"))?;
+            let device =
+                Device::system_default().ok_or_else(|| anyhow::anyhow!("no Metal device found"))?;
             let device_name = device.name().to_string();
             let queue = device.new_command_queue();
 
@@ -1539,11 +1634,15 @@ pub mod metal_deeksha {
             // On M2+/Pro/Max larger threadgroups help hide latency.
             let threads_per_tg = if device_name.contains("M1") {
                 64
-            } else if device_name.contains("Pro") || device_name.contains("Max") || device_name.contains("Ultra") {
+            } else if device_name.contains("Pro")
+                || device_name.contains("Max")
+                || device_name.contains("Ultra")
+            {
                 256
             } else {
                 128
-            }.min(max_tpg);
+            }
+            .min(max_tpg);
 
             // Auto-cap batch_size based on device memory.
             // Each thread needs 256 KiB scratchpad.
@@ -1551,9 +1650,9 @@ pub mod metal_deeksha {
             // Pro/Max/Ultra (16-192 GB): can use more.
             let recommended = device.recommended_max_working_set_size();
             let pct = if recommended > 12_000_000_000 {
-                75  // Pro/Max/Ultra: plenty of GPU memory
+                75 // Pro/Max/Ultra: plenty of GPU memory
             } else {
-                58  // M1/M2 base: avoid memory pressure on shared RAM
+                58 // M1/M2 base: avoid memory pressure on shared RAM
             };
             let max_scratch_bytes = (recommended / 100) * pct;
             let max_threads_by_mem = (max_scratch_bytes / 262_144) as usize;
@@ -1564,10 +1663,10 @@ pub mod metal_deeksha {
 
             // Core buffers
             let header_buf = device.new_buffer(80, opts);
-            let params_buf = device.new_buffer(12, opts);          // 3 × u32
-            let nonce_base_buf = device.new_buffer(8, opts);       // u64
-            let result_nonce_buf = device.new_buffer(12, opts);    // atomic_uint flag + nonce_lo + nonce_hi
-            let result_hash_buf = device.new_buffer(32, opts);     // hash output
+            let params_buf = device.new_buffer(12, opts); // 3 × u32
+            let nonce_base_buf = device.new_buffer(8, opts); // u64
+            let result_nonce_buf = device.new_buffer(12, opts); // atomic_uint flag + nonce_lo + nonce_hi
+            let result_hash_buf = device.new_buffer(32, opts); // hash output
 
             // Scratchpad: batch_size × 256 KiB per thread
             let scratch_bytes = (batch_size as u64) * 262_144u64;
@@ -1608,7 +1707,10 @@ pub mod metal_deeksha {
 
             println!(
                 "gpu_metal_init device=\"{}\" batch_size={} threads_per_tg={} scratchpad_mib={}",
-                device_name, batch_size, threads_per_tg, scratch_bytes / (1024 * 1024)
+                device_name,
+                batch_size,
+                threads_per_tg,
+                scratch_bytes / (1024 * 1024)
             );
 
             Ok(Self {
@@ -1674,8 +1776,10 @@ pub mod metal_deeksha {
                 return None;
             }
             // Nonce stored as two u32 at offsets [4..8] and [8..12]
-            let nonce_lo = unsafe { *(self.result_nonce_buf.contents().add(4) as *const u32) } as u64;
-            let nonce_hi = unsafe { *(self.result_nonce_buf.contents().add(8) as *const u32) } as u64;
+            let nonce_lo =
+                unsafe { *(self.result_nonce_buf.contents().add(4) as *const u32) } as u64;
+            let nonce_hi =
+                unsafe { *(self.result_nonce_buf.contents().add(8) as *const u32) } as u64;
             let nonce = nonce_lo | (nonce_hi << 32);
             let mut hash = [0u8; 32];
             unsafe {
@@ -1704,18 +1808,29 @@ pub mod metal_deeksha {
             let packed = zion_cosmic_harmony::algorithms_npu::chv4_npu_weights_packed(epoch);
             let opts = MTLResourceOptions::StorageModeShared;
             self.npu_weights_buf = self.device.new_buffer_with_data(
-                packed.weights.as_ptr() as *const _, packed.weights.len() as u64, opts,
+                packed.weights.as_ptr() as *const _,
+                packed.weights.len() as u64,
+                opts,
             );
             self.npu_biases_buf = self.device.new_buffer_with_data(
-                packed.biases.as_ptr() as *const _, packed.biases.len() as u64, opts,
+                packed.biases.as_ptr() as *const _,
+                packed.biases.len() as u64,
+                opts,
             );
             self.npu_scales_buf = self.device.new_buffer_with_data(
-                packed.scales.as_ptr() as *const _, (packed.scales.len() * 2) as u64, opts,
+                packed.scales.as_ptr() as *const _,
+                (packed.scales.len() * 2) as u64,
+                opts,
             );
             self.npu_meta_buf = self.device.new_buffer_with_data(
-                packed.meta.as_ptr() as *const _, (packed.meta.len() * 4) as u64, opts,
+                packed.meta.as_ptr() as *const _,
+                (packed.meta.len() * 4) as u64,
+                opts,
             );
-            println!("gpu_npu_epoch_update epoch={} height={} topology={:?}", epoch, height, topology);
+            println!(
+                "gpu_npu_epoch_update epoch={} height={} topology={:?}",
+                epoch, height, topology
+            );
             self.current_epoch = epoch;
             Ok(())
         }
@@ -1732,12 +1847,19 @@ pub mod metal_deeksha {
             // Write header
             unsafe {
                 let ptr = self.header_buf.contents() as *mut u8;
-                std::ptr::copy_nonoverlapping(header_bytes.as_ptr(), ptr, header_bytes.len().min(80));
+                std::ptr::copy_nonoverlapping(
+                    header_bytes.as_ptr(),
+                    ptr,
+                    header_bytes.len().min(80),
+                );
             }
 
             // Write params: [header_len, nonce_count, target_u32]
             let target_u32 = u32::from_be_bytes([
-                target.bytes[0], target.bytes[1], target.bytes[2], target.bytes[3],
+                target.bytes[0],
+                target.bytes[1],
+                target.bytes[2],
+                target.bytes[3],
             ]);
 
             let mut all_solutions = Vec::new();
@@ -1751,9 +1873,9 @@ pub mod metal_deeksha {
                 // Update params for this chunk
                 unsafe {
                     let ptr = self.params_buf.contents() as *mut u32;
-                    *ptr = 80u32;                // header_len
-                    *ptr.add(1) = chunk as u32;  // nonce_count
-                    *ptr.add(2) = target_u32;    // target
+                    *ptr = 80u32; // header_len
+                    *ptr.add(1) = chunk as u32; // nonce_count
+                    *ptr.add(2) = target_u32; // target
                 }
 
                 self.dispatch_batch(current_nonce, chunk);
@@ -1809,7 +1931,11 @@ pub mod metal_deeksha {
             }
 
             let elapsed = start.elapsed().as_secs_f64();
-            let khps = if elapsed > 0.0 { total as f64 / elapsed / 1_000.0 } else { 0.0 };
+            let khps = if elapsed > 0.0 {
+                total as f64 / elapsed / 1_000.0
+            } else {
+                0.0
+            };
             Ok((total, elapsed, khps))
         }
     }
@@ -1838,7 +1964,9 @@ pub fn detect_gpus() -> Vec<String> {
     #[cfg(feature = "gpu-cuda")]
     {
         if let Ok(dev) = cudarc::driver::CudaDevice::new(0) {
-            let name = dev.name().unwrap_or_else(|_| "unknown CUDA device".to_string());
+            let name = dev
+                .name()
+                .unwrap_or_else(|_| "unknown CUDA device".to_string());
             devices.push(format!("cuda:{name}"));
         }
     }
