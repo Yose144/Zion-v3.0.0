@@ -191,7 +191,10 @@ impl ExternalCoin {
             _ => "de",
         };
 
-        Some(format!("{}.{}.herominers.com:{}", hm_region, subdomain, port))
+        Some(format!(
+            "{}.{}.herominers.com:{}",
+            hm_region, subdomain, port
+        ))
     }
 
     /// ZPool endpoints for supported coins.
@@ -381,17 +384,61 @@ impl ProfitEntry {
 /// Values are approximate daily USD revenue per 100 MH/s reference hashrate.
 pub fn fallback_estimates() -> Vec<ProfitEntry> {
     vec![
-        ProfitEntry { coin: ExternalCoin::KAS,  revenue_per_day_usd: 0.85, power_cost_usd: 0.10 },
-        ProfitEntry { coin: ExternalCoin::ETC,  revenue_per_day_usd: 0.60, power_cost_usd: 0.12 },
-        ProfitEntry { coin: ExternalCoin::ALPH, revenue_per_day_usd: 0.55, power_cost_usd: 0.08 },
-        ProfitEntry { coin: ExternalCoin::FLUX, revenue_per_day_usd: 0.50, power_cost_usd: 0.10 },
-        ProfitEntry { coin: ExternalCoin::DCR,  revenue_per_day_usd: 0.45, power_cost_usd: 0.08 },
-        ProfitEntry { coin: ExternalCoin::ERG,  revenue_per_day_usd: 0.40, power_cost_usd: 0.10 },
-        ProfitEntry { coin: ExternalCoin::RVN,  revenue_per_day_usd: 0.35, power_cost_usd: 0.12 },
-        ProfitEntry { coin: ExternalCoin::CLORE,revenue_per_day_usd: 0.30, power_cost_usd: 0.10 },
-        ProfitEntry { coin: ExternalCoin::EVR,  revenue_per_day_usd: 0.20, power_cost_usd: 0.08 },
-        ProfitEntry { coin: ExternalCoin::MEWC, revenue_per_day_usd: 0.15, power_cost_usd: 0.06 },
-        ProfitEntry { coin: ExternalCoin::XMR,  revenue_per_day_usd: 0.12, power_cost_usd: 0.03 },
+        ProfitEntry {
+            coin: ExternalCoin::KAS,
+            revenue_per_day_usd: 0.85,
+            power_cost_usd: 0.10,
+        },
+        ProfitEntry {
+            coin: ExternalCoin::ETC,
+            revenue_per_day_usd: 0.60,
+            power_cost_usd: 0.12,
+        },
+        ProfitEntry {
+            coin: ExternalCoin::ALPH,
+            revenue_per_day_usd: 0.55,
+            power_cost_usd: 0.08,
+        },
+        ProfitEntry {
+            coin: ExternalCoin::FLUX,
+            revenue_per_day_usd: 0.50,
+            power_cost_usd: 0.10,
+        },
+        ProfitEntry {
+            coin: ExternalCoin::DCR,
+            revenue_per_day_usd: 0.45,
+            power_cost_usd: 0.08,
+        },
+        ProfitEntry {
+            coin: ExternalCoin::ERG,
+            revenue_per_day_usd: 0.40,
+            power_cost_usd: 0.10,
+        },
+        ProfitEntry {
+            coin: ExternalCoin::RVN,
+            revenue_per_day_usd: 0.35,
+            power_cost_usd: 0.12,
+        },
+        ProfitEntry {
+            coin: ExternalCoin::CLORE,
+            revenue_per_day_usd: 0.30,
+            power_cost_usd: 0.10,
+        },
+        ProfitEntry {
+            coin: ExternalCoin::EVR,
+            revenue_per_day_usd: 0.20,
+            power_cost_usd: 0.08,
+        },
+        ProfitEntry {
+            coin: ExternalCoin::MEWC,
+            revenue_per_day_usd: 0.15,
+            power_cost_usd: 0.06,
+        },
+        ProfitEntry {
+            coin: ExternalCoin::XMR,
+            revenue_per_day_usd: 0.12,
+            power_cost_usd: 0.03,
+        },
     ]
 }
 
@@ -485,14 +532,26 @@ mod tests {
     #[test]
     fn from_str_loose_parses_dcr_aliases() {
         assert_eq!(ExternalCoin::from_str_loose("dcr"), Some(ExternalCoin::DCR));
-        assert_eq!(ExternalCoin::from_str_loose("Decred"), Some(ExternalCoin::DCR));
-        assert_eq!(ExternalCoin::from_str_loose("BLAKE3-DCR"), Some(ExternalCoin::DCR));
-        assert_eq!(ExternalCoin::from_str_loose("blake3dcr"), Some(ExternalCoin::DCR));
+        assert_eq!(
+            ExternalCoin::from_str_loose("Decred"),
+            Some(ExternalCoin::DCR)
+        );
+        assert_eq!(
+            ExternalCoin::from_str_loose("BLAKE3-DCR"),
+            Some(ExternalCoin::DCR)
+        );
+        assert_eq!(
+            ExternalCoin::from_str_loose("blake3dcr"),
+            Some(ExternalCoin::DCR)
+        );
     }
 
     #[test]
     fn from_str_loose_parses_others() {
-        assert_eq!(ExternalCoin::from_str_loose("alph"), Some(ExternalCoin::ALPH));
+        assert_eq!(
+            ExternalCoin::from_str_loose("alph"),
+            Some(ExternalCoin::ALPH)
+        );
         assert_eq!(ExternalCoin::from_str_loose("KAS"), Some(ExternalCoin::KAS));
         assert_eq!(ExternalCoin::from_str_loose("xmr"), Some(ExternalCoin::XMR));
         assert_eq!(ExternalCoin::from_str_loose("unknown"), None);
@@ -512,9 +571,21 @@ mod tests {
     #[test]
     fn select_best_coin_picks_highest_profit() {
         let entries = vec![
-            ProfitEntry { coin: ExternalCoin::DCR,  revenue_per_day_usd: 0.45, power_cost_usd: 0.08 },
-            ProfitEntry { coin: ExternalCoin::KAS,  revenue_per_day_usd: 0.85, power_cost_usd: 0.10 },
-            ProfitEntry { coin: ExternalCoin::ALPH, revenue_per_day_usd: 0.55, power_cost_usd: 0.08 },
+            ProfitEntry {
+                coin: ExternalCoin::DCR,
+                revenue_per_day_usd: 0.45,
+                power_cost_usd: 0.08,
+            },
+            ProfitEntry {
+                coin: ExternalCoin::KAS,
+                revenue_per_day_usd: 0.85,
+                power_cost_usd: 0.10,
+            },
+            ProfitEntry {
+                coin: ExternalCoin::ALPH,
+                revenue_per_day_usd: 0.55,
+                power_cost_usd: 0.08,
+            },
         ];
         let best = select_best_coin(&entries, None, 5.0);
         assert_eq!(best, Some(ExternalCoin::KAS));
@@ -523,8 +594,16 @@ mod tests {
     #[test]
     fn select_best_coin_hysteresis_keeps_current() {
         let entries = vec![
-            ProfitEntry { coin: ExternalCoin::DCR,  revenue_per_day_usd: 0.45, power_cost_usd: 0.08 },
-            ProfitEntry { coin: ExternalCoin::ALPH, revenue_per_day_usd: 0.49, power_cost_usd: 0.08 },
+            ProfitEntry {
+                coin: ExternalCoin::DCR,
+                revenue_per_day_usd: 0.45,
+                power_cost_usd: 0.08,
+            },
+            ProfitEntry {
+                coin: ExternalCoin::ALPH,
+                revenue_per_day_usd: 0.49,
+                power_cost_usd: 0.08,
+            },
         ];
         // ALPH is ~10.8% better, but hysteresis is 15% → stay on DCR
         let best = select_best_coin(&entries, Some(ExternalCoin::DCR), 15.0);
@@ -534,8 +613,16 @@ mod tests {
     #[test]
     fn select_best_coin_hysteresis_switches_when_large_gap() {
         let entries = vec![
-            ProfitEntry { coin: ExternalCoin::DCR,  revenue_per_day_usd: 0.30, power_cost_usd: 0.08 },
-            ProfitEntry { coin: ExternalCoin::KAS,  revenue_per_day_usd: 0.85, power_cost_usd: 0.10 },
+            ProfitEntry {
+                coin: ExternalCoin::DCR,
+                revenue_per_day_usd: 0.30,
+                power_cost_usd: 0.08,
+            },
+            ProfitEntry {
+                coin: ExternalCoin::KAS,
+                revenue_per_day_usd: 0.85,
+                power_cost_usd: 0.10,
+            },
         ];
         // KAS is ~240% better → switch even with 15% hysteresis
         let best = select_best_coin(&entries, Some(ExternalCoin::DCR), 15.0);
@@ -546,7 +633,10 @@ mod tests {
     fn fallback_estimates_include_dcr() {
         let estimates = fallback_estimates();
         assert!(estimates.iter().any(|e| e.coin == ExternalCoin::DCR));
-        let dcr = estimates.iter().find(|e| e.coin == ExternalCoin::DCR).unwrap();
+        let dcr = estimates
+            .iter()
+            .find(|e| e.coin == ExternalCoin::DCR)
+            .unwrap();
         assert!(dcr.revenue_per_day_usd > 0.0);
         assert!(dcr.profit_per_day_usd() > 0.0);
     }
@@ -568,25 +658,20 @@ mod tests {
 
     #[test]
     fn nicehash_supported_coin_gets_nh_endpoint() {
-        let pool = ExternalCoin::KAS
-            .best_pool(PoolPreference::NiceHash, "eu");
+        let pool = ExternalCoin::KAS.best_pool(PoolPreference::NiceHash, "eu");
         assert_eq!(pool, "kheavyhash.eu.nicehash.com:9024");
     }
 
     #[test]
     fn nicehash_blake3_coin_falls_back() {
-        let pool = ExternalCoin::DCR
-            .best_pool(PoolPreference::NiceHash, "eu");
+        let pool = ExternalCoin::DCR.best_pool(PoolPreference::NiceHash, "eu");
         assert_eq!(pool, "dcr.2miners.com:3333");
     }
 
     #[test]
     fn profile_for_preference_uses_selected_pool() {
-        let profile = CoinProfile::for_preference(
-            ExternalCoin::KAS,
-            PoolPreference::NiceHash,
-            "eu",
-        );
+        let profile =
+            CoinProfile::for_preference(ExternalCoin::KAS, PoolPreference::NiceHash, "eu");
         assert_eq!(profile.pool_host, "kheavyhash.eu.nicehash.com");
         assert_eq!(profile.pool_port, 9024);
     }

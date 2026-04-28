@@ -86,12 +86,8 @@ pub async fn run(cfg: &Config, cmd: AgentCmd) -> Result<()> {
             ui::print_info("Stopping agent via deploy layer...");
             crate::commands::deploy::stop_service(cfg, "agent").await
         }
-        AgentCmd::Restart => {
-            crate::commands::deploy::restart_service(cfg, "agent").await
-        }
-        AgentCmd::Logs => {
-            crate::commands::deploy::tail_logs(cfg, "agent").await
-        }
+        AgentCmd::Restart => crate::commands::deploy::restart_service(cfg, "agent").await,
+        AgentCmd::Logs => crate::commands::deploy::tail_logs(cfg, "agent").await,
         AgentCmd::Config => {
             ui::print_header("Agent Config");
             ui::print_row("URL", url);
@@ -130,7 +126,10 @@ pub async fn run(cfg: &Config, cmd: AgentCmd) -> Result<()> {
                 ui::print_info("Rebuilding RAG knowledge base index...");
                 let result = agent_rpc::post(url, "rag/index", serde_json::json!({})).await;
                 match result {
-                    Ok(v) => { ui::print_ok("Index rebuilt"); println!("  {}", v); }
+                    Ok(v) => {
+                        ui::print_ok("Index rebuilt");
+                        println!("  {}", v);
+                    }
                     Err(e) => ui::print_warn(&format!("Index failed: {}", e)),
                 }
                 println!();
@@ -138,7 +137,9 @@ pub async fn run(cfg: &Config, cmd: AgentCmd) -> Result<()> {
             }
             RagCmd::Query { question } => {
                 ui::print_header("RAG Query");
-                let result = agent_rpc::post(url, "rag/query", serde_json::json!({ "query": question })).await;
+                let result =
+                    agent_rpc::post(url, "rag/query", serde_json::json!({ "query": question }))
+                        .await;
                 match result {
                     Ok(v) => println!("{}", serde_json::to_string_pretty(&v)?),
                     Err(e) => ui::print_warn(&format!("RAG query failed: {}", e)),

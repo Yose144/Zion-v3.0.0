@@ -170,7 +170,8 @@ impl PropagationStats {
 
     pub fn record_relay(&self, target_count: u64) {
         self.blocks_relayed.fetch_add(1, Ordering::Relaxed);
-        self.relay_attempts.fetch_add(target_count, Ordering::Relaxed);
+        self.relay_attempts
+            .fetch_add(target_count, Ordering::Relaxed);
     }
 
     pub fn record_success(&self) {
@@ -187,7 +188,8 @@ impl PropagationStats {
 
     pub fn record_tx_relay(&self, target_count: u64) {
         self.txs_relayed.fetch_add(1, Ordering::Relaxed);
-        self.tx_relay_attempts.fetch_add(target_count, Ordering::Relaxed);
+        self.tx_relay_attempts
+            .fetch_add(target_count, Ordering::Relaxed);
     }
 
     pub fn record_tx_success(&self) {

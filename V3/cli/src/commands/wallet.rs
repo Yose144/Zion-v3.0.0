@@ -224,7 +224,14 @@ pub async fn run(cfg: &Config, cmd: WalletCmd) -> Result<()> {
             } else {
                 generate_wallet_file()
             };
-            persist_wallet_file(wallet, &out, force, print, set_default, password_env.as_deref())
+            persist_wallet_file(
+                wallet,
+                &out,
+                force,
+                print,
+                set_default,
+                password_env.as_deref(),
+            )
         }
         WalletCmd::ImportMnemonic {
             mnemonic,
@@ -237,7 +244,14 @@ pub async fn run(cfg: &Config, cmd: WalletCmd) -> Result<()> {
         } => {
             ui::print_header("Import Wallet From Mnemonic");
             let wallet = import_mnemonic_wallet_file(&mnemonic, &passphrase)?;
-            persist_wallet_file(wallet, &out, force, print, set_default, password_env.as_deref())
+            persist_wallet_file(
+                wallet,
+                &out,
+                force,
+                print,
+                set_default,
+                password_env.as_deref(),
+            )
         }
         WalletCmd::ImportSecretKey {
             secret_key_hex,
@@ -249,7 +263,14 @@ pub async fn run(cfg: &Config, cmd: WalletCmd) -> Result<()> {
         } => {
             ui::print_header("Import Wallet From Secret Key");
             let wallet = import_secret_key_wallet_file(&secret_key_hex)?;
-            persist_wallet_file(wallet, &out, force, print, set_default, password_env.as_deref())
+            persist_wallet_file(
+                wallet,
+                &out,
+                force,
+                print,
+                set_default,
+                password_env.as_deref(),
+            )
         }
         WalletCmd::Info { wallet } => {
             ui::print_header("Wallet File Info");
@@ -260,7 +281,11 @@ pub async fn run(cfg: &Config, cmd: WalletCmd) -> Result<()> {
             ui::print_row("Public key", &parsed.public_key_hex);
             ui::print_row(
                 "Encrypted",
-                if parsed.encryption.is_some() { "yes" } else { "no" },
+                if parsed.encryption.is_some() {
+                    "yes"
+                } else {
+                    "no"
+                },
             );
             ui::print_row(
                 "Mnemonic stored",
@@ -276,7 +301,10 @@ pub async fn run(cfg: &Config, cmd: WalletCmd) -> Result<()> {
             println!("{}", raw);
             Ok(())
         }
-        WalletCmd::Reveal { wallet, password_env } => {
+        WalletCmd::Reveal {
+            wallet,
+            password_env,
+        } => {
             let parsed = read_wallet_file(&wallet)?;
             let secrets = resolve_wallet_secrets(&parsed, password_env.as_deref())?;
             let reveal = WalletReveal {
@@ -314,10 +342,12 @@ pub async fn run(cfg: &Config, cmd: WalletCmd) -> Result<()> {
                 cfg.node.rpc_port,
                 "getBalance",
                 serde_json::json!({ "address": addr }),
-            ).await;
+            )
+            .await;
             match result {
                 Ok(v) => {
-                    let balance = v["balance_flowers"].as_str()
+                    let balance = v["balance_flowers"]
+                        .as_str()
                         .and_then(|s| s.parse::<f64>().ok())
                         .map(|f| f / 1_000_000.0)
                         .unwrap_or(0.0);
@@ -355,7 +385,8 @@ pub async fn run(cfg: &Config, cmd: WalletCmd) -> Result<()> {
                 cfg.node.rpc_port,
                 "submitTransaction",
                 params,
-            ).await;
+            )
+            .await;
             match result {
                 Ok(v) => {
                     let txid = v["txid"].as_str().unwrap_or("?");
@@ -565,12 +596,7 @@ fn encrypt_wallet_file(mut wallet: WalletFile, password: &str) -> Result<WalletF
     OsRng.fill_bytes(&mut nonce_bytes);
 
     let mut key = [0u8; 32];
-    pbkdf2_hmac::<sha2::Sha256>(
-        password.as_bytes(),
-        &salt,
-        WALLET_KDF_ITERATIONS,
-        &mut key,
-    );
+    pbkdf2_hmac::<sha2::Sha256>(password.as_bytes(), &salt, WALLET_KDF_ITERATIONS, &mut key);
 
     let cipher = Aes256Gcm::new_from_slice(&key)
         .map_err(|error| anyhow!("failed to initialize wallet cipher: {error}"))?;
@@ -590,7 +616,10 @@ fn encrypt_wallet_file(mut wallet: WalletFile, password: &str) -> Result<WalletF
     Ok(wallet)
 }
 
-fn resolve_wallet_secrets(wallet: &WalletFile, password_env: Option<&str>) -> Result<WalletSecretPayload> {
+fn resolve_wallet_secrets(
+    wallet: &WalletFile,
+    password_env: Option<&str>,
+) -> Result<WalletSecretPayload> {
     if let Some(secret_key_hex) = &wallet.secret_key_hex {
         return Ok(WalletSecretPayload {
             secret_key_hex: secret_key_hex.clone(),
@@ -603,9 +632,7 @@ fn resolve_wallet_secrets(wallet: &WalletFile, password_env: Option<&str>) -> Re
         .as_ref()
         .ok_or_else(|| anyhow!("wallet file has neither plaintext nor encrypted secrets"))?;
     let password_env = password_env.ok_or_else(|| {
-        anyhow!(
-            "wallet file is encrypted; pass --password-env <ENV_VAR> to reveal secrets"
-        )
+        anyhow!("wallet file is encrypted; pass --password-env <ENV_VAR> to reveal secrets")
     })?;
     let password = env::var(password_env).with_context(|| {
         format!(
@@ -614,13 +641,19 @@ fn resolve_wallet_secrets(wallet: &WalletFile, password_env: Option<&str>) -> Re
         )
     })?;
     if password.is_empty() {
-        return Err(anyhow!("Environment variable {} is set but empty", password_env));
+        return Err(anyhow!(
+            "Environment variable {} is set but empty",
+            password_env
+        ));
     }
 
     decrypt_wallet_secret_payload(encryption, &password)
 }
 
-fn decrypt_wallet_secret_payload(encryption: &WalletEncryption, password: &str) -> Result<WalletSecretPayload> {
+fn decrypt_wallet_secret_payload(
+    encryption: &WalletEncryption,
+    password: &str,
+) -> Result<WalletSecretPayload> {
     if encryption.algorithm != ENCRYPTION_ALGORITHM {
         return Err(anyhow!(
             "unsupported wallet encryption algorithm: {}",
@@ -691,7 +724,10 @@ mod tests {
         let wallet = generate_wallet_file();
         assert_eq!(wallet.format, "zion_wallet_ed25519");
         assert_eq!(wallet.format_version, 1);
-        assert_eq!(wallet.secret_key_hex.as_deref().unwrap_or_default().len(), 64);
+        assert_eq!(
+            wallet.secret_key_hex.as_deref().unwrap_or_default().len(),
+            64
+        );
         assert_eq!(wallet.public_key_hex.len(), 64);
         assert!(!wallet.mnemonic_present);
         assert!(zion_core::crypto::is_valid_address(&wallet.address));
@@ -699,7 +735,8 @@ mod tests {
 
     #[test]
     fn generated_mnemonic_wallet_has_phrase() {
-        let wallet = generate_mnemonic_wallet_file(24, "").expect("mnemonic wallet should generate");
+        let wallet =
+            generate_mnemonic_wallet_file(24, "").expect("mnemonic wallet should generate");
         assert!(wallet.mnemonic_present);
         assert!(wallet.mnemonic.is_some());
         assert!(zion_core::crypto::is_valid_address(&wallet.address));
@@ -732,8 +769,11 @@ mod tests {
         let env_name = format!("ZION_TEST_WALLET_PASSWORD_REVEAL_{}", std::process::id());
         std::env::set_var(&env_name, "test-password");
 
-        let encrypted = maybe_encrypt_wallet_file(generate_mnemonic_wallet_file(12, "").expect("mnemonic wallet should generate"), Some(&env_name))
-            .expect("wallet encryption should succeed");
+        let encrypted = maybe_encrypt_wallet_file(
+            generate_mnemonic_wallet_file(12, "").expect("mnemonic wallet should generate"),
+            Some(&env_name),
+        )
+        .expect("wallet encryption should succeed");
         let revealed = resolve_wallet_secrets(&encrypted, Some(&env_name))
             .expect("wallet reveal should succeed");
         assert_eq!(revealed.secret_key_hex.len(), 64);
@@ -755,7 +795,8 @@ mod tests {
             .expect("wallet file should be written with parent directories created");
 
         assert!(wallet_path.exists());
-        let content = std::fs::read_to_string(&wallet_path).expect("wallet file should be readable");
+        let content =
+            std::fs::read_to_string(&wallet_path).expect("wallet file should be readable");
         assert_eq!(content, "{}");
 
         let _ = std::fs::remove_dir_all(&temp_dir);

@@ -62,15 +62,16 @@ pub enum WalletError {
 impl std::fmt::Display for WalletError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::InsufficientFunds { available, needed } =>
-                write!(f, "insufficient funds: have {available}, need {needed}"),
+            Self::InsufficientFunds { available, needed } => {
+                write!(f, "insufficient funds: have {available}, need {needed}")
+            }
             Self::NoUtxos => write!(f, "no spendable UTXOs"),
             Self::InvalidAddress(a) => write!(f, "invalid address: {a}"),
-            Self::FeeTooLow { fee, minimum } =>
-                write!(f, "fee {fee} below minimum {minimum}"),
+            Self::FeeTooLow { fee, minimum } => write!(f, "fee {fee} below minimum {minimum}"),
             Self::AmountTooSmall(a) => write!(f, "amount {a} too small"),
-            Self::TooManyRecipients(n) =>
-                write!(f, "too many recipients: {n} (max {MAX_BATCH_RECIPIENTS})"),
+            Self::TooManyRecipients(n) => {
+                write!(f, "too many recipients: {n} (max {MAX_BATCH_RECIPIENTS})")
+            }
             Self::SigningFailed => write!(f, "signing failed"),
         }
     }
@@ -137,7 +138,9 @@ pub fn build_and_sign(
         });
     }
 
-    let target = params.amount.checked_add(params.fee)
+    let target = params
+        .amount
+        .checked_add(params.fee)
         .ok_or(WalletError::InsufficientFunds {
             available: 0,
             needed: u64::MAX,
@@ -193,8 +196,8 @@ pub fn build_and_sign(
     // Sign each input
     let mut key_bytes = signing_key.to_bytes();
     for input in &mut tx.inputs {
-        let sig = crypto::sign_and_zeroize(key_bytes, &tx.id)
-            .map_err(|_| WalletError::SigningFailed)?;
+        let sig =
+            crypto::sign_and_zeroize(key_bytes, &tx.id).map_err(|_| WalletError::SigningFailed)?;
         input.signature = sig.to_vec();
         // Re-derive key for next input (zeroize happens inside sign_and_zeroize)
         key_bytes = signing_key.to_bytes();
@@ -231,7 +234,8 @@ pub fn build_batch_payout(
     }
 
     let total_payout: u64 = recipients.iter().map(|r| r.amount).sum();
-    let target = total_payout.checked_add(fee)
+    let target = total_payout
+        .checked_add(fee)
         .ok_or(WalletError::InsufficientFunds {
             available: 0,
             needed: u64::MAX,
@@ -285,8 +289,8 @@ pub fn build_batch_payout(
 
     let mut key_bytes = signing_key.to_bytes();
     for input in &mut tx.inputs {
-        let sig = crypto::sign_and_zeroize(key_bytes, &tx.id)
-            .map_err(|_| WalletError::SigningFailed)?;
+        let sig =
+            crypto::sign_and_zeroize(key_bytes, &tx.id).map_err(|_| WalletError::SigningFailed)?;
         input.signature = sig.to_vec();
         key_bytes = signing_key.to_bytes();
     }
@@ -334,7 +338,10 @@ mod tests {
         let result = build_and_sign(&sk, &addr, &params, &utxos).unwrap();
         assert!(result.transaction.verify_signatures());
         assert_eq!(result.transaction.outputs[0].amount, 2_000_000_000_000);
-        assert_eq!(result.change_amount, 5_000_000_000_000 - 2_000_000_000_000 - 1_000);
+        assert_eq!(
+            result.change_amount,
+            5_000_000_000_000 - 2_000_000_000_000 - 1_000
+        );
     }
 
     #[test]

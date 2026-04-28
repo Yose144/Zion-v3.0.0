@@ -581,10 +581,10 @@ async fn treasury_execute(
         TreasuryOperation::HumanitarianGrant { amount, .. } => *amount,
         TreasuryOperation::Rebalance { amount, .. } => *amount,
     };
-    state
-        .metrics
-        .treasury_total_disbursed_zion
-        .fetch_add(amount / FLOWERS_PER_ZION, std::sync::atomic::Ordering::Relaxed);
+    state.metrics.treasury_total_disbursed_zion.fetch_add(
+        amount / FLOWERS_PER_ZION,
+        std::sync::atomic::Ordering::Relaxed,
+    );
 
     Ok(ok(serde_json::json!({
         "op_id": op_id,

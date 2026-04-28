@@ -84,11 +84,7 @@ impl EvmWatcher {
             self.config.finality_blocks,
         );
 
-        let direct_rpc_url = self
-            .config
-            .rpc_url
-            .as_deref()
-            .unwrap_or("(ankr fallback)");
+        let direct_rpc_url = self.config.rpc_url.as_deref().unwrap_or("(ankr fallback)");
         info!(
             "   Primary RPC: {} | Ankr fallback: {}",
             direct_rpc_url, self.ankr_config.enabled
@@ -245,10 +241,7 @@ impl EvmWatcher {
                 Ok(burn) => {
                     info!(
                         "🔥 BridgeBurn on {}: {} wZION → {} (burn_id: {})",
-                        self.config.name,
-                        burn.amount_wzion_wei,
-                        burn.l1_recipient,
-                        burn.burn_id,
+                        self.config.name, burn.amount_wzion_wei, burn.l1_recipient, burn.burn_id,
                     );
                     if let Err(e) = burn_tx.send(burn).await {
                         error!(
@@ -353,8 +346,7 @@ fn parse_bridge_burn_log(log: &AnkrLog, chain_id: &str) -> Result<EvmBurnEvent> 
         );
     }
 
-    let amount_flowers =
-        crate::types::conversion::wzion_wei_to_flowers(&amount_str).unwrap_or(0);
+    let amount_flowers = crate::types::conversion::wzion_wei_to_flowers(&amount_str).unwrap_or(0);
 
     Ok(EvmBurnEvent {
         evm_tx_hash: log.transaction_hash.clone().unwrap_or_default(),
@@ -531,7 +523,13 @@ mod tests {
         format!("0x{}", hex::encode(&data))
     }
 
-    fn make_burn_log(from: &str, burn_id: &str, amount: u128, recipient: &str, block: u64) -> AnkrLog {
+    fn make_burn_log(
+        from: &str,
+        burn_id: &str,
+        amount: u128,
+        recipient: &str,
+        block: u64,
+    ) -> AnkrLog {
         AnkrLog {
             address: "0x742d35Cc6634C0532925a3b8D4C9C5B2C39b8F2".into(),
             topics: vec![
@@ -560,7 +558,10 @@ mod tests {
         );
         let burn = parse_bridge_burn_log(&log, "base").unwrap();
         assert_eq!(burn.evm_chain, "base");
-        assert_eq!(burn.l1_recipient, "zion1qrecipient000000000000000000000000001");
+        assert_eq!(
+            burn.l1_recipient,
+            "zion1qrecipient000000000000000000000000001"
+        );
         assert_eq!(burn.amount_wzion_wei, amount.to_string());
         assert_eq!(burn.evm_block_number, 123456);
         assert_eq!(burn.status, BridgeStatus::Confirmed);
