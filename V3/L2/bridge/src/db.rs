@@ -327,7 +327,7 @@ mod tests {
             evm_chain: "base".into(),
             evm_burner: "0xaaabbbccc".into(),
             amount_wzion_wei: "1000000000000000000000".into(), // 1000 wZION
-            amount_flowers: 1_000_000_000_000_000, // 1000 ZION × 1e12
+            amount_flowers: 1_000_000_000_000_000,             // 1000 ZION × 1e12
             l1_recipient: "zion1qrecipient".into(),
             burn_id: burn_id.into(),
             detected_at: Utc::now(),
@@ -496,7 +496,8 @@ mod tests {
         db.insert_lock(&lock).unwrap();
 
         // Mark as Completed
-        db.update_lock_status("tx_dup_ignore", BridgeStatus::Completed).unwrap();
+        db.update_lock_status("tx_dup_ignore", BridgeStatus::Completed)
+            .unwrap();
 
         // Attacker tries to replay: insert same TX with Pending status
         lock.confirmations = 0;
@@ -505,7 +506,11 @@ mod tests {
 
         // Completed status must be preserved (not reset to Pending)
         let pending = db.get_pending_locks().unwrap();
-        assert_eq!(pending.len(), 0, "Replay attack must not reset Completed → Pending");
+        assert_eq!(
+            pending.len(),
+            0,
+            "Replay attack must not reset Completed → Pending"
+        );
     }
 
     #[test]

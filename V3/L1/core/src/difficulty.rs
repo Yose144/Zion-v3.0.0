@@ -176,8 +176,16 @@ pub fn target_to_compact(target: &DifficultyTarget) -> u32 {
 
     let mut size = (32 - first_nz) as u32;
     let b0 = target.bytes[first_nz] as u32;
-    let b1 = if first_nz + 1 < 32 { target.bytes[first_nz + 1] as u32 } else { 0 };
-    let b2 = if first_nz + 2 < 32 { target.bytes[first_nz + 2] as u32 } else { 0 };
+    let b1 = if first_nz + 1 < 32 {
+        target.bytes[first_nz + 1] as u32
+    } else {
+        0
+    };
+    let b2 = if first_nz + 2 < 32 {
+        target.bytes[first_nz + 2] as u32
+    } else {
+        0
+    };
     let mut compact = (b0 << 16) | (b1 << 8) | b2;
 
     // If top bit of mantissa is set, shift right to avoid sign ambiguity.
@@ -378,15 +386,24 @@ mod tests {
     #[test]
     fn short_window_two_blocks() {
         let window = vec![
-            BlockInfo { timestamp: 1000, difficulty: 5_000 },
-            BlockInfo { timestamp: 1060, difficulty: 5_000 },
+            BlockInfo {
+                timestamp: 1000,
+                difficulty: 5_000,
+            },
+            BlockInfo {
+                timestamp: 1060,
+                difficulty: 5_000,
+            },
         ];
         assert_eq!(lwma_next_difficulty(&window), 5_000);
     }
 
     #[test]
     fn single_block_returns_its_difficulty() {
-        let window = vec![BlockInfo { timestamp: 1000, difficulty: 8_000 }];
+        let window = vec![BlockInfo {
+            timestamp: 1000,
+            difficulty: 8_000,
+        }];
         assert_eq!(lwma_next_difficulty(&window), 8_000);
     }
 
@@ -399,14 +416,23 @@ mod tests {
     fn recent_blocks_weighted_more() {
         let mut window = Vec::new();
         let mut ts = 1_000_000u64;
-        window.push(BlockInfo { timestamp: ts, difficulty: 10_000 });
+        window.push(BlockInfo {
+            timestamp: ts,
+            difficulty: 10_000,
+        });
         for _ in 1..=50 {
             ts += 60;
-            window.push(BlockInfo { timestamp: ts, difficulty: 10_000 });
+            window.push(BlockInfo {
+                timestamp: ts,
+                difficulty: 10_000,
+            });
         }
         for _ in 51..=60 {
             ts += 30;
-            window.push(BlockInfo { timestamp: ts, difficulty: 10_000 });
+            window.push(BlockInfo {
+                timestamp: ts,
+                difficulty: 10_000,
+            });
         }
         assert!(
             lwma_next_difficulty(&window) > 10_000,
@@ -417,14 +443,20 @@ mod tests {
     #[test]
     fn stability_simulation_200_blocks() {
         let solve_times = [55u64, 65, 58, 62, 50, 70, 57, 63, 59, 61];
-        let mut blocks = vec![BlockInfo { timestamp: 1_000_000, difficulty: 10_000 }];
+        let mut blocks = vec![BlockInfo {
+            timestamp: 1_000_000,
+            difficulty: 10_000,
+        }];
         let mut ts = 1_000_000u64;
 
         for i in 0..200 {
             ts += solve_times[i % solve_times.len()];
             let start = blocks.len().saturating_sub(LWMA_WINDOW + 1);
             let diff = lwma_next_difficulty(&blocks[start..]);
-            blocks.push(BlockInfo { timestamp: ts, difficulty: diff });
+            blocks.push(BlockInfo {
+                timestamp: ts,
+                difficulty: diff,
+            });
         }
 
         let final_diff = blocks.last().unwrap().difficulty;
@@ -541,7 +573,10 @@ mod tests {
 
     #[test]
     fn stats_returns_none_for_single_block() {
-        let window = vec![BlockInfo { timestamp: 1000, difficulty: 5000 }];
+        let window = vec![BlockInfo {
+            timestamp: 1000,
+            difficulty: 5000,
+        }];
         assert!(difficulty_stats(&window).is_none());
     }
 
@@ -581,8 +616,14 @@ mod tests {
     #[test]
     fn predict_short_window() {
         let window = vec![
-            BlockInfo { timestamp: 1000, difficulty: 5000 },
-            BlockInfo { timestamp: 1060, difficulty: 5000 },
+            BlockInfo {
+                timestamp: 1000,
+                difficulty: 5000,
+            },
+            BlockInfo {
+                timestamp: 1060,
+                difficulty: 5000,
+            },
         ];
         let preds = predict_difficulty(&window, 3);
         assert_eq!(preds.len(), 3);
@@ -594,7 +635,9 @@ mod tests {
         let high = make_window(20, 100_000, 60);
         let s_low = difficulty_stats(&low).unwrap();
         let s_high = difficulty_stats(&high).unwrap();
-        assert!(s_high.estimated_hashrate > s_low.estimated_hashrate * 50.0,
-            "100x difficulty should produce much higher hashrate estimate");
+        assert!(
+            s_high.estimated_hashrate > s_low.estimated_hashrate * 50.0,
+            "100x difficulty should produce much higher hashrate estimate"
+        );
     }
 }

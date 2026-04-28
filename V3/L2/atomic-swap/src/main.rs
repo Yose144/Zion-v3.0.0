@@ -20,8 +20,9 @@
 //! 5. Start auto-refund background task
 //! 6. Start axum HTTP API
 
+use axum::{routing::get, routing::post, Router};
 use std::sync::Arc;
-use tracing::{info, error};
+use tracing::{error, info};
 use tracing_subscriber::EnvFilter;
 use zion_atomic_swap::{
     config::SwapConfig,
@@ -31,15 +32,13 @@ use zion_atomic_swap::{
     handlers::{self, AppState},
     watcher::{L1Watcher, RefundLoop},
 };
-use axum::{routing::get, routing::post, Router};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     // ── Logging ───────────────────────────────────────────────────────────
     tracing_subscriber::fmt()
         .with_env_filter(
-            EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| EnvFilter::new("info")),
+            EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info")),
         )
         .with_target(false)
         .init();
@@ -92,11 +91,7 @@ async fn main() -> anyhow::Result<()> {
 
     // ── Background: auto-refund loop ──────────────────────────────────────
     {
-        let refund_loop = RefundLoop::new(
-            Arc::clone(&cfg),
-            Arc::clone(&db),
-            Arc::clone(&executor),
-        );
+        let refund_loop = RefundLoop::new(Arc::clone(&cfg), Arc::clone(&db), Arc::clone(&executor));
         tokio::spawn(async move {
             refund_loop.run().await;
         });

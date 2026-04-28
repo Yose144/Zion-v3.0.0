@@ -7,10 +7,11 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use zion_core::{
-    decode_p2p_message, decode_rpc_request, encode_p2p_message, encode_rpc_response,
-    node_protocol_version,
+    decode_p2p_message, decode_rpc_request,
     discovery::{DiscoveryCommand, DiscoveryEngine, DISCOVERY_PORT},
+    encode_p2p_message, encode_rpc_response,
     ibd::{IbdCommand, IbdEngine},
+    node_protocol_version,
     p2p_security::PeerSecurity,
     peer_manager::{PeerAction, PeerDirection, PeerManager, MIN_OUTBOUND},
     propagation::{PropagationStats, SeenBlocks, SeenTransactions},
@@ -113,13 +114,11 @@ fn main() -> Result<()> {
             .known_peers()
             .iter()
             .filter_map(|p| {
-                p.address()
-                    .rsplit_once(':')
-                    .and_then(|(h, port)| {
-                        let ip: IpAddr = h.parse().ok()?;
-                        let port: u16 = port.parse().ok()?;
-                        Some((ip, port))
-                    })
+                p.address().rsplit_once(':').and_then(|(h, port)| {
+                    let ip: IpAddr = h.parse().ok()?;
+                    let port: u16 = port.parse().ok()?;
+                    Some((ip, port))
+                })
             })
             .collect();
         peer_mgr.lock().expect("lock").add_seeds(&seeds);
@@ -137,8 +136,8 @@ fn main() -> Result<()> {
         .context("failed to bind RPC listener")?;
 
     // ── Metrics HTTP server ────────────────────────────────────────────
-    let metrics_bind = std::env::var("ZION_METRICS_BIND")
-        .unwrap_or_else(|_| "0.0.0.0:9115".to_string());
+    let metrics_bind =
+        std::env::var("ZION_METRICS_BIND").unwrap_or_else(|_| "0.0.0.0:9115".to_string());
     println!("metrics_bind={metrics_bind}");
     let metrics_runtime = Arc::clone(&runtime);
     let _metrics_thread = thread::spawn(move || {
@@ -155,7 +154,14 @@ fn main() -> Result<()> {
     let ob_peer_sec = Arc::clone(&peer_sec);
     let ob_batch_limit = config.sync_batch_limit;
     let outbound_thread = thread::spawn(move || {
-        outbound_peer_loop(&ob_runtime, &ob_seen, &ob_stats, &ob_peer_mgr, &ob_peer_sec, ob_batch_limit);
+        outbound_peer_loop(
+            &ob_runtime,
+            &ob_seen,
+            &ob_stats,
+            &ob_peer_mgr,
+            &ob_peer_sec,
+            ob_batch_limit,
+        );
     });
 
     // ── P2P accept loop ────────────────────────────────────────────────
@@ -197,7 +203,9 @@ fn main() -> Result<()> {
             let source = peer_addr.to_string();
             let source_ip = peer_ip;
             handles.push(thread::spawn(move || {
-                let result = handle_p2p_stream(stream, &runtime, &seen, &seen_txs, &stats, &source, &mgr, &sec, source_ip);
+                let result = handle_p2p_stream(
+                    stream, &runtime, &seen, &seen_txs, &stats, &source, &mgr, &sec, source_ip,
+                );
                 // Release connection slot when stream ends
                 sec.lock().expect("lock").release_connection();
                 result
@@ -205,7 +213,9 @@ fn main() -> Result<()> {
             accepted = accepted.saturating_add(1);
         }
         for handle in handles {
-            handle.join().map_err(|_| anyhow!("P2P client thread panicked"))??;
+            handle
+                .join()
+                .map_err(|_| anyhow!("P2P client thread panicked"))??;
         }
         Ok(())
     });
@@ -223,7 +233,9 @@ fn main() -> Result<()> {
             if matches!(rpc_limit, Some(limit) if accepted >= limit) {
                 break;
             }
-            let (stream, peer_addr) = rpc_listener.accept().context("failed to accept RPC client")?;
+            let (stream, peer_addr) = rpc_listener
+                .accept()
+                .context("failed to accept RPC client")?;
             println!("rpc_client_addr={peer_addr}");
             let runtime = Arc::clone(&rpc_runtime);
             let seen = Arc::clone(&rpc_seen);
@@ -236,13 +248,19 @@ fn main() -> Result<()> {
             accepted = accepted.saturating_add(1);
         }
         for handle in handles {
-            handle.join().map_err(|_| anyhow!("RPC client thread panicked"))??;
+            handle
+                .join()
+                .map_err(|_| anyhow!("RPC client thread panicked"))??;
         }
         Ok(())
     });
 
-    p2p_thread.join().map_err(|_| anyhow!("P2P thread panicked"))??;
-    rpc_thread.join().map_err(|_| anyhow!("RPC thread panicked"))??;
+    p2p_thread
+        .join()
+        .map_err(|_| anyhow!("P2P thread panicked"))??;
+    rpc_thread
+        .join()
+        .map_err(|_| anyhow!("RPC thread panicked"))??;
     let _ = outbound_thread.join();
 
     let status = runtime.lock().expect("node runtime lock poisoned").status();
@@ -271,9 +289,7 @@ fn handle_p2p_stream(
     source_ip: IpAddr,
 ) -> Result<()> {
     // Set read timeout so idle connections are cleaned up
-    stream
-        .set_read_timeout(Some(Duration::from_secs(330)))
-        .ok();
+    stream.set_read_timeout(Some(Duration::from_secs(330))).ok();
     let reader_stream = stream.try_clone().context("failed to clone P2P stream")?;
     let mut reader = BufReader::new(reader_stream);
     let mut writer = stream;
@@ -313,7 +329,12 @@ fn handle_p2p_stream(
         };
 
         // Register peer in PeerManager on Hello
-        if let P2pMessage::Hello { ref node_id, ref listen_addr, .. } = message {
+        if let P2pMessage::Hello {
+            ref node_id,
+            ref listen_addr,
+            ..
+        } = message
+        {
             let now = Instant::now();
             if let Some((host, port_str)) = listen_addr.rsplit_once(':') {
                 if let (Ok(ip), Ok(port)) = (host.parse::<IpAddr>(), port_str.parse::<u16>()) {
@@ -398,7 +419,14 @@ fn handle_p2p_stream(
         // Relay newly accepted transaction to other peers
         if let Some((tx_id, transaction)) = announce_tx_info {
             let peers = runtime.lock().expect("lock").known_peers().to_vec();
-            relay_tx_to_peers(&tx_id, transaction, &peers, Some(source_addr), seen_txs, stats);
+            relay_tx_to_peers(
+                &tx_id,
+                transaction,
+                &peers,
+                Some(source_addr),
+                seen_txs,
+                stats,
+            );
         }
     }
 
@@ -437,20 +465,23 @@ fn handle_rpc_stream(
     }
 
     // Protocol detection: JSON-RPC 2.0 requests contain "jsonrpc" key
-    let parsed: serde_json::Value = serde_json::from_str(&line)
-        .unwrap_or(serde_json::Value::Null);
+    let parsed: serde_json::Value = serde_json::from_str(&line).unwrap_or(serde_json::Value::Null);
 
     let is_jsonrpc = parsed.get("jsonrpc").is_some()
-        || parsed.as_array().is_some_and(|arr| {
-            arr.first().and_then(|v| v.get("jsonrpc")).is_some()
-        });
+        || parsed
+            .as_array()
+            .is_some_and(|arr| arr.first().and_then(|v| v.get("jsonrpc")).is_some());
 
     if is_jsonrpc {
         // JSON-RPC 2.0 protocol
         let response_bytes = jsonrpc_router.handle_raw(line.as_bytes());
-        writer.write_all(&response_bytes).context("failed to write JSON-RPC response")?;
+        writer
+            .write_all(&response_bytes)
+            .context("failed to write JSON-RPC response")?;
         writer.write_all(b"\n").context("failed to write newline")?;
-        writer.flush().context("failed to flush JSON-RPC response")?;
+        writer
+            .flush()
+            .context("failed to flush JSON-RPC response")?;
         let trimmed = String::from_utf8_lossy(&response_bytes);
         println!("jsonrpc_out={trimmed}");
         return Ok(());
@@ -494,7 +525,12 @@ fn handle_rpc_stream(
 
     // Relay accepted transaction to peers
     if let Some(submitted) = submit_tx {
-        if let zion_core::RpcResponse::TransactionResult { accepted: true, ref tx_id, .. } = response {
+        if let zion_core::RpcResponse::TransactionResult {
+            accepted: true,
+            ref tx_id,
+            ..
+        } = response
+        {
             let peers = runtime.lock().expect("lock").known_peers().to_vec();
             relay_tx_to_peers(tx_id, submitted, &peers, None, seen_txs, stats);
         }
@@ -561,14 +597,19 @@ fn handle_rpc_http(
     loop {
         let header_line = {
             let mut buf = String::new();
-            reader.read_line(&mut buf).context("failed to read HTTP header")?;
+            reader
+                .read_line(&mut buf)
+                .context("failed to read HTTP header")?;
             buf
         };
         let trimmed = header_line.trim();
         if trimmed.is_empty() {
             break; // end of headers
         }
-        if let Some(value) = trimmed.strip_prefix("Content-Length:").or_else(|| trimmed.strip_prefix("content-length:")) {
+        if let Some(value) = trimmed
+            .strip_prefix("Content-Length:")
+            .or_else(|| trimmed.strip_prefix("content-length:"))
+        {
             content_length = value.trim().parse().unwrap_or(0);
         }
     }
@@ -589,7 +630,8 @@ fn handle_rpc_http(
 
     // Enforce body size limit
     if content_length > RPC_MAX_REQUEST_BYTES {
-        let err_body = r#"{"jsonrpc":"2.0","error":{"code":-32600,"message":"request too large"},"id":null}"#;
+        let err_body =
+            r#"{"jsonrpc":"2.0","error":{"code":-32600,"message":"request too large"},"id":null}"#;
         let http_response = format!(
             "HTTP/1.1 413 Payload Too Large\r\nContent-Type: application/json\r\nContent-Length: {}\r\nAccess-Control-Allow-Origin: *\r\nConnection: close\r\n\r\n{}",
             err_body.len(), err_body
@@ -601,7 +643,9 @@ fn handle_rpc_http(
 
     // Read JSON body
     let mut body_buf = vec![0u8; content_length];
-    reader.read_exact(&mut body_buf).context("failed to read HTTP body")?;
+    reader
+        .read_exact(&mut body_buf)
+        .context("failed to read HTTP body")?;
     let body_str = String::from_utf8_lossy(&body_buf);
     println!("rpc_http_in={body_str}");
 
@@ -848,7 +892,10 @@ fn sync_from_peer(
     Ok(discovered)
 }
 
-fn p2p_roundtrip(peer: &PeerEndpoint, message: &zion_core::P2pMessage) -> Result<zion_core::P2pMessage> {
+fn p2p_roundtrip(
+    peer: &PeerEndpoint,
+    message: &zion_core::P2pMessage,
+) -> Result<zion_core::P2pMessage> {
     let addr = peer
         .address()
         .to_socket_addrs()
@@ -1016,7 +1063,10 @@ impl PeerConn {
         stream.set_write_timeout(Some(Duration::from_secs(10)))?;
         let _ = stream.set_nodelay(true);
         let reader = BufReader::new(stream.try_clone().context("failed to clone stream")?);
-        Ok(Self { writer: stream, reader })
+        Ok(Self {
+            writer: stream,
+            reader,
+        })
     }
 
     fn roundtrip(&mut self, message: &P2pMessage) -> Result<P2pMessage> {
@@ -1024,9 +1074,7 @@ impl PeerConn {
         self.writer
             .write_all(line.as_bytes())
             .context("failed to write P2P message")?;
-        self.writer
-            .flush()
-            .context("failed to flush P2P message")?;
+        self.writer.flush().context("failed to flush P2P message")?;
         let response = read_line(&mut self.reader)?;
         decode_p2p_message(&response).context("failed to decode P2P response")
     }
@@ -1047,11 +1095,7 @@ impl OutboundPool {
 
     /// Send a message and receive a response, reusing an existing connection
     /// or creating a new one. Stale connections are evicted and retried once.
-    fn roundtrip(
-        &mut self,
-        peer: &PeerEndpoint,
-        message: &P2pMessage,
-    ) -> Result<P2pMessage> {
+    fn roundtrip(&mut self, peer: &PeerEndpoint, message: &P2pMessage) -> Result<P2pMessage> {
         let key = peer.address().to_string();
         if let Some(conn) = self.conns.get_mut(&key) {
             match conn.roundtrip(message) {
@@ -1109,7 +1153,8 @@ fn outbound_peer_loop(
             zion_core::NetworkId::Mainnet => "mainnet",
             zion_core::NetworkId::Testnet => "testnet",
             zion_core::NetworkId::Devnet => "devnet",
-        }.to_string()
+        }
+        .to_string()
     };
     let mut discovery = DiscoveryEngine::new(&network_name);
     // Set self address so we don't try to connect to ourselves
@@ -1185,8 +1230,12 @@ fn outbound_peer_loop(
                 PeerAction::Ban { peer_id, reason } => {
                     println!("peer_action_ban peer={peer_id} reason={reason}");
                     // Propagate ban to PeerSecurity so inbound connections are rejected
-                    if let Some(peer_state) = peer_mgr.lock().expect("lock").peer_info()
-                        .iter().find(|p| p.peer_id == *peer_id)
+                    if let Some(peer_state) = peer_mgr
+                        .lock()
+                        .expect("lock")
+                        .peer_info()
+                        .iter()
+                        .find(|p| p.peer_id == *peer_id)
                     {
                         peer_sec.lock().expect("lock").punish(
                             peer_state.addr,
@@ -1221,10 +1270,17 @@ fn outbound_peer_loop(
 
         for peer in &peers {
             // Quick status check via Ping to keep connection alive (persistent)
-            match pool.roundtrip(peer, &P2pMessage::Ping { nonce: epoch_secs() }) {
+            match pool.roundtrip(
+                peer,
+                &P2pMessage::Ping {
+                    nonce: epoch_secs(),
+                },
+            ) {
                 Ok(P2pMessage::Pong { .. }) => {
                     // Peer alive — check if it has new blocks
-                    if let Ok(P2pMessage::Status { status }) = pool.roundtrip(peer, &P2pMessage::GetStatus) {
+                    if let Ok(P2pMessage::Status { status }) =
+                        pool.roundtrip(peer, &P2pMessage::GetStatus)
+                    {
                         // Feed height into IBD engine
                         ibd.update_peer(&peer.address(), status.chain_height);
 
@@ -1249,12 +1305,10 @@ fn outbound_peer_loop(
                                     sync_fail_count = 0;
                                 }
                                 Err(e) => {
-                                    eprintln!(
-                                        "outbound_sync_err peer={} err={e}",
-                                        peer.address()
-                                    );
+                                    eprintln!("outbound_sync_err peer={} err={e}", peer.address());
                                     // Track consecutive failures at the same height
-                                    let current_height = runtime.lock().expect("lock").chain_height();
+                                    let current_height =
+                                        runtime.lock().expect("lock").chain_height();
                                     if current_height == sync_fail_height {
                                         sync_fail_count += 1;
                                     } else {
@@ -1330,13 +1384,11 @@ fn outbound_peer_loop(
                             let new_seeds: Vec<(IpAddr, u16)> = discovered
                                 .iter()
                                 .filter_map(|p| {
-                                    p.address()
-                                        .rsplit_once(':')
-                                        .and_then(|(h, port)| {
-                                            let ip: IpAddr = h.parse().ok()?;
-                                            let port: u16 = port.parse().ok()?;
-                                            Some((ip, port))
-                                        })
+                                    p.address().rsplit_once(':').and_then(|(h, port)| {
+                                        let ip: IpAddr = h.parse().ok()?;
+                                        let port: u16 = port.parse().ok()?;
+                                        Some((ip, port))
+                                    })
                                 })
                                 .collect();
                             peer_mgr.lock().expect("lock").add_seeds(&new_seeds);
@@ -1366,12 +1418,23 @@ fn outbound_peer_loop(
 
         // ── Discovery engine tick ──────────────────────────────────────
         {
-            let connected_peer_ids: Vec<String> = peer_mgr.lock().expect("lock")
-                .peer_info().iter().map(|p| p.peer_id.clone()).collect();
+            let connected_peer_ids: Vec<String> = peer_mgr
+                .lock()
+                .expect("lock")
+                .peer_info()
+                .iter()
+                .map(|p| p.peer_id.clone())
+                .collect();
             let current_count = connected_peer_ids.len();
             let now = Instant::now();
             let now_secs = epoch_secs();
-            let commands = discovery.tick(now, now_secs, &connected_peer_ids, current_count, MIN_OUTBOUND);
+            let commands = discovery.tick(
+                now,
+                now_secs,
+                &connected_peer_ids,
+                current_count,
+                MIN_OUTBOUND,
+            );
             for cmd in commands {
                 match cmd {
                     DiscoveryCommand::ResolveDns { hostname } => {
@@ -1397,9 +1460,8 @@ fn outbound_peer_loop(
                             // Extract our host:port for the announcement
                             if let Some((host, port_str)) = bind.rsplit_once(':') {
                                 if let Ok(p) = port_str.parse::<u16>() {
-                                    let data = discovery.build_announcement(
-                                        host, p, &version, height, now_secs,
-                                    );
+                                    let data = discovery
+                                        .build_announcement(host, p, &version, height, now_secs);
                                     let _ = sock.send_to(&data, (addr, port));
                                 }
                             }
@@ -1407,16 +1469,24 @@ fn outbound_peer_loop(
                     }
                     DiscoveryCommand::RequestPeers { peer_id } => {
                         // Find endpoint for this peer and request peers via P2P
-                        let endpoint = peer_mgr.lock().expect("lock")
-                            .peer_info().iter()
+                        let endpoint = peer_mgr
+                            .lock()
+                            .expect("lock")
+                            .peer_info()
+                            .iter()
                             .find(|p| p.peer_id == peer_id)
                             .map(|p| PeerEndpoint::new(p.addr.to_string(), p.port));
                         if let Some(ep) = endpoint {
-                            if let Ok(P2pMessage::Peers { peers: found }) = pool.roundtrip(&ep, &P2pMessage::GetPeers) {
+                            if let Ok(P2pMessage::Peers { peers: found }) =
+                                pool.roundtrip(&ep, &P2pMessage::GetPeers)
+                            {
                                 for p in &found {
                                     if let Some((h, port_str)) = p.address().rsplit_once(':') {
-                                        if let (Ok(ip), Ok(port)) = (h.parse::<IpAddr>(), port_str.parse::<u16>()) {
-                                            discovery.add_from_peer_exchange(ip, port, None, now_secs);
+                                        if let (Ok(ip), Ok(port)) =
+                                            (h.parse::<IpAddr>(), port_str.parse::<u16>())
+                                        {
+                                            discovery
+                                                .add_from_peer_exchange(ip, port, None, now_secs);
                                         }
                                     }
                                 }
@@ -1442,24 +1512,37 @@ fn outbound_peer_loop(
             let ibd_commands = ibd.tick(now);
             for cmd in ibd_commands {
                 match cmd {
-                    IbdCommand::RequestBatch { peer_id, start_height, count } => {
+                    IbdCommand::RequestBatch {
+                        peer_id,
+                        start_height,
+                        count,
+                    } => {
                         // Find peer endpoint from PeerManager
-                        let endpoint = peer_mgr.lock().expect("lock")
-                            .peer_info().iter()
+                        let endpoint = peer_mgr
+                            .lock()
+                            .expect("lock")
+                            .peer_info()
+                            .iter()
                             .find(|p| p.peer_id == peer_id)
                             .map(|p| PeerEndpoint::new(p.addr.to_string(), p.port));
                         if let Some(ep) = endpoint {
                             match pool.roundtrip(
                                 &ep,
-                                &P2pMessage::GetBlocksSince { from_height: start_height, limit: count.min(u16::MAX as u64) as u16 },
+                                &P2pMessage::GetBlocksSince {
+                                    from_height: start_height,
+                                    limit: count.min(u16::MAX as u64) as u16,
+                                },
                             ) {
                                 Ok(P2pMessage::Blocks { blocks }) => {
                                     ibd.batch_received(start_height);
-                                    let imported = runtime.lock().expect("lock")
+                                    let imported = runtime
+                                        .lock()
+                                        .expect("lock")
                                         .import_peer_blocks(blocks)
                                         .unwrap_or(0);
                                     if imported > 0 {
-                                        let new_height = runtime.lock().expect("lock").chain_height();
+                                        let new_height =
+                                            runtime.lock().expect("lock").chain_height();
                                         ibd.blocks_applied(new_height);
                                         println!("ibd_batch start={start_height} imported={imported} height={new_height}");
                                     }
@@ -1532,7 +1615,10 @@ fn serve_node_metrics(bind_addr: &str, runtime: Arc<Mutex<NodeRuntime>>) -> Resu
             "/health" => {
                 let body = format!(
                     r#"{{"status":"ok","chain_height":{},"tip_hash":"{}","peer_count":{},"mempool_size":{}}}"#,
-                    status.chain_height, status.tip_hash_hex, peer_count, status.mempool_transactions,
+                    status.chain_height,
+                    status.tip_hash_hex,
+                    peer_count,
+                    status.mempool_transactions,
                 );
                 ("200 OK", "application/json", body)
             }
@@ -1541,27 +1627,61 @@ fn serve_node_metrics(bind_addr: &str, runtime: Arc<Mutex<NodeRuntime>>) -> Resu
                 let _ = writeln!(out, "# HELP zion_chain_height Current chain tip height.");
                 let _ = writeln!(out, "# TYPE zion_chain_height gauge");
                 let _ = writeln!(out, "zion_chain_height {}", status.chain_height);
-                let _ = writeln!(out, "# HELP zion_mempool_size Number of transactions in mempool.");
+                let _ = writeln!(
+                    out,
+                    "# HELP zion_mempool_size Number of transactions in mempool."
+                );
                 let _ = writeln!(out, "# TYPE zion_mempool_size gauge");
                 let _ = writeln!(out, "zion_mempool_size {}", status.mempool_transactions);
                 let _ = writeln!(out, "# HELP zion_peer_count Total connected peers.");
                 let _ = writeln!(out, "# TYPE zion_peer_count gauge");
                 let _ = writeln!(out, "zion_peer_count {peer_count}");
-                let _ = writeln!(out, "# HELP zion_blocks_accepted_total Total blocks accepted.");
+                let _ = writeln!(
+                    out,
+                    "# HELP zion_blocks_accepted_total Total blocks accepted."
+                );
                 let _ = writeln!(out, "# TYPE zion_blocks_accepted_total gauge");
                 let _ = writeln!(out, "zion_blocks_accepted_total {}", status.accepted_blocks);
-                let _ = writeln!(out, "# HELP zion_template_height Active block template height.");
+                let _ = writeln!(
+                    out,
+                    "# HELP zion_template_height Active block template height."
+                );
                 let _ = writeln!(out, "# TYPE zion_template_height gauge");
-                let _ = writeln!(out, "zion_template_height {}", status.active_template_height);
-                let _ = writeln!(out, "# HELP zion_template_txs Transactions in active template.");
+                let _ = writeln!(
+                    out,
+                    "zion_template_height {}",
+                    status.active_template_height
+                );
+                let _ = writeln!(
+                    out,
+                    "# HELP zion_template_txs Transactions in active template."
+                );
                 let _ = writeln!(out, "# TYPE zion_template_txs gauge");
-                let _ = writeln!(out, "zion_template_txs {}", status.active_template_transactions);
-                let _ = writeln!(out, "# HELP zion_template_fees_zion Total fees in active template.");
+                let _ = writeln!(
+                    out,
+                    "zion_template_txs {}",
+                    status.active_template_transactions
+                );
+                let _ = writeln!(
+                    out,
+                    "# HELP zion_template_fees_zion Total fees in active template."
+                );
                 let _ = writeln!(out, "# TYPE zion_template_fees_zion gauge");
-                let _ = writeln!(out, "zion_template_fees_zion {}", status.active_template_total_fees_zion);
-                let _ = writeln!(out, "# HELP zion_tip_hash_info Current chain tip hash (label).");
+                let _ = writeln!(
+                    out,
+                    "zion_template_fees_zion {}",
+                    status.active_template_total_fees_zion
+                );
+                let _ = writeln!(
+                    out,
+                    "# HELP zion_tip_hash_info Current chain tip hash (label)."
+                );
                 let _ = writeln!(out, "# TYPE zion_tip_hash_info gauge");
-                let _ = writeln!(out, "zion_tip_hash_info{{tip_hash=\"{}\"}} 1", status.tip_hash_hex);
+                let _ = writeln!(
+                    out,
+                    "zion_tip_hash_info{{tip_hash=\"{}\"}} 1",
+                    status.tip_hash_hex
+                );
                 ("200 OK", "text/plain; version=0.0.4", out)
             }
         };

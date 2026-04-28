@@ -7,8 +7,8 @@
 //! - `TxOutput` — amount in flowers + `zion1...` destination address
 //! - `Transaction` — inputs, outputs, fee, timestamp; ID = BLAKE3 hash
 
-use serde::{Deserialize, Serialize};
 use crate::crypto;
+use serde::{Deserialize, Serialize};
 
 // ── Structures ─────────────────────────────────────────────────────────
 
@@ -123,7 +123,7 @@ impl Transaction {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::crypto::{generate_keypair, sign, derive_address};
+    use crate::crypto::{derive_address, generate_keypair, sign};
 
     fn make_signed_tx() -> Transaction {
         let (sk, vk) = generate_keypair();
@@ -223,9 +223,21 @@ mod tests {
             version: 1,
             inputs: vec![],
             outputs: vec![
-                TxOutput { amount: 100, address: "a".into(), memo: None },
-                TxOutput { amount: 200, address: "b".into(), memo: None },
-                TxOutput { amount: 300, address: "c".into(), memo: None },
+                TxOutput {
+                    amount: 100,
+                    address: "a".into(),
+                    memo: None,
+                },
+                TxOutput {
+                    amount: 200,
+                    address: "b".into(),
+                    memo: None,
+                },
+                TxOutput {
+                    amount: 300,
+                    address: "c".into(),
+                    memo: None,
+                },
             ],
             fee: 0,
             timestamp: 0,

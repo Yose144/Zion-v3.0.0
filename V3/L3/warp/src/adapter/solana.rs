@@ -13,17 +13,17 @@ use tracing::{debug, info, warn};
 // ─────────────────────────────────────────────────────────────────────────────
 fn wzion_mint(cluster: &str) -> Option<&'static str> {
     match cluster {
-        "mainnet-beta" => Some("ZIONmintXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"),  // TODO mainnet
-        "devnet"       => Some("ZIONdevXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"), // TODO devnet
+        "mainnet-beta" => Some("ZIONmintXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"), // TODO mainnet
+        "devnet" => Some("ZIONdevXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"),      // TODO devnet
         _ => None,
     }
 }
 
 fn default_rpc(cluster: &str) -> &'static str {
     match cluster {
-        "devnet"   => "https://api.devnet.solana.com",
-        "testnet"  => "https://api.testnet.solana.com",
-        _          => "https://api.mainnet-beta.solana.com",
+        "devnet" => "https://api.devnet.solana.com",
+        "testnet" => "https://api.testnet.solana.com",
+        _ => "https://api.mainnet-beta.solana.com",
     }
 }
 
@@ -43,14 +43,37 @@ struct RpcResp {
     result: Option<Value>,
 }
 
-async fn rpc(client: &reqwest::Client, url: &str, method: &str, params: Value) -> WarpResult<Value> {
-    let body = RpcReq { jsonrpc: "2.0", id: 1, method, params };
+async fn rpc(
+    client: &reqwest::Client,
+    url: &str,
+    method: &str,
+    params: Value,
+) -> WarpResult<Value> {
+    let body = RpcReq {
+        jsonrpc: "2.0",
+        id: 1,
+        method,
+        params,
+    };
     let resp: RpcResp = client
-        .post(url).json(&body).send().await
-        .map_err(|e| WarpError::AdapterError { chain: "solana".into(), reason: e.to_string() })?
-        .json().await
-        .map_err(|e| WarpError::AdapterError { chain: "solana".into(), reason: e.to_string() })?;
-    resp.result.ok_or_else(|| WarpError::AdapterError { chain: "solana".into(), reason: "null result".into() })
+        .post(url)
+        .json(&body)
+        .send()
+        .await
+        .map_err(|e| WarpError::AdapterError {
+            chain: "solana".into(),
+            reason: e.to_string(),
+        })?
+        .json()
+        .await
+        .map_err(|e| WarpError::AdapterError {
+            chain: "solana".into(),
+            reason: e.to_string(),
+        })?;
+    resp.result.ok_or_else(|| WarpError::AdapterError {
+        chain: "solana".into(),
+        reason: "null result".into(),
+    })
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -66,14 +89,16 @@ pub struct SolanaAdapter {
 }
 
 impl Default for SolanaAdapter {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl SolanaAdapter {
     pub fn new() -> Self {
         let cluster = std::env::var("SOLANA_CLUSTER").unwrap_or_else(|_| "mainnet-beta".into());
-        let rpc_url = std::env::var("WARP_SOLANA_RPC")
-            .unwrap_or_else(|_| default_rpc(&cluster).to_string());
+        let rpc_url =
+            std::env::var("WARP_SOLANA_RPC").unwrap_or_else(|_| default_rpc(&cluster).to_string());
         Self {
             cluster,
             rpc_url,
@@ -86,28 +111,55 @@ impl SolanaAdapter {
 
     /// `getSlot` → current confirmed slot.
     async fn get_slot(&self) -> WarpResult<u64> {
-        let v = rpc(&self.client, &self.rpc_url, "getSlot",
-            json!([{"commitment": "confirmed"}])).await?;
+        let v = rpc(
+            &self.client,
+            &self.rpc_url,
+            "getSlot",
+            json!([{"commitment": "confirmed"}]),
+        )
+        .await?;
         v.as_u64().ok_or_else(|| WarpError::AdapterError {
-            chain: "solana".into(), reason: "getSlot: non-u64 result".into() })
+            chain: "solana".into(),
+            reason: "getSlot: non-u64 result".into(),
+        })
     }
 
     /// `getSignaturesForAddress(mint, limit=40)` → list of recent signatures.
-    async fn get_signatures_for_address(&self, address: &str, limit: u64) -> WarpResult<Vec<SolSig>> {
-        let v = rpc(&self.client, &self.rpc_url, "getSignaturesForAddress",
-            json!([address, {"limit": limit, "commitment": "confirmed"}])).await?;
+    async fn get_signatures_for_address(
+        &self,
+        address: &str,
+        limit: u64,
+    ) -> WarpResult<Vec<SolSig>> {
+        let v = rpc(
+            &self.client,
+            &self.rpc_url,
+            "getSignaturesForAddress",
+            json!([address, {"limit": limit, "commitment": "confirmed"}]),
+        )
+        .await?;
         serde_json::from_value(v).map_err(|e| WarpError::AdapterError {
-            chain: "solana".into(), reason: format!("sig list parse: {}", e) })
+            chain: "solana".into(),
+            reason: format!("sig list parse: {}", e),
+        })
     }
 
     /// `getTransaction(sig)` → decoded transaction.
     async fn get_transaction(&self, sig: &str) -> WarpResult<Option<SolTx>> {
-        let v = rpc(&self.client, &self.rpc_url, "getTransaction",
+        let v = rpc(
+            &self.client,
+            &self.rpc_url,
+            "getTransaction",
             json!([sig, {"encoding": "json", "commitment": "confirmed",
-                         "maxSupportedTransactionVersion": 0}])).await?;
-        if v.is_null() { return Ok(None); }
+                         "maxSupportedTransactionVersion": 0}]),
+        )
+        .await?;
+        if v.is_null() {
+            return Ok(None);
+        }
         let tx: SolTx = serde_json::from_value(v).map_err(|e| WarpError::AdapterError {
-            chain: "solana".into(), reason: format!("tx parse: {}", e) })?;
+            chain: "solana".into(),
+            reason: format!("tx parse: {}", e),
+        })?;
         Ok(Some(tx))
     }
 
@@ -119,10 +171,12 @@ impl SolanaAdapter {
         let burn_log = logs.iter().find(|l| l.contains("BridgeBurn"))?;
 
         // Parse: "Program log: BridgeBurn amount=1000000 dest=zion1abc..."
-        let amount = burn_log.split_once("amount=")
+        let amount = burn_log
+            .split_once("amount=")
             .and_then(|(_, rest)| rest.split_whitespace().next())
             .and_then(|s| s.parse::<u64>().ok())?;
-        let dest = burn_log.split_once("dest=")
+        let dest = burn_log
+            .split_once("dest=")
             .and_then(|(_, rest)| rest.split_whitespace().next())
             .unwrap_or("zion1unknown")
             .to_string();
@@ -134,7 +188,9 @@ impl SolanaAdapter {
             tx_hash: sig.to_string(),
             block_height: block_slot,
             block_hash: format!("sol-slot-{}", block_slot),
-            sender: tx.transaction.as_ref()
+            sender: tx
+                .transaction
+                .as_ref()
                 .and_then(|t| t.message.accountKeys.first())
                 .cloned()
                 .unwrap_or_default(),
@@ -187,20 +243,33 @@ struct SolMeta {
 // ─────────────────────────────────────────────────────────────────────────────
 #[async_trait]
 impl ChainAdapter for SolanaAdapter {
-    fn family(&self) -> ChainFamily { ChainFamily::Solana }
-    fn name(&self) -> &str { "solana" }
+    fn family(&self) -> ChainFamily {
+        ChainFamily::Solana
+    }
+    fn name(&self) -> &str {
+        "solana"
+    }
 
     async fn health_check(&self) -> WarpResult<bool> {
         match self.get_slot().await {
-            Ok(s) => { info!("[WARP][solana] Health OK — slot {}", s); Ok(true) }
-            Err(e) => { warn!("[WARP][solana] Health FAIL: {}", e); Ok(false) }
+            Ok(s) => {
+                info!("[WARP][solana] Health OK — slot {}", s);
+                Ok(true)
+            }
+            Err(e) => {
+                warn!("[WARP][solana] Health FAIL: {}", e);
+                Ok(false)
+            }
         }
     }
 
     async fn watch_events(&self) -> WarpResult<Vec<DepositProof>> {
         let mint = match wzion_mint(&self.cluster) {
             Some(m) => m,
-            None => { debug!("[WARP][solana] No wZION mint configured"); return Ok(vec![]); }
+            None => {
+                debug!("[WARP][solana] No wZION mint configured");
+                return Ok(vec![]);
+            }
         };
         let slot = self.get_slot().await?;
         let sigs = self.get_signatures_for_address(mint, 40).await?;
@@ -210,7 +279,8 @@ impl ChainAdapter for SolanaAdapter {
         for sig_entry in sigs.iter().filter(|s| s.err.is_none()) {
             match self.get_transaction(&sig_entry.signature).await {
                 Ok(Some(tx)) => {
-                    if let Some(proof) = self.parse_bridge_burn_log(&tx, &sig_entry.signature, slot) {
+                    if let Some(proof) = self.parse_bridge_burn_log(&tx, &sig_entry.signature, slot)
+                    {
                         proofs.push(proof);
                     }
                 }
@@ -242,7 +312,13 @@ impl ChainAdapter for SolanaAdapter {
             amount, instruction.recipient, self.cluster, mint
         );
         signer
-            .mint_to(&self.client, &self.rpc_url, &instruction.recipient, mint, amount)
+            .mint_to(
+                &self.client,
+                &self.rpc_url,
+                &instruction.recipient,
+                mint,
+                amount,
+            )
             .await
     }
 
@@ -251,8 +327,13 @@ impl ChainAdapter for SolanaAdapter {
     }
 
     async fn confirmations(&self, tx_hash: &str) -> WarpResult<u64> {
-        let v = rpc(&self.client, &self.rpc_url, "getSignatureStatuses",
-            json!([[tx_hash], {"searchTransactionHistory": true}])).await?;
+        let v = rpc(
+            &self.client,
+            &self.rpc_url,
+            "getSignatureStatuses",
+            json!([[tx_hash], {"searchTransactionHistory": true}]),
+        )
+        .await?;
         let slot_now = self.get_slot().await.unwrap_or(0);
         let tx_slot = v["value"][0]["slot"].as_u64().unwrap_or(slot_now);
         Ok(slot_now.saturating_sub(tx_slot))
@@ -282,8 +363,11 @@ mod tests {
     #[tokio::test]
     async fn test_solana_execute_mint_is_err() {
         let inst = MintInstruction {
-            dest_chain: "solana".into(), recipient: "7xKXtg2CW87d97T".into(),
-            amount_dest_atomic: 100, signatures: vec![], warp_message_hash: String::new(),
+            dest_chain: "solana".into(),
+            recipient: "7xKXtg2CW87d97T".into(),
+            amount_dest_atomic: 100,
+            signatures: vec![],
+            warp_message_hash: String::new(),
         };
         assert!(SolanaAdapter::new().execute_mint(&inst).await.is_err());
     }
@@ -294,16 +378,20 @@ mod tests {
         let tx = SolTx {
             slot: Some(300_000_000),
             transaction: Some(SolTxInner {
-                message: SolMsg { accountKeys: vec!["7xKXtg2CW87d97T".into()] }
+                message: SolMsg {
+                    accountKeys: vec!["7xKXtg2CW87d97T".into()],
+                },
             }),
             meta: Some(SolMeta {
                 err: None,
                 logMessages: Some(vec![
-                    "Program log: BridgeBurn amount=5000000 dest=zion1abcde".into()
+                    "Program log: BridgeBurn amount=5000000 dest=zion1abcde".into(),
                 ]),
             }),
         };
-        let proof = adapter.parse_bridge_burn_log(&tx, "SIG123", 300_000_001).unwrap();
+        let proof = adapter
+            .parse_bridge_burn_log(&tx, "SIG123", 300_000_001)
+            .unwrap();
         assert_eq!(proof.amount_flowers, 5_000_000);
         assert_eq!(proof.memo, "WARP_INBOUND:solana:zion1abcde");
         assert_eq!(proof.confirmations, 1);
@@ -314,8 +402,15 @@ mod tests {
         let adapter = SolanaAdapter::new();
         let tx = SolTx {
             slot: Some(1),
-            transaction: Some(SolTxInner { message: SolMsg { accountKeys: vec![] } }),
-            meta: Some(SolMeta { err: None, logMessages: Some(vec!["Program log: Transfer".into()]) }),
+            transaction: Some(SolTxInner {
+                message: SolMsg {
+                    accountKeys: vec![],
+                },
+            }),
+            meta: Some(SolMeta {
+                err: None,
+                logMessages: Some(vec!["Program log: Transfer".into()]),
+            }),
         };
         assert!(adapter.parse_bridge_burn_log(&tx, "SIG", 100).is_none());
     }
