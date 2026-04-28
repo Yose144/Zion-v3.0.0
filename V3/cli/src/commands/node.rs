@@ -176,14 +176,24 @@ async fn node_tx(host: &str, port: u16, txid: &str) -> Result<()> {
 async fn node_mempool(host: &str, port: u16) -> Result<()> {
     ui::print_header("Mempool");
     let result = node_rpc::call0(host, port, "getMempoolInfo").await?;
-    // getMempoolInfo returns { "size": N, "template_transactions": N, "template_total_fees_zion": N }
     let txs = result["size"].as_u64().unwrap_or(0);
     let tmpl_txs = result["template_transactions"].as_u64().unwrap_or(0);
     let fees = result["template_total_fees_zion"].as_str().unwrap_or("0");
+    let model = result["transaction_model"].as_str().unwrap_or("unknown");
     ui::print_row("Pending txs", &txs.to_string());
     ui::print_row("Template txs", &tmpl_txs.to_string());
     ui::print_row("Template fees", &format!("{} ZION", fees));
-    if txs > 0 {
+    ui::print_row("Transaction model", model);
+    if txs == 0 {
+        ui::print_ok("Mempool is empty");
+    } else if tmpl_txs == 0 {
+        ui::print_warn("Pending transactions are not included in the active template");
+    } else {
+        ui::print_ok(&format!(
+            "{} of {} pending transactions are template-ready",
+            tmpl_txs, txs
+        ));
+    }
     println!();
     Ok(())
 }
