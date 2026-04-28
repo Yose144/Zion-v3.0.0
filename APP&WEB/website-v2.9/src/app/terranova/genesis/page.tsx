@@ -114,7 +114,7 @@ export default function ZahradaGenesisPage() {
           className="mb-10"
         >
           <Link
-            href="/terranova/public"
+            href="/terranova"
             className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-emerald-400 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
