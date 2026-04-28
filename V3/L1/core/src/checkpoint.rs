@@ -13,9 +13,9 @@
 // This module is a pure state machine — no I/O. The node runtime is responsible
 // for loading checkpoint files (JSON) and passing them in.
 
-use ed25519_dalek::{Signature, VerifyingKey, Verifier};
-use sha2::{Sha256, Digest};
+use ed25519_dalek::{Signature, Verifier, VerifyingKey};
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
 
 // ── Constants ──────────────────────────────────────────────────────────
@@ -107,7 +107,10 @@ impl CheckpointRegistry {
     /// Get the best (highest) verified checkpoint at or below `height`.
     /// Used by IBD to determine the fast-sync boundary.
     pub fn best_checkpoint_at_or_below(&self, height: u64) -> Option<&SignedCheckpoint> {
-        self.checkpoints.range(..=height).next_back().map(|(_, cp)| cp)
+        self.checkpoints
+            .range(..=height)
+            .next_back()
+            .map(|(_, cp)| cp)
     }
 
     /// Check if a block hash at a given height matches the checkpoint.
@@ -163,8 +166,8 @@ impl CheckpointRegistry {
     /// Load checkpoints from a JSON array (e.g., from a file or peer).
     /// Returns (accepted_count, rejected_count).
     pub fn load_from_json(&mut self, json: &str) -> Result<(usize, usize), String> {
-        let cps: Vec<SignedCheckpoint> = serde_json::from_str(json)
-            .map_err(|e| format!("invalid checkpoint JSON: {e}"))?;
+        let cps: Vec<SignedCheckpoint> =
+            serde_json::from_str(json).map_err(|e| format!("invalid checkpoint JSON: {e}"))?;
 
         let mut accepted = 0;
         let mut rejected = 0;
@@ -188,7 +191,10 @@ impl CheckpointRegistry {
     /// Compute the canonical digest for a checkpoint.
     /// Format: SHA-256("height:block_hash:state_root:timestamp")
     pub fn compute_digest(cp: &SignedCheckpoint) -> [u8; 32] {
-        let msg = format!("{}:{}:{}:{}", cp.height, cp.block_hash, cp.state_root, cp.timestamp);
+        let msg = format!(
+            "{}:{}:{}:{}",
+            cp.height, cp.block_hash, cp.state_root, cp.timestamp
+        );
         let mut hasher = Sha256::new();
         hasher.update(msg.as_bytes());
         let result = hasher.finalize();
@@ -354,7 +360,10 @@ mod tests {
         let mut reg = CheckpointRegistry::new(trusted);
 
         // Checkpoint at height 10000 signed by 2 of 3 — should pass
-        let cp = make_checkpoint(10_000, &[(sk1.clone(), pk1.clone()), (sk2.clone(), pk2.clone())]);
+        let cp = make_checkpoint(
+            10_000,
+            &[(sk1.clone(), pk1.clone()), (sk2.clone(), pk2.clone())],
+        );
         let result = reg.add_checkpoint(cp);
         assert_eq!(result, CheckpointVerification::Valid { valid_sigs: 2 });
         assert_eq!(reg.len(), 1);
@@ -373,7 +382,10 @@ mod tests {
         let result = reg.add_checkpoint(cp);
         assert_eq!(
             result,
-            CheckpointVerification::InsufficientSignatures { valid: 1, required: 2 }
+            CheckpointVerification::InsufficientSignatures {
+                valid: 1,
+                required: 2
+            }
         );
         assert!(reg.is_empty());
     }
@@ -399,8 +411,14 @@ mod tests {
         let trusted = vec![pk1.clone(), pk2.clone()];
         let mut reg = CheckpointRegistry::new(trusted);
 
-        let cp1 = make_checkpoint(10_000, &[(sk1.clone(), pk1.clone()), (sk2.clone(), pk2.clone())]);
-        let cp2 = make_checkpoint(20_000, &[(sk1.clone(), pk1.clone()), (sk2.clone(), pk2.clone())]);
+        let cp1 = make_checkpoint(
+            10_000,
+            &[(sk1.clone(), pk1.clone()), (sk2.clone(), pk2.clone())],
+        );
+        let cp2 = make_checkpoint(
+            20_000,
+            &[(sk1.clone(), pk1.clone()), (sk2.clone(), pk2.clone())],
+        );
 
         reg.add_checkpoint(cp1);
         reg.add_checkpoint(cp2);
@@ -470,7 +488,10 @@ mod tests {
         let result = reg.add_checkpoint(cp);
         assert_eq!(
             result,
-            CheckpointVerification::InsufficientSignatures { valid: 1, required: 2 }
+            CheckpointVerification::InsufficientSignatures {
+                valid: 1,
+                required: 2
+            }
         );
     }
 

@@ -74,7 +74,9 @@ pub async fn run(cfg: &Config, cmd: WarpCmd) -> Result<()> {
                             let rpc = c["rpc_url"].as_str().unwrap_or("-");
                             println!("  [{id}] {name}  rpc={rpc}");
                         }
-                        if arr.is_empty() { ui::print_info("No chains registered."); }
+                        if arr.is_empty() {
+                            ui::print_info("No chains registered.");
+                        }
                     } else {
                         println!("{}", serde_json::to_string_pretty(&v)?);
                     }

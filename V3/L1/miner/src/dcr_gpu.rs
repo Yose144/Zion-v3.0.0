@@ -16,8 +16,7 @@ use serde_json::Value;
 
 /// Blake3 IV constants (matching the standard).
 const BLAKE3_IV: [u32; 8] = [
-    0x6A09E667, 0xBB67AE85, 0x3C6EF372, 0xA54FF53A,
-    0x510E527F, 0x9B05688C, 0x1F83D9AB, 0x5BE0CD19,
+    0x6A09E667, 0xBB67AE85, 0x3C6EF372, 0xA54FF53A, 0x510E527F, 0x9B05688C, 0x1F83D9AB, 0x5BE0CD19,
 ];
 
 const BLAKE3_MSG_PERM: [usize; 16] = [2, 6, 3, 10, 7, 0, 4, 13, 1, 11, 12, 5, 9, 14, 15, 8];
@@ -56,11 +55,15 @@ pub fn save_work_size(device: &str, work_size: usize) -> Result<(), String> {
     };
 
     map.insert(device.to_string(), work_size);
-    let payload = serde_json::to_string_pretty(&map).map_err(|e| format!("encode profiles: {e}"))?;
+    let payload =
+        serde_json::to_string_pretty(&map).map_err(|e| format!("encode profiles: {e}"))?;
     std::fs::write(&path, payload).map_err(|e| format!("write profiles: {e}"))
 }
 
-pub fn autotune_best_work_size(candidates: &[usize], secs: f64) -> Result<(String, usize, f64), String> {
+pub fn autotune_best_work_size(
+    candidates: &[usize],
+    secs: f64,
+) -> Result<(String, usize, f64), String> {
     if candidates.is_empty() {
         return Err("no autotune candidates".to_string());
     }
@@ -102,14 +105,14 @@ fn g(st: &mut [u32; 16], a: usize, b: usize, c: usize, d: usize, mx: u32, my: u3
 }
 
 fn b3_round(st: &mut [u32; 16], msg: &[u32; 16]) {
-    g(st, 0, 4,  8, 12, msg[0],  msg[1]);
-    g(st, 1, 5,  9, 13, msg[2],  msg[3]);
-    g(st, 2, 6, 10, 14, msg[4],  msg[5]);
-    g(st, 3, 7, 11, 15, msg[6],  msg[7]);
-    g(st, 0, 5, 10, 15, msg[8],  msg[9]);
+    g(st, 0, 4, 8, 12, msg[0], msg[1]);
+    g(st, 1, 5, 9, 13, msg[2], msg[3]);
+    g(st, 2, 6, 10, 14, msg[4], msg[5]);
+    g(st, 3, 7, 11, 15, msg[6], msg[7]);
+    g(st, 0, 5, 10, 15, msg[8], msg[9]);
     g(st, 1, 6, 11, 12, msg[10], msg[11]);
-    g(st, 2, 7,  8, 13, msg[12], msg[13]);
-    g(st, 3, 4,  9, 14, msg[14], msg[15]);
+    g(st, 2, 7, 8, 13, msg[12], msg[13]);
+    g(st, 3, 4, 9, 14, msg[14], msg[15]);
 }
 
 fn b3_permute(msg: &mut [u32; 16]) {
@@ -120,11 +123,26 @@ fn b3_permute(msg: &mut [u32; 16]) {
 }
 
 /// Blake3 compress: returns all 16 state words.
-fn b3_compress(cv: &[u32; 8], bw: &[u32; 16], counter: u64, block_len: u32, flags: u32) -> [u32; 16] {
+fn b3_compress(
+    cv: &[u32; 8],
+    bw: &[u32; 16],
+    counter: u64,
+    block_len: u32,
+    flags: u32,
+) -> [u32; 16] {
     let mut st: [u32; 16] = [
-        cv[0], cv[1], cv[2], cv[3],
-        cv[4], cv[5], cv[6], cv[7],
-        BLAKE3_IV[0], BLAKE3_IV[1], BLAKE3_IV[2], BLAKE3_IV[3],
+        cv[0],
+        cv[1],
+        cv[2],
+        cv[3],
+        cv[4],
+        cv[5],
+        cv[6],
+        cv[7],
+        BLAKE3_IV[0],
+        BLAKE3_IV[1],
+        BLAKE3_IV[2],
+        BLAKE3_IV[3],
         counter as u32,
         (counter >> 32) as u32,
         block_len,
@@ -139,7 +157,13 @@ fn b3_compress(cv: &[u32; 8], bw: &[u32; 16], counter: u64, block_len: u32, flag
 }
 
 /// Compress and extract chaining value (XOR of upper and lower halves).
-fn b3_compress_cv(cv: &[u32; 8], bw: &[u32; 16], counter: u64, block_len: u32, flags: u32) -> [u32; 8] {
+fn b3_compress_cv(
+    cv: &[u32; 8],
+    bw: &[u32; 16],
+    counter: u64,
+    block_len: u32,
+    flags: u32,
+) -> [u32; 8] {
     let full = b3_compress(cv, bw, counter, block_len, flags);
     let mut out = [0u32; 8];
     for i in 0..8 {
@@ -201,7 +225,11 @@ pub fn verify_precompute(header: &[u8; 180]) -> bool {
     }
 
     if hash != expected {
-        eprintln!("precompute: mismatch (expected {:02x?}, got {:02x?})", &expected[..8], &hash[..8]);
+        eprintln!(
+            "precompute: mismatch (expected {:02x?}, got {:02x?})",
+            &expected[..8],
+            &hash[..8]
+        );
     }
 
     hash == expected
@@ -321,9 +349,18 @@ impl GpuDcrMiner {
         let target_be = target_to_be_words(&target);
 
         // Upload static buffers
-        self.cv_buf.write(&cv as &[u32]).enq().map_err(|e| format!("{e}"))?;
-        self.tail_buf.write(&tail).enq().map_err(|e| format!("{e}"))?;
-        self.target_buf.write(&target_be as &[u32]).enq().map_err(|e| format!("{e}"))?;
+        self.cv_buf
+            .write(&cv as &[u32])
+            .enq()
+            .map_err(|e| format!("{e}"))?;
+        self.tail_buf
+            .write(&tail)
+            .enq()
+            .map_err(|e| format!("{e}"))?;
+        self.target_buf
+            .write(&target_be as &[u32])
+            .enq()
+            .map_err(|e| format!("{e}"))?;
 
         let start = Instant::now();
         let mut total_hashes: u64 = 0;
@@ -333,7 +370,10 @@ impl GpuDcrMiner {
         loop {
             // Clear results
             let zeros = vec![0u32; 1 + MAX_RESULTS as usize];
-            self.results_buf.write(&zeros).enq().map_err(|e| format!("{e}"))?;
+            self.results_buf
+                .write(&zeros)
+                .enq()
+                .map_err(|e| format!("{e}"))?;
 
             // Update nonce_start
             self.kernel
@@ -342,9 +382,7 @@ impl GpuDcrMiner {
 
             // Dispatch
             unsafe {
-                self.kernel
-                    .enq()
-                    .map_err(|e| format!("kernel enq: {e}"))?;
+                self.kernel.enq().map_err(|e| format!("kernel enq: {e}"))?;
             }
 
             // Wait for completion
@@ -373,28 +411,41 @@ impl GpuDcrMiner {
         let tail: Vec<u8> = header[128..180].to_vec();
         let target_be = target_to_be_words(target);
 
-        self.cv_buf.write(&cv as &[u32]).enq().map_err(|e| format!("{e}"))?;
-        self.tail_buf.write(&tail).enq().map_err(|e| format!("{e}"))?;
-        self.target_buf.write(&target_be as &[u32]).enq().map_err(|e| format!("{e}"))?;
+        self.cv_buf
+            .write(&cv as &[u32])
+            .enq()
+            .map_err(|e| format!("{e}"))?;
+        self.tail_buf
+            .write(&tail)
+            .enq()
+            .map_err(|e| format!("{e}"))?;
+        self.target_buf
+            .write(&target_be as &[u32])
+            .enq()
+            .map_err(|e| format!("{e}"))?;
 
         let zeros = vec![0u32; 1 + MAX_RESULTS as usize];
-        self.results_buf.write(&zeros).enq().map_err(|e| format!("{e}"))?;
+        self.results_buf
+            .write(&zeros)
+            .enq()
+            .map_err(|e| format!("{e}"))?;
 
         self.kernel
             .set_arg(3, nonce_start)
             .map_err(|e| format!("{e}"))?;
 
         unsafe {
-            self.kernel
-                .enq()
-                .map_err(|e| format!("kernel enq: {e}"))?;
+            self.kernel.enq().map_err(|e| format!("kernel enq: {e}"))?;
         }
 
         self.pro_que.queue().finish().map_err(|e| format!("{e}"))?;
 
         // Read results
         let mut results = vec![0u32; 1 + MAX_RESULTS as usize];
-        self.results_buf.read(&mut results).enq().map_err(|e| format!("{e}"))?;
+        self.results_buf
+            .read(&mut results)
+            .enq()
+            .map_err(|e| format!("{e}"))?;
 
         let count = results[0].min(MAX_RESULTS) as usize;
         Ok(results[1..1 + count].to_vec())

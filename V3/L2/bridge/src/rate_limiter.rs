@@ -43,7 +43,11 @@ pub enum RateLimitResult {
     /// Rejected: global hourly limit reached.
     GlobalLimitReached { current: u32, max: u32 },
     /// Rejected: per-address limit reached.
-    AddressLimitReached { address: String, current: u32, max: u32 },
+    AddressLimitReached {
+        address: String,
+        current: u32,
+        max: u32,
+    },
 }
 
 impl RateLimiter {
@@ -105,7 +109,11 @@ impl RateLimiter {
 
         // Record — both borrows are now independent
         inner.global.push_back(now);
-        inner.per_address.entry(addr_key).or_default().push_back(now);
+        inner
+            .per_address
+            .entry(addr_key)
+            .or_default()
+            .push_back(now);
 
         RateLimitResult::Allowed
     }
@@ -164,7 +172,11 @@ mod tests {
         }
         // 26th from same address should be rejected
         match rl.check_and_record(addr) {
-            RateLimitResult::AddressLimitReached { current: 25, max: 25, .. } => {}
+            RateLimitResult::AddressLimitReached {
+                current: 25,
+                max: 25,
+                ..
+            } => {}
             other => panic!("Expected AddressLimitReached, got {:?}", other),
         }
         // Different address should still work

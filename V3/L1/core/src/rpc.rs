@@ -8,16 +8,16 @@
 //
 // Spec: https://www.jsonrpc.org/specification
 
+use k256::ecdsa::{signature::Verifier, Signature, VerifyingKey};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, Mutex};
-use k256::ecdsa::{signature::Verifier, Signature, VerifyingKey};
 
-use crate::NodeRuntime;
 use crate::crypto;
 use crate::emission;
 use crate::fee;
+use crate::NodeRuntime;
 
 // ── Constants ──────────────────────────────────────────────────────────
 
@@ -199,9 +199,8 @@ impl RpcRouter {
                         RpcResponse::error(Value::Null, INVALID_REQUEST, "Empty batch")
                     } else {
                         // Batch: process each, return array
-                        let responses: Vec<RpcResponse> = arr.iter()
-                            .map(|v| self.handle_value(v))
-                            .collect();
+                        let responses: Vec<RpcResponse> =
+                            arr.iter().map(|v| self.handle_value(v)).collect();
                         // Serialize as array
                         return serde_json::to_vec(&responses).unwrap_or_default();
                     }
@@ -271,7 +270,11 @@ fn parse_bridge_memo(memo: &str) -> Option<(&str, &str)> {
 
 fn utxo_balance_at_height(rt: &NodeRuntime, address: &str, height: u64) -> u64 {
     let mut utxos: HashMap<(String, u32), u64> = HashMap::new();
-    for block in rt.accepted_blocks().iter().filter(|block| block.height <= height) {
+    for block in rt
+        .accepted_blocks()
+        .iter()
+        .filter(|block| block.height <= height)
+    {
         for utxo_tx in &block.utxo_transactions {
             for input in &utxo_tx.inputs {
                 utxos.remove(&(crypto::to_hex(&input.prev_tx_hash), input.output_index));
@@ -286,12 +289,15 @@ fn utxo_balance_at_height(rt: &NodeRuntime, address: &str, height: u64) -> u64 {
     }
 
     let mut balance = 0u64;
-    for block in rt.accepted_blocks().iter().filter(|block| block.height <= height) {
+    for block in rt
+        .accepted_blocks()
+        .iter()
+        .filter(|block| block.height <= height)
+    {
         for utxo_tx in &block.utxo_transactions {
             let tx_hash = crypto::to_hex(&utxo_tx.id);
             for (index, output) in utxo_tx.outputs.iter().enumerate() {
-                if output.address == address
-                    && utxos.contains_key(&(tx_hash.clone(), index as u32))
+                if output.address == address && utxos.contains_key(&(tx_hash.clone(), index as u32))
                 {
                     balance = balance.saturating_add(output.amount);
                 }
@@ -309,14 +315,34 @@ pub fn build_stub_router() -> RpcRouter {
     let mut router = RpcRouter::new();
     let stub = |method_name: &'static str| -> HandlerFn {
         Box::new(move |_params: &Value| {
-            Err((INTERNAL_ERROR, format!("{method_name}: not yet bound to node state")))
+            Err((
+                INTERNAL_ERROR,
+                format!("{method_name}: not yet bound to node state"),
+            ))
         })
     };
     for method in [
-        "getBalance", "getAccountBalance", "getBlock", "getBlockByHeight", "getTransaction",
-        "getAccountTransaction", "sendRawTransaction", "submitTransaction", "submitAccountTransaction", "getBlockTemplate", "getMempoolInfo",
-        "getPeerInfo", "getChainInfo", "getNodeInfo", "submitBlock", "getUtxos", "getSupplyInfo",
-        "getBalanceAtHeight", "getBridgeLocks", "getBridgeVaultBalance", "submitBridgeUnlock",
+        "getBalance",
+        "getAccountBalance",
+        "getBlock",
+        "getBlockByHeight",
+        "getTransaction",
+        "getAccountTransaction",
+        "sendRawTransaction",
+        "submitTransaction",
+        "submitAccountTransaction",
+        "getBlockTemplate",
+        "getMempoolInfo",
+        "getPeerInfo",
+        "getChainInfo",
+        "getNodeInfo",
+        "submitBlock",
+        "getUtxos",
+        "getSupplyInfo",
+        "getBalanceAtHeight",
+        "getBridgeLocks",
+        "getBridgeVaultBalance",
+        "submitBridgeUnlock",
     ] {
         router.register(method, stub(method));
     }
@@ -331,105 +357,133 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
     // ── getChainInfo ───────────────────────────────────────────────────
     {
         let rt = Arc::clone(&runtime);
-        router.register("getChainInfo", Box::new(move |_params: &Value| {
-            let rt = rt.lock().map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
-            let status = rt.status();
-            Ok(json!({
-                "network": status.network,
-                "consensus_profile": status.consensus_profile,
-                "chain_height": status.chain_height,
-                "tip_hash": status.tip_hash_hex,
-                "accepted_blocks": status.accepted_blocks,
-                "mempool_transactions": status.mempool_transactions,
-                "protocol_version": status.protocol_version,
-                "transaction_model": ACTIVE_TRANSACTION_MODEL,
-                "utxo_validation_available": true,
-            }))
-        }));
+        router.register(
+            "getChainInfo",
+            Box::new(move |_params: &Value| {
+                let rt = rt
+                    .lock()
+                    .map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
+                let status = rt.status();
+                Ok(json!({
+                    "network": status.network,
+                    "consensus_profile": status.consensus_profile,
+                    "chain_height": status.chain_height,
+                    "tip_hash": status.tip_hash_hex,
+                    "accepted_blocks": status.accepted_blocks,
+                    "mempool_transactions": status.mempool_transactions,
+                    "protocol_version": status.protocol_version,
+                    "transaction_model": ACTIVE_TRANSACTION_MODEL,
+                    "utxo_validation_available": true,
+                }))
+            }),
+        );
     }
 
     // ── getNodeInfo ────────────────────────────────────────────────────
     {
         let rt = Arc::clone(&runtime);
-        router.register("getNodeInfo", Box::new(move |_params: &Value| {
-            let rt = rt.lock().map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
-            let status = rt.status();
-            Ok(json!({
-                "node_id": status.node_id,
-                "protocol_version": status.protocol_version,
-                "network": status.network,
-                "chain_height": status.chain_height,
-                "p2p_bind": status.p2p_bind.address(),
-                "rpc_bind": status.rpc_bind.address(),
-                "pool_bind": status.pool_bind.address(),
-                "known_peers": status.known_peers.len(),
-                "accepted_blocks": status.accepted_blocks,
-                "mempool_transactions": status.mempool_transactions,
-                "transaction_model": ACTIVE_TRANSACTION_MODEL,
-                "balance_lookup": "account_id_or_zion1_address",
-            }))
-        }));
+        router.register(
+            "getNodeInfo",
+            Box::new(move |_params: &Value| {
+                let rt = rt
+                    .lock()
+                    .map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
+                let status = rt.status();
+                Ok(json!({
+                    "node_id": status.node_id,
+                    "protocol_version": status.protocol_version,
+                    "network": status.network,
+                    "chain_height": status.chain_height,
+                    "p2p_bind": status.p2p_bind.address(),
+                    "rpc_bind": status.rpc_bind.address(),
+                    "pool_bind": status.pool_bind.address(),
+                    "known_peers": status.known_peers.len(),
+                    "accepted_blocks": status.accepted_blocks,
+                    "mempool_transactions": status.mempool_transactions,
+                    "transaction_model": ACTIVE_TRANSACTION_MODEL,
+                    "balance_lookup": "account_id_or_zion1_address",
+                }))
+            }),
+        );
     }
 
     // ── getBlockByHeight ───────────────────────────────────────────────
     {
         let rt = Arc::clone(&runtime);
-        router.register("getBlockByHeight", Box::new(move |params: &Value| {
-            let height = params.get("height")
-                .or_else(|| params.get(0))
-                .and_then(|v| v.as_u64())
-                .ok_or_else(|| (INVALID_PARAMS, "missing or invalid 'height' param".into()))?;
-            let rt = rt.lock().map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
-            match rt.accepted_block_by_height(height) {
-                Some(block) => Ok(serde_json::to_value(block).unwrap_or(Value::Null)),
-                None => Err((BLOCK_NOT_FOUND, format!("no block at height {height}"))),
-            }
-        }));
+        router.register(
+            "getBlockByHeight",
+            Box::new(move |params: &Value| {
+                let height = params
+                    .get("height")
+                    .or_else(|| params.get(0))
+                    .and_then(|v| v.as_u64())
+                    .ok_or_else(|| (INVALID_PARAMS, "missing or invalid 'height' param".into()))?;
+                let rt = rt
+                    .lock()
+                    .map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
+                match rt.accepted_block_by_height(height) {
+                    Some(block) => Ok(serde_json::to_value(block).unwrap_or(Value::Null)),
+                    None => Err((BLOCK_NOT_FOUND, format!("no block at height {height}"))),
+                }
+            }),
+        );
     }
 
     // ── getBlock (by hash) ─────────────────────────────────────────────
     {
         let rt = Arc::clone(&runtime);
-        router.register("getBlock", Box::new(move |params: &Value| {
-            let hash = params.get("hash")
-                .or_else(|| params.get(0))
-                .and_then(|v| v.as_str())
-                .ok_or_else(|| (INVALID_PARAMS, "missing or invalid 'hash' param".into()))?;
-            let rt = rt.lock().map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
-            for block in rt.accepted_blocks() {
-                if block.hash_hex == hash {
-                    return Ok(serde_json::to_value(block).unwrap_or(Value::Null));
+        router.register(
+            "getBlock",
+            Box::new(move |params: &Value| {
+                let hash = params
+                    .get("hash")
+                    .or_else(|| params.get(0))
+                    .and_then(|v| v.as_str())
+                    .ok_or_else(|| (INVALID_PARAMS, "missing or invalid 'hash' param".into()))?;
+                let rt = rt
+                    .lock()
+                    .map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
+                for block in rt.accepted_blocks() {
+                    if block.hash_hex == hash {
+                        return Ok(serde_json::to_value(block).unwrap_or(Value::Null));
+                    }
                 }
-            }
-            Err((BLOCK_NOT_FOUND, format!("no block with hash {hash}")))
-        }));
+                Err((BLOCK_NOT_FOUND, format!("no block with hash {hash}")))
+            }),
+        );
     }
 
     // ── getTransaction / getAccountTransaction ───────────────────────
     let register_get_transaction = |router: &mut RpcRouter, method_name: &'static str| {
         let rt = Arc::clone(&runtime);
-        router.register(method_name, Box::new(move |params: &Value| {
-            let txid = params.get("txid")
-                .or_else(|| params.get(0))
-                .and_then(|v| v.as_str())
-                .ok_or_else(|| (INVALID_PARAMS, "missing or invalid 'txid' param".into()))?;
-            let rt = rt.lock().map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
-            for block in rt.accepted_blocks() {
-                for tx in &block.transactions {
-                    if tx.tx_id == txid {
-                        return Ok(json!({
-                            "transaction_model": ACTIVE_TRANSACTION_MODEL,
-                            "transaction": tx,
-                            "block_height": block.height,
-                            "block_hash": block.hash_hex,
-                            "confirmed": true,
-                            "source": "confirmed",
-                        }));
+        router.register(
+            method_name,
+            Box::new(move |params: &Value| {
+                let txid = params
+                    .get("txid")
+                    .or_else(|| params.get(0))
+                    .and_then(|v| v.as_str())
+                    .ok_or_else(|| (INVALID_PARAMS, "missing or invalid 'txid' param".into()))?;
+                let rt = rt
+                    .lock()
+                    .map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
+                for block in rt.accepted_blocks() {
+                    for tx in &block.transactions {
+                        if tx.tx_id == txid {
+                            return Ok(json!({
+                                "transaction_model": ACTIVE_TRANSACTION_MODEL,
+                                "transaction": tx,
+                                "block_height": block.height,
+                                "block_hash": block.hash_hex,
+                                "confirmed": true,
+                                "source": "confirmed",
+                            }));
+                        }
                     }
                 }
-            }
-            Err((TX_NOT_FOUND, format!("transaction {txid} not found")))
-        }));
+                Err((TX_NOT_FOUND, format!("transaction {txid} not found")))
+            }),
+        );
     };
     register_get_transaction(&mut router, "getTransaction");
     register_get_transaction(&mut router, "getAccountTransaction");
@@ -437,63 +491,69 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
     // ── getBalance / getAccountBalance ────────────────────────────────
     let register_get_balance = |router: &mut RpcRouter, method_name: &'static str| {
         let rt = Arc::clone(&runtime);
-        router.register(method_name, Box::new(move |params: &Value| {
-            let account_id = params.get("account")
-                .or_else(|| params.get("address"))
-                .or_else(|| params.get(0))
-                .and_then(|v| v.as_str())
-                .ok_or_else(|| (INVALID_PARAMS, "missing or invalid 'account' param".into()))?;
-            if account_id.is_empty() {
-                return Err((INVALID_ADDRESS, "empty account id".into()));
-            }
-            let rt = rt.lock().map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
-            if looks_like_utxo_address(account_id) {
-                let utxo_balance = rt.utxo_balance(account_id);
-                // Also scan account-model transactions (coinbase/premine credits)
-                let mut account_balance: i128 = 0;
+        router.register(
+            method_name,
+            Box::new(move |params: &Value| {
+                let account_id = params
+                    .get("account")
+                    .or_else(|| params.get("address"))
+                    .or_else(|| params.get(0))
+                    .and_then(|v| v.as_str())
+                    .ok_or_else(|| (INVALID_PARAMS, "missing or invalid 'account' param".into()))?;
+                if account_id.is_empty() {
+                    return Err((INVALID_ADDRESS, "empty account id".into()));
+                }
+                let rt = rt
+                    .lock()
+                    .map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
+                if looks_like_utxo_address(account_id) {
+                    let utxo_balance = rt.utxo_balance(account_id);
+                    // Also scan account-model transactions (coinbase/premine credits)
+                    let mut account_balance: i128 = 0;
+                    for block in rt.accepted_blocks() {
+                        for tx in &block.transactions {
+                            if tx.to == account_id {
+                                account_balance += tx.amount_zion as i128;
+                            }
+                            if tx.from == account_id {
+                                account_balance -= (tx.amount_zion + tx.fee_zion as u128) as i128;
+                            }
+                        }
+                    }
+                    let account_balance = account_balance.max(0) as u128;
+                    let utxo_count = rt.spendable_utxos(account_id).len() as u64;
+                    let total = utxo_balance as u128 + account_balance;
+                    return Ok(json!({
+                        "address": account_id,
+                        "balance_flowers": total.to_string(),
+                        "utxo_balance_flowers": utxo_balance,
+                        "account_balance_flowers": account_balance.to_string(),
+                        "utxo_count": utxo_count,
+                        "chain_height": rt.chain_height(),
+                        "transaction_model": ACTIVE_TRANSACTION_MODEL,
+                        "balance_scope": "confirmed_chain_only",
+                    }));
+                }
+                let mut balance: i128 = 0;
                 for block in rt.accepted_blocks() {
                     for tx in &block.transactions {
                         if tx.to == account_id {
-                            account_balance += tx.amount_zion as i128;
+                            balance += tx.amount_zion as i128;
                         }
                         if tx.from == account_id {
-                            account_balance -= (tx.amount_zion + tx.fee_zion as u128) as i128;
+                            balance -= (tx.amount_zion + tx.fee_zion as u128) as i128;
                         }
                     }
                 }
-                let account_balance = account_balance.max(0) as u128;
-                let utxo_count = rt.spendable_utxos(account_id).len() as u64;
-                let total = utxo_balance as u128 + account_balance;
-                return Ok(json!({
-                    "address": account_id,
-                    "balance_flowers": total.to_string(),
-                    "utxo_balance_flowers": utxo_balance,
-                    "account_balance_flowers": account_balance.to_string(),
-                    "utxo_count": utxo_count,
+                Ok(json!({
+                    "account_id": account_id,
+                    "balance_zion": balance.max(0).to_string(),
                     "chain_height": rt.chain_height(),
                     "transaction_model": ACTIVE_TRANSACTION_MODEL,
                     "balance_scope": "confirmed_chain_only",
-                }));
-            }
-            let mut balance: i128 = 0;
-            for block in rt.accepted_blocks() {
-                for tx in &block.transactions {
-                    if tx.to == account_id {
-                        balance += tx.amount_zion as i128;
-                    }
-                    if tx.from == account_id {
-                        balance -= (tx.amount_zion + tx.fee_zion as u128) as i128;
-                    }
-                }
-            }
-            Ok(json!({
-                "account_id": account_id,
-                "balance_zion": balance.max(0).to_string(),
-                "chain_height": rt.chain_height(),
-                "transaction_model": ACTIVE_TRANSACTION_MODEL,
-                "balance_scope": "confirmed_chain_only",
-            }))
-        }));
+                }))
+            }),
+        );
     };
     register_get_balance(&mut router, "getBalance");
     register_get_balance(&mut router, "getAccountBalance");
@@ -501,173 +561,228 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
     // ── getBalanceAtHeight ────────────────────────────────────────────
     {
         let rt = Arc::clone(&runtime);
-        router.register("getBalanceAtHeight", Box::new(move |params: &Value| {
-            let account_id = params.get("account")
-                .or_else(|| params.get("address"))
-                .or_else(|| params.get(0))
-                .and_then(|v| v.as_str())
-                .ok_or_else(|| (INVALID_PARAMS, "missing or invalid 'account' param".into()))?;
-            let height = params.get("height")
-                .or_else(|| params.get(1))
-                .and_then(|v| v.as_u64())
-                .ok_or_else(|| (INVALID_PARAMS, "missing or invalid 'height' param".into()))?;
-            if account_id.is_empty() {
-                return Err((INVALID_ADDRESS, "empty account id".into()));
-            }
-            let rt = rt.lock().map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
-            let effective_height = height.min(rt.chain_height());
-            if looks_like_utxo_address(account_id) {
-                let utxo_balance = utxo_balance_at_height(&rt, account_id, effective_height);
-                let mut account_balance: i128 = 0;
-                for block in rt.accepted_blocks().iter().filter(|block| block.height <= effective_height) {
+        router.register(
+            "getBalanceAtHeight",
+            Box::new(move |params: &Value| {
+                let account_id = params
+                    .get("account")
+                    .or_else(|| params.get("address"))
+                    .or_else(|| params.get(0))
+                    .and_then(|v| v.as_str())
+                    .ok_or_else(|| (INVALID_PARAMS, "missing or invalid 'account' param".into()))?;
+                let height = params
+                    .get("height")
+                    .or_else(|| params.get(1))
+                    .and_then(|v| v.as_u64())
+                    .ok_or_else(|| (INVALID_PARAMS, "missing or invalid 'height' param".into()))?;
+                if account_id.is_empty() {
+                    return Err((INVALID_ADDRESS, "empty account id".into()));
+                }
+                let rt = rt
+                    .lock()
+                    .map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
+                let effective_height = height.min(rt.chain_height());
+                if looks_like_utxo_address(account_id) {
+                    let utxo_balance = utxo_balance_at_height(&rt, account_id, effective_height);
+                    let mut account_balance: i128 = 0;
+                    for block in rt
+                        .accepted_blocks()
+                        .iter()
+                        .filter(|block| block.height <= effective_height)
+                    {
+                        for tx in &block.transactions {
+                            if tx.to == account_id {
+                                account_balance += tx.amount_zion as i128;
+                            }
+                            if tx.from == account_id {
+                                account_balance -= (tx.amount_zion + tx.fee_zion as u128) as i128;
+                            }
+                        }
+                    }
+                    let account_balance = account_balance.max(0) as u128;
+                    let total = utxo_balance as u128 + account_balance;
+                    return Ok(json!({
+                        "address": account_id,
+                        "height": effective_height,
+                        "balance_flowers": total.to_string(),
+                        "utxo_balance_flowers": utxo_balance,
+                        "account_balance_flowers": account_balance.to_string(),
+                        "balance_zion": format_flowers_as_zion(total as u64),
+                        "transaction_model": ACTIVE_TRANSACTION_MODEL,
+                        "balance_scope": "confirmed_chain_only",
+                    }));
+                }
+                let mut balance: i128 = 0;
+                for block in rt
+                    .accepted_blocks()
+                    .iter()
+                    .filter(|block| block.height <= effective_height)
+                {
                     for tx in &block.transactions {
                         if tx.to == account_id {
-                            account_balance += tx.amount_zion as i128;
+                            balance += tx.amount_zion as i128;
                         }
                         if tx.from == account_id {
-                            account_balance -= (tx.amount_zion + tx.fee_zion as u128) as i128;
+                            balance -= (tx.amount_zion + tx.fee_zion as u128) as i128;
                         }
                     }
                 }
-                let account_balance = account_balance.max(0) as u128;
-                let total = utxo_balance as u128 + account_balance;
-                return Ok(json!({
-                    "address": account_id,
+                Ok(json!({
+                    "account_id": account_id,
                     "height": effective_height,
-                    "balance_flowers": total.to_string(),
-                    "utxo_balance_flowers": utxo_balance,
-                    "account_balance_flowers": account_balance.to_string(),
-                    "balance_zion": format_flowers_as_zion(total as u64),
+                    "balance_zion": balance.max(0).to_string(),
                     "transaction_model": ACTIVE_TRANSACTION_MODEL,
                     "balance_scope": "confirmed_chain_only",
-                }));
-            }
-            let mut balance: i128 = 0;
-            for block in rt.accepted_blocks().iter().filter(|block| block.height <= effective_height) {
-                for tx in &block.transactions {
-                    if tx.to == account_id {
-                        balance += tx.amount_zion as i128;
-                    }
-                    if tx.from == account_id {
-                        balance -= (tx.amount_zion + tx.fee_zion as u128) as i128;
-                    }
-                }
-            }
-            Ok(json!({
-                "account_id": account_id,
-                "height": effective_height,
-                "balance_zion": balance.max(0).to_string(),
-                "transaction_model": ACTIVE_TRANSACTION_MODEL,
-                "balance_scope": "confirmed_chain_only",
-            }))
-        }));
+                }))
+            }),
+        );
     }
 
     // ── getUtxos ───────────────────────────────────────────────────────
     {
         let rt = Arc::clone(&runtime);
-        router.register("getUtxos", Box::new(move |params: &Value| {
-            let address = params.get("address")
-                .or_else(|| params.get(0))
-                .and_then(|v| v.as_str())
-                .ok_or_else(|| (INVALID_PARAMS, "missing or invalid 'address' param".into()))?;
-            if address.is_empty() {
-                return Err((INVALID_ADDRESS, "empty address".into()));
-            }
-            if !looks_like_utxo_address(address) {
-                return Err((INVALID_ADDRESS, "getUtxos requires a zion1 UTXO address".into()));
-            }
-            let rt = rt.lock().map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
-            let utxos = rt.spendable_utxos(address);
-            let utxo_list: Vec<Value> = utxos.iter().map(|u| json!({
-                "tx_hash": u.tx_hash,
-                "output_index": u.output_index,
-                "amount": u.amount,
-                "address": u.address,
-                "height": u.height,
-            })).collect();
-            Ok(json!({
-                "address": address,
-                "utxos": utxo_list,
-                "count": utxo_list.len(),
-                "total_amount": utxos.iter().map(|u| u.amount).sum::<u64>(),
-                "chain_height": rt.chain_height(),
-            }))
-        }));
+        router.register(
+            "getUtxos",
+            Box::new(move |params: &Value| {
+                let address = params
+                    .get("address")
+                    .or_else(|| params.get(0))
+                    .and_then(|v| v.as_str())
+                    .ok_or_else(|| (INVALID_PARAMS, "missing or invalid 'address' param".into()))?;
+                if address.is_empty() {
+                    return Err((INVALID_ADDRESS, "empty address".into()));
+                }
+                if !looks_like_utxo_address(address) {
+                    return Err((
+                        INVALID_ADDRESS,
+                        "getUtxos requires a zion1 UTXO address".into(),
+                    ));
+                }
+                let rt = rt
+                    .lock()
+                    .map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
+                let utxos = rt.spendable_utxos(address);
+                let utxo_list: Vec<Value> = utxos
+                    .iter()
+                    .map(|u| {
+                        json!({
+                            "tx_hash": u.tx_hash,
+                            "output_index": u.output_index,
+                            "amount": u.amount,
+                            "address": u.address,
+                            "height": u.height,
+                        })
+                    })
+                    .collect();
+                Ok(json!({
+                    "address": address,
+                    "utxos": utxo_list,
+                    "count": utxo_list.len(),
+                    "total_amount": utxos.iter().map(|u| u.amount).sum::<u64>(),
+                    "chain_height": rt.chain_height(),
+                }))
+            }),
+        );
     }
 
     // ── getBridgeLocks ────────────────────────────────────────────────
     {
         let rt = Arc::clone(&runtime);
-        router.register("getBridgeLocks", Box::new(move |params: &Value| {
-            let from_height = params.get("from_height")
-                .or_else(|| params.get(0))
-                .and_then(|v| v.as_u64())
-                .ok_or_else(|| (INVALID_PARAMS, "missing or invalid 'from_height' param".into()))?;
-            let rt = rt.lock().map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
-            let to_height = params.get("to_height")
-                .or_else(|| params.get(1))
-                .and_then(|v| v.as_u64())
-                .unwrap_or_else(|| rt.chain_height())
-                .min(rt.chain_height());
-            if from_height > to_height {
-                return Err((INVALID_PARAMS, "from_height cannot be greater than to_height".into()));
-            }
+        router.register(
+            "getBridgeLocks",
+            Box::new(move |params: &Value| {
+                let from_height = params
+                    .get("from_height")
+                    .or_else(|| params.get(0))
+                    .and_then(|v| v.as_u64())
+                    .ok_or_else(|| {
+                        (
+                            INVALID_PARAMS,
+                            "missing or invalid 'from_height' param".into(),
+                        )
+                    })?;
+                let rt = rt
+                    .lock()
+                    .map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
+                let to_height = params
+                    .get("to_height")
+                    .or_else(|| params.get(1))
+                    .and_then(|v| v.as_u64())
+                    .unwrap_or_else(|| rt.chain_height())
+                    .min(rt.chain_height());
+                if from_height > to_height {
+                    return Err((
+                        INVALID_PARAMS,
+                        "from_height cannot be greater than to_height".into(),
+                    ));
+                }
 
-            let mut locks = Vec::new();
-            for block in rt.accepted_blocks().iter().filter(|block| block.height >= from_height && block.height <= to_height) {
-                for utxo_tx in &block.utxo_transactions {
-                    let sender = utxo_tx.inputs.first()
-                        .map(|input| crypto::derive_address(&input.public_key))
-                        .unwrap_or_default();
-                    let txid = crypto::to_hex(&utxo_tx.id);
-                    for output in &utxo_tx.outputs {
-                        if output.address != fee::BRIDGE_VAULT_ADDRESS {
-                            continue;
+                let mut locks = Vec::new();
+                for block in rt
+                    .accepted_blocks()
+                    .iter()
+                    .filter(|block| block.height >= from_height && block.height <= to_height)
+                {
+                    for utxo_tx in &block.utxo_transactions {
+                        let sender = utxo_tx
+                            .inputs
+                            .first()
+                            .map(|input| crypto::derive_address(&input.public_key))
+                            .unwrap_or_default();
+                        let txid = crypto::to_hex(&utxo_tx.id);
+                        for output in &utxo_tx.outputs {
+                            if output.address != fee::BRIDGE_VAULT_ADDRESS {
+                                continue;
+                            }
+                            let Some(memo) = output.memo.as_deref() else {
+                                continue;
+                            };
+                            let Some((recipient_chain, recipient)) = parse_bridge_memo(memo) else {
+                                continue;
+                            };
+                            locks.push(json!({
+                                "txid": txid,
+                                "block_height": block.height,
+                                "sender": sender,
+                                "recipient_chain": recipient_chain,
+                                "recipient": recipient,
+                                "amount_flowers": output.amount,
+                                "amount_zion": format_flowers_as_zion(output.amount),
+                                "memo": memo,
+                                "confirmed": true,
+                            }));
                         }
-                        let Some(memo) = output.memo.as_deref() else {
-                            continue;
-                        };
-                        let Some((recipient_chain, recipient)) = parse_bridge_memo(memo) else {
-                            continue;
-                        };
-                        locks.push(json!({
-                            "txid": txid,
-                            "block_height": block.height,
-                            "sender": sender,
-                            "recipient_chain": recipient_chain,
-                            "recipient": recipient,
-                            "amount_flowers": output.amount,
-                            "amount_zion": format_flowers_as_zion(output.amount),
-                            "memo": memo,
-                            "confirmed": true,
-                        }));
                     }
                 }
-            }
 
-            Ok(json!({
-                "from_height": from_height,
-                "to_height": to_height,
-                "locks": locks,
-                "count": locks.len(),
-            }))
-        }));
+                Ok(json!({
+                    "from_height": from_height,
+                    "to_height": to_height,
+                    "locks": locks,
+                    "count": locks.len(),
+                }))
+            }),
+        );
     }
 
     // ── getBridgeVaultBalance ─────────────────────────────────────────
     {
         let rt = Arc::clone(&runtime);
-        router.register("getBridgeVaultBalance", Box::new(move |_params: &Value| {
-            let rt = rt.lock().map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
-            let balance = rt.utxo_balance(fee::BRIDGE_VAULT_ADDRESS);
-            Ok(json!({
-                "address": fee::BRIDGE_VAULT_ADDRESS,
-                "balance_flowers": balance,
-                "balance_zion": format_flowers_as_zion(balance),
-                "chain_height": rt.chain_height(),
-            }))
-        }));
+        router.register(
+            "getBridgeVaultBalance",
+            Box::new(move |_params: &Value| {
+                let rt = rt
+                    .lock()
+                    .map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
+                let balance = rt.utxo_balance(fee::BRIDGE_VAULT_ADDRESS);
+                Ok(json!({
+                    "address": fee::BRIDGE_VAULT_ADDRESS,
+                    "balance_flowers": balance,
+                    "balance_zion": format_flowers_as_zion(balance),
+                    "chain_height": rt.chain_height(),
+                }))
+            }),
+        );
     }
 
     // ── submitBridgeUnlock ────────────────────────────────────────────
@@ -862,65 +977,89 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
     // ── getBlockTemplate ───────────────────────────────────────────────
     {
         let rt = Arc::clone(&runtime);
-        router.register("getBlockTemplate", Box::new(move |_params: &Value| {
-            let rt = rt.lock().map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
-            let template = rt.active_template();
-            Ok(serde_json::to_value(&template).unwrap_or(Value::Null))
-        }));
+        router.register(
+            "getBlockTemplate",
+            Box::new(move |_params: &Value| {
+                let rt = rt
+                    .lock()
+                    .map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
+                let template = rt.active_template();
+                Ok(serde_json::to_value(&template).unwrap_or(Value::Null))
+            }),
+        );
     }
 
     // ── getMempoolInfo ─────────────────────────────────────────────────
     {
         let rt = Arc::clone(&runtime);
-        router.register("getMempoolInfo", Box::new(move |_params: &Value| {
-            let rt = rt.lock().map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
-            let status = rt.status();
-            Ok(json!({
-                "size": status.mempool_transactions,
-                "template_transactions": status.active_template_transactions,
-                "template_total_fees_zion": status.active_template_total_fees_zion,
-                "transaction_model": ACTIVE_TRANSACTION_MODEL,
-            }))
-        }));
+        router.register(
+            "getMempoolInfo",
+            Box::new(move |_params: &Value| {
+                let rt = rt
+                    .lock()
+                    .map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
+                let status = rt.status();
+                Ok(json!({
+                    "size": status.mempool_transactions,
+                    "template_transactions": status.active_template_transactions,
+                    "template_total_fees_zion": status.active_template_total_fees_zion,
+                    "transaction_model": ACTIVE_TRANSACTION_MODEL,
+                }))
+            }),
+        );
     }
 
     // ── getPeerInfo ────────────────────────────────────────────────────
     {
         let rt = Arc::clone(&runtime);
-        router.register("getPeerInfo", Box::new(move |_params: &Value| {
-            let rt = rt.lock().map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
-            let peers: Vec<Value> = rt.known_peers().iter().map(|peer| {
+        router.register(
+            "getPeerInfo",
+            Box::new(move |_params: &Value| {
+                let rt = rt
+                    .lock()
+                    .map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
+                let peers: Vec<Value> = rt.known_peers().iter().map(|peer| {
                 json!({ "host": peer.host, "port": peer.port, "address": peer.address() })
             }).collect();
-            Ok(json!({ "peers": peers, "count": peers.len() }))
-        }));
+                Ok(json!({ "peers": peers, "count": peers.len() }))
+            }),
+        );
     }
 
     // ── sendRawTransaction / submitTransaction ────────────────────────
     let register_submit_transaction = |router: &mut RpcRouter, method_name: &'static str| {
         let rt = Arc::clone(&runtime);
-        router.register(method_name, Box::new(move |params: &Value| {
-            let tx_value = params
-                .get("transaction")
-                .cloned()
-                .unwrap_or_else(|| params.clone());
-            let submitted = match crate::SubmittedTransaction::parse_value(tx_value) {
-                Ok(transaction) => transaction,
-                Err(message) => return Err((INVALID_PARAMS, message)),
-            };
-            let mut rt = rt.lock().map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
-            let resp = rt.submit_submitted_transaction(submitted);
-            match resp {
-                crate::RpcResponse::TransactionResult { accepted, tx_id, reason } => {
-                    if accepted {
-                        Ok(json!({ "accepted": true, "tx_id": tx_id }))
-                    } else {
-                        Err((TX_REJECTED, reason.unwrap_or_else(|| "rejected".into())))
+        router.register(
+            method_name,
+            Box::new(move |params: &Value| {
+                let tx_value = params
+                    .get("transaction")
+                    .cloned()
+                    .unwrap_or_else(|| params.clone());
+                let submitted = match crate::SubmittedTransaction::parse_value(tx_value) {
+                    Ok(transaction) => transaction,
+                    Err(message) => return Err((INVALID_PARAMS, message)),
+                };
+                let mut rt = rt
+                    .lock()
+                    .map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
+                let resp = rt.submit_submitted_transaction(submitted);
+                match resp {
+                    crate::RpcResponse::TransactionResult {
+                        accepted,
+                        tx_id,
+                        reason,
+                    } => {
+                        if accepted {
+                            Ok(json!({ "accepted": true, "tx_id": tx_id }))
+                        } else {
+                            Err((TX_REJECTED, reason.unwrap_or_else(|| "rejected".into())))
+                        }
                     }
+                    _ => Err((INTERNAL_ERROR, "unexpected response".into())),
                 }
-                _ => Err((INTERNAL_ERROR, "unexpected response".into())),
-            }
-        }));
+            }),
+        );
     };
     register_submit_transaction(&mut router, "sendRawTransaction");
     register_submit_transaction(&mut router, "submitTransaction");
@@ -981,41 +1120,54 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
     // ── submitBlock ────────────────────────────────────────────────────
     {
         let rt = Arc::clone(&runtime);
-        router.register("submitBlock", Box::new(move |params: &Value| {
-            let template_id = params.get("template_id")
-                .and_then(|v| v.as_u64())
-                .ok_or_else(|| (INVALID_PARAMS, "missing 'template_id'".into()))?;
-            let header_hex = params.get("header_hex")
-                .and_then(|v| v.as_str())
-                .ok_or_else(|| (INVALID_PARAMS, "missing 'header_hex'".into()))?
-                .to_string();
-            let nonce = params.get("nonce")
-                .and_then(|v| v.as_u64())
-                .ok_or_else(|| (INVALID_PARAMS, "missing 'nonce'".into()))?;
-            let target_hex = params.get("target_hex")
-                .and_then(|v| v.as_str())
-                .ok_or_else(|| (INVALID_PARAMS, "missing 'target_hex'".into()))?
-                .to_string();
-            let mut rt = rt.lock().map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
-            let resp = rt.handle_rpc_request(crate::RpcRequest::SubmitCandidate {
-                template_id,
-                header_hex,
-                nonce,
-                target_hex,
-            });
-            match resp {
-                crate::RpcResponse::SubmitResult { accepted, template_id, block_height, hash_hex, reason } => {
-                    Ok(json!({
+        router.register(
+            "submitBlock",
+            Box::new(move |params: &Value| {
+                let template_id = params
+                    .get("template_id")
+                    .and_then(|v| v.as_u64())
+                    .ok_or_else(|| (INVALID_PARAMS, "missing 'template_id'".into()))?;
+                let header_hex = params
+                    .get("header_hex")
+                    .and_then(|v| v.as_str())
+                    .ok_or_else(|| (INVALID_PARAMS, "missing 'header_hex'".into()))?
+                    .to_string();
+                let nonce = params
+                    .get("nonce")
+                    .and_then(|v| v.as_u64())
+                    .ok_or_else(|| (INVALID_PARAMS, "missing 'nonce'".into()))?;
+                let target_hex = params
+                    .get("target_hex")
+                    .and_then(|v| v.as_str())
+                    .ok_or_else(|| (INVALID_PARAMS, "missing 'target_hex'".into()))?
+                    .to_string();
+                let mut rt = rt
+                    .lock()
+                    .map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
+                let resp = rt.handle_rpc_request(crate::RpcRequest::SubmitCandidate {
+                    template_id,
+                    header_hex,
+                    nonce,
+                    target_hex,
+                });
+                match resp {
+                    crate::RpcResponse::SubmitResult {
+                        accepted,
+                        template_id,
+                        block_height,
+                        hash_hex,
+                        reason,
+                    } => Ok(json!({
                         "accepted": accepted,
                         "template_id": template_id,
                         "block_height": block_height,
                         "hash_hex": hash_hex,
                         "reason": reason,
-                    }))
+                    })),
+                    _ => Err((INTERNAL_ERROR, "unexpected response".into())),
                 }
-                _ => Err((INTERNAL_ERROR, "unexpected response".into())),
-            }
-        }));
+            }),
+        );
     }
 
     router
@@ -1035,17 +1187,19 @@ mod tests {
 
     fn test_router() -> RpcRouter {
         let mut router = RpcRouter::new();
-        router.register("echo", Box::new(|params: &Value| {
-            Ok(params.clone())
-        }));
-        router.register("add", Box::new(|params: &Value| {
-            let a = params.get("a").and_then(|v| v.as_i64()).unwrap_or(0);
-            let b = params.get("b").and_then(|v| v.as_i64()).unwrap_or(0);
-            Ok(json!(a + b))
-        }));
-        router.register("fail", Box::new(|_params: &Value| {
-            Err((TX_REJECTED, "transaction rejected".to_string()))
-        }));
+        router.register("echo", Box::new(|params: &Value| Ok(params.clone())));
+        router.register(
+            "add",
+            Box::new(|params: &Value| {
+                let a = params.get("a").and_then(|v| v.as_i64()).unwrap_or(0);
+                let b = params.get("b").and_then(|v| v.as_i64()).unwrap_or(0);
+                Ok(json!(a + b))
+            }),
+        );
+        router.register(
+            "fail",
+            Box::new(|_params: &Value| Err((TX_REJECTED, "transaction rejected".to_string()))),
+        );
         router
     }
 
@@ -1134,7 +1288,8 @@ mod tests {
             "method": "add",
             "params": {"a": 3, "b": 4},
             "id": 5
-        })).unwrap();
+        }))
+        .unwrap();
 
         let resp_bytes = router.handle_raw(&input);
         let resp: RpcResponse = serde_json::from_slice(&resp_bytes).unwrap();
@@ -1148,7 +1303,8 @@ mod tests {
         let input = serde_json::to_vec(&json!([
             {"jsonrpc": "2.0", "method": "echo", "params": "a", "id": 1},
             {"jsonrpc": "2.0", "method": "echo", "params": "b", "id": 2}
-        ])).unwrap();
+        ]))
+        .unwrap();
 
         let resp_bytes = router.handle_raw(&input);
         let responses: Vec<RpcResponse> = serde_json::from_slice(&resp_bytes).unwrap();
@@ -1171,15 +1327,30 @@ mod tests {
     fn stub_node_router() -> RpcRouter {
         let mut router = RpcRouter::new();
         let stub = |method_name: &'static str| -> HandlerFn {
-            Box::new(move |_params: &Value| {
-                Err((INTERNAL_ERROR, format!("{method_name}: stub")))
-            })
+            Box::new(move |_params: &Value| Err((INTERNAL_ERROR, format!("{method_name}: stub"))))
         };
         for method in [
-            "getBalance", "getAccountBalance", "getBlock", "getBlockByHeight", "getTransaction",
-            "getAccountTransaction", "sendRawTransaction", "submitTransaction", "submitAccountTransaction", "getBlockTemplate", "getMempoolInfo",
-            "getPeerInfo", "getChainInfo", "getNodeInfo", "submitBlock", "getUtxos", "getSupplyInfo",
-            "getBalanceAtHeight", "getBridgeLocks", "getBridgeVaultBalance", "submitBridgeUnlock",
+            "getBalance",
+            "getAccountBalance",
+            "getBlock",
+            "getBlockByHeight",
+            "getTransaction",
+            "getAccountTransaction",
+            "sendRawTransaction",
+            "submitTransaction",
+            "submitAccountTransaction",
+            "getBlockTemplate",
+            "getMempoolInfo",
+            "getPeerInfo",
+            "getChainInfo",
+            "getNodeInfo",
+            "submitBlock",
+            "getUtxos",
+            "getSupplyInfo",
+            "getBalanceAtHeight",
+            "getBridgeLocks",
+            "getBridgeVaultBalance",
+            "submitBridgeUnlock",
         ] {
             router.register(method, stub(method));
         }
@@ -1252,9 +1423,10 @@ mod tests {
 
     fn live_router() -> RpcRouter {
         use std::sync::{Arc, Mutex};
-        let runtime = Arc::new(Mutex::new(
-            crate::NodeRuntime::new("rpc-test", crate::NodeConfig::mainnet()),
-        ));
+        let runtime = Arc::new(Mutex::new(crate::NodeRuntime::new(
+            "rpc-test",
+            crate::NodeConfig::mainnet(),
+        )));
         build_node_router(runtime)
     }
 
@@ -1359,7 +1531,11 @@ mod tests {
     fn live_get_chain_info() {
         let router = live_router();
         let resp = rpc_call(&router, "getChainInfo", json!(null));
-        assert!(resp.error.is_none(), "getChainInfo failed: {:?}", resp.error);
+        assert!(
+            resp.error.is_none(),
+            "getChainInfo failed: {:?}",
+            resp.error
+        );
         let result = resp.result.unwrap();
         assert_eq!(result["chain_height"], 0);
         assert!(result["network"].is_string());
@@ -1383,7 +1559,11 @@ mod tests {
     fn live_get_block_by_height_genesis() {
         let router = live_router();
         let resp = rpc_call(&router, "getBlockByHeight", json!({"height": 0}));
-        assert!(resp.error.is_none(), "getBlockByHeight(0) failed: {:?}", resp.error);
+        assert!(
+            resp.error.is_none(),
+            "getBlockByHeight(0) failed: {:?}",
+            resp.error
+        );
         let result = resp.result.unwrap();
         assert_eq!(result["height"], 0);
         assert!(result["hash_hex"].is_string());
@@ -1402,10 +1582,17 @@ mod tests {
         let router = live_router();
         // First get genesis block hash
         let resp = rpc_call(&router, "getBlockByHeight", json!({"height": 0}));
-        let genesis_hash = resp.result.unwrap()["hash_hex"].as_str().unwrap().to_string();
+        let genesis_hash = resp.result.unwrap()["hash_hex"]
+            .as_str()
+            .unwrap()
+            .to_string();
         // Now fetch by hash
         let resp = rpc_call(&router, "getBlock", json!({"hash": genesis_hash}));
-        assert!(resp.error.is_none(), "getBlock by hash failed: {:?}", resp.error);
+        assert!(
+            resp.error.is_none(),
+            "getBlock by hash failed: {:?}",
+            resp.error
+        );
         assert_eq!(resp.result.unwrap()["height"], 0);
     }
 
@@ -1422,8 +1609,16 @@ mod tests {
     #[test]
     fn live_get_balance_returns_zero_for_unknown_utxo_address() {
         let router = live_router();
-        let resp = rpc_call(&router, "getBalance", json!({"address": "zion1nobody000000000000000000000000000000000"}));
-        assert!(resp.error.is_none(), "getBalance for zion1 failed: {:?}", resp.error);
+        let resp = rpc_call(
+            &router,
+            "getBalance",
+            json!({"address": "zion1nobody000000000000000000000000000000000"}),
+        );
+        assert!(
+            resp.error.is_none(),
+            "getBalance for zion1 failed: {:?}",
+            resp.error
+        );
         let result = resp.result.unwrap();
         assert_eq!(result["balance_flowers"], "0");
         // After Phase 18 fix, zion1 addresses report combined account+UTXO balance
@@ -1433,8 +1628,16 @@ mod tests {
     #[test]
     fn live_get_account_balance_alias_works() {
         let router = live_router();
-        let resp = rpc_call(&router, "getAccountBalance", json!({"account": "wallet.alpha"}));
-        assert!(resp.error.is_none(), "getAccountBalance failed: {:?}", resp.error);
+        let resp = rpc_call(
+            &router,
+            "getAccountBalance",
+            json!({"account": "wallet.alpha"}),
+        );
+        assert!(
+            resp.error.is_none(),
+            "getAccountBalance failed: {:?}",
+            resp.error
+        );
         assert_eq!(resp.result.unwrap()["account_id"], "wallet.alpha");
     }
 
@@ -1442,7 +1645,11 @@ mod tests {
     fn live_get_block_template() {
         let router = live_router();
         let resp = rpc_call(&router, "getBlockTemplate", json!(null));
-        assert!(resp.error.is_none(), "getBlockTemplate failed: {:?}", resp.error);
+        assert!(
+            resp.error.is_none(),
+            "getBlockTemplate failed: {:?}",
+            resp.error
+        );
         let result = resp.result.unwrap();
         assert!(result["template_id"].is_number());
         assert!(result["height"].is_number());
@@ -1479,7 +1686,11 @@ mod tests {
     #[test]
     fn live_get_account_transaction_alias_not_found() {
         let router = live_router();
-        let resp = rpc_call(&router, "getAccountTransaction", json!({"txid": "nonexistent"}));
+        let resp = rpc_call(
+            &router,
+            "getAccountTransaction",
+            json!({"txid": "nonexistent"}),
+        );
         assert!(resp.error.is_some());
         assert_eq!(resp.error.unwrap().code, TX_NOT_FOUND);
     }
@@ -1505,22 +1716,26 @@ mod tests {
     #[test]
     fn live_submit_transaction_rejects_utxo_payload() {
         let router = live_router();
-        let resp = rpc_call(&router, "submitTransaction", json!({
-            "id": vec![0u8; 32],
-            "version": 1,
-            "inputs": [{
-                "prev_tx_hash": vec![1u8; 32],
-                "output_index": 0,
-                "signature": vec![2u8; 64],
-                "public_key": vec![3u8; 32]
-            }],
-            "outputs": [{
-                "amount": 1000,
-                "address": "zion1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq"
-            }],
-            "fee": 100,
-            "timestamp": 1700000000
-        }));
+        let resp = rpc_call(
+            &router,
+            "submitTransaction",
+            json!({
+                "id": vec![0u8; 32],
+                "version": 1,
+                "inputs": [{
+                    "prev_tx_hash": vec![1u8; 32],
+                    "output_index": 0,
+                    "signature": vec![2u8; 64],
+                    "public_key": vec![3u8; 32]
+                }],
+                "outputs": [{
+                    "amount": 1000,
+                    "address": "zion1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq"
+                }],
+                "fee": 100,
+                "timestamp": 1700000000
+            }),
+        );
         assert!(resp.error.is_some());
         let err = resp.error.unwrap();
         assert_eq!(err.code, TX_REJECTED);
@@ -1530,30 +1745,46 @@ mod tests {
     #[test]
     fn live_submit_transaction_alias_accepts_object_payload() {
         let router = live_router();
-        let resp = rpc_call(&router, "submitTransaction", json!({
-            "tx_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-            "from": "wallet.alpha",
-            "to": "wallet.beta",
-            "amount_zion": 25,
-            "fee_zion": 5,
-            "nonce": 1
-        }));
-        assert!(resp.error.is_none(), "submitTransaction failed: {:?}", resp.error);
+        let resp = rpc_call(
+            &router,
+            "submitTransaction",
+            json!({
+                "tx_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "from": "wallet.alpha",
+                "to": "wallet.beta",
+                "amount_zion": 25,
+                "fee_zion": 5,
+                "nonce": 1
+            }),
+        );
+        assert!(
+            resp.error.is_none(),
+            "submitTransaction failed: {:?}",
+            resp.error
+        );
         assert_eq!(resp.result.unwrap()["accepted"], true);
     }
 
     #[test]
     fn live_submit_account_transaction_alias_accepts_object_payload() {
         let router = live_router();
-        let resp = rpc_call(&router, "submitAccountTransaction", json!({
-            "tx_id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-            "from": "wallet.alpha",
-            "to": "wallet.beta",
-            "amount_zion": 30,
-            "fee_zion": 5,
-            "nonce": 1
-        }));
-        assert!(resp.error.is_none(), "submitAccountTransaction failed: {:?}", resp.error);
+        let resp = rpc_call(
+            &router,
+            "submitAccountTransaction",
+            json!({
+                "tx_id": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                "from": "wallet.alpha",
+                "to": "wallet.beta",
+                "amount_zion": 30,
+                "fee_zion": 5,
+                "nonce": 1
+            }),
+        );
+        assert!(
+            resp.error.is_none(),
+            "submitAccountTransaction failed: {:?}",
+            resp.error
+        );
         assert_eq!(resp.result.unwrap()["accepted"], true);
     }
 
@@ -1567,7 +1798,11 @@ mod tests {
     fn live_get_supply_info() {
         let router = live_router();
         let resp = rpc_call(&router, "getSupplyInfo", json!(null));
-        assert!(resp.error.is_none(), "getSupplyInfo failed: {:?}", resp.error);
+        assert!(
+            resp.error.is_none(),
+            "getSupplyInfo failed: {:?}",
+            resp.error
+        );
         let r = resp.result.unwrap();
         assert_eq!(r["total_supply_zion"], 144_000_000_000u64);
         assert_eq!(r["premine_zion"], 16_280_000_000u64);
@@ -1585,14 +1820,22 @@ mod tests {
         let r = resp.result.unwrap();
         let total: u128 = r["total_supply_atomic"].as_str().unwrap().parse().unwrap();
         let premine: u128 = r["premine_atomic"].as_str().unwrap().parse().unwrap();
-        let emission: u128 = r["mining_emission_atomic"].as_str().unwrap().parse().unwrap();
+        let emission: u128 = r["mining_emission_atomic"]
+            .as_str()
+            .unwrap()
+            .parse()
+            .unwrap();
         assert_eq!(emission, total - premine);
     }
 
     #[test]
     fn live_get_utxos_returns_empty_for_unknown_address() {
         let router = live_router();
-        let resp = rpc_call(&router, "getUtxos", json!({"address": "zion1nobody000000000000000000000000000000000"}));
+        let resp = rpc_call(
+            &router,
+            "getUtxos",
+            json!({"address": "zion1nobody000000000000000000000000000000000"}),
+        );
         assert!(resp.error.is_none(), "getUtxos failed: {:?}", resp.error);
         let result = resp.result.unwrap();
         assert_eq!(result["count"], 0);
@@ -1612,11 +1855,19 @@ mod tests {
     #[test]
     fn live_get_balance_at_height_genesis() {
         let router = live_router();
-        let resp = rpc_call(&router, "getBalanceAtHeight", json!({
-            "account": "wallet.alpha",
-            "height": 0
-        }));
-        assert!(resp.error.is_none(), "getBalanceAtHeight failed: {:?}", resp.error);
+        let resp = rpc_call(
+            &router,
+            "getBalanceAtHeight",
+            json!({
+                "account": "wallet.alpha",
+                "height": 0
+            }),
+        );
+        assert!(
+            resp.error.is_none(),
+            "getBalanceAtHeight failed: {:?}",
+            resp.error
+        );
         let result = resp.result.unwrap();
         assert_eq!(result["height"], 0);
         assert_eq!(result["balance_zion"], "0");
@@ -1625,11 +1876,19 @@ mod tests {
     #[test]
     fn live_get_bridge_locks_empty_at_genesis() {
         let router = live_router();
-        let resp = rpc_call(&router, "getBridgeLocks", json!({
-            "from_height": 0,
-            "to_height": 0
-        }));
-        assert!(resp.error.is_none(), "getBridgeLocks failed: {:?}", resp.error);
+        let resp = rpc_call(
+            &router,
+            "getBridgeLocks",
+            json!({
+                "from_height": 0,
+                "to_height": 0
+            }),
+        );
+        assert!(
+            resp.error.is_none(),
+            "getBridgeLocks failed: {:?}",
+            resp.error
+        );
         let result = resp.result.unwrap();
         assert_eq!(result["count"], 0);
         assert!(result["locks"].as_array().unwrap().is_empty());
@@ -1639,7 +1898,11 @@ mod tests {
     fn live_get_bridge_vault_balance_defaults_to_zero() {
         let router = live_router();
         let resp = rpc_call(&router, "getBridgeVaultBalance", json!(null));
-        assert!(resp.error.is_none(), "getBridgeVaultBalance failed: {:?}", resp.error);
+        assert!(
+            resp.error.is_none(),
+            "getBridgeVaultBalance failed: {:?}",
+            resp.error
+        );
         let result = resp.result.unwrap();
         assert_eq!(result["address"], fee::BRIDGE_VAULT_ADDRESS);
         assert_eq!(result["balance_flowers"], 0);
@@ -1659,14 +1922,18 @@ mod tests {
         );
         std::env::set_var("ZION_BRIDGE_VALIDATOR_PUBKEYS", allowlist);
         std::env::set_var("ZION_BRIDGE_VALIDATOR_THRESHOLD", "3");
-        let resp = rpc_call(&router, "submitBridgeUnlock", json!({
-            "recipient": recipient,
-            "amount_flowers": 1_000_000_000_000u64,
-            "burn_id": "burn-empty",
-            "evm_chain": "base-sepolia",
-            "evm_tx_hash": "0xempty",
-            "validator_proofs": validator_proofs
-        }));
+        let resp = rpc_call(
+            &router,
+            "submitBridgeUnlock",
+            json!({
+                "recipient": recipient,
+                "amount_flowers": 1_000_000_000_000u64,
+                "burn_id": "burn-empty",
+                "evm_chain": "base-sepolia",
+                "evm_tx_hash": "0xempty",
+                "validator_proofs": validator_proofs
+            }),
+        );
         std::env::remove_var("ZION_BRIDGE_VALIDATOR_PUBKEYS");
         std::env::remove_var("ZION_BRIDGE_VALIDATOR_THRESHOLD");
         assert!(resp.error.is_some());
@@ -1689,17 +1956,25 @@ mod tests {
         );
         std::env::set_var("ZION_BRIDGE_VALIDATOR_PUBKEYS", allowlist);
         std::env::set_var("ZION_BRIDGE_VALIDATOR_THRESHOLD", "3");
-        let resp = rpc_call(&router, "submitBridgeUnlock", json!({
-            "recipient": recipient,
-            "amount_flowers": 1_000_000_000_000u64,
-            "burn_id": "burn-1",
-            "evm_chain": "base-sepolia",
-            "evm_tx_hash": "0xabc123",
-            "validator_proofs": validator_proofs
-        }));
+        let resp = rpc_call(
+            &router,
+            "submitBridgeUnlock",
+            json!({
+                "recipient": recipient,
+                "amount_flowers": 1_000_000_000_000u64,
+                "burn_id": "burn-1",
+                "evm_chain": "base-sepolia",
+                "evm_tx_hash": "0xabc123",
+                "validator_proofs": validator_proofs
+            }),
+        );
         std::env::remove_var("ZION_BRIDGE_VALIDATOR_PUBKEYS");
         std::env::remove_var("ZION_BRIDGE_VALIDATOR_THRESHOLD");
-        assert!(resp.error.is_none(), "submitBridgeUnlock failed: {:?}", resp.error);
+        assert!(
+            resp.error.is_none(),
+            "submitBridgeUnlock failed: {:?}",
+            resp.error
+        );
         let result = resp.result.unwrap();
         assert_eq!(result["accepted"], true);
         assert!(result["tx_id"].as_str().is_some());
@@ -1729,7 +2004,11 @@ mod tests {
         });
 
         let first = rpc_call(&router, "submitBridgeUnlock", params.clone());
-        assert!(first.error.is_none(), "initial unlock failed: {:?}", first.error);
+        assert!(
+            first.error.is_none(),
+            "initial unlock failed: {:?}",
+            first.error
+        );
 
         let second = rpc_call(&router, "submitBridgeUnlock", params);
         std::env::remove_var("ZION_BRIDGE_VALIDATOR_PUBKEYS");

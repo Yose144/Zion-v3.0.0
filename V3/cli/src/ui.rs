@@ -63,15 +63,24 @@ pub fn print_row(label: &str, value: &str) {
 }
 
 pub fn print_banner() {
-    println!("{}", r#"
+    println!(
+        "{}",
+        r#"
 ████████╗██╗ ██████╗███╗   ██╗     ██████╗██╗     ██╗
 ╚══███╔╝██║██╔═══██╗████╗  ██║    ██╔════╝██║     ██║
   ███╔╝ ██║██║   ██║██╔██╗ ██║    ██║     ██║     ██║
  ███╔╝  ██║██║   ██║██║╚██╗██║    ██║     ██║     ██║
 ███████╗██║╚██████╔╝██║ ╚████║    ╚██████╗███████╗██║
 ╚══════╝╚═╝ ╚═════╝ ╚═╝  ╚═══╝    ╚═════╝╚══════╝╚═╝
-"#.bright_yellow());
-    println!("  {} {} {}", "Om Namo Hiranyagarbha".dimmed(), "·".dimmed(), "Peace & One Love".dimmed());
+"#
+        .bright_yellow()
+    );
+    println!(
+        "  {} {} {}",
+        "Om Namo Hiranyagarbha".dimmed(),
+        "·".dimmed(),
+        "Peace & One Love".dimmed()
+    );
     println!();
 }
 
@@ -81,7 +90,12 @@ pub fn print_genesis_banner() {
     println!("{}", ZION_ASCII.bright_yellow());
     println!("  {}", "Mainnet Launch v3".bright_white().bold());
     println!("  {}", "The Golden Age begins.".bright_cyan());
-    println!("  {} {} {}", "Om Namo Hiranyagarbha".dimmed(), "·".dimmed(), "Peace & One Love".dimmed());
+    println!(
+        "  {} {} {}",
+        "Om Namo Hiranyagarbha".dimmed(),
+        "·".dimmed(),
+        "Peace & One Love".dimmed()
+    );
     println!();
 }
 
