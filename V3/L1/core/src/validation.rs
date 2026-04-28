@@ -389,12 +389,23 @@ pub fn validate_subsidy(coinbase: &Transaction, block_height: u64) -> Result<(),
 
 /// Step 11: Validate premine lock — inputs spending from DAO Treasury addresses
 /// must have the current height >= unlock_height.
+///
+/// Coinbase transactions are skipped via `tx.is_coinbase()` (they have no
+/// inputs to validate) rather than positional `.skip(1)`. This matches the
+/// pattern used by `validate_inputs_exist` and `validate_value_conservation`,
+/// and is required for callers that pass the runtime's
+/// `block.utxo_transactions` slice — that slice does not always have a
+/// coinbase at index 0, so a positional skip would silently bypass the
+/// timelock check on the very first transaction.
 pub fn validate_premine_locks(
     transactions: &[Transaction],
     current_height: u64,
     utxo_lookup: &dyn Fn(&[u8; 32], u32) -> Option<UtxoInfo>,
 ) -> Result<(), ValidationError> {
-    for (tx_i, tx) in transactions.iter().enumerate().skip(1) {
+    for (tx_i, tx) in transactions.iter().enumerate() {
+        if tx.is_coinbase() {
+            continue;
+        }
         for input in &tx.inputs {
             if let Some(utxo) = utxo_lookup(&input.prev_tx_hash, input.output_index) {
                 if genesis::is_premine_transfer_allowed(&utxo.address, current_height).is_err() {
@@ -473,14 +484,14 @@ pub fn validate_value_conservation(
         }
 
         let mut inputs_sum: u64 = 0;
-        for input in &tx.inputs {
+        for (inp_i, input) in tx.inputs.iter().enumerate() {
             // Missing inputs are surfaced by `validate_inputs_exist`. Here we
             // tolerate the absence and short-circuit so the error type stays
             // descriptive and stable for callers that run the steps in order.
             let Some(utxo) = utxo_lookup(&input.prev_tx_hash, input.output_index) else {
                 return Err(ValidationError::InputNotFound {
                     tx_index: tx_i,
-                    input_index: 0,
+                    input_index: inp_i,
                     prev_tx_hash: input.prev_tx_hash,
                     output_index: input.output_index,
                 });
@@ -490,7 +501,17 @@ pub fn validate_value_conservation(
                 .ok_or(ValidationError::ValueOverflow { tx_index: tx_i })?;
         }
 
-        let outputs_sum = tx.total_output();
+        // Sum outputs with `checked_add` rather than `tx.total_output()`,
+        // which uses `Iterator::sum()` and silently wraps in release builds
+        // (the V3 workspace does not enable `overflow-checks` in release).
+        // Wrapping the output sum would let an attacker craft outputs that
+        // wrap to a value ≤ inputs and bypass conservation entirely.
+        let mut outputs_sum: u64 = 0;
+        for output in &tx.outputs {
+            outputs_sum = outputs_sum
+                .checked_add(output.amount)
+                .ok_or(ValidationError::ValueOverflow { tx_index: tx_i })?;
+        }
         let outputs_plus_fee = outputs_sum
             .checked_add(tx.fee)
             .ok_or(ValidationError::ValueOverflow { tx_index: tx_i })?;
@@ -914,8 +935,20 @@ mod tests {
         assert!(matches!(result, Err(ValidationError::LockedPremine { .. })));
 
         // height 525_600 — should be allowed
-        let result2 = validate_premine_locks(&[make_coinbase(525_600), tx], 525_600, &lookup);
+        let result2 =
+            validate_premine_locks(&[make_coinbase(525_600), tx.clone()], 525_600, &lookup);
         assert!(result2.is_ok());
+
+        // Regression for PR #20 review: when the caller passes a slice
+        // whose index 0 is **not** a coinbase (as `block.utxo_transactions`
+        // can be), the old `.skip(1)` would silently bypass the check.
+        // After the fix, `is_coinbase()` is the only skip predicate, so a
+        // locked-premine spend at index 0 must still be flagged.
+        let result_no_coinbase = validate_premine_locks(&[tx], 100, &lookup);
+        assert!(matches!(
+            result_no_coinbase,
+            Err(ValidationError::LockedPremine { tx_index: 0, .. })
+        ));
     }
 
     #[test]
@@ -1129,6 +1162,58 @@ mod tests {
         let txs = vec![cb, tx];
         // Each input claims max u64 → sum overflows.
         let lookup = lookup_with_amount(u64::MAX);
+
+        let err = validate_value_conservation(&txs, &lookup, &no_bridge_unlocks).unwrap_err();
+        assert_eq!(err, ValidationError::ValueOverflow { tx_index: 1 });
+    }
+
+    /// Exploit regression test for the `total_output()` wrap-around bypass
+    /// flagged in PR #20 review. With release-mode `Iterator::sum()` an
+    /// attacker could craft outputs whose unchecked sum wrapped to a value
+    /// less than or equal to inputs, passing the conservation check while
+    /// printing roughly 2^64 flowers. We must reject this with
+    /// `ValueOverflow`, not `ValueNotConserved` (and certainly not Ok).
+    #[test]
+    fn validate_value_conservation_rejects_output_wraparound_attack() {
+        let (sk, vk) = generate_keypair();
+        let addr = derive_address(vk.as_bytes());
+
+        // Two outputs, each ≈ 2^63, whose wrapping sum is ~ 2 * (2^63) = 0
+        // mod 2^64. With unchecked Iterator::sum() the wrapped sum would
+        // satisfy `outputs_sum ≤ inputs_sum`, bypassing conservation.
+        let half_max = (u64::MAX / 2) + 1; // 0x8000_0000_0000_0000
+        let mut tx = Transaction {
+            id: [0u8; 32],
+            version: 1,
+            inputs: vec![TxInput {
+                prev_tx_hash: [0xAA; 32],
+                output_index: 0,
+                signature: vec![],
+                public_key: vk.as_bytes().to_vec(),
+            }],
+            outputs: vec![
+                TxOutput {
+                    amount: half_max,
+                    address: addr.clone(),
+                    memo: None,
+                },
+                TxOutput {
+                    amount: half_max,
+                    address: addr,
+                    memo: None,
+                },
+            ],
+            fee: 0,
+            timestamp: 1_700_000_000,
+        };
+        tx.finalize_id();
+        tx.inputs[0].signature = sign(&sk, &tx.id).to_vec();
+
+        let cb = make_coinbase(1);
+        let txs = vec![cb, tx];
+        // Inputs are tiny (1 ZION); without overflow checks the wrapped
+        // outputs_sum would equal 0, falsely passing conservation.
+        let lookup = lookup_with_amount(1_000_000);
 
         let err = validate_value_conservation(&txs, &lookup, &no_bridge_unlocks).unwrap_err();
         assert_eq!(err, ValidationError::ValueOverflow { tx_index: 1 });
