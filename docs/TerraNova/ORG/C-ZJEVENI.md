@@ -1,18 +1,18 @@
 # Příloha C — Zjevení: Apokalypsa jako mapa přechodu
 
-Tento appendix čte text Zjevení Janova nikoli jako doslova splněné nebo nesplněné proroctví, ale jako **strukturální mapu civilizačního přechodu** — a vychází z předpokladu, že každá kultura, která prochází transformací, produkuje podobné symbolické jazyky, protože transformace sama má rozpoznatelnou strukturu.
+Tato příloha čte text Zjevení Janova nikoli jako doslova splněné nebo nesplněné proroctví, ale jako **strukturální mapu civilizačního přechodu** — a vychází z předpokladu, že každá kultura, která prochází transformací, produkuje podobné symbolické jazyky, protože transformace sama má rozpoznatelnou strukturu.
 
 ---
 
-## Zásada tohoto appendixu
+## Zásada této přílohy
 
 Zjevení bylo zapsáno jako text vnitřního svědectví, ne jako lineární předpověď politických událostí. Řecky *apokalypsis* znamená doslova **odhalení** — stržení závoje, který skrývá to, co je. Ne zkáza. Ne konec. Odhalení struktury věcí pod povrchem.
 
-Tento appendix si klade jednu otázku: *Co se odhaluje ve chvíli, kdy starý systém selhává a nový ještě není plně stabilizován?*
+Tato příloha si klade jednu otázku: *Co se odhaluje ve chvíli, kdy starý systém selhává a nový ještě není plně stabilizován?*
 
 ---
 
-## 1. Jak tento appendix číst
+## 1. Jak tuto přílohu číst
 
 Paralelní čtení — nikoli tvrzení, že ZION je prorokem předpovězený projekt. Takové čtení by bylo neupřímné a nepřesné. Jde o **strukturální resonanci**: podobné archetypy se vynořují v podobných momentech, protože lidská psyché a sociální dynamika mají svou gramatiku.
 
@@ -36,7 +36,7 @@ Babylon v Zjevení je symbol systému, který koncentruje hodnotu na vrchu pyram
 
 Jde o popis toku hodnoty, ne o geografické místo. Systém, ve kterém tisk peněz koncentruje bohatství a exterializuje náklady na ostatní, má rozpoznatelnou strukturu — a Zjevení ji pojmenovává.
 
-TerraNova nevznikla jako protest vůči Babylonu. Vznikla jako alternativní architektura. Proof-of-Care distribuce odměn, transparentní ledger, komunitní správa — to jsou inženýrská řešení problému, který Zjevení popsalo v symbolickém jazyce.
+Terra Nova nevznikla jako protest vůči Babylonu. Vznikla jako alternativní architektura. Proof-of-Care distribuce odměn, transparentní ledger, komunitní správa — to jsou inženýrská řešení problému, který Zjevení popsalo v symbolickém jazyce.
 
 ---
 
@@ -46,7 +46,7 @@ TerraNova nevznikla jako protest vůči Babylonu. Vznikla jako alternativní arc
 
 144 000 = 12 × 12 × 1 000 — úplnost (12 kmenů, 12 apoštolů) × rozsah (tisíce, tedy velký počet).
 
-V kontextu TerraNova: je to metafora kritické masy. Komunita, která je dostatečně velká a dostatečně vědomá, aby unesla nový systém. Není to uzavřená elita — je to práh dostatečnosti.
+V kontextu Terra Nova: je to metafora kritické masy. Komunita, která je dostatečně velká a dostatečně vědomá, aby unesla nový systém. Není to uzavřená elita — je to práh dostatečnosti.
 
 ZION jako síť funguje na podobném principu: blockchain je bezpečný, dokud dostatečný počet nezávislých uzlů udržuje konsenzus. Decentralizace vyžaduje distribuovanou odpovědnost.
 
@@ -58,7 +58,7 @@ ZION jako síť funguje na podobném principu: blockchain je bezpečný, dokud d
 
 Slovo *kainos* v řečtině, překládané jako „nový", neznamená časově nový — znamená **kvalitativně jiný**. Nový věk je jiný způsob organizace, jiné vztahy, jiná struktura moci.
 
-Issobella v TerraNova je podobný horizont — ne konkrétní datum, ale **směr pohybu**. Orbitální komunita není zaručena. Je to metafora toho, kam projekt směřuje, pokud se každá iterace posune správným směrem.
+Issobella v Terra Nova je podobný horizont — ne konkrétní datum, ale **směr pohybu**. Orbitální komunita není zaručena. Je to metafora toho, kam projekt směřuje, pokud se každá iterace posune správným směrem.
 
 Horizonty nejsou cíle, které se dosáhnou. Jsou to kompasy, které udržují kurz.
 
@@ -70,7 +70,7 @@ Popis Nového Jeruzaléma v Zjevení 21 je architektonicky přesný: míry, stav
 
 Tato konkrétnost může být čtena jako záměr: nová civilizace není abstrakce. Má strukturu. Má vrstvy. Má pravidla.
 
-TerraNova má analogickou strukturu: L1 (konsenzus), L2 (DeFi), L3 (AI), L4 (OASIS), L5 (fyzická komunita), L6 (oběžná dráha). Každá vrstva má definované protokoly a odpovědnosti. Nová Země není jen sen — je to architektura.
+Terra Nova má analogickou strukturu: L1 (konsenzus), L2 (DeFi), L3 (AI), L4 (OASIS), L5 (fyzická komunita), L6 (oběžná dráha). Každá vrstva má definované protokoly a odpovědnosti. Nová Země není jen sen — je to architektura.
 
 ---
 
@@ -82,13 +82,13 @@ Alfa a Omega v Zjevení nejsou dva vzdálené body na časové přímce. Jsou to
 
 Genesis blok ZION (4. 12. 2025) není Alfa v tom smyslu, že by byl začátek bez konce. Je to zárodek, který obsahuje genetickou informaci o celém projektu — pravidla, záměr, první konsenzus.
 
-Omega je v TerraNova vždy na horizontu — Issobella, plná decentralizace, autonomní komunity. Projekt je smysluplný tehdy, když zárodek a horizont tvoří koherentní linii.
+Omega je v Terra Nova vždy na horizontu — Issobella, plná decentralizace, autonomní komunity. Projekt je smysluplný tehdy, když zárodek a horizont tvoří koherentní linii.
 
 ---
 
-## 8. Co tento appendix říká a co ne
+## 8. Co tato příloha říká a co ne
 
-Tento appendix **netvrdí**, že ZION je naplněním biblického proroctví. Takové tvrzení by bylo neverifikovatelné a zbytečné.
+Tento příloha **netvrdí**, že ZION je naplněním biblického proroctví. Takové tvrzení by bylo neverifikovatelné a zbytečné.
 
 Tvrdí, že struktura přechodu, kterou Zjevení popsalo — selhání starého systému, chaos na přechodu, vznik alternativní komunity, budování nového řádu — je rozpoznatelná. A že je užitečné ji rozpoznat.
 
@@ -100,6 +100,6 @@ Mapa není terén. Ale dobrá mapa pomáhá orientovat se v terénu, který je n
 
 Zjevení je text o odvaze číst skutečnost bez závoje pohodlné iluze. *Apokalypsa* — odhalení — je vždy nepříjemná, protože nám ukazuje, co je. Ne co bychom chtěli, aby bylo.
 
-TerraNova jako projekt stojí nebo padá na ochotě vidět skutečný stav věcí — technologie, komunity, ekonomiky, vědomí — a reagovat na to, co skutečně je, ne na to, co bychom přáli, aby bylo.
+Terra Nova jako projekt stojí nebo padá na ochotě vidět skutečný stav věcí — technologie, komunity, ekonomiky, vědomí — a reagovat na to, co skutečně je, ne na to, co bychom přáli, aby bylo.
 
 To je sdílené jádro mezi Janem z Patmu a každým architektem nového systému: odvaha vidět.

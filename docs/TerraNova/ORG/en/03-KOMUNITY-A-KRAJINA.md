@@ -1,0 +1,13 @@
+# Part III — Communities and Landscape
+
+If Terra Nova has any real testing ground, it is not a conference hall or a keynote stage. It is soil. Soil, water, food, light, building, relationships, decision-making, fatigue, conflict, sharing — only there does it become clear whether a new civilisational logic actually works or was merely elegantly written. The New Earth cannot first take shape in an abstract system and then descend to life; it must first become habitable in the nearest layer that a human being can genuinely bear.
+
+The chapter reframes the off-grid community. In the common imagination it is depicted as an escape — a place for people disappointed by the world to build a smaller copy of their dream beyond the system's reach. Terra Nova understands it the opposite way: a community is not a retreat from reality but a return to the point where reality is still legible. When energy is expensive you know it immediately. When water is bad you notice at once. When relationships are toxic you cannot hide them for long. When the decision-making process fails, the community begins to visibly disintegrate. That is why community is more important than any declaration of values: it is the place where ideas must become habitable.
+
+## Landscape as the first institution
+
+The chapter insists that landscape is not a backdrop to the economy — it is the first institution in which a human being learns measure. If the soil is dead, no constitution will last long. If the water is undrinkable, even the best governance collapses. If the community cannot grow and share food, it will always be held hostage by an external system. The return to land in Terra Nova is therefore simultaneously a political, economic and spiritual act.
+
+The smallest legible unit of Terra Nova is described as a quartet: the **house** where one lives; the **garden** where the relationship to food and time is restored; the **workshop** where usefulness and repair are reborn; and the **node** where the community connects to the wider network economically and informationally. Together they produce something more than passive dwelling — a cell of civilisation. The chapter closes by addressing governance: decentralisation cannot merely be proclaimed, it must be operationally designed, with decisions arising as close as possible to their point of impact, transparency preceding suspicion, and process taking precedence over charisma. DAO, in this world, is not a substitute for community — it is community's memory, record and instrument of distributed trust.
+
+*[Full Czech text available in the CZ edition]*
