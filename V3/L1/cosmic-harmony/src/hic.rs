@@ -110,9 +110,17 @@ mod tests {
 
     #[test]
     fn test_hic_count() {
-        assert_eq!(HIC.len(), 22, "HIC musí mít přesně 22 konstant (22 póly vědomí)");
+        assert_eq!(
+            HIC.len(),
+            22,
+            "HIC musí mít přesně 22 konstant (22 póly vědomí)"
+        );
         assert_eq!(HIC.len(), KEY_ROUNDS, "HIC délka musí odpovídat KEY_ROUNDS");
-        assert_eq!(HIC.len(), KABALA_READS, "HIC délka musí odpovídat KABALA_READS");
+        assert_eq!(
+            HIC.len(),
+            KABALA_READS,
+            "HIC délka musí odpovídat KABALA_READS"
+        );
     }
 
     #[test]

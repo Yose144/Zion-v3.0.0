@@ -27,7 +27,7 @@ struct MonitorState {
     tip_hash: String,
     // L1 pool
     miners: u64,
-    hashrate: f64,        // H/s
+    hashrate: f64, // H/s
     // L3 agent
     agent_online: bool,
     agent_model: String,
@@ -95,7 +95,9 @@ pub async fn run(cfg: &Config) -> Result<()> {
     loop {
         terminal.draw(|f| draw(f, &state))?;
 
-        let remaining = tick_interval.checked_sub(last_tick.elapsed()).unwrap_or(Duration::ZERO);
+        let remaining = tick_interval
+            .checked_sub(last_tick.elapsed())
+            .unwrap_or(Duration::ZERO);
 
         if event::poll(remaining)? {
             if let Event::Key(key) = event::read()? {
@@ -173,12 +175,12 @@ fn draw(f: &mut Frame, s: &MonitorState) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(3),  // title bar
-            Constraint::Length(7),  // node panel
-            Constraint::Length(7),  // pool panel
-            Constraint::Length(7),  // agent panel
-            Constraint::Min(3),     // sparklines
-            Constraint::Length(2),  // footer
+            Constraint::Length(3), // title bar
+            Constraint::Length(7), // node panel
+            Constraint::Length(7), // pool panel
+            Constraint::Length(7), // agent panel
+            Constraint::Min(3),    // sparklines
+            Constraint::Length(2), // footer
         ])
         .split(area);
 
@@ -189,21 +191,46 @@ fn draw(f: &mut Frame, s: &MonitorState) {
         Span::raw(format!("  tick #{}", s.tick))
     };
     let title = Paragraph::new(Line::from(vec![
-        Span::styled("  ZION ", Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)),
-        Span::styled("Stack Monitor", Style::default().fg(Color::White).add_modifier(Modifier::BOLD)),
+        Span::styled(
+            "  ZION ",
+            Style::default()
+                .fg(Color::Yellow)
+                .add_modifier(Modifier::BOLD),
+        ),
+        Span::styled(
+            "Stack Monitor",
+            Style::default()
+                .fg(Color::White)
+                .add_modifier(Modifier::BOLD),
+        ),
         loading_span,
     ]))
     .alignment(Alignment::Left)
-    .block(Block::default().borders(Borders::ALL).border_style(Style::default().fg(Color::Yellow)));
+    .block(
+        Block::default()
+            .borders(Borders::ALL)
+            .border_style(Style::default().fg(Color::Yellow)),
+    );
     f.render_widget(title, chunks[0]);
 
     // ── L1 Node ───────────────────────────────────────────────────
-    let tip = if s.tip_hash.len() > 16 { &s.tip_hash[..16] } else { &s.tip_hash };
-    let node_color = if s.error.is_some() { Color::Red } else { Color::Green };
+    let tip = if s.tip_hash.len() > 16 {
+        &s.tip_hash[..16]
+    } else {
+        &s.tip_hash
+    };
+    let node_color = if s.error.is_some() {
+        Color::Red
+    } else {
+        Color::Green
+    };
     let node_status = if s.error.is_some() {
         s.error.as_deref().unwrap_or("error").to_string()
     } else {
-        format!("online  height={}  peers={}  tip={}…", s.height, s.peers, tip)
+        format!(
+            "online  height={}  peers={}  tip={}…",
+            s.height, s.peers, tip
+        )
     };
     let node_text = vec![
         Line::from(Span::styled(
@@ -215,30 +242,39 @@ fn draw(f: &mut Frame, s: &MonitorState) {
             Style::default().fg(Color::DarkGray),
         )),
     ];
-    let node_panel = Paragraph::new(node_text)
-        .block(Block::default().borders(Borders::ALL).title("L1 — Core"));
+    let node_panel =
+        Paragraph::new(node_text).block(Block::default().borders(Borders::ALL).title("L1 — Core"));
     f.render_widget(node_panel, chunks[1]);
 
     // ── L1 Pool ───────────────────────────────────────────────────
     let hs_kh = s.hashrate / 1000.0;
-    let pool_text = vec![
-        Line::from(Span::styled(
-            format!("  ● Stratum pool   miners={}  hashrate={:.1} kH/s", s.miners, hs_kh),
-            Style::default().fg(Color::Cyan),
-        )),
-    ];
+    let pool_text = vec![Line::from(Span::styled(
+        format!(
+            "  ● Stratum pool   miners={}  hashrate={:.1} kH/s",
+            s.miners, hs_kh
+        ),
+        Style::default().fg(Color::Cyan),
+    ))];
 
     let max_hash = s.hashrate_history.iter().copied().max().unwrap_or(1).max(1);
-    let pool_panel = Paragraph::new(pool_text)
-        .block(Block::default().borders(Borders::ALL).title("L1 — Pool"));
+    let pool_panel =
+        Paragraph::new(pool_text).block(Block::default().borders(Borders::ALL).title("L1 — Pool"));
     f.render_widget(pool_panel, chunks[2]);
 
     // ── L3 Agent ──────────────────────────────────────────────────
-    let agent_color = if s.agent_online { Color::Magenta } else { Color::Red };
+    let agent_color = if s.agent_online {
+        Color::Magenta
+    } else {
+        Color::Red
+    };
     let agent_status = if s.agent_online {
         format!(
             "online  model={}  sessions={}",
-            if s.agent_model.is_empty() { "?" } else { &s.agent_model },
+            if s.agent_model.is_empty() {
+                "?"
+            } else {
+                &s.agent_model
+            },
             s.agent_sessions
         )
     } else {
@@ -254,8 +290,11 @@ fn draw(f: &mut Frame, s: &MonitorState) {
             Style::default().fg(Color::DarkGray),
         )),
     ];
-    let agent_panel = Paragraph::new(agent_text)
-        .block(Block::default().borders(Borders::ALL).title("L3 — AI Native"));
+    let agent_panel = Paragraph::new(agent_text).block(
+        Block::default()
+            .borders(Borders::ALL)
+            .title("L3 — AI Native"),
+    );
     f.render_widget(agent_panel, chunks[3]);
 
     // ── Sparklines ────────────────────────────────────────────────
@@ -265,13 +304,21 @@ fn draw(f: &mut Frame, s: &MonitorState) {
         .split(chunks[4]);
 
     let height_spark = Sparkline::default()
-        .block(Block::default().borders(Borders::ALL).title("Block height (relative)"))
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("Block height (relative)"),
+        )
         .data(&s.height_history)
         .style(Style::default().fg(Color::Green));
     f.render_widget(height_spark, spark_chunks[0]);
 
     let hash_spark = Sparkline::default()
-        .block(Block::default().borders(Borders::ALL).title("Hashrate (kH/s)"))
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("Hashrate (kH/s)"),
+        )
         .data(&s.hashrate_history)
         .max(max_hash + 1)
         .style(Style::default().fg(Color::Cyan));

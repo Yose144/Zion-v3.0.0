@@ -10,16 +10,16 @@ use crate::db::SwapDb;
 use crate::error::SwapResult;
 use crate::executor::SwapExecutor;
 use crate::types::{
-    HtlcRecord, L1Block, L1ChainInfo, RpcResponse, SwapMemo, SwapState,
-    bytes_to_hex, normalize_rpc_addr, zion_address_from_public_key,
+    bytes_to_hex, normalize_rpc_addr, zion_address_from_public_key, HtlcRecord, L1Block,
+    L1ChainInfo, RpcResponse, SwapMemo, SwapState,
 };
 use chrono::Utc;
 use serde::de::DeserializeOwned;
-use serde_json::{Value, json};
+use serde_json::{json, Value};
 use std::sync::Arc;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::net::TcpStream;
-use tokio::time::{Duration, sleep};
+use tokio::time::{sleep, Duration};
 use tracing::{debug, error, info, warn};
 
 // ─── L1Watcher ───────────────────────────────────────────────────────────────
@@ -149,16 +149,13 @@ impl L1Watcher {
                     return Ok(());
                 }
 
-                let expires_at =
-                    Utc::now().timestamp() + (timeout_minutes as i64 * 60);
+                let expires_at = Utc::now().timestamp() + (timeout_minutes as i64 * 60);
 
                 // Sanity: enforce config bounds
                 let min = self.cfg.swap.min_lock_flowers;
                 let max = self.cfg.swap.max_lock_atomic;
                 if amount < min || amount > max {
-                    warn!(
-                        "LOCK {hash_hex} amount {amount} outside [{min},{max}] — rejected"
-                    );
+                    warn!("LOCK {hash_hex} amount {amount} outside [{min},{max}] — rejected");
                     return Ok(());
                 }
 
@@ -227,7 +224,8 @@ impl L1Watcher {
     }
 
     async fn fetch_block(&self, height: u64) -> SwapResult<L1Block> {
-        self.rpc("getBlockByHeight", json!({ "height": height })).await
+        self.rpc("getBlockByHeight", json!({ "height": height }))
+            .await
     }
 
     async fn rpc<T: DeserializeOwned>(&self, method: &str, params: Value) -> SwapResult<T> {
@@ -248,10 +246,9 @@ impl L1Watcher {
             .write_all(request.as_bytes())
             .await
             .map_err(|e| crate::error::SwapError::L1Rpc(format!("RPC write failed: {e}")))?;
-        stream
-            .write_all(b"\n")
-            .await
-            .map_err(|e| crate::error::SwapError::L1Rpc(format!("RPC newline write failed: {e}")))?;
+        stream.write_all(b"\n").await.map_err(|e| {
+            crate::error::SwapError::L1Rpc(format!("RPC newline write failed: {e}"))
+        })?;
 
         let mut reader = BufReader::new(stream);
         let mut line = String::new();
@@ -282,11 +279,7 @@ pub struct RefundLoop {
 }
 
 impl RefundLoop {
-    pub fn new(
-        cfg: Arc<SwapConfig>,
-        db: Arc<SwapDb>,
-        executor: Arc<SwapExecutor>,
-    ) -> Self {
+    pub fn new(cfg: Arc<SwapConfig>, db: Arc<SwapDb>, executor: Arc<SwapExecutor>) -> Self {
         Self { cfg, db, executor }
     }
 
