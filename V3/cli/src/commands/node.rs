@@ -184,6 +184,8 @@ async fn node_mempool(host: &str, port: u16) -> Result<()> {
     ui::print_row("Template txs", &tmpl_txs.to_string());
     ui::print_row("Template fees", &format!("{} ZION", fees));
     if txs > 0 {
+        println!("{}", serde_json::to_string_pretty(&result)?);
+    }
     println!();
     Ok(())
 }
