@@ -33,10 +33,7 @@ pub enum SwapError {
     AlreadySettled { hash_hex: String, state: String },
 
     #[error("HTLC {hash_hex} timelock has not expired yet (expires at {expires_at})")]
-    TimelockActive {
-        hash_hex: String,
-        expires_at: i64,
-    },
+    TimelockActive { hash_hex: String, expires_at: i64 },
 
     #[error("HTLC {hash_hex} has expired — cannot claim after timelock")]
     TimelockExpired { hash_hex: String },

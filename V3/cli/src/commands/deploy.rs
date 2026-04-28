@@ -108,7 +108,8 @@ pub async fn restart_service(cfg: &Config, service: &str) -> Result<()> {
     let user = &cfg.deploy.ssh_user;
 
     ui::print_header(&format!("Restarting {}", service));
-    let cmd = format!(
+    let cmd =
+        format!(
         "cd /root/zion-2.9.6/docker && docker compose -f docker-compose.v3-mainnet.yml restart {}",
         if compose_svc == "all" { "".into() } else { compose_svc }
     );
@@ -147,11 +148,13 @@ async fn remote_status(cfg: &Config) -> Result<()> {
 }
 
 fn run_local_script(script: &str, _cfg: &Config) -> Result<()> {
-    let resolved = resolve_local_path(script)
-        .ok_or_else(|| anyhow::anyhow!("Script not found from current working directory upward: {}", script))?;
-    std::process::Command::new("bash")
-        .arg(&resolved)
-        .status()?;
+    let resolved = resolve_local_path(script).ok_or_else(|| {
+        anyhow::anyhow!(
+            "Script not found from current working directory upward: {}",
+            script
+        )
+    })?;
+    std::process::Command::new("bash").arg(&resolved).status()?;
     Ok(())
 }
 
