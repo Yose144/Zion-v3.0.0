@@ -1,6 +1,6 @@
-# Appendix A — Technologie, compute a výrobní horizont
+# Příloha A — Technologie, compute a výrobní horizont
 
-Tento appendix existuje z jednoho důvodu: technologický materiál je pro TerraNova důležitý, ale nemá rozbíjet rytmus hlavního vyprávění.
+Tato příloha existuje z jednoho důvodu: technologický materiál je pro Terra Nova důležitý, ale nemá rozbíjet rytmus hlavního vyprávění.
 
 Patří sem zejména:
 
@@ -12,7 +12,7 @@ Patří sem zejména:
 
 V hlavním textu má zůstat jen to, co je pro čtenářskou kontinuitu nezbytné. Vše detailní, silně produktové nebo rychle zastarávající patří sem.
 
-## Zásada tohoto appendixu
+## Zásada této přílohy
 
 Technologická fascinace nesmí přepsat základní osu knihy.
 
@@ -20,13 +20,13 @@ Hardware je důležitý.
 
 Ale bez správného civilizačního záměru je to pořád jen rychlejší stroj.
 
-## 1. Jak tento appendix číst
+## 1. Jak tuto přílohu číst
 
-Technologická vrstva TerraNova má zvláštní problém: stárne rychleji než filosofie, ale pomaleji než marketing.
+Technologická vrstva Terra Nova má zvláštní problém: stárne rychleji než filosofie, ale pomaleji než marketing.
 
 Právě proto musí být psána jinak než hlavní kapitoly. Nesmí se utopit v produktových detailech, které za půl roku zestárnou. Zároveň ale nesmí sklouznout do abstraktní mlhy, která ztratí technickou užitečnost.
 
-Tento appendix proto rozlišuje tři úrovně:
+Tento příloha proto rozlišuje tři úrovně:
 
 - **dostupné teď**: hardware, který lze skutečně pořídit, provozovat nebo realisticky plánovat,
 - **architektonicky důležité**: prvky, které určují směr návrhu i tehdy, když konkrétní modelová řada časem zmizí,
@@ -34,13 +34,13 @@ Tento appendix proto rozlišuje tři úrovně:
 
 Takové čtení chrání text před dvojím selháním: před technofetišem i před vágní vizí bez opory.
 
-## 2. Proč je compute pro TerraNova zásadní
+## 2. Proč je compute pro Terra Nova zásadní
 
 Terra Nova nemůže mluvit o AI, koordinaci, medicínské asistenci, vzdělávání ani komunitní autonomii, aniž by si poctivě položila otázku výpočetní infrastruktury.
 
 Základní problém dneška není jen v tom, že AI je silná. Problém je, že její síla bývá soustředěna v málo centrech a propojena s obchodním modelem, který proměňuje člověka v datový zdroj.
 
-Proto je compute v TerraNova důležitý ne jako statusový symbol, ale jako podmínka suverenity.
+Proto je compute v Terra Nova důležitý ne jako statusový symbol, ale jako podmínka suverenity.
 
 Bez lokálního a regionálního compute zůstane komunita závislá na cizích API, cizích obchodních prioritách a cizích limitech. A tam, kde je závislost totální, nelze mluvit o skutečné autonomii péče, vzdělávání ani koordinace.
 
@@ -59,7 +59,7 @@ Sem patří například:
 - biofeedback a podpůrná data pro Medical Table,
 - energetická, bezpečnostní a provozní automatizace s nízkou spotřebou.
 
-Tato vrstva je pro TerraNova klíčová, protože dovoluje, aby data zůstávala blízko zdroji a aby komunita nemusela kvůli každému rozhodnutí volat vzdálenou infrastrukturu.
+Tato vrstva je pro Terra Nova klíčová, protože dovoluje, aby data zůstávala blízko zdroji a aby komunita nemusela kvůli každému rozhodnutí volat vzdálenou infrastrukturu.
 
 ### 3.2 Komunitní vrstva
 
@@ -73,7 +73,7 @@ Teprve regionální vrstva umožňuje systematičtější fine-tuning, náročn�
 
 Sem spadají stroje typu DGX Spark a další kompaktnější systémy, které přinášejí datacentrovou logiku do měřítka, jež je ještě přístupné menším týmům, laboratořím a regionálním centrům.
 
-Pro TerraNova je tato vrstva důležitá hlavně z těchto důvodů:
+Pro Terra Nova je tato vrstva důležitá hlavně z těchto důvodů:
 
 - dovoluje vyvíjet komunitně vlastněné AI bez okamžitého vstupu do hyperscaler infrastruktury,
 - vytváří most mezi lokálním použitím a výzkumnou kapacitou,
@@ -94,15 +94,15 @@ Má však v knize místo, protože propojuje dvě důležité věci:
 - dlouhodobý horizont lidstva,
 - otázku, jak se výpočetní infrastruktura mění, když opustí Zemi.
 
-Právě zde se potkává Appendix A s kapitolou o Issobelle. Ale jen tehdy, když zůstane přiznáno, že jde o horizont, nikoli o stav dnešního provozu.
+Právě zde se potkává Příloha A s kapitolou o Issobelle. Ale jen tehdy, když zůstane přiznáno, že jde o horizont, nikoli o stav dnešního provozu.
 
 ## 4. DGX Spark, DGX Station a proč na nich záleží
 
-Konkrétní jména jako DGX Spark nebo DGX Station nejsou pro TerraNova důležitá kvůli kultu značky. Jsou důležitá proto, že ukazují civilizační posun v měřítku dostupnosti.
+Konkrétní jména jako DGX Spark nebo DGX Station nejsou pro Terra Nova důležitá kvůli kultu značky. Jsou důležitá proto, že ukazují civilizační posun v měřítku dostupnosti.
 
 Ještě nedávno bylo mnoho úloh spojených s většími modely myslitelných jen uvnitř drahé cloudové nebo korporátní infrastruktury. Novější generace kompaktních AI systémů posouvají část této kapacity blíž k menším týmům, laboratořím a regionálním centrům.
 
-Pro TerraNova to znamená tři zásadní věci:
+Pro Terra Nova to znamená tři zásadní věci:
 
 - vyšší míru experimentální svobody,
 - menší nutnost odevzdávat citlivá data cizí infrastruktuře,
@@ -114,7 +114,7 @@ Správná interpretace těchto strojů není triumfalistická. Neznamenají, že
 
 Stejně důležité jako regionální stroje jsou i dostupnější vrstvy: GPU třídy RTX, menší edge systémy, Apple Silicon a další lokálně provozovatelné platformy.
 
-Právě tyto vrstvy dávají TerraNova realistický základ. Bez nich by se celý compute příběh rozpadl do elitního snu o několika výjimečných strojích. S nimi naopak vzniká škálovatelná skladba:
+Právě tyto vrstvy dávají Terra Nova realistický základ. Bez nich by se celý compute příběh rozpadl do elitního snu o několika výjimečných strojích. S nimi naopak vzniká škálovatelná skladba:
 
 - drobné lokální úlohy na nízké spotřebě,
 - komunitní inference a znalostní báze na běžnějším hardware,
@@ -124,7 +124,7 @@ To je důležité i politicky. Demokracie compute nezačne tím, že všichni do
 
 ## 6. AI suverenita a proč cloud nestačí
 
-Cloud má v některých situacích své místo. Ale jako výhradní základ TerraNova nestačí.
+Cloud má v některých situacích své místo. Ale jako výhradní základ Terra Nova nestačí.
 
 Pokud by komunita stavěla svou inteligentní vrstvu jen na cizích API, znamenalo by to:
 
@@ -140,7 +140,7 @@ AI suverenita proto neznamená absolutní izolaci. Znamená správné pořadí: 
 
 Jedna z největších chyb technologického myšlení je redukovat vše na železo. Jenže skutečnou použitelnost určuje až celý stack.
 
-Pro TerraNova jsou proto stejně důležité i tyto vrstvy:
+Pro Terra Nova jsou proto stejně důležité i tyto vrstvy:
 
 - inference runtime,
 - modelové formáty,
@@ -169,7 +169,7 @@ Právě tato poctivost odlišuje knihu, která něco nese, od knihy, která si j
 
 Jakmile se compute dostane do většího měřítka, nestačí už kupovat stroje. Je třeba simulovat infrastrukturu jako celek: tepelný režim, networking, redundanci, umístění, spotřebu i přechodové režimy.
 
-Proto mají nástroje typu AI factory simulation nebo digitální dvojče důležitou roli. Pro TerraNova nejde o efektní vizualizaci. Jde o formu prevence sebeklamu. Simulace dovoluje odhalit, co se rozpadne ještě před fyzickou stavbou.
+Proto mají nástroje typu AI factory simulation nebo digitální dvojče důležitou roli. Pro Terra Nova nejde o efektní vizualizaci. Jde o formu prevence sebeklamu. Simulace dovoluje odhalit, co se rozpadne ještě před fyzickou stavbou.
 
 To je v souladu s celou knihou: nejdřív pravdivost, potom expanze.
 
@@ -177,7 +177,7 @@ To je v souladu s celou knihou: nejdřív pravdivost, potom expanze.
 
 Compute se často popisuje, jako by byl téměř nehmotný. Ve skutečnosti je hluboce materiální. Potřebuje proud, chlazení, servis, náhradní díly, prostor, čistotu prostředí a lidskou péči.
 
-To je důvod, proč TerraNova nesmí psát AI infrastrukturu jako magický mrak. Každý watt má původ. Každý rack má tepelnou stopu. Každý upgrade má logistickou a ekologickou cenu.
+To je důvod, proč Terra Nova nesmí psát AI infrastrukturu jako magický mrak. Každý watt má původ. Každý rack má tepelnou stopu. Každý upgrade má logistickou a ekologickou cenu.
 
 Technologická pokora zde znamená přiznat i toto:
 
@@ -195,7 +195,7 @@ Hlavní kniha potřebuje jen to, co nese orientaci. Tedy například:
 - že hardware se přibližuje komunitnímu měřítku,
 - že orbitální horizont existuje jako legitimní budoucí směr.
 
-Naopak sem do appendixu patří vše, co by v hlavním textu rozbíjelo rytmus:
+Naopak sem do přílohy patří vše, co by v hlavním textu rozbíjelo rytmus:
 
 - detailní názvy produktových řad,
 - dočasné benchmarky,
@@ -206,7 +206,7 @@ Toto rozlišení je redakčně důležité. Umožňuje, aby kniha dýchala, ani�
 
 ## 12. Závěrečná poznámka
 
-Technologie v TerraNova nemá být ani démonizována, ani zbožštěna.
+Technologie v Terra Nova nemá být ani démonizována, ani zbožštěna.
 
 Má být zasazena do správného řádu.
 

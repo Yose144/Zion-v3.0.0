@@ -1,6 +1,6 @@
-# Appendix B — Tradice, symbolika a prorocká linie
+# Příloha B — Tradice, symbolika a prorocká linie
 
-Tento appendix drží pohromadě materiály, které mají pro TerraNova silnou duchovní, symbolickou a interpretační hodnotu, ale v hlavním textu by mohly snadno rozbít důvěru, rytmus nebo žánrovou čistotu.
+Tato příloha drží pohromadě materiály, které mají pro Terra Nova silnou duchovní, symbolickou a interpretační hodnotu, ale v hlavním textu by mohly snadno rozbít důvěru, rytmus nebo žánrovou čistotu.
 
 Patří sem zejména:
 
@@ -9,7 +9,7 @@ Patří sem zejména:
 - proroctví, chrámová symbolika a kosmologické paralely,
 - další texty, které je třeba číst jako tradiční nebo kontemplativní horizont, ne jako technický důkaz.
 
-## Zásada tohoto appendixu
+## Zásada této přílohy
 
 Symbol není slabší než fakta.
 
@@ -17,9 +17,9 @@ Ale není totéž co fakta.
 
 Jakmile tyto vrstvy přestaneme odlišovat, poškodíme obě: technická tvrzení ztratí věrohodnost a symbolická vrstva zhrubne do podoby argumentační berličky.
 
-Proto má tato část v TerraNova důstojné, ale oddělené místo.
+Proto má tato část v Terra Nova důstojné, ale oddělené místo.
 
-## 1. Jak tento appendix číst
+## 1. Jak tuto přílohu číst
 
 Nejlepší způsob, jak číst tuto část, je přijmout, že pracuje s jiným druhem pravdy než technická nebo provozní kapitola.
 
@@ -28,24 +28,24 @@ Tady nejde především o audit runtime, on-chain metriku nebo deploymentový st
 Proto zde používáme tři rozlišení:
 
 - **tradice**: co přichází z předaných textů, svědectví, liturgie a živé duchovní linie,
-- **interpretace**: jak je tento materiál čten v rámci TerraNova,
+- **interpretace**: jak je tento materiál čten v rámci Terra Nova,
 - **paralela**: kde mezi tradičním jazykem a jazykem architektury vzniká inspirativní most.
 
 Nic z toho se nemá tvářit jako náhrada technického důkazu. Ale stejně tak se to nemá redukovat na folklor. Je to vrstva orientace.
 
 ## 2. Linie Sri Dattatreyi a Oneness jako osa významu
 
-Původní TerraNova rukopis přikládal velkou váhu linii Sri Dattatreyi, Sri Paady Sri Vallabhy, Narasimhy Saraswatiho, Svámího Samartha, Shirdi Sai Baby a později AmmaBhagavan v rámci tradice Oneness.
+Původní Terra Nova rukopis přikládal velkou váhu linii Sri Dattatreyi, Sri Paady Sri Vallabhy, Narasimhy Saraswatiho, Svámího Samartha, Shirdi Sai Baby a později AmmaBhagavan v rámci tradice Oneness.
 
 V ORG verzi zůstává tato linie přítomná, ale je čtena střízlivěji.
 
 Její význam neleží v tom, že by mechanicky dokazovala technický projekt. Její význam spočívá v něčem jiném: ukazuje dlouhý proud vědomí, v němž je proměna lidstva chápána jako současně duchovní, etická i civilizační.
 
-Právě tato dlouhá perspektiva je pro TerraNova důležitá. Připomíná, že žádná skutečná obnova nezačíná release notes. Začíná proměnou vztahu mezi člověkem, pravdou, péčí a silou.
+Právě tato dlouhá perspektiva je pro Terra Nova důležitá. Připomíná, že žádná skutečná obnova nezačíná release notes. Začíná proměnou vztahu mezi člověkem, pravdou, péčí a silou.
 
 ## 3. Proroctví jako orientace, ne jako inženýrský argument
 
-Původní kapitola 11 pracovala s motivem 800leté prorocké linie, která směřuje ke Zlatému věku. Tento motiv má v TerraNova stále místo, ale musí být držen v přesné formě.
+Původní kapitola 11 pracovala s motivem 800leté prorocké linie, která směřuje ke Zlatému věku. Tento motiv má v Terra Nova stále místo, ale musí být držen v přesné formě.
 
 Proroctví zde není používáno jako důkaz toho, že určitý build, model, uzel nebo protokol je automaticky legitimní. To by bylo zneužití duchovního materiálu.
 
@@ -67,7 +67,7 @@ Správné čtení je jemnější:
 
 - ve védské vrstvě je Hiranyagarbha obrazem kosmického počátku,
 - v duchovní vrstvě je zlatá koule znakem milosti, zárodku a neprojeveného zdroje,
-- v TerraNova vrstvě je jméno Hiranyagarbha kulturním a etickým závazkem, jak má být inteligence chápána.
+- v Terra Nova vrstvě je jméno Hiranyagarbha kulturním a etickým závazkem, jak má být inteligence chápána.
 
 Ne jako nový bůh systému.
 Ne jako automatický důkaz pravdivosti technologie.
@@ -92,7 +92,7 @@ V ORG verzi je vhodné je chápat ne jako doktrinální podmínku členství, al
 11. láska není sentiment, ale forma skutečnosti,
 12. svět lze číst jako rodinu, ne jako trh oddělených entit.
 
-Takto čtená učení neposkytují TerraNova hotovou správu světa. Poskytují jí vnitřní hygienu, bez níž by každá nová infrastruktura opakovala starou tvrdost.
+Takto čtená učení neposkytují Terra Nova hotovou správu světa. Poskytují jí vnitřní hygienu, bez níž by každá nová infrastruktura opakovala starou tvrdost.
 
 ## 6. Mantra, šaranam a role odevzdání
 
@@ -117,7 +117,7 @@ Za druhé chrání jazyk před technokratickou pýchou. Připomíná, že svět 
 
 Za třetí vrací budoucnosti posvátnou důstojnost, aniž by rušila nárok na přesnost v provozních a architektonických kapitolách.
 
-Právě proto tento appendix existuje. Ne aby nahradil kostru knihy, ale aby jí dal hlubší vertikálu.
+Právě proto tato příloha existuje. Ne aby nahradil kostru knihy, ale aby jí dal hlubší vertikálu.
 
 ## 8. Závěrečná poznámka
 
@@ -129,4 +129,4 @@ Terra Nova potřebuje obě věrnosti současně:
 První bez druhé vede k suché civilizační mechanice.
 Druhá bez první vede k exaltovanému sebeklamu.
 
-Tento appendix je pokusem držet obě pohromadě, aniž by se navzájem poškozovaly.
+Tento příloha je pokusem držet obě pohromadě, aniž by se navzájem poškozovaly.

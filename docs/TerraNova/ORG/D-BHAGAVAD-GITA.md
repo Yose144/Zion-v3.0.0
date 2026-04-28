@@ -1,22 +1,22 @@
 # Příloha D — Bhagavad Gíta: Dharma stavitele
 
-Tento appendix vstupuje do Bhagavad Gíty z jediného úhlu: **dilema stavitele**, který vidí, co je třeba udělat, ale zároveň cítí váhu toho, co se tím změní nebo zboří. Gíta je v tomto čtení průvodcem pro každého, kdo stojí na prahu nutného činu.
+Tato příloha vstupuje do Bhagavad Gíty z jediného úhlu: **dilema stavitele**, který vidí, co je třeba udělat, ale zároveň cítí váhu toho, co se tím změní nebo zboří. Gíta je v tomto čtení průvodcem pro každého, kdo stojí na prahu nutného činu.
 
 ---
 
-## Zásada tohoto appendixu
+## Zásada této přílohy
 
 Bhagavad Gíta není dogmatický text. Je to dialektický rozhovor — Ardžuna klade otázky, Kršna odpovídá, a odpovědi nejsou jednoduché. Gíta neříká: *„Udělej to."* Říká: *„Pochop proč."*
 
-Tento appendix neslouží jako duchovní autorita TerraNova. Slouží jako **zrcadlo** pro ty, kteří v projektu pracují a zažívají pochybnosti, únavu nebo konflikt mezi tím, co cítí jako správné, a tím, co je bezpečné.
+Tato příloha neslouží jako duchovní autorita Terra Nova. Slouží jako **zrcadlo** pro ty, kteří v projektu pracují a zažívají pochybnosti, únavu nebo konflikt mezi tím, co cítí jako správné, a tím, co je bezpečné.
 
 ---
 
-## 1. Jak tento appendix číst
+## 1. Jak tuto přílohu číst
 
-Text Gíty existuje v mnoha překladech a komentářích. Tento appendix čerpá z obecně dostupných překladů a vztahuje klíčové koncepty k otázkám, které se přirozeně vynořují v dlouhém projektu s nejistým výsledkem.
+Text Gíty existuje v mnoha překladech a komentářích. Tento příloha čerpá z obecně dostupných překladů a vztahuje klíčové koncepty k otázkám, které se přirozeně vynořují v dlouhém projektu s nejistým výsledkem.
 
-Gíta mluví s každou generací jinak, protože se mění kontext. Tento appendix ji čte v kontextu decentralizovaných sítí, komunit v přechodu a stavby systémů, které mají sloužit vědomí.
+Gíta mluví s každou generací jinak, protože se mění kontext. Tento příloha ji čte v kontextu decentralizovaných sítí, komunit v přechodu a stavby systémů, které mají sloužit vědomí.
 
 ---
 
@@ -26,7 +26,7 @@ Ardžuna stojí před bitvou. Na druhé straně jsou jeho příbuzní, učitelé
 
 *„Mé tělo se třese. Moje ústa jsou suchá. Tělo se chvěje a vlasy vstávají hrůzou."* (BG 1.29)
 
-Ardžunův kolaps není slabost. Je to **morální poctivost** — neschopnost jednat bez plného porozumění tomu, co jeho čin způsobí. V projektu jako TerraNova existují analogické momenty: nasazení kódu, který změní pravidla systému; rozhodnutí, která ovlivní komunitu; volby, které nelze vzít zpět.
+Ardžunův kolaps není slabost. Je to **morální poctivost** — neschopnost jednat bez plného porozumění tomu, co jeho čin způsobí. V projektu jako Terra Nova existují analogické momenty: nasazení kódu, který změní pravidla systému; rozhodnutí, která ovlivní komunitu; volby, které nelze vzít zpět.
 
 Kolaps před činem není selhání. Je to výzva k hlubšímu porozumění.
 
@@ -48,7 +48,7 @@ V kontextu mining a sítě: každý hash je validní bez ohledu na to, zda konkr
 
 Gíta popisuje tři cesty k jednání v souladu s dharma:
 
-| Cesta | Sanskrt | Popis | Paralela v TerraNova |
+| Cesta | Sanskrt | Popis | Paralela v Terra Nova |
 |-------|---------|-------|----------------------|
 | **Cesta činu** | Karma jóga | Jednat správně bez připoutanosti | L1 protokol, mining, validace |
 | **Cesta poznání** | Jnána jóga | Vidět skutečnost za iluzí | Architektura L5–L6, design systémů |
@@ -64,7 +64,7 @@ Gíta netvrdí, že jedna cesta je nadřazená. Různí lidé dosáhnou správn�
 
 Ardžuna je bojovník — *kšatrija*. Jeho dharma je chránit. Vzdát se boje ve jménu osobního klidu by bylo porušením dharmy — ne jejím naplněním.
 
-Pro stavitele TerraNova je dharma analogicky: **budovat funkční systémy**. Nedokončit práci kvůli strachu z rizika je porušením dharmy — ne obezřetností.
+Pro stavitele Terra Nova je dharma analogicky: **budovat funkční systémy**. Nedokončit práci kvůli strachu z rizika je porušením dharmy — ne obezřetností.
 
 Dharma se ale mění s kontextem. Co je dharma v jedné fázi projektu, nemusí být dharma v jiné. Gíta to uznává: *„Lepší je vlastní dharma, byť nedokonalá, než cizí dharma, byť dokonalá."* (BG 3.35)
 
@@ -78,7 +78,7 @@ Jeden z nejcitovanějších úseků Gíty je o nesmrtelnosti duše:
 
 V sekulárním čtení je toto tvrzení o tom, co přetrvává: záměr, hodnoty, struktury, které byly postaveny dobře. Kód, který je čistý a validní, přetrvává. Genesis blok nelze odstranit ze sítě. Konsenzus, jednou dosažený, existuje jako záznam.
 
-TerraNova nemůže zaručit fyzické přežití každé komunity nebo každého projektu. Může zaručit, že dobře postavené protokoly mají trvanlivost.
+Terra Nova nemůže zaručit fyzické přežití každé komunity nebo každého projektu. Může zaručit, že dobře postavené protokoly mají trvanlivost.
 
 ---
 
@@ -99,19 +99,19 @@ Toto rozlišení není absolutní soud o lidech — je to **diagnóza vzorců**.
 
 ## 8. Závěr — Gíta jako průvodce, ne autorita
 
-Bhagavad Gíta nezakládá TerraNova. Není jeho duchovní autoritou. Ale jako průvodce pro momenty pochybnosti, únavy nebo morálního konfliktu nabízí jazyk, který je jiný než technická specifikace nebo ekonomický model.
+Bhagavad Gíta nezakládá Terra Nova. Není jeho duchovní autoritou. Ale jako průvodce pro momenty pochybnosti, únavy nebo morálního konfliktu nabízí jazyk, který je jiný než technická specifikace nebo ekonomický model.
 
 Projekt, který buduje novou civilizaci, potřebuje oba druhy textu: přesné protokoly pro konsenzus a poetické průvodce pro vědomí, které ty protokoly naplňuje.
 
 Gíta říká: *Jednej. Jednej správně. Jednej bez připoutanosti k osobní odměně. A neustávej.*
 
-Pro stavitele TerraNova: dokončit iteraci, dokumentovat, předat dalšímu, a pokračovat.
+Pro stavitele Terra Nova: dokončit iteraci, dokumentovat, předat dalšímu, a pokračovat.
 
 ---
 
 ## 9. Závěrečná poznámka
 
-Tento appendix cíleně neprocházel všechny verše ani nevytvářel soustavný komentář. Bhagavad Gíta je text, který si zaslouží přímé čtení — ne výběr citátů, které potvrzují předem zvolené závěry.
+Tato příloha cíleně neprocházel všechny verše ani nevytvářel soustavný komentář. Bhagavad Gíta je text, který si zaslouží přímé čtení — ne výběr citátů, které potvrzují předem zvolené závěry.
 
 Čtenáři, kteří chtějí jít hlouběji: Překlad Vladimíra Minaře (Bhagavad-gíta taková, jaká je) je dostupný v češtině. Alternativně Svámi Bhaktivedánta nebo Bádarájanovy Brahma Sútry v kontextu Šankary a Rámanudžy.
 
