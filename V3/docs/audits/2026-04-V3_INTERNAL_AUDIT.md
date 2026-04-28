@@ -193,7 +193,11 @@ V praxi je to obtížně exploitovatelné, protože `is_valid_address` vyžaduje
 
 ---
 
-## 4. 🔴 F1 — Validation pipeline `validate_block` se z produkce nevolá (Critical / Architectural)
+## 4. 🔴 F1 — Validation pipeline `validate_block` se z produkce nevolá (Critical / Architectural) — **PARTIALLY FIXED**
+
+> **Update 2026‑04‑28** — částečně opraveno PR `f1-validation-pipeline`. `validate_peer_block` nyní jako conservation‑of‑value hook volá nové funkce `validation::validate_inputs_exist` a `validation::validate_value_conservation`, plus napojuje `validation::validate_premine_locks` a `fee::validate_fee` floor pro non‑coinbase / non‑bridge‑unlock UTXO transakce. Bridge‑unlock cesta zůstává na `validate_bridge_unlock_transaction_shape`. Coinbase‑maturity (100‑bloků) check zůstává deferred — vyžaduje rozšířit `SpendableUtxo` o `is_coinbase`. Regression testy: 8 unit testů v `validation.rs::tests::*` + 1 RPC integration test `submit_candidate_rejects_utxo_inflating_supply`. Existující testy `utxo_mined_block_passes_peer_import` a `peer_import_rejects_utxo_with_bad_signature` byly upraveny tak, aby seedily stejné funding UTXO do source i target runtime (předtím se opíraly o ne‑validovaný stav, F1 to odhalil). 11‑step `validation::validate_block` pipeline zůstává nenapojená — refaktor vyžaduje ujednocení AcceptedBlock → Block typu, plánováno jako follow‑up.
+
+
 
 **Kde:** `V3/L1/core/src/validation.rs` (11‑step pipeline) vs `V3/L1/core/src/lib.rs::validate_peer_block` (skutečná produkční cesta).
 
