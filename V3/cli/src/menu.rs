@@ -61,7 +61,15 @@ fn print_intro(show_genesis: bool) {
 
 fn stack_operations_menu() -> Result<Option<Vec<String>>> {
     loop {
-        let items = ["Service lifecycle", "Guided deploy", "Config", "Views & TUI", "Version & release info", "Auto update CLI", BACK];
+        let items = [
+            "Service lifecycle",
+            "Guided deploy",
+            "Config",
+            "Views & TUI",
+            "Version & release info",
+            "Auto update CLI",
+            BACK,
+        ];
 
         let Some(choice) = select("Stack operations", &items)? else {
             return Ok(None);
@@ -272,8 +280,17 @@ fn node_menu() -> Result<Option<Vec<String>>> {
             8 => {
                 let method = required_input("RPC method", Some("getChainInfo"))?;
                 let params = optional_input("Params JSON (blank = {})", Some("{}"))?;
-                let params = if params.trim().is_empty() { "{}".to_string() } else { params };
-                return Ok(Some(args_owned(vec!["node".into(), "rpc".into(), method, params])));
+                let params = if params.trim().is_empty() {
+                    "{}".to_string()
+                } else {
+                    params
+                };
+                return Ok(Some(args_owned(vec![
+                    "node".into(),
+                    "rpc".into(),
+                    method,
+                    params,
+                ])));
             }
             _ => return Ok(None),
         }
@@ -282,7 +299,14 @@ fn node_menu() -> Result<Option<Vec<String>>> {
 
 fn pool_menu() -> Result<Option<Vec<String>>> {
     loop {
-        let items = ["Stats", "Active miners", "Config", "Earnings for current wallet", "Earnings for custom address", BACK];
+        let items = [
+            "Stats",
+            "Active miners",
+            "Config",
+            "Earnings for current wallet",
+            "Earnings for custom address",
+            BACK,
+        ];
         let Some(choice) = select("Pool", &items)? else {
             return Ok(None);
         };
@@ -294,7 +318,12 @@ fn pool_menu() -> Result<Option<Vec<String>>> {
             3 => return Ok(Some(args(&["pool", "earnings"]))),
             4 => {
                 let address = required_input("Wallet address", None)?;
-                return Ok(Some(args_owned(vec!["pool".into(), "earnings".into(), "--address".into(), address])));
+                return Ok(Some(args_owned(vec![
+                    "pool".into(),
+                    "earnings".into(),
+                    "--address".into(),
+                    address,
+                ])));
             }
             _ => return Ok(None),
         }
@@ -329,15 +358,31 @@ fn mine_menu() -> Result<Option<Vec<String>>> {
             4 => {
                 let mut argv = args(&["mine", "bench", "--gpu"]);
                 apply_backend_flag(&mut argv, choose_gpu_backend(false)?);
-                apply_optional_flag(&mut argv, "--work-size", optional_input("Work size (blank = default)", None)?);
-                apply_optional_flag(&mut argv, "--secs", optional_input("Duration seconds (blank = 5)", Some("5"))?);
+                apply_optional_flag(
+                    &mut argv,
+                    "--work-size",
+                    optional_input("Work size (blank = default)", None)?,
+                );
+                apply_optional_flag(
+                    &mut argv,
+                    "--secs",
+                    optional_input("Duration seconds (blank = 5)", Some("5"))?,
+                );
                 return Ok(Some(argv));
             }
             5 => {
                 let mut argv = args(&["mine", "bench", "--ekam"]);
                 apply_backend_flag(&mut argv, choose_gpu_backend(true)?);
-                apply_optional_flag(&mut argv, "--work-size", optional_input("Work size (blank = default)", None)?);
-                apply_optional_flag(&mut argv, "--secs", optional_input("Duration seconds (blank = 5)", Some("5"))?);
+                apply_optional_flag(
+                    &mut argv,
+                    "--work-size",
+                    optional_input("Work size (blank = default)", None)?,
+                );
+                apply_optional_flag(
+                    &mut argv,
+                    "--secs",
+                    optional_input("Duration seconds (blank = 5)", Some("5"))?,
+                );
                 return Ok(Some(argv));
             }
             6 => return Ok(Some(args(&["mine", "stop"]))),
@@ -369,7 +414,12 @@ fn wallet_menu() -> Result<Option<Vec<String>>> {
             1 => return Ok(Some(args(&["wallet", "balance"]))),
             2 => {
                 let address = required_input("Address", None)?;
-                return Ok(Some(args_owned(vec!["wallet".into(), "balance".into(), "--address".into(), address])));
+                return Ok(Some(args_owned(vec![
+                    "wallet".into(),
+                    "balance".into(),
+                    "--address".into(),
+                    address,
+                ])));
             }
             3 => return Ok(Some(guided_wallet_send()?)),
             4 => return Ok(Some(args(&["wallet", "new"]))),
@@ -406,7 +456,11 @@ fn agent_menu() -> Result<Option<Vec<String>>> {
             1 => return Ok(Some(args(&["agent", "chat"]))),
             2 => {
                 let question = required_input("Question", None)?;
-                return Ok(Some(args_owned(vec!["agent".into(), "ask".into(), question])));
+                return Ok(Some(args_owned(vec![
+                    "agent".into(),
+                    "ask".into(),
+                    question,
+                ])));
             }
             3 => return Ok(Some(args(&["agent", "logs"]))),
             4 => return Ok(Some(args(&["agent", "config"]))),
@@ -416,7 +470,12 @@ fn agent_menu() -> Result<Option<Vec<String>>> {
             8 => return Ok(Some(args(&["agent", "rag", "index"]))),
             9 => {
                 let question = required_input("RAG query", None)?;
-                return Ok(Some(args_owned(vec!["agent".into(), "rag".into(), "query".into(), question])));
+                return Ok(Some(args_owned(vec![
+                    "agent".into(),
+                    "rag".into(),
+                    "query".into(),
+                    question,
+                ])));
             }
             10 => return Ok(Some(args(&["agent", "warp"]))),
             11 => return Ok(Some(args(&["agent", "ncl"]))),
@@ -428,7 +487,16 @@ fn agent_menu() -> Result<Option<Vec<String>>> {
 
 fn bridge_menu() -> Result<Option<Vec<String>>> {
     loop {
-        let items = ["Status", "Pending", "History (last 10)", "History (custom)", "Get transfer", "Chains", "Transfer dry-run", BACK];
+        let items = [
+            "Status",
+            "Pending",
+            "History (last 10)",
+            "History (custom)",
+            "Get transfer",
+            "Chains",
+            "Transfer dry-run",
+            BACK,
+        ];
         let Some(choice) = select("Bridge", &items)? else {
             return Ok(None);
         };
@@ -454,7 +522,15 @@ fn bridge_menu() -> Result<Option<Vec<String>>> {
 
 fn dao_menu() -> Result<Option<Vec<String>>> {
     loop {
-        let items = ["Status", "Active proposals", "Proposal detail", "Treasury", "Params", "Vote dry-run", BACK];
+        let items = [
+            "Status",
+            "Active proposals",
+            "Proposal detail",
+            "Treasury",
+            "Params",
+            "Vote dry-run",
+            BACK,
+        ];
         let Some(choice) = select("DAO", &items)? else {
             return Ok(None);
         };
@@ -476,7 +552,16 @@ fn dao_menu() -> Result<Option<Vec<String>>> {
 
 fn warp_menu() -> Result<Option<Vec<String>>> {
     loop {
-        let items = ["Status", "Chains", "Chain detail", "Pending", "Get message", "Stats", "Validators", BACK];
+        let items = [
+            "Status",
+            "Chains",
+            "Chain detail",
+            "Pending",
+            "Get message",
+            "Stats",
+            "Validators",
+            BACK,
+        ];
         let Some(choice) = select("Warp", &items)? else {
             return Ok(None);
         };
@@ -486,7 +571,11 @@ fn warp_menu() -> Result<Option<Vec<String>>> {
             1 => return Ok(Some(args(&["warp", "chains"]))),
             2 => {
                 let chain_id = required_input("Chain ID", None)?;
-                return Ok(Some(args_owned(vec!["warp".into(), "chain".into(), chain_id])));
+                return Ok(Some(args_owned(vec![
+                    "warp".into(),
+                    "chain".into(),
+                    chain_id,
+                ])));
             }
             3 => return Ok(Some(args(&["warp", "pending"]))),
             4 => {
@@ -496,7 +585,11 @@ fn warp_menu() -> Result<Option<Vec<String>>> {
             5 => return Ok(Some(args(&["warp", "stats"]))),
             6 => {
                 let chain_id = required_input("Chain ID", None)?;
-                return Ok(Some(args_owned(vec!["warp".into(), "validators".into(), chain_id])));
+                return Ok(Some(args_owned(vec![
+                    "warp".into(),
+                    "validators".into(),
+                    chain_id,
+                ])));
             }
             _ => return Ok(None),
         }
@@ -505,7 +598,17 @@ fn warp_menu() -> Result<Option<Vec<String>>> {
 
 fn ncl_menu() -> Result<Option<Vec<String>>> {
     loop {
-        let items = ["Status", "Jobs", "Job detail", "Workers", "Leaderboard", "Schedule", "Price", "Submit job", BACK];
+        let items = [
+            "Status",
+            "Jobs",
+            "Job detail",
+            "Workers",
+            "Leaderboard",
+            "Schedule",
+            "Price",
+            "Submit job",
+            BACK,
+        ];
         let Some(choice) = select("NCL", &items)? else {
             return Ok(None);
         };
@@ -532,7 +635,14 @@ fn ncl_menu() -> Result<Option<Vec<String>>> {
 
 fn config_menu() -> Result<Option<Vec<String>>> {
     loop {
-        let items = ["Show config", "Config path", "Validate", "Init wizard", "Set key/value", BACK];
+        let items = [
+            "Show config",
+            "Config path",
+            "Validate",
+            "Init wizard",
+            "Set key/value",
+            BACK,
+        ];
         let Some(choice) = select("Config", &items)? else {
             return Ok(None);
         };
@@ -545,7 +655,12 @@ fn config_menu() -> Result<Option<Vec<String>>> {
             4 => {
                 let key = required_input("Config key", None)?;
                 let value = required_input("Config value", None)?;
-                return Ok(Some(args_owned(vec!["config".into(), "set".into(), key, value])));
+                return Ok(Some(args_owned(vec![
+                    "config".into(),
+                    "set".into(),
+                    key,
+                    value,
+                ])));
             }
             _ => return Ok(None),
         }
@@ -554,7 +669,16 @@ fn config_menu() -> Result<Option<Vec<String>>> {
 
 fn views_menu() -> Result<Option<Vec<String>>> {
     loop {
-        let items = ["Dashboard in browser", "Block explorer TUI", "Live monitor TUI", "Deploy status", "Deploy server", "Deploy website", "Deploy update", BACK];
+        let items = [
+            "Dashboard in browser",
+            "Block explorer TUI",
+            "Live monitor TUI",
+            "Deploy status",
+            "Deploy server",
+            "Deploy website",
+            "Deploy update",
+            BACK,
+        ];
         let Some(choice) = select("Views & TUI", &items)? else {
             return Ok(None);
         };
@@ -654,9 +778,21 @@ fn guided_mine_start() -> Result<Vec<String>> {
     let backend = choose_backend()?;
     let profile = choose_profile()?;
 
-    apply_optional_flag(&mut argv, "--pool", optional_input("Pool host:port (blank = config)", None)?);
-    apply_optional_flag(&mut argv, "--wallet", optional_input("Wallet override (blank = config)", None)?);
-    apply_optional_flag(&mut argv, "--threads", optional_input("Threads (blank = auto)", None)?);
+    apply_optional_flag(
+        &mut argv,
+        "--pool",
+        optional_input("Pool host:port (blank = config)", None)?,
+    );
+    apply_optional_flag(
+        &mut argv,
+        "--wallet",
+        optional_input("Wallet override (blank = config)", None)?,
+    );
+    apply_optional_flag(
+        &mut argv,
+        "--threads",
+        optional_input("Threads (blank = auto)", None)?,
+    );
     apply_backend_flag(&mut argv, backend);
     argv.push("--profile".into());
     argv.push(profile.into());
