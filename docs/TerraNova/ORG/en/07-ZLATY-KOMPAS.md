@@ -1,0 +1,13 @@
+# Part VII — The Golden Compass
+
+A book that ends only with an impression ultimately leads nowhere. That is why Terra Nova must end with a Compass — not as a management table or list of KPIs, but as a form of orientation for people who want to know where the beginning is and how to recognise the direction without lying to themselves about the distance to the goal. After the stellar horizon, this return feels at first like a descent. In reality it is the exact opposite: the Compass is the moment when everything distant, great and beautiful returns to the scale at which it is actually possible to act.
+
+The first truth of the Compass is plain: the greatest share of the work does not lie in the year 2040 — it lies in the nearest step. Today that step means maintaining a truthful relationship between documentation and runtime; completing the public launch without self-deception; building a language that can bear both technology and soul; and not beginning to speak about future layers as though the core were already finished. The Compass is not there to let someone skip the uncomfortable stages — it is there to remind them of the order.
+
+## Seven directions
+
+The chapter defines a Guardian not as a class, caste or heroic title, but as a person who has decided to carry a part of the world more consciously than before — in code, in landscape, in care, in the translation of ideas, or by holding infrastructure when it is not visible. The Golden Age will not begin when everyone does the same thing; it will begin when different roles finally stop standing against each other. Seven directions of the Compass are then articulated: **Truthfulness** (write nothing that contradicts reality merely because it sounds more beautiful); **Care** (build everything so that it bears life, not only performance); **Discipline** (maintain rhythm, maintenance and operations without which every vision disintegrates); **Community** (stop imagining the future as an individualist upgrade); **Openness** (share knowledge, errors and breakthrough patterns); **Courage** (do not shrink the horizon just because it is large); **Measure** (do not enlarge the language beyond what reality can carry).
+
+Success for Terra Nova, the chapter concludes, will not consist in everything from the text being quickly finished. It will consist in the individual layers ceasing to be separated from one another — when the person reading about the stars also understands the soil; when the person who understands the protocol also understands care; when community is not in opposition to technology; when AI is not in opposition to humanity; when economy is not in opposition to love.
+
+*[Full Czech text available in the CZ edition]*

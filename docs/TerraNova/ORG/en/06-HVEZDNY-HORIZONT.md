@@ -1,0 +1,13 @@
+# Part VI — The Stellar Horizon
+
+It is easy to speak about the stars wrongly — either slipping too quickly into technological narcissism, or dissolving into soft mysticism that sounds grand but bears no weight. Terra Nova can afford neither. That is why this chapter comes only after the architecture. The stellar horizon is not meant to function as an escape from the weight of reality but as its test at the longest scale. Only something that can bear soil, care, economics and a truthful stack can begin to speak the language of the stars without embarrassment.
+
+The first sentence of the chapter is unambiguous: the stellar horizon in Terra Nova is not an escape from a broken Earth. It is a consequence of having begun to live on Earth more maturely. A civilisation that has not managed soil, water, honesty and care would only extend the scale of its destructiveness among the stars. Issobella is therefore important in this book not as a symbol of dominance but as a symbol of maturity. From orbit, what is so easily concealed below becomes visible: humanity is not a collection of separate fates but one organism with many languages, traditions, traumas and possibilities. The overview effect is not decoration for a space programme — it is a cultural event.
+
+## WARP, SETI and the question of readiness
+
+WARP in Terra Nova always carries a double meaning: a bridge between networks, and an image of crossing a boundary that previously seemed impassable. The chapter insists this dual nature must be handled carefully — where the text speaks of research, research must be acknowledged; where it speaks of symbol, symbol must be acknowledged. The great question of first contact, the chapter argues, is not only astronomical. It is the question of who we are when we meet someone. What would a Terra Nova civilisation transmit into space? Not primarily a technical signature, but evidence that it had succeeded in transferring technology from the sphere of dominance to the sphere of service; that it had created an economy that does not destroy all that is living; that it had built community without needing a new empire; that it had given AI a role that does not enlarge alienation; and that it had maintained humility in the horizon of the stars. That would be a message worth sending.
+
+The stellar horizon exerts a constant moral pressure on every lower layer: whoever speaks of Issobella but cannot be truthful about the current runtime is using the stars merely as scenery. Whoever speaks of first contact but cannot care for the person beside them simply wants a larger stage for an old ego. L6 is in this sense an ongoing test of the inner honesty of all the layers beneath it.
+
+*[Full Czech text available in the CZ edition]*
