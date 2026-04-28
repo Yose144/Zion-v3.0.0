@@ -28,8 +28,8 @@ pub async fn call(host: &str, port: u16, method: &str, params: Value) -> Result<
     let mut response_line = String::new();
     buf_reader.read_line(&mut response_line).await?;
 
-    let response: Value = serde_json::from_str(response_line.trim())
-        .context("Invalid JSON response from node")?;
+    let response: Value =
+        serde_json::from_str(response_line.trim()).context("Invalid JSON response from node")?;
 
     if let Some(err) = response.get("error") {
         if !err.is_null() {

@@ -100,9 +100,13 @@ pub fn cosmic_harmony_ekam_deeksha(block_header: &[u8], nonce: u64) -> Hash32 {
 ///
 /// This is the V3 mainnet canonical hash (active from genesis).
 #[inline]
-pub fn cosmic_harmony_ekam_deeksha_v2(block_header: &[u8], nonce: u64, block_height: u64) -> Hash32 {
-    use crate::scratchpad_ekam::memory_hard_transform_ekam_light_v2;
+pub fn cosmic_harmony_ekam_deeksha_v2(
+    block_header: &[u8],
+    nonce: u64,
+    block_height: u64,
+) -> Hash32 {
     use crate::algorithms_npu::{epoch_from_height, npu_mixing_step_epoch};
+    use crate::scratchpad_ekam::memory_hard_transform_ekam_light_v2;
 
     let mut input = [0u8; 88];
     let len = block_header.len().min(80);
@@ -131,9 +135,13 @@ pub fn cosmic_harmony_ekam_deeksha_v2(block_header: &[u8], nonce: u64, block_hei
 ///
 /// Gated by `CHV42_DUAL_SPIN_FORK_HEIGHT` (currently u64::MAX — not active).
 #[inline]
-pub fn cosmic_harmony_ekam_deeksha_v3(block_header: &[u8], nonce: u64, block_height: u64) -> Hash32 {
-    use crate::scratchpad_ekam::memory_hard_transform_ekam_v3;
+pub fn cosmic_harmony_ekam_deeksha_v3(
+    block_header: &[u8],
+    nonce: u64,
+    block_height: u64,
+) -> Hash32 {
     use crate::algorithms_npu::{epoch_from_height, npu_mixing_step_epoch};
+    use crate::scratchpad_ekam::memory_hard_transform_ekam_v3;
 
     let mut input = [0u8; 88];
     let len = block_header.len().min(80);
@@ -226,7 +234,11 @@ pub fn ekam_self_test() -> bool {
         return false;
     }
 
-    let hex: String = left.data.iter().map(|byte| format!("{:02x}", byte)).collect();
+    let hex: String = left
+        .data
+        .iter()
+        .map(|byte| format!("{:02x}", byte))
+        .collect();
     hex == EKAM_CANONICAL_TEST_VECTOR_HEX
 }
 
@@ -251,7 +263,10 @@ pub fn generate_ekam_test_vector() -> String {
     const TEST_HEADER: &[u8] = b"ZION_DEEKSHA_GENESIS_V298_CANONICAL";
     const TEST_NONCE: u64 = 0x2980_0001_0000_0001;
     let hash = cosmic_harmony_ekam_deeksha(TEST_HEADER, TEST_NONCE);
-    hash.data.iter().map(|byte| format!("{:02x}", byte)).collect()
+    hash.data
+        .iter()
+        .map(|byte| format!("{:02x}", byte))
+        .collect()
 }
 
 /// Generate Ekam v2 test vector.
@@ -259,7 +274,10 @@ pub fn generate_ekam_v2_test_vector() -> String {
     const TEST_HEADER: &[u8] = b"ZION_DEEKSHA_GENESIS_V298_CANONICAL";
     const TEST_NONCE: u64 = 0x2980_0001_0000_0001;
     let hash = cosmic_harmony_ekam_deeksha_v2(TEST_HEADER, TEST_NONCE, 0);
-    hash.data.iter().map(|byte| format!("{:02x}", byte)).collect()
+    hash.data
+        .iter()
+        .map(|byte| format!("{:02x}", byte))
+        .collect()
 }
 
 /// CHv4.2 self-test — determinism.
@@ -278,7 +296,10 @@ pub fn generate_ekam_v3_test_vector() -> String {
     const TEST_HEADER: &[u8] = b"ZION_DEEKSHA_GENESIS_V298_CANONICAL";
     const TEST_NONCE: u64 = 0x2980_0001_0000_0001;
     let hash = cosmic_harmony_ekam_deeksha_v3(TEST_HEADER, TEST_NONCE, 0);
-    hash.data.iter().map(|byte| format!("{:02x}", byte)).collect()
+    hash.data
+        .iter()
+        .map(|byte| format!("{:02x}", byte))
+        .collect()
 }
 
 /// Hash 64-byte input through NPU backend.
@@ -309,7 +330,10 @@ mod tests {
     #[test]
     fn ekam_vector_matches() {
         let vector = generate_ekam_test_vector();
-        assert_eq!(vector, EKAM_CANONICAL_TEST_VECTOR_HEX, "Ekam v1 vector changed");
+        assert_eq!(
+            vector, EKAM_CANONICAL_TEST_VECTOR_HEX,
+            "Ekam v1 vector changed"
+        );
     }
 
     #[test]
@@ -325,7 +349,10 @@ mod tests {
     #[test]
     fn ekam_v2_vector_matches() {
         let vector = generate_ekam_v2_test_vector();
-        assert_eq!(vector, EKAM_V2_CANONICAL_TEST_VECTOR_HEX, "Ekam v2 vector changed");
+        assert_eq!(
+            vector, EKAM_V2_CANONICAL_TEST_VECTOR_HEX,
+            "Ekam v2 vector changed"
+        );
     }
 
     #[test]
@@ -382,7 +409,10 @@ mod tests {
     #[test]
     fn ekam_v2_output_nonzero() {
         let h = cosmic_harmony_ekam_deeksha_v2(b"nonzero test", 0, 0);
-        assert!(h.data.iter().any(|&b| b != 0), "Output must not be all-zero");
+        assert!(
+            h.data.iter().any(|&b| b != 0),
+            "Output must not be all-zero"
+        );
     }
 
     #[test]
@@ -452,7 +482,10 @@ mod tests {
     #[test]
     fn v3_output_nonzero() {
         let h = cosmic_harmony_ekam_deeksha_v3(b"v3 nonzero test", 0, 0);
-        assert!(h.data.iter().any(|&b| b != 0), "v3 output must not be all-zero");
+        assert!(
+            h.data.iter().any(|&b| b != 0),
+            "v3 output must not be all-zero"
+        );
     }
 
     #[test]
@@ -474,12 +507,18 @@ mod tests {
         let nonce = 999u64;
         let h_ep0 = cosmic_harmony_ekam_deeksha_v3(header, nonce, 0);
         let h_ep1 = cosmic_harmony_ekam_deeksha_v3(header, nonce, NPU_EPOCH_LENGTH);
-        assert_ne!(h_ep0.data, h_ep1.data, "v3: different epochs → different hashes");
+        assert_ne!(
+            h_ep0.data, h_ep1.data,
+            "v3: different epochs → different hashes"
+        );
     }
 
     #[test]
     fn v3_fork_height_not_active() {
-        assert_eq!(CHV42_DUAL_SPIN_FORK_HEIGHT, u64::MAX,
-            "CHv4.2 must not be active until governance approval");
+        assert_eq!(
+            CHV42_DUAL_SPIN_FORK_HEIGHT,
+            u64::MAX,
+            "CHv4.2 must not be active until governance approval"
+        );
     }
 }

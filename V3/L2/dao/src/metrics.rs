@@ -102,106 +102,124 @@ impl DaoMetrics {
         }
 
         emit!(
-            "gauge", "zion_dao_uptime_seconds",
+            "gauge",
+            "zion_dao_uptime_seconds",
             "DAO daemon uptime in seconds",
             self.uptime_secs()
         );
 
         // Proposals
         emit!(
-            "counter", "zion_dao_proposals_created_total",
+            "counter",
+            "zion_dao_proposals_created_total",
             "Total governance proposals created",
             self.proposals_created.load(Ordering::Relaxed)
         );
         emit!(
-            "counter", "zion_dao_proposals_executed_total",
+            "counter",
+            "zion_dao_proposals_executed_total",
             "Total proposals successfully executed",
             self.proposals_executed.load(Ordering::Relaxed)
         );
         emit!(
-            "counter", "zion_dao_proposals_rejected_total",
+            "counter",
+            "zion_dao_proposals_rejected_total",
             "Total proposals rejected (quorum not met or voted down)",
             self.proposals_rejected.load(Ordering::Relaxed)
         );
         emit!(
-            "counter", "zion_dao_proposals_expired_total",
+            "counter",
+            "zion_dao_proposals_expired_total",
             "Total proposals that expired without reaching quorum",
             self.proposals_expired.load(Ordering::Relaxed)
         );
 
         // Voting
         emit!(
-            "counter", "zion_dao_votes_cast_total",
+            "counter",
+            "zion_dao_votes_cast_total",
             "Total votes cast across all proposals",
             self.votes_cast.load(Ordering::Relaxed)
         );
         emit!(
-            "counter", "zion_dao_votes_yes_total",
+            "counter",
+            "zion_dao_votes_yes_total",
             "Total YES votes cast",
             self.votes_yes.load(Ordering::Relaxed)
         );
         emit!(
-            "counter", "zion_dao_votes_no_total",
+            "counter",
+            "zion_dao_votes_no_total",
             "Total NO votes cast",
             self.votes_no.load(Ordering::Relaxed)
         );
         emit!(
-            "counter", "zion_dao_votes_abstain_total",
+            "counter",
+            "zion_dao_votes_abstain_total",
             "Total ABSTAIN votes cast",
             self.votes_abstain.load(Ordering::Relaxed)
         );
 
         // Treasury
         emit!(
-            "counter", "zion_dao_treasury_ops_submitted_total",
+            "counter",
+            "zion_dao_treasury_ops_submitted_total",
             "Total treasury operations submitted for multisig",
             self.treasury_operations_submitted.load(Ordering::Relaxed)
         );
         emit!(
-            "counter", "zion_dao_treasury_ops_executed_total",
+            "counter",
+            "zion_dao_treasury_ops_executed_total",
             "Total treasury operations executed",
             self.treasury_operations_executed.load(Ordering::Relaxed)
         );
         emit!(
-            "counter", "zion_dao_treasury_disbursed_zion_total",
+            "counter",
+            "zion_dao_treasury_disbursed_zion_total",
             "Total ZION disbursed from treasury (whole coins, no decimals)",
             self.treasury_total_disbursed_zion.load(Ordering::Relaxed)
         );
 
         // Emergency
         emit!(
-            "counter", "zion_dao_emergency_actions_total",
+            "counter",
+            "zion_dao_emergency_actions_total",
             "Total emergency actions executed",
             self.emergency_actions_executed.load(Ordering::Relaxed)
         );
 
         // Guardian
         emit!(
-            "counter", "zion_dao_guardian_signatures_total",
+            "counter",
+            "zion_dao_guardian_signatures_total",
             "Total guardian signatures collected for multisig operations",
             self.guardian_signatures_collected.load(Ordering::Relaxed)
         );
 
         // L1 scanner
         emit!(
-            "counter", "zion_dao_l1_blocks_scanned_total",
+            "counter",
+            "zion_dao_l1_blocks_scanned_total",
             "Total L1 blocks scanned for governance memos",
             self.l1_blocks_scanned.load(Ordering::Relaxed)
         );
         emit!(
-            "counter", "zion_dao_l1_governance_memos_total",
+            "counter",
+            "zion_dao_l1_governance_memos_total",
             "Total L1 governance memo transactions found",
             self.l1_governance_memos_found.load(Ordering::Relaxed)
         );
 
         // API
         emit!(
-            "counter", "zion_dao_api_requests_total",
+            "counter",
+            "zion_dao_api_requests_total",
             "Total HTTP API requests processed",
             self.api_requests_total.load(Ordering::Relaxed)
         );
         emit!(
-            "counter", "zion_dao_api_errors_total",
+            "counter",
+            "zion_dao_api_errors_total",
             "Total HTTP API requests that returned an error",
             self.api_errors_total.load(Ordering::Relaxed)
         );

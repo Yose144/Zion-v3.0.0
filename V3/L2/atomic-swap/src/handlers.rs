@@ -60,7 +60,10 @@ fn ok_json(v: serde_json::Value) -> Json<serde_json::Value> {
 
 // ─── Auth helper ─────────────────────────────────────────────────────────────
 
-fn require_auth(state: &AppState, headers: &HeaderMap) -> Result<(), (StatusCode, Json<serde_json::Value>)> {
+fn require_auth(
+    state: &AppState,
+    headers: &HeaderMap,
+) -> Result<(), (StatusCode, Json<serde_json::Value>)> {
     let Some(ref expected) = state.bearer_token else {
         return Ok(()); // open access
     };
@@ -96,10 +99,13 @@ pub async fn swap_status(
     Path(hash_hex): Path<String>,
 ) -> (StatusCode, Json<serde_json::Value>) {
     match state.db.get_htlc(&hash_hex) {
-        Ok(Some(rec)) => (StatusCode::OK, ok_json(serde_json::json!({
-            "status": "ok",
-            "htlc": rec,
-        }))),
+        Ok(Some(rec)) => (
+            StatusCode::OK,
+            ok_json(serde_json::json!({
+                "status": "ok",
+                "htlc": rec,
+            })),
+        ),
         Ok(None) => (
             StatusCode::NOT_FOUND,
             err_json(format!("HTLC not found: {hash_hex}")),
@@ -119,13 +125,22 @@ pub async fn claim(
     }
     // Basic input validation
     if req.hash_hex.len() != 64 {
-        return (StatusCode::BAD_REQUEST, err_json("hash_hex must be 64 hex chars"));
+        return (
+            StatusCode::BAD_REQUEST,
+            err_json("hash_hex must be 64 hex chars"),
+        );
     }
     if req.preimage_hex.len() != 64 {
-        return (StatusCode::BAD_REQUEST, err_json("preimage_hex must be 64 hex chars"));
+        return (
+            StatusCode::BAD_REQUEST,
+            err_json("preimage_hex must be 64 hex chars"),
+        );
     }
     if req.recipient.is_empty() {
-        return (StatusCode::BAD_REQUEST, err_json("recipient address required"));
+        return (
+            StatusCode::BAD_REQUEST,
+            err_json("recipient address required"),
+        );
     }
 
     match state
@@ -135,21 +150,23 @@ pub async fn claim(
     {
         Ok(()) => {
             let rec = state.db.get_htlc(&req.hash_hex).ok().flatten();
-            (StatusCode::OK, ok_json(serde_json::json!({
-                "status": "claimed",
-                "hash_hex": req.hash_hex,
-                "recipient": req.recipient,
-                "release_tx_id": rec.as_ref().and_then(|r| r.release_tx_id.clone()),
-            })))
+            (
+                StatusCode::OK,
+                ok_json(serde_json::json!({
+                    "status": "claimed",
+                    "hash_hex": req.hash_hex,
+                    "recipient": req.recipient,
+                    "release_tx_id": rec.as_ref().and_then(|r| r.release_tx_id.clone()),
+                })),
+            )
         }
         Err(SwapError::PreimageMismatch) => (
             StatusCode::BAD_REQUEST,
             err_json("Preimage does not match hash"),
         ),
-        Err(SwapError::AlreadySettled { .. }) => (
-            StatusCode::CONFLICT,
-            err_json("HTLC already settled"),
-        ),
+        Err(SwapError::AlreadySettled { .. }) => {
+            (StatusCode::CONFLICT, err_json("HTLC already settled"))
+        }
         Err(SwapError::TimelockExpired { .. }) => (
             StatusCode::GONE,
             err_json("HTLC timelock expired — claim rejected"),
@@ -171,23 +188,29 @@ pub async fn refund(
     if let Err(e) = require_auth(&state, &headers) {
         return e;
     }
-    match state.executor.execute_refund(&state.db, &req.hash_hex).await {
+    match state
+        .executor
+        .execute_refund(&state.db, &req.hash_hex)
+        .await
+    {
         Ok(()) => {
             let rec = state.db.get_htlc(&req.hash_hex).ok().flatten();
-            (StatusCode::OK, ok_json(serde_json::json!({
-                "status": "refunded",
-                "hash_hex": req.hash_hex,
-                "release_tx_id": rec.as_ref().and_then(|r| r.release_tx_id.clone()),
-            })))
+            (
+                StatusCode::OK,
+                ok_json(serde_json::json!({
+                    "status": "refunded",
+                    "hash_hex": req.hash_hex,
+                    "release_tx_id": rec.as_ref().and_then(|r| r.release_tx_id.clone()),
+                })),
+            )
         }
         Err(SwapError::TimelockActive { expires_at, .. }) => (
             StatusCode::CONFLICT,
             err_json(format!("Timelock active until UNIX {expires_at}")),
         ),
-        Err(SwapError::AlreadySettled { .. }) => (
-            StatusCode::CONFLICT,
-            err_json("HTLC already settled"),
-        ),
+        Err(SwapError::AlreadySettled { .. }) => {
+            (StatusCode::CONFLICT, err_json("HTLC already settled"))
+        }
         Err(SwapError::HtlcNotFound { .. }) => (
             StatusCode::NOT_FOUND,
             err_json(format!("HTLC not found: {}", req.hash_hex)),
@@ -205,11 +228,14 @@ pub async fn list_pending(
         return e;
     }
     match state.db.list_pending(100) {
-        Ok(list) => (StatusCode::OK, ok_json(serde_json::json!({
-            "status": "ok",
-            "count": list.len(),
-            "htlcs": list,
-        }))),
+        Ok(list) => (
+            StatusCode::OK,
+            ok_json(serde_json::json!({
+                "status": "ok",
+                "count": list.len(),
+                "htlcs": list,
+            })),
+        ),
         Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, err_json(e.to_string())),
     }
 }
