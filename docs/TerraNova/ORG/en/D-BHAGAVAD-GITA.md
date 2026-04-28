@@ -1,0 +1,13 @@
+# Appendix D — Bhagavad Gita: The Dharma of the Builder
+
+This appendix enters the Bhagavad Gita from a single angle: **the dilemma of the builder who sees what must be done, but simultaneously feels the weight of what that action will change or destroy.** The Gita, in this reading, is a guide for anyone standing on the threshold of a necessary act. It does not serve as a spiritual authority for Terra Nova — it serves as a **mirror** for those working on the project who experience doubt, fatigue or conflict between what they sense is right and what feels safe.
+
+## Arjuna's collapse and nishkama karma
+
+Arjuna's paralysis before the battle of Kurukshetra is not weakness — it is moral honesty: an inability to act without fully understanding what that action will cause. Analogous moments exist in any project like Terra Nova: deploying code that changes the rules of a system; decisions that affect a community; choices that cannot be taken back. Krishna's response to the collapse is not encouragement or promises of victory. It is a philosophical argument about the nature of **action without attachment to outcome** — *nishkama karma*: *"You have a right to perform your prescribed duties, but you are not entitled to the fruits of your actions."* (BG 2.47) This does not mean indifference to results. It means that the motivation of the act must not be personal gain, fear or ego — the act is performed because it is right, not to bring a specific reward. Applied to the network: every hash is valid regardless of whether that particular block wins; the network functions on the basis of millions of acts without guaranteed individual reward.
+
+## Three paths and dharma
+
+The Gita's three paths are mapped to Terra Nova: karma yoga (right action without attachment) corresponds to L1 protocol, mining and validation; jnana yoga (seeing reality behind illusion) to architecture L5–L6 and systems design; and bhakti yoga (serving the intention, not the ego-outcome) to community, care and DAO governance. The Gita does not claim one path is superior — different people reach right action by different routes, and the project needs all three. Dharma in the Gita's context is not an external rule but the **inner law of existence** — what a thing essentially is. For a builder of Terra Nova, dharma is to build functional systems; abandoning work out of fear of risk is a violation of dharma, not prudence. The appendix ends with the Gita's teaching on the imperishability of the soul read in secular terms: what persists is intention, values and well-built structures — clean and valid code persists; the genesis block cannot be removed from the network; consensus, once achieved, exists as a record.
+
+*[Full Czech text available in the CZ edition]*
