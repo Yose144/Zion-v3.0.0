@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import {
   ArrowRight,
-  Lock,
   Leaf,
   MapPin,
   Orbit,
@@ -71,27 +70,27 @@ const PROJECTS: ProjectCardData[] = [
     ],
   },
   {
+    href: '/terranova/dharma-temple',
     title: 'Dharma Temple',
-    location: 'Lokalita neznámá',
-    eyebrow: 'L5 · Secret Mock',
-    statusCs: 'Secret mock',
-    statusEn: 'Secret mock',
+    location: 'La Palma · Kanárské ostrovy',
+    eyebrow: 'L5 · Sanctuary La Palma',
+    statusCs: 'V přípravě',
+    statusEn: 'In preparation',
     descriptionCs:
-      'Zatím jen pracovní placeholder pro budoucí projekt. Název zůstává Dharma Temple, ale detaily i lokalita doplníme později.',
+      'Spirituální a vzdělávací uzel Terra Nova na vulkanickém ostrově La Palma — místo meditace, syntropic zahrady, dharma governance a hlubokého zastavení.',
     descriptionEn:
-      'For now this is only a working placeholder for a future project. The Dharma Temple name stays, but details and location will be added later.',
+      'Terra Nova spiritual and educational node on volcanic La Palma island — a place for meditation, syntropic garden, dharma governance and deep stillness.',
     accent: 'violet',
-    isSecret: true,
     features: [
-      { icon: Orbit, labelCs: 'Koncept', labelEn: 'Concept' },
-      { icon: Sprout, labelCs: 'Mock', labelEn: 'Mock' },
-      { icon: Mountain, labelCs: 'L5 placeholder', labelEn: 'L5 placeholder' },
-      { icon: Droplets, labelCs: 'Detaily později', labelEn: 'Details later' },
+      { icon: Orbit, labelCs: 'Meditace & Ticho', labelEn: 'Meditation & Silence' },
+      { icon: Sprout, labelCs: 'Syntropic zahrada', labelEn: 'Syntropic garden' },
+      { icon: Mountain, labelCs: 'Vulkanická krajina', labelEn: 'Volcanic landscape' },
+      { icon: Droplets, labelCs: 'Off-grid voda', labelEn: 'Off-grid water' },
     ],
     metrics: [
-      { value: 'TBD', labelCs: 'Fáze', labelEn: 'Phase' },
+      { value: 'UNESCO', labelCs: 'Bioreservace', labelEn: 'Biosphere' },
       { value: 'L5', labelCs: 'Vrstva', labelEn: 'Layer' },
-      { value: '???', labelCs: 'Region', labelEn: 'Region' },
+      { value: 'ES', labelCs: 'Region', labelEn: 'Region' },
     ],
   },
 ];
