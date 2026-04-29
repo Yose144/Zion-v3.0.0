@@ -69,3 +69,65 @@ These addresses **must be treated as fully compromised**.
 See `V3/docs/audits/2026-04-V3_INTERNAL_AUDIT.md`, Finding **F3**, for
 the full technical explanation, and section 17 for the recommended
 priority order of all the audit findings.
+
+---
+
+## Addendum — 2026-04-29: additional credentials leak (`docs/docs2.9/ZION_KEYS/`)
+
+While completing the audit sweep, a **second** plaintext-credentials
+directory was found at `docs/docs2.9/ZION_KEYS/`, introduced 2026-03-30
+in commit `feat: AI Native Hiranyagarbha v1.0` (author:
+`estrelaisabellazion3`). It contained:
+
+- `GITHUB_TOKEN.txt` — a live GitHub Personal Access Token
+  (`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`)
+- `OPENAI_API_KEY.txt` — a live OpenAI API key
+  (`sk-proj-CsUPFBafi12A3Kl6YVRY716An5iuJRzlmyW0n5wCAnMdJTHe7Gd…`)
+- `SSH_KEYS_INFO.txt` — deployment SSH key path and SSH config pointing
+  at `root@91.98.122.165` (live mainnet node)
+- A screenshot of the keys and a `README.md` documenting usage
+
+### Actions taken in this commit
+
+- `git rm` of the entire `docs/docs2.9/ZION_KEYS/` directory.
+- Extended `.gitignore` with patterns that block this category from
+  being re-introduced: `**/ZION_KEYS/`, `**/*TOKEN*.txt`,
+  `**/*API_KEY*.txt`, `**/*SECRET_KEY*.txt`, `**/*KEYS_INFO*.txt`,
+  `**/*CREDENTIALS*.txt`.
+
+### Actions still required (NOT done in this commit — please follow up manually)
+
+1. **Revoke the GitHub PAT immediately.** Go to
+   https://github.com/settings/tokens, find the token starting with
+   `ghp_7gxI3Y…`, and click Revoke. If you can't identify it, revoke
+   **all** PATs and reissue. Then review the account security log at
+   https://github.com/settings/security-log for suspicious activity
+   since 2025-11-10.
+2. **Rotate the OpenAI API key.** Delete `sk-proj-CsUPFBafi12A3…` at
+   https://platform.openai.com/api-keys and review the Usage page for
+   anomalous billing.
+3. **Rotate the SSH deployment key on `91.98.122.165`.** Generate a new
+   keypair locally, `ssh-copy-id` the public half, then remove the old
+   key from `~/.ssh/authorized_keys` on the server. Review
+   `journalctl -u sshd --since "2025-11-10"` and `last -F` for
+   unexpected logins.
+4. **Include the `ZION_KEYS/` directory in the same BFG / git-filter-repo
+   rewrite** planned for the wallet leak above. Amend the recommended
+   command to:
+   ```bash
+   git filter-repo --invert-paths \
+       --path zion-wallet.json \
+       --path V3/zion-wallet.json \
+       --path V3-src.tar \
+       --path V3-src-fresh.tar \
+       --path V3-src.zip \
+       --path V3_upload.zip \
+       --path docs/docs2.9/ZION_KEYS
+   git push --force-with-lease origin main
+   ```
+
+**Until step 1–3 are completed, the leaked PAT, OpenAI key, and SSH
+access are still live.** Removing the files from `HEAD` in this commit
+does **not** invalidate any of them — they remain recoverable from
+history and, more importantly, from any clone made before the rewrite.
+Rotation is the only mitigation that actually closes the window.
