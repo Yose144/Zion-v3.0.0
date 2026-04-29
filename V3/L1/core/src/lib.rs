@@ -1761,17 +1761,28 @@ impl NodeRuntime {
             .insert_utxo_transaction(&self.node_id, &self.core, transaction)
         {
             Ok(()) => {
-                if let Err(error) =
-                    self.persist_chain_update(&ChainJournalEntry::TransactionAccepted {
-                        transaction: self
-                            .chain_state
-                            .mempool_by_id
-                            .get(&tx_id)
-                            .cloned()
-                            .expect("accepted UTXO mempool transaction should be indexed"),
-                    })
-                {
-                    eprintln!("node_state_persist_error={error}");
+                // The transaction was accepted into the mempool, so it
+                // *should* be present in mempool_by_id. If it isn't (e.g.
+                // a future state-machine bug, or an in-flight eviction),
+                // log the inconsistency and skip journaling rather than
+                // panicking — the tx is already accepted, the caller
+                // deserves a successful response. (Audit finding F5.)
+                match self.chain_state.mempool_by_id.get(&tx_id).cloned() {
+                    Some(transaction) => {
+                        if let Err(error) =
+                            self.persist_chain_update(&ChainJournalEntry::TransactionAccepted {
+                                transaction,
+                            })
+                        {
+                            eprintln!("node_state_persist_error={error}");
+                        }
+                    }
+                    None => {
+                        eprintln!(
+                            "node_state_persist_skipped: accepted UTXO transaction {tx_id} \
+                             missing from mempool_by_id index"
+                        );
+                    }
                 }
                 RpcResponse::TransactionResult {
                     accepted: true,
@@ -1932,15 +1943,24 @@ impl NodeRuntime {
                     reason: Some(format!("locally mined block failed validation: {reason}")),
                 };
             }
-            if let Err(error) = self.persist_chain_update(&ChainJournalEntry::BlockAccepted {
-                block: self
-                    .chain_state
-                    .accepted_blocks
-                    .last()
-                    .cloned()
-                    .expect("accepted block should be recorded"),
-            }) {
-                eprintln!("node_state_persist_error={error}");
+            // Soft-fail rather than panic if the just-accepted block
+            // somehow isn't at the back of accepted_blocks (e.g. a future
+            // pruning interaction). The block was already accepted; we
+            // owe the caller a successful response. (Audit finding F5.)
+            match self.chain_state.accepted_blocks.last().cloned() {
+                Some(block) => {
+                    if let Err(error) =
+                        self.persist_chain_update(&ChainJournalEntry::BlockAccepted { block })
+                    {
+                        eprintln!("node_state_persist_error={error}");
+                    }
+                }
+                None => {
+                    eprintln!(
+                        "node_state_persist_skipped: locally accepted block missing from \
+                         accepted_blocks tail"
+                    );
+                }
             }
         }
 
@@ -1964,17 +1984,26 @@ impl NodeRuntime {
             .insert_transaction(&self.node_id, &self.core, transaction)
         {
             Ok(()) => {
-                if let Err(error) =
-                    self.persist_chain_update(&ChainJournalEntry::TransactionAccepted {
-                        transaction: self
-                            .chain_state
-                            .mempool_by_id
-                            .get(&tx_id)
-                            .cloned()
-                            .expect("accepted mempool transaction should be indexed"),
-                    })
-                {
-                    eprintln!("node_state_persist_error={error}");
+                // Same soft-fail pattern as submit_utxo_transaction_rpc:
+                // the tx was accepted into the mempool, so log + skip
+                // journaling rather than panic if the index lookup
+                // misses. (Audit finding F5.)
+                match self.chain_state.mempool_by_id.get(&tx_id).cloned() {
+                    Some(transaction) => {
+                        if let Err(error) =
+                            self.persist_chain_update(&ChainJournalEntry::TransactionAccepted {
+                                transaction,
+                            })
+                        {
+                            eprintln!("node_state_persist_error={error}");
+                        }
+                    }
+                    None => {
+                        eprintln!(
+                            "node_state_persist_skipped: accepted account transaction {tx_id} \
+                             missing from mempool_by_id index"
+                        );
+                    }
                 }
                 RpcResponse::TransactionResult {
                     accepted: true,
