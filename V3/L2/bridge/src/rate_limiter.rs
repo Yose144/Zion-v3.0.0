@@ -8,7 +8,7 @@
 //! call `check_*` from any Tokio task.
 
 use std::collections::VecDeque;
-use std::sync::Mutex;
+use std::sync::{Mutex, MutexGuard};
 use std::time::{Duration, Instant};
 
 /// Sliding-window rate limiter.
@@ -51,6 +51,21 @@ pub enum RateLimitResult {
 }
 
 impl RateLimiter {
+    /// Acquire the inner guard, recovering from poisoning instead of
+    /// panicking. The rate-limit state is bookkeeping (sliding-window
+    /// counters of `Instant`s); recovering the inner state keeps the
+    /// bridge daemon alive through a single panic rather than amplifying
+    /// it into a DOS on every subsequent relayer call. (Audit finding F5.)
+    fn inner(&self) -> MutexGuard<'_, Inner> {
+        self.inner.lock().unwrap_or_else(|poisoned| {
+            eprintln!(
+                "warning: rate limiter mutex was poisoned by a panicking holder; \
+                 recovering inner state"
+            );
+            poisoned.into_inner()
+        })
+    }
+
     /// Create a new rate limiter.
     ///
     /// - `max_ops_per_hour`: global cap from `security.max_ops_per_hour`
@@ -77,7 +92,7 @@ impl RateLimiter {
         let cutoff = now - self.window;
         let addr_key = address.to_ascii_lowercase();
 
-        let mut inner = self.inner.lock().expect("rate limiter lock poisoned");
+        let mut inner = self.inner();
 
         // Prune expired entries — global
         while inner.global.front().map_or(false, |&t| t < cutoff) {
@@ -122,7 +137,7 @@ impl RateLimiter {
     pub fn current_count(&self) -> u32 {
         let now = Instant::now();
         let cutoff = now - self.window;
-        let mut inner = self.inner.lock().expect("rate limiter lock poisoned");
+        let mut inner = self.inner();
         while inner.global.front().map_or(false, |&t| t < cutoff) {
             inner.global.pop_front();
         }
