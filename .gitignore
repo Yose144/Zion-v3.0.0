@@ -78,6 +78,16 @@ PREMINE_WALLETS_BACKUP.json
 **/PREMINE_WALLETS_BACKUP*
 MYSTERIUM_KEYS_BACKUP.json
 scripts/_decrypt_myst.py
+# Plaintext credentials folders / files (see SECURITY_NOTICE_2026-04-28.md)
+**/ZION_KEYS/
+**/*TOKEN*.txt
+**/*API_KEY*.txt
+**/*SECRET_KEY*.txt
+**/*KEYS_INFO*.txt
+**/*CREDENTIALS*.txt
+github_token.txt
+openai_api_key.txt
+ssh_keys_info.txt
 # Wallet exports (Ed25519 secret_key_hex / mnemonic must NEVER be committed)
 zion-wallet.json
 **/zion-wallet*.json
