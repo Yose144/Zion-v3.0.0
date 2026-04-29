@@ -72,6 +72,96 @@ Oba projekty jsou uzly téže sítě: různá energie, stejný záměr.
 
 ---
 
+## Glamping & Retreat Ubytování
+
+Dharma Temple přijímá hosty jiným způsobem než Zahrada Genesis. Zde nejde o komerční glamping — jde o **retreat prostředí**: hosté přicházejí s záměrem, ne na dovolenou. Přesto je fyzická pohoda podmínkou vnitřní práce, proto jsou prostory navrženy jako minimalisticky krásné.
+
+### Typy ubytování
+
+| Typ | Kapacita | Popis | Status |
+|-----|----------|-------|--------|
+| Meditační buňka | 1 osoba | Malá přírodní chata (8–12 m²), naprostá jednoduchost, ticho, výhled | 🔵 Fáze 1 |
+| Párová eco-chata | 2 osoby | Bambusová nebo kamenná, terasa, hammock, bez displeje | 🔵 Fáze 2 |
+| Skupinová jurta | 8–14 osob | Sdílený dharma prostor, ranní praxe, večerní kruh | 🔵 Fáze 2 |
+| Silence cottage | 1–2 osoby | Izolovaná chata mimo komunitu — pro hluboké ticho, 7+ dní | 🔵 Fáze 3 |
+
+### Principy hosté-sanctuary
+
+- **Přijímání s záměrem:** Hosté píší krátké vyjádření záměru při rezervaci
+- **Minimální délka pobytu:** 5 dní (pro smysluplný vnitřní dopad)
+- **Žádná elektronika v meditačních prostorách:** Silent zone — bez telefonů, bez notebooků
+- **Retreat programy:** 7-denní, 14-denní, 21-denní strukturované pobyty
+- **Ceny (orientační):** 35–75 EUR/noc (všechny includingy: jídlo z farmy, program, průvodce)
+
+### Příjmy a alokace
+
+| Alokace | % z tržby |
+|---------|-----------|
+| Provoz komunity (jídlo, energie, voda) | 35 % |
+| Syntropic zahrada a obnova krajiny | 20 % |
+| Dharma program a průvodci | 20 % |
+| Stavba a rozvoj infrastruktury | 15 % |
+| Humanitární příspěvek (ZION fond) | 10 % |
+
+---
+
+## Stavba Budov — Plán Fyzické Infrastruktury
+
+La Palma nabízí mimořádné podmínky pro přírodní výstavbu: vulkanická lávová cihla (picón), vydatné srážky pro zemní práce, místní bambus a subtropsické dřevo. Každá budova je navržena jako **trvalé místo pro praxi** — tichá, pevná, v souladu s krajinou.
+
+### Filozofie výstavby
+
+- **Vulkanický kámen jako primární materiál:** Lávová cihla má přirozené tepelné a akustické vlastnosti — ideální pro meditační prostory
+- **Organické tvary:** Žádné pravé rohy kde není nutné — kulaté a eliptické budovy pro psychologický klid
+- **Ticho jako design princip:** Akustická izolace pomocí tloušťky zdí, orientace od hluku, vegetační bariéry
+- **Sociokrační výstavba:** Komunita se rozhoduje o každé budově v dharma circle před zahájením
+- **Certifikace:** Soulad se španělskými normami pro alternativní architekturu (Canarias)
+
+### Fáze výstavby
+
+#### Fáze 1 — Sanctuary základ (2026–2027)
+| Budova | Popis | Priorita | Odhadovaný čas |
+|--------|-------|----------|----------------|
+| Meditační pavilon | Kruhová kamenná stavba, otevřená, překrytá, akusticky navržená | Kritická | 4–6 měsíců |
+| Sanitární blok | Přírodní odpadní voda (constructed wetland), teplá sprcha ze sluneční energie | Kritická | 2–3 měsíce |
+| Komunitní kuchyň | Venkovní krb + vnitřní příprava, propojení se syntropickou zahradou | Vysoká | 3–4 měsíce |
+
+#### Fáze 2 — Komunita (2027–2028)
+| Budova | Popis | Priorita | Odhadovaný čas |
+|--------|-------|----------|----------------|
+| Meditační buňky (3–5 ks) | Individuální kamenné chaty 8–12 m², minimalismus | Vysoká | 2–3 měsíce/buňka |
+| Dharma hala | Multifunkční prostor: církulární setkání, vzdělávání, skupinová praxe | Střední | 5–7 měsíců |
+| Lékárenský pavilon (Medical Table) | Holistická péče, bylinkový sklad, klidová místnost | Střední | 2–3 měsíce |
+
+#### Fáze 3 — Výzařování (2028+)
+| Budova | Popis |
+|--------|-------|
+| Silence cottages (2–3 ks) | Izolované pro hluboké retreaty, minimálně 500 m od hlavního areálu |
+| Vzdělávací centrum | Knihovna, ZION node rack, seed bank, dokumentace |
+| Observatoř / Hvězdárna | La Palma je světové centrum astronomie — přirozená meditace pod hvězdami |
+
+### Metody přírodní výstavby pro La Palmu
+
+| Metoda | Použití | Výhody |
+|--------|---------|--------|
+| **Lávová cihla (picón)** | Stěny všech budov | Lokální materiál, tepelná stabilita, estetika |
+| **Kamenné zdivo za sucha** | Terasy, opěrné zdi, cesty | Tradiční kanárská technika, bez betonu |
+| **Bambusová konstrukce** | Střešní nosníky, lehké přístřešky | Rychlý růst (místní), pevnost, estetika |
+| **Zelená střecha / živá střecha** | Meditační pavilon, buňky | Izolace, srážková retence, integrace s krajinou |
+| **Rammed earth** | Podlahy, vnitřní přepážky | Tepelná akumulace, přirozená vlhkost |
+
+### Odhadované náklady (orientačně)
+
+| Fáze | Odhadovaný rozpočet |
+|------|---------------------|
+| Fáze 1 — Sanctuary základ | 20 000–35 000 EUR |
+| Fáze 2 — Komunita | 60 000–100 000 EUR |
+| Fáze 3 — Výzařování | 70 000–130 000 EUR |
+
+*Náklady jsou sníženy participativní výstavbou a použitím místního materiálu — lávová cihla je na La Palmě dostupná a levná.*
+
+---
+
 ## Governance
 
 - **Model:** Sociokracie + dharma council
