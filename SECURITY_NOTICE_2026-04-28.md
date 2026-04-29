@@ -80,9 +80,12 @@ in commit `feat: AI Native Hiranyagarbha v1.0` (author:
 `estrelaisabellazion3`). It contained:
 
 - `GITHUB_TOKEN.txt` — a live GitHub Personal Access Token
-  (`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`)
+  (prefix `ghp_7gxI3Y…`, full value redacted; see git history of the
+  removed `docs/docs2.9/ZION_KEYS/GITHUB_TOKEN.txt` pre-scrub)
 - `OPENAI_API_KEY.txt` — a live OpenAI API key
-  (`sk-proj-CsUPFBafi12A3Kl6YVRY716An5iuJRzlmyW0n5wCAnMdJTHe7Gd…`)
+  (prefix `sk-proj-CsUPFBafi12A3…`, full value redacted; see git
+  history of the removed `docs/docs2.9/ZION_KEYS/OPENAI_API_KEY.txt`
+  pre-scrub)
 - `SSH_KEYS_INFO.txt` — deployment SSH key path and SSH config pointing
   at `root@91.98.122.165` (live mainnet node)
 - A screenshot of the keys and a `README.md` documenting usage
