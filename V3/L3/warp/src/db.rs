@@ -12,7 +12,7 @@
 //! ```
 
 use rusqlite::{params, Connection};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, MutexGuard};
 use uuid::Uuid;
 
 use crate::error::{WarpError, WarpResult};
@@ -54,6 +54,21 @@ pub struct TransferDb {
 }
 
 impl TransferDb {
+    /// Acquire the connection guard, recovering from poisoning rather
+    /// than panicking. SQLite is independently thread-safe and our
+    /// SQL operations are stateless across calls — recovering the
+    /// inner state keeps the WARP daemon alive even if a previous
+    /// holder panicked. (Audit finding F5.)
+    fn conn(&self) -> MutexGuard<'_, Connection> {
+        self.conn.lock().unwrap_or_else(|poisoned| {
+            eprintln!(
+                "warning: TransferDb mutex was poisoned by a panicking holder; \
+                 recovering inner connection state"
+            );
+            poisoned.into_inner()
+        })
+    }
+
     /// Open or create a file-backed database.
     pub fn open(path: &str) -> WarpResult<Self> {
         let conn = Connection::open(path).map_err(db_err)?;
@@ -75,7 +90,7 @@ impl TransferDb {
     }
 
     fn init(&self) -> WarpResult<()> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn();
         conn.execute_batch(SCHEMA).map_err(db_err)?;
         Ok(())
     }
@@ -88,7 +103,7 @@ impl TransferDb {
     pub fn save(&self, t: &WarpTransfer) -> WarpResult<()> {
         let data_json = serde_json::to_string(t)
             .map_err(|e| WarpError::Database(format!("serialize transfer: {e}")))?;
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn();
         conn.execute(
             r#"INSERT OR REPLACE INTO transfers
                (id, status, source_chain, dest_chain, sender, recipient,
@@ -123,7 +138,7 @@ impl TransferDb {
         status: WarpStatus,
         updated_json: &str,
     ) -> WarpResult<()> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn();
         let changed = conn
             .execute(
                 "UPDATE transfers SET status=?1, data_json=?2 WHERE id=?3",
@@ -142,7 +157,7 @@ impl TransferDb {
 
     /// Load a single transfer by UUID. Returns `None` if not found.
     pub fn load(&self, id: &Uuid) -> WarpResult<Option<WarpTransfer>> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn();
         let mut stmt = conn
             .prepare("SELECT data_json FROM transfers WHERE id=?1")
             .map_err(db_err)?;
@@ -173,7 +188,7 @@ impl TransferDb {
 
     /// Count all stored transfers.
     pub fn count(&self) -> WarpResult<usize> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn();
         let n: i64 = conn
             .query_row("SELECT COUNT(*) FROM transfers", [], |r| r.get(0))
             .map_err(db_err)?;
@@ -182,7 +197,7 @@ impl TransferDb {
 
     /// Count transfers with a given status string.
     pub fn count_by_status(&self, status: &str) -> WarpResult<usize> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn();
         let n: i64 = conn
             .query_row(
                 "SELECT COUNT(*) FROM transfers WHERE status=?1",
@@ -199,7 +214,7 @@ impl TransferDb {
 
     /// Delete completed and failed transfers older than `days` days.
     pub fn purge_old(&self, days: u32) -> WarpResult<usize> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn();
         let cutoff = chrono::Utc::now() - chrono::Duration::days(days as i64);
         let n = conn
             .execute(
@@ -215,7 +230,7 @@ impl TransferDb {
     // ─────────────────────────────────────────────────────────────────────────
 
     fn query_transfers(&self, sql: &str) -> WarpResult<Vec<WarpTransfer>> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn();
         let mut stmt = conn.prepare(sql).map_err(db_err)?;
         let rows = stmt
             .query_map([], |row| row.get::<_, String>(0))
