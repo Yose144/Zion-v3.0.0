@@ -53,9 +53,40 @@ pub struct Transaction {
     pub timestamp: u64,
 }
 
+/// Transaction format version that activates the length-prefixed,
+/// non-malleable preimage scheme (`calculate_hash_v2`). Version 1 (and
+/// anything else) keeps the legacy v1 scheme for backward compatibility
+/// with txs already mined into the chain. Wallets / RPC must set
+/// `version = TX_HASH_V2_VERSION` to opt in once a hard fork that
+/// activates the v2 rule has shipped. (Audit Finding §3.2 /
+/// `TX_HASH_V2_ACTIVATION_PLAN.md`.)
+pub const TX_HASH_V2_VERSION: u32 = 2;
+
 impl Transaction {
-    /// Compute the canonical transaction hash (SegWit-style: excludes signatures).
+    /// Compute the canonical transaction hash (SegWit-style: excludes
+    /// signatures).
+    ///
+    /// Dispatches on `self.version`: versions `<2` use the legacy v1
+    /// preimage (raw concatenation, kept for compatibility with txs
+    /// already baked into chain state); version `2` uses the
+    /// length-prefixed v2 preimage that closes the malleability
+    /// findings documented in audit §3.2.
     pub fn calculate_hash(&self) -> [u8; 32] {
+        if self.version >= TX_HASH_V2_VERSION {
+            self.calculate_hash_v2()
+        } else {
+            self.calculate_hash_v1()
+        }
+    }
+
+    /// Legacy v1 preimage (raw concatenation, no length prefixes).
+    ///
+    /// **Malleable** — see audit §3.2. Kept verbatim because every tx
+    /// currently in the chain was hashed this way; changing it for
+    /// `version = 1` txs would retroactively invalidate every historical
+    /// UTXO outpoint. New txs should set `version = TX_HASH_V2_VERSION`
+    /// once the v2 activation fork ships.
+    fn calculate_hash_v1(&self) -> [u8; 32] {
         let mut data = Vec::new();
         data.extend_from_slice(&self.version.to_le_bytes());
         for input in &self.inputs {
@@ -73,6 +104,61 @@ impl Transaction {
         }
         data.extend_from_slice(&self.fee.to_le_bytes());
         data.extend_from_slice(&self.timestamp.to_le_bytes());
+        crypto::blake3_hash(&data)
+    }
+
+    /// Length-prefixed v2 preimage, domain-separated per field and per
+    /// vector. Fixes the two malleability cases from audit §3.2:
+    ///
+    /// 1. `tx{inputs:[a,b], outputs:[c]}` vs `tx{inputs:[a], outputs:[b,c]}`
+    ///    — counts are explicit.
+    /// 2. `address="zion1foo" + memo="bar"` vs
+    ///    `address="zion1foobar" + memo=""` — every variable-length
+    ///    field is prefixed with its `u32` length, and memo-absent vs
+    ///    memo-empty-string are encoded with distinct tags.
+    ///
+    /// Dormant until a hard fork sets this as the active rule for
+    /// `version = TX_HASH_V2_VERSION`. Never called on existing
+    /// (`version = 1`) txs, so activation does not rewrite any
+    /// historical UTXO IDs.
+    fn calculate_hash_v2(&self) -> [u8; 32] {
+        // Domain-separation tag — guarantees v1 and v2 preimages are
+        // distinct even for identical field content.
+        const DOMAIN: &[u8] = b"ZION_TX_V2\x00";
+
+        let mut data = Vec::new();
+        data.extend_from_slice(DOMAIN);
+        data.extend_from_slice(&self.version.to_le_bytes());
+        data.extend_from_slice(&self.fee.to_le_bytes());
+        data.extend_from_slice(&self.timestamp.to_le_bytes());
+
+        // Inputs — length-prefixed vector of length-prefixed fields.
+        data.extend_from_slice(&(self.inputs.len() as u32).to_le_bytes());
+        for input in &self.inputs {
+            data.extend_from_slice(&input.prev_tx_hash);
+            data.extend_from_slice(&input.output_index.to_le_bytes());
+            data.extend_from_slice(&(input.public_key.len() as u32).to_le_bytes());
+            data.extend_from_slice(&input.public_key);
+        }
+
+        // Outputs — length-prefixed vector of length-prefixed fields.
+        data.extend_from_slice(&(self.outputs.len() as u32).to_le_bytes());
+        for output in &self.outputs {
+            data.extend_from_slice(&output.amount.to_le_bytes());
+            let addr_bytes = output.address.as_bytes();
+            data.extend_from_slice(&(addr_bytes.len() as u32).to_le_bytes());
+            data.extend_from_slice(addr_bytes);
+            match &output.memo {
+                None => data.push(0),
+                Some(memo) => {
+                    data.push(1);
+                    let mb = memo.as_bytes();
+                    data.extend_from_slice(&(mb.len() as u32).to_le_bytes());
+                    data.extend_from_slice(mb);
+                }
+            }
+        }
+
         crypto::blake3_hash(&data)
     }
 
@@ -281,5 +367,110 @@ mod tests {
         let mut with_memo = base.clone();
         with_memo.outputs[0].memo = Some("memo data".into());
         assert_ne!(base.calculate_hash(), with_memo.calculate_hash());
+    }
+
+    // ── audit §3.2: tx hash malleability regression tests ────────────
+
+    fn mk_tx_varlen(version: u32, address: String, memo: Option<String>) -> Transaction {
+        Transaction {
+            id: [0u8; 32],
+            version,
+            inputs: vec![],
+            outputs: vec![TxOutput {
+                amount: 1_000,
+                address,
+                memo,
+            }],
+            fee: 0,
+            timestamp: 0,
+        }
+    }
+
+    /// Regression: v1 raw-concat preimage is malleable on adjacent
+    /// variable-length fields. `address="A" + memo="B"` hashes identically
+    /// to `address="AB" + memo=""` once memo is `Some("")`. This test
+    /// *documents* the known v1 weakness from audit §3.2 so anyone who
+    /// later tries to "fix" the v1 hash in place is forced to understand
+    /// that doing so would invalidate every historical UTXO ID.
+    #[test]
+    fn tx_hash_v1_is_malleable_across_address_and_memo_boundary() {
+        let a = mk_tx_varlen(1, "zion1AB".into(), Some("".into()));
+        let b = mk_tx_varlen(1, "zion1A".into(), Some("B".into()));
+        assert_eq!(
+            a.calculate_hash(),
+            b.calculate_hash(),
+            "v1 preimage is expected to collide here (audit section 3.2). \
+             Do NOT 'fix' v1 in place - it would retroactively invalidate \
+             historical UTXO IDs. Bump the tx version field to \
+             TX_HASH_V2_VERSION and activate v2 via a coordinated hard \
+             fork instead.",
+        );
+    }
+
+    /// Paired fix: the v2 preimage, because every variable-length field
+    /// is prefixed with its length, produces distinct hashes for the
+    /// same two inputs above.
+    #[test]
+    fn tx_hash_v2_rejects_address_memo_boundary_collision() {
+        let a = mk_tx_varlen(TX_HASH_V2_VERSION, "zion1AB".into(), Some("".into()));
+        let b = mk_tx_varlen(TX_HASH_V2_VERSION, "zion1A".into(), Some("B".into()));
+        assert_ne!(
+            a.calculate_hash(),
+            b.calculate_hash(),
+            "v2 length-prefixed preimage must not collide on the boundary \
+             shift that v1 does; if this ever starts passing, the length \
+             prefixes have been dropped",
+        );
+    }
+
+    /// The v2 `Option<memo>` encoding distinguishes memo-absent
+    /// (`None`) from memo-empty-string (`Some("")`) via a 1-byte tag.
+    /// In v1 these two hash identically because `None` is simply skipped
+    /// and `Some("")` appends zero bytes.
+    #[test]
+    fn tx_hash_v2_distinguishes_none_memo_from_empty_string_memo() {
+        let none = mk_tx_varlen(TX_HASH_V2_VERSION, "zion1foo".into(), None);
+        let empty = mk_tx_varlen(TX_HASH_V2_VERSION, "zion1foo".into(), Some("".into()));
+        assert_ne!(
+            none.calculate_hash(),
+            empty.calculate_hash(),
+            "v2 must distinguish Option::None from Option::Some(empty)"
+        );
+    }
+
+    /// Activation safety: changing the tx format version must change
+    /// the computed hash even with identical field content. This is why
+    /// the v2 preimage prefixes with a `ZION_TX_V2\0` domain-separation
+    /// tag — without it, a v1 tx and a v2 tx with the same fields would
+    /// share a preimage and collide across the fork boundary.
+    #[test]
+    fn tx_hash_v1_and_v2_are_domain_separated() {
+        let v1 = mk_tx_varlen(1, "zion1foo".into(), Some("bar".into()));
+        let v2 = mk_tx_varlen(TX_HASH_V2_VERSION, "zion1foo".into(), Some("bar".into()));
+        assert_ne!(
+            v1.calculate_hash(),
+            v2.calculate_hash(),
+            "v1 and v2 preimages must be domain-separated to prevent \
+             cross-fork hash collisions",
+        );
+    }
+
+    /// Backward-compat: activating v2 in the codebase must not change
+    /// the hash of any existing v1 tx. If this test ever fails, every
+    /// historical UTXO ID in the chain is about to be invalidated.
+    #[test]
+    fn tx_hash_v1_activation_is_backward_compatible() {
+        let tx = make_signed_tx();
+        // `make_signed_tx` sets version = 1.
+        assert_eq!(tx.version, 1);
+        // Spot-check a hash we can bind to regression by storing its
+        // computation directly from the v1 algorithm and confirming
+        // `calculate_hash` dispatches there.
+        let via_dispatch = tx.calculate_hash();
+        let via_v1_direct = tx.calculate_hash_v1();
+        assert_eq!(
+            via_dispatch, via_v1_direct,
+            "version = 1 must dispatch to the legacy v1 preimage"
+        );
     }
 }
