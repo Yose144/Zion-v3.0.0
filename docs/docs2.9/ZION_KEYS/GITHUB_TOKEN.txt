@@ -1,7 +1,0 @@
-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
-
-Created: 2025-11-10
-Location: Originally in /Users/yeshuae/Desktop/ZION/public_html/git.key
-Purpose: GitHub Personal Access Token for repository access
-User: Yose144
-Repositories: Zion-2.9, Universal-Miner, and others
