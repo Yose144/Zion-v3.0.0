@@ -3,7 +3,7 @@ use std::collections::{HashMap, HashSet, VecDeque};
 use std::fmt::Write as FmtWrite;
 use std::io::{BufRead, BufReader, Write};
 use std::net::{IpAddr, TcpListener, TcpStream, ToSocketAddrs, UdpSocket};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, MutexGuard};
 use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use zion_core::{
@@ -18,6 +18,36 @@ use zion_core::{
     rpc::{build_node_router, RpcRouter},
     AcceptedBlock, NodeConfig, NodeRuntime, P2pMessage, PeerEndpoint, SubmittedTransaction,
 };
+
+/// Acquire the PeerManager guard, recovering from poisoning instead of
+/// panicking. PeerManager holds scoring/tracking bookkeeping whose loss
+/// on a fresh recovered inner is not security-critical — recovering keeps
+/// the daemon alive through a single panic in the P2P event loop rather
+/// than amplifying it into a DOS on every subsequent peer connection.
+/// (Audit finding F5.)
+fn lock_peer_mgr(m: &Mutex<PeerManager>) -> MutexGuard<'_, PeerManager> {
+    m.lock().unwrap_or_else(|poisoned| {
+        eprintln!(
+            "warning: peer_mgr mutex was poisoned by a panicking holder; \
+             recovering inner state"
+        );
+        poisoned.into_inner()
+    })
+}
+
+/// Acquire the PeerSecurity guard, recovering from poisoning instead of
+/// panicking. PeerSecurity tracks rate-limit / ban bookkeeping; a panic
+/// mid-mutation would otherwise take the whole daemon down on the very
+/// next connection accept or message. (Audit finding F5.)
+fn lock_peer_sec(m: &Mutex<PeerSecurity>) -> MutexGuard<'_, PeerSecurity> {
+    m.lock().unwrap_or_else(|poisoned| {
+        eprintln!(
+            "warning: peer_sec mutex was poisoned by a panicking holder; \
+             recovering inner state"
+        );
+        poisoned.into_inner()
+    })
+}
 
 fn main() -> Result<()> {
     let config = NodeServerConfig::from_env()?;
@@ -121,7 +151,7 @@ fn main() -> Result<()> {
                 })
             })
             .collect();
-        peer_mgr.lock().expect("lock").add_seeds(&seeds);
+        lock_peer_mgr(&peer_mgr).add_seeds(&seeds);
     }
 
     // P2P security — rate limiting, banning, connection limits
@@ -185,7 +215,7 @@ fn main() -> Result<()> {
             let peer_ip = peer_addr.ip();
             let now_epoch = epoch_secs();
             {
-                let mut sec = p2p_peer_sec.lock().expect("lock");
+                let mut sec = lock_peer_sec(&p2p_peer_sec);
                 if !sec.try_accept_connection(&peer_ip, now_epoch) {
                     println!("p2p_rejected ip={peer_ip} (banned or at limit)");
                     drop(stream);
@@ -207,7 +237,7 @@ fn main() -> Result<()> {
                     stream, &runtime, &seen, &seen_txs, &stats, &source, &mgr, &sec, source_ip,
                 );
                 // Release connection slot when stream ends
-                sec.lock().expect("lock").release_connection();
+                lock_peer_sec(&sec).release_connection();
                 result
             }));
             accepted = accepted.saturating_add(1);
@@ -306,7 +336,7 @@ fn handle_p2p_stream(
         // Rate limiting per message
         {
             let now_epoch = epoch_secs();
-            let mut sec = peer_sec.lock().expect("lock");
+            let mut sec = lock_peer_sec(&peer_sec);
             if let Err(_reason) = sec.record_message(source_ip, now_epoch) {
                 eprintln!("p2p_rate_limited ip={source_ip}");
                 break;
@@ -319,7 +349,7 @@ fn handle_p2p_stream(
             Err(e) => {
                 eprintln!("p2p_decode_err source={source_addr} err={e}");
                 // Punish for protocol violation
-                peer_sec.lock().expect("lock").punish(
+                lock_peer_sec(&peer_sec).punish(
                     source_ip,
                     epoch_secs(),
                     zion_core::p2p_security::BanReason::ProtocolViolation,
@@ -338,7 +368,7 @@ fn handle_p2p_stream(
             let now = Instant::now();
             if let Some((host, port_str)) = listen_addr.rsplit_once(':') {
                 if let (Ok(ip), Ok(port)) = (host.parse::<IpAddr>(), port_str.parse::<u16>()) {
-                    peer_mgr.lock().expect("lock").register_peer(
+                    lock_peer_mgr(&peer_mgr).register_peer(
                         node_id,
                         ip,
                         port,
@@ -353,10 +383,7 @@ fn handle_p2p_stream(
         // Update last_seen in PeerManager
         if let Some(ref pid) = peer_id {
             let now = Instant::now();
-            peer_mgr
-                .lock()
-                .expect("lock")
-                .record_message(pid, line.len() as u64, now);
+            lock_peer_mgr(&peer_mgr).record_message(pid, line.len() as u64, now);
         }
 
         // Detect AnnounceBlock / AnnounceTx for relay
@@ -377,9 +404,7 @@ fn handle_p2p_stream(
             Err(reason) => {
                 eprintln!("p2p_handle_err source={source_addr} reason={reason}");
                 if let Some(ref pid) = peer_id {
-                    peer_mgr
-                        .lock()
-                        .expect("lock")
+                    lock_peer_mgr(&peer_mgr)
                         .penalize(pid, zion_core::peer_manager::PENALTY_PROTOCOL_VIOLATION);
                 }
                 break;
@@ -389,10 +414,7 @@ fn handle_p2p_stream(
         // Reward valid block imports
         if is_announce {
             if let Some(ref pid) = peer_id {
-                peer_mgr
-                    .lock()
-                    .expect("lock")
-                    .reward(pid, zion_core::peer_manager::REWARD_VALID_BLOCK);
+                lock_peer_mgr(&peer_mgr).reward(pid, zion_core::peer_manager::REWARD_VALID_BLOCK);
             }
         }
 
@@ -432,7 +454,7 @@ fn handle_p2p_stream(
 
     // Unregister peer when connection ends
     if let Some(ref pid) = peer_id {
-        peer_mgr.lock().expect("lock").unregister_peer(pid);
+        lock_peer_mgr(&peer_mgr).unregister_peer(pid);
     }
     println!("p2p_disconnected source={source_addr}");
 
@@ -1216,7 +1238,7 @@ fn outbound_peer_loop(
             let now = Instant::now();
             if now.duration_since(last_heartbeat) >= Duration::from_secs(60) {
                 last_heartbeat = now;
-                peer_mgr.lock().expect("lock").heartbeat(now)
+                lock_peer_mgr(&peer_mgr).heartbeat(now)
             } else {
                 Vec::new()
             }
@@ -1230,14 +1252,12 @@ fn outbound_peer_loop(
                 PeerAction::Ban { peer_id, reason } => {
                     println!("peer_action_ban peer={peer_id} reason={reason}");
                     // Propagate ban to PeerSecurity so inbound connections are rejected
-                    if let Some(peer_state) = peer_mgr
-                        .lock()
-                        .expect("lock")
+                    if let Some(peer_state) = lock_peer_mgr(&peer_mgr)
                         .peer_info()
                         .iter()
                         .find(|p| p.peer_id == *peer_id)
                     {
-                        peer_sec.lock().expect("lock").punish(
+                        lock_peer_sec(&peer_sec).punish(
                             peer_state.addr,
                             epoch_secs(),
                             zion_core::p2p_security::BanReason::Manual,
@@ -1391,7 +1411,7 @@ fn outbound_peer_loop(
                                     })
                                 })
                                 .collect();
-                            peer_mgr.lock().expect("lock").add_seeds(&new_seeds);
+                            lock_peer_mgr(&peer_mgr).add_seeds(&new_seeds);
                         }
                     }
                 }
@@ -1413,14 +1433,12 @@ fn outbound_peer_loop(
         // ── Cleanup expired bans in PeerSecurity (~every 5 min) ────────
         if last_cleanup.elapsed() >= Duration::from_secs(300) {
             last_cleanup = Instant::now();
-            peer_sec.lock().expect("lock").cleanup(epoch_secs());
+            lock_peer_sec(&peer_sec).cleanup(epoch_secs());
         }
 
         // ── Discovery engine tick ──────────────────────────────────────
         {
-            let connected_peer_ids: Vec<String> = peer_mgr
-                .lock()
-                .expect("lock")
+            let connected_peer_ids: Vec<String> = lock_peer_mgr(&peer_mgr)
                 .peer_info()
                 .iter()
                 .map(|p| p.peer_id.clone())
@@ -1469,9 +1487,7 @@ fn outbound_peer_loop(
                     }
                     DiscoveryCommand::RequestPeers { peer_id } => {
                         // Find endpoint for this peer and request peers via P2P
-                        let endpoint = peer_mgr
-                            .lock()
-                            .expect("lock")
+                        let endpoint = lock_peer_mgr(&peer_mgr)
                             .peer_info()
                             .iter()
                             .find(|p| p.peer_id == peer_id)
@@ -1518,9 +1534,7 @@ fn outbound_peer_loop(
                         count,
                     } => {
                         // Find peer endpoint from PeerManager
-                        let endpoint = peer_mgr
-                            .lock()
-                            .expect("lock")
+                        let endpoint = lock_peer_mgr(&peer_mgr)
                             .peer_info()
                             .iter()
                             .find(|p| p.peer_id == peer_id)
@@ -1555,7 +1569,7 @@ fn outbound_peer_loop(
                     }
                     IbdCommand::DemotePeer { peer_id, reason } => {
                         println!("ibd_demote peer={peer_id} reason={reason}");
-                        peer_mgr.lock().expect("lock").penalize(
+                        lock_peer_mgr(&peer_mgr).penalize(
                             &peer_id,
                             zion_core::peer_manager::PENALTY_PROTOCOL_VIOLATION,
                         );
