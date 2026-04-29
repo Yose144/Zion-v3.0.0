@@ -20,7 +20,7 @@
 //! # Event topics (keccak256 of signature)
 //! Computed once at startup via `sha3::Keccak256`.
 
-use std::sync::Arc;
+use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::Duration;
 
 use anyhow::{anyhow, Context, Result};
@@ -111,6 +111,21 @@ pub fn migrate(conn: &Connection) -> Result<()> {
 }
 
 // ─── Topic helpers ────────────────────────────────────────────────────────────
+
+/// Acquire the connection guard, recovering from poisoning rather than
+/// panicking. SQLite is independently thread-safe and our SQL operations
+/// here are stateless across calls — without this, a panic in any
+/// previous holder would take down the whole atomic-swap daemon on the
+/// next DB access. (Audit finding F5.)
+fn lock_conn_recover(m: &Arc<Mutex<Connection>>) -> MutexGuard<'_, Connection> {
+    m.lock().unwrap_or_else(|poisoned| {
+        eprintln!(
+            "warning: EVM-watcher db mutex was poisoned by a panicking holder; \
+             recovering inner connection state"
+        );
+        poisoned.into_inner()
+    })
+}
 
 fn keccak256_topic(sig: &str) -> String {
     let mut hasher = Keccak256::new();
@@ -450,7 +465,7 @@ async fn poll_once(
     };
 
     let from_block = {
-        let conn = db_conn.lock().unwrap();
+        let conn = lock_conn_recover(db_conn);
         get_last_block(&conn, cfg.start_block)
     };
 
@@ -503,7 +518,7 @@ async fn poll_once(
     }
 
     {
-        let conn = db_conn.lock().unwrap();
+        let conn = lock_conn_recover(db_conn);
         for log in &logs {
             // Skip removed (re-org) logs
             if log.removed.unwrap_or(false) {
