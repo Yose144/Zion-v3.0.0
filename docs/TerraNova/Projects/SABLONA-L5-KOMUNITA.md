@@ -2,7 +2,31 @@
 
 Tento adresář obsahuje projektové listy pro fyzické komunity sítě Terra Nova — L5 vrstva (fyzické místo a soběstačnost).
 
-Každý projekt je "první nástřel" — živý dokument, který se postupně zpřesňuje s tím, jak projekt fyzicky roste.
+Každý projekt je "živý dokument" — průběžně se zpřesňuje s tím, jak projekt fyzicky roste.
+
+## Aktivní projektové listy
+
+| Projekt | Lokace | Status | Soubor |
+|---------|--------|--------|--------|
+| **Zahrada Genesis** | Algarve, Portugalsko | 🟡 Aktivní rozvoj | [ZAHRADA-GENESIS-PORTUGAL.md](ZAHRADA-GENESIS-PORTUGAL.md) |
+| **Dharma Temple** | La Palma, Kanárské ostrovy | 🔵 Příprava | [DHARMA-TEMPLE-LA-PALMA.md](DHARMA-TEMPLE-LA-PALMA.md) |
+| **Projekt Venus** | TBD | 🔵 Konceptuální fáze | [PROJEKT-VENUS.md](PROJEKT-VENUS.md) |
+
+## Archetypová role každého uzlu
+
+```
+Zahrada Genesis  →  Base Camp  →  Pohyb, práce, oceán, farma
+Dharma Temple    →  Sanctuary  →  Ticho, meditace, dharma, sopka
+Projekt Venus    →  Regenerace →  Ženský princip, byliny, tvořivost, obnova krajiny
+```
+
+## Sdílené protokoly (všechny L5 uzly)
+
+- **ZION Node** — Guardian uzel sítě, 10 % odměn do humanitárního fondu
+- **Seed Library** — výměna osiva mezi uzly, focus na lokální odrůdy
+- **Medical Table** — zdravotní a wellness protokoly komunity
+- **LoRa / Meshtastic** — off-grid komunikace v areálu i mezi uzly
+- **Governance** — kompatibilní modely (sociokracie + ZION DAO)
 
 ---
 
