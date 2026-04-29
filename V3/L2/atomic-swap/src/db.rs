@@ -26,7 +26,7 @@ use crate::types::{HtlcRecord, SwapState};
 use chrono::Utc;
 use rusqlite::{params, Connection, OptionalExtension};
 use std::path::Path;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, MutexGuard};
 
 // ─── SwapDb ──────────────────────────────────────────────────────────────────
 
@@ -37,6 +37,22 @@ pub struct SwapDb {
 }
 
 impl SwapDb {
+    /// Acquire the connection guard. If a previous holder panicked the
+    /// mutex is poisoned — we still recover the inner state because
+    /// SQLite is independently thread-safe and our SQL operations are
+    /// stateless across calls. Without this, every subsequent DB access
+    /// in the daemon would panic on `lock().unwrap()`, taking the
+    /// process down. (Audit finding F5.)
+    fn conn(&self) -> MutexGuard<'_, Connection> {
+        self.conn.lock().unwrap_or_else(|poisoned| {
+            eprintln!(
+                "warning: SwapDb mutex was poisoned by a panicking holder; \
+                 recovering inner connection state"
+            );
+            poisoned.into_inner()
+        })
+    }
+
     // ── Constructor ───────────────────────────────────────────────────────
 
     /// Open (or create) a SQLite database at `path` and run migrations.
@@ -72,7 +88,7 @@ impl SwapDb {
     // ── Migration ─────────────────────────────────────────────────────────
 
     fn migrate(&self) -> SwapResult<()> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn();
         conn.execute_batch(
             r#"
             CREATE TABLE IF NOT EXISTS htlc_locks (
@@ -105,7 +121,7 @@ impl SwapDb {
 
     /// Insert a new HTLC record.  Returns `Err` if `hash_hex` already exists.
     pub fn insert_htlc(&self, rec: &HtlcRecord) -> SwapResult<()> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn();
         conn.execute(
             r#"INSERT INTO htlc_locks
                (hash_hex, locker_address, amount_flowers, lock_tx_id, lock_block_height,
@@ -134,7 +150,7 @@ impl SwapDb {
 
     /// Fetch a single HTLC by hash.
     pub fn get_htlc(&self, hash_hex: &str) -> SwapResult<Option<HtlcRecord>> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn();
         let res = conn
             .query_row(
                 r#"SELECT hash_hex, locker_address, amount_flowers, lock_tx_id,
@@ -158,7 +174,7 @@ impl SwapDb {
         preimage_hex: &str,
     ) -> SwapResult<()> {
         let now = Utc::now().to_rfc3339();
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn();
         conn.execute(
             r#"UPDATE htlc_locks
                SET state = 'claimed', release_tx_id = ?1, release_recipient = ?2,
@@ -178,7 +194,7 @@ impl SwapDb {
     /// Mark an HTLC as refunded.
     pub fn mark_refunded(&self, hash_hex: &str, release_tx_id: &str) -> SwapResult<()> {
         let now = Utc::now().to_rfc3339();
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn();
         conn.execute(
             r#"UPDATE htlc_locks
                SET state = 'refunded', release_tx_id = ?1, updated_at = ?2
@@ -192,7 +208,7 @@ impl SwapDb {
     pub fn mark_error(&self, hash_hex: &str, msg: &str) -> SwapResult<()> {
         let now = Utc::now().to_rfc3339();
         let state_str = format!("error:{msg}");
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn();
         conn.execute(
             "UPDATE htlc_locks SET state = ?1, updated_at = ?2 WHERE hash_hex = ?3",
             params![state_str, now, hash_hex],
@@ -203,7 +219,7 @@ impl SwapDb {
     /// Return all pending HTLCs whose timelock has expired.
     pub fn get_expired_pending(&self) -> SwapResult<Vec<HtlcRecord>> {
         let now = Utc::now().timestamp();
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn();
         let mut stmt = conn.prepare(
             r#"SELECT hash_hex, locker_address, amount_flowers, lock_tx_id,
                       lock_block_height, expires_at, counterparty_chain,
@@ -222,7 +238,7 @@ impl SwapDb {
 
     /// Return all pending HTLCs (for dashboard / admin).
     pub fn list_pending(&self, limit: i64) -> SwapResult<Vec<HtlcRecord>> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn();
         let mut stmt = conn.prepare(
             r#"SELECT hash_hex, locker_address, amount_flowers, lock_tx_id,
                       lock_block_height, expires_at, counterparty_chain,
@@ -243,7 +259,7 @@ impl SwapDb {
 
     /// Read the last L1 block height scanned by the watcher.
     pub fn get_scan_height(&self) -> SwapResult<u64> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn();
         let val: Option<String> = conn
             .query_row(
                 "SELECT value FROM watcher_state WHERE key = 'scan_height'",
@@ -256,7 +272,7 @@ impl SwapDb {
 
     /// Persist the last scanned block height.
     pub fn set_scan_height(&self, height: u64) -> SwapResult<()> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.conn();
         conn.execute(
             "INSERT OR REPLACE INTO watcher_state (key, value) VALUES ('scan_height', ?1)",
             params![height.to_string()],
@@ -270,7 +286,7 @@ impl SwapDb {
     /// ensure the EVM watcher tables exist.
     pub fn conn_for_evm_watcher(&self) -> std::sync::Arc<std::sync::Mutex<rusqlite::Connection>> {
         {
-            let conn = self.conn.lock().unwrap();
+            let conn = self.conn();
             crate::evm_watcher::migrate(&conn).expect("EVM watcher migration failed");
         }
         Arc::clone(&self.conn)
