@@ -553,8 +553,18 @@ where
                     *opt = Some(hp);
                 }
                 Err(e) => {
-                    log::warn!("HugePages alloc failed ({}), falling back to Vec", e);
-                    // Caller gets a panic if we can't allocate — this shouldn't happen.
+                    // HugePageScratchpad::new already falls back from huge
+                    // pages to regular mmap internally. Reaching this branch
+                    // means even regular mmap failed — i.e. the process is
+                    // genuinely out of address space / memory. The node
+                    // cannot verify PoW without a scratchpad, so abort
+                    // loudly rather than silently skip verification.
+                    log::error!(
+                        "Scratchpad allocation of {} KiB failed ({}); cannot \
+                         participate in PoW verification without it.",
+                        size / 1024,
+                        e
+                    );
                     panic!("Cannot allocate scratchpad: {}", e);
                 }
             }
