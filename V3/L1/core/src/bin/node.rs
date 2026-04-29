@@ -1132,11 +1132,6 @@ impl OutboundPool {
         self.conns.insert(key, conn);
         Ok(resp)
     }
-
-    /// Remove a peer's cached connection.
-    fn evict(&mut self, address: &str) {
-        self.conns.remove(address);
-    }
 }
 
 /// Outbound peer loop: periodically connects to known peers, syncs new blocks,
