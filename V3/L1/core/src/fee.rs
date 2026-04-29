@@ -144,6 +144,31 @@ mod tests {
         assert_eq!(BRIDGE_VAULT_ADDRESS, crate::crypto::bridge_vault_address());
     }
 
+    /// The provable-burn address must be deliberately unreachable by normal
+    /// wallet flows: it is a hand-picked literal, not derived, and its
+    /// checksum is not the canonical 4-char suffix produced by
+    /// `derive_address`. `is_valid_address` must therefore reject it, so
+    /// that any RPC / mempool path which front-gates deposits with
+    /// `is_valid_address` cannot be tricked into treating `BURN_ADDRESS`
+    /// as a regular recipient. Sending *to* this address is still allowed
+    /// for `record_revenue` / fee-burn code paths that reference the
+    /// literal constant directly, without going through address
+    /// validation. (Audit finding §15.3.)
+    #[test]
+    fn burn_address_is_rejected_by_is_valid_address() {
+        assert!(
+            !crate::crypto::is_valid_address(BURN_ADDRESS),
+            "BURN_ADDRESS must not pass is_valid_address; if this starts \
+             passing, an attacker could spoof an addr that collides with \
+             this checksum form",
+        );
+        assert_eq!(BURN_ADDRESS.len(), 44, "ZION addresses are 44 chars");
+        assert!(
+            BURN_ADDRESS.starts_with("zion1"),
+            "ZION addresses must use the zion1 HRP",
+        );
+    }
+
     #[test]
     fn fee_rate_calculation() {
         assert_eq!(fee_rate(1000, 250), 4);
