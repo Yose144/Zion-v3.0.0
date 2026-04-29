@@ -897,14 +897,6 @@ impl RuntimeTransaction {
             Self::Account(_) => None,
         }
     }
-
-    #[allow(dead_code)]
-    fn into_utxo(self) -> Option<tx::Transaction> {
-        match self {
-            Self::Utxo(tx) => Some(tx),
-            Self::Account(_) => None,
-        }
-    }
 }
 
 impl From<Transaction> for RuntimeTransaction {
