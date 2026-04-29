@@ -9,7 +9,6 @@ import {
   Globe,
   Landmark,
   Leaf,
-  Lock,
   LucideIcon,
   MapPin,
   Network,
@@ -367,6 +366,205 @@ export default function ZahradaGenesisPage() {
           </div>
         </motion.section>
 
+        {/* ═══ PHYSICAL INFRASTRUCTURE ═══ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.35, duration: 0.6 }}
+          className="mb-16"
+        >
+          <div className="text-center mb-8">
+            <p className="text-[10px] uppercase tracking-[0.45em] text-gray-500 mb-2">
+              {cs ? 'Fyzická základna' : 'Physical Foundation'}
+            </p>
+            <h2 className="text-2xl font-bold text-white">
+              {cs ? 'Infrastruktura & Off-grid' : 'Infrastructure & Off-grid'}
+            </h2>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-4">
+            {/* Energie */}
+            <div className="relative rounded-2xl border border-yellow-500/20 bg-yellow-500/4 p-5 space-y-3 overflow-hidden">
+              <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full blur-[40px] bg-yellow-500/20" />
+              <div className="flex items-center gap-2 relative z-10">
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-yellow-400/20 bg-yellow-400/10">
+                  <Sun className="h-4 w-4 text-yellow-300" />
+                </span>
+                <h3 className="font-bold text-yellow-300 text-sm">{cs ? 'Energie' : 'Energy'}</h3>
+              </div>
+              <div className="space-y-1.5 relative z-10">
+                {[
+                  { label: cs ? 'Zdroj' : 'Source', val: 'Solar FV systém' },
+                  { label: cs ? 'Záloha' : 'Backup', val: cs ? 'V rozvoji' : 'In development' },
+                  { label: cs ? 'Status' : 'Status', val: cs ? '🟡 Instalace' : '🟡 Installing' },
+                ].map((r) => (
+                  <div key={r.label} className="flex justify-between text-xs gap-2">
+                    <span className="text-gray-500">{r.label}</span>
+                    <span className="text-gray-300 text-right">{r.val}</span>
+                  </div>
+                ))}
+              </div>
+              <p className="text-[11px] text-gray-600 relative z-10">
+                {cs ? 'Cíl: energetická soběstačnost areálu' : 'Goal: full energy self-sufficiency'}
+              </p>
+            </div>
+
+            {/* Voda */}
+            <div className="relative rounded-2xl border border-cyan-500/20 bg-cyan-500/4 p-5 space-y-3 overflow-hidden">
+              <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full blur-[40px] bg-cyan-500/20" />
+              <div className="flex items-center gap-2 relative z-10">
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-cyan-400/20 bg-cyan-400/10">
+                  <Droplets className="h-4 w-4 text-cyan-300" />
+                </span>
+                <h3 className="font-bold text-cyan-300 text-sm">{cs ? 'Voda' : 'Water'}</h3>
+              </div>
+              <div className="space-y-1.5 relative z-10">
+                {[
+                  { label: cs ? 'Zdroj' : 'Source', val: cs ? 'Studna + déšť' : 'Well + rainwater' },
+                  { label: cs ? 'Čištění' : 'Filter', val: 'Gravitace + UV' },
+                  { label: cs ? 'Status' : 'Status', val: cs ? '🟡 Funkční základ' : '🟡 Basic system' },
+                ].map((r) => (
+                  <div key={r.label} className="flex justify-between text-xs gap-2">
+                    <span className="text-gray-500">{r.label}</span>
+                    <span className="text-gray-300 text-right">{r.val}</span>
+                  </div>
+                ))}
+              </div>
+              <p className="text-[11px] text-gray-600 relative z-10">
+                {cs ? 'Plánovaný sběr dešťové vody — plná retence' : 'Planned rainwater harvesting — full retention'}
+              </p>
+            </div>
+
+            {/* Jídlo */}
+            <div className="relative rounded-2xl border border-emerald-500/20 bg-emerald-500/4 p-5 space-y-3 overflow-hidden">
+              <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full blur-[40px] bg-emerald-500/20" />
+              <div className="flex items-center gap-2 relative z-10">
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-emerald-400/20 bg-emerald-400/10">
+                  <Sprout className="h-4 w-4 text-emerald-300" />
+                </span>
+                <h3 className="font-bold text-emerald-300 text-sm">{cs ? 'Zahrada & Jídlo' : 'Garden & Food'}</h3>
+              </div>
+              <div className="space-y-1.5 relative z-10">
+                {[
+                  { label: cs ? 'Metoda' : 'Method', val: cs ? 'Organická farma' : 'Organic farming' },
+                  { label: cs ? 'Cíl' : 'Goal', val: '40–60 % kalorií' },
+                  { label: cs ? 'Status' : 'Status', val: cs ? '🟢 Roste' : '🟢 Growing' },
+                ].map((r) => (
+                  <div key={r.label} className="flex justify-between text-xs gap-2">
+                    <span className="text-gray-500">{r.label}</span>
+                    <span className="text-gray-300 text-right">{r.val}</span>
+                  </div>
+                ))}
+              </div>
+              <p className="text-[11px] text-gray-600 relative z-10">
+                {cs ? 'Sázení stromů, obnova biodiverzity, sezónní sklizeň' : 'Tree planting, biodiversity restoration, seasonal harvest'}
+              </p>
+            </div>
+          </div>
+        </motion.section>
+
+        {/* ═══ GOVERNANCE ═══ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.38, duration: 0.6 }}
+          className="mb-16"
+        >
+          <div className="text-center mb-8">
+            <p className="text-[10px] uppercase tracking-[0.45em] text-gray-500 mb-2">
+              {cs ? 'Komunitní správa' : 'Community Governance'}
+            </p>
+            <h2 className="text-2xl font-bold text-white">
+              {cs ? 'Governance & DAO' : 'Governance & DAO'}
+            </h2>
+          </div>
+
+          <div className="zion-panel rounded-3xl p-6 md:p-8 border border-emerald-500/15 relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/15 to-transparent" />
+            <div className="relative z-10 grid md:grid-cols-2 gap-8">
+              <div className="space-y-4">
+                <h3 className="text-emerald-400 font-bold text-sm uppercase tracking-widest">
+                  {cs ? 'Model rozhodování' : 'Decision Model'}
+                </h3>
+                <div className="space-y-3">
+                  {[
+                    { label: cs ? 'Model' : 'Model', val: cs ? 'Komunitní správa + Terra Nova ® framework' : 'Community governance + Terra Nova ® framework' },
+                    { label: cs ? 'Rozhodování' : 'Decisions', val: cs ? 'Konsensuální pro klíčová rozhodnutí' : 'Consensus for key decisions' },
+                    { label: cs ? 'ZION DAO' : 'ZION DAO', val: cs ? 'Plánováno — Proof-of-Care governance' : 'Planned — Proof-of-Care governance' },
+                    { label: cs ? 'Min. buňka' : 'Min. cell', val: cs ? '3–5 stálých Guardians + sezónní' : '3–5 permanent Guardians + seasonal' },
+                  ].map((row) => (
+                    <div key={row.label} className="flex gap-3">
+                      <span className="text-gray-500 text-xs w-28 shrink-0 pt-0.5">{row.label}</span>
+                      <span className="text-gray-300 text-xs leading-relaxed">{row.val}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-4">
+                <h3 className="text-emerald-400 font-bold text-sm uppercase tracking-widest">
+                  {cs ? 'Humanitární závazek' : 'Humanitarian Commitment'}
+                </h3>
+                <div className="relative rounded-2xl border border-emerald-400/15 bg-emerald-400/5 p-4">
+                  <div className="text-3xl font-black text-emerald-400 mb-1">10 %</div>
+                  <p className="text-gray-400 text-sm">
+                    {cs
+                      ? 'z node odměn ZION sítě jde do humanitárního fondu komunity'
+                      : 'of ZION network node rewards go to the community humanitarian fund'}
+                  </p>
+                </div>
+                <p className="text-gray-600 text-xs">
+                  {cs
+                    ? 'Každý Guardian node, který bude provozován v areálu, přispívá 10 % odměn zpět komunitě a jejím projektům.'
+                    : 'Every Guardian node operated on the premises contributes 10% of rewards back to the community and its projects.'}
+                </p>
+              </div>
+            </div>
+          </div>
+        </motion.section>
+
+        {/* ═══ CHARACTER OF PLACE ═══ */}
+        <motion.section
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.39, duration: 0.6 }}
+          className="mb-16"
+        >
+          <div className="zion-panel rounded-3xl p-6 md:p-10 border border-white/8 relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/12 via-teal-900/8 to-transparent" />
+            <div className="absolute -bottom-20 -right-20 w-48 h-48 rounded-full blur-[100px] bg-emerald-500/8" />
+            <div className="relative z-10 max-w-2xl space-y-4">
+              <p className="text-[10px] uppercase tracking-[0.45em] text-gray-500">
+                {cs ? 'Charakter místa' : 'Character of Place'}
+              </p>
+              <h2 className="text-xl font-bold text-white">
+                {cs ? 'Farma na hranici dvou světů' : 'A Farm on the Edge of Two Worlds'}
+              </h2>
+              <p className="text-gray-400 text-sm leading-relaxed">
+                {cs
+                  ? 'Zahrada Genesis stojí na hranici dvou světů: tichého vnitrozemí farmy a divokého atlantického pobřeží. Tato dualita — ticho půdy a energie oceánu — je záměrná. Projekt hledá lidi, kteří umí pracovat v hlíně i surfovat vlny. Farmáře i surfaře. Stavitele i meditující.'
+                  : 'Zahrada Genesis stands on the boundary of two worlds: the quiet inland farm and the wild Atlantic coast. This duality — the silence of soil and the energy of the ocean — is intentional. The project looks for people who can work in clay and surf waves. Farmers and surfers. Builders and meditators.'}
+              </p>
+              <p className="text-gray-500 text-sm leading-relaxed">
+                {cs
+                  ? 'Sázení stromů není PR aktivita. Je to rituál zakořenění. Každý strom, který tu vyroste, bude tu dál, když tenhle tým dávno odejde. Zahrada Genesis buduje dědictví v biologickém čase — ne v čtvrtletních zprávách.'
+                  : "Tree planting is not a PR activity. It is a ritual of rooting. Every tree that grows here will be here long after this team is gone. Zahrada Genesis builds legacy in biological time — not in quarterly reports."}
+              </p>
+              <div className="pt-2 flex flex-wrap gap-2">
+                {[
+                  cs ? '🌊 Oceán & pohyb' : '🌊 Ocean & movement',
+                  cs ? '🌱 Půda & ticho' : '🌱 Soil & silence',
+                  cs ? '🌳 Biologický čas' : '🌳 Biological time',
+                  cs ? '🔥 Autentický záměr' : '🔥 Authentic intention',
+                ].map((tag) => (
+                  <span key={tag} className="rounded-full border border-white/8 bg-white/4 px-3 py-1 text-xs text-gray-400">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </motion.section>
+
         {/* ═══ ZION INTEGRATION ═══ */}
         <motion.section
           initial={{ opacity: 0, y: 24 }}
@@ -469,19 +667,13 @@ export default function ZahradaGenesisPage() {
             <ArrowLeft className="w-4 h-4" />
             {cs ? 'Zpět na Terra Nova' : 'Back to Terra Nova'}
           </Link>
-          <div className="relative inline-flex items-center gap-3 overflow-hidden rounded-xl border border-violet-500/25 bg-violet-500/10 px-4 py-2 text-sm text-violet-300/85 saturate-75">
-            <div className="pointer-events-none absolute inset-0 bg-[repeating-linear-gradient(135deg,rgba(255,255,255,0.03)_0,rgba(255,255,255,0.03)_10px,transparent_10px,transparent_22px)] opacity-70" />
-            <div className="relative z-10">
-              <span>{cs ? 'Dharma Temple' : 'Dharma Temple'}</span>
-              <p className="mt-1 text-[11px] text-violet-200/55">
-                {cs ? 'Sealed mock · doplníme později' : 'Sealed mock · details later'}
-              </p>
-            </div>
-            <div className="relative z-10 inline-flex items-center gap-2 rounded-full border border-violet-300/15 bg-black/35 px-2.5 py-1 text-[10px] uppercase tracking-[0.22em] text-violet-100/80">
-              <Lock className="w-3.5 h-3.5" />
-              Sealed
-            </div>
-          </div>
+          <Link
+            href="/terranova/dharma-temple"
+            className="inline-flex items-center gap-3 rounded-xl border border-violet-500/25 bg-violet-500/10 hover:bg-violet-500/20 px-4 py-2 text-sm text-violet-300 transition-all duration-300"
+          >
+            <span>{cs ? 'Dharma Temple' : 'Dharma Temple'}</span>
+            <ArrowRight className="w-4 h-4" />
+          </Link>
         </motion.div>
 
       </div>
