@@ -31,7 +31,6 @@ type CardMetric = {
 
 type ProjectCardData = {
   href?: string;
-  isSecret?: boolean;
   title: string;
   location: string;
   eyebrow: string;
@@ -134,23 +133,13 @@ export default function PioneerProjectCards({ cs }: { cs: boolean }) {
     <div className="grid gap-4 md:grid-cols-2">
       {PROJECTS.map((project) => {
         const accent = accentClasses(project.accent);
-        const cardClassName = `group relative overflow-hidden rounded-[28px] border bg-black/35 p-5 transition-all duration-500 ${accent.border}${project.isSecret ? ' cursor-default saturate-75' : ''}`;
+        const cardClassName = `group relative overflow-hidden rounded-[28px] border bg-black/35 p-5 transition-all duration-500 ${accent.border}`;
         const content = (
           <>
             <div className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${accent.glowA}`} />
             <div className={`pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full blur-3xl ${accent.glowB}`} />
             <div className={`pointer-events-none absolute -bottom-10 -left-10 h-32 w-32 rounded-full blur-3xl ${accent.glowC}`} />
-            <div className={`pointer-events-none absolute inset-0 transition-opacity duration-500 ${project.isSecret ? 'opacity-40' : 'opacity-0 group-hover:opacity-100'}`} style={{ background: 'linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.07) 28%, transparent 56%)' }} />
-            {project.isSecret && (
-              <>
-                <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),transparent_42%),repeating-linear-gradient(135deg,rgba(255,255,255,0.03)_0,rgba(255,255,255,0.03)_10px,transparent_10px,transparent_22px)] opacity-80" />
-                <div className="pointer-events-none absolute inset-0 backdrop-blur-[1.5px]" />
-                <div className="pointer-events-none absolute right-4 top-4 inline-flex items-center gap-2 rounded-full border border-violet-300/15 bg-black/45 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.26em] text-violet-100/80 shadow-[0_0_30px_rgba(168,85,247,0.16)]">
-                  <Lock className="h-3.5 w-3.5" />
-                  {cs ? 'Sealed' : 'Sealed'}
-                </div>
-              </>
-            )}
+            <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" style={{ background: 'linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.07) 28%, transparent 56%)' }} />
 
             <div className="relative z-10 space-y-5">
               <div className="flex items-start justify-between gap-4">
@@ -171,7 +160,7 @@ export default function PioneerProjectCards({ cs }: { cs: boolean }) {
                 </span>
               </div>
 
-              <p className={`max-w-xl text-sm leading-relaxed ${project.isSecret ? 'text-gray-400' : 'text-gray-300'}`}>
+              <p className="max-w-xl text-sm leading-relaxed text-gray-300">
                 {cs ? project.descriptionCs : project.descriptionEn}
               </p>
 
@@ -179,7 +168,7 @@ export default function PioneerProjectCards({ cs }: { cs: boolean }) {
                 {project.features.map((feature) => {
                   const Icon = feature.icon;
                   return (
-                    <div key={feature.labelCs} className={`flex items-center gap-2 rounded-2xl border px-3 py-2 text-xs ${accent.chip}${project.isSecret ? ' border-dashed opacity-80' : ''}`}>
+                    <div key={feature.labelCs} className={`flex items-center gap-2 rounded-2xl border px-3 py-2 text-xs ${accent.chip}`}>
                       <Icon className={`h-4 w-4 shrink-0 ${accent.icon}`} />
                       <span>{cs ? feature.labelCs : feature.labelEn}</span>
                     </div>
@@ -189,36 +178,24 @@ export default function PioneerProjectCards({ cs }: { cs: boolean }) {
 
               <div className="grid grid-cols-3 gap-2">
                 {project.metrics.map((metric) => (
-                  <div key={metric.labelCs} className={`rounded-2xl border px-3 py-2 ${accent.metric}${project.isSecret ? ' opacity-75' : ''}`}>
+                  <div key={metric.labelCs} className={`rounded-2xl border px-3 py-2 ${accent.metric}`}>
                     <p className="text-sm font-semibold">{metric.value}</p>
                     <p className="mt-0.5 text-[10px] uppercase tracking-[0.16em] text-gray-500">{cs ? metric.labelCs : metric.labelEn}</p>
                   </div>
                 ))}
               </div>
 
-              <div className={`flex items-center justify-between rounded-2xl border px-4 py-3 text-sm font-semibold transition-colors ${accent.cta}${project.isSecret ? ' border-dashed bg-black/35 text-violet-100/85 opacity-90' : ''}`}>
-                <span>
-                  {project.isSecret
-                    ? cs
-                      ? 'Sealed concept · doplníme později'
-                      : 'Sealed concept · details later'
-                    : cs
-                      ? 'Otevřít detail projektu'
-                      : 'Open project detail'}
-                </span>
-                {project.isSecret ? (
-                  <Lock className="h-4 w-4" />
-                ) : (
-                  <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
-                )}
+              <div className={`flex items-center justify-between rounded-2xl border px-4 py-3 text-sm font-semibold transition-colors ${accent.cta}`}>
+                <span>{cs ? 'Otevřít detail projektu' : 'Open project detail'}</span>
+                <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
               </div>
             </div>
           </>
         );
 
-        if (!project.href || project.isSecret) {
+        if (!project.href) {
           return (
-            <div key={project.title} className={cardClassName} aria-disabled="true">
+            <div key={project.title} className={cardClassName}>
               {content}
             </div>
           );
