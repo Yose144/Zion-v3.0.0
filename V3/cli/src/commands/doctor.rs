@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use std::process::{Command, Output};
 use std::time::Duration;
 
-use crate::commands::{deploy, mine};
+use crate::commands::{compose, deploy, mine};
 use crate::config::{self, Config};
 use crate::rpc::{agent_rpc, node_rpc};
 use crate::ui;
@@ -87,6 +87,25 @@ pub async fn run(cfg: &Config) -> Result<()> {
             "Pool target    {}:{} — {}",
             cfg.pool.host, cfg.pool.port, err
         )),
+    }
+
+    ui::print_header("Docker Stack");
+    if command_exists("docker") {
+        match Command::new("docker").arg("--version").output() {
+            Ok(output) if output.status.success() => {
+                let version = String::from_utf8_lossy(&output.stdout).trim().to_string();
+                ui::print_ok(&format!("Docker          {}", version));
+            }
+            _ => ui::print_warn("Docker found in PATH but version check failed"),
+        }
+
+        // Run compose doctor logic
+        if let Err(e) = compose::run_compose_doctor().await {
+            ui::print_warn(&format!("Compose doctor encountered issue: {}", e));
+        }
+    } else {
+        ui::print_warn("Docker          not found in PATH. Install Docker Desktop or docker CLI.");
+        hard_failures += 1;
     }
 
     ui::print_header("Deploy Readiness");
