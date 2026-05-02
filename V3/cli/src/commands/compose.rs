@@ -178,7 +178,7 @@ async fn run_compose_restart(service: &str) -> Result<()> {
     Ok(())
 }
 
-async fn run_compose_doctor() -> Result<()> {
+pub async fn run_compose_doctor() -> Result<()> {
     ui::print_header("Docker Doctor");
 
     // Check if docker is available
