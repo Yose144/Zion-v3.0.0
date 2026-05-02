@@ -200,8 +200,8 @@ export default function EkamDeekshaPage() {
                 </p>
                 <div className="my-10 p-8 rounded-2xl border border-amber-300/20 bg-amber-300/5 backdrop-blur-xl">
                   <p className="text-lg italic text-gray-300 leading-relaxed">
-                    Ekam znamená „jedno".<br />
-                    Deeksha znamená „přenos, zasvěcení, milost".<br />
+                    Ekam znamená „jedno&quot;.<br />
+                    Deeksha znamená „přenos, zasvěcení, milost&quot;.<br />
                     Tato kniha je o tom, jak se toto jedno přenáší v čase,<br />
                     prostoru, filozofii — a v algoritmech blockchainu.
                   </p>
@@ -432,7 +432,7 @@ export default function EkamDeekshaPage() {
                   <Orbit className="w-8 h-8 text-amber-300 mx-auto mb-3" />
                   <p className="text-amber-200 italic text-lg">
                     „Na počátku bylo zlaté vejce, zárodek vesmíru.<br />
-                    Z něho se zrodil veškerý svět — nebe, země, světlo, tma."
+                    Z něho se zrodil veškerý svět — nebe, země, světlo, tma.&quot;
                   </p>
                   <p className="text-gray-500 text-sm mt-2">— Rigvéda, hymnus na Hiranyagarbhu</p>
                 </div>
