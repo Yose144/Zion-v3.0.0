@@ -8,9 +8,25 @@
 
 use crate::crypto;
 use crate::fee;
-use crate::tx::{Transaction, TxInput, TxOutput};
+use crate::tx::{Transaction, TxInput, TxOutput, TX_HASH_V2_VERSION};
 use ed25519_dalek::SigningKey;
 use std::time::{SystemTime, UNIX_EPOCH};
+use zion_cosmic_harmony::tx_hash_v2_active;
+
+/// Choose `Transaction.version` for UTXO txs broadcast while chain tip is `chain_tip_height`.
+///
+/// Transactions are validated for inclusion in block `chain_tip_height + 1`, matching
+/// mempool admission (`pending_height = chain_tip_height + 1`).
+/// mempool admission logic.
+#[inline]
+pub fn pending_utxo_tx_version(chain_tip_height: u64) -> u32 {
+    let pending_height = chain_tip_height.saturating_add(1);
+    if tx_hash_v2_active(pending_height) {
+        TX_HASH_V2_VERSION
+    } else {
+        1
+    }
+}
 
 // ── Constants ──────────────────────────────────────────────────────────
 
@@ -121,6 +137,7 @@ pub fn build_and_sign(
     change_address: &str,
     params: &SendParams,
     available_utxos: &[SpendableUtxo],
+    chain_tip_height: u64,
 ) -> Result<BuildResult, WalletError> {
     // Validate
     if !crypto::is_valid_address(&params.to_address) {
@@ -183,7 +200,7 @@ pub fn build_and_sign(
 
     let mut tx = Transaction {
         id: [0u8; 32],
-        version: 1,
+        version: pending_utxo_tx_version(chain_tip_height),
         inputs,
         outputs,
         fee: params.fee,
@@ -228,6 +245,7 @@ pub fn build_batch_payout(
     recipients: &[BatchRecipient],
     fee: u64,
     available_utxos: &[SpendableUtxo],
+    chain_tip_height: u64,
 ) -> Result<BuildResult, WalletError> {
     if recipients.len() > MAX_BATCH_RECIPIENTS {
         return Err(WalletError::TooManyRecipients(recipients.len()));
@@ -279,7 +297,7 @@ pub fn build_batch_payout(
 
     let mut tx = Transaction {
         id: [0u8; 32],
-        version: 1,
+        version: pending_utxo_tx_version(chain_tip_height),
         inputs,
         outputs,
         fee,
@@ -324,6 +342,12 @@ mod tests {
     }
 
     #[test]
+    fn pending_utxo_tx_version_before_fork_defaults_one() {
+        assert_eq!(pending_utxo_tx_version(0), 1);
+        assert_eq!(pending_utxo_tx_version(u64::MAX / 2), 1);
+    }
+
+    #[test]
     fn build_and_sign_single_send() {
         let (sk, vk) = generate_keypair();
         let addr = derive_address(vk.as_bytes());
@@ -335,7 +359,7 @@ mod tests {
             fee: 1_000,
         };
 
-        let result = build_and_sign(&sk, &addr, &params, &utxos).unwrap();
+        let result = build_and_sign(&sk, &addr, &params, &utxos, 0).unwrap();
         assert!(result.transaction.verify_signatures());
         assert_eq!(result.transaction.outputs[0].amount, 2_000_000_000_000);
         assert_eq!(
@@ -356,7 +380,7 @@ mod tests {
             fee: 1_000,
         };
 
-        let result = build_and_sign(&sk, &addr, &params, &utxos).unwrap();
+        let result = build_and_sign(&sk, &addr, &params, &utxos, 0).unwrap();
         assert_eq!(result.change_amount, 0);
         assert_eq!(result.transaction.outputs.len(), 1); // no change output
     }
@@ -373,7 +397,7 @@ mod tests {
             fee: 1_000,
         };
 
-        let err = build_and_sign(&sk, &addr, &params, &utxos).unwrap_err();
+        let err = build_and_sign(&sk, &addr, &params, &utxos, 0).unwrap_err();
         assert!(matches!(err, WalletError::InsufficientFunds { .. }));
     }
 
@@ -388,7 +412,7 @@ mod tests {
             fee: 1_000,
         };
 
-        let err = build_and_sign(&sk, &addr, &params, &[]).unwrap_err();
+        let err = build_and_sign(&sk, &addr, &params, &[], 0).unwrap_err();
         assert_eq!(err, WalletError::NoUtxos);
     }
 
@@ -404,7 +428,7 @@ mod tests {
             fee: 1_000,
         };
 
-        let err = build_and_sign(&sk, &addr, &params, &utxos).unwrap_err();
+        let err = build_and_sign(&sk, &addr, &params, &utxos, 0).unwrap_err();
         assert!(matches!(err, WalletError::InvalidAddress(_)));
     }
 
@@ -421,7 +445,7 @@ mod tests {
             fee: 1_000,
         };
 
-        let result = build_and_sign(&sk, &addr, &params, &utxos).unwrap();
+        let result = build_and_sign(&sk, &addr, &params, &utxos, 0).unwrap();
         // Should use the 500K UTXO only
         assert_eq!(result.transaction.inputs.len(), 1);
         assert_eq!(result.change_amount, 500_000 - 400_000 - 1_000);
@@ -440,7 +464,7 @@ mod tests {
             })
             .collect();
 
-        let result = build_batch_payout(&sk, &addr, &recipients, 5_000, &utxos).unwrap();
+        let result = build_batch_payout(&sk, &addr, &recipients, 5_000, &utxos, 0).unwrap();
         assert!(result.transaction.verify_signatures());
         assert_eq!(result.transaction.outputs.len(), 6); // 5 recipients + change
         let total_out: u64 = result.transaction.outputs.iter().map(|o| o.amount).sum();
@@ -460,7 +484,7 @@ mod tests {
             })
             .collect();
 
-        let err = build_batch_payout(&sk, &addr, &recipients, 1_000, &utxos).unwrap_err();
+        let err = build_batch_payout(&sk, &addr, &recipients, 1_000, &utxos, 0).unwrap_err();
         assert!(matches!(err, WalletError::TooManyRecipients(201)));
     }
 
@@ -476,7 +500,7 @@ mod tests {
             fee: 1_000,
         };
 
-        let result = build_and_sign(&sk, &addr, &params, &utxos).unwrap();
+        let result = build_and_sign(&sk, &addr, &params, &utxos, 0).unwrap();
         assert!(result.transaction.verify_signatures());
         // Should use both UTXOs (2M + 1M = 3M, need 2.501M)
         assert_eq!(result.transaction.inputs.len(), 2);

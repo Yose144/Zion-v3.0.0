@@ -174,7 +174,7 @@ fn l3_menu() -> Result<Option<Vec<String>>> {
 }
 
 fn quick_status_menu() -> Result<Option<Vec<String>>> {
-    loop {
+    {
         let items = [
             "zion status",
             "zion doctor",
@@ -241,7 +241,7 @@ fn service_menu() -> Result<Option<Vec<String>>> {
 }
 
 fn node_menu() -> Result<Option<Vec<String>>> {
-    loop {
+    {
         let items = [
             "Status",
             "Peers",
@@ -298,7 +298,7 @@ fn node_menu() -> Result<Option<Vec<String>>> {
 }
 
 fn pool_menu() -> Result<Option<Vec<String>>> {
-    loop {
+    {
         let items = [
             "Stats",
             "Active miners",
@@ -331,7 +331,7 @@ fn pool_menu() -> Result<Option<Vec<String>>> {
 }
 
 fn mine_menu() -> Result<Option<Vec<String>>> {
-    loop {
+    {
         let items = [
             "Start mining (quick default)",
             "Start mining (guided)",
@@ -395,7 +395,7 @@ fn mine_menu() -> Result<Option<Vec<String>>> {
 }
 
 fn wallet_menu() -> Result<Option<Vec<String>>> {
-    loop {
+    {
         let items = [
             "Current wallet address",
             "Current wallet balance",
@@ -430,7 +430,7 @@ fn wallet_menu() -> Result<Option<Vec<String>>> {
 }
 
 fn agent_menu() -> Result<Option<Vec<String>>> {
-    loop {
+    {
         let items = [
             "Status",
             "Chat REPL",
@@ -486,7 +486,7 @@ fn agent_menu() -> Result<Option<Vec<String>>> {
 }
 
 fn bridge_menu() -> Result<Option<Vec<String>>> {
-    loop {
+    {
         let items = [
             "Status",
             "Pending",
@@ -521,7 +521,7 @@ fn bridge_menu() -> Result<Option<Vec<String>>> {
 }
 
 fn dao_menu() -> Result<Option<Vec<String>>> {
-    loop {
+    {
         let items = [
             "Status",
             "Active proposals",
@@ -551,7 +551,7 @@ fn dao_menu() -> Result<Option<Vec<String>>> {
 }
 
 fn warp_menu() -> Result<Option<Vec<String>>> {
-    loop {
+    {
         let items = [
             "Status",
             "Chains",
@@ -597,7 +597,7 @@ fn warp_menu() -> Result<Option<Vec<String>>> {
 }
 
 fn ncl_menu() -> Result<Option<Vec<String>>> {
-    loop {
+    {
         let items = [
             "Status",
             "Jobs",
@@ -634,7 +634,7 @@ fn ncl_menu() -> Result<Option<Vec<String>>> {
 }
 
 fn config_menu() -> Result<Option<Vec<String>>> {
-    loop {
+    {
         let items = [
             "Show config",
             "Config path",
@@ -668,7 +668,7 @@ fn config_menu() -> Result<Option<Vec<String>>> {
 }
 
 fn views_menu() -> Result<Option<Vec<String>>> {
-    loop {
+    {
         let items = [
             "Dashboard in browser",
             "Block explorer TUI",
