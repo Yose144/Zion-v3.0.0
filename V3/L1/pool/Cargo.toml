@@ -23,3 +23,4 @@ zion-core = { path = "../core" }
 [features]
 default = []
 testnet = []
+testnet_fork_rehearsal = ["zion-core/testnet_fork_rehearsal"]
