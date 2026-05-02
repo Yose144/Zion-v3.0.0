@@ -57,7 +57,7 @@ export default function Hero() {
   ];
 
   return (
-    <section className="relative pt-32 pb-28 px-4 overflow-hidden">
+    <section className="relative px-4 pt-32 pb-28 overflow-hidden">
       {/* ── ambient gradients ── */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute -top-40 -left-40 w-[700px] h-[700px] rounded-full bg-violet-700/12 blur-3xl" />
@@ -76,11 +76,11 @@ export default function Hero() {
           transition={{ duration: 0.6 }}
           className="flex flex-wrap items-center gap-3 mb-12 justify-center lg:justify-start"
         >
-          <div className="inline-flex items-center gap-2 bg-zion-gold/10 border border-zion-gold/25 rounded-full px-5 py-2 text-xs uppercase tracking-widest text-zion-gold font-semibold">
+          <div className="zion-kicker border-zion-gold/25 bg-zion-gold/10 text-zion-gold">
             <Sparkles className="w-3.5 h-3.5 animate-pulse" />
             {tr('hero', 'badge_version', lang)}
           </div>
-          <div className="inline-flex items-center gap-2 bg-pink-500/10 border border-pink-500/25 rounded-full px-5 py-2 text-xs uppercase tracking-widest text-pink-300 font-semibold">
+          <div className="zion-kicker border-pink-500/25 bg-pink-500/10 text-pink-300">
             <BrainCircuit className="w-3.5 h-3.5 animate-pulse" />
             {tr('hero', 'badge_chv4', lang)}
           </div>
@@ -100,7 +100,7 @@ export default function Hero() {
                 {tr('hero', 'tagline', lang)}
               </p>
               <h1 className="text-5xl md:text-6xl xl:text-7xl font-extrabold leading-[1.06] tracking-tight">
-                <span className="text-gradient">ZION</span>
+                <span className="text-gradient-soft">ZION</span>
                 <span className="block text-white mt-1">Terra Nova</span>
                 <span className="block text-2xl md:text-3xl xl:text-4xl font-semibold text-white/60 mt-2 tracking-normal">
                   {tr('hero', 'title_sub', lang)}
@@ -117,21 +117,21 @@ export default function Hero() {
             <div className="flex flex-col sm:flex-row flex-wrap gap-3">
               <Link
                 href="/network"
-                className="group inline-flex items-center justify-center gap-2 px-7 py-4 rounded-2xl bg-gradient-to-r from-zion-gold via-zion-purple to-zion-cyan text-base font-semibold shadow-[0_0_45px_rgba(147,51,234,0.40)] hover:shadow-[0_0_60px_rgba(147,51,234,0.55)] transition-shadow"
+                className="zion-button-primary group"
               >
                 {tr('hero', 'btn_warp', lang)}
                 <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
               </Link>
               <Link
                 href="/docs"
-                className="inline-flex items-center justify-center gap-2 px-7 py-4 rounded-2xl border border-white/15 bg-white/5 text-base font-semibold hover:border-white/35 transition"
+                className="zion-button-secondary"
               >
                 <ShieldHalf className="w-5 h-5 text-zion-cyan" />
                 {tr('hero', 'btn_guardian_docs', lang)}
               </Link>
               <Link
                 href="/download"
-                className="inline-flex items-center justify-center gap-2 px-7 py-4 rounded-2xl border border-white/15 text-base font-semibold hover:border-zion-gold/60 transition"
+                className="zion-button-secondary hover:border-zion-gold/60"
               >
                 <CircuitBoard className="w-5 h-5 text-zion-gold" />
                 {tr('hero', 'btn_native_miner', lang)}
@@ -143,7 +143,7 @@ export default function Hero() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.4 }}
-              className="relative rounded-2xl border border-pink-500/25 bg-gradient-to-br from-pink-500/10 via-violet-500/8 to-transparent p-5 backdrop-blur overflow-hidden"
+              className="zion-panel-soft zion-panel-hover relative overflow-hidden border-pink-500/25 bg-gradient-to-br from-pink-500/10 via-violet-500/8 to-transparent p-5"
             >
               <div className="absolute -inset-px rounded-2xl bg-gradient-to-br from-pink-500/15 to-violet-600/10 blur-sm pointer-events-none" />
               <div className="relative flex items-start gap-4">
@@ -178,7 +178,7 @@ export default function Hero() {
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.5 + i * 0.1 }}
-                  className="group rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur hover:border-white/25 hover:bg-white/8 transition cursor-default"
+                  className="zion-panel-soft zion-panel-hover group p-4 cursor-default"
                 >
                   <metric.icon className="w-4 h-4 text-zion-gold mb-2" />
                   <div className="text-xl font-bold text-white">{metric.value}</div>
@@ -198,7 +198,7 @@ export default function Hero() {
             {/* outer halo glow */}
             <div className="absolute -inset-6 rounded-[32px] bg-gradient-to-br from-violet-600/25 via-cyan-500/15 to-transparent blur-3xl pointer-events-none" />
 
-            <div className="relative rounded-[28px] border border-white/10 bg-black/55 backdrop-blur-2xl p-6 space-y-5 shadow-[0_30px_90px_rgba(0,0,0,0.5)]">
+            <div className="zion-panel relative rounded-[28px] p-6 space-y-5">
               {/* HUD header */}
               <header className="flex items-start justify-between gap-4">
                 <div>
@@ -214,7 +214,7 @@ export default function Hero() {
               </header>
 
               {/* scanline */}
-              <div className="rounded-xl border border-white/6 bg-gradient-to-br from-white/5 to-transparent p-4">
+              <div className="zion-panel-soft rounded-xl p-4">
                 <p className="text-xs text-gray-500 mb-1">{tr('hero', 'observatory_scan_label', lang)}</p>
                 <p className="text-sm text-white">{active.signal}</p>
               </div>
