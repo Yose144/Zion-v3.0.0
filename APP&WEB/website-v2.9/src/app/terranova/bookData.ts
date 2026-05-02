@@ -3,6 +3,10 @@
   Source synthesis: docs/TerraNova/ORG + public + cloude
   ═══════════════════════════════════════════════════════════════ */
 
+import chDPublic from './public/chapters/chD-bhagavad-gita';
+import chEPublic from './public/chapters/chE-zlata-stredni-cesta';
+import chFPublic from './public/chapters/chF-zaver-jedno-srdce';
+
 export interface BookChapter {
   id: string;
   number: string;          // display label e.g. "Prolog", "I", "II" …
@@ -885,51 +889,7 @@ export const CHAPTERS: BookChapter[] = [
     ],
   },
 
-  /* ═══ APPENDIX D ═══ */
-  {
-    id: 'appendix-gita',
-    number: 'D',
-    titleCs: 'Bhagavad Gíta: Dharma kód pro Guardiany',
-    titleEn: 'Bhagavad Gita: Dharma Code for Guardians',
-    subtitleCs: 'Příloha',
-    subtitleEn: 'Appendix',
-    epigraphCs: 'Duše se nerodí ani neumírá. Nezahyne, když tělo zanikne. — Bhagavad Gíta 2.20',
-    epigraphEn: 'The soul is never born and never dies. It is not slain when the body is slain. — Bhagavad Gita 2.20',
-    color: '#F0A040',
-    rgb: '240,160,64',
-    sectionsCs: [
-      {
-        body: 'Bhagavad Gíta není jen duchovní text. Je to operační manuál vědomého jednání v čase krize. Ardžuna stojí na bojišti a neví, zda jednat. Kršna mu neříká „uteč". Říká: jednej v souladu s dharmou, bez lpění na výsledku.\n\nZION Guardian je moderní Ardžuna. Bojiště je civilizační kolaps starého systému. Zbraň není meč, ale kód, infrastruktura, péče a pravdivost.',
-      },
-      {
-        heading: 'Karma Yoga — čin bez lpění',
-        body: 'Bhagavad Gíta 3.19: „Proto konej svou povinnost bez připoutanosti."\n\nEkam Deeksha PoW je přesně toto. Guardian mineuje blok ne kvůli egu, ale kvůli síti. Přijímá odměnu, ale není jí vlastněn. Disciplína bez chamtivosti je technická i duchovní kvalita zároveň.',
-      },
-      {
-        heading: 'Bhakti Yoga — oddanost v kódu',
-        body: 'Bhakti není sentiment. Je to stabilní orientace srdce. V ZION architektuře se projevuje jako humanitární tithe, DAO treasury pro komunitní dobro a ochota dávat energii tam, kde nevzniká okamžitý osobní profit.\n\nOddanost není slabost. Je to anti-korupční síla civilizace.',
-      },
-      {
-        heading: 'Závěrečný příkaz',
-        body: 'Bhagavad Gíta 18 končí výzvou k činu. Ne k abstraktní víře.\n\nI Terra Nova končí stejně: pokud rozumíš, jednej.\n\nzion-miner --pool pool.zionterranova.com --wallet YOUR_ADDRESS\n\nTo není jen CLI command. To je dharma v praxi.',
-      },
-    ],
-    sectionsEn: [
-      {
-        body: 'The Bhagavad Gita is not only a spiritual scripture. It is an operational manual for conscious action in times of crisis. Arjuna stands on a battlefield, uncertain whether to act. Krishna does not tell him to flee. He tells him: act in alignment with dharma, without attachment to outcomes.\n\nA ZION Guardian is a modern Arjuna. The battlefield is the civilizational collapse of the old system. The weapon is not a sword, but code, infrastructure, care, and truthfulness.',
-      },
-      {
-        heading: 'Karma Yoga — action without attachment',
-        body: 'Bhagavad Gita 3.19: "Therefore perform your duty without attachment."\n\nEkam Deeksha PoW is exactly this. A Guardian mines a block not for ego, but for the network. They receive reward, but are not owned by it. Discipline without greed is both a technical and spiritual quality.',
-      },
-      {
-        heading: 'Bhakti Yoga — devotion in code',
-        body: 'Bhakti is not sentimentality. It is stable orientation of the heart. In ZION architecture it appears as humanitarian tithe, DAO treasury for communal good, and willingness to channel energy where no immediate personal profit appears.\n\nDevotion is not weakness. It is the anti-corruption force of civilization.',
-      },
-      {
-        heading: 'Final command',
-        body: 'Bhagavad Gita 18 ends with a call to action, not abstract belief.\n\nTerra Nova ends the same way: if you understand, act.\n\nzion-miner --pool pool.zionterranova.com --wallet YOUR_ADDRESS\n\nThis is not only a CLI command. It is dharma in practice.',
-      },
-    ],
-  },
+  chDPublic,
+  chEPublic,
+  chFPublic,
 ];
