@@ -1,7 +1,7 @@
+use crate::ui;
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 use std::process::Command;
-use crate::ui;
 
 #[derive(Parser)]
 pub struct ComposeCmd {
@@ -84,8 +84,10 @@ async fn run_compose_up(profile: &str, build: bool) -> Result<()> {
 
     let mut args = vec![
         "compose",
-        "-f", "V3/docker/docker-compose.yml",
-        "--profile", profile,
+        "-f",
+        "V3/docker/docker-compose.yml",
+        "--profile",
+        profile,
     ];
 
     if build {
@@ -101,7 +103,10 @@ async fn run_compose_up(profile: &str, build: bool) -> Result<()> {
         .context("Failed to run docker compose up")?;
 
     if status.success() {
-        ui::print_ok(&format!("Stack with profile '{}' started successfully", profile));
+        ui::print_ok(&format!(
+            "Stack with profile '{}' started successfully",
+            profile
+        ));
         ui::print_info("Use 'zion compose logs node' to follow logs");
     } else {
         ui::print_err("Failed to start stack");
@@ -145,9 +150,11 @@ async fn run_compose_logs(service: &str, tail: u32) -> Result<()> {
     let _status = Command::new("docker")
         .args([
             "compose",
-            "-f", "V3/docker/docker-compose.yml",
+            "-f",
+            "V3/docker/docker-compose.yml",
             "logs",
-            "--tail", &tail.to_string(),
+            "--tail",
+            &tail.to_string(),
             "-f",
             service,
         ])
@@ -163,7 +170,13 @@ async fn run_compose_restart(service: &str) -> Result<()> {
     let args = if service == "all" {
         vec!["compose", "-f", "V3/docker/docker-compose.yml", "restart"]
     } else {
-        vec!["compose", "-f", "V3/docker/docker-compose.yml", "restart", service]
+        vec![
+            "compose",
+            "-f",
+            "V3/docker/docker-compose.yml",
+            "restart",
+            service,
+        ]
     };
 
     let status = Command::new("docker")
@@ -202,7 +215,14 @@ pub async fn run_compose_doctor() -> Result<()> {
 
     // Check running containers
     let ps_output = Command::new("docker")
-        .args(["compose", "-f", "V3/docker/docker-compose.yml", "ps", "--format", "table {{.Name}}\t{{.Status}}"])
+        .args([
+            "compose",
+            "-f",
+            "V3/docker/docker-compose.yml",
+            "ps",
+            "--format",
+            "table {{.Name}}\t{{.Status}}",
+        ])
         .output();
 
     if let Ok(output) = ps_output {
