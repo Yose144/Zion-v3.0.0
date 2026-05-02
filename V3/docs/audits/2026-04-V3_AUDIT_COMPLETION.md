@@ -2,12 +2,13 @@
 
 **Companion to:** `2026-04-V3_INTERNAL_AUDIT.md`
 **Date:** 2026-04-29
+**Last verification update:** 2026-05-02
 **Status of the six ranked findings** (Finding → PR → state):
 
 | # | Finding | Severity | PR | State |
 |---|---|---|---|---|
 | **F1** | Validation pipeline `validate_block` not called + missing conservation-of-value | 🔴 Critical | [#20](https://github.com/Yose144/2.9.6/pull/20) | ✅ merged |
-| **F2** | Block body "merkle root" is XOR aggregate, not tree | 🔴 High | — (this doc) | 🗓 deferred to hard fork |
+| **F2** | Block body "merkle root" is XOR aggregate, not tree | 🔴 High | Cursor WIP E.1–E.5 | ✅ code landed dormant; activation height + rehearsal pending |
 | **F3** | `zion-wallet.json` committed with plaintext Ed25519 secret keys | 🔴 Critical | [#18](https://github.com/Yose144/2.9.6/pull/18) | ✅ merged |
 | **F3b** | `docs/docs2.9/ZION_KEYS/` committed with live PAT + OpenAI key + SSH config | 🔴 Critical | *this PR* | HEAD cleaned; **rotation & history scrub still pending** |
 | **F4** | Bridge unlock multisig not enforced at L1 | 🟡 Medium | [#22](https://github.com/Yose144/2.9.6/pull/22) | ✅ merged |
@@ -16,7 +17,11 @@
 
 Plus the three **§15 small items** from the audit (`active_tip().expect`, `lib.rs::evict` dead code, `BURN_ADDRESS` regression test) — the latter two are handled in *this PR*, the first is a low-priority type-safety refactor kept as a known item.
 
-And the **§3.2 tx-hash preimage malleability** (Medium): this PR lands the fix as the dormant `Transaction::calculate_hash_v2()` helper, gated by `TX_HASH_V2_VERSION = 2` so v1 txs (everything in the chain today) keep their current IDs untouched. Activation is a hard-fork step, covered below.
+And the **§3.2 tx-hash preimage malleability** (Medium): the repository now
+carries the dormant `Transaction::calculate_hash_v2()` helper, activation
+constants, peer-block / mempool rejection gates, and wallet/pool emission
+switches. v1 txs (everything in the chain today) keep their current IDs
+untouched until the coordinated hard-fork height is flipped.
 
 ---
 
@@ -46,41 +51,39 @@ And the **§3.2 tx-hash preimage malleability** (Medium): this PR lands the fix 
   - `tx_hash_v1_activation_is_backward_compatible` — landing v2 must
     not change v1 hashes.
 
-### What the PR does **not** do
+### 2026-05-02 implementation update
 
-- Does not emit `version = 2` from wallets or the RPC.
-- Does not force peer validators to *reject* `version = 2` before the
-  fork, nor to *accept* `version = 1` after the fork.
-- Does not carry an activation height.
+Cursor WIP has completed the previously deferred code hooks:
 
-Those three are deliberately deferred to a coordinated consensus
-change. The helper is shipped dormant so that activation is a single
-code change (flip a height gate and update wallet emission), not a
-reimplementation under time pressure.
+- `TX_HASH_V2_ACTIVATION_HEIGHT` lives in
+  `V3/L1/cosmic-harmony/src/deeksha.rs` and defaults to `u64::MAX`.
+- `peer_block_validation::validate_accepted_peer_block` rejects UTXO
+  `tx.version < TX_HASH_V2_VERSION` at/above the activation height.
+- `insert_utxo_transaction` rejects legacy UTXO txs for pending block
+  height `tip + 1` once the gate is active; RPC submit paths reuse this.
+- `wallet::pending_utxo_tx_version`, wallet CLI, bridge-lock builder,
+  bridge unlock builder, coinbase template builder, and pool payouts all
+  emit `version = 2` once the pending block height is active.
+
+What is still deliberately **not** done: choosing the real mainnet
+activation height. Both activation constants remain `u64::MAX` until
+testnet rehearsal and operator coordination are complete.
 
 ### When to activate (hard-fork step)
 
-1. **Add a height gate**, conventionally next to
-   `CHV_EKAM_V2_FORK_HEIGHT` in `cosmic-harmony`:
+1. **Choose the height gate** next to `CHV_EKAM_V2_FORK_HEIGHT` in
+   `cosmic-harmony`:
    ```rust
    pub const TX_HASH_V2_ACTIVATION_HEIGHT: u64 = u64::MAX; // set at fork
    ```
-2. **Tighten `validate_peer_block`** (L1/core/src/lib.rs): for every
-   UTXO tx in a block at `height >= TX_HASH_V2_ACTIVATION_HEIGHT`,
-   reject `tx.version < TX_HASH_V2_VERSION`. Keep accepting
-   `version = 1` below the height so historical blocks continue to
-   re-validate.
-3. **Update the mempool admission path** (`insert_utxo_transaction`,
-   RPC `submit_utxo_transaction_rpc`) to refuse `version = 1` once
-   the chain tip crosses the activation height.
-4. **Update wallet emission** (`V3/L1/core/src/bin/wallet.rs` and any
-   CLI/RPC tools that build txs) to set `version = TX_HASH_V2_VERSION`
-   once the activation height is known.
-5. **Testnet first.** Pin a canonical test vector that nails the v2
+2. **Keep the code hooks dormant until that height:** peer-block,
+   mempool/RPC, wallet, pool, coinbase, and bridge-unlock builders are
+   already wired to the `tx_hash_v2_active(height)` predicate.
+3. **Testnet first.** Pin a canonical test vector that nails the v2
    preimage for a known tx (`version = 2`, one input, two outputs,
    one `Some(memo)` + one `None`); freeze it in `tx.rs` like the
    Ekam v2 canonical vector.
-6. **Mainnet activation** coordinated with the same release window as
+4. **Mainnet activation** coordinated with the same release window as
    F2 (Merkle rebuild) and any other consensus changes — they both
    break consensus, so batching them minimizes user-facing fork
    churn.
@@ -137,10 +140,11 @@ Ekam. Per-leaf cost drops from O(scratchpad-fill) to O(field-count).
 
 ### Activation
 
-Same pattern as §1: add a `BODY_ROOT_V2_ACTIVATION_HEIGHT`, keep XOR
-for blocks below the gate, switch to BLAKE3 Merkle above. Can (and
-should) be batched with §1 activation — they both need a
-fork-window coordination.
+`BODY_ROOT_V2_ACTIVATION_HEIGHT` now exists beside
+`TX_HASH_V2_ACTIVATION_HEIGHT` and defaults to `u64::MAX`. The template
+root dispatcher keeps legacy XOR below the gate and switches to BLAKE3
+Merkle above it. Activation should still be batched with §1 — they both
+need a fork-window coordination.
 
 ### Open design question
 
@@ -160,91 +164,39 @@ blocks.
 
 ## 3. Relayer follow-up — `synthetic: true` proof emission
 
-### Current state
+### 2026-05-02 state
 
-`V3/L2/bridge/src/relayer.rs:647` synthesizes placeholder proofs when
-the configured validator set is below threshold, emitting
-`"synthetic": true` in the submitted proof. **With F4 merged
-(#22), L1 validation now rejects these** — which is the intended end
-state, but it also means re-enabling the bridge (`bridge-mainnet.toml:
-enabled = true`) while the relayer still emits synthetic proofs would
-immediately produce a flood of "invalid proof" rejections and log
-noise.
-
-### Plan (separate PR, not in this audit-completion batch)
-
-1. In the relayer loop, replace "fill missing signers with a
-   synthetic proof" with "decline to submit and warn" once the
-   configured threshold cannot be met from live signers.
-2. Surface the validator-short condition as a Prometheus metric
-   (`bridge_relayer_missing_signers`) so ops can wire an alert.
-3. Add `--require-real-signers` CLI flag (default on; the only path
-   that emits synthetic proofs is a very narrow dev-loop mode).
-4. Re-enable `bridge-mainnet.toml: enabled = true` in a separate
-   release, after the metric has been green on testnet for at least
-   one week.
-
-### Why not done here
-
-Mid-size work (~300–500 LoC; touches relayer loop, config, telemetry,
-docs), and orthogonal to the audit-completion delta.
+Resolved by PR #27. Relayer proof building is fail-closed: below-threshold
+or duplicate signer sets return `Err` before any L1 RPC submit, synthetic
+proof placeholders are not emitted, and errors surface through logs/metrics.
+Remaining work is operational: provision a real 3/5 validator set before
+enabling the production bridge path.
 
 ---
 
 ## 4. §13 — native-ffi safety contracts
 
-### Current state
+### 2026-05-02 state
 
-`V3/L1/native-ffi/src/lib.rs` has 29 `unsafe` blocks wrapping C FFI
-into legacy GPU PoW algorithms. None of them assert the minimum input
-size expected by the C side. If Rust passes a short slice, the C
-callee reads off the end of the buffer (classic UB).
-
-### Fix (separate PR; low-hanging)
-
-For every FFI wrapper, add one of:
-
-```rust
-assert!(header.len() >= MIN_HEADER_LEN, "FFI: header too short");
-```
-
-or
-
-```rust
-if header.len() < MIN_HEADER_LEN {
-    return Err(FfiError::ShortBuffer);
-}
-```
-
-and a `# Safety` doc comment above each `unsafe` block documenting the
-C-side contract it relies on (min size, alignment, null-termination,
-etc.).
-
-### Scope
-
-~30 locations, mechanical. Safe to do as one PR once the C header
-files are re-read; no consensus risk, no hard fork. Deferred for ops
-reasons (GPU mining is the primary consumer and currently `feature`-gated off on mainnet nodes anyway).
+Resolved by PR #28. `native-ffi` now has typed safety guards and `try_*`
+wrappers for input size, boolean return-code parsing, version string
+handling, and C-side safety contracts. Remaining note: legacy C GPU smoke
+tests with `native-all` still require serial execution because upstream
+global caches are not thread-safe.
 
 ---
 
 ## 5. §11 — `lib.rs` monolith refactor
 
-`V3/L1/core/src/lib.rs` is ~6500 lines. `validate_peer_block` alone is
-300+ lines. This is an auditability problem, not a correctness
-problem; deferred to a dedicated refactor PR that:
+`validate_peer_block` was extracted into
+`V3/L1/core/src/peer_block_validation.rs` as
+`validate_accepted_peer_block`. `ChainState::validate_peer_block` now keeps
+only the genesis special case and passes immutable snapshots
+(`accepted_blocks`, `utxo_set`, bridge replay keys) into the validator.
 
-- Extracts `validate_peer_block` and each of its steps into a
-  per-step function file under `V3/L1/core/src/validation/`.
-- Merges with the existing `validation.rs` 11-step pipeline so there
-  is **one** authoritative validation entry point (F1's follow-up).
-- Extracts `insert_utxo_transaction` and `insert_transaction` into
-  `mempool.rs`.
-- Extracts RPC-related code into the existing `rpc.rs` (some of it
-  already is).
-
-No behavior change. Scope: medium; risk: line-ending churn in PR
-review.
+Still optional future cleanup: split the extracted module into smaller
+per-step functions and move mempool/RPC code out of `lib.rs`. That is
+auditability polish, not a correctness blocker.
 
 ---
 
@@ -273,14 +225,14 @@ Ordered by criticality:
    - See `SECURITY_NOTICE_2026-04-28.md` addendum for the full checklist.
    Merging this PR cleans HEAD but does **not** invalidate the leaked
    values — they are live until manually rotated.
-2. **F2 Merkle** + **§3.2 tx hash v2 activation** — hard fork,
-   coordinated release window, both land together.
-3. **Relayer synthetic-proof kill** — gate for re-enabling the bridge.
-4. **native-ffi safety contracts** — gate for shipping GPU miner
-   binaries to non-trusted builders.
-5. **3rd-party security audit** (ROADMAP Q3 2026, Trail of Bits /
+2. **F2 Merkle** + **§3.2 tx hash v2 activation** — code hooks are
+   present and dormant; choosing/flipping the real height is still a
+   coordinated hard-fork release step.
+3. **Bridge validator provisioning** — relayer is fail-closed, but the
+   production bridge still needs the real 3/5 validator key set and config.
+4. **3rd-party security audit** (ROADMAP Q3 2026, Trail of Bits /
    Halborn / OtterSec). This document is *not* a substitute for that.
-6. **Repo history scrub** (BFG / git-filter-repo) — must run after
+5. **Repo history scrub** (BFG / git-filter-repo) — must run after
    (1) and before the repo is ever made public. ROADMAP Q3 2026 has
    this as a todo; bringing it forward is advisable.
 

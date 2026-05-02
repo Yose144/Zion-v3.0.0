@@ -126,11 +126,11 @@ export default function Navigation() {
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50">
-  <div className="pointer-events-none absolute inset-0 bg-linear-to-r from-zion-purple/30 via-transparent to-zion-cyan/30 blur-3xl opacity-40" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-linear-to-r from-zion-purple/24 via-black/40 to-zion-cyan/24 blur-3xl opacity-80" />
       <div className="zion-container py-4 relative">
-        <div className="zion-panel flex items-center justify-between px-4 py-3">
+        <div className="zion-panel flex items-center justify-between px-4 py-3 ring-1 ring-white/5">
           <Link href="/" className="flex items-center space-x-3 group">
-            <div className="w-12 h-12 rounded-lg flex items-center justify-center relative overflow-hidden border border-white/20 group-hover:border-zion-gold/50 transition-colors bg-black/40">
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center relative overflow-hidden border border-white/20 group-hover:border-zion-gold/50 transition-colors bg-black/40 shadow-[0_12px_34px_rgba(0,0,0,0.35)]">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(255,215,0,0.3),transparent_60%)]" />
               <Image 
                 src="/LogoStargate.jpg" 
@@ -140,8 +140,8 @@ export default function Navigation() {
                 className="relative z-10 object-cover w-full h-full"
               />
             </div>
-            <span className="text-2xl font-bold text-gradient tracking-tight">ZION</span>
-            <span className="text-[11px] px-2 py-1 rounded bg-white/5 border border-white/10 uppercase tracking-widest">
+            <span className="text-2xl font-bold text-gradient-soft tracking-tight">ZION</span>
+            <span className="hidden sm:inline-flex text-[10px] px-2.5 py-1 rounded-full bg-white/6 border border-white/10 uppercase tracking-[0.28em] text-white/70">
               {SITE_RELEASE_LABEL}
             </span>
           </Link>
@@ -156,8 +156,8 @@ export default function Navigation() {
                       key={group.title}
                       type="button"
                       onClick={() => setOpenGroup(isActive ? null : group.title)}
-                      className={`inline-flex items-center gap-1 rounded-2xl border border-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.3em] transition-colors ${
-                        isActive ? 'bg-white/10 text-white' : 'text-gray-400 hover:text-white'
+                      className={`inline-flex items-center gap-1 rounded-2xl border px-3 py-2 text-xs font-semibold uppercase tracking-[0.28em] transition-all ${
+                        isActive ? 'border-white/18 bg-white/10 text-white shadow-[0_12px_30px_rgba(0,0,0,0.24)]' : 'border-white/8 text-gray-400 hover:border-white/18 hover:bg-white/5 hover:text-white'
                       }`}
                       aria-expanded={isActive}
                     >
@@ -168,7 +168,7 @@ export default function Navigation() {
                 })}
               </div>
               {activeGroup && (
-                <div className="absolute right-0 mt-3 w-72 rounded-3xl border border-white/10 bg-black/80 p-4 shadow-[0_15px_45px_rgba(0,0,0,0.45)] backdrop-blur-xl">
+                <div className="absolute right-0 mt-3 w-72 rounded-3xl border border-white/10 bg-[rgba(4,7,16,0.92)] p-4 shadow-[0_18px_60px_rgba(0,0,0,0.55)] backdrop-blur-2xl">
                   <p className="text-[10px] uppercase tracking-[0.4em] text-gray-500">{groupLabels[activeGroup.title] ?? activeGroup.title}</p>
                   <div className="mt-3 flex flex-col gap-1">
                     {activeGroup.items.map((item) => (
@@ -176,7 +176,7 @@ export default function Navigation() {
                         <Link
                           href={item.href}
                           className={`rounded-2xl px-4 py-3 text-sm font-semibold transition block ${
-                            pathname === item.href ? 'bg-white/10 text-white' : 'text-gray-300 hover:bg-white/5'
+                            pathname === item.href ? 'bg-white/10 text-white' : 'text-gray-300 hover:bg-white/5 hover:text-white'
                           }`}
                           onClick={() => setOpenGroup(null)}
                         >
@@ -204,7 +204,7 @@ export default function Navigation() {
             <Link
               href="/network"
               title={tr('nav', 'network', lang)}
-              className="p-2 rounded-xl border border-white/20 hover:border-zion-cyan/50 bg-black/30 backdrop-blur transition-colors inline-flex items-center justify-center group relative"
+              className="p-2 rounded-xl border border-white/15 hover:border-zion-cyan/50 bg-white/5 backdrop-blur transition-colors inline-flex items-center justify-center group relative"
             >
               <SignalHigh className="w-4 h-4 text-zion-cyan" />
               <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] bg-black/90 border border-white/10 rounded px-2 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">{tr('nav', 'network', lang)}</span>
@@ -212,7 +212,7 @@ export default function Navigation() {
             <Link
               href="/explorer"
               title={tr('nav', 'explorer', lang)}
-              className="p-2 rounded-xl border border-white/20 hover:border-zion-gold/50 bg-black/30 backdrop-blur transition-colors inline-flex items-center justify-center group relative"
+              className="p-2 rounded-xl border border-white/15 hover:border-zion-gold/50 bg-white/5 backdrop-blur transition-colors inline-flex items-center justify-center group relative"
             >
               <Orbit className="w-4 h-4 text-zion-gold" />
               <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] bg-black/90 border border-white/10 rounded px-2 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">{tr('nav', 'explorer', lang)}</span>
@@ -220,7 +220,7 @@ export default function Navigation() {
             <Link
               href="/pool"
               title={tr('nav', 'pool', lang)}
-              className="p-2 rounded-xl border border-white/20 hover:border-zion-purple/50 bg-black/30 backdrop-blur transition-colors inline-flex items-center justify-center group relative"
+              className="p-2 rounded-xl border border-white/15 hover:border-zion-purple/50 bg-white/5 backdrop-blur transition-colors inline-flex items-center justify-center group relative"
             >
               <Pickaxe className="w-4 h-4 text-zion-purple" />
               <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] bg-black/90 border border-white/10 rounded px-2 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">{tr('nav', 'pool', lang)}</span>
@@ -228,14 +228,14 @@ export default function Navigation() {
             <Link
               href="/dashboard"
               title={tr('nav', 'dashboard', lang)}
-              className="p-2 rounded-2xl bg-linear-to-r from-zion-gold via-zion-purple to-zion-cyan inline-flex items-center justify-center shadow-[0_10px_30px_rgba(147,51,234,0.35)] group relative"
+              className="p-2 rounded-2xl bg-linear-to-r from-zion-gold via-zion-purple to-zion-cyan inline-flex items-center justify-center shadow-[0_14px_38px_rgba(147,51,234,0.42)] transition-transform hover:-translate-y-0.5 group relative"
             >
               <LayoutDashboard className="w-4 h-4 text-white" />
               <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] bg-black/90 border border-white/10 rounded px-2 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">{tr('nav', 'dashboard', lang)}</span>
             </Link>
             <button
               onClick={() => setLang(lang === 'cs' ? 'en' : 'cs')}
-              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/15 text-xs font-semibold hover:border-white/30 transition-colors text-gray-300 hover:text-white"
+              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/15 bg-white/5 text-xs font-semibold hover:border-white/30 hover:bg-white/8 transition-colors text-gray-300 hover:text-white"
               title={lang === 'cs' ? tr('nav', 'switch_to_en', lang) : tr('nav', 'switch_to_cs', lang)}
             >
               {lang === 'cs' ? tr('nav', 'language_toggle_desktop_cs', lang) : tr('nav', 'language_toggle_desktop_en', lang)}
@@ -244,7 +244,7 @@ export default function Navigation() {
 
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="md:hidden text-white p-3 rounded-xl border border-white/20 hover:border-white/40 active:scale-95 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center"
+            className="md:hidden text-white p-3 rounded-xl border border-white/20 bg-white/5 hover:border-white/40 active:scale-95 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center"
             aria-label={isOpen ? tr('nav', 'close_menu', lang) : tr('nav', 'open_menu', lang)}
             aria-expanded={isOpen}
           >

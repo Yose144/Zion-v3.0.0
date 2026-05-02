@@ -3607,6 +3607,7 @@ fn execute_pool_payout(
             &recipients,
             payout_fee,
             &utxos,
+            height,
         ) {
             Ok(build_result) => {
                 let tx_id = submit_utxo_transaction(node_rpc_addr, &build_result.transaction)?;
@@ -3722,6 +3723,7 @@ fn execute_pool_payout(
         &capped_recipients,
         capped_fee,
         &utxos,
+        height,
     ) {
         Ok(build_result) => {
             let tx_id = submit_utxo_transaction(node_rpc_addr, &build_result.transaction)?;
