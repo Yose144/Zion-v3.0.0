@@ -12,6 +12,8 @@ path = "src/lib.rs"
 default = []
 native-npu = ["dep:ort"]
 testnet = []
+# Local/docker hard-fork rehearsal only — sets TX/BODY v2 gates to the same low height.
+testnet_fork_rehearsal = []
 
 [dependencies]
 serde.workspace = true
