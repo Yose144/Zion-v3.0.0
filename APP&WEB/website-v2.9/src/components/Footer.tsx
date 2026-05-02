@@ -43,12 +43,15 @@ export default function Footer() {
   ];
 
   return (
-    <footer className="border-t border-white/10 bg-black/60 backdrop-blur-xl mt-20">
+    <footer className="relative mt-20 overflow-hidden border-t border-white/10 bg-[rgba(2,4,12,0.82)] backdrop-blur-xl">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-zion-gold/50 to-transparent" />
+      <div className="pointer-events-none absolute -left-32 top-0 h-72 w-72 rounded-full bg-zion-purple/10 blur-3xl" />
+      <div className="pointer-events-none absolute -right-32 bottom-0 h-72 w-72 rounded-full bg-zion-cyan/10 blur-3xl" />
       <div className="zion-container py-12">
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-5">
           {/* Brand column */}
           <div className="md:col-span-2 space-y-4">
-            <h3 className="text-xl font-bold text-gradient">ZION TerraNova</h3>
+            <h3 className="text-xl font-bold text-gradient-soft">ZION TerraNova</h3>
             <p className="text-sm text-gray-400 leading-relaxed max-w-sm">
               {tr('footer', 'tagline', lang)}
             </p>
@@ -60,7 +63,7 @@ export default function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={label}
-                  className="inline-flex items-center justify-center w-9 h-9 rounded-xl border border-white/10 bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 hover:border-white/20 transition-colors"
+                  className="inline-flex items-center justify-center w-9 h-9 rounded-xl border border-white/10 bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all hover:-translate-y-0.5"
                 >
                   <Icon className="w-4 h-4" />
                 </a>
@@ -90,7 +93,9 @@ export default function Footer() {
         </div>
 
         {/* Disclaimer */}
-        <div className="mt-10 pt-6 border-t border-white/5">
+        <hr className="zion-divider mt-10" />
+
+        <div className="pt-6">
           <p className="text-[11px] leading-relaxed text-gray-600 max-w-3xl">
             {tr('footer', 'disclaimer', lang)}
             {' '}{tr('footer', 'legal_suffix', lang)}{' '}
