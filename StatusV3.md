@@ -1,8 +1,8 @@
 # ZION V3 — Status Report (Mainnet Polish)
 
-> **Datum:** 2026-05-02 (update)
-> **Předchozí update:** 2026-04-29 (audit completion)
-> **Branch:** `main` (vše merged, `git status` clean)
+> **Datum:** 2026-05-02 (večerní update)
+> **Předchozí update:** 2026-05-02 (poledni — viz §10 dříve, nyní rozšířeno)
+> **Branch:** `cursor/2026-05-02-…` (work in progress; `main` je beze změny)
 > **Předchozí status:** [`STATUS.md`](./STATUS.md) (2026-04-07)
 > **Účel tohoto dokumentu:** zkonsolidovaný stav před mainnet Genesis #0 — co
 > funguje, co je hotové, co ještě hoří, a co je *nice-to-have*. Psáno tak, aby
@@ -13,20 +13,34 @@
 
 ## Co je nového od 2026-04-29 (mini changelog)
 
+### Mainnet PR (merged na `main`)
+
 | PR | Téma | Stav | Test impact |
 |---:|---|---|---|
 | [#27](https://github.com/Yose144/2.9.6/pull/27) | Relayer synthetic-proof kill (fail-closed quorum) | ✅ merged 2026-05-02 | `zion-bridge` lib **125 → 130** |
 | [#28](https://github.com/Yose144/2.9.6/pull/28) | `native-ffi` safety contracts + `try_*` wrappers | ✅ merged 2026-05-02 | `zion-native-ffi` 13 (no-default) + **28 native-all** |
 
+### Cursor work-in-progress (lokálně, ne-merged, na branchi `cursor/2026-05-02-…`)
+
+| Step | Téma | Stav | Test impact |
+|---:|---|---|---|
+| **A** | `.pre-commit-config.yaml` (fmt + clippy + gitleaks + py/js syntax + private-key detect) | 🟢 hotové | hook config valid (`pre-commit validate-config` clean) |
+| **C.1** | Oprava deterministicky failujícího `discovery::tests::tick_produces_dns_and_announce_commands` (root cause: `DNS_SEEDS` const je `&[]`, test nepoužíval `set_dns_seeds`) | 🟢 hotové | discovery: **15 → 16** lib tests |
+| **C.2** | 13 slow PoW unit testů označeno `#[ignore]` s instrukcí pro `cargo test --release -- --ignored` (`peer_import_*`, `e2e_*`, `accepted_*`, `coinbase_tx_credits_*`, `import_peer_blocks_*`, `batch_import_*`, `accepted_submission_*`) | 🟢 hotové | `zion-core` lib pyramid: aktivních **480 - 13 = ~474** v dev profile, ostatní pod `--ignored` flag |
+| **C.3** | `[profile.test.package.zion-cosmic-harmony] opt-level = 3` (z 2) — PoW kryptografie v testech běží na release-rychlosti | 🟢 hotové | mining-heavy testy zrychleny ~2× |
+| **E.1** | Aktivační konstanty pro hard fork: `TX_HASH_V2_ACTIVATION_HEIGHT: u64 = u64::MAX` + `BODY_ROOT_V2_ACTIVATION_HEIGHT: u64 = u64::MAX` (oba dormant) + `tx_hash_v2_active(h)` / `body_root_v2_active(h)` predikáty v `cosmic-harmony::deeksha`, re-export z lib root | 🟢 hotové | `zion-cosmic-harmony` lib: **95 → 100** (+5 dormant-gate pinning testů) |
+| **E.2** | F2 BLAKE3 Merkle dispatcher v `derive_template_merkle_root` — `body_root_v2_active(height)` rozhoduje mezi legacy XOR aggregate (`derive_template_merkle_root_v1_xor`) a novou BLAKE3 binární cestou (`derive_template_merkle_root_v2_blake3`) přes `validation::merkle_root` | 🟢 hotové | `zion-core` lib: **+7 dispatcher / v1-vs-v2 / avalanche / order-sensitive / empty-list / determinism testů** |
+| **E.3** | `validate_peer_block` reject `tx.version < 2` nad activation height | 🟡 plánováno (XS — odhad ~30 LoC) | bude pinováno regression testem |
+| **E.4** | Mempool admission + RPC `submit_*` reject v1 nad activation height | 🟡 plánováno | M scope |
+| **E.5** | Wallet emission set `tx.version = 2` nad activation height | 🟡 plánováno | M scope |
+| **B** | Dependabot batch (#1, #3, #5–#17, ~14 PRs) | 🟡 plánováno (mechanické přes GH UI) | minor surface reduction |
+| **D** | `lib.rs` monolith refactor — extract `validate_peer_block` (464 LoC) do `validation/peer_block.rs` | 🟡 plánováno (L scope, dedicated session) | žádná behaviorální změna; čistá auditovatelnost |
+| **F** | Testnet hard-fork rehearsal harness (Docker compose + scripts) | 🟡 plánováno (po E.3–E.5) | gate před mainnet aktivací |
+
 Tím se **ze tří dříve otevřených P1/P2 blokátorů** zavřely dva — zbývá už
 **jen koordinovaný hard-fork window** (tx-hash v2 + F2 BLAKE3 Merkle) jako
-poslední kódový blokátor.
-
-Změny v `lib.rs` monolithu, F2 Merkle, ani v consensus path **nebyly** —
-testovací čísla pro `zion-core`, `zion-cosmic-harmony`, `zion-pool`,
-`zion-cli`, `zion-miner`, `zion-dao`, `zion-atomic-swap`, `zion-warp`,
-`zion-ncl`, `zion-ai-native` jsou beze změny vůči 2026-04-29 (lokálně
-opět spot-check ověřeno 2026-05-02 — viz §5).
+poslední kódový blokátor. **Foundation pro hard fork je v repu** (E.1 + E.2),
+zbývá `validate_peer_block` hook + mempool admission + wallet emission.
 
 ---
 
@@ -393,28 +407,39 @@ nebo má konkrétní aktivační plán v
 
 ---
 
-## 5. Test pyramid (snapshot 2026-05-02)
+## 5. Test pyramid (snapshot 2026-05-02 evening, post-WIP)
 
-| Crate | Lib testů | Integration | Total | Fail |
-|---|---:|---:|---:|---|
-| `zion-core` (L1) | 478 | — | 478 | 1 flaky DNS (i na main); §2 P2.9 |
-| `zion-cosmic-harmony` (L1 PoW) | 95 | — | 95 | 0 |
-| `zion-pool` (L1) | 53 | 29 | 82 | 0 |
-| `zion-miner` (L1) | 59 | — | 59 | 0 |
-| `zion-native-ffi` (L1, no-default) | 13 | — | 13 | 0 |
-| `zion-native-ffi` (L1, native-all, `--test-threads=1`) | 28 | — | 28 | 0 |
-| `zion-bridge` (L2) | **130** | 63 | **193** | 0 |
-| `zion-dao` (L2) | 40 | 25 | 65 | 0 |
-| `zion-atomic-swap` (L2) | 18 | — | 18 | 0 |
-| `zion-warp` (L3) | 251 | — | 251 | 0 |
-| `zion-ncl` (L3) | 42 | 1 doc | 43 | 0 |
-| `zion-ai-native` (L3) | 195 | — | 195 | 0 (+ 2 ignored) |
-| `zion-cli` | 21 | — | 21 | 0 |
-| **Total** | | | **~1 444** | **1 flaky** |
+| Crate | Lib testů | Integration | Aktivní (dev) | Ignored | Fail |
+|---|---:|---:|---:|---:|---|
+| `zion-core` (L1) | **487** | — | 474 | **13** slow PoW (`--release --ignored`) | 0 |
+| `zion-cosmic-harmony` (L1 PoW) | **100** | — | 100 | 0 | 0 |
+| `zion-pool` (L1) | 53 | 29 | 82 | 0 | 0 |
+| `zion-miner` (L1) | 59 | — | 59 | 0 | 0 |
+| `zion-native-ffi` (L1, no-default) | 13 | — | 13 | 0 | 0 |
+| `zion-native-ffi` (L1, native-all, `--test-threads=1`) | 28 | — | 28 | 0 | 0 |
+| `zion-bridge` (L2) | **130** | 63 | 193 | 0 | 0 |
+| `zion-dao` (L2) | 40 | 25 | 65 | 0 | 0 |
+| `zion-atomic-swap` (L2) | 18 | — | 18 | 0 | 0 |
+| `zion-warp` (L3) | 251 | — | 251 | 0 | 0 |
+| `zion-ncl` (L3) | 42 | 1 doc | 43 | 0 | 0 |
+| `zion-ai-native` (L3) | 195 | — | 195 | 2 ignored (intentional) | 0 |
+| `zion-cli` | 21 | — | 21 | 0 | 0 |
+| **Total** | | | **~1 470** | **13 + 2** | **0** |
 
-Δ vs 2026-04-29: **+5 zion-bridge** (PR #27), **+25** zion-dao integration
-(už existovaly, status je předtím nezapočítával), **+13 / +28**
-zion-native-ffi (PR #28 — předtím se v statusu neuvádělo).
+Δ vs 2026-04-29 (po PR #27, #28 a Cursor WIP):
+
+- **+5 zion-bridge** (PR #27)
+- **+13 / +28** zion-native-ffi (PR #28 — předtím se v statusu neuvádělo)
+- **+25** zion-dao integration (už existovaly, status je předtím nezapočítával)
+- **+9 zion-core** (Cursor WIP): 1 oprava discovery + 1 nový pinning + 7 F2
+  Merkle dispatcher tests
+- **+5 zion-cosmic-harmony** (Cursor WIP): hard-fork dormant-gate pinning testy
+
+**Pozn. k 13 ignored zion-core testům:** všechny jsou *slow PoW* unit testy
+v debug profile (`mine_one_block` × N kde N ≥ 2, nebo `find_valid_nonce`
+opakovaně). Spustí se jednotně přes `cargo test --release -- --include-ignored`
+(plánováno jako dedicated CI job — viz §2 P2.9). V default `cargo test
+--workspace` profile pomalé/visící testy nyní neblokují celý běh.
 
 Lokálně 2026-05-02 ověřeno (vše `0 failed`):
 
@@ -540,26 +565,27 @@ fuzzing, a kryptanalýzu Cosmic Harmony Ekam Deeksha v2.
 
 ---
 
-## 9. Doporučené pořadí dalších PR (návrh sekvence)
+## 9. Doporučené pořadí dalších PR (sekvence — průběžně aktualizovaná)
 
-Pořadí je voleno tak, aby každý PR byl **samostatně mergovatelný**, měl
-**malý surface area** a buď **odblokoval další krok**, nebo **zvýšil
-defense-in-depth** bez čekání na cokoli jiného. Bezpečnostní akce na
-uživateli (rotace klíčů, billing) běží **paralelně** — nezávisí na tomto
-seznamu.
+| # | PR (návrh) | Velikost | Závisí na | Stav (2026-05-02 večer) |
+|---:|---|---|---|---|
+| **A** | `chore: add .pre-commit-config.yaml` (fmt + clippy + gitleaks + py/js syntax + private-key detect) | XS | — | 🟢 **hotové** (lokálně, čeká na commit) |
+| **B** | `chore(deps): batch dependabot PRs #1–#17` | M | A | 🟡 plánováno (mechanické přes GH UI nebo `gh pr merge` loop) |
+| **C** | `test(core): de-flake + isolate slow PoW tests` | M | — | 🟢 **hotové** (1 fix + 1 new pinning + 13 `#[ignore]` + opt-level=3 bump) |
+| **D** | `refactor(core): extract validate_peer_block` (§11) | L (~800 LoC) | C | 🟡 plánováno (dedicated session — riskantní v jednom běhu) |
+| **E.1** | `feat(consensus): TX_HASH_V2_ACTIVATION_HEIGHT + BODY_ROOT_V2_ACTIVATION_HEIGHT (dormant) + helpers` | XS | — | 🟢 **hotové** (lokálně) |
+| **E.2** | `feat(consensus): F2 BLAKE3 Merkle dispatcher v derive_template_merkle_root` | M | E.1 | 🟢 **hotové** (lokálně, +7 testů) |
+| **E.3** | `feat(consensus): validate_peer_block reject tx.version<2 above activation` | XS | E.1 | 🟡 plánováno (~30 LoC + regression test) |
+| **E.4** | `feat(consensus): mempool admission + RPC submit reject v1 above activation` | M | E.1 | 🟡 plánováno |
+| **E.5** | `feat(wallet): set tx.version=2 above activation height` | M | E.1, E.4 | 🟡 plánováno |
+| **F** | `feat(testnet): hard-fork rehearsal harness` (Docker compose + scripts) | M | E.3–E.5 | 🟡 plánováno (gate před mainnet aktivační výškou) |
+| **G** | `feat(bridge): 5-validator key provisioning + 3/5 cfg + ANKR_API_KEY guard` | M | A | 🟡 plánováno (paralelní cesta) |
+| **H** | `chore(security): git filter-repo history scrub (one-shot rewrite)` | XS code / L coord | A, B | 🟡 plánováno (po rotaci klíčů uživatelem) |
+| **I** | `feat(observability): Prometheus SLO + alert rules` | M | — | 🟡 plánováno (paralelní, Q3 audit polish) |
+| **J** | `test(e2e): mainnet stress harness (10k+ TX, peer churn, partition)` | XL | C, F | 🟡 plánováno (confidence pre-Genesis) |
 
-| # | PR (návrh) | Crate / scope | Velikost | Závisí na | Odblokuje |
-|---:|---|---|---|---|---|
-| A | `chore: add .pre-commit-config.yaml` (`cargo fmt --check`, clippy, gitleaks) | repo root | XS (~50 LoC) | — | defense vs. F3/F3b regrese; Q3 audit polish |
-| B | `chore(deps): batch-merge dependabot PRs #1–#17 (audit-friendly subset)` | workspace deps | M (~5 PRs) | A (CI green) | minor surface reduction před auditem |
-| C | `test(core): isolate flaky DNS test (`#[ignore]` + dedicated job)` | `zion-core` discovery | XS (~30 LoC) | — | `cargo test --workspace` přestane viset; CI green pro #D+ |
-| D | `refactor(core): extract validate_peer_block into validation/` (§11 lib.rs split, část 1) | `V3/L1/core/src/validation/` | L (~800 LoC, no behavior change) | C | auditovatelnost; nutné pro confidence v #E |
-| E | `feat(consensus): hard-fork PR — tx-hash v2 activation height + F2 BLAKE3 Merkle` | `cosmic-harmony` const, `core::lib::derive_template_merkle_root`, `validate_peer_block`, mempool admission, wallet emission | L (~600 LoC + 8 nových testů) | D, C | dva poslední consensus blokátory pro Genesis |
-| F | `feat(testnet): hard-fork rehearsal harness` | `V3/docker/`, scripts | M | E | testnet ≥ 2 týdny zelený před mainnet aktivační výškou |
-| G | `feat(bridge): 5-validator key provisioning + 3/5 cfg + ANKR_API_KEY guard` | `bridge-mainnet.toml` + `validator.rs` | M | A | re-enable bridge L2 mainnet |
-| H | `chore(security): git filter-repo history scrub (one-shot rewrite)` | repo history | XS code / L coordination | A, B (clean state) | repo public → CI free; closes leaked-creds chapter |
-| I | `feat(observability): Prometheus SLO + alert rules` | `monitoring/` | M | — | Q3 audit polish; production readiness |
-| J | `test(e2e): mainnet stress harness (10k+ TX, peer churn, partition)` | `V3/tests/e2e/` (nový) | XL | C, F | confidence pre-Genesis; vstup pro 3rd-party audit |
+Klíčový **critical path k Genesis**:
+**A ✅ → C ✅ → D 🟡 → E.1 ✅ → E.2 ✅ → E.3 🟡 → E.4 🟡 → E.5 🟡 → F 🟡 → mainnet activation.**
 
-Klíčový critical path k Genesis: **A → C → D → E → F → mainnet activation**.
-Vše ostatní (B, G, H, I, J) může běžet paralelně, žádný neblokuje hard fork.
+Krátkodobý další krok: **commit současného WIP (A + C + E.1 + E.2)** jako 3-4
+samostatné PR, pak pokračovat s E.3 (XS, low-risk) jako nezávislý PR.
