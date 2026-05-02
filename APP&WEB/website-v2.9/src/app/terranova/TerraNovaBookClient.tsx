@@ -180,27 +180,27 @@ const EDITION_INTRO: Record<EditionKey, EditionIntro> = {
     ],
   },
   final: {
-    signalsCs: ['Genesis.md', 'ZION CLI v2.9.8', 'Terra Nova IV'],
-    signalsEn: ['Genesis.md', 'ZION CLI v2.9.8', 'Terra Nova IV'],
-    eyebrowCs: 'ZION mainnet · v2.9.8 Deeksha · Terra Nova',
-    eyebrowEn: 'ZION Mainnet · v2.9.8 Deeksha · Terra Nova',
-    headlineCs: 'ZION je živý. Síť běží. Čtvrtá kniha začíná tady.',
-    headlineEn: 'ZION is live. The network runs. The fourth book begins here.',
+    signalsCs: ['Genesis.md', 'ZION CLI v3 RC', 'Terra Nova IV'],
+    signalsEn: ['Genesis.md', 'ZION CLI v3 RC', 'Terra Nova IV'],
+    eyebrowCs: 'ZION V3 · release candidate · Terra Nova',
+    eyebrowEn: 'ZION V3 · release candidate · Terra Nova',
+    headlineCs: 'ZION je v release-candidate stavu. Čtvrtá kniha drží mapu.',
+    headlineEn: 'ZION is in release-candidate state. The fourth book carries the map.',
     leadCs:
-      'Síť žije. Uzel synchronizuje. Miner hledá. Stojíte na prahu příběhu, který se právě stává skutečností.',
+      'Pražský runtime běží, auditní polish pokračuje a Genesis freeze se připravuje. Stojíte na prahu příběhu, který se staví krok za krokem.',
     leadEn:
-      'The network is live. The node syncs. The miner searches. You stand at the threshold of a story becoming real.',
+      'The Prague runtime is running, audit polish continues, and Genesis freeze is being prepared. You stand at the threshold of a story being built step by step.',
     bodyCs:
       'Terra Nova není manifest budoucnosti. Je to pracovní mapa toho, jak ZION funguje dnes, jak poroste zítra a kde končí fantasy a začíná stavební disciplína.',
     bodyEn:
       'Terra Nova is not a manifesto of the future. It is a working map of how ZION operates today, how it grows tomorrow, and where fantasy ends and build discipline begins.',
     notesCs: [
-      'Genesis drží počátek a jazyk spuštění v2.9.8 Deeksha.',
+      'Genesis drží počátek, ale finální freeze čeká na podepsané okno.',
       'ZION CLI je provozní nástroj, ne dekorace.',
       'Terra Nova tu funguje jako realistická stavební kniha.',
     ],
     notesEn: [
-      'Genesis holds the beginning and language of the v2.9.8 Deeksha launch.',
+      'Genesis holds the beginning, while the final freeze waits for a signed window.',
       'ZION CLI is an operational tool, not decoration.',
       'Terra Nova works here as a realistic construction book.',
     ],
@@ -315,31 +315,33 @@ type DharmaWheelSpoke = {
 export const ACCELERATION_DIRECTIONS: AccelerationDirection[] = [
   {
     id: 'l1',
-    titleCs: 'L1 Genesis (2026)',
-    titleEn: 'L1 Genesis (2026)',
-    descCs: 'Čistý Rust codebase, Mainnet launch, stabilní runtime a desktop agent.',
-    descEn: 'Clean Rust codebase, Mainnet launch, stable runtime and desktop agent.',
+    titleCs: 'L1 Release Candidate (2026)',
+    titleEn: 'L1 Release Candidate (2026)',
+    descCs: 'Čistý Rust codebase, pražský runtime, auditní polish a příprava Genesis freeze.',
+    descEn: 'Clean Rust codebase, Prague runtime, audit polish, and Genesis freeze preparation.',
     techCs: 'Node, pool a miner runtime v čistém Rustu.',
     techEn: 'Node, pool, and miner runtime in clean Rust.',
     checklistCs: [
       'V3 codebase — čistý Rust, auditovatelný',
       'Desktop-agent funkční (macOS / Win / Linux)',
       'Website + docs live',
-      'Base mainnet bridge contracts verified + Prague relay aktivní',
+      'Base mainnet bridge contracts verified + Prague relay připravený',
       'Finální whitepaper PDF',
       'Genesis freeze — signed, checksummed',
+      'Rotace kompromitovaných klíčů',
       'External security audit',
-      'PUBLIC LAUNCH ← Q4 2026',
+      'PUBLIC LAUNCH WINDOW ← Q4 2026',
     ],
     checklistEn: [
       'V3 codebase — clean Rust, auditable',
       'Desktop-agent running (macOS / Win / Linux)',
       'Website + docs live',
-      'Base mainnet bridge contracts verified + Prague relay active',
+      'Base mainnet bridge contracts verified + Prague relay prepared',
       'Final whitepaper PDF',
       'Genesis freeze — signed, checksummed',
+      'Compromised key rotation',
       'External security audit',
-      'PUBLIC LAUNCH ← Q4 2026',
+      'PUBLIC LAUNCH WINDOW ← Q4 2026',
     ],
     color: '#FFD700',
     rgb: '255,215,0',
@@ -738,18 +740,18 @@ const BOOT_SEQUENCE = [
   },
   {
     command: 'zion status --layer all',
-    responseCs: 'node ✓  pool ✓  miner ✓  bridge ✓',
-    responseEn: 'node ✓  pool ✓  miner ✓  bridge ✓',
+    responseCs: 'node ✓  pool ✓  miner ✓  bridge relay připraven',
+    responseEn: 'node ✓  pool ✓  miner ✓  bridge relay prepared',
   },
   {
     command: 'zion l1 start node --profile mainnet',
-    responseCs: 'node synced · height 22 410 · 3 peers',
-    responseEn: 'node synced · height 22 410 · 3 peers',
+    responseCs: 'Prague runtime healthy · release-candidate state',
+    responseEn: 'Prague runtime healthy · release-candidate state',
   },
   {
     command: 'zion doctor',
-    responseCs: 'all checks passed · env clean · no drift',
-    responseEn: 'all checks passed · env clean · no drift',
+    responseCs: 'audit polish active · external audit pending',
+    responseEn: 'audit polish active · external audit pending',
   },
 ];
 
@@ -829,11 +831,11 @@ const DHARMA_WHEEL_SPOKES: DharmaWheelSpoke[] = [
 ];
 
 const LIVE_TERMINAL_CMDS = [
-  { cmd: 'zion version', resp: 'zion v2.9.8 "Deeksha" · mainnet · build 2026-04-01' },
-  { cmd: 'zion status --layer all', resp: 'node ✓  pool ✓  miner ✓  bridge ✓  all nominal' },
-  { cmd: 'zion l1 start node --profile mainnet', resp: 'node synced · height 22 410 · 3 peers · 12 ms' },
+  { cmd: 'zion version', resp: 'zion v3 release-candidate · Prague runtime · build 2026-04' },
+  { cmd: 'zion status --layer all', resp: 'node ✓  pool ✓  miner ✓  bridge relay prepared · audit polish active' },
+  { cmd: 'zion l1 status --profile mainnet', resp: 'Prague runtime healthy · Genesis freeze pending' },
   { cmd: 'zion mine bench --backend cpu', resp: '14.7 H/s · best-share 0x1f2a · 0 rejects · 8 threads' },
-  { cmd: 'zion doctor', resp: 'all checks passed · env clean · no drift detected' },
+  { cmd: 'zion doctor', resp: 'local checks green · key rotation and external audit pending' },
   { cmd: 'zion logs --tail 8', resp: '[pool] share accepted · worker deeksha-01 · 0 ms latency' },
 ];
 
@@ -974,7 +976,7 @@ export default function TerraNovaBookClient() {
 
   const next = useCallback(() => {
     if (activeChapter < currentChapters.length - 1) goTo(activeChapter + 1);
-  }, [activeChapter, goTo]);
+  }, [activeChapter, currentChapters.length, goTo]);
 
   /* Keyboard nav */
   useEffect(() => {
@@ -1057,12 +1059,6 @@ export default function TerraNovaBookClient() {
       document.body.style.overflow = originalOverflow;
     };
   }, [tocOpen, overlayOpen]);
-
-  useEffect(() => {
-    if (activeChapter >= currentChapters.length) {
-      setActiveChapter(0);
-    }
-  }, [activeChapter, currentChapters.length]);
 
   return (
     <div className="zion-shell min-h-screen pt-24 md:pt-28 pb-24 overflow-x-hidden">
@@ -1791,7 +1787,7 @@ export default function TerraNovaBookClient() {
               <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500 mb-3">
                 {cs ? 'Kompoziční mapa' : 'Compositional Map'}
               </p>
-              <ol className="space-y-1.5">
+              <ol className="space-y-1.5 list-none pl-0">
                 {compositionLines.map((line, i) => (
                   <li key={i} className="text-sm text-gray-400 flex items-start gap-2">
                     <span className="text-zion-gold/60 font-mono text-xs mt-0.5">{i + 1}.</span>

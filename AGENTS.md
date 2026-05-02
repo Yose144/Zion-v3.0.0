@@ -50,14 +50,32 @@ Run from repository root unless noted.
 - Unified operator CLI:
   - `cargo run --manifest-path V3/Cargo.toml -p zion-cli -- --help`
 
-### Docker (V3 stack)
+### Docker (V3 stack) — Updated 2026-05
 
-- Build:
-  - `docker compose -f V3/docker/docker-compose.v3-mainnet.yml build`
-- Start:
-  - `docker compose -f V3/docker/docker-compose.v3-mainnet.yml up -d`
-- Logs:
-  - `docker compose -f V3/docker/docker-compose.v3-mainnet.yml logs -f`
+**Recommended (new unified setup):**
+
+```bash
+# Development / Mainnet with profiles
+docker compose -f V3/docker/docker-compose.yml --profile mainnet up -d
+docker compose -f V3/docker/docker-compose.yml logs -f node
+
+# With monitoring
+docker compose -f V3/docker/docker-compose.yml --profile mainnet --profile monitoring up -d
+
+# Legacy (still works)
+docker compose -f V3/docker/docker-compose.v3-mainnet.yml up -d
+```
+
+**Documentation:**
+- `V3/docker/DOCKER.md` — complete guide with profiles, env vars, healthchecks
+- `V3/docker/HARDENING.md` — production hardening (ufw, log rotation, non-root)
+
+**New features:**
+- Docker Compose profiles (`dev`, `mainnet`, `monitoring`)
+- Healthchecks on all services
+- Unified `.env` management
+- Resource limits and proper depends_on conditions
+- Non-root containers (already in Dockerfiles)
 
 ### App/Web subprojects (when task explicitly targets them)
 
