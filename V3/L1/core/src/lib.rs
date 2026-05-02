@@ -6,8 +6,10 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 use zion_cosmic_harmony::{
-    cosmic_harmony_ekam_deeksha, cosmic_harmony_with_height, profile_name, RevenueCollector,
-    RevenueEvent, RevenueStats, CHV_EKAM_FORK_HEIGHT, EKAM_FUSION_ROUNDS,
+    body_root_v2_active, cosmic_harmony_ekam_deeksha, cosmic_harmony_with_height, profile_name,
+    tx_hash_v2_active, RevenueCollector, RevenueEvent, RevenueStats,
+    BODY_ROOT_V2_ACTIVATION_HEIGHT, CHV_EKAM_FORK_HEIGHT, EKAM_FUSION_ROUNDS,
+    TX_HASH_V2_ACTIVATION_HEIGHT,
 };
 
 pub use zion_cosmic_harmony::ExternalCoin;
@@ -3811,7 +3813,48 @@ fn dedup_peers(peers: Vec<PeerEndpoint>) -> Vec<PeerEndpoint> {
     deduped
 }
 
+/// Top-level dispatcher for the block body's Merkle root.
+///
+/// At/above [`BODY_ROOT_V2_ACTIVATION_HEIGHT`] this commits via a Bitcoin-style
+/// BLAKE3 binary Merkle tree (audit §F2 / `AUDIT_COMPLETION.md` §2). Below that
+/// height the legacy XOR aggregate is preserved bit-for-bit so historical
+/// blocks continue to validate against their stored body roots.
+///
+/// # Why two paths
+/// The XOR aggregate is birthday-resistant only at 2^64 and uses
+/// `cosmic_harmony_ekam_deeksha` (256 KiB scratchpad) as a per-tx hash, which
+/// is a misuse of a PoW function as a data-structure hash. The v2 path
+/// replaces both: leaf hash drops to BLAKE3 via
+/// `Transaction::calculate_hash()` (cheap, ASIC-irrelevant), aggregation
+/// becomes a proper tree (collision-bounded at 2^256/2 with BLAKE3).
 fn derive_template_merkle_root(
+    node_id: &str,
+    height: u64,
+    template_id: u64,
+    previous_hash: [u8; 32],
+    transactions: &[Transaction],
+    utxo_transactions: &[tx::Transaction],
+) -> [u8; 32] {
+    if body_root_v2_active(height) {
+        derive_template_merkle_root_v2_blake3(transactions, utxo_transactions)
+    } else {
+        derive_template_merkle_root_v1_xor(
+            node_id,
+            height,
+            template_id,
+            previous_hash,
+            transactions,
+            utxo_transactions,
+        )
+    }
+}
+
+/// Legacy XOR aggregate body root (audit §F2 documents this as a misuse —
+/// kept for pre-fork blocks so historical hashes don't change).
+///
+/// **Do not call directly** outside the dispatcher above and the regression
+/// tests that pin v1 ↔ v2 distinction.
+fn derive_template_merkle_root_v1_xor(
     node_id: &str,
     height: u64,
     template_id: u64,
@@ -3851,6 +3894,36 @@ fn derive_template_merkle_root(
         template_id ^ height ^ (transactions.len() + utxo_transactions.len()) as u64,
     )
     .data
+}
+
+/// F2 BLAKE3 Merkle body root — the post-fork rule.
+///
+/// Builds leaves from BLAKE3 over the account-model `tx_id` (which already
+/// commits to all consensus-relevant fields) and from `tx::Transaction::id`
+/// for UTXO-model txs (which is itself already BLAKE3-derived via
+/// [`tx::Transaction::calculate_hash`] — that dispatches to v2 once
+/// [`TX_HASH_V2_ACTIVATION_HEIGHT`] is met, so the body root inherits the v2
+/// malleability fix automatically). Aggregation uses
+/// [`validation::merkle_root`] (Bitcoin-style pair-duplicate-on-odd-count
+/// binary tree, BLAKE3 hash pairs).
+///
+/// Order of leaves: account-model txs first (in `transactions` order), then
+/// UTXO txs (in `utxo_transactions` order). This matches the order in which
+/// they are serialized into the block body, so peer validators can re-derive
+/// the same root deterministically.
+fn derive_template_merkle_root_v2_blake3(
+    transactions: &[Transaction],
+    utxo_transactions: &[tx::Transaction],
+) -> [u8; 32] {
+    let mut leaves: Vec<[u8; 32]> =
+        Vec::with_capacity(transactions.len() + utxo_transactions.len());
+    for transaction in transactions {
+        leaves.push(crypto::blake3_hash(transaction.tx_id.as_bytes()));
+    }
+    for utxo_tx in utxo_transactions {
+        leaves.push(utxo_tx.id);
+    }
+    validation::merkle_root(&leaves)
 }
 
 fn select_template_transactions(mempool: &[RuntimeTransaction]) -> Vec<Transaction> {
@@ -6549,5 +6622,138 @@ mod tests {
             err.contains("missing required validator proofs"),
             "expected proofs-missing rejection, got: {err}",
         );
+    }
+
+    // ════════════════════════════════════════════════════════════════════
+    // F2 BLAKE3 Merkle body root — hard-fork dispatcher tests
+    // (audit `AUDIT_COMPLETION.md` §2)
+    // ════════════════════════════════════════════════════════════════════
+
+    fn merkle_test_account_txs() -> Vec<Transaction> {
+        vec![
+            sample_transaction("merkle-tx-1", 5, 1),
+            sample_transaction("merkle-tx-2", 7, 2),
+            sample_transaction("merkle-tx-3", 11, 3),
+        ]
+    }
+
+    /// Pin the dispatcher: while the activation height is dormant
+    /// (`u64::MAX`), every realistic block height must route to v1 XOR.
+    /// This guarantees that historical body roots remain unchanged
+    /// post-merge of this PR.
+    #[test]
+    fn merkle_dispatcher_uses_v1_xor_below_activation() {
+        let txs = merkle_test_account_txs();
+        let utxos: Vec<tx::Transaction> = Vec::new();
+        let prev = [0x11u8; 32];
+
+        for &h in &[0u64, 1, 100, 1_000_000, u64::MAX - 1] {
+            let dispatched = derive_template_merkle_root("node-test", h, 42, prev, &txs, &utxos);
+            let v1 = derive_template_merkle_root_v1_xor("node-test", h, 42, prev, &txs, &utxos);
+            assert_eq!(
+                dispatched, v1,
+                "below activation gate (height = {h}), dispatcher must equal v1 XOR"
+            );
+        }
+    }
+
+    /// At activation height (`u64::MAX` while dormant), dispatcher must
+    /// route to v2 BLAKE3 Merkle. This pins the v2 path for the test
+    /// suite without committing to a real activation height.
+    #[test]
+    fn merkle_dispatcher_uses_v2_blake3_at_activation() {
+        let txs = merkle_test_account_txs();
+        let utxos: Vec<tx::Transaction> = Vec::new();
+        let prev = [0x11u8; 32];
+
+        let dispatched = derive_template_merkle_root(
+            "node-test",
+            BODY_ROOT_V2_ACTIVATION_HEIGHT,
+            42,
+            prev,
+            &txs,
+            &utxos,
+        );
+        let v2 = derive_template_merkle_root_v2_blake3(&txs, &utxos);
+        assert_eq!(
+            dispatched, v2,
+            "at activation gate, dispatcher must equal v2 BLAKE3 Merkle"
+        );
+    }
+
+    /// v1 XOR and v2 BLAKE3 Merkle MUST produce different roots for the
+    /// same input set. If this ever returns equal, the fork is silent —
+    /// peers wouldn't see a body-root mismatch and the migration would
+    /// be invisible to consensus.
+    #[test]
+    fn merkle_v1_xor_and_v2_blake3_differ() {
+        let txs = merkle_test_account_txs();
+        let utxos: Vec<tx::Transaction> = Vec::new();
+        let prev = [0x11u8; 32];
+
+        let v1 = derive_template_merkle_root_v1_xor("node-test", 100, 42, prev, &txs, &utxos);
+        let v2 = derive_template_merkle_root_v2_blake3(&txs, &utxos);
+        assert_ne!(
+            v1, v2,
+            "v1 XOR and v2 BLAKE3 Merkle MUST produce different roots — silent fork detected"
+        );
+    }
+
+    /// v2 BLAKE3 Merkle is deterministic — same inputs always produce the
+    /// same root. This is the basic invariant peers rely on to agree on a
+    /// block's body commitment.
+    #[test]
+    fn merkle_v2_blake3_is_deterministic() {
+        let txs = merkle_test_account_txs();
+        let utxos: Vec<tx::Transaction> = Vec::new();
+        let a = derive_template_merkle_root_v2_blake3(&txs, &utxos);
+        let b = derive_template_merkle_root_v2_blake3(&txs, &utxos);
+        assert_eq!(a, b, "v2 BLAKE3 Merkle must be deterministic");
+    }
+
+    /// v2 BLAKE3 Merkle has avalanche behaviour — a single-byte change
+    /// in any input tx propagates to the full root.
+    #[test]
+    fn merkle_v2_blake3_avalanche_on_tx_change() {
+        let mut txs = merkle_test_account_txs();
+        let utxos: Vec<tx::Transaction> = Vec::new();
+        let baseline = derive_template_merkle_root_v2_blake3(&txs, &utxos);
+
+        let original_id = txs[1].tx_id.clone();
+        txs[1].tx_id = format!("{}f", &original_id[..63]);
+        let perturbed = derive_template_merkle_root_v2_blake3(&txs, &utxos);
+        assert_ne!(
+            baseline, perturbed,
+            "v2 BLAKE3 Merkle must change when any tx_id changes"
+        );
+    }
+
+    /// v2 BLAKE3 Merkle commits to leaf order — swapping two txs in the
+    /// list produces a different root. This pins that the body root is
+    /// position-sensitive (Merkle property), so peers cannot reorder
+    /// transactions in a block body without invalidating the root.
+    #[test]
+    fn merkle_v2_blake3_is_order_sensitive() {
+        let txs = merkle_test_account_txs();
+        let utxos: Vec<tx::Transaction> = Vec::new();
+        let baseline = derive_template_merkle_root_v2_blake3(&txs, &utxos);
+
+        let mut swapped = txs.clone();
+        swapped.swap(0, 2);
+        let swapped_root = derive_template_merkle_root_v2_blake3(&swapped, &utxos);
+        assert_ne!(
+            baseline, swapped_root,
+            "v2 BLAKE3 Merkle must be order-sensitive (Merkle leaf-order property)"
+        );
+    }
+
+    /// Empty tx list — v2 must collapse to all-zeros (matches
+    /// `validation::merkle_root` empty contract). Pinning this so
+    /// future contributors don't accidentally feed empty lists into
+    /// a panic-prone branch.
+    #[test]
+    fn merkle_v2_blake3_empty_lists_yield_zero_root() {
+        let v2 = derive_template_merkle_root_v2_blake3(&[], &[]);
+        assert_eq!(v2, [0u8; 32], "empty tx + empty utxo => all-zeros root");
     }
 }
