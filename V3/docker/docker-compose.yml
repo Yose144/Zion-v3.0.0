@@ -1,0 +1,139 @@
+# ZION V3 — Unified Docker Compose
+#
+# Moderní stack s profily:
+#   - dev:       development mode (hot reload, debug, verbose logging)
+#   - mainnet:   production mainnet stack (node + pool + miner)
+#   - monitoring: Prometheus + Grafana + alert manager
+#
+# Usage:
+#   docker compose -f V3/docker/docker-compose.yml --profile mainnet up -d
+#   docker compose -f V3/docker/docker-compose.yml --profile dev up -d
+#   docker compose -f V3/docker/docker-compose.yml logs -f node
+#
+# Environment files:
+#   cp V3/docker/.env.example V3/docker/.env
+#   cp V3/docker/.env.mainnet.example V3/docker/.env.mainnet
+
+services:
+
+  node:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.node
+      args:
+        - PROFILE=${BUILD_PROFILE:-release}
+    image: zion-v3-node:${TAG:-latest}
+    container_name: zion-v3-node
+    restart: unless-stopped
+    profiles: ["mainnet", "dev"]
+    ports:
+      - "${P2P_PORT:-8333}:8333"
+      - "${RPC_PORT:-8443}:8443"
+    volumes:
+      - zion-node-data:/data/zion
+    environment:
+      - RUST_LOG=${RUST_LOG:-info}
+      - ZION_NODE_ID=${ZION_NODE_ID:-v3-mainnet-local}
+      - ZION_NODE_STATE_PATH=/data/zion/state
+      - ZION_P2P_BIND=0.0.0.0:8333
+      - ZION_RPC_BIND=0.0.0.0:8443
+      - ZION_SEED_PEERS=${ZION_SEED_PEERS:-}
+      - ZION_MINER_ADDRESS=${ZION_MINER_ADDRESS:-}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8443/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - zion-v3
+
+  pool:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.pool
+    image: zion-v3-pool:${TAG:-latest}
+    container_name: zion-v3-pool
+    restart: unless-stopped
+    profiles: ["mainnet", "dev"]
+    ports:
+      - "${POOL_PORT:-8444}:8444"
+    environment:
+      - RUST_LOG=${RUST_LOG:-info}
+      - ZION_POOL_BIND=0.0.0.0:8444
+      - ZION_NODE_RPC_ADDR=node:8443
+      - ZION_POOL_LOOP_COUNT=${POOL_LOOP_COUNT:-1000000}
+    depends_on:
+      node:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8444/health"]
+      interval: 20s
+      timeout: 5s
+      retries: 10
+    networks:
+      - zion-v3
+
+  miner:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.miner
+    image: zion-v3-miner:${TAG:-latest}
+    container_name: zion-v3-miner
+    restart: unless-stopped
+    profiles: ["mainnet", "dev"]
+    environment:
+      - RUST_LOG=${RUST_LOG:-info}
+      - ZION_POOL_ADDR=pool:8444
+      - ZION_MINER_THREADS=${MINER_THREADS:-2}
+      - ZION_LOOP_COUNT=${MINER_LOOP_COUNT:-1000000}
+    depends_on:
+      - pool
+    networks:
+      - zion-v3
+
+  # Monitoring stack (separate profile)
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    container_name: zion-prometheus
+    profiles: ["monitoring"]
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    networks:
+      - zion-v3
+
+  grafana:
+    image: grafana/grafana:11.1.0
+    container_name: zion-grafana
+    profiles: ["monitoring"]
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/datasources:/etc/grafana/provisioning/datasources
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    depends_on:
+      - prometheus
+    networks:
+      - zion-v3
+
+volumes:
+  zion-node-data:
+  prometheus-data:
+  grafana-data:
+
+networks:
+  zion-v3:
+    name: zion-v3
+    driver: bridge
