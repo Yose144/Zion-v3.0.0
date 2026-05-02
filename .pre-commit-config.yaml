@@ -1,0 +1,92 @@
+# Pre-commit hooks for ZION 2.9.6 / V3 mainnet polish.
+#
+# Defense-in-depth proti regresím F3 / F3b classy (committed plaintext secrets)
+# a proti lokálnímu drift od formátovacích / lint norem dokud GitHub Actions
+# CI běží červená (billing infra issue, viz StatusV3.md §2 P2.5).
+#
+# Install:
+#   pip install --user pre-commit
+#   pre-commit install            # installs git pre-commit hook
+#   pre-commit install --hook-type pre-push
+#
+# Run manually on the whole repo:
+#   pre-commit run --all-files
+#
+# Skip a single commit (only when pre-approved):
+#   git commit --no-verify
+#
+# CI parity: fast hooks run on commit, expensive hooks (cargo clippy on full
+# V3 workspace) run on pre-push to keep the inner loop quick.
+
+minimum_pre_commit_version: "3.5.0"
+
+default_stages: [pre-commit]
+
+# Repo cleanliness baseline (cheap, ~1s)
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: '\.(svg|patch|diff|lock)$'
+      - id: end-of-file-fixer
+        exclude: '\.(svg|patch|diff|lock|md)$'
+      - id: check-merge-conflict
+      - id: check-yaml
+        args: [--allow-multiple-documents]
+      - id: check-toml
+      - id: check-json
+        exclude: 'tsconfig.*\.json$'  # tsconfig allows comments / trailing commas
+      - id: check-added-large-files
+        args: [--maxkb=1024]
+      - id: detect-private-key
+      - id: mixed-line-ending
+        args: [--fix=lf]
+
+  # Secret scanning — primary F3 / F3b regression guard.
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.21.2
+    hooks:
+      - id: gitleaks
+        name: gitleaks (block leaked secrets)
+
+  # Local hooks — Rust toolchain on the host (no docker).
+  - repo: local
+    hooks:
+      - id: cargo-fmt-v3
+        name: cargo fmt (V3 workspace)
+        language: system
+        entry: cargo fmt --manifest-path V3/Cargo.toml --all --check
+        pass_filenames: false
+        files: ^V3/.*\.rs$
+
+      - id: cargo-fmt-root
+        name: cargo fmt (root legacy workspace)
+        language: system
+        entry: cargo fmt --all --check
+        pass_filenames: false
+        files: ^(L[1-6]|crates|cli)/.*\.rs$
+
+      # Clippy is too slow for every commit (cold workspace can take minutes).
+      # Run on pre-push instead, where latency tolerance is higher.
+      - id: cargo-clippy-v3
+        name: cargo clippy (V3 workspace, errors-only)
+        language: system
+        entry: cargo clippy --manifest-path V3/Cargo.toml --workspace --all-targets --no-deps
+        pass_filenames: false
+        files: ^V3/.*\.(rs|toml)$
+        stages: [pre-push]
+
+      # Quick syntactic check for desktop-agent JS (cheap; matches AGENTS.md guidance).
+      - id: desktop-agent-node-check
+        name: node --check (desktop-agent main.js)
+        language: system
+        entry: node --check
+        files: ^APP&WEB/desktop-agent/src/.*\.js$
+
+      # Quick py compile check for desktop-agent Python fallbacks (cheap).
+      - id: desktop-agent-py-compile
+        name: python3 -m py_compile (desktop-agent *.py)
+        language: system
+        entry: python3 -m py_compile
+        files: ^APP&WEB/desktop-agent/.*\.py$
