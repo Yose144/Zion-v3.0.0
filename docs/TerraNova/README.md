@@ -13,12 +13,17 @@
 
 Tato kořenová větev TerraNova zůstává důležitým zdrojem, archivem motivů a starší pracovní mapou knihy.
 
-Pro aktuální souvislé čtení a novou organickou redakci je hlavní vstup zde:
+Pro aktuální souvislé čtení v konsolidované markdown struktuře (FINÁL po sloučení `cloude/` + `public/` + disciplíny `ORG/`):
+
+- **[FINAL/README.md](./FINAL/README.md)** — kanonické jednotlivé kapitoly  
+- **[composer/README.md](./composer/README.md)** — **Composer unified edition**: genealogie všech variant, manifest řazení a generované soubory **[composer/edition/Full.md](./composer/edition/Full.md)** (CS), **[composer/edition/Full-en.md](./composer/edition/Full-en.md)** (EN)
+
+Paralelní organická čtenářská linie (jiný řez textu):
 
 - [ORG/Full.md](./ORG/Full.md)
 - [ORG/TerraNova-CTENARSKA-EDICE.md](./ORG/TerraNova-CTENARSKA-EDICE.md)
 
-Texty v této kořenové složce je proto vhodné číst především jako archivní a pracovní materiál, ne jako hlavní čtenářskou osu nové verze.
+Kořenové číslované `.md` soubory v této složce jsou historické / pracovní mapy — viz **[composer/SOURCES_AND_LINEAGE.md](./composer/SOURCES_AND_LINEAGE.md)**.
 
 ---
 
