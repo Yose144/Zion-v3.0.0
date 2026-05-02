@@ -9,8 +9,8 @@ mod rpc;
 mod ui;
 
 use commands::{
-    agent, bridge, completions, dao, deploy, doctor, explorer, mine, monitor, ncl, node, onboard,
-    pool, status, update, wallet, warp,
+    agent, bridge, completions, compose, dao, deploy, doctor, explorer, mine, monitor, ncl, node,
+    onboard, pool, status, update, wallet, warp,
 };
 
 use clap_complete::Shell;
@@ -77,6 +77,12 @@ enum Commands {
     },
     /// Open web dashboard in browser
     Dashboard,
+
+    /// Docker Compose integration (up, down, logs, ps, doctor)
+    Compose {
+        #[command(subcommand)]
+        cmd: compose::ComposeSubcommand,
+    },
 
     /// L1 core node commands
     Node {
@@ -239,6 +245,7 @@ async fn dispatch(cli: Cli) -> Result<()> {
         Commands::Monitor => monitor::run(&cfg).await,
         Commands::Warp { cmd } => warp::run(&cfg, cmd).await,
         Commands::Ncl { cmd } => ncl::run(&cfg, cmd).await,
+        Commands::Compose { cmd } => compose::run(compose::ComposeCmd { command: cmd }).await,
         Commands::Completions { shell } => completions::run(shell),
         Commands::Config { cmd } => match cmd {
             ConfigCmd::Show => {

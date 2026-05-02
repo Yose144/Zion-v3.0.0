@@ -1,7 +1,9 @@
 /target/
 /.idea/
 /.vscode/
-Cargo.lock
+# V3 ships binaries/services; keep the lockfile tracked for reproducible
+# mainnet builds and auditable dependency remediation.
+!Cargo.lock
 
 # Wallet exports must NEVER be committed
 zion-wallet.json

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { ArrowRight, BookOpen, Orbit, Sparkles, Stars } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { EKAM_GOLDEN_EGG_IMAGE, EKAM_SOURCE_URL } from '@/lib/site';
@@ -20,12 +21,14 @@ export default function GoldenEggHaraniagharba() {
             {/* ── Left: Compact Image ── */}
             <div className="space-y-2">
               <div className="relative overflow-hidden rounded-2xl border border-amber-200/20 bg-black/30 shadow-[0_18px_60px_rgba(0,0,0,0.35)]">
-                <img
+                <Image
                   src={EKAM_GOLDEN_EGG_IMAGE}
                   alt="Ekam visual used as Golden Egg inspiration"
+                  width={800}
+                  height={800}
+                  sizes="(min-width: 1024px) 380px, 100vw"
                   className="aspect-square w-full object-cover object-center"
                   loading="lazy"
-                  decoding="async"
                   referrerPolicy="no-referrer"
                 />
                 <div className="absolute inset-0 bg-linear-to-t from-black/75 via-black/10 to-transparent" />
