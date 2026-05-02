@@ -10,6 +10,10 @@ description = "Zion CLI — unified gateway for the entire ZION stack"
 name = "zion"
 path = "src/main.rs"
 
+[features]
+default = []
+testnet_fork_rehearsal = ["zion-core/testnet_fork_rehearsal"]
+
 [dependencies]
 anyhow.workspace = true
 ed25519-dalek.workspace = true

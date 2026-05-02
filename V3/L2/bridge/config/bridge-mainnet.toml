@@ -44,6 +44,13 @@ max_gas_gwei            = 5          # tight gas cap for mainnet
 # start_block           = 0          # set to contract deployment block
 
 # ── Validator / Multisig ─────────────────────────────────────────────────────
+#
+# STAGING below (threshold=1 / total=2). Production checklist — before enabling
+# live unlock volume — see `V3/docs/operational/AUDIT_CLOSEOUT_1_THROUGH_6.md` §3:
+#   • Provision five validator key files on hosts (/etc/zion/bridge-validator.key + extras).
+#   • threshold = 3, total_validators = 5 (matches L1 enforcement narrative).
+#   • Refresh validator_addresses whitelist for all five secp256k1 operators.
+#   • ≥1 week testnet green on metrics.bridge_relayer_missing_signers == 0.
 
 [validator]
 private_key_file    = "/etc/zion/bridge-validator.key"
