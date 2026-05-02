@@ -450,17 +450,34 @@ impl Relayer {
             burn.l1_recipient,
         );
 
+        // Build real multisig proofs. Fail-closed: if fewer than `threshold`
+        // real validator keys are available we abort before we touch L1.
+        // Synthetic placeholder proofs were removed in this PR — L1 (F4, PR
+        // #22) rejects them anyway, so emitting them is pure noise and wastes
+        // an RPC round-trip.
+        let validator_proofs = self.build_validator_proofs(&burn, l1_amount).map_err(|e| {
+            self.metrics.errors.fetch_add(1, Ordering::Relaxed);
+            anyhow::anyhow!(
+                "🚫 Bridge unlock aborted: {} — burn_id: {}",
+                e,
+                burn.burn_id
+            )
+        })?;
+        let proof_count = validator_proofs.len();
+
         let unlock_request = json!({
             "recipient": burn.l1_recipient,
             "amount_flowers": l1_amount,
             "burn_id": burn.burn_id,
             "evm_chain": burn.evm_chain,
             "evm_tx_hash": burn.evm_tx_hash,
-            "validator_proofs": self.build_validator_proofs(&burn, l1_amount),
+            "validator_proofs": validator_proofs,
         });
 
-        warn!(
-            "submitBridgeUnlock transport is canonical V3 RPC; validator proofs now include local cryptographic signature plus synthetic fillers until full multisig fan-in is enabled"
+        info!(
+            "   Step 1a: Aggregated {} real validator signatures (threshold met). \
+             Synthetic placeholder proofs are disabled — L1 would reject them.",
+            proof_count
         );
 
         let l1_result: Value = self
@@ -644,73 +661,37 @@ impl Relayer {
         Ok(())
     }
 
-    fn build_validator_proofs(&self, burn: &EvmBurnEvent, amount_flowers: u64) -> Vec<Value> {
+    /// Build the `validator_proofs` array for a `submitBridgeUnlock` call.
+    ///
+    /// **Fail-closed.** If the relayer has fewer than `threshold` real
+    /// validator signing keys configured, this returns `Err` and the caller
+    /// aborts the unlock before hitting L1 — we no longer pad with synthetic
+    /// placeholder proofs. L1 (F4, PR #22) rejects `synthetic: true` entries
+    /// anyway, so emitting them is wasted work + noise.
+    ///
+    /// Configure `ZION_VALIDATOR_EXTRA_KEYS` (comma-separated hex) plus
+    /// `ZION_VALIDATOR_EXTRA_IDS` (comma-separated, optional) so that the
+    /// local key + extras meet `threshold`.
+    fn build_validator_proofs(
+        &self,
+        burn: &EvmBurnEvent,
+        amount_flowers: u64,
+    ) -> Result<Vec<Value>> {
         let threshold = usize::from(self.config.validator.threshold.max(3));
-        let mut proofs = Vec::with_capacity(threshold);
 
         let operation_message = format!(
             "unlock|recipient={}|amount={}|chain={}|burn_id={}|evm_tx={}",
             burn.l1_recipient, amount_flowers, burn.evm_chain, burn.burn_id, burn.evm_tx_hash,
         );
 
-        let signer_keys = self.load_validator_signers().unwrap_or_default();
-        if signer_keys.len() < threshold {
-            warn!(
-                "validator_signatures_insufficient have={} need={} -- configure ZION_VALIDATOR_EXTRA_KEYS to satisfy threshold",
-                signer_keys.len(),
-                threshold
-            );
-        }
+        let signers = self.load_validator_signers()?;
 
-        for (index, (validator_id, signing_key)) in
-            signer_keys.into_iter().enumerate().take(threshold)
-        {
-            let validator_address = self
-                .config
-                .validator
-                .validator_addresses
-                .get(index)
-                .cloned();
-            let (signature, validator_public_key) =
-                Self::sign_operation_with_key(&signing_key, &operation_message);
-
-            proofs.push(json!({
-                "validator_id": validator_id,
-                "validator_address": validator_address,
-                "validator_public_key": validator_public_key,
-                "signature": signature,
-                "signature_scheme": "secp256k1-ecdsa",
-                "operation_message": operation_message,
-                "synthetic": false,
-            }));
-        }
-
-        while proofs.len() < threshold {
-            let index = proofs.len();
-            let fallback_id = format!("validator-{}", index + 1);
-            let validator_id = if index == 0 && !self.config.validator.validator_id.is_empty() {
-                self.config.validator.validator_id.clone()
-            } else {
-                fallback_id
-            };
-            let validator_address = self
-                .config
-                .validator
-                .validator_addresses
-                .get(index)
-                .cloned();
-
-            proofs.push(json!({
-                "validator_id": validator_id,
-                "validator_address": validator_address,
-                "signature": "synthetic-proof-slot",
-                "signature_scheme": "secp256k1-ecdsa",
-                "operation_message": operation_message,
-                "synthetic": true,
-            }));
-        }
-
-        proofs
+        build_validator_proofs_checked(
+            signers,
+            &self.config.validator.validator_addresses,
+            threshold,
+            &operation_message,
+        )
     }
 
     fn load_validator_signers(&self) -> Result<Vec<(String, SigningKey)>> {
@@ -756,16 +737,6 @@ impl Relayer {
             .map_err(|e| anyhow::anyhow!("Invalid secp256k1 private key: {e}"))
     }
 
-    fn sign_operation_with_key(signing_key: &SigningKey, message: &str) -> (String, String) {
-        let signature: Signature = signing_key.sign(message.as_bytes());
-        let public_key = signing_key.verifying_key();
-        let sec1 = public_key.to_encoded_point(true);
-        (
-            format!("0x{}", hex::encode(signature.to_bytes())),
-            format!("0x{}", hex::encode(sec1.as_bytes())),
-        )
-    }
-
     async fn l1_rpc<T: DeserializeOwned>(&self, method: &str, params: Value) -> Result<T> {
         let address = normalize_rpc_addr(&self.config.l1.rpc_url);
         let mut stream = TcpStream::connect(&address)
@@ -795,6 +766,85 @@ impl Relayer {
             .result
             .ok_or_else(|| anyhow::anyhow!("RPC returned null result"))
     }
+}
+
+/// Sign an operation message with a secp256k1 signing key and return
+/// `(signature_hex, compressed_public_key_hex)`, both prefixed with `0x`.
+///
+/// Exposed as a free function so unit tests can exercise it without
+/// constructing a full `Relayer` (which requires a populated
+/// `BridgeConfig` + a filesystem-backed validator key file).
+fn sign_operation_with_key(signing_key: &SigningKey, message: &str) -> (String, String) {
+    let signature: Signature = signing_key.sign(message.as_bytes());
+    let public_key = signing_key.verifying_key();
+    let sec1 = public_key.to_encoded_point(true);
+    (
+        format!("0x{}", hex::encode(signature.to_bytes())),
+        format!("0x{}", hex::encode(sec1.as_bytes())),
+    )
+}
+
+/// Pure, testable core of [`Relayer::build_validator_proofs`].
+///
+/// Fail-closed contract:
+///
+/// - Returns `Err` if `signers.len() < threshold` — caller must abort
+///   the unlock. Synthetic placeholder proofs are **never** emitted.
+/// - Returns `Err` if any `validator_id` appears more than once — a
+///   duplicate quorum member cannot contribute to threshold.
+/// - Otherwise returns exactly `threshold` proofs (the first `threshold`
+///   signers in the supplied order), each carrying a real secp256k1 ECDSA
+///   signature over `operation_message` and `"synthetic": false`.
+///
+/// `validator_addresses[i]` is looked up for the i-th proof and reported
+/// as `validator_address` (or `null` if out of range).
+fn build_validator_proofs_checked(
+    signers: Vec<(String, SigningKey)>,
+    validator_addresses: &[String],
+    threshold: usize,
+    operation_message: &str,
+) -> Result<Vec<Value>> {
+    if signers.len() < threshold {
+        anyhow::bail!(
+            "validator_signatures_insufficient: have={}, need={}. \
+             Configure ZION_VALIDATOR_EXTRA_KEYS (+ optional \
+             ZION_VALIDATOR_EXTRA_IDS) so that the relayer holds at least \
+             `threshold` distinct real validator signing keys. Synthetic \
+             placeholder proofs are disabled — L1 rejects them and the \
+             submitBridgeUnlock call would fail on-chain.",
+            signers.len(),
+            threshold,
+        );
+    }
+
+    let mut seen: std::collections::HashSet<String> = std::collections::HashSet::new();
+    for (id, _) in &signers {
+        if !seen.insert(id.clone()) {
+            anyhow::bail!(
+                "validator_signatures_duplicate_id: {id} — each validator \
+                 may appear at most once in the quorum."
+            );
+        }
+    }
+
+    let mut proofs = Vec::with_capacity(threshold);
+    for (index, (validator_id, signing_key)) in signers.into_iter().enumerate().take(threshold) {
+        let validator_address = validator_addresses.get(index).cloned();
+        let (signature, validator_public_key) =
+            sign_operation_with_key(&signing_key, operation_message);
+
+        proofs.push(json!({
+            "validator_id": validator_id,
+            "validator_address": validator_address,
+            "validator_public_key": validator_public_key,
+            "signature": signature,
+            "signature_scheme": "secp256k1-ecdsa",
+            "operation_message": operation_message,
+            "synthetic": false,
+        }));
+    }
+
+    Ok(proofs)
 }
 
 fn normalize_rpc_addr(value: &str) -> String {
@@ -911,6 +961,137 @@ mod tests {
         assert_eq!(
             normalize_rpc_addr("91.98.122.165:8443"),
             "91.98.122.165:8443"
+        );
+    }
+
+    // ──────────────────────────────────────────────────────────────────
+    // build_validator_proofs_checked (synthetic-proof kill regression)
+    // ──────────────────────────────────────────────────────────────────
+
+    fn mk_signer(id: &str, seed: u8) -> (String, SigningKey) {
+        // Deterministic 32-byte seed from a single byte — fine for tests.
+        let bytes = [seed; 32];
+        let sk = SigningKey::from_slice(&bytes).expect("valid test secp256k1 scalar");
+        (id.to_string(), sk)
+    }
+
+    fn mk_addrs(n: usize) -> Vec<String> {
+        (0..n)
+            .map(|i| format!("0x{:040x}", 0xde_ad_be_ef_u32 + i as u32))
+            .collect()
+    }
+
+    #[test]
+    fn build_validator_proofs_checked_rejects_insufficient_signers() {
+        let signers = vec![mk_signer("validator-1", 1), mk_signer("validator-2", 2)];
+        let addrs = mk_addrs(3);
+        let err = build_validator_proofs_checked(signers, &addrs, 3, "op|test")
+            .expect_err("must fail-closed when below threshold");
+        let msg = format!("{err}");
+        assert!(
+            msg.contains("validator_signatures_insufficient"),
+            "error must name the failure class for ops triage: {msg}"
+        );
+        assert!(
+            msg.contains("have=2") && msg.contains("need=3"),
+            "error must report the observed and required counts: {msg}"
+        );
+        assert!(
+            msg.contains("Synthetic placeholder proofs are disabled"),
+            "error must document why padding isn't used anymore: {msg}"
+        );
+    }
+
+    #[test]
+    fn build_validator_proofs_checked_accepts_at_threshold() {
+        let signers = vec![
+            mk_signer("validator-1", 1),
+            mk_signer("validator-2", 2),
+            mk_signer("validator-3", 3),
+        ];
+        let addrs = mk_addrs(3);
+        let proofs = build_validator_proofs_checked(signers, &addrs, 3, "op|test")
+            .expect("must produce real proofs when threshold is met");
+        assert_eq!(proofs.len(), 3, "must emit exactly `threshold` proofs");
+
+        for proof in &proofs {
+            assert_eq!(
+                proof["synthetic"],
+                json!(false),
+                "no proof may be marked synthetic under the fail-closed contract: {proof}"
+            );
+            let sig = proof["signature"]
+                .as_str()
+                .expect("signature must be a string");
+            assert!(sig.starts_with("0x"), "signature must be 0x-prefixed hex");
+            assert_ne!(
+                sig, "synthetic-proof-slot",
+                "synthetic placeholder sentinel must not appear"
+            );
+            assert!(
+                proof["validator_public_key"]
+                    .as_str()
+                    .map(|s| s.starts_with("0x"))
+                    .unwrap_or(false),
+                "every real proof must carry a compressed secp256k1 public key"
+            );
+        }
+    }
+
+    #[test]
+    fn build_validator_proofs_checked_rejects_duplicate_validator_id() {
+        let signers = vec![
+            mk_signer("validator-1", 1),
+            mk_signer("validator-1", 7),
+            mk_signer("validator-2", 2),
+        ];
+        let addrs = mk_addrs(3);
+        let err = build_validator_proofs_checked(signers, &addrs, 3, "op|test")
+            .expect_err("duplicate validator_id must not contribute to threshold");
+        let msg = format!("{err}");
+        assert!(
+            msg.contains("validator_signatures_duplicate_id"),
+            "error must name the duplicate-id failure: {msg}"
+        );
+        assert!(
+            msg.contains("validator-1"),
+            "error must identify the duplicated id: {msg}"
+        );
+    }
+
+    #[test]
+    fn build_validator_proofs_checked_takes_exactly_threshold_not_more() {
+        let signers = vec![
+            mk_signer("validator-1", 1),
+            mk_signer("validator-2", 2),
+            mk_signer("validator-3", 3),
+            mk_signer("validator-4", 4),
+            mk_signer("validator-5", 5),
+        ];
+        let addrs = mk_addrs(5);
+        let proofs = build_validator_proofs_checked(signers, &addrs, 3, "op|test")
+            .expect("5 signers / threshold 3 must succeed");
+        assert_eq!(
+            proofs.len(),
+            3,
+            "must cap at threshold even when more signers are available"
+        );
+        let ids: Vec<_> = proofs
+            .iter()
+            .filter_map(|p| p["validator_id"].as_str())
+            .collect();
+        assert_eq!(ids, vec!["validator-1", "validator-2", "validator-3"]);
+    }
+
+    #[test]
+    fn build_validator_proofs_checked_never_emits_synthetic_marker() {
+        // Worst case for the old pad-with-synthetics behaviour: 0 signers,
+        // threshold 3. Must NOT produce 3 synthetic placeholders.
+        let err = build_validator_proofs_checked(Vec::new(), &mk_addrs(3), 3, "op|test")
+            .expect_err("zero signers must fail-closed");
+        assert!(
+            format!("{err}").contains("validator_signatures_insufficient"),
+            "0 signers must never degrade to synthetic padding"
         );
     }
 }
