@@ -33,6 +33,9 @@ native-all = [
     "native-blake3-algo", "native-cosmic-harmony", "native-verushash", "native-randomx",
 ]
 
+# Hard-fork rehearsal: same consensus gates as node/pool (`V3/docs/operational/AUDIT_CLOSEOUT_1_THROUGH_6.md`).
+testnet_fork_rehearsal = ["zion-core/testnet_fork_rehearsal", "zion-pool/testnet_fork_rehearsal"]
+
 [dependencies]
 anyhow.workspace = true
 blake3.workspace = true

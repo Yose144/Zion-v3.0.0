@@ -6221,10 +6221,7 @@ mod tests {
         ]
     }
 
-    /// Pin the dispatcher: while the activation height is dormant
-    /// (`u64::MAX`), every realistic block height must route to v1 XOR.
-    /// This guarantees that historical body roots remain unchanged
-    /// post-merge of this PR.
+    /// Below [`BODY_ROOT_V2_ACTIVATION_HEIGHT`], dispatcher routes to legacy v1 XOR.
     #[test]
     fn merkle_dispatcher_uses_v1_xor_below_activation() {
         let txs = merkle_test_account_txs();
@@ -6232,6 +6229,9 @@ mod tests {
         let prev = [0x11u8; 32];
 
         for &h in &[0u64, 1, 100, 1_000_000, u64::MAX - 1] {
+            if body_root_v2_active(h) {
+                continue;
+            }
             let dispatched = derive_template_merkle_root("node-test", h, 42, prev, &txs, &utxos);
             let v1 = derive_template_merkle_root_v1_xor("node-test", h, 42, prev, &txs, &utxos);
             assert_eq!(
@@ -6241,9 +6241,7 @@ mod tests {
         }
     }
 
-    /// At activation height (`u64::MAX` while dormant), dispatcher must
-    /// route to v2 BLAKE3 Merkle. This pins the v2 path for the test
-    /// suite without committing to a real activation height.
+    /// At [`BODY_ROOT_V2_ACTIVATION_HEIGHT`], dispatcher must route to v2 BLAKE3 Merkle.
     #[test]
     fn merkle_dispatcher_uses_v2_blake3_at_activation() {
         let txs = merkle_test_account_txs();
