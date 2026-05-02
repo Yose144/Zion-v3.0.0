@@ -59,7 +59,11 @@ pub const BODY_ROOT_V2_ACTIVATION_HEIGHT: u64 = u64::MAX;
 /// }
 /// ```
 #[inline]
+#[allow(clippy::absurd_extreme_comparisons)]
 pub fn tx_hash_v2_active(height: u64) -> bool {
+    // Keep `>=` even while the dormant default is `u64::MAX`: when governance
+    // flips the constant to a real height, the activation semantics are already
+    // correct and do not need another code change.
     height >= TX_HASH_V2_ACTIVATION_HEIGHT
 }
 
@@ -74,7 +78,9 @@ pub fn tx_hash_v2_active(height: u64) -> bool {
 /// };
 /// ```
 #[inline]
+#[allow(clippy::absurd_extreme_comparisons)]
 pub fn body_root_v2_active(height: u64) -> bool {
+    // Same dormant-gate pattern as `tx_hash_v2_active`.
     height >= BODY_ROOT_V2_ACTIVATION_HEIGHT
 }
 
