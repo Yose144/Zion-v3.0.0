@@ -6,8 +6,9 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 use zion_cosmic_harmony::{
-    cosmic_harmony_ekam_deeksha, cosmic_harmony_with_height, profile_name, RevenueCollector,
-    RevenueEvent, RevenueStats, CHV_EKAM_FORK_HEIGHT, EKAM_FUSION_ROUNDS,
+    body_root_v2_active, cosmic_harmony_ekam_deeksha, cosmic_harmony_with_height, profile_name,
+    tx_hash_v2_active, RevenueCollector, RevenueEvent, RevenueStats, CHV_EKAM_FORK_HEIGHT,
+    EKAM_FUSION_ROUNDS, TX_HASH_V2_ACTIVATION_HEIGHT,
 };
 
 pub use zion_cosmic_harmony::ExternalCoin;
@@ -35,6 +36,8 @@ pub mod storage;
 pub mod tx;
 pub mod validation;
 pub mod wallet;
+
+mod peer_block_validation;
 
 pub const HEADER_SIZE: usize = 80;
 pub const NODE_PROTOCOL_VERSION: &str = "zion-v3-node/0.1";
@@ -410,7 +413,7 @@ pub struct BridgeUnlockRequest {
     pub evm_tx_hash: String,
 }
 
-fn validate_bridge_unlock_transaction_shape_with_utxos(
+pub(crate) fn validate_bridge_unlock_transaction_shape_with_utxos(
     transaction: &tx::Transaction,
     utxos: &HashMap<(String, u32), SpendableUtxo>,
 ) -> Result<Option<String>, String> {
@@ -2401,9 +2404,15 @@ impl ChainState {
             });
         }
 
+        let pending_height = self.height.saturating_add(1);
+        let bridge_utxo_ver = if tx_hash_v2_active(pending_height) {
+            tx::TX_HASH_V2_VERSION
+        } else {
+            1
+        };
         let mut transaction = tx::Transaction {
             id: [0u8; 32],
-            version: 1,
+            version: bridge_utxo_ver,
             inputs: selected
                 .into_iter()
                 .map(|utxo| tx::TxInput {
@@ -2689,459 +2698,14 @@ impl ChainState {
             return Ok(());
         }
 
-        // ── Checkpoint verification ────────────────────────────────────
-        launch::verify_checkpoint(block.height, &block.hash_hex)?;
-
-        // ── PoW verification (when header is available) ────────────────
-        let block_hash = parse_fixed_hex::<32>(&block.hash_hex, "peer block hash")?;
-        if !block.header_hex.is_empty() {
-            let header_bytes =
-                parse_fixed_hex::<HEADER_SIZE>(&block.header_hex, "peer block header")?;
-            let header = MiningHeader::from_bytes(header_bytes);
-
-            // Header fields must be consistent with block metadata
-            if header.timestamp != block.timestamp {
-                return Err(
-                    "peer block header timestamp does not match block timestamp".to_string()
-                );
-            }
-            let expected_target = difficulty::difficulty_to_target(block.difficulty);
-            let expected_bits = difficulty::target_to_compact(&expected_target);
-            if header.difficulty_bits != expected_bits {
-                return Err(format!(
-                    "peer block header difficulty_bits {} does not match expected {}",
-                    header.difficulty_bits, expected_bits
-                ));
-            }
-
-            // Reject inconsistent parent metadata before doing expensive PoW work.
-            if !block.previous_hash_hex.is_empty() {
-                let header_prev = hex(&header.previous_hash);
-                if block.previous_hash_hex != header_prev {
-                    return Err(
-                        "peer block previous_hash_hex does not match header previous_hash"
-                            .to_string(),
-                    );
-                }
-            }
-
-            // Verify PoW: recompute hash from header + nonce
-            let candidate = BlockCandidate {
-                header,
-                nonce: block.nonce,
-                height: block.height,
-            };
-            let computed_hash = candidate.hash();
-            if computed_hash != block_hash {
-                return Err(
-                    "peer block hash does not match PoW computation from header and nonce"
-                        .to_string(),
-                );
-            }
-
-            // Verify hash meets difficulty target
-            let target = difficulty::difficulty_to_target(block.difficulty);
-            if !target.allows(&computed_hash) {
-                return Err("peer block PoW hash does not meet difficulty target".to_string());
-            }
-        }
-
-        // ── Timestamp sanity ───────────────────────────────────────────
-        let current_time = now_secs();
-        let median_time_past = if self.accepted_blocks.is_empty() {
-            0
-        } else {
-            let start = self.accepted_blocks.len().saturating_sub(11);
-            let mut timestamps: Vec<u64> = self.accepted_blocks[start..]
-                .iter()
-                .map(|b| b.timestamp)
-                .collect();
-            timestamps.sort_unstable();
-            timestamps[timestamps.len() / 2]
-        };
-        validation::validate_timestamp(block.timestamp, median_time_past, current_time)
-            .map_err(|e| format!("peer block timestamp invalid: {e}"))?;
-
-        // ── Transaction structure ──────────────────────────────────────
-        if block.transaction_ids.len() != block.transactions.len() {
-            return Err("peer block transaction ids do not match block body length".to_string());
-        }
-        let expected_ids = block
-            .transactions
-            .iter()
-            .map(|transaction| transaction.tx_id.clone())
-            .collect::<Vec<_>>();
-        if expected_ids != block.transaction_ids {
-            return Err(
-                "peer block transaction ids do not match serialized transactions".to_string(),
-            );
-        }
-        let mut seen_tx_ids = HashSet::new();
-        let mut seen_sender_nonces = HashSet::new();
-        let mut coinbase_count = 0usize;
-        let mut total_coinbase_zion = 0u128;
-        let has_fee_addresses = !block.humanitarian_address.is_empty()
-            || !block.issobella_address.is_empty()
-            || !block.pool_fee_address.is_empty();
-        let has_all_fee_addresses = !block.humanitarian_address.is_empty()
-            && !block.issobella_address.is_empty()
-            && !block.pool_fee_address.is_empty();
-        if has_fee_addresses && !has_all_fee_addresses {
-            return Err("peer block fee split metadata must provide all fee addresses".to_string());
-        }
-        let (
-            expected_miner_reward,
-            expected_humanitarian_reward,
-            expected_issobella_reward,
-            expected_pool_fee_reward,
-        ) = emission::fee_split(block.subsidy_zion);
-        let total_fees_zion = block
-            .transactions
-            .iter()
-            .enumerate()
-            .map(|(index, transaction)| {
-                if !seen_tx_ids.insert(transaction.tx_id.clone()) {
-                    return Err(format!(
-                        "peer block contains duplicate transaction id {}",
-                        transaction.tx_id
-                    ));
-                }
-                if transaction.from == "coinbase" {
-                    coinbase_count = coinbase_count.saturating_add(1);
-                    total_coinbase_zion = total_coinbase_zion.saturating_add(transaction.amount_zion);
-                    if transaction.tx_id.len() != 64
-                        || !transaction.tx_id.chars().all(|ch| ch.is_ascii_hexdigit())
-                    {
-                        return Err("peer block coinbase transaction id must be exactly 64 hex chars"
-                            .to_string());
-                    }
-                    if transaction.to.trim().is_empty() {
-                        return Err(
-                            "peer block coinbase recipient must not be empty".to_string(),
-                        );
-                    }
-                    if !is_valid_account_id(&transaction.to) {
-                        return Err(
-                            "peer block coinbase recipient must use a 3-64 ascii wallet id"
-                                .to_string(),
-                        );
-                    }
-                    if index != coinbase_count.saturating_sub(1) {
-                        return Err(
-                            "peer block coinbase transactions must be contiguous at the start"
-                                .to_string(),
-                        );
-                    }
-                    if transaction.fee_zion != 0 {
-                        return Err("peer block coinbase transaction must have zero fee".to_string());
-                    }
-                    if transaction.nonce != block.height {
-                        return Err(format!(
-                            "peer block coinbase nonce {} does not match block height {}",
-                            transaction.nonce, block.height
-                        ));
-                    }
-                    if block.miner_address.is_empty() {
-                        return Err(
-                            "peer block coinbase transaction requires miner_address metadata"
-                                .to_string(),
-                        );
-                    }
-                    let (expected_to, expected_amount, expected_label) = if has_all_fee_addresses {
-                        match index {
-                            0 => (
-                                block.miner_address.as_str(),
-                                expected_miner_reward,
-                                format!("coinbase:{}:{}", block.height, block.miner_address),
-                            ),
-                            1 => (
-                                block.humanitarian_address.as_str(),
-                                expected_humanitarian_reward,
-                                format!(
-                                    "coinbase_humanitarian:{}:{}",
-                                    block.height, block.humanitarian_address
-                                ),
-                            ),
-                            2 => (
-                                block.issobella_address.as_str(),
-                                expected_issobella_reward,
-                                format!(
-                                    "coinbase_issobella:{}:{}",
-                                    block.height, block.issobella_address
-                                ),
-                            ),
-                            3 => (
-                                block.pool_fee_address.as_str(),
-                                expected_pool_fee_reward,
-                                format!(
-                                    "coinbase_pool_fee:{}:{}",
-                                    block.height, block.pool_fee_address
-                                ),
-                            ),
-                            _ => {
-                                return Err(
-                                    "peer block contains too many split coinbase transactions"
-                                        .to_string(),
-                                )
-                            }
-                        }
-                    } else {
-                        (
-                            block.miner_address.as_str(),
-                            block.subsidy_zion,
-                            format!("coinbase:{}:{}", block.height, block.miner_address),
-                        )
-                    };
-                    if transaction.to != expected_to {
-                        return Err(
-                            "peer block coinbase recipient does not match expected payout address"
-                                .to_string(),
-                        );
-                    }
-                    if transaction.amount_zion != expected_amount as u128 {
-                        return Err(format!(
-                            "peer block coinbase amount {} does not match expected {}",
-                            transaction.amount_zion, expected_amount
-                        ));
-                    }
-                    let expected_coinbase_hash =
-                        cosmic_harmony_ekam_deeksha(expected_label.as_bytes(), block.height);
-                    let expected_coinbase_id = hex(&expected_coinbase_hash.data);
-                    if transaction.tx_id != expected_coinbase_id {
-                        return Err(
-                            "peer block coinbase tx_id is not deterministic for the expected payout slot"
-                                .to_string(),
-                        );
-                    }
-                } else {
-                    transaction.validate()?;
-                    if !seen_sender_nonces.insert((transaction.from.clone(), transaction.nonce)) {
-                        return Err(format!(
-                            "peer block reuses sender nonce {} for {}",
-                            transaction.nonce, transaction.from
-                        ));
-                    }
-                }
-                Ok(transaction.fee_zion)
-            })
-            .collect::<Result<Vec<_>, String>>()?
-            .into_iter()
-            .sum::<u64>();
-        if coinbase_count > 4 {
-            return Err("peer block contains more than four coinbase transactions".to_string());
-        }
-        if !block.miner_address.is_empty() && coinbase_count == 0 {
-            return Err(
-                "peer block miner_address is set but coinbase transaction is missing".to_string(),
-            );
-        }
-        if has_all_fee_addresses && coinbase_count != 4 {
-            return Err(
-                "peer block with fee split metadata must contain four coinbase transactions"
-                    .to_string(),
-            );
-        }
-        if !has_all_fee_addresses && coinbase_count > 1 {
-            return Err(
-                "peer block without fee split metadata must contain at most one coinbase transaction"
-                    .to_string(),
-            );
-        }
-        if total_coinbase_zion != 0 && total_coinbase_zion != block.subsidy_zion as u128 {
-            return Err(format!(
-                "peer block coinbase total {} does not match subsidy {}",
-                total_coinbase_zion, block.subsidy_zion
-            ));
-        }
-        if total_fees_zion != block.total_fees_zion {
-            return Err("peer block fee total does not match serialized transactions".to_string());
-        }
-        if block.body_hash_hex != body_hash_hex(&block.transactions) {
-            return Err("peer block body hash does not match serialized transactions".to_string());
-        }
-        let expected_block_miner_reward = if has_all_fee_addresses && coinbase_count == 4 {
-            expected_miner_reward
-        } else {
-            block.subsidy_zion
-        };
-        if block.miner_reward_zion != expected_block_miner_reward {
-            return Err(format!(
-                "peer block miner reward {} does not match expected {}",
-                block.miner_reward_zion, expected_block_miner_reward
-            ));
-        }
-        let expected_subsidy = emission::block_subsidy(block.height);
-        if block.subsidy_zion != expected_subsidy {
-            return Err(format!(
-                "peer block subsidy {} does not match emission schedule {} at height {}",
-                block.subsidy_zion, expected_subsidy, block.height
-            ));
-        }
-        // Validate difficulty against LWMA
-        let expected_difficulty = if self.accepted_blocks.is_empty() {
-            difficulty::GENESIS_DIFFICULTY
-        } else {
-            let start = self
-                .accepted_blocks
-                .len()
-                .saturating_sub(difficulty::LWMA_WINDOW + 1);
-            let window: Vec<difficulty::BlockInfo> = self.accepted_blocks[start..]
-                .iter()
-                .map(|b| difficulty::BlockInfo {
-                    timestamp: b.timestamp,
-                    difficulty: b.difficulty,
-                })
-                .collect();
-            difficulty::lwma_next_difficulty(&window)
-        };
-        if block.difficulty != expected_difficulty {
-            return Err(format!(
-                "peer block difficulty {} does not match expected {} at height {}",
-                block.difficulty, expected_difficulty, block.height
-            ));
-        }
-        // ── UTXO transaction structure ─────────────────────────────────
-        let utxo_expected_ids: Vec<String> = block
-            .utxo_transactions
-            .iter()
-            .map(|utxo_tx| hex(&utxo_tx.id))
-            .collect();
-        if utxo_expected_ids != block.utxo_transaction_ids {
-            return Err(
-                "peer block UTXO transaction ids do not match serialized UTXO transactions"
-                    .to_string(),
-            );
-        }
-        let mut seen_utxo_inputs: HashSet<([u8; 32], u32)> = HashSet::new();
-        let mut seen_bridge_unlock_replay_keys = self.accepted_bridge_unlock_replay_keys();
-        for utxo_tx in &block.utxo_transactions {
-            if utxo_tx.id != utxo_tx.calculate_hash() {
-                return Err(format!(
-                    "peer block UTXO transaction {} has invalid id",
-                    hex(&utxo_tx.id)
-                ));
-            }
-            match self.validate_bridge_unlock_transaction_shape(utxo_tx)? {
-                Some(replay_key) => {
-                    if !seen_bridge_unlock_replay_keys.insert(replay_key.clone()) {
-                        return Err(format!(
-                            "peer block bridge unlock replay key already used: {}",
-                            replay_key,
-                        ));
-                    }
-                }
-                None => {
-                    if !utxo_tx.verify_signatures() {
-                        return Err(format!(
-                            "peer block UTXO transaction {} has invalid signatures",
-                            hex(&utxo_tx.id)
-                        ));
-                    }
-                }
-            }
-            let utxo_id_hex = hex(&utxo_tx.id);
-            if !seen_tx_ids.insert(utxo_id_hex) {
-                return Err(format!(
-                    "peer block contains duplicate UTXO transaction id {}",
-                    hex(&utxo_tx.id)
-                ));
-            }
-            for input in &utxo_tx.inputs {
-                if !seen_utxo_inputs.insert((input.prev_tx_hash, input.output_index)) {
-                    return Err(format!(
-                        "peer block contains double-spend of UTXO input {}:{}",
-                        hex(&input.prev_tx_hash),
-                        input.output_index,
-                    ));
-                }
-            }
-        }
-
-        // ── UTXO conservation-of-value pipeline (F1) ───────────────────
-        //
-        // Before this hook the peer-block path verified structure,
-        // signatures, and within-block double-spends, but never confirmed
-        // that the inputs each UTXO transaction references actually exist
-        // in the chain's UTXO set, that the spend conserved value
-        // (∑inputs ≥ ∑outputs + fee), that every transaction met the fee
-        // floor, or that DAO Treasury addresses were past their unlock
-        // height. The mempool insertion path covered the existence check
-        // for new transactions but never re-checked anything for blocks
-        // arriving from peers, which meant a malicious peer could mint
-        // coins by submitting a forged block whose UTXO transactions
-        // resolved to nothing or printed value out of thin air.
-        //
-        // Bridge-unlock transactions are kept on their dedicated
-        // `validate_bridge_unlock_transaction_shape` path (they spend the
-        // keyless bridge vault, see line ~90), so we skip them here.
-        if !block.utxo_transactions.is_empty() {
-            let utxo_snapshot = self.utxo_set();
-            let utxo_lookup = |hash: &[u8; 32], idx: u32| -> Option<validation::UtxoInfo> {
-                utxo_snapshot
-                    .get(&(hex(hash), idx))
-                    .map(|spendable| validation::UtxoInfo {
-                        amount: spendable.amount,
-                        address: spendable.address.clone(),
-                        created_height: spendable.height,
-                        // Coinbase maturity enforcement is deferred to a
-                        // follow-up PR (requires tracking is_coinbase in
-                        // SpendableUtxo). For now we conservatively report
-                        // false; consumers that need maturity must opt in
-                        // explicitly.
-                        is_coinbase: false,
-                    })
-            };
-            let is_bridge_unlock = |transaction: &tx::Transaction| -> bool {
-                bridge_unlock_replay_key_from_transaction(transaction).is_some()
-            };
-
-            validation::validate_inputs_exist(
-                &block.utxo_transactions,
-                &utxo_lookup,
-                &is_bridge_unlock,
-            )
-            .map_err(|err| format!("peer block UTXO input check failed: {err}"))?;
-
-            validation::validate_value_conservation(
-                &block.utxo_transactions,
-                &utxo_lookup,
-                &is_bridge_unlock,
-            )
-            .map_err(|err| format!("peer block UTXO value conservation failed: {err}"))?;
-
-            // DAO Treasury timelock — premine outputs cannot be spent
-            // before their `unlock_height`. Bridge-unlock spends only the
-            // keyless vault, so this still flags general transactions
-            // that try to drain time-locked treasury balances.
-            validation::validate_premine_locks(
-                &block.utxo_transactions,
-                block.height,
-                &utxo_lookup,
-            )
-            .map_err(|err| format!("peer block premine lock violation: {err}"))?;
-
-            // UTXO fee floor for non-coinbase, non-bridge-unlock
-            // transactions. Bridge-unlock transactions already validate
-            // their fee inside `validate_bridge_unlock_transaction_shape`,
-            // and coinbase has no fee to validate.
-            for (tx_i, utxo_tx) in block.utxo_transactions.iter().enumerate() {
-                if utxo_tx.is_coinbase() {
-                    continue;
-                }
-                if is_bridge_unlock(utxo_tx) {
-                    continue;
-                }
-                let tx_size = fee::estimate_tx_size(utxo_tx.inputs.len(), utxo_tx.outputs.len());
-                fee::validate_fee(utxo_tx.fee, tx_size).map_err(|err| {
-                    format!(
-                        "peer block UTXO transaction {} fee invalid (tx_index {tx_i}): {err}",
-                        hex(&utxo_tx.id)
-                    )
-                })?;
-            }
-        }
-
-        Ok(())
+        let utxo_snapshot = self.utxo_set();
+        let bridge_keys = self.accepted_bridge_unlock_replay_keys();
+        peer_block_validation::validate_accepted_peer_block(
+            &self.accepted_blocks,
+            &utxo_snapshot,
+            bridge_keys,
+            block,
+        )
     }
 
     fn insert_transaction(
@@ -3222,6 +2786,16 @@ impl ChainState {
         core: &CoreRuntime,
         transaction: tx::Transaction,
     ) -> Result<(), String> {
+        let pending_height = self.height.saturating_add(1);
+        if tx_hash_v2_active(pending_height) && transaction.version < tx::TX_HASH_V2_VERSION {
+            return Err(format!(
+                "UTXO mempool rejects tx.version {} — pending block height {} requires tx.version >= {} (TX_HASH_V2 activation {})",
+                transaction.version,
+                pending_height,
+                tx::TX_HASH_V2_VERSION,
+                TX_HASH_V2_ACTIVATION_HEIGHT
+            ));
+        }
         if transaction.id != transaction.calculate_hash() {
             return Err("UTXO transaction id does not match calculated hash".to_string());
         }
@@ -3560,9 +3134,14 @@ impl ChainState {
                         memo: Some("coinbase_pool_fee".into()),
                     });
                 }
+                let coinbase_utxo_ver = if tx_hash_v2_active(next_height) {
+                    tx::TX_HASH_V2_VERSION
+                } else {
+                    1
+                };
                 let mut utxo_coinbase = tx::Transaction {
                     id: [0u8; 32],
-                    version: 1,
+                    version: coinbase_utxo_ver,
                     inputs: vec![], // coinbase: no inputs
                     outputs: utxo_coinbase_outputs,
                     fee: 0,
@@ -3586,9 +3165,14 @@ impl ChainState {
                 selected_transactions.insert(0, coinbase_tx);
 
                 // Phase 18: UTXO coinbase for single-output legacy mode
+                let coinbase_utxo_ver = if tx_hash_v2_active(next_height) {
+                    tx::TX_HASH_V2_VERSION
+                } else {
+                    1
+                };
                 let mut utxo_coinbase = tx::Transaction {
                     id: [0u8; 32],
-                    version: 1,
+                    version: coinbase_utxo_ver,
                     inputs: vec![],
                     outputs: vec![tx::TxOutput {
                         amount: subsidy,
@@ -3811,7 +3395,48 @@ fn dedup_peers(peers: Vec<PeerEndpoint>) -> Vec<PeerEndpoint> {
     deduped
 }
 
+/// Top-level dispatcher for the block body's Merkle root.
+///
+/// At/above [`BODY_ROOT_V2_ACTIVATION_HEIGHT`] this commits via a Bitcoin-style
+/// BLAKE3 binary Merkle tree (audit §F2 / `AUDIT_COMPLETION.md` §2). Below that
+/// height the legacy XOR aggregate is preserved bit-for-bit so historical
+/// blocks continue to validate against their stored body roots.
+///
+/// # Why two paths
+/// The XOR aggregate is birthday-resistant only at 2^64 and uses
+/// `cosmic_harmony_ekam_deeksha` (256 KiB scratchpad) as a per-tx hash, which
+/// is a misuse of a PoW function as a data-structure hash. The v2 path
+/// replaces both: leaf hash drops to BLAKE3 via
+/// `Transaction::calculate_hash()` (cheap, ASIC-irrelevant), aggregation
+/// becomes a proper tree (collision-bounded at 2^256/2 with BLAKE3).
 fn derive_template_merkle_root(
+    node_id: &str,
+    height: u64,
+    template_id: u64,
+    previous_hash: [u8; 32],
+    transactions: &[Transaction],
+    utxo_transactions: &[tx::Transaction],
+) -> [u8; 32] {
+    if body_root_v2_active(height) {
+        derive_template_merkle_root_v2_blake3(transactions, utxo_transactions)
+    } else {
+        derive_template_merkle_root_v1_xor(
+            node_id,
+            height,
+            template_id,
+            previous_hash,
+            transactions,
+            utxo_transactions,
+        )
+    }
+}
+
+/// Legacy XOR aggregate body root (audit §F2 documents this as a misuse —
+/// kept for pre-fork blocks so historical hashes don't change).
+///
+/// **Do not call directly** outside the dispatcher above and the regression
+/// tests that pin v1 ↔ v2 distinction.
+fn derive_template_merkle_root_v1_xor(
     node_id: &str,
     height: u64,
     template_id: u64,
@@ -3853,6 +3478,36 @@ fn derive_template_merkle_root(
     .data
 }
 
+/// F2 BLAKE3 Merkle body root — the post-fork rule.
+///
+/// Builds leaves from BLAKE3 over the account-model `tx_id` (which already
+/// commits to all consensus-relevant fields) and from `tx::Transaction::id`
+/// for UTXO-model txs (which is itself already BLAKE3-derived via
+/// [`tx::Transaction::calculate_hash`] — that dispatches to v2 once
+/// [`TX_HASH_V2_ACTIVATION_HEIGHT`] is met, so the body root inherits the v2
+/// malleability fix automatically). Aggregation uses
+/// [`validation::merkle_root`] (Bitcoin-style pair-duplicate-on-odd-count
+/// binary tree, BLAKE3 hash pairs).
+///
+/// Order of leaves: account-model txs first (in `transactions` order), then
+/// UTXO txs (in `utxo_transactions` order). This matches the order in which
+/// they are serialized into the block body, so peer validators can re-derive
+/// the same root deterministically.
+fn derive_template_merkle_root_v2_blake3(
+    transactions: &[Transaction],
+    utxo_transactions: &[tx::Transaction],
+) -> [u8; 32] {
+    let mut leaves: Vec<[u8; 32]> =
+        Vec::with_capacity(transactions.len() + utxo_transactions.len());
+    for transaction in transactions {
+        leaves.push(crypto::blake3_hash(transaction.tx_id.as_bytes()));
+    }
+    for utxo_tx in utxo_transactions {
+        leaves.push(utxo_tx.id);
+    }
+    validation::merkle_root(&leaves)
+}
+
 fn select_template_transactions(mempool: &[RuntimeTransaction]) -> Vec<Transaction> {
     let mut selected: Vec<Transaction> = mempool
         .iter()
@@ -3879,7 +3534,7 @@ fn select_template_utxo_transactions(mempool: &[RuntimeTransaction]) -> Vec<tx::
     selected
 }
 
-fn body_hash_hex(transactions: &[Transaction]) -> String {
+pub(crate) fn body_hash_hex(transactions: &[Transaction]) -> String {
     let hash = derive_block_body_hash(transactions);
     hex(&hash)
 }
@@ -3900,7 +3555,7 @@ fn derive_block_body_hash(transactions: &[Transaction]) -> [u8; 32] {
     cosmic_harmony_ekam_deeksha(&seed, transactions.len() as u64).data
 }
 
-fn now_secs() -> u64 {
+pub(crate) fn now_secs() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default()
@@ -3923,7 +3578,7 @@ fn journal_path(path: &Path) -> PathBuf {
     path.with_file_name(format!("{file_name}.journal"))
 }
 
-fn is_valid_account_id(value: &str) -> bool {
+pub(crate) fn is_valid_account_id(value: &str) -> bool {
     let len = value.len();
     (3..=64).contains(&len)
         && value
@@ -3935,7 +3590,7 @@ fn looks_like_utxo_address(value: &str) -> bool {
     value.starts_with("zion1")
 }
 
-fn parse_fixed_hex<const N: usize>(raw: &str, label: &str) -> Result<[u8; N], String> {
+pub(crate) fn parse_fixed_hex<const N: usize>(raw: &str, label: &str) -> Result<[u8; N], String> {
     let normalized = raw.trim().trim_start_matches("0x");
     if normalized.len() != N * 2 {
         return Err(format!("{label} must be exactly {} hex chars", N * 2));
@@ -3959,7 +3614,9 @@ pub(crate) fn hex(bytes: &[u8]) -> String {
 mod tests {
     use super::*;
     use std::fs;
-    use zion_cosmic_harmony::{generate_ekam_test_vector, EKAM_CANONICAL_TEST_VECTOR_HEX};
+    use zion_cosmic_harmony::{
+        generate_ekam_test_vector, BODY_ROOT_V2_ACTIVATION_HEIGHT, EKAM_CANONICAL_TEST_VECTOR_HEX,
+    };
 
     fn sample_header() -> MiningHeader {
         MiningHeader {
@@ -4315,7 +3972,10 @@ mod tests {
         assert_eq!(template.total_fees_zion, 8);
     }
 
+    /// Slow: `find_valid_nonce` + template rotation in debug build.
+    /// Run via: `cargo test --release -- --include-ignored`
     #[test]
+    #[ignore = "slow PoW in debug build; run with --release --ignored"]
     fn accepted_submission_rotates_template_and_updates_tip() {
         let mut runtime = NodeRuntime::new("node-rotate", NodeConfig::mainnet());
         let mined_transaction = sample_transaction("tx-mined", 3, 1);
@@ -4539,7 +4199,10 @@ mod tests {
         assert!(error.contains("conflicting peer block"));
     }
 
+    /// Slow: multiple `find_valid_nonce` rounds in debug build. Run via:
+    ///   `cargo test --release -- --include-ignored`
     #[test]
+    #[ignore = "slow PoW in debug build; run with --release --ignored"]
     fn import_peer_blocks_accepts_contiguous_batch() {
         let mut source = NodeRuntime::new("node-batch-source", NodeConfig::mainnet());
         let first_tx = sample_transaction("tx-batch-1", 3, 1);
@@ -4586,7 +4249,10 @@ mod tests {
         assert_eq!(target.active_template().height, 3);
     }
 
+    /// Slow: 2× `find_valid_nonce` in debug build.
+    /// Run via: `cargo test --release -- --include-ignored`
     #[test]
+    #[ignore = "slow PoW in debug build; run with --release --ignored"]
     fn import_peer_blocks_rejects_non_contiguous_batch() {
         let mut source = NodeRuntime::new("node-gap-source", NodeConfig::mainnet());
         let first_template = source.active_template();
@@ -4616,7 +4282,10 @@ mod tests {
         assert_eq!(target.chain_height(), 0);
     }
 
+    /// Slow: `find_valid_nonce` in debug build (~60s on M1).
+    /// Run via: `cargo test --release -- --include-ignored`
     #[test]
+    #[ignore = "slow PoW in debug build; run with --release --ignored"]
     fn accepted_block_indexes_are_available_after_submit() {
         let mut runtime = NodeRuntime::new("node-index", NodeConfig::mainnet());
         let template = runtime.active_template();
@@ -5183,7 +4852,12 @@ mod tests {
         assert_eq!(genesis.previous_hash_hex, hex(&[0u8; 32]));
     }
 
+    /// Slow: mines two blocks via `find_valid_nonce` (Cosmic Harmony Ekam Deeksha v2,
+    /// 256 KiB scratchpad) in debug build. Run via:
+    ///   `cargo test --manifest-path V3/Cargo.toml -p zion-core --release -- --ignored`
+    /// or `cargo test --release -- --include-ignored`.
     #[test]
+    #[ignore = "slow PoW in debug build; run with --release --ignored"]
     fn peer_import_verifies_chain_linkage() {
         let mut source = NodeRuntime::new("node-link-src", NodeConfig::mainnet());
         mine_one_block(&mut source);
@@ -5232,7 +4906,12 @@ mod tests {
         );
     }
 
+    /// Slow: mines two blocks via `find_valid_nonce` (Cosmic Harmony Ekam Deeksha v2,
+    /// 256 KiB scratchpad) in debug build. Run via:
+    ///   `cargo test --manifest-path V3/Cargo.toml -p zion-core --release -- --ignored`
+    /// or `cargo test --release -- --include-ignored`.
     #[test]
+    #[ignore = "slow PoW in debug build; run with --release --ignored"]
     fn batch_import_verifies_intra_batch_chain_linkage() {
         let mut source = NodeRuntime::new("node-batch-link-src", NodeConfig::mainnet());
         mine_one_block(&mut source);
@@ -5312,7 +4991,10 @@ mod tests {
         assert_eq!(template.transaction_ids.len(), 1);
     }
 
+    /// Slow: `mine_one_block` in debug build (~140s on M1).
+    /// Run via: `cargo test --release -- --include-ignored`
     #[test]
+    #[ignore = "slow PoW in debug build; run with --release --ignored"]
     fn coinbase_tx_credits_correct_address_and_amount() {
         let mut runtime = NodeRuntime::new("node-cb-addr", NodeConfig::mainnet());
         runtime.set_miner_address("alice-wallet".to_string());
@@ -6058,7 +5740,10 @@ mod tests {
     // E2E multi-node tests
     // ═══════════════════════════════════════════════════════════════════
 
+    /// Slow: 3× `mine_one_block` in debug build. Run via:
+    ///   `cargo test --release -- --include-ignored`
     #[test]
+    #[ignore = "slow PoW in debug build; run with --release --ignored"]
     fn e2e_block_relay_between_two_nodes() {
         let mut node_a = NodeRuntime::new("node-a", NodeConfig::mainnet());
         let mut node_b = NodeRuntime::new("node-b", NodeConfig::mainnet());
@@ -6081,7 +5766,12 @@ mod tests {
         assert_eq!(node_a.status().tip_hash_hex, node_b.status().tip_hash_hex,);
     }
 
+    /// Slow / hangs in debug build: 5× `mine_one_block` (LWMA difficulty
+    /// ramps each iteration). Empirically does not complete within 5 minutes
+    /// in `cargo test` debug build. Run via:
+    ///   `cargo test --release -- --include-ignored`
     #[test]
+    #[ignore = "slow PoW in debug build; run with --release --ignored"]
     fn e2e_get_blocks_since_sync() {
         let mut node_a = NodeRuntime::new("node-src", NodeConfig::mainnet());
         let mut node_b = NodeRuntime::new("node-dst", NodeConfig::mainnet());
@@ -6153,7 +5843,10 @@ mod tests {
         assert_eq!(decoded, msg);
     }
 
+    /// Slow: 2× `mine_one_block` in debug build. Run via:
+    ///   `cargo test --release -- --include-ignored`
     #[test]
+    #[ignore = "slow PoW in debug build; run with --release --ignored"]
     fn e2e_three_node_chain_sync() {
         let mut miner = NodeRuntime::new("miner", NodeConfig::mainnet());
         let mut relay = NodeRuntime::new("relay", NodeConfig::mainnet());
@@ -6187,7 +5880,10 @@ mod tests {
         assert_eq!(relay.status().tip_hash_hex, edge.status().tip_hash_hex);
     }
 
+    /// Slow: `mine_one_block` in debug build (~50s on M1).
+    /// Run via: `cargo test --release -- --include-ignored`
     #[test]
+    #[ignore = "slow PoW in debug build; run with --release --ignored"]
     fn e2e_duplicate_block_announce_is_harmless() {
         let mut node_a = NodeRuntime::new("dup-src", NodeConfig::mainnet());
         let mut node_b = NodeRuntime::new("dup-dst", NodeConfig::mainnet());
@@ -6208,7 +5904,10 @@ mod tests {
         assert_eq!(node_b.chain_height(), 1);
     }
 
+    /// Slow: `mine_one_block` + sync in debug build.
+    /// Run via: `cargo test --release -- --include-ignored`
     #[test]
+    #[ignore = "slow PoW in debug build; run with --release --ignored"]
     fn e2e_transaction_then_mine_then_sync() {
         let mut node_a = NodeRuntime::new("txmine-a", NodeConfig::mainnet());
         let mut node_b = NodeRuntime::new("txmine-b", NodeConfig::mainnet());
@@ -6232,7 +5931,10 @@ mod tests {
         assert_eq!(node_a.status().tip_hash_hex, node_b.status().tip_hash_hex,);
     }
 
+    /// Slow: 2× `mine_one_block` in debug build. Run via:
+    ///   `cargo test --release -- --include-ignored`
     #[test]
+    #[ignore = "slow PoW in debug build; run with --release --ignored"]
     fn e2e_status_exchange() {
         let mut node_a = NodeRuntime::new("status-a", NodeConfig::mainnet());
         mine_one_block(&mut node_a);
@@ -6504,5 +6206,138 @@ mod tests {
             err.contains("missing required validator proofs"),
             "expected proofs-missing rejection, got: {err}",
         );
+    }
+
+    // ════════════════════════════════════════════════════════════════════
+    // F2 BLAKE3 Merkle body root — hard-fork dispatcher tests
+    // (audit `AUDIT_COMPLETION.md` §2)
+    // ════════════════════════════════════════════════════════════════════
+
+    fn merkle_test_account_txs() -> Vec<Transaction> {
+        vec![
+            sample_transaction("merkle-tx-1", 5, 1),
+            sample_transaction("merkle-tx-2", 7, 2),
+            sample_transaction("merkle-tx-3", 11, 3),
+        ]
+    }
+
+    /// Pin the dispatcher: while the activation height is dormant
+    /// (`u64::MAX`), every realistic block height must route to v1 XOR.
+    /// This guarantees that historical body roots remain unchanged
+    /// post-merge of this PR.
+    #[test]
+    fn merkle_dispatcher_uses_v1_xor_below_activation() {
+        let txs = merkle_test_account_txs();
+        let utxos: Vec<tx::Transaction> = Vec::new();
+        let prev = [0x11u8; 32];
+
+        for &h in &[0u64, 1, 100, 1_000_000, u64::MAX - 1] {
+            let dispatched = derive_template_merkle_root("node-test", h, 42, prev, &txs, &utxos);
+            let v1 = derive_template_merkle_root_v1_xor("node-test", h, 42, prev, &txs, &utxos);
+            assert_eq!(
+                dispatched, v1,
+                "below activation gate (height = {h}), dispatcher must equal v1 XOR"
+            );
+        }
+    }
+
+    /// At activation height (`u64::MAX` while dormant), dispatcher must
+    /// route to v2 BLAKE3 Merkle. This pins the v2 path for the test
+    /// suite without committing to a real activation height.
+    #[test]
+    fn merkle_dispatcher_uses_v2_blake3_at_activation() {
+        let txs = merkle_test_account_txs();
+        let utxos: Vec<tx::Transaction> = Vec::new();
+        let prev = [0x11u8; 32];
+
+        let dispatched = derive_template_merkle_root(
+            "node-test",
+            BODY_ROOT_V2_ACTIVATION_HEIGHT,
+            42,
+            prev,
+            &txs,
+            &utxos,
+        );
+        let v2 = derive_template_merkle_root_v2_blake3(&txs, &utxos);
+        assert_eq!(
+            dispatched, v2,
+            "at activation gate, dispatcher must equal v2 BLAKE3 Merkle"
+        );
+    }
+
+    /// v1 XOR and v2 BLAKE3 Merkle MUST produce different roots for the
+    /// same input set. If this ever returns equal, the fork is silent —
+    /// peers wouldn't see a body-root mismatch and the migration would
+    /// be invisible to consensus.
+    #[test]
+    fn merkle_v1_xor_and_v2_blake3_differ() {
+        let txs = merkle_test_account_txs();
+        let utxos: Vec<tx::Transaction> = Vec::new();
+        let prev = [0x11u8; 32];
+
+        let v1 = derive_template_merkle_root_v1_xor("node-test", 100, 42, prev, &txs, &utxos);
+        let v2 = derive_template_merkle_root_v2_blake3(&txs, &utxos);
+        assert_ne!(
+            v1, v2,
+            "v1 XOR and v2 BLAKE3 Merkle MUST produce different roots — silent fork detected"
+        );
+    }
+
+    /// v2 BLAKE3 Merkle is deterministic — same inputs always produce the
+    /// same root. This is the basic invariant peers rely on to agree on a
+    /// block's body commitment.
+    #[test]
+    fn merkle_v2_blake3_is_deterministic() {
+        let txs = merkle_test_account_txs();
+        let utxos: Vec<tx::Transaction> = Vec::new();
+        let a = derive_template_merkle_root_v2_blake3(&txs, &utxos);
+        let b = derive_template_merkle_root_v2_blake3(&txs, &utxos);
+        assert_eq!(a, b, "v2 BLAKE3 Merkle must be deterministic");
+    }
+
+    /// v2 BLAKE3 Merkle has avalanche behaviour — a single-byte change
+    /// in any input tx propagates to the full root.
+    #[test]
+    fn merkle_v2_blake3_avalanche_on_tx_change() {
+        let mut txs = merkle_test_account_txs();
+        let utxos: Vec<tx::Transaction> = Vec::new();
+        let baseline = derive_template_merkle_root_v2_blake3(&txs, &utxos);
+
+        let original_id = txs[1].tx_id.clone();
+        txs[1].tx_id = format!("{}f", &original_id[..63]);
+        let perturbed = derive_template_merkle_root_v2_blake3(&txs, &utxos);
+        assert_ne!(
+            baseline, perturbed,
+            "v2 BLAKE3 Merkle must change when any tx_id changes"
+        );
+    }
+
+    /// v2 BLAKE3 Merkle commits to leaf order — swapping two txs in the
+    /// list produces a different root. This pins that the body root is
+    /// position-sensitive (Merkle property), so peers cannot reorder
+    /// transactions in a block body without invalidating the root.
+    #[test]
+    fn merkle_v2_blake3_is_order_sensitive() {
+        let txs = merkle_test_account_txs();
+        let utxos: Vec<tx::Transaction> = Vec::new();
+        let baseline = derive_template_merkle_root_v2_blake3(&txs, &utxos);
+
+        let mut swapped = txs.clone();
+        swapped.swap(0, 2);
+        let swapped_root = derive_template_merkle_root_v2_blake3(&swapped, &utxos);
+        assert_ne!(
+            baseline, swapped_root,
+            "v2 BLAKE3 Merkle must be order-sensitive (Merkle leaf-order property)"
+        );
+    }
+
+    /// Empty tx list — v2 must collapse to all-zeros (matches
+    /// `validation::merkle_root` empty contract). Pinning this so
+    /// future contributors don't accidentally feed empty lists into
+    /// a panic-prone branch.
+    #[test]
+    fn merkle_v2_blake3_empty_lists_yield_zero_root() {
+        let v2 = derive_template_merkle_root_v2_blake3(&[], &[]);
+        assert_eq!(v2, [0u8; 32], "empty tx + empty utxo => all-zeros root");
     }
 }

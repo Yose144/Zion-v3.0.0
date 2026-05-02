@@ -575,7 +575,14 @@ mod tests {
 
     #[test]
     fn tick_produces_dns_and_announce_commands() {
+        // The production `DNS_SEEDS` slice is currently empty (mainnet has not
+        // committed to a public DNS seed surface yet). The test seeds the
+        // engine explicitly so it exercises the DNS-resolve branch deterministically
+        // — without this `set_dns_seeds` call the assertion below would
+        // depend on whether anyone has populated `DNS_SEEDS`, which was the
+        // root cause of the historical "flaky DNS test" on `main`.
         let mut engine = DiscoveryEngine::new("testnet");
+        engine.set_dns_seeds(vec!["seed1.zion.test".to_string()]);
         engine.set_bootstrap_nodes(vec![(ip(10, 0, 0, 1), DISCOVERY_PORT)]);
         let now = Instant::now();
         let cmds = engine.tick(now, 1000, &["peer1".into()], 0, 8);
@@ -584,13 +591,42 @@ mod tests {
             .iter()
             .filter(|c| matches!(c, DiscoveryCommand::ResolveDns { .. }))
             .collect();
-        assert!(!dns.is_empty());
+        assert!(
+            !dns.is_empty(),
+            "tick() must emit at least one ResolveDns command when dns_seeds is non-empty"
+        );
 
         let announces: Vec<_> = cmds
             .iter()
             .filter(|c| matches!(c, DiscoveryCommand::SendAnnounce { .. }))
             .collect();
-        assert!(!announces.is_empty());
+        assert!(
+            !announces.is_empty(),
+            "tick() must emit at least one SendAnnounce command when bootstrap_nodes is non-empty"
+        );
+    }
+
+    /// Mirrors the historical default (`DNS_SEEDS = &[]`) and pins the
+    /// invariant that `tick()` must NOT emit `ResolveDns` when there are no
+    /// configured DNS seeds. This complements `tick_produces_dns_and_announce_commands`
+    /// so future contributors do not accidentally re-introduce the empty-seed
+    /// failure that the explicit `set_dns_seeds` call above hides.
+    #[test]
+    fn tick_emits_no_dns_when_seeds_empty() {
+        let mut engine = DiscoveryEngine::new("testnet");
+        engine.set_bootstrap_nodes(vec![(ip(10, 0, 0, 1), DISCOVERY_PORT)]);
+        // Default `DNS_SEEDS` is empty; do NOT call `set_dns_seeds`.
+        assert_eq!(engine.dns_seeds.len(), DNS_SEEDS.len());
+        let now = Instant::now();
+        let cmds = engine.tick(now, 1000, &["peer1".into()], 0, 8);
+        let dns: Vec<_> = cmds
+            .iter()
+            .filter(|c| matches!(c, DiscoveryCommand::ResolveDns { .. }))
+            .collect();
+        assert!(
+            dns.is_empty(),
+            "tick() must not emit ResolveDns when dns_seeds is empty"
+        );
     }
 
     #[test]
