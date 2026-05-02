@@ -134,3 +134,12 @@ access are still live.** Removing the files from `HEAD` in this commit
 does **not** invalidate any of them — they remain recoverable from
 history and, more importantly, from any clone made before the rewrite.
 Rotation is the only mitigation that actually closes the window.
+
+---
+
+## See also — 2026-05 consolidated close-out playbook (items 1–6)
+
+Operational sequencing for rotation, fork rehearsal, bridge production
+rollout, external-audit prep, history scrub commands, and fuzzing plan:
+
+`V3/docs/operational/AUDIT_CLOSEOUT_1_THROUGH_6.md`

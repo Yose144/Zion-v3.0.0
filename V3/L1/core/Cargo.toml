@@ -33,3 +33,4 @@ tempfile.workspace = true
 [features]
 default = []
 testnet = []
+testnet_fork_rehearsal = ["zion-cosmic-harmony/testnet_fork_rehearsal"]
