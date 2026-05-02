@@ -363,12 +363,14 @@ export default function EkamMuseumLanding() {
             <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-300">{tr('ekamPage', 'founders_subtitle', lang)}</p>
 
             <div className="mt-6 relative overflow-hidden rounded-2xl border border-amber-200/20 bg-black/30 shadow-[0_18px_60px_rgba(0,0,0,0.35)]">
-              <img
+              <Image
                 src={EKAM_FOUNDERS_BANNER_IMAGE}
                 alt="Sri Amma & Sri Bhagavan"
+                width={1600}
+                height={500}
+                sizes="(min-width: 1024px) 1152px, 100vw"
                 className="aspect-[16/5] w-full object-cover"
                 loading="lazy"
-                decoding="async"
                 referrerPolicy="no-referrer"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/40 to-transparent sm:from-slate-950/75" />
@@ -385,12 +387,14 @@ export default function EkamMuseumLanding() {
             <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_1.2fr]">
               <div className="space-y-4">
                 <div className="relative overflow-hidden rounded-2xl border border-amber-200/20 bg-black/30 shadow-[0_18px_60px_rgba(0,0,0,0.35)]">
-                  <img
+                  <Image
                     src={EKAM_PREETHAJI_KRISHNAJI_IMAGE}
                     alt="Sri Preethaji & Sri Krishnaji"
+                    width={1200}
+                    height={750}
+                    sizes="(min-width: 1024px) 460px, 100vw"
                     className="aspect-[16/10] w-full object-cover object-top"
                     loading="lazy"
-                    decoding="async"
                     referrerPolicy="no-referrer"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
@@ -457,12 +461,14 @@ export default function EkamMuseumLanding() {
             <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {/* Ekam hero */}
               <div className="relative overflow-hidden rounded-2xl border border-amber-200/20 bg-black/30 sm:col-span-2 lg:col-span-1 lg:row-span-2">
-                <img
+                <Image
                   src={EKAM_BANNER_IMAGE}
                   alt="Ekam — Oneness Temple"
+                  width={900}
+                  height={1000}
+                  sizes="(min-width: 1024px) 360px, (min-width: 640px) 50vw, 100vw"
                   className="h-full w-full object-cover"
                   loading="lazy"
-                  decoding="async"
                   referrerPolicy="no-referrer"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
@@ -473,12 +479,14 @@ export default function EkamMuseumLanding() {
               </div>
               {/* Turiya / Sacred space */}
               <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/30">
-                <img
+                <Image
                   src={EKAM_TURIYA_IMAGE}
                   alt="Sacred meditation space"
+                  width={900}
+                  height={560}
+                  sizes="(min-width: 1024px) 360px, (min-width: 640px) 50vw, 100vw"
                   className="aspect-[16/10] w-full object-cover"
                   loading="lazy"
-                  decoding="async"
                   referrerPolicy="no-referrer"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
@@ -489,12 +497,14 @@ export default function EkamMuseumLanding() {
               </div>
               {/* Nordic centre */}
               <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black/30">
-                <img
+                <Image
                   src={EKAM_NORDIC_IMAGE}
                   alt="Oneness Nordic — European Centre"
+                  width={900}
+                  height={560}
+                  sizes="(min-width: 1024px) 360px, (min-width: 640px) 50vw, 100vw"
                   className="aspect-[16/10] w-full object-cover"
                   loading="lazy"
-                  decoding="async"
                   referrerPolicy="no-referrer"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
