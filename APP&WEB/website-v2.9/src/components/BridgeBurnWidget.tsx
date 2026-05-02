@@ -56,8 +56,7 @@ export default function BridgeBurnWidget() {
   function getProvider() {
     const eth = (window as Window & { ethereum?: unknown }).ethereum;
     if (!eth) throw new Error('MetaMask not found');
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return new ethers.providers.Web3Provider(eth as any);
+    return new ethers.providers.Web3Provider(eth as ethers.providers.ExternalProvider);
   }
 
   const refreshBalance = useCallback(async (addr: string) => {
@@ -74,7 +73,7 @@ export default function BridgeBurnWidget() {
       setPhase('ready');
       console.error('balance fetch error', e);
     }
-  }, []);
+  }, [cs]);
 
   // ── connect wallet ───────────────────────────────────────────────────────────
 

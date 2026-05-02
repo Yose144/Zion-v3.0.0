@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { createContext, useContext, useState, type ReactNode } from 'react';
 
 export type Lang = 'cs' | 'en';
 
@@ -15,14 +15,15 @@ const LanguageContext = createContext<LanguageContextType>({
 });
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [lang, setLangState] = useState<Lang>('cs');
-
-  useEffect(() => {
+  const [lang, setLangState] = useState<Lang>(() => {
+    if (typeof window === 'undefined') return 'cs';
     try {
-      const stored = localStorage.getItem('zion-lang') as Lang | null;
-      if (stored === 'cs' || stored === 'en') setLangState(stored);
-    } catch {}
-  }, []);
+      const stored = window.localStorage.getItem('zion-lang') as Lang | null;
+      return stored === 'cs' || stored === 'en' ? stored : 'cs';
+    } catch {
+      return 'cs';
+    }
+  });
 
   const setLang = (l: Lang) => {
     setLangState(l);
