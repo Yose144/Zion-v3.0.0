@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useLang } from '@/contexts/LanguageContext';
+import { ATOMIC_UNITS_PER_ZION } from '@/lib/constants';
 import { CHAPTERS } from './bookData';
 import { EDITIONS_DATA } from './generatedEditions';
 import PioneerProjectCards from './components/PioneerProjectCards';
@@ -52,7 +53,7 @@ type EditionIntro = {
   notesEn: string[];
 };
 
-const APPENDIX_NUMBERS = new Set(['A', 'B', 'C', 'D']);
+const APPENDIX_NUMBERS = new Set(['A', 'B', 'C', 'D', 'E', 'F']);
 
 const EDITION_OPTIONS: Array<{
   id: EditionKey;
@@ -234,7 +235,7 @@ const EDITION_INTRO: Record<EditionKey, EditionIntro> = {
 
 const EDITION_CHAPTERS: Record<EditionKey, BookChapter[]> = {
   org: EDITIONS_DATA.org ?? CHAPTERS,
-  final: EDITIONS_DATA.final ?? CHAPTERS,
+  final: CHAPTERS,
   gemini: EDITIONS_DATA.gemini ?? CHAPTERS,
 };
 
@@ -272,6 +273,10 @@ function formatChapterLabel(chapter: BookChapter, cs: boolean) {
     return `${cs ? 'Prolog' : 'Prologue'} — ${title}`;
   }
 
+  if (chapter.number === 'Závěr') {
+    return `${cs ? 'Závěr' : 'Conclusion'} — ${title}`;
+  }
+
   if (APPENDIX_NUMBERS.has(chapter.number)) {
     return title;
   }
@@ -296,6 +301,16 @@ export interface AccelerationDirection {
   rgb: string;
   symbol: string;
 }
+
+type DharmaWheelSpoke = {
+  id: string;
+  titleCs: string;
+  titleEn: string;
+  mapCs: string;
+  mapEn: string;
+  descCs: string;
+  descEn: string;
+};
 
 export const ACCELERATION_DIRECTIONS: AccelerationDirection[] = [
   {
@@ -738,6 +753,81 @@ const BOOT_SEQUENCE = [
   },
 ];
 
+const DHARMA_WHEEL_SPOKES: DharmaWheelSpoke[] = [
+  {
+    id: 'understanding',
+    titleCs: 'Správné Porozumění',
+    titleEn: 'Right Understanding',
+    mapCs: 'Blockchain transparentnost',
+    mapEn: 'Blockchain transparency',
+    descCs: 'Vidět věci tak, jak skutečně jsou: open-source kód, auditovatelný řetězec a žádná iluze skrytých pravidel.',
+    descEn: 'Seeing things as they truly are: open-source code, an auditable chain, and no illusion of hidden rules.',
+  },
+  {
+    id: 'intent',
+    titleCs: 'Správný Záměr',
+    titleEn: 'Right Intent',
+    mapCs: 'AI Native Manifest + CL systém',
+    mapEn: 'AI Native Manifest + CL system',
+    descCs: 'Záměr musí předcházet činu: manifest, humanitární tithe i Consciousness Level drží směr dřív než přijde výkon.',
+    descEn: 'Intent must precede action: the manifest, humanitarian tithe, and Consciousness Level hold the direction before performance arrives.',
+  },
+  {
+    id: 'speech',
+    titleCs: 'Správná Řeč',
+    titleEn: 'Right Speech',
+    mapCs: 'Hiranyagarbha Satya test',
+    mapEn: 'Hiranyagarbha Satya test',
+    descCs: 'Pravdivost, laskavost a užitečnost: blockchain neumí lhát a AI má říct nevím, když neví.',
+    descEn: 'Truthfulness, kindness, and usefulness: the blockchain cannot lie, and AI must say it does not know when it does not know.',
+  },
+  {
+    id: 'action',
+    titleCs: 'Správné Jednání',
+    titleEn: 'Right Action',
+    mapCs: 'Permakultúra + ahimsa',
+    mapEn: 'Permaculture + ahimsa',
+    descCs: 'Každodenní čin bez škody: permakultura, honest mining a ochrana života jako provozní disciplína.',
+    descEn: 'Daily action without harm: permaculture, honest mining, and protection of life as an operational discipline.',
+  },
+  {
+    id: 'livelihood',
+    titleCs: 'Správné Živobytí',
+    titleEn: 'Right Livelihood',
+    mapCs: 'Mining jako čistý byznys model',
+    mapEn: 'Mining as a clean business model',
+    descCs: 'Živobytí bez manipulace: práce za odměnu, bez prodeje pozornosti, dat nebo závislosti.',
+    descEn: 'Livelihood without manipulation: work for reward, without selling attention, data, or addiction.',
+  },
+  {
+    id: 'effort',
+    titleCs: 'Správné Úsilí',
+    titleEn: 'Right Effort',
+    mapCs: 'Rust + testy u kořenů',
+    mapEn: 'Rust + tests at the roots',
+    descCs: 'Energie vynaložená správně: silné kořeny v Rustu, testech a dlouhém horizontu místo rychlých zkratek.',
+    descEn: 'Energy spent rightly: strong roots in Rust, tests, and a long horizon instead of fast shortcuts.',
+  },
+  {
+    id: 'mindfulness',
+    titleCs: 'Správná Bdělost',
+    titleEn: 'Right Mindfulness',
+    mapCs: 'Medical Table biofeedback',
+    mapEn: 'Medical Table biofeedback',
+    descCs: 'Přítomnost bez útěku: biofeedback, paměť řetězce a AI zrcadlo ukazují stav takový, jaký je.',
+    descEn: 'Presence without escape: biofeedback, chain memory, and the AI mirror show the state exactly as it is.',
+  },
+  {
+    id: 'concentration',
+    titleCs: 'Správná Meditace',
+    titleEn: 'Right Concentration',
+    mapCs: 'CL9 + Issobella + Ekam Deeksha',
+    mapEn: 'CL9 + Issobella + Ekam Deeksha',
+    descCs: 'Soustředění, které uklidní ego: od CL9 přes Overview Effect až po konsensus jako vědomou praxi.',
+    descEn: 'Concentration that calms the ego: from CL9 through the Overview Effect to consensus as conscious practice.',
+  },
+];
+
 const LIVE_TERMINAL_CMDS = [
   { cmd: 'zion version', resp: 'zion v2.9.8 "Deeksha" · mainnet · build 2026-04-01' },
   { cmd: 'zion status --layer all', resp: 'node ✓  pool ✓  miner ✓  bridge ✓  all nominal' },
@@ -811,6 +901,7 @@ export default function TerraNovaBookClient() {
   const [visibleBootLines, setVisibleBootLines] = useState(1);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [compassDir, setCompassDir] = useState<number | null>(0);
+  const [dharmaSpoke, setDharmaSpoke] = useState(0);
   const [twCmdText, setTwCmdText] = useState('');
   const [twRespText, setTwRespText] = useState('');
   const twRef = useRef({ cmdIdx: 0, charIdx: 0, phase: 'typing' as string, pauseTicks: 0 });
@@ -826,10 +917,18 @@ export default function TerraNovaBookClient() {
       ? cs
         ? 'Prolog'
         : 'Prologue'
-      : chapter.number === 'A' || chapter.number === 'B' || chapter.number === 'C' || chapter.number === 'D'
+      : APPENDIX_NUMBERS.has(chapter.number)
       ? `${cs ? 'Příloha' : 'Appendix'} ${chapter.number}`
+      : chapter.number === 'Závěr'
+      ? cs
+        ? 'Závěr'
+        : 'Conclusion'
       : `${cs ? 'Část' : 'Part'} ${chapter.number}`;
   const selectedDirection = compassDir !== null ? ACCELERATION_DIRECTIONS[compassDir] : null;
+  const selectedDharmaSpoke = DHARMA_WHEEL_SPOKES[dharmaSpoke];
+  const flowersPerZionLabel = cs
+    ? `1 ZION = 10^${Math.log10(ATOMIC_UNITS_PER_ZION)} květů`
+    : `1 ZION = 10^${Math.log10(ATOMIC_UNITS_PER_ZION)} flowers`;
   const introSignals = cs ? intro.signalsCs : intro.signalsEn;
   const introLead = cs ? intro.leadCs : intro.leadEn;
   const introBody = cs ? intro.bodyCs : intro.bodyEn;
@@ -1418,6 +1517,121 @@ export default function TerraNovaBookClient() {
                       </div>
                     )}
                   </div>
+                  <div className="rounded-2xl border border-emerald-300/12 bg-emerald-300/5 p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <p className="text-[10px] uppercase tracking-[0.28em] text-emerald-300/80">
+                          {cs ? 'Dharmachakra' : 'Dharmachakra'}
+                        </p>
+                        <h3 className="mt-2 text-lg font-semibold text-emerald-200">
+                          {cs ? 'Ušlechtilá osmidílná stezka' : 'The Noble Eightfold Path'}
+                        </h3>
+                      </div>
+                      <p className="max-w-xs text-xs leading-relaxed text-emerald-100/70">
+                        {cs
+                          ? 'Buddhovo kolo Dharmy jako druhá navigační vrstva Terra Novy: osm paprsků, jedno vědomé jádro.'
+                          : 'Buddha’s Wheel of Dharma as Terra Nova’s second navigation layer: eight spokes, one conscious core.'}
+                      </p>
+                    </div>
+                    <div className="mt-4 grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)] lg:items-start">
+                      <div className="mx-auto w-full max-w-[220px] rounded-[28px] border border-emerald-300/10 bg-black/25 p-3">
+                        <svg viewBox="0 0 220 220" className="h-auto w-full" role="img" aria-label={cs ? 'Dharmachakra s osmi paprsky' : 'Dharmachakra with eight spokes'}>
+                          <circle cx="110" cy="110" r="86" fill="rgba(16,185,129,0.06)" stroke="rgba(16,185,129,0.18)" strokeWidth="2" />
+                          <circle cx="110" cy="110" r="58" fill="rgba(245,158,11,0.05)" stroke="rgba(245,158,11,0.2)" strokeWidth="1.5" />
+                          <circle cx="110" cy="110" r="18" fill="rgba(245,158,11,0.2)" stroke="rgba(253,224,71,0.45)" strokeWidth="1.5" />
+                          <circle cx="110" cy="110" r="34" fill="none" stroke="rgba(16,185,129,0.12)" strokeWidth="8" strokeDasharray="6 10" />
+                          {DHARMA_WHEEL_SPOKES.map((spoke, index) => {
+                            const isActive = dharmaSpoke === index;
+                            const angle = ((index * 45) - 90) * (Math.PI / 180);
+                            const x = 110 + Math.cos(angle) * 86;
+                            const y = 110 + Math.sin(angle) * 86;
+                            const innerX = 110 + Math.cos(angle) * 18;
+                            const innerY = 110 + Math.sin(angle) * 18;
+                            return (
+                              <g
+                                key={spoke.id}
+                                role="button"
+                                tabIndex={0}
+                                aria-label={cs ? spoke.titleCs : spoke.titleEn}
+                                onClick={() => setDharmaSpoke(index)}
+                                onKeyDown={(event) => {
+                                  if (event.key === 'Enter' || event.key === ' ') {
+                                    event.preventDefault();
+                                    setDharmaSpoke(index);
+                                  }
+                                }}
+                                className="cursor-pointer"
+                              >
+                                <line
+                                  x1={innerX}
+                                  y1={innerY}
+                                  x2={x}
+                                  y2={y}
+                                  stroke={isActive ? 'rgba(253,224,71,0.92)' : 'rgba(16,185,129,0.45)'}
+                                  strokeWidth={isActive ? '4' : '3'}
+                                  strokeLinecap="round"
+                                />
+                                <circle cx={x} cy={y} r={isActive ? '9' : '7'} fill={isActive ? 'rgba(253,224,71,0.95)' : 'rgba(16,185,129,0.9)'} stroke="rgba(209,250,229,0.7)" strokeWidth="1.5" />
+                              </g>
+                            );
+                          })}
+                          <text x="110" y="106" textAnchor="middle" className="fill-emerald-100 text-[10px] uppercase tracking-[0.28em]">
+                            {cs ? 'Dharma' : 'Dharma'}
+                          </text>
+                          <text x="110" y="121" textAnchor="middle" className="fill-emerald-300 text-[8px] uppercase tracking-[0.22em]">
+                            {dharmaSpoke + 1}/8
+                          </text>
+                        </svg>
+                      </div>
+                      <div className="space-y-3">
+                        <div className="rounded-2xl border border-emerald-300/15 bg-black/25 px-4 py-3">
+                          <p className="text-[10px] uppercase tracking-[0.24em] text-emerald-300/70">
+                            {cs ? 'Aktivní paprsek' : 'Active spoke'}
+                          </p>
+                          <h4 className="mt-1 text-base font-semibold text-emerald-100">
+                            {cs ? selectedDharmaSpoke.titleCs : selectedDharmaSpoke.titleEn}
+                          </h4>
+                          <p className="mt-2 text-sm leading-relaxed text-gray-300">
+                            {cs ? selectedDharmaSpoke.descCs : selectedDharmaSpoke.descEn}
+                          </p>
+                          <div className="mt-3 rounded-2xl border border-white/8 bg-white/4 px-3 py-2">
+                            <p className="text-[10px] uppercase tracking-[0.22em] text-gray-500">
+                              {cs ? 'ZION mapa' : 'ZION map'}
+                            </p>
+                            <p className="mt-1 text-sm text-emerald-100">
+                              {cs ? selectedDharmaSpoke.mapCs : selectedDharmaSpoke.mapEn}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="grid gap-2 sm:grid-cols-2">
+                        {DHARMA_WHEEL_SPOKES.map((spoke, index) => {
+                          const isActive = dharmaSpoke === index;
+                          return (
+                          <button
+                            type="button"
+                            onClick={() => setDharmaSpoke(index)}
+                            key={spoke.id}
+                            className="rounded-2xl border px-3 py-2.5 text-left transition-all"
+                            style={{
+                              borderColor: isActive ? 'rgba(253,224,71,0.35)' : 'rgba(255,255,255,0.08)',
+                              backgroundColor: isActive ? 'rgba(253,224,71,0.08)' : 'rgba(255,255,255,0.02)',
+                            }}
+                          >
+                            <p className="text-[10px] uppercase tracking-[0.24em] text-emerald-300/70">
+                              {index + 1}
+                            </p>
+                            <p className="mt-1 text-sm font-medium" style={{ color: isActive ? '#FDE047' : 'rgb(209 250 229 / 1)' }}>
+                              {cs ? spoke.titleCs : spoke.titleEn}
+                            </p>
+                            <p className="mt-1 text-[12px] leading-snug text-gray-300">
+                              {cs ? spoke.mapCs : spoke.mapEn}
+                            </p>
+                          </button>
+                        );})}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                   <p className="text-[11px] leading-relaxed text-gray-500">
                     {cs
                       ? 'Každý bod kompasu je zároveň aktivní uzel roadmapy. Klikni na L1 až L6 nahoře nebo přímo do SVG.'
@@ -1511,7 +1725,7 @@ export default function TerraNovaBookClient() {
           <div className="grid gap-2 sm:grid-cols-2">
             {currentChapters.map((ch, i) => {
               const isActive = activeChapter === i;
-              const isAppendix = ch.number === 'A' || ch.number === 'B' || ch.number === 'C' || ch.number === 'D';
+              const isAppendix = APPENDIX_NUMBERS.has(ch.number);
               return (
                 <button
                   key={ch.id}
@@ -1871,6 +2085,9 @@ export default function TerraNovaBookClient() {
           <p className="mt-4 text-sm italic text-pink-200/35 tracking-[0.18em]">
             pro vás ♡
           </p>
+          <p className="mt-2 text-[11px] uppercase tracking-[0.26em] text-zion-gold/60">
+            {flowersPerZionLabel}
+          </p>
         </div>
       </div>
 
@@ -1907,7 +2124,7 @@ export default function TerraNovaBookClient() {
               <nav className="space-y-1">
                 {currentChapters.map((ch, i) => {
                   const isActive = activeChapter === i;
-                  const isAppendix = ch.number === 'A' || ch.number === 'B' || ch.number === 'C' || ch.number === 'D';
+                  const isAppendix = APPENDIX_NUMBERS.has(ch.number);
                   return (
                     <button
                       key={ch.id}
