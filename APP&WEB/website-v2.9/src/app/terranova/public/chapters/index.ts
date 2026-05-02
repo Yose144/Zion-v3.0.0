@@ -13,6 +13,9 @@ import ch11 from './ch11-kompas';
 import chA from './chA-nvidia';
 import chB from './chB-proroctvi';
 import chC from './chC-zjeveni';
+import chD from './chD-bhagavad-gita';
+import chE from './chE-zlata-stredni-cesta';
+import chF from './chF-zaver-jedno-srdce';
 
 import type { BookChapter } from '../bookMetaPublic';
 
@@ -32,4 +35,7 @@ export const CHAPTERS_PUBLIC: BookChapter[] = [
   chA,
   chB,
   chC,
+  chD,
+  chE,
+  chF,
 ];

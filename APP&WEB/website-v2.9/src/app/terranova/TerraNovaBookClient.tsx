@@ -1869,7 +1869,7 @@ export default function TerraNovaBookClient() {
             <circle cx="60" cy="60" r="2.8" fill="rgba(255,255,255,0.88)" />
           </motion.svg>
           <p className="mt-4 text-sm italic text-pink-200/35 tracking-[0.18em]">
-            pro tebe ♡
+            pro vás ♡
           </p>
         </div>
       </div>
