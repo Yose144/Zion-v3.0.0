@@ -146,6 +146,11 @@ fn rpc_call(method: &str, params: Value) -> Value {
     resp["result"].clone()
 }
 
+fn rpc_chain_tip_height() -> u64 {
+    let info = rpc_call("getChainInfo", json!(null));
+    info["chain_height"].as_u64().unwrap_or(0)
+}
+
 // ── Helpers ────────────────────────────────────────────────────────────
 
 const FLOWERS_PER_ZION: u64 = 1_000_000_000_000;
@@ -275,13 +280,15 @@ fn cmd_send(to: &str, amount_str: &str, fee: u64) {
         })
         .collect();
 
+    let chain_tip = rpc_chain_tip_height();
+
     let params = zion_core::wallet::SendParams {
         to_address: to.to_string(),
         amount: amount_flowers,
         fee,
     };
 
-    let result = zion_core::wallet::build_and_sign(&sk, &address, &params, &available)
+    let result = zion_core::wallet::build_and_sign(&sk, &address, &params, &available, chain_tip)
         .unwrap_or_else(|e| die(&format!("build failed: {e}")));
 
     // Submit
@@ -349,6 +356,8 @@ fn cmd_bridge_lock(evm_recipient: &str, amount_str: &str, chain: &str) {
     let (selected, total) = select_utxos_largest_first(&available, target);
     let change = total - target;
 
+    let tip = rpc_chain_tip_height();
+
     let vk = sk.verifying_key();
     let mut outputs = vec![zion_core::tx::TxOutput {
         amount: amount_flowers,
@@ -380,7 +389,7 @@ fn cmd_bridge_lock(evm_recipient: &str, amount_str: &str, chain: &str) {
 
     let mut tx = zion_core::tx::Transaction {
         id: [0u8; 32],
-        version: 1,
+        version: zion_core::wallet::pending_utxo_tx_version(tip),
         inputs,
         outputs,
         fee,

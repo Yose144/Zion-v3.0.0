@@ -30,17 +30,21 @@
 | **C.3** | `[profile.test.package.zion-cosmic-harmony] opt-level = 3` (z 2) — PoW kryptografie v testech běží na release-rychlosti | 🟢 hotové | mining-heavy testy zrychleny ~2× |
 | **E.1** | Aktivační konstanty pro hard fork: `TX_HASH_V2_ACTIVATION_HEIGHT: u64 = u64::MAX` + `BODY_ROOT_V2_ACTIVATION_HEIGHT: u64 = u64::MAX` (oba dormant) + `tx_hash_v2_active(h)` / `body_root_v2_active(h)` predikáty v `cosmic-harmony::deeksha`, re-export z lib root | 🟢 hotové | `zion-cosmic-harmony` lib: **95 → 100** (+5 dormant-gate pinning testů) |
 | **E.2** | F2 BLAKE3 Merkle dispatcher v `derive_template_merkle_root` — `body_root_v2_active(height)` rozhoduje mezi legacy XOR aggregate (`derive_template_merkle_root_v1_xor`) a novou BLAKE3 binární cestou (`derive_template_merkle_root_v2_blake3`) přes `validation::merkle_root` | 🟢 hotové | `zion-core` lib: **+7 dispatcher / v1-vs-v2 / avalanche / order-sensitive / empty-list / determinism testů** |
-| **E.3** | `validate_peer_block` reject `tx.version < 2` nad activation height | 🟡 plánováno (XS — odhad ~30 LoC) | bude pinováno regression testem |
-| **E.4** | Mempool admission + RPC `submit_*` reject v1 nad activation height | 🟡 plánováno | M scope |
-| **E.5** | Wallet emission set `tx.version = 2` nad activation height | 🟡 plánováno | M scope |
-| **B** | Dependabot batch (#1, #3, #5–#17, ~14 PRs) | 🟡 plánováno (mechanické přes GH UI) | minor surface reduction |
-| **D** | `lib.rs` monolith refactor — extract `validate_peer_block` (464 LoC) do `validation/peer_block.rs` | 🟡 plánováno (L scope, dedicated session) | žádná behaviorální změna; čistá auditovatelnost |
-| **F** | Testnet hard-fork rehearsal harness (Docker compose + scripts) | 🟡 plánováno (po E.3–E.5) | gate před mainnet aktivací |
+| **E.3** | `validate_peer_block` reject `tx.version < 2` nad activation height | 🟢 hotové | dormant dokud `TX_HASH_V2_ACTIVATION_HEIGHT == u64::MAX`; gate připojen před signaturami |
+| **E.4** | Mempool admission + RPC `submit_*` reject v1 nad activation height | 🟢 hotové | `insert_utxo_transaction`: pending výška `tip+1`; RPC reuse |
+| **E.5** | Wallet emission set `tx.version = 2` nad activation height | 🟢 hotové | `wallet::pending_utxo_tx_version`, CLI `getChainInfo`, pool payouts dostávají `job.height` |
+| **B** | Dependabot batch (#3, #5–#17, ~11 PRs) | 🟡 částečně | PR **#3** (`actions/checkout` 4→6) squash-merged; **#17** conflicts — jednotlivě rebasovat; cargo bump PR zvlášť po CI |
+| **D** | `lib.rs` refactor — extract peer-block pipeline | 🟢 hotové | [`V3/L1/core/src/peer_block_validation.rs`](./V3/L1/core/src/peer_block_validation.rs) (`validate_accepted_peer_block`); genesis zůstává v `ChainState::validate_peer_block` |
+| **F** | Testnet hard-fork rehearsal harness (Docker compose + scripts) | 🟢 základ | skript [`V3/scripts/hardfork-rehearsal-testnet.sh`](./V3/scripts/hardfork-rehearsal-testnet.sh) — dokumentuje rebuild-driven rehearsal dokud nejsou runtime env overrides |
+| **Clean gate** | Release validation sweep po WIP + `rustls-webpki` audit bumpu | 🟢 průchozí | `cargo fmt --all --check` ✅; `cargo clippy --workspace --all-targets -j1` ✅ (warnings only); `cargo test --workspace --release -- --test-threads=1` ✅; `cargo audit` ✅ **0 vulnerabilities** / 6 warnings |
+| **Lockfile** | Trackovat `V3/Cargo.lock` pro mainnet build reproducibility | 🟢 hotové | `V3/.gitignore` přepnuto na `!Cargo.lock`; `rustls-webpki` zvednuto na `0.103.13` v lokálním lockfile kvůli RUSTSEC-2026-0098/0099/0104 |
 
 Tím se **ze tří dříve otevřených P1/P2 blokátorů** zavřely dva — zbývá už
 **jen koordinovaný hard-fork window** (tx-hash v2 + F2 BLAKE3 Merkle) jako
 poslední kódový blokátor. **Foundation pro hard fork je v repu** (E.1 + E.2),
-zbývá `validate_peer_block` hook + mempool admission + wallet emission.
+zbývá koordinovaný **activation height flip** (`TX_HASH_V2_ACTIVATION_HEIGHT` /
+`BODY_ROOT_V2_ACTIVATION_HEIGHT`) po lokálním rehearsal — konsensusové háky **E.3–E.5**
+(jsou v repu), dormant dokud konstanty zůstanou `u64::MAX`.
 
 ---
 
@@ -56,8 +60,8 @@ v Praze**. Co zbývá:
    *Nadále nejvyšší priorita — klíče jsou stále live, dokud nejsou ručně rotovány.*
 2. **Naplánovat „hard fork"** v koordinovaném okně, kdy se zapne nové, lépe
    chráněné hashování transakcí (`tx-hash v2`) a Merkle stromu bloku (`F2`).
-   Kód `tx-hash v2` už je hotový a dormant v repu (PR #25); F2 BLAKE3 Merkle
-   má detailní design v `AUDIT_COMPLETION.md` §2 a čeká na PR + aktivační výšku.
+   Kód `tx-hash v2` + F2 BLAKE3 Merkle dispatcher + peer/mempool/wallet hooks
+   jsou hotové a dormant v repu; čeká se na testnet rehearsal a aktivační výšku.
 3. **Zaplatit GitHub Actions** (nebo udělat repo public po historickém scrubu).
    Bez toho CI neběží zelená a nemůže se automaticky validovat každý PR.
 4. **Externí audit** (Trail of Bits / Halborn / OtterSec — Q3 2026 plán).
@@ -411,7 +415,7 @@ nebo má konkrétní aktivační plán v
 
 | Crate | Lib testů | Integration | Aktivní (dev) | Ignored | Fail |
 |---|---:|---:|---:|---:|---|
-| `zion-core` (L1) | **487** | — | 474 | **13** slow PoW (`--release --ignored`) | 0 |
+| `zion-core` (L1) | **488** | — | 475 | **13** slow PoW (`--release --include-ignored`) | 0 |
 | `zion-cosmic-harmony` (L1 PoW) | **100** | — | 100 | 0 | 0 |
 | `zion-pool` (L1) | 53 | 29 | 82 | 0 | 0 |
 | `zion-miner` (L1) | 59 | — | 59 | 0 | 0 |
@@ -450,12 +454,19 @@ Lokálně 2026-05-02 ověřeno (vše `0 failed`):
 - `zion-native-ffi` no-default-features: 13
 - `zion-cli`: 21, `zion-dao`: 40 lib + 25 integration, `zion-atomic-swap`:
   18, `zion-ncl`: 42 lib + 1 doc, `zion-warp`: 251, `zion-ai-native`: 195
+- `zion-core` release lib run: **475 passed / 13 ignored / 0 failed**
 - `zion-core` `tx::tests::tx_hash_*` regression batch: **8/8** (5 nových
   z PR #25 + 3 původní)
 
-`cargo check --manifest-path V3/Cargo.toml --workspace` clean (jen
-pre-existing warnings v `zion-ai-native` a `zion-cosmic-harmony`).
-`cargo fmt --check` clean. `cargo clippy --all-targets` 0 errors.
+Clean gate 2026-05-02:
+
+- `cargo fmt --manifest-path V3/Cargo.toml --all --check` ✅
+- `cargo clippy --manifest-path V3/Cargo.toml --workspace --all-targets -j1` ✅
+  (exit 0; warning cleanup remains nice-to-have, not failing)
+- `cargo test --manifest-path V3/Cargo.toml --workspace --release -- --test-threads=1` ✅
+- `cargo audit` from `V3/` ✅ after bumping `rustls-webpki` to `0.103.13`
+  (0 vulnerabilities; warnings remain for `bincode`, `number_prefix`, `paste`,
+  `lru`, and `rand` transitive advisories)
 
 ---
 
@@ -570,22 +581,22 @@ fuzzing, a kryptanalýzu Cosmic Harmony Ekam Deeksha v2.
 | # | PR (návrh) | Velikost | Závisí na | Stav (2026-05-02 večer) |
 |---:|---|---|---|---|
 | **A** | `chore: add .pre-commit-config.yaml` (fmt + clippy + gitleaks + py/js syntax + private-key detect) | XS | — | 🟢 **hotové** (lokálně, čeká na commit) |
-| **B** | `chore(deps): batch dependabot PRs #1–#17` | M | A | 🟡 plánováno (mechanické přes GH UI nebo `gh pr merge` loop) |
+| **B** | `chore(deps): batch dependabot PRs #5–#17` (+ dokončené **#3**) | M | A | 🟡 částečně — **#3** merged na GH; zbývá cargo / další Actions PR |
 | **C** | `test(core): de-flake + isolate slow PoW tests` | M | — | 🟢 **hotové** (1 fix + 1 new pinning + 13 `#[ignore]` + opt-level=3 bump) |
-| **D** | `refactor(core): extract validate_peer_block` (§11) | L (~800 LoC) | C | 🟡 plánováno (dedicated session — riskantní v jednom běhu) |
+| **D** | `refactor(core): extract validate_peer_block → peer_block_validation.rs` | L | C | 🟢 **hotové** (lokálně) |
 | **E.1** | `feat(consensus): TX_HASH_V2_ACTIVATION_HEIGHT + BODY_ROOT_V2_ACTIVATION_HEIGHT (dormant) + helpers` | XS | — | 🟢 **hotové** (lokálně) |
 | **E.2** | `feat(consensus): F2 BLAKE3 Merkle dispatcher v derive_template_merkle_root` | M | E.1 | 🟢 **hotové** (lokálně, +7 testů) |
-| **E.3** | `feat(consensus): validate_peer_block reject tx.version<2 above activation` | XS | E.1 | 🟡 plánováno (~30 LoC + regression test) |
-| **E.4** | `feat(consensus): mempool admission + RPC submit reject v1 above activation` | M | E.1 | 🟡 plánováno |
-| **E.5** | `feat(wallet): set tx.version=2 above activation height` | M | E.1, E.4 | 🟡 plánováno |
-| **F** | `feat(testnet): hard-fork rehearsal harness` (Docker compose + scripts) | M | E.3–E.5 | 🟡 plánováno (gate před mainnet aktivační výškou) |
+| **E.3** | `feat(consensus): validate_peer_block reject tx.version<2 above activation` | XS | E.1 | 🟢 **hotové** (lokálně) |
+| **E.4** | `feat(consensus): mempool admission + RPC submit reject v1 above activation` | M | E.1 | 🟢 **hotové** (lokálně) |
+| **E.5** | `feat(wallet): set tx.version=2 above activation height` | M | E.1, E.4 | 🟢 **hotové** (lokálně) |
+| **F** | `feat(testnet): hard-fork rehearsal harness` (Docker compose + scripts) | M | E.3–E.5 | 🟢 **základ**: `V3/scripts/hardfork-rehearsal-testnet.sh` |
 | **G** | `feat(bridge): 5-validator key provisioning + 3/5 cfg + ANKR_API_KEY guard` | M | A | 🟡 plánováno (paralelní cesta) |
 | **H** | `chore(security): git filter-repo history scrub (one-shot rewrite)` | XS code / L coord | A, B | 🟡 plánováno (po rotaci klíčů uživatelem) |
 | **I** | `feat(observability): Prometheus SLO + alert rules` | M | — | 🟡 plánováno (paralelní, Q3 audit polish) |
 | **J** | `test(e2e): mainnet stress harness (10k+ TX, peer churn, partition)` | XL | C, F | 🟡 plánováno (confidence pre-Genesis) |
 
 Klíčový **critical path k Genesis**:
-**A ✅ → C ✅ → D 🟡 → E.1 ✅ → E.2 ✅ → E.3 🟡 → E.4 🟡 → E.5 🟡 → F 🟡 → mainnet activation.**
+**A ✅ → C ✅ → D ✅ → E.1 ✅ → E.2 ✅ → E.3 ✅ → E.4 ✅ → E.5 ✅ → F 🟢 základ → mainnet activation.**
 
 Krátkodobý další krok: **commit současného WIP (A + C + E.1 + E.2)** jako 3-4
 samostatné PR, pak pokračovat s E.3 (XS, low-risk) jako nezávislý PR.
