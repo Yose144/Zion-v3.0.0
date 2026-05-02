@@ -225,7 +225,7 @@ export const CHAPTERS: BookChapter[] = [
       },
       {
         heading: 'Šest vrstev Nové Země',
-        body: 'L1 Terra Nova — blockchain, základní kámen — živý od 4. 12. 2025.\nL2 Bridge, DAO, DeFi — ekonomie lásky — živý od dubna 2026.\nL3 AI Native, WARP, NCL — vědomá síť — plánováno 2027.\nL4 OASIS — hra Života — plánováno 2029.\nL5 Free World — humanitární základ — plánováno 2030.\nL6 Issobella — orbitální stanice — horizont 2040.\n\nTato mapa není triumfální seznam hotových produktů. Je to pořadí odpovědnosti.',
+        body: 'L1 Terra Nova — blockchain, základní kámen — release candidate v roce 2026, s pražským runtime a Genesis freeze před veřejným oknem.\nL2 Bridge, DAO, DeFi — ekonomie lásky — kontrakty ověřené, relay připravený, veřejné otevření až po L1 freeze.\nL3 AI Native, WARP, NCL — vědomá síť — plánováno 2027.\nL4 OASIS — hra Života — plánováno 2029.\nL5 Free World — humanitární základ — plánováno 2030.\nL6 Issobella — orbitální stanice — horizont 2040.\n\nTato mapa není triumfální seznam hotových produktů. Je to pořadí odpovědnosti.',
       },
     ],
     sectionsEn: [
@@ -246,7 +246,7 @@ export const CHAPTERS: BookChapter[] = [
       },
       {
         heading: 'Six layers of the New Earth',
-        body: 'L1 Terra Nova — blockchain, the foundation stone — live since December 4, 2025.\nL2 Bridge, DAO, DeFi — economy of love — live since April 2026.\nL3 AI Native, WARP, NCL — conscious network — planned for 2027.\nL4 OASIS — the Game of Life — planned for 2029.\nL5 Free World — humanitarian foundation — planned for 2030.\nL6 Issobella — orbital station — horizon 2040.\n\nThis map is not a triumphalist list of finished products. It is an order of responsibility.',
+        body: 'L1 Terra Nova — blockchain, the foundation stone — in release-candidate state in 2026, with Prague runtime and Genesis freeze ahead of the public window.\nL2 Bridge, DAO, DeFi — economy of love — contracts verified, relay prepared, public opening after L1 freeze.\nL3 AI Native, WARP, NCL — conscious network — planned for 2027.\nL4 OASIS — the Game of Life — planned for 2029.\nL5 Free World — humanitarian foundation — planned for 2030.\nL6 Issobella — orbital station — horizon 2040.\n\nThis map is not a triumphalist list of finished products. It is an order of responsibility.',
       },
     ],
   },

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useLang } from '@/contexts/LanguageContext';
@@ -256,10 +256,12 @@ export default function NetworkPage() {
     last_block?: { height: number; hash: string; timestamp: number; difficulty: number; reward: number; num_txes: number; block_size: number };
   }
 
+  type HistoryPoint = { ts: number; value: number };
+
   const [chainStats, setChainStats] = useState<ChainStats | null>(null);
-  const hashrateHistoryRef = useRef<{ts: number; value: number}[]>([]);
-  const difficultyHistoryRef = useRef<{ts: number; value: number}[]>([]);
-  const blockTimeHistoryRef = useRef<{ts: number; value: number}[]>([]);
+  const [hashrateHistory, setHashrateHistory] = useState<HistoryPoint[]>([]);
+  const [difficultyHistory, setDifficultyHistory] = useState<HistoryPoint[]>([]);
+  const [blockTimeHistory, setBlockTimeHistory] = useState<HistoryPoint[]>([]);
 
   const fetchChainStats = useCallback(async () => {
     try {
@@ -268,9 +270,12 @@ export default function NetworkPage() {
       const json = await res.json();
       setChainStats(json);
       const now = Math.floor(Date.now() / 1000);
-      hashrateHistoryRef.current = [...hashrateHistoryRef.current.filter(p => now - p.ts < 3600), { ts: now, value: json.network_hashrate ?? 0 }].slice(-60);
-      difficultyHistoryRef.current = [...difficultyHistoryRef.current.filter(p => now - p.ts < 3600), { ts: now, value: json.difficulty ?? 0 }].slice(-60);
-      blockTimeHistoryRef.current = [...blockTimeHistoryRef.current.filter(p => now - p.ts < 3600), { ts: now, value: json.avg_block_time ?? 0 }].slice(-60);
+      const appendPoint = (prev: HistoryPoint[], value: number) =>
+        [...prev.filter((p) => now - p.ts < 3600), { ts: now, value }].slice(-60);
+
+      setHashrateHistory((prev) => appendPoint(prev, json.network_hashrate ?? 0));
+      setDifficultyHistory((prev) => appendPoint(prev, json.difficulty ?? 0));
+      setBlockTimeHistory((prev) => appendPoint(prev, json.avg_block_time ?? 0));
     } catch { /* silent */ }
   }, []);
 
@@ -449,7 +454,7 @@ export default function NetworkPage() {
                   <p className="text-2xl font-bold text-emerald-400 font-mono mt-1">{chainStats.network_hashrate_formatted}</p>
                 </div>
               </div>
-              <NetSparkline data={hashrateHistoryRef.current.map(p => p.value)} color="rgb(52, 211, 153)" height={80} />
+              <NetSparkline data={hashrateHistory.map(p => p.value)} color="rgb(52, 211, 153)" height={80} />
             </div>
 
             {/* Difficulty */}
@@ -460,7 +465,7 @@ export default function NetworkPage() {
                   <p className="text-2xl font-bold text-zion-cyan font-mono mt-1">{fmtLargeNum(chainStats.difficulty)}</p>
                 </div>
               </div>
-              <NetSparkline data={difficultyHistoryRef.current.map(p => p.value)} color="rgb(34, 211, 238)" height={80} />
+              <NetSparkline data={difficultyHistory.map(p => p.value)} color="rgb(34, 211, 238)" height={80} />
             </div>
 
             {/* Block Time */}
@@ -472,7 +477,7 @@ export default function NetworkPage() {
                 </div>
                 <span className="text-xs text-gray-500">{cs ? 'Cíl' : 'Target'}: {chainStats.target_block_time ?? BLOCK_TIME_SECONDS}s</span>
               </div>
-              <NetSparkline data={blockTimeHistoryRef.current.map(p => p.value)} color="rgb(96, 165, 250)" height={80} />
+              <NetSparkline data={blockTimeHistory.map(p => p.value)} color="rgb(96, 165, 250)" height={80} />
             </div>
           </div>
         </section>

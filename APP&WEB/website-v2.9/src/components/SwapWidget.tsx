@@ -50,19 +50,23 @@ export default function SwapWidget() {
   }, [provider, account]);
 
   useEffect(() => {
-    if (connected && isBaseMainnet) refreshBalances();
+    if (!connected || !isBaseMainnet) return;
+
+    const timer = setTimeout(() => void refreshBalances(), 0);
+    return () => clearTimeout(timer);
   }, [connected, isBaseMainnet, refreshBalances]);
 
   // ── Get quote ──────────────────────────────────────────────────────────────
 
   useEffect(() => {
     const amount = parseFloat(inputAmount);
-    if (!amount || amount <= 0) {
-      setQuote(null);
-      return;
-    }
 
     const timer = setTimeout(async () => {
+      if (!amount || amount <= 0) {
+        setQuote(null);
+        return;
+      }
+
       try {
         setPhase('quoting');
         const readProvider = new ethers.providers.JsonRpcProvider('https://mainnet.base.org');

@@ -18,81 +18,132 @@ defaults:
 
 env:
   CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+  CARGO_PROFILE_DEV_DEBUG: 0
 
 jobs:
   # ───────────────────────────────────────────────
-  # Build + Test (needs C/C++ for native-ffi)
+  # Test Matrix (Rust stable + beta)
   # ───────────────────────────────────────────────
   test:
-    name: Test V3
-    runs-on: ubuntu-latest
+    name: Test (${{ matrix.rust }})
+    runs-on: ubuntu-22.04  # More stable for billing-constrained repos
+    strategy:
+      matrix:
+        rust: [stable, beta]
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+          components: rustfmt, clippy
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
         with:
           workspaces: V3
+          key: ${{ matrix.rust }}
 
-      - name: Install C/C++ build tools
-        run: sudo apt-get update && sudo apt-get install -y build-essential cmake pkg-config libssl-dev
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y build-essential cmake pkg-config libssl-dev
 
       - name: Check workspace
-        run: cargo check --workspace
+        run: cargo check --workspace --all-targets
 
-      - name: Test workspace
+      - name: Run tests
         run: cargo test --workspace -- --test-threads=1
 
   # ───────────────────────────────────────────────
-  # Clippy
+  # Clippy + Format (on stable only)
   # ───────────────────────────────────────────────
-  clippy:
-    name: Clippy V3
-    runs-on: ubuntu-latest
+  lint:
+    name: Lint (clippy + fmt)
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
+
       - uses: dtolnay/rust-toolchain@stable
         with:
-          components: clippy
+          components: clippy, rustfmt
+
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: V3
 
-      - name: Install C/C++ build tools
-        run: sudo apt-get update && sudo apt-get install -y build-essential cmake pkg-config libssl-dev
+      - name: Install system dependencies
+        run: sudo apt-get update -qq && sudo apt-get install -y build-essential cmake pkg-config libssl-dev
 
-      - name: Clippy (warnings)
-        run: cargo clippy --workspace --all-targets 2>&1
+      - name: Run clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
 
-  # ───────────────────────────────────────────────
-  # Format
-  # ───────────────────────────────────────────────
-  fmt:
-    name: Format V3
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt
-
-      - name: Check format
+      - name: Check formatting
         run: cargo fmt --all --check
 
   # ───────────────────────────────────────────────
-  # Security audit
+  # Security (cargo-audit + Trivy)
   # ───────────────────────────────────────────────
-  audit:
-    name: Audit V3
-    runs-on: ubuntu-latest
+  security:
+    name: Security Scan
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
 
-      - name: Install C/C++ build tools
-        run: sudo apt-get update && sudo apt-get install -y build-essential cmake pkg-config libssl-dev
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
 
-      - name: Install cargo-audit
-        run: cargo install cargo-audit --locked
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: V3
 
-      - name: Run audit
-        run: cargo audit
+      - name: Install system deps
+        run: sudo apt-get update -qq && sudo apt-get install -y build-essential cmake pkg-config libssl-dev
+
+      - name: Run cargo audit
+        run: |
+          cargo install cargo-audit --locked
+          cargo audit
+
+      - name: Scan Dockerfiles with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: 'V3/docker'
+          format: 'table'
+          exit-code: '1'
+          severity: 'CRITICAL,HIGH'
+
+  # ───────────────────────────────────────────────
+  # Docker Build Test
+  # ───────────────────────────────────────────────
+  docker:
+    name: Docker Build Test
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Node image (cache only)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./V3/docker/Dockerfile.node
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            PROFILE=release
+
+      - name: Build Pool image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./V3/docker/Dockerfile.pool
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

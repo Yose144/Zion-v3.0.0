@@ -43,16 +43,29 @@ export default function DefiPage() {
   const fetchSupply = useCallback(async () => {
     try {
       const res = await fetch('/api/defi/status');
-      if (!res.ok) return;
+      if (!res.ok) return null;
       const data = await res.json();
-      if (data.ok) setWZIONSupply(data.data?.wZION?.totalSupply ?? null);
-    } catch { /* silent */ }
+      return data.ok ? data.data?.wZION?.totalSupply ?? null : null;
+    } catch {
+      return null;
+    }
   }, []);
 
   useEffect(() => {
-    fetchSupply();
-    const interval = setInterval(fetchSupply, 60_000);
-    return () => clearInterval(interval);
+    let cancelled = false;
+
+    const refreshSupply = async () => {
+      const supply = await fetchSupply();
+      if (!cancelled) setWZIONSupply(supply);
+    };
+
+    void refreshSupply();
+    const interval = setInterval(() => void refreshSupply(), 60_000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
   }, [fetchSupply]);
 
   return (
