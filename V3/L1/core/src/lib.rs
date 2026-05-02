@@ -4315,7 +4315,10 @@ mod tests {
         assert_eq!(template.total_fees_zion, 8);
     }
 
+    /// Slow: `find_valid_nonce` + template rotation in debug build.
+    /// Run via: `cargo test --release -- --include-ignored`
     #[test]
+    #[ignore = "slow PoW in debug build; run with --release --ignored"]
     fn accepted_submission_rotates_template_and_updates_tip() {
         let mut runtime = NodeRuntime::new("node-rotate", NodeConfig::mainnet());
         let mined_transaction = sample_transaction("tx-mined", 3, 1);
@@ -4539,7 +4542,10 @@ mod tests {
         assert!(error.contains("conflicting peer block"));
     }
 
+    /// Slow: multiple `find_valid_nonce` rounds in debug build. Run via:
+    ///   `cargo test --release -- --include-ignored`
     #[test]
+    #[ignore = "slow PoW in debug build; run with --release --ignored"]
     fn import_peer_blocks_accepts_contiguous_batch() {
         let mut source = NodeRuntime::new("node-batch-source", NodeConfig::mainnet());
         let first_tx = sample_transaction("tx-batch-1", 3, 1);
@@ -4586,7 +4592,10 @@ mod tests {
         assert_eq!(target.active_template().height, 3);
     }
 
+    /// Slow: 2× `find_valid_nonce` in debug build.
+    /// Run via: `cargo test --release -- --include-ignored`
     #[test]
+    #[ignore = "slow PoW in debug build; run with --release --ignored"]
     fn import_peer_blocks_rejects_non_contiguous_batch() {
         let mut source = NodeRuntime::new("node-gap-source", NodeConfig::mainnet());
         let first_template = source.active_template();
@@ -4616,7 +4625,10 @@ mod tests {
         assert_eq!(target.chain_height(), 0);
     }
 
+    /// Slow: `find_valid_nonce` in debug build (~60s on M1).
+    /// Run via: `cargo test --release -- --include-ignored`
     #[test]
+    #[ignore = "slow PoW in debug build; run with --release --ignored"]
     fn accepted_block_indexes_are_available_after_submit() {
         let mut runtime = NodeRuntime::new("node-index", NodeConfig::mainnet());
         let template = runtime.active_template();
@@ -5183,7 +5195,12 @@ mod tests {
         assert_eq!(genesis.previous_hash_hex, hex(&[0u8; 32]));
     }
 
+    /// Slow: mines two blocks via `find_valid_nonce` (Cosmic Harmony Ekam Deeksha v2,
+    /// 256 KiB scratchpad) in debug build. Run via:
+    ///   `cargo test --manifest-path V3/Cargo.toml -p zion-core --release -- --ignored`
+    /// or `cargo test --release -- --include-ignored`.
     #[test]
+    #[ignore = "slow PoW in debug build; run with --release --ignored"]
     fn peer_import_verifies_chain_linkage() {
         let mut source = NodeRuntime::new("node-link-src", NodeConfig::mainnet());
         mine_one_block(&mut source);
@@ -5232,7 +5249,12 @@ mod tests {
         );
     }
 
+    /// Slow: mines two blocks via `find_valid_nonce` (Cosmic Harmony Ekam Deeksha v2,
+    /// 256 KiB scratchpad) in debug build. Run via:
+    ///   `cargo test --manifest-path V3/Cargo.toml -p zion-core --release -- --ignored`
+    /// or `cargo test --release -- --include-ignored`.
     #[test]
+    #[ignore = "slow PoW in debug build; run with --release --ignored"]
     fn batch_import_verifies_intra_batch_chain_linkage() {
         let mut source = NodeRuntime::new("node-batch-link-src", NodeConfig::mainnet());
         mine_one_block(&mut source);
@@ -5312,7 +5334,10 @@ mod tests {
         assert_eq!(template.transaction_ids.len(), 1);
     }
 
+    /// Slow: `mine_one_block` in debug build (~140s on M1).
+    /// Run via: `cargo test --release -- --include-ignored`
     #[test]
+    #[ignore = "slow PoW in debug build; run with --release --ignored"]
     fn coinbase_tx_credits_correct_address_and_amount() {
         let mut runtime = NodeRuntime::new("node-cb-addr", NodeConfig::mainnet());
         runtime.set_miner_address("alice-wallet".to_string());
@@ -6058,7 +6083,10 @@ mod tests {
     // E2E multi-node tests
     // ═══════════════════════════════════════════════════════════════════
 
+    /// Slow: 3× `mine_one_block` in debug build. Run via:
+    ///   `cargo test --release -- --include-ignored`
     #[test]
+    #[ignore = "slow PoW in debug build; run with --release --ignored"]
     fn e2e_block_relay_between_two_nodes() {
         let mut node_a = NodeRuntime::new("node-a", NodeConfig::mainnet());
         let mut node_b = NodeRuntime::new("node-b", NodeConfig::mainnet());
@@ -6081,7 +6109,12 @@ mod tests {
         assert_eq!(node_a.status().tip_hash_hex, node_b.status().tip_hash_hex,);
     }
 
+    /// Slow / hangs in debug build: 5× `mine_one_block` (LWMA difficulty
+    /// ramps each iteration). Empirically does not complete within 5 minutes
+    /// in `cargo test` debug build. Run via:
+    ///   `cargo test --release -- --include-ignored`
     #[test]
+    #[ignore = "slow PoW in debug build; run with --release --ignored"]
     fn e2e_get_blocks_since_sync() {
         let mut node_a = NodeRuntime::new("node-src", NodeConfig::mainnet());
         let mut node_b = NodeRuntime::new("node-dst", NodeConfig::mainnet());
@@ -6153,7 +6186,10 @@ mod tests {
         assert_eq!(decoded, msg);
     }
 
+    /// Slow: 2× `mine_one_block` in debug build. Run via:
+    ///   `cargo test --release -- --include-ignored`
     #[test]
+    #[ignore = "slow PoW in debug build; run with --release --ignored"]
     fn e2e_three_node_chain_sync() {
         let mut miner = NodeRuntime::new("miner", NodeConfig::mainnet());
         let mut relay = NodeRuntime::new("relay", NodeConfig::mainnet());
@@ -6187,7 +6223,10 @@ mod tests {
         assert_eq!(relay.status().tip_hash_hex, edge.status().tip_hash_hex);
     }
 
+    /// Slow: `mine_one_block` in debug build (~50s on M1).
+    /// Run via: `cargo test --release -- --include-ignored`
     #[test]
+    #[ignore = "slow PoW in debug build; run with --release --ignored"]
     fn e2e_duplicate_block_announce_is_harmless() {
         let mut node_a = NodeRuntime::new("dup-src", NodeConfig::mainnet());
         let mut node_b = NodeRuntime::new("dup-dst", NodeConfig::mainnet());
@@ -6208,7 +6247,10 @@ mod tests {
         assert_eq!(node_b.chain_height(), 1);
     }
 
+    /// Slow: `mine_one_block` + sync in debug build.
+    /// Run via: `cargo test --release -- --include-ignored`
     #[test]
+    #[ignore = "slow PoW in debug build; run with --release --ignored"]
     fn e2e_transaction_then_mine_then_sync() {
         let mut node_a = NodeRuntime::new("txmine-a", NodeConfig::mainnet());
         let mut node_b = NodeRuntime::new("txmine-b", NodeConfig::mainnet());
@@ -6232,7 +6274,10 @@ mod tests {
         assert_eq!(node_a.status().tip_hash_hex, node_b.status().tip_hash_hex,);
     }
 
+    /// Slow: 2× `mine_one_block` in debug build. Run via:
+    ///   `cargo test --release -- --include-ignored`
     #[test]
+    #[ignore = "slow PoW in debug build; run with --release --ignored"]
     fn e2e_status_exchange() {
         let mut node_a = NodeRuntime::new("status-a", NodeConfig::mainnet());
         mine_one_block(&mut node_a);
