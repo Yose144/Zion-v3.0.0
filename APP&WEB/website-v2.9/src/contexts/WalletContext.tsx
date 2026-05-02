@@ -54,10 +54,17 @@ const defaultState: WalletState = {
 
 const WalletContext = createContext<WalletState>(defaultState);
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function getEthereum(): any | null {
+interface EthereumProvider extends ethers.providers.ExternalProvider {
+  request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
+  on(event: 'accountsChanged', handler: (accounts: string[]) => void): void;
+  on(event: 'chainChanged', handler: (chainId: string) => void): void;
+  removeListener(event: 'accountsChanged', handler: (accounts: string[]) => void): void;
+  removeListener(event: 'chainChanged', handler: (chainId: string) => void): void;
+}
+
+function getEthereum(): EthereumProvider | null {
   if (typeof window === 'undefined') return null;
-  return (window as Window & { ethereum?: unknown }).ethereum ?? null;
+  return ((window as Window & { ethereum?: unknown }).ethereum as EthereumProvider | undefined) ?? null;
 }
 
 // ─── Provider ──────────────────────────────────────────────────────────────────
@@ -114,7 +121,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     setConnecting(true);
     setError(null);
     try {
-      const accounts: string[] = await eth.request({ method: 'eth_requestAccounts' });
+      const accounts = (await eth.request({ method: 'eth_requestAccounts' })) as string[];
       if (!accounts[0]) throw new Error('No account');
       await switchToBase();
       setAccount(accounts[0]);
@@ -153,10 +160,12 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     eth.on('chainChanged', onChain);
 
     // Check if already connected
-    eth.request({ method: 'eth_accounts' }).then((accs: string[]) => {
-      if (accs.length > 0) {
-        setAccount(accs[0]);
-        eth.request({ method: 'eth_chainId' }).then((hex: string) => {
+    eth.request({ method: 'eth_accounts' }).then((accs) => {
+      const accounts = accs as string[];
+      if (accounts.length > 0) {
+        setAccount(accounts[0]);
+        eth.request({ method: 'eth_chainId' }).then((chainId) => {
+          const hex = chainId as string;
           setChainId(parseInt(hex, 16));
         });
       }

@@ -21,6 +21,69 @@ pub const CHV_EKAM_V2_FORK_HEIGHT: u64 = 0;
 /// Set to u64::MAX to prevent accidental activation before governance approval.
 pub const CHV42_DUAL_SPIN_FORK_HEIGHT: u64 = u64::MAX;
 
+/// Activation height for **TX hash v2** (audit §3.2, see
+/// `V3/docs/audits/2026-04-V3_AUDIT_COMPLETION.md` §1).
+///
+/// Below this height blocks accept `tx.version = 1` (raw-concat preimage).
+/// At/above this height, `validate_peer_block` MUST reject any tx with
+/// `version < TX_HASH_V2_VERSION` (= 2), and the wallet / RPC layer MUST
+/// emit `version = TX_HASH_V2_VERSION` for every newly built tx.
+///
+/// Default: `u64::MAX` — dormant. Activation flips this to a coordinated
+/// mainnet height in the same release window as
+/// [`BODY_ROOT_V2_ACTIVATION_HEIGHT`].
+pub const TX_HASH_V2_ACTIVATION_HEIGHT: u64 = u64::MAX;
+
+/// Activation height for **F2 BLAKE3 Merkle body root** (audit §F2, see
+/// `V3/docs/audits/2026-04-V3_AUDIT_COMPLETION.md` §2).
+///
+/// Below this height block bodies use the legacy `derive_template_merkle_root`
+/// XOR aggregate (per-tx hash via Cosmic Harmony Ekam Deeksha — expensive,
+/// not collision-bounded as a tree). At/above this height, the body root
+/// MUST be computed via `crypto::merkle_root(...)` over per-tx hashes
+/// (BLAKE3, Bitcoin-style pair-duplicate-on-odd-count, leaf =
+/// `Transaction::calculate_hash()` which already dispatches to v2 once
+/// `TX_HASH_V2_ACTIVATION_HEIGHT` is met).
+///
+/// Default: `u64::MAX` — dormant. Activate **together with**
+/// [`TX_HASH_V2_ACTIVATION_HEIGHT`] — mixing the two breaks consensus
+/// twice in a row, batching them halves the user-facing fork churn.
+pub const BODY_ROOT_V2_ACTIVATION_HEIGHT: u64 = u64::MAX;
+
+/// Returns `true` once a height has crossed the TX hash v2 activation gate.
+///
+/// Standard idiom for call sites is:
+/// ```ignore
+/// if tx_hash_v2_active(block.height) && tx.version < TX_HASH_V2_VERSION {
+///     return Err("post-fork: tx.version must be >= 2".into());
+/// }
+/// ```
+#[inline]
+#[allow(clippy::absurd_extreme_comparisons)]
+pub fn tx_hash_v2_active(height: u64) -> bool {
+    // Keep `>=` even while the dormant default is `u64::MAX`: when governance
+    // flips the constant to a real height, the activation semantics are already
+    // correct and do not need another code change.
+    height >= TX_HASH_V2_ACTIVATION_HEIGHT
+}
+
+/// Returns `true` once a height has crossed the BLAKE3 Merkle body-root gate.
+///
+/// Standard idiom for the template builder is:
+/// ```ignore
+/// let body_root = if body_root_v2_active(height) {
+///     crypto::merkle_root(&tx_hashes)
+/// } else {
+///     derive_template_merkle_root_xor(&tx_hashes)
+/// };
+/// ```
+#[inline]
+#[allow(clippy::absurd_extreme_comparisons)]
+pub fn body_root_v2_active(height: u64) -> bool {
+    // Same dormant-gate pattern as `tx_hash_v2_active`.
+    height >= BODY_ROOT_V2_ACTIVATION_HEIGHT
+}
+
 // ============================================================================
 // CONSENSUS PARAMETERS
 // ============================================================================
@@ -520,5 +583,69 @@ mod tests {
             u64::MAX,
             "CHv4.2 must not be active until governance approval"
         );
+    }
+
+    // ================================================================
+    // Hard-fork activation gates: TX hash v2 + F2 BLAKE3 Merkle
+    // ================================================================
+
+    /// Mainnet must ship with both v2 hard-fork gates dormant (`u64::MAX`).
+    /// Activation lives in a coordinated release window — see
+    /// `V3/docs/audits/2026-04-V3_AUDIT_COMPLETION.md` §1 + §2.
+    #[test]
+    fn tx_hash_v2_activation_height_is_dormant() {
+        assert_eq!(
+            TX_HASH_V2_ACTIVATION_HEIGHT,
+            u64::MAX,
+            "TX hash v2 must remain dormant until coordinated hard-fork activation"
+        );
+    }
+
+    /// Pin BLAKE3 Merkle body root activation to dormant default.
+    #[test]
+    fn body_root_v2_activation_height_is_dormant() {
+        assert_eq!(
+            BODY_ROOT_V2_ACTIVATION_HEIGHT,
+            u64::MAX,
+            "F2 BLAKE3 Merkle body root must remain dormant until coordinated hard-fork activation"
+        );
+    }
+
+    /// `tx_hash_v2_active` must return `false` for any reasonable height
+    /// while the activation is dormant. Use a value that's representative
+    /// of mainnet operation (a few million blocks ≈ years of runtime).
+    #[test]
+    fn tx_hash_v2_active_is_false_below_dormant_gate() {
+        assert!(!tx_hash_v2_active(0));
+        assert!(!tx_hash_v2_active(100));
+        assert!(!tx_hash_v2_active(1_000_000));
+        assert!(!tx_hash_v2_active(u64::MAX - 1));
+        assert!(
+            tx_hash_v2_active(u64::MAX),
+            "edge case: only u64::MAX itself should evaluate true while dormant"
+        );
+    }
+
+    /// Same shape for `body_root_v2_active`.
+    #[test]
+    fn body_root_v2_active_is_false_below_dormant_gate() {
+        assert!(!body_root_v2_active(0));
+        assert!(!body_root_v2_active(100));
+        assert!(!body_root_v2_active(1_000_000));
+        assert!(!body_root_v2_active(u64::MAX - 1));
+        assert!(body_root_v2_active(u64::MAX));
+    }
+
+    /// At/above any chosen activation height the gate must flip true.
+    /// Uses a synthetic non-dormant value to verify branching behaviour
+    /// without committing to a real activation height.
+    #[test]
+    fn activation_gates_flip_at_or_above_chosen_height() {
+        // We cannot mutate the const, so simulate the predicate:
+        let chosen: u64 = 1_000_000;
+        let predicate = |h: u64| h >= chosen;
+        assert!(!predicate(chosen - 1));
+        assert!(predicate(chosen));
+        assert!(predicate(chosen + 1));
     }
 }

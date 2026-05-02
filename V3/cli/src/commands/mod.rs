@@ -1,6 +1,7 @@
 pub mod agent;
 pub mod bridge;
 pub mod completions;
+pub mod compose;
 pub mod dao;
 pub mod deploy;
 pub mod doctor;
