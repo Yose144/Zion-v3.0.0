@@ -1534,12 +1534,70 @@ export default function TerraNovaBookClient() {
                       </p>
                     </div>
                     <div className="mt-4 grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)] lg:items-start">
-                      <div className="mx-auto w-full max-w-[220px] rounded-[28px] border border-emerald-300/10 bg-black/25 p-3">
-                        <svg viewBox="0 0 220 220" className="h-auto w-full" role="img" aria-label={cs ? 'Dharmachakra s osmi paprsky' : 'Dharmachakra with eight spokes'}>
+                      <div className="mx-auto w-full max-w-[220px] rounded-[28px] border border-emerald-300/10 bg-[radial-gradient(circle_at_center,rgba(253,224,71,0.12),rgba(0,0,0,0)_45%),linear-gradient(180deg,rgba(16,185,129,0.08),rgba(0,0,0,0.18))] p-3 shadow-[0_16px_40px_rgba(16,185,129,0.08)]">
+                        <motion.svg
+                          viewBox="0 0 220 220"
+                          className="h-auto w-full"
+                          role="img"
+                          aria-label={cs ? 'Dharmachakra s osmi paprsky' : 'Dharmachakra with eight spokes'}
+                          initial={{ opacity: 0, scale: 0.97 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ duration: 0.35, ease: 'easeOut' }}
+                        >
+                          <defs>
+                            <radialGradient id="dharma-hub-glow" cx="50%" cy="50%" r="50%">
+                              <stop offset="0%" stopColor="rgba(253,224,71,0.75)" />
+                              <stop offset="55%" stopColor="rgba(245,158,11,0.25)" />
+                              <stop offset="100%" stopColor="rgba(0,0,0,0)" />
+                            </radialGradient>
+                          </defs>
+                          <motion.circle
+                            cx="110"
+                            cy="110"
+                            r="98"
+                            fill="url(#dharma-hub-glow)"
+                            animate={{ opacity: [0.16, 0.28, 0.16] }}
+                            transition={{ duration: 4.8, repeat: Infinity, ease: 'easeInOut' }}
+                          />
                           <circle cx="110" cy="110" r="86" fill="rgba(16,185,129,0.06)" stroke="rgba(16,185,129,0.18)" strokeWidth="2" />
+                          <motion.circle
+                            cx="110"
+                            cy="110"
+                            r="86"
+                            fill="none"
+                            stroke="rgba(253,224,71,0.16)"
+                            strokeWidth="1"
+                            strokeDasharray="3 8"
+                            animate={{ rotate: 360 }}
+                            transition={{ duration: 28, repeat: Infinity, ease: 'linear' }}
+                            style={{ transformOrigin: '110px 110px' }}
+                          />
                           <circle cx="110" cy="110" r="58" fill="rgba(245,158,11,0.05)" stroke="rgba(245,158,11,0.2)" strokeWidth="1.5" />
-                          <circle cx="110" cy="110" r="18" fill="rgba(245,158,11,0.2)" stroke="rgba(253,224,71,0.45)" strokeWidth="1.5" />
-                          <circle cx="110" cy="110" r="34" fill="none" stroke="rgba(16,185,129,0.12)" strokeWidth="8" strokeDasharray="6 10" />
+                          {[0, 45, 90, 135, 180, 225, 270, 315].map((angle) => (
+                            <ellipse
+                              key={`hub-petal-${angle}`}
+                              cx="110"
+                              cy="88"
+                              rx="8"
+                              ry="18"
+                              fill="rgba(253,224,71,0.16)"
+                              stroke="rgba(253,224,71,0.28)"
+                              strokeWidth="0.8"
+                              transform={`rotate(${angle} 110 110)`}
+                            />
+                          ))}
+                          <motion.circle
+                            cx="110"
+                            cy="110"
+                            r="34"
+                            fill="none"
+                            stroke="rgba(16,185,129,0.12)"
+                            strokeWidth="8"
+                            strokeDasharray="6 10"
+                            animate={{ rotate: -360 }}
+                            transition={{ duration: 40, repeat: Infinity, ease: 'linear' }}
+                            style={{ transformOrigin: '110px 110px' }}
+                          />
                           {DHARMA_WHEEL_SPOKES.map((spoke, index) => {
                             const isActive = dharmaSpoke === index;
                             const angle = ((index * 45) - 90) * (Math.PI / 180);
@@ -1548,7 +1606,7 @@ export default function TerraNovaBookClient() {
                             const innerX = 110 + Math.cos(angle) * 18;
                             const innerY = 110 + Math.sin(angle) * 18;
                             return (
-                              <g
+                              <motion.g
                                 key={spoke.id}
                                 role="button"
                                 tabIndex={0}
@@ -1561,8 +1619,10 @@ export default function TerraNovaBookClient() {
                                   }
                                 }}
                                 className="cursor-pointer"
+                                animate={{ scale: isActive ? 1.035 : 1, opacity: isActive ? 1 : 0.86 }}
+                                transition={{ duration: 0.28, ease: 'easeOut' }}
                               >
-                                <line
+                                <motion.line
                                   x1={innerX}
                                   y1={innerY}
                                   x2={x}
@@ -1570,39 +1630,70 @@ export default function TerraNovaBookClient() {
                                   stroke={isActive ? 'rgba(253,224,71,0.92)' : 'rgba(16,185,129,0.45)'}
                                   strokeWidth={isActive ? '4' : '3'}
                                   strokeLinecap="round"
+                                  animate={{ opacity: isActive ? 1 : 0.72 }}
+                                  transition={{ duration: 0.28, ease: 'easeOut' }}
                                 />
-                                <circle cx={x} cy={y} r={isActive ? '9' : '7'} fill={isActive ? 'rgba(253,224,71,0.95)' : 'rgba(16,185,129,0.9)'} stroke="rgba(209,250,229,0.7)" strokeWidth="1.5" />
-                              </g>
+                                <motion.circle
+                                  cx={x}
+                                  cy={y}
+                                  r={isActive ? '9' : '7'}
+                                  fill={isActive ? 'rgba(253,224,71,0.95)' : 'rgba(16,185,129,0.9)'}
+                                  stroke="rgba(209,250,229,0.7)"
+                                  strokeWidth="1.5"
+                                  animate={isActive ? { scale: [1, 1.12, 1] } : { scale: 1 }}
+                                  transition={isActive ? { duration: 1.8, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.25 }}
+                                />
+                              </motion.g>
                             );
                           })}
+                          <motion.circle
+                            cx="110"
+                            cy="110"
+                            r="20"
+                            fill="rgba(245,158,11,0.26)"
+                            stroke="rgba(253,224,71,0.55)"
+                            strokeWidth="1.5"
+                            animate={{ scale: [1, 1.04, 1] }}
+                            transition={{ duration: 3.8, repeat: Infinity, ease: 'easeInOut' }}
+                          />
+                          <circle cx="110" cy="110" r="10" fill="rgba(254,240,138,0.92)" stroke="rgba(255,255,255,0.45)" strokeWidth="1" />
                           <text x="110" y="106" textAnchor="middle" className="fill-emerald-100 text-[10px] uppercase tracking-[0.28em]">
                             {cs ? 'Dharma' : 'Dharma'}
                           </text>
                           <text x="110" y="121" textAnchor="middle" className="fill-emerald-300 text-[8px] uppercase tracking-[0.22em]">
                             {dharmaSpoke + 1}/8
                           </text>
-                        </svg>
+                        </motion.svg>
                       </div>
                       <div className="space-y-3">
-                        <div className="rounded-2xl border border-emerald-300/15 bg-black/25 px-4 py-3">
-                          <p className="text-[10px] uppercase tracking-[0.24em] text-emerald-300/70">
-                            {cs ? 'Aktivní paprsek' : 'Active spoke'}
-                          </p>
-                          <h4 className="mt-1 text-base font-semibold text-emerald-100">
-                            {cs ? selectedDharmaSpoke.titleCs : selectedDharmaSpoke.titleEn}
-                          </h4>
-                          <p className="mt-2 text-sm leading-relaxed text-gray-300">
-                            {cs ? selectedDharmaSpoke.descCs : selectedDharmaSpoke.descEn}
-                          </p>
-                          <div className="mt-3 rounded-2xl border border-white/8 bg-white/4 px-3 py-2">
-                            <p className="text-[10px] uppercase tracking-[0.22em] text-gray-500">
-                              {cs ? 'ZION mapa' : 'ZION map'}
+                        <AnimatePresence mode="wait">
+                          <motion.div
+                            key={selectedDharmaSpoke.id}
+                            initial={{ opacity: 0, y: 8, scale: 0.985 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: -8, scale: 0.985 }}
+                            transition={{ duration: 0.22, ease: 'easeOut' }}
+                            className="rounded-2xl border border-emerald-300/15 bg-[linear-gradient(180deg,rgba(253,224,71,0.06),rgba(0,0,0,0.22))] px-4 py-3"
+                          >
+                            <p className="text-[10px] uppercase tracking-[0.24em] text-emerald-300/70">
+                              {cs ? 'Aktivní paprsek' : 'Active spoke'}
                             </p>
-                            <p className="mt-1 text-sm text-emerald-100">
-                              {cs ? selectedDharmaSpoke.mapCs : selectedDharmaSpoke.mapEn}
+                            <h4 className="mt-1 text-base font-semibold text-emerald-100">
+                              {cs ? selectedDharmaSpoke.titleCs : selectedDharmaSpoke.titleEn}
+                            </h4>
+                            <p className="mt-2 text-sm leading-relaxed text-gray-300">
+                              {cs ? selectedDharmaSpoke.descCs : selectedDharmaSpoke.descEn}
                             </p>
-                          </div>
-                        </div>
+                            <div className="mt-3 rounded-2xl border border-white/8 bg-white/4 px-3 py-2">
+                              <p className="text-[10px] uppercase tracking-[0.22em] text-gray-500">
+                                {cs ? 'ZION mapa' : 'ZION map'}
+                              </p>
+                              <p className="mt-1 text-sm text-emerald-100">
+                                {cs ? selectedDharmaSpoke.mapCs : selectedDharmaSpoke.mapEn}
+                              </p>
+                            </div>
+                          </motion.div>
+                        </AnimatePresence>
                         <div className="grid gap-2 sm:grid-cols-2">
                         {DHARMA_WHEEL_SPOKES.map((spoke, index) => {
                           const isActive = dharmaSpoke === index;
