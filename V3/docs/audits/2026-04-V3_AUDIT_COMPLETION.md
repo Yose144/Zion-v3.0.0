@@ -216,7 +216,7 @@ auditability polish, not a correctness blocker.
 
 ## 7. What still blocks mainnet launch
 
-Ordered by criticality:
+Ordered by criticality (step-by-step playbook: [`V3/docs/operational/AUDIT_CLOSEOUT_1_THROUGH_6.md`](../operational/AUDIT_CLOSEOUT_1_THROUGH_6.md)):
 
 1. **ZION_KEYS rotation.** Not a code change. User must:
    - Revoke `ghp_7gxI3Y…` PAT at https://github.com/settings/tokens.
