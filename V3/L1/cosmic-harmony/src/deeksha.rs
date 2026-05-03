@@ -27,7 +27,7 @@ pub const CHV42_DUAL_SPIN_FORK_HEIGHT: u64 = u64::MAX;
 /// tx-hash v2 and body-root v2 via the aliases below. **Never ship production
 /// binaries with `--features testnet_fork_rehearsal`.**
 #[cfg(feature = "testnet_fork_rehearsal")]
-const TESTNET_REHEARSAL_COORDINATED_HEIGHT: u64 = 50;
+const TESTNET_REHEARSAL_COORDINATED_HEIGHT: u64 = 10;
 
 /// Activation height for **TX hash v2** (audit §3.2, see
 /// `V3/docs/audits/2026-04-V3_AUDIT_COMPLETION.md` §1).
