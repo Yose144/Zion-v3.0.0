@@ -11,7 +11,7 @@
 #       --features testnet_fork_rehearsal
 #
 #   Shared rehearsal height is `TESTNET_REHEARSAL_COORDINATED_HEIGHT` in
-#   `V3/L1/cosmic-harmony/src/deeksha.rs` (edit there if you need another height).
+#   `V3/L1/cosmic-harmony/src/deeksha.rs` (default **10** for local fork-after-~9-blocks).
 #
 # Option B — mainnet-coordinated activation:
 #   Set both constants to the SAME finite height in `deeksha.rs` for the release tag.
@@ -24,3 +24,4 @@ echo "hardfork rehearsal root: $ROOT"
 echo "Constants file: $ROOT/V3/L1/cosmic-harmony/src/deeksha.rs"
 echo "Compose: $ROOT/V3/docker/docker-compose.yml"
 echo "Playbook: $ROOT/V3/docs/operational/AUDIT_CLOSEOUT_1_THROUGH_6.md"
+echo "Windows verify-all: $ROOT/V3/scripts/verify-fork-rehearsal.ps1"
