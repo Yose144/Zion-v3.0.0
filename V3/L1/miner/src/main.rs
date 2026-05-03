@@ -17,6 +17,11 @@ mod dcr_worker;
 mod gpu_backend;
 mod parallel;
 
+fn flush_stdout() {
+    use std::io::Write;
+    let _ = std::io::stdout().flush();
+}
+
 /// Gate verbose wire_* / iteration= debug output (--verbose or ZION_MINER_VERBOSE=1).
 static VERBOSE: AtomicBool = AtomicBool::new(false);
 #[cfg(any(feature = "gpu", feature = "gpu-opencl"))]
@@ -749,6 +754,8 @@ fn main() -> Result<()> {
         return Ok(());
     }
 
+    let metrics = Arc::new(Mutex::new(MinerMetricsSnapshot::from_config(&config)));
+
     let outcome = match config.pool_addr.as_deref() {
         Some(pool_addr) => {
             println!("mode=remote");
@@ -1226,7 +1233,7 @@ fn run_remote_session(
             None => false,
         };
         let scan_result = if can_gpu {
-            gpu_backend::gpu_scan_job(gpu.as_deref_mut().unwrap(), job)
+            gpu_backend::gpu_scan_job(gpu.as_deref_mut().unwrap(), job).solution
         } else {
             parallel::parallel_scan_nonce_range(job, threads)
         };
@@ -1539,6 +1546,9 @@ struct SessionTelemetry {
     current_epoch: u64,
     pool_height: u64,
     best_batch_ms: u64,
+    /// Peak hashrate (H/s) seen this session — used for XMRig-style speed line.
+    hashrate_max: f64,
+    last_stats_write: Instant,
 }
 
 impl SessionTelemetry {
@@ -1561,6 +1571,8 @@ impl SessionTelemetry {
             current_epoch: 0,
             pool_height: 0,
             best_batch_ms: 0,
+            hashrate_max: 0.0,
+            last_stats_write: now,
         }
     }
 
@@ -2236,7 +2248,13 @@ mod tests {
         assert_eq!(config.nonce_adjust_percent, 30);
         assert_eq!(config.remote_ttl_guard_percent, 85);
         assert_eq!(config.metrics_report_every_secs, 12);
-        assert_eq!(config.metrics_bind.as_deref(), Some("127.0.0.1:9116"));
+        assert_eq!(config.metrics_bind.as_deref(), None);
+        std::env::set_var("ZION_MINER_METRICS_BIND", "127.0.0.1:9116");
+        let with_bind = MinerConfig::from_env_and_args().expect("config with metrics bind");
+        assert_eq!(
+            with_bind.metrics_bind.as_deref(),
+            Some("127.0.0.1:9116")
+        );
         std::env::remove_var("ZION_LOOP_COUNT");
         std::env::remove_var("ZION_JOB_TTL_MS");
         std::env::remove_var("ZION_NONCE_STRIDE");
