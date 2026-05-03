@@ -264,13 +264,14 @@ impl PplnsEngine {
         self.fee_issobella_flowers = self.fee_issobella_flowers.saturating_add(issobella_share);
         self.fee_pool_flowers = self.fee_pool_flowers.saturating_add(pool_fee_share);
 
-        // Count shares per miner in the current window.
-        let mut share_counts: HashMap<&str, u64> = HashMap::new();
+        // Weighted share totals per miner in the current window (difficulty-weighted).
+        let mut share_weights: HashMap<String, u128> = HashMap::new();
+        let mut share_counts: HashMap<String, u64> = HashMap::new();
         let mut total_weight: u128 = 0;
         for share in &self.window {
             let w = share.difficulty.max(1) as u128;
-            *share_weights.entry(&share.miner_id).or_insert(0) += w;
-            *share_counts.entry(&share.miner_id).or_insert(0) += 1;
+            *share_weights.entry(share.miner_id.clone()).or_insert(0) += w;
+            *share_counts.entry(share.miner_id.clone()).or_insert(0) += 1;
             total_weight += w;
         }
         if total_weight == 0 {
@@ -279,18 +280,22 @@ impl PplnsEngine {
 
         // Distribute miner_reward proportionally and accumulate in `unpaid`.
         let mut distributed = 0u64;
-        let miners: Vec<(&str, u128)> = share_weights.iter().map(|(k, v)| (*k, *v)).collect();
-        for (i, &(miner_id, weight)) in miners.iter().enumerate() {
+        let miners: Vec<(String, u128)> = share_weights
+            .iter()
+            .map(|(k, v)| (k.clone(), *v))
+            .collect();
+        for (i, (miner_id, weight)) in miners.iter().enumerate() {
             let amount = if i == miners.len() - 1 {
                 // Last miner gets the remainder to avoid rounding dust.
                 miner_reward.saturating_sub(distributed)
             } else {
-                miner_reward
-                    .saturating_mul(count)
-                    .saturating_div(total_shares)
+                let part = (miner_reward as u128)
+                    .saturating_mul(*weight)
+                    .saturating_div(total_weight);
+                u64::try_from(part).unwrap_or(0)
             };
             distributed = distributed.saturating_add(amount);
-            *self.unpaid.entry(miner_id.to_string()).or_insert(0) += amount;
+            *self.unpaid.entry(miner_id.clone()).or_insert(0) += amount;
         }
 
         // Collect payouts for miners above the minimum threshold with a registered address.
@@ -299,7 +304,7 @@ impl PplnsEngine {
         for (miner_id, balance) in &self.unpaid {
             if *balance >= self.config.min_payout_flowers {
                 if let Some(address) = self.addresses.get(miner_id) {
-                    let share_count = share_counts.get(miner_id.as_str()).copied().unwrap_or(0);
+                    let share_count = share_counts.get(miner_id).copied().unwrap_or(0);
                     payouts.push(PayoutEntry {
                         miner_id: miner_id.clone(),
                         address: address.clone(),

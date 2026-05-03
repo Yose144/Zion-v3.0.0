@@ -3,7 +3,7 @@ use std::collections::{HashMap, HashSet, VecDeque};
 use std::fmt::Write as FmtWrite;
 use std::io::{BufRead, BufReader, Write};
 use std::net::{IpAddr, TcpListener, TcpStream, ToSocketAddrs, UdpSocket};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, MutexGuard};
 use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use zion_core::{
@@ -12,8 +12,6 @@ use zion_core::{
     encode_p2p_message, encode_rpc_response,
     ibd::{IbdCommand, IbdEngine},
     node_protocol_version,
-    discovery::{DiscoveryCommand, DiscoveryEngine, DISCOVERY_PORT},
-    ibd::{IbdCommand, IbdEngine},
     p2p_security::PeerSecurity,
     peer_manager::{PeerAction, PeerDirection, PeerManager, MIN_OUTBOUND},
     propagation::{PropagationStats, SeenBlocks, SeenTransactions},
@@ -1083,6 +1081,8 @@ fn outbound_peer_loop(
     let mut last_heartbeat = Instant::now();
     let mut last_cleanup = Instant::now();
     let mut cycle_count: u64 = 0;
+    let mut sync_fail_count: u32 = 0;
+    let mut sync_fail_height: u64 = 0;
 
     // ── Discovery engine setup ─────────────────────────────────────────
     let network_name = {
@@ -1196,7 +1196,7 @@ fn outbound_peer_loop(
 
         for peer in &peers {
             // Quick status check via Ping to keep connection alive (persistent)
-            match pool.roundtrip(
+            match p2p_roundtrip(
                 peer,
                 &P2pMessage::Ping {
                     nonce: epoch_secs(),
@@ -1279,7 +1279,7 @@ fn outbound_peer_loop(
         if cycle_count % DISCOVERY_EVERY_N_CYCLES == 0 && !peers.is_empty() {
             let idx = (cycle_count / DISCOVERY_EVERY_N_CYCLES) as usize % peers.len();
             let target = &peers[idx];
-            match pool.roundtrip(target, &P2pMessage::GetPeers) {
+            match p2p_roundtrip(target, &P2pMessage::GetPeers) {
                 Ok(P2pMessage::Peers { peers: discovered }) => {
                     let new_count = discovered.len();
                     if new_count > 0 {
