@@ -587,6 +587,7 @@ mod tests {
         // depend on whether anyone has populated `DNS_SEEDS`, which was the
         // root cause of the historical "flaky DNS test" on `main`.
         let mut engine = DiscoveryEngine::new("testnet");
+        engine.set_dns_seeds(vec!["rehearsal-seed.invalid".into()]);
         engine.set_bootstrap_nodes(vec![(ip(10, 0, 0, 1), DISCOVERY_PORT)]);
         let now = Instant::now();
         let cmds = engine.tick(now, 1000, &["peer1".into()], 0, 8);
