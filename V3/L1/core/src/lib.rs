@@ -1895,6 +1895,7 @@ impl NodeRuntime {
                 .first()
                 .filter(|transaction| transaction.from == "coinbase")
                 .map(|transaction| transaction.amount_zion)
+                .map(|amount| u64::try_from(amount).unwrap_or(active_template.reward_zion))
                 .unwrap_or(active_template.reward_zion);
             let accepted_block = AcceptedBlock {
                 template_id,
@@ -2038,6 +2039,7 @@ impl TemplateState {
             .first()
             .filter(|transaction| transaction.from == "coinbase")
             .map(|transaction| transaction.amount_zion)
+            .map(|amount| u64::try_from(amount).unwrap_or(self.reward_zion))
             .unwrap_or(self.reward_zion);
         BlockTemplate {
             template_id: self.template_id,
@@ -2808,7 +2810,10 @@ impl ChainState {
                 }
                 if transaction.from == "coinbase" {
                     coinbase_count = coinbase_count.saturating_add(1);
-                    total_coinbase_zion = total_coinbase_zion.saturating_add(transaction.amount_zion);
+                    let coinbase_amt = u64::try_from(transaction.amount_zion).map_err(|_| {
+                        "peer block coinbase amount exceeds u64".to_string()
+                    })?;
+                    total_coinbase_zion = total_coinbase_zion.saturating_add(coinbase_amt);
                     if transaction.tx_id.len() != 64
                         || !transaction.tx_id.chars().all(|ch| ch.is_ascii_hexdigit())
                     {
@@ -2898,7 +2903,7 @@ impl ChainState {
                                 .to_string(),
                         );
                     }
-                    if transaction.amount_zion != expected_amount {
+                    if transaction.amount_zion != u128::from(expected_amount) {
                         return Err(format!(
                             "peer block coinbase amount {} does not match expected {}",
                             transaction.amount_zion, expected_amount
@@ -3427,7 +3432,7 @@ impl ChainState {
                         tx_id: hex(&hash.data),
                         from: "coinbase".to_string(),
                         to: addr.to_string(),
-                        amount_zion: amount,
+                        amount_zion: u128::from(amount),
                         fee_zion: 0,
                         nonce: next_height,
                     }
@@ -3447,7 +3452,7 @@ impl ChainState {
                     tx_id: hex(&coinbase_hash.data),
                     from: "coinbase".to_string(),
                     to: miner_address.to_string(),
-                    amount_zion: subsidy,
+                    amount_zion: u128::from(subsidy),
                     fee_zion: 0,
                     nonce: next_height,
                 };
@@ -5315,19 +5320,19 @@ mod tests {
 
         assert_eq!(transactions[0].from, "coinbase");
         assert_eq!(transactions[0].to, "alice-wallet");
-        assert_eq!(transactions[0].amount_zion, miner_amount);
+        assert_eq!(transactions[0].amount_zion, u128::from(miner_amount));
 
         assert_eq!(transactions[1].from, "coinbase");
         assert_eq!(transactions[1].to, "human-wallet");
-        assert_eq!(transactions[1].amount_zion, humanitarian_amount);
+        assert_eq!(transactions[1].amount_zion, u128::from(humanitarian_amount));
 
         assert_eq!(transactions[2].from, "coinbase");
         assert_eq!(transactions[2].to, "issobella-wallet");
-        assert_eq!(transactions[2].amount_zion, issobella_amount);
+        assert_eq!(transactions[2].amount_zion, u128::from(issobella_amount));
 
         assert_eq!(transactions[3].from, "coinbase");
         assert_eq!(transactions[3].to, "pool-wallet");
-        assert_eq!(transactions[3].amount_zion, pool_fee_amount);
+        assert_eq!(transactions[3].amount_zion, u128::from(pool_fee_amount));
     }
 
     #[test]
@@ -5342,7 +5347,8 @@ mod tests {
 
         let template = source.chain_state.active_template.clone();
         let transactions = template.account_transactions();
-        let miner_reward_zion = transactions[0].amount_zion;
+        let miner_reward_zion = u64::try_from(transactions[0].amount_zion)
+            .expect("miner coinbase amount must fit u64 for block metadata");
         let block = AcceptedBlock {
             template_id: template.template_id,
             height: template.height,
@@ -5383,17 +5389,21 @@ mod tests {
         assert_eq!(block.miner_reward_zion, miner_amount);
 
         assert_eq!(block.transactions[0].to, "alice-wallet");
-        assert_eq!(block.transactions[0].amount_zion, miner_amount);
+        assert_eq!(block.transactions[0].amount_zion, u128::from(miner_amount));
         assert_eq!(block.transactions[1].to, "human-wallet");
-        assert_eq!(block.transactions[1].amount_zion, humanitarian_amount);
+        assert_eq!(block.transactions[1].amount_zion, u128::from(humanitarian_amount));
         assert_eq!(block.transactions[2].to, "issobella-wallet");
-        assert_eq!(block.transactions[2].amount_zion, issobella_amount);
+        assert_eq!(block.transactions[2].amount_zion, u128::from(issobella_amount));
         assert_eq!(block.transactions[3].to, "pool-wallet");
-        assert_eq!(block.transactions[3].amount_zion, pool_fee_amount);
+        assert_eq!(block.transactions[3].amount_zion, u128::from(pool_fee_amount));
 
         assert_eq!(
-            block.transactions.iter().map(|transaction| transaction.amount_zion).sum::<u64>(),
-            block.subsidy_zion
+            block
+                .transactions
+                .iter()
+                .map(|transaction| transaction.amount_zion)
+                .sum::<u128>(),
+            u128::from(block.subsidy_zion)
         );
     }
 
@@ -6597,5 +6607,20 @@ mod tests {
     fn merkle_v2_blake3_empty_lists_yield_zero_root() {
         let v2 = derive_template_merkle_root_v2_blake3(&[], &[]);
         assert_eq!(v2, [0u8; 32], "empty tx + empty utxo => all-zeros root");
+    }
+
+    /// Pins `TESTNET_REHEARSAL_COORDINATED_HEIGHT` from `zion-cosmic-harmony`
+    /// when this crate is built with `--features testnet_fork_rehearsal`.
+    #[cfg(feature = "testnet_fork_rehearsal")]
+    #[test]
+    fn fork_rehearsal_gates_aligned_at_10_in_core_build() {
+        use zion_cosmic_harmony::{
+            body_root_v2_active, tx_hash_v2_active, BODY_ROOT_V2_ACTIVATION_HEIGHT,
+            TX_HASH_V2_ACTIVATION_HEIGHT,
+        };
+        assert_eq!(TX_HASH_V2_ACTIVATION_HEIGHT, BODY_ROOT_V2_ACTIVATION_HEIGHT);
+        assert_eq!(TX_HASH_V2_ACTIVATION_HEIGHT, 10);
+        assert!(!tx_hash_v2_active(9) && tx_hash_v2_active(10));
+        assert!(!body_root_v2_active(9) && body_root_v2_active(10));
     }
 }
