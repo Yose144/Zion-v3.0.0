@@ -37,14 +37,14 @@ const TESTNET_REHEARSAL_COORDINATED_HEIGHT: u64 = 10;
 /// `version < TX_HASH_V2_VERSION` (= 2), and the wallet / RPC layer MUST
 /// emit `version = TX_HASH_V2_VERSION` for every newly built tx.
 ///
-/// Default: `u64::MAX` — dormant. Activation flips this to a coordinated
-/// mainnet height in the same release window as
-/// [`BODY_ROOT_V2_ACTIVATION_HEIGHT`].
+/// **V3 mainnet (fresh chain):** active from genesis (`0`). Use
+/// `--features testnet_fork_rehearsal` for a finite rehearsal height without
+/// changing production defaults.
 #[cfg(feature = "testnet_fork_rehearsal")]
 pub const TX_HASH_V2_ACTIVATION_HEIGHT: u64 = TESTNET_REHEARSAL_COORDINATED_HEIGHT;
 
 #[cfg(not(feature = "testnet_fork_rehearsal"))]
-pub const TX_HASH_V2_ACTIVATION_HEIGHT: u64 = u64::MAX;
+pub const TX_HASH_V2_ACTIVATION_HEIGHT: u64 = 0;
 
 /// Activation height for **F2 BLAKE3 Merkle body root** (audit §F2, see
 /// `V3/docs/audits/2026-04-V3_AUDIT_COMPLETION.md` §2).
@@ -57,14 +57,14 @@ pub const TX_HASH_V2_ACTIVATION_HEIGHT: u64 = u64::MAX;
 /// `Transaction::calculate_hash()` which already dispatches to v2 once
 /// `TX_HASH_V2_ACTIVATION_HEIGHT` is met).
 ///
-/// Default: `u64::MAX` — dormant. Activate **together with**
-/// [`TX_HASH_V2_ACTIVATION_HEIGHT`] — mixing the two breaks consensus
-/// twice in a row, batching them halves the user-facing fork churn.
+/// **V3 mainnet (fresh chain):** active from genesis (`0`), coordinated with
+/// [`TX_HASH_V2_ACTIVATION_HEIGHT`]. Rehearsal builds override via
+/// `testnet_fork_rehearsal`.
 #[cfg(feature = "testnet_fork_rehearsal")]
 pub const BODY_ROOT_V2_ACTIVATION_HEIGHT: u64 = TESTNET_REHEARSAL_COORDINATED_HEIGHT;
 
 #[cfg(not(feature = "testnet_fork_rehearsal"))]
-pub const BODY_ROOT_V2_ACTIVATION_HEIGHT: u64 = u64::MAX;
+pub const BODY_ROOT_V2_ACTIVATION_HEIGHT: u64 = 0;
 
 /// Returns `true` once a height has crossed the TX hash v2 activation gate.
 ///
@@ -605,54 +605,34 @@ mod tests {
     // Hard-fork activation gates: TX hash v2 + F2 BLAKE3 Merkle
     // ================================================================
 
-    /// Mainnet must ship with both v2 hard-fork gates dormant (`u64::MAX`).
-    /// Activation lives in a coordinated release window — see
-    /// `V3/docs/audits/2026-04-V3_AUDIT_COMPLETION.md` §1 + §2.
+    /// Production V3 ships both gates at genesis (`0`).
     #[test]
     #[cfg(not(feature = "testnet_fork_rehearsal"))]
-    fn tx_hash_v2_activation_height_is_dormant() {
-        assert_eq!(
-            TX_HASH_V2_ACTIVATION_HEIGHT,
-            u64::MAX,
-            "TX hash v2 must remain dormant until coordinated hard-fork activation"
-        );
+    fn tx_hash_v2_activation_height_is_genesis() {
+        assert_eq!(TX_HASH_V2_ACTIVATION_HEIGHT, 0);
     }
 
-    /// Pin BLAKE3 Merkle body root activation to dormant default.
     #[test]
     #[cfg(not(feature = "testnet_fork_rehearsal"))]
-    fn body_root_v2_activation_height_is_dormant() {
-        assert_eq!(
-            BODY_ROOT_V2_ACTIVATION_HEIGHT,
-            u64::MAX,
-            "F2 BLAKE3 Merkle body root must remain dormant until coordinated hard-fork activation"
-        );
+    fn body_root_v2_activation_height_is_genesis() {
+        assert_eq!(BODY_ROOT_V2_ACTIVATION_HEIGHT, 0);
     }
 
-    /// `tx_hash_v2_active` must return `false` for any reasonable height
-    /// while the activation is dormant. Use a value that's representative
-    /// of mainnet operation (a few million blocks ≈ years of runtime).
     #[test]
     #[cfg(not(feature = "testnet_fork_rehearsal"))]
-    fn tx_hash_v2_active_is_false_below_dormant_gate() {
-        assert!(!tx_hash_v2_active(0));
-        assert!(!tx_hash_v2_active(100));
-        assert!(!tx_hash_v2_active(1_000_000));
-        assert!(!tx_hash_v2_active(u64::MAX - 1));
-        assert!(
-            tx_hash_v2_active(u64::MAX),
-            "edge case: only u64::MAX itself should evaluate true while dormant"
-        );
+    fn tx_hash_v2_active_from_genesis() {
+        assert!(tx_hash_v2_active(0));
+        assert!(tx_hash_v2_active(1));
+        assert!(tx_hash_v2_active(100));
+        assert!(tx_hash_v2_active(1_000_000));
+        assert!(tx_hash_v2_active(u64::MAX));
     }
 
-    /// Same shape for `body_root_v2_active`.
     #[test]
     #[cfg(not(feature = "testnet_fork_rehearsal"))]
-    fn body_root_v2_active_is_false_below_dormant_gate() {
-        assert!(!body_root_v2_active(0));
-        assert!(!body_root_v2_active(100));
-        assert!(!body_root_v2_active(1_000_000));
-        assert!(!body_root_v2_active(u64::MAX - 1));
+    fn body_root_v2_active_from_genesis() {
+        assert!(body_root_v2_active(0));
+        assert!(body_root_v2_active(1));
         assert!(body_root_v2_active(u64::MAX));
     }
 
