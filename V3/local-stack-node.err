@@ -1,0 +1,4 @@
+peer_sync_failed peer=91.98.122.165:8333 reason=connection closed before message
+peer_sync_failed peer=5.78.194.94:8333 reason=failed to connect to peer 5.78.194.94:8333
+peer_sync_failed peer=5.223.84.191:8333 reason=failed to connect to peer 5.223.84.191:8333
+outbound_sync_err peer=91.98.122.165:8333 err=connection closed before message
