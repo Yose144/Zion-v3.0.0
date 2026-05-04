@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 # TX_HASH_V2 + BODY_ROOT_V2 rehearsal harness (local / bring-your-own-testnet).
 #
-# Default production binaries keep both gates dormant (`u64::MAX`).
+# Default production binaries (no `testnet_fork_rehearsal`): **TX_HASH_V2** and
+# **BODY_ROOT_V2** are active from height **0** — intended for a **fresh chain**
+# from genesis. Rehearsal builds use a finite coordinated height (see
+# `TESTNET_REHEARSAL_COORDINATED_HEIGHT` in `deeksha.rs`).
 #
 # Option A — rebuild-driven rehearsal **without** editing source:
 #   Enable Cargo feature `testnet_fork_rehearsal` on ALL consensus binaries together:
@@ -13,8 +16,9 @@
 #   Shared rehearsal height is `TESTNET_REHEARSAL_COORDINATED_HEIGHT` in
 #   `V3/L1/cosmic-harmony/src/deeksha.rs` (default **10** for local fork-after-~9-blocks).
 #
-# Option B — mainnet-coordinated activation:
-#   Set both constants to the SAME finite height in `deeksha.rs` for the release tag.
+# Option B — legacy coordinated flip on an **existing** chain (rare):
+#   Ship a release with the same finite height for both constants in `deeksha.rs`
+#   (only if you are not using the default genesis-at-0 product build).
 #
 # After rebuilding: reset chain state, bring up two nodes, observe fork at the gate.
 
