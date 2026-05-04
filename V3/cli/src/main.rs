@@ -213,6 +213,15 @@ async fn run_menu_session(default_config: Option<String>) -> Result<()> {
 
 async fn dispatch(cli: Cli) -> Result<()> {
     let cfg = config::load(cli.config.as_deref())?;
+    
+    // Auto-check for updates in background (silent)
+    if cfg.cli.auto_update_check {
+        let update_cfg = cfg.clone();
+        tokio::spawn(async move {
+            let _ = update::run_with_auto_check(&update_cfg, true, false, true).await;
+        });
+    }
+
     let command = cli
         .command
         .ok_or_else(|| anyhow::anyhow!("no command selected"))?;
