@@ -41,7 +41,12 @@ pub const MAX_ANNOUNCE_AGE: u64 = 600;
 pub const DNS_SEEDS: &[&str] = &[];
 
 /// Well-known bootstrap nodes for UDP announcements.
-pub const BOOTSTRAP_NODES: &[(&str, u16)] = &[("91.98.122.165", 8335)];
+pub const BOOTSTRAP_NODES: &[(&str, u16)] = &[
+    ("91.98.122.165", 8335),
+    ("157.180.41.213", 8335),
+    ("5.78.194.94", 8335),
+    ("5.223.84.191", 8335),
+];
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -582,7 +587,7 @@ mod tests {
         // depend on whether anyone has populated `DNS_SEEDS`, which was the
         // root cause of the historical "flaky DNS test" on `main`.
         let mut engine = DiscoveryEngine::new("testnet");
-        engine.set_dns_seeds(vec!["seed1.zion.test".to_string()]);
+        engine.set_dns_seeds(vec!["rehearsal-seed.invalid".into()]);
         engine.set_bootstrap_nodes(vec![(ip(10, 0, 0, 1), DISCOVERY_PORT)]);
         let now = Instant::now();
         let cmds = engine.tick(now, 1000, &["peer1".into()], 0, 8);

@@ -595,8 +595,12 @@ impl NodeConfig {
             rpc_bind: PeerEndpoint::new("0.0.0.0", 8443),
             pool_bind: PeerEndpoint::new("0.0.0.0", 8444),
             seed_peers: vec![
-                // EU – Prague, CZ (primary — sole active node)
+                // EU – Prague, CZ (primary)
                 PeerEndpoint::new("91.98.122.165", 8333),
+                // US – USA
+                PeerEndpoint::new("5.78.194.94", 8333),
+                // AP – Singapore
+                PeerEndpoint::new("5.223.84.191", 8333),
             ],
         }
     }
@@ -1469,10 +1473,7 @@ impl NodeRuntime {
         let count = peers.len();
         self.register_peers(peers);
         self.prune_known_peers();
-        println!(
-            "peers_loaded count={count} total={}",
-            self.known_peers.len()
-        );
+        println!("peers_loaded count={count} total={}", self.known_peers.len());
     }
 
     /// Number of known peers (for diagnostics).
@@ -1893,7 +1894,8 @@ impl NodeRuntime {
             let miner_reward_zion = template_transactions
                 .first()
                 .filter(|transaction| transaction.from == "coinbase")
-                .map(|transaction| transaction.amount_zion as u64)
+                .map(|transaction| transaction.amount_zion)
+                .map(|amount| u64::try_from(amount).unwrap_or(active_template.reward_zion))
                 .unwrap_or(active_template.reward_zion);
             let accepted_block = AcceptedBlock {
                 template_id,
@@ -2036,7 +2038,8 @@ impl TemplateState {
         let estimated_miner_reward_zion = account_transactions
             .first()
             .filter(|transaction| transaction.from == "coinbase")
-            .map(|transaction| transaction.amount_zion as u64)
+            .map(|transaction| transaction.amount_zion)
+            .map(|amount| u64::try_from(amount).unwrap_or(self.reward_zion))
             .unwrap_or(self.reward_zion);
         BlockTemplate {
             template_id: self.template_id,
@@ -2052,7 +2055,10 @@ impl TemplateState {
             total_fees_zion: self.total_fees_zion,
             body_hash_hex: body_hash_hex(&account_transactions),
             estimated_miner_reward_zion,
-            utxo_transaction_ids: utxo_transactions.iter().map(|tx| hex(&tx.id)).collect(),
+            utxo_transaction_ids: utxo_transactions
+                .iter()
+                .map(|tx| hex(&tx.id))
+                .collect(),
             utxo_transaction_count: utxo_transactions.len(),
             total_utxo_fees: utxo_transactions.iter().map(|tx| tx.fee).sum(),
         }
@@ -2204,19 +2210,8 @@ impl ChainState {
         let genesis_hash = parse_fixed_hex::<32>(&genesis.hash_hex, "genesis hash")
             .expect("genesis hash must be valid hex");
         let mempool = Vec::new();
-        let template = Self::build_template(
-            node_id,
-            core,
-            0,
-            genesis_hash,
-            1,
-            &mempool,
-            std::slice::from_ref(&genesis),
-            "",
-            "",
-            "",
-            "",
-        );
+        let template =
+            Self::build_template(node_id, core, 0, genesis_hash, 1, &mempool, std::slice::from_ref(&genesis), "", "", "", "");
         let mut accepted_by_height = BTreeMap::new();
         accepted_by_height.insert(0, genesis.clone());
         Self {
@@ -2698,14 +2693,370 @@ impl ChainState {
             return Ok(());
         }
 
-        let utxo_snapshot = self.utxo_set();
-        let bridge_keys = self.accepted_bridge_unlock_replay_keys();
-        peer_block_validation::validate_accepted_peer_block(
-            &self.accepted_blocks,
-            &utxo_snapshot,
-            bridge_keys,
-            block,
-        )
+        // ── Checkpoint verification ────────────────────────────────────
+        launch::verify_checkpoint(block.height, &block.hash_hex)?;
+
+        // ── PoW verification (when header is available) ────────────────
+        let block_hash = parse_fixed_hex::<32>(&block.hash_hex, "peer block hash")?;
+        if !block.header_hex.is_empty() {
+            let header_bytes = parse_fixed_hex::<HEADER_SIZE>(
+                &block.header_hex,
+                "peer block header",
+            )?;
+            let header = MiningHeader::from_bytes(header_bytes);
+
+            // Header fields must be consistent with block metadata
+            if header.timestamp != block.timestamp {
+                return Err("peer block header timestamp does not match block timestamp".to_string());
+            }
+            let expected_target = difficulty::difficulty_to_target(block.difficulty);
+            let expected_bits = difficulty::target_to_compact(&expected_target);
+            if header.difficulty_bits != expected_bits {
+                return Err(format!(
+                    "peer block header difficulty_bits {} does not match expected {}",
+                    header.difficulty_bits, expected_bits
+                ));
+            }
+
+            // Reject inconsistent parent metadata before doing expensive PoW work.
+            if !block.previous_hash_hex.is_empty() {
+                let header_prev = hex(&header.previous_hash);
+                if block.previous_hash_hex != header_prev {
+                    return Err(
+                        "peer block previous_hash_hex does not match header previous_hash"
+                            .to_string(),
+                    );
+                }
+            }
+
+            // Verify PoW: recompute hash from header + nonce
+            let candidate = BlockCandidate {
+                header,
+                nonce: block.nonce,
+                height: block.height,
+            };
+            let computed_hash = candidate.hash();
+            if computed_hash != block_hash {
+                return Err(
+                    "peer block hash does not match PoW computation from header and nonce"
+                        .to_string(),
+                );
+            }
+
+            // Verify hash meets difficulty target
+            let target = difficulty::difficulty_to_target(block.difficulty);
+            if !target.allows(&computed_hash) {
+                return Err("peer block PoW hash does not meet difficulty target".to_string());
+            }
+        }
+
+        // ── Timestamp sanity ───────────────────────────────────────────
+        let current_time = now_secs();
+        let median_time_past = if self.accepted_blocks.is_empty() {
+            0
+        } else {
+            let start = self.accepted_blocks.len().saturating_sub(11);
+            let mut timestamps: Vec<u64> = self.accepted_blocks[start..]
+                .iter()
+                .map(|b| b.timestamp)
+                .collect();
+            timestamps.sort_unstable();
+            timestamps[timestamps.len() / 2]
+        };
+        validation::validate_timestamp(block.timestamp, median_time_past, current_time)
+            .map_err(|e| format!("peer block timestamp invalid: {e}"))?;
+
+        // ── Transaction structure ──────────────────────────────────────
+        if block.transaction_ids.len() != block.transactions.len() {
+            return Err("peer block transaction ids do not match block body length".to_string());
+        }
+        let expected_ids = block
+            .transactions
+            .iter()
+            .map(|transaction| transaction.tx_id.clone())
+            .collect::<Vec<_>>();
+        if expected_ids != block.transaction_ids {
+            return Err("peer block transaction ids do not match serialized transactions".to_string());
+        }
+        let mut seen_tx_ids = HashSet::new();
+        let mut seen_sender_nonces = HashSet::new();
+        let mut coinbase_count = 0usize;
+        let mut total_coinbase_zion = 0u64;
+        let has_fee_addresses = !block.humanitarian_address.is_empty()
+            || !block.issobella_address.is_empty()
+            || !block.pool_fee_address.is_empty();
+        let has_all_fee_addresses = !block.humanitarian_address.is_empty()
+            && !block.issobella_address.is_empty()
+            && !block.pool_fee_address.is_empty();
+        if has_fee_addresses && !has_all_fee_addresses {
+            return Err("peer block fee split metadata must provide all fee addresses".to_string());
+        }
+        let (
+            expected_miner_reward,
+            expected_humanitarian_reward,
+            expected_issobella_reward,
+            expected_pool_fee_reward,
+        ) = emission::fee_split(block.subsidy_zion);
+        let total_fees_zion = block
+            .transactions
+            .iter()
+            .enumerate()
+            .map(|(index, transaction)| {
+                if !seen_tx_ids.insert(transaction.tx_id.clone()) {
+                    return Err(format!(
+                        "peer block contains duplicate transaction id {}",
+                        transaction.tx_id
+                    ));
+                }
+                if transaction.from == "coinbase" {
+                    coinbase_count = coinbase_count.saturating_add(1);
+                    let coinbase_amt = u64::try_from(transaction.amount_zion).map_err(|_| {
+                        "peer block coinbase amount exceeds u64".to_string()
+                    })?;
+                    total_coinbase_zion = total_coinbase_zion.saturating_add(coinbase_amt);
+                    if transaction.tx_id.len() != 64
+                        || !transaction.tx_id.chars().all(|ch| ch.is_ascii_hexdigit())
+                    {
+                        return Err("peer block coinbase transaction id must be exactly 64 hex chars"
+                            .to_string());
+                    }
+                    if transaction.to.trim().is_empty() {
+                        return Err(
+                            "peer block coinbase recipient must not be empty".to_string(),
+                        );
+                    }
+                    if !is_valid_account_id(&transaction.to) {
+                        return Err(
+                            "peer block coinbase recipient must use a 3-64 ascii wallet id"
+                                .to_string(),
+                        );
+                    }
+                    if index != coinbase_count.saturating_sub(1) {
+                        return Err(
+                            "peer block coinbase transactions must be contiguous at the start"
+                                .to_string(),
+                        );
+                    }
+                    if transaction.fee_zion != 0 {
+                        return Err("peer block coinbase transaction must have zero fee".to_string());
+                    }
+                    if transaction.nonce != block.height {
+                        return Err(format!(
+                            "peer block coinbase nonce {} does not match block height {}",
+                            transaction.nonce, block.height
+                        ));
+                    }
+                    if block.miner_address.is_empty() {
+                        return Err(
+                            "peer block coinbase transaction requires miner_address metadata"
+                                .to_string(),
+                        );
+                    }
+                    let (expected_to, expected_amount, expected_label) = if has_all_fee_addresses {
+                        match index {
+                            0 => (
+                                block.miner_address.as_str(),
+                                expected_miner_reward,
+                                format!("coinbase:{}:{}", block.height, block.miner_address),
+                            ),
+                            1 => (
+                                block.humanitarian_address.as_str(),
+                                expected_humanitarian_reward,
+                                format!(
+                                    "coinbase_humanitarian:{}:{}",
+                                    block.height, block.humanitarian_address
+                                ),
+                            ),
+                            2 => (
+                                block.issobella_address.as_str(),
+                                expected_issobella_reward,
+                                format!(
+                                    "coinbase_issobella:{}:{}",
+                                    block.height, block.issobella_address
+                                ),
+                            ),
+                            3 => (
+                                block.pool_fee_address.as_str(),
+                                expected_pool_fee_reward,
+                                format!(
+                                    "coinbase_pool_fee:{}:{}",
+                                    block.height, block.pool_fee_address
+                                ),
+                            ),
+                            _ => {
+                                return Err(
+                                    "peer block contains too many split coinbase transactions"
+                                        .to_string(),
+                                )
+                            }
+                        }
+                    } else {
+                        (
+                            block.miner_address.as_str(),
+                            block.subsidy_zion,
+                            format!("coinbase:{}:{}", block.height, block.miner_address),
+                        )
+                    };
+                    if transaction.to != expected_to {
+                        return Err(
+                            "peer block coinbase recipient does not match expected payout address"
+                                .to_string(),
+                        );
+                    }
+                    if transaction.amount_zion != u128::from(expected_amount) {
+                        return Err(format!(
+                            "peer block coinbase amount {} does not match expected {}",
+                            transaction.amount_zion, expected_amount
+                        ));
+                    }
+                    let expected_coinbase_hash =
+                        cosmic_harmony_ekam_deeksha(expected_label.as_bytes(), block.height);
+                    let expected_coinbase_id = hex(&expected_coinbase_hash.data);
+                    if transaction.tx_id != expected_coinbase_id {
+                        return Err(
+                            "peer block coinbase tx_id is not deterministic for the expected payout slot"
+                                .to_string(),
+                        );
+                    }
+                } else {
+                    transaction.validate()?;
+                    if !seen_sender_nonces.insert((transaction.from.clone(), transaction.nonce)) {
+                        return Err(format!(
+                            "peer block reuses sender nonce {} for {}",
+                            transaction.nonce, transaction.from
+                        ));
+                    }
+                }
+                Ok(transaction.fee_zion)
+            })
+            .collect::<Result<Vec<_>, String>>()?
+            .into_iter()
+            .sum::<u64>();
+        if coinbase_count > 4 {
+            return Err("peer block contains more than four coinbase transactions".to_string());
+        }
+        if !block.miner_address.is_empty() && coinbase_count == 0 {
+            return Err("peer block miner_address is set but coinbase transaction is missing".to_string());
+        }
+        if has_all_fee_addresses && coinbase_count != 4 {
+            return Err(
+                "peer block with fee split metadata must contain four coinbase transactions"
+                    .to_string(),
+            );
+        }
+        if !has_all_fee_addresses && coinbase_count > 1 {
+            return Err(
+                "peer block without fee split metadata must contain at most one coinbase transaction"
+                    .to_string(),
+            );
+        }
+        if total_coinbase_zion != 0 && total_coinbase_zion != block.subsidy_zion {
+            return Err(format!(
+                "peer block coinbase total {} does not match subsidy {}",
+                total_coinbase_zion, block.subsidy_zion
+            ));
+        }
+        if total_fees_zion != block.total_fees_zion {
+            return Err("peer block fee total does not match serialized transactions".to_string());
+        }
+        if block.body_hash_hex != body_hash_hex(&block.transactions) {
+            return Err("peer block body hash does not match serialized transactions".to_string());
+        }
+        let expected_block_miner_reward = if has_all_fee_addresses && coinbase_count == 4 {
+            expected_miner_reward
+        } else {
+            block.subsidy_zion
+        };
+        if block.miner_reward_zion != expected_block_miner_reward {
+            return Err(format!(
+                "peer block miner reward {} does not match expected {}",
+                block.miner_reward_zion, expected_block_miner_reward
+            ));
+        }
+        let expected_subsidy = emission::block_subsidy(block.height);
+        if block.subsidy_zion != expected_subsidy {
+            return Err(format!(
+                "peer block subsidy {} does not match emission schedule {} at height {}",
+                block.subsidy_zion, expected_subsidy, block.height
+            ));
+        }
+        // Validate difficulty against LWMA
+        let expected_difficulty = if self.accepted_blocks.is_empty() {
+            difficulty::GENESIS_DIFFICULTY
+        } else {
+            let start = self.accepted_blocks.len().saturating_sub(difficulty::LWMA_WINDOW + 1);
+            let window: Vec<difficulty::BlockInfo> = self.accepted_blocks[start..]
+                .iter()
+                .map(|b| difficulty::BlockInfo {
+                    timestamp: b.timestamp,
+                    difficulty: b.difficulty,
+                })
+                .collect();
+            difficulty::lwma_next_difficulty(&window)
+        };
+        if block.difficulty != expected_difficulty {
+            return Err(format!(
+                "peer block difficulty {} does not match expected {} at height {}",
+                block.difficulty, expected_difficulty, block.height
+            ));
+        }
+        // ── UTXO transaction structure ─────────────────────────────────
+        let utxo_expected_ids: Vec<String> = block
+            .utxo_transactions
+            .iter()
+            .map(|utxo_tx| hex(&utxo_tx.id))
+            .collect();
+        if utxo_expected_ids != block.utxo_transaction_ids {
+            return Err(
+                "peer block UTXO transaction ids do not match serialized UTXO transactions"
+                    .to_string(),
+            );
+        }
+        let mut seen_utxo_inputs: HashSet<([u8; 32], u32)> = HashSet::new();
+        let mut seen_bridge_unlock_replay_keys = self.accepted_bridge_unlock_replay_keys();
+        for utxo_tx in &block.utxo_transactions {
+            if utxo_tx.id != utxo_tx.calculate_hash() {
+                return Err(format!(
+                    "peer block UTXO transaction {} has invalid id",
+                    hex(&utxo_tx.id)
+                ));
+            }
+            match self.validate_bridge_unlock_transaction_shape(utxo_tx)? {
+                Some(replay_key) => {
+                    if !seen_bridge_unlock_replay_keys.insert(replay_key.clone()) {
+                        return Err(format!(
+                            "peer block bridge unlock replay key already used: {}",
+                            replay_key,
+                        ));
+                    }
+                }
+                None => {
+                    if !utxo_tx.verify_signatures() {
+                        return Err(format!(
+                            "peer block UTXO transaction {} has invalid signatures",
+                            hex(&utxo_tx.id)
+                        ));
+                    }
+                }
+            }
+            let utxo_id_hex = hex(&utxo_tx.id);
+            if !seen_tx_ids.insert(utxo_id_hex) {
+                return Err(format!(
+                    "peer block contains duplicate UTXO transaction id {}",
+                    hex(&utxo_tx.id)
+                ));
+            }
+            for input in &utxo_tx.inputs {
+                if !seen_utxo_inputs.insert((input.prev_tx_hash, input.output_index)) {
+                    return Err(format!(
+                        "peer block contains double-spend of UTXO input {}:{}",
+                        hex(&input.prev_tx_hash),
+                        input.output_index,
+                    ));
+                }
+            }
+        }
+        Ok(())
     }
 
     fn insert_transaction(
@@ -3081,74 +3432,17 @@ impl ChainState {
                         tx_id: hex(&hash.data),
                         from: "coinbase".to_string(),
                         to: addr.to_string(),
-                        amount_zion: amount as u128,
+                        amount_zion: u128::from(amount),
                         fee_zion: 0,
                         nonce: next_height,
                     }
                 };
 
                 // Insert in reverse order so positions are: 0=miner, 1=humanitarian, 2=issobella, 3=pool_fee
-                selected_transactions.insert(
-                    0,
-                    mk_coinbase("coinbase_pool_fee", pool_fee_address, pool_fee_amt),
-                );
-                selected_transactions.insert(
-                    0,
-                    mk_coinbase("coinbase_issobella", issobella_address, issobella_amt),
-                );
-                selected_transactions.insert(
-                    0,
-                    mk_coinbase(
-                        "coinbase_humanitarian",
-                        humanitarian_address,
-                        humanitarian_amt,
-                    ),
-                );
+                selected_transactions.insert(0, mk_coinbase("coinbase_pool_fee", pool_fee_address, pool_fee_amt));
+                selected_transactions.insert(0, mk_coinbase("coinbase_issobella", issobella_address, issobella_amt));
+                selected_transactions.insert(0, mk_coinbase("coinbase_humanitarian", humanitarian_address, humanitarian_amt));
                 selected_transactions.insert(0, mk_coinbase("coinbase", miner_address, miner_amt));
-
-                // Phase 18: Also generate UTXO coinbase outputs so rewards are
-                // spendable via the UTXO transaction model (pool payouts, wallet sends).
-                let mut utxo_coinbase_outputs = vec![tx::TxOutput {
-                    amount: miner_amt,
-                    address: miner_address.to_string(),
-                    memo: Some("coinbase".into()),
-                }];
-                if !humanitarian_address.is_empty() {
-                    utxo_coinbase_outputs.push(tx::TxOutput {
-                        amount: humanitarian_amt,
-                        address: humanitarian_address.to_string(),
-                        memo: Some("coinbase_humanitarian".into()),
-                    });
-                }
-                if !issobella_address.is_empty() {
-                    utxo_coinbase_outputs.push(tx::TxOutput {
-                        amount: issobella_amt,
-                        address: issobella_address.to_string(),
-                        memo: Some("coinbase_issobella".into()),
-                    });
-                }
-                if !pool_fee_address.is_empty() {
-                    utxo_coinbase_outputs.push(tx::TxOutput {
-                        amount: pool_fee_amt,
-                        address: pool_fee_address.to_string(),
-                        memo: Some("coinbase_pool_fee".into()),
-                    });
-                }
-                let coinbase_utxo_ver = if tx_hash_v2_active(next_height) {
-                    tx::TX_HASH_V2_VERSION
-                } else {
-                    1
-                };
-                let mut utxo_coinbase = tx::Transaction {
-                    id: [0u8; 32],
-                    version: coinbase_utxo_ver,
-                    inputs: vec![], // coinbase: no inputs
-                    outputs: utxo_coinbase_outputs,
-                    fee: 0,
-                    timestamp: next_height, // deterministic: use height as timestamp for reproducibility
-                };
-                utxo_coinbase.finalize_id();
-                selected_utxo_transactions.insert(0, utxo_coinbase);
             } else {
                 // Legacy single coinbase: 100% to miner
                 let coinbase_label = format!("coinbase:{}:{}", next_height, miner_address);
@@ -3158,32 +3452,11 @@ impl ChainState {
                     tx_id: hex(&coinbase_hash.data),
                     from: "coinbase".to_string(),
                     to: miner_address.to_string(),
-                    amount_zion: subsidy as u128,
+                    amount_zion: u128::from(subsidy),
                     fee_zion: 0,
                     nonce: next_height,
                 };
                 selected_transactions.insert(0, coinbase_tx);
-
-                // Phase 18: UTXO coinbase for single-output legacy mode
-                let coinbase_utxo_ver = if tx_hash_v2_active(next_height) {
-                    tx::TX_HASH_V2_VERSION
-                } else {
-                    1
-                };
-                let mut utxo_coinbase = tx::Transaction {
-                    id: [0u8; 32],
-                    version: coinbase_utxo_ver,
-                    inputs: vec![],
-                    outputs: vec![tx::TxOutput {
-                        amount: subsidy,
-                        address: miner_address.to_string(),
-                        memo: Some("coinbase".into()),
-                    }],
-                    fee: 0,
-                    timestamp: next_height,
-                };
-                utxo_coinbase.finalize_id();
-                selected_utxo_transactions.insert(0, utxo_coinbase);
             }
         }
 
@@ -4505,8 +4778,12 @@ mod tests {
         let config = test_config_without_seed_allowlist();
 
         // Create runtime with chain store, add some peers
-        let mut runtime = NodeRuntime::with_chain_store("node-peers", config.clone(), &state_path)
-            .expect("create runtime");
+        let mut runtime = NodeRuntime::with_chain_store(
+            "node-peers",
+            config.clone(),
+            &state_path,
+        )
+        .expect("create runtime");
 
         // Register new peers beyond the seeds
         runtime.register_peer(PeerEndpoint::new("10.0.0.1", 8333));
@@ -4521,22 +4798,20 @@ mod tests {
         assert!(peers_path.exists(), "peers.json should exist");
 
         // Create a new runtime from the same state path — peers should be loaded
-        let restored = NodeRuntime::with_chain_store("node-peers-2", config, &state_path)
-            .expect("restore runtime");
+        let restored = NodeRuntime::with_chain_store(
+            "node-peers-2",
+            config,
+            &state_path,
+        )
+        .expect("restore runtime");
 
         assert_eq!(restored.known_peers().len(), saved_count);
         assert!(
-            restored
-                .known_peers()
-                .iter()
-                .any(|p| p.address() == "10.0.0.1:8333"),
+            restored.known_peers().iter().any(|p| p.address() == "10.0.0.1:8333"),
             "should contain persisted peer 10.0.0.1"
         );
         assert!(
-            restored
-                .known_peers()
-                .iter()
-                .any(|p| p.address() == "10.0.0.3:8333"),
+            restored.known_peers().iter().any(|p| p.address() == "10.0.0.3:8333"),
             "should contain persisted peer 10.0.0.3"
         );
     }
@@ -5045,19 +5320,19 @@ mod tests {
 
         assert_eq!(transactions[0].from, "coinbase");
         assert_eq!(transactions[0].to, "alice-wallet");
-        assert_eq!(transactions[0].amount_zion, miner_amount as u128);
+        assert_eq!(transactions[0].amount_zion, u128::from(miner_amount));
 
         assert_eq!(transactions[1].from, "coinbase");
         assert_eq!(transactions[1].to, "human-wallet");
-        assert_eq!(transactions[1].amount_zion, humanitarian_amount as u128);
+        assert_eq!(transactions[1].amount_zion, u128::from(humanitarian_amount));
 
         assert_eq!(transactions[2].from, "coinbase");
         assert_eq!(transactions[2].to, "issobella-wallet");
-        assert_eq!(transactions[2].amount_zion, issobella_amount as u128);
+        assert_eq!(transactions[2].amount_zion, u128::from(issobella_amount));
 
         assert_eq!(transactions[3].from, "coinbase");
         assert_eq!(transactions[3].to, "pool-wallet");
-        assert_eq!(transactions[3].amount_zion, pool_fee_amount as u128);
+        assert_eq!(transactions[3].amount_zion, u128::from(pool_fee_amount));
     }
 
     #[test]
@@ -5072,7 +5347,8 @@ mod tests {
 
         let template = source.chain_state.active_template.clone();
         let transactions = template.account_transactions();
-        let miner_reward_zion = transactions[0].amount_zion as u64;
+        let miner_reward_zion = u64::try_from(transactions[0].amount_zion)
+            .expect("miner coinbase amount must fit u64 for block metadata");
         let block = AcceptedBlock {
             template_id: template.template_id,
             height: template.height,
@@ -5082,10 +5358,7 @@ mod tests {
             hash_hex: hex(&[0x11; 32]),
             header_hex: String::new(),
             previous_hash_hex: hex(&source.chain_state.tip_hash),
-            transaction_ids: transactions
-                .iter()
-                .map(|transaction| transaction.tx_id.clone())
-                .collect(),
+            transaction_ids: transactions.iter().map(|transaction| transaction.tx_id.clone()).collect(),
             transactions: transactions.clone(),
             total_fees_zion: template.total_fees_zion,
             body_hash_hex: body_hash_hex(&transactions),
@@ -5116,16 +5389,13 @@ mod tests {
         assert_eq!(block.miner_reward_zion, miner_amount);
 
         assert_eq!(block.transactions[0].to, "alice-wallet");
-        assert_eq!(block.transactions[0].amount_zion, miner_amount as u128);
+        assert_eq!(block.transactions[0].amount_zion, u128::from(miner_amount));
         assert_eq!(block.transactions[1].to, "human-wallet");
-        assert_eq!(
-            block.transactions[1].amount_zion,
-            humanitarian_amount as u128
-        );
+        assert_eq!(block.transactions[1].amount_zion, u128::from(humanitarian_amount));
         assert_eq!(block.transactions[2].to, "issobella-wallet");
-        assert_eq!(block.transactions[2].amount_zion, issobella_amount as u128);
+        assert_eq!(block.transactions[2].amount_zion, u128::from(issobella_amount));
         assert_eq!(block.transactions[3].to, "pool-wallet");
-        assert_eq!(block.transactions[3].amount_zion, pool_fee_amount as u128);
+        assert_eq!(block.transactions[3].amount_zion, u128::from(pool_fee_amount));
 
         assert_eq!(
             block
@@ -5133,7 +5403,7 @@ mod tests {
                 .iter()
                 .map(|transaction| transaction.amount_zion)
                 .sum::<u128>(),
-            block.subsidy_zion as u128
+            u128::from(block.subsidy_zion)
         );
     }
 
@@ -6337,5 +6607,20 @@ mod tests {
     fn merkle_v2_blake3_empty_lists_yield_zero_root() {
         let v2 = derive_template_merkle_root_v2_blake3(&[], &[]);
         assert_eq!(v2, [0u8; 32], "empty tx + empty utxo => all-zeros root");
+    }
+
+    /// Pins `TESTNET_REHEARSAL_COORDINATED_HEIGHT` from `zion-cosmic-harmony`
+    /// when this crate is built with `--features testnet_fork_rehearsal`.
+    #[cfg(feature = "testnet_fork_rehearsal")]
+    #[test]
+    fn fork_rehearsal_gates_aligned_at_10_in_core_build() {
+        use zion_cosmic_harmony::{
+            body_root_v2_active, tx_hash_v2_active, BODY_ROOT_V2_ACTIVATION_HEIGHT,
+            TX_HASH_V2_ACTIVATION_HEIGHT,
+        };
+        assert_eq!(TX_HASH_V2_ACTIVATION_HEIGHT, BODY_ROOT_V2_ACTIVATION_HEIGHT);
+        assert_eq!(TX_HASH_V2_ACTIVATION_HEIGHT, 10);
+        assert!(!tx_hash_v2_active(9) && tx_hash_v2_active(10));
+        assert!(!body_root_v2_active(9) && body_root_v2_active(10));
     }
 }

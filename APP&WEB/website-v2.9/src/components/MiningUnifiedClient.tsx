@@ -171,7 +171,7 @@ const networkConfigs = [
 
 const cliCommands = [
   { cmd: "zion-node --version", desc: "Check installed version" },
-  { cmd: "zion-node --config mainnet.toml", desc: "Start with the public rehearsal config" },
+  { cmd: "zion-node --config mainnet.toml", desc: "Start with config file" },
   { cmd: "zion-node --network mainnet --rpc-port 8443", desc: "Override RPC port" },
   { cmd: `zion-node --peers ${POOL}:8333`, desc: "Manual peer list" },
   { cmd: "zion-node --log-level debug", desc: "Verbose logging" },
@@ -774,7 +774,7 @@ cargo build --release -p zion-miner --features opencl
                 </div>
 
                 <CodeBlock
-                  title={cs ? 'Krok 1 - spustte vlastni full node' : 'Step 1 — Run your own full node'}
+                  title="Step 1 — Run your own full node"
                   code={`zion-node --config config/mainnet.toml --rpc-port 8443`}
                 />
                 <div className="mt-4">
@@ -977,7 +977,7 @@ docker run -d \\
               <CodeBlock
                 title={networkConfigsView[activeNetwork].file}
                 code={`[network]
-name = "${networkConfigsView[activeNetwork].name.toLowerCase()}"
+name = "${networkConfigs[activeNetwork].name.toLowerCase()}"
 p2p_port = 8333
 rpc_port = 8443
 max_peers = 128
@@ -1034,7 +1034,7 @@ bootstrap = [
 
             <div className="mt-4">
               <CodeBlock
-                title={cs ? 'UFW firewall (Ubuntu/Debian)' : 'UFW Firewall (Ubuntu/Debian)'}
+                title="UFW Firewall (Ubuntu/Debian)"
                 code={`sudo ufw allow 8333/tcp comment "ZION P2P"
 sudo ufw allow from 127.0.0.1 to any port 8443 proto tcp comment "ZION RPC"
 sudo ufw status`}
@@ -1066,13 +1066,13 @@ sudo ufw status`}
               {cs ? 'Overte svuj node' : 'Verify Your Node'}
             </h3>
             <CodeBlock
-              title={cs ? 'Kontrola stavu synchronizace' : 'Check sync status'}
+              title="Check sync status"
               code={`curl -s http://localhost:8443 \\
   -H "Content-Type: application/json" \\
   -d '{"jsonrpc":"2.0","id":1,"method":"getBlockchainInfo"}' | jq .`}
             />
             <CodeBlock
-              title={cs ? 'Kontrola peeru' : 'Check peers'}
+              title="Check peers"
               code={`curl -s http://localhost:8443 \\
   -H "Content-Type: application/json" \\
   -d '{"jsonrpc":"2.0","id":1,"method":"getPeerCount"}' | jq .`}

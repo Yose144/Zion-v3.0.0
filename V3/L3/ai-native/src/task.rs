@@ -37,12 +37,12 @@ pub enum AiTaskType {
 impl std::fmt::Display for AiTaskType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::LlmInference => write!(f, "llm_inference"),
-            Self::ImageGeneration => write!(f, "image_generation"),
-            Self::ModelTraining => write!(f, "model_training"),
-            Self::Embeddings => write!(f, "embeddings"),
-            Self::CodeAnalysis => write!(f, "code_analysis"),
-            Self::Custom => write!(f, "custom"),
+            Self::LlmInference     => write!(f, "llm_inference"),
+            Self::ImageGeneration  => write!(f, "image_generation"),
+            Self::ModelTraining    => write!(f, "model_training"),
+            Self::Embeddings       => write!(f, "embeddings"),
+            Self::CodeAnalysis     => write!(f, "code_analysis"),
+            Self::Custom           => write!(f, "custom"),
         }
     }
 }
@@ -76,13 +76,13 @@ pub enum TaskStatus {
 impl std::fmt::Display for TaskStatus {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Pending => write!(f, "pending"),
-            Self::Assigned => write!(f, "assigned"),
+            Self::Pending    => write!(f, "pending"),
+            Self::Assigned   => write!(f, "assigned"),
             Self::Processing => write!(f, "processing"),
-            Self::Completed => write!(f, "completed"),
-            Self::Failed => write!(f, "failed"),
-            Self::Timeout => write!(f, "timeout"),
-            Self::Cancelled => write!(f, "cancelled"),
+            Self::Completed  => write!(f, "completed"),
+            Self::Failed     => write!(f, "failed"),
+            Self::Timeout    => write!(f, "timeout"),
+            Self::Cancelled  => write!(f, "cancelled"),
         }
     }
 }
@@ -210,10 +210,7 @@ impl AiTask {
     pub fn is_terminal(&self) -> bool {
         matches!(
             self.status,
-            TaskStatus::Completed
-                | TaskStatus::Failed
-                | TaskStatus::Timeout
-                | TaskStatus::Cancelled
+            TaskStatus::Completed | TaskStatus::Failed | TaskStatus::Timeout | TaskStatus::Cancelled
         )
     }
 
@@ -225,7 +222,9 @@ impl AiTask {
             return false;
         }
         let reference = self.assigned_at.unwrap_or(self.created_at);
-        let elapsed = Utc::now().signed_duration_since(reference).num_seconds();
+        let elapsed = Utc::now()
+            .signed_duration_since(reference)
+            .num_seconds();
         elapsed > self.timeout_secs as i64
     }
 
@@ -352,9 +351,11 @@ mod tests {
 
     #[test]
     fn test_timeout_detection() {
-        let mut t =
-            AiTask::new(AiTaskType::Embeddings, "m", "s", serde_json::json!({}), 0).with_timeout(0); // Expire immediately
-                                                                                                     // Force created_at to be way in the past
+        let mut t = AiTask::new(
+            AiTaskType::Embeddings, "m", "s", serde_json::json!({}), 0,
+        )
+        .with_timeout(0); // Expire immediately
+        // Force created_at to be way in the past
         t.created_at = Utc::now() - chrono::Duration::seconds(999);
         assert!(t.is_timed_out());
     }

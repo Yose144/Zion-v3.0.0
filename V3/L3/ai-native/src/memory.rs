@@ -62,7 +62,11 @@ pub struct MemoryEntry {
 
 impl MemoryEntry {
     /// Create a new entry with default importance of 0.5.
-    pub fn new(kind: MemoryEventKind, summary: impl Into<String>, data: serde_json::Value) -> Self {
+    pub fn new(
+        kind: MemoryEventKind,
+        summary: impl Into<String>,
+        data: serde_json::Value,
+    ) -> Self {
         Self {
             id: 0, // assigned by AgentMemory::record
             kind,
@@ -243,7 +247,8 @@ impl AgentMemory {
         if self.long_term.is_empty() {
             return 0.0;
         }
-        self.long_term.iter().map(|e| e.importance).sum::<f32>() / self.long_term.len() as f32
+        self.long_term.iter().map(|e| e.importance).sum::<f32>()
+            / self.long_term.len() as f32
     }
 }
 
@@ -254,21 +259,13 @@ mod tests {
     use super::*;
 
     fn low(summary: &str) -> MemoryEntry {
-        MemoryEntry::new(
-            MemoryEventKind::TaskCompleted,
-            summary,
-            serde_json::json!({}),
-        )
-        .with_importance(0.3)
+        MemoryEntry::new(MemoryEventKind::TaskCompleted, summary, serde_json::json!({}))
+            .with_importance(0.3)
     }
 
     fn high(summary: &str) -> MemoryEntry {
-        MemoryEntry::new(
-            MemoryEventKind::TaskCompleted,
-            summary,
-            serde_json::json!({}),
-        )
-        .with_importance(0.9)
+        MemoryEntry::new(MemoryEventKind::TaskCompleted, summary, serde_json::json!({}))
+            .with_importance(0.9)
     }
 
     #[test]
@@ -296,10 +293,7 @@ mod tests {
         m.record(low("x"));
         m.record(low("y")); // evicts "rare event" from short-term
         let hits = m.recall("rare event");
-        assert!(
-            !hits.is_empty(),
-            "evicted high-importance entry should be in long-term"
-        );
+        assert!(!hits.is_empty(), "evicted high-importance entry should be in long-term");
     }
 
     #[test]
@@ -316,12 +310,8 @@ mod tests {
     fn test_recall_by_kind() {
         let mut m = AgentMemory::with_defaults();
         m.record(
-            MemoryEntry::new(
-                MemoryEventKind::PoolSwitched,
-                "switched",
-                serde_json::json!({}),
-            )
-            .with_importance(0.8),
+            MemoryEntry::new(MemoryEventKind::PoolSwitched, "switched", serde_json::json!({}))
+                .with_importance(0.8),
         );
         m.record(low("unrelated"));
         let hits = m.recall_by_kind(&MemoryEventKind::PoolSwitched);
