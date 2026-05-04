@@ -33,9 +33,9 @@ use tracing::info;
 
 fn network_passphrase(network: &str) -> &'static str {
     match network {
-        "testnet" => "Test SDF Network ; September 2015",
+        "testnet"   => "Test SDF Network ; September 2015",
         "futurenet" => "Test SDF Future Network ; October 2022",
-        _ => "Public Global Stellar Network ; September 2015",
+        _           => "Public Global Stellar Network ; September 2015",
     }
 }
 
@@ -43,13 +43,13 @@ fn network_passphrase(network: &str) -> &'static str {
 // XDR discriminant constants (Stellar Protocol 19)
 // ─────────────────────────────────────────────────────────────────────────────
 
-const ENVELOPE_TYPE_TX: u32 = 2;
-const KEY_TYPE_ED25519: u32 = 0;
-const PUBLIC_KEY_ED25519: u32 = 0;
-const PRECOND_NONE: u32 = 0;
-const MEMO_NONE: u32 = 0;
-const OP_PAYMENT: u32 = 1;
-const ASSET_TYPE_ALPHANUM4: u32 = 1;
+const ENVELOPE_TYPE_TX: u32      = 2;
+const KEY_TYPE_ED25519: u32      = 0;
+const PUBLIC_KEY_ED25519: u32    = 0;
+const PRECOND_NONE: u32          = 0;
+const MEMO_NONE: u32             = 0;
+const OP_PAYMENT: u32            = 1;
+const ASSET_TYPE_ALPHANUM4: u32  = 1;
 const ASSET_TYPE_ALPHANUM12: u32 = 2;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -59,24 +59,16 @@ const ASSET_TYPE_ALPHANUM12: u32 = 2;
 struct Xdr(Vec<u8>);
 
 impl Xdr {
-    fn new() -> Self {
-        Xdr(Vec::new())
-    }
+    fn new() -> Self { Xdr(Vec::new()) }
 
     /// big-endian uint32
-    fn u32(&mut self, v: u32) {
-        self.0.extend_from_slice(&v.to_be_bytes());
-    }
+    fn u32(&mut self, v: u32) { self.0.extend_from_slice(&v.to_be_bytes()); }
 
     /// big-endian int64
-    fn i64(&mut self, v: i64) {
-        self.0.extend_from_slice(&v.to_be_bytes());
-    }
+    fn i64(&mut self, v: i64) { self.0.extend_from_slice(&v.to_be_bytes()); }
 
     /// raw bytes (must already be a multiple of 4, or caller handles padding)
-    fn raw(&mut self, b: &[u8]) {
-        self.0.extend_from_slice(b);
-    }
+    fn raw(&mut self, b: &[u8]) { self.0.extend_from_slice(b); }
 
     /// fixed-length opaque[n] — appends b then pads to multiple of 4
     fn fixed(&mut self, b: &[u8], n: usize) {
@@ -91,9 +83,7 @@ impl Xdr {
         self.fixed(b, b.len());
     }
 
-    fn into_bytes(self) -> Vec<u8> {
-        self.0
-    }
+    fn into_bytes(self) -> Vec<u8> { self.0 }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -128,30 +118,21 @@ impl StellarSigner {
 
     /// Create from a Stellar secret key string (S...).
     pub fn from_str_key(secret: &str, network: String) -> WarpResult<Self> {
-        let priv_key =
-            StellarPrivKey::from_string(secret).map_err(|e| WarpError::AdapterError {
-                chain: "stellar".into(),
-                reason: format!("Stellar StrKey parse error: {:?}", e),
-            })?;
+        let priv_key = StellarPrivKey::from_string(secret).map_err(|e| WarpError::AdapterError {
+            chain: "stellar".into(),
+            reason: format!("Stellar StrKey parse error: {:?}", e),
+        })?;
         // ed25519-dalek SigningKey takes a 32-byte seed
         let signing_key = SigningKey::from_bytes(&priv_key.0);
         let pub_key_bytes = signing_key.verifying_key().to_bytes();
-        Ok(Self {
-            signing_key,
-            pub_key_bytes,
-            network,
-        })
+        Ok(Self { signing_key, pub_key_bytes, network })
     }
 
     /// Create directly from a raw 32-byte ed25519 seed (test/internal use).
     pub fn from_raw(seed: [u8; 32], network: String) -> Self {
         let signing_key = SigningKey::from_bytes(&seed);
         let pub_key_bytes = signing_key.verifying_key().to_bytes();
-        Self {
-            signing_key,
-            pub_key_bytes,
-            network,
-        }
+        Self { signing_key, pub_key_bytes, network }
     }
 
     /// The relay wallet's G... Stellar address.
@@ -169,13 +150,14 @@ impl StellarSigner {
         recipient: &str,
         amount_stroops: i64,
     ) -> WarpResult<String> {
-        let asset_code =
-            std::env::var("WARP_STELLAR_ASSET_CODE").unwrap_or_else(|_| "wZION".to_string());
-        let issuer_str =
-            std::env::var("WARP_STELLAR_WZION_ISSUER").map_err(|_| WarpError::AdapterError {
+        let asset_code = std::env::var("WARP_STELLAR_ASSET_CODE")
+            .unwrap_or_else(|_| "wZION".to_string());
+        let issuer_str = std::env::var("WARP_STELLAR_WZION_ISSUER").map_err(|_| {
+            WarpError::AdapterError {
                 chain: "stellar".into(),
                 reason: "WARP_STELLAR_WZION_ISSUER env var not set".into(),
-            })?;
+            }
+        })?;
         let fee = std::env::var("WARP_STELLAR_FEE")
             .ok()
             .and_then(|v| v.parse::<u32>().ok())
@@ -188,16 +170,8 @@ impl StellarSigner {
         // 2. Decode recipient + issuer public keys
         let dest_bytes = g_addr_to_bytes(recipient)?;
         let issuer_bytes = g_addr_to_bytes(&issuer_str)?;
-        let asset_type = if asset_code.len() <= 4 {
-            ASSET_TYPE_ALPHANUM4
-        } else {
-            ASSET_TYPE_ALPHANUM12
-        };
-        let asset_code_len = if asset_type == ASSET_TYPE_ALPHANUM4 {
-            4usize
-        } else {
-            12usize
-        };
+        let asset_type = if asset_code.len() <= 4 { ASSET_TYPE_ALPHANUM4 } else { ASSET_TYPE_ALPHANUM12 };
+        let asset_code_len = if asset_type == ASSET_TYPE_ALPHANUM4 { 4usize } else { 12usize };
 
         // Pad asset code to fixed length
         let mut code_bytes = [0u8; 12];
@@ -232,13 +206,13 @@ impl StellarSigner {
 
         // 6. Assemble TransactionEnvelope XDR
         let mut env = Xdr::new();
-        env.u32(ENVELOPE_TYPE_TX); // TransactionEnvelope discriminant
-        env.raw(&tx_xdr); // Transaction
-        env.u32(1); // signatures array count = 1
-                    // DecoratedSignature:
-                    // hint = 4 fixed bytes (last 4 of pubkey)
+        env.u32(ENVELOPE_TYPE_TX);          // TransactionEnvelope discriminant
+        env.raw(&tx_xdr);                   // Transaction
+        env.u32(1);                         // signatures array count = 1
+        // DecoratedSignature:
+        // hint = 4 fixed bytes (last 4 of pubkey)
         env.raw(&self.pub_key_bytes[28..32]); // fixed opaque[4] — no length prefix
-        env.var(&sig_bytes); // variable opaque sig
+        env.var(&sig_bytes);                // variable opaque sig
 
         let envelope_b64 = B64.encode(&env.into_bytes());
 
@@ -263,7 +237,7 @@ fn build_payment_tx(
     source_pk: &[u8; 32],
     dest_pk: &[u8; 32],
     asset_type: u32,
-    asset_code: &[u8], // 4 or 12 bytes
+    asset_code: &[u8],   // 4 or 12 bytes
     issuer_pk: &[u8; 32],
     amount_stroops: i64,
     seq_num: i64,
@@ -305,7 +279,7 @@ fn build_payment_tx(
     // AlphaNum4 or AlphaNum12: assetCode (fixed 4 or 12 bytes) + issuer AccountID
     let asset_code_len = asset_code.len(); // 4 or 12
     tx.fixed(asset_code, asset_code_len); // no padding needed (4,12 are multiples of 4)
-                                          // issuer AccountID::PUBLIC_KEY_TYPE_ED25519
+    // issuer AccountID::PUBLIC_KEY_TYPE_ED25519
     tx.u32(PUBLIC_KEY_ED25519);
     tx.raw(issuer_pk);
 
@@ -331,24 +305,14 @@ async fn fetch_sequence(
     let acc: HorizonAccount = client
         .get(&url)
         .header("Accept", "application/json")
-        .send()
-        .await
-        .map_err(|e| WarpError::AdapterError {
-            chain: "stellar".into(),
-            reason: e.to_string(),
-        })?
-        .json()
-        .await
-        .map_err(|e| WarpError::AdapterError {
-            chain: "stellar".into(),
-            reason: e.to_string(),
-        })?;
-    acc.sequence
-        .parse::<i64>()
-        .map_err(|_| WarpError::AdapterError {
-            chain: "stellar".into(),
-            reason: format!("Cannot parse sequence number: '{}'", acc.sequence),
-        })
+        .send().await
+        .map_err(|e| WarpError::AdapterError { chain: "stellar".into(), reason: e.to_string() })?
+        .json().await
+        .map_err(|e| WarpError::AdapterError { chain: "stellar".into(), reason: e.to_string() })?;
+    acc.sequence.parse::<i64>().map_err(|_| WarpError::AdapterError {
+        chain: "stellar".into(),
+        reason: format!("Cannot parse sequence number: '{}'", acc.sequence),
+    })
 }
 
 async fn submit_transaction(
@@ -367,12 +331,8 @@ async fn submit_transaction(
                 .replace('/', "%2F")
                 .replace('=', "%3D")
         ))
-        .send()
-        .await
-        .map_err(|e| WarpError::AdapterError {
-            chain: "stellar".into(),
-            reason: e.to_string(),
-        })?;
+        .send().await
+        .map_err(|e| WarpError::AdapterError { chain: "stellar".into(), reason: e.to_string() })?;
 
     let status = resp.status();
     let body: serde_json::Value = resp.json().await.unwrap_or(serde_json::json!({}));
@@ -421,11 +381,7 @@ mod tests {
     fn test_signer_address_format() {
         let s = test_signer();
         let addr = s.address();
-        assert!(
-            addr.starts_with('G'),
-            "Expected G... address, got: {}",
-            addr
-        );
+        assert!(addr.starts_with('G'), "Expected G... address, got: {}", addr);
         assert_eq!(addr.len(), 56);
     }
 
@@ -487,16 +443,7 @@ mod tests {
         let dst = [2u8; 32];
         let iss = [3u8; 32];
         let code = b"wZION\0\0\0\0\0\0\0"; // 12 bytes
-        let tx = build_payment_tx(
-            &src,
-            &dst,
-            ASSET_TYPE_ALPHANUM12,
-            code,
-            &iss,
-            1_000_000,
-            42,
-            100,
-        );
+        let tx = build_payment_tx(&src, &dst, ASSET_TYPE_ALPHANUM12, code, &iss, 1_000_000, 42, 100);
         // sourceAccount(36) + fee(4) + seqNum(8) + cond(4) + memo(4) + n_ops(4)
         // + op_src(4) + op_type(4) + dest(36) + asset_disc(4) + code(12)
         // + issuer(36) + amount(8) + ext(4) = 168
@@ -509,23 +456,9 @@ mod tests {
         let dst = [2u8; 32];
         let iss = [3u8; 32];
         let code = b"ZION"; // 4 bytes
-        let tx = build_payment_tx(
-            &src,
-            &dst,
-            ASSET_TYPE_ALPHANUM4,
-            code,
-            &iss,
-            1_000_000,
-            42,
-            100,
-        );
+        let tx = build_payment_tx(&src, &dst, ASSET_TYPE_ALPHANUM4, code, &iss, 1_000_000, 42, 100);
         // AlphaNum4 code = 4 bytes instead of 12 → 168 - 8 = 160
-        assert_eq!(
-            tx.len(),
-            160,
-            "Unexpected TX size for AlphaNum4: {}",
-            tx.len()
-        );
+        assert_eq!(tx.len(), 160, "Unexpected TX size for AlphaNum4: {}", tx.len());
     }
 
     #[test]
@@ -534,31 +467,19 @@ mod tests {
         let s2 = test_signer();
 
         let tx = build_payment_tx(
-            &s1.pub_key_bytes,
-            &[2u8; 32],
-            ASSET_TYPE_ALPHANUM12,
-            b"wZION\0\0\0\0\0\0\0",
-            &[3u8; 32],
-            100_000,
-            5,
-            100,
+            &s1.pub_key_bytes, &[2u8; 32], ASSET_TYPE_ALPHANUM12,
+            b"wZION\0\0\0\0\0\0\0", &[3u8; 32], 100_000, 5, 100,
         );
 
         let passphrase = network_passphrase("testnet");
         let network_id: [u8; 32] = Sha256::digest(passphrase.as_bytes()).into();
 
         let hash1 = {
-            let mut p = Xdr::new();
-            p.raw(&network_id);
-            p.u32(ENVELOPE_TYPE_TX);
-            p.raw(&tx);
+            let mut p = Xdr::new(); p.raw(&network_id); p.u32(ENVELOPE_TYPE_TX); p.raw(&tx);
             Sha256::digest(&p.into_bytes())
         };
         let hash2 = {
-            let mut p = Xdr::new();
-            p.raw(&network_id);
-            p.u32(ENVELOPE_TYPE_TX);
-            p.raw(&tx);
+            let mut p = Xdr::new(); p.raw(&network_id); p.u32(ENVELOPE_TYPE_TX); p.raw(&tx);
             Sha256::digest(&p.into_bytes())
         };
         assert_eq!(hash1, hash2);
@@ -573,22 +494,13 @@ mod tests {
     fn test_envelope_base64_is_valid_base64() {
         let s = test_signer();
         let tx = build_payment_tx(
-            &s.pub_key_bytes,
-            &[2u8; 32],
-            ASSET_TYPE_ALPHANUM12,
-            b"wZION\0\0\0\0\0\0\0",
-            &[3u8; 32],
-            100_000,
-            5,
-            100,
+            &s.pub_key_bytes, &[2u8; 32], ASSET_TYPE_ALPHANUM12,
+            b"wZION\0\0\0\0\0\0\0", &[3u8; 32], 100_000, 5, 100,
         );
 
         let passphrase = network_passphrase("testnet");
         let network_id: [u8; 32] = Sha256::digest(passphrase.as_bytes()).into();
-        let mut p = Xdr::new();
-        p.raw(&network_id);
-        p.u32(ENVELOPE_TYPE_TX);
-        p.raw(&tx);
+        let mut p = Xdr::new(); p.raw(&network_id); p.u32(ENVELOPE_TYPE_TX); p.raw(&tx);
         let sig_hash = Sha256::digest(&p.into_bytes());
         let sig = s.signing_key.sign(sig_hash.as_slice());
 

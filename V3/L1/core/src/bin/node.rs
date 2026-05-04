@@ -184,14 +184,7 @@ fn main() -> Result<()> {
     let ob_peer_sec = Arc::clone(&peer_sec);
     let ob_batch_limit = config.sync_batch_limit;
     let outbound_thread = thread::spawn(move || {
-        outbound_peer_loop(
-            &ob_runtime,
-            &ob_seen,
-            &ob_stats,
-            &ob_peer_mgr,
-            &ob_peer_sec,
-            ob_batch_limit,
-        );
+        outbound_peer_loop(&ob_runtime, &ob_seen, &ob_stats, &ob_peer_mgr, &ob_peer_sec, ob_batch_limit);
     });
 
     // ── P2P accept loop ────────────────────────────────────────────────
@@ -914,10 +907,7 @@ fn sync_from_peer(
     Ok(discovered)
 }
 
-fn p2p_roundtrip(
-    peer: &PeerEndpoint,
-    message: &zion_core::P2pMessage,
-) -> Result<zion_core::P2pMessage> {
+fn p2p_roundtrip(peer: &PeerEndpoint, message: &zion_core::P2pMessage) -> Result<zion_core::P2pMessage> {
     let addr = peer
         .address()
         .to_socket_addrs()
@@ -1063,77 +1053,6 @@ fn relay_tx_to_peers(
     }
 }
 
-// ── Persistent outbound connection pool ────────────────────────────────
-
-/// A single persistent TCP connection to a peer.
-struct PeerConn {
-    writer: TcpStream,
-    reader: BufReader<TcpStream>,
-}
-
-impl PeerConn {
-    fn connect(peer: &PeerEndpoint) -> Result<Self> {
-        let addr = peer
-            .address()
-            .to_socket_addrs()
-            .with_context(|| format!("failed to resolve peer {}", peer.address()))?
-            .next()
-            .with_context(|| format!("no address for peer {}", peer.address()))?;
-        let stream = TcpStream::connect_timeout(&addr, Duration::from_secs(10))
-            .with_context(|| format!("failed to connect to peer {}", peer.address()))?;
-        stream.set_read_timeout(Some(Duration::from_secs(30)))?;
-        stream.set_write_timeout(Some(Duration::from_secs(10)))?;
-        let _ = stream.set_nodelay(true);
-        let reader = BufReader::new(stream.try_clone().context("failed to clone stream")?);
-        Ok(Self {
-            writer: stream,
-            reader,
-        })
-    }
-
-    fn roundtrip(&mut self, message: &P2pMessage) -> Result<P2pMessage> {
-        let line = encode_p2p_message(message).context("failed to encode P2P message")?;
-        self.writer
-            .write_all(line.as_bytes())
-            .context("failed to write P2P message")?;
-        self.writer.flush().context("failed to flush P2P message")?;
-        let response = read_line(&mut self.reader)?;
-        decode_p2p_message(&response).context("failed to decode P2P response")
-    }
-}
-
-/// Pool of persistent outbound connections, keyed by peer address string.
-/// Stale connections are automatically evicted on error and retried once.
-struct OutboundPool {
-    conns: HashMap<String, PeerConn>,
-}
-
-impl OutboundPool {
-    fn new() -> Self {
-        Self {
-            conns: HashMap::new(),
-        }
-    }
-
-    /// Send a message and receive a response, reusing an existing connection
-    /// or creating a new one. Stale connections are evicted and retried once.
-    fn roundtrip(&mut self, peer: &PeerEndpoint, message: &P2pMessage) -> Result<P2pMessage> {
-        let key = peer.address().to_string();
-        if let Some(conn) = self.conns.get_mut(&key) {
-            match conn.roundtrip(message) {
-                Ok(resp) => return Ok(resp),
-                Err(_) => {
-                    self.conns.remove(&key);
-                }
-            }
-        }
-        let mut conn = PeerConn::connect(peer)?;
-        let resp = conn.roundtrip(message)?;
-        self.conns.insert(key, conn);
-        Ok(resp)
-    }
-}
-
 /// Outbound peer loop: periodically connects to known peers, syncs new blocks,
 /// sends heartbeat pings, discovers new peers via GetPeers, and runs
 /// PeerManager maintenance.
@@ -1162,6 +1081,8 @@ fn outbound_peer_loop(
     let mut last_heartbeat = Instant::now();
     let mut last_cleanup = Instant::now();
     let mut cycle_count: u64 = 0;
+    let mut sync_fail_count: u32 = 0;
+    let mut sync_fail_height: u64 = 0;
 
     // ── Discovery engine setup ─────────────────────────────────────────
     let network_name = {
@@ -1170,8 +1091,7 @@ fn outbound_peer_loop(
             zion_core::NetworkId::Mainnet => "mainnet",
             zion_core::NetworkId::Testnet => "testnet",
             zion_core::NetworkId::Devnet => "devnet",
-        }
-        .to_string()
+        }.to_string()
     };
     let mut discovery = DiscoveryEngine::new(&network_name);
     // Set self address so we don't try to connect to ourselves
@@ -1217,13 +1137,6 @@ fn outbound_peer_loop(
     let initial_height = runtime.lock().expect("lock").chain_height();
     let mut ibd = IbdEngine::new(initial_height);
 
-    // ── Persistent outbound connection pool ────────────────────────────
-    let mut pool = OutboundPool::new();
-
-    // ── Fork detection state ───────────────────────────────────────────
-    let mut sync_fail_count: u32 = 0;
-    let mut sync_fail_height: u64 = 0;
-
     loop {
         thread::sleep(Duration::from_secs(OUTBOUND_CYCLE_SECS));
         cycle_count += 1;
@@ -1247,12 +1160,10 @@ fn outbound_peer_loop(
                 PeerAction::Ban { peer_id, reason } => {
                     println!("peer_action_ban peer={peer_id} reason={reason}");
                     // Propagate ban to PeerSecurity so inbound connections are rejected
-                    if let Some(peer_state) = lock_peer_mgr(&peer_mgr)
-                        .peer_info()
-                        .iter()
-                        .find(|p| p.peer_id == *peer_id)
+                    if let Some(peer_state) = peer_mgr.lock().expect("lock").peer_info()
+                        .iter().find(|p| p.peer_id == *peer_id)
                     {
-                        lock_peer_sec(&peer_sec).punish(
+                        peer_sec.lock().expect("lock").punish(
                             peer_state.addr,
                             epoch_secs(),
                             zion_core::p2p_security::BanReason::Manual,
@@ -1285,7 +1196,7 @@ fn outbound_peer_loop(
 
         for peer in &peers {
             // Quick status check via Ping to keep connection alive (persistent)
-            match pool.roundtrip(
+            match p2p_roundtrip(
                 peer,
                 &P2pMessage::Ping {
                     nonce: epoch_secs(),
@@ -1293,20 +1204,9 @@ fn outbound_peer_loop(
             ) {
                 Ok(P2pMessage::Pong { .. }) => {
                     // Peer alive — check if it has new blocks
-                    if let Ok(P2pMessage::Status { status }) =
-                        pool.roundtrip(peer, &P2pMessage::GetStatus)
-                    {
+                    if let Ok(P2pMessage::Status { status }) = p2p_roundtrip(peer, &P2pMessage::GetStatus) {
                         // Feed height into IBD engine
                         ibd.update_peer(&peer.address(), status.chain_height);
-
-                        // Track tip agreement for fork detection
-                        if status.chain_height > our_height {
-                            peers_ahead += 1;
-                            if status.tip_hash_hex != our_tip {
-                                peers_disagree_tip += 1;
-                            }
-                        }
-
                         if status.chain_height > our_height {
                             println!(
                                 "outbound_sync peer={} remote_height={} our_height={}",
@@ -1379,7 +1279,7 @@ fn outbound_peer_loop(
         if cycle_count % DISCOVERY_EVERY_N_CYCLES == 0 && !peers.is_empty() {
             let idx = (cycle_count / DISCOVERY_EVERY_N_CYCLES) as usize % peers.len();
             let target = &peers[idx];
-            match pool.roundtrip(target, &P2pMessage::GetPeers) {
+            match p2p_roundtrip(target, &P2pMessage::GetPeers) {
                 Ok(P2pMessage::Peers { peers: discovered }) => {
                     let new_count = discovered.len();
                     if new_count > 0 {
@@ -1428,26 +1328,17 @@ fn outbound_peer_loop(
         // ── Cleanup expired bans in PeerSecurity (~every 5 min) ────────
         if last_cleanup.elapsed() >= Duration::from_secs(300) {
             last_cleanup = Instant::now();
-            lock_peer_sec(&peer_sec).cleanup(epoch_secs());
+            peer_sec.lock().expect("lock").cleanup(epoch_secs());
         }
 
         // ── Discovery engine tick ──────────────────────────────────────
         {
-            let connected_peer_ids: Vec<String> = lock_peer_mgr(&peer_mgr)
-                .peer_info()
-                .iter()
-                .map(|p| p.peer_id.clone())
-                .collect();
+            let connected_peer_ids: Vec<String> = peer_mgr.lock().expect("lock")
+                .peer_info().iter().map(|p| p.peer_id.clone()).collect();
             let current_count = connected_peer_ids.len();
             let now = Instant::now();
             let now_secs = epoch_secs();
-            let commands = discovery.tick(
-                now,
-                now_secs,
-                &connected_peer_ids,
-                current_count,
-                MIN_OUTBOUND,
-            );
+            let commands = discovery.tick(now, now_secs, &connected_peer_ids, current_count, MIN_OUTBOUND);
             for cmd in commands {
                 match cmd {
                     DiscoveryCommand::ResolveDns { hostname } => {
@@ -1473,8 +1364,9 @@ fn outbound_peer_loop(
                             // Extract our host:port for the announcement
                             if let Some((host, port_str)) = bind.rsplit_once(':') {
                                 if let Ok(p) = port_str.parse::<u16>() {
-                                    let data = discovery
-                                        .build_announcement(host, p, &version, height, now_secs);
+                                    let data = discovery.build_announcement(
+                                        host, p, &version, height, now_secs,
+                                    );
                                     let _ = sock.send_to(&data, (addr, port));
                                 }
                             }
@@ -1482,22 +1374,16 @@ fn outbound_peer_loop(
                     }
                     DiscoveryCommand::RequestPeers { peer_id } => {
                         // Find endpoint for this peer and request peers via P2P
-                        let endpoint = lock_peer_mgr(&peer_mgr)
-                            .peer_info()
-                            .iter()
+                        let endpoint = peer_mgr.lock().expect("lock")
+                            .peer_info().iter()
                             .find(|p| p.peer_id == peer_id)
                             .map(|p| PeerEndpoint::new(p.addr.to_string(), p.port));
                         if let Some(ep) = endpoint {
-                            if let Ok(P2pMessage::Peers { peers: found }) =
-                                pool.roundtrip(&ep, &P2pMessage::GetPeers)
-                            {
+                            if let Ok(P2pMessage::Peers { peers: found }) = p2p_roundtrip(&ep, &P2pMessage::GetPeers) {
                                 for p in &found {
                                     if let Some((h, port_str)) = p.address().rsplit_once(':') {
-                                        if let (Ok(ip), Ok(port)) =
-                                            (h.parse::<IpAddr>(), port_str.parse::<u16>())
-                                        {
-                                            discovery
-                                                .add_from_peer_exchange(ip, port, None, now_secs);
+                                        if let (Ok(ip), Ok(port)) = (h.parse::<IpAddr>(), port_str.parse::<u16>()) {
+                                            discovery.add_from_peer_exchange(ip, port, None, now_secs);
                                         }
                                     }
                                 }
@@ -1523,35 +1409,24 @@ fn outbound_peer_loop(
             let ibd_commands = ibd.tick(now);
             for cmd in ibd_commands {
                 match cmd {
-                    IbdCommand::RequestBatch {
-                        peer_id,
-                        start_height,
-                        count,
-                    } => {
+                    IbdCommand::RequestBatch { peer_id, start_height, count } => {
                         // Find peer endpoint from PeerManager
-                        let endpoint = lock_peer_mgr(&peer_mgr)
-                            .peer_info()
-                            .iter()
+                        let endpoint = peer_mgr.lock().expect("lock")
+                            .peer_info().iter()
                             .find(|p| p.peer_id == peer_id)
                             .map(|p| PeerEndpoint::new(p.addr.to_string(), p.port));
                         if let Some(ep) = endpoint {
-                            match pool.roundtrip(
+                            match p2p_roundtrip(
                                 &ep,
-                                &P2pMessage::GetBlocksSince {
-                                    from_height: start_height,
-                                    limit: count.min(u16::MAX as u64) as u16,
-                                },
+                                &P2pMessage::GetBlocksSince { from_height: start_height, limit: count.min(u16::MAX as u64) as u16 },
                             ) {
                                 Ok(P2pMessage::Blocks { blocks }) => {
                                     ibd.batch_received(start_height);
-                                    let imported = runtime
-                                        .lock()
-                                        .expect("lock")
+                                    let imported = runtime.lock().expect("lock")
                                         .import_peer_blocks(blocks)
                                         .unwrap_or(0);
                                     if imported > 0 {
-                                        let new_height =
-                                            runtime.lock().expect("lock").chain_height();
+                                        let new_height = runtime.lock().expect("lock").chain_height();
                                         ibd.blocks_applied(new_height);
                                         println!("ibd_batch start={start_height} imported={imported} height={new_height}");
                                     }
@@ -1564,7 +1439,7 @@ fn outbound_peer_loop(
                     }
                     IbdCommand::DemotePeer { peer_id, reason } => {
                         println!("ibd_demote peer={peer_id} reason={reason}");
-                        lock_peer_mgr(&peer_mgr).penalize(
+                        peer_mgr.lock().expect("lock").penalize(
                             &peer_id,
                             zion_core::peer_manager::PENALTY_PROTOCOL_VIOLATION,
                         );

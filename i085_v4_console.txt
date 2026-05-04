@@ -1,0 +1,20 @@
+<span class="rig-details__console-wrapper"><p><i>  Platform Profile: FULL_PROFILE</i></p>
+<p><i>  Platform Version: OpenCL 2.1 AMD-APP (3602.0)</i></p>
+<p><i>  Platform Name: AMD Accelerated Parallel Processing</i></p>
+<p><i>  Platform Vendor: Advanced Micro Devices, Inc.</i></p>
+<p><i>=V3= DRI:</i></p>
+<p><i>by-path  card0card1  renderD128  renderD129</i></p>
+<p><i>=V3= PCIE:</i></p>
+<p><i>speed=8.0 GT/s PCIe</i></p>
+<p><i>width=16</i></p>
+<p><i>power=20000000</i></p>
+<p><i>temp=34000</i></p>
+<p><i>vbios=113-D0500100-103</i></p>
+<p><i>busy=0</i></p>
+<p><i>sclk=0: 852Mhz ,1: 1000Mhz *,2: 1084Mhz ,3: 1138Mhz ,4: 1200Mhz ,5: 1401Mhz ,6: 1536Mhz ,7: 1630Mhz ,</i></p>
+<p><i>mclk=0: 167Mhz ,1: 500Mhz ,2: 800Mhz *,3: 800Mhz ,</i></p>
+<p><i>driver=amdgpu</i></p>
+<p><i>=V3= DONE</i></p>
+<p><i class="crimson bold">[2026-04-09 23:01:16] Stopping miner...</i></p>
+<p><i class="crimson bold">[2026-04-09 23:01:17] Rebooting rig...</i></p></span>
+
