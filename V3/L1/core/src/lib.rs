@@ -5539,7 +5539,7 @@ mod tests {
     fn build_synthetic_funding_tx(amount: u64, address: &str) -> tx::Transaction {
         let mut funding = tx::Transaction {
             id: [0u8; 32],
-            version: 1,
+            version: tx::TX_HASH_V2_VERSION,
             inputs: vec![],
             outputs: vec![tx::TxOutput {
                 amount,
@@ -5580,7 +5580,7 @@ mod tests {
         let fee = 1_000u64;
         let mut utxo = tx::Transaction {
             id: [0u8; 32],
-            version: 1,
+            version: tx::TX_HASH_V2_VERSION,
             inputs: vec![tx::TxInput {
                 prev_tx_hash: prev_hash,
                 output_index,
@@ -5610,7 +5610,7 @@ mod tests {
 
         let mut utxo = tx::Transaction {
             id: [0u8; 32],
-            version: 1,
+            version: tx::TX_HASH_V2_VERSION,
             inputs: vec![tx::TxInput {
                 prev_tx_hash: [0xAA; 32],
                 output_index: 0,
@@ -5862,7 +5862,7 @@ mod tests {
         let fee: u64 = 1_000;
         let mut utxo = tx::Transaction {
             id: [0u8; 32],
-            version: 1,
+            version: tx::TX_HASH_V2_VERSION,
             inputs: vec![tx::TxInput {
                 prev_tx_hash: fund_id,
                 output_index: 0,
@@ -6456,7 +6456,7 @@ mod tests {
         // protects peers from accepting unsigned unlocks.
         let tx = tx::Transaction {
             id: [0u8; 32],
-            version: 1,
+            version: tx::TX_HASH_V2_VERSION,
             inputs: vec![tx::TxInput {
                 prev_tx_hash: [0u8; 32],
                 output_index: 0,
@@ -6491,22 +6491,21 @@ mod tests {
         ]
     }
 
-    /// Below [`BODY_ROOT_V2_ACTIVATION_HEIGHT`], dispatcher routes to legacy v1 XOR.
+    /// Production activates BLAKE3 Merkle at genesis — dispatcher must match
+    /// v2 for typical template heights (legacy v1 XOR remains testable via
+    /// `derive_template_merkle_root_v1_xor` directly).
     #[test]
-    fn merkle_dispatcher_uses_v1_xor_below_activation() {
+    fn merkle_dispatcher_routes_v2_from_genesis_heights() {
         let txs = merkle_test_account_txs();
         let utxos: Vec<tx::Transaction> = Vec::new();
         let prev = [0x11u8; 32];
+        let v2 = derive_template_merkle_root_v2_blake3(&txs, &utxos);
 
-        for &h in &[0u64, 1, 100, 1_000_000, u64::MAX - 1] {
-            if body_root_v2_active(h) {
-                continue;
-            }
+        for &h in &[0u64, 1, 100, 1_000_000] {
             let dispatched = derive_template_merkle_root("node-test", h, 42, prev, &txs, &utxos);
-            let v1 = derive_template_merkle_root_v1_xor("node-test", h, 42, prev, &txs, &utxos);
             assert_eq!(
-                dispatched, v1,
-                "below activation gate (height = {h}), dispatcher must equal v1 XOR"
+                dispatched, v2,
+                "height {h}: dispatcher must use v2 BLAKE3 Merkle"
             );
         }
     }
@@ -6622,5 +6621,18 @@ mod tests {
         assert_eq!(TX_HASH_V2_ACTIVATION_HEIGHT, 10);
         assert!(!tx_hash_v2_active(9) && tx_hash_v2_active(10));
         assert!(!body_root_v2_active(9) && body_root_v2_active(10));
+    }
+
+    /// Production default: coordinated gates at genesis (height 0).
+    #[cfg(not(feature = "testnet_fork_rehearsal"))]
+    #[test]
+    fn production_fork_gates_at_genesis_in_core_build() {
+        use zion_cosmic_harmony::{
+            body_root_v2_active, tx_hash_v2_active, BODY_ROOT_V2_ACTIVATION_HEIGHT,
+            TX_HASH_V2_ACTIVATION_HEIGHT,
+        };
+        assert_eq!(TX_HASH_V2_ACTIVATION_HEIGHT, BODY_ROOT_V2_ACTIVATION_HEIGHT);
+        assert_eq!(TX_HASH_V2_ACTIVATION_HEIGHT, 0);
+        assert!(tx_hash_v2_active(0) && body_root_v2_active(0));
     }
 }
