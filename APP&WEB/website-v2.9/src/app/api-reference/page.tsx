@@ -14,12 +14,10 @@ import {
   Sparkles,
 } from 'lucide-react';
 
-const ApiQuickstartPanels = dynamic(() => import('@/components/api/ApiQuickstartPanels'));
-
-const getApiStats = (cs: boolean) => [
-  { label: cs ? 'Core prostredi' : 'Core environment', value: 'V3 Test Mainnet', detail: cs ? 'kontrolovana rehearsal linie' : 'controlled rehearsal line', icon: Shield },
+const apiStats = [
+  { label: 'Core environment', value: 'V3 Test Mainnet', detail: 'controlled rehearsal line', icon: Shield },
   { label: 'API Port', value: '8443', detail: 'JSON-RPC + REST', icon: Activity },
-  { label: cs ? 'Pool port' : 'Pool Port', value: '8080', detail: cs ? 'stats endpoint' : 'stats endpoint', icon: Server },
+  { label: 'Pool Port', value: '8080', detail: 'stats endpoint', icon: Server },
 ];
 
 const getEndpointGroups = (cs: boolean) => [
