@@ -148,6 +148,17 @@ impl ConsciousnessEngine {
         self.add_xp(XP_POOL_SWITCHED);
     }
 
+    /// Agent performed a self-improvement autotuning session.
+    pub fn on_autotune(&mut self, report: &crate::autotuner::AutotuneReport) {
+        self.memory.record(
+            MemoryEntry::simple(
+                MemoryEventKind::Evolution,
+                format!("Dharma Autotune successful. Learned {} principles.", report.learned_principles.len()),
+            ).with_importance(0.9)
+        );
+        self.add_xp(100); // Major XP boost
+    }
+
     /// WARP field was activated / escalated.
     pub fn on_warp_activated(&mut self, mode: &str) {
         self.memory.record(

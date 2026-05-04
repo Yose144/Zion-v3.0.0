@@ -29,14 +29,14 @@ impl DharmaAutotuner {
         &mut self,
         llm: &dyn LlmBackend,
         store: &VectorStore,
-        memory: &Mutex<AgentMemory>,
+        memory: &mut AgentMemory,
     ) -> anyhow::Result<AutotuneReport> {
         tracing::info!("starting_dharma_autotune");
 
         // 1. Extract core principles from RAG
         let mut learned_docs = Vec::new();
         
-        for doc in store.all().iter().take(5) {
+        for doc in store.all().iter().take(2) {
             learned_docs.push(doc.content.clone());
         }
 
@@ -65,15 +65,12 @@ impl DharmaAutotuner {
         };
 
         // 3. Record in memory
-        {
-            let mut mem_guard = memory.lock().expect("memory lock poisoned");
-            mem_guard.record(
-                MemoryEntry::simple(
-                    MemoryEventKind::Custom("autotune".to_string()),
-                    format!("Autotuning complete. New system prompt generated."),
-                ).with_importance(0.8)
-            );
-        }
+        memory.record(
+            MemoryEntry::simple(
+                MemoryEventKind::Custom("autotune".to_string()),
+                format!("Autotuning complete. New system prompt generated."),
+            ).with_importance(0.8)
+        );
 
         self.last_report = Some(report.clone());
         tracing::info!("dharma_autotune_complete");
