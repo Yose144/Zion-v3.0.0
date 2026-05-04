@@ -14,6 +14,69 @@ import {
   Sparkles,
 } from 'lucide-react';
 
+function ApiQuickstartPanels({ cs }: { cs: boolean }) {
+  const panels = [
+    {
+      title: cs ? 'Explorer / telemetry' : 'Explorer / telemetry',
+      body: cs
+        ? 'Začni na /network a /explorer — z živých endpointů uvidíš výšku chainu, peers a hashrate.'
+        : 'Start with /network and /explorer — live endpoints expose chain height, peers, and hashrate.',
+      href: '/network',
+      icon: Activity,
+    },
+    {
+      title: cs ? 'Pool API' : 'Pool API',
+      body: cs
+        ? 'Pool statistiky (hashrate, sessions, PPLNS) jsou dostupné přes /api/pool/stats.'
+        : 'Pool stats (hashrate, sessions, PPLNS) are available via /api/pool/stats.',
+      href: '/pool',
+      icon: Server,
+    },
+    {
+      title: cs ? 'Health' : 'Health',
+      body: cs
+        ? 'Jeden endpoint pro rychlé ověření závislostí webu: /api/health.'
+        : 'One endpoint for dependency checks: /api/health.',
+      href: '/api/health',
+      icon: Shield,
+    },
+  ] as const;
+
+  return (
+    <section className="rounded-4xl border border-white/10 bg-black/40 p-8">
+      <h3 className="text-2xl font-semibold text-white">
+        {cs ? 'Quickstart' : 'Quickstart'}
+      </h3>
+      <p className="mt-2 text-sm text-gray-400">
+        {cs
+          ? 'Základní panely pro první zapojení do runtime surface.'
+          : 'Basic panels to get started with the runtime surface.'}
+      </p>
+      <div className="mt-6 grid gap-4 md:grid-cols-3">
+        {panels.map((p) => (
+          <Link
+            key={p.href}
+            href={p.href}
+            className="group rounded-3xl border border-white/10 bg-white/5 p-5 hover:bg-white/8 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <p.icon className="h-5 w-5 text-zion-gold" />
+              <div className="font-semibold text-white">{p.title}</div>
+            </div>
+            <p className="mt-3 text-sm text-white/55 leading-relaxed">
+              {p.body}
+            </p>
+            <div className="mt-4 inline-flex items-center gap-1.5 text-xs text-zion-gold/70 group-hover:text-zion-gold">
+              <span>{cs ? 'Otevřít' : 'Open'}</span>
+              <ArrowUpRight className="h-3.5 w-3.5" />
+            </div>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 const apiStats = [
   { label: 'Core environment', value: 'V3 Test Mainnet', detail: 'controlled rehearsal line', icon: Shield },
   { label: 'API Port', value: '8443', detail: 'JSON-RPC + REST', icon: Activity },
