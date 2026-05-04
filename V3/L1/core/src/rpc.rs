@@ -1447,7 +1447,7 @@ mod tests {
         let funding = {
             let mut transaction = crate::tx::Transaction {
                 id: [0u8; 32],
-                version: 1,
+                version: crate::tx::TX_HASH_V2_VERSION,
                 inputs: vec![],
                 outputs: vec![crate::tx::TxOutput {
                     amount,
@@ -1749,7 +1749,15 @@ mod tests {
         assert!(resp.error.is_some());
         let err = resp.error.unwrap();
         assert_eq!(err.code, TX_REJECTED);
-        assert!(err.message.contains("UTXO transaction"));
+        // With TX hash v2 active from genesis, `version = 1` UTXO payloads
+        // are rejected during mempool admission.
+        assert!(
+            err.message.contains("tx.version")
+                || err.message.contains("requires tx.version")
+                || err.message.contains("TX_HASH_V2"),
+            "unexpected rejection message: {}",
+            err.message
+        );
     }
 
     #[test]
