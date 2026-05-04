@@ -9,6 +9,8 @@ use axum::{Json, Router};
 use chrono::Utc;
 use serde::Deserialize;
 use serde_json::{json, Value};
+use zion_ai_native::autotuner::{AutotuneReport, DharmaAutotuner};
+use zion_ai_native::consciousness_engine::ConsciousnessStatus;
 use zion_ai_native::llm_backend::RemoteHttpBackend;
 use zion_ai_native::rag::EmbeddingInputType;
 use zion_ai_native::{
@@ -31,6 +33,7 @@ struct AppState {
     echo_backend: EchoBackend,
     memory: Mutex<AgentMemory>,
     rag: Mutex<RagIndexState>,
+    autotuner: Mutex<DharmaAutotuner>,
     request_count: AtomicU64,
     session_count: AtomicU64,
     node_rpc_addr: String,
@@ -60,7 +63,18 @@ async fn main() -> anyhow::Result<()> {
         .parse::<SocketAddr>()?;
 
     let state = Arc::new(AppState::from_env());
-    seed_rag(&state)?;
+
+    // Auto-seed RAG and Autotune on startup
+    if let Err(e) = seed_rag(&state) {
+        tracing::error!(error = %e, "failed_to_auto_seed_rag");
+    } else {
+        // Only autotune if RAG seeding succeeded
+        let mut tuner = state.autotuner.lock().expect("autotuner lock poisoned");
+        let rag = state.rag.lock().expect("rag lock poisoned");
+        if let Some(llm) = state.remote_backend.as_ref() {
+             let _ = tuner.tune(llm, &rag.store, &state.memory);
+        }
+    }
 
     let app = Router::new()
         .route("/health", get(health))
@@ -71,6 +85,7 @@ async fn main() -> anyhow::Result<()> {
         .route("/memory/flush", post(memory_flush))
         .route("/rag/index", post(rag_index))
         .route("/rag/query", post(rag_query))
+        .route("/rag/autotune", post(rag_autotune))
         .route("/tasks", get(tasks))
         .route("/warp/status", get(warp_status))
         .route("/ncl/status", get(ncl_status))
@@ -123,6 +138,7 @@ impl AppState {
                 store: VectorStore::new(),
                 last_indexed_at: None,
             }),
+            autotuner: Mutex::new(DharmaAutotuner::new()),
             request_count: AtomicU64::new(0),
             session_count: AtomicU64::new(0),
             node_rpc_addr: std::env::var("ZION_NODE_RPC_ADDR")
@@ -134,7 +150,17 @@ impl AppState {
 }
 
 fn seed_rag(state: &Arc<AppState>) -> anyhow::Result<()> {
-    let docs = builtin_rag_documents();
+    tracing::info!("seeding_rag_start");
+    let docs = match load_docs_from_disk() {
+        Ok(custom_docs) => {
+            tracing::info!(count = custom_docs.len(), "loaded_docs_from_disk");
+            custom_docs
+        }
+        Err(err) => {
+            tracing::warn!(error = %err, "failed_to_load_docs_from_disk_using_builtin");
+            builtin_rag_documents()
+        }
+    };
     let embedder = MockEmbeddingBackend::new(24);
     let texts: Vec<&str> = docs.iter().map(|(_, text)| text.as_str()).collect();
     let embeddings = embedder
@@ -147,7 +173,34 @@ fn seed_rag(state: &Arc<AppState>) -> anyhow::Result<()> {
         rag.store.add(RagDocument::new(id, text, embedding));
     }
     rag.last_indexed_at = Some(Utc::now().to_rfc3339());
+    tracing::info!(total = rag.store.len(), "seeding_rag_complete");
     Ok(())
+}
+
+fn load_docs_from_disk() -> anyhow::Result<Vec<(String, String)>> {
+    let mut docs = Vec::new();
+    let base_path = std::env::var("ZION_DOCS_PATH").unwrap_or_else(|_| "/root/zion-2.9.6/docs".to_string());
+    
+    if !std::path::Path::new(&base_path).exists() {
+        anyhow::bail!("Docs path not found");
+    }
+
+    for entry in walkdir::WalkDir::new(base_path)
+        .into_iter()
+        .filter_map(|e| e.ok())
+        .filter(|e| e.path().extension().map_or(false, |ext| ext == "md"))
+    {
+        let path = entry.path();
+        let content = std::fs::read_to_string(path)?;
+        let id = path.to_string_lossy().to_string();
+        docs.push((id, content));
+    }
+    
+    if docs.is_empty() {
+        anyhow::bail!("No markdown files found");
+    }
+    
+    Ok(docs)
 }
 
 fn builtin_rag_documents() -> Vec<(String, String)> {
@@ -167,6 +220,14 @@ fn builtin_rag_documents() -> Vec<(String, String)> {
         (
             "ops/server".to_string(),
             "Produkce pouziva docker-compose.v3-mainnet.yml. Website bezi na 3000, pool API na 8080, bridge health na 9101 a agent health na 8001.".to_string(),
+        ),
+        (
+            "terranova/seal6".to_string(),
+            "Pečeť VI drží konstanty TX_HASH_V2_ACTIVATION_HEIGHT a BODY_ROOT_V2_ACTIVATION_HEIGHT nastavené na u64::MAX. To představuje dormant kód, který čeká na aktivaci hard forkem po dohodě Guardians.".to_string(),
+        ),
+        (
+            "terranova/dormant".to_string(),
+            "Dormant kód v ZIONu není mrtvý kód, ale otestovaný a schválený upgrade, který je v repozitáři připraven k aktivaci v budoucnu. Je to civilizační závazek a nástroj pro bezpečný hard fork.".to_string(),
         ),
     ]
 }
@@ -193,10 +254,17 @@ fn generate_answer(
     state: &AppState,
     prompt: String,
 ) -> Result<(String, String, Option<String>), String> {
+    let mut system_prompt = "Jsi Hiranyagarbha, AI Native agent ZION site. Odpovidej presne, technicky a cesky. Kdyz chybi LLM backend, rekni to pravdive a drz se overenych faktu.".to_string();
+    
+    // Try to use refined prompt from autotuner
+    if let Ok(tuner) = state.autotuner.lock() {
+        if let Some(report) = &tuner.last_report {
+            system_prompt = report.refined_system_prompt.clone();
+        }
+    }
+
     let request = LlmRequest::new(MmlModality::Text, prompt.clone())
-        .with_system_prompt(
-            "Jsi Hiranyagarbha, AI Native agent ZION site. Odpovidej presne, technicky a cesky. Kdyz chybi LLM backend, rekni to pravdive a drz se overenych faktu.",
-        )
+        .with_system_prompt(system_prompt)
         .with_max_tokens(320)
         .with_temperature(0.3);
 
@@ -393,6 +461,19 @@ async fn rag_query(
         .collect();
 
     Json(json!({ "query": query, "results": hits, "documents": rag.store.len() }))
+}
+
+async fn rag_autotune(State(state): State<Arc<AppState>>) -> Json<Value> {
+    let mut tuner = state.autotuner.lock().expect("autotuner lock poisoned");
+    let rag = state.rag.lock().expect("rag lock poisoned");
+    if let Some(llm) = state.remote_backend.as_ref() {
+        match tuner.tune(llm, &rag.store, &state.memory) {
+            Ok(report) => Json(json!({ "ok": true, "report": report })),
+            Err(err) => Json(json!({ "ok": false, "error": err.to_string() })),
+        }
+    } else {
+        Json(json!({ "ok": false, "error": "No remote LLM backend available for autotuning" }))
+    }
 }
 
 async fn tasks(State(_state): State<Arc<AppState>>) -> Json<Value> {
