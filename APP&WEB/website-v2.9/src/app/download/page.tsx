@@ -3,8 +3,17 @@
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import {
-  ArrowDownToLine, CheckCircle2, Cpu, Shield, TerminalSquare,
-  Package, Monitor, ExternalLink,
+  ArrowDownToLine,
+  CheckCircle2,
+  Cpu,
+  Shield,
+  TerminalSquare,
+  Package,
+  Monitor,
+  ExternalLink,
+  Server,
+  Wallet,
+  Zap,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { SITE_POOL_PRIMARY, SITE_RELEASE_LABEL, SITE_VERSION } from '@/lib/site';
