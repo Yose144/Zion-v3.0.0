@@ -127,3 +127,22 @@ export const SOFT_FINALITY_DEPTH = 60;
 
 /** Coinbase maturity: 100 blocks */
 export const COINBASE_MATURITY = 100;
+
+// ─── Explorer / UI labels (known on-chain addresses) ─────────────────────────
+
+export type KnownAddressType = 'humanitarian' | 'issobella' | 'pool_fee' | 'other';
+
+export const KNOWN_ADDRESS_LABELS: Record<
+  string,
+  {
+    label: string;
+    type: KnownAddressType;
+  }
+> = {
+  [HUMANITARIAN_WALLET]: { label: 'Humanitarian tithe wallet', type: 'humanitarian' },
+  [ISSOBELLA_WALLET]: { label: 'L5/L6 Issobella fund wallet', type: 'issobella' },
+  [POOL_FEE_WALLET]: { label: 'Pool fee wallet', type: 'pool_fee' },
+};
+
+/** Pool payout / fee wallet used by explorer heuristics (`is_pool_block`). */
+export const POOL_WALLET = POOL_FEE_WALLET;

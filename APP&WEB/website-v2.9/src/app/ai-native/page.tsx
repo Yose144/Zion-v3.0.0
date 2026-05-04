@@ -1,4 +1,4 @@
-import { redirect } from 'next/navigation';
+'use client';
 
 import { Brain, Heart, Sparkles, Zap, BookOpen, Code2, Lightbulb, Smile, HandHeart, HeartHandshake, HelpCircle, Waves, Target, Shield, Church, Star, Scroll, Users, Flame, Cpu, MessageCircle } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';

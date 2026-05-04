@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Activity, AlertTriangle, ArrowLeftRight, BarChart3, Brain, CheckCircle2,
@@ -947,7 +947,19 @@ function PoolGroupRow({ name, submits, accepted, dot }: { name: string; submits:
 }
 
 /* ═══════════ V3 TEST MAINNET METRICS SECTION ═══════════ */
-function V3MetricsSection({ v3: m, sparks, nowSec }: { v3: V3Metrics; sparks: V3Sparklines; nowSec: number }) {
+function V3MetricsSection({
+  v3: m,
+  sparks,
+  nowSec,
+  cs,
+  locale,
+}: {
+  v3: V3Metrics;
+  sparks: V3Sparklines;
+  nowSec: number;
+  cs: boolean;
+  locale: string;
+}) {
   const memPct = m.memTotal && m.memAvail ? ((1 - m.memAvail / m.memTotal) * 100) : null;
   const diskPct = m.diskTotal && m.diskAvail ? ((1 - m.diskAvail / m.diskTotal) * 100) : null;
   const uptime = m.bootTime ? nowSec - m.bootTime : null;
@@ -1456,13 +1468,56 @@ export default function MissionControlDashboard() {
   const [walletAddressInput, setWalletAddressInput] = useState('');
   const [walletQueryAddress, setWalletQueryAddress] = useState('');
   const [walletDiagnostics, setWalletDiagnostics] = useState<WalletDiagnosticsData | null>(null);
-  const [walletLoading, setWalletLoading] = useState(true);
+  const [walletLoading, setWalletLoading] = useState(false);
   const [walletError, setWalletError] = useState<string | null>(null);
   const [walletTxMethod, setWalletTxMethod] = useState<WalletSubmitMethod>('submitTransaction');
   const [walletTxPayload, setWalletTxPayload] = useState('');
   const [walletTxSubmitting, setWalletTxSubmitting] = useState(false);
   const [walletTxResult, setWalletTxResult] = useState<WalletBroadcastResult | null>(null);
   const [walletTxError, setWalletTxError] = useState<string | null>(null);
+
+  const loadWalletDiagnostics = useCallback(async (address?: string) => {
+    setWalletLoading(true);
+    setWalletError(null);
+    try {
+      const trimmed = address?.trim() ?? '';
+      const next = await fetchWalletDiagnostics(trimmed || undefined);
+      setWalletDiagnostics(next);
+      setWalletQueryAddress(trimmed);
+    } catch (error) {
+      setWalletDiagnostics(null);
+      setWalletError(error instanceof Error ? error.message : 'Wallet diagnostics failed');
+    } finally {
+      setWalletLoading(false);
+    }
+  }, []);
+
+  const handleWalletLoad = useCallback(async () => {
+    await loadWalletDiagnostics(walletAddressInput);
+  }, [loadWalletDiagnostics, walletAddressInput]);
+
+  const handleWalletSubmit = useCallback(async () => {
+    setWalletTxSubmitting(true);
+    setWalletTxError(null);
+    setWalletTxResult(null);
+    try {
+      const trimmed = walletTxPayload.trim();
+      if (!trimmed) {
+        throw new Error('Paste a signed transaction JSON payload first.');
+      }
+      const parsed: unknown = JSON.parse(trimmed);
+      const result = await submitWalletBroadcast(walletTxMethod, parsed);
+      setWalletTxResult(result);
+    } catch (error) {
+      setWalletTxError(error instanceof Error ? error.message : 'Transaction submit failed');
+    } finally {
+      setWalletTxSubmitting(false);
+    }
+  }, [walletTxMethod, walletTxPayload]);
+
+  useEffect(() => {
+    void loadWalletDiagnostics();
+  }, [loadWalletDiagnostics]);
 
   const refresh = useCallback(async () => {
     try {
@@ -2148,7 +2203,9 @@ export default function MissionControlDashboard() {
             </motion.section>
 
             {/* ── TEST-MAINNET METRICS ── */}
-            {v3 && v3Sparks && <V3MetricsSection v3={v3} sparks={v3Sparks} nowSec={nowSec} />}
+            {v3 && v3Sparks && (
+              <V3MetricsSection v3={v3} sparks={v3Sparks} nowSec={nowSec} cs={cs} locale={locale} />
+            )}
 
             {/* ── 6H CHARTS ── */}
             {v3Charts && (
