@@ -66,10 +66,12 @@ require_cmd ssh
 
 SSH_OPTS="-i $SSH_KEY -o StrictHostKeyChecking=accept-new"
 REMOTE="$REMOTE_USER@$REMOTE_HOST"
-REMOTE_SRC_DQ="${REMOTE_SRC//\"/\\\"}"
-REMOTE_COMPOSE_DQ="${REMOTE_COMPOSE//\"/\\\"}"
-REMOTE_SRC_RSYNC="'$REMOTE_SRC'"
-REMOTE_COMPOSE_RSYNC="'$REMOTE_COMPOSE'"
+# shell-quote remote paths for safe expansion on the remote shell (paths may contain '&', spaces, etc.)
+REMOTE_SRC_SH=$(printf '%q' "$REMOTE_SRC")
+REMOTE_COMPOSE_SH=$(printf '%q' "$REMOTE_COMPOSE")
+# rsync remote destinations are parsed by a remote shell; '&' must be escaped or it will split the path.
+REMOTE_SRC_RSYNC="${REMOTE_SRC//&/\\&}"
+REMOTE_COMPOSE_RSYNC="${REMOTE_COMPOSE//&/\\&}"
 
 cd "$ROOT_DIR"
 
@@ -92,7 +94,7 @@ fi
 # --- Rsync source to server ---
 if [[ $SKIP_SYNC -ne 1 ]]; then
   log "Syncing source to $REMOTE_HOST:$REMOTE_SRC"
-  ssh $SSH_OPTS "$REMOTE" "mkdir -p \"$REMOTE_SRC_DQ\""
+  ssh $SSH_OPTS "$REMOTE" "mkdir -p $REMOTE_SRC_SH"
   rsync -avz --delete \
     --exclude='node_modules' \
     --exclude='.next' \
@@ -100,12 +102,12 @@ if [[ $SKIP_SYNC -ne 1 ]]; then
     --exclude='*.tar.gz' \
     --exclude='.env.local' \
     -e "ssh $SSH_OPTS" \
-    ./ "$REMOTE:./"
+    ./ "${REMOTE}:${REMOTE_SRC_RSYNC}/"
 
   log "Syncing compose file to $REMOTE_HOST:$REMOTE_COMPOSE"
   rsync -avz \
     -e "ssh $SSH_OPTS" \
-    "$REPO_ROOT/docker/$COMPOSE_FILE" "$REMOTE:$REMOTE_COMPOSE/"
+    "$REPO_ROOT/docker/$COMPOSE_FILE" "$REMOTE:${REMOTE_COMPOSE_RSYNC}/"
 else
   log "Skipping rsync (--skip-sync)"
 fi
@@ -117,10 +119,10 @@ fi
 
 # --- Docker rebuild & recreate on server ---
 log "Building Docker image on $REMOTE_HOST"
-ssh $SSH_OPTS "$REMOTE" "cd \"$REMOTE_COMPOSE_DQ\" && docker compose -f '$COMPOSE_FILE' build --no-cache website"
+ssh $SSH_OPTS "$REMOTE" "cd $REMOTE_COMPOSE_SH && docker compose -f '$COMPOSE_FILE' build --no-cache website"
 
 log "Recreating container"
-ssh $SSH_OPTS "$REMOTE" "cd \"$REMOTE_COMPOSE_DQ\" && docker compose -f '$COMPOSE_FILE' up -d website"
+ssh $SSH_OPTS "$REMOTE" "cd $REMOTE_COMPOSE_SH && docker compose -f '$COMPOSE_FILE' up -d website"
 
 # --- Health check ---
 log "Waiting for container health check (up to 60s)"

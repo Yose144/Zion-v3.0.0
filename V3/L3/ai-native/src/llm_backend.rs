@@ -497,7 +497,9 @@ impl RemoteHttpBackend {
             .unwrap_or_else(|_| "https://integrate.api.nvidia.com/v1".to_string());
         let model =
             std::env::var("LLM_MODEL").unwrap_or_else(|_| "meta/llama-3.1-8b-instruct".to_string());
-        let api_key = std::env::var("NVIDIA_API_KEY").ok();
+        let api_key = std::env::var("VAST_API_KEY")
+            .or_else(|_| std::env::var("NVIDIA_API_KEY"))
+            .ok();
 
         Self::new(base_url, model, api_key)
     }
