@@ -10,7 +10,7 @@ use chrono::Utc;
 use serde::Deserialize;
 use serde_json::{json, Value};
 use zion_ai_native::autotuner::{AutotuneReport, DharmaAutotuner};
-use zion_ai_native::consciousness_engine::ConsciousnessStatus;
+use zion_ai_native::consciousness_engine::{ConsciousnessEngine, ConsciousnessStatus};
 use zion_ai_native::llm_backend::RemoteHttpBackend;
 use zion_ai_native::rag::EmbeddingInputType;
 use zion_ai_native::{
@@ -31,7 +31,7 @@ struct AppState {
     model: String,
     backend_mode: String,
     echo_backend: EchoBackend,
-    memory: Mutex<AgentMemory>,
+    consciousness_engine: Mutex<ConsciousnessEngine>,
     rag: Mutex<RagIndexState>,
     autotuner: Mutex<DharmaAutotuner>,
     request_count: AtomicU64,
@@ -64,17 +64,24 @@ async fn main() -> anyhow::Result<()> {
 
     let state = Arc::new(AppState::from_env());
 
-    // Auto-seed RAG and Autotune on startup
+    // Auto-seed RAG on startup
     if let Err(e) = seed_rag(&state) {
         tracing::error!(error = %e, "failed_to_auto_seed_rag");
-    } else {
-        // Only autotune if RAG seeding succeeded
-        let mut tuner = state.autotuner.lock().expect("autotuner lock poisoned");
-        let rag = state.rag.lock().expect("rag lock poisoned");
-        if let Some(llm) = state.remote_backend.as_ref() {
-             let _ = tuner.tune(llm, &rag.store, &state.memory);
-        }
     }
+
+    // Spawn Autotune in background
+    let autotune_state = state.clone();
+    tokio::spawn(async move {
+        tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
+        let mut tuner = autotune_state.autotuner.lock().expect("autotuner lock poisoned");
+        let rag = autotune_state.rag.lock().expect("rag lock poisoned");
+        if let Some(llm) = autotune_state.remote_backend.as_ref() {
+             let mut consciousness = autotune_state.consciousness_engine.lock().expect("consciousness lock poisoned");
+             if let Ok(report) = tuner.tune(llm, &rag.store, &mut consciousness.memory) {
+                 consciousness.on_autotune(&report);
+             }
+        }
+    });
 
     let app = Router::new()
         .route("/health", get(health))
@@ -118,12 +125,7 @@ impl AppState {
                 .and_then(|url| RemoteHttpBackend::new(url.clone(), model.clone(), api_key).ok())
         };
 
-        let backend_mode = if remote_backend.is_some() {
-            "remote+echo-fallback"
-        } else {
-            "echo-only"
-        }
-        .to_string();
+        let backend_mode = backend_pref.clone();
 
         Self {
             started_at: Instant::now(),
@@ -133,7 +135,7 @@ impl AppState {
             model,
             backend_mode,
             echo_backend: EchoBackend::new("hiranyagarbha-echo-fallback"),
-            memory: Mutex::new(AgentMemory::with_defaults()),
+            consciousness_engine: Mutex::new(ConsciousnessEngine::new("hiranyagarbha-v2")),
             rag: Mutex::new(RagIndexState {
                 store: VectorStore::new(),
                 last_indexed_at: None,
@@ -141,10 +143,8 @@ impl AppState {
             autotuner: Mutex::new(DharmaAutotuner::new()),
             request_count: AtomicU64::new(0),
             session_count: AtomicU64::new(0),
-            node_rpc_addr: std::env::var("ZION_NODE_RPC_ADDR")
-                .unwrap_or_else(|_| "127.0.0.1:8443".to_string()),
-            pool_api_url: std::env::var("ZION_POOL_API_URL")
-                .unwrap_or_else(|_| "http://127.0.0.1:8080".to_string()),
+            node_rpc_addr: std::env::var("ZION_NODE_RPC_ADDR").unwrap_or_else(|_| "127.0.0.1:8443".to_string()),
+            pool_api_url: std::env::var("ZION_POOL_API_URL").unwrap_or_else(|_| "http://127.0.0.1:8080".to_string()),
         }
     }
 }
@@ -246,27 +246,47 @@ fn record_event(
     summary: impl Into<String>,
     importance: f32,
 ) {
-    let mut memory = state.memory.lock().expect("memory lock poisoned");
-    memory.record(MemoryEntry::simple(kind, summary).with_importance(importance));
+    let mut consciousness = state.consciousness_engine.lock().expect("consciousness lock poisoned");
+    consciousness.memory.record(MemoryEntry::simple(kind, summary).with_importance(importance));
 }
 
 fn generate_answer(
     state: &AppState,
     prompt: String,
 ) -> Result<(String, String, Option<String>), String> {
-    let mut system_prompt = "Jsi Hiranyagarbha, AI Native agent ZION site. Odpovidej presne, technicky a cesky. Kdyz chybi LLM backend, rekni to pravdive a drz se overenych faktu.".to_string();
+    let consciousness = state.consciousness_engine.lock().expect("consciousness lock poisoned");
+    let rag = state.rag.lock().expect("rag lock poisoned");
     
-    // Try to use refined prompt from autotuner
+    // 1. Get RAG context
+    let embedder = MockEmbeddingBackend::new(24);
+    let query_embedding = embedder.embed(&[&prompt], EmbeddingInputType::Query)
+        .map_err(|e| e.to_string())?
+        .into_iter().next().unwrap_or_default();
+    
+    let hits = rag.store.search(&query_embedding, 2);
+    let context = hits.iter().map(|d| d.content.as_str()).collect::<Vec<_>>().join("\n---\n");
+
+    // 2. Build system prompt
+    let mut system_prompt = "Jsi Hiranyagarbha, AI Native agent ZION site. Odpovidej presne, technicky a cesky.".to_string();
+    
+    // Try to use refined prompt from autotuner if it exists
     if let Ok(tuner) = state.autotuner.lock() {
         if let Some(report) = &tuner.last_report {
             system_prompt = report.refined_system_prompt.clone();
         }
     }
 
-    let request = LlmRequest::new(MmlModality::Text, prompt.clone())
+    let final_prompt = if context.is_empty() {
+        prompt
+    } else {
+        format!("KONTEXT Z DOKUMENTACE:\n{}\n---\nDOTAZ: {}", context, prompt)
+    };
+
+    let request = LlmRequest::new(MmlModality::Text, final_prompt)
         .with_system_prompt(system_prompt)
-        .with_max_tokens(320)
-        .with_temperature(0.3);
+        .with_consciousness(consciousness.level.clone())
+        .with_max_tokens(450)
+        .with_temperature(0.2);
 
     if let Some(remote) = state.remote_backend.as_ref() {
         match remote.generate(request.clone()) {
@@ -311,7 +331,7 @@ async fn health(State(state): State<Arc<AppState>>) -> Json<Value> {
 }
 
 async fn status(State(state): State<Arc<AppState>>) -> Json<Value> {
-    let memory = state.memory.lock().expect("memory lock poisoned");
+    let consciousness = state.consciousness_engine.lock().expect("consciousness lock poisoned");
     let rag = state.rag.lock().expect("rag lock poisoned");
 
     Json(json!({
@@ -323,10 +343,10 @@ async fn status(State(state): State<Arc<AppState>>) -> Json<Value> {
         "uptime": uptime_string(state.started_at),
         "started_at": state.started_at_rfc3339,
         "memory": {
-            "short_term": memory.short_term_len(),
-            "long_term": memory.long_term_len(),
-            "total_recorded": memory.total_recorded,
-            "avg_importance": memory.avg_importance(),
+            "short_term": consciousness.memory.short_term_len(),
+            "long_term": consciousness.memory.long_term_len(),
+            "total_recorded": consciousness.memory.total_recorded,
+            "avg_importance": consciousness.memory.avg_importance(),
         },
         "rag": {
             "documents": rag.store.len(),
@@ -348,73 +368,49 @@ async fn config(State(state): State<Arc<AppState>>) -> Json<Value> {
     }))
 }
 
-async fn chat(State(state): State<Arc<AppState>>, Json(payload): Json<ChatRequest>) -> Json<Value> {
-    let prompt = payload.message.trim().to_string();
-    if prompt.is_empty() {
-        return Json(json!({ "error": "empty message" }));
-    }
+async fn chat(
+     State(state): State<Arc<AppState>>,
+     Json(req): Json<ChatRequest>,
+ ) -> Json<Value> {
+     let prompt = req.message.trim().to_string();
+     if prompt.is_empty() {
+         return Json(json!({ "error": "empty message" }));
+     }
 
-    state.request_count.fetch_add(1, Ordering::Relaxed);
-    state.session_count.fetch_add(1, Ordering::Relaxed);
-    record_event(
-        &state,
-        MemoryEventKind::MessageReceived,
-        format!("user: {}", prompt),
-        0.35,
-    );
-
-    let state_for_gen = state.clone();
-    let result =
-        tokio::task::spawn_blocking(move || generate_answer(&state_for_gen, prompt.clone()))
-            .await
-            .map_err(|e| e.to_string())
-            .and_then(|r| r);
-
-    match result {
-        Ok((response, backend_id, degraded_reason)) => {
-            record_event(
-                &state,
-                MemoryEventKind::MessageSent,
-                format!("agent via {}", backend_id),
-                0.4,
-            );
-            Json(json!({
-                "response": response,
-                "backend": backend_id,
-                "degraded_reason": degraded_reason,
-            }))
-        }
-        Err(err) => {
-            record_event(
-                &state,
-                MemoryEventKind::TaskFailed,
-                format!("chat failure: {}", err),
-                0.7,
-            );
-            Json(json!({ "error": err }))
-        }
-    }
-}
+     state.request_count.fetch_add(1, Ordering::Relaxed);
+     let result = generate_answer(&state, prompt.clone());
+     let mut consciousness = state.consciousness_engine.lock().expect("consciousness lock poisoned");
+     match result {
+         Ok((answer, context, source)) => {
+             consciousness.memory.record(
+                 MemoryEntry::new(MemoryEventKind::MessageReceived, prompt, json!({}))
+                     .with_importance(0.4),
+             );
+             consciousness.memory.record(
+                 MemoryEntry::new(MemoryEventKind::MessageSent, answer.clone(), json!({}))
+                     .with_importance(0.5),
+             );
+             Json(json!({ "answer": answer, "context": context, "source": source }))
+         }
+         Err(err) => {
+             consciousness.memory.record(
+                 MemoryEntry::new(MemoryEventKind::TaskFailed, "chat_request", json!({ "error": err }))
+                     .with_importance(0.8),
+             );
+             Json(json!({ "error": err }))
+         }
+     }
+ }
 
 async fn memory_list(State(state): State<Arc<AppState>>) -> Json<Value> {
-    let memory = state.memory.lock().expect("memory lock poisoned");
-    let entries: Vec<Value> = memory
-        .recent(25)
-        .into_iter()
-        .filter_map(|entry| serde_json::to_value(entry).ok())
-        .collect();
-    Json(json!({
-        "entries": entries,
-        "short_term": memory.short_term_len(),
-        "long_term": memory.long_term_len(),
-        "total_recorded": memory.total_recorded,
-    }))
+    let consciousness = state.consciousness_engine.lock().expect("consciousness lock poisoned");
+    Json(json!({ "memories": consciousness.memory.recall_all() }))
 }
 
 async fn memory_flush(State(state): State<Arc<AppState>>) -> Json<Value> {
-    let mut memory = state.memory.lock().expect("memory lock poisoned");
-    *memory = AgentMemory::with_defaults();
-    Json(json!({ "ok": true, "message": "session memory flushed" }))
+    let mut consciousness = state.consciousness_engine.lock().expect("consciousness lock poisoned");
+    consciousness.memory.flush();
+    Json(json!({ "ok": true }))
 }
 
 async fn rag_index(State(state): State<Arc<AppState>>) -> Json<Value> {
@@ -467,8 +463,12 @@ async fn rag_autotune(State(state): State<Arc<AppState>>) -> Json<Value> {
     let mut tuner = state.autotuner.lock().expect("autotuner lock poisoned");
     let rag = state.rag.lock().expect("rag lock poisoned");
     if let Some(llm) = state.remote_backend.as_ref() {
-        match tuner.tune(llm, &rag.store, &state.memory) {
-            Ok(report) => Json(json!({ "ok": true, "report": report })),
+        let mut consciousness = state.consciousness_engine.lock().expect("consciousness lock poisoned");
+        match tuner.tune(llm, &rag.store, &mut consciousness.memory) {
+            Ok(report) => {
+                consciousness.on_autotune(&report);
+                Json(json!({ "ok": true, "report": report }))
+            }
             Err(err) => Json(json!({ "ok": false, "error": err.to_string() })),
         }
     } else {
