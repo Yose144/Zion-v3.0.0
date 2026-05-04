@@ -19,6 +19,7 @@
 //! └─────────────────┘
 //! ```
 
+pub mod autotuner;
 pub mod consciousness;
 pub mod consciousness_engine;
 pub mod ekam_field;
