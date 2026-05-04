@@ -17,6 +17,11 @@ mod dcr_worker;
 mod gpu_backend;
 mod parallel;
 
+fn flush_stdout() {
+    use std::io::Write;
+    let _ = std::io::stdout().flush();
+}
+
 /// Gate verbose wire_* / iteration= debug output (--verbose or ZION_MINER_VERBOSE=1).
 static VERBOSE: AtomicBool = AtomicBool::new(false);
 #[cfg(any(feature = "gpu", feature = "gpu-opencl"))]
@@ -563,28 +568,6 @@ fn format_hashrate(hps: f64) -> String {
 }
 
 fn main() -> Result<()> {
-    // Force stdout to flush after every write when running under a pipe (Electron, scripts).
-    // Without this, Rust fully-buffers stdout on non-TTY and nothing reaches the parent
-    // until the 8 KiB buffer fills or the process exits.
-    #[inline(always)]
-    fn flush_stdout() {
-        use std::io::Write;
-        let _ = std::io::stdout().flush();
-    }
-
-    // Background thread: flush stdout every 100ms so piped output reaches
-    // the Electron parent without needing explicit flush after every println.
-    std::thread::Builder::new()
-        .name("stdout-flush".into())
-        .spawn(|| {
-            use std::io::Write;
-            loop {
-                std::thread::sleep(std::time::Duration::from_millis(100));
-                let _ = std::io::stdout().flush();
-            }
-        })
-        .ok();
-
     // ── Ekam Deeksha GPU benchmark: `zion-miner --ekam-bench` ──
     if std::env::args().any(|a| a == "--ekam-bench") {
         let work_size: usize = std::env::var("ZION_GPU_WORK_SIZE")
@@ -599,11 +582,7 @@ fn main() -> Result<()> {
 
         println!("--- Ekam Deeksha GPU benchmark ---");
         let mut gpu = gpu_backend::create_gpu_backend(
-            if backend == gpu_backend::GpuBackendKind::Cpu {
-                gpu_backend::GpuBackendKind::Auto
-            } else {
-                backend
-            },
+            if backend == gpu_backend::GpuBackendKind::Cpu { gpu_backend::GpuBackendKind::Auto } else { backend },
             work_size,
         )?;
         println!("device={}", gpu.device_name());
@@ -721,20 +700,6 @@ fn main() -> Result<()> {
     }
 
     let config = MinerConfig::from_env_and_args()?;
-    let verbose = std::env::args().any(|a| a == "--verbose" || a == "-v")
-        || parse_bool_env("ZION_MINER_VERBOSE", false);
-    VERBOSE.store(verbose, Ordering::Relaxed);
-    let metrics = Arc::new(Mutex::new(MinerMetricsSnapshot::from_config(&config)));
-    if let Some(metrics_bind) = config.metrics_bind.as_deref() {
-        println!("metrics_bind={metrics_bind}");
-        let metrics_bind = metrics_bind.to_string();
-        let metrics_ref = Arc::clone(&metrics);
-        thread::spawn(move || {
-            if let Err(error) = serve_miner_metrics(&metrics_bind, metrics_ref) {
-                eprintln!("miner_metrics_error={error:#}");
-            }
-        });
-    }
 
     // ── Startup banner + hardware detection ──
     banner::print_banner(config.threads);
@@ -788,6 +753,8 @@ fn main() -> Result<()> {
         }
         return Ok(());
     }
+
+    let metrics = Arc::new(Mutex::new(MinerMetricsSnapshot::from_config(&config)));
 
     let outcome = match config.pool_addr.as_deref() {
         Some(pool_addr) => {
@@ -1253,26 +1220,13 @@ fn run_remote_session(
         last_job_id = job.job_id;
         telemetry.pool_height = job.height;
         telemetry.current_epoch = job.height / 100;
-        println!(
-            "[{}] new job  height {}  nonces {}..{}  job_id={}",
-            log_timestamp(),
-            job.height,
-            job.start_nonce,
-            job.start_nonce + job.nonce_count,
-            job.job_id,
-        );
-        if VERBOSE.load(Ordering::Relaxed) {
-            println!("wire_job={job_line}");
-        }
+        println!("mining job_id={} height={} nonces={}..{}", job.job_id, job.height, job.start_nonce, job.start_nonce + job.nonce_count);
         // GPU-first, CPU-fallback nonce scan
         let can_gpu = match gpu.as_mut() {
             Some(g) => match g.update_epoch(job.height) {
                 Ok(()) => true,
                 Err(e) => {
-                    println!(
-                        "gpu_epoch_fallback height={} reason=\"{e}\" using=cpu",
-                        job.height
-                    );
+                    println!("gpu_epoch_fallback height={} reason=\"{e}\" using=cpu", job.height);
                     false
                 }
             },
@@ -1592,6 +1546,7 @@ struct SessionTelemetry {
     current_epoch: u64,
     pool_height: u64,
     best_batch_ms: u64,
+    /// Peak hashrate (H/s) seen this session — used for XMRig-style speed line.
     hashrate_max: f64,
     last_stats_write: Instant,
 }
@@ -1661,11 +1616,7 @@ impl SessionTelemetry {
 
     fn gpu_hashrate_hps(&self) -> f64 {
         let elapsed = self.status_started_at.elapsed().as_secs_f64();
-        if elapsed > 0.0 {
-            self.gpu_hashes as f64 / elapsed
-        } else {
-            0.0
-        }
+        if elapsed > 0.0 { self.gpu_hashes as f64 / elapsed } else { 0.0 }
     }
 
     fn submit_avg_latency_ms(&self) -> f64 {
@@ -1731,12 +1682,27 @@ impl SessionTelemetry {
         // ── Machine-parseable status line (for desktop agent stdout parser) ──
         println!(
             "session_status iter={}/{} uptime_s={:.1} accepted={} rejected={} accept_pct={:.2} no_solution={} local_skip={} hps_overall={:.2} hps_10s={:.2} hps_60s={:.2} hps_15m={:.2} attempted_hashes={} submit_avg_ms={:.2} submit_max_ms={} remote_ttl_ms={} gpu_backend={} gpu_hps={:.2} epoch={} pool_height={} best_batch_ms={}",
-            iteration_done, loop_count, uptime, accepted, rejected, accept_pct,
-            self.no_solution_iterations, self.local_skip_likely_stale,
-            overall_hps, hr_10s, hr_60s, hr_15m,
-            attempted_hashes, submit_avg, self.submit_max_latency_ms, ttl_text,
-            backend_label, self.gpu_hashrate_hps(),
-            self.current_epoch, self.pool_height, self.best_batch_ms,
+            iteration_done,
+            loop_count,
+            uptime,
+            accepted,
+            rejected,
+            accept_pct,
+            self.no_solution_iterations,
+            self.local_skip_likely_stale,
+            overall_hps,
+            self.hashrate_10s_hps(),
+            self.hashrate_60s_hps(),
+            self.hashrate_15m_hps(),
+            attempted_hashes,
+            submit_avg,
+            self.submit_max_latency_ms,
+            ttl_text,
+            if self.gpu_backend_name.is_empty() { "cpu" } else { &self.gpu_backend_name },
+            self.gpu_hashrate_hps(),
+            self.current_epoch,
+            self.pool_height,
+            self.best_batch_ms,
         );
 
         // ── XMRig-style human-readable speed line ──
@@ -2003,19 +1969,11 @@ impl MinerConfig {
                     i += 2;
                 }
                 "--gpu" if i + 1 < args.len() => {
-                    std::env::set_var("ZION_BACKEND", &args[i + 1]);
+                    std::env::set_var("ZION_GPU_BACKEND", &args[i + 1]);
                     i += 2;
                 }
                 "--profile" if i + 1 < args.len() => {
                     std::env::set_var("ZION_PROFILE", &args[i + 1]);
-                    i += 2;
-                }
-                "--stats-file" if i + 1 < args.len() => {
-                    std::env::set_var("ZION_STATS_FILE", &args[i + 1]);
-                    i += 2;
-                }
-                "--stats-interval" if i + 1 < args.len() => {
-                    std::env::set_var("ZION_METRICS_REPORT_SECS", &args[i + 1]);
                     i += 2;
                 }
                 "--help" | "-h" => {
@@ -2029,8 +1987,6 @@ impl MinerConfig {
                     println!("  --gpu BACKEND       GPU backend: auto, metal, opencl, cpu (default: auto)");
                     println!("  --loops N           Iteration count (default: 1)");
                     println!("  --profile NAME      Profile: pool, solo, benchmark, dual");
-                    println!("  --stats-file PATH   Write JSON stats to file (for desktop agent)");
-                    println!("  --stats-interval N  Stats/metrics reporting interval in seconds");
                     println!();
                     println!("Benchmarks:");
                     println!("  --ekam-bench        Ekam Deeksha GPU benchmark");
@@ -2040,9 +1996,7 @@ impl MinerConfig {
                     println!("All options can also be set via ZION_* environment variables.");
                     std::process::exit(0);
                 }
-                _ => {
-                    i += 1;
-                } // skip unknown flags (bench flags handled earlier)
+                _ => { i += 1; } // skip unknown flags (bench flags handled earlier)
             }
         }
 
@@ -2284,7 +2238,6 @@ mod tests {
         std::env::set_var("ZION_NONCE_ADJUST_PCT", "30");
         std::env::set_var("ZION_REMOTE_TTL_GUARD_PCT", "85");
         std::env::set_var("ZION_METRICS_REPORT_SECS", "12");
-        std::env::set_var("ZION_MINER_METRICS_BIND", "127.0.0.1:9116");
         let config = MinerConfig::from_env_and_args().expect("config from env");
         assert_eq!(config.loop_count, 3);
         assert_eq!(config.job_ttl_ms, 2500);
@@ -2295,7 +2248,13 @@ mod tests {
         assert_eq!(config.nonce_adjust_percent, 30);
         assert_eq!(config.remote_ttl_guard_percent, 85);
         assert_eq!(config.metrics_report_every_secs, 12);
-        assert_eq!(config.metrics_bind.as_deref(), Some("127.0.0.1:9116"));
+        assert_eq!(config.metrics_bind.as_deref(), None);
+        std::env::set_var("ZION_MINER_METRICS_BIND", "127.0.0.1:9116");
+        let with_bind = MinerConfig::from_env_and_args().expect("config with metrics bind");
+        assert_eq!(
+            with_bind.metrics_bind.as_deref(),
+            Some("127.0.0.1:9116")
+        );
         std::env::remove_var("ZION_LOOP_COUNT");
         std::env::remove_var("ZION_JOB_TTL_MS");
         std::env::remove_var("ZION_NONCE_STRIDE");
@@ -2553,7 +2512,6 @@ mod tests {
 
     #[test]
     fn profile_does_not_override_explicit_env() {
-        let _guard = env_test_guard();
         // Set explicit value BEFORE profile so it must not be overwritten.
         std::env::set_var("ZION_LOOP_COUNT", "42");
         std::env::set_var("ZION_PROFILE", "pool");
@@ -2563,16 +2521,10 @@ mod tests {
         let val = std::env::var("ZION_LOOP_COUNT").unwrap_or_default();
         assert!(val == "42" || val.is_empty(),
             "expected ZION_LOOP_COUNT to be '42' (explicit) or removed by parallel test, got '{val}'");
-        for k in [
-            "ZION_PROFILE",
-            "ZION_LOOP_COUNT",
-            "ZION_RECONNECT",
-            "ZION_NONCE_AUTOTUNE",
-            "ZION_NONCE_COUNT",
-            "ZION_NONCE_COUNT_MIN",
-            "ZION_NONCE_COUNT_MAX",
-            "ZION_METRICS_REPORT_SECS",
-        ] {
+        for k in ["ZION_PROFILE", "ZION_LOOP_COUNT", "ZION_RECONNECT",
+                   "ZION_NONCE_AUTOTUNE", "ZION_NONCE_COUNT",
+                   "ZION_NONCE_COUNT_MIN", "ZION_NONCE_COUNT_MAX",
+                   "ZION_METRICS_REPORT_SECS"] {
             std::env::remove_var(k);
         }
     }

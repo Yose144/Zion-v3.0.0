@@ -12,6 +12,8 @@ const STATE_SCHEMA_VERSION = 2;
 const INCIDENT_DEBOUNCE_SAMPLES = 2;
 const DEFAULT_NODES = [
   { id: 'prague-eu', host: '91.98.122.165', port: 8443 },
+  { id: 'usa-west', host: '5.78.194.94', port: 8443 },
+  { id: 'singapore-ap', host: '5.223.84.191', port: 8443 },
 ];
 const DEFAULT_POOL = { host: '91.98.122.165', port: 8080, path: '/stats' };
 

@@ -796,8 +796,8 @@ export default function PoolDashboard() {
                 <Heart className="h-7 w-7 text-pink-400" />
               </div>
               <p className="text-4xl font-bold text-pink-400 font-mono">{data?.fee.humanitarian_tithe ?? 5}%</p>
-              <h3 className="mt-2 text-base font-semibold text-white">{cs ? 'Humanitární tithe' : 'Humanitarian Tithe'}</h3>
-              <p className="mt-1 text-xs text-gray-500">{cs ? 'Financování globálních humanitárních aktivit' : 'Funding global humanitarian causes'}</p>
+              <h3 className="mt-2 text-base font-semibold text-white">Humanitarian Tithe</h3>
+              <p className="mt-1 text-xs text-gray-500">Funding global humanitarian causes</p>
               {data?.fee.humanitarian_wallet && <p className="mt-2 text-[10px] font-mono text-gray-600 break-all">{data.fee.humanitarian_wallet}</p>}
             </div>
             <div className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6 text-center">
@@ -805,8 +805,8 @@ export default function PoolDashboard() {
                 <Heart className="h-7 w-7 text-zion-gold" />
               </div>
               <p className="text-4xl font-bold text-zion-gold font-mono">{data?.fee.issobella_fund ?? 5}%</p>
-              <h3 className="mt-2 text-base font-semibold text-white">{cs ? 'Fond Issobella' : 'Issobella Fund'}</h3>
-              <p className="mt-1 text-xs text-gray-500">{cs ? 'Vyhrazená humanitární a stewardship treasury alokace' : 'Reserved humanitarian and stewardship treasury allocation'}</p>
+              <h3 className="mt-2 text-base font-semibold text-white">Issobella Fund</h3>
+              <p className="mt-1 text-xs text-gray-500">Reserved humanitarian and stewardship treasury allocation</p>
               {data?.fee.issobella_wallet && <p className="mt-2 text-[10px] font-mono text-gray-600 break-all">{data.fee.issobella_wallet}</p>}
             </div>
             <div className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6 text-center">
@@ -814,8 +814,8 @@ export default function PoolDashboard() {
                 <Shield className="h-7 w-7 text-zion-cyan" />
               </div>
               <p className="text-4xl font-bold text-zion-cyan font-mono">{data?.fee.pool_fee ?? 1}%</p>
-              <h3 className="mt-2 text-base font-semibold text-white">{cs ? 'Pool fee' : 'Pool Fee'}</h3>
-              <p className="mt-1 text-xs text-gray-500">{cs ? 'Údržba infrastruktury a vývoj' : 'Infrastructure maintenance & development'}</p>
+              <h3 className="mt-2 text-base font-semibold text-white">Pool Fee</h3>
+              <p className="mt-1 text-xs text-gray-500">Infrastructure maintenance &amp; development</p>
               {data?.fee.pool_fee_wallet && <p className="mt-2 text-[10px] font-mono text-gray-600 break-all">{data.fee.pool_fee_wallet}</p>}
             </div>
           </div>

@@ -23,7 +23,7 @@ LOCAL_SRC="$(cd "$(dirname "$0")/.." && pwd)"
 # the active seed rotation until they are restored, otherwise fresh nodes learn
 # dead peers and burn sync cycles.
 SERVER_ALIASES=(eu primary us sg)
-ACTIVE_SERVER_ALIASES=(primary)
+ACTIVE_SERVER_ALIASES=(primary us sg)
 
 resolve_alias() {
     case "$1" in
@@ -71,14 +71,14 @@ resolve_seed_node_id() {
 
 resolve_services() {
     case "$1" in
-        primary|us) echo "core seed1 pool miner redis" ;;
+        primary) echo "core seed1 pool miner redis" ;;
         *) echo "core seed1" ;;
     esac
 }
 
 expected_container_floor() {
     case "$1" in
-        primary|us) echo "5" ;;
+        primary) echo "5" ;;
         *) echo "2" ;;
     esac
 }
@@ -167,7 +167,6 @@ provision_server() {
         ufw allow 9115/tcp  comment 'Metrics'
         ufw allow 3333/tcp  comment 'Stratum'
         ufw allow 8080/tcp  comment 'Pool API'
-        ufw allow 8001/tcp  comment 'AI Native API'
         ufw --force enable
         ufw status numbered
     "
@@ -244,7 +243,7 @@ deploy_server() {
         docker compose -f $COMPOSE_FILE build $services 2>&1 | tail -15
     "
 
-    if [ "$alias" != "primary" ] && [ "$alias" != "us" ]; then
+    if [ "$alias" != "primary" ]; then
         log "[$name] Stopping non-canonical mining services on follower node..."
         ssh_cmd "$ip" "
             docker rm -f zion-miner zion-pool zion-redis 2>/dev/null || true
