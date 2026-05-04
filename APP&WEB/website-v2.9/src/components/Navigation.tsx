@@ -53,8 +53,9 @@ export default function Navigation() {
       title: 'Reference',
       items: [
         { href: '/docs',           label: tr('nav', 'docs', lang) },
-        { href: '/roadmap',        label: tr('nav', 'roadmap', lang) },
-        { href: '/terranova',     label: tr('nav', 'terranova', lang) },
+        { href: '/bridge',         label: tr('nav', 'bridge', lang) },
+        { href: '/api-reference',  label: tr('nav', 'api', lang) },
+        { href: '/ai-native',      label: tr('nav', 'ai_native', lang) },
       ],
     },
   ];
