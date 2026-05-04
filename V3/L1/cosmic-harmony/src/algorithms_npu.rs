@@ -474,16 +474,15 @@ pub fn chv4_npu_weights_flat_epoch(epoch: u64) -> ChV4WeightsFlat {
     assert!(
         weights.topology == MlpTopology::Standard,
         "GPU kernel only supports Standard (64→128→64) topology, got {:?} for epoch {}",
-        weights.topology,
-        epoch
+        weights.topology, epoch
     );
     let layer0 = &weights.layers[0];
     let layer1 = &weights.layers[1];
     ChV4WeightsFlat {
-        w1: layer0.weights.clone(),
-        b1: layer0.bias.clone(),
-        w2: layer1.weights.clone(),
-        b2: layer1.bias.clone(),
+        w1:     layer0.weights.clone(),
+        b1:     layer0.bias.clone(),
+        w2:     layer1.weights.clone(),
+        b2:     layer1.bias.clone(),
         scale1: layer0.scale.clone(),
         scale2: layer1.scale.clone(),
     }
@@ -515,12 +514,7 @@ pub fn chv4_npu_weights_packed(epoch: u64) -> ChV4WeightsPacked {
         meta.push(layer.in_dim as u32);
         meta.push(layer.out_dim as u32);
     }
-    ChV4WeightsPacked {
-        weights: w_all,
-        biases: b_all,
-        scales: s_all,
-        meta,
-    }
+    ChV4WeightsPacked { weights: w_all, biases: b_all, scales: s_all, meta }
 }
 
 // ============================================================================
