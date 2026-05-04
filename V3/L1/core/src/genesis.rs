@@ -9,7 +9,7 @@
 //! Source: `PREMINE_ADDRESSES_PUBLIC.txt` + `L1/core/src/blockchain/premine.rs`
 
 use crate::{difficulty, AcceptedBlock, MiningHeader, Transaction};
-use zion_cosmic_harmony::cosmic_harmony_ekam_deeksha;
+use zion_cosmic_harmony::{cosmic_harmony_ekam_deeksha, cosmic_harmony_with_height};
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -209,7 +209,7 @@ pub fn genesis_block() -> AcceptedBlock {
         difficulty_bits: genesis_bits,
     };
 
-    let hash = cosmic_harmony_ekam_deeksha(&header.to_bytes(), 0);
+    let hash = cosmic_harmony_with_height(&header.to_bytes(), 0, 0);
     let hash_hex = crate::hex(&hash.data);
     let header_hex = crate::hex(&header.to_bytes());
 
