@@ -3056,6 +3056,47 @@ impl ChainState {
                 }
             }
         }
+
+        // ── UTXO input existence + value conservation (F1) ─────────────────
+        //
+        // These checks must apply both to peer-imported blocks and to locally
+        // mined candidates accepted via SubmitCandidate, otherwise a miner
+        // could accidentally (or maliciously) mint value by submitting a block
+        // whose UTXO tx outputs+fee exceed its referenced inputs.
+        let utxos = self.utxo_set();
+        let coinbase_outpoints: HashSet<(String, u32)> = self
+            .accepted_blocks
+            .iter()
+            .flat_map(|b| b.utxo_transactions.iter().filter(|tx| tx.is_coinbase()).map(move |tx| (b.height, tx)))
+            .flat_map(|(height, tx)| {
+                let id_hex = hex(&tx.id);
+                tx.outputs
+                    .iter()
+                    .enumerate()
+                    .map(move |(idx, _)| (id_hex.clone(), idx as u32, height))
+            })
+            .map(|(id_hex, idx, _height)| (id_hex, idx))
+            .collect();
+
+        let utxo_lookup = |tx_hash: &[u8; 32], output_index: u32| -> Option<validation::UtxoInfo> {
+            let key = (hex(tx_hash), output_index);
+            utxos.get(&key).map(|u| validation::UtxoInfo {
+                amount: u.amount,
+                address: u.address.clone(),
+                created_height: u.height,
+                is_coinbase: coinbase_outpoints.contains(&key),
+            })
+        };
+        let is_bridge_unlock = |tx: &tx::Transaction| bridge_unlock_replay_key_from_transaction(tx).is_some();
+
+        validation::validate_inputs_exist(&block.utxo_transactions, &utxo_lookup, &is_bridge_unlock)
+            .map_err(|err| format!("peer block UTXO input existence failed: {err}"))?;
+        validation::validate_value_conservation(
+            &block.utxo_transactions,
+            &utxo_lookup,
+            &is_bridge_unlock,
+        )
+        .map_err(|err| format!("peer block UTXO value conservation failed: {err}"))?;
         Ok(())
     }
 
