@@ -68,12 +68,36 @@ const NetworkOperatorToolkit = dynamic(() => import('@/components/network/Networ
    NETWORK PAGE — Redesigned to match Roadmap visual language
    ═══════════════════════════════════════════════════════════ */
 
-const heroStats = [
-  { label: 'Public Nodes', value: '1', descriptor: 'Prague public host + USA/Singapore internal lanes' },
-  { label: 'P2P Mesh', value: 'Controlled', descriptor: 'Public host + internal validator lanes' },
-  { label: 'Telemetry', value: '30s', descriptor: 'Auto-refresh interval' },
-  { label: 'Topology', value: 'Rehearsal', descriptor: '3-region test-mainnet rehearsal topology' },
-  { label: 'Network', value: 'V3 Test Mainnet', descriptor: 'Public rehearsal line v2.9.9 · runtime v2.9.8' },
+const getHeroStats = (cs: boolean) => [
+  {
+    label: cs ? 'Veřejné nody' : 'Public Nodes',
+    value: '1',
+    descriptor: cs
+      ? 'Praha (veřejný host) + interní validátory USA/Singapur'
+      : 'Prague public host + USA/Singapore internal lanes',
+  },
+  {
+    label: cs ? 'P2P mesh' : 'P2P Mesh',
+    value: cs ? 'Kontrolovaný' : 'Controlled',
+    descriptor: cs ? 'Veřejný host + interní validátorské lane' : 'Public host + internal validator lanes',
+  },
+  {
+    label: cs ? 'Telemetrie' : 'Telemetry',
+    value: '30s',
+    descriptor: cs ? 'Interval auto-obnovení' : 'Auto-refresh interval',
+  },
+  {
+    label: cs ? 'Topologie' : 'Topology',
+    value: cs ? 'Rehearsal' : 'Rehearsal',
+    descriptor: cs ? '3-region test-mainnet rehearsal topologie' : '3-region test-mainnet rehearsal topology',
+  },
+  {
+    label: cs ? 'Síť' : 'Network',
+    value: 'V3 Test Mainnet',
+    descriptor: cs
+      ? 'Veřejná rehearsal linka v2.9.9 · runtime v2.9.8'
+      : 'Public rehearsal line v2.9.9 · runtime v2.9.8',
+  },
 ];
 
 const getInfraFeatures = (cs: boolean) => [
@@ -178,16 +202,25 @@ const getGuideBlocks = (cs: boolean) => [
   },
 ];
 
-const networkFacts = [
-  { text: 'Native Rust P2P — libp2p mesh', done: true },
-  { text: '1 public host + 2 internal validator lanes', done: true },
-  { text: 'Primary stratum endpoint on Prague', done: true },
-  { text: 'JSON-RPC endpoints live (port 8443)', done: true },
-  { text: '24/7 Docker containers with auto-restart', done: true },
-  { text: 'LWMA DAA — target 60s block time', done: true },
-  { text: 'Archived 3-region relay evidence retained', done: true },
-  { text: 'Prometheus + Grafana monitoring', done: true },
-  { text: 'Geo-distributed rehearsal topology active', done: true },
+const getNetworkFacts = (cs: boolean) => [
+  { text: cs ? 'Nativní Rust P2P — libp2p mesh' : 'Native Rust P2P — libp2p mesh', done: true },
+  {
+    text: cs ? '1 veřejný host + 2 interní validátorské lane' : '1 public host + 2 internal validator lanes',
+    done: true,
+  },
+  { text: cs ? 'Primární stratum endpoint v Praze' : 'Primary stratum endpoint on Prague', done: true },
+  { text: cs ? 'JSON-RPC endpointy live (port 8443)' : 'JSON-RPC endpoints live (port 8443)', done: true },
+  { text: cs ? 'Docker kontejnery 24/7 s auto-restartem' : '24/7 Docker containers with auto-restart', done: true },
+  { text: cs ? 'LWMA DAA — cíl 60s block time' : 'LWMA DAA — target 60s block time', done: true },
+  {
+    text: cs ? 'Archivovaný 3-region relay evidence retained' : 'Archived 3-region relay evidence retained',
+    done: true,
+  },
+  { text: cs ? 'Monitoring Prometheus + Grafana' : 'Prometheus + Grafana monitoring', done: true },
+  {
+    text: cs ? 'Geo-distribuovaná rehearsal topologie aktivní' : 'Geo-distributed rehearsal topology active',
+    done: true,
+  },
 ];
 
 interface MonitoringSnapshot {
@@ -934,11 +967,4 @@ function fmtLargeNum(n: number | undefined): string {
   if (n >= 1e6) return `${(n / 1e6).toFixed(2)}M`;
   if (n >= 1e3) return `${(n / 1e3).toFixed(1)}K`;
   return n.toLocaleString();
-}
-function fmtBytes(b: number | undefined): string {
-  if (b == null) return '—';
-  if (b >= 1e9) return `${(b / 1e9).toFixed(1)} GB`;
-  if (b >= 1e6) return `${(b / 1e6).toFixed(1)} MB`;
-  if (b >= 1e3) return `${(b / 1e3).toFixed(0)} KB`;
-  return `${b} B`;
 }

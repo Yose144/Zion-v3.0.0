@@ -77,10 +77,25 @@ function ApiQuickstartPanels({ cs }: { cs: boolean }) {
   );
 }
 
-const apiStats = [
-  { label: 'Core environment', value: 'V3 Test Mainnet', detail: 'controlled rehearsal line', icon: Shield },
-  { label: 'API Port', value: '8443', detail: 'JSON-RPC + REST', icon: Activity },
-  { label: 'Pool Port', value: '8080', detail: 'stats endpoint', icon: Server },
+const getApiStats = (cs: boolean) => [
+  {
+    label: cs ? 'Prostředí core' : 'Core environment',
+    value: 'V3 Test Mainnet',
+    detail: cs ? 'kontrolovaná mainnet rehearsal linka' : 'controlled rehearsal line',
+    icon: Shield,
+  },
+  {
+    label: cs ? 'API port' : 'API Port',
+    value: '8443',
+    detail: cs ? 'JSON-RPC + REST' : 'JSON-RPC + REST',
+    icon: Activity,
+  },
+  {
+    label: cs ? 'Pool port' : 'Pool Port',
+    value: '8080',
+    detail: cs ? 'stats endpoint' : 'stats endpoint',
+    icon: Server,
+  },
 ];
 
 const getEndpointGroups = (cs: boolean) => [
