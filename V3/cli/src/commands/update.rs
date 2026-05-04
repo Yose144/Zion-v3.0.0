@@ -50,12 +50,31 @@ pub fn print_version_surface(cfg: &Config) -> Result<()> {
 }
 
 pub async fn run(_cfg: &Config, check: bool, yes: bool) -> Result<()> {
+    run_with_auto_check(_cfg, check, yes, false).await
+}
+
+pub async fn run_with_auto_check(_cfg: &Config, check: bool, yes: bool, auto_check: bool) -> Result<()> {
     let artifact = detect_artifact_name()?;
     let current_exe = env::current_exe().context("Cannot resolve current zion executable")?;
     let client = Client::builder()
-        .timeout(Duration::from_secs(90))
+        .timeout(Duration::from_secs(if auto_check { 5 } else { 90 }))
         .build()
         .context("Cannot create update HTTP client")?;
+
+    if auto_check {
+        // Silent check for background use
+        if let Ok(expected_sha) = fetch_expected_sha256(&client, artifact).await {
+            if let Ok(current_sha) = hash_file(&current_exe) {
+                if current_sha != expected_sha {
+                    println!();
+                    ui::print_warn(">>> A newer version of ZION CLI is available! <<<");
+                    ui::print_info("Run `zion update` to upgrade to the latest version.");
+                    println!();
+                }
+            }
+        }
+        return Ok(());
+    }
 
     ui::print_header(if check {
         "ZION CLI Update Check"
