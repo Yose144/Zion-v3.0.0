@@ -762,7 +762,7 @@ mod tests {
         let tx_id = [99u8; 32];
         let tx = tx::Transaction {
             id: tx_id,
-            version: 1,
+            version: crate::tx::TX_HASH_V2_VERSION,
             inputs: vec![],
             outputs: vec![],
             fee: 0,

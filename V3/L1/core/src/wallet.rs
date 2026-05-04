@@ -342,9 +342,10 @@ mod tests {
     }
 
     #[test]
-    fn pending_utxo_tx_version_before_fork_defaults_one() {
-        assert_eq!(pending_utxo_tx_version(0), 1);
-        assert_eq!(pending_utxo_tx_version(u64::MAX / 2), 1);
+    fn pending_utxo_tx_version_is_v2_from_genesis() {
+        assert_eq!(pending_utxo_tx_version(0), TX_HASH_V2_VERSION);
+        assert_eq!(pending_utxo_tx_version(1), TX_HASH_V2_VERSION);
+        assert_eq!(pending_utxo_tx_version(u64::MAX / 2), TX_HASH_V2_VERSION);
     }
 
     #[test]
