@@ -21,6 +21,21 @@ export interface NewsArticle {
 
 export const NEWS_ARTICLES: NewsArticle[] = [
   {
+    slug: 'v3-internal-audit-complete',
+    date: '2026-05-04',
+    tag: { cs: 'Audit', en: 'Audit' },
+    tagColor: 'text-emerald-400',
+    title: {
+      cs: 'Interní audit ZION V3 dokončen — shrnutí nálezů a launch readiness',
+      en: 'ZION V3 internal audit completed — findings summary and launch readiness',
+    },
+    summary: {
+      cs: 'Zkonsolidovali jsme interní security audit V3: uzavřené nálezy, co ještě blokuje Genesis, a konkrétní aktivační plán (tx-hash v2 + Merkle F2).',
+      en: 'We consolidated the V3 internal security audit: closed findings, what still blocks Genesis, and the concrete activation plan (tx-hash v2 + Merkle F2).',
+    },
+    href: '/news/v3-internal-audit',
+  },
+  {
     slug: 'zion-cli-rollout',
     date: '2026-04-21',
     tag: { cs: 'CLI', en: 'CLI' },
