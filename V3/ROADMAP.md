@@ -1,6 +1,6 @@
 # ZION v3 Mainnet Roadmap
 
-Status date: 2026-04-20 (post-audit correction for single-host Prague topology)
+Status date: 2026-03-28 (Sprint 8 complete, fee-split rollout verified live)
 
 This file is the active source-of-truth for the clean `V3/` mainnet line.
 `V3/` is intentionally separated from the legacy root workspace. The legacy root remains migration source material and audit evidence, but new mainnet-track runtime work should land in `V3/`.
@@ -78,15 +78,9 @@ This roadmap follows the release progression already defined in the repository d
 
 ### Latest Verified Runtime Milestone
 
-- **Unified CLI operator baseline (2026-04-23):** `V3/cli` now covers the canonical operator gateway across L1, L2, L3, deploy, explorer, monitor, guided workflows, and checksum-verified local CLI auto-update. Public-safe CLI guide, FAQ, reference, troubleshooting, and deploy playbook remain the documentation rollout path.
-- **Phase 18 UTXO coinbase + pool payout E2E (2026-04-01):** `getBalance` now combines account+UTXO for zion1 addresses (was returning 0). `build_template()` generates UTXO coinbase with 4 outputs (89/5/5/1 split). Pool payout pipeline: `execute_pool_payout()` with Ed25519 UTXO signing. Deployed to Prague, chain height 6801, miner balance 14.12B ZION, template utxo_tx_count=1.
-- **Humanitarian tithe verified on-chain (2026-04-01):** Per-block split is exact: miner 4,806,059,630,000,000 flowers (89%), humanitarian 270,003,350,000,000 (5%), issobella 270,003,350,000,000 (5%), pool_fee 54,000,670,000,000 (1%). Total = block subsidy. Cumulative balances ~93% of theoretical max (early blocks pre-config).
-- **BaseScan verification (2026-04-01):** All 3 Base mainnet contracts (wZION, ZIONBridge, ZIONAtomicSwap) verified on BaseScan via Etherscan V2 API.
-- **All bridge blockers resolved (2026-04-01):** Deterministic keyless vault address (`zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0`) derived via SHA-256("ZION Bridge Vault V3 Mainnet"), crypto validator proof already implemented (secp256k1 ECDSA in `submitBridgeUnlock`), L1 wallet CLI binary (`wallet.rs` — keygen/info/send/balance over TCP JSON-RPC), bridge mainnet config enabled (`bridge-mainnet.toml` → `enabled=true`). Bridge relay deployed and running on Prague server with 3/5 threshold, L1+EVM watchers active, scanning Base mainnet blocks.
-
 - **On-chain fee-split enforcement is live:** V3 core now produces and validates four-output coinbase payouts on mainnet with deterministic split `89/5/5/1`
 - **First explicitly verified split-enabled block:** `465`
-- **Historical cross-node confirmation:** the original USA and Singapore rehearsal nodes accepted split-enabled blocks `471` and `472`; those nodes are no longer part of the active topology
+- **Cross-node confirmation:** audited USA and Singapore nodes accepted subsequent split-enabled blocks `471` and `472`
 - **Operational root cause learned during rollout:** the first ineffective deploy was caused by a stale server-side `docker/docker-compose.v3-mainnet.yml` missing fee-wallet env vars in the `core` service; successful rebuild alone is not sufficient verification
 - **Canonical operational references:** `../docs/reports/REPORT_SESSION_2026-03-28_V3_MAINNET_FEE_SPLIT_ROLLOUT.md`, `../docs/mainnet/V3_ROLLOUT_VERIFICATION_CHECKLIST.md`, `docs/MAINNET_DEPLOY_RUNBOOK.md`
 
@@ -205,10 +199,7 @@ This roadmap follows the release progression already defined in the repository d
 
 - `cargo test --manifest-path V3/Cargo.toml` passes
 - local release build for `zion-core` passed before live rollout
-- live V3 fee-split rollout passed after manifest correction; today the audited production topology is the Prague primary host only
-- **Phase 18 deployed to Prague (2026-04-01):** miner balance 14.12B ZION (was 0), UTXO coinbase in template, pool payout enabled
-- **Humanitarian tithe on-chain verification (2026-04-01):** per-block 89/5/5/1 split exact to the flower, cumulative balances ~93% theoretical (early blocks pre-config)
-- **BaseScan verification (2026-04-01):** all 3 Base mainnet contracts verified via Etherscan V2 API
+- live V3 fee-split rollout passed after manifest correction, with Prague / USA / Singapore synchronized post-deploy
 - pool/miner remote TCP smoke test passes
 - repeated miner sessions against one shared pool instance pass
 - core node scaffold responds over both P2P and RPC TCP endpoints
@@ -252,8 +243,6 @@ This roadmap follows the release progression already defined in the repository d
 - **Sprint 8 (Stabilization — 2026-03-26/27): Miner test hardening. V3/PLAN.md created. **Complete L2/L3 migration**: L2/bridge (157 tests, decimal fix 6→12), L2/dao (65 tests, u128 treasury), L2/atomic-swap (15 tests), L3/ncl (43 tests), L3/warp (252 tests, 7 chain adapters), L3/ai-native (89 tests, agent framework). All `amount_atomic`→`amount_flowers`, `FLOWERS_PER_ZION=1e12`. Total: ~1,300 workspace tests, 0 failures.**
 - **Phase 23: Grafana + Prometheus monitoring stack — Node metrics HTTP server (`serve_node_metrics()` on ZION_METRICS_BIND=:9115, Prometheus /metrics + JSON /health), Prometheus scrape target alignment (`:8444` → `:9115`), alert rules rewritten to match actual V3 metric names (`zion_pool_*`, `zion_*`), Docker compose updated with port 9115 exposure + explicit `name: zion-net` network, Grafana provisioning with 22-panel V3 dashboard (pool overview, shares timeseries, routing groups, PPLNS window, core node stats), hardcoded Grafana credential removed. Full 5-service monitoring stack deployed: Prometheus, Grafana, node-exporter, redis-exporter, alertmanager. All local Prometheus targets scraping, Grafana dashboard live with real-time V3 data.**
 - **Sprint 8 stabilization (2026-03-26/27):** Miner test hardening (`profile_does_not_override_explicit_env` — env var race condition between parallel tests, tolerant assertion). Comprehensive mainnet plan created (`V3/PLAN.md` — L1 finish phases, L2/L3 migration strategy with decimal audit, Go/No-Go genesis checklist). **Complete L2/L3 migration: bridge (157 tests), dao (65 tests), atomic-swap (15 tests), ncl (43 tests), warp (252 tests), ai-native (89 tests). ~1,300 workspace tests pass, 0 failures.**
-- **Sprint 9 (L2 Deployment Infrastructure):** Production TOML configs for all L2 services: `bridge-testnet.toml` (Base Sepolia 84532, wZION `0x0c49...`, ZIONBridge `0xa5a0...`), `bridge-mainnet.toml` (Base 8453, disabled until contract deploy), `swap-testnet.toml` (HTLC service), `dao-testnet.toml` (governance daemon). Multi-stage Dockerfiles for bridge/swap/dao. Docker compose `docker-compose.v3-l2.yml` (bridge:9100, swap:8888, dao:8080 on zion-v3 network). 2 new integration tests: TOML config file parsing validation. Bridge unlock fully implemented in L1 core: `submitBridgeUnlock` RPC, replay protection via HashSet, vault balance check, 3 RPC tests. All L2 ready for server deployment.
-- **Sprint 9b (Bridge Blockers — 2026-04-01):** All 4 bridge activation blockers resolved: (1) deterministic keyless vault address derived from SHA-256 seed in `crypto.rs`, wired into `fee.rs`, bridge configs, docker-compose; (2) crypto validator proof already implemented — `submitBridgeUnlock` has secp256k1 ECDSA verification with allowlist + threshold; (3) L1 wallet CLI binary (`wallet.rs` — keygen, info, send, balance via raw TCP JSON-RPC); (4) bridge-mainnet.toml switched to `enabled=true`, deployed to Prague, bridge relay running with 3/5 threshold on Base mainnet (chain 8453). 448 core unit tests pass.
 
 ### Not Done Yet
 
