@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { useLang } from '@/contexts/LanguageContext';
 import {
   Activity,
   ArrowRight,
