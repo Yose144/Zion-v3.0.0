@@ -36,3 +36,4 @@ bip39 = { version = "2", features = ["rand"] }
 aes-gcm = "0.10"
 pbkdf2 = "0.12"
 zion-core = { path = "../L1/core" }
+zion-sdk = { path = "../sdk" }
