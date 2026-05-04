@@ -6,33 +6,33 @@ import { useLang } from '@/contexts/LanguageContext';
 
 const getPhaseCards = (cs: boolean) => [
   {
-    name: cs ? 'L1 TerraNova — kontrolovany test mainnet' : 'L1 TerraNova — Controlled Test Mainnet',
-    window: cs ? 'Bre 2026 – nyni' : 'Mar 2026 – Now',
+    name: 'L1 TerraNova — Controlled Test Mainnet',
+    window: 'Mar 2026 – Now',
     progress: 96,
     highlights: [
-      cs ? 'Nasazena v2.9.9 Pure Code verejna linie kontrolovaneho V3 test-mainnetu' : 'v2.9.9 Pure Code deployed — controlled V3 test-mainnet line',
-      cs ? 'Aktivni 3-node rehearsal mesh, pool telemetrie a synchronizovany explorer' : '3-node rehearsal mesh active, pool telemetry, and explorer synced',
-      cs ? 'Overen on-chain split 89/5/5/1; wZION DEX live na Base Mainnet' : 'On-chain 89/5/5/1 split verified; wZION DEX live on Base Mainnet',
+      'v2.9.9 Pure Code deployed — controlled V3 test-mainnet line',
+      '3-node rehearsal mesh active, pool telemetry, and explorer synced',
+      'On-chain 89/5/5/1 split verified; public launch still gated',
     ],
   },
   {
-    name: cs ? 'Launch ops a bezpecnostni closure' : 'Launch Ops & Security Closure',
+    name: 'Launch Ops & Security Closure',
     window: 'Q2–Q3 2026',
     progress: 20,
     highlights: [
-      cs ? 'BFG scrub + genesis artefakty / checksumy' : 'BFG scrub + genesis artifacts / checksums',
-      cs ? 'Externi bezpecnostni audit (Q2 2026)' : 'External security audit (Q2 2026)',
-      cs ? 'Mereny 48–72h closure report + evidence recovery scenaru' : 'Measured 48–72h closure report + recovery evidence',
+      'BFG scrub + genesis artifacts / checksums',
+      'External security audit (Q2 2026)',
+      'Measured 48–72h closure report + recovery evidence',
     ],
   },
   {
-    name: cs ? 'Gate verejneho launchu' : 'Public Launch Gate',
+    name: 'Public Launch Gate',
     window: 'Q4 2026',
     progress: 5,
     highlights: [
-      cs ? 'Dress rehearsal + genesis freeze' : 'Dress rehearsal + genesis freeze',
-      cs ? 'Rozhodnuti o verejnem launchi az po splneni closure kriterii' : 'Public launch decision only after closure criteria',
-      cs ? 'CoinGecko listing + wZION bridge az po verejne genesis' : 'CoinGecko listing + wZION bridge after public genesis',
+      'Dress rehearsal + genesis freeze',
+      'Public launch decision only after closure criteria',
+      'CoinGecko listing + wZION bridge after public genesis',
     ],
   },
 ];
@@ -80,9 +80,8 @@ export default function RoadmapPulse() {
               v2.9.9 <span className="text-gradient">Pure Code</span>
             </h2>
             <p className="text-lg text-gray-300 max-w-2xl">
-              {cs
-                ? 'Aktualni verejna linie je kontrolovana V3 test-mainnet rehearsal na v2.9.9 Pure Code vetvi nad kanonickym runtime v2.9.8 Deeksha/Ekam. Prioritou jsou closure evidence, telemetrie, dokumentace a operacni disciplina pred jakymkoli rozhodnutim o verejnem launchi.'
-                : 'The current public line is a controlled V3 test-mainnet rehearsal on the v2.9.9 Pure Code public line over the v2.9.8 Deeksha/Ekam canonical runtime. Priority is closure evidence, telemetry, documentation, and operational discipline before any public launch decision.'}
+              The current public line is a controlled V3 test-mainnet rehearsal on the v2.9.9 Pure Code public line over the v2.9.8 Deeksha/Ekam canonical runtime.
+              Priority is closure evidence, telemetry, documentation, and operational discipline before any public launch decision.
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-4">

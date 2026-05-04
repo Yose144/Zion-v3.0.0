@@ -12,10 +12,8 @@ use zion_core::{
     decode_rpc_response, encode_rpc_request, BlockTemplate, CoreRuntime, DifficultyTarget,
     MiningHeader, MiningSolution, RevenueSource, RpcRequest, RpcResponse,
 };
+use zion_pool::{decode_message, encode_message, MiningPool, PoolMessage, ShareDecision, ShareStatus};
 use zion_pool::pplns::{FeeConfig, PayoutEntry, PplnsConfig, PplnsEngine};
-use zion_pool::{
-    decode_message, encode_message, MiningPool, PoolMessage, ShareDecision, ShareStatus,
-};
 
 fn main() -> Result<()> {
     let config = ServerConfig::from_env()?;
@@ -29,14 +27,10 @@ fn main() -> Result<()> {
     )?));
     let routing_stats = Arc::new(Mutex::new(RoutingStats::new(config.routing_log_every)));
     let miner_telemetry = Arc::new(Mutex::new(MinerTelemetryRegistry::default()));
-    // Protocol fees (humanitarian 5%, issobella 5%, pool 1%) are handled
-    // by core in the coinbase transaction. Pool receives only the miner
-    // share (89%) so PPLNS fee defaults are 0. Set ZION_POOL_FEE_PCT to
-    // add an extra pool-operator fee on top of the protocol split.
     let fee_config = FeeConfig {
-        humanitarian_pct: parse_env_u64("ZION_HUMANITARIAN_TITHE_PCT", 0).unwrap_or(0),
-        issobella_pct: parse_env_u64("ZION_ISSOBELLA_FUND_PCT", 0).unwrap_or(0),
-        pool_fee_pct: parse_env_u64("ZION_POOL_FEE_PCT", 0).unwrap_or(0),
+        humanitarian_pct: parse_env_u64("ZION_HUMANITARIAN_TITHE_PCT", 5).unwrap_or(5),
+        issobella_pct: parse_env_u64("ZION_ISSOBELLA_FUND_PCT", 5).unwrap_or(5),
+        pool_fee_pct: parse_env_u64("ZION_POOL_FEE_PCT", 1).unwrap_or(1),
         humanitarian_wallet: std::env::var("ZION_HUMANITARIAN_WALLET").unwrap_or_default(),
         issobella_wallet: std::env::var("ZION_ISSOBELLA_WALLET").unwrap_or_default(),
         pool_fee_wallet: std::env::var("ZION_POOL_FEE_WALLET").unwrap_or_default(),
@@ -1953,21 +1947,9 @@ fn build_prometheus_payload(
         pplns.total_paid_flowers
     );
     let _ = writeln!(body, "zion_pplns_payout_rounds {}", pplns.payout_rounds);
-    let _ = writeln!(
-        body,
-        "zion_fee_humanitarian_flowers {}",
-        fees.humanitarian_accumulated_flowers
-    );
-    let _ = writeln!(
-        body,
-        "zion_fee_issobella_flowers {}",
-        fees.issobella_accumulated_flowers
-    );
-    let _ = writeln!(
-        body,
-        "zion_fee_pool_flowers {}",
-        fees.pool_fee_accumulated_flowers
-    );
+    let _ = writeln!(body, "zion_fee_humanitarian_flowers {}", fees.humanitarian_accumulated_flowers);
+    let _ = writeln!(body, "zion_fee_issobella_flowers {}", fees.issobella_accumulated_flowers);
+    let _ = writeln!(body, "zion_fee_pool_flowers {}", fees.pool_fee_accumulated_flowers);
     let _ = writeln!(body, "zion_fee_miner_pct {}", fees.miner_pct);
     for (miner_id, miner) in &telemetry.miners {
         let worker_name = sanitize_prometheus_label(&miner.worker_name);

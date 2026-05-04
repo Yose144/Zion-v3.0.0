@@ -81,8 +81,11 @@ impl WarpWatcher {
 
     /// Run the polling loop forever (call via `tokio::spawn`).
     pub async fn run(mut self) {
-        let interval =
-            Duration::from_secs(self.config.poll_interval_secs.unwrap_or(POLL_INTERVAL_SECS));
+        let interval = Duration::from_secs(
+            self.config
+                .poll_interval_secs
+                .unwrap_or(POLL_INTERVAL_SECS),
+        );
 
         info!(
             "[Watcher] Starting — {} adapters, poll every {}s",
@@ -232,11 +235,7 @@ mod tests {
         let registry = ChainRegistry::with_defaults();
         let fee_engine = FeeEngine::with_defaults();
         let validator_set = WarpValidatorSet::new(1);
-        Arc::new(Mutex::new(WarpRouter::new(
-            registry,
-            fee_engine,
-            validator_set,
-        )))
+        Arc::new(Mutex::new(WarpRouter::new(registry, fee_engine, validator_set)))
     }
 
     fn make_config_no_chains() -> WarpConfig {
@@ -310,10 +309,7 @@ mod tests {
     #[test]
     fn test_extract_zion_recipient_valid() {
         let memo = "WARP_INBOUND:base:zion1abc123";
-        assert_eq!(
-            extract_zion_recipient(memo),
-            Some("zion1abc123".to_string())
-        );
+        assert_eq!(extract_zion_recipient(memo), Some("zion1abc123".to_string()));
     }
 
     #[test]
@@ -328,17 +324,9 @@ mod tests {
         use crate::error::WarpError;
 
         assert!(is_permanent_error(&WarpError::InvalidMemo("bad".into())));
-        assert!(is_permanent_error(&WarpError::UnsupportedChain(
-            "xyz".into()
-        )));
-        assert!(is_permanent_error(&WarpError::AmountBelowMinimum {
-            amount: 1,
-            minimum: 100
-        }));
+        assert!(is_permanent_error(&WarpError::UnsupportedChain("xyz".into())));
+        assert!(is_permanent_error(&WarpError::AmountBelowMinimum { amount: 1, minimum: 100 }));
         // AdapterError is retriable
-        assert!(!is_permanent_error(&WarpError::AdapterError {
-            chain: "evm".into(),
-            reason: "timeout".into()
-        }));
+        assert!(!is_permanent_error(&WarpError::AdapterError { chain: "evm".into(), reason: "timeout".into() }));
     }
 }

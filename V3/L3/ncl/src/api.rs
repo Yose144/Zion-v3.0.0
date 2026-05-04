@@ -132,16 +132,10 @@ pub struct OkResponse {
 
 impl OkResponse {
     fn ok() -> Self {
-        Self {
-            ok: true,
-            message: None,
-        }
+        Self { ok: true, message: None }
     }
     fn msg(m: impl Into<String>) -> Self {
-        Self {
-            ok: true,
-            message: Some(m.into()),
-        }
+        Self { ok: true, message: Some(m.into()) }
     }
 }
 
@@ -223,9 +217,7 @@ pub async fn submit_job(
     .with_min_consciousness(req.min_consciousness);
 
     let mut sched = state.scheduler.lock().map_err(|_| lock_err())?;
-    let job_id = sched
-        .submit_job(job)
-        .map_err(|e| bad_request(e.to_string()))?;
+    let job_id = sched.submit_job(job).map_err(|e| bad_request(e.to_string()))?;
 
     Ok(Json(SubmitJobResponse {
         job_id,
@@ -239,9 +231,7 @@ pub async fn get_job(
     Path(id): Path<Uuid>,
 ) -> ApiResult<JobStatusResponse> {
     let sched = state.scheduler.lock().map_err(|_| lock_err())?;
-    let job = sched
-        .get_job(&id)
-        .ok_or_else(|| not_found(&id.to_string()))?;
+    let job = sched.get_job(&id).ok_or_else(|| not_found(&id.to_string()))?;
 
     Ok(Json(JobStatusResponse {
         job_id: job.id,
@@ -308,7 +298,11 @@ pub async fn register_worker(
 ) -> ApiResult<OkResponse> {
     let worker_id = Uuid::new_v4().to_string();
 
-    let mut worker = NclWorker::new(worker_id.clone(), req.address.clone(), req.backends);
+    let mut worker = NclWorker::new(
+        worker_id.clone(),
+        req.address.clone(),
+        req.backends,
+    );
     worker.max_concurrent = req.max_concurrent;
     worker.consciousness_level = req.consciousness_level;
 
@@ -331,20 +325,16 @@ pub async fn register_worker(
 /// `GET /workers`
 pub async fn list_workers(State(state): State<NclAppState>) -> ApiResult<serde_json::Value> {
     let rep = state.reputation.lock().map_err(|_| lock_err())?;
-    let board: Vec<_> = rep
-        .leaderboard()
-        .iter()
-        .map(|(id, score)| {
-            let r = rep.get(id);
-            serde_json::json!({
-                "worker_id": id,
-                "score": score,
-                "jobs_completed": r.map(|r| r.jobs_completed).unwrap_or(0),
-                "jobs_failed": r.map(|r| r.jobs_failed).unwrap_or(0),
-                "consciousness_level": r.map(|r| r.consciousness_level).unwrap_or(0),
-            })
+    let board: Vec<_> = rep.leaderboard().iter().map(|(id, score)| {
+        let r = rep.get(id);
+        serde_json::json!({
+            "worker_id": id,
+            "score": score,
+            "jobs_completed": r.map(|r| r.jobs_completed).unwrap_or(0),
+            "jobs_failed": r.map(|r| r.jobs_failed).unwrap_or(0),
+            "consciousness_level": r.map(|r| r.consciousness_level).unwrap_or(0),
         })
-        .collect();
+    }).collect();
     Ok(Json(serde_json::json!({ "workers": board })))
 }
 
@@ -465,9 +455,7 @@ mod tests {
             max_concurrent: 4,
             consciousness_level: 3,
         };
-        let resp = register_worker(State(state.clone()), Json(req))
-            .await
-            .unwrap();
+        let resp = register_worker(State(state.clone()), Json(req)).await.unwrap();
         assert!(resp.0.ok);
 
         let workers = list_workers(State(state)).await.unwrap();

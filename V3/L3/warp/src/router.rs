@@ -414,13 +414,9 @@ mod tests {
         assert!(router.drain_xp_events().is_empty());
 
         // Advance to completed
-        router
-            .advance_transfer(id, WarpStatus::AwaitingFinality)
-            .unwrap();
+        router.advance_transfer(id, WarpStatus::AwaitingFinality).unwrap();
         router.advance_transfer(id, WarpStatus::Validating).unwrap();
-        router
-            .advance_transfer(id, WarpStatus::QuorumReached)
-            .unwrap();
+        router.advance_transfer(id, WarpStatus::QuorumReached).unwrap();
         router.advance_transfer(id, WarpStatus::Executing).unwrap();
         router.advance_transfer(id, WarpStatus::Completed).unwrap();
 
@@ -436,9 +432,7 @@ mod tests {
         let mut router = test_router();
         let proof = test_deposit(100_000, "WARP:1:base:0x1");
         let id = router.initiate_outbound(proof).unwrap();
-        router
-            .advance_transfer(id, WarpStatus::AwaitingFinality)
-            .unwrap();
+        router.advance_transfer(id, WarpStatus::AwaitingFinality).unwrap();
         router.advance_transfer(id, WarpStatus::Failed).unwrap();
         assert!(router.drain_xp_events().is_empty());
     }

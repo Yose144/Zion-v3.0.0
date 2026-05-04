@@ -68,41 +68,21 @@ const NetworkOperatorToolkit = dynamic(() => import('@/components/network/Networ
    NETWORK PAGE — Redesigned to match Roadmap visual language
    ═══════════════════════════════════════════════════════════ */
 
-const getHeroStats = (cs: boolean) => [
-  {
-    label: cs ? 'Verejne nody' : 'Public Nodes',
-    value: '1',
-    descriptor: cs ? 'Prazsky verejny host + interni linky USA/Singapur' : 'Prague public host + USA/Singapore internal lanes',
-  },
-  {
-    label: cs ? 'P2P sit' : 'P2P Mesh',
-    value: cs ? 'Rizena' : 'Controlled',
-    descriptor: cs ? 'Verejny host + interni validacni linky' : 'Public host + internal validator lanes',
-  },
-  {
-    label: cs ? 'Telemetrie' : 'Telemetry',
-    value: '30s',
-    descriptor: cs ? 'Interval automaticke obnovy' : 'Auto-refresh interval',
-  },
-  {
-    label: cs ? 'Topologie' : 'Topology',
-    value: cs ? 'Nacvik' : 'Rehearsal',
-    descriptor: cs ? 'Zkusebni test-mainnet topologie ve 3 regionech' : '3-region test-mainnet rehearsal topology',
-  },
-  {
-    label: cs ? 'Sit' : 'Network',
-    value: 'V3 Test Mainnet',
-    descriptor: cs ? 'Verejna zkusebni linka v2.9.9 · runtime v2.9.8' : 'Public rehearsal line v2.9.9 · runtime v2.9.8',
-  },
+const heroStats = [
+  { label: 'Public Nodes', value: '1', descriptor: 'Prague public host + USA/Singapore internal lanes' },
+  { label: 'P2P Mesh', value: 'Controlled', descriptor: 'Public host + internal validator lanes' },
+  { label: 'Telemetry', value: '30s', descriptor: 'Auto-refresh interval' },
+  { label: 'Topology', value: 'Rehearsal', descriptor: '3-region test-mainnet rehearsal topology' },
+  { label: 'Network', value: 'V3 Test Mainnet', descriptor: 'Public rehearsal line v2.9.9 · runtime v2.9.8' },
 ];
 
 const getInfraFeatures = (cs: boolean) => [
   {
     icon: Server,
-    title: cs ? 'Praha (EU)' : 'Prague (EU)',
-    detail: cs ? 'Primarni seed node: chain, pool, web, explorer' : 'Primary seed node: chain, pool, web, explorer',
+    title: 'Prague (EU)',
+    detail: 'Primary seed node: chain, pool, web, explorer',
     ip: '91.98.122.165',
-    status: cs ? 'Primarni' : 'Primary',
+    status: 'Primary',
     color: 'text-emerald-400',
     border: 'border-emerald-500/30',
     bg: 'bg-emerald-500/5',
@@ -110,9 +90,9 @@ const getInfraFeatures = (cs: boolean) => [
   {
     icon: Server,
     title: 'USA (Hillsboro)',
-    detail: cs ? 'Interni validacni linka: chain, pool' : 'Internal validator lane: chain, pool',
+    detail: 'Internal validator lane: chain, pool',
     ip: '5.78.194.94',
-    status: cs ? 'Interni' : 'Internal',
+    status: 'Internal',
     color: 'text-zion-cyan',
     border: 'border-cyan-500/30',
     bg: 'bg-cyan-500/5',
@@ -120,9 +100,9 @@ const getInfraFeatures = (cs: boolean) => [
   {
     icon: Server,
     title: 'Singapore (APAC)',
-    detail: cs ? 'Interni validacni linka: chain, pool' : 'Internal validator lane: chain, pool',
+    detail: 'Internal validator lane: chain, pool',
     ip: '5.223.84.191',
-    status: cs ? 'Interni' : 'Internal',
+    status: 'Internal',
     color: 'text-zion-purple',
     border: 'border-purple-500/30',
     bg: 'bg-purple-500/5',
@@ -148,7 +128,7 @@ const getRuntimePanels = (cs: boolean) => [
     icon: Globe,
     label: 'P2P Peer',
     value: `${SITE_PRIMARY_HOST}:8333`,
-    detail: cs ? 'Primarni verejny peer s internimi linkami do USA a Singapuru' : 'Primary public peer with internal lanes to USA + Singapore',
+    detail: 'Primary public peer with internal lanes to USA + Singapore',
     accent: 'text-emerald-400',
   },
   {
@@ -188,27 +168,117 @@ const getGuideBlocks = (cs: boolean) => [
   },
   {
     icon: Globe,
-    title: cs ? 'P2P vrstva' : 'P2P Layer',
-    description: cs ? 'Nativni libp2p sit pro synchronizaci blockchainu na aktualni zkusebni topologii.' : 'Native libp2p network for blockchain synchronization on the current rehearsal topology.',
+    title: 'P2P Layer',
+    description: 'Native libp2p network for blockchain synchronization on the current rehearsal topology.',
     items: [
-      `${cs ? 'Verejny peer' : 'Public peer'}: ${SITE_PRIMARY_HOST}:8333`,
-      `${cs ? 'Interni linky' : 'Internal lanes'}: 5.78.194.94:8333, 5.223.84.191:8333`,
-      cs ? '1 verejny host + 2 interni validacni linky' : '1 public host + 2 internal validator lanes',
+      `Public peer: ${SITE_PRIMARY_HOST}:8333`,
+      'Internal lanes: 5.78.194.94:8333, 5.223.84.191:8333',
+      '1 public host + 2 internal validator lanes',
     ],
   },
 ];
 
-const getNetworkFacts = (cs: boolean) => [
-  { text: cs ? 'Nativni Rust P2P - libp2p sit' : 'Native Rust P2P - libp2p mesh', done: true },
-  { text: cs ? '1 verejny host + 2 interni validacni linky' : '1 public host + 2 internal validator lanes', done: true },
-  { text: cs ? 'Primarni stratum endpoint v Praze' : 'Primary stratum endpoint on Prague', done: true },
-  { text: cs ? 'JSON-RPC endpointy online (port 8443)' : 'JSON-RPC endpoints live (port 8443)', done: true },
-  { text: cs ? 'Docker kontejnery 24/7 s auto-restartem' : '24/7 Docker containers with auto-restart', done: true },
-  { text: cs ? 'LWMA DAA - cil 60s na blok' : 'LWMA DAA - target 60s block time', done: true },
-  { text: cs ? 'Archivovane dukazy o 3-region relay topologii zachovany' : 'Archived 3-region relay evidence retained', done: true },
-  { text: cs ? 'Prometheus + Grafana monitoring' : 'Prometheus + Grafana monitoring', done: true },
-  { text: cs ? 'Geo-distribuovana zkusebni topologie aktivni' : 'Geo-distributed rehearsal topology active', done: true },
+const networkFacts = [
+  { text: 'Native Rust P2P — libp2p mesh', done: true },
+  { text: '1 public host + 2 internal validator lanes', done: true },
+  { text: 'Primary stratum endpoint on Prague', done: true },
+  { text: 'JSON-RPC endpoints live (port 8443)', done: true },
+  { text: '24/7 Docker containers with auto-restart', done: true },
+  { text: 'LWMA DAA — target 60s block time', done: true },
+  { text: 'Archived 3-region relay evidence retained', done: true },
+  { text: 'Prometheus + Grafana monitoring', done: true },
+  { text: 'Geo-distributed rehearsal topology active', done: true },
 ];
+
+interface MonitoringSnapshot {
+  chainHeight: number | null;
+  coreUp: number | null;
+  poolUp: number | null;
+  poolSessions: number | null;
+  poolAcceptRate: number | null;
+  poolUptime: number | null;
+  templateFees: number | null;
+  load1: number | null;
+  memAvailable: number | null;
+  memTotal: number | null;
+  diskAvailable: number | null;
+  diskTotal: number | null;
+}
+
+function fmtMetric(n: number | null | undefined, digits = 0) {
+  if (n == null) return '—';
+  return digits > 0 ? n.toFixed(digits) : n.toLocaleString('en-US');
+}
+
+function fmtPct(n: number | null | undefined, digits = 1) {
+  if (n == null) return '—';
+  return `${n.toFixed(digits)}%`;
+}
+
+function fmtBytes(bytes: number | null | undefined) {
+  if (bytes == null) return '—';
+  if (bytes >= 1e12) return `${(bytes / 1e12).toFixed(1)} TB`;
+  if (bytes >= 1e9) return `${(bytes / 1e9).toFixed(1)} GB`;
+  if (bytes >= 1e6) return `${(bytes / 1e6).toFixed(1)} MB`;
+  return `${Math.round(bytes / 1024)} KB`;
+}
+
+function fmtUptime(secs: number | null | undefined) {
+  if (!secs) return '—';
+  const days = Math.floor(secs / 86400);
+  const hours = Math.floor((secs % 86400) / 3600);
+  const minutes = Math.floor((secs % 3600) / 60);
+  if (days > 0) return `${days}d ${hours}h`;
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  return `${minutes}m`;
+}
+
+async function metricValue(query: string): Promise<number | null> {
+  try {
+    const res = await fetch(`/api/metrics?query=${encodeURIComponent(query)}`, {
+      cache: 'no-store',
+      signal: AbortSignal.timeout(6000),
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    const first = json?.data?.result?.[0];
+    return first ? Number.parseFloat(first.value?.[1] ?? '') : null;
+  } catch {
+    return null;
+  }
+}
+
+async function fetchMonitoringSnapshot(): Promise<MonitoringSnapshot> {
+  const values = await Promise.all([
+    metricValue('zion_chain_height'),
+    metricValue('up{job="zion-core-prague"}'),
+    metricValue('up{job="zion-pool-prague"}'),
+    metricValue('zion_pool_active_sessions'),
+    metricValue('zion_pool_accept_rate_pct'),
+    metricValue('zion_pool_uptime_seconds'),
+    metricValue('zion_template_fees_zion'),
+    metricValue('node_load1'),
+    metricValue('node_memory_MemAvailable_bytes'),
+    metricValue('node_memory_MemTotal_bytes'),
+    metricValue('node_filesystem_avail_bytes{mountpoint="/"}'),
+    metricValue('node_filesystem_size_bytes{mountpoint="/"}'),
+  ]);
+
+  return {
+    chainHeight: values[0],
+    coreUp: values[1],
+    poolUp: values[2],
+    poolSessions: values[3],
+    poolAcceptRate: values[4],
+    poolUptime: values[5],
+    templateFees: values[6],
+    load1: values[7],
+    memAvailable: values[8],
+    memTotal: values[9],
+    diskAvailable: values[10],
+    diskTotal: values[11],
+  };
+}
 
 export default function NetworkPage() {
   const { lang } = useLang();
@@ -741,7 +811,7 @@ export default function NetworkPage() {
               : 'Native Rust infrastructure running 24/7 from the current primary host with internal quorum support. Connect your miner, run your own node, or explore the blockchain while historical rollout context stays preserved in docs.'}
           </p>
           <p className="mt-2 text-sm text-gray-300 max-w-2xl mx-auto">
-            {cs ? '89 % miner · 5 % humanitarian · 5 % fond Issobella · 1 % pool fee · Verejny launch zatim NO-GO' : '89% miner · 5% humanitarian · 5% Issobella fund · 1% pool fee · Public launch currently NO-GO'}
+            89% miner · 5% humanitarian · 5% Issobella fund · 1% pool fee · Public launch target 31.12.2026
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3 text-xs">
             {[

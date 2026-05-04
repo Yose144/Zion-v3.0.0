@@ -441,39 +441,9 @@ const sections: Section[] = [
     accentText: 'text-emerald-400',
     accentBorder: 'border-emerald-400/30',
     docs: [
-      { id: 'mainnet-plan', title: 'Public Launch Path', file: 'mainnet/README.md' },
-      { id: 'roadmap-lite', title: 'Roadmap Lite — launch readiness', file: 'roadmap-lite.md' },
+      { id: 'mainnet-plan', title: 'Public Launch Plan 2026', file: 'mainnet/README.md' },
+      { id: 'mainnet-genesis-book', title: 'Genesis Book of Awakening', file: 'mainnet/genesis-book.md' },
       { id: 'mainnet-checklist', title: 'Public Launch Gate Checklist (archive)', file: 'v2.9.7/mainnet-gate.md' },
-    ],
-  },
-  {
-    id: 'zion-cli',
-    title: 'ZION CLI',
-    icon: LayoutList,
-    accentText: 'text-zion-cyan',
-    accentBorder: 'border-zion-cyan/30',
-    docs: [
-      { id: 'cli-quickstart', title: 'ZION CLI Quickstart (10 min)', file: 'mainnet/cli-quickstart.md' },
-      { id: 'cli-guide', title: 'ZION CLI Guide', file: 'mainnet/cli-guide.md' },
-      { id: 'cli-glossary', title: 'ZION CLI Glossary', file: 'mainnet/cli-glossary.md' },
-      { id: 'cli-faq', title: 'ZION CLI FAQ', file: 'mainnet/cli-faq.md' },
-      { id: 'cli-reference', title: 'ZION CLI Reference', file: 'mainnet/cli-reference.md' },
-      { id: 'cli-troubleshooting', title: 'ZION CLI Troubleshooting', file: 'mainnet/cli-troubleshooting.md' },
-      { id: 'cli-deploy-playbook', title: 'ZION CLI Deploy Playbook', file: 'mainnet/cli-deploy-playbook.md' },
-    ],
-  },
-  {
-    id: 'books',
-    title: 'Books',
-    icon: Book,
-    accentText: 'text-amber-300',
-    accentBorder: 'border-amber-300/30',
-    docs: [
-      { id: 'book-genesis', title: 'Genesis — Book of Awakening', file: 'mainnet/genesis-book.md', href: '/genesis' },
-      { id: 'book-ekam-full', title: 'Ekam Deeksha — Full Book', file: 'books/ekam-deeksha/BOOK-FULL-VERSION.md' },
-      { id: 'book-qr', title: 'Kvantová Revoluce', file: 'books/quantum-revolution.md' },
-      { id: 'book-terranova', title: 'Terra Nova — Zlatý Kompas Nové Země', file: '', href: '/terranova' },
-      { id: 'book-ekam-ucebnice', title: 'Učebnice Ekam (historie)', file: 'books/ekam-deeksha/UCEBNICE-FULL-VERSION.md' },
     ],
   },
   {
@@ -488,7 +458,7 @@ const sections: Section[] = [
   },
   {
     id: 'ai-native',
-    title: 'AI / Research Archive',
+    title: 'AI Native',
     icon: Sparkles,
     accentText: 'text-purple-400',
     accentBorder: 'border-purple-400/30',
@@ -529,7 +499,7 @@ export default function DocsPage() {
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [expandedVersions, setExpandedVersions] = useState<Record<string, boolean>>({ 'v2.9.9': true, 'v2.9.8': false, 'v2.9.7': false, 'v2.9.6': true, 'v2.9.5': false, 'v2.9': false, 'v2.8.x': false, 'live-ops': true, 'release-lineage': true, 'ai-native': false, 'whitepaper': true, 'architecture': false, 'mainnet': true, 'books': true, 'listing': false, 'legal': false });
+  const [expandedVersions, setExpandedVersions] = useState<Record<string, boolean>>({ 'v2.9.5': false, 'v2.9.6': true, 'v2.9': false, 'v2.8.x': false, 'live-ops': true, 'ai-native': true, 'whitepaper': false, 'architecture': false, 'mainnet': false, 'listing': false, 'legal': false });
   const [sidebarTab, setSidebarTab] = useState<'resources' | 'history'>('resources');
   const { lang } = useLang();
   const currentLang = lang === 'cs' ? 'cs' : 'en';
@@ -679,7 +649,7 @@ export default function DocsPage() {
               {tr('docs', 'subtitle', lang)}
             </p>
             <div className="mx-auto mb-8 max-w-3xl rounded-2xl border border-emerald-400/20 bg-emerald-400/5 px-5 py-4 text-left text-sm text-gray-300">
-              {tx(docsPageCopy.overviewNotice, currentLang)}
+              Současná veřejná linka běží jako kontrolovaný V3 test mainnet na release linii v2.9.9 Pure Code nad kanonickou runtime cestou v2.9.8 Deeksha/Ekam. Sekce Live Index na /docs#live-index teď slouží jako kanonický vstup pro síťový snapshot, repo baseline 2.9.6, aktuální release/runtime mapu a launch blockers.
             </div>
             <div className="flex items-center justify-center gap-3 mb-8">
               {primaryVersions.map(v => (
