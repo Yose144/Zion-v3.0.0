@@ -1,4 +1,24 @@
-import { redirect } from 'next/navigation';
+'use client';
+
+import { useState } from 'react';
+import {
+  Activity,
+  Calendar,
+  CheckCircle2,
+  Circle,
+  Clock,
+  Heart,
+  Layers,
+  Link2,
+  Rocket,
+  Server,
+  Shield,
+  Sparkles,
+  Target,
+  TrendingUp,
+  Users,
+  Zap,
+} from 'lucide-react';
 
 export default function Roadmap295Page() {
   const [activeQuarter, setActiveQuarter] = useState<string | null>(null);
