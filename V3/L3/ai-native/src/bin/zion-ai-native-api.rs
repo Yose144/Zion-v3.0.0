@@ -223,7 +223,7 @@ fn builtin_rag_documents() -> Vec<(String, String)> {
         ),
         (
             "terranova/seal6".to_string(),
-            "Pečeť VI drží konstanty TX_HASH_V2_ACTIVATION_HEIGHT a BODY_ROOT_V2_ACTIVATION_HEIGHT nastavené na u64::MAX. To představuje dormant kód, který čeká na aktivaci hard forkem po dohodě Guardians.".to_string(),
+            "TX_HASH_V2_ACTIVATION_HEIGHT a BODY_ROOT_V2_ACTIVATION_HEIGHT: v produkčním buildu (bez feature testnet_fork_rehearsal) jsou **0** — nový řetězec od genesis používá tx-hash v2 a BLAKE3 Merkle body root od prvního bloku. Rehearsal testnet používá cargo feature `testnet_fork_rehearsal` a sdílenou konečnou výšku v deeksha.rs. Další konsensusové pečetě (např. CHv4.2 dual-spin) mohou zůstat u64::MAX dokud je neaktivuje governance.".to_string(),
         ),
         (
             "terranova/dormant".to_string(),
