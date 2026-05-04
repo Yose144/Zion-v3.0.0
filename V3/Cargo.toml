@@ -11,6 +11,8 @@ members = [
     "L3/ncl",
     "L3/warp",
     "L3/ai-native",
+    "sdk",
+    "cli",
 ]
 resolver = "2"
 
