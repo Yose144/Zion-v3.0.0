@@ -37,6 +37,7 @@ pub enum MemoryEventKind {
     WarpModeChanged,
     AgentSpawned,
     AgentTerminated,
+    Evolution,
     RewardReceived,
     ErrorRecovered,
     Custom(String),
@@ -230,6 +231,21 @@ impl AgentMemory {
                 .unwrap_or(std::cmp::Ordering::Equal)
         });
         hits
+    }
+
+    /// Return all memories from both tiers (newest first).
+    pub fn recall_all(&self) -> Vec<MemoryEntry> {
+        let mut all = self.long_term.clone();
+        all.extend(self.short_term.clone());
+        all.sort_by(|a, b| b.timestamp.cmp(&a.timestamp));
+        all
+    }
+
+    /// Clear all memories.
+    pub fn flush(&mut self) {
+        self.short_term.clear();
+        self.long_term.clear();
+        self.total_recorded = 0;
     }
 
     // ─── Stats ────────────────────────────────────────────────────────────
