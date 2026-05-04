@@ -29,6 +29,26 @@ pub struct Config {
     pub bridge: BridgeConfig,
     #[serde(default)]
     pub dao: DaoConfig,
+    #[serde(default)]
+    pub cli: CliConfig,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CliConfig {
+    #[serde(default = "default_true")]
+    pub auto_update_check: bool,
+}
+
+fn default_true() -> bool {
+    true
+}
+
+impl Default for CliConfig {
+    fn default() -> Self {
+        Self {
+            auto_update_check: true,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -148,6 +168,7 @@ impl Default for Config {
             deploy: DeployConfig::default(),
             bridge: BridgeConfig::default(),
             dao: DaoConfig::default(),
+            cli: CliConfig::default(),
         }
     }
 }
@@ -199,7 +220,6 @@ pub fn set_value(key: &str, value: &str) -> Result<()> {
         ["miner", "threads"] => cfg.miner.threads = value.into(),
         ["miner", "backend"] => cfg.miner.backend = value.into(),
         ["miner", "profile"] => cfg.miner.profile = value.into(),
-        ["miner", "btc_wallet"] => cfg.miner.btc_wallet = value.into(),
         ["agent", "url"] => cfg.agent.url = value.into(),
         ["agent", "model"] => cfg.agent.model = value.into(),
         ["deploy", "default_server"] => cfg.deploy.default_server = value.into(),
@@ -207,7 +227,8 @@ pub fn set_value(key: &str, value: &str) -> Result<()> {
         ["deploy", "ssh_user"] => cfg.deploy.ssh_user = value.into(),
         ["bridge", "port"] => cfg.bridge.port = value.parse()?,
         ["dao", "port"] => cfg.dao.port = value.parse()?,
-        _ => anyhow::bail!("Unknown config key: {}. Valid keys: node.rpc_host, node.rpc_port, node.p2p_port, pool.host, pool.port, miner.wallet, miner.btc_wallet, miner.threads, miner.backend, miner.profile, agent.url, agent.model, deploy.ssh_key, deploy.ssh_user, deploy.default_server, bridge.port, dao.port", key),
+        ["cli", "auto_update_check"] => cfg.cli.auto_update_check = value.parse()?,
+        _ => anyhow::bail!("Unknown config key: {}. Valid keys: node.rpc_host, node.rpc_port, node.p2p_port, pool.host, pool.port, miner.wallet, miner.btc_wallet, miner.threads, miner.backend, miner.profile, agent.url, agent.model, deploy.ssh_key, deploy.ssh_user, deploy.default_server, bridge.port, dao.port, cli.auto_update_check", key),
     }
     save(&cfg)?;
     println!("✓ {} = {}", key, value);

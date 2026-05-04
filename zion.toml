@@ -1,0 +1,30 @@
+[node]
+rpc_host = "91.98.122.165"
+rpc_port = 8443
+p2p_port = 8334
+
+[pool]
+host = "91.98.122.165"
+port = 3333
+
+[miner]
+wallet = "zion16853d8r885l4g4u8p8t7v5n8u6v7e0f445dr3f8"
+btc_wallet = ""
+threads = "auto"
+backend = "auto"
+profile = "pool"
+
+[agent]
+url = "https://zionterranova.com/agent"
+model = "hiranyagarbha-v1"
+
+[deploy]
+default_server = "prague"
+ssh_key = "~/.ssh/zion_hetzner_key"
+ssh_user = "root"
+
+[bridge]
+port = 8888
+
+[dao]
+port = 8081

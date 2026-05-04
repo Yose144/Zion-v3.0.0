@@ -133,6 +133,11 @@ impl VectorStore {
     pub fn ids(&self) -> Vec<&str> {
         self.documents.iter().map(|d| d.id.as_str()).collect()
     }
+
+    /// Vrátí všechny dokumenty v store.
+    pub fn all(&self) -> &[RagDocument] {
+        &self.documents
+    }
 }
 
 // ─── Cosine similarity ───────────────────────────────────────────────────────
