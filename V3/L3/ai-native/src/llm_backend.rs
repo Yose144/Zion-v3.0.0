@@ -472,7 +472,7 @@ impl RemoteHttpBackend {
         api_key: Option<String>,
     ) -> Result<Self, LlmError> {
         let client = reqwest::blocking::Client::builder()
-            .timeout(std::time::Duration::from_secs(120))
+            .timeout(std::time::Duration::from_secs(300))
             .build()
             .map_err(|e| LlmError::InternalError(e.to_string()))?;
 
