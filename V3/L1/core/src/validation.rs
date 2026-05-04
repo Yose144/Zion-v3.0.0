@@ -583,13 +583,13 @@ pub fn validate_block(
 mod tests {
     use super::*;
     use crate::crypto::{derive_address, generate_keypair, sign};
-    use crate::tx::{TxInput, TxOutput};
+    use crate::tx::{TxInput, TxOutput, TX_HASH_V2_VERSION};
 
     fn make_coinbase(height: u64) -> Transaction {
         let reward = emission::block_subsidy(height);
         let mut tx = Transaction {
             id: [0u8; 32],
-            version: 1,
+            version: TX_HASH_V2_VERSION,
             inputs: vec![],
             outputs: vec![TxOutput {
                 amount: reward,
@@ -608,7 +608,7 @@ mod tests {
         let addr = derive_address(vk.as_bytes());
         let mut tx = Transaction {
             id: [0u8; 32],
-            version: 1,
+            version: TX_HASH_V2_VERSION,
             inputs: vec![TxInput {
                 prev_tx_hash: prev_hash,
                 output_index: 0,
@@ -818,7 +818,7 @@ mod tests {
         let (_, vk) = generate_keypair();
         let tx = Transaction {
             id: [0u8; 32],
-            version: 1,
+            version: TX_HASH_V2_VERSION,
             inputs: vec![TxInput {
                 prev_tx_hash: [0xFF; 32],
                 output_index: 0,
@@ -904,7 +904,7 @@ mod tests {
         let (_, pub_key) = generate_keypair();
         let tx = Transaction {
             id: [0xEE; 32],
-            version: 1,
+            version: TX_HASH_V2_VERSION,
             inputs: vec![TxInput {
                 prev_tx_hash: [0xAA; 32],
                 output_index: 0,
@@ -962,7 +962,7 @@ mod tests {
         let (_, pub_key) = generate_keypair();
         let tx = Transaction {
             id: [0xFF; 32],
-            version: 1,
+            version: TX_HASH_V2_VERSION,
             inputs: vec![TxInput {
                 prev_tx_hash: [0xBB; 32],
                 output_index: 0,
@@ -1130,7 +1130,7 @@ mod tests {
         let addr = derive_address(vk.as_bytes());
         let mut tx = Transaction {
             id: [0u8; 32],
-            version: 1,
+            version: TX_HASH_V2_VERSION,
             inputs: vec![
                 TxInput {
                     prev_tx_hash: [0xAA; 32],
@@ -1184,7 +1184,7 @@ mod tests {
         let half_max = (u64::MAX / 2) + 1; // 0x8000_0000_0000_0000
         let mut tx = Transaction {
             id: [0u8; 32],
-            version: 1,
+            version: TX_HASH_V2_VERSION,
             inputs: vec![TxInput {
                 prev_tx_hash: [0xAA; 32],
                 output_index: 0,

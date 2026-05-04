@@ -342,9 +342,8 @@ pub(crate) fn validate_accepted_peer_block(
     let mut seen_utxo_inputs: HashSet<([u8; 32], u32)> = HashSet::new();
     // ── TX hash v2 hard fork (audit §3.2) ─────────────────────────────
     //
-    // Once `TX_HASH_V2_ACTIVATION_HEIGHT` is flipped from `u64::MAX` to a
-    // coordinated mainnet height, every UTXO transaction in blocks at or
-    // above that height MUST carry `version >= TX_HASH_V2_VERSION`.
+    // With `TX_HASH_V2_ACTIVATION_HEIGHT` at genesis (`0`), every UTXO
+    // transaction in blocks at height ≥ 1 MUST carry `version >= TX_HASH_V2_VERSION`.
     // Coinbase / bridge-unlock are included — templates & RPC builders
     // must emit v2 alongside this gate (`build_template`, `insert_utxo_*`,
     // `build_bridge_unlock_transaction`).

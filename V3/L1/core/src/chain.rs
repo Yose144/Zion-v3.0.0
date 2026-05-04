@@ -491,7 +491,7 @@ mod tests {
         use crate::tx::{Transaction, TxInput, TxOutput};
         let tx = Transaction {
             id: hash(50),
-            version: 1,
+            version: crate::tx::TX_HASH_V2_VERSION,
             inputs: vec![TxInput {
                 prev_tx_hash: hash(10),
                 output_index: 0,
