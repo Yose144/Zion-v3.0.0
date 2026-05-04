@@ -11,9 +11,6 @@ import {
   Package,
   Monitor,
   ExternalLink,
-  Server,
-  Wallet,
-  Zap,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { SITE_POOL_PRIMARY, SITE_RELEASE_LABEL, SITE_VERSION } from '@/lib/site';
@@ -32,95 +29,31 @@ const getDesktopAgentFeatures = (cs: boolean) => [
   cs ? 'Dostupne pro Windows, macOS a Linux' : 'Available for Windows, macOS & Linux',
 ];
 
-const getSteps = (cs: boolean) => [
+const getCliQuickstartSteps = (cs: boolean) => [
   {
-    name: 'Miner',
-    id: 'miner',
-    desc: 'CPU/GPU miner with Cosmic Harmony v3 — connect to pool and start earning ZION',
-    icon: <Zap className="h-6 w-6" />,
-    prefix: 'zion-miner',
-    color: 'text-zion-gold',
-    quickCmd: `zion-miner --pool stratum+tcp://${SITE_POOL_PRIMARY} --wallet YOUR_ADDRESS`,
-  },
-  {
-    name: 'Wallet',
-    id: 'wallet',
-    desc: 'Generate wallets, check balance, send transactions — Ed25519 + BIP39 mnemonic',
-    icon: <Wallet className="h-6 w-6" />,
-    prefix: 'zion-wallet',
-    color: 'text-zion-cyan',
-    quickCmd: 'zion-wallet gen-mnemonic --out my-wallet.json --print',
-  },
-  {
-    name: 'Node',
-    id: 'node',
-    desc: 'Full blockchain node — verify transactions, serve RPC, support decentralization',
-    icon: <Server className="h-6 w-6" />,
-    prefix: 'zion-node',
-    color: 'text-zion-purple',
-    quickCmd: 'zion-node --network mainnet --rpc-port 8443 --p2p-port 8333',
-  },
-];
-
-const desktopAgentFeatures = [
-  'GUI Dashboard with real-time hashrate & balance',
-  'One-click mining — no terminal needed',
-  'Built-in wallet generator & manager',
-  'Auto-updates & system tray integration',
-  'Remote monitoring & Gaming mode',
-  'Available for Windows, macOS & Linux',
-];
-
-const faqItems = [
-  {
-    q: 'Do I need a Node to mine?',
-    a: `No. Connect your miner to the public pool (${SITE_POOL_PRIMARY}). The pool handles blockchain communication. A node is only needed if you want to verify transactions yourself or run your own pool.`,
-  },
-  {
-    q: 'How do I create a wallet?',
-    a: 'Download the Wallet CLI and run: zion-wallet gen-mnemonic --out my-wallet.json --print. Write down the 24 words on paper — they are your backup. Never share them online.',
-  },
-  {
-    q: 'Windows Defender blocks the binary?',
-    a: 'Click "More info" → "Run anyway". The binaries are open-source (MIT license) but unsigned. You can also add C:\\ZION\\ to exclusions in Windows Security.',
-  },
-  {
-    q: 'macOS says "cannot be opened"?',
-    a: 'Run: xattr -d com.apple.quarantine zion-miner-macos-arm64 — or go to System Settings → Privacy & Security → Allow Anyway.',
-  },
-  {
-    q: 'What is Consciousness Mining?',
-    a: 'Your consciousness level (PHYSICAL → COSMIC) multiplies block rewards up to 15×. Level up by consistent mining, discovering blocks, and contributing to network health.',
-  },
-  {
-    q: 'Can I mine on Raspberry Pi?',
-    a: 'Yes! Download the linux-arm64 version. RPi 4/5 works well. Hashrate will be lower than desktop CPUs but fully functional.',
-  },
-];
-
-const steps = [
-  {
-    title: '1. Create Wallet',
+    title: cs ? '1. Vytvoř peněženku' : '1. Create Wallet',
     items: [
-      cs ? 'Stahnete zion-wallet pro svuj OS' : 'Download zion-wallet for your OS',
+      cs ? 'Stáhni zion-wallet pro svůj OS' : 'Download zion-wallet for your OS',
       'Run: zion-wallet gen-mnemonic --out my-wallet.json --print',
-      cs ? 'Zapiste si 24 slov na papir — to je vase zaloha!' : 'Write down 24 words on paper — this is your backup!',
+      cs ? 'Zapiš si 24 slov na papír — to je tvá záloha!' : 'Write down 24 words on paper — this is your backup!',
     ],
   },
   {
-    title: cs ? '2. Spust tezbu' : '2. Start Mining',
+    title: cs ? '2. Spusť těžbu' : '2. Start Mining',
     items: [
-      cs ? 'Stahnete zion-miner pro svuj OS' : 'Download zion-miner for your OS',
+      cs ? 'Stáhni zion-miner pro svůj OS' : 'Download zion-miner for your OS',
       `Run: zion-miner --pool stratum+tcp://${SITE_POOL_PRIMARY} --wallet YOUR_ADDRESS`,
-      cs ? 'Sledujte hashrate a prijate shares v konzoli' : 'Watch hashrate & accepted shares in console',
+      cs ? 'Sleduj hashrate a přijaté shares v konzoli' : 'Watch hashrate & accepted shares in console',
     ],
   },
   {
-    title: cs ? '3. Zkontroluj zustatek' : '3. Check Balance',
+    title: cs ? '3. Zkontroluj zůstatek' : '3. Check Balance',
     items: [
       'Run: zion-wallet balance --address YOUR_ADDRESS --node https://node.zionterranova.com',
-      cs ? 'Nebo navstivte Explorer na zionterranova.com/explorer' : 'Or visit the Explorer at zionterranova.com/explorer',
-      cs ? 'Poslat ZION: zion-wallet send --wallet my-wallet.json --to RECIPIENT --amount 100' : 'Send ZION: zion-wallet send --wallet my-wallet.json --to RECIPIENT --amount 100',
+      cs ? 'Nebo navštiv Explorer na zionterranova.com/explorer' : 'Or visit the Explorer at zionterranova.com/explorer',
+      cs
+        ? 'Poslat ZION: zion-wallet send --wallet my-wallet.json --to RECIPIENT --amount 100'
+        : 'Send ZION: zion-wallet send --wallet my-wallet.json --to RECIPIENT --amount 100',
     ],
   },
 ];
@@ -131,7 +64,7 @@ export default function DownloadPage() {
   const { lang } = useLang();
   const cs = lang === 'cs';
   const desktopAgentFeatures = getDesktopAgentFeatures(cs);
-  const steps = getSteps(cs);
+  const cliQuickstartSteps = getCliQuickstartSteps(cs);
 
   return (
     <div className="zion-shell min-h-screen pt-28 md:pt-32 pb-24 overflow-x-hidden">
@@ -282,7 +215,7 @@ export default function DownloadPage() {
             <h2 className="text-3xl font-semibold text-white">{cs ? '3 kroky k tezbe' : '3 steps to mining'}</h2>
           </div>
           <div className="grid gap-6 md:grid-cols-3">
-            {steps.map((step) => (
+            {cliQuickstartSteps.map((step) => (
               <div key={step.title} className="rounded-3xl border border-white/10 bg-black/30 p-6">
                 <div className="flex items-center gap-3">
                   <Shield className="h-5 w-5 text-zion-cyan" />
