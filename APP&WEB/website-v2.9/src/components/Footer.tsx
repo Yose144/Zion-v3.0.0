@@ -113,7 +113,7 @@ export default function Footer() {
           </p>
           <div className="flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-xs text-gray-500">{tr('footer', 'test_mainnet_active', lang)}</span>
+            <span className="text-xs text-gray-500">Test Mainnet Active</span>
           </div>
         </div>
       </div>

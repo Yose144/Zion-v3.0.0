@@ -18,7 +18,6 @@
 ///   BITCOIN_NETWORK      — "mainnet" | "testnet" | "signet" (default: "mainnet")
 use crate::error::{WarpError, WarpResult};
 
-use bitcoin::secp256k1::{Message, Secp256k1};
 use bitcoin::{
     absolute::LockTime,
     consensus::encode::serialize,
@@ -27,6 +26,7 @@ use bitcoin::{
     Address, Amount, Network, OutPoint, PrivateKey, PublicKey, ScriptBuf, Sequence, Transaction,
     TxIn, TxOut, Txid, Witness,
 };
+use bitcoin::secp256k1::{Message, Secp256k1};
 use serde::Deserialize;
 use std::str::FromStr;
 use tracing::{debug, info};
@@ -103,12 +103,7 @@ impl BtcSigner {
         })?;
         let public_key = private_key.public_key(&secp);
         let address = p2wpkh_address(&public_key, network)?;
-        Ok(Self {
-            private_key,
-            public_key,
-            address,
-            network,
-        })
+        Ok(Self { private_key, public_key, address, network })
     }
 
     /// The relay wallet's P2WPKH address (used for UTXO lookup).
@@ -149,11 +144,7 @@ impl BtcSigner {
 
         debug!(
             "[WARP][bitcoin] {} UTXOs selected, total={} sats, amount={}, fee={}, change={}",
-            selected.len(),
-            total_in,
-            amount_sats,
-            fee,
-            change
+            selected.len(), total_in, amount_sats, fee, change
         );
 
         // 3. Parse recipient address
@@ -169,13 +160,7 @@ impl BtcSigner {
             })?;
 
         // 4. Build unsigned transaction
-        let mut tx = build_unsigned_tx(
-            &selected,
-            &recipient_addr,
-            amount_sats,
-            change,
-            &self.address,
-        )?;
+        let mut tx = build_unsigned_tx(&selected, &recipient_addr, amount_sats, change, &self.address)?;
 
         // 5. Sign each input
         let secp = Secp256k1::new();
@@ -184,17 +169,15 @@ impl BtcSigner {
         for (i, utxo) in selected.iter().enumerate() {
             let sighash = {
                 let mut cache = SighashCache::new(&tx);
-                cache
-                    .p2wpkh_signature_hash(
-                        i,
-                        &relay_spk,
-                        Amount::from_sat(utxo.value),
-                        EcdsaSighashType::All,
-                    )
-                    .map_err(|e| WarpError::AdapterError {
-                        chain: "bitcoin".into(),
-                        reason: format!("Sighash error at input {}: {}", i, e),
-                    })?
+                cache.p2wpkh_signature_hash(
+                    i,
+                    &relay_spk,
+                    Amount::from_sat(utxo.value),
+                    EcdsaSighashType::All,
+                ).map_err(|e| WarpError::AdapterError {
+                    chain: "bitcoin".into(),
+                    reason: format!("Sighash error at input {}: {}", i, e),
+                })?
             };
 
             let msg = Message::from_digest_slice(sighash.as_ref()).map_err(|e| {
@@ -209,21 +192,15 @@ impl BtcSigner {
             sig_bytes.push(EcdsaSighashType::All.to_u32() as u8);
 
             let pubkey_bytes = self.public_key.to_bytes();
-            tx.input[i].witness =
-                Witness::from_slice(&[sig_bytes.as_slice(), pubkey_bytes.as_slice()]);
+            tx.input[i].witness = Witness::from_slice(&[sig_bytes.as_slice(), pubkey_bytes.as_slice()]);
         }
 
         // 6. Serialize and broadcast
         let raw = serialize(&tx);
         let raw_hex = hex::encode(&raw);
 
-        info!(
-            "[WARP][bitcoin] Broadcasting TX {} bytes, {} inputs, {} + {} sats",
-            raw.len(),
-            selected.len(),
-            amount_sats,
-            fee
-        );
+        info!("[WARP][bitcoin] Broadcasting TX {} bytes, {} inputs, {} + {} sats",
+            raw.len(), selected.len(), amount_sats, fee);
 
         let txid = broadcast_tx(client, api_url, &raw_hex).await?;
 
@@ -239,9 +216,9 @@ impl BtcSigner {
 fn parse_network(s: &str) -> Network {
     match s {
         "testnet" => Network::Testnet,
-        "signet" => Network::Signet,
+        "signet"  => Network::Signet,
         "regtest" => Network::Regtest,
-        _ => Network::Bitcoin,
+        _         => Network::Bitcoin,
     }
 }
 
@@ -252,12 +229,10 @@ fn p2wpkh_address(pubkey: &PublicKey, network: Network) -> WarpResult<Address> {
             reason: "BTC relay key must be compressed (WIF with 'c' prefix or length=52)".into(),
         });
     }
-    let wpkh = pubkey
-        .wpubkey_hash()
-        .ok_or_else(|| WarpError::AdapterError {
-            chain: "bitcoin".into(),
-            reason: "Failed to derive P2WPKH hash from public key".into(),
-        })?;
+    let wpkh = pubkey.wpubkey_hash().ok_or_else(|| WarpError::AdapterError {
+        chain: "bitcoin".into(),
+        reason: "Failed to derive P2WPKH hash from public key".into(),
+    })?;
     let spk = ScriptBuf::new_p2wpkh(&wpkh);
     Address::from_script(&spk, network).map_err(|e| WarpError::AdapterError {
         chain: "bitcoin".into(),
@@ -275,16 +250,10 @@ async fn fetch_utxos(
         .get(&url)
         .send()
         .await
-        .map_err(|e| WarpError::AdapterError {
-            chain: "bitcoin".into(),
-            reason: e.to_string(),
-        })?
+        .map_err(|e| WarpError::AdapterError { chain: "bitcoin".into(), reason: e.to_string() })?
         .json()
         .await
-        .map_err(|e| WarpError::AdapterError {
-            chain: "bitcoin".into(),
-            reason: e.to_string(),
-        })?;
+        .map_err(|e| WarpError::AdapterError { chain: "bitcoin".into(), reason: e.to_string() })?;
     Ok(utxos)
 }
 
@@ -304,11 +273,7 @@ fn select_utxos(
         selected.push(utxo.clone());
         total += utxo.value;
         // Estimate fee: n inputs, 2 outputs (recipient + change); or 1 if change < dust
-        let n_out = if total > amount + feerate * estimate_vbytes(selected.len(), 1) + 546 {
-            2
-        } else {
-            1
-        };
+        let n_out = if total > amount + feerate * estimate_vbytes(selected.len(), 1) + 546 { 2 } else { 1 };
         let fee = feerate * estimate_vbytes(selected.len(), n_out);
         if total >= amount + fee {
             return Ok((selected, fee));
@@ -333,23 +298,22 @@ fn build_unsigned_tx(
 ) -> WarpResult<Transaction> {
     const DUST: u64 = 546; // P2WPKH dust threshold
 
-    let inputs: Vec<TxIn> = selected
-        .iter()
-        .map(|u| {
-            let txid = Txid::from_str(&u.txid).expect("valid txid");
-            TxIn {
-                previous_output: OutPoint::new(txid, u.vout),
-                script_sig: ScriptBuf::default(),
-                sequence: Sequence::MAX,
-                witness: Witness::default(),
-            }
-        })
-        .collect();
+    let inputs: Vec<TxIn> = selected.iter().map(|u| {
+        let txid = Txid::from_str(&u.txid).expect("valid txid");
+        TxIn {
+            previous_output: OutPoint::new(txid, u.vout),
+            script_sig: ScriptBuf::default(),
+            sequence: Sequence::MAX,
+            witness: Witness::default(),
+        }
+    }).collect();
 
-    let mut outputs = vec![TxOut {
-        value: Amount::from_sat(amount),
-        script_pubkey: recipient.script_pubkey(),
-    }];
+    let mut outputs = vec![
+        TxOut {
+            value: Amount::from_sat(amount),
+            script_pubkey: recipient.script_pubkey(),
+        }
+    ];
 
     // Add change output only if above dust limit
     if change >= DUST {
@@ -379,10 +343,7 @@ async fn broadcast_tx(
         .body(raw_hex.to_string())
         .send()
         .await
-        .map_err(|e| WarpError::AdapterError {
-            chain: "bitcoin".into(),
-            reason: e.to_string(),
-        })?;
+        .map_err(|e| WarpError::AdapterError { chain: "bitcoin".into(), reason: e.to_string() })?;
 
     let status = resp.status();
     let body = resp.text().await.unwrap_or_default();
@@ -425,11 +386,7 @@ mod tests {
     fn test_estimate_vbytes_1in_2out() {
         // 1 P2WPKH input, 2 outputs: ~189 vbytes
         let v = estimate_vbytes(1, 2);
-        assert!(
-            v >= 140 && v <= 200,
-            "vbytes={} out of expected range 140-200",
-            v
-        );
+        assert!(v >= 140 && v <= 200, "vbytes={} out of expected range 140-200", v);
     }
 
     #[test]
@@ -446,11 +403,7 @@ mod tests {
         let signer = BtcSigner::from_wif(wif, Network::Bitcoin).unwrap();
         let addr = signer.address().to_string();
         // Compressed WIF → should produce a valid bech32 P2WPKH address
-        assert!(
-            addr.starts_with("bc1q"),
-            "Expected bech32 addr, got: {}",
-            addr
-        );
+        assert!(addr.starts_with("bc1q"), "Expected bech32 addr, got: {}", addr);
     }
 
     #[test]
@@ -461,18 +414,8 @@ mod tests {
     #[test]
     fn test_select_utxos_sufficient() {
         let utxos = vec![
-            MempoolUtxo {
-                txid: "aaaa".into(),
-                vout: 0,
-                value: 500_000,
-                status: Some(UtxoStatus { confirmed: true }),
-            },
-            MempoolUtxo {
-                txid: "bbbb".into(),
-                vout: 0,
-                value: 200_000,
-                status: Some(UtxoStatus { confirmed: true }),
-            },
+            MempoolUtxo { txid: "aaaa".into(), vout: 0, value: 500_000, status: Some(UtxoStatus { confirmed: true }) },
+            MempoolUtxo { txid: "bbbb".into(), vout: 0, value: 200_000, status: Some(UtxoStatus { confirmed: true }) },
         ];
         let (selected, fee) = select_utxos(&utxos, 100_000, 5).unwrap();
         assert_eq!(selected.len(), 1); // 500k is enough
@@ -481,36 +424,18 @@ mod tests {
 
     #[test]
     fn test_select_utxos_insufficient() {
-        let utxos = vec![MempoolUtxo {
-            txid: "aaaa".into(),
-            vout: 0,
-            value: 100,
-            status: Some(UtxoStatus { confirmed: true }),
-        }];
+        let utxos = vec![
+            MempoolUtxo { txid: "aaaa".into(), vout: 0, value: 100, status: Some(UtxoStatus { confirmed: true }) },
+        ];
         assert!(select_utxos(&utxos, 100_000, 5).is_err());
     }
 
     #[test]
     fn test_select_utxos_multi_input() {
         let utxos = vec![
-            MempoolUtxo {
-                txid: "a".into(),
-                vout: 0,
-                value: 50_000,
-                status: Some(UtxoStatus { confirmed: true }),
-            },
-            MempoolUtxo {
-                txid: "b".into(),
-                vout: 0,
-                value: 50_000,
-                status: Some(UtxoStatus { confirmed: true }),
-            },
-            MempoolUtxo {
-                txid: "c".into(),
-                vout: 0,
-                value: 50_000,
-                status: Some(UtxoStatus { confirmed: true }),
-            },
+            MempoolUtxo { txid: "a".into(), vout: 0, value: 50_000, status: Some(UtxoStatus { confirmed: true }) },
+            MempoolUtxo { txid: "b".into(), vout: 0, value: 50_000, status: Some(UtxoStatus { confirmed: true }) },
+            MempoolUtxo { txid: "c".into(), vout: 0, value: 50_000, status: Some(UtxoStatus { confirmed: true }) },
         ];
         let (selected, fee) = select_utxos(&utxos, 90_000, 5).unwrap();
         assert!(selected.len() <= 3);

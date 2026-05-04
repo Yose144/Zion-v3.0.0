@@ -11,7 +11,6 @@ members = [
     "L3/ncl",
     "L3/warp",
     "L3/ai-native",
-    "cli",
 ]
 resolver = "2"
 
@@ -49,18 +48,14 @@ strip = "symbols"
 
 # Optimize PoW-heavy crates in dev/test builds so mining tests finish
 # in reasonable time (Ekam Deeksha v2 scratchpad ops are painfully slow at opt0).
-# Bumped 2026-05-02: zion-cosmic-harmony to opt=3 so `find_valid_nonce` and
-# `mine_one_block` run at near-release speed in `cargo test --lib` — without
-# this many `tests::*` and `tests::e2e_*` cases hang for >5 min in debug,
-# forcing them under `#[ignore]`.
 [profile.dev.package.zion-cosmic-harmony]
-opt-level = 3
+opt-level = 2
 
 [profile.dev.package.zion-core]
 opt-level = 1
 
 [profile.test.package.zion-cosmic-harmony]
-opt-level = 3
+opt-level = 2
 
 [profile.test.package.zion-core]
 opt-level = 1

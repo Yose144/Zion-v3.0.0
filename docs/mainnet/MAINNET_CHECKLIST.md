@@ -2,7 +2,7 @@
 
 **Comprehensive checklist for MainNet readiness**
 
-> 🔄 Aktualizace: 20. 4. 2026 — sladěno s active Prague-only runtime
+> 🔄 Aktualizace: 28. 3. 2026 — checklist doplněn o ověřený V3 fee-split rollout a live post-deploy audit
 
 ## Recent Verified Milestone
 
@@ -11,7 +11,6 @@
 - ✅ První explicitně potvrzený split-enabled blok: `465`
 - ✅ Následné potvrzení na auditovaných nodech: bloky `471` a `472`
 - ✅ Referenční rollout report: `docs/reports/REPORT_SESSION_2026-03-28_V3_MAINNET_FEE_SPLIT_ROLLOUT.md`
-- ✅ Aktivní veřejný dashboard sleduje Prague primary runtime; původní Prague / USA / Singapore rehearsal zůstává jen jako historická evidence
 
 ---
 
@@ -33,8 +32,7 @@
 - ✅ Fork-choice rule implementován — highest accumulated work (`reorg.rs`)
 
 ### Exit Criteria
-- ⚠️ `MAINNET_EXIT_CRITERIA.md` existuje, ale stále nemá finální sign-off — launch blocker do finálního schválení
-- ⚠️ Plánovaný upgrade restart během rehearsal je přípustný jen pokud je uzavřený recovery evidencí v closure reportu
+- ⚠️ `MAINNET_EXIT_CRITERIA.md` existuje, ale je stále `DRAFT` a bez sign-offu — launch blocker do finálního schválení
 - [ ] CI job: `mainnet_correctness_suite` nebo ekvivalentní explicitní launch-gating workflow
 
 ---
@@ -80,8 +78,8 @@
 ## 🟢 PHASE 3 — INFRASTRUCTURE (P1)
 
 ### Seed & Bootstrap
-- ⚠️ Aktuálně auditovaný je pouze Prague primary host; multi-geo seed expansion je odložená a před veřejnou expanzí musí být znovu auditovaná
-- ✅ Monitoring (dashboard + collector + Prometheus/Grafana) — běží na primárním hostu a vrací live rehearsal data
+- ✅ Min. 3 geografické seed nody — Prague / USA / Singapore auditovány po V3 fee-split rolloutu 28. 3. 2026
+- ✅ Monitoring (Prometheus/Grafana) — běží na Helsinki (port 3001/9090)
 - [ ] Alerty (disk, peers, block lag) — **Alertmanager routing CHYBÍ** (Telegram/Slack)
 - [ ] Zálohy dat
 
@@ -180,5 +178,5 @@
 
 ---
 
-*Checklist Version: 1.2*  
-*Last Updated: 2026-03-30 (72h controlled V3 rehearsal alignment)*
+*Checklist Version: 1.1*  
+*Last Updated: 2026-03-28 (V3 fee-split rollout verification)*
