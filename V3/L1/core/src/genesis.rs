@@ -6,10 +6,45 @@
 //! 16,280,000,000 ZION (11.31 % of the 144 B total supply).
 //! Block subsidy at height 0 is 0 — the premine is the sole coinbase.
 //!
+//! Mining subsidy **89/5/5/1** routing and default-operator `zion1` addresses live in constants
+//! below ([`MAINNET_CANONICAL_*`]) — they are **not** additional genesis outputs; see
+//! `docs/mainnet/PREMINE_AND_CANONICAL_WALLETS_PUBLIC.txt`.
+
 //! Source: `PREMINE_ADDRESSES_PUBLIC.txt` + `L1/core/src/blockchain/premine.rs`
 
 use crate::{difficulty, AcceptedBlock, MiningHeader, Transaction};
 use zion_cosmic_harmony::{cosmic_harmony_ekam_deeksha, cosmic_harmony_with_height};
+
+// ---------------------------------------------------------------------------
+// Canonical mainnet subsidy & operator wallets (89/5/5/1 + default miner + pool payout)
+// ---------------------------------------------------------------------------
+//
+// Issobella / pool-fee / default-miner / pool-payout addresses are derived deterministically from
+// the UTF-8 labels below via `crypto::canonical_address_for_label` (BLAKE3 → StdRng → Ed25519).
+// **Keys are reconstructible from this repository** — adequate only for bootstrap / open custody;
+// operators who need exclusive control should generate fresh keys and override env vars.
+
+/// Label → `MAINNET_CANONICAL_ISSOBELLA_SUBSIDY_WALLET`.
+pub const MAINNET_CANONICAL_ISSOBELLA_SUBSIDY_LABEL: &str =
+    "ZION_V3_MAINNET_CANONICAL_ISSOBELLA_SUBSIDY_RECIPIENT_v1";
+/// Label → `MAINNET_CANONICAL_POOL_FEE_SUBSIDY_WALLET`.
+pub const MAINNET_CANONICAL_POOL_FEE_SUBSIDY_LABEL: &str =
+    "ZION_V3_MAINNET_CANONICAL_POOL_FEE_SUBSIDY_RECIPIENT_v1";
+/// Label → `MAINNET_CANONICAL_DEFAULT_MINER_WALLET` (89% share when split is on).
+pub const MAINNET_CANONICAL_DEFAULT_MINER_LABEL: &str =
+    "ZION_V3_MAINNET_CANONICAL_DEFAULT_SOLO_MINER_COINBASE_v1";
+/// Label → `MAINNET_CANONICAL_POOL_PAYOUT_WALLET` (PPLNS UTXO batch signer address).
+pub const MAINNET_CANONICAL_POOL_PAYOUT_LABEL: &str =
+    "ZION_V3_MAINNET_CANONICAL_POOL_PPLNS_PAYOUT_SIGNER_v1";
+
+/// Humanitarian 5% — must match premine output with `category == "humanitarian"`.
+pub const MAINNET_CANONICAL_HUMANITARIAN_SUBSIDY_WALLET: &str =
+    "zion1m4v5z8z850u480c5c208z274e334369275n5y20";
+
+pub const MAINNET_CANONICAL_ISSOBELLA_SUBSIDY_WALLET: &str = "zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702";
+pub const MAINNET_CANONICAL_POOL_FEE_SUBSIDY_WALLET: &str = "zion1p2a7a5q0t2z5z545y6m6j5e864n002v4z6w95w5";
+pub const MAINNET_CANONICAL_DEFAULT_MINER_WALLET: &str = "zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3";
+pub const MAINNET_CANONICAL_POOL_PAYOUT_WALLET: &str = "zion1l56685k280p364g686j88644g3j4r375755e8p7";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -537,6 +572,75 @@ mod tests {
         assert!(GENESIS_MESSAGE_FULL.contains("Golden Age begins"));
     }
 
+    #[test]
+    fn canonical_mainnet_subsidy_wallets_track_label_derivation() {
+        use crate::crypto;
+        assert_eq!(
+            crypto::canonical_address_for_label(MAINNET_CANONICAL_ISSOBELLA_SUBSIDY_LABEL),
+            MAINNET_CANONICAL_ISSOBELLA_SUBSIDY_WALLET
+        );
+        assert_eq!(
+            crypto::canonical_address_for_label(MAINNET_CANONICAL_POOL_FEE_SUBSIDY_LABEL),
+            MAINNET_CANONICAL_POOL_FEE_SUBSIDY_WALLET
+        );
+        assert_eq!(
+            crypto::canonical_address_for_label(MAINNET_CANONICAL_DEFAULT_MINER_LABEL),
+            MAINNET_CANONICAL_DEFAULT_MINER_WALLET
+        );
+        assert_eq!(
+            crypto::canonical_address_for_label(MAINNET_CANONICAL_POOL_PAYOUT_LABEL),
+            MAINNET_CANONICAL_POOL_PAYOUT_WALLET
+        );
+    }
+
+    #[test]
+    fn canonical_mainnet_addresses_are_valid_zion1() {
+        for addr in [
+            MAINNET_CANONICAL_ISSOBELLA_SUBSIDY_WALLET,
+            MAINNET_CANONICAL_POOL_FEE_SUBSIDY_WALLET,
+            MAINNET_CANONICAL_DEFAULT_MINER_WALLET,
+            MAINNET_CANONICAL_POOL_PAYOUT_WALLET,
+        ] {
+            assert!(
+                crate::crypto::is_valid_address(addr),
+                "invalid canonical address: {addr}"
+            );
+        }
+        assert_eq!(
+            PREMINE_OUTPUTS
+                .iter()
+                .find(|o| o.category == "humanitarian")
+                .unwrap()
+                .address,
+            MAINNET_CANONICAL_HUMANITARIAN_SUBSIDY_WALLET
+        );
+    }
+
+    #[test]
+    fn canonical_subsidy_wallets_are_distinct_and_not_duplicate_premine_slots() {
+        let canon = [
+            MAINNET_CANONICAL_ISSOBELLA_SUBSIDY_WALLET,
+            MAINNET_CANONICAL_POOL_FEE_SUBSIDY_WALLET,
+            MAINNET_CANONICAL_DEFAULT_MINER_WALLET,
+            MAINNET_CANONICAL_POOL_PAYOUT_WALLET,
+        ];
+        let mut seen = std::collections::HashSet::new();
+        for a in canon {
+            assert!(seen.insert(a), "duplicate canonical address: {a}");
+            assert!(
+                !PREMINE_OUTPUTS.iter().any(|o| o.address == a),
+                "canonical operator address must not duplicate a genesis premine recipient: {a}"
+            );
+        }
+        assert_eq!(
+            PREMINE_OUTPUTS
+                .iter()
+                .find(|o| o.category == "humanitarian")
+                .unwrap()
+                .address,
+            MAINNET_CANONICAL_HUMANITARIAN_SUBSIDY_WALLET
+        );
+    }
     #[test]
     fn genesis_coinbase_tx_includes_message() {
         // The first tx's tx_id should differ from a plain "genesis-premine-00" hash

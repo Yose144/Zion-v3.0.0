@@ -427,8 +427,8 @@ mod tests {
             "127.0.0.1:8443"
         );
         assert_eq!(
-            normalize_rpc_addr("https://91.98.122.165:8443/"),
-            "91.98.122.165:8443"
+            normalize_rpc_addr("https://204.168.245.175:8443/"),
+            "204.168.245.175:8443"
         );
         assert_eq!(
             normalize_rpc_addr("tcp://5.78.194.94:8443"),
