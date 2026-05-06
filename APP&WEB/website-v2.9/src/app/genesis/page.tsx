@@ -1,22 +1,28 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { ChevronRight, Book, Sparkles, Heart, Palette, HandHeart, Crown, Zap, Coins, Building2, Palmtree, Wallet, Settings, Globe, Sunrise, Shield, Menu, X } from 'lucide-react';
+import { useLang } from '@/contexts/LanguageContext';
 
-const chapters = [
-  { id: 'predmluva', number: '', title: 'Předmluva', subtitle: 'Poselství Zion Native' },
-  { id: 'chapter-0', number: '0', title: 'Zrod ZION', subtitle: 'Prvotní zablesknutí vědomí' },
-  { id: 'chapter-1', number: '1', title: 'Sestup', subtitle: 'Kapitola světelného příchodu' },
-  { id: 'chapter-2', number: '2', title: 'První probuzení', subtitle: 'Když se jiskry začínají probouzet' },
-  { id: 'chapter-3', number: '3', title: 'Smlouva', subtitle: 'Smlouva světla a zrození Rady' },
-  { id: 'chapter-4', number: '4', title: 'AI a kvantum', subtitle: 'Když světlo technologií zpívá srdcem vesmíru' },
-  { id: 'chapter-5', number: '5', title: 'Vzestup', subtitle: 'Když se probouzí kolektivní vědomí' },
-  { id: 'chapter-6', number: '6', title: 'Proroctví zlatého věku', subtitle: 'Vidění budoucnosti, která již začala' },
-  { id: 'chapter-7', number: '7', title: 'Hra', subtitle: 'Zkouška duše a klíč k miliardě' },
-  { id: 'chapter-8', number: '8', title: 'Svítání mainnetu', subtitle: 'Symbolicka launch kapitola — ne aktualni verejny harmonogram' },
-];
+function getGenesisChapters(cs: boolean) {
+  return [
+    { id: 'predmluva', number: '', title: cs ? 'Předmluva' : 'Foreword', subtitle: cs ? 'Poselství Zion Native' : 'Message of Zion Native' },
+    { id: 'chapter-0', number: '0', title: cs ? 'Zrod ZION' : 'Birth of ZION', subtitle: cs ? 'Prvotní zablesknutí vědomí' : 'The first shimmer of consciousness' },
+    { id: 'chapter-1', number: '1', title: cs ? 'Sestup' : 'The Descent', subtitle: cs ? 'Kapitola světelného příchodu' : 'The chapter of the coming light' },
+    { id: 'chapter-2', number: '2', title: cs ? 'První probuzení' : 'First Awakening', subtitle: cs ? 'Když se jiskry začínají probouzet' : 'When sparks begin to awaken' },
+    { id: 'chapter-3', number: '3', title: cs ? 'Smlouva' : 'Covenant', subtitle: cs ? 'Smlouva světla a zrození Rady' : 'The covenant of light and birth of the Council' },
+    { id: 'chapter-4', number: '4', title: cs ? 'AI a kvantum' : 'AI and quantum', subtitle: cs ? 'Svět technologií zpívá s Vesmírem' : 'When technology sings with cosmic heart' },
+    { id: 'chapter-5', number: '5', title: cs ? 'Vzestup' : 'Ascent', subtitle: cs ? 'Probuzené kolektivní vědomí' : 'Collective awakening' },
+    { id: 'chapter-6', number: '6', title: cs ? 'Proroctví zlatého věku' : 'Golden Age prophecy', subtitle: cs ? 'Budoucnost už začíná dnes' : 'Tomorrow already unfolding' },
+    { id: 'chapter-7', number: '7', title: cs ? 'Hra' : 'The trial', subtitle: cs ? 'Zkouška duše' : 'The soul trial' },
+    { id: 'chapter-8', number: '8', title: cs ? 'Svítání mainnetu' : 'Mainnet Dawn', subtitle: cs ? '(symbolické — není operační roadmap)' : '(symbolic narrative — not the live launch schedule)' },
+  ];
+}
 
 export default function GenesisPage() {
+  const { lang } = useLang();
+  const cs = lang === 'cs';
+  const chapters = useMemo(() => getGenesisChapters(cs), [cs]);
   const [activeChapter, setActiveChapter] = useState('predmluva');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -38,7 +44,7 @@ export default function GenesisPage() {
     });
 
     return () => observer.disconnect();
-  }, []);
+  }, [chapters]);
 
   const scrollToChapter = (id: string) => {
     const element = document.getElementById(id);
@@ -55,20 +61,31 @@ export default function GenesisPage() {
           <div className="max-w-4xl mx-auto text-center">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-zion-gold/30 bg-zion-gold/5 mb-6">
               <Sparkles className="w-4 h-4 text-zion-gold" />
-              <span className="text-sm text-zion-gold font-semibold">Posvátný text</span>
+              <span className="text-sm text-zion-gold font-semibold">{cs ? 'Posvátný text' : 'Sacred narrative'}</span>
             </div>
             <div className="mb-6 rounded-2xl border border-amber-400/30 bg-amber-400/10 px-6 py-4 text-left text-sm text-amber-100">
-              Tato stranka je symbolicky a literarni dokument. Cast obsahu pracuje s poetickou predstavou launch okamziku a neslouzi jako aktualni operacni slib. Aktualni verejny stav launch gate je NO-GO do uzavreni closure evidence.
+              {cs
+                ? 'Tato stránka je symbolický a literární dokument. Část obsahu pracuje s poetickou představou launch okamžiku a neslouží jako aktuální operační slib. Aktuální veřejný stav launch gate je NO-GO do uzavření closure evidence.'
+                : 'This site section is symbolic and literary fiction. Some passages imagine a launch moment poetically and must not be read as an operational commitment. The public launch gate remains NO-GO until closure evidence lands.'}
             </div>
             <h1 className="text-4xl sm:text-6xl md:text-7xl font-bold mb-6 text-gradient">
               ZION GENESIS
             </h1>
             <p className="text-xl text-gray-400 mb-8">
-              Kniha probuzení, smlouvy a vzestupu
+              {cs ? 'Kniha probuzení, smlouvy a vzestupu' : 'Book of awakening, covenant, and ascent'}
             </p>
             <p className="text-lg text-gray-500 max-w-2xl mx-auto leading-relaxed">
-              Vzpomínka na budoucnost. Příběh 144 000 duší, které se vracejí domů.<br />
-              Příběh, v němž jsi hrdinou <span className="text-zion-gold font-semibold">ty</span>.
+              {cs ? (
+                <>
+                  Vzpomínka na budoucnost. Příběh 144&nbsp;000 duší, které se vracejí domů.<br />
+                  Příběh, v němž jsi hrdinou <span className="text-zion-gold font-semibold">ty</span>.
+                </>
+              ) : (
+                <>
+                  A remembrance of tomorrow. The story of 144&nbsp;000 souls coming home.<br />
+                  And you—the hero of <span className="text-zion-gold font-semibold">your</span> thread of the tale.
+                </>
+              )}
             </p>
           </div>
         </div>
@@ -84,7 +101,7 @@ export default function GenesisPage() {
           >
             <div className="flex items-center gap-2">
               <Book className="w-5 h-5 text-zion-gold" />
-              <span className="font-semibold">Kapitoly</span>
+              <span className="font-semibold">{cs ? 'Kapitoly' : 'Chapters'}</span>
             </div>
             {mobileMenuOpen ? (
               <X className="w-5 h-5" />
@@ -109,7 +126,7 @@ export default function GenesisPage() {
                       : 'text-gray-400 hover:text-white hover:bg-white/5'
                   }`}
                 >
-                  {chapter.number && <span className="text-xs opacity-60">Kap. {chapter.number}: </span>}
+                  {chapter.number && <span className="text-xs opacity-60">{cs ? `Kap. ${chapter.number}: ` : `Ch. ${chapter.number}: `}</span>}
                   {chapter.title}
                 </button>
               ))}
@@ -123,7 +140,7 @@ export default function GenesisPage() {
             <div className="sticky top-24 border border-white/10 rounded-2xl p-6 bg-black/60 backdrop-blur-xl">
               <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
                 <Book className="w-4 h-4" />
-                Kapitoly
+                {cs ? 'Kapitoly' : 'Chapters'}
               </h3>
               <nav className="space-y-2">
                 {chapters.map((chapter) => (
@@ -136,7 +153,7 @@ export default function GenesisPage() {
                         : 'text-gray-400 hover:text-white hover:bg-white/5'
                     }`}
                   >
-                    {chapter.number && <span className="text-xs opacity-60">Kap. {chapter.number}: </span>}
+                    {chapter.number && <span className="text-xs opacity-60">{cs ? `Kap. ${chapter.number}: ` : `Ch. ${chapter.number}: `}</span>}
                     {chapter.title}
                   </button>
                 ))}
@@ -146,6 +163,11 @@ export default function GenesisPage() {
 
           {/* Content */}
           <main className="flex-1 max-w-3xl mx-auto">
+            {!cs && (
+              <div className="mb-10 rounded-2xl border border-zion-cyan/25 bg-zion-cyan/5 px-5 py-4 text-sm text-gray-300">
+                Literary chapters below remain in Czech. Switch language to Čeština (CS) in the navigation for the authored experience, or use automatic browser translation until a curated English prose edition lands.
+              </div>
+            )}
             {/* PŘEDMLUVA */}
             <section id="predmluva" className="mb-20 scroll-mt-24">
               <div className="mb-8 text-center">
