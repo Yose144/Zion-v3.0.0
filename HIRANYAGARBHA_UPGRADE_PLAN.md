@@ -76,6 +76,10 @@ Model odpovídá s aktuálními daty
 **Zdroje pro embedding:** docs/, V3/README.md, SERVERS.md, STATUS.md + live API data  
 **Dopad:** Model bude vědět aktuální stav sítě, přesné hodnoty, nové features.
 
+### 0.2.1 Širší encyklopedická vrstva (Hiran v2.1) — RAG, ne megadataset
+
+ZION SFT/LoRA má zůstat **doménově zaměřený** (V3, Rust, orchestrace). Obecné vědomí — vědy, dějiny, duchovní texty (např. tibetský buddhismus), respektované zdroje k domorodým tradicím, interní knihovna projektu — se **nepracuje** jako „stáhni vše do tréninku“, ale jako **kurátorované korpusy + více indexů + router + citace**. Kanonický popis strategie, etiky a pipeline je v repo root [`Hiran_v2.1.md`](Hiran_v2.1.md) (oddíl **3.6**). Tím pádem zůstává upgrade plán sladěný: váhy drží ZION identitu, retrieval drží šířku světa.
+
 ### 0.3 Multi-turn chat na API úrovni
 
 **Problém:** Každá zpráva je izolovaná — model zapomíná kontext konverzace.  
