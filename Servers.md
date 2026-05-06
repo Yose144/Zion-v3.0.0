@@ -27,6 +27,36 @@ export SEED="${COORD}:8333"
 
 ---
 
+## Automatizovaný bootstrap (Praha = šablona `.env`, kód z lokálního `V3/`)
+
+Na **prod operátorském počítači** (kde máš checkout tohoto repa a SSH klíč):
+
+```bash
+export ZION_SSH_USER=root
+export ZION_SSH_IDENTITY="${HOME}/.ssh/zion_hetzner_key"
+export ZION_TEMPLATE_HOST=91.98.122.165          # Praha — jen docker/.env (pool SK, miner wallet)
+export ZION_TARGET_HOST="${COORD}"
+export ZION_FLEET_ROLE=coordinator                # follower: nastav též ZION_COORD_P2P="${COORD}:8333"
+./V3/scripts/fleet-mainnet-remote-bootstrap.sh
+```
+
+Skript: [`V3/scripts/fleet-mainnet-remote-bootstrap.sh`](V3/scripts/fleet-mainnet-remote-bootstrap.sh) — nainstaluje Docker na cíli (pokud chybí), **rsync** lokálního `V3/` na **`/root/zion-v3-fleet/V3`**, složí `docker/.env` z [`V3/docker/.env.example`](V3/docker/.env.example) + hodnot z **`/root/zion-2.9.6/docker/.env`** na Praze (`MINER_WALLET` → `ZION_MINER_ADDRESS`), nastaví `ZION_SEED_PEERS`, provede **`docker compose -f docker-compose.v3-mainnet.yml down -v`** (greenfield volumy), **`up -d --build`**, kontrola `/health` a `getChainInfo`.
+
+**Firewall na cílovém VPS po skriptu:** nezapomeň otevřít **8333/tcp** (P2P) a zvenku **8444/tcp** (pool pro minery), pokud to `ufw`/security group blokuje — skript síť nekonfiguruje.
+
+**Odlišnost od Pražského compose:** aktivní VPS v Praze běží **vlastní** starší stack (`docker-compose.v3-mainnet.yml` pod `/root/zion-2.9.6/docker` s **pool port 3333** a `network_mode: host`). Kanonické soubory v **tomto** repu mapují stratum na **8444** a RPC jen **127.0.0.1:8443**. Minery a externí tooling pro nový Helsinki mainnet používej proti **`204.168.245.175:8444`** (ne 3333).
+
+**Followři (Singapore / USA):**
+
+```bash
+export ZION_TARGET_HOST="${N1}"   # nebo N2
+export ZION_FLEET_ROLE=follower
+export ZION_COORD_P2P="${COORD}:8333"
+./V3/scripts/fleet-mainnet-remote-bootstrap.sh
+```
+
+---
+
 ## Start pomalu — fáze 0 (řekni si „dnes jen příprava“)
 
 Cíl: na **Helsinkách** mít SSH + Docker + naklonované repo a `.env` rozumně vyplněné — **ještě bez** followerů, nebo je nech vypnuté, dokud koordinátor neprošel healthcheckem.
