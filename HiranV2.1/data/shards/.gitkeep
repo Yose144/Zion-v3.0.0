@@ -1,0 +1,2 @@
+# Shard *.jsonl files are intentionally not tracked (see repo .gitignore).
+# Regenerate: collect_dataset/build_v3_orchestrator_dataset + scripts/finetune/merge_hiran_curriculum_v2_1.py
