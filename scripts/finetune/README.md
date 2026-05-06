@@ -63,6 +63,18 @@ NVIDIA_API_KEY=nvapi-... cargo test -p zion-ai-native -- test_nim_embedding_live
 
 ## 3. Krok 1: Generování datasetu (zdarma, na Macu)
 
+**V3 / Rust / orchestrátor:** collector má ve **HIGH** prioritě `AGENTS.md`, `V3/docs`, `V3/docker`, `V3/cli`, celý `V3/L*`, `StatusV3.md` a rozšířený system prompt (Hiranyagarbha jako orchestrátor). Pro silný V3 bias spusť:
+
+```bash
+python scripts/finetune/collect_dataset.py \
+    --output scripts/finetune/data/zion_train.jsonl \
+    --priority HIGH \
+    --max-docs 650 \
+    --max-chunks 5
+```
+
+Úplný ingest (HIGH+MEDIUM+LOW) nech na noc s vyšším `--max-docs`.
+
 ```bash
 cd /Users/yeshuae/Projects/2.9.6
 
@@ -72,7 +84,7 @@ export NVIDIA_API_KEY=nvapi-...
 # Generuj dataset (seed páry + NIM generování)
 python scripts/finetune/collect_dataset.py \
     --output scripts/finetune/data/zion_train.jsonl \
-    --max-docs 300 \
+    --max-docs 450 \
     --max-chunks 4
 
 # Zkontroluj výsledek:
@@ -97,18 +109,22 @@ Ověřený robustní běh z 2026-03-29:
 
 ## 4. Krok 2: Nájem GPU hosta
 
-### Vast.ai (ověřeno na RTX 5090)
+### Vast.ai (RTX 4090 / 5090 / A100)
 
-Nejrychlejší cesta je použít automatizovaný script:
+Automatizovaný script: `vast_deploy.sh`. **API klíč jen přes env** (`export VAST_API_KEY=…`), viz kořenový [`gpuVast.md`](../../gpuVast.md).
 
 ```bash
 cd /Users/yeshuae/Projects/2.9.6/scripts/finetune
 
-# Najdi nebo spusť RTX 5090
-./vast_deploy.sh --gpu RTX_5090 --epochs 5
+# Doporučeno pro v2 upgrade: RTX 4090 (24 GB, QLoRA auto-tier v finetune_lora.py)
+./vast_deploy.sh --gpu 'RTX 4090' --find-only   # nabídky
+./vast_deploy.sh --gpu 'RTX 4090' --epochs 5    # plný pipeline (potvrdíš vytvoření instance)
+
+# Alternativa: RTX 5090 / A100
+VAST_GPU='RTX 5090' ./vast_deploy.sh --epochs 5
 ```
 
-Ruční workflow je pořád možné, ale Vast.ai už byl ověřený včetně merge i GGUF exportu.
+Ruční workflow přes SSH je pořád možné; ověřený běh 2026-03-29 byl **RTX 5090** (~11.5 min / 799 párů).
 
 ### Lambda Labs (stále vhodné pro A100)
 

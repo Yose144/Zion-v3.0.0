@@ -341,10 +341,21 @@ mod tests {
             .collect()
     }
 
+    #[cfg(not(feature = "testnet_fork_rehearsal"))]
     #[test]
     fn pending_utxo_tx_version_is_v2_from_genesis() {
         assert_eq!(pending_utxo_tx_version(0), TX_HASH_V2_VERSION);
         assert_eq!(pending_utxo_tx_version(1), TX_HASH_V2_VERSION);
+        assert_eq!(pending_utxo_tx_version(u64::MAX / 2), TX_HASH_V2_VERSION);
+    }
+
+    #[cfg(feature = "testnet_fork_rehearsal")]
+    #[test]
+    fn pending_utxo_tx_version_respects_rehearsal_gate() {
+        assert_eq!(pending_utxo_tx_version(0), 1);
+        assert_eq!(pending_utxo_tx_version(8), 1);
+        assert_eq!(pending_utxo_tx_version(9), TX_HASH_V2_VERSION);
+        assert_eq!(pending_utxo_tx_version(10), TX_HASH_V2_VERSION);
         assert_eq!(pending_utxo_tx_version(u64::MAX / 2), TX_HASH_V2_VERSION);
     }
 

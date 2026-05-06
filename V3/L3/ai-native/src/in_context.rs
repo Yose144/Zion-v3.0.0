@@ -19,9 +19,8 @@
 //! # Příklad
 //!
 //! ```rust,no_run
-//! use zion_ai_native::{
-//!     HiranyagarbhaAgent, InContextBackend, EchoBackend, ContextSnapshot,
-//! };
+//! use zion_ai_native::{EchoBackend, HiranyagarbhaAgent};
+//! use zion_ai_native::in_context::{ContextSnapshot, InContextBackend};
 //!
 //! let mut agent = HiranyagarbhaAgent::with_xp(1_000);
 //! let backend = InContextBackend::new(EchoBackend::new("dev"), "Hiranyagarbha");
