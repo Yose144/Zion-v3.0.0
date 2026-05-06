@@ -112,6 +112,11 @@ node scripts/docs-i18n-report.mjs --json
 
 ### Vlna E — whitepapery a velké manifesty (náročné objemy)
 
+**Stav: hotovo pro položky z navigace — každá cesta má `cs/whitepaper/…` a `en/whitepaper/…`.**  
+- **V3 Mainnet:** plný pár CS překlad + EN kopie z kořene.  
+- **v2.9.5 FULL:** CS = plný kánon (kopie kořene); EN = **anglický výtah** s odkazem na plné CS a na V3 whitepaper.  
+- **v2.8.5 + Cosmic Map Public:** CS = kopie kořene; EN u **Cosmic Map** = **anglický průvodce / obsah**, nikoli plný překlad 14k řádků; u **v2.8.5** sdílená archivní kopie v CS i EN (smíšený zdroj).
+
 Dělit na menší commity; právní review u citlivých pasáží.
 
 | Cesta |
