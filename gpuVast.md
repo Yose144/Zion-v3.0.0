@@ -81,6 +81,8 @@ Další příkazy: `--destroy <id>` (ukonči platby).
 
 **QLoRA na Vastu** = expenzivní krok pro **ZION-doménové** váhy (kód, docs, CLI). Širší „světové“ znalosti (vědy, dějiny, texty, knihovna projektu, eticky kurátorované ne-ZION korpusy) se **nesnaž** narvat do stejného fine-tuningu jako jediný univerzální svazek — drž je v **samostatných retrieval kolekcích** podle [`Hiran_v2.1.md`](../Hiran_v2.1.md) § **3.6**.
 
+**Záloha starého v1 na produkci (Ollama `zion-expert`)** před přepnutím na v2: [`docs/ops/BACKUP_HIRAN_V1_OLLAMA.md`](../docs/ops/BACKUP_HIRAN_V1_OLLAMA.md).
+
 ## Odkazy
 
 - [Vast API overview](https://docs.vast.ai/api-reference/overview-and-quickstart)
