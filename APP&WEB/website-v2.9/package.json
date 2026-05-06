@@ -8,7 +8,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "deploy": "bash scripts/deploy.sh"
+    "deploy": "bash scripts/deploy.sh",
+    "docs:i18n": "node scripts/docs-i18n-report.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.6",
