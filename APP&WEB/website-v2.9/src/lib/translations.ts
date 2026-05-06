@@ -452,6 +452,79 @@ const t = {
     },
   },
 
+  /* ─── Docs rail (homepage section) ─── */
+  docsRail: {
+    nav_kicker: { cs: 'Navigace', en: 'Navigation' },
+    headline_open: { cs: 'Otevři ', en: 'Open the ' },
+    headline_gradient: {
+      cs: 'aktuální dokumentaci, nástroje a zdroje',
+      en: 'current docs, tools, and sources',
+    },
+    blurb: {
+      cs: 'Veškerý provozní kontext řízeného test mainnetu na jedné ose — dokumentace, mining nástroje, explorer i zdrojový kód.',
+      en: 'Operational context for the controlled test-mainnet rehearsal in one spine — docs, mining tools, explorer, and source.',
+    },
+    card_open: { cs: 'Otevřít', en: 'Open' },
+    res_docs_title: { cs: 'Aktuální dokumentace', en: 'Current docs' },
+    res_docs_body: {
+      cs: 'Otevře /docs s live přehledem rehearsal topologie, maticí verzí 2.9.6 / 2.9.8 / 2.9.9 a launch blokery.',
+      en: 'Opens /docs with the rehearsal topology snapshot, versions 2.9.6 / 2.9.8 / 2.9.9, and launch blockers.',
+    },
+    res_download_title: { cs: 'Stáhnout minera', en: 'Miner downloads' },
+    res_download_body: {
+      cs: 'Nativní Rust binárky minera pro macOS, Linux a Windows s Cosmic Harmony.',
+      en: 'Native Rust miner binaries for macOS, Linux, and Windows with Cosmic Harmony.',
+    },
+    res_explorer_title: { cs: 'Průzkumník blockchainu', en: 'Block explorer' },
+    res_explorer_body: {
+      cs: 'Projdi bloky, transakce, adresy a mempool v reálném čase.',
+      en: 'Browse blocks, transactions, addresses, and the mempool in real time.',
+    },
+    cta_roadmap_title: { cs: 'Roadmap → veřejná launch gate', en: 'Roadmap → Public Launch Gate' },
+    cta_roadmap_body: {
+      cs: 'Osa od veřejné linie 2.9.9 a kanonického runtime 2.9.8 k closure hlášení a řazení launch kroků.',
+      en: 'Thread from the 2.9.9 public line and 2.9.8 canonical runtime through closure reports and launch sequencing.',
+    },
+    cta_github_title: { cs: 'GitHub / Zion', en: 'GitHub / Zion' },
+    cta_github_body: {
+      cs: 'Mono-repo — core, minery, pool, dashboardy, dokumentace a deploy.',
+      en: 'Mono-repo — core, miners, pool, dashboards, docs, and deployments.',
+    },
+  },
+
+  notFound: {
+    eyebrow: { cs: 'Ztracený signál', en: 'Signal lost' },
+    title_hint: { cs: 'Stránka nenalezena', en: 'Page not found' },
+    description: {
+      cs: 'Tato URL v aktuálním routování neexistuje nebo se změnila.',
+      en: 'This route is unknown or may have moved in the routing table.',
+    },
+    btn_home: { cs: 'Hlavní stránka', en: 'Home' },
+    btn_docs: { cs: 'Dokumentace', en: 'Docs' },
+    btn_explorer: { cs: 'Explorer', en: 'Explorer' },
+    btn_github: { cs: 'Zdrojový kód', en: 'Source' },
+    btn_back_hint: { cs: 'Zpět v historii', en: 'Go back in history' },
+    btn_dashboard: { cs: 'Přehled (dashboard)', en: 'Dashboard' },
+    quick_roadmap: { cs: 'Roadmap', en: 'Roadmap' },
+    quick_download: { cs: 'Stažení', en: 'Download' },
+    quick_docs: { cs: 'Dokumentace', en: 'Docs' },
+    quick_network: { cs: 'Síť', en: 'Network' },
+  },
+
+  globalRouteError: {
+    title: { cs: 'Aplikace narazila na chybu', en: 'Something went wrong' },
+    paragraph: {
+      cs: 'Při vykreslení části stránky nastala chyba — zkuste obnovit nebo vyřadit rozšíření prohlížeče.',
+      en: 'This slice failed to render — try reloading or disabling browser extensions temporarily.',
+    },
+    retry: { cs: 'Zkusit znovu', en: 'Try again' },
+    reload: { cs: 'Obnovit stránku', en: 'Reload page' },
+    footer_hint: {
+      cs: 'Pokud se chyba opakuje, proveď tvrdé obnovení bez cache.',
+      en: 'If it keeps repeating, hard-reload without cache.',
+    },
+  },
+
   /* ─── Footer ─── */
   footer: {
     group_protocol: { cs: 'Protokol', en: 'Protocol' },
