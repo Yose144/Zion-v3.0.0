@@ -8,7 +8,7 @@
 
 ## 0. Ověřený zdroj (květen 2026)
 
-Na hostiteli **`root@91.98.122.165`** (`hostname`: **Zion2**, SSH klíč `~/.ssh/zion_hetzner_key`) běží Ollama s modelem **`hiranyagarbha-v1:latest`** (cca **5.7 GB** v blobu `sha256-c8fd1ad3719…`). Reference zálohy v tomto repu je gitignorovaná složka `HiranV2.1/exports/prague-ollama-v1-20260507/` (Modelfile + `/root/.ollama/models/`).
+Na hostiteli **`root@91.98.122.165`** (`hostname`: **Zion2**, SSH klíč `~/.ssh/zion_hetzner_key`) běží Ollama s modelem **`hiranyagarbha-v1:latest`** (cca **5.7 GB** v blobu `sha256-c8fd1ad3719…`). Reference zálohy v tomto repu je gitignorovaný strom **`HiranV2.1/lineage/v1-ollama-prague/`** (kompletní store); textové kopie metadat jsou též v **`HiranV2.1/curriculum/meta/`**.
 
 Deploy konfigurace (`zion.toml`) zmiňuje `default_server = "prague"` — SSH alias **`Host prague`** v lokálním `~/.ssh/config` nemusí existovat; **vždy ověř** skutečné IP/hostitele a `ollama list` před kopírováním.
 
@@ -76,7 +76,7 @@ Struktura obvykle:
 
 ## 4. Stáhnout na lokální Mac (příklad)
 
-Z lokálního počítače (vytvoř si cílovou složku mimo git, nebo použij gitignorovaný `HiranV2.1/exports/`):
+Z lokálního počítače (vytvoř si cílovou složku mimo git, nebo použij gitignorovaný `HiranV2.1/lineage/` — např. vnoř složku k datům jako `…/lineage/v1-remote-${DATE}/`):
 
 ```bash
 DEST=~/backups/ollama-v1-$(date +%Y%m%d)
