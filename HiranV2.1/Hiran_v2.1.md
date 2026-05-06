@@ -44,15 +44,26 @@ V2 je první skutečný fine-tune nad ZION daty. **V2.1 je přechod od znalostn�
 - `V3/L3/ai-native/src/llm_backend.rs` — LLM backendy.
 - `docs/2.9.9/archive/HIRANYAGARBHA_AI_NATIVE.md` — historický/narativní kontext.
 
-### Training factory
+### Training factory (`HiranV2.1/`)
 
-Datasetové JSONL a exporty drží adresář **`HiranV2.1/`**; **`scripts/finetune/data`** je symlink na **`HiranV2.1/data`**, aby stávající skripty (`--dataset data/…`) fungovaly beze změn.
+**Layout**
 
-- `scripts/finetune/build_v3_orchestrator_dataset.py` — offline V3/Rust/orchestrátor corpus.
-- `HiranV2.1/data/zion_train_hiran_v2.jsonl` — aktuální v2 dataset (viz také `scripts/finetune/data/…`).
-- `scripts/finetune/finetune_lora.py` — QLoRA SFT.
-- `scripts/finetune/vast_deploy.sh` — Vast orchestrace.
-- `scripts/finetune/start_hiran_v2_vast.sh` — rychlý start jobu.
+| Část | Role |
+|------|------|
+| `data/shards/` | Provenience SFT řádků — v1 éra (`zion_train*.jsonl`) a čistě v2 běh (`zion_train_hiran_v2.jsonl`). |
+| `data/hiran_curriculum_v2.1.jsonl` | **Kanonické v2.1 učivo** — sloučené + deduplikované (pozdější shard má přednost při kolizi uživatelské vs. asistentické části). Regeneruje `scripts/finetune/merge_hiran_curriculum_v2_1.py`. |
+| `data/*.jsonl` (symlinks) | Kompatibilita se starými cestami `scripts/finetune/data/…`; míří do `data/shards/`. |
+| `lineage/v1-ollama-prague/` | Celý lokální Ollama blob store Hiranyagarbhy v1 (gitignored). |
+| `lineage/v2-lora-vast-36254769/` | Vast LoRA výstupy Hiran v2 (gitignored). |
+| `curriculum/meta/` | Malé artefakty sledovatelné gitem (kopie Praha Modelfile, `SOURCE`). |
+
+Datasetové symlinky drží adresář **`HiranV2.1/data`** jako reálný cíl odkazu **`scripts/finetune/data`**.
+
+- `scripts/finetune/build_v3_orchestrator_dataset.py` — offline V3/Rust/orchestrátor korpus (`--base`/`--output` stále používají výchozí cesty přes symlinky).
+- `scripts/finetune/merge_hiran_curriculum_v2_1.py` — zřetězení shardů → `hiran_curriculum_v2.1.jsonl` (proveď po změnách orchestrátorové nebo shard dat).
+- `scripts/finetune/finetune_lora.py` — QLoRA SFT (`--dataset` typicky `data/hiran_curriculum_v2.1.jsonl` při nových fine-tune bězích).
+- `scripts/finetune/vast_deploy.sh` — Vast orchestrace (`ZION_TRAIN_DATASET`).
+- `scripts/finetune/start_hiran_v2_vast.sh` — výchozí dataset = `hiran_curriculum_v2.1.jsonl` pokud existuje.
 - `HiranV2.1/gpuVast.md` — bezpečný Vast workflow.
 
 ---
