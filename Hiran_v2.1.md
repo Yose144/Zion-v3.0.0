@@ -129,6 +129,36 @@ RAG zdroje mají být primárně:
 - `V3/docker`,
 - `V3/cli`.
 
+### 3.6 Širší „celosvětová“ vrstva: vědy, dějiny, texty, domorodé tradice
+
+Cíl: aby Hiran v2.1 nebyl jen ZION technik, ale **hlubší společník s přístupem k velké lidské tradici** — v souladu s Dharma rámcem projektu a s přiznanými limity AI.
+
+**Co je reálně možné (a co ne):**
+
+- **Do vah (SFT/LoRA) nedává smysl „stáhnout celý internet“ ani „všechny vědy“.** Objem a práva by to znemožnily; model by stejně halucinoval mimo ZION doménu.
+- Správný pattern je **silný obecný base model** + **oddělené, kurátorované korpusy** + **RAG** (případně více indeksů podle tématu) + **citace zdroje** v odpovědi.
+- Volitelně malý **DPO / stylistický** tuning: „když čerpáš z RAG, řekni z jakého svazku/bloku; když nemáš chunk, nepředstírej detail.“
+
+**Plánované oblasti (ingest do knowledge base, ne nutně do ZION SFT):**
+
+| Oblast | Směr ingestu | Poznámka |
+|--------|----------------|----------|
+| **Přírodní a společenské vědy** | Otevřené učebnice, přehledové publikace, kvalitní Open Educational Resources, kde licence dovolí kopii pro interní index | Živá věda se mění → RAG + verze snapshotu, ne „jednou natrénováno navždy“ |
+| **Dějiny (svět + regiony)** | Referenční syntézy, primární texty tam, kde jsou volné nebo licencované | Rozlišovat **periodizaci / interpretaci** — uvádět zdroj školy historiografie |
+| **Tibetské buddhistické spisy** | Kanonické sbory ve **veřejných překladech** / akademické edice, kde máš práva (např. výběry, překlady 108 volumes kde dostupné), databáze typu BDRC tam, kde API/licence projekt dovolyje | Klasický rozsah kánonu je obrovský → **prioritizovat svazky podle kurikula** (např. základy Madhyamaky, Lamrim, vybrané sútry), ne „vše najednou“ |
+| **Domorodé / původní národy (Americas a jinde)** | **Ne** jako jeden homogenní „blob“. Indexovat **konkrétní zdroje s respektem k rozmanitosti**: kmenové/edu instituce, ověřené antologie, akademické edice, primární vyprávění kde jsou sdílená se souhlasem | Etický imperativ: žádné „ukradení“ mytologie z nekontextualizovaných webů; u citlivého obsahu **precedenční** pravidla (kdo mluví, za koho, jak citovat) |
+| **Knihy a dokumenty samotného ZION projektu** | Všechny interní a veřejné texty repa (`docs`, `Genesis`, AI Native koncepty, reporty) jako **dedikovaná knihovna** s vysokou prioritou v RAG routeru | Splývá s kanonem v části 2 — tady explicitně jako „projektová biblioteka“ |
+
+**Operační pipeline (stejná logika jako V3 RAG, širší soubory):**
+
+1. **Katalog** — tabulka zdrojů (URL/soubor, licence, jazyk, téma, datum stahu, hash).
+2. **Chunking + metadata** — kapitoly, svazky, autor/překladatel.
+3. **Embedding index** (nebo více indexů: `zion-tech`, `dharma-texts`, `sciences`, `history`, `indigenous-sources`).
+4. **Router** — dotaz → které indexy dotáhnout (aby se nemíchaly nesouvisející domény bez úmyslu).
+5. **Eval** — kontrolní otázky s očekávanou citací zdroje; penalizovat odpověď bez chunku při dostupném materiálu.
+
+Tato vrstva **nenahrazuje** sekce 3.1–3.5: ZION V3, Rust a orchestrace zůstávají **primární produktová kompetence**. Širší korpusy rozšiřují **horizont a integritu Hiranyagarbhy**, ne základní úlohu síťového agenta.
+
 ---
 
 ## 4. BestModel strategie
@@ -217,6 +247,7 @@ Princip:
 - **base model** = obecné znalosti, programování, reasoning, čeština/angličtina,
 - **SFT / LoRA** = ZION V3 identita, přesné cesty, Rust workspace, `zion` CLI, AI Native,
 - **RAG** = aktuální dokumentace, živý stav sítě, nové změny po tréninku,
+- **RAG (rozšířeně)** = kurátorované korpusy z oddílu 3.6 (vědy, dějiny, texty, projektová biblioteka) — **ne** masové „dostahování” do vah,
 - **DPO** = styl: přesnost, méně halucinací, bezpečný operátorský postup.
 
 Do datasetu tedy nepatří generické otázky typu „co je HTTP“ nebo „co je Rust ownership“, pokud nejsou navázané na ZION. Lepší příklad je: „Jak se ownership projeví při úpravě mempoolu v `V3/L1/core`?“
