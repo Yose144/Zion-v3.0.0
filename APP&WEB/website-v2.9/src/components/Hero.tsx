@@ -19,6 +19,7 @@ import { useLang } from '@/contexts/LanguageContext';
 import { tr } from '@/lib/translations';
 import { SITE_ENVIRONMENT_LABEL, SITE_RELEASE_LABEL, SITE_RUNTIME_LABEL } from '@/lib/site';
 import CosmicFlowers from './CosmicFlowers';
+import HolographicEarth from './HolographicEarth';
 
 export default function Hero() {
   const { mode, setMode, availableModes } = useObservatory();
@@ -198,6 +199,8 @@ export default function Hero() {
           >
             {/* outer halo glow */}
             <div className="absolute -inset-6 rounded-[32px] bg-gradient-to-br from-violet-600/25 via-cyan-500/15 to-transparent blur-3xl pointer-events-none" />
+
+            <HolographicEarth className="mb-5 z-10" />
 
             <div className="zion-panel relative rounded-[28px] p-6 space-y-5">
               {/* HUD header */}
