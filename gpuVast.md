@@ -77,6 +77,10 @@ Po doběhu: `./vast_deploy.sh --status <INSTANCE_ID>`, pak `./vast_deploy.sh --d
 
 Další příkazy: `--destroy <id>` (ukonči platby).
 
+## Hiran v2.1 — co patří na GPU vs. co patří do RAG
+
+**QLoRA na Vastu** = expenzivní krok pro **ZION-doménové** váhy (kód, docs, CLI). Širší „světové“ znalosti (vědy, dějiny, texty, knihovna projektu, eticky kurátorované ne-ZION korpusy) se **nesnaž** narvat do stejného fine-tuningu jako jediný univerzální svazek — drž je v **samostatných retrieval kolekcích** podle [`Hiran_v2.1.md`](../Hiran_v2.1.md) § **3.6**.
+
 ## Odkazy
 
 - [Vast API overview](https://docs.vast.ai/api-reference/overview-and-quickstart)
