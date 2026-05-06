@@ -99,6 +99,10 @@ Poznamka k V2 books:
 - collector je uci pres repo-local textove proxy vrstvy jako `docs/docs2.9/books/`, `docs/docs2.9/ZION_OASIS/GOLDEN_EGG_GAME/`, `docs/docs2.9/SACRED_KNOWLEDGE/`, `docs/docs2.9/COSMIC_MAP/` a `docs/docs2.9/deployment/AMENTI_LOG_INDEX.md`,
 - kanonicky prehled teto strategie drzi `docs/docs2.9/books/V2_BOOKS_AI_NATIVE_CORPUS.md`.
 
+### Hiran v2.1 — širší znalosti mimo ZION (zakotvení)
+
+Fine-tune dataset (`zion_train*.jsonl`) slouží **primárně** V3 / Rust / `zion` CLI / AI Native. Širší oblasti (přírodní a společenské vědy, dějiny, tibetské a jiné kánonické texty kde licence dovolí, eticky citlivé domorodé zdroje, kompletní projektová biblioteka z repa) patří do **RAG indexů a katalogu zdrojů**, ne do nekonečného rozšiřování JSONL. Viz repo root [`Hiran_v2.1.md`](../../Hiran_v2.1.md) § **3.6** a Fáze E (RAG rozšířeně).
+
 Ověřený robustní běh z 2026-03-29:
 - `300` souborů
 - `765` vygenerovaných párů
