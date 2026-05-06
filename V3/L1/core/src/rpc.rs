@@ -1749,12 +1749,23 @@ mod tests {
         assert!(resp.error.is_some());
         let err = resp.error.unwrap();
         assert_eq!(err.code, TX_REJECTED);
-        // With TX hash v2 active from genesis, `version = 1` UTXO payloads
-        // are rejected during mempool admission.
+        // Production: v2 from genesis → `version = 1` rejected at mempool gate.
+        // Rehearsal: below coordinated height, v1 is still valid — bogus payload
+        // may fail id/hash validation before any version gate.
+        #[cfg(not(feature = "testnet_fork_rehearsal"))]
         assert!(
             err.message.contains("tx.version")
                 || err.message.contains("requires tx.version")
                 || err.message.contains("TX_HASH_V2"),
+            "unexpected rejection message: {}",
+            err.message
+        );
+        #[cfg(feature = "testnet_fork_rehearsal")]
+        assert!(
+            err.message.contains("tx.version")
+                || err.message.contains("requires tx.version")
+                || err.message.contains("TX_HASH_V2")
+                || err.message.contains("does not match calculated hash"),
             "unexpected rejection message: {}",
             err.message
         );

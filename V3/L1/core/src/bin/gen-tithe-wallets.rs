@@ -1,12 +1,26 @@
 //! One-shot wallet generator for V3 mainnet tithe accounts.
 //!
-//! Generates Ed25519 keypairs and derives zion1... addresses for:
+//! Prints the **canonical mainnet humanitarian address** (Children Future Fund
+//! premine output from genesis), then generates Ed25519 keypairs for:
 //! - Issobella Fund (L5/L6)
-//! - Pool Fee
+//! - Pool Fee (1% operator recipient)
 //!
 //! Outputs JSON with secret keys — KEEP SECURE.
 
 fn main() {
+    eprintln!("Canonical mainnet humanitarian wallet (premine / Children Future Fund):");
+    for o in zion_core::genesis::PREMINE_OUTPUTS {
+        if o.category == "humanitarian" {
+            eprintln!("  ZION_HUMANITARIAN_WALLET={}", o.address);
+            break;
+        }
+    }
+    eprintln!();
+    eprintln!(
+        "Mainnet canonical addresses + payout key (.env lines): cargo run --manifest-path V3/Cargo.toml -p zion-core --release --bin canonical-mainnet-operator-env"
+    );
+    eprintln!();
+
     let wallets = [
         ("issobella_fund", "L5/L6 ZION Issobella Fund"),
         ("pool_fee", "Pool Operator Fee"),
