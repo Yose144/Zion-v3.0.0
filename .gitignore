@@ -56,6 +56,9 @@ APP&WEB/website-v2.9/public/downloads/
 # Large local training/doc bundles (GitHub rejects >100 MB; use Releases/LFS if needed)
 /zion_deep_learning_package.zip
 /zion_full_docs.zip
+# Ollama / GGUF production backups (use ~/backups or Releases; do not commit)
+scripts/finetune/exports/
+**/ollama-models-backup/
 
 # Python (tools)
 __pycache__/
