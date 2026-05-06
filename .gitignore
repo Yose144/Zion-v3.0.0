@@ -61,6 +61,10 @@ scripts/finetune/exports/
 # Hiran v1/v2 large artifacts (blobs + LoRA checkpoints) — keep manifests under curriculum/meta/
 HiranV2.1/lineage/
 **/ollama-models-backup/
+# Hiran SFT data (JSONL — často MB až desítky MB; regeneruj collector + merge_hiran_curriculum_v2_1.py)
+HiranV2.1/data/shards/*
+!HiranV2.1/data/shards/.gitkeep
+HiranV2.1/data/hiran_curriculum_v2.1.jsonl
 
 # Python (tools)
 __pycache__/
