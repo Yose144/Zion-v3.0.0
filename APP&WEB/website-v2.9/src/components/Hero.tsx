@@ -200,7 +200,9 @@ export default function Hero() {
             {/* outer halo glow */}
             <div className="absolute -inset-6 rounded-[32px] bg-gradient-to-br from-violet-600/25 via-cyan-500/15 to-transparent blur-3xl pointer-events-none" />
 
-            <HolographicEarth className="mb-5 z-10" />
+            <div className="mb-5 z-10 mx-auto flex w-full max-w-md justify-center lg:max-w-xl">
+              <HolographicEarth className="w-full shrink-0" />
+            </div>
 
             <div className="zion-panel relative rounded-[28px] p-6 space-y-5">
               {/* HUD header */}
