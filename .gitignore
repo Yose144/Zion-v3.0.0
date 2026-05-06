@@ -58,8 +58,8 @@ APP&WEB/website-v2.9/public/downloads/
 /zion_full_docs.zip
 # Ollama / GGUF production backups (use ~/backups or Releases; do not commit)
 scripts/finetune/exports/
-HiranV2.1/exports/
-HiranV2.1/finetune-outputs/
+# Hiran v1/v2 large artifacts (blobs + LoRA checkpoints) — keep manifests under curriculum/meta/
+HiranV2.1/lineage/
 **/ollama-models-backup/
 
 # Python (tools)
