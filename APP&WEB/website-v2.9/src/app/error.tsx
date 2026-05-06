@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect } from 'react';
+import { useLang } from '@/contexts/LanguageContext';
+import { tr } from '@/lib/translations';
 
 export default function GlobalError({
   error,
@@ -9,6 +11,8 @@ export default function GlobalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const { lang } = useLang();
+
   useEffect(() => {
     console.error('[ZION] Next.js route error:', error);
   }, [error]);
@@ -22,25 +26,24 @@ export default function GlobalError({
           </svg>
         </div>
 
-        <h1 className="text-2xl font-bold">Aplikace narazila na chybu</h1>
-        <p className="text-gray-400">
-          Při načítání stránky došlo k chybě. Často ji způsobí rozšíření prohlížeče (např. MetaMask / ad-block),
-          nebo starý cache bundle.
-        </p>
-        <p className="text-sm text-gray-600">Try refreshing the page or disabling extensions for this site.</p>
+        <h1 className="text-2xl font-bold">{tr('globalRouteError', 'title', lang)}</h1>
+        <p className="text-gray-400">{tr('globalRouteError', 'paragraph', lang)}</p>
+        <p className="text-sm text-gray-600">{tr('globalRouteError', 'footer_hint', lang)}</p>
 
         <div className="flex items-center justify-center gap-3">
           <button
+            type="button"
             onClick={() => reset()}
             className="inline-flex items-center px-5 py-3 rounded-xl border border-white/20 bg-white/5 hover:bg-white/10 transition"
           >
-            Zkusit znovu
+            {tr('globalRouteError', 'retry', lang)}
           </button>
           <button
+            type="button"
             onClick={() => window.location.reload()}
             className="inline-flex items-center px-5 py-3 rounded-xl bg-gradient-to-r from-yellow-600 to-amber-500 text-black font-semibold hover:opacity-90 transition"
           >
-            Obnovit stránku
+            {tr('globalRouteError', 'reload', lang)}
           </button>
         </div>
       </div>
