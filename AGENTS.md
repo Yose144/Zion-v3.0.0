@@ -13,6 +13,7 @@ This file provides guidance to WARP (warp.dev) when working with code in this re
 ## Existing guidance files to know
 
 - Root guidance baseline: `.github/copilot-instructions.md` (applies repo-wide).
+- Hiranyagarbha / Hiran **v2.1** roadmap (ZION-domain model + kurátorované ne-ZION RAG korpusy): `Hiran_v2.1.md` (oddíl 3.6); souvislosti s upgrade plánem: `HIRANYAGARBHA_UPGRADE_PLAN.md` § 0.2.1.
 - Historical archive exists at `docs/2.9.9/archive/WARP.md`; treat it as legacy context, not current source of truth for V3 runtime behavior.
 - Current V3 planning/status references are `V3/README.md` and `V3/ROADMAP.md`.
 
