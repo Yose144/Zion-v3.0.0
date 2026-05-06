@@ -1,9 +1,20 @@
 # HIRANYAGARBHA — Upgrade Plán: Od 8B k Frontier-Level AI
 
 > **Datum:** 30. března 2026  
-> **Aktuální stav:** `zion-expert` – Llama 3.1 8B Q5_K_M, 776 training párů, RTX 3060  
-> **Cíl:** Hiranyagarbha tak dobrý ve věcech ZION jako Claude 4.6 nebo GPT — v doméně projektu  
+> **Aktuální stav (v1):** `zion-expert` – Llama 3.1 8B Q5_K_M, 776 training párů; inference dříve na přechodné **Vast.ai** instanci (RTX 3060) — vhodné na experiment, ne jako dlouhodobý domov.  
+> **Cíl (v2):** Hiranyagarbha v2 — srovnatelná kvalita v doméně ZION s top modely; **produkční inference na dedikovaném GPU** (vlastní RTX 5080+ / reserved cloud), **Vast pouze krátkodobě** (fine-tune, batch joby), ne 24/7 provoz.  
+> **Technická v2 linie v repu:** viz `AiNativev2.md` — `V3/L3/ai-native` (Dharma Autotuner, consciousness integrace, RAG index nad `docs/TerraNova`), delší timeouty pro remote LLM, docker orchestrace.  
 > **Upřímnost:** Frontier modely (Claude, GPT) mají 100B–1T parametrů + měsíce RLHF. My se jim nemůžeme rovnat globálně. Ale v doméně ZION blockchainu je to dosažitelné.
+
+---
+
+## Hiranyagarbha v1 → v2 — proč pryč z „domovské“ Vast instance
+
+| | v1 (legacy) | v2 (cíl) |
+|---|---|---|
+| **Inference host** | Spot / levná Vast instance — riziko preemption, měnící se IP | Dedikovaný stroj nebo **reserved** GPU u poskytovatele |
+| **Stack** | Ollama + `zion-expert` + jednoduchý web proxy | Rust agent + autotuner + RAG + napojení na stejný nebo větší LLM backend |
+| **Účel Vast** | Často jediný runtime | Jen **nárazové** tréninky / eval, ne veřejný chat 24/7 |
 
 ---
 
@@ -299,21 +310,22 @@ Výsledek: přesný, konkrétní, ne-repetitivní
 
 ---
 
-## Fáze 5 — Deployment upgrade (měsíc 3–4)
+## Fáze 5 — Deployment upgrade (měsíc 3–4) — v2: stabilita před levným spotem
 
-### 5.1 Přesunout model na Hetzner (dedikovaný server)
+### 5.1 Produkce mimo spot Vast — dedikovaný nebo reserved GPU
 
-**Problém:** Vast.ai $0.05/hr × 24/7 = $36/měsíc + nestabilní (instance může být preempted)  
-**Řešení:** Hetzner GPU server dedikovaný
+**Problém:** Spot Vast instance je levná na hodiny, ale špatná jako **domov** pro veřejný chat — preemption, nestabilní síť, měnící se koncovky, provozní režie.  
+**Řešení (v2):** Primární inference na stroji pod vaší kontrolou nebo na **explicitně reserved** GPU u cloud providera. Vast nechat jen na **krátké** joby (QLoRA, experimenty).
 
-| Option | GPU | VRAM | Cena/měsíc | Pozn. |
+| Option | GPU | VRAM | Cena/měsíc (řádově) | Pozn. |
 |---|---|---|---|---|
-| Hetzner GX2-15 | NVIDIA Tesla A10G | 24 GB | ~€150 | Nestačí pro 70B |
-| Hetzner GX2-45 | NVIDIA Tesla A30 | 24 GB | ~€300 | Q4 70B barely |
-| Vast.ai A100 reserved | A100 80GB | 80 GB | ~$180 | Nejlepší poměr |
-| RunPod Secure Cloud | A100 80GB | 80 GB | ~$175 | Alternativa |
+| **Vlastní / kolokace** | RTX 5080 / 5090 | 16–32 GB | CapEx + energie | Preferovaný směr pro v2 (`AiNativev2.md` — Deep Upgrade na 5080) |
+| Hetzner GX2-15 | NVIDIA Tesla A10G | 24 GB | ~€150 | Spíš 8B–13B / služby kolem inference |
+| Hetzner GX2-45 | NVIDIA Tesla A30 | 24 GB | ~€300 | Q4 70B jen s obtíží |
+| RunPod / TensorDock **reserved** | A100 80GB | 80 GB | ~$175–200 | Stabilní varianta pro 70B produkci |
+| Vast.ai **reserved** (ne spot) | A100 80GB | 80 GB | ~$180 | OK jako reserved; **ne** jako default spot 3060 24/7 |
 
-**Doporučení:** Vast.ai reserved instance A100 80GB ~$180/měsíc
+**Doporučení v2:** Veřejný Hiranyagarbha endpoint nasměrovat na **dedikovaný** host (vlastní 5080+ nebo reserved A100). Vast spot používat výhradně k tréninku a testům.
 
 ### 5.2 Multi-model strategie
 
@@ -330,13 +342,13 @@ Complex reasoning (future):   70B + RAG             → 800ms
 | Fáze | Kdy | Cena | Co se zlepší |
 |---|---|---|---|
 | **F0: Prompt + Multi-turn** | Tento týden | $0 | +30% kvalita, pamatuje kontext |
-| **F0: RAG** | Týden 2 | $10 setup | Actuální data, přesná čísla |
+| **F0: RAG** | Týden 2 | $10 setup | Aktuální data, přesná čísla |
 | **F1: Dataset 15k** | Týden 3–4 | $15 (NIM API) | Hlubší znalosti, méně opakování |
 | **F1: DPO páry** | Týden 4 | $5 | Konkrétní odpovědi |
 | **F2: 70B base** | Měsíc 2 | $35 trénink | Dramatický skok kvality |
-| **F3: RAG pipeline** | Měsíc 2–3 | $20 setup | Žadné hallucinations, citace |
+| **F3: RAG pipeline** | Měsíc 2–3 | $20 setup | Méně halucinací, citace |
 | **F4: DPO** | Měsíc 3 | $15 | Vyladěný styl, konzistence |
-| **F5: A100 deployment** | Měsíc 3–4 | $180/měsíc | Stabilní produkce |
+| **F5: Dedikovaný / reserved GPU** | Měsíc 3–4 | dle varianty | Stabilní v2 produkce (ne spot Vast) |
 
 ### Realistické srovnání po F2+F3:
 
@@ -367,12 +379,12 @@ Obecné otázky mimo ZION:
 
 **P3 — Příští 2 týdny:**
 - [ ] Generovat dataset 15k párů (NIM API)
-- [ ] Fine-tune Qwen2.5-72B-Instruct (Vast.ai A100)
-- [ ] Exportovat GGUF Q5_K_M, nasadit
+- [ ] Fine-tune Qwen2.5-72B-Instruct na **dočasném** GPU (Vast/RunPod jen na job — ne jako runtime webu)
+- [ ] Exportovat GGUF Q5_K_M, nasadit na **v2 host** (5080+ vlastní nebo reserved A100)
 
 **P4 — Měsíc 2-3:**
-- [ ] DPO alignment
-- [ ] Produkční A100 instance (Vast.ai reserved)
+- [ ] DPO alignment (stejně — krátký pronájem GPU, ne domovská instance)
+- [ ] **v2 produkce:** přepnout `OLLAMA_API_URL` / backend na dedikovaný server; vypnout závislost na spot Vast pro `/api/ai-chat`
 
 ---
 

@@ -12,6 +12,10 @@ path = "src/lib.rs"
 name = "node"
 path = "src/bin/node.rs"
 
+[[bin]]
+name = "canonical-mainnet-operator-env"
+path = "src/bin/canonical-mainnet-operator-env.rs"
+
 [dependencies]
 anyhow.workspace = true
 blake3.workspace = true
