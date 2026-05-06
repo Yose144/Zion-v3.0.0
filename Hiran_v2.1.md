@@ -181,13 +181,32 @@ Kandidáti:
 
 - krátkodobě: Llama 3.1/3.2 8B/13B pro levné inference,
 - středně: Qwen2.5-Coder / Qwen2.5 14B/32B pro Rust/code schopnosti,
+- experimentálně: NVIDIA Nemotron 3 rodina pro agentic reasoning a NVIDIA-native deployment,
 - dlouhodobě: Qwen2.5-72B nebo Llama 3.3 70B pro frontier-like ZION doménu.
 
 Pro BestModel je pravděpodobně nejlepší:
 
 - **coding/orchestrator model:** Qwen coder rodina,
 - **AI Native / dialog model:** Llama/Qwen instruct,
+- **NVIDIA/agentic experiment:** Nemotron 3, pokud runtime podporuje konkrétní architekturu a quant,
 - **produkční stack:** menší rychlý model + RAG + fallback větší model pro těžké otázky.
+
+### Nemotron 3 poznámka
+
+Nemotron 3 je pro ZION zajímavý, protože jde o NVIDIA rodinu mířenou na enterprise/agentic workflow a dobře zapadá do našeho směru Vast, CUDA, NIM, TensorRT-LLM a NeMo. Není to ale automaticky nejlepší lokální model pro Hiran v2.1.
+
+Rozlišuj dvě věci:
+
+- **Starší Nemotron-3-8B** — 8B transformer s krátkým 4k kontextem; použitelný jako experiment, ale pro Rust/coding dnes nemusí porazit Qwen Coder.
+- **Novější Nemotron 3 Nano/Super/Ultra** — hybridní Mamba-Transformer MoE, agentic reasoning, velmi dlouhý kontext; slibné, ale lokální runtime/quant podpora může být složitější než běžný GGUF model.
+
+Pro náš stack:
+
+- pokud běžíme **Ollama / llama.cpp lokálně**, držet jako default Qwen/Llama GGUF, dokud Nemotron 3 nebude hladce podporovaný v našem runtime,
+- pokud běžíme **NVIDIA stack** (NIM / TensorRT-LLM / NeMo / Blackwell), Nemotron 3 je velmi dobrý kandidát na experiment,
+- pro **Hiran v2.1 coding agenta** zatím vede `Qwen2.5-Coder-14B/32B`; Nemotron 3 testovat jako agentic reasoning fallback.
+
+Verdikt: **Nemotron 3 zařadit do eval, ne rovnou jako hlavní lokální model.** Pokud vyhraje na ZION V3 eval suite (Rust patching, CLI orchestration, RAG grounded odpovědi), povýšíme ho.
 
 ### Fáze E — obecné znalosti vs. ZION specializace
 
@@ -256,6 +275,108 @@ Pro Hiran v2.1 bych nekupoval jen podle názvu karty. Rozhodovací pravidlo:
 - praktické optimum mimo high-end: **16GB VRAM**,
 - ideál pro lokální BestModel: **32GB VRAM**, pokud rozpočet dovolí,
 - pro 70B nepoužívat consumer midrange; tam dává smysl cloud/reserved GPU.
+
+### Jetson Nano / Orin Nano jako „AI Raspberry Pi“
+
+Upřesnění: když mluvíme o „NVIDIA nano jako RP5“, nejde primárně o samostatnou NPU, ale o **Jetson** mini počítače — ARM CPU + NVIDIA GPU/Tensor Cores + unified memory v malém boardu.
+
+Nejzajímavější aktuální směr:
+
+- **Jetson Orin Nano Super Developer Kit**,
+- cca **8 GB LPDDR5 unified memory**,
+- až cca **67 TOPS INT8**,
+- nízká spotřeba v řádu jednotek až desítek wattů,
+- NVMe disk silně doporučený,
+- vhodné pro JetPack / CUDA / TensorRT / edge AI.
+
+Co od toho realisticky čekat:
+
+- skvělé pro malý lokální Hiran **edge node**,
+- dobré pro embeddingy, RAG index, telemetry, hlas, senzory,
+- použitelné pro malé LLM/SLM cca **1B–4B**, někdy menší 7B v agresivní kvantizaci,
+- nečekat pohodlný 14B coding model jako na RTX 5070 Ti.
+
+#### Role v ZION síti
+
+Jetson Nano/Orin Nano může být:
+
+- domácí **AI Native sentinel**,
+- lokální RAG cache pro node,
+- hlasové/terminálové rozhraní k Hiranovi,
+- edge inference pro Medical Table / senzory,
+- lehký agent pro monitoring `zion node`, poolu a Docker stacku,
+- offline komunitní asistent s malým modelem,
+- orchestrátor, který těžké otázky přeposílá na RTX stroj nebo cloud fallback.
+
+#### Doporučená architektura s Jetsonem
+
+```text
+Jetson Orin Nano
+  → always-on Hiran edge agent
+  → embeddings / RAG cache / telemetry
+  → malý model 1B–4B pro rychlé lokální odpovědi
+  → router dotazů
+
+RTX 5070 Ti / desktop GPU
+  → hlavní Hiran v2.1 coding model (7B/14B)
+  → Rust reasoning, patch planning, dlouhé odpovědi
+
+Vast / reserved GPU
+  → fine-tune, DPO, 32B/70B fallback
+```
+
+Verdikt: **Jetson Orin Nano Super je výborný doplněk k lokálnímu ZION node**, ale ne náhrada za desktop GPU pro hlavní Hiran v2.1 coding model.
+
+### NPU / edge AI jednotky obecně
+
+NPU myšlenka je správná, ale je potřeba rozlišit marketingové „AI TOPS“ od reálného LLM provozu.
+
+U NVIDIA lokální AI dnes typicky nestojí na samostatné NPU jako v telefonech, ale na:
+
+- **Tensor Cores v RTX GPU** — nejlepší poměr pro lokální LLM na PC,
+- **Jetson / embedded platformách** — edge AI, senzory, robotika, nízká spotřeba,
+- **DGX Spark / GB10** — desktop AI supercomputer s unified memory,
+- **NIM / TensorRT-LLM / TensorRT for RTX** — optimalizační software pro lokální inference.
+
+#### Kdy NPU/edge dává smysl
+
+NPU/edge jednotka je vhodná pro:
+
+- always-on lokální asistenci,
+- wake-word / hlasové rozhraní,
+- embeddingy pro RAG,
+- klasifikaci dotazů,
+- malé 1B–4B modely,
+- senzory, robotiku, Medical Table, domácí node telemetry,
+- nízkou spotřebu 24/7.
+
+Není ideální jako hlavní mozek pro Hiran v2.1 coding agenta, pokud chceme 14B+ model a Rust reasoning. Tam pořád vede GPU s dost VRAM.
+
+#### Možná architektura lokálního Hiran node
+
+```text
+NPU / edge akcelerátor
+  → wake word, voice, embeddings, telemetry, router dotazů
+
+RTX GPU
+  → hlavní LLM inference: Hiran v2.1 / Qwen Coder / RAG reasoning
+
+CPU + SSD
+  → vector DB, repo index, logs, long-term memory
+
+Cloud / Vast fallback
+  → 32B/70B model pro těžké úlohy, fine-tune, eval, DPO
+```
+
+#### Doporučení
+
+Pro Hiran v2.1 nekupovat NPU místo GPU. Lepší je:
+
+1. **RTX 5070 Ti 16GB** jako hlavní lokální inference karta,
+2. volitelně edge/NPU jednotka pro always-on služby a RAG embeddingy,
+3. později DGX Spark / Jetson Thor styl platformy pro komunitní node, robotiku nebo Medical Table.
+
+Pokud by se objevil levný desktop NPU s dobrým LLM runtime, 32GB+ sdílenou pamětí a podporou GGUF/ONNX/TensorRT-LLM, může být kandidát. Pro teď je ale bezpečnější stavět BestModel runtime na RTX Tensor Cores.
 
 ---
 
