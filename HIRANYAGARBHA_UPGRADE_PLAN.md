@@ -3,6 +3,7 @@
 > **Datum:** 30. března 2026  
 > **Aktuální stav (v1):** `zion-expert` – Llama 3.1 8B Q5_K_M, 776 training párů; inference dříve na přechodné **Vast.ai** instanci (RTX 3060) — vhodné na experiment, ne jako dlouhodobý domov.  
 > **Cíl (v2):** Hiranyagarbha v2 — srovnatelná kvalita v doméně ZION s top modely; **produkční inference na dedikovaném GPU** (vlastní RTX 5080+ / reserved cloud), **Vast pouze krátkodobě** (fine-tune, batch joby), ne 24/7 provoz.  
+> **Před nasazením v2:** zálohuj produkční **v1** (`zion-expert`) z Ollama na lokál — viz [`docs/ops/BACKUP_HIRAN_V1_OLLAMA.md`](docs/ops/BACKUP_HIRAN_V1_OLLAMA.md).  
 > **Technická v2 linie v repu:** viz `AiNativev2.md` — `V3/L3/ai-native` (Dharma Autotuner, consciousness integrace, RAG index nad `docs/TerraNova`), delší timeouty pro remote LLM, docker orchestrace.  
 > **Upřímnost:** Frontier modely (Claude, GPT) mají 100B–1T parametrů + měsíce RLHF. My se jim nemůžeme rovnat globálně. Ale v doméně ZION blockchainu je to dosažitelné.
 
