@@ -101,7 +101,7 @@ Poznamka k V2 books:
 
 ### Hiran v2.1 — širší znalosti mimo ZION (zakotvení)
 
-Fine-tune dataset (`zion_train*.jsonl`) slouží **primárně** V3 / Rust / `zion` CLI / AI Native. Širší oblasti (přírodní a společenské vědy, dějiny, tibetské a jiné kánonické texty kde licence dovolí, eticky citlivé domorodé zdroje, kompletní projektová biblioteka z repa) patří do **RAG indexů a katalogu zdrojů**, ne do nekonečného rozšiřování JSONL. Viz repo root [`Hiran_v2.1.md`](../../Hiran_v2.1.md) § **3.6** a Fáze E (RAG rozšířeně).
+Fine-tune dataset (`zion_train*.jsonl`) slouží **primárně** V3 / Rust / `zion` CLI / AI Native. Širší oblasti (přírodní a společenské vědy, dějiny, tibetské a jiné kánonické texty kde licence dovolí, eticky citlivé domorodé zdroje, kompletní projektová biblioteka z repa) patří do **RAG indexů a katalogu zdrojů**, ne do nekonečného rozšiřování JSONL. Viz [`HiranV2.1/Hiran_v2.1.md`](../../HiranV2.1/Hiran_v2.1.md) § **3.6** a Fáze E (RAG rozšířeně).
 
 Ověřený robustní běh z 2026-03-29:
 - `300` souborů
@@ -115,7 +115,7 @@ Ověřený robustní běh z 2026-03-29:
 
 ### Vast.ai (RTX 4090 / 5090 / A100)
 
-Automatizovaný script: `vast_deploy.sh`. **API klíč jen přes env** (`export VAST_API_KEY=…`), viz kořenový [`gpuVast.md`](../../gpuVast.md).
+Automatizovaný script: `vast_deploy.sh`. **API klíč jen přes env** (`export VAST_API_KEY=…`), viz [`HiranV2.1/gpuVast.md`](../../HiranV2.1/gpuVast.md).
 
 ```bash
 cd /Users/yeshuae/Projects/2.9.6/scripts/finetune
