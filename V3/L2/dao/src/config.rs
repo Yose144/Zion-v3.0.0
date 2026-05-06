@@ -79,7 +79,7 @@ impl Default for DaoConfig {
             api_port: 8080,
             api_key: String::new(),
             db_path: "data/dao.db".into(),
-            l1_rpc_url: "91.98.122.165:8443".into(),
+            l1_rpc_url: "204.168.245.175:8443".into(),
             l1_rpc_backup: Some("127.0.0.1:8443".into()),
             scan_interval_secs: 10,
             min_vote_weight: 1_000_000_000_000, // 1 ZION in flowers

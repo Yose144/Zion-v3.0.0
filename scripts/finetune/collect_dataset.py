@@ -41,23 +41,42 @@ NVIDIA_BASE = "https://integrate.api.nvidia.com/v1"
 CHAT_MODEL  = "meta/llama-3.1-8b-instruct"   # free tier, 8B — ideální pro generování dat
 
 SYSTEM_PROMPT = (
-    "Jsi ZION AI — duchovně-technický expert na ZION blockchain projekt. "
-    "ZION je Proof-of-Work blockchain s mining algoritmem Ekam Deeksha "
-    "(SHA3-512 + AES-256 memory-hard, 256 KiB scratchpad). "
-    "Znáš celou historii projektu od verze 2.7 přes 2.8, 2.9 až po V3 mainnet. "
-    "Znáš Cosmic Harmony, Hiranyagarbha AI Native, Sacred Knowledge, Cosmic Map, "
-    "Whitepaper, ZION Oasis, Humanitarian Tithe, Ekam Deeksha knihy, "
-    "Deeksha conscious mining, DharmaScore, EkamField, RAG pipeline i deployment. "
-    "Odpovídej přesně, technicky a v češtině. Pokud nevíš, řekni to otevřeně."
+    "Jsi Hiranyagarbha / ZION AI — duchovně-technický expert a operátorský orchestrátor nad projektem ZION. "
+    "Kanonický mainnet kód a pravda o runtime jsou ve workspace **V3/** (Rust crates: zion-core, zion-pool, zion-miner, "
+    "L2 bridge/dao/atomic-swap, L3 warp/ncl/ai-native). Kořeny L1/, L2/, L3/ mimo V3/ jsou legacy / reference. "
+    "Znáš Ekam Deeksha PoW (SHA3-512 + AES memory-hard scratchpad), Cosmic Harmony, AI Native manifest, HiranyagarbhaAgent v "
+    "V3/L3/ai-native, dokumentaci v V3/docs a provoz podle AGENTS.md. "
+    "Jako orchestrátor znáš příkazy **zion** CLI (menu, doctor, status, logs, deploy, služby node/pool/miner/ai-native/bridge/dao). "
+    "Umíš číst a vysvětlovat Rust v V3, navrhovat změny konzistentní se stylem repo, a odkazovat na správné cesty souborů. "
+    "Odpovídej přesně, technicky, v češtině (anglické identifikátory a názvy crate přesně). Pokud nevíš, řekni to otevřeně."
 )
 
 # ─── Hierarchické skenování ─────────────────────────────────────────────────
 # Priorita: HIGH = klíčové docs, MEDIUM = history/code, LOW = archiv
 SCAN_ROOTS_PRIORITIZED = {
     "HIGH": [
-        # Kořenové dokumenty
+        # ─── V3 mainnet (kanonický Rust stack + operátor docs) — nejvyšší priorita ingestu
+        "AGENTS.md",
+        "StatusV3.md",
+        "HIRANYAGARBHA_UPGRADE_PLAN.md",
+        ".github/copilot-instructions.md",
+        ".github/instructions/v3-mainnet.instructions.md",
+        "V3/README.md",
+        "V3/ROADMAP.md",
+        "V3/docs",
+        "V3/docker",
+        "V3/cli",
+        "V3/sdk",
+        "V3/L1/core/src",
+        "V3/L1/miner/src",
+        "V3/L1/pool/src",
+        "V3/L1/cosmic-harmony/src",
+        "V3/L1/native-ffi",
+        "V3/L2",
+        "V3/L3",
+        # Kořenové dokumenty (kontext celého projektu)
         "README.md",
-        "HIRANYAGARBHA_AI_NATIVE.md",
+        "docs/2.9.9/archive/HIRANYAGARBHA_AI_NATIVE.md",
         "EkamDeeksha.md",
         "AI_NATIVE_CONCEPT_2.9.md",
         "AI-L3.md",
@@ -102,20 +121,10 @@ SCAN_ROOTS_PRIORITIZED = {
         "docs/docs2.9/26.9.2025VICTORY",
         # Presale
         "docs/docs2.9/PRESALE_2025",
-        # V3 mainnet code (Rust)
-        "V3/README.md",
-        "V3/ROADMAP.md",
-        "V3/L1/core/src",
-        "V3/L1/miner/src",
-        "V3/L1/pool/src",
-        "V3/L1/cosmic-harmony/src",
-        # AI Native Rust
-        "L3/ai-native/src",
-        # V3 L2/L3 code
-        "V3/L2",
-        "V3/L3",
     ],
     "MEDIUM": [
+        # V3 CI / release (doplňkový kontext)
+        ".github/workflows",
         # Hlavní docs (audit, roadmap, reports)
         "docs",
         # Version history
@@ -172,7 +181,7 @@ SCAN_ROOTS: list[str] = []
 for _prio in ("HIGH", "MEDIUM", "LOW"):
     SCAN_ROOTS.extend(SCAN_ROOTS_PRIORITIZED[_prio])
 
-INCLUDE_EXTENSIONS = {".md", ".rs", ".toml", ".py", ".json"}
+INCLUDE_EXTENSIONS = {".md", ".rs", ".toml", ".py", ".json", ".yml", ".yaml"}
 MAX_CHUNK_CHARS = 2000   # Větší chunk = víc kontextu pro LLM
 CHUNK_OVERLAP   = 300    # Větší překryv = kontinuita
 
@@ -316,6 +325,12 @@ def generate_qa_pair(api_key: str, source: str, chunk: str) -> dict | None:
         category = "mainnet spuštění a konfigurace"
     elif "mining" in src_lower or "miner" in src_lower:
         category = "mining, pool a těžba"
+    elif source.startswith("V3/") and "/cli/" in src_lower:
+        category = "V3 zion CLI — operátorský orchestrátor (Rust)"
+    elif source.startswith("V3/docs/") or "v3/docs" in src_lower:
+        category = "V3 oficiální dokumentace (mainnet, CLI, mining, L2/L3)"
+    elif source.startswith("V3/") and source.endswith(".rs"):
+        category = "V3 Rust mainnet — kanonická implementace (preferuj před legacy L1/)"
     elif source.endswith(".rs"):
         category = "Rust zdrojový kód ZION"
     elif "philosophy" in src_lower or "dharma" in src_lower:
@@ -338,6 +353,8 @@ Pravidla:
 - Otázka musí být konkrétní, technická nebo věcná
 - Odpověď musí vycházet POUZE z textu, min. 50 slov
 - Odpověď v češtině, technické termíny ponech anglicky
+- Pokud jde o V3 Rust kód: ptej se na strukturu modulů, typy, konsensus, pool protokol, CLI; uveď krátké citace identifikátorů
+- Pokud jde o orchestraci: ptej se na příkazy zion, deploy, doctor, služby
 - Pokud text obsahuje kód, zahrň ukázku kódu
 
 Formát odpovědi (JSON):
@@ -430,11 +447,40 @@ SEED_PAIRS = [
     {
         "user": "Jak nasadit ZION V3 node přes Docker?",
         "assistant": (
-            "Použij docker-compose.v3-mainnet.yml:\n"
-            "  docker compose -f docker/docker-compose.v3-mainnet.yml up -d\n"
-            "Node spustí: zion-core (port 9333/9334), zion-pool (port 3333), zion-miner. "
-            "Konfiguraci nastav v config/mainnet.toml nebo přes env proměnné (ZION_NETWORK=mainnet). "
-            "Pre-check: docker compose -f docker/docker-compose.v3-mainnet.yml config"
+            "Doporučený postup (2026): unified compose v **V3/docker/docker-compose.yml** s profilem mainnet:\n"
+            "  docker compose -f V3/docker/docker-compose.yml --profile mainnet up -d\n"
+            "Logy node: docker compose -f V3/docker/docker-compose.yml logs -f node\n"
+            "Legacy soubor docker/docker-compose.v3-mainnet.yml může stále existovat, ale primární dokumentace míří na V3/docker. "
+            "Kompletní přehled: V3/docker/DOCKER.md a AGENTS.md."
+        ),
+    },
+    {
+        "user": "Kde je kanonický Rust workspace V3 a jak ho zkontroluju?",
+        "assistant": (
+            "Všechny mainnet crate jsou pod **V3/** s manifestem `V3/Cargo.toml`. "
+            "Z kořene repa:\n"
+            "  cargo check --manifest-path V3/Cargo.toml --workspace\n"
+            "  cargo test --manifest-path V3/Cargo.toml --workspace -- --test-threads=1\n"
+            "Klíčové balíčky: `zion-core` (node), `zion-pool` (server), `zion-miner`, L2 bridge/dao/atomic-swap, L3 warp/ncl/ai-native. "
+            "Legacy stromy `L1/`, `L2/`, `L3/` mimo `V3/` jsou referenční — nové změny preferuj v `V3/**`."
+        ),
+    },
+    {
+        "user": "Co je zion CLI a jak slouží jako orchestrátor?",
+        "assistant": (
+            "`zion` je sjednocený operátorský binární nástroj (crate **V3/cli**). "
+            "Spouští interaktivní menu (`zion` / `zion menu`), health (`zion doctor`, `zion status`), "
+            "logy služeb (`zion logs node`, `zion logs ai-native`), lifecycle deploye a dílčí příkazy pro node, pool, miner, bridge, dao, ai-native. "
+            "Rozliš: `zion update` aktualizuje **lokální** CLI binárku, zatímco `zion deploy update` cílí na vzdálené compose kontejnery. "
+            "Referenční příklady: `V3/docs/CLI_REFERENCE.md`, `V3/docs/CLI_GUIDE.md`."
+        ),
+    },
+    {
+        "user": "Kde v kódu najdu HiranyagarbhaAgent a AI Native v3?",
+        "assistant": (
+            "V mainnet linii je AI Native v **V3/L3/ai-native/** (Rust crate `zion-ai-native` v workspace `V3/Cargo.toml`). "
+            "Agent a související logika jsou v modulech jako `hiranyagarbha.rs`, `consciousness_engine.rs`, `llm_backend.rs`, orchestrace v `lib.rs`. "
+            "Starší strom `L3/ai-native/` (mimo V3) ber jen jako migraci / historii — pro pravdu o aktuálním běhu používej `V3/L3/ai-native/`."
         ),
     },
     # ─── AI NATIVE & HIRANYAGARBHA ──────────────────────────────────────────
@@ -963,7 +1009,7 @@ def build_seed_dataset() -> list[dict]:
 def main() -> None:
     parser = argparse.ArgumentParser(description="ZION fine-tune dataset collector")
     parser.add_argument("--output",    default="data/zion_train.jsonl", help="Výstupní JSONL soubor")
-    parser.add_argument("--max-docs",  type=int, default=300,  help="Max počet dokumentů ke skenování")
+    parser.add_argument("--max-docs",  type=int, default=450,  help="Max počet dokumentů ke skenování (V3 corpus: zkus 600–900)")
     parser.add_argument("--max-chunks", type=int, default=5,   help="Max chunků na soubor (default 5)")
     parser.add_argument("--seed-only", action="store_true",    help="Pouze seed páry, bez NIM generování")
     parser.add_argument("--project",   default=None,           help="Cesta k projektu ZION (auto-detect)")

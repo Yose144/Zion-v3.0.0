@@ -1,4 +1,4 @@
-# Audit close-out — položky 1–6 (sekvenční playbook)
+# Audit close-out — položky 1–7 (sekvenční playbook)
 
 Tento dokument navazuje na shrnutí v [`StatusV3.md`](../../../StatusV3.md) §2 a na
 [`2026-04-V3_AUDIT_COMPLETION.md`](../audits/2026-04-V3_AUDIT_COMPLETION.md) §7–8.
@@ -24,14 +24,19 @@ Do dokončení kroků 1–3 audit **F3b nepovažujte za uzavřený z pohledu riz
 
 ---
 
-## 2. Hard fork — tx-hash v2 + F2 BLAKE3 Merkle (koordinace)
+## 2. Konsensus — tx-hash v2 + F2 BLAKE3 Merkle
 
 **Konstanty:** `V3/L1/cosmic-harmony/src/deeksha.rs`
 (`TX_HASH_V2_ACTIVATION_HEIGHT`, `BODY_ROOT_V2_ACTIVATION_HEIGHT`).
 
-**Produkční mainnet:** obě nastavit na **stejnou** koordinovanou výšku (viz audit completion §1–2).
+**Produkční mainnet (výchozí build, bez `testnet_fork_rehearsal`):** obě jsou
+**`0`** — nový řetězec od Genesis #0. Nasazení **vyžaduje prázdný / nový datadir**
+(starý stav s XOR body nebo tx v1 only není kompatibilní).
 
-**Lokální / docker rehearsal bez editace konstant v souboru:**
+**Koordinovaný „flip“ na už běžícím řetězci** dnes není cíl této linky; šlo by
+o budoucí release s jednou společnou výškou pro obě konstanty.
+
+**Lokální / docker rehearsal bez měny produkčních literálů:**
 
 ```bash
 cargo build --release --manifest-path V3/Cargo.toml \
@@ -87,11 +92,51 @@ Plán priorit a fází:
 
 ---
 
+## 7. Nový produkční server (greenfield V3)
+
+**Aktuální primární bootstrap (P2P / konfigurace v repu):** `204.168.245.175`
+
+Checklist při přesunu na nový host (shrnutí z [`StatusV3.md`](../../../StatusV3.md) §2 P1):
+
+1. **Build / image:** release z `main`, **bez** `testnet_fork_rehearsal` (pokud nejsi v labu).
+2. **Datadir:** smazat nebo znovu vytvořit LMDB + chain metadata cesty z dokumentace
+   compose / [`V3/docs/MAINNET_DEPLOY_RUNBOOK.md`](../MAINNET_DEPLOY_RUNBOOK.md) —
+   žádný import starého XOR řetězce.
+3. **Síť:** na **prvním** uzlu nechat `ZION_SEED_PEERS` prázdné; na follower uzlech nastavit
+   `204.168.245.175:8333` (nebo jiný koordinátor). Firewall: 8333 P2P, RPC dle compose.
+4. **Pool + miner:** znovu nasměrovat na RPC nového nodu; ověřit `submit_candidate` a výplaty.
+5. **Bridge (volitelně):** stejné jako §3 — klíče, `bridge-mainnet.toml` (`rpc_url` směřuje na L1),
+   `ANKR_API_KEY`.
+6. **Smoke:** `getChainInfo`, výška roste, `/health` + Prometheus; krátký pool share test.
+
+**Hardfork / rehearsal (ověření gate výšky mimo produkční default):**
+
+```bash
+# Lokální build se sdílenou rehearsal výškou (viz deeksha.rs)
+cargo build --release --manifest-path V3/Cargo.toml \
+  -p zion-core -p zion-pool -p zion-cli -p zion-miner \
+  --features testnet_fork_rehearsal
+
+# Testy jen u crate, které feature propagují (celý workspace s --features nevolat)
+cargo test --release --manifest-path V3/Cargo.toml \
+  -p zion-cosmic-harmony -p zion-core -p zion-pool -p zion-miner -p zion-cli \
+  --features testnet_fork_rehearsal -- --test-threads=1
+```
+
+Produkční binárky **bez** této feature už mají tx-hash v2 + BLAKE3 body root od výšky **0**
+(`StatusV3.md` 2026-05-03). Skript: [`V3/scripts/hardfork-rehearsal-testnet.sh`](../../scripts/hardfork-rehearsal-testnet.sh).
+
+Detailní kroky: [`V3/docs/CLI_DEPLOY_PLAYBOOK.md`](../CLI_DEPLOY_PLAYBOOK.md),
+Docker: [`V3/docker/DOCKER.md`](../../docker/DOCKER.md).
+
+---
+
 ## Pořadí závislostí
 
 ```text
 1 (rotace) → pak bezpečně 5 (scrub)
-2 (fork)   ↔ provázané s release procesem a testnet rehearsal
+2 (konsensus / datadir) ↔ release + čistý stav na novém řetězci
+7 (nový server) ↔ závislé na 2 (správný build + prázdný datadir)
 3 (bridge) ↔ nezávislé na 5, závislé na klíčích / ops
 4 (externí audit) ← lze paralelně připravovat od začátku
 6 (fuzz)   ← lze paralelně v engineering tracku

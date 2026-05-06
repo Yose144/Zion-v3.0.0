@@ -2,13 +2,13 @@
 
 **Companion to:** `2026-04-V3_INTERNAL_AUDIT.md`
 **Date:** 2026-04-29
-**Last verification update:** 2026-05-02
+**Last verification update:** 2026-05-06 (dokument synchronizován s produkčními konstantami v `deeksha.rs`: fresh mainnet aktivuje §3.2 + F2 od výšky **0**)
 **Status of the six ranked findings** (Finding → PR → state):
 
 | # | Finding | Severity | PR | State |
 |---|---|---|---|---|
 | **F1** | Validation pipeline `validate_block` not called + missing conservation-of-value | 🔴 Critical | [#20](https://github.com/Yose144/2.9.6/pull/20) | ✅ merged |
-| **F2** | Block body "merkle root" is XOR aggregate, not tree | 🔴 High | Cursor WIP E.1–E.5 | ✅ code landed dormant; activation height + rehearsal pending |
+| **F2** | Block body "merkle root" is XOR aggregate, not tree | 🔴 High | Cursor WIP E.1–E.5 | ✅ BLAKE3 Merkle dispatcher; **production default active from height `0`** (new chain); rehearsal via `testnet_fork_rehearsal` |
 | **F3** | `zion-wallet.json` committed with plaintext Ed25519 secret keys | 🔴 Critical | [#18](https://github.com/Yose144/2.9.6/pull/18) | ✅ merged |
 | **F3b** | `docs/docs2.9/ZION_KEYS/` committed with live PAT + OpenAI key + SSH config | 🔴 Critical | *this PR* | HEAD cleaned; **rotation & history scrub still pending** |
 | **F4** | Bridge unlock multisig not enforced at L1 | 🟡 Medium | [#22](https://github.com/Yose144/2.9.6/pull/22) | ✅ merged |
@@ -17,11 +17,12 @@
 
 Plus the three **§15 small items** from the audit (`active_tip().expect`, `lib.rs::evict` dead code, `BURN_ADDRESS` regression test) — the latter two are handled in *this PR*, the first is a low-priority type-safety refactor kept as a known item.
 
-And the **§3.2 tx-hash preimage malleability** (Medium): the repository now
-carries the dormant `Transaction::calculate_hash_v2()` helper, activation
-constants, peer-block / mempool rejection gates, and wallet/pool emission
-switches. v1 txs (everything in the chain today) keep their current IDs
-untouched until the coordinated hard-fork height is flipped.
+And the **§3.2 tx-hash preimage malleability** (Medium): the repository carries
+`Transaction::calculate_hash()` dispatch to v2, peer-block / mempool rejection
+gates, and wallet/pool emission wired to `tx_hash_v2_active(height)`.
+**Production builds without `testnet_fork_rehearsal` activate v2 from height `0`**
+(fresh mainnet). Legacy v1 code paths remain for historical tests and
+below-activation semantics in rehearsal builds.
 
 ---
 
@@ -51,42 +52,35 @@ untouched until the coordinated hard-fork height is flipped.
   - `tx_hash_v1_activation_is_backward_compatible` — landing v2 must
     not change v1 hashes.
 
-### 2026-05-02 implementation update
+### Production vs rehearsal (2026-05-03+)
 
-Cursor WIP has completed the previously deferred code hooks:
+Implementation lives in `V3/L1/cosmic-harmony/src/deeksha.rs`:
 
-- `TX_HASH_V2_ACTIVATION_HEIGHT` lives in
-  `V3/L1/cosmic-harmony/src/deeksha.rs` and defaults to `u64::MAX`.
+- **Default production** (`#[cfg(not(feature = "testnet_fork_rehearsal"))]`):
+  `TX_HASH_V2_ACTIVATION_HEIGHT = 0` and `BODY_ROOT_V2_ACTIVATION_HEIGHT = 0`.
+  This targets a **new chain from Genesis #0** (incompatible with any prior
+  XOR-body / tx-v1-only persisted state).
+- **Rehearsal builds:** `cargo build … --features testnet_fork_rehearsal` uses a
+  shared finite `TESTNET_REHEARSAL_COORDINATED_HEIGHT` for both gates — edit
+  that literal only for local/docker fork drills. **Do not ship rehearsal
+  features in production binaries.**
+
+Wired behaviors (unchanged):
+
 - `peer_block_validation::validate_accepted_peer_block` rejects UTXO
   `tx.version < TX_HASH_V2_VERSION` at/above the activation height.
-- `insert_utxo_transaction` rejects legacy UTXO txs for pending block
-  height `tip + 1` once the gate is active; RPC submit paths reuse this.
-- `wallet::pending_utxo_tx_version`, wallet CLI, bridge-lock builder,
-  bridge unlock builder, coinbase template builder, and pool payouts all
-  emit `version = 2` once the pending block height is active.
+- `insert_utxo_transaction` rejects legacy UTXO txs for pending height
+  `tip + 1` when the gate is active; RPC submit paths reuse this.
+- Wallet, bridge, coinbase template, and pool payouts emit `version = 2`
+  when `tx_hash_v2_active(pending_height)`.
 
-What is still deliberately **not** done: choosing the real mainnet
-activation height. Both activation constants remain `u64::MAX` until
-testnet rehearsal and operator coordination are complete.
+### If you ever need a coordinated flip on an *existing* live chain
 
-### When to activate (hard-fork step)
-
-1. **Choose the height gate** next to `CHV_EKAM_V2_FORK_HEIGHT` in
-   `cosmic-harmony`:
-   ```rust
-   pub const TX_HASH_V2_ACTIVATION_HEIGHT: u64 = u64::MAX; // set at fork
-   ```
-2. **Keep the code hooks dormant until that height:** peer-block,
-   mempool/RPC, wallet, pool, coinbase, and bridge-unlock builders are
-   already wired to the `tx_hash_v2_active(height)` predicate.
-3. **Testnet first.** Pin a canonical test vector that nails the v2
-   preimage for a known tx (`version = 2`, one input, two outputs,
-   one `Some(memo)` + one `None`); freeze it in `tx.rs` like the
-   Ekam v2 canonical vector.
-4. **Mainnet activation** coordinated with the same release window as
-   F2 (Merkle rebuild) and any other consensus changes — they both
-   break consensus, so batching them minimizes user-facing fork
-   churn.
+That scenario is **not** the current V3 default (greenfield genesis). For a
+future live fork you would set both activation constants to the same coordinated
+height in a dedicated release, run testnet rehearsal first, and batch with any
+other consensus changes. The `tx_hash_v2_active` / `body_root_v2_active`
+predicates are already the single switch points.
 
 ### Risk if never activated
 
@@ -140,11 +134,11 @@ Ekam. Per-leaf cost drops from O(scratchpad-fill) to O(field-count).
 
 ### Activation
 
-`BODY_ROOT_V2_ACTIVATION_HEIGHT` now exists beside
-`TX_HASH_V2_ACTIVATION_HEIGHT` and defaults to `u64::MAX`. The template
-root dispatcher keeps legacy XOR below the gate and switches to BLAKE3
-Merkle above it. Activation should still be batched with §1 — they both
-need a fork-window coordination.
+`BODY_ROOT_V2_ACTIVATION_HEIGHT` lives beside `TX_HASH_V2_ACTIVATION_HEIGHT`.
+In **default production** both are **`0`** (BLAKE3 Merkle body root from
+genesis). With `testnet_fork_rehearsal`, both follow the same rehearsal height.
+The template root dispatcher keeps legacy XOR below the gate and switches to
+BLAKE3 Merkle at/above it.
 
 ### Open design question
 
@@ -225,9 +219,10 @@ Ordered by criticality (step-by-step playbook: [`V3/docs/operational/AUDIT_CLOSE
    - See `SECURITY_NOTICE_2026-04-28.md` addendum for the full checklist.
    Merging this PR cleans HEAD but does **not** invalidate the leaked
    values — they are live until manually rotated.
-2. **F2 Merkle** + **§3.2 tx hash v2 activation** — code hooks are
-   present and dormant; choosing/flipping the real height is still a
-   coordinated hard-fork release step.
+2. **F2 Merkle** + **§3.2 tx hash v2** — implemented and **active from height
+   `0` in default production** (new chain). **Operational step:** deploy only
+   with a **clean datadir**; do not attach old XOR/v1 chain data. For fork
+   drills without editing sources, use `--features testnet_fork_rehearsal`.
 3. **Bridge validator provisioning** — relayer is fail-closed, but the
    production bridge still needs the real 3/5 validator key set and config.
 4. **3rd-party security audit** (ROADMAP Q3 2026, Trail of Bits /

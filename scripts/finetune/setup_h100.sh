@@ -1,10 +1,10 @@
 #!/bin/bash
-# Deep Learning Setup for Hiranyagarbha v2 on H100
+# Deep Learning Setup for Hiranyagarbha v2 on H100/A100/RTX 4090
 
 echo "--- Starting ZION Deep Learning Environment Setup ---"
 
 # 1. System Updates & Essential Tools
-apt-get update && apt-get install -y rsync curl git jq build-essential pkg-config libssl-dev
+apt-get update && apt-get install -y rsync curl git jq build-essential pkg-config libssl-dev openssh-server
 
 # 2. Rust & LLVM Toolchain (For debugging and code analysis learning)
 if ! command -v rustc &> /dev/null; then

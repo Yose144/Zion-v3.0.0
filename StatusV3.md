@@ -142,9 +142,8 @@ nebo má konkrétní aktivační plán v
   `self.version`. Verze `>=2` používá schéma `"ZION_TX_V2\0"`. V produkčním
   buildu je v2 **vyžadováno od genesis** (výška 0); verze 1 zůstává ve kódu
   pro historické / test cesty pod gate.
-- **Test coverage:** **478/479** lib testů v `zion-core` projde (1 selhává
-  i na `main`: `discovery::tests::tick_produces_dns_and_announce_commands`,
-  flaky DNS lookup test, ne kód). 5 nových `tx_hash_*` regression testů
+- **Test coverage:** lib testy `zion-core` — viz §5 (pyramida); `discovery` testy
+  používají čistý state machine bez síťového DNS. 5 nových `tx_hash_*` regression testů
   přibylo v PR #25, jeden z nich úmyslně **pinuje malleability v1** aby
   budoucí contributoři neopravovali v1 in-place a tím nezneplatnili každý
   historický UTXO ID.
@@ -331,10 +330,12 @@ nebo má konkrétní aktivační plán v
    [`AUDIT_COMPLETION.md` §5](./V3/docs/audits/2026-04-V3_AUDIT_COMPLETION.md).
 8. **3rd-party L3/warp signer review** (§15.7) — per-adapter audit
    `private_key` cest pro Stellar, BTC, Tron — odložené do externího auditu.
-9. **Stabilizace `discovery::tests::tick_produces_dns_and_announce_commands`** —
-   flaky DNS test, který blokuje `cargo test --workspace` (pozorováno i na
-   2026-05-02 lokálně — testovací proces visí > 30 minut). Buď izolovat
-   DNS lookup mockem, nebo `#[ignore]` + dedicated job.
+9. **`discovery::tests::tick_produces_dns_and_announce_commands`** — engine je
+   čistě synchronní (žádný DNS I/O v testu). Fix: explicitní
+   `set_dns_seeds` + doprovodný test `tick_emits_no_dns_when_seeds_empty` (viz
+   `V3/L1/core/src/discovery.rs`). Pokud starý clone stále visí na DNS, zkontroluj
+   jiné testy / paralelní běh; `cargo test -p zion-core discovery::tests` by měl
+   doběhnout v řádu sekund.
 
 ### 🟢 P3 — nice-to-have
 

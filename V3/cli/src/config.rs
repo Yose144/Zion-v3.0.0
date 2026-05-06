@@ -99,7 +99,7 @@ pub struct DaoConfig {
 impl Default for NodeConfig {
     fn default() -> Self {
         Self {
-            rpc_host: "91.98.122.165".into(),
+            rpc_host: "204.168.245.175".into(),
             rpc_port: 8443,
             p2p_port: 8334,
         }
@@ -109,7 +109,7 @@ impl Default for NodeConfig {
 impl Default for PoolConfig {
     fn default() -> Self {
         Self {
-            host: "91.98.122.165".into(),
+            host: "204.168.245.175".into(),
             port: 3333,
         }
     }
@@ -130,7 +130,7 @@ impl Default for MinerConfig {
 impl Default for AgentConfig {
     fn default() -> Self {
         Self {
-            url: "http://91.98.122.165:8001".into(),
+            url: "http://204.168.245.175:8001".into(),
             model: "hiranyagarbha-v1".into(),
         }
     }
