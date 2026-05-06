@@ -59,7 +59,7 @@ impl Default for SwapIdentity {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct L1Config {
-    /// L1 raw TCP JSON-RPC address, e.g. `91.98.122.165:8443`
+    /// L1 raw TCP JSON-RPC address, e.g. `204.168.245.175:8443`
     pub rpc_url: String,
 
     /// Bearer token for L1 RPC (value of `ZION_RPC_TOKEN` on node).

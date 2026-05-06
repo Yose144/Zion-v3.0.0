@@ -7,6 +7,8 @@
 //! PoW hashing uses Ekam Deeksha (cosmic_harmony), not this module.
 
 use ed25519_dalek::{Signature, Signer, SigningKey, Verifier, VerifyingKey};
+use rand::rngs::StdRng;
+use rand::SeedableRng;
 use ripemd::Ripemd160;
 use sha2::{Digest, Sha256};
 use zeroize::Zeroize;
@@ -26,6 +28,24 @@ pub fn generate_keypair() -> (SigningKey, VerifyingKey) {
     let signing = SigningKey::generate(&mut csprng);
     let verifying = signing.verifying_key();
     (signing, verifying)
+}
+
+/// Deterministic Ed25519 keypair from a domain-separated UTF-8 label: BLAKE3(label) → `StdRng` seed → `SigningKey::generate`.
+///
+/// **Anyone with this source and the same label can regenerate the keypair.** Use for repo-pinned
+/// bootstrap addresses only; for exclusive custody, replace with OS-random keys and store offline.
+pub fn keypair_from_canonical_label(label: &str) -> (SigningKey, VerifyingKey) {
+    let seed = blake3_hash(label.as_bytes());
+    let mut rng = StdRng::from_seed(seed);
+    let signing_key = SigningKey::generate(&mut rng);
+    let verifying_key = signing_key.verifying_key();
+    (signing_key, verifying_key)
+}
+
+/// `zion1…` address for [`keypair_from_canonical_label`].
+pub fn canonical_address_for_label(label: &str) -> String {
+    let (_, vk) = keypair_from_canonical_label(label);
+    derive_address(vk.as_bytes())
 }
 
 /// Sign `message` with an Ed25519 secret key. Returns 64-byte signature.
@@ -220,6 +240,19 @@ mod tests {
         let (_sk2, vk2) = generate_keypair();
         let sig = sign(&sk, b"msg");
         assert!(!verify(vk2.as_bytes(), b"msg", &sig));
+    }
+
+    #[test]
+    fn keypair_from_canonical_label_is_deterministic() {
+        let label = "__test_canonical_deterministic_v1__";
+        let (sk1, vk1) = keypair_from_canonical_label(label);
+        let (sk2, vk2) = keypair_from_canonical_label(label);
+        assert_eq!(sk1.to_bytes(), sk2.to_bytes());
+        assert_eq!(vk1.to_bytes(), vk2.to_bytes());
+        assert_eq!(
+            derive_address(vk1.as_bytes()),
+            canonical_address_for_label(label)
+        );
     }
 
     #[test]
