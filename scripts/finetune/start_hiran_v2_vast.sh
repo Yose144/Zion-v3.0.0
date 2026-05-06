@@ -20,13 +20,17 @@ if [[ -z "${VAST_API_KEY:-}" ]]; then
   exit 1
 fi
 
-DATASET="${ZION_TRAIN_DATASET:-$SCRIPT_DIR/data/zion_train_hiran_v2.jsonl}"
-if [[ ! -f "$DATASET" ]]; then
+# Prefer unified v2.1 curriculum (merged v1-shards + v2); override with ZION_TRAIN_DATASET.
+if [[ -n "${ZION_TRAIN_DATASET:-}" ]]; then
+  DATASET="$ZION_TRAIN_DATASET"
+elif [[ -f "$SCRIPT_DIR/data/hiran_curriculum_v2.1.jsonl" ]]; then
+  DATASET="$SCRIPT_DIR/data/hiran_curriculum_v2.1.jsonl"
+elif [[ -f "$SCRIPT_DIR/data/zion_train_hiran_v2.jsonl" ]]; then
+  DATASET="$SCRIPT_DIR/data/zion_train_hiran_v2.jsonl"
+elif [[ -f "$SCRIPT_DIR/data/zion_train.jsonl" ]]; then
   DATASET="$SCRIPT_DIR/data/zion_train.jsonl"
-fi
-
-if [[ ! -f "$DATASET" ]]; then
-  echo "[ERR] Dataset nenalezen: $DATASET"
+else
+  echo "[ERR] Dataset nenalezen (očekáváno ZION_TRAIN_DATASET nebo data/hiran_curriculum_v2.1.jsonl)."
   exit 1
 fi
 
