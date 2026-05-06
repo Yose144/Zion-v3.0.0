@@ -18,6 +18,8 @@ Unified CLI command reference: `V3/docs/CLI_REFERENCE.md`.
 Unified CLI troubleshooting: `V3/docs/CLI_TROUBLESHOOTING.md`.
 Unified CLI deploy playbook: `V3/docs/CLI_DEPLOY_PLAYBOOK.md`.
 
+Hiranyagarbha / Hiran **v2.1** roadmap (ZION agent + širší kurátorované RAG korpusy mimo čistý SFT): repository root [`Hiran_v2.1.md`](../Hiran_v2.1.md).
+
 Pure-code scope for the bootstrap:
 
 - `L1/cosmic-harmony` — canonical Ekam Deeksha PoW and GPU backends
