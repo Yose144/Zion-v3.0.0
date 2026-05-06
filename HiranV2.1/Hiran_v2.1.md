@@ -46,12 +46,14 @@ V2 je první skutečný fine-tune nad ZION daty. **V2.1 je přechod od znalostn�
 
 ### Training factory
 
+Datasetové JSONL a exporty drží adresář **`HiranV2.1/`**; **`scripts/finetune/data`** je symlink na **`HiranV2.1/data`**, aby stávající skripty (`--dataset data/…`) fungovaly beze změn.
+
 - `scripts/finetune/build_v3_orchestrator_dataset.py` — offline V3/Rust/orchestrátor corpus.
-- `scripts/finetune/data/zion_train_hiran_v2.jsonl` — aktuální v2 dataset.
+- `HiranV2.1/data/zion_train_hiran_v2.jsonl` — aktuální v2 dataset (viz také `scripts/finetune/data/…`).
 - `scripts/finetune/finetune_lora.py` — QLoRA SFT.
 - `scripts/finetune/vast_deploy.sh` — Vast orchestrace.
 - `scripts/finetune/start_hiran_v2_vast.sh` — rychlý start jobu.
-- `gpuVast.md` — bezpečný Vast workflow.
+- `HiranV2.1/gpuVast.md` — bezpečný Vast workflow.
 
 ---
 
