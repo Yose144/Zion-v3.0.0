@@ -85,7 +85,7 @@ CHAIN_AFTER="$(rpc_chain | tee "$WORKDIR/chain-after.json")"
 STATS_END="$(docker_stats | tee "$WORKDIR/docker-stats-end.txt")"
 
 echo "stahuji log poolu od $T0_ISO…" >&2
-pool_logs_since "$T0_ISO" | tee "$WORKDIR/pool-logs-slice.log" >/dev/null
+pool_logs_since "$T0_ISO" >"$WORKDIR/pool-logs-slice.log"
 
 # Statistiky z řezu logu
 SLICE="$WORKDIR/pool-logs-slice.log"
@@ -174,4 +174,6 @@ scp -o BatchMode=yes "$SLICE" "$SSH_HOST:$REMOTE_STRESS_LOG_DIR/pool-logs-$REPOR
 echo "" >&2
 echo "Hotovo. Report na serveru: $REMOTE_STRESS_LOG_DIR/report-$REPORT_ID.md" >&2
 echo "Lokální kopie: $LOCAL_REPORT_MD" >&2
-cat "$LOCAL_REPORT_MD"
+if [[ "${STRESS_PRINT_REPORT:-0}" == "1" ]]; then
+  cat "$LOCAL_REPORT_MD"
+fi
