@@ -595,11 +595,11 @@ impl NodeConfig {
             rpc_bind: PeerEndpoint::new("0.0.0.0", 8443),
             pool_bind: PeerEndpoint::new("0.0.0.0", 8444),
             seed_peers: vec![
-                // EU – Prague, CZ (primary)
+                // Primary bootstrap (current fleet entrypoint)
+                PeerEndpoint::new("204.168.245.175", 8333),
+                // Legacy / regional peers (same chain only — trim via ZION_SEED_PEERS if greenfield solo)
                 PeerEndpoint::new("91.98.122.165", 8333),
-                // US – USA
                 PeerEndpoint::new("5.78.194.94", 8333),
-                // AP – Singapore
                 PeerEndpoint::new("5.223.84.191", 8333),
             ],
         }
@@ -4028,7 +4028,7 @@ mod tests {
         let config = NodeConfig::mainnet();
         assert_eq!(config.network, NetworkId::Mainnet);
         assert_eq!(config.p2p_bind.address(), "0.0.0.0:8333");
-        assert_eq!(config.seed_peers[0].address(), "91.98.122.165:8333");
+        assert_eq!(config.seed_peers[0].address(), "204.168.245.175:8333");
     }
 
     #[test]
@@ -6535,6 +6535,7 @@ mod tests {
     /// Production activates BLAKE3 Merkle at genesis — dispatcher must match
     /// v2 for typical template heights (legacy v1 XOR remains testable via
     /// `derive_template_merkle_root_v1_xor` directly).
+    #[cfg(not(feature = "testnet_fork_rehearsal"))]
     #[test]
     fn merkle_dispatcher_routes_v2_from_genesis_heights() {
         let txs = merkle_test_account_txs();
@@ -6547,6 +6548,33 @@ mod tests {
             assert_eq!(
                 dispatched, v2,
                 "height {h}: dispatcher must use v2 BLAKE3 Merkle"
+            );
+        }
+    }
+
+    /// Rehearsal build: XOR below `BODY_ROOT_V2_ACTIVATION_HEIGHT`, BLAKE3 Merkle at/above.
+    #[cfg(feature = "testnet_fork_rehearsal")]
+    #[test]
+    fn merkle_dispatcher_routes_xor_then_v2_for_rehearsal_heights() {
+        let txs = merkle_test_account_txs();
+        let utxos: Vec<tx::Transaction> = Vec::new();
+        let prev = [0x11u8; 32];
+        let v2 = derive_template_merkle_root_v2_blake3(&txs, &utxos);
+        let gate = BODY_ROOT_V2_ACTIVATION_HEIGHT;
+
+        for h in 0..gate {
+            let dispatched = derive_template_merkle_root("node-test", h, 42, prev, &txs, &utxos);
+            let v1 = derive_template_merkle_root_v1_xor("node-test", h, 42, prev, &txs, &utxos);
+            assert_eq!(
+                dispatched, v1,
+                "height {h}: rehearsal dispatcher must use legacy v1 XOR below gate"
+            );
+        }
+        for &h in &[gate, gate + 1, 100, 1_000_000] {
+            let dispatched = derive_template_merkle_root("node-test", h, 42, prev, &txs, &utxos);
+            assert_eq!(
+                dispatched, v2,
+                "height {h}: rehearsal dispatcher must use v2 BLAKE3 Merkle at/above gate"
             );
         }
     }

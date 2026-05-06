@@ -53,6 +53,10 @@ APP&WEB/desktop-agent/resources/*.dylib
 # Release binaries (host on GitHub Releases, not in repo)
 APP&WEB/website-v2.9/public/downloads/
 
+# Large local training/doc bundles (GitHub rejects >100 MB; use Releases/LFS if needed)
+/zion_deep_learning_package.zip
+/zion_full_docs.zip
+
 # Python (tools)
 __pycache__/
 *.pyc

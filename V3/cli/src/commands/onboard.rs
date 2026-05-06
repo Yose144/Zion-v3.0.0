@@ -21,7 +21,7 @@ pub async fn run(_cfg: &Config) -> Result<()> {
     println!("  Step 1/4  Node endpoint");
     let host: String = Input::new()
         .with_prompt("    RPC host")
-        .default("91.98.122.165".into())
+        .default("204.168.245.175".into())
         .interact_text()?;
     let port_str: String = Input::new()
         .with_prompt("    RPC port")
