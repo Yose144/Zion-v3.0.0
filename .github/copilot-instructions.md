@@ -42,8 +42,8 @@ These instructions apply to the whole repository. Prefer more specific file-leve
 
 ## Hiranyagarbha / Hiran model roadmap
 
-- **ZION-domain** training and RAG are documented at the repo root: [`Hiran_v2.1.md`](../Hiran_v2.1.md) (or `./Hiran_v2.1.md` from root) and [`HIRANYAGARBHA_UPGRADE_PLAN.md`](../HIRANYAGARBHA_UPGRADE_PLAN.md).
-- Broader non-ZION knowledge (sciences, history, curated spiritual / primary sources, project book corpus) is specified as **retrieval corpora and indexing**, not as unlimited SFT data — see `Hiran_v2.1.md` section **3.6** before proposing huge dataset ingestion into fine-tuning.
+- **ZION-domain** training and RAG are documented in [`HiranV2.1/Hiran_v2.1.md`](../HiranV2.1/Hiran_v2.1.md) (or `./HiranV2.1/Hiran_v2.1.md` from repo root) and [`HIRANYAGARBHA_UPGRADE_PLAN.md`](../HIRANYAGARBHA_UPGRADE_PLAN.md).
+- Broader non-ZION knowledge (sciences, history, curated spiritual / primary sources, project book corpus) is specified as **retrieval corpora and indexing**, not as unlimited SFT data — see `HiranV2.1/Hiran_v2.1.md` section **3.6** before proposing huge dataset ingestion into fine-tuning.
 
 ## Editing Guidance
 

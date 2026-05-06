@@ -42,8 +42,8 @@ type LocalizedText = { cs: string; en: string };
 const docsPageCopy = {
   badge: { cs: 'Znalostní báze', en: 'Knowledge Base' },
   overviewNotice: {
-    cs: 'Veřejný web teď primárně ukazuje kanonickou V3 launch cestu: Live Index, Whitepaper V3 Mainnet, launch path a aktivní síťový snapshot. V History panelu je kompletní release linie 2.9.7 (Pre-MainNet Gate) -> 2.9.8 (Ekam canonical runtime) -> 2.9.9 (Pure Code) jako auditovatelná vývojová osa.',
-    en: 'The public site now primarily exposes the canonical V3 launch path: Live Index, V3 Mainnet Whitepaper, launch path, and the active network snapshot. The History panel carries the full 2.9.7 (Pre-MainNet Gate) -> 2.9.8 (Ekam canonical runtime) -> 2.9.9 (Pure Code) release line as an auditable development timeline.',
+    cs: 'Současná veřejná linka běží jako kontrolovaný V3 test mainnet na linii v2.9.9 Pure Code nad kanonickou runtime v2.9.8 Deeksha/Ekam. Live Index na /docs#live-index je kanonický vstup pro síťový snapshot, baseline repa 2.9.6, mapu release/runtime a launch blockery. Zároveň stránka zvýrazňuje V3 launch cestu (whitepaper, launch path); v panelu Historie je auditovatelná osa 2.9.7 → 2.9.8 → 2.9.9.',
+    en: 'The public line runs as a controlled V3 test mainnet on v2.9.9 Pure Code over the canonical v2.9.8 Deeksha/Ekam runtime. Live Index at /docs#live-index is the canonical entry for the network snapshot, 2.9.6 repo baseline, release/runtime map, and launch blockers. The site also foregrounds the V3 launch path (whitepaper, launch path); the History panel carries the auditable 2.9.7 → 2.9.8 → 2.9.9 timeline.',
   },
   githubLabel: { cs: 'GitHub', en: 'GitHub' },
   apiHealthLabel: { cs: 'Zdraví API', en: 'API Health' },
@@ -649,7 +649,7 @@ export default function DocsPage() {
               {tr('docs', 'subtitle', lang)}
             </p>
             <div className="mx-auto mb-8 max-w-3xl rounded-2xl border border-emerald-400/20 bg-emerald-400/5 px-5 py-4 text-left text-sm text-gray-300">
-              Současná veřejná linka běží jako kontrolovaný V3 test mainnet na release linii v2.9.9 Pure Code nad kanonickou runtime cestou v2.9.8 Deeksha/Ekam. Sekce Live Index na /docs#live-index teď slouží jako kanonický vstup pro síťový snapshot, repo baseline 2.9.6, aktuální release/runtime mapu a launch blockers.
+              {tx(docsPageCopy.overviewNotice, currentLang)}
             </div>
             <div className="flex items-center justify-center gap-3 mb-8">
               {primaryVersions.map(v => (
