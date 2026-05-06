@@ -13,7 +13,7 @@ release_fee_atomic = 10_000                # flat fee per release
 # ── ZION L1 ──────────────────────────────────────────────────────────────────
 
 [l1]
-rpc_url            = "91.98.122.165:8443"  # Prague node
+rpc_url            = "204.168.245.175:8443"  # Primary L1 node
 # rpc_token        = ""                    # set ZION_RPC_TOKEN env var
 # escrow_key_hex   = ""                    # set ZION_SWAP_ESCROW_KEY env var
 scan_batch_size    = 10

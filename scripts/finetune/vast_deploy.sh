@@ -13,31 +13,37 @@
 # Použití:
 #   ./vast_deploy.sh              # plný pipeline
 #   ./vast_deploy.sh --find-only  # jen najdi GPU, nespouštěj
-#   ./vast_deploy.sh --resume ID  # připoj se k existující instanci#   ./vast_deploy.sh --download ID # stáhni výsledky
+#   ./vast_deploy.sh --resume ID  # připoj se k existující instanci
+#   ./vast_deploy.sh --download ID # stáhni výsledky
 #   ./vast_deploy.sh --destroy ID  # zruš instanci
-#   ./vast_deploy.sh --gpu RTX_5090   # preferuj RTX 5090
-#   ./vast_deploy.sh --gpu A100   # preferuj A100 (default)
-#   ./vast_deploy.sh --epochs 5   # více epoch# ═══════════════════════════════════════════════════════════════════════════════
+#   VAST_GPU='RTX 4090' ./vast_deploy.sh   # preferuj RTX 4090 (doporučeno pro v2 LoRA)
+#   VAST_GPU='A100' ./vast_deploy.sh       # výchozí GPU dle VAST_GPU / A100
+#   ./vast_deploy.sh --epochs 5   # více epoch
+# ═══════════════════════════════════════════════════════════════════════════════
 
 set -euo pipefail
 
 # ─── Konfigurace ──────────────────────────────────────────────────────────────
 
-VAST_API_KEY="${VAST_API_KEY:-e0fe6cd434a2b4f24c12dc59b2ab65034da77832a9e23440d32b5e399ce6afa0}"
+VAST_API_KEY="${VAST_API_KEY:-}"
 HF_TOKEN="${HF_TOKEN:-}"
 NVIDIA_API_KEY="${NVIDIA_API_KEY:-}"
 
-# GPU požadavky
-GPU_NAME="A100"           # A100 nebo RTX_5090 dle --gpu
+# GPU požadavky (přepiš: export VAST_GPU='RTX 4090' — název musí sedět s Vast CLI / nabídkami)
+GPU_NAME="${VAST_GPU:-A100}"
 MIN_GPU_RAM=24            # GB — sníženo pro víc možností
 MIN_DISK=80               # GB — model + dataset + output
 MAX_PRICE=3.00            # $/hr — budget limit
 EPOCHS=5                  # Epochs pro robustní trénink
+AUTO_CONFIRM=false        # --yes = přeskočí read před vytvořením instance
 
 # Projekt
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-DATASET="$SCRIPT_DIR/data/zion_train.jsonl"
+DATASET="${ZION_TRAIN_DATASET:-$SCRIPT_DIR/data/zion_train_hiran_v2.jsonl}"
+if [[ ! -f "$DATASET" ]]; then
+    DATASET="$SCRIPT_DIR/data/zion_train.jsonl"
+fi
 
 # Barvy
 RED='\033[0;31m'
@@ -89,27 +95,41 @@ find_gpu() {
     log "Hledám ${GPU_NAME} GPU (min ${MIN_GPU_RAM}GB VRAM, max \$${MAX_PRICE}/hr)..."
 
     local offers
+    local cli_gpu_name
+    cli_gpu_name="${GPU_NAME// /_}"
     offers=$(vastai search offers \
-        --type on-demand \
-        --gpu-name "$GPU_NAME" \
-        --gpu-ram ">=${MIN_GPU_RAM}" \
-        --disk ">=${MIN_DISK}" \
-        --order "dph_total" \
+        "reliability>0.97 num_gpus>=1 gpu_ram>=${MIN_GPU_RAM} disk_space>=${MIN_DISK} dph<${MAX_PRICE} gpu_name=${cli_gpu_name} rented=False" \
         --limit 10 \
+        --order "dph" \
+        --raw \
         2>/dev/null || true)
 
-    if [[ -z "$offers" ]]; then
+    if [[ -z "$offers" || "$offers" == "[]" ]]; then
         err "Žádné ${GPU_NAME} nabídky nenalezeny. Zkus jiný GPU nebo zvyš budget."
         exit 1
     fi
 
     echo ""
-    echo "$offers"
+    echo "$offers" | python3 -c '
+import json, sys
+offers = json.load(sys.stdin)
+print("ID\t$/hr\tGPU\tVRAM\tCUDA\tRel\tCountry")
+for o in offers:
+    print("{}\t{}\t{}\t{}\t{}\t{}\t{}".format(
+        o.get("id"),
+        round(float(o.get("dph") or o.get("dph_total") or 0), 4),
+        o.get("gpu_name"),
+        o.get("gpu_ram"),
+        o.get("cuda_max_good"),
+        round(float(o.get("reliability") or 0), 4),
+        o.get("geolocation") or o.get("country") or "",
+    ))
+'
     echo ""
 
     # Extrahuj ID nejlevnější instance
-    OFFER_ID=$(echo "$offers" | tail -n +2 | head -1 | awk '{print $1}')
-    OFFER_PRICE=$(echo "$offers" | tail -n +2 | head -1 | awk '{for(i=1;i<=NF;i++) if ($i ~ /^[0-9]+\.[0-9]+$/) {print $i; exit}}')
+    OFFER_ID=$(echo "$offers" | python3 -c 'import json,sys; offers=json.load(sys.stdin); print(offers[0]["id"] if offers else "")')
+    OFFER_PRICE=$(echo "$offers" | python3 -c 'import json,sys; offers=json.load(sys.stdin); o=offers[0] if offers else {}; print(o.get("dph") or o.get("dph_total") or "")')
 
     log "Nejlevnější nabídka: ID=${OFFER_ID}, cena ~\$${OFFER_PRICE}/hr"
 }
@@ -125,6 +145,9 @@ create_instance() {
     result=$(vastai create instance "$offer_id" \
         --image "pytorch/pytorch:2.3.1-cuda12.1-cudnn8-devel" \
         --disk "$MIN_DISK" \
+        --ssh \
+        --direct \
+        --cancel-unavail \
         --onstart-cmd "apt-get update && apt-get install -y git wget" \
         2>&1)
 
@@ -136,6 +159,12 @@ create_instance() {
     fi
 
     log "Instance vytvořena: ID=${INSTANCE_ID}"
+    if [[ -f "$HOME/.ssh/id_ed25519.pub" ]]; then
+        log "Připojuji lokální SSH klíč k instanci..."
+        vastai attach ssh "$INSTANCE_ID" "$HOME/.ssh/id_ed25519.pub" >/dev/null 2>&1 || \
+            warn "Nepodařilo se připojit SSH klíč přes vastai attach ssh; zkusím pokračovat."
+        sleep 5
+    fi
     log "Čekám na spuštění..."
 
     # Wait for instance to be ready
@@ -314,17 +343,20 @@ usage() {
 ZION AI Native — Vast.ai Robustní Fine-tuning Deploy
 
 Použití:
-  $0                      # Plný pipeline: find → create → train → download
-  $0 --find-only          # Jen najdi dostupné GPU
-  $0 --resume <ID>        # Připoj se k existující instanci
-  $0 --download <ID>      # Stáhni výsledky z instance
-  $0 --destroy <ID>       # Zruš instanci
-  $0 --status <ID>        # Stav instance + logy
-    $0 --gpu <NAME>         # GPU preference (A100, RTX_5090, RTX_4090, H100)
-  $0 --epochs <N>         # Počet epoch (default: 5)
+  $0                              # Plný pipeline: find → create → train
+  $0 --gpu 'RTX 4090' --find-only # Jen nabídky 4090 (stejné před ostatními příkazy)
+  $0 --gpu 'RTX 4090'             # Plný pipeline na 4090
+  $0 --find-only                  # Jen najdi GPU (VAST_GPU nebo výchozí A100)
+  $0 --resume <ID>                # Nahraj soubory a spusť trénink na instanci
+  $0 --download <ID>             # Stáhni výsledky z instance
+  $0 --destroy <ID>               # Zruš instanci
+  $0 --status <ID>                # Stav instance + logy
+  $0 --epochs <N>                 # Počet epoch (lze předřadit před subpříkaz)
+  $0 --yes                        # Neinteraktivně vytvoř instanci (s opatrností)
 
 Env:
-  VAST_API_KEY    Vast.ai API klíč (povinný)
+  VAST_API_KEY    Vast.ai API klíč (povinný — nikdy do gitu)
+  VAST_GPU        Např. RTX 4090, A100 (výchozí A100)
   HF_TOKEN        HuggingFace token (pro Llama-3)
   NVIDIA_API_KEY  NVIDIA NIM klíč (volitelné, pro dataset gen)
 EOF
@@ -350,11 +382,34 @@ main() {
     echo "═══════════════════════════════════════════════════════════"
     echo -e "${NC}"
 
+    # Volitelné příznaky před subpříkazem: --gpu / --epochs
+    while [[ $# -gt 0 ]]; do
+        case "${1:-}" in
+            --gpu)
+                GPU_NAME="${2:?Chybí GPU name (např. 'RTX 4090')}"
+                shift 2
+                ;;
+            --epochs)
+                EPOCHS="${2:?Chybí počet epoch}"
+                shift 2
+                ;;
+            --yes|-y)
+                AUTO_CONFIRM=true
+                shift
+                ;;
+            *)
+                break
+                ;;
+        esac
+    done
+
     case "${1:-}" in
         --find-only)
             check_prereqs
             find_gpu
-            log "Použij: $0 --resume <OFFER_ID> pro vytvoření instance"
+            log "Další krok — vytvoř instanci a trénink (interaktivně potvrdíš):"
+            log "  VAST_GPU='${GPU_NAME}' $0"
+            log "Nebo ručně: vastai create instance ${OFFER_ID} --image pytorch/pytorch:2.3.1-cuda12.1-cudnn8-devel --disk ${MIN_DISK}"
             ;;
         --resume)
             INSTANCE_ID="${2:?Chybí instance ID}"
@@ -375,16 +430,6 @@ main() {
             INSTANCE_ID="${2:?Chybí instance ID}"
             check_status "$INSTANCE_ID"
             ;;
-        --gpu)
-            GPU_NAME="${2:?Chybí GPU name}"
-            shift 2
-            check_prereqs
-            find_gpu
-            ;;
-        --epochs)
-            EPOCHS="${2:?Chybí počet epoch}"
-            shift 2
-            ;;
         --help|-h)
             usage
             ;;
@@ -394,10 +439,14 @@ main() {
             find_gpu
 
             echo ""
-            read -rp "Vytvořit instanci z nabídky ${OFFER_ID}? (y/N) " confirm
-            if [[ "${confirm,,}" != "y" ]]; then
-                log "Zrušeno."
-                exit 0
+            if [[ "${AUTO_CONFIRM}" != true ]]; then
+                read -rp "Vytvořit instanci z nabídky ${OFFER_ID}? (y/N) " confirm
+                if [[ "${confirm,,}" != "y" ]]; then
+                    log "Zrušeno."
+                    exit 0
+                fi
+            else
+                log "AUTO_CONFIRM: vytvářím instanci z nabídky ${OFFER_ID} bez dotazu."
             fi
 
             create_instance "$OFFER_ID"

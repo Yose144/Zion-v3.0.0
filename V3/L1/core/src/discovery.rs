@@ -42,6 +42,7 @@ pub const DNS_SEEDS: &[&str] = &[];
 
 /// Well-known bootstrap nodes for UDP announcements.
 pub const BOOTSTRAP_NODES: &[(&str, u16)] = &[
+    ("204.168.245.175", 8335),
     ("91.98.122.165", 8335),
     ("157.180.41.213", 8335),
     ("5.78.194.94", 8335),
