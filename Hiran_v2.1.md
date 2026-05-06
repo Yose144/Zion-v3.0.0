@@ -276,6 +276,31 @@ Pro Hiran v2.1 bych nekupoval jen podle názvu karty. Rozhodovací pravidlo:
 - ideál pro lokální BestModel: **32GB VRAM**, pokud rozpočet dovolí,
 - pro 70B nepoužívat consumer midrange; tam dává smysl cloud/reserved GPU.
 
+### 2× RTX 5060 Ti 16GB a 70B kvantovaný „centrální mozek“
+
+Krátká odpověď: **jako primární architektura pro pohodlný 70B inference ne — jako kompromis s výhradami částečně ano.**
+
+**Proč:**
+
+- Dvě karty **nesčítají VRAM pro jednu kopii vrstvy jako 32 GB volného RAM**, ale inference stack (llama.cpp / Ollama / TensorRT-LLM) **rozděluje váhy přes tensor / pipeline parallel**. Důležitý je **součet dostupné VRAM** na všech GPU pro daný model + KV cache.
+- Typický **70B v rozumné kvantizaci (Q4_K / Q4_K_M)** má jen samotné váhy řádově **~40–44 GB** v GGUF; s KV cache a rozumným kontextem se často pohybuješ **nad ~38–48 GB** podle implementace a délky kontextu.
+- **2× 16 GB = 32 GB celkem** — to je **pod** běžným komfortním rozsahem pro 70B Q4. Může to **někdy** jít jen s **agresivnější kvantizací** (Q3, IQ4/XS apod.), **kratším kontextem** a často s **částečným offloadem** částí modelu na CPU/RAM — což u 70B znamená **nižší rychlost** a vyšší citlivost na latenci RAM.
+
+**Praktický verdikt pro Hiran v2.1:**
+
+| Cíl | S 2× 5060 Ti 16GB |
+|---|---|
+| „Centrální mozek“ = **spolehlivý coding agent** (Rust, dlouhé soubory) | Spíš **14B–32B** v dobré kvantizaci + RAG; 70B jen jako **experiment** nebo fallback do cloudu. |
+| 70B Q4 jako denní driver | **Nedoporučeno** — chybí ~8–12+ GB headroom proti typickému Q4 70B. |
+| 70B silně zmenšená kvantizace + offload | **Technicky možné**, ale kvalita a rychlost často nesedí na roli hlavního orchestrátora. |
+
+**Kdy dává smysl dvě střední karty jinak než kvůli 70B:**
+
+- **32B třída** v Q4/Q5 na **32 GB** bývá reálnější než spokojený 70B,
+- nebo **jedna karta s 24–32 GB** často zjednoduší software stack (méně NUMA/PCIe šílenství než nutně u ka všech desek).
+
+**Shrnutí:** Dvě RTX 5060 Ti 16GB jsou rozumný **lokální střed** pro Hiran v2.1 v režimu **7B–14B (ideálně) až ~32B s kompromisy**, ne jako bezproblémový **70B Q4 centrální mozek**. Na 70B typicky potřebuješ **≥ ~40–48 GB efektivního GPU poolu** nebo akceptovat horší kvant / offload / cloud.
+
 ### Jetson Nano / Orin Nano jako „AI Raspberry Pi“
 
 Upřesnění: když mluvíme o „NVIDIA nano jako RP5“, nejde primárně o samostatnou NPU, ale o **Jetson** mini počítače — ARM CPU + NVIDIA GPU/Tensor Cores + unified memory v malém boardu.
