@@ -71,9 +71,9 @@ CHAIN_BEFORE="$(rpc_chain | tee "$WORKDIR/chain-before.json")"
 POOL_ENV_BEFORE="$(snapshot_pool_env | tee "$WORKDIR/pool-env.txt")"
 
 if [[ "${STRESS_SKIP_STRESS:-0}" != "1" ]]; then
-  echo "start minérů…" >&2
+  echo "start mineru ..." >&2
   bash "$MINERS_SCRIPT" start "$COUNT" "$POOL_EXTERNAL"
-  echo "běží ${DURATION}s…" >&2
+  echo "bezi ${DURATION}s ..." >&2
   sleep "$DURATION"
   STOP_OUT="$(bash "$MINERS_SCRIPT" stop 2>&1 | tee "$WORKDIR/stop-miners.log")"
 else
@@ -84,7 +84,7 @@ T1_ISO="$(run_ssh 'date -u +%Y-%m-%dT%H:%M:%SZ')"
 CHAIN_AFTER="$(rpc_chain | tee "$WORKDIR/chain-after.json")"
 STATS_END="$(docker_stats | tee "$WORKDIR/docker-stats-end.txt")"
 
-echo "stahuji log poolu od $T0_ISO…" >&2
+echo "stahuji log poolu od ${T0_ISO} ..." >&2
 pool_logs_since "$T0_ISO" >"$WORKDIR/pool-logs-slice.log"
 
 # Statistiky z řezu logu
@@ -166,7 +166,7 @@ $(tail -80 "$SLICE" 2>/dev/null || echo "(žádný log)")
 *Generováno skriptem \`V3/scripts/stress-mainnet-zionv3-report.sh\`.*
 EOF
 
-echo "nahrávám report na server $SSH_HOST:$REMOTE_STRESS_LOG_DIR …" >&2
+echo "nahravam report na server $SSH_HOST:${REMOTE_STRESS_LOG_DIR} ..." >&2
 run_ssh "mkdir -p \"$REMOTE_STRESS_LOG_DIR\""
 scp -o BatchMode=yes "$LOCAL_REPORT_MD" "$SSH_HOST:$REMOTE_STRESS_LOG_DIR/report-$REPORT_ID.md"
 scp -o BatchMode=yes "$SLICE" "$SSH_HOST:$REMOTE_STRESS_LOG_DIR/pool-logs-$REPORT_ID.log" 2>/dev/null || true
