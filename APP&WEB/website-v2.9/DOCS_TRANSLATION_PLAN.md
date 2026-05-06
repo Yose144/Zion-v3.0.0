@@ -89,6 +89,8 @@ node scripts/docs-i18n-report.mjs --json
 
 ### Vlna C — veřejná launch cesta & listing
 
+**Stav: hotovo — `mainnet/genesis-book.md`, `mainnet/coingecko.md` a `architecture/consensus.md` mají páry `cs/` + `en/` (EN checklist CoinGecko je plný překlad; CS `architecture/consensus` je redakce EN originálu).**
+
 | Cesta |
 |-------|
 | `mainnet/genesis-book.md` |
@@ -98,6 +100,8 @@ node scripts/docs-i18n-report.mjs --json
 *( `mainnet/README.md` už má cs+en. )*
 
 ### Vlna D — AI Native
+
+**Stav: hotovo — čtyři soubory pod `ai-native/` mají páry `cs/` + `en/` (CS kopie z kořene + úprava relativních odkazů; EN plný překlad).**
 
 | Cesta |
 |-------|

@@ -1,0 +1,102 @@
+#!/usr/bin/env python3
+"""
+Merge v1-era and v2 SFT shards into one canonical Hiranyagarbha v2.1 JSONL corpus.
+
+Dedupes conversations by fingerprints of non-system turns (later shards win).
+
+Default inputs live under `HiranV2.1/data/shards/` (repo root-relative).
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+from collections import OrderedDict
+from pathlib import Path
+
+# Canonical merge order — older domain first; v2 synthesized corpus last so it wins overlaps.
+DEFAULT_SHARD_NAMES = (
+    "zion_train.jsonl",
+    "zion_train_seed_books_refresh.jsonl",
+    "zion_train_full_books_refresh.jsonl",
+    "zion_train_backup_20260330.jsonl",
+    "zion_train_hiran_v2.jsonl",
+)
+
+
+def fingerprint(obj: dict) -> str:
+    msgs = obj.get("messages") or []
+    body = [(m.get("role", ""), m.get("content", "")) for m in msgs if m.get("role") != "system"]
+    return json.dumps(body, ensure_ascii=False)
+
+
+def load_lines(path: Path) -> list[dict]:
+    out: list[dict] = []
+    with path.open(encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                out.append(json.loads(line))
+            except json.JSONDecodeError:
+                continue
+    return out
+
+
+def main() -> None:
+    p = argparse.ArgumentParser()
+    p.add_argument(
+        "--shard-dir",
+        default="HiranV2.1/data/shards",
+        help="Directory holding JSONL shards (relative to project root)",
+    )
+    p.add_argument(
+        "--names",
+        nargs="*",
+        default=list(DEFAULT_SHARD_NAMES),
+        help="Shard filenames in merge order",
+    )
+    p.add_argument(
+        "--output",
+        default="HiranV2.1/data/hiran_curriculum_v2.1.jsonl",
+        help="Merged JSONL path (relative to project root)",
+    )
+    args = p.parse_args()
+
+    project = Path(".").resolve()
+    shard_dir = (project / args.shard_dir).resolve()
+    outp = project / args.output
+    outp.parent.mkdir(parents=True, exist_ok=True)
+
+    merged: OrderedDict[str, dict] = OrderedDict()
+    counts: OrderedDict[str, int] = OrderedDict()
+
+    for name in args.names:
+        shard_path = shard_dir / name
+        if not shard_path.is_file():
+            continue
+        n = 0
+        for obj in load_lines(shard_path):
+            fp = fingerprint(obj)
+            if fp in merged:
+                del merged[fp]
+            merged[fp] = obj
+            n += 1
+        counts[name] = n
+
+    with outp.open("w", encoding="utf-8") as f:
+        for obj in merged.values():
+            f.write(json.dumps(obj, ensure_ascii=False) + "\n")
+
+    print(f"Wrote {len(merged)} conversations → {outp.relative_to(project)}")
+    for name in args.names:
+        if (shard_dir / name).is_file():
+            loaded = counts.get(name, 0)
+            print(f"  scanned {loaded:>5} lines  {name}")
+        else:
+            print(f"  skipped (missing)       {name}")
+
+
+if __name__ == "__main__":
+    main()
