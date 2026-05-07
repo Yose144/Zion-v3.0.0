@@ -61,6 +61,20 @@ pub const V2_BOOKS_PROXY_CORPUS_ROOTS: &[&str] = &[
     "docs/docs2.9/PROJECT_OVERVIEW.md",
 ];
 
+/// Hiran v2.1: stažené / vygenerované sútry (bhikkhusujato tree) — viz `HiranV2.1/scripts/rag/`.
+pub const BUDDHISM_CLASSICAL_CORPUS_ROOTS: &[&str] =
+    &["HiranV2.1/data/rag/buddhism-classical/generated"];
+
+/// Hiran v2.1: seed encyklopedie (např. Wikipedia EN) — doplň Kanjur/Tangyur dle licence.
+pub const BUDDHISM_TIBETAN_CORPUS_ROOTS: &[&str] =
+    &["HiranV2.1/data/rag/buddhism-tibetan/generated"];
+
+/// Oba Buddhism RAG adresáře najednou (metadata v YAML frontmatter u .md značí `rag_index`).
+pub const BUDDHISM_RAG_CORPUS_ROOTS: &[&str] = &[
+    "HiranV2.1/data/rag/buddhism-classical/generated",
+    "HiranV2.1/data/rag/buddhism-tibetan/generated",
+];
+
 /// Konfigurace knowledge base indexeru.
 #[derive(Debug, Clone)]
 pub struct KnowledgeConfig {
@@ -89,6 +103,120 @@ impl Default for KnowledgeConfig {
             ],
         }
     }
+}
+
+// ─── Volné markdown chunky (bez embedderu) — API bootstrap & externí ingest ──
+
+/// Jedna část dokumentu bez embedding vektoru.
+#[derive(Debug, Clone)]
+pub struct RagTextChunk {
+    pub id: String,
+    pub content: String,
+    pub metadata: HashMap<String, String>,
+}
+
+/// Stejný chunking algoritmus jako při indexaci `KnowledgeBase` (konfigurovatelné limity).
+pub fn chunk_document_text(text: &str, config: &KnowledgeConfig) -> Vec<String> {
+    chunk_text(text, config.max_chunk_size, config.chunk_overlap)
+}
+
+fn walk_markdown_files(config: &KnowledgeConfig, dir: &Path, out: &mut Vec<PathBuf>) {
+    let entries = match fs::read_dir(dir) {
+        Ok(e) => e,
+        Err(_) => return,
+    };
+
+    for entry in entries.flatten() {
+        let path = entry.path();
+        let file_name = entry.file_name().to_string_lossy().to_string();
+
+        if path.is_dir() {
+            if !config.skip_dirs.contains(&file_name) {
+                walk_markdown_files(config, &path, out);
+            }
+        } else if path.extension().and_then(|e| e.to_str()) == Some("md") {
+            out.push(path);
+        }
+    }
+}
+
+fn markdown_path_to_chunks(
+    workspace_root: &Path,
+    path: &Path,
+    config: &KnowledgeConfig,
+) -> Result<Vec<RagTextChunk>, LlmError> {
+    let content = fs::read_to_string(path)
+        .map_err(|e| LlmError::InternalError(format!("Read {}: {e}", path.display())))?;
+
+    if content.trim().is_empty() {
+        return Ok(vec![]);
+    }
+
+    let chunks = chunk_text(
+        &content,
+        config.max_chunk_size,
+        config.chunk_overlap,
+    );
+    let rel = path
+        .strip_prefix(workspace_root)
+        .unwrap_or(path)
+        .to_string_lossy()
+        .replace('\\', "/");
+
+    let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
+    let mut out = Vec::with_capacity(chunks.len());
+    for (i, chunk) in chunks.iter().enumerate() {
+        let id = if chunks.len() == 1 {
+            rel.clone()
+        } else {
+            format!("{}#chunk{i}", rel)
+        };
+        let mut metadata = HashMap::new();
+        metadata.insert("source".into(), path.display().to_string());
+        metadata.insert("extension".into(), ext.to_string());
+        metadata.insert("path_repo_relative".into(), rel.clone());
+
+        out.push(RagTextChunk {
+            id,
+            content: chunk.clone(),
+            metadata,
+        });
+    }
+
+    Ok(out)
+}
+
+/// Seskupí markdown soubory pod relativními kořeny workspace (soubor nebo adresář) na chunky — bez volání embedding API.
+///
+/// Používá stejná pravidla chunkování jako `KnowledgeBase`; vektorová DB musí chunky zvláště embeddingovat.
+pub fn collect_markdown_chunks_from_relative_roots(
+    workspace_root: &Path,
+    roots: &[&str],
+    config: &KnowledgeConfig,
+) -> Result<Vec<RagTextChunk>, LlmError> {
+    let canonical =
+        fs::canonicalize(workspace_root).unwrap_or_else(|_| workspace_root.to_path_buf());
+    let mut all = Vec::new();
+
+    for relative_root in roots {
+        let rel = relative_root.trim_start_matches('/');
+        let path = canonical.join(rel);
+
+        if path.is_file() {
+            if path.extension().and_then(|e| e.to_str()) == Some("md") {
+                all.extend(markdown_path_to_chunks(&canonical, &path, config)?);
+            }
+        } else if path.is_dir() {
+            let mut files = Vec::new();
+            walk_markdown_files(config, &path, &mut files);
+            files.sort();
+            for file_path in files {
+                all.extend(markdown_path_to_chunks(&canonical, &file_path, config)?);
+            }
+        }
+    }
+
+    Ok(all)
 }
 
 // ─── KnowledgeBase ───────────────────────────────────────────────────────────
@@ -633,11 +761,39 @@ def foo():
     }
 
     #[test]
+    fn buddhism_rag_roots_reference_hiran_paths() {
+        assert!(BUDDHISM_CLASSICAL_CORPUS_ROOTS[0].contains("buddhism-classical"));
+        assert!(BUDDHISM_TIBETAN_CORPUS_ROOTS[0].contains("buddhism-tibetan"));
+        assert_eq!(BUDDHISM_RAG_CORPUS_ROOTS.len(), 2);
+    }
+
+    #[test]
     fn test_scan_result_default() {
         let r = ScanResult::default();
         assert_eq!(r.files_found, 0);
         assert_eq!(r.files_indexed, 0);
         assert_eq!(r.chunks_created, 0);
         assert!(r.errors.is_empty());
+    }
+
+    #[test]
+    fn test_collect_markdown_chunks_from_relative_roots() {
+        let root = make_temp_dir("kb-md-chunks");
+        let gen = root.join("HiranV2.1/data/rag/buddhism-classical/generated");
+        fs::create_dir_all(&gen).unwrap();
+        let long = "Para one.\n\n".to_string() + &"word ".repeat(400);
+        fs::write(gen.join("sample.md"), long).unwrap();
+
+        let mut cfg = KnowledgeConfig::default();
+        cfg.max_chunk_size = 200;
+        cfg.chunk_overlap = 20;
+        cfg.extensions = vec!["md".into()];
+        cfg.skip_dirs = KnowledgeConfig::default().skip_dirs;
+
+        let roots = &["HiranV2.1/data/rag/buddhism-classical/generated"];
+        let chunks = collect_markdown_chunks_from_relative_roots(&root, roots, &cfg).unwrap();
+        assert!(chunks.len() >= 2, "large md should produce multiple chunks");
+
+        fs::remove_dir_all(&root).unwrap();
     }
 }
