@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "_comment": "Konfigurace Buddhism RAG pipeline — Python skript berou výchozí cesty zde; runtime API používá env (viz PLAN_v2.1.md oddíl D.2).",
+  "ingest": {
+    "manifest_classical": "HiranV2.1/data/rag/manifest_buddhism_classical.json",
+    "manifest_tibetan_wiki": "HiranV2.1/data/rag/manifest_buddhism_tibetan_wiki.json",
+    "output_classical": "HiranV2.1/data/rag/buddhism-classical/generated",
+    "output_tibetan": "HiranV2.1/data/rag/buddhism-tibetan/generated",
+    "ingest_manifest_output": "HiranV2.1/data/rag/INGEST_MANIFEST.json"
+  },
+  "runtime_api_env": {
+    "ZION_WORKSPACE_ROOT": "<repo_root>",
+    "ZION_RAG_BUDDHISM": "all",
+    "ZION_RAG_CHUNK_DOCS": "true",
+    "ZION_DOCS_PATH": "<optional_markdown_docs_tree>"
+  }
+}
