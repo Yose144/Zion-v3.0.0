@@ -71,6 +71,14 @@ HiranV2.1/data/rag/buddhism-tibetan/generated/
 HiranV2.1/data/hiran_curriculum_v2.1.jsonl
 HiranV2.1/curriculum/meta/BUILD.txt
 
+# Lokální / velké artefakty (necommitovat)
+*.rom
+/zion-miner*.zip
+/ssh_*.json
+/tmp_smos_*.py
+/server_kernel.cl
+/scripts/finetune/outputs/
+
 # Python (tools)
 __pycache__/
 *.pyc
