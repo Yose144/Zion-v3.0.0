@@ -55,6 +55,7 @@ use crate::consciousness::ConsciousnessLevel;
 use crate::consciousness_engine::ConsciousnessEngine;
 use crate::knowledge_base::{
     KnowledgeBase, KnowledgeConfig, ScanResult, AI_NATIVE_CANONICAL_CORPUS_ROOTS,
+    BUDDHISM_CLASSICAL_CORPUS_ROOTS, BUDDHISM_RAG_CORPUS_ROOTS, BUDDHISM_TIBETAN_CORPUS_ROOTS,
     V2_BOOKS_PROXY_CORPUS_ROOTS,
 };
 use crate::llm_backend::{LlmBackend, LlmRequest};
@@ -739,6 +740,30 @@ impl HiranyagarbhaAgent {
         workspace_root: &Path,
     ) -> Result<ScanResult, crate::llm_backend::LlmError> {
         self.index_relative_corpus(workspace_root, V2_BOOKS_PROXY_CORPUS_ROOTS)
+    }
+
+    /// Indexuj Hiran v2.1 **klasický** buddhismus (primárně páli canon překlady z ingest pipeline).
+    pub fn index_buddhism_classical_rag(
+        &mut self,
+        workspace_root: &Path,
+    ) -> Result<ScanResult, crate::llm_backend::LlmError> {
+        self.index_relative_corpus(workspace_root, BUDDHISM_CLASSICAL_CORPUS_ROOTS)
+    }
+
+    /// Indexuj Hiran v2.1 **tibetský** seed korpus (encyklopedické zdroje; doplň licencovaný Kanjur/Tangyur).
+    pub fn index_buddhism_tibetan_rag(
+        &mut self,
+        workspace_root: &Path,
+    ) -> Result<ScanResult, crate::llm_backend::LlmError> {
+        self.index_relative_corpus(workspace_root, BUDDHISM_TIBETAN_CORPUS_ROOTS)
+    }
+
+    /// Indexuj oba Buddhism RAG adresáře (`buddhism-classical` + `buddhism-tibetan`).
+    pub fn index_buddhism_rag_corpora(
+        &mut self,
+        workspace_root: &Path,
+    ) -> Result<ScanResult, crate::llm_backend::LlmError> {
+        self.index_relative_corpus(workspace_root, BUDDHISM_RAG_CORPUS_ROOTS)
     }
 
     /// Počet dokumentů v RAG knowledge base.

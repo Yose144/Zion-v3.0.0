@@ -8,7 +8,7 @@
 
 ## 1. Mise
 
-Hiran v2.1 nemá být jen chatovací model pro web. Má být **ZION-native pracovní agent**:
+Hiran v2.1 nemá být jen chatovací model pro web. Má být **ZION-native pracovní agent** — a zároveň má mít **hloubku v linii TerraNova / knihovny Amenti** (digitální archiv a odkazy z portálu [**Síně Amenti**](https://newearth.cz/V2/halls.html)) v režimu **RAG + citace**, nikoli nekonečný SFT všech PDF do vah:
 
 - rozumí celé aktuální architektuře `V3/`,
 - umí pomáhat s Rust programováním v cratech `zion-core`, `zion-pool`, `zion-miner`, L2/L3 službách a `V3/cli`,
@@ -58,6 +58,8 @@ V2 je první skutečný fine-tune nad ZION daty. **V2.1 je přechod od znalostn�
 | `curriculum/meta/` | Malé artefakty sledovatelné gitem (kopie Praha Modelfile, `SOURCE`). |
 
 Datasetové symlinky drží adresář **`HiranV2.1/data`** jako reálný cíl odkazu **`scripts/finetune/data`**.
+
+**Provádění (fáze, kritéria hotovo, Wave 1):** viz [`PLAN_v2.1.md`](./PLAN_v2.1.md) a skript [`bootstrap_workspace.sh`](./bootstrap_workspace.sh) z kořene repa.
 
 - `scripts/finetune/build_v3_orchestrator_dataset.py` — offline V3/Rust/orchestrátor korpus (`--base`/`--output` stále používají výchozí cesty přes symlinky).
 - `scripts/finetune/merge_hiran_curriculum_v2_1.py` — zřetězení shardů → `hiran_curriculum_v2.1.jsonl` (proveď po změnách orchestrátorové nebo shard dat).
@@ -140,9 +142,13 @@ RAG zdroje mají být primárně:
 - `StatusV3.md`,
 - `V3/L*/src`,
 - `V3/docker`,
-- `V3/cli`.
+- `V3/cli`,
+- **TerraNova — knihovna Amenti:** veřejný portál [ZION TerraNova \| Síně Amenti](https://newearth.cz/V2/halls.html) (digitální knihovna, kroniky a publikované materiály dostupné odkud) — **do vah necpat celé knihovny**; indexovat pro RAG snapshoty + metadata licence, router může mít frontu `amenti` / `terra-nova`.
+- **[Online Vedabase](https://vedabase.io/en/library/) — library:** Gaudīya–Vaišnavovská literatura (BBT atd.); do SFT výhradně **kurátorované** shardy `zion_train_vedic_guided.jsonl` v mezích licence / fair use nebo po souhlasu BBT — viz [`PLAN_v2.1.md`](./PLAN_v2.1.md).
+- **Buddhismus (klasický + tibetská linie):** mapa znalostí pokrývá **raný/indický** (páli, abhidhammové přehledy, vybrané sútry v legálních překladech), **širší mahájánové** texty tam, kde máme licenci, a **tibetský buddhismus** (kangyur/tengyur ve veřejných překladech atd.) — primárně **RAG indexy `buddhism-classical` / `buddhism-tibetan`**; malý SFT jen ve `zion_train_buddhism_guided.jsonl` (viz `PLAN_v2.1.md`).
+- **Vědy (OER):** krátké pasáže + syntetické páry ve `zion_train_oer_sciences.jsonl` (OpenStax, LibreTexts, CK-12, …) pro **přímý finetuning** základních pojmů.
 
-### 3.6 Širší „celosvětová“ vrstva: vědy, dějiny, texty, domorodé tradice
+### 3.6 Širší „celosvětová“ vrstva: vědy, dějiny, texty, domorodé tradice, klasický i tibetský buddhismus
 
 Cíl: aby Hiran v2.1 nebyl jen ZION technik, ale **hlubší společník s přístupem k velké lidské tradici** — v souladu s Dharma rámcem projektu a s přiznanými limity AI.
 
@@ -158,15 +164,20 @@ Cíl: aby Hiran v2.1 nebyl jen ZION technik, ale **hlubší společník s přís
 |--------|----------------|----------|
 | **Přírodní a společenské vědy** | Otevřené učebnice, přehledové publikace, kvalitní Open Educational Resources, kde licence dovolí kopii pro interní index | Živá věda se mění → RAG + verze snapshotu, ne „jednou natrénováno navždy“ |
 | **Dějiny (svět + regiony)** | Referenční syntézy, primární texty tam, kde jsou volné nebo licencované | Rozlišovat **periodizaci / interpretaci** — uvádět zdroj školy historiografie |
-| **Tibetské buddhistické spisy** | Kanonické sbory ve **veřejných překladech** / akademické edice, kde máš práva (např. výběry, překlady 108 volumes kde dostupné), databáze typu BDRC tam, kde API/licence projekt dovolyje | Klasický rozsah kánonu je obrovský → **prioritizovat svazky podle kurikula** (např. základy Madhyamaky, Lamrim, vybrané sútry), ne „vše najednou“ |
+| **Klasický buddhismus (Theravāda základ, raná Mahájána)** | Veřejně dostupné překlady a výukové texty ([SuttaCentral](https://suttacentral.net) a edice s jasnou CC/licencí), případně akademické úvody redistributovatelné pod licencí | **„Celý“ v kontextu projektu znamená systematický přístup přes RAG + kurikulum** (tematické kolekce: čtyři ušlechtilé pravdy, závislé vznikání, láska / mettā, śūnyatā v přístupných zdrojích), **ne** nacpat celý kánon do jednoho SFT svazku. |
+| **Tibetský buddhismus (Mahāyāna + Vajrayāna v tibetské linii)** | Kanonické a komentátorské texty tam, kde platí práva výtisku/API: výběry z veřejných překladů (např. překladové projekty s jasným licencováním), metadata a katalogy např. [BDRC — Buddhist Digital Resource Center](https://www.bdrc.io) kde API/podmínky projektu dovolyjí dotahování kontextů; projekty jako [84000](https://84000.co) **jen v rozsahu jejich vlastní licence** | Prioritizované **kurikulum** (např. lamrim, **Madhyamaka** / středová cesta, bodhicitta, základy vadžrajány — vždy s historickým vědomím škol a překladatele); halucinace sanskr./tib. citací = penalizovat v eval |
 | **Domorodé / původní národy (Americas a jinde)** | **Ne** jako jeden homogenní „blob“. Indexovat **konkrétní zdroje s respektem k rozmanitosti**: kmenové/edu instituce, ověřené antologie, akademické edice, primární vyprávění kde jsou sdílená se souhlasem | Etický imperativ: žádné „ukradení“ mytologie z nekontextualizovaných webů; u citlivého obsahu **precedenční** pravidla (kdo mluví, za koho, jak citovat) |
 | **Knihy a dokumenty samotného ZION projektu** | Všechny interní a veřejné texty repa (`docs`, `Genesis`, AI Native koncepty, reporty) jako **dedikovaná knihovna** s vysokou prioritou v RAG routeru | Splývá s kanonem v části 2 — tady explicitně jako „projektová biblioteka“ |
+| **TerraNova / Síně Amenti (veřejná knihovna)** | Digitální vrstva [Síní Amenti](https://newearth.cz/V2/halls.html): kroniky, Amenti Library, dostupné PDF a popisné texty portálu — **Hiran v2.1 musí umět s tím pracovat jako s plnohodnotnou znalostní knihovnou** přes RAG (více chunků, vlastní index), s respektem k autorským právům a snapshotu verze | Nenahrazuje ZION technický kanon § 3.1–3.5; doplňuje **narrativní a publikovanou** linii projektu |
+| **Vědy (OER a legální online zdroje)** | Pro **přímý SFT** jen z kurátorovaných úryvků s licencí (např. [OpenStax](https://openstax.org), [LibreTexts](https://libretexts.org), [CK-12](https://www.ck12.org)) + syntetické Q&A (`zion_train_oer_sciences.jsonl`). Širší „internet vědy“ drž v RAG snapshotech. | Viz [`PLAN_v2.1.md`](./PLAN_v2.1.md) fáze A rozšíření. |
+| **Guided buddhismus (volitelný SFT)** | Krátké syntetické Q&A která učí **routing, terminologii a citlivost škol** aniž kopírují celá díla — soubor `zion_train_buddhism_guided.jsonl` (merge volitelně) | Doplňuje RAG; asistent vždy preferuje **citaci konkrétního překladu / zdroje** při faktických tvrzeních |
+| **Védsko-gauḍījská exegetika (Online Vedabase)** | Kanon práce uživatele: [Vedabase **library**](https://vedabase.io/en/library/). **SFT jen eticky-legálně:** celé dílo ani hromadné stažení do vah **bez souhlasu BBT** nedává smyslu — použij krátké guided páry (`zion_train_vedic_guided.jsonl`) nebo povolený ingest; práva drží [Bhaktivedanta Book Trust](https://bbt.info/information/permissions/). Vedabase používá BBT díla *[s jejich právy](https://vedabase.io/en/privacy-policy)*. Duálně **RAG** na snapshot pro čtení s citací. |
 
 **Operační pipeline (stejná logika jako V3 RAG, širší soubory):**
 
-1. **Katalog** — tabulka zdrojů (URL/soubor, licence, jazyk, téma, datum stahu, hash).
+1. **Katalog / ingest** — tabulka zdrojů (URL/soubor, licence, jazyk, téma, datum stahu, hash); pro Buddhism **klasický+tibetský seed** `./HiranV2.1/scripts/rag/autopilot_buddhism_rag.sh` z kořene repa → markdown v `HiranV2.1/data/rag/*/generated/` a `INGEST_MANIFEST.json`; runtime API env (`ZION_RAG_BUDDHISM`, `ZION_WORKSPACE_ROOT`) a Rust chunkování viz [`PLAN_v2.1.md`](./PLAN_v2.1.md) oddíl **D.2** + `BUDDHISM_RAG_CORPUS_ROOTS`.
 2. **Chunking + metadata** — kapitoly, svazky, autor/překladatel.
-3. **Embedding index** (nebo více indexů: `zion-tech`, `dharma-texts`, `sciences`, `history`, `indigenous-sources`).
+3. **Embedding index** (např.: `zion-tech`, `amenti` / `terra-nova`, `vedabase` / `vaiṣṇava-sources`, **`buddhism-classical`**, **`buddhism-tibetan`**, `dharma-texts`, `sciences`, `history`, `indigenous-sources`; u buddhismu vždy **verze překladu** v metadatech chunku).
 4. **Router** — dotaz → které indexy dotáhnout (aby se nemíchaly nesouvisející domény bez úmyslu).
 5. **Eval** — kontrolní otázky s očekávanou citací zdroje; penalizovat odpověď bez chunku při dostupném materiálu.
 
