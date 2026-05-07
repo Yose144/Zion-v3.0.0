@@ -1,4 +1,6 @@
+use std::collections::HashMap;
 use std::net::SocketAddr;
+use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
@@ -13,6 +15,11 @@ use zion_ai_native::autotuner::{AutotuneReport, DharmaAutotuner};
 use zion_ai_native::consciousness_engine::{ConsciousnessEngine, ConsciousnessStatus};
 use zion_ai_native::llm_backend::RemoteHttpBackend;
 use zion_ai_native::rag::EmbeddingInputType;
+use zion_ai_native::{
+    chunk_document_text, collect_markdown_chunks_from_relative_roots,
+    BUDDHISM_CLASSICAL_CORPUS_ROOTS, BUDDHISM_RAG_CORPUS_ROOTS, BUDDHISM_TIBETAN_CORPUS_ROOTS,
+};
+use zion_ai_native::knowledge_base::KnowledgeConfig;
 use zion_ai_native::{
     AgentMemory, EchoBackend, EmbeddingBackend, LlmBackend, LlmRequest, MemoryEntry,
     MemoryEventKind, MmlModality, MockEmbeddingBackend, RagDocument, VectorStore,
@@ -149,28 +156,129 @@ impl AppState {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum BuddhismRagPreset {
+    Off,
+    All,
+    Classical,
+    Tibetan,
+}
+
+fn buddhism_rag_preset() -> BuddhismRagPreset {
+    match std::env::var("ZION_RAG_BUDDHISM")
+        .unwrap_or_default()
+        .to_lowercase()
+        .as_str()
+    {
+        "" | "0" | "false" | "no" => BuddhismRagPreset::Off,
+        "classical" => BuddhismRagPreset::Classical,
+        "tibetan" => BuddhismRagPreset::Tibetan,
+        _ => BuddhismRagPreset::All,
+    }
+}
+
+fn workspace_root_path() -> PathBuf {
+    std::env::var("ZION_WORKSPACE_ROOT")
+        .ok()
+        .map(PathBuf::from)
+        .filter(|p| !p.as_os_str().is_empty())
+        .and_then(|p| p.canonicalize().ok())
+        .or_else(|| std::env::current_dir().ok().and_then(|p| p.canonicalize().ok()))
+        .unwrap_or_else(|| PathBuf::from("."))
+}
+
+fn chunk_zion_docs_flag() -> bool {
+    match std::env::var("ZION_RAG_CHUNK_DOCS").as_deref() {
+        Ok("0") | Ok("false") | Ok("no") => false,
+        Ok(_) => true,
+        Err(_) => true,
+    }
+}
+
 fn seed_rag(state: &Arc<AppState>) -> anyhow::Result<()> {
     tracing::info!("seeding_rag_start");
-    let docs = match load_docs_from_disk() {
-        Ok(custom_docs) => {
-            tracing::info!(count = custom_docs.len(), "loaded_docs_from_disk");
-            custom_docs
+    let kb_cfg = KnowledgeConfig::default();
+    let chunk_docs = chunk_zion_docs_flag();
+    let mut entries: Vec<(String, String, HashMap<String, String>)> = Vec::new();
+
+    match load_docs_from_disk() {
+        Ok(docs) => {
+            tracing::info!(count = docs.len(), "loaded_docs_from_disk");
+            for (id, text) in docs {
+                if chunk_docs && !text.trim().is_empty() {
+                    let parts = chunk_document_text(&text, &kb_cfg);
+                    if parts.is_empty() {
+                        continue;
+                    }
+                    for (i, part) in parts.iter().enumerate() {
+                        let chunk_id = if parts.len() == 1 {
+                            id.clone()
+                        } else {
+                            format!("{}#chunk{}", id, i)
+                        };
+                        let mut m = HashMap::new();
+                        m.insert("source".into(), "zion-docs".into());
+                        m.insert("origin_path".into(), id.clone());
+                        entries.push((chunk_id, part.clone(), m));
+                    }
+                } else {
+                    let mut m = HashMap::new();
+                    m.insert("source".into(), "zion-docs".into());
+                    entries.push((id, text, m));
+                }
+            }
         }
         Err(err) => {
             tracing::warn!(error = %err, "failed_to_load_docs_from_disk_using_builtin");
-            builtin_rag_documents()
+            for (id, text) in builtin_rag_documents() {
+                entries.push((id, text, HashMap::new()));
+            }
         }
-    };
+    }
+
+    let ws = workspace_root_path();
+    let preset = buddhism_rag_preset();
+    if preset != BuddhismRagPreset::Off {
+        let roots: &[&str] = match preset {
+            BuddhismRagPreset::Classical => BUDDHISM_CLASSICAL_CORPUS_ROOTS,
+            BuddhismRagPreset::Tibetan => BUDDHISM_TIBETAN_CORPUS_ROOTS,
+            BuddhismRagPreset::All => BUDDHISM_RAG_CORPUS_ROOTS,
+            BuddhismRagPreset::Off => unreachable!("preset Off filtered above"),
+        };
+        match collect_markdown_chunks_from_relative_roots(&ws, roots, &kb_cfg) {
+            Ok(chunks) => {
+                tracing::info!(
+                    count = chunks.len(),
+                    preset = ?preset,
+                    workspace = %ws.display(),
+                    "buddhism_rag_chunks_loaded"
+                );
+                for c in chunks {
+                    entries.push((c.id, c.content, c.metadata));
+                }
+            }
+            Err(e) => {
+                tracing::warn!(error = %e, "buddhism_rag_scan_failed");
+            }
+        }
+    }
+
+    if entries.is_empty() {
+        anyhow::bail!("rag seed has no documents");
+    }
+
     let embedder = MockEmbeddingBackend::new(24);
-    let texts: Vec<&str> = docs.iter().map(|(_, text)| text.as_str()).collect();
+    let texts: Vec<&str> = entries.iter().map(|(_, t, _)| t.as_str()).collect();
     let embeddings = embedder
         .embed(&texts, EmbeddingInputType::Passage)
         .map_err(|err| anyhow::anyhow!(err.to_string()))?;
 
     let mut rag = state.rag.lock().expect("rag lock poisoned");
     rag.store = VectorStore::new();
-    for ((id, text), embedding) in docs.into_iter().zip(embeddings.into_iter()) {
-        rag.store.add(RagDocument::new(id, text, embedding));
+    for ((id, content, meta), embedding) in entries.into_iter().zip(embeddings.into_iter()) {
+        let mut doc = RagDocument::new(id, content, embedding);
+        doc.metadata = meta;
+        rag.store.add(doc);
     }
     rag.last_indexed_at = Some(Utc::now().to_rfc3339());
     tracing::info!(total = rag.store.len(), "seeding_rag_complete");
@@ -365,6 +473,9 @@ async fn config(State(state): State<Arc<AppState>>) -> Json<Value> {
         "node_rpc_addr": state.node_rpc_addr,
         "pool_api_url": state.pool_api_url,
         "rag_documents": rag.store.len(),
+        "zion_workspace_root": workspace_root_path().display().to_string(),
+        "zion_rag_buddhism": std::env::var("ZION_RAG_BUDDHISM").unwrap_or_default(),
+        "zion_rag_chunk_docs": chunk_zion_docs_flag(),
     }))
 }
 
