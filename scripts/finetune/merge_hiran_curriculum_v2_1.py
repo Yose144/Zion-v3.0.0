@@ -14,13 +14,20 @@ import json
 from collections import OrderedDict
 from pathlib import Path
 
-# Canonical merge order — older domain first; v2 synthesized corpus last so it wins overlaps.
+# Canonical merge order — older domain first; v2 synthesized corpus; optional supplemental shards last so they win overlaps.
 DEFAULT_SHARD_NAMES = (
     "zion_train.jsonl",
     "zion_train_seed_books_refresh.jsonl",
     "zion_train_full_books_refresh.jsonl",
     "zion_train_backup_20260330.jsonl",
     "zion_train_hiran_v2.jsonl",
+    # Optional — place JSONL files in HiranV2.1/data/shards/ (gitignored):
+    #   zion_train_oer_sciences.jsonl   — curated OER STEM/social excerpts + synthetic Q&A
+    #   zion_train_vedic_guided.jsonl     — short guided Q&A referencing Vedabase/BBT (see PLAN_v2.1.md legal note)
+    #   zion_train_buddhism_guided.jsonl   — classical + Tibetan Buddhism guided Q&A (heavy lifting still RAG; see PLAN_v2.1.md)
+    "zion_train_oer_sciences.jsonl",
+    "zion_train_vedic_guided.jsonl",
+    "zion_train_buddhism_guided.jsonl",
 )
 
 
