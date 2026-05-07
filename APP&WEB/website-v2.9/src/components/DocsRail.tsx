@@ -9,7 +9,8 @@ export default function DocsRail() {
   const { lang } = useLang();
 
   const resources = [
-    { tr('docsRail', 'res_docs_title', lang),
+    {
+      title: tr('docsRail', 'res_docs_title', lang),
       description: tr('docsRail', 'res_docs_body', lang),
       icon: Book,
       href: '/docs#live-index',
