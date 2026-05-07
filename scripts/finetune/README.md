@@ -104,6 +104,8 @@ python3 scripts/finetune/merge_hiran_curriculum_v2_1.py
 
 Výstupem je `scripts/finetune/data/hiran_curriculum_v2.1.jsonl` → reálně `../../HiranV2.1/data/hiran_curriculum_v2.1.jsonl`. Tento soubor používá `start_hiran_v2_vast.sh`, pokud ho neníčím přebiješ `ZION_TRAIN_DATASET`.
 
+Volitelně do stejného adresáře **`HiranV2.1/data/shards/`** přidej kurátorované **SFT** rozšíření: `zion_train_oer_sciences.jsonl` (OER vědy), `zion_train_vedic_guided.jsonl` (BBT/Vedabase — viz plán), **`zion_train_buddhism_guided.jsonl`** (orientace v **klasickém** a **tibetském** buddhismu); plná hloubka přes RAG indexy `buddhism-classical` / `buddhism-tibetan` v [`Hiran_v2.1.md`](../../HiranV2.1/Hiran_v2.1.md) § 3.6.
+
 Poznamka k V2 books:
 - publikovane PDF ve `APP&WEB/public_html/V2/books/` se nemaji brat jako primarni ingest format,
 - collector je uci pres repo-local textove proxy vrstvy jako `docs/docs2.9/books/`, `docs/docs2.9/ZION_OASIS/GOLDEN_EGG_GAME/`, `docs/docs2.9/SACRED_KNOWLEDGE/`, `docs/docs2.9/COSMIC_MAP/` a `docs/docs2.9/deployment/AMENTI_LOG_INDEX.md`,
@@ -111,7 +113,7 @@ Poznamka k V2 books:
 
 ### Hiran v2.1 — širší znalosti mimo ZION (zakotvení)
 
-Fine-tune dataset (`zion_train*.jsonl`) slouží **primárně** V3 / Rust / `zion` CLI / AI Native. Širší oblasti (přírodní a společenské vědy, dějiny, tibetské a jiné kánonické texty kde licence dovolí, eticky citlivé domorodé zdroje, kompletní projektová biblioteka z repa) patří do **RAG indexů a katalogu zdrojů**, ne do nekonečného rozšiřování JSONL. Viz [`HiranV2.1/Hiran_v2.1.md`](../../HiranV2.1/Hiran_v2.1.md) § **3.6** a Fáze E (RAG rozšířeně).
+Fine-tune dataset (`zion_train*.jsonl`) slouží **primárně** V3 / Rust / `zion` CLI / AI Native. Širší oblasti (přírodní a společenské vědy, dějiny, tibetské a jiné kánonické texty kde licence dovolí, eticky citlivé domorodé zdroje, kompletní projektová biblioteka z repa) patří typicky do **RAG indexů a katalogu zdrojů**; **výjimka pro cílený SFT** jsou kurátorované volitelné shardy `zion_train_oer_sciences.jsonl`, `zion_train_vedic_guided.jsonl` a **`zion_train_buddhism_guided.jsonl`** v `HiranV2.1/data/shards/` podle [`PLAN_v2.1.md`](../../HiranV2.1/PLAN_v2.1.md). **Buddhistický RAG korpus** stáhni skriptem [`HiranV2.1/scripts/rag/autopilot_buddhism_rag.sh`](../../HiranV2.1/scripts/rag/autopilot_buddhism_rag.sh). Viz též [`HiranV2.1/Hiran_v2.1.md`](../../HiranV2.1/Hiran_v2.1.md) § **3.6**.
 
 Ověřený robustní běh z 2026-03-29:
 - `300` souborů

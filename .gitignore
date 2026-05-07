@@ -64,7 +64,12 @@ HiranV2.1/lineage/
 # Hiran SFT data (JSONL — často MB až desítky MB; regeneruj collector + merge_hiran_curriculum_v2_1.py)
 HiranV2.1/data/shards/*
 !HiranV2.1/data/shards/.gitkeep
+!HiranV2.1/data/shards/zion_train_buddhism_guided.jsonl
+# Buddhism RAG výstupy z HiranV2.1/scripts/rag/autopilot_buddhism_rag.sh (manifesty jsou v gitu)
+HiranV2.1/data/rag/buddhism-classical/generated/
+HiranV2.1/data/rag/buddhism-tibetan/generated/
 HiranV2.1/data/hiran_curriculum_v2.1.jsonl
+HiranV2.1/curriculum/meta/BUILD.txt
 
 # Python (tools)
 __pycache__/
