@@ -18,6 +18,8 @@ export default function Navigation() {
   const pathname = usePathname();
   const { lang, setLang } = useLang();
 
+  const navItemMatches = (href: string) =>
+    pathname === href || (href === '/terranova' && pathname.startsWith('/terranova'));
   const navGroups: NavGroup[] = [
     {
       title: 'Core',
@@ -52,10 +54,19 @@ export default function Navigation() {
     {
       title: 'Reference',
       items: [
-        { href: '/docs',           label: tr('nav', 'docs', lang) },
-        { href: '/bridge',         label: tr('nav', 'bridge', lang) },
-        { href: '/api-reference',  label: tr('nav', 'api', lang) },
-        { href: '/ai-native',      label: tr('nav', 'ai_native', lang) },
+        { href: '/docs', label: tr('nav', 'docs', lang) },
+        {
+          href: '/terranova',
+          label: tr('nav', 'terranova', lang),
+          children: [
+            { href: '/terranova/public', label: tr('nav', 'terranova_public', lang) },
+            { href: '/terranova/genesis', label: tr('nav', 'terra_garden_genesis', lang) },
+            { href: '/terranova/dharma-temple', label: tr('nav', 'terra_dharma_temple', lang) },
+          ],
+        },
+        { href: '/kompas', label: tr('nav', 'kompas', lang) },
+        { href: '/api-reference', label: tr('nav', 'api', lang) },
+        { href: '/ai-native', label: tr('nav', 'ai_native', lang) },
       ],
     },
   ];
@@ -177,7 +188,7 @@ export default function Navigation() {
                         <Link
                           href={item.href}
                           className={`rounded-2xl px-4 py-3 text-sm font-semibold transition block ${
-                            pathname === item.href ? 'bg-white/10 text-white' : 'text-gray-300 hover:bg-white/5 hover:text-white'
+                            navItemMatches(item.href) ? 'bg-white/10 text-white' : 'text-gray-300 hover:bg-white/5 hover:text-white'
                           }`}
                           onClick={() => setOpenGroup(null)}
                         >
@@ -290,7 +301,9 @@ export default function Navigation() {
                         <Link
                           href={item.href}
                           className={`rounded-xl px-3 py-3 text-sm font-semibold transition min-h-[44px] flex items-center ${
-                            pathname === item.href ? 'bg-white/10 text-white' : 'text-gray-300 hover:bg-white/5 active:bg-white/10'
+                            navItemMatches(item.href)
+                              ? 'bg-white/10 text-white'
+                              : 'text-gray-300 hover:bg-white/5 active:bg-white/10'
                           }`}
                           onClick={() => setIsOpen(false)}
                         >
