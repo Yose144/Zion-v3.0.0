@@ -43,6 +43,7 @@ pub const AI_NATIVE_CANONICAL_CORPUS_ROOTS: &[&str] = &[
     "docs/docs2.9/SACRED_KNOWLEDGE",
     "docs/docs2.9/COSMIC_MAP",
     "docs/docs2.9/ZION_OASIS",
+    "HiranV2.1/corpus/oasis-ue5",
     "docs/docs2.9/deployment/AMENTI_LOG_INDEX.md",
     "L3/ai-native/src",
     "V3/README.md",
@@ -752,6 +753,14 @@ def foo():
         assert!(result.chunks_created >= 2);
 
         fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[test]
+    fn canonical_corpus_contains_hiran_ue5_oasis_scratchpad() {
+        assert!(
+            AI_NATIVE_CANONICAL_CORPUS_ROOTS.contains(&"HiranV2.1/corpus/oasis-ue5"),
+            "UE5 Oasis blueprint kurátorované zápisy pro RAG (viz Hiran_v2.1.md oddíl 3.7)"
+        );
     }
 
     #[test]
