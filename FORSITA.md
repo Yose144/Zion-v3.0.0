@@ -1,44 +1,94 @@
-# ZION TerraNova — Kompletní Průvodce Repositářem
+# ZION TerraNova — Kompletní Průvodce (FORSITA)
 
-> **Pro koho:** Pro každého — vývojáře, přítele, nováčka, i úplného laika.  
-> **Účel:** Vysvětlit co je kde, jak to funguje, jak to spustit, a jak pokračovat.  
-> **Poslední update:** 2. dubna 2026
-
----
-
-## 📖 Co je ZION?
-
-ZION TerraNova je **vlastní blockchain** — postavený od nuly v jazyku **Rust**. Není to fork Bitcoinu ani Etherea. Je to úplně nový chain s vlastním těžebním algoritmem (Cosmic Harmony), UTXO transakcemi, a 6-vrstvou architekturou (od základního chainu po vesmírnou stanici).
-
-**Klíčové vlastnosti:**
-- 144 miliard ZION celkem (nikdy víc)
-- Odměna za blok: 5,400 ZION, klesá o 20% každých 10 let
-- Těžba poběží 100+ let
-- Stoprocentní spalování poplatků (deflationary)
-- Fair Launch — žádný presale, žádný ICO
+> **Pro koho:** Pro každého — vývojáře, přítele, nováčka, **i úplného laika**, který nikdy nespustil server.
+> **Co se naučíš:** Co je ZION, jak repo funguje, jak si **koupit a nastavit server**, jak **spustit mainnet uzel**, **přijmout/poslat platbu**, **těžit**, použít **zion CLI**, a co dělat když něco nefunguje.
+> **Poslední update:** 2026-05-08 (security cleanup + 3-server mainnet topologie po deprecatu Praha node)
+> **Aktuální status repa:** [`StatusV3.md`](./StatusV3.md) + [`StatusV3-Part2.md`](./StatusV3-Part2.md)
 
 ---
 
-## 🗂️ Mapa Repositáře — Co je Kde
+## 📑 Obsah
+
+1. [Co je ZION (pro laika)](#1-co-je-zion-pro-laika)
+2. [Slovníček (pojmy bez kterých si neporadíš)](#2-slovníček)
+3. [Mapa repositáře — co je kde](#3-mapa-repositáře)
+4. [Premine peněženky](#4-premine-peněženky)
+5. **[Robustní mainnet deployment od nuly](#5-robustní-mainnet-deployment-od-nuly)** ← hlavní část
+6. [zion CLI — operátorský nástroj](#6-zion-cli)
+7. [Bridge ZION ↔ wZION (Base)](#7-bridge--zion--wzion)
+8. [Desktop, Mobile, Web aplikace](#8-aplikace)
+9. [Monitoring (Prometheus + Grafana)](#9-monitoring)
+10. [Backup & disaster recovery](#10-backup--disaster-recovery)
+11. [Security checklist](#11-security-checklist)
+12. [Troubleshooting (FAQ)](#12-troubleshooting)
+13. [Jak přispět](#13-jak-přispět)
+
+---
+
+## 1. Co je ZION (pro laika)
+
+**ZION TerraNova** je vlastní **kryptoměna a blockchain** — postavený od nuly v jazyku **Rust**, ne fork Bitcoinu/Etherea. Má vlastní těžební algoritmus (Cosmic Harmony Ekam Deeksha v2) a 3-vrstvou architekturu (L1 chain → L2 DeFi → L3 AI a cross-chain).
+
+**Klíčová čísla:**
+
+| | |
+|---|---|
+| Total supply | **144 000 000 000 ZION** (nikdy víc) |
+| Premine (genesis) | 16,28 mld ZION (11,31 %), v 12 účelových peněženkách |
+| Block reward | 5 400 ZION → klesá o **20 % každých 10 let**, tail ~724 ZION/blok navždy |
+| Block time | **60 s** |
+| Fee policy | **100 % burn** (deflationary) |
+| Reward split | 89 % miner / 5 % humanitarian / 5 % Issobella / 1 % pool |
+| Decimals | 10¹² flowers / 1 ZION |
+| Hashing | BLAKE3 + Cosmic Harmony 6-stage pipeline (256 KiB scratchpad) |
+
+**Filosofie:** Fair Launch (žádný presale, žádné ICO), 100letý horizont (ne hype-cycle), open source MIT.
+
+---
+
+## 2. Slovníček
+
+Pokud něco nevíš, vrať se sem.
+
+| Pojem | Co to znamená v kontextu ZION |
+|---|---|
+| **Node** | Program běžící na serveru, který drží kompletní kopii blockchainu, ověřuje transakce, propaguje bloky. Syn. "uzel". |
+| **Mainnet** | Hlavní (živá, produkční) síť. Tady jsou skutečné peníze. Opak: **testnet** (zkušebka, fake peníze). |
+| **Genesis #0** | Úplně první blok řetězce. Po `git filter-repo` cleanup (2026-05-07) startujeme **nový mainnet od bloku 0**. |
+| **Pool** | Server, který sdružuje malé minery a rozděluje odměnu. ZION pool používá **PPLNS**. |
+| **Miner** | Program (CPU nebo GPU), který hledá platné bloky. Posílá svou práci pool serveru. |
+| **Wallet** | Peněženka — pár klíčů (privátní + adresa). Privátní klíč = peníze. **Nikdy ho nikomu nedávej.** |
+| **RPC** | "Remote Procedure Call" — způsob, jak se s nodem mluví (např. `getBalance`). U ZION je to **raw TCP** na portu 8443, ne HTTP! |
+| **P2P** | Peer-to-peer vrstva, kde si nody mezi sebou vyměňují bloky. Port **8333**. |
+| **Stratum** | Protokol mezi minerem a poolem. Port **8444**. |
+| **Bridge** | Most mezi ZION L1 a Ethereum (Base). Pošleš ZION → dostaneš wZION (ERC-20). |
+| **VPS** | Virtual Private Server — pronajatý server v cloudu (Hetzner, Contabo, OVH, DigitalOcean…). |
+| **SSH klíč** | Kryptografický klíč k přihlášení na server bez hesla. Bezpečnější než heslo. |
+| **systemd / Docker** | Dva způsoby, jak na Linuxu trvale spouštět služby. ZION mainnet nasazujeme přes **Docker Compose**. |
+| **CLI** | Command-line interface. ZION má `zion` binárku — operátorský "uber-tool". |
+
+---
+
+## 3. Mapa repositáře
 
 ```
-2.9.6/                          ← ROOT — hlavní repo
+2.9.6/                          ← ROOT (multi-layer monorepo)
 │
-├── README.md                   ← Hlavní README projektu
-├── ROADMAP.md                  ← Master roadmapa (přehled fází)
-├── FORSITA.md                  ← TOTO — kompletní průvodce (čteš právě teď)
-├── LICENSE                     ← MIT licence
-├── Cargo.toml                  ← Rust workspace config (root)
-├── Genesis                     ← Genesis ASCII art (symbolický soubor)
-├── PREMINE_ADDRESSES_PUBLIC.txt← 15 genesis peněženek (VEŘEJNÉ adresy)
+├── README.md                   ← Přehled projektu
+├── ROADMAP.md                  ← Master roadmapa
+├── FORSITA.md                  ← TOTO — kompletní průvodce
+├── AGENTS.md                   ← Pravidla pro AI agenty / collaboratory
+├── StatusV3.md                 ← ⭐ Aktuální stav (mainnet polish)
+├── StatusV3-Part2.md           ← Independent audit + cleanup
+├── PREMINE_ADDRESSES_PUBLIC.txt← 15 genesis peněženek (veřejné adresy)
 │
-├── V3/                         ← 🚀 AKTIVNÍ KÓDOVÁ LINIE (mainnet)
+├── V3/                         ← 🚀 AKTIVNÍ MAINNET KÓD
 │   ├── L1/                     ←   Jádro blockchainu
 │   │   ├── core/               ←     Node (konsensus, P2P, RPC, storage)
-│   │   ├── cosmic-harmony/     ←     PoW algoritmus (Ekam Deeksha v2)
+│   │   ├── cosmic-harmony/     ←     PoW algoritmus
 │   │   ├── pool/               ←     Mining pool (Stratum, PPLNS)
-│   │   ├── miner/              ←     Miner (CPU + GPU backend)
-│   │   └── native-libs/        ←     C/Metal/CUDA nativní knihovny
+│   │   ├── miner/              ←     Miner (CPU + GPU)
+│   │   └── native-libs/        ←     C/Metal/CUDA knihovny
 │   ├── L2/                     ←   DeFi vrstva
 │   │   ├── bridge/             ←     wZION bridge (ZION ↔ Base)
 │   │   ├── dao/                ←     DAO governance
@@ -46,599 +96,733 @@ ZION TerraNova je **vlastní blockchain** — postavený od nuly v jazyku **Rust
 │   ├── L3/                     ←   AI & Cross-chain
 │   │   ├── ncl/                ←     Neural Compute Layer
 │   │   ├── warp/               ←     Universal bridge (7 chainů)
-│   │   └── ai-native/          ←     AI Agent framework
-│   ├── ROADMAP.md              ←   Detailní V3 roadmapa (source of truth)
+│   │   └── ai-native/          ←     AI Agent framework (Hiranyagarbha)
+│   ├── cli/                    ←   ⭐ "zion" operátorská CLI binárka
+│   ├── docker/                 ←   ⭐ MAINNET docker compose (sem!)
+│   │   ├── docker-compose.yml                ← unified s profiles
+│   │   ├── docker-compose.v3-mainnet.yml     ← legacy mainnet stack
+│   │   ├── docker-compose.monitoring.yml     ← Prometheus/Grafana
+│   │   ├── prometheus.yml + alert_rules.yml
+│   │   └── DOCKER.md / HARDENING.md          ← návody
+│   ├── docs/                   ←   V3 dokumentace
+│   │   ├── CLI_GUIDE.md        ←     ⭐ jak používat zion CLI
+│   │   ├── CLI_DEPLOY_PLAYBOOK.md
+│   │   ├── CLI_REFERENCE.md
+│   │   └── audits/             ←     Audit reporty
+│   ├── ROADMAP.md              ←   Detailní V3 roadmapa
 │   └── README.md               ←   V3 status a popis
 │
-├── L1/ … L6/                   ← Legacy vrstvy (historický referenční kód)
-│                                  L1=chain, L2=DeFi, L3=AI, L4=Oasis,
-│                                  L5=Free World, L6=Issobella
+├── HiranV2.1/                  ← AI agent (Hiranyagarbha v2.1) — RAG + LoRA pipeline
+│   ├── Hiran_v2.1.md           ←   Specifikace agenta + RAG router
+│   ├── PLAN_v2.1.md            ←   Prováděcí plán (fáze 0-D)
+│   └── bootstrap_workspace.sh  ←   Setup skript
+│
+├── L1/ … L6/                   ← Legacy vrstvy (referenční historický kód)
 │                                  ⚠️ Nový kód se píše do V3/, ne sem!
 │
 ├── APP&WEB/                    ← Frontendové aplikace
-│   ├── desktop-agent/          ←   Electron desktop app (mining GUI + wallet)
-│   │   └── src/main.js         ←     Hlavní proces Electronu
-│   ├── mobile-app/             ←   React Native + Expo mobilní app
-│   │   └── src/screens/        ←     9 obrazovek (wallet, bridge, mining…)
-│   ├── website-v2.9/           ←   Next.js 16 web (explorer, bridge, DeFi)
-│   │   └── src/app/            ←     App Router stránky
-│   └── public_html/            ←   Starý statický web (legacy)
+│   ├── desktop-agent/          ←   Electron desktop app
+│   ├── mobile-app/             ←   React Native + Expo
+│   └── website-v2.9/           ←   Next.js 16 web
 │
-├── docker/                     ← Docker soubory pro deployment
-│   ├── docker-compose.v3-mainnet.yml  ← ⭐ HLAVNÍ compose pro mainnet
-│   ├── Dockerfile.v3.core      ←   Build image pro node
-│   ├── Dockerfile.v3.pool      ←   Build image pro pool
-│   ├── Dockerfile.v3.miner     ←   Build image pro miner
-│   └── …                       ←   Další compose soubory (monitoring, web…)
-│
-├── config/                     ← Konfigurační soubory
-│   ├── mainnet.toml            ←   Konfigurace mainnetu
-│   ├── testnet.toml            ←   Konfigurace testnetu
-│   └── …                       ←   Bridge, DAO, devnet konfigurace
-│
-├── scripts/                    ← Skripty pro deployment a operace
-│   ├── deploy-v3-mainnet.sh    ←   Deploy na servery
-│   ├── bridge-test-tx.py       ←   Testovací bridge transakce
-│   └── …                       ←   Monitoring, backup, deploy skripty
-│
-├── docs/                       ← Dokumentace (desítky souborů)
-│   ├── DEFI_FULL_ROADMAP.md    ←   ⭐ DeFi ecosystem plán (6 waves)
-│   ├── MAINNET_CONSTITUTION.md ←   Neměnné parametry protokolu
-│   ├── v2.9.6/                 ←   Specifikace verze 2.9.6
-│   ├── whitepaper/             ←   Technický whitepaper
-│   ├── 2.9.7/                  ←   Pre-MainNet gate dokumentace
-│   ├── 2.9.8/                  ←   Deeksha kanonická release docs
-│   ├── 2.9.9/                  ←   Cleanup & migrace + archive/
-│   └── …                       ←   Audity, reporty, plány
-│
+├── docker/                     ← (legacy root-level docker, postupně migrace do V3/docker/)
+├── config/                     ← Konfigurační soubory (mainnet.toml, testnet.toml, …)
+├── scripts/                    ← Deployment + ops skripty
+├── docs/                       ← Veškerá dokumentace (audity, whitepaper, …)
 ├── tests/                      ← Integrační testy
-├── tools/                      ← Pomocné nástroje
-├── monitoring/                 ← Prometheus/Grafana konfigurace
-├── ops/                        ← Operační playbooks
-├── legal/                      ← Právní disclaimer
-└── opencl_sdk/                 ← OpenCL SDK pro GPU mining
+└── .pre-commit-config.yaml     ← Git hooks (fmt + clippy + gitleaks)
 ```
 
----
-
-## 💰 Premine — Genesis Peněženky
-
-V genesis bloku je předem vytvořeno **16.28 miliard ZION** (11.31% z celkového supplym) ve **12 peněženkách**. Plus 3 operační peněženky přidané v V3.
-
-Veřejné adresy jsou v souboru **`PREMINE_ADDRESSES_PUBLIC.txt`** v rootu.
-
-### Přehled premine:
-
-| # | Účel | Adresa (zkrácená) | Kolik |
-|---|------|--------------------|-------|
-| 1-5 | OASIS Golden Egg/Xp | `zion166e6v…` až `zion1n8h2a…` | 5× 1.65B = **8.25B** |
-| 6 | DAO Treasury (hlavní) | `zion176u8r…` | **2.5B** |
-| 7 | DAO Grants & Bounties | `zion12643n…` | **1.0B** |
-| 8 | DAO Ecosystem Bootstrap | `zion1k8w73…` | **0.5B** |
-| 9 | Core Development Fund | `zion1q540v…` | **1.0B** |
-| 10 | Network Infrastructure | `zion1h4w39…` | **1.0B** |
-| 11 | Genesis Creator | `zion1x638z…` | **0.59B** |
-| 12 | Humanitarian (Children) | `zion1m4v5z…` | **1.44B** |
-| 13 | Issobella Fund (5% tithe) | `zion170a37…` | ~plní se těžbou |
-| 14 | Pool Fee (1% tithe) | `zion1y5u65…` | ~plní se těžbou |
-| 15 | Pool Payout Wallet | `zion1k3h7p…` | ~tranzitní |
-
-### ⚠️ Privátní klíče
-
-- Premine klíče (1–12): v souboru `PREMINE_WALLETS_BACKUP.json` — **NENÍ v repo** (gitignored), existuje jen offline
-- Tithe klíče (13–14): v souboru `TITHE_WALLETS_BACKUP.txt` — **NENÍ v repo** (gitignored)
-- **POZOR:** Staré verze repozitáře mohou obsahovat klíče v git historii. Před jakýmkoli veřejným forkem je NUTNÉ spustit BFG Repo-Cleaner!
+**Klíčové pravidlo:** Nový mainnet kód se píše **do `V3/`**. Vše ostatní je referenční nebo aplikační vrstva.
 
 ---
 
-## ⚡ Jak to Spustit — Krok za Krokem
+## 4. Premine peněženky
 
-### Prerekvizity
+V genesis bloku je předem vytvořeno **16,28 mld ZION** (11,31 %) ve **12 peněženkách**. Plus 3 operační peněženky (Issobella, Pool fee, Pool payout) plněné odměnami za těžbu.
+
+Veřejné adresy: **`PREMINE_ADDRESSES_PUBLIC.txt`** v rootu repa.
+
+| # | Účel | Kolik |
+|---|---|---|
+| 1–5 | OASIS Golden Egg / Xp | 5× 1,65 mld = **8,25 mld** |
+| 6 | DAO Treasury (hlavní) | **2,5 mld** |
+| 7 | DAO Grants & Bounties | **1,0 mld** |
+| 8 | DAO Ecosystem Bootstrap | **0,5 mld** |
+| 9 | Core Development Fund | **1,0 mld** |
+| 10 | Network Infrastructure | **1,0 mld** |
+| 11 | Genesis Creator | **0,59 mld** |
+| 12 | Humanitarian (Children) | **1,44 mld** |
+| 13 | Issobella Fund | plněno 5 % bloku |
+| 14 | Pool Fee | plněno 1 % bloku |
+| 15 | Pool Payout Wallet | tranzitní |
+
+**Privátní klíče** premine peněženek **NEJSOU v repu** (`.gitignore`), existují jen offline u Genesis creatora. Po `git filter-repo` history scrub (2026-05-07) jsou odstraněny i z historie.
+
+---
+
+## 5. Robustní mainnet deployment od nuly
+
+> Tahle sekce tě provede od **úplného začátku** (nemáš ještě nic) až k **běžícímu mainnet uzlu** v cloudu. Po cestě probereme i **3-server topologii** doporučenou pro Genesis #0.
+
+### 5.1 Co budeš potřebovat
+
+| Položka | Cena (orientačně) | Poznámka |
+|---|---|---|
+| **VPS** | $20–80/měs za kus | Doporučujeme 3 servery v různých zemích |
+| **Doménové jméno** | $10–15/rok | Volitelné (pro web a SSH alias) |
+| **Lokální PC** | — | macOS / Linux / WSL2 na Windows |
+| **SSH klient** | zdarma | Built-in `ssh` na všech OS |
+| **Trpělivost** | — | Počítej 1–3 hodiny od nuly k prvnímu bloku |
+
+**Doporučená VPS specifikace pro 1 mainnet node:**
+
+| Resource | Min | Doporučeno | Pro pool/bridge |
+|---|---|---|---|
+| CPU | 2 vCPU | **4 vCPU** | 8 vCPU |
+| RAM | 4 GB | **8 GB** | 16 GB |
+| Disk | 50 GB SSD | **200 GB NVMe** | 500 GB NVMe |
+| Bandwidth | 1 TB/měs | 5 TB/měs | unmetered |
+| OS | Ubuntu 22.04 LTS | **Ubuntu 24.04 LTS** | Debian 12 |
+
+### 5.2 Volba poskytovatele
+
+> **Důrazně doporučujeme rozprostřít 3 nody do 3 různých datacenter / providerů.** Snižuje single-point-of-failure (geo, právní, infra).
+
+| Provider | Plus | Mínus |
+|---|---|---|
+| **Hetzner** (DE/FI/US) | Levné, výkonné, EU GDPR | Vyžaduje ID verifikaci |
+| **OVH** (FR/CA/SG) | Široký výběr lokací | Občas pomalé support |
+| **Contabo** (DE/US/JP) | Nejlevnější za RAM | Pomalejší disk |
+| **DigitalOcean** | Skvělé docs, API | Dražší než EU providers |
+| **Vultr** | Velký výběr lokací | Cena srovnatelná s DO |
+| **Linode (Akamai)** | Stabilní, US-friendly | Méně lokací |
+
+**Příklad doporučené 3-server topologie pro mainnet:**
+
+```
+Server A (EU)         Server B (US)         Server C (APAC)
+Hetzner FSN1          Hetzner ASH1          Vultr Tokyo
+4 vCPU / 8 GB / 200GB 4 vCPU / 8 GB / 200GB 4 vCPU / 8 GB / 200GB
+role: full node       role: full node       role: full node
+        + pool                + bridge              + monitoring
+```
+
+### 5.3 Krok za krokem: od koupě VPS k běžícímu nodu
+
+#### Krok 1 — Koupit VPS
+
+1. Registruj se u zvoleného providera (např. Hetzner Cloud).
+2. **Vygeneruj SI lokálně SSH klíč** (NE u providera!):
+   ```bash
+   # Na svém laptopu
+   ssh-keygen -t ed25519 -a 100 -f ~/.ssh/zion_node_a -C "zion-node-a-$(date +%Y%m%d)"
+   # Stiskni Enter na passphrase pokud chceš jednodušší přístup z CI
+   # NEBO zadej passphrase pro lepší bezpečnost (musíš pak používat ssh-agent)
+   
+   cat ~/.ssh/zion_node_a.pub
+   # Tenhle text (jeden řádek) zkopíruj
+   ```
+3. V cloud panelu providera klikni **Create server**:
+   - OS: **Ubuntu 24.04 LTS**
+   - Lokace: dle topologie (EU/US/APAC)
+   - Type: 4 vCPU / 8 GB RAM / 200 GB SSD
+   - **SSH key:** vlož ten public key z `cat ~/.ssh/zion_node_a.pub`
+   - Firewall: zatím nic (uděláme níže přes ufw)
+4. Po spuštění získáš **veřejnou IP** (např. `203.0.113.42`).
+5. Otestuj SSH:
+   ```bash
+   ssh -i ~/.ssh/zion_node_a root@203.0.113.42
+   # Když poprvé: "Are you sure you want to continue?" → yes
+   # Měl bys být přihlášený jako root@hostname:~#
+   ```
+
+#### Krok 2 — Základní hardening (bezpečnost)
+
+Připojený přes SSH spusť:
 
 ```bash
-# Na macOS:
-brew install rust docker docker-compose
+# 1. Update systému
+apt update && apt upgrade -y
 
-# Na Ubuntu/Debian:
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-sudo apt install docker.io docker-compose-plugin
+# 2. Vytvoř ne-root usera (bezpečnější než přímý root)
+adduser zion-deploy            # zadej silné heslo, ostatní fields skip
+usermod -aG sudo zion-deploy
+mkdir -p /home/zion-deploy/.ssh
+cp ~/.ssh/authorized_keys /home/zion-deploy/.ssh/
+chown -R zion-deploy:zion-deploy /home/zion-deploy/.ssh
+chmod 700 /home/zion-deploy/.ssh
+chmod 600 /home/zion-deploy/.ssh/authorized_keys
 
-# Ověř:
-rustc --version    # potřebuješ 1.75+
-cargo --version
+# 3. Zakaž root login + heslo přihlášení
+sed -i 's/^#*PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config
+sed -i 's/^#*PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config
+echo 'AllowUsers zion-deploy' >> /etc/ssh/sshd_config
+systemctl reload sshd
+
+# 4. Firewall
+apt install -y ufw
+ufw default deny incoming
+ufw default allow outgoing
+ufw allow 22/tcp     comment "SSH"
+ufw allow 8333/tcp   comment "ZION P2P"
+ufw allow 8443/tcp   comment "ZION RPC (zvážit jen z trusted IPs)"
+ufw allow 8444/tcp   comment "ZION pool stratum (jen pokud je to pool node)"
+ufw allow 9090/tcp   comment "Prometheus (jen pokud je monitoring node)"
+ufw --force enable
+ufw status
+
+# 5. fail2ban (chrání proti brute-force)
+apt install -y fail2ban
+systemctl enable --now fail2ban
+
+# 6. Automatic security updates
+apt install -y unattended-upgrades
+dpkg-reconfigure -plow unattended-upgrades
+```
+
+Otestuj nové přihlášení **z jiného terminálu** (ne zavírej původní SSH session, dokud neověříš!):
+
+```bash
+ssh -i ~/.ssh/zion_node_a zion-deploy@203.0.113.42
+# Mělo by fungovat
+```
+
+Pokud OK, můžeš zavřít root session a dál pracovat jako `zion-deploy`.
+
+#### Krok 3 — Instalace Dockeru
+
+```bash
+# Jako zion-deploy s sudo:
+sudo apt install -y ca-certificates curl gnupg
+sudo install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | \
+  sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+sudo chmod a+r /etc/apt/keyrings/docker.gpg
+
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
+  https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo $VERSION_CODENAME) stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+sudo apt update
+sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+# Přidej se do docker grupy (aby nebylo nutné sudo u každého docker příkazu)
+sudo usermod -aG docker $USER
+# Odhlas se a zpátky (nebo `newgrp docker`)
+exit
+```
+
+Re-login a otestuj:
+```bash
+ssh -i ~/.ssh/zion_node_a zion-deploy@203.0.113.42
 docker --version
+docker compose version
+docker run --rm hello-world    # quick smoke test
 ```
 
-### Varianta A: Spustit vše přes Docker (NEJJEDNODUŠŠÍ)
+#### Krok 4 — Klonovat repo a nasadit ZION
 
 ```bash
-# 1. Klonuj repo
-git clone https://github.com/Yose144/2.9.6.git
-cd 2.9.6
+# Volitelně: nainstaluj git pokud chybí
+sudo apt install -y git
 
-# 2. Vytvoř .env soubor s peněženkovými adresami
-#    (bez toho node neví kam posílat odměny za těžbu)
+# Klonuj repo
+cd ~
+git clone https://github.com/Yose144/2.9.6.git zion
+cd zion
+
+# Vytvoř .env (kam chodí odměny za bloky)
 cat > .env << 'EOF'
-MINER_WALLET=zion1TVOJE_ADRESA_SEM
+# Tvoje wallet adresa (vygeneruj ji lokálně, viz Krok 5)
+MINER_WALLET=zion1...TVOJE_ADRESA
+
+# Operační peněženky (zachovat jak jsou — protokolové defaults)
 HUMANITARIAN_WALLET=zion1m4v5z8z850u480c5c208z274e334369275n5y20
 ISSOBELLA_WALLET=zion170a374s6h390k7w244m5c4f354v8n4678844655
 POOL_FEE_WALLET=zion1y5u653y3w4z7p5r3l034y0q6u06542a426z77j7
 POOL_PAYOUT_WALLET=zion1k3h7p6q4z7l0s495w6h775f566u0276237rh8x5
-POOL_SIGNING_KEY=TVUJ_PRIVATNI_KLIC_HEX
+
+# Pokud běžíš pool, vygeneruj signing key:
+#   docker run --rm zion-core wallet new-keypair
+# A vlož sem hex private key (bez 0x):
+POOL_SIGNING_KEY=
 EOF
+chmod 600 .env
 
-# 3. Spusť mainnet stack
-docker compose --env-file .env -f docker/docker-compose.v3-mainnet.yml up -d
+# Spusť unified compose s mainnet profilem
+docker compose -f V3/docker/docker-compose.yml --env-file .env --profile mainnet up -d
 
-# 4. Zkontroluj že běží
+# Sleduj logy
+docker compose -f V3/docker/docker-compose.yml logs -f node
+# Ctrl+C ukončí jen tail, ne kontejner
+
+# Po pár sekundách ověř:
 docker ps
-# Měl bys vidět: zion-core, zion-pool, zion-miner, redis, ...
+# Měl bys vidět: zion-core, zion-pool, zion-miner …
 
-# 5. Zkontroluj chain
+# Otestuj RPC (POZOR: raw TCP, ne HTTP — ne curl, použij nc!):
 echo '{"jsonrpc":"2.0","id":1,"method":"getChainInfo","params":{}}' | \
   nc -w 3 127.0.0.1 8443
+# Měl bys dostat JSON odpověď s tip_height, hashrate, mempool, ...
 ```
 
-### Varianta B: Buildit a spustit z source (pro vývojáře)
+#### Krok 5 — Vytvoř si peněženku (lokálně, ne na serveru!)
+
+> **Privátní klíč peněženky NIKDY nedrž jen na serveru.** Vždy ho generuj lokálně a důkladně zazálohuj.
+
+Lokálně na svém laptopu:
 
 ```bash
-# 1. Klonuj a jdi do V3
+# Klonuj repo
 git clone https://github.com/Yose144/2.9.6.git
 cd 2.9.6
 
-# 2. Zkontroluj Rust toolchain
-cat V3/rust-toolchain.toml
-# Pokud tam je specifická verze, nainstaluj:
-# rustup install <verze>
-
-# 3. Build celý V3 workspace
-cd V3
-cargo build --release
-# Výstup: V3/target/release/zion-core, zion-miner, zion-pool
-
-# 4. Spusť node
-./target/release/zion-core \
-  --config ../config/mainnet.toml \
-  --data-dir ./data \
-  --p2p-port 8334 \
-  --rpc-port 8443
-
-# 5. V jiném terminálu: spusť miner
-./target/release/zion-miner \
-  --pool 127.0.0.1:3333 \
-  --wallet zion1TVOJE_ADRESA \
-  --worker muj-pc \
-  --threads 4 \
-  --algo cosmic_harmony
+# Spusť V3 wallet generator
+cargo run --release --manifest-path V3/Cargo.toml -p zion-cli -- wallet new
+# Nebo přes desktop agenta:
+cd APP&WEB/desktop-agent && npm install && npm start
 ```
 
-### Varianta C: Generovat peněženku
+Generator ti dá:
+- **Adresu** (`zion1...`) — to je veřejné, posílej kamkoli
+- **Privátní klíč** (hex string) — **TAJNÉ**, uložit do password manageru
+- **Mnemonic** (12–24 anglických slov) — **TAJNÉ**, vytisknout a zamknout
+
+Adresu pak vlož do `.env` na serveru jako `MINER_WALLET`.
+
+#### Krok 6 — Připojit se k peer mesh (P2P)
+
+Pokud je server první v síti, je to genesis seed. Pokud jsou už jiné nody, edituj `config/mainnet.toml`:
+
+```toml
+[p2p]
+seed_peers = [
+  "203.0.113.42:8333",     # tvoje server A
+  "198.51.100.55:8333",    # tvoje server B
+  "192.0.2.99:8333",       # tvoje server C
+]
+```
+
+Po každé změně configu:
+```bash
+docker compose -f V3/docker/docker-compose.yml --env-file .env restart node
+```
+
+#### Krok 7 — Replikuj na 2 zbývající servery
+
+Opakuj Kroky 1–6 pro server B a C. Klíčové rozdíly:
+
+- **Server A:** node + pool + miner (těžba zde)
+- **Server B:** node + bridge (L2 → Base mostek)
+- **Server C:** node + monitoring (Prometheus + Grafana)
+
+Nakonec všechny 3 se musí navzájem znát v `seed_peers`.
+
+### 5.4 Sanity check po nasazení
+
+Z laptopu na všech 3 servery najednou:
 
 ```bash
-# Z V3 workspace
-cd V3
-cargo run --release --bin wallet-generator
-
-# Nebo z desktop agenta (JavaScript):
-cd APP&WEB/desktop-agent
-node src/wallet-generator.js
+for IP in 203.0.113.42 198.51.100.55 192.0.2.99 ; do
+  echo "=== $IP ==="
+  ssh -i ~/.ssh/zion_node_a zion-deploy@$IP "
+    echo '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"getChainInfo\",\"params\":{}}' | \
+      nc -w 3 127.0.0.1 8443 | python3 -c 'import sys,json; r=json.load(sys.stdin); print(\"height:\", r[\"result\"][\"tip_height\"])'
+  "
+done
 ```
+
+Všechny 3 by měly hlásit **stejnou výšku ±1**. Pokud se rozcházejí o víc, není to OK — zkontroluj `seed_peers` a firewall na portu 8333.
 
 ---
 
-## 🌐 Aktuální Servery (Duben 2026)
+## 6. zion CLI
 
-| Server | IP | Lokace | Docker služby |
-|--------|----|--------|---------------|
-| **Praha** | 91.98.122.165 | Hetzner EU | Core, Pool, Miner, Bridge, Web, Monitoring |
-| **USA** | 5.78.194.94 | Hetzner US | Core, Pool, Miner |
-| **Singapur** | 5.223.84.191 | Hetzner SG | Core, Pool, Miner |
+`zion` je unifikovaný operátorský binární příkaz pro celý stack. Detail v [`V3/docs/CLI_GUIDE.md`](./V3/docs/CLI_GUIDE.md).
 
-### Jak se připojit k serveru
+### 6.1 Build
 
 ```bash
-# SSH (potřebuješ klíč):
-ssh -i ~/.ssh/zion_hetzner_key root@91.98.122.165
+# Z root repa:
+cargo build --release --manifest-path V3/Cargo.toml -p zion-cli
+sudo cp V3/target/release/zion /usr/local/bin/
 
-# Na serveru:
-cd /root/zion-2.9.6
-docker ps                    # seznam running kontejnerů
-docker logs zion-core        # logy node
-docker logs zion-v3-bridge   # logy bridge
-
-# Zkontrolovat chain výšku:
-echo '{"jsonrpc":"2.0","id":1,"method":"getChainInfo","params":{}}' | \
-  nc -w 3 127.0.0.1 8443
+# Ověř:
+zion --help
 ```
 
-### Porty
-
-| Port | Služba | Popis |
-|------|--------|-------|
-| 8334 | P2P | Peer-to-peer mesh |
-| 8443 | RPC | JSON-RPC 2.0 (raw TCP, ne HTTP!) |
-| 3333 | Stratum | Pool mining protokol |
-| 8080 | Pool API | Pool statistiky |
-| 443 | HTTPS | Website |
-
-**⚠️ DŮLEŽITÉ:** RPC na portu 8443 je **raw TCP** — nefunguje přes `curl`! Musíš použít `nc` nebo raw socket:
+### 6.2 Nejčastější příkazy
 
 ```bash
-# SPRÁVNĚ:
-echo '{"jsonrpc":"2.0","id":1,"method":"getBalance","params":{"address":"zion1..."}}' | nc -w 3 127.0.0.1 8443
+# Interaktivní menu (arrow keys)
+zion
+# nebo:
+zion menu
 
-# ŠPATNĚ (nefunguje):
-curl http://localhost:8443/...
+# První-runtime setup wizard
+zion onboard
+
+# Zdravotní kontrola všech vrstev
+zion status
+zion doctor                      # pre-flight diagnostics
+
+# Spustit/zastavit služby
+zion start all                   # vše: node + pool + miner + agent + bridge + dao + website + monitoring
+zion start node                  # jen node
+zion stop pool
+zion restart bridge
+
+# Logy
+zion logs node --tail 100
+zion logs bridge -f              # follow mode
+
+# L1 specifické
+zion node sync-status
+zion node peers
+zion mine start --threads 4
+zion wallet balance zion1...
+
+# L2
+zion bridge status
+zion dao proposals
+
+# Deploy (per V3/docs/CLI_DEPLOY_PLAYBOOK.md)
+zion deploy --target mainnet --server 203.0.113.42
+
+# Konfigurace
+zion config show
+zion config set p2p.seed_peers "['203.0.113.42:8333','198.51.100.55:8333']"
+
+# Block explorer TUI
+zion explorer
+
+# Live monitoring TUI
+zion monitor
 ```
+
+### 6.3 Kompletní reference
+
+- [`V3/docs/CLI_GUIDE.md`](./V3/docs/CLI_GUIDE.md) — koncept a top-level
+- [`V3/docs/CLI_REFERENCE.md`](./V3/docs/CLI_REFERENCE.md) — všechny příkazy
+- [`V3/docs/CLI_DEPLOY_PLAYBOOK.md`](./V3/docs/CLI_DEPLOY_PLAYBOOK.md) — deploy workflows
+- [`V3/docs/CLI_FAQ.md`](./V3/docs/CLI_FAQ.md) — časté dotazy
+- [`V3/docs/CLI_TROUBLESHOOTING.md`](./V3/docs/CLI_TROUBLESHOOTING.md) — řešení problémů
 
 ---
 
-## 🔗 Bridge — ZION ↔ wZION (Base)
+## 7. Bridge — ZION ↔ wZION
 
-Bridge umožňuje převést ZION tokeny z hlavního chainu na Base blockchain jako wZION (wrapped ZION) — ERC-20 token.
+Bridge umožňuje převést ZION z hlavního chainu na **Base** (Coinbase L2 nad Ethereem) jako **wZION** (ERC-20).
 
-### Smart Kontrakty na Base Mainnet
+### 7.1 Smart kontrakty na Base Mainnet
 
-| Kontrakt | Adresa | Odkaz |
-|----------|--------|-------|
-| **wZION** (ERC-20) | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` | [BaseScan](https://basescan.org/address/0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6) |
-| **ZIONBridge** | `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721` | [BaseScan](https://basescan.org/address/0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721) |
-| **ZIONAtomicSwap** | (verified na BaseScan) | |
-| **UniV3 Pool** (wZION/WETH 0.3%) | `0xa88C4C89EB4597Df2e29A8061895300FcDF44FBB` | [BaseScan](https://basescan.org/address/0xa88C4C89EB4597Df2e29A8061895300FcDF44FBB) |
+| Kontrakt | Adresa |
+|---|---|
+| **wZION** (ERC-20) | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` |
+| **ZIONBridge** | `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721` |
+| **UniV3 Pool** (wZION/WETH 0.3%) | `0xa88C4C89EB4597Df2e29A8061895300FcDF44FBB` |
 
-### DeFi Hub & Web stránky
-
-Kompletní DeFi sekce webu (zionterranova.com):
-
-| Stránka | URL | Popis |
-|---------|-----|-------|
-| **DeFi Hub** | `/defi` | Swap wZION/WETH, bridge burn, portfolio |
-| **Bridge** | `/bridge` | Detailní bridge operace, architektura, FAQ |
-| **DAO** | `/dao` | Governance, treasury, návrhy, Tree of Life |
-| **Warp** | `/warp` | Multi-chain koridory (ETH live, BTC+SOL plánované) |
-
-Všechny stránky jsou bilingvální (cs/en) a používají Base Mainnet (chain 8453).
-
-### Jak funguje bridge (zjednodušeně)
-
-```
-ZION chain                          Base chain
-─────────                          ──────────
-1. Pošleš 100 ZION na vault        
-   s memo: BRIDGE:base:0xTVOJE_EVM_ADRESA
-                    │
-                    ▼
-2. Bridge watcher detekuje lock TX
-                    │
-3. Čeká 60 bloků (finalita)
-                    │
-                    ▼
-4. Relayer pošle submitLockProof()
-   na ZIONBridge kontrakt
-                    │
-                    ▼
-                                    5. ZIONBridge mintne 100 wZION
-                                       na tvoji EVM adresu
-                                    6. wZION se objeví v MetaMask!
-```
-
-### Bridge vault adresa (kam posíláš ZION pro bridge)
+### 7.2 Bridge vault adresa (kam posíláš ZION)
 
 ```
 zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0
 ```
 
+### 7.3 Jak funguje bridge
+
+```
+ZION L1                              Base L2
+─────────                            ──────
+1. Pošleš X ZION na vault
+   s memo: BRIDGE:base:0xTVOJE_EVM
+                  │
+                  ▼
+2. L1 watcher detekuje lock
+3. Čeká 60 bloků (finalita)
+                  │
+                  ▼
+4. Relayer agreguje 3/5 validator podpisů
+                  │
+                  ▼
+5. Submit submitLockProof() ────► 6. ZIONBridge.unlock() mintne
+                                     X wZION na 0xTVOJE_EVM
+                                  7. Vidíš v MetaMask ✅
+```
+
+### 7.4 Bridge stav (2026-05-08)
+
+> ⚠️ **Bridge je v staging** (`threshold=1, total_validators=2`). Před produkčním unlock-flow je potřeba provisioning **3/5 multisig** (5 validator klíčů, každý na samostatném serveru). Detail v [`StatusV3.md` § P1](./StatusV3.md).
+
+### 7.5 DeFi Hub & web
+
+| Stránka | URL | Popis |
+|---|---|---|
+| DeFi Hub | `/defi` | Swap wZION/WETH, bridge burn, portfolio |
+| Bridge | `/bridge` | Detailní operace + FAQ |
+| DAO | `/dao` | Governance, treasury, návrhy |
+| Warp | `/warp` | Multi-chain koridory (ETH live, BTC+SOL plánované) |
+
 ---
 
-## 🖥️ Desktop Agent (Electron App)
+## 8. Aplikace
 
-**Cesta:** `APP&WEB/desktop-agent/`
-
-Jednoduché GUI pro těžbu a správu peněženky.
+### 8.1 Desktop Agent (Electron)
 
 ```bash
-cd APP&WEB/desktop-agent
+cd APP\&WEB/desktop-agent
 npm install
-npm start           # spustí Electron app
+npm start                    # GUI pro mining + wallet
 ```
 
-### Struktura:
-- `src/main.js` — Electron hlavní proces
-- `src/preload.js` — Bridge mezi main a renderer
-- `src/ui/` — GUI (HTML + JS)
-- `src/wallet-generator.js` — Generování peněženek
-
----
-
-## 📱 Mobile App (React Native)
-
-**Cesta:** `APP&WEB/mobile-app/`
+### 8.2 Mobile App (React Native + Expo)
 
 ```bash
-cd APP&WEB/mobile-app
+cd APP\&WEB/mobile-app
 npm install
-npx expo start      # spustí Expo dev server
-# Naskenuj QR kód v Expo Go app na telefonu
+npx expo start               # naskenuj QR v Expo Go appce
 ```
 
-### 9 Obrazovek:
-Dashboard, Wallet, Send, Receive, Mining, Bridge, Network, Settings, TransactionHistory
+9 obrazovek: Dashboard, Wallet, Send, Receive, Mining, Bridge, Network, Settings, TransactionHistory.
 
----
-
-## 🌐 Website (Next.js)
-
-**Cesta:** `APP&WEB/website-v2.9/`
+### 8.3 Website (Next.js)
 
 ```bash
-cd APP&WEB/website-v2.9
+cd APP\&WEB/website-v2.9
 npm install
-npm run dev         # http://localhost:3000
-```
-
-### Hlavní stránky:
-- `/` — Landing page (3D Spline animace)
-- `/explorer` — Block explorer (bloky, TX, adresy, richlist)
-- `/bridge` — Bridge UI
-- `/defi` — DeFi dashboard
-- `/mining` — Mining info
-- `/dao` — DAO governance
-- `/download` — Stažení desktop agenta
-- `/roadmap` — Veřejná roadmapa
-
----
-
-## 🧪 Testy
-
-```bash
-# Spustit VŠECHNY V3 testy (1300+):
-cd V3
-cargo test
-
-# Jen bridge testy (157):
-cargo test --manifest-path L2/bridge/Cargo.toml
-
-# Jen DAO testy (65):
-cargo test --manifest-path L2/dao/Cargo.toml
-
-# Jen core testy:
-cargo test --manifest-path L1/core/Cargo.toml
-
-# Jen cosmic-harmony testy (95):
-cargo test --manifest-path L1/cosmic-harmony/Cargo.toml
+npm run dev                  # http://localhost:3000
+npm run build && npm start   # produkce
 ```
 
 ---
 
-## 🐳 Docker Služby (Compose)
+## 9. Monitoring
 
-Hlavní compose: `docker/docker-compose.v3-mainnet.yml`
-
-| Služba | Popis |
-|--------|-------|
-| `core` | ZION node (konsensus, P2P, RPC) |
-| `seed1` | Seed node (pomáhá peer discovery) |
-| `pool` | Mining pool (Stratum, PPLNS payout) |
-| `miner` | CPU miner |
-| `redis` | Cache pro pool |
-| `bridge` | wZION bridge relay daemon |
-| `swap` | Atomic swap service |
-| `dao` | DAO governance daemon |
-| `website` | Next.js web (port 443) |
-| `prometheus` | Metriků sběrač |
-| `grafana` | Dashboard monitoring |
-| `alertmanager` | Alerty |
-| `node-exporter` | System metriky |
-| `redis-exporter` | Redis metriky |
-| `stability-collector` | Stabilita collector |
-
-### Základní Docker příkazy
+Doporučujeme aktivovat monitoring profile na alespoň jednom ze 3 serverů (typicky server C).
 
 ```bash
-# Spustit vše:
-docker compose --env-file .env -f docker/docker-compose.v3-mainnet.yml up -d
+docker compose -f V3/docker/docker-compose.yml --env-file .env \
+  --profile mainnet --profile monitoring up -d
+```
 
-# Zastavit vše:
-docker compose -f docker/docker-compose.v3-mainnet.yml down
+Spuštěné služby:
 
-# Rebuild jedné služby (např. po změně kódu):
-docker compose -f docker/docker-compose.v3-mainnet.yml build core
-docker compose -f docker/docker-compose.v3-mainnet.yml up -d core
+| Služba | Port | URL |
+|---|---|---|
+| Prometheus | 9090 | `http://203.0.113.42:9090` |
+| Grafana | 3000 | `http://203.0.113.42:3000` (default admin/admin → změň!) |
+| Alertmanager | 9093 | `http://203.0.113.42:9093` |
+| node_exporter | 9100 | system metrics |
 
-# Logy:
-docker logs -f zion-core          # live logy node
-docker logs zion-v3-bridge --tail 50  # posledních 50 řádků bridge
+**Doporučené alerty** (`V3/docker/alert_rules.yml` má defaults):
+
+- `zion_chain_tip_lag > 5 blocks` — node se rozjíždí
+- `zion_p2p_peer_count < 3` — málo peerů
+- `bridge_relayer_missing_signers > 0` — bridge nemá quorum
+- `node_disk_free < 10 %` — server brzy bez místa
+- `mempool_depth > 1000` — backlog v mempoolu
+
+Grafana dashboards jsou v `monitoring/grafana/` v repu.
+
+---
+
+## 10. Backup & disaster recovery
+
+### 10.1 Co zálohovat
+
+| Co | Frekvence | Kam |
+|---|---|---|
+| Privátní klíče peněženek | jednorázově | offline (papír v sejfu, password manager) |
+| Server SSH klíče | jednorázově | password manager + offline backup |
+| `.env` soubory ze serverů | po každé změně | šifrovaný backup (např. age, gpg) |
+| ZION chain data (LMDB) | každých 6 h | snapshot na druhý server / S3 |
+| Bridge SQLite DB | každých 1 h | dtto |
+| Validator key (`/etc/zion/bridge-validator.key`) | jednorázově | offline; `chmod 600 999:999` |
+
+### 10.2 Backup skript (cron na serveru)
+
+```bash
+# /home/zion-deploy/zion-backup.sh
+#!/usr/bin/env bash
+set -euo pipefail
+TS=$(date +%Y%m%d-%H%M)
+DEST="/home/zion-deploy/backups"
+mkdir -p "$DEST"
+
+# 1. Snapshot chain data (read-only kopie)
+docker exec zion-core sqlite3 /data/state.db ".backup '/data/backup-$TS.db'" 2>/dev/null || true
+docker cp zion-core:/data/backup-$TS.db "$DEST/" 2>/dev/null || true
+
+# 2. Bridge DB
+docker exec zion-v3-bridge sqlite3 /data/bridge.db ".backup '/tmp/bridge-$TS.db'"
+docker cp zion-v3-bridge:/tmp/bridge-$TS.db "$DEST/"
+
+# 3. Komprese + upload na S3 (nebo rclone na druhý server)
+tar czf "$DEST/zion-backup-$TS.tar.gz" "$DEST/backup-$TS.db" "$DEST/bridge-$TS.db"
+# rclone copy "$DEST/zion-backup-$TS.tar.gz" remote:zion-backups/
+
+# 4. Smaž starší než 7 dní
+find "$DEST" -name "*.tar.gz" -mtime +7 -delete
+```
+
+Cron (`crontab -e`):
+```
+0 */6 * * * /home/zion-deploy/zion-backup.sh >> /var/log/zion-backup.log 2>&1
+```
+
+### 10.3 Disaster recovery scenáře
+
+| Scénář | Akce |
+|---|---|
+| Server crashed (HW failure) | Postav nový server, pull repo, restore datadir z S3, restart compose |
+| Datadir corruption | `docker compose down`, restore poslední backup, `docker compose up -d` |
+| Single node desync | `zion node force-resync --from-peer 203.0.113.42:8333` |
+| Síťový split (2 nody se neshodují s 3.) | Vždy se přiklonit ke chainu s vyšší celkovou prací (longest valid chain) |
+| Validator key compromise | Okamžitě rotovat validator address v multisig + slash starý klíč |
+| Wallet mnemonic ztracen | **Není recovery.** Proto offline backup. |
+
+---
+
+## 11. Security checklist
+
+Před spuštěním produkce projít vše:
+
+```
+[ ] SSH klíče vygenerovány lokálně, ne v cloudu
+[ ] Root login zakázán (PermitRootLogin no)
+[ ] PasswordAuthentication no
+[ ] AllowUsers obsahuje jen deploy account
+[ ] ufw enabled, jen porty 22 + ZION
+[ ] fail2ban běží
+[ ] Automatic security updates aktivní
+[ ] .env soubory chmod 600
+[ ] Validator key chmod 600 999:999
+[ ] Wallet privátní klíče OFFLINE (papír + password manager)
+[ ] Mnemonic NIKDY nefoceno na telefon (EXIF)
+[ ] Žádné credentials v gitu (git secret scan)
+[ ] .pre-commit-config.yaml aktivní (gitleaks + private-key detect)
+[ ] Backup skript v cronu, otestovaná restore procedura
+[ ] Monitoring zapnutý, alerty směřují na funkční email/telegram
+[ ] Bridge threshold = 3/5 (ne staging 1/2!)
+[ ] HTTPS na webu (Let's Encrypt)
+[ ] DNS DNSSEC zapnutý (volitelné, ale doporučené)
 ```
 
 ---
 
-## 📡 RPC API — Dostupné Metody
+## 12. Troubleshooting
 
-| Metoda | Popis |
-|--------|-------|
-| `getChainInfo` | Výška chainu, difficulty, mempool |
-| `getBalance` | Zůstatek adresy (UTXO + account) |
-| `getBlock` | Blok podle hashe |
-| `getBlockByHeight` | Blok podle výšky |
-| `getTransaction` | Transakce podle hashe |
-| `getUtxos` | Nespotřebované výstupy adresy |
-| `getSupplyInfo` | Aktuální zásoby (mined, supply) |
-| `sendRawTransaction` | Odeslat surovou transakci |
-| `submitTransaction` | Odeslat account TX |
-| `getBlockTemplate` | Template pro mining |
-| `submitBlock` | Odeslat vyřešený blok |
-| `getMempoolInfo` | Stav mempoolu |
-| `getPeerInfo` | Připojení peers |
-| `getNodeInfo` | Info o node |
-| `getBridgeLocks` | Bridge lock transakce |
-| `getBridgeVaultBalance` | Zůstatek bridge vaultu |
-| `submitBridgeUnlock` | Poslat bridge unlock |
+### Cargo build selhává
 
----
-
-## 📂 Co je V3 vs Legacy (L1-L6)
-
-| | V3/ | L1/-L6/ (root) |
-|---|-----|----------------|
-| **Účel** | Aktivní mainnet kód | Historický referenční kód |
-| **Stav** | Běží na 3 serverech | Nepoužívá se pro produkci |
-| **Psát nový kód?** | ✅ ANO, sem | ❌ NE, jen reference |
-| **Testy** | 1300+ passing | Může být outdated |
-
-**Pravidlo:** Veškerý nový mainnet kód jde do `V3/`. Legacy `L1/`-`L6/` v rootu slouží jako referenční materiál a zdrojový audit kód pro migraci.
-
----
-
-## 🔧 Jak Pokračovat ve Vývoji
-
-### 1. Bridge Hardening (priorita teď)
 ```bash
-# Kód bridge je v:
-V3/L2/bridge/src/
-  ├── lib.rs          # hlavní modul
-  ├── relayer.rs      # L1→EVM relay logika  
-  ├── l1_watcher.rs   # sleduje L1 chain pro lock TX
-  ├── evm_watcher.rs  # sleduje Base pro burn TX
-  ├── db.rs           # SQLite persistence
-  └── validator.rs    # validator set (3/5 quorum)
+# Ujisti se že jsi ve V3 workspace
+cd V3 && cargo build --release
+# OpenCL/Metal warnings: optional GPU backend, OK ignorovat
 ```
 
-### 2. Přidat novou RPC metodu
+### Node se nesyncuje (height neroste)
+
 ```bash
-# RPC handler je v:
-V3/L1/core/src/rpc.rs
-
-# Přidej metodu do match bloku v handle_request()
-# Pak: cargo test --manifest-path V3/L1/core/Cargo.toml
-```
-
-### 3. Upravit website
-```bash
-cd APP&WEB/website-v2.9
-# Stránky jsou v src/app/<nazev>/page.tsx
-# Např. explorer: src/app/explorer/page.tsx
-npm run dev  # hot reload na http://localhost:3000
-```
-
-### 4. Upravit desktop agent
-```bash
-cd APP&WEB/desktop-agent
-# Hlavní logic: src/main.js
-# UI: src/ui/renderer.js + src/ui/index.html
-npm start    # spustí Electron
-```
-
-### 5. Deploy na server
-```bash
-# Nejdřív commitni a pushni:
-git add -A && git commit -m "popis zmeny" && git push origin main
-
-# Pak na serveru:
-ssh -i ~/.ssh/zion_hetzner_key root@91.98.122.165
-cd /root/zion-2.9.6
-git pull origin main
-
-# Rebuild konkrétní služby:
-docker compose --env-file .env -f docker/docker-compose.v3-mainnet.yml build core
-docker compose --env-file .env -f docker/docker-compose.v3-mainnet.yml up -d core
-```
-
----
-
-## 📊 Emise a Tokenomika (Zjednodušeně)
-
-```
-Celkem:                 144,000,000,000 ZION
-Genesis premine:         16,280,000,000 ZION  (11.31%)
-K vytěžení:             127,720,000,000 ZION  (88.69%)
-
-Blok každých:           60 sekund
-Odměna za blok:         5,400.067 ZION (prvních 10 let)
-Potom:                  -20% každých 10 let
-Po 100 letech:          ~724 ZION/blok navždy (tail emise)
-
-Za každý blok:
-  ⛏️  Miner dostane:       89%  (4,806 ZION)
-  🕊️  Humanitarian:         5%  (270 ZION)
-  🔭  Issobella Fund:       5%  (270 ZION)
-  🏊  Pool Fee:              1%  (54 ZION)
-```
-
----
-
-## ⚠️ Bezpečnostní Poznámky
-
-1. **Privátní klíče NIKDY nenahrávej na GitHub** — jsou v `.gitignore`
-2. **Git historie může obsahovat staré klíče** — před veřejným forkem použij BFG Repo-Cleaner
-3. **RPC port (8443) nevystavuj veřejně** — je to raw TCP bez autentikace
-4. **Bridge validator key** musí mít práva `chmod 600, chown 999:999`
-5. **V3 kód je audit-ready** ale formální třetí-strana audit zatím neproběhl
-
----
-
-## 📚 Klíčové Dokumenty
-
-| Soubor | Co v něm najdeš |
-|--------|-----------------|
-| `README.md` | Přehled projektu, parametry, status |
-| `ROADMAP.md` | Master roadmapa — fáze vývoje |
-| `FORSITA.md` | Toto — kompletní průvodce |
-| `V3/ROADMAP.md` | Detailní V3 implementační stav |
-| `docs/DEFI_FULL_ROADMAP.md` | DeFi plán (6 waves, ~12-18 týdnů) |
-| `docs/MAINNET_CONSTITUTION.md` | Neměnné parametry (supply, emission, block time) |
-| `docs/whitepaper/` | Technický whitepaper |
-| `PREMINE_ADDRESSES_PUBLIC.txt` | 15 genesis peněženek (veřejné adresy) |
-
----
-
-## 🆘 Časté Problémy
-
-### "cargo build" selže
-```bash
-# Ujisti se že jsi ve V3/:
-cd V3
-cargo build --release
-# Pokud chyba na OpenCL/Metal: to je OK, GPU backend je optional
-```
-
-### Node se nespojí s peery
-```bash
-# Zkontroluj seed peers v configu:
-cat config/mainnet.toml | grep seed
-# Ručně přidej:
-# seed_peers = ["91.98.122.165:8334", "5.78.194.94:8334"]
-```
-
-### Docker "no space left"
-```bash
-docker system prune -a    # smaže staré images (opatrně!)
+zion node peers              # vidíš peers?
+zion logs node --tail 50     # nějaké errory?
+# Pokud "no peers": zkontroluj seed_peers v configu + ufw 8333
+sudo ufw status | grep 8333
 ```
 
 ### RPC vrací prázdnou odpověď
+
 ```bash
-# Nepoužívej curl! Použij nc:
-echo '{"jsonrpc":"2.0","id":1,"method":"getChainInfo","params":{}}' | nc -w 3 127.0.0.1 8443
+# NE: curl http://localhost:8443/...
+# ANO: raw TCP
+echo '{"jsonrpc":"2.0","id":1,"method":"getChainInfo","params":{}}' | \
+  nc -w 3 127.0.0.1 8443
 ```
 
-### Bridge nefunguje
+### Docker "no space left"
+
 ```bash
-# Zkontroluj logy:
-docker logs zion-v3-bridge 2>&1 | tail -50
-# Ověř validator key permissions:
-ls -la /etc/zion/bridge-validator.key
-# Má být: -rw------- 999:999
+df -h                         # kolik místa
+docker system df              # co Docker zabírá
+docker system prune -a        # smaže nepoužívané images (opatrně!)
+docker volume prune           # smaže unused volumes (POZOR: ztráta dat!)
+```
+
+### Pool nepřijímá shares od mineru
+
+```bash
+zion logs pool --tail 100 | grep -E "share|reject"
+# "stale share": miner běží na starém jobu → restart miner
+# "low diff": miner posílá pod var diff → ověř hashrate
+# "auth fail": špatná adresa → ověř MINER_WALLET formát zion1...
+```
+
+### Bridge nezpracovává unlock
+
+```bash
+docker logs zion-v3-bridge --tail 100 2>&1 | grep -E "ERROR|unlock|missing"
+# "missing signers": chybí validator quorum (P1 blokátor)
+# "ANKR_API_KEY": chybí env var
+# Ověř konfiguraci:
+grep -E "threshold|total_validators" V3/L2/bridge/config/bridge-mainnet.toml
+```
+
+### High memory / OOM kill
+
+```bash
+free -h
+docker stats --no-stream
+# Pokud OOM: zvyš RAM serveru nebo přidej swap:
+sudo fallocate -l 4G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+```
+
+### Hiran (AI agent) backend nedostupný
+
+Hiran v2.1 je **volitelný** AI agent. Pokud běží jen technické vrstvy (L1+L2), agent nemusí být deployed. Detail v [`HiranV2.1/PLAN_v2.1.md`](./HiranV2.1/PLAN_v2.1.md).
+
+```bash
+zion agent status
+# "degraded mode": OK, technické funkce nepostižené
+# Pro plný setup: ./HiranV2.1/bootstrap_workspace.sh
 ```
 
 ---
 
-## 🤝 Jak Přispět
+## 13. Jak přispět
 
-1. Forkni repo na GitHubu
+1. Forkni repo na GitHubu (až bude public)
 2. Vytvoř branch: `git checkout -b moje-zmena`
-3. Piš kód do `V3/` (ne do legacy `L1/`-`L6/`)
-4. Spusť testy: `cd V3 && cargo test`
-5. Commitni a pushni
-6. Otevři Pull Request
+3. **Píš kód do `V3/`** (ne do legacy `L1/`–`L6/`)
+4. Spusť testy: `cargo test --manifest-path V3/Cargo.toml --workspace -- --test-threads=1`
+5. Spusť pre-commit: `pre-commit run --all-files`
+6. Commitni a pushni
+7. Otevři Pull Request
+
+Pravidla v [`AGENTS.md`](./AGENTS.md), audit kontext v [`StatusV3.md`](./StatusV3.md).
+
+---
+
+## 📚 Klíčové dokumenty
+
+| Soubor | Co v něm najdeš |
+|---|---|
+| [`StatusV3.md`](./StatusV3.md) | ⭐ Aktuální stav mainnet polish |
+| [`StatusV3-Part2.md`](./StatusV3-Part2.md) | Independent audit + 2026-05-07 cleanup log |
+| [`README.md`](./README.md) | Přehled projektu |
+| [`ROADMAP.md`](./ROADMAP.md) | Master roadmapa (fáze) |
+| [`V3/ROADMAP.md`](./V3/ROADMAP.md) | Detailní V3 implementační stav |
+| [`V3/docs/CLI_GUIDE.md`](./V3/docs/CLI_GUIDE.md) | zion CLI koncept |
+| [`V3/docs/CLI_REFERENCE.md`](./V3/docs/CLI_REFERENCE.md) | Všechny CLI příkazy |
+| [`V3/docker/DOCKER.md`](./V3/docker/DOCKER.md) | Docker compose & profiles |
+| [`V3/docker/HARDENING.md`](./V3/docker/HARDENING.md) | Production hardening (ufw, log rotation, non-root) |
+| [`docs/MAINNET_CONSTITUTION.md`](./docs/MAINNET_CONSTITUTION.md) | Neměnné parametry protokolu |
+| [`docs/DEFI_FULL_ROADMAP.md`](./docs/DEFI_FULL_ROADMAP.md) | DeFi ecosystem plán (6 waves) |
+| [`HiranV2.1/Hiran_v2.1.md`](./HiranV2.1/Hiran_v2.1.md) | AI agent specifikace + RAG router |
+| [`HiranV2.1/PLAN_v2.1.md`](./HiranV2.1/PLAN_v2.1.md) | AI agent prováděcí plán |
+| [`PREMINE_ADDRESSES_PUBLIC.txt`](./PREMINE_ADDRESSES_PUBLIC.txt) | 15 genesis peněženek (veřejné) |
 
 ---
 
