@@ -1,6 +1,7 @@
 # ZION V3 — Status Report (Mainnet Polish)
 
-> **Datum:** 2026-05-03 (poslední konsensusový update) · 2026-05-07 (security cleanup)
+> **Datum:** 2026-05-07 (security cleanup + agentická obsluha)
+> **Předchozí update:** 2026-05-03 (genesis konsensus — merged na `main`)
 > **Branch:** `main` — konsensusové háky **TX_HASH_V2** + **BODY_ROOT_V2** jsou
 > v produkčním buildu aktivní od výšky **0** (nový mainnet od genesis).
 > Klíčové commity (před 2026-05-07 history rewrite): `c048f9aa` (aktivace
@@ -15,7 +16,9 @@
 
 ---
 
-## Co je nového 2026-05-07 (security cleanup)
+## Co je nového 2026-05-07 (security cleanup + agentická obsluha)
+
+### Security cleanup
 
 | Akce | Stav |
 |---|---|
@@ -28,6 +31,13 @@
 
 **F3b a F6 jsou nyní reálně CLOSED** (nejen v dokumentaci). Detail v
 [`StatusV3-Part2.md`](./StatusV3-Part2.md).
+
+### Agentická obsluha
+
+- `AGENTS.md` je zpřesněný jako provozní návod pro Devina/WARP/Copilot: zdůrazňuje pořadí zdrojů pravdy, zákaz destruktivních operací bez potvrzení a práci bez kopírování uniklých secretů.
+- `.pre-commit-config.yaml` už v repu existuje a obsahuje fmt/clippy/gitleaks/private-key/JS/Python guardy; položka P3 o chybějícím hooku je tím uzavřená jako dokumentační drift.
+- Pro Hiran v2.1 platí stejný kanon: `StatusV3.md` + `V3/` jsou technická pravda, širší vědomostní korpusy patří primárně do licencovaného RAG s citacemi, ne do nekritického SFT.
+- P0/P1 se nemění operacionálně: bridge 3/5 provisioning, CI billing a externí audit zůstávají rozhodující před veřejným launch (rotace klíčů + scrub jsou už ✅).
 
 ---
 
@@ -288,8 +298,8 @@ nebo má konkrétní aktivační plán v
 
 ### ✅ P0 — bezpečnostní akce na uživateli (DOKONČENO 2026-05-07)
 
-1. ✅ **Rotace `ZION_KEYS` credentials hotová:**
-   - **GitHub PAT** (`ghp_7gxI3Y…`) → ✅ revoke; nový PAT mimo repo
+1. ✅ **Rotace `ZION_KEYS` credentials hotová (2026-05-07):**
+   - **GitHub PAT** (`ghp_7gxI3Y…`) → ✅ revoke; nový PAT vystaven mimo repo
    - **OpenAI API key** (`sk-proj-CsUPFB…`) → ✅ **kompletně zrušen** (žádný
      replacement, AI cesta odložena)
    - **SSH deployment key** (`91.98.122.165` Praha) → ✅ **node deprecated**;
@@ -358,10 +368,13 @@ nebo má konkrétní aktivační plán v
 10. **Phase-2 testovací coverage** — workspace má **~1 444 testů** (po
     PR #27 + #28), ale chybí end-to-end mainnet stress test
     (10k+ transakcí, peer churn, partition recovery, restart-mid-sync).
-11. **Pre-commit hook** (`.pre-commit-config.yaml`) — ✅ **existuje od 2026-05-02**
-    (3 183 B). Pokrývá fmt + clippy + gitleaks + py/js syntax + private-key
-    detect jako defense-in-depth proti F3/F3b classu. Status §2 P3.11 to
-    dříve uváděl jako pending — drift opraven 2026-05-07.
+11. ✅ **Pre-commit hook** (`.pre-commit-config.yaml`) — **existuje od 2026-05-02**
+    (3 183 B). Obsahuje `cargo fmt`, pre-push `cargo clippy`, gitleaks,
+    private-key detect, JS syntax check a Python compile guardy jako
+    defense-in-depth proti F3/F3b classu. Při změně hooků ověř
+    `pre-commit validate-config`; pro ruční sweep použij
+    `pre-commit run --all-files`. (Status §2 P3.11 to dříve uváděl jako
+    pending — drift opraven 2026-05-07.)
 12. **Telemetry + alerty** — Prometheus + Grafana běží, ale chybí
     SLO definice (block time p95 < 90 s, mempool depth < 1000,
     `bridge_relayer_missing_signers = 0`, `validator.threshold` met) a
@@ -432,7 +445,9 @@ nebo má konkrétní aktivační plán v
 | Chci spustit miner | `ZION_POOL_ADDR=127.0.0.1:8444 cargo run --release --manifest-path V3/Cargo.toml -p zion-miner` |
 | Chci CLI helper | `cargo run --manifest-path V3/Cargo.toml -p zion-cli -- --help` |
 | Chci celý workspace test | `cargo test --manifest-path V3/Cargo.toml --workspace -- --test-threads=1` |
-| Chci Docker stack | `docker compose -f V3/docker/docker-compose.v3-mainnet.yml up -d` |
+| Chci Docker stack | `docker compose -f V3/docker/docker-compose.yml --profile mainnet up -d` |
+| Chci agentická pravidla | [`AGENTS.md`](./AGENTS.md) |
+| Chci Hiran v2.1 plán | [`HiranV2.1/Hiran_v2.1.md`](./HiranV2.1/Hiran_v2.1.md) |
 | Audit report | [`V3/docs/audits/2026-04-V3_INTERNAL_AUDIT.md`](./V3/docs/audits/2026-04-V3_INTERNAL_AUDIT.md) |
 | Aktivační plán hard fork věcí | [`V3/docs/audits/2026-04-V3_AUDIT_COMPLETION.md`](./V3/docs/audits/2026-04-V3_AUDIT_COMPLETION.md) |
 | Co rotovat / scrubnout | [`SECURITY_NOTICE_2026-04-28.md`](./SECURITY_NOTICE_2026-04-28.md) |
@@ -526,7 +541,7 @@ Clean gate 2026-05-02:
         │  □ Deploy nový řetězec: čistý datadir + binárky │
         │  □ Provision 5 bridge validator keys + 3/5 cfg  │
         │  □ Re-enable bridge L2 mainnet (testnet ≥1 týd) │
-        │  □ Pre-commit hook (.pre-commit-config.yaml)    │
+        │  done Pre-commit hook (.pre-commit-config.yaml) │
         │  □ Stabilizace flaky DNS testu (discovery)      │
         └─────────────────┬───────────────────────────────┘
                           │
@@ -612,9 +627,9 @@ fuzzing, a kryptanalýzu Cosmic Harmony Ekam Deeksha v2.
 
 ## 9. Doporučené pořadí dalších PR (sekvence — průběžně aktualizovaná)
 
-| # | PR (návrh) | Velikost | Závisí na | Stav (2026-05-03) |
+| # | PR (návrh) | Velikost | Závisí na | Stav (2026-05-07) |
 |---:|---|---|---|---|
-| **A** | `chore: add .pre-commit-config.yaml` (fmt + clippy + gitleaks + py/js syntax + private-key detect) | XS | — | 🟢 **hotové** (lokálně, čeká na commit) |
+| **A** | `chore: add .pre-commit-config.yaml` (fmt + clippy + gitleaks + py/js syntax + private-key detect) | XS | — | 🟢 **hotové** — hook config je v repu, udržovat při změnách validací |
 | **B** | `chore(deps): batch dependabot PRs #5–#17` (+ dokončené **#3**) | M | A | 🟡 částečně — **#3** merged na GH; zbývá cargo / další Actions PR |
 | **C** | `test(core): de-flake + isolate slow PoW tests` | M | — | 🟢 **hotové** (1 fix + 1 new pinning + 13 `#[ignore]` + opt-level=3 bump) |
 | **D** | `refactor(core): extract validate_peer_block → peer_block_validation.rs` | L | C | 🟢 **hotové** (lokálně) |
