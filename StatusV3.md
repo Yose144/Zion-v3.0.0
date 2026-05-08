@@ -1,15 +1,33 @@
 # ZION V3 — Status Report (Mainnet Polish)
 
-> **Datum:** 2026-05-03
-> **Předchozí update:** 2026-05-02 (večerní StatusV3 + PR #27/#28)
+> **Datum:** 2026-05-03 (poslední konsensusový update) · 2026-05-07 (security cleanup)
 > **Branch:** `main` — konsensusové háky **TX_HASH_V2** + **BODY_ROOT_V2** jsou
 > v produkčním buildu aktivní od výšky **0** (nový mainnet od genesis).
-> Commity: `c048f9aa` (aktivace z genesis), `89ba3730` (F1 u lokálně těžených bloků).
+> Klíčové commity (před 2026-05-07 history rewrite): `c048f9aa` (aktivace
+> z genesis), `89ba3730` (F1 u lokálně těžených bloků). **Po 2026-05-07
+> `git filter-repo` mají tyto commity nové SHA** — vyhledat dle commit message.
 > **Předchozí status:** [`STATUS.md`](./STATUS.md) (2026-04-07)
+> **Doplněk (Part 2 + cleanup):** [`StatusV3-Part2.md`](./StatusV3-Part2.md) (2026-05-07)
 > **Účel tohoto dokumentu:** zkonsolidovaný stav před mainnet Genesis #0 — co
 > funguje, co je hotové, co ještě hoří, a co je *nice-to-have*. Psáno tak, aby
 > tomu rozuměl jak vývojář, tak laik (ne-vývojář si může číst jen sekce **TL;DR**
 > a **Co stále hoří před Genesis**).
+
+---
+
+## Co je nového 2026-05-07 (security cleanup)
+
+| Akce | Stav |
+|---|---|
+| OpenAI API key (`sk-proj-CsUPFB…`) | ✅ **úplně zrušen** uživatelem (bez replacement) |
+| Starý GitHub PAT (`ghp_7gxI3Y…`) | ✅ revoke; nový PAT vystaven mimo repo |
+| Praha node `91.98.122.165` (deployment SSH key) | ✅ **node deprecated**; mainnet poběží na 3 nových serverech s čerstvým keysetem |
+| `git filter-repo` history rewrite | ✅ proveden; bare backup `2.9.6-backup-20260507-2229.git` |
+| Working-tree leftovers | ✅ smazáno (ZION_KEYS, V3-src*.tar/.zip, V3_upload.zip, local-stack-*.err) |
+| Force-push `origin/main` | ✅ repo je private, fork notifikace nepotřebná |
+
+**F3b a F6 jsou nyní reálně CLOSED** (nejen v dokumentaci). Detail v
+[`StatusV3-Part2.md`](./StatusV3-Part2.md).
 
 ---
 
@@ -252,7 +270,7 @@ nebo má konkrétní aktivační plán v
 | F1 — conservation-of-value v `validate_peer_block` | 🔴 Critical | ✅ PR #20 |
 | F2 — XOR „merkle root" → BLAKE3 strom | 🔴 High | ✅ dispatcher + aktivace od výšky **0** (nový řetězec); viz E.2 + 2026-05-03 |
 | F3 — `zion-wallet.json` plaintext klíče | 🔴 Critical | ✅ PR #18 |
-| F3b — `docs/docs2.9/ZION_KEYS/` PAT + OpenAI + SSH | 🔴 Critical | ✅ PR #25 (HEAD), **rotace klíčů na uživateli** |
+| F3b — `docs/docs2.9/ZION_KEYS/` PAT + OpenAI + SSH | 🔴 Critical | ✅ **fully closed 2026-05-07** (history rewrite + rotace + Praha deprecated) |
 | F4 — bridge unlock multisig na L1 | 🟡 Medium | ✅ PR #22 |
 | F5 — `unwrap/expect` density | 🟡 Medium | ✅ PR #23 + #24 |
 | F6 — `V3-src*.tar/.zip` archivy v repu | 🟡 Medium | ✅ PR #18 + PR #25 |
