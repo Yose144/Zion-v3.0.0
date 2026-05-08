@@ -26,7 +26,28 @@ Thumbs.db
 
 # Logs
 *.log
+*.err
 logs/
+
+# Local stack runtime residua (V3/local-stack-*.err and similar)
+**/local-stack-*.err
+**/local-stack-*.out
+
+# git filter-repo backup bare clones (kept locally, never tracked)
+*-backup-*.git/
+
+# Leaked / sensitive material — must NEVER be committed (defense-in-depth
+# above the V3/.gitignore wallet rules)
+**/zion-wallet*.json
+**/*.wallet.json
+**/*.mnemonic
+**/*.keystore
+**/seed.json
+**/seed.txt
+**/ZION_KEYS/
+V3-src*.tar
+V3-src*.zip
+V3_upload*.zip
 
 # Data (runtime) — only root-level; nested dirs like APP&WEB/**/data/ are allowed
 /data/
