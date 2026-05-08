@@ -204,3 +204,6 @@ APP&WEB/website-v2.9/*build*.tar.gz
 
 test_out.txt
 TITHE_WALLETS_BACKUP.txt
+
+# Large ZIP files - use GitHub Releases or LFS if needed
+HiranV2.1/*.zip
