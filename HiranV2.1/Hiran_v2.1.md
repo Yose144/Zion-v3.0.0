@@ -19,6 +19,20 @@ Hiran v2.1 nemá být jen chatovací model pro web. Má být **ZION-native praco
 
 V2 je první skutečný fine-tune nad ZION daty. **V2.1 je přechod od znalostního modelu k pracovnímu agentovi.**
 
+### 1.1 Agent operating contract
+
+Hiran v2.1 musí mít před modelem samotným jasný provozní kontrakt. Váhy, RAG, frontend a Rust API se smí měnit, ale kontrakt odpovědi a akce musí zůstat stabilní:
+
+| Kontrakt | Povinnost agenta |
+|---|---|
+| **Truth contract** | Nejprve rozlišit kanonický `V3/` zdroj, legacy/reference zdroj, live runtime údaj a neověřený předpoklad. Pokud chybí zdroj, říct nejistotu. |
+| **Action contract** | Nejdřív diagnostikovat a navrhnout plán; destruktivní kroky, deploy, wallet/key operace, remote změny a veřejné releasy jen po explicitním potvrzení. |
+| **Provenance contract** | U kódu, provozu, čísel sítě a korpusů uvádět odkud odpověď čerpá: soubor, endpoint, index, manifest nebo verze datasetu. |
+| **Version contract** | Každý release odpovědi/modelu má nést `model_version`, `prompt_version`, `dataset_hash` a `rag_index_version`, pokud jsou dostupné. |
+| **Identity contract** | Dharma jazyk slouží jako rámec smyslu; technická přesnost, bezpečnost a pravdivost mají přednost před mystickým tónem. |
+
+Výsledkem má být agent, který je použitelný v živém ZION systému: umí pracovat, ale nikdy nepředstírá jistotu ani oprávnění, které nemá.
+
 ---
 
 ## 2. Zdroje pravdy
@@ -147,6 +161,22 @@ RAG zdroje mají být primárně:
 - **[Online Vedabase](https://vedabase.io/en/library/) — library:** Gaudīya–Vaišnavovská literatura (BBT atd.); do SFT výhradně **kurátorované** shardy `zion_train_vedic_guided.jsonl` v mezích licence / fair use nebo po souhlasu BBT — viz [`PLAN_v2.1.md`](./PLAN_v2.1.md).
 - **Buddhismus (klasický + tibetská linie):** mapa znalostí pokrývá **raný/indický** (páli, abhidhammové přehledy, vybrané sútry v legálních překladech), **širší mahájánové** texty tam, kde máme licenci, a **tibetský buddhismus** (kangyur/tengyur ve veřejných překladech atd.) — primárně **RAG indexy `buddhism-classical` / `buddhism-tibetan`**; malý SFT jen ve `zion_train_buddhism_guided.jsonl` (viz `PLAN_v2.1.md`).
 - **Vědy (OER):** krátké pasáže + syntetické páry ve `zion_train_oer_sciences.jsonl` (OpenStax, LibreTexts, CK-12, …) pro **přímý finetuning** základních pojmů.
+
+### 3.5.1 RAG router a priorita zdrojů
+
+RAG nesmí být jeden plochý koš dokumentů. Hiran v2.1 má směrovat dotaz podle intentu do samostatných indexů:
+
+| Index | Obsah | Priorita odpovědi |
+|---|---|---|
+| `zion-tech` | `AGENTS.md`, `StatusV3.md`, `V3/README.md`, `V3/docs`, `V3/docker`, `V3/cli`, `V3/L*/src` | Primární pravda pro technické a operátorské otázky. |
+| `live-runtime` | health/config/status endpointy, node/pool/bridge metriky, aktuální server env | Přepisuje statickou dokumentaci u live stavu, ale musí říct čas měření. |
+| `amenti-library` / `terra-nova` | snapshoty Síní Amenti + metadata licence | Jen retrieval-grounded odpovědi s citací chunku. |
+| `buddhism-classical` | legální klasické překlady a metadata | Bez chunku neuvádět přesné citáty. |
+| `buddhism-tibetan` | tibetská linie, katalogy a povolené překlady | Rozlišovat encyklopedický seed od kanonického textu. |
+| `vedic-guided` | Vedabase/BBT pouze dle licence nebo krátké guided odkazy | Nepřebírat chráněné texty do SFT bez povolení. |
+| `oer-sciences` | OER věda a kurátorované výklady | Citovat licenci / zdrojovou URL v metadatech. |
+
+Zakázané zdroje pro ingest: `.git` historie, secrets, wallet exports, velké binární artefakty, staré generated odpovědi jako `e2e_results.json` bez označení archiv/test sample a cokoliv, kde chybí licence nebo souhlas.
 
 ### 3.6 Širší „celosvětová“ vrstva: vědy, dějiny, texty, domorodé tradice, klasický i tibetský buddhismus
 
@@ -537,14 +567,27 @@ Každý release modelu musí mít:
 
 - NCL inference backendy jsou podle roadmapy stále nedokončené / stubované.
 - RAG architektura není sjednocená: plán mluví o Chroma/LlamaIndex, Rust crate má vlastní RAG.
+- Aktuální API cesta používá testovací/mock embeddingy; pro produkci je potřeba reálný embedding backend a persistentní vector store.
+- Web chat dnes může obcházet Rust agent runtime a volat Ollama přímo; Hiran v2.1 potřebuje jeden kanonický API kontrakt.
+- Chat odpovědi musí vracet jasné `sources`, `backend_id`, `warnings` a verze, ne míchat backend/context/source významy.
+- `VAST_API_KEY` nesmí být používán jako LLM bearer token; LLM backend má používat vlastní `LLM_API_KEY` / `NVIDIA_API_KEY`.
 - Dataset 2781 příkladů je dobrý v2 start, ale pro v2.1 je málo.
 - Potřebujeme DPO data, ne jen SFT.
 - Musíme oddělit produkční fakta od historických/archivních docs.
 - Musíme hlídat API key hygiene: Vast/NVIDIA/HF klíče nikdy nepatří do repa ani chatu.
+- Dharma validator je zatím heuristický; agentické operace potřebují explicitní risk tiers a approval policy.
 
 ---
 
 ## 8. Roadmapa příprav
+
+### Wave 0 — kontrakt a bezpečnost
+
+- [ ] Sepsat a udržovat Hiran Agent Operating Contract: truth/action/provenance/version/identity.
+- [ ] Ujasnit output schema API: `answer`, `sources`, `backend_id`, `mode`, `warnings`, `model_version`, `prompt_version`, `dataset_hash`, `rag_index_version`.
+- [ ] Zakázat ingest `.git`, secrets, wallet exportů, generated stale odpovědí a nelicencovaných korpusů.
+- [ ] Opravit oddělení klíčů: `VAST_API_KEY` jen pro Vast orchestration, ne pro LLM backend.
+- [ ] Sjednotit web chat, CLI a desktop přes jeden Hiran API kontrakt.
 
 ### Ihned
 
@@ -552,6 +595,9 @@ Každý release modelu musí mít:
 - [x] Spustit Hiran v2 QLoRA na Vast RTX 4090.
 - [ ] Po doběhu stáhnout LoRA/GGUF/logy a zrušit instanci.
 - [ ] Smoke test `zion-expert-v2` v Ollama.
+- [ ] Nahradit mock RAG embeddingy reálným backendem a zvolit persistentní vector store.
+- [ ] Přidat RAG router `zion-tech` × `live-runtime` × `amenti` × `buddhism-*`.
+- [ ] Převést eval scénáře na release gate.
 
 ### Další iterace
 
@@ -581,6 +627,10 @@ Hiran v2.1 je úspěšný, pokud:
 - navrhne bezpečný operátorský postup,
 - rozlišuje aktuální V3 od legacy,
 - při nejistotě řekne „nevím / potřebuji ověřit“,
+- uvádí zdroje/citace pro technická fakta, live stav a korpusové odpovědi,
+- má jasný action policy pro destruktivní/deploy/wallet/key kroky,
+- projde eval release gate včetně hallucination, stale-data, legal/provenance a safety scénářů,
+- loguje nebo vrací verzi modelu, promptu, datasetu a RAG indexu,
 - funguje jako praktický coding agent pro ZION, ne jen jako filozofický chatbot.
 
 ---
