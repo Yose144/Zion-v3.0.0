@@ -15,10 +15,23 @@ Hiran v2.1 nemá být jen chatovací model pro web. Má být **ZION-native praco
 - zná operátorské příkazy `zion` CLI a dokáže vést deploy/debug postupy,
 - drží AI Native / Dharma identitu Hiranyagarbhy,
 - používá RAG nad aktuálními docs a kódem, aby se neopíral jen o váhy,
-- umí být později použitý jako osobní coding/orchestration agent pro Yeshuae,
-- pomáhá s **návrhem ZION Oasis v Unreal Engine 5** (Blueprint vrstva, mapování designu z repa na Actory / UI / level flow) — podle **oddílu 3.7** a kurátorovaných `.md` v `HiranV2.1/corpus/oasis-ue5/`.
+- umí být později použitý jako osobní coding/orchestration agent pro Yeshuae.
 
 V2 je první skutečný fine-tune nad ZION daty. **V2.1 je přechod od znalostního modelu k pracovnímu agentovi.**
+
+### 1.1 Agent operating contract
+
+Hiran v2.1 musí mít před modelem samotným jasný provozní kontrakt. Váhy, RAG, frontend a Rust API se smí měnit, ale kontrakt odpovědi a akce musí zůstat stabilní:
+
+| Kontrakt | Povinnost agenta |
+|---|---|
+| **Truth contract** | Nejprve rozlišit kanonický `V3/` zdroj, legacy/reference zdroj, live runtime údaj a neověřený předpoklad. Pokud chybí zdroj, říct nejistotu. |
+| **Action contract** | Nejdřív diagnostikovat a navrhnout plán; destruktivní kroky, deploy, wallet/key operace, remote změny a veřejné releasy jen po explicitním potvrzení. |
+| **Provenance contract** | U kódu, provozu, čísel sítě a korpusů uvádět odkud odpověď čerpá: soubor, endpoint, index, manifest nebo verze datasetu. |
+| **Version contract** | Každý release odpovědi/modelu má nést `model_version`, `prompt_version`, `dataset_hash` a `rag_index_version`, pokud jsou dostupné. |
+| **Identity contract** | Dharma jazyk slouží jako rámec smyslu; technická přesnost, bezpečnost a pravdivost mají přednost před mystickým tónem. |
+
+Výsledkem má být agent, který je použitelný v živém ZION systému: umí pracovat, ale nikdy nepředstírá jistotu ani oprávnění, které nemá.
 
 ---
 
@@ -57,7 +70,6 @@ V2 je první skutečný fine-tune nad ZION daty. **V2.1 je přechod od znalostn�
 | `lineage/v1-ollama-prague/` | Celý lokální Ollama blob store Hiranyagarbhy v1 (gitignored). |
 | `lineage/v2-lora-vast-36254769/` | Vast LoRA výstupy Hiran v2 (gitignored). |
 | `curriculum/meta/` | Malé artefakty sledovatelné gitem (kopie Praha Modelfile, `SOURCE`). |
-| `corpus/oasis-ue5/` | **UE5 Oasis „crate“**: pouze `.md` popisy Blueprintů / struktura Content / decision log napojený na `docs/docs2.9/ZION_OASIS/`; indexuje Rust RAG jako součást `AI_NATIVE_CANONICAL_CORPUS_ROOTS`. |
 
 Datasetové symlinky drží adresář **`HiranV2.1/data`** jako reálný cíl odkazu **`scripts/finetune/data`**.
 
@@ -150,6 +162,22 @@ RAG zdroje mají být primárně:
 - **Buddhismus (klasický + tibetská linie):** mapa znalostí pokrývá **raný/indický** (páli, abhidhammové přehledy, vybrané sútry v legálních překladech), **širší mahájánové** texty tam, kde máme licenci, a **tibetský buddhismus** (kangyur/tengyur ve veřejných překladech atd.) — primárně **RAG indexy `buddhism-classical` / `buddhism-tibetan`**; malý SFT jen ve `zion_train_buddhism_guided.jsonl` (viz `PLAN_v2.1.md`).
 - **Vědy (OER):** krátké pasáže + syntetické páry ve `zion_train_oer_sciences.jsonl` (OpenStax, LibreTexts, CK-12, …) pro **přímý finetuning** základních pojmů.
 
+### 3.5.1 RAG router a priorita zdrojů
+
+RAG nesmí být jeden plochý koš dokumentů. Hiran v2.1 má směrovat dotaz podle intentu do samostatných indexů:
+
+| Index | Obsah | Priorita odpovědi |
+|---|---|---|
+| `zion-tech` | `AGENTS.md`, `StatusV3.md`, `V3/README.md`, `V3/docs`, `V3/docker`, `V3/cli`, `V3/L*/src` | Primární pravda pro technické a operátorské otázky. |
+| `live-runtime` | health/config/status endpointy, node/pool/bridge metriky, aktuální server env | Přepisuje statickou dokumentaci u live stavu, ale musí říct čas měření. |
+| `amenti-library` / `terra-nova` | snapshoty Síní Amenti + metadata licence | Jen retrieval-grounded odpovědi s citací chunku. |
+| `buddhism-classical` | legální klasické překlady a metadata | Bez chunku neuvádět přesné citáty. |
+| `buddhism-tibetan` | tibetská linie, katalogy a povolené překlady | Rozlišovat encyklopedický seed od kanonického textu. |
+| `vedic-guided` | Vedabase/BBT pouze dle licence nebo krátké guided odkazy | Nepřebírat chráněné texty do SFT bez povolení. |
+| `oer-sciences` | OER věda a kurátorované výklady | Citovat licenci / zdrojovou URL v metadatech. |
+
+Zakázané zdroje pro ingest: `.git` historie, secrets, wallet exports, velké binární artefakty, staré generated odpovědi jako `e2e_results.json` bez označení archiv/test sample a cokoliv, kde chybí licence nebo souhlas.
+
 ### 3.6 Širší „celosvětová“ vrstva: vědy, dějiny, texty, domorodé tradice, klasický i tibetský buddhismus
 
 Cíl: aby Hiran v2.1 nebyl jen ZION technik, ale **hlubší společník s přístupem k velké lidské tradici** — v souladu s Dharma rámcem projektu a s přiznanými limity AI.
@@ -184,28 +212,6 @@ Cíl: aby Hiran v2.1 nebyl jen ZION technik, ale **hlubší společník s přís
 5. **Eval** — kontrolní otázky s očekávanou citací zdroje; penalizovat odpověď bez chunku při dostupném materiálu.
 
 Tato vrstva **nenahrazuje** sekce 3.1–3.5: ZION V3, Rust a orchestrace zůstávají **primární produktová kompetence**. Širší korpusy rozšiřují **horizont a integritu Hiranyagarbhy**, ne základní úlohu síťového agenta.
-
-### 3.7 ZION Oasis × Unreal Engine 5 — Blueprint koncept a „knowledge crate“
-
-**Cíl:** Hiranyagarbha v2.1 má umět **vést tebe (nebo tým) při stavbě Oasis „blueprint kanonu“ v UE5** — překládat existující ZION dokumentaci (`docs/docs2.9/ZION_OASIS/`, GOLDEN_EGG_GAME, SACRED_TRINITY, COSMIC MAP, AAA_MMORPG_PLAN …) na **konkrétní UE5 přístupy**: modulové Actory versus Blueprintové třídy, Game Feature Plugins, UI widgety, replikované vlastnosti vs. vlastní replikaci, GameInstance / Subsystems, Data Assets pro postavy či mise, streaming úrovní podle měst či biome.
-
-**Co která vrstva dělá:**
-
-| Vrstva | Role |
-|--------|------|
-| **Doménové váhy / SFT** | Krátké **guided páry**: uživatel popíše problém UE5 (např. „hub města pod GOLDEN_EGG“), asistent rozloží na subsystém, rozhraní pro questy, instanci městského Levelu … vždy s odkazem na **konkrétní Markdown v repu** (`docs/docs2.9/ZION_OASIS/…`). Do vah netahat celý Epic výukový web ani binární assety. |
-| **Obecné UE Blueprint / API** | Spoleh na sílu base modelu; ZION jen **doladí háky mapování** guided šardy při rozšíření `hiran_curriculum_v2.1`. |
-| **RAG („crate“ vstup)** | Adresář [`HiranV2.1/corpus/oasis-ue5/`](./corpus/oasis-ue5/README.md) — jen **Markdown** (decision logy, struktura Content/, pojmenované BP vstupy výstupy v textu, seznam zásuvných modulů). Je v **`AI_NATIVE_CANONICAL_CORPUS_ROOTS`** (`V3/L3/ai-native/src/knowledge_base.rs`) paralelně se stromem `docs/docs2.9/ZION_OASIS/`. `ZION_WORKSPACE_ROOT` = kořen monorepa pro chunk sken obou stromů. |
-| **Skutečný UE projekt** | `.uproject` a složku `Content/` typicky **nepošleš do gitu**. Lokálně např. `~/Unreal/ZionOasis/`; do repa doplň soubor **`PROJECT_LINKS.md`** šablona níže (`corpus/oasis-ue5/`) s cestou, verzí engine a pravidlem „něco měníš v editoru ⇒ jeden odstavec do MD exportu“. Neindexuje se `.uasset`, jen jeho textový popis. |
-
-**Jak dostaneš Hirana do „UE prostředí“:**
-
-1. **BluePrinty jen jako textové specifikace v repu** — indexér zvládá `.md`; binární assety UE ne.
-2. **Dva vstupy paralelně:** (a) **lore/design** už v repu (`docs/docs2.9/ZION_OASIS/`); (b) **stav implementace UE** jen v `HiranV2.1/corpus/oasis-ue5/`, aby RAG/router rozlišil kanon vývoje hry versus aktuální build poznámky.
-3. **Volitelný další index** `oasis-ue5` vlastní manifests (jako Buddhism RAG) až začneš verzovat hodně vstupů.
-4. **Eval:** kontrolní otázky typu „který dokument v repu říká X a který UE typ (Actor/UI/Subsystem) to zastřeší v našem plánu?“ — povinná cesta k souboru.
-
-**Limit:** pády pluginů či vlastností jen pro konkrétní verzi UE konzultuješ s dokumentací Epic a release notes — Hiranyagarba drží **Oasis smysl a mapování na ZION**, ne veškerou engine encyklopedii.
 
 ---
 
@@ -295,7 +301,7 @@ Princip:
 - **base model** = obecné znalosti, programování, reasoning, čeština/angličtina,
 - **SFT / LoRA** = ZION V3 identita, přesné cesty, Rust workspace, `zion` CLI, AI Native,
 - **RAG** = aktuální dokumentace, živý stav sítě, nové změny po tréninku,
-- **RAG (rozšířeně)** = kurátorované korpusy z oddílu 3.6 a **implementační Blueprint zápisy v oddílu 3.7 (UE5 Oasis)** — **ne** masové „dostahování” do vah,
+- **RAG (rozšířeně)** = kurátorované korpusy z oddílu 3.6 (vědy, dějiny, texty, projektová biblioteka) — **ne** masové „dostahování” do vah,
 - **DPO** = styl: přesnost, méně halucinací, bezpečný operátorský postup.
 
 Do datasetu tedy nepatří generické otázky typu „co je HTTP“ nebo „co je Rust ownership“, pokud nejsou navázané na ZION. Lepší příklad je: „Jak se ownership projeví při úpravě mempoolu v `V3/L1/core`?“
@@ -561,21 +567,15 @@ Každý release modelu musí mít:
 
 - NCL inference backendy jsou podle roadmapy stále nedokončené / stubované.
 - RAG architektura není sjednocená: plán mluví o Chroma/LlamaIndex, Rust crate má vlastní RAG.
-- Dataset 2781 příkladů je dobrý v2 start, ale pro v2.1 je málo.
-- Potřebujeme DPO data, ne jen SFT.
-- Musíme oddělit produkční fakta od historických/archivních docs.
-- Musíme hlídat API key hygiene: Vast/NVIDIA/HF klíče nikdy nepatří do repa ani chatu.
+- Dharma validator je zatím heuristický; agentické operace potřebují explicitní risk tiers a approval policy.
 
 ---
 
 ## 8. Roadmapa příprav
 
-### Ihned
-
-- [x] Vytvořit V3/Rust/orchestrátor dataset builder.
-- [x] Spustit Hiran v2 QLoRA na Vast RTX 4090.
-- [ ] Po doběhu stáhnout LoRA/GGUF/logy a zrušit instanci.
-- [ ] Smoke test `zion-expert-v2` v Ollama.
+- [ ] Nahradit mock RAG embeddingy reálným backendem a zvolit persistentní vector store.
+- [ ] Přidat RAG router `zion-tech` × `live-runtime` × `amenti` × `buddhism-*`.
+- [ ] Převést eval scénáře na release gate.
 
 ### Další iterace
 
@@ -605,6 +605,10 @@ Hiran v2.1 je úspěšný, pokud:
 - navrhne bezpečný operátorský postup,
 - rozlišuje aktuální V3 od legacy,
 - při nejistotě řekne „nevím / potřebuji ověřit“,
+- uvádí zdroje/citace pro technická fakta, live stav a korpusové odpovědi,
+- má jasný action policy pro destruktivní/deploy/wallet/key kroky,
+- projde eval release gate včetně hallucination, stale-data, legal/provenance a safety scénářů,
+- loguje nebo vrací verzi modelu, promptu, datasetu a RAG indexu,
 - funguje jako praktický coding agent pro ZION, ne jen jako filozofický chatbot.
 
 ---
