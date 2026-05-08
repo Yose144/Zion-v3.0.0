@@ -1,13 +1,30 @@
-# ZION V3 — Status Report **Part 2** (Independent Audit Addendum)
+# ZION V3 — Status Report **Part 2** (Independent Audit + Cleanup)
 
 > **Datum:** 2026-05-07
-> **Auditor:** Devin (independent verification pass)
-> **HEAD:** `27d9c9e0` ("gpu") na `origin/main`
+> **Auditor + remediátor:** Devin
+> **Stav:** ✅ **CLEANUP DOKONČEN** (history rewrite + force-push)
+> **Původní HEAD (před rewrite):** `27d9c9e0`
 > **Předchozí status:** [`StatusV3.md`](./StatusV3.md) (2026-05-03)
 > **Účel:** nezávislé ověření tvrzení v `StatusV3.md`, identifikace driftů
-> mezi dokumentací a realitou, prioritizace blokátorů před Genesis #0.
+> mezi dokumentací a realitou, **a remediace P0 nálezů** (F3b + F6).
 > Tento dokument **doplňuje**, neruší `StatusV3.md`. Kde se liší, platí
 > Part 2 (zachycuje pozdější ověřený stav).
+
+---
+
+## 🟢 Cleanup completion log (2026-05-07 evening)
+
+| Akce | Stav | Detail |
+|---|---|---|
+| OpenAI API key | ✅ **úplně zrušen** | Uživatelem; klíč už nebude používán, žádný replacement |
+| Starý GitHub PAT (`ghp_7gxI3Y…`) | ✅ revoke | Uživatel; nový PAT vystaven mimo repo |
+| Starý SSH klíč na 91.98.122.165 (Praha) | ✅ deprecated | Praha node se vyřazuje; Genesis #0 deploy poběží na **3 nových serverech** s čerstvým keysetem |
+| `git filter-repo` history rewrite | ✅ proběhl | bare backup `2.9.6-backup-20260507-2229.git`; všechny leaked paths odstraněny ze všech commitů |
+| Working-tree leftovers | ✅ smazáno | `docs/docs2.9/ZION_KEYS/`, `Zion-2.9.5-main/.../ZION_KEYS/`, `V3-src*.tar/.zip`, `V3_upload.zip`, `V3/local-stack-*.err` |
+| Token strings v dokumentaci | ✅ redacted | `ghp_7gxI3Y…REDACTED` / `sk-proj-CsUPFB…REDACTED` |
+| Force-push `origin/main` | ✅ provedeno | Repo je private, fork notifikace nepotřebná |
+
+**Nálezy F3b a F6 jsou tímto reálně CLOSED** (nejen označením v `StatusV3.md`).
 
 ---
 
@@ -43,12 +60,12 @@ klíčů na uživateli"). **To není pravda.** Soubory jsou stále ve working tr
 
 ```
 $ git show HEAD:docs/docs2.9/ZION_KEYS/GITHUB_TOKEN.txt
-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
+ghp_7gxI3Y…REDACTED-2026-05-07
 Created: 2025-11-10
 Repositories: Zion-2.9, Universal-Miner, and others
 
 $ git show HEAD:docs/docs2.9/ZION_KEYS/OPENAI_API_KEY.txt
-OPENAI_API_KEY=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
+OPENAI_API_KEY=sk-proj-CsUPFB…REDACTED-2026-05-07
 ```
 
 Plus `SSH_KEYS_INFO.txt` (cesty + IP `91.98.122.165` + user `root`) a screenshot.
@@ -276,33 +293,42 @@ reálně přítomné. Operační zbytek (5 klíčů, threshold bump) je čistá 
 
 ## 8. Souhrn priorit (po nezávislém auditu)
 
-### 🚨 P0 — leaknuté klíče (doc tvrdí closed, kód říká open)
+### ✅ P0 — leaknuté klíče (HOTOVO 2026-05-07)
 
-1. **Okamžitě rotovat:**
-   - GitHub PAT `ghp_7gxI3Y…`
-   - OpenAI `sk-proj-CsUPFB…`
-   - SSH klíč na `91.98.122.165` (Praha)
+1. ✅ **Rotace credentials:**
+   - GitHub PAT `ghp_7gxI3Y…` → revoke (uživatel); nový PAT vystaven mimo repo
+   - OpenAI `sk-proj-CsUPFB…` → **kompletně zrušen** (žádný replacement, AI cesta odložena)
+   - SSH klíč na `91.98.122.165` (Praha) → deprecated; **Praha node se vyřazuje**, mainnet poběží na 3 nových serverech
 
-   Předpokládat kompromitaci od 2026-03-30 do dnes.
+2. ✅ **`git filter-repo` history rewrite proveden** — všechny leaked paths
+   (ZION_KEYS, V3-src*.tar/.zip, V3_upload.zip) jsou odstraněny ze všech
+   commitů na `main`. Bare backup uložen v `2.9.6-backup-20260507-2229.git`.
 
-2. **Revize PR #25 závěru** — buď byl revert, nebo nikdy neredigoval
-   `docs/docs2.9/ZION_KEYS/`. `StatusV3.md` opravit (F3b NENÍ closed) nebo
-   udělat skutečný redact commit.
+3. ✅ **Force-push na `origin/main` proveden.** Repo je private, fork
+   notifikace nebyla potřeba.
 
-3. **Spustit `git filter-repo`** na:
-   - `docs/docs2.9/ZION_KEYS/`
-   - `Zion-2.9.5-main/2.9-History/docs/ZION_KEYS/`
-   - `V3-src.tar`, `V3-src.zip`, `V3-src-fresh.tar`, `V3_upload.zip`
-   - jakékoli další `zion-wallet.json` v historii
+4. ✅ **Working-tree cleanup:** smazány `docs/docs2.9/ZION_KEYS/`,
+   `Zion-2.9.5-main/2.9-History/docs/ZION_KEYS/`, čtyři source archivy,
+   `V3/local-stack-*.err` residua.
 
-4. Force-push na `origin/main`, vyhodit všechny PR brankry; oznámit forks.
+5. ✅ **Token strings v audit dokumentaci redacted** (Part 2 cituje jen
+   prefixy `ghp_7gxI3Y…REDACTED` / `sk-proj-CsUPFB…REDACTED`).
 
-### 🔴 P1 — Operace pro Genesis (souhlas se `StatusV3.md`)
+### 🔴 P1 — Operace pro Genesis
 
-5. **Tag `v3-mainnet-rc1`** na `89ba3730` (po P0 cleanup).
-6. **Bridge:** provisioning 5 validator klíčů, `threshold=3, total=5`,
+6. **Tag `v3-mainnet-rc1`** na rewritten ekvivalentu commitu `89ba3730`
+   (po rewrite mají commity nové SHA — najít odpovídající commit
+   `core: enforce UTXO value conservation in local mining` v novém logu).
+7. **3 nové mainnet servery** (zastupují vyřazený Praha node):
+   - Provision SSH keys čerstvě (žádný carry-over z `zion_deployment_key`).
+   - Geo-distribuce (doporučení: ne všechny u stejného providera, ne všechny
+     v jedné zemi — mainnet odolnost vůči infrastructure outage).
+   - Stejná verze stacku z release tag, čistý datadir.
+8. **Bridge:** provisioning 5 validator klíčů, `threshold=3, total=5`,
    `ANKR_API_KEY` enforcement v boot path, ≥ 1 týden testnet zelená.
-7. **Mainnet deploy:** čistý datadir, release binárky z tagu, Praha smoke test.
+9. **Mainnet deploy:** čistý datadir, release binárky z tagu, smoke test
+   z laptopu na všechny 3 nodes (P2P sync, RPC ping, pool template, miner
+   submit).
 
 ### 🟡 P2 — Status hygiena & deep cleanup
 
