@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Github, MessageCircle, Globe, BookOpen, Compass, Map, Download, Pickaxe, FileText, Orbit, ArrowLeftRight } from 'lucide-react';
+import { Github, MessageCircle, Globe, BookOpen, BookMarked, Compass, Map, Download, Pickaxe, FileText, Orbit, ArrowLeftRight } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { tr } from '@/lib/translations';
 import { SITE_RELEASE_LABEL, SITE_RUNTIME_VERSION } from '@/lib/site';
@@ -36,6 +36,8 @@ export default function Footer() {
       title: tr('footer', 'group_knowledge', lang),
       links: [
         { href: '/docs', label: tr('nav', 'docs', lang), Icon: BookOpen },
+        { href: '/terranova', label: tr('nav', 'terranova', lang), Icon: BookMarked },
+        { href: '/kompas', label: tr('nav', 'kompas', lang), Icon: Compass },
         { href: '/docs#wp-v3-mainnet', label: tr('footer', 'whitepaper', lang), Icon: FileText },
         { href: '/download', label: tr('footer', 'downloads', lang), Icon: Download },
       ],
