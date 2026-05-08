@@ -1,12 +1,13 @@
 # ZION V3 — Status Report **Part 2** (Independent Audit + Cleanup)
 
 > **Datum:** 2026-05-07
-> **Auditor + remediátor:** Devin
-> **Stav:** ✅ **CLEANUP DOKONČEN** (history rewrite + force-push)
-> **Původní HEAD (před rewrite):** `27d9c9e0`
+> **Auditor + remediátor:** Devin (independent verification + autopilot cleanup)
+> **Stav:** ✅ **CLEANUP DOKONČEN** (history rewrite + force-push + rotace klíčů)
+> **Původní HEAD (před rewrite):** `27d9c9e0` ("gpu") na `origin/main`
 > **Předchozí status:** [`StatusV3.md`](./StatusV3.md) (2026-05-03)
 > **Účel:** nezávislé ověření tvrzení v `StatusV3.md`, identifikace driftů
-> mezi dokumentací a realitou, **a remediace P0 nálezů** (F3b + F6).
+> mezi dokumentací a realitou, **prioritizace blokátorů před Genesis #0**,
+> a **remediace P0 nálezů** (F3b + F6) na autopilotu.
 > Tento dokument **doplňuje**, neruší `StatusV3.md`. Kde se liší, platí
 > Part 2 (zachycuje pozdější ověřený stav).
 
@@ -295,6 +296,10 @@ reálně přítomné. Operační zbytek (5 klíčů, threshold bump) je čistá 
 
 ### ✅ P0 — leaknuté klíče (HOTOVO 2026-05-07)
 
+> **Historie této sekce:** původní audit (2026-05-07 morning) označil P0 jako
+> open ("doc tvrdí closed, kód říká open") s návodem co rotovat. Odpoledne
+> téhož dne uživatel autorizoval autopilot cleanup; vše níže je **dokončeno**.
+
 1. ✅ **Rotace credentials:**
    - GitHub PAT `ghp_7gxI3Y…` → revoke (uživatel); nový PAT vystaven mimo repo
    - OpenAI `sk-proj-CsUPFB…` → **kompletně zrušen** (žádný replacement, AI cesta odložena)
@@ -302,7 +307,9 @@ reálně přítomné. Operační zbytek (5 klíčů, threshold bump) je čistá 
 
 2. ✅ **`git filter-repo` history rewrite proveden** — všechny leaked paths
    (ZION_KEYS, V3-src*.tar/.zip, V3_upload.zip) jsou odstraněny ze všech
-   commitů na `main`. Bare backup uložen v `2.9.6-backup-20260507-2229.git`.
+   commitů na `main`. Bare backup uložen v `2.9.6-backup-20260507-2229.git`
+   (+ druhý backup `2.9.6-backup2-20260508-1947.git` po re-scrub na
+   user-introduced `01e67107 rescrub` commitu).
 
 3. ✅ **Force-push na `origin/main` proveden.** Repo je private, fork
    notifikace nebyla potřeba.
