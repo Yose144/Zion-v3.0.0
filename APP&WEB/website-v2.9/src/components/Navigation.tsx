@@ -64,6 +64,7 @@ export default function Navigation() {
             { href: '/terranova/dharma-temple', label: tr('nav', 'terra_dharma_temple', lang) },
           ],
         },
+        { href: '/bridge', label: tr('nav', 'bridge', lang) },
         { href: '/kompas', label: tr('nav', 'kompas', lang) },
         { href: '/api-reference', label: tr('nav', 'api', lang) },
         { href: '/ai-native', label: tr('nav', 'ai_native', lang) },
