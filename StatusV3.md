@@ -273,9 +273,9 @@ nebo má konkrétní aktivační plán v
 | F3b — `docs/docs2.9/ZION_KEYS/` PAT + OpenAI + SSH | 🔴 Critical | ✅ **fully closed 2026-05-07** (history rewrite + rotace + Praha deprecated) |
 | F4 — bridge unlock multisig na L1 | 🟡 Medium | ✅ PR #22 |
 | F5 — `unwrap/expect` density | 🟡 Medium | ✅ PR #23 + #24 |
-| F6 — `V3-src*.tar/.zip` archivy v repu | 🟡 Medium | ✅ PR #18 + PR #25 |
+| F6 — `V3-src*.tar/.zip` archivy v repu | 🟡 Medium | ✅ **fully closed 2026-05-07** (history rewrite + working-tree cleanup) |
 | §3.2 — tx-hash preimage malleability | 🟡 Medium | ✅ PR #25 + **2026-05-03:** v2 od genesis v produkci |
-| §11 — `lib.rs` monolith refactor (~6 508 LoC) | 🟢 Low | 📋 plán v completion docu §5 |
+| §11 — `lib.rs` monolith refactor (**6 707** LoC; status doc dříve psal 6 508) | 🟢 Low | 📋 plán v completion docu §5 |
 | §13 — native-ffi safety contracts | 🟡 Medium | ✅ PR #28 (2026-05-02) |
 | §15.1 — `active_tip().expect` | 🟢 Low | známé, refactor target |
 | §15.2 — dead code (evict, into_utxo, hex_encode) | 🟢 Low | ✅ PR #25 |
@@ -286,21 +286,19 @@ nebo má konkrétní aktivační plán v
 
 ## 2. Co stále hoří před Genesis (řazeno podle naléhavosti)
 
-### 🚨 P0 — bezpečnostní akce na uživateli (ne na kódu)
+### ✅ P0 — bezpečnostní akce na uživateli (DOKONČENO 2026-05-07)
 
-1. **Rotace `ZION_KEYS` credentials** — *nutná akce na Yose144*. Klíče byly
-   v repu od 2026-03-30 do 2026-04-29, jsou stále aktivní pokud nezrotovány:
-   - **GitHub PAT** (prefix `ghp_7gxI3Y…`) → revoke na
-     <https://github.com/settings/tokens>, audit security log.
-   - **OpenAI API key** (prefix `sk-proj-CsUPFBafi12A3…`) → delete na
-     <https://platform.openai.com/api-keys>, audit usage stránku.
-   - **SSH deployment key** na `91.98.122.165` (Praha) → vygenerovat nový,
-     odstranit starý z `~/.ssh/authorized_keys` na serveru, zkontrolovat
-     `last -F` a `journalctl -u sshd --since "2025-11-10"`.
+1. ✅ **Rotace `ZION_KEYS` credentials hotová:**
+   - **GitHub PAT** (`ghp_7gxI3Y…`) → ✅ revoke; nový PAT mimo repo
+   - **OpenAI API key** (`sk-proj-CsUPFB…`) → ✅ **kompletně zrušen** (žádný
+     replacement, AI cesta odložena)
+   - **SSH deployment key** (`91.98.122.165` Praha) → ✅ **node deprecated**;
+     mainnet poběží na **3 nových serverech** s čerstvým keysetem (žádný
+     carry-over starého klíče)
+   - **`git filter-repo` history rewrite** → ✅ proveden; bare backup uložen
+   - **Force-push `origin/main`** → ✅ provedeno (repo je private)
 
-   *Proč to hoří:* PAT může klonovat soukromé repa a pushnout malware do
-   tvých dalších projektů. OpenAI klíč může nasekat účet (tisíce USD/den).
-   SSH klíč = root na živý mainnet node.
+   Detail v [`StatusV3-Part2.md` §1](./StatusV3-Part2.md#1--critical--bezpečnostní-nálezy-v-rozporu-se-statusv3md).
 
 ### 🔴 P1 — produkční blokátory
 
@@ -334,17 +332,17 @@ nebo má konkrétní aktivační plán v
    - **NEBO** po `git filter-repo` historic scrubu repo otevřít public
      (Actions zdarma neomezeně),
    - **NEBO** přesunout pod GitHub organization s placeným plánem.
-6. **`git filter-repo` history scrub** — jednorázová destructive op
-   (rewrites every branch, breaks every existing clone) pro odstranění
-   leaked credentials z historie. Musí proběhnout *jednou* a najednou pro:
-   - `zion-wallet.json` (root) + `V3/zion-wallet.json` (premine privkey, mnemonic)
-   - `docs/docs2.9/ZION_KEYS/` (PAT, OpenAI, SSH)
-   - `V3-src*.tar`, `V3-src.zip`, `V3_upload.zip` (archivní zálohy)
-   Detail v [`SECURITY_NOTICE_2026-04-28.md`](./SECURITY_NOTICE_2026-04-28.md).
+6. ✅ **`git filter-repo` history scrub PROVEDEN 2026-05-07** —
+   všechny leaked paths (`zion-wallet.json`, `docs/docs2.9/ZION_KEYS/`,
+   `V3-src*.tar/.zip`, `V3_upload.zip`) odstraněny ze všech commitů,
+   force-push proveden, bare backup uložen v
+   `2.9.6-backup-20260507-2229.git`. Repo je private, takže fork breakage
+   nebyl problém. Detail v
+   [`StatusV3-Part2.md` §1](./StatusV3-Part2.md).
 7. **`lib.rs` monolith refactor** (§11) — `V3/L1/core/src/lib.rs` má
-   **6 508 řádků** (ověřeno 2026-05-02), drží node loop + RPC + P2P + mempool
-   + validation v jednom souboru. Žádná behaviorální změna, čistá
-   auditovatelnost. Plán v
+   **6 707 řádků** (ověřeno 2026-05-07; status doc dříve uváděl 6 508 — drift
+   opraven), drží node loop + RPC + P2P + mempool + validation v jednom
+   souboru. Žádná behaviorální změna, čistá auditovatelnost. Plán v
    [`AUDIT_COMPLETION.md` §5](./V3/docs/audits/2026-04-V3_AUDIT_COMPLETION.md).
 8. **3rd-party L3/warp signer review** (§15.7) — per-adapter audit
    `private_key` cest pro Stellar, BTC, Tron — odložené do externího auditu.
@@ -360,10 +358,10 @@ nebo má konkrétní aktivační plán v
 10. **Phase-2 testovací coverage** — workspace má **~1 444 testů** (po
     PR #27 + #28), ale chybí end-to-end mainnet stress test
     (10k+ transakcí, peer churn, partition recovery, restart-mid-sync).
-11. **Pre-commit hook** (`.pre-commit-config.yaml`) — žádný hook neexistuje
-    (ověřeno 2026-05-02). Snadno přidat `cargo fmt --check` + `cargo clippy`
-    + secret-scan (gitleaks / tartufo) jako defense-in-depth proti F3/F3b
-    classu.
+11. **Pre-commit hook** (`.pre-commit-config.yaml`) — ✅ **existuje od 2026-05-02**
+    (3 183 B). Pokrývá fmt + clippy + gitleaks + py/js syntax + private-key
+    detect jako defense-in-depth proti F3/F3b classu. Status §2 P3.11 to
+    dříve uváděl jako pending — drift opraven 2026-05-07.
 12. **Telemetry + alerty** — Prometheus + Grafana běží, ale chybí
     SLO definice (block time p95 < 90 s, mempool depth < 1000,
     `bridge_relayer_missing_signers = 0`, `validator.threshold` met) a
