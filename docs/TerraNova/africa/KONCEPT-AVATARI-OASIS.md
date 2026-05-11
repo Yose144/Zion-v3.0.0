@@ -28,4 +28,4 @@ Souhrnná tabulka: **[`../../docs2.9/ZION_OASIS/AVATAR_ROSTER.md`](../../docs2.9
 
 **Atlantis** je v rosteru jako **literární Platónovský kruh #152–161** viz [`../atlantis/KONCEPT-AVATARI-OASIS.md`](../atlantis/KONCEPT-AVATARI-OASIS.md).
 
-**Lemúrie + kosmičtí archetypové** následují jako vlastní značené bloky (typicky **#162+** po Lemurii — přesné číslování uzavřít v příští vlně).
+**Lemúrie** jako syntetický kruh **#162–171** viz [`../lemuria/KONCEPT-AVATARI-OASIS.md`](../lemuria/KONCEPT-AVATARI-OASIS.md). **Kosmičtí archetypové** jako **#172+** — příští vlna.
