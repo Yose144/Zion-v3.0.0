@@ -65,7 +65,7 @@ Stejně jako u `saman/`:
 
 ## Vztah k ZION OASIS
 
-Sacred Trinity v `docs/docs2.9/ZION_OASIS/SACRED_TRINITY/` má rozšířený roster **191 avatarů**: **51** základních slotů plus **čtrnáct rozšiřujících desetibloků** (First Nations **52–61**, Pacific **62–71**, Tibet **72–81**, Indie **82–91**, Japonsko **92–101**, Čína **102–111**, Indonésie **112–121**, Austrálie **122–131**, Aotearoa NZ **132–141**, Afrika **142–151**, literary **Atlantis 152–161**, syntetická **Lemúrie 162–171**, kosmický **Vzestup 172–181**, **Norse–Celtic 182–191**). Rozcestníky TerraNova viz odkazy níže podle kruhu. Zrcadlové profily ve stylu OASIS:
+Sacred Trinity v `docs/docs2.9/ZION_OASIS/SACRED_TRINITY/` má rozšířený roster **201 avatarů**: **51** základních slotů plus **patnáct rozšiřujících desetibloků** (First Nations **52–61**, Pacific **62–71**, Tibet **72–81**, Indie **82–91**, Japonsko **92–101**, Čína **102–111**, Indonésie **112–121**, Austrálie **122–131**, Aotearoa NZ **132–141**, Afrika **142–151**, literary **Atlantis 152–161**, syntetická **Lemúrie 162–171**, kosmický **Vzestup 172–181**, **Norse–Celtic 182–191**, **Staroegypt 192–201**). Rozcestníky TerraNova viz odkazy níže podle kruhu. Zrcadlové profily ve stylu OASIS:
 
 - First Nations: [`52_HEHAKA_SAPA.md`](../../docs2.9/ZION_OASIS/SACRED_TRINITY/52_HEHAKA_SAPA.md) … [`61_HEYOKHA.md`](../../docs2.9/ZION_OASIS/SACRED_TRINITY/61_HEYOKHA.md)
 - Pacific (tato knihovna): [`62_LA_ILIAI.md`](../../docs2.9/ZION_OASIS/SACRED_TRINITY/62_LA_ILIAI.md) … [`71_MAUI.md`](../../docs2.9/ZION_OASIS/SACRED_TRINITY/71_MAUI.md)
