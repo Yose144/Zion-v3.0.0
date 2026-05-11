@@ -10,7 +10,7 @@
 
 1. **Mapuje** **klíčové motivy** tibetské tradice (Bön + Buddhismus Vajrayana)
 2. **Otevírá** prostor pro **plnou knihu** *(„Kniha Vajrového Hromu"* nebo podobně)*, **kterou** **někdo jiný napíše později**
-3. **Nabízí** **2 avatary** *(72-73)* pro **ZION OASIS** Sacred Trinity: **Padmasambhava** + **Současný Dalajláma**
+3. **Nabízí Tibet Circle** — **10 avatarů** *(72–81)* v OASIS: viz [`KONCEPT-AVATARI-OASIS.md`](KONCEPT-AVATARI-OASIS.md) a profily v [`../../docs2.9/ZION_OASIS/SACRED_TRINITY/`](../../docs2.9/ZION_OASIS/SACRED_TRINITY/) (`72_`…`81_`). **14. Dalajláma zůstává avatar #51** v OASIS — zde **neduplikován**.
 
 ---
 
@@ -35,7 +35,7 @@ tibet/
 ├── 01-PRAZDNOTA-A-SOUCIT.md                   ← Šūnyatā + bodhicitta = jádro Mahájány
 ├── 02-VAJRAYANA-DIAMANTOVA-CESTA.md           ← Vajrayana lite (yidam, mandala, tantra)
 ├── 03-DALAJLAMA-A-SAMBHALA.md                 ← 14. Dalajláma + Shambhala proroctví
-└── KONCEPT-AVATARI-OASIS.md                   ← Padmasambhava + Dalajláma jako avatari 72-73
+└── KONCEPT-AVATARI-OASIS.md                   ← Tibet Circle 72–81 + odkazy na 84000 / Lotsawa House / dalailama.com
 ```
 
 ---
@@ -58,7 +58,9 @@ tibet/
 | Vajrayana / Tantra | Padmasambhava *Bardo Thödol*; Tsongkhapa *Lamrim Chenmo* |
 | Žijící tradice | 14. Dalajláma *The Universe in a Single Atom*; Karmapa, Sakya Trichen, atd. |
 | Šambhala | Chögyam Trungpa *Shambhala: The Sacred Path of the Warrior* |
-| Politika | Free Tibet, International Campaign for Tibet, Tibetan Government in Exile |
+| Politika | Free Tibet, International Campaign for Tibet, Centrální Tibetská administrativa ([tibet.net](https://www.tibet.net/)) |
+| Otevřený kánon (EN) | [84000.co](https://84000.co/), [Lotsawa House — Tibetan Masters](https://www.lotsawahouse.org/tibetan-masters/) |
+| Dalajláma (oficiální) | [dalailama.com](https://www.dalailama.com/) |
 
 Plné texty viz **HiranV2.1/data/rag/buddhism-tibetan/** (existing RAG corpus).
 
