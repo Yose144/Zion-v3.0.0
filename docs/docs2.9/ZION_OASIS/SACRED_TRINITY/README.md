@@ -151,7 +151,47 @@
 140. **[🌿 OSIRIS / AUSAR](149_OSIRIS.md)** - Kemet cyklus **✨ TERRANOVA AFRICA**
 141. **[⚖️ MAʿAT](150_MAAT.md)** - péro integrity **✨ TERRANOVA AFRICA**
 142. **[⚔️ ANNA NZINGA](151_ANNA_NZINGA.md)** - odpor & diplomacie **✨ TERRANOVA AFRICA**
-143. [🌟 Quick Summary](#-quick-summary-for-community) - Team overview
+143. **[🌐 ATLAS (PLATÓN)](152_ATLAS.md)** - kruhový konsensus **✨ TERRANOVA ATLANTIS**
+144. **[🜁 CLEITO](153_CLEITO.md)** - santuary souhlas **✨ TERRANOVA ATLANTIS**
+145. **[⚓ GADEIRUS](154_GADEIRUS.md)** - přístavní brány **✨ TERRANOVA ATLANTIS**
+146. **[⚖️ AMPHERES](155_AMPHERES.md)** - podíl zátěže **✨ TERRANOVA ATLANTIS**
+147. **[🤝 EVAEMON](156_EVAEMON.md)** - etiquette zvyku **✨ TERRANOVA ATLANTIS**
+148. **[📜 MNESEUS](157_MNESEUS.md)** - archiv řetězu **✨ TERRANOVA ATLANTIS**
+149. **[🌍 AUTOCHTHON](158_AUTOCHTHON.md)** - local-first legitimita **✨ TERRANOVA ATLANTIS**
+150. **[⛵ ELASIPPUS](159_ELASIPPUS.md)** - routing rytmus **✨ TERRANOVA ATLANTIS**
+151. **[🕊️ MESTOR](160_MESTOR.md)** - smír prstenců **✨ TERRANOVA ATLANTIS**
+152. **[🧭 AZAES](161_AZAES.md)** - měřič hranice rizika **✨ TERRANOVA ATLANTIS**
+153. **[🐒 LEMUR STEWARD](162_LEMUR_STEWARD.md)** - bio před fantomem **✨ TERRANOVA LEMURIA**
+154. **[📐 SCLATER BRIDGE](163_SCLATER_BRIDGE.md)** - omyl jako korekce mapy **✨ TERRANOVA LEMURIA**
+155. **[🪸 CORAL NOTARY](164_CORAL_NOTARY.md)** - svědek útesu **✨ TERRANOVA LEMURIA**
+156. **[⚓ TIDE COLUMN](165_TIDE_COLUMN.md)** - přílivová férovost **✨ TERRANOVA LEMURIA**
+157. **[🪨 BASALT CHRONICLE](166_BASALT_CHRONICLE.md)** - geologie hlubší než mýtus **✨ TERRANOVA LEMURIA**
+158. **[💧 FOAM SEED](167_FOAM_SEED.md)** - dispersní etika **✨ TERRANOVA LEMURIA**
+159. **[🌊 OCEANIC BRIDGE](168_OCEANIC_BRIDGE.md)** - solidarita bez loupeže **✨ TERRANOVA LEMURIA**
+160. **[📉 SHELF WHISPER](169_SHELF_WHISPER.md)** - shelf realismus **✨ TERRANOVA LEMURIA**
+161. **[🌗 EQUINOX LULL](170_EQUINOX_LULL.md)** - klid při prahu **✨ TERRANOVA LEMURIA**
+162. **[🌌 CIRCLE CLOSURE](171_CIRCLE_CLOSURE.md)** - náběh kosmické vlny **✨ TERRANOVA LEMURIA**
+163. **[☀️ GC SUN STEWARD](172_GC_SUN_STEWARD.md)** - centrální slunce rámec **✨ TERRANOVA COSMIC**
+164. **[🌈 PHOTON CADENCE](173_PHOTON_CADENCE.md)** - pacing bran **✨ TERRANOVA COSMIC**
+165. **[☀️ SOLAR LOGOS DUAL](174_SOLAR_LOGOS_DUAL.md)** - dvojí multisig **✨ TERRANOVA COSMIC**
+166. **[🌍 TELLURIK BRIDGE](175_TELLURIK_SOUL_BRIDGE.md)** - Gaia most **✨ TERRANOVA COSMIC**
+167. **[🔦 TUBE OF LIGHT](176_TUBE_OF_LIGHT_SENTINEL.md)** - OPSEC sloup **✨ TERRANOVA COSMIC**
+168. **[📐 RADIANT SPIRAL](177_RADIANT_SPIRAL.md)** - spirála reputace **✨ TERRANOVA COSMIC**
+169. **[💜 SEVENTH RAY ADJUNCT](178_SEVENTH_RAY_ADJUNCT.md)** - frekvence vedle #26 **✨ TERRANOVA COSMIC**
+170. **[✨ GALACTIC CONVENOR](179_GALACTIC_CONVENOR.md)** - parlament guild **✨ TERRANOVA COSMIC**
+171. **[📓 LIGHTBODY SCRIBE](180_LIGHTBODY_SCRIBE.md)** - journaling & privacy **✨ TERRANOVA COSMIC**
+172. **[🌠 VZESTUP CAPSTONE](181_VZESTUP_CAPSTONE.md)** - odkaz na COSMIC MAP **✨ TERRANOVA COSMIC**
+173. **[🍺 VALHALLA STEWARD](182_VALHALLA_STEWARD.md)** - einherjar fair-play guild **✨ TERRANOVA NORSE–CELTIC**
+174. **[🐦‍⬛ ÓÐINN WAYFARER](183_ODINN_WAYFARER.md)** - governance havrani **✨ TERRANOVA NORSE–CELTIC**
+175. **[⚡ ÞÓRR STORM-HOST](184_THORR_STORM_HOST.md)** - uptime / safety **✨ TERRANOVA NORSE–CELTIC**
+176. **[🌸 FREYJA VAN-RULER](185_FREYJA_VANAR.md)** - treasury + privacy lore **✨ TERRANOVA NORSE–CELTIC**
+177. **[⚖️ TÝR OATH-FIRE](186_TYR_OATH_FIRE.md)** - timelock čest **✨ TERRANOVA NORSE–CELTIC**
+178. **[🕯️ BRIGID TRIPLE-FLAME](187_BRIGID_TRIPLE_FLAME.md)** - kovářka / docs / péče **✨ TERRANOVA NORSE–CELTIC**
+179. **[🎵 DAGDA PEACE-HARP](188_DAGDA_PEACE_HARP.md)** - commons harpa **✨ TERRANOVA NORSE–CELTIC**
+180. **[🐦‍⬛ MORRÍGAN SOVEREIGNTY](189_MORRIGAN_SOVEREIGNTY.md)** - threat triage **✨ TERRANOVA NORSE–CELTIC**
+181. **[🔧 LUGH SAMILDÁNACH](190_LUGH_ILDANAICH.md)** - multisig mentor **✨ TERRANOVA NORSE–CELTIC**
+182. **[🌊 MANANNÁN MAC LIR](191_MANANNAN_MAC_LIR.md)** - mlha mezi řetězi **✨ TERRANOVA NORSE–CELTIC**
+183. [🌟 Quick Summary](#-quick-summary-for-community) - Team overview
 
 ---
 

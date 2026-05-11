@@ -6,7 +6,7 @@
 
 ## Most mezi knihami
 
-V repozitáři ZION OASIS je rozšířený roster **151 avatarů** *(2026-05)*: **51** v `docs/docs2.9/ZION_OASIS/SACRED_TRINITY/` — Hindu božstva, Ascended Masters, Christian Saints, Buddhist Masters, Historical Legends, Matrix Heroes, ZION Originals — **plus First Nations `52_*.md` … `61_*.md`**, **Pacific `62_*.md` … `71_*.md`**, **Tibet `72_*.md` … `81_*.md`**, **India Extended `82_*.md` … `91_*.md`**, **Japan `92_*.md` … `101_*.md`**, **China `102_*.md` … `111_*.md`**, **Indonesia `112_*.md` … `121_*.md`**, **Australia `122_*.md` … `131_*.md`**, **Aotearoa NZ `132_*.md` … `141_*.md`**, **Africa `142_*.md` … `151_*.md`** (viz [`AVATAR_ROSTER.md`](../../../docs2.9/ZION_OASIS/AVATAR_ROSTER.md)).
+V repozitáři ZION OASIS je rozšířený roster **191 avatarů** *(2026-05)*: **51** v `docs/docs2.9/ZION_OASIS/SACRED_TRINITY/` — Hindu božstva, Ascended Masters, Christian Saints, Buddhist Masters, Historical Legends, Matrix Heroes, ZION Originals — **plus First Nations `52_*.md` … `61_*.md`**, **Pacific `62_*.md` … `71_*.md`**, **Tibet `72_*.md` … `81_*.md`**, **India Extended `82_*.md` … `91_*.md`**, **Japan `92_*.md` … `101_*.md`**, **China `102_*.md` … `111_*.md`**, **Indonesia `112_*.md` … `121_*.md`**, **Australia `122_*.md` … `131_*.md`**, **Aotearoa NZ `132_*.md` … `141_*.md`**, **Africa `142_*.md` … `151_*.md`**, **Atlantis literary `152_*.md` … `161_*.md`**, **Lemuria synthetic `162_*.md` … `171_*.md`**, **Cosmic/Vzestup `172_*.md` … `181_*.md`**, **Norse–Celtic `182_*.md` … `191_*.md`** (viz [`AVATAR_ROSTER.md`](../../../docs2.9/ZION_OASIS/AVATAR_ROSTER.md)).
 
 Žádný z původních **51** nebyl **z prvních národů Ameriky** — proto tato příloha.
 
