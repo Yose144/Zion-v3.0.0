@@ -65,11 +65,21 @@ Stejně jako u `saman/`:
 
 ## Vztah k ZION OASIS
 
-Sacred Trinity v `docs/docs2.9/ZION_OASIS/SACRED_TRINITY/` má **51 + 10 (z First Nations Circle)** = **61 avatarů** napříč Hindu, Buddhist, Christian, Matrix, Ascended Masters, ZION Originals, First Nations.
+Sacred Trinity v `docs/docs2.9/ZION_OASIS/SACRED_TRINITY/` má rozšířený roster **151 avatarů**: **51** základních slotů plus **desetileté geografické/kulturní kruhy** First Nations **52–61**, Pacific **62–71**, Tibet **72–81**, Indie **82–91**, Japonsko **92–101**, Čína **102–111**, Indonésie **112–121**, Austrálie **122–131**, Aotearoa NZ **132–141**, Afrika **142–151**. Rozcestníky TerraNova viz odkazy níže podle kruhu. Zrcadlové profily ve stylu OASIS:
 
-**Žádný polynéský avatar zatím chybí.**
+- First Nations: [`52_HEHAKA_SAPA.md`](../../docs2.9/ZION_OASIS/SACRED_TRINITY/52_HEHAKA_SAPA.md) … [`61_HEYOKHA.md`](../../docs2.9/ZION_OASIS/SACRED_TRINITY/61_HEYOKHA.md)
+- Pacific (tato knihovna): [`62_LA_ILIAI.md`](../../docs2.9/ZION_OASIS/SACRED_TRINITY/62_LA_ILIAI.md) … [`71_MAUI.md`](../../docs2.9/ZION_OASIS/SACRED_TRINITY/71_MAUI.md)
+- Tibet: [`72_PADMASAMBHAVA.md`](../../docs2.9/ZION_OASIS/SACRED_TRINITY/72_PADMASAMBHAVA.md) … [`81_LONGCHEN_RABJAM.md`](../../docs2.9/ZION_OASIS/SACRED_TRINITY/81_LONGCHEN_RABJAM.md) — [`../tibet/KONCEPT-AVATARI-OASIS.md`](../tibet/KONCEPT-AVATARI-OASIS.md)
+- India Extended: [`82_SHIVA_MAHADEV.md`](../../docs2.9/ZION_OASIS/SACRED_TRINITY/82_SHIVA_MAHADEV.md) … [`91_GANGA.md`](../../docs2.9/ZION_OASIS/SACRED_TRINITY/91_GANGA.md) — [`../india/KONCEPT-AVATARI-OASIS.md`](../india/KONCEPT-AVATARI-OASIS.md)
+- Japan: [`92_AMATERASU.md`](../../docs2.9/ZION_OASIS/SACRED_TRINITY/92_AMATERASU.md) … [`101_NICHIREN.md`](../../docs2.9/ZION_OASIS/SACRED_TRINITY/101_NICHIREN.md) — koncept [`../japan/KONCEPT-AVATARI-OASIS.md`](../japan/KONCEPT-AVATARI-OASIS.md)
+- China: [`102_HUANG_DI.md`](../../docs2.9/ZION_OASIS/SACRED_TRINITY/102_HUANG_DI.md) … [`111_LEI_GONG.md`](../../docs2.9/ZION_OASIS/SACRED_TRINITY/111_LEI_GONG.md) — [`../china/KONCEPT-AVATARI-OASIS.md`](../china/KONCEPT-AVATARI-OASIS.md)
+- Indonesia: [`112_DEWI_SRI.md`](../../docs2.9/ZION_OASIS/SACRED_TRINITY/112_DEWI_SRI.md) … [`121_DEWI_NAWANG_WULAN.md`](../../docs2.9/ZION_OASIS/SACRED_TRINITY/121_DEWI_NAWANG_WULAN.md) — [`../indonesia/KONCEPT-AVATARI-OASIS.md`](../indonesia/KONCEPT-AVATARI-OASIS.md)
+- Australia: [`122_SEVEN_SISTERS_STEWARD.md`](../../docs2.9/ZION_OASIS/SACRED_TRINITY/122_SEVEN_SISTERS_STEWARD.md) … [`131_MAKARRATA_BRIDGE.md`](../../docs2.9/ZION_OASIS/SACRED_TRINITY/131_MAKARRATA_BRIDGE.md) — [`../australia/KONCEPT-AVATARI-OASIS.md`](../australia/KONCEPT-AVATARI-OASIS.md)
+- Aotearoa NZ: [`132_PAPATUANUKU.md`](../../docs2.9/ZION_OASIS/SACRED_TRINITY/132_PAPATUANUKU.md) … [`141_KUPE.md`](../../docs2.9/ZION_OASIS/SACRED_TRINITY/141_KUPE.md) — [`../newzealand/KONCEPT-AVATARI-OASIS.md`](../newzealand/KONCEPT-AVATARI-OASIS.md)
+- Africa: [`142_OSHUN.md`](../../docs2.9/ZION_OASIS/SACRED_TRINITY/142_OSHUN.md) … [`151_ANNA_NZINGA.md`](../../docs2.9/ZION_OASIS/SACRED_TRINITY/151_ANNA_NZINGA.md) — [`../africa/KONCEPT-AVATARI-OASIS.md`](../africa/KONCEPT-AVATARI-OASIS.md)
+- Souhrn: [`AVATAR_ROSTER.md`](../../docs2.9/ZION_OASIS/AVATAR_ROSTER.md)
 
-Příloha A na konci knihy navrhuje **Pacifický Kruh** (avatari 62–71) — postavy z polynéské tradice, které mohou v budoucnu vstoupit do MMORPG světa. Není to nutnost. Je to nabídka, **stejně jako u First Nations Circle**.
+**Kāne (65)** zůstává **bez NFT / presence-only** podle etiky přílohy. Všechny polynézské postavy stále vyžadují **živou bránu** (kupuna, native VO, income share) dle [`KNIHA-LEHUA/PRILOHA-A-Kruh-Avataru-Pacifiku.md`](KNIHA-LEHUA/PRILOHA-A-Kruh-Avataru-Pacifiku.md) — OASIS soubory jsou **návrh**, ne hotová hra.
 
 ---
 
