@@ -28,4 +28,6 @@ Souhrnná tabulka: **[`../../docs2.9/ZION_OASIS/AVATAR_ROSTER.md`](../../docs2.9
 
 **Atlantis** je v rosteru jako **literární Platónovský kruh #152–161** viz [`../atlantis/KONCEPT-AVATARI-OASIS.md`](../atlantis/KONCEPT-AVATARI-OASIS.md).
 
-**Lemúrie** jako syntetický kruh **#162–171** viz [`../lemuria/KONCEPT-AVATARI-OASIS.md`](../lemuria/KONCEPT-AVATARI-OASIS.md). **Kosmičtí archetypové** jako **#172+** — příští vlna.
+**Lemúrie** jako syntetický kruh **#162–171** viz [`../lemuria/KONCEPT-AVATARI-OASIS.md`](../lemuria/KONCEPT-AVATARI-OASIS.md). **Kosmičtí archetypové** **#172–181** a dále Norse–Celtic / Egypt viz TerraNova.
+
+**Rozšířený faraonský pantheon (#192–201)** — doplňuje **#149 Osiris** a **#150 Maʿät** širšími rolemi (Ré, Hor, Thovt, Hathor, Sachmet, Ptah, Anup, Amon, Geb, Nut); viz [`../ancient-egypt/KONCEPT-AVATARI-OASIS.md`](../ancient-egypt/KONCEPT-AVATARI-OASIS.md).

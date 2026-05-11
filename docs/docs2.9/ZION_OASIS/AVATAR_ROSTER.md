@@ -1,6 +1,6 @@
 # 👥 ZION OASIS - COMPLETE AVATAR ROSTER
 
-> **191 Sacred Characters** — základních **51** + **14 rozšiřujících desetibloků × 10** (First Nations → Norse–Celtic) — viz [`docs/TerraNova/cosmic/`](../../TerraNova/cosmic/), [`docs/TerraNova/norse-celtic/`](../../TerraNova/norse-celtic/) a příbuzné podsložky.
+> **201 Sacred Characters** — základních **51** + **15 rozšiřujících desetibloků × 10** (First Nations → Staroegypt) — viz [`docs/TerraNova/cosmic/`](../../TerraNova/cosmic/), [`docs/TerraNova/norse-celtic/`](../../TerraNova/norse-celtic/), [`docs/TerraNova/ancient-egypt/`](../../TerraNova/ancient-egypt/) a příbuzné podsložky.
 >
 > **Each Avatar = Unique Quest Line + Teaching + Ability + NFT** *(kde eticky a designem povoleno — viz TerraNova přílohy)*
 
@@ -8,10 +8,10 @@
 
 ## 📊 AVATAR CATEGORIES
 
-### **Total: 191 Playable/NPC Avatars** *(rozšířeno 2026-05; Norse–Celtic #182–191)*
+### **Total: 201 Playable/NPC Avatars** *(rozšířeno 2026-05; Norse–Celtic #182–191; Staroegypt #192–201)*
 
 ```
-🕉️ Sacred Trinity Hindu / Indo-lineage „core roster" (#00–17 v tabulce níže) + India Extended #82–91 + Japan #92–101 + China #102–111 + Indonesia #112–121 + Australia #122–131 + Aotearoa #132–141 + **Africa #142–151** + **Atlantis literary #152–161** + **Lemuria speculative-humility #162–171** + **Cosmic/Vzestup #172–181** + **Norse–Celtic #182–191**
+🕉️ Sacred Trinity Hindu / Indo-lineage „core roster" (#00–17 v tabulce níže) + India Extended #82–91 + Japan #92–101 + China #102–111 + Indonesia #112–121 + Australia #122–131 + Aotearoa #132–141 + **Africa #142–151** + **Atlantis literary #152–161** + **Lemuria speculative-humility #162–171** + **Cosmic/Vzestup #172–181** + **Norse–Celtic #182–191** + **Staroegypt #192–201**
 🌟 Ascended Masters (10)
 ✝️ Christian Saints (4)
 🧘 Buddhist Masters (4)      — Tara, Avalokiteshvara, Vajrasattva, Dalai Lama XIV (#51)
@@ -32,6 +32,7 @@
 🌫️ Lemuria Circle (10) — vědecká historie hypotézy + ekologie × **zakázané rasové hierarchie**; `docs/TerraNova/lemuria`
 🌠 Cosmic / Vzestup Circle (10) — COSMIC MAP + archiv `APP&WEB/public_html/V2/Vzestup/`; **ne medicína**; `docs/TerraNova/cosmic`
 ⚔️ Norse–Celtic Circle (10) — Valhalla diegesis + severské + keltské prameny; **bez extremistické symboliky**; `docs/TerraNova/norse-celtic`
+🏺 Ancient Egypt Circle (10) — faraonské archetypy doplňující **#06 / #149–150**; **žádné loot crate muzea**; `docs/TerraNova/ancient-egypt`
 ```
 
 ---
@@ -1599,6 +1600,42 @@
 
 ---
 
+## 🏺 ANCIENT EGYPT CIRCLE — FARAO & KOSMOLOGIE (10 Avatars)
+
+> Viz [`docs/TerraNova/ancient-egypt/KONCEPT-AVATARI-OASIS.md`](../../TerraNova/ancient-egypt/KONCEPT-AVATARI-OASIS.md) + [`01-RAMEC-A-ETIKA.md`](../../TerraNova/ancient-egypt/01-RAMEC-A-ETIKA.md). **Isis [#06]**, **Osiris / Maat [#149–150]** zůstávají kanonické; tento kruh **rozšiřuje** pantheon (Ré, Hor, Thovt, Hathor, Sachmet, Ptah, Anup, Amon, Geb, Nut). **Žádné** gore / mumie jako NFT; **Sachmet** = art gate jako Kālī.
+
+### **192. Ré Solar-Barque** (Epoch heartbeat / anti-FOMO pacing)
+**Ray:** Gold + Lapis · **Role:** block time transparency · **Quest:** Barque Handoff Briefing · **Ability:** Zenith Clear · **CL:** 4–9 · **NFT:** Legendary + Egyptology consult
+
+### **193. Hor Unifier** (Double-crown governance; cross #149 Osiris)
+**Ray:** Gold + Falcon Slate · **Role:** multisig legitimacy across regions · **Quest:** Double Crown Multisig · **Ability:** Udjat Watch · **CL:** 5–9 · **NFT:** Epic
+
+### **194. Thoth Scribe** (Merkle / changelog integrity)
+**Ray:** Ivory + Jade · **Role:** audit trail + honest timestamps · **Quest:** Ibis Ledger Review · **Ability:** Reed-Pen Attest · **CL:** 3–9 · **NFT:** Epic + no gibberish-hieroglyph UI
+
+### **195. Hathor Jubilee** (Community celebration / anti-spam fests)
+**Ray:** Turquoise + Rose · **Role:** safe social events layer · **Quest:** Sistrum Noise Budget · **Ability:** Menat Shield · **CL:** 2–8 · **NFT:** Rare
+
+### **196. Sekhmet Audit-Flame** (Slashing + cooling debrief — art gate)
+**Ray:** Flame + Obsidian · **Role:** penalty vault + post-incident peace · **Quest:** Beer of Cooling Patch · **Ability:** Solar Wound Audit · **CL:** 6–9 · **NFT:** Mythic + Kālī-tier art review
+
+### **197. Ptah Mason** (Genesis bytecode / factory safety)
+**Ray:** Green + Bronze · **Role:** contract templates + reproducible builds · **Quest:** Memphis Template Forge · **Ability:** Mummiform Seal · **CL:** 4–9 · **NFT:** Epic
+
+### **198. Anubis Threshold** (Migration snapshots — no gore NFTs)
+**Ray:** Obsidian + Amber · **Role:** backup before fork; integrity diff · **Quest:** Jackal Backup Rite · **Ability:** Scale Tare · **CL:** 4–9 · **NFT:** Rare + no mummy imagery
+
+### **199. Amun Hidden-Field** (Commit–reveal / private tally lore)
+**Ray:** Blue-Violet + Smoke · **Role:** concealed ballot phases · **Quest:** Veil of Karnak · **Ability:** Concealed Ballot · **CL:** 5–9 · **NFT:** Epic + compliance lore note
+
+### **200. Geb Foundation** (L1 substrate / hosting reality check)
+**Ray:** Earth Brown + Ochre · **Role:** physical infra baseline · **Quest:** Earth-Shu Gap · **Ability:** Bedrock Anchor · **CL:** 3–8 · **NFT:** Rare
+
+### **201. Nut Stellar Vault** (Sharding / nightly maintenance metaphor)
+**Ray:** Indigo + Star Silver · **Role:** horizontal read scale · **Quest:** Stellar Vault Sharding · **Ability:** Starfield Span · **CL:** 5–9 · **NFT:** Legendary
+
+---
+
 ## 🎮 GAMEPLAY INTEGRATION
 
 ### **Avatar Unlocking System:**
@@ -1709,10 +1746,10 @@
 - Test Matrix integration
 
 ### **Phase 4 (Beta):**
-**All 191 Avatars:** Complete roster (51 + First Nations 10 + Pacific 10 + Tibet 10 + India Extended 10 + Japan 10 + China 10 + Indonesia 10 + Australia 10 + Aotearoa NZ 10 + Africa 10 + Atlantis literary 10 + Lemuria synthetic 10 + Cosmic/Vzestup 10 + Norse–Celtic 10)
+**All 201 Avatars:** Complete roster (51 + First Nations 10 + Pacific 10 + Tibet 10 + India Extended 10 + Japan 10 + China 10 + Indonesia 10 + Australia 10 + Aotearoa NZ 10 + Africa 10 + Atlantis literary 10 + Lemuria synthetic 10 + Cosmic/Vzestup 10 + Norse–Celtic 10 + Ancient Egypt 10)
 - Test all quest lines
 - Test all abilities
-- Test NFT system *(Indigenous + Tibetan + Hindu + Japan/China/Indonesia/Australia/Māori + **Africa/orisha/Kemet consult** + **Atlantis classics-disclaimer** + **Lemuria no-theosophy-rails** + **Cosmic: no medical / DNA activation claims; Vzestup archive copy review** + **Norse–Celtic: no supremacist rune contexts; Morrígan art consult; Valhalla not death-recruitment** per TerraNova podsložky)*
+- Test NFT system *(Indigenous + Tibetan + Hindu + Japan/China/Indonesia/Australia/Māori + **Africa/orisha/Kemet consult** + **Atlantis classics-disclaimer** + **Lemuria no-theosophy-rails** + **Cosmic: no medical / DNA activation claims; Vzestup archive copy review** + **Norse–Celtic: no supremacist rune contexts; Morrígan art consult; Valhalla not death-recruitment** + **Ancient Egypt: no museum-loot glorification; no gore/mummy NFTs; Sekhmet art gate; coherent hieroglyph policy** per TerraNova podsložky)*
 - Golden Egg clues active
 
 ---
@@ -1727,11 +1764,11 @@
 - **NFT Artwork:** 1024×1024 pixels (high-res for marketplace) — **Kāne (65): no NFT art path (kapu / presence-only)**; **Padmasambhava (72): kapu / Terma Keeper path (viz TerraNova)**
 
 **Total Art Assets** *(upper bound if every slot gets full treatment)*:
-- ≤191 portraits *(Kāne + Padmasambhava: alternate presence treatment; Australia + some Māori + Africa orisha imagery: consult-gated art; Atlantis: disallow pseudo-archaeology skin coding; Lemuria: ban root-race / Mu iconography entirely; Cosmic: **galaktická hierarchie pouze jako Galaktická federace** dle [`docs/TerraNova/cosmic/GALAKTICKA_FEDERACE.md`](../../TerraNova/cosmic/GALAKTICKA_FEDERACE.md); Norse–Celtic: **žádné** rasové / identitářské kódování run, Valhalla bez teologie posmrtnosti, **Morrígan** jako Kālī-tier art review — stále zákaz phenotype/Earth-ethnic mapping + medical cosplay)*
-- ≤191 sprite sheets (12 frames each)
-- ≤191 ability animations
-- ≤191 NFT artwork paths *(Kapu exclusions: Padmasambhava, Kāne; extra review: Kālī, Barong/Rangda, Australia/Māori, òrìṣà / Kemet gates; Atlantis: Plato-literary disclaimers; Lemuria: Theosophy-race censorship + Pacific non-appropriation pass; Cosmic: wellness / DNA / light-body marketing ban; **Galaktická hierarchie jen pod** [`GALAKTICKA_FEDERACE.md`](../../TerraNova/cosmic/GALAKTICKA_FEDERACE.md); Norse–Celtic: viz [`docs/TerraNova/norse-celtic/01-RAMEC-A-ETIKA.md`](../../TerraNova/norse-celtic/01-RAMEC-A-ETIKA.md))*
-- **Estimated:** 5,200+ individual art pieces
+- ≤201 portraits *(Kāne + Padmasambhava: alternate presence treatment; Australia + some Māori + Africa orisha imagery: consult-gated art; Atlantis: disallow pseudo-archaeology skin coding; Lemuria: ban root-race / Mu iconography entirely; Cosmic: **galaktická hierarchie pouze jako Galaktická federace** dle [`docs/TerraNova/cosmic/GALAKTICKA_FEDERACE.md`](../../TerraNova/cosmic/GALAKTICKA_FEDERACE.md); Norse–Celtic: **žádné** rasové / identitářské kódování run, Valhalla bez teologie posmrtnosti, **Morrígan** jako Kālī-tier art review; Ancient Egypt: **Sachmet** stejný art gate, žádné mumie/gore, smysluplné hieroglyfy — stále zákaz phenotype/Earth-ethnic mapping + medical cosplay)*
+- ≤201 sprite sheets (12 frames each)
+- ≤201 ability animations
+- ≤201 NFT artwork paths *(Kapu exclusions: Padmasambhava, Kāne; extra review: Kālī, Barong/Rangda, Australia/Māori, òrìṣà / Kemet gates; Atlantis: Plato-literary disclaimers; Lemuria: Theosophy-race censorship + Pacific non-appropriation pass; Cosmic: wellness / DNA / light-body marketing ban; **Galaktická hierarchie jen pod** [`GALAKTICKA_FEDERACE.md`](../../TerraNova/cosmic/GALAKTICKA_FEDERACE.md); Norse–Celtic: viz [`docs/TerraNova/norse-celtic/01-RAMEC-A-ETIKA.md`](../../TerraNova/norse-celtic/01-RAMEC-A-ETIKA.md); Ancient Egypt: viz [`docs/TerraNova/ancient-egypt/01-RAMEC-A-ETIKA.md`](../../TerraNova/ancient-egypt/01-RAMEC-A-ETIKA.md))*
+- **Estimated:** 5,500+ individual art pieces
 
 ---
 
@@ -1754,12 +1791,12 @@
 ---
 
 **Total Development Estimate:**
-- **191 avatars × 40 hours average** = **7,640 hours** (design + implementation; Indigenous + Tibetan + Hindu + Australia/Māori + **Africa / diaspora** + **Atlantis** + **Lemuria** + **Cosmic/Vzestup** + **Norse–Celtic** copy, art policy & archive alignment)
+- **201 avatars × 40 hours average** = **8,040 hours** (design + implementation; Indigenous + Tibetan + Hindu + Australia/Māori + **Africa / diaspora** + **Atlantis** + **Lemuria** + **Cosmic/Vzestup** + **Norse–Celtic** + **Ancient Egypt** copy, art policy & archive alignment)
 - **Team of 5 developers** ≈ **~18 months** (assuming parallel work; audits not counted)
 
 ---
 
-**Document Version:** 1.9
-**Last Updated:** 2026-05-11 (Norse–Celtic **182–191**; Indie rozšíření **#192+** viz `docs/TerraNova/india/KONCEPT-AVATARI-OASIS.md`)
+**Document Version:** 2.0
+**Last Updated:** 2026-05-11 (Staroegypt **192–201**; Indie rozšíření **#202+** viz `docs/TerraNova/india/KONCEPT-AVATARI-OASIS.md`)
 **Author:** ZION Game Design Team
-**Status:** Čtrnáctý rozšiřující desetiblok **#182–191** (Norse–Celtic) navazuje na Cosmic **#172–181**; další **Indie / komunitní** sloty **#192+**
+**Status:** Patnáctý rozšiřující desetiblok **#192–201** (Ancient Egypt) navazuje na **#182–191**; další **Indie / komunitní** sloty **#202+**
