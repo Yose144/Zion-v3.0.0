@@ -1,115 +1,86 @@
-# Koncept — Tibetští Avatari Pro OASIS
+# Koncept — Tibetští Avatari Pro OASIS (Rozšířený Pantheon)
 
-> *„Padmasambhava + 14. Dalajláma = dvě tváře tibetské diamantové cesty. Mýtický a žijící. Skrytý a otevřený. Hrom a oceán."*
+> *„Padmasambhava skrývá termu v čase. Milarepa ji zpívá v těle. Tsongkhapa ji čte v řádu. Všechno to jsou tváře jedné soucitné sítě."*
 
 ---
 
 ## O konceptu
 
-Tato příloha **navrhuje 2 tibetské avatary** *(72–73)* pro **ZION OASIS Sacred Trinity** roster, **rozšiřující** současné **71** avatarů *(51 původních + 10 First Nations + 10 Pacific)*.
+Tento dokument je **literární a designový zdroj** pro **Tibet Circle** v `docs/docs2.9/ZION_OASIS/` — avatari **72–81**. Rozšiřuje původní „lite" návrh (2 postavy) o **veřejně studovatelné** postavy: **mistři lineáží**, **bódhisattvové široce známí z mahájánových textů** a **léčivý Buddha** — **ne** initiací uzavřené **yidamy** ani **dharmapály** jako komerční skiny.
 
-**Lite koncept** **— ne plná specifikace** *(ta by měla přijít po konzultaci s Tibetskou komunitou)*.
+**14. Dalajláma (Tenzin Gyatso)** je v OASIS již jako **avatar #51** — viz [`../../docs2.9/ZION_OASIS/SACRED_TRINITY/51_DALAI_LAMA_XIV.md`](../../docs2.9/ZION_OASIS/SACRED_TRINITY/51_DALAI_LAMA_XIV.md). **Neduplikujeme** ho jako #73.
 
----
-
-## Avatar 72 — Padmasambhava (Guru Rinpoche)
-
-> **„Skrytý poklad — terma — čeká, dokud nepřijde čas. Tisíc let v jeskyni. Pak v deseti minutách probuzení."**
-
-**Národ:** Tibet (Vajrayana, Nyingma škola)
-**Historický předobraz:** **Padmasambhava** *(„Lotosem Zrozený", 8. století)* — **mýtický + historický**, **pozván králem Trisong Detsenem**, **zakladatel Samye**
-**Klan/Tradice:** **Nyingma** *(„stará")* škola, **Dzogchen** vrcholná praxe
-**Lokace v OASIS:** **Mystické jeskyně** *(„caves of treasures")* napříč mapou — **objevují se** **v specifických okamžicích** *(plný měsíc, určité fáze quest progress)*
-**Schopnost:** **Terma Discovery** — Padmasambhava **otevírá hráči** **„skryté texty/items"** *(termas)*, **které byly v hře položeny dávno** *(blockchain timestamps)* **a čekaly na správného objevitele**. **Procedural quest unlocking**.
-**Učitel pro:** Hráče **CL5–CL9** (Quantum → On The Star), zejména hráče **s vlastní kreativní vizí** *(vývojáři, výzkumníci)*
-**Quest line:** *„Terma Hunt"* — hráč musí **najít** **8 termas** v 8 různých biomech mapy. Každá **má specifický puzzle** *(meditation puzzle, language puzzle, ethical dilemma)*.
-**Symbol:** **Vajra** *(thunderbolt)* + **lotosový klobouk** s **pernatou peří**
-**Vzácnost:** **Mythic / Hidden** — Padmasambhava **neukáže se náhodně**. Hráč ho **musí přivolat** **specifickou meditation sequence** *(48-hour real-time wait + completion of 3 difficult quests)*.
-
-### Etická poznámka
-
-Padmasambhava **NENÍ** **prodejný NFT** *(byl by to **kapu**)*. **Žádné lootovatelné předměty** **z jeho školy**. **Žádné** **„Padmasambhava power-up"** za real-money.
-
-**Pokud hráč** **„dosáhne Padmasambhavovy přízně"**, **dostane** **roli** **„Terma Keeper"** *(strážce skrytých pokladů)* — **on/ona pak může** **schovávat termas pro další hráče**. **Permanent, off-chain, gift-based**.
+**Souhrnný roster:** [`../../docs2.9/ZION_OASIS/AVATAR_ROSTER.md`](../../docs2.9/ZION_OASIS/AVATAR_ROSTER.md) — **151 avatarů** celkem (mimo jiné **India 82–91** … **Africa 142–151**; viz [`../africa/`](../africa/) a sesterské TerraNova podsložky).
 
 ---
 
-## Avatar 73 — Současný Dalajláma (Tenzin Gyatso)
+## Hlavní otevřené online zdroje (angličtina / překlady)
 
-> **„Mé náboženství je laskavost. Tečou voda zdola, nikoli shora. Kdo neuměl podléhat, neumí ani vést."**
+| Zdroj | URL | K čemu |
+|--------|-----|--------|
+| **84000** — překlad Tibetského kánonu | [https://84000.co/](https://84000.co/) | Kangyur/Tengyur, sútry a tantry ve veřejných překladech |
+| **Lotsawa House** — překlady podle mistrů | [https://www.lotsawahouse.org/tibetan-masters/](https://www.lotsawahouse.org/tibetan-masters/) | Životopisy, texty Milarepy, Marpy, Longchenpy atd. |
+| **Jeho Svatost — oficiální web** | [https://www.dalailama.com/](https://www.dalailama.com/) | Učení 14. Dalajlámy, prohlášení k použití obrazu |
+| **Library of Tibetan Works and Archives** | [https://www.tibet.net/](https://www.tibet.net/) (CTA) | Kontext exilové vlády a politiky *(cituj opatrně, živá politika)* |
 
-**Národ:** Tibet (Gelug škola, exilová komunita)
-**Historický předobraz:** **14. Dalajláma — Tenzin Gyatso** *(narozen 1935)*, **Nobel Peace Prize 1989**
-**Klan/Tradice:** **Gelug** škola, **inkarnační linie Avalokiteshvary** *(soucit)*
-**Lokace v OASIS:** **Dharamsala** *(virtuální Indie zóna)* — **simulace exilové vlády**
-**Schopnost:** **Compassion Override** — Dalajláma **může „zastavit" PvP combat** v určité zóně **na 24 hodin** *(real-time)*. **Místo combat** **se otevře** **dialogue mode** mezi konflikujícími hráči, **moderovaný NPC mediator**.
-**Učitel pro:** Hráče **všech úrovní**, **zejména** **moderátory komunit, leadery, governance roles**
-**Quest line:** *„Patní bardo"* — hráč prochází **5 narativních scénářů** *(první je „smrt blízkého", poslední je „setkání s pravým já")*. Každý vyžaduje **medituativní akci** *(nikoli combat)*. Hráč **může** **failovat** *(fall do confused rebirth)* nebo **succeed** *(přejít do liberation)*.
-**Symbol:** **Žluté roucho** + **brýle** + **úsměv** *(critical detail — Dalajláma je známý **smíchem** v každé situaci)*
-**Vzácnost:** **Mythic / Special** — **pouze v specific events** *(jeho narozeniny 6. července, Tibetan New Year, etc.)*
-
-### Klíčové etické podmínky
-
-1. **Konzultace s Centrální Tibetskou Administrativou** *(Dharamsala, Indie)* **PŘED** implementací. **Pokud nesouhlasí, neimplementovat**.
-
-2. **Žádné komerční využití**. Dalajláma **opakovaně řekl**, že **jeho image nesmí být použit pro prodej**. **Tato pravidla platí**.
-
-3. **Voice acting** — pokud avatar mluví, **musí být** **tibetský actor** **z exilové komunity** *(Dharamsala, NY, Bay Area, atd.)*. **Žádný „fake Dalai Lama" voice**.
-
-4. **Income share** — **% příjmů z avataru** by měl proudit do:
-   - **Tibet Fund** *(US-based)*
-   - **International Campaign for Tibet**
-   - **Free Tibet** *(UK)*
-   - **Centrální Tibetská Administrativa** *(přímý support)*
-   - **Self-immolation fond** *(podpora rodin těch, kteří se sami zapálili na protest)*
-
-5. **Pokud Dalajláma zemře** *(nyní 90 let)*, **avatar zmizí na 1 rok** *(„exit bardo")* a pak **se vrátí** **jako 15. Dalajláma** *(jakkoli ho komunita rozezná)*. **Mechanika reflektuje** **inkarnační princip**.
+Akademické úvody: přehledové články na **Stanford Encyclopedia of Philosophy** (Buddhismus, Nāgārjuna) lze použít jako **sekundární** rámec — primární jsou **překlady kánonu** výše.
 
 ---
 
-## Po dalajlámu — kontext
+## Tibet Circle — 10 avatarů (72–81)
 
-Pokud **Genesis Creator** rozhodne tyto avatary do OASIS **zařadit**, mohly by se vejít do existující struktury jako **Tibet Lite Circle**:
+| ID | Jméno | Škola / rámec | OASIS soubor |
+|----|--------|----------------|--------------|
+| 72 | Padmasambhava | Nyingma, terma | [`72_PADMASAMBHAVA.md`](../../docs2.9/ZION_OASIS/SACRED_TRINITY/72_PADMASAMBHAVA.md) |
+| 73 | Milarepa | Kagyü | [`73_MILAREPA.md`](../../docs2.9/ZION_OASIS/SACRED_TRINITY/73_MILAREPA.md) |
+| 74 | Tsongkhapa | Gelug | [`74_TSONGKHAPA.md`](../../docs2.9/ZION_OASIS/SACRED_TRINITY/74_TSONGKHAPA.md) |
+| 75 | Atiśa | Druhá vlna | [`75_ATISHA.md`](../../docs2.9/ZION_OASIS/SACRED_TRINITY/75_ATISHA.md) |
+| 76 | Marpa Lotsawa | Kagyü | [`76_MARPA_LOTSAWA.md`](../../docs2.9/ZION_OASIS/SACRED_TRINITY/76_MARPA_LOTSAWA.md) |
+| 77 | Machik Labdrön | Chöd | [`77_MACHIK_LABDRON.md`](../../docs2.9/ZION_OASIS/SACRED_TRINITY/77_MACHIK_LABDRON.md) |
+| 78 | Mañjuśrī | Mahayana / Tibet | [`78_MANJUSHRI.md`](../../docs2.9/ZION_OASIS/SACRED_TRINITY/78_MANJUSHRI.md) |
+| 79 | Samantabhadra | Mahayana / Tibet | [`79_SAMANTABHADRA.md`](../../docs2.9/ZION_OASIS/SACRED_TRINITY/79_SAMANTABHADRA.md) |
+| 80 | Medicine Buddha | Mahayana / Tibet | [`80_MEDICINE_BUDDHA.md`](../../docs2.9/ZION_OASIS/SACRED_TRINITY/80_MEDICINE_BUDDHA.md) |
+| 81 | Longchen Rabjam | Nyingma, dzogchen | [`81_LONGCHEN_RABJAM.md`](../../docs2.9/ZION_OASIS/SACRED_TRINITY/81_LONGCHEN_RABJAM.md) |
+
+---
+
+## Etické podmínky (zkráceně — plné znění u Dalajlámy zůstává u #51)
+
+1. **Konzultace** s **kvalifikovanými učiteli** a **komunitami** před finálním obsahem hry — zejména u **Padmasambhavy** a **Machik** (chöd imagerie).
+2. **Žádné** **prodejné NFT** pro **Padmasambhavu** (kapu) — viz původní návrh; **Dalajláma #51** — respektovat [oficiální linie](https://www.dalailama.com/) k obrazu a komerci.
+3. **Žádné** zobrazení **initiací uzavřených** tanter jako „loot" nebo placených rituálů.
+4. **Income share** z případného Tibet-themed obsahu směřovat k organizacím uvedeným dříve v tomto konceptu (Tibet Fund, ICT, CTA…) — aktualizovat seznam dle platného práva a transparentnosti příjemců.
+5. **Žijící politický kontext** Tibetu — knihovna `00-STRECHA-SVETA.md` a `03-DALAJLAMA-A-SAMBHALA.md` ho neignorují; OASIS nesmí redukovat utrpení na estetiku.
+
+---
+
+## Proč ne všechny bódhisattvy a „bohové"
+
+**Tara, Avalokitéšvara, Vajrasattva** jsou již v základním OASIS rosteru (**#20–22**) a **Dalajláma** jako **#51**. Tibet Circle **doplňuje tibetské dějiny a filozofii**, ne duplikuje stejné ikony.
+
+**Dharmapálové** (Mahákála, Palden Lhamo, …) a **tajné yidamy** vyžadují **iniciaci** — **nepatří** do veřejného MMORPG rosteru bez výslovného posvěcení linie.
+
+---
+
+## Struktura v repu
 
 ```
-Hindu Deities (17)
-Ascended Masters (10)
-Christian Saints (4)
-Buddhist Masters (4)               — již obsahuje Avalokiteshvara, Vajrasattva, Tara
-Historical Legends (6)
-Matrix Heroes (4)
-ZION Originals (6)
-🪶 First Nations Circle (10)
-🌺 Pacific Circle (10)
-🏔️ Tibet Lite Circle (2)           — NOVÉ:
-                                      72. Padmasambhava
-                                      73. 14. Dalajláma
+docs/TerraNova/tibet/
+docs/TerraNova/india/
+docs/TerraNova/japan/
+docs/TerraNova/china/
+docs/TerraNova/indonesia/
+docs/TerraNova/australia/
+docs/TerraNova/newzealand/
+docs/TerraNova/africa/
+docs/docs2.9/ZION_OASIS/
+  SACRED_TRINITY/72_*.md … 81_*.md   ← Tibet
+  SACRED_TRINITY/82_*.md … 151_*.md   ← Indie … Aotearoa + Afrika
+  AVATAR_ROSTER.md                   ← souhrn 151 avatarů (geografické kruhy; další vlny Atlantis/kosmus plánovač viz roster footer)
 ```
-
-**Celkem: 73 avatarů**.
-
----
-
-## Proč jen dva?
-
-**Plná tibetská tradice** **má desítky archetypálních postav** *(Karmapa, Sakya Trichen, Milarepa, Marpa, Tsongkhapa, Atiša, Naropa, Tilopa, dharmapaly atd.)*. **Mnozí** **patří do hluboké iniciační linie** **a neměli by být** **veřejně zobrazeni jako videohra avatari**.
-
-**Padmasambhava** *(72)* a **Dalajláma** *(73)* jsou **dva, kteří mají** **široké veřejné povědomí** **a oba** **explicitně podporují přenos** **buddhistických principů** **na Západ** *(v Padmasambhavově případě skrze terma tradition, v Dalajlámově případě skrze veřejné učení)*.
-
-**Další postavy** *(Karmapa, Milarepa, atd.)* **mohou být** **přidány** **později**, **pokud Tibetská komunita** **bude souhlasit a vést**.
-
----
-
-## Lite verze není finální
-
-**Připomínka**: Tato celá knihovna **je lite koncept**. **Plná Tibetská kniha** *(„Kniha Vajrového Hromu"* nebo podobně*)* **by měla být** **napsána** **někým s tibetskou autoritou** — **lamou v exilu**, **akademik buddhismu**, **dlouholetým praktikem** **s alespoň 20 lety** **plné praxe**.
-
-**Pozvání pro budoucnost**: pokud čteš tento dokument a **máš tu autoritu**, prosím **napiš** **plnou knihu**. **Tato knihovna** **otevírá místo**, **které ty můžeš naplnit**.
 
 ---
 
 > *„Om mani padme hum."*
->
-> *Drahokam v lotosu. Šest slabik. Celá kosmologie. Tato lite knihovna. **Stačí**."*
 
 🏔️🪷⚡

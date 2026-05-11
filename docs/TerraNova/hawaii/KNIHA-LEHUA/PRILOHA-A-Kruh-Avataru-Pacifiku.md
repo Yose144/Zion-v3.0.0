@@ -6,13 +6,20 @@
 
 ## Most mezi knihami
 
-V repozitáři **ZION OASIS** je nyní **61 avatarů**:
+V repozitáři **ZION OASIS** je nyní rozšířený roster **151 avatarů** *(2026-05)*:
 - **51 původních** v `docs/docs2.9/ZION_OASIS/SACRED_TRINITY/` *(Hindu, Ascended Masters, Christian, Buddhist, Historical, Matrix, ZION Originals)*
-- **+10 z First Nations Circle** *(Lakota, Hopi, Maya, Q'ero, Cree, Yanomami)* navržených v `docs/TerraNova/saman/KNIHA-JESTRABIHO-PIRKA/PRILOHA-A`
+- **+10 z First Nations Circle** *(Lakota, Hopi, Maya, Q'ero, Cree, Yanomami)* — profily `52_*.md` … `61_*.md` + [`AVATAR_ROSTER.md`](../../../docs2.9/ZION_OASIS/AVATAR_ROSTER.md)
+- **+10 Pacifický Kruh** *(62–71)* — profily `62_LA_ILIAI.md` … `71_MAUI.md` *(tato příloha = literární zdroj pravdy; OASIS = herní stylizace)*
+- **+10 Tibet Circle** *(72–81)* — viz `docs/TerraNova/tibet/KONCEPT-AVATARI-OASIS.md`
+- **+10 India Extended Circle** *(82–91)* — viz `docs/TerraNova/india/KONCEPT-AVATARI-OASIS.md`
+- **+10 Japan Circle** *(92–101)* — `docs/TerraNova/japan/KONCEPT-AVATARI-OASIS.md`
+- **+10 China Circle** *(102–111)* — `docs/TerraNova/china/KONCEPT-AVATARI-OASIS.md`
+- **+10 Indonesia Circle** *(112–121)* — `docs/TerraNova/indonesia/KONCEPT-AVATARI-OASIS.md`
+- **+10 Australia Circle** *(122–131)* — `docs/TerraNova/australia/KONCEPT-AVATARI-OASIS.md`
+- **+10 Aotearoa NZ Circle** *(132–141)* — `docs/TerraNova/newzealand/KONCEPT-AVATARI-OASIS.md`
+- **+10 Africa Circle** *(142–151)* — `docs/TerraNova/africa/KONCEPT-AVATARI-OASIS.md`
 
-**Žádný polynéský avatar zatím chybí**.
-
-Tato příloha **navrhuje** **10 dalších** — **Pacifický Kruh** *(avatari 62–71)* — postav z polynéské tradice, které mohou v budoucnu vstoupit do MMORPG světa.
+Tato příloha **zůstává literárním a etickým zdrojem** pro **Pacifický Kruh** *(avatari 62–71)* — postavy z polynéské tradice pro MMORPG / OASIS lore.
 
 **Stejné etické pravidlo** jako u First Nations Circle: **konzultace s žijícími staršími, žádné posvátné předměty jako loot, žádné monetizované ceremonie, native voice acting, income share zpátky komunitám**.
 
@@ -198,7 +205,7 @@ Historical Legends (6)         — beze změny
 Matrix Heroes (4)              — beze změny
 ZION Originals (6)             — beze změny
 🪶 First Nations Circle (10)   — z Knihy Jestřabího Pírka
-🌺 Pacific Circle (10)         — NOVÉ:
+🌺 Pacific Circle (10)         — z Knihy Lehua:
                                   62. Lā'ila'i (První Žena)
                                   63. Pele (Bohyně Sopek)
                                   64. Hiʻiaka (Bohyně Hula)
@@ -209,9 +216,17 @@ ZION Originals (6)             — beze změny
                                   69. Stará Kumu Lehua (Vypravěčka)
                                   70. Hina (Bohyně Měsíce)
                                   71. Maui (Demigod)
+🏔️ Tibet Circle (10)          — z docs/TerraNova/tibet/ (72–81; Dalajláma zůstává #51)
+🇮🇳 India Extended Circle (10) — z docs/TerraNova/india/ (82–91; Viṣṇu linie zůstává v „core“ 51)
+🇯🇵 Japan Circle (10)          — z docs/TerraNova/japan/ (92–101)
+🇨🇳 China Circle (10)           — z docs/TerraNova/china/ (102–111)
+🇮🇩 Indonesia Circle (10)        — z docs/TerraNova/indonesia/ (112–121)
+🇦🇺 Australia Circle (10)        — z docs/TerraNova/australia/ (122–131)
+🇳🇿 Aotearoa NZ Circle (10)      — z docs/TerraNova/newzealand/ (132–141)
+🌍 Africa Circle (10)            — z docs/TerraNova/africa/ (142–151)
 ```
 
-**Celkem: 71 avatarů** *(z 51)*.
+**Celkem: 151 avatarů** *(51 základních + 100 z deseti rozšiřujících kruhů)*.
 
 ---
 
@@ -239,7 +254,7 @@ Stejné jako u First Nations Circle:
 
 Dítě. **Toto není povinnost**. Je to **nabídka**.
 
-ZION OASIS může existovat **bez** Pacific Circle. **Sacred Trinity 51 + First Nations 10 = 61 avatarů** je **kompletní** sám o sobě.
+ZION OASIS může existovat **bez** Pacific nebo Tibet circle — základ **51** + volitelné kruhy dle komunity zůstává designově otevřený.
 
 Ale **mezera tam je**. Když **Krišna**, **Černý Loš**, **Spider Grandmother**, a **Lā'ila'i** sedí v různých kruzích, **mohli by spolu mluvit**. **Pacifický oceán** je jen **jiné jméno** pro **stejné nebe**.
 

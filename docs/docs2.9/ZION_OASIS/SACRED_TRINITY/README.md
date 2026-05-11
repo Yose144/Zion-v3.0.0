@@ -51,7 +51,107 @@
 40. **[🥚 HIRANYAGARBHA COMPLETE DOCUMENT](44_HIRANYAGARBHA.md)** - The Golden Egg, Cosmic Womb, Source of All Creation! 🥚 **✨ NEW**
 41. **[⚔️ SRI KALKI AVATAR COMPLETE DOCUMENT](45_SRI_KALKI_AVATAR.md)** - The Final Avatar, Bhagavan+Amma Unity, Golden Age NOW! ⚔️🐴 **✨ NEW**
 42. **[🙏 HIS HOLINESS DALAI LAMA XIV COMPLETE DOCUMENT](51_DALAI_LAMA_XIV.md)** - Kundun, Ocean of Wisdom, Laughing Buddha of Compassion! 🙏😄 **✨ NEW**
-43. [🌟 Quick Summary](#-quick-summary-for-community) - Team overview
+43. **[🪶 HEȞÁKA SÁPA — Černý Loš](52_HEHAKA_SAPA.md)** - Lakota sacred vision, Black Hills circle **✨ TERRANOVA**
+44. **[🦬 PTESÁŇ WÍŇ — Bílá Bivolice](53_PTESAN_WIN.md)** - Sacred law, seven rites **✨ TERRANOVA**
+45. **[🕸️ KÓKYANGWÚTI — Pavoučí Babička](54_KOKYANGWUTI.md)** - Hopi weaver, network healer **✨ TERRANOVA**
+46. **[🎮 HUNAHPÚ & XBALANQUÉ](55_HUNAHPU_XBALANQUE.md)** - Maya Hero Twins, Xibalba **✨ TERRANOVA**
+47. **[⛰️ DON MARIANO — Q'ero](56_DON_MARIANO.md)** - Altomesayoq, Apu speaker **✨ TERRANOVA**
+48. **[📖 DOÑA ROSALÍA IXMUKANÉ](57_DONA_ROSALIA_IXMUKANE.md)** - Chilam balam, Popol Vuh memory **✨ TERRANOVA**
+49. **[🪶 BÍLÉ PERO — Hopi](58_BILE_PERO.md)** - Stone tablet, Pahána discernment **✨ TERRANOVA**
+50. **[🔥 OHNIVÁ OKA — Cree](59_OHNIVA_OKA.md)** - Rainbow Warrior vision **✨ TERRANOVA**
+51. **[🌳 DAVI KOPENAWA — Yanomami](60_DAVI_KOPENAWA.md)** - Xapiri, falling sky **✨ TERRANOVA**
+52. **[🃏 HEYÓKȞA — Posvátný šašek](61_HEYOKHA.md)** - Reverse logic, thunder-clown **✨ TERRANOVA**
+53. **[🌺 LĀʻILAIʻ — První žena](62_LA_ILIAI.md)** - Kumulipo boundary, three lineages **✨ TERRANOVA PACIFIC**
+54. **[🌋 PELE — Bohyně ohně](63_PELE.md)** - Volcanic reset, lehua **✨ TERRANOVA PACIFIC**
+55. **[💃 HIIʻIAKA — Hula](64_HIIAKA.md)** - Mele, pule, dance healing **✨ TERRANOVA PACIFIC**
+56. **[☀️ KĀNE — Stvoření](65_KANE.md)** - Abstract genesis, Mauna Kea — **no NFT (kapu)** **✨ TERRANOVA PACIFIC**
+57. **[🌊 KANALOA — Oceán many](66_KANALOA.md)** - Mana channel, wayfinding **✨ TERRANOVA PACIFIC**
+58. **[🪓 KŪ — Vzpřímenost](67_KU.md)** - PoW patron, wao akua **✨ TERRANOVA PACIFIC**
+59. **[🌾 LONO — Makahiki](68_LONO.md)** - Peace season, false-Lono test **✨ TERRANOVA PACIFIC**
+60. **[📿 STARÁ KUMU LEHUA](69_STARA_KUMU_LEHUA.md)** - Cross-tradition storyteller **✨ TERRANOVA PACIFIC**
+61. **[🌙 HINA — Měsíc](70_HINA.md)** - Lunar rhythm, kapa **✨ TERRANOVA PACIFIC**
+62. **[🪝 MAUI — Trickster](71_MAUI.md)** - Pan-polynesian feats **✨ TERRANOVA PACIFIC**
+63. **[🪷 PADMASAMBHAVA — Guru Rinpoche](72_PADMASAMBHAVA.md)** - Terma, Nyingma, **no NFT (kapu)** **✨ TERRANOVA TIBET**
+64. **[🎵 MILAREPA — Jogín písní](73_MILAREPA.md)** - Kagyu, proměna karmy **✨ TERRANOVA TIBET**
+65. **[📿 TSONGKHAPA — Je Gelug](74_TSONGKHAPA.md)** - Lamrim, disciplína **✨ TERRANOVA TIBET**
+66. **[🪔 ATIŚA — Lampa cesty](75_ATISHA.md)** - Druhá vlna, bodhicitta **✨ TERRANOVA TIBET**
+67. **[🧭 MARPA LOTSAWA](76_MARPA_LOTSAWA.md)** - Překladatel, Kagyu most **✨ TERRANOVA TIBET**
+68. **[✂️ MACHIK LABDRÖN — Čód](77_MACHIK_LABDRON.md)** - Obětavost, řez lpěním **✨ TERRANOVA TIBET**
+69. **[⚔️ MAÑJUŚRÍ — Moudrost](78_MANJUSHRI.md)** - Meč rozlišení **✨ TERRANOVA TIBET**
+70. **[🌸 SAMANTABHADRA — Praxe](79_SAMANTABHADRA.md)** - Deset velkých slibů **✨ TERRANOVA TIBET**
+71. **[💊 MEDICINE BUDDHA](80_MEDICINE_BUDDHA.md)** - Bhaiṣajyaguru, léčení **✨ TERRANOVA TIBET**
+72. **[☁️ LONGCHEN RABJAM](81_LONGCHEN_RABJAM.md)** - Dzogchen, klid mysli **✨ TERRANOVA TIBET**
+73. **[🕉️ ŚIVA MAHĀDEVA](82_SHIVA_MAHADEV.md)** - Trimūrti osu transformace **✨ TERRANOVA INDIA**
+74. **[🌺 PARVATĪ](83_PARVATI.md)** - Śakti harmonie **✨ TERRANOVA INDIA**
+75. **[🐘 GAṆEŚA](84_GANESHA.md)** - Vināyaka, prah začátků **✨ TERRANOVA INDIA**
+76. **[✨ LAKṢMĪ](85_LAKSHMI.md)** - Śrī, prosperita vedle **[43]** **✨ TERRANOVA INDIA**
+77. **[🦁 DURGĀ](86_DURGA.md)** - Navarātri, ochrana **✨ TERRANOVA INDIA**
+78. **[⏳ KĀLĪ](87_KALI.md)** - Śakti času (etika art review) **✨ TERRANOVA INDIA**
+79. **[⚡ SKANDA / KĀRTTIKEYA](88_KARTIKEYA.md)** - Dharmová disciplína **✨ TERRANOVA INDIA**
+80. **[☀️ SŪRYA](89_SURYA.md)** - Āditya, rytmus (anti-FOMO) **✨ TERRANOVA INDIA**
+81. **[🌩️ INDRA](90_INDRA.md)** - Śakra, poučení síly **✨ TERRANOVA INDIA**
+82. **[🌊 GAṄGĀ](91_GANGA.md)** - řeka, eco-stewardship **✨ TERRANOVA INDIA**
+83. **[🇯🇵 AMATERASU](92_AMATERASU.md)** - solární kami **✨ TERRANOVA JAPAN**
+84. **[🌊 SUSANOO](93_SUSANOO.md)** - bouře očisty **✨ TERRANOVA JAPAN**
+85. **[🌙 TSUKUYOMI](94_TSUKUYOMI.md)** - lunární audit **✨ TERRANOVA JAPAN**
+86. **[🦊 INARI](95_INARI.md)** - prah úrody **✨ TERRANOVA JAPAN**
+87. **[🤝 ŌKUNINUSHI](96_OKUNINUSHI.md)** - pohostinnost země **✨ TERRANOVA JAPAN**
+88. **[⚫ IZANAMI](97_IZANAMI.md)** - práh jomi (etika) **✨ TERRANOVA JAPAN**
+89. **[🏹 HACHIMAN](98_HACHIMAN.md)** - ochránce slibu **✨ TERRANOVA JAPAN**
+90. **[🎶 BENZAITEN](99_BENZAITEN.md)** - umění / tok **✨ TERRANOVA JAPAN**
+91. **[📐 KŪKAI](100_KUKAI.md)** - mandala architekt **✨ TERRANOVA JAPAN**
+92. **[📿 NICHIREN](101_NICHIREN.md)** - lotosová reforma **✨ TERRANOVA JAPAN**
+93. **[🐉 HUANG DI](102_HUANG_DI.md)** - žlutý císař archetyp **✨ TERRANOVA CHINA**
+94. **[🍑 XIWANGMU](103_XIWANGMU.md)** - královna západu **✨ TERRANOVA CHINA**
+95. **[☯ LAOZI](104_LAOZI.md)** - dao / wu wei **✨ TERRANOVA CHINA**
+96. **[🎓 KONGZI](105_KONGZI.md)** - ren & mentoři **✨ TERRANOVA CHINA**
+97. **[⚔️ GUAN YU](106_GUAN_YU.md)** - věrnost / escrow **✨ TERRANOVA CHINA**
+98. **[⚓ MAZU](107_MAZU.md)** - patronka námořníků **✨ TERRANOVA CHINA**
+99. **[🔥 NEZHA](108_NEZHA.md)** - lotosové znovuzrození **✨ TERRANOVA CHINA**
+100. **[🐒 SUN WUKONG](109_SUN_WUKONG.md)** - poutní mluvka (etika) **✨ TERRANOVA CHINA**
+101. **[💧 YU THE GREAT](110_YU_THE_GREAT.md)** - řízení vod **✨ TERRANOVA CHINA**
+102. **[⚡ LEI GONG](111_LEI_GONG.md)** - hromový tribunal **✨ TERRANOVA CHINA**
+103. **[🌾 DEWI SRI](112_DEWI_SRI.md)** - rýže **✨ TERRANOVA INDONESIA**
+104. **[🌊 NYAI RORO KIDUL](113_NYAI_RORO_KIDUL.md)** - jižní moře suverénka **✨ TERRANOVA INDONESIA**
+105. **[🎭 SEMAR](114_SEMAR.md)** - wayang guru **✨ TERRANOVA INDONESIA**
+106. **[🌠 BATARA GURU](115_BATARA_GURU.md)** - kosmický mentor **✨ TERRANOVA INDONESIA**
+107. **[🦁 BARONG KET](116_BARONG_KET.md)** - ochránce (Bali etika) **✨ TERRANOVA INDONESIA**
+108. **[🦅 GARUDA](117_GARUDA.md)** - jednota / relay **✨ TERRANOVA INDONESIA**
+109. **[✈️ GATOTKACA](118_GATOTKACA.md)** - lokální hrdina Pandavské řady **✨ TERRANOVA INDONESIA**
+110. **[💞 PANJI](119_PANJI.md)** - cyklus romantické suverenity **✨ TERRANOVA INDONESIA**
+111. **[⏳ RORO JONGRANG](120_RORO_JONGRANG.md)** - chrámový příběh **✨ TERRANOVA INDONESIA**
+112. **[🌙 NAWANG WULAN](121_DEWI_NAWANG_WULAN.md)** - měsíc & hostinství **✨ TERRANOVA INDONESIA**
+113. **[✨ SEVEN SISTERS STEWARD](122_SEVEN_SISTERS_STEWARD.md)** - Plejády (consult) **✨ TERRANOVA AUSTRALIA**
+114. **[🌈 RAINBOW SERPENT LAW](123_RAINBOW_SERPENT_LAW.md)** - voda × země **✨ TERRANOVA AUSTRALIA**
+115. **[🦅 BUNJIL](124_BUNJIL.md)** - Kulin orel **✨ TERRANOVA AUSTRALIA**
+116. **[☁️ BAIAME](125_BAIAME.md)** - sky father (variance) **✨ TERRANOVA AUSTRALIA**
+117. **[⛵ TAGAI](126_TAGAI.md)** - Torres Strait navigátor **✨ TERRANOVA AUSTRALIA**
+118. **[🦤 CELESTIAL EMU](127_CELESTIAL_EMU.md)** - tmavé souhvězdí STEM **✨ TERRANOVA AUSTRALIA**
+119. **[🛶 DJANGʹKAWU](128_DJANGKAWU.md)** - stvořitelské cesty **✨ TERRANOVA AUSTRALIA**
+120. **[⚡ NAMARRKON](129_NAMARRKON.md)** - Arnhem blesk **✨ TERRANOVA AUSTRALIA**
+121. **[🪃 COUNTRY WALK](130_TJUKURPA_COUNTRY.md)** - Tjukurpa rámec **✨ TERRANOVA AUSTRALIA**
+122. **[⚖️ MAKARRATA BRIDGE](131_MAKARRATA_BRIDGE.md)** - smír / treaty **✨ TERRANOVA AUSTRALIA**
+123. **[🌍 PAPATŪĀNUKU](132_PAPATUANUKU.md)** - země matka **✨ TERRANOVA AOTEAROA**
+124. **[☁️ RANGINUI](133_RANGINUI.md)** - nebeský otec **✨ TERRANOVA AOTEAROA**
+125. **[🌲 TĀNE MAHUTA](134_TANE_MAHUTA.md)** - les **✨ TERRANOVA AOTEAROA**
+126. **[🐚 TANGAROA](135_TANGAROA.md)** - moře (cross #66) **✨ TERRANOVA AOTEAROA**
+127. **[🕊️ RONGO](136_RONGO.md)** - mír & úroda **✨ TERRANOVA AOTEAROA**
+128. **[⚔️ TŪMATAUENGA](137_TUMATAUENGA.md)** - obránce whānau **✨ TERRANOVA AOTEAROA**
+129. **[🌬️ TĀWHIRIMĀTEA](138_TAWHIRIMATEA.md)** - bouře odolnost **✨ TERRANOVA AOTEAROA**
+130. **[🥬 HAUMIATIKETIKE](139_HAUMIATIKETIKE.md)** - divoké jídlo **✨ TERRANOVA AOTEAROA**
+131. **[🌑 HINE-NUI-TE-PŌ](140_HINE_NUI_TE_PO.md)** - práh transformace **✨ TERRANOVA AOTEAROA**
+132. **[⛵ KUPE](141_KUPE.md)** - navigátor Aotearoa **✨ TERRANOVA AOTEAROA**
+133. **[💧 ỌṢUN / OSHUN](142_OSHUN.md)** - řeka reciprocalita **✨ TERRANOVA AFRICA**
+134. **[⚡ ṢÀNGÓ](143_SHANGO.md)** - spravedlnost blesku **✨ TERRANOVA AFRICA**
+135. **[🤍 ỌBÀTÁLÁ](144_OBATALA.md)** - klid práce materiálů **✨ TERRANOVA AFRICA**
+136. **[🌪️ ỌYA](145_OYA.md)** - vítr změny **✨ TERRANOVA AFRICA**
+137. **[☀️🌙 MAWU-LISA](146_MAWU_LISA.md)** - fonovská dualita **✨ TERRANOVA AFRICA**
+138. **[📐 NYAME](147_NYAME.md)** - Akan Nejvyšší kompas **✨ TERRANOVA AFRICA**
+139. **[🕸️ ANANSI](148_ANANSI.md)** - příběhová síť **✨ TERRANOVA AFRICA**
+140. **[🌿 OSIRIS / AUSAR](149_OSIRIS.md)** - Kemet cyklus **✨ TERRANOVA AFRICA**
+141. **[⚖️ MAʿAT](150_MAAT.md)** - péro integrity **✨ TERRANOVA AFRICA**
+142. **[⚔️ ANNA NZINGA](151_ANNA_NZINGA.md)** - odpor & diplomacie **✨ TERRANOVA AFRICA**
+143. [🌟 Quick Summary](#-quick-summary-for-community) - Team overview
 
 ---
 

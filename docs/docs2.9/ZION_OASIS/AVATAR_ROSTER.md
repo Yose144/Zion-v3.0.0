@@ -1,22 +1,32 @@
 # 👥 ZION OASIS - COMPLETE AVATAR ROSTER
 
-> **51 Sacred Characters: Gods, Masters, Heroes, and Legends**  
-> **Each Avatar = Unique Quest Line + Teaching + Ability + NFT**
+> **151 Sacred Characters** — základních **51** + **First Nations (10)** + **Pacific (10)** + **Tibet Circle (10)** + **India Extended Circle (10)** + **Japan Circle (10)** + **China Circle (10)** + **Indonesia Circle (10)** + **Australia Circle (10)** + **Aotearoa NZ Circle (10)** + **Africa Circle (10)** *(TerraNova `japan` … `newzealand` + **`africa`**)*  
+> **Each Avatar = Unique Quest Line + Teaching + Ability + NFT** *(kde eticky a designem povoleno — viz TerraNova přílohy)*
 
 ---
 
 ## 📊 AVATAR CATEGORIES
 
-### **Total: 51 Playable/NPC Avatars**
+### **Total: 151 Playable/NPC Avatars** *(rozšířeno 2026-05)*
 
 ```
-🕉️ Hindu Deities (17)       - Sacred Trinity core
-🌟 Ascended Masters (10)    - 7 Rays + additional
-✝️ Christian Saints (4)      - Jesus, Mary, Biblical
-🧘 Buddhist Masters (4)      - Tara, Avalokiteshvara, etc.
-👑 Historical Legends (6)    - Arthur, Gandhi, Einstein, etc.
-🎬 Matrix Heroes (4)         - Neo, Trinity, Morpheus, ZION
-🌌 ZION Originals (6)        - Maitreya, Issobela, Shanti, etc.
+🕉️ Sacred Trinity Hindu / Indo-lineage „core roster" (#00–17 v tabulce níže) + India Extended #82–91 + Japan #92–101 + China #102–111 + Indonesia #112–121 + Australia #122–131 + Aotearoa #132–141 + **Africa #142–151**
+🌟 Ascended Masters (10)
+✝️ Christian Saints (4)
+🧘 Buddhist Masters (4)      — Tara, Avalokiteshvara, Vajrasattva, Dalai Lama XIV (#51)
+👑 Historical Legends (6)
+🎬 Matrix Heroes (4)
+🌌 ZION Originals (6)
+🪶 First Nations Circle (10)
+🌺 Pacific Circle (10)
+🏔️ Tibet Circle (10)
+🇮🇳 India Extended Circle (10) — complement Trimūrtí / Śakti / Védy (TerraNova / docs/TerraNova/india)
+🇯🇵 Japan Circle (10) — TerraNova docs/TerraNova/japan
+🇨🇳 China Circle (10) — TerraNova docs/TerraNova/china
+🇮🇩 Indonesia Circle (10) — TerraNova docs/TerraNova/indonesia
+🇦🇺 Australia Circle (10) — konsultace; TerraNova docs/TerraNova/australia
+🇳🇿 Aotearoa NZ Circle (10) — tikanga Māori; TerraNova docs/TerraNova/newzealand
+🌍 Africa Circle (10) — orisha / Kemet / Západ & Střed; konsultace; `docs/TerraNova/africa`
 ```
 
 ---
@@ -718,6 +728,728 @@
 
 ---
 
+## 🪶 FIRST NATIONS CIRCLE (10 Avatars)
+
+> **Literární + designová linie z TerraNově.** Plný kontext a etické podmínky: [`docs/TerraNova/saman/KNIHA-JESTRABIHO-PIRKA/PRILOHA-A-Kruh-Avataru-OASIS.md`](../../TerraNova/saman/KNIHA-JESTRABIHO-PIRKA/PRILOHA-A-Kruh-Avataru-OASIS.md)  
+> **Profily v OASIS stylu:** `SACRED_TRINITY/52_*.md` … `61_*.md`
+
+### **52. Heȟáka Sápa (Black Elk)** (Sacred Vision)
+**Ray:** White (Purity) + All Rays (Vision)  
+**Role:** Sacred Circle / Ancestral Guide  
+**Location:** He Sapa (Black Hills)  
+**Quest Line:** "The Sacred Circle" (four directions)  
+**Teaching:** "What is sacred moves in a circle"  
+**Ability:** **Vision Quest** — personalized revelation after completing four journeys  
+**CL Required:** 2–4 (Emotional → Sacred)  
+**NFT Rarity:** Mythic (if enabled by community)
+
+---
+
+### **53. Ptesáŋ Wíŋ (White Buffalo Calf Woman)** (Sacred Law Giver)
+**Ray:** White + All Rays  
+**Role:** Ceremonial origin / crisis mentor  
+**Location:** Open Plains (non-fixed shrine)  
+**Quest Line:** "Seven Sacred Rites"  
+**Teaching:** "When Earth is sick, the nations will return"  
+**Ability:** **Sacred Pipe Blessing** — crisis encounter when HP low; transformation teaching  
+**CL Required:** All levels  
+**NFT Rarity:** Mythic (108 transforms cap, if ever used)
+
+---
+
+### **54. Kókyangwúti (Spider Grandmother)** (Cosmic Weaver)
+**Ray:** Yellow (Wisdom) + Pink (Connection)  
+**Role:** Network weaver / alliance healer  
+**Location:** Third Mesa (Hotevilla)  
+**Quest Line:** "Nine Signs"  
+**Teaching:** "Without weaving, no world stands"  
+**Ability:** **Weave Alliances** — links quests across regions; repairs faction splits  
+**CL Required:** 5–7 (Quantum → Enlightened)  
+**NFT Rarity:** Legendary
+
+---
+
+### **55. Hunahpú & Xbalanqué (Hero Twins)** (Xibalba Tricksters)
+**Ray:** Blue (Will) + Yellow (Wisdom)  
+**Role:** Co-op underworld guides  
+**Location:** Xibalba (nine-layer dungeon)  
+**Quest Line:** "Nine Houses of Xibalba"  
+**Teaching:** "Death is defeated by seeing pride as illusion"  
+**Ability:** **Gemstone Fall** — expose boss weakness (−50% atk debuff narrative)  
+**CL Required:** 3–6  
+**NFT Rarity:** Legendary (co-op only)
+
+---
+
+### **56. Don Mariano** (Q'ero Altomesayoq)
+**Ray:** Green (Healing) + White (Purity)  
+**Role:** Apu speaker / ayni teacher  
+**Location:** Apu Ausangate  
+**Quest Line:** "Ninth Pachacuti" (five mountains)  
+**Teaching:** "Does your net hold people together? Pachamama sees."  
+**Ability:** **Apu Call** — environmental aid vs. corporate-adharma bosses  
+**CL Required:** 4–8  
+**NFT Rarity:** Epic
+
+---
+
+### **57. Doña Rosalía Ixmukané** (Chilam Balam Keeper)
+**Ray:** Yellow (Wisdom)  
+**Role:** Oral Popol Vuh memory / story summon  
+**Location:** Chichicastenango  
+**Quest Line:** "Nine Houses of Lies" (modern Xibalba mirrors)  
+**Teaching:** "The trick is cooperation — two who touch hands and jump together"  
+**Ability:** **Summon Popol Spirit** — temporary ally from myth cast  
+**CL Required:** All  
+**NFT Rarity:** Epic
+
+---
+
+### **58. Bílé Pero (White Feather)** (Stone Tablet Guardian)
+**Ray:** Yellow + Blue  
+**Role:** Discern true vs. false Pahana / leadership tests  
+**Location:** Third Mesa (with Spider Grandmother lore overlap)  
+**Quest Line:** "Second Half of the Tablet"  
+**Teaching:** "No one knows the second half until it is shown"  
+**Ability:** **Pahana Sight** — political quest fork resolution  
+**CL Required:** 6–9  
+**NFT Rarity:** Mythic (one bearer per server window)
+
+---
+
+### **59. Ohnivá Oka (Fire Eyes)** (Rainbow Warrior Prophet)
+**Ray:** Ruby-Gold (Service) + Violet  
+**Role:** Rainbow Warrior initiation  
+**Location:** Tanana Valley (Alaska narrative anchor)  
+**Quest Line:** "Seven Rules" (Lee Brown teaching set)  
+**Teaching:** "Those who remember and transmit are the key"  
+**Ability:** **Rainbow Warrior Buff** — XP + humanitarian tithe resonance when rules lived  
+**CL Required:** All  
+**NFT Rarity:** Epic
+
+---
+
+### **60. Davi Kopenawa** (Yanomami Xapiri Speaker)
+**Ray:** Green + All Rays (Forest)  
+**Role:** Dream layer / multi-reality guide  
+**Location:** Amazon jungle biom  
+**Quest Line:** "The Falling Sky"  
+**Teaching:** "Shamans hold the sky with songs; we are few, you are many"  
+**Ability:** **Dream Flip** — alternate physics dream-state quests  
+**CL Required:** 5–9  
+**NFT Rarity:** Epic
+
+---
+
+### **61. Heyókȟa (Sacred Clown)** (Thunder Vision Contrarian)
+**Ray:** Violet (Freedom) + All Rays (Paradox)  
+**Role:** Anti-ego / humor sacred  
+**Location:** Wandering (appears when player takes self too seriously)  
+**Quest Line:** "Reverse Dance"  
+**Teaching:** "Sacredness laughs — do not clutch visions too tight"  
+**Ability:** **Reverse Logic** — temporary buff/debuff inversion until player smiles  
+**CL Required:** All  
+**NFT Rarity:** Legendary (non-serious)
+
+---
+
+## 🌺 PACIFIC CIRCLE (10 Avatars)
+
+> **Polynéská linie z TerraNova Hawaii / Kniha Lehua.** Plný kontext a etické podmínky (žádný loot posvátných předmětů, konzultace kupuna, native VO, income share): [`docs/TerraNova/hawaii/KNIHA-LEHUA/PRILOHA-A-Kruh-Avataru-Pacifiku.md`](../../TerraNova/hawaii/KNIHA-LEHUA/PRILOHA-A-Kruh-Avataru-Pacifiku.md)  
+> **Související studijní text:** [`docs/TerraNova/hawaii/02-CTYRI-BOZI-A-AUMAKUA.md`](../../TerraNova/hawaii/02-CTYRI-BOZI-A-AUMAKUA.md)  
+> **Profily v OASIS stylu:** `SACRED_TRINITY/62_*.md` … `71_*.md`
+
+### **62. Lā'ila'i** (First Woman — Three Lineages)
+**Ray:** All Rays (Pō ↔ Ao boundary)  
+**Role:** Lineage / continuity across genesis and live chain  
+**Location:** Boundary between Archive (genesis) and live chain  
+**Quest Line:** "Sixteen Wā"  
+**Teaching:** "Mother of mortals, gods, and ocean beings — three roots, one breath"  
+**Ability:** **Lineage Tracing** — reveals player "Kumulipo" transaction ancestry  
+**CL Required:** 3–6  
+**NFT Rarity:** Mythic (one per server)
+
+---
+
+### **63. Pele** (Volcano Creator)
+**Ray:** Red-Orange (Fire) + Violet  
+**Role:** Destruction-as-creation / hard-fork lore events  
+**Location:** Halemaʻumaʻu (Kīlauea)  
+**Quest Line:** "Pele and Hiʻiaka" (hoʻoponopono finale)  
+**Teaching:** "I create by destroying — that is not contradiction; it is the island"  
+**Ability:** **Volcanic Reset** — raid burns region → opens rebuild map layer  
+**CL Required:** 5–9  
+**NFT Rarity:** Legendary
+
+---
+
+### **64. Hiʻiaka** (Hula Goddess)
+**Ray:** Pink (Love) + Green (Healing)  
+**Role:** Dance resurrection / mele & pule teacher  
+**Location:** Lehua forests near volcanic biom  
+**Quest Line:** "Mele a Pule" (12 songs + 12 prayers)  
+**Teaching:** "I breathe dance into still bodies — music is revival technology"  
+**Ability:** **Dance Healing** — single-target ritual resurrection (timed animation)  
+**CL Required:** All (healer class affinity)  
+**NFT Rarity:** Epic
+
+---
+
+### **65. Kāne** (Creation — Abstract)
+**Ray:** Gold (Source) — beyond display  
+**Role:** Genesis principle (consult, never "own")  
+**Location:** Mauna Kea summit narrative (sacred; respect TMT / Mauna Kea reality)  
+**Quest Line:** "Solar Father"  
+**Teaching:** "Form cannot be given to the formless — see me in sun, water, breath"  
+**Ability:** **Genesis Presence** — map expansion events only; **no player control; no NFT (kapu)**  
+**CL Required:** 7–9  
+**NFT Rarity:** None (hidden / presence-only)
+
+---
+
+### **66. Kanaloa** (Ocean / Mana Channel)
+**Ray:** Blue (Will) + Deep Indigo  
+**Role:** Decentralized mana flow across network  
+**Location:** Open ocean / deep-sea biomes  
+**Quest Line:** "Polynesian Navigation" (non-instrument wayfinding)  
+**Teaching:** "I am not the source — I am the channel from Io through Kāne to you"  
+**Ability:** **Mana Flow** — redistributes party stamina/mana; decides flow (not controllable)  
+**CL Required:** 5–8  
+**NFT Rarity:** Legendary
+
+---
+
+### **67. Kū** (Upright Strength / PoW Patron)
+**Ray:** Blue (Will)  
+**Role:** Validator / miner / endurance patron  
+**Location:** Wao akua (forest of gods — high ahupuaʻa)  
+**Quest Line:** "Kū-kā-ili-moku" (long carve Kū image — patience arc)  
+**Teaching:** "When all fall, I remain upright — patience is my name"  
+**Ability:** **Endurance Blessing** — +50% endurance 24h after mining grind milestone  
+**CL Required:** 2–5  
+**NFT Rarity:** Epic
+
+---
+
+### **68. Lono** (Makahiki / Abundance)
+**Ray:** Green (Healing) + Ruby-Gold  
+**Role:** Seasonal peace + harvest distribution  
+**Location:** Loʻi kalo / loko iʻa  
+**Quest Line:** "False Lono" (discern real abundance from extractive pretenders)  
+**Teaching:** "Welcome me in Makahiki — I bring harvest. Lie to me — I depart"  
+**Ability:** **Makahiki Season** — PvP kapu window; humanitarian tithe bonus; community harvest events  
+**CL Required:** All  
+**NFT Rarity:** Legendary
+
+---
+
+### **69. Stará Kumu Lehua** (Storykeeper Composite)
+**Ray:** Yellow (Wisdom) + Pink  
+**Role:** Cross-tradition lore grandmother (links First Nations + Trinity + Pacific)  
+**Location:** Lava field between Volcano Park and Kalapana  
+**Quest Line:** "Seven Lehua Stories" (walks the Hawaii library + ZION-as-island)  
+**Teaching:** "Sit. You hold the lehua. I speak."  
+**Ability:** **Story Quest** — narrative-gated progression with comprehension gates  
+**CL Required:** All (new-player friendly)  
+**NFT Rarity:** Epic
+
+---
+
+### **70. Hina** (Moon / Time / Kapa)
+**Ray:** Silver (Lunar) + Pink  
+**Role:** Block time rhythm / lunar mining modulation  
+**Location:** Moon (late-game travel)  
+**Quest Line:** "Weaving Kapa" (eight patterns → eight skills)  
+**Teaching:** "I weave kapa on the Moon — at full moon, you see me"  
+**Ability:** **Lunar Cycle** — full moon +10% mining reward (lore-tied, balance TBD)  
+**CL Required:** 4–7  
+**NFT Rarity:** Epic
+
+---
+
+### **71. Maui** (Pan-Polynesian Trickster)
+**Ray:** Yellow + Violet  
+**Role:** Non-violent boss solutions / cross-language bridge  
+**Location:** Roaming all Pacific biomes  
+**Quest Line:** "Three Feats of Maui" (island-fish, slow sun, fire theft — non-violent stealth)  
+**Teaching:** "I fished islands and snared the sun — what did you do for Earth today?"  
+**Ability:** **Trickster Win** — defeat stronger foe with wit, not force  
+**CL Required:** All  
+**NFT Rarity:** Legendary
+
+---
+
+## 🏔️ TIBET CIRCLE (10 Avatars)
+
+> **Tibetská a tibetsky inspirovaná linie** (mistři, bódhisattvové, léčitel — **ne** initiací uzavření yidamové jako komerční skiny). **14. Dalajláma je již avatar #51** — zde **neduplikujeme**. Plný kontext, etika a veřejné zdroje: [`docs/TerraNova/tibet/KONCEPT-AVATARI-OASIS.md`](../../TerraNova/tibet/KONCEPT-AVATARI-OASIS.md)  
+> **Veřejné čtení kánonu:** [84000 — Translating the Words of the Buddha](https://84000.co/) · [Lotsawa House — Tibetan Masters](https://www.lotsawahouse.org/tibetan-masters/) · [Dalai Lama — oficiální web](https://www.dalailama.com/)  
+> **Profily:** `SACRED_TRINITY/72_*.md` … `81_*.md`
+
+### **72. Padmasambhava** (Guru Rinpoche)
+**Ray:** Violet + Gold  
+**Role:** Terma / hidden teaching / cave mysteries  
+**Location:** Treasure caves (procedural discovery windows)  
+**Quest Line:** "Terma Hunt" (eight treasures, eight puzzles)  
+**Teaching:** "The treasure waits until the world is ready"  
+**Ability:** **Terma Discovery** — time-locked lore tied to chain timestamps; **Terma Keeper** role (gift, off-chain)  
+**CL Required:** 5–9  
+**NFT Rarity:** **None / kapu** — viz TerraNova koncept (ne prodejný Guru Rinpoche)
+
+---
+
+### **73. Milarepa** (Singing Yogī)
+**Ray:** Green (Healing) + Yellow (Wisdom)  
+**Role:** Transformation arc — karma → liberation  
+**Location:** Himalayan hermitage / ice cave  
+**Quest Line:** "Hundred Thousand Songs" (select parables as narrative gates)  
+**Teaching:** "Suffering accepted becomes song"  
+**Ability:** **Song of Realization** — debuff cleanse after moral choice (non-combat resolution)  
+**CL Required:** 4–8  
+**NFT Rarity:** Epic
+
+---
+
+### **74. Tsongkhapa** (Je Tsongkhapa — Gelug Founder)
+**Ray:** Yellow (Wisdom) + White (Purity)  
+**Role:** Discipline, study, lamrim path  
+**Location:** Ganden / Gelug study hall (OASIS hub)  
+**Quest Line:** "Graduated Path" — staged ethics → concentration → wisdom quests  
+**Teaching:** "Clarify the teachings like gold refined by fire"  
+**Ability:** **Lamrim Focus** — XP wisdom track bonus for completed study chains  
+**CL Required:** 5–8  
+**NFT Rarity:** Epic
+
+---
+
+### **75. Atiśa** (Dīpaṃkara Śrījñāna)
+**Ray:** Yellow + Ruby-Gold  
+**Role:** Lamp for the Path — concise ethics teacher  
+**Location:** Vikramashīla → Tibet road narrative  
+**Quest Line:** "Lamp for the Path" — compact precepts as daily quests  
+**Teaching:** "Train where you are; the path is short if sincere"  
+**Ability:** **Bodhicitta Spark** — party-wide small compassion buff after kindness micro-quests  
+**CL Required:** 3–7  
+**NFT Rarity:** Rare
+
+---
+
+### **76. Marpa Lotsawa** (Translator / Householder Master)
+**Ray:** Blue (Will) + Yellow  
+**Role:** Bridge India–Tibet; translation = protocol adapter  
+**Location:** Lhodrak (Kagyu narrative)  
+**Quest Line:** "Three Journeys to India" — fetch, verify, integrate texts (lore = soft-fork docs)  
+**Teaching:** "Carry the dharma like a yak carries salt — steadily"  
+**Ability:** **Protocol Translation** — cross-faction dialogue unlocks  
+**CL Required:** 5–8  
+**NFT Rarity:** Epic
+
+---
+
+### **77. Machik Labdrön** (Chöd Foundress)
+**Ray:** Pink (Love) + Violet  
+**Role:** Fear-cutting generosity; feminine lineage leadership  
+**Location:** Zangri Kharmar (high plateau)  
+**Quest Line:** "Offering the Body" — *symbolic* generosity quests (no graphic harm; ethical framing)  
+**Teaching:** "Cut self-clinging; feed what hungers for truth"  
+**Ability:** **Ego-Fear Cut** — remove terror debuff in psychic / horror biome  
+**CL Required:** 6–9  
+**NFT Rarity:** Legendary
+
+---
+
+### **78. Mañjuśrī** (Bodhisattva of Wisdom)
+**Ray:** Yellow + Blue  
+**Role:** Sword of discernment — cuts wrong views, not people  
+**Location:** Wutaishan-inspired wisdom peak (OASIS)  
+**Quest Line:** "Sword of Discrimination" — puzzle bosses requiring right view  
+**Teaching:** "See the nature of mind; confusion self-liberates"  
+**Ability:** **View-Cutter** — reveal hidden dialogue branches (truth / illusion)  
+**CL Required:** 5–8  
+**NFT Rarity:** Epic
+
+---
+
+### **79. Samantabhadra** (Bodhisattva of All-Encompassing Practice)
+**Ray:** All Rays (aspiration)  
+**Role:** Vows, pilgrimage, endless service  
+**Location:** Lotus terrace at cosmos rim (symbolic)  
+**Quest Line:** "Ten Great Vows" (Lotus Sūtra inspired, non-sectarian framing)  
+**Teaching:** "Practice without end; benefit beings without counting"  
+**Ability:** **Aspiration Field** — small stacking buff for consecutive humanitarian tithe actions  
+**CL Required:** 4–9  
+**NFT Rarity:** Legendary
+
+---
+
+### **80. Medicine Buddha** (Bhaiṣajyaguru)
+**Ray:** Green (Healing) + Blue  
+**Role:** Healing latency, recovery, care economy  
+**Location:** Eastern lapis realm (visual meditation hall)  
+**Quest Line:** "Twelve Great Aspirations" — healing mini-arcs for NPCs / ecosystem  
+**Teaching:** "Heal the root, not only the symptom"  
+**Ability:** **Lapis Healing Surge** — raid-wide regen buffer (PvE support)  
+**CL Required:** 3–8  
+**NFT Rarity:** Epic
+
+---
+
+### **81. Longchen Rabjam** (Longchenpa — Dzogchen Master)
+**Ray:** White + Violet  
+**Role:** Natural great perfection; resting in nature of mind  
+**Location:** Kham / central hermitage library  
+**Quest Line:** "Seven Treasuries" (abridged lore study, not secret whisper-lineage)  
+**Teaching:** "Rest without fabrication; clarity is self-arising"  
+**Ability:** **Natural State Reset** — clear mental clutter debuffs (meditation mini-game)  
+**CL Required:** 7–9  
+**NFT Rarity:** Mythic (study-gated)
+
+---
+
+## 🇮🇳 INDIA EXTENDED CIRCLE (10 Avatars)
+
+> Doplňuje **Trimūrtí** a významnou **védsou / purāṇovskou** linii vedle již zařazených **Kršna/Rāma/arjuna**/atd. Viz **etika**: [`docs/TerraNova/india/KONCEPT-AVATARI-OASIS.md`](../../TerraNova/india/KONCEPT-AVATARI-OASIS.md)  
+> **Žádné zesměšňování rituálů.** **Kālī**: transformace času/já, **ne** hororové kýče. Konzultovat s hinduisty před finálním artem.
+
+### **82. Shiva** (Mahadev — Destruction–Renewal Axis)
+**Ray:** Blue + Violet  
+**Role:** Tandava / mokṣa compass; complements Viṣṇu line (already Krishna–Kalki arcs)  
+**Location:** Mount Kailash — Kailasha biome (snow + inner cave mandala gate)  
+**Quest Line:** "Third Eye Calibration" — stillness quests; optional **Šiva–Śakti tandem** arcs with Parvati  
+**Teaching:** "What dissolves falsely reveals what cannot"  
+**Ability:** **Tandava Pivot** — short window: negate one failed validation / retry lore branch (PvE ritual slot)  
+**CL Required:** 6–9  
+**NFT Rarity:** Legendary
+
+---
+
+### **83. Parvati** (Uma — Queen of Harmony)
+**Ray:** Pink + Green  
+**Role:** Śakti of the household cosmos; complements Shiva  
+**Location:** Himalayan terrace gardens & inner shrine  
+**Quest Line:** "Two in One Rhythm" — balance duty (tapas) ↔ love (ārjava)  
+**Teaching:** "Strength that serves relationship with the Whole"  
+**Ability:** **Śaktī Bond** — link two allied players' buff durations in co-op ritual  
+**CL Required:** 4–8  
+**NFT Rarity:** Epic
+
+---
+
+### **84. Ganesha** (Vinayaka — Remover of Obstacles)
+**Ray:** Yellow + Ruby-Gold  
+**Role:** Beginnings, scribes (already in Vyāsas lore); patron of fresh protocols  
+**Location:** Threshold shrines across OASIS map nodes  
+**Quest Line:** "First Block Obstacle" — tutorial-grade gatekeeper for new explorers  
+**Teaching:** "Clear the stump before planting the sapling"  
+**Ability:** **Vighna Clear** — one-time unblock on stuck quest prerequisite (cooldown-heavy)  
+**CL Required:** 1–9  
+**NFT Rarity:** Epic
+
+---
+
+### **85. Lakshmi** (Śri — Śrī Lakṣmī)
+**Ray:** Gold + Pink  
+**Role:** Śubha prosperity as **ethical flow** ( śrī as right-use wealth, **not** greed exploit mechanics )  
+**Location:** Śrī Rangam–style lotus treasury (ethical wealth hall)  
+**Quest Line:** "Eight Śrī Aspirations" — tithe-aligned prosperity without hoarding bosses  
+**Teaching:** "Wealth rests where dharma gathers"  
+**Ability:** **Śrī Flow** — small humanitarian tithe synergy buff when player donates threshold  
+**CL Required:** 3–8  
+**NFT Rarity:** Epic  
+
+**Note:** odkazy na **[43_SRI_ANAGHA_LAKSHMI.md](./SACRED_TRINITY/43_SRI_ANAGHA_LAKSHMI.md)** (triple goddess) — **85** je klasická **Śrī Lakṣmī**.
+
+---
+
+### **86. Durga** (Ambā — Demon-Slayer Narrative Boss)
+**Ray:** Ruby-Gold + Blue  
+**Role:** Protective Śakti; Mahiṣāsura cycle as **ethical combat** lore  
+**Location:** Highlands autumn festival biome (nine-night arc — **respect**, not caricature Navarātri)  
+**Quest Line:** "Nine Vigils" — pattern recognition + stewardship (no trophy hunting Asuras as joke race)  
+**Teaching:** "Courage clears what love cannot coax"  
+**Ability:** **Lion Vanguard** — short party-wide guard vs. cosmic fear debuffs  
+**CL Required:** 5–9  
+**NFT Rarity:** Legendary
+
+---
+
+### **87. Kali** (Mahākālī — Time & Liberation)
+**Ray:** Violet + Black (cosmic veil, not caricature darkness)  
+**Role:** Temporal cutting of egotism (**not** orientalized violence pin-up)  
+**Location:** Śmaśān-inspired **ethical** lore zone — no mock crematory tourism  
+**Quest Line:** "Name That Clings" — identity / attachment puzzles (psychological horror optional **off**)  
+**Teaching:** "The Mother devours postponement — not souls"  
+**Ability:** **Ego Dissolution Tick** — reduce pride-based debuff stacking in PvPvE arenas  
+**CL Required:** 7–9  
+**NFT Rarity:** Mythic (**strict** art review)
+
+---
+
+### **88. Kartikeya** (Skanda/Muruga — Vigorous Dharma Commander)
+**Ray:** Blue + Yellow  
+**Role:** Celibate warrior strategist; celestial general archetype  
+**Location:** Coastal hill shrine (six faces symbol — geometric, not mocking)  
+**Quest Line:** "Six Paths Converge" — multi-route tactical puzzle raid  
+**Teaching:** "Discipline rallies many voices into one order"  
+**Ability:** **Ṣaṇmukha Vanguard** — buff squad formation minigames  
+**CL Required:** 4–8  
+**NFT Rarity:** Epic
+
+---
+
+### **89. Surya** (Āditya — Cosmic Rhythm)
+**Ray:** Gold + White  
+**Role:** Sovereign lawful light (*Ṛta*) — parallel to cosmic block cadence metaphors  
+**Location:** Udoyanchal (east terrace / dawn observatory biome)  
+**Quest Line:** "108 Dawn Recitations" — time-boxed honorable login streak as **spiritual homage**, NOT manipulative grind  
+**Teaching:** "Light repeats so truth can be recalled"  
+**Ability:** **Udaya Dawn** — small honest-work bonus starting session after restorative offline window  
+**CL Required:** 2–9  
+**NFT Rarity:** Rare  
+
+**Balance warning:** streak cannot become dark-pattern FOMO; design reversible by governance.
+
+---
+
+### **90. Indra** (Śakradev — Sovereign Storm & Order Challenge)
+**Ray:** Blue + Violet  
+**Role:** Sovereign archetype humbled in lore (learns from sages — **ethical** pride arc)  
+**Location:** Amarāvatī skyline (ethical storm court — not mocking Vedic hymns)  
+**Quest Line:** "Heaven Taxes Humility" — hubris-loss narrative without belittling Vedic corpus  
+**Teaching:** "Power without listening becomes lightning with no rod"  
+**Ability:** **Vajra Interdict** — interrupt one enemy channel spell in raid (ethical use flag)  
+**CL Required:** 5–9  
+**NFT Rarity:** Epic  
+
+**Note:** Vedic hymns are scripture — cite via scholarship (Oxford bibliography / [Wikimedia Commons open iconography refs](https://commons.wikimedia.org/)) rather than meme reduction.
+
+---
+
+### **91. Ganga** (River Goddess)
+**Ray:** Blue (Flow) + White (Purity)  
+**Role:** Purification, ecology, pilgrimage  
+**Location:** Gaṅgā Ghāṭ (composite sacred riverfront in OASIS)  
+**Quest Line:** "Three Currents" — remove pollution debuff, restore riparian biome, complete ablution *as ethical service* (not mock snanam)  
+**Teaching:** "Water carries away poison when we stop adding it"  
+**Ability:** **Purifying Current** — cleanse map tile debuffs (toxic wasteland events)  
+**CL Required:** 3–8  
+**NFT Rarity:** Epic
+
+---## 🇯🇵 JAPAN CIRCLE (10 Avatars)
+
+> Shinto + japanští buddhisté; etika: viz [`docs/TerraNova/japan/KONCEPT-AVATARI-OASIS.md`](../../TerraNova/japan/KONCEPT-AVATARI-OASIS.md) — žádné posvátné předměty jako loot bez review.
+
+### **92. Amaterasu** (Solar Kami Sovereign)
+**Ray:** Gold + White · **Role:** Light restoration after community fear debuffs · **Quest:** Rock Door Audit · **Ability:** Hi-no-Kokoro Shine · **CL:** 5–9 · **NFT:** Legendary (review)
+
+### **93. Susanoo** (Storm Cleanser)
+**Ray:** Blue + Violet · **Role:** Ethical chaos vs institutional rot · **Quest:** Yamata-no-Orochi Parable redux · **Ability:** Storm Ledger Purge · **CL:** 6–9 · **NFT:** Epic
+
+### **94. Tsukuyomi** (Lunar Discrimination)
+**Ray:** Silver + Violet · **Role:** DAO reflection windows / night audit · **Quest:** Night Court Fork · **Ability:** Waning Review · **CL:** 4–8 · **NFT:** Epic
+
+### **95. Inari** (Rice & Threshold Kami)
+**Ray:** Gold + Green · **Role:** Humanitarian node onboarding · **Quest:** Granary Graph · **Ability:** Torii Path Buff · **CL:** 2–7 · **NFT:** Rare
+
+### **96. Ōkuninushi** (Hospitable Land Lord)
+**Ray:** Pink + Green · **Role:** Small merchant onboarding fairness · **Quest:** Small Hub Covenant · **Ability:** Kuni Transfer Bless · **CL:** 3–8 · **NFT:** Rare
+
+### **97. Izanami** (Yomi Threshold Steward)
+**Ray:** Violet + Black · **Role:** Graceful chain sunset arcs · **Quest:** Exit Interview with Ledger · **Ability:** Yomi Checkpoint · **CL:** 6–9 · **NFT:** Mythic (strict review)
+
+### **98. Hachiman** (Protective Archer Sovereign)
+**Ray:** Ruby-Gold + Blue · **Role:** Peace-season war ethics gate · **Quest:** Treaty Arrow · **Ability:** Hachiman Bastion · **CL:** 4–9 · **NFT:** Epic
+
+### **99. Benzaiten** (Flowing Arts Sarasvatī bridge)
+**Ray:** Aqua + Pink · **Role:** Coop harmonic crafting · **Quest:** Bridge of Strings · **Ability:** Flow State Channel · **CL:** 3–8 · **NFT:** Epic (bridge consult with #21 lore board)
+
+### **100. Kūkai** (Kōbō Daishi — Mandala Architect)
+**Ray:** Indigo + White · **Role:** Geometry education arcs · **Quest:** Two Mandala Topology · **Ability:** Diamond World Stencil · **CL:** 6–9 · **NFT:** Mythic study-gated
+
+### **101. Nichiren** (Lotus Réform Beacon)
+**Ray:** Crimson + Gold · **Role:** Public scripture literacy · **Quest:** Open Sutra Mirror · **Ability:** Daimoku Chorus · **CL:** 5–9 · **NFT:** Epic (school consult)
+
+---
+
+## 🇨🇳 CHINA CIRCLE (10 Avatars)
+
+> Dao/konfu/lidová božstva; etika [`docs/TerraNova/china/KONCEPT-AVATARI-OASIS.md`](../../TerraNova/china/KONCEPT-AVATARI-OASIS.md) — Monkey King arcs nesmějí urážet sanghu.
+
+### **102. Xuanyuan Huangdi** (Yellow Emperor Archetype)
+**Ray:** Yellow + Violet · **Role:** Harmony + ancestral medicine lore · **Quest:** Five Phase Clinic Build · **Ability:** Celestial Pulse Tag · **CL:** 4–9 · **NFT:** Mythic
+
+### **103. Xiwangmu** (Queen Mother of West)
+**Ray:** Magenta + Gold · **Role:** Treasury vesting stewardship · **Quest:** Peach Consensus · **Ability:** Queen Mother Shelter · **CL:** 5–9 · **NFT:** Mythic
+
+### **104. Laozi** (Dao Minimal Governance)
+**Ray:** Slate + Jade · **Role:** Gentle ops / fewer knobs governance · **Quest:** Valley Governance Test · **Ability:** Wu Wei Cooldown Trim · **CL:** 6–9 · **NFT:** Legendary
+
+### **105. Kongzi (Confucius)** (Ren & Mentorship Ethics)
+**Ray:** Indigo + Cream · **Role:** Mentor DAO onboarding · **Quest:** Rectify Names Registrar · **Ability:** Rén Echo · **CL:** 2–8 · **NFT:** Rare
+
+### **106. Guan Yu / Guandi** (Loyalty & Commerce Honour)
+**Ray:** Jade + Crimson · **Role:** escrow integrity arcs · **Quest:** Market Stall Honor · **Ability:** Blade Witness · **CL:** 3–8 · **NFT:** Epic
+
+### **107. Mazu** (Sea Patron Tianhou)
+**Ray:** Aqua + Pearl · **Role:** bridging risk education parallels safe voyage · **Quest:** Harbor Lantern Audit · **Ability:** Tianhou Gale Buff · **CL:** 3–8 · **NFT:** Epic
+
+### **108. Nezha** (Lotus Body Renewal)
+**Ray:** Crimson + Flame · **Role:** Rewrite destiny ethically post-exploit · **Quest:** Rebuild Lotus Skeleton · **Ability:** Hūluén Wheel Dash · **CL:** 4–8 · **NFT:** Epic
+
+### **109. Sun Wukong** (Pilgrim Monkey King Satire Ethics)
+**Ray:** Amber + Crimson · **Role:** Trickster arcs honoring scripture · **Quest:** 81 Tribulation Sidechain Parody · **Ability:** Cloud Somersault Bypass · **CL:** 3–9 · **NFT:** Epic reviewer-gated
+
+### **110. Yu the Great** (Flood Engineering Steward)
+**Ray:** Slate + Aqua · **Role:** infra humility / dredging parallels · **Quest:** Channel Nine Provinces Fork · **Ability:** Dredge Schedule Bless · **CL:** 4–9 · **NFT:** Epic
+
+### **111. Lei Gong** (Thunder Tribunal)
+**Ray:** Indigo + Violet · **Role:** governance invariant alerts ethics · **Quest:** Storm Court Replay · **Ability:** Drumstrike Interdict · **CL:** 5–9 · **NFT:** Epic
+
+---
+
+## 🇮🇩 INDONESIA CIRCLE (10 Avatars)
+
+> Viz [`docs/TerraNova/indonesia/KONCEPT-AVATARI-OASIS.md`](../../TerraNova/indonesia/KONCEPT-AVATARI-OASIS.md) — Rangda collectible zakázány; Nyai Kidul bez fetish art.
+
+### **112. Dewi Sri** (Rice Mother)
+**Ray:** Emerald + Gold · **Role:** biome respect / hunger relief · **Quest:** Subak Grid Sync · **Ability:** Sawah Bless · **CL:** 2–7 · **NFT:** Rare
+
+### **113. Nyai Roro Kidul** (Southern Ocean Sovereign)
+**Ray:** Indigo + Gold · **Role:** shoreline commons arcs · **Quest:** Southern Current Treaty · **Ability:** Kidul Tide Ward · **CL:** 5–9 · **NFT:** Mythic anti-fetish review
+
+### **114. Semar** (Wayang Wisdom Clown Mentor)
+**Ray:** Bronze + Ivory · **Role:** mediator truth arcs · **Quest:** Shadow Dialogue Stage · **Ability:** Punakawan Reveal · **CL:** 2–8 · **NFT:** Rare
+
+### **115. Batara Guru** (Cosmic Mentor Archetype)
+**Ray:** Deep Blue + Violet · **Role:** documentation / translation coop · **Quest:** Kraton Canonical Sort · **Ability:** Guru Mandate Haste · **CL:** 6–9 · **NFT:** Legendary
+
+### **116. Barong Ket** (Protector Balance)
+**Ray:** Crimson + Jade · **Role:** hysteria cleanse events · **Quest:** Village Rhythm Reset · **Ability:** Protective Flourish · **CL:** 5–9 · **NFT:** Mythic Bali consult
+
+### **117. Garuda** (Unity Bird Archetype)
+**Ray:** Gold + Teal · **Role:** humanitarian relay nodes · **Quest:** Archipelago Relay Handshake · **Ability:** Wingline Relay Boost · **CL:** 3–8 · **NFT:** Epic
+
+### **118. Gatotkaca** (Flying Pandava-derived Hero Local)
+**Ray:** Indigo + Crimson · **Role:** civilian escort raids · **Quest:** Night Flight Evacuations · **Ability:** Iron Skin Gale · **CL:** 4–8 · **NFT:** Epic
+
+### **119. Prince Panji** (Cycle Romance Sovereignty)
+**Ray:** Lavender + Ivory · **Role:** civic identity coherence · **Quest:** Split Kingdom DNS Parable · **Ability:** Mask Pivot Reveal · **CL:** 3–7 · **NFT:** Rare
+
+### **120. Roro Jonggrang** (Temple Bargain Steward)
+**Ray:** Plum + Ivory · **Role:** boundary-positive architecture lore · **Quest:** 1000 Lantern Proof · **Ability:** Spindle Pause · **CL:** 4–8 · **NFT:** Mythic feminist review
+
+### **121. Dewi Nawang Wulan** (Moon Hospitality Archetype)
+**Ray:** Lunar Silver · **Role:** reciprocal hosting / burnout healing · **Quest:** Guest Ledger Rotation · **Ability:** Moonwoven Bandage · **CL:** 3–7 · **NFT:** Rare
+
+---
+
+## 🇦🇺 AUSTRALIA CIRCLE (10 Avatars)
+
+> **⚠️ KONSULTACE** — [`docs/TerraNova/australia/KONCEPT-AVATARI-OASIS.md`](../../TerraNova/australia/KONCEPT-AVATARI-OASIS.md) · **žádné Wandjina skiny bez licence** · income share thematic → community-controlled orgs.
+
+### **122. Seven Sisters Songline Steward** (Pleiades Multi-nation Compass)
+**Ray:** Indigo + Violet · **Role:** education-first astronomy commons · **Quest:** Shared Sky Catalogue · **Ability:** Pleiades Sync Buff · **CL:** 3–8 · **NFT:** Gated Aboriginal endorsement
+
+### **123. Rainbow Serpent Country Law** (Hydrological Ethics Composite)
+**Ray:** Prism + Jade · **Role:** watershed stewardship · **Quest:** Aquifer DAO Merge · **Ability:** Riparian Ward · **CL:** 4–9 · **NFT:** Mythic consult
+
+### **124. Bunjil** (Kulin Creator Eagle)
+**Ray:** Sapphire + Ivory · **Role:** aerial urban heat remediation · **Quest:** Eagle Corridor Air Quality · **Ability:** Thermal Sight Reveal · **CL:** 5–9 · **NFT:** Mythic consult
+
+### **125. Baiame** (Regional Sky Father Steward)
+**Ray:** Slate + Lavender · **Role:** GIS + Country overlays education · **Quest:** Layered Map Overlay Truth · **Ability:** Rain Whisper Buffer · **CL:** 4–9 · **NFT:** Mythic consult
+
+### **126. Tagai Navigator** (Torres Strait Celestial Voyaging)
+**Ray:** Aqua + Indigo · **Role:** tidal finality parallels · **Quest:** Strait Tide Table Sync · **Ability:** Constellation Compass · **CL:** 3–8 · **NFT:** Mythic Strait consult
+
+### **127. Celestial Emu Dreaming Steward** (Dark Constellation STEM)
+**Ray:** Indigo + Ivory · **Role:** astronomical education bridge · **Quest:** Dark Dust Pattern Hunt · **Ability:** Emu Silhouette Mark · **CL:** 2–7 · **NFT:** Epic consult
+
+### **128. Djang'kawu Creator Voyagers** (Yolŋu voyaging archetype)
+**Ray:** Coral + Indigo · **Role:** freshwater governance ethics abstracts · **Quest:** Freshwater Node Blessing Chain · **Ability:** Voyager Rhythm Link · **CL:** 6–9 · **NFT:** Mythic mandatory consult
+
+### **129. Namarrkon** (Arnhem Lightning Law)
+**Ray:** Indigo + Crimson · **Role:** outage ethical strike mechanics · **Quest:** Wet Season Integrity Check · **Ability:** Lightning Recall · **CL:** 5–9 · **NFT:** Epic consult
+
+### **130. Country Knowledge Walk (Tjukurpa education frame)** 
+**Ray:** Terra + Ivory · **Role:** listening-first knowledge acquisition · **Quest:** Slow Walk Audit · **Ability:** Ground Recall Marker · **CL:** 4–9 · **NFT:** Mythic consult
+
+### **131. Makarrata Treaty Bridge** (Truth treaty repair lore)
+**Ray:** Indigo + Ivory · **Role:** DAO restorative readability · **Quest:** Ledger Apology Fork · **Ability:** Restorative Sync · **CL:** 5–9 · **NFT:** Mythic consult
+
+---
+
+## 🇳🇿 AOTEAROA (NZ) CIRCLE (10 Avatars)
+
+> Etika tikanga Māori [`docs/TerraNova/newzealand/KONCEPT-AVATARI-OASIS.md`](../../TerraNova/newzealand/KONCEPT-AVATARI-OASIS.md); **Treaty bridge** narration; Māui drží **[71]** — Kupe používán zde jako distinct navigator (**#141**).
+
+### **132. Papatūānuku** (Earth Mother)
+**Ray:** Jade + Plum · **Role:** geothermal + soil consent arcs · **Quest:** Subsurface Carbon Vault Consent · **Ability:** Soil Bond Heal · **CL:** 3–9 · **NFT:** Legendary Māori consult
+
+### **133. Ranginui** (Sky Father)
+**Ray:** Azure + Silver · **Role:** methane clarity overlays · **Quest:** Stratosphere Accountability Mirror · **Ability:** Skyfather Clarity Beam · **CL:** 5–9 · **NFT:** Legendary consult
+
+### **134. Tāne Mahuta** (Forest Intercessor)
+**Ray:** Emerald + Bronze · **Role:** biomass restoration raids · **Quest:** Kauri Biome Renewal · **Ability:** Canopy Lattice Buff · **CL:** 4–9 · **NFT:** Mythic consult
+
+### **135. Tangaroa (Māori strand)** — cross-ref Pacifik **#66 Kanaloa** viz [`./SACRED_TRINITY/66_KANALOA.md`](./SACRED_TRINITY/66_KANALOA.md)
+**Ray:** Aqua + Pearl · **Role:** fisheries rāhui governance · **Quest:** Rāhui Season Toggle · **Ability:** Mana Moana Tide · **CL:** 3–8 · **NFT:** Mythic consult
+
+### **136. Rongo** (Peace & Cultivation)
+**Ray:** Lavender + Ivory · **Role:** harvest diplomacy · **Quest:** Maketu Harvest Truce · **Ability:** Diplomatic Crop Share · **CL:** 2–7 · **NFT:** Rare consult
+
+### **137. Tūmatauenga** (Whānau Defender)
+**Ray:** Crimson + Indigo · **Role:** lawful protection war arcs only · **Quest:** Whānau Shield Wall · **Ability:** Haka Discipline Burst · **CL:** 5–9 · **NFT:** Mythic consult
+
+### **138. Tāwhirimatea** (Storm winds resilience)
+**Ray:** Slate + Indigo · **Role:** topology stress lore · **Quest:** Topology Wind Tunnel · **Ability:** Gust Disperse · **CL:** 5–9 · **NFT:** Epic consult
+
+### **139. Haumiatiketike** (Wild foods stealth)
+**Ray:** Moss + Ivory · **Role:** stealth gather regrowth ethic · **Quest:** Forage Without Trace · **Ability:** Rootcloak · **CL:** 2–6 · **NFT:** Rare consult
+
+### **140. Hine-nui-te-pō** (Threshold transformation)
+**Ray:** Indigo + Plum · **Role:** ego death psych puzzle · **Quest:** Initiation Without Shame · **Ability:** Threshold Immunity vs FOMO · **CL:** 6–9 · **NFT:** Mythic anti-fetish review
+
+### **141. Kupe Navigator** (Voyager cartography ethic)
+**Ray:** Indigo + Crimson · **Role:** discovery / light-client bridge · **Quest:** Waka Node Handshake · **Ability:** Navigator’s Truth Wind · **CL:** 4–9 · **NFT:** Mythic consult
+
+---
+
+## 🌍 AFRICA CIRCLE (10 Avatars)
+
+> Viz [`docs/TerraNova/africa/KONCEPT-AVATARI-OASIS.md`](../../TerraNova/africa/KONCEPT-AVATARI-OASIS.md) — **žádný pan-afrikanismus jako jeden NFT texture pack** · orisha arcs oddělit od initiatory religion držitelů.
+
+### **142. Ọṣun** (River reciprocity òrìṣà)
+**Ray:** Aqua + Ruby-Gold · **Role:** humane liquidity / anti-burnout moderator buffs · **Quest:** River Wallet Reciprocity · **Ability:** Mirror Flow Benediction · **CL:** 3–8 · **NFT:** Mythic anti-fetish review
+
+### **143. Ṣàngó** (Thunder-order justice lore)
+**Ray:** Crimson + Indigo · **Role:** strike corruption institutions only · **Quest:** Double-Spend Lightning Trial · **Ability:** Gavelstrike Purge · **CL:** 5–9 · **NFT:** Epic diaspora consult
+
+### **144. Ọbàtálá** (Calm-maker / elder craft)
+**Ray:** Ivory + Slate · **Role:** infra readability & calm governance · **Quest:** White Clay Spec Review · **Ability:** Calm Kiln Shield · **CL:** 4–8 · **NFT:** Legendary initiatory-distance review
+
+### **145. Ọya** (Wind-crossing refactor)
+**Ray:** Indigo + Violet · **Role:** humane migration arcs · **Quest:** Market Crosswind Pivot · **Ability:** Gale Reconcile · **CL:** 5–9 · **NFT:** Epic glamour-ban review
+
+### **146. Mawu-Lisa** (Fon cosmology dual stewardship)
+**Ray:** Jade + Indigo · **Role:** alternating listening governance · **Quest:** Split Mandate Sunset · **Ability:** Equinox Lock · **CL:** 6–9 · **NFT:** Rare consult Benin-region framing
+
+### **147. Nyame / Nyankopon** (Akan high-god pedagogical compass)
+**Ray:** Pearl + Indigo · **Role:** laconic truthful proposals · **Quest:** Thin Ice Oracle Proposals · **Ability:** High God Hush (spam proposal cooldown lore) · **CL:** 5–9 · **NFT:** Rare consult
+
+### **148. Kwaku Ananse** (Story-weaver pedagogy)
+**Ray:** Charcoal + Gold · **Role:** revelation via narrative puzzle · **Quest:** Web-of-Forks Parable · **Ability:** Thread Insight · **CL:** 2–8 · **NFT:** Rare diaspora VO + writer consult
+
+### **149. Ausar-Osiris** (Kemetic cyclic renewal ethics)
+**Ray:** Jade + Indigo · **Role:** humane chain restart symbolism · **Quest:** Green Renewal Hardfork Ritual · **Ability:** Verdant Revival Mark · **CL:** 5–9 · **NFT:** Mythic museum-repat framing
+
+### **150. Maʿăt** (Feather tribunal / integrity voting)
+**Ray:** Ivory + Indigo · **Role:** DAO truth-game pedagogy · **Quest:** Featherweighted Vote Replay · **Ability:** Scale Reveal Overlay · **CL:** 4–9 · **NFT:** Epic consult
+
+### **151. Anna Njinga** (Ndongo–Matamba resistance diplomat)
+**Ray:** Crimson + Indigo · **Role:** asymmetrical negotiation vs empire lore · **Quest:** Ambush Treaty Table Flip · **Ability:** Strategic Bluff Counter · **CL:** 5–9 · **NFT:** Mythic historians + Angola/diaspora consult
+
+---
+
 ## 🎮 GAMEPLAY INTEGRATION
 
 ### **Avatar Unlocking System:**
@@ -828,10 +1560,10 @@
 - Test Matrix integration
 
 ### **Phase 4 (Beta):**
-**All 51 Avatars:** Complete roster
+**All 151 Avatars:** Complete roster (51 + First Nations 10 + Pacific 10 + Tibet 10 + India Extended 10 + Japan 10 + China 10 + Indonesia 10 + Australia 10 + Aotearoa NZ 10 + Africa 10)
 - Test all quest lines
 - Test all abilities
-- Test NFT system
+- Test NFT system *(Indigenous + Tibetan + Hindu + Japan/China/Indonesia/Australia/Māori + **Africa/orisha/Kemet consult** gates per TerraNova podsložky)*
 - Golden Egg clues active
 
 ---
@@ -843,14 +1575,14 @@
 - **Sprite Sheet:** 32×32 pixels × 4 directions × 3 animation frames
 - **Combat Pose:** 64×64 pixels (if combat avatar)
 - **Ability Animation:** 16-frame sprite sheet
-- **NFT Artwork:** 1024×1024 pixels (high-res for marketplace)
+- **NFT Artwork:** 1024×1024 pixels (high-res for marketplace) — **Kāne (65): no NFT art path (kapu / presence-only)**; **Padmasambhava (72): kapu / Terma Keeper path (viz TerraNova)**
 
-**Total Art Assets:**
-- 51 portraits
-- 51 sprite sheets (12 frames each = 612 sprites)
-- 51 ability animations (816 frames)
-- 51 NFT artworks
-- **Estimated:** 1,500+ individual art pieces
+**Total Art Assets** *(upper bound if every slot gets full treatment)*:
+- ≤151 portraits *(Kāne + Padmasambhava: alternate presence treatment; Australia + some Māori + Africa orisha imagery: consult-gated art)*
+- ≤151 sprite sheets (12 frames each)
+- ≤151 ability animations
+- ≤151 NFT artwork paths *(Kapu exclusions: Padmasambhava, Kāne; extra review: Kālī, Barong/Rangda, Australia/Māori, òrìṣà / Kemet commercialization gates)*  
+- **Estimated:** 4,900+ individual art pieces
 
 ---
 
@@ -873,12 +1605,12 @@
 ---
 
 **Total Development Estimate:**
-- **51 avatars × 40 hours average** = **2,040 hours** (design + implementation)
-- **Team of 5 developers** = **~10 months** (assuming parallel work)
+- **151 avatars × 40 hours average** = **6,040 hours** (design + implementation; Indigenous + Tibetan + Hindu + Australia/Māori + **Africa / diaspora** consultation budget)
+- **Team of 5 developers** ≈ **~18 months** (assuming parallel work; audits not counted)
 
 ---
 
-**Document Version:** 1.0  
-**Last Updated:** October 30, 2025  
+**Document Version:** 1.5  
+**Last Updated:** 2026-05-11 (Africa Circle 142–151; změň datum při přidání Atlantis/Lemurie/kosmové vlny)  
 **Author:** ZION Game Design Team  
-**Status:** COMPLETE ROSTER - READY FOR DEVELOPMENT
+**Status:** COMPLETE ROSTER (151 geografických kruhů) — Atlantis / Lemuria / kosmické archetypy jako **nadcházející vlna** nad rámec #142–151
