@@ -14,4 +14,4 @@ Tato složka doplňuje geopolitickou knihovnu ZION OASIS o **severské germánsk
 ## Související
 
 - Souhrnný roster: [`../../docs2.9/ZION_OASIS/AVATAR_ROSTER.md`](../../docs2.9/ZION_OASIS/AVATAR_ROSTER.md)
-- Po tomto desetibloku: **Indie rozšíření #192+** (Viṣṇu / Brahmā a další — viz [`../india/KONCEPT-AVATARI-OASIS.md`](../india/KONCEPT-AVATARI-OASIS.md))
+- Po tomto desetibloku: **Staroegypt #192–201** (viz [`../ancient-egypt/README.md`](../ancient-egypt/README.md)); **Indie rozšíření #202+** (viz [`../india/KONCEPT-AVATARI-OASIS.md`](../india/KONCEPT-AVATARI-OASIS.md))

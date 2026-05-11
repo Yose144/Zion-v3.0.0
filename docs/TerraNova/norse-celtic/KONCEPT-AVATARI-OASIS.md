@@ -5,7 +5,7 @@ Souhrnná tabulka: **[`../../docs2.9/ZION_OASIS/AVATAR_ROSTER.md`](../../docs2.9
 ## Číslování a návaznost
 
 - Tento desetiblok následuje po **Cosmic / Vzestup #172–181**.
-- **Indie (Viṣṇu / Brahmā a další rozšíření)** posunuto na **#192+** — viz [`../india/KONCEPT-AVATARI-OASIS.md`](../india/KONCEPT-AVATARI-OASIS.md).
+- **Staroegypt (faraonský kruh)** **#192–201** — viz [`../ancient-egypt/KONCEPT-AVATARI-OASIS.md`](../ancient-egypt/KONCEPT-AVATARI-OASIS.md). **Indie (Viṣṇu / Brahmā a další rozšíření)** posunuto na **#202+** — viz [`../india/KONCEPT-AVATARI-OASIS.md`](../india/KONCEPT-AVATARI-OASIS.md).
 
 ## Rámec tradic (před implementací copy/art)
 

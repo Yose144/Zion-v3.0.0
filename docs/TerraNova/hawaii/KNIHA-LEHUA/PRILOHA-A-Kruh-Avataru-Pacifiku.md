@@ -6,7 +6,7 @@
 
 ## Most mezi knihami
 
-V repozitáři **ZION OASIS** je nyní rozšířený roster **191 avatarů** *(2026-05)*:
+V repozitáři **ZION OASIS** je nyní rozšířený roster **201 avatarů** *(2026-05)*:
 - **51 původních** v `docs/docs2.9/ZION_OASIS/SACRED_TRINITY/` *(Hindu, Ascended Masters, Christian, Buddhist, Historical, Matrix, ZION Originals)*
 - **+10 z First Nations Circle** *(Lakota, Hopi, Maya, Q'ero, Cree, Yanomami)* — profily `52_*.md` … `61_*.md` + [`AVATAR_ROSTER.md`](../../../docs2.9/ZION_OASIS/AVATAR_ROSTER.md)
 - **+10 Pacifický Kruh** *(62–71)* — profily `62_LA_ILIAI.md` … `71_MAUI.md` *(tato příloha = literární zdroj pravdy; OASIS = herní stylizace)*
@@ -22,6 +22,7 @@ V repozitáři **ZION OASIS** je nyní rozšířený roster **191 avatarů** *(2
 - **+10 Lemuria Circle (syntetická pedagogika)** *(162–171)* — `docs/TerraNova/lemuria/KONCEPT-AVATARI-OASIS.md`
 - **+10 Cosmic / Vzestup Circle** *(172–181)* — `docs/TerraNova/cosmic/KONCEPT-AVATARI-OASIS.md` *(+ archiv `APP&WEB/public_html/V2/Vzestup/`; ne medicína)*
 - **+10 Norse–Celtic Circle** *(182–191)* — `docs/TerraNova/norse-celtic/KONCEPT-AVATARI-OASIS.md` *(Valhalla jen guild metafora; žádná rasová pýcha)*
+- **+10 Ancient Egypt Circle** *(192–201)* — `docs/TerraNova/ancient-egypt/KONCEPT-AVATARI-OASIS.md` *(doplňuje #06 / #149–150; žádné muzejní loot NFT)*
 
 Tato příloha **zůstává literárním a etickým zdrojem** pro **Pacifický Kruh** *(avatari 62–71)* — postavy z polynéské tradice pro MMORPG / OASIS lore.
 
@@ -232,9 +233,10 @@ ZION Originals (6)             — beze změny
 🌫️ Lemuria Circle (10)         — z docs/TerraNova/lemuria/ (162–171; debunk + ekologie)
 🌠 Cosmic / Vzestup (10)       — z docs/TerraNova/cosmic/ (172–181; COSMIC MAP + V2/Vzestup archiv)
 ⚔️ Norse–Celtic (10)           — z docs/TerraNova/norse-celtic/ (182–191; etika v 01-RAMEC)
+🏺 Ancient Egypt (10)          — z docs/TerraNova/ancient-egypt/ (192–201; etika v 01-RAMEC)
 ```
 
-**Celkem: 191 avatarů** *(51 základních + 140 ze čtrnácti rozšiřujících desetibloků)*.
+**Celkem: 201 avatarů** *(51 základních + 150 z patnácti rozšiřujících desetibloků)*.
 
 ---
 

@@ -10,7 +10,7 @@ Tento dokument je **literární a designový zdroj** pro **Tibet Circle** v `doc
 
 **14. Dalajláma (Tenzin Gyatso)** je v OASIS již jako **avatar #51** — viz [`../../docs2.9/ZION_OASIS/SACRED_TRINITY/51_DALAI_LAMA_XIV.md`](../../docs2.9/ZION_OASIS/SACRED_TRINITY/51_DALAI_LAMA_XIV.md). **Neduplikujeme** ho jako #73.
 
-**Souhrnný roster:** [`../../docs2.9/ZION_OASIS/AVATAR_ROSTER.md`](../../docs2.9/ZION_OASIS/AVATAR_ROSTER.md) — **191 avatarů** včetně **Cosmic/Vzestup #172–181** a **Norse–Celtic #182–191**; viz [`../cosmic/`](../cosmic/), [`../norse-celtic/`](../norse-celtic/) a sesterské TerraNova podsložky.
+**Souhrnný roster:** [`../../docs2.9/ZION_OASIS/AVATAR_ROSTER.md`](../../docs2.9/ZION_OASIS/AVATAR_ROSTER.md) — **201 avatarů** včetně **Cosmic/Vzestup #172–181**, **Norse–Celtic #182–191** a **Ancient Egypt #192–201**; viz [`../cosmic/`](../cosmic/), [`../norse-celtic/`](../norse-celtic/), [`../ancient-egypt/`](../ancient-egypt/) a sesterské TerraNova podsložky.
 
 ---
 
@@ -79,7 +79,7 @@ docs/TerraNova/cosmic/
 docs/docs2.9/ZION_OASIS/
   SACRED_TRINITY/72_*.md … 81_*.md   ← Tibet
   SACRED_TRINITY/82_*.md … 181_*.md   ← Indie … Cosmic capstone
-  AVATAR_ROSTER.md                   ← souhrn **191** avatarů (**#192+** Indie dle `india/KONCEPT`; **#182–191** Norse–Celtic)
+  AVATAR_ROSTER.md                   ← souhrn **201** avatarů (**#202+** Indie dle `india/KONCEPT`; **#182–191** Norse–Celtic; **#192–201** Ancient Egypt)
 ```
 
 ---
