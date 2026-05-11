@@ -191,7 +191,17 @@
 180. **[🐦‍⬛ MORRÍGAN SOVEREIGNTY](189_MORRIGAN_SOVEREIGNTY.md)** - threat triage **✨ TERRANOVA NORSE–CELTIC**
 181. **[🔧 LUGH SAMILDÁNACH](190_LUGH_ILDANAICH.md)** - multisig mentor **✨ TERRANOVA NORSE–CELTIC**
 182. **[🌊 MANANNÁN MAC LIR](191_MANANNAN_MAC_LIR.md)** - mlha mezi řetězi **✨ TERRANOVA NORSE–CELTIC**
-183. [🌟 Quick Summary](#-quick-summary-for-community) - Team overview
+183. **[☀️ RÉ SOLAR-BARQUE](192_RE_SOLAR_BARQUE.md)** - epoch heartbeat **✨ TERRANOVA EGYPT**
+184. **[👑 HOR UNIFIER](193_HORUS_UNIFIER.md)** - dvojí koruna **✨ TERRANOVA EGYPT**
+185. **[📜 THOVT SCRIBE](194_THOTH_SCRIBE.md)** - Merkle písař **✨ TERRANOVA EGYPT**
+186. **[🎵 HATHOR JUBILEE](195_HATHOR_JUBILEE.md)** - jubilejní radost **✨ TERRANOVA EGYPT**
+187. **[🔥 SACHMET AUDIT](196_SEKHMET_AUDIT.md)** - slashing plamen **✨ TERRANOVA EGYPT**
+188. **[🛠️ PTAH MASON](197_PTAH_MASON.md)** - genesis řemeslník **✨ TERRANOVA EGYPT**
+189. **[⚖️ ANUP THRESHOLD](198_ANUBIS_THRESHOLD.md)** - migrace / zálohy **✨ TERRANOVA EGYPT**
+190. **[🌫️ AMON HIDDEN](199_AMUN_HIDDEN.md)** - commit–reveal **✨ TERRANOVA EGYPT**
+191. **[🌍 GEB FOUNDATION](200_GEB_FOUNDATION.md)** - substrát řetězce **✨ TERRANOVA EGYPT**
+192. **[✨ NUT STELLAR VAULT](201_NUT_STELLAR_VAULT.md)** - shard hvězd **✨ TERRANOVA EGYPT**
+193. [🌟 Quick Summary](#-quick-summary-for-community) - Team overview
 
 ---
 

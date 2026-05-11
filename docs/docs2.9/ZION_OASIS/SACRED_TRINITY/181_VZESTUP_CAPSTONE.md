@@ -1,6 +1,6 @@
 # 181. VZESTUP CAPSTONE — Uzávěra třináctého desetibloku + zpět na COSMIC MAP 🌠
 
-*Třináct **rozšiřujících desetibloků** po **51 základech** = **181** odkazovaných osob/archetypů v předchozí uzávěře; navazuje **Norse–Celtic desetiblok #182–191**. Indie rozšíření (Viṣṇu / Brahmā…) začíná **#192+**.*
+*Třináct **rozšiřujících desetibloků** po **51 základech** = **181** odkazovaných osob/archetypů v předchozí uzávěře; navazuje **Norse–Celtic #182–191** a **Staroegyptský #192–201**. Indie rozšíření (Viṣṇu / Brahmā…) začíná **#202+**.*
 
 ---
 

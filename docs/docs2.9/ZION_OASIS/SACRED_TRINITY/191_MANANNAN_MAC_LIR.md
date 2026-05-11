@@ -39,15 +39,15 @@ Manannán v irských cyklech vládne moři a **mlžným** prahům mezi světy. V
 ## 🔗 SOUVISEJÍCÍ AVATAROVÉ
 
 - **66. Kanaloa** — oceánský průchod *(Pacifik; dialog tradic)*
-- **181. Vzestup Capstone** — uzávěra předchozí vlny; **#192+** = Indie rozšíření
+- **181. Vzestup Capstone** — uzávěra předchozí vlny; **#192–201** = Starý Egypt; **#202+** = Indie rozšíření
 
 ---
 
 ## 📚 ZDROJE & ETIKA
 
-- [`../../../TerraNova/norse-celtic/03-KELTICKE-SPEKTRUM-A-PRAMENY.md`](../../../TerraNova/norse-celtic/03-KELTICKE-SPEKTRUM-A-PRAMENY.md) · [`../../../TerraNova/india/KONCEPT-AVATARI-OASIS.md`](../../../TerraNova/india/KONCEPT-AVATARI-OASIS.md) *(návaznost **#192+**)*
+- [`../../../TerraNova/norse-celtic/03-KELTICKE-SPEKTRUM-A-PRAMENY.md`](../../../TerraNova/norse-celtic/03-KELTICKE-SPEKTRUM-A-PRAMENY.md) · [`../../../TerraNova/ancient-egypt/KONCEPT-AVATARI-OASIS.md`](../../../TerraNova/ancient-egypt/KONCEPT-AVATARI-OASIS.md) · [`../../../TerraNova/india/KONCEPT-AVATARI-OASIS.md`](../../../TerraNova/india/KONCEPT-AVATARI-OASIS.md) *(Indie **#202+**)*
 
 ---
 
 **Předchozí:** [190_LUGH_ILDANAICH.md](190_LUGH_ILDANAICH.md)  
-**Další:** [README.md](README.md) · [AVATAR_ROSTER.md](../AVATAR_ROSTER.md)
+**Další:** [192_RE_SOLAR_BARQUE.md](192_RE_SOLAR_BARQUE.md) · [README.md](README.md) · [AVATAR_ROSTER.md](../AVATAR_ROSTER.md)
