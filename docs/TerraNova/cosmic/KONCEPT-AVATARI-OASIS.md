@@ -27,8 +27,8 @@ Souhrnná tabulka: **[`../../docs2.9/ZION_OASIS/AVATAR_ROSTER.md`](../../docs2.9
 1. **Žádné léčitelství ani wellness-NFT** tváří v tvář reálným symptómům — směrovat hráče k **lékařům** mimo lore.
 2. **„Galaktické rasy“ a jejich hierarchie** smí figurovat **jen jako součást diegetické instituce — [Galaktická federace](./GALAKTICKA_FEDERACE.md)** (mandáty a audit), **ne** jako řebříček **lidských** etnik ani phenotype-supremacie. Bez tohoto rámce zůstává hierarchie zakázána v art/copy.
 3. **Saint Germain, Sanat Kumara, další Masters už v core** — cosmic circle je **rámování a extension sloty**, ne nová sekta collectible.
-4. **Viṣṇu / Brahmā** rezervovat jako **#192+** viz [`../india/KONCEPT-AVATARI-OASIS.md`](../india/KONCEPT-AVATARI-OASIS.md) (po **Norse–Celtic** desetibloku **#182–191**, viz [`../norse-celtic/KONCEPT-AVATARI-OASIS.md`](../norse-celtic/KONCEPT-AVATARI-OASIS.md)).
+4. **Viṣṇu / Brahmā** rezervovat jako **#202+** viz [`../india/KONCEPT-AVATARI-OASIS.md`](../india/KONCEPT-AVATARI-OASIS.md) (po **Staroegyptském** desetibloku **#192–201**, viz [`../ancient-egypt/KONCEPT-AVATARI-OASIS.md`](../ancient-egypt/KONCEPT-AVATARI-OASIS.md); Norse–Celtic **#182–191** viz [`../norse-celtic/KONCEPT-AVATARI-OASIS.md`](../norse-celtic/KONCEPT-AVATARI-OASIS.md)).
 
 **Související rám hierarchie federace:** [`GALAKTICKA_FEDERACE.md`](./GALAKTICKA_FEDERACE.md).
 
-**Cosmic Circle (#172–181)** doplňuje roster po **#171**; navazuje **Norse–Celtic (#182–191)**; rozšíření **#192+** řeší Indie / další vlny podle komunity.
+**Cosmic Circle (#172–181)** doplňuje roster po **#171**; navazuje **Norse–Celtic (#182–191)** a **Ancient Egypt (#192–201)**; rozšíření **#202+** řeší Indie / další vlny podle komunity.
