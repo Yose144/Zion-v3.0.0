@@ -6,7 +6,7 @@
 
 ## Most mezi knihami
 
-V repozitáři **ZION OASIS** je nyní rozšířený roster **151 avatarů** *(2026-05)*:
+V repozitáři **ZION OASIS** je nyní rozšířený roster **191 avatarů** *(2026-05)*:
 - **51 původních** v `docs/docs2.9/ZION_OASIS/SACRED_TRINITY/` *(Hindu, Ascended Masters, Christian, Buddhist, Historical, Matrix, ZION Originals)*
 - **+10 z First Nations Circle** *(Lakota, Hopi, Maya, Q'ero, Cree, Yanomami)* — profily `52_*.md` … `61_*.md` + [`AVATAR_ROSTER.md`](../../../docs2.9/ZION_OASIS/AVATAR_ROSTER.md)
 - **+10 Pacifický Kruh** *(62–71)* — profily `62_LA_ILIAI.md` … `71_MAUI.md` *(tato příloha = literární zdroj pravdy; OASIS = herní stylizace)*
@@ -18,6 +18,10 @@ V repozitáři **ZION OASIS** je nyní rozšířený roster **151 avatarů** *(2
 - **+10 Australia Circle** *(122–131)* — `docs/TerraNova/australia/KONCEPT-AVATARI-OASIS.md`
 - **+10 Aotearoa NZ Circle** *(132–141)* — `docs/TerraNova/newzealand/KONCEPT-AVATARI-OASIS.md`
 - **+10 Africa Circle** *(142–151)* — `docs/TerraNova/africa/KONCEPT-AVATARI-OASIS.md`
+- **+10 Atlantis Circle (literární Platón)** *(152–161)* — `docs/TerraNova/atlantis/KONCEPT-AVATARI-OASIS.md`
+- **+10 Lemuria Circle (syntetická pedagogika)** *(162–171)* — `docs/TerraNova/lemuria/KONCEPT-AVATARI-OASIS.md`
+- **+10 Cosmic / Vzestup Circle** *(172–181)* — `docs/TerraNova/cosmic/KONCEPT-AVATARI-OASIS.md` *(+ archiv `APP&WEB/public_html/V2/Vzestup/`; ne medicína)*
+- **+10 Norse–Celtic Circle** *(182–191)* — `docs/TerraNova/norse-celtic/KONCEPT-AVATARI-OASIS.md` *(Valhalla jen guild metafora; žádná rasová pýcha)*
 
 Tato příloha **zůstává literárním a etickým zdrojem** pro **Pacifický Kruh** *(avatari 62–71)* — postavy z polynéské tradice pro MMORPG / OASIS lore.
 
@@ -224,9 +228,13 @@ ZION Originals (6)             — beze změny
 🇦🇺 Australia Circle (10)        — z docs/TerraNova/australia/ (122–131)
 🇳🇿 Aotearoa NZ Circle (10)      — z docs/TerraNova/newzealand/ (132–141)
 🌍 Africa Circle (10)            — z docs/TerraNova/africa/ (142–151)
+🏛️ Atlantis Circle (10)         — z docs/TerraNova/atlantis/ (152–161, Plato *Critias*)
+🌫️ Lemuria Circle (10)         — z docs/TerraNova/lemuria/ (162–171; debunk + ekologie)
+🌠 Cosmic / Vzestup (10)       — z docs/TerraNova/cosmic/ (172–181; COSMIC MAP + V2/Vzestup archiv)
+⚔️ Norse–Celtic (10)           — z docs/TerraNova/norse-celtic/ (182–191; etika v 01-RAMEC)
 ```
 
-**Celkem: 151 avatarů** *(51 základních + 100 z deseti rozšiřujících kruhů)*.
+**Celkem: 191 avatarů** *(51 základních + 140 ze čtrnácti rozšiřujících desetibloků)*.
 
 ---
 
