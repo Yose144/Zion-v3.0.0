@@ -65,7 +65,7 @@ Stejně jako u `saman/`:
 
 ## Vztah k ZION OASIS
 
-Sacred Trinity v `docs/docs2.9/ZION_OASIS/SACRED_TRINITY/` má rozšířený roster **151 avatarů**: **51** základních slotů plus **desetileté geografické/kulturní kruhy** First Nations **52–61**, Pacific **62–71**, Tibet **72–81**, Indie **82–91**, Japonsko **92–101**, Čína **102–111**, Indonésie **112–121**, Austrálie **122–131**, Aotearoa NZ **132–141**, Afrika **142–151**. Rozcestníky TerraNova viz odkazy níže podle kruhu. Zrcadlové profily ve stylu OASIS:
+Sacred Trinity v `docs/docs2.9/ZION_OASIS/SACRED_TRINITY/` má rozšířený roster **191 avatarů**: **51** základních slotů plus **čtrnáct rozšiřujících desetibloků** (First Nations **52–61**, Pacific **62–71**, Tibet **72–81**, Indie **82–91**, Japonsko **92–101**, Čína **102–111**, Indonésie **112–121**, Austrálie **122–131**, Aotearoa NZ **132–141**, Afrika **142–151**, literary **Atlantis 152–161**, syntetická **Lemúrie 162–171**, kosmický **Vzestup 172–181**, **Norse–Celtic 182–191**). Rozcestníky TerraNova viz odkazy níže podle kruhu. Zrcadlové profily ve stylu OASIS:
 
 - First Nations: [`52_HEHAKA_SAPA.md`](../../docs2.9/ZION_OASIS/SACRED_TRINITY/52_HEHAKA_SAPA.md) … [`61_HEYOKHA.md`](../../docs2.9/ZION_OASIS/SACRED_TRINITY/61_HEYOKHA.md)
 - Pacific (tato knihovna): [`62_LA_ILIAI.md`](../../docs2.9/ZION_OASIS/SACRED_TRINITY/62_LA_ILIAI.md) … [`71_MAUI.md`](../../docs2.9/ZION_OASIS/SACRED_TRINITY/71_MAUI.md)
@@ -77,6 +77,9 @@ Sacred Trinity v `docs/docs2.9/ZION_OASIS/SACRED_TRINITY/` má rozšířený ros
 - Australia: [`122_SEVEN_SISTERS_STEWARD.md`](../../docs2.9/ZION_OASIS/SACRED_TRINITY/122_SEVEN_SISTERS_STEWARD.md) … [`131_MAKARRATA_BRIDGE.md`](../../docs2.9/ZION_OASIS/SACRED_TRINITY/131_MAKARRATA_BRIDGE.md) — [`../australia/KONCEPT-AVATARI-OASIS.md`](../australia/KONCEPT-AVATARI-OASIS.md)
 - Aotearoa NZ: [`132_PAPATUANUKU.md`](../../docs2.9/ZION_OASIS/SACRED_TRINITY/132_PAPATUANUKU.md) … [`141_KUPE.md`](../../docs2.9/ZION_OASIS/SACRED_TRINITY/141_KUPE.md) — [`../newzealand/KONCEPT-AVATARI-OASIS.md`](../newzealand/KONCEPT-AVATARI-OASIS.md)
 - Africa: [`142_OSHUN.md`](../../docs2.9/ZION_OASIS/SACRED_TRINITY/142_OSHUN.md) … [`151_ANNA_NZINGA.md`](../../docs2.9/ZION_OASIS/SACRED_TRINITY/151_ANNA_NZINGA.md) — [`../africa/KONCEPT-AVATARI-OASIS.md`](../africa/KONCEPT-AVATARI-OASIS.md)
+- Atlantis (literární): [`152_ATLAS.md`](../../docs2.9/ZION_OASIS/SACRED_TRINITY/152_ATLAS.md) … [`161_AZAES.md`](../../docs2.9/ZION_OASIS/SACRED_TRINITY/161_AZAES.md) — [`../atlantis/KONCEPT-AVATARI-OASIS.md`](../atlantis/KONCEPT-AVATARI-OASIS.md)
+- Lemúrie (syntetická pedagogika): [`162_LEMUR_STEWARD.md`](../../docs2.9/ZION_OASIS/SACRED_TRINITY/162_LEMUR_STEWARD.md) … [`171_CIRCLE_CLOSURE.md`](../../docs2.9/ZION_OASIS/SACRED_TRINITY/171_CIRCLE_CLOSURE.md) — [`../lemuria/KONCEPT-AVATARI-OASIS.md`](../lemuria/KONCEPT-AVATARI-OASIS.md)
+- Cosmic / Vzestup: [`172_GC_SUN_STEWARD.md`](../../docs2.9/ZION_OASIS/SACRED_TRINITY/172_GC_SUN_STEWARD.md) … [`181_VZESTUP_CAPSTONE.md`](../../docs2.9/ZION_OASIS/SACRED_TRINITY/181_VZESTUP_CAPSTONE.md) — [`../cosmic/KONCEPT-AVATARI-OASIS.md`](../cosmic/KONCEPT-AVATARI-OASIS.md)
 - Souhrn: [`AVATAR_ROSTER.md`](../../docs2.9/ZION_OASIS/AVATAR_ROSTER.md)
 
 **Kāne (65)** zůstává **bez NFT / presence-only** podle etiky přílohy. Všechny polynézské postavy stále vyžadují **živou bránu** (kupuna, native VO, income share) dle [`KNIHA-LEHUA/PRILOHA-A-Kruh-Avataru-Pacifiku.md`](KNIHA-LEHUA/PRILOHA-A-Kruh-Avataru-Pacifiku.md) — OASIS soubory jsou **návrh**, ne hotová hra.
