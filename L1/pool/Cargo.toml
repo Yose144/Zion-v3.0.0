@@ -53,7 +53,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 uuid = { version = "1", features = ["v4", "serde"] }
 hex = "0.4"
 blake3 = "1.5"
-sha3 = "0.10"
+sha3 = "0.11"
 chrono = { version = "0.4", features = ["serde"] }
 tokio-postgres = { version = "0.7", features = ["with-chrono-0_4"] }
 reqwest = { version = "0.12", features = ["json"] }

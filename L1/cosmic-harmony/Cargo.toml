@@ -65,7 +65,7 @@ anyhow = "1.0"
 tracing = "0.1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-sha3 = "0.10"
+sha3 = "0.11"
 keccak = "0.1"
 aes = "0.8"
 blake3 = "1.5"

@@ -24,7 +24,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 reqwest = { version = "0.12", features = ["json", "rustls-tls"] }
 
 # Crypto — keccak256 for EVM event topic hash (replaces ethers dependency)
-sha3 = "0.10"   # Keccak256 (same family as Ethereum's hash function)
+sha3 = "0.11"   # Keccak256 (same family as Ethereum's hash function)
 sha2 = "0.10"
 hex = "0.4"
 # secp256k1 signing for EVM transactions (submitLockProof)
