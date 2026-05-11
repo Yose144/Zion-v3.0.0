@@ -47,9 +47,9 @@ Volitelný **dar** výnosů: školství / ekologické NGO v Indii nebo diaspoře
 
 ## Proč né Brahma / Viṣṇu jako nové celé čísla?
 
-– **Viṣṇu** už je distribuovaný přes Kršnu, Ramu, Kalkīho, Hari-Krishna tematiku (#00 lineage). Dedikovaný **Viṣṇu-Nārāyaṇ** slot možný později jako **#152+**, pokud komunita chce ikonographically distinct avatar.
+– **Viṣṇu** už je distribuovaný přes Kršnu, Ramu, Kalkīho, Hari-Krishna tematiku (#00 lineage). Dedikovaný **Viṣṇu-Nārāyaṇ** slot možný později jako **#192+**, pokud komunita chce ikonographically distinct avatar *(po **Norse–Celtic** vlně **#182–191** a cosmické **#172–181**)*.
 
-– **Brahmā** je částečně pokrytý **[42]** (Trimūrti); samostatný **Brahmā** avatar je možný později jako **#152+**, pokud to komunita a poradní výbor schválí — zde vynecháno kvůli redundanci.
+– **Brahmā** je částečně pokrytý **[42]** (Trimūrti); samostatný **Brahmā** avatar je možný později jako **#192+**, pokud to komunita a poradní výbor schválí — zde vynecháno kvůli redundanci.
 
 ---
 
