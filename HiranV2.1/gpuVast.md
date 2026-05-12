@@ -111,6 +111,12 @@ Další příkazy: `--destroy <id>` (ukonči platby).
 
 **Záloha starého v1 na produkci (Ollama `zion-expert`)** před přepnutím na v2: [`docs/ops/BACKUP_HIRAN_V1_OLLAMA.md`](../docs/ops/BACKUP_HIRAN_V1_OLLAMA.md).
 
+### 2.2 Training na Vast / malém disku
+
+- **15 GB root** na levné instanci typicky nestačí na současně: plný `llama.cpp` CUDA build, HF cache, LoRA checkpointy a GGUF. Pro **Hiran v2.2 Phase 2** počítej **≥100 GB** volume nebo větší image disk (viz [`HiranV2.2/DETAILED_IMPLEMENTATION_PLAN.md`](../HiranV2.2/DETAILED_IMPLEMENTATION_PLAN.md) Resource Requirements).
+- Před `cmake --build` uvolni místo (`docker system prune`, smaž staré `build/`, HF cache v `~/.cache/huggingface`), jinak build spadne na `No space left on device`.
+- Inference-only: drž na disku jen **jeden** GGUF + předbuildnutý `llama-server` binární artefakt (ne celý zdroják llama.cpp), viz dřívější poznámky k `LD_LIBRARY_PATH` pro Conda images.
+
 ## Odkazy
 
 - [Vast API overview](https://docs.vast.ai/api-reference/overview-and-quickstart)
