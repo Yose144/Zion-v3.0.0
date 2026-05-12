@@ -1,7 +1,7 @@
 # Hiran / Hiranyagarbha v2.1 — prováděcí plán
 
-**Účel:** jeden dokument, jak z **aktuálních dat a V3 kanonu** dojít k **„pracovnímu agentovi“**: doménové váhy + RAG + rozumný provoz inference.  
-**Kontext strategie širší náplně (RAG vrstvy § 3.6):** viz [`Hiran_v2.1.md`](./Hiran_v2.1.md).  
+**Účel:** jeden dokument, jak z **aktuálních dat a V3 kanonu** dojít k **„pracovnímu agentovi“**: doménové váhy + RAG + rozumný provoz inference.
+**Kontext strategie širší náplně (RAG vrstvy § 3.6):** viz [`Hiran_v2.1.md`](./Hiran_v2.1.md).
 **Starší roadmapa řady v1→frontier:** [`HIRANYAGARBHA_UPGRADE_PLAN.md`](../HIRANYAGARBHA_UPGRADE_PLAN.md) — tenhle plán **zužuje** na realistický **v2.1 milestone** v tomto repu.
 
 ---
@@ -52,7 +52,7 @@
 
 ### Fáze E — DPO / preference (volitelné, po MVP)
 
-· Malý preference dataset (správná vs slabá odpověď na ZION scenáře).  
+· Malý preference dataset (správná vs slabá odpověď na ZION scenáře).
 · Drží se **pod** řádkem počtu vah — neřešit před hotovým SFT+RAG.
 
 ---
@@ -114,5 +114,5 @@
 
 ---
 
-*Tento dokument se aktualizuje při změnách infra (jména modelů, porty).*  
+*Tento dokument se aktualizuje při změnách infra (jména modelů, porty).*
 *Začněte příkazem v kořeni repozitáře: `./HiranV2.1/bootstrap_workspace.sh`*

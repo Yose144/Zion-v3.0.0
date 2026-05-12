@@ -1,8 +1,8 @@
 # ZION AI Native — Kompletní koncept 2.9
 
-**Datum:** 25. března 2026  
-**Zdroj:** Syntéza 50+ historických dokumentů + kompletní 2.9-History analýza  
-**Účel:** Jediný autoritativní přehled AI Native vize, architektury a stavu implementace  
+**Datum:** 25. března 2026
+**Zdroj:** Syntéza 50+ historických dokumentů + kompletní 2.9-History analýza
+**Účel:** Jediný autoritativní přehled AI Native vize, architektury a stavu implementace
 **Zahrnuje:** Historický vývoj od Python prototypu (prosinec 2025) po Rust mainnet (březen 2026)
 
 ---
