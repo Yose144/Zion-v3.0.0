@@ -189,6 +189,7 @@ fn map_service(service: &str) -> String {
         "pool" => "pool".into(),
         "miner" => "miner".into(),
         "agent" | "ai-native" => "ai-native".into(),
+        "hiran" | "inference" => "hiran-inference".into(),
         "website" => "website".into(),
         "redis" => "redis".into(),
         "bridge" => "bridge".into(),
@@ -204,7 +205,7 @@ fn validate_service_target(service: &str) -> Result<String> {
     }
 
     anyhow::bail!(
-        "Unsupported service target '{}'. Supported targets: all, node, core, pool, miner, agent, ai-native, bridge, dao, website, redis, monitoring",
+        "Unsupported service target '{}'. Supported targets: all, node, core, pool, miner, agent, ai-native, hiran, inference, bridge, dao, website, redis, monitoring",
         service
     )
 }
@@ -219,6 +220,8 @@ fn is_supported_service_target(service: &str) -> bool {
             | "miner"
             | "agent"
             | "ai-native"
+            | "hiran"
+            | "inference"
             | "bridge"
             | "dao"
             | "website"
