@@ -79,7 +79,7 @@ check_prereqs() {
 
     if [[ ! -f "$DATASET" ]]; then
         err "Dataset nenalezen: $DATASET"
-        err "Spusť nejdřív: cd scripts/finetune && python collect_dataset.py"
+        err "Spusť nejdřív: cd HiranV2.1/finetune && python collect_dataset.py"
         exit 1
     fi
 
