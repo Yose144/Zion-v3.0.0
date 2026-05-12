@@ -101,6 +101,46 @@ services:
     networks:
       - zion-v3
 
+  # Hiran v2.2 Inference Service
+  hiran-inference:
+    build:
+      context: ./hiran-inference
+      dockerfile: Dockerfile
+    image: zion-hiran-inference:${HIRAN_TAG:-v2.2}
+    container_name: zion-hiran-inference
+    restart: unless-stopped
+    profiles: ["hiran", "mainnet"]
+    ports:
+      - "${HIRAN_PORT:-8002}:8002"
+    volumes:
+      - hiran-models:/models
+      - hiran-cache:/cache
+      - hiran-logs:/logs
+    environment:
+      - HIRAN_MODEL=${HIRAN_MODEL:-/models/hiran-v2.2-q5_k_m.gguf}
+      - HIRAN_BACKEND=${HIRAN_BACKEND:-llama_cpp}
+      - HIRAN_DEVICE=${HIRAN_DEVICE:-cuda}
+      - HIRAN_HOST=0.0.0.0
+      - HIRAN_PORT=8002
+      - HIRAN_CTX_SIZE=${HIRAN_CTX_SIZE:-4096}
+      - HIRAN_N_GPU_LAYERS=${HIRAN_N_GPU_LAYERS:-99}
+      - HIRAN_THREADS=${HIRAN_THREADS:-4}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    networks:
+      - zion-v3
+
   # Monitoring stack (separate profile)
   prometheus:
     image: prom/prometheus:v2.53.0
@@ -141,6 +181,9 @@ volumes:
   zion-node-data:
   prometheus-data:
   grafana-data:
+  hiran-models:
+  hiran-cache:
+  hiran-logs:
 
 networks:
   zion-v3:

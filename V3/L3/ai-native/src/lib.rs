@@ -24,6 +24,7 @@ pub mod consciousness;
 pub mod consciousness_engine;
 pub mod ekam_field;
 pub mod error;
+pub mod hiran_inference;
 pub mod hiranyagarbha;
 pub mod in_context;
 pub mod knowledge_base;
@@ -42,6 +43,7 @@ pub mod warp_agent;
 pub use consciousness::ConsciousnessLevel;
 pub use consciousness_engine::{ConsciousnessEngine, ConsciousnessStatus};
 pub use error::{AiError, AiResult};
+pub use hiran_inference::{HiranInferenceClient, HiranStatus, HybridInferenceBackend};
 pub use hiranyagarbha::{HiranyagarbhaAgent, MmlModality};
 pub use llm_backend::{LlmBackend, LlmRequest, EchoBackend, RemoteHttpBackend};
 pub use knowledge_base::{

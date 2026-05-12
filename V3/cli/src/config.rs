@@ -24,6 +24,8 @@ pub struct Config {
     #[serde(default)]
     pub agent: AgentConfig,
     #[serde(default)]
+    pub hiran: Option<HiranConfig>,
+    #[serde(default)]
     pub deploy: DeployConfig,
     #[serde(default)]
     pub bridge: BridgeConfig,
@@ -77,6 +79,17 @@ pub struct MinerConfig {
 pub struct AgentConfig {
     pub url: String,
     pub model: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HiranConfig {
+    pub model_path: String,
+    pub backend: String,
+    pub device: String,
+    pub port: u16,
+    pub max_context: usize,
+    pub temperature: f32,
+    pub top_p: f32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -136,6 +149,20 @@ impl Default for AgentConfig {
     }
 }
 
+impl Default for HiranConfig {
+    fn default() -> Self {
+        Self {
+            model_path: "/models/hiran-v2.2-q5_k_m.gguf".into(),
+            backend: "llama_cpp".into(),
+            device: "cuda".into(),
+            port: 8002,
+            max_context: 4096,
+            temperature: 0.7,
+            top_p: 0.9,
+        }
+    }
+}
+
 impl Default for DeployConfig {
     fn default() -> Self {
         Self {
@@ -165,6 +192,7 @@ impl Default for Config {
             pool: PoolConfig::default(),
             miner: MinerConfig::default(),
             agent: AgentConfig::default(),
+            hiran: Some(HiranConfig::default()),
             deploy: DeployConfig::default(),
             bridge: BridgeConfig::default(),
             dao: DaoConfig::default(),
@@ -222,13 +250,55 @@ pub fn set_value(key: &str, value: &str) -> Result<()> {
         ["miner", "profile"] => cfg.miner.profile = value.into(),
         ["agent", "url"] => cfg.agent.url = value.into(),
         ["agent", "model"] => cfg.agent.model = value.into(),
+        ["hiran", "model_path"] => {
+            if cfg.hiran.is_none() {
+                cfg.hiran = Some(HiranConfig::default());
+            }
+            cfg.hiran.as_mut().unwrap().model_path = value.into();
+        }
+        ["hiran", "backend"] => {
+            if cfg.hiran.is_none() {
+                cfg.hiran = Some(HiranConfig::default());
+            }
+            cfg.hiran.as_mut().unwrap().backend = value.into();
+        }
+        ["hiran", "device"] => {
+            if cfg.hiran.is_none() {
+                cfg.hiran = Some(HiranConfig::default());
+            }
+            cfg.hiran.as_mut().unwrap().device = value.into();
+        }
+        ["hiran", "port"] => {
+            if cfg.hiran.is_none() {
+                cfg.hiran = Some(HiranConfig::default());
+            }
+            cfg.hiran.as_mut().unwrap().port = value.parse()?;
+        }
+        ["hiran", "max_context"] => {
+            if cfg.hiran.is_none() {
+                cfg.hiran = Some(HiranConfig::default());
+            }
+            cfg.hiran.as_mut().unwrap().max_context = value.parse()?;
+        }
+        ["hiran", "temperature"] => {
+            if cfg.hiran.is_none() {
+                cfg.hiran = Some(HiranConfig::default());
+            }
+            cfg.hiran.as_mut().unwrap().temperature = value.parse()?;
+        }
+        ["hiran", "top_p"] => {
+            if cfg.hiran.is_none() {
+                cfg.hiran = Some(HiranConfig::default());
+            }
+            cfg.hiran.as_mut().unwrap().top_p = value.parse()?;
+        }
         ["deploy", "default_server"] => cfg.deploy.default_server = value.into(),
         ["deploy", "ssh_key"] => cfg.deploy.ssh_key = value.into(),
         ["deploy", "ssh_user"] => cfg.deploy.ssh_user = value.into(),
         ["bridge", "port"] => cfg.bridge.port = value.parse()?,
         ["dao", "port"] => cfg.dao.port = value.parse()?,
         ["cli", "auto_update_check"] => cfg.cli.auto_update_check = value.parse()?,
-        _ => anyhow::bail!("Unknown config key: {}. Valid keys: node.rpc_host, node.rpc_port, node.p2p_port, pool.host, pool.port, miner.wallet, miner.btc_wallet, miner.threads, miner.backend, miner.profile, agent.url, agent.model, deploy.ssh_key, deploy.ssh_user, deploy.default_server, bridge.port, dao.port, cli.auto_update_check", key),
+        _ => anyhow::bail!("Unknown config key: {}. Valid keys: node.rpc_host, node.rpc_port, node.p2p_port, pool.host, pool.port, miner.wallet, miner.btc_wallet, miner.threads, miner.backend, miner.profile, agent.url, agent.model, hiran.model_path, hiran.backend, hiran.device, hiran.port, hiran.max_context, hiran.temperature, hiran.top_p, deploy.ssh_key, deploy.ssh_user, deploy.default_server, bridge.port, dao.port, cli.auto_update_check", key),
     }
     save(&cfg)?;
     println!("✓ {} = {}", key, value);
@@ -288,6 +358,39 @@ pub fn validate(cfg: &Config) -> ValidationReport {
         errors.push("agent.url must not be empty".to_string());
     } else if !cfg.agent.url.starts_with("http://") && !cfg.agent.url.starts_with("https://") {
         errors.push("agent.url must start with http:// or https://".to_string());
+    }
+
+    // Validate hiran config if present
+    if let Some(ref hiran_cfg) = cfg.hiran {
+        if hiran_cfg.model_path.trim().is_empty() {
+            errors.push("hiran.model_path must not be empty".to_string());
+        }
+        match hiran_cfg.backend.trim().to_ascii_lowercase().as_str() {
+            "llama_cpp" | "onnx" | "tensorrt" => {}
+            other => errors.push(format!(
+                "hiran.backend has unsupported value '{}'. Supported: llama_cpp, onnx, tensorrt",
+                other
+            )),
+        }
+        match hiran_cfg.device.trim().to_ascii_lowercase().as_str() {
+            "cuda" | "cpu" | "auto" => {}
+            other => errors.push(format!(
+                "hiran.device has unsupported value '{}'. Supported: cuda, cpu, auto",
+                other
+            )),
+        }
+        if hiran_cfg.port == 0 {
+            errors.push("hiran.port must be greater than 0".to_string());
+        }
+        if hiran_cfg.max_context == 0 {
+            errors.push("hiran.max_context must be greater than 0".to_string());
+        }
+        if !(0.0..=2.0).contains(&hiran_cfg.temperature) {
+            errors.push("hiran.temperature must be between 0.0 and 2.0".to_string());
+        }
+        if !(0.0..=1.0).contains(&hiran_cfg.top_p) {
+            errors.push("hiran.top_p must be between 0.0 and 1.0".to_string());
+        }
     }
 
     let ssh_key = expand_path(&cfg.deploy.ssh_key);

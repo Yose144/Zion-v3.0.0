@@ -1,0 +1,21 @@
+# Git files
+.git
+.gitignore
+
+# Documentation
+*.md
+README.md
+
+# Temporary files
+*.tmp
+*.log
+
+# Build artifacts (if any local builds)
+build/
+target/
+*.o
+*.a
+
+# Test data
+test/
+tests/
