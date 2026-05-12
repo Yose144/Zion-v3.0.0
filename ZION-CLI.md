@@ -112,6 +112,7 @@ pool
 mine
 wallet
 agent
+hiran
 deploy
 config
 bridge
@@ -224,6 +225,15 @@ profile = "pool"
 [agent]
 url = "http://91.98.122.165:8001"
 model = "hiranyagarbha-v1"
+
+[hiran]
+model_path = "/models/hiran-v2.2-q5_k_m.gguf"
+backend = "llama_cpp"
+device = "cuda"
+port = 8002
+max_context = 4096
+temperature = 0.7
+top_p = 0.9
 
 [deploy]
 default_server = "prague"
