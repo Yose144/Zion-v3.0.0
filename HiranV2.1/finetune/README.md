@@ -328,7 +328,35 @@ let zion_expert = RemoteHttpBackend::new(
 
 ---
 
-## 12. Tipy pro minimální náklady
+## 12. Komplexní ZIP release pro jiný stroj
+
+Skript `package_hiran_release.sh` zabalí GGUF, přenosný `Modelfile` (řádek `FROM` ukazuje na `./…gguf` ve stejné složce), `MANIFEST.json` (SHA-256 souborů v kořeni balíčku, `base_model` z `adapter_config.json` pokud existuje LoRA), `README_INSTALL.md` (Ollama + ZION env), volitelně `provenance/BUILD.txt` z `HiranV2.1/curriculum/meta/`, a na přání celou složku **LoRA** nebo **HF merge** (velké).
+
+```bash
+./HiranV2.1/finetune/package_hiran_release.sh --help
+
+# Po dokončení merge_export.py — GGUF v HiranV2.1/finetune/outputs/
+./HiranV2.1/finetune/package_hiran_release.sh --name hiran-v2.1
+
+# + LoRA pro případný re-merge na cílovém GPU
+./HiranV2.1/finetune/package_hiran_release.sh --name hiran-v2.1 --with-lora
+
+# Jen rozbalovací složka v /tmp (cesta na stdout, bez zip)
+./HiranV2.1/finetune/package_hiran_release.sh --no-zip
+
+./HiranV2.1/finetune/package_hiran_release.sh --out-zip ~/artifacts/hiran-v2.1.zip
+
+# Výjimečně: celý HF sloučený model (15+ GB)
+./HiranV2.1/finetune/package_hiran_release.sh --with-hf-merged
+```
+
+Výchozí cíl archivu: `~/hiran-v2.1-YYYYMMDD-HHMMSS.zip` (UTC). Na cílovém stroji rozbal, `cd` do `hiran-v2.1-release/`, pak `ollama create hiran-v2.1 -f Modelfile` (název modelu = `--name`).
+
+Bez `--outputs-dir` skript **sám vybere** kořen `outputs/`, kde leží **nejnovější** `*.gguf` (porovná `HiranV2.1/finetune/outputs/` a legacy `scripts/finetune/outputs/`). Pro jednu kanonickou složku přesuň artefakty do `HiranV2.1/finetune/outputs/` — viz [`scripts/finetune/README.md`](../../scripts/finetune/README.md).
+
+---
+
+## 13. Tipy pro minimální náklady
 
 ```bash
 # Sleduj čas instance — zastav hned po dokončení!
@@ -347,4 +375,4 @@ scp ubuntu@{ip}:~/zion/HiranV2.1/finetune/outputs/*q5*.gguf ~/models/
 
 ---
 
-*Poslední aktualizace: 29. 3. 2026 | ZION v2.9.6 | Phase V-VI AI Native*
+*Poslední aktualizace: 12. 5. 2026 | ZION v2.9.6 | Phase V-VI AI Native*
