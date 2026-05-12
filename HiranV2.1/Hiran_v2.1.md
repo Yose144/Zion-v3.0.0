@@ -15,7 +15,8 @@ Hiran v2.1 nemá být jen chatovací model pro web. Má být **ZION-native praco
 - zná operátorské příkazy `zion` CLI a dokáže vést deploy/debug postupy,
 - drží AI Native / Dharma identitu Hiranyagarbhy,
 - používá RAG nad aktuálními docs a kódem, aby se neopíral jen o váhy,
-- umí být později použitý jako osobní coding/orchestration agent pro Yeshuae.
+- umí být později použitý jako osobní coding/orchestration agent pro Yeshuae,
+- je **parťákem při stavbě ZION Oasis ve hře**: zná **celý Markdown kanon** pod `docs/docs2.9/ZION_OASIS/` (SACRED_TRINITY, GOLDEN_EGG_GAME, plány MMORPG, cosmic map, avatary, economy/lore) a umí ho **mapovat na Unreal Engine 5** (Blueprint, moduly) podle **oddílu 3.7** — RAG + případný malý guided SFT, ne kopírování binárních asserů do vah.
 
 V2 je první skutečný fine-tune nad ZION daty. **V2.1 je přechod od znalostního modelu k pracovnímu agentovi.**
 
@@ -58,6 +59,15 @@ Výsledkem má být agent, který je použitelný v živém ZION systému: umí 
 - `V3/L3/ai-native/src/llm_backend.rs` — LLM backendy.
 - `docs/2.9.9/archive/HIRANYAGARBHA_AI_NATIVE.md` — historický/narativní kontext.
 
+### ZION Oasis (design hry / UX k L4)
+
+Kompletní znalostní báze pro Hirana jako **herního a BP partnera** žije v repu zde:
+
+- **`docs/docs2.9/ZION_OASIS/`** — veškeré `.md`: `SACRED_TRINITY/` (postavy, lore, eventy), `GOLDEN_EGG_GAME/` (herní smyčka, klíče, integrace), `DEVELOPMENT_PLAN.md`, `AAA_MMORPG_PLAN.md`, `AVATAR_ROSTER.md`, COSMIC mapy, atd. Indexuje se rekurzivně v RAG (viz `ZION_OASIS_GAME_CORPUS_ROOTS` a `index_zion_oasis_game_corpus` v `V3/L3/ai-native`).
+- **`HiranV2.1/corpus/oasis-ue5/`** — tvoje vlastní textové popisy Blueprintů, struktury Content a tahák k `.uproject` (UE zůstává lokálně mimo git).
+
+Pro **minimum průchodnosti**: `ZION_WORKSPACE_ROOT` = kořen monorepa; volitelně po merge kurikula přidej guided páry `→` citace konkrétního souboru v `ZION_OASIS/`.
+
 ### Training factory (`HiranV2.1/`)
 
 **Layout**
@@ -70,6 +80,7 @@ Výsledkem má být agent, který je použitelný v živém ZION systému: umí 
 | `lineage/v1-ollama-prague/` | Celý lokální Ollama blob store Hiranyagarbhy v1 (gitignored). |
 | `lineage/v2-lora-vast-36254769/` | Vast LoRA výstupy Hiran v2 (gitignored). |
 | `curriculum/meta/` | Malé artefakty sledovatelné gitem (kopie Praha Modelfile, `SOURCE`). |
+| `corpus/oasis-ue5/` | Textový **UE5 blueprint „crate“**: mapování lore z `docs/docs2.9/ZION_OASIS/` na implementaci v editoru (`BP_*.md`, `CHANGELOG_UE.md`); společně se stromem Oasis tvoří `ZION_OASIS_GAME_CORPUS_ROOTS`. |
 
 Datasetové symlinky drží adresář **`HiranV2.1/data`** jako reálný cíl odkazu **`scripts/finetune/data`**.
 
@@ -157,6 +168,8 @@ RAG zdroje mají být primárně:
 - `V3/L*/src`,
 - `V3/docker`,
 - `V3/cli`,
+- **ZION Oasis — celá hra v Markdownu:** rekurzivně **`docs/docs2.9/ZION_OASIS/`** (postavy, ekonomika, úkoly, MMORPG plán, GOLDEN EGG, COSMIC mapy) — primární pravda pro otázky „co má být ve hře / v Blueprintu“ kromě samotného V3 chain kódu,
+- **UE5 implementační zápisy:** **`HiranV2.1/corpus/oasis-ue5/`** — co je už postavené v editoru, struktura modulů,
 - **TerraNova — knihovna Amenti:** veřejný portál [ZION TerraNova \| Síně Amenti](https://newearth.cz/V2/halls.html) (digitální knihovna, kroniky a publikované materiály dostupné odkud) — **do vah necpat celé knihovny**; indexovat pro RAG snapshoty + metadata licence, router může mít frontu `amenti` / `terra-nova`.
 - **[Online Vedabase](https://vedabase.io/en/library/) — library:** Gaudīya–Vaišnavovská literatura (BBT atd.); do SFT výhradně **kurátorované** shardy `zion_train_vedic_guided.jsonl` v mezích licence / fair use nebo po souhlasu BBT — viz [`PLAN_v2.1.md`](./PLAN_v2.1.md).
 - **Buddhismus (klasický + tibetská linie):** mapa znalostí pokrývá **raný/indický** (páli, abhidhammové přehledy, vybrané sútry v legálních překladech), **širší mahájánové** texty tam, kde máme licenci, a **tibetský buddhismus** (kangyur/tengyur ve veřejných překladech atd.) — primárně **RAG indexy `buddhism-classical` / `buddhism-tibetan`**; malý SFT jen ve `zion_train_buddhism_guided.jsonl` (viz `PLAN_v2.1.md`).
@@ -168,6 +181,7 @@ RAG nesmí být jeden plochý koš dokumentů. Hiran v2.1 má směrovat dotaz po
 
 | Index | Obsah | Priorita odpovědi |
 |---|---|---|
+| `oasis-game` | Rekurzivně `docs/docs2.9/ZION_OASIS/**` + `HiranV2.1/corpus/oasis-ue5/**` | **Her/BP partner:** lore, quest struktury, UI flow, propojení na L4 Oasis koncept; UE5 engine minutiae pořád z dokumentace Epic + tvých MD v `oasis-ue5/`. |
 | `zion-tech` | `AGENTS.md`, `StatusV3.md`, `V3/README.md`, `V3/docs`, `V3/docker`, `V3/cli`, `V3/L*/src` | Primární pravda pro technické a operátorské otázky. |
 | `live-runtime` | health/config/status endpointy, node/pool/bridge metriky, aktuální server env | Přepisuje statickou dokumentaci u live stavu, ale musí říct čas měření. |
 | `amenti-library` / `terra-nova` | snapshoty Síní Amenti + metadata licence | Jen retrieval-grounded odpovědi s citací chunku. |
@@ -207,11 +221,31 @@ Cíl: aby Hiran v2.1 nebyl jen ZION technik, ale **hlubší společník s přís
 
 1. **Katalog / ingest** — tabulka zdrojů (URL/soubor, licence, jazyk, téma, datum stahu, hash); pro Buddhism **klasický+tibetský seed** `./HiranV2.1/scripts/rag/autopilot_buddhism_rag.sh` z kořene repa → markdown v `HiranV2.1/data/rag/*/generated/` a `INGEST_MANIFEST.json`; runtime API env (`ZION_RAG_BUDDHISM`, `ZION_WORKSPACE_ROOT`) a Rust chunkování viz [`PLAN_v2.1.md`](./PLAN_v2.1.md) oddíl **D.2** + `BUDDHISM_RAG_CORPUS_ROOTS`.
 2. **Chunking + metadata** — kapitoly, svazky, autor/překladatel.
-3. **Embedding index** (např.: `zion-tech`, `amenti` / `terra-nova`, `vedabase` / `vaiṣṇava-sources`, **`buddhism-classical`**, **`buddhism-tibetan`**, `dharma-texts`, `sciences`, `history`, `indigenous-sources`; u buddhismu vždy **verze překladu** v metadatech chunku).
+3. **Embedding index** (např.: `zion-tech`, **`oasis-game`**, `amenti` / `terra-nova`, `vedabase` / `vaiṣṇava-sources`, **`buddhism-classical`**, **`buddhism-tibetan`**, `dharma-texts`, `sciences`, `history`, `indigenous-sources`; u buddhismu vždy **verze překladu** v metadatech chunku).
 4. **Router** — dotaz → které indexy dotáhnout (aby se nemíchaly nesouvisející domény bez úmyslu).
 5. **Eval** — kontrolní otázky s očekávanou citací zdroje; penalizovat odpověď bez chunku při dostupném materiálu.
 
 Tato vrstva **nenahrazuje** sekce 3.1–3.5: ZION V3, Rust a orchestrace zůstávají **primární produktová kompetence**. Širší korpusy rozšiřují **horizont a integritu Hiranyagarbhy**, ne základní úlohu síťového agenta.
+
+### 3.7 ZION Oasis ve hře a UE5 — naučit Hirana celý Oasis a být parťák při Blueprintu
+
+**Účel:** Hiran v2.1 má znát **vše**, co už máš o Oasis **v repozitáři jako Markdown**, a na tom stavět společné rozhodování při **Unreal Engine 5** (Blueprint třídy, Gameplay Ability / UI, Data Assets, streaming levelů, propojení s narativní ekonomikou z docs).
+
+**Co je „vše o Oasis“ v praxi**
+
+- Jediný strom: **`docs/docs2.9/ZION_OASIS/`** — včetně všech podadresářů (`SACRED_TRINITY`, `GOLDEN_EGG_GAME`, plány, mapy, roster). To **je** kanon hry pro RAG; nové postavy (např. rozšíření SACRED_TRINITY) máš přidávat sem jako `.md`, aby je Hiran viděl při příštím indexu.
+- Druhý vstup: **`HiranV2.1/corpus/oasis-ue5/`** — co z kanonu už existuje v editoru, pod jakým názvem BP, jaké má rozhraní. Bez toho by model uměl jen lore, ne „co je hotové v projektu“.
+
+**Jak se to učí (váhy vs RAG)**
+
+- **RAG (povinně):** index `oasis-game` = oba kořeny výše. V Rust API: `ZION_OASIS_GAME_CORPUS_ROOTS` a `HiranyagarbhaAgent::index_zion_oasis_game_corpus`; širší profil `V2_BOOKS_PROXY_CORPUS_ROOTS` už také zahrnuje celý `ZION_OASIS` + `corpus/oasis-ue5`.
+- **SFT / LoRA (doporučené drobně):** generuj krátké páry z reálných rozhovorů: uživatel „chci v UE5 X podle `…/ZION_OASIS/…/FILE.md`“, asistent navrhne Blueprint hierarchii a **odkáže na cestu k souboru**. Volitelný shard např. `zion_train_oasis_ue5_guided.jsonl` (merge do `hiran_curriculum_v2.1` až budeš mít dávku), viz [`PLAN_v2.1.md`](./PLAN_v2.1.md).
+- **Neucíme:** hromadné tahání Epic Learning základů do datasetu; obecné UE znalosti nech na base modelu.
+
+**Chování agenta**
+
+- U otázek na hru nejdřív **dotáhni chunk** z `oasis-game`; při chybě chunku **nevymýšlej** konkrétní obsah karty/postavy.
+- U dotazu „jak to udělat v UE5“ kombinuj **kanonický .md** + **tvůj zápis v oasis-ue5**; engine verzi a pluginy ber z `PROJECT_LINKS.md` (šablona v `corpus/oasis-ue5/`).
 
 ---
 
@@ -242,7 +276,8 @@ Další dataset musí být větší a kvalitnější:
 - bridge/DAO/atomic-swap provozní dotazy,
 - pool/miner incidenty,
 - test failure → diagnosis → fix,
-- RAG-grounded odpovědi se zdrojovou cestou.
+- RAG-grounded odpovědi se zdrojovou cestou,
+- **ZION Oasis + UE5:** syntetické nebo nahrané konverzační páry kde asistent drží lore z `docs/docs2.9/ZION_OASIS/` a navrhuje Blueprint / moduly s citací konkrétního `.md`; volitelný shard `zion_train_oasis_ue5_guided.jsonl`.
 
 ### Fáze C — DPO / preference alignment
 
@@ -301,7 +336,7 @@ Princip:
 - **base model** = obecné znalosti, programování, reasoning, čeština/angličtina,
 - **SFT / LoRA** = ZION V3 identita, přesné cesty, Rust workspace, `zion` CLI, AI Native,
 - **RAG** = aktuální dokumentace, živý stav sítě, nové změny po tréninku,
-- **RAG (rozšířeně)** = kurátorované korpusy z oddílu 3.6 (vědy, dějiny, texty, projektová biblioteka) — **ne** masové „dostahování” do vah,
+- **RAG (rozšířeně)** = kurátorované korpusy z oddílu 3.6 (vědy, dějiny, texty, projektová biblioteka) **a herní kanon + UE5 zápisy z oddílu 3.7** — **ne** masové „dostahování” do vah,
 - **DPO** = styl: přesnost, méně halucinací, bezpečný operátorský postup.
 
 Do datasetu tedy nepatří generické otázky typu „co je HTTP“ nebo „co je Rust ownership“, pokud nejsou navázané na ZION. Lepší příklad je: „Jak se ownership projeví při úpravě mempoolu v `V3/L1/core`?“

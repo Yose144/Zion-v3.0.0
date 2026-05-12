@@ -1,15 +1,23 @@
 # Python závislosti pro ZION fine-tuning pipeline
 # Nainstaluj: pip install -r requirements.txt
+#
+# Python verze:
+#   Doporučeno 3.10–3.13 (venv na Macu např. /opt/homebrew/bin/python3.12 -m venv .venv-smoke).
+#   Python 3.14 často nemá předkompilované kolo pro starší tokenizers → pip zkouší maturin/PyO3
+#   a padne na „newer than PyO3's maximum supported version (3.13)“. Pro 3.14 použij novější stack
+#   nebo venv z Pythonu 3.12/3.13.
 
 # ─── Core ML ─────────────────────────────────────────────────
-torch>=2.1.0                 # PyTorch (CUDA 12.1+)
-transformers>=4.40.0         # HuggingFace transformers
+# Na Vast conda image bývá torch 2.3.x; lokálně (nový Python / Mac) může být jen 2.9+ — horní mez nepinujeme.
+torch>=2.3
+# transformers 5.x často vyžaduje novější torch a mění API; pro skript finetune_lora držíme v4.
+transformers>=4.46,<5.0      # HuggingFace transformers (pin pod v5); stáhne kompatibilní tokenizers
 datasets>=2.18.0             # HF datasets
 accelerate>=0.28.0           # Multi-GPU, mixed precision
 
 # ─── Fine-tuning ──────────────────────────────────────────────
 peft>=0.10.0                 # LoRA, QLoRA adaptery
-trl>=0.8.6                   # SFTTrainer, RLHF utilities
+trl>=0.8.6,<0.10             # SFTTrainer, RLHF utilities (drž kompat s transformers<5)
 bitsandbytes>=0.43.0         # 4-bit / 8-bit quantization (CUDA only)
 sentencepiece>=0.2.0         # GGUF tokenizer conversion přes llama.cpp
 

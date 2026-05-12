@@ -7,7 +7,7 @@ Tento adresář je **vědomý „knowledge crate“ vedle Rust crate**: žádný
 - `docs/docs2.9/ZION_OASIS/` obsahuje **lore a design dokumenty** Oasis (globální kanon vývoje hry).
 - `HiranV2.1/corpus/oasis-ue5/` je pro **aktuální mapování na Unreal Engine 5**: co je v jakém BP, jak se jmenuje Data Asset, který Subsystem řídí co, kde je hranice replikace, apod.
 
-Hiranyagarbha dostane oboje do jednoho workspace při `ZION_WORKSPACE_ROOT` = kořen repozitáře.
+Hiranyagarbha dostane oboje do jednoho workspace při `ZION_WORKSPACE_ROOT` = kořen repozitáře. **Kompletní Oasis lore** má být vždy pod `docs/docs2.9/ZION_OASIS/` (rekurzivně všechny `.md`); Rust konstanty `ZION_OASIS_GAME_CORPUS_ROOTS` + `HiranyagarbhaAgent::index_zion_oasis_game_corpus` slouží k cílenému přeindexování hry + těchto UE zápisů najednou.
 
 ## Doporučené soubory
 
