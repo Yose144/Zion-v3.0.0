@@ -24,6 +24,9 @@ Použití
     # 3. Otestuj v Ollama:
     ollama create zion-expert -f Modelfile.zion
     ollama run zion-expert "Co je Ekam Deeksha algoritmus?"
+
+    # 4. Komplexní ZIP pro jiný stroj (GGUF + přenosný Modelfile + manifest):
+    #    ./package_hiran_release.sh --name hiran-v2.1
 """
 
 import argparse
