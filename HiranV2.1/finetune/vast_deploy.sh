@@ -3,8 +3,7 @@
 # ZION AI Native — Vast.ai Fine-tuning Deploy Script
 # ═══════════════════════════════════════════════════════════════════════════════
 #
-# One-click deployment: najde A100/RTX 5090, uploadne dataset, spustí trénink, stáhne GGUF.
-#
+# One-click deployment: najdi GPU (výchozí RTX 4090 nebo VAST_ANY_GPU=1 od nejlevnějšího), nahraj dataset, …
 # Prerekvizity:
 #   pip install vastai
 #   export VAST_API_KEY="e0fe6cd4..."
@@ -17,7 +16,7 @@
 #   ./vast_deploy.sh --download ID # stáhni výsledky
 #   ./vast_deploy.sh --destroy ID  # zruš instanci
 #   VAST_GPU='RTX 4090' ./vast_deploy.sh   # preferuj RTX 4090 (doporučeno pro v2 LoRA)
-#   VAST_GPU='A100' ./vast_deploy.sh       # výchozí GPU dle VAST_GPU / A100
+#   VAST_GPU='A100' ./vast_deploy.sh       # výběr jiné karty přes env
 #   ./vast_deploy.sh --epochs 5   # více epoch
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -33,19 +32,33 @@ HF_TOKEN="${HF_TOKEN:-}"
 NVIDIA_API_KEY="${NVIDIA_API_KEY:-}"
 
 # GPU požadavky (přepiš: export VAST_GPU='RTX 4090' — název musí sedět s Vast CLI / nabídkami)
-GPU_NAME="${VAST_GPU:-A100}"
-MIN_GPU_RAM=24            # GB — sníženo pro víc možností
+GPU_NAME="${VAST_GPU:-RTX 4090}"
+MIN_GPU_RAM="${VAST_MIN_GPU_RAM:-24}" # GB — pro levnější nabídky lze 16 (riziko OOM u 8B QLoRA)
 MIN_DISK="${VAST_MIN_DISK:-100}"  # GB — base + checkpoints + GGUF (+ margin)
 MIN_RELIABILITY="${VAST_MIN_RELIABILITY:-0.985}"
 MAX_PRICE="${VAST_MAX_PRICE:-4.50}" # $/hr — budget limit (vážnou trénku neblokovat levným šuntem)
+# VAST_ANY_GPU=1 — nefiltruj gpu_name; seřaď podle ceny (viz VAST_SEARCH_ORDER). Pro ~0.3$/h typicky:
+#   VAST_ANY_GPU=1 VAST_MAX_PRICE=0.35 VAST_MIN_RELIABILITY=0.96 ./vast_deploy.sh --find-only
+VAST_ANY_GPU="${VAST_ANY_GPU:-0}"
+VAST_SEARCH_ORDER="${VAST_SEARCH_ORDER:-}" # prázdné = dle režimu níže
 EPOCHS=3                  # Epochs (budget výchozí); víc: export přes --epochs nebo ZION_EPOCHS na instanci
 AUTO_CONFIRM=false        # --yes = přeskočí read před vytvořením instance
 
 # Projekt
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-DATASET="${ZION_TRAIN_DATASET:-$SCRIPT_DIR/data/zion_train_hiran_v2.jsonl}"
-if [[ ! -f "$DATASET" ]]; then
+# Match start_hiran_v2_vast.sh: merged curriculum first, then shards (ZION_TRAIN_DATASET wins).
+if [[ -n "${ZION_TRAIN_DATASET:-}" ]]; then
+    DATASET="$ZION_TRAIN_DATASET"
+elif [[ -f "$SCRIPT_DIR/data/hiran_curriculum_v2.1.jsonl" ]]; then
+    DATASET="$SCRIPT_DIR/data/hiran_curriculum_v2.1.jsonl"
+elif [[ -f "$SCRIPT_DIR/../data/hiran_curriculum_v2.1.jsonl" ]]; then
+    DATASET="$SCRIPT_DIR/../data/hiran_curriculum_v2.1.jsonl"
+elif [[ -f "$SCRIPT_DIR/../data/shards/zion_train_hiran_v2.jsonl" ]]; then
+    DATASET="$SCRIPT_DIR/../data/shards/zion_train_hiran_v2.jsonl"
+elif [[ -f "$SCRIPT_DIR/data/zion_train_hiran_v2.jsonl" ]]; then
+    DATASET="$SCRIPT_DIR/data/zion_train_hiran_v2.jsonl"
+else
     DATASET="$SCRIPT_DIR/data/zion_train.jsonl"
 fi
 
@@ -79,7 +92,7 @@ check_prereqs() {
 
     if [[ ! -f "$DATASET" ]]; then
         err "Dataset nenalezen: $DATASET"
-        err "Spusť nejdřív: cd HiranV2.1/finetune && python collect_dataset.py"
+        err "Spusť z kořene repa: ./HiranV2.1/bootstrap_workspace.sh  nebo merge a build dle HiranV2.1/PLAN_v2.1.md"
         exit 1
     fi
 
@@ -88,42 +101,61 @@ check_prereqs() {
     log "Dataset: $n_pairs Q&A párů v $DATASET"
 
     if [[ -z "$HF_TOKEN" ]]; then
-        warn "HF_TOKEN není nastaven — budeš potřebovat pro Llama-3 gated model."
+        warn "HF_TOKEN není nastaven — u veřejného base typu Meta-Llama-3.1 často stačí; u gated HF modelu použij:"
         warn "  export HF_TOKEN='hf_...'"
     fi
 }
 
-# ─── Najdi A100 instanci ─────────────────────────────────────────────────────
+# ─── Najdi nabízenou instanci ────────────────────────────────────────────────
 
 find_gpu() {
-    log "Hledám ${GPU_NAME} GPU (VRAM≥${MIN_GPU_RAM}GB, disk≥${MIN_DISK}GB, reliability≥${MIN_RELIABILITY}, max \$${MAX_PRICE}/hr, on‑demand)..."
-
     local offers
     local cli_gpu_name
-    cli_gpu_name="${GPU_NAME// /_}"
-    # On-demand (ne přerušované nabídky), nejdřív nejspolehlivější, pak nejnižší cena.
-    # Pozor: nesmět psát `-d on-demand` — `-d` je přepínač bez hodnoty, další slovo by byl špatný query.
-    # Celé GPU jen (gpu_frac=1), typicky jedna karta na instanci (num_gpus==1).
-    # Cena používáme z dph_total (skutečný $/hod včetně disku/poplatků dle nabídky).
+    local order_primary
+    local order_fallback
+    local q_primary
+    local q_fallback
+
+    if [[ "${VAST_ANY_GPU}" == "1" ]]; then
+        log "Hledám libovolné GPU (VRAM≥${MIN_GPU_RAM}GB, disk≥${MIN_DISK}GB, reliability>${MIN_RELIABILITY}, max \$${MAX_PRICE}/hr, on‑demand) — VAST_ANY_GPU=1..."
+        order_primary="${VAST_SEARCH_ORDER:-dph_total,reliability-}"
+        order_fallback="${VAST_SEARCH_ORDER:-dph_total,reliability-}"
+        q_primary="reliability>${MIN_RELIABILITY} num_gpus==1 gpu_frac>=1 gpu_ram>=${MIN_GPU_RAM} disk_space>=${MIN_DISK} dph_total<${MAX_PRICE} rented=False"
+        q_fallback="reliability>0.97 num_gpus==1 gpu_frac>=1 gpu_ram>=${MIN_GPU_RAM} disk_space>=${MIN_DISK} dph_total<${MAX_PRICE} rented=False"
+    else
+        log "Hledám ${GPU_NAME} GPU (VRAM≥${MIN_GPU_RAM}GB, disk≥${MIN_DISK}GB, reliability≥${MIN_RELIABILITY}, max \$${MAX_PRICE}/hr, on‑demand)..."
+        cli_gpu_name="${GPU_NAME// /_}"
+        order_primary="${VAST_SEARCH_ORDER:-reliability-,dph_total}"
+        order_fallback="${VAST_SEARCH_ORDER:-reliability-,dph_total}"
+        q_primary="reliability>${MIN_RELIABILITY} num_gpus==1 gpu_frac>=1 gpu_ram>=${MIN_GPU_RAM} disk_space>=${MIN_DISK} dph_total<${MAX_PRICE} gpu_name=${cli_gpu_name} rented=False"
+        q_fallback="reliability>0.97 num_gpus==1 gpu_frac>=1 gpu_ram>=${MIN_GPU_RAM} disk_space>=${MIN_DISK} dph_total<${MAX_PRICE} gpu_name=${cli_gpu_name} rented=False"
+    fi
+
+    # On-demand (ne přerušované nabídky).
+    # Cena: dph_total (skutečný $/hod včetně disku/poplatků dle nabídky).
     offers=$(vastai search offers --on-demand \
-        "reliability>${MIN_RELIABILITY} num_gpus==1 gpu_frac>=1 gpu_ram>=${MIN_GPU_RAM} disk_space>=${MIN_DISK} dph_total<${MAX_PRICE} gpu_name=${cli_gpu_name} rented=False" \
+        "$q_primary" \
         --limit 15 \
-        --order "reliability-,dph_total" \
+        --order "$order_primary" \
         --raw \
         2>/dev/null || true)
 
     if [[ -z "$offers" || "$offers" == "[]" ]]; then
         warn "Žádné nabídky při reliability>${MIN_RELIABILITY} — zkouším uvolnění na 0.97..."
         offers=$(vastai search offers --on-demand \
-            "reliability>0.97 num_gpus==1 gpu_frac>=1 gpu_ram>=${MIN_GPU_RAM} disk_space>=${MIN_DISK} dph_total<${MAX_PRICE} gpu_name=${cli_gpu_name} rented=False" \
+            "$q_fallback" \
             --limit 15 \
-            --order "reliability-,dph_total" \
+            --order "$order_fallback" \
             --raw \
             2>/dev/null || true)
     fi
 
     if [[ -z "$offers" || "$offers" == "[]" ]]; then
-        err "Žádné ${GPU_NAME} nabídky nenalezeny. Zkus jiný GPU (VAST_GPU=…), vyšší VAST_MAX_PRICE, nebo sniž MIN_DISK přes export VAST_MIN_DISK."
+        if [[ "${VAST_ANY_GPU}" == "1" ]]; then
+            err "Žádné nabídky v rozpočtu. Zkus: vyšší VAST_MAX_PRICE, nižší VAST_MIN_DISK, nižší VAST_MIN_RELIABILITY, nebo VAST_MIN_GPU_RAM (env)."
+        else
+            err "Žádné ${GPU_NAME} nabídky nenalezeny. Zkus jiný GPU (VAST_GPU=…), VAST_ANY_GPU=1, vyšší VAST_MAX_PRICE, nebo sniž MIN_DISK přes export VAST_MIN_DISK."
+        fi
         exit 1
     fi
 
@@ -392,7 +424,7 @@ Použití:
   $0                              # Plný pipeline: find → create → train
   $0 --gpu 'RTX 4090' --find-only # Jen nabídky 4090 (stejné před ostatními příkazy)
   $0 --gpu 'RTX 4090'             # Plný pipeline na 4090
-  $0 --find-only                  # Jen najdi GPU (VAST_GPU nebo výchozí A100)
+  $0 --find-only                  # Jen nabídky GPU (dle VAST_GPU nebo VAST_ANY_GPU=1)
   $0 --resume <ID>                # Nahraj soubory a spusť trénink na instanci
   $0 --download <ID>             # Stáhni výsledky z instance
   $0 --destroy <ID>               # Zruš instanci
@@ -402,7 +434,11 @@ Použití:
 
 Env:
   VAST_API_KEY    Vast.ai API klíč (povinný — nikdy do gitu)
-  VAST_GPU        Např. RTX 4090, A100 (výchozí A100)
+  VAST_GPU        Např. RTX 4090, A100 (výchozí RTX 4090; ignorováno když VAST_ANY_GPU=1)
+  VAST_ANY_GPU    1 = hledej libovolné GPU v ceně (řazení: nejlevnější dph_total)
+  VAST_MAX_PRICE  Max $/h (výchozí 4.50; pro budget ~0.3 zkus 0.35 + VAST_ANY_GPU=1)
+  VAST_MIN_RELIABILITY  Výchozí 0.985; pro levné nabídky často 0.96
+  VAST_MIN_DISK   Min GB disku (výchozí 100)
   HF_TOKEN        HuggingFace token (pro Llama-3)
   NVIDIA_API_KEY  NVIDIA NIM klíč (volitelné, pro dataset gen)
   ZION_MAX_SEQ_LENGTH  Default 1024 na Vast (rychlejší); 2048 = pomalejší, často lepší kontext
