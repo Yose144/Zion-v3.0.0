@@ -1,5 +1,33 @@
 # Vast.ai — Hiranyagarbha v2 (trénink / fine-tune)
 
+## Obnova po ztracené instanci / smazaném modelu (checklist)
+
+**Git historie** neobsahuje GGUF ani LoRA — `HiranV2.1/lineage/`, `finetune/outputs/`, většina `data/shards/*.jsonl` a `hiran_curriculum_v2.1.jsonl` jsou **ignorované**. Když Vast instance skončila bez `./vast_deploy.sh --download <ID>` nebo se smazaly lokální kopie, je potřeba **znovu vygenerovat data + spustit pipeline**.
+
+1. **`VAST_API_KEY`** — `export VAST_API_KEY='…'` nebo `HiranV2.1/finetune/.env` (`chmod 600`), nikdy do commitu.
+2. **`NVIDIA_API_KEY`** — pro `collect_dataset.py` (NIM), pokud dataset znovu generuješ z repa.
+3. **Shardy / kurikulum** — v `HiranV2.1/data/shards/` musí být alespoň zdroje pro merge (typicky `zion_train*.jsonl`, `zion_train_hiran_v2.jsonl`, …). Pokud složka skoro prázdná, znovu:
+   - `export NVIDIA_API_KEY=nvapi-…`
+   - `python HiranV2.1/finetune/collect_dataset.py --output HiranV2.1/finetune/data/zion_train.jsonl --priority HIGH --max-docs 650 --max-chunks 5` (parametry dle [`finetune/README.md`](./finetune/README.md)).
+   - `python3 HiranV2.1/finetune/merge_hiran_curriculum_v2_1.py` → vytvoří `HiranV2.1/finetune/data/hiran_curriculum_v2.1.jsonl` (symlink z `finetune/data` → `../data`).
+4. **Dry-run před platbou GPU:**  
+   `python3 HiranV2.1/finetune/finetune_lora.py --dataset HiranV2.1/finetune/data/hiran_curriculum_v2.1.jsonl --dry-run`  
+   (nebo cesta z `ZION_TRAIN_DATASET`).
+5. **Vast skripty** — z kořene repa na **Linux / WSL / macOS** (bash):  
+   `cd HiranV2.1/finetune && ./start_hiran_v2_vast.sh --find-only` → ověř nabídky; pak  
+   `VAST_GPU='RTX 5090' VAST_EPOCHS=5 ./start_hiran_v2_vast.sh --yes`  
+   (`start_hiran_v2_vast.sh` předá `ZION_TRAIN_DATASET` do `vast_deploy.sh`).
+6. **Během běhu:** `vastai logs <ID>` / `./vast_deploy.sh --status <ID>` — až skončí merge+GGUF na serveru (pokud `ZION_SKIP_GGUF!=1`).
+7. **IHNED stáhnout** (než `destroy`):  
+   `./vast_deploy.sh --download <ID>` → lokálně `HiranV2.1/finetune/outputs/zion-llama-merged/`.  
+   Volitelně zálohovat i LoRA: na instanci `/workspace/outputs/zion-llama-lora/` přes `vastai copy <ID>:/workspace/outputs/zion-llama-lora/ …`.
+8. **Balíček pro přenos (LM Studio / Ollama):** z kořene repa  
+   `./HiranV2.1/finetune/package_hiran_release.sh --name hiran-v2.1 --with-lora`  
+   (viz [`finetune/README.md`](./finetune/README.md) §12 — `--gguf` pokud GGUF není pod `outputs/`).
+9. **Teprve potom** `./vast_deploy.sh --destroy <ID>` — ušetříš $/hr.
+
+**HF_TOKEN:** jen pokud měníš base na gated model; výchozí `unsloth/Meta-Llama-3.1-8B-Instruct` často stačí bez loginu.
+
 ## Bezpečnost API klíče
 
 - **Nikdy** neukládej `VAST_API_KEY` do gitu ani do sdílených souborů.
