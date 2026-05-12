@@ -27,12 +27,17 @@ Použití
 """
 
 import argparse
-import shutil
+import json
+import os
 import subprocess
 import sys
 from pathlib import Path
 
-BASE_MODEL = "meta-llama/Meta-Llama-3.1-8B-Instruct"
+# Musí sedět s tréninkem ve finetune_lora.py (fallback, pokud v adapter_config chybí base).
+DEFAULT_BASE_MODEL = os.environ.get(
+    "ZION_BASE_MODEL",
+    "unsloth/Meta-Llama-3.1-8B-Instruct",
+)
 
 OLLAMA_MODELFILE = '''\
 # Ollama Modelfile pro ZION Expert
@@ -53,12 +58,26 @@ PARAMETER stop "<|end_of_text|>"
 '''
 
 
-def merge_lora(adapter_path: str, output_path: str) -> Path:
+def _read_base_model_id(adapter: Path) -> str:
+    """Vezme base model z adapter_config.json (stejný jako při tréninku)."""
+    cfg_path = adapter / "adapter_config.json"
+    if not cfg_path.is_file():
+        print(f"VAROVÁNÍ: chybí {cfg_path}, používám {DEFAULT_BASE_MODEL}")
+        return DEFAULT_BASE_MODEL
+    with cfg_path.open(encoding="utf-8") as f:
+        cfg = json.load(f)
+    base = cfg.get("base_model_name_or_path") or cfg.get("base_model_name")
+    if not base:
+        return DEFAULT_BASE_MODEL
+    return str(base)
+
+
+def merge_lora(adapter_path: str, output_path: str, base_model_override: str | None = None) -> Path:
     """Sloučí LoRA adaptér s base modelem a uloží jako HuggingFace model."""
     try:
         import torch
-        from peft import AutoPeftModelForCausalLM
-        from transformers import AutoTokenizer
+        from peft import PeftModel
+        from transformers import AutoModelForCausalLM, AutoTokenizer
     except ImportError as e:
         print(f"CHYBA: {e}\nSpusť: pip install -r requirements.txt")
         sys.exit(1)
@@ -67,21 +86,48 @@ def merge_lora(adapter_path: str, output_path: str) -> Path:
     output  = Path(output_path)
     output.mkdir(parents=True, exist_ok=True)
 
-    print(f"Načítám LoRA model z: {adapter}")
-    model = AutoPeftModelForCausalLM.from_pretrained(
-        str(adapter),
-        device_map="auto",
-        torch_dtype=torch.float16,
-    )
+    base_id = base_model_override or _read_base_model_id(adapter)
+    print(f"Načítám base model: {base_id}")
+    print(f"Načítám LoRA adaptér z: {adapter}")
 
-    print("Slučuji LoRA adaptér s base modelem...")
-    merged = model.merge_and_unload()
+    use_cuda = torch.cuda.is_available()
+    use_mps = getattr(torch.backends, "mps", None) is not None and torch.backends.mps.is_available()
+
+    hf_token = os.environ.get("HF_TOKEN")
+
+    if use_cuda:
+        torch_dtype = torch.bfloat16
+        load_kw = dict(torch_dtype=torch_dtype, device_map="auto", trust_remote_code=True)
+    elif use_mps:
+        torch_dtype = torch.float16
+        load_kw = dict(torch_dtype=torch_dtype, trust_remote_code=True)
+    else:
+        torch_dtype = torch.float32
+        load_kw = dict(torch_dtype=torch_dtype, trust_remote_code=True)
+    if hf_token:
+        load_kw["token"] = hf_token
+
+    try:
+        base = AutoModelForCausalLM.from_pretrained(base_id, **load_kw)
+        if use_mps:
+            base = base.to("mps")
+        # torch_dtype u PeftModel.from_pretrained není ve všech verzích peft — dtype drží base.
+        model = PeftModel.from_pretrained(base, str(adapter))
+        print("Slučuji LoRA adaptér s base modelem...")
+        merged = model.merge_and_unload()
+    except Exception as e:
+        print(f"CHYBA při merge: {e}")
+        print("Tip: ujisti se, že máš stejný stack jako při tréninku (transformers/peft z requirements.txt).")
+        raise
 
     print(f"Ukládám sloučený model do: {output}")
     merged.save_pretrained(str(output), safe_serialization=True)
 
     print("Ukládám tokenizer...")
-    tokenizer = AutoTokenizer.from_pretrained(str(adapter))
+    tok_kw = dict(trust_remote_code=True)
+    if hf_token:
+        tok_kw["token"] = hf_token
+    tokenizer = AutoTokenizer.from_pretrained(str(adapter), **tok_kw)
     tokenizer.save_pretrained(str(output))
 
     print(f"✅ Merge dokončen: {output}")
@@ -175,12 +221,17 @@ def main() -> None:
                         help="Kvantizace pro GGUF (default: Q5_K_M)")
     parser.add_argument("--llamacpp",   default="/opt/llama.cpp",
                         help="Cesta k llama.cpp adresáři (pro GGUF konverzi)")
+    parser.add_argument(
+        "--base-model",
+        default=None,
+        help="Volitelně přepiš base model (výchozí z adapter_config.json / ZION_BASE_MODEL)",
+    )
 
     args = parser.parse_args()
     output_dir = Path(args.output)
 
     # 1. Merge LoRA
-    merged_path = merge_lora(args.adapter, args.output)
+    merged_path = merge_lora(args.adapter, args.output, base_model_override=args.base_model)
 
     # 2. GGUF konverze (volitelné)
     if args.to_gguf:

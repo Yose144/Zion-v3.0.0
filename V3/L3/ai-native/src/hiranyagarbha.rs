@@ -56,7 +56,7 @@ use crate::consciousness_engine::ConsciousnessEngine;
 use crate::knowledge_base::{
     KnowledgeBase, KnowledgeConfig, ScanResult, AI_NATIVE_CANONICAL_CORPUS_ROOTS,
     BUDDHISM_CLASSICAL_CORPUS_ROOTS, BUDDHISM_RAG_CORPUS_ROOTS, BUDDHISM_TIBETAN_CORPUS_ROOTS,
-    V2_BOOKS_PROXY_CORPUS_ROOTS,
+    V2_BOOKS_PROXY_CORPUS_ROOTS, ZION_OASIS_GAME_CORPUS_ROOTS,
 };
 use crate::llm_backend::{LlmBackend, LlmRequest};
 use crate::memory::MemoryEventKind;
@@ -740,6 +740,14 @@ impl HiranyagarbhaAgent {
         workspace_root: &Path,
     ) -> Result<ScanResult, crate::llm_backend::LlmError> {
         self.index_relative_corpus(workspace_root, V2_BOOKS_PROXY_CORPUS_ROOTS)
+    }
+
+    /// Celý Oasis design Markdown (`docs/docs2.9/ZION_OASIS/`) + `HiranV2.1/corpus/oasis-ue5/` (Blueprint zápisy).
+    pub fn index_zion_oasis_game_corpus(
+        &mut self,
+        workspace_root: &Path,
+    ) -> Result<ScanResult, crate::llm_backend::LlmError> {
+        self.index_relative_corpus(workspace_root, ZION_OASIS_GAME_CORPUS_ROOTS)
     }
 
     /// Indexuj Hiran v2.1 **klasický** buddhismus (primárně páli canon překlady z ingest pipeline).

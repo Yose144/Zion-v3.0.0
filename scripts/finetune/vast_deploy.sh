@@ -26,15 +26,19 @@ set -euo pipefail
 # ─── Konfigurace ──────────────────────────────────────────────────────────────
 
 VAST_API_KEY="${VAST_API_KEY:-}"
+if [[ -z "$VAST_API_KEY" && -f "${HOME}/.config/vastai/vast_api_key" ]]; then
+    VAST_API_KEY="$(tr -d ' \t\r\n' < "${HOME}/.config/vastai/vast_api_key")"
+fi
 HF_TOKEN="${HF_TOKEN:-}"
 NVIDIA_API_KEY="${NVIDIA_API_KEY:-}"
 
 # GPU požadavky (přepiš: export VAST_GPU='RTX 4090' — název musí sedět s Vast CLI / nabídkami)
 GPU_NAME="${VAST_GPU:-A100}"
 MIN_GPU_RAM=24            # GB — sníženo pro víc možností
-MIN_DISK=80               # GB — model + dataset + output
-MAX_PRICE=3.00            # $/hr — budget limit
-EPOCHS=5                  # Epochs pro robustní trénink
+MIN_DISK="${VAST_MIN_DISK:-100}"  # GB — base + checkpoints + GGUF (+ margin)
+MIN_RELIABILITY="${VAST_MIN_RELIABILITY:-0.985}"
+MAX_PRICE="${VAST_MAX_PRICE:-4.50}" # $/hr — budget limit (vážnou trénku neblokovat levným šuntem)
+EPOCHS=3                  # Epochs (budget výchozí); víc: export přes --epochs nebo ZION_EPOCHS na instanci
 AUTO_CONFIRM=false        # --yes = přeskočí read před vytvořením instance
 
 # Projekt
@@ -92,20 +96,34 @@ check_prereqs() {
 # ─── Najdi A100 instanci ─────────────────────────────────────────────────────
 
 find_gpu() {
-    log "Hledám ${GPU_NAME} GPU (min ${MIN_GPU_RAM}GB VRAM, max \$${MAX_PRICE}/hr)..."
+    log "Hledám ${GPU_NAME} GPU (VRAM≥${MIN_GPU_RAM}GB, disk≥${MIN_DISK}GB, reliability≥${MIN_RELIABILITY}, max \$${MAX_PRICE}/hr, on‑demand)..."
 
     local offers
     local cli_gpu_name
     cli_gpu_name="${GPU_NAME// /_}"
-    offers=$(vastai search offers \
-        "reliability>0.97 num_gpus>=1 gpu_ram>=${MIN_GPU_RAM} disk_space>=${MIN_DISK} dph<${MAX_PRICE} gpu_name=${cli_gpu_name} rented=False" \
-        --limit 10 \
-        --order "dph" \
+    # On-demand (ne přerušované nabídky), nejdřív nejspolehlivější, pak nejnižší cena.
+    # Pozor: nesmět psát `-d on-demand` — `-d` je přepínač bez hodnoty, další slovo by byl špatný query.
+    # Celé GPU jen (gpu_frac=1), typicky jedna karta na instanci (num_gpus==1).
+    # Cena používáme z dph_total (skutečný $/hod včetně disku/poplatků dle nabídky).
+    offers=$(vastai search offers --on-demand \
+        "reliability>${MIN_RELIABILITY} num_gpus==1 gpu_frac>=1 gpu_ram>=${MIN_GPU_RAM} disk_space>=${MIN_DISK} dph_total<${MAX_PRICE} gpu_name=${cli_gpu_name} rented=False" \
+        --limit 15 \
+        --order "reliability-,dph_total" \
         --raw \
         2>/dev/null || true)
 
     if [[ -z "$offers" || "$offers" == "[]" ]]; then
-        err "Žádné ${GPU_NAME} nabídky nenalezeny. Zkus jiný GPU nebo zvyš budget."
+        warn "Žádné nabídky při reliability>${MIN_RELIABILITY} — zkouším uvolnění na 0.97..."
+        offers=$(vastai search offers --on-demand \
+            "reliability>0.97 num_gpus==1 gpu_frac>=1 gpu_ram>=${MIN_GPU_RAM} disk_space>=${MIN_DISK} dph_total<${MAX_PRICE} gpu_name=${cli_gpu_name} rented=False" \
+            --limit 15 \
+            --order "reliability-,dph_total" \
+            --raw \
+            2>/dev/null || true)
+    fi
+
+    if [[ -z "$offers" || "$offers" == "[]" ]]; then
+        err "Žádné ${GPU_NAME} nabídky nenalezeny. Zkus jiný GPU (VAST_GPU=…), vyšší VAST_MAX_PRICE, nebo sniž MIN_DISK přes export VAST_MIN_DISK."
         exit 1
     fi
 
@@ -115,9 +133,10 @@ import json, sys
 offers = json.load(sys.stdin)
 print("ID\t$/hr\tGPU\tVRAM\tCUDA\tRel\tCountry")
 for o in offers:
+    hr = round(float(o.get("dph_total") or o.get("dph") or 0), 4)
     print("{}\t{}\t{}\t{}\t{}\t{}\t{}".format(
         o.get("id"),
-        round(float(o.get("dph") or o.get("dph_total") or 0), 4),
+        hr,
         o.get("gpu_name"),
         o.get("gpu_ram"),
         o.get("cuda_max_good"),
@@ -129,7 +148,7 @@ for o in offers:
 
     # Extrahuj ID nejlevnější instance
     OFFER_ID=$(echo "$offers" | python3 -c 'import json,sys; offers=json.load(sys.stdin); print(offers[0]["id"] if offers else "")')
-    OFFER_PRICE=$(echo "$offers" | python3 -c 'import json,sys; offers=json.load(sys.stdin); o=offers[0] if offers else {}; print(o.get("dph") or o.get("dph_total") or "")')
+    OFFER_PRICE=$(echo "$offers" | python3 -c 'import json,sys; offers=json.load(sys.stdin); o=offers[0] if offers else {}; print(o.get("dph_total") or o.get("dph") or "")')
 
     log "Nejlevnější nabídka: ID=${OFFER_ID}, cena ~\$${OFFER_PRICE}/hr"
 }
@@ -172,13 +191,33 @@ create_instance() {
     while [[ $retries -gt 0 ]]; do
         local status
         status=$(vastai show instance "$INSTANCE_ID" --raw 2>/dev/null | python3 -c "
-import sys, json
+import sys, json, subprocess, os
 d = json.load(sys.stdin)
-print(d.get('actual_status', 'unknown'))
+a, c = d.get('actual_status'), d.get('cur_state')
+host, port = d.get('ssh_host'), d.get('ssh_port')
+# Primárně čekáme na actual_status=running (SSH + vast copy jsou stabilní až potom).
+if a == 'running':
+    print('running')
+elif c == 'running' and host and port:
+    key = os.path.expanduser('~/.ssh/id_ed25519')
+    if os.path.isfile(key):
+        r = subprocess.run(
+            ['ssh', '-i', key, '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=6',
+             '-o', 'StrictHostKeyChecking=accept-new', '-p', str(int(port)), f'root@{host}', 'true'],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=12,
+        )
+        if r.returncode == 0:
+            print('running')
+        else:
+            print(a or 'waiting')
+    else:
+        print(a or 'waiting')
+else:
+    print(a or c or 'unknown')
 " 2>/dev/null || echo "unknown")
 
         if [[ "$status" == "running" ]]; then
-            log "Instance běží!"
+            log "Instance běží (SSH připojení OK — můžeme nahrávat soubory)."
             break
         fi
         echo -n "."
@@ -230,11 +269,12 @@ echo "  ZION AI Native — Fine-tuning na $(hostname)"
 echo "═══════════════════════════════════════════════"
 
 cd /workspace
+export TOKENIZERS_PARALLELISM="${TOKENIZERS_PARALLELISM:-false}"
+export ZION_DATALOADER_WORKERS="${ZION_DATALOADER_WORKERS:-0}"
 
 # 1. Install deps
 echo "[1/5] Instaluji závislosti..."
 pip install -q -r requirements.txt
-pip install -q flash-attn --no-build-isolation 2>/dev/null || echo "Flash Attention not available, continuing"
 
 # 2. HuggingFace login
 if [[ -n "${HF_TOKEN:-}" ]]; then
@@ -248,14 +288,20 @@ fi
 PAIRS=$(wc -l < data/zion_train.jsonl)
 echo "[3/5] Dataset: $PAIRS Q&A párů"
 
-# 4. Fine-tune
+# 4. Fine-tune (budget výchozí: max_seq 1024, epoch 3 — přepni env ZION_MAX_SEQ_LENGTH / ZION_EPOCHS)
 echo "[4/5] Spouštím QLoRA fine-tuning..."
 python finetune_lora.py \
     --dataset data/zion_train.jsonl \
     --output  outputs/zion-llama-lora \
-    --epochs  "${ZION_EPOCHS:-5}"
+    --epochs  "${ZION_EPOCHS:-3}" \
+    --max-seq-length "${ZION_MAX_SEQ_LENGTH:-1024}"
 
 # 5. Merge + GGUF export
+if [[ "${ZION_SKIP_GGUF:-0}" == "1" ]]; then
+    echo "[5/5] ZION_SKIP_GGUF=1 — přeskakuji merge/GGUF na serveru."
+    echo "  LoRA: outputs/zion-llama-lora/"
+    exit 0
+fi
 echo "[5/5] Merge LoRA + GGUF export..."
 # Clone llama.cpp for GGUF conversion
 if [[ ! -d /opt/llama.cpp ]]; then
@@ -289,7 +335,7 @@ TRAIN_EOF
     vastai copy /tmp/zion_train_remote.sh "$instance_id:/workspace/train.sh"
 
     # Execute
-    vastai execute "$instance_id" "chmod +x /workspace/train.sh && HF_TOKEN='${HF_TOKEN}' ZION_EPOCHS='${EPOCHS}' bash /workspace/train.sh"
+    vastai execute "$instance_id" "export PYTHONUNBUFFERED=1; chmod +x /workspace/train.sh && HF_TOKEN='${HF_TOKEN}' ZION_EPOCHS='${EPOCHS}' ZION_MAX_SEQ_LENGTH='${ZION_MAX_SEQ_LENGTH:-1024}' ZION_SKIP_GGUF='${ZION_SKIP_GGUF:-0}' bash /workspace/train.sh"
 
     log "Trénink spuštěn! Sleduj logy:"
     log "  vastai logs $instance_id"
@@ -359,6 +405,8 @@ Env:
   VAST_GPU        Např. RTX 4090, A100 (výchozí A100)
   HF_TOKEN        HuggingFace token (pro Llama-3)
   NVIDIA_API_KEY  NVIDIA NIM klíč (volitelné, pro dataset gen)
+  ZION_MAX_SEQ_LENGTH  Default 1024 na Vast (rychlejší); 2048 = pomalejší, často lepší kontext
+  ZION_SKIP_GGUF       1 = po LoRA skončit (merge/GGUF udělej lokálně, ušetří čas stroje)
 EOF
 }
 
