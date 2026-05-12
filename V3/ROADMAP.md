@@ -1,9 +1,33 @@
 # ZION v3 Mainnet Roadmap
 
-Status date: 2026-03-28 (Sprint 8 complete, fee-split rollout verified live)
+Status date: **2026-05-12** (supplement below; narrative body still reflects Sprint 8 / March snapshot unless cross-linked)
 
 This file is the active source-of-truth for the clean `V3/` mainnet line.
 `V3/` is intentionally separated from the legacy root workspace. The legacy root remains migration source material and audit evidence, but new mainnet-track runtime work should land in `V3/`.
+
+## Supplement — 2026-05-12 (quick sync with `main`)
+
+Operational + security **canonical status**: [`StatusV3.md`](../StatusV3.md). The sections below remain the long-form engineering history.
+
+### L1 consensus shipped on `main` (new chain)
+
+- **TX hash v2** + **F2 BLAKE3 body Merkle (BODY_ROOT_V2)** active from height **0** in default builds (`V3/L1/cosmic-harmony/src/deeksha.rs`).
+- **F1** UTXO input existence + value conservation on **peer-imported and locally submitted** blocks (`V3/L1/core/src/lib.rs` `validate_peer_block`, `SubmitCandidate` → `accept_block`).
+- Optional **testnet fork rehearsal** via Cargo feature `testnet_fork_rehearsal` + scripts under `V3/scripts/`.
+
+### Repo security (May 2026)
+
+- Coordinated **`git filter-repo`** + credential rotation completed (see `StatusV3.md` / `StatusV3-Part2.md`). Treat any **pre-scrub clone** as compromised media.
+
+### Parallel tracks (docs / AI — outside hot V3 runtime path)
+
+| Track | Where / recent `git log` | Next |
+|-------|--------------------------|------|
+| **ZION OASIS avatars** | [`docs/docs2.9/ZION_OASIS/`](../docs/docs2.9/ZION_OASIS/) — `SACRED_TRINITY/` roster waves (`eb901016`, `c23af065`, `55d2490a`, …) | Keep `README.md` / `AVATAR_ROSTER.md` aligned; wire into site + RAG roots |
+| **TerraNova + Forsita** | [`docs/TerraNova/`](../docs/TerraNova/), Forsita guide (`6a5f6996`, …) | Editorial pass, i18n |
+| **Hiran v2.1** | [`HiranV2.1/Hiran_v2.1.md`](../HiranV2.1/Hiran_v2.1.md); finetune in `HiranV2.1/finetune/` (`c41d1f5f`); RAG/Vast (`6b927882`); UE5 notes (`dbd6010c`) | Versioned datasets, ONNX/export, no large committed blobs |
+
+---
 
 ## Constitutional Reference (Mainnet Parameters)
 
@@ -56,6 +80,8 @@ Lock: DAO Treasury cliff at ~525,600 blocks (~1 year). All others: immediate unl
 ### Security Note
 
 12 private keys exist in git history (`PREMINE_WALLETS_BACKUP.json`). **Must be scrubbed via BFG Repo-Cleaner before any public fork or mainnet launch.**
+
+**Update 2026-05-07:** Leaked *operator* paths (`docs/docs2.9/ZION_KEYS/`, `V3-src*`, …) were removed from `main` via **`git filter-repo`** + credential rotation — see [`StatusV3.md`](../StatusV3.md). Treat old clones as untrusted until re-fetched. The **premine backup** warning above remains until independently verified against current `git` refs.
 
 ## Document Lineage
 
