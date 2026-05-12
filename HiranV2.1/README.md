@@ -26,4 +26,6 @@ Po úpravě shardů regeneruj kurikulum:
 python3 HiranV2.1/finetune/merge_hiran_curriculum_v2_1.py
 ```
 
+Komplexní export natrénovaného modelu (GGUF + přenosný Modelfile + manifest + návod) na jiný stroj jako ZIP: [`finetune/package_hiran_release.sh`](./finetune/package_hiran_release.sh) — viz [`finetune/README.md`](./finetune/README.md) oddíl 12.
+
 Většina skriptů mluví na `finetune/data/` — ten adresář je symlink na `./data/` zde.
