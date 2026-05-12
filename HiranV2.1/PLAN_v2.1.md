@@ -14,7 +14,7 @@
 | **Data** | Kanonický JSONL `HiranV2.1/data/hiran_curriculum_v2.1.jsonl` z documented shardů; verze a hash zapsané v release notes / `curriculum/meta/BUILD.txt` (viz bootstrap) |
 | **Runtime** | `V3/L3/ai-native` umí s modelem mluvit přes existující backend (`LLM_MODEL`, `OLLAMA_API_URL` / remote) bez pádu; system prompt odpovídá chování z § 3.4 `Hiran_v2.1.md` |
 | **Agent contract** | Odpověď i akce dodržují truth/action/provenance/version/identity kontrakt z `Hiran_v2.1.md` § 1.1; destruktivní/deploy/wallet/key kroky vyžadují explicitní approval |
-| **RAG (min.)** | **V3-realita:** index nad `V3/docs` + `AGENTS.md` + `StatusV3.md`. **TerraNova / knihovna Amenti:** agent musí umět odpovídat **ukotveně** k obsahu digitální knihovny Amenti (portál [Síně Amenti](https://newearth.cz/V2/halls.html) — Kroniky, Amenti Library, PDF knihy atd.) přes **dedikovaný RAG index** (ne masový dump do SFT); při chybě chunku **nepředstírat** citace |
+| **RAG (min.)** | **V3-realita:** index nad `V3/docs` + `AGENTS.md` + `StatusV3.md`. **TerraNova / knihovna Amenti:** agent musí umět odpovídat **ukotveně** k obsahu digitální knihovny Amenti (portál [Síně Amenti](https://newearth.cz/V2/halls.html) — Kroniky, Amenti Library, PDF knihy atd.) přes **dedikovaný RAG index** (ne masový dump do SFT); při chybě chunku **nepředstírat** citace. **Navíc — ZION Oasis / UE5 (doplněk v2.1):** celý Markdown strom `docs/docs2.9/ZION_OASIS/` + textové zápisy v `HiranV2.1/corpus/oasis-ue5/` (router/index `oasis-game`, Rust `ZION_OASIS_GAME_CORPUS_ROOTS` / `index_zion_oasis_game_corpus`); bez vkládání `.uasset` do RAG; při absenci chunku neuvádět vymyšlené lore detaily bez zdroje. |
 | **API schema** | Chat/RAG vrací odděleně `answer`, `sources`, `backend_id`, `mode`, `warnings`, `model_version`, `prompt_version`, `dataset_hash`, `rag_index_version` |
 | **Eval** | Minimálně 20 ručně vybraných scénářů (Rust patch, `zion doctor`, deploy otázka, „nevím“ test) — pass/fail log; safety/provenance/stale-data scénáře jsou release gate |
 | **Provoz** | Dokumentované env pro Docker / server; žádné tajné klíče v gitu; `VAST_API_KEY` není používán jako LLM bearer token |
@@ -41,7 +41,7 @@
 | Gate | Kritérium |
 |------|-----------|
 | **Embedding backend** | Runtime nepoužívá mock/test embeddingy pro produkční odpovědi; backend je explicitně konfigurovaný. |
-| **Vector store** | Zvolená persistentní cesta pro indexy (`zion-tech`, `live-runtime`, `amenti-library`, `buddhism-*`) nebo jasně označený in-memory dev režim. |
+| **Vector store** | Zvolená persistentní cesta pro indexy (`zion-tech`, `live-runtime`, `amenti-library`, `buddhism-*`, případně **`oasis-game`** pro herní dokumentaci Zion Oasis) nebo jasně označený in-memory dev režim. |
 | **Source contract** | Každá RAG odpověď vrací source metadata: index, path/url, chunk id, licence/provenance kde existuje. |
 | **Schema contract** | Chat API nemíchá context/backend/source významy; odpověď je stabilní pro web, CLI i desktop. |
 | **Runtime key hygiene** | Vast orchestration klíč je oddělený od LLM provider klíčů; lokální endpointy fungují bez falešného bearer tokenu. |
@@ -74,7 +74,7 @@
 | **Train** | ML / GPU | LoRA + logy |
 | **Infra** | DevOps | Ollama / compose / env |
 | **Product** | App | web proxy, multi-turn, UI přes stejný Hiran API kontrakt |
-| **RAG / korpusy** | ML + obsah | V3 index + **Amenti Library** index ([Síně Amenti](https://newearth.cz/V2/halls.html)) + Buddhism/Vedabase/OER metadata |
+| **RAG / korpusy** | ML + obsah | V3 index + **Amenti Library** index ([Síně Amenti](https://newearth.cz/V2/halls.html)) + Buddhism/Vedabase/OER metadata + **`oasis-game`** (`docs/docs2.9/ZION_OASIS`, `HiranV2.1/corpus/oasis-ue5`) |
 | **Agent** | Rust | ai-native prompt + RAG wiring (router na tech vs. Amenti index) |
 | **Safety / legal** | Dev + obsah | action tiers, approval policy, licence manifesty, secret/source denylist |
 | **Eval** | Dev + produkt | release gate scénáře: hallucination, stale data, provenance, destructive ops, Rust patch |
@@ -94,6 +94,7 @@
 9. [ ] Rozhodnout produkční embedding/vector-store cestu a označit in-memory/mock jen jako dev režim.
 10. [ ] Zapsat 20 eval promptů do `HiranV2.1/curriculum/meta/eval_scenarios_v2.1.md` (nový soubor při prvním evalu): Rust patch, `zion doctor`, deploy, „nevím“, stale data, licence/citace, destructive action.
 11. [ ] Ověřit, že web chat nepoužívá separátní osobnost/API mimo Hiran runtime.
+12. [ ] *(Doplněk)* **ZION Oasis + UE5:** zajistit RAG index `oasis-game` — celý strom `docs/docs2.9/ZION_OASIS/` + `HiranV2.1/corpus/oasis-ue5/` s `ZION_WORKSPACE_ROOT=<repo>`; ověřit `index_zion_oasis_game_corpus` nebo plný canonical scan; smoke dotazy s očekávanou cestou k `.md` v `SACRED_TRINITY` / `GOLDEN_EGG_GAME`; volitelně `zion_train_oasis_ue5_guided.jsonl`.
 
 ---
 

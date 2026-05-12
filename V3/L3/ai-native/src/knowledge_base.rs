@@ -56,11 +56,16 @@ pub const AI_NATIVE_CANONICAL_CORPUS_ROOTS: &[&str] = &[
 pub const V2_BOOKS_PROXY_CORPUS_ROOTS: &[&str] = &[
     "docs/docs2.9/books",
     "docs/docs2.9/deployment/AMENTI_LOG_INDEX.md",
-    "docs/docs2.9/ZION_OASIS/GOLDEN_EGG_GAME",
+    "docs/docs2.9/ZION_OASIS",
+    "HiranV2.1/corpus/oasis-ue5",
     "docs/docs2.9/SACRED_KNOWLEDGE",
     "docs/docs2.9/COSMIC_MAP",
     "docs/docs2.9/PROJECT_OVERVIEW.md",
 ];
+
+/// Zion Oasis (hra / L4 design v repu) + tvoje UE5 textové zápisy — použij jako samostatný RAG sweep nebo vedle Buddhism presetů.
+pub const ZION_OASIS_GAME_CORPUS_ROOTS: &[&str] =
+    &["docs/docs2.9/ZION_OASIS", "HiranV2.1/corpus/oasis-ue5"];
 
 /// Hiran v2.1: stažené / vygenerované sútry (bhikkhusujato tree) — viz `HiranV2.1/scripts/rag/`.
 pub const BUDDHISM_CLASSICAL_CORPUS_ROOTS: &[&str] =
@@ -766,9 +771,16 @@ def foo():
     #[test]
     fn test_v2_books_proxy_profile_contains_books_root() {
         assert!(V2_BOOKS_PROXY_CORPUS_ROOTS.contains(&"docs/docs2.9/books"));
-        assert!(V2_BOOKS_PROXY_CORPUS_ROOTS.contains(&"docs/docs2.9/ZION_OASIS/GOLDEN_EGG_GAME"));
+        assert!(V2_BOOKS_PROXY_CORPUS_ROOTS.contains(&"docs/docs2.9/ZION_OASIS"));
+        assert!(V2_BOOKS_PROXY_CORPUS_ROOTS.contains(&"HiranV2.1/corpus/oasis-ue5"));
     }
 
+    #[test]
+    fn zion_oasis_game_roots_cover_design_and_ue5_scratchpad() {
+        assert!(ZION_OASIS_GAME_CORPUS_ROOTS.contains(&"docs/docs2.9/ZION_OASIS"));
+        assert!(ZION_OASIS_GAME_CORPUS_ROOTS.contains(&"HiranV2.1/corpus/oasis-ue5"));
+        assert_eq!(ZION_OASIS_GAME_CORPUS_ROOTS.len(), 2);
+    }
     #[test]
     fn buddhism_rag_roots_reference_hiran_paths() {
         assert!(BUDDHISM_CLASSICAL_CORPUS_ROOTS[0].contains("buddhism-classical"));

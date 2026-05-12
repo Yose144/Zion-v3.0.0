@@ -208,7 +208,10 @@ def train(args) -> None:
 
     # 4. Načti model s 4-bit quantization
     print(f"\nNačítám model: {BASE_MODEL} (4-bit QLoRA)...")
-    bnb_config = BitsAndBytesConfig(**BNB_CONFIG)
+    # Novější transformers volají getattr(torch, dtype) — musí to být skutečný torch.dtype, ne řetězec.
+    bnb_config = BitsAndBytesConfig(
+        **{**BNB_CONFIG, "bnb_4bit_compute_dtype": torch.bfloat16}
+    )
 
     model = AutoModelForCausalLM.from_pretrained(
         BASE_MODEL,
@@ -233,6 +236,9 @@ def train(args) -> None:
     output_dir = Path(args.output)
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    _dlw = os.environ.get("ZION_DATALOADER_WORKERS", "").strip()
+    dataloader_num_workers = int(_dlw) if _dlw.isdigit() else 2
+
     training_args = SFTConfig(
         output_dir=str(output_dir),
         num_train_epochs=args.epochs,
@@ -256,9 +262,10 @@ def train(args) -> None:
         optim="paged_adamw_8bit",
         max_grad_norm=0.3,
         weight_decay=0.01,
-        dataloader_pin_memory=True,
-        dataloader_num_workers=2,
-        max_length=args.max_seq_length,
+        dataloader_pin_memory=(dataloader_num_workers > 0),
+        dataloader_num_workers=dataloader_num_workers,
+        # trl==0.9.x používá max_seq_length (ne max_length)
+        max_seq_length=args.max_seq_length,
         packing=False,
         resume_from_checkpoint=args.resume if args.resume else None,
     )
@@ -270,7 +277,8 @@ def train(args) -> None:
         model=model,
         train_dataset=train_ds,
         eval_dataset=eval_ds,
-        processing_class=tokenizer,
+        tokenizer=tokenizer,
+        dataset_text_field="text",
         args=training_args,
         callbacks=[EarlyStoppingCallback(early_stopping_patience=2)],
     )
@@ -330,6 +338,14 @@ def main() -> None:
                         help="Zkontroluj dataset a config bez spuštění tréninku")
 
     args = parser.parse_args()
+
+    # Env override (Vast / CI): ZION_MAX_SEQ_LENGTH, ZION_EPOCHS
+    _msl = os.environ.get("ZION_MAX_SEQ_LENGTH", "").strip()
+    if _msl.isdigit():
+        args.max_seq_length = int(_msl)
+    _ep = os.environ.get("ZION_EPOCHS", "").strip()
+    if _ep.isdigit():
+        args.epochs = int(_ep)
 
     if args.dry_run:
         print("=== DRY RUN ===")
