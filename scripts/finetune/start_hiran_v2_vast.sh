@@ -44,7 +44,9 @@ source "$VENV/bin/activate"
 pip install -q vastai
 
 GPU="${VAST_GPU:-RTX 4090}"
-EPOCHS="${VAST_EPOCHS:-5}"
-echo "[ZION] GPU=$GPU epochs=$EPOCHS | dataset: $DATASET ($(wc -l < "$DATASET" | tr -d ' ') řádků)"
+# Budget výchozí: 3 epochy; max kvalita déle: export VAST_EPOCHS=5
+EPOCHS="${VAST_EPOCHS:-3}"
+MAXSEQ="${VAST_MAX_SEQ_LENGTH:-1024}"
+echo "[ZION] GPU=$GPU epochs=$EPOCHS max_seq=$MAXSEQ | dataset: $DATASET ($(wc -l < "$DATASET" | tr -d ' ') řádků)"
 
-exec env ZION_TRAIN_DATASET="$DATASET" ./vast_deploy.sh --gpu "$GPU" --epochs "$EPOCHS" --yes "$@"
+exec env ZION_TRAIN_DATASET="$DATASET" ZION_MAX_SEQ_LENGTH="$MAXSEQ" ./vast_deploy.sh --gpu "$GPU" --epochs "$EPOCHS" --yes "$@"
