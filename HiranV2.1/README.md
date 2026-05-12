@@ -4,7 +4,7 @@ Komplexní adresář pro **váhy inference (v1)**, **LoRA trénink (v2)** a **je
 
 ## Provádění v2.1 („stavíme“)
 
-1. **[`PLAN_v2.1.md`](PLAN_v2.1.md)** — kompletní phased plán (data → SFT → GGUF → RAG → prod).  
+1. **[`PLAN_v2.1.md`](PLAN_v2.1.md)** — kompletní phased plán (data → SFT → GGUF → RAG → prod).
 2. **Bootstrap** (z kořene repa):
 
 ```bash
