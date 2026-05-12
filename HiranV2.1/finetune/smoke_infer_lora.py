@@ -9,7 +9,7 @@ Python: použij 3.10–3.13. S 3.14 instalace často spadne na sestavení `token
 CPython 3.13). Na Macu např. `brew install python@3.12` → `python3.12 -m venv .venv-smoke`.
 
 Příklad:
-  cd scripts/finetune
+  cd HiranV2.1/finetune
   python3.12 -m venv .venv-smoke && . .venv-smoke/bin/activate
   pip install -U pip
   pip install -r requirements.txt

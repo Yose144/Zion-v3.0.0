@@ -25,7 +25,7 @@
 
 | Zdroj | Poznámka |
 |-------|----------|
-| **Base model** | Rozhodnutí: např. Llama 3.1 8B / 70B / Qwen — musí sedět s licencí a s VRAM (QLoRA tabulka v `scripts/finetune/README.md`) |
+| **Base model** | Rozhodnutí: např. Llama 3.1 8B / 70B / Qwen — musí sedět s licencí a s VRAM (QLoRA tabulka v `HiranV2.1/finetune/README.md`) |
 | **GPU** | Vast / vlastní CUDA; SSH + disk pro checkpointy (~10–50 GB záleží na běhu) |
 | **`NVIDIA_API_KEY`** | Pro `collect_dataset.py` generování párů (free tier limity) |
 | **`VAST_API_KEY`** | Pro `start_hiran_v2_vast.sh` + `gpuVast.md` playbook |

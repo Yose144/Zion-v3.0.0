@@ -75,22 +75,22 @@ Pro **minimum průchodnosti**: `ZION_WORKSPACE_ROOT` = kořen monorepa; voliteln
 | Část | Role |
 |------|------|
 | `data/shards/` | Provenience SFT řádků — v1 éra (`zion_train*.jsonl`) a čistě v2 běh (`zion_train_hiran_v2.jsonl`). |
-| `data/hiran_curriculum_v2.1.jsonl` | **Kanonické v2.1 učivo** — sloučené + deduplikované (pozdější shard má přednost při kolizi uživatelské vs. asistentické části). Regeneruje `scripts/finetune/merge_hiran_curriculum_v2_1.py`. |
-| `data/*.jsonl` (symlinks) | Kompatibilita se starými cestami `scripts/finetune/data/…`; míří do `data/shards/`. |
+| `data/hiran_curriculum_v2.1.jsonl` | **Kanonické v2.1 učivo** — sloučené + deduplikované (pozdější shard má přednost při kolizi uživatelské vs. asistentické části). Regeneruje `finetune/merge_hiran_curriculum_v2_1.py`. |
+| `data/*.jsonl` (symlinks) | Kompatibilita se starými cestami `finetune/data/…`; míří do `data/shards/`. |
 | `lineage/v1-ollama-prague/` | Celý lokální Ollama blob store Hiranyagarbhy v1 (gitignored). |
 | `lineage/v2-lora-vast-36254769/` | Vast LoRA výstupy Hiran v2 (gitignored). |
 | `curriculum/meta/` | Malé artefakty sledovatelné gitem (kopie Praha Modelfile, `SOURCE`). |
 | `corpus/oasis-ue5/` | Textový **UE5 blueprint „crate“**: mapování lore z `docs/docs2.9/ZION_OASIS/` na implementaci v editoru (`BP_*.md`, `CHANGELOG_UE.md`); společně se stromem Oasis tvoří `ZION_OASIS_GAME_CORPUS_ROOTS`. |
 
-Datasetové symlinky drží adresář **`HiranV2.1/data`** jako reálný cíl odkazu **`scripts/finetune/data`**.
+Datasetové symlinky drží adresář **`HiranV2.1/data`** jako reálný cíl odkazu **`HiranV2.1/finetune/data`**.
 
 **Provádění (fáze, kritéria hotovo, Wave 1):** viz [`PLAN_v2.1.md`](./PLAN_v2.1.md) a skript [`bootstrap_workspace.sh`](./bootstrap_workspace.sh) z kořene repa.
 
-- `scripts/finetune/build_v3_orchestrator_dataset.py` — offline V3/Rust/orchestrátor korpus (`--base`/`--output` stále používají výchozí cesty přes symlinky).
-- `scripts/finetune/merge_hiran_curriculum_v2_1.py` — zřetězení shardů → `hiran_curriculum_v2.1.jsonl` (proveď po změnách orchestrátorové nebo shard dat).
-- `scripts/finetune/finetune_lora.py` — QLoRA SFT (`--dataset` typicky `data/hiran_curriculum_v2.1.jsonl` při nových fine-tune bězích).
-- `scripts/finetune/vast_deploy.sh` — Vast orchestrace (`ZION_TRAIN_DATASET`).
-- `scripts/finetune/start_hiran_v2_vast.sh` — výchozí dataset = `hiran_curriculum_v2.1.jsonl` pokud existuje.
+- `finetune/build_v3_orchestrator_dataset.py` — offline V3/Rust/orchestrátor korpus (`--base`/`--output` stále používají výchozí cesty přes symlinky).
+- `finetune/merge_hiran_curriculum_v2_1.py` — zřetězení shardů → `hiran_curriculum_v2.1.jsonl` (proveď po změnách orchestrátorové nebo shard dat).
+- `finetune/finetune_lora.py` — QLoRA SFT (`--dataset` typicky `data/hiran_curriculum_v2.1.jsonl` při nových fine-tune bězích).
+- `finetune/vast_deploy.sh` — Vast orchestrace (`ZION_TRAIN_DATASET`).
+- `finetune/start_hiran_v2_vast.sh` — výchozí dataset = `hiran_curriculum_v2.1.jsonl` pokud existuje.
 - `HiranV2.1/gpuVast.md` — bezpečný Vast workflow.
 
 ---

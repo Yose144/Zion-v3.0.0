@@ -34,11 +34,11 @@ echo "== Merge curriculum → $CUR =="
 if [[ $missing -eq 1 ]]; then
   echo "[WARN] Some core shards missing — merge may be incomplete."
   echo "       Generate with:"
-  echo "         python3 scripts/finetune/build_v3_orchestrator_dataset.py --project ."
-  echo "         python3 scripts/finetune/collect_dataset.py ...  # see scripts/finetune/README.md"
+  echo "         python3 HiranV2.1/finetune/build_v3_orchestrator_dataset.py --project ."
+  echo "         python3 HiranV2.1/finetune/collect_dataset.py ...  # see HiranV2.1/finetune/README.md"
 fi
 
-python3 scripts/finetune/merge_hiran_curriculum_v2_1.py
+python3 HiranV2.1/finetune/merge_hiran_curriculum_v2_1.py
 
 if [[ -f "$CUR" ]]; then
   lines=$(wc -l < "$CUR" | tr -d ' ')
@@ -65,7 +65,7 @@ echo "  $SHARDS/zion_train_buddhism_guided.jsonl"
 echo ""
 echo "== Next steps =="
 echo "  1. Read:  HiranV2.1/PLAN_v2.1.md"
-echo "  2. Dry-run: python3 scripts/finetune/finetune_lora.py --dataset scripts/finetune/data/hiran_curriculum_v2.1.jsonl --dry-run"
-echo "  3. Train:   cd scripts/finetune && ./start_hiran_v2_vast.sh   # needs VAST_API_KEY"
+echo "  2. Dry-run: python3 HiranV2.1/finetune/finetune_lora.py --dataset HiranV2.1/finetune/data/hiran_curriculum_v2.1.jsonl --dry-run"
+echo "  3. Train:   cd HiranV2.1/finetune && ./start_hiran_v2_vast.sh   # needs VAST_API_KEY"
 echo "  4. Runtime: export LLM_MODEL=<ollama-tag>  # see V3/L3/ai-native zion-ai-native-api"
 echo ""

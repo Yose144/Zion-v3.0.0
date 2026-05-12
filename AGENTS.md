@@ -17,7 +17,7 @@ This file provides operating guidance to Devin, WARP, Copilot, and future automa
 - Root guidance baseline: `.github/copilot-instructions.md` (applies repo-wide).
 - Current status and launch blockers: [`StatusV3.md`](./StatusV3.md) + [`StatusV3-Part2.md`](./StatusV3-Part2.md) (independent audit + 2026-05-07 cleanup).
 - Current V3 planning/status references: `V3/README.md`, `V3/ROADMAP.md`, and `V3/docs/**`.
-- Hiranyagarbha / Hiran **v2.1** roadmap (ZION-domain model + curated non-ZION RAG corpora): [`HiranV2.1/Hiran_v2.1.md`](./HiranV2.1/Hiran_v2.1.md) (oddíl 3.6 / § 1.1 agent contract); prováděcí plán: [`HiranV2.1/PLAN_v2.1.md`](./HiranV2.1/PLAN_v2.1.md); upgrade context: [`HIRANYAGARBHA_UPGRADE_PLAN.md`](./HIRANYAGARBHA_UPGRADE_PLAN.md) § 0.2.1.
+- Hiranyagarbha / Hiran **v2.1** roadmap (ZION-domain model + curated non-ZION RAG corpora): [`HiranV2.1/Hiran_v2.1.md`](./HiranV2.1/Hiran_v2.1.md) (oddíl 3.6 / § 1.1 agent contract); prováděcí plán: [`HiranV2.1/PLAN_v2.1.md`](./HiranV2.1/PLAN_v2.1.md); LoRA / Vast fine-tune: [`HiranV2.1/finetune/README.md`](./HiranV2.1/finetune/README.md); upgrade context: [`HIRANYAGARBHA_UPGRADE_PLAN.md`](./HIRANYAGARBHA_UPGRADE_PLAN.md) § 0.2.1.
 - Historical archive exists at `docs/2.9.9/archive/WARP.md`; treat it as legacy context, not current source of truth for V3 runtime behavior.
 
 ## Agent operating rules
