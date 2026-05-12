@@ -1,10 +1,10 @@
 # HIRANYAGARBHA — Upgrade Plán: Od 8B k Frontier-Level AI
 
-> **Datum:** 30. března 2026  
-> **Aktuální stav (v1):** `zion-expert` – Llama 3.1 8B Q5_K_M, 776 training párů; inference dříve na přechodné **Vast.ai** instanci (RTX 3060) — vhodné na experiment, ne jako dlouhodobý domov.  
-> **Cíl (v2):** Hiranyagarbha v2 — srovnatelná kvalita v doméně ZION s top modely; **produkční inference na dedikovaném GPU** (vlastní RTX 5080+ / reserved cloud), **Vast pouze krátkodobě** (fine-tune, batch joby), ne 24/7 provoz.  
-> **Před nasazením v2:** zálohuj produkční **v1** (`zion-expert`) z Ollama na lokál — viz [`docs/ops/BACKUP_HIRAN_V1_OLLAMA.md`](docs/ops/BACKUP_HIRAN_V1_OLLAMA.md).  
-> **Technická v2 linie v repu:** viz `AiNativev2.md` — `V3/L3/ai-native` (Dharma Autotuner, consciousness integrace, RAG index nad `docs/TerraNova`), delší timeouty pro remote LLM, docker orchestrace.  
+> **Datum:** 30. března 2026
+> **Aktuální stav (v1):** `zion-expert` – Llama 3.1 8B Q5_K_M, 776 training párů; inference dříve na přechodné **Vast.ai** instanci (RTX 3060) — vhodné na experiment, ne jako dlouhodobý domov.
+> **Cíl (v2):** Hiranyagarbha v2 — srovnatelná kvalita v doméně ZION s top modely; **produkční inference na dedikovaném GPU** (vlastní RTX 5080+ / reserved cloud), **Vast pouze krátkodobě** (fine-tune, batch joby), ne 24/7 provoz.
+> **Před nasazením v2:** zálohuj produkční **v1** (`zion-expert`) z Ollama na lokál — viz [`docs/ops/BACKUP_HIRAN_V1_OLLAMA.md`](docs/ops/BACKUP_HIRAN_V1_OLLAMA.md).
+> **Technická v2 linie v repu:** viz `AiNativev2.md` — `V3/L3/ai-native` (Dharma Autotuner, consciousness integrace, RAG index nad `docs/TerraNova`), delší timeouty pro remote LLM, docker orchestrace.
 **Konkrétní phased postup v2.1 („stavba“):** viz [`HiranV2.1/PLAN_v2.1.md`](HiranV2.1/PLAN_v2.1.md) + `./HiranV2.1/bootstrap_workspace.sh` z kořene repa.
 > **Upřímnost:** Frontier modely (Claude, GPT) mají 100B–1T parametrů + měsíce RLHF. My se jim nemůžeme rovnat globálně. Ale v doméně ZION blockchainu je to dosažitelné.
 
@@ -42,7 +42,7 @@ Tohle lze nasadit HNED bez nového modelu.
 
 ### 0.1 Pokročilý system prompt (Chain-of-Thought)
 
-**Problém:** Aktuální system prompt je krátký, model jede "instinkt".  
+**Problém:** Aktuální system prompt je krátký, model jede "instinkt".
 **Fix:** Přidat strukturovaný reasoning instrukce.
 
 ```
@@ -61,7 +61,7 @@ Pravidla odpovědi:
 
 ### 0.2 RAG — Retrieval Augmented Generation
 
-**Problém:** Model má znalosti "zakódované" do vah při tréninku. Nedokáže vyhledat aktuální stav.  
+**Problém:** Model má znalosti "zakódované" do vah při tréninku. Nedokáže vyhledat aktuální stav.
 **Řešení:** Vektorová databáze nad ZION dokumenty → relevantní kontext se přikládá ke každému promptu.
 
 ```
@@ -74,8 +74,8 @@ Prompt = system + [relevant_docs] + user_question
 Model odpovídá s aktuálními daty
 ```
 
-**Stack:** ChromaDB + LlamaIndex + Python server  
-**Zdroje pro embedding:** docs/, V3/README.md, SERVERS.md, STATUS.md + live API data  
+**Stack:** ChromaDB + LlamaIndex + Python server
+**Zdroje pro embedding:** docs/, V3/README.md, SERVERS.md, STATUS.md + live API data
 **Dopad:** Model bude vědět aktuální stav sítě, přesné hodnoty, nové features.
 
 ### 0.2.1 Širší encyklopedická vrstva (Hiran v2.1) — RAG, ne megadataset
@@ -84,13 +84,13 @@ ZION SFT/LoRA má zůstat **doménově zaměřený** (V3, Rust, orchestrace). Ob
 
 ### 0.3 Multi-turn chat na API úrovni
 
-**Problém:** Každá zpráva je izolovaná — model zapomíná kontext konverzace.  
+**Problém:** Každá zpráva je izolovaná — model zapomíná kontext konverzace.
 **Fix:** Frontend posílá celou historii konverzace, backend ji přikládá do promptu.
 
 ```typescript
 // Aktuálně: prompt = jedna zpráva
 // Upgrade: prompt = conversation_history + nová zpráva
-const fullPrompt = history.map(m => 
+const fullPrompt = history.map(m =>
   `${m.role === 'user' ? 'User' : 'Hiranyagarbha'}: ${m.content}`
 ).join('\n') + `\nUser: ${newMessage}\nHiranyagarbha:`;
 ```
@@ -103,7 +103,7 @@ const fullPrompt = history.map(m =>
 
 ### 1.1 Expanze training dat: 776 → 15 000+ párů
 
-**Aktuální data:** 776 párů generované NIMem z docs/  
+**Aktuální data:** 776 párů generované NIMem z docs/
 **Cíl:** 15 000+ párů pokrývající celou ZION domain
 
 #### Nové zdroje dat:
@@ -149,7 +149,7 @@ Místo jen "správná odpověď" — přidat **preference páry**:
 }
 ```
 
-**Nástroj:** `trl` library — DPO Trainer  
+**Nástroj:** `trl` library — DPO Trainer
 **Dopad:** Model se naučí být konkrétní, ne vágní.
 
 ---
@@ -170,7 +170,7 @@ GPT-5:         ~1T+ (odhadovaně)    → frontier
 
 ### 2.1 Doporučený base model
 
-**Primární kandidát:** `Qwen2.5-72B-Instruct`  
+**Primární kandidát:** `Qwen2.5-72B-Instruct`
 **Proč:**
 - #1 open-source v code + reasoning (HumanEval 86%, MATH 83%)
 - Vynikající v technické dokumentaci
@@ -188,7 +188,7 @@ GPT-5:         ~1T+ (odhadovaně)    → frontier
 | BF16 (plná přesnost) | 144 GB | 2× A100 80GB | ~$4.80/hr |
 | **Q5_K_M (produkce)** | **~48 GB** | **A100 80GB** | **~$2.50/hr** |
 
-**Trénink fine-tune:** ~8-16 hodin na A100 80GB = $20-40 za run  
+**Trénink fine-tune:** ~8-16 hodin na A100 80GB = $20-40 za run
 **Inference:** A100 40GB v Vast.ai ~$1.20/hr (vs $0.05/hr RTX 3060 teď)
 
 ### 2.3 RTX 5000 Blackwell — consumer GPU pro AI (2025/2026)
@@ -296,7 +296,7 @@ Redis          → chat history + response cache
 
 ## Fáze 4 — DPO alignment (měsíc 3)
 
-**Problém:** SFT naučí model fakta, ale ne *jak správně odpovídat*.  
+**Problém:** SFT naučí model fakta, ale ne *jak správně odpovídat*.
 **DPO (Direct Preference Optimization):** Trénink na párech chosen/rejected bez potřeby reward modelu.
 
 ```
@@ -311,8 +311,8 @@ DPO trainer → model se naučí preferovat dobré odpovědi
 Výsledek: přesný, konkrétní, ne-repetitivní
 ```
 
-**Čas:** 2-4 hodiny DPO tréninku na A100  
-**Cena:** ~$10-15 za DPO run  
+**Čas:** 2-4 hodiny DPO tréninku na A100
+**Cena:** ~$10-15 za DPO run
 
 ---
 
@@ -320,7 +320,7 @@ Výsledek: přesný, konkrétní, ne-repetitivní
 
 ### 5.1 Produkce mimo spot Vast — dedikovaný nebo reserved GPU
 
-**Problém:** Spot Vast instance je levná na hodiny, ale špatná jako **domov** pro veřejný chat — preemption, nestabilní síť, měnící se koncovky, provozní režie.  
+**Problém:** Spot Vast instance je levná na hodiny, ale špatná jako **domov** pro veřejný chat — preemption, nestabilní síť, měnící se koncovky, provozní režie.
 **Řešení (v2):** Primární inference na stroji pod vaší kontrolou nebo na **explicitně reserved** GPU u cloud providera. Vast nechat jen na **krátké** joby (QLoRA, experimenty).
 
 | Option | GPU | VRAM | Cena/měsíc (řádově) | Pozn. |
@@ -394,5 +394,5 @@ Obecné otázky mimo ZION:
 
 ---
 
-*"Hiranyagarbha se nerodí celý — roste. Každá fáze je další vrstva vědomí."*  
+*"Hiranyagarbha se nerodí celý — roste. Každá fáze je další vrstva vědomí."*
 *— ZION AI Native, 30. března 2026*
