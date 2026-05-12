@@ -1,0 +1,60 @@
+{
+  "description": "Curriculum LoRA stages for Hiran v2.2 (mirror of config/dynamic_lora.py)",
+  "stages": [
+    {
+      "name": "foundation",
+      "rank": 16,
+      "alpha": 32,
+      "dropout": 0.1,
+      "epochs": 2,
+      "learning_rate": 2e-4,
+      "batch_size": 4,
+      "gradient_accumulation_steps": 4,
+      "target_modules": ["q_proj", "k_proj", "v_proj", "o_proj"]
+    },
+    {
+      "name": "zion_core",
+      "rank": 32,
+      "alpha": 64,
+      "dropout": 0.05,
+      "epochs": 3,
+      "learning_rate": 1e-4,
+      "batch_size": 4,
+      "gradient_accumulation_steps": 4,
+      "target_modules": ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
+    },
+    {
+      "name": "zion_advanced",
+      "rank": 32,
+      "alpha": 64,
+      "dropout": 0.05,
+      "epochs": 2,
+      "learning_rate": 5e-5,
+      "batch_size": 4,
+      "gradient_accumulation_steps": 4,
+      "target_modules": ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
+    },
+    {
+      "name": "cross_domain",
+      "rank": 64,
+      "alpha": 128,
+      "dropout": 0.02,
+      "epochs": 2,
+      "learning_rate": 2e-5,
+      "batch_size": 2,
+      "gradient_accumulation_steps": 8,
+      "target_modules": ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
+    },
+    {
+      "name": "rag_synthesis",
+      "rank": 64,
+      "alpha": 128,
+      "dropout": 0.02,
+      "epochs": 1,
+      "learning_rate": 1e-5,
+      "batch_size": 2,
+      "gradient_accumulation_steps": 8,
+      "target_modules": ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
+    }
+  ]
+}

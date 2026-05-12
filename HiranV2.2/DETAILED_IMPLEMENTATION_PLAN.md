@@ -9,7 +9,7 @@ Aktualizovaný detailní implementační plán pro Hiran v2.2 s multi-domain cur
 | Fáze | Status | Trvání | Priority | Progress |
 |------|--------|--------|----------|----------|
 | **Phase 1: Dataset & Curriculum** | ✅ COMPLETED | 2-3 dny | P0 | 100% |
-| **Phase 2: Training Pipeline** | ⏳ PENDING | 3-5 dní | P0 | 0% |
+| **Phase 2: Training Pipeline** | 🔄 IN PROGRESS | 3-5 dní | P0 | ~40% |
 | **Phase 3: Quantization** | ⏳ PENDING | 1 den | P1 | 0% |
 | **Phase 4: Inference Testing** | ⏳ PENDING | 1-2 dny | P1 | 0% |
 | **Phase 5: Deployment** | ⏳ PENDING | 1 den | P2 | 0% |
@@ -783,12 +783,16 @@ if __name__ == "__main__":
 
 3. **Training Execution**
    ```bash
-   # Run complete curriculum training
-   python HiranV2.2/scripts/train_v2.2.py \
+   # Sync curriculum + scripts to a new Vast instance (set VAST_SSH, VAST_PORT, SSH_IDENTITY)
+   bash HiranV2.2/scripts/sync_curriculum_to_vast.sh
+
+   # On instance (after pip install -r requirements-train.txt):
+   python3 scripts/train_v2.2.py \
        --base_model unsloth/Meta-Llama-3.1-8B-Instruct \
        --output_dir /workspace/checkpoints \
-       --data_dir /workspace/HiranV2.2/data/curriculum \
-       --stages foundation zion_core zion_advanced cross_domain rag_synthesis
+       --data_dir /workspace/hiran-v2.2/data/curriculum \
+       --stages foundation zion_core zion_advanced cross_domain rag_synthesis \
+       --tensorboard --logging_steps 20
    ```
 
 4. **Monitoring**
@@ -813,12 +817,12 @@ if __name__ == "__main__":
 
 ### Phase 2 Deliverables
 
-- [x] Dynamic QLoRA configuration
-- [ ] Multi-stage training script
-- [ ] Evaluation protocol
-- [ ] Training execution a monitoring
+- [x] Dynamic QLoRA configuration (`HiranV2.2/config/dynamic_lora.py`, `curriculum_config.json`)
+- [x] Multi-stage training script (`HiranV2.2/scripts/train_v2.2.py`, `data_loader.py`, `trainer_utils.py`)
+- [x] Evaluation protocol (initial: `HiranV2.2/evaluate/evaluate_v2.2.py`, `metrics.py`)
+- [ ] Training execution a monitoring (TensorBoard: `--tensorboard`; sync: `scripts/sync_curriculum_to_vast.sh`)
 - [ ] Trained LoRA model
-- [ ] Evaluation report
+- [ ] Evaluation report (full benchmark suite)
 
 **Success Criteria:**
 - ✅ Dataset > 5000 pairs
@@ -1526,8 +1530,8 @@ docker-compose up -d
 
 ### IMMEDIATE (Dnes)
 - [x] Phase 1 completion ✅
-- [ ] Připravit Phase 2 environment
-- [ ] Implementovat dynamic QLoRA config
+- [x] Phase 2 scaffold: dynamic LoRA, `train_v2.2.py`, eval, `sync_curriculum_to_vast.sh`, TensorBoard flag
+- [ ] Nová Vast instance (≥100 GB) + první plný curriculum běh
 
 ### SHORT-TERM (Zítra)
 - [ ] Implementovat multi-stage training script
@@ -1585,6 +1589,6 @@ docker-compose up -d
 
 **Status:** Detailed Implementation Plan  
 **Created:** 2026-05-12  
-**Updated:** 2026-05-12 (Phase 1 complete)  
+**Updated:** 2026-05-12 (Phase 2 training scaffold: config + scripts + evaluate)  
 **Author:** Devin (ZION AI Team)  
 **Version:** 2.0

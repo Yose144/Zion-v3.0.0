@@ -43,10 +43,12 @@ HiranV2.2/
 │   └── training_configs/             # Training configs
 ├── scripts/                          # Training a deployment skripty
 │   ├── prepare_dataset.sh            # Dataset preparation
-│   ├── train_v2.2.py                 # Training script
+│   ├── train_v2.2.py                 # QLoRA curriculum training
+│   ├── sync_curriculum_to_vast.sh   # rsync dat na Vast
 │   └── deploy_vast.sh                # Vast.ai deployment
 ├── evaluate/                         # Evaluation a testing
 │   ├── evaluate_v2.2.py              # Evaluation script
+│   ├── benchmark_dataset.py          # Train/eval split helper
 │   └── test_backends.py              # Backend testing
 ├── quantization/                     # Model quantization
 │   └── hybrid_quant.py               # Hybrid quantization
@@ -74,15 +76,39 @@ python3 data/scrape_v3_docs.py
 python3 data/validate_dataset.py
 ```
 
-### 2. Training
+### 2. Training (Phase 2 — QLoRA curriculum)
+
+Z lokálního stroje s NVIDIA GPU (nebo po syncu na Vast, viz níže):
 
 ```bash
-# Trénovat s curriculum learning
-python3 scripts/train_v2.2.py \
-    --base_model unsloth/Meta-Llama-3.1-8B-Instruct \
-    --output_dir checkpoints \
-    --data_dir data/curriculum \
-    --stages foundation zion_core zion_advanced cross_domain rag_synthesis
+pip install -r HiranV2.2/requirements-train.txt
+python3 HiranV2.2/scripts/train_v2.2.py --dry_run
+# plný běh + TensorBoard
+python3 HiranV2.2/scripts/train_v2.2.py \
+  --output_dir HiranV2.2/checkpoints \
+  --data_dir HiranV2.2/data/curriculum \
+  --tensorboard --logging_steps 20 --save_steps 500
+# TensorBoard: tensorboard --logdir HiranV2.2/checkpoints/logs
+```
+
+**Nová Vast instance (doporučeno ≥100 GB disk pro HF cache + checkpointy):**
+
+```bash
+export VAST_SSH="root@<host>.vast.ai"
+export VAST_PORT="<ssh_port_z_konzole>"
+export SSH_IDENTITY="$HOME/.ssh/vast_hiran_key"
+bash HiranV2.2/scripts/sync_curriculum_to_vast.sh
+```
+
+Na instanci pak `cd` do vypísaného `VAST_REMOTE_DIR` a spusť `pip install` + `train_v2.2.py` jako výše (cesty `data/curriculum` a `scripts` jsou relativní k tomu adresáři).
+
+**Holdout pro eval (volitelné):**
+
+```bash
+python3 HiranV2.2/evaluate/benchmark_dataset.py \
+  --input HiranV2.2/data/curriculum/foundation.jsonl \
+  --train_out /tmp/foundation_train.jsonl \
+  --eval_out /tmp/foundation_eval.jsonl
 ```
 
 ### 3. Quantization
@@ -267,10 +293,10 @@ bash scripts/deploy_vast.sh
 - [ ] Create curriculum configs
 
 ### Fáze 2: Training Pipeline (3-5 dní)
-- [ ] Implement dynamic QLoRA
-- [ ] Multi-stage training
-- [ ] Evaluation protocol
-- [ ] Training scripts
+- [x] Implement dynamic QLoRA (`config/dynamic_lora.py`)
+- [x] Multi-stage training (`scripts/train_v2.2.py`)
+- [x] Evaluation protocol (initial `evaluate/`)
+- [ ] Full training run + convergence report
 
 ### Fáze 3: Quantization (1 den)
 - [ ] Hybrid quantization
