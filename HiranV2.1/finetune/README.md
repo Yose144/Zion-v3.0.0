@@ -352,7 +352,13 @@ Skript `package_hiran_release.sh` zabalí GGUF, přenosný `Modelfile` (řádek 
 
 Výchozí cíl archivu: `~/hiran-v2.1-YYYYMMDD-HHMMSS.zip` (UTC). Na cílovém stroji rozbal, `cd` do `hiran-v2.1-release/`, pak `ollama create hiran-v2.1 -f Modelfile` (název modelu = `--name`).
 
-Bez `--outputs-dir` skript **sám vybere** kořen `outputs/`, kde leží **nejnovější** `*.gguf` (porovná `HiranV2.1/finetune/outputs/` a legacy `scripts/finetune/outputs/`). Pro jednu kanonickou složku přesuň artefakty do `HiranV2.1/finetune/outputs/` — viz [`scripts/finetune/README.md`](../../scripts/finetune/README.md).
+Bez `--outputs-dir` skript vybere **nejnovější** `*.gguf` podle času souboru — **rekurzivně** v:
+
+`HiranV2.1/finetune/outputs/`, `HiranV2.1/finetune/exports/`, `HiranV2.1/lineage/`, `scripts/finetune/outputs/`.
+
+Při stejném čase upřednostní soubor pod `HiranV2.1/finetune/outputs/`. Pro jednu kanonickou složku přesuň artefakty do `HiranV2.1/finetune/outputs/` — viz [`scripts/finetune/README.md`](../../scripts/finetune/README.md).
+
+Pokud v repu žádný GGUF není (zůstal jen na Vast / v `~/models`), použij `--gguf /absolutní/cesta/model.gguf`.
 
 ---
 
