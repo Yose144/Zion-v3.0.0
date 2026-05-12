@@ -92,8 +92,8 @@ Poznámka:
 
 | Cesta | Stav | Důvod |
 |------|------|-------|
-| `scripts/finetune/outputs/*/Modelfile.zion` | ponechat | malé, použité v merge/export a deploy flow |
-| `scripts/finetune/data/zion_train.jsonl` | ponechat | je to kanonický dataset referencovaný training skripty |
+| `HiranV2.1/finetune/outputs/*/Modelfile.zion` | ponechat | malé, použité v merge/export a deploy flow |
+| `HiranV2.1/finetune/data/zion_train.jsonl` | ponechat | je to kanonický dataset referencovaný training skripty |
 
 ---
 
