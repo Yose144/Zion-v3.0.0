@@ -599,7 +599,7 @@ SEED_PAIRS = [
             "Fine-tuning pipeline na Vast.ai:\n"
             "  1. export VAST_API_KEY='...'\n"
             "  2. pip install vastai\n"
-            "  3. cd scripts/finetune && ./vast_deploy.sh --gpu RTX_5090 --epochs 5\n"
+            "  3. cd HiranV2.1/finetune && ./vast_deploy.sh --gpu RTX_5090 --epochs 5\n"
             "Skript automaticky: najde GPU (A100/5090/4090), vytvoří instanci, "
             "uploadne dataset + skripty, spustí QLoRA trénink, merge LoRA + GGUF export.\n"
             "GPU auto-detect: RTX 5090 32GB → batch_size 2 + grad_accum 16, packing vypnutý; "
