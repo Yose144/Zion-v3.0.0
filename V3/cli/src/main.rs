@@ -9,8 +9,8 @@ mod rpc;
 mod ui;
 
 use commands::{
-    agent, bridge, completions, compose, dao, deploy, doctor, explorer, mine, monitor, ncl, node,
-    onboard, pool, status, update, wallet, warp,
+    agent, bridge, completions, compose, dao, deploy, doctor, explorer, hiran, mine, monitor, ncl,
+    node, onboard, pool, status, update, wallet, warp,
 };
 
 use clap_complete::Shell;
@@ -108,6 +108,11 @@ enum Commands {
     Agent {
         #[command(subcommand)]
         cmd: agent::AgentCmd,
+    },
+    /// Hiran v2.2 inference service
+    Hiran {
+        #[command(subcommand)]
+        cmd: hiran::HiranCmd,
     },
     /// Server deployment
     Deploy {
@@ -247,6 +252,7 @@ async fn dispatch(cli: Cli) -> Result<()> {
         Commands::Mine { cmd } => mine::run(&cfg, cmd).await,
         Commands::Wallet { cmd } => wallet::run(&cfg, cmd).await,
         Commands::Agent { cmd } => agent::run(&cfg, cmd).await,
+        Commands::Hiran { cmd } => hiran::run(&cfg, cmd).await,
         Commands::Deploy { cmd } => deploy::run(&cfg, cmd).await,
         Commands::Bridge { cmd } => bridge::run(&cfg, cmd).await,
         Commands::Dao { cmd } => dao::run(&cfg, cmd).await,

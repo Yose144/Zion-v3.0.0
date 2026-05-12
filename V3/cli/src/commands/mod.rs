@@ -6,6 +6,7 @@ pub mod dao;
 pub mod deploy;
 pub mod doctor;
 pub mod explorer;
+pub mod hiran;
 pub mod mine;
 pub mod monitor;
 pub mod ncl;
