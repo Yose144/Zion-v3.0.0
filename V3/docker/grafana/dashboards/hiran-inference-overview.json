@@ -1,0 +1,187 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "title": "Service Status",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+      "targets": [
+        { "expr": "up{job=\"zion-hiran-inference\"}", "legendFormat": "status", "refId": "A" }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "options": { "0": { "text": "DOWN", "color": "red" }, "1": { "text": "UP", "color": "green" } }, "type": "value" }
+          ]
+        }
+      }
+    },
+    {
+      "title": "Uptime",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+      "targets": [
+        { "expr": "hiran_uptime_seconds", "legendFormat": "uptime", "refId": "A" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" } }
+    },
+    {
+      "title": "Total Requests",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+      "targets": [
+        { "expr": "hiran_inference_requests_total", "legendFormat": "requests", "refId": "A" }
+      ]
+    },
+    {
+      "title": "Active Sessions",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+      "targets": [
+        { "expr": "hiran_active_sessions", "legendFormat": "sessions", "refId": "A" }
+      ]
+    },
+    {
+      "title": "Inference Latency (P50)",
+      "type": "gauge",
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 4 },
+      "targets": [
+        { "expr": "histogram_quantile(0.50, hiran_inference_latency_seconds)", "legendFormat": "P50", "refId": "A" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s", "thresholds": { "steps": [
+        { "color": "green", "value": null },
+        { "color": "yellow", "value": 0.5 },
+        { "color": "red", "value": 1.0 }
+      ]}}}
+    },
+    {
+      "title": "Inference Latency (P95)",
+      "type": "gauge",
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 4 },
+      "targets": [
+        { "expr": "histogram_quantile(0.95, hiran_inference_latency_seconds)", "legendFormat": "P95", "refId": "A" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s", "thresholds": { "steps": [
+        { "color": "green", "value": null },
+        { "color": "yellow", "value": 1.0 },
+        { "color": "red", "value": 2.0 }
+      ]}}}
+    },
+    {
+      "title": "GPU Utilization",
+      "type": "gauge",
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 4 },
+      "targets": [
+        { "expr": "hiran_gpu_utilization_percent", "legendFormat": "GPU %", "refId": "A" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percent", "max": 100, "thresholds": { "steps": [
+        { "color": "red", "value": null },
+        { "color": "yellow", "value": 30 },
+        { "color": "green", "value": 60 }
+      ]}}}
+    },
+    {
+      "title": "GPU Memory Usage",
+      "type": "gauge",
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 4 },
+      "targets": [
+        { "expr": "hiran_gpu_memory_used_bytes / hiran_gpu_memory_total_bytes * 100", "legendFormat": "VRAM %", "refId": "A" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percent", "max": 100, "thresholds": { "steps": [
+        { "color": "green", "value": null },
+        { "color": "yellow", "value": 70 },
+        { "color": "red", "value": 90 }
+      ]}}}
+    },
+    {
+      "title": "Request Rate",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        { "expr": "rate(hiran_inference_requests_total[5m])", "legendFormat": "requests/s", "refId": "A" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps" } }
+    },
+    {
+      "title": "Inference Latency Distribution",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        { "expr": "histogram_quantile(0.50, rate(hiran_inference_latency_seconds_bucket[5m]))", "legendFormat": "P50", "refId": "A" },
+        { "expr": "histogram_quantile(0.95, rate(hiran_inference_latency_seconds_bucket[5m]))", "legendFormat": "P95", "refId": "B" },
+        { "expr": "histogram_quantile(0.99, rate(hiran_inference_latency_seconds_bucket[5m]))", "legendFormat": "P99", "refId": "C" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" } }
+    },
+    {
+      "title": "GPU Utilization Over Time",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "targets": [
+        { "expr": "hiran_gpu_utilization_percent", "legendFormat": "GPU %", "refId": "A" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percent", "max": 100 } }
+    },
+    {
+      "title": "GPU Memory Over Time",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "targets": [
+        { "expr": "hiran_gpu_memory_used_bytes / 1024 / 1024 / 1024", "legendFormat": "VRAM GB", "refId": "A" },
+        { "expr": "hiran_gpu_memory_total_bytes / 1024 / 1024 / 1024", "legendFormat": "Total GB", "refId": "B" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "GB" } }
+    },
+    {
+      "title": "Tokens Generated",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+      "targets": [
+        { "expr": "rate(hiran_tokens_generated_total[5m])", "legendFormat": "tokens/s", "refId": "A" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "tokens/s" } }
+    },
+    {
+      "title": "Error Rate",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+      "targets": [
+        { "expr": "rate(hiran_inference_errors_total[5m]) / rate(hiran_inference_requests_total[5m]) * 100", "legendFormat": "error %", "refId": "A" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percent", "max": 100, "thresholds": { "steps": [
+        { "color": "green", "value": null },
+        { "color": "yellow", "value": 1 },
+        { "color": "red", "value": 5 }
+      ]}}}
+    },
+    {
+      "title": "Model Info",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 12, "x": 0, "y": 32 },
+      "targets": [
+        { "expr": "hiran_model_info", "legendFormat": "{{model}}", "refId": "A" }
+      ],
+      "fieldConfig": { "defaults": { "displayName": "Model" } }
+    },
+    {
+      "title": "Backend Info",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 12, "x": 12, "y": 32 },
+      "targets": [
+        { "expr": "hiran_backend_info", "legendFormat": "{{backend}}", "refId": "A" }
+      ],
+      "fieldConfig": { "defaults": { "displayName": "Backend" } }
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["zion", "hiran", "inference", "ai"],
+  "templating": { "list": [] },
+  "time": { "from": "now-1h", "to": "now" },
+  "title": "Hiran v2.2 Inference Overview",
+  "uid": "hiran-v2.2-inference-overview"
+}
