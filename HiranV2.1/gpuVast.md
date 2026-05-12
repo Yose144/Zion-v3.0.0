@@ -9,7 +9,7 @@
 ## Rychlý start — najít RTX nabídky (bez API klíče)
 
 ```bash
-./scripts/finetune/vast_list_rtx_offers.sh 20
+./HiranV2.1/finetune/vast_list_rtx_offers.sh 20
 ```
 
 První sloupec je **offer_id** pro Vast console / `vastai create instance …`.
@@ -41,13 +41,13 @@ Výstup: sloupce `offer_id`, GPU, **$/hod**, lokace. `offer_id` použiješ u vyt
 
 ## Repo pipeline (QLoRA → GGUF)
 
-Skript: `scripts/finetune/vast_deploy.sh`
+Skript: `HiranV2.1/finetune/vast_deploy.sh`
 
-1. **Dataset pro v2 (V3 + Rust + orchestrátor):** znovu vygeneruj `zion_train.jsonl` přes `collect_dataset.py` (HIGH priorita, `--max-docs 650+`) — viz `scripts/finetune/README.md` §3. Pak teprve fine-tune.
+1. **Dataset pro v2 (V3 + Rust + orchestrátor):** znovu vygeneruj `zion_train.jsonl` přes `collect_dataset.py` (HIGH priorita, `--max-docs 650+`) — viz `HiranV2.1/finetune/README.md` §3. Pak teprve fine-tune.
 2. **Kontrola datasetu**:
    ```bash
-   wc -l scripts/finetune/data/zion_train.jsonl
-   python3 scripts/finetune/finetune_lora.py --dataset scripts/finetune/data/zion_train.jsonl --dry-run
+   wc -l HiranV2.1/finetune/data/zion_train.jsonl
+   python3 HiranV2.1/finetune/finetune_lora.py --dataset HiranV2.1/finetune/data/zion_train.jsonl --dry-run
    ```
 3. **HuggingFace** — pro aktuální default `unsloth/Meta-Llama-3.1-8B-Instruct` token **není nutný**; nastav `HF_TOKEN` jen pokud měníš base model na gated repo.
 4. **vastai CLI** (jednorázově):
@@ -59,7 +59,7 @@ Skript: `scripts/finetune/vast_deploy.sh`
 5. Spuštění tréninku **Hiran v2** (jeden příkaz — venv + vastai + neinteraktivní rent):
 
 ```bash
-cd scripts/finetune
+cd HiranV2.1/finetune
 export VAST_API_KEY='…'   # nebo .env v této složce (gitignored)
 
 ./start_hiran_v2_vast.sh              # RTX 4090, 5 epoch, --yes

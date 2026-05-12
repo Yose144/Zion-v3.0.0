@@ -224,8 +224,8 @@ def fixed_orchestrator_examples() -> list[dict]:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--project", default=".", help="Project root")
-    parser.add_argument("--base", default="scripts/finetune/data/zion_train.jsonl", help="Existing JSONL dataset")
-    parser.add_argument("--output", default="scripts/finetune/data/zion_train_hiran_v2.jsonl")
+    parser.add_argument("--base", default="HiranV2.1/finetune/data/zion_train.jsonl", help="Existing JSONL dataset")
+    parser.add_argument("--output", default="HiranV2.1/finetune/data/zion_train_hiran_v2.jsonl")
     parser.add_argument("--doc-chunks", type=int, default=8)
     parser.add_argument("--rust-symbols", type=int, default=12)
     args = parser.parse_args()
