@@ -1011,14 +1011,15 @@ Místo přeučení celého 8B modelu (potřeba 80GB+):
 ```bash
 pip install transformers peft bitsandbytes datasets trl
 
-# Trénink (RTX 4090 24GB, ~3–4 hodiny)
-python3 scripts/finetune/train_hiranyagarbha.py \
-  --model meta/llama-3.1-8b-instruct \
-  --dataset data/hiranyagarbha_dataset.jsonl \
-  --output models/hiranyagarbha-8b-v1 \
-  --epochs 3 \
-  --batch_size 4 \
-  --lora_r 16
+# Archivní ukázka (původní CLI). Současný QLoRA stack: HiranV2.1/finetune/README.md a finetune_lora.py.
+# Dříve např.:
+# python3 scripts/finetune/train_hiranyagarbha.py \
+#   --model meta/llama-3.1-8b-instruct \
+#   --dataset data/hiranyagarbha_dataset.jsonl \
+#   --output models/hiranyagarbha-8b-v1 \
+#   --epochs 3 \
+#   --batch_size 4 \
+#   --lora_r 16
 
 # Výsledek: models/hiranyagarbha-8b-v1/ (~200MB LoRA adapter)
 # Spuštění přes Ollama:
