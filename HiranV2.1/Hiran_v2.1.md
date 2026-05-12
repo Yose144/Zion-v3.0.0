@@ -1,7 +1,7 @@
 # Hiran v2.1 — BestModel pro ZION V3
 
-> **Status:** koncept / příprava po v2 fine-tune  
-> **Cíl:** Hiranyagarbha jako nejlepší ZION V3 doménový model, Rust programovací agent a operátorský orchestrátor.  
+> **Status:** koncept / příprava po v2 fine-tune
+> **Cíl:** Hiranyagarbha jako nejlepší ZION V3 doménový model, Rust programovací agent a operátorský orchestrátor.
 > **Kanon:** `V3/` je hlavní mainnet linie. Legacy stromy mimo `V3/` jsou reference, ne primární pravda.
 
 ---
