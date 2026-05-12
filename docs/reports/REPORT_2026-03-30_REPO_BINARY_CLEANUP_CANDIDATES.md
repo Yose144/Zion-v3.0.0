@@ -1,6 +1,6 @@
 # ZION Repo Binary Cleanup Candidates
 
-**Datum:** 30. března 2026  
+**Datum:** 30. března 2026
 **Účel:** oddělit živé web a desktop assets od historických archivů a build artefaktů, které zbytečně nafukují git historii
 
 ---

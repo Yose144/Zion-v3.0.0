@@ -4,8 +4,8 @@
 
 ## Engine
 
-- **Verze UE:** např. 5.4 / 5.5  
-- **Cesta k `.uproject`:** např. `~/Unreal/ZionOasis/ZionOasis.uproject`  
+- **Verze UE:** např. 5.4 / 5.5
+- **Cesta k `.uproject`:** např. `~/Unreal/ZionOasis/ZionOasis.uproject`
 
 ## Repo vztah
 
