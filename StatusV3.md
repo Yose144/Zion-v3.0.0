@@ -1,6 +1,8 @@
 # ZION V3 — Status Report (Mainnet Polish)
 
-> **Datum:** 2026-05-07 (security cleanup + agentická obsluha)
+> **Datum:** 2026-05-07 (security cleanup + agentická obsluha); **2026-05-12**
+> (sjednocení `StatusV3.md` ↔ `StatusV3-Part2.md` — TL;DR, roadmap §6, §8, §5
+> pyramida, odkazy).
 > **Předchozí update:** 2026-05-03 (genesis konsensus — merged na `main`)
 > **Branch:** `main` — konsensusové háky **TX_HASH_V2** + **BODY_ROOT_V2** jsou
 > v produkčním buildu aktivní od výšky **0** (nový mainnet od genesis).
@@ -8,7 +10,7 @@
 > z genesis), `89ba3730` (F1 u lokálně těžených bloků). **Po 2026-05-07
 > `git filter-repo` mají tyto commity nové SHA** — vyhledat dle commit message.
 > **Předchozí status:** [`STATUS.md`](./STATUS.md) (2026-04-07)
-> **Doplněk (Part 2 + cleanup):** [`StatusV3-Part2.md`](./StatusV3-Part2.md) (2026-05-07)
+> **Doplněk (Part 2):** [`StatusV3-Part2.md`](./StatusV3-Part2.md) — nezávislé ověření kódu + **historický** záznam nálezů na pre-scrub `main` (`27d9c9e0`). Kanonický stav repo + P0/P1 po večerním cleanupu je v tomto souboru (záhlaví + §2).
 > **Účel tohoto dokumentu:** zkonsolidovaný stav před mainnet Genesis #0 — co
 > funguje, co je hotové, co ještě hoří, a co je *nice-to-have*. Psáno tak, aby
 > tomu rozuměl jak vývojář, tak laik (ne-vývojář si může číst jen sekce **TL;DR**
@@ -93,7 +95,7 @@ kompatibilní — nasazení = čistý datadir / nový Genesis #0.
 **Kódový blokátor „koordinovaný flip konstant“** pro **nový mainnet od genesis**
 je k 2026-05-03 **vyřešený v repu** (výšky **0** + testy + F1 u lokální těžby).
 Zbývá **operace**: nasadit uzly/pool/miner z `main`, vyčistit data starého řetězce,
-ověřit stack v Praze. Volitelný **testnet rehearsal** dál přes cargo feature
+smoke na **novém** deploy cíli (legacy Pražský uzel k 2026-05-07 deprecated). Volitelný **testnet rehearsal** dál přes cargo feature
 `testnet_fork_rehearsal` a skripty v `V3/scripts/`.
 
 ---
@@ -102,17 +104,20 @@ ověřit stack v Praze. Volitelný **testnet rehearsal** dál přes cargo featur
 
 Síť ZION V3 je v **„release candidate"** stavu. Core funkčnost (běžící nod,
 těžba, pool výplaty, převody mezi peněženkami, bridge na Base, DAO, atomic
-swapy, AI agenti) je **napsaná, otestovaná a běží na produkčním serveru
-v Praze**. Co zbývá:
+swapy, AI agenti) je **napsaná a otestovaná**; provozně byl stack ověřen na
+legacy infrastruktuře (**Pražský uzel k 2026-05-07 deprecated** — Genesis #0
+cílí **3 nové servery** s čerstvým keysetem). Co zbývá:
 
-1. **Vyměnit kompromitované klíče** (manuální akce — Yose144 musí ručně rotovat
-   GitHub Personal Access Token, OpenAI klíč, a SSH klíč na produkčním nodu).
-   *Nadále nejvyšší priorita — klíče jsou stále live, dokud nejsou ručně rotovány.*
+1. **P0 bezpečnost (2026-05-07) — provedeno:** rotace GitHub PAT, zrušení
+   OpenAI klíče, vyřazení starého deploy SSH, **`git filter-repo`** + force-push
+   (`origin/main`). Leaked cesty nejsou v aktuálním **git tree** `main`.
+   *Stále ověřit:* **staré klony / forky** s pre-scrub historií — nepoužívat z nich
+   žádné secrets; přepnout `remote` na nový `main` nebo znovu klonovat.
 2. **Konsensus z genesis (2026-05-03):** `tx-hash v2` a F2 BLAKE3 body Merkle
    jsou v defaultním buildu **aktivní od výšky 0** — vhodné pro **nový** řetězec.
    Koordinovaný „flip“ na starém mainnetu už není potřeba, pokud jde o čistý
    restart od Genesis #0. Rehearsal build zůstává přes `testnet_fork_rehearsal`.
-3. **Zaplatit GitHub Actions** (nebo udělat repo public po historickém scrubu).
+3. **Zaplatit GitHub Actions** (nebo udělat repo public; nebo org s placeným plánem).
    Bez toho CI neběží zelená a nemůže se automaticky validovat každý PR.
 4. **Externí audit** (Trail of Bits / Halborn / OtterSec — Q3 2026 plán).
 5. **Provisioning bridge validátorů + zapnout L2 bridge.** Relayer už je
@@ -450,7 +455,7 @@ nebo má konkrétní aktivační plán v
 | Chci Hiran v2.1 plán | [`HiranV2.1/Hiran_v2.1.md`](./HiranV2.1/Hiran_v2.1.md) |
 | Audit report | [`V3/docs/audits/2026-04-V3_INTERNAL_AUDIT.md`](./V3/docs/audits/2026-04-V3_INTERNAL_AUDIT.md) |
 | Aktivační plán hard fork věcí | [`V3/docs/audits/2026-04-V3_AUDIT_COMPLETION.md`](./V3/docs/audits/2026-04-V3_AUDIT_COMPLETION.md) |
-| Co rotovat / scrubnout | [`SECURITY_NOTICE_2026-04-28.md`](./SECURITY_NOTICE_2026-04-28.md) |
+| Co rotovat / scrubnout | [`docs/SECURITY_NOTICE_2026-04-28.md`](./docs/SECURITY_NOTICE_2026-04-28.md) |
 | Operator guide | [`V3/docs/CLI_GUIDE.md`](./V3/docs/CLI_GUIDE.md) |
 | Roadmap | [`ROADMAP.md`](./ROADMAP.md), [`V3/ROADMAP.md`](./V3/ROADMAP.md) |
 | Předchozí status | [`STATUS.md`](./STATUS.md) (2026-04-07) |
@@ -462,7 +467,7 @@ nebo má konkrétní aktivační plán v
 | Crate | Lib testů | Integration | Aktivní (dev) | Ignored | Fail |
 |---|---:|---:|---:|---:|---|
 | `zion-core` (L1) | **488** | — | 475 | **13** slow PoW (`--release --include-ignored`) | 0 |
-| `zion-cosmic-harmony` (L1 PoW) | **100** | — | 100 | 0 | 0 |
+| `zion-cosmic-harmony` (L1 PoW) | **~100** | — | **100** | 0 | 0 |
 | `zion-pool` (L1) | 53 | 29 | 82 | 0 | 0 |
 | `zion-miner` (L1) | 59 | — | 59 | 0 | 0 |
 | `zion-native-ffi` (L1, no-default) | 13 | — | 13 | 0 | 0 |
@@ -497,7 +502,8 @@ opakovaně). Spustí se jednotně přes `cargo test --release -- --include-ignor
 Lokálně 2026-05-02 ověřeno (vše `0 failed`):
 
 - `zion-bridge` lib: 130, `zion-bridge` integration: 47 mainnet + 16 bridge
-- `zion-cosmic-harmony` lib: 95
+- `zion-cosmic-harmony` lib: **100** passed (shoduje se sloupcem „Aktivní“;
+  `#[test]` direktiv v `src/` může být o něco více — kosmetický drift, viz Part 2 §3)
 - `zion-pool` lib: 53, integration: 29
 - `zion-miner`: 59
 - `zion-native-ffi` no-default-features: 13
@@ -535,14 +541,13 @@ Clean gate 2026-05-02:
                           │
         ┌─────────────────▼───────────────────────────────┐
         │ Q2 2026 (do ~2026-06-30)                        │
-        │  □ Rotate ZION_KEYS (PAT, OpenAI, SSH)  ⚠ user  │
-        │  □ git filter-repo history scrub                 │
+        │  done Rotate credentials + `git filter-repo` (2026-05-07) │
         │  □ Set GitHub Actions spending limit > $0       │
         │  □ Deploy nový řetězec: čistý datadir + binárky │
         │  □ Provision 5 bridge validator keys + 3/5 cfg  │
         │  □ Re-enable bridge L2 mainnet (testnet ≥1 týd) │
         │  done Pre-commit hook (.pre-commit-config.yaml) │
-        │  □ Stabilizace flaky DNS testu (discovery)      │
+        │  done Stabilizace discovery DNS testu (set_dns_seeds) │
         └─────────────────┬───────────────────────────────┘
                           │
         ┌─────────────────▼───────────────────────────────┐
@@ -600,7 +605,8 @@ findingy z interního auditu (F1, F3, F3b, F4, F5, F6, §3.2, §13, §15.2,
 §15.3 + relayer synthetic-proof) jsou **uzavřené**. Kód pro **tx-hash v2** a
 **F2 BLAKE3 body Merkle** je **zapnutý od genesis** v produkčním buildu
 (`c048f9aa`); **F1** u lokální těžby doplněno v `89ba3730`. Zbývá hlavně
-**provozní nasazení** nového řetězce a položky P0/P1 výše (klíče, bridge, CI).
+**provozní nasazení** nového řetězce a položky **P1** výše (bridge, CI, deploy);
+**P0** (rotace + history scrub) je k 2026-05-07 dokončeno.
 
 Co bránilo postupu k mainnetu k 2026-04-29 a teď už nebrání:
 
@@ -609,7 +615,9 @@ Co bránilo postupu k mainnetu k 2026-04-29 a teď už nebrání:
 
 Co bránilo a stále brání:
 
-- Kompromitované klíče v git historii (na uživateli — rotace + BFG scrub).
+- ~~Kompromitované materiály v git historii~~ → **vyřešeno `git filter-repo`
+  2026-05-07** na `origin/main`; rizikem zůstávají jen **staré klony / forky** s
+  pre-scrub historií (nepublikovat, nepřenášet secrets).
 - ~~Hard-fork koordinace pro flip konstant~~ → pro **nový** mainnet nahrazeno
   merge na `main` (výška 0); volitelný testnet rehearsal přes feature build.
 - 5-validator bridge provisioning (operations).
@@ -619,9 +627,9 @@ Před Genesis #0 doporučujeme **třetí-stranný audit** (Q3 2026) a **bug boun
 program** — interní audit pokrývá code review, ale ne dynamic analysis,
 fuzzing, a kryptanalýzu Cosmic Harmony Ekam Deeksha v2.
 
-> *„Hot, ale ne na panikařit."* — co hoří je seznam **P0/P1** výše. Nic
-> z toho není v aktivním exploitu, ale klíče by se měly rotovat dnes
-> a nejpozději tento týden.
+> *„Hot, ale ne na panikařit."* — po dokončení P0 (2026-05-07) je kritická
+> priorita v **P1** (deploy, bridge, CI). Staré lokální klony s pre-scrub
+> historií smažte nebo přefetchujte čistý `main`.
 
 ---
 
@@ -641,7 +649,7 @@ fuzzing, a kryptanalýzu Cosmic Harmony Ekam Deeksha v2.
 | **E.6** | `fix(core): F1 UTXO checks for locally mined candidates` | S | E.1–E.5 | 🟢 **hotové** na `main` (`89ba3730`) |
 | **F** | `feat(testnet): hard-fork rehearsal harness` (Docker compose + scripts) | M | E.3–E.5 | 🟢 **základ**: `hardfork-rehearsal-testnet.sh` + `verify-fork-rehearsal.ps1` |
 | **G** | `feat(bridge): 5-validator key provisioning + 3/5 cfg + ANKR_API_KEY guard` | M | A | 🟡 plánováno (paralelní cesta) |
-| **H** | `chore(security): git filter-repo history scrub (one-shot rewrite)` | XS code / L coord | A, B | 🟡 plánováno (po rotaci klíčů uživatelem) |
+| **H** | `chore(security): git filter-repo history scrub (one-shot rewrite)` | XS code / L coord | A, B | 🟢 **hotové** 2026-05-07 (viz záhlaví) |
 | **I** | `feat(observability): Prometheus SLO + alert rules` | M | — | 🟡 plánováno (paralelní, Q3 audit polish) |
 | **J** | `test(e2e): mainnet stress harness (10k+ TX, peer churn, partition)` | XL | C, F | 🟡 plánováno (confidence pre-Genesis) |
 
