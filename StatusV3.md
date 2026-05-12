@@ -1,6 +1,6 @@
 # ZION V3 — Status Report (Mainnet Polish)
 
-> **Datum:** 2026-05-07 (security cleanup + agentická obsluha); **2026-05-12**
+> **Datum:** 2026-05-12 (Hiran v2.2 CLI integration); **2026-05-07** (security cleanup + agentická obsluha); **2026-05-12**
 > (sjednocení `StatusV3.md` ↔ `StatusV3-Part2.md` — TL;DR, roadmap §6, §8, §5
 > pyramida, odkazy).
 > **Předchozí update:** 2026-05-03 (genesis konsensus — merged na `main`)
@@ -40,6 +40,69 @@
 - `.pre-commit-config.yaml` už v repu existuje a obsahuje fmt/clippy/gitleaks/private-key/JS/Python guardy; položka P3 o chybějícím hooku je tím uzavřená jako dokumentační drift.
 - Pro Hiran v2.1 platí stejný kanon: `StatusV3.md` + `V3/` jsou technická pravda, širší vědomostní korpusy patří primárně do licencovaného RAG s citacemi, ne do nekritického SFT.
 - P0/P1 se nemění operacionálně: bridge 3/5 provisioning, CI billing a externí audit zůstávají rozhodující před veřejným launch (rotace klíčů + scrub jsou už ✅).
+
+---
+
+## Co je nového 2026-05-12 (Hiran v2.2 CLI integration)
+
+### Hiran v2.2 plně integrován do ZION CLI
+
+|| Komponenta | Stav |
+|---|---|
+| **CLI příkazy** | ✅ Hotovo - `zion hiran` s plným rozhraním |
+| **Docker service** | ✅ Hotovo - `hiran-inference` s llama.cpp + CUDA |
+| **Config schema** | ✅ Hotovo - `[hiran]` sekce v `zion.toml` |
+| **Monitoring** | ✅ Hotovo - Prometheus + Grafana dashboard |
+| **AI-Native hybrid** | ✅ Hotovo - Hybrid RAG + inference integrace |
+| **Vast.ai test** | 🔄 Probíhá - model upload (70%) |
+
+**Nové CLI příkazy:**
+```bash
+zion hiran start/stop/restart/status  # Lifecycle management
+zion hiran chat                        # Interaktivní REPL
+zion hiran ask <question>             # Single query
+zion hiran inference --model --backend --device  # Advanced inference
+zion hiran evaluate --dataset --metrics          # Model evaluace
+zion hiran quantize --model --format             # Quantizace
+zion hiran deploy --model --platform             # Deployment
+```
+
+**Docker service:**
+- Image: `zion-hiran-inference:v2.2`
+- Backend: llama.cpp s CUDA akcelerací
+- Port: 8002 (OpenAI-compatible API)
+- GPU: NVIDIA RTX 3060+ (6+ GB VRAM)
+
+**Monitoring:**
+- Prometheus scraping: `zion-hiran-inference` job
+- Grafana dashboard: 16 panelů (latency, GPU, requests)
+- Alerting: 5 pravidel (down, high latency, error rate, GPU memory, GPU utilization)
+
+**Config:**
+```toml
+[hiran]
+model_path = "/models/hiran-v2.2-q5_k_m.gguf"
+backend = "llama_cpp"
+device = "cuda"
+port = 8002
+max_context = 4096
+temperature = 0.7
+top_p = 0.9
+```
+
+**Vytvořené soubory:**
+- `V3/docker/hiran-inference/Dockerfile`
+- `V3/cli/src/commands/hiran.rs` (300+ řádků)
+- `V3/cli/src/rpc/hiran_rpc.rs` (100+ řádků)
+- `V3/L3/ai-native/src/hiran_inference.rs` (400+ řádků)
+- `V3/docker/grafana/dashboards/hiran-inference-overview.json`
+- `HIRAN_V2.2_CLI_INTEGRATION.md` (dokumentace)
+
+**Další kroky:**
+1. Dokončit model upload na Vast.ai (čeká se na 5.4GB)
+2. Spustit inference test na RTX 3060
+3. Validovat CLI příkazy v produkčním prostředí
+4. Deploy na mainnet server
 
 ---
 
