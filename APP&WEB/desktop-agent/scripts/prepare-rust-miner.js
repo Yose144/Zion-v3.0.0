@@ -434,6 +434,9 @@ function main() {
   // Prefer the freshly built target/release artifact over stale legacy libs.
   const explicitNativeLibCandidates = [
     // V3 workspace target (preferred — clean-room mainnet build)
+    // Windows Rust cdylib for package `zion-cosmic-harmony` → zion_cosmic_harmony.dll (if crate-type includes cdylib)
+    path.join(workspaceRoot, 'V3', 'target', 'release', `zion_cosmic_harmony${libExt}`),
+    path.join(workspaceRoot, 'V3', 'target', 'release', `libzion_cosmic_harmony${libExt}`),
     path.join(workspaceRoot, 'V3', 'target', 'release', `libzion_cosmic_harmony_v3${libExt}`),
     path.join(workspaceRoot, 'V3', 'target', 'release', `zion_cosmic_harmony_v3${libExt}`),
     path.join(workspaceRoot, 'V3', 'target', 'release', `libcosmic_harmony${libExt}`),
@@ -472,11 +475,11 @@ function main() {
       console.warn(`[prepare-rust-miner] ⚠️ Could not copy canonical Deeksha lib: ${e.message}`);
     }
   } else {
-    const msg = '[prepare-rust-miner] ⚠️ No canonical Deeksha cdylib found in explicit candidates — Python miner may fall back to legacy libs';
-    if (args.requireBinary) {
-      throw new Error(msg);
-    }
-    console.warn(msg);
+    // V3 `zion-miner` does not need this DLL (OpenCL is in-process). Optional Python fallback may use it if present.
+    // `--require` only enforces the Rust miner binary above, not this artifact — the workspace often builds cosmic-harmony as rlib only (no cdylib).
+    console.warn(
+      '[prepare-rust-miner] ⚠️ No canonical Deeksha native DLL/so/dylib in search paths — Python miner may use slower fallback. (V3 Rust miner is unaffected.)'
+    );
   }
 
   let nativeLibsSource = null;

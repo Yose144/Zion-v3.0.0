@@ -635,6 +635,48 @@ let minerStats = {
   // Dual mining: ZION + XMR (DAO revenue)
 };
 
+/** Clear stdout-derived mining telemetry so UI/[METRICS] never mixes two miner processes. */
+function resetMinerTelemetryForNewSpawn() {
+  minerRateSamples = [];
+  minerShareDeltaSamples = [];
+  minerShareLastSample = { t: 0, accepted: 0, rejected: 0 };
+  minerMetricsLastEmitMs = 0;
+  delete minerStats.gpu_info;
+  delete minerStats.gpu_backend;
+  delete minerStats.runtime_backend;
+  delete minerStats.hashrate_10s;
+  delete minerStats.hashrate_60s;
+  delete minerStats.hashrate_15m;
+  delete minerStats.hashrate_max;
+  delete minerStats.hashrate_gpu;
+  delete minerStats.gpu_hps;
+  delete minerStats.uptime_display;
+  delete minerStats.accept_rate;
+  delete minerStats.total_hashes;
+  delete minerStats.total_hashes_display;
+  delete minerStats.current_epoch;
+  delete minerStats.stream_algorithm;
+  delete minerStats.miner_version;
+  Object.assign(minerStats, {
+    hashrate: 0,
+    shares: 0,
+    accepted: 0,
+    rejected: 0,
+    uptime: 0,
+    last_job_height: '',
+    last_job_diff: '',
+    last_pool_diff: '',
+    last_job_id: '',
+    last_share_diff: '',
+    last_share_latency: null,
+    gpu_detected: false,
+    gpu_type: 'none',
+    gpu_name: '',
+    cpu_only_mode: true,
+    reconnect_attempts: 0
+  });
+}
+
 function formatHashrate(hs) {
   const v = typeof hs === 'number' && Number.isFinite(hs) ? hs : 0;
   if (v >= 1e9) return `${(v / 1e9).toFixed(2)} GH/s`;
@@ -2181,6 +2223,8 @@ function startMiningV3(config, v3Path) {
   log(`[V3-FAST] Spawned PID ${minerProcess?.pid} in ${Date.now() - t0}ms\n`);
   logApp('v3-fast-spawn', JSON.stringify({ pid: minerProcess?.pid, args, pool, wallet: wallet.slice(0, 12) + '...', threads: effectiveThreads }));
 
+  resetMinerTelemetryForNewSpawn();
+
   // ── 11. Grace period → miner-started ───────────────────────────────────────
   const myStartToken = ++minerStartToken;
   minerStartAckTimer = setTimeout(() => {
@@ -2873,6 +2917,11 @@ function parseMinerOutput(output) {
         minerStats.gpu_detected = true;
         minerStats.gpu_type = gpuBe;
         minerStats.cpu_only_mode = false;
+      } else {
+        minerStats.gpu_detected = false;
+        minerStats.cpu_only_mode = true;
+        minerStats.gpu_type = 'none';
+        delete minerStats.gpu_info;
       }
     }
     const gpuHpsVal = gf('gpu_hps');
@@ -3372,6 +3421,8 @@ function parseMinerOutput(output) {
     minerStats.runtime_backend = 'cpu';
     minerStats.gpu_detected = false;
     minerStats.cpu_only_mode = true;
+    minerStats.gpu_type = 'none';
+    delete minerStats.gpu_info;
   }
 
   // ─── V3 mining threads: "cpu_cores=8 logical=8 mining_threads=8" ───
