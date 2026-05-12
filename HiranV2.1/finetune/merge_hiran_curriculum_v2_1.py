@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from collections import OrderedDict
 from pathlib import Path
 
@@ -29,6 +30,44 @@ DEFAULT_SHARD_NAMES = (
     "zion_train_vedic_guided.jsonl",
     "zion_train_buddhism_guided.jsonl",
 )
+
+
+# Single-line legacy pointer files in HiranV2.1/data/ pointed at shards/ — resolve when present.
+POINTER_LINE_RE = re.compile(r"^shards/[\w._-]+\.jsonl\s*$")
+
+
+def resolve_shard_path(shard_dir: Path, name: str) -> Path | None:
+    """
+    Return a path to read for this shard name.
+
+    Tries `data/shards/<name>` first, then `data/<name>` (some checkouts used pointer stubs there).
+    """
+    direct = shard_dir / name
+    if direct.is_file():
+        try:
+            sz = direct.stat().st_size
+        except OSError:
+            return None
+        if sz < 512:
+            txt = direct.read_text(encoding="utf-8").strip()
+            if "\n" not in txt and POINTER_LINE_RE.fullmatch(txt):
+                target = shard_dir / Path(txt).name
+                return target if target.is_file() else None
+        return direct
+
+    legacy = shard_dir.parent / name
+    if legacy.is_file():
+        try:
+            sz = legacy.stat().st_size
+        except OSError:
+            return None
+        if sz < 512:
+            txt = legacy.read_text(encoding="utf-8").strip()
+            if "\n" not in txt and POINTER_LINE_RE.fullmatch(txt):
+                target = shard_dir / Path(txt).name
+                return target if target.is_file() else None
+        return legacy
+    return None
 
 
 def fingerprint(obj: dict) -> str:
@@ -80,8 +119,8 @@ def main() -> None:
     counts: OrderedDict[str, int] = OrderedDict()
 
     for name in args.names:
-        shard_path = shard_dir / name
-        if not shard_path.is_file():
+        shard_path = resolve_shard_path(shard_dir, name)
+        if shard_path is None:
             continue
         n = 0
         for obj in load_lines(shard_path):
@@ -90,19 +129,32 @@ def main() -> None:
                 del merged[fp]
             merged[fp] = obj
             n += 1
-        counts[name] = n
+        try:
+            src = str(shard_path.relative_to(project))
+        except ValueError:
+            src = str(shard_path)
+        counts[src] = n
 
     with outp.open("w", encoding="utf-8") as f:
         for obj in merged.values():
             f.write(json.dumps(obj, ensure_ascii=False) + "\n")
 
-    print(f"Wrote {len(merged)} conversations → {outp.relative_to(project)}")
+    try:
+        rel_out = str(outp.relative_to(project))
+    except ValueError:
+        rel_out = str(outp)
+    print(f"Wrote {len(merged)} conversations -> {rel_out}")
     for name in args.names:
-        if (shard_dir / name).is_file():
-            loaded = counts.get(name, 0)
-            print(f"  scanned {loaded:>5} lines  {name}")
-        else:
+        p = resolve_shard_path(shard_dir, name)
+        if p is None:
             print(f"  skipped (missing)       {name}")
+        else:
+            try:
+                key = str(p.relative_to(project))
+            except ValueError:
+                key = str(p)
+            loaded = counts.get(key, 0)
+            print(f"  scanned {loaded:>5} lines  {name}  [{key}]")
 
 
 if __name__ == "__main__":

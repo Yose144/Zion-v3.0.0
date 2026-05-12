@@ -12,7 +12,39 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import sys
 from pathlib import Path
+
+
+# Legacy repo layout shipped tiny „pointer“ files (`shards/foo.jsonl` on one line) — skip them.
+POINTER_LINE_RE = re.compile(r"^shards/[\w._-]+\.jsonl\s*$")
+
+
+def load_jsonl_conversations(path: Path) -> list[dict]:
+    """Load chat turns from JSONL; ignore empty lines and stray non‑JSON junk."""
+    if not path.is_file():
+        return []
+    try:
+        raw = path.read_text(encoding="utf-8")
+    except OSError:
+        return []
+    stripped = raw.strip()
+    if not stripped:
+        return []
+    lines = stripped.splitlines()
+    if len(lines) == 1 and POINTER_LINE_RE.fullmatch(lines[0].strip() or ""):
+        return []
+
+    loaded: list[dict] = []
+    for ln in raw.splitlines():
+        ln = ln.strip()
+        if not ln:
+            continue
+        try:
+            loaded.append(normalize_system_prompt(json.loads(ln)))
+        except json.JSONDecodeError:
+            continue
+    return loaded
 
 
 SYSTEM_PROMPT = (
@@ -224,10 +256,28 @@ def fixed_orchestrator_examples() -> list[dict]:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--project", default=".", help="Project root")
-    parser.add_argument("--base", default="HiranV2.1/finetune/data/zion_train.jsonl", help="Existing JSONL dataset")
-    parser.add_argument("--output", default="HiranV2.1/finetune/data/zion_train_hiran_v2.jsonl")
-    parser.add_argument("--doc-chunks", type=int, default=8)
-    parser.add_argument("--rust-symbols", type=int, default=12)
+    parser.add_argument(
+        "--base",
+        default="",
+        help="Optional NIM / external JSONL to prepend (chat format). Empty = try canonical shard paths.",
+    )
+    parser.add_argument(
+        "--output",
+        default="HiranV2.1/data/shards/zion_train_hiran_v2.jsonl",
+        help="Dest shard (PLAN v2.1: under HiranV2.1/data/shards/)",
+    )
+    parser.add_argument(
+        "--doc-chunks",
+        type=int,
+        default=14,
+        help="Max grounded doc chunks per file (higher = larger, more robust SFT)",
+    )
+    parser.add_argument(
+        "--rust-symbols",
+        type=int,
+        default=22,
+        help="Max Rust symbol windows per source file",
+    )
     args = parser.parse_args()
 
     project = Path(args.project).resolve()
@@ -235,11 +285,39 @@ def main() -> None:
     output.parent.mkdir(parents=True, exist_ok=True)
 
     all_examples: list[dict] = []
-    base_path = project / args.base
-    if base_path.exists():
-        with base_path.open(encoding="utf-8") as f:
-            all_examples.extend(normalize_system_prompt(json.loads(line)) for line in f if line.strip())
+    base_candidates: list[Path] = []
+    if args.base.strip():
+        base_candidates.append(project / args.base)
+    else:
+        base_candidates.extend(
+            [
+                project / "HiranV2.1/data/shards/zion_train.jsonl",
+                project / "HiranV2.1/finetune/data/zion_train.jsonl",
+            ]
+        )
+    base_block: list[dict] = []
+    loaded_from: Path | None = None
+    for bp in base_candidates:
+        ex = load_jsonl_conversations(bp)
+        if ex:
+            base_block = ex
+            loaded_from = bp
+            break
 
+    if not base_block:
+        print(
+            "[build_v3_orchestrator] No base JSONL loaded (collect_dataset / NIM path missing or empty — "
+            "continuing from deterministic V3 docs + Rust only)",
+            file=sys.stderr,
+        )
+    elif loaded_from is not None:
+        print(
+            f"[build_v3_orchestrator] Prepended {len(base_block)} base examples "
+            f"from {loaded_from.relative_to(project)}",
+            file=sys.stderr,
+        )
+
+    all_examples.extend(base_block)
     all_examples.extend(fixed_orchestrator_examples())
     all_examples.extend(doc_examples(project, args.doc_chunks))
     all_examples.extend(rust_examples(project, args.rust_symbols))
@@ -248,7 +326,7 @@ def main() -> None:
         for item in all_examples:
             f.write(json.dumps(item, ensure_ascii=False) + "\n")
 
-    print(f"Wrote {len(all_examples)} examples → {output}")
+    print(f"Wrote {len(all_examples)} examples → {output.relative_to(project)}")
 
 
 if __name__ == "__main__":
