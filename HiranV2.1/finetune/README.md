@@ -27,7 +27,7 @@ Kompletní postup: od generování datasetu přes Vast.ai nebo A100/RTX 5090 tr�
 
 ## 2. NVIDIA NIM free tier — co funguje zadarmo
 
-Base URL: `https://integrate.api.nvidia.com/v1`  
+Base URL: `https://integrate.api.nvidia.com/v1`
 API klíč: [build.nvidia.com](https://build.nvidia.com) → Get API Key (zdarma)
 
 ### Dostupné zdarma:
