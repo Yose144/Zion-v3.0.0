@@ -1364,7 +1364,7 @@ void ekam_deeksha_mine_s4(
 
     /* Output s4 result for this work item */
     __global uchar *slot = s4_out + (ulong)tid * 64;
-    ulong *dst64 = (__global ulong *)slot;
+    __global ulong *dst64 = (__global ulong *)slot;
     ulong *src64 = (ulong *)buf_b;
     for (int i = 0; i < 8; i++) dst64[i] = src64[i];
 }
