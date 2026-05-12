@@ -15,6 +15,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 # Kanonické výstupy tréninku jsou v HiranV2.1; starší běhy mohly zapisovat do scripts/finetune/outputs.
 HIRAN_OUTPUTS="${REPO_ROOT}/HiranV2.1/finetune/outputs"
+HIRAN_FINETUNE="${REPO_ROOT}/HiranV2.1/finetune"
+HIRAN_EXPORTS="${REPO_ROOT}/HiranV2.1/finetune/exports"
+HIRAN_LINEAGE="${REPO_ROOT}/HiranV2.1/lineage"
 LEGACY_OUTPUTS="${REPO_ROOT}/scripts/finetune/outputs"
 OUTPUTS_DIR="${OUTPUTS_DIR-}"
 EXPLICIT_OUTPUTS=0
@@ -38,10 +41,9 @@ Použití:
   package_hiran_release.sh [možnosti]
 
 Možnosti:
-  --outputs-dir DIR   Kořen s outputs (jinak: auto — nejnovější *.gguf v
-                        HiranV2.1/finetune/outputs a scripts/finetune/outputs — vybere se
-                        adresář s nejnovějším *.gguf podle času souboru)
-  --gguf FILE         Konkrétní GGUF (jinak: nejnovější *.gguf v zvoleném outputs)
+  --outputs-dir DIR   Kořen pro --gguf auto jen v tomto stromě (--outputs-dir vyžaduje rekurzi zde)
+  --gguf FILE         Konkrétní GGUF (jinak: nejnovější *.gguf rekurzivně pod HiranV2.1/finetune,
+                        lineage, exports a legacy scripts/finetune/outputs)
   --modelfile FILE    Modelfile.zion (jinak: hledá */Modelfile.zion pod outputs)
   --lora-dir DIR      LoRA adaptér (výchozí při --with-lora: .../outputs/zion-llama-lora)
   --name SLUG         Název release / prefix ZIP (výchozí: hiran-v2.1)
@@ -78,84 +80,93 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# --- Automatická volba outputs/ (GGUF může být ještě ve starém scripts/finetune/outputs) ---
+# --- Rekurzivní hledání nejnovějšího *.gguf (často v podadresáři outputs/ nebo v lineage/) ---
 _file_mtime() {
   if stat -f%m "$1" >/dev/null 2>&1; then stat -f%m "$1"
   else stat -c%Y "$1" 2>/dev/null || echo 0
   fi
 }
 
-_newest_gguf_in_dir() {
-  local d="$1" best="" best_mt=0 cur mt
-  [[ -d "$d" ]] || { echo ""; return 0; }
-  shopt -s nullglob
-  for cur in "$d"/*.gguf; do
-    [[ -f "$cur" ]] || continue
-    mt="$(_file_mtime "$cur")"
-    if [[ -z "$best" ]] || [[ "$mt" -gt "$best_mt" ]]; then best_mt=$mt; best=$cur; fi
-  done
-  shopt -u nullglob
+# Nejnovější .gguf pod daným kořenem (maxdepth omezuje náhodné obří stromy).
+_newest_gguf_under() {
+  local root="$1" maxd="${2:-16}" best="" best_mt=0 f mt
+  [[ -d "$root" ]] || { echo ""; return 0; }
+  while IFS= read -r -d '' f; do
+    [[ -f "$f" ]] || continue
+    mt="$(_file_mtime "$f")"
+    # Při shodě času upřednostni soubor pod kanonickým HiranV2.1/finetune/outputs
+    if [[ -z "$best" ]] || [[ "$mt" -gt "$best_mt" ]] \
+      || { [[ "$mt" -eq "$best_mt" ]] && [[ "$f" == "$HIRAN_OUTPUTS"* ]] && [[ "$best" != "$HIRAN_OUTPUTS"* ]]; }; then
+      best_mt=$mt
+      best=$f
+    fi
+  done < <(find "$root" -maxdepth "$maxd" -name '*.gguf' -type f -print0 2>/dev/null)
   echo "$best"
 }
 
-_dir_has_gguf() {
-  local d="$1"
-  [[ -d "$d" ]] || return 1
-  shopt -s nullglob
-  local g=( "$d"/*.gguf )
-  shopt -u nullglob
-  [[ ${#g[@]} -gt 0 ]]
-}
-
-_best_gguf_either_tree() {
-  local a b ta tb
-  a="$(_newest_gguf_in_dir "$HIRAN_OUTPUTS")"
-  b="$(_newest_gguf_in_dir "$LEGACY_OUTPUTS")"
-  if [[ -n "$a" && -n "$b" ]]; then
-    ta="$(_file_mtime "$a")"; tb="$(_file_mtime "$b")"
-    if [[ "$ta" -ge "$tb" ]]; then echo "$a"; else echo "$b"; fi
-  elif [[ -n "$a" ]]; then echo "$a"
-  else echo "$b"
-  fi
-}
-
-if [[ "$EXPLICIT_OUTPUTS" -eq 0 ]]; then
-  best="$(_best_gguf_either_tree)"
-  if [[ -z "${OUTPUTS_DIR}" ]]; then
-    if [[ -n "$best" ]]; then
-      OUTPUTS_DIR="$(dirname "$best")"
-      if [[ "$OUTPUTS_DIR" == "$LEGACY_OUTPUTS" ]]; then
-        info "GGUF je v legacy $LEGACY_OUTPUTS — kanon je $HIRAN_OUTPUTS (viz scripts/finetune/README.md)."
-      fi
-    else
-      OUTPUTS_DIR="$HIRAN_OUTPUTS"
+# Nejnovější GGUF pro Hiran v2.1 balíček: prohledá všechny rozumné lokace v repu.
+_best_gguf_hiran_scan() {
+  local best="" best_mt=0 cand mt roots=(
+    "$HIRAN_OUTPUTS"
+    "$HIRAN_EXPORTS"
+    "$HIRAN_LINEAGE"
+    "$LEGACY_OUTPUTS"
+  )
+  local r c
+  for r in "${roots[@]}"; do
+    c="$(_newest_gguf_under "$r" 20)"
+    [[ -n "$c" ]] || continue
+    mt="$(_file_mtime "$c")"
+    if [[ -z "$best" ]] || [[ "$mt" -gt "$best_mt" ]] \
+      || { [[ "$mt" -eq "$best_mt" ]] && [[ "$c" == "$HIRAN_OUTPUTS"* ]] && [[ "$best" != "$HIRAN_OUTPUTS"* ]]; }; then
+      best_mt=$mt
+      best=$c
     fi
-  elif ! _dir_has_gguf "$OUTPUTS_DIR" && [[ -n "$best" ]]; then
-    info "V $OUTPUTS_DIR není žádný *.gguf — přepínám na $(dirname "$best")"
-    OUTPUTS_DIR="$(dirname "$best")"
+  done
+  echo "$best"
+}
+
+mkdir -p "$HIRAN_OUTPUTS" 2>/dev/null || true
+
+if [[ -z "$GGUF_PATH" ]]; then
+  if [[ "$EXPLICIT_OUTPUTS" -eq 1 ]]; then
+    [[ -n "${OUTPUTS_DIR}" ]] || die "S --outputs-dir musíš zadat existující adresář."
+    [[ -d "$OUTPUTS_DIR" ]] || die "Adresář neexistuje: $OUTPUTS_DIR"
+    GGUF_PATH="$(_newest_gguf_under "$OUTPUTS_DIR" 32)"
+  else
+    GGUF_PATH="$(_best_gguf_hiran_scan)"
+    OUTPUTS_DIR="$HIRAN_OUTPUTS"
   fi
 fi
 
+if [[ -z "${OUTPUTS_DIR}" ]] || { [[ "$EXPLICIT_OUTPUTS" -eq 0 ]] && [[ "$OUTPUTS_DIR" != "$HIRAN_OUTPUTS"* ]]; }; then
+  OUTPUTS_DIR="$HIRAN_OUTPUTS"
+fi
 mkdir -p "$OUTPUTS_DIR" 2>/dev/null || true
 [[ -d "$OUTPUTS_DIR" ]] || die "Adresář neexistuje: $OUTPUTS_DIR"
 
-if [[ -z "$GGUF_PATH" ]]; then
-  shopt -s nullglob
-  local_ggufs=( "$OUTPUTS_DIR"/*.gguf )
-  shopt -u nullglob
-  if [[ ${#local_ggufs[@]} -gt 0 ]]; then
-    GGUF_PATH="$(ls -t "${local_ggufs[@]}" | head -1)"
-  fi
-  [[ -n "$GGUF_PATH" ]] || die "Nenalezen žádný *.gguf v $OUTPUTS_DIR.
-Zkontroluj také druhou kanonickou cestu nebo přesuň artefakty:
-  mkdir -p \"$HIRAN_OUTPUTS\" && mv \"$LEGACY_OUTPUTS\"/*.gguf \"$HIRAN_OUTPUTS\"/ 2>/dev/null || true
-Nebo zadej přímo: --gguf /cesta/k/modelu.gguf
-Hledané kořeny: $HIRAN_OUTPUTS , $LEGACY_OUTPUTS"
-fi
+[[ -n "$GGUF_PATH" ]] || die "Nenalezen žádný *.gguf (rekurzivně) pod:
+  $HIRAN_OUTPUTS
+  $HIRAN_EXPORTS
+  $HIRAN_LINEAGE
+  $LEGACY_OUTPUTS
+Zkus: find \"$HIRAN_FINETUNE\" \"$HIRAN_LINEAGE\" \"$LEGACY_OUTPUTS\" -name '*.gguf' 2>/dev/null
+Nebo: --gguf /plná/cesta/model.gguf"
+
 [[ -f "$GGUF_PATH" ]] || die "GGUF není soubor: $GGUF_PATH"
+if [[ "$GGUF_PATH" != "$HIRAN_OUTPUTS"* ]]; then
+  info "Vybraný GGUF: $GGUF_PATH (nejnovější v repu; kanonická outputs složka zůstává $HIRAN_OUTPUTS pro LoRA/merged)."
+fi
 
 if [[ -z "$MODELFILE_PATH" ]]; then
-  MODELFILE_PATH="$(find "$OUTPUTS_DIR" -name 'Modelfile.zion' -type f 2>/dev/null | head -1 || true)"
+  MODELFILE_PATH="$(
+    {
+      find "$HIRAN_OUTPUTS" "$LEGACY_OUTPUTS" "$(dirname "$GGUF_PATH")" -maxdepth 8 -name 'Modelfile.zion' -type f 2>/dev/null || true
+    } | while IFS= read -r p; do
+        [[ -f "$p" ]] || continue
+        printf '%s\t%s\n' "$(_file_mtime "$p")" "$p"
+      done | LC_ALL=C sort -t $'\t' -nr -k1,1 | head -1 | cut -f2-
+  )"
 fi
 
 STAMP="$(date -u +%Y%m%d-%H%M%S)"
@@ -207,8 +218,12 @@ fi
 
 # Base model z LoRA, pokud je k dispozici
 BASE_MODEL="unknown"
-DEFAULT_LORA="${OUTPUTS_DIR}/zion-llama-lora"
-[[ -n "$LORA_DIR" ]] || LORA_DIR="$DEFAULT_LORA"
+[[ -n "$LORA_DIR" ]] || {
+  if [[ -d "$HIRAN_OUTPUTS/zion-llama-lora" ]]; then LORA_DIR="$HIRAN_OUTPUTS/zion-llama-lora"
+  elif [[ -d "$LEGACY_OUTPUTS/zion-llama-lora" ]]; then LORA_DIR="$LEGACY_OUTPUTS/zion-llama-lora"
+  else LORA_DIR="${OUTPUTS_DIR}/zion-llama-lora"
+  fi
+}
 if [[ -f "${LORA_DIR}/adapter_config.json" ]]; then
   BASE_MODEL="$(
     ADAPTER_CFG="${LORA_DIR}/adapter_config.json" python3 -c \
