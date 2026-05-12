@@ -46,8 +46,9 @@ pub use hiranyagarbha::{HiranyagarbhaAgent, MmlModality};
 pub use llm_backend::{LlmBackend, LlmRequest, EchoBackend, RemoteHttpBackend};
 pub use knowledge_base::{
     AI_NATIVE_CANONICAL_CORPUS_ROOTS, BUDDHISM_CLASSICAL_CORPUS_ROOTS, BUDDHISM_RAG_CORPUS_ROOTS,
-    BUDDHISM_TIBETAN_CORPUS_ROOTS, V2_BOOKS_PROXY_CORPUS_ROOTS, RagTextChunk,
-    chunk_document_text, collect_markdown_chunks_from_relative_roots,
+    BUDDHISM_TIBETAN_CORPUS_ROOTS, V2_BOOKS_PROXY_CORPUS_ROOTS,
+    ZION_OASIS_GAME_CORPUS_ROOTS, RagTextChunk, chunk_document_text,
+    collect_markdown_chunks_from_relative_roots,
 };
 pub use memory::{AgentMemory, MemoryEntry, MemoryEventKind};
 pub use rag::{RagDocument, VectorStore, EmbeddingBackend, MockEmbeddingBackend};
