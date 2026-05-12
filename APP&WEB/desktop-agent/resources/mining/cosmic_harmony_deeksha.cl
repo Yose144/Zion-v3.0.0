@@ -1253,10 +1253,8 @@ void ekam_deeksha_mine(
     if (state0 <= target_u32) {
         ulong old = atom_cmpxchg(result_nonce, 0xFFFFFFFFFFFFFFFFUL, nonce);
         if (old == 0xFFFFFFFFFFFFFFFFUL) {
-            __global uint *rh32 = (__global uint *)result_hash;
-            uint *h32 = (uint *)hash;
-            for (int i = 0; i < 8; i++)
-                rh32[i] = h32[i];
+            for (int i = 0; i < 32; i++)
+                result_hash[i] = hash[i];
         }
     }
 }
@@ -1312,4 +1310,61 @@ __kernel void ekam_deeksha_debug(
     for (int i = 0; i < 64; i++) stage_out[160 + i] = s4[i];
     for (int i = 0; i < 64; i++) stage_out[224 + i] = s5[i];
     for (int i = 0; i < 32; i++) stage_out[288 + i] = hash[i];
+}
+
+/* ========================================================================== */
+/* S4-only Mining Kernel (stages 1-4 only, CPU does NPU + Fusion)             */
+/*                                                                             */
+/* For GCN devices where the full pipeline triggers compiler bugs in NPU code. */
+/* The GPU computes the expensive memory-hard stages; the host CPU does the    */
+/* cheap NPU mix + cosmic fusion + target check.                               */
+/* ========================================================================== */
+
+__kernel __attribute__((work_group_size_hint(WGS, 1, 1)))
+void ekam_deeksha_mine_s4(
+    __global const uchar  *header,
+    uint                   header_len,
+    ulong                  nonce_base,
+    uint                   nonce_count,
+    __global uchar        *scratchpad_pool,
+    __global uchar        *s4_out          /* nonce_count * 64 bytes */
+)
+{
+    uint tid   = get_global_id(0);
+    if (tid >= nonce_count) return;
+    __global uchar *pad = scratchpad_pool + (ulong)tid * SCRATCHPAD_SIZE;
+
+    /* Build input: header (<=80 B) + nonce (8 B LE) = 88 B, zero-padded */
+    uchar input[88];
+    ulong *inp64 = (ulong *)input;
+    for (int i = 0; i < 11; i++) inp64[i] = 0;
+    uint hlen = min(header_len, (uint)80);
+    __global const uint *hdr32 = (__global const uint *)header;
+    uint *inp32 = (uint *)input;
+    uint hwords = hlen >> 2;
+    for (uint i = 0; i < hwords; i++) inp32[i] = hdr32[i];
+    for (uint i = (hwords << 2); i < hlen; i++) input[i] = header[i];
+    ulong nonce = nonce_base + (ulong)tid;
+    inp64[10] = nonce;
+
+    uchar buf_a[64];
+    uchar buf_b[64];
+
+    /* Step 1: Keccak-256 → buf_a[0:32] */
+    keccak256(input, 88, buf_a);
+
+    /* Step 2: SHA3-512(buf_a[0:32]) → buf_b */
+    sha3_512(buf_a, 32, buf_b);
+
+    /* Step 3: Golden Matrix(buf_b) → buf_a */
+    golden_matrix(buf_b, buf_a);
+
+    /* Step 4: Memory-Hard(buf_a) → buf_b */
+    ekam_memory_hard_transform(buf_a, pad, buf_b);
+
+    /* Output s4 result for this work item */
+    __global uchar *slot = s4_out + (ulong)tid * 64;
+    ulong *dst64 = (__global ulong *)slot;
+    ulong *src64 = (ulong *)buf_b;
+    for (int i = 0; i < 8; i++) dst64[i] = src64[i];
 }
