@@ -84,7 +84,7 @@
 ## 5. Wave 1 — první týden stavby (konkrétní úkoly)
 
 1. [ ] Zafixovat agent operating contract a SOT pořadí z Fáze 0 jako checklist pro každý další běh.
-2. [ ] Spustit `./HiranV2.1/bootstrap_workspace.sh` z kořene repa a opravit chybějící shardy.
+2. [ ] Spustit `./HiranV2.1/bootstrap_workspace.sh` z kořene repa (nahradí chybějící **deterministic** orchestrátor shard `data/shards/zion_train_hiran_v2.jsonl` automaticky přes `build_v3_orchestrator_dataset.py`; volitelné NIM shardy `data/shards/zion_train.jsonl` generovat `collect_dataset.py`, viz `finetune/README.md`).
 3. [ ] Znovu vygenerovat `zion_train_hiran_v2.jsonl` přes `build_v3_orchestrator_dataset.py` (aktuální `V3/`).
 4. [ ] Spustit `merge_hiran_curriculum_v2_1.py` a archivovat `BUILD.txt` do `curriculum/meta/`.
 5. [ ] `finetune_lora.py --dry-run` na curriculum.

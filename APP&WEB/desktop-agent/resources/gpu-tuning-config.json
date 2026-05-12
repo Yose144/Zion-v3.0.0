@@ -1,11 +1,11 @@
 {
   "version": "2.9.8",
-  "generated_at": "2026-03-29T11:24:15.928Z",
-  "platform": "darwin",
-  "arch": "arm64",
-  "gpu_features": "gpu-metal,native-cosmic-harmony",
+  "generated_at": "2026-05-12T05:48:41.594Z",
+  "platform": "win32",
+  "arch": "x64",
+  "gpu_features": "gpu-opencl,native-cosmic-harmony",
   "recommendations": {
-    "threads": 0,
+    "threads": 2,
     "opencl": {
       "enabled": true,
       "fallback_reason": "nvidia-smi not available",
@@ -15,7 +15,7 @@
     "algorithms": {
       "cosmic_harmony": {
         "priority": "high",
-        "threads": 0,
+        "threads": 2,
         "intensity": "balanced"
       },
       "multi_algo": {
