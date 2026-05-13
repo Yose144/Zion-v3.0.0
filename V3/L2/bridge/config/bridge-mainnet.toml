@@ -45,22 +45,29 @@ max_gas_gwei            = 5          # tight gas cap for mainnet
 
 # ── Validator / Multisig ─────────────────────────────────────────────────────
 #
-# STAGING below (threshold=1 / total=2). Production checklist — before enabling
-# live unlock volume — see `V3/docs/operational/AUDIT_CLOSEOUT_1_THROUGH_6.md` §3:
-#   • Provision five validator key files on hosts (/etc/zion/bridge-validator.key + extras).
-#   • threshold = 3, total_validators = 5 (matches L1 enforcement narrative).
-#   • Refresh validator_addresses whitelist for all five secp256k1 operators.
-#   • ≥1 week testnet green on metrics.bridge_relayer_missing_signers == 0.
+# Production: 3-of-5 multisig for all mint/unlock operations.
+# Replace placeholder addresses with real secp256k1 operator addresses before
+# mainnet launch. Each operator keeps their private key in a separate HSM.
+#
+# Checklist:
+#   1. Provision five validator key files on five separate hosts.
+#   2. Replace the five addresses below with real operator addresses.
+#   3. Each operator sets their own `validator_id` (validator-1 … validator-5).
+#   4. ≥1 week testnet green on metrics.bridge_relayer_missing_signers == 0.
+#   5. See `V3/docs/operational/AUDIT_CLOSEOUT_1_THROUGH_6.md` §3.
 
 [validator]
 private_key_file    = "/etc/zion/bridge-validator.key"
 validator_id        = "validator-1"
-threshold           = 1
-total_validators    = 2
+threshold           = 3
+total_validators    = 5
 validator_addresses = [
-    "0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186",
-    "0x8cc6F931edDAf5F14D0071727Ed1640752B5c787",
-]   # mainnet: active validator is 0xdde175 (deployer key)
+    "0x0000000000000000000000000000000000000001",  # validator-1
+    "0x0000000000000000000000000000000000000002",  # validator-2
+    "0x0000000000000000000000000000000000000003",  # validator-3
+    "0x0000000000000000000000000000000000000004",  # validator-4
+    "0x0000000000000000000000000000000000000005",  # validator-5
+]   # TODO: replace with real operator addresses before mainnet launch
 
 # ── Security ─────────────────────────────────────────────────────────────────
 
