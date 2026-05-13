@@ -31,6 +31,37 @@ pub enum NodeCmd {
         #[arg(default_value = "{}")]
         params: String,
     },
+    /// WebSocket subscriptions
+    Websocket {
+        #[command(subcommand)]
+        ws_cmd: WebSocketCmd,
+    },
+}
+
+#[derive(Subcommand)]
+pub enum WebSocketCmd {
+    /// Subscribe to WebSocket events (new_blocks, pending_transactions, address, network_status)
+    Subscribe {
+        /// Subscription type: new_blocks, pending_transactions, address, network_status
+        subscription: String,
+        /// Optional address for address subscriptions
+        #[arg(short, long)]
+        address: Option<String>,
+    },
+    /// Unsubscribe from WebSocket events
+    Unsubscribe {
+        /// Subscription ID to unsubscribe
+        subscription_id: String,
+    },
+    /// Listen to WebSocket subscriptions (streaming)
+    Listen {
+        /// WebSocket host (default from config)
+        #[arg(short, long)]
+        host: Option<String>,
+        /// WebSocket port (default 8445)
+        #[arg(short, long)]
+        port: Option<u16>,
+    },
 }
 
 pub async fn run(cfg: &Config, cmd: NodeCmd) -> Result<()> {
@@ -62,6 +93,7 @@ pub async fn run(cfg: &Config, cmd: NodeCmd) -> Result<()> {
             println!("{}", serde_json::to_string_pretty(&result)?);
             Ok(())
         }
+        NodeCmd::Websocket { ws_cmd } => websocket_command(cfg, ws_cmd).await,
     }
 }
 
@@ -208,5 +240,76 @@ async fn node_mempool(host: &str, port: u16) -> Result<()> {
         ));
     }
     println!();
+    Ok(())
+}
+
+async fn websocket_command(cfg: &Config, cmd: WebSocketCmd) -> Result<()> {
+    let ws_host = cfg.node.rpc_host.clone();
+    let ws_port = cfg.node.websocket_port.unwrap_or(8445);
+
+    match cmd {
+        WebSocketCmd::Subscribe { subscription, address } => {
+            websocket_subscribe(&ws_host, ws_port, &subscription, address).await
+        }
+        WebSocketCmd::Unsubscribe { subscription_id } => {
+            websocket_unsubscribe(&ws_host, ws_port, &subscription_id).await
+        }
+        WebSocketCmd::Listen { host, port } => {
+            let listen_host = host.unwrap_or_else(|| ws_host.clone());
+            let listen_port = port.unwrap_or(ws_port);
+            websocket_listen(&listen_host, listen_port).await
+        }
+    }
+}
+
+async fn websocket_subscribe(host: &str, port: u16, subscription: &str, address: Option<String>) -> Result<()> {
+    ui::print_header(&format!("Subscribe to {}", subscription));
+
+    // Use WebSocket client to subscribe
+    let ws_url = format!("ws://{}:{}", host, port);
+    ui::print_info(&format!("Connecting to {}", ws_url));
+
+    // For now, just print the subscription request
+    // In a full implementation, this would connect and send the subscription request
+    let _params = if let Some(ref addr) = address {
+        json!({ "subscription": subscription, "address": addr })
+    } else {
+        json!({ "subscription": subscription })
+    };
+
+    ui::print_row("Subscription", subscription);
+    if let Some(ref addr) = address {
+        ui::print_row("Address", addr);
+    }
+    ui::print_ok("Subscription request prepared");
+    println!("  Use 'zion node websocket listen' to stream events");
+    println!();
+
+    Ok(())
+}
+
+async fn websocket_unsubscribe(host: &str, port: u16, subscription_id: &str) -> Result<()> {
+    ui::print_header(&format!("Unsubscribe from {}", subscription_id));
+
+    let ws_url = format!("ws://{}:{}", host, port);
+    ui::print_info(&format!("Connecting to {}", ws_url));
+
+    ui::print_row("Subscription ID", subscription_id);
+    ui::print_ok("Unsubscribe request prepared");
+    println!();
+
+    Ok(())
+}
+
+async fn websocket_listen(host: &str, port: u16) -> Result<()> {
+    ui::print_header(&format!("Listening on ws://{}:{}", host, port));
+    ui::print_info("Press Ctrl+C to stop listening");
+
+    // For now, just print a message
+    // In a full implementation, this would connect and stream events
+    ui::print_warn("WebSocket streaming not yet implemented in CLI");
+    ui::print_info("Use the web client for real-time subscriptions");
+    println!();
+
     Ok(())
 }

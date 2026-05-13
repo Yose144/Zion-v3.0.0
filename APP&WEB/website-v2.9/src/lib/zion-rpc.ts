@@ -898,3 +898,236 @@ export function getZionRpc(): ZionRpcClient {
 }
 
 export default ZionRpcClient;
+
+// ─── WebSocket Subscriptions Client ────────────────────────────────────────────
+
+export enum SubscriptionType {
+  NewBlocks = 'new_blocks',
+  PendingTransactions = 'pending_transactions',
+  Address = 'address',
+  NetworkStatus = 'network_status',
+}
+
+export interface WsMessage {
+  notification?: {
+    subscription: SubscriptionType;
+    data: any;
+  };
+  subscribed?: {
+    subscription: SubscriptionType;
+  };
+  unsubscribed?: {
+    subscription: SubscriptionType;
+  };
+  error?: {
+    code: number;
+    message: string;
+  };
+  ping?: boolean;
+  pong?: boolean;
+}
+
+export interface ClientMessage {
+  subscribe?: {
+    subscription: SubscriptionType;
+  };
+  unsubscribe?: {
+    subscription: SubscriptionType;
+  };
+  ping?: boolean;
+  pong?: boolean;
+}
+
+export class ZionWebSocketClient {
+  private ws: WebSocket | null = null;
+  private url: string;
+  private reconnectInterval: number = 5000;
+  private reconnectTimer: NodeJS.Timeout | null = null;
+  private subscriptions: Set<SubscriptionType> = new Set();
+  private messageHandlers: Map<SubscriptionType, (data: any) => void> = new Map();
+  private connectionState: 'connecting' | 'connected' | 'disconnected' = 'disconnected';
+
+  constructor(url: string = 'ws://localhost:8445') {
+    this.url = url;
+  }
+
+  connect(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (this.ws?.readyState === WebSocket.OPEN) {
+        resolve();
+        return;
+      }
+
+      this.connectionState = 'connecting';
+
+      try {
+        this.ws = new WebSocket(this.url);
+
+        this.ws.onopen = () => {
+          console.log('[ZionWebSocket] Connected');
+          this.connectionState = 'connected';
+          
+          // Re-subscribe to previous subscriptions
+          this.subscriptions.forEach(sub => {
+            this.sendSubscribe(sub);
+          });
+
+          resolve();
+        };
+
+        this.ws.onmessage = (event) => {
+          try {
+            const message: WsMessage = JSON.parse(event.data);
+            this.handleMessage(message);
+          } catch (err) {
+            console.error('[ZionWebSocket] Failed to parse message:', err);
+          }
+        };
+
+        this.ws.onerror = (error) => {
+          console.error('[ZionWebSocket] Error:', error);
+          this.connectionState = 'disconnected';
+          reject(error);
+        };
+
+        this.ws.onclose = () => {
+          console.log('[ZionWebSocket] Disconnected');
+          this.connectionState = 'disconnected';
+          this.scheduleReconnect();
+        };
+      } catch (err) {
+        this.connectionState = 'disconnected';
+        reject(err);
+      }
+    });
+  }
+
+  private handleMessage(message: WsMessage) {
+    if (message.notification) {
+      const { subscription, data } = message.notification;
+      const handler = this.messageHandlers.get(subscription);
+      if (handler) {
+        handler(data);
+      }
+    } else if (message.subscribed) {
+      console.log('[ZionWebSocket] Subscribed to:', message.subscribed.subscription);
+    } else if (message.unsubscribed) {
+      console.log('[ZionWebSocket] Unsubscribed from:', message.unsubscribed.subscription);
+    } else if (message.error) {
+      console.error('[ZionWebSocket] Error:', message.error);
+    } else if (message.ping) {
+      this.sendPong();
+    }
+  }
+
+  private sendSubscribe(subscription: SubscriptionType) {
+    const message: ClientMessage = {
+      subscribe: { subscription },
+    };
+    this.send(message);
+  }
+
+  private sendUnsubscribe(subscription: SubscriptionType) {
+    const message: ClientMessage = {
+      unsubscribe: { subscription },
+    };
+    this.send(message);
+  }
+
+  private sendPong() {
+    const message: ClientMessage = { pong: true };
+    this.send(message);
+  }
+
+  private send(message: ClientMessage) {
+    if (this.ws?.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify(message));
+    }
+  }
+
+  private scheduleReconnect() {
+    if (this.reconnectTimer) {
+      return;
+    }
+
+    this.reconnectTimer = setTimeout(() => {
+      this.reconnectTimer = null;
+      this.connect().catch(err => {
+        console.error('[ZionWebSocket] Reconnect failed:', err);
+      });
+    }, this.reconnectInterval);
+  }
+
+  subscribe(subscription: SubscriptionType, handler: (data: any) => void): void {
+    this.subscriptions.add(subscription);
+    this.messageHandlers.set(subscription, handler);
+
+    if (this.connectionState === 'connected') {
+      this.sendSubscribe(subscription);
+    } else if (this.connectionState === 'disconnected') {
+      this.connect().catch(err => {
+        console.error('[ZionWebSocket] Failed to connect:', err);
+      });
+    }
+  }
+
+  unsubscribe(subscription: SubscriptionType): void {
+    this.subscriptions.delete(subscription);
+    this.messageHandlers.delete(subscription);
+
+    if (this.connectionState === 'connected') {
+      this.sendUnsubscribe(subscription);
+    }
+  }
+
+  subscribeToNewBlocks(handler: (data: any) => void): void {
+    this.subscribe(SubscriptionType.NewBlocks, handler);
+  }
+
+  subscribeToPendingTransactions(handler: (data: any) => void): void {
+    this.subscribe(SubscriptionType.PendingTransactions, handler);
+  }
+
+  subscribeToAddress(address: string, handler: (data: any) => void): void {
+    const subscription = `${SubscriptionType.Address}:${address}` as SubscriptionType;
+    this.subscribe(subscription, handler);
+  }
+
+  subscribeToNetworkStatus(handler: (data: any) => void): void {
+    this.subscribe(SubscriptionType.NetworkStatus, handler);
+  }
+
+  disconnect(): void {
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+
+    if (this.ws) {
+      this.ws.close();
+      this.ws = null;
+    }
+
+    this.connectionState = 'disconnected';
+    this.subscriptions.clear();
+    this.messageHandlers.clear();
+  }
+
+  isConnected(): boolean {
+    return this.connectionState === 'connected';
+  }
+
+  getConnectionState(): 'connecting' | 'connected' | 'disconnected' {
+    return this.connectionState;
+  }
+}
+
+// Singleton instance
+let wsClientInstance: ZionWebSocketClient | null = null;
+
+export function getZionWebSocket(url?: string): ZionWebSocketClient {
+  if (!wsClientInstance) {
+    wsClientInstance = new ZionWebSocketClient(url);
+  }
+  return wsClientInstance;
+}
