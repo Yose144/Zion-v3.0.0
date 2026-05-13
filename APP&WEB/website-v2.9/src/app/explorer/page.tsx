@@ -12,6 +12,7 @@ import {
   BarChart3,
   Compass,
   ExternalLink,
+  Flame,
   Globe,
   Layers,
   Rocket,
@@ -51,6 +52,13 @@ const getQuickLinks = (cs: boolean) => [
     href: '/explorer/transactions',
     accent: 'from-zion-cyan/80 to-blue-600/80',
     icon: Activity,
+  },
+  {
+    title: cs ? 'Mempool' : 'Mempool',
+    description: cs ? 'Cekajici transakce, fee histogram, double-spend' : 'Pending transactions, fee histogram, double-spend',
+    href: '/explorer/mempool',
+    accent: 'from-amber-500/80 to-orange-600/80',
+    icon: Flame,
   },
   {
     title: cs ? 'Sitovi peeri' : 'Network Peers',

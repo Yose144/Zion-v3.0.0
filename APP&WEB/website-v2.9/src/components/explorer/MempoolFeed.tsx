@@ -82,13 +82,16 @@ export default function MempoolFeed() {
       className="rounded-[28px] border border-white/10 bg-black/60 p-6"
     >
       <div className="flex items-center justify-between mb-5">
-        <div className="flex items-center gap-3">
-          <Flame className="h-5 w-5 text-orange-400" />
+        <Link
+          href="/explorer/mempool"
+          className="flex items-center gap-3 group"
+        >
+          <Flame className="h-5 w-5 text-orange-400 group-hover:text-orange-300 transition-colors" />
           <div>
             <p className="text-xs uppercase tracking-[0.4em] text-gray-400">{cs ? "Živě" : "Live"}</p>
-            <h3 className="text-lg font-semibold text-white">Mempool</h3>
+            <h3 className="text-lg font-semibold text-white group-hover:text-amber-300 transition-colors">Mempool →</h3>
           </div>
-        </div>
+        </Link>
         <div className="flex items-center gap-2">
           <motion.span
             animate={{ opacity: [0.4, 1, 0.4] }}
