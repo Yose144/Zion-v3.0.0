@@ -20,14 +20,18 @@ SSH_IDENTITY="${SSH_IDENTITY:-$HOME/.ssh/id_ed25519}"
 REMOTE="${VAST_REMOTE_DIR:-/workspace/hiran-v2.2}"
 
 SSH=(ssh -i "$SSH_IDENTITY" -p "$VAST_PORT" -o StrictHostKeyChecking=accept-new)
-RSYNC=(rsync -az --mkpath -e "ssh -i $SSH_IDENTITY -p $VAST_PORT -o StrictHostKeyChecking=accept-new")
+RSYNC=(rsync -az -e "ssh -i $SSH_IDENTITY -p $VAST_PORT -o StrictHostKeyChecking=accept-new")
 
 echo "Remote: ${VAST_SSH}:${REMOTE}"
-"${SSH[@]}" "$VAST_SSH" "mkdir -p '$REMOTE/data/curriculum' '$REMOTE/scripts' '$REMOTE/config'"
+"${SSH[@]}" "$VAST_SSH" "mkdir -p '$REMOTE/data/curriculum' '$REMOTE/scripts' '$REMOTE/config' '$REMOTE/evaluate' '$REMOTE/quantization' '$REMOTE/inference'"
 
 "${RSYNC[@]}" "$HIRAN22/data/curriculum/"*.jsonl "$VAST_SSH:$REMOTE/data/curriculum/"
 "${RSYNC[@]}" "$HIRAN22/scripts/"*.py "$VAST_SSH:$REMOTE/scripts/"
+"${RSYNC[@]}" "$HIRAN22/scripts/"*.sh "$VAST_SSH:$REMOTE/scripts/"
 "${RSYNC[@]}" "$HIRAN22/config/" "$VAST_SSH:$REMOTE/config/"
+"${RSYNC[@]}" "$HIRAN22/evaluate/"*.py "$VAST_SSH:$REMOTE/evaluate/"
+"${RSYNC[@]}" "$HIRAN22/quantization/"*.py "$VAST_SSH:$REMOTE/quantization/"
+"${RSYNC[@]}" "$HIRAN22/inference/"*.py "$VAST_SSH:$REMOTE/inference/"
 "${RSYNC[@]}" "$HIRAN22/requirements-train.txt" "$VAST_SSH:$REMOTE/"
 
 echo "Synced. On instance:"
