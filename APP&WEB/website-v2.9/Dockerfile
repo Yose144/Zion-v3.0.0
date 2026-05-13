@@ -1,28 +1,18 @@
-FROM node:22-alpine AS base
+FROM node:20-alpine AS builder
 
-# Dependencies
-FROM base AS deps
-RUN apk add --no-cache libc6-compat
 WORKDIR /app
-COPY package.json package-lock.json* ./
-RUN npm config delete script-shell || true
-ENV npm_config_script_shell=/bin/sh
-RUN npm ci
 
-# Builder
-FROM base AS builder
-WORKDIR /app
-ENV npm_config_script_shell=/bin/sh
-COPY --from=deps /app/node_modules ./node_modules
+COPY package*.json ./
+RUN npm install
+
 COPY . .
-ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
-# Runner
-FROM base AS runner
+FROM node:20-alpine AS runner
+
 WORKDIR /app
+
 ENV NODE_ENV=production
-ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
@@ -32,8 +22,9 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 USER nextjs
+
 EXPOSE 3000
+
 ENV PORT=3000
-ENV HOSTNAME="0.0.0.0"
 
 CMD ["node", "server.js"]
