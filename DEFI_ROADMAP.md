@@ -18,7 +18,7 @@
 ### Co chybí (podle docs/DEFI_FULL_ROADMAP.md):
 - **✅ RPC rozšíření (6 nových metod)** - getTransactionHistory, getAddressInfo, estimateFee, getBlockRange, getNetworkStats, getTokenInfo
 - **✅ WebSocket subscriptions** (new blocks, pending TX) - IMPLEMENTOVáno 2026-05-13
-- **❌ Wallet SDK** (TypeScript/JS library)
+- **✅ Wallet SDK** (TypeScript/JS library) - `APP&WEB/zion-wallet-sdk/`, integrováno do webu, desktop agenta a mobilní appky
 - **❌ Swap Aggregator backend** (orchestrace bridge+swap)
 - **❌ Price feed / oracle** (Uni V3 TWAP)
 - **❌ Bridge Tracker** (live view lock→bridge→mint)
@@ -45,7 +45,7 @@ Tyto úkoly musí být hotové před veřejným oznámením:
 | Úkol | Oblast | Odhad | Status |
 |------|--------|-------|--------|
 | RPC rozšíření (6 metod) | Backend | ✅ DOKONČENO | getTransactionHistory, getAddressInfo, estimateFee, getBlockRange, getNetworkStats, getTokenInfo |
-| Wallet SDK (TS/JS) | Infrastructure | 4 dny | ⬜ |
+| Wallet SDK (TS/JS) | Infrastructure | ✅ DOKONČENO | 4 dny | V3-compatible address derivation + checksum, keypair, crypto, tx builder, RPC client, storage adapters; integrováno do webu, desktop agenta a mobilní appky |
 | Price feed oracle | Backend | 3 dny | ⬜ |
 | Supply dashboard | Explorer | 2 dny | ⬜ |
 | Mempool viewer | Explorer | 2 dny | ⬜ |
@@ -75,8 +75,8 @@ Tyto úkoly musí být hotové před veřejným oznámením:
 - [x] Implement getNetworkStats RPC
 - [x] Implement getTokenInfo RPC
 - [x] WebSocket subscriptions (new blocks, pending TX) - IMPLEMENTOVáno 2026-05-13
-- [ ] TypeScript Wallet SDK package
-- [ ] Multi-wallet management
+- [x] TypeScript Wallet SDK package — `APP&WEB/zion-wallet-sdk/` (address, keypair, crypto, tx, RPC, storage, wallet-manager)
+- [x] Multi-wallet management — integrováno do website-v2.9 (`ZionWalletContext.tsx` + `/wallet` stránka)
 
 ### Fáze 3: Swap Aggregator (2 týdny)
 - [ ] Swap Aggregator backend service
