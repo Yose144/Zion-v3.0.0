@@ -68,11 +68,18 @@ const getQuickLinks = (cs: boolean) => [
     icon: Globe,
   },
   {
+    title: cs ? 'Supply Dashboard' : 'Supply Dashboard',
+    description: cs ? 'Circulating, vytezeno, premine, Decade Decay' : 'Circulating, mined, premine, Decade Decay',
+    href: '/explorer/supply',
+    accent: 'from-emerald-500/80 to-teal-600/80',
+    icon: BarChart3,
+  },
+  {
     title: cs ? 'Grafy a analytika' : 'Charts & Analytics',
     description: cs ? 'Historicka obtiznost, hashrate a emise' : 'Historical difficulty, hashrate & emission',
     href: '#charts',
-    accent: 'from-emerald-500/80 to-teal-600/80',
-    icon: BarChart3,
+    accent: 'from-rose-500/80 to-pink-600/80',
+    icon: TrendingUp,
   },
   {
     title: cs ? 'API explorera' : 'Explorer API',
