@@ -3,6 +3,7 @@
 
 const crypto = require('crypto');
 const bip39 = require('bip39');
+const { publicKeyToAddress, isValidAddress: isValidZionAddress } = require('zion-wallet-sdk');
 const { randomBytes } = crypto;
 
 class ZionWalletGenerator {
@@ -99,31 +100,7 @@ class ZionWalletGenerator {
    * @returns {string} ZION address (44 chars)
    */
   static deriveAddress(publicKey) {
-    const ZION_BASE32 = '023456789acdefghjklmnpqrstuvwxyz';
-
-    // SHA-256 → RIPEMD-160 (matches V3/L1/core/src/crypto.rs)
-    const sha = crypto.createHash('sha256').update(publicKey).digest();
-    const keyHash = crypto.createHash('ripemd160').update(sha).digest(); // 20 bytes
-
-    // Each byte → 2 base32 chars (byte % 32, (byte / 32) % 32)
-    let data = '';
-    for (const byte of keyHash) {
-      data += ZION_BASE32[byte % 32];
-      data += ZION_BASE32[Math.floor(byte / 32) % 32];
-    }
-    // Truncate to 35 body chars
-    const body = data.slice(0, 35);
-
-    // 4-char checksum: SHA-256("zion1" + body), first 2 bytes → 4 base32 chars
-    const ckHash = crypto.createHash('sha256').update('zion1' + body).digest();
-    let checksum = '';
-    for (let i = 0; i < 2; i++) {
-      const b = ckHash[i];
-      checksum += ZION_BASE32[b % 32];
-      checksum += ZION_BASE32[Math.floor(b / 32) % 32];
-    }
-
-    return 'zion1' + body + checksum;
+    return publicKeyToAddress(new Uint8Array(publicKey));
   }
 
   /**
@@ -132,21 +109,7 @@ class ZionWalletGenerator {
    * @returns {boolean}
    */
   static isValidAddress(address) {
-    if (!address || !address.startsWith('zion1') || address.length !== 44) return false;
-    const ZION_BASE32 = '023456789acdefghjklmnpqrstuvwxyz';
-    for (let i = 5; i < 44; i++) {
-      if (!ZION_BASE32.includes(address[i])) return false;
-    }
-    const body = address.slice(5, 40);
-    const actualCk = address.slice(40, 44);
-    const ckHash = crypto.createHash('sha256').update('zion1' + body).digest();
-    let expectedCk = '';
-    for (let i = 0; i < 2; i++) {
-      const b = ckHash[i];
-      expectedCk += ZION_BASE32[b % 32];
-      expectedCk += ZION_BASE32[Math.floor(b / 32) % 32];
-    }
-    return expectedCk === actualCk;
+    return isValidZionAddress(address);
   }
 
   /**

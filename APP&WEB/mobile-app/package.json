@@ -48,7 +48,8 @@
     "react-native-screens": "^3.29.0",
     "react-native-vector-icons": "^10.0.3",
     "react-native-web": "^0.21.2",
-    "stellar-base": "^13.1.0"
+    "stellar-base": "^13.1.0",
+    "zion-wallet-sdk": "file:../zion-wallet-sdk"
   },
   "devDependencies": {
     "@babel/core": "^7.23.7",
