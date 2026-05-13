@@ -266,6 +266,7 @@ mod tests {
             p2p_bind: PeerEndpoint::new("127.0.0.1", 18334),
             rpc_bind: PeerEndpoint::new("127.0.0.1", 18332),
             pool_bind: PeerEndpoint::new("127.0.0.1", 18444),
+            websocket_bind: PeerEndpoint::new("127.0.0.1", 18445),
             seed_peers: vec![
                 PeerEndpoint::new("127.0.0.1", 18334),
                 PeerEndpoint::new("127.0.0.2", 18334),

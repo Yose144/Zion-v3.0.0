@@ -11,6 +11,8 @@ import {
   RefreshCw,
   BarChart3,
   Flame,
+  Wifi,
+  WifiOff,
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { useWallet } from '@/contexts/WalletContext';
@@ -18,6 +20,7 @@ import SwapWidget from '@/components/SwapWidget';
 import BridgeBurnWidget from '@/components/BridgeBurnWidget';
 import DefiBalances from '@/components/DefiBalances';
 import { CONTRACTS } from '@/lib/defi-contracts';
+import { useNetworkStatus } from '@/hooks/useWebSocketSubscription';
 
 // ─── Tabs ─────────────────────────────────────────────────────────────────────
 
@@ -37,6 +40,9 @@ export default function DefiPage() {
   const { connected, account, isBaseMainnet, connect, switchToBase } = useWallet();
   const [tab, setTab] = useState<Tab>('swap');
   const [wZIONSupply, setWZIONSupply] = useState<string | null>(null);
+
+  // ── WebSocket subscription for real-time network status ─────────────────────
+  const { data: networkStatus, isConnected: wsConnected } = useNetworkStatus(true);
 
   // ── Fetch wZION total supply from API ──────────────────────────────────────
 
@@ -129,6 +135,21 @@ export default function DefiPage() {
                 {cs ? 'Připojit peněženku' : 'Connect Wallet'}
               </button>
             )}
+
+            {/* WebSocket connection status */}
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5">
+              {wsConnected ? (
+                <>
+                  <Wifi className="h-3.5 w-3.5 text-emerald-400" />
+                  <span className="text-[10px] text-gray-400">Live</span>
+                </>
+              ) : (
+                <>
+                  <WifiOff className="h-3.5 w-3.5 text-orange-400" />
+                  <span className="text-[10px] text-gray-400">Polling</span>
+                </>
+              )}
+            </div>
 
             {wZIONSupply && (
               <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5">
