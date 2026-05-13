@@ -384,6 +384,21 @@ nebo má konkrétní aktivační plán v
 | §15.3 — BURN_ADDRESS regression test | 🟢 Low | ✅ PR #25 |
 | Relayer — `synthetic: true` placeholder proofy | 🟡 Medium | ✅ PR #27 (2026-05-02) |
 
+### 1.9 APP&WEB / Wallet SDK (2026-05-13)
+
+- **zion-wallet-sdk** — TypeScript knihovna v `APP&WEB/zion-wallet-sdk/`:
+  - V3-compatible `zion1` address derivation (SHA-256 → RIPEMD-160 → custom base32 + 4-char checksum)
+  - Ed25519 keypair generation via `@noble/ed25519` + BIP39 mnemonic
+  - AES-256-GCM encryption with PBKDF2
+  - UTXO transaction builder + BLAKE3 hash, Ed25519 signing
+  - JSON-RPC 2.0 client (`ZionRPC`)
+  - Storage adapters: Web (`localStorage`), React Native (`AsyncStorage`), Electron (`safeStorage`)
+  - `WalletManager` — multi-wallet CRUD, active wallet, encryption, balance fetch
+- **SDK integrován do všech 3 frontendů:**
+  - website-v2.9 (`/wallet` stránka, `ZionWalletContext`)
+  - desktop-agent (`wallet-generator.js` — CJS inline bundle s `@noble/hashes`)
+  - mobile-app (`CryptoService.js` → `zionAddress.js` → SDK)
+
 ---
 
 ## 2. Co stále hoří před Genesis (řazeno podle naléhavosti)
@@ -484,6 +499,8 @@ nebo má konkrétní aktivační plán v
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │ APP&WEB/  — Electron desktop, RN mobile, Next.js website    │
+│           + zion-wallet-sdk (TS lib: address, keypair,     │
+│             crypto, tx builder, RPC, storage adapters)      │
 └──────────────────────┬──────────────────────────────────────┘
                        │ JSON-RPC + WebSocket
 ┌──────────────────────▼──────────────────────────────────────┐

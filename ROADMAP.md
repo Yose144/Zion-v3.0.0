@@ -85,7 +85,7 @@ Detailní plán: [`docs/DEFI_FULL_ROADMAP.md`](docs/DEFI_FULL_ROADMAP.md)
 - [ ] HTTP REST wrapper pro node RPC
 - [ ] WebSocket subscriptions
 - [ ] Rozšířené RPC metody (getAddressHistory, searchTransactions)
-- [ ] Wallet SDK (TypeScript)
+- [x] Wallet SDK (TypeScript) — `APP&WEB/zion-wallet-sdk/` with V3 address derivation, keypair, crypto, tx builder, RPC client, storage adapters
 
 **Wave 3 — DEX & Swap (květen—červen)**
 - [ ] Uniswap V3 seed likvidita (wZION/ETH)

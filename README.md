@@ -198,10 +198,11 @@ cargo run --release --manifest-path V3/Cargo.toml -p zion-core --bin wallet
 ├── L4/                # 🎮 OASIS
 ├── L5/                # 🌍 ZION Free World (vision 2030)
 ├── L6/                # 🔭 ZION Issobella (vision 2040+)
-├── APP&WEB/           # Frontend applications
-│   ├── desktop-agent/ #    Electron desktop agent + mining GUI
-│   ├── mobile-app/    #    React Native + Expo mobile app
-│   └── website-v2.9/  #    Next.js 16 website + explorer
+├── APP&WEB/               # Frontend applications
+│   ├── zion-wallet-sdk/ #    Unified TypeScript Wallet SDK (address, keypair, crypto, tx, RPC)
+│   ├── desktop-agent/   #    Electron desktop agent + mining GUI
+│   ├── mobile-app/      #    React Native + Expo mobile app
+│   └── website-v2.9/    #    Next.js 16 website + explorer + wallet
 ├── config/            # Configuration files (mainnet, testnet, devnet)
 ├── docker/            # Docker deployment (compose files, Dockerfiles)
 ├── docs/              # Documentation, whitepapers, roadmaps
@@ -240,6 +241,7 @@ cargo run --release --manifest-path V3/Cargo.toml -p zion-core --bin wallet
 - [x] Website with block explorer (blocks, TX, addresses, richlist)
 - [x] Desktop agent (Electron) — mining GUI + wallet
 - [x] Mobile app (React Native + Expo) — 9 screens
+- [x] ZION Wallet SDK (TypeScript) — unified address/keypair/crypto/tx/RPC across web, desktop, mobile
 - [x] 6-Layer "On the Star" architecture
 - [x] 1,300+ tests passing, 157 bridge tests
 
