@@ -75,29 +75,36 @@
 
 Detailní plán: [`docs/DEFI_FULL_ROADMAP.md`](docs/DEFI_FULL_ROADMAP.md)
 
-**Wave 1 — Bridge Hardening (duben)**
-- [ ] Burn→Unlock směr (Base→L1)
-- [ ] 3/5 multisig validator threshold
-- [ ] Rate limiter, auto-reconnect
-- [ ] Bridge monitoring dashboard
+**Wave 1 — Bridge Hardening (duben—květen)**
+- [x] Burn→Unlock směr (Base→L1) — E2E test v `zion-bridge`, unlock request + validator proof pipeline
+- [x] 3/5 multisig validator threshold — `bridge-mainnet.toml` production-ready
+- [x] Rate limiter, auto-reconnect — bridge relayer fail-closed
+- [ ] Bridge monitoring dashboard (Grafana)
 
 **Wave 2 — RPC & Infrastructure (duben—květen)**
-- [ ] HTTP REST wrapper pro node RPC
-- [ ] WebSocket subscriptions
-- [ ] Rozšířené RPC metody (getAddressHistory, searchTransactions)
+- [x] HTTP REST wrapper pro node RPC — 15+ API routes (`/api/blockchain/*`, `/api/defi/*`)
+- [x] WebSocket subscriptions — new blocks + pending TX streaming
+- [x] Rozšířené RPC metody (getTransactionHistory, estimateFee, getAddressInfo, getBlockRange, getNetworkStats, getTokenInfo)
 - [x] Wallet SDK (TypeScript) — `APP&WEB/zion-wallet-sdk/` with V3 address derivation, keypair, crypto, tx builder, RPC client, storage adapters
 
 **Wave 3 — DEX & Swap (květen—červen)**
 - [ ] Uniswap V3 seed likvidita (wZION/ETH)
-- [ ] Swap UI na webu — one-click ZION→ETH
-- [ ] Price feed oracle
+- [x] Swap UI na webu — Uniswap widget (ETH↔wZION)
+- [x] Price feed oracle — `/api/defi/price` (Uni V3 slot0 + Chainlink WETH/USD)
+- [x] Swap Aggregator backend — `V3/L2/swap-aggregator/` Rust/Axum, quote/swap/status API + SQLite pipeline
 - [ ] Swap integrace do desktop/mobile
+- [ ] Best-route calculation (multi-hop)
 
-**Wave 4 — Explorer Upgrade (červen)**
-- [ ] Real-time WebSocket updates
-- [ ] Bridge TX tracker
-- [ ] Staking & DAO dashboard
-- [ ] Full-text vyhledávání
+**Wave 4 — Explorer Upgrade (květen—červen)**
+- [x] Real-time WebSocket updates — mempool + blocks feed
+- [x] Bridge TX tracker — `/explorer/bridge` live metrics + pipeline vizualizace
+- [x] Mempool viewer — fee histogram, sort, search, WS live
+- [x] Network stats dashboard — hashrate, difficulty, block time, TX trend grafy
+- [x] Supply dashboard — donut chart, emission progress, Decade Decay table
+- [x] UTXO view — address detail shows unspent outputs for zion1 addresses
+- [x] Staking & DAO dashboard — `/defi/staking` + `/defi/dao` pages
+- [x] Full-text vyhledávání — `/explorer/search` unified block/tx/address search
+- [x] TradingView multi-chart — 2×2 dashboard + single-chart toggle
 
 **Wave 5 — Desktop & Mobile (červen—červenec)**
 - [ ] Desktop: bridge + swap + staking UI
@@ -105,7 +112,7 @@ Detailní plán: [`docs/DEFI_FULL_ROADMAP.md`](docs/DEFI_FULL_ROADMAP.md)
 - [ ] Push notifikace pro TX/bridge/staking
 
 **Wave 6 — Web & Public Launch (červenec—srpen)**
-- [ ] Full DeFi dashboard na webu
+- [x] Full DeFi dashboard na webu — `/defi` + farming/staking/dao subpages
 - [ ] API dokumentace
 - [ ] Mining calculator
 - [ ] BitcoinTalk / Crypto Twitter announcement
