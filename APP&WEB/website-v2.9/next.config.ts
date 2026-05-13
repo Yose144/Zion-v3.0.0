@@ -10,8 +10,23 @@ const nextConfig: NextConfig = {
     unoptimized: true,
   },
   reactCompiler: true,
+  transpilePackages: ['zion-wallet-sdk', '@noble/ed25519', '@noble/hashes'],
   turbopack: {
     root: rootDir,
+    resolveAlias: {
+      net: {
+        browser: './src/lib/empty-module.ts',
+      },
+      fs: {
+        browser: './src/lib/empty-module.ts',
+      },
+      path: {
+        browser: './src/lib/empty-module.ts',
+      },
+      os: {
+        browser: './src/lib/empty-module.ts',
+      },
+    },
   },
   // P1-33: Security headers — CSP, X-Frame-Options, HSTS, etc.
   async headers() {

@@ -2,8 +2,15 @@
   "name": "zion-wallet-sdk",
   "version": "1.0.0",
   "description": "ZION Wallet SDK — TypeScript library for ZION L1 wallet operations",
+  "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
   "files": [
     "dist/**/*",
     "README.md"

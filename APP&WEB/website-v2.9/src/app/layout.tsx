@@ -8,6 +8,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { ObservatoryProvider } from "@/contexts/ObservatoryContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { WalletProvider } from "@/contexts/WalletContext";
+import { ZionWalletProvider } from "@/contexts/ZionWalletContext";
 import ClientBackgrounds from "@/components/ClientBackgrounds";
 import { SITE_NETWORK_TOPOLOGY, SITE_RELEASE_LABEL, SITE_RUNTIME_LABEL, SITE_VERSION } from '@/lib/site';
 
@@ -54,14 +55,16 @@ export default function RootLayout({
             <ObservatoryProvider>
               <LanguageProvider>
                 <WalletProvider>
-                  <ClientBackgrounds />
-                  <div className="relative z-10">
-                    <Navigation />
-                    <main className="zion-shell min-h-screen">
-                      {children}
-                    </main>
-                    <Footer />
-                  </div>
+                  <ZionWalletProvider>
+                    <ClientBackgrounds />
+                    <div className="relative z-10">
+                      <Navigation />
+                      <main className="zion-shell min-h-screen">
+                        {children}
+                      </main>
+                      <Footer />
+                    </div>
+                  </ZionWalletProvider>
                 </WalletProvider>
               </LanguageProvider>
             </ObservatoryProvider>

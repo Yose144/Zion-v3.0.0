@@ -4,7 +4,7 @@
  */
 
 import { blake3 } from '@noble/hashes/blake3.js';
-import { signMessage } from './keypair';
+import { signMessage } from './keypair.js';
 
 export const FLOWERS_PER_ZION = 1_000_000_000_000n;
 export const MIN_FEE_FLOWERS = 1_000_000n; // 0.000001 ZION minimum fee
