@@ -24,7 +24,7 @@
 - **❌ Bridge Tracker** (live view lock→bridge→mint)
 - **✅ Mempool Viewer** (pending TX) - `/explorer/mempool` stránka s fee histogramem, sortováním, vyhledáváním, WS live updates
 - **❌ Network stats dashboard** (hashrate, difficulty grafy)
-- **❌ Supply dashboard** (circulating, locked, staked, burned)
+- **✅ Supply dashboard** (circulating, locked, staked, burned) — `/explorer/supply` stránka s donut chart, emisními progress bary, Decade Decay tabulkou a live updates
 - **❌ Staking dashboard** (APR, rewards history)
 - **❌ DAO proposals UI** (governance voting)
 - **❌ Explorer upgrade** (search, TX history, UTXO view)
@@ -47,7 +47,7 @@ Tyto úkoly musí být hotové před veřejným oznámením:
 | RPC rozšíření (6 metod) | Backend | ✅ DOKONČENO | getTransactionHistory, getAddressInfo, estimateFee, getBlockRange, getNetworkStats, getTokenInfo |
 | Wallet SDK (TS/JS) | Infrastructure | ✅ DOKONČENO | 4 dny | V3-compatible address derivation + checksum, keypair, crypto, tx builder, RPC client, storage adapters; integrováno do webu, desktop agenta a mobilní appky |
 | Price feed oracle | Backend | 3 dny | ⬜ |
-| Supply dashboard | Explorer | 2 dny | ⬜ |
+| Supply dashboard | Explorer | ✅ DOKONČENO | `/explorer/supply` — donut chart, emission progress, Decade Decay table, live updates |
 | Mempool viewer | Explorer | ✅ DOKONČENO | `/explorer/mempool` — fee histogram, sort, search, WS live updates |
 | Network stats grafy | Explorer | 3 dny | ⬜ |
 
@@ -88,7 +88,7 @@ Tyto úkoly musí být hotové před veřejným oznámením:
 - [ ] Bridge Tracker live UI
 - [x] Mempool viewer — `/explorer/mempool` (fee histogram, sort, search, WS live updates)
 - [ ] Network stats dashboard
-- [ ] Supply dashboard
+- [x] Supply dashboard — `/explorer/supply` stránka s donut chart, emisními progress bary, Decade Decay tabulkou a live updates
 - [ ] Search upgrade (jeden search bar)
 
 ### Fáze 5: Desktop/Mobile DeFi UI (2 týdny)
