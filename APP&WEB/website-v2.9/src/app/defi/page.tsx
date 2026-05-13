@@ -40,6 +40,7 @@ export default function DefiPage() {
   const { connected, account, isBaseMainnet, connect, switchToBase } = useWallet();
   const [tab, setTab] = useState<Tab>('swap');
   const [wZIONSupply, setWZIONSupply] = useState<string | null>(null);
+  const [wZIONPrice, setWZIONPrice] = useState<{ wzion_per_weth: number; usd_per_wzion: number } | null>(null);
 
   // ── WebSocket subscription for real-time network status ─────────────────────
   const { data: networkStatus, isConnected: wsConnected } = useNetworkStatus(true);
@@ -65,8 +66,26 @@ export default function DefiPage() {
       if (!cancelled) setWZIONSupply(supply);
     };
 
+    const refreshPrice = async () => {
+      try {
+        const res = await fetch('/api/defi/price');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.ok && !cancelled) {
+          setWZIONPrice({
+            wzion_per_weth: data.price.wzion_per_weth,
+            usd_per_wzion: data.price.usd_per_wzion,
+          });
+        }
+      } catch { /* ignore */ }
+    };
+
     void refreshSupply();
-    const interval = setInterval(() => void refreshSupply(), 60_000);
+    void refreshPrice();
+    const interval = setInterval(() => {
+      void refreshSupply();
+      void refreshPrice();
+    }, 60_000);
 
     return () => {
       cancelled = true;
@@ -156,6 +175,18 @@ export default function DefiPage() {
                 <Activity className="h-3.5 w-3.5 text-zion-gold" />
                 <span className="text-gray-300">wZION Supply:</span>
                 <span className="font-mono text-white">{wZIONSupply}</span>
+              </div>
+            )}
+            {wZIONPrice && wZIONPrice.usd_per_wzion > 0 && (
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5">
+                <BarChart3 className="h-3.5 w-3.5 text-emerald-400" />
+                <span className="text-gray-300">{cs ? 'Cena' : 'Price'}:</span>
+                <span className="font-mono text-white">
+                  ${wZIONPrice.usd_per_wzion.toFixed(6)}
+                </span>
+                <span className="text-[10px] text-gray-500">
+                  ({wZIONPrice.wzion_per_weth.toFixed(8)} WETH)
+                </span>
               </div>
             )}
 
