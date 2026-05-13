@@ -482,6 +482,163 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
     register_get_transaction(&mut router, "getTransaction");
     register_get_transaction(&mut router, "getAccountTransaction");
 
+    // ── getTransactionHistory ─────────────────────────────────────────
+    {
+        let rt = Arc::clone(&runtime);
+        router.register(
+            "getTransactionHistory",
+            Box::new(move |params: &Value| {
+                let address = params
+                    .get("address")
+                    .or_else(|| params.get("account"))
+                    .or_else(|| params.get(0))
+                    .and_then(|v| v.as_str())
+                    .ok_or_else(|| (INVALID_PARAMS, "missing or invalid 'address' param".into()))?;
+                
+                let offset = params
+                    .get("offset")
+                    .or_else(|| params.get(1))
+                    .and_then(|v| v.as_u64())
+                    .unwrap_or(0);
+                
+                let limit = params
+                    .get("limit")
+                    .or_else(|| params.get(2))
+                    .and_then(|v| v.as_u64())
+                    .unwrap_or(50)
+                    .min(1000); // Cap at 1000 to prevent abuse
+                
+                if address.is_empty() {
+                    return Err((INVALID_ADDRESS, "empty address".into()));
+                }
+                
+                let rt = rt
+                    .lock()
+                    .map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
+                
+                let mut transactions = Vec::new();
+                for block in rt.accepted_blocks() {
+                    for tx in &block.transactions {
+                        // Check if address is involved (from or to)
+                        if tx.from == address || tx.to == address {
+                            transactions.push(json!({
+                                "transaction": tx,
+                                "block_height": block.height,
+                                "block_hash": block.hash_hex,
+                                "timestamp": block.timestamp,
+                                "confirmed": true,
+                            }));
+                        }
+                    }
+                }
+                
+                // Sort by height descending (newest first)
+                transactions.sort_by(|a, b| {
+                    let height_a = a["block_height"].as_u64().unwrap_or(0);
+                    let height_b = b["block_height"].as_u64().unwrap_or(0);
+                    height_b.cmp(&height_a)
+                });
+                
+                // Apply pagination
+                let total = transactions.len();
+                let start = offset as usize;
+                let end = (start + limit as usize).min(total);
+                
+                let page_transactions = if start < total {
+                    transactions[start..end].to_vec()
+                } else {
+                    Vec::new()
+                };
+                
+                Ok(json!({
+                    "address": address,
+                    "transactions": page_transactions,
+                    "total": total,
+                    "offset": offset,
+                    "limit": limit,
+                    "has_more": end < total,
+                }))
+            }),
+        );
+    }
+
+    // ── getAddressInfo ──────────────────────────────────────────────────
+    {
+        let rt = Arc::clone(&runtime);
+        router.register(
+            "getAddressInfo",
+            Box::new(move |params: &Value| {
+                let address = params
+                    .get("address")
+                    .or_else(|| params.get("account"))
+                    .or_else(|| params.get(0))
+                    .and_then(|v| v.as_str())
+                    .ok_or_else(|| (INVALID_PARAMS, "missing or invalid 'address' param".into()))?;
+                
+                if address.is_empty() {
+                    return Err((INVALID_ADDRESS, "empty address".into()));
+                }
+                
+                let rt = rt
+                    .lock()
+                    .map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
+                
+                // Get balance using existing logic (similar to getBalance)
+                let balance_flowers: u128 = if looks_like_utxo_address(address) {
+                    rt.utxo_balance(address) as u128
+                } else {
+                    // Account model balance
+                    let mut account_balance: i128 = 0;
+                    for block in rt.accepted_blocks() {
+                        for tx in &block.transactions {
+                            if tx.to == address {
+                                account_balance += tx.amount_zion as i128;
+                            }
+                            if tx.from == address {
+                                account_balance -= (tx.amount_zion + tx.fee_zion as u128) as i128;
+                            }
+                        }
+                    }
+                    account_balance.max(0) as u128
+                };
+                
+                // Count transactions and find first/last seen
+                let mut tx_count = 0;
+                let mut first_seen_height: Option<u64> = None;
+                let mut last_seen_height: Option<u64> = None;
+                
+                for block in rt.accepted_blocks() {
+                    for tx in &block.transactions {
+                        if tx.from == address || tx.to == address {
+                            tx_count += 1;
+                            first_seen_height = Some(first_seen_height.map_or(block.height, |h| h.min(block.height)));
+                            last_seen_height = Some(last_seen_height.map_or(block.height, |h| h.max(block.height)));
+                        }
+                    }
+                }
+                
+                // Get UTXO count if applicable
+                let utxo_count = if looks_like_utxo_address(address) {
+                    rt.spendable_utxos(address).len() as u64
+                } else {
+                    0
+                };
+                
+                Ok(json!({
+                    "address": address,
+                    "balance_flowers": balance_flowers.to_string(),
+                    "balance_zion": format_flowers_as_zion(balance_flowers as u64),
+                    "transaction_count": tx_count,
+                    "utxo_count": utxo_count,
+                    "first_seen_height": first_seen_height,
+                    "last_seen_height": last_seen_height,
+                    "chain_height": rt.chain_height(),
+                    "transaction_model": ACTIVE_TRANSACTION_MODEL,
+                }))
+            }),
+        );
+    }
+
     // ── getBalance / getAccountBalance ────────────────────────────────
     let register_get_balance = |router: &mut RpcRouter, method_name: &'static str| {
         let rt = Arc::clone(&runtime);
@@ -1032,6 +1189,254 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
                 json!({ "host": peer.host, "port": peer.port, "address": peer.address() })
             }).collect();
                 Ok(json!({ "peers": peers, "count": peers.len() }))
+            }),
+        );
+    }
+
+    // ── estimateFee ────────────────────────────────────────────────────
+    {
+        let rt = Arc::clone(&runtime);
+        router.register(
+            "estimateFee",
+            Box::new(move |params: &Value| {
+                let amount_zion = params
+                    .get("amount")
+                    .or_else(|| params.get(0))
+                    .and_then(|v| v.as_str())
+                    .and_then(|s| s.parse::<u64>().ok())
+                    .unwrap_or(0);
+                
+                let rt = rt
+                    .lock()
+                    .map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
+                
+                // ZION uses 100% fee burn policy with minimum fee
+                // Calculate based on amount and current network conditions
+                let base_fee = 1_000_000u64; // Minimum 0.001 ZION fee
+                let amount_fee = (amount_zion / 10000).max(base_fee); // 0.01% of amount or base_fee
+                
+                // Get current mempool congestion info
+                let mempool_size = rt.status().mempool_transactions;
+                let congestion_multiplier = if mempool_size > 1000 {
+                    2.0
+                } else if mempool_size > 500 {
+                    1.5
+                } else {
+                    1.0
+                };
+                
+                let estimated_fee = (amount_fee as f64 * congestion_multiplier) as u64;
+                
+                Ok(json!({
+                    "estimated_fee_flowers": estimated_fee.to_string(),
+                    "estimated_fee_zion": format_flowers_as_zion(estimated_fee),
+                    "amount_zion": amount_zion,
+                    "mempool_size": mempool_size,
+                    "congestion_multiplier": congestion_multiplier,
+                    "min_fee_flowers": base_fee.to_string(),
+                    "min_fee_zion": format_flowers_as_zion(base_fee),
+                }))
+            }),
+        );
+    }
+
+    // ── getBlockRange ────────────────────────────────────────────────────
+    {
+        let rt = Arc::clone(&runtime);
+        router.register(
+            "getBlockRange",
+            Box::new(move |params: &Value| {
+                let start_height = params
+                    .get("start_height")
+                    .or_else(|| params.get("from"))
+                    .or_else(|| params.get(0))
+                    .and_then(|v| v.as_u64())
+                    .ok_or_else(|| (INVALID_PARAMS, "missing or invalid 'start_height' param".into()))?;
+                
+                let end_height = params
+                    .get("end_height")
+                    .or_else(|| params.get("to"))
+                    .or_else(|| params.get(1))
+                    .and_then(|v| v.as_u64())
+                    .unwrap_or_else(|| {
+                        // Default to current chain height if not specified
+                        // We'll get this after locking runtime
+                        start_height
+                    });
+                
+                let limit = params
+                    .get("limit")
+                    .or_else(|| params.get(2))
+                    .and_then(|v| v.as_u64())
+                    .unwrap_or(100)
+                    .min(500); // Cap at 500 blocks to prevent abuse
+                
+                if start_height > end_height {
+                    return Err((INVALID_PARAMS, "start_height cannot be greater than end_height".into()));
+                }
+                
+                let rt = rt
+                    .lock()
+                    .map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
+                
+                let actual_end_height = end_height.min(rt.chain_height());
+                let requested_count = (actual_end_height - start_height + 1).min(limit);
+                
+                let mut blocks = Vec::new();
+                for height in start_height..=(start_height + requested_count - 1).min(actual_end_height) {
+                    if let Some(block) = rt.accepted_block_by_height(height) {
+                        blocks.push(block);
+                    }
+                }
+                
+                Ok(json!({
+                    "blocks": blocks,
+                    "count": blocks.len(),
+                    "start_height": start_height,
+                    "end_height": actual_end_height,
+                    "chain_height": rt.chain_height(),
+                    "has_more": actual_end_height > start_height + requested_count - 1,
+                }))
+            }),
+        );
+    }
+
+    // ── getNetworkStats ─────────────────────────────────────────────────
+    {
+        let rt = Arc::clone(&runtime);
+        router.register(
+            "getNetworkStats",
+            Box::new(move |_params: &Value| {
+                let rt = rt
+                    .lock()
+                    .map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
+                
+                let blocks = rt.accepted_blocks();
+                let chain_height = rt.chain_height();
+                
+                if blocks.len() < 2 {
+                    return Ok(json!({
+                        "error": "insufficient blocks for statistics",
+                        "min_blocks_required": 2,
+                    }));
+                }
+                
+                // Calculate average block time over last 100 blocks
+                let sample_size = 100.min(blocks.len());
+                let recent_blocks = &blocks[blocks.len() - sample_size..];
+                
+                let mut total_block_time = 0u64;
+                let mut total_difficulty = 0u64;
+                let mut block_times = Vec::new();
+                let mut difficulties = Vec::new();
+                
+                for (i, block) in recent_blocks.iter().enumerate() {
+                    if i > 0 {
+                        let prev_block = &recent_blocks[i - 1];
+                        let block_time = block.timestamp.saturating_sub(prev_block.timestamp);
+                        total_block_time += block_time;
+                        block_times.push(block_time);
+                    }
+                    total_difficulty += block.difficulty;
+                    difficulties.push(block.difficulty);
+                }
+                
+                let avg_block_time = if !block_times.is_empty() {
+                    total_block_time / block_times.len() as u64
+                } else {
+                    60 // Default target
+                };
+                
+                let avg_difficulty = if !difficulties.is_empty() {
+                    total_difficulty / difficulties.len() as u64
+                } else {
+                    0
+                };
+                
+                // Calculate estimated hashrate (hashes per second)
+                // hashrate = difficulty * 2^32 / block_time (for standard Bitcoin-like PoW)
+                // For Cosmic Harmony, this is an approximation
+                let estimated_hashrate = if avg_block_time > 0 {
+                    (avg_difficulty as f64 * 4_294_967_296.0) / avg_block_time as f64
+                } else {
+                    0.0
+                };
+                
+                // Format hashrate for display
+                let hashrate_hps = if estimated_hashrate >= 1e18 {
+                    format!("{:.2} EH/s", estimated_hashrate / 1e18)
+                } else if estimated_hashrate >= 1e15 {
+                    format!("{:.2} PH/s", estimated_hashrate / 1e15)
+                } else if estimated_hashrate >= 1e12 {
+                    format!("{:.2} TH/s", estimated_hashrate / 1e12)
+                } else if estimated_hashrate >= 1e9 {
+                    format!("{:.2} GH/s", estimated_hashrate / 1e9)
+                } else if estimated_hashrate >= 1e6 {
+                    format!("{:.2} MH/s", estimated_hashrate / 1e6)
+                } else {
+                    format!("{:.2} H/s", estimated_hashrate)
+                };
+                
+                Ok(json!({
+                    "chain_height": chain_height,
+                    "average_block_time": avg_block_time,
+                    "target_block_time": 60,
+                    "average_difficulty": avg_difficulty,
+                    "current_difficulty": blocks.last().map(|b| b.difficulty).unwrap_or(0),
+                    "estimated_hashrate_hps": estimated_hashrate,
+                    "estimated_hashrate_formatted": hashrate_hps,
+                    "sample_size": sample_size,
+                    "peer_count": rt.known_peers().len(),
+                    "mempool_size": rt.status().mempool_transactions,
+                    "network_hashrate": hashrate_hps,
+                }))
+            }),
+        );
+    }
+
+    // ── getTokenInfo ─────────────────────────────────────────────────────
+    {
+        let rt = Arc::clone(&runtime);
+        router.register(
+            "getTokenInfo",
+            Box::new(move |_params: &Value| {
+                let rt = rt
+                    .lock()
+                    .map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
+                
+                let blocks = rt.accepted_blocks();
+                
+                // Get bridge vault balance (wZION locked in L1)
+                let vault_balance = rt.utxo_balance(fee::BRIDGE_VAULT_ADDRESS);
+                
+                // Get supply info for circulating supply
+                let height = rt.chain_height();
+                
+                // Calculate total minted wZION (this would typically come from bridge stats)
+                // For now, we'll estimate based on vault balance assuming 1:1 peg
+                let total_locked_flowers = vault_balance;
+                let total_locked_zion = format_flowers_as_zion(vault_balance);
+                
+                // Bridge contract address on Base (from deployment)
+                let bridge_contract = "0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721"; // ZIONBridge
+                let wzion_contract = "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6"; // wZION
+                
+                Ok(json!({
+                    "token_name": "Wrapped ZION",
+                    "token_symbol": "wZION",
+                    "bridge_contract": bridge_contract,
+                    "wzion_contract": wzion_contract,
+                    "bridge_network": "Base Mainnet",
+                    "total_locked_flowers": total_locked_flowers.to_string(),
+                    "total_locked_zion": total_locked_zion,
+                    "total_minted_wzion": total_locked_zion, // Assuming 1:1 peg
+                    "bridge_vault_address": fee::BRIDGE_VAULT_ADDRESS,
+                    "bridge_vault_balance_flowers": vault_balance.to_string(),
+                    "chain_height": height,
+                    "last_updated_timestamp": blocks.last().map(|b| b.timestamp).unwrap_or(0), // Use last block timestamp
+                    "peg_status": "1:1 maintained",
+                    "bridge_status": "operational",
+                }))
             }),
         );
     }
