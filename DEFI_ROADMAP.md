@@ -23,7 +23,7 @@
 - **❌ Price feed / oracle** (Uni V3 TWAP)
 - **✅ Bridge Tracker** (live view lock→bridge→mint) — `/explorer/bridge` stránka s relay metrikami, pipeline vizualizací L1↔Base a contract links
 - **✅ Mempool Viewer** (pending TX) - `/explorer/mempool` stránka s fee histogramem, sortováním, vyhledáváním, WS live updates
-- **❌ Network stats dashboard** (hashrate, difficulty grafy)
+- **✅ Network stats dashboard** (hashrate, difficulty grafy) — `/explorer/network-stats` stránka s 8 stat kartami, sparklines a 4 area grafy (hashrate, difficulty, block time, tx count)
 - **✅ Supply dashboard** (circulating, locked, staked, burned) — `/explorer/supply` stránka s donut chart, emisními progress bary, Decade Decay tabulkou a live updates
 - **❌ Staking dashboard** (APR, rewards history)
 - **❌ DAO proposals UI** (governance voting)
@@ -49,7 +49,7 @@ Tyto úkoly musí být hotové před veřejným oznámením:
 | Price feed oracle | Backend | 3 dny | ⬜ |
 | Supply dashboard | Explorer | ✅ DOKONČENO | `/explorer/supply` — donut chart, emission progress, Decade Decay table, live updates |
 | Mempool viewer | Explorer | ✅ DOKONČENO | `/explorer/mempool` — fee histogram, sort, search, WS live updates |
-| Network stats grafy | Explorer | 3 dny | ⬜ |
+| Network stats grafy | Explorer | ✅ DOKONČENO | `/explorer/network-stats` — 8 stat cards, sparklines, 4 area charts (hashrate, difficulty, block time, tx count) |
 
 ### 🟢 Medium Priority P2 (Nice to have)
 | Úkol | Oblast | Odhad | Status |
@@ -87,7 +87,7 @@ Tyto úkoly musí být hotové před veřejným oznámením:
 ### Fáze 4: Explorer Upgrade (2 týdny)
 - [x] Bridge Tracker live UI — `/explorer/bridge` stránka s relay metrikami, pipeline vizualizací L1↔Base a contract links
 - [x] Mempool viewer — `/explorer/mempool` (fee histogram, sort, search, WS live updates)
-- [ ] Network stats dashboard
+- [x] Network stats dashboard — `/explorer/network-stats` stránka s 8 stat kartami, sparklines a 4 area grafy (hashrate, difficulty, block time, tx count)
 - [x] Supply dashboard — `/explorer/supply` stránka s donut chart, emisními progress bary, Decade Decay tabulkou a live updates
 - [ ] Search upgrade (jeden search bar)
 
