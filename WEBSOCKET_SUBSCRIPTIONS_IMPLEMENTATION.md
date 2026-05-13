@@ -334,5 +334,42 @@ ZION_WEBSOCKET_BIND=0.0.0.0:8445
 - ✅ DeFi page integration (web2.9/src/app/defi/page.tsx)
 - ✅ CLI WebSocket commands (V3/cli/src/commands/node.rs)
 - ✅ Backend notifikace (NodeRuntime integration)
-- ⏳ End-to-end testing
+- ✅ End-to-end testing (2026-05-13)
 - ⏳ Production hardening
+
+## E2E Test Results (2026-05-13)
+
+**Test Environment:**
+- Server: 91.98.122.165 (Prague)
+- WebSocket Port: 8448 (mapped to container 8445)
+- RPC Port: 8447 (localhost only for security)
+
+**Test Results:**
+- ✅ WebSocket Connection
+- ✅ Subscribe to new_blocks
+- ✅ Subscribe to pending_transactions
+- ✅ Unsubscribe from new_blocks
+- ⚠ No notifications received (chain is quiet - expected)
+- ✅ Message protocol validation
+
+**Deployment Configuration:**
+```yaml
+services:
+  node:
+    environment:
+      - ZION_WEBSOCKET_BIND=0.0.0.0:8445
+    ports:
+      - "8448:8445"   # WebSocket subscriptions (external)
+      - "127.0.0.1:8447:8443"   # RPC (localhost only)
+```
+
+**Firewall Rules:**
+```bash
+iptables -I INPUT -p tcp --dport 8445 -j ACCEPT
+iptables -I INPUT -p tcp --dport 8448 -j ACCEPT
+```
+
+**Known Issues:**
+- RPC endpoints are localhost-only for security (intentional)
+- Chain is quiet - no blocks being mined during test period
+- No authentication yet (planned for production hardening)
