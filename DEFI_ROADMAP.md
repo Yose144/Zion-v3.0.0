@@ -25,8 +25,8 @@
 - **✅ Mempool Viewer** (pending TX) - `/explorer/mempool` stránka s fee histogramem, sortováním, vyhledáváním, WS live updates
 - **✅ Network stats dashboard** (hashrate, difficulty grafy) — `/explorer/network-stats` stránka s 8 stat kartami, sparklines a 4 area grafy (hashrate, difficulty, block time, tx count)
 - **✅ Supply dashboard** (circulating, locked, staked, burned) — `/explorer/supply` stránka s donut chart, emisními progress bary, Decade Decay tabulkou a live updates
-- **❌ Staking dashboard** (APR, rewards history)
-- **❌ DAO proposals UI** (governance voting)
+- **✅ Staking dashboard** (APR, rewards history) — `/defi/staking` stránka s info o 12% APR, 7d cooldown, stake/unstake UI placeholder a contract link
+- **✅ DAO proposals UI** (governance voting) — `/defi/dao` stránka s proposal list, voting bars, quorum progress a contract link
 - **❌ Explorer upgrade** (search, TX history, UTXO view)
 
 ## 🎯 Priority Matrix
@@ -54,8 +54,8 @@ Tyto úkoly musí být hotové před veřejným oznámením:
 ### 🟢 Medium Priority P2 (Nice to have)
 | Úkol | Oblast | Odhad | Status |
 |------|--------|-------|--------|
-| Staking dashboard | DeFi UI | 2 dny | ⬜ |
-| DAO proposals UI | DeFi UI | 2 dny | ⬜ |
+| Staking dashboard | DeFi UI | ✅ DOKONČENO | `/defi/staking` — 12% APR info, stake/unstake UI placeholder, contract link |
+| DAO proposals UI | DeFi UI | ✅ DOKONČENO | `/defi/dao` — proposal list, voting bars, quorum progress, contract link |
 | Search upgrade | Explorer | 1 den | ⬜ |
 | TradingView charts | Explorer | 2 dny | ⬜ |
 | Push notifications | Mobile | 2 dny | ⬜ |
@@ -98,8 +98,8 @@ Tyto úkoly musí být hotové před veřejným oznámením:
 - [ ] Portfolio dashboard
 
 ### Fáze 6: Website + Marketing (1 týden)
-- [ ] `/defi/staking` stránka
-- [ ] `/defi/dao` stránka
+- [x] `/defi/staking` stránka — 12% APR, 7d cooldown, stake/unstake UI placeholder
+- [x] `/defi/dao` stránka — proposal list, voting bars, quorum progress
 - [ ] `/defi/farming` stránka
 - [ ] Technical whitepaper
 - [ ] BitcoinTalk ANN post
