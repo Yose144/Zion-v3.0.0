@@ -21,7 +21,7 @@
 - **✅ Wallet SDK** (TypeScript/JS library) - `APP&WEB/zion-wallet-sdk/`, integrováno do webu, desktop agenta a mobilní appky
 - **❌ Swap Aggregator backend** (orchestrace bridge+swap)
 - **❌ Price feed / oracle** (Uni V3 TWAP)
-- **❌ Bridge Tracker** (live view lock→bridge→mint)
+- **✅ Bridge Tracker** (live view lock→bridge→mint) — `/explorer/bridge` stránka s relay metrikami, pipeline vizualizací L1↔Base a contract links
 - **✅ Mempool Viewer** (pending TX) - `/explorer/mempool` stránka s fee histogramem, sortováním, vyhledáváním, WS live updates
 - **❌ Network stats dashboard** (hashrate, difficulty grafy)
 - **✅ Supply dashboard** (circulating, locked, staked, burned) — `/explorer/supply` stránka s donut chart, emisními progress bary, Decade Decay tabulkou a live updates
@@ -39,7 +39,7 @@ Tyto úkoly musí být hotové před veřejným oznámením:
 | Bridge validator 3/5 multisig | Bridge | 3 dny | ⬜ | Bezpečnostní upgrade |
 | Burn→Unlock E2E test | Bridge | 2 dny | ⬜ | Reverse bridge směr |
 | WebSocket subscriptions (WS) | Backend | 4 dny | ✅ DOKONČENO | new blocks, pending TX streaming (2026-05-13) |
-| Bridge Tracker UI | Explorer | 3 dny | ⬜ | Live status lock→bridge→mint |
+| Bridge Tracker UI | Explorer | ✅ DOKONČENO | `/explorer/bridge` — relay metrics, L1↔Base pipeline viz, contract links |
 
 ### 🟡 High Priority P1 (Důležité pro UX)
 | Úkol | Oblast | Odhad | Status |
@@ -85,7 +85,7 @@ Tyto úkoly musí být hotové před veřejným oznámením:
 - [ ] Status tracking API
 
 ### Fáze 4: Explorer Upgrade (2 týdny)
-- [ ] Bridge Tracker live UI
+- [x] Bridge Tracker live UI — `/explorer/bridge` stránka s relay metrikami, pipeline vizualizací L1↔Base a contract links
 - [x] Mempool viewer — `/explorer/mempool` (fee histogram, sort, search, WS live updates)
 - [ ] Network stats dashboard
 - [x] Supply dashboard — `/explorer/supply` stránka s donut chart, emisními progress bary, Decade Decay tabulkou a live updates
