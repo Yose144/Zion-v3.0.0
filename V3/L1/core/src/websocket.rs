@@ -156,8 +156,16 @@ impl WebSocketServer {
         clients: Arc<Mutex<HashMap<SocketAddr, ClientSession>>>,
         runtime: Arc<Mutex<NodeRuntime>>,
     ) -> Result<()> {
+        println!("Incoming connection from: {}", addr);
+
         // Perform WebSocket handshake
-        let ws_stream = tokio_tungstenite::accept_async(stream).await?;
+        let ws_stream = match tokio_tungstenite::accept_async(stream).await {
+            Ok(s) => s,
+            Err(e) => {
+                eprintln!("WebSocket handshake failed from {}: {}", addr, e);
+                return Err(e.into());
+            }
+        };
 
         println!("WebSocket client connected: {}", addr);
 

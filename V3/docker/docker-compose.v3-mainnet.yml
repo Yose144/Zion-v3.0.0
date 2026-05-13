@@ -46,47 +46,6 @@ services:
     networks:
       - zion-v3
 
-  pool:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile.pool
-    image: zion-v3-pool:latest
-    container_name: zion-v3-pool
-    restart: unless-stopped
-    ports:
-      - "8446:8444"   # Pool stratum (changed to avoid conflict with zion-seed-1)
-    environment:
-      ZION_POOL_BIND: "0.0.0.0:8444"
-      ZION_NODE_RPC_ADDR: "node:8443"
-      ZION_POOL_LOOP_COUNT: "1000000"
-      ZION_NONCE_COUNT: "1000000"
-      # 0 = unlimited (stress / many workers behind NAT). Default 10 protects production.
-      ZION_MAX_SESSIONS_PER_IP: "${ZION_MAX_SESSIONS_PER_IP:-10}"
-      ZION_HUMANITARIAN_WALLET: "${ZION_HUMANITARIAN_WALLET:-zion1m4v5z8z850u480c5c208z274e334369275n5y20}"
-      ZION_ISSOBELLA_WALLET: "${ZION_ISSOBELLA_WALLET:-zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702}"
-      ZION_POOL_FEE_WALLET: "${ZION_POOL_FEE_WALLET:-zion1p2a7a5q0t2z5z545y6m6j5e864n002v4z6w95w5}"
-      ZION_POOL_WALLET: "${ZION_POOL_WALLET:-zion1l56685k280p364g686j88644g3j4r375755e8p7}"
-      ZION_POOL_PAYOUT_SK_HEX: "${ZION_POOL_PAYOUT_SK_HEX:-[REDACTED — pool SK removed for security]}"
-    depends_on:
-      - node
-    networks:
-      - zion-v3
-
-  miner:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile.miner
-    image: zion-v3-miner:latest
-    restart: unless-stopped
-    environment:
-      ZION_POOL_ADDR: "pool:8444"
-      ZION_MINER_THREADS: "1"
-      ZION_LOOP_COUNT: "1000000"
-    depends_on:
-      - pool
-    networks:
-      - zion-v3
-
 volumes:
   zion-node-data:
     driver: local
