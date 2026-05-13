@@ -135,6 +135,7 @@ async function resolveTarget(query: string, fallbackHref?: string): Promise<stri
   if (parsed.forcedType === "tx_hash") return `/explorer/tx?hash=${s}`;
   if (parsed.forcedType === "block_hash") return `/explorer/block?id=${s}`;
 
+  // For 64-char hex: try to resolve via API; if ambiguous, go to search results
   if (/^[a-fA-F0-9]{64}$/.test(s)) {
     try {
       const tx = await apiClient<{ tx_hash?: string }>(`/blockchain/transactions?hash=${s}`);
@@ -146,10 +147,11 @@ async function resolveTarget(query: string, fallbackHref?: string): Promise<stri
       if (block?.hash) return `/explorer/block?id=${s}`;
     } catch {}
 
-    return `/explorer/tx?hash=${s}`;
+    // Neither block nor tx found exactly — show search results
+    return `/explorer/search?q=${encodeURIComponent(s)}`;
   }
 
-  return fallbackHref || `/explorer/block?id=${encodeURIComponent(s)}`;
+  return fallbackHref || `/explorer/search?q=${encodeURIComponent(s)}`;
 }
 
 export default function ProSearchBar() {

@@ -18,6 +18,7 @@ import {
   Layers,
   Network,
   Rocket,
+  Search,
   SearchCode,
   Sparkles,
   TrendingUp,
@@ -96,6 +97,13 @@ const getQuickLinks = (cs: boolean) => [
     href: '/explorer/network-stats',
     accent: 'from-violet-500/80 to-purple-600/80',
     icon: Network,
+  },
+  {
+    title: cs ? 'Hledat' : 'Search',
+    description: cs ? 'Jednotne hledani bloku, tx a adres' : 'Unified search for blocks, transactions and addresses',
+    href: '/explorer/search',
+    accent: 'from-zion-cyan/80 to-blue-600/80',
+    icon: Search,
   },
   {
     title: cs ? 'API explorera' : 'Explorer API',
