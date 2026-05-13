@@ -8,6 +8,7 @@ members = [
     "L2/bridge",
     "L2/dao",
     "L2/atomic-swap",
+    "L2/swap-aggregator",
     "L3/ncl",
     "L3/warp",
     "L3/ai-native",
