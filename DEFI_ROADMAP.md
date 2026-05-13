@@ -89,7 +89,7 @@ Tyto úkoly musí být hotové před veřejným oznámením:
 - [x] Mempool viewer — `/explorer/mempool` (fee histogram, sort, search, WS live updates)
 - [x] Network stats dashboard — `/explorer/network-stats` stránka s 8 stat kartami, sparklines a 4 area grafy (hashrate, difficulty, block time, tx count)
 - [x] Supply dashboard — `/explorer/supply` stránka s donut chart, emisními progress bary, Decade Decay tabulkou a live updates
-- [ ] Search upgrade (jeden search bar)
+- [x] Search upgrade — `/explorer/search` stránka s jednotným API pro bloky, transakce a adresy + redirect z ProSearchBar
 
 ### Fáze 5: Desktop/Mobile DeFi UI (2 týdny)
 - [ ] Real bridge integration (mobile)
