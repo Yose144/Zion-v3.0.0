@@ -16,6 +16,7 @@ import {
   Flame,
   Globe,
   Layers,
+  Network,
   Rocket,
   SearchCode,
   Sparkles,
@@ -88,6 +89,13 @@ const getQuickLinks = (cs: boolean) => [
     href: '#charts',
     accent: 'from-rose-500/80 to-pink-600/80',
     icon: TrendingUp,
+  },
+  {
+    title: cs ? 'Network Stats' : 'Network Stats',
+    description: cs ? 'Hashrate, obtiznost, cas bloku, TX trendy' : 'Hashrate, difficulty, block time, TX trends',
+    href: '/explorer/network-stats',
+    accent: 'from-violet-500/80 to-purple-600/80',
+    icon: Network,
   },
   {
     title: cs ? 'API explorera' : 'Explorer API',
