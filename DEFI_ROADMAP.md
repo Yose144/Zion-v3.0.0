@@ -20,7 +20,7 @@
 - **✅ WebSocket subscriptions** (new blocks, pending TX) - IMPLEMENTOVáno 2026-05-13
 - **✅ Wallet SDK** (TypeScript/JS library) - `APP&WEB/zion-wallet-sdk/`, integrováno do webu, desktop agenta a mobilní appky
 - **❌ Swap Aggregator backend** (orchestrace bridge+swap)
-- **❌ Price feed / oracle** (Uni V3 TWAP)
+- **✅ Price feed / oracle** (Uni V3 TWAP) — `/api/defi/price` endpoint čte slot0 z wZION/WETH poolu, vrací cenu v WETH i USD (Chainlink WETH/USD), zobrazeno na DeFi stránce
 - **✅ Bridge Tracker** (live view lock→bridge→mint) — `/explorer/bridge` stránka s relay metrikami, pipeline vizualizací L1↔Base a contract links
 - **✅ Mempool Viewer** (pending TX) - `/explorer/mempool` stránka s fee histogramem, sortováním, vyhledáváním, WS live updates
 - **✅ Network stats dashboard** (hashrate, difficulty grafy) — `/explorer/network-stats` stránka s 8 stat kartami, sparklines a 4 area grafy (hashrate, difficulty, block time, tx count)
@@ -46,7 +46,7 @@ Tyto úkoly musí být hotové před veřejným oznámením:
 |------|--------|-------|--------|
 | RPC rozšíření (6 metod) | Backend | ✅ DOKONČENO | getTransactionHistory, getAddressInfo, estimateFee, getBlockRange, getNetworkStats, getTokenInfo |
 | Wallet SDK (TS/JS) | Infrastructure | ✅ DOKONČENO | 4 dny | V3-compatible address derivation + checksum, keypair, crypto, tx builder, RPC client, storage adapters; integrováno do webu, desktop agenta a mobilní appky |
-| Price feed oracle | Backend | 3 dny | ⬜ |
+| Price feed oracle | Backend | ✅ DOKONČENO | `/api/defi/price` — Uni V3 slot0 + Chainlink WETH/USD, zobrazeno na /defi |
 | Supply dashboard | Explorer | ✅ DOKONČENO | `/explorer/supply` — donut chart, emission progress, Decade Decay table, live updates |
 | Mempool viewer | Explorer | ✅ DOKONČENO | `/explorer/mempool` — fee histogram, sort, search, WS live updates |
 | Network stats grafy | Explorer | ✅ DOKONČENO | `/explorer/network-stats` — 8 stat cards, sparklines, 4 area charts (hashrate, difficulty, block time, tx count) |
