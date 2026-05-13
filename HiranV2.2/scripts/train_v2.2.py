@@ -40,7 +40,12 @@ def _parse_args() -> argparse.Namespace:
         "--base_model",
         type=str,
         default="unsloth/Meta-Llama-3.1-8B-Instruct",
-        help="HF model id for 4-bit base",
+        help="HF model id for base",
+    )
+    p.add_argument(
+        "--full_finetune",
+        action="store_true",
+        help="Enable full fine-tuning (no quantization)",
     )
     p.add_argument(
         "--output_dir",
@@ -106,34 +111,50 @@ def _tokenize_map(tokenizer, max_length: int):
     return _map
 
 
-def _load_model_tokenizer(base_model: str):
+def _load_model_tokenizer(base_model: str, full_finetune: bool = False):
     import torch
     from peft import prepare_model_for_kbit_training
     from transformers import (
         AutoModelForCausalLM,
         AutoTokenizer,
-        BitsAndBytesConfig,
     )
 
-    bnb = BitsAndBytesConfig(
-        load_in_4bit=True,
-        bnb_4bit_use_double_quant=True,
-        bnb_4bit_quant_type="nf4",
-        bnb_4bit_compute_dtype=torch.float16,
-    )
-    tokenizer = AutoTokenizer.from_pretrained(base_model, trust_remote_code=True)
-    if tokenizer.pad_token is None:
-        tokenizer.pad_token = tokenizer.eos_token
-    tokenizer.padding_side = "right"
+    if full_finetune:
+        tokenizer = AutoTokenizer.from_pretrained(base_model, trust_remote_code=True)
+        if tokenizer.pad_token is None:
+            tokenizer.pad_token = tokenizer.eos_token
+        tokenizer.padding_side = "right"
 
-    model = AutoModelForCausalLM.from_pretrained(
-        base_model,
-        quantization_config=bnb,
-        device_map="auto",
-        trust_remote_code=True,
-    )
-    model = prepare_model_for_kbit_training(model)
-    return model, tokenizer
+        model = AutoModelForCausalLM.from_pretrained(
+            base_model,
+            torch_dtype=torch.float16,
+            device_map="cuda",  # Single GPU, no offloading
+            trust_remote_code=True,
+        )
+        model.gradient_checkpointing_enable()  # Enable gradient checkpointing for memory efficiency
+        return model, tokenizer
+    else:
+        from transformers import BitsAndBytesConfig
+
+        bnb = BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_use_double_quant=True,
+            bnb_4bit_quant_type="nf4",
+            bnb_4bit_compute_dtype=torch.float16,
+        )
+        tokenizer = AutoTokenizer.from_pretrained(base_model, trust_remote_code=True)
+        if tokenizer.pad_token is None:
+            tokenizer.pad_token = tokenizer.eos_token
+        tokenizer.padding_side = "right"
+
+        model = AutoModelForCausalLM.from_pretrained(
+            base_model,
+            quantization_config=bnb,
+            device_map="auto",
+            trust_remote_code=True,
+        )
+        model = prepare_model_for_kbit_training(model)
+        return model, tokenizer
 
 
 def train_one_stage(
@@ -146,6 +167,7 @@ def train_one_stage(
     max_steps: Optional[int],
     logging_steps: int,
     save_steps: int,
+    full_finetune: bool = False,
     use_tensorboard: bool,
 ) -> Path:
     from data_loader import build_hf_dataset
@@ -157,10 +179,15 @@ def train_one_stage(
     cfg = get_stage_config(stage)
     ds = build_hf_dataset(data_path, max_rows=max_rows)
 
-    model, tokenizer = _load_model_tokenizer(base_model)
-    peft_config = cfg.to_peft_config()
-    model = get_peft_model(model, peft_config)
-    log_trainable_params(model, prefix=f"[{stage}] ")
+    model, tokenizer = _load_model_tokenizer(base_model, full_finetune=full_finetune)
+
+    if full_finetune:
+        # Full fine-tuning: no PEFT adapter
+        log_trainable_params(model, prefix=f"[{stage} full-finetune] ")
+    else:
+        peft_config = cfg.to_peft_config()
+        model = get_peft_model(model, peft_config)
+        log_trainable_params(model, prefix=f"[{stage} QLoRA] ")
 
     max_length = cfg.max_seq_length
     tokenized = ds.map(
@@ -284,6 +311,7 @@ def main() -> None:
             max_steps=args.max_steps,
             logging_steps=args.logging_steps,
             save_steps=args.save_steps,
+            full_finetune=args.full_finetune,
             use_tensorboard=args.tensorboard,
         )
         print(f"Saved adapter: {final_path}")

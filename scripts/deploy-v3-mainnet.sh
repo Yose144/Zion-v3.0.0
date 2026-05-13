@@ -11,7 +11,7 @@
 
 set -euo pipefail
 
-SSH_KEY="$HOME/.ssh/zion_hetzner_key"
+SSH_KEY="$HOME/.ssh/zion_hetzner_key"  # FUNKČNÍ klíč pro Prague (91.98.122.165)
 DEPLOY_USER="${DEPLOY_USER:-root}"
 DEPLOY_DIR="/root/zion-2.9.6"
 COMPOSE_FILE="docker/docker-compose.v3-mainnet.yml"
@@ -22,8 +22,16 @@ LOCAL_SRC="$(cd "$(dirname "$0")/.." && pwd)"
 # ACTIVE_SERVER_ALIASES is the live mainnet fleet. Keep unreachable hosts out of
 # the active seed rotation until they are restored, otherwise fresh nodes learn
 # dead peers and burn sync cycles.
+#
+# STAV 2026-05-12:
+# - primary (Prague 91.98.122.165): ✅ AKTIVNÍ - běží V3 mainnet (height 26,910+)
+# - us (5.78.194.94): ❌ NEDOSTUPNÝ - žádná odpověď na health endpoint
+# - sg (5.223.84.191): ❌ NEDOSTUPNÝ - žádná odpověď na health endpoint
+# - eu (Helsinki 157.180.41.213): ❌ NEDOSTUPNÝ - connection refused
+#
+# Poznámka: SSH přístup FUNKČNÍ přes zion_hetzner_key, všechny služby běží v Dockeru
 SERVER_ALIASES=(eu primary us sg)
-ACTIVE_SERVER_ALIASES=(primary us sg)
+ACTIVE_SERVER_ALIASES=(primary)
 
 resolve_alias() {
     case "$1" in

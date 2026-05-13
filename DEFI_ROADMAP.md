@@ -16,7 +16,8 @@
 - **✅ Contract addresses table** - Basescan links
 
 ### Co chybí (podle docs/DEFI_FULL_ROADMAP.md):
-- **❌ Backend RPC rozšíření** (getTransactionHistory, WebSocket, estimateFee)
+- **✅ RPC rozšíření (6 nových metod)** - getTransactionHistory, getAddressInfo, estimateFee, getBlockRange, getNetworkStats, getTokenInfo
+- **❌ WebSocket subscriptions** (new blocks, pending TX)
 - **❌ Wallet SDK** (TypeScript/JS library)
 - **❌ Swap Aggregator backend** (orchestrace bridge+swap)
 - **❌ Price feed / oracle** (Uni V3 TWAP)
@@ -37,12 +38,13 @@ Tyto úkoly musí být hotové před veřejným oznámením:
 |------|--------|-------|--------|-----------|
 | Bridge validator 3/5 multisig | Bridge | 3 dny | ⬜ | Bezpečnostní upgrade |
 | Burn→Unlock E2E test | Bridge | 2 dny | ⬜ | Reverse bridge směr |
-| RPC rozšíření (9 metod) | Backend | 5 dní | ⬜ | getTransactionHistory, WS subs, atd. |
+| WebSocket subscriptions (WS) | Backend | 4 dny | ⬜ | new blocks, pending TX streaming |
 | Bridge Tracker UI | Explorer | 3 dny | ⬜ | Live status lock→bridge→mint |
 
 ### 🟡 High Priority P1 (Důležité pro UX)
 | Úkol | Oblast | Odhad | Status |
 |------|--------|-------|--------|
+| RPC rozšíření (6 metod) | Backend | ✅ DOKONČENO | getTransactionHistory, getAddressInfo, estimateFee, getBlockRange, getNetworkStats, getTokenInfo |
 | Wallet SDK (TS/JS) | Infrastructure | 4 dny | ⬜ |
 | Price feed oracle | Backend | 3 dny | ⬜ |
 | Supply dashboard | Explorer | 2 dny | ⬜ |
@@ -65,9 +67,13 @@ Tyto úkoly musí být hotové před veřejným oznámením:
 - [ ] Validator threshold upgrade (1/2 → 3/5)
 - [ ] Bridge monitoring dashboard (Grafana integration)
 
-### Fáze 2: RPC + Wallet SDK (2 týdny)
-- [ ] Implement getTransactionHistory RPC
-- [ ] Implement estimateFee RPC
+### Fáze 1: RPC + Wallet SDK (2 týdny)
+- [x] Implement getTransactionHistory RPC
+- [x] Implement estimateFee RPC
+- [x] Implement getAddressInfo RPC
+- [x] Implement getBlockRange RPC
+- [x] Implement getNetworkStats RPC
+- [x] Implement getTokenInfo RPC
 - [ ] WebSocket subscriptions (new blocks, pending TX)
 - [ ] TypeScript Wallet SDK package
 - [ ] Multi-wallet management
