@@ -19,7 +19,7 @@
 - **✅ RPC rozšíření (6 nových metod)** - getTransactionHistory, getAddressInfo, estimateFee, getBlockRange, getNetworkStats, getTokenInfo
 - **✅ WebSocket subscriptions** (new blocks, pending TX) - IMPLEMENTOVáno 2026-05-13
 - **✅ Wallet SDK** (TypeScript/JS library) - `APP&WEB/zion-wallet-sdk/`, integrováno do webu, desktop agenta a mobilní appky
-- **❌ Swap Aggregator backend** (orchestrace bridge+swap)
+- **✅ Swap Aggregator backend** (orchestrace bridge+swap) — `V3/L2/swap-aggregator/` Rust crate s Axum REST API, SQLite persistencí, orchestrací pipeline (lock→bridge→swap) a quote endpointem
 - **✅ Price feed / oracle** (Uni V3 TWAP) — `/api/defi/price` endpoint čte slot0 z wZION/WETH poolu, vrací cenu v WETH i USD (Chainlink WETH/USD), zobrazeno na DeFi stránce
 - **✅ Bridge Tracker** (live view lock→bridge→mint) — `/explorer/bridge` stránka s relay metrikami, pipeline vizualizací L1↔Base a contract links
 - **✅ Mempool Viewer** (pending TX) - `/explorer/mempool` stránka s fee histogramem, sortováním, vyhledáváním, WS live updates
@@ -79,10 +79,10 @@ Tyto úkoly musí být hotové před veřejným oznámením:
 - [x] Multi-wallet management — integrováno do website-v2.9 (`ZionWalletContext.tsx` + `/wallet` stránka)
 
 ### Fáze 3: Swap Aggregator (2 týdny)
-- [ ] Swap Aggregator backend service
-- [ ] Price feed oracle (Uni V3 TWAP)
-- [ ] Best-route calculation
-- [ ] Status tracking API
+- [x] Swap Aggregator backend service — `V3/L2/swap-aggregator/` Rust crate (Axum REST API, SQLite, pipeline orchestrace)
+- [x] Price feed oracle (Uni V3 TWAP) — `/api/defi/price` endpoint
+- [ ] Best-route calculation (více poolů / multi-hop)
+- [x] Status tracking API — `/swap/:id` a `/swaps` endpointy
 
 ### Fáze 4: Explorer Upgrade (2 týdny)
 - [x] Bridge Tracker live UI — `/explorer/bridge` stránka s relay metrikami, pipeline vizualizací L1↔Base a contract links
