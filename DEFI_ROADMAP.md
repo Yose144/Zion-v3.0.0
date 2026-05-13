@@ -17,7 +17,7 @@
 
 ### Co chybí (podle docs/DEFI_FULL_ROADMAP.md):
 - **✅ RPC rozšíření (6 nových metod)** - getTransactionHistory, getAddressInfo, estimateFee, getBlockRange, getNetworkStats, getTokenInfo
-- **❌ WebSocket subscriptions** (new blocks, pending TX)
+- **✅ WebSocket subscriptions** (new blocks, pending TX) - IMPLEMENTOVáno 2026-05-13
 - **❌ Wallet SDK** (TypeScript/JS library)
 - **❌ Swap Aggregator backend** (orchestrace bridge+swap)
 - **❌ Price feed / oracle** (Uni V3 TWAP)
@@ -38,7 +38,7 @@ Tyto úkoly musí být hotové před veřejným oznámením:
 |------|--------|-------|--------|-----------|
 | Bridge validator 3/5 multisig | Bridge | 3 dny | ⬜ | Bezpečnostní upgrade |
 | Burn→Unlock E2E test | Bridge | 2 dny | ⬜ | Reverse bridge směr |
-| WebSocket subscriptions (WS) | Backend | 4 dny | ⬜ | new blocks, pending TX streaming |
+| WebSocket subscriptions (WS) | Backend | 4 dny | ✅ DOKONČENO | new blocks, pending TX streaming (2026-05-13) |
 | Bridge Tracker UI | Explorer | 3 dny | ⬜ | Live status lock→bridge→mint |
 
 ### 🟡 High Priority P1 (Důležité pro UX)
@@ -74,7 +74,7 @@ Tyto úkoly musí být hotové před veřejným oznámením:
 - [x] Implement getBlockRange RPC
 - [x] Implement getNetworkStats RPC
 - [x] Implement getTokenInfo RPC
-- [ ] WebSocket subscriptions (new blocks, pending TX)
+- [x] WebSocket subscriptions (new blocks, pending TX) - IMPLEMENTOVáno 2026-05-13
 - [ ] TypeScript Wallet SDK package
 - [ ] Multi-wallet management
 
