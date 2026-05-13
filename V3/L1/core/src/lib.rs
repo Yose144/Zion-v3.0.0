@@ -36,6 +36,7 @@ pub mod storage;
 pub mod tx;
 pub mod validation;
 pub mod wallet;
+pub mod websocket;
 
 mod peer_block_validation;
 
@@ -584,6 +585,7 @@ pub struct NodeConfig {
     pub p2p_bind: PeerEndpoint,
     pub rpc_bind: PeerEndpoint,
     pub pool_bind: PeerEndpoint,
+    pub websocket_bind: PeerEndpoint,
     pub seed_peers: Vec<PeerEndpoint>,
 }
 
@@ -594,6 +596,7 @@ impl NodeConfig {
             p2p_bind: PeerEndpoint::new("0.0.0.0", 8333),
             rpc_bind: PeerEndpoint::new("0.0.0.0", 8443),
             pool_bind: PeerEndpoint::new("0.0.0.0", 8444),
+            websocket_bind: PeerEndpoint::new("0.0.0.0", 8445),
             seed_peers: vec![
                 // Primary bootstrap (current fleet entrypoint)
                 PeerEndpoint::new("204.168.245.175", 8333),
@@ -828,7 +831,7 @@ pub enum SubmittedTransaction {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(untagged)]
-enum RuntimeTransaction {
+pub enum RuntimeTransaction {
     Account(Transaction),
     Utxo(tx::Transaction),
 }
@@ -1134,6 +1137,7 @@ pub struct NodeRuntime {
     humanitarian_address: String,
     issobella_address: String,
     pool_fee_address: String,
+    ws_notifier: Option<std::sync::Arc<websocket::WebSocketServer>>,
 }
 
 impl Default for CoreRuntime {
@@ -1302,6 +1306,31 @@ impl NodeRuntime {
             humanitarian_address: String::new(),
             issobella_address: String::new(),
             pool_fee_address: String::new(),
+            ws_notifier: None,
+        }
+    }
+
+    pub fn with_websocket_notifier(
+        node_id: impl Into<String>,
+        config: NodeConfig,
+        ws_notifier: std::sync::Arc<websocket::WebSocketServer>,
+    ) -> Self {
+        let node_id = node_id.into();
+        let known_peers = dedup_peers(config.seed_peers.clone());
+        let core = CoreRuntime::default();
+        let chain_state = ChainState::new(&node_id, &core);
+        Self {
+            node_id,
+            config,
+            core,
+            known_peers,
+            chain_state,
+            chain_store: None,
+            miner_address: String::new(),
+            humanitarian_address: String::new(),
+            issobella_address: String::new(),
+            pool_fee_address: String::new(),
+            ws_notifier: Some(ws_notifier),
         }
     }
 
@@ -1344,6 +1373,54 @@ impl NodeRuntime {
             humanitarian_address: String::new(),
             issobella_address: String::new(),
             pool_fee_address: String::new(),
+            ws_notifier: None,
+        };
+        runtime.persist_chain_state()?;
+        runtime.load_persisted_peers();
+        Ok(runtime)
+    }
+
+    pub fn with_chain_store_and_websocket_notifier(
+        node_id: impl Into<String>,
+        config: NodeConfig,
+        state_path: impl Into<PathBuf>,
+        ws_notifier: std::sync::Arc<websocket::WebSocketServer>,
+    ) -> Result<Self, String> {
+        let node_id = node_id.into();
+        let known_peers = dedup_peers(config.seed_peers.clone());
+        let core = CoreRuntime::default();
+        let chain_store = ChainStore {
+            path: state_path.into(),
+        };
+        let snapshot = match chain_store.load_snapshot() {
+            Ok(snapshot) => snapshot,
+            Err(error) => {
+                if chain_store.journal_exists() {
+                    eprintln!("node_state_snapshot_recovery_fallback={error}");
+                    None
+                } else {
+                    return Err(error);
+                }
+            }
+        };
+        let mut chain_state = match snapshot {
+            Some(snapshot) => ChainState::from_snapshot(&node_id, &core, snapshot)?,
+            None => ChainState::new(&node_id, &core),
+        };
+        chain_store.replay_journal(&node_id, &core, &mut chain_state)?;
+
+        let mut runtime = Self {
+            node_id,
+            config,
+            core,
+            known_peers,
+            chain_state,
+            chain_store: Some(chain_store),
+            miner_address: String::new(),
+            humanitarian_address: String::new(),
+            issobella_address: String::new(),
+            pool_fee_address: String::new(),
+            ws_notifier: Some(ws_notifier),
         };
         runtime.persist_chain_state()?;
         runtime.load_persisted_peers();
@@ -1357,6 +1434,11 @@ impl NodeRuntime {
         self.miner_address = addr.clone();
         self.chain_state.miner_address = addr;
         self.rebuild_active_template();
+    }
+
+    /// Set the WebSocket notifier for real-time event broadcasting.
+    pub fn set_websocket_notifier(&mut self, ws_notifier: std::sync::Arc<websocket::WebSocketServer>) {
+        self.ws_notifier = Some(ws_notifier);
     }
 
     /// Set the fee split destination addresses.
@@ -1693,7 +1775,14 @@ impl NodeRuntime {
             .import_peer_block(&self.node_id, &self.core, block)?;
         self.persist_chain_state()?;
         if self.chain_state.height > height_before {
-            Ok(self.chain_state.accepted_blocks.last().cloned())
+            let accepted_block = self.chain_state.accepted_blocks.last().cloned();
+            
+            // Notify WebSocket subscribers about new block
+            if let (Some(ws_notifier), Some(block)) = (&self.ws_notifier, &accepted_block) {
+                ws_notifier.notify_new_block(block);
+            }
+            
+            Ok(accepted_block)
         } else {
             Ok(None)
         }
@@ -1705,6 +1794,13 @@ impl NodeRuntime {
             .import_peer_blocks(&self.node_id, &self.core, blocks)?;
         if imported > 0 {
             self.persist_chain_state()?;
+            
+            // Notify WebSocket subscribers about newly accepted blocks
+            if let Some(ws_notifier) = &self.ws_notifier {
+                for block in self.chain_state.accepted_blocks.iter().rev().take(imported) {
+                    ws_notifier.notify_new_block(block);
+                }
+            }
         }
         Ok(imported)
     }
@@ -1767,10 +1863,15 @@ impl NodeRuntime {
                     Some(transaction) => {
                         if let Err(error) =
                             self.persist_chain_update(&ChainJournalEntry::TransactionAccepted {
-                                transaction,
+                                transaction: transaction.clone(),
                             })
                         {
                             eprintln!("node_state_persist_error={error}");
+                        }
+                        
+                        // Notify WebSocket subscribers about pending transaction
+                        if let Some(ws_notifier) = &self.ws_notifier {
+                            ws_notifier.notify_pending_transaction(&transaction);
                         }
                     }
                     None => {
@@ -1989,10 +2090,15 @@ impl NodeRuntime {
                     Some(transaction) => {
                         if let Err(error) =
                             self.persist_chain_update(&ChainJournalEntry::TransactionAccepted {
-                                transaction,
+                                transaction: transaction.clone(),
                             })
                         {
                             eprintln!("node_state_persist_error={error}");
+                        }
+                        
+                        // Notify WebSocket subscribers about pending transaction
+                        if let Some(ws_notifier) = &self.ws_notifier {
+                            ws_notifier.notify_pending_transaction(&transaction);
                         }
                     }
                     None => {

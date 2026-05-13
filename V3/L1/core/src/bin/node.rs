@@ -16,6 +16,7 @@ use zion_core::{
     peer_manager::{PeerAction, PeerDirection, PeerManager, MIN_OUTBOUND},
     propagation::{PropagationStats, SeenBlocks, SeenTransactions},
     rpc::{build_node_router, RpcRouter},
+    websocket::WebSocketServer,
     AcceptedBlock, NodeConfig, NodeRuntime, P2pMessage, PeerEndpoint, SubmittedTransaction,
 };
 
@@ -88,6 +89,15 @@ fn main() -> Result<()> {
         }
         rt
     }));
+
+    // Create WebSocket server
+    let ws_server = Arc::new(WebSocketServer::new(Arc::clone(&runtime)));
+    
+    // Set WebSocket notifier in runtime
+    {
+        let mut rt = runtime.lock().expect("lock");
+        rt.set_websocket_notifier(Arc::clone(&ws_server));
+    }
 
     println!("ZION v3 node");
     println!("node_id={}", config.node_id);
@@ -174,6 +184,18 @@ fn main() -> Result<()> {
         if let Err(e) = serve_node_metrics(&metrics_bind, metrics_runtime) {
             eprintln!("metrics_server_err={e}");
         }
+    });
+
+    // ── WebSocket server ───────────────────────────────────────────────
+    let ws_bind = config.node_config.websocket_bind.address();
+    println!("websocket_bind={ws_bind}");
+    let _ws_thread = thread::spawn(move || {
+        let rt = tokio::runtime::Runtime::new().expect("failed to create tokio runtime");
+        rt.block_on(async {
+            if let Err(e) = ws_server.serve(&ws_bind).await {
+                eprintln!("websocket_server_err={e}");
+            }
+        });
     });
 
     // ── Outbound peer thread ───────────────────────────────────────────
@@ -702,6 +724,9 @@ impl NodeServerConfig {
         }
         if let Ok(value) = std::env::var("ZION_POOL_BIND") {
             node_config.pool_bind = parse_endpoint_env(&value, "ZION_POOL_BIND")?;
+        }
+        if let Ok(value) = std::env::var("ZION_WEBSOCKET_BIND") {
+            node_config.websocket_bind = parse_endpoint_env(&value, "ZION_WEBSOCKET_BIND")?;
         }
         if let Ok(value) = std::env::var("ZION_SEED_PEERS") {
             node_config.seed_peers = parse_seed_peers_env(&value)?;
