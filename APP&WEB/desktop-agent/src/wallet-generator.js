@@ -3,8 +3,67 @@
 
 const crypto = require('crypto');
 const bip39 = require('bip39');
-const { publicKeyToAddress, isValidAddress: isValidZionAddress } = require('zion-wallet-sdk');
+const { sha256 } = require('@noble/hashes/sha2');
+const { ripemd160 } = require('@noble/hashes/legacy');
+
 const { randomBytes } = crypto;
+
+const ZION_PREFIX = 'zion1';
+const ZION_BASE32 = '023456789acdefghjklmnpqrstuvwxyz';
+
+function publicKeyToAddress(publicKey) {
+  if (publicKey.length !== 32) {
+    throw new Error(`Invalid public key length: expected 32, got ${publicKey.length}`);
+  }
+  const sha = sha256(publicKey);
+  const keyHash = ripemd160(sha);
+  let data = '';
+  for (const byte of keyHash) {
+    data += ZION_BASE32[byte % 32];
+    data += ZION_BASE32[Math.floor(byte / 32) % 32];
+  }
+  const body = data.slice(0, 35);
+  const ckHash = sha256(new TextEncoder().encode(ZION_PREFIX + body));
+  let checksum = '';
+  for (let i = 0; i < 2; i++) {
+    const b = ckHash[i];
+    checksum += ZION_BASE32[b % 32];
+    checksum += ZION_BASE32[Math.floor(b / 32) % 32];
+  }
+  return ZION_PREFIX + body + checksum;
+}
+
+function isValidAddress(address) {
+  if (!address || typeof address !== 'string') return false;
+  const a = address.trim();
+  if (!a.startsWith(ZION_PREFIX)) return false;
+  if (a.length !== 44) return false;
+  for (let i = 5; i < 44; i++) {
+    if (!ZION_BASE32.includes(a[i])) return false;
+  }
+  const body = a.slice(5, 40);
+  const actualCk = a.slice(40, 44);
+  const ckHash = sha256(new TextEncoder().encode(ZION_PREFIX + body));
+  let expectedCk = '';
+  for (let i = 0; i < 2; i++) {
+    const b = ckHash[i];
+    expectedCk += ZION_BASE32[b % 32];
+    expectedCk += ZION_BASE32[Math.floor(b / 32) % 32];
+  }
+  return expectedCk === actualCk;
+}
+
+function getAddressType(address) {
+  if (typeof address !== 'string') return 'invalid';
+  const a = address.trim();
+  if (!a) return 'invalid';
+  if (a.startsWith(ZION_PREFIX)) {
+    return isValidAddress(a) ? 'zion1' : 'invalid';
+  }
+  const legacyRegex = /^ZION[A-Z2-7]{20,60}$/;
+  if (legacyRegex.test(a)) return 'legacy';
+  return 'invalid';
+}
 
 class ZionWalletGenerator {
   /**
@@ -109,7 +168,7 @@ class ZionWalletGenerator {
    * @returns {boolean}
    */
   static isValidAddress(address) {
-    return isValidZionAddress(address);
+    return isValidAddress(address);
   }
 
   /**
@@ -230,14 +289,10 @@ class ZionWalletGenerator {
     const a = address.trim();
     if (!a) return 'invalid';
 
-    // Canonical chain format: zion1 + 35 body + 4 checksum = 44 total
-    // Matches V3/L1/core/src/crypto.rs is_valid_address()
     if (a.startsWith('zion1')) {
       if (a.length !== 44) return 'invalid';
       const data = a.slice(5);
       if (!/^[0-9a-z]{39}$/.test(data)) return 'invalid';
-      // Verify checksum when possible (V3-compatible addresses)
-      // Accept addresses even if checksum doesn't match (legacy desktop-agent addresses)
       return 'zion1';
     }
 

@@ -7,15 +7,15 @@ import {
   deriveKeypairFromMnemonic,
   deriveKeypairFromPrivateKey,
   generateMnemonic,
-} from '../core/keypair';
-import { publicKeyToAddress, isValidAddress } from '../core/address';
-import { encrypt, decrypt } from '../core/crypto';
-import type { StorageInterface } from '../storage/storage-interface';
-import type { Wallet, WalletPublicView } from './wallet';
-import { toPublicView } from './wallet';
-import { buildUtxoTransaction, transactionToRpcPayload } from '../core/transaction';
-import { ZionRPC } from '../rpc/zion-rpc';
-import type { RpcConfig } from '../rpc/zion-rpc';
+} from '../core/keypair.js';
+import { publicKeyToAddress, isValidAddress } from '../core/address.js';
+import { encrypt, decrypt } from '../core/crypto.js';
+import type { StorageInterface } from '../storage/storage-interface.js';
+import type { Wallet, WalletPublicView } from './wallet.js';
+import { toPublicView } from './wallet.js';
+import { buildUtxoTransaction, transactionToRpcPayload } from '../core/transaction.js';
+import { ZionRPC } from '../rpc/zion-rpc.js';
+import type { RpcConfig } from '../rpc/zion-rpc.js';
 
 const STORAGE_KEY_WALLETS = 'zion_wallet_index';
 const STORAGE_KEY_ACTIVE = 'zion_wallet_active';
