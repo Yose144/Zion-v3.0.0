@@ -17,7 +17,6 @@
  *  - submitBlock / submitTransaction: Submission endpoints
  */
 
-import * as net from 'net';
 import { getSeedNodesConfig, type SeedNodeConfig } from './network-config';
 import { SITE_PRIMARY_POOL_API_URL } from './site';
 
@@ -193,7 +192,8 @@ const POOL_TIMEOUT_MS = 5000;
  * Send a JSON-RPC 2.0 request over raw TCP to the V3 node.
  * Protocol: single request per connection — write JSON line, read response, close.
  */
-function tcpJsonRpc(host: string, port: number, method: string, params: any = {}, timeoutMs = RPC_TIMEOUT_MS): Promise<any> {
+async function tcpJsonRpc(host: string, port: number, method: string, params: any = {}, timeoutMs = RPC_TIMEOUT_MS): Promise<any> {
+  const net = await import('net');
   return new Promise((resolve, reject) => {
     const socket = new net.Socket();
     let data = '';
@@ -234,7 +234,8 @@ function tcpJsonRpc(host: string, port: number, method: string, params: any = {}
  * Read V3 pool routing metrics over raw TCP.
  * The pool serves HTTP on its metrics port — send GET / and parse the JSON body.
  */
-function tcpPoolMetrics(host: string, port: number, timeoutMs = POOL_TIMEOUT_MS): Promise<V3PoolRoutingStats> {
+async function tcpPoolMetrics(host: string, port: number, timeoutMs = POOL_TIMEOUT_MS): Promise<V3PoolRoutingStats> {
+  const net = await import('net');
   return new Promise((resolve, reject) => {
     const socket = new net.Socket();
     let data = '';

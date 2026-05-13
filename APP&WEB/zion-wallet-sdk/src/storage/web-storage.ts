@@ -2,7 +2,7 @@
  * Web Storage — uses localStorage for browser environments.
  */
 
-import { StorageInterface } from './storage-interface';
+import { StorageInterface } from './storage-interface.js';
 
 export class WebStorage implements StorageInterface {
   async getItem(key: string): Promise<string | null> {

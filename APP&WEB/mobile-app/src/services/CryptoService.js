@@ -29,7 +29,7 @@ import * as bip39 from 'bip39';
 import * as ed25519 from '@noble/ed25519';
 import CryptoJS from 'crypto-js';
 import { Buffer } from 'buffer';
-import {publicKeyToZionAddress, isValidZionAddress} from '../utils/zionAddress';
+import {publicKeyToAddress as _sdkPublicKeyToAddress, isValidAddress as _sdkIsValidAddress} from '../utils/zionAddress';
 
 // ZION network configuration
 const ZION_CONFIG = {
@@ -101,7 +101,7 @@ const deriveKeypairFromSeed = async (seed) => {
  */
 export const publicKeyToAddress = (publicKey, prefix = ZION_CONFIG.prefix) => {
   try {
-    return publicKeyToZionAddress(publicKey, prefix);
+    return _sdkPublicKeyToAddress(publicKey);
   } catch (error) {
     throw new Error(`Address generation failed: ${error.message}`);
   }
@@ -149,7 +149,7 @@ export const isValidAddress = (address, chainOrPrefix = ZION_CONFIG.prefix) => {
     }
 
     const prefix = isChainId ? ZION_CONFIG.prefix : chainOrPrefix;
-    return isValidZionAddress(trimmed, prefix);
+    return _sdkIsValidAddress(trimmed);
   } catch (error) {
     return false;
   }

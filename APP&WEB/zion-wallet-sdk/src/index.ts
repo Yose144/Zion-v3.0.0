@@ -10,7 +10,7 @@ export {
   getAddressType,
   ZION_PREFIX,
   ZION_BASE32,
-} from './core/address';
+} from './core/address.js';
 
 export {
   generateMnemonic,
@@ -19,9 +19,9 @@ export {
   deriveKeypairFromPrivateKey,
   signMessage,
   verifySignature,
-} from './core/keypair';
+} from './core/keypair.js';
 
-export { encrypt, decrypt, hashPassword, constantTimeEqual } from './core/crypto';
+export { encrypt, decrypt, hashPassword, constantTimeEqual } from './core/crypto.js';
 
 export {
   buildUtxoTransaction,
@@ -29,40 +29,40 @@ export {
   transactionToRpcPayload,
   FLOWERS_PER_ZION,
   MIN_FEE_FLOWERS,
-} from './core/transaction';
+} from './core/transaction.js';
 
 export type {
   UTXO,
   TxInput,
   TxOutput,
   Transaction,
-} from './core/transaction';
+} from './core/transaction.js';
 
 // RPC
-export { ZionRPC } from './rpc/zion-rpc';
-export type { RpcConfig } from './rpc/zion-rpc';
+export { ZionRPC } from './rpc/zion-rpc.js';
+export type { RpcConfig } from './rpc/zion-rpc.js';
 
 // Storage
-export type { StorageInterface, WalletData } from './storage/storage-interface';
-export { WebStorage } from './storage/web-storage';
-export { ReactNativeStorage } from './storage/react-native-storage';
-export { ElectronStorage } from './storage/electron-storage';
+export type { StorageInterface, WalletData } from './storage/storage-interface.js';
+export { WebStorage } from './storage/web-storage.js';
+export { ReactNativeStorage } from './storage/react-native-storage.js';
+export { ElectronStorage } from './storage/electron-storage.js';
 
 // Wallet
-export type { Wallet, WalletPublicView } from './wallet/wallet';
-export { toPublicView } from './wallet/wallet';
+export type { Wallet, WalletPublicView } from './wallet/wallet.js';
+export { toPublicView } from './wallet/wallet.js';
 export {
   WalletManager,
   type CreateWalletOptions,
   type ImportMnemonicOptions,
   type ImportPrivateKeyOptions,
   type SendOptions,
-} from './wallet/wallet-manager';
+} from './wallet/wallet-manager.js';
 
 // Convenience class that wires everything together
-import { WalletManager } from './wallet/wallet-manager';
-import type { StorageInterface } from './storage/storage-interface';
-import type { RpcConfig } from './rpc/zion-rpc';
+import { WalletManager } from './wallet/wallet-manager.js';
+import type { StorageInterface } from './storage/storage-interface.js';
+import type { RpcConfig } from './rpc/zion-rpc.js';
 
 export class ZionWalletSDK {
   manager: WalletManager;
