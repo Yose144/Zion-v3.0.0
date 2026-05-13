@@ -22,7 +22,7 @@
 - **❌ Swap Aggregator backend** (orchestrace bridge+swap)
 - **❌ Price feed / oracle** (Uni V3 TWAP)
 - **❌ Bridge Tracker** (live view lock→bridge→mint)
-- **❌ Mempool Viewer** (pending TX)
+- **✅ Mempool Viewer** (pending TX) - `/explorer/mempool` stránka s fee histogramem, sortováním, vyhledáváním, WS live updates
 - **❌ Network stats dashboard** (hashrate, difficulty grafy)
 - **❌ Supply dashboard** (circulating, locked, staked, burned)
 - **❌ Staking dashboard** (APR, rewards history)
@@ -48,7 +48,7 @@ Tyto úkoly musí být hotové před veřejným oznámením:
 | Wallet SDK (TS/JS) | Infrastructure | ✅ DOKONČENO | 4 dny | V3-compatible address derivation + checksum, keypair, crypto, tx builder, RPC client, storage adapters; integrováno do webu, desktop agenta a mobilní appky |
 | Price feed oracle | Backend | 3 dny | ⬜ |
 | Supply dashboard | Explorer | 2 dny | ⬜ |
-| Mempool viewer | Explorer | 2 dny | ⬜ |
+| Mempool viewer | Explorer | ✅ DOKONČENO | `/explorer/mempool` — fee histogram, sort, search, WS live updates |
 | Network stats grafy | Explorer | 3 dny | ⬜ |
 
 ### 🟢 Medium Priority P2 (Nice to have)
@@ -86,7 +86,7 @@ Tyto úkoly musí být hotové před veřejným oznámením:
 
 ### Fáze 4: Explorer Upgrade (2 týdny)
 - [ ] Bridge Tracker live UI
-- [ ] Mempool viewer
+- [x] Mempool viewer — `/explorer/mempool` (fee histogram, sort, search, WS live updates)
 - [ ] Network stats dashboard
 - [ ] Supply dashboard
 - [ ] Search upgrade (jeden search bar)
