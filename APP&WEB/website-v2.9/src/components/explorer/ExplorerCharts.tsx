@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { BarChart3, TrendingUp } from "lucide-react";
+import { BarChart3, TrendingUp, LayoutGrid, Maximize2, Minimize2 } from "lucide-react";
 import { apiClient } from "@/lib/api";
 import { useLang } from "@/contexts/LanguageContext";
 
@@ -18,13 +18,15 @@ interface ChartData {
   };
 }
 
+const CHART_ORDER: ChartType[] = ["hashrate", "difficulty", "blocktime", "emission"];
+
 const getChartConfig = (cs: boolean): Record<ChartType, { label: string; color: string; unit: string; formatFn?: (v: number) => string }> => ({
   difficulty: { label: cs ? "Obtížnost" : "Difficulty", color: "#ef4444", unit: "", formatFn: formatSI },
-  hashrate: { label: cs ? "Hashrate" : "Hashrate", color: "#06b6d4", unit: "H/s", formatFn: formatHashrate },
-  blocktime: { label: cs ? "Čas bloku" : "Block Time", color: "#22c55e", unit: "s" },
-  emission: { label: cs ? "Oběžná zásoba" : "Circulating Supply", color: "#eab308", unit: "ZION", formatFn: formatSI },
-  blocksize: { label: cs ? "Velikost bloku" : "Block Size", color: "#a855f7", unit: "B", formatFn: formatBytes },
-  txcount: { label: cs ? "TX / blok" : "TX / Block", color: "#14b8a6", unit: "tx" },
+  hashrate:   { label: cs ? "Hashrate" : "Hashrate", color: "#06b6d4", unit: "H/s", formatFn: formatHashrate },
+  blocktime:  { label: cs ? "Čas bloku" : "Block Time", color: "#22c55e", unit: "s" },
+  emission:   { label: cs ? "Oběžná zásoba" : "Circulating Supply", color: "#eab308", unit: "ZION", formatFn: formatSI },
+  blocksize:  { label: cs ? "Velikost bloku" : "Block Size", color: "#a855f7", unit: "B", formatFn: formatBytes },
+  txcount:    { label: cs ? "TX / blok" : "TX / Block", color: "#14b8a6", unit: "tx" },
 });
 
 const getTimeRanges = (cs: boolean): { value: TimeRange; label: string }[] => [
@@ -39,109 +41,176 @@ const getTimeRanges = (cs: boolean): { value: TimeRange; label: string }[] => [
 export default function ExplorerCharts() {
   const { lang } = useLang();
   const cs = lang === "cs";
+  const [multiView, setMultiView] = useState(true);
   const [activeChart, setActiveChart] = useState<ChartType>("hashrate");
   const [activeRange, setActiveRange] = useState<TimeRange>("24h");
-  const [chartData, setChartData] = useState<ChartData | null>(null);
+  const [chartData, setChartData] = useState<Record<ChartType, ChartData | null>>({
+    difficulty: null, hashrate: null, blocktime: null, emission: null, blocksize: null, txcount: null,
+  });
   const [loading, setLoading] = useState(true);
 
-  const fetchChart = useCallback(async () => {
+  const fetchAll = useCallback(async () => {
     setLoading(true);
-    try {
-      const data = await apiClient<ChartData>(`/blockchain/charts?type=${activeChart}&range=${activeRange}`);
-      setChartData(data);
-    } catch { setChartData(null); }
-    finally { setLoading(false); }
-  }, [activeChart, activeRange]);
+    const typesToFetch = multiView ? CHART_ORDER : [activeChart];
+    const results = await Promise.all(
+      typesToFetch.map(async (type) => {
+        try {
+          const data = await apiClient<ChartData>(`/blockchain/charts?type=${type}&range=${activeRange}`);
+          return { type, data } as { type: ChartType; data: ChartData };
+        } catch {
+          return { type, data: null } as { type: ChartType; data: ChartData | null };
+        }
+      })
+    );
+    setChartData((prev) => {
+      const next = { ...prev };
+      results.forEach((r) => { next[r.type] = r.data; });
+      return next;
+    });
+    setLoading(false);
+  }, [activeChart, activeRange, multiView]);
 
-  useEffect(() => { fetchChart(); }, [fetchChart]);
+  useEffect(() => { fetchAll(); }, [fetchAll]);
 
   const chartConfig = getChartConfig(cs);
   const timeRanges = getTimeRanges(cs);
-  const config = chartConfig[activeChart];
 
   return (
     <div className="rounded-[28px] bg-black/60 backdrop-blur-2xl border border-white/[0.08] overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-6 pt-6 pb-4">
+      <div className="flex items-center justify-between px-6 pt-6 pb-4 flex-wrap gap-3">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center">
             <BarChart3 className="w-4.5 h-4.5 text-purple-400" />
           </div>
           <div>
             <h2 className="text-base font-semibold text-white">{cs ? "Grafy sítě" : "Network Charts"}</h2>
-            <p className="text-[11px] text-white/30">{chartData?.data_points || 0} {cs ? "datových bodů" : "data points"}</p>
+            <p className="text-[11px] text-white/30">
+              {multiView ? (cs ? "Multi-chart dashboard" : "Multi-chart dashboard") : `${chartConfig[activeChart].label} · ${chartData[activeChart]?.data_points || 0} ${cs ? "datových bodů" : "data points"}`}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {/* View toggle */}
+          <button
+            onClick={() => setMultiView((m) => !m)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] rounded-lg border border-white/[0.08] bg-white/[0.04] hover:bg-white/[0.08] transition-colors text-white/50 hover:text-white/80"
+            title={multiView ? (cs ? "Jeden graf" : "Single chart") : (cs ? "Multi-graf" : "Multi-chart")}
+          >
+            {multiView ? <Minimize2 className="w-3.5 h-3.5" /> : <LayoutGrid className="w-3.5 h-3.5" />}
+            {multiView ? (cs ? "Jeden" : "Single") : (cs ? "Dashboard" : "Dashboard")}
+          </button>
+          {/* Time ranges */}
+          <div className="flex gap-0.5">
+            {timeRanges.map((range) => (
+              <button
+                key={range.value}
+                onClick={() => setActiveRange(range.value)}
+                className={`px-3 py-1 text-[11px] rounded-md transition-all ${
+                  activeRange === range.value
+                    ? "bg-white/[0.10] text-white font-semibold"
+                    : "text-white/30 hover:text-white/60"
+                }`}
+              >
+                {range.label}
+              </button>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* Chart type pills */}
-      <div className="flex flex-wrap gap-1.5 px-6 pb-3">
-        {(Object.keys(chartConfig) as ChartType[]).map((type) => (
-          <button
-            key={type}
-            onClick={() => setActiveChart(type)}
-            className={`px-3 py-1.5 text-[11px] font-medium rounded-lg transition-all ${
-              activeChart === type
-                ? "bg-white/[0.12] text-white border border-white/[0.12]"
-                : "text-white/40 hover:text-white/70 hover:bg-white/[0.04]"
-            }`}
-          >
-            {chartConfig[type].label}
-          </button>
-        ))}
-      </div>
+      {!multiView && (
+        /* Single chart type pills */
+        <div className="flex flex-wrap gap-1.5 px-6 pb-3">
+          {(Object.keys(chartConfig) as ChartType[]).map((type) => (
+            <button
+              key={type}
+              onClick={() => setActiveChart(type)}
+              className={`px-3 py-1.5 text-[11px] font-medium rounded-lg transition-all ${
+                activeChart === type
+                  ? "bg-white/[0.12] text-white border border-white/[0.12]"
+                  : "text-white/40 hover:text-white/70 hover:bg-white/[0.04]"
+              }`}
+            >
+              {chartConfig[type].label}
+            </button>
+          ))}
+        </div>
+      )}
 
-      {/* Time range pills */}
-      <div className="flex gap-0.5 px-6 pb-5">
-        {timeRanges.map((range) => (
-          <button
-            key={range.value}
-            onClick={() => setActiveRange(range.value)}
-            className={`px-3 py-1 text-[11px] rounded-md transition-all ${
-              activeRange === range.value
-                ? "bg-white/[0.10] text-white font-semibold"
-                : "text-white/30 hover:text-white/60"
-            }`}
-          >
-            {range.label}
-          </button>
-        ))}
-      </div>
+      {/* Charts area */}
+      {multiView ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-white/[0.04]">
+          {CHART_ORDER.map((type) => {
+            const data = chartData[type];
+            const config = chartConfig[type];
+            return (
+              <div key={type} className="bg-black/60 p-4 relative h-56">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[11px] font-medium text-white/60">{config.label}</span>
+                  {data && data.data.values.length > 0 && (
+                    <span className="text-[10px] text-white/30 tabular-nums">
+                      {(config.formatFn || String)(data.data.values[data.data.values.length - 1])} {config.unit}
+                    </span>
+                  )}
+                </div>
+                {loading && !data ? (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-5 h-5 border-2 border-white/10 border-t-white/40 rounded-full animate-spin" />
+                  </div>
+                ) : data && data.data.values.length > 0 ? (
+                  <MiniChart
+                    values={data.data.values}
+                    labels={data.data.labels}
+                    color={config.color}
+                    formatFn={config.formatFn}
+                    unit={config.unit}
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-white/15 gap-1">
+                    <TrendingUp className="h-5 w-5" />
+                    <p className="text-[11px]">{cs ? "Data nejsou dostupná" : "No data"}</p>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="relative h-72 px-2">
+          {loading && !chartData[activeChart] ? (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-6 h-6 border-2 border-white/10 border-t-white/40 rounded-full animate-spin" />
+            </div>
+          ) : chartData[activeChart] && chartData[activeChart]!.data.values.length > 0 ? (
+            <FullChart
+              values={chartData[activeChart]!.data.values}
+              labels={chartData[activeChart]!.data.labels}
+              color={chartConfig[activeChart].color}
+              formatFn={chartConfig[activeChart].formatFn}
+              unit={chartConfig[activeChart].unit}
+            />
+          ) : (
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-white/20 gap-2">
+              <TrendingUp className="h-8 w-8" />
+              <p className="text-sm">{cs ? "Data nejsou dostupná" : "No data available"}</p>
+            </div>
+          )}
+        </div>
+      )}
 
-      {/* Chart area */}
-      <div className="relative h-72 px-2">
-        {loading ? (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-6 h-6 border-2 border-white/10 border-t-white/40 rounded-full animate-spin" />
-          </div>
-        ) : chartData && chartData.data.values.length > 0 ? (
-          <SVGChart
-            values={chartData.data.values}
-            labels={chartData.data.labels}
-            color={config.color}
-            formatFn={config.formatFn}
-            unit={config.unit}
-          />
-        ) : (
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-white/20 gap-2">
-            <TrendingUp className="h-8 w-8" />
-            <p className="text-sm">{cs ? "Data nejsou dostupná" : "No data available"}</p>
-          </div>
-        )}
-      </div>
-
-      {/* Summary bar */}
-      {chartData && chartData.data.values.length > 0 && (
+      {/* Summary bar (single view only) */}
+      {!multiView && chartData[activeChart] && chartData[activeChart]!.data.values.length > 0 && (
         <div className="grid grid-cols-3 border-t border-white/[0.06]">
           {[
-            { label: cs ? "Min" : "Min", value: Math.min(...chartData.data.values), color: "text-cyan-400" },
-            { label: cs ? "Průměr" : "Avg", value: chartData.data.values.reduce((a, b) => a + b, 0) / chartData.data.values.length, color: "text-white" },
-            { label: cs ? "Max" : "Max", value: Math.max(...chartData.data.values), color: "text-zion-gold" },
+            { label: cs ? "Min" : "Min", value: Math.min(...chartData[activeChart]!.data.values), color: "text-cyan-400" },
+            { label: cs ? "Průměr" : "Avg", value: chartData[activeChart]!.data.values.reduce((a, b) => a + b, 0) / chartData[activeChart]!.data.values.length, color: "text-white" },
+            { label: cs ? "Max" : "Max", value: Math.max(...chartData[activeChart]!.data.values), color: "text-zion-gold" },
           ].map((s, i) => (
             <div key={s.label} className={`text-center py-4 ${i < 2 ? "border-r border-white/[0.06]" : ""}`}>
               <p className="text-[10px] uppercase tracking-[0.15em] text-white/30 mb-1">{s.label}</p>
               <p className={`text-sm font-semibold tabular-nums ${s.color}`}>
-                {(config.formatFn || String)(s.value)}
+                {(chartConfig[activeChart].formatFn || String)(s.value)}
               </p>
             </div>
           ))}
@@ -151,9 +220,70 @@ export default function ExplorerCharts() {
   );
 }
 
-// ─── SVG Chart Component ─────────────────────────────────────
+// ─── Mini Chart (multi-view) ─────────────────────────────────
 
-function SVGChart({ values, labels, color, formatFn, unit }: {
+function MiniChart({ values, labels, color, formatFn, unit }: {
+  values: number[]; labels: string[]; color: string; formatFn?: (v: number) => string; unit: string;
+}) {
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+
+  const W = 400, H = 140;
+  const PAD = { top: 8, right: 8, bottom: 16, left: 48 };
+  const chartW = W - PAD.left - PAD.right;
+  const chartH = H - PAD.top - PAD.bottom;
+
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = max - min || 1;
+
+  const points = values.map((v, i) => ({
+    x: PAD.left + (i / Math.max(values.length - 1, 1)) * chartW,
+    y: PAD.top + chartH - ((v - min) / range) * chartH,
+    value: v,
+    label: labels[i],
+  }));
+
+  const pathD = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
+  const areaD = `${pathD} L ${points[points.length - 1].x} ${PAD.top + chartH} L ${points[0].x} ${PAD.top + chartH} Z`;
+  const fmt = formatFn || ((v: number) => v.toFixed(1));
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-full" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id={`miniGrad-${color.replace('#', '')}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.2" />
+          <stop offset="100%" stopColor={color} stopOpacity="0.02" />
+        </linearGradient>
+      </defs>
+      <path d={areaD} fill={`url(#miniGrad-${color.replace('#', '')})`} />
+      <path d={pathD} fill="none" stroke={color} strokeWidth="1.5" strokeLinejoin="round" opacity="0.9" />
+      {/* Y axis labels (2) */}
+      <text x={PAD.left - 4} y={PAD.top + 3} textAnchor="end" fill="rgba(255,255,255,0.15)" fontSize="6" fontFamily="monospace">{fmt(max)}</text>
+      <text x={PAD.left - 4} y={PAD.top + chartH + 3} textAnchor="end" fill="rgba(255,255,255,0.15)" fontSize="6" fontFamily="monospace">{fmt(min)}</text>
+      {/* Hover */}
+      {points.map((p, i) => (
+        <g key={i}>
+          <rect x={p.x - chartW / values.length / 2} y={PAD.top} width={chartW / values.length} height={chartH} fill="transparent"
+            onMouseEnter={() => setHoveredIndex(i)} onMouseLeave={() => setHoveredIndex(null)} />
+          {hoveredIndex === i && (
+            <>
+              <line x1={p.x} x2={p.x} y1={PAD.top} y2={PAD.top + chartH} stroke="rgba(255,255,255,0.08)" strokeDasharray="2" />
+              <circle cx={p.x} cy={p.y} r="3" fill={color} stroke="rgba(0,0,0,0.6)" strokeWidth="1.5" />
+              <rect x={Math.min(p.x - 40, W - 84)} y={Math.max(p.y - 24, 2)} width="80" height="18" rx="4" fill="rgba(0,0,0,0.9)" stroke={color} strokeWidth="0.5" />
+              <text x={Math.min(p.x, W - 42)} y={Math.max(p.y - 12, 12)} textAnchor="middle" fill="white" fontSize="7" fontWeight="600" fontFamily="monospace">
+                {fmt(p.value)} {unit}
+              </text>
+            </>
+          )}
+        </g>
+      ))}
+    </svg>
+  );
+}
+
+// ─── Full Chart (single view) ─────────────────────────────────
+
+function FullChart({ values, labels, color, formatFn, unit }: {
   values: number[]; labels: string[]; color: string; formatFn?: (v: number) => string; unit: string;
 }) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
