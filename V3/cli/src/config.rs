@@ -58,6 +58,7 @@ pub struct NodeConfig {
     pub rpc_host: String,
     pub rpc_port: u16,
     pub p2p_port: u16,
+    pub websocket_port: Option<u16>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -115,6 +116,7 @@ impl Default for NodeConfig {
             rpc_host: "204.168.245.175".into(),
             rpc_port: 8443,
             p2p_port: 8334,
+            websocket_port: Some(8445),
         }
     }
 }
@@ -241,6 +243,7 @@ pub fn set_value(key: &str, value: &str) -> Result<()> {
         ["node", "rpc_host"] => cfg.node.rpc_host = value.into(),
         ["node", "rpc_port"] => cfg.node.rpc_port = value.parse()?,
         ["node", "p2p_port"] => cfg.node.p2p_port = value.parse()?,
+        ["node", "websocket_port"] => cfg.node.websocket_port = Some(value.parse()?),
         ["pool", "host"] => cfg.pool.host = value.into(),
         ["pool", "port"] => cfg.pool.port = value.parse()?,
         ["miner", "wallet"] => cfg.miner.wallet = value.into(),
@@ -298,7 +301,7 @@ pub fn set_value(key: &str, value: &str) -> Result<()> {
         ["bridge", "port"] => cfg.bridge.port = value.parse()?,
         ["dao", "port"] => cfg.dao.port = value.parse()?,
         ["cli", "auto_update_check"] => cfg.cli.auto_update_check = value.parse()?,
-        _ => anyhow::bail!("Unknown config key: {}. Valid keys: node.rpc_host, node.rpc_port, node.p2p_port, pool.host, pool.port, miner.wallet, miner.btc_wallet, miner.threads, miner.backend, miner.profile, agent.url, agent.model, hiran.model_path, hiran.backend, hiran.device, hiran.port, hiran.max_context, hiran.temperature, hiran.top_p, deploy.ssh_key, deploy.ssh_user, deploy.default_server, bridge.port, dao.port, cli.auto_update_check", key),
+        _ => anyhow::bail!("Unknown config key: {}. Valid keys: node.rpc_host, node.rpc_port, node.p2p_port, node.websocket_port, pool.host, pool.port, miner.wallet, miner.btc_wallet, miner.threads, miner.backend, miner.profile, agent.url, agent.model, hiran.model_path, hiran.backend, hiran.device, hiran.port, hiran.max_context, hiran.temperature, hiran.top_p, deploy.ssh_key, deploy.ssh_user, deploy.default_server, bridge.port, dao.port, cli.auto_update_check", key),
     }
     save(&cfg)?;
     println!("✓ {} = {}", key, value);
