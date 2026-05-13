@@ -3,7 +3,7 @@
  * Requires Electron's main process context.
  */
 
-import { StorageInterface } from './storage-interface';
+import { StorageInterface } from './storage-interface.js';
 
 export class ElectronStorage implements StorageInterface {
   private safeStorage: { encryptString: (text: string) => Buffer; decryptString: (buffer: Buffer) => string } | null = null;
