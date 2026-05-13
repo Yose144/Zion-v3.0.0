@@ -14,6 +14,7 @@ import {
   Star,
   Wallet,
   XCircle,
+  Layers,
 } from "lucide-react";
 import { apiClient } from "@/lib/api";
 import { useLang } from '@/contexts/LanguageContext';
@@ -92,6 +93,14 @@ interface AddressData {
     timestamp: number;
     status: string;
   }>;
+  utxos: Array<{
+    tx_hash: string;
+    output_index: number;
+    amount: number;
+    address: string;
+    height: number;
+  }>;
+  transaction_model: string;
 }
 
 const consciousnessMap: Record<string, { bg: string; border: string; text: string; glow: string; icon: typeof Star }> = {
@@ -348,6 +357,57 @@ export default function AddressDetailClient() {
             })
           )}
         </div>
+
+        {/* ── UTXO list (only for UTXO-model addresses) ────── */}
+        {data.transaction_model === 'utxo' && (
+          <div className="zion-panel rounded-[28px] bg-black/60 overflow-hidden mt-6">
+            <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-white/70 flex items-center gap-2">
+                <Layers className="w-4 h-4 text-zion-cyan" />
+                {cs ? 'UTXO seznam' : 'UTXO List'} ({data.utxos.length})
+              </h2>
+              <span className="text-[10px] text-white/30 uppercase tracking-wider">
+                {cs ? 'Celkem' : 'Total'} {data.utxos.reduce((s, u) => s + u.amount, 0).toFixed(4)} ZION
+              </span>
+            </div>
+
+            {/* table header */}
+            <div className="grid grid-cols-[60px_1fr_80px_100px_100px] gap-3 px-5 py-2.5 border-b border-white/[0.04]">
+              <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">#</span>
+              <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium">TX Hash</span>
+              <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">{cs ? 'Index' : 'Index'}</span>
+              <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">{cs ? 'Vyska' : 'Height'}</span>
+              <span className="text-[10px] uppercase tracking-[0.15em] text-white/30 font-medium text-right">{cs ? 'Castka' : 'Amount'}</span>
+            </div>
+
+            {data.utxos.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 gap-2">
+                <p className="text-white/20 text-sm">{cs ? 'Zadne UTXO nenalezeny' : 'No UTXOs found'}</p>
+              </div>
+            ) : (
+              data.utxos.map((u, idx) => (
+                <Link
+                  key={`${u.tx_hash}_${u.output_index}`}
+                  href={`/explorer/tx?hash=${encodeURIComponent(u.tx_hash)}`}
+                  className="grid grid-cols-[60px_1fr_80px_100px_100px] gap-3 px-5 py-3 border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors group"
+                >
+                  <div className="flex items-center text-[12px] text-white/40 tabular-nums">{idx + 1}</div>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-[13px] font-mono text-cyan-300 group-hover:text-cyan-200 truncate transition-colors">
+                      {u.tx_hash.slice(0, 16)}…{u.tx_hash.slice(-8)}
+                    </span>
+                    <CopyBtn text={u.tx_hash} />
+                  </div>
+                  <div className="flex items-center justify-end text-[12px] text-white/40 tabular-nums font-mono">{u.output_index}</div>
+                  <div className="flex items-center justify-end text-[12px] text-white/40 tabular-nums font-mono">{u.height > 0 ? u.height.toLocaleString(locale) : '—'}</div>
+                  <div className="flex items-center justify-end text-[13px] font-semibold tabular-nums text-emerald-400">
+                    {u.amount.toFixed(4)} ₿Z
+                  </div>
+                </Link>
+              ))
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
