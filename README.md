@@ -4,7 +4,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-> **Status (April 2026):** V3 mainnet is live on 3 servers (Prague, USA, Singapore). L2 wZION bridge to Base is operational. DeFi roadmap active - see [docs/DEFI_FULL_ROADMAP.md](docs/DEFI_FULL_ROADMAP.md).  
+> **Status (May 2026):** V3 mainnet live on Prague node (height 26,910+). L2 wZION bridge to Base operational (lock→relay→mint + burn→unlock). DeFi/Explorer stack fully deployed — see [DEFI_ROADMAP.md](DEFI_ROADMAP.md).  
 > Active development: [V3/](V3/) - clean-room mainnet code. Legacy root tree is reference/archive only.
 
 ---
@@ -226,33 +226,36 @@ cargo run --release --manifest-path V3/Cargo.toml -p zion-core --bin wallet
 
 ---
 
-## Current Status (April 2026)
+## Current Status (May 2026)
 
 > 🎯 **MainNet target: December 31, 2026**
 
 ### Live ✅
 
-- [x] V3 clean-room mainnet running on 3 servers (Prague, USA, Singapore)
-- [x] CHv3 PoW consensus — single Deeksha canonical path
+- [x] V3 clean-room mainnet running on Prague node (height 26,910+)
+- [x] CHv3 PoW consensus — single Deeksha canonical path (TX_HASH_V2 + BODY_ROOT_V2 from genesis)
 - [x] Mining pool with PPLNS, fee-split (89/5/5/1), LWMA DAA
 - [x] Decade Decay emission — `reward.rs` implementation
-- [x] L2 wZION bridge to Base — lock → relay → mint operational
+- [x] L2 wZION bridge to Base — lock→relay→mint + burn→unlock both operational
+- [x] Bridge validator 3/5 multisig config (production-ready, HSM placeholders)
 - [x] Smart contracts deployed on Base (wZION, ZIONBridge, ZIONStaking, ZIONGovernance, ZIONFarm)
-- [x] Website with block explorer (blocks, TX, addresses, richlist)
+- [x] Website with block explorer (blocks, TX, addresses, richlist, search)
+- [x] **Explorer Pro** — Bridge tracker, Mempool viewer, Network stats, Supply dashboard, UTXO view
+- [x] **DeFi Hub** — Swap widget, Bridge burn widget, Staking/DAO/Farming pages, live price feed
+- [x] Swap Aggregator backend (Rust/Axum — quote/swap/status API + SQLite pipeline orchestration)
 - [x] Desktop agent (Electron) — mining GUI + wallet
 - [x] Mobile app (React Native + Expo) — 9 screens
 - [x] ZION Wallet SDK (TypeScript) — unified address/keypair/crypto/tx/RPC across web, desktop, mobile
 - [x] 6-Layer "On the Star" architecture
-- [x] 1,300+ tests passing, 157 bridge tests
+- [x] 1,470+ tests passing, 157+ bridge tests, E2E burn→unlock coverage
 
 ### In Progress ⏳
 
-- [ ] Bridge hardening (3/5 multisig, rate limits, monitoring)
-- [ ] HTTP REST wrapper for node RPC
-- [ ] DEX/Swap integration (Uniswap V3 liquidity)
-- [ ] Explorer upgrade (real-time WebSocket, search)
+- [ ] Bridge monitoring dashboard (Grafana)
+- [ ] Uniswap V3 seed liquidity (wZION/WETH)
 - [ ] Desktop/Mobile bridge + swap UX
 - [ ] 3rd party security audit (Q3 2026)
+- [ ] Best-route calculation (multi-hop swap aggregator)
 
 ### Roadmaps
 
