@@ -27,7 +27,7 @@
 - **✅ Supply dashboard** (circulating, locked, staked, burned) — `/explorer/supply` stránka s donut chart, emisními progress bary, Decade Decay tabulkou a live updates
 - **✅ Staking dashboard** (APR, rewards history) — `/defi/staking` stránka s info o 12% APR, 7d cooldown, stake/unstake UI placeholder a contract link
 - **✅ DAO proposals UI** (governance voting) — `/defi/dao` stránka s proposal list, voting bars, quorum progress a contract link
-- **✅ Explorer upgrade** (search, TX history, UTXO view) — Search upgrade hotovo, zbývá TX history a UTXO view
+- **✅ Explorer upgrade** (search, TX history, UTXO view) — `/explorer/search` jednotné hledání, TX history na `/explorer/address`, UTXO list pro zion1 adresy
 
 ## 🎯 Priority Matrix
 
@@ -36,8 +36,8 @@ Tyto úkoly musí být hotové před veřejným oznámením:
 
 | Úkol | Oblast | Odhad | Status | Poznámky |
 |------|--------|-------|--------|-----------|
-| Bridge validator 3/5 multisig | Bridge | 3 dny | ⬜ | Bezpečnostní upgrade |
-| Burn→Unlock E2E test | Bridge | 2 dny | ⬜ | Reverse bridge směr |
+| Bridge validator 3/5 multisig | Bridge | 3 dny | ✅ | `bridge-mainnet.toml` — threshold=3, total=5, placeholder addresses |
+| Burn→Unlock E2E test | Bridge | 2 dny | ✅ | `bridge_integration.rs` — `test_e2e_burn_to_unlock_request` |
 | WebSocket subscriptions (WS) | Backend | 4 dny | ✅ DOKONČENO | new blocks, pending TX streaming (2026-05-13) |
 | Bridge Tracker UI | Explorer | ✅ DOKONČENO | `/explorer/bridge` — relay metrics, L1↔Base pipeline viz, contract links |
 
@@ -56,15 +56,15 @@ Tyto úkoly musí být hotové před veřejným oznámením:
 |------|--------|-------|--------|
 | Staking dashboard | DeFi UI | ✅ DOKONČENO | `/defi/staking` — 12% APR info, stake/unstake UI placeholder, contract link |
 | DAO proposals UI | DeFi UI | ✅ DOKONČENO | `/defi/dao` — proposal list, voting bars, quorum progress, contract link |
-| Search upgrade | Explorer | 1 den | ⬜ |
-| TradingView charts | Explorer | 2 dny | ⬜ |
+| Search upgrade | Explorer | 1 den | ✅ | `/explorer/search` — unified block/tx/address search + redirect from ProSearchBar |
+| TradingView charts | Explorer | 2 dny | ✅ | `ExplorerCharts.tsx` — multi-chart dashboard (2×2 grid) + single chart toggle |
 | Push notifications | Mobile | 2 dny | ⬜ |
 
 ## 🗺️ Implementační Plán
 
 ### Fáze 1: Bridge Hardening (1 týden)
-- [ ] Burn→Unlock E2E test (Base→L1)
-- [ ] Validator threshold upgrade (1/2 → 3/5)
+- [x] Burn→Unlock E2E test (Base→L1) — `bridge_integration.rs` `test_e2e_burn_to_unlock_request`
+- [x] Validator threshold upgrade (1/2 → 3/5) — `bridge-mainnet.toml` updated
 - [ ] Bridge monitoring dashboard (Grafana integration)
 
 ### Fáze 1: RPC + Wallet SDK (2 týdny)
