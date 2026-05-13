@@ -98,6 +98,37 @@ top_p = 0.9
 - `V3/docker/grafana/dashboards/hiran-inference-overview.json`
 - `HIRAN_V2.2_CLI_INTEGRATION.md` (dokumentace)
 
+---
+
+## Co je nového květen 2026 (DeFi + Explorer rollout)
+
+### DeFi Ecosystem — website-v2.9 kompletní stack
+
+| Komponenta | Stav | Detail |
+|---|---|---|
+| **Bridge tracker** | ✅ Hotovo | `/explorer/bridge` — live relay metrics (Prometheus), pipeline vizualizace L1↔Base, contract links |
+| **Mempool viewer** | ✅ Hotovo | `/explorer/mempool` — fee histogram, sort, search, WS live updates |
+| **Network stats** | ✅ Hotovo | `/explorer/network-stats` — 8 stat cards, sparklines, 4 area charts (hashrate, difficulty, block time, tx count) |
+| **Supply dashboard** | ✅ Hotovo | `/explorer/supply` — donut chart, emission progress, Decade Decay table, live updates |
+| **UTXO view** | ✅ Hotovo | `/explorer/address` — UTXO list pro zion1 adresy (tx_hash, output_index, height, amount) |
+| **Unified search** | ✅ Hotovo | `/explorer/search` — block/tx/address hash resolver, redirect z ProSearchBar |
+| **TradingView charts** | ✅ Hotovo | `ExplorerCharts.tsx` — 2×2 multi-chart dashboard + single-chart toggle, hover tooltips |
+| **Price feed oracle** | ✅ Hotovo | `/api/defi/price` — Uni V3 slot0 + Chainlink WETH/USD, live badge na `/defi` |
+| **Staking page** | ✅ Hotovo | `/defi/staking` — 12% APR, 7d cooldown, stake/unstake UI placeholder |
+| **DAO proposals** | ✅ Hotovo | `/defi/dao` — proposal list, voting bars, quorum progress, contract link |
+| **Farming page** | ✅ Hotovo | `/defi/farming` — farm pool cards (wZION/WETH LP, wZION staking), APR, TVL, deposit UI |
+| **Swap Aggregator backend** | ✅ Hotovo | `V3/L2/swap-aggregator/` — Rust/Axum, SQLite, quote/swap/status REST API |
+| **Bridge 3/5 multisig** | ✅ Hotovo | `bridge-mainnet.toml` — threshold=3, total=5, placeholder addresses, production checklist |
+| **Burn→Unlock E2E** | ✅ Hotovo | `bridge_integration.rs` — `test_e2e_burn_to_unlock_request`, 17/17 testů |
+
+### Výsledek
+
+- Next.js build: **72 static routes** (všechny nové stránky registrovány)
+- Bridge crate tests: **17/17 passed** (včetně nového E2E testu)
+- `DEFI_ROADMAP.md` aktualizován — všechny implementované položky označeny ✅
+
+---
+
 ### Infrastruktura — Live check 2026-05-12
 
 **Praha node (91.98.122.165) — AKTIVNÍ:**
