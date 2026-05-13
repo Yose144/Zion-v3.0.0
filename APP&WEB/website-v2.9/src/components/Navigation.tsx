@@ -46,6 +46,7 @@ export default function Navigation() {
       title: 'DeFi',
       items: [
         { href: '/defi',           label: tr('nav', 'defi', lang) },
+        { href: '/wallet',         label: 'Wallet' },
         { href: '/bridge',         label: tr('nav', 'bridge', lang) },
         { href: '/dao',            label: tr('nav', 'dao', lang) },
         { href: '/warp',           label: tr('nav', 'warp', lang) },

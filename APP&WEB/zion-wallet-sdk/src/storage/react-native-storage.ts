@@ -3,7 +3,7 @@
  * This file must be imported conditionally in React Native apps.
  */
 
-import { StorageInterface } from './storage-interface';
+import { StorageInterface } from './storage-interface.js';
 
 export class ReactNativeStorage implements StorageInterface {
   private asyncStorage: typeof import('@react-native-async-storage/async-storage').default | null = null;
