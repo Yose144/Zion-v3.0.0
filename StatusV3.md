@@ -26,7 +26,7 @@
 |---|---|
 | OpenAI API key (`sk-proj-CsUPFB…`) | ✅ **úplně zrušen** uživatelem (bez replacement) |
 | Starý GitHub PAT (`ghp_7gxI3Y…`) | ✅ revoke; nový PAT vystaven mimo repo |
-| Praha node `91.98.122.165` (deployment SSH key) | ✅ **node deprecated**; mainnet poběží na 3 nových serverech s čerstvým keysetem |
+| Praha node `91.98.122.165` (deployment SSH key) | ⚠️ **AKTIVNÍ NODE** - běží V3 mainnet (height 26,910); SSH klíče rotovány, nutná obnova přístupu; ostatní servery (US/SG/Helsinki) nedostupné |
 | `git filter-repo` history rewrite | ✅ proveden; bare backup `2.9.6-backup-20260507-2229.git` |
 | Working-tree leftovers | ✅ smazáno (ZION_KEYS, V3-src*.tar/.zip, V3_upload.zip, local-stack-*.err) |
 | Force-push `origin/main` | ✅ repo je private, fork notifikace nepotřebná |
@@ -97,6 +97,30 @@ top_p = 0.9
 - `V3/L3/ai-native/src/hiran_inference.rs` (400+ řádků)
 - `V3/docker/grafana/dashboards/hiran-inference-overview.json`
 - `HIRAN_V2.2_CLI_INTEGRATION.md` (dokumentace)
+
+### Infrastruktura — Live check 2026-05-12
+
+**Praha node (91.98.122.165) — AKTIVNÍ:**
+- ✅ Běží V3 mainnet node (height: 26,910+)
+- ✅ RPC endpoint: http://91.98.122.165:8443 (health OK)
+- ✅ Prometheus metrics: http://91.98.122.165:9115/metrics
+- ✅ Next.js website: https://91.98.122.165 (v2.9.9 branding)
+- ✅ Mining aktivní (template připraven)
+- ✅ Pool server BĚŽÍ (porty 3333 Stratum + 8080 API)
+- ✅ SSH přístup FUNKČNÍ (zion_hetzner_key)
+- ✅ Všechny služby v Dockeru (12 kontejnerů)
+- ⚠️ Isolated mode (1 peer - self only, ostatní servery nedostupné)
+
+**Ostatní servery — NEDOSTUPNÉ:**
+- ❌ US (5.78.194.94): žádná odpověď na health endpoint
+- ❌ SG (5.223.84.191): žádná odpověď na health endpoint
+- ❌ Helsinki (157.180.41.213): connection refused
+
+**Akce potřebné:**
+1. ✅ SSH přístup obnoven (zion_hetzner_key funguje)
+2. ✅ Pool server běží (0 aktivních minerů, připraven pro připojení)
+3. Konfigurace seed peers (ostatní servery nedostupné - Prague běží isolated)
+4. Deploy nebo provisioning ostatních serverů (US/SG/Helsinki)
 
 **Další kroky:**
 1. Dokončit model upload na Vast.ai (čeká se na 5.4GB)
