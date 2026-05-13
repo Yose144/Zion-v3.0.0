@@ -9,6 +9,7 @@ import { useLang } from '@/contexts/LanguageContext';
 import { SITE_RELEASE_LABEL, SITE_RUNTIME_LABEL } from '@/lib/site';
 import {
   Activity,
+  ArrowLeftRight,
   BarChart3,
   Compass,
   ExternalLink,
@@ -59,6 +60,13 @@ const getQuickLinks = (cs: boolean) => [
     href: '/explorer/mempool',
     accent: 'from-amber-500/80 to-orange-600/80',
     icon: Flame,
+  },
+  {
+    title: cs ? 'Bridge Tracker' : 'Bridge Tracker',
+    description: cs ? 'Live stav L1↔Base mostu, lock/mint/burn/unlock' : 'Live L1↔Base bridge status, lock/mint/burn/unlock',
+    href: '/explorer/bridge',
+    accent: 'from-blue-500/80 to-cyan-600/80',
+    icon: ArrowLeftRight,
   },
   {
     title: cs ? 'Sitovi peeri' : 'Network Peers',
