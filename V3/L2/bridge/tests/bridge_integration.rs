@@ -164,6 +164,96 @@ fn test_full_burn_flow_evm_to_l1() {
 }
 
 // ──────────────────────────────────────────────
+// Test: E2E Burn→Unlock request construction
+// ──────────────────────────────────────────────
+
+#[test]
+fn test_e2e_burn_to_unlock_request() {
+    let (db, _dir) = setup_db();
+
+    // Step 1: EVM watcher detects burn of 500 ZION
+    let burn = make_burn("burn_e2e_001", 500, "zion1qrecipient_unlock_e2e");
+    assert_eq!(burn.amount_flowers, 500_000_000_000_000); // 500 ZION × 1e12
+    assert_eq!(burn.l1_recipient, "zion1qrecipient_unlock_e2e");
+
+    db.insert_burn(&burn).unwrap();
+
+    // Step 2: 3-of-5 validator consensus
+    let mut tracker = ConsensusTracker::new("burn_e2e_001".into(), 3);
+    for addr in &["0xV1", "0xV2", "0xV3"] {
+        db.add_confirmation("burn", "burn_e2e_001", addr).unwrap();
+        tracker.add_confirmation(addr);
+    }
+    assert!(tracker.reached);
+
+    // Step 3: Build unlock request JSON (same logic as relayer)
+    let operation_message = format!(
+        "unlock|recipient={}|amount={}|chain={}|burn_id={}|evm_tx={}",
+        burn.l1_recipient, burn.amount_flowers, burn.evm_chain, burn.burn_id, burn.evm_tx_hash
+    );
+
+    // Simulate validator proofs (structure check)
+    let validator_proofs: Vec<serde_json::Value> = vec![
+        serde_json::json!({
+            "validator_id": "validator-1",
+            "validator_address": "0xdeadbeef00000000000000000000000000000001",
+            "signature": format!("0x{}", "a".repeat(130)),
+            "message_hash": format!("0x{}", "b".repeat(64)),
+            "synthetic": false
+        }),
+        serde_json::json!({
+            "validator_id": "validator-2",
+            "validator_address": "0xdeadbeef00000000000000000000000000000002",
+            "signature": format!("0x{}", "a".repeat(130)),
+            "message_hash": format!("0x{}", "b".repeat(64)),
+            "synthetic": false
+        }),
+        serde_json::json!({
+            "validator_id": "validator-3",
+            "validator_address": "0xdeadbeef00000000000000000000000000000003",
+            "signature": format!("0x{}", "a".repeat(130)),
+            "message_hash": format!("0x{}", "b".repeat(64)),
+            "synthetic": false
+        }),
+    ];
+
+    let unlock_request = serde_json::json!({
+        "recipient": burn.l1_recipient,
+        "amount_flowers": burn.amount_flowers,
+        "amount_wzion_wei": burn.amount_wzion_wei,
+        "evm_chain": burn.evm_chain,
+        "burn_id": burn.burn_id,
+        "evm_tx_hash": burn.evm_tx_hash,
+        "validator_proofs": validator_proofs,
+        "operation_message": operation_message,
+    });
+
+    // Step 4: Verify unlock request structure
+    assert_eq!(unlock_request["recipient"].as_str().unwrap(), "zion1qrecipient_unlock_e2e");
+    assert_eq!(unlock_request["amount_flowers"].as_u64().unwrap(), 500_000_000_000_000);
+    assert_eq!(unlock_request["evm_chain"].as_str().unwrap(), "base");
+    assert_eq!(unlock_request["burn_id"].as_str().unwrap(), "burn_e2e_001");
+    assert!(unlock_request["validator_proofs"].as_array().unwrap().len() >= 3);
+    assert!(
+        !validator_proofs.iter().any(|p| p["synthetic"].as_bool().unwrap()),
+        "no synthetic proofs allowed"
+    );
+
+    // Step 5: Verify operation_message format
+    assert!(operation_message.contains("unlock|recipient="));
+    assert!(operation_message.contains("|amount=500000000000000|"));
+    assert!(operation_message.contains("|chain=base|"));
+    assert!(operation_message.contains("|burn_id=burn_e2e_001|"));
+
+    // Step 6: Mark completed and verify DB state
+    db.update_burn_status("burn_e2e_001", BridgeStatus::Completed).unwrap();
+    let pending = db.get_pending_burns().unwrap();
+    assert_eq!(pending.len(), 0);
+    let stats = db.get_stats().unwrap();
+    assert_eq!(stats.total_operations, 1);
+}
+
+// ──────────────────────────────────────────────
 // Test: Decimal conversion roundtrip (full flow)
 // ──────────────────────────────────────────────
 
