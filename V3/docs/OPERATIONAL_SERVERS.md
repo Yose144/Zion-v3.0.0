@@ -457,4 +457,167 @@ Helsinki: ZION_SEED_PEERS="prague:8333,usa:8333,singapore:8333"
 
 ---
 
+## 🚀 MainNet Genesis #0 Launch Specifika
+
+> **Zdroj:** `docs/mainnet/MAINNET_CHECKLIST.md`, `docs/mainnet/MAINNET_CONSTITUTION.md`, `V3/docs/MAINNET_DEPLOY_RUNBOOK.md`, `StatusV3.md`
+
+### Klíčové zásady pro Genesis #0
+
+| Zásada | Popis | Zdroj |
+|--------|-------|-------|
+| **Čistý datadir** | Každý nový server musí mít **prázdný** `/data/zion/` — žádný carry-over z testnetu | `StatusV3.md` §1.4 |
+| **Nové SSH klíče** | Nepoužívat staré deployment klíče (`zion_hetzner_key` apod.) — rotovat před launch | `StatusV3.md` §1.4 |
+| **Genesis offline** | Genesis blok se vytváří **OFFLINE** a pak se deployuje na seed nody | `PHASE_7_LAUNCH.md` |
+| **TX_HASH_V2 + BODY_ROOT_V2** | Od genesis height **0** — aktivní ve všech build od května 2026 | `StatusV3.md` §2 |
+| **Chain ID** | `zion-mainnet-1` (locked) | `MAINNET_CONSTITUTION.md` §1 |
+| **Fee split 89/5/5/1** | Miner 89% / Humanitarian 5% / Issobella 5% / Pool 1% — on-chain enforced | `MAINNET_CHECKLIST.md` |
+| **No presale** | ❌ NEEXISTUJE — fair launch only | `MAINNET_CONSTITUTION.md` §4 |
+| **No admin key** | ❌ NEEXISTUJE — plně permissionless | `MAINNET_CONSTITUTION.md` §6 |
+
+### Genesis Premine — 12 Wallets
+
+> **16.28B ZION** vytvořeno v genesis bloku do 12 peněženek. **Privátní klíče musí být offline** (USB, trezor, papír).
+
+| # | Účel | Adresa | Částka | Zamčeno? |
+|---|------|--------|--------|----------|
+| 1 | OASIS Golden Egg 1 | `zion166e6v3k204h8p5w4w3a7m0x790q5m7z5z6n252p` | 1.65B | NE |
+| 2 | OASIS Golden Egg 2 | `zion1l2h8h0e3h7m6p8e297m6n624c5m7r2k364v684a` | 1.65B | NE |
+| 3 | OASIS Golden Egg 3 | `zion1e6r0q3g6t0r0v5f6h7k7c5f3v562j0v7e5e5d0a` | 1.65B | NE |
+| 4 | OASIS Golden Egg 4 | `zion1l7e4c4c5x8l440t295a7m4k5p5x8v8z7r043s23` | 1.65B | NE |
+| 5 | OASIS Golden Egg 5 | `zion1n8h2a8p386z274859833h7v6c5n687f7a6k523u` | 1.65B | NE |
+| 6 | DAO Treasury | `zion176u8r6w53768e2k04035d4d3c2z5g555n6l4r3s` | 2.50B | ANO — 1 rok |
+| 7 | DAO Grants | `zion12643n776r3m8f340484756q06485h5w4c2l405m` | 1.00B | ANO — 1 rok |
+| 8 | DAO Bootstrap | `zion1k8w734x422f3t6t536r287k2c6n3z0e05257606` | 500M | ANO — 1 rok |
+| 9 | Core Dev Fund | `zion1q540v6y4f0s4v3n0f8t740t53494z56024u645c` | 1.00B | NE |
+| 10 | Seed Nodes | `zion1h4w39686t8w376g0x0y426e775q6p2q0v698v43` | 1.00B | NE |
+| 11 | Genesis Creator | `zion1x638z5x6d2d0y6u3f7y8g7j56054a4a2a2c7l8f` | 590M | NE |
+| 12 | Children Future Fund | `zion1m4v5z8z850u480c5c208z274e334369275n5y20` | 1.44B | NE |
+
+> **Soubor `PREMINE_WALLETS_BACKUP.json`** obsahuje privátní klíče. **Nikdy na serveru, vždy offline.** BFG scrub před zveřejněním repa.
+
+### Node Runtime Env Variables (required for fee split)
+
+Každý `zion-core` kontejner MUSÍ mít tyto env vars (live env inside container, ne jen v compose file):
+
+```bash
+ZION_MINER_ADDRESS=zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3
+ZION_HUMANITARIAN_WALLET=zion1m4v5z8z850u480c5c208z274e334369275n5y20
+ZION_ISSOBELLA_WALLET=zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702
+ZION_POOL_FEE_WALLET=zion1p2a7a5q0t2z5z545y6m6j5e864n002v4z6w95w5
+```
+
+> **Chyba z 2026-03-28:** Pool měl fee-wallet env vars, ale node je neměl → single-output coinbase blocks. Vždy ověřit live env uvnitř `zion-core` containeru.
+
+### Launch Sequence (T-0)
+
+```
+T-7 days:   Code freeze — tag v2.9.5-mainnet, build binaries + Docker images
+T-3 days:   Pre-announcement (Discord, Twitter, Telegram, blog)
+T-1 day:    Final checks — seed nodes ready, pool ready, explorer ready, monitoring ready
+T-30min:    Genesis block creation OFFLINE
+T-15min:    Deploy genesis to all seed nodes
+T-5min:     Announce genesis hash
+T-0:        🌟 GENESIS TIME — mining opens
+T+1min:     First block expected
+T+10min:    Chain stability check
+T+1hr:      Launch announcement
+```
+
+### Post-Deploy Verification (mandatory)
+
+```bash
+# 1. Live env inside every zion-core
+for host in $NODES; do
+  ssh root@$host "docker exec zion-v3-node env | grep '^ZION_' | grep -E 'MINER|HUMANITARIAN|ISSOBELLA|POOL_FEE'"
+done
+
+# 2. Cross-node chain health
+for host in $NODES; do
+  ssh root@$host "echo '{\"jsonrpc\":\"2.0\",\"method\":\"getChainInfo\",\"params\":[],\"id\":1}' | nc -w 2 127.0.0.1 8443"
+done
+# → all nodes must agree on chain_height and tip_hash
+
+# 3. First proof block
+# Wait for block #1, then:
+echo '{"jsonrpc":"2.0","method":"getBlockByHeight","params":[1],"id":1}' | nc -w 2 127.0.0.1 8443
+# → verify: 4 coinbase transactions, amounts sum to subsidy, addresses populated
+
+# 4. Pool & miner sanity
+curl -s http://localhost:8080/stats | head -c 200
+# → accepted shares flowing
+
+# 5. Non-primary node audit
+# Same checks on USA, Singapore, Helsinki — no divergence, no validation failures
+```
+
+### Immutable Parameters (locked)
+
+| Parametr | Hodnota | Status |
+|----------|---------|--------|
+| Chain ID | `zion-mainnet-1` | 🔒 |
+| Total Supply | 144,000,000,000 ZION | 🔒 |
+| Initial Block Reward | 5,400.067 ZION | 🔒 |
+| Block Time | 60 s | 🔒 |
+| DAA | LWMA, window 60, ±25% | 🔒 |
+| Max Reorg | 10 blocks | 🔒 |
+| Soft Finality | 60 blocks | 🔒 |
+| Fee Policy | 100% burn (deflationary) | 🔒 |
+| Consensus | PoW Cosmic Harmony v3 | 🔒 |
+
+### Open Blockers před Launch
+
+| Blocker | Status | Poznámka |
+|---------|--------|----------|
+| Genesis block vytvořen OFFLINE | ⬜ | Nutné — ručně nebo skriptem |
+| `MAINNET_EXIT_CRITERIA.md` sign-off | ⬜ | DRAFT, potřeba schválení |
+| CI launch-gating workflow | ⬜ | `mainnet_correctness_suite` |
+| BFG repo scrub (premine keys) | ✅ | `git filter-repo` proveden 2026-05-07 |
+| 3rd party security audit | ⬜ | Q3 2026 |
+| Docker images published | ⬜ | Registry + SHA256 checksums |
+| 72h rehearsal closure report | ⬜ | Restart / recovery appendix |
+
+---
+
+## Multi-Host Role Map (Future)
+
+| Server | Location | Role | Porty navíc | Poznámka |
+|--------|----------|------|-------------|----------|
+| **Prague (EU)** | `91.98.122.165` | Core + Pool + Web + Bridge + AI | — | Hlavní, běží všechno |
+| **USA** | `5.78.194.94` | Core + Pool | 3333, 8080 | Miner pool pro US region |
+| **Singapore** | `5.223.84.191` | Core + Pool | 3333, 8080 | Miner pool pro APAC region |
+| **Helsinki** | `157.180.41.213` | Core + Seed | 8335 | Backup seed node |
+
+### Seed Peer Konfigurace (per host)
+
+```bash
+# Prague
+ZION_SEED_PEERS="5.78.194.94:8333,5.223.84.191:8333,157.180.41.213:8333"
+
+# USA
+ZION_SEED_PEERS="91.98.122.165:8333,5.223.84.191:8333,157.180.41.213:8333"
+
+# Singapore
+ZION_SEED_PEERS="91.98.122.165:8333,5.78.194.94:8333,157.180.41.213:8333"
+
+# Helsinki
+ZION_SEED_PEERS="91.98.122.165:8333,5.78.194.94:8333,5.223.84.191:8333"
+```
+
+> **Pravidlo:** Každý host v `ZION_SEED_PEERS` nesmí obsahovat vlastní public IP:port.
+
+---
+
+## Bezpečnostní Checklist
+
+- [ ] **Premine klíče** — offline (USB ×2 + papír), nikdy na serveru
+- [ ] **SSH klíče** — nové pro každý server, žádné staré deployment klíče
+- [ ] **Firewall** — `ufw allow` jen potřebné porty (22, 3000, 3333, 8080, 8001, 8335, 8448, 9090, 9093, 3001, 9100, 9101, 9121)
+- [ ] **Repo scrub** — `git filter-repo` + force-push hotovo 2026-05-07 ✅
+- [ ] **Docker images** — build z release tagu, ne z `main`
+- [ ] **Node jako non-root** — uživatel `zion`, ne `root`
+- [ ] **RPC port 8443** — nikdy neotevírat do internetu (pouze localhost + Docker síť)
+
+---
+
 *Vygenerováno květen 2026 z aktuální provozní topologie Praha serveru (91.98.122.165).*
+*Dokument slouží jako blueprint pro nasazení identické konfigurace na nové servery před mainnet Genesis #0.*
