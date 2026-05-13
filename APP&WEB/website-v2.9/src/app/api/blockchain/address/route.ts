@@ -22,15 +22,15 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch blockchain balance (authoritative) + pool mining stats in parallel
-    const [chainBalance, minerData] = await Promise.all([
-      rpc.getAddressBalance(address).catch(() => null),
+    const [walletSnapshot, minerData] = await Promise.all([
+      rpc.getWalletSnapshot(address).catch(() => null),
       rpc.getMinerInfo(address).catch(() => null),
     ]);
 
     // Build address info — chain balance is the real balance
-    const balanceZion = chainBalance?.balance_zion ?? 0;
-    const balanceAtomic = chainBalance?.balance_atomic ?? 0;
-    const utxoCount = chainBalance?.utxo_count ?? 0;
+    const balanceZion = walletSnapshot?.balance_zion ?? 0;
+    const balanceAtomic = walletSnapshot?.balance_atomic ?? 0;
+    const utxoCount = walletSnapshot?.utxo_count ?? 0;
 
     const balance = {
       total: balanceZion,
@@ -41,6 +41,9 @@ export async function GET(request: NextRequest) {
       pool_locked: minerData?.balance?.locked || 0,
       pool_paid: minerData?.balance?.paid || 0,
     };
+
+    // UTXO list (for zion1 addresses)
+    const utxoList = walletSnapshot?.utxos ?? [];
 
     const payouts = minerData?.recent_payouts || [];
     const transactions = payouts.map((p: any, idx: number) => ({
@@ -85,6 +88,10 @@ export async function GET(request: NextRequest) {
       // Transactions
       transactions,
       recent_transactions: transactions.slice(0, 10),
+
+      // UTXO list
+      utxos: utxoList,
+      transaction_model: walletSnapshot?.transaction_model ?? (address.startsWith('zion1') ? 'utxo' : 'account'),
     };
 
     return NextResponse.json(addressInfo, {
