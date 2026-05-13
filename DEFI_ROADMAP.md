@@ -27,7 +27,7 @@
 - **✅ Supply dashboard** (circulating, locked, staked, burned) — `/explorer/supply` stránka s donut chart, emisními progress bary, Decade Decay tabulkou a live updates
 - **✅ Staking dashboard** (APR, rewards history) — `/defi/staking` stránka s info o 12% APR, 7d cooldown, stake/unstake UI placeholder a contract link
 - **✅ DAO proposals UI** (governance voting) — `/defi/dao` stránka s proposal list, voting bars, quorum progress a contract link
-- **❌ Explorer upgrade** (search, TX history, UTXO view)
+- **✅ Explorer upgrade** (search, TX history, UTXO view) — Search upgrade hotovo, zbývá TX history a UTXO view
 
 ## 🎯 Priority Matrix
 
@@ -100,7 +100,7 @@ Tyto úkoly musí být hotové před veřejným oznámením:
 ### Fáze 6: Website + Marketing (1 týden)
 - [x] `/defi/staking` stránka — 12% APR, 7d cooldown, stake/unstake UI placeholder
 - [x] `/defi/dao` stránka — proposal list, voting bars, quorum progress
-- [ ] `/defi/farming` stránka
+- [x] `/defi/farming` stránka — farm pool list, APR, TVL, deposit UI placeholder, MasterChef v2 info
 - [ ] Technical whitepaper
 - [ ] BitcoinTalk ANN post
 - [ ] Social media assets
