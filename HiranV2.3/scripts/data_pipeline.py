@@ -675,6 +675,359 @@ class L3TechnicalCollector(BaseCollector):
         return pairs
 
 
+# =============================================================================
+# NEW: NCL Task Collector — structured Q&A from NCL source truth
+# =============================================================================
+
+class NCLTaskCollector(BaseCollector):
+    """Extracts structured NCL (Neural Compute Layer) Q&A pairs from Rust source."""
+    name = "ncl_tasks"
+
+    # Source truth: V3/L3/ncl/src/*.rs and V3/L1/cosmic-harmony/src/ncl_integration.rs
+    NCL_SOURCE_FILES = [
+        (V3_DIR / "L3" / "ncl" / "src" / "types.rs", "types"),
+        (V3_DIR / "L3" / "ncl" / "src" / "scheduler.rs", "scheduler"),
+        (V3_DIR / "L3" / "ncl" / "src" / "pricing.rs", "pricing"),
+        (V3_DIR / "L3" / "ncl" / "src" / "reputation.rs", "reputation"),
+        (V3_DIR / "L3" / "ncl" / "src" / "backend.rs", "backend"),
+        (V3_DIR / "L3" / "ncl" / "src" / "api.rs", "api"),
+        (V3_DIR / "L1" / "cosmic-harmony" / "src" / "ncl_integration.rs", "integration"),
+    ]
+
+    def collect(self) -> list[DataPair]:
+        pairs: list[DataPair] = []
+        for path, module in self.NCL_SOURCE_FILES:
+            if not path.exists():
+                continue
+            content = path.read_text(encoding="utf-8", errors="ignore")
+            pairs.extend(self._extract_ncl_pairs(content, str(path), module))
+        # Also add curated synthetic NCL task examples
+        pairs.extend(self._generate_ncl_curriculum())
+        return pairs
+
+    def _extract_ncl_pairs(self, code: str, source: str, module: str) -> list[DataPair]:
+        pairs = []
+
+        # 1. NclTaskType variants and base rewards (from types.rs + integration)
+        if module in ("types", "integration"):
+            task_types = [
+                ("LlmInference", "0.01", "Text generation / LLM inference"),
+                ("ImageGeneration", "0.02", "Image synthesis"),
+                ("ModelTraining", "0.1", "Fine-tuning / model training"),
+                ("Embeddings", "0.001", "Vector embeddings"),
+                ("CodeAnalysis", "0.003", "Code analysis, review"),
+                ("Custom", "variable", "User-defined custom task"),
+                # From integration
+                ("ImageClassification", "0.002", "Image classification"),
+                ("SpeechToText", "0.005", "Speech-to-text transcription"),
+            ]
+            for name, reward, desc in task_types:
+                pairs.append(DataPair(
+                    instruction=f"What is the NCL task type `{name}` and what is its base reward in ZION?",
+                    output=f"NCL Task Type: {name}\nDescription: {desc}\nBase Reward: {reward} ZION\n"
+                           f"This task type is used for routing and pricing decisions in the NCL marketplace.",
+                    source=source,
+                    domain="ncl_tasks",
+                    language="en",
+                ))
+
+        # 2. ComputeBackend variants and pricing multipliers
+        if module in ("types", "pricing"):
+            backends = [
+                ("OnnxRuntime", "1.5", "ONNX Runtime (CPU/GPU) — general purpose"),
+                ("Wasm", "0.5", "WebAssembly (sandboxed) — cheapest"),
+                ("TfLite", "1.0", "TensorFlow Lite — mobile/edge"),
+                ("Custom", "2.0", "Custom native binary — most expensive"),
+            ]
+            for name, multiplier, desc in backends:
+                pairs.append(DataPair(
+                    instruction=f"What is the NCL compute backend `{name}` and what is its pricing multiplier?",
+                    output=f"Backend: {name}\nDescription: {desc}\nPricing Multiplier: {multiplier}x\n"
+                           f"The pricing engine uses this multiplier to calculate job costs relative to the base price.",
+                    source=source,
+                    domain="ncl_tasks",
+                    language="en",
+                ))
+
+        # 3. Consciousness levels (from integration — DISABLED on mainnet L1)
+        if module == "integration":
+            levels = [
+                ("Physical", 1, "1.0x", "Base level"),
+                ("Emotional", 2, "1.0x (disabled, was 1.05x)", "Reserved for L3"),
+                ("Mental", 3, "1.0x (disabled, was 1.1x)", "Reserved for L3"),
+                ("Spiritual", 4, "1.0x (disabled, was 1.25x)", "Reserved for L3"),
+                ("Cosmic", 5, "1.0x (disabled, was 1.5x)", "Reserved for L3"),
+                ("OnTheStar", 6, "1.0x (disabled, was 2.0x)", "Reserved for L3"),
+            ]
+            for name, level, multiplier, note in levels:
+                pairs.append(DataPair(
+                    instruction=f"What is the NCL consciousness level `{name}` (level {level}) and its reward multiplier on mainnet L1?",
+                    output=f"Consciousness Level: {name} (Level {level})\n"
+                           f"Reward Multiplier: {multiplier}\nNote: {note}\n"
+                           f"On mainnet L1, all consciousness levels return 1.0x (disabled). "
+                           f"Differential multipliers are reserved for future L3 activation post-mainnet.",
+                    source=source,
+                    domain="ncl_tasks",
+                    language="en",
+                ))
+
+        # 4. NCLScheduler compute split (75/25 model)
+        if module == "integration":
+            pairs.append(DataPair(
+                instruction="What is the NCL Scheduler compute split in ZION's 50/25/25 model?",
+                output="The NCL Scheduler implements a 75/25 compute split:\n"
+                       "- 75% mining: 50% ZION mining (Keccak->SHA3->Matrix->Fusion) + 25% Multi-Algo profit-switch\n"
+                       "- 25% NCL AI: inference tasks (embeddings, LLM, image gen, etc.)\n"
+                       "Bonus: Keccak & SHA3 intermediates are FREE byproducts of ZION mining (streams 2 & 3).\n"
+                       "The scheduler tracks mining_time_ms vs npu_time_ms and decides whether to accept NPU work.",
+                source=source,
+                domain="ncl_tasks",
+                language="en",
+            ))
+
+        # 5. NCLBonusCalculator reward formula
+        if module == "integration":
+            pairs.append(DataPair(
+                instruction="How does the NCL Bonus Calculator compute rewards for AI tasks?",
+                output="The NCL Bonus Calculator uses this formula:\n"
+                       "reward = base_reward * consciousness_multiplier * (1 + efficiency * 0.2)\n\n"
+                       "Where:\n"
+                       "- base_reward: depends on task type (e.g., Embeddings=0.001, LLM=0.01, Training=0.1)\n"
+                       "- consciousness_multiplier: 1.0x for all levels on mainnet L1 (disabled)\n"
+                       "- efficiency = success_rate * 0.5 + latency_score * 0.5\n"
+                       "  * success_rate = successful_tasks / total_tasks\n"
+                       "  * latency_score = (1 - (avg_latency - 100) / 900).clamp(0, 1)\n"
+                       "    Target <100ms = 1.0, >1000ms = 0.0\n\n"
+                       "Failures receive only 10% of the calculated reward.",
+                source=source,
+                domain="ncl_tasks",
+                language="en",
+            ))
+
+        # 6. CH3RevenueModel 5-stream breakdown
+        if module == "integration":
+            pairs.append(DataPair(
+                instruction="What are the 5 revenue streams in ZION's CH v3 Complete Revenue Model?",
+                output="CH v3 has 5 revenue streams (50/25/25 + 2 FREE):\n\n"
+                       "1. ZION Mining (50% compute): Keccak->SHA3->Matrix->Fusion\n"
+                       "2. ETC/NiceHash (FREE): Keccak intermediate from ZION pipeline\n"
+                       "3. NXS/0xBTC (FREE): SHA3 intermediate from ZION pipeline\n"
+                       "4. Multi-Algo Profit-Switch (25% compute): ERG/RVN/KAS/ALPH\n"
+                       "5. NCL AI Inference (25% compute): embeddings, LLM, image gen, code analysis, training\n\n"
+                       "Total compute: 50% + 25% + 25% = 100%\n"
+                       "Revenue streams: 5 (but only 3 cost compute; 2 are free byproducts).",
+                source=source,
+                domain="ncl_tasks",
+                language="en",
+            ))
+
+        # 7. JobScheduler scheduling policy
+        if module == "scheduler":
+            pairs.append(DataPair(
+                instruction="What is the NCL Job Scheduler's scheduling policy for assigning jobs to workers?",
+                output="The NCL Job Scheduler uses a 3-tier policy:\n\n"
+                       "1. Priority-first: Higher-priority jobs are dispatched before lower-priority jobs. "
+                       "Ties are broken by FIFO (oldest first). Priority range: 1 (lowest) to 10 (highest).\n\n"
+                       "2. Consciousness gate: Only workers meeting job.min_consciousness are considered.\n\n"
+                       "3. Reputation-weighted: Among eligible workers, the one with the highest reputation score wins. "
+                       "If no reputation registry is attached, falls back to the first available worker.\n\n"
+                       "A worker must have: capacity (active_jobs < max_concurrent), backend support, "
+                       "and meet the minimum consciousness requirement.",
+                source=source,
+                domain="ncl_tasks",
+                language="en",
+            ))
+
+        # 8. Reputation scoring model
+        if module == "reputation":
+            pairs.append(DataPair(
+                instruction="How is the NCL worker reputation score calculated?",
+                output="Reputation score formula:\n"
+                       "score = base_score * success_rate * (1 + consciousness_bonus) * recency_factor\n\n"
+                       "Where:\n"
+                       "- base_score = 100.0\n"
+                       "- success_rate = accepted / (accepted + failed)\n"
+                       "- consciousness_bonus = consciousness_level * 0.05 (max +25% at level 5)\n"
+                       "- recency_factor = 1.0 within 24h, then decays by 1% per hour (floor 50%)\n\n"
+                       "Score is clamped to [0.0, 100.0]. Workers below ban_threshold (20.0) are banned.\n"
+                       "The registry tracks per-backend success/failure for specialization detection.",
+                source=source,
+                domain="ncl_tasks",
+                language="en",
+            ))
+
+        # 9. PricingEngine fee split
+        if module == "pricing":
+            pairs.append(DataPair(
+                instruction="How does the NCL Pricing Engine split rewards between workers and the protocol?",
+                output="The NCL Pricing Engine uses a 90/10 split:\n"
+                       "- Worker reward: 90% of total\n"
+                       "- Protocol fee: 10% of total\n\n"
+                       "Base price is 0.01 ZION (10_000_000_000 flowers in V3 12-decimal units).\n"
+                       "Backend multipliers: Wasm=0.5x, TfLite=1.0x, ONNX=1.5x, Custom=2.0x.\n"
+                       "Final price = base_price * multiplier * compute_units.",
+                source=source,
+                domain="ncl_tasks",
+                language="en",
+            ))
+
+        # 10. NPURuntime auto-detection
+        if module == "integration":
+            pairs.append(DataPair(
+                instruction="How does ZION detect the best NPU runtime for AI inference?",
+                output="NPURuntime::detect() uses platform-specific detection:\n\n"
+                       "- macOS + aarch64 (Apple Silicon): CoreML\n"
+                       "- macOS + x86_64: ONNX Runtime (fallback)\n"
+                       "- Other platforms: ONNX Runtime (default)\n\n"
+                       "Future: TensorRT for NVIDIA GPUs, OpenVINO for Intel.\n"
+                       "The runtime is stored in NCLIntegration and used for task routing.",
+                source=source,
+                domain="ncl_tasks",
+                language="en",
+            ))
+
+        # 11. zion ncl CLI reference
+        pairs.append(DataPair(
+            instruction="What are the available `zion ncl` CLI commands?",
+            output="The `zion ncl` CLI provides:\n\n"
+                   "- `zion ncl status` — Show NCL status (worker, scheduler, earnings)\n"
+                   "- `zion ncl start` — Start NCL worker daemon\n"
+                   "- `zion ncl stop` — Stop NCL worker daemon\n"
+                   "- `zion ncl submit <task>` — Submit an AI task to the NCL marketplace\n"
+                   "- `zion ncl workers` — List registered compute workers\n"
+                   "- `zion ncl leaderboard` — Show worker reputation leaderboard\n"
+                   "- `zion ncl earnings` — Display earnings breakdown by stream\n"
+                   "- `zion ncl config` — Show NCL configuration\n\n"
+                   "These commands manage the Neural Compute Layer for decentralized AI inference.",
+            source=source,
+            domain="ncl_tasks",
+            language="en",
+        ))
+
+        # 12. Rust API usage for NCLIntegration::process_task
+        if module == "integration":
+            pairs.append(DataPair(
+                instruction="How do I process an NCL AI task in Rust using NCLIntegration?",
+                output="Example Rust usage:\n\n"
+                       "```rust\n"
+                       "let mut ncl = NCLIntegration::new(\n"
+                       "    miner_address,\n"
+                       "    consciousness_level,  // 0-6\n"
+                       "    0.75,                 // 75% mining, 25% NCL\n"
+                       ");\n\n"
+                       "let reward = ncl.process_task(\n"
+                       "    AITaskType::LlmInference,\n"
+                       "    execution_time_ms,\n"
+                       "    success,              // true/false\n"
+                       ");\n\n"
+                       "println!(\"Reward: {} ZION\", reward);\n"
+                       "println!(\"Total earnings: {}\", ncl.total_earnings);\n"
+                       "println!(\"Revenue: {:?}\", ncl.revenue_stream());\n"
+                       "```\n\n"
+                       "Returns: calculated reward in ZION. Updates internal stats.",
+                source=source,
+                domain="ncl_tasks",
+                language="en",
+            ))
+
+        return pairs
+
+    def _generate_ncl_curriculum(self) -> list[DataPair]:
+        """Generate additional synthetic NCL curriculum examples."""
+        pairs = []
+
+        # Worker lifecycle
+        pairs.append(DataPair(
+            instruction="Describe the complete lifecycle of an NCL compute worker.",
+            output="NCL Worker Lifecycle:\n\n"
+                   "1. Registration: Worker registers with ID, address, supported backends, max_concurrent (default 4).\n"
+                   "2. Heartbeat: Worker sends periodic heartbeats to stay online.\n"
+                   "3. Job Assignment: Scheduler assigns queued jobs based on priority, consciousness gate, and reputation.\n"
+                   "4. Execution: Worker executes the AI task (ONNX, WASM, etc.).\n"
+                   "5. Completion: Worker reports success/failure with output hash.\n"
+                   "   - Success: active_jobs--, total_completed++, total_earned += reward\n"
+                   "   - Failure: active_jobs--, job marked Failed\n"
+                   "6. Reputation Update: Registry updates success/failure counters and recalculates score.\n"
+                   "7. Capacity Check: Worker can accept new jobs only if active_jobs < max_concurrent AND online=true.",
+            source="synthetic/ncl_curriculum",
+            domain="ncl_tasks",
+            language="en",
+        ))
+
+        # Marketplace economics
+        pairs.append(DataPair(
+            instruction="Explain the economics of the NCL decentralized AI marketplace.",
+            output="NCL Marketplace Economics:\n\n"
+                   "Workers (miners with NPU/GPU) offer compute capacity.\n"
+                   "Submitters (users/agents) post AI jobs with a reward offer.\n\n"
+                   "Pricing:\n"
+                   "- Base price: 0.01 ZION per compute unit\n"
+                   "- Backend multipliers: WASM 0.5x, TfLite 1.0x, ONNX 1.5x, Custom 2.0x\n"
+                   "- Task type rewards: Embeddings 0.001, CodeAnalysis 0.003, LLM 0.01, ImageGen 0.02, Training 0.1\n\n"
+                   "Fee Split:\n"
+                   "- Worker receives 90%\n"
+                   "- Protocol fee is 10%\n\n"
+                   "Selection: Priority + Consciousness Gate + Reputation Weighting.\n"
+                   "Quality control: Ban threshold at score 20.0; recency decay for idle workers.",
+            source="synthetic/ncl_curriculum",
+            domain="ncl_tasks",
+            language="en",
+        ))
+
+        # NCL vs traditional cloud AI
+        pairs.append(DataPair(
+            instruction="How does NCL differ from traditional centralized cloud AI inference?",
+            output="NCL (Neural Compute Layer) vs Traditional Cloud AI:\n\n"
+                   "Decentralization:\n"
+                   "- NCL: Miners provide compute; no single point of failure\n"
+                   "- Cloud: Centralized data centers controlled by one company\n\n"
+                   "Pricing:\n"
+                   "- NCL: Market-driven, transparent pricing with blockchain settlement\n"
+                   "- Cloud: Opaque pricing tiers, subscription models\n\n"
+                   "Privacy:\n"
+                   "- NCL: WASM sandboxing possible; users can verify execution\n"
+                   "- Cloud: Data leaves user control entirely\n\n"
+                   "Censorship Resistance:\n"
+                   "- NCL: Permissionless; anyone can submit or provide compute\n"
+                   "- Cloud: Subject to provider terms and regional restrictions\n\n"
+                   "Incentives:\n"
+                   "- NCL: Workers earn ZION; reputation system rewards reliability\n"
+                   "- Cloud: Profit goes to corporation; no user ownership",
+            source="synthetic/ncl_curriculum",
+            domain="ncl_tasks",
+            language="en",
+        ))
+
+        # NPU time tracking example
+        pairs.append(DataPair(
+            instruction="Show me how the NCL Scheduler decides whether to do NPU work vs mining.",
+            output="NCL Scheduler Decision Logic:\n\n"
+                   "```rust\n"
+                   "fn should_do_npu_work(&self) -> bool {\n"
+                   "    if mining_priority { return false; }\n\n"
+                   "    let mining = mining_time_ms.load();\n"
+                   "    let npu = npu_time_ms.load();\n"
+                   "    let total = mining + npu;\n\n"
+                   "    if total == 0 { return true; }\n\n"
+                   "    let ratio = mining as f64 / total as f64;\n"
+                   "    ratio > mining_allocation  // e.g., 0.75\n"
+                   "}\n"
+                   "```\n\n"
+                   "Example timeline (mining_allocation=0.75):\n"
+                   "- T0: mining=0, npu=0 -> total=0 -> do NPU work\n"
+                   "- T1: mining=750ms, npu=0 -> ratio=1.0 > 0.75 -> do NPU work\n"
+                   "- T2: mining=750ms, npu=250ms -> ratio=0.75 == 0.75 -> do NPU work (just barely)\n"
+                   "- T3: mining=750ms, npu=300ms -> ratio=0.714 < 0.75 -> do MINING work\n"
+                   "- T4: mining=800ms, npu=300ms -> ratio=0.727 < 0.75 -> do MINING work\n\n"
+                   "Reset when: scheduler.reset() clears both counters.",
+            source="synthetic/ncl_curriculum",
+            domain="ncl_tasks",
+            language="en",
+        ))
+
+        return pairs
+
+
 # Registry
 COLLECTORS: list[type[BaseCollector]] = [
     V3DocsCollector,
@@ -685,6 +1038,7 @@ COLLECTORS: list[type[BaseCollector]] = [
     CulturalKnowledgeCollector,
     HiranyagarbhaCollector,
     L3TechnicalCollector,
+    NCLTaskCollector,
 ]
 
 
@@ -755,6 +1109,7 @@ def build_curriculum(pairs: list[DataPair], output_dir: Path) -> dict[str, Any]:
         "cultural_historical": "cultural_historical_wisdom",
         "hiranyagarbha": "hiranyagarbha_consciousness",
         "l3_technical": "l3_ai_native_technical",
+        "ncl_tasks": "l3_ai_native_technical",
         "general": "cross_domain_synthesis",
         "cross_domain": "cross_domain_synthesis",
     }
@@ -792,7 +1147,12 @@ def build_curriculum(pairs: list[DataPair], output_dir: Path) -> dict[str, Any]:
 # CLI
 # ---------------------------------------------------------------------------
 
-def stage_collection(include_multilingual: bool, include_cultural: bool, include_hiranyagarbha: bool) -> list[DataPair]:
+def stage_collection(
+    include_multilingual: bool,
+    include_cultural: bool,
+    include_hiranyagarbha: bool,
+    include_ncl_tasks: bool = True,
+) -> list[DataPair]:
     print("[data_pipeline] Stage: COLLECTION")
     all_pairs: list[DataPair] = []
     for collector_cls in COLLECTORS:
@@ -803,6 +1163,8 @@ def stage_collection(include_multilingual: bool, include_cultural: bool, include
         if name == "cultural_historical" and not include_cultural:
             continue
         if name == "hiranyagarbha_ai_native" and not include_hiranyagarbha:
+            continue
+        if name == "ncl_tasks" and not include_ncl_tasks:
             continue
 
         collector = collector_cls()
@@ -844,6 +1206,7 @@ def main() -> int:
     parser.add_argument("--include-multilingual", action="store_true", default=True, help="Include multilingual corpus")
     parser.add_argument("--include-cultural", action="store_true", default=True, help="Include cultural/historical knowledge")
     parser.add_argument("--include-hiranyagarbha", action="store_true", default=True, help="Include Hiranyagarbha/AI Native knowledge")
+    parser.add_argument("--include-ncl-tasks", action="store_true", default=True, help="Include NCL (Neural Compute Layer) task curriculum")
     args = parser.parse_args()
 
     global OUTPUT_DIR
@@ -853,7 +1216,12 @@ def main() -> int:
     pairs: list[DataPair] = []
 
     if args.stage in ("collection", "all"):
-        pairs = stage_collection(args.include_multilingual, args.include_cultural, args.include_hiranyagarbha)
+        pairs = stage_collection(
+            args.include_multilingual,
+            args.include_cultural,
+            args.include_hiranyagarbha,
+            args.include_ncl_tasks,
+        )
 
     if args.stage in ("processing", "all"):
         if not pairs:
@@ -866,7 +1234,12 @@ def main() -> int:
                         obj = json.loads(line)
                         pairs.append(DataPair(**obj))
             else:
-                pairs = stage_collection(args.include_multilingual, args.include_cultural, args.include_hiranyagarbha)
+                pairs = stage_collection(
+                    args.include_multilingual,
+                    args.include_cultural,
+                    args.include_hiranyagarbha,
+                    args.include_ncl_tasks,
+                )
         pairs = stage_processing(pairs)
         proc_path = OUTPUT_DIR / "processed.jsonl"
         with open(proc_path, "w", encoding="utf-8") as f:

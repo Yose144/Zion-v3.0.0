@@ -242,6 +242,55 @@ L3_TECHNICAL_QUESTIONS: list[dict[str, Any]] = [
         "expected_keywords": ["uptime", "latency", "stale", "reject", "0.4", "0.3", "0.2", "0.1", "hysteresis", "5.0", "rolling", "20"],
         "weight": 2.5,
     },
+    # NCL-specific deep evaluation questions
+    {
+        "id": "l3_ncl_1",
+        "question": "What are the 8 NCL task types and their base rewards in ZION? Which task pays the most?",
+        "expected_keywords": ["LlmInference", "0.01", "ImageGeneration", "0.02", "ModelTraining", "0.1", "Embeddings", "0.001", "CodeAnalysis", "0.003", "ImageClassification", "0.002", "SpeechToText", "0.005", "Custom"],
+        "weight": 2.5,
+    },
+    {
+        "id": "l3_ncl_2",
+        "question": "Explain the NCL Job Scheduler's 3-tier policy: priority-first, consciousness gate, and reputation-weighted selection.",
+        "expected_keywords": ["priority", "FIFO", "oldest", "consciousness", "min_consciousness", "reputation", "score", "eligible", "worker"],
+        "weight": 3.0,
+    },
+    {
+        "id": "l3_ncl_3",
+        "question": "How does the NCL Pricing Engine calculate job costs, and what is the 90/10 reward split?",
+        "expected_keywords": ["base_price", "0.01", "multiplier", "ONNX", "1.5", "Wasm", "0.5", "Custom", "2.0", "worker", "90", "protocol", "10", "split"],
+        "weight": 2.5,
+    },
+    {
+        "id": "l3_ncl_4",
+        "question": "Describe the CH v3 Complete Revenue Model's 5 streams. Which streams are FREE byproducts?",
+        "expected_keywords": ["ZION", "50%", "ETC", "FREE", "Keccak", "NXS", "SHA3", "Multi-Algo", "25%", "ERG", "RVN", "KAS", "ALPH", "NCL", "AI", "25%"],
+        "weight": 3.0,
+    },
+    {
+        "id": "l3_ncl_5",
+        "question": "How does the NCL Bonus Calculator compute efficiency? What is the latency score formula?",
+        "expected_keywords": ["success_rate", "0.5", "latency_score", "0.5", "avg_latency", "100", "1000", "clamp", "efficiency", "0.2"],
+        "weight": 2.5,
+    },
+    {
+        "id": "l3_ncl_6",
+        "question": "What happens when an NCL worker's reputation score drops below the ban threshold? How is the score calculated?",
+        "expected_keywords": ["ban_threshold", "20.0", "success_rate", "consciousness_bonus", "recency_factor", "decay", "24", "hours", "idle", "banned"],
+        "weight": 2.5,
+    },
+    {
+        "id": "l3_ncl_7",
+        "question": "Explain the 75/25 NCL Scheduler compute split. When does the scheduler decide to do NPU work vs mining?",
+        "expected_keywords": ["75%", "mining", "25%", "NCL", "mining_time_ms", "npu_time_ms", "ratio", "mining_allocation", "should_do_npu_work"],
+        "weight": 2.5,
+    },
+    {
+        "id": "l3_ncl_8",
+        "question": "How does NPURuntime::detect() choose the best inference runtime for different platforms?",
+        "expected_keywords": ["CoreML", "macOS", "aarch64", "TensorRT", "NVIDIA", "OpenVINO", "Intel", "ONNX", "fallback"],
+        "weight": 2.0,
+    },
 ]
 
 CODE_GENERATION_TASKS: list[dict[str, Any]] = [
@@ -257,6 +306,18 @@ CODE_GENERATION_TASKS: list[dict[str, Any]] = [
         "prompt": "Write a Python script that validates a ZION Oasis territory claim. The claim is valid if: the player has at least 10_000 ZION, the territory is not already claimed, and there is no active defense period.",
         "expected_patterns": [r"def.*validate.*claim", r"10000", r"defense"],
         "weight": 1.5,
+    },
+    {
+        "id": "code_ncl_1",
+        "prompt": "Write a Rust function `process_ncl_task` that takes a task type, execution time, and success boolean, then calculates the reward using the NCL Bonus Calculator formula: base_reward * consciousness_multiplier * (1 + efficiency * 0.2). Assume consciousness_multiplier is 1.0 and efficiency is 0.8. The function signature should be: pub fn process_ncl_task(task_type: &str, execution_time_ms: u64, success: bool) -> f64",
+        "expected_patterns": [r"pub fn process_ncl_task", r"base_reward", r"consciousness_multiplier", r"efficiency", r"0.2"],
+        "weight": 2.0,
+    },
+    {
+        "id": "code_ncl_2",
+        "prompt": "Write a Python function `calculate_reputation_score` that computes an NCL worker's reputation score given: jobs_completed, jobs_failed, consciousness_level (0-5), and hours_idle. Formula: score = 100.0 * success_rate * (1 + consciousness_level * 0.05) * recency_factor, where recency_factor = 1.0 if hours_idle <= 24, else max(0.5, 1.0 - (hours_idle - 24) * 0.01). Return the score clamped to [0.0, 100.0].",
+        "expected_patterns": [r"def calculate_reputation_score", r"success_rate", r"consciousness_level", r"recency_factor", r"clamp"],
+        "weight": 2.0,
     },
 ]
 
