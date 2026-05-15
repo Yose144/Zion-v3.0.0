@@ -154,24 +154,39 @@ class CurriculumPipeline:
         return None
 
 
+def _parse_args():
+    import argparse
+    p = argparse.ArgumentParser(description="Hiran v2.2 Curriculum Pipeline")
+    p.add_argument("--create-structure", action="store_true", help="Only create directory structure")
+    p.add_argument("--validate", action="store_true", help="Only validate data distribution")
+    return p.parse_args()
+
+
 def main():
     """Main funkce pro testování pipeline"""
+    args = _parse_args()
     print("🚀 Initializing Hiran v2.2 Curriculum Pipeline...")
-    
+
     pipeline = CurriculumPipeline()
-    
+
+    if args.create_structure:
+        print("\n📁 Creating curriculum directory structure...")
+        pipeline.create_stage_directories()
+        print("\n✅ Directory structure created!")
+        return
+
     # Vytvořit adresářovou strukturu
     print("\n📁 Creating curriculum directory structure...")
     pipeline.create_stage_directories()
-    
+
     # Vypsat konfiguraci
     print("\n⚙️  Curriculum Configuration:")
     pipeline.print_config_summary()
-    
+
     # Validovat distribuci dat
     print("\n📊 Current Data Distribution:")
     distribution = pipeline.validate_data_distribution()
-    
+
     for stage, count in distribution.items():
         if stage == "total":
             print(f"  {stage.upper()}: {count} pairs")
@@ -179,7 +194,7 @@ def main():
             target = pipeline.get_stage_config(stage).target_size if pipeline.get_stage_config(stage) else "?"
             progress = f"{count}/{target}" if target != "?" else f"{count}"
             print(f"  {stage}: {progress} pairs")
-    
+
     print("\n✅ Curriculum pipeline initialized successfully!")
     print("📝 Next steps:")
     print("   1. Build dataset with: python data/build_dataset.py")

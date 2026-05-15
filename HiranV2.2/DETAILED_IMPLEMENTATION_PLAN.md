@@ -9,7 +9,7 @@ Aktualizovaný detailní implementační plán pro Hiran v2.2 s multi-domain cur
 | Fáze | Status | Trvání | Priority | Progress |
 |------|--------|--------|----------|----------|
 | **Phase 1: Dataset & Curriculum** | ✅ COMPLETED | 2-3 dny | P0 | 100% |
-| **Phase 2: Training Pipeline** | 🔄 IN PROGRESS | 3-5 dní | P0 | ~40% |
+| **Phase 2: Training Pipeline** | 🔄 CODE READY — EXECUTION PENDING | 3-5 dní | P0 | ~85% |
 | **Phase 3: Quantization** | ⏳ PENDING | 1 den | P1 | 0% |
 | **Phase 4: Inference Testing** | ⏳ PENDING | 1-2 dny | P1 | 0% |
 | **Phase 5: Deployment** | ⏳ PENDING | 1 den | P2 | 0% |
@@ -62,7 +62,7 @@ Quality: 0 duplicates, 0 toxic content ✅
 
 ---
 
-## Phase 2: Training Pipeline ⏳ PENDING (3-5 dní)
+## Phase 2: Training Pipeline 🔄 CODE READY — EXECUTION PENDING (3-5 dní)
 
 ### 2.1 Architektura Training Pipeline
 
