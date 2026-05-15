@@ -118,9 +118,11 @@ python HiranV2.3/scripts/data_pipeline.py \
   --stage all \
   --include-multilingual \
   --include-cultural \
-  --include-hiranyagarbha
+  --include-hiranyagarbha \
+  --include-ncl-tasks
 
 # Expected output: 11 curriculum JSONL files in HiranV2.3/data/curriculum/
+# NCL tasks are routed to the `l3_ai_native_technical` stage
 ```
 
 ### 2. Training
@@ -216,7 +218,15 @@ Deep understanding of:
 - **AgentMemory:** Short-term ring buffer, long-term archive, importance-based promotion
 - **Pool Optimizer:** Health score formula, hysteresis, rolling history
 - **WARP Engine:** FieldTopology (Sphere→Hypercube), WarpMode, coherence, resonance
-- **NCL:** Job scheduler, reputation model, pricing, backend runners
+- **NCL (Neural Compute Layer):**
+  - **Task Types:** LlmInference, ImageGeneration, ModelTraining, Embeddings, CodeAnalysis, Custom
+  - **Compute Backends:** ONNX Runtime (1.5x), Wasm (0.5x), TfLite (1.0x), Custom (2.0x)
+  - **Job Scheduler:** Priority-first + Consciousness gate + Reputation-weighted selection
+  - **Reputation Model:** score = base * success_rate * (1 + consciousness_bonus) * recency_factor
+  - **Pricing Engine:** Base 0.01 ZION, 90/10 worker/protocol split
+  - **Scheduler:** 75/25 mining/NPU split with adaptive time tracking
+  - **Reward Formula:** base_reward * consciousness_multiplier * (1 + efficiency * 0.2)
+  - **5 Revenue Streams:** ZION (50%) + ETC FREE + NXS FREE + Multi-Algo (25%) + NCL AI (25%)
 
 ### Tool Ecosystem
 
