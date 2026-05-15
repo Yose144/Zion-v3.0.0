@@ -331,6 +331,43 @@ impl RevenueCollector {
         });
     }
 
+    /// Track a Deeksha stream-telemetry bundle.
+    ///
+    /// Each step in the Deeksha pipeline is mapped to a revenue stream and
+    /// recorded as a fractional revenue event. The total `value_usd` is split
+    /// across streams proportionally to their work-unit weights.
+    ///
+    /// This is used by the pool to do granular per-stream accounting when a
+    /// share or block is accepted.
+    pub fn track_deeksha_streams(
+        &self,
+        telemetry: &crate::stream_layers::DeekshaStreamTelemetry,
+        total_value_usd: f64,
+        block_height: Option<u64>,
+    ) {
+        if telemetry.total_work == 0 || total_value_usd <= 0.0 {
+            return;
+        }
+        for (source_name, units) in &telemetry.stream_breakdown {
+            let source = match source_name.as_str() {
+                "zion" => RevenueSource::Zion,
+                "keccak_bonus" => RevenueSource::KeccakBonus,
+                "sha3_bonus" => RevenueSource::Sha3Bonus,
+                "ncl_ai" => RevenueSource::NclAi,
+                _ => continue,
+            };
+            let share = total_value_usd * (*units as f64 / telemetry.total_work as f64);
+            self.track_event(RevenueEvent {
+                source,
+                value_usd: share,
+                qualifies: true,
+                timestamp: Some(Utc::now().to_rfc3339()),
+                block_height,
+                tx_hash: None,
+            });
+        }
+    }
+
     // ── Replay (for startup recovery) ────────────────────────────────
 
     pub fn replay_zion_block(
@@ -600,5 +637,42 @@ mod tests {
             .with_tx_hash("abc123");
         assert_eq!(e.block_height, Some(99));
         assert_eq!(e.tx_hash, Some("abc123".to_string()));
+    }
+
+    #[test]
+    fn track_deeksha_streams_splits_value_proportionally() {
+        let collector = RevenueCollector::new();
+
+        // Build synthetic telemetry matching a full Deeksha pipeline.
+        let mut telemetry = crate::stream_layers::DeekshaStreamTelemetry::default();
+        telemetry.steps.push((crate::stream_layers::DeekshaStep::Keccak256, 5));
+        telemetry.steps.push((crate::stream_layers::DeekshaStep::Sha3_512, 5));
+        telemetry.steps.push((crate::stream_layers::DeekshaStep::GoldenMatrix, 10));
+        telemetry.steps.push((crate::stream_layers::DeekshaStep::MemoryHard, 55));
+        telemetry.steps.push((crate::stream_layers::DeekshaStep::NpuMix, 15));
+        telemetry.steps.push((crate::stream_layers::DeekshaStep::CosmicFusion, 10));
+        telemetry.total_work = 100;
+        telemetry
+            .stream_breakdown
+            .insert("zion".to_string(), 75);
+        telemetry
+            .stream_breakdown
+            .insert("keccak_bonus".to_string(), 5);
+        telemetry
+            .stream_breakdown
+            .insert("sha3_bonus".to_string(), 5);
+        telemetry
+            .stream_breakdown
+            .insert("ncl_ai".to_string(), 15);
+
+        collector.track_deeksha_streams(&telemetry, 100.0, Some(123));
+
+        let stats = collector.get_stats();
+        // 100 USD split: 75 ZION, 5 Keccak, 5 SHA3, 15 NCL
+        // Fees: ZION 5% = 3.75, Keccak 5% = 0.25, SHA3 5% = 0.25, NCL 10% = 1.5
+        // Total fees = 5.75
+        assert!((stats.total_earnings_usd - 100.0).abs() < 0.001);
+        assert!((stats.zion_fees_usd - 5.75).abs() < 0.1);
+        assert!((stats.miner_payout_usd - 94.25).abs() < 0.1);
     }
 }
