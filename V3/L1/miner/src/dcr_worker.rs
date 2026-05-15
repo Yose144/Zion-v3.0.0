@@ -27,6 +27,9 @@ pub struct DcrStats {
     pub total_hashes: AtomicU64,
     pub accepted_shares: AtomicU64,
     pub rejected_shares: AtomicU64,
+    /// Total tracked revenue in micro-cents (1 USD = 100_000_000).
+    /// Updated atomically per accepted share.
+    pub revenue_microcents: AtomicU64,
 }
 
 impl DcrStats {
@@ -35,7 +38,13 @@ impl DcrStats {
             total_hashes: AtomicU64::new(0),
             accepted_shares: AtomicU64::new(0),
             rejected_shares: AtomicU64::new(0),
+            revenue_microcents: AtomicU64::new(0),
         }
+    }
+
+    /// Return total revenue as USD float.
+    pub fn revenue_usd(&self) -> f64 {
+        self.revenue_microcents.load(Ordering::Relaxed) as f64 / 100_000_000.0
     }
 }
 
@@ -51,6 +60,9 @@ pub struct DcrConfig {
     pub gpu_autotune: bool,
     pub gpu_autotune_secs: f64,
     pub hash_impl: DcrHashImpl,
+    /// Estimated USD value credited per accepted share.
+    /// Default 0.001 USD (1/10 of a cent) per share.
+    pub revenue_per_share_usd: f64,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -134,6 +146,11 @@ impl DcrConfig {
             hash_impl: parse_hash_impl(
                 &std::env::var("ZION_DCR_HASH_IMPL").unwrap_or_else(|_| "rust".to_string()),
             ),
+            revenue_per_share_usd: std::env::var("ZION_DCR_REVENUE_PER_SHARE")
+                .ok()
+                .and_then(|v| v.parse::<f64>().ok())
+                .unwrap_or(0.001)
+                .max(0.0),
         })
     }
 
@@ -336,6 +353,12 @@ fn mine_loop_cpu(config: &DcrConfig, thread_id: usize, stop: &AtomicBool, stats:
                 if hash_meets_target(&hash, &target) {
                     if client.submit_share(&job_id, nonce).is_ok() {
                         stats.accepted_shares.fetch_add(1, Ordering::Relaxed);
+                        let microcents = (config.revenue_per_share_usd * 100_000_000.0) as u64;
+                        if microcents > 0 {
+                            stats
+                                .revenue_microcents
+                                .fetch_add(microcents, Ordering::Relaxed);
+                        }
                     } else {
                         stats.rejected_shares.fetch_add(1, Ordering::Relaxed);
                     }
@@ -490,6 +513,12 @@ fn mine_loop_gpu(
             for found_nonce in found {
                 if client.submit_share(&job_id, found_nonce).is_ok() {
                     stats.accepted_shares.fetch_add(1, Ordering::Relaxed);
+                    let microcents = (config.revenue_per_share_usd * 100_000_000.0) as u64;
+                    if microcents > 0 {
+                        stats
+                            .revenue_microcents
+                            .fetch_add(microcents, Ordering::Relaxed);
+                    }
                 } else {
                     stats.rejected_shares.fetch_add(1, Ordering::Relaxed);
                 }
