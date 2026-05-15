@@ -4559,10 +4559,12 @@ version = "3.0.0"
 dependencies = [
  "aes",
  "blake3",
+ "chrono",
  "libc",
  "log",
  "ort",
  "serde",
+ "serde_json",
  "sha3",
 ]
 
@@ -4638,6 +4640,7 @@ dependencies = [
  "anyhow",
  "ctrlc",
  "ed25519-dalek",
+ "hex",
  "serde",
  "serde_json",
  "zion-core",
