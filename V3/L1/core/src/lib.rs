@@ -737,8 +737,13 @@ pub struct RevenueSnapshot {
     // ZION-denominated fields (flowers).
     pub total_zion: u64,
     pub zion_fees_zion: u64,
+    pub humanitarian_zion: u64,
+    pub issobella_zion: u64,
     pub miner_payout_zion: u64,
     pub blocks_found: u64,
+    // Audit fields.
+    pub last_block_height: u64,
+    pub last_block_ts: Option<String>,
 }
 
 impl From<RevenueStats> for RevenueSnapshot {
@@ -749,8 +754,12 @@ impl From<RevenueStats> for RevenueSnapshot {
             miner_payout_usd: value.miner_payout_usd,
             total_zion: value.total_zion,
             zion_fees_zion: value.zion_fees_zion,
+            humanitarian_zion: value.humanitarian_zion,
+            issobella_zion: value.issobella_zion,
             miner_payout_zion: value.miner_payout_zion,
             blocks_found: value.blocks_found,
+            last_block_height: value.last_block_height,
+            last_block_ts: value.last_block_ts,
         }
     }
 }
@@ -1225,16 +1234,19 @@ impl CoreRuntime {
     }
 
     pub fn record_revenue(&self, source: RevenueSource, value_usd: f64, qualifies: bool) {
-        self.revenue.track_event(RevenueEvent {
-            source,
-            value_usd,
-            qualifies,
-        });
+        self.revenue.track_event(RevenueEvent::new(source, value_usd, qualifies));
     }
 
     /// Record a canonical ZION Deeksha block reward in the revenue collector.
-    pub fn record_zion_block_revenue(&self, subsidy: u64, pool_fee_pct: u64) {
-        self.revenue.track_zion_block(subsidy, pool_fee_pct);
+    /// `tx_hash` may be `None` if the on-chain tx hash is not yet known.
+    pub fn record_zion_block_revenue(
+        &self,
+        height: u64,
+        subsidy: u64,
+        pool_fee_pct: u64,
+        tx_hash: Option<String>,
+    ) {
+        self.revenue.track_zion_block(height, subsidy, pool_fee_pct, tx_hash);
     }
 
     pub fn revenue_snapshot(&self) -> RevenueSnapshot {
@@ -4142,13 +4154,21 @@ mod tests {
     fn runtime_tracks_zion_block_revenue() {
         let runtime = CoreRuntime::default();
         let subsidy = 5_400_067_000_000_000_u64;
-        runtime.record_zion_block_revenue(subsidy, 1);
+        runtime.record_zion_block_revenue(42, subsidy, 1, None);
 
         let snapshot = runtime.revenue_snapshot();
+        let expected_pool = subsidy * zion_cosmic_harmony::ZION_POOL_PCT / 100;
+        let expected_humanitarian = subsidy * zion_cosmic_harmony::ZION_HUMANITARIAN_PCT / 100;
+        let expected_issobella = subsidy * zion_cosmic_harmony::ZION_ISSOBELLA_PCT / 100;
+        let expected_miner = subsidy - expected_pool - expected_humanitarian - expected_issobella;
+
         assert_eq!(snapshot.total_zion, subsidy);
-        assert_eq!(snapshot.zion_fees_zion, subsidy * 1 / 100);
-        assert_eq!(snapshot.miner_payout_zion, subsidy - subsidy * 1 / 100);
+        assert_eq!(snapshot.zion_fees_zion, expected_pool);
+        assert_eq!(snapshot.humanitarian_zion, expected_humanitarian);
+        assert_eq!(snapshot.issobella_zion, expected_issobella);
+        assert_eq!(snapshot.miner_payout_zion, expected_miner);
         assert_eq!(snapshot.blocks_found, 1);
+        assert_eq!(snapshot.last_block_height, 42);
         assert_eq!(snapshot.total_earnings_usd, 0.0); // USD untouched
     }
 
@@ -5004,6 +5024,7 @@ mod tests {
             p2p_bind: PeerEndpoint::new("0.0.0.0", 8333),
             rpc_bind: PeerEndpoint::new("127.0.0.1", 8443),
             pool_bind: PeerEndpoint::new("0.0.0.0", 8444),
+            websocket_bind: PeerEndpoint::new("127.0.0.1", 8445),
             seed_peers: Vec::new(),
         }
     }

@@ -666,10 +666,16 @@ fn handle_client(
                             // Actual ZION canonical block revenue.
                             let subsidy = zion_core::emission::block_subsidy(job.height);
                             let pool_fee_pct = zion_core::emission::POOL_FEE_PCT;
+                            let block_hash_hex = hex::encode(sealed.hash);
                             pool.lock()
                                 .expect("pool lock poisoned")
                                 .runtime()
-                                .record_zion_block_revenue(subsidy, pool_fee_pct);
+                                .record_zion_block_revenue(
+                                    job.height,
+                                    subsidy,
+                                    pool_fee_pct,
+                                    Some(block_hash_hex),
+                                );
                         }
 
                         ShareDecision {
