@@ -85,6 +85,9 @@ fn main() -> Result<()> {
         },
         config.pool_wallet_address.as_deref().unwrap_or("(not set)"),
     );
+    if let Some(btc_wallet) = config.btc_wallet.as_deref() {
+        println!("btc_wallet={btc_wallet}");
+    }
     println!(
         "session_default_group={} backend_miner_ids={} backend_worker_hints={}",
         session_group_name(config.user_default_group),
@@ -1139,6 +1142,9 @@ struct ServerConfig {
     vardiff_min_difficulty: u64,
     /// Maximum share difficulty (0 = unlimited = network diff).  Default: 0.
     vardiff_max_difficulty: u64,
+    /// BTC wallet address for external pool payouts (2miners, NiceHash, etc.).
+    /// All multi-algo revenue streams pay out to this wallet.
+    btc_wallet: Option<String>,
 }
 
 #[derive(Debug)]
@@ -1148,8 +1154,8 @@ struct RoutingStats {
     total_accepted: u64,
     group_submits: [u64; 4],
     group_accepted: [u64; 4],
-    source_submits: [u64; 6],
-    source_accepted: [u64; 6],
+    source_submits: [u64; 12],
+    source_accepted: [u64; 12],
 }
 
 enum JobCompletion {
@@ -1488,6 +1494,55 @@ impl RevenueScheduler {
             25,
             default_value_usd,
         )?;
+        // Optional per-algorithm external lanes (default 0 -> disabled until explicitly set).
+        push_lane_from_env(
+            &mut lanes,
+            RevenueSource::KHeavyHashExternal,
+            "ZION_STREAM_KHEAVYHASH_PCT",
+            "ZION_STREAM_KHEAVYHASH_USD",
+            0,
+            default_value_usd,
+        )?;
+        push_lane_from_env(
+            &mut lanes,
+            RevenueSource::EthashExternal,
+            "ZION_STREAM_ETHASH_PCT",
+            "ZION_STREAM_ETHASH_USD",
+            0,
+            default_value_usd,
+        )?;
+        push_lane_from_env(
+            &mut lanes,
+            RevenueSource::KawPowExternal,
+            "ZION_STREAM_KAWPOW_PCT",
+            "ZION_STREAM_KAWPOW_USD",
+            0,
+            default_value_usd,
+        )?;
+        push_lane_from_env(
+            &mut lanes,
+            RevenueSource::AutolykosExternal,
+            "ZION_STREAM_AUTOLYKOS_PCT",
+            "ZION_STREAM_AUTOLYKOS_USD",
+            0,
+            default_value_usd,
+        )?;
+        push_lane_from_env(
+            &mut lanes,
+            RevenueSource::RandomXExternal,
+            "ZION_STREAM_RANDOMX_PCT",
+            "ZION_STREAM_RANDOMX_USD",
+            0,
+            default_value_usd,
+        )?;
+        push_lane_from_env(
+            &mut lanes,
+            RevenueSource::ZelHashExternal,
+            "ZION_STREAM_ZELHASH_PCT",
+            "ZION_STREAM_ZELHASH_USD",
+            0,
+            default_value_usd,
+        )?;
 
         let total_weight: u32 = lanes.iter().map(|l| l.weight).sum();
         if total_weight == 0 {
@@ -1519,7 +1574,15 @@ impl RevenueScheduler {
                         choices.push((SessionGroup::Zion, lane.weight));
                     }
                 }
-                RevenueSource::Blake3External => choices.push((SessionGroup::Revenue, lane.weight)),
+                RevenueSource::Blake3External
+                | RevenueSource::KHeavyHashExternal
+                | RevenueSource::EthashExternal
+                | RevenueSource::KawPowExternal
+                | RevenueSource::AutolykosExternal
+                | RevenueSource::RandomXExternal
+                | RevenueSource::ZelHashExternal => {
+                    choices.push((SessionGroup::Revenue, lane.weight))
+                }
                 RevenueSource::NclAi => choices.push((SessionGroup::Ncl, lane.weight)),
                 _ => {}
             }
@@ -1572,11 +1635,39 @@ impl RevenueScheduler {
                 self.value_for_source(RevenueSource::Zion)
                     .unwrap_or(self.default_value_usd),
             ),
-            SessionGroup::Revenue => (
-                RevenueSource::Blake3External,
-                self.value_for_source(RevenueSource::Blake3External)
-                    .unwrap_or(self.default_value_usd),
-            ),
+            SessionGroup::Revenue => {
+                // Rotate through enabled external-algo lanes.
+                let external_lanes: Vec<_> = self
+                    .lanes
+                    .iter()
+                    .filter(|l| {
+                        l.weight > 0
+                            && matches!(
+                                l.source,
+                                RevenueSource::Blake3External
+                                    | RevenueSource::KHeavyHashExternal
+                                    | RevenueSource::EthashExternal
+                                    | RevenueSource::KawPowExternal
+                                    | RevenueSource::AutolykosExternal
+                                    | RevenueSource::RandomXExternal
+                                    | RevenueSource::ZelHashExternal
+                            )
+                    })
+                    .copied()
+                    .collect();
+                if external_lanes.is_empty() {
+                    return (
+                        RevenueSource::Blake3External,
+                        self.value_for_source(RevenueSource::Blake3External)
+                            .unwrap_or(self.default_value_usd),
+                    );
+                }
+                // Use a stable sub-cursor for external rotation.
+                let idx = self.cursor as usize % external_lanes.len();
+                self.cursor = self.cursor.wrapping_add(1);
+                let lane = external_lanes[idx];
+                (lane.source, lane.value_usd)
+            }
             SessionGroup::Ncl => (
                 RevenueSource::NclAi,
                 self.value_for_source(RevenueSource::NclAi)
@@ -1617,8 +1708,8 @@ impl RoutingStats {
             total_accepted: 0,
             group_submits: [0; 4],
             group_accepted: [0; 4],
-            source_submits: [0; 6],
-            source_accepted: [0; 6],
+            source_submits: [0; 12],
+            source_accepted: [0; 12],
         }
     }
 
@@ -1675,6 +1766,12 @@ impl RoutingStats {
         for source in [
             RevenueSource::Zion,
             RevenueSource::Blake3External,
+            RevenueSource::KHeavyHashExternal,
+            RevenueSource::EthashExternal,
+            RevenueSource::KawPowExternal,
+            RevenueSource::AutolykosExternal,
+            RevenueSource::RandomXExternal,
+            RevenueSource::ZelHashExternal,
             RevenueSource::NclAi,
         ] {
             let idx = source_index(source);
@@ -2352,6 +2449,7 @@ impl ServerConfig {
             vardiff_retarget_shares: parse_env_u64("ZION_VARDIFF_RETARGET_SHARES", 6)?,
             vardiff_min_difficulty: parse_env_u64("ZION_VARDIFF_MIN_DIFF", 1)?,
             vardiff_max_difficulty: parse_env_u64("ZION_VARDIFF_MAX_DIFF", 0)?,
+            btc_wallet: parse_optional_env_string("ZION_BTC_WALLET"),
         })
     }
 }
@@ -2480,6 +2578,14 @@ fn parse_revenue_source(value: &str) -> Result<RevenueSource> {
         "sha3" | "sha3_bonus" => Ok(RevenueSource::Sha3Bonus),
         "profit" | "profit_switch" => Ok(RevenueSource::ProfitSwitch),
         "blake3" | "blake3_external" | "dcr" | "alph" => Ok(RevenueSource::Blake3External),
+        "kheavyhash" | "kas" | "kaspa" => Ok(RevenueSource::KHeavyHashExternal),
+        "ethash" | "etc" | "ethereum-classic" | "evr" | "evrmore" | "mewc" | "meowcoin" => {
+            Ok(RevenueSource::EthashExternal)
+        }
+        "kawpow" | "rvn" | "ravencoin" | "clore" | "clore.ai" => Ok(RevenueSource::KawPowExternal),
+        "autolykos" | "erg" | "ergo" => Ok(RevenueSource::AutolykosExternal),
+        "randomx" | "xmr" | "monero" => Ok(RevenueSource::RandomXExternal),
+        "zelhash" | "flux" => Ok(RevenueSource::ZelHashExternal),
         "ncl" | "ncl_ai" => Ok(RevenueSource::NclAi),
         other => Err(anyhow!("unsupported revenue source: {other}")),
     }
@@ -2655,6 +2761,7 @@ mod tests {
             vardiff_retarget_shares: 6,
             vardiff_min_difficulty: 1,
             vardiff_max_difficulty: 0,
+            btc_wallet: None,
         };
         let (pool_addr, pool_handle) = spawn_pool_server(config)?;
 
@@ -2875,6 +2982,7 @@ mod tests {
             vardiff_retarget_shares: 6,
             vardiff_min_difficulty: 1,
             vardiff_max_difficulty: 0,
+            btc_wallet: None,
         };
 
         let group = resolve_session_group("user-miner", "rig-01", &config);
@@ -2910,6 +3018,7 @@ mod tests {
             vardiff_retarget_shares: 6,
             vardiff_min_difficulty: 1,
             vardiff_max_difficulty: 0,
+            btc_wallet: None,
         };
 
         let group = resolve_session_group("backend-miner-1", "rig-01", &config);
@@ -2945,6 +3054,7 @@ mod tests {
             vardiff_retarget_shares: 6,
             vardiff_min_difficulty: 1,
             vardiff_max_difficulty: 0,
+            btc_wallet: None,
         };
 
         let group = resolve_session_group("miner-a", "backend-revenue-1", &config);
@@ -3144,6 +3254,7 @@ mod tests {
             vardiff_retarget_shares: 6,
             vardiff_min_difficulty: 1,
             vardiff_max_difficulty: 0,
+            btc_wallet: None,
         };
 
         // Even though miner_id is in backend list, explicit hint wins
@@ -3374,6 +3485,12 @@ mod tests {
         assert_eq!(revenue_source_name(RevenueSource::Sha3Bonus), "sha3");
         assert_eq!(revenue_source_name(RevenueSource::ProfitSwitch), "profit");
         assert_eq!(revenue_source_name(RevenueSource::Blake3External), "blake3");
+        assert_eq!(revenue_source_name(RevenueSource::KHeavyHashExternal), "kheavyhash");
+        assert_eq!(revenue_source_name(RevenueSource::EthashExternal), "ethash");
+        assert_eq!(revenue_source_name(RevenueSource::KawPowExternal), "kawpow");
+        assert_eq!(revenue_source_name(RevenueSource::AutolykosExternal), "autolykos");
+        assert_eq!(revenue_source_name(RevenueSource::RandomXExternal), "randomx");
+        assert_eq!(revenue_source_name(RevenueSource::ZelHashExternal), "zelhash");
         assert_eq!(revenue_source_name(RevenueSource::NclAi), "ncl");
     }
 }
