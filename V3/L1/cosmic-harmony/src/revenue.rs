@@ -60,12 +60,18 @@ pub struct RevenueStats {
     pub zion_fees_usd: f64,
     pub miner_payout_usd: f64,
     pub by_source: HashMap<String, f64>,
+    // ZION-denominated tracking for canonical Deeksha mining (flowers).
+    pub total_zion: u64,
+    pub zion_fees_zion: u64,
+    pub miner_payout_zion: u64,
+    pub blocks_found: u64,
 }
 
 #[derive(Debug, Clone)]
 pub struct RevenueCollector {
     stats: Arc<RwLock<RevenueStats>>,
     pending_fees_usd: Arc<RwLock<f64>>,
+    pending_fees_zion: Arc<RwLock<u64>>,
 }
 
 impl Default for RevenueCollector {
@@ -79,9 +85,11 @@ impl RevenueCollector {
         Self {
             stats: Arc::new(RwLock::new(RevenueStats::default())),
             pending_fees_usd: Arc::new(RwLock::new(0.0)),
+            pending_fees_zion: Arc::new(RwLock::new(0)),
         }
     }
 
+    /// Track a multi-chain revenue event (denominated in USD).
     pub fn track_event(&self, event: RevenueEvent) {
         if !event.qualifies {
             return;
@@ -106,6 +114,29 @@ impl RevenueCollector {
         *pending += fee;
     }
 
+    /// Track a canonical ZION Deeksha block reward (denominated in flowers).
+    /// Uses the protocol fee split: miner/humanitarian/issobella/pool.
+    pub fn track_zion_block(&self, subsidy: u64, pool_fee_pct: u64) {
+        let pool_fee = subsidy * pool_fee_pct / 100;
+        let miner_share = subsidy.saturating_sub(pool_fee);
+
+        let mut stats = self.stats.write().expect("revenue stats lock poisoned");
+        stats.total_zion += subsidy;
+        stats.zion_fees_zion += pool_fee;
+        stats.miner_payout_zion += miner_share;
+        stats.blocks_found += 1;
+        *stats
+            .by_source
+            .entry("zion_canonical".to_string())
+            .or_insert(0.0) += subsidy as f64;
+
+        let mut pending = self
+            .pending_fees_zion
+            .write()
+            .expect("revenue pending-fees-zion lock poisoned");
+        *pending += pool_fee;
+    }
+
     pub fn track_ncl_task(&self, value_usd: f64) {
         self.track_event(RevenueEvent {
             source: RevenueSource::NclAi,
@@ -128,6 +159,13 @@ impl RevenueCollector {
             .expect("revenue pending-fees lock poisoned")
     }
 
+    pub fn get_pending_fees_zion(&self) -> u64 {
+        *self
+            .pending_fees_zion
+            .read()
+            .expect("revenue pending-fees-zion lock poisoned")
+    }
+
     pub fn process_payout(&self) -> f64 {
         let mut pending = self
             .pending_fees_usd
@@ -135,6 +173,16 @@ impl RevenueCollector {
             .expect("revenue pending-fees lock poisoned");
         let amount = *pending;
         *pending = 0.0;
+        amount
+    }
+
+    pub fn process_payout_zion(&self) -> u64 {
+        let mut pending = self
+            .pending_fees_zion
+            .write()
+            .expect("revenue pending-fees-zion lock poisoned");
+        let amount = *pending;
+        *pending = 0;
         amount
     }
 
@@ -185,5 +233,36 @@ mod tests {
         let stats = collector.get_stats();
         assert_eq!(stats.total_earnings_usd, 0.0);
         assert_eq!(stats.zion_fees_usd, 0.0);
+    }
+
+    #[test]
+    fn track_zion_block_records_subsidy_and_pool_fee() {
+        let collector = RevenueCollector::new();
+        // Subsidy = 5400.067 ZION in flowers, pool fee = 1%
+        let subsidy = 5_400_067_000_000_000_u64;
+        collector.track_zion_block(subsidy, 1);
+
+        let stats = collector.get_stats();
+        let expected_pool_fee = subsidy * 1 / 100; // 54,000,670,000,000
+        let expected_miner = subsidy - expected_pool_fee;
+
+        assert_eq!(stats.total_zion, subsidy);
+        assert_eq!(stats.zion_fees_zion, expected_pool_fee);
+        assert_eq!(stats.miner_payout_zion, expected_miner);
+        assert_eq!(stats.blocks_found, 1);
+        assert_eq!(stats.total_earnings_usd, 0.0); // USD side untouched
+        assert_eq!(collector.get_pending_fees_zion(), expected_pool_fee);
+    }
+
+    #[test]
+    fn track_zion_block_zero_pool_fee_gives_all_to_miner() {
+        let collector = RevenueCollector::new();
+        let subsidy = 1_000_000_000_000_u64;
+        collector.track_zion_block(subsidy, 0);
+
+        let stats = collector.get_stats();
+        assert_eq!(stats.total_zion, subsidy);
+        assert_eq!(stats.zion_fees_zion, 0);
+        assert_eq!(stats.miner_payout_zion, subsidy);
     }
 }
