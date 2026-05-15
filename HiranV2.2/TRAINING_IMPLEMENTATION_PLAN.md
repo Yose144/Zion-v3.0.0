@@ -8,8 +8,8 @@ Komplexní implementační plán pro Hiran v2.2 trénink s multi-domain curricul
 
 | Fáze | Trvání | Status | Priority |
 |------|--------|--------|----------|
-| Fáze 1: Dataset & Curriculum | 2-3 dny | 🔄 Pending | P0 |
-| Fáze 2: Training Pipeline | 3-5 dní | ⏳ Waiting | P0 |
+| Fáze 1: Dataset & Curriculum | 2-3 dny | ✅ COMPLETED | P0 |
+| Fáze 2: Training Pipeline | 3-5 dní | 🔄 IN PROGRESS | P0 |
 | Fáze 3: Quantization | 1 den | ⏳ Waiting | P1 |
 | Fáze 4: Inference Testing | 1-2 dny | ⏳ Waiting | P1 |
 | Fáze 5: Deployment | 1 den | ⏳ Waiting | P2 |
@@ -25,9 +25,9 @@ Komplexní implementační plán pro Hiran v2.2 trénink s multi-domain curricul
 **Cíl:** Vytvořit strukturovaný curriculum learning pipeline s 5 fázemi.
 
 **Deliverables:**
-- [ ] `HiranV2.2/curriculum/curriculum_pipeline.py` - hlavní pipeline
-- [ ] `HiranV2.2/curriculum/stages/` - definice jednotlivých fází
-- [ ] `HiranV2.2/curriculum/config/` - konfigurace pro každou fázi
+- [x] `HiranV2.2/curriculum/curriculum_pipeline.py` - hlavní pipeline
+- [x] `HiranV2.2/curriculum/stages/` - definice jednotlivých fází
+- [x] `HiranV2.2/curriculum/config/` - konfigurace pro každou fázi
 
 **Implementace:**
 
@@ -411,9 +411,9 @@ if __name__ == "__main__":
 
 **Deliverables Fáze 1:**
 - [x] Curriculum pipeline design
-- [ ] Dataset expansion (5000+ pairs)
-- [ ] Data quality validation
-- [ ] Curriculum config templates
+- [x] Dataset expansion (5001 pairs, target met)
+- [x] Data quality validation (0 duplicates, 0 toxic content)
+- [x] Curriculum config templates (`config/dynamic_lora.py`, `config/curriculum_config.json`)
 
 ---
 
@@ -769,10 +769,13 @@ if __name__ == "__main__":
 ```
 
 **Deliverables Fáze 2:**
-- [ ] Dynamic QLoRA configuration
-- [ ] Multi-stage training pipeline
-- [ ] Evaluation protocol
-- [ ] Training skripty a configs
+- [x] Dynamic QLoRA configuration (`config/dynamic_lora.py`, `config/curriculum_config.json`)
+- [x] Multi-stage training pipeline (`scripts/train_v2.2.py`, `scripts/data_loader.py`, `scripts/trainer_utils.py`)
+- [x] Evaluation protocol (initial: `evaluate/evaluate_v2.2.py`, `evaluate/metrics.py`)
+- [x] Training skripty a configs (`scripts/run_training.sh`, `scripts/sync_curriculum_to_vast.sh`)
+- [ ] Training execution a monitoring (requires GPU runtime)
+- [ ] Trained LoRA model (pending execution)
+- [ ] Evaluation report (full benchmark suite, pending execution)
 
 ---
 
