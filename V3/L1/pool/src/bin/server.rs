@@ -656,11 +656,21 @@ fn handle_client(
 
                         // Record revenue for the block.
                         let block_accepted = matches!(node_status, ShareStatus::Accepted);
-                        pool.lock().expect("pool lock poisoned").record_revenue(
-                            revenue_source,
-                            revenue_value_usd,
-                            block_accepted,
-                        );
+                        if block_accepted {
+                            // Dummy USD revenue (multi-chain compat).
+                            pool.lock().expect("pool lock poisoned").record_revenue(
+                                revenue_source,
+                                revenue_value_usd,
+                                true,
+                            );
+                            // Actual ZION canonical block revenue.
+                            let subsidy = zion_core::emission::block_subsidy(job.height);
+                            let pool_fee_pct = zion_core::emission::POOL_FEE_PCT;
+                            pool.lock()
+                                .expect("pool lock poisoned")
+                                .runtime()
+                                .record_zion_block_revenue(subsidy, pool_fee_pct);
+                        }
 
                         ShareDecision {
                             status: node_status,
