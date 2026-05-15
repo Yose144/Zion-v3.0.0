@@ -69,6 +69,25 @@ else:
     print("WARNING: No CUDA GPU detected — training will be extremely slow!")
 PYEOF
 
+# ── 2.5 Data sanity check ────────────────────────────────────────────────────
+echo ""
+echo "=== Data check ==="
+MISSING=0
+for stage in $STAGES; do
+  f="$DATA_DIR/${stage}.jsonl"
+  if [[ -f "$f" ]]; then
+    lines=$(wc -l < "$f" | tr -d ' ')
+    echo "  $stage: $lines rows"
+  else
+    echo "  $stage: MISSING ($f)"
+    MISSING=$((MISSING + 1))
+  fi
+done
+if [[ $MISSING -gt 0 ]]; then
+  echo "ERROR: $MISSING stage data files missing. Run dataset preparation first." >&2
+  exit 1
+fi
+
 # ── 3. Dry-run (config + dataset sizes) ─────────────────────────────────────
 echo ""
 echo "=== Dry run ==="
