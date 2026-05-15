@@ -734,6 +734,11 @@ pub struct RevenueSnapshot {
     pub total_earnings_usd: f64,
     pub zion_fees_usd: f64,
     pub miner_payout_usd: f64,
+    // ZION-denominated fields (flowers).
+    pub total_zion: u64,
+    pub zion_fees_zion: u64,
+    pub miner_payout_zion: u64,
+    pub blocks_found: u64,
 }
 
 impl From<RevenueStats> for RevenueSnapshot {
@@ -742,6 +747,10 @@ impl From<RevenueStats> for RevenueSnapshot {
             total_earnings_usd: value.total_earnings_usd,
             zion_fees_usd: value.zion_fees_usd,
             miner_payout_usd: value.miner_payout_usd,
+            total_zion: value.total_zion,
+            zion_fees_zion: value.zion_fees_zion,
+            miner_payout_zion: value.miner_payout_zion,
+            blocks_found: value.blocks_found,
         }
     }
 }
@@ -1221,6 +1230,11 @@ impl CoreRuntime {
             value_usd,
             qualifies,
         });
+    }
+
+    /// Record a canonical ZION Deeksha block reward in the revenue collector.
+    pub fn record_zion_block_revenue(&self, subsidy: u64, pool_fee_pct: u64) {
+        self.revenue.track_zion_block(subsidy, pool_fee_pct);
     }
 
     pub fn revenue_snapshot(&self) -> RevenueSnapshot {
@@ -4122,6 +4136,20 @@ mod tests {
         let snapshot = runtime.revenue_snapshot();
         assert_eq!(snapshot.total_earnings_usd, 100.0);
         assert!((snapshot.zion_fees_usd - 2.0).abs() < 0.001);
+    }
+
+    #[test]
+    fn runtime_tracks_zion_block_revenue() {
+        let runtime = CoreRuntime::default();
+        let subsidy = 5_400_067_000_000_000_u64;
+        runtime.record_zion_block_revenue(subsidy, 1);
+
+        let snapshot = runtime.revenue_snapshot();
+        assert_eq!(snapshot.total_zion, subsidy);
+        assert_eq!(snapshot.zion_fees_zion, subsidy * 1 / 100);
+        assert_eq!(snapshot.miner_payout_zion, subsidy - subsidy * 1 / 100);
+        assert_eq!(snapshot.blocks_found, 1);
+        assert_eq!(snapshot.total_earnings_usd, 0.0); // USD untouched
     }
 
     #[test]
