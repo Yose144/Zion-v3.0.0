@@ -87,7 +87,7 @@ def _parse_args() -> argparse.Namespace:
         "--resume_stage",
         type=str,
         default=None,
-        help="Skip stages before this name (exclusive of resume_stage itself)",
+        help="Skip stages before this name (resume_stage is trained first)",
     )
     p.add_argument("--logging_steps", type=int, default=10)
     p.add_argument("--save_steps", type=int, default=200)
@@ -154,6 +154,7 @@ def _load_model_tokenizer(base_model: str, full_finetune: bool = False):
             trust_remote_code=True,
         )
         model = prepare_model_for_kbit_training(model)
+        model.enable_input_require_grads()
         return model, tokenizer
 
 
@@ -202,6 +203,17 @@ def train_one_stage(
     stage_out = output_root / stage
     stage_out.mkdir(parents=True, exist_ok=True)
 
+    # Auto-resume: find the latest checkpoint-* dir inside stage_out
+    resume_ckpt: Optional[str] = None
+    ckpt_dirs = sorted(
+        [d for d in stage_out.iterdir() if d.is_dir() and d.name.startswith("checkpoint-")],
+        key=lambda d: int(d.name.split("-")[1]),
+        reverse=True,
+    )
+    if ckpt_dirs:
+        resume_ckpt = str(ckpt_dirs[0])
+        print(f"  Auto-resuming from checkpoint: {resume_ckpt}")
+
     log_dir = output_root / "logs" / stage if use_tensorboard else None
     if log_dir is not None:
         log_dir.mkdir(parents=True, exist_ok=True)
@@ -242,7 +254,10 @@ def train_one_stage(
         data_collator=collator,
         tokenizer=tokenizer,
     )
-    trainer.train()
+    if resume_ckpt:
+        trainer.train(resume_from_checkpoint=resume_ckpt)
+    else:
+        trainer.train()
 
     final_dir = stage_out / "final"
     trainer.save_model(str(final_dir))
