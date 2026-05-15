@@ -2225,7 +2225,7 @@ mod tests {
     #[test]
     fn live_router_method_count() {
         let router = live_router();
-        assert_eq!(router.method_count(), 21);
+        assert_eq!(router.method_count(), 27);
     }
 
     #[test]

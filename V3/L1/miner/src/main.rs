@@ -831,8 +831,11 @@ fn main() -> Result<()> {
         let total = stats.total_hashes.load(Ordering::Relaxed);
         let acc = stats.accepted_shares.load(Ordering::Relaxed);
         let rej = stats.rejected_shares.load(Ordering::Relaxed);
+        let dcr_revenue = stats.revenue_usd();
         if total > 0 {
-            println!("dcr_total_hashes={total} dcr_accepted={acc} dcr_rejected={rej}");
+            println!(
+                "dcr_total_hashes={total} dcr_accepted={acc} dcr_rejected={rej} dcr_revenue_usd={dcr_revenue:.4}"
+            );
         }
     }
 
@@ -2169,6 +2172,12 @@ fn parse_revenue_source(value: &str) -> Result<RevenueSource> {
         "sha3" | "sha3_bonus" => Ok(RevenueSource::Sha3Bonus),
         "profit" | "profit_switch" => Ok(RevenueSource::ProfitSwitch),
         "blake3" | "blake3_external" | "dcr" | "alph" => Ok(RevenueSource::Blake3External),
+        "kheavyhash" | "kas" => Ok(RevenueSource::KHeavyHashExternal),
+        "ethash" | "etc" | "evr" | "mewc" => Ok(RevenueSource::EthashExternal),
+        "kawpow" | "rvn" | "clore" => Ok(RevenueSource::KawPowExternal),
+        "autolykos" | "erg" => Ok(RevenueSource::AutolykosExternal),
+        "randomx" | "xmr" => Ok(RevenueSource::RandomXExternal),
+        "zelhash" | "flux" => Ok(RevenueSource::ZelHashExternal),
         "ncl" | "ncl_ai" => Ok(RevenueSource::NclAi),
         other => Err(anyhow!("unsupported revenue source: {other}")),
     }
