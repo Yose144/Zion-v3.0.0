@@ -7,6 +7,7 @@ pub mod hugepages;
 pub mod ncl_integration;
 pub mod profit_router;
 pub mod revenue;
+pub mod revenue_journal;
 pub mod scratchpad_ekam;
 pub mod sha3_fast;
 
@@ -37,9 +38,14 @@ pub use profit_router::{
     fallback_estimates, select_best_coin, CoinProfile, ExternalCoin, ProfitEntry, StratumProtocol,
 };
 pub use revenue::{
-    RevenueCollector, RevenueEvent, RevenueSource, RevenueStats, BLAKE3_EXTERNAL_FEE,
+    RevenueCollector, RevenueEvent, RevenueHealth, RevenueSource, RevenueStats,
+    BLAKE3_EXTERNAL_FEE, CIRCUIT_BREAKER_RESET_SECS, CIRCUIT_BREAKER_THRESHOLD,
     MERGED_MINING_FEE, MIN_ZION_ALLOCATION, MULTI_ALGO_ALLOCATION, NCL_ALLOCATION, NCL_FEE,
-    PROFIT_SWITCH_FEE, ZION_ALLOCATION,
+    PROFIT_SWITCH_FEE, ZION_ALLOCATION, ZION_HUMANITARIAN_PCT, ZION_ISSOBELLA_PCT,
+    ZION_MINER_PCT, ZION_POOL_PCT,
+};
+pub use revenue_journal::{
+    JournalEntry, JournalPayload, ReplayedEvent, ReplayedZionBlock, RevenueJournal,
 };
 
 pub const POW_PROFILE: &str = "cosmic_harmony_ekam_deeksha_v2";
