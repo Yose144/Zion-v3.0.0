@@ -1237,6 +1237,22 @@ impl CoreRuntime {
         self.revenue.track_event(RevenueEvent::new(source, value_usd, qualifies));
     }
 
+    /// Record revenue from an external pool (e.g. 2miners, NiceHash).
+    /// `external_coin` is the ticker of the mined coin (e.g. "DCR", "KAS", "ETC").
+    /// This is used for multi-algo revenue tracking with BTC payout.
+    pub fn record_external_revenue(
+        &self,
+        source: RevenueSource,
+        value_usd: f64,
+        external_coin: Option<&str>,
+    ) {
+        let mut event = RevenueEvent::new(source, value_usd, true);
+        if let Some(coin) = external_coin {
+            event = event.with_external_coin(coin);
+        }
+        self.revenue.track_event(event);
+    }
+
     /// Record a canonical ZION Deeksha block reward in the revenue collector.
     /// `tx_hash` may be `None` if the on-chain tx hash is not yet known.
     pub fn record_zion_block_revenue(
