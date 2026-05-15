@@ -39,6 +39,18 @@ pub enum RevenueSource {
     /// Same fee rate as ProfitSwitch (2 %) since our algo already uses Blake3
     /// internally and the hash function is shared infrastructure.
     Blake3External,
+    /// Revenue from kHeavyHash external coins (KAS).
+    KHeavyHashExternal,
+    /// Revenue from Ethash / Etchash external coins (ETC, EVR, MEWC).
+    EthashExternal,
+    /// Revenue from KawPow / ProgPow external coins (RVN, CLORE).
+    KawPowExternal,
+    /// Revenue from Autolykos v2 external coins (ERG).
+    AutolykosExternal,
+    /// Revenue from RandomX external coins (XMR).
+    RandomXExternal,
+    /// Revenue from ZelHash / Equihash external coins (FLUX).
+    ZelHashExternal,
     NclAi,
 }
 
@@ -50,6 +62,12 @@ impl RevenueSource {
             Self::Sha3Bonus => "sha3_bonus",
             Self::ProfitSwitch => "profit_switch",
             Self::Blake3External => "blake3_external",
+            Self::KHeavyHashExternal => "kheavyhash_external",
+            Self::EthashExternal => "ethash_external",
+            Self::KawPowExternal => "kawpow_external",
+            Self::AutolykosExternal => "autolykos_external",
+            Self::RandomXExternal => "randomx_external",
+            Self::ZelHashExternal => "zelhash_external",
             Self::NclAi => "ncl_ai",
         }
     }
@@ -57,7 +75,14 @@ impl RevenueSource {
     pub fn fee_rate(self) -> f64 {
         match self {
             Self::Zion | Self::KeccakBonus | Self::Sha3Bonus => MERGED_MINING_FEE,
-            Self::ProfitSwitch | Self::Blake3External => BLAKE3_EXTERNAL_FEE,
+            Self::ProfitSwitch
+            | Self::Blake3External
+            | Self::KHeavyHashExternal
+            | Self::EthashExternal
+            | Self::KawPowExternal
+            | Self::AutolykosExternal
+            | Self::RandomXExternal
+            | Self::ZelHashExternal => BLAKE3_EXTERNAL_FEE,
             Self::NclAi => NCL_FEE,
         }
     }
@@ -75,6 +100,10 @@ pub struct RevenueEvent {
     pub block_height: Option<u64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tx_hash: Option<String>,
+    /// Optional per-coin ticker for granular multi-algo revenue tracking.
+    /// Examples: "DCR", "ALPH", "KAS", "ETC", "RVN", "ERG", "XMR", "FLUX".
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub external_coin: Option<String>,
 }
 
 impl RevenueEvent {
@@ -86,6 +115,7 @@ impl RevenueEvent {
             timestamp: None,
             block_height: None,
             tx_hash: None,
+            external_coin: None,
         }
     }
 
@@ -96,6 +126,11 @@ impl RevenueEvent {
 
     pub fn with_tx_hash(mut self, tx_hash: impl Into<String>) -> Self {
         self.tx_hash = Some(tx_hash.into());
+        self
+    }
+
+    pub fn with_external_coin(mut self, coin: impl Into<String>) -> Self {
+        self.external_coin = Some(coin.into());
         self
     }
 }
@@ -328,6 +363,7 @@ impl RevenueCollector {
             timestamp: Some(Utc::now().to_rfc3339()),
             block_height: None,
             tx_hash: None,
+            external_coin: None,
         });
     }
 
@@ -364,6 +400,7 @@ impl RevenueCollector {
                 timestamp: Some(Utc::now().to_rfc3339()),
                 block_height,
                 tx_hash: None,
+                external_coin: None,
             });
         }
     }
@@ -527,6 +564,7 @@ mod tests {
             timestamp: None,
             block_height: None,
             tx_hash: None,
+            external_coin: None,
         });
 
         let stats = collector.get_stats();
@@ -556,6 +594,7 @@ mod tests {
             timestamp: None,
             block_height: None,
             tx_hash: None,
+            external_coin: None,
         });
 
         let stats = collector.get_stats();
