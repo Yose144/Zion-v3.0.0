@@ -10,7 +10,7 @@ Hiran v2.2 je robustní upgrade nad v2.1 s důrazem na multi-domain learning, dy
 |---------|------|------|
 | Training Approach | Single-domain fine-tuning | Multi-domain curriculum learning |
 | LoRA Configuration | Static (rank 32, alpha 64) | Dynamic (16-64 adaptive) |
-| Dataset Size | ~3056 pairs | 5000-8000 pairs (target) |
+| Dataset Size | ~3056 pairs | 5001 pairs (target met) |
 | Quantization | Q5_K_M only | Hybrid (Q4_K_M + Q8_0) |
 | Inference Backends | llama.cpp only | llama.cpp + ONNX + TensorRT |
 | RAG Integration | Basic | Advanced hybrid RAG |
@@ -288,9 +288,9 @@ bash scripts/deploy_vast.sh
 
 ### Fáze 1: Dataset & Curriculum (2-3 dny)
 - [x] Design curriculum pipeline
-- [ ] Expand dataset to 5000+ pairs
-- [ ] Validate data quality
-- [ ] Create curriculum configs
+- [x] Expand dataset to 5000+ pairs (5001 pairs, 0 duplicates, 0 toxic content)
+- [x] Validate data quality
+- [x] Create curriculum configs
 
 ### Fáze 2: Training Pipeline (3-5 dní)
 - [x] Implement dynamic QLoRA (`config/dynamic_lora.py`)
