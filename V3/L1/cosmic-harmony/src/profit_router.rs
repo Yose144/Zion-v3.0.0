@@ -284,6 +284,21 @@ impl ExternalCoin {
     pub fn blake3_coins() -> &'static [ExternalCoin] {
         &[Self::DCR, Self::ALPH]
     }
+
+    /// Map this external coin to the canonical revenue source used by the
+    /// pool-side revenue collector.
+    pub fn revenue_source(self) -> crate::revenue::RevenueSource {
+        use crate::revenue::RevenueSource;
+        match self {
+            Self::DCR | Self::ALPH => RevenueSource::Blake3External,
+            Self::KAS => RevenueSource::KHeavyHashExternal,
+            Self::ETC | Self::EVR | Self::MEWC => RevenueSource::EthashExternal,
+            Self::RVN | Self::CLORE => RevenueSource::KawPowExternal,
+            Self::ERG => RevenueSource::AutolykosExternal,
+            Self::XMR => RevenueSource::RandomXExternal,
+            Self::FLUX => RevenueSource::ZelHashExternal,
+        }
+    }
 }
 
 impl fmt::Display for ExternalCoin {

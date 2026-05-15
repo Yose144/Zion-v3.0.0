@@ -2261,6 +2261,12 @@ fn source_index(source: RevenueSource) -> usize {
         RevenueSource::ProfitSwitch => 3,
         RevenueSource::Blake3External => 4,
         RevenueSource::NclAi => 5,
+        RevenueSource::KHeavyHashExternal => 6,
+        RevenueSource::EthashExternal => 7,
+        RevenueSource::KawPowExternal => 8,
+        RevenueSource::AutolykosExternal => 9,
+        RevenueSource::RandomXExternal => 10,
+        RevenueSource::ZelHashExternal => 11,
     }
 }
 
@@ -2272,6 +2278,12 @@ fn revenue_source_name(source: RevenueSource) -> &'static str {
         RevenueSource::ProfitSwitch => "profit",
         RevenueSource::Blake3External => "blake3",
         RevenueSource::NclAi => "ncl",
+        RevenueSource::KHeavyHashExternal => "kheavyhash",
+        RevenueSource::EthashExternal => "ethash",
+        RevenueSource::KawPowExternal => "kawpow",
+        RevenueSource::AutolykosExternal => "autolykos",
+        RevenueSource::RandomXExternal => "randomx",
+        RevenueSource::ZelHashExternal => "zelhash",
     }
 }
 
