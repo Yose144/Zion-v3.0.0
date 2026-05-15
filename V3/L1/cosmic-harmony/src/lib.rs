@@ -9,6 +9,7 @@ pub mod profit_router;
 pub mod revenue;
 pub mod revenue_journal;
 pub mod scratchpad_ekam;
+pub mod stream_layers;
 pub mod sha3_fast;
 
 pub use algorithms_npu::{
@@ -46,6 +47,10 @@ pub use revenue::{
 };
 pub use revenue_journal::{
     JournalEntry, JournalPayload, ReplayedEvent, ReplayedZionBlock, RevenueJournal,
+};
+pub use stream_layers::{
+    cosmic_harmony_ekam_deeksha_v2_with_streams, cosmic_harmony_ekam_deeksha_with_streams,
+    DeekshaStep, DeekshaStreamTelemetry,
 };
 
 pub const POW_PROFILE: &str = "cosmic_harmony_ekam_deeksha_v2";
