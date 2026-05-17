@@ -107,6 +107,7 @@ const sectionTitles: Record<string, LocalizedText> = {
   'books': { cs: 'Knihy', en: 'Books' },
   'listing': { cs: 'Listing / CoinGecko', en: 'Listing / CoinGecko' },
   'ai-native': { cs: 'AI / výzkumný archiv', en: 'AI / Research Archive' },
+  'lumi-language': { cs: 'Lumi — jazyk světla', en: 'Lumi — Light Language' },
   'legal': { cs: 'Právní rámec', en: 'Legal' },
 };
 
@@ -169,6 +170,10 @@ const docTitles: Record<string, LocalizedText> = {
   'ai-native-cudax': { cs: 'NVIDIA CUDA-X integrace', en: 'NVIDIA CUDA-X Integration' },
   'ai-native-ncl': { cs: 'NCL — Neural Compute', en: 'NCL — Neural Compute' },
   'ai-native-oasis': { cs: 'L4 Oasis — úrovně vědomí', en: 'L4 Oasis — Consciousness Levels' },
+  'lumi-overview': { cs: 'Lumi — přehled jazyka světla', en: 'Lumi — Light Language Overview' },
+  'lumi-phonetics': { cs: 'Fonetika a tóny', en: 'Phonetics & Tones' },
+  'lumi-core-108': { cs: 'Jádrový slovník 108', en: 'Core Dictionary 108' },
+  'lumi-light-tones': { cs: 'Light Language tóny', en: 'Light Language Tones' },
   'legal-disclaimer': { cs: 'Disclaimer', en: 'Disclaimer' },
   'legal-risk': { cs: 'Risk Disclosure', en: 'Risk Disclosure' },
   'legal-token': { cs: 'Token Not Security', en: 'Token Not Security' },
@@ -481,6 +486,19 @@ const sections: Section[] = [
       { id: 'legal-token', title: 'Token Not Security', file: 'legal/token.md' },
     ],
   },
+  {
+    id: 'lumi-language',
+    title: 'Lumi — Light Language',
+    icon: Sparkles,
+    accentText: 'text-yellow-300',
+    accentBorder: 'border-yellow-300/30',
+    docs: [
+      { id: 'lumi-overview', title: 'Lumi — Light Language Overview', file: 'lumi/README.md' },
+      { id: 'lumi-phonetics', title: 'Phonetics & Tones', file: 'lumi/phonetics.md' },
+      { id: 'lumi-core-108', title: 'Core Dictionary 108', file: 'lumi/core-108.md' },
+      { id: 'lumi-light-tones', title: 'Light Language Tones', file: 'lumi/light-tones.md' },
+    ],
+  },
 ];
 
 function findCategoryIdByDoc(docId: string): string | null {
@@ -499,7 +517,7 @@ export default function DocsPage() {
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [expandedVersions, setExpandedVersions] = useState<Record<string, boolean>>({ 'v2.9.5': false, 'v2.9.6': true, 'v2.9': false, 'v2.8.x': false, 'live-ops': true, 'ai-native': true, 'whitepaper': false, 'architecture': false, 'mainnet': false, 'listing': false, 'legal': false });
+  const [expandedVersions, setExpandedVersions] = useState<Record<string, boolean>>({ 'v2.9.5': false, 'v2.9.6': true, 'v2.9': false, 'v2.8.x': false, 'live-ops': true, 'ai-native': true, 'whitepaper': false, 'architecture': false, 'mainnet': false, 'listing': false, 'legal': false, 'lumi-language': false });
   const [sidebarTab, setSidebarTab] = useState<'resources' | 'history'>('resources');
   const { lang } = useLang();
   const currentLang = lang === 'cs' ? 'cs' : 'en';
