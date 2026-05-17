@@ -62,7 +62,6 @@ export default function Navigation() {
           children: [
             { href: '/terranova/public', label: tr('nav', 'terranova_public', lang) },
             { href: '/terranova/genesis', label: tr('nav', 'terra_garden_genesis', lang) },
-            { href: '/terranova/dharma-temple', label: tr('nav', 'terra_dharma_temple', lang) },
           ],
         },
         { href: '/bridge', label: tr('nav', 'bridge', lang) },
