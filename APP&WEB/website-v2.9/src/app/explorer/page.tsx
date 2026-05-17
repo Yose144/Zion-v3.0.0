@@ -120,7 +120,7 @@ export default function ExplorerPage() {
   const quickLinks = getQuickLinks(cs);
 
   return (
-    <div className="zion-shell min-h-screen pt-28 md:pt-32 pb-24 overflow-x-hidden">
+    <div className="pt-28 md:pt-32 pb-24 overflow-x-hidden">
       {/* ── Subtle background glows ── */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <div className="absolute -left-40 top-1/4 h-[500px] w-[500px] rounded-full blur-[200px] bg-zion-purple/8" />
@@ -256,8 +256,7 @@ export default function ExplorerPage() {
                     <Link
                       key={link.title}
                       href={link.href}
-                      className="group flex items-center gap-3 rounded-xl border border-white/6 bg-white/2
-                        p-3 transition-all duration-200 hover:border-white/15 hover:bg-white/4"
+                      className="group flex items-center gap-3 rounded-xl border border-white/6 bg-white/2 p-3 transition-all duration-200 hover:border-white/15 hover:bg-white/4"
                     >
                       <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-linear-to-br ${link.accent}
                         opacity-80 transition group-hover:opacity-100`}>

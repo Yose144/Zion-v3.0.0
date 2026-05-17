@@ -200,7 +200,7 @@ export default function ApiReferencePage() {
   const endpointGroups = getEndpointGroups(cs);
 
   return (
-    <div className="zion-shell min-h-screen pt-32 pb-20 overflow-x-hidden">
+    <div className="pt-28 pb-20 overflow-x-hidden">
       <div className="zion-container max-w-6xl space-y-12">
         <section className="rounded-[36px] border border-white/10 bg-black/60 p-8 backdrop-blur-xl shadow-[0_30px_120px_rgba(0,0,0,0.5)]">
           <div className="inline-flex items-center gap-2 rounded-full border border-zion-purple/40 bg-zion-purple/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-zion-gold">
