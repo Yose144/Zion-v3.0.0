@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 "use client";
 
 import { useState } from "react";
@@ -131,6 +132,11 @@ const MOCK_SETTINGS: CH3Settings = {
   },
 };
 
+export const metadata: Metadata = {
+  title: 'CHv3 Dashboard · ZION',
+  description: 'Cosmic Harmony v3 protocol metrics and consensus health monitoring.',
+};
+
 export default function CH3SettingsPage() {
   const [settings, setSettings] = useState<CH3Settings>(MOCK_SETTINGS);
   const [loading] = useState(false);
@@ -190,14 +196,14 @@ export default function CH3SettingsPage() {
 
   if (loading) {
     return (
-      <div className="zion-shell min-h-screen flex items-center justify-center">
+      <div className="flex items-center justify-center">
         <div className="text-yellow-400 text-2xl animate-pulse">Loading CH v3 Settings...</div>
       </div>
     );
   }
 
   return (
-    <div className="zion-shell min-h-screen text-white p-6">
+    <div className="text-white p-6">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-4xl font-bold text-yellow-400 mb-2">

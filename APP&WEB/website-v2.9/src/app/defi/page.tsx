@@ -94,7 +94,7 @@ export default function DefiPage() {
   }, [fetchSupply]);
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-black text-white pt-24 pb-16">
+    <div className="relative overflow-hidden bg-black text-white pt-28 pb-16">
       {/* Background glows */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -top-36 -left-28 h-[520px] w-[520px] rounded-full bg-zion-purple/18 blur-3xl" />
@@ -375,6 +375,6 @@ export default function DefiPage() {
           </div>
         </motion.div>
       </section>
-    </main>
+    </div>
   );
 }

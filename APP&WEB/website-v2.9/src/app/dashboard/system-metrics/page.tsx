@@ -12,8 +12,8 @@ export const metadata: Metadata = {
 
 export default function SystemMetricsPage() {
   return (
-    <div className="zion-shell min-h-screen text-white pb-16">
-      <div className="zion-container max-w-6xl pt-20">
+    <div className="text-white pb-16">
+      <div className="zion-container max-w-6xl pt-28">
         <div className="mb-6">
           <p className="zion-kicker">Monitoring</p>
           <h1 className="zion-section-title mt-3">Full System Dashboard</h1>
