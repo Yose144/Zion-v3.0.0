@@ -18,6 +18,8 @@ use crate::api::ApiResponse;
 use crate::config::OasisConfig;
 use crate::db::OasisDb;
 use crate::guild::Guild;
+use crate::combat::{CombatAction, CombatEngine, Combatant, ActionType};
+use crate::quests::QuestManager;
 use crate::rewards::{RewardPool, RewardSlot};
 use crate::territory::TerritoryMap;
 use crate::xp::{XpSource, XpSystem};
@@ -39,15 +41,17 @@ pub struct OasisState {
     pub db: OasisDb,
     pub config: OasisConfig,
     pub xp_sys: Arc<XpSystem>,
+    pub quest_mgr: Arc<QuestManager>,
 }
 
 impl OasisState {
-    pub fn new(db: OasisDb, config: OasisConfig) -> Self {
+    pub fn new(db: OasisDb, config: OasisConfig, quest_mgr: Arc<QuestManager>) -> Self {
         let daily_cap = config.daily_xp_cap;
         Self {
             db,
             config,
             xp_sys: Arc::new(XpSystem { daily_cap }),
+            quest_mgr,
         }
     }
 }
@@ -59,11 +63,30 @@ pub fn build_router(state: OasisState) -> Router {
         .route("/api/v1/oasis/player/:address", get(get_player))
         .route("/api/v1/oasis/player/:address/xp", post(award_xp))
         .route("/api/v1/oasis/leaderboard", get(leaderboard))
+        .route("/api/v1/oasis/leaderboard/top100", get(top_100_leaderboard))
         .route("/api/v1/oasis/guild", post(create_guild))
         .route("/api/v1/oasis/guild/:id", get(get_guild))
         .route("/api/v1/oasis/guild/:id/join", post(join_guild))
         .route("/api/v1/oasis/map", get(territory_map))
         .route("/api/v1/oasis/rewards/pools", get(reward_pools))
+        // Golden Egg
+        .route("/api/v1/oasis/golden-egg/progress/:address", get(golden_egg_progress))
+        .route("/api/v1/oasis/golden-egg/leaderboard", get(golden_egg_leaderboard))
+        .route("/api/v1/oasis/prize-tiers", get(prize_tiers))
+        // Raid Team
+        .route("/api/v1/oasis/raid-team", post(create_raid_team))
+        .route("/api/v1/oasis/raid-team/:id", get(get_raid_team))
+        .route("/api/v1/oasis/raid-team/:id/join", post(join_raid_team))
+        .route("/api/v1/oasis/raid-leaderboard", get(raid_leaderboard))
+        // Quests
+        .route("/api/v1/oasis/quests", get(list_quests))
+        .route("/api/v1/oasis/player/:address/quests", get(player_quests))
+        .route(
+            "/api/v1/oasis/player/:address/quests/:quest_id/complete",
+            post(complete_quest),
+        )
+        // Combat
+        .route("/api/v1/oasis/combat/resolve", post(resolve_combat))
         .with_state(state)
 }
 
@@ -386,6 +409,181 @@ async fn reward_pools() -> impl IntoResponse {
     Json(ApiResponse::ok(resp))
 }
 
+// ── Top 100 Leaderboard ───────────────────────────────────────────────────────
+
+/// GET /api/v1/oasis/leaderboard/top100
+async fn top_100_leaderboard(
+    State(state): State<OasisState>,
+) -> impl IntoResponse {
+    match state.db.top_players(100) {
+        Ok(entries) => (StatusCode::OK, Json(ApiResponse::ok(entries))).into_response(),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ApiResponse::<()>::error(&e.to_string())),
+        )
+            .into_response(),
+    }
+}
+
+// ── Golden Egg ──────────────────────────────────────────────────────────────────
+
+use crate::golden_egg::GoldenEggProgress;
+use crate::prize_tiers::PrizeConfig;
+use crate::raid_team::RaidTeam;
+
+/// GET /api/v1/oasis/golden-egg/progress/:address
+async fn golden_egg_progress(Path(address): Path<String>) -> impl IntoResponse {
+    let progress = GoldenEggProgress::new(address);
+    Json(ApiResponse::ok(progress))
+}
+
+/// GET /api/v1/oasis/golden-egg/leaderboard
+async fn golden_egg_leaderboard() -> impl IntoResponse {
+    // Placeholder - will be wired to DB in future iteration
+    let leaderboard: Vec<GoldenEggProgress> = Vec::new();
+    Json(ApiResponse::ok(leaderboard))
+}
+
+/// GET /api/v1/oasis/prize-tiers
+async fn prize_tiers() -> impl IntoResponse {
+    let config = PrizeConfig::from_embedded_json();
+    Json(ApiResponse::ok(config))
+}
+
+// ── Raid Team ───────────────────────────────────────────────────────────────────
+
+/// Request for POST /api/v1/oasis/raid-team
+#[derive(Debug, Deserialize)]
+pub struct CreateRaidRequest {
+    pub name: String,
+    pub leader_address: String,
+}
+
+/// POST /api/v1/oasis/raid-team
+async fn create_raid_team(
+    State(_state): State<OasisState>,
+    Json(req): Json<CreateRaidRequest>,
+) -> impl IntoResponse {
+    let id = uuid::Uuid::new_v4().to_string();
+    let raid = RaidTeam::new(id.clone(), req.name, req.leader_address);
+    (StatusCode::CREATED, Json(ApiResponse::ok(raid))).into_response()
+}
+
+/// GET /api/v1/oasis/raid-team/:id
+async fn get_raid_team(Path(id): Path<String>) -> impl IntoResponse {
+    // Placeholder - returns not found
+    (
+        StatusCode::NOT_FOUND,
+        Json(ApiResponse::<()>::error(&format!("Raid team {} not found", id))),
+    )
+        .into_response()
+}
+
+/// Request for POST /api/v1/oasis/raid-team/:id/join
+#[derive(Debug, Deserialize)]
+pub struct JoinRaidRequest {
+    pub address: String,
+    pub consciousness_level: u8,
+    pub role: String,
+}
+
+/// POST /api/v1/oasis/raid-team/:id/join
+async fn join_raid_team(
+    Path(id): Path<String>,
+    Json(_req): Json<JoinRaidRequest>,
+) -> impl IntoResponse {
+    // Placeholder - would add member to raid team in DB
+    (
+        StatusCode::OK,
+        Json(ApiResponse::ok(format!("Join request for raid {} received", id))),
+    )
+        .into_response()
+}
+
+/// GET /api/v1/oasis/raid-leaderboard
+async fn raid_leaderboard() -> impl IntoResponse {
+    let leaderboard: Vec<&str> = Vec::new();
+    Json(ApiResponse::ok(leaderboard))
+}
+
+// ── Quests ────────────────────────────────────────────────────────────────────
+
+/// GET /api/v1/oasis/quests
+async fn list_quests(State(state): State<OasisState>) -> impl IntoResponse {
+    Json(ApiResponse::ok(state.quest_mgr.registry.all().to_vec()))
+}
+
+/// GET /api/v1/oasis/player/:address/quests
+async fn player_quests(
+    State(state): State<OasisState>,
+    Path(address): Path<String>,
+) -> impl IntoResponse {
+    match state.quest_mgr.player_progress(&state.db, &address) {
+        Ok(progress) => (StatusCode::OK, Json(ApiResponse::ok(progress))).into_response(),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ApiResponse::<()>::error(&e.to_string())),
+        )
+            .into_response(),
+    }
+}
+
+/// POST /api/v1/oasis/player/:address/quests/:quest_id/complete
+async fn complete_quest(
+    State(state): State<OasisState>,
+    Path((address, quest_id)): Path<(String, String)>,
+) -> impl IntoResponse {
+    let def = match state.quest_mgr.registry.get(&quest_id) {
+        Some(d) => d.clone(),
+        None => {
+            return (
+                StatusCode::NOT_FOUND,
+                Json(ApiResponse::<()>::error("quest not found")),
+            )
+                .into_response();
+        }
+    };
+
+    let mut player = match state.db.get_or_create_player(&address) {
+        Ok(p) => p,
+        Err(e) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(ApiResponse::<()>::error(&e.to_string())),
+            )
+                .into_response()
+        }
+    };
+
+    match state
+        .quest_mgr
+        .complete_quest(&state.db, &address, &quest_id)
+    {
+        Ok(progress) => {
+            // Award XP via the standard XP system
+            let source = XpSource::AvatarQuest {
+                quest_id: quest_id.clone(),
+                avatar_id: def.avatar_id,
+            };
+            let award = state
+                .xp_sys
+                .award(player.total_xp, player.level, &source, player.daily_xp);
+            player.total_xp = award.new_total_xp;
+            player.daily_xp += award.actual_amount;
+            player.level = award.new_level;
+            if let Err(e) = state.db.save_player(&player) {
+                tracing::warn!("Quest XP save failed: {}", e);
+            }
+            (StatusCode::OK, Json(ApiResponse::ok(progress))).into_response()
+        }
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ApiResponse::<()>::error(&e.to_string())),
+        )
+            .into_response(),
+    }
+}
+
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 #[cfg(test)]
@@ -401,7 +599,10 @@ mod tests {
     fn test_state() -> OasisState {
         let db = OasisDb::in_memory().expect("db");
         let config = OasisConfig::default();
-        OasisState::new(db, config)
+        let quest_mgr = Arc::new(QuestManager::new(
+            crate::quests::QuestRegistry::default()
+        ));
+        OasisState::new(db, config, quest_mgr)
     }
 
     #[tokio::test]
@@ -517,5 +718,75 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(resp.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_top100_leaderboard_endpoint() {
+        let state = test_state();
+        let app = build_router(state);
+        let resp = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/v1/oasis/leaderboard/top100")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn test_golden_egg_progress_endpoint() {
+        let state = test_state();
+        let app = build_router(state);
+        let resp = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/v1/oasis/golden-egg/progress/zion1test")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn test_prize_tiers_endpoint() {
+        let state = test_state();
+        let app = build_router(state);
+        let resp = app
+            .oneshot(
+                Request::builder()
+                    .uri("/api/v1/oasis/prize-tiers")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn test_create_raid_team_endpoint() {
+        let state = test_state();
+        let app = build_router(state);
+        let body = serde_json::json!({
+            "name": "Golden Egg Raiders",
+            "leader_address": "zion1leader"
+        });
+        let resp = app
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri("/api/v1/oasis/raid-team")
+                    .header("content-type", "application/json")
+                    .body(Body::from(body.to_string()))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(resp.status(), StatusCode::CREATED);
     }
 }

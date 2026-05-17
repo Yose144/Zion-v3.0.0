@@ -72,6 +72,14 @@ impl OasisDb {
                 key   TEXT PRIMARY KEY,
                 value TEXT NOT NULL
             );
+
+            CREATE TABLE IF NOT EXISTS quest_progress (
+                player_address TEXT NOT NULL,
+                quest_id       TEXT NOT NULL,
+                completed      INTEGER NOT NULL DEFAULT 0,
+                completed_at   INTEGER,
+                PRIMARY KEY (player_address, quest_id)
+            );
             ",
         )
         .map_err(OasisError::Database)?;
@@ -289,6 +297,95 @@ impl OasisDb {
             .query_row("SELECT COUNT(*) FROM guilds", [], |row| row.get(0))
             .map_err(OasisError::Database)?;
         Ok(count as u64)
+    }
+
+    // ── Quest Progress ─────────────────────────────────────────────────────
+
+    /// Save (insert or update) quest progress.
+    pub fn save_quest_progress(
+        &self,
+        progress: &crate::quests::QuestProgress,
+    ) -> OasisResult<()> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "INSERT INTO quest_progress (player_address, quest_id, completed, completed_at)
+             VALUES (?1, ?2, ?3, ?4)
+             ON CONFLICT(player_address, quest_id) DO UPDATE SET
+               completed    = excluded.completed,
+               completed_at = excluded.completed_at",
+            params![
+                progress.player_address,
+                progress.quest_id,
+                progress.completed,
+                progress.completed_at.map(|t| t as i64),
+            ],
+        )
+        .map_err(OasisError::Database)?;
+        Ok(())
+    }
+
+    /// Get a single quest progress entry.
+    pub fn get_quest_progress(
+        &self,
+        address: &str,
+        quest_id: &str,
+    ) -> OasisResult<Option<crate::quests::QuestProgress>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn
+            .prepare("SELECT completed, completed_at FROM quest_progress WHERE player_address = ?1 AND quest_id = ?2")
+            .map_err(OasisError::Database)?;
+        let mut rows = stmt.query(params![address, quest_id]).map_err(OasisError::Database)?;
+        if let Some(row) = rows.next().map_err(OasisError::Database)? {
+            let completed: bool = row.get(0).map_err(OasisError::Database)?;
+            let completed_at: Option<i64> = row.get(1).map_err(OasisError::Database)?;
+            Ok(Some(crate::quests::QuestProgress {
+                player_address: address.to_string(),
+                quest_id: quest_id.to_string(),
+                completed,
+                completed_at: completed_at.map(|t| t as u64),
+            }))
+        } else {
+            Ok(None)
+        }
+    }
+
+    /// List all quest progress for a player.
+    pub fn list_quest_progress(
+        &self,
+        address: &str,
+    ) -> OasisResult<Vec<crate::quests::QuestProgress>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn
+            .prepare("SELECT quest_id, completed, completed_at FROM quest_progress WHERE player_address = ?1")
+            .map_err(OasisError::Database)?;
+        let rows = stmt
+            .query_map(params![address], |row| {
+                Ok(crate::quests::QuestProgress {
+                    player_address: address.to_string(),
+                    quest_id: row.get(0)?,
+                    completed: row.get(1)?,
+                    completed_at: row.get::<_, Option<i64>>(2)?.map(|t| t as u64),
+                })
+            })
+            .map_err(OasisError::Database)?;
+        let mut out = Vec::new();
+        for r in rows {
+            out.push(r.map_err(OasisError::Database)?);
+        }
+        Ok(out)
+    }
+
+    /// Count completed quests for a player.
+    pub fn count_completed_quests(&self, address: &str) -> OasisResult<u32> {
+        let conn = self.conn.lock().unwrap();
+        let count: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM quest_progress WHERE player_address = ?1 AND completed = 1",
+                params![address],
+                |row| row.get(0),
+            )
+            .map_err(OasisError::Database)?;
+        Ok(count as u32)
     }
 }
 

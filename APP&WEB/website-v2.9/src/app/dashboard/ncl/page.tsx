@@ -1,4 +1,3 @@
-import type { Metadata } from 'next';
 "use client";
 
 import { useState } from "react";
@@ -55,11 +54,6 @@ const CONSCIOUSNESS_COLORS: Record<number, string> = {
   4: "text-purple-400",
   5: "text-yellow-400",
   6: "text-amber-300",
-};
-
-export const metadata: Metadata = {
-  title: 'NCL Curriculum · ZION',
-  description: 'Neural Compute Layer curriculum dashboard — task progress and learning analytics.',
 };
 
 export default function NCLDashboard() {

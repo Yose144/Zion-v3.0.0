@@ -9,11 +9,13 @@
 //!   OASIS_BIND    — bind address (default: 0.0.0.0)
 //!   RUST_LOG      — log level (default: info)
 
+use std::sync::Arc;
 use tracing::info;
 use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 use zion_oasis::{
     config::OasisConfig,
     db::OasisDb,
+    quests::{QuestManager, QuestRegistry},
     server::{start_server, OasisState},
 };
 
@@ -42,7 +44,27 @@ async fn main() -> anyhow::Result<()> {
     info!("Opening OASIS database: {}", db_path);
     let db = OasisDb::open(&db_path)?;
 
-    let state = OasisState::new(db, config);
+    // Load quest definitions from avatars.json
+    let avatars_path = std::env::var("OASIS_AVATARS_PATH")
+        .unwrap_or_else(|_| "data/avatars.json".to_string());
+    let quest_mgr = match std::fs::read_to_string(&avatars_path) {
+        Ok(data) => match QuestRegistry::from_avatars_json(&data) {
+            Ok(registry) => {
+                info!("Loaded {} quests from {}", registry.len(), avatars_path);
+                Arc::new(QuestManager::new(registry))
+            }
+            Err(e) => {
+                tracing::warn!("Failed to parse quest registry: {}", e);
+                Arc::new(QuestManager::new(QuestRegistry::default()))
+            }
+        },
+        Err(e) => {
+            tracing::warn!("Could not read {}: {}", avatars_path, e);
+            Arc::new(QuestManager::new(QuestRegistry::default()))
+        }
+    };
+
+    let state = OasisState::new(db, config, quest_mgr);
 
     info!(
         "Consciousness levels: 9 (Physical → OnTheStar)"

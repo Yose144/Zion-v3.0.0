@@ -101,6 +101,33 @@ services:
     networks:
       - zion-v3
 
+  # ZION OASIS Game Server (L4)
+  oasis:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.oasis
+    image: zion-v3-oasis:${TAG:-latest}
+    container_name: zion-v3-oasis
+    restart: unless-stopped
+    profiles: ["mainnet", "dev"]
+    ports:
+      - "${OASIS_PORT:-8094}:8094"
+    volumes:
+      - zion-oasis-data:/data/oasis
+    environment:
+      - RUST_LOG=${RUST_LOG:-info}
+      - OASIS_BIND=0.0.0.0
+      - OASIS_PORT=8094
+      - OASIS_DB=/data/oasis/oasis.db
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8094/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - zion-v3
+
   # Hiran v2.2 Inference Service
   hiran-inference:
     build:
@@ -179,6 +206,7 @@ services:
 
 volumes:
   zion-node-data:
+  zion-oasis-data:
   prometheus-data:
   grafana-data:
   hiran-models:
