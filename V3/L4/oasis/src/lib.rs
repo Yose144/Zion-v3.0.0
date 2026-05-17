@@ -66,6 +66,7 @@ pub mod prize_tiers;
 pub mod quests;
 pub mod raid_team;
 pub mod rewards;
+pub mod rate_limit;
 pub mod server;
 pub mod territory;
 pub mod tithe;
