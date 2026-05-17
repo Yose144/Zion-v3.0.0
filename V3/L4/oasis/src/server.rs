@@ -19,9 +19,11 @@ use crate::config::OasisConfig;
 use crate::db::OasisDb;
 use crate::guild::Guild;
 use crate::combat::{CombatAction, CombatEngine, Combatant, ActionType};
+use crate::metrics::{OasisMetrics, serve_metrics};
 use crate::quests::QuestManager;
 use crate::rewards::{RewardPool, RewardSlot};
 use crate::territory::TerritoryMap;
+use crate::websocket::{ws_events_handler, ws_leaderboard_handler, WsHub};
 use crate::xp::{XpSource, XpSystem};
 use axum::{
     extract::{Path, State},
@@ -42,16 +44,26 @@ pub struct OasisState {
     pub config: OasisConfig,
     pub xp_sys: Arc<XpSystem>,
     pub quest_mgr: Arc<QuestManager>,
+    pub metrics: Arc<OasisMetrics>,
+    pub ws_hub: Option<Arc<WsHub>>,
 }
 
 impl OasisState {
-    pub fn new(db: OasisDb, config: OasisConfig, quest_mgr: Arc<QuestManager>) -> Self {
+    pub fn new(
+        db: OasisDb,
+        config: OasisConfig,
+        quest_mgr: Arc<QuestManager>,
+        metrics: Arc<OasisMetrics>,
+        ws_hub: Option<Arc<WsHub>>,
+    ) -> Self {
         let daily_cap = config.daily_xp_cap;
         Self {
             db,
             config,
             xp_sys: Arc::new(XpSystem { daily_cap }),
             quest_mgr,
+            metrics,
+            ws_hub,
         }
     }
 }
@@ -87,15 +99,27 @@ pub fn build_router(state: OasisState) -> Router {
         )
         // Combat
         .route("/api/v1/oasis/combat/resolve", post(resolve_combat))
+        // WebSocket feeds
+        .route(
+            "/api/v1/oasis/ws/leaderboard",
+            get(ws_leaderboard_handler),
+        )
+        .route("/api/v1/oasis/ws/events", get(ws_events_handler))
         .with_state(state)
 }
 
 /// Start the HTTP server on the configured port.
 pub async fn start_server(state: OasisState) -> anyhow::Result<()> {
     let bind = format!("{}:{}", state.config.bind, state.config.port);
+    let metrics_port = state.config.metrics_port;
+    let metrics = Arc::clone(&state.metrics);
     let router = build_router(state);
     let listener = TcpListener::bind(&bind).await?;
     info!("OASIS API server listening on http://{}", bind);
+
+    // Spawn Prometheus metrics endpoint in background
+    tokio::spawn(serve_metrics(metrics, metrics_port));
+
     axum::serve(listener, router).await?;
     Ok(())
 }
@@ -156,9 +180,11 @@ async fn award_xp(
     Path(address): Path<String>,
     Json(req): Json<AwardXpRequest>,
 ) -> impl IntoResponse {
+    state.metrics.requests_total.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
     let mut player = match state.db.get_or_create_player(&address) {
         Ok(p) => p,
         Err(e) => {
+            state.metrics.errors_total.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(ApiResponse::<()>::error(&e.to_string())),
@@ -216,6 +242,7 @@ async fn award_xp(
         level: award.new_level.name().to_string(),
         leveled_up: award.leveled_up,
     };
+    state.metrics.xp_awards_total.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
     (StatusCode::OK, Json(ApiResponse::ok(resp))).into_response()
 }
 
@@ -246,6 +273,7 @@ async fn create_guild(
     State(state): State<OasisState>,
     Json(req): Json<CreateGuildRequest>,
 ) -> impl IntoResponse {
+    state.metrics.requests_total.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
     // Check founder XP requirement (Mental level = 5000 XP)
     match state.db.get_player(&req.founder) {
         Ok(Some(player)) if player.total_xp < crate::guild::MIN_LEVEL_CREATE => {
@@ -281,6 +309,7 @@ async fn create_guild(
             .into_response();
     }
 
+    state.metrics.guild_creations_total.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
     (StatusCode::CREATED, Json(ApiResponse::ok(guild))).into_response()
 }
 
@@ -316,6 +345,7 @@ async fn join_guild(
     Path(id): Path<String>,
     Json(req): Json<JoinGuildRequest>,
 ) -> impl IntoResponse {
+    state.metrics.requests_total.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
     let mut guild = match state.db.get_guild(&id) {
         Ok(Some(g)) => g,
         Ok(None) => {
@@ -377,6 +407,7 @@ async fn join_guild(
             .into_response();
     }
 
+    state.metrics.guild_joins_total.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
     (StatusCode::OK, Json(ApiResponse::ok(guild))).into_response()
 }
 
@@ -461,11 +492,13 @@ pub struct CreateRaidRequest {
 
 /// POST /api/v1/oasis/raid-team
 async fn create_raid_team(
-    State(_state): State<OasisState>,
+    State(state): State<OasisState>,
     Json(req): Json<CreateRaidRequest>,
 ) -> impl IntoResponse {
+    state.metrics.requests_total.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
     let id = uuid::Uuid::new_v4().to_string();
     let raid = RaidTeam::new(id.clone(), req.name, req.leader_address);
+    state.metrics.raid_team_creations_total.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
     (StatusCode::CREATED, Json(ApiResponse::ok(raid))).into_response()
 }
 
@@ -533,6 +566,7 @@ async fn complete_quest(
     State(state): State<OasisState>,
     Path((address, quest_id)): Path<(String, String)>,
 ) -> impl IntoResponse {
+    state.metrics.requests_total.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
     let def = match state.quest_mgr.registry.get(&quest_id) {
         Some(d) => d.clone(),
         None => {
@@ -574,6 +608,7 @@ async fn complete_quest(
             if let Err(e) = state.db.save_player(&player) {
                 tracing::warn!("Quest XP save failed: {}", e);
             }
+            state.metrics.quest_completions_total.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
             (StatusCode::OK, Json(ApiResponse::ok(progress))).into_response()
         }
         Err(e) => (
@@ -602,7 +637,11 @@ pub struct CombatResponse {
 }
 
 /// POST /api/v1/oasis/combat/resolve
-async fn resolve_combat(Json(req): Json<CombatRequest>) -> impl IntoResponse {
+async fn resolve_combat(
+    State(state): State<OasisState>,
+    Json(req): Json<CombatRequest>,
+) -> impl IntoResponse {
+    state.metrics.requests_total.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
     let action_type = match req.action.as_str() {
         "strike" => ActionType::Strike,
         "meditate" => ActionType::Meditate,
@@ -673,6 +712,7 @@ async fn resolve_combat(Json(req): Json<CombatRequest>) -> impl IntoResponse {
         energy_cost: result.energy_cost,
     };
 
+    state.metrics.combat_resolutions_total.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
     (StatusCode::OK, Json(ApiResponse::ok(resp)))
 }
 
@@ -694,7 +734,9 @@ mod tests {
         let quest_mgr = Arc::new(QuestManager::new(
             crate::quests::QuestRegistry::default()
         ));
-        OasisState::new(db, config, quest_mgr)
+        let metrics = OasisMetrics::new();
+        let ws_hub = Some(crate::websocket::WsHub::new());
+        OasisState::new(db, config, quest_mgr, metrics, ws_hub)
     }
 
     #[tokio::test]
