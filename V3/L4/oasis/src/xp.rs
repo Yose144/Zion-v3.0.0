@@ -22,6 +22,8 @@ pub enum XpSource {
     Tithe { category: String, amount: u64 },
     /// Guild quest completion
     GuildQuest { quest_id: String },
+    /// Avatar quest completion
+    AvatarQuest { quest_id: String, avatar_id: u16 },
     /// Referral bonus
     Referral { referred_address: String },
 }
@@ -42,6 +44,7 @@ impl XpSource {
             XpSource::Meditation { duration_minutes } => *duration_minutes.min(&60) as u64 * 5,
             XpSource::Tithe { amount, .. } => (*amount / 1_000_000).min(500), // max 500 XP per tithe
             XpSource::GuildQuest { .. } => 200,
+            XpSource::AvatarQuest { .. } => 500,
             XpSource::Referral { .. } => 50,
         }
     }

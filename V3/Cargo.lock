@@ -4634,6 +4634,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "zion-oasis"
+version = "3.0.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "axum",
+ "chrono",
+ "rusqlite",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+ "tokio",
+ "tokio-test",
+ "toml",
+ "tower 0.4.13",
+ "tower-http 0.5.2",
+ "tracing",
+ "tracing-subscriber",
+ "uuid",
+]
+
+[[package]]
 name = "zion-pool"
 version = "3.0.0"
 dependencies = [

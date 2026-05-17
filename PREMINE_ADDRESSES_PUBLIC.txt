@@ -7,6 +7,7 @@
 # ROTATED and BURNED. These are the NEW canonical wallets post-scrub.
 # Old seed phrases must be treated as compromised and never reused.
 
+
 # 1–5: OASIS + Winners Golden Egg/Xp (5 slots × 1.65B = 8.25B ZION)
 1  zion1zz-ILOBeL9pBhE3fBw0RpIYu4Jo    OASIS_Winner_1       1,650,000,000
 2  zion1ZIJDSPzkhfmw3Lm1p6a-NWwRkY0    OASIS_Winner_2       1,650,000,000
@@ -17,6 +18,8 @@
 # 6–8: DAO Treasury (main + grants + bootstrap = 4B ZION)
 6  zion1-0xPn2NxSraspMeaW_hhhVu9bFQ    DAO_Treasury_Main    2,500,000,000
 7  zion1GP3_T8G29jGnuCcfL__zqZcqg4c    DAO_Grants           1,000,000,000
+
+
 8  zion1zfcwR7ZUE3qP-amglp1mD77H700    DAO_Bootstrap        500,000,000
 
 # 9–11: Infrastructure (core dev + seed nodes + creator = 2.59B ZION)

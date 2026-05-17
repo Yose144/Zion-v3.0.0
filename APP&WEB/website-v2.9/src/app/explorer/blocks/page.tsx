@@ -1,4 +1,3 @@
-import type { Metadata } from 'next';
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
@@ -48,11 +47,6 @@ function CopyBtn({ text }: { text: string }) {
     </button>
   );
 }
-
-export const metadata: Metadata = {
-  title: 'Block Archive · ZION Explorer',
-  description: 'Complete history of ZION blockchain blocks with real-time updates.',
-};
 
 export default function BlocksPage() {
   const { lang } = useLang();
