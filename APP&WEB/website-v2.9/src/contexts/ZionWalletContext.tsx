@@ -66,6 +66,16 @@ export function ZionWalletProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [initialized, setInitialized] = useState(false);
 
+  const refreshWallets = useCallback((m: any) => {
+    const list = m.listWallets();
+    setWallets(list);
+    const active = m.getActiveWallet();
+    setActiveWallet(active);
+    if (active) {
+      m.getBalance(active.address).then((b: number) => setBalance(b)).catch(() => setBalance(null));
+    }
+  }, []);
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
     getSDK().then(async (SDK: any) => {
@@ -78,17 +88,7 @@ export function ZionWalletProvider({ children }: { children: ReactNode }) {
       refreshWallets(m);
       setInitialized(true);
     });
-  }, []);
-
-  const refreshWallets = useCallback((m: any) => {
-    const list = m.listWallets();
-    setWallets(list);
-    const active = m.getActiveWallet();
-    setActiveWallet(active);
-    if (active) {
-      m.getBalance(active.address).then((b: number) => setBalance(b)).catch(() => setBalance(null));
-    }
-  }, []);
+  }, [refreshWallets]);
 
   const createWallet = useCallback(async (name: string, password: string) => {
     if (!manager) throw new Error('Wallet manager not initialized');
