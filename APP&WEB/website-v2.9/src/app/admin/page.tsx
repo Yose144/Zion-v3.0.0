@@ -5,7 +5,7 @@ import { SITE_VERSION } from '@/lib/site';
 
 export default function AdminDashboard() {
   return (
-    <div className="zion-shell min-h-screen pt-32 pb-20 overflow-x-hidden">
+    <div className="pt-28 pb-20 overflow-x-hidden">
       <div className="zion-container max-w-7xl space-y-12">
         <div className="rounded-[32px] border border-white/10 bg-black/60 p-10 backdrop-blur-xl">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">

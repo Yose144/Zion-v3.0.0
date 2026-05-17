@@ -90,7 +90,7 @@ export default function DaoPage() {
   }
 
   return (
-    <div className="zion-shell min-h-screen pt-32 pb-24 overflow-x-hidden">
+    <div className="pt-28 pb-24 overflow-x-hidden">
       <div className="zion-container max-w-7xl space-y-16">
 
         {/* ── HERO ── */}

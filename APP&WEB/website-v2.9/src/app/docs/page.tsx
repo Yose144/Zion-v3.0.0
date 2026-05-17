@@ -633,7 +633,7 @@ export default function DocsPage() {
   };
 
   return (
-    <div className="zion-shell min-h-screen">
+    <div className="">
       {/* Hero Section */}
       <div className="relative overflow-hidden border-b border-white/10 bg-linear-to-b from-zion-cyan/10 via-transparent to-transparent">
         <div className="zion-container py-20 relative">
@@ -944,7 +944,7 @@ export default function DocsPage() {
           </aside>
 
           {/* ═══ Content ═══ */}
-          <main className="flex-1 max-w-3xl xl:max-w-4xl mx-auto">
+          <div className="flex-1 max-w-3xl xl:max-w-4xl mx-auto">
             {selectedDoc === 'philosophy' ? (
               <PhilosophyContent />
             ) : (
@@ -999,7 +999,7 @@ export default function DocsPage() {
                 </div>
               </>
             )}
-          </main>
+          </div>
         </div>
       </div>
     </div>

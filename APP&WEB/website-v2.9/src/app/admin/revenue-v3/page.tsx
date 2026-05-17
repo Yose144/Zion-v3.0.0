@@ -101,11 +101,11 @@ export default function RevenueSettings() {
       });
   };
 
-  if (loading) return <div className="zion-shell min-h-screen flex items-center justify-center"><div className="text-yellow-400 text-2xl animate-pulse">Loading Settings...</div></div>;
-  if (!config) return <div className="zion-shell min-h-screen flex items-center justify-center"><div className="text-red-400 text-xl">Failed to load configuration.</div></div>;
+  if (loading) return <div className="flex items-center justify-center"><div className="text-yellow-400 text-2xl animate-pulse">Loading Settings...</div></div>;
+  if (!config) return <div className="flex items-center justify-center"><div className="text-red-400 text-xl">Failed to load configuration.</div></div>;
 
   return (
-    <div className="zion-shell min-h-screen pt-28 md:pt-32 pb-20 overflow-x-hidden">
+    <div className="pt-28 md:pt-32 pb-20 overflow-x-hidden">
       <div className="zion-container max-w-4xl space-y-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
