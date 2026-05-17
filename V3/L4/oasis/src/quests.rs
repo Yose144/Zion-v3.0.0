@@ -139,7 +139,7 @@ impl QuestManager {
         address: &str,
         quest_id: &str,
     ) -> OasisResult<QuestProgress> {
-        let def = self
+        let _def = self
             .registry
             .get(quest_id)
             .ok_or_else(|| OasisError::PlayerNotFound(format!("quest {}", quest_id)))?;
