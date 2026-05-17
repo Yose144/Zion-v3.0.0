@@ -55,6 +55,10 @@ pub struct OasisConfig {
     pub ws_port: u16,
     /// Max concurrent UE5 connections
     pub max_ws_connections: u32,
+
+    // === Metrics ===
+    /// Prometheus metrics HTTP port
+    pub metrics_port: u16,
 }
 
 impl Default for OasisConfig {
@@ -85,6 +89,8 @@ impl Default for OasisConfig {
 
             ws_port: 8095,
             max_ws_connections: 1000,
+
+            metrics_port: 9101,
         }
     }
 }
