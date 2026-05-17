@@ -51,14 +51,19 @@
 
 pub mod api;
 pub mod challenges;
+pub mod combat;
 pub mod config;
 pub mod consciousness;
 pub mod db;
 pub mod error;
+pub mod golden_egg;
 pub mod guild;
 pub mod leaderboard;
 pub mod levels;
 pub mod player;
+pub mod prize_tiers;
+pub mod quests;
+pub mod raid_team;
 pub mod rewards;
 pub mod server;
 pub mod territory;
