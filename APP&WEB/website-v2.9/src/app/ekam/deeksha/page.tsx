@@ -79,7 +79,7 @@ export default function EkamDeekshaPage() {
   };
 
   return (
-    <div className="zion-shell min-h-screen">
+    <div className="">
 
       {/* ── HERO ── */}
       <div className="relative overflow-hidden border-b border-white/10 bg-linear-to-b from-amber-900/10 via-transparent to-transparent">
@@ -175,7 +175,7 @@ export default function EkamDeekshaPage() {
           </aside>
 
           {/* ══ CONTENT ══ */}
-          <main className="flex-1 max-w-3xl">
+          <div className="flex-1 max-w-3xl">
 
             {/* PŘEDMLUVA */}
             <section id="predmluva" className="mb-24 scroll-mt-24">
@@ -586,7 +586,7 @@ export default function EkamDeekshaPage() {
             </section>
 
             {/* CTA */}
-            <div className="mb-20 border-t border-white/10 pt-12 text-center space-y-4">
+            <div className="mb-20 border-t border-white/10 pt-28 text-center space-y-4">
               <p className="text-gray-400 text-sm">Prozkoumej dál</p>
               <div className="flex flex-wrap justify-center gap-3">
                 <Link href="/ekam" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full border border-white/15 bg-white/8 text-sm font-semibold text-white hover:border-amber-300/30 transition-colors">
@@ -601,7 +601,7 @@ export default function EkamDeekshaPage() {
               </div>
             </div>
 
-          </main>
+          </div>
         </div>
       </div>
     </div>

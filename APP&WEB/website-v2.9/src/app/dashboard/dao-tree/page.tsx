@@ -129,8 +129,8 @@ const daoMetrics = [
 
 export default function DaoDashboardPage() {
   return (
-    <div className="zion-shell min-h-screen text-white pb-20">
-      <div className="zion-container max-w-6xl pt-24 space-y-12">
+    <div className="text-white pb-20">
+      <div className="zion-container max-w-6xl pt-28 space-y-12">
         <header className="rounded-[32px] border border-white/10 bg-gradient-to-r from-black/40 via-zion-purple/20 to-zion-gold/20 p-10 shadow-2xl">
           <p className="text-xs uppercase tracking-[0.4em] text-gray-300">DAO Ledger</p>
           <h1 className="mt-3 text-4xl md:text-5xl font-semibold text-gradient">

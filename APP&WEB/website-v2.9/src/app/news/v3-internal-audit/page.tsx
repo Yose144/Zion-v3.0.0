@@ -9,7 +9,7 @@ export default function V3InternalAuditNewsPage() {
   const cs = lang === 'cs';
 
   return (
-    <main className="zion-shell min-h-screen pt-28 pb-20">
+    <div className="pt-28 pb-20">
       <div className="zion-container max-w-4xl">
         <Link
           href="/news"
@@ -102,7 +102,7 @@ export default function V3InternalAuditNewsPage() {
           </div>
         </div>
       </div>
-    </main>
+    </div>
   );
 }
 

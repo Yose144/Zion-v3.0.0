@@ -141,7 +141,7 @@ export default function DharmaTemplePage() {
   const cs = lang === 'cs';
 
   return (
-    <div className="zion-shell min-h-screen pt-24 md:pt-28 pb-24 overflow-x-hidden">
+    <div className="pt-28 md:pt-28 pb-24 overflow-x-hidden">
       {/* Ambient atmosphere */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <div className="absolute -left-40 top-1/3 h-[600px] w-[600px] rounded-full blur-[240px] bg-violet-500/8" />

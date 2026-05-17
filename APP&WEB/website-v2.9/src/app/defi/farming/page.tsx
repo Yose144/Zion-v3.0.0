@@ -66,7 +66,7 @@ export default function FarmingPage() {
   const pool = MOCK_POOLS[selectedPool];
 
   return (
-    <div className="zion-shell min-h-screen pt-28 md:pt-32 pb-24 overflow-x-hidden">
+    <div className="pt-28 md:pt-32 pb-24 overflow-x-hidden">
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <div className="absolute -left-40 top-1/4 h-[500px] w-[500px] rounded-full blur-[200px] bg-green-500/8" />
         <div className="absolute -right-40 top-2/3 h-[400px] w-[400px] rounded-full blur-[200px] bg-zion-gold/6" />

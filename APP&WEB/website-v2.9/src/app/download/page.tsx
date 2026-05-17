@@ -67,7 +67,7 @@ export default function DownloadPage() {
   const cliQuickstartSteps = getCliQuickstartSteps(cs);
 
   return (
-    <div className="zion-shell min-h-screen pt-28 md:pt-32 pb-24 overflow-x-hidden">
+    <div className="pt-28 md:pt-32 pb-24 overflow-x-hidden">
       <div className="zion-container max-w-5xl space-y-16">
 
         {/* ─── Hero ─── */}
