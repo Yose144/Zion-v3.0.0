@@ -113,41 +113,41 @@ export default function WalletPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="zion-container max-w-4xl pt-28 pb-24">
       <h1 className="text-3xl font-bold mb-8 flex items-center gap-3">
-        <Wallet className="w-8 h-8 text-amber-400" />
+        <Wallet className="w-8 h-8 text-zion-gold" />
         ZION L1 Wallet
       </h1>
 
       {error && (
-        <div className="bg-red-900/30 border border-red-500/30 text-red-300 px-4 py-3 rounded-lg mb-6">
+        <div className="bg-red-500/10 border border-red-500/20 text-red-300 px-4 py-3 rounded-2xl mb-6">
           {error}
         </div>
       )}
 
       {/* Active wallet card */}
       {activeWallet && (
-        <div className="bg-zinc-900/80 border border-zinc-700 rounded-xl p-6 mb-8">
+        <div className="zion-panel p-6 mb-8">
           <div className="flex items-center justify-between mb-4">
             <div>
               <p className="text-sm text-zinc-400">Active Wallet</p>
               <p className="text-lg font-semibold">{activeWallet.name}</p>
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={refreshBalance} className="p-2 hover:bg-zinc-800 rounded-lg transition" disabled={loading}>
+              <button onClick={refreshBalance} className="p-2 hover:bg-white/10 rounded-2xl transition" disabled={loading}>
                 <RefreshCw className={`w-5 h-5 text-zinc-400 ${loading ? 'animate-spin' : ''}`} />
               </button>
             </div>
           </div>
           <div className="flex items-center gap-2 mb-2">
-            <code className="bg-zinc-950 px-3 py-1.5 rounded text-sm font-mono text-amber-300 flex-1 truncate">
+            <code className="bg-black/60 px-3 py-1.5 rounded-xl text-sm font-mono text-zion-gold flex-1 truncate">
               {activeWallet.address}
             </code>
-            <button onClick={() => copyToClipboard(activeWallet.address)} className="p-2 hover:bg-zinc-800 rounded-lg">
+            <button onClick={() => copyToClipboard(activeWallet.address)} className="p-2 hover:bg-white/10 rounded-2xl">
               <Copy className="w-4 h-4 text-zinc-400" />
             </button>
           </div>
-          <p className="text-2xl font-bold text-emerald-400 mt-3">
+          <p className="text-2xl font-bold text-zion-cyan mt-3">
             {balance !== null ? `${balance.toFixed(6)} ZION` : '---'}
           </p>
         </div>
@@ -155,7 +155,7 @@ export default function WalletPage() {
 
       {/* Wallet list */}
       {wallets.length > 0 && (
-        <div className="bg-zinc-900/80 border border-zinc-700 rounded-xl p-6 mb-8">
+        <div className="zion-panel p-6 mb-8">
           <h2 className="text-lg font-semibold mb-4">Your Wallets ({wallets.length})</h2>
           <div className="space-y-2">
             {wallets.map((w) => (
@@ -163,8 +163,8 @@ export default function WalletPage() {
                 key={w.id}
                 className={`flex items-center justify-between p-3 rounded-lg border transition cursor-pointer ${
                   activeWallet?.id === w.id
-                    ? 'bg-amber-900/20 border-amber-500/30'
-                    : 'bg-zinc-950 border-zinc-800 hover:border-zinc-600'
+                    ? 'bg-zion-gold/10 border-zion-gold/30'
+                    : 'bg-black/40 border-white/5 hover:border-white/15'
                 }`}
                 onClick={() => setActiveWallet(w.id)}
               >
@@ -174,7 +174,7 @@ export default function WalletPage() {
                 </div>
                 <button
                   onClick={(e) => { e.stopPropagation(); deleteWallet(w.id); }}
-                  className="p-2 hover:bg-red-900/30 rounded-lg text-red-400 transition"
+                  className="p-2 hover:bg-red-500/10 rounded-2xl text-red-400 transition"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -192,8 +192,8 @@ export default function WalletPage() {
             onClick={() => setTab(t)}
             className={`px-4 py-2 rounded-t-lg text-sm font-medium transition ${
               tab === t
-                ? 'bg-zinc-800 text-amber-400 border-b-2 border-amber-400'
-                : 'text-zinc-500 hover:text-zinc-300'
+                ? 'bg-white/10 text-zion-gold border-b-2 border-zion-gold'
+                : 'text-gray-500 hover:text-gray-300'
             }`}
           >
             {t.charAt(0).toUpperCase() + t.slice(1)}
@@ -203,7 +203,7 @@ export default function WalletPage() {
 
       {/* Create tab */}
       {tab === 'create' && (
-        <div className="bg-zinc-900/80 border border-zinc-700 rounded-xl p-6">
+        <div className="zion-panel p-6">
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <Plus className="w-5 h-5" /> Create New Wallet
           </h3>
@@ -214,7 +214,7 @@ export default function WalletPage() {
                 type="text"
                 value={walletName}
                 onChange={(e) => setWalletName(e.target.value)}
-                className="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-4 py-2 text-white focus:border-amber-500 focus:outline-none"
+                className="w-full bg-black/60 border border-white/10 rounded-2xl px-4 py-2 text-white focus:border-zion-cyan focus:outline-none"
               />
             </div>
             <div>
@@ -223,13 +223,13 @@ export default function WalletPage() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-4 py-2 text-white focus:border-amber-500 focus:outline-none"
+                className="w-full bg-black/60 border border-white/10 rounded-2xl px-4 py-2 text-white focus:border-zion-cyan focus:outline-none"
               />
             </div>
             <button
               onClick={handleCreate}
               disabled={loading}
-              className="bg-amber-500 hover:bg-amber-600 text-black font-semibold px-6 py-2 rounded-lg transition disabled:opacity-50"
+              className="zion-button-primary transition disabled:opacity-50"
             >
               {loading ? 'Creating...' : 'Create Wallet'}
             </button>
@@ -239,7 +239,7 @@ export default function WalletPage() {
 
       {/* Import tab */}
       {tab === 'import' && (
-        <div className="bg-zinc-900/80 border border-zinc-700 rounded-xl p-6">
+        <div className="zion-panel p-6">
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <Import className="w-5 h-5" /> Import Wallet
           </h3>
@@ -250,7 +250,7 @@ export default function WalletPage() {
                 value={mnemonic}
                 onChange={(e) => setMnemonic(e.target.value)}
                 placeholder="Enter 12 or 24 word mnemonic phrase..."
-                className="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-4 py-2 text-white focus:border-amber-500 focus:outline-none h-24"
+                className="w-full bg-black/60 border border-white/10 rounded-2xl px-4 py-2 text-white focus:border-zion-cyan focus:outline-none h-24"
               />
               <div className="mt-3">
                 <input
@@ -258,12 +258,12 @@ export default function WalletPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Encryption password"
-                  className="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-4 py-2 text-white focus:border-amber-500 focus:outline-none mb-3"
+                  className="w-full bg-black/60 border border-white/10 rounded-2xl px-4 py-2 text-white focus:border-zion-cyan focus:outline-none mb-3"
                 />
                 <button
                   onClick={handleImportMnemonic}
                   disabled={loading}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-6 py-2 rounded-lg transition disabled:opacity-50"
+                  className="zion-button-primary transition disabled:opacity-50"
                 >
                   {loading ? 'Importing...' : 'Import from Mnemonic'}
                 </button>
@@ -276,7 +276,7 @@ export default function WalletPage() {
                 value={privateKey}
                 onChange={(e) => setPrivateKey(e.target.value)}
                 placeholder="64-char hex private key"
-                className="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-4 py-2 text-white focus:border-amber-500 focus:outline-none font-mono text-sm"
+                className="w-full bg-black/60 border border-white/10 rounded-2xl px-4 py-2 text-white focus:border-zion-cyan focus:outline-none font-mono text-sm"
               />
               <div className="mt-3">
                 <input
@@ -284,12 +284,12 @@ export default function WalletPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Encryption password"
-                  className="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-4 py-2 text-white focus:border-amber-500 focus:outline-none mb-3"
+                  className="w-full bg-black/60 border border-white/10 rounded-2xl px-4 py-2 text-white focus:border-zion-cyan focus:outline-none mb-3"
                 />
                 <button
                   onClick={handleImportPrivateKey}
                   disabled={loading}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-6 py-2 rounded-lg transition disabled:opacity-50"
+                  className="zion-button-primary transition disabled:opacity-50"
                 >
                   {loading ? 'Importing...' : 'Import from Private Key'}
                 </button>
@@ -301,7 +301,7 @@ export default function WalletPage() {
 
       {/* Send tab */}
       {tab === 'send' && (
-        <div className="bg-zinc-900/80 border border-zinc-700 rounded-xl p-6">
+        <div className="zion-panel p-6">
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <Send className="w-5 h-5" /> Send ZION
           </h3>
@@ -316,7 +316,7 @@ export default function WalletPage() {
                   value={sendTo}
                   onChange={(e) => setSendTo(e.target.value)}
                   placeholder="zion1..."
-                  className="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-4 py-2 text-white focus:border-amber-500 focus:outline-none font-mono text-sm"
+                  className="w-full bg-black/60 border border-white/10 rounded-2xl px-4 py-2 text-white focus:border-zion-cyan focus:outline-none font-mono text-sm"
                 />
               </div>
               <div>
@@ -327,7 +327,7 @@ export default function WalletPage() {
                   onChange={(e) => setSendAmount(e.target.value)}
                   placeholder="0.00"
                   step="0.000001"
-                  className="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-4 py-2 text-white focus:border-amber-500 focus:outline-none"
+                  className="w-full bg-black/60 border border-white/10 rounded-2xl px-4 py-2 text-white focus:border-zion-cyan focus:outline-none"
                 />
               </div>
               <div>
@@ -337,7 +337,7 @@ export default function WalletPage() {
                   value={sendMemo}
                   onChange={(e) => setSendMemo(e.target.value)}
                   placeholder="Optional message..."
-                  className="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-4 py-2 text-white focus:border-amber-500 focus:outline-none"
+                  className="w-full bg-black/60 border border-white/10 rounded-2xl px-4 py-2 text-white focus:border-zion-cyan focus:outline-none"
                 />
               </div>
               <div>
@@ -347,18 +347,18 @@ export default function WalletPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter wallet password"
-                  className="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-4 py-2 text-white focus:border-amber-500 focus:outline-none mb-3"
+                  className="w-full bg-black/60 border border-white/10 rounded-2xl px-4 py-2 text-white focus:border-zion-cyan focus:outline-none mb-3"
                 />
               </div>
               <button
                 onClick={handleSend}
                 disabled={loading}
-                className="bg-amber-500 hover:bg-amber-600 text-black font-semibold px-6 py-2 rounded-lg transition disabled:opacity-50"
+                className="zion-button-primary transition disabled:opacity-50"
               >
                 {loading ? 'Sending...' : 'Send ZION'}
               </button>
               {txResult && (
-                <p className="text-emerald-400 text-sm mt-2 bg-emerald-900/20 p-3 rounded-lg">{txResult}</p>
+                <p className="text-zion-cyan text-sm mt-2 bg-zion-cyan/10 p-3 rounded-2xl">{txResult}</p>
               )}
             </div>
           )}
@@ -367,7 +367,7 @@ export default function WalletPage() {
 
       {/* Export tab */}
       {tab === 'export' && (
-        <div className="bg-zinc-900/80 border border-zinc-700 rounded-xl p-6">
+        <div className="zion-panel p-6">
           <h3 className="text-lg font-semibold mb-4">Export Wallet Secrets</h3>
           {!activeWallet ? (
             <p className="text-zinc-500">Select a wallet first.</p>
@@ -380,25 +380,25 @@ export default function WalletPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter password to decrypt"
-                  className="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-4 py-2 text-white focus:border-amber-500 focus:outline-none"
+                  className="w-full bg-black/60 border border-white/10 rounded-2xl px-4 py-2 text-white focus:border-zion-cyan focus:outline-none"
                 />
               </div>
               <div className="flex gap-3">
                 <button
                   onClick={handleExportMnemonic}
-                  className="bg-zinc-700 hover:bg-zinc-600 text-white font-semibold px-4 py-2 rounded-lg transition"
+                  className="zion-button-secondary transition"
                 >
                   Export Mnemonic
                 </button>
                 <button
                   onClick={handleExportPrivateKey}
-                  className="bg-zinc-700 hover:bg-zinc-600 text-white font-semibold px-4 py-2 rounded-lg transition"
+                  className="zion-button-secondary transition"
                 >
                   Export Private Key
                 </button>
               </div>
               {exportedSecret && (
-                <div className="mt-4 bg-red-900/20 border border-red-500/30 rounded-lg p-4">
+                <div className="mt-4 bg-red-500/10 border border-red-500/20 rounded-2xl p-4">
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-red-300 text-sm font-medium">Secret (never share!)</p>
                     <div className="flex gap-2">

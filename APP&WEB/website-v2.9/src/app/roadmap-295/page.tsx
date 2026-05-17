@@ -141,7 +141,7 @@ export default function Roadmap295Page() {
   ];
 
   return (
-    <div className="zion-shell min-h-screen pb-20 overflow-x-hidden">
+    <div className="pb-20 overflow-x-hidden">
       {/* Hero Section */}
       <section className="relative py-20 px-6 overflow-hidden">
         <div className="absolute inset-0 bg-linear-to-b from-zion-cyan/20 via-transparent to-transparent" />
@@ -519,7 +519,7 @@ export default function Roadmap295Page() {
                   <Heart className="w-5 h-5 text-zion-purple" />
                 </p>
               </div>
-              <div className="mt-8 pt-8 border-t border-zion-cyan/30">
+              <div className="mt-8 pt-28 border-t border-zion-cyan/30">
                 <p className="text-sm italic text-gray-400 mb-0">
                   &quot;Native Philosophy → Native Code → Native Future&quot;
                 </p>

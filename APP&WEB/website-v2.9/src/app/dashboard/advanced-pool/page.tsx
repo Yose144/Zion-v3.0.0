@@ -10,8 +10,8 @@ export const metadata: Metadata = {
 
 export default function AdvancedPoolPage() {
   return (
-    <div className="zion-shell min-h-screen text-white pb-16">
-      <div className="zion-container max-w-6xl pt-20">
+    <div className="text-white pb-16">
+      <div className="zion-container max-w-6xl pt-28">
         <div className="mb-6">
           <p className="text-xs uppercase tracking-[0.35em] text-gray-400">Monitoring</p>
           <h1 className="text-3xl md:text-4xl font-semibold text-gradient">Advanced Pool Dashboard</h1>
