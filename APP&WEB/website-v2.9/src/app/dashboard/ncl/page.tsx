@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 "use client";
 
 import { useState } from "react";
@@ -54,6 +55,11 @@ const CONSCIOUSNESS_COLORS: Record<number, string> = {
   4: "text-purple-400",
   5: "text-yellow-400",
   6: "text-amber-300",
+};
+
+export const metadata: Metadata = {
+  title: 'NCL Curriculum · ZION',
+  description: 'Neural Compute Layer curriculum dashboard — task progress and learning analytics.',
 };
 
 export default function NCLDashboard() {
@@ -122,14 +128,14 @@ export default function NCLDashboard() {
 
   if (loading) {
     return (
-      <div className="zion-shell min-h-screen flex items-center justify-center">
+      <div className="flex items-center justify-center">
         <div className="text-yellow-400 text-2xl animate-pulse">Loading NCL Dashboard...</div>
       </div>
     );
   }
 
   return (
-    <div className="zion-shell min-h-screen text-white p-6">
+    <div className="text-white p-6">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-4xl font-bold text-yellow-400 mb-2">

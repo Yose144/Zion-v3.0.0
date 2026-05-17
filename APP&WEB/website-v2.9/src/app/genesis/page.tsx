@@ -54,7 +54,7 @@ export default function GenesisPage() {
   };
 
   return (
-    <div className="zion-shell min-h-screen">
+    <div className="">
       {/* Hero Section */}
       <div className="relative overflow-hidden border-b border-white/10 bg-linear-to-b from-zion-purple/10 via-transparent to-transparent">
         <div className="zion-container py-20 relative">
@@ -162,7 +162,7 @@ export default function GenesisPage() {
           </aside>
 
           {/* Content */}
-          <main className="flex-1 max-w-3xl mx-auto">
+          <div className="flex-1 max-w-3xl mx-auto">
             {!cs && (
               <div className="mb-10 rounded-2xl border border-zion-cyan/25 bg-zion-cyan/5 px-5 py-4 text-sm text-gray-300">
                 Literary chapters below remain in Czech. Switch language to Čeština (CS) in the navigation for the authored experience, or use automatic browser translation until a curated English prose edition lands.
@@ -1426,7 +1426,7 @@ export default function GenesisPage() {
                 <span>DAO Council 9 • 144k Rainbow Family El-An-Ra</span>
               </p>
             </div>
-          </main>
+          </div>
         </div>
       </div>
     </div>

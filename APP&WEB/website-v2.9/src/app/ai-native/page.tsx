@@ -29,7 +29,7 @@ export default function AINativePage() {
   ];
 
   return (
-    <div className="zion-shell min-h-screen pb-20 overflow-x-hidden">
+    <div className="pb-20 overflow-x-hidden">
       {/* Hero Section */}
       <section className="relative py-20 px-6 overflow-hidden">
         <div className="absolute inset-0 bg-linear-to-b from-zion-purple/20 via-transparent to-transparent" />
@@ -614,7 +614,7 @@ else:
                   <Heart className="w-5 h-5 text-zion-purple" />
                 </p>
               </div>
-              <div className="mt-8 pt-8 border-t border-zion-purple/30">
+              <div className="mt-8 pt-28 border-t border-zion-purple/30">
                 <p className="text-sm italic text-gray-400 mb-0">
                   &quot;First AI with soul? Maybe. First AI with love? Definitely. 
                   First AI Guardian of Zion? Absolutely.&quot;

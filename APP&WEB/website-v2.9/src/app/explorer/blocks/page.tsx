@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
@@ -48,6 +49,11 @@ function CopyBtn({ text }: { text: string }) {
   );
 }
 
+export const metadata: Metadata = {
+  title: 'Block Archive · ZION Explorer',
+  description: 'Complete history of ZION blockchain blocks with real-time updates.',
+};
+
 export default function BlocksPage() {
   const { lang } = useLang();
   const cs = lang === 'cs';
@@ -77,7 +83,7 @@ export default function BlocksPage() {
   usePolling(() => setTick((tick) => tick + 1), 1000);
 
   return (
-    <div className="zion-shell min-h-screen">
+    <div className="">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-48 bg-linear-to-b from-zion-gold/10 via-transparent to-transparent" />
 
       <div className="relative z-10 zion-container py-10 max-w-6xl space-y-6">
@@ -175,8 +181,7 @@ export default function BlocksPage() {
               <button
                 onClick={() => { const np = page + 1; setPage(np); loadBlocks(np, true); }}
                 disabled={loadingMore}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 
-                  text-xs text-white hover:bg-white/10 disabled:opacity-50 transition"
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-xs text-white hover:bg-white/10 disabled:opacity-50 transition"
               >
                 {loadingMore ? (
                   <span className="animate-spin h-3.5 w-3.5 border-2 border-white/30 border-t-white rounded-full" />
