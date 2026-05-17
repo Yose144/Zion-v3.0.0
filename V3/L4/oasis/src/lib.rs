@@ -60,6 +60,7 @@ pub mod golden_egg;
 pub mod guild;
 pub mod leaderboard;
 pub mod levels;
+pub mod metrics;
 pub mod player;
 pub mod prize_tiers;
 pub mod quests;
@@ -68,6 +69,7 @@ pub mod rewards;
 pub mod server;
 pub mod territory;
 pub mod tithe;
+pub mod websocket;
 pub mod xp;
 
 // Re-exports

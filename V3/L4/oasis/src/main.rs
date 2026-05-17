@@ -15,8 +15,10 @@ use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 use zion_oasis::{
     config::OasisConfig,
     db::OasisDb,
+    metrics::OasisMetrics,
     quests::{QuestManager, QuestRegistry},
     server::{start_server, OasisState},
+    websocket::WsHub,
 };
 
 #[tokio::main]
@@ -64,7 +66,16 @@ async fn main() -> anyhow::Result<()> {
         }
     };
 
-    let state = OasisState::new(db, config, quest_mgr);
+    // Metrics
+    let metrics = OasisMetrics::new();
+
+    // Seed active_quests gauge from quest registry
+    metrics.active_quests.store(quest_mgr.registry.len() as u64, std::sync::atomic::Ordering::Relaxed);
+
+    // WebSocket broadcast hub
+    let ws_hub = WsHub::new();
+
+    let state = OasisState::new(db, config, quest_mgr, metrics, Some(ws_hub));
 
     info!(
         "Consciousness levels: 9 (Physical → OnTheStar)"

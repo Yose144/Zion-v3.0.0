@@ -48,6 +48,13 @@ pub enum TreasuryOperation {
         to: String,
         amount: u64,
     },
+    /// Golden Egg treasure hunt prize payout
+    GoldenEggPrize {
+        place: u8,           // 1, 2, 3
+        recipient: String,   // wallet address
+        amount: u64,         // ZION amount
+        proposal_id: u64,
+    },
 }
 
 // ---------------------------------------------------------------------------
@@ -219,6 +226,7 @@ impl Treasury {
             TreasuryOperation::Spend { amount, .. } => *amount,
             TreasuryOperation::HumanitarianGrant { amount, .. } => *amount,
             TreasuryOperation::Rebalance { amount, .. } => *amount,
+            TreasuryOperation::GoldenEggPrize { amount, .. } => *amount,
         }
     }
 

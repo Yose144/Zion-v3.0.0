@@ -578,6 +578,7 @@ async fn treasury_execute(
         TreasuryOperation::Spend { amount, .. } => *amount,
         TreasuryOperation::HumanitarianGrant { amount, .. } => *amount,
         TreasuryOperation::Rebalance { amount, .. } => *amount,
+        TreasuryOperation::GoldenEggPrize { amount, .. } => *amount,
     };
     state
         .metrics
