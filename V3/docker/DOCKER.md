@@ -47,6 +47,7 @@ P2P_PORT=8333
 RPC_PORT=8443
 POOL_PORT=8444
 OASIS_PORT=8094
+OASIS_METRICS_PORT=9101
 
 # Node identification
 ZION_NODE_ID=v3-mainnet-local
@@ -69,15 +70,17 @@ Všechny služby mají healthchecky:
 
 ## OASIS Game Server (L4)
 
-OASIS služba běží na portu **8094** a poskytuje REST API pro:
+OASIS služba běží na portu **8094** (REST API) a **9101** (Prometheus metrics):
 - player profile, XP, consciousness levels
 - guildy, teritoria, leaderboardy
 - Golden Egg treasure hunt, raid teams, prize tiers
+- WebSocket real-time feeds (`/api/v1/oasis/ws/leaderboard`, `/api/v1/oasis/ws/events`)
+- Prometheus metrics (`/metrics`) na portu 9101
 
 **Build a run ručně:**
 ```bash
 docker build -f V3/docker/Dockerfile.oasis -t zion-v3-oasis V3
-docker run -d -p 8094:8094 -v zion-oasis-data:/data/oasis --name zion-oasis zion-v3-oasis
+docker run -d -p 8094:8094 -p 9101:9101 -v zion-oasis-data:/data/oasis --name zion-oasis zion-v3-oasis
 ```
 
 **Logy:**
