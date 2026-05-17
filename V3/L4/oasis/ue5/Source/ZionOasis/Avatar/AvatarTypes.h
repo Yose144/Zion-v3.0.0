@@ -145,6 +145,33 @@ struct FAvatarRow : public FTableRowBase
 	FString NftMetadataUri;
 };
 
+/** One row of the Avatar Quest Data Table */
+USTRUCT(BlueprintType)
+struct FAvatarQuestRow : public FTableRowBase
+{
+	GENERATED_BODY()
+
+	/** Which avatar this quest belongs to */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AvatarQuest")
+	EAvatarID AvatarID = EAvatarID::Rama;
+
+	/** Quest index within avatar's quest list (0-based) */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AvatarQuest")
+	int32 QuestIndex = 0;
+
+	/** Quest title shown in UI */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AvatarQuest")
+	FText QuestTitle;
+
+	/** Quest description / objective text */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AvatarQuest")
+	FText QuestDescription;
+
+	/** XP reward on completion */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "AvatarQuest")
+	int32 XpReward = 500;
+};
+
 /** Player-equipped avatar slot */
 USTRUCT(BlueprintType)
 struct FEquippedAvatar
