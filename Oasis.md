@@ -19,10 +19,14 @@
 7. [Raid Teams](#raid-teams)
 8. [Consciousness Combat](#consciousness-combat)
 9. [REST API](#rest-api)
-10. [UE5 Client Integration](#ue5-client-integration)
-11. [Docker Deployment](#docker-deployment)
-12. [Development](#development)
-13. [Data Files](#data-files)
+10. [WebSocket Real-Time Feeds](#websocket-real-time-feeds)
+11. [Prometheus Metrics](#prometheus-metrics)
+12. [DAO Prize Distribution](#dao-prize-distribution)
+13. [UE5 Client Integration](#ue5-client-integration)
+14. [UE5 Avatar Pipeline](#ue5-avatar-pipeline)
+15. [Docker Deployment](#docker-deployment)
+16. [Development](#development)
+17. [Data Files](#data-files)
 
 ---
 
@@ -33,14 +37,16 @@
 │                        UE5 Client                           │
 │   ZionCharacter │ ZionPlayerController │ ZionBlockchainBridge│
 │   ConsciousnessComponent │ GoldenEggManager │ TerritoryManager│
+│   WS /api/v1/oasis/ws/leaderboard  │  WS /api/v1/oasis/ws/events│
 └────────────────────┬────────────────────────────────────────┘
-                     │ HTTP REST (port 8094)
+                     │ HTTP REST (port 8094)  WS (port 8095)
 ┌────────────────────┴────────────────────────────────────────┐
 │                    ZION OASIS (Rust)                        │
 │  ┌─────────────┐  ┌──────────────┐  ┌─────────────────┐   │
 │  │ Player / XP │  │ Golden Egg   │  │ Quest System    │   │
 │  │ Guilds      │  │ Raid Teams   │  │ Combat Engine   │   │
 │  │ Territory   │  │ Leaderboard  │  │ Prize Tiers     │   │
+│  │ Metrics     │  │ WebSocket    │  │                 │   │
 │  └──────┬──────┘  └──────┬───────┘  └────────┬────────┘   │
 │         └─────────────────┴─────────────────────┘            │
 │                           │                                  │
@@ -94,6 +100,8 @@ V3/L4/oasis/
 │   ├── raid_team.rs        # EKAM Dimension raid teams
 │   ├── quests.rs           # Avatar quest system
 │   ├── combat.rs           # Consciousness-based combat
+│   ├── metrics.rs          # Prometheus metrics (port 9101)
+│   ├── websocket.rs        # WS feeds (leaderboard, events)
 │   └── ...
 └── ue5/
     └── Source/ZionOasis/   # UE5 C++ client skeleton
@@ -325,6 +333,94 @@ Damage formula: `base × (1 + level_delta × 0.2)`
 |---|---|---|
 | GET | `/api/v1/oasis/rewards/pools` | Reward pool status |
 
+### WebSocket
+| Method | Path | Description |
+|---|---|---|
+| WS | `/api/v1/oasis/ws/leaderboard` | Real-time leaderboard snapshot + keepalive |
+| WS | `/api/v1/oasis/ws/events` | Live XP/quest/guild event broadcast |
+
+---
+
+## WebSocket Real-Time Feeds
+
+OASIS exposes two WebSocket endpoints for real-time UE5/mobile client updates:
+
+### `GET /api/v1/oasis/ws/leaderboard`
+- Sends initial top-100 leaderboard snapshot on connection
+- 30-second ping keepalive
+- JSON messages:
+  ```json
+  {"type": "leaderboard", "data": [{"rank": 1, "address": "...", "total_xp": 50000, "level": "Mental"}]}
+  ```
+
+### `GET /api/v1/oasis/ws/events`
+- Subscribes to live game events via `WsHub` broadcast channel
+- Event types:
+  - `xp_award` — player XP gains
+  - `quest_complete` — quest completions
+  - `guild_create` — new guild formations
+  - `system` — server status messages
+
+### Example Event
+```json
+{"type": "xp_award", "address": "zion1abc...", "amount": 500, "total_xp": 1500}
+```
+
+---
+
+## Prometheus Metrics
+
+A lightweight Prometheus-compatible metrics endpoint runs on **port 9101** (configurable via `metrics_port` in `OasisConfig`). No external crate required — pure atomic counters.
+
+### Endpoints
+| Path | Format |
+|---|---|
+| `GET /metrics` | Prometheus text exposition |
+| `GET /health` | JSON `{"status": "ok"}` |
+
+### Metrics
+| Name | Type | Description |
+|---|---|---|
+| `zion_oasis_uptime_seconds` | counter | Server uptime |
+| `zion_oasis_requests_total` | counter | HTTP requests served |
+| `zion_oasis_xp_awards_total` | counter | XP awards granted |
+| `zion_oasis_quest_completions_total` | counter | Quests completed |
+| `zion_oasis_guild_creations_total` | counter | Guilds created |
+| `zion_oasis_guild_joins_total` | counter | Guild joins |
+| `zion_oasis_combat_resolutions_total` | counter | Combat actions |
+| `zion_oasis_raid_team_creations_total` | counter | Raid teams created |
+| `zion_oasis_errors_total` | counter | Server errors |
+| `zion_oasis_player_count` | gauge | Registered players |
+| `zion_oasis_active_guilds` | gauge | Active guilds |
+| `zion_oasis_active_quests` | gauge | Quest definitions loaded |
+
+---
+
+## DAO Prize Distribution
+
+Golden Egg prize payouts are governed by the **zion-dao** treasury multi-sig.
+
+### `zion-dao/src/prizes.rs`
+- `PrizeTier` — 1st (1B), 2nd (500M), 3rd (250M) ZION
+- `PrizeDistribution::validate()` — ensures totals match pool
+- `request_payout(treasury, place, recipient, submitter)` — submits a `GoldenEggPrize` treasury operation
+
+### Treasury Operation
+```rust
+TreasuryOperation::GoldenEggPrize {
+    place: 1,              // 1, 2, 3
+    recipient: String,     // wallet address
+    amount: u64,           // ZION amount
+    proposal_id: u64,
+}
+```
+
+### Execution Flow
+1. Guardian submits payout request → creates pending operation
+2. 5-of-7 guardian signatures required (`MULTISIG_THRESHOLD`)
+3. `treasury.execute(op_id)` — deducts balance, records daily spend
+4. On-chain transfer triggered by DAO daemon
+
 ---
 
 ## UE5 Client Integration
@@ -348,6 +444,34 @@ The UE5 skeleton in `V3/L4/oasis/ue5/` provides:
 
 ---
 
+## UE5 Avatar Pipeline
+
+The pipeline converts `data/avatars.json` (199 avatars) into UE5-importable assets.
+
+### Script
+```bash
+python3 V3/L4/oasis/scripts/gen_ue5_avatar_pipeline.py
+```
+
+### Outputs
+| File | Format | Purpose |
+|---|---|---|
+| `ue5/Content/DataTables/UE5_AvatarDataTable.csv` | CSV | Import as `DataTable<FAvatarRow>` |
+| `ue5/Content/DataTables/UE5_AvatarQuestTable.csv` | CSV | Import as `DataTable<FAvatarQuestRow>` |
+| `ue5/Source/ZionOasis/Avatar/UE5_AvatarTypes.h` | C++ | 199-entry `EAvatarID` enum |
+
+### CSV Fields (FAvatarRow)
+- `Name` — numeric row ID
+- `AvatarID` — enum value (`(Value="Rama")`)
+- `DisplayName`, `Title`, `Teaching` — FText
+- `SpecialAbilityName`, `SpecialAbilityDesc` — parsed from `ability` field
+- `MinConsciousnessLevel` — enum
+- `Ray`, `Rarity` — enums
+- `RegionName` — location
+- `QuestCount`, `TotalQuestXpReward` — derived from quests array
+
+---
+
 ## Docker Deployment
 
 ### Quick Start
@@ -366,7 +490,9 @@ docker compose -f V3/docker/docker-compose.yml logs -f oasis
 | | |
 |---|---|
 | Image | `zion-v3-oasis:latest` |
-| Port | `8094` |
+| API Port | `8094` |
+| Metrics Port | `9101` |
+| WebSocket Port | `8095` |
 | Healthcheck | `GET /health` |
 | Volume | `zion-oasis-data:/data/oasis` |
 | Env | `OASIS_BIND`, `OASIS_PORT`, `OASIS_DB` |
@@ -378,6 +504,13 @@ OASIS_PORT=8094
 OASIS_DB=/data/oasis/oasis.db
 OASIS_AVATARS_PATH=/data/oasis/data/avatars.json
 RUST_LOG=info
+```
+
+### Prometheus Scraping
+```bash
+curl http://localhost:9101/metrics
+# or for Docker:
+docker compose -f V3/docker/docker-compose.yml exec oasis curl localhost:9101/metrics
 ```
 
 ### Manual Build
@@ -392,7 +525,7 @@ docker run -d -p 8094:8094 -v zion-oasis-data:/data/oasis --name zion-oasis zion
 
 ### Run Tests
 ```bash
-# All tests (81 tests)
+# All tests (87 tests)
 cargo test --manifest-path V3/Cargo.toml -p zion-oasis
 
 # Check workspace
@@ -406,13 +539,24 @@ cargo fmt --manifest-path V3/Cargo.toml --all
 ```bash
 cd V3/L4/oasis
 cargo run --bin zion-oasis
-# Server starts on http://localhost:8094
+# API:     http://localhost:8094
+# Metrics: http://localhost:9101/metrics
+# WS:      ws://localhost:8094/api/v1/oasis/ws/events
 ```
 
 ### Regenerate Avatar JSON
 ```bash
 python3 V3/L4/oasis/scripts/parse_avatars.py
 # Output: V3/L4/oasis/data/avatars.json
+```
+
+### Regenerate UE5 DataTable Assets
+```bash
+python3 V3/L4/oasis/scripts/gen_ue5_avatar_pipeline.py
+# Outputs:
+#   ue5/Content/DataTables/UE5_AvatarDataTable.csv
+#   ue5/Content/DataTables/UE5_AvatarQuestTable.csv
+#   ue5/Source/ZionOasis/Avatar/UE5_AvatarTypes.h
 ```
 
 ---
