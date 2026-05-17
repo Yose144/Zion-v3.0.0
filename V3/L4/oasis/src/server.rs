@@ -584,6 +584,98 @@ async fn complete_quest(
     }
 }
 
+// ── Combat ────────────────────────────────────────────────────────────────────
+
+#[derive(Debug, Deserialize)]
+pub struct CombatRequest {
+    pub action: String,
+    pub attacker_level: u8,
+    pub defender_level: u8,
+    pub base_damage: u32,
+}
+
+#[derive(Debug, Serialize)]
+pub struct CombatResponse {
+    pub damage_dealt: u32,
+    pub healing_done: u32,
+    pub energy_cost: u32,
+}
+
+/// POST /api/v1/oasis/combat/resolve
+async fn resolve_combat(Json(req): Json<CombatRequest>) -> impl IntoResponse {
+    let action_type = match req.action.as_str() {
+        "strike" => ActionType::Strike,
+        "meditate" => ActionType::Meditate,
+        "soul_shield" => ActionType::SoulShield,
+        "dharma_blast" => ActionType::DharmaBlast,
+        "cosmic_ray" => ActionType::CosmicRay,
+        "unity_pulse" => ActionType::UnityPulse,
+        "keter_beam" => ActionType::KeterBeam,
+        _ => ActionType::Strike,
+    };
+
+    let attacker_level = match req.attacker_level {
+        1 => crate::consciousness::ConsciousnessLevel::Physical,
+        2 => crate::consciousness::ConsciousnessLevel::Emotional,
+        3 => crate::consciousness::ConsciousnessLevel::Mental,
+        4 => crate::consciousness::ConsciousnessLevel::Intuitional,
+        5 => crate::consciousness::ConsciousnessLevel::Spiritual,
+        6 => crate::consciousness::ConsciousnessLevel::Cosmic,
+        7 => crate::consciousness::ConsciousnessLevel::Divine,
+        8 => crate::consciousness::ConsciousnessLevel::Unity,
+        9 => crate::consciousness::ConsciousnessLevel::OnTheStar,
+        _ => crate::consciousness::ConsciousnessLevel::Physical,
+    };
+
+    let defender_level = match req.defender_level {
+        1 => crate::consciousness::ConsciousnessLevel::Physical,
+        2 => crate::consciousness::ConsciousnessLevel::Emotional,
+        3 => crate::consciousness::ConsciousnessLevel::Mental,
+        4 => crate::consciousness::ConsciousnessLevel::Intuitional,
+        5 => crate::consciousness::ConsciousnessLevel::Spiritual,
+        6 => crate::consciousness::ConsciousnessLevel::Cosmic,
+        7 => crate::consciousness::ConsciousnessLevel::Divine,
+        8 => crate::consciousness::ConsciousnessLevel::Unity,
+        9 => crate::consciousness::ConsciousnessLevel::OnTheStar,
+        _ => crate::consciousness::ConsciousnessLevel::Physical,
+    };
+
+    let action = CombatAction {
+        action_type: action_type.clone(),
+        attacker_level,
+        defender_level,
+        base_damage: req.base_damage,
+    };
+
+    let mut attacker = Combatant {
+        address: "attacker".into(),
+        display_name: "Attacker".into(),
+        level: attacker_level,
+        current_hp: CombatEngine::base_hp(attacker_level),
+        max_hp: CombatEngine::base_hp(attacker_level),
+        energy: CombatEngine::base_energy(attacker_level),
+    };
+
+    let mut defender = Combatant {
+        address: "defender".into(),
+        display_name: "Defender".into(),
+        level: defender_level,
+        current_hp: CombatEngine::base_hp(defender_level),
+        max_hp: CombatEngine::base_hp(defender_level),
+        energy: CombatEngine::base_energy(defender_level),
+    };
+
+    let result = CombatEngine::resolve(&action, &mut attacker, &mut defender);
+
+    let resp = CombatResponse {
+        damage_dealt: result.damage_dealt,
+        healing_done: result.healing_done,
+        energy_cost: result.energy_cost,
+    };
+
+    (StatusCode::OK, Json(ApiResponse::ok(resp)))
+}
+
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 #[cfg(test)]
