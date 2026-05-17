@@ -44,6 +44,9 @@ pub enum DaoError {
     #[error("Treasury daily limit exceeded: {limit} ZION/day")]
     DailyLimitExceeded { limit: u64 },
 
+    #[error("Invalid Golden Egg prize place: {0}")]
+    InvalidPrizePlace(u8),
+
     // Timelock errors
     #[error("Timelock active: {remaining_hours}h remaining")]
     TimelockActive { remaining_hours: u64 },

@@ -15,6 +15,54 @@ use zion_core::{
 use zion_pool::{decode_message, encode_message, MiningPool, PoolMessage, ShareDecision, ShareStatus};
 use zion_pool::pplns::{FeeConfig, PayoutEntry, PplnsConfig, PplnsEngine};
 
+/// Notify the ZION OASIS L4 game server that a block was mined so it can
+/// award XP to the miner.  This is a best-effort fire-and-forget call;
+/// failure is silently logged so the pool never blocks or errors.
+fn notify_oasis_block_mined(miner_address: &str, block_height: u64) {
+    let oasis_url = match std::env::var("ZION_OASIS_API_URL") {
+        Ok(url) if !url.is_empty() => url,
+        _ => return, // hook disabled — nothing to do
+    };
+
+    let body = format!(
+        r#"{{"source":"block_mined","amount":500,"block_height":{}}}"#,
+        block_height
+    );
+    let url = format!("{}/api/v1/oasis/player/{}/xp", oasis_url, miner_address);
+
+    // Try curl first (available in most Docker images).
+    let curl_result = std::process::Command::new("curl")
+        .args([
+            "-s", "-o", "/dev/null", "-w", "%{http_code}",
+            "-X", "POST",
+            "-H", "Content-Type: application/json",
+            "-d", &body,
+            &url,
+        ])
+        .output();
+
+    match curl_result {
+        Ok(out) => {
+            let code = String::from_utf8_lossy(&out.stdout);
+            let code = code.trim();
+            if code == "200" || code == "201" {
+                println!("oasis_xp_awarded miner={} height={}", miner_address, block_height);
+            } else {
+                println!(
+                    "oasis_xp_hook_failed miner={} height={} http_code={}",
+                    miner_address, block_height, code
+                );
+            }
+        }
+        Err(e) => {
+            println!(
+                "oasis_xp_hook_unavailable miner={} height={} err={}",
+                miner_address, block_height, e
+            );
+        }
+    }
+}
+
 fn main() -> Result<()> {
     let config = ServerConfig::from_env()?;
     let pool = Arc::new(Mutex::new(MiningPool::with_job_ttl(
@@ -679,6 +727,13 @@ fn handle_client(
                                     pool_fee_pct,
                                     Some(block_hash_hex),
                                 );
+                            // Notify OASIS L4 game server to award XP to the miner.
+                            // Fire-and-forget via background thread so pool never blocks.
+                            let miner_addr = miner_id.clone();
+                            let height = job.height;
+                            std::thread::spawn(move || {
+                                notify_oasis_block_mined(&miner_addr, height);
+                            });
                         }
 
                         ShareDecision {

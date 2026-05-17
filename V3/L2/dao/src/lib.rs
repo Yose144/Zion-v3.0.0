@@ -54,6 +54,7 @@ pub mod config;
 pub mod error;
 pub mod executor;
 pub mod humanitarian;
+pub mod prizes;
 pub mod proposal;
 pub mod quorum;
 pub mod timelock;
