@@ -49,10 +49,10 @@ export default function ExplorerCharts() {
   });
   const [loading, setLoading] = useState(true);
 
-  const fetchAll = useCallback(async () => {
-    setLoading(true);
+  useEffect(() => {
+    let cancelled = false;
     const typesToFetch = multiView ? CHART_ORDER : [activeChart];
-    const results = await Promise.all(
+    Promise.all(
       typesToFetch.map(async (type) => {
         try {
           const data = await apiClient<ChartData>(`/blockchain/charts?type=${type}&range=${activeRange}`);
@@ -61,16 +61,17 @@ export default function ExplorerCharts() {
           return { type, data: null } as { type: ChartType; data: ChartData | null };
         }
       })
-    );
-    setChartData((prev) => {
-      const next = { ...prev };
-      results.forEach((r) => { next[r.type] = r.data; });
-      return next;
+    ).then((results) => {
+      if (cancelled) return;
+      setChartData((prev) => {
+        const next = { ...prev };
+        results.forEach((r) => { next[r.type] = r.data; });
+        return next;
+      });
+      setLoading(false);
     });
-    setLoading(false);
+    return () => { cancelled = true; };
   }, [activeChart, activeRange, multiView]);
-
-  useEffect(() => { fetchAll(); }, [fetchAll]);
 
   const chartConfig = getChartConfig(cs);
   const timeRanges = getTimeRanges(cs);

@@ -1,4 +1,3 @@
-import type { Metadata } from 'next';
 "use client";
 
 import { useState } from "react";
@@ -130,11 +129,6 @@ const MOCK_SETTINGS: CH3Settings = {
     stream_names: ["ZION", "ETC", "NXS", "Dynamic GPU", "NCL AI"],
     total_target_share: 1.0,
   },
-};
-
-export const metadata: Metadata = {
-  title: 'CHv3 Dashboard · ZION',
-  description: 'Cosmic Harmony v3 protocol metrics and consensus health monitoring.',
 };
 
 export default function CH3SettingsPage() {
