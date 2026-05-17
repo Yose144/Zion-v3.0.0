@@ -21,6 +21,7 @@ use crate::guild::Guild;
 use crate::combat::{CombatAction, CombatEngine, Combatant, ActionType};
 use crate::metrics::{OasisMetrics, serve_metrics};
 use crate::quests::QuestManager;
+use crate::rate_limit::{rate_limit_middleware, RateLimiter};
 use crate::rewards::{RewardPool, RewardSlot};
 use crate::territory::TerritoryMap;
 use crate::websocket::{ws_events_handler, ws_leaderboard_handler, WsHub};
@@ -28,9 +29,10 @@ use crate::xp::{XpSource, XpSystem};
 use axum::{
     extract::{Path, State},
     http::StatusCode,
+    middleware,
     response::IntoResponse,
     routing::{get, post},
-    Json, Router,
+    Extension, Json, Router,
 };
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -70,15 +72,30 @@ impl OasisState {
 
 /// Build the Axum router with all OASIS routes.
 pub fn build_router(state: OasisState) -> Router {
+    let limiter = RateLimiter::new(30, 60);
+
+    // Sensitive POST endpoints under rate limit
+    let sensitive = Router::new()
+        .route("/api/v1/oasis/player/:address/xp", post(award_xp))
+        .route("/api/v1/oasis/guild", post(create_guild))
+        .route("/api/v1/oasis/guild/:id/join", post(join_guild))
+        .route("/api/v1/oasis/raid-team", post(create_raid_team))
+        .route("/api/v1/oasis/raid-team/:id/join", post(join_raid_team))
+        .route(
+            "/api/v1/oasis/player/:address/quests/:quest_id/complete",
+            post(complete_quest),
+        )
+        .route("/api/v1/oasis/combat/resolve", post(resolve_combat))
+        .layer(middleware::from_fn(rate_limit_middleware))
+        .layer(Extension(limiter));
+
     Router::new()
+        .merge(sensitive)
         .route("/health", get(health))
         .route("/api/v1/oasis/player/:address", get(get_player))
-        .route("/api/v1/oasis/player/:address/xp", post(award_xp))
         .route("/api/v1/oasis/leaderboard", get(leaderboard))
         .route("/api/v1/oasis/leaderboard/top100", get(top_100_leaderboard))
-        .route("/api/v1/oasis/guild", post(create_guild))
         .route("/api/v1/oasis/guild/:id", get(get_guild))
-        .route("/api/v1/oasis/guild/:id/join", post(join_guild))
         .route("/api/v1/oasis/map", get(territory_map))
         .route("/api/v1/oasis/rewards/pools", get(reward_pools))
         // Golden Egg
@@ -86,19 +103,11 @@ pub fn build_router(state: OasisState) -> Router {
         .route("/api/v1/oasis/golden-egg/leaderboard", get(golden_egg_leaderboard))
         .route("/api/v1/oasis/prize-tiers", get(prize_tiers))
         // Raid Team
-        .route("/api/v1/oasis/raid-team", post(create_raid_team))
         .route("/api/v1/oasis/raid-team/:id", get(get_raid_team))
-        .route("/api/v1/oasis/raid-team/:id/join", post(join_raid_team))
         .route("/api/v1/oasis/raid-leaderboard", get(raid_leaderboard))
         // Quests
         .route("/api/v1/oasis/quests", get(list_quests))
         .route("/api/v1/oasis/player/:address/quests", get(player_quests))
-        .route(
-            "/api/v1/oasis/player/:address/quests/:quest_id/complete",
-            post(complete_quest),
-        )
-        // Combat
-        .route("/api/v1/oasis/combat/resolve", post(resolve_combat))
         // WebSocket feeds
         .route(
             "/api/v1/oasis/ws/leaderboard",
@@ -113,12 +122,27 @@ pub async fn start_server(state: OasisState) -> anyhow::Result<()> {
     let bind = format!("{}:{}", state.config.bind, state.config.port);
     let metrics_port = state.config.metrics_port;
     let metrics = Arc::clone(&state.metrics);
+    let db = state.db.clone();
     let router = build_router(state);
     let listener = TcpListener::bind(&bind).await?;
     info!("OASIS API server listening on http://{}", bind);
 
     // Spawn Prometheus metrics endpoint in background
-    tokio::spawn(serve_metrics(metrics, metrics_port));
+    tokio::spawn(serve_metrics(metrics.clone(), metrics_port));
+
+    // Spawn periodic gauge refresh from DB
+    tokio::spawn(async move {
+        let mut interval = tokio::time::interval(std::time::Duration::from_secs(60));
+        loop {
+            interval.tick().await;
+            if let Ok(count) = db.player_count() {
+                metrics.player_count.store(count, std::sync::atomic::Ordering::Relaxed);
+            }
+            if let Ok(count) = db.guild_count() {
+                metrics.active_guilds.store(count, std::sync::atomic::Ordering::Relaxed);
+            }
+        }
+    });
 
     axum::serve(listener, router).await?;
     Ok(())
@@ -236,13 +260,23 @@ async fn award_xp(
     }
 
     let resp = AwardXpResponse {
-        address,
+        address: address.clone(),
         xp_awarded: award.actual_amount,
         total_xp: award.new_total_xp,
         level: award.new_level.name().to_string(),
         leveled_up: award.leveled_up,
     };
     state.metrics.xp_awards_total.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+
+    // Broadcast XP award to WebSocket subscribers
+    if let Some(ref hub) = state.ws_hub {
+        hub.broadcast(crate::websocket::WsEvent::XpAward {
+            address,
+            amount: award.actual_amount,
+            total_xp: award.new_total_xp,
+        });
+    }
+
     (StatusCode::OK, Json(ApiResponse::ok(resp))).into_response()
 }
 
@@ -310,6 +344,13 @@ async fn create_guild(
     }
 
     state.metrics.guild_creations_total.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    // Broadcast guild creation
+    if let Some(ref hub) = state.ws_hub {
+        hub.broadcast(crate::websocket::WsEvent::GuildCreate {
+            guild_id: guild.id.clone(),
+            name: guild.name.clone(),
+        });
+    }
     (StatusCode::CREATED, Json(ApiResponse::ok(guild))).into_response()
 }
 
@@ -609,6 +650,13 @@ async fn complete_quest(
                 tracing::warn!("Quest XP save failed: {}", e);
             }
             state.metrics.quest_completions_total.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            // Broadcast quest completion
+            if let Some(ref hub) = state.ws_hub {
+                hub.broadcast(crate::websocket::WsEvent::QuestComplete {
+                    address,
+                    quest_id,
+                });
+            }
             (StatusCode::OK, Json(ApiResponse::ok(progress))).into_response()
         }
         Err(e) => (
