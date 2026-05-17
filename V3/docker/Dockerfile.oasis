@@ -1,0 +1,36 @@
+# ZION V3 OASIS Game Server
+# Multi-stage build for minimal production image
+#
+# Build:  cd V3 && docker build -f docker/Dockerfile.oasis -t zion-v3-oasis .
+# Run:    docker run -d --name zion-oasis \
+#           -p 8094:8094 \
+#           -v zion-oasis-data:/data/oasis \
+#           zion-v3-oasis
+
+FROM rust:1.85-bookworm AS builder
+WORKDIR /build
+RUN apt-get update && apt-get install -y \
+        cmake g++ make pkg-config libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+COPY . .
+RUN cargo build --release -p zion-oasis --bin zion-oasis
+
+FROM debian:bookworm-slim
+RUN apt-get update && apt-get install -y \
+        ca-certificates libssl3 curl \
+    && rm -rf /var/lib/apt/lists/*
+RUN groupadd -r zion && useradd -r -g zion -d /data/oasis -s /sbin/nologin zion
+COPY --from=builder /build/target/release/zion-oasis /usr/local/bin/zion-oasis
+COPY --from=builder /build/L4/oasis/data /data/oasis/data
+RUN mkdir -p /data/oasis && chown -R zion:zion /data/oasis
+
+ENV OASIS_BIND=0.0.0.0
+ENV OASIS_PORT=8094
+ENV OASIS_DB=/data/oasis/oasis.db
+ENV RUST_LOG=info
+
+WORKDIR /data/oasis
+EXPOSE 8094
+VOLUME ["/data/oasis"]
+USER zion
+ENTRYPOINT ["zion-oasis"]

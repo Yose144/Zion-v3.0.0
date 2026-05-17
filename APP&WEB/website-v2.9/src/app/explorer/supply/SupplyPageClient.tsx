@@ -96,12 +96,16 @@ function DonutChart({
 }) {
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
-  let offset = 0;
+  const offsets = segments.reduce<number[]>((acc, s) => {
+    const prev = acc.length > 0 ? acc[acc.length - 1] + segments[acc.length - 1].pct * c : 0;
+    acc.push(prev);
+    return acc;
+  }, []);
   return (
     <svg width={size} height={size} className="shrink-0">
       {segments.map((s, i) => {
         const dash = s.pct * c;
-        const el = (
+        return (
           <circle
             key={i}
             cx={size / 2}
@@ -111,13 +115,11 @@ function DonutChart({
             stroke={s.color}
             strokeWidth={stroke}
             strokeDasharray={`${dash} ${c - dash}`}
-            strokeDashoffset={-offset}
+            strokeDashoffset={-offsets[i]}
             strokeLinecap="butt"
             transform={`rotate(-90 ${size / 2} ${size / 2})`}
           />
         );
-        offset += dash;
-        return el;
       })}
       <text
         x="50%"
