@@ -12,6 +12,7 @@ members = [
     "L3/ncl",
     "L3/warp",
     "L3/ai-native",
+    "L4/oasis",
     "sdk",
     "cli",
 ]
