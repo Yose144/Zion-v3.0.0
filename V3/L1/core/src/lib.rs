@@ -7,11 +7,12 @@ use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 use zion_cosmic_harmony::{
     body_root_v2_active, cosmic_harmony_ekam_deeksha, cosmic_harmony_with_height, profile_name,
-    tx_hash_v2_active, RevenueCollector, RevenueEvent, RevenueStats, CHV_EKAM_FORK_HEIGHT,
-    EKAM_FUSION_ROUNDS, TX_HASH_V2_ACTIVATION_HEIGHT,
+    tx_hash_v2_active, NclStats, RevenueCollector, RevenueEvent, RevenueStats,
+    CHV_EKAM_FORK_HEIGHT, EKAM_FUSION_ROUNDS, TX_HASH_V2_ACTIVATION_HEIGHT,
 };
 
 pub use zion_cosmic_harmony::ExternalCoin;
+pub use zion_cosmic_harmony::NclStats as NclSnapshot;
 pub use zion_cosmic_harmony::RevenueSource;
 
 pub mod chain;
@@ -1281,6 +1282,38 @@ impl CoreRuntime {
 
     pub fn revenue_snapshot(&self) -> RevenueSnapshot {
         self.revenue.get_stats().into()
+    }
+
+    /// Record a Neural Compute Layer (NCL) inference task that produced
+    /// revenue.  `value_usd` is the gross customer payment for the task;
+    /// the standard NCL fee rate (`NCL_FEE = 10 %`) is applied internally.
+    /// Set `success = false` to record a failed task — this still bumps
+    /// the failure counter (and trips the circuit breaker after enough
+    /// consecutive failures) but contributes zero revenue.
+    pub fn record_ncl_task_revenue(
+        &self,
+        value_usd: f64,
+        tokens_in: u64,
+        tokens_out: u64,
+        latency_ms: u64,
+        success: bool,
+    ) {
+        self.revenue
+            .track_ncl_task_detailed(value_usd, tokens_in, tokens_out, latency_ms, success);
+    }
+
+    /// Snapshot of the NCL task / token / latency telemetry counters.
+    pub fn ncl_stats(&self) -> NclStats {
+        self.revenue.ncl_stats()
+    }
+
+    /// Clone of the underlying revenue collector handle.  Inexpensive
+    /// (`RevenueCollector` is `Arc`-internal) and intended for async
+    /// subsystems — e.g. the pool's NCL gateway dispatcher — that need
+    /// to push events into the same accounting state as the main
+    /// `CoreRuntime` without coupling to its full lifecycle.
+    pub fn revenue_handle(&self) -> RevenueCollector {
+        self.revenue.clone()
     }
 }
 

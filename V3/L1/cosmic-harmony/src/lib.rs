@@ -39,7 +39,7 @@ pub use profit_router::{
     fallback_estimates, select_best_coin, CoinProfile, ExternalCoin, ProfitEntry, StratumProtocol,
 };
 pub use revenue::{
-    RevenueCollector, RevenueEvent, RevenueHealth, RevenueSource, RevenueStats,
+    NclStats, RevenueCollector, RevenueEvent, RevenueHealth, RevenueSource, RevenueStats,
     BLAKE3_EXTERNAL_FEE, CIRCUIT_BREAKER_RESET_SECS, CIRCUIT_BREAKER_THRESHOLD, MERGED_MINING_FEE,
     MIN_ZION_ALLOCATION, MULTI_ALGO_ALLOCATION, NCL_ALLOCATION, NCL_FEE, PROFIT_SWITCH_FEE,
     ZION_ALLOCATION, ZION_HUMANITARIAN_PCT, ZION_ISSOBELLA_PCT, ZION_MINER_PCT, ZION_POOL_PCT,
