@@ -260,7 +260,9 @@ impl PplnsEngine {
             .saturating_sub(issobella_share)
             .saturating_sub(pool_fee_share);
 
-        self.fee_humanitarian_flowers = self.fee_humanitarian_flowers.saturating_add(humanitarian_share);
+        self.fee_humanitarian_flowers = self
+            .fee_humanitarian_flowers
+            .saturating_add(humanitarian_share);
         self.fee_issobella_flowers = self.fee_issobella_flowers.saturating_add(issobella_share);
         self.fee_pool_flowers = self.fee_pool_flowers.saturating_add(pool_fee_share);
 
@@ -280,10 +282,8 @@ impl PplnsEngine {
 
         // Distribute miner_reward proportionally and accumulate in `unpaid`.
         let mut distributed = 0u64;
-        let miners: Vec<(String, u128)> = share_weights
-            .iter()
-            .map(|(k, v)| (k.clone(), *v))
-            .collect();
+        let miners: Vec<(String, u128)> =
+            share_weights.iter().map(|(k, v)| (k.clone(), *v)).collect();
         for (i, (miner_id, weight)) in miners.iter().enumerate() {
             let amount = if i == miners.len() - 1 {
                 // Last miner gets the remainder to avoid rounding dust.
@@ -655,12 +655,14 @@ mod tests {
 
         let fs = e.fee_stats();
         assert_eq!(fs.humanitarian_accumulated_flowers, 50_000); // 5%
-        assert_eq!(fs.issobella_accumulated_flowers, 50_000);    // 5%
-        assert_eq!(fs.pool_fee_accumulated_flowers, 10_000);     // 1%
-        // Total: 890k + 50k + 50k + 10k = 1M (no dust)
+        assert_eq!(fs.issobella_accumulated_flowers, 50_000); // 5%
+        assert_eq!(fs.pool_fee_accumulated_flowers, 10_000); // 1%
+                                                             // Total: 890k + 50k + 50k + 10k = 1M (no dust)
         assert_eq!(
-            payouts[0].amount + fs.humanitarian_accumulated_flowers
-                + fs.issobella_accumulated_flowers + fs.pool_fee_accumulated_flowers,
+            payouts[0].amount
+                + fs.humanitarian_accumulated_flowers
+                + fs.issobella_accumulated_flowers
+                + fs.pool_fee_accumulated_flowers,
             1_000_000
         );
     }
@@ -692,7 +694,7 @@ mod tests {
         let fs = e.fee_stats();
         let humanitarian = 5_400_067_000_000_000u64 * 5 / 100; // 270,003,350,000,000
         let issobella = 5_400_067_000_000_000u64 * 5 / 100;
-        let pool_fee = 5_400_067_000_000_000u64 * 1 / 100;     // 54,000,670,000,000
+        let pool_fee = 5_400_067_000_000_000u64 * 1 / 100; // 54,000,670,000,000
         let miner_share = block_reward - humanitarian - issobella - pool_fee;
 
         assert_eq!(fs.humanitarian_accumulated_flowers, humanitarian);

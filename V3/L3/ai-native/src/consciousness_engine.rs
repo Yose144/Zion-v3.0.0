@@ -153,8 +153,12 @@ impl ConsciousnessEngine {
         self.memory.record(
             MemoryEntry::simple(
                 MemoryEventKind::Evolution,
-                format!("Dharma Autotune successful. Learned {} principles.", report.learned_principles.len()),
-            ).with_importance(0.9)
+                format!(
+                    "Dharma Autotune successful. Learned {} principles.",
+                    report.learned_principles.len()
+                ),
+            )
+            .with_importance(0.9),
         );
         self.add_xp(100); // Major XP boost
     }
@@ -185,8 +189,7 @@ impl ConsciousnessEngine {
     /// Generic critical error — high importance so it stays in long-term memory.
     pub fn on_critical_error(&mut self, message: &str) {
         self.memory.record(
-            MemoryEntry::simple(MemoryEventKind::ErrorRecovered, message)
-                .with_importance(1.0),
+            MemoryEntry::simple(MemoryEventKind::ErrorRecovered, message).with_importance(1.0),
         );
     }
 
@@ -344,7 +347,9 @@ mod tests {
             eng.on_task_complete("emb", 10);
         }
         // Should have a LevelUp entry in memory
-        let recalls = eng.memory.recall_by_kind(&MemoryEventKind::ConsciousnessLevelUp);
+        let recalls = eng
+            .memory
+            .recall_by_kind(&MemoryEventKind::ConsciousnessLevelUp);
         assert!(!recalls.is_empty(), "level-up should be in memory");
     }
 
@@ -395,8 +400,7 @@ mod tests {
 
     #[test]
     fn test_with_level_resumes_at_threshold() {
-        let eng = ConsciousnessEngine::new("agent-9")
-            .with_level(ConsciousnessLevel::Transcendent);
+        let eng = ConsciousnessEngine::new("agent-9").with_level(ConsciousnessLevel::Transcendent);
         assert_eq!(eng.level, ConsciousnessLevel::Transcendent);
         assert_eq!(eng.xp, ConsciousnessLevel::Transcendent.xp_required());
     }
@@ -417,6 +421,9 @@ mod tests {
         let mut eng = ConsciousnessEngine::new("agent-11");
         eng.on_critical_error("node unreachable");
         // importance=1.0 → promoted to long-term
-        assert!(eng.memory.long_term_len() > 0, "ErrorRecovered with importance=1.0 should be in long-term");
+        assert!(
+            eng.memory.long_term_len() > 0,
+            "ErrorRecovered with importance=1.0 should be in long-term"
+        );
     }
 }

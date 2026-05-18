@@ -488,7 +488,10 @@ impl RevenueCollector {
 
     pub fn health_for(&self, source: RevenueSource) -> RevenueHealth {
         let health = self.health.read().expect("health lock poisoned");
-        health.get(&source).cloned().unwrap_or_else(|| RevenueHealth::new(source))
+        health
+            .get(&source)
+            .cloned()
+            .unwrap_or_else(|| RevenueHealth::new(source))
     }
 
     pub fn all_health(&self) -> Vec<RevenueHealth> {
@@ -612,7 +615,8 @@ mod tests {
         let expected_pool_fee = subsidy * ZION_POOL_PCT / 100;
         let expected_humanitarian = subsidy * ZION_HUMANITARIAN_PCT / 100;
         let expected_issobella = subsidy * ZION_ISSOBELLA_PCT / 100;
-        let expected_miner = subsidy - expected_pool_fee - expected_humanitarian - expected_issobella;
+        let expected_miner =
+            subsidy - expected_pool_fee - expected_humanitarian - expected_issobella;
 
         assert_eq!(stats.total_zion, subsidy);
         assert_eq!(stats.zion_fees_zion, expected_pool_fee);
@@ -684,25 +688,33 @@ mod tests {
 
         // Build synthetic telemetry matching a full Deeksha pipeline.
         let mut telemetry = crate::stream_layers::DeekshaStreamTelemetry::default();
-        telemetry.steps.push((crate::stream_layers::DeekshaStep::Keccak256, 5));
-        telemetry.steps.push((crate::stream_layers::DeekshaStep::Sha3_512, 5));
-        telemetry.steps.push((crate::stream_layers::DeekshaStep::GoldenMatrix, 10));
-        telemetry.steps.push((crate::stream_layers::DeekshaStep::MemoryHard, 55));
-        telemetry.steps.push((crate::stream_layers::DeekshaStep::NpuMix, 15));
-        telemetry.steps.push((crate::stream_layers::DeekshaStep::CosmicFusion, 10));
-        telemetry.total_work = 100;
         telemetry
-            .stream_breakdown
-            .insert("zion".to_string(), 75);
+            .steps
+            .push((crate::stream_layers::DeekshaStep::Keccak256, 5));
+        telemetry
+            .steps
+            .push((crate::stream_layers::DeekshaStep::Sha3_512, 5));
+        telemetry
+            .steps
+            .push((crate::stream_layers::DeekshaStep::GoldenMatrix, 10));
+        telemetry
+            .steps
+            .push((crate::stream_layers::DeekshaStep::MemoryHard, 55));
+        telemetry
+            .steps
+            .push((crate::stream_layers::DeekshaStep::NpuMix, 15));
+        telemetry
+            .steps
+            .push((crate::stream_layers::DeekshaStep::CosmicFusion, 10));
+        telemetry.total_work = 100;
+        telemetry.stream_breakdown.insert("zion".to_string(), 75);
         telemetry
             .stream_breakdown
             .insert("keccak_bonus".to_string(), 5);
         telemetry
             .stream_breakdown
             .insert("sha3_bonus".to_string(), 5);
-        telemetry
-            .stream_breakdown
-            .insert("ncl_ai".to_string(), 15);
+        telemetry.stream_breakdown.insert("ncl_ai".to_string(), 15);
 
         collector.track_deeksha_streams(&telemetry, 100.0, Some(123));
 

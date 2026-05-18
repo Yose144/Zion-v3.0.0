@@ -3,8 +3,8 @@ use clap::Subcommand;
 use std::io::{self, Write};
 
 use crate::config::Config;
-use crate::ui;
 use crate::rpc::hiran_rpc;
+use crate::ui;
 
 #[derive(Subcommand)]
 pub enum HiranCmd {
@@ -103,7 +103,11 @@ pub async fn run(cfg: &Config, cmd: HiranCmd) -> Result<()> {
             ui::print_header("Hiran v2.2 Config");
             hiran_config(cfg).await
         }
-        HiranCmd::Inference { model, backend, device } => {
+        HiranCmd::Inference {
+            model,
+            backend,
+            device,
+        } => {
             ui::print_header("Hiran v2.2 Inference");
             hiran_inference(cfg, model, backend, device).await
         }
@@ -111,7 +115,11 @@ pub async fn run(cfg: &Config, cmd: HiranCmd) -> Result<()> {
             ui::print_header("Hiran v2.2 Evaluation");
             hiran_evaluate(cfg, dataset, metrics).await
         }
-        HiranCmd::Quantize { model, format, output } => {
+        HiranCmd::Quantize {
+            model,
+            format,
+            output,
+        } => {
             ui::print_header("Hiran v2.2 Quantization");
             hiran_quantize(cfg, model, format, output).await
         }
