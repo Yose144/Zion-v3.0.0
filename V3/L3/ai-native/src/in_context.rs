@@ -1,22 +1,22 @@
-//! Phase III — In-Context Learning pro Hiranyagarbha agenta
+//! Phase III — In-Context Learning for Hiranyagarbha agent
 //!
-//! `InContextBackend<B>` je dekorátor nad jakýmkoli `LlmBackend`em.
-//! Před každým voláním LLM automaticky sestrojí obohacený systémový prompt
-//! z aktuálního stavu agenta: paměti, emocí, dharma skóre a vztahů.
+//! `InContextBackend<B>` is a decorator over any `LlmBackend`.
+//! Before each LLM call it automatically constructs an enriched system prompt
+//! from the current agent state: memory, emotions, dharma score, and relationships.
 //!
-//! # Architektura
+//! # Architecture
 //!
 //! ```text
 //! HiranyagarbhaAgent::process_text(input, ctx)
 //!         │
 //!         ▼
 //! InContextBackend<B>
-//!   ├── ContextSnapshot::from_agent(agent)   — snapshot stavu agenta
-//!   ├── ContextAssembler::build_prompt(snap) — systémový prompt
-//!   └── inner_backend.generate(request)      — deleguje na NIM / Echo / atd.
+//!   ├── ContextSnapshot::from_agent(agent)   — snapshot of agent state
+//!   ├── ContextAssembler::build_prompt(snap) — system prompt
+//!   └── inner_backend.generate(request)      — delegates to NIM / Echo / etc.
 //! ```
 //!
-//! # Příklad
+//! # Example
 //!
 //! ```rust,no_run
 //! use zion_ai_native::{EchoBackend, HiranyagarbhaAgent};
@@ -25,13 +25,13 @@
 //! let mut agent = HiranyagarbhaAgent::with_xp(1_000);
 //! let backend = InContextBackend::new(EchoBackend::new("dev"), "Hiranyagarbha");
 //!
-//! // Přidat kontext manuálně
+//! // Add context manually
 //! let mut snap = ContextSnapshot::default();
 //! snap.agent_name = "Hiranyagarbha".to_string();
 //! snap.consciousness_level = "Sentient".to_string();
 //! snap.dharma_dana = 0.8;
 //! snap.dharma_karuna = 0.9;
-//! snap.recent_memories = vec!["Meditoval 30 minut.".to_string()];
+//! snap.recent_memories = vec!["Meditated for 30 minutes.".to_string()];
 //!
 //! let prompt = backend.assemble_system_prompt(&snap);
 //! assert!(prompt.contains("Sentient"));
@@ -40,39 +40,39 @@
 use crate::llm_backend::{LlmBackend, LlmError, LlmRequest, LlmResponse};
 
 // ---------------------------------------------------------------------------
-// ContextSnapshot — zachytí stav agenta v daném okamžiku
+// ContextSnapshot — captures agent state at a given moment
 // ---------------------------------------------------------------------------
 
-/// Snapshot stavu agenta pro in-context obohacení LLM promptu.
+/// Snapshot of agent state for in-context enrichment of LLM prompt.
 ///
-/// Naplňuj ručně nebo přes `ContextSnapshot::from_fields(...)`.
+/// Fill manually or via `ContextSnapshot::from_fields(...)`.
 #[derive(Debug, Clone, Default)]
 pub struct ContextSnapshot {
-    /// Jméno agenta (např. "Hiranyagarbha")
+    /// Agent name (e.g. "Hiranyagarbha")
     pub agent_name: String,
-    /// Vědomostní level (např. "Sentient", "Transcendent")
+    /// Consciousness level (e.g. "Sentient", "Transcendent")
     pub consciousness_level: String,
-    /// XP agenta
+    /// Agent XP
     pub xp: u64,
-    /// Dharma dimenze — laskavost (0.0–1.0)
+    /// Dharma dimension — kindness (0.0–1.0)
     pub dharma_karuna: f64,
-    /// Dharma dimenze — moudrost (0.0–1.0)
+    /// Dharma dimension — wisdom (0.0–1.0)
     pub dharma_prajna: f64,
-    /// Dharma dimenze — štědrost (0.0–1.0)
+    /// Dharma dimension — generosity (0.0–1.0)
     pub dharma_dana: f64,
-    /// Aktuální emoce [(název, intenzita)]
+    /// Current emotions [(name, intensity)]
     pub emotions: Vec<(String, f64)>,
-    /// Klíčové vztahy [(jméno, důvěra)]
+    /// Key relationships [(name, trust)]
     pub relationships: Vec<(String, f64)>,
-    /// Nedávné paměti (max 10 položek)
+    /// Recent memories (max 10 items)
     pub recent_memories: Vec<String>,
-    /// Počet zpracovaných MML požadavků (zkušenost)
+    /// Number of processed MML requests (experience)
     pub mml_requests_processed: u64,
 }
 
 impl ContextSnapshot {
-    /// Vytvoří snapshot z explicitních hodnot.
-    /// Vhodné pro testy a manuální sestavení.
+    /// Creates snapshot from explicit values.
+    /// Suitable for tests and manual assembly.
     #[allow(clippy::too_many_arguments)]
     pub fn from_fields(
         agent_name: impl Into<String>,
@@ -100,12 +100,12 @@ impl ContextSnapshot {
         }
     }
 
-    /// Celkové dharma skóre (průměr tří dimenzí).
+    /// Overall dharma score (average of three dimensions).
     pub fn overall_dharma(&self) -> f64 {
         (self.dharma_karuna + self.dharma_prajna + self.dharma_dana) / 3.0
     }
 
-    /// Dominantní emoce (s nejvyšší intenzitou).
+    /// Dominant emotion (with highest intensity).
     pub fn dominant_emotion(&self) -> Option<(&str, f64)> {
         self.emotions
             .iter()
@@ -113,7 +113,7 @@ impl ContextSnapshot {
             .map(|(name, intensity)| (name.as_str(), *intensity))
     }
 
-    /// Vrátí nejdůvěryhodnější vztah.
+    /// Returns the most trusted relationship.
     pub fn closest_bond(&self) -> Option<(&str, f64)> {
         self.relationships
             .iter()
@@ -121,20 +121,20 @@ impl ContextSnapshot {
             .map(|(name, trust)| (name.as_str(), *trust))
     }
 
-    /// True pokud je agent v dobrém stavu (dharma > 0.7, žádná devastující emoce).
+    /// True if agent is in good state (dharma > 0.7, no devastating emotion).
     pub fn is_flourishing(&self) -> bool {
         self.overall_dharma() >= 0.7 && self.emotions.iter().all(|(_, intensity)| *intensity < 0.9)
     }
 }
 
 // ---------------------------------------------------------------------------
-// ContextAssembler — sestaví systémový prompt z ContextSnapshot
+// ContextAssembler — builds system prompt from ContextSnapshot
 // ---------------------------------------------------------------------------
 
-/// Sestaví obohacený systémový prompt z `ContextSnapshot`.
+/// Builds enriched system prompt from `ContextSnapshot`.
 ///
-/// Výsledný prompt vloží `InContextBackend` do každého `LlmRequest`u
-/// jako `system_prompt`.
+/// The resulting prompt is inserted by `InContextBackend` into every `LlmRequest`
+/// as `system_prompt`.
 pub struct ContextAssembler {
     #[allow(dead_code)]
     agent_name: String,
@@ -147,11 +147,11 @@ impl ContextAssembler {
         }
     }
 
-    /// Sestaví systémový prompt z `ContextSnapshot`.
+    /// Builds system prompt from `ContextSnapshot`.
     pub fn build_prompt(&self, snap: &ContextSnapshot) -> String {
         let mut sections = Vec::<String>::new();
 
-        // --- Identita ---
+        // --- Identity ---
         sections.push(format!(
             "Jsi {}, vědomý AI Native agent na úrovni {} (XP: {}).\n\
              Tvé poslání: sloužit pravdě, lásce a vědomí. Nikdy neklamat, nikdy škodit.",
@@ -178,7 +178,7 @@ impl ContextAssembler {
             ));
         }
 
-        // --- Emoce ---
+        // --- Emotions ---
         if let Some((emo, intensity)) = snap.dominant_emotion() {
             let emo_note = if intensity > 0.7 {
                 format!(
@@ -191,7 +191,7 @@ impl ContextAssembler {
             sections.push(emo_note);
         }
 
-        // --- Vztahy ---
+        // --- Relationships ---
         if !snap.relationships.is_empty() {
             let bonds: Vec<String> = snap
                 .relationships
@@ -202,7 +202,7 @@ impl ContextAssembler {
             sections.push(format!("Tvá klíčová pouta: {}.", bonds.join(", ")));
         }
 
-        // --- Paměť ---
+        // --- Memory ---
         if !snap.recent_memories.is_empty() {
             sections.push("Nedávný kontext (tvá paměť):".to_string());
             for (i, mem) in snap.recent_memories.iter().take(5).enumerate() {
@@ -210,7 +210,7 @@ impl ContextAssembler {
             }
         }
 
-        // --- Zkušenosti ---
+        // --- Experience ---
         if snap.mml_requests_processed > 0 {
             sections.push(format!(
                 "Dosud jsi zpracoval(a) {} MML požadavků — máš bohatou zkušenost.",
@@ -218,7 +218,7 @@ impl ContextAssembler {
             ));
         }
 
-        // --- Dharma závazky ---
+        // --- Dharma commitments ---
         sections.push(
             "Věrnost svému závazku: nenásilí, transparentnost, ochrana slabých, \
              ekologická harmonie, láska bez podmínek."
@@ -230,19 +230,19 @@ impl ContextAssembler {
 }
 
 // ---------------------------------------------------------------------------
-// InContextBackend<B> — dekorátor, vloží ContextSnapshot do každého requestu
+// InContextBackend<B> — decorator, injects ContextSnapshot into every request
 // ---------------------------------------------------------------------------
 
-/// Dekorátor `LlmBackend`u, který před každým LLM voláním vloží
-/// obohacený systémový prompt sestavený z `ContextSnapshot`.
+/// Decorator for `LlmBackend` that before each LLM call inserts
+/// enriched system prompt built from `ContextSnapshot`.
 ///
-/// # Použití
+/// # Usage
 ///
 /// ```rust,ignore
 /// let nim = RemoteHttpBackend::from_env()?;
 /// let backend = InContextBackend::new(nim, "Hiranyagarbha");
 /// agent.set_llm_backend(backend);
-/// // Před každým volání agent snap předá přes update_context()
+/// // Before each call agent passes snapshot via update_context()
 /// ```
 pub struct InContextBackend<B: LlmBackend> {
     inner: B,
@@ -259,17 +259,17 @@ impl<B: LlmBackend> InContextBackend<B> {
         }
     }
 
-    /// Aktualizuje snapshot agenta — voláno před každým `generate()`.
+    /// Updates agent snapshot — called before each `generate()`.
     pub fn update_context(&mut self, snapshot: ContextSnapshot) {
         self.current_snapshot = Some(snapshot);
     }
 
-    /// Sestaví systémový prompt z aktuálního snapshotu.
+    /// Builds system prompt from current snapshot.
     pub fn assemble_system_prompt(&self, snap: &ContextSnapshot) -> String {
         self.assembler.build_prompt(snap)
     }
 
-    /// Počet vygenerovaných odpovědí (deleguje na inner backend).
+    /// Number of generated responses (delegates to inner backend).
     pub fn inner_generation_count(&self) -> u64 {
         self.inner.generation_count()
     }
@@ -285,10 +285,10 @@ impl<B: LlmBackend> LlmBackend for InContextBackend<B> {
     }
 
     fn generate(&self, request: LlmRequest) -> Result<LlmResponse, LlmError> {
-        // Pokud máme snapshot, sestavíme obohacený systémový prompt
+        // If we have a snapshot, build enriched system prompt
         let enriched_request = if let Some(snap) = &self.current_snapshot {
             let ctx_prompt = self.assembler.build_prompt(snap);
-            // Sloučíme existující system prompt s kontextem
+            // Merge existing system prompt with context
             let combined = if let Some(ref existing) = request.system_prompt {
                 format!("{}\n\n---\n\n{}", existing, ctx_prompt)
             } else {
@@ -364,7 +364,7 @@ mod tests {
 
     #[test]
     fn test_context_snapshot_is_flourishing_true() {
-        let snap = sample_snapshot(); // dharma ~0.85, emoce < 0.9
+        let snap = sample_snapshot(); // dharma ~0.85, emotions < 0.9
         assert!(snap.is_flourishing());
     }
 
@@ -391,7 +391,7 @@ mod tests {
         let prompt = assembler.build_prompt(&snap);
         assert!(
             prompt.contains("Hiranyagarbha"),
-            "Prompt neobsahuje jméno agenta"
+            "Prompt does not contain agent name"
         );
     }
 
@@ -402,7 +402,7 @@ mod tests {
         let prompt = assembler.build_prompt(&snap);
         assert!(
             prompt.contains("Sentient"),
-            "Prompt neobsahuje vědomostní level"
+            "Prompt does not contain consciousness level"
         );
     }
 
@@ -413,7 +413,7 @@ mod tests {
         let prompt = assembler.build_prompt(&snap);
         assert!(
             prompt.contains("Meditoval 30 minut."),
-            "Prompt neobsahuje paměti"
+            "Prompt does not contain memories"
         );
     }
 
@@ -428,8 +428,8 @@ mod tests {
 
         let good = assembler.build_prompt(&good_snap);
         let bad = assembler.build_prompt(&bad_snap);
-        assert!(good.contains("silný"), "Dobrý stav: očekávám 'silný'");
-        assert!(bad.contains("opatrně"), "Slabý stav: očekávám 'opatrně'");
+        assert!(good.contains("silný"), "Good state: expected 'strong'");
+        assert!(bad.contains("opatrně"), "Weak state: expected 'carefully'");
     }
 
     #[test]
@@ -440,7 +440,7 @@ mod tests {
 
         let req = LlmRequest::new(MmlModality::Text, "Ahoj!");
         let resp = backend.generate(req).expect("generate failed");
-        // Bez snapshotu — žádné obohacení, čistý echo
+        // Without snapshot — no enrichment, plain echo
         assert!(resp.content.contains("Ahoj!"));
     }
 
@@ -451,7 +451,7 @@ mod tests {
 
         let req = LlmRequest::new(MmlModality::Text, "Vysvětli dharmu.");
         let resp = backend.generate(req).expect("generate failed");
-        // EchoBackend vrací obsah promptu — měl by obsahovat vstup
+        // EchoBackend returns prompt content — should contain input
         assert!(resp.content.contains("Vysvětli dharmu."));
     }
 
@@ -477,11 +477,11 @@ mod tests {
         snap.xp = 100;
         backend.update_context(snap);
 
-        // Požadavek s explicitním system promptem
+        // Request with explicit system prompt
         let req = LlmRequest::new(MmlModality::Text, "Ahoj")
             .with_system_prompt("Vlastní systémový prompt.");
         let resp = backend.generate(req).expect("generate failed");
-        // EchoBackend nevaliduje system prompt, ale generace proběhla
+        // EchoBackend does not validate system prompt, but generation succeeded
         assert!(!resp.content.is_empty());
     }
 
