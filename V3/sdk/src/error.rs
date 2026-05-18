@@ -1,7 +1,7 @@
 use serde_json::Value;
 use thiserror::Error;
 
-/// JSON-RPC `error` objekt z odpovědi nody.
+/// JSON-RPC `error` object from the node response.
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 pub struct RpcErrorBody {
     pub code: i64,
@@ -52,7 +52,7 @@ pub enum ZionSdkError {
 pub type Result<T> = std::result::Result<T, ZionSdkError>;
 
 impl ZionSdkError {
-    /// `true` pro chyby vhodné k automatickému retry (síťové výpadky).
+    /// `true` for errors suitable for automatic retry (network outages).
     pub fn is_transient(&self) -> bool {
         match self {
             ZionSdkError::Timeout { .. } => true,

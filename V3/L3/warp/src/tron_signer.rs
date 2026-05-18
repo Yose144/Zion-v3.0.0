@@ -101,6 +101,7 @@ pub fn tron_base58check_decode(addr: &str) -> WarpResult<[u8; 21]> {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// Compute the 4-byte Keccak256 function selector for a Solidity signature.
+#[allow(dead_code)]
 fn abi_selector(sig: &str) -> [u8; 4] {
     let mut h = Keccak256::new();
     h.update(sig.as_bytes());

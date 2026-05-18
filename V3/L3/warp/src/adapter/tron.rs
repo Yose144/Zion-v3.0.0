@@ -42,10 +42,12 @@ struct TronEvent {
 }
 
 #[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct TronEventResult {
-    from: Option<String>,
+    #[serde(rename = "from")]
+    from_addr: Option<String>,
     amount: Option<String>, // uint256 as decimal string
-    destAddr: Option<String>,
+    dest_addr: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -64,8 +66,9 @@ struct TronBlockRaw {
 }
 
 #[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct TronTxInfo {
-    blockNumber: Option<u64>,
+    block_number: Option<u64>,
     confirmations: Option<u64>,
 }
 
@@ -77,6 +80,7 @@ struct TronTxInfo {
 pub struct TronAdapter {
     network: String,
     api_url: String,
+    #[allow(dead_code)]
     api_key: Option<String>,
     client: reqwest::Client,
 }
@@ -167,8 +171,8 @@ impl TronAdapter {
         if amount == 0 {
             return None;
         }
-        let dest = res.destAddr.clone().unwrap_or_default();
-        let from = res.from.clone().unwrap_or_default();
+        let dest = res.dest_addr.clone().unwrap_or_default();
+        let from = res.from_addr.clone().unwrap_or_default();
         let block = ev.block_number.unwrap_or(0);
         Some(DepositProof {
             tx_hash: ev.transaction_id.clone(),

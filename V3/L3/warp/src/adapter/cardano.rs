@@ -29,6 +29,7 @@ fn default_blockfrost(network: &str) -> &'static str {
 // Blockfrost REST structures
 // ─────────────────────────────────────────────────────────────────────────────
 #[derive(Deserialize)]
+#[allow(dead_code)]
 struct BFBlock {
     height: Option<u64>,
     hash: Option<String>,
@@ -36,6 +37,7 @@ struct BFBlock {
 }
 
 #[derive(Deserialize)]
+#[allow(dead_code)]
 struct BFAssetTx {
     tx_hash: String,
     block_height: Option<u64>,
@@ -43,6 +45,7 @@ struct BFAssetTx {
 }
 
 #[derive(Deserialize)]
+#[allow(dead_code)]
 struct BFTxDetails {
     hash: Option<String>,
     block: Option<String>,
