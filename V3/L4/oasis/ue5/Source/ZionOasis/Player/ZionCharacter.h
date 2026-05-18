@@ -3,8 +3,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
-#include "Avatar/AvatarTypes.h"
-#include "Consciousness/ConsciousnessTypes.h"
+#include "ZionOasis/Avatar/AvatarTypes.h"
+#include "ZionOasis/Consciousness/ConsciousnessTypes.h"
 #include "ZionCharacter.generated.h"
 
 class UConsciousnessComponent;

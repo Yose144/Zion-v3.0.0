@@ -3,7 +3,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "Consciousness/ConsciousnessTypes.h"
+#include "ZionOasis/Consciousness/ConsciousnessTypes.h"
 #include "GoldenEggManager.generated.h"
 
 UENUM(BlueprintType)

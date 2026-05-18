@@ -1,6 +1,6 @@
 // Copyright 2026 ZION TerraNova. All Rights Reserved.
-#include "Consciousness/ConsciousnessComponent.h"
-#include "Blockchain/ZionBlockchainBridge.h"
+#include "ConsciousnessComponent.h"
+#include "ZionOasis/Blockchain/ZionBlockchainBridge.h"
 #include "Net/UnrealNetwork.h"
 #include "Logging/LogMacros.h"
 
