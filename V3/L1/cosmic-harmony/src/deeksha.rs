@@ -640,8 +640,7 @@ mod tests {
     #[test]
     fn fork_rehearsal_tx_and_body_heights_are_aligned() {
         assert_eq!(
-            TX_HASH_V2_ACTIVATION_HEIGHT,
-            BODY_ROOT_V2_ACTIVATION_HEIGHT,
+            TX_HASH_V2_ACTIVATION_HEIGHT, BODY_ROOT_V2_ACTIVATION_HEIGHT,
             "rehearsal must never ship mismatched gates"
         );
         assert!(

@@ -53,7 +53,12 @@ pub async fn run(_cfg: &Config, check: bool, yes: bool) -> Result<()> {
     run_with_auto_check(_cfg, check, yes, false).await
 }
 
-pub async fn run_with_auto_check(_cfg: &Config, check: bool, yes: bool, auto_check: bool) -> Result<()> {
+pub async fn run_with_auto_check(
+    _cfg: &Config,
+    check: bool,
+    yes: bool,
+    auto_check: bool,
+) -> Result<()> {
     let artifact = detect_artifact_name()?;
     let current_exe = env::current_exe().context("Cannot resolve current zion executable")?;
     let client = Client::builder()

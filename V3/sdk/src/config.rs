@@ -80,8 +80,10 @@ impl NodeClientConfig {
             (host, port)
         };
 
-        let connect_timeout = Duration::from_millis(parse_u64_env("ZION_RPC_CONNECT_TIMEOUT_MS", 15_000)?);
-        let request_timeout = Duration::from_millis(parse_u64_env("ZION_RPC_REQUEST_TIMEOUT_MS", 90_000)?);
+        let connect_timeout =
+            Duration::from_millis(parse_u64_env("ZION_RPC_CONNECT_TIMEOUT_MS", 15_000)?);
+        let request_timeout =
+            Duration::from_millis(parse_u64_env("ZION_RPC_REQUEST_TIMEOUT_MS", 90_000)?);
         let max_line_bytes = parse_usize_env("ZION_RPC_MAX_LINE_BYTES", 16 * 1024 * 1024)?;
         let max_retries = parse_u64_env("ZION_RPC_MAX_RETRIES", 2)? as u32;
         let retry_initial_backoff =

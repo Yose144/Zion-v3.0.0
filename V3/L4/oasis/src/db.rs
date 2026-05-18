@@ -90,8 +90,8 @@ impl OasisDb {
 
     /// Save (insert or update) a player.
     pub fn save_player(&self, player: &Player) -> OasisResult<()> {
-        let data = serde_json::to_string(player)
-            .map_err(|e| OasisError::Serialization(e.to_string()))?;
+        let data =
+            serde_json::to_string(player).map_err(|e| OasisError::Serialization(e.to_string()))?;
         let level = player.level as i64;
         let now = now_secs();
         let conn = self.conn.lock().unwrap();
@@ -104,7 +104,14 @@ impl OasisDb {
                guild_id   = excluded.guild_id,
                data       = excluded.data,
                updated_at = excluded.updated_at",
-            params![player.address, player.total_xp as i64, level, player.guild_id, data, now],
+            params![
+                player.address,
+                player.total_xp as i64,
+                level,
+                player.guild_id,
+                data,
+                now
+            ],
         )
         .map_err(OasisError::Database)?;
         Ok(())
@@ -117,9 +124,7 @@ impl OasisDb {
             .prepare("SELECT data FROM players WHERE address = ?1")
             .map_err(OasisError::Database)?;
 
-        let mut rows = stmt
-            .query(params![address])
-            .map_err(OasisError::Database)?;
+        let mut rows = stmt.query(params![address]).map_err(OasisError::Database)?;
 
         if let Some(row) = rows.next().map_err(OasisError::Database)? {
             let data: String = row.get(0).map_err(OasisError::Database)?;
@@ -145,8 +150,8 @@ impl OasisDb {
 
     /// Save (insert or update) a guild.
     pub fn save_guild(&self, guild: &Guild) -> OasisResult<()> {
-        let data = serde_json::to_string(guild)
-            .map_err(|e| OasisError::Serialization(e.to_string()))?;
+        let data =
+            serde_json::to_string(guild).map_err(|e| OasisError::Serialization(e.to_string()))?;
         let now = now_secs();
         let conn = self.conn.lock().unwrap();
         conn.execute(
@@ -180,9 +185,7 @@ impl OasisDb {
             .prepare("SELECT data FROM guilds WHERE id = ?1")
             .map_err(OasisError::Database)?;
 
-        let mut rows = stmt
-            .query(params![id])
-            .map_err(OasisError::Database)?;
+        let mut rows = stmt.query(params![id]).map_err(OasisError::Database)?;
 
         if let Some(row) = rows.next().map_err(OasisError::Database)? {
             let data: String = row.get(0).map_err(OasisError::Database)?;
@@ -302,10 +305,7 @@ impl OasisDb {
     // ── Quest Progress ─────────────────────────────────────────────────────
 
     /// Save (insert or update) quest progress.
-    pub fn save_quest_progress(
-        &self,
-        progress: &crate::quests::QuestProgress,
-    ) -> OasisResult<()> {
+    pub fn save_quest_progress(&self, progress: &crate::quests::QuestProgress) -> OasisResult<()> {
         let conn = self.conn.lock().unwrap();
         conn.execute(
             "INSERT INTO quest_progress (player_address, quest_id, completed, completed_at)
@@ -334,7 +334,9 @@ impl OasisDb {
         let mut stmt = conn
             .prepare("SELECT completed, completed_at FROM quest_progress WHERE player_address = ?1 AND quest_id = ?2")
             .map_err(OasisError::Database)?;
-        let mut rows = stmt.query(params![address, quest_id]).map_err(OasisError::Database)?;
+        let mut rows = stmt
+            .query(params![address, quest_id])
+            .map_err(OasisError::Database)?;
         if let Some(row) = rows.next().map_err(OasisError::Database)? {
             let completed: bool = row.get(0).map_err(OasisError::Database)?;
             let completed_at: Option<i64> = row.get(1).map_err(OasisError::Database)?;
@@ -466,7 +468,10 @@ mod tests {
         db.save_player(&player).unwrap();
 
         let xp_sys = XpSystem::new();
-        let source = XpSource::BlockMined { block_height: 100, shares: 10 };
+        let source = XpSource::BlockMined {
+            block_height: 100,
+            shares: 10,
+        };
         let award = xp_sys.award(player.total_xp, player.level, &source, player.daily_xp);
         player.total_xp = award.new_total_xp;
         player.level = award.new_level;
@@ -479,7 +484,11 @@ mod tests {
     #[test]
     fn test_save_and_get_guild() {
         let db = test_db();
-        let guild = Guild::new("guild-1".to_string(), "Zion Knights".to_string(), "zion1founder".to_string());
+        let guild = Guild::new(
+            "guild-1".to_string(),
+            "Zion Knights".to_string(),
+            "zion1founder".to_string(),
+        );
         db.save_guild(&guild).unwrap();
         let loaded = db.get_guild("guild-1").unwrap().unwrap();
         assert_eq!(loaded.name, "Zion Knights");
@@ -490,7 +499,11 @@ mod tests {
     fn test_list_guilds() {
         let db = test_db();
         for i in 0..3 {
-            let mut g = Guild::new(format!("g{}", i), format!("Guild {}", i), "zion1x".to_string());
+            let mut g = Guild::new(
+                format!("g{}", i),
+                format!("Guild {}", i),
+                "zion1x".to_string(),
+            );
             g.guild_xp = (i as u64) * 1000;
             db.save_guild(&g).unwrap();
         }

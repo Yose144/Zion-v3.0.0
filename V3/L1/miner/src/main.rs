@@ -582,7 +582,11 @@ fn main() -> Result<()> {
 
         println!("--- Ekam Deeksha GPU benchmark ---");
         let mut gpu = gpu_backend::create_gpu_backend(
-            if backend == gpu_backend::GpuBackendKind::Cpu { gpu_backend::GpuBackendKind::Auto } else { backend },
+            if backend == gpu_backend::GpuBackendKind::Cpu {
+                gpu_backend::GpuBackendKind::Auto
+            } else {
+                backend
+            },
             work_size,
         )?;
         println!("device={}", gpu.device_name());
@@ -1223,13 +1227,22 @@ fn run_remote_session(
         last_job_id = job.job_id;
         telemetry.pool_height = job.height;
         telemetry.current_epoch = job.height / 100;
-        println!("mining job_id={} height={} nonces={}..{}", job.job_id, job.height, job.start_nonce, job.start_nonce + job.nonce_count);
+        println!(
+            "mining job_id={} height={} nonces={}..{}",
+            job.job_id,
+            job.height,
+            job.start_nonce,
+            job.start_nonce + job.nonce_count
+        );
         // GPU-first, CPU-fallback nonce scan
         let can_gpu = match gpu.as_mut() {
             Some(g) => match g.update_epoch(job.height) {
                 Ok(()) => true,
                 Err(e) => {
-                    println!("gpu_epoch_fallback height={} reason=\"{e}\" using=cpu", job.height);
+                    println!(
+                        "gpu_epoch_fallback height={} reason=\"{e}\" using=cpu",
+                        job.height
+                    );
                     false
                 }
             },
@@ -1619,7 +1632,11 @@ impl SessionTelemetry {
 
     fn gpu_hashrate_hps(&self) -> f64 {
         let elapsed = self.status_started_at.elapsed().as_secs_f64();
-        if elapsed > 0.0 { self.gpu_hashes as f64 / elapsed } else { 0.0 }
+        if elapsed > 0.0 {
+            self.gpu_hashes as f64 / elapsed
+        } else {
+            0.0
+        }
     }
 
     fn submit_avg_latency_ms(&self) -> f64 {
@@ -1999,7 +2016,9 @@ impl MinerConfig {
                     println!("All options can also be set via ZION_* environment variables.");
                     std::process::exit(0);
                 }
-                _ => { i += 1; } // skip unknown flags (bench flags handled earlier)
+                _ => {
+                    i += 1;
+                } // skip unknown flags (bench flags handled earlier)
             }
         }
 
@@ -2260,10 +2279,7 @@ mod tests {
         assert_eq!(config.metrics_bind.as_deref(), None);
         std::env::set_var("ZION_MINER_METRICS_BIND", "127.0.0.1:9116");
         let with_bind = MinerConfig::from_env_and_args().expect("config with metrics bind");
-        assert_eq!(
-            with_bind.metrics_bind.as_deref(),
-            Some("127.0.0.1:9116")
-        );
+        assert_eq!(with_bind.metrics_bind.as_deref(), Some("127.0.0.1:9116"));
         std::env::remove_var("ZION_LOOP_COUNT");
         std::env::remove_var("ZION_JOB_TTL_MS");
         std::env::remove_var("ZION_NONCE_STRIDE");
@@ -2530,10 +2546,16 @@ mod tests {
         let val = std::env::var("ZION_LOOP_COUNT").unwrap_or_default();
         assert!(val == "42" || val.is_empty(),
             "expected ZION_LOOP_COUNT to be '42' (explicit) or removed by parallel test, got '{val}'");
-        for k in ["ZION_PROFILE", "ZION_LOOP_COUNT", "ZION_RECONNECT",
-                   "ZION_NONCE_AUTOTUNE", "ZION_NONCE_COUNT",
-                   "ZION_NONCE_COUNT_MIN", "ZION_NONCE_COUNT_MAX",
-                   "ZION_METRICS_REPORT_SECS"] {
+        for k in [
+            "ZION_PROFILE",
+            "ZION_LOOP_COUNT",
+            "ZION_RECONNECT",
+            "ZION_NONCE_AUTOTUNE",
+            "ZION_NONCE_COUNT",
+            "ZION_NONCE_COUNT_MIN",
+            "ZION_NONCE_COUNT_MAX",
+            "ZION_METRICS_REPORT_SECS",
+        ] {
             std::env::remove_var(k);
         }
     }

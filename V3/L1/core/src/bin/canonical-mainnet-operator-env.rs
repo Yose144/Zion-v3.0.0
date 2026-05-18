@@ -40,5 +40,8 @@ fn main() {
     println!("ZION_ISSOBELLA_WALLET={MAINNET_CANONICAL_ISSOBELLA_SUBSIDY_WALLET}");
     println!("ZION_POOL_FEE_WALLET={MAINNET_CANONICAL_POOL_FEE_SUBSIDY_WALLET}");
     println!("ZION_POOL_WALLET={MAINNET_CANONICAL_POOL_PAYOUT_WALLET}");
-    println!("ZION_POOL_PAYOUT_SK_HEX={}", crypto::to_hex(sk_pool.as_bytes()));
+    println!(
+        "ZION_POOL_PAYOUT_SK_HEX={}",
+        crypto::to_hex(sk_pool.as_bytes())
+    );
 }

@@ -80,9 +80,8 @@ impl RevenueJournal {
     pub fn append(&self, payload: JournalPayload) -> std::io::Result<()> {
         let ts = Utc::now().to_rfc3339();
         let entry = JournalEntry { ts, payload };
-        let line = serde_json::to_string(&entry).map_err(|e| {
-            std::io::Error::new(std::io::ErrorKind::InvalidData, e)
-        })?;
+        let line = serde_json::to_string(&entry)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
 
         let file_path = self.current_file_path();
         let mut file = OpenOptions::new()
