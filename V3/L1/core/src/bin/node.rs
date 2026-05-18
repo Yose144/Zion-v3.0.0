@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Context, Result};
-use std::collections::{HashMap, HashSet, VecDeque};
+use std::collections::{HashSet, VecDeque};
 use std::fmt::Write as FmtWrite;
 use std::io::{BufRead, BufReader, Write};
 use std::net::{IpAddr, TcpListener, TcpStream, ToSocketAddrs, UdpSocket};
@@ -1231,8 +1231,8 @@ fn outbound_peer_loop(
         let our_tip = runtime.lock().expect("lock").tip_hash_hex();
 
         // ── Fork detection: compare our tip with peer tips ─────────────
-        let mut peers_ahead = 0u32;
-        let mut peers_disagree_tip = 0u32;
+        let peers_ahead = 0u32;
+        let peers_disagree_tip = 0u32;
 
         for peer in &peers {
             // Quick status check via Ping to keep connection alive (persistent)

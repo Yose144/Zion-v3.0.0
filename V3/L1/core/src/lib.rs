@@ -3633,7 +3633,7 @@ impl ChainState {
             .map(|transaction| transaction.fee_zion)
             .sum();
 
-        let mut selected_utxo_transactions = select_template_utxo_transactions(mempool);
+        let selected_utxo_transactions = select_template_utxo_transactions(mempool);
 
         // Phase 14: Generate coinbase transaction(s) when miner_address is configured.
         if !miner_address.is_empty() {
