@@ -1,9 +1,9 @@
 # Hiran v2.2 — Training Runbook (Autonomous)
 
-> **Instance:** Vast.ai contract #37024133
-> **SSH:** `ssh -i ~/.ssh/vast_hiran_key -p 24132 root@ssh1.vast.ai`
+> **Instance:** Vast.ai contract #37028568
+> **SSH:** `ssh -i ~/.ssh/vast_hiran_key -p 28568 root@ssh7.vast.ai`
 > **GPU:** 1x RTX 4090 (24 GB VRAM)
-> **Cost:** ~$0.43/hr
+> **Cost:** ~$0.46/hr
 > **Dataset:** 22,181 pairs across 5 curriculum stages
 
 ---
@@ -12,7 +12,7 @@
 
 ```bash
 # Connect to instance
-ssh -i ~/.ssh/vast_hiran_key -p 24132 -o StrictHostKeyChecking=no root@ssh1.vast.ai
+ssh -i ~/.ssh/vast_hiran_key -p 28568 -o StrictHostKeyChecking=no root@ssh7.vast.ai
 
 # On instance
 cd /workspace/hiran-v2.2
@@ -91,8 +91,8 @@ python3 evaluate/evaluate_v2.2.py --model hiran-v2.2-merged
 
 ```bash
 # From local machine
-rsync -avz -e "ssh -i ~/.ssh/vast_hiran_key -p 24132" \
-  root@ssh1.vast.ai:/workspace/hiran-v2.2/checkpoints/ \
+rsync -avz -e "ssh -i ~/.ssh/vast_hiran_key -p 28568" \
+  root@ssh7.vast.ai:/workspace/hiran-v2.2/checkpoints/ \
   ./HiranV2.2/checkpoints_vast/
 ```
 
@@ -100,7 +100,7 @@ rsync -avz -e "ssh -i ~/.ssh/vast_hiran_key -p 24132" \
 
 ```bash
 # On local machine
-vastai destroy instance 37024133
+vastai destroy instance 37028568
 ```
 
 ---
