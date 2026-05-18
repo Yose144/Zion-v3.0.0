@@ -29,7 +29,7 @@
 | 2.1 | Docker stack up | All services healthy | N/A (used local binaries) | SKIPPED |
 | 2.2 | Node RPC health | `{"status":"ok"}` | `{"status":"ok","service":"zion-v3-rpc","protocol":"jsonrpc-2.0"}` | PASS |
 | 2.3 | GPU miner init | OpenCL device detected, self-test PASS | GPU self-test: all 6 stages OK, hash MATCH | PASS |
-| 2.4 | GPU hashrate | `gpu_hps > 20` | `gpu_hps=31.32` (RX 5600 XT class) | PASS |
+| 2.4 | GPU hashrate | `gpu_hps > 20` | `gpu_hps=31.32` pre-fix (reconnect overhead); **~3.1 KH/s** benchmark post-fix; **~1.7 KH/s** live post-fix | PASS |
 | 2.5 | Share acceptance | `share_status=Accepted`, 100% rate | `accepted=1 rejected=0 accept_pct=100.00` | PASS |
 | 2.6 | Block mined | `chain_height >= 1` | `chain_height=15`, `accepted_blocks=16` | PASS |
 | 2.7 | Coinbase split | 4 tx: 89/5/5/1% | Confirmed: 4 coinbase transactions, exact split | PASS |
@@ -64,7 +64,7 @@
 ### 3. GPU Miner (P0)
 - **Device:** AMD gfx1010:xnack- detected via OpenCL
 - **Self-test:** All 6 stages PASS, CPU/GPU hash MATCH
-- **Hashrate:** ~31-34 H/s (within expected 25-35 H/s for RX 5600 XT class)
+- **Hashrate:** ~31-34 H/s during the pre-fix test (caused by pool `loop_count=1` reconnect overhead); **~3.1 KH/s** in `--ekam-bench` mode after fix; **~1.3-1.7 KH/s** live after fix (pool nonce_count=1024). Benchmark matrix 10 KH/s target was measured on Linux/ROCm (RX 5600 XT 6 GB); this Windows 4 GB card with Adrenalin OpenCL runs ~3× slower.
 - **Share rate:** 100% accepted, ~6-9ms pool latency
 - **Backend:** OpenCL with work_size=262144
 
@@ -109,7 +109,8 @@ supply_mined_percent=0.000063%
 
 | Issue | Severity | Workaround Applied | Fix Needed |
 |-------|----------|-------------------|------------|
-| Pool `loop_count=1` default causes `Bye` after every iteration | **HIGH** | Export `ZION_POOL_LOOP_COUNT=1000000` before starting pool | Change default in pool server or document requirement |
+| Pool `loop_count=1` default causes `Bye` after every iteration | **HIGH** | Fixed in code (default now `1_000_000`) and tagged `v3-mainnet-rc1` | None — already fixed |
+| GPU hashrate shortfall vs benchmark matrix | **MEDIUM** | Root cause: pool `nonce_count=1024` default under-utilises GPU; Windows Adrenalin OpenCL ~3× slower than Linux/ROCm | Increase `ZION_NONCE_COUNT` on pool for larger batches; document Windows vs Linux performance gap |
 | Pool health endpoint (`/health`) not responding to curl | LOW | Pool TCP listener works; shares accepted successfully | Investigate HTTP parsing in pool server.rs |
 | CLI status checks remote endpoints by default | LOW | Expected behavior; local stack verified via direct RPC | Configure `zion.toml` for local testing |
 
@@ -160,7 +161,9 @@ All P0 tests passed:
 - Block reward split is EXACTLY 89/5/5/1 as specified
 - Chain grows continuously with valid PoW blocks
 
-The only operational issue found is the **pool `loop_count=1` default**, which severely degrades mining efficiency by forcing reconnect after every share. This must be documented or fixed before any production deployment.
+The two operational issues found are:
+1. **Pool `loop_count=1` default** — fixed in code (now `1_000_000`) and tagged `v3-mainnet-rc1`.
+2. **GPU hashrate shortfall** — the observed ~31 H/s during the pre-fix test was entirely caused by the reconnect overhead. After the fix, the same RX 5600 XT 4 GB card achieves **~3.1 KH/s** in `--ekam-bench` and **~1.3-1.7 KH/s** live. This is below the 10 KH/s Linux/ROCm benchmark because (a) this is a 4 GB Windows card with Adrenalin OpenCL (~3× slower than ROCm), and (b) the pool default `nonce_count=1024` sends smaller batches than the optimal `work_size=4096`, under-utilising the GPU. For production deployment, raise `ZION_NONCE_COUNT` on the pool to `4096` or higher to match the benchmark batch size.
 
 ---
 
