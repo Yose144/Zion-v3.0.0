@@ -11,7 +11,7 @@ $UProjectPath = "$PSScriptRoot\ZionOasis.uproject"
 
 if (-not (Test-Path $EditorPath)) {
     Write-Error "Unreal Editor not found at: $EditorPath"
-    Write-Host "Please install UE 5.4 via Epic Games Launcher or specify -EnginePath"
+    Write-Host "Please install UE 5.7 via Epic Games Launcher or specify -EnginePath"
     exit 1
 }
 

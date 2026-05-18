@@ -1,8 +1,8 @@
 // Copyright 2026 ZION TerraNova. All Rights Reserved.
-#include "Player/ZionCharacter.h"
-#include "Player/ZionPlayerController.h"
-#include "Consciousness/ConsciousnessComponent.h"
-#include "Guild/GuildComponent.h"
+#include "ZionCharacter.h"
+#include "ZionPlayerController.h"
+#include "ZionOasis/Consciousness/ConsciousnessComponent.h"
+#include "ZionOasis/Guild/GuildComponent.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -68,9 +68,9 @@ void AZionCharacter::SetupPlayerInputComponent(UInputComponent* Comp)
 	}
 }
 
-void AZionCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out) const
+void AZionCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
-	Super::GetLifetimeReplicatedProps(Out);
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(AZionCharacter, WalletAddress);
 	DOREPLIFETIME(AZionCharacter, PlayerDisplayName);
 	DOREPLIFETIME(AZionCharacter, EquippedAvatar);

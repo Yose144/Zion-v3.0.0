@@ -3,7 +3,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "Consciousness/ConsciousnessTypes.h"
+#include "ConsciousnessTypes.h"
 #include "ConsciousnessComponent.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnLevelUp,

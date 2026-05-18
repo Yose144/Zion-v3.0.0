@@ -2,7 +2,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Consciousness/ConsciousnessTypes.h"
+#include "ZionOasis/Consciousness/ConsciousnessTypes.h"
 #include "GuildTypes.generated.h"
 
 /** Guild spiritual order type */
