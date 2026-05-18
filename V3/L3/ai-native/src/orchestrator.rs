@@ -4,8 +4,7 @@ use uuid::Uuid;
 use crate::error::{AiError, AiResult};
 use crate::task::{AiTask, AiTaskType};
 use crate::types::{Agent, AgentCapability, AgentMessage, AgentStatus};
-use zion_bridge::types::BridgeStatus;
-use zion_ncl::{ComputeBackend, JobScheduler, NclJob, NclTaskType, ReputationRegistry};
+use zion_ncl::{ComputeBackend, JobScheduler, NclJob, NclTaskType};
 use zion_warp::{ChainFamily, ChainId, WarpRouter};
 
 /// Bridge operation types that AI agents can initiate.
@@ -302,7 +301,7 @@ impl Orchestrator {
     ///
     /// Returns the number of successfully deployed agents.
     pub async fn deploy_warp_agents(&mut self, chains: &[ChainId]) -> AiResult<usize> {
-        let router = self
+        let _router = self
             .warp_router
             .as_ref()
             .ok_or_else(|| AiError::CapabilityNotAvailable("WARP Router".into()))?;

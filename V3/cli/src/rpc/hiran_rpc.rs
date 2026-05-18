@@ -65,11 +65,13 @@ pub async fn ask(base_url: &str, question: &str) -> Result<String> {
 }
 
 /// Get model information
+#[allow(dead_code)]
 pub async fn model_info(base_url: &str) -> Result<Value> {
     get(base_url, "v1/models").await
 }
 
 /// Get embeddings for text
+#[allow(dead_code)]
 pub async fn embeddings(base_url: &str, text: &str) -> Result<Value> {
     let body = json!({
         "model": "hiran-v2.2",
@@ -79,6 +81,7 @@ pub async fn embeddings(base_url: &str, text: &str) -> Result<Value> {
 }
 
 /// Get inference metrics
+#[allow(dead_code)]
 pub async fn metrics(base_url: &str) -> Result<String> {
     let resp = Client::new()
         .get(&format!("{}/metrics", base_url.trim_end_matches('/')))

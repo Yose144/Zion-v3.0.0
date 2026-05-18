@@ -193,7 +193,7 @@ impl StellarAdapter {
             Some(r) => r,
             None => return Ok(vec![]),
         };
-        let latest = result.latestLedger.unwrap_or(start_ledger);
+        let latest = result.latest_ledger.unwrap_or(start_ledger);
 
         let proofs: Vec<DepositProof> = result
             .events
@@ -220,7 +220,7 @@ impl StellarAdapter {
         let from = val["from"].as_str().unwrap_or("").to_string();
         let ledger = ev.ledger.unwrap_or(latest_ledger);
         let tx = ev
-            .txHash
+            .tx_hash
             .clone()
             .unwrap_or_else(|| format!("stellar-ev-{}", ev.id));
 
@@ -370,8 +370,8 @@ mod tests {
         let ev = SorobanEvent {
             id: "ev1".into(),
             ledger: Some(50_000),
-            txHash: Some("TXHASH".into()),
-            contractId: None,
+            tx_hash: Some("TXHASH".into()),
+            contract_id: None,
             topic: None,
             value: Some(json!({ "amount": "3000000", "dest": "zion1stellar", "from": "GA..." })),
         };
@@ -387,8 +387,8 @@ mod tests {
         let ev = SorobanEvent {
             id: "ev2".into(),
             ledger: Some(1),
-            txHash: None,
-            contractId: None,
+            tx_hash: None,
+            contract_id: None,
             topic: None,
             value: Some(json!({ "amount": "0", "dest": "zion1x", "from": "GA..." })),
         };
