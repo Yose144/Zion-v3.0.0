@@ -3,7 +3,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "Guild/GuildTypes.h"
+#include "GuildTypes.h"
 #include "GuildComponent.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGuildJoined,  FGuildData, Guild);

@@ -1,14 +1,24 @@
 // Copyright 2026 ZION TerraNova. All Rights Reserved.
-#include "Player/ZionPlayerController.h"
-#include "Player/ZionCharacter.h"
-#include "Blockchain/ZionBlockchainBridge.h"
-#include "Consciousness/ConsciousnessComponent.h"
-#include "Game/ZionGameInstance.h"
+#include "ZionPlayerController.h"
+#include "ZionCharacter.h"
+#include "ZionOasis/Blockchain/ZionBlockchainBridge.h"
+#include "ZionOasis/Consciousness/ConsciousnessComponent.h"
+#include "ZionOasis/Game/ZionGameInstance.h"
 #include "Engine/World.h"
 #include "Net/UnrealNetwork.h"
 
 AZionPlayerController::AZionPlayerController()
 {
+}
+
+void AZionPlayerController::BeginPlay()
+{
+	Super::BeginPlay();
+}
+
+void AZionPlayerController::OnPossess(APawn* InPawn)
+{
+	Super::OnPossess(InPawn);
 }
 
 void AZionPlayerController::ConnectWallet(const FString& WalletAddress)
@@ -38,7 +48,7 @@ void AZionPlayerController::DisconnectWallet()
 		GI->ActiveWallet = TEXT("");
 	}
 
-	OnWalletDisconnected.Broadcast(OldWallet);
+	OnWalletDisconnected.Broadcast();
 	UE_LOG(LogTemp, Log, TEXT("[ZionPlayerController] Wallet disconnected"));
 }
 
@@ -48,7 +58,8 @@ void AZionPlayerController::ServerInteract_Implementation()
 	if (!ZionChar) return;
 
 	FVector Start, Direction;
-	GetPlayerViewPoint(Start, FRotator{});
+	FRotator Rot;
+	GetPlayerViewPoint(Start, Rot);
 	Direction = GetControlRotation().Vector();
 
 	FHitResult Hit;
