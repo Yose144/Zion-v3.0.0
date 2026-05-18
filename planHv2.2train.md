@@ -20,9 +20,9 @@
   - `rag_synthesis`: 2,052 pairs (status, roadmaps, audits, guides)
 
 ### Vast.ai Instance
-- **Contract ID:** `37024133`
+- **Contract ID:** `37028568` (Iceland RTX 4090)
 - **GPU:** 1x RTX 4090 (24 GB VRAM)
-- **Cost:** ~$0.43/hr
+- **Cost:** ~$0.46/hr
 - **Image:** `pytorch/pytorch:2.3.0-cuda12.1-cudnn8-runtime`
 - **Status:** `loading` (wait for SSH readiness before sync)
 
@@ -52,9 +52,9 @@ When the user says "go autonomous", execute in this order:
 ### Step 1: Wait for SSH readiness
 Loop until this succeeds:
 ```bash
-ssh -i ~/.ssh/vast_hiran_key -p 24132 -o StrictHostKeyChecking=no \
+ssh -i ~/.ssh/vast_hiran_key -p 28568 -o StrictHostKeyChecking=no \
   -o UserKnownHostsFile=/dev/null -o ConnectTimeout=10 \
-  root@ssh1.vast.ai "echo ready"
+  root@ssh7.vast.ai "echo ready"
 ```
 
 ### Step 2: Sync data + scripts
@@ -64,8 +64,8 @@ bash HiranV2.2/scripts/sync_to_current_vast.sh
 
 ### Step 3: Connect and setup environment
 ```bash
-ssh -i ~/.ssh/vast_hiran_key -p 24132 -o StrictHostKeyChecking=no \
-  root@ssh1.vast.ai
+ssh -i ~/.ssh/vast_hiran_key -p 28568 -o StrictHostKeyChecking=no \
+  root@ssh7.vast.ai
 
 cd /workspace/hiran-v2.2
 nvidia-smi
@@ -92,7 +92,9 @@ python3 scripts/train_v2.2.py \
 ### Step 6: Monitor & poll
 Every 5-10 minutes check:
 ```bash
-ssh ... "tail -n 20 /workspace/hiran-v2.2/checkpoints/training_history.json"
+ssh -i ~/.ssh/vast_hiran_key -p 28568 -o StrictHostKeyChecking=no \
+  -o UserKnownHostsFile=/dev/null root@ssh7.vast.ai \
+  "tail -n 20 /workspace/hiran-v2.2/checkpoints/training_history.json"
 ```
 
 ### Step 7: Post-training
@@ -108,12 +110,12 @@ python3 evaluate/evaluate_v2.2.py --model hiran-v2.2-merged
 
 ### Step 8: Download artifacts
 ```bash
-rsync -avz -e "ssh -i ~/.ssh/vast_hiran_key -p 24132" \
-  root@ssh1.vast.ai:/workspace/hiran-v2.2/checkpoints/ \
+rsync -avz -e "ssh -i ~/.ssh/vast_hiran_key -p 28568" \
+  root@ssh7.vast.ai:/workspace/hiran-v2.2/checkpoints/ \
   ./HiranV2.2/checkpoints_vast/
 
-rsync -avz -e "ssh -i ~/.ssh/vast_hiran_key -p 24132" \
-  root@ssh1.vast.ai:/workspace/hiran-v2.2/hiran-v2.2-merged/ \
+rsync -avz -e "ssh -i ~/.ssh/vast_hiran_key -p 28568" \
+  root@ssh7.vast.ai:/workspace/hiran-v2.2/hiran-v2.2-merged/ \
   ./HiranV2.2/models/
 ```
 
@@ -126,7 +128,7 @@ git push origin main
 
 ### Step 10: Cleanup (optional)
 ```bash
-vastai destroy instance 37024133
+vastai destroy instance 37028568
 ```
 
 ---
