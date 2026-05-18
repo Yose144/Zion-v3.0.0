@@ -90,7 +90,7 @@ pub trait GpuMiner: Send {
 }
 
 /// Try to create the best available GPU backend.
-pub fn create_gpu_backend(kind: GpuBackendKind, work_size: usize) -> Result<Box<dyn GpuMiner>> {
+pub fn create_gpu_backend(kind: GpuBackendKind, _work_size: usize) -> Result<Box<dyn GpuMiner>> {
     match kind {
         GpuBackendKind::Cpu => {
             anyhow::bail!("GPU backend requested but kind=cpu — use CPU mining path instead");

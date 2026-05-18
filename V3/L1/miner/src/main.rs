@@ -1693,7 +1693,7 @@ impl SessionTelemetry {
             .map(|ttl| ttl.to_string())
             .unwrap_or_else(|| "n/a".to_string());
         let ts = log_timestamp();
-        let backend_label = if self.gpu_backend_name.is_empty() {
+        let _backend_label = if self.gpu_backend_name.is_empty() {
             "cpu"
         } else {
             &self.gpu_backend_name
