@@ -29,15 +29,18 @@ fn default_rest(network: &str) -> &'static str {
 // CosmosSDK REST structures
 // ─────────────────────────────────────────────────────────────────────────────
 #[derive(Deserialize)]
+#[allow(dead_code)]
 struct CosmosTxsResp {
     txs: Option<Vec<CosmosRawTx>>,
     tx_responses: Option<Vec<CosmosRawTxResp>>,
 }
 
 #[derive(Deserialize)]
+#[allow(dead_code)]
 struct CosmosRawTx {}
 
 #[derive(Deserialize)]
+#[allow(dead_code)]
 struct CosmosRawTxResp {
     txhash: Option<String>,
     height: Option<String>,
@@ -45,6 +48,7 @@ struct CosmosRawTxResp {
 }
 
 #[derive(Deserialize)]
+#[allow(dead_code)]
 struct CosmosLog {
     events: Option<Vec<CosmosEvent>>,
 }

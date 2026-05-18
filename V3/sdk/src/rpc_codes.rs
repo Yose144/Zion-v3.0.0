@@ -1,5 +1,5 @@
-//! JSON-RPC a aplikační kódy chyb v souladu s `zion-core` (`V3/L1/core/src/rpc.rs`).
-//! SDK je samostatný — neimportuje `zion-core`, ale čísla musí zůstat synchronní.
+//! JSON-RPC and application error codes aligned with `zion-core` (`V3/L1/core/src/rpc.rs`).
+//! The SDK is standalone — it does not import `zion-core`, but the numbers must stay in sync.
 
 /// JSON-RPC 2.0 — parse error.
 pub const PARSE_ERROR: i64 = -32_700;

@@ -87,6 +87,7 @@ struct EthLog {
 }
 
 #[derive(Deserialize)]
+#[allow(dead_code)]
 struct TxReceipt {
     #[serde(rename = "blockNumber")]
     block_number: Option<String>,

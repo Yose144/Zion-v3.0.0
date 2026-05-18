@@ -48,6 +48,7 @@ struct HorizonEmbedded<T> {
 }
 
 #[derive(Deserialize)]
+#[allow(dead_code)]
 struct HorizonLedger {
     sequence: u64,
     closed_at: Option<String>,
@@ -70,17 +71,21 @@ struct SorobanRpcResp {
 }
 
 #[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[allow(dead_code)]
 struct SorobanEventsResult {
     events: Vec<SorobanEvent>,
-    latestLedger: Option<u64>,
+    latest_ledger: Option<u64>,
 }
 
 #[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[allow(dead_code)]
 struct SorobanEvent {
     id: String,
     ledger: Option<u64>,
-    txHash: Option<String>,
-    contractId: Option<String>,
+    tx_hash: Option<String>,
+    contract_id: Option<String>,
     topic: Option<Vec<Value>>,
     value: Option<Value>,
 }

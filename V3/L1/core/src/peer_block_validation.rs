@@ -20,6 +20,7 @@ use crate::{
     BlockCandidate, MiningHeader, SpendableUtxo, HEADER_SIZE,
 };
 
+#[allow(dead_code)]
 pub(crate) fn validate_accepted_peer_block(
     accepted_blocks: &[AcceptedBlock],
     utxo_snapshot: &HashMap<(String, u32), SpendableUtxo>,
