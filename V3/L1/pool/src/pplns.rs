@@ -720,4 +720,50 @@ mod tests {
         let payouts = e.compute_payouts(1_000_000);
         assert_eq!(payouts[0].amount, 1_000_000);
     }
+
+    #[test]
+    fn drain_fees_returns_and_clears_accumulators() {
+        let mut e = engine_with_fees(100, 1);
+        e.register_address("alice", "zion1alice");
+        e.record_share_at("alice", "rig1", 1, 1000);
+        e.compute_payouts(1_000_000);
+
+        let fs_before = e.fee_stats();
+        assert_eq!(fs_before.humanitarian_accumulated_flowers, 50_000);
+
+        let (h, i, p) = e.drain_fees();
+        assert_eq!(h, 50_000);
+        assert_eq!(i, 50_000);
+        assert_eq!(p, 10_000);
+
+        let fs_after = e.fee_stats();
+        assert_eq!(fs_after.humanitarian_accumulated_flowers, 0);
+        assert_eq!(fs_after.issobella_accumulated_flowers, 0);
+        assert_eq!(fs_after.pool_fee_accumulated_flowers, 0);
+    }
+
+    #[test]
+    fn restore_fees_re_adds_balances() {
+        let mut e = engine_with_fees(100, 1);
+        e.register_address("alice", "zion1alice");
+        e.record_share_at("alice", "rig1", 1, 1000);
+        e.compute_payouts(1_000_000);
+
+        let (h, i, p) = e.drain_fees();
+        assert_eq!(h, 50_000);
+
+        e.restore_fees(10_000, 20_000, 5_000);
+        let fs = e.fee_stats();
+        assert_eq!(fs.humanitarian_accumulated_flowers, 10_000);
+        assert_eq!(fs.issobella_accumulated_flowers, 20_000);
+        assert_eq!(fs.pool_fee_accumulated_flowers, 5_000);
+    }
+
+    #[test]
+    fn restore_fees_saturates_on_overflow() {
+        let mut e = engine_with_fees(100, 1);
+        e.fee_humanitarian_flowers = u64::MAX;
+        e.restore_fees(1, 0, 0);
+        assert_eq!(e.fee_stats().humanitarian_accumulated_flowers, u64::MAX);
+    }
 }
