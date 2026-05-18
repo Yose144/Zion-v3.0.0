@@ -75,6 +75,7 @@ pub enum ClientMessage {
 // ── Client Session ─────────────────────────────────────────────────────────
 
 struct ClientSession {
+    #[allow(dead_code)]
     addr: SocketAddr,
     subscriptions: HashSet<SubscriptionType>,
     /// Channel to send messages to this client

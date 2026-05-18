@@ -1,4 +1,4 @@
-//! Typované odpovědi JSON-RPC odpovídající tvarům z `zion-core` (`V3/L1/core/src/rpc.rs`).
+//! Typed JSON-RPC responses matching shapes from `zion-core` (`V3/L1/core/src/rpc.rs`).
 
 use serde::{Deserialize, Serialize};
 
@@ -55,7 +55,7 @@ pub struct PeerInfo {
     pub count: usize,
 }
 
-/// Odpověď `getSupplyInfo` (čísla v řetězcích kvůli u128 na wire).
+/// `getSupplyInfo` response (numbers as strings because of u128 on the wire).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SupplyInfo {
     pub total_supply_atomic: String,
@@ -76,7 +76,7 @@ pub struct SupplyInfo {
     pub height: u64,
 }
 
-/// Úspěšná odpověď `submitTransaction` / `sendRawTransaction` / `submitAccountTransaction`.
+/// Successful `submitTransaction` / `sendRawTransaction` / `submitAccountTransaction` response.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SubmitAccepted {
     pub accepted: bool,
@@ -84,7 +84,7 @@ pub struct SubmitAccepted {
     pub tx_id: Option<String>,
 }
 
-/// Parametry RPC `submitBlock`.
+/// RPC parameters for `submitBlock`.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SubmitBlockParams {
     pub template_id: u64,
@@ -93,7 +93,7 @@ pub struct SubmitBlockParams {
     pub target_hex: String,
 }
 
-/// Odpověď `submitBlock`.
+/// `submitBlock` response.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SubmitCandidateResult {
     pub accepted: bool,

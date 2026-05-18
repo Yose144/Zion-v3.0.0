@@ -173,6 +173,7 @@ impl MinerMetricsSnapshot {
         self.started_at.elapsed().as_secs()
     }
 
+    #[allow(dead_code)]
     fn seconds_since_update(&self) -> u64 {
         self.last_update_at.elapsed().as_secs()
     }
@@ -207,6 +208,7 @@ fn sync_miner_metrics(
     }
 }
 
+#[allow(dead_code)]
 fn sanitize_prometheus_label(value: &str) -> String {
     value
         .chars()
@@ -220,6 +222,7 @@ fn sanitize_prometheus_label(value: &str) -> String {
         .collect()
 }
 
+#[allow(dead_code)]
 fn build_miner_prometheus_payload(snapshot: &MinerMetricsSnapshot) -> String {
     let miner_id = sanitize_prometheus_label(&snapshot.miner_id);
     let worker_name = sanitize_prometheus_label(&snapshot.worker_name);
@@ -363,6 +366,7 @@ fn build_miner_prometheus_payload(snapshot: &MinerMetricsSnapshot) -> String {
     body
 }
 
+#[allow(dead_code)]
 fn build_miner_stats_payload(snapshot: &MinerMetricsSnapshot) -> String {
     serde_json::json!({
         "ok": true,

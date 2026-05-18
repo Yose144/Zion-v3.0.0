@@ -205,6 +205,7 @@ impl SolanaAdapter {
 // Serde helpers
 // ─────────────────────────────────────────────────────────────────────────────
 #[derive(Deserialize)]
+#[allow(dead_code)]
 struct SolSig {
     signature: String,
     slot: Option<u64>,
