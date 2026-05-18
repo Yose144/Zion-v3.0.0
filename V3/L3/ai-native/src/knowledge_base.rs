@@ -1,15 +1,15 @@
-//! # Knowledge Base — Auto-indexer pro RAG pipeline
+//! # Knowledge Base — Auto-indexer for RAG pipeline
 //!
-//! Skenuje ZION projektovou strukturu, chunking dokumentů,
-//! a automaticky plní `RagRetriever` knowledge base.
+//! Scans the ZION project structure, chunking documents,
+//! and automatically populates the `RagRetriever` knowledge base.
 //!
-//! ## Podporované formáty
-//! - `.md`  — Markdown dokumentace
-//! - `.rs`  — Rust zdrojové soubory (doc komentáře)
-//! - `.toml` — TOML konfigurace
-//! - `.py`  — Python skripty (docstringy)
+//! ## Supported formats
+//! - `.md`  — Markdown documentation
+//! - `.rs` — Rust source files (doc comments)
+//! - `.toml` — TOML configuration
+//! - `.py`  — Python scripts (docstrings)
 //!
-//! ## Příklad
+//! ## Example
 //! ```rust
 //! use zion_ai_native::knowledge_base::{KnowledgeBase, KnowledgeConfig};
 //! use zion_ai_native::rag::{MockEmbeddingBackend, RagRetriever};
@@ -18,7 +18,7 @@
 //! let config = KnowledgeConfig::default();
 //! let mut kb = KnowledgeBase::new(retriever, config);
 //!
-//! kb.add_text("pool_setup", "ZION pool běží na portu 3333.");
+//! kb.add_text("pool_setup", "ZION pool is running on port 3333.");
 //! assert_eq!(kb.document_count(), 1);
 //! ```
 
@@ -29,9 +29,9 @@ use std::path::{Path, PathBuf};
 use crate::llm_backend::LlmError;
 use crate::rag::RagRetriever;
 
-// ─── Konfigurace ─────────────────────────────────────────────────────────────
+// ─── Configuration ────────────────────────────────────────────────────────────
 
-/// Kanonické relativní kořeny pro širší AI Native corpus.
+/// Canonical relative roots for the wider AI Native corpus.
 pub const AI_NATIVE_CANONICAL_CORPUS_ROOTS: &[&str] = &[
     "README.md",
     "HIRANYAGARBHA_AI_NATIVE.md",
@@ -52,7 +52,7 @@ pub const AI_NATIVE_CANONICAL_CORPUS_ROOTS: &[&str] = &[
     "V3/L3",
 ];
 
-/// Užší profil pro publikované V2 books přes textové proxy a provenance docs.
+/// Narrower profile for published V2 books via text proxy and provenance docs.
 pub const V2_BOOKS_PROXY_CORPUS_ROOTS: &[&str] = &[
     "docs/docs2.9/books",
     "docs/docs2.9/deployment/AMENTI_LOG_INDEX.md",
@@ -63,34 +63,34 @@ pub const V2_BOOKS_PROXY_CORPUS_ROOTS: &[&str] = &[
     "docs/docs2.9/PROJECT_OVERVIEW.md",
 ];
 
-/// Zion Oasis (hra / L4 design v repu) + tvoje UE5 textové zápisy — použij jako samostatný RAG sweep nebo vedle Buddhism presetů.
+/// Zion Oasis (game / L4 design in rap) + your UE5 text entries — use as a separate RAG sweep or next to Buddhism presets.
 pub const ZION_OASIS_GAME_CORPUS_ROOTS: &[&str] =
     &["docs/docs2.9/ZION_OASIS", "HiranV2.1/corpus/oasis-ue5"];
 
-/// Hiran v2.1: stažené / vygenerované sútry (bhikkhusujato tree) — viz `HiranV2.1/scripts/rag/`.
+/// Hiran v2.1: downloaded / generated sutras (bhikkhusujato tree) — see `HiranV2.1/scripts/rag/`.
 pub const BUDDHISM_CLASSICAL_CORPUS_ROOTS: &[&str] =
     &["HiranV2.1/data/rag/buddhism-classical/generated"];
 
-/// Hiran v2.1: seed encyklopedie (např. Wikipedia EN) — doplň Kanjur/Tangyur dle licence.
+/// Hiran v2.1: seed encyclopedia (eg Wikipedia EN) — add Kanjur/Tangyur according to license.
 pub const BUDDHISM_TIBETAN_CORPUS_ROOTS: &[&str] =
     &["HiranV2.1/data/rag/buddhism-tibetan/generated"];
 
-/// Oba Buddhism RAG adresáře najednou (metadata v YAML frontmatter u .md značí `rag_index`).
+/// Both Buddhism RAG directories at once (metadata in YAML frontmatter for .md is `rag_index`).
 pub const BUDDHISM_RAG_CORPUS_ROOTS: &[&str] = &[
     "HiranV2.1/data/rag/buddhism-classical/generated",
     "HiranV2.1/data/rag/buddhism-tibetan/generated",
 ];
 
-/// Konfigurace knowledge base indexeru.
+/// Knowledge base indexer configuration.
 #[derive(Debug, Clone)]
 pub struct KnowledgeConfig {
-    /// Maximální délka jednoho chunku v bajtech.
+    /// Maximum length of one chunk in bytes.
     pub max_chunk_size: usize,
-    /// Překryv mezi chunky v bajtech.
+    /// Overlap between chunks in bytes.
     pub chunk_overlap: usize,
-    /// Přípony souborů k indexaci.
+    /// File extensions to index.
     pub extensions: Vec<String>,
-    /// Adresáře k přeskočení.
+    /// Directories to skip.
     pub skip_dirs: Vec<String>,
 }
 
@@ -111,9 +111,9 @@ impl Default for KnowledgeConfig {
     }
 }
 
-// ─── Volné markdown chunky (bez embedderu) — API bootstrap & externí ingest ──
+// ─── Free markdown chunks (no embedder) — API bootstrap & external ingest ──
 
-/// Jedna část dokumentu bez embedding vektoru.
+/// One part of the document without the embedding vector.
 #[derive(Debug, Clone)]
 pub struct RagTextChunk {
     pub id: String,
@@ -121,7 +121,7 @@ pub struct RagTextChunk {
     pub metadata: HashMap<String, String>,
 }
 
-/// Stejný chunking algoritmus jako při indexaci `KnowledgeBase` (konfigurovatelné limity).
+/// Same chunking algorithm as `KnowledgeBase` indexing (configurable limits).
 pub fn chunk_document_text(text: &str, config: &KnowledgeConfig) -> Vec<String> {
     chunk_text(text, config.max_chunk_size, config.chunk_overlap)
 }
@@ -188,9 +188,9 @@ fn markdown_path_to_chunks(
     Ok(out)
 }
 
-/// Seskupí markdown soubory pod relativními kořeny workspace (soubor nebo adresář) na chunky — bez volání embedding API.
+/// Group markdown files under relative workspace roots (file or directory) into chunks — without calling the embedding API.
 ///
-/// Používá stejná pravidla chunkování jako `KnowledgeBase`; vektorová DB musí chunky zvláště embeddingovat.
+/// Uses the same chunking rules as `KnowledgeBase`; vector DB must embed chunks in particular.
 pub fn collect_markdown_chunks_from_relative_roots(
     workspace_root: &Path,
     roots: &[&str],
@@ -223,9 +223,9 @@ pub fn collect_markdown_chunks_from_relative_roots(
 
 // ─── KnowledgeBase ───────────────────────────────────────────────────────────
 
-/// Auto-indexer pro RAG knowledge base.
+/// Auto-indexer for RAG knowledge base.
 ///
-/// Skenuje projektovou strukturu, chunkuje dokumenty a plní `RagRetriever`.
+/// Scans the project structure, chunks the documents, and populates the `RagRetriever`.
 pub struct KnowledgeBase {
     pub retriever: RagRetriever,
     config: KnowledgeConfig,
@@ -243,14 +243,14 @@ impl KnowledgeBase {
         }
     }
 
-    /// Přidej textový dokument přímo (bez chunking).
+    /// Add the text document directly (without chunking).
     pub fn add_text(&mut self, id: &str, content: &str) -> Result<(), LlmError> {
         self.retriever.index(id, content)?;
         self.total_chunks += 1;
         Ok(())
     }
 
-    /// Přidej textový dokument s metadaty.
+    /// Add a text document with metadata.
     pub fn add_text_with_metadata(
         &mut self,
         id: &str,
@@ -262,7 +262,7 @@ impl KnowledgeBase {
         Ok(())
     }
 
-    /// Skenuj adresář a indexuj všechny podporované soubory.
+    /// Scan the directory and index all supported files.
     pub fn scan_directory(&mut self, root: &Path) -> Result<ScanResult, LlmError> {
         let mut result = ScanResult::default();
 
@@ -288,10 +288,10 @@ impl KnowledgeBase {
         Ok(result)
     }
 
-    /// Skenuj více relativních kořenů v rámci workspace rootu.
+    /// Scan multiple relative roots within the workspace root.
     ///
-    /// Hodí se pro kanonické curated korpusy, kde nechceme spouštět scan nad
-    /// celým repozitářem, ale nad přesně definovanou množinou cest.
+    /// Suitable for canonical curated corpora where we don't want to run scan nad
+    /// the entire repository, but over a well-defined set of paths.
     pub fn scan_relative_roots(
         &mut self,
         workspace_root: &Path,
@@ -329,7 +329,7 @@ impl KnowledgeBase {
         Ok(aggregate)
     }
 
-    /// Indexuj curated AI Native corpus včetně knižních a RAG zdrojů.
+    /// Index curated AI Native corpus including book and RAG resources.
     pub fn scan_ai_native_canonical_corpus(
         &mut self,
         workspace_root: &Path,
@@ -337,7 +337,7 @@ impl KnowledgeBase {
         self.scan_relative_roots(workspace_root, AI_NATIVE_CANONICAL_CORPUS_ROOTS)
     }
 
-    /// Indexuj publikovanou V2 books vrstvu přes textové proxy zdroje.
+    /// Index the published V2 books layer via text proxy resources.
     pub fn scan_v2_books_proxy_corpus(
         &mut self,
         workspace_root: &Path,
@@ -393,7 +393,7 @@ impl KnowledgeBase {
         Ok(chunks.len())
     }
 
-    /// Sbírá soubory rekurzivně s filtrací přípona + skip_dirs.
+    /// Collects files recursively with extension filtering + skip_dirs.
     fn collect_files(&self, root: &Path) -> Vec<PathBuf> {
         let mut files = Vec::new();
         self.walk_dir(root, &mut files);
@@ -438,7 +438,7 @@ impl KnowledgeBase {
 
 // ─── ScanResult ──────────────────────────────────────────────────────────────
 
-/// Výsledek skenování adresáře.
+/// Directory scan result.
 #[derive(Debug, Default)]
 pub struct ScanResult {
     pub files_found: usize,
@@ -449,7 +449,7 @@ pub struct ScanResult {
 
 // ─── Chunking ────────────────────────────────────────────────────────────────
 
-/// Rozděl text na chunky s překryvem.
+/// Split the text into chunks with an overlay.
 fn chunk_text(text: &str, max_size: usize, overlap: usize) -> Vec<String> {
     if text.len() <= max_size {
         return vec![text.to_string()];
@@ -462,20 +462,20 @@ fn chunk_text(text: &str, max_size: usize, overlap: usize) -> Vec<String> {
     while start < bytes.len() {
         let end = (start + max_size).min(bytes.len());
 
-        // Hledej konec odstavce nebo věty v blízkosti konce chunku
+        // Look for the end of a paragraph or sentence near the end of a chunk
         let actual_end = if end < bytes.len() {
             find_break_point(text, start, end)
         } else {
             end
         };
 
-        // Bezpečný string slice na UTF-8 hranicích
+        // Safe string slice on UTF-8 boundaries
         let chunk_str = safe_slice(text, start, actual_end);
         if !chunk_str.trim().is_empty() {
             chunks.push(chunk_str.to_string());
         }
 
-        // Posun s překryvem
+        // Offset with overlay
         if actual_end >= bytes.len() {
             break;
         }
@@ -484,7 +484,7 @@ fn chunk_text(text: &str, max_size: usize, overlap: usize) -> Vec<String> {
         } else {
             actual_end
         };
-        // Zajisti forward progress — overlap nesmí vrátit start na předchozí pozici
+        // Ensure forward progress — overlap must not return the start to the previous position
         start = if new_start <= start {
             actual_end
         } else {
@@ -495,23 +495,23 @@ fn chunk_text(text: &str, max_size: usize, overlap: usize) -> Vec<String> {
     chunks
 }
 
-/// Najdi vhodný bod zlomu (konec odstavce > konec věty > konec slova).
+/// Find an appropriate breakpoint (end of paragraph > end of sentence > end of word).
 fn find_break_point(text: &str, start: usize, max_end: usize) -> usize {
     let segment = safe_slice(text, start, max_end);
 
-    // Hledej poslední \n\n (konec odstavce)
+    // Look for last \n\n (end of paragraph)
     if let Some(pos) = segment.rfind("\n\n") {
         return start + pos + 2;
     }
-    // Poslední `. ` (konec věty)
+    // Last `. ` (end of sentence)
     if let Some(pos) = segment.rfind(". ") {
         return start + pos + 2;
     }
-    // Poslední `\n`
+    // Last `\n`
     if let Some(pos) = segment.rfind('\n') {
         return start + pos + 1;
     }
-    // Poslední mezera
+    // Last space
     if let Some(pos) = segment.rfind(' ') {
         return start + pos + 1;
     }
@@ -519,12 +519,12 @@ fn find_break_point(text: &str, start: usize, max_end: usize) -> usize {
     max_end
 }
 
-/// Bezpečné oříznutí UTF-8 stringu na bajtových pozicích.
+/// Safe truncation of UTF-8 string at byte positions.
 fn safe_slice(text: &str, start: usize, end: usize) -> &str {
     let s = start.min(text.len());
     let e = end.min(text.len());
 
-    // Zarovnej na UTF-8 boundary
+    // Align to UTF-8 boundary
     let s = (s..text.len())
         .find(|&i| text.is_char_boundary(i))
         .unwrap_or(text.len());
@@ -540,9 +540,9 @@ fn safe_slice(text: &str, start: usize, end: usize) -> &str {
     }
 }
 
-// ─── Extraktory dokumentace ──────────────────────────────────────────────────
+// ─── Documentation Extractors ────────────────────────────────────────────────
 
-/// Extrahuj doc komentáře (//! a ///) z Rust souboru.
+/// Extract doc comments (//! and ///) from Rust file.
 fn extract_rust_docs(content: &str) -> String {
     let mut docs = Vec::new();
 
@@ -558,7 +558,7 @@ fn extract_rust_docs(content: &str) -> String {
     docs.join("\n")
 }
 
-/// Extrahuj docstringy z Python souboru.
+/// Extract docstrings from a Python file.
 fn extract_python_docs(content: &str) -> String {
     let mut docs = Vec::new();
     let mut in_docstring = false;
@@ -571,7 +571,7 @@ fn extract_python_docs(content: &str) -> String {
             if trimmed.starts_with("\"\"\"") || trimmed.starts_with("'''") {
                 docstring_delim = &trimmed[..3];
                 in_docstring = true;
-                // Jednořádkový docstring?
+                // Single line docstring?
                 if trimmed.len() > 3 && trimmed[3..].contains(docstring_delim) {
                     docs.push(trimmed[3..trimmed.len() - 3].to_string());
                     in_docstring = false;
@@ -620,7 +620,7 @@ mod tests {
     #[test]
     fn test_add_text() {
         let mut kb = test_kb();
-        kb.add_text("test1", "ZION blockchain je PoW síť.").unwrap();
+        kb.add_text("test1", "ZION blockchain is a PoW network.").unwrap();
         assert_eq!(kb.document_count(), 1);
         assert_eq!(kb.total_chunks(), 1);
     }
@@ -637,9 +637,9 @@ mod tests {
 
     #[test]
     fn test_chunk_small_text() {
-        let chunks = chunk_text("Krátký text.", 1500, 200);
+        let chunks = chunk_text("Short text.", 1500, 200);
         assert_eq!(chunks.len(), 1);
-        assert_eq!(chunks[0], "Krátký text.");
+        assert_eq!(chunks[0], "Short text.");
     }
 
     #[test]
@@ -700,10 +700,10 @@ def foo():
 
     #[test]
     fn test_safe_slice_handles_utf8() {
-        let text = "Ekam Deeksha — zlatý zárodek";
+        let text = "Ekam Deeksha — Golden Seed";
         let slice = safe_slice(text, 0, 15);
         assert!(!slice.is_empty());
-        // Ověř že nekončí uprostřed vícebytového znaku
+        // Verify that it does not end in the middle of a multibyte character
         assert!(slice.is_ascii() || slice.chars().last().is_some());
     }
 
@@ -760,7 +760,7 @@ def foo():
     fn canonical_corpus_contains_hiran_ue5_oasis_scratchpad() {
         assert!(
             AI_NATIVE_CANONICAL_CORPUS_ROOTS.contains(&"HiranV2.1/corpus/oasis-ue5"),
-            "UE5 Oasis blueprint kurátorované zápisy pro RAG (viz Hiran_v2.1.md oddíl 3.7)"
+            "UE5 Oasis blueprint curated entries for RAG (see Hiran_v2.1.md section 3.7)"
         );
     }
 
