@@ -284,7 +284,7 @@ impl ChainAdapter for TronAdapter {
             return Ok(c);
         }
         let tip = self.get_now_block().await.unwrap_or(0);
-        Ok(tip.saturating_sub(resp.blockNumber.unwrap_or(tip)))
+        Ok(tip.saturating_sub(resp.block_number.unwrap_or(tip)))
     }
 }
 
@@ -315,9 +315,9 @@ mod tests {
             transaction_id: "TXHASH1".into(),
             block_number: Some(60_000_000),
             result: Some(TronEventResult {
-                from: Some("TFrom123".into()),
+                from_addr: Some("TFrom123".into()),
                 amount: Some("2000000".into()),
-                destAddr: Some("zion1xyz".into()),
+                dest_addr: Some("zion1xyz".into()),
             }),
         };
         let proof = adapter.event_to_proof(&ev, 60_000_010).unwrap();
@@ -333,9 +333,9 @@ mod tests {
             transaction_id: "TX".into(),
             block_number: Some(1),
             result: Some(TronEventResult {
-                from: None,
+                from_addr: None,
                 amount: Some("0".into()),
-                destAddr: None,
+                dest_addr: None,
             }),
         };
         assert!(adapter.event_to_proof(&ev, 100).is_none());

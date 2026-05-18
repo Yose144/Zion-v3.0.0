@@ -11,8 +11,8 @@ use axum::{Json, Router};
 use chrono::Utc;
 use serde::Deserialize;
 use serde_json::{json, Value};
-use zion_ai_native::autotuner::{AutotuneReport, DharmaAutotuner};
-use zion_ai_native::consciousness_engine::{ConsciousnessEngine, ConsciousnessStatus};
+use zion_ai_native::autotuner::DharmaAutotuner;
+use zion_ai_native::consciousness_engine::ConsciousnessEngine;
 use zion_ai_native::knowledge_base::KnowledgeConfig;
 use zion_ai_native::llm_backend::RemoteHttpBackend;
 use zion_ai_native::rag::EmbeddingInputType;
@@ -21,8 +21,8 @@ use zion_ai_native::{
     BUDDHISM_CLASSICAL_CORPUS_ROOTS, BUDDHISM_RAG_CORPUS_ROOTS, BUDDHISM_TIBETAN_CORPUS_ROOTS,
 };
 use zion_ai_native::{
-    AgentMemory, EchoBackend, EmbeddingBackend, LlmBackend, LlmRequest, MemoryEntry,
-    MemoryEventKind, MmlModality, MockEmbeddingBackend, RagDocument, VectorStore,
+    EchoBackend, EmbeddingBackend, LlmBackend, LlmRequest, MemoryEntry, MemoryEventKind,
+    MmlModality, MockEmbeddingBackend, RagDocument, VectorStore,
 };
 
 struct RagIndexState {
