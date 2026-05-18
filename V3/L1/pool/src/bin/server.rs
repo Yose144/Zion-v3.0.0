@@ -87,14 +87,7 @@ fn main() -> Result<()> {
     )?));
     let routing_stats = Arc::new(Mutex::new(RoutingStats::new(config.routing_log_every)));
     let miner_telemetry = Arc::new(Mutex::new(MinerTelemetryRegistry::default()));
-    let fee_config = FeeConfig {
-        humanitarian_pct: parse_env_u64("ZION_HUMANITARIAN_TITHE_PCT", 5).unwrap_or(5),
-        issobella_pct: parse_env_u64("ZION_ISSOBELLA_FUND_PCT", 5).unwrap_or(5),
-        pool_fee_pct: parse_env_u64("ZION_POOL_FEE_PCT", 1).unwrap_or(1),
-        humanitarian_wallet: std::env::var("ZION_HUMANITARIAN_WALLET").unwrap_or_default(),
-        issobella_wallet: std::env::var("ZION_ISSOBELLA_WALLET").unwrap_or_default(),
-        pool_fee_wallet: std::env::var("ZION_POOL_FEE_WALLET").unwrap_or_default(),
-    };
+    let fee_config = config.fee_config.clone();
     println!(
         "fee_split: miners={}% humanitarian={}% issobella={}% pool_fee={}%",
         fee_config.miner_pct(),
@@ -966,6 +959,82 @@ fn handle_client(
                                 deferred_payouts.len()
                             );
                         }
+                        if payout_executed {
+                            let (humanitarian, issobella, pool_fee) = {
+                                let mut pplns = pplns_engine.lock().expect("pplns lock poisoned");
+                                pplns.drain_fees()
+                            };
+                            let fee_recipients = fee_payout_recipients(
+                                humanitarian,
+                                issobella,
+                                pool_fee,
+                                &config.fee_config,
+                            );
+                            if !fee_recipients.is_empty() {
+                                let fee_result = if let Some(node_rpc_addr) =
+                                    config.node_rpc_addr.as_deref()
+                                {
+                                    if let Some(ref pool_wallet_addr) = config.pool_wallet_address {
+                                        if let Some(ref signing_key) = config.pool_signing_key {
+                                            execute_fee_payout(
+                                                node_rpc_addr,
+                                                pool_wallet_addr,
+                                                signing_key,
+                                                &fee_recipients,
+                                                job.height,
+                                            )
+                                        } else {
+                                            Err(anyhow!("missing signing key"))
+                                        }
+                                    } else {
+                                        Err(anyhow!("missing pool wallet address"))
+                                    }
+                                } else {
+                                    Err(anyhow!("missing node RPC address"))
+                                };
+                                match fee_result {
+                                    Ok(tx_id) => {
+                                        println!(
+                                            "fee_payout_submitted height={} recipients={} tx_id={}",
+                                            job.height,
+                                            fee_recipients.len(),
+                                            tx_id
+                                        );
+                                        let mut telemetry = miner_telemetry
+                                            .lock()
+                                            .expect("miner telemetry lock poisoned");
+                                        telemetry.record_fee_payout(
+                                            job.height,
+                                            &tx_id,
+                                            humanitarian,
+                                            issobella,
+                                            pool_fee,
+                                        );
+                                    }
+                                    Err(err) => {
+                                        {
+                                            let mut pplns =
+                                                pplns_engine.lock().expect("pplns lock poisoned");
+                                            pplns.restore_fees(humanitarian, issobella, pool_fee);
+                                        }
+                                        println!(
+                                            "fee_payout_failed height={} humanitarian={} issobella={} pool_fee={} error={}",
+                                            job.height, humanitarian, issobella, pool_fee, err
+                                        );
+                                        let mut telemetry = miner_telemetry
+                                            .lock()
+                                            .expect("miner telemetry lock poisoned");
+                                        telemetry.record_failed_fee_payout(
+                                            job.height,
+                                            &format!("{err}"),
+                                            humanitarian,
+                                            issobella,
+                                            pool_fee,
+                                        );
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
                 {
@@ -1243,6 +1312,7 @@ struct ServerConfig {
     revenue_proxy_addr: Option<String>,
     /// Default coin for revenue proxy redirect (e.g. "KAS").
     revenue_proxy_coin: String,
+    fee_config: FeeConfig,
 }
 
 #[derive(Debug)]
@@ -2620,6 +2690,14 @@ impl ServerConfig {
             revenue_proxy_addr: parse_optional_env_string("ZION_REVENUE_PROXY_ADDR"),
             revenue_proxy_coin: std::env::var("ZION_REVENUE_PROXY_COIN")
                 .unwrap_or_else(|_| "KAS".to_string()),
+            fee_config: FeeConfig {
+                humanitarian_pct: parse_env_u64("ZION_HUMANITARIAN_TITHE_PCT", 5).unwrap_or(5),
+                issobella_pct: parse_env_u64("ZION_ISSOBELLA_FUND_PCT", 5).unwrap_or(5),
+                pool_fee_pct: parse_env_u64("ZION_POOL_FEE_PCT", 1).unwrap_or(1),
+                humanitarian_wallet: std::env::var("ZION_HUMANITARIAN_WALLET").unwrap_or_default(),
+                issobella_wallet: std::env::var("ZION_ISSOBELLA_WALLET").unwrap_or_default(),
+                pool_fee_wallet: std::env::var("ZION_POOL_FEE_WALLET").unwrap_or_default(),
+            },
         })
     }
 }
@@ -2945,6 +3023,7 @@ mod tests {
             btc_wallet: None,
             revenue_proxy_addr: None,
             revenue_proxy_coin: "KAS".to_string(),
+            fee_config: FeeConfig::default(),
         };
         let (pool_addr, pool_handle) = spawn_pool_server(config)?;
 
@@ -3168,6 +3247,7 @@ mod tests {
             btc_wallet: None,
             revenue_proxy_addr: None,
             revenue_proxy_coin: "KAS".to_string(),
+            fee_config: FeeConfig::default(),
         };
 
         let group = resolve_session_group("user-miner", "rig-01", &config);
@@ -3206,6 +3286,7 @@ mod tests {
             btc_wallet: None,
             revenue_proxy_addr: None,
             revenue_proxy_coin: "KAS".to_string(),
+            fee_config: FeeConfig::default(),
         };
 
         let group = resolve_session_group("backend-miner-1", "rig-01", &config);
@@ -3244,6 +3325,7 @@ mod tests {
             btc_wallet: None,
             revenue_proxy_addr: None,
             revenue_proxy_coin: "KAS".to_string(),
+            fee_config: FeeConfig::default(),
         };
 
         let group = resolve_session_group("miner-a", "backend-revenue-1", &config);
@@ -3446,6 +3528,7 @@ mod tests {
             btc_wallet: None,
             revenue_proxy_addr: None,
             revenue_proxy_coin: "KAS".to_string(),
+            fee_config: FeeConfig::default(),
         };
 
         // Even though miner_id is in backend list, explicit hint wins
@@ -4107,6 +4190,34 @@ fn execute_pool_payout(
 /// Execute a protocol-fee payout: humanitarian tithe, issobella fund, and
 /// pool operator fee.  Builds a single batch transaction with up to three
 /// outputs and submits it to the node RPC.
+fn fee_payout_recipients(
+    humanitarian: u64,
+    issobella: u64,
+    pool_fee: u64,
+    fee_config: &FeeConfig,
+) -> Vec<BatchRecipient> {
+    let mut recipients = Vec::new();
+    if humanitarian > 0 && !fee_config.humanitarian_wallet.is_empty() {
+        recipients.push(BatchRecipient {
+            address: fee_config.humanitarian_wallet.clone(),
+            amount: humanitarian,
+        });
+    }
+    if issobella > 0 && !fee_config.issobella_wallet.is_empty() {
+        recipients.push(BatchRecipient {
+            address: fee_config.issobella_wallet.clone(),
+            amount: issobella,
+        });
+    }
+    if pool_fee > 0 && !fee_config.pool_fee_wallet.is_empty() {
+        recipients.push(BatchRecipient {
+            address: fee_config.pool_fee_wallet.clone(),
+            amount: pool_fee,
+        });
+    }
+    recipients
+}
+
 fn execute_fee_payout(
     node_rpc_addr: &str,
     pool_wallet_addr: &str,
