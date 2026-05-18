@@ -88,7 +88,7 @@ num_cpus = { version = "1.16", optional = true }
 opencl3 = { version = "0.9", optional = true }
 metal = { version = "0.27", optional = true }
 randomx-rs = { version = "1.2", optional = true }
-reqwest = { version = "0.12", features = ["json"], optional = true }
+reqwest = { version = "0.13", features = ["json"], optional = true }
 ort = { version = "2.0.0-rc.9", default-features = false, features = ["std", "coreml"], optional = true }
 
 [build-dependencies]
