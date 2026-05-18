@@ -8,7 +8,8 @@ public class ZionOasisEditorTarget : TargetRules
 	{
 		Type = TargetType.Editor;
 		DefaultBuildSettings = BuildSettingsVersion.V5;
-		IncludeOrderVersion = EngineIncludeOrderVersion.Unreal5_4;
+		IncludeOrderVersion = EngineIncludeOrderVersion.Unreal5_7;
+		bOverrideBuildEnvironment = true;
 		ExtraModuleNames.Add("ZionOasis");
 	}
 }
