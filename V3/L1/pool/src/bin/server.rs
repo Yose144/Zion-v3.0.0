@@ -12,6 +12,9 @@ use zion_core::{
     decode_rpc_response, encode_rpc_request, BlockTemplate, ConsensusConfig, CoreRuntime,
     DifficultyTarget, MiningHeader, MiningSolution, RevenueSource, RpcRequest, RpcResponse,
 };
+use zion_pool::ncl_gateway::{
+    NclDispatcher, NclGatewayClient, NclHeartbeatConfig, NclPricing,
+};
 use zion_pool::pplns::{FeeConfig, PayoutEntry, PplnsConfig, PplnsEngine};
 use zion_pool::{
     decode_message, encode_message, MiningPool, PoolMessage, ShareDecision, ShareStatus,
@@ -170,6 +173,68 @@ fn main() -> Result<()> {
             }
         });
     }
+
+    // ── NCL Gateway dispatcher ───────────────────────────────────────
+    // When ZION_NCL_GATEWAY_URL is configured, spawn a tokio runtime in a
+    // background thread and run the NCL dispatcher.  This wires the 25 %
+    // NCL revenue stream to a live Hiran inference service.  The dispatcher
+    // pulls tasks from an mpsc queue; when ZION_NCL_HEARTBEAT=true the
+    // dispatcher also self-produces periodic heartbeat tasks so the
+    // pipeline stays warm and the revenue stream is observable end-to-end.
+    if let Ok(gateway_url) = std::env::var("ZION_NCL_GATEWAY_URL") {
+        if !gateway_url.trim().is_empty() {
+            match NclGatewayClient::new(&gateway_url) {
+                Ok(client) => {
+                    let revenue = pool
+                        .lock()
+                        .expect("pool lock poisoned")
+                        .runtime()
+                        .revenue_handle();
+                    let pricing = NclPricing::from_env();
+                    let heartbeat = NclHeartbeatConfig::from_env();
+                    let queue_capacity = parse_env_u64("ZION_NCL_QUEUE_SIZE", 256)
+                        .unwrap_or(256) as usize;
+                    println!(
+                        "ncl_gateway_enabled url={} heartbeat={} interval_secs={} \
+                         price_in_per_1k={} price_out_per_1k={}",
+                        client.authority(),
+                        heartbeat.enabled,
+                        heartbeat.interval.as_secs(),
+                        pricing.price_in_per_1k_tokens,
+                        pricing.price_out_per_1k_tokens
+                    );
+                    thread::spawn(move || {
+                        let rt = match tokio::runtime::Builder::new_current_thread()
+                            .enable_all()
+                            .build()
+                        {
+                            Ok(rt) => rt,
+                            Err(e) => {
+                                eprintln!("ncl_gateway_rt_error: {e}");
+                                return;
+                            }
+                        };
+                        rt.block_on(async move {
+                            let dispatcher = NclDispatcher::new(client, pricing, revenue);
+                            let _tx = dispatcher.spawn(heartbeat, queue_capacity);
+                            // Keep the runtime alive — the dispatcher runs
+                            // until the parent process exits.
+                            futures_park().await;
+                        });
+                    });
+                }
+                Err(e) => {
+                    eprintln!(
+                        "ncl_gateway_config_error url={} error={}",
+                        gateway_url, e
+                    );
+                }
+            }
+        }
+    } else {
+        println!("ncl_gateway_enabled=false (set ZION_NCL_GATEWAY_URL to enable)");
+    }
+
     {
         let scheduler = revenue_scheduler
             .lock()
@@ -4264,4 +4329,10 @@ fn execute_fee_payout(
     );
 
     Ok(tx_id)
+}
+
+/// Park forever — used by the NCL dispatcher thread to keep the tokio
+/// runtime alive for the lifetime of the process without busy-looping.
+async fn futures_park() {
+    let () = std::future::pending().await;
 }
