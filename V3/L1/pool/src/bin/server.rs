@@ -9,8 +9,8 @@ use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use zion_core::wallet::{BatchRecipient, SpendableUtxo};
 use zion_core::{
-    decode_rpc_response, encode_rpc_request, BlockTemplate, CoreRuntime, DifficultyTarget,
-    MiningHeader, MiningSolution, RevenueSource, RpcRequest, RpcResponse,
+    decode_rpc_response, encode_rpc_request, BlockTemplate, ConsensusConfig, CoreRuntime,
+    DifficultyTarget, MiningHeader, MiningSolution, RevenueSource, RpcRequest, RpcResponse,
 };
 use zion_pool::pplns::{FeeConfig, PayoutEntry, PplnsConfig, PplnsEngine};
 use zion_pool::{
@@ -78,7 +78,7 @@ fn notify_oasis_block_mined(miner_address: &str, block_height: u64) {
 fn main() -> Result<()> {
     let config = ServerConfig::from_env()?;
     let pool = Arc::new(Mutex::new(MiningPool::with_job_ttl(
-        CoreRuntime::default(),
+        CoreRuntime::new_with_journal_replay(ConsensusConfig::default()),
         config.job_ttl_ms,
     )));
     let revenue_scheduler = Arc::new(Mutex::new(RevenueScheduler::from_env(
