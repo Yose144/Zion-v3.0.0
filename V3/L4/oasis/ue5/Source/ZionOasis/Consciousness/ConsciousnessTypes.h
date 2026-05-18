@@ -12,6 +12,7 @@
 UENUM(BlueprintType)
 enum class EConsciousnessLevel : uint8
 {
+	None          = 0  UMETA(DisplayName = "None"),
 	Physical      = 1  UMETA(DisplayName = "Physical — Malkuth"),
 	Emotional     = 2  UMETA(DisplayName = "Emotional — Yesod"),
 	Mental        = 3  UMETA(DisplayName = "Mental — Hod/Netzach"),

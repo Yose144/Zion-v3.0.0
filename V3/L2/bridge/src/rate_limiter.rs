@@ -9,7 +9,7 @@
 
 use std::collections::VecDeque;
 use std::sync::{Mutex, MutexGuard};
-use std::time::{Duration, Instant};
+use std::time::{Duration, SystemTime};
 
 /// Sliding-window rate limiter.
 ///
@@ -30,9 +30,9 @@ pub struct RateLimiter {
 #[derive(Debug)]
 struct Inner {
     /// Global timestamps (oldest first).
-    global: VecDeque<Instant>,
+    global: VecDeque<SystemTime>,
     /// Per-address timestamps (key = lowercase address string).
-    per_address: std::collections::HashMap<String, VecDeque<Instant>>,
+    per_address: std::collections::HashMap<String, VecDeque<SystemTime>>,
 }
 
 /// Rate-limit check result.
@@ -88,7 +88,7 @@ impl RateLimiter {
     /// Returns `RateLimitResult::Allowed` on success and records the
     /// timestamp, or one of the rejection variants.
     pub fn check_and_record(&self, address: &str) -> RateLimitResult {
-        let now = Instant::now();
+        let now = SystemTime::now();
         let cutoff = now - self.window;
         let addr_key = address.to_ascii_lowercase();
 
@@ -135,7 +135,7 @@ impl RateLimiter {
 
     /// Peek at current global count without recording.
     pub fn current_count(&self) -> u32 {
-        let now = Instant::now();
+        let now = SystemTime::now();
         let cutoff = now - self.window;
         let mut inner = self.inner();
         while inner.global.front().map_or(false, |&t| t < cutoff) {
