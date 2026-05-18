@@ -1,15 +1,19 @@
 //! ZION Revenue Proxy — standalone Stratum proxy for external multi-algo pools.
 //!
-//! Usage:
-//!   ZION_PROXY_COIN=KAS ZION_PROXY_WALLET=YOUR_BTC_WALLET cargo run --bin revenue-proxy
+//! Accepts connections from GPU miners and forwards them transparently to
+//! external pools (2miners, MoneroOcean, ZPool, etc.), substituting the
+//! operator wallet so the 25% multi-algo revenue stream is live.
 //!
-//! Supports multiple coins via comma-separated `ZION_PROXY_COINS`.
+//! Usage:
+//!   ZION_PROXY_COINS=KAS,ETC ZION_PROXY_WALLET=YOUR_BTC_WALLET cargo run --bin revenue-proxy
+//!
+//! Each coin listens on a dedicated port (default base 9000).
 
 use std::sync::Arc;
 use tokio::signal;
 use tracing::{error, info};
 use zion_cosmic_harmony::profit_router::{CoinProfile, ExternalCoin, PoolPreference};
-use zion_pool::revenue_proxy::{client_from_profile, ExternalPoolClient};
+use zion_pool::revenue_proxy::{ExternalPoolStats, ProxyListener};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -23,6 +27,10 @@ async fn main() -> anyhow::Result<()> {
         .ok()
         .map(|s| PoolPreference::from_str_loose(&s))
         .unwrap_or(PoolPreference::Default);
+    let base_port: u16 = std::env::var("ZION_PROXY_BASE_PORT")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(9000);
 
     if wallet.is_empty() {
         eprintln!("Error: ZION_PROXY_WALLET is required (BTC payout address).");
@@ -32,25 +40,35 @@ async fn main() -> anyhow::Result<()> {
     let coin_names: Vec<&str> = coins_env.split(',').map(|s| s.trim()).collect();
     let mut handles = vec![];
 
-    for name in coin_names {
+    for (idx, name) in coin_names.iter().enumerate() {
         let Some(coin) = ExternalCoin::from_str_loose(name) else {
             error!("Unknown coin '{}', skipping", name);
             continue;
         };
         let profile = CoinProfile::for_preference(coin, preference, &region);
-        let client = client_from_profile(&profile, &wallet, &worker);
+        let listen_port = base_port + idx as u16;
+        let listen_addr = format!("0.0.0.0:{}", listen_port);
+        let stats = Arc::new(ExternalPoolStats::default());
+
+        let proxy = Arc::new(ProxyListener::new(
+            &listen_addr,
+            &profile.pool_address(),
+            &wallet,
+            &worker,
+            stats,
+        ));
 
         info!(
-            "Starting proxy for {} → {} (algo={})",
+            "Starting proxy for {} → {} (algo={}) on {}",
             coin.ticker(),
             profile.pool_address(),
-            profile.algorithm
+            profile.algorithm,
+            listen_addr
         );
 
-        handles.push(tokio::spawn({
-            let client = Arc::clone(&client);
-            async move {
-                client.run_loop().await;
+        handles.push(tokio::spawn(async move {
+            if let Err(e) = proxy.run().await {
+                error!("[{}] Proxy listener error: {}", coin.ticker(), e);
             }
         }));
     }
