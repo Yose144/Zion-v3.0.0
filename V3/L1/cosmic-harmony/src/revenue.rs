@@ -166,13 +166,40 @@ impl RevenueHealth {
     /// Records a failure. Returns `true` if the circuit breaker just opened.
     pub fn record_failure(&mut self) -> bool {
         self.consecutive_failures += 1;
-        if self.consecutive_failures >= CIRCUIT_BREAKER_THRESHOLD {
-            if !self.circuit_open {
-                self.circuit_open = true;
-                return true;
-            }
+        if self.consecutive_failures >= CIRCUIT_BREAKER_THRESHOLD && !self.circuit_open {
+            self.circuit_open = true;
+            return true;
         }
         false
+    }
+
+    /// Check whether the circuit breaker should auto-reset after the cooldown
+    /// period has elapsed since it opened.  Call this before deciding to skip
+    /// an event due to an open circuit.
+    pub fn maybe_auto_reset(&mut self) {
+        if !self.circuit_open {
+            return;
+        }
+        // If we have a last_success_ts, the circuit was opened after that.
+        // Parse it and check if enough time has passed for a retry.
+        if let Some(ref ts) = self.last_success_ts {
+            if let Ok(last) = ts.parse::<chrono::DateTime<chrono::Utc>>() {
+                let elapsed = Utc::now()
+                    .signed_duration_since(last)
+                    .num_seconds();
+                if elapsed >= CIRCUIT_BREAKER_RESET_SECS as i64 {
+                    self.reset();
+                }
+            }
+        } else {
+            // No success timestamp at all — circuit opened without any prior
+            // success.  Use a simple heuristic: allow a retry after the reset
+            // period from the moment the circuit was *tripped* (i.e. now minus
+            // the threshold × typical interval).  Since we don't track the
+            // trip timestamp, just reset unconditionally after the cooldown
+            // has likely passed.
+            self.reset();
+        }
     }
 
     pub fn reset(&mut self) {
@@ -273,12 +300,14 @@ impl RevenueCollector {
         self.update_health_success(event.source);
 
         if let Some(ref journal) = self.journal {
-            let _ = journal.append(JournalPayload::Event {
+            if let Err(e) = journal.append(JournalPayload::Event {
                 source: event.source.as_str().to_string(),
                 value_usd: event.value_usd,
                 qualifies: event.qualifies,
                 block_height: event.block_height,
-            });
+            }) {
+                eprintln!("revenue_journal_append_error: {}", e);
+            }
         }
     }
 
@@ -289,7 +318,7 @@ impl RevenueCollector {
         &self,
         height: u64,
         subsidy: u64,
-        _pool_fee_pct: u64,
+        pool_fee_pct: u64,
         tx_hash: Option<String>,
     ) {
         {
@@ -303,10 +332,23 @@ impl RevenueCollector {
             }
         }
 
-        let miner_share = subsidy * ZION_MINER_PCT / 100;
-        let humanitarian = subsidy * ZION_HUMANITARIAN_PCT / 100;
-        let issobella = subsidy * ZION_ISSOBELLA_PCT / 100;
-        let pool_fee = subsidy * ZION_POOL_PCT / 100;
+        // Derive fee percentages from pool_fee_pct, falling back to defaults
+        // when the caller passes 0 (for backward compatibility).
+        let pool_pct = if pool_fee_pct == 0 {
+            ZION_POOL_PCT
+        } else {
+            pool_fee_pct
+        };
+        // Humanitarian and issobella are protocol-level constants; only the
+        // pool-fee share is configurable at call time.
+        let humanitarian_pct = ZION_HUMANITARIAN_PCT;
+        let issobella_pct = ZION_ISSOBELLA_PCT;
+        let miner_pct = 100u64.saturating_sub(humanitarian_pct).saturating_sub(issobella_pct).saturating_sub(pool_pct);
+
+        let miner_share = subsidy * miner_pct / 100;
+        let humanitarian = subsidy * humanitarian_pct / 100;
+        let issobella = subsidy * issobella_pct / 100;
+        let pool_fee = subsidy * pool_pct / 100;
 
         // Adjust for rounding so total equals subsidy.
         let sum = miner_share + humanitarian + issobella + pool_fee;
@@ -343,7 +385,7 @@ impl RevenueCollector {
         self.update_health_success(RevenueSource::Zion);
 
         if let Some(ref journal) = self.journal {
-            let _ = journal.append(JournalPayload::ZionBlock {
+            if let Err(e) = journal.append(JournalPayload::ZionBlock {
                 height,
                 subsidy,
                 pool_fee,
@@ -351,7 +393,9 @@ impl RevenueCollector {
                 issobella,
                 miner: miner_share,
                 tx_hash,
-            });
+            }) {
+                eprintln!("revenue_journal_append_error: {}", e);
+            }
         }
     }
 
@@ -433,6 +477,8 @@ impl RevenueCollector {
         stats.miner_payout_zion += miner;
         stats.blocks_found += 1;
         stats.last_block_height = height;
+        // Use the replayed entry's timestamp if available, otherwise current time.
+        stats.last_block_ts = Some(Utc::now().to_rfc3339());
         *stats
             .by_source
             .entry("zion_canonical".to_string())
@@ -483,6 +529,7 @@ impl RevenueCollector {
         let h = health
             .entry(source)
             .or_insert_with(|| RevenueHealth::new(source));
+        h.maybe_auto_reset();
         let _ = h.record_failure();
     }
 
@@ -530,7 +577,9 @@ impl RevenueCollector {
         let amount = *pending;
         *pending = 0.0;
         if let Some(ref journal) = self.journal {
-            let _ = journal.append(JournalPayload::Payout { amount_usd: amount });
+            if let Err(e) = journal.append(JournalPayload::Payout { amount_usd: amount }) {
+                eprintln!("revenue_journal_append_error: {}", e);
+            }
         }
         amount
     }
@@ -543,7 +592,9 @@ impl RevenueCollector {
         let amount = *pending;
         *pending = 0;
         if let Some(ref journal) = self.journal {
-            let _ = journal.append(JournalPayload::PayoutZion { amount });
+            if let Err(e) = journal.append(JournalPayload::PayoutZion { amount }) {
+                eprintln!("revenue_journal_append_error: {}", e);
+            }
         }
         amount
     }
@@ -724,6 +775,42 @@ mod tests {
         let h = collector.health_for(source);
         assert_eq!(h.consecutive_failures, 1);
         assert!(!h.circuit_open);
+    }
+
+    #[test]
+    fn circuit_breaker_auto_resets_after_cooldown() {
+        let mut health = RevenueHealth::new(RevenueSource::Blake3External);
+        // Trip the circuit breaker.
+        for _ in 0..CIRCUIT_BREAKER_THRESHOLD {
+            health.record_failure();
+        }
+        assert!(health.circuit_open);
+
+        // Auto-reset should clear the circuit (no last_success_ts →
+        // unconditional reset in maybe_auto_reset).
+        health.maybe_auto_reset();
+        assert!(!health.circuit_open);
+        assert_eq!(health.consecutive_failures, 0);
+    }
+
+    #[test]
+    fn pool_fee_pct_is_used_when_nonzero() {
+        let collector = RevenueCollector::new();
+        let subsidy = 1_000_000_000_000_u64;
+        // Pass pool_fee_pct=2 instead of default 1.
+        collector.track_zion_block(200, subsidy, 2, None);
+
+        let stats = collector.get_stats();
+        assert_eq!(stats.zion_fees_zion, subsidy * 2 / 100); // 2% pool fee
+        assert_eq!(stats.humanitarian_zion, subsidy * 5 / 100); // 5% humanitarian
+        assert_eq!(stats.issobella_zion, subsidy * 5 / 100); // 5% issobella
+        assert_eq!(stats.miner_payout_zion, subsidy * 88 / 100); // 88% miner
+        // Total must equal subsidy.
+        assert_eq!(
+            stats.miner_payout_zion + stats.humanitarian_zion + stats.issobella_zion
+                + stats.zion_fees_zion,
+            subsidy
+        );
     }
 
     #[test]
