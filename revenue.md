@@ -277,9 +277,10 @@ Stratum authorize format: `BTC_ADDRESS.worker_name` — pool auto-detects BTC pa
 
 ## 9. Safety Features
 
-- **Circuit breaker:** 10 consecutive failures → open, 60 s cooldown before retry
+- **Circuit breaker:** 10 consecutive failures → open, 60 s cooldown before auto-reset (`maybe_auto_reset()` called before each `record_failure()`)
 - **Idempotence:** `track_zion_block` deduplicates by block height (`seen_heights` HashSet)
-- **Audit journal:** append-only JSONL, daily rotation, replayable on startup
+- **Audit journal:** append-only JSONL, daily rotation, replayable on startup; append errors logged (not silently dropped)
+- **Configurable pool fee:** `track_zion_block` respects `pool_fee_pct` parameter (falls back to `ZION_POOL_PCT` when 0)
 - **Overflow protection:** `checked_add` fold on all summations
 - **Fee minimum:** enforced for UTXO transactions (except bridge unlock)
 - **Session pinning:** auto sessions assigned at connect time, no per-share rotation

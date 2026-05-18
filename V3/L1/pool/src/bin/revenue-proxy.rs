@@ -52,7 +52,7 @@ async fn main() -> anyhow::Result<()> {
 
         let proxy = Arc::new(ProxyListener::new(
             &listen_addr,
-            &profile.pool_address(),
+            profile.pool_address(),
             &wallet,
             &worker,
             stats,

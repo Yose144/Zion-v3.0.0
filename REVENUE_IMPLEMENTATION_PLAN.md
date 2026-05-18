@@ -1,8 +1,8 @@
 # ZION V3 Revenue — Implementation Plan & Progress Tracker
 
 > **Date:** 2026-05-18
-> **Status:** COMPLETE — Phases A, B (core), and C delivered
-> **Auto-mode:** Devin executed A → B → C autonomously, documenting progress here.
+> **Status:** COMPLETE — Phases A, B (core), C, and D delivered
+> **Auto-mode:** Devin executed A → B → C autonomously; Phase D bug fixes applied manually.
 
 ---
 
@@ -57,12 +57,27 @@
 
 ---
 
+## Phase D: Revenue Bug Fixes & Hardening
+**Goal:** Fix discovered bugs in the revenue pipeline that could cause data loss or incorrect accounting.
+
+| Step | Task | Status | Notes |
+|------|------|--------|-------|
+| D1 | Circuit breaker auto-reset | COMPLETED | `CIRCUIT_BREAKER_RESET_SECS` was defined but `reset()` was never called — circuit stayed open forever after 10 consecutive failures. Added `RevenueHealth::maybe_auto_reset()` which checks cooldown and is called automatically before `record_failure()`. |
+| D2 | `pool_fee_pct` parameter now used | COMPLETED | `track_zion_block` accepted but ignored `_pool_fee_pct`, always using hardcoded `ZION_POOL_PCT=1`. Now dynamically computes `miner_pct = 100 - humanitarian - issobella - pool`. Falls back to `ZION_POOL_PCT` when 0 is passed. |
+| D3 | `replay_zion_block` sets `last_block_ts` | COMPLETED | Missing field caused empty timestamp after journal replay. Now sets `last_block_ts` during replay. |
+| D4 | Journal append errors logged | COMPLETED | Replaced 4× `let _ = journal.append(...)` with `if let Err(e) = ... { eprintln!(...) }` — disk-full / I/O errors are now visible in logs instead of silently dropped. |
+| D5 | Clippy warnings fixed | COMPLETED | `collapsible_if` in revenue.rs, `identity_op` (`* 1 / 100` → `/ 100`) in pplns.rs, `needless_borrow` in revenue-proxy.rs. |
+| D6 | New tests | COMPLETED | `circuit_breaker_auto_resets_after_cooldown`, `pool_fee_pct_is_used_when_nonzero`. All 96 revenue tests pass. |
+
+---
+
 ## Summary
 
-### What was delivered today
+### What was delivered
 1. **Fee payouts are now on-chain** — every time a ZION block is found, the pool submits a batch UTXO transaction paying the 5% humanitarian tithe, 5% issobella fund, and 1% pool fee to their configured wallets. On failure, fees are restored and retried next round.
 2. **Startup replay is live** — the pool server now reconstructs its accumulated revenue state from `RevenueJournal` JSONL files on restart, preventing loss of accounting across crashes or deploys.
 3. **External Pool Proxy is operational** — `revenue-proxy` binary provides transparent Stratum bridges to external pools (2miners, MoneroOcean, ZPool, etc.) with wallet substitution and auto-reconnect. The pool server can redirect `Revenue`/`Auto` miners to these proxies via `PoolMessage::ProxyRedirect`.
+4. **Revenue pipeline hardened** — circuit breaker now auto-resets after cooldown, `pool_fee_pct` is respected, journal errors are logged, and replay preserves timestamps.
 
 ### What remains for full Mainnet readiness
 - **Runtime profit-switching** — the proxy currently serves the coins configured at startup (`ZION_PROXY_COINS`). Automatic switching to the most profitable coin based on `profit_router` estimates is future work.
