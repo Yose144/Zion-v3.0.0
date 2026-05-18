@@ -1,12 +1,12 @@
 //! # Phase V: RAG — Retrieval-Augmented Generation
 //!
-//! Sémantické vyhledávání + augmentace promptů pro Hiranyagarbha agenta.
-//! Funguje 100% přes NVIDIA NIM free API — žádný lokální GPU nepotřeba.
+//! Semantic search + prompt augmentation for the Hiranyagarbha agent.
+//! Works 100% via NVIDIA NIM free API — no local GPU needed.
 //!
-//! ## Architektura
+//! ## Architecture
 //!
 //! ```text
-//! uživatelský dotaz
+//! user query
 //!       │
 //!       ▼
 //! NimEmbeddingBackend  ──→  embed(query)  ──→  Vec<f32> (1024 dim)
@@ -15,20 +15,20 @@
 //! VectorStore ──── cosine_similarity ──── top_k ──→ Vec<RagDocument>
 //!       │
 //!       ▼
-//! RagBackend::augment_prompt() ──→ [KONTEXT: ...] + original prompt
+//! RagBackend::augment_prompt() ──→ [CONTEXT: ...] + original prompt
 //!       │
 //!       ▼
-//! LlmBackend::generate() ──→ LlmResponse (kontextuálně přesná)
+//! LlmBackend::generate() ──→ LlmResponse (contextually accurate)
 //! ```
 //!
-//! ## NVIDIA NIM embedding modely (free tier)
+//! ## NVIDIA NIM embedding models (free tier)
 //!
-//! | Model | Dim | Max tokens | Beste Pro |
+//! | Model | Dim | Max tokens | Best for |
 //! |-------|-----|-----------|----------|
-//! | `nvidia/nv-embedqa-e5-v5` | 1024 | 512 | Q&A, dokumentace |
-//! | `nvidia/nv-embedqa-mistral-7b-v2` | 4096 | 512 | Kód, dlouhé texty |
+//! | `nvidia/nv-embedqa-e5-v5` | 1024 | 512 | Q&A, documentation |
+//! | `nvidia/nv-embedqa-mistral-7b-v2` | 4096 | 512 | Code, long texts |
 //!
-//! ## Příklad
+//! ## Example
 //!
 //! ```rust
 //! use zion_ai_native::rag::{RagDocument, VectorStore};
@@ -46,16 +46,16 @@ use std::collections::HashMap;
 
 // ─── RagDocument ─────────────────────────────────────────────────────────────
 
-/// Dokument v RAG knowledge base.
+/// Document in the RAG knowledge base.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RagDocument {
-    /// Unikátní ID (např. "docs/MAINNET.md#pool-setup")
+    /// Unique ID (e.g. "docs/MAINNET.md#pool-setup")
     pub id: String,
-    /// Textový obsah chunku
+    /// Text content of the chunk
     pub content: String,
     /// Metadata (source, date, author, …)
     pub metadata: HashMap<String, String>,
-    /// Embedding vektor — délka závisí na zvoleném modelu
+    /// Embedding vector — length depends on the chosen model
     pub embedding: Vec<f32>,
 }
 
@@ -77,10 +77,10 @@ impl RagDocument {
 
 // ─── VectorStore ─────────────────────────────────────────────────────────────
 
-/// In-memory vektorová databáze s cosine similarity vyhledáváním.
+/// In-memory vector database with cosine similarity search.
 ///
-/// Phase V: záměrně jednoduchá bez sqlite-vec nebo Qdrant.
-/// Phase VI+: migrovat na sqlite-vec pro perzistenci.
+/// Phase V: intentionally simple without sqlite-vec or Qdrant.
+/// Phase VI+: migrate to sqlite-vec for persistence.
 #[derive(Debug, Default)]
 pub struct VectorStore {
     documents: Vec<RagDocument>,
@@ -91,7 +91,7 @@ impl VectorStore {
         Self::default()
     }
 
-    /// Přidá nebo nahradí dokument (dedup podle ID).
+    /// Adds or replaces a document (dedup by ID).
     pub fn add(&mut self, doc: RagDocument) {
         if let Some(pos) = self.documents.iter().position(|d| d.id == doc.id) {
             self.documents[pos] = doc;
@@ -100,7 +100,7 @@ impl VectorStore {
         }
     }
 
-    /// Odebere dokument podle ID. Vrátí true pokud byl nalezen.
+    /// Removes a document by ID. Returns true if found.
     pub fn remove(&mut self, id: &str) -> bool {
         let before = self.documents.len();
         self.documents.retain(|d| d.id != id);
@@ -115,7 +115,7 @@ impl VectorStore {
         self.documents.is_empty()
     }
 
-    /// Top-k dokumenty seřazené sestupně podle cosine similarity.
+    /// Top-k documents sorted descending by cosine similarity.
     pub fn search(&self, query_embedding: &[f32], top_k: usize) -> Vec<&RagDocument> {
         if self.documents.is_empty() || top_k == 0 {
             return vec![];
@@ -129,12 +129,12 @@ impl VectorStore {
         scored.into_iter().take(top_k).map(|(_, doc)| doc).collect()
     }
 
-    /// Vrátí všechna ID v store.
+    /// Returns all IDs in the store.
     pub fn ids(&self) -> Vec<&str> {
         self.documents.iter().map(|d| d.id.as_str()).collect()
     }
 
-    /// Vrátí všechny dokumenty v store.
+    /// Returns all documents in the store.
     pub fn all(&self) -> &[RagDocument] {
         &self.documents
     }
@@ -142,8 +142,8 @@ impl VectorStore {
 
 // ─── Cosine similarity ───────────────────────────────────────────────────────
 
-/// Kosínusová podobnost dvou vektorů ∈ [-1.0, 1.0].
-/// Vrátí 0.0 pro prázdné nebo nulové vektory.
+/// Cosine similarity of two vectors ∈ [-1.0, 1.0].
+/// Returns 0.0 for empty or zero vectors.
 fn cosine_similarity(a: &[f32], b: &[f32]) -> f32 {
     let len = a.len().min(b.len());
     if len == 0 {
@@ -164,12 +164,12 @@ fn cosine_similarity(a: &[f32], b: &[f32]) -> f32 {
 
 // ─── EmbeddingInputType ───────────────────────────────────────────────────────
 
-/// Typ vstupu — NIM používá asymetrické embedding pro lepší přesnost.
+/// Input type — NIM uses asymmetric embedding for better accuracy.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum EmbeddingInputType {
-    /// Dokumenty ukládané do knowledge base
+    /// Documents stored in the knowledge base
     Passage,
-    /// Dotaz při sémantickém vyhledávání
+    /// Query during semantic search
     Query,
 }
 
@@ -184,7 +184,7 @@ impl EmbeddingInputType {
 
 // ─── EmbeddingBackend trait ───────────────────────────────────────────────────
 
-/// Abstrakce embedding backendu — umožňuje swap NIM ↔ Ollama ↔ Mock.
+/// Embedding backend abstraction — allows swapping NIM ↔ Ollama ↔ Mock.
 pub trait EmbeddingBackend: Send + Sync {
     fn name(&self) -> &str;
     fn embed(
@@ -197,7 +197,7 @@ pub trait EmbeddingBackend: Send + Sync {
 
 // ─── MockEmbeddingBackend ─────────────────────────────────────────────────────
 
-/// Deterministický embedding pro unit testy — nevyžaduje API klíč.
+/// Deterministic embedding for unit tests — does not require an API key.
 #[derive(Debug)]
 pub struct MockEmbeddingBackend {
     dim: usize,
@@ -219,7 +219,7 @@ impl EmbeddingBackend for MockEmbeddingBackend {
         texts: &[&str],
         _input_type: EmbeddingInputType,
     ) -> Result<Vec<Vec<f32>>, LlmError> {
-        // Deterministický embedding: průměr ASCII normalizovaný na [0.0, 1.0]
+        // Deterministic embedding: ASCII average normalized to [0.0, 1.0]
         Ok(texts
             .iter()
             .map(|text| {
@@ -242,13 +242,13 @@ impl EmbeddingBackend for MockEmbeddingBackend {
 
 // ─── NimEmbeddingBackend ──────────────────────────────────────────────────────
 
-/// NVIDIA NIM Embedding Backend — free tier, žádný GPU nepotřeba.
+/// NVIDIA NIM Embedding Backend — free tier, no GPU needed.
 ///
 /// Endpoint: `POST https://integrate.api.nvidia.com/v1/embeddings`
 ///
-/// ## Modely
-/// - `nvidia/nv-embedqa-e5-v5` — výchozí, 1024 dim, ideální pro ZION docs
-/// - `nvidia/nv-embedqa-mistral-7b-v2` — 4096 dim, pro kód/delší texty
+/// ## Models
+/// - `nvidia/nv-embedqa-e5-v5` — default, 1024 dim, ideal for ZION docs
+/// - `nvidia/nv-embedqa-mistral-7b-v2` — 4096 dim, for code/longer texts
 ///
 /// ## Live test
 /// ```bash
@@ -263,7 +263,7 @@ pub struct NimEmbeddingBackend {
 }
 
 impl NimEmbeddingBackend {
-    /// Výchozí: `nvidia/nv-embedqa-e5-v5`, 1024 dim.
+    /// Default: `nvidia/nv-embedqa-e5-v5`, 1024 dim.
     pub fn new(api_key: impl Into<String>) -> Self {
         Self {
             base_url: "https://integrate.api.nvidia.com/v1".into(),
@@ -354,7 +354,7 @@ impl EmbeddingBackend for NimEmbeddingBackend {
 
 // ─── RagRetriever ─────────────────────────────────────────────────────────────
 
-/// Kombinuje `EmbeddingBackend` + `VectorStore` do jednoho pipeline.
+/// Combines `EmbeddingBackend` + `VectorStore` into a single pipeline.
 pub struct RagRetriever {
     pub embedding: Box<dyn EmbeddingBackend>,
     pub store: VectorStore,
@@ -375,7 +375,7 @@ impl RagRetriever {
         self
     }
 
-    /// Indexuje nový dokument: embed → uloží do VectorStore.
+    /// Indexes a new document: embed → stores into VectorStore.
     pub fn index(
         &mut self,
         id: impl Into<String>,
@@ -393,7 +393,7 @@ impl RagRetriever {
         Ok(())
     }
 
-    /// Indexuje dokument s metadaty.
+    /// Indexes a document with metadata.
     pub fn index_with_metadata(
         &mut self,
         id: impl Into<String>,
@@ -415,7 +415,7 @@ impl RagRetriever {
         Ok(())
     }
 
-    /// Sémantické vyhledávání — vrátí top-k nejrelevantnějších dokumentů.
+    /// Semantic search — returns the top-k most relevant documents.
     pub fn retrieve(&self, query: &str) -> Result<Vec<&RagDocument>, LlmError> {
         let mut embeddings = self.embedding.embed(&[query], EmbeddingInputType::Query)?;
         let query_emb = embeddings
@@ -434,10 +434,10 @@ impl RagRetriever {
 
 /// RAG-augmented LLM backend.
 ///
-/// Obaluje libovolný `LlmBackend` a automaticky augmentuje každý prompt
-/// o relevantní dokumenty z knowledge base.
+/// Wraps any `LlmBackend` and automatically augments every prompt
+/// with relevant documents from the knowledge base.
 ///
-/// # Použití
+/// # Usage
 /// ```rust
 /// use zion_ai_native::rag::{MockEmbeddingBackend, RagRetriever, RagBackend};
 /// use zion_ai_native::llm_backend::{EchoBackend, LlmBackend, LlmRequest};
@@ -452,7 +452,7 @@ impl RagRetriever {
 pub struct RagBackend {
     pub retriever: RagRetriever,
     pub inner: Box<dyn LlmBackend>,
-    /// Šablona pro augmentovaný prompt. Proměnné: {context}, {query}
+    /// Template for the augmented prompt. Variables: {context}, {query}
     pub context_template: String,
 }
 
@@ -654,7 +654,7 @@ mod tests {
         let backend = MockEmbeddingBackend::new(4);
         let results = backend.embed(&[""], EmbeddingInputType::Passage).unwrap();
         assert_eq!(results.len(), 1);
-        // Prázdný text → base = 0.5
+        // Empty text → base = 0.5
         assert!((results[0][0] - 0.5).abs() < 0.001);
     }
 
@@ -721,7 +721,7 @@ mod tests {
 
         let req = LlmRequest::new(MmlModality::Text, "Jak funguje ZION mining?");
         let resp = backend.generate(req).unwrap();
-        // EchoBackend echuouje prompt zpět — prompt musí obsahovat RAG kontext
+        // EchoBackend echoes prompt back — prompt must contain RAG context
         assert!(resp.content.contains("KONTEXT") || resp.content.contains("zion_doc"));
     }
 
@@ -737,7 +737,7 @@ mod tests {
         let query = "dotaz bez kontextu";
         let req = LlmRequest::new(MmlModality::Text, query);
         let resp = backend.generate(req).unwrap();
-        // Prázdný store → prompt se nemění, EchoBackend echuouje přesný text
+        // Empty store → prompt unchanged, EchoBackend echoes exact text
         assert!(resp.content.contains(query));
     }
 
@@ -752,7 +752,7 @@ mod tests {
         assert_eq!(doc.metadata["version"], "2.9.6");
     }
 
-    /// Live test s NVIDIA NIM API — spusť ručně:
+    /// Live test with NVIDIA NIM API — run manually:
     ///
     /// ```bash
     /// NVIDIA_API_KEY=nvapi-... cargo test -p zion-ai-native -- test_nim_embedding_live --ignored --nocapture
@@ -775,7 +775,7 @@ mod tests {
         );
     }
 
-    /// Live test RAG pipeline — embeduje ZION docs, pak dotaz v češtině.
+    /// Live test RAG pipeline — embeds ZION docs, then query in Czech.
     ///
     /// ```bash
     /// NVIDIA_API_KEY=nvapi-... cargo test -p zion-ai-native -- test_nim_rag_pipeline_live --ignored --nocapture
@@ -792,7 +792,7 @@ mod tests {
         retriever.index("dharma_score", "DharmaScore = 0.0 (chaos) → 1.0 (satori). Výpočet: 6-kroková transformace s vědomostní vrstvou").unwrap();
 
         let results = retriever.retrieve("Jak se připojit k poolu?").unwrap();
-        println!("RAG výsledky pro 'Jak se připojit k poolu?':");
+        println!("RAG výsledky pro 'Jak se připojit k poolu?:");
         for (i, doc) in results.iter().enumerate() {
             println!("  {}. [{}]: {}", i + 1, doc.id, doc.content);
         }
