@@ -358,7 +358,10 @@ fn summarize_process_failure(output: &Output) -> String {
 #[cfg(test)]
 mod tests {
     use super::{summarize_process_failure, validate_threads_setting};
+    #[cfg(unix)]
     use std::os::unix::process::ExitStatusExt;
+    #[cfg(windows)]
+    use std::os::windows::process::ExitStatusExt;
     use std::process::Output;
 
     #[test]
