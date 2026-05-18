@@ -159,6 +159,8 @@ impl std::fmt::Display for LlmError {
     }
 }
 
+impl std::error::Error for LlmError {}
+
 // ─── LlmBackend trait ────────────────────────────────────────────────────────
 
 /// Abstraktní LLM inference backend.
