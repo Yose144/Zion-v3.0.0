@@ -106,7 +106,10 @@ HiranV2.1/curriculum/meta/BUILD.txt
 /HiranV2.1/finetune/outputs/
 /scripts/finetune/outputs/
 HiranV2.2/checkpoints/
+HiranV2.2/checkpoints_vast/
 HiranV2.2/eval_reports/
+HiranV2.2/models/
+nul
 
 # Python (tools)
 __pycache__/

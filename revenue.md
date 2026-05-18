@@ -135,7 +135,19 @@ Maps each pipeline step to a revenue stream:
 | NPU Mix | `NclAi` | 25 |
 | CosmicFusion | `Zion` | 15 |
 
-### 5.4 `ProfitRouter` — External Coins
+### 5.4 `NclGateway` — Hiran AI Bridge (Phase F)
+
+`V3/L1/pool/src/ncl_gateway.rs`
+
+- `NclGatewayClient` — async HTTP/1.1 client to Hiran inference service (OpenAI-compat `/v1/chat/completions`, `/health`). No new crate deps — hand-rolled over `tokio::net::TcpStream`.
+- `NclPricing` — per-token + per-task USD pricing. Env-tunable via `ZION_NCL_PRICE_IN_PER_1K`, `ZION_NCL_PRICE_OUT_PER_1K`, `ZION_NCL_MIN_PER_TASK_USD`.
+- `NclDispatcher` — background tokio task that consumes `mpsc<NclTaskRequest>`, calls Hiran, records revenue via cloned `RevenueCollector` handle from `CoreRuntime::revenue_handle()`.
+- `NclHeartbeatConfig` — optional self-produced heartbeat tasks (`ZION_NCL_HEARTBEAT=true`) so the 25 % stream generates measurable revenue before customer submit endpoints exist.
+- Enabled by `ZION_NCL_GATEWAY_URL=http://host:8002`. Disabled by default.
+
+See [`NCL_INTEGRATION.md`](./NCL_INTEGRATION.md) for the full architecture, configuration, and rollout guide.
+
+### 5.5 `ProfitRouter` — External Coins
 
 `V3/L1/cosmic-harmony/src/profit_router.rs`
 
