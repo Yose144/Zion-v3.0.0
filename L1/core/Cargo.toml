@@ -43,7 +43,7 @@ zion-cosmic-harmony-v3 = { path = "../cosmic-harmony" }
 once_cell = "1.19"
 parking_lot = "0.12"
 randomx-rs = "1.2"
-scrypt = "0.11"
+scrypt = "0.12"
 log = "0.4"
 
 # VerusHash 2.2 — native C/C++ implementation via FFI.
