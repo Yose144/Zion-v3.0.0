@@ -2943,6 +2943,8 @@ mod tests {
             vardiff_min_difficulty: 1,
             vardiff_max_difficulty: 0,
             btc_wallet: None,
+            revenue_proxy_addr: None,
+            revenue_proxy_coin: "KAS".to_string(),
         };
         let (pool_addr, pool_handle) = spawn_pool_server(config)?;
 
@@ -3164,6 +3166,8 @@ mod tests {
             vardiff_min_difficulty: 1,
             vardiff_max_difficulty: 0,
             btc_wallet: None,
+            revenue_proxy_addr: None,
+            revenue_proxy_coin: "KAS".to_string(),
         };
 
         let group = resolve_session_group("user-miner", "rig-01", &config);
@@ -3200,6 +3204,8 @@ mod tests {
             vardiff_min_difficulty: 1,
             vardiff_max_difficulty: 0,
             btc_wallet: None,
+            revenue_proxy_addr: None,
+            revenue_proxy_coin: "KAS".to_string(),
         };
 
         let group = resolve_session_group("backend-miner-1", "rig-01", &config);
@@ -3236,6 +3242,8 @@ mod tests {
             vardiff_min_difficulty: 1,
             vardiff_max_difficulty: 0,
             btc_wallet: None,
+            revenue_proxy_addr: None,
+            revenue_proxy_coin: "KAS".to_string(),
         };
 
         let group = resolve_session_group("miner-a", "backend-revenue-1", &config);
@@ -3436,6 +3444,8 @@ mod tests {
             vardiff_min_difficulty: 1,
             vardiff_max_difficulty: 0,
             btc_wallet: None,
+            revenue_proxy_addr: None,
+            revenue_proxy_coin: "KAS".to_string(),
         };
 
         // Even though miner_id is in backend list, explicit hint wins

@@ -792,6 +792,19 @@ mod tests {
     }
 
     #[test]
+    fn proxy_redirect_roundtrip_is_stable() {
+        let msg = PoolMessage::ProxyRedirect {
+            host: "127.0.0.1".to_string(),
+            port: 9000,
+            coin: "KAS".to_string(),
+            algorithm: "kheavyhash".to_string(),
+        };
+        let encoded = encode_message(&msg).expect("encode proxy_redirect");
+        let decoded = decode_message(&encoded).expect("decode proxy_redirect");
+        assert_eq!(decoded, msg);
+    }
+
+    #[test]
     fn bye_message_reports_session_totals() {
         let mut pool = MiningPool::default();
         let _ = pool.submit_share(ShareSubmission {
