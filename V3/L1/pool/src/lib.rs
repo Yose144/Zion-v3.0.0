@@ -1,4 +1,5 @@
 pub mod pplns;
+pub mod revenue_proxy;
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
