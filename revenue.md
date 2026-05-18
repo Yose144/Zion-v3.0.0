@@ -277,10 +277,12 @@ Stratum authorize format: `BTC_ADDRESS.worker_name` — pool auto-detects BTC pa
 
 ## 9. Safety Features
 
-- **Circuit breaker:** 10 consecutive failures → open, 60 s cooldown before auto-reset (`maybe_auto_reset()` called before each `record_failure()`)
-- **Idempotence:** `track_zion_block` deduplicates by block height (`seen_heights` HashSet)
-- **Audit journal:** append-only JSONL, daily rotation, replayable on startup; append errors logged (not silently dropped)
+- **Circuit breaker:** 10 consecutive failures → open, 60 s cooldown before auto-reset. Cooldown is tracked from the actual trip time (`circuit_opened_ts`), so a freshly-tripped breaker stays open for the full window even with no prior success record. Trip events are logged (`revenue_circuit_open source=… consecutive_failures=…`).
+- **Idempotence:** `track_zion_block` deduplicates by block height. The `seen_heights` set is bounded to a sliding window (`SEEN_HEIGHTS_WINDOW = 100_000`) so long-running pools don't grow unbounded.
+- **Audit journal:** append-only JSONL, daily rotation, replayable on startup; append errors logged (not silently dropped). Writes are serialized under a mutex so concurrent appends never interleave half-written lines. Retention pruning runs once per day rollover (`prune_expired()` honours `ZION_REVENUE_JOURNAL_DAYS`).
+- **Replay fidelity:** `replay_zion_block_with_ts` preserves the original journal timestamp and only advances `last_block_height` for higher heights, so out-of-order journal entries cannot rewind the cursor or rewrite block timestamps to the restart time.
 - **Configurable pool fee:** `track_zion_block` respects `pool_fee_pct` parameter (falls back to `ZION_POOL_PCT` when 0)
+- **Zero-amount payouts:** `process_payout` / `process_payout_zion` skip journaling when the pending balance is 0, keeping the audit log clean.
 - **Overflow protection:** `checked_add` fold on all summations
 - **Fee minimum:** enforced for UTXO transactions (except bridge unlock)
 - **Session pinning:** auto sessions assigned at connect time, no per-share rotation
