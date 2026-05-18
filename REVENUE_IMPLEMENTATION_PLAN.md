@@ -71,6 +71,23 @@
 
 ---
 
+## Phase E: Revenue Code Audit & Hardening (2026-05-18)
+**Goal:** Fix latent bugs found in a deep audit of the revenue pipeline and bound long-running resource growth.
+
+| Step | Task | Status | Notes |
+|------|------|--------|-------|
+| E1 | Preserve original journal timestamp on replay | COMPLETED | `replay_zion_block_with_ts` accepts `journal_ts`; `replay()` now passes `block.ts`. Previously `Utc::now()` overwrote the original timestamp on every restart. |
+| E2 | Fix `last_block_height` rewind on out-of-order replay | COMPLETED | Only advance the cursor when `height >= stats.last_block_height`. Out-of-order JSONL entries (e.g. across daily file boundaries or after partial appends) can no longer rewind state. |
+| E3 | Circuit breaker proper cooldown tracking | COMPLETED | Added `circuit_opened_ts` field. `maybe_auto_reset` now compares elapsed time against the **trip** timestamp, not `last_success_ts`. Previously a source with no successful events would reset on every call, defeating the cooldown. New test `circuit_breaker_stays_open_within_cooldown` enforces the contract. |
+| E4 | Journal append serialization | COMPLETED | Held `current_file` mutex across `open + writeln! + sync_all` so concurrent appends from multiple worker threads cannot interleave a half-written JSON line. New test `concurrent_appends_do_not_corrupt_lines` proves it under 400 parallel writes. |
+| E5 | Journal retention pruning | COMPLETED | `retention_days` was dead — files were never deleted. Added `prune_expired()` called once per day rollover (cheap path), honouring `ZION_REVENUE_JOURNAL_DAYS`. New test `prune_expired_removes_old_files_only` covers the boundary. |
+| E6 | Bound `seen_heights` HashSet | COMPLETED | Added `SEEN_HEIGHTS_WINDOW = 100_000`; set is pruned to the most-recent window so long-running pools cannot grow memory unbounded. |
+| E7 | Skip journaling zero-amount payouts | COMPLETED | `process_payout` / `process_payout_zion` early-return without an I/O write when nothing was accumulated, cutting log noise on idle pools. |
+| E8 | Log circuit breaker trips | COMPLETED | `update_health_failure` now uses the `bool` return of `record_failure()` to emit `revenue_circuit_open source=… consecutive_failures=…` so SREs can alert on it. |
+| E9 | Tests & validation | COMPLETED | `zion-cosmic-harmony` 119/119, `zion-core` 481/481, `zion-pool` 52/52 pass. Clippy clean on touched code. |
+
+---
+
 ## Summary
 
 ### What was delivered
