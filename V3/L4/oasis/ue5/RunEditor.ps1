@@ -1,8 +1,8 @@
 # ZION OASIS UE5 — Launch Unreal Editor
-# Usage: .\RunEditor.ps1 [-EnginePath "C:\\Program Files\\Epic Games\\UE_5.4"] [-Map LV_World]
+# Usage: .\RunEditor.ps1 [-EnginePath "C:\\Program Files\\Epic Games\\UE_5.7"] [-Map LV_World]
 
 param(
-    [string]$EnginePath = "C:\Program Files\Epic Games\UE_5.4",
+    [string]$EnginePath = "C:\Program Files\Epic Games\UE_5.7",
     [string]$Map = "LV_MainMenu"
 )
 

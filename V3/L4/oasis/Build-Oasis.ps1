@@ -39,7 +39,7 @@ if (-not $BackendOnly) {
     Write-Host "[2/3] Generating UE5 project files..." -ForegroundColor Yellow
 
     $UProject = "$Root\ue5\ZionOasis.uproject"
-    $EnginePath = "C:\Program Files\Epic Games\UE_5.4"
+    $EnginePath = "C:\Program Files\Epic Games\UE_5.7"
     $UBT = "$EnginePath\Engine\Binaries\DotNET\UnrealBuildTool\UnrealBuildTool.exe"
 
     if (Test-Path $UBT) {
