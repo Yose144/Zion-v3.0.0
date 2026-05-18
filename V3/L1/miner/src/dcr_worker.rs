@@ -663,6 +663,7 @@ mod tests {
             gpu_autotune: true,
             gpu_autotune_secs: DEFAULT_GPU_AUTOTUNE_SECS,
             hash_impl: DcrHashImpl::RustPrecompute,
+            revenue_per_share_usd: 0.001,
         };
         assert_eq!(config.wallet_short(), "bc1q...d8mw");
     }
@@ -679,6 +680,7 @@ mod tests {
             gpu_autotune: false,
             gpu_autotune_secs: DEFAULT_GPU_AUTOTUNE_SECS,
             hash_impl: DcrHashImpl::RustPrecompute,
+            revenue_per_share_usd: 0.001,
         };
         let stop = Arc::new(AtomicBool::new(true)); // pre-set stop
         let (handles, stats) = spawn_dcr_worker(config, stop);
