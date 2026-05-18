@@ -84,6 +84,16 @@ pub enum PoolMessage {
         difficulty: u64,
         target_hex: String,
     },
+    /// Pool → miner: redirect to an external revenue proxy.
+    /// Sent when the session is assigned to the `Revenue` or `Auto` group
+    /// that routes to external multi-algo pools.  The miner should connect
+    /// to `host:port` using native Stratum for the given coin.
+    ProxyRedirect {
+        host: String,
+        port: u16,
+        coin: String,
+        algorithm: String,
+    },
 }
 
 pub fn encode_message(message: &PoolMessage) -> Result<String, serde_json::Error> {

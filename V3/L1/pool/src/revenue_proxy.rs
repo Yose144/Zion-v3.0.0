@@ -17,7 +17,7 @@ use tokio::sync::mpsc;
 use tokio::time::{sleep, Duration};
 use tracing::{debug, error, info, warn};
 
-use zion_cosmic_harmony::profit_router::{CoinProfile, ExternalCoin, PoolPreference};
+use zion_cosmic_harmony::profit_router::CoinProfile;
 
 /// Stats for one external pool connection.
 #[derive(Debug, Default)]
@@ -239,6 +239,202 @@ impl ExternalPoolClient {
         let val = serde_json::from_str(&line)
             .with_context(|| format!("invalid JSON line: {line}"))?;
         Ok(val)
+    }
+}
+
+/// Transparent Stratum proxy listener.
+/// Accepts connections from GPU miners and forwards JSON-RPC lines to an
+/// external pool, substituting the pool wallet in authorize / login
+/// messages so payouts go to the operator.
+pub struct ProxyListener {
+    listen_addr: String,
+    pool_addr: String,
+    wallet: String,
+    worker: String,
+    stats: Arc<ExternalPoolStats>,
+}
+
+impl ProxyListener {
+    pub fn new(
+        listen_addr: impl Into<String>,
+        pool_addr: impl Into<String>,
+        wallet: impl Into<String>,
+        worker: impl Into<String>,
+        stats: Arc<ExternalPoolStats>,
+    ) -> Self {
+        Self {
+            listen_addr: listen_addr.into(),
+            pool_addr: pool_addr.into(),
+            wallet: wallet.into(),
+            worker: worker.into(),
+            stats,
+        }
+    }
+
+    /// Start listening and forwarding miner connections.
+    pub async fn run(self: Arc<Self>) -> Result<()> {
+        let listener = tokio::net::TcpListener::bind(&self.listen_addr)
+            .await
+            .with_context(|| format!("failed to bind proxy on {}", self.listen_addr))?;
+        info!(
+            "Proxy listening on {} → {}",
+            self.listen_addr, self.pool_addr
+        );
+
+        loop {
+            let (miner_stream, peer) = listener.accept().await?;
+            let proxy = Arc::clone(&self);
+            tokio::spawn(async move {
+                if let Err(e) = proxy.forward_session(miner_stream, peer).await {
+                    warn!("[{}] Session from {} ended: {}", proxy.pool_addr, peer, e);
+                }
+            });
+        }
+    }
+
+    /// Forward a single miner session: connect upstream, swap wallet, pipe lines.
+    async fn forward_session(
+        &self,
+        miner_stream: tokio::net::TcpStream,
+        peer: std::net::SocketAddr,
+    ) -> Result<()> {
+        let upstream = TcpStream::connect(&self.pool_addr)
+            .await
+            .with_context(|| format!("failed to connect to pool {}", self.pool_addr))?;
+        info!("[{}] ↔ Session from {} started", self.pool_addr, peer);
+
+        let (mut upstream_r, mut upstream_w) = upstream.into_split();
+        let (mut downstream_r, mut downstream_w) = miner_stream.into_split();
+
+        // Spawn two tasks: downstream → upstream (with wallet substitution on first messages)
+        // and upstream → downstream (transparent).
+        let wallet = self.wallet.clone();
+        let worker = self.worker.clone();
+        let pool_addr_d2u = self.pool_addr.clone();
+        let pool_addr_u2d = self.pool_addr.clone();
+        let stats = Arc::clone(&self.stats);
+
+        let d2u = tokio::spawn(async move {
+            let mut reader = tokio::io::BufReader::new(&mut downstream_r);
+            let mut buf = String::new();
+            let mut authorized = false;
+            loop {
+                buf.clear();
+                match reader.read_line(&mut buf).await {
+                    Ok(0) => break,
+                    Ok(_) => {}
+                    Err(e) => {
+                        warn!("[{}] Error reading from miner: {}", pool_addr_d2u, e);
+                        break;
+                    }
+                }
+                let mut line = buf.trim_end().to_string();
+                if line.is_empty() {
+                    continue;
+                }
+
+                // Wallet substitution on first authorize / login / subscribe messages.
+                if !authorized {
+                    if let Ok(mut msg) = serde_json::from_str::<serde_json::Value>(&line) {
+                        if let Some(method) = msg.get("method").and_then(|m| m.as_str()) {
+                            match method {
+                                "mining.authorize" => {
+                                    if let Some(params) = msg.get_mut("params").and_then(|p| p.as_array_mut()) {
+                                        if !params.is_empty() {
+                                            let user = format!("{}.{}", wallet, worker);
+                                            params[0] = serde_json::Value::String(user);
+                                        }
+                                    }
+                                    authorized = true;
+                                }
+                                "mining.subscribe" => {
+                                    // Replace user-agent with ours.
+                                    if let Some(params) = msg.get_mut("params").and_then(|p| p.as_array_mut()) {
+                                        if !params.is_empty() {
+                                            params[0] = serde_json::Value::String("zion_revenue_proxy/1.0".to_string());
+                                        }
+                                    }
+                                }
+                                "login" => {
+                                    // CryptoNote stratum login.
+                                    if let Some(params) = msg.get_mut("params").and_then(|p| p.as_object_mut()) {
+                                        params.insert("login".to_string(), serde_json::Value::String(wallet.clone()));
+                                        params.insert("pass".to_string(), serde_json::Value::String(worker.clone()));
+                                    }
+                                    authorized = true;
+                                }
+                                _ => {}
+                            }
+                        }
+                        line = serde_json::to_string(&msg).unwrap_or(line);
+                    }
+                }
+
+                line.push('\n');
+                if let Err(e) = upstream_w.write_all(line.as_bytes()).await {
+                    warn!("[{}] Error writing to pool: {}", pool_addr_d2u, e);
+                    break;
+                }
+                if let Err(e) = upstream_w.flush().await {
+                    warn!("[{}] Error flushing to pool: {}", pool_addr_d2u, e);
+                    break;
+                }
+            }
+        });
+
+        let u2d = tokio::spawn(async move {
+            let mut reader = tokio::io::BufReader::new(&mut upstream_r);
+            let mut buf = String::new();
+            loop {
+                buf.clear();
+                match reader.read_line(&mut buf).await {
+                    Ok(0) => break,
+                    Ok(_) => {}
+                    Err(e) => {
+                        warn!("[{}] Error reading from pool: {}", pool_addr_u2d, e);
+                        break;
+                    }
+                }
+                if buf.trim().is_empty() {
+                    continue;
+                }
+                // Track stats from pool responses.
+                if let Ok(msg) = serde_json::from_str::<serde_json::Value>(buf.trim()) {
+                    if let Some(error) = msg.get("error") {
+                        if !error.is_null() {
+                            stats.shares_rejected.fetch_add(1, Ordering::Relaxed);
+                        }
+                    }
+                    if let Some(result) = msg.get("result") {
+                        if result.get("status").and_then(|s| s.as_str()) == Some("ok") {
+                            stats.shares_accepted.fetch_add(1, Ordering::Relaxed);
+                        }
+                    }
+                    if let Some(method) = msg.get("method").and_then(|m| m.as_str()) {
+                        if method == "mining.notify" {
+                            stats.jobs_received.fetch_add(1, Ordering::Relaxed);
+                        }
+                    }
+                }
+                if let Err(e) = downstream_w.write_all(buf.as_bytes()).await {
+                    warn!("[{}] Error writing to miner: {}", pool_addr_u2d, e);
+                    break;
+                }
+                if let Err(e) = downstream_w.flush().await {
+                    warn!("[{}] Error flushing to miner: {}", pool_addr_u2d, e);
+                    break;
+                }
+            }
+        });
+
+        // Wait for either direction to finish.
+        tokio::select! {
+            _ = d2u => {},
+            _ = u2d => {},
+        }
+
+        info!("[{}] Session from {} ended", self.pool_addr, peer);
+        Ok(())
     }
 }
 

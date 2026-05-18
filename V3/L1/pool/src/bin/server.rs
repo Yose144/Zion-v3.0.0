@@ -485,6 +485,31 @@ fn handle_client(
     let welcome_line = write_wire_message(&mut writer, &welcome_message)?;
     println!("wire_welcome={welcome_line}");
 
+    // ── Revenue proxy redirect ──────────────────────────────────────────
+    // If the miner was assigned to Revenue (or Auto→Revenue) and a proxy
+    // address is configured, send a ProxyRedirect so the GPU miner can
+    // connect directly to the external Stratum proxy.
+    if let Some(ref proxy_addr) = config.revenue_proxy_addr {
+        let should_redirect = matches!(session_group, SessionGroup::Revenue | SessionGroup::Auto);
+        if should_redirect {
+            if let Some((host, port)) = split_host_port(proxy_addr) {
+                let algorithm = zion_cosmic_harmony::profit_router::ExternalCoin::from_str_loose(
+                    &config.revenue_proxy_coin,
+                )
+                .map(|c| c.algorithm().to_string())
+                .unwrap_or_else(|| "unknown".to_string());
+                let redirect = PoolMessage::ProxyRedirect {
+                    host,
+                    port,
+                    coin: config.revenue_proxy_coin.clone(),
+                    algorithm,
+                };
+                let redirect_line = write_wire_message(&mut writer, &redirect)?;
+                println!("wire_proxy_redirect={redirect_line}");
+            }
+        }
+    }
+
     // Initialise per-session variable difficulty.
     let mut vardiff = VarDiff::new(config);
     // Send initial share difficulty to miner.
@@ -1213,6 +1238,11 @@ struct ServerConfig {
     /// BTC wallet address for external pool payouts (2miners, NiceHash, etc.).
     /// All multi-algo revenue streams pay out to this wallet.
     btc_wallet: Option<String>,
+    /// Revenue proxy redirect address (`host:port`) for Revenue / Auto sessions.
+    /// When set, the pool sends `ProxyRedirect` to miners in these groups.
+    revenue_proxy_addr: Option<String>,
+    /// Default coin for revenue proxy redirect (e.g. "KAS").
+    revenue_proxy_coin: String,
 }
 
 #[derive(Debug)]
@@ -2587,6 +2617,9 @@ impl ServerConfig {
             vardiff_min_difficulty: parse_env_u64("ZION_VARDIFF_MIN_DIFF", 1)?,
             vardiff_max_difficulty: parse_env_u64("ZION_VARDIFF_MAX_DIFF", 0)?,
             btc_wallet: parse_optional_env_string("ZION_BTC_WALLET"),
+            revenue_proxy_addr: parse_optional_env_string("ZION_REVENUE_PROXY_ADDR"),
+            revenue_proxy_coin: std::env::var("ZION_REVENUE_PROXY_COIN")
+                .unwrap_or_else(|_| "KAS".to_string()),
         })
     }
 }
@@ -2616,6 +2649,16 @@ fn parse_optional_env_string(key: &str) -> Option<String> {
             }
         }
         Err(_) => None,
+    }
+}
+
+fn split_host_port(addr: &str) -> Option<(String, u16)> {
+    if let Some(pos) = addr.rfind(':') {
+        let host = addr[..pos].to_string();
+        let port = addr[pos + 1..].parse::<u16>().ok()?;
+        Some((host, port))
+    } else {
+        None
     }
 }
 
