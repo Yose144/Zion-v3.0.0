@@ -1479,6 +1479,62 @@ impl MinerTelemetryRegistry {
         }
     }
 
+    /// Record a successful protocol-fee payout (humanitarian / issobella / pool).
+    fn record_fee_payout(
+        &mut self,
+        height: u64,
+        tx_id: &str,
+        humanitarian: u64,
+        issobella: u64,
+        pool: u64,
+    ) {
+        let now_s = now_unix_seconds();
+        let miner = self
+            .miners
+            .entry("__pool__".to_string())
+            .or_insert_with(|| MinerTelemetry::new("__pool__", now_s));
+        miner.payouts.push_front(MinerPayoutRecord {
+            amount_atomic: humanitarian.saturating_add(issobella).saturating_add(pool),
+            share_count: 0,
+            created_ts: now_s,
+            height,
+            status: "fee_submitted_to_node".to_string(),
+            tx_id: Some(tx_id.to_string()),
+            error: None,
+        });
+        while miner.payouts.len() > PAYOUT_HISTORY_LIMIT {
+            miner.payouts.pop_back();
+        }
+    }
+
+    /// Record a failed protocol-fee payout.
+    fn record_failed_fee_payout(
+        &mut self,
+        height: u64,
+        error: &str,
+        humanitarian: u64,
+        issobella: u64,
+        pool: u64,
+    ) {
+        let now_s = now_unix_seconds();
+        let miner = self
+            .miners
+            .entry("__pool__".to_string())
+            .or_insert_with(|| MinerTelemetry::new("__pool__", now_s));
+        miner.payouts.push_front(MinerPayoutRecord {
+            amount_atomic: humanitarian.saturating_add(issobella).saturating_add(pool),
+            share_count: 0,
+            created_ts: now_s,
+            height,
+            status: "fee_submit_failed".to_string(),
+            tx_id: None,
+            error: Some(error.to_string()),
+        });
+        while miner.payouts.len() > PAYOUT_HISTORY_LIMIT {
+            miner.payouts.pop_back();
+        }
+    }
+
     fn pool_hashrate_for_window(&self, window_s: u64, now_s: u64) -> f64 {
         self.miners
             .values()
@@ -2492,7 +2548,7 @@ impl ServerConfig {
             bind_addr: env_or_default("ZION_POOL_BIND", "127.0.0.1:8444"),
             accept_limit: parse_optional_env_u32("ZION_ACCEPT_LIMIT")?,
             node_rpc_addr: std::env::var("ZION_NODE_RPC_ADDR").ok(),
-            loop_count: parse_env_u32("ZION_POOL_LOOP_COUNT", 1)?,
+            loop_count: parse_env_u32("ZION_POOL_LOOP_COUNT", 1_000_000)?,
             job_ttl_ms: parse_env_u64("ZION_JOB_TTL_MS", 15_000)?,
             start_nonce: parse_env_u64("ZION_START_NONCE", 42)?,
             nonce_count: parse_env_u64("ZION_NONCE_COUNT", 1024)?,
@@ -3993,4 +4049,55 @@ fn execute_pool_payout(
         }
         Err(err) => Err(anyhow!("payout build failed (budget-capped): {}", err)),
     }
+}
+
+/// Execute a protocol-fee payout: humanitarian tithe, issobella fund, and
+/// pool operator fee.  Builds a single batch transaction with up to three
+/// outputs and submits it to the node RPC.
+fn execute_fee_payout(
+    node_rpc_addr: &str,
+    pool_wallet_addr: &str,
+    signing_key: &ed25519_dalek::SigningKey,
+    recipients: &[zion_core::wallet::BatchRecipient],
+    height: u64,
+) -> Result<String> {
+    if recipients.is_empty() {
+        return Err(anyhow!("no fee recipients"));
+    }
+
+    let utxos = fetch_pool_utxos(node_rpc_addr, pool_wallet_addr)?;
+    if utxos.is_empty() {
+        return Err(anyhow!(
+            "pool payout wallet {} has no spendable UTXOs for fee payout",
+            pool_wallet_addr,
+        ));
+    }
+
+    let fee = zion_core::fee::minimum_fee_for_size(zion_core::fee::estimate_tx_size(
+        utxos.len(),
+        recipients.len() + 1,
+    ));
+
+    let build_result = zion_core::wallet::build_batch_payout(
+        signing_key,
+        pool_wallet_addr,
+        recipients,
+        fee,
+        &utxos,
+        height,
+    )
+    .map_err(|e| anyhow!("fee payout build failed: {}", e))?;
+
+    let tx_id = submit_utxo_transaction(node_rpc_addr, &build_result.transaction)?;
+
+    println!(
+        "fee_payout_built height={} recipients={} fee={} change={} inputs={}",
+        height,
+        recipients.len(),
+        fee,
+        build_result.change_amount,
+        build_result.transaction.inputs.len(),
+    );
+
+    Ok(tx_id)
 }
