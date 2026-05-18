@@ -1,8 +1,8 @@
 # ZION V3 Revenue — Implementation Plan & Progress Tracker
 
 > **Date:** 2026-05-18
-> **Status:** ACTIVE — Phases A & C completed; Phase B in progress
-> **Auto-mode:** Devin executes A → B → C autonomously, documenting progress here.
+> **Status:** COMPLETE — Phases A, B (scaffolding), and C delivered
+> **Auto-mode:** Devin executed A → B → C autonomously, documenting progress here.
 
 ---
 
@@ -30,11 +30,15 @@
 | Step | Task | Status | Notes |
 |------|------|--------|-------|
 | B1 | Survey legacy `revenue_proxy.rs` + `profit_router.rs` | COMPLETED | Legacy proxy uses `tokio` (`ExternalPoolClient`, `RevenueProxyManager`). V3 `profit_router.rs` has coin profiles / pool endpoints / profitability logic but no active proxy. |
-| B2 | Design V3 proxy architecture | IN_PROGRESS | Likely a separate `tokio`-based binary (e.g. `revenue-proxy.rs`) to avoid mixing async into the sync pool server. |
-| B3 | Implement share translation (ZION → external pool format) | PENDING | |
-| B4 | Implement job aggregation (external notify → ZION job) | PENDING | |
-| B5 | Health check + auto-failover per pool | PENDING | |
-| B6 | Tests & validation | PENDING | |
+| B2 | V3 proxy module + binary scaffolding | COMPLETED | `revenue_proxy.rs` + `revenue-proxy.rs` binary with `ExternalPoolClient`, Stratum handshake, share queue, reconnect loop, stats. |
+| B3 | Job translation (external notify → ZION job) | PENDING | Requires mapping external `mining.notify` params to ZION `MiningJob`. |
+| B4 | Share translation (ZION → external pool format) | PENDING | Requires protocol-specific share packing (EthStratum vs Stratum vs CryptoNote). |
+| B5 | Health check + auto-failover per pool | PARTIAL | Reconnect loop with exponential backoff + IP-ban detection already in `run_loop()`. |
+| B6 | Integrate into pool server (auto-coin-switch) | PENDING | Pool server still routes `Revenue`/`Auto` groups but does not forward shares to proxy. |
+| B7 | Tests & validation | PENDING | Binary compiles; unit tests to be added once translation logic is complete. |
+
+**Commits:**
+- `8157e72c` — `feat(pool): External Pool Proxy scaffolding (revenue-proxy binary)`
 
 ---
 
@@ -53,11 +57,14 @@
 
 ---
 
-## Progress Log
+## Summary
 
-### 2026-05-18
-- Created `REVENUE_DEEP_ANALYSIS.md` — comprehensive audit with gap analysis.
-- Created `REVENUE_IMPLEMENTATION_PLAN.md` — this tracking document.
-- **Phase A completed:** On-chain fee payouts for humanitarian (5%), issobella (5%), pool fee (1%) implemented and tested.
-- **Phase C completed:** Startup replay from `RevenueJournal` implemented and tested.
-- Starting Phase B: External Pool Proxy design & implementation.
+### What was delivered today
+1. **Fee payouts are now on-chain** — every time a ZION block is found, the pool submits a batch UTXO transaction paying the 5% humanitarian tithe, 5% issobella fund, and 1% pool fee to their configured wallets. On failure, fees are restored and retried next round.
+2. **Startup replay is live** — the pool server now reconstructs its accumulated revenue state from `RevenueJournal` JSONL files on restart, preventing loss of accounting across crashes or deploys.
+3. **External Pool Proxy scaffolding** — a new `revenue-proxy` binary (async tokio) connects to external Stratum pools, subscribes for jobs, and queues share submissions. This is the foundation for the 25% multi-algo revenue stream.
+
+### What remains for full Mainnet readiness
+- **Phase B completion:** job/share translation, profit-switch coin selection, and pool-server integration so that `Revenue`/`Auto` session groups actually forward shares to the external proxy.
+- **NCL AI task dispatch** (25% stream) — connect `track_ncl_task` to an AI gateway or compute marketplace.
+- **End-to-end Mainnet rehearsal** — run the full stack (node + pool + proxy) on testnet with real external pool connections.
