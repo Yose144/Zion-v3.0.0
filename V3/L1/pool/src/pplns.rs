@@ -387,6 +387,31 @@ impl PplnsEngine {
             pool_fee_wallet: self.config.fee_config.pool_fee_wallet.clone(),
         }
     }
+
+    /// Drain all accumulated fee balances, returning them and resetting
+    /// internal accumulators to zero.  Used when the pool server executes
+    /// an on-chain fee-payout transaction.
+    pub fn drain_fees(&mut self) -> (u64, u64, u64) {
+        let humanitarian = self.fee_humanitarian_flowers;
+        let issobella = self.fee_issobella_flowers;
+        let pool = self.fee_pool_flowers;
+        self.fee_humanitarian_flowers = 0;
+        self.fee_issobella_flowers = 0;
+        self.fee_pool_flowers = 0;
+        (humanitarian, issobella, pool)
+    }
+
+    /// Restore fee balances (e.g. after a failed on-chain submission).
+    /// Saturating add prevents overflow.
+    pub fn restore_fees(&mut self, humanitarian: u64, issobella: u64, pool: u64) {
+        self.fee_humanitarian_flowers = self
+            .fee_humanitarian_flowers
+            .saturating_add(humanitarian);
+        self.fee_issobella_flowers = self
+            .fee_issobella_flowers
+            .saturating_add(issobella);
+        self.fee_pool_flowers = self.fee_pool_flowers.saturating_add(pool);
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
