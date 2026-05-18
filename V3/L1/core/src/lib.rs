@@ -1172,6 +1172,18 @@ impl CoreRuntime {
         }
     }
 
+    /// Create a CoreRuntime with an env-configured RevenueJournal and replay
+    /// all persisted events so the revenue collector resumes from where it
+    /// left off after a restart.
+    pub fn new_with_journal_replay(consensus: ConsensusConfig) -> Self {
+        let collector = RevenueCollector::with_env_journal();
+        collector.replay();
+        Self {
+            consensus,
+            revenue: collector,
+        }
+    }
+
     pub fn consensus(&self) -> &ConsensusConfig {
         &self.consensus
     }
