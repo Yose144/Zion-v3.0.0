@@ -1,12 +1,10 @@
 // Copyright 2026 ZION TerraNova. All Rights Reserved.
-#include "Game/ZionGameInstance.h"
-#include "Blockchain/ZionBlockchainBridge.h"
+#include "ZionGameInstance.h"
+#include "ZionOasis/Blockchain/ZionBlockchainBridge.h"
 #include "Engine/World.h"
 
 UZionGameInstance::UZionGameInstance()
 {
-	OasisApiHost = TEXT("http://localhost:8094");
-	ChainRpcHost = TEXT("http://localhost:8444");
 }
 
 void UZionGameInstance::Init()

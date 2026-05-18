@@ -3,7 +3,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataTable.h"
-#include "Consciousness/ConsciousnessTypes.h"
+#include "ZionOasis/Consciousness/ConsciousnessTypes.h"
 #include "AvatarTypes.generated.h"
 
 /**

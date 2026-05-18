@@ -1,6 +1,6 @@
 // Copyright 2026 ZION TerraNova. All Rights Reserved.
-#include "GoldenEgg/GoldenEggManager.h"
-#include "Blockchain/ZionBlockchainBridge.h"
+#include "GoldenEggManager.h"
+#include "ZionOasis/Blockchain/ZionBlockchainBridge.h"
 #include "Net/UnrealNetwork.h"
 #include "Engine/World.h"
 #include "Kismet/GameplayStatics.h"
