@@ -201,7 +201,11 @@ impl RaidTeam {
         if self.members.is_empty() {
             return 0.0;
         }
-        let sum: u32 = self.members.iter().map(|m| m.consciousness_level as u32).sum();
+        let sum: u32 = self
+            .members
+            .iter()
+            .map(|m| m.consciousness_level as u32)
+            .sum();
         sum as f64 / self.members.len() as f64
     }
 
@@ -339,7 +343,8 @@ mod tests {
     #[test]
     fn test_add_member() {
         let mut raid = RaidTeam::new("r1".into(), "Test".into(), "leader1".into());
-        raid.add_member(test_member("m1", 5, RaidRole::Tank)).unwrap();
+        raid.add_member(test_member("m1", 5, RaidRole::Tank))
+            .unwrap();
         assert_eq!(raid.members.len(), 1);
     }
 

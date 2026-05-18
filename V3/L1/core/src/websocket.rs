@@ -63,13 +63,9 @@ pub enum WsMessage {
 #[serde(rename_all = "snake_case")]
 pub enum ClientMessage {
     /// Subscribe to an event type
-    Subscribe {
-        subscription: SubscriptionType,
-    },
+    Subscribe { subscription: SubscriptionType },
     /// Unsubscribe from an event type
-    Unsubscribe {
-        subscription: SubscriptionType,
-    },
+    Unsubscribe { subscription: SubscriptionType },
     /// Ping for keepalive
     Ping,
     /// Pong response
@@ -107,7 +103,9 @@ impl ClientSession {
     }
 
     async fn send(&self, msg: WsMessage) -> Result<()> {
-        self.sender.send(msg).context("failed to send message to client")?;
+        self.sender
+            .send(msg)
+            .context("failed to send message to client")?;
         Ok(())
     }
 }
@@ -175,7 +173,9 @@ impl WebSocketServer {
 
         // Register client
         {
-            let mut clients_guard = clients.lock().map_err(|_| anyhow::anyhow!("clients lock poisoned"))?;
+            let mut clients_guard = clients
+                .lock()
+                .map_err(|_| anyhow::anyhow!("clients lock poisoned"))?;
             clients_guard.insert(addr, ClientSession::new(addr, tx));
         }
 
@@ -204,7 +204,8 @@ impl WebSocketServer {
             match msg {
                 Ok(Message::Text(text)) => {
                     if let Ok(client_msg) = serde_json::from_str::<ClientMessage>(&text) {
-                        Self::handle_client_message(client_msg, addr, &clients, &runtime, &text_tx).await?;
+                        Self::handle_client_message(client_msg, addr, &clients, &runtime, &text_tx)
+                            .await?;
                     }
                 }
                 Ok(Message::Ping(data)) => {
@@ -225,7 +226,9 @@ impl WebSocketServer {
 
         // Cleanup
         {
-            let mut clients_guard = clients.lock().map_err(|_| anyhow::anyhow!("clients lock poisoned"))?;
+            let mut clients_guard = clients
+                .lock()
+                .map_err(|_| anyhow::anyhow!("clients lock poisoned"))?;
             clients_guard.remove(&addr);
         }
 
@@ -244,7 +247,9 @@ impl WebSocketServer {
     ) -> Result<()> {
         match msg {
             ClientMessage::Subscribe { subscription } => {
-                let mut clients_guard = clients.lock().map_err(|_| anyhow::anyhow!("clients lock poisoned"))?;
+                let mut clients_guard = clients
+                    .lock()
+                    .map_err(|_| anyhow::anyhow!("clients lock poisoned"))?;
                 if let Some(session) = clients_guard.get_mut(&addr) {
                     session.add_subscription(subscription.clone());
 
@@ -274,13 +279,13 @@ impl WebSocketServer {
                 }
             }
             ClientMessage::Unsubscribe { subscription } => {
-                let mut clients_guard = clients.lock().map_err(|_| anyhow::anyhow!("clients lock poisoned"))?;
+                let mut clients_guard = clients
+                    .lock()
+                    .map_err(|_| anyhow::anyhow!("clients lock poisoned"))?;
                 if let Some(session) = clients_guard.get_mut(&addr) {
                     session.remove_subscription(&subscription);
 
-                    let confirmation = WsMessage::Unsubscribed {
-                        subscription,
-                    };
+                    let confirmation = WsMessage::Unsubscribed { subscription };
                     let json = serde_json::to_string(&confirmation).unwrap_or_default();
                     let _ = text_tx.send(json);
                 }

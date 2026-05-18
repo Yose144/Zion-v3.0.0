@@ -39,8 +39,8 @@ impl JobStore {
 
     /// Open (or create) a file-backed store at `path`.
     pub fn open(path: &str) -> NclResult<Self> {
-        let conn = Connection::open(path)
-            .map_err(|e| NclError::Database(format!("sqlite open: {e}")))?;
+        let conn =
+            Connection::open(path).map_err(|e| NclError::Database(format!("sqlite open: {e}")))?;
         let store = Self {
             conn: Arc::new(Mutex::new(conn)),
         };
@@ -134,11 +134,8 @@ impl JobStore {
     /// Delete a job record.
     pub fn delete_job(&self, id: Uuid) -> NclResult<()> {
         let conn = self.conn.lock().unwrap();
-        conn.execute(
-            "DELETE FROM jobs WHERE id = ?1",
-            params![id.to_string()],
-        )
-        .map_err(|e| NclError::Database(format!("delete_job: {e}")))?;
+        conn.execute("DELETE FROM jobs WHERE id = ?1", params![id.to_string()])
+            .map_err(|e| NclError::Database(format!("delete_job: {e}")))?;
         Ok(())
     }
 
@@ -241,11 +238,11 @@ impl JobStore {
 
 fn status_to_str(s: NclJobStatus) -> &'static str {
     match s {
-        NclJobStatus::Queued    => "queued",
-        NclJobStatus::Assigned  => "assigned",
-        NclJobStatus::Running   => "running",
+        NclJobStatus::Queued => "queued",
+        NclJobStatus::Assigned => "assigned",
+        NclJobStatus::Running => "running",
         NclJobStatus::Completed => "completed",
-        NclJobStatus::Failed    => "failed",
+        NclJobStatus::Failed => "failed",
         NclJobStatus::Cancelled => "cancelled",
     }
 }
@@ -292,7 +289,7 @@ mod tests {
 
         let loaded = store.load_job(id).unwrap();
         assert_eq!(loaded.status, NclJobStatus::Queued); // full job blob not updated
-        // status is updated in the index column; use list_jobs to verify filter
+                                                         // status is updated in the index column; use list_jobs to verify filter
         let completed = store.list_jobs(Some(NclJobStatus::Completed)).unwrap();
         assert_eq!(completed.len(), 1);
     }

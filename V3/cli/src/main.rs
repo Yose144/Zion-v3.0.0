@@ -218,7 +218,7 @@ async fn run_menu_session(default_config: Option<String>) -> Result<()> {
 
 async fn dispatch(cli: Cli) -> Result<()> {
     let cfg = config::load(cli.config.as_deref())?;
-    
+
     // Auto-check for updates in background (silent)
     if cfg.cli.auto_update_check {
         let update_cfg = cfg.clone();

@@ -65,7 +65,11 @@ impl CombatEngine {
     }
 
     /// Process a combat action and return the result
-    pub fn resolve(action: &CombatAction, attacker: &mut Combatant, defender: &mut Combatant) -> CombatResult {
+    pub fn resolve(
+        action: &CombatAction,
+        attacker: &mut Combatant,
+        defender: &mut Combatant,
+    ) -> CombatResult {
         let mut result = CombatResult {
             damage_dealt: 0,
             healing_done: 0,
@@ -153,7 +157,7 @@ mod tests {
         let action = CombatAction {
             action_type: ActionType::Strike,
             attacker_level: ConsciousnessLevel::Spiritual, // 5
-            defender_level: ConsciousnessLevel::Physical,   // 1
+            defender_level: ConsciousnessLevel::Physical,  // 1
             base_damage: 100,
         };
         let dmg = CombatEngine::calculate_damage(&action);

@@ -1234,7 +1234,8 @@ impl CoreRuntime {
     }
 
     pub fn record_revenue(&self, source: RevenueSource, value_usd: f64, qualifies: bool) {
-        self.revenue.track_event(RevenueEvent::new(source, value_usd, qualifies));
+        self.revenue
+            .track_event(RevenueEvent::new(source, value_usd, qualifies));
     }
 
     /// Record revenue from an external pool (e.g. 2miners, NiceHash).
@@ -1262,7 +1263,8 @@ impl CoreRuntime {
         pool_fee_pct: u64,
         tx_hash: Option<String>,
     ) {
-        self.revenue.track_zion_block(height, subsidy, pool_fee_pct, tx_hash);
+        self.revenue
+            .track_zion_block(height, subsidy, pool_fee_pct, tx_hash);
     }
 
     pub fn revenue_snapshot(&self) -> RevenueSnapshot {
@@ -1479,7 +1481,10 @@ impl NodeRuntime {
     }
 
     /// Set the WebSocket notifier for real-time event broadcasting.
-    pub fn set_websocket_notifier(&mut self, ws_notifier: std::sync::Arc<websocket::WebSocketServer>) {
+    pub fn set_websocket_notifier(
+        &mut self,
+        ws_notifier: std::sync::Arc<websocket::WebSocketServer>,
+    ) {
         self.ws_notifier = Some(ws_notifier);
     }
 
@@ -1597,7 +1602,10 @@ impl NodeRuntime {
         let count = peers.len();
         self.register_peers(peers);
         self.prune_known_peers();
-        println!("peers_loaded count={count} total={}", self.known_peers.len());
+        println!(
+            "peers_loaded count={count} total={}",
+            self.known_peers.len()
+        );
     }
 
     /// Number of known peers (for diagnostics).
@@ -1818,12 +1826,12 @@ impl NodeRuntime {
         self.persist_chain_state()?;
         if self.chain_state.height > height_before {
             let accepted_block = self.chain_state.accepted_blocks.last().cloned();
-            
+
             // Notify WebSocket subscribers about new block
             if let (Some(ws_notifier), Some(block)) = (&self.ws_notifier, &accepted_block) {
                 ws_notifier.notify_new_block(block);
             }
-            
+
             Ok(accepted_block)
         } else {
             Ok(None)
@@ -1836,7 +1844,7 @@ impl NodeRuntime {
             .import_peer_blocks(&self.node_id, &self.core, blocks)?;
         if imported > 0 {
             self.persist_chain_state()?;
-            
+
             // Notify WebSocket subscribers about newly accepted blocks
             if let Some(ws_notifier) = &self.ws_notifier {
                 for block in self.chain_state.accepted_blocks.iter().rev().take(imported) {
@@ -1910,7 +1918,7 @@ impl NodeRuntime {
                         {
                             eprintln!("node_state_persist_error={error}");
                         }
-                        
+
                         // Notify WebSocket subscribers about pending transaction
                         if let Some(ws_notifier) = &self.ws_notifier {
                             ws_notifier.notify_pending_transaction(&transaction);
@@ -2137,7 +2145,7 @@ impl NodeRuntime {
                         {
                             eprintln!("node_state_persist_error={error}");
                         }
-                        
+
                         // Notify WebSocket subscribers about pending transaction
                         if let Some(ws_notifier) = &self.ws_notifier {
                             ws_notifier.notify_pending_transaction(&transaction);
@@ -2203,10 +2211,7 @@ impl TemplateState {
             total_fees_zion: self.total_fees_zion,
             body_hash_hex: body_hash_hex(&account_transactions),
             estimated_miner_reward_zion,
-            utxo_transaction_ids: utxo_transactions
-                .iter()
-                .map(|tx| hex(&tx.id))
-                .collect(),
+            utxo_transaction_ids: utxo_transactions.iter().map(|tx| hex(&tx.id)).collect(),
             utxo_transaction_count: utxo_transactions.len(),
             total_utxo_fees: utxo_transactions.iter().map(|tx| tx.fee).sum(),
         }
@@ -2358,8 +2363,19 @@ impl ChainState {
         let genesis_hash = parse_fixed_hex::<32>(&genesis.hash_hex, "genesis hash")
             .expect("genesis hash must be valid hex");
         let mempool = Vec::new();
-        let template =
-            Self::build_template(node_id, core, 0, genesis_hash, 1, &mempool, std::slice::from_ref(&genesis), "", "", "", "");
+        let template = Self::build_template(
+            node_id,
+            core,
+            0,
+            genesis_hash,
+            1,
+            &mempool,
+            std::slice::from_ref(&genesis),
+            "",
+            "",
+            "",
+            "",
+        );
         let mut accepted_by_height = BTreeMap::new();
         accepted_by_height.insert(0, genesis.clone());
         Self {
@@ -2847,15 +2863,15 @@ impl ChainState {
         // ── PoW verification (when header is available) ────────────────
         let block_hash = parse_fixed_hex::<32>(&block.hash_hex, "peer block hash")?;
         if !block.header_hex.is_empty() {
-            let header_bytes = parse_fixed_hex::<HEADER_SIZE>(
-                &block.header_hex,
-                "peer block header",
-            )?;
+            let header_bytes =
+                parse_fixed_hex::<HEADER_SIZE>(&block.header_hex, "peer block header")?;
             let header = MiningHeader::from_bytes(header_bytes);
 
             // Header fields must be consistent with block metadata
             if header.timestamp != block.timestamp {
-                return Err("peer block header timestamp does not match block timestamp".to_string());
+                return Err(
+                    "peer block header timestamp does not match block timestamp".to_string()
+                );
             }
             let expected_target = difficulty::difficulty_to_target(block.difficulty);
             let expected_bits = difficulty::target_to_compact(&expected_target);
@@ -2924,7 +2940,9 @@ impl ChainState {
             .map(|transaction| transaction.tx_id.clone())
             .collect::<Vec<_>>();
         if expected_ids != block.transaction_ids {
-            return Err("peer block transaction ids do not match serialized transactions".to_string());
+            return Err(
+                "peer block transaction ids do not match serialized transactions".to_string(),
+            );
         }
         let mut seen_tx_ids = HashSet::new();
         let mut seen_sender_nonces = HashSet::new();
@@ -3084,7 +3102,9 @@ impl ChainState {
             return Err("peer block contains more than four coinbase transactions".to_string());
         }
         if !block.miner_address.is_empty() && coinbase_count == 0 {
-            return Err("peer block miner_address is set but coinbase transaction is missing".to_string());
+            return Err(
+                "peer block miner_address is set but coinbase transaction is missing".to_string(),
+            );
         }
         if has_all_fee_addresses && coinbase_count != 4 {
             return Err(
@@ -3132,7 +3152,10 @@ impl ChainState {
         let expected_difficulty = if self.accepted_blocks.is_empty() {
             difficulty::GENESIS_DIFFICULTY
         } else {
-            let start = self.accepted_blocks.len().saturating_sub(difficulty::LWMA_WINDOW + 1);
+            let start = self
+                .accepted_blocks
+                .len()
+                .saturating_sub(difficulty::LWMA_WINDOW + 1);
             let window: Vec<difficulty::BlockInfo> = self.accepted_blocks[start..]
                 .iter()
                 .map(|b| difficulty::BlockInfo {
@@ -3215,7 +3238,12 @@ impl ChainState {
         let coinbase_outpoints: HashSet<(String, u32)> = self
             .accepted_blocks
             .iter()
-            .flat_map(|b| b.utxo_transactions.iter().filter(|tx| tx.is_coinbase()).map(move |tx| (b.height, tx)))
+            .flat_map(|b| {
+                b.utxo_transactions
+                    .iter()
+                    .filter(|tx| tx.is_coinbase())
+                    .map(move |tx| (b.height, tx))
+            })
             .flat_map(|(height, tx)| {
                 let id_hex = hex(&tx.id);
                 tx.outputs
@@ -3235,10 +3263,15 @@ impl ChainState {
                 is_coinbase: coinbase_outpoints.contains(&key),
             })
         };
-        let is_bridge_unlock = |tx: &tx::Transaction| bridge_unlock_replay_key_from_transaction(tx).is_some();
+        let is_bridge_unlock =
+            |tx: &tx::Transaction| bridge_unlock_replay_key_from_transaction(tx).is_some();
 
-        validation::validate_inputs_exist(&block.utxo_transactions, &utxo_lookup, &is_bridge_unlock)
-            .map_err(|err| format!("peer block UTXO input existence failed: {err}"))?;
+        validation::validate_inputs_exist(
+            &block.utxo_transactions,
+            &utxo_lookup,
+            &is_bridge_unlock,
+        )
+        .map_err(|err| format!("peer block UTXO input existence failed: {err}"))?;
         validation::validate_value_conservation(
             &block.utxo_transactions,
             &utxo_lookup,
@@ -3628,9 +3661,22 @@ impl ChainState {
                 };
 
                 // Insert in reverse order so positions are: 0=miner, 1=humanitarian, 2=issobella, 3=pool_fee
-                selected_transactions.insert(0, mk_coinbase("coinbase_pool_fee", pool_fee_address, pool_fee_amt));
-                selected_transactions.insert(0, mk_coinbase("coinbase_issobella", issobella_address, issobella_amt));
-                selected_transactions.insert(0, mk_coinbase("coinbase_humanitarian", humanitarian_address, humanitarian_amt));
+                selected_transactions.insert(
+                    0,
+                    mk_coinbase("coinbase_pool_fee", pool_fee_address, pool_fee_amt),
+                );
+                selected_transactions.insert(
+                    0,
+                    mk_coinbase("coinbase_issobella", issobella_address, issobella_amt),
+                );
+                selected_transactions.insert(
+                    0,
+                    mk_coinbase(
+                        "coinbase_humanitarian",
+                        humanitarian_address,
+                        humanitarian_amt,
+                    ),
+                );
                 selected_transactions.insert(0, mk_coinbase("coinbase", miner_address, miner_amt));
             } else {
                 // Legacy single coinbase: 100% to miner
@@ -4989,12 +5035,8 @@ mod tests {
         let config = test_config_without_seed_allowlist();
 
         // Create runtime with chain store, add some peers
-        let mut runtime = NodeRuntime::with_chain_store(
-            "node-peers",
-            config.clone(),
-            &state_path,
-        )
-        .expect("create runtime");
+        let mut runtime = NodeRuntime::with_chain_store("node-peers", config.clone(), &state_path)
+            .expect("create runtime");
 
         // Register new peers beyond the seeds
         runtime.register_peer(PeerEndpoint::new("10.0.0.1", 8333));
@@ -5009,20 +5051,22 @@ mod tests {
         assert!(peers_path.exists(), "peers.json should exist");
 
         // Create a new runtime from the same state path — peers should be loaded
-        let restored = NodeRuntime::with_chain_store(
-            "node-peers-2",
-            config,
-            &state_path,
-        )
-        .expect("restore runtime");
+        let restored = NodeRuntime::with_chain_store("node-peers-2", config, &state_path)
+            .expect("restore runtime");
 
         assert_eq!(restored.known_peers().len(), saved_count);
         assert!(
-            restored.known_peers().iter().any(|p| p.address() == "10.0.0.1:8333"),
+            restored
+                .known_peers()
+                .iter()
+                .any(|p| p.address() == "10.0.0.1:8333"),
             "should contain persisted peer 10.0.0.1"
         );
         assert!(
-            restored.known_peers().iter().any(|p| p.address() == "10.0.0.3:8333"),
+            restored
+                .known_peers()
+                .iter()
+                .any(|p| p.address() == "10.0.0.3:8333"),
             "should contain persisted peer 10.0.0.3"
         );
     }
@@ -5570,7 +5614,10 @@ mod tests {
             hash_hex: hex(&[0x11; 32]),
             header_hex: String::new(),
             previous_hash_hex: hex(&source.chain_state.tip_hash),
-            transaction_ids: transactions.iter().map(|transaction| transaction.tx_id.clone()).collect(),
+            transaction_ids: transactions
+                .iter()
+                .map(|transaction| transaction.tx_id.clone())
+                .collect(),
             transactions: transactions.clone(),
             total_fees_zion: template.total_fees_zion,
             body_hash_hex: body_hash_hex(&transactions),
@@ -5603,11 +5650,20 @@ mod tests {
         assert_eq!(block.transactions[0].to, "alice-wallet");
         assert_eq!(block.transactions[0].amount_zion, u128::from(miner_amount));
         assert_eq!(block.transactions[1].to, "human-wallet");
-        assert_eq!(block.transactions[1].amount_zion, u128::from(humanitarian_amount));
+        assert_eq!(
+            block.transactions[1].amount_zion,
+            u128::from(humanitarian_amount)
+        );
         assert_eq!(block.transactions[2].to, "issobella-wallet");
-        assert_eq!(block.transactions[2].amount_zion, u128::from(issobella_amount));
+        assert_eq!(
+            block.transactions[2].amount_zion,
+            u128::from(issobella_amount)
+        );
         assert_eq!(block.transactions[3].to, "pool-wallet");
-        assert_eq!(block.transactions[3].amount_zion, u128::from(pool_fee_amount));
+        assert_eq!(
+            block.transactions[3].amount_zion,
+            u128::from(pool_fee_amount)
+        );
 
         assert_eq!(
             block

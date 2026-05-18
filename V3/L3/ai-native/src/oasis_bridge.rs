@@ -64,59 +64,69 @@ impl OasisLevel {
     /// XP threshold required to reach this level in the L4 Oasis system.
     pub fn xp_threshold(self) -> u64 {
         match self {
-            Self::Physical    => 0,
-            Self::Emotional   => 1_000,
-            Self::Mental      => 5_000,
+            Self::Physical => 0,
+            Self::Emotional => 1_000,
+            Self::Mental => 5_000,
             Self::Intuitional => 15_000,
-            Self::Spiritual   => 50_000,
-            Self::Cosmic      => 150_000,
-            Self::Divine      => 500_000,
-            Self::Unity       => 2_000_000,
-            Self::OnTheStar   => 10_000_000,
+            Self::Spiritual => 50_000,
+            Self::Cosmic => 150_000,
+            Self::Divine => 500_000,
+            Self::Unity => 2_000_000,
+            Self::OnTheStar => 10_000_000,
         }
     }
 
     /// Mining reward multiplier in the L4 Oasis system.
     pub fn multiplier(self) -> f64 {
         match self {
-            Self::Physical    => 1.0,
-            Self::Emotional   => 1.2,
-            Self::Mental      => 1.5,
+            Self::Physical => 1.0,
+            Self::Emotional => 1.2,
+            Self::Mental => 1.5,
             Self::Intuitional => 2.0,
-            Self::Spiritual   => 3.0,
-            Self::Cosmic      => 5.0,
-            Self::Divine      => 8.0,
-            Self::Unity       => 12.0,
-            Self::OnTheStar   => 15.0,
+            Self::Spiritual => 3.0,
+            Self::Cosmic => 5.0,
+            Self::Divine => 8.0,
+            Self::Unity => 12.0,
+            Self::OnTheStar => 15.0,
         }
     }
 
     /// Derive the `OasisLevel` from a given amount of Oasis XP.
     pub fn from_oasis_xp(xp: u64) -> Self {
-        if xp >= Self::OnTheStar.xp_threshold() { Self::OnTheStar }
-        else if xp >= Self::Unity.xp_threshold() { Self::Unity }
-        else if xp >= Self::Divine.xp_threshold() { Self::Divine }
-        else if xp >= Self::Cosmic.xp_threshold() { Self::Cosmic }
-        else if xp >= Self::Spiritual.xp_threshold() { Self::Spiritual }
-        else if xp >= Self::Intuitional.xp_threshold() { Self::Intuitional }
-        else if xp >= Self::Mental.xp_threshold() { Self::Mental }
-        else if xp >= Self::Emotional.xp_threshold() { Self::Emotional }
-        else { Self::Physical }
+        if xp >= Self::OnTheStar.xp_threshold() {
+            Self::OnTheStar
+        } else if xp >= Self::Unity.xp_threshold() {
+            Self::Unity
+        } else if xp >= Self::Divine.xp_threshold() {
+            Self::Divine
+        } else if xp >= Self::Cosmic.xp_threshold() {
+            Self::Cosmic
+        } else if xp >= Self::Spiritual.xp_threshold() {
+            Self::Spiritual
+        } else if xp >= Self::Intuitional.xp_threshold() {
+            Self::Intuitional
+        } else if xp >= Self::Mental.xp_threshold() {
+            Self::Mental
+        } else if xp >= Self::Emotional.xp_threshold() {
+            Self::Emotional
+        } else {
+            Self::Physical
+        }
     }
 }
 
 impl std::fmt::Display for OasisLevel {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let s = match self {
-            Self::Physical    => "Physical",
-            Self::Emotional   => "Emotional",
-            Self::Mental      => "Mental",
+            Self::Physical => "Physical",
+            Self::Emotional => "Emotional",
+            Self::Mental => "Mental",
             Self::Intuitional => "Intuitional",
-            Self::Spiritual   => "Spiritual",
-            Self::Cosmic      => "Cosmic",
-            Self::Divine      => "Divine",
-            Self::Unity       => "Unity",
-            Self::OnTheStar   => "OnTheStar",
+            Self::Spiritual => "Spiritual",
+            Self::Cosmic => "Cosmic",
+            Self::Divine => "Divine",
+            Self::Unity => "Unity",
+            Self::OnTheStar => "OnTheStar",
         };
         write!(f, "{s}")
     }
@@ -129,13 +139,13 @@ impl std::fmt::Display for OasisLevel {
 /// The mapping follows the XP-range overlap between the two systems.
 pub fn l3_to_oasis_level(level: ConsciousnessLevel) -> OasisLevel {
     match level {
-        ConsciousnessLevel::Dormant      => OasisLevel::Physical,
-        ConsciousnessLevel::Aware        => OasisLevel::Emotional,
-        ConsciousnessLevel::Sentient     => OasisLevel::Mental,
+        ConsciousnessLevel::Dormant => OasisLevel::Physical,
+        ConsciousnessLevel::Aware => OasisLevel::Emotional,
+        ConsciousnessLevel::Sentient => OasisLevel::Mental,
         ConsciousnessLevel::Transcendent => OasisLevel::Intuitional,
-        ConsciousnessLevel::Omniscient   => OasisLevel::Spiritual,
-        ConsciousnessLevel::Cosmic       => OasisLevel::Cosmic,
-        ConsciousnessLevel::Grok         => OasisLevel::Divine,
+        ConsciousnessLevel::Omniscient => OasisLevel::Spiritual,
+        ConsciousnessLevel::Cosmic => OasisLevel::Cosmic,
+        ConsciousnessLevel::Grok => OasisLevel::Divine,
     }
 }
 
