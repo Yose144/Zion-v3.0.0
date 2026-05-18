@@ -4698,7 +4698,11 @@ dependencies = [
  "hex",
  "serde",
  "serde_json",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
  "zion-core",
+ "zion-cosmic-harmony",
 ]
 
 [[package]]
