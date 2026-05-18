@@ -600,10 +600,11 @@ impl LlmBackend for RemoteHttpBackend {
             .json()
             .map_err(|e| LlmError::InternalError(format!("JSON parse error: {}", e)))?;
 
-        let choice =
-            chat_resp.choices.into_iter().next().ok_or_else(|| {
-                LlmError::InternalError("Empty response (choices[])".to_string())
-            })?;
+        let choice = chat_resp
+            .choices
+            .into_iter()
+            .next()
+            .ok_or_else(|| LlmError::InternalError("Empty response (choices[])".to_string()))?;
 
         let truncated = choice.finish_reason.as_deref() == Some("length");
         let content = choice.message.content;
