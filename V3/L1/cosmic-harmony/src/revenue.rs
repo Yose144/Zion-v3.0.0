@@ -28,6 +28,12 @@ pub const CIRCUIT_BREAKER_THRESHOLD: u32 = 10;
 /// Seconds before a tripped circuit breaker can be retried.
 pub const CIRCUIT_BREAKER_RESET_SECS: u64 = 60;
 
+/// Maximum number of recently-seen block heights retained for idempotence.
+/// The set is pruned to keep heights within the most-recent window, which is
+/// far larger than any plausible re-org or journal replay distance but keeps
+/// long-running pools from growing memory unbounded.
+pub const SEEN_HEIGHTS_WINDOW: u64 = 100_000;
+
 // ── RevenueSource ──────────────────────────────────────────────────
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum RevenueSource {
@@ -143,6 +149,11 @@ pub struct RevenueHealth {
     pub consecutive_failures: u32,
     pub total_events: u64,
     pub circuit_open: bool,
+    /// Wall-clock time at which the circuit breaker most recently tripped.
+    /// Used by `maybe_auto_reset` to enforce `CIRCUIT_BREAKER_RESET_SECS`
+    /// cooldown independently of `last_success_ts` (which may be missing).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub circuit_opened_ts: Option<String>,
 }
 
 impl RevenueHealth {
@@ -153,6 +164,7 @@ impl RevenueHealth {
             consecutive_failures: 0,
             total_events: 0,
             circuit_open: false,
+            circuit_opened_ts: None,
         }
     }
 
@@ -161,6 +173,7 @@ impl RevenueHealth {
         self.last_success_ts = Some(Utc::now().to_rfc3339());
         self.total_events += 1;
         self.circuit_open = false;
+        self.circuit_opened_ts = None;
     }
 
     /// Records a failure. Returns `true` if the circuit breaker just opened.
@@ -168,6 +181,7 @@ impl RevenueHealth {
         self.consecutive_failures += 1;
         if self.consecutive_failures >= CIRCUIT_BREAKER_THRESHOLD && !self.circuit_open {
             self.circuit_open = true;
+            self.circuit_opened_ts = Some(Utc::now().to_rfc3339());
             return true;
         }
         false
@@ -180,24 +194,27 @@ impl RevenueHealth {
         if !self.circuit_open {
             return;
         }
-        // If we have a last_success_ts, the circuit was opened after that.
-        // Parse it and check if enough time has passed for a retry.
-        if let Some(ref ts) = self.last_success_ts {
-            if let Ok(last) = ts.parse::<chrono::DateTime<chrono::Utc>>() {
-                let elapsed = Utc::now()
-                    .signed_duration_since(last)
-                    .num_seconds();
+        // Prefer the explicit trip timestamp; fall back to last_success_ts for
+        // backwards compatibility with serialized state that predates
+        // `circuit_opened_ts`.
+        let reference = self
+            .circuit_opened_ts
+            .as_ref()
+            .or(self.last_success_ts.as_ref());
+        if let Some(ts) = reference {
+            if let Ok(opened) = ts.parse::<chrono::DateTime<chrono::Utc>>() {
+                let elapsed = Utc::now().signed_duration_since(opened).num_seconds();
                 if elapsed >= CIRCUIT_BREAKER_RESET_SECS as i64 {
                     self.reset();
                 }
+            } else {
+                // Unparseable timestamp — reset rather than wedge the circuit
+                // open forever.
+                self.reset();
             }
         } else {
-            // No success timestamp at all — circuit opened without any prior
-            // success.  Use a simple heuristic: allow a retry after the reset
-            // period from the moment the circuit was *tripped* (i.e. now minus
-            // the threshold × typical interval).  Since we don't track the
-            // trip timestamp, just reset unconditionally after the cooldown
-            // has likely passed.
+            // No timestamp at all (e.g. state created before this field
+            // existed).  Reset so the source gets another chance.
             self.reset();
         }
     }
@@ -205,6 +222,7 @@ impl RevenueHealth {
     pub fn reset(&mut self) {
         self.consecutive_failures = 0;
         self.circuit_open = false;
+        self.circuit_opened_ts = None;
     }
 }
 
@@ -329,6 +347,12 @@ impl RevenueCollector {
             if !seen.insert(height) {
                 // Already recorded — deduplicate.
                 return;
+            }
+            // Prune anything older than the retention window so the set
+            // cannot grow without bound on a long-running pool.
+            if height > SEEN_HEIGHTS_WINDOW {
+                let cutoff = height - SEEN_HEIGHTS_WINDOW;
+                seen.retain(|h| *h >= cutoff);
             }
         }
 
@@ -460,6 +484,21 @@ impl RevenueCollector {
         issobella: u64,
         miner: u64,
     ) {
+        self.replay_zion_block_with_ts(height, subsidy, pool_fee, humanitarian, issobella, miner, None);
+    }
+
+    /// Replay a Zion block while preserving the original journal timestamp.
+    #[allow(clippy::too_many_arguments)]
+    pub fn replay_zion_block_with_ts(
+        &self,
+        height: u64,
+        subsidy: u64,
+        pool_fee: u64,
+        humanitarian: u64,
+        issobella: u64,
+        miner: u64,
+        journal_ts: Option<String>,
+    ) {
         let mut seen = self
             .seen_heights
             .write()
@@ -476,9 +515,14 @@ impl RevenueCollector {
         stats.issobella_zion += issobella;
         stats.miner_payout_zion += miner;
         stats.blocks_found += 1;
-        stats.last_block_height = height;
-        // Use the replayed entry's timestamp if available, otherwise current time.
-        stats.last_block_ts = Some(Utc::now().to_rfc3339());
+        // Track the highest height we have ever seen, not the last-replayed one,
+        // so out-of-order journal entries cannot rewind the cursor.
+        if height >= stats.last_block_height {
+            stats.last_block_height = height;
+            // Prefer the journal-supplied timestamp; fall back to current time
+            // only if the entry was malformed or missing.
+            stats.last_block_ts = journal_ts.or_else(|| Some(Utc::now().to_rfc3339()));
+        }
         *stats
             .by_source
             .entry("zion_canonical".to_string())
@@ -530,7 +574,14 @@ impl RevenueCollector {
             .entry(source)
             .or_insert_with(|| RevenueHealth::new(source));
         h.maybe_auto_reset();
-        let _ = h.record_failure();
+        if h.record_failure() {
+            // Circuit breaker just tripped — surface this so SREs can react.
+            eprintln!(
+                "revenue_circuit_open source={} consecutive_failures={}",
+                source.as_str(),
+                h.consecutive_failures
+            );
+        }
     }
 
     pub fn health_for(&self, source: RevenueSource) -> RevenueHealth {
@@ -576,9 +627,12 @@ impl RevenueCollector {
             .expect("revenue pending-fees lock poisoned");
         let amount = *pending;
         *pending = 0.0;
-        if let Some(ref journal) = self.journal {
-            if let Err(e) = journal.append(JournalPayload::Payout { amount_usd: amount }) {
-                eprintln!("revenue_journal_append_error: {}", e);
+        // Avoid journaling no-op payouts that would only add noise/IO.
+        if amount > 0.0 {
+            if let Some(ref journal) = self.journal {
+                if let Err(e) = journal.append(JournalPayload::Payout { amount_usd: amount }) {
+                    eprintln!("revenue_journal_append_error: {}", e);
+                }
             }
         }
         amount
@@ -591,9 +645,11 @@ impl RevenueCollector {
             .expect("revenue pending-fees-zion lock poisoned");
         let amount = *pending;
         *pending = 0;
-        if let Some(ref journal) = self.journal {
-            if let Err(e) = journal.append(JournalPayload::PayoutZion { amount }) {
-                eprintln!("revenue_journal_append_error: {}", e);
+        if amount > 0 {
+            if let Some(ref journal) = self.journal {
+                if let Err(e) = journal.append(JournalPayload::PayoutZion { amount }) {
+                    eprintln!("revenue_journal_append_error: {}", e);
+                }
             }
         }
         amount
@@ -606,13 +662,14 @@ impl RevenueCollector {
         match journal.replay_zion_blocks() {
             Ok(blocks) => {
                 for block in &blocks {
-                    self.replay_zion_block(
+                    self.replay_zion_block_with_ts(
                         block.height,
                         block.subsidy,
                         block.pool_fee,
                         block.humanitarian,
                         block.issobella,
                         block.miner,
+                        Some(block.ts.clone()),
                     );
                 }
                 eprintln!("revenue_replay_zion_blocks loaded={}", blocks.len());
@@ -785,12 +842,34 @@ mod tests {
             health.record_failure();
         }
         assert!(health.circuit_open);
+        assert!(health.circuit_opened_ts.is_some());
 
-        // Auto-reset should clear the circuit (no last_success_ts →
-        // unconditional reset in maybe_auto_reset).
+        // Within the cooldown window the breaker must stay open.
+        health.maybe_auto_reset();
+        assert!(health.circuit_open, "must not reset before cooldown elapses");
+
+        // Back-date the trip timestamp past the cooldown and verify reset.
+        let past = Utc::now()
+            - chrono::Duration::seconds(CIRCUIT_BREAKER_RESET_SECS as i64 + 5);
+        health.circuit_opened_ts = Some(past.to_rfc3339());
         health.maybe_auto_reset();
         assert!(!health.circuit_open);
         assert_eq!(health.consecutive_failures, 0);
+        assert!(health.circuit_opened_ts.is_none());
+    }
+
+    #[test]
+    fn circuit_breaker_stays_open_within_cooldown() {
+        let mut health = RevenueHealth::new(RevenueSource::EthashExternal);
+        for _ in 0..CIRCUIT_BREAKER_THRESHOLD {
+            health.record_failure();
+        }
+        assert!(health.circuit_open);
+        // Multiple auto-reset calls inside the cooldown must NOT clear it.
+        for _ in 0..5 {
+            health.maybe_auto_reset();
+            assert!(health.circuit_open);
+        }
     }
 
     #[test]
