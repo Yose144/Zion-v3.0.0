@@ -252,7 +252,7 @@ impl ChainAdapter for BitcoinAdapter {
 
         // Attempt to load the relay key from env
         let network_str = std::env::var("BITCOIN_NETWORK").unwrap_or_else(|_| "mainnet".into());
-        let network = match network_str.as_str() {
+        let _network = match network_str.as_str() {
             "testnet" => Network::Testnet,
             "signet" => Network::Signet,
             "regtest" => Network::Regtest,
