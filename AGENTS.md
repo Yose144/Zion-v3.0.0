@@ -64,6 +64,8 @@ Run from repository root unless noted.
   - `ZION_POOL_BIND=0.0.0.0:8444 ZION_NODE_RPC_ADDR=127.0.0.1:8443 cargo run --release --manifest-path V3/Cargo.toml -p zion-pool --bin server`
 - Miner:
   - `ZION_POOL_ADDR=127.0.0.1:8444 ZION_WORKER_NAME=<name> ZION_MINER_ID=<id> cargo run --release --manifest-path V3/Cargo.toml -p zion-miner`
+  - **Important:** For sustained GPU mining, also set `ZION_LOOP_COUNT=1000000` on the miner and `ZION_POOL_LOOP_COUNT=1000000` on the pool. The pool default was historically `1`, which caused a `Bye` after every iteration and forced expensive reconnects/GPU self-tests, collapsing effective hashrate from ~3 KH/s to ~30 H/s.
+  - **GPU batch size:** The pool default `ZION_NONCE_COUNT=1024` sends small batches to miners. For better GPU utilisation, raise this to `4096` (or match `ZION_GPU_WORK_SIZE`) on the pool. Benchmark `--ekam-bench` uses `work_size` directly and therefore reports higher hashrate than live stratum mining with the default 1024 nonce window.
 - Unified operator CLI:
   - `cargo run --manifest-path V3/Cargo.toml -p zion-cli -- --help`
 
