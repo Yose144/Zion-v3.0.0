@@ -158,11 +158,7 @@ fn markdown_path_to_chunks(
         return Ok(vec![]);
     }
 
-    let chunks = chunk_text(
-        &content,
-        config.max_chunk_size,
-        config.chunk_overlap,
-    );
+    let chunks = chunk_text(&content, config.max_chunk_size, config.chunk_overlap);
     let rel = path
         .strip_prefix(workspace_root)
         .unwrap_or(path)

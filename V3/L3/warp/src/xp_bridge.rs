@@ -103,9 +103,11 @@ impl WarpXpReward {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::types::{ChainId, WarpTransfer, WarpStatus};
+    use crate::types::{ChainId, WarpStatus, WarpTransfer};
 
-    fn base_chain() -> ChainId { ChainId::evm("base", 8453, 64) }
+    fn base_chain() -> ChainId {
+        ChainId::evm("base", 8453, 64)
+    }
 
     fn make_transfer(amount: u64, dest: ChainId) -> WarpTransfer {
         let mut t = WarpTransfer::new(

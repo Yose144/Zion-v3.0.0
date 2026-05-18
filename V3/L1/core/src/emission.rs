@@ -277,7 +277,10 @@ mod tests {
         let subsidy = BASE_REWARD;
         let (miner, humanitarian, issobella, pool_fee) = fee_split(subsidy);
         // 89%
-        assert_eq!(miner, subsidy - subsidy * 5 / 100 - subsidy * 5 / 100 - subsidy * 1 / 100);
+        assert_eq!(
+            miner,
+            subsidy - subsidy * 5 / 100 - subsidy * 5 / 100 - subsidy * 1 / 100
+        );
         // 5%
         assert_eq!(humanitarian, subsidy * 5 / 100);
         assert_eq!(issobella, subsidy * 5 / 100);

@@ -12,8 +12,10 @@ use zion_core::{
     decode_rpc_response, encode_rpc_request, BlockTemplate, CoreRuntime, DifficultyTarget,
     MiningHeader, MiningSolution, RevenueSource, RpcRequest, RpcResponse,
 };
-use zion_pool::{decode_message, encode_message, MiningPool, PoolMessage, ShareDecision, ShareStatus};
 use zion_pool::pplns::{FeeConfig, PayoutEntry, PplnsConfig, PplnsEngine};
+use zion_pool::{
+    decode_message, encode_message, MiningPool, PoolMessage, ShareDecision, ShareStatus,
+};
 
 /// Notify the ZION OASIS L4 game server that a block was mined so it can
 /// award XP to the miner.  This is a best-effort fire-and-forget call;
@@ -33,10 +35,17 @@ fn notify_oasis_block_mined(miner_address: &str, block_height: u64) {
     // Try curl first (available in most Docker images).
     let curl_result = std::process::Command::new("curl")
         .args([
-            "-s", "-o", "/dev/null", "-w", "%{http_code}",
-            "-X", "POST",
-            "-H", "Content-Type: application/json",
-            "-d", &body,
+            "-s",
+            "-o",
+            "/dev/null",
+            "-w",
+            "%{http_code}",
+            "-X",
+            "POST",
+            "-H",
+            "Content-Type: application/json",
+            "-d",
+            &body,
             &url,
         ])
         .output();
@@ -46,7 +55,10 @@ fn notify_oasis_block_mined(miner_address: &str, block_height: u64) {
             let code = String::from_utf8_lossy(&out.stdout);
             let code = code.trim();
             if code == "200" || code == "201" {
-                println!("oasis_xp_awarded miner={} height={}", miner_address, block_height);
+                println!(
+                    "oasis_xp_awarded miner={} height={}",
+                    miner_address, block_height
+                );
             } else {
                 println!(
                     "oasis_xp_hook_failed miner={} height={} http_code={}",
@@ -2115,9 +2127,21 @@ fn build_prometheus_payload(
         pplns.total_paid_flowers
     );
     let _ = writeln!(body, "zion_pplns_payout_rounds {}", pplns.payout_rounds);
-    let _ = writeln!(body, "zion_fee_humanitarian_flowers {}", fees.humanitarian_accumulated_flowers);
-    let _ = writeln!(body, "zion_fee_issobella_flowers {}", fees.issobella_accumulated_flowers);
-    let _ = writeln!(body, "zion_fee_pool_flowers {}", fees.pool_fee_accumulated_flowers);
+    let _ = writeln!(
+        body,
+        "zion_fee_humanitarian_flowers {}",
+        fees.humanitarian_accumulated_flowers
+    );
+    let _ = writeln!(
+        body,
+        "zion_fee_issobella_flowers {}",
+        fees.issobella_accumulated_flowers
+    );
+    let _ = writeln!(
+        body,
+        "zion_fee_pool_flowers {}",
+        fees.pool_fee_accumulated_flowers
+    );
     let _ = writeln!(body, "zion_fee_miner_pct {}", fees.miner_pct);
     for (miner_id, miner) in &telemetry.miners {
         let worker_name = sanitize_prometheus_label(&miner.worker_name);
@@ -3540,12 +3564,24 @@ mod tests {
         assert_eq!(revenue_source_name(RevenueSource::Sha3Bonus), "sha3");
         assert_eq!(revenue_source_name(RevenueSource::ProfitSwitch), "profit");
         assert_eq!(revenue_source_name(RevenueSource::Blake3External), "blake3");
-        assert_eq!(revenue_source_name(RevenueSource::KHeavyHashExternal), "kheavyhash");
+        assert_eq!(
+            revenue_source_name(RevenueSource::KHeavyHashExternal),
+            "kheavyhash"
+        );
         assert_eq!(revenue_source_name(RevenueSource::EthashExternal), "ethash");
         assert_eq!(revenue_source_name(RevenueSource::KawPowExternal), "kawpow");
-        assert_eq!(revenue_source_name(RevenueSource::AutolykosExternal), "autolykos");
-        assert_eq!(revenue_source_name(RevenueSource::RandomXExternal), "randomx");
-        assert_eq!(revenue_source_name(RevenueSource::ZelHashExternal), "zelhash");
+        assert_eq!(
+            revenue_source_name(RevenueSource::AutolykosExternal),
+            "autolykos"
+        );
+        assert_eq!(
+            revenue_source_name(RevenueSource::RandomXExternal),
+            "randomx"
+        );
+        assert_eq!(
+            revenue_source_name(RevenueSource::ZelHashExternal),
+            "zelhash"
+        );
         assert_eq!(revenue_source_name(RevenueSource::NclAi), "ncl");
     }
 }
