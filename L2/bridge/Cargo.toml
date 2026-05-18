@@ -43,7 +43,7 @@ chrono = { version = "0.4", features = ["serde"] }
 
 # HTTP server (Prometheus metrics endpoint)
 axum = { version = "0.7", features = ["macros"] }
-tower = "0.4"
+tower = "0.5"
 
 [dev-dependencies]
 tokio-test = "0.4"

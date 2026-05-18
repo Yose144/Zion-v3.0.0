@@ -42,7 +42,7 @@ base64 = "0.22"
 
 [dev-dependencies]
 tokio = { version = "1", features = ["full", "test-util"] }
-tower = { version = "0.4", features = ["util"] }
+tower = { version = "0.5", features = ["util"] }
 
 [[bin]]
 name = "zion-warp-server"
