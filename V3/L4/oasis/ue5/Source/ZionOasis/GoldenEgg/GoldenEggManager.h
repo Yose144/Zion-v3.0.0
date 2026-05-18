@@ -145,9 +145,9 @@ private:
 	static constexpr int32 TOTAL_KEYS_REQUIRED   = 3;
 	static constexpr int32 TOTAL_QUESTS_REQUIRED = 255; // 51 avatars x 5 quests
 
-	static constexpr int64 PRIZE_1ST = 1'000'000'000LL;
-	static constexpr int64 PRIZE_2ND =   500'000'000LL;
-	static constexpr int64 PRIZE_3RD =   250'000'000LL;
+	static constexpr int64 PRIZE_1ST = 1000000000LL;
+	static constexpr int64 PRIZE_2ND = 500000000LL;
+	static constexpr int64 PRIZE_3RD = 250000000LL;
 
 	static constexpr int32 HINT_COST_1 = 100;
 	static constexpr int32 HINT_COST_2 = 500;

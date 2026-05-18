@@ -1,9 +1,9 @@
 # ZION OASIS UE5 — Generate Visual Studio Project Files
-# Requires: Unreal Engine 5.4 installed via Epic Games Launcher
+# Requires: Unreal Engine 5.7 installed via Epic Games Launcher
 # Usage: .\GenerateProjectFiles.ps1 [-EnginePath "C:\\Program Files\\Epic Games\\UE_5.4"]
 
 param(
-    [string]$EnginePath = "C:\Program Files\Epic Games\UE_5.4"
+    [string]$EnginePath = "C:\Program Files\Epic Games\UE_5.7"
 )
 
 $UProjectPath = "$PSScriptRoot\ZionOasis.uproject"

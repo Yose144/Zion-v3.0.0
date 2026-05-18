@@ -28,7 +28,6 @@ public class ZionOasis : ModuleRules
 			"OnlineSubsystem",
 			"OnlineSubsystemUtils",
 			"CommonUI",
-			"CommonGame",
 			"NetCore"
 		});
 
@@ -37,7 +36,7 @@ public class ZionOasis : ModuleRules
 			"RenderCore",
 			"RHI",
 			"Renderer",
-			"ChaosPhysics",
+			"Chaos",
 			"PhysicsCore",
 			"AIModule",
 			"NavigationSystem",

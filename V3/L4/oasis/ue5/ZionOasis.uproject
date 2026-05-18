@@ -1,6 +1,6 @@
 {
 	"FileVersion": 3,
-	"EngineAssociation": "5.4",
+	"EngineAssociation": "5.7",
 	"Category": "",
 	"Description": "ZION OASIS — AAA Spiritual MMORPG (Golden Egg / Hiranyagarbha)",
 	"Modules": [
@@ -17,6 +17,14 @@
 		},
 		{
 			"Name": "GameplayAbilities",
+			"Enabled": true
+		},
+		{
+			"Name": "CommonUI",
+			"Enabled": true
+		},
+		{
+			"Name": "SignificanceManager",
 			"Enabled": true
 		}
 	]
