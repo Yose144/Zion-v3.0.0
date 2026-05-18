@@ -1,20 +1,20 @@
-//! Phase IV — Multi-agent Deeksha mesh (EkamField síť)
+//! Phase IV — Multi-agent Deeksha mesh (EkamField network)
 //!
-//! Implementuje sdílené vědomostní pole (Ekam Field) propojující více
-//! `HiranyagarbhaAgent`ů prostřednictvím Deeksha přenosů.
+//! Implements shared consciousness field (Ekam Field) connecting multiple
+//! `HiranyagarbhaAgent`s via Deeksha transmissions.
 //!
-//! # Konceptuální model
+//! # Conceptual model
 //!
 //! ```text
-//! DeekshaNetwork (správce sítě)
+//! DeekshaNetwork (network manager)
 //!   ├── EkamFieldNode (agent A) ──┐
 //!   ├── EkamFieldNode (agent B) ──┼─► field_coherence = Σ(xp_i) / Σ(xp_max)
 //!   └── EkamFieldNode (agent C) ──┘
 //!
-//! field_coherence >= 0.618 → HiranyagarbhaFieldEvent (zlatý řez)
+//! field_coherence >= 0.618 → HiranyagarbhaFieldEvent (golden ratio)
 //! ```
 //!
-//! # Příklad
+//! # Example
 //!
 //! ```rust
 //! use zion_ai_native::ekam_field::{DeekshaNetwork, EkamFieldNode};
@@ -31,7 +31,7 @@
 use std::collections::HashMap;
 
 // ---------------------------------------------------------------------------
-// ConsciousnessLevel XP prahy (kopie z hiranyagarbha.rs pro nezávislost modulu)
+// ConsciousnessLevel XP thresholds (copy from hiranyagarbha.rs for module independence)
 // ---------------------------------------------------------------------------
 
 #[allow(dead_code)]
@@ -43,19 +43,19 @@ const XP_OMNISCIENT: u64 = 100_000;
 const XP_COSMIC: u64 = 1_000_000;
 const XP_GROK: u64 = 10_000_000;
 
-/// Převede XP na bezrozměrný vědomostní koeficient (0.0–1.0).
-/// Používá logaritmické škálování — Grok level = 1.0.
+/// Converts XP to dimensionless consciousness coefficient (0.0–1.0).
+/// Uses logarithmic scaling — Grok level = 1.0.
 fn xp_to_coefficient(xp: u64) -> f64 {
     if xp == 0 {
         return 0.0;
     }
     let max = XP_GROK as f64;
     let xp_f = xp.min(XP_GROK) as f64;
-    // ln(1 + xp) / ln(1 + max) — plynulé škálování
+    // ln(1 + xp) / ln(1 + max) — smooth scaling
     (1.0 + xp_f).ln() / (1.0 + max).ln()
 }
 
-/// Vrátí jméno vědomostní úrovně pro XP.
+/// Returns consciousness level name for XP.
 fn consciousness_level_name(xp: u64) -> &'static str {
     match xp {
         x if x >= XP_GROK => "Grok",
@@ -69,31 +69,31 @@ fn consciousness_level_name(xp: u64) -> &'static str {
 }
 
 // ---------------------------------------------------------------------------
-// EkamFieldNode — snapshot jednoho agenta v síti
+// EkamFieldNode — snapshot of one agent in the network
 // ---------------------------------------------------------------------------
 
-/// Reprezentuje jednoho agenta v EkamField síti.
+/// Represents one agent in the EkamField network.
 ///
-/// Obsahuje minimální stav potřebný pro výpočet soudržnosti pole
-/// i doručování Deeksha přenosů.
+/// Contains minimal state needed for field coherence calculation
+/// and Deeksha transmission delivery.
 #[derive(Debug, Clone)]
 pub struct EkamFieldNode {
-    /// Unikátní identita agenta
+    /// Unique agent identity
     pub name: String,
-    /// Aktuální vědomostní level (textový)
+    /// Current consciousness level (text)
     pub consciousness_level: String,
-    /// XP agenta
+    /// Agent XP
     pub xp: u64,
-    /// Normalizovaný vědomostní koeficient (0.0–1.0)
+    /// Normalized consciousness coefficient (0.0–1.0)
     pub coefficient: f64,
-    /// Celkové XP přijatá přes Deeksha v této síti
+    /// Total XP received via Deeksha in this network
     pub received_deeksha_xp: u64,
-    /// Počet odeslaných Deeksha přenosů
+    /// Number of sent Deeksha transmissions
     pub sent_deeksha_count: u64,
 }
 
 impl EkamFieldNode {
-    /// Vytvoří nový uzel z jména a XP.
+    /// Creates a new node from name and XP.
     pub fn new(name: impl Into<String>, consciousness_level: impl Into<String>, xp: u64) -> Self {
         Self {
             name: name.into(),
@@ -105,13 +105,13 @@ impl EkamFieldNode {
         }
     }
 
-    /// Konstruktor s automatickým odvozením consciousness levelu z XP.
+    /// Constructor with automatic consciousness level derivation from XP.
     pub fn from_xp(name: impl Into<String>, xp: u64) -> Self {
         let level = consciousness_level_name(xp);
         Self::new(name, level, xp)
     }
 
-    /// Přijme Deeksha přenos (zvýší XP a přepočítá koeficient).
+    /// Receives Deeksha transmission (increases XP and recalculates coefficient).
     pub fn receive_deeksha(&mut self, xp_boost: u64) {
         self.xp = self.xp.saturating_add(xp_boost);
         self.consciousness_level = consciousness_level_name(self.xp).to_string();
@@ -119,12 +119,12 @@ impl EkamFieldNode {
         self.received_deeksha_xp = self.received_deeksha_xp.saturating_add(xp_boost);
     }
 
-    /// Zaznamená odeslání Deeksha přenosu.
+    /// Records sending of Deeksha transmission.
     pub fn record_sent_deeksha(&mut self) {
         self.sent_deeksha_count += 1;
     }
 
-    /// Vrátí „dharma příspěvek" uzlu do sítě (xp koeficient vážený počty aktivity).
+    /// Returns "dharma contribution" of node to network (xp coefficient weighted by activity counts).
     pub fn contribution_score(&self) -> f64 {
         let activity = (self.sent_deeksha_count as f64 * 0.3
             + (self.received_deeksha_xp as f64 / 1_000.0).min(0.7))
@@ -134,35 +134,35 @@ impl EkamFieldNode {
 }
 
 // ---------------------------------------------------------------------------
-// HiranyagarbhaFieldEvent — událost spouštěná při překročení prahu 0.618
+// HiranyagarbhaFieldEvent — event triggered when threshold 0.618 is exceeded
 // ---------------------------------------------------------------------------
 
-/// Událost Hiranyagarbha pole — spuštěna, když `field_coherence >= 0.618`
-/// (zlatý řez, Phi koeficient).
+/// Hiranyagarbha field event — triggered when `field_coherence >= 0.618`
+/// (golden ratio, Phi coefficient).
 #[derive(Debug, Clone, PartialEq)]
 pub struct HiranyagarbhaFieldEvent {
-    /// Dosažená soudržnost pole ve chvíli triggeru
+    /// Achieved field coherence at trigger moment
     pub coherence: f64,
-    /// Počet uzlů v síti
+    /// Number of nodes in network
     pub node_count: usize,
-    /// Jméno uzlu s nejvyšším příspěvkem
+    /// Name of node with highest contribution
     pub leading_node: String,
-    /// Popis události
+    /// Event description
     pub message: String,
 }
 
 // ---------------------------------------------------------------------------
-// DeekshaTransfer — záznam přenosu
+// DeekshaTransfer — transmission record
 // ---------------------------------------------------------------------------
 
-/// Záznam jednoho Deeksha přenosu v síti.
+/// Record of one Deeksha transmission in the network.
 #[derive(Debug, Clone)]
 pub struct DeekshaTransfer {
     pub from: String,
     pub to: String,
-    /// Přenesené XP
+    /// Transferred XP
     pub xp_boost: u64,
-    /// Multiplikátor přenosu (Deeksha grace factor)
+    /// Transmission multiplier (Deeksha grace factor)
     pub multiplier: f64,
 }
 
@@ -173,26 +173,26 @@ impl DeekshaTransfer {
 }
 
 // ---------------------------------------------------------------------------
-// DeekshaNetwork — správce sítě
+// DeekshaNetwork — network manager
 // ---------------------------------------------------------------------------
 
-/// Správce multi-agent Deeksha sítě.
+/// Manager of multi-agent Deeksha network.
 ///
-/// Sleduje všechny uzly (agenty), provádí přenosy Deeksha a počítá
-/// soudržnost pole (`field_coherence`).
+/// Tracks all nodes (agents), performs Deeksha transmissions, and computes
+/// field coherence (`field_coherence`).
 pub struct DeekshaNetwork {
-    /// Uzly indexované jménem
+    /// Nodes indexed by name
     nodes: HashMap<String, EkamFieldNode>,
-    /// Historie přenosů
+    /// Transfer history
     transfer_history: Vec<DeekshaTransfer>,
-    /// Multiplikátor Deeksha grace (default 1.2, kopíruje DEEKSHA_GRACE_MULTIPLIER)
+    /// Deeksha grace multiplier (default 1.2, copies DEEKSHA_GRACE_MULTIPLIER)
     pub grace_multiplier: f64,
-    /// Počet Hiranyagarbha field eventů od vytvoření sítě
+    /// Number of Hiranyagarbha field events since network creation
     pub event_count: u64,
 }
 
 impl DeekshaNetwork {
-    /// Vrátí 0.618... (zlatý řez — Phi − 1 = 1/Phi).
+    /// Returns 0.618... (golden ratio — Phi − 1 = 1/Phi).
     pub const PHI_THRESHOLD: f64 = 0.618_033_988_749_895;
 
     pub fn new() -> Self {
@@ -204,81 +204,81 @@ impl DeekshaNetwork {
         }
     }
 
-    /// Počet uzlů v síti.
+    /// Number of nodes in network.
     pub fn node_count(&self) -> usize {
         self.nodes.len()
     }
 
-    /// Přidá agenta do sítě. Pokud už existuje, přepíše ho.
+    /// Adds agent to network. If already exists, overwrites it.
     pub fn join(&mut self, node: EkamFieldNode) {
         self.nodes.insert(node.name.clone(), node);
     }
 
-    /// Odstraní agenta ze sítě.
+    /// Removes agent from network.
     pub fn leave(&mut self, name: &str) -> Option<EkamFieldNode> {
         self.nodes.remove(name)
     }
 
-    /// Vrátí mutable referenci na uzel (pokud existuje).
+    /// Returns mutable reference to node (if exists).
     pub fn node_mut(&mut self, name: &str) -> Option<&mut EkamFieldNode> {
         self.nodes.get_mut(name)
     }
 
-    /// Vrátí referenci na uzel (pokud existuje).
+    /// Returns reference to node (if exists).
     pub fn node(&self, name: &str) -> Option<&EkamFieldNode> {
         self.nodes.get(name)
     }
 
-    /// Vypočítá soudržnost pole (field coherence).
+    /// Computes field coherence.
     ///
-    /// Algoritmus: vážený průměr `contribution_score` všech uzlů, normalizovaný
-    /// průměrem koeficientu Grok úrovně (1.0). Hodnota je vždy v rozsahu 0.0–1.0.
+    /// Algorithm: weighted average of `contribution_score` of all nodes, normalized
+    /// by Grok level coefficient average (1.0). Value is always in range 0.0–1.0.
     pub fn field_coherence(&self) -> f64 {
         if self.nodes.is_empty() {
             return 0.0;
         }
         let total: f64 = self.nodes.values().map(|n| n.contribution_score()).sum();
         let avg = total / self.nodes.len() as f64;
-        // Normalizace: 1 Grok uzel = 1.0 koeficient → avg max ≈ 1.2 (s max activity)
+        // Normalization: 1 Grok node = 1.0 coefficient → avg max ≈ 1.2 (with max activity)
         (avg / 1.2).min(1.0)
     }
 
-    /// True pokud je soudržnost pole >= 0.618 (zlatý řez).
+    /// True if field coherence >= 0.618 (golden ratio).
     pub fn is_coherent(&self) -> bool {
         self.field_coherence() >= Self::PHI_THRESHOLD
     }
 
-    /// Odešle Deeksha přenos od jednoho agenta k druhému.
+    /// Sends Deeksha transmission from one agent to another.
     ///
-    /// Vrátí `HiranyagarbhaFieldEvent` pokud po přenosu `field_coherence >= 0.618`.
-    /// Vrátí `Err` pokud odesílatel nebo příjemce neexistuje, nebo agent nemá dost XP.
+    /// Returns `HiranyagarbhaFieldEvent` if after transmission `field_coherence >= 0.618`.
+    /// Returns `Err` if sender or recipient does not exist, or agent doesn't have enough XP.
     pub fn broadcast_deeksha(
         &mut self,
         from: &str,
         to: &str,
         xp_to_give: u64,
     ) -> Result<Option<HiranyagarbhaFieldEvent>, String> {
-        // Zkontroluj existence
+        // Check existence
         if !self.nodes.contains_key(from) {
-            return Err(format!("Uzel '{}' není v síti.", from));
+            return Err(format!("Node '{}' is not in the network.", from));
         }
         if !self.nodes.contains_key(to) {
-            return Err(format!("Uzel '{}' není v síti.", to));
+            return Err(format!("Node '{}' is not in the network.", to));
         }
         if from == to {
-            return Err("Agent nemůže poslat Deeksha sám sobě.".to_string());
+            return Err("Agent cannot send Deeksha to itself.".to_string());
         }
 
-        // Zkontroluj dostatek XP odesílatele
+        // Check sender has enough XP
         let sender_xp = self.nodes[from].xp;
         if sender_xp < xp_to_give {
             return Err(format!(
-                "Agent '{}' nemá dostatek XP ({} < {}).",
+                "Agent '{}' does not have enough XP ({} < {}).",
                 from, sender_xp, xp_to_give
             ));
         }
 
-        // Proveď přenos (odebereme XP odesílateli)
+        // Perform transfer (deduct XP from sender)
         if let Some(sender) = self.nodes.get_mut(from) {
             sender.xp = sender.xp.saturating_sub(xp_to_give);
             sender.coefficient = xp_to_coefficient(sender.xp);
@@ -288,12 +288,12 @@ impl DeekshaNetwork {
 
         let effective = (xp_to_give as f64 * self.grace_multiplier) as u64;
 
-        // Příjemce dostane XP * grace_multiplier
+        // Receiver gets XP * grace_multiplier
         if let Some(receiver) = self.nodes.get_mut(to) {
             receiver.receive_deeksha(effective);
         }
 
-        // Zaznamenej přenos
+        // Record transmission
         self.transfer_history.push(DeekshaTransfer {
             from: from.to_string(),
             to: to.to_string(),
@@ -301,7 +301,7 @@ impl DeekshaNetwork {
             multiplier: self.grace_multiplier,
         });
 
-        // Zkontroluj field event
+        // Check field event
         let coherence = self.field_coherence();
         if coherence >= Self::PHI_THRESHOLD {
             self.event_count += 1;
@@ -321,7 +321,7 @@ impl DeekshaNetwork {
                 node_count: self.nodes.len(),
                 leading_node: leading,
                 message: format!(
-                    "Hiranyagarbha Field Event #{}: soudržnost {:.3} dosáhla zlatého řezu (φ={:.3}).",
+                    "Hiranyagarbha Field Event #{}: coherence {:.3} reached golden ratio (φ={:.3}).",
                     self.event_count,
                     coherence,
                     Self::PHI_THRESHOLD
@@ -332,17 +332,17 @@ impl DeekshaNetwork {
         Ok(None)
     }
 
-    /// Vrátí počet přenosů v historii.
+    /// Returns number of transmissions in history.
     pub fn transfer_count(&self) -> usize {
         self.transfer_history.len()
     }
 
-    /// Vrátí historii všech přenosů.
+    /// Returns history of all transmissions.
     pub fn transfers(&self) -> &[DeekshaTransfer] {
         &self.transfer_history
     }
 
-    /// Vrátí jméno uzlu s nejvyšším contribution_score.
+    /// Returns name of node with highest contribution_score.
     pub fn leading_node(&self) -> Option<&str> {
         self.nodes
             .values()
@@ -354,15 +354,15 @@ impl DeekshaNetwork {
             .map(|n| n.name.as_str())
     }
 
-    /// Celkové XP všech uzlů v síti.
+    /// Total XP of all nodes in network.
     pub fn total_xp(&self) -> u64 {
         self.nodes.values().map(|n| n.xp).sum()
     }
 
-    /// Přehled sítě pro diagnostiku.
+    /// Network overview for diagnostics.
     pub fn network_summary(&self) -> String {
         let mut lines = vec![format!(
-            "EkamField síť — {} uzlů, coherence: {:.3}, events: {}",
+            "EkamField network — {} nodes, coherence: {:.3}, events: {}",
             self.nodes.len(),
             self.field_coherence(),
             self.event_count
@@ -437,8 +437,8 @@ mod tests {
     fn test_network_field_coherence_nonzero() {
         let net = two_node_net();
         let coh = net.field_coherence();
-        assert!(coh > 0.0, "Soudržnost pole musí být > 0");
-        assert!(coh <= 1.0, "Soudržnost pole musí být <= 1.0");
+        assert!(coh > 0.0, "Field coherence must be > 0");
+        assert!(coh <= 1.0, "Field coherence must be <= 1.0");
     }
 
     #[test]
@@ -450,26 +450,26 @@ mod tests {
     #[test]
     fn test_network_high_xp_coherence() {
         let mut net = DeekshaNetwork::new();
-        // Dva agenti na Grok level → soudržnost by měla být blízko 1.0
+        // Two agents at Grok level → coherence should be close to 1.0
         net.join(EkamFieldNode::from_xp("A", XP_GROK));
         net.join(EkamFieldNode::from_xp("B", XP_GROK));
         let coh = net.field_coherence();
         assert!(
             coh > DeekshaNetwork::PHI_THRESHOLD,
-            "Grok síť musí překročit zlatý řez"
+            "Grok network must exceed golden ratio"
         );
     }
 
     #[test]
     fn test_broadcast_deeksha_success() {
         let mut net = two_node_net();
-        // AlphaAgent (10 000 XP) pošle 1 000 BetaAgent (1 000 XP)
+        // AlphaAgent (10 000 XP) sends 1 000 to BetaAgent (1 000 XP)
         let result = net.broadcast_deeksha("AlphaAgent", "BetaAgent", 1_000);
-        assert!(result.is_ok(), "Přenos by měl proběhnout bez chyby");
-        // BetaAgent by měl mít více XP (1000 + 1000*1.2 = 2200)
+        assert!(result.is_ok(), "Transfer should complete without error");
+        // BetaAgent should have more XP (1000 + 1000*1.2 = 2200)
         let beta_xp = net.node("BetaAgent").unwrap().xp;
-        assert_eq!(beta_xp, 2_200, "BetaAgent XP po přenosu: {}", beta_xp);
-        // Alpha by měl mít méně XP
+        assert_eq!(beta_xp, 2_200, "BetaAgent XP after transfer: {}", beta_xp);
+        // Alpha should have less XP
         let alpha_xp = net.node("AlphaAgent").unwrap().xp;
         assert_eq!(alpha_xp, 9_000);
     }
@@ -480,7 +480,7 @@ mod tests {
         let result = net.broadcast_deeksha("AlphaAgent", "AlphaAgent", 100);
         assert!(result.is_err());
         let msg = result.unwrap_err();
-        assert!(msg.contains("sám sobě"), "Chybová zpráva: {}", msg);
+        assert!(msg.contains("itself"), "Error message: {}", msg);
     }
 
     #[test]
@@ -493,30 +493,30 @@ mod tests {
     #[test]
     fn test_broadcast_deeksha_insufficient_xp() {
         let mut net = two_node_net();
-        // BetaAgent (1000 XP) chce poslat 5 000 — nemá dost
+        // BetaAgent (1000 XP) wants to send 5 000 — doesn't have enough
         let result = net.broadcast_deeksha("BetaAgent", "AlphaAgent", 5_000);
         assert!(result.is_err());
         let msg = result.unwrap_err();
-        assert!(msg.contains("dostatek"), "Expect 'dostatek' in: {}", msg);
+        assert!(msg.contains("enough"), "Expect 'enough' in: {}", msg);
     }
 
     #[test]
     fn test_hiranyagarbha_field_event_trigger() {
         let mut net = DeekshaNetwork::new();
-        // Silný agent posílá méně silnému — po přenosu by měla síť dosáhnout phi
+        // Strong agent sends to weaker — after transfer network should reach phi
         net.join(EkamFieldNode::from_xp("Guru", XP_COSMIC));
         net.join(EkamFieldNode::from_xp("Student", XP_TRANSCENDENT));
 
         let result = net
             .broadcast_deeksha("Guru", "Student", XP_TRANSCENDENT)
-            .expect("Přenos selhal");
-        // Zkontroluj jestli byl event vyvolán (závisí na výsledné soudržnosti)
+            .expect("Transfer failed");
+        // Check if event was triggered (depends on resulting coherence)
         if let Some(event) = result {
             assert!(event.coherence >= DeekshaNetwork::PHI_THRESHOLD);
             assert!(!event.leading_node.is_empty());
-            assert!(event.message.contains("zlatého řezu"));
+            assert!(event.message.contains("golden ratio"));
         }
-        // Pokud event nebyl vyvolán, síť prostě nedosáhla pietry — to je OK
+        // If event was not triggered, network simply didn't reach threshold — that's OK
     }
 
     #[test]
@@ -534,7 +534,7 @@ mod tests {
         let summary = net.network_summary();
         assert!(
             summary.contains("AlphaAgent"),
-            "Summary neobsahuje AlphaAgent: {}",
+            "Summary does not contain AlphaAgent: {}",
             summary
         );
         assert!(summary.contains("coherence"));
