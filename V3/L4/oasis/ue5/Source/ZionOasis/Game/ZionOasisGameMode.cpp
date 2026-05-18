@@ -1,10 +1,10 @@
 // Copyright 2026 ZION TerraNova. All Rights Reserved.
-#include "Game/ZionOasisGameMode.h"
-#include "Game/ZionGameInstance.h"
-#include "Player/ZionPlayerController.h"
-#include "Player/ZionCharacter.h"
-#include "Consciousness/ConsciousnessComponent.h"
-#include "Blockchain/ZionBlockchainBridge.h"
+#include "ZionOasisGameMode.h"
+#include "ZionGameInstance.h"
+#include "ZionOasis/Player/ZionPlayerController.h"
+#include "ZionOasis/Player/ZionCharacter.h"
+#include "ZionOasis/Consciousness/ConsciousnessComponent.h"
+#include "ZionOasis/Blockchain/ZionBlockchainBridge.h"
 #include "GameFramework/PlayerState.h"
 #include "Engine/World.h"
 #include "Kismet/GameplayStatics.h"
@@ -45,7 +45,7 @@ APlayerController* AZionOasisGameMode::Login(UPlayer* NewPlayer, ENetRole InRemo
 	return Super::Login(NewPlayer, InRemoteRole, Portal, Options, UniqueId, ErrorMessage);
 }
 
-void AZionOasisGameMode::BroadcastBlockMined(const FString& MinerWallet, int64 BlockHeight)
+void AZionOasisGameMode::BroadcastBlockMined(const FString& MinerWallet, int32 BlockHeight)
 {
 	UE_LOG(LogTemp, Log, TEXT("[ZionOasisGameMode] Block #%lld mined by %s — broadcasting XP"),
 		BlockHeight, *MinerWallet);

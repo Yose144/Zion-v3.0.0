@@ -1,6 +1,6 @@
 // Copyright 2026 ZION TerraNova. All Rights Reserved.
-#include "Guild/GuildComponent.h"
-#include "Blockchain/ZionBlockchainBridge.h"
+#include "GuildComponent.h"
+#include "ZionOasis/Blockchain/ZionBlockchainBridge.h"
 #include "Net/UnrealNetwork.h"
 #include "Engine/World.h"
 #include "Logging/LogMacros.h"
