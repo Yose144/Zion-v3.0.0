@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Sync Hiran v2.2 curriculum + training code to the CURRENT Vast GPU instance.
-# Instance: ssh1.vast.ai:24132 (contract 37024133)
+# Instance: ssh7.vast.ai:28568 (contract 37028568)
 #
 # Usage (from repo root):
 #   bash HiranV2.2/scripts/sync_to_current_vast.sh
@@ -9,8 +9,8 @@ set -euo pipefail
 
 HIRAN22="$(cd "$(dirname "$0")/.." && pwd)"
 
-VAST_SSH="root@ssh1.vast.ai"
-VAST_PORT="24132"
+VAST_SSH="root@ssh7.vast.ai"
+VAST_PORT="28568"
 SSH_IDENTITY="$HOME/.ssh/vast_hiran_key"
 REMOTE="/workspace/hiran-v2.2"
 
@@ -61,7 +61,7 @@ echo "========================================"
 echo "Sync complete!"
 echo "========================================"
 echo "Next steps on the instance:"
-echo "  ssh -i ~/.ssh/vast_hiran_key -p 24132 root@ssh1.vast.ai"
+echo "  ssh -i ~/.ssh/vast_hiran_key -p 28568 root@ssh7.vast.ai"
 echo "  cd /workspace/hiran-v2.2"
 echo "  pip install -r requirements-train.txt"
 echo "  python3 scripts/train_v2.2.py --dry_run"
