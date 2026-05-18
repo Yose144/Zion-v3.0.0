@@ -548,6 +548,59 @@ impl RevenueCollector {
         amount
     }
 
+    /// Replay all persisted Zion blocks and events from the journal into
+    /// this collector.  Called automatically by `CoreRuntime::new_with_journal_replay`.
+    pub fn replay(&self) {
+        let Some(ref journal) = self.journal else { return };
+        match journal.replay_zion_blocks() {
+            Ok(blocks) => {
+                for block in &blocks {
+                    self.replay_zion_block(
+                        block.height,
+                        block.subsidy,
+                        block.pool_fee,
+                        block.humanitarian,
+                        block.issobella,
+                        block.miner,
+                    );
+                }
+                eprintln!("revenue_replay_zion_blocks loaded={}", blocks.len());
+            }
+            Err(e) => {
+                eprintln!("revenue_replay_zion_blocks error: {}", e);
+            }
+        }
+        match journal.replay_events() {
+            Ok(events) => {
+                for event in &events {
+                    self.replay_event(
+                        match event.source.as_str() {
+                            "zion" => RevenueSource::Zion,
+                            "keccak_bonus" => RevenueSource::KeccakBonus,
+                            "sha3_bonus" => RevenueSource::Sha3Bonus,
+                            "profit_switch" => RevenueSource::ProfitSwitch,
+                            "blake3_external" => RevenueSource::Blake3External,
+                            "kheavyhash_external" => RevenueSource::KHeavyHashExternal,
+                            "ethash_external" => RevenueSource::EthashExternal,
+                            "kawpow_external" => RevenueSource::KawPowExternal,
+                            "autolykos_external" => RevenueSource::AutolykosExternal,
+                            "randomx_external" => RevenueSource::RandomXExternal,
+                            "zelhash_external" => RevenueSource::ZelHashExternal,
+                            "ncl_ai" => RevenueSource::NclAi,
+                            _ => continue,
+                        },
+                        event.value_usd,
+                        event.qualifies,
+                    );
+                }
+                eprintln!("revenue_replay_events loaded={}", events.len());
+            }
+            Err(e) => {
+                eprintln!("revenue_replay_events error: {}", e);
+            }
+        }
+    }
+
     pub fn calculate_fee(source: RevenueSource, value_usd: f64) -> f64 {
         value_usd * source.fee_rate()
     }
