@@ -1,11 +1,11 @@
 {
-  "total_pairs": 3226,
+  "total_pairs": 22181,
   "stage_stats": {
-    "foundation": 212,
-    "zion_core": 1337,
-    "zion_advanced": 833,
-    "cross_domain": 413,
-    "rag_synthesis": 431
+    "foundation": 3869,
+    "zion_core": 2368,
+    "zion_advanced": 2458,
+    "cross_domain": 11434,
+    "rag_synthesis": 2052
   },
   "generated_at": "2026-05-18T08:00:00Z",
   "status": "READY"
