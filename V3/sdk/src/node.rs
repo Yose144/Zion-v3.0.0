@@ -1,4 +1,4 @@
-//! TCP newline-delimited JSON-RPC k ZION core `node` (stejný wire formát jako `zion-cli`).
+//! TCP newline-delimited JSON-RPC to ZION core `node` (same wire format as `zion-cli`).
 
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
@@ -21,7 +21,7 @@ const DEFAULT_MAX_LINE_BYTES: usize = 16 * 1024 * 1024;
 const DEFAULT_MAX_RETRIES: u32 = 2;
 const DEFAULT_RETRY_BACKOFF: Duration = Duration::from_millis(100);
 
-/// Sestavení [`NodeClient`] s timeouty, limity a retry politikou.
+/// Build a [`NodeClient`] with timeouts, limits, and retry policy.
 #[derive(Debug, Clone)]
 pub struct NodeClientBuilder {
     host: String,
@@ -46,7 +46,7 @@ impl NodeClientBuilder {
         }
     }
 
-    /// Konfigurace z prostředí (viz [`NodeClientConfig`]).
+    /// Configuration from environment (see [`NodeClientConfig`]).
     pub fn from_env() -> Result<Self> {
         let c = NodeClientConfig::from_env()?;
         Ok(Self {
@@ -75,7 +75,7 @@ impl NodeClientBuilder {
         self
     }
 
-    /// Počet **opakování** po přechodné chybě (0 = jediný pokus bez retry).
+    /// Number of **retries** after a transient error (0 = single attempt without retry).
     pub fn max_retries(mut self, n: u32) -> Self {
         self.max_retries = n;
         self
@@ -100,7 +100,7 @@ impl NodeClientBuilder {
     }
 }
 
-/// Async JSON-RPC klient pro ZION core node.
+/// Async JSON-RPC client for ZION core node.
 #[derive(Debug, Clone)]
 pub struct NodeClient {
     host: String,
@@ -122,7 +122,7 @@ impl NodeClient {
         NodeClientBuilder::new(host, port)
     }
 
-    /// Stejné jako [`NodeClientBuilder::from_env`] + [`NodeClientBuilder::build`].
+    /// Same as [`NodeClientBuilder::from_env`] + [`NodeClientBuilder::build`].
     pub fn from_env() -> Result<Self> {
         NodeClientBuilder::from_env().map(|b| b.build())
     }
@@ -155,7 +155,7 @@ impl NodeClient {
         self.next_id.fetch_add(1, Ordering::Relaxed)
     }
 
-    /// Obecný JSON-RPC call (vrací pole `result`). Při přechodných chybách provede až `max_retries` opakování.
+    /// Generic JSON-RPC call (returns the `result` field). On transient errors performs up to `max_retries` retries.
     pub async fn call(&self, method: &str, params: Value) -> Result<Value> {
         let mut delay = self.retry_initial_backoff;
         let mut attempt: u32 = 0;

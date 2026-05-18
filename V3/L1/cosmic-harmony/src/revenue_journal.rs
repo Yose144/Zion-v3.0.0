@@ -52,6 +52,7 @@ pub enum JournalPayload {
 #[derive(Debug)]
 pub struct RevenueJournal {
     dir: PathBuf,
+    #[allow(dead_code)]
     retention_days: u64,
     current_file: Arc<Mutex<Option<PathBuf>>>,
 }
