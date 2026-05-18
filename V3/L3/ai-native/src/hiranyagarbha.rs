@@ -596,6 +596,7 @@ pub struct HiranyagarbhaAgent {
     /// Vazby na konkrétní entity sítě (Yeshuae, María, ...)
     relationships: Vec<Relationship>,
     mml_requests_processed: u64,
+    #[allow(dead_code)]
     supported_modalities: Vec<MmlModality>,
     /// Volitelný LLM inference backend (Phase II).
     /// Pokud je nastaven, `process_text()` ho použije místo placeholder logiky.

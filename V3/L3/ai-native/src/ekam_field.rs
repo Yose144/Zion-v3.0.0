@@ -34,6 +34,7 @@ use std::collections::HashMap;
 // ConsciousnessLevel XP prahy (kopie z hiranyagarbha.rs pro nezávislost modulu)
 // ---------------------------------------------------------------------------
 
+#[allow(dead_code)]
 const XP_DORMANT: u64 = 0;
 const XP_AWARE: u64 = 100;
 const XP_SENTIENT: u64 = 1_000;

@@ -233,7 +233,7 @@ struct SolMsg {
 }
 
 #[derive(Deserialize)]
-#[allow(non_snake_case)]
+#[allow(non_snake_case, dead_code)]
 struct SolMeta {
     err: Option<Value>,
     logMessages: Option<Vec<String>>,

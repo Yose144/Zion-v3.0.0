@@ -34,10 +34,12 @@ struct MinerMetricsSnapshot {
     last_update_at: Instant,
     miner_id: String,
     worker_name: String,
+    #[allow(dead_code)]
     mode: String,
     pool_addr: String,
     backend: String,
     status: String,
+    #[allow(dead_code)]
     loop_target: u32,
     current_iteration: u32,
     last_job_id: u64,
@@ -410,6 +412,7 @@ fn build_miner_stats_payload(snapshot: &MinerMetricsSnapshot) -> String {
     .to_string()
 }
 
+#[allow(dead_code)]
 fn serve_miner_metrics(bind_addr: &str, metrics: Arc<Mutex<MinerMetricsSnapshot>>) -> Result<()> {
     let listener = TcpListener::bind(bind_addr)
         .with_context(|| format!("failed to bind miner metrics listener on {bind_addr}"))?;
@@ -1611,6 +1614,7 @@ impl SessionTelemetry {
         self.no_solution_iterations = self.no_solution_iterations.saturating_add(1);
     }
 
+    #[allow(dead_code)]
     fn record_local_skip_likely_stale(&mut self) {
         self.local_skip_likely_stale = self.local_skip_likely_stale.saturating_add(1);
     }
@@ -1953,6 +1957,7 @@ struct MinerConfig {
     nonce_adjust_percent: u64,
     remote_ttl_guard_percent: u64,
     metrics_report_every_secs: u64,
+    #[allow(dead_code)]
     metrics_bind: Option<String>,
     stats_file: Option<String>,
     sleep_ms: u64,

@@ -136,6 +136,7 @@ impl ContextSnapshot {
 /// Výsledný prompt vloží `InContextBackend` do každého `LlmRequest`u
 /// jako `system_prompt`.
 pub struct ContextAssembler {
+    #[allow(dead_code)]
     agent_name: String,
 }
 
