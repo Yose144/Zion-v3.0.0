@@ -34,6 +34,7 @@ fn default_api(network: &str) -> &'static str {
 // mempool.space REST structures
 // ─────────────────────────────────────────────────────────────────────────────
 #[derive(Deserialize)]
+#[allow(dead_code)]
 struct MempoolTx {
     txid: String,
     status: Option<MempoolTxStatus>,
@@ -42,6 +43,7 @@ struct MempoolTx {
 }
 
 #[derive(Deserialize)]
+#[allow(dead_code)]
 struct MempoolTxStatus {
     confirmed: bool,
     block_height: Option<u64>,
@@ -49,6 +51,7 @@ struct MempoolTxStatus {
 }
 
 #[derive(Deserialize)]
+#[allow(dead_code)]
 struct MempoolVout {
     value: u64,
     scriptpubkey_type: Option<String>,
@@ -56,6 +59,7 @@ struct MempoolVout {
 }
 
 #[derive(Deserialize)]
+#[allow(dead_code)]
 struct MempoolVin {
     prevout: Option<MempoolVout>,
     scriptsig_asm: Option<String>,

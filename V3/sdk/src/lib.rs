@@ -1,6 +1,6 @@
-//! **Zion SDK** — async knihovna pro práci se ZION L1 node přes TCP JSON-RPC (jeden JSON objekt na řádek, výchozí port **8443**).
+//! **Zion SDK** — async library for working with ZION L1 node over TCP JSON-RPC (one JSON object per line, default port **8443**).
 //!
-//! ## Základní použití
+//! ## Basic usage
 //!
 //! ```no_run
 //! use zion_sdk::node::NodeClient;
@@ -17,13 +17,13 @@
 //! # }
 //! ```
 //!
-//! Chování je zarovnané se `zion-cli` (`V3/cli`): stejný wire protokol a stejné názvy metod (`getChainInfo`, …).
+//! Behavior is aligned with `zion-cli` (`V3/cli`): same wire protocol and same method names (`getChainInfo`, …).
 //!
-//! ## Produkční konfigurace
+//! ## Production configuration
 //!
-//! [`NodeClient::from_env`] / [`NodeClientBuilder::from_env`] načtou [`NodeClientConfig`] z proměnných `ZION_RPC_*` (viz [`config`]).
+//! [`NodeClient::from_env`] / [`NodeClientBuilder::from_env`] load [`NodeClientConfig`] from `ZION_RPC_*` variables (see [`config`]).
 //!
-//! Volitelně zapněte feature **`tracing`** pro strukturované logy RPC (retry, úspěch).
+//! Optionally enable the **`tracing`** feature for structured RPC logs (retry, success).
 
 pub mod config;
 pub mod error;
@@ -31,7 +31,7 @@ pub mod node;
 pub mod rpc_codes;
 pub mod types;
 
-/// Verze crate (`CARGO_PKG_VERSION`).
+/// Crate version (`CARGO_PKG_VERSION`).
 pub const SDK_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 pub use config::{parse_rpc_addr, NodeClientConfig};
@@ -42,7 +42,7 @@ pub use types::{
     SubmitCandidateResult, SupplyInfo,
 };
 
-/// Běžné importy pro aplikační kód.
+/// Common imports for application code.
 pub mod prelude {
     pub use crate::config::{parse_rpc_addr, NodeClientConfig};
     pub use crate::error::{Result, RpcErrorBody, ZionSdkError};

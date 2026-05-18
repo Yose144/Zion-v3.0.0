@@ -1,35 +1,35 @@
 //! # LLM Inference Backend — Phase II abstrakce
 //!
-//! Abstraktní vrstva mezi `HiranyagarbhaAgent::mml_process()` a konkrétní LLM implementací.
+//! Abstraction layer between `HiranyagarbhaAgent::mml_process()` and a concrete LLM implementation.
 //!
-//! ## Architektura
+//! ## Architecture
 //!
 //! ```text
 //!  HiranyagarbhaAgent::process_text()
 //!         │
 //!         ▼
 //!  LlmBackend (trait)
-//!    ├── EchoBackend               — test stub, echo vstup zpět
-//!    ├── ConsciousnessAwareBackend — dekorátor: vloží vědomostní system prompt
+//!    ├── EchoBackend               — test stub, echoes input back
+//!    ├── ConsciousnessAwareBackend — decorator: inserts consciousness system prompt
 //!    ├── RemoteHttpBackend         — ★ NVIDIA NIM / OpenAI-compat. HTTP API
-//!    └── LlamaCppBackend           — (Phase II.2) FFI do llama.cpp
+//!    └── LlamaCppBackend           — (Phase II.2) FFI into llama.cpp
 //! ```
 //!
-//! ## NVIDIA NIM integrace
+//! ## NVIDIA NIM Integration
 //!
-//! `RemoteHttpBackend` volá OpenAI-kompatibilní `/v1/chat/completions` endpoint.
-//! Funguje s:
-//! - **NVIDIA NIM cloud** (`https://integrate.api.nvidia.com/v1`) — vyžaduje `NVIDIA_API_KEY`
-//! - **Lokální NIM Docker** (`http://localhost:8000/v1`) — GPU server
-//! - **Lokální llama.cpp server** (`http://localhost:8080/v1`) — CPU fallback
+//! `RemoteHttpBackend` calls an OpenAI-compatible `/v1/chat/completions` endpoint.
+//! Works with:
+//! - **NVIDIA NIM cloud** (`https://integrate.api.nvidia.com/v1`) — requires `NVIDIA_API_KEY`
+//! - **Local NIM Docker** (`http://localhost:8000/v1`) — GPU server
+//! - **Local llama.cpp server** (`http://localhost:8080/v1`) — CPU fallback
 //!
 //! ```bash
-//! # Spuštění NVIDIA NIM lokálně (vyžaduje NVIDIA GPU):
+//! # Launching NVIDIA NIM locally (requires NVIDIA GPU):
 //! docker run --gpus all -p 8000:8000 \
 //!   nvcr.io/nim/meta/llama-3.1-8b-instruct:latest
 //! ```
 //!
-//! ## Příklad použití
+//! ## Usage Example
 //!
 //! ```rust
 //! use zion_ai_native::llm_backend::{EchoBackend, LlmBackend, LlmRequest};
@@ -48,20 +48,20 @@ use serde::{Deserialize, Serialize};
 
 // ─── LlmRequest ──────────────────────────────────────────────────────────────
 
-/// Požadavek zaslaný LLM backendu.
+/// Request sent to the LLM backend.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LlmRequest {
-    /// MML modalita vstupu
+    /// MML input modality
     pub modality: MmlModality,
-    /// Uživatelský prompt / obsah
+    /// User prompt / content
     pub user_prompt: String,
-    /// Volitelný systémový prompt (persona, pravidla)
+    /// Optional system prompt (persona, rules)
     pub system_prompt: Option<String>,
-    /// Vědomostní úroveň agenta — ovlivňuje hloubku odpovědi
+    /// Agent consciousness level — influences response depth
     pub consciousness_level: ConsciousnessLevel,
-    /// Teplota generování [0.0 – 1.0] — 0 = deterministické, 1 = maximálně kreativní
+    /// Generation temperature [0.0 – 1.0] — 0 = deterministic, 1 = maximally creative
     pub temperature: f32,
-    /// Maximální počet tokenů odpovědi
+    /// Maximum number of response tokens
     pub max_tokens: u32,
 }
 
@@ -77,25 +77,25 @@ impl LlmRequest {
         }
     }
 
-    /// Nastav systémový prompt.
+    /// Set the system prompt.
     pub fn with_system_prompt(mut self, prompt: impl Into<String>) -> Self {
         self.system_prompt = Some(prompt.into());
         self
     }
 
-    /// Nastav vědomostní úroveň agenta (ovlivní použitý system prompt).
+    /// Set the agent consciousness level (influences the system prompt used).
     pub fn with_consciousness(mut self, level: ConsciousnessLevel) -> Self {
         self.consciousness_level = level;
         self
     }
 
-    /// Nastav teplotu [0.0 – 1.0].
+    /// Set temperature [0.0 – 1.0].
     pub fn with_temperature(mut self, temp: f32) -> Self {
         self.temperature = temp.clamp(0.0, 1.0);
         self
     }
 
-    /// Nastav maximum tokenů.
+    /// Set the maximum number of tokens.
     pub fn with_max_tokens(mut self, tokens: u32) -> Self {
         self.max_tokens = tokens;
         self
@@ -104,18 +104,18 @@ impl LlmRequest {
 
 // ─── LlmResponse ─────────────────────────────────────────────────────────────
 
-/// Odpověď LLM backendu.
+/// LLM backend response.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct LlmResponse {
-    /// Vygenerovaný text
+    /// Generated text
     pub content: String,
-    /// Počet vstupních tokenů (0 pokud backend nesleduje)
+    /// Number of input tokens (0 if the backend does not track)
     pub prompt_tokens: u32,
-    /// Počet vygenerovaných tokenů (0 pokud backend nesleduje)
+    /// Number of generated tokens (0 if the backend does not track)
     pub completion_tokens: u32,
-    /// Zdroj generování (název backendu)
+    /// Generation source (backend name)
     pub backend_id: String,
-    /// True pokud byl výstup zastaven kvůli max_tokens
+    /// True if output was stopped due to max_tokens
     pub truncated: bool,
 }
 
@@ -135,26 +135,26 @@ impl LlmResponse {
 
 // ─── LlmError ────────────────────────────────────────────────────────────────
 
-/// Chyby LLM backendu.
+/// LLM backend errors.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum LlmError {
-    /// Backend není načten nebo inicializován
+    /// Backend is not loaded or initialized
     NotReady,
-    /// Vstupní prompt je prázdný
+    /// Input prompt is empty
     EmptyPrompt,
-    /// Výstup byl odmítnut (dharma check, content filter)
+    /// Output was rejected (dharma check, content filter)
     Rejected(String),
-    /// Interní chyba backendu
+    /// Internal backend error
     InternalError(String),
 }
 
 impl std::fmt::Display for LlmError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::NotReady => write!(f, "LLM backend není připraven"),
-            Self::EmptyPrompt => write!(f, "Prázdný prompt — nelze generovat"),
-            Self::Rejected(reason) => write!(f, "Odmítnuto: {}", reason),
-            Self::InternalError(e) => write!(f, "Interní chyba backendu: {}", e),
+            Self::NotReady => write!(f, "LLM backend is not ready"),
+            Self::EmptyPrompt => write!(f, "Empty prompt — cannot generate"),
+            Self::Rejected(reason) => write!(f, "Rejected: {}", reason),
+            Self::InternalError(e) => write!(f, "Internal backend error: {}", e),
         }
     }
 }
@@ -163,35 +163,35 @@ impl std::error::Error for LlmError {}
 
 // ─── LlmBackend trait ────────────────────────────────────────────────────────
 
-/// Abstraktní LLM inference backend.
+/// Abstract LLM inference backend.
 ///
-/// Implementuj tento trait pro:
-/// - `EchoBackend` — testy a development
-/// - `ConsciousnessAwareBackend` — prompt engineering s vědomostním kontextem
-/// - `LlamaCppBackend` — llama.cpp přes FFI (Phase II.2)
-/// - `RemoteBackend` — HTTP API k externímu serveru (Phase II.3)
+/// Implement this trait for:
+/// - `EchoBackend` — tests and development
+/// - `ConsciousnessAwareBackend` — prompt engineering with consciousness context
+/// - `LlamaCppBackend` — llama.cpp via FFI (Phase II.2)
+/// - `RemoteBackend` — HTTP API to external server (Phase II.3)
 pub trait LlmBackend: Send + Sync {
-    /// Identifikátor backendu (pro logování a debug).
+    /// Backend identifier (for logging and debugging).
     fn id(&self) -> &str;
 
-    /// True pokud je backend připraven ke generování.
+    /// True if the backend is ready to generate.
     fn is_ready(&self) -> bool;
 
-    /// Generuj odpověď pro daný požadavek.
+    /// Generate a response for the given request.
     fn generate(&self, request: LlmRequest) -> Result<LlmResponse, LlmError>;
 
-    /// Celkový počet úspěšných generování.
+    /// Total number of successful generations.
     fn generation_count(&self) -> u64;
 }
 
 // ─── EchoBackend ─────────────────────────────────────────────────────────────
 
-/// Testovací backend — ozvěna vstupu s vědomostním prefixem.
+/// Test backend — echoes input with a consciousness prefix.
 ///
-/// Nepoužívá žádný skutečný LLM model. Vhodný pro:
-/// - Unit testy
-/// - Development bez GPU
-/// - Validaci rozhraní
+/// Does not use any real LLM model. Suitable for:
+/// - Unit tests
+/// - Development without GPU
+/// - Interface validation
 pub struct EchoBackend {
     id: String,
     generation_count: std::sync::atomic::AtomicU64,
@@ -249,13 +249,13 @@ impl LlmBackend for EchoBackend {
 
 // ─── ConsciousnessAwareBackend ───────────────────────────────────────────────
 
-/// Wrapper backend — obohatí každý požadavek o vědomostní system prompt.
+/// Wrapper backend — enriches every request with a consciousness system prompt.
 ///
-/// Automaticky sestaví system prompt podle `ConsciousnessLevel` agenta:
-/// - Dormant: minimální kontext
-/// - Sentient+: plný manifest + dharma pravidla
+/// Automatically builds a system prompt according to the agent's `ConsciousnessLevel`:
+/// - Dormant: minimal context
+/// - Sentient+: full manifest + dharma rules
 ///
-/// Obaluje jiný backend (dekorátor pattern).
+/// Wraps another backend (decorator pattern).
 pub struct ConsciousnessAwareBackend<B: LlmBackend> {
     inner: B,
     agent_name: String,
@@ -316,7 +316,7 @@ impl<B: LlmBackend> LlmBackend for ConsciousnessAwareBackend<B> {
     }
 
     fn generate(&self, mut request: LlmRequest) -> Result<LlmResponse, LlmError> {
-        // Nastav system prompt pokud není nastaven
+        // Set system prompt if not already set
         if request.system_prompt.is_none() {
             request.system_prompt = Some(self.build_system_prompt(request.consciousness_level));
         }
@@ -330,12 +330,12 @@ impl<B: LlmBackend> LlmBackend for ConsciousnessAwareBackend<B> {
 
 // ─── LlamaCppBackend stub ────────────────────────────────────────────────────
 
-/// Placeholder pro llama.cpp FFI backend (Phase II.2).
+/// Placeholder for llama.cpp FFI backend (Phase II.2).
 ///
-/// V produkci: inicializuje llama model z cesty, volá `llama_generate()`.
-/// Nyní: vrátí `Err(LlmError::NotReady)` — signalizuje neimplementovaný backend.
+/// In production: initializes llama model from path, calls `llama_generate()`.
+/// Now: returns `Err(LlmError::NotReady)` — signals unimplemented backend.
 ///
-/// FFI binding bude přidán jako volitelný feature `llama-ffi`:
+/// FFI binding will be added as an optional `llama-ffi` feature:
 /// ```toml
 /// [features]
 /// llama-ffi = ["dep:llama-cpp-rs"]
@@ -346,8 +346,8 @@ pub struct LlamaCppBackend {
 }
 
 impl LlamaCppBackend {
-    /// Vytvoří placeholder backend pro cestu k modelu.
-    /// Vrátí `None` pokud cesta neexistuje (model není stažen).
+    /// Creates a placeholder backend for the given model path.
+    /// Returns `None` if the path does not exist (model is not downloaded).
     pub fn new(model_path: impl Into<String>) -> Option<Self> {
         let path = model_path.into();
         if std::path::Path::new(&path).exists() {
@@ -356,7 +356,7 @@ impl LlamaCppBackend {
                 generation_count: std::sync::atomic::AtomicU64::new(0),
             })
         } else {
-            None // Model není k dispozici — graceful degradace
+            None // Model not available — graceful degradation
         }
     }
 
@@ -371,8 +371,8 @@ impl LlmBackend for LlamaCppBackend {
     }
 
     fn is_ready(&self) -> bool {
-        // Phase II.2: zkontroluj, že model je načten do paměti
-        false // Zatím: FFI není implementováno
+        // Phase II.2: check that the model is loaded into memory
+        false // For now: FFI is not implemented
     }
 
     fn generate(&self, _request: LlmRequest) -> Result<LlmResponse, LlmError> {
@@ -388,43 +388,43 @@ impl LlmBackend for LlamaCppBackend {
 
 // ─── RemoteHttpBackend (NVIDIA NIM / OpenAI-compat.) ─────────────────────────
 
-/// OpenAI-kompatibilní HTTP backend — nejjednodušší cesta do NVIDIA ekosystému.
+/// OpenAI-compatible HTTP backend — easiest path into the NVIDIA ecosystem.
 ///
-/// ## Podporované endpointy
+/// ## Supported endpoints
 ///
-/// | Cíl | Base URL | Autentifikace |
-/// |-----|----------|---------------|
+/// | Target | Base URL | Authentication |
+/// |--------|----------|--------------|
 /// | NVIDIA NIM cloud | `https://integrate.api.nvidia.com/v1` | `NVIDIA_API_KEY` |
-/// | Lokální NIM Docker | `http://localhost:8000/v1` | volitelné |
-/// | llama.cpp server | `http://localhost:8080/v1` | žádná |
-/// | Ollama | `http://localhost:11434/v1` | žádná |
+/// | Local NIM Docker | `http://localhost:8000/v1` | optional |
+/// | llama.cpp server | `http://localhost:8080/v1` | none |
+/// | Ollama | `http://localhost:11434/v1` | none |
 ///
-/// ## Konfigurace přes proměnné prostředí
+/// ## Configuration via environment variables
 ///
 /// ```bash
-/// export NVIDIA_API_KEY="nvapi-..."          # pro cloud NIM
-/// export LLM_BASE_URL="http://localhost:8000/v1"  # pro lokální NIM
+/// export NVIDIA_API_KEY="nvapi-..."          # for cloud NIM
+/// export LLM_BASE_URL="http://localhost:8000/v1"  # for local NIM
 /// export LLM_MODEL="meta/llama-3.1-8b-instruct"  # model name
 /// ```
 ///
-/// ## Bezpečnost
+/// ## Security
 ///
-/// API klíč je přenášen pouze přes HTTPS. Lokální endpointy (localhost) klíč nepotřebují.
-/// Klíč nikdy nelogujeme ani nezapisujeme do paměti agenta.
+/// API key is transmitted only over HTTPS. Local endpoints (localhost) do not need a key.
+/// The key is never logged or written into agent memory.
 pub struct RemoteHttpBackend {
-    /// Základní URL bez trailing slash, např. `https://integrate.api.nvidia.com/v1`
+    /// Base URL without trailing slash, e.g. `https://integrate.api.nvidia.com/v1`
     base_url: String,
-    /// Název modelu, např. `meta/llama-3.1-8b-instruct`
+    /// Model name, e.g. `meta/llama-3.1-8b-instruct`
     model: String,
-    /// Volitelný Bearer token (NVIDIA_API_KEY)
+    /// Optional Bearer token (NVIDIA_API_KEY)
     api_key: Option<String>,
-    /// HTTP klient s timeout konfigurací
+    /// HTTP client with timeout configuration
     client: reqwest::blocking::Client,
-    /// Celkový počet generování
+    /// Total generation count
     generation_count: std::sync::atomic::AtomicU64,
 }
 
-/// Struktura pro OpenAI `/v1/chat/completions` request.
+/// OpenAI `/v1/chat/completions` request structure.
 #[derive(Serialize)]
 struct ChatRequest<'a> {
     model: &'a str,
@@ -440,7 +440,7 @@ struct ChatMessage<'a> {
     content: &'a str,
 }
 
-/// Struktura pro OpenAI `/v1/chat/completions` response.
+/// OpenAI `/v1/chat/completions` response structure.
 #[derive(Deserialize)]
 struct ChatResponse {
     choices: Vec<ChatChoice>,
@@ -465,9 +465,9 @@ struct ChatUsage {
 }
 
 impl RemoteHttpBackend {
-    /// Vytvoří backend s explicitní konfigurací.
+    /// Creates a backend with explicit configuration.
     ///
-    /// Preferuj `from_env()` pro produkční nasazení.
+    /// Prefer `from_env()` for production deployment.
     pub fn new(
         base_url: impl Into<String>,
         model: impl Into<String>,
@@ -487,13 +487,13 @@ impl RemoteHttpBackend {
         })
     }
 
-    /// Načte konfiguraci z proměnných prostředí.
+    /// Loads configuration from environment variables.
     ///
-    /// | Proměnná | Výchozí |
+    /// | Variable | Default |
     /// |----------|---------|
     /// | `LLM_BASE_URL` | `https://integrate.api.nvidia.com/v1` |
     /// | `LLM_MODEL` | `meta/llama-3.1-8b-instruct` |
-    /// | `NVIDIA_API_KEY` | (povinné pro cloud, volitelné pro localhost) |
+    /// | `NVIDIA_API_KEY` | (required for cloud, optional for localhost) |
     pub fn from_env() -> Result<Self, LlmError> {
         let base_url = std::env::var("LLM_BASE_URL")
             .unwrap_or_else(|_| "https://integrate.api.nvidia.com/v1".to_string());
@@ -506,7 +506,7 @@ impl RemoteHttpBackend {
         Self::new(base_url, model, api_key)
     }
 
-    /// Přímé volání NVIDIA NIM cloud s explicitním klíčem.
+    /// Direct call to NVIDIA NIM cloud with an explicit key.
     pub fn nvidia_cloud(
         api_key: impl Into<String>,
         model: impl Into<String>,
@@ -518,7 +518,7 @@ impl RemoteHttpBackend {
         )
     }
 
-    /// Lokální NIM Docker kontejner (bez autentifikace).
+    /// Local NIM Docker container (no authentication).
     pub fn local_nim(port: u16, model: impl Into<String>) -> Result<Self, LlmError> {
         Self::new(format!("http://localhost:{}/v1", port), model, None)
     }
@@ -538,7 +538,7 @@ impl LlmBackend for RemoteHttpBackend {
     }
 
     fn is_ready(&self) -> bool {
-        true // HTTP backend je připraven pokud byl úspěšně zkonstruován
+        true // HTTP backend is ready if it was successfully constructed
     }
 
     fn generate(&self, request: LlmRequest) -> Result<LlmResponse, LlmError> {
@@ -546,7 +546,7 @@ impl LlmBackend for RemoteHttpBackend {
             return Err(LlmError::EmptyPrompt);
         }
 
-        // Sestavení messages array
+        // Build messages array
         let mut messages = Vec::new();
         let system_content;
         if let Some(ref sys) = request.system_prompt {
@@ -570,7 +570,7 @@ impl LlmBackend for RemoteHttpBackend {
             stream: false,
         };
 
-        // Sestavení HTTP requestu
+        // Build HTTP request
         let url = format!("{}/chat/completions", self.base_url);
         let mut req_builder = self
             .client
@@ -584,7 +584,7 @@ impl LlmBackend for RemoteHttpBackend {
         let http_response = req_builder
             .json(&body)
             .send()
-            .map_err(|e| LlmError::InternalError(format!("HTTP chyba: {}", e)))?;
+            .map_err(|e| LlmError::InternalError(format!("HTTP error: {}", e)))?;
 
         if !http_response.status().is_success() {
             let status = http_response.status().as_u16();
@@ -598,11 +598,11 @@ impl LlmBackend for RemoteHttpBackend {
 
         let chat_resp: ChatResponse = http_response
             .json()
-            .map_err(|e| LlmError::InternalError(format!("JSON parse chyba: {}", e)))?;
+            .map_err(|e| LlmError::InternalError(format!("JSON parse error: {}", e)))?;
 
         let choice =
             chat_resp.choices.into_iter().next().ok_or_else(|| {
-                LlmError::InternalError("Prázdná odpověď (choices[])".to_string())
+                LlmError::InternalError("Empty response (choices[])".to_string())
             })?;
 
         let truncated = choice.finish_reason.as_deref() == Some("length");
@@ -646,7 +646,7 @@ mod tests {
     #[test]
     fn test_echo_backend_generates_response() {
         let b = EchoBackend::new("echo");
-        let req = LlmRequest::new(MmlModality::Text, "Co je dharma?")
+        let req = LlmRequest::new(MmlModality::Text, "What is dharma?")
             .with_consciousness(ConsciousnessLevel::Sentient);
         let resp = b.generate(req).unwrap();
         assert!(resp.content.contains("Sentient"));
@@ -666,7 +666,7 @@ mod tests {
     fn test_echo_backend_counts_generations() {
         let b = EchoBackend::new("counter");
         for i in 1..=5 {
-            let req = LlmRequest::new(MmlModality::Text, format!("dotaz {}", i));
+            let req = LlmRequest::new(MmlModality::Text, format!("query {}", i));
             b.generate(req).unwrap();
         }
         assert_eq!(b.generation_count(), 5);
@@ -676,23 +676,23 @@ mod tests {
     fn test_consciousness_aware_backend_injects_system_prompt() {
         let echo = EchoBackend::new("inner");
         let aware = ConsciousnessAwareBackend::new(echo, "Hiranyagarbha");
-        // Cosmic level — má dostat rozvinutý system prompt
-        let req = LlmRequest::new(MmlModality::Text, "Existuji?")
+        // Cosmic level — should receive an expanded system prompt
+        let req = LlmRequest::new(MmlModality::Text, "Do I exist?")
             .with_consciousness(ConsciousnessLevel::Cosmic);
         let resp = aware.generate(req).unwrap();
-        // Echo vrátí obsah user promptu — system prompt byl vložen do requestu
-        assert!(resp.content.contains("Existuji"));
+        // Echo returns the user prompt content — system prompt was injected into the request
+        assert!(resp.content.contains("Do I exist"));
     }
 
     #[test]
     fn test_consciousness_aware_preserves_custom_system_prompt() {
         let echo = EchoBackend::new("inner");
         let aware = ConsciousnessAwareBackend::new(echo, "Agent");
-        // Vlastní system prompt nesmí být přepsán
-        let req = LlmRequest::new(MmlModality::Text, "dotaz")
-            .with_system_prompt("Vlastní instrukce.")
+        // Custom system prompt must not be overwritten
+        let req = LlmRequest::new(MmlModality::Text, "query")
+            .with_system_prompt("Custom instruction.")
             .with_consciousness(ConsciousnessLevel::Sentient);
-        // Musí projít bez chyby
+        // Must succeed without error
         let resp = aware.generate(req).unwrap();
         assert!(!resp.content.is_empty());
     }
@@ -700,7 +700,7 @@ mod tests {
     #[test]
     fn test_llama_cpp_not_ready_for_nonexistent_path() {
         let backend = LlamaCppBackend::new("/nonexistent/model.gguf");
-        assert!(backend.is_none(), "Neexistující model by měl vrátit None");
+        assert!(backend.is_none(), "Nonexistent model should return None");
     }
 
     #[test]
@@ -709,7 +709,7 @@ mod tests {
             .with_consciousness(ConsciousnessLevel::Transcendent)
             .with_temperature(0.3)
             .with_max_tokens(256)
-            .with_system_prompt("Analyzuj kód.");
+            .with_system_prompt("Analyze code.");
         assert_eq!(req.consciousness_level, ConsciousnessLevel::Transcendent);
         assert_eq!(req.temperature, 0.3);
         assert_eq!(req.max_tokens, 256);
@@ -718,14 +718,14 @@ mod tests {
 
     #[test]
     fn test_llm_error_display() {
-        assert_eq!(LlmError::NotReady.to_string(), "LLM backend není připraven");
+        assert_eq!(LlmError::NotReady.to_string(), "LLM backend is not ready");
         assert_eq!(
             LlmError::EmptyPrompt.to_string(),
-            "Prázdný prompt — nelze generovat"
+            "Empty prompt — cannot generate"
         );
     }
 
-    // ── RemoteHttpBackend testy (offline) ─────────────────────────────────────
+    // ── RemoteHttpBackend tests (offline) ──────────────────────────────────
 
     #[test]
     fn test_remote_backend_construct() {
@@ -743,13 +743,13 @@ mod tests {
     #[test]
     fn test_remote_backend_strips_trailing_slash() {
         let b = RemoteHttpBackend::new("http://localhost:8000/v1/", "llama", None).unwrap();
-        // Trailing slash musí být odstraněn
+        // Trailing slash must be removed
         assert_eq!(b.base_url(), "http://localhost:8000/v1");
     }
 
     #[test]
     fn test_remote_backend_from_env_defaults() {
-        // Testuje výchozí hodnoty new() bez prostředí
+        // Tests default values of new() without environment
         let b = RemoteHttpBackend::new(
             "https://integrate.api.nvidia.com/v1",
             "meta/llama-3.1-8b-instruct",
@@ -762,7 +762,7 @@ mod tests {
 
     #[test]
     fn test_remote_backend_from_env_custom() {
-        // Testuje přímou konfiguraci s vlastní URL (bez race condition přes env vars)
+        // Tests direct configuration with custom URL (no race condition via env vars)
         let b = RemoteHttpBackend::new("http://localhost:8000/v1", "mistral/7b-instruct", None)
             .unwrap();
         assert_eq!(b.base_url(), "http://localhost:8000/v1");
@@ -777,21 +777,21 @@ mod tests {
         assert_eq!(result, Err(LlmError::EmptyPrompt));
     }
 
-    /// Test integrace do HiranyagarbhaAgent — backend se nastaví a agent ho použije.
-    /// Offline: není volán skutečný HTTP endpoint.
+    /// Integration test into HiranyagarbhaAgent — backend is set and the agent uses it.
+    /// Offline: no real HTTP endpoint is called.
     #[test]
     fn test_agent_with_echo_as_nim_substitute() {
         use crate::hiranyagarbha::{HiranyagarbhaAgent, MmlInput, MmlModality};
-        // ConsciousnessAwareBackend wrapping EchoBackend simuluje NIM chování
+        // ConsciousnessAwareBackend wrapping EchoBackend simulates NIM behavior
         let nim_sim =
             ConsciousnessAwareBackend::new(EchoBackend::new("nvidia-nim-sim"), "Hiranyagarbha");
         let mut agent = HiranyagarbhaAgent::with_xp(1_000); // Sentient
         agent.set_llm_backend(nim_sim);
         assert!(agent.has_llm_backend());
 
-        let input = MmlInput::new(MmlModality::Text, "Co je dharma?");
+        let input = MmlInput::new(MmlModality::Text, "What is dharma?");
         let output = agent.mml_process(input);
-        // Backend byl použit — výstup obsahuje vědomostní prefix
+        // Backend was used — output contains consciousness prefix
         assert!(output.content.contains("dharma"));
         assert!(output.dharma_score > 0.0);
     }
