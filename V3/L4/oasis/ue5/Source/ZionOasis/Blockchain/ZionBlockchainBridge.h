@@ -4,8 +4,8 @@
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
 #include "Http.h"
-#include "Consciousness/ConsciousnessTypes.h"
-#include "Avatar/AvatarTypes.h"
+#include "ZionOasis/Consciousness/ConsciousnessTypes.h"
+#include "ZionOasis/Avatar/AvatarTypes.h"
 #include "ZionBlockchainBridge.generated.h"
 
 /** C++ async callback for HTTP bridge requests (non-dynamic) */

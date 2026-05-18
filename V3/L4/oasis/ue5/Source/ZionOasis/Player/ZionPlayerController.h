@@ -3,7 +3,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
-#include "Avatar/AvatarTypes.h"
+#include "ZionOasis/Avatar/AvatarTypes.h"
 #include "ZionPlayerController.generated.h"
 
 class UZionBlockchainBridge;
@@ -24,6 +24,8 @@ class ZIONOASIS_API AZionPlayerController : public APlayerController
 	GENERATED_BODY()
 
 public:
+	AZionPlayerController();
+
 	UPROPERTY(BlueprintAssignable, Category = "ZION|Events")
 	FOnWalletConnected OnWalletConnected;
 

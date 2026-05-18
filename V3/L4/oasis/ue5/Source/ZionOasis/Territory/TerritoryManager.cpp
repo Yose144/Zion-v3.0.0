@@ -1,6 +1,6 @@
 // Copyright 2026 ZION TerraNova. All Rights Reserved.
-#include "Territory/TerritoryManager.h"
-#include "Blockchain/ZionBlockchainBridge.h"
+#include "TerritoryManager.h"
+#include "ZionOasis/Blockchain/ZionBlockchainBridge.h"
 #include "Net/UnrealNetwork.h"
 #include "Engine/World.h"
 #include "Kismet/GameplayStatics.h"
@@ -48,7 +48,7 @@ void ATerritoryManager::LoadGenesisMap()
 	{
 		FTerritoryInfo T;
 		T.TerritoryId    = Id;
-		T.Name           = Name;
+		T.Name           = FText::FromString(Name);
 		T.Region         = Region;
 		T.ControllerGuildId = TEXT("");
 		T.MiningBonus    = 0.10f;
