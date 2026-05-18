@@ -122,7 +122,11 @@ impl DeekshaStreamTelemetry {
         if self.total_work == 0 {
             return 0.0;
         }
-        let units = self.stream_breakdown.get(source.as_str()).copied().unwrap_or(0);
+        let units = self
+            .stream_breakdown
+            .get(source.as_str())
+            .copied()
+            .unwrap_or(0);
         (units as f64 / self.total_work as f64) * 100.0
     }
 }
@@ -269,8 +273,7 @@ mod tests {
         let nonce = 42u64;
 
         let hash_plain = crate::deeksha::cosmic_harmony_ekam_deeksha(header, nonce);
-        let (hash_streams, telemetry) =
-            cosmic_harmony_ekam_deeksha_with_streams(header, nonce);
+        let (hash_streams, telemetry) = cosmic_harmony_ekam_deeksha_with_streams(header, nonce);
 
         assert_eq!(
             hash_plain.data, hash_streams.data,
@@ -300,7 +303,11 @@ mod tests {
         let ncl_pct = telemetry.pct_for(RevenueSource::NclAi);
 
         let sum = zion_pct + keccak_pct + sha3_pct + ncl_pct;
-        assert!((sum - 100.0).abs() < 0.1, "stream percentages must sum to 100, got {}", sum);
+        assert!(
+            (sum - 100.0).abs() < 0.1,
+            "stream percentages must sum to 100, got {}",
+            sum
+        );
     }
 
     #[test]
@@ -308,7 +315,11 @@ mod tests {
         let (_hash, telemetry) =
             cosmic_harmony_ekam_deeksha_v2_with_streams(b"majority test", 0, 0);
         let zion_pct = telemetry.pct_for(RevenueSource::Zion);
-        assert!(zion_pct > 50.0, "ZION stream must be majority of work, got {}%", zion_pct);
+        assert!(
+            zion_pct > 50.0,
+            "ZION stream must be majority of work, got {}%",
+            zion_pct
+        );
     }
 
     #[test]

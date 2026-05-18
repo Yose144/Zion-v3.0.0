@@ -5,7 +5,7 @@ use tokio::sync::Mutex;
 use tracing::{info, warn};
 
 use crate::db::SwapDb;
-use crate::types::{SwapDirection, SwapId, SwapRecord, SwapStatus, QuoteRequest, QuoteResponse};
+use crate::types::{QuoteRequest, QuoteResponse, SwapDirection, SwapId, SwapRecord, SwapStatus};
 
 /// Configuration for the swap orchestrator
 #[derive(Debug, Clone)]
@@ -34,7 +34,7 @@ impl Default for OrchestratorConfig {
             weth_address: "0x4200000000000000000000000000000000000006".into(),
             usdc_address: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913".into(),
             min_amount_atomic: 1_000_000_000_000, // 1 ZION
-            max_slippage_bps: 500, // 5%
+            max_slippage_bps: 500,                // 5%
         }
     }
 }
@@ -87,9 +87,8 @@ impl SwapOrchestrator {
         let amount_in: u128 = req.amount_in.parse().unwrap_or(0);
         let estimated_out = amount_in / 10_000; // placeholder ratio
 
-        let min_amount_out = estimated_out.saturating_mul(
-            (10_000 - self.config.max_slippage_bps as u128) / 10_000
-        );
+        let min_amount_out =
+            estimated_out.saturating_mul((10_000 - self.config.max_slippage_bps as u128) / 10_000);
 
         Ok(QuoteResponse {
             amount_in: req.amount_in,
@@ -165,7 +164,13 @@ impl SwapOrchestrator {
             record.bridge_mint_tx = Some(format!("0xmint_{}", &record.id[..8]));
             {
                 let db = self.db.lock().await;
-                db.update_txs(&record.id, None, record.bridge_mint_tx.as_deref(), None, None)?;
+                db.update_txs(
+                    &record.id,
+                    None,
+                    record.bridge_mint_tx.as_deref(),
+                    None,
+                    None,
+                )?;
             }
         }
 
@@ -181,10 +186,17 @@ impl SwapOrchestrator {
             // Placeholder: execute swap via EVM RPC
             tokio::time::sleep(std::time::Duration::from_secs(2)).await;
             record.swap_tx = Some(format!("0xswap_{}", &record.id[..8]));
-            record.amount_out = Some((record.amount_in.parse::<u128>().unwrap_or(0) / 10_000).to_string());
+            record.amount_out =
+                Some((record.amount_in.parse::<u128>().unwrap_or(0) / 10_000).to_string());
             {
                 let db = self.db.lock().await;
-                db.update_txs(&record.id, None, None, record.swap_tx.as_deref(), record.amount_out.as_deref())?;
+                db.update_txs(
+                    &record.id,
+                    None,
+                    None,
+                    record.swap_tx.as_deref(),
+                    record.amount_out.as_deref(),
+                )?;
                 db.update_status(&record.id, SwapStatus::Completed)?;
             }
             record.status = SwapStatus::Completed;
@@ -224,7 +236,13 @@ impl SwapOrchestrator {
             record.bridge_mint_tx = Some(format!("0xburn_{}", &record.id[..8]));
             {
                 let db = self.db.lock().await;
-                db.update_txs(&record.id, None, record.bridge_mint_tx.as_deref(), None, None)?;
+                db.update_txs(
+                    &record.id,
+                    None,
+                    record.bridge_mint_tx.as_deref(),
+                    None,
+                    None,
+                )?;
             }
         }
 
@@ -235,7 +253,13 @@ impl SwapOrchestrator {
             record.amount_out = Some(record.amount_in.clone()); // 1:1 after fees
             {
                 let db = self.db.lock().await;
-                db.update_txs(&record.id, record.l1_lock_tx.as_deref(), None, None, record.amount_out.as_deref())?;
+                db.update_txs(
+                    &record.id,
+                    record.l1_lock_tx.as_deref(),
+                    None,
+                    None,
+                    record.amount_out.as_deref(),
+                )?;
                 db.update_status(&record.id, SwapStatus::Completed)?;
             }
             record.status = SwapStatus::Completed;

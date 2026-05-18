@@ -24,12 +24,12 @@ pub enum NclTaskType {
 impl std::fmt::Display for NclTaskType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::LlmInference    => write!(f, "llm_inference"),
+            Self::LlmInference => write!(f, "llm_inference"),
             Self::ImageGeneration => write!(f, "image_generation"),
-            Self::ModelTraining   => write!(f, "model_training"),
-            Self::Embeddings      => write!(f, "embeddings"),
-            Self::CodeAnalysis    => write!(f, "code_analysis"),
-            Self::Custom          => write!(f, "custom"),
+            Self::ModelTraining => write!(f, "model_training"),
+            Self::Embeddings => write!(f, "embeddings"),
+            Self::CodeAnalysis => write!(f, "code_analysis"),
+            Self::Custom => write!(f, "custom"),
         }
     }
 }

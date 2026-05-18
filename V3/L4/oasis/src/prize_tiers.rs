@@ -44,16 +44,96 @@ impl Default for PrizeConfig {
 impl PrizeConfig {
     pub fn default_tiers() -> Vec<PrizeTier> {
         vec![
-            PrizeTier { rank: 1, title: "Hiranyagarbha Sovereign".into(), zion: 1_000_000_000, flowers: 1_000_000_000_000_000_000_000, percentage: 100.0, nft_reward: "Legendary Golden Egg Solver".into(), unlock_condition: "All 3 Master Keys + CL 9 + DAO 67%".into() },
-            PrizeTier { rank: 2, title: "Cosmic Guardian".into(), zion: 500_000_000, flowers: 500_000_000_000_000_000_000, percentage: 50.0, nft_reward: "Epic Cosmic Guardian".into(), unlock_condition: "2 Master Keys + CL 8 + Top 2 raid".into() },
-            PrizeTier { rank: 3, title: "Divine Strategist".into(), zion: 250_000_000, flowers: 250_000_000_000_000_000_000, percentage: 25.0, nft_reward: "Epic Divine Strategist".into(), unlock_condition: "2 Master Keys + CL 7 + Top 3 raid".into() },
-            PrizeTier { rank: 4, title: "Star Mystic".into(), zion: 100_000_000, flowers: 100_000_000_000_000_000_000, percentage: 10.0, nft_reward: "Rare Star Mystic".into(), unlock_condition: "1 Master Key + CL 6 + Top 10 raid".into() },
-            PrizeTier { rank: 5, title: "Ascended Sage".into(), zion: 50_000_000, flowers: 50_000_000_000_000_000_000, percentage: 5.0, nft_reward: "Rare Ascended Sage".into(), unlock_condition: "1 Master Key + CL 5 + Top 20 raid".into() },
-            PrizeTier { rank: 6, title: "Spiritual Warrior".into(), zion: 25_000_000, flowers: 25_000_000_000_000_000_000, percentage: 2.5, nft_reward: "Uncommon Spiritual Warrior".into(), unlock_condition: "CL 4 + Top 50 raid".into() },
-            PrizeTier { rank: 7, title: "Intuitional Seeker".into(), zion: 10_000_000, flowers: 10_000_000_000_000_000_000, percentage: 1.0, nft_reward: "Uncommon Intuitional Seeker".into(), unlock_condition: "CL 3 + Top 100 raid".into() },
-            PrizeTier { rank: 8, title: "Mental Adept".into(), zion: 5_000_000, flowers: 5_000_000_000_000_000_000, percentage: 0.5, nft_reward: "Common Mental Adept".into(), unlock_condition: "CL 2 + Top 500 raid".into() },
-            PrizeTier { rank: 9, title: "Emotional Healer".into(), zion: 1_000_000, flowers: 1_000_000_000_000_000_000, percentage: 0.1, nft_reward: "Common Emotional Healer".into(), unlock_condition: "CL 1 + Top 1000 raid".into() },
-            PrizeTier { rank: 10, title: "Physical Initiate".into(), zion: 100_000, flowers: 100_000_000_000_000_000, percentage: 0.01, nft_reward: "Common Physical Initiate".into(), unlock_condition: "CL 1 + Participation".into() },
+            PrizeTier {
+                rank: 1,
+                title: "Hiranyagarbha Sovereign".into(),
+                zion: 1_000_000_000,
+                flowers: 1_000_000_000_000_000_000_000,
+                percentage: 100.0,
+                nft_reward: "Legendary Golden Egg Solver".into(),
+                unlock_condition: "All 3 Master Keys + CL 9 + DAO 67%".into(),
+            },
+            PrizeTier {
+                rank: 2,
+                title: "Cosmic Guardian".into(),
+                zion: 500_000_000,
+                flowers: 500_000_000_000_000_000_000,
+                percentage: 50.0,
+                nft_reward: "Epic Cosmic Guardian".into(),
+                unlock_condition: "2 Master Keys + CL 8 + Top 2 raid".into(),
+            },
+            PrizeTier {
+                rank: 3,
+                title: "Divine Strategist".into(),
+                zion: 250_000_000,
+                flowers: 250_000_000_000_000_000_000,
+                percentage: 25.0,
+                nft_reward: "Epic Divine Strategist".into(),
+                unlock_condition: "2 Master Keys + CL 7 + Top 3 raid".into(),
+            },
+            PrizeTier {
+                rank: 4,
+                title: "Star Mystic".into(),
+                zion: 100_000_000,
+                flowers: 100_000_000_000_000_000_000,
+                percentage: 10.0,
+                nft_reward: "Rare Star Mystic".into(),
+                unlock_condition: "1 Master Key + CL 6 + Top 10 raid".into(),
+            },
+            PrizeTier {
+                rank: 5,
+                title: "Ascended Sage".into(),
+                zion: 50_000_000,
+                flowers: 50_000_000_000_000_000_000,
+                percentage: 5.0,
+                nft_reward: "Rare Ascended Sage".into(),
+                unlock_condition: "1 Master Key + CL 5 + Top 20 raid".into(),
+            },
+            PrizeTier {
+                rank: 6,
+                title: "Spiritual Warrior".into(),
+                zion: 25_000_000,
+                flowers: 25_000_000_000_000_000_000,
+                percentage: 2.5,
+                nft_reward: "Uncommon Spiritual Warrior".into(),
+                unlock_condition: "CL 4 + Top 50 raid".into(),
+            },
+            PrizeTier {
+                rank: 7,
+                title: "Intuitional Seeker".into(),
+                zion: 10_000_000,
+                flowers: 10_000_000_000_000_000_000,
+                percentage: 1.0,
+                nft_reward: "Uncommon Intuitional Seeker".into(),
+                unlock_condition: "CL 3 + Top 100 raid".into(),
+            },
+            PrizeTier {
+                rank: 8,
+                title: "Mental Adept".into(),
+                zion: 5_000_000,
+                flowers: 5_000_000_000_000_000_000,
+                percentage: 0.5,
+                nft_reward: "Common Mental Adept".into(),
+                unlock_condition: "CL 2 + Top 500 raid".into(),
+            },
+            PrizeTier {
+                rank: 9,
+                title: "Emotional Healer".into(),
+                zion: 1_000_000,
+                flowers: 1_000_000_000_000_000_000,
+                percentage: 0.1,
+                nft_reward: "Common Emotional Healer".into(),
+                unlock_condition: "CL 1 + Top 1000 raid".into(),
+            },
+            PrizeTier {
+                rank: 10,
+                title: "Physical Initiate".into(),
+                zion: 100_000,
+                flowers: 100_000_000_000_000_000,
+                percentage: 0.01,
+                nft_reward: "Common Physical Initiate".into(),
+                unlock_condition: "CL 1 + Participation".into(),
+            },
         ]
     }
 
@@ -128,7 +208,10 @@ impl PrizeLedger {
     }
 
     pub fn by_address(&self, address: &str) -> Vec<&PlayerPrize> {
-        self.awards.iter().filter(|a| a.address == address).collect()
+        self.awards
+            .iter()
+            .filter(|a| a.address == address)
+            .collect()
     }
 
     pub fn total_awarded_zion(&self) -> u64 {

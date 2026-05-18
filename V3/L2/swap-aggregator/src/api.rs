@@ -14,7 +14,7 @@ use tracing::info;
 use crate::{
     db::SwapDb,
     orchestrator::SwapOrchestrator,
-    types::{SwapRequest, SwapResponse, QuoteRequest, QuoteResponse},
+    types::{QuoteRequest, QuoteResponse, SwapRequest, SwapResponse},
 };
 
 /// Shared application state
@@ -43,13 +43,15 @@ async fn create_swap_handler(
     State(state): State<AppState>,
     Json(req): Json<SwapRequest>,
 ) -> Result<Json<SwapResponse>, StatusCode> {
-    info!("Received swap request: direction={:?}, amount={}", req.direction, req.amount_in);
+    info!(
+        "Received swap request: direction={:?}, amount={}",
+        req.direction, req.amount_in
+    );
 
-    let record = state.orchestrator.create_swap(req).await
-        .map_err(|e| {
-            tracing::error!("Failed to create swap: {}", e);
-            StatusCode::INTERNAL_SERVER_ERROR
-        })?;
+    let record = state.orchestrator.create_swap(req).await.map_err(|e| {
+        tracing::error!("Failed to create swap: {}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
 
     // Spawn background processing
     let id = record.id.clone();
@@ -71,7 +73,10 @@ async fn get_swap_handler(
     State(state): State<AppState>,
     Path(id): Path<String>,
 ) -> Result<Json<SwapResponse>, StatusCode> {
-    let record = state.orchestrator.get_swap(&id).await
+    let record = state
+        .orchestrator
+        .get_swap(&id)
+        .await
         .map_err(|e| {
             tracing::error!("Failed to get swap: {}", e);
             StatusCode::INTERNAL_SERVER_ERROR
@@ -84,11 +89,10 @@ async fn get_swap_handler(
 async fn list_swaps_handler(
     State(state): State<AppState>,
 ) -> Result<Json<Vec<SwapResponse>>, StatusCode> {
-    let records = state.orchestrator.list_swaps(100).await
-        .map_err(|e| {
-            tracing::error!("Failed to list swaps: {}", e);
-            StatusCode::INTERNAL_SERVER_ERROR
-        })?;
+    let records = state.orchestrator.list_swaps(100).await.map_err(|e| {
+        tracing::error!("Failed to list swaps: {}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
 
     Ok(Json(records.into_iter().map(Into::into).collect()))
 }
@@ -97,11 +101,10 @@ async fn quote_handler(
     State(state): State<AppState>,
     Json(req): Json<QuoteRequest>,
 ) -> Result<Json<QuoteResponse>, StatusCode> {
-    let quote = state.orchestrator.quote(req).await
-        .map_err(|e| {
-            tracing::error!("Failed to get quote: {}", e);
-            StatusCode::INTERNAL_SERVER_ERROR
-        })?;
+    let quote = state.orchestrator.quote(req).await.map_err(|e| {
+        tracing::error!("Failed to get quote: {}", e);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
 
     Ok(Json(quote))
 }

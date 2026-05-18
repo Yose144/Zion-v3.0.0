@@ -48,7 +48,7 @@ pub mod prelude {
     pub use crate::error::{Result, RpcErrorBody, ZionSdkError};
     pub use crate::node::{NodeClient, NodeClientBuilder};
     pub use crate::types::{
-        ChainInfo, MempoolInfo, NodeInfo, PeerEndpoint, PeerInfo, SubmitAccepted, SubmitBlockParams,
-        SubmitCandidateResult, SupplyInfo,
+        ChainInfo, MempoolInfo, NodeInfo, PeerEndpoint, PeerInfo, SubmitAccepted,
+        SubmitBlockParams, SubmitCandidateResult, SupplyInfo,
     };
 }

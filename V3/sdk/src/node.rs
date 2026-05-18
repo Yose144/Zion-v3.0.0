@@ -345,7 +345,8 @@ impl NodeClient {
     }
 
     pub async fn block_by_height(&self, height: u64) -> Result<Value> {
-        self.call("getBlockByHeight", json!({ "height": height })).await
+        self.call("getBlockByHeight", json!({ "height": height }))
+            .await
     }
 
     pub async fn block_by_hash(&self, hash: &str) -> Result<Value> {
@@ -357,7 +358,8 @@ impl NodeClient {
     }
 
     pub async fn account_transaction(&self, txid: &str) -> Result<Value> {
-        self.call("getAccountTransaction", json!({ "txid": txid })).await
+        self.call("getAccountTransaction", json!({ "txid": txid }))
+            .await
     }
 
     pub async fn block_template(&self) -> Result<Value> {
@@ -381,7 +383,8 @@ impl NodeClient {
     }
 
     pub async fn utxos(&self, zion1_address: &str) -> Result<Value> {
-        self.call("getUtxos", json!({ "address": zion1_address })).await
+        self.call("getUtxos", json!({ "address": zion1_address }))
+            .await
     }
 
     pub async fn bridge_locks(&self, from_height: u64, to_height: Option<u64>) -> Result<Value> {
@@ -398,7 +401,11 @@ impl NodeClient {
     }
 
     /// `submitTransaction`, `submitAccountTransaction`, nebo `sendRawTransaction`.
-    pub async fn submit_transaction(&self, method: &str, transaction: Value) -> Result<SubmitAccepted> {
+    pub async fn submit_transaction(
+        &self,
+        method: &str,
+        transaction: Value,
+    ) -> Result<SubmitAccepted> {
         let v = self
             .call(method, json!({ "transaction": transaction }))
             .await?;
@@ -462,7 +469,12 @@ mod tests {
         let line = r#"{"jsonrpc":"2.0","id":1,"error":{"code":-32001,"message":"nope"}}"#;
         let e = NodeClient::parse_envelope(line, 1, "getBlock").unwrap_err();
         match e {
-            ZionSdkError::NodeRpc { method, code, message, .. } => {
+            ZionSdkError::NodeRpc {
+                method,
+                code,
+                message,
+                ..
+            } => {
                 assert_eq!(method, "getBlock");
                 assert_eq!(code, -32001);
                 assert_eq!(message, "nope");

@@ -248,9 +248,10 @@ async fn websocket_command(cfg: &Config, cmd: WebSocketCmd) -> Result<()> {
     let ws_port = cfg.node.websocket_port.unwrap_or(8445);
 
     match cmd {
-        WebSocketCmd::Subscribe { subscription, address } => {
-            websocket_subscribe(&ws_host, ws_port, &subscription, address).await
-        }
+        WebSocketCmd::Subscribe {
+            subscription,
+            address,
+        } => websocket_subscribe(&ws_host, ws_port, &subscription, address).await,
         WebSocketCmd::Unsubscribe { subscription_id } => {
             websocket_unsubscribe(&ws_host, ws_port, &subscription_id).await
         }
@@ -262,7 +263,12 @@ async fn websocket_command(cfg: &Config, cmd: WebSocketCmd) -> Result<()> {
     }
 }
 
-async fn websocket_subscribe(host: &str, port: u16, subscription: &str, address: Option<String>) -> Result<()> {
+async fn websocket_subscribe(
+    host: &str,
+    port: u16,
+    subscription: &str,
+    address: Option<String>,
+) -> Result<()> {
     ui::print_header(&format!("Subscribe to {}", subscription));
 
     // Use WebSocket client to subscribe
