@@ -6,7 +6,7 @@ param(
     [switch]$NoUE5,
     [switch]$Monitoring,
     [string]$Map = "LV_MainMenu",
-    [string]$EnginePath = "C:\Program Files\Epic Games\UE_5.4"
+    [string]$EnginePath = "C:\Program Files\Epic Games\UE_5.7"
 )
 
 $ErrorActionPreference = "Stop"
