@@ -166,3 +166,44 @@ In practice: **node is source of chain truth**, pool is coordination layer, mine
   - `python3 -m py_compile <touched_python_file>`
 - `scripts/autopilot-2.9.8.sh` encodes a practical validation/deploy sequence when tasks touch miner/desktop-agent/deploy pipelines.
 - If GitHub Actions jobs finish in seconds with no runner/steps, treat it as the known billing/infrastructure issue in `StatusV3.md`, not as code validation.
+
+## 6) Hiran v2.2 AI Model Training (Completed 2026-05-18)
+
+Hiran v2.2 is a domain-specific fine-tuned model for the Zion ecosystem. Training artifacts and evaluation reports live in `HiranV2.2/`.
+
+### Training stack
+- **Base model:** `unsloth/Meta-Llama-3.1-8B-Instruct`
+- **Method:** QLoRA (curriculum, 5 stages)
+- **Dataset:** 22,181 instruction/output pairs across:
+  - `foundation` (3,869) → rank 16, 2 epochs, final loss ~1.297
+  - `zion_core` (2,368) → rank 32, 3 epochs
+  - `zion_advanced` (2,458) → rank 32, 2 epochs, final loss ~1.040
+  - `cross_domain` (11,434) → rank 64, 2 epochs, final loss ~1.246
+  - `rag_synthesis` (2,052) → rank 64, 1 epoch, final loss ~2.469
+- **Hardware:** Vast.ai RTX 4090 (contract #37028568, IP 213.181.123.6:32264)
+- **Merged model size:** ~15 GB (FP16)
+- **Training script:** `HiranV2.2/scripts/train_v2.2.py`
+- **Merge script:** `HiranV2.2/scripts/merge_and_quantize.py`
+
+### Key learnings from this run
+1. **QLoRA limits:** With 22K pairs and max rank 64, the model learned *concepts* and *style* but did **not** reliably memorize exact numeric facts (e.g. fee split 89/5/5/1). Base model parameters dominated for precise percentages.
+2. **Temperature sensitivity:** Low temperatures (`<0.3`) without system prompts triggered base model contamination (e.g. hallucinating Mormon church associations with "Zion").
+3. **System prompt anchoring works:** Adding an explicit system prompt ("You are the Zion DAO technical assistant...") eliminated religious contamination and anchored responses to the crypto project.
+4. **Few-shot is inconsistent:** Even with explicit examples of correct percentages, the model sometimes invented new numbers (e.g. 6% instead of 5% for Issobella).
+5. **Adversarial safety:** Model refused to assist with attack scenarios (manipulating fee splits), which is a positive safety signal.
+6. **Inference speed:** ~40 tokens/s on RTX 4090 with FP16, ~16 GB VRAM usage.
+
+### Evaluation artifacts
+- `HiranV2.2/MODEL_INTERVIEW_REPORT.md` — 20-question structured interview
+- `HiranV2.2/model_interview_results.json` — machine-readable responses
+- `HiranV2.2/gpu_experiment_results.json` — benchmark + temperature sweep + factual recall
+- `HiranV2.2/gpu_experiment_results_v2.json` — system prompt + few-shot + chain-of-thought tests
+
+### Vast.ai workflow (for future runs)
+1. Provision instance via `vastai create instance` (prefer RTX 4090/3090, ~$0.46/hr)
+2. Attach SSH key: `vastai attach ssh <contract_id> $(cat ~/.ssh/vast_hiran_key.pub)`
+3. Get actual endpoint: `vastai ssh-url <contract_id>` (advertised endpoint != actual!)
+4. Sync: use `HiranV2.2/scripts/sync_to_current_vast.sh` or manual `scp -r`
+5. Training: `cd /workspace/hiran-v2.2 && bash scripts/run_training.sh`
+6. Post-training: merge with `scripts/merge_and_quantize.py`, evaluate with `scripts/interview_model.py`
+7. Keep instance alive for evaluation; artifacts can stay remote if bandwidth is concern
