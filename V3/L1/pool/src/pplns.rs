@@ -404,12 +404,8 @@ impl PplnsEngine {
     /// Restore fee balances (e.g. after a failed on-chain submission).
     /// Saturating add prevents overflow.
     pub fn restore_fees(&mut self, humanitarian: u64, issobella: u64, pool: u64) {
-        self.fee_humanitarian_flowers = self
-            .fee_humanitarian_flowers
-            .saturating_add(humanitarian);
-        self.fee_issobella_flowers = self
-            .fee_issobella_flowers
-            .saturating_add(issobella);
+        self.fee_humanitarian_flowers = self.fee_humanitarian_flowers.saturating_add(humanitarian);
+        self.fee_issobella_flowers = self.fee_issobella_flowers.saturating_add(issobella);
         self.fee_pool_flowers = self.fee_pool_flowers.saturating_add(pool);
     }
 }
@@ -719,7 +715,7 @@ mod tests {
         let fs = e.fee_stats();
         let humanitarian = 5_400_067_000_000_000u64 * 5 / 100; // 270,003,350,000,000
         let issobella = 5_400_067_000_000_000u64 * 5 / 100;
-        let pool_fee = 5_400_067_000_000_000u64 * 1 / 100; // 54,000,670,000,000
+        let pool_fee = 5_400_067_000_000_000u64 / 100; // 54,000,670,000,000
         let miner_share = block_reward - humanitarian - issobella - pool_fee;
 
         assert_eq!(fs.humanitarian_accumulated_flowers, humanitarian);
@@ -774,7 +770,7 @@ mod tests {
         e.record_share_at("alice", "rig1", 1, 1000);
         e.compute_payouts(1_000_000);
 
-        let (h, i, p) = e.drain_fees();
+        let (h, _i, _p) = e.drain_fees();
         assert_eq!(h, 50_000);
 
         e.restore_fees(10_000, 20_000, 5_000);
