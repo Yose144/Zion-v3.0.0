@@ -1,7 +1,8 @@
 # Hiran v2.2 Completion Plan — Dokončení a Přemostění k v2.3
 
-> **Status:** Active  
+> **Status:** Active — dataset rebuilt, ready for training  
 > **Created:** 2026-05-13  
+> **Updated:** 2026-05-18  
 > **Target:** Dokončit v2.2 training → quantization → eval → deployment, pak začít v2.3 data collection  
 > **Depends on:** `HiranV2.2/README.md`, `HiranV2.2/TRAINING_IMPLEMENTATION_PLAN.md`, `HiranV2.2/DETAILED_IMPLEMENTATION_PLAN.md`
 
@@ -12,20 +13,19 @@
 ### ✅ Completed
 | Item | Detail |
 |------|--------|
-| Dataset | 5,001 pairs across 5 curriculum stages, 0 quality issues |
-| Foundation stage | 128 steps, loss 0.746 → 0.559, ~18 min runtime |
-| Zion Core stage | IN PROGRESS (288 total steps so far), loss ~0.53–0.56 |
-| Vast checkpoint sync | `checkpoints_vast/` contains live training artifacts |
+| Dataset | **3,226 pairs** across 5 curriculum stages (local rule-based generation). Source: `HiranV2.2/scripts/build_curriculum.py` |
+| Dataset validation | All 5 stages present, correct `instruction/output` format, global dedup OK |
 | Training scripts | `train_v2.2.py`, `dynamic_lora.py`, curriculum pipeline ready |
+| Vast sync + deploy scripts | `sync_curriculum_to_vast.sh`, `deploy_vast.sh`, `run_training.sh` ready |
+| CLI + Docker integration | `HIRAN_V2.2_CLI_INTEGRATION.md` — fully merged |
 
-### 🔄 In Progress
-- **Zion Core stage** on Vast.ai — monitor convergence, do not interrupt unless loss diverges
+### 🔄 Ready to start
+- **5-stage curriculum training** on Vast.ai (or local GPU ≥16 GB VRAM)
+- Dry-run: `python HiranV2.2/scripts/train_v2.2.py --dry_run`
+- Full run: `bash HiranV2.2/scripts/run_training.sh`
 
 ### ⏳ Remaining (this plan)
-- Zion Core completion
-- Zion Advanced stage
-- Cross-Domain stage
-- RAG Synthesis stage
+- Phase 2-A: All 5 curriculum stages (Foundation → Zion Core → Zion Advanced → Cross-Domain → RAG Synthesis)
 - Hybrid quantization (Q4_K_M, Q5_K_M, Q8_0, ONNX)
 - Multi-backend inference testing
 - Vast.ai deployment + Docker image
