@@ -21,9 +21,9 @@ pub const UNITY_CLUES: u32 = 43;
 /// Master Key types
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum MasterKey {
-    Ramayana,   // Dharma Path - 30 clues
+    Ramayana,    // Dharma Path - 30 clues
     Mahabharata, // Karma Path - 35 clues
-    Unity,      // Moksha Path - 43 clues (requires both previous)
+    Unity,       // Moksha Path - 43 clues (requires both previous)
 }
 
 impl MasterKey {
@@ -154,7 +154,8 @@ impl GoldenEggProgress {
         let unity_ids: HashSet<u32> = (66..=108).collect();
 
         self.ramayana_progress = self.clues_discovered.intersection(&ramayana_ids).count() as u32;
-        self.mahabharata_progress = self.clues_discovered.intersection(&mahabharata_ids).count() as u32;
+        self.mahabharata_progress =
+            self.clues_discovered.intersection(&mahabharata_ids).count() as u32;
         self.unity_progress = self.clues_discovered.intersection(&unity_ids).count() as u32;
 
         // Auto-unlock keys if requirements met
@@ -223,12 +224,20 @@ impl std::fmt::Display for GoldenEggError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::InsufficientConsciousnessLevel { required, current } => {
-                write!(f, "Need CL {} to discover this clue (current: {})", required, current)
+                write!(
+                    f,
+                    "Need CL {} to discover this clue (current: {})",
+                    required, current
+                )
             }
             Self::ClueAlreadyDiscovered => write!(f, "Clue already discovered"),
             Self::KeyAlreadyUnlocked => write!(f, "Key already unlocked"),
-            Self::NotReadyForFinalTest => write!(f, "Not ready for final test (need all 3 keys + CL 9)"),
-            Self::FinalTestFailed => write!(f, "Final test failed - the answer requires 100% donation"),
+            Self::NotReadyForFinalTest => {
+                write!(f, "Not ready for final test (need all 3 keys + CL 9)")
+            }
+            Self::FinalTestFailed => {
+                write!(f, "Final test failed - the answer requires 100% donation")
+            }
             Self::DaoApprovalPending => write!(f, "DAO approval still pending"),
             Self::InvalidClueId => write!(f, "Invalid clue ID"),
         }
@@ -278,7 +287,11 @@ impl GoldenEggTracker {
     /// Global leaderboard by completion percentage
     pub fn leaderboard_by_completion(&self, limit: usize) -> Vec<&GoldenEggProgress> {
         let mut sorted: Vec<&GoldenEggProgress> = self.players.values().collect();
-        sorted.sort_by(|a, b| b.completion_percent().partial_cmp(&a.completion_percent()).unwrap());
+        sorted.sort_by(|a, b| {
+            b.completion_percent()
+                .partial_cmp(&a.completion_percent())
+                .unwrap()
+        });
         sorted.truncate(limit);
         sorted
     }

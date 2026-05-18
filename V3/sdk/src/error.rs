@@ -36,10 +36,7 @@ pub enum ZionSdkError {
     #[error("invalid JSON-RPC response: {reason}")]
     InvalidRpcEnvelope { reason: String },
     #[error("JSON-RPC id mismatch: expected {expected}, got {got:?}")]
-    RpcIdMismatch {
-        expected: u64,
-        got: Option<Value>,
-    },
+    RpcIdMismatch { expected: u64, got: Option<Value> },
     #[error("operation timed out during {phase} (limit {limit_ms} ms)")]
     Timeout { phase: &'static str, limit_ms: u64 },
     #[error("typed decode failed for {context}: {source}")]

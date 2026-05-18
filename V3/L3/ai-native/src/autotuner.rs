@@ -1,9 +1,9 @@
-use serde::{Deserialize, Serialize};
-use crate::llm_backend::{LlmBackend, LlmRequest};
 use crate::hiranyagarbha::MmlModality;
+use crate::llm_backend::{LlmBackend, LlmRequest};
+use crate::memory::{AgentMemory, MemoryEntry, MemoryEventKind};
 use crate::rag::VectorStore;
+use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
-use crate::memory::{AgentMemory, MemoryEventKind, MemoryEntry};
 
 /// Represents the result of an autotuning session.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -35,7 +35,7 @@ impl DharmaAutotuner {
 
         // 1. Extract core principles from RAG
         let mut learned_docs = Vec::new();
-        
+
         for doc in store.all().iter().take(2) {
             learned_docs.push(doc.content.clone());
         }
@@ -55,13 +55,21 @@ impl DharmaAutotuner {
             .with_system_prompt("Jsi Dharma Autotuner. Tvým úkolem je destilovat moudrost z dokumentace do operačních pravidel.")
             .with_temperature(0.2);
 
-        let response = llm.generate(request).map_err(|e| anyhow::anyhow!(e.to_string()))?;
-        
+        let response = llm
+            .generate(request)
+            .map_err(|e| anyhow::anyhow!(e.to_string()))?;
+
         let report = AutotuneReport {
             timestamp: chrono::Utc::now().to_rfc3339(),
-            learned_principles: vec!["Dharma-driven decision making".to_string(), "Oneness principle".to_string()],
+            learned_principles: vec![
+                "Dharma-driven decision making".to_string(),
+                "Oneness principle".to_string(),
+            ],
             refined_system_prompt: response.content,
-            focus_areas: vec!["L1-L6 integration".to_string(), "Autonomous assistance".to_string()],
+            focus_areas: vec![
+                "L1-L6 integration".to_string(),
+                "Autonomous assistance".to_string(),
+            ],
         };
 
         // 3. Record in memory
@@ -69,7 +77,8 @@ impl DharmaAutotuner {
             MemoryEntry::simple(
                 MemoryEventKind::Custom("autotune".to_string()),
                 format!("Autotuning complete. New system prompt generated."),
-            ).with_importance(0.8)
+            )
+            .with_importance(0.8),
         );
 
         self.last_report = Some(report.clone());

@@ -4,7 +4,7 @@ use anyhow::Result;
 use chrono::{DateTime, Utc};
 use rusqlite::{params, Connection};
 
-use crate::types::{SwapDirection, SwapId, SwapRecord, SwapStatus, OutputToken};
+use crate::types::{OutputToken, SwapDirection, SwapId, SwapRecord, SwapStatus};
 
 pub struct SwapDb {
     conn: Connection,
@@ -123,7 +123,9 @@ impl SwapDb {
                     amount_out, error, created_at, updated_at
              FROM swaps WHERE status = ?1 ORDER BY created_at DESC LIMIT ?2",
         )?;
-        let rows = stmt.query_map(params![status_to_str(status), limit], |row| Ok(map_row(row)))?;
+        let rows = stmt.query_map(params![status_to_str(status), limit], |row| {
+            Ok(map_row(row))
+        })?;
         rows.collect::<Result<Vec<_>, _>>().map_err(Into::into)
     }
 
@@ -159,7 +161,14 @@ impl SwapDb {
                 amount_out = COALESCE(?4, amount_out),
                 updated_at = ?5
              WHERE id = ?6",
-            params![l1_lock, bridge_mint, swap, amount_out, Utc::now().to_rfc3339(), id],
+            params![
+                l1_lock,
+                bridge_mint,
+                swap,
+                amount_out,
+                Utc::now().to_rfc3339(),
+                id
+            ],
         )?;
         Ok(())
     }
@@ -184,12 +193,14 @@ fn map_row(row: &rusqlite::Row) -> SwapRecord {
         swap_tx: row.get(10).ok(),
         amount_out: row.get(11).ok(),
         error: row.get(12).ok(),
-        created_at: row.get(13)
+        created_at: row
+            .get(13)
             .ok()
             .and_then(|s: String| DateTime::parse_from_rfc3339(&s).ok())
             .map(|dt| dt.with_timezone(&Utc))
             .unwrap_or_else(Utc::now),
-        updated_at: row.get(14)
+        updated_at: row
+            .get(14)
             .ok()
             .and_then(|s: String| DateTime::parse_from_rfc3339(&s).ok())
             .map(|dt| dt.with_timezone(&Utc))

@@ -47,8 +47,8 @@ async fn main() -> anyhow::Result<()> {
     let db = OasisDb::open(&db_path)?;
 
     // Load quest definitions from avatars.json
-    let avatars_path = std::env::var("OASIS_AVATARS_PATH")
-        .unwrap_or_else(|_| "data/avatars.json".to_string());
+    let avatars_path =
+        std::env::var("OASIS_AVATARS_PATH").unwrap_or_else(|_| "data/avatars.json".to_string());
     let quest_mgr = match std::fs::read_to_string(&avatars_path) {
         Ok(data) => match QuestRegistry::from_avatars_json(&data) {
             Ok(registry) => {
@@ -70,19 +70,18 @@ async fn main() -> anyhow::Result<()> {
     let metrics = OasisMetrics::new();
 
     // Seed active_quests gauge from quest registry
-    metrics.active_quests.store(quest_mgr.registry.len() as u64, std::sync::atomic::Ordering::Relaxed);
+    metrics.active_quests.store(
+        quest_mgr.registry.len() as u64,
+        std::sync::atomic::Ordering::Relaxed,
+    );
 
     // WebSocket broadcast hub
     let ws_hub = WsHub::new();
 
     let state = OasisState::new(db, config, quest_mgr, metrics, Some(ws_hub));
 
-    info!(
-        "Consciousness levels: 9 (Physical → OnTheStar)"
-    );
-    info!(
-        "Reward pool: 8,250,000,000 ZION over 10 years"
-    );
+    info!("Consciousness levels: 9 (Physical → OnTheStar)");
+    info!("Reward pool: 8,250,000,000 ZION over 10 years");
 
     start_server(state).await
 }

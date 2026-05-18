@@ -32,10 +32,22 @@ const BROADCAST_CAP: usize = 256;
 #[serde(tag = "type", content = "data", rename_all = "snake_case")]
 pub enum WsEvent {
     Leaderboard(Vec<LeaderboardEntry>),
-    XpAward { address: String, amount: u64, total_xp: u64 },
-    QuestComplete { address: String, quest_id: String },
-    GuildCreate { guild_id: String, name: String },
-    System { msg: String },
+    XpAward {
+        address: String,
+        amount: u64,
+        total_xp: u64,
+    },
+    QuestComplete {
+        address: String,
+        quest_id: String,
+    },
+    GuildCreate {
+        guild_id: String,
+        name: String,
+    },
+    System {
+        msg: String,
+    },
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -139,13 +151,17 @@ async fn handle_leaderboard_socket(mut socket: WebSocket, state: OasisState) {
 async fn handle_events_socket(mut socket: WebSocket, state: OasisState) {
     info!("New events WebSocket connection");
 
-    let mut rx = state.ws_hub.as_ref().map(|h| h.tx.subscribe()).unwrap_or_else(|| {
-        let (tx, rx) = broadcast::channel(1);
-        let _ = tx.send(WsEvent::System {
-            msg: "OASIS events feed active".into(),
+    let mut rx = state
+        .ws_hub
+        .as_ref()
+        .map(|h| h.tx.subscribe())
+        .unwrap_or_else(|| {
+            let (tx, rx) = broadcast::channel(1);
+            let _ = tx.send(WsEvent::System {
+                msg: "OASIS events feed active".into(),
+            });
+            rx
         });
-        rx
-    });
 
     // Keep connection alive and broadcast events
     let mut interval = tokio::time::interval(std::time::Duration::from_secs(30));

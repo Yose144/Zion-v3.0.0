@@ -229,13 +229,21 @@ fn test_e2e_burn_to_unlock_request() {
     });
 
     // Step 4: Verify unlock request structure
-    assert_eq!(unlock_request["recipient"].as_str().unwrap(), "zion1qrecipient_unlock_e2e");
-    assert_eq!(unlock_request["amount_flowers"].as_u64().unwrap(), 500_000_000_000_000);
+    assert_eq!(
+        unlock_request["recipient"].as_str().unwrap(),
+        "zion1qrecipient_unlock_e2e"
+    );
+    assert_eq!(
+        unlock_request["amount_flowers"].as_u64().unwrap(),
+        500_000_000_000_000
+    );
     assert_eq!(unlock_request["evm_chain"].as_str().unwrap(), "base");
     assert_eq!(unlock_request["burn_id"].as_str().unwrap(), "burn_e2e_001");
     assert!(unlock_request["validator_proofs"].as_array().unwrap().len() >= 3);
     assert!(
-        !validator_proofs.iter().any(|p| p["synthetic"].as_bool().unwrap()),
+        !validator_proofs
+            .iter()
+            .any(|p| p["synthetic"].as_bool().unwrap()),
         "no synthetic proofs allowed"
     );
 
@@ -246,7 +254,8 @@ fn test_e2e_burn_to_unlock_request() {
     assert!(operation_message.contains("|burn_id=burn_e2e_001|"));
 
     // Step 6: Mark completed and verify DB state
-    db.update_burn_status("burn_e2e_001", BridgeStatus::Completed).unwrap();
+    db.update_burn_status("burn_e2e_001", BridgeStatus::Completed)
+        .unwrap();
     let pending = db.get_pending_burns().unwrap();
     assert_eq!(pending.len(), 0);
     let stats = db.get_stats().unwrap();
