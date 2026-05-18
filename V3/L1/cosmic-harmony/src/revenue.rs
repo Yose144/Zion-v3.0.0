@@ -226,6 +226,51 @@ impl RevenueHealth {
     }
 }
 
+// ── NclStats ───────────────────────────────────────────────────────
+/// Snapshot of Neural Compute Layer (NCL) task activity.  Tracks the
+/// 25 % AI-inference revenue stream end-to-end: how many tasks were
+/// dispatched to the Hiran gateway, how many succeeded, latency, and
+/// the USD-denominated revenue earned (gross — fees are already in
+/// `RevenueStats::zion_fees_usd`).
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct NclStats {
+    pub tasks_total: u64,
+    pub tasks_succeeded: u64,
+    pub tasks_failed: u64,
+    pub tokens_in: u64,
+    pub tokens_out: u64,
+    pub total_latency_ms: u64,
+    pub total_value_usd: f64,
+    /// RFC3339 timestamp of the most recent successful task.
+    pub last_success_ts: Option<String>,
+}
+
+impl NclStats {
+    pub fn success_rate(&self) -> f64 {
+        if self.tasks_total == 0 {
+            0.0
+        } else {
+            self.tasks_succeeded as f64 / self.tasks_total as f64
+        }
+    }
+
+    pub fn avg_latency_ms(&self) -> f64 {
+        if self.tasks_succeeded == 0 {
+            0.0
+        } else {
+            self.total_latency_ms as f64 / self.tasks_succeeded as f64
+        }
+    }
+
+    pub fn avg_tokens_out(&self) -> f64 {
+        if self.tasks_succeeded == 0 {
+            0.0
+        } else {
+            self.tokens_out as f64 / self.tasks_succeeded as f64
+        }
+    }
+}
+
 // ── RevenueStats ───────────────────────────────────────────────────
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct RevenueStats {
@@ -249,6 +294,7 @@ pub struct RevenueStats {
 #[derive(Debug, Clone)]
 pub struct RevenueCollector {
     stats: Arc<RwLock<RevenueStats>>,
+    ncl_stats: Arc<RwLock<NclStats>>,
     pending_fees_usd: Arc<RwLock<f64>>,
     pending_fees_zion: Arc<RwLock<u64>>,
     seen_heights: Arc<RwLock<HashSet<u64>>>,
@@ -266,6 +312,7 @@ impl RevenueCollector {
     pub fn new() -> Self {
         Self {
             stats: Arc::new(RwLock::new(RevenueStats::default())),
+            ncl_stats: Arc::new(RwLock::new(NclStats::default())),
             pending_fees_usd: Arc::new(RwLock::new(0.0)),
             pending_fees_zion: Arc::new(RwLock::new(0)),
             seen_heights: Arc::new(RwLock::new(HashSet::new())),
@@ -433,6 +480,65 @@ impl RevenueCollector {
             tx_hash: None,
             external_coin: None,
         });
+        // Bookkeeping-only update — full detail goes through track_ncl_task_detailed.
+        let mut s = self.ncl_stats.write().expect("ncl_stats lock poisoned");
+        s.tasks_total = s.tasks_total.saturating_add(1);
+        if value_usd > 0.0 {
+            s.tasks_succeeded = s.tasks_succeeded.saturating_add(1);
+            s.total_value_usd += value_usd;
+            s.last_success_ts = Some(Utc::now().to_rfc3339());
+        } else {
+            s.tasks_failed = s.tasks_failed.saturating_add(1);
+        }
+    }
+
+    /// Record a fully-attributed NCL task: revenue + per-task telemetry
+    /// (tokens, latency).  This is the canonical entrypoint used by the
+    /// pool-side NCL gateway dispatcher.
+    pub fn track_ncl_task_detailed(
+        &self,
+        value_usd: f64,
+        tokens_in: u64,
+        tokens_out: u64,
+        latency_ms: u64,
+        success: bool,
+    ) {
+        // Revenue side first (mirrors existing track_event semantics —
+        // failed tasks contribute zero revenue but are counted in stats).
+        if success {
+            self.track_event(RevenueEvent {
+                source: RevenueSource::NclAi,
+                value_usd,
+                qualifies: true,
+                timestamp: Some(Utc::now().to_rfc3339()),
+                block_height: None,
+                tx_hash: None,
+                external_coin: None,
+            });
+        } else {
+            self.update_health_failure(RevenueSource::NclAi);
+        }
+
+        // Telemetry side.
+        let mut s = self.ncl_stats.write().expect("ncl_stats lock poisoned");
+        s.tasks_total = s.tasks_total.saturating_add(1);
+        s.tokens_in = s.tokens_in.saturating_add(tokens_in);
+        if success {
+            s.tasks_succeeded = s.tasks_succeeded.saturating_add(1);
+            s.tokens_out = s.tokens_out.saturating_add(tokens_out);
+            s.total_latency_ms = s.total_latency_ms.saturating_add(latency_ms);
+            s.total_value_usd += value_usd;
+            s.last_success_ts = Some(Utc::now().to_rfc3339());
+        } else {
+            s.tasks_failed = s.tasks_failed.saturating_add(1);
+        }
+    }
+
+    pub fn ncl_stats(&self) -> NclStats {
+        self.ncl_stats
+            .read()
+            .expect("ncl_stats lock poisoned")
+            .clone()
     }
 
     /// Track a Deeksha stream-telemetry bundle.
