@@ -1089,6 +1089,7 @@ fn rpc_roundtrip(node_rpc_addr: &str, request: &RpcRequest) -> Result<RpcRespons
     decode_rpc_response(&response_line).context("failed to decode node rpc response")
 }
 
+#[allow(dead_code)]
 fn json_rpc_roundtrip(
     node_rpc_addr: &str,
     method: &str,
@@ -1940,6 +1941,7 @@ impl RoutingStats {
         out
     }
 
+    #[allow(dead_code)]
     fn snapshot_json_ext(&self, active_sessions: u64, uptime_s: u64) -> String {
         let total_rejected = self.total_submits.saturating_sub(self.total_accepted);
         let accept_rate = if self.total_submits == 0 {
@@ -2533,6 +2535,7 @@ impl ServerConfig {
     }
 }
 
+#[allow(dead_code)]
 fn parse_optional_key_bytes_env(key: &str) -> Result<Option<[u8; 32]>> {
     match std::env::var(key) {
         Ok(value) => {

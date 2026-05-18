@@ -3,8 +3,8 @@
 //! This module provides integration with the Hiran v2.2 inference service
 //! for hybrid RAG + local inference capabilities.
 
-use anyhow::Result;
 use crate::llm_backend::LlmBackend;
+use anyhow::Result;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};

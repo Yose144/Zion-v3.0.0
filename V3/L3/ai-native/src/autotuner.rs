@@ -3,7 +3,6 @@ use crate::llm_backend::{LlmBackend, LlmRequest};
 use crate::memory::{AgentMemory, MemoryEntry, MemoryEventKind};
 use crate::rag::VectorStore;
 use serde::{Deserialize, Serialize};
-use std::sync::Mutex;
 
 /// Represents the result of an autotuning session.
 #[derive(Debug, Clone, Serialize, Deserialize)]
