@@ -17,6 +17,8 @@
 
 **Our recommendation:** **Topology A** — use your existing local PC as the Greenfield node + pool, with a cheap cloud VPS as a follower/backup node. This gives you physical control of the chain-of-truth machine at the lowest cost.
 
+> **Step-by-step dual-boot installation guide:** See [`DUALBOOT_GUIDE.md`](./DUALBOOT_GUIDE.md) for a complete walkthrough from a Windows 11 PC to a running Ubuntu Server ZION mainnet node.
+
 ---
 
 ## 2. Full Stack Component Breakdown
