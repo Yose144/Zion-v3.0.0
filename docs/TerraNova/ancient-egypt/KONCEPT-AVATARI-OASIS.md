@@ -5,7 +5,8 @@ Souhrnná tabulka: **[`../../docs2.9/ZION_OASIS/AVATAR_ROSTER.md`](../../docs2.9
 ## Návaznost
 
 - Předchází **Norse–Celtic #182–191**.
-- **Indie rozšíření** posunuta na **#202+** — viz [`../india/KONCEPT-AVATARI-OASIS.md`](../india/KONCEPT-AVATARI-OASIS.md).
+- **Následuje** **Maya #202** — viz [`../maya/KONCEPT-AVATARI-OASIS.md`](../maya/KONCEPT-AVATARI-OASIS.md).
+- **Indie rozšíření** posunuta na **#203+** — viz [`../india/KONCEPT-AVATARI-OASIS.md`](../india/KONCEPT-AVATARI-OASIS.md).
 - Překryv s **Isis [#06]**, **Osiris / Maat [#149–150]**: tento kruh **rozšiřuje** pantheon jinými rolemi; duplicitní questy na stejné jméno se **vyhýbají**.
 
 ## Rámec
