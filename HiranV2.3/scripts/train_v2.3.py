@@ -1,308 +1,412 @@
 #!/usr/bin/env python3
 """
-Hiran v2.3 Training Script
-===========================
-DeepSpeed-enabled multi-stage curriculum training for Llama 3.1 70B.
-Supports LoRA + optional full fine-tune on later stages.
-
-Usage:
-    # Single node, 8 GPUs
-    deepspeed scripts/train_v2.3.py \
-        --base_model meta-llama/Llama-3.1-70B-Instruct \
-        --curriculum_config config/curriculum_v2.3.json \
-        --deepspeed_config config/deepspeed_config.json \
-        --output_dir checkpoints
-
-    # Dry run / test on small model
-    python scripts/train_v2.3.py --base_model meta-llama/Llama-3.1-8B-Instruct \
-        --dry_run --max_steps 10
-
-    # Resume from checkpoint
-    python scripts/train_v2.3.py --resume_from_checkpoint checkpoints/stage_2/checkpoint-500
-
-Requirements:
-    torch>=2.1.0 transformers>=4.40.0 peft>=0.11.0 deepspeed>=0.14.0
-    bitsandbytes>=0.43.0 accelerate>=0.30.0
+Hiran v2.3 DORA Training Script
+Trains DORA (Weight-Decomposed Low-Rank Adaptation) adapters on Nemotron-32B.
+Uses 8-bit quantization for base model to fit on single A100 80GB.
 """
 
-from __future__ import annotations
-
-import argparse
-import json
-import logging
 import os
 import sys
-import time
-from pathlib import Path
-from typing import Any
-
+import json
 import torch
+import argparse
+from pathlib import Path
+from datetime import datetime
+
+# ---------------------------------------------------------------------------
+# Dependencies (install before training):
+#   pip install transformers accelerate peft bitsandbytes trl datasets
+# ---------------------------------------------------------------------------
+
 from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,
-    DataCollatorForLanguageModeling,
-    Trainer,
     TrainingArguments,
-    set_seed,
+    Trainer,
+    DataCollatorForLanguageModeling,
+    BitsAndBytesConfig,
 )
-from peft import LoraConfig, get_peft_model, TaskType, PeftModel
-from datasets import Dataset
-
-logger = logging.getLogger("hiran_v2.3_train")
+from peft import (
+    LoraConfig,
+    get_peft_model,
+    PeftModel,
+    TaskType,
+    prepare_model_for_kbit_training,
+)
+from datasets import load_dataset
 
 # ---------------------------------------------------------------------------
-# Helpers
+# CONFIGURATION
 # ---------------------------------------------------------------------------
 
-def setup_logging(level: int = logging.INFO) -> None:
-    logging.basicConfig(
-        format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
-        level=level,
-        datefmt="%Y-%m-%d %H:%M:%S",
+BASE_MODEL = "nvidia/OpenReasoning-Nemotron-32B"
+
+STAGE_CONFIGS = {
+    "stage1_factual": {
+        "dataset": "data/curriculum/stage1_factual_reinforcement.jsonl",
+        "output_dir": "checkpoints/stage1_factual",
+        "rank": 512,
+        "alpha": 362,  # rsLoRA: rank^0.5 * 16 ≈ 362
+        "dropout": 0.05,
+        "epochs": 5,
+        "lr": 1e-4,
+        "batch_size": 1,
+        "grad_accum": 16,
+        "warmup_steps": 500,
+        "weight_decay": 0.01,
+        "max_grad_norm": 1.0,
+        "lr_scheduler": "cosine_with_restarts",
+        "target_modules": "all-linear",
+        "use_rslora": True,
+    },
+    "stage2_domain": {
+        "dataset": "data/curriculum/stage2_domain_expertise.jsonl",
+        "output_dir": "checkpoints/stage2_domain",
+        "rank": 512,
+        "alpha": 362,
+        "dropout": 0.03,
+        "epochs": 3,
+        "lr": 5e-5,
+        "batch_size": 1,
+        "grad_accum": 16,
+        "warmup_steps": 300,
+        "weight_decay": 0.01,
+        "max_grad_norm": 1.0,
+        "lr_scheduler": "cosine",
+        "target_modules": "all-linear",
+        "use_rslora": True,
+        "continue_from": "checkpoints/stage1_factual/final",
+    },
+    "stage3_cross": {
+        "dataset": "data/curriculum/stage3_cross_domain.jsonl",
+        "output_dir": "checkpoints/stage3_cross",
+        "rank": 512,
+        "alpha": 362,
+        "dropout": 0.02,
+        "epochs": 2,
+        "lr": 2e-5,
+        "batch_size": 1,
+        "grad_accum": 16,
+        "warmup_steps": 200,
+        "weight_decay": 0.01,
+        "max_grad_norm": 1.0,
+        "lr_scheduler": "cosine",
+        "target_modules": "all-linear",
+        "use_rslora": True,
+        "continue_from": "checkpoints/stage2_domain/final",
+    },
+}
+
+# 8-bit quantization config for base model
+BNB_CONFIG = BitsAndBytesConfig(
+    load_in_8bit=True,
+    bnb_8bit_use_double_quant=True,
+    bnb_8bit_quant_type="nf4",
+    bnb_8bit_compute_dtype=torch.bfloat16,
+)
+
+# Nemotron-32B uses Qwen2.5 chat template
+CHAT_TEMPLATE = "{% for message in messages %}{% if loop.first and messages[0]['role'] != 'system' %}{{ '<|im_start|>system\nYou are a helpful assistant.<|im_end|>\n' }}{% endif %}{{ '<|im_start|>' + message['role'] + '\n' + message['content'] + '<|im_end|>' + '\n' }}{% endfor %}{% if add_generation_prompt %}{{ '<|im_start|>assistant\n' }}{% endif %}"
+
+
+def format_instruction_to_messages(instruction, output):
+    """Convert instruction/output to chat messages for Nemotron/Qwen format."""
+    # Detect if instruction already contains system prompt
+    if "<|system|>" in instruction:
+        # Parse existing system prompt
+        parts = instruction.split("<|user|>")
+        if len(parts) >= 2:
+            system = parts[0].replace("<|system|>", "").strip()
+            user_msg = parts[1].replace("<|assistant|>", "").strip()
+            return [
+                {"role": "system", "content": system},
+                {"role": "user", "content": user_msg},
+                {"role": "assistant", "content": output},
+            ]
+
+    return [
+        {"role": "system", "content": "You are the Zion DAO technical assistant. Answer accurately and concisely about Zion blockchain, DAO governance, mining pools, and humanitarian funding."},
+        {"role": "user", "content": instruction},
+        {"role": "assistant", "content": output},
+    ]
+
+
+def load_and_prepare_dataset(dataset_path, tokenizer, max_length=2048):
+    """Load JSONL dataset and tokenize."""
+    print(f"Loading dataset from {dataset_path}...")
+
+    dataset = load_dataset("json", data_files=str(dataset_path), split="train")
+    print(f"  Loaded {len(dataset)} examples")
+
+    def tokenize_function(examples):
+        # Format as chat
+        texts = []
+        for inst, out in zip(examples["instruction"], examples["output"]):
+            messages = format_instruction_to_messages(inst, out)
+            text = tokenizer.apply_chat_template(
+                messages,
+                tokenize=False,
+                add_generation_prompt=False,
+            )
+            texts.append(text)
+
+        # Tokenize
+        tokenized = tokenizer(
+            texts,
+            truncation=True,
+            max_length=max_length,
+            padding="max_length",
+            return_tensors=None,
+        )
+        tokenized["labels"] = tokenized["input_ids"].copy()
+        return tokenized
+
+    # Process in batches
+    tokenized_dataset = dataset.map(
+        tokenize_function,
+        batched=True,
+        remove_columns=dataset.column_names,
+        num_proc=4,
     )
 
-
-def load_curriculum_config(path: Path) -> dict[str, Any]:
-    with open(path, "r", encoding="utf-8") as f:
-        return json.load(f)
+    print(f"  Tokenized dataset ready")
+    return tokenized_dataset
 
 
-def load_dataset_for_stage(stage_cfg: dict[str, Any], data_dir: Path) -> Dataset:
-    dataset_file = data_dir / stage_cfg.get("dataset", f"{stage_cfg['name']}.jsonl")
-    if not dataset_file.exists():
-        raise FileNotFoundError(f"Dataset not found: {dataset_file}")
+def get_dora_config(stage_cfg):
+    """Create DORA LoraConfig from stage config."""
+    use_rslora = stage_cfg.get("use_rslora", False)
 
-    records = []
-    with open(dataset_file, "r", encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if not line:
-                continue
-            obj = json.loads(line)
-            # Build prompt in Llama 3.1 chat format
-            instruction = obj.get("instruction", "")
-            output = obj.get("output", "")
-            text = (
-                "<|begin_of_text|><|start_header_id|>user<|end_header_id|>\n\n"
-                f"{instruction}<|eot_id|>"
-                "<|start_header_id|>assistant<|end_header_id|>\n\n"
-                f"{output}<|eot_id|>"
-            )
-            records.append({"text": text})
-
-    return Dataset.from_list(records)
-
-
-def create_lora_config(stage_cfg: dict[str, Any]) -> LoraConfig:
-    target_modules = stage_cfg.get("target_modules", ["q_proj", "v_proj"])
-    if target_modules == ["all"]:
-        target_modules = [
-            "q_proj", "k_proj", "v_proj", "o_proj",
-            "gate_proj", "up_proj", "down_proj",
-        ]
     return LoraConfig(
-        r=stage_cfg.get("rank", 128),
-        lora_alpha=stage_cfg.get("alpha", 256),
-        target_modules=target_modules,
-        lora_dropout=stage_cfg.get("dropout", 0.05),
+        r=stage_cfg["rank"],
+        lora_alpha=stage_cfg["alpha"],
+        target_modules=stage_cfg.get("target_modules", "all-linear"),
+        lora_dropout=stage_cfg["dropout"],
         bias="none",
         task_type=TaskType.CAUSAL_LM,
-        use_rslora=True,  # Rank-stabilized LoRA for large ranks
+        use_rslora=use_rslora,
+        # DORA specific: use_dora=True enables weight decomposition
+        use_dora=True,
+        # Train all layers for maximum adaptability
+        modules_to_save=None,
     )
 
 
-# ---------------------------------------------------------------------------
-# Stage training
-# ---------------------------------------------------------------------------
+def train_stage(stage_name, stage_cfg, base_model_path=None):
+    """Train a single curriculum stage."""
+    print(f"\n{'='*60}")
+    print(f"Training Stage: {stage_name}")
+    print(f"{'='*60}")
+    print(f"  Dataset: {stage_cfg['dataset']}")
+    print(f"  Output: {stage_cfg['output_dir']}")
+    print(f"  Rank: {stage_cfg['rank']} | Alpha: {stage_cfg['alpha']}")
+    print(f"  Epochs: {stage_cfg['epochs']} | LR: {stage_cfg['lr']}")
+    print(f"  Batch: {stage_cfg['batch_size']} × {stage_cfg['grad_accum']} steps")
+    print(f"  Method: DORA {'+ rsLoRA' if stage_cfg.get('use_rslora') else ''}")
 
-def train_stage(
-    model,
-    tokenizer,
-    stage_cfg: dict[str, Any],
-    data_dir: Path,
-    output_dir: Path,
-    training_config: dict[str, Any],
-    deepspeed_config: Path | None = None,
-    resume_from: str | None = None,
-    dry_run: bool = False,
-) -> Path:
-    stage_name = stage_cfg["name"]
-    stage_output = output_dir / stage_name
-    stage_output.mkdir(parents=True, exist_ok=True)
+    output_dir = Path(stage_cfg["output_dir"])
+    output_dir.mkdir(parents=True, exist_ok=True)
 
-    logger.info(f"--- Stage: {stage_name} ---")
-    logger.info(f"  Output: {stage_output}")
-    logger.info(f"  Rank: {stage_cfg.get('rank')}, Alpha: {stage_cfg.get('alpha')}")
+    # Determine base model to load
+    if base_model_path and Path(base_model_path).exists():
+        load_path = base_model_path
+        print(f"  Loading from previous stage: {load_path}")
+    else:
+        load_path = BASE_MODEL
+        print(f"  Loading base model: {load_path}")
+
+    # Load tokenizer
+    print("\nLoading tokenizer...")
+    tokenizer = AutoTokenizer.from_pretrained(
+        BASE_MODEL,  # Always use base model tokenizer
+        trust_remote_code=True,
+        padding_side="right",
+    )
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+        tokenizer.pad_token_id = tokenizer.eos_token_id
+
+    # Apply chat template if not present
+    if not hasattr(tokenizer, "chat_template") or tokenizer.chat_template is None:
+        tokenizer.chat_template = CHAT_TEMPLATE
+
+    # Load model
+    print(f"Loading model (8-bit quantized)...")
+    model = AutoModelForCausalLM.from_pretrained(
+        load_path,
+        quantization_config=BNB_CONFIG,
+        device_map="auto",
+        trust_remote_code=True,
+        torch_dtype=torch.bfloat16,
+        attn_implementation="flash_attention_2" if torch.cuda.is_available() else None,
+    )
+
+    # Prepare for k-bit training
+    model = prepare_model_for_kbit_training(model)
+
+    # Apply DORA config
+    print("Applying DORA configuration...")
+    lora_config = get_dora_config(stage_cfg)
+    model = get_peft_model(model, lora_config)
+    model.print_trainable_parameters()
 
     # Load dataset
-    logger.info("  Loading dataset...")
-    dataset = load_dataset_for_stage(stage_cfg, data_dir)
-    logger.info(f"  Dataset size: {len(dataset)}")
+    dataset_path = Path(stage_cfg["dataset"])
+    if not dataset_path.is_absolute():
+        dataset_path = Path.cwd() / dataset_path
 
-    if dry_run:
-        dataset = dataset.select(range(min(20, len(dataset))))
-        stage_cfg["max_steps"] = 10
-        logger.info("  DRY RUN: truncated to 20 samples, 10 steps")
+    tokenized_dataset = load_and_prepare_dataset(dataset_path, tokenizer)
+
+    # Split train/val
+    tokenized_dataset = tokenized_dataset.train_test_split(test_size=0.05, seed=42)
+    train_dataset = tokenized_dataset["train"]
+    eval_dataset = tokenized_dataset["test"]
 
     # Training arguments
-    max_steps = stage_cfg.get("max_steps", 1000)
-    batch_size = stage_cfg.get("batch_size", 1)
-    grad_accum = stage_cfg.get("gradient_accumulation_steps", 8)
-    lr = stage_cfg.get("learning_rate", 1e-5)
-    warmup = stage_cfg.get("warmup_steps", 100)
-
-    train_args = TrainingArguments(
-        output_dir=str(stage_output),
-        overwrite_output_dir=True,
-        num_train_epochs=stage_cfg.get("epochs", 2),
-        max_steps=max_steps if not dry_run else 10,
-        per_device_train_batch_size=batch_size,
-        gradient_accumulation_steps=grad_accum,
-        learning_rate=lr,
-        warmup_steps=warmup,
-        logging_steps=stage_cfg.get("logging_steps", 10),
-        save_steps=stage_cfg.get("save_steps", 100),
-        eval_strategy="no",
+    training_args = TrainingArguments(
+        output_dir=str(output_dir),
+        num_train_epochs=stage_cfg["epochs"],
+        per_device_train_batch_size=stage_cfg["batch_size"],
+        per_device_eval_batch_size=stage_cfg["batch_size"],
+        gradient_accumulation_steps=stage_cfg["grad_accum"],
+        learning_rate=stage_cfg["lr"],
+        weight_decay=stage_cfg["weight_decay"],
+        warmup_steps=stage_cfg["warmup_steps"],
+        lr_scheduler_type=stage_cfg.get("lr_scheduler", "cosine"),
+        max_grad_norm=stage_cfg["max_grad_norm"],
+        evaluation_strategy="steps",
+        eval_steps=100,
         save_strategy="steps",
+        save_steps=100,
         save_total_limit=3,
-        load_best_model_at_end=False,
-        bf16=training_config.get("bf16", True),
-        fp16=training_config.get("fp16", False),
-        gradient_checkpointing=training_config.get("gradient_checkpointing", True),
-        gradient_clipping=training_config.get("gradient_clipping", 1.0),
-        weight_decay=training_config.get("weight_decay", 0.01),
-        lr_scheduler_type=training_config.get("lr_scheduler_type", "cosine"),
+        logging_steps=10,
+        logging_first_step=True,
+        load_best_model_at_end=True,
+        metric_for_best_model="eval_loss",
+        greater_is_better=False,
+        bf16=True,
+        fp16=False,
+        gradient_checkpointing=True,
+        optim="adamw_8bit",
+        group_by_length=True,
         report_to=["tensorboard"],
-        logging_dir=str(stage_output / "logs"),
-        deepspeed=str(deepspeed_config) if deepspeed_config else None,
-        dataloader_num_workers=4,
         remove_unused_columns=False,
-        resume_from_checkpoint=resume_from,
+        dataloader_num_workers=4,
+        dataloader_pin_memory=True,
     )
 
+    # Data collator
     data_collator = DataCollatorForLanguageModeling(
         tokenizer=tokenizer,
         mlm=False,
     )
 
+    # Trainer
+    print("\nInitializing trainer...")
     trainer = Trainer(
         model=model,
-        args=train_args,
-        train_dataset=dataset,
+        args=training_args,
+        train_dataset=train_dataset,
+        eval_dataset=eval_dataset,
         data_collator=data_collator,
+        tokenizer=tokenizer,
     )
 
-    logger.info("  Starting training...")
-    start = time.time()
-    result = trainer.train(resume_from_checkpoint=resume_from)
-    elapsed = time.time() - start
-    logger.info(f"  Training complete: {result.metrics}")
-    logger.info(f"  Elapsed: {elapsed / 60:.1f} min")
+    # Train
+    print("\nStarting training...")
+    trainer.train()
 
     # Save final adapter
-    adapter_dir = stage_output / "final_adapter"
-    model.save_pretrained(str(adapter_dir))
-    tokenizer.save_pretrained(str(adapter_dir))
-    logger.info(f"  Adapter saved to {adapter_dir}")
+    final_dir = output_dir / "final"
+    print(f"\nSaving final adapter to {final_dir}...")
+    model.save_pretrained(final_dir)
+    tokenizer.save_pretrained(final_dir)
 
-    # Save stage metrics
-    metrics_path = stage_output / "stage_metrics.json"
-    with open(metrics_path, "w", encoding="utf-8") as f:
-        json.dump({
-            "stage": stage_name,
-            "metrics": result.metrics,
-            "elapsed_seconds": elapsed,
-            "adapter_dir": str(adapter_dir),
-        }, f, indent=2)
+    # Save training config
+    config = {
+        "stage": stage_name,
+        "base_model": BASE_MODEL,
+        "timestamp": datetime.now().isoformat(),
+        **{k: str(v) if isinstance(v, Path) else v for k, v in stage_cfg.items()},
+        "trainable_params": model.print_trainable_parameters(),
+    }
+    with open(final_dir / "training_config.json", "w") as f:
+        json.dump(config, f, indent=2, default=str)
 
-    return adapter_dir
+    print(f"\nStage {stage_name} complete!")
+    print(f"  Final adapter saved: {final_dir}")
+    print(f"  Best checkpoint: {trainer.state.best_model_checkpoint}")
+    print(f"  Best eval loss: {trainer.state.best_metric}")
+
+    return str(final_dir)
 
 
-# ---------------------------------------------------------------------------
-# Main
-# ---------------------------------------------------------------------------
-
-def main() -> int:
-    parser = argparse.ArgumentParser(description="Hiran v2.3 Training")
-    parser.add_argument("--base_model", required=True, help="Base model HF name or local path")
-    parser.add_argument("--curriculum_config", default="HiranV2.3/config/curriculum_v2.3.json")
-    parser.add_argument("--deepspeed_config", default="HiranV2.3/config/deepspeed_config.json")
-    parser.add_argument("--data_dir", default="HiranV2.3/data/curriculum")
-    parser.add_argument("--output_dir", default="HiranV2.3/checkpoints")
-    parser.add_argument("--resume_from_checkpoint", default=None)
-    parser.add_argument("--stages", default="all", help="Comma-separated stage names or 'all'")
-    parser.add_argument("--dry_run", action="store_true", help="Quick test run")
-    parser.add_argument("--seed", type=int, default=42)
+def main():
+    parser = argparse.ArgumentParser(description="Hiran v2.3 DORA Training")
+    parser.add_argument(
+        "--stage",
+        type=str,
+        choices=list(STAGE_CONFIGS.keys()) + ["all"],
+        default="all",
+        help="Which stage to train (or 'all')",
+    )
+    parser.add_argument(
+        "--resume_from",
+        type=str,
+        default=None,
+        help="Resume from a specific checkpoint directory",
+    )
+    parser.add_argument(
+        "--dry_run",
+        action="store_true",
+        help="Print config without training",
+    )
     args = parser.parse_args()
 
-    setup_logging(logging.DEBUG if args.dry_run else logging.INFO)
-    set_seed(args.seed)
+    print("=" * 60)
+    print("Hiran v2.3 DORA Training Pipeline")
+    print("=" * 60)
+    print(f"Base Model: {BASE_MODEL}")
+    print(f"Method: DORA (8-bit base + rank-512 adapters)")
+    print(f"Device: {torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU'}")
+    print(f"CUDA: {torch.cuda.is_available()}")
+    print(f"CUDA Version: {torch.version.cuda if torch.cuda.is_available() else 'N/A'}")
+    print("=" * 60)
 
-    curriculum = load_curriculum_config(Path(args.curriculum_config))
-    stages = curriculum["stages"]
-    training_config = curriculum.get("training_config", {})
-    deepspeed_path = Path(args.deepspeed_config) if args.deepspeed_config else None
-    data_dir = Path(args.data_dir)
-    output_dir = Path(args.output_dir)
-    output_dir.mkdir(parents=True, exist_ok=True)
+    if args.dry_run:
+        print("\nDRY RUN — configuration only:\n")
+        stages = [args.stage] if args.stage != "all" else list(STAGE_CONFIGS.keys())
+        for stage in stages:
+            cfg = STAGE_CONFIGS[stage]
+            print(f"\n{stage}:")
+            for k, v in cfg.items():
+                print(f"  {k}: {v}")
+        return
 
-    # Filter stages
-    if args.stages != "all":
-        selected = {s.strip() for s in args.stages.split(",")}
-        stages = [s for s in stages if s["name"] in selected]
+    # Training loop
+    stages_to_train = [args.stage] if args.stage != "all" else list(STAGE_CONFIGS.keys())
+    previous_checkpoint = args.resume_from
 
-    logger.info(f"Stages to train: {[s['name'] for s in stages]}")
-    logger.info(f"Base model: {args.base_model}")
+    for stage_name in stages_to_train:
+        stage_cfg = STAGE_CONFIGS[stage_name].copy()
 
-    # Load base model + tokenizer
-    logger.info("Loading base model and tokenizer...")
-    tokenizer = AutoTokenizer.from_pretrained(args.base_model, trust_remote_code=True)
-    if tokenizer.pad_token is None:
-        tokenizer.pad_token = tokenizer.eos_token
+        # Override continue_from if resuming
+        if previous_checkpoint:
+            stage_cfg["continue_from"] = previous_checkpoint
 
-    # Load with DeepSpeed will happen via Trainer
-    # For initialization we load normally; DeepSpeed handles partitioning
-    model = AutoModelForCausalLM.from_pretrained(
-        args.base_model,
-        torch_dtype=torch.bfloat16 if training_config.get("bf16") else torch.float16,
-        trust_remote_code=True,
-        attn_implementation="flash_attention_2" if not args.dry_run else "eager",
-    )
-
-    # Apply LoRA to base model (will be saved per stage)
-    lora_cfg = create_lora_config(stages[0])  # Initial LoRA config
-    model = get_peft_model(model, lora_cfg)
-    model.print_trainable_parameters()
-
-    # Train stages sequentially
-    prev_adapter: Path | None = None
-    for stage_cfg in stages:
-        # Update LoRA config per stage if needed
-        if prev_adapter is not None:
-            # Load previous stage adapter as base for next
-            logger.info(f"Loading previous adapter: {prev_adapter}")
-            model = PeftModel.from_pretrained(model, str(prev_adapter), is_trainable=True)
-            # Re-initialize LoRA with new rank if different
-            new_lora = create_lora_config(stage_cfg)
-            # Note: in practice you'd merge and re-init; simplified here
-
-        adapter_dir = train_stage(
-            model=model,
-            tokenizer=tokenizer,
-            stage_cfg=stage_cfg,
-            data_dir=data_dir,
-            output_dir=output_dir,
-            training_config=training_config,
-            deepspeed_config=deepspeed_path,
-            resume_from=args.resume_from_checkpoint,
-            dry_run=args.dry_run,
+        final_path = train_stage(
+            stage_name,
+            stage_cfg,
+            base_model_path=stage_cfg.get("continue_from"),
         )
-        prev_adapter = adapter_dir
+        previous_checkpoint = final_path
 
-    logger.info("=== All stages complete ===")
-    logger.info(f"Final adapter: {prev_adapter}")
-    return 0
+    print(f"\n{'='*60}")
+    print("ALL STAGES COMPLETE")
+    print(f"{'='*60}")
+    print(f"Final checkpoint: {previous_checkpoint}")
+    print("Next step: merge adapters with scripts/merge_model.py")
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()
