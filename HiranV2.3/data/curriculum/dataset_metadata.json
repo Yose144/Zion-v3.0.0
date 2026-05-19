@@ -1,7 +1,7 @@
 {
   "version": "2.3",
-  "created": "2026-05-19T09:50:03.114532",
-  "total_pairs": 43336,
+  "created": "2026-05-19T15:26:37.526031",
+  "total_pairs": 48436,
   "stage_counts": {
     "stage1_factual": 3200,
     "stage1_drill": 5302,
@@ -11,7 +11,8 @@
     "stage5_conversation": 300,
     "stage6_bilingual": 2015,
     "stage7_code_gen": 3000,
-    "stage8_inference": 2000
+    "stage8_inference": 2000,
+    "stage9_safety_adversarial": 1700
   },
   "training_method": "full_fine_tuning",
   "target_model": "nvidia/OpenReasoning-Nemotron-32B",
@@ -23,6 +24,10 @@
     "system_prompt_anchoring",
     "memory_anchor_contexts",
     "refusal_to_hallucinate",
-    "preference_alignment"
+    "preference_alignment",
+    "adversarial_jailbreak_resistance",
+    "attack_scenario_refusals",
+    "multi_turn_consistency",
+    "edge_case_misconception_handling"
   ]
 }
