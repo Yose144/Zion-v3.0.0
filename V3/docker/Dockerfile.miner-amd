@@ -1,0 +1,44 @@
+# ZION V3 Miner — AMD GPU OpenCL Build
+# Multi-stage build with OpenCL runtime for AMD Radeon / ROCm GPUs
+#
+# Build:  cd V3 && docker build -f docker/Dockerfile.miner-amd -t zion-v3-miner-amd .
+# Run:    docker run -d --name zion-miner-amd \
+#           --device /dev/dri:/dev/dri \
+#           --group-add video \
+#           -e ZION_GPU_BACKEND=opencl \
+#           -e ZION_POOL_ADDR=zion-pool:8444 \
+#           zion-v3-miner-amd
+
+FROM rust:1.85-bookworm AS builder
+WORKDIR /build
+RUN apt-get update && apt-get install -y \
+        cmake g++ make pkg-config libssl-dev \
+        ocl-icd-opencl-dev \
+    && rm -rf /var/lib/apt/lists/*
+COPY . .
+RUN cargo build --release -p zion-miner --features gpu-opencl --bin zion-miner
+
+# ── Runtime stage with Mesa OpenCL for AMD ────────────────────────────────
+FROM debian:bookworm-slim
+RUN apt-get update && apt-get install -y \
+        ca-certificates libssl3 curl \
+        ocl-icd-libopencl1 \
+        mesa-opencl-icd \
+        clinfo \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user + add to video group for /dev/dri access
+RUN groupadd -r zion && \
+    groupadd -r video 2>/dev/null || true && \
+    useradd -r -g zion -G video -d /home/zion -s /sbin/nologin -m zion
+
+COPY --from=builder /build/target/release/zion-miner /usr/local/bin/zion-miner
+
+ENV ZION_POOL_ADDR=127.0.0.1:8444
+ENV ZION_MINER_THREADS=1
+ENV ZION_GPU_BACKEND=opencl
+ENV ZION_GPU_WORK_SIZE=4096
+ENV ZION_LOOP_COUNT=1000000
+
+USER zion
+ENTRYPOINT ["zion-miner"]
