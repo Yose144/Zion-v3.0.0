@@ -111,6 +111,10 @@ HiranV2.2/eval_reports/
 HiranV2.2/models/
 nul
 
+# Runtime / env secrets
+.env.*
+run/
+
 # Python (tools)
 __pycache__/
 *.pyc
