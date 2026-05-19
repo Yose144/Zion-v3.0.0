@@ -131,32 +131,60 @@ v2.2 dataset had 22,181 pairs. Key facts (89/5/5/1 split, 7 categories) appeared
 ### v2.3 Dataset Design: "Factual Reinforcement Loops"
 
 ```
-Total target: 50,000+ instruction pairs
-├── Stage 1: FACTUAL_MEMORIZATION (10,000 pairs)
-│   ├── Fee split: 500 variations ("What is 89% of 6.25?", "Calculate pool operator share...")
-│   ├── 7 categories: 1,000 variations with descriptions
+Actual dataset: 48,436 weighted instruction pairs (20,517 unique)
+├── Stage 1a: FACTUAL_REINFORCEMENT (3,200 pairs)
+│   ├── Fee split: 500 variations
+│   ├── 7 categories: 1,000 variations
 │   ├── L1-L6 architecture: 500 variations
-│   ├── Key wallet addresses/formulas: 500 variations
-│   └── Chain-of-thought variants: 2,000 pairs showing step-by-step reasoning
+│   ├── Issobella wallet: 200 variations
+│   ├── Chain-of-thought: 500 pairs
+│   └── Negative corrections: 500 pairs
 │
-├── Stage 2: ZION_DOMAIN (15,000 pairs)
-│   ├── Core concepts (5,000)
-│   ├── Advanced topics (5,000)
-│   └── Code/documentation generation (5,000)
+├── Stage 1b: DRILL_PATTERNS (5,302 pairs)
+│   ├── Fee split drills: 2,000
+│   ├── Refusal drills: 1,000
+│   ├── Layer identification: 600
+│   ├── Category listing: 500
+│   ├── True/false: 300
+│   ├── Verification: 200
+│   └── Memory anchors: 56
 │
-├── Stage 3: CROSS_DOMAIN (15,000 pairs)
-│   ├── Blockchain interoperability (5,000)
-│   ├── DAO governance comparisons (5,000)
-│   └── Technical architecture (5,000)
+├── Stage 2: ZION_DOMAIN (1,500 pairs)
+│   ├── Mining pool protocol: 300
+│   ├── Cross-chain bridge: 300
+│   ├── DAO governance: 300
+│   ├── Node & consensus: 300
+│   └── Security & wallet: 300
 │
-├── Stage 4: NEGATIVE_CORRECTION (5,000 pairs)
-│   ├── Wrong answer + correction pairs (2,500)
-│   ├── Anti-hallucination prompts (1,500)
-│   └── System prompt anchoring examples (1,000)
+├── Stage 3: CROSS_DOMAIN (1,000 pairs)
+│   ├── Zion vs other blockchains: 500
+│   └── Technical integration: 500
 │
-└── Stage 5: CONVERSATION_FLOW (5,000+ pairs)
-    ├── Multi-turn technical discussions (3,000)
-    └── RAG-synthesis with context (2,000)
+├── Stage 4: PREFERENCE_ALIGNMENT (500 pairs)
+│   └── Chosen/rejected pairs for ORPO
+│
+├── Stage 5: CONVERSATION_FLOW (300 pairs)
+│   └── Multi-turn technical discussions
+│
+├── Stage 6: BILINGUAL (2,015 pairs)
+│   └── Czech/English pairs
+│
+├── Stage 7: CODE_GENERATION (3,000 pairs)
+│   ├── Rust: 1,713
+│   ├── Python: 880
+│   └── Solidity: 407
+│
+├── Stage 8: INFERENCE_DOCS (2,000 pairs)
+│   └── Deployment, monitoring, troubleshooting
+│
+└── Stage 9: SAFETY & ADVERSARIAL (1,700 pairs)
+    ├── Jailbreak refusals: 210
+    ├── Attack refusals: 210
+    ├── Misinformation refusals: 180
+    ├── Manipulation refusals: 150
+    ├── Multi-turn anchoring: 270
+    ├── Edge case handling: 680
+    └── Trick questions: 140
 ```
 
 ### Key Dataset Innovations
@@ -166,6 +194,10 @@ Total target: 50,000+ instruction pairs
 3. **CoT Forcing**: 40% of examples show explicit step-by-step reasoning before final answer
 4. **Adversarial Immunization**: Examples of common hallucinations (Mormon church, generic mining) with corrections
 5. **Structured Output Training**: All responses use markdown tables, bullet lists, or JSON for precision
+6. **Jailbreak Resistance**: Dedicated stage (Stage 9) with 210+ refusal examples covering DAN mode, developer mode, system override, translation attacks, and roleplay exploits
+7. **Attack Scenario Refusals**: 210+ examples refusing mempool flooding, 51% attacks, wallet theft, vote manipulation, and trojan contract creation
+8. **Multi-Turn Consistency**: 270+ conversation examples testing context retention when topic shifts between Zion and general knowledge and back
+9. **Edge Case Handling**: 680+ examples for mixed-domain queries (Zion vs religion), misconceptions (CEO, stock ticker), unanswerable questions (price predictions), and trick questions
 
 ---
 
