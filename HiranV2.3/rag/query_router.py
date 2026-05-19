@@ -96,10 +96,12 @@ KNOWLEDGE_DOMAINS = {
 
 
 def _keyword_match(text: str, keyword: str) -> bool:
-    """Match keyword with word boundaries (except for multi-word phrases)."""
+    """Match keyword with word boundaries; allow common suffixes for single words."""
     if " " in keyword:
         return keyword in text
-    return bool(re.search(r'\b' + re.escape(keyword) + r'\b', text))
+    suffixes = r"(s|es|ing|ed|tion|ism|ity|ment|ness|ly|al|ic|ive|ous|able|ible|ance|ence|ure|age|dom|ship|ist|cy|ize|ise|ward|wards)?"
+    pattern = r'\b' + re.escape(keyword) + suffixes + r'\b'
+    return bool(re.search(pattern, text))
 
 
 def classify_query(query: str) -> Literal["zion_only", "knowledge_rag", "hybrid"]:
@@ -137,12 +139,6 @@ def classify_query(query: str) -> Literal["zion_only", "knowledge_rag", "hybrid"
         # If it's an explicit comparison, definitely hybrid
         if is_comparison:
             return "hybrid"
-        # If the knowledge terms are weak (only 1 hit in a minor domain),
-        # prefer zion_only unless strong general-knowledge signal
-        if len(domain_hits) == 1 and sum(domain_hits.values()) == 1:
-            # Check if the single hit is a borderline term that also appears in Zion context
-            # e.g. "governance" could be both Zion and general, but ZION_KEYWORDS already caught it
-            return "zion_only"
         return "hybrid"
     else:
         # Ambiguous query — default to hybrid to be safe

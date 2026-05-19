@@ -218,3 +218,6 @@ TITHE_WALLETS_BACKUP.txt
 
 # Large ZIP files - use GitHub Releases or LFS if needed
 HiranV2.1/*.zip
+
+# Hiran v2.3 generated vector DB
+HiranV2.3/knowledge/vector_db/
