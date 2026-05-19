@@ -71,7 +71,7 @@ services:
       - ZION_ISSOBELLA_WALLET=${ZION_ISSOBELLA_WALLET:-zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702}
       - ZION_POOL_FEE_WALLET=${ZION_POOL_FEE_WALLET:-zion1p2a7a5q0t2z5z545y6m6j5e864n002v4z6w95w5}
       - ZION_POOL_WALLET=${ZION_POOL_WALLET:-zion1l56685k280p364g686j88644g3j4r375755e8p7}
-      - ZION_POOL_PAYOUT_SK_HEX=${ZION_POOL_PAYOUT_SK_HEX:-a3bc7452beb612e2f3a59f85d31905cc2e8e28f3450e4892c9c0ea445e913ee9}
+      - ZION_POOL_PAYOUT_SK_HEX=${ZION_POOL_PAYOUT_SK_HEX:?ZION_POOL_PAYOUT_SK_HEX must be set in .env}
     depends_on:
       node:
         condition: service_healthy
@@ -197,7 +197,7 @@ services:
       - ./grafana/datasources:/etc/grafana/provisioning/datasources
       - ./grafana/dashboards:/etc/grafana/provisioning/dashboards
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD:?GF_SECURITY_ADMIN_PASSWORD must be set in .env}
       - GF_USERS_ALLOW_SIGN_UP=false
     depends_on:
       - prometheus

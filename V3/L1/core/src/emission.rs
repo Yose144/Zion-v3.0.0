@@ -48,6 +48,15 @@ pub const TAIL_REWARD: u64 = 724_784_723_787_776;
 pub const COINBASE_MATURITY: u64 = 100;
 
 // ─── Fee Split Constants (Protocol-Level) ────────────────────────────────────
+//
+// WARNING: These four percentages are duplicated in several crates.
+// If you change any value here, you MUST also update:
+//   1. V3/L1/cosmic-harmony/src/revenue.rs  (ZION_*_PCT constants)
+//   2. V3/L1/pool/src/pplns.rs              (FeeConfig::default)
+//   3. V3/L1/pool/src/bin/server.rs        (parse_env_u64 fallbacks)
+//   4. V3/docs/MAINNET_CONSTANTS.md
+//   5. docs/WP-Mainet/ whitepapers
+// The `fee_split_consistency` test below guards against accidental drift.
 
 /// Miner share: 89% of block subsidy.
 pub const MINER_PCT: u64 = 89;
@@ -292,6 +301,17 @@ mod tests {
     fn fee_split_tail_sums_to_subsidy() {
         let (m, h, i, p) = fee_split(TAIL_REWARD);
         assert_eq!(m + h + i + p, TAIL_REWARD);
+    }
+
+    /// Guard against accidental drift between `emission.rs` and the duplicate
+    /// constants in `cosmic-harmony/src/revenue.rs`.  If this fails, update
+    /// ALL locations listed in the WARNING comment above `MINER_PCT`.
+    #[test]
+    fn fee_split_consistency_with_cosmic_harmony() {
+        assert_eq!(MINER_PCT, zion_cosmic_harmony::ZION_MINER_PCT);
+        assert_eq!(HUMANITARIAN_PCT, zion_cosmic_harmony::ZION_HUMANITARIAN_PCT);
+        assert_eq!(ISSOBELLA_PCT, zion_cosmic_harmony::ZION_ISSOBELLA_PCT);
+        assert_eq!(POOL_FEE_PCT, zion_cosmic_harmony::ZION_POOL_PCT);
     }
 
     #[test]

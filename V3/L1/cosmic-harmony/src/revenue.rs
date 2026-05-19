@@ -18,6 +18,14 @@ pub const BLAKE3_EXTERNAL_FEE: f64 = 0.02;
 pub const NCL_FEE: f64 = 0.10;
 
 /// Protocol fee split for canonical ZION blocks (percentages).
+///
+/// WARNING: These values must stay in sync with `zion_core::emission`.
+/// If you change any value here, you MUST also update:
+///   1. V3/L1/core/src/emission.rs  (MINER_PCT, HUMANITARIAN_PCT, ISSOBELLA_PCT, POOL_FEE_PCT)
+///   2. V3/L1/pool/src/pplns.rs     (FeeConfig::default)
+///   3. V3/L1/pool/src/bin/server.rs (parse_env_u64 fallbacks)
+///   4. V3/docs/MAINNET_CONSTANTS.md
+///   5. docs/WP-Mainet/ whitepapers
 pub const ZION_MINER_PCT: u64 = 89;
 pub const ZION_HUMANITARIAN_PCT: u64 = 5;
 pub const ZION_ISSOBELLA_PCT: u64 = 5;
