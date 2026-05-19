@@ -86,7 +86,7 @@ services:
   miner:
     build:
       context: ..
-      dockerfile: docker/Dockerfile.miner
+      dockerfile: docker/${MINER_DOCKERFILE:-Dockerfile.miner}
     image: zion-v3-miner:${TAG:-latest}
     container_name: zion-v3-miner
     restart: unless-stopped
@@ -96,8 +96,16 @@ services:
       - ZION_POOL_ADDR=pool:8444
       - ZION_MINER_THREADS=${MINER_THREADS:-2}
       - ZION_LOOP_COUNT=${MINER_LOOP_COUNT:-1000000}
+      - ZION_GPU_BACKEND=${ZION_GPU_BACKEND:-cpu}
+      - ZION_GPU_WORK_SIZE=${ZION_GPU_WORK_SIZE:-4096}
     depends_on:
       - pool
+    # AMD GPU passthrough (OpenCL via /dev/dri); ignored on NVIDIA systems
+    devices:
+      - /dev/dri:/dev/dri
+    group_add:
+      - video
+      - render
     networks:
       - zion-v3
 
