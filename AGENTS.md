@@ -207,3 +207,41 @@ Hiran v2.2 is a domain-specific fine-tuned model for the Zion ecosystem. Trainin
 5. Training: `cd /workspace/hiran-v2.2 && bash scripts/run_training.sh`
 6. Post-training: merge with `scripts/merge_and_quantize.py`, evaluate with `scripts/interview_model.py`
 7. Keep instance alive for evaluation; artifacts can stay remote if bandwidth is concern
+
+## 7) Hiran v2.3 AI Model Training (In Progress)
+
+Hiran v2.3 is the next-generation domain model using full fine-tuning on a 32B base model with hybrid RAG architecture. All artifacts live in `HiranV2.3/`.
+
+### Training stack
+- **Base model:** `nvidia/OpenReasoning-Nemotron-32B` (Qwen2.5-32B-Instruct derivative, 32K context, reasoning-optimized)
+- **Method:** Full Fine-Tuning with DeepSpeed ZeRO-3 (CPU/NVMe offload, BF16)
+- **Fallback:** DORA with rank 512 (`scripts/train_v2.3.py`)
+- **Hardware target:** 4x A100 80GB (~$6/hr, ~48h = ~$288)
+- **Dataset:** 48,436 weighted instruction pairs (20,517 unique) across 9 stages:
+  - Stage 1a: 3,200 factual reinforcement (fee split, categories, L1-L6, Issobella)
+  - Stage 1b: 5,302 drill patterns (massive repetition, true/false, verification)
+  - Stage 2: 1,500 domain expertise (mining, DAO, bridge, consensus, security)
+  - Stage 3: 1,000 cross-domain comparisons
+  - Stage 4: 500 preference alignment (ORPO pairs)
+  - Stage 5: 300 conversation flow
+  - Stage 6: 2,015 bilingual Czech/English
+  - Stage 7: 3,000 code generation (Rust, Solidity, Python)
+  - Stage 8: 2,000 inference/deployment docs
+  - Stage 9: 1,700 safety & adversarial (jailbreak refusals, attack refusals, edge cases, multi-turn consistency)
+
+### Hybrid RAG Architecture
+Because general knowledge is too large for 32B parameters, v2.3 uses RAG alongside FT:
+- **33 knowledge documents** across religion, history, science, culture, philosophy, art, medicine, literature, mythology, languages
+- **Vector DB:** ChromaDB + `all-MiniLM-L6-v2` embeddings
+- **Query Router:** Classifies queries as `zion_only`, `knowledge_rag`, or `hybrid`
+- **Retriever:** Multi-collection cosine-similarity retrieval
+- **Inference:** `rag/inference_hybrid.py` combines FT model with retrieved context
+
+### Key files
+- `HiranV2.3/PLAN_v2.3.md` — comprehensive training plan
+- `HiranV2.3/data/generators/build_v2.3_dataset.py` — master dataset builder
+- `HiranV2.3/data/generators/generate_safety_adversarial.py` — Stage 9 generator
+- `HiranV2.3/scripts/train_v2.3_fullft.py` — DeepSpeed ZeRO-3 full FT script
+- `HiranV2.3/config/deepspeed_zero3.json` — ZeRO-3 configuration
+- `HiranV2.3/rag/query_router.py` — query classification
+- `HiranV2.3/rag/indexer.py` / `retriever.py` — vector DB operations
