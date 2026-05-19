@@ -1,21 +1,25 @@
 {
   "version": "2.3",
-  "created": "2026-05-19T09:10:39.686646",
-  "total_pairs": 9700,
+  "created": "2026-05-19T09:20:36.418835",
+  "total_pairs": 31306,
   "stage_counts": {
-    "stage1": 3200,
-    "stage2": 1500,
-    "stage3": 1000,
-    "stage4": 500,
-    "stage5": 300
+    "stage1_factual": 3200,
+    "stage1_drill": 5302,
+    "stage2_domain": 1500,
+    "stage3_cross": 1000,
+    "stage4_preference": 500,
+    "stage5_conversation": 300
   },
   "training_method": "DORA",
   "target_model": "nvidia/OpenReasoning-Nemotron-32B",
   "key_innovations": [
     "factual_reinforcement_loops",
+    "drill_pattern_memorization",
     "negative_correction_examples",
     "chain_of_thought_training",
     "system_prompt_anchoring",
+    "memory_anchor_contexts",
+    "refusal_to_hallucinate",
     "preference_alignment"
   ]
 }
