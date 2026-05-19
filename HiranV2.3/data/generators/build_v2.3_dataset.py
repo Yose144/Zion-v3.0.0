@@ -172,6 +172,9 @@ def main():
     stage1_drill = load_jsonl(curriculum_dir / "stage1_drill_patterns.jsonl")
     stage2 = load_jsonl(curriculum_dir / "stage2_domain_expertise.jsonl")
     stage3 = load_jsonl(curriculum_dir / "stage3_cross_domain.jsonl")
+    stage6 = load_jsonl(curriculum_dir / "stage6_bilingual.jsonl")
+    stage7 = load_jsonl(curriculum_dir / "stage7_code_generation.jsonl")
+    stage8 = load_jsonl(curriculum_dir / "stage8_inference.jsonl")
 
     # Build remaining stages
     print("\nBuilding Stage 4: Preference Alignment...")
@@ -188,6 +191,9 @@ def main():
         "stage3_cross_domain": stage3,
         "stage4_preference_alignment": stage4,
         "stage5_conversation": stage5,
+        "stage6_bilingual": stage6,
+        "stage7_code_generation": stage7,
+        "stage8_inference": stage8,
     }
 
     all_valid = True
@@ -200,10 +206,10 @@ def main():
     print("\nBuilding combined dataset...")
     all_pairs = []
     for name, pairs in stages.items():
-        # Weight stages: factual + drill get 3x weight, domain 2x, rest 1x
+        # Weight stages: factual + drill get 3x weight, domain 2x, bilingual/code 2x, rest 1x
         if "factual" in name or "drill" in name:
             weight = 3
-        elif "domain" in name:
+        elif "domain" in name or "code" in name or "bilingual" in name:
             weight = 2
         else:
             weight = 1
@@ -223,8 +229,11 @@ def main():
     print(f"Stage 1b (Drill):        {len(stage1_drill):>6} pairs")
     print(f"Stage 2 (Domain):        {len(stage2):>6} pairs")
     print(f"Stage 3 (Cross-domain):  {len(stage3):>6} pairs")
-    print(f"Stage 4 (Preference):  {len(stage4):>6} pairs")
+    print(f"Stage 4 (Preference):    {len(stage4):>6} pairs")
     print(f"Stage 5 (Conversation):  {len(stage5):>6} pairs")
+    print(f"Stage 6 (Bilingual):     {len(stage6):>6} pairs")
+    print(f"Stage 7 (Code Gen):      {len(stage7):>6} pairs")
+    print(f"Stage 8 (Inference):     {len(stage8):>6} pairs")
     print(f"{'-' * 40}")
     print(f"Combined (weighted):     {len(all_pairs):>6} pairs")
     print(f"\nSaved to: {curriculum_dir}")
@@ -243,8 +252,11 @@ def main():
             "stage3_cross": len(stage3),
             "stage4_preference": len(stage4),
             "stage5_conversation": len(stage5),
+            "stage6_bilingual": len(stage6),
+            "stage7_code_gen": len(stage7),
+            "stage8_inference": len(stage8),
         },
-        "training_method": "DORA",
+        "training_method": "full_fine_tuning",
         "target_model": "nvidia/OpenReasoning-Nemotron-32B",
         "key_innovations": [
             "factual_reinforcement_loops",

@@ -7,7 +7,7 @@ v2.2 proved that **QLoRA with rank ≤ 64 on 8B model is insufficient** for memo
 - Triggered base model contamination at low temperature (Mormon church associations)
 - Failed few-shot factual recall (6% instead of 5% for Issobella)
 
-v2.3 addresses these root causes with **larger model capacity (32B+)**, **advanced parameter-efficient methods (DORA/rsLoRA)**, and **factual reinforcement dataset engineering**.
+v2.3 addresses these root causes with **larger model capacity (32B+)**, **full fine-tuning (ALL parameters updated)**, and **massive factual reinforcement dataset engineering (43K+ pairs with drill patterns)**.
 
 ---
 
@@ -37,48 +37,40 @@ v2.3 addresses these root causes with **larger model capacity (32B+)**, **advanc
 
 ---
 
-## 2. Training Method Selection
+## 2. Training Method: FULL FINE-TUNING (Not LoRA/DORA)
 
-### Option A: DORA (Weight-Decomposed Low-Rank Adaptation) — RECOMMENDED
+After v2.2 analysis, we determined that **parameter-efficient methods cannot overcome base model dominance on precise facts**. The only way to guarantee factual memorization is to update ALL parameters.
 
-DORA decomposes weights into **magnitude** and **direction**, adapting both. This is significantly closer to full fine-tuning than standard LoRA.
-
-```
-Standard LoRA:  W' = W + BA           (only direction changed)
-DORA:          W' = m * (W/||W|| + BA)  (magnitude AND direction changed)
-```
+### Full Fine-Tuning with DeepSpeed ZeRO-3
 
 | Config | Value |
 |--------|-------|
-| Rank | 512 (rsLoRA scaling: alpha = 512^0.5 * 16 ≈ 362) |
-| Target modules | ALL linear layers (q, k, v, o, gate, up, down, lm_head) |
-| Quantization | BF16 (no 4-bit — we need full weight fidelity for facts) |
-| Gradient checkpointing | Enabled |
-| VRAM need | ~65GB → fits on 1x A100 80GB |
-| Cost (Vast.ai) | ~$2.50/hr × 60h = **~$150** |
-
-### Option B: Full Fine-Tuning with DeepSpeed ZeRO-3
-
-| Config | Value |
-|--------|-------|
-| Precision | BF16 + mixed precision |
-| Optimizer | AdamW 8-bit (bitsandbytes) |
+| Method | Full parameter update (32.8B params) |
+| Precision | BF16 mixed precision |
+| Optimizer | AdamW (via DeepSpeed) |
 | ZeRO stage | 3 with CPU/NVMe offload |
-| VRAM need | ~40GB per GPU → 2x A100 80GB or 4x A100 40GB |
-| Cost (Vast.ai) | ~$5/hr × 48h = **~$240** |
-| Quality | Best possible (all params updated) |
+| Gradient checkpointing | Enabled |
+| Gradient accumulation | 32 steps |
+| VRAM per GPU | ~40-60GB |
+| GPUs needed | 2-4x A100 80GB |
+| Cost (Vast.ai) | ~$1.50/hr per A100 × 4 GPUs × 48h = **~$288** |
+| Quality | **Best possible** — all params updated |
 
-### Option C: rsLoRA QLoRA (Budget)
+### Why Full FT Over DORA/LoRA?
 
-| Config | Value |
-|--------|-------|
-| Rank | 1024 (rsLoRA scaling) |
-| Quantization | NF4 with double quantization |
-| VRAM need | ~28GB → fits on 1x RTX 4090 |
-| Cost | ~$0.50/hr × 80h = **~$40** |
-| Quality | Better than v2.2 but still not full FT |
+| Aspect | LoRA/DORA | Full FT |
+|--------|-----------|---------|
+| Parameters updated | 0.1-1% | 100% |
+| Factual memorization | Weak (v2.2 proved this) | Strong |
+| Training speed | Fast | Slow |
+| VRAM need | Low | High |
+| Final quality | Limited by base model | True domain adaptation |
 
-**Decision: Option A (DORA)** — best quality/cost ratio for our budget.
+**Decision: FULL FINE-TUNING** — we need true domain adaptation, not adapter patches.
+
+### Fallback: DORA (if full FT is unavailable)
+
+If 4× A100 is unavailable, `scripts/train_v2.3.py` provides DORA as fallback with rank 512 + rsLoRA on 1× A100 80GB.
 
 ---
 
@@ -212,31 +204,28 @@ After DORA stages, run **Odds Ratio Preference Optimization** to improve respons
 
 ## 5. Hardware & Cost Plan
 
-### Vast.ai Instance Requirements
+### Vast.ai Instance Requirements (FULL FT)
 
-| Spec | Minimum | Recommended |
-|------|---------|-------------|
-| GPU | 1× A100 80GB | 2× A100 80GB |
-| VRAM | 80GB | 160GB |
-| Disk | 200GB | 300GB |
-| Region | Any (latency irrelevant) | EU preferred |
-| Cost/hr | ~$2.50 | ~$5.00 |
+| Spec | Minimum | Recommended | Ideal |
+|------|---------|-------------|-------|
+| GPU | 2× A100 80GB | 4× A100 80GB | 8× A100 80GB |
+| VRAM total | 160GB | 320GB | 640GB |
+| CPU RAM | 128GB+ | 256GB+ | 512GB+ |
+| Disk | 300GB | 500GB | 500GB |
+| Cost/hr | ~$3.00 | ~$6.00 | ~$12.00 |
 
-### Estimated Duration & Cost
+### Estimated Duration & Cost (FULL FT)
 
-| Phase | Duration | Cost (1× A100) | Cost (2× A100) |
+| Phase | Duration | Cost (2× A100) | Cost (4× A100) |
 |-------|----------|----------------|----------------|
 | Dataset generation | Local | $0 | $0 |
-| Stage 1 training | 24h | $60 | $120 |
-| Stage 2 training | 18h | $45 | $90 |
-| Stage 3 training | 12h | $30 | $60 |
-| ORPO alignment | 6h | $15 | $30 |
-| Evaluation | 2h | $5 | $10 |
-| **Total** | **~62h** | **~$155** | **~$310** |
+| Full FT training (3 epochs) | 48-72h | $144-216 | $288-432 |
+| Evaluation | 4h | $12 | $24 |
+| **Total** | **~52-76h** | **~$156-228** | **~$312-456** |
 
 ### Recommendation
 
-Start with **1× A100 80GB** (~$2.50/hr). If Stage 1 factual memorization metrics are poor (<85% exact recall), upgrade to 2× A100 for Stage 2-3.
+**4× A100 80GB** is the sweet spot for full FT of 32B model. Training completes in ~48 hours. Fallback to 2× A100 with CPU offload if 4× unavailable.
 
 ---
 
@@ -286,21 +275,30 @@ HiranV2.3/
 │   │   ├── generate_architecture.py
 │   │   └── generate_negative_examples.py
 │   ├── curriculum/
-│   │   ├── stage1_factual_reinforcement.jsonl
-│   │   ├── stage2_domain_expertise.jsonl
-│   │   ├── stage3_cross_domain.jsonl
-│   │   └── stage4_preference_pairs.jsonl
-│   └── validate_v2.3.py        # Dataset validation
+│   │   ├── stage1_factual_reinforcement.jsonl  (3,200 pairs)
+│   │   ├── stage1_drill_patterns.jsonl       (5,302 pairs)
+│   │   ├── stage2_domain_expertise.jsonl       (1,500 pairs)
+│   │   ├── stage3_cross_domain.jsonl           (1,000 pairs)
+│   │   ├── stage4_preference_pairs.jsonl       (500 pairs)
+│   │   ├── stage5_conversation.jsonl           (300 pairs)
+│   │   ├── stage6_bilingual.jsonl              (2,015 pairs)
+│   │   ├── stage7_code_generation.jsonl        (3,000 pairs)
+│   │   ├── stage8_inference.jsonl              (2,000 pairs)
+│   │   └── v2.3_combined_dataset.jsonl         (43,336 weighted)
+│   ├── generators/                # Dataset generation scripts
+│   └── validate_v2.3.py         # Dataset validation (6 checks)
 ├── scripts/
-│   ├── train_v2.3.py            # DORA training script
-│   ├── run_training.sh          # Full pipeline launcher
-│   ├── merge_model.py           # Merge adapters + base
-│   ├── quantize_gguf.py         # GGUF quantization
+│   ├── train_v2.3_fullft.py     # FULL FT (DeepSpeed ZeRO-3)
+│   ├── train_v2.3.py            # DORA fallback (1× A100)
+│   ├── run_training_fullft.sh   # Full FT launcher
+│   ├── run_training.sh          # DORA launcher
+│   ├── merge_model.py           # Merge adapters (DORA only)
 │   ├── evaluate_v2.3.py         # Comprehensive evaluation
-│   └── interview_v2.3.py        # Model interview (like v2.2)
+│   └── interview_v2.3.py        # Model interview
 ├── config/
+│   ├── deepspeed_zero3.json     # DeepSpeed ZeRO-3 config
 │   ├── curriculum_config.json   # Stage definitions
-│   └── dora_config.json         # DORA-specific settings
+│   └── dora_config.json         # DORA fallback config
 └── results/
     └── (evaluation reports)
 ```
@@ -311,14 +309,12 @@ HiranV2.3/
 
 | Milestone | ETA | Deliverable |
 |-----------|-----|-------------|
-| M1: Dataset generation | Day 1-2 | 50K+ validated pairs |
-| M2: Vast.ai provisioning | Day 3 | 1× A100 80GB instance |
-| M3: Stage 1 training | Day 3-4 | Factual memorization adapter |
-| M4: Stage 2-3 training | Day 4-6 | Full DORA adapter |
-| M5: ORPO alignment | Day 6 | Aligned model |
-| M6: Merge + quantize | Day 7 | GGUF for inference |
-| M7: Evaluation | Day 7 | Factual recall report |
-| M8: Deploy + docs | Day 8 | Production ready |
+| M1: Dataset generation | Day 1 | 43K+ validated pairs (DONE) |
+| M2: Vast.ai provisioning | Day 2 | 4× A100 80GB instance |
+| M3: Full FT training | Day 2-4 | Complete model checkpoint |
+| M4: Evaluation | Day 4 | Factual recall + code gen test |
+| M5: Quantize + deploy | Day 5 | GGUF for inference |
+| M6: Production ready | Day 6 | API server + docs |
 
 ---
 
@@ -326,11 +322,12 @@ HiranV2.3/
 
 | Risk | Likelihood | Mitigation |
 |------|------------|------------|
-| A100 unavailable on Vast.ai | Medium | Pre-book instance; fallback to RunPod/Lambda |
-| DORA doesn't improve factual recall | Low | Fallback to full FT (Option B) |
-| 50K dataset overfits | Low | Strong regularization (dropout 0.05, weight decay) |
-| Training interrupted | Medium | Checkpoint every 500 steps; auto-resume |
-| Model still hallucinates at low temp | Medium | Increase factual stage to 8 epochs; add more negative examples |
+| 4× A100 unavailable on Vast.ai | Medium | Pre-book; fallback to 2× A100 + CPU offload; DORA as last resort |
+| Full FT OOM on single GPU | High | DeepSpeed ZeRO-3 + CPU offload; reduce batch to 1; increase grad accum |
+| Training interrupted | Medium | Checkpoint every 500 steps; auto-resume from latest |
+| 43K dataset overfits | Low | Only 3 epochs; weight decay 0.01; eval every 200 steps |
+| Model still hallucinates at low temp | Low | Massive drill patterns (5,302 pairs); 200× repetition of key facts |
+| Czech output quality poor | Medium | 2,015 bilingual pairs; evaluate separately on Czech test set |
 
 ---
 
@@ -345,6 +342,9 @@ v2.3 is successful when **ALL** of the following are true:
 5. ✅ Model generates valid Zion-related code (Rust/Solidity) **that compiles**
 6. ✅ GGUF quantized model runs at >50 tok/s on RTX 4090
 7. ✅ No religious contamination at any temperature
+8. ✅ Model answers correctly in **Czech** about Zion facts
+9. ✅ Model explains technical concepts with **chain-of-thought reasoning**
+10. ✅ Model provides accurate API examples and deployment configs
 
 ---
 
