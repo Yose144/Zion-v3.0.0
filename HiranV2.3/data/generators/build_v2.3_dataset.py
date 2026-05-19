@@ -169,6 +169,7 @@ def main():
     # Load pre-generated stages
     print("\nLoading generated data...")
     stage1 = load_jsonl(curriculum_dir / "stage1_factual_reinforcement.jsonl")
+    stage1_drill = load_jsonl(curriculum_dir / "stage1_drill_patterns.jsonl")
     stage2 = load_jsonl(curriculum_dir / "stage2_domain_expertise.jsonl")
     stage3 = load_jsonl(curriculum_dir / "stage3_cross_domain.jsonl")
 
@@ -182,6 +183,7 @@ def main():
     # Validate each stage
     stages = {
         "stage1_factual_reinforcement": stage1,
+        "stage1_drill_patterns": stage1_drill,
         "stage2_domain_expertise": stage2,
         "stage3_cross_domain": stage3,
         "stage4_preference_alignment": stage4,
@@ -198,8 +200,13 @@ def main():
     print("\nBuilding combined dataset...")
     all_pairs = []
     for name, pairs in stages.items():
-        # Weight stages: factual gets 2x weight
-        weight = 2 if "factual" in name else 1
+        # Weight stages: factual + drill get 3x weight, domain 2x, rest 1x
+        if "factual" in name or "drill" in name:
+            weight = 3
+        elif "domain" in name:
+            weight = 2
+        else:
+            weight = 1
         for _ in range(weight):
             all_pairs.extend(pairs)
 
@@ -212,13 +219,14 @@ def main():
     print(f"\n{'=' * 60}")
     print("DATASET BUILD COMPLETE")
     print(f"{'=' * 60}")
-    print(f"Stage 1 (Factual):      {len(stage1):>6} pairs")
-    print(f"Stage 2 (Domain):       {len(stage2):>6} pairs")
-    print(f"Stage 3 (Cross-domain): {len(stage3):>6} pairs")
-    print(f"Stage 4 (Preference):   {len(stage4):>6} pairs")
-    print(f"Stage 5 (Conversation):   {len(stage5):>6} pairs")
+    print(f"Stage 1a (Factual):      {len(stage1):>6} pairs")
+    print(f"Stage 1b (Drill):        {len(stage1_drill):>6} pairs")
+    print(f"Stage 2 (Domain):        {len(stage2):>6} pairs")
+    print(f"Stage 3 (Cross-domain):  {len(stage3):>6} pairs")
+    print(f"Stage 4 (Preference):  {len(stage4):>6} pairs")
+    print(f"Stage 5 (Conversation):  {len(stage5):>6} pairs")
     print(f"{'-' * 40}")
-    print(f"Combined (weighted):    {len(all_pairs):>6} pairs")
+    print(f"Combined (weighted):     {len(all_pairs):>6} pairs")
     print(f"\nSaved to: {curriculum_dir}")
     print(f"Combined: {combined_file}")
     print(f"\nValidation: {'PASSED' if all_valid else 'FAILED - check issues above'}")
@@ -229,19 +237,23 @@ def main():
         "created": datetime.now().isoformat(),
         "total_pairs": len(all_pairs),
         "stage_counts": {
-            "stage1": len(stage1),
-            "stage2": len(stage2),
-            "stage3": len(stage3),
-            "stage4": len(stage4),
-            "stage5": len(stage5),
+            "stage1_factual": len(stage1),
+            "stage1_drill": len(stage1_drill),
+            "stage2_domain": len(stage2),
+            "stage3_cross": len(stage3),
+            "stage4_preference": len(stage4),
+            "stage5_conversation": len(stage5),
         },
         "training_method": "DORA",
         "target_model": "nvidia/OpenReasoning-Nemotron-32B",
         "key_innovations": [
             "factual_reinforcement_loops",
+            "drill_pattern_memorization",
             "negative_correction_examples",
             "chain_of_thought_training",
             "system_prompt_anchoring",
+            "memory_anchor_contexts",
+            "refusal_to_hallucinate",
             "preference_alignment"
         ]
     }
