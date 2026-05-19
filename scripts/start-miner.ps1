@@ -1,0 +1,8 @@
+$env:ZION_POOL_ADDR='127.0.0.1:8444'
+$env:ZION_LOOP_COUNT='1000000'
+$env:ZION_MINER_THREADS='2'
+$env:ZION_WORKER_NAME='worker1'
+$env:ZION_MINER_ID='w11-gpu-miner-01'
+$env:ZION_GPU_BACKEND='opencl'
+$env:ZION_GPU_WORK_SIZE='4096'
+& 'C:\Users\yosef\Desktop\Zion\2.9.6-main\V3\target\release\zion-miner.exe'
