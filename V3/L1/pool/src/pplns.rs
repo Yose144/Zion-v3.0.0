@@ -54,6 +54,9 @@ pub struct FeeConfig {
 
 impl Default for FeeConfig {
     fn default() -> Self {
+        // WARNING: These defaults must stay in sync with `zion_core::emission`.
+        // If the protocol-level split changes, update here, in server.rs,
+        // cosmic-harmony/src/revenue.rs, and the whitepapers.
         Self {
             humanitarian_pct: 5,
             issobella_pct: 5,
@@ -655,10 +658,11 @@ mod tests {
         let cfg = PplnsConfig::default();
         assert_eq!(cfg.window_size, 1_000);
         assert_eq!(cfg.min_payout_flowers, zion_core::wallet::MIN_PAYOUT_AMOUNT);
-        assert_eq!(cfg.fee_config.humanitarian_pct, 5);
-        assert_eq!(cfg.fee_config.issobella_pct, 5);
-        assert_eq!(cfg.fee_config.pool_fee_pct, 1);
-        assert_eq!(cfg.fee_config.miner_pct(), 89);
+        // Guard against drift with zion_core::emission constants.
+        assert_eq!(cfg.fee_config.humanitarian_pct, zion_core::emission::HUMANITARIAN_PCT);
+        assert_eq!(cfg.fee_config.issobella_pct, zion_core::emission::ISSOBELLA_PCT);
+        assert_eq!(cfg.fee_config.pool_fee_pct, zion_core::emission::POOL_FEE_PCT);
+        assert_eq!(cfg.fee_config.miner_pct(), zion_core::emission::MINER_PCT);
     }
 
     #[test]
