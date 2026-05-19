@@ -39,6 +39,7 @@ KNOWLEDGE_DOMAINS = {
                 "roman", "egyptian", "greek", "persian", "mongol", "byzantine",
                 "ottoman", "aztec", "inca", "maya", "renaissance", "enlightenment",
                 "industrial", "colonization", "feudalism", "monarchy", "republic",
+                "democracy", "athenian", "sparta", "senate", "assembly",
                 "slave trade", "holocaust", "cold war", "iron curtain",
                 "portugal", "spain", "france", "czech", "hawaii", "india",
                 "china", "japan", "africa", "americas", "europe", "asia"},
@@ -54,7 +55,51 @@ KNOWLEDGE_DOMAINS = {
                 "ohona", "aloha", "ubuntu", "fado", "siesta", "fiesta",
                 "language family", "indo-european", "romance languages",
                 "germanic", "slavic", "sino-tibetan", "bantu"},
+    "philosophy": {"philosophy", "socrates", "plato", "aristotle", "kant",
+                   "nietzsche", "heidegger", "sartre", "existentialism",
+                   "ethics", "morality", "metaphysics", "epistemology",
+                   "logic", "reason", "consciousness", "free will",
+                   "stoicism", "utilitarianism", "nihilism", "absurd",
+                   "confucius", "laozi", "taoism", "buddhist philosophy",
+                   "dharma", "enlightenment", "meditation", "zen"},
+    "art": {"art", "painting", "sculpture", "architecture", "music", "dance",
+            "theater", "film", "cinema", "photography", "literature", "poetry",
+            "renaissance", "baroque", "impressionism", "cubism", "surrealism",
+            "picasso", "van gogh", "monet", "davinci", "michelangelo",
+            "rembrandt", "shakespeare", "mozart", "beethoven", "opera",
+            "symphony", "ballet", "modern art", "contemporary art"},
+    "medicine": {"medicine", "health", "disease", "virus", "bacteria",
+                 "anatomy", "physiology", "surgery", "vaccine", "antibiotic",
+                 "cancer", "diabetes", "heart disease", "mental health",
+                 "depression", "anxiety", "therapy", "hospital", "doctor",
+                 "nurse", "treatment", "diagnosis", "symptom", "epidemic",
+                 "pandemic", "nutrition", "exercise", "wellness",
+                 "crispr", "gene editing", "genetic engineering", "stem cell"},
+    "literature": {"literature", "novel", "poem", "epic", "myth", "fable",
+                   "shakespeare", "homer", "dante", "cervantes", "kafka",
+                   "tolstoy", "dostoevsky", "joyce", "murakami", "poetry",
+                   "prose", "fiction", "non-fiction", "drama", "tragedy",
+                   "comedy", "satire", "romance", "sci-fi", "fantasy",
+                   "don quixote", "quixote", "moby dick", "odyssey", "iliad",
+                   "divine comedy", "inferno", "hamlet", "macbeth", "othello"},
+    "mythology": {"myth", "mythology", "god", "goddess", "hero", "demigod",
+                  "olympus", "valhalla", "olympian", "norse", "greek myth",
+                  "egyptian myth", "hindu myth", "japanese myth", "creation myth",
+                  "dragon", "phoenix", "unicorn", "fairy", "elf", "dwarf",
+                  "titan", "giant", "monster", "legend", "folklore", "fairy tale"},
+    "languages": {"german", "russian", "chinese", "arabic", "japanese",
+                  "latin", "greek", "sanskrit", "hebrew", "swahili",
+                  "translation", "interpret", "pronunciation", "grammar",
+                  "alphabet", "script", "writing system", "vocabulary",
+                  "phrase", "greeting", "hello in", "how to say", "say in"},
 }
+
+
+def _keyword_match(text: str, keyword: str) -> bool:
+    """Match keyword with word boundaries (except for multi-word phrases)."""
+    if " " in keyword:
+        return keyword in text
+    return bool(re.search(r'\b' + re.escape(keyword) + r'\b', text))
 
 
 def classify_query(query: str) -> Literal["zion_only", "knowledge_rag", "hybrid"]:
@@ -67,16 +112,21 @@ def classify_query(query: str) -> Literal["zion_only", "knowledge_rag", "hybrid"
     query_lower = query.lower()
 
     # Check for Zion-specific terms
-    has_zion_terms = any(kw in query_lower for kw in ZION_KEYWORDS)
+    has_zion_terms = any(_keyword_match(query_lower, kw) for kw in ZION_KEYWORDS)
 
     # Check for knowledge domain terms
     has_knowledge_terms = False
     domain_hits = {}
     for domain, keywords in KNOWLEDGE_DOMAINS.items():
-        hits = sum(1 for kw in keywords if kw in query_lower)
+        hits = sum(1 for kw in keywords if _keyword_match(query_lower, kw))
         if hits > 0:
             domain_hits[domain] = hits
             has_knowledge_terms = True
+
+    # Explicit comparison / contrast queries that mention Zion + another domain
+    comparison_words = {"compare", "comparison", "versus", "vs", "difference between",
+                        "similarities", "contrast", "like", "unlike", "analogy"}
+    is_comparison = any(cw in query_lower for cw in comparison_words)
 
     # Classification logic
     if has_zion_terms and not has_knowledge_terms:
@@ -84,6 +134,15 @@ def classify_query(query: str) -> Literal["zion_only", "knowledge_rag", "hybrid"
     elif has_knowledge_terms and not has_zion_terms:
         return "knowledge_rag"
     elif has_zion_terms and has_knowledge_terms:
+        # If it's an explicit comparison, definitely hybrid
+        if is_comparison:
+            return "hybrid"
+        # If the knowledge terms are weak (only 1 hit in a minor domain),
+        # prefer zion_only unless strong general-knowledge signal
+        if len(domain_hits) == 1 and sum(domain_hits.values()) == 1:
+            # Check if the single hit is a borderline term that also appears in Zion context
+            # e.g. "governance" could be both Zion and general, but ZION_KEYWORDS already caught it
+            return "zion_only"
         return "hybrid"
     else:
         # Ambiguous query — default to hybrid to be safe
@@ -120,13 +179,25 @@ def main():
         "Calculate the humanitarian share from a 100 ZION block",
         "What is the Big Bang theory?",
         "Zion's humanitarian categories and Hinduism's four goals of life",
+        "What did Nietzsche mean by God is dead?",
+        "Tell me about Impressionism in art",
+        "How do vaccines work?",
+        "Who wrote Don Quixote?",
+        "What is Ragnarok in Norse mythology?",
+        "How do I say thank you in Japanese?",
+        "Explain the Tao Te Ching",
+        "What is CRISPR gene editing?",
+        "Describe the Egyptian underworld",
+        "What are the Greek gods?",
+        "How do you write hello in Chinese characters?",
+        "Tell me about Swahili language",
     ]
 
     for query in test_queries:
         classification = classify_query(query)
         explanation = get_router_explanation(query, classification)
         print(f"\n[{classification:13s}] {query}")
-        print(f"              → {explanation}")
+        print(f"              -> {explanation}")
 
 
 if __name__ == "__main__":
