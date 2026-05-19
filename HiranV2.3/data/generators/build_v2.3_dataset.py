@@ -237,6 +237,7 @@ def main():
     print(f"Stage 6 (Bilingual):     {len(stage6):>6} pairs")
     print(f"Stage 7 (Code Gen):      {len(stage7):>6} pairs")
     print(f"Stage 8 (Inference):     {len(stage8):>6} pairs")
+    print(f"Stage 9 (Safety/Adv):    {len(stage9):>6} pairs")
     print(f"{'-' * 40}")
     print(f"Combined (weighted):     {len(all_pairs):>6} pairs")
     print(f"\nSaved to: {curriculum_dir}")
@@ -258,6 +259,7 @@ def main():
             "stage6_bilingual": len(stage6),
             "stage7_code_gen": len(stage7),
             "stage8_inference": len(stage8),
+            "stage9_safety_adversarial": len(stage9),
         },
         "training_method": "full_fine_tuning",
         "target_model": "nvidia/OpenReasoning-Nemotron-32B",
@@ -269,7 +271,11 @@ def main():
             "system_prompt_anchoring",
             "memory_anchor_contexts",
             "refusal_to_hallucinate",
-            "preference_alignment"
+            "preference_alignment",
+            "adversarial_jailbreak_resistance",
+            "attack_scenario_refusals",
+            "multi_turn_consistency",
+            "edge_case_misconception_handling"
         ]
     }
     with open(curriculum_dir / "dataset_metadata.json", "w") as f:
