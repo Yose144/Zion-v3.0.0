@@ -2755,6 +2755,9 @@ impl ServerConfig {
             revenue_proxy_addr: parse_optional_env_string("ZION_REVENUE_PROXY_ADDR"),
             revenue_proxy_coin: std::env::var("ZION_REVENUE_PROXY_COIN")
                 .unwrap_or_else(|_| "KAS".to_string()),
+            // WARNING: Fallback values must stay in sync with `zion_core::emission`.
+            // If the protocol-level split changes, update here, in pplns.rs,
+            // cosmic-harmony/src/revenue.rs, and the whitepapers.
             fee_config: FeeConfig {
                 humanitarian_pct: parse_env_u64("ZION_HUMANITARIAN_TITHE_PCT", 5).unwrap_or(5),
                 issobella_pct: parse_env_u64("ZION_ISSOBELLA_FUND_PCT", 5).unwrap_or(5),
