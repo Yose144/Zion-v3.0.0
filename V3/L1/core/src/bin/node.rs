@@ -736,7 +736,11 @@ impl NodeServerConfig {
             node_config.websocket_bind = parse_endpoint_env(&value, "ZION_WEBSOCKET_BIND")?;
         }
         if let Ok(value) = std::env::var("ZION_SEED_PEERS") {
-            node_config.seed_peers = parse_seed_peers_env(&value)?;
+            if value.eq_ignore_ascii_case("none") || value.eq_ignore_ascii_case("empty") {
+                node_config.seed_peers.clear();
+            } else {
+                node_config.seed_peers = parse_seed_peers_env(&value)?;
+            }
         }
 
         let shared_accept_limit = parse_accept_limit_env("ZION_ACCEPT_LIMIT", None)?;
