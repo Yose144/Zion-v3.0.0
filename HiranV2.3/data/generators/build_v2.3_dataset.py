@@ -175,6 +175,7 @@ def main():
     stage6 = load_jsonl(curriculum_dir / "stage6_bilingual.jsonl")
     stage7 = load_jsonl(curriculum_dir / "stage7_code_generation.jsonl")
     stage8 = load_jsonl(curriculum_dir / "stage8_inference.jsonl")
+    stage9 = load_jsonl(curriculum_dir / "stage9_safety_adversarial.jsonl")
 
     # Build remaining stages
     print("\nBuilding Stage 4: Preference Alignment...")
@@ -194,6 +195,7 @@ def main():
         "stage6_bilingual": stage6,
         "stage7_code_generation": stage7,
         "stage8_inference": stage8,
+        "stage9_safety_adversarial": stage9,
     }
 
     all_valid = True
@@ -206,8 +208,9 @@ def main():
     print("\nBuilding combined dataset...")
     all_pairs = []
     for name, pairs in stages.items():
-        # Weight stages: factual + drill get 3x weight, domain 2x, bilingual/code 2x, rest 1x
-        if "factual" in name or "drill" in name:
+        # Weight stages: factual + drill + safety get 3x weight,
+        # domain + code + bilingual get 2x, rest 1x
+        if "factual" in name or "drill" in name or "safety" in name:
             weight = 3
         elif "domain" in name or "code" in name or "bilingual" in name:
             weight = 2
