@@ -1,6 +1,6 @@
 # 👥 ZION OASIS - COMPLETE AVATAR ROSTER
 
-> **201 Sacred Characters** — základních **51** + **15 rozšiřujících desetibloků × 10** (First Nations → Staroegypt) — viz [`docs/TerraNova/cosmic/`](../../TerraNova/cosmic/), [`docs/TerraNova/norse-celtic/`](../../TerraNova/norse-celtic/), [`docs/TerraNova/ancient-egypt/`](../../TerraNova/ancient-egypt/) a příbuzné podsložky.
+> **202 Sacred Characters** — základních **51** + **15 rozšiřujících desetibloků × 10** (First Nations → Staroegypt) + **Maya #202** — viz [`docs/TerraNova/cosmic/`](../../TerraNova/cosmic/), [`docs/TerraNova/norse-celtic/`](../../TerraNova/norse-celtic/), [`docs/TerraNova/ancient-egypt/`](../../TerraNova/ancient-egypt/) a příbuzné podsložky.
 >
 > **Each Avatar = Unique Quest Line + Teaching + Ability + NFT** *(kde eticky a designem povoleno — viz TerraNova přílohy)*
 
@@ -8,10 +8,10 @@
 
 ## 📊 AVATAR CATEGORIES
 
-### **Total: 201 Playable/NPC Avatars** *(rozšířeno 2026-05; Norse–Celtic #182–191; Staroegypt #192–201)*
+### **Total: 202 Playable/NPC Avatars** *(rozšířeno 2026-05; Norse–Celtic #182–191; Staroegypt #192–201; Maya #202)*
 
 ```
-🕉️ Sacred Trinity Hindu / Indo-lineage „core roster" (#00–17 v tabulce níže) + India Extended #82–91 + Japan #92–101 + China #102–111 + Indonesia #112–121 + Australia #122–131 + Aotearoa #132–141 + **Africa #142–151** + **Atlantis literary #152–161** + **Lemuria speculative-humility #162–171** + **Cosmic/Vzestup #172–181** + **Norse–Celtic #182–191** + **Staroegypt #192–201**
+🕉️ Sacred Trinity Hindu / Indo-lineage „core roster" (#00–17 v tabulce níže) + India Extended #82–91 + Japan #92–101 + China #102–111 + Indonesia #112–121 + Australia #122–131 + Aotearoa #132–141 + **Africa #142–151** + **Atlantis literary #152–161** + **Lemuria speculative-humility #162–171** + **Cosmic/Vzestup #172–181** + **Norse–Celtic #182–191** + **Staroegypt #192–201** + **🌳 Maya #202**
 🌟 Ascended Masters (10)
 ✝️ Christian Saints (4)
 🧘 Buddhist Masters (4)      — Tara, Avalokiteshvara, Vajrasattva, Dalai Lama XIV (#51)
@@ -33,6 +33,7 @@
 🌠 Cosmic / Vzestup Circle (10) — COSMIC MAP + archiv `APP&WEB/public_html/V2/Vzestup/`; **ne medicína**; `docs/TerraNova/cosmic`
 ⚔️ Norse–Celtic Circle (10) — Valhalla diegesis + severské + keltské prameny; **bez extremistické symboliky**; `docs/TerraNova/norse-celtic`
 🏺 Ancient Egypt Circle (10) — faraonské archetypy doplňující **#06 / #149–150**; **žádné loot crate muzea**; `docs/TerraNova/ancient-egypt`
+🌳 Maya Circle (1) — bůh devíti kroků, cyklický přechod; **ne doomsday**; `docs/TerraNova/maya`
 ```
 
 ---
@@ -1633,6 +1634,9 @@
 
 ### **201. Nut Stellar Vault** (Sharding / nightly maintenance metaphor)
 **Ray:** Indigo + Star Silver · **Role:** horizontal read scale · **Quest:** Stellar Vault Sharding · **Ability:** Starfield Span · **CL:** 5–9 · **NFT:** Legendary
+
+### **202. Bolon Yokte' K'uh** (Cycle transition / end-beginning deity)
+**Ray:** Obsidian + Flame Gold · **Role:** bak'tun reset, transformation · **Quest:** Devět Kroků Přechodu · **Ability:** Bak'tun Shift · **CL:** 7–9 · **NFT:** Legendary (cosmetic dual-form: shadow / light)
 
 ---
 
