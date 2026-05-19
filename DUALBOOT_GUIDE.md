@@ -4,6 +4,8 @@
 **Date:** 2026-05-19  
 **Target:** Existing Windows 11 PC → add Ubuntu Server 24.04 LTS for ZION V3 mainnet
 
+> **Related:** For hardware sizing, topology options, and cost estimates see [`SERVERPLAN.md`](./SERVERPLAN.md). This guide implements **Topology A** (local PC + cloud backup) from that plan.
+
 ---
 
 ## Prerequisites
