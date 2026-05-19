@@ -16,6 +16,10 @@ path = "src/bin/node.rs"
 name = "canonical-mainnet-operator-env"
 path = "src/bin/canonical-mainnet-operator-env.rs"
 
+[[bin]]
+name = "gen-keys"
+path = "src/bin/gen-keys.rs"
+
 [dependencies]
 anyhow.workspace = true
 blake3.workspace = true
