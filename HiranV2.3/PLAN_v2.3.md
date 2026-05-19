@@ -74,6 +74,54 @@ If 4× A100 is unavailable, `scripts/train_v2.3.py` provides DORA as fallback wi
 
 ---
 
+## 2.5 Hybrid Architecture: FT + RAG
+
+Hiran v2.3 uses a **hybrid approach** combining two complementary systems:
+
+### Fine-Tuned Model (Zion Expert)
+- **Purpose**: Deep expertise in Zion blockchain, DAO governance, mining pools
+- **Training**: Full fine-tuning on 43K Zion-specific pairs
+- **Strength**: Precise facts, domain terminology, code generation, multilingual Zion content
+- **Limitation**: Cannot store infinite general knowledge in 32B parameters
+
+### RAG System (General Knowledge)
+- **Purpose**: History, religion, science, cultures, languages
+- **Components**:
+  - **Knowledge Corpora**: 25 markdown documents across religion (Amduat, Bible, world religions), history (civilizations, empires, nations), science (physics, chemistry, biology, astronomy, math), cultures & languages (traditions, 7 language basics)
+  - **Vector DB**: ChromaDB with `all-MiniLM-L6-v2` embeddings
+  - **Query Router**: Classifies queries as `zion_only`, `knowledge_rag`, or `hybrid`
+  - **Retriever**: Fetches top-k relevant chunks based on cosine similarity
+
+### How It Works
+```
+User Query → Query Router → Classification
+                              ↓
+                    ┌────────┴────────┐
+                    ↓                 ↓
+              Zion-specific      General knowledge
+                    ↓                 ↓
+            Fine-Tuned Model      RAG Retriever
+                    ↓                 ↓
+              Domain answer    Retrieved context
+                                    ↓
+                              FT Model + Context
+                                    ↓
+                              Final Response
+```
+
+### Why This Architecture?
+- **FT only**: Cannot memorize all human knowledge in 32B parameters
+- **RAG only**: Lacks deep domain expertise and precise factual recall
+- **Hybrid**: Zion facts come from FT (no retrieval needed = faster), general knowledge from RAG (extensible = add more documents anytime)
+
+### Extensibility
+Adding new knowledge domains requires NO retraining:
+1. Write markdown documents in `knowledge/corpora/`
+2. Run `python rag/indexer.py` to embed and index
+3. The RAG system automatically retrieves from new collections
+
+---
+
 ## 3. Enhanced Dataset Architecture
 
 ### v2.2 Problem Analysis
@@ -266,15 +314,16 @@ After DORA stages, run **Odds Ratio Preference Optimization** to improve respons
 ```
 HiranV2.3/
 ├── PLAN_v2.3.md                  # This file
-├── DATASET_PLAN.md               # Detailed dataset generation guide
-├── TRAINING_CONFIG.md            # Full training hyperparameters
 ├── data/
-│   ├── generators/               # Scripts to generate factual reinforcement loops
-│   │   ├── generate_fee_split.py
-│   │   ├── generate_categories.py
-│   │   ├── generate_architecture.py
-│   │   └── generate_negative_examples.py
-│   ├── curriculum/
+│   ├── generators/               # Dataset generators
+│   │   ├── generate_factual_core.py
+│   │   ├── generate_drill_patterns.py
+│   │   ├── generate_domain_expertise.py
+│   │   ├── generate_bilingual.py
+│   │   ├── generate_code.py
+│   │   ├── generate_inference.py
+│   │   └── build_v2.3_dataset.py
+│   ├── curriculum/               # 8 stages, 43,336 weighted pairs
 │   │   ├── stage1_factual_reinforcement.jsonl  (3,200 pairs)
 │   │   ├── stage1_drill_patterns.jsonl       (5,302 pairs)
 │   │   ├── stage2_domain_expertise.jsonl       (1,500 pairs)
@@ -285,8 +334,20 @@ HiranV2.3/
 │   │   ├── stage7_code_generation.jsonl        (3,000 pairs)
 │   │   ├── stage8_inference.jsonl              (2,000 pairs)
 │   │   └── v2.3_combined_dataset.jsonl         (43,336 weighted)
-│   ├── generators/                # Dataset generation scripts
 │   └── validate_v2.3.py         # Dataset validation (6 checks)
+├── knowledge/                    # RAG knowledge corpora
+│   ├── generators/
+│   │   ├── generate_religion.py  # Amduat, Bible, world religions
+│   │   ├── generate_history.py   # Civilizations, empires, nations
+│   │   ├── generate_science.py   # Physics, chemistry, biology, math
+│   │   └── generate_culture_languages.py  # Traditions, languages
+│   ├── corpora/                  # 25 markdown documents
+│   └── vector_db/                # ChromaDB vector index
+├── rag/                          # RAG Pipeline
+│   ├── indexer.py               # Document chunking + embedding
+│   ├── retriever.py             # Context retrieval from vector DB
+│   ├── query_router.py          # Zion vs Knowledge classification
+│   └── inference_hybrid.py      # FT model + RAG combined inference
 ├── scripts/
 │   ├── train_v2.3_fullft.py     # FULL FT (DeepSpeed ZeRO-3)
 │   ├── train_v2.3.py            # DORA fallback (1× A100)
