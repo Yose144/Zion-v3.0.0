@@ -1,0 +1,26 @@
+# Hiran v2.3 Training Dependencies
+# Install: pip install -r requirements.txt
+
+# Core ML
+torch>=2.3.0
+transformers>=4.40.0
+accelerate>=0.30.0
+
+# Fine-tuning
+peft>=0.11.0
+bitsandbytes>=0.43.0
+trl>=0.8.0
+
+# Data
+datasets>=2.19.0
+
+# Training utilities
+tensorboard>=2.16.0
+wandb>=0.17.0
+
+# Quantization (for GGUF export)
+# llama.cpp must be built separately from source
+
+# Utilities
+numpy>=1.26.0
+tqdm>=4.66.0
