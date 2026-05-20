@@ -1,3 +1,7 @@
+# ZION V3 — Start Node 1 (Genesis) with log redirect
+$logDir = "C:\Users\yosef\Desktop\Zion\2.9.6-main\logs"
+New-Item -ItemType Directory -Path $logDir -Force | Out-Null
+
 [Environment]::SetEnvironmentVariable('ZION_NODE_ID', 'w11-native-node', 'Process')
 [Environment]::SetEnvironmentVariable('ZION_P2P_BIND', '0.0.0.0:8333', 'Process')
 [Environment]::SetEnvironmentVariable('ZION_RPC_BIND', '0.0.0.0:8443', 'Process')
@@ -13,4 +17,6 @@ Remove-Item -Path 'C:\Users\yosef\AppData\Local\Temp\peers.json' -ErrorAction Si
 Remove-Item -Path 'C:\Users\yosef\AppData\Local\Temp\zion-node-state.db' -ErrorAction SilentlyContinue
 Remove-Item -Path 'C:\Users\yosef\AppData\Local\Temp\zion-node-state.db-lock' -ErrorAction SilentlyContinue
 
-& 'C:\Users\yosef\Desktop\Zion\2.9.6-main\V3\target\release\node.exe'
+$nodeExe = 'C:\Users\yosef\Desktop\Zion\2.9.6-main\V3\target\release\node.exe'
+$p = Start-Process -FilePath $nodeExe -RedirectStandardOutput "$logDir\node1.log" -RedirectStandardError "$logDir\node1.err" -WindowStyle Hidden -PassThru
+Write-Host "Started Node1  PID=$($p.Id)"
