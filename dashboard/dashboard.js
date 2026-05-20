@@ -3,7 +3,8 @@
 const TABS = ['overview','services','genesis','blockers','controls','charts','events','env','database','metrics','wizard','logs'];
 let autoRefresh = true, refreshTimer = null, currentTab = 'overview';
 let charts = {};
-let friendlyMode = localStorage.getItem('zion-friendly') === '1';
+let friendlyMode = false;
+try { friendlyMode = localStorage.getItem('zion-friendly') === '1'; } catch(e) {}
 
 // ─────────────────────────────────────────────────────────────────────
 // Utilities
@@ -357,24 +358,31 @@ async function renderWizard(){
 // ─────────────────────────────────────────────────────────────────────
 
 async function renderControls(){
-  const res = await fetch('/api/controls').then(r => r.json());
   const c = document.getElementById('control-buttons');
-  const icons = {
-    'install-deps': '📦', 'open-terminal': '🖥️',
-    'start-node1': '🔷', 'start-node2': '🔶', 'start-pool': '⚡', 'start-miner': '⛏️',
-    'restart-node2': '⟳ 🔶', 'restart-miner': '⟳ ⛏️',
-    'start-monitoring': '📊', 'stop-monitoring': '⏸ 📊',
-    'start-prometheus': '📊', 'start-grafana': '📈',
-    'launch-stack': '🚀', 'stop-stack': '⏹️',
-    'launch-full': '🚀', 'stop-all': '⏹',
-  };
-  // Hide big buttons from individual grid
-  const hidden = ['launch-stack','stop-stack','launch-full','stop-all','open-terminal'];
-  c.innerHTML = res.actions.filter(a => !hidden.includes(a)).map(a =>
-    `<button onclick="controlAction('${a}')" class="zion-panel-soft p-3 text-left hover:border-zion-gold/40 transition zion-panel-hover">
-      <div class="text-2xl mb-1">${icons[a] || '⚙️'}</div>
-      <div class="text-xs font-semibold">${a}</div>
-    </button>`).join('');
+  if(!c) return;
+  try {
+    const res = await fetch('/api/controls').then(r => r.json());
+    const icons = {
+      'install-deps': '📦', 'open-terminal': '🖥️',
+      'start-node1': '🔷', 'start-node2': '🔶', 'start-pool': '⚡', 'start-miner': '⛏️',
+      'restart-node2': '⟳ 🔶', 'restart-miner': '⟳ ⛏️',
+      'start-monitoring': '📊', 'stop-monitoring': '⏸ 📊',
+      'start-prometheus': '📊', 'start-grafana': '📈',
+      'launch-stack': '🚀', 'stop-stack': '⏹️',
+      'launch-full': '🚀', 'stop-all': '⏹',
+    };
+    // Hide big buttons from individual grid
+    const hidden = ['launch-stack','stop-stack','launch-full','stop-all','open-terminal'];
+    const actions = (res.actions || []).filter(a => !hidden.includes(a));
+    c.innerHTML = actions.map(a =>
+      `<button onclick="controlAction('${a}')" class="zion-panel-soft p-3 text-left hover:border-zion-gold/40 transition zion-panel-hover">
+        <div class="text-2xl mb-1">${icons[a] || '⚙️'}</div>
+        <div class="text-xs font-semibold">${a}</div>
+      </button>`).join('');
+  } catch(e) {
+    console.error('renderControls error:', e);
+    c.innerHTML = '<div class="text-red-400 text-sm">Failed to load controls. Refresh the page (Ctrl+F5).</div>';
+  }
   loadInstallLog();
 }
 
@@ -441,7 +449,7 @@ async function loadLogs(service){
 
 function toggleFriendly(){
   friendlyMode = !friendlyMode;
-  localStorage.setItem('zion-friendly', friendlyMode ? '1' : '0');
+  try { localStorage.setItem('zion-friendly', friendlyMode ? '1' : '0'); } catch(e) {}
   applyFriendlyMode();
   if(currentTab === 'services') loadServices();
 }
