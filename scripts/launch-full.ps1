@@ -9,6 +9,17 @@ Write-Host "║   ZION V3 — FULL MAINNET LAUNCH (CORE + MONITORING) ║" -Fore
 Write-Host "╚═══════════════════════════════════════════════════╝" -ForegroundColor Cyan
 Write-Host ""
 
+# Stop any existing ZION processes first
+Write-Host "[0/2] Stopping existing ZION processes..." -ForegroundColor Yellow
+$names = @("node", "server", "zion-miner")
+foreach ($n in $names) {
+    Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.ProcessName -eq $n } | ForEach-Object {
+        Write-Host "  Stopping $($_.ProcessName) PID=$($_.Id)" -ForegroundColor Gray
+        $_.Kill()
+    }
+}
+Start-Sleep -Seconds 2
+
 # 1. Launch core stack (Node1 + Node2 + Pool + Miner)
 Write-Host "[1/2] Launching core stack..." -ForegroundColor Yellow
 & "$ScriptDir\launch-stack.ps1"
