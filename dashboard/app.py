@@ -680,6 +680,95 @@ def load_env_file(name: str) -> dict:
     missing = sorted(REQUIRED - keys_present)
     return {"file": name, "vars": variables, "missing_required": missing, "total": len(variables)}
 
+# ── Mainnet constants & genesis (from V3/L1/core/src/{emission,genesis,fee}.rs) ──
+
+MAINNET_CONSTANTS = {
+    "supply": {
+        "total_zion": 144_000_000_000,
+        "genesis_premine_zion": 16_280_000_000,
+        "mining_emission_zion": 127_720_000_000,
+        "flowers_per_zion": 1_000_000_000_000,
+    },
+    "block": {
+        "time_seconds": 60,
+        "blocks_per_year": 525_600,
+        "blocks_per_decade": 5_256_000,
+        "base_reward_zion": 5400.067,
+        "tail_reward_zion": 724.784723787776,
+        "decay_factor": "0.8 (4/5) per decade",
+        "max_decay_decades": 10,
+        "coinbase_maturity": 100,
+    },
+    "reward_split": {
+        "miner_pct": 89,
+        "humanitarian_pct": 5,
+        "issobella_pct": 5,
+        "pool_fee_pct": 1,
+    },
+    "consensus": {
+        "algorithm": "cosmic_harmony_ekam_deeksha_v2",
+        "scratchpad_size_kib": 256,
+        "passes": 4,
+        "random_reads": 256,
+        "fusion_rounds": 8,
+        "signing": "Ed25519",
+        "hashing": "BLAKE3",
+        "address_format": "Bech32 (zion1...)",
+    },
+    "fees": {
+        "min_tx_fee_flowers": 1_000,
+        "min_fee_rate_per_byte": 1,
+        "max_tx_size_bytes": 100_000,
+    },
+    "special_addresses": {
+        "burn": "zion1burn0000000000000000000000000000000dead",
+        "dao": "zion1dao00000000000000000000000000000treasury",
+        "bridge_vault": "zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0",
+    },
+}
+
+PREMINE_OUTPUTS = [
+    # OASIS + Golden Egg (5 slots × 1.65B = 8.25B)
+    {"address": "zion166e6v3k204h8p5w4w3a7m0x790q5m7z5z6n252p", "purpose": "ZION OASIS + Winners Golden Egg/Xp (Slot 1)", "amount_zion": 1_650_000_000, "category": "oasis_golden_egg", "unlock_height": None},
+    {"address": "zion1l2h8h0e3h7m6p8e297m6n624c5m7r2k364v684a", "purpose": "ZION OASIS + Winners Golden Egg/Xp (Slot 2)", "amount_zion": 1_650_000_000, "category": "oasis_golden_egg", "unlock_height": None},
+    {"address": "zion1e6r0q3g6t0r0v5f6h7k7c5f3v562j0v7e5e5d0a", "purpose": "ZION OASIS + Winners Golden Egg/Xp (Slot 3)", "amount_zion": 1_650_000_000, "category": "oasis_golden_egg", "unlock_height": None},
+    {"address": "zion1l7e4c4c5x8l440t295a7m4k5p5x8v8z7r043s23", "purpose": "ZION OASIS + Winners Golden Egg/Xp (Slot 4)", "amount_zion": 1_650_000_000, "category": "oasis_golden_egg", "unlock_height": None},
+    {"address": "zion1n8h2a8p386z274859833h7v6c5n687f7a6k523u", "purpose": "ZION OASIS + Winners Golden Egg/Xp (Slot 5)", "amount_zion": 1_650_000_000, "category": "oasis_golden_egg", "unlock_height": None},
+    # DAO Treasury (3 slots = 4.0B) — locked until block 525,600
+    {"address": "zion176u8r6w53768e2k04035d4d3c2z5g555n6l4r3s", "purpose": "DAO Treasury — Community Governance (main)", "amount_zion": 2_500_000_000, "category": "dao_treasury", "unlock_height": 525_600},
+    {"address": "zion12643n776r3m8f340484756q06485h5w4c2l405m", "purpose": "DAO Treasury — Grants & Bounties", "amount_zion": 1_000_000_000, "category": "dao_treasury", "unlock_height": 525_600},
+    {"address": "zion1k8w734x422f3t6t536r287k2c6n3z0e05257606", "purpose": "DAO Treasury — Ecosystem Bootstrap", "amount_zion": 500_000_000, "category": "dao_treasury", "unlock_height": 525_600},
+    # Infrastructure (3 slots = 2.59B)
+    {"address": "zion1q540v6y4f0s4v3n0f8t740t53494z56024u645c", "purpose": "Core Development Fund", "amount_zion": 1_000_000_000, "category": "infrastructure", "unlock_height": None},
+    {"address": "zion1h4w39686t8w376g0x0y426e775q6p2q0v698v43", "purpose": "Network Infrastructure — P2P Seed Nodes", "amount_zion": 1_000_000_000, "category": "infrastructure", "unlock_height": None},
+    {"address": "zion1x638z5x6d2d0y6u3f7y8g7j56054a4a2a2c7l8f", "purpose": "Genesis Creator — Lifetime Rent", "amount_zion": 590_000_000, "category": "infrastructure", "unlock_height": None},
+    # Humanitarian (1 slot = 1.44B)
+    {"address": "zion1m4v5z8z850u480c5c208z274e334369275n5y20", "purpose": "Children Future Fund — Humanitarian DAO", "amount_zion": 1_440_000_000, "category": "humanitarian", "unlock_height": None},
+]
+
+P0_BLOCKERS = [
+    {"id": 1, "title": "Bridge validator 3/5 multisig", "owner": "Security / Ops", "deadline": "T-7", "status": "OPEN", "severity": "critical",
+     "detail": "Placeholder addresses 0x0000…0001–0005 in V3/L2/bridge/config/bridge-mainnet.toml. Need 5 real secp256k1 addresses on separate HSM hosts."},
+    {"id": 2, "title": "Ankr API key (premium tier)", "owner": "Ops", "deadline": "T-7", "status": "OPEN", "severity": "critical",
+     "detail": "bridge-mainnet.toml line 28: api_key=\"\". Requires premium Ankr account for EVM watcher reliability."},
+    {"id": 3, "title": "Seed peer bootstrap mesh", "owner": "Ops", "deadline": "T-3", "status": "OPEN", "severity": "critical",
+     "detail": "Helsinki must come online first as seed; US/SG/Prague need P2P mesh verification."},
+    {"id": 4, "title": "Premine wallet rotation", "owner": "Security", "deadline": "T-14", "status": "DONE", "severity": "info",
+     "detail": "✅ Done 2026-05-14. Old 12 BIP-39 seeds burned, new addresses generated, public addresses in PREMINE_ADDRESSES_PUBLIC.txt."},
+    {"id": 5, "title": "CI / GitHub Actions billing", "owner": "DevOps", "deadline": "T-14", "status": "OPEN", "severity": "warning",
+     "detail": "Private repo runners not starting without paid plan. Need GitHub Team/Enterprise OR self-hosted runner."},
+    {"id": 6, "title": "External security audit", "owner": "Security", "deadline": "T-21", "status": "OPEN", "severity": "critical",
+     "detail": "Independent review needed for L1/cosmic-harmony, L1/core, L2/bridge, L2/dao. Candidates: Trail of Bits, OpenZeppelin, CertiK."},
+    {"id": 7, "title": "Bug bounty program", "owner": "Security", "deadline": "T-7", "status": "OPEN", "severity": "critical",
+     "detail": "No public disclosure channel. Set up Immunefi / HackerOne with scope + rewards."},
+    {"id": 8, "title": "Genesis block ceremony", "owner": "Core Dev", "deadline": "T-1", "status": "PREP", "severity": "warning",
+     "detail": "Frozen genesis hash must be publicly verifiable. Prepare GENESIS_MESSAGE.txt + signed witness log."},
+    {"id": 9, "title": "RPC / P2P endpoint hardening", "owner": "Ops", "deadline": "T-3", "status": "OPEN", "severity": "critical",
+     "detail": "Firewall, rate limiting, DDoS protection. UFW on all nodes + Cloudflare/WAF + RPC rate limiter."},
+    {"id": 10, "title": "Docker hardened deployment", "owner": "Ops", "deadline": "T-3", "status": "OPEN", "severity": "warning",
+     "detail": "Verify V3/docker/HARDENING.md, non-root containers, resource limits, secrets management."},
+]
+
 # ── Service control (PowerShell scripts) ────────────────────────────────
 
 ALLOWED_ACTIONS = {
@@ -1531,7 +1620,23 @@ class DashboardHandler(BaseHTTPRequestHandler):
         params = urllib.parse.parse_qs(parsed.query)
 
         if route == "/" or route == "/index.html":
-            self._html(HTML_DASHBOARD)
+            # Prefer external dashboard.html if it exists (new design)
+            html_path = SCRIPT_DIR / "dashboard.html"
+            if html_path.exists():
+                self._html(html_path.read_text(encoding="utf-8"))
+            else:
+                self._html(HTML_DASHBOARD)
+        elif route == "/dashboard.js":
+            js_path = SCRIPT_DIR / "dashboard.js"
+            if js_path.exists():
+                body = js_path.read_bytes()
+                self.send_response(200)
+                self.send_header("Content-Type", "application/javascript; charset=utf-8")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+            else:
+                self.send_error(404)
         elif route == "/api/status":
             self._json(build_status())
         elif route == "/api/checklist":
@@ -1551,6 +1656,26 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json({"actions": sorted(ALLOWED_ACTIONS.keys())})
         elif route == "/api/services":
             self._json({"services": all_services_health()})
+        elif route == "/api/genesis":
+            total_premine = sum(p["amount_zion"] for p in PREMINE_OUTPUTS)
+            self._json({
+                "constants": MAINNET_CONSTANTS,
+                "premine": PREMINE_OUTPUTS,
+                "premine_total_zion": total_premine,
+                "premine_outputs_count": len(PREMINE_OUTPUTS),
+            })
+        elif route == "/api/blockers":
+            blockers = P0_BLOCKERS
+            open_critical = sum(1 for b in blockers if b["status"] != "DONE" and b["severity"] == "critical")
+            total_open = sum(1 for b in blockers if b["status"] != "DONE")
+            self._json({
+                "blockers": blockers,
+                "total": len(blockers),
+                "open": total_open,
+                "open_critical": open_critical,
+                "done": sum(1 for b in blockers if b["status"] == "DONE"),
+                "ready_for_launch": open_critical == 0,
+            })
         elif route.startswith("/api/metrics/"):
             sid = route.split("/")[-1]
             self._json(scrape_metrics(sid))
