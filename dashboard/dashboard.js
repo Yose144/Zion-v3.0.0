@@ -389,14 +389,19 @@ async function renderControls(){
 async function controlAction(action){
   const log = document.getElementById('control-log');
   const ts = new Date().toLocaleTimeString();
-  if(log) log.insertAdjacentHTML('afterbegin', '<div class="text-zion-gold">[' + ts + '] dispatching ' + action + '…</div>');
+  const launchActions = ['launch-full','launch-stack','start-node1','start-node2','start-pool','start-miner'];
+  const note = launchActions.includes(action) ? ' (may take ~15s)' : '';
+  if(log) log.insertAdjacentHTML('afterbegin', '<div class="text-zion-gold">[' + ts + '] dispatching ' + action + note + '…</div>');
   try {
     const res = await fetch('/api/control', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action }) }).then(r => r.json());
     const msg = res.ok ? '<div class="text-emerald-400">[' + ts + '] ✓ ' + action + ' started (PID ' + res.pid + ')</div>' : '<div class="text-red-400">[' + ts + '] ✗ ' + (res.error || 'failed') + '</div>';
     if(log) log.insertAdjacentHTML('afterbegin', msg);
-    toast(res.ok ? ('▶ ' + action + ' dispatched') : ('Failed: ' + (res.error || action)), res.ok ? 'success' : 'error');
+    toast(res.ok ? ('▶ ' + action + ' dispatched' + note) : ('Failed: ' + (res.error || action)), res.ok ? 'success' : 'error');
     if(action === 'install-deps' && res.ok){
       startInstallLogPolling();
+    }
+    if(res.ok && launchActions.includes(action)){
+      setTimeout(() => { toast('Services should be live. Check Overview tab.', 'success'); refreshAll(); }, 12000);
     }
   } catch(e) {
     if(log) log.insertAdjacentHTML('afterbegin', '<div class="text-red-400">[' + ts + '] ✗ ' + e.message + '</div>');
@@ -753,5 +758,6 @@ function toggleAuto(){
 // ─────────────────────────────────────────────────────────────────────
 
 applyFriendlyMode();
+switchTab('overview');
 refreshAll();
 refreshTimer = setInterval(refreshAll, 3000);
