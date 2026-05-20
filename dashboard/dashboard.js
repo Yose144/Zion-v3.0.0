@@ -360,7 +360,7 @@ async function renderControls(){
   const res = await fetch('/api/controls').then(r => r.json());
   const c = document.getElementById('control-buttons');
   const icons = {
-    'install-deps': '📦',
+    'install-deps': '📦', 'open-terminal': '🖥️',
     'start-node1': '🔷', 'start-node2': '🔶', 'start-pool': '⚡', 'start-miner': '⛏️',
     'restart-node2': '⟳ 🔶', 'restart-miner': '⟳ ⛏️',
     'start-monitoring': '📊', 'stop-monitoring': '⏸ 📊',
@@ -368,7 +368,9 @@ async function renderControls(){
     'launch-stack': '🚀', 'stop-stack': '⏹️',
     'launch-full': '🚀', 'stop-all': '⏹',
   };
-  c.innerHTML = res.actions.filter(a => !['launch-stack','stop-stack','launch-full','stop-all'].includes(a)).map(a =>
+  // Hide big buttons from individual grid
+  const hidden = ['launch-stack','stop-stack','launch-full','stop-all','open-terminal'];
+  c.innerHTML = res.actions.filter(a => !hidden.includes(a)).map(a =>
     `<button onclick="controlAction('${a}')" class="zion-panel-soft p-3 text-left hover:border-zion-gold/40 transition zion-panel-hover">
       <div class="text-2xl mb-1">${icons[a] || '⚙️'}</div>
       <div class="text-xs font-semibold">${a}</div>
