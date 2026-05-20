@@ -7,6 +7,17 @@ New-Item -ItemType Directory -Path $logDir -Force | Out-Null
 # Clean old logs
 Remove-Item "$logDir\*.log","$logDir\*.err" -ErrorAction SilentlyContinue
 
+# ── Stop any existing instances first ──
+Write-Host "[launch] Stopping existing ZION processes..." -ForegroundColor Yellow
+$names = @("node", "server", "zion-miner")
+foreach ($n in $names) {
+    Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.ProcessName -eq $n } | ForEach-Object {
+        Write-Host "  Stopping $($_.ProcessName) PID=$($_.Id)" -ForegroundColor Gray
+        $_.Kill()
+    }
+}
+Start-Sleep -Seconds 2
+
 $nodeExe = "C:\Users\yosef\Desktop\Zion\2.9.6-main\V3\target\release\node.exe"
 $poolExe = "C:\Users\yosef\Desktop\Zion\2.9.6-main\V3\target\release\server.exe"
 $minerExe = "C:\Users\yosef\Desktop\Zion\2.9.6-main\V3\target\release\zion-miner.exe"
