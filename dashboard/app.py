@@ -788,6 +788,16 @@ ALLOWED_ACTIONS = {
     "start-grafana":     "start-monitoring.ps1",
 }
 
+CONTROL_LOG = LOG_DIR / "control-audit.txt"
+
+def _log_control(msg: str):
+    ts = datetime.now().isoformat()
+    try:
+        with open(CONTROL_LOG, "a", encoding="utf-8") as f:
+            f.write(f"[{ts}] {msg}\n")
+    except Exception:
+        pass
+
 def run_control(action: str) -> dict:
     """Execute an allowed PowerShell control script in the background."""
     if action not in ALLOWED_ACTIONS:
@@ -796,15 +806,31 @@ def run_control(action: str) -> dict:
     if not script.exists():
         return {"ok": False, "error": f"Script not found: {script}"}
     try:
-        # Launch detached so dashboard isn't blocked
+        # On Windows do NOT combine CREATE_NEW_CONSOLE with stdout/stderr
+        # other than None — it is undefined behaviour and may silently fail.
+        # Instead run PowerShell hidden with output discarded.
+        si = None
+        creation = 0
+        if os.name == "nt":
+            try:
+                si = subprocess.STARTUPINFO()
+                si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+                si.wShowWindow = 0  # SW_HIDE
+            except Exception:
+                pass
+            creation = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
         proc = subprocess.Popen(
             ["powershell.exe", "-ExecutionPolicy", "Bypass", "-File", str(script)],
             cwd=str(REPO_ROOT),
-            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-            creationflags=getattr(subprocess, "CREATE_NEW_CONSOLE", 0) if os.name == "nt" else 0,
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL,
+            startupinfo=si,
+            creationflags=creation,
+            close_fds=True,
         )
+        _log_control(f"dispatched action={action} script={script} pid={proc.pid}")
         return {"ok": True, "action": action, "script": str(script), "pid": proc.pid}
     except Exception as e:
+        _log_control(f"FAILED action={action} error={e}")
         return {"ok": False, "error": str(e), "action": action}
 
 # ── Background sampler ──────────────────────────────────────────────────
