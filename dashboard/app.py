@@ -1332,8 +1332,7 @@ async function controlAction(action){
 async function loadLogs(service){
   try{const res=await fetch('/api/logs/'+service);const data=await res.json();
     const el=document.getElementById('log-'+service);
-    if(el)el.textContent=data.lines.slice(-50).join('
-');
+    if(el)el.textContent=data.lines.slice(-50).join('\\n');
   }catch(e){console.error(e);}
 }
 
