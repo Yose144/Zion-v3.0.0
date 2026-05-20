@@ -1,6 +1,17 @@
-# ZION V3 — Mainnet Launch Dashboard 3.0
+# ZION V3 — Mainnet Launch Dashboard 4.0
 
 A **zero-dependency**, autonomous, intuitive **command center** for the entire ZION V3 mainnet stack — designed so **a kid can use it but a pro can master it**.
+
+## What's new in 4.0 (2026-05-20)
+
+- **🎛️ Controls tab overhaul** — 4 large action cards (Launch Full Stack, Open Terminal, Install/Build, Stop All) with strong visible gradients + individual service grid
+- **📦 Install / Build** — One-click dependency check: Rust, cargo, npm, Docker, then builds V3 release. Live log polling every 2s.
+- **🖥️ Open Terminal** — Opens 4 visible PowerShell windows tailing node1/node2/pool/miner logs; auto-close after 5 min of inactivity
+- **🧱 Genesis & Premine tab** — Canonical on-chain data: 144B supply, 16.28B premine (12 outputs), Decade Decay, fee split 89/5/5/1
+- **🔥 P0 Blockers tab** — 10 launch blockers with severity, owner, deadline, status; `ready_for_launch` boolean
+- **🚀 Launch reliability** — `launch-stack` and `launch-full` automatically stop existing node/server/miner processes before starting new ones so ports are never blocked
+- **👁️ UI visibility fixes** — `switchTab('overview')` on startup; stronger panel/button contrast (removed glassmorphism orbs that caused transparency bugs)
+- **📊 Auto-refresh** — 3s polling with toast feedback; launch actions show "may take ~15s" hint and auto-refresh Overview after 12s
 
 ## What's new in 3.0
 
@@ -50,6 +61,9 @@ A **zero-dependency**, autonomous, intuitive **command center** for the entire Z
 | `/api/controls` | GET | Whitelisted actions |
 | `/api/control` | POST | Execute action |
 | `/api/logs/<service>` | GET | Log tail |
+| `/api/genesis` | GET | Constants + premine outputs (12) |
+| `/api/blockers` | GET | P0 launch blockers + `ready_for_launch` |
+| `/api/install/log` | GET | Live install-deps build log |
 
 ## Control Actions (whitelisted)
 
@@ -62,6 +76,8 @@ start-node1
 start-node2 / restart-node2
 start-pool
 start-miner / restart-miner
+open-terminal      — Open 4 visible PowerShell windows tailing all logs
+install-deps       — Check Rust, cargo, npm, Docker; build V3 release
 start-monitoring   — Prometheus + Grafana via Docker
 stop-monitoring
 start-prometheus / start-grafana  (alias to start-monitoring)
@@ -96,8 +112,8 @@ dashboard\start-dashboard.ps1
 
 ## Tabs
 
-1. **📊 Overview** — Service cards, checklist, alerts, mini hashrate, payouts
-2. **🎛️ Controls** — Stack Control Center, individual service buttons
+1. **📊 Overview** — Service cards, checklist, alerts, mini hashrate, payouts (auto-shown on startup)
+2. **🎛️ Controls** — Stack Control Center: Launch Full Stack, Open Terminal, Install/Build, Stop All + individual service grid
 3. **📈 Charts** — Hashrate, height, shares, sessions (Chart.js, last 10 min)
 4. **🧱 Events** — Block discovery feed
 5. **⚙️ Env** — Env file viewer with sensitive redaction
@@ -106,6 +122,8 @@ dashboard\start-dashboard.ps1
 8. **🗄️ Database** — DB explorer (SQLite + JSON)
 9. **📊 Metrics** — Prometheus scraper + Grafana iframe
 10. **📜 Logs** — All 4 core service log tails
+11. **⚡ Genesis** — Canonical premine data: 144B supply, 16.28B premine (12 outputs), Decade Decay, fee split
+12. **🔥 Blockers** — P0 launch blockers with severity, owner, deadline, status and `ready_for_launch` boolean
 
 ## Friendly Mode
 
@@ -151,7 +169,10 @@ dashboard/app.py (~1600 LOC)
 
 | Issue | Fix |
 |-------|-----|
+| Overview/Controls tabs invisible on first load | Hard-refresh (Ctrl+F5) to clear old CSS/JS cache |
 | Services tab shows everything DOWN | Click "🚀 Launch ALL" in Controls tab or Services tab header |
+| Launch button seems stuck / no new processes | Existing processes are stopped automatically before restart; wait ~15s then check Overview |
+| Log windows stay open forever | They auto-close after 5 min of inactivity; close manually if needed |
 | Grafana iframe blank | Click "▶ Start Monitoring" — Docker must be running |
 | SQLite DBs show "Not yet created" | They're created on first run of the L2/L3 services |
 | Slow first probe | Initial probe takes ~2s; subsequent are cached 5s |
