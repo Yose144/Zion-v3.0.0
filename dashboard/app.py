@@ -16,7 +16,7 @@ import urllib.parse
 from collections import deque
 from datetime import datetime
 from pathlib import Path
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 # ── Config ──────────────────────────────────────────────────────────────
 
@@ -61,6 +61,300 @@ class MetricsHistory:
 HISTORY = MetricsHistory()
 BLOCK_EVENTS: deque = deque(maxlen=50)
 LAST_BLOCK_EVENT_TIME = {"node1": 0, "node2": 0, "pool": 0}
+
+# ── Service Registry ────────────────────────────────────────────────────
+# Single source of truth: every service the mainnet stack might run.
+# Used to render service cards, health checks, network topology, and controls.
+
+SERVICE_REGISTRY = [
+    # ── L1: Consensus ────────────────────────────────────────────────────
+    {"id": "node1", "name": "Node 1 (Genesis)", "icon": "🔷", "level": "L1", "kind": "node",
+     "ports": {"p2p": 8333, "rpc": 8443, "ws": 8445, "metrics": 9115},
+     "log": "node1.log", "start": "start-node1", "stop": None,
+     "purpose": "Source of chain truth: validates blocks, manages mempool, talks to peers via P2P.",
+     "child_says": "🔷 This is the boss — it remembers every block ever made.",
+     "depends_on": []},
+    {"id": "node2", "name": "Node 2 (Follower)", "icon": "🔶", "level": "L1", "kind": "node",
+     "ports": {"p2p": 8334, "rpc": 8446, "ws": 8447},
+     "log": "node2.log", "start": "start-node2", "stop": None,
+     "purpose": "Backup node — syncs from Node 1 and validates independently for redundancy.",
+     "child_says": "🔶 Like Node 1's twin — they double-check each other!",
+     "depends_on": ["node1"]},
+    {"id": "pool", "name": "Mining Pool", "icon": "⚡", "level": "L1", "kind": "pool",
+     "ports": {"stratum": 8444, "metrics": 9550},
+     "log": "pool.log", "start": "start-pool", "stop": None,
+     "purpose": "Coordinates miners, validates shares, builds block templates, distributes payouts (89/5/5/1).",
+     "child_says": "⚡ The pool helps lots of computers work together to find blocks!",
+     "depends_on": ["node1"]},
+    {"id": "miner", "name": "GPU Miner", "icon": "⛏️", "level": "L1", "kind": "miner",
+     "ports": {},
+     "log": "miner.log", "start": "start-miner", "stop": None,
+     "purpose": "Performs cosmic_harmony PoW hashing on GPU to find new blocks.",
+     "child_says": "⛏️ The miner is like a digger — it digs for new gold (ZION coins)!",
+     "depends_on": ["pool"]},
+
+    # ── L2: Bridge & DAO ────────────────────────────────────────────────
+    {"id": "bridge", "name": "ZION Bridge", "icon": "🌉", "level": "L2", "kind": "bridge",
+     "ports": {"api": 8550, "metrics": 9551},
+     "log": "bridge.log", "start": None, "stop": None,
+     "purpose": "Cross-chain relay: moves ZION between L1 and EVM chains (Ethereum, Polygon).",
+     "child_says": "🌉 A magical bridge to send ZION to other crypto worlds!",
+     "depends_on": ["node1"]},
+    {"id": "dao", "name": "ZION DAO", "icon": "🗳️", "level": "L2", "kind": "dao",
+     "ports": {"api": 8560, "metrics": 9552},
+     "log": "dao.log", "start": None, "stop": None,
+     "purpose": "Decentralized governance: proposals, voting, treasury management.",
+     "child_says": "🗳️ Everyone votes here to decide what ZION should do next!",
+     "depends_on": ["node1"]},
+    {"id": "atomic-swap", "name": "Atomic Swap", "icon": "🔄", "level": "L2", "kind": "swap",
+     "ports": {"api": 8570, "metrics": 9553},
+     "log": "atomic-swap.log", "start": None, "stop": None,
+     "purpose": "HTLC-based atomic swaps between ZION and other chains (no middleman).",
+     "child_says": "🔄 Trade coins safely with strangers without anyone cheating!",
+     "depends_on": ["node1"]},
+
+    # ── L3: Advanced ─────────────────────────────────────────────────────
+    {"id": "warp", "name": "WARP Relay", "icon": "🌀", "level": "L3", "kind": "relay",
+     "ports": {"api": 8580, "metrics": 9554},
+     "log": "warp.log", "start": None, "stop": None,
+     "purpose": "Multi-chain relay for fast cross-chain messaging.",
+     "child_says": "🌀 A super-fast message tube between blockchains!",
+     "depends_on": []},
+    {"id": "ncl", "name": "NCL Gateway", "icon": "🧠", "level": "L3", "kind": "gateway",
+     "ports": {"api": 8590},
+     "log": "ncl.log", "start": None, "stop": None,
+     "purpose": "Network Computing Layer gateway — distributed compute fabric.",
+     "child_says": "🧠 Helps many computers think together as one big brain!",
+     "depends_on": ["node1"]},
+    {"id": "ai-native", "name": "AI Native (Hiran)", "icon": "🤖", "level": "L3", "kind": "ai",
+     "ports": {"api": 8002},
+     "log": "hiran-inference.log", "start": None, "stop": None,
+     "purpose": "Hiran v2.2 language model serving inference for ZION ecosystem queries.",
+     "child_says": "🤖 A robot helper that knows everything about ZION!",
+     "depends_on": []},
+
+    # ── L4: Apps ─────────────────────────────────────────────────────────
+    {"id": "oasis", "name": "OASIS Avatar Hub", "icon": "🪷", "level": "L4", "kind": "app",
+     "ports": {"api": 8600},
+     "log": "oasis.log", "start": None, "stop": None,
+     "purpose": "Avatar registry and humanitarian impact tracking.",
+     "child_says": "🪷 A garden where your ZION avatar lives and helps the world!",
+     "depends_on": ["node1"]},
+
+    # ── Infrastructure ───────────────────────────────────────────────────
+    {"id": "prometheus", "name": "Prometheus", "icon": "📊", "level": "Infra", "kind": "metrics",
+     "ports": {"web": 9090},
+     "log": None, "start": "start-prometheus", "stop": None,
+     "purpose": "Collects and stores metrics from all services (every 15s).",
+     "child_says": "📊 A super-memory that remembers all the numbers!",
+     "depends_on": []},
+    {"id": "grafana", "name": "Grafana", "icon": "📈", "level": "Infra", "kind": "dashboards",
+     "ports": {"web": 3000},
+     "log": None, "start": "start-grafana", "stop": None,
+     "purpose": "Beautiful charts and dashboards for Prometheus metrics.",
+     "child_says": "📈 Pretty pictures showing how everything is doing!",
+     "depends_on": ["prometheus"]},
+]
+
+def get_service(sid: str) -> dict:
+    return next((s for s in SERVICE_REGISTRY if s["id"] == sid), None)
+
+# ── Health checks ───────────────────────────────────────────────────────
+
+import socket
+import urllib.request as _urlreq
+HEALTH_CACHE = {}  # id -> {"alive": bool, "ts": int, "details": str}
+HEALTH_TTL = 5  # seconds
+
+def tcp_probe(host: str, port: int, timeout: float = 0.15) -> bool:
+    try:
+        with socket.create_connection((host, port), timeout=timeout):
+            return True
+    except Exception:
+        return False
+
+def http_probe(url: str, timeout: float = 0.5) -> tuple[bool, str]:
+    try:
+        with _urlreq.urlopen(url, timeout=timeout) as r:
+            return (r.status < 500, f"HTTP {r.status}")
+    except Exception as e:
+        return (False, str(e)[:60])
+
+def check_service_health(svc: dict) -> dict:
+    sid = svc["id"]
+    cached = HEALTH_CACHE.get(sid)
+    now = int(time.time())
+    if cached and now - cached["ts"] < HEALTH_TTL:
+        return cached
+
+    ports = svc.get("ports", {})
+    if not ports:
+        # No ports → infer from log file activity
+        if svc.get("log"):
+            path = LOG_DIR / svc["log"]
+            if path.exists():
+                mtime_age = now - int(path.stat().st_mtime)
+                alive = mtime_age < 60
+                result = {"alive": alive, "ts": now,
+                          "details": f"log mtime {mtime_age}s ago",
+                          "ports_open": [], "ports_closed": []}
+            else:
+                result = {"alive": False, "ts": now, "details": "no log file",
+                          "ports_open": [], "ports_closed": []}
+        else:
+            result = {"alive": False, "ts": now, "details": "no ports & no log",
+                      "ports_open": [], "ports_closed": []}
+        HEALTH_CACHE[sid] = result
+        return result
+
+    open_ports = []
+    closed_ports = []
+    for name, port in ports.items():
+        if tcp_probe("127.0.0.1", port):
+            open_ports.append(f"{name}:{port}")
+        else:
+            closed_ports.append(f"{name}:{port}")
+
+    alive = len(open_ports) > 0
+    result = {"alive": alive, "ts": now,
+              "details": f"{len(open_ports)}/{len(ports)} ports open",
+              "ports_open": open_ports, "ports_closed": closed_ports}
+    HEALTH_CACHE[sid] = result
+    return result
+
+def all_services_health() -> list:
+    out = []
+    for svc in SERVICE_REGISTRY:
+        h = check_service_health(svc)
+        out.append({
+            "id": svc["id"], "name": svc["name"], "icon": svc["icon"],
+            "level": svc["level"], "kind": svc["kind"],
+            "purpose": svc["purpose"], "child_says": svc["child_says"],
+            "ports": svc["ports"], "depends_on": svc["depends_on"],
+            "log": svc["log"], "start": svc["start"],
+            "alive": h["alive"], "details": h["details"],
+            "ports_open": h["ports_open"], "ports_closed": h["ports_closed"],
+        })
+    return out
+
+# ── Prometheus metrics scraper ─────────────────────────────────────────
+
+def scrape_metrics(svc_id: str) -> dict:
+    svc = get_service(svc_id)
+    if not svc:
+        return {"error": f"unknown service {svc_id}"}
+    ports = svc.get("ports", {})
+    metrics_port = ports.get("metrics") or ports.get("web") or ports.get("api")
+    if not metrics_port:
+        return {"error": "no metrics endpoint"}
+
+    url = f"http://127.0.0.1:{metrics_port}/metrics"
+    try:
+        with _urlreq.urlopen(url, timeout=1.0) as r:
+            body = r.read().decode("utf-8", errors="ignore")
+    except Exception as e:
+        return {"error": str(e)[:120], "url": url}
+
+    # Parse Prometheus text format (simplified)
+    metrics = {}
+    for line in body.splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        # Format: metric_name{labels} value [timestamp]
+        m = re.match(r'^([a-zA-Z_:][a-zA-Z0-9_:]*)(\{[^}]*\})?\s+([\d\.\-eE+inf]+)', line)
+        if m:
+            name = m.group(1)
+            labels = m.group(2) or ""
+            try:
+                val = float(m.group(3))
+                key = f"{name}{labels}" if labels else name
+                metrics[key] = val
+            except ValueError:
+                pass
+    return {"url": url, "count": len(metrics), "metrics": metrics}
+
+# ── Database explorer ──────────────────────────────────────────────────
+
+import sqlite3
+
+DB_LOCATIONS = [
+    # path, kind ("sqlite" or "json"), service_id, friendly name
+    (Path("C:/Users/yosef/AppData/Local/Temp/zion-node-state.db"),  "json",   "node1", "Node 1 state"),
+    (Path("C:/Users/yosef/AppData/Local/Temp/zion-node2-state.db"), "json",   "node2", "Node 2 state"),
+    (REPO_ROOT / "V3" / "data" / "pool.db",                          "sqlite", "pool",  "Pool PPLNS"),
+    (REPO_ROOT / "V3" / "data" / "bridge.db",                        "sqlite", "bridge","Bridge events"),
+    (REPO_ROOT / "V3" / "data" / "dao.db",                           "sqlite", "dao",   "DAO governance"),
+    (REPO_ROOT / "V3" / "data" / "warp.db",                          "sqlite", "warp",  "WARP relay"),
+]
+
+def list_databases() -> list:
+    out = []
+    for path, kind, sid, friendly in DB_LOCATIONS:
+        if path.exists() and path.is_file():
+            size = path.stat().st_size
+            mtime = int(path.stat().st_mtime)
+            out.append({
+                "path": str(path), "kind": kind, "service": sid,
+                "name": friendly, "size": size, "mtime": mtime,
+                "available": True,
+            })
+        else:
+            out.append({
+                "path": str(path), "kind": kind, "service": sid,
+                "name": friendly, "size": 0, "mtime": 0,
+                "available": False,
+            })
+    return out
+
+def inspect_database(path_str: str, limit: int = 50) -> dict:
+    # Whitelist: must match one of the known DB locations
+    matched = next((d for d in DB_LOCATIONS if str(d[0]) == path_str), None)
+    if not matched:
+        return {"error": "Database not in whitelist"}
+    path, kind, sid, friendly = matched
+    if not path.exists():
+        return {"error": "Database file not found"}
+
+    if kind == "json":
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            # Show top-level keys + sizes
+            preview = {}
+            for k, v in (data.items() if isinstance(data, dict) else []):
+                if isinstance(v, (list, dict)):
+                    preview[k] = {"_type": type(v).__name__, "_len": len(v),
+                                  "_sample": (v[:3] if isinstance(v, list) else dict(list(v.items())[:3]))}
+                else:
+                    preview[k] = v
+            return {"kind": "json", "name": friendly, "path": str(path), "data": preview}
+        except Exception as e:
+            return {"error": f"JSON parse error: {e}", "kind": "json"}
+
+    if kind == "sqlite":
+        try:
+            con = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+            con.row_factory = sqlite3.Row
+            cur = con.cursor()
+            cur.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
+            tables = [r[0] for r in cur.fetchall()]
+            tables_info = []
+            for tname in tables:
+                cur.execute(f'SELECT COUNT(*) FROM "{tname}"')
+                count = cur.fetchone()[0]
+                cur.execute(f'PRAGMA table_info("{tname}")')
+                cols = [{"name": r[1], "type": r[2]} for r in cur.fetchall()]
+                # Sample rows
+                cur.execute(f'SELECT * FROM "{tname}" LIMIT {limit}')
+                rows = [dict(r) for r in cur.fetchall()]
+                tables_info.append({"name": tname, "rows": count, "columns": cols, "sample": rows})
+            con.close()
+            return {"kind": "sqlite", "name": friendly, "path": str(path), "tables": tables_info}
+        except Exception as e:
+            return {"error": f"SQLite error: {e}", "kind": "sqlite"}
+
+    return {"error": f"Unknown kind: {kind}"}
 
 # ── Log parsers ─────────────────────────────────────────────────────────
 
@@ -389,14 +683,20 @@ def load_env_file(name: str) -> dict:
 # ── Service control (PowerShell scripts) ────────────────────────────────
 
 ALLOWED_ACTIONS = {
-    "launch-stack":  "launch-stack.ps1",
-    "stop-stack":    "stop-stack.ps1",
-    "start-node1":   "start-node.ps1",
-    "start-node2":   "start-node2.ps1",
-    "start-pool":    "start-pool.ps1",
-    "start-miner":   "start-miner.ps1",
-    "restart-node2": "start-node2.ps1",
-    "restart-miner": "start-miner.ps1",
+    "launch-stack":      "launch-stack.ps1",
+    "launch-full":       "launch-full.ps1",       # full stack + monitoring
+    "stop-stack":        "stop-stack.ps1",
+    "stop-all":          "stop-all.ps1",          # core + monitoring
+    "start-node1":       "start-node.ps1",
+    "start-node2":       "start-node2.ps1",
+    "start-pool":        "start-pool.ps1",
+    "start-miner":       "start-miner.ps1",
+    "restart-node2":     "start-node2.ps1",
+    "restart-miner":     "start-miner.ps1",
+    "start-monitoring":  "start-monitoring.ps1",  # Prometheus + Grafana via docker
+    "stop-monitoring":   "stop-monitoring.ps1",
+    "start-prometheus":  "start-monitoring.ps1",
+    "start-grafana":     "start-monitoring.ps1",
 }
 
 def run_control(action: str) -> dict:
@@ -421,12 +721,16 @@ def run_control(action: str) -> dict:
 # ── Background sampler ──────────────────────────────────────────────────
 
 def background_sampler():
-    """Periodically polls status, records history, scans for block events."""
+    """Periodically polls status, records history, scans for block events, warms health cache."""
     while True:
         try:
             st = build_status()
             HISTORY.record(st)
             scan_block_events()
+            # Pre-warm health cache for all services in parallel
+            for svc in SERVICE_REGISTRY:
+                HEALTH_CACHE.pop(svc["id"], None)  # invalidate
+                check_service_health(svc)
         except Exception as e:
             print(f"[sampler] error: {e}", file=sys.stderr)
         time.sleep(5)
@@ -476,6 +780,7 @@ tailwind.config={theme:{extend:{colors:{zion:{900:'#0a0f1e',800:'#131a2e',700:'#
     </div>
     <div class="flex gap-2 items-center">
       <span id="alertCount" class="hidden px-3 py-1 bg-red-600 rounded-full text-xs font-bold animate-pulse">0</span>
+      <button onclick="toggleFriendly()" id="friendlyBtn" class="px-3 py-2 bg-zion-700 hover:bg-zion-600 rounded-lg text-sm font-medium transition" title="Toggle kid-friendly explanations">🧒 Kid Mode</button>
       <button onclick="refreshAll()" class="px-3 py-2 bg-zion-700 hover:bg-zion-600 rounded-lg text-sm font-medium transition" title="Manual refresh">🔄</button>
       <button onclick="toggleAuto()" id="autoBtn" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-sm font-medium transition">⚡ Auto</button>
     </div>
@@ -489,6 +794,9 @@ tailwind.config={theme:{extend:{colors:{zion:{900:'#0a0f1e',800:'#131a2e',700:'#
     <button onclick="switchTab('events')" id="tab-events" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent hover:text-amber-400 transition">🧱 Events</button>
     <button onclick="switchTab('env')" id="tab-env" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent hover:text-amber-400 transition">⚙️ Env</button>
     <button onclick="switchTab('wizard')" id="tab-wizard" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent hover:text-amber-400 transition">🧙 Wizard</button>
+    <button onclick="switchTab('services')" id="tab-services" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent hover:text-amber-400 transition">🧩 Services</button>
+    <button onclick="switchTab('database')" id="tab-database" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent hover:text-amber-400 transition">🗄️ Database</button>
+    <button onclick="switchTab('metrics')" id="tab-metrics" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent hover:text-amber-400 transition">📊 Metrics</button>
     <button onclick="switchTab('logs')" id="tab-logs" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent hover:text-amber-400 transition">📜 Logs</button>
   </div>
 
@@ -671,6 +979,59 @@ tailwind.config={theme:{extend:{colors:{zion:{900:'#0a0f1e',800:'#131a2e',700:'#
     </div>
   </div>
 
+  <!-- TAB: Services -->
+  <div id="pane-services" class="hidden space-y-4">
+    <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-lg font-bold flex items-center gap-2">🧩 All Mainnet Services <span class="text-xs text-gray-500 font-normal">(L1 Consensus · L2 Bridge/DAO · L3 Advanced · L4 Apps · Infra)</span></h2>
+        <div class="flex gap-2">
+          <button onclick="controlAction('launch-full')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-xs font-bold transition">🚀 Launch ALL</button>
+          <button onclick="if(confirm('Stop everything?')) controlAction('stop-all')" class="px-3 py-1.5 bg-red-600 hover:bg-red-500 rounded-lg text-xs font-bold transition">⏹ Stop ALL</button>
+        </div>
+      </div>
+      <p class="text-xs text-gray-400 mb-4">Auto-discovered from service registry. Status = TCP port probe + log file activity. Click a service for details.</p>
+      <div id="services-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3"></div>
+    </div>
+  </div>
+
+  <!-- TAB: Database -->
+  <div id="pane-database" class="hidden space-y-4">
+    <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
+      <h2 class="text-lg font-bold mb-2 flex items-center gap-2">🗄️ Database Explorer</h2>
+      <p class="text-xs text-gray-400 mb-4">Read-only inspector for all ZION state databases (SQLite + JSON state files). Whitelisted paths only.</p>
+      <div id="db-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-4"></div>
+      <div id="db-detail" class="bg-zion-900 rounded-lg p-4 min-h-[300px] max-h-[600px] overflow-auto">
+        <div class="text-gray-500 italic text-sm">Select a database above to inspect its contents.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: Metrics -->
+  <div id="pane-metrics" class="hidden space-y-4">
+    <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
+      <h2 class="text-lg font-bold mb-2 flex items-center gap-2">📊 Prometheus Metrics &amp; Grafana</h2>
+      <p class="text-xs text-gray-400 mb-4">Live scraped metrics from each service. Or open the full Grafana dashboard below.</p>
+      <div class="flex gap-2 mb-4 flex-wrap" id="metrics-buttons"></div>
+      <div id="metrics-detail" class="bg-zion-900 rounded-lg p-3 max-h-72 overflow-auto log-tail">
+        <div class="text-gray-500 italic">Click a service above to scrape its /metrics endpoint.</div>
+      </div>
+      <div class="mt-6">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-sm font-bold uppercase tracking-wider text-gray-300">Grafana Dashboard</h3>
+          <div class="flex gap-2">
+            <a href="http://127.0.0.1:3000" target="_blank" class="text-xs px-3 py-1 bg-zion-700 hover:bg-zion-600 rounded transition">Open Grafana ↗</a>
+            <a href="http://127.0.0.1:9090" target="_blank" class="text-xs px-3 py-1 bg-zion-700 hover:bg-zion-600 rounded transition">Open Prometheus ↗</a>
+            <button onclick="controlAction('start-monitoring')" class="text-xs px-3 py-1 bg-emerald-700 hover:bg-emerald-600 rounded transition">▶ Start Monitoring</button>
+          </div>
+        </div>
+        <iframe src="http://127.0.0.1:3000" id="grafana-iframe" class="w-full bg-zion-900 rounded-lg border border-zion-700" style="height:600px" onerror="this.style.display='none'" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
+        <div id="grafana-offline" class="hidden text-center text-gray-500 text-sm py-12">
+          Grafana not running. Click <button onclick="controlAction('start-monitoring')" class="text-amber-400 underline">▶ Start Monitoring</button> to launch Prometheus + Grafana via Docker.
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- TAB: Logs -->
   <div id="pane-logs" class="hidden">
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -705,7 +1066,7 @@ tailwind.config={theme:{extend:{colors:{zion:{900:'#0a0f1e',800:'#131a2e',700:'#
 <script>
 let autoRefresh=true,refreshTimer=null,currentTab='overview';
 let charts={};
-const TABS=['overview','controls','charts','events','env','wizard','logs'];
+const TABS=['overview','controls','charts','events','env','wizard','services','database','metrics','logs'];
 
 // ── Tab switching ──
 function switchTab(name){
@@ -720,6 +1081,9 @@ function switchTab(name){
   if(name==='wizard')renderWizard();
   if(name==='logs'){loadLogs('node1');loadLogs('node2');loadLogs('pool');loadLogs('miner');}
   if(name==='controls')renderControls();
+  if(name==='services')loadServices();
+  if(name==='database')loadDatabases();
+  if(name==='metrics')renderMetricsButtons();
 }
 
 // ── Badges & cards ──
@@ -973,6 +1337,149 @@ async function loadLogs(service){
   }catch(e){console.error(e);}
 }
 
+
+// ── Friendly mode ──
+let friendlyMode = localStorage.getItem('zion-friendly') === '1';
+function toggleFriendly(){
+  friendlyMode = !friendlyMode;
+  localStorage.setItem('zion-friendly', friendlyMode ? '1' : '0');
+  applyFriendlyMode();
+  if(currentTab==='services') loadServices();
+}
+function applyFriendlyMode(){
+  const btn = document.getElementById('friendlyBtn');
+  if(!btn) return;
+  btn.textContent = friendlyMode ? '🧑‍💻 Pro Mode' : '🧒 Kid Mode';
+  btn.className = (friendlyMode ? 'bg-amber-600 hover:bg-amber-500' : 'bg-zion-700 hover:bg-zion-600') + ' px-3 py-2 rounded-lg text-sm font-medium transition';
+}
+
+// ── Services tab ──
+async function loadServices(){
+  const res = await fetch('/api/services').then(r => r.json());
+  const grid = document.getElementById('services-grid');
+  if(!grid) return;
+  const lvlColors = {L1:'border-emerald-600 bg-emerald-900/15', L2:'border-blue-600 bg-blue-900/15', L3:'border-purple-600 bg-purple-900/15', L4:'border-pink-600 bg-pink-900/15', Infra:'border-amber-600 bg-amber-900/15'};
+  grid.innerHTML = res.services.map(s => {
+    const aliveColor = s.alive ? 'text-emerald-400' : 'text-gray-500';
+    const aliveBadge = s.alive ? '<span class="px-1.5 py-0.5 bg-emerald-600 text-white text-[10px] rounded font-bold animate-pulse">LIVE</span>' : '<span class="px-1.5 py-0.5 bg-zion-700 text-gray-400 text-[10px] rounded">DOWN</span>';
+    const portsHtml = Object.entries(s.ports || {}).map(([k,v]) => {
+      const isOpen = s.ports_open.includes(k+':'+v);
+      return `<span class="text-[10px] font-mono ${isOpen?'text-emerald-400':'text-gray-600'}" title="${k}">${k}:${v}</span>`;
+    }).join(' · ');
+    const desc = friendlyMode ? s.child_says : s.purpose;
+    const startBtn = s.start ? `<button onclick="controlAction('${s.start}')" class="text-[10px] px-2 py-0.5 bg-emerald-700 hover:bg-emerald-600 rounded transition">▶ Start</button>` : '';
+    const metricsBtn = (s.ports.metrics || s.ports.api) ? `<button onclick="loadMetrics('${s.id}')" class="text-[10px] px-2 py-0.5 bg-zion-700 hover:bg-zion-600 rounded transition">📊 Metrics</button>` : '';
+    const logBtn = s.log ? `<button onclick="switchTab('logs');setTimeout(()=>loadLogs('${s.id}'),300)" class="text-[10px] px-2 py-0.5 bg-zion-700 hover:bg-zion-600 rounded transition">📜 Log</button>` : '';
+    return `<div class="p-3 rounded-lg border ${lvlColors[s.level]||'border-zion-700'} hover:border-amber-500 transition">
+      <div class="flex items-center justify-between mb-1.5">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">${s.icon}</span>
+          <div>
+            <div class="text-sm font-bold ${aliveColor}">${escapeHtml(s.name)}</div>
+            <div class="text-[10px] text-gray-500 uppercase tracking-wider">${s.level} · ${s.kind}</div>
+          </div>
+        </div>
+        ${aliveBadge}
+      </div>
+      <div class="text-[11px] text-gray-300 leading-snug mb-2 min-h-[2.5em]">${escapeHtml(desc)}</div>
+      <div class="flex flex-wrap gap-x-2 gap-y-0.5 mb-2">${portsHtml || '<span class="text-[10px] text-gray-600">no ports</span>'}</div>
+      <div class="flex gap-1">${startBtn}${metricsBtn}${logBtn}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── Database explorer ──
+async function loadDatabases(){
+  const res = await fetch('/api/db').then(r => r.json());
+  const list = document.getElementById('db-list');
+  if(!list) return;
+  list.innerHTML = res.databases.map(d => {
+    const sizeStr = d.size > 1024*1024 ? (d.size/1024/1024).toFixed(1)+' MB' : d.size > 1024 ? (d.size/1024).toFixed(1)+' KB' : d.size + ' B';
+    const kindBadge = d.kind === 'sqlite' ? 'bg-blue-700 text-blue-200' : 'bg-amber-700 text-amber-200';
+    const dis = d.available ? '' : 'opacity-40';
+    return `<button onclick="inspectDb('${escapeHtml(d.path)}')" ${d.available?'':'disabled'} class="${dis} text-left p-3 rounded-lg bg-zion-900 border border-zion-700 hover:border-amber-500 transition">
+      <div class="flex items-center justify-between mb-1">
+        <span class="text-sm font-bold">${escapeHtml(d.name)}</span>
+        <span class="text-[10px] px-1.5 py-0.5 rounded ${kindBadge} uppercase font-bold">${d.kind}</span>
+      </div>
+      <div class="text-[10px] font-mono text-gray-500 truncate">${escapeHtml(d.path)}</div>
+      <div class="text-[10px] text-gray-400 mt-1">${d.available ? sizeStr : 'Not yet created'} · service: <span class="text-amber-400">${d.service}</span></div>
+    </button>`;
+  }).join('');
+}
+
+async function inspectDb(path){
+  const res = await fetch('/api/db/inspect?path=' + encodeURIComponent(path)).then(r => r.json());
+  const c = document.getElementById('db-detail');
+  if(!c) return;
+  if(res.error){c.innerHTML = '<div class="text-red-400">Error: ' + escapeHtml(res.error) + '</div>';return;}
+  let html = '<div class="mb-3"><div class="text-sm font-bold text-amber-300">' + escapeHtml(res.name) + '</div>';
+  html += '<div class="text-[10px] font-mono text-gray-500">' + escapeHtml(res.path) + '</div></div>';
+  if(res.kind === 'json'){
+    html += '<div class="space-y-2">';
+    for(const [k, v] of Object.entries(res.data)){
+      if(v && typeof v === 'object' && '_type' in v){
+        html += '<div class="bg-zion-800 rounded p-2"><div class="text-xs font-bold text-amber-400">' + escapeHtml(k) + ' <span class="text-gray-500 font-normal">(' + v._type + ', ' + v._len + ' items)</span></div>';
+        html += '<pre class="text-[10px] text-gray-400 mt-1 overflow-auto max-h-48">' + escapeHtml(JSON.stringify(v._sample, null, 2)) + '</pre></div>';
+      } else {
+        html += '<div class="flex gap-3 py-1 border-b border-zion-700"><span class="text-xs text-amber-400 font-mono w-48">' + escapeHtml(k) + '</span><span class="text-xs text-gray-300 font-mono break-all">' + escapeHtml(typeof v === 'object' ? JSON.stringify(v) : String(v)) + '</span></div>';
+      }
+    }
+    html += '</div>';
+  } else if(res.kind === 'sqlite'){
+    if(!res.tables || !res.tables.length){
+      html += '<div class="text-gray-500 italic text-sm">Database has no tables.</div>';
+    } else {
+      html += res.tables.map(t => {
+        let tHtml = '<details class="mb-3 bg-zion-800 rounded p-2"><summary class="cursor-pointer text-sm"><span class="font-bold text-amber-400">' + escapeHtml(t.name) + '</span> <span class="text-gray-500">(' + t.rows + ' rows, ' + t.columns.length + ' cols)</span></summary>';
+        tHtml += '<div class="text-[10px] text-gray-400 mt-2 mb-2">Columns: ' + t.columns.map(c => '<span class="font-mono text-amber-300">' + escapeHtml(c.name) + '</span>:<span class="text-gray-500">' + escapeHtml(c.type) + '</span>').join(', ') + '</div>';
+        if(t.sample && t.sample.length){
+          tHtml += '<div class="overflow-auto max-h-64"><table class="w-full text-[10px] border-collapse">';
+          tHtml += '<thead><tr>' + t.columns.map(c => '<th class="text-left p-1 border-b border-zion-700 text-amber-400">' + escapeHtml(c.name) + '</th>').join('') + '</tr></thead><tbody>';
+          tHtml += t.sample.map(row => '<tr class="hover:bg-zion-700/30">' + t.columns.map(c => '<td class="p-1 border-b border-zion-700 font-mono">' + escapeHtml(String(row[c.name] ?? '')).slice(0, 80) + '</td>').join('') + '</tr>').join('');
+          tHtml += '</tbody></table></div>';
+        }
+        tHtml += '</details>';
+        return tHtml;
+      }).join('');
+    }
+  }
+  c.innerHTML = html;
+}
+
+// ── Metrics tab ──
+async function renderMetricsButtons(){
+  const svcRes = await fetch('/api/services').then(r => r.json());
+  const c = document.getElementById('metrics-buttons');
+  if(!c) return;
+  const scrapable = svcRes.services.filter(s => s.ports.metrics || s.ports.api);
+  c.innerHTML = scrapable.map(s => `<button onclick="loadMetrics('${s.id}')" class="px-3 py-1.5 bg-zion-700 hover:bg-zion-600 rounded text-xs font-medium transition flex items-center gap-1">
+    <span>${s.icon}</span><span>${escapeHtml(s.name)}</span>
+    <span class="text-[10px] ${s.alive?'text-emerald-400':'text-gray-500'}">${s.alive?'●':'○'}</span>
+  </button>`).join('');
+}
+
+async function loadMetrics(sid){
+  if(currentTab !== 'metrics') switchTab('metrics');
+  const res = await fetch('/api/metrics/' + sid).then(r => r.json());
+  const c = document.getElementById('metrics-detail');
+  if(!c) return;
+  if(res.error){
+    c.innerHTML = '<div class="text-red-400">Cannot scrape metrics from <span class="text-amber-400">' + escapeHtml(sid) + '</span>: ' + escapeHtml(res.error) + '</div><div class="text-xs text-gray-500 mt-2">URL tried: ' + escapeHtml(res.url || 'n/a') + '</div>';
+    return;
+  }
+  const entries = Object.entries(res.metrics);
+  if(!entries.length){c.innerHTML = '<div class="text-gray-500 italic">No metrics returned.</div>';return;}
+  let html = '<div class="text-xs text-emerald-400 mb-2">✓ Scraped ' + res.count + ' metrics from ' + escapeHtml(res.url) + '</div>';
+  html += '<div class="space-y-0.5">';
+  for(const [k, v] of entries){
+    html += '<div class="flex gap-3 hover:bg-zion-800/50 px-1"><span class="text-[10px] text-amber-300 font-mono flex-1 truncate">' + escapeHtml(k) + '</span><span class="text-[10px] text-gray-300 font-mono">' + v + '</span></div>';
+  }
+  html += '</div>';
+  c.innerHTML = html;
+}
+
+
 // ── Helpers ──
 function toggleAuto(){autoRefresh=!autoRefresh;const b=document.getElementById('autoBtn');
   if(autoRefresh){b.textContent='⚡ Auto';b.className='px-3 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-sm font-medium transition';refreshTimer=setInterval(refreshAll,3000);}
@@ -988,6 +1495,7 @@ function toast(msg,kind){
 }
 
 // ── Init ──
+applyFriendlyMode();
 refreshAll();
 refreshTimer=setInterval(refreshAll,3000);
 </script>
@@ -1042,6 +1550,16 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json(load_env_file(name))
         elif route == "/api/controls":
             self._json({"actions": sorted(ALLOWED_ACTIONS.keys())})
+        elif route == "/api/services":
+            self._json({"services": all_services_health()})
+        elif route.startswith("/api/metrics/"):
+            sid = route.split("/")[-1]
+            self._json(scrape_metrics(sid))
+        elif route == "/api/db":
+            self._json({"databases": list_databases()})
+        elif route == "/api/db/inspect":
+            path = params.get("path", [""])[0]
+            self._json(inspect_database(path))
         elif route.startswith("/api/logs/"):
             service = route.split("/")[-1]
             mapping = {"node1": "node1.log", "node2": "node2.log", "pool": "pool.log", "miner": "miner.log"}
@@ -1085,7 +1603,7 @@ if __name__ == "__main__":
     sampler_thread.start()
 
     open_browser()
-    server = HTTPServer((HOST, PORT), DashboardHandler)
+    server = ThreadingHTTPServer((HOST, PORT), DashboardHandler)
     try:
         server.serve_forever()
     except KeyboardInterrupt:
