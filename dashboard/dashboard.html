@@ -37,26 +37,25 @@ body{
     radial-gradient(circle at 18% -8%,rgba(147,51,234,0.18),transparent 34rem),
     radial-gradient(circle at 86% 8%,rgba(6,182,212,0.12),transparent 30rem),
     radial-gradient(circle at 50% 110%,rgba(255,215,0,0.10),transparent 40rem),
-    linear-gradient(180deg,rgb(2 4 12),rgb(0 0 0) 36rem);
+    linear-gradient(180deg,rgb(2,4,12),rgb(0,0,0) 36rem);
   color:#fff;text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased;min-height:100vh;
 }
 .zion-shell::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;
   background:linear-gradient(rgba(255,255,255,0.018) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.014) 1px,transparent 1px);
   background-size:96px 96px,96px 96px;
-  mask-image:linear-gradient(to bottom,black 0%,black 70%,transparent 100%);
+  -webkit-mask-image:linear-gradient(to bottom,rgba(0,0,0,1) 0%,rgba(0,0,0,1) 70%,rgba(0,0,0,0) 100%);
+  mask-image:linear-gradient(to bottom,rgba(0,0,0,1) 0%,rgba(0,0,0,1) 70%,rgba(0,0,0,0) 100%);
 }
 .zion-panel{
   border-radius:clamp(1rem,2.5vw,1.5rem);
-  border:1px solid var(--zion-border-subtle);
-  background:linear-gradient(135deg,rgba(255,255,255,0.075),rgba(255,255,255,0.028)),var(--zion-surface);
-  backdrop-filter:blur(22px) saturate(140%);
-  box-shadow:var(--zion-shadow-panel);
+  border:1px solid rgba(255,255,255,0.25);
+  background:rgba(15,20,35,0.95);
+  box-shadow:0 24px 90px rgba(0,0,0,0.5);
 }
 .zion-panel-soft{
-  border-radius:var(--zion-radius-lg);
-  border:1px solid var(--zion-border-subtle);
-  background:var(--zion-surface-soft);
-  backdrop-filter:blur(18px);
+  border-radius:1.65rem;
+  border:1px solid rgba(255,255,255,0.22);
+  background:rgba(255,255,255,0.14);
 }
 .zion-panel-hover{transition:border-color 180ms ease,background-color 180ms ease,transform 180ms ease,box-shadow 180ms ease;}
 .zion-panel-hover:hover{transform:translateY(-2px);border-color:var(--zion-border-strong);background-color:var(--zion-surface-hover);box-shadow:var(--zion-shadow-panel),var(--zion-shadow-glow);}
@@ -99,10 +98,6 @@ button{display:inline-flex;align-items:center;justify-content:center;cursor:poin
 <body class="zion-shell">
 
 <div class="max-w-[1680px] mx-auto px-6 py-6 relative">
-
-  <!-- Decorative orbs -->
-  <div class="hero-orb float" style="top:-100px;left:10%;width:300px;height:300px;background:radial-gradient(circle,rgba(255,215,0,0.15),transparent);"></div>
-  <div class="hero-orb float" style="top:200px;right:5%;width:400px;height:400px;background:radial-gradient(circle,rgba(147,51,234,0.18),transparent);animation-delay:-2s;"></div>
 
   <!-- Header -->
   <header class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8 relative z-10">
@@ -324,7 +319,6 @@ button{display:inline-flex;align-items:center;justify-content:center;cursor:poin
   <div id="pane-genesis" class="hidden space-y-4">
     <!-- Hero -->
     <div class="zion-panel p-6 md:p-8 relative overflow-hidden">
-      <div class="hero-orb" style="top:-40px;right:-40px;width:200px;height:200px;background:radial-gradient(circle,rgba(255,215,0,0.25),transparent);"></div>
       <div class="zion-kicker mb-3 relative z-10">⚡ Genesis · Block #0 · Eternal</div>
       <h2 class="text-3xl md:text-5xl font-bold mb-4 relative z-10 leading-tight">
         <span class="text-gradient-soft">144,000,000,000</span><br>
@@ -396,25 +390,25 @@ button{display:inline-flex;align-items:center;justify-content:center;cursor:poin
 
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <button onclick="controlAction('launch-full')" class="zion-panel zion-panel-hover p-6 text-left relative overflow-hidden"
-                style="background:linear-gradient(135deg,rgba(16,185,129,0.15),rgba(16,185,129,0.05));border-color:rgba(16,185,129,0.4);">
+                style="background:linear-gradient(135deg,rgba(16,185,129,0.35),rgba(16,185,129,0.12));border-color:rgba(16,185,129,0.65);">
           <div class="text-4xl mb-3">🚀</div>
           <div class="text-lg font-bold mb-1">Launch Full Stack</div>
           <div class="text-xs text-emerald-300/80">Core + Prometheus + Grafana</div>
         </button>
         <button onclick="controlAction('open-terminal')" class="zion-panel zion-panel-hover p-6 text-left relative overflow-hidden"
-                style="background:linear-gradient(135deg,rgba(59,130,246,0.15),rgba(59,130,246,0.05));border-color:rgba(59,130,246,0.4);">
+                style="background:linear-gradient(135deg,rgba(59,130,246,0.35),rgba(59,130,246,0.12));border-color:rgba(59,130,246,0.65);">
           <div class="text-4xl mb-3">🖥️</div>
           <div class="text-lg font-bold mb-1">Open Terminal</div>
           <div class="text-xs text-blue-300/80">Visible console with live logs</div>
         </button>
         <button onclick="if(confirm('Run dependency check and build? This may take several minutes.')) controlAction('install-deps')" class="zion-panel zion-panel-hover p-6 text-left relative overflow-hidden"
-                style="background:linear-gradient(135deg,rgba(245,158,11,0.15),rgba(245,158,11,0.05));border-color:rgba(245,158,11,0.4);">
+                style="background:linear-gradient(135deg,rgba(245,158,11,0.35),rgba(245,158,11,0.12));border-color:rgba(245,158,11,0.65);">
           <div class="text-4xl mb-3">📦</div>
           <div class="text-lg font-bold mb-1">Install / Build</div>
           <div class="text-xs text-amber-300/80">Check Rust, build V3, npm, Docker</div>
         </button>
         <button onclick="if(confirm('Stop ALL services?')) controlAction('stop-all')" class="zion-panel zion-panel-hover p-6 text-left relative overflow-hidden"
-                style="background:linear-gradient(135deg,rgba(239,68,68,0.15),rgba(239,68,68,0.05));border-color:rgba(239,68,68,0.4);">
+                style="background:linear-gradient(135deg,rgba(239,68,68,0.35),rgba(239,68,68,0.12));border-color:rgba(239,68,68,0.65);">
           <div class="text-4xl mb-3">⏹️</div>
           <div class="text-lg font-bold mb-1">Stop All Services</div>
           <div class="text-xs text-red-300/80">Terminates everything</div>
