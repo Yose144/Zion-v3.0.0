@@ -772,6 +772,7 @@ P0_BLOCKERS = [
 # ── Service control (PowerShell scripts) ────────────────────────────────
 
 ALLOWED_ACTIONS = {
+    "install-deps":      "install-deps.ps1",      # check + build Rust, npm, Docker
     "launch-stack":      "launch-stack.ps1",
     "launch-full":       "launch-full.ps1",       # full stack + monitoring
     "stop-stack":        "stop-stack.ps1",
@@ -1715,6 +1716,13 @@ class DashboardHandler(BaseHTTPRequestHandler):
             mapping = {"node1": "node1.log", "node2": "node2.log", "pool": "pool.log", "miner": "miner.log"}
             filename = mapping.get(service, f"{service}.log")
             self._json({"lines": tail_log(filename, 200)})
+        elif route == "/api/install/log":
+            install_log = LOG_DIR / "install-deps.log"
+            lines = []
+            if install_log.exists():
+                with open(install_log, "r", encoding="utf-8", errors="ignore") as f:
+                    lines = [ln.rstrip("\n") for ln in f.readlines()[-200:]]
+            self._json({"lines": lines, "file": str(install_log)})
         else:
             self.send_error(404)
 

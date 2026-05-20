@@ -360,6 +360,7 @@ async function renderControls(){
   const res = await fetch('/api/controls').then(r => r.json());
   const c = document.getElementById('control-buttons');
   const icons = {
+    'install-deps': '📦',
     'start-node1': '🔷', 'start-node2': '🔶', 'start-pool': '⚡', 'start-miner': '⛏️',
     'restart-node2': '⟳ 🔶', 'restart-miner': '⟳ ⛏️',
     'start-monitoring': '📊', 'stop-monitoring': '⏸ 📊',
@@ -372,6 +373,7 @@ async function renderControls(){
       <div class="text-2xl mb-1">${icons[a] || '⚙️'}</div>
       <div class="text-xs font-semibold">${a}</div>
     </button>`).join('');
+  loadInstallLog();
 }
 
 async function controlAction(action){
@@ -383,10 +385,39 @@ async function controlAction(action){
     const msg = res.ok ? '<div class="text-emerald-400">[' + ts + '] ✓ ' + action + ' started (PID ' + res.pid + ')</div>' : '<div class="text-red-400">[' + ts + '] ✗ ' + (res.error || 'failed') + '</div>';
     if(log) log.insertAdjacentHTML('afterbegin', msg);
     toast(res.ok ? ('▶ ' + action + ' dispatched') : ('Failed: ' + (res.error || action)), res.ok ? 'success' : 'error');
+    if(action === 'install-deps' && res.ok){
+      startInstallLogPolling();
+    }
   } catch(e) {
     if(log) log.insertAdjacentHTML('afterbegin', '<div class="text-red-400">[' + ts + '] ✗ ' + e.message + '</div>');
     toast('Error: ' + e.message, 'error');
   }
+}
+
+// ── Install log ──
+let installLogTimer = null;
+async function loadInstallLog(){
+  const el = document.getElementById('install-log');
+  if(!el) return;
+  try {
+    const data = await fetch('/api/install/log').then(r => r.json());
+    if(data.lines && data.lines.length){
+      el.innerHTML = data.lines.map(ln => '<div class="text-[11px] font-mono whitespace-pre-wrap">' + escapeHtml(ln) + '</div>').join('');
+      el.scrollTop = el.scrollHeight;
+    } else {
+      el.innerHTML = '<div class="text-gray-500 italic text-sm">Run Install / Build to see progress.</div>';
+    }
+  } catch(e) {
+    el.innerHTML = '<div class="text-red-400 text-sm">Failed to load install log.</div>';
+  }
+}
+function startInstallLogPolling(){
+  if(installLogTimer) clearInterval(installLogTimer);
+  loadInstallLog();
+  installLogTimer = setInterval(loadInstallLog, 2000);
+}
+function stopInstallLogPolling(){
+  if(installLogTimer){ clearInterval(installLogTimer); installLogTimer = null; }
 }
 
 // ─────────────────────────────────────────────────────────────────────
