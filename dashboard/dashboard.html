@@ -393,12 +393,18 @@ body{
       <h2 class="text-xl font-bold mb-2 flex items-center gap-2"><span class="text-gradient">🎛️ Stack Control Center</span></h2>
       <p class="text-sm text-gray-400 mb-6">All actions execute whitelisted PowerShell scripts via detached subprocess. Logs appear below.</p>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <button onclick="controlAction('launch-full')" class="zion-panel zion-panel-hover p-6 text-left relative overflow-hidden"
                 style="background:linear-gradient(135deg,rgba(16,185,129,0.15),rgba(16,185,129,0.05));border-color:rgba(16,185,129,0.4);">
           <div class="text-4xl mb-3">🚀</div>
           <div class="text-lg font-bold mb-1">Launch Full Stack</div>
           <div class="text-xs text-emerald-300/80">Core (Node1+Node2+Pool+Miner) + Prometheus + Grafana</div>
+        </button>
+        <button onclick="if(confirm('Run dependency check and build? This may take several minutes.')) controlAction('install-deps')" class="zion-panel zion-panel-hover p-6 text-left relative overflow-hidden"
+                style="background:linear-gradient(135deg,rgba(245,158,11,0.15),rgba(245,158,11,0.05));border-color:rgba(245,158,11,0.4);">
+          <div class="text-4xl mb-3">📦</div>
+          <div class="text-lg font-bold mb-1">Install / Build</div>
+          <div class="text-xs text-amber-300/80">Check Rust, build V3, npm install, Docker check</div>
         </button>
         <button onclick="if(confirm('Stop ALL services?')) controlAction('stop-all')" class="zion-panel zion-panel-hover p-6 text-left relative overflow-hidden"
                 style="background:linear-gradient(135deg,rgba(239,68,68,0.15),rgba(239,68,68,0.05));border-color:rgba(239,68,68,0.4);">
@@ -411,9 +417,19 @@ body{
       <h3 class="zion-kicker mb-3">Individual Services</h3>
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6" id="control-buttons"></div>
 
-      <h3 class="zion-kicker mb-3">Action Log</h3>
-      <div id="control-log" class="bg-black/40 rounded-xl p-3 max-h-48 overflow-y-auto log-tail">
-        <div class="text-gray-500 italic">Control actions will be logged here.</div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        <div>
+          <h3 class="zion-kicker mb-3">Action Log</h3>
+          <div id="control-log" class="bg-black/40 rounded-xl p-3 max-h-48 overflow-y-auto log-tail">
+            <div class="text-gray-500 italic">Control actions will be logged here.</div>
+          </div>
+        </div>
+        <div>
+          <h3 class="zion-kicker mb-3 flex items-center gap-2">📦 Install Log <button onclick="loadInstallLog()" class="text-[10px] px-2 py-0.5 bg-white/10 hover:bg-white/20 rounded transition">🔄 Refresh</button></h3>
+          <div id="install-log" class="bg-black/40 rounded-xl p-3 max-h-48 overflow-y-auto log-tail text-gray-300">
+            <div class="text-gray-500 italic">Run Install / Build to see progress.</div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
