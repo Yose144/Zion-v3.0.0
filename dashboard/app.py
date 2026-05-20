@@ -769,25 +769,34 @@ P0_BLOCKERS = [
      "detail": "Verify V3/docker/HARDENING.md, non-root containers, resource limits, secrets management."},
 ]
 
-# ── Service control (PowerShell scripts) ────────────────────────────────
+# ── Service control (cross-platform scripts) ──────────────────────────
 
-ALLOWED_ACTIONS = {
-    "install-deps":      "install-deps.ps1",      # check + build Rust, npm, Docker
-    "launch-stack":      "launch-stack.ps1",
-    "launch-full":       "launch-full.ps1",       # full stack + monitoring
-    "stop-stack":        "stop-stack.ps1",
-    "stop-all":          "stop-all.ps1",          # core + monitoring
-    "start-node1":       "start-node.ps1",
-    "start-node2":       "start-node2.ps1",
-    "start-pool":        "start-pool.ps1",
-    "start-miner":       "start-miner.ps1",
-    "restart-node2":     "start-node2.ps1",
-    "restart-miner":     "start-miner.ps1",
-    "start-monitoring":  "start-monitoring.ps1",  # Prometheus + Grafana via docker
-    "stop-monitoring":   "stop-monitoring.ps1",
-    "start-prometheus":  "start-monitoring.ps1",
-    "start-grafana":     "start-monitoring.ps1",
+# OS suffix: .ps1 on Windows, .sh on Linux/macOS
+_SCRIPT_EXT = ".ps1" if os.name == "nt" else ".sh"
+
+_ALLOW_BASE = {
+    "install-deps":      "install-deps",
+    "launch-stack":      "launch-stack",
+    "stop-stack":        "stop-stack",
+    "stop-all":          "stop-all",
+    "start-node1":       "start-node",
+    "start-node2":       "start-node2",
+    "start-pool":        "start-pool",
+    "start-miner":       "start-miner",
+    "restart-node2":     "start-node2",
+    "restart-miner":     "start-miner",
 }
+
+# Windows-only extras
+if os.name == "nt":
+    _ALLOW_BASE["launch-full"] = "launch-full"
+    _ALLOW_BASE["start-monitoring"] = "start-monitoring"
+    _ALLOW_BASE["stop-monitoring"] = "stop-monitoring"
+    _ALLOW_BASE["start-prometheus"] = "start-monitoring"
+    _ALLOW_BASE["start-grafana"] = "start-monitoring"
+    _ALLOW_BASE["open-terminal"] = "open-terminal"
+
+ALLOWED_ACTIONS = {k: v + _SCRIPT_EXT for k, v in _ALLOW_BASE.items()}
 
 CONTROL_LOG = LOG_DIR / "control-audit.txt"
 
@@ -800,19 +809,16 @@ def _log_control(msg: str):
         pass
 
 def run_control(action: str) -> dict:
-    """Execute an allowed PowerShell control script in the background."""
+    """Execute an allowed control script in the background (cross-platform)."""
     if action not in ALLOWED_ACTIONS:
         return {"ok": False, "error": f"Unknown action '{action}'. Allowed: {sorted(ALLOWED_ACTIONS)}"}
     script = SCRIPTS_DIR / ALLOWED_ACTIONS[action]
     if not script.exists():
         return {"ok": False, "error": f"Script not found: {script}"}
     try:
-        # On Windows do NOT combine CREATE_NEW_CONSOLE with stdout/stderr
-        # other than None — it is undefined behaviour and may silently fail.
-        # Instead run PowerShell hidden with output discarded.
-        si = None
-        creation = 0
         if os.name == "nt":
+            # Windows: PowerShell hidden (no console window), output discarded
+            si = None
             try:
                 si = subprocess.STARTUPINFO()
                 si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
@@ -820,14 +826,23 @@ def run_control(action: str) -> dict:
             except Exception:
                 pass
             creation = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
-        proc = subprocess.Popen(
-            ["powershell.exe", "-ExecutionPolicy", "Bypass", "-File", str(script)],
-            cwd=str(REPO_ROOT),
-            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL,
-            startupinfo=si,
-            creationflags=creation,
-            close_fds=True,
-        )
+            proc = subprocess.Popen(
+                ["powershell.exe", "-ExecutionPolicy", "Bypass", "-File", str(script)],
+                cwd=str(REPO_ROOT),
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL,
+                startupinfo=si,
+                creationflags=creation,
+                close_fds=True,
+            )
+        else:
+            # Linux/macOS: bash + nohup so the script survives SIGHUP
+            proc = subprocess.Popen(
+                ["bash", str(script)],
+                cwd=str(REPO_ROOT),
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL,
+                close_fds=True,
+                preexec_fn=os.setsid if hasattr(os, "setsid") else None,
+            )
         _log_control(f"dispatched action={action} script={script} pid={proc.pid}")
         return {"ok": True, "action": action, "script": str(script), "pid": proc.pid}
     except Exception as e:
