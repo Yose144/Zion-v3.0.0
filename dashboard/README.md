@@ -1,101 +1,158 @@
-# ZION V3 — Mainnet Launch Dashboard 2.0
+# ZION V3 — Mainnet Launch Dashboard 3.0
 
-A **zero-dependency**, autonomous, intuitive live HTML dashboard for monitoring **and controlling** the ZION V3 mainnet launch stack on Windows 11.
+A **zero-dependency**, autonomous, intuitive **command center** for the entire ZION V3 mainnet stack — designed so **a kid can use it but a pro can master it**.
 
-## What's new in 2.0
+## What's new in 3.0
 
-- **🎛️ Tabbed UI** — Overview · Controls · Charts · Events · Env · Wizard · Logs
-- **🚀 Stack Control Center** — One-click launch/stop full stack + per-service start/restart buttons (executes PowerShell scripts via `POST /api/control`)
-- **📈 Live Charts (Chart.js)** — Hashrate, chain height (Node1 vs Node2), shares accepted/rejected, sessions & peers (in-memory ring buffer, 5s sampling, last 10 min)
-- **🚨 Alerts & Recommendations** — Auto-detects: stuck chain, node drift, wrong fee split, payouts disabled, low nonce window, low hashrate, share rejection rate, log errors. Each actionable alert has a **Fix** button that triggers a control action.
-- **🧱 Block Events Feed** — Real-time stream of `relay_block` and `BLOCK_FOUND` events parsed from logs, color-coded by source.
-- **⚙️ Env File Viewer** — Lists all `.env*` files, validates required variables, **redacts sensitive values** (`*PRIVKEY*`, `*SK_HEX*`), highlights missing required vars.
-- **🧙 Launch Wizard** — 7-step guided flow with status detection per step and quick-action buttons.
-- **📈 Mini hashrate sparkline** in the overview tab.
-- **Toast notifications** for control actions.
+- **🧩 Full Service Registry** — 13 services across L1 (Consensus), L2 (Bridge/DAO/Swap), L3 (WARP/NCL/AI), L4 (OASIS), and Infrastructure (Prometheus/Grafana)
+- **🩺 Real-time health checks** — TCP port probes + log-mtime fallback, cached 5s, parallelized by background sampler
+- **🗄️ Database Explorer** — Read-only inspector for both SQLite databases (Pool PPLNS, Bridge, DAO, WARP) and JSON state files (Node state) with table schema + sample rows
+- **📊 Prometheus Metrics Scraper** — Direct scrape of `/metrics` endpoints for any service, parsed into key/value display
+- **📈 Embedded Grafana** — Live iframe of Grafana dashboards inside the UI, with one-click "Start Monitoring" if not running
+- **🧒 Kid Mode / Pro Mode** — Toggle between plain-language explanations ("⚡ The pool helps lots of computers work together!") and technical descriptions
+- **🚀 Launch FULL Stack** — One-click button starts core (Node1+Node2+Pool+Miner) AND monitoring (Prometheus+Grafana via Docker)
+- **🧵 Threading HTTP server** — Parallel request handling for instant UI even with slow probes
 
-## Quick Start
+## All Services
 
-```powershell
-# From repo root
-dashboard\start-dashboard.ps1
-```
+| Layer | Service | Icon | Ports | Purpose |
+|-------|---------|------|-------|---------|
+| L1 | Node 1 (Genesis) | 🔷 | p2p 8333, rpc 8443, ws 8445, metrics 9115 | Chain truth |
+| L1 | Node 2 (Follower) | 🔶 | p2p 8334, rpc 8446, ws 8447 | Backup/sync |
+| L1 | Mining Pool | ⚡ | stratum 8444, metrics 9550 | Share coord + payouts |
+| L1 | GPU Miner | ⛏️ | — | PoW hashing |
+| L2 | ZION Bridge | 🌉 | api 8550, metrics 9551 | Cross-chain relay |
+| L2 | ZION DAO | 🗳️ | api 8560, metrics 9552 | Governance |
+| L2 | Atomic Swap | 🔄 | api 8570, metrics 9553 | HTLC swaps |
+| L3 | WARP Relay | 🌀 | api 8580, metrics 9554 | Multi-chain msgs |
+| L3 | NCL Gateway | 🧠 | api 8590 | Compute fabric |
+| L3 | AI Native (Hiran) | 🤖 | api 8002 | LLM inference |
+| L4 | OASIS Avatar Hub | 🪷 | api 8600 | Avatar registry |
+| Infra | Prometheus | 📊 | web 9090 | Metrics store |
+| Infra | Grafana | 📈 | web 3000 | Dashboards |
 
-Or manually:
-
-```bash
-python dashboard/app.py
-# Opens http://127.0.0.1:8765 automatically
-```
-
-## API Reference
+## API Reference (full)
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/` | GET | HTML dashboard |
-| `/api/status` | GET | Parsed live state of all services |
+| `/api/status` | GET | Parsed live state (core services) |
+| `/api/services` | GET | **All 13 services + health** |
 | `/api/checklist` | GET | 10-point readiness score |
-| `/api/alerts` | GET | Auto-detected alerts & recommendations |
-| `/api/history` | GET | Last ~10 min of sampled metrics for charts |
-| `/api/events` | GET | Recent block discovery / relay events |
-| `/api/env` | GET | List of `.env*` files in repo root |
-| `/api/env/load?name=<file>` | GET | Parsed contents of an env file (with redaction) |
-| `/api/controls` | GET | List of allowed control actions |
-| `/api/control` | POST | Execute action: `{"action": "launch-stack"}` |
-| `/api/logs/<service>` | GET | Tail of `node1`/`node2`/`pool`/`miner` log |
+| `/api/alerts` | GET | Auto-detected alerts |
+| `/api/history` | GET | Sampled metrics for charts |
+| `/api/events` | GET | Block discovery events |
+| `/api/env` | GET | List `.env*` files |
+| `/api/env/load?name=` | GET | Parsed env w/ redaction |
+| `/api/db` | GET | **List all databases** |
+| `/api/db/inspect?path=` | GET | **Inspect DB tables/JSON** |
+| `/api/metrics/<service>` | GET | **Scrape Prometheus metrics** |
+| `/api/controls` | GET | Whitelisted actions |
+| `/api/control` | POST | Execute action |
+| `/api/logs/<service>` | GET | Log tail |
 
-## Allowed Control Actions
+## Control Actions (whitelisted)
 
-| Action | Script |
-|--------|--------|
-| `launch-stack` | `scripts/launch-stack.ps1` |
-| `stop-stack` | `scripts/stop-stack.ps1` |
-| `start-node1` | `scripts/start-node.ps1` |
-| `start-node2` | `scripts/start-node2.ps1` |
-| `start-pool` | `scripts/start-pool.ps1` |
-| `start-miner` | `scripts/start-miner.ps1` |
-| `restart-node2` | `scripts/start-node2.ps1` |
-| `restart-miner` | `scripts/start-miner.ps1` |
+```
+launch-full        — Core stack + monitoring (one-click everything)
+launch-stack       — Core only (node1 + node2 + pool + miner)
+stop-all           — Stop everything
+stop-stack         — Stop core only
+start-node1
+start-node2 / restart-node2
+start-pool
+start-miner / restart-miner
+start-monitoring   — Prometheus + Grafana via Docker
+stop-monitoring
+start-prometheus / start-grafana  (alias to start-monitoring)
+```
 
-Control actions are **whitelisted** — only the actions above can be executed; arbitrary script paths are rejected.
+## Database Explorer
+
+| Database | Type | Service |
+|----------|------|---------|
+| `zion-node-state.db` | JSON | node1 |
+| `zion-node2-state.db` | JSON | node2 |
+| `V3/data/pool.db` | SQLite | pool |
+| `V3/data/bridge.db` | SQLite | bridge |
+| `V3/data/dao.db` | SQLite | dao |
+| `V3/data/warp.db` | SQLite | warp |
+
+**Whitelisted paths only.** Read-only access. SQLite opened with `mode=ro`.
+
+## Quick Start
+
+```powershell
+# Launch dashboard
+dashboard\start-dashboard.ps1
+
+# From the dashboard UI, click "🚀 Launch ALL" to start:
+#   - Node 1 + Node 2 (P2P + RPC)
+#   - Pool (Stratum + metrics)
+#   - GPU Miner
+#   - Prometheus (collects all metrics)
+#   - Grafana (dashboards at http://localhost:3000)
+```
+
+## Tabs
+
+1. **📊 Overview** — Service cards, checklist, alerts, mini hashrate, payouts
+2. **🎛️ Controls** — Stack Control Center, individual service buttons
+3. **📈 Charts** — Hashrate, height, shares, sessions (Chart.js, last 10 min)
+4. **🧱 Events** — Block discovery feed
+5. **⚙️ Env** — Env file viewer with sensitive redaction
+6. **🧙 Wizard** — 7-step guided launch
+7. **🧩 Services** — All 13 services with health, ports, descriptions
+8. **🗄️ Database** — DB explorer (SQLite + JSON)
+9. **📊 Metrics** — Prometheus scraper + Grafana iframe
+10. **📜 Logs** — All 4 core service log tails
+
+## Friendly Mode
+
+Click 🧒 **Kid Mode** in the header — service descriptions switch to:
+- 🔷 *"This is the boss — it remembers every block ever made."*
+- ⚡ *"The pool helps lots of computers work together to find blocks!"*
+- 📊 *"A super-memory that remembers all the numbers!"*
+
+Click 🧑‍💻 **Pro Mode** to switch back to technical descriptions.
 
 ## Architecture
 
 ```
-dashboard/app.py
-├── MetricsHistory       ring buffer (deque, max 120 samples, ~10 min)
-├── BLOCK_EVENTS         deque of detected block events (last 50)
-├── background_sampler   thread polling status & events every 5s
-├── parse_*              log parsers (node, pool, miner) — head + tail
-├── build_alerts         heuristic alert engine
-├── load_env_file        env file viewer with sensitive-value redaction
-├── run_control          subprocess executor (whitelisted actions only)
-└── DashboardHandler     HTTP server (GET + POST endpoints)
+dashboard/app.py (~1600 LOC)
+├── SERVICE_REGISTRY      13 services with metadata (purpose, ports, icons, child_says)
+├── HEALTH_CACHE          TCP probe + log-mtime fallback (5s TTL)
+├── DB_LOCATIONS          whitelist of inspectable databases
+├── scrape_metrics()      Prometheus text format parser
+├── inspect_database()    SQLite read-only + JSON state inspector
+├── MetricsHistory        ring buffer (5s sampling, 10 min retention)
+├── BLOCK_EVENTS          deque of detected blocks
+├── background_sampler    thread: status + events + health pre-warm
+├── build_alerts          9 heuristic alert generators
+├── run_control           whitelisted PowerShell action dispatcher
+└── ThreadingHTTPServer   parallel request handling
 ```
-
-The HTML is a single embedded template using:
-- **Tailwind CDN** for styling
-- **Chart.js 4.4** for live charts
-- **Vanilla JS** for state & polling (no framework)
 
 ## Requirements
 
-- Python 3.10+ (already on W11 dev box)
-- Powerful enough: dashboard runs alongside the mining stack with negligible CPU/RAM
-- No pip packages — uses only `http.server`, `subprocess`, `json`, `re`, `deque`
+- Python 3.10+ (only stdlib: `http.server`, `sqlite3`, `subprocess`, `socket`)
+- Docker (only for Prometheus/Grafana monitoring stack)
+- PowerShell scripts in `scripts/` for native Windows control
 
-## Security Notes
+## Security
 
-- Server binds to **127.0.0.1 only** (localhost) — never expose publicly
-- Control actions are **whitelisted**; no arbitrary shell execution
-- Sensitive env values (`PRIVKEY`, `SK_HEX`) are **redacted** in the API response
-- The dashboard does not modify env files (read-only viewer)
+- Bound to `127.0.0.1` only
+- All actions whitelisted (no arbitrary shell exec)
+- All DB paths whitelisted (no path traversal)
+- Sensitive env values redacted in API
+- SQLite opened with `mode=ro`
 
 ## Troubleshooting
 
 | Issue | Fix |
 |-------|-----|
+| Services tab shows everything DOWN | Click "🚀 Launch ALL" in Controls tab or Services tab header |
+| Grafana iframe blank | Click "▶ Start Monitoring" — Docker must be running |
+| SQLite DBs show "Not yet created" | They're created on first run of the L2/L3 services |
+| Slow first probe | Initial probe takes ~2s; subsequent are cached 5s |
 | Port 8765 in use | `Get-Process python \| Stop-Process -Force` then restart |
-| Charts empty | Wait 15-30s for the background sampler to accumulate samples |
-| Control action fails | Check `scripts/*.ps1` exists; allow PowerShell execution policy |
-| Sensitive values shown | Update parser to add to `SENSITIVE` set in `load_env_file` |
