@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="zion">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZION Mainnet — Launch Command Center</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script>
+tailwind.config={theme:{extend:{colors:{
+  'zion-gold':'rgb(255 215 0 / <alpha-value>)',
+  'zion-purple':'rgb(147 51 234 / <alpha-value>)',
+  'zion-cyan':'rgb(6 182 212 / <alpha-value>)',
+  'zion-blue':'rgb(30 58 138 / <alpha-value>)',
+}}}};
+</script>
+<style>
+:root{
+  --color-zion-gold:255 215 0;
+  --color-zion-purple:147 51 234;
+  --color-zion-cyan:6 182 212;
+  --color-zion-blue:30 58 138;
+  --zion-radius-md:1.2rem;
+  --zion-radius-lg:1.65rem;
+  --zion-border-subtle:rgba(255,255,255,0.1);
+  --zion-border-strong:rgba(255,255,255,0.18);
+  --zion-surface:rgba(7,10,20,0.68);
+  --zion-surface-soft:rgba(255,255,255,0.045);
+  --zion-surface-hover:rgba(255,255,255,0.075);
+  --zion-shadow-panel:0 24px 90px rgba(0,0,0,0.42);
+  --zion-shadow-glow:0 0 42px rgba(147,51,234,0.28);
+}
+body{
+  font-family:'Inter',system-ui,sans-serif;
+  background:
+    radial-gradient(circle at 18% -8%,rgba(147,51,234,0.18),transparent 34rem),
+    radial-gradient(circle at 86% 8%,rgba(6,182,212,0.12),transparent 30rem),
+    radial-gradient(circle at 50% 110%,rgba(255,215,0,0.10),transparent 40rem),
+    linear-gradient(180deg,rgb(2 4 12),rgb(0 0 0) 36rem);
+  color:#fff;text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased;min-height:100vh;
+}
+.zion-shell::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;
+  background:linear-gradient(rgba(255,255,255,0.018) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.014) 1px,transparent 1px);
+  background-size:96px 96px,96px 96px;
+  mask-image:linear-gradient(to bottom,black 0%,black 70%,transparent 100%);
+}
+.zion-panel{
+  border-radius:clamp(1rem,2.5vw,1.5rem);
+  border:1px solid var(--zion-border-subtle);
+  background:linear-gradient(135deg,rgba(255,255,255,0.075),rgba(255,255,255,0.028)),var(--zion-surface);
+  backdrop-filter:blur(22px) saturate(140%);
+  box-shadow:var(--zion-shadow-panel);
+}
+.zion-panel-soft{
+  border-radius:var(--zion-radius-lg);
+  border:1px solid var(--zion-border-subtle);
+  background:var(--zion-surface-soft);
+  backdrop-filter:blur(18px);
+}
+.zion-panel-hover{transition:border-color 180ms ease,background-color 180ms ease,transform 180ms ease,box-shadow 180ms ease;}
+.zion-panel-hover:hover{transform:translateY(-2px);border-color:var(--zion-border-strong);background-color:var(--zion-surface-hover);box-shadow:var(--zion-shadow-panel),var(--zion-shadow-glow);}
+.zion-kicker{display:inline-flex;align-items:center;gap:0.5rem;border-radius:9999px;border:1px solid rgba(255,255,255,0.12);background:linear-gradient(90deg,rgba(255,255,255,0.07),rgba(255,255,255,0.035));padding:0.3rem 0.8rem;font-size:0.65rem;font-weight:600;letter-spacing:0.28em;text-transform:uppercase;color:#d1d5db;}
+.zion-button-primary{display:inline-flex;align-items:center;justify-content:center;gap:0.55rem;border-radius:var(--zion-radius-md);background-image:linear-gradient(110deg,rgb(255 215 0),rgb(147 51 234) 52%,rgb(6 182 212));padding:0.9rem 1.35rem;font-weight:700;color:white;box-shadow:0 18px 45px rgba(147,51,234,0.34);transition:transform 180ms ease,box-shadow 180ms ease,filter 180ms ease;border:none;cursor:pointer;}
+.zion-button-primary:hover{transform:translateY(-1px);box-shadow:0 24px 60px rgba(147,51,234,0.44);filter:saturate(1.08);}
+.zion-button-secondary{display:inline-flex;align-items:center;justify-content:center;gap:0.55rem;border-radius:var(--zion-radius-md);border:1px solid var(--zion-border-subtle);background:rgba(255,255,255,0.055);padding:0.7rem 1.1rem;font-weight:600;color:white;backdrop-filter:blur(16px);transition:border-color 180ms ease,background-color 180ms ease,transform 180ms ease;cursor:pointer;}
+.zion-button-secondary:hover{transform:translateY(-1px);border-color:var(--zion-border-strong);background:rgba(255,255,255,0.085);}
+.text-gradient{background-clip:text;-webkit-background-clip:text;color:transparent;background-image:linear-gradient(to right,rgb(255 215 0),rgb(147 51 234),rgb(6 182 212));}
+.text-gradient-soft{background-clip:text;-webkit-background-clip:text;color:transparent;background-image:linear-gradient(110deg,#fff7c2,rgb(255 215 0),rgb(6 182 212));}
+.glow{text-shadow:0 0 20px rgba(255,215,0,0.5);}
+.zion-divider{height:1px;border:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.14),transparent);}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+@keyframes pulse-glow{0%,100%{box-shadow:0 0 5px rgba(255,215,0,0.3)}50%{box-shadow:0 0 30px rgba(255,215,0,0.6)}}
+.float{animation:float 6s ease-in-out infinite;}
+.shimmer{background:linear-gradient(90deg,transparent 0%,rgba(255,215,0,0.2) 50%,transparent 100%);background-size:200% 100%;animation:shimmer 3s infinite;}
+.pulse-gold{animation:pulse-glow 3s infinite;}
+.tab-btn{position:relative;padding:0.7rem 1.1rem;font-size:0.85rem;font-weight:600;color:#9ca3af;border-radius:0.75rem;transition:all 180ms;cursor:pointer;background:transparent;border:1px solid transparent;white-space:nowrap;}
+.tab-btn:hover{color:#fff;background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.08);}
+.tab-active{color:#fff;background:linear-gradient(135deg,rgba(255,215,0,0.08),rgba(147,51,234,0.08));border-color:rgba(255,215,0,0.3) !important;box-shadow:0 4px 20px rgba(147,51,234,0.2);}
+.log-tail{font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.6;}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.12);border-radius:3px;}
+::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.2);}
+.svc-card{position:relative;overflow:hidden;}
+.svc-card::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 80% 0%,rgba(255,215,0,0.08),transparent 60%);pointer-events:none;}
+.svc-live{border-color:rgba(16,185,129,0.5) !important;box-shadow:0 0 30px rgba(16,185,129,0.2);}
+.alert-critical{background:linear-gradient(135deg,rgba(239,68,68,0.15),rgba(239,68,68,0.05));border-color:rgba(239,68,68,0.4);}
+.alert-warning{background:linear-gradient(135deg,rgba(245,158,11,0.15),rgba(245,158,11,0.05));border-color:rgba(245,158,11,0.4);}
+.alert-info{background:linear-gradient(135deg,rgba(59,130,246,0.15),rgba(59,130,246,0.05));border-color:rgba(59,130,246,0.4);}
+.alert-success{background:linear-gradient(135deg,rgba(16,185,129,0.15),rgba(16,185,129,0.05));border-color:rgba(16,185,129,0.4);}
+.tooltip{position:relative;}
+.tooltip:hover .tip{visibility:visible;opacity:1;}
+.tip{visibility:hidden;opacity:0;position:absolute;bottom:130%;left:50%;transform:translateX(-50%);background:rgba(7,10,20,0.95);border:1px solid rgba(255,255,255,0.15);padding:6px 10px;border-radius:6px;font-size:11px;white-space:nowrap;z-index:50;transition:opacity 0.2s;font-weight:500;color:#e5e7eb;}
+.hero-orb{position:absolute;border-radius:50%;filter:blur(60px);pointer-events:none;}
+</style>
+</head>
+<body class="zion-shell">
+
+<div class="max-w-[1680px] mx-auto px-6 py-6 relative">
+
+  <!-- Decorative orbs -->
+  <div class="hero-orb float" style="top:-100px;left:10%;width:300px;height:300px;background:radial-gradient(circle,rgba(255,215,0,0.15),transparent);"></div>
+  <div class="hero-orb float" style="top:200px;right:5%;width:400px;height:400px;background:radial-gradient(circle,rgba(147,51,234,0.18),transparent);animation-delay:-2s;"></div>
+
+  <!-- Header -->
+  <header class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8 relative z-10">
+    <div class="flex items-center gap-4">
+      <div class="w-14 h-14 rounded-2xl flex items-center justify-center font-bold text-2xl pulse-gold relative"
+           style="background:linear-gradient(135deg,rgb(255 215 0),rgb(147 51 234) 50%,rgb(6 182 212));">
+        Z
+      </div>
+      <div>
+        <div class="zion-kicker mb-1.5">🌟 Mainnet Launch · Command Center</div>
+        <h1 class="text-3xl md:text-4xl font-bold tracking-tight leading-none">
+          <span class="text-gradient">ZION TerraNova</span>
+        </h1>
+        <p class="text-xs text-gray-400 mt-1" id="timestamp">Initializing…</p>
+      </div>
+    </div>
+    <div class="flex flex-wrap gap-2 items-center">
+      <span id="alertCount" class="hidden px-3 py-1.5 bg-red-600 rounded-full text-xs font-bold animate-pulse">0 alerts</span>
+      <button onclick="toggleFriendly()" id="friendlyBtn" class="zion-button-secondary text-xs">🧒 Kid Mode</button>
+      <button onclick="refreshAll()" class="zion-button-secondary text-xs">🔄 Refresh</button>
+      <button onclick="toggleAuto()" id="autoBtn" class="zion-button-secondary text-xs">⚡ Auto</button>
+    </div>
+  </header>
+
+  <!-- Hero — Launch Status -->
+  <section class="zion-panel p-6 md:p-8 mb-6 relative overflow-hidden">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-center relative z-10">
+      <div class="lg:col-span-2">
+        <div class="zion-kicker mb-3" id="hero-status-kicker">⏳ Pre-Launch · Awaiting Genesis</div>
+        <h2 class="text-2xl md:text-4xl font-bold mb-3 leading-tight">
+          <span class="text-gradient-soft">Ignite the Mainnet</span><br>
+          <span class="text-white">— one click, full stack.</span>
+        </h2>
+        <p class="text-sm md:text-base text-gray-400 mb-5 max-w-2xl">
+          Launches <strong class="text-zion-gold">Node 1 + Node 2</strong>, the <strong class="text-zion-purple">Pool</strong> with 89/5/5/1 fee split,
+          the <strong class="text-zion-cyan">GPU Miner</strong>, plus <strong class="text-amber-300">Prometheus + Grafana</strong> monitoring.
+          All processes are spawned natively on Windows + Docker.
+        </p>
+        <div class="flex flex-wrap gap-3">
+          <button onclick="controlAction('launch-full')" class="zion-button-primary">
+            🚀 Launch Full Stack
+          </button>
+          <button onclick="controlAction('launch-stack')" class="zion-button-secondary">
+            ⚡ Core Only
+          </button>
+          <button onclick="if(confirm('Stop ALL services?')) controlAction('stop-all')" class="zion-button-secondary" style="color:#fca5a5;">
+            ⏹ Stop All
+          </button>
+        </div>
+      </div>
+
+      <!-- Readiness Card -->
+      <div class="zion-panel-soft p-5">
+        <div class="flex items-center justify-between mb-3">
+          <span class="zion-kicker">Launch Readiness</span>
+          <span class="text-3xl font-bold text-gradient" id="progressText">—</span>
+        </div>
+        <div class="w-full h-2 bg-white/5 rounded-full overflow-hidden mb-3">
+          <div id="progressBar" class="h-full rounded-full transition-all duration-700"
+               style="width:0%;background:linear-gradient(90deg,rgb(255 215 0),rgb(147 51 234),rgb(6 182 212));"></div>
+        </div>
+        <div class="grid grid-cols-3 gap-2 mt-4 text-center">
+          <div class="zion-panel-soft py-2 px-1">
+            <div class="text-lg font-bold text-emerald-400" id="hero-services-up">—</div>
+            <div class="text-[10px] uppercase tracking-wider text-gray-500">Live</div>
+          </div>
+          <div class="zion-panel-soft py-2 px-1">
+            <div class="text-lg font-bold text-amber-400" id="hero-blockers-open">—</div>
+            <div class="text-[10px] uppercase tracking-wider text-gray-500">P0 Open</div>
+          </div>
+          <div class="zion-panel-soft py-2 px-1">
+            <div class="text-lg font-bold text-zion-cyan" id="hero-chain-height">—</div>
+            <div class="text-[10px] uppercase tracking-wider text-gray-500">Height</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tabs -->
+  <div class="flex gap-1.5 mb-6 overflow-x-auto pb-1 relative z-10">
+    <button onclick="switchTab('overview')" id="tab-overview" class="tab-btn tab-active">📊 Overview</button>
+    <button onclick="switchTab('services')" id="tab-services" class="tab-btn">🧩 Services</button>
+    <button onclick="switchTab('genesis')" id="tab-genesis" class="tab-btn">⚡ Genesis & Premine</button>
+    <button onclick="switchTab('blockers')" id="tab-blockers" class="tab-btn">🚧 P0 Blockers</button>
+    <button onclick="switchTab('controls')" id="tab-controls" class="tab-btn">🎛️ Controls</button>
+    <button onclick="switchTab('charts')" id="tab-charts" class="tab-btn">📈 Charts</button>
+    <button onclick="switchTab('events')" id="tab-events" class="tab-btn">🧱 Events</button>
+    <button onclick="switchTab('env')" id="tab-env" class="tab-btn">⚙️ Env</button>
+    <button onclick="switchTab('database')" id="tab-database" class="tab-btn">🗄️ Database</button>
+    <button onclick="switchTab('metrics')" id="tab-metrics" class="tab-btn">📊 Metrics</button>
+    <button onclick="switchTab('wizard')" id="tab-wizard" class="tab-btn">🧙 Wizard</button>
+    <button onclick="switchTab('logs')" id="tab-logs" class="tab-btn">📜 Logs</button>
+  </div>
+
+  <!-- ═════════ TAB: Overview ═════════ -->
+  <div id="pane-overview" class="space-y-5">
+    <!-- Service Cards (top 4) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div id="card-node1" class="zion-panel zion-panel-hover svc-card p-5">
+        <div class="flex items-center justify-between mb-3 relative z-10">
+          <span class="zion-kicker">🔷 Node 1</span>
+          <span id="badge-node1" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white/5 text-gray-400">?</span>
+        </div>
+        <div class="text-4xl font-bold mb-1 text-gradient relative z-10" id="val-node1-height">—</div>
+        <div class="text-xs text-gray-400 mb-3 relative z-10">Chain Height</div>
+        <div class="text-xs font-mono text-gray-300 truncate mb-1 relative z-10" id="val-node1-id">—</div>
+        <div class="text-xs text-gray-400 mb-1 relative z-10">Peers: <span id="val-node1-peers" class="text-white font-semibold">—</span></div>
+        <div class="text-xs text-gray-400 mb-3 relative z-10">P2P: <span id="val-node1-p2p" class="font-mono">—</span></div>
+        <div class="flex gap-1.5 relative z-10">
+          <button onclick="controlAction('start-node1')" class="text-[10px] px-2.5 py-1 bg-emerald-700/50 hover:bg-emerald-600 rounded-md font-semibold transition">▶ Start</button>
+        </div>
+      </div>
+
+      <div id="card-node2" class="zion-panel zion-panel-hover svc-card p-5">
+        <div class="flex items-center justify-between mb-3 relative z-10">
+          <span class="zion-kicker">🔶 Node 2</span>
+          <span id="badge-node2" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white/5 text-gray-400">?</span>
+        </div>
+        <div class="text-4xl font-bold mb-1 text-gradient relative z-10" id="val-node2-height">—</div>
+        <div class="text-xs text-gray-400 mb-3 relative z-10">Chain Height</div>
+        <div class="text-xs font-mono text-gray-300 truncate mb-1 relative z-10" id="val-node2-id">—</div>
+        <div class="text-xs text-gray-400 mb-1 relative z-10">Peers: <span id="val-node2-peers" class="text-white font-semibold">—</span></div>
+        <div class="text-xs text-gray-400 mb-3 relative z-10">Sync: <span id="val-node2-sync">—</span></div>
+        <div class="flex gap-1.5 relative z-10">
+          <button onclick="controlAction('start-node2')" class="text-[10px] px-2.5 py-1 bg-emerald-700/50 hover:bg-emerald-600 rounded-md font-semibold transition">▶ Start</button>
+          <button onclick="controlAction('restart-node2')" class="text-[10px] px-2.5 py-1 bg-amber-700/50 hover:bg-amber-600 rounded-md font-semibold transition">⟳ Restart</button>
+        </div>
+      </div>
+
+      <div id="card-pool" class="zion-panel zion-panel-hover svc-card p-5">
+        <div class="flex items-center justify-between mb-3 relative z-10">
+          <span class="zion-kicker">⚡ Pool</span>
+          <span id="badge-pool" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white/5 text-gray-400">?</span>
+        </div>
+        <div class="text-4xl font-bold mb-1 text-emerald-400 relative z-10" id="val-pool-sessions">—</div>
+        <div class="text-xs text-gray-400 mb-3 relative z-10">Active Sessions</div>
+        <div class="text-xs text-gray-400 mb-1 relative z-10">Blocks: <span id="val-pool-blocks" class="text-emerald-400 font-semibold">—</span></div>
+        <div class="text-xs text-gray-400 mb-1 relative z-10">Shares: <span id="val-pool-shares" class="text-white font-semibold">—</span></div>
+        <div class="text-xs text-amber-400 mb-3 relative z-10 font-mono" id="val-pool-fee">—</div>
+        <div class="flex gap-1.5 relative z-10">
+          <button onclick="controlAction('start-pool')" class="text-[10px] px-2.5 py-1 bg-emerald-700/50 hover:bg-emerald-600 rounded-md font-semibold transition">▶ Start</button>
+        </div>
+      </div>
+
+      <div id="card-miner" class="zion-panel zion-panel-hover svc-card p-5">
+        <div class="flex items-center justify-between mb-3 relative z-10">
+          <span class="zion-kicker">⛏️ GPU Miner</span>
+          <span id="badge-miner" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white/5 text-gray-400">?</span>
+        </div>
+        <div class="text-4xl font-bold mb-1 text-gradient relative z-10" id="val-miner-hashrate">—</div>
+        <div class="text-xs text-gray-400 mb-3 relative z-10">KH/s (10s avg)</div>
+        <div class="text-xs text-gray-400 mb-1 relative z-10 truncate">GPU: <span id="val-miner-gpu" class="text-white text-[10px]">—</span></div>
+        <div class="text-xs text-gray-400 mb-1 relative z-10">Height: <span id="val-miner-height" class="text-white">—</span></div>
+        <div class="text-xs text-gray-400 mb-3 relative z-10">Diff: <span id="val-miner-diff">—</span></div>
+        <div class="flex gap-1.5 relative z-10">
+          <button onclick="controlAction('start-miner')" class="text-[10px] px-2.5 py-1 bg-emerald-700/50 hover:bg-emerald-600 rounded-md font-semibold transition">▶ Start</button>
+          <button onclick="controlAction('restart-miner')" class="text-[10px] px-2.5 py-1 bg-amber-700/50 hover:bg-amber-600 rounded-md font-semibold transition">⟳ Restart</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Alerts + Checklist + Hashrate -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div class="zion-panel p-5 lg:col-span-2">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-base font-bold flex items-center gap-2">🚨 Alerts &amp; Recommendations</h2>
+          <span id="alertBadge" class="text-xs px-2.5 py-1 rounded-full bg-emerald-600/20 text-emerald-300">—</span>
+        </div>
+        <div id="alerts" class="space-y-2 max-h-80 overflow-y-auto"></div>
+      </div>
+      <div class="zion-panel p-5">
+        <h2 class="text-base font-bold mb-4 flex items-center gap-2">✅ Checklist</h2>
+        <div id="checklist" class="space-y-1.5"></div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="zion-panel p-5">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-base font-bold">📈 Hashrate Trend</h2>
+          <span class="text-xs text-gray-500" id="hashrate-summary">—</span>
+        </div>
+        <canvas id="mini-hashrate" height="80"></canvas>
+      </div>
+      <div class="zion-panel p-5">
+        <h2 class="text-base font-bold mb-3">💰 Payouts &amp; Fee Split <span class="text-xs text-gray-500 font-normal">(89/5/5/1)</span></h2>
+        <div class="space-y-2">
+          <div class="flex justify-between text-xs"><span class="text-gray-400">Pool Wallet</span><span id="payout-wallet" class="font-mono text-white truncate max-w-[260px]">—</span></div>
+          <div class="flex justify-between text-xs"><span class="text-gray-400">Payout Enabled</span><span id="payout-enabled" class="font-bold">—</span></div>
+          <div class="flex justify-between text-xs"><span class="text-gray-400">Active Split</span><span id="payout-split" class="text-zion-gold font-mono font-bold">—</span></div>
+          <div class="flex justify-between text-xs"><span class="text-gray-400">Blocks Found</span><span id="payout-blocks" class="text-emerald-400 font-bold">—</span></div>
+          <div class="flex justify-between text-xs"><span class="text-gray-400">Nonce Window</span><span id="payout-nonce" class="text-white">—</span></div>
+        </div>
+        <hr class="zion-divider my-3">
+        <div id="payout-recent" class="space-y-1 max-h-24 overflow-y-auto log-tail text-gray-400"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═════════ TAB: Services ═════════ -->
+  <div id="pane-services" class="hidden space-y-4">
+    <div class="zion-panel p-6">
+      <div class="flex items-center justify-between mb-5 flex-wrap gap-3">
+        <div>
+          <h2 class="text-xl font-bold flex items-center gap-2"><span class="text-gradient">🧩 All Mainnet Services</span></h2>
+          <p class="text-xs text-gray-400 mt-1">L1 Consensus · L2 Bridge/DAO · L3 Advanced · L4 Apps · Infrastructure — 13 services</p>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="controlAction('launch-full')" class="zion-button-primary text-sm">🚀 Launch ALL</button>
+          <button onclick="if(confirm('Stop everything?')) controlAction('stop-all')" class="zion-button-secondary text-sm" style="color:#fca5a5;">⏹ Stop ALL</button>
+        </div>
+      </div>
+      <div id="services-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3"></div>
+    </div>
+  </div>
+
+  <!-- ═════════ TAB: Genesis & Premine ═════════ -->
+  <div id="pane-genesis" class="hidden space-y-4">
+    <!-- Hero -->
+    <div class="zion-panel p-6 md:p-8 relative overflow-hidden">
+      <div class="hero-orb" style="top:-40px;right:-40px;width:200px;height:200px;background:radial-gradient(circle,rgba(255,215,0,0.25),transparent);"></div>
+      <div class="zion-kicker mb-3 relative z-10">⚡ Genesis · Block #0 · Eternal</div>
+      <h2 class="text-3xl md:text-5xl font-bold mb-4 relative z-10 leading-tight">
+        <span class="text-gradient-soft">144,000,000,000</span><br>
+        <span class="text-white text-2xl md:text-3xl font-semibold">ZION — Not one satoshi more.</span>
+      </h2>
+      <p class="text-sm md:text-base text-gray-400 max-w-3xl relative z-10">
+        Total supply hard-capped. <span class="text-zion-gold font-semibold">16.28B ZION</span> premined in genesis block (12 outputs).
+        <span class="text-zion-cyan font-semibold">127.72B ZION</span> available for mining over 100 years via Decade Decay.
+        Tail emission of <span class="text-zion-purple font-semibold">724.78 ZION/block</span> forever from ~2126.
+      </p>
+    </div>
+
+    <!-- Key Stats Grid -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3" id="genesis-stats"></div>
+
+    <!-- Reward Split + Consensus -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="zion-panel p-6">
+        <h3 class="text-lg font-bold mb-4 flex items-center gap-2">💰 Block Reward Distribution</h3>
+        <div id="reward-split-viz" class="space-y-3"></div>
+        <p class="text-xs text-gray-500 mt-4 italic">Enforced at protocol level. Cannot be changed by governance. 89+5+5+1 = 100%.</p>
+      </div>
+      <div class="zion-panel p-6">
+        <h3 class="text-lg font-bold mb-4 flex items-center gap-2">🔐 Consensus Parameters</h3>
+        <div id="consensus-params" class="space-y-2 text-xs"></div>
+      </div>
+    </div>
+
+    <!-- Premine Outputs -->
+    <div class="zion-panel p-6">
+      <div class="flex items-center justify-between mb-5 flex-wrap gap-2">
+        <h3 class="text-lg font-bold flex items-center gap-2">🌱 Premine Distribution <span class="text-xs text-gray-500 font-normal">(12 outputs, total 16.28B ZION)</span></h3>
+        <div class="flex gap-2 text-xs">
+          <span class="zion-kicker">🌸 OASIS 8.25B</span>
+          <span class="zion-kicker">🗳️ DAO 4.0B</span>
+          <span class="zion-kicker">🏗️ Infra 2.59B</span>
+          <span class="zion-kicker">💝 Humanitarian 1.44B</span>
+        </div>
+      </div>
+      <div id="premine-table" class="space-y-2"></div>
+    </div>
+
+    <!-- Special Addresses -->
+    <div class="zion-panel p-6">
+      <h3 class="text-lg font-bold mb-4 flex items-center gap-2">📍 Canonical Special Addresses</h3>
+      <div id="special-addresses" class="space-y-2"></div>
+    </div>
+  </div>
+
+  <!-- ═════════ TAB: P0 Blockers ═════════ -->
+  <div id="pane-blockers" class="hidden space-y-4">
+    <div class="zion-panel p-6">
+      <div class="flex items-center justify-between mb-5 flex-wrap gap-3">
+        <div>
+          <h2 class="text-xl font-bold flex items-center gap-2"><span class="text-gradient">🚧 P0 Launch Blockers</span></h2>
+          <p class="text-xs text-gray-400 mt-1">Critical issues that MUST be resolved before T-0 (genesis ceremony)</p>
+        </div>
+        <div id="blockers-summary" class="text-xs"></div>
+      </div>
+      <div id="blockers-list" class="space-y-3"></div>
+    </div>
+  </div>
+
+  <!-- ═════════ TAB: Controls ═════════ -->
+  <div id="pane-controls" class="hidden space-y-4">
+    <div class="zion-panel p-6">
+      <h2 class="text-xl font-bold mb-2 flex items-center gap-2"><span class="text-gradient">🎛️ Stack Control Center</span></h2>
+      <p class="text-sm text-gray-400 mb-6">All actions execute whitelisted PowerShell scripts via detached subprocess. Logs appear below.</p>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <button onclick="controlAction('launch-full')" class="zion-panel zion-panel-hover p-6 text-left relative overflow-hidden"
+                style="background:linear-gradient(135deg,rgba(16,185,129,0.15),rgba(16,185,129,0.05));border-color:rgba(16,185,129,0.4);">
+          <div class="text-4xl mb-3">🚀</div>
+          <div class="text-lg font-bold mb-1">Launch Full Stack</div>
+          <div class="text-xs text-emerald-300/80">Core (Node1+Node2+Pool+Miner) + Prometheus + Grafana</div>
+        </button>
+        <button onclick="if(confirm('Stop ALL services?')) controlAction('stop-all')" class="zion-panel zion-panel-hover p-6 text-left relative overflow-hidden"
+                style="background:linear-gradient(135deg,rgba(239,68,68,0.15),rgba(239,68,68,0.05));border-color:rgba(239,68,68,0.4);">
+          <div class="text-4xl mb-3">⏹️</div>
+          <div class="text-lg font-bold mb-1">Stop All Services</div>
+          <div class="text-xs text-red-300/80">Terminates node, pool, miner, monitoring containers</div>
+        </button>
+      </div>
+
+      <h3 class="zion-kicker mb-3">Individual Services</h3>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6" id="control-buttons"></div>
+
+      <h3 class="zion-kicker mb-3">Action Log</h3>
+      <div id="control-log" class="bg-black/40 rounded-xl p-3 max-h-48 overflow-y-auto log-tail">
+        <div class="text-gray-500 italic">Control actions will be logged here.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═════════ TAB: Charts ═════════ -->
+  <div id="pane-charts" class="hidden space-y-4">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="zion-panel p-5"><h3 class="text-sm font-bold mb-3 zion-kicker">Hashrate (KH/s)</h3><canvas id="chart-hashrate" height="160"></canvas></div>
+      <div class="zion-panel p-5"><h3 class="text-sm font-bold mb-3 zion-kicker">Chain Height Progression</h3><canvas id="chart-height" height="160"></canvas></div>
+      <div class="zion-panel p-5"><h3 class="text-sm font-bold mb-3 zion-kicker">Shares Accepted / Rejected</h3><canvas id="chart-shares" height="160"></canvas></div>
+      <div class="zion-panel p-5"><h3 class="text-sm font-bold mb-3 zion-kicker">Active Sessions &amp; Peers</h3><canvas id="chart-sessions" height="160"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ═════════ TAB: Events ═════════ -->
+  <div id="pane-events" class="hidden">
+    <div class="zion-panel p-6">
+      <h2 class="text-lg font-bold mb-4 flex items-center gap-2">🧱 Block &amp; Network Events <span class="text-xs text-gray-500 font-normal">(latest first)</span></h2>
+      <div id="events-feed" class="space-y-2 max-h-[600px] overflow-y-auto"></div>
+    </div>
+  </div>
+
+  <!-- ═════════ TAB: Env ═════════ -->
+  <div id="pane-env" class="hidden">
+    <div class="zion-panel p-6">
+      <h2 class="text-lg font-bold mb-2 flex items-center gap-2">⚙️ Environment Files</h2>
+      <p class="text-xs text-gray-400 mb-5">Read-only viewer with sensitive value redaction (PRIVKEY, SK_HEX always masked).</p>
+      <div class="flex flex-wrap gap-2 mb-5" id="env-file-list"></div>
+      <div id="env-detail" class="bg-black/40 rounded-xl p-4 max-h-[500px] overflow-auto">
+        <div class="text-gray-500 italic text-sm">Select an .env file above to inspect variables.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═════════ TAB: Database ═════════ -->
+  <div id="pane-database" class="hidden">
+    <div class="zion-panel p-6">
+      <h2 class="text-lg font-bold mb-2 flex items-center gap-2">🗄️ Database Explorer</h2>
+      <p class="text-xs text-gray-400 mb-5">Read-only inspector for ZION state DBs (SQLite + JSON state). Whitelisted paths only.</p>
+      <div id="db-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-5"></div>
+      <div id="db-detail" class="bg-black/40 rounded-xl p-4 min-h-[300px] max-h-[600px] overflow-auto">
+        <div class="text-gray-500 italic text-sm">Select a database above to inspect its contents.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═════════ TAB: Metrics ═════════ -->
+  <div id="pane-metrics" class="hidden">
+    <div class="zion-panel p-6">
+      <h2 class="text-lg font-bold mb-2 flex items-center gap-2">📊 Prometheus Metrics &amp; Grafana</h2>
+      <p class="text-xs text-gray-400 mb-5">Live scraped metrics from each service. Open Grafana for full dashboards.</p>
+      <div class="flex gap-2 mb-4 flex-wrap" id="metrics-buttons"></div>
+      <div id="metrics-detail" class="bg-black/40 rounded-xl p-3 max-h-72 overflow-auto log-tail mb-6">
+        <div class="text-gray-500 italic">Click a service above to scrape its /metrics endpoint.</div>
+      </div>
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="zion-kicker">Grafana Dashboard</h3>
+        <div class="flex gap-2">
+          <a href="http://127.0.0.1:3000" target="_blank" class="zion-button-secondary text-xs">Open Grafana ↗</a>
+          <a href="http://127.0.0.1:9090" target="_blank" class="zion-button-secondary text-xs">Open Prometheus ↗</a>
+          <button onclick="controlAction('start-monitoring')" class="zion-button-secondary text-xs" style="color:#86efac;">▶ Start Monitoring</button>
+        </div>
+      </div>
+      <iframe src="http://127.0.0.1:3000" id="grafana-iframe" class="w-full bg-black/40 rounded-xl border border-white/10" style="height:600px;" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
+    </div>
+  </div>
+
+  <!-- ═════════ TAB: Wizard ═════════ -->
+  <div id="pane-wizard" class="hidden">
+    <div class="zion-panel p-6">
+      <h2 class="text-xl font-bold mb-2 flex items-center gap-2"><span class="text-gradient">🧙 Mainnet Launch Wizard</span></h2>
+      <p class="text-sm text-gray-400 mb-6">Step-by-step guided launch sequence. Each step shows current status &amp; quick actions.</p>
+      <div id="wizard-steps" class="space-y-3"></div>
+    </div>
+  </div>
+
+  <!-- ═════════ TAB: Logs ═════════ -->
+  <div id="pane-logs" class="hidden">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="zion-panel p-5"><div class="flex items-center justify-between mb-2"><h3 class="zion-kicker">Node 1</h3><button onclick="loadLogs('node1')" class="text-xs text-gray-400 hover:text-white">🔄</button></div><pre id="log-node1" class="log-tail bg-black/40 rounded-xl p-3 h-72 overflow-auto text-gray-300"></pre></div>
+      <div class="zion-panel p-5"><div class="flex items-center justify-between mb-2"><h3 class="zion-kicker">Node 2</h3><button onclick="loadLogs('node2')" class="text-xs text-gray-400 hover:text-white">🔄</button></div><pre id="log-node2" class="log-tail bg-black/40 rounded-xl p-3 h-72 overflow-auto text-gray-300"></pre></div>
+      <div class="zion-panel p-5"><div class="flex items-center justify-between mb-2"><h3 class="zion-kicker">Pool</h3><button onclick="loadLogs('pool')" class="text-xs text-gray-400 hover:text-white">🔄</button></div><pre id="log-pool" class="log-tail bg-black/40 rounded-xl p-3 h-72 overflow-auto text-gray-300"></pre></div>
+      <div class="zion-panel p-5"><div class="flex items-center justify-between mb-2"><h3 class="zion-kicker">Miner</h3><button onclick="loadLogs('miner')" class="text-xs text-gray-400 hover:text-white">🔄</button></div><pre id="log-miner" class="log-tail bg-black/40 rounded-xl p-3 h-72 overflow-auto text-gray-300"></pre></div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="text-center text-xs text-gray-600 pt-8 pb-4">
+    <hr class="zion-divider mb-4">
+    <span class="text-gradient font-semibold">ZION TerraNova V3</span> · Mainnet Command Center · Zero-dep Python stdlib server
+    <span class="text-gray-500"> · </span>
+    <a href="../MAINNETREADYrun.md" target="_blank" class="text-zion-gold hover:underline">Runbook</a>
+    <span class="text-gray-500"> · </span>
+    <a href="../V3/docs/MAINNET_CONSTANTS.md" target="_blank" class="text-zion-gold hover:underline">Constants</a>
+    <span class="text-gray-500"> · </span>
+    <a href="../MainnetLaunch.md" target="_blank" class="text-zion-gold hover:underline">Playbook</a>
+    <div class="mt-2 italic">"In code we trust. 144 billion ZION. Not one satoshi more."</div>
+  </footer>
+</div>
+
+<script src="/dashboard.js"></script>
+</body>
+</html>
