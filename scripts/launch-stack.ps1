@@ -18,6 +18,9 @@ foreach ($n in $names) {
 }
 Start-Sleep -Seconds 2
 
+$DataDir = "C:\Users\yosef\Desktop\Zion\2.9.6-main\V3\data"
+New-Item -ItemType Directory -Path $DataDir -Force | Out-Null
+
 $nodeExe = "C:\Users\yosef\Desktop\Zion\2.9.6-main\V3\target\release\node.exe"
 $poolExe = "C:\Users\yosef\Desktop\Zion\2.9.6-main\V3\target\release\server.exe"
 $minerExe = "C:\Users\yosef\Desktop\Zion\2.9.6-main\V3\target\release\zion-miner.exe"
@@ -26,7 +29,7 @@ $minerExe = "C:\Users\yosef\Desktop\Zion\2.9.6-main\V3\target\release\zion-miner
 $env:ZION_NODE_ID='w11-native-node'
 $env:ZION_P2P_BIND='0.0.0.0:8333'
 $env:ZION_RPC_BIND='0.0.0.0:8443'
-$env:ZION_NODE_STATE_PATH='C:\Users\yosef\AppData\Local\Temp\zion-node-state.db'
+$env:ZION_NODE_STATE_PATH="$DataDir\zion-node-state.db"
 $env:ZION_SEED_PEERS='none'
 $env:ZION_MINER_ADDRESS='zion1e2z646u403s6c7k8m6m8m4q0a6r2a5h5j8534d8'
 $env:ZION_HUMANITARIAN_WALLET='zion1t4w447d7k4c600h3x893m5r55645w4p057yf4d7'
@@ -41,7 +44,7 @@ Start-Sleep -Seconds 3
 $env:ZION_NODE_ID='w11-native-node2'
 $env:ZION_P2P_BIND='0.0.0.0:8334'
 $env:ZION_RPC_BIND='0.0.0.0:8446'
-$env:ZION_NODE_STATE_PATH='C:\Users\yosef\AppData\Local\Temp\zion-node2-state.db'
+$env:ZION_NODE_STATE_PATH="$DataDir\zion-node2-state.db"
 $env:ZION_SEED_PEERS='127.0.0.1:8333'
 $env:ZION_MINER_ADDRESS='zion1e2z646u403s6c7k8m6m8m4q0a6r2a5h5j8534d8'
 $env:ZION_HUMANITARIAN_WALLET='zion1t4w447d7k4c600h3x893m5r55645w4p057yf4d7'

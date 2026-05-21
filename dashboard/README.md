@@ -10,6 +10,7 @@ A **zero-dependency**, autonomous, intuitive **command center** for the entire Z
 - **🧱 Genesis & Premine tab** — Canonical on-chain data: 144B supply, 16.28B premine (12 outputs), Decade Decay, fee split 89/5/5/1
 - **🔥 P0 Blockers tab** — 10 launch blockers with severity, owner, deadline, status; `ready_for_launch` boolean
 - **🚀 Launch reliability** — `launch-stack` and `launch-full` automatically stop existing node/server/miner processes before starting new ones so ports are never blocked
+- **💾 Backup & Recovery** — One-click ZIP backup of chain state (V3/data/ including LMDB), restore with emergency rollback, delete old backups, verify JSON/LMDB integrity
 - **👁️ UI visibility fixes** — `switchTab('overview')` on startup; stronger panel/button contrast (removed glassmorphism orbs that caused transparency bugs)
 - **📊 Auto-refresh** — 3s polling with toast feedback; launch actions show "may take ~15s" hint and auto-refresh Overview after 12s
 
@@ -64,6 +65,11 @@ A **zero-dependency**, autonomous, intuitive **command center** for the entire Z
 | `/api/genesis` | GET | Constants + premine outputs (12) |
 | `/api/blockers` | GET | P0 launch blockers + `ready_for_launch` |
 | `/api/install/log` | GET | Live install-deps build log |
+| `/api/backup/list` | GET | List backup ZIPs with size and date |
+| `/api/backup/create` | POST | Create backup (opt: includeLogs, includeEnv, name) |
+| `/api/backup/restore` | POST | Restore from backup (stops services, emergency rollback) |
+| `/api/backup/delete` | POST | Delete a backup ZIP |
+| `/api/backup/verify` | GET | Run verify-chain integrity check |
 
 ## Control Actions (whitelisted)
 
@@ -78,6 +84,8 @@ start-pool
 start-miner / restart-miner
 open-terminal      — Open 4 visible PowerShell windows tailing all logs
 install-deps       — Check Rust, cargo, npm, Docker; build V3 release
+backup-chain       — ZIP backup of V3/data (chain state + LMDB)
+verify-chain       — Verify snapshot JSON, journal, and LMDB integrity
 start-monitoring   — Prometheus + Grafana via Docker
 stop-monitoring
 start-prometheus / start-grafana  (alias to start-monitoring)
@@ -173,6 +181,9 @@ dashboard/app.py (~1600 LOC)
 | Services tab shows everything DOWN | Click "🚀 Launch ALL" in Controls tab or Services tab header |
 | Launch button seems stuck / no new processes | Existing processes are stopped automatically before restart; wait ~15s then check Overview |
 | Log windows stay open forever | They auto-close after 5 min of inactivity; close manually if needed |
+| Backup shows 0 MB | Node has not run yet; V3/data/ is empty until first node start |
+| Restore says backup not found | Use the exact filename including `.zip`; list refreshes automatically |
+| Chain state verification fails | Stop all services, run verify again; if still failing, restore from last backup |
 | Grafana iframe blank | Click "▶ Start Monitoring" — Docker must be running |
 | SQLite DBs show "Not yet created" | They're created on first run of the L2/L3 services |
 | Slow first probe | Initial probe takes ~2s; subsequent are cached 5s |
