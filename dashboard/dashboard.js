@@ -1,6 +1,6 @@
 'use strict';
 
-const TABS = ['overview','services','genesis','blockers','controls','charts','events','env','database','metrics','wizard','logs'];
+const TABS = ['overview','services','l1','l2','l3','l4','genesis','blockers','controls','charts','events','env','database','metrics','wizard','logs'];
 let autoRefresh = true, refreshTimer = null, currentTab = 'overview';
 let charts = {};
 let friendlyMode = false;
@@ -60,6 +60,7 @@ function switchTab(name){
   if(name === 'metrics') renderMetricsButtons();
   if(name === 'genesis') loadGenesis();
   if(name === 'blockers') loadBlockers();
+  if(name === 'l1' || name === 'l2' || name === 'l3' || name === 'l4') loadLayer(name);
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -642,6 +643,66 @@ function applyFriendlyMode(){
   const btn = document.getElementById('friendlyBtn');
   if(!btn) return;
   btn.textContent = friendlyMode ? '🧑‍💻 Pro Mode' : '🧒 Kid Mode';
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Layer tabs (L1, L2, L3, L4)
+// ─────────────────────────────────────────────────────────────────────
+
+async function loadLayer(layer){
+  const grid = document.getElementById('layer-' + layer + '-grid');
+  if(!grid) return;
+  grid.innerHTML = '<div class="text-gray-500 italic col-span-2">Loading ' + layer.toUpperCase() + ' services…</div>';
+  try {
+    const data = await fetch('/api/layer/' + layer).then(r => r.json());
+    if(!data.services || data.services.length === 0){
+      grid.innerHTML = '<div class="text-gray-500 italic col-span-2">No services found for ' + layer.toUpperCase() + '.</div>';
+      return;
+    }
+    grid.innerHTML = data.services.map(s => {
+      const aliveClass = s.alive ? 'border-emerald-600 bg-emerald-900/15' : 'border-red-600 bg-red-900/15';
+      const aliveText = s.alive ? '✓ Live' : '✗ Down';
+      const dbSection = s.databases && s.databases.length > 0
+        ? s.databases.map(db => {
+            const sz = db.size ? (db.size > 1024*1024 ? (db.size/(1024*1024)).toFixed(1)+' MB' : (db.size/1024).toFixed(0)+' KB') : '0 B';
+            return '<div class="text-[10px] text-gray-400">DB: ' + escapeHtml(db.name) + ' (' + sz + ') ' + (db.available ? '✓' : '✗') + '</div>';
+          }).join('')
+        : '<div class="text-[10px] text-gray-500">No DB</div>';
+      const logPreview = s.log_tail && s.log_tail.length > 0
+        ? '<div class="mt-2 bg-black/30 rounded p-2 max-h-24 overflow-y-auto font-mono text-[10px] text-gray-400">' + s.log_tail.slice(-5).map(l => '<div>' + escapeHtml(l) + '</div>').join('') + '</div>'
+        : '<div class="mt-2 text-[10px] text-gray-500 italic">No log data</div>';
+      const metricsBadge = s.has_metrics
+        ? '<span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-900/30 text-amber-300">Metrics: ' + s.metrics_count + '</span>'
+        : '<span class="text-[10px] px-1.5 py-0.5 rounded bg-gray-800 text-gray-500">No metrics</span>';
+      const ports = s.ports_open && s.ports_open.length > 0
+        ? '<div class="text-[10px] text-emerald-400">Ports: ' + s.ports_open.join(', ') + '</div>'
+        : (s.ports_closed && s.ports_closed.length > 0 ? '<div class="text-[10px] text-red-400">Closed: ' + s.ports_closed.join(', ') + '</div>' : '');
+      return `
+        <div class="zion-panel p-4 border ${aliveClass}">
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-2">
+              <span class="text-xl">${s.icon}</span>
+              <div>
+                <div class="font-bold text-sm">${escapeHtml(s.name)}</div>
+                <div class="text-[10px] text-gray-400">${escapeHtml(s.kind)} · ${escapeHtml(s.id)}</div>
+              </div>
+            </div>
+            <span class="text-[10px] px-2 py-0.5 rounded-full ${s.alive ? 'bg-emerald-700 text-emerald-300' : 'bg-red-700 text-red-300'}">${aliveText}</span>
+          </div>
+          <div class="text-xs text-gray-300 mb-2">${escapeHtml(s.purpose)}</div>
+          <div class="flex flex-wrap gap-1 mb-2">
+            ${metricsBadge}
+            ${s.depends_on && s.depends_on.length > 0 ? '<span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-900/30 text-blue-300">Depends: ' + s.depends_on.join(', ') + '</span>' : ''}
+          </div>
+          ${ports}
+          ${dbSection}
+          ${logPreview}
+        </div>
+      `;
+    }).join('');
+  } catch(e) {
+    grid.innerHTML = '<div class="text-red-400 italic col-span-2">Failed to load ' + layer.toUpperCase() + ': ' + escapeHtml(e.message) + '</div>';
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────
