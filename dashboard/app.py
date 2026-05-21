@@ -141,6 +141,22 @@ SERVICE_REGISTRY = [
      "child_says": "🪷 A garden where your ZION avatar lives and helps the world!",
      "depends_on": ["node1"]},
 
+    # ── L5: Free World Humanitarian ──────────────────────────────────────
+    {"id": "free-world", "name": "Free World Humanitarian", "icon": "🕊️", "level": "L5", "kind": "humanitarian",
+     "ports": {"api": 8095},
+     "log": "free-world.log", "start": None, "stop": None,
+     "purpose": "Humanitarian aid coordination — mesh networks, medical tables, community DAOs.",
+     "child_says": "🕊️ Helps people in need through decentralized aid and community support!",
+     "depends_on": ["node1"]},
+
+    # ── L6: Issobella Space ──────────────────────────────────────────────
+    {"id": "issobella", "name": "Issobella Space Layer", "icon": "🚀", "level": "L6", "kind": "space",
+     "ports": {"api": 8096},
+     "log": "issobella.log", "start": None, "stop": None,
+     "purpose": "Space infrastructure coordination — satellite relay, off-world settlements, orbital DAOs.",
+     "child_says": "🚀 Takes ZION beyond Earth — to the stars and beyond!",
+     "depends_on": ["node1"]},
+
     # ── Infrastructure ───────────────────────────────────────────────────
     {"id": "prometheus", "name": "Prometheus", "icon": "📊", "level": "Infra", "kind": "metrics",
      "ports": {"web": 9090},
@@ -1790,7 +1806,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json({"result": res, "log": log_lines})
         elif route.startswith("/api/layer/"):
             layer = route.split("/")[-1].upper()
-            layer_map = {"L1": "L1", "L2": "L2", "L3": "L3", "L4": "L4"}
+            layer_map = {"L1": "L1", "L2": "L2", "L3": "L3", "L4": "L4", "L5": "L5", "L6": "L6"}
             layer = layer_map.get(layer, layer)
             services = [s for s in SERVICE_REGISTRY if s.get("level") == layer]
             db_list = list_databases()
