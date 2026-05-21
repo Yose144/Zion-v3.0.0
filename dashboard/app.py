@@ -722,6 +722,168 @@ def load_env_file(name: str) -> dict:
     missing = sorted(REQUIRED - keys_present)
     return {"file": name, "vars": variables, "missing_required": missing, "total": len(variables)}
 
+# ── Wallet discovery & RPC balance lookup ──────────────────────────────
+
+def rpc_call(host: str, port: int, method: str, params: dict, timeout: float = 2.0) -> dict:
+    """Simple TCP JSON-RPC call to ZION node. Returns result dict or None on failure."""
+    try:
+        payload = json.dumps({"jsonrpc": "2.0", "id": 1, "method": method, "params": params}) + "\n"
+        with socket.create_connection((host, port), timeout=timeout) as sock:
+            sock.sendall(payload.encode("utf-8"))
+            sock.settimeout(timeout)
+            data = b""
+            while True:
+                try:
+                    chunk = sock.recv(4096)
+                    if not chunk:
+                        break
+                    data += chunk
+                    if b"\n" in data:
+                        break
+                except socket.timeout:
+                    break
+        for line in data.decode("utf-8", errors="ignore").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                resp = json.loads(line)
+                if "result" in resp:
+                    return resp["result"]
+                if "error" in resp and resp["error"]:
+                    return {"_rpc_error": resp["error"]}
+            except json.JSONDecodeError:
+                continue
+        return None
+    except Exception:
+        return None
+
+def parse_premine_addresses() -> list:
+    """Parse PREMINE_ADDRESSES_PUBLIC.txt for canonical premine wallet list."""
+    path = REPO_ROOT / "PREMINE_ADDRESSES_PUBLIC.txt"
+    wallets = []
+    if not path.exists():
+        return wallets
+    try:
+        with open(path, "r", encoding="utf-8", errors="ignore") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                # Format: 1  zion1zz-ILOBeL9pBhE3fBw0RpIYu4Jo    OASIS_Winner_1       1,650,000,000
+                m = re.match(r'^\s*(\d+)\s+(\S+)\s+(\S+)\s+([0-9,]+)', line)
+                if m:
+                    amount_str = m.group(4).replace(",", "")
+                    wallets.append({
+                        "index": int(m.group(1)),
+                        "address": m.group(2),
+                        "label": m.group(3).replace("_", " "),
+                        "amount_zion": int(amount_str) if amount_str.isdigit() else 0,
+                        "source": "premine",
+                        "category": "premine",
+                    })
+    except Exception:
+        pass
+    return wallets
+
+def build_wallets() -> dict:
+    """Collect all known wallets: premine, operational (env), miner (toml)."""
+    wallets = []
+
+    # 1. Premine wallets from canonical public file
+    premine = parse_premine_addresses()
+    for w in premine:
+        wallets.append(w)
+
+    # 2. Operational wallets from environment / .env files
+    env_vars = {
+        "ZION_MINER_ADDRESS": "Miner Payout",
+        "ZION_HUMANITARIAN_WALLET": "Humanitarian Tithe",
+        "ZION_ISSOBELLA_WALLET": "Issobella Fund",
+        "ZION_POOL_FEE_WALLET": "Pool Fee Recipient",
+        "ZION_POOL_WALLET": "Pool Operational",
+    }
+    for var, label in env_vars.items():
+        val = os.environ.get(var)
+        if not val:
+            continue
+        val = val.strip().strip('"').strip("'")
+        if val and not val.startswith("$") and len(val) > 10:
+            if not any(w["address"] == val for w in wallets):
+                wallets.append({
+                    "address": val,
+                    "label": label,
+                    "source": "env",
+                    "category": "operational",
+                })
+
+    # 3. Miner wallet from zion.toml
+    toml_path = REPO_ROOT / "zion.toml"
+    if toml_path.exists():
+        try:
+            with open(toml_path, "r", encoding="utf-8", errors="ignore") as f:
+                for line in f:
+                    line = line.strip()
+                    if line.startswith("#"):
+                        continue
+                    if m := re.search(r'wallet\s*=\s*["\']?([^"\'\s#]+)', line):
+                        addr = m.group(1).strip()
+                        if addr and not any(w["address"] == addr for w in wallets):
+                            wallets.append({
+                                "address": addr,
+                                "label": "Miner Wallet (zion.toml)",
+                                "source": "zion.toml",
+                                "category": "operational",
+                            })
+                        break
+        except Exception:
+            pass
+
+    # 4. Try to enrich with live balances from Node 1 RPC
+    rpc_host = "127.0.0.1"
+    rpc_port = 8443
+    rpc_addr = os.environ.get("ZION_NODE_RPC_ADDR", "")
+    if rpc_addr and ":" in rpc_addr:
+        try:
+            rpc_host, rpc_port_str = rpc_addr.rsplit(":", 1)
+            rpc_port = int(rpc_port_str)
+        except Exception:
+            pass
+    elif rpc_addr:
+        rpc_host = rpc_addr
+
+    for w in wallets:
+        addr = w.get("address", "")
+        if addr and addr.startswith("zion1"):
+            bal = rpc_call(rpc_host, rpc_port, "getBalance", {"address": addr})
+            if bal and not bal.get("_rpc_error"):
+                atomic = bal.get("balance_flowers") or bal.get("balance_atomic") or 0
+                w["balance_zion"] = bal.get("balance_zion") if isinstance(bal.get("balance_zion"), (int, float)) else atomic / 1_000_000_000_000
+                w["balance_atomic"] = atomic
+                w["rpc_ok"] = True
+            else:
+                w["balance_zion"] = None
+                w["balance_atomic"] = None
+                w["rpc_ok"] = False
+        else:
+            w["balance_zion"] = None
+            w["balance_atomic"] = None
+            w["rpc_ok"] = False
+
+    total_premine = sum(w.get("amount_zion", 0) for w in wallets if w.get("source") == "premine")
+    with_balance = [w for w in wallets if w.get("balance_zion") is not None]
+    return {
+        "wallets": wallets,
+        "summary": {
+            "total_wallets": len(wallets),
+            "premine_wallets": len(premine),
+            "operational_wallets": len([w for w in wallets if w.get("source") != "premine"]),
+            "with_live_balance": len(with_balance),
+            "total_premine_zion": total_premine,
+        },
+        "rpc": {"host": rpc_host, "port": rpc_port, "reachable": len(with_balance) > 0},
+    }
+
 # ── Mainnet constants & genesis (from V3/L1/core/src/{emission,genesis,fee}.rs) ──
 
 MAINNET_CONSTANTS = {
@@ -1763,6 +1925,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 "done": sum(1 for b in blockers if b["status"] == "DONE"),
                 "ready_for_launch": open_critical == 0,
             })
+        elif route == "/api/wallets":
+            self._json(build_wallets())
         elif route.startswith("/api/metrics/"):
             sid = route.split("/")[-1]
             self._json(scrape_metrics(sid))
