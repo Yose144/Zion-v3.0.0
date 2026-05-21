@@ -108,6 +108,7 @@ async function refreshAll(){
     updateChecklist(cl.checks);
     updatePayouts(s.pool);
     updateMiniHashrate();
+    loadCliNodeStatus();
 
     if(currentTab === 'charts') renderCharts();
     if(currentTab === 'events') loadEvents();
@@ -215,6 +216,34 @@ async function updateMiniHashrate(){
     const avg = valid.reduce((a, b) => a + b, 0) / valid.length;
     const max = Math.max(...valid);
     document.getElementById('hashrate-summary').textContent = 'avg ' + avg.toFixed(2) + ' / peak ' + max.toFixed(2) + ' KH/s';
+  }
+}
+
+async function loadCliNodeStatus(){
+  try {
+    const data = await fetch('/api/cli/node-status').then(r => r.json());
+    const badge = document.getElementById('cli-status-badge');
+    if(!badge) return;
+    if(data.ok && data.cli_connected){
+      badge.className = 'text-xs px-2 py-0.5 rounded-md bg-emerald-700 text-emerald-300';
+      badge.textContent = 'Connected';
+      // Try to parse output
+      const out = data.output || '';
+      const height = out.match(/Height\s+(\d+)/); 
+      const peers = out.match(/Peers\s+(\d+)/);
+      const mempool = out.match(/Mempool\s+(\d+)/);
+      const tip = out.match(/Tip\s+([a-f0-9]{8,})/i);
+      if(height) document.getElementById('cli-val-height').textContent = height[1];
+      if(peers) document.getElementById('cli-val-peers').textContent = peers[1];
+      if(mempool) document.getElementById('cli-val-mempool').textContent = mempool[1];
+      if(tip) document.getElementById('cli-val-tip').textContent = tip[1].substring(0,16) + '…';
+    } else {
+      badge.className = 'text-xs px-2 py-0.5 rounded-md bg-gray-700 text-gray-400';
+      badge.textContent = 'Unavailable';
+    }
+  } catch(e) {
+    const badge = document.getElementById('cli-status-badge');
+    if(badge){ badge.className = 'text-xs px-2 py-0.5 rounded-md bg-gray-700 text-gray-400'; badge.textContent = 'Error'; }
   }
 }
 
@@ -406,6 +435,56 @@ async function controlAction(action){
   } catch(e) {
     if(log) log.insertAdjacentHTML('afterbegin', '<div class="text-red-400">[' + ts + '] ✗ ' + e.message + '</div>');
     toast('Error: ' + e.message, 'error');
+  }
+}
+
+// ── CLI Console ──
+async function runCliCommand(){
+  const input = document.getElementById('cli-input');
+  const output = document.getElementById('cli-output');
+  const cmd = input.value.trim();
+  if(!cmd) return;
+  output.innerHTML = '<div class="text-zion-gold text-xs">Running: zion ' + escapeHtml(cmd) + '…</div>';
+  try {
+    const res = await fetch('/api/cli/run', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({cmd})
+    }).then(r => r.json());
+    if(res.ok){
+      let out = '';
+      if(res.stdout) out += '<pre class="text-gray-300 whitespace-pre-wrap">' + escapeHtml(res.stdout) + '</pre>';
+      if(res.stderr) out += '<pre class="text-red-400 whitespace-pre-wrap mt-1">' + escapeHtml(res.stderr) + '</pre>';
+      if(!res.stdout && !res.stderr) out = '<div class="text-gray-500 italic">No output.</div>';
+      output.innerHTML = '<div class="text-emerald-400 text-xs mb-1">✓ zion ' + escapeHtml(cmd) + ' (exit ' + (res.exit_code ?? '?') + ')</div>' + out;
+    } else {
+      output.innerHTML = '<div class="text-red-400 text-xs">✗ ' + escapeHtml(res.error || 'failed') + '</div>';
+    }
+  } catch(e) {
+    output.innerHTML = '<div class="text-red-400 text-xs">✗ ' + escapeHtml(e.message) + '</div>';
+  }
+}
+function runCliQuick(cmd){
+  document.getElementById('cli-input').value = cmd;
+  runCliCommand();
+}
+
+async function runCoreUtil(cmd){
+  const log = document.getElementById('backup-log');
+  const db = 'V3/data/zion-node-state.db';
+  if(log) log.insertAdjacentHTML('afterbegin', '<div class="text-zion-gold text-xs">Running core-util ' + cmd + '…</div>');
+  try {
+    const res = await fetch('/api/cli/core-util', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({cmd, db})
+    }).then(r => r.json());
+    const msg = res.ok ? '<div class="text-emerald-400 text-xs">✓ core-util ' + cmd + '</div>' : '<div class="text-red-400 text-xs">✗ ' + escapeHtml(res.error || 'failed') + '</div>';
+    if(log) log.insertAdjacentHTML('afterbegin', msg + '<pre class="text-[10px] text-gray-400 mt-1 whitespace-pre-wrap">' + escapeHtml(res.stdout || res.output || '') + '</pre>');
+    toast(res.ok ? 'core-util ' + cmd + ' done' : 'core-util failed: ' + (res.error || ''), res.ok ? 'success' : 'error');
+  } catch(e) {
+    if(log) log.insertAdjacentHTML('afterbegin', '<div class="text-red-400 text-xs">✗ ' + e.message + '</div>');
+    toast('core-util error: ' + e.message, 'error');
   }
 }
 
