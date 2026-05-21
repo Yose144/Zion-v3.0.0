@@ -1,243 +1,423 @@
-# Mainnet V3 — servery a kompletní nasazení
+# ZION Mainnet V3 — Infrastructure & Launch Plan
 
-Poslední úprava: 2026-05 (greenfield řetězec od genesis — viz `StatusV3.md`).  
-Projektová dokumentace: [`V3/docker/DOCKER.md`](V3/docker/DOCKER.md), [`V3/docker/HARDENING.md`](V3/docker/HARDENING.md), [`V3/docs/MAINNET_DEPLOY_RUNBOOK.md`](V3/docs/MAINNET_DEPLOY_RUNBOOK.md), [`V3/docs/operational/AUDIT_CLOSEOUT_1_THROUGH_6.md`](V3/docs/operational/AUDIT_CLOSEOUT_1_THROUGH_6.md).
-
----
-
-## Tabulka flotily (aktuální)
-
-| Role          | Lokace    | IPv4               | Poznámka                                         |
-|---------------|-----------|-------------------|--------------------------------------------------|
-| Koordinátor   | Helsinki  | `204.168.245.175` | Main — první uzel (`ZION_SEED_PEERS` **prázdné**); typicky node + pool + vnější miner |
-| Node 1        | Singapur  | `5.223.62.255`    | Follower — seed jen na Helsinki `204.168.245.175:8333` |
-| Node 2        | USA       | `5.78.197.254`    | Follower — seed jen na Helsinki `204.168.245.175:8333` |
-
-SSH: jeden klíč v `~/.ssh` na všech hostech (uživatel dle systévu, níže **`root`** jako příklad).
-
-Export pro skripty:
-
-```bash
-export COORD="204.168.245.175"
-export N1="5.223.62.255"
-export N2="5.78.197.254"
-export NODES="${COORD} ${N1} ${N2}"
-export SEED="${COORD}:8333"
-```
+Poslední úprava: 2026-05-21  
+Architektura: **Core (lokální PC) + Edge Relay (VPS)** — vše ostatní vyřazeno.
 
 ---
 
-## Automatizovaný bootstrap (Praha = šablona `.env`, kód z lokálního `V3/`)
+## Flotila (aktuální)
 
-Na **prod operátorském počítači** (kde máš checkout tohoto repa a SSH klíč):
+| Role | Lokace | IPv4 | Tailscale | Služby |
+|------|--------|------|-----------|--------|
+| **Core** | ZionServer (local) | — | `100.86.102.5` | Node 1, Node 2, Pool (master), Miner, Dashboard, Zálohy |
+| **Edge** | MainnetEdge (Hetzner) | `77.42.71.94` | `100.66.162.125` | Node 1 (relay), Pool (relay), P2P inbound |
+
+Všechny ostatní servery (Helsinki, Singapore, USA, Praha) byly vyřazeny. Flotila je zredukovaná na **Core + Edge** s Tailscale VPN tunelem.
+
+### SSH přístup
 
 ```bash
-export ZION_SSH_USER=root
-export ZION_SSH_IDENTITY="${HOME}/.ssh/zion_hetzner_key"
-export ZION_TEMPLATE_HOST=91.98.122.165          # Praha — jen docker/.env (pool SK, miner wallet)
-export ZION_TARGET_HOST="${COORD}"
-export ZION_FLEET_ROLE=coordinator                # follower: nastav též ZION_COORD_P2P="${COORD}:8333"
-./V3/scripts/fleet-mainnet-remote-bootstrap.sh
+# Edge server (přes SSH klíč vygenerovaný pro tento projekt)
+ssh -i ~/.ssh/ssh-key-zion-edge root@77.42.71.94
+
+# Nebo přes alias (přidej do ~/.ssh/config):
+# Host zion-edge
+#     HostName 77.42.71.94
+#     User root
+#     IdentityFile ~/.ssh/ssh-key-zion-edge
+#     IdentitiesOnly yes
 ```
 
-Skript: [`V3/scripts/fleet-mainnet-remote-bootstrap.sh`](V3/scripts/fleet-mainnet-remote-bootstrap.sh) — nainstaluje Docker na cíli (pokud chybí), **rsync** lokálního `V3/` na **`/root/zion-v3-fleet/V3`**, složí `docker/.env` z [`V3/docker/.env.example`](V3/docker/.env.example) + hodnot z **`/root/zion-2.9.6/docker/.env`** na Praze (`MINER_WALLET` → `ZION_MINER_ADDRESS`), nastaví `ZION_SEED_PEERS`, provede **`docker compose -f docker-compose.v3-mainnet.yml down -v`** (greenfield volumy), **`up -d --build`**, kontrola `/health` a `getChainInfo`.
+### Tailscale síť
 
-**Firewall na cílovém VPS po skriptu:** nezapomeň otevřít **8333/tcp** (P2P) a zvenku **8444/tcp** (pool pro minery), pokud to `ufw`/security group blokuje — skript síť nekonfiguruje.
-
-**Odlišnost od Pražského compose:** aktivní VPS v Praze běží **vlastní** starší stack (`docker-compose.v3-mainnet.yml` pod `/root/zion-2.9.6/docker` s **pool port 3333** a `network_mode: host`). Kanonické soubory v **tomto** repu mapují stratum na **8444** a RPC jen **127.0.0.1:8443**. Minery a externí tooling pro nový Helsinki mainnet používej proti **`204.168.245.175:8444`** (ne 3333).
-
-**Followři (Singapore / USA):**
+| Uzel | Tailscale IP | Popis |
+|------|-------------|-------|
+| Core (ZionServer) | `100.86.102.5` | Lokální PC, zdroj pravdy, zálohy |
+| Edge (MainnetEdge) | `100.66.162.125` | Veřejný relay, přijímá inbound z internetu |
 
 ```bash
-export ZION_TARGET_HOST="${N1}"   # nebo N2
-export ZION_FLEET_ROLE=follower
-export ZION_COORD_P2P="${COORD}:8333"
-./V3/scripts/fleet-mainnet-remote-bootstrap.sh
+# Ověření konektivity z Core na Edge
+tailscale ping 100.66.162.125
+# Ověření z Edge na Core
+tailscale ping 100.86.102.5
 ```
 
 ---
 
-## Start pomalu — fáze 0 (řekni si „dnes jen příprava“)
+## Topologie Core + Edge
 
-Cíl: na **Helsinkách** mít SSH + Docker + naklonované repo a `.env` rozumně vyplněné — **ještě bez** followerů, nebo je nech vypnuté, dokud koordinátor neprošel healthcheckem.
-
-| Krok | Co udělat |
-|------|-----------|
-| 0a | **SSH host key:** při novém VPS smaž staré záznamy v `~/.ssh/known_hosts` (jinak `WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED`). Bezpečně: `ssh-keygen -R <IP>` pro `COORD`, `N1`, `N2`. Otisk nového klíče ověř u providera, pak první přihlášení ručně (`ssh root@…`). |
-| 0b | **Čistý řetězec:** rozhodni, jestli na koordinátorovi **vyhazuješ starý datadir / volume** (`zion-node-data` apod.) — u greenfield Mainnet V3 ano, pokud tam nebyla už jen tato verze. |
-| 0c | **Docker:** na každém hostovi nainstalovat Engine + Compose v2 (např. [get.docker.com](https://get.docker.com) nebo balíčky z distro). Bez toho compose z `Servers.md` nepoběží. |
-| 0d | **Repo + pin:** stejný git **commit** na všech třech strojích (`git rev-parse HEAD` musí sedět). Lokálně měj alespoň jeden **pushnutý** bod na `origin`, ať se na servery dá `git pull`. |
-| 0e | **Jen Helsinki první:** `ZION_SEED_PEERS=` prázdné, `docker compose … up` (node / nebo celý mainnet stack dle plánu). Až `getChainInfo` a logy vypadají zdravě, přidej **Singapore** a **USA** se seedem na `204.168.245.175:8333`. |
-
-**Rychlý test z notebooku po 0a:** `ssh -o ConnectTimeout=10 root@${COORD} 'hostname && docker --version'` — očekáveš jméno stroje a číslo verze Dockeru (ne `no_docker`).
+```
+                            INTERNET
+                               │
+              ┌────────────────┼────────────────┐
+              │                │                │
+         Ext. Miner #1    Ext. Miner #2    Ext. Node #3
+              │                │                │
+              └────────────┬───┘                │
+                           │                    │
+                  tcp://77.42.71.94:8333 ───────┘
+                           │
+              ┌────────────▼────────────┐
+              │      EDGE (VPS)         │
+              │  P2P: 0.0.0.0:8333      │  ← Veřejný relay
+              │  Pool: 0.0.0.0:8444     │  ← Veřejný stratum
+              │  VPN: 100.66.162.125    │
+              └────────────┬────────────┘
+                           │ Tailscale (WireGuard)
+              ┌────────────▼────────────┐
+              │      CORE (PC)          │
+              │  Node 1: 0.0.0.0:8333   │  ← Zdroj pravdy
+              │  Node 2: 0.0.0.0:8334   │  ← Lokální follower
+              │  Pool: 127.0.0.1:8444   │  ← Master PPLNS
+              │  RPC: 127.0.0.1:8443    │
+              │  Dashboard: 127.0.0.1:8765│
+              │  VPN: 100.86.102.5      │
+              │  Zálohy: V3/data/       │
+              └────────────┬────────────┘
+                           │
+                    ┌──────┴──────┐
+                    │  GPU Miner   │
+                    │  127.0.0.1   │
+                    └──────────────┘
+```
 
 ---
 
-## Předpoklady (všechny hosty)
+## Parametry Edge serveru (77.42.71.94)
 
-1. **Docker + Docker Compose** v2 (stack běží v kontejnerech dle [`V3/docker/docker-compose.yml`](V3/docker/docker-compose.yml)).
-2. **Firewall**
-   - **8333/tcp** ven (P2P) — všude, kde má být plnohodnotný uzel.
-   - **8443** (RPC) — ideálně jen **localhost**/VPN/firewall na allowlist; neexponovat veřejně bez nutnosti.
-   - **8444/tcp** jen tam, kde běží **pool** směrem k minerům (typicky Helsinki).
-   - Detailní pravidla: [`V3/docker/HARDENING.md`](V3/docker/HARDENING.md).
-3. **Kód / images:** build z **`main`**, artefakt **bez** feature `testnet_fork_rehearsal` (produkční konsensus od výšky **0**).
-4. **Datadir nový řetězec:** při prvním greenfield greenlight smazat / nepoužívat stará data z před‑V3 nebo XOR řetězce — viz `AUDIT_CLOSEOUT` §2 a §7.
+### Hardware
+
+| Parametr | Hodnota |
+|----------|---------|
+| Provider | Hetzner Cloud |
+| Lokace | Německo (hel) |
+| Image | Ubuntu 26.04 |
+| vCPU | 2 |
+| RAM | 4 GB |
+| Disk | 80 GB NVMe |
+| Veřejná IP | `77.42.71.94` |
+| Tailscale IP | `100.66.162.125` |
+| SSH klíč | `ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOBW4wUXIVo7dUJ9lkFzfSYyV3JxCOmFNf+ezJMlMpNE` |
+
+### Služby a porty
+
+| Služba | Port | Bind | Popis |
+|--------|------|------|-------|
+| ZION Node P2P | `8333/tcp` | `0.0.0.0` | Veřejný P2P — inbound z internetu |
+| ZION Pool Stratum | `8444/tcp` | `0.0.0.0` | Veřejný pool — externí minery |
+| ZION Node RPC | `8443/tcp` | `127.0.0.1` | Interní RPC (jen localhost) |
+| Tailscale | `41641/udp` | — | VPN tunnel |
+| SSH | `22/tcp` | `0.0.0.0` | Admin přístup (klíč-only) |
+
+### Environment (Edge)
+
+```bash
+# Node
+ZION_NODE_ID=zion-edge-relay
+ZION_P2P_BIND=0.0.0.0:8333
+ZION_RPC_BIND=127.0.0.1:8443
+ZION_SEED_PEERS=100.86.102.5:8333       # Core via Tailscale
+ZION_NODE_STATE_PATH=/root/zion-2.9.6-main/data/edge-state.db
+
+# Pool (relay mode)
+ZION_POOL_BIND=0.0.0.0:8444
+ZION_NODE_RPC_ADDR=127.0.0.1:8443
+ZION_POOL_LOOP_COUNT=1000000
+ZION_MAX_SESSIONS_PER_IP=10
+ZION_NONCE_COUNT=4096
+ZION_VARDIFF_START_DIFF=1
+ZION_VARDIFF_MAX_DIFF=1000000
+ZION_UPSTREAM_POOL_ADDR=100.86.102.5:8444  # ShareRelay → Core
+
+# Pool wallet (Edge vlastní — payouty z Edge poolu)
+ZION_POOL_WALLET=zion1a6z5a4m830w6s6k7r508n300n6z30022q6qt0n7
+ZION_POOL_PAYOUT_SK_HEX=edee1b2904f16b31b7553ea87e783946585c2cbe335a6e200eac60d12410049f
+
+# Fee split (shodné s Core)
+ZION_HUMANITARIAN_WALLET=zion1t4w447d7k4c600h3x893m5r55645w4p057yf4d7
+ZION_ISSOBELLA_WALLET=zion1e4t5a390m2r427a8f3s39885v4f2v6n8u3mj3f5
+ZION_POOL_FEE_WALLET=zion1f3d840y886x6r658j3t0f583j347l2e2h84z402
+```
+
+### Systemd služby
+
+| Služba | Popis | Status |
+|--------|-------|--------|
+| `zion-edge.service` | ZION Node relay | `enabled + running` |
+| `zion-edge-pool.service` | ZION Pool (Edge relay) | `enabled + running` |
+| `tailscaled.service` | Tailscale VPN | `enabled + running` |
+| `ufw.service` | Firewall | `enabled + active` |
+
+```bash
+# Edge server — kontrola
+systemctl status zion-edge zion-edge-pool tailscaled ufw
+journalctl -u zion-edge -f
+journalctl -u zion-edge-pool -f
+```
 
 ---
 
-## Repo na serverech
+## Parametry Core serveru (ZionServer)
 
-Stejná absolutní cesta na všech hostech usnadňuje copy‑paste (`REMOTE_DIR` uprav):
+### Hardware
 
-```bash
-export REMOTE_DIR="/opt/zion/V3"
+| Parametr | Hodnota |
+|----------|---------|
+| Lokace | Lokální PC (Windows 11) |
+| Tailscale IP | `100.86.102.5` |
+| Lokální IP | `192.168.x.x` (NAT, žádná veřejná IP) |
+| GPU | AMD Radeon (OpenCL miner) |
 
-# Doporučeno na každém hostu: git clone + checkout stejného tagu/commitu, pak:
-#   cd ${REMOTE_DIR} && git pull && git checkout <release-tag>
+### Služby a porty
 
-# Nebo nasyncuj celý strom V3/ z lokálního počítače (z kořene repa kde existuje ./V3/):
-rsync -az --delete --exclude target --exclude '**/target' \
-  ./V3/ root@${COORD}:${REMOTE_DIR}/
+| Služba | Port | Bind | Popis |
+|--------|------|------|-------|
+| Node 1 P2P | `8333/tcp` | `0.0.0.0` | P2P (jen lokální síť + Tailscale) |
+| Node 2 P2P | `8334/tcp` | `0.0.0.0` | Follower (jen lokální síť) |
+| Node 1 RPC | `8443/tcp` | `0.0.0.0` | RPC (lokální + Tailscale) |
+| Node 2 RPC | `8446/tcp` | `0.0.0.0` | Follower RPC |
+| Pool Stratum | `8444/tcp` | `0.0.0.0` | Master pool (PPLNS okno) |
+| Dashboard | `8765/tcp` | `127.0.0.1` | Web UI |
+| Metrics Node 2 | `9116/tcp` | `0.0.0.0` | Prometheus metrics |
 
-for h in ${N1} ${N2}; do
-  rsync -az --delete --exclude target --exclude '**/target' \
-    ./V3/ root@${h}:${REMOTE_DIR}/
-done
+### Environment (Core)
+
+```powershell
+# Topology mode
+$env:ZION_TOPOLOGY = 'CORE'
+$env:EDGE_TS_IP = '100.66.162.125'
+
+# Node 1 (Genesis)
+$env:ZION_NODE_ID='w11-native-node'
+$env:ZION_P2P_BIND='0.0.0.0:8333'
+$env:ZION_RPC_BIND='0.0.0.0:8443'
+$env:ZION_SEED_PEERS='100.66.162.125:8333'   # Edge via Tailscale
+
+# Node 2 (Follower)
+$env:ZION_NODE_ID='w11-native-node2'
+$env:ZION_P2P_BIND='0.0.0.0:8334'
+$env:ZION_RPC_BIND='0.0.0.0:8446'
+$env:ZION_METRICS_BIND='0.0.0.0:9116'
+$env:ZION_SEED_PEERS='127.0.0.1:8333'
+
+# Pool (Master)
+$env:ZION_POOL_BIND='0.0.0.0:8444'
+$env:ZION_NODE_RPC_ADDR='127.0.0.1:8443'
+$env:ZION_POOL_LOOP_COUNT='1000000'
+$env:ZION_NONCE_COUNT='4096'
+$env:ZION_VARDIFF_MAX_DIFF='1000000'
+
+# Miner
+$env:ZION_POOL_ADDR='127.0.0.1:8444'
+$env:ZION_LOOP_COUNT='1000000'
+$env:ZION_GPU_BACKEND='opencl'
+$env:ZION_GPU_WORK_SIZE='4096'
 ```
-
-Na serverech drž **stejný git commit/tag** napříč flotilou před ostrým zapnutím P2P.
 
 ---
 
-## Konfigurace prostředí (`.env` v `docker/`)
+## Launch Stack (Core)
 
-Na každém hostě:
-
-```bash
-cd ${REMOTE_DIR}/docker   # např. /opt/zion/V3/docker
-cp .env.example .env
-cp .env.mainnet.example .env.mainnet   # pokud používáš split; jinak doplň do .env
+```powershell
+# Spustí vše: Node1 + Node2 + Pool + Miner
+$env:ZION_TOPOLOGY = 'CORE'
+$env:EDGE_TS_IP = '100.66.162.125'
+powershell -ExecutionPolicy Bypass -File .\scripts\launch-stack.ps1
 ```
 
-**Sdílené (všechny uzly):** `ZION_NODE_ID` unikátní na host (`helsinki-main`, `singapore-1`, `usa-2`), správné **fee split** adresy (`ZION_MINER_ADDRESS`, humanitarian, pool fee…) dle operační dokumentace — ověř uvnitř běžícího kontejneru jako v [`MAINNET_DEPLOY_RUNBOOK.md`](V3/docs/MAINNET_DEPLOY_RUNBOOK.md) §6.
-
-**Koordinátor (Helsinki):**
-
-```env
-ZION_SEED_PEERS=
+Nebo pomocí wrapperu:
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\_launch-core.ps1
 ```
 
-**Followři (Singapore, USA)** — jen jeden koordinující peer, **bez** vlastní veřejné IP v tomto řetězci:
+### Dashboard
 
-```env
-ZION_SEED_PEERS=204.168.245.175:8333
+```powershell
+# Web UI na http://127.0.0.1:8765
+powershell -ExecutionPolicy Bypass -File .\dashboard\start-dashboard.ps1
 ```
-
-Na **žádném** hostu neuváděj ve `ZION_SEED_PEERS` **vlastní** `veřejná_ip:8333`.
-
-Další klíče: porty (`P2P_PORT`, `RPC_PORT`), `POOL_PORT` kde poběží pool — viz [.env.example](V3/docker/.env.example).
 
 ---
 
-## Pořadí spuštění (kritické)
+## Mainnet Launch Plán
 
-1. **Helsinki:** node musí naběhnout jako první a naslouchat P2P.
-2. Až Helsinki hlásí zdravý node (`/health`, log bez fatálních chyb), spusť **Singapore**, pak **USA** (pořadí followerů je pružné, ale až koordinátor žije).
+### Fáze 0: Příprava (nyní)
 
----
+- [x] **SSH klíče**: Vygenerovány a nasazeny na Edge
+- [x] **Tailscale**: Nainstalován na Core i Edge, ověřen ping oběma směry
+- [x] **Edge server**: Ubuntu 26.04, Rust, ZION repo, firewall, systemd služby
+- [x] **Edge binary**: Node + Pool zkompilovány a nasazeny
+- [x] **Edge wallet**: Pool wallet vygenerován (`zion1a6z5a4m830w6s6k7r508n300n6z30022q6qt0n7`)
+- [x] **ShareRelay**: Edge → Core PPLNS synchronizace implementována
+- [x] **Dashboard**: Dual-pool view (Core + Edge)
+- [ ] **Genesis #0**: Ověřit genesis block hash shodu mezi Core a Edge
+- [ ] **Test miner na Edge**: Připojit externího mineru k `77.42.71.94:8444`
+- [ ] **Test block propagation**: Najít block na Core, ověřit relay na Edge
 
-## Compose příkazy
+### Fáze 1: Soft Launch (1–3 dny)
 
-**Koordinátor — plný Mainnet stack (node + pool + vestavěný miner v compose):**
+- [ ] **Lokální miner**: Core miner běží stabilně, hashrate konzistentní
+- [ ] **Edge sync**: Edge node sleduje Core height bez gapů
+- [ ] **Edge pool**: Externí test miner připojen, share relay funguje
+- [ ] **Payout test**: Ověřit payout mechanismus na Core (mock nebo malá částka)
+- [ ] **Firewall audit**: UFW pravidla správná, žádné zbytečné otevřené porty
+- [ ] **Log rotace**: Nastavit logrotate na Edge (`/var/log/journal` limit)
 
-```bash
-ssh root@${COORD} "cd ${REMOTE_DIR}/docker && docker compose -f docker-compose.yml --profile mainnet up -d --build"
-```
+### Fáze 2: Hardening (3–7 dní)
 
-Na produkci často vestavěný `miner` službou vypneš (`--scale miner=0`) nebo necháš jen pro lokální kouř; hlavní těžba může být externí proces / jiný host — rozhodni podle provozu.
+- [ ] **Zálohy Core**: Automatická záloha `V3/data/` + `.env` na externí disk/cloud
+- [ ] **Edge záloha**: Snapshot Edge VPS (Hetzner backup image)
+- [ ] **Monitoring**: Prometheus + Grafana pro Core (už běží, ověřit metrics)
+- [ ] **Alerting**: Nastavit upozornění na: node down, pool down, sync gap > 5 bloků
+- [ ] **Failover test**: Vypnout Edge, ověřit že Core běží dál; pak obnovit Edge
+- [ ] **Tailscale ACL**: Nastavit Tailscale ACL pro omezení přístupu jen na ZION uzly
 
-**Followři — pouze core node (bez poolu na stejném stroji):**
+### Fáze 3: Scale (1–2 týdny)
 
-```bash
-for h in ${N1} ${N2}; do
-  ssh root@${h} "cd ${REMOTE_DIR}/docker && docker compose -f docker-compose.yml --profile mainnet up -d --build node"
-done
-```
+- [ ] **Node 3 (Edge #2)**: Nový VPS jako follower na Edge, seed `77.42.71.94:8333`
+- [ ] **Node 4 (Edge #3)**: Další VPS pro redundanci
+- [ ] **Load balancer**: DNS round-robin nebo anycast pro pool (`pool.zion.network`)
+- [ ] **Community miners**: Otevřít pool pro veřejnost, fee split 89/5/5/1 komunikován
+- [ ] **Block explorer**: Veřejný RPC endpoint pro prohlížení chainu (read-only)
 
-Logy:
+### Fáze 4: Full Mainnet (1 měsíc+)
 
-```bash
-ssh root@${COORD} "cd ${REMOTE_DIR}/docker && docker compose -f docker-compose.yml logs -f --tail=100 node"
-```
-
-Alternativa (starší jednosouborové compose): [`V3/docker/docker-compose.v3-mainnet.yml`](V3/docker/docker-compose.v3-mainnet.yml) — musí sedět stejné env proměnné jako u nového unify compose.
-
----
-
-## Ověření po nasazení
-
-### 1) Kontejnery
-
-```bash
-for h in $NODES; do
-  echo "===== ${h} ====="
-  ssh root@${h} "docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'"
-done
-```
-
-### 2) Shoda řetězce (JSON-RPC řádek + LF, port **8443**)
-
-```bash
-for h in $NODES; do
-  echo "===== ${h} ====="
-  ssh root@${h} 'printf "%s\n" "{\"jsonrpc\":\"2.0\",\"method\":\"getChainInfo\",\"params\":[],\"id\":1}" | nc -w 3 127.0.0.1 8443'
-done
-```
-
-Všude musí sedět **`chain_height`** a **`tip_hash`**. Rozdíly = P2P / firewall / nesoulad genesis nebo špatný seed.
-
-### 3) Lokálně z vývojářského počítače
-
-```bash
-export PATH="/path/to/V3/target/release:$PATH"
-# dočasný ~/.zion nebo odkaz na dokumentaci zion.toml
-zion node status
-zion node rpc getChainInfo
-```
-
-Nasměruj `rpc_host` na veřejnou IP jen pokud máš bezpečné pravidlo firewallu.
-
-### 4) Pool a mining (End-to-End)
-
-- Logy poolu na koordinátorovi: `docker compose logs pool` (název služby dle aktuálního compose — často `pool`, kontejner `zion-v3-pool`).
-- Z notebooku / těžebního stroje:
-
-```bash
-zion mine start --pool ${COORD}:8444 --wallet zion1... --threads auto --backend auto
-```
-
-Očekávej ve výpisu mineru **`welcome`**, **`mining job`** a **`Accepted`** shares. Pokud více minerů za jednou IP (`ZION_MAX_SESSIONS_PER_IP` na poolu).
-
-### 5) Růst výšky
-
-Po startu všech nodů počkej na nové bloky; lze sledovat cyklem `getChainInfo` (viz MAINNET_DEPLOY_RUNBOOK §8).
+- [ ] **DAO spuštění**: Governance aktivní, proposal systém live
+- [ ] **Bridge**: Cross-chain bridge L1 ↔ EVM (Ethereum/Polygon)
+- [ ] **Atomic swap**: HTLC swaps mezi ZION a BTC/ETH
+- [ ] **Hiran AI**: Inference endpoint pro ZION ecosystem queries
+- [ ] **Audit**: Externí security audit L1 consensus + pool + bridge
+- [ ] **Bug bounty**: Veřejný bug bounty program
 
 ---
 
-## Rollback / znovustežení řetězce
+## Plán budoucích nodů (Edge cluster)
 
-Změnil‑li sis omylem konsensus bez koordinovaného výstupku: **zastavit všechny uzly**, smazat **datadir** všude, znovu spustit v pořadí Helsinki → followers. Nesmíš míchat uložený stav ze starým genesis nebo XOR řetězcem.
+### Příští uzly na Edge infrastruktuře
+
+| Priorita | Role | Lokace | Seed | Pool | Popis |
+|----------|------|--------|------|------|-------|
+| 1 | Edge #2 | Hetzner (jiný region) | `77.42.71.94:8333` | Ano | Druhý relay pro redundanci |
+| 2 | Edge #3 | OVH / DigitalOcean | `77.42.71.94:8333` | Ano | Třetí relay pro geografickou diverzitu |
+| 3 | Archive | Core PC | `100.66.162.125:8333` | Ne | Full history node pro zálohy |
+
+### Pravidla pro nové Edge nody
+
+1. **Core zůstává lokální**: Všechny zálohy, genesis, a master PPLNS zůstávají na Core PC
+2. **Edge = relay only**: Nové uzly na Edge jsou follower/relay, ne source-of-truth
+3. **Veřejný P2P**: Každý Edge node binduje P2P na `0.0.0.0:8333`
+4. **Tailscale povinný**: Každý Edge node musí být na Tailscale pro VPN sync s Core
+5. **Pool relay**: Každý Edge pool používá `ZION_UPSTREAM_POOL_ADDR` na Core
+6. **Samostatný wallet**: Každý Edge pool má vlastní wallet pro payouty (není sdílené)
+7. **systemd + auto-restart**: Všechny služby přes systemd s `Restart=always`
+8. **UFW minimum**: Pouze 8333/tcp (P2P), 8444/tcp (pool), 22/tcp (SSH), 41641/udp (Tailscale)
+
+### Bootstrap nového Edge nodu
+
+```bash
+# 1. Vytořit VPS (Hetzner / OVH / DO)
+# 2. Přidat SSH klíč z tohoto repa
+# 3. Spustit setup
+ssh root@<NEW_EDGE_IP> "bash /root/edge-server-setup.sh"
+
+# 4. Tailscale login (stejný tailnet)
+tailscale up
+
+# 5. Zkopírovat ZION repo
+scp -r -i ssh-key-zion-edge V3 root@<NEW_EDGE_IP>:/root/V3/
+
+# 6. Build
+ssh root@<NEW_EDGE_IP> "cd /root/V3 && . ~/.cargo/env && cargo build --release --bin node --bin server"
+
+# 7. Vytvořit pool wallet
+ssh root@<NEW_EDGE_IP> "/root/V3/target/release/gen-keys | grep ZION_POOL"
+
+# 8. Nastavit systemd services (podle šablony z MainnetEdge)
+# 9. Změnit ZION_SEED_PEERS na 77.42.71.94:8333 (nebo jiný Edge)
+# 10. Start: systemctl start zion-edge zion-edge-pool
+```
 
 ---
 
-## Checklist před „go mainnet publicity“
+## Operativní příkazy
 
-- [ ] Všechny tři hosty na **stejném** git commitu, **bez** `testnet_fork_rehearsal` v release image  
-- [ ] `ZION_SEED_PEERS` jen jak výše  
-- [ ] Shoda **`tip_hash`** na všech uzlech  
-- [ ] Pool health + miner share **Accepted**  
-- [ ] RPC neleží zbytečně na `0.0.0.0:8443` bez ochrany  
-- [ ] Záloha / dokumentace provozních klíčů a `.env` mimo repo (bez commitu tajemství)  
+### Edge server
 
-Další mise (bridge, DAO, monitoring): profily `monitoring`, L2 docs v `V3/L2/` a `CLI_DEPLOY_PLAYBOOK.md`.
+```bash
+# Status všech služeb
+systemctl status zion-edge zion-edge-pool tailscaled ufw
+
+# Logy
+journalctl -u zion-edge -f
+journalctl -u zion-edge-pool -f
+
+# Restart
+systemctl restart zion-edge
+systemctl restart zion-edge-pool
+
+# Tailscale
+ tailscale status
+tailscale ping 100.86.102.5
+
+# Firewall
+ufw status numbered
+
+# Disk
+ df -h
+ du -sh /root/V3/data/ /root/zion-2.9.6-main/data/
+```
+
+### Core PC
+
+```powershell
+# Status procesů
+tasklist | findstr node
+tasklist | findstr server
+tasklist | findstr zion-miner
+
+# Logy
+type logs\node1.log | findstr "relay\|sync\|height"
+type logs\pool.log | findstr "share_relay\|valid_share\|Accepted"
+type logs\miner.log | findstr "hashrate\|Accepted\|Rejected"
+
+# Dashboard
+ curl http://127.0.0.1:8765/api/status | python -m json.tool
+
+# Tailscale
+& "C:\Program Files\Tailscale\tailscale.exe" status
+& "C:\Program Files\Tailscale\tailscale.exe" ping 100.66.162.125
+```
+
+---
+
+## Bezpečnostní checklist
+
+- [x] **SSH**: Pouze klíč (PasswordAuthentication no, PermitRootLogin prohibit-password)
+- [x] **UFW**: Minimum portů (8333, 8444, 22, 41641)
+- [x] **Tailscale**: Mesh VPN, žádné veřejné porty na Core
+- [x] **Pool wallet**: Každý pool má vlastní wallet + signing key
+- [x] **RPC**: Core RPC binduje 0.0.0.0:8443 (přístupné přes Tailscale, ne internet)
+- [ ] **Tailscale ACL**: Omezit přístup na tailnetu (jen ZION uzly)
+- [ ] **2FA**: Hetzner Console 2FA zapnuto
+- [ ] **Backup**: Automatická záloha Core datadir
+- [ ] **Secrets**: Žádné privátní klíče v gitu (`.gitignore` obsahuje `*.key`, `ssh-key-*`)
+
+---
+
+## Kontakty & odkazy
+
+| Dokument | Cesta |
+|----------|-------|
+| Network Topology (architektura) | `docs/ZION_NETWORK_TOPOLOGY.md` |
+| Topology Diagram | `docs/ZION_TOPOLOGY_DIAGRAM.md` |
+| Edge Setup Script | `scripts/edge-server-setup.sh` |
+| Edge Launch Script | `scripts/launch-edge-node.sh` |
+| Deploy Orchestrator | `scripts/deploy-edge.ps1` |
+| Tailscale Setup (Linux) | `scripts/setup-tailscale.sh` |
+| Tailscale Setup (Windows) | `scripts/setup-tailscale.ps1` |
+| Hetzner API Helper | `scripts/hetzner-api.ps1` |
+| SSH Config Template | `scripts/ssh-config.txt` |
+| Core Launch (wrapper) | `scripts/_launch-core.ps1` |
+| StatusV3 (kanonický stav) | `StatusV3.md` |
+| Docker/Hardening | `V3/docker/HARDENING.md` |
+| Deploy Runbook | `V3/docs/MAINNET_DEPLOY_RUNBOOK.md` |
