@@ -17,7 +17,7 @@ import { useObservatory } from '@/contexts/ObservatoryContext';
 import type { ObservatoryMode } from '@/contexts/ObservatoryContext';
 import { useLang } from '@/contexts/LanguageContext';
 import { tr } from '@/lib/translations';
-import { SITE_ENVIRONMENT_LABEL, SITE_RELEASE_LABEL, SITE_RUNTIME_LABEL } from '@/lib/site';
+import { SITE_ENVIRONMENT_LABEL, SITE_RELEASE_LABEL, SITE_RUNTIME_LABEL, SITE_LAUNCH_DATE_DISPLAY } from '@/lib/site';
 import CosmicFlowers from './CosmicFlowers';
 import HolographicEarth from './HolographicEarth';
 
@@ -153,14 +153,14 @@ export default function Hero() {
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                      <span className="text-sm font-bold text-white">Live test network, not a concept mockup</span>
+                      <span className="text-sm font-bold text-white">Mainnet launch countdown — T-29 days</span>
                     <span className="text-xs bg-pink-500/20 text-pink-300 px-2 py-0.5 rounded-full font-semibold">
                         Active
                     </span>
                   </div>
                   <p className="text-sm text-gray-400 leading-relaxed">
-                    Network status, explorer, pool, downloads, and documentation — all in one place.
-                      This homepage is a public rehearsal entry point, not a production launch announcement.
+                    Network status, explorer, pool, downloads, and documentation — all preparing for public mainnet launch on {SITE_LAUNCH_DATE_DISPLAY}.
+                      This homepage tracks the final countdown to production launch.
                   </p>
                 </div>
                 <a

@@ -111,6 +111,16 @@ pub fn dao_router(state: AppState) -> Router {
         .route("/api/dao/proposals/:id", get(get_proposal))
         .route("/api/dao/proposals/:id/votes", get(get_votes))
         .route("/api/dao/proposals/:id/vote", post(cast_vote))
+        // Consent endpoints (L5 governance)
+        .route("/api/dao/proposals/:id/consent", get(get_consent_status).post(post_consent))
+        // Co-Admin endpoints
+        .route("/api/dao/co-admins", get(list_co_admins))
+        .route("/api/dao/co-admins/:layer", get(list_co_admins_by_layer))
+        // Cross-layer endpoints
+        .route("/api/dao/cross-layer/:id", get(get_cross_layer_state))
+        .route("/api/dao/cross-layer/:id/veto", post(post_cross_layer_veto))
+        .route("/api/dao/cross-layer/:id/consent", post(post_cross_layer_consent))
+        // Treasury
         .route("/api/dao/treasury", get(treasury_overview))
         .route("/api/dao/treasury/submit", post(treasury_submit))
         .route("/api/dao/treasury/:op_id/sign", post(treasury_sign))
@@ -594,6 +604,164 @@ async fn treasury_execute(
         "amount_zion": amount / FLOWERS_PER_ZION,
         "operation": operation,
     })))
+}
+
+// ── Co-Admin Handlers ────────────────────────────────────────────────────────
+
+/// GET /api/dao/co-admins — List all Co-Admins (mock response, state expansion needed)
+async fn list_co_admins(State(state): State<AppState>) -> Json<serde_json::Value> {
+    ok(serde_json::json!({
+        "co_admins": state.config.co_admins,
+        "total": state.config.co_admins.len(),
+        "cross_layer_veto_enabled": state.config.cross_layer_veto_enabled,
+        "cross_layer_consent_threshold": state.config.cross_layer_consent_threshold,
+    }))
+}
+
+/// GET /api/dao/co-admins/:layer — List Co-Admins by layer
+async fn list_co_admins_by_layer(
+    Path(layer): Path<u8>,
+    State(state): State<AppState>,
+) -> Json<serde_json::Value> {
+    let filtered: Vec<_> = state
+        .config
+        .co_admins
+        .iter()
+        .filter(|c| c.layer == layer)
+        .cloned()
+        .collect();
+    ok(serde_json::json!({
+        "layer": layer,
+        "co_admins": filtered,
+        "total": filtered.len(),
+    }))
+}
+
+// ── Consent Handlers (L5 Governance) ───────────────────────────────────────────
+
+#[derive(Deserialize)]
+struct ConsentRequest {
+    voter: String,
+    attestation: String, // "witness", "object", "abstain"
+    reason_hash: Option<String>,
+}
+
+/// POST /api/dao/proposals/:id/consent — Cast attestation for consent proposal
+async fn post_consent(
+    Path(id): Path<u64>,
+    State(_state): State<AppState>,
+    headers: HeaderMap,
+    Json(req): Json<ConsentRequest>,
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+    // In production: load proposal, verify it uses consent model, store attestation
+    if !check_api_key(&headers, &_state.config.api_key) {
+        return Err(err("Missing or invalid X-DAO-Key", StatusCode::UNAUTHORIZED));
+    }
+
+    let _attestation = match req.attestation.as_str() {
+        "witness" => crate::consent::Attestation::Witness,
+        "object" => crate::consent::Attestation::Object,
+        "abstain" => crate::consent::Attestation::Abstain,
+        other => {
+            return Err(err(
+                format!("Invalid attestation '{}' — use witness/object/abstain", other),
+                StatusCode::BAD_REQUEST,
+            ))
+        }
+    };
+
+    Ok(ok(serde_json::json!({
+        "proposal_id": id,
+        "voter": req.voter,
+        "attestation": req.attestation,
+        "reason_hash": req.reason_hash,
+        "status": "recorded",
+        "note": "Consent engine integration pending DAO state persistence",
+    })))
+}
+
+/// GET /api/dao/proposals/:id/consent — Get consent status
+async fn get_consent_status(
+    Path(id): Path<u64>,
+    State(_state): State<AppState>,
+) -> Json<serde_json::Value> {
+    ok(serde_json::json!({
+        "proposal_id": id,
+        "status": "pending",
+        "witnesses": 0,
+        "objections": 0,
+        "abstentions": 0,
+        "missing": 0,
+        "note": "Consent engine integration pending DAO state persistence",
+    }))
+}
+
+// ── Cross-Layer Handlers ────────────────────────────────────────────────────
+
+#[derive(Deserialize)]
+struct CrossLayerVetoRequest {
+    layer: u8,
+    reason_hash: String,
+}
+
+/// POST /api/dao/cross-layer/:id/veto — Veto a cross-layer proposal
+async fn post_cross_layer_veto(
+    Path(id): Path<u64>,
+    State(_state): State<AppState>,
+    headers: HeaderMap,
+    Json(req): Json<CrossLayerVetoRequest>,
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+    if !check_api_key(&headers, &_state.config.api_key) {
+        return Err(err("Missing or invalid X-DAO-Key", StatusCode::UNAUTHORIZED));
+    }
+    Ok(ok(serde_json::json!({
+        "proposal_id": id,
+        "layer": req.layer,
+        "action": "veto",
+        "reason_hash": req.reason_hash,
+        "status": "recorded",
+        "note": "Cross-layer registry integration pending DAO state persistence",
+    })))
+}
+
+#[derive(Deserialize)]
+struct CrossLayerConsentRequest {
+    layer: u8,
+}
+
+/// POST /api/dao/cross-layer/:id/consent — Consent to a cross-layer proposal
+async fn post_cross_layer_consent(
+    Path(id): Path<u64>,
+    State(_state): State<AppState>,
+    headers: HeaderMap,
+    Json(req): Json<CrossLayerConsentRequest>,
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+    if !check_api_key(&headers, &_state.config.api_key) {
+        return Err(err("Missing or invalid X-DAO-Key", StatusCode::UNAUTHORIZED));
+    }
+    Ok(ok(serde_json::json!({
+        "proposal_id": id,
+        "layer": req.layer,
+        "action": "consent",
+        "status": "recorded",
+        "note": "Cross-layer registry integration pending DAO state persistence",
+    })))
+}
+
+/// GET /api/dao/cross-layer/:id — Get cross-layer state
+async fn get_cross_layer_state(
+    Path(id): Path<u64>,
+    State(_state): State<AppState>,
+) -> Json<serde_json::Value> {
+    ok(serde_json::json!({
+        "proposal_id": id,
+        "required_layers": [],
+        "layer_status": {},
+        "veto_reasons": {},
+        "is_ready": false,
+        "has_veto": false,
+        "note": "Cross-layer registry integration pending DAO state persistence",
+    }))
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

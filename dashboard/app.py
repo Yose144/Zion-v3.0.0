@@ -786,6 +786,28 @@ def parse_premine_addresses() -> list:
         pass
     return wallets
 
+def find_env_value(key: str) -> str:
+    """Check os.environ first, then scan .env* files in repo root."""
+    val = os.environ.get(key)
+    if val:
+        return val
+    for p in sorted(REPO_ROOT.glob(".env*")):
+        if not p.is_file():
+            continue
+        try:
+            with open(p, "r", encoding="utf-8", errors="ignore") as f:
+                for line in f:
+                    line = line.strip()
+                    if line.startswith("#") or "=" not in line:
+                        continue
+                    k, _, v = line.partition("=")
+                    k = k.strip()
+                    if k == key:
+                        return v.strip().strip('"').strip("'")
+        except Exception:
+            continue
+    return ""
+
 def build_wallets() -> dict:
     """Collect all known wallets: premine, operational (env), miner (toml)."""
     wallets = []
@@ -804,7 +826,7 @@ def build_wallets() -> dict:
         "ZION_POOL_WALLET": "Pool Operational",
     }
     for var, label in env_vars.items():
-        val = os.environ.get(var)
+        val = find_env_value(var)
         if not val:
             continue
         val = val.strip().strip('"').strip("'")
@@ -857,7 +879,7 @@ def build_wallets() -> dict:
         if addr and addr.startswith("zion1"):
             bal = rpc_call(rpc_host, rpc_port, "getBalance", {"address": addr})
             if bal and not bal.get("_rpc_error"):
-                atomic = bal.get("balance_flowers") or bal.get("balance_atomic") or 0
+                atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
                 w["balance_zion"] = bal.get("balance_zion") if isinstance(bal.get("balance_zion"), (int, float)) else atomic / 1_000_000_000_000
                 w["balance_atomic"] = atomic
                 w["rpc_ok"] = True
