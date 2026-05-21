@@ -924,7 +924,8 @@ def build_wallets() -> dict:
                     "category": "operational",
                 })
 
-    # 3. Miner wallet from zion.toml
+    # 3. zion.toml [miner] wallet — only add if it's a DIFFERENT address from the
+    #    active node miner payout address (to avoid a confusing 0-balance duplicate).
     toml_path = REPO_ROOT / "zion.toml"
     if toml_path.exists():
         try:
@@ -935,10 +936,11 @@ def build_wallets() -> dict:
                         continue
                     if m := re.search(r'wallet\s*=\s*["\']?([^"\'\s#]+)', line):
                         addr = m.group(1).strip()
-                        if addr and not any(w["address"] == addr for w in wallets):
+                        active_miner = node_addrs.get("miner") or find_env_value("ZION_MINER_ADDRESS")
+                        if addr and addr != active_miner and not any(w["address"] == addr for w in wallets):
                             wallets.append({
                                 "address": addr,
-                                "label": "Miner Wallet (zion.toml)",
+                                "label": "Remote Config Wallet (zion.toml)",
                                 "source": "zion.toml",
                                 "category": "operational",
                             })
