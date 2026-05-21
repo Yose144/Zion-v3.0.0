@@ -114,6 +114,10 @@ pub fn build_router(state: OasisState) -> Router {
         // Quests
         .route("/api/v1/oasis/quests", get(list_quests))
         .route("/api/v1/oasis/player/:address/quests", get(player_quests))
+        // Avatars
+        .route("/api/v1/oasis/avatars", get(list_avatars))
+        .route("/api/v1/oasis/avatars/:id", get(get_avatar))
+        .route("/api/v1/oasis/avatars/:id/quests", get(avatar_quests))
         // WebSocket feeds
         .route("/api/v1/oasis/ws/leaderboard", get(ws_leaderboard_handler))
         .route("/api/v1/oasis/ws/events", get(ws_events_handler))
@@ -698,6 +702,60 @@ async fn complete_quest(
         )
             .into_response(),
     }
+}
+
+// ── Avatars ───────────────────────────────────────────────────────────────────
+
+/// GET /api/v1/oasis/avatars?ray=Blue&min_cl=4&rarity=Epic
+async fn list_avatars(
+    State(state): State<OasisState>,
+    axum::extract::Query(params): axum::extract::Query<std::collections::HashMap<String, String>>,
+) -> impl IntoResponse {
+    state
+        .metrics
+        .requests_total
+        .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    let ray = params.get("ray").map(|s| s.as_str());
+    let min_cl = params
+        .get("min_cl")
+        .and_then(|s| s.parse::<u8>().ok());
+    let rarity = params.get("rarity").map(|s| s.as_str());
+    let filtered = state.quest_mgr.registry.filter_avatars(ray, min_cl, rarity);
+    (StatusCode::OK, Json(ApiResponse::ok(filtered))).into_response()
+}
+
+/// GET /api/v1/oasis/avatars/:id
+async fn get_avatar(
+    State(state): State<OasisState>,
+    Path(id): Path<u16>,
+) -> impl IntoResponse {
+    state
+        .metrics
+        .requests_total
+        .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    match state.quest_mgr.registry.get_avatar(id) {
+        Some(avatar) => {
+            (StatusCode::OK, Json(ApiResponse::ok(avatar))).into_response()
+        }
+        None => (
+            StatusCode::NOT_FOUND,
+            Json(ApiResponse::<()>::error("avatar not found")),
+        )
+            .into_response(),
+    }
+}
+
+/// GET /api/v1/oasis/avatars/:id/quests
+async fn avatar_quests(
+    State(state): State<OasisState>,
+    Path(id): Path<u16>,
+) -> impl IntoResponse {
+    state
+        .metrics
+        .requests_total
+        .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    let quests = state.quest_mgr.registry.by_avatar(id);
+    (StatusCode::OK, Json(ApiResponse::ok(quests))).into_response()
 }
 
 // ── Combat ────────────────────────────────────────────────────────────────────
