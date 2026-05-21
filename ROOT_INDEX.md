@@ -218,6 +218,7 @@
 - `GOVERNANCE/community-dao-framework.md` — Hybrid sociocracy + DAO
 - `GOVERNANCE/consciousness-admission-framework.md` — Age-based entry, 5 Dharmic principles, Bodhisattva vow
 - `GOVERNANCE/multi-layer-dao-governance.md` — Co-Admin system across L1–L6
+- `PROTOCOLS/resonance-protocol.md` — Sound/time/intergenerational bridge: Resonance Council, Fibonacci Time Capsule, Light Language Registry
 - `TECH/zion-node-spec.md` — Guardian node hardware spec
 - `TECH/mesh-network.md` — LoRa/Meshtastic off-grid network
 - `TECH/medical-table.md` — Community health protocol
