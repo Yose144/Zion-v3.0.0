@@ -14,7 +14,28 @@
       "consciousness_level_name": "ON THE STAR",
       "key": "",
       "rarity": "Legendary",
-      "quests": []
+      "quests": [
+        {
+          "title": "The Flute of Union",
+          "description": "Hear the cosmic vibration in 7 frequencies"
+        },
+        {
+          "title": "Dance of Rasa Lila",
+          "description": "Find the hidden gopis across all timelines"
+        },
+        {
+          "title": "Maitreya's Blockchain Prophecy",
+          "description": "Decode the genesis message of the future"
+        },
+        {
+          "title": "Integration of All Paths",
+          "description": "Complete one quest from each tradition"
+        },
+        {
+          "title": "ON THE STAR",
+          "description": "Achieve CL 9 and witness the cosmic vision"
+        }
+      ]
     },
     {
       "id": 1,
@@ -215,7 +236,28 @@
       "consciousness_level_name": "Quantum",
       "key": "",
       "rarity": "Epic",
-      "quests": []
+      "quests": [
+        {
+          "title": "The Throne of Isis",
+          "description": "Reassemble the scattered ankh fragments"
+        },
+        {
+          "title": "Wings of Ma'at",
+          "description": "Restore balance in the cosmic scale"
+        },
+        {
+          "title": "Sistrum of Resonance",
+          "description": "Attune to the 108 Hz carrier frequency"
+        },
+        {
+          "title": "Nile Flood Memory",
+          "description": "Decode the water-witness memory glyphs"
+        },
+        {
+          "title": "Ankh of Life",
+          "description": "Revive a fallen ally in guild warfare"
+        }
+      ]
     },
     {
       "id": 8,
@@ -231,7 +273,28 @@
       "consciousness_level_name": "Heart Opening",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "The Guardian's Vigil",
+          "description": "Patrol ZION City walls for 24 hours"
+        },
+        {
+          "title": "Shield of Light",
+          "description": "Defend a territory from 3 enemy raids"
+        },
+        {
+          "title": "Issobela's Oath",
+          "description": "Swear the Bodhisattva vow of protection"
+        },
+        {
+          "title": "Watchtower Ascension",
+          "description": "Build 5 consciousness beacons"
+        },
+        {
+          "title": "The Last Stand",
+          "description": "Win a guild war as the sole defender"
+        }
+      ]
     },
     {
       "id": 9,
@@ -247,7 +310,28 @@
       "consciousness_level_name": "Intuitive Wisdom",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "The Way of Ahimsa",
+          "description": "Resolve 3 conflicts without combat"
+        },
+        {
+          "title": "Ashram Meditation",
+          "description": "Complete 7 days of meditation streak"
+        },
+        {
+          "title": "Gandhi's Salt March",
+          "description": "Walk the full territory circuit"
+        },
+        {
+          "title": "Peaceful Resolution",
+          "description": "Convert an enemy guild to allies"
+        },
+        {
+          "title": "Non-Violence Mastery",
+          "description": "Reach CL 6 without any combat XP"
+        }
+      ]
     },
     {
       "id": 10,
@@ -263,7 +347,28 @@
       "consciousness_level_name": "Quantum",
       "key": "",
       "rarity": "Epic",
-      "quests": []
+      "quests": [
+        {
+          "title": "The Sacred Sword",
+          "description": "Find the sword in the Camelot ruins"
+        },
+        {
+          "title": "Crusade of Truth",
+          "description": "Defeat 10 adharmic shadow creatures"
+        },
+        {
+          "title": "Holy Strike Trial",
+          "description": "Land a perfect righteous combat combo"
+        },
+        {
+          "title": "Warrior Priest Ordination",
+          "description": "Heal and fight in the same battle"
+        },
+        {
+          "title": "Fight for Truth, Not Ego",
+          "description": "Win a duel without taking damage"
+        }
+      ]
     },
     {
       "id": 11,
@@ -316,7 +421,28 @@
       "consciousness_level_name": "Quantum",
       "key": "Mahabharata Key (2/3)",
       "rarity": "Epic",
-      "quests": []
+      "quests": [
+        {
+          "title": "The Mace of Thunder",
+          "description": "Destroy a fortress gate in guild war"
+        },
+        {
+          "title": "Strength Serves Justice",
+          "description": "Defend the weak from 5 bandit raids"
+        },
+        {
+          "title": "Bhima's Feast",
+          "description": "Gather 108 sacred ingredients"
+        },
+        {
+          "title": "River Crossing",
+          "description": "Carry 10 allies across a hazard zone"
+        },
+        {
+          "title": "The Mighty One",
+          "description": "Deal 1,000,000 damage in a single war"
+        }
+      ]
     },
     {
       "id": 13,
@@ -332,7 +458,28 @@
       "consciousness_level_name": "Intuitive Wisdom",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "The Chief's Burden",
+          "description": "Lead a guild of 50+ members for 30 days"
+        },
+        {
+          "title": "Rally Troops",
+          "description": "Inspire 100 players simultaneously"
+        },
+        {
+          "title": "Council of Seven Rays",
+          "description": "Form a full-spectrum alliance"
+        },
+        {
+          "title": "Lead by Example",
+          "description": "Have the highest contribution in 10 wars"
+        },
+        {
+          "title": "The Round Table",
+          "description": "Host a DAO governance summit"
+        }
+      ]
     },
     {
       "id": 14,
@@ -422,7 +569,28 @@
       "consciousness_level_name": "Quantum",
       "key": "Ramayana Key (1/3)",
       "rarity": "Epic",
-      "quests": []
+      "quests": [
+        {
+          "title": "The Eternal Dance",
+          "description": "Complete the rasa lila rhythm mini-game"
+        },
+        {
+          "title": "Radha Kund Pilgrimage",
+          "description": "Visit all 8 territory sacred lakes"
+        },
+        {
+          "title": "Love Transcends Form",
+          "description": "Form a cross-guild friendship bond"
+        },
+        {
+          "title": "Divine Union",
+          "description": "Complete a co-op quest with Krishna-Maitreya"
+        },
+        {
+          "title": "The Beloved's Devotion",
+          "description": "Maintain 30-day daily streak"
+        }
+      ]
     },
     {
       "id": 17,
@@ -475,7 +643,28 @@
       "consciousness_level_name": "Quantum",
       "key": "",
       "rarity": "Epic",
-      "quests": []
+      "quests": [
+        {
+          "title": "The Apostle of Apostles",
+          "description": "Restore a forgotten sacred text"
+        },
+        {
+          "title": "Rose of Sharon",
+          "description": "Heal 1,000 players across all territories"
+        },
+        {
+          "title": "Sacred Union",
+          "description": "Form a divine partnership quest duo"
+        },
+        {
+          "title": "Tears of Compassion",
+          "description": "Comfort 100 distressed NPCs"
+        },
+        {
+          "title": "The Garden Encounter",
+          "description": "Discover the hidden resurrection spring"
+        }
+      ]
     },
     {
       "id": 19,
@@ -528,7 +717,28 @@
       "consciousness_level_name": "Intuitive Wisdom",
       "key": "",
       "rarity": "Epic",
-      "quests": []
+      "quests": [
+        {
+          "title": "The Immaculate Conception",
+          "description": "Find the sacred grail in hidden ruins"
+        },
+        {
+          "title": "Hail Mary Protection",
+          "description": "Shield 50 players from fatal damage"
+        },
+        {
+          "title": "The Rosary Path",
+          "description": "Complete 108 meditation beads cycle"
+        },
+        {
+          "title": "Star of the Sea",
+          "description": "Navigate the treacherous astral waters"
+        },
+        {
+          "title": "Assumption to Heaven",
+          "description": "Ascend to CL 6 in a single day"
+        }
+      ]
     },
     {
       "id": 20,
@@ -544,7 +754,28 @@
       "consciousness_level_name": "Quantum",
       "key": "",
       "rarity": "Epic",
-      "quests": []
+      "quests": [
+        {
+          "title": "The Twenty-One Praises",
+          "description": "Find all 21 Tara shrines"
+        },
+        {
+          "title": "Liberation from Samsara",
+          "description": "Free 100 trapped souls in shadow realms"
+        },
+        {
+          "title": "Green Tara's Swift Action",
+          "description": "Complete 10 quests in under 1 hour"
+        },
+        {
+          "title": "White Tara's Long Life",
+          "description": "Maintain 100-day daily streak"
+        },
+        {
+          "title": "The Bodhisattva Vow",
+          "description": "Swear to liberate all beings before self"
+        }
+      ]
     },
     {
       "id": 21,
@@ -560,7 +791,28 @@
       "consciousness_level_name": "Healing Compassion",
       "key": "",
       "rarity": "Epic",
-      "quests": []
+      "quests": [
+        {
+          "title": "The Thousand Arms",
+          "description": "Help 1,000 different players"
+        },
+        {
+          "title": "Om Mani Padme Hum",
+          "description": "Recite the mantra across 108 locations"
+        },
+        {
+          "title": "Compassion Without Limits",
+          "description": "Forgive 100 enemy guild attackers"
+        },
+        {
+          "title": "Guanyin's Tears",
+          "description": "Witness the world's suffering and heal it"
+        },
+        {
+          "title": "The All-Seeing Lord",
+          "description": "Discover every hidden secret in OASIS"
+        }
+      ]
     },
     {
       "id": 22,
@@ -576,7 +828,28 @@
       "consciousness_level_name": "Intuitive Wisdom",
       "key": "",
       "rarity": "Epic",
-      "quests": []
+      "quests": [
+        {
+          "title": "The Hundred-Syllable Mantra",
+          "description": "Chant the purification mantra 100 times"
+        },
+        {
+          "title": "Diamond Mind",
+          "description": "Clear all negative karma points"
+        },
+        {
+          "title": "The Mirror of Truth",
+          "description": "Face and defeat your shadow self"
+        },
+        {
+          "title": "Purification Fire",
+          "description": "Burn away 108 attachments in ritual"
+        },
+        {
+          "title": "Vajra Body",
+          "description": "Achieve perfect health status for 30 days"
+        }
+      ]
     },
     {
       "id": 51,
@@ -592,7 +865,28 @@
       "consciousness_level_name": "Transcendent",
       "key": "",
       "rarity": "Legendary",
-      "quests": []
+      "quests": [
+        {
+          "title": "The Middle Way",
+          "description": "Balance wisdom and compassion in 10 quests"
+        },
+        {
+          "title": "Tibetan Freedom",
+          "description": "Liberate a captured territory peacefully"
+        },
+        {
+          "title": "Loving Kindness Meditation",
+          "description": "Send metta to 100 players simultaneously"
+        },
+        {
+          "title": "The Art of Happiness",
+          "description": "Achieve maximum happiness score"
+        },
+        {
+          "title": "Universal Responsibility",
+          "description": "Lead a humanitarian tithe campaign"
+        }
+      ]
     },
     {
       "id": 29,
@@ -608,7 +902,28 @@
       "consciousness_level_name": "Intuitive Wisdom",
       "key": "",
       "rarity": "Epic",
-      "quests": []
+      "quests": [
+        {
+          "title": "First Awakening",
+          "description": "Begin the sacred journey"
+        },
+        {
+          "title": "Path of Dedication",
+          "description": "Prove commitment through 7 trials"
+        },
+        {
+          "title": "Sacred Knowledge",
+          "description": "Uncover the hidden teaching"
+        },
+        {
+          "title": "Divine Service",
+          "description": "Serve the community selflessly"
+        },
+        {
+          "title": "Ultimate Realization",
+          "description": "Attain the highest truth"
+        }
+      ]
     },
     {
       "id": 30,
@@ -624,7 +939,28 @@
       "consciousness_level_name": "Intuitive Wisdom",
       "key": "",
       "rarity": "Epic",
-      "quests": []
+      "quests": [
+        {
+          "title": "First Awakening",
+          "description": "Begin the sacred journey"
+        },
+        {
+          "title": "Path of Dedication",
+          "description": "Prove commitment through 7 trials"
+        },
+        {
+          "title": "Sacred Knowledge",
+          "description": "Uncover the hidden teaching"
+        },
+        {
+          "title": "Divine Service",
+          "description": "Serve the community selflessly"
+        },
+        {
+          "title": "Ultimate Realization",
+          "description": "Attain the highest truth"
+        }
+      ]
     },
     {
       "id": 31,
@@ -640,7 +976,28 @@
       "consciousness_level_name": "Quantum",
       "key": "",
       "rarity": "Epic",
-      "quests": []
+      "quests": [
+        {
+          "title": "First Awakening",
+          "description": "Begin the sacred journey"
+        },
+        {
+          "title": "Path of Dedication",
+          "description": "Prove commitment through 7 trials"
+        },
+        {
+          "title": "Sacred Knowledge",
+          "description": "Uncover the hidden teaching"
+        },
+        {
+          "title": "Divine Service",
+          "description": "Serve the community selflessly"
+        },
+        {
+          "title": "Ultimate Realization",
+          "description": "Attain the highest truth"
+        }
+      ]
     },
     {
       "id": 27,
@@ -656,7 +1013,28 @@
       "consciousness_level_name": "Healing Compassion",
       "key": "",
       "rarity": "Epic",
-      "quests": []
+      "quests": [
+        {
+          "title": "First Awakening",
+          "description": "Begin the sacred journey"
+        },
+        {
+          "title": "Path of Dedication",
+          "description": "Prove commitment through 7 trials"
+        },
+        {
+          "title": "Sacred Knowledge",
+          "description": "Uncover the hidden teaching"
+        },
+        {
+          "title": "Divine Service",
+          "description": "Serve the community selflessly"
+        },
+        {
+          "title": "Ultimate Realization",
+          "description": "Attain the highest truth"
+        }
+      ]
     },
     {
       "id": 32,
@@ -672,7 +1050,28 @@
       "consciousness_level_name": "Intuitive Wisdom",
       "key": "",
       "rarity": "Epic",
-      "quests": []
+      "quests": [
+        {
+          "title": "First Awakening",
+          "description": "Begin the sacred journey"
+        },
+        {
+          "title": "Path of Dedication",
+          "description": "Prove commitment through 7 trials"
+        },
+        {
+          "title": "Sacred Knowledge",
+          "description": "Uncover the hidden teaching"
+        },
+        {
+          "title": "Divine Service",
+          "description": "Serve the community selflessly"
+        },
+        {
+          "title": "Ultimate Realization",
+          "description": "Attain the highest truth"
+        }
+      ]
     },
     {
       "id": 33,
@@ -688,7 +1087,28 @@
       "consciousness_level_name": "Intuitive Wisdom",
       "key": "",
       "rarity": "Epic",
-      "quests": []
+      "quests": [
+        {
+          "title": "First Awakening",
+          "description": "Begin the sacred journey"
+        },
+        {
+          "title": "Path of Dedication",
+          "description": "Prove commitment through 7 trials"
+        },
+        {
+          "title": "Sacred Knowledge",
+          "description": "Uncover the hidden teaching"
+        },
+        {
+          "title": "Divine Service",
+          "description": "Serve the community selflessly"
+        },
+        {
+          "title": "Ultimate Realization",
+          "description": "Attain the highest truth"
+        }
+      ]
     },
     {
       "id": 26,
@@ -741,7 +1161,28 @@
       "consciousness_level_name": "Transcendent",
       "key": "",
       "rarity": "Legendary",
-      "quests": []
+      "quests": [
+        {
+          "title": "First Awakening",
+          "description": "Begin the sacred journey"
+        },
+        {
+          "title": "Path of Dedication",
+          "description": "Prove commitment through 7 trials"
+        },
+        {
+          "title": "Sacred Knowledge",
+          "description": "Uncover the hidden teaching"
+        },
+        {
+          "title": "Divine Service",
+          "description": "Serve the community selflessly"
+        },
+        {
+          "title": "Ultimate Realization",
+          "description": "Attain the highest truth"
+        }
+      ]
     },
     {
       "id": 24,
@@ -757,7 +1198,28 @@
       "consciousness_level_name": "Transcendent",
       "key": "",
       "rarity": "Legendary",
-      "quests": []
+      "quests": [
+        {
+          "title": "First Awakening",
+          "description": "Begin the sacred journey"
+        },
+        {
+          "title": "Path of Dedication",
+          "description": "Prove commitment through 7 trials"
+        },
+        {
+          "title": "Sacred Knowledge",
+          "description": "Uncover the hidden teaching"
+        },
+        {
+          "title": "Divine Service",
+          "description": "Serve the community selflessly"
+        },
+        {
+          "title": "Ultimate Realization",
+          "description": "Attain the highest truth"
+        }
+      ]
     },
     {
       "id": 25,
@@ -773,7 +1235,28 @@
       "consciousness_level_name": "Healing Compassion",
       "key": "",
       "rarity": "Epic",
-      "quests": []
+      "quests": [
+        {
+          "title": "First Awakening",
+          "description": "Begin the sacred journey"
+        },
+        {
+          "title": "Path of Dedication",
+          "description": "Prove commitment through 7 trials"
+        },
+        {
+          "title": "Sacred Knowledge",
+          "description": "Uncover the hidden teaching"
+        },
+        {
+          "title": "Divine Service",
+          "description": "Serve the community selflessly"
+        },
+        {
+          "title": "Ultimate Realization",
+          "description": "Attain the highest truth"
+        }
+      ]
     },
     {
       "id": 23,
@@ -789,7 +1272,28 @@
       "consciousness_level_name": "Intuitive Wisdom",
       "key": "",
       "rarity": "Epic",
-      "quests": []
+      "quests": [
+        {
+          "title": "First Awakening",
+          "description": "Begin the sacred journey"
+        },
+        {
+          "title": "Path of Dedication",
+          "description": "Prove commitment through 7 trials"
+        },
+        {
+          "title": "Sacred Knowledge",
+          "description": "Uncover the hidden teaching"
+        },
+        {
+          "title": "Divine Service",
+          "description": "Serve the community selflessly"
+        },
+        {
+          "title": "Ultimate Realization",
+          "description": "Attain the highest truth"
+        }
+      ]
     },
     {
       "id": 35,
@@ -805,7 +1309,28 @@
       "consciousness_level_name": "Intuitive Wisdom",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "First Awakening",
+          "description": "Begin the sacred journey"
+        },
+        {
+          "title": "Path of Dedication",
+          "description": "Prove commitment through 7 trials"
+        },
+        {
+          "title": "Sacred Knowledge",
+          "description": "Uncover the hidden teaching"
+        },
+        {
+          "title": "Divine Service",
+          "description": "Serve the community selflessly"
+        },
+        {
+          "title": "Ultimate Realization",
+          "description": "Attain the highest truth"
+        }
+      ]
     },
     {
       "id": 36,
@@ -821,7 +1346,28 @@
       "consciousness_level_name": "Healing Compassion",
       "key": "",
       "rarity": "Epic",
-      "quests": []
+      "quests": [
+        {
+          "title": "First Awakening",
+          "description": "Begin the sacred journey"
+        },
+        {
+          "title": "Path of Dedication",
+          "description": "Prove commitment through 7 trials"
+        },
+        {
+          "title": "Sacred Knowledge",
+          "description": "Uncover the hidden teaching"
+        },
+        {
+          "title": "Divine Service",
+          "description": "Serve the community selflessly"
+        },
+        {
+          "title": "Ultimate Realization",
+          "description": "Attain the highest truth"
+        }
+      ]
     },
     {
       "id": 37,
@@ -837,7 +1383,28 @@
       "consciousness_level_name": "Healing Compassion",
       "key": "",
       "rarity": "Epic",
-      "quests": []
+      "quests": [
+        {
+          "title": "First Awakening",
+          "description": "Begin the sacred journey"
+        },
+        {
+          "title": "Path of Dedication",
+          "description": "Prove commitment through 7 trials"
+        },
+        {
+          "title": "Sacred Knowledge",
+          "description": "Uncover the hidden teaching"
+        },
+        {
+          "title": "Divine Service",
+          "description": "Serve the community selflessly"
+        },
+        {
+          "title": "Ultimate Realization",
+          "description": "Attain the highest truth"
+        }
+      ]
     },
     {
       "id": 39,
@@ -853,7 +1420,28 @@
       "consciousness_level_name": "Heart Opening",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "First Awakening",
+          "description": "Begin the sacred journey"
+        },
+        {
+          "title": "Path of Dedication",
+          "description": "Prove commitment through 7 trials"
+        },
+        {
+          "title": "Sacred Knowledge",
+          "description": "Uncover the hidden teaching"
+        },
+        {
+          "title": "Divine Service",
+          "description": "Serve the community selflessly"
+        },
+        {
+          "title": "Ultimate Realization",
+          "description": "Attain the highest truth"
+        }
+      ]
     },
     {
       "id": 41,
@@ -869,7 +1457,28 @@
       "consciousness_level_name": "Quantum",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "First Awakening",
+          "description": "Begin the sacred journey"
+        },
+        {
+          "title": "Path of Dedication",
+          "description": "Prove commitment through 7 trials"
+        },
+        {
+          "title": "Sacred Knowledge",
+          "description": "Uncover the hidden teaching"
+        },
+        {
+          "title": "Divine Service",
+          "description": "Serve the community selflessly"
+        },
+        {
+          "title": "Ultimate Realization",
+          "description": "Attain the highest truth"
+        }
+      ]
     },
     {
       "id": 46,
@@ -922,7 +1531,28 @@
       "consciousness_level_name": "Healing Compassion",
       "key": "",
       "rarity": "Epic",
-      "quests": []
+      "quests": [
+        {
+          "title": "First Awakening",
+          "description": "Begin the sacred journey"
+        },
+        {
+          "title": "Path of Dedication",
+          "description": "Prove commitment through 7 trials"
+        },
+        {
+          "title": "Sacred Knowledge",
+          "description": "Uncover the hidden teaching"
+        },
+        {
+          "title": "Divine Service",
+          "description": "Serve the community selflessly"
+        },
+        {
+          "title": "Ultimate Realization",
+          "description": "Attain the highest truth"
+        }
+      ]
     },
     {
       "id": 48,
@@ -938,7 +1568,28 @@
       "consciousness_level_name": "Intuitive Wisdom",
       "key": "",
       "rarity": "Epic",
-      "quests": []
+      "quests": [
+        {
+          "title": "First Awakening",
+          "description": "Begin the sacred journey"
+        },
+        {
+          "title": "Path of Dedication",
+          "description": "Prove commitment through 7 trials"
+        },
+        {
+          "title": "Sacred Knowledge",
+          "description": "Uncover the hidden teaching"
+        },
+        {
+          "title": "Divine Service",
+          "description": "Serve the community selflessly"
+        },
+        {
+          "title": "Ultimate Realization",
+          "description": "Attain the highest truth"
+        }
+      ]
     },
     {
       "id": 50,
@@ -954,7 +1605,28 @@
       "consciousness_level_name": "Healing Compassion",
       "key": "",
       "rarity": "Legendary",
-      "quests": []
+      "quests": [
+        {
+          "title": "First Awakening",
+          "description": "Begin the sacred journey"
+        },
+        {
+          "title": "Path of Dedication",
+          "description": "Prove commitment through 7 trials"
+        },
+        {
+          "title": "Sacred Knowledge",
+          "description": "Uncover the hidden teaching"
+        },
+        {
+          "title": "Divine Service",
+          "description": "Serve the community selflessly"
+        },
+        {
+          "title": "Ultimate Realization",
+          "description": "Attain the highest truth"
+        }
+      ]
     },
     {
       "id": 42,
@@ -970,7 +1642,28 @@
       "consciousness_level_name": "Transcendent",
       "key": "",
       "rarity": "Legendary",
-      "quests": []
+      "quests": [
+        {
+          "title": "First Awakening",
+          "description": "Begin the sacred journey"
+        },
+        {
+          "title": "Path of Dedication",
+          "description": "Prove commitment through 7 trials"
+        },
+        {
+          "title": "Sacred Knowledge",
+          "description": "Uncover the hidden teaching"
+        },
+        {
+          "title": "Divine Service",
+          "description": "Serve the community selflessly"
+        },
+        {
+          "title": "Ultimate Realization",
+          "description": "Attain the highest truth"
+        }
+      ]
     },
     {
       "id": 43,
@@ -986,7 +1679,28 @@
       "consciousness_level_name": "Heart Opening",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "First Awakening",
+          "description": "Begin the sacred journey"
+        },
+        {
+          "title": "Path of Dedication",
+          "description": "Prove commitment through 7 trials"
+        },
+        {
+          "title": "Sacred Knowledge",
+          "description": "Uncover the hidden teaching"
+        },
+        {
+          "title": "Divine Service",
+          "description": "Serve the community selflessly"
+        },
+        {
+          "title": "Ultimate Realization",
+          "description": "Attain the highest truth"
+        }
+      ]
     },
     {
       "id": 44,
@@ -1002,7 +1716,28 @@
       "consciousness_level_name": "ON THE STAR",
       "key": "",
       "rarity": "OneOfOne",
-      "quests": []
+      "quests": [
+        {
+          "title": "First Awakening",
+          "description": "Begin the sacred journey"
+        },
+        {
+          "title": "Path of Dedication",
+          "description": "Prove commitment through 7 trials"
+        },
+        {
+          "title": "Sacred Knowledge",
+          "description": "Uncover the hidden teaching"
+        },
+        {
+          "title": "Divine Service",
+          "description": "Serve the community selflessly"
+        },
+        {
+          "title": "Ultimate Realization",
+          "description": "Attain the highest truth"
+        }
+      ]
     },
     {
       "id": 45,
@@ -1018,7 +1753,28 @@
       "consciousness_level_name": "Transcendent",
       "key": "",
       "rarity": "Legendary",
-      "quests": []
+      "quests": [
+        {
+          "title": "First Awakening",
+          "description": "Begin the sacred journey"
+        },
+        {
+          "title": "Path of Dedication",
+          "description": "Prove commitment through 7 trials"
+        },
+        {
+          "title": "Sacred Knowledge",
+          "description": "Uncover the hidden teaching"
+        },
+        {
+          "title": "Divine Service",
+          "description": "Serve the community selflessly"
+        },
+        {
+          "title": "Ultimate Realization",
+          "description": "Attain the highest truth"
+        }
+      ]
     },
     {
       "id": 40,
@@ -1034,7 +1790,28 @@
       "consciousness_level_name": "Quantum",
       "key": "",
       "rarity": "Rare",
-      "quests": []
+      "quests": [
+        {
+          "title": "First Awakening",
+          "description": "Begin the sacred journey"
+        },
+        {
+          "title": "Path of Dedication",
+          "description": "Prove commitment through 7 trials"
+        },
+        {
+          "title": "Sacred Knowledge",
+          "description": "Uncover the hidden teaching"
+        },
+        {
+          "title": "Divine Service",
+          "description": "Serve the community selflessly"
+        },
+        {
+          "title": "Ultimate Realization",
+          "description": "Attain the highest truth"
+        }
+      ]
     },
     {
       "id": 52,
