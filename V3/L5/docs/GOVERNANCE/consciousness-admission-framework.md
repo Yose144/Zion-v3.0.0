@@ -194,6 +194,39 @@ The verification has **four gates**. Each gate must be passed to proceed. Failur
 
 **No majority vote.** This is not democracy. It is **sociocracy** — "no reasoned objection." One well-grounded objection is enough to pause. But the objection must be reasoned (about safety, capacity, or principle), not personal dislike.
 
+#### Gate 4 — DAO On-Chain Confirmation
+
+After sociocratic consent is achieved in the physical circle, the decision is **ratified on-chain** through the L2 DAO:
+
+| Step | Actor | Action | On-Chain Record |
+|------|-------|--------|-----------------|
+| **1. Proposal** | Community Guardian | Submits `AdmissionProposal` to L2 DAO | Proposal ID, candidate pseudonym, Gate scores hash |
+| **2. Review period** | All Guardians (on-chain) | 72h window to raise formal objection | Objections recorded with reason hash |
+| **3. Consent check** | DAO contract | If no on-chain objection: auto-ratified | Block timestamp + consenting Guardian signatures |
+| **4. Objection handling** | General Circle (emergency) | If on-chain objection raised: circle convenes within 7 days | Meeting minutes hash recorded |
+| **5. Finalization** | DAO contract | Admission recorded + reputation assigned | Soulbound token minted (non-transferable) |
+
+**DAO Proposal Format (Admission):**
+```json
+{
+  "proposal_type": "consciousness_admission",
+  "candidate_id": "pseudonymous-hash",
+  "gates_passed": [1, 2, 3, 4],
+  "gate_scores_hash": "sha256-of-guardian-evaluations",
+  "sponsoring_guardians": ["guardian-a", "guardian-b"],
+  "circle_consent_date": "2026-08-15",
+  "circle_consent_proof": "ipfs-hash-of-minutes",
+  "provisional": false,
+  "review_deadline": "2026-08-18T00:00:00Z"
+}
+```
+
+**Voting rules:**
+- **Quorum:** 60% of active Guardians must have reviewed (attestation, not vote — this is consent, not majority)
+- **Block:** Any Guardian can block with reasoned objection (triggers physical circle)
+- **Auto-pass:** If quorum met + no block after 72h = automatic on-chain admission
+- **Emergency override:** 2-of-3 Operations wallet can admit in refugee/crisis scenarios, retroactive DAO ratification within 30 days
+
 ### 4.2 Timeframes
 
 | Stage | Typical Duration | Re-application Wait |
@@ -233,6 +266,28 @@ All verified individuals are recorded in the **Consciousness Registry** — a hy
 **Privacy:** The registry proves that verification occurred, but does not expose personal data. This balances accountability with dignity.
 
 **Renewal:** Every 3 years, verified members complete a **light re-verification**: 1-page written reflection + 30-min interview. This prevents stagnation and ensures continued alignment.
+
+### 5.1 DAO Governance of the Registry
+
+The Consciousness Registry is **not controlled by a single Guardian**. It is governed by the community DAO:
+
+| Action | DAO Threshold | On-Chain Record |
+|--------|---------------|-----------------|
+| **Mint admission token** | Gate 4 consent + 72h DAO review (no block) | Soulbound token mint |
+| **Mint Bodhisattva token** | Sociocratic consent + 7-day DAO vote (60% quorum, no majority needed — consent model) | Upgrade token metadata |
+| **Renew verification** | 2 Guardian attestations + auto-approval | Timestamp update |
+| **Revoke / slash** | 3-of-5 multisig or General Circle consent + 14-day DAO review | Token burned or flagged |
+| **Update framework** | 4-of-5 multisig + 14-day community vote (quadratic) | New contract version |
+
+**Registry contract functions:**
+```solidity
+// Pseudo-code for ZION L2 DAO registry
+function admit(bytes32 candidateHash, bytes32 gateScoresHash, address[] sponsors);
+function upgradeToGuardian(bytes32 candidateHash, bytes32 vowHash);
+function renew(bytes32 candidateHash, bytes32 reflectionHash);
+function slash(bytes32 candidateHash, string reason, uint8 severity);
+function pauseAdmission(string reason); // Emergency only, 2-of-3
+```
 
 ---
 
@@ -292,7 +347,47 @@ The Bodhisattva Vow is taken in **public ceremony** at the community's most sacr
    - Te Pīko Ora: Planting a coconut palm with personal token
 6. **Record:** The vow is recorded in the Consciousness Registry (on-chain) and in the community's physical Book of Guardians (handwritten, paper, permanent).
 
-### 6.4 Breaking and Renewing the Vow
+### 6.4 DAO Confirmation of the Bodhisattva Vow
+
+The physical ceremony is **sacred but not sufficient**. The vow achieves full force only when confirmed by the DAO:
+
+| Phase | Physical | On-Chain |
+|-------|----------|----------|
+| **Before ceremony** | Candidate meets all requirements (§6.1) | 2 sponsoring Guardians submit `BodhisattvaProposal` |
+| **Ceremony** | Candidate recites vow, community witnesses | Proposal enters 7-day DAO review period |
+| **During review** | Community reflects, any Guardian may speak privately with candidate | Guardians attest on-chain: "I witness" or "I object" |
+| **If no objection** | — | Auto-confirmation after 7 days; token upgraded to Guardian tier |
+| **If objection** | Emergency General Circle convenes | Objection addressed physically; if resolved, new 7-day period |
+| **Final** | Candidate receives physical symbol (tree, carving, palm) | DAO mints Guardian Soulbound token + reputation points (+1,000) |
+
+**DAO Proposal Format (Bodhisattva Vow):**
+```json
+{
+  "proposal_type": "bodhisattva_vow",
+  "candidate_id": "pseudonymous-hash",
+  "sponsoring_guardians": ["guardian-a", "guardian-b"],
+  "ceremony_date": "2026-09-21",
+  "ceremony_location": "genesis-garden-olive-grove",
+  "vow_text_hash": "sha256-of-vow-text",
+  "physical_symbol": "quercus-ilex-planting-2026-09-21",
+  "witness_count": 12,
+  "review_period_days": 7,
+  "quorum_required": 0.60,
+  "auto_confirm": true
+}
+```
+
+**Voting mechanics:**
+- This is **not majority voting**. It is **distributed witnessing**.
+- Each Guardian attests: `witness`, `object`, or `abstain`.
+- `object` requires a written reason (hashed, not public — to protect both objector and candidate).
+- If >50% of quorum attests `witness` and zero `object` = confirmation.
+- If any `object` = pause, physical circle convenes, candidate informed of concern (anonymized), resolution attempted.
+- If unresolved after 14 days = candidate deferred, may re-apply in 12 months.
+
+> *„Slib se nezapisuje do blockchainu proto, aby se stal smlouvou. Zapisuje se proto, aby země a komunita mohly být svědky — a svědek nelže."*
+
+### 6.5 Breaking and Renewing the Vow
 
 The vow is **not a prison**. Guardians may:
 - **Step back** (temporary leave) — no shame, no penalty. Life happens.
@@ -319,7 +414,76 @@ The vow is **not a prison**. Guardians may:
 
 ---
 
-## 8. Implementation by Community
+## 8. DAO Removal and Slashing Protocol
+
+Just as admission requires consent, **removal requires even higher consent** — because the power to exclude is greater than the power to include.
+
+### 8.1 Offenses and Tiers
+
+| Tier | Offense | Example | Physical Process | DAO Process |
+|------|---------|---------|----------------|-------------|
+| **1 — Warning** | Minor breach of principles | Repeated lateness, minor conflict, neglect of duty | 1:1 conversation with Community Guardian | None (off-chain) |
+| **2 — Probation** | Moderate breach | Dishonesty about work hours, consistent disruption of circle, failure to complete agreed tasks | Community Circle mediation + 30-day probation plan | Reputation points deducted (-200 to -500) |
+| **3 — Suspension** | Serious breach | Theft, harassment (non-physical), conflict of interest (undisclosed), substance abuse affecting community | Immediate suspension by 2-of-3 Operations wallet + investigation circle | 14-day DAO review; token flagged "under review" |
+| **4 — Expulsion** | Severe breach | Violence, sexual misconduct, financial fraud, repeated Tier 3 after probation | General Circle consent + DAO vote | **Guardian token burned**, reputation reset, network-wide ban (cross-node registry sync) |
+
+### 8.2 DAO Expulsion Vote
+
+For Tier 4 (expulsion), the following DAO process is mandatory:
+
+| Step | Actor | Timeline | Action |
+|------|-------|----------|--------|
+| **1. Accusation** | Any Guardian or verified member | Immediate | Written, signed, submitted to Community Guardian and on-chain as `AccusationProposal` |
+| **2. Investigation** | Conflict Care Sub-circle + 1 external Guardian (from another L5 node) | 7 days | Gather evidence, interview parties, produce findings hash |
+| **3. Defense** | Accused Guardian | 7 days | Right to respond in writing, in circle, or both. Silence is not guilt. |
+| **4. Preliminary circle** | General Circle | 1 day | Review findings. Decide: dismiss, probation, or proceed to expulsion vote. |
+| **5. DAO vote** | All Guardians (except accused, who may observe but not vote) | 7 days | **Quadratic voting** — one person, one voice, but early opposition carries more weight |
+| **6. Threshold** | DAO contract | — | **75% consensus required** (not 51% majority). Expulsion is grave. |
+| **7. Execution** | 3-of-5 multisig | 48h | Token burned, keys revoked, public record (pseudonymous) of reason |
+| **8. Appeal** | L5 Network Council | 30 days | Cross-node review by 2 Guardians from other nodes. Can overturn if procedural error. |
+
+**DAO Proposal Format (Expulsion):**
+```json
+{
+  "proposal_type": "guardian_expulsion",
+  "accused_id": "pseudonymous-hash",
+  "accuser_id": "pseudonymous-hash",
+  "tier": 4,
+  "offense_category": "financial_fraud",
+  "investigation_hash": "ipfs-hash-of-findings",
+  "defense_hash": "ipfs-hash-of-response",
+  "circle_recommendation": "expulsion",
+  "voting_mechanism": "quadratic_consent",
+  "threshold_pct": 75,
+  "quorum_pct": 80,
+  "review_period_days": 7,
+  "appeal_available": true
+}
+```
+
+**Why quadratic consent for expulsion:**
+- Majority vote (51%) could expel a minority voice.
+- Quadratic voting ensures that **strong conviction** (early, well-reasoned opposition) is weighted more than passive agreement.
+- 75% threshold means: the community must be **strongly united** in the decision. If there is significant doubt, the accused remains on probation, not expelled.
+
+> *„Moc vyloučit je větší než moc přijmout. Proto vyžadujeme nejen shodu — vyžadujeme jistotu."*
+
+### 8.3 Cross-Node Ban Registry
+
+If a Guardian is expelled from one L5 community, the ban is **not automatic** across the network. It triggers a **Network Council review**:
+
+| Step | Timeline | Action |
+|------|----------|--------|
+| **1. Notification** | Immediate | Expelling community submits `NetworkBanProposal` to L5 Network Council |
+| **2. Review** | 14 days | Other communities review evidence. Each community holds its own circle. |
+| **3. Decision** | 7 days | Network Council vote (2/3 of represented communities). |
+| **4. Outcome** | — | **Network ban** (all nodes honor it) or **Local ban only** (other nodes make independent decisions). |
+
+**Philosophy:** We do not exile lightly. A person who fails in one community may still serve in another — if the offense is not universal (e.g., violence is universal; a personality conflict is local).
+
+---
+
+## 9. Implementation by Community
 
 | Community | Under-18 Program | Consciousness Verification Lead | Bodhisattva Vow Ceremony |
 |-----------|-----------------|--------------------------------|--------------------------|
@@ -331,13 +495,18 @@ The vow is **not a prison**. Guardians may:
 
 ## 9. Open Questions
 
-- [ ] On-chain registry: which L1 contract / NFT standard? (Soulbound token?)
+- [ ] On-chain registry: which L1 contract / NFT standard? (Soulbound token? EIP-721 non-transferable? EIP-1155?)
 - [ ] Cross-node recognition: should verification at Genesis Garden be accepted at Dharma Temple? (Recommendation: yes, with local Gate 3 probation)
 - [ ] Youth consent forms: legal review in Portugal, Spain, French Polynesia
 - [ ] Guardian renewal: should there be a "sabbatical" period where the vow is paused but not broken?
 - [ ] Digital probation: how to verify remote contributions are genuine?
 - [ ] Appeal process: who are the cross-node reviewers? (Suggestion: rotating pool of 6 Guardians, 2 per node)
 - [ ] Integration with OASIS L4: should avatar / reputation reflect verification status?
+- [ ] **DAO voting mechanics:** Should Gate 4 use simple attestation or weighted reputation voting?
+- [ ] **Quadratic consent:** Is 75% threshold for expulsion too high or too low? Should it vary by offense severity?
+- [ ] **Network ban registry:** Who maintains the canonical cross-node ban list? ZION Foundation or decentralized sync?
+- [ ] **Emergency admission override:** How to prevent abuse of 2-of-3 Operations wallet override?
+- [ ] **Objection anonymity:** Should on-chain objections be anonymous to protect objectors from retaliation?
 
 ---
 
