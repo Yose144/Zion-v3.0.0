@@ -144,6 +144,14 @@ function updateServiceCards(s){
   document.getElementById('val-pool-shares').textContent = (p.shares_accepted ?? 0) + ' / ' + (p.shares_rejected ?? 0);
   document.getElementById('val-pool-fee').textContent = p.fee_split ? 'Split: ' + p.fee_split : '—';
 
+  const pe = s.pool_edge ?? {};
+  setBadge('badge-pool-edge', pe.running); setCardLive('pool-edge', pe.running);
+  document.getElementById('val-pool-edge-status').textContent = pe.running ? '✓ Online' : '✗ Offline';
+  document.getElementById('val-pool-edge-status').className = 'text-3xl font-bold mb-1 ' + (pe.running ? 'text-emerald-400' : 'text-red-400');
+  document.getElementById('val-pool-edge-host').textContent = pe.host ?? '—';
+  document.getElementById('val-pool-edge-port').textContent = pe.ports_open?.[0]?.split(':')[1] ?? '8444';
+  document.getElementById('val-pool-edge-detail').textContent = pe.running ? 'Tailscale + Public ready' : 'Unreachable';
+
   setBadge('badge-miner', m.running && m.hashrate); setCardLive('miner', m.running && m.hashrate);
   document.getElementById('val-miner-hashrate').textContent = m.hashrate ? m.hashrate.toFixed(2) : '—';
   document.getElementById('val-miner-gpu').textContent = (m.gpu_backend ? m.gpu_backend + ': ' : '') + (m.gpu_device ?? '—');
