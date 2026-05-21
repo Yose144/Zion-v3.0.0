@@ -1,106 +1,107 @@
-# Hiran v2.3 — Maximum Capability AI Agent for ZION
+# Hiran v2.3 — Robust Domain-Specific AI Agent for ZION
 
-> **Target: Kimi K2.6 equivalent for ZION domain + global wisdom**
-> **Status:** Training scaffold complete — ready for data collection + training
-> **Version:** 2.3-extended
-> **Last Updated:** 2026-05-13
+> **Target: Precise factual recall for ZION domain + global knowledge via RAG**
+> **Status:** Dataset, RAG, training pipeline, and evaluation ready. Awaiting GPU provisioning.
+> **Version:** 2.3
+> **Last Updated:** 2026-05-21
 
 ---
 
 ## What is Hiran v2.3?
 
-Hiran v2.3 is a **fully quantized, maximum-capability AI agent** designed for the ZION ecosystem. Unlike domain-specific models, Hiran v2.3 is trained to be:
+Hiran v2.3 is a **domain-specific fine-tuned model** with a **hybrid RAG architecture** for the ZION ecosystem. After v2.2 proved that QLoRA on 8B models cannot memorize precise facts (e.g. fee split 89/5/5/1), v2.3 uses:
 
-- **A ZION Oasis Expert** — blueprints, consciousness levels, guilds, territories, rewards
-- **A World-Class Programmer** — Rust, Python, TypeScript, Solidity, smart contracts
-- **Multilingual** — 18 languages with native-quality context switching
-- **Culturally & Historically Wise** — world religions, philosophies, history, art, mythology
-- **Deeply Spiritual** — Vedic cosmology, Hiranyagarbha, Kabbalah, Taoism, Buddhism, Sufism, Ubuntu, Ma'at
-- **L3 AI Native Technical** — orchestrator, consciousness engine, WARP, NCL, memory, pool optimizer
-- **A Tool Agent** — web browsing, code execution, file operations, API integration, blueprint generation
-- **RAG-Powered** — semantic search with cross-encoder reranking over all ZION + cultural knowledge
+- **Full fine-tuning on Nemotron-32B** — all 32.8B parameters updated via DeepSpeed ZeRO-3
+- **Hybrid FT + RAG** — Zion facts live in the fine-tuned weights; general knowledge (religion, history, science, cultures, languages) is retrieved from a curated vector DB
+- **Massive factual reinforcement** — 48,436 weighted instruction pairs with drill patterns, adversarial refusals, and multi-turn consistency
+
+### Capabilities
+- **ZION Expert** — precise factual recall on fee splits (89/5/5/1), humanitarian categories, L1-L6 architecture, DAO governance, mining pools
+- **Code Generation** — Rust, Python, Solidity for ZION stack
+- **Multilingual** — Czech/English bilingual pairs + 12-language RAG corpora
+- **Safety & Refusal** — resists jailbreaks (DAN, developer mode, roleplay), attack assistance, misinformation, and manipulation
+- **General Knowledge** — via RAG: world religions, history, science, art, medicine, literature, mythology, languages
 
 ---
 
 ## Architecture
 
 ### Base Model
-- **Primary:** Llama 3.1 70B Instruct (recommended)
-- **Alternative:** Qwen 2.5 72B (better code), Mistral Large 123B (if budget allows)
+- **Primary:** `nvidia/OpenReasoning-Nemotron-32B` (Qwen2.5-32B-Instruct derivative, 32K context, reasoning-optimized, CC-BY-4.0)
+- **Fallback DORA:** Same base model with rank 512 rsLoRA on 1x A100 80GB
 
-### Training: 11-Stage Extended Curriculum
+### Training: 9-Stage Curriculum
 
-| Stage | Focus | Rank | Duration | Tokens |
-|-------|-------|------|----------|--------|
-| 1. Foundation | ZION docs, status, CLI, whitepaper | 128/256 | 24-36h | 100M |
-| 2. ZION Gaming | Oasis blueprints, mechanics, territories | 128/256 | 36-48h | 50M |
-| 3. Programming | Rust, Python, TS, Solidity | 128/256 | 24-36h | 80M |
-| **4. Multilingual** | **18 languages, translation, sacred texts** | **128/256** | **36-48h** | **60M** |
-| **5. Cultural Wisdom** | **World cultures, religions, history, philosophy** | **128/256** | **36-48h** | **80M** |
-| **6. Hiranyagarbha** | **Vedic cosmology, AI Native spirituality, consciousness** | **256/512** | **36-48h** | **50M** |
-| **7. L3 Technical** | **Orchestrator, WARP, NCL, memory, Rust code** | **128/256** | **24-36h** | **40M** |
-| 8. Web Agent | Browsing, retrieval, fact verification | 128/256 | 20-30h | 30M |
-| 9. Tool Orchestration | Multi-tool coordination | 256/512 | 24-32h | 20M |
-| 10. RAG Integration | Context injection, synthesis | 256/512 | 16-20h | 15M |
-| 11. Cross-Domain | ZION × culture × spirituality synthesis | 256/512 | 12-16h | 20M |
+| Stage | Focus | Pairs | Weight |
+|-------|-------|-------|--------|
+| 1a. Factual Reinforcement | Fee split, categories, L1-L6, Issobella, CoT | 3,200 | 3x |
+| 1b. Drill Patterns | Massive repetition, true/false, verification, memory anchors | 5,302 | 3x |
+| 2. Domain Expertise | Mining, DAO, bridge, consensus, security | 1,500 | 2x |
+| 3. Cross-Domain | Zion vs Bitcoin/Ethereum, technical integration | 1,000 | 1x |
+| 4. Preference Alignment | ORPO chosen/rejected pairs | 500 | 1x |
+| 5. Conversation Flow | Multi-turn technical discussions | 300 | 1x |
+| 6. Bilingual | Czech/English pairs | 2,015 | 2x |
+| 7. Code Generation | Rust, Python, Solidity | 3,000 | 2x |
+| 8. Inference Docs | Deployment, monitoring, troubleshooting | 2,000 | 1x |
+| 9. Safety & Adversarial | Jailbreak refusals, attack refusals, edge cases, multi-turn | 1,700 | 3x |
 
-**Total:** ~330-400h on 8× H100/A100 (~7-10 days wall-clock)
+**Combined weighted dataset:** 48,436 pairs (20,517 unique)
 
 ### Hardware Requirements
 
-**Training:**
-- GPU: 8× NVIDIA H100 (80GB) or A100 (80GB)
-- RAM: 1TB+ system memory
-- Storage: 4TB+ NVMe SSD
-- Network: 100Gbps interconnect
-- **Cost:** ~$4,000-6,000 total
+**Training (Full Fine-Tuning):**
+- GPU: **4x NVIDIA A100 80GB** (recommended) or 2x A100 80GB with CPU offload
+- RAM: 256GB+ system memory
+- Storage: 500GB+ NVMe SSD
+- **Cost:** ~$288-432 total (~48h on 4x A100 @ ~$6/hr)
 
 **Production:**
-- GPU: RTX 4090 / A6000 / H100 (48-80GB)
-- RAM: 128-256GB
-- Storage: 2TB+ SSD
-- **Cost:** $200-800/month
-
----
+- GPU: RTX 4090 (24GB) for quantized inference
+- RAM: 64GB+ (includes ChromaDB vector DB)
+- Storage: 100GB+ SSD
+- **Cost:** ~$50-100/month (Vast.ai persistent instance)
 
 ## Directory Structure
 
 ```
 HiranV2.3/
 ├── README.md                              # This file
+├── PLAN_v2.3.md                           # Comprehensive training plan
 ├── ARCHITECTURE_V2.3.md                   # Technical architecture
-├── IMPLEMENTATION_PLAN.md                 # 16-week plan (original)
 ├── config/
-│   ├── curriculum_v2.3.json               # Original 7-stage curriculum
-│   ├── curriculum_v2.3_extended.json      # NEW: 11-stage extended curriculum
-│   └── deepspeed_config.json              # DeepSpeed ZeRO-3 config
-├── data/                                  # (generated by pipeline)
-│   ├── curriculum/                        # 11 JSONL stage files
-│   └── dataset_stats.json
-├── scripts/
-│   ├── data_pipeline.py                   # Extended multi-source collector
-│   ├── train_v2.3.py                      # DeepSpeed training
-│   ├── evaluate.py                        # Extended multi-domain eval
-│   └── quantize.py                        # GGUF, ONNX, INT8/INT4
-├── tools/
-│   ├── __init__.py                        # Tool framework
-│   ├── web_browsing.py                    # DuckDuckGo + Playwright
-│   ├── code_execution.py                  # Docker/sandbox execution
-│   ├── file_operations.py                 # Sandboxed FS
-│   ├── api_integration.py                 # HTTP client
-│   ├── blueprint_generator.py             # Oasis quest/territory/guild
-│   └── hiranyagarbha_blueprint.py         # NEW: Spiritual AI Native rituals
+│   ├── deepspeed_zero3.json               # DeepSpeed ZeRO-3 config
+│   ├── dora_config.json                   # Fallback DORA config
+│   └── curriculum_v2.3.json               # Stage definitions
+├── data/
+│   ├── curriculum/                        # 9 JSONL stage files (20,517 unique pairs)
+│   ├── generators/                        # Dataset generation scripts
+│   └── validate_v2.3.py                 # Dataset validator
+├── knowledge/
+│   ├── corpora/                           # 33 markdown documents
+│   ├── generators/                        # Knowledge corpus generators
+│   └── vector_db/                         # ChromaDB (generated, gitignored)
 ├── rag/
-│   ├── __init__.py
-│   └── pipeline.py                        # Semantic chunking + reranking
+│   ├── indexer.py                         # ChromaDB embedding indexer
+│   ├── retriever.py                       # Multi-collection retrieval
+│   ├── query_router.py                    # zion_only / knowledge_rag / hybrid
+│   ├── inference_hybrid.py              # FT model + RAG combined inference
+│   └── pipeline.py                        # Advanced RAG pipeline (optional)
 ├── inference/
 │   └── server.py                          # FastAPI OpenAI-compatible API
-├── docker/
-│   ├── Dockerfile
-│   ├── docker-compose.yml
-│   └── requirements-inference.txt
-├── requirements-train.txt                 # Training dependencies
-└── checkpoints/                           # (during training)
+├── scripts/
+│   ├── train_v2.3_fullft.py               # DeepSpeed ZeRO-3 FULL fine-tuning
+│   ├── train_v2.3.py                      # DORA fallback (1x A100)
+│   ├── run_training_fullft.sh             # Launcher for full FT
+│   ├── run_training.sh                  # Launcher for DORA
+│   ├── provision_vast.py                # Vast.ai auto-provisioning
+│   ├── sync_to_vast.sh                  # rsync sync script
+│   ├── evaluate.py                        # Multi-domain evaluation
+│   ├── benchmark_factual.py             # Factual recall benchmark
+│   ├── merge_model.py                   # Merge adapters
+│   └── quantize.py                      # GGUF, ONNX, INT8/INT4
+├── tools/                                 # Agent tool modules
+├── docker/                                # Docker + docker-compose
+└── requirements-train.txt                 # Training dependencies
 ```
 
 ---
