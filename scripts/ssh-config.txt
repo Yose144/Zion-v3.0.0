@@ -1,0 +1,16 @@
+# SSH config for ZION Edge Server
+# ================================
+# Add this to your ~/.ssh/config (Linux/Mac) or %USERPROFILE%\.ssh\config (Windows)
+#
+# Then connect with: ssh zion-edge
+
+Host zion-edge
+    HostName 77.42.71.94
+    User root
+    IdentityFile ~/.ssh/ssh-key-zion-edge
+    IdentitiesOnly yes
+    StrictHostKeyChecking accept-new
+
+# For Windows PowerShell / OpenSSH:
+# Copy ssh-key-zion-edge to %USERPROFILE%\.ssh\
+# Then: ssh zion-edge

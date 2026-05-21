@@ -134,6 +134,8 @@ docker-data/
 # Secrets & Keys
 *.pem
 *.key
+ssh-key-*
+ssh_key_*
 *.p12
 *.secret
 wallet_keys/
