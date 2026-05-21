@@ -210,6 +210,24 @@ List the first 10–15 crops you will plant, with seasonality.
 | | | |
 | | | |
 
+### 6.4 Admission & Consciousness Protocol (Required)
+
+All L5 communities **must** implement the [`Consciousness Admission Framework`](../GOVERNANCE/consciousness-admission-framework.md). You may adapt details to local culture, but the core requirements are non-negotiable:
+
+| Tier | Age | Entry Rule |
+|------|-----|-----------|
+| **Seedling** | 0–7 | Free with parent/guardian |
+| **Sprout** | 8–12 | Free with parent consent + welcome interview |
+| **Sapling** | 13–17 | **Free entry** — parent consent + intent letter + welcome interview |
+| **Seeker / Steward** | 18+ | Standard rate + **Consciousness Verification** (4 Gates) |
+| **Guardian** | 21+ (or exceptional youth) | Full verification + **Bodhisattva Vow** |
+
+**Local adaptations to document:**
+- [ ] Under-18 program name and curriculum
+- [ ] Which Guardian(s) lead Consciousness Verification
+- [ ] Sacred space for Bodhisattva Vow ceremony
+- [ ] Physical symbol of vow (tree planting, carving, etc.)
+
 ---
 
 ## 7. Development Timeline
