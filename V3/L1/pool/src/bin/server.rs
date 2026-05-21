@@ -78,6 +78,20 @@ fn notify_oasis_block_mined(miner_address: &str, block_height: u64) {
     }
 }
 
+/// Best-effort fire-and-forget share relay to upstream/Core pool.
+/// Opens a TCP connection, sends a single ShareRelay line, and closes.
+/// Failure is logged but never blocks the local session.
+fn relay_share_fire_and_forget(upstream_addr: &str, relay: &PoolMessage) -> Result<()> {
+    let mut stream = TcpStream::connect(upstream_addr)
+        .with_context(|| format!("failed to connect to upstream pool at {}", upstream_addr))?;
+    stream.set_write_timeout(Some(Duration::from_secs(3)))?;
+    let line = encode_message(relay)?;
+    stream.write_all(line.as_bytes())?;
+    stream.flush()?;
+    // We intentionally do NOT read a response — fire-and-forget.
+    Ok(())
+}
+
 fn main() -> Result<()> {
     let config = ServerConfig::from_env()?;
     let pool = Arc::new(Mutex::new(MiningPool::with_job_ttl(
@@ -131,6 +145,11 @@ fn main() -> Result<()> {
     );
     if let Some(node_rpc_addr) = config.node_rpc_addr.as_deref() {
         println!("node_rpc_addr={node_rpc_addr}");
+    }
+    if let Some(upstream) = config.upstream_pool_addr.as_deref() {
+        println!("upstream_pool_addr={upstream} (share relay enabled — Edge mode)");
+    } else {
+        println!("upstream_pool_addr=(not set) — this pool owns the PPLNS window (Core mode)");
     }
     println!(
         "payout_execution={} pool_wallet={}",
@@ -492,6 +511,15 @@ fn handle_client(
     let (hello_line, hello_message) = read_wire_message(&mut reader)?;
     println!("wire_hello={}", hello_line);
 
+    // ── Inter-pool ShareRelay (Edge → Core) ─────────────────────────────
+    // If the first message is a ShareRelay, record it in PPLNS and close.
+    if let PoolMessage::ShareRelay { miner_id, worker_name, height, difficulty, relay_origin } = &hello_message {
+        let mut pplns = pplns_engine.lock().expect("pplns lock poisoned");
+        pplns.record_share_with_diff(miner_id, worker_name, *height, *difficulty);
+        println!("share_relay_accepted miner={} worker={} height={} diff={} origin={}", miner_id, worker_name, height, difficulty, relay_origin);
+        return Ok(());
+    }
+
     let (miner_id, worker_name, algorithm) = match hello_message {
         PoolMessage::Hello {
             miner_id,
@@ -745,6 +773,21 @@ fn handle_client(
                             job.height,
                             share_difficulty,
                         );
+                    }
+                    // ── Relay to upstream/Core pool (Edge mode) ──────────
+                    if let Some(ref upstream) = config.upstream_pool_addr {
+                        let relay = PoolMessage::ShareRelay {
+                            miner_id: miner_id.clone(),
+                            worker_name: worker_name.clone(),
+                            height: job.height,
+                            difficulty: share_difficulty,
+                            relay_origin: config.bind_addr.clone(),
+                        };
+                        if let Err(e) = relay_share_fire_and_forget(upstream, &relay) {
+                            println!("share_relay_failed miner={} upstream={} err={}", worker_name, upstream, e);
+                        } else {
+                            println!("share_relayed miner={} upstream={} diff={}", worker_name, upstream, share_difficulty);
+                        }
                     }
                     println!(
                         "valid_share miner={} job={} share_diff={}",
@@ -1379,6 +1422,10 @@ struct ServerConfig {
     /// Default coin for revenue proxy redirect (e.g. "KAS").
     revenue_proxy_coin: String,
     fee_config: FeeConfig,
+    /// Upstream/Core pool address for share relay (Edge pool only).
+    /// When set, every accepted share is forwarded to the upstream pool
+    /// via `ShareRelay` so the Core pool owns the unified PPLNS window.
+    upstream_pool_addr: Option<String>,
 }
 
 #[derive(Debug)]
@@ -2756,6 +2803,7 @@ impl ServerConfig {
             revenue_proxy_addr: parse_optional_env_string("ZION_REVENUE_PROXY_ADDR"),
             revenue_proxy_coin: std::env::var("ZION_REVENUE_PROXY_COIN")
                 .unwrap_or_else(|_| "KAS".to_string()),
+            upstream_pool_addr: parse_optional_env_string("ZION_UPSTREAM_POOL_ADDR"),
             // WARNING: Fallback values must stay in sync with `zion_core::emission`.
             // If the protocol-level split changes, update here, in pplns.rs,
             // cosmic-harmony/src/revenue.rs, and the whitepapers.

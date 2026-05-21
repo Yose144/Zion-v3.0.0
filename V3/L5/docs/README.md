@@ -39,6 +39,8 @@ V3/L5/docs/
 │   ├── community-dao-framework.md         ← On-chain + off-chain governance model
 │   ├── consciousness-admission-framework.md ← Age-based entry, 5 Dharmic principles, Bodhisattva vow
 │   └── multi-layer-dao-governance.md      ← Co-Admin system across L1–L6, cross-layer voting, slashing
+├── PROTOCOLS/
+│   └── resonance-protocol.md      ← Sound, Time & Intergenerational Bridge (Resonance Council, Fibonacci Time Capsule, Light Language Registry)
 ├── TECH/
 │   ├── zion-node-spec.md          ← Hardware/software spec for Guardian nodes
 │   ├── mesh-network.md            ← LoRa/Meshtastic off-grid communication
@@ -75,6 +77,7 @@ Every L5 community implements the same **baseline protocols**, ensuring interope
 | **LoRa / Meshtastic Mesh** | Off-grid communication within and between communities | Message relay, no blockchain dependency |
 | **Sociocratic DAO** | Hybrid governance: off-chain circles + on-chain treasury votes | L2 DAO proposals for capital allocation |
 | **Consciousness Admission** | Age-based entry (free <18), Dharmic principles, Bodhisattva vow for Guardians | Off-chain verification, on-chain registry (Soulbound token) |
+| **Resonance Protocol** | Sound attunement before governance, Fibonacci Time Capsules, Youth–Elder Bridge, Light Language Registry | L2 DAO seal requirement, Co-Admin frequency signatures, cross-layer HRV proof |
 
 ---
 
