@@ -233,8 +233,9 @@ def check_service_health(svc: dict) -> dict:
     open_ports = []
     closed_ports = []
     host = svc.get("host", "127.0.0.1")
+    timeout = 1.5 if host != "127.0.0.1" else 0.15
     for name, port in ports.items():
-        if tcp_probe(host, port):
+        if tcp_probe(host, port, timeout):
             open_ports.append(f"{name}:{port}@{host}")
         else:
             closed_ports.append(f"{name}:{port}@{host}")
