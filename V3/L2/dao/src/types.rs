@@ -117,6 +117,93 @@ pub struct Guardian {
 }
 
 // ---------------------------------------------------------------------------
+// Co-Admin — multi-layer governance participant
+// ---------------------------------------------------------------------------
+
+/// Layer identifier for Co-Admin governance (1–6)
+pub type LayerId = u8;
+
+/// Role of a Co-Admin within a specific layer
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum CoAdminRole {
+    Validator,   // L1: consensus node operator
+    CoreDev,     // L1: protocol developer
+    Security,    // L1: emergency response
+    Treasury,    // L2: treasury guardian
+    Bridge,      // L2/L3: bridge guardian
+    Relayer,     // L3: WARP cross-chain relayer
+    Auditor,     // L3: cross-chain auditor
+    Curator,     // L4: OASIS quest/avatar curator
+    Moderator,   // L4: content moderator
+    Community,   // L5: physical community guardian
+    Network,     // L5: L5 network council delegate
+    Steward,     // L6: Issobella space steward
+}
+
+impl CoAdminRole {
+    /// Which layer this role belongs to
+    pub fn layer(&self) -> LayerId {
+        match self {
+            CoAdminRole::Validator | CoAdminRole::CoreDev | CoAdminRole::Security => 1,
+            CoAdminRole::Treasury | CoAdminRole::Bridge => 2,
+            CoAdminRole::Relayer | CoAdminRole::Auditor => 3,
+            CoAdminRole::Curator | CoAdminRole::Moderator => 4,
+            CoAdminRole::Community | CoAdminRole::Network => 5,
+            CoAdminRole::Steward => 6,
+        }
+    }
+
+    /// Human-readable role name
+    pub fn role_name(&self) -> &'static str {
+        match self {
+            CoAdminRole::Validator => "validator",
+            CoAdminRole::CoreDev => "core_dev",
+            CoAdminRole::Security => "security",
+            CoAdminRole::Treasury => "treasury",
+            CoAdminRole::Bridge => "bridge",
+            CoAdminRole::Relayer => "relayer",
+            CoAdminRole::Auditor => "auditor",
+            CoAdminRole::Curator => "curator",
+            CoAdminRole::Moderator => "moderator",
+            CoAdminRole::Community => "community",
+            CoAdminRole::Network => "network",
+            CoAdminRole::Steward => "steward",
+        }
+    }
+}
+
+/// A Co-Admin is a governance participant with bonded stake and reputation
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CoAdmin {
+    pub name: String,
+    pub address: String,
+    pub public_key: String,
+    pub role: CoAdminRole,
+    pub layer: LayerId,
+    pub bonded: u64,         // staked/bonded amount in flowers
+    pub reputation: u64,     // governance reputation score
+    pub is_active: bool,
+    pub appointed_at: u64,   // block height
+    pub term_end: Option<u64>, // block height, None = indefinite
+}
+
+impl CoAdmin {
+    /// Check if this Co-Admin holds a role in a given layer
+    pub fn is_in_layer(&self, layer: LayerId) -> bool {
+        self.layer == layer && self.is_active
+    }
+
+    /// Check if this Co-Admin can participate in cross-layer proposals
+    pub fn can_cross_layer(&self) -> bool {
+        // Only roles with explicit cross-layer permission
+        matches!(
+            self.role,
+            CoAdminRole::Treasury | CoAdminRole::Bridge | CoAdminRole::Network | CoAdminRole::Steward
+        )
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Snapshot of voter balance
 // ---------------------------------------------------------------------------
 
@@ -167,6 +254,55 @@ mod tests {
         assert!(parse_dao_memo("BRIDGE:base:0x123").is_none());
         assert!(parse_dao_memo("DAO:invalid").is_none());
         assert!(parse_dao_memo("random text").is_none());
+    }
+
+    #[test]
+    fn test_co_admin_role_layer() {
+        assert_eq!(CoAdminRole::Validator.layer(), 1);
+        assert_eq!(CoAdminRole::Treasury.layer(), 2);
+        assert_eq!(CoAdminRole::Relayer.layer(), 3);
+        assert_eq!(CoAdminRole::Curator.layer(), 4);
+        assert_eq!(CoAdminRole::Community.layer(), 5);
+        assert_eq!(CoAdminRole::Steward.layer(), 6);
+    }
+
+    #[test]
+    fn test_co_admin_role_name() {
+        assert_eq!(CoAdminRole::Validator.role_name(), "validator");
+        assert_eq!(CoAdminRole::Steward.role_name(), "steward");
+    }
+
+    #[test]
+    fn test_co_admin_cross_layer() {
+        let treasury = CoAdmin {
+            name: "Alice".into(),
+            address: "zion1alice".into(),
+            public_key: "pk1".into(),
+            role: CoAdminRole::Treasury,
+            layer: 2,
+            bonded: 1_000_000,
+            reputation: 500,
+            is_active: true,
+            appointed_at: 100,
+            term_end: None,
+        };
+        assert!(treasury.can_cross_layer());
+        assert!(treasury.is_in_layer(2));
+        assert!(!treasury.is_in_layer(5));
+
+        let validator = CoAdmin {
+            name: "Bob".into(),
+            address: "zion1bob".into(),
+            public_key: "pk2".into(),
+            role: CoAdminRole::Validator,
+            layer: 1,
+            bonded: 2_000_000,
+            reputation: 1000,
+            is_active: true,
+            appointed_at: 200,
+            term_end: None,
+        };
+        assert!(!validator.can_cross_layer());
     }
 
     #[test]

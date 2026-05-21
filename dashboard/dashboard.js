@@ -1,6 +1,6 @@
 'use strict';
 
-const TABS = ['overview','services','l1','l2','l3','l4','l5','l6','genesis','blockers','controls','charts','events','env','database','metrics','wizard','logs'];
+const TABS = ['overview','wallets','services','l1','l2','l3','l4','l5','l6','genesis','blockers','controls','charts','events','env','database','metrics','wizard','logs'];
 let autoRefresh = true, refreshTimer = null, currentTab = 'overview';
 let charts = {};
 let friendlyMode = false;
@@ -60,6 +60,7 @@ function switchTab(name){
   if(name === 'metrics') renderMetricsButtons();
   if(name === 'genesis') loadGenesis();
   if(name === 'blockers') loadBlockers();
+  if(name === 'wallets') loadWallets();
   if(['l1','l2','l3','l4','l5','l6'].includes(name)) loadLayer(name);
 }
 
@@ -245,6 +246,82 @@ async function loadCliNodeStatus(){
   } catch(e) {
     const badge = document.getElementById('cli-status-badge');
     if(badge){ badge.className = 'text-xs px-2 py-0.5 rounded-md bg-gray-700 text-gray-400'; badge.textContent = 'Error'; }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Wallets tab
+// ─────────────────────────────────────────────────────────────────────
+
+async function loadWallets(){
+  try {
+    const data = await fetch('/api/wallets').then(r => r.json());
+    const wallets = data.wallets || [];
+    const summary = data.summary || {};
+    const rpc = data.rpc || {};
+
+    const stats = document.getElementById('wallets-stats');
+    stats.innerHTML = `
+      <div class="zion-panel-soft p-3 text-center">
+        <div class="text-lg font-bold text-gradient">${wallets.length}</div>
+        <div class="text-[10px] text-gray-400">Total Wallets</div>
+      </div>
+      <div class="zion-panel-soft p-3 text-center">
+        <div class="text-lg font-bold text-zion-gold">${summary.premine_wallets || 0}</div>
+        <div class="text-[10px] text-gray-400">Premine</div>
+      </div>
+      <div class="zion-panel-soft p-3 text-center">
+        <div class="text-lg font-bold text-zion-cyan">${summary.operational_wallets || 0}</div>
+        <div class="text-[10px] text-gray-400">Operational</div>
+      </div>
+      <div class="zion-panel-soft p-3 text-center">
+        <div class="text-lg font-bold text-emerald-400">${summary.with_live_balance || 0}</div>
+        <div class="text-[10px] text-gray-400">Live Balance</div>
+      </div>
+    `;
+
+    const tbody = document.getElementById('wallets-table');
+    if(!wallets.length){
+      tbody.innerHTML = '<tr><td colspan="7" class="py-4 text-gray-500 italic text-center">No wallets found. Set environment variables or start the node.</td></tr>';
+    } else {
+      tbody.innerHTML = wallets.map((w, i) => {
+        const idx = w.index || (i + 1);
+        const addr = escapeHtml(w.address || '');
+        const shortAddr = addr.length > 36 ? addr.slice(0, 18) + '…' + addr.slice(-12) : addr;
+        const label = escapeHtml(w.label || '');
+        const sourceBadge = w.source === 'premine'
+          ? '<span class="px-1.5 py-0.5 rounded bg-zion-gold/20 text-zion-gold text-[10px]">premine</span>'
+          : '<span class="px-1.5 py-0.5 rounded bg-zion-cyan/20 text-zion-cyan text-[10px]">' + escapeHtml(w.source || 'env') + '</span>';
+        const catBadge = w.category === 'premine'
+          ? '<span class="text-zion-gold">premine</span>'
+          : '<span class="text-zion-cyan">operational</span>';
+        const premineAmt = w.amount_zion ? fmtNum(w.amount_zion) + ' ZION' : '—';
+        const bal = w.balance_zion !== null && w.balance_zion !== undefined
+          ? (typeof w.balance_zion === 'number' ? w.balance_zion.toFixed(6) + ' ZION' : w.balance_zion)
+          : (w.rpc_ok === false ? '<span class="text-gray-600">unavailable</span>' : '—');
+        const balClass = w.balance_zion !== null && w.balance_zion !== undefined ? 'text-emerald-400 font-bold' : 'text-gray-500';
+        return `<tr class="border-b border-white/5 hover:bg-white/3 transition">
+          <td class="py-2 px-3 text-gray-500">${idx}</td>
+          <td class="py-2 px-3 font-semibold text-white">${label}</td>
+          <td class="py-2 px-3">
+            <span class="text-gray-300" title="${addr}">${shortAddr}</span>
+            <button onclick="copyToClipboard('${addr}')" class="ml-1 text-[10px] text-zion-gold hover:underline">copy</button>
+          </td>
+          <td class="py-2 px-3">${sourceBadge}</td>
+          <td class="py-2 px-3">${catBadge}</td>
+          <td class="py-2 px-3 text-right text-zion-gold">${premineAmt}</td>
+          <td class="py-2 px-3 text-right ${balClass}">${bal}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    const rpcStatus = document.getElementById('wallets-rpc-status');
+    rpcStatus.innerHTML = rpc.reachable
+      ? `✓ Live balances from Node RPC at ${escapeHtml(rpc.host)}:${rpc.port}`
+      : `○ Node RPC unreachable at ${escapeHtml(rpc.host)}:${rpc.port} — balances unavailable. Start node to enable live lookup.`;
+  } catch(e){
+    console.error('Wallets load error:', e);
+    document.getElementById('wallets-table').innerHTML = '<tr><td colspan="7" class="py-4 text-red-400 text-center">Failed to load wallets.</td></tr>';
   }
 }
 
