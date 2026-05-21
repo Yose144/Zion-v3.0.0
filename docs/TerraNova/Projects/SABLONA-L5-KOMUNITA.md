@@ -10,6 +10,7 @@ Každý projekt je "živý dokument" — průběžně se zpřesňuje s tím, jak
 |---------|--------|--------|--------|
 | **Zahrada Genesis** | Algarve, Portugalsko | 🟡 Aktivní rozvoj | [ZAHRADA-GENESIS-PORTUGAL.md](ZAHRADA-GENESIS-PORTUGAL.md) |
 | **Dharma Temple** | La Palma, Kanárské ostrovy | 🔵 Příprava | [DHARMA-TEMPLE-LA-PALMA.md](DHARMA-TEMPLE-LA-PALMA.md) |
+| **Te Pīko Ora** | Raiatea / Tahiti, Francouzská Polynésie | 🔵 Vize / Příprava | [TE-PIKO-ORA.md](TE-PIKO-ORA.md) |
 | **Projekt Venus** | TBD | 🔵 Konceptuální fáze | [PROJEKT-VENUS.md](PROJEKT-VENUS.md) |
 
 ## Archetypová role každého uzlu
@@ -17,6 +18,7 @@ Každý projekt je "živý dokument" — průběžně se zpřesňuje s tím, jak
 ```
 Zahrada Genesis  →  Base Camp  →  Pohyb, práce, oceán, farma
 Dharma Temple    →  Sanctuary  →  Ticho, meditace, dharma, sopka
+Te Pīko Ora      →  Paradise   →  Koruna, plnost, mořská permakultura, wayfinding
 Projekt Venus    →  Regenerace →  Ženský princip, byliny, tvořivost, obnova krajiny
 ```
 

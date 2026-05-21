@@ -401,18 +401,41 @@ def parse_node_log(name: str) -> dict:
         if m := re.search(r'rpc_bind=(\S+)', line):
             status["rpc_bind"] = m.group(1)
     # Dynamic metrics from recent lines
+    peer_hosts = set()
     for line in recent:
+        # Node 1 / rich-JSON format (p2p_out={"type":"status",...})
         if m := re.search(r'"chain_height":(\d+)', line):
             status["chain_height"] = int(m.group(1))
         if m := re.search(r'"tip_hash_hex":"([a-f0-9]+)"', line):
             status["tip_hash"] = m.group(1)[:16] + "…"
         if m := re.search(r'"known_peers":\[(.*?)\]', line):
             status["known_peers"] = len(re.findall(r'\{', m.group(1)))
-        if any(k in line for k in ("discovery_connect_ok", "outbound_sync_ok", "relay_ok", "p2p_in=", "p2p_out=")):
-            if status["known_peers"] == 0:
-                status["known_peers"] = 1  # at least one peer interaction observed
+
+        # Node 2 / follower format: relay_block height=... hash=...
+        if m := re.search(r'relay_block height=(\d+)', line):
+            h = int(m.group(1))
+            if status["chain_height"] is None or h > status["chain_height"]:
+                status["chain_height"] = h
+        if m := re.search(r'outbound_sync.*our_height=(\d+)', line):
+            h = int(m.group(1))
+            if status["chain_height"] is None or h > status["chain_height"]:
+                status["chain_height"] = h
+
+        # Peer counting — both node formats
+        if m := re.search(r'discovery_connect_ok peer=([^\s:]+)', line):
+            peer_hosts.add(m.group(1))
+        if m := re.search(r'outbound_sync_ok peer=([^\s:]+)', line):
+            peer_hosts.add(m.group(1))
+        if m := re.search(r'outbound_sync peer=([^\s:]+)', line):
+            peer_hosts.add(m.group(1))
+        if any(k in line for k in ("relay_ok", "p2p_in=", "p2p_out=")):
+            if status["known_peers"] == 0 and not peer_hosts:
+                status["known_peers"] = 1
         if "Error" in line or "error" in line.lower():
             status["last_error"] = line[:120]
+
+    if peer_hosts:
+        status["known_peers"] = len(peer_hosts)
     return status
 
 def parse_pool_log() -> dict:

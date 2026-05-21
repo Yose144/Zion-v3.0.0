@@ -36,6 +36,7 @@
 
 pub mod api;
 pub mod config;
+pub mod dao_client;
 pub mod db;
 pub mod error;
 pub mod l1_scanner;

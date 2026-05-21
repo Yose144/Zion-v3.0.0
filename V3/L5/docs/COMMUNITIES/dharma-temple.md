@@ -364,6 +364,141 @@ Same mechanism as Genesis Garden, with one addition:
 
 ---
 
+## 12. Retreat Curriculum Detail
+
+### 12.1 Seven-Day "Roots of Silence" Program
+
+| Day | Morning (06:00–12:00) | Afternoon (14:00–18:00) | Evening (19:00–21:00) |
+|-----|------------------------|-------------------------|----------------------|
+| **1 — Arrival** | Self-directed settle-in | Land walk: meet the volcano, the forest, the water | Welcome circle + *awa* (Canary herbal tea, not kava) ceremony |
+| **2 — Body** | Movement practice (qi gong / yoga) + silent breakfast | Syntropic garden work: planting, pruning, soil contact | Dharma talk: "The Body as Ground" + meditation |
+| **3 — Breath** | Breathwork + pranayama + silent breakfast | Forest bathing (Canarian laurel forest, *laurisilva*) | Dharma talk: "Breath as Bridge" + meditation |
+| **4 — Silence** | Full silence begins at dawn | Silent land work / creative time (writing, drawing) | Walking meditation under stars (La Palma has world-class dark sky) |
+| **5 — Heart** | Silence continues | Compassion meditation + letter writing (to self, to ancestor) | Fire ceremony: release what no longer serves |
+| **6 — Integration** | Silence lifts at dawn with bells | Group harvest: what emerged, what shifted | Celebration dinner (local food, music optional) |
+| **7 — Departure** | Morning practice + final circle | Packing, goodbyes, seed gift (locally saved variety) | — |
+
+### 12.2 Fourteen-Day "Deepening" Program
+
+Days 1–7 mirror the Roots program. Days 8–14 add:
+
+| Day | Focus | Practice |
+|-----|-------|----------|
+| **8** | *Dharma study* | Core text: *Satipatthana Sutta* (Foundations of Mindfulness) — morning lecture, afternoon applied practice |
+| **9** | *Volcano vigil* | Night hike to Cumbre Vieja viewpoint (safe zone). Witness the Earth's breath. Meditation at crater rim. |
+| **10** | *Creative expression* | Full day of art: clay from volcanic soil, natural dyes from plants, sound work |
+| **11** | *Service* | Full day of land restoration: invasive species removal, native reforestation, trail maintenance |
+| **12** | *Dream work* | Extended sleep, dream journaling, group dream sharing (if consented) |
+| **13** | *Integration* | One-on-one with Dharma Guardian. Personal practice plan. Commitment ceremony. |
+| **14** | *Departure / Return* | Final circle. Each participant receives a **symbolic tatau** (wood carving) marking their completion. Seed gift. |
+
+### 12.3 Pricing
+
+| Program | Phase 1 | Phase 2 | Phase 3 | Includes |
+|---------|---------|---------|---------|----------|
+| **7-day "Roots of Silence"** | EUR 550 | EUR 650 | EUR 750 | Accommodation, all meals, instruction, materials |
+| **14-day "Deepening"** | EUR 1,100 | EUR 1,300 | EUR 1,500 | Same + art materials, volcano excursion, 1:1 session |
+| **21-day "Transformation" (by invitation)** | EUR 1,800 | EUR 2,200 | EUR 2,500 | Same + personal mentoring, custom practice design |
+| **Individual stay (meditation cell)** | EUR 35/night | EUR 45/night | EUR 55/night | Accommodation only, kitchen access, optional practice schedule |
+| **Work exchange** | 0 | 0 | 0 | 30 hrs/week labor → free accommodation + food + program access |
+
+**Work exchange ratio:** Max 3 work-exchange guests per 6 paying guests.
+
+---
+
+## 13. Observatory & Volcanic Protocol
+
+### 13.1 Roque de los Muchachos Observatory Connection
+
+La Palma hosts one of the world's premier astronomical observatories at 2,396 m elevation.
+
+| Collaboration Angle | Status | Action |
+|---------------------|--------|--------|
+| **Dark sky tourism** | 🔵 Planned | Dharma Temple guests can book "Starlight Reserve" experiences. Partnership with [Starlight Foundation](https://www.starlightfoundation.com/). |
+| **Astronomy + meditation** | 🔵 Concept | "Celestial Silence" — overnight meditation at observatory viewpoint (outside fence). Collaboration with IAC outreach. |
+| **Research hospitality** | 🔵 Concept | Host visiting astronomers for retreat stays. Cross-pollination: scientists + contemplatives. |
+| **Data for ZION** | 🔵 Speculative | Could a Guardian node process astronomical telemetry? (Long shot, but poetic.) |
+
+### 13.2 Volcanic Monitoring & Emergency Protocol
+
+La Palma erupted in 2021 (Cumbre Vieja) and 1949 (San Juan). Volcanic risk is real but manageable with preparation.
+
+| Protocol | Detail | Responsible |
+|----------|--------|-------------|
+| **Early warning** | Subscribe to IGN (Instituto Geográfico Nacional) alerts + Cabildo de La Palma civil defense app | Tech Guardian |
+| **Seismic monitoring** | If budget allows, install low-cost Raspberry Shake seismometer on property (EUR 300) | Tech Guardian |
+| **Evacuation plan** | Pre-planned routes to port (Santa Cruz) + airport. Vehicle always fueled. Emergency bag ready. | Land Guardian |
+| **Communication** | Mesh network auto-broadcasts emergency alert to all nodes + neighboring farms. Satellite phone backup. | Tech Guardian |
+| **Data backup** | ZION node wallet + DAO keys backed up off-island (Genesis Garden + cloud) | Finance Guardian |
+| **Insurance** | Force majeure clause in all retreat bookings. Cancellation = full credit, no cash refund. | Finance Guardian |
+| **Air quality** | If volcanic fog (*vog*) detected: close windows, run air purifier, move sensitive guests to north side. | Community Guardian |
+
+**Evacuation trigger levels:**
+- **Green:** Normal. No action.
+- **Yellow:** Elevated seismicity. Review plan, fuel vehicle, notify guests.
+- **Orange:** Magmatic intrusion. Voluntary guest departure. Pack critical items.
+- **Red:** Eruption imminent / active. Immediate evacuation to port/airport. All Guardians account for all guests.
+
+---
+
+## 14. Syntropic Agroforestry Design Detail
+
+### 14.1 Plant Guilds for La Palma Climate
+
+La Palma's west side (400–800 m) offers: mild temperatures (15–25°C), reliable rainfall (700 mm), volcanic soil (rich but young, needs organic matter).
+
+**Guild 1: Banana Circle (Year 1–3)**
+- Center: Compost pit + water capture
+- Ring 1: Banana, plantain (heavy feeders, chop-and-drop)
+- Ring 2: Papaya, cassava (fast biomass)
+- Ring 3: Sweet potato ground cover (suppress weeds, food)
+- Edge: Lemongrass, vetiver (erosion control, mulch)
+
+**Guild 2: Subtropical Orchard (Year 2–7)**
+- Emergent: Avocado, cherimoya (*Annona cherimola*)
+- Understory: Coffee, cacao (shade-tolerant, cash crops)
+- Shrub: Blueberry (acidic pockets), guava
+- Ground: Taro (*Colocasia esculenta*), ginger, turmeric
+- Vine: Passion fruit, chayote (*Sechium edule*)
+- Support: Nitrogen-fixing trees (*Tagasaste*, *Acacia* spp.), comfrey, *Tithonia diversifolia* (biomass)
+
+**Guild 3: Medicinal Corner (Year 1+)**
+- *Bosea yervamora* — endemic Canarian herb, traditional digestive remedy
+- *Dracaena draco* (dragon tree) — sap (*dragon's blood*) for skin/wound healing
+- *Tenerife lavender* (*Lavandula canariensis*) — essential oil, calming
+- *Aloe vera* — ubiquitous, burns, skin
+- *Mint / pennyroyal* — digestive, insect repellent
+- *Cannabis* (if legally permitted) — CBD varieties for medicinal use
+
+### 14.2 Ernst Götsch Principles Applied
+
+1. **Stratification:** 7+ layers from ground cover to emergent trees
+2. **Succession:** Fast-growing species chop-and-dropped to feed slow-growing fruit trees
+3. **Placentation:** Heavy-feeding species (banana, papaya) planted where biomass accumulates
+4. **Life cycles:** Short-cycle (salad, radish) between long-cycle (tree) rows
+5. **Biodiversity:** Minimum 30 species per hectare
+6. **No external inputs:** All fertility from biomass, rock dust (local volcanic), urine, compost
+
+---
+
+## 15. Marketing & Guest Acquisition
+
+| Channel | Phase 1 Budget | Phase 2 Budget | Tactics |
+|---------|---------------|---------------|---------|
+| **Instagram / YouTube** | EUR 100/month | EUR 400/month | Volcano footage, meditation clips, time-lapse of garden growth |
+| **Retreat aggregators** | EUR 0 | EUR 1,500/year | BookRetreats, RetreatGuru, WeTravel |
+| **Teacher network** | EUR 0 | EUR 0 | Host traveling teachers (they bring their audience) |
+| **ZION Discord / OASIS** | EUR 0 | EUR 0 | "Silence Quest" — reward for completing 7-day retreat |
+| **Word of mouth / alumni** | EUR 0 | EUR 0 | Referral discount 10% for alumni who bring friends |
+| **SEO / blog** | EUR 0 | EUR 0 | Essays on: silence, volcano as teacher, syntropic farming |
+
+**Launch campaign (Q4 2027):**
+- **Month 1 (Oct):** "Soft open" — ZION Guardians, friends, teachers. Document everything.
+- **Month 2 (Nov):** "Volcano vigil" — first public retreat. Theme: Cumbre Vieja anniversary reflection.
+- **Month 3 (Dec):** "Solstice silence" — premium pricing, full program. Goal: 70% occupancy.
+
+---
+
 > *"La Palma's gift is not an advantage — it is a responsibility. To care for a place that cares for us with such tenderness."*
 
 *Dharma Temple · Terra Nova L5 · La Palma · 2026*

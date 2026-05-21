@@ -44,6 +44,7 @@ Start-Sleep -Seconds 3
 $env:ZION_NODE_ID='w11-native-node2'
 $env:ZION_P2P_BIND='0.0.0.0:8334'
 $env:ZION_RPC_BIND='0.0.0.0:8446'
+$env:ZION_METRICS_BIND='0.0.0.0:9116'
 $env:ZION_NODE_STATE_PATH="$DataDir\zion-node2-state.db"
 $env:ZION_SEED_PEERS='127.0.0.1:8333'
 $env:ZION_MINER_ADDRESS='zion1e2z646u403s6c7k8m6m8m4q0a6r2a5h5j8534d8'
