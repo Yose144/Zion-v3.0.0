@@ -50,7 +50,10 @@
 //! | Timelock         | 48 hours           | Before execution      |
 //! | Multi-sig        | 5-of-7             | Treasury operations   |
 
+pub mod co_admin;
 pub mod config;
+pub mod consent;
+pub mod cross_layer;
 pub mod error;
 pub mod executor;
 pub mod humanitarian;
@@ -69,7 +72,10 @@ pub mod l1_scanner;
 pub mod metrics;
 
 // Re-exports
+pub use co_admin::CoAdminRegistry;
 pub use config::DaoConfig;
+pub use consent::{Attestation, ConsentEngine, ConsentRecord};
+pub use cross_layer::{CrossLayerRegistry, CrossLayerState, LayerConsent};
 pub use db::DaoDb;
 pub use error::{DaoError, DaoResult};
 pub use humanitarian::{HumanitarianCategory, HumanitarianFund};
