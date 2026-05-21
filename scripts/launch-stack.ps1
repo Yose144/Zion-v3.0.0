@@ -1,5 +1,14 @@
 # ZION V3 Full Stack — Windows 11 Native with Log Files
 # Launches node1 + node2 + pool + miner and redirects all output to logs/
+#
+# Topology modes:
+#   LOCAL  (default) — seed_peers='none', standalone stack
+#   CORE   — seed_peers=<EDGE_TAILSCALE_IP>:8333, Core node behind VPN
+#
+# Použitie CORE módu:
+#   $env:ZION_TOPOLOGY = 'CORE'
+#   $env:EDGE_TS_IP     = '100.x.y.z'    # Tailscale IP Edge Node
+#   powershell -ExecutionPolicy Bypass -File scripts\launch-stack.ps1
 
 $logDir = "C:\Users\yosef\Desktop\Zion\2.9.6-main\logs"
 New-Item -ItemType Directory -Path $logDir -Force | Out-Null
@@ -18,6 +27,27 @@ foreach ($n in $names) {
 }
 Start-Sleep -Seconds 2
 
+# ── Topology config ──
+$topology = $env:ZION_TOPOLOGY
+if (-not $topology) { $topology = 'LOCAL' }
+
+$seedPeers = 'none'
+$node1P2p  = '0.0.0.0:8333'
+if ($topology -eq 'CORE') {
+    $edgeIp = $env:EDGE_TS_IP
+    if (-not $edgeIp) {
+        Write-Host "[launch] WARNING: ZION_TOPOLOGY=CORE ale EDGE_TS_IP nie je nastavené." -ForegroundColor Yellow
+        Write-Host "[launch] Používam LOCAL mód. Pre Core+Edge topológiu nastav:" -ForegroundColor Yellow
+        Write-Host "           `$env:EDGE_TS_IP = '100.x.y.z'" -ForegroundColor Yellow
+        $topology = 'LOCAL'
+    } else {
+        $seedPeers = "$edgeIp`:8333"
+        Write-Host "[launch] Topology: CORE (Edge peer=$seedPeers)" -ForegroundColor Cyan
+    }
+} else {
+    Write-Host "[launch] Topology: LOCAL (standalone)" -ForegroundColor Cyan
+}
+
 $DataDir = "C:\Users\yosef\Desktop\Zion\2.9.6-main\V3\data"
 New-Item -ItemType Directory -Path $DataDir -Force | Out-Null
 
@@ -30,7 +60,7 @@ $env:ZION_NODE_ID='w11-native-node'
 $env:ZION_P2P_BIND='0.0.0.0:8333'
 $env:ZION_RPC_BIND='0.0.0.0:8443'
 $env:ZION_NODE_STATE_PATH="$DataDir\zion-node-state.db"
-$env:ZION_SEED_PEERS='none'
+$env:ZION_SEED_PEERS=$seedPeers
 $env:ZION_MINER_ADDRESS='zion1e2z646u403s6c7k8m6m8m4q0a6r2a5h5j8534d8'
 $env:ZION_HUMANITARIAN_WALLET='zion1t4w447d7k4c600h3x893m5r55645w4p057yf4d7'
 $env:ZION_ISSOBELLA_WALLET='zion1e4t5a390m2r427a8f3s39885v4f2v6n8u3mj3f5'
