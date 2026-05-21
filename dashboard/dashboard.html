@@ -181,7 +181,11 @@ button{display:inline-flex;align-items:center;justify-content:center;cursor:poin
   <div class="flex gap-1.5 mb-6 overflow-x-auto pb-1 relative z-10">
     <button onclick="switchTab('overview')" id="tab-overview" class="tab-btn tab-active">📊 Overview</button>
     <button onclick="switchTab('services')" id="tab-services" class="tab-btn">🧩 Services</button>
-    <button onclick="switchTab('genesis')" id="tab-genesis" class="tab-btn">⚡ Genesis & Premine</button>
+    <button onclick="switchTab('l1')" id="tab-l1" class="tab-btn">🔷 L1</button>
+    <button onclick="switchTab('l2')" id="tab-l2" class="tab-btn">🌉 L2</button>
+    <button onclick="switchTab('l3')" id="tab-l3" class="tab-btn">🌀 L3</button>
+    <button onclick="switchTab('l4')" id="tab-l4" class="tab-btn">🪷 L4</button>
+    <button onclick="switchTab('genesis')" id="tab-genesis" class="tab-btn">⚡ Genesis &amp; Premine</button>
     <button onclick="switchTab('blockers')" id="tab-blockers" class="tab-btn">🚧 P0 Blockers</button>
     <button onclick="switchTab('controls')" id="tab-controls" class="tab-btn">🎛️ Controls</button>
     <button onclick="switchTab('charts')" id="tab-charts" class="tab-btn">📈 Charts</button>
@@ -517,6 +521,42 @@ button{display:inline-flex;align-items:center;justify-content:center;cursor:poin
           <div class="text-gray-500 italic">Type a command and press Run, or click a quick command.</div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- ═════════ TAB: L1 Consensus ═════════ -->
+  <div id="pane-l1" class="hidden space-y-4">
+    <div class="zion-panel p-6">
+      <h2 class="text-xl font-bold mb-2 flex items-center gap-2"><span class="text-gradient">🔷 L1 — Consensus Layer</span></h2>
+      <p class="text-sm text-gray-400 mb-4">Node 1, Node 2, Pool, Miner — live data from all sources.</p>
+      <div id="layer-l1-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+    </div>
+  </div>
+
+  <!-- ═════════ TAB: L2 Bridge & DAO ═════════ -->
+  <div id="pane-l2" class="hidden space-y-4">
+    <div class="zion-panel p-6">
+      <h2 class="text-xl font-bold mb-2 flex items-center gap-2"><span class="text-gradient">🌉 L2 — Bridge & DAO</span></h2>
+      <p class="text-sm text-gray-400 mb-4">Bridge, DAO, Atomic Swap — cross-chain relay, governance, HTLC.</p>
+      <div id="layer-l2-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+    </div>
+  </div>
+
+  <!-- ═════════ TAB: L3 Advanced ═════════ -->
+  <div id="pane-l3" class="hidden space-y-4">
+    <div class="zion-panel p-6">
+      <h2 class="text-xl font-bold mb-2 flex items-center gap-2"><span class="text-gradient">🌀 L3 — Advanced Layer</span></h2>
+      <p class="text-sm text-gray-400 mb-4">WARP Relay, NCL Gateway, AI Native (Hiran).</p>
+      <div id="layer-l3-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+    </div>
+  </div>
+
+  <!-- ═════════ TAB: L4 Apps ═════════ -->
+  <div id="pane-l4" class="hidden space-y-4">
+    <div class="zion-panel p-6">
+      <h2 class="text-xl font-bold mb-2 flex items-center gap-2"><span class="text-gradient">🪷 L4 — Application Layer</span></h2>
+      <p class="text-sm text-gray-400 mb-4">OASIS Avatar Hub — avatar registry and humanitarian impact.</p>
+      <div id="layer-l4-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
     </div>
   </div>
 
