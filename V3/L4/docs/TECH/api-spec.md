@@ -60,6 +60,34 @@ POST   /api/v1/oasis/player/:address/xp
 GET /api/v1/oasis/leaderboard?limit=100&filter=xp|blocks|tithe
 ```
 
+### Avatars
+
+```
+GET /api/v1/oasis/avatars              → List avatars (query: ?ray=Blue&min_cl=4&rarity=Epic)
+GET /api/v1/oasis/avatars/:id          → Avatar by ID
+GET /api/v1/oasis/avatars/:id/quests   → Quests for avatar
+```
+
+**Avatar fields:**
+
+```json
+{
+  "id": 1,
+  "name": "Rama",
+  "subtitle": "Dharma King",
+  "ray": "Blue",
+  "role": "Moral Compass / Dharma Teacher",
+  "location": "Ayodhya Palace",
+  "quest_line": "The Path of Righteousness",
+  "teaching": "Duty before desire, truth before comfort",
+  "ability": "Dharma Shield",
+  "consciousness_level_required": 4,
+  "consciousness_level_name": "Heart Opening",
+  "key": "Ramayana Key (1/3)",
+  "rarity": "Epic"
+}
+```
+
 ### Guilds
 
 ```
