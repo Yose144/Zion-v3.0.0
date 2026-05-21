@@ -18,6 +18,14 @@ L5 is the **terrestrial layer** of ZION — where blockchain consensus meets soi
 - **L4** (OASIS) provides the **digital interface** — avatars, quests, reputation.
 - **L5** (this layer) provides the **physical substrate** — farms, sanctuaries, workshops, homes.
 
+### The L5 Trinity
+
+| Node | Element | Archetype | Function |
+|------|---------|-----------|----------|
+| **Genesis Garden** | Earth | Root / Base Camp | Foundation, agriculture, entry point |
+| **Dharma Temple** | Fire | Trunk / Sanctuary | Practice, transformation, depth |
+| **Te Pīko Ora** | Water | Crown / Paradise | Fruition, abundance, integration |
+
 ---
 
 ## Directory Structure
@@ -35,7 +43,8 @@ V3/L5/docs/
 │   └── medical-table.md           ← Health protocol specification
 ├── COMMUNITIES/
 │   ├── genesis-garden.md          ← Zahrada Genesis, Portugal
-│   └── dharma-temple.md           ← Dharma Temple, La Palma
+│   ├── dharma-temple.md           ← Dharma Temple, La Palma
+│   └── te-piko-ora.md             ← Te Pīko Ora, French Polynesia
 └── TEMPLATES/
     └── community-blueprint.md     ← Generic template for new L5 communities
 ```
@@ -48,6 +57,7 @@ V3/L5/docs/
 |-----------|----------|-----------|--------|---------|
 | **Genesis Garden** | Algarve, Portugal | Base Camp — movement, ocean, farm | 🟡 Active development | [`COMMUNITIES/genesis-garden.md`](./COMMUNITIES/genesis-garden.md) |
 | **Dharma Temple** | La Palma, Canary Islands | Sanctuary — silence, meditation, volcano | 🔵 Preparation | [`COMMUNITIES/dharma-temple.md`](./COMMUNITIES/dharma-temple.md) |
+| **Te Pīko Ora** | Raiatea / Tahiti, French Polynesia | Crown — paradise, marine permaculture, wayfinding | 🔵 Vision / Preparation | [`COMMUNITIES/te-piko-ora.md`](./COMMUNITIES/te-piko-ora.md) |
 
 ---
 
