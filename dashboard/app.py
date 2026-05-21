@@ -80,11 +80,18 @@ SERVICE_REGISTRY = [
      "purpose": "Backup node — syncs from Node 1 and validates independently for redundancy.",
      "child_says": "🔶 Like Node 1's twin — they double-check each other!",
      "depends_on": ["node1"]},
-    {"id": "pool", "name": "Mining Pool", "icon": "⚡", "level": "L1", "kind": "pool",
+    {"id": "pool", "name": "Core Mining Pool", "icon": "⚡", "level": "L1", "kind": "pool",
      "ports": {"stratum": 8444, "metrics": 9550},
      "log": "pool.log", "start": "start-pool", "stop": None,
-     "purpose": "Coordinates miners, validates shares, builds block templates, distributes payouts (89/5/5/1).",
+     "purpose": "Primary pool — local miners, validates shares, distributes payouts (89/5/5/1).",
      "child_says": "⚡ The pool helps lots of computers work together to find blocks!",
+     "depends_on": ["node1"]},
+    {"id": "pool-edge", "name": "Edge Mining Pool", "icon": "🌐", "level": "L1", "kind": "pool",
+     "ports": {"stratum": 8444, "metrics": 9550},
+     "host": "100.66.162.125",
+     "log": None, "start": None, "stop": None,
+     "purpose": "Edge relay pool — accepts external miners via public IP, syncs with Core pool.",
+     "child_says": "🌐 The edge pool lets miners from all over the world connect!",
      "depends_on": ["node1"]},
     {"id": "miner", "name": "GPU Miner", "icon": "⛏️", "level": "L1", "kind": "miner",
      "ports": {},
@@ -225,11 +232,12 @@ def check_service_health(svc: dict) -> dict:
 
     open_ports = []
     closed_ports = []
+    host = svc.get("host", "127.0.0.1")
     for name, port in ports.items():
-        if tcp_probe("127.0.0.1", port):
-            open_ports.append(f"{name}:{port}")
+        if tcp_probe(host, port):
+            open_ports.append(f"{name}:{port}@{host}")
         else:
-            closed_ports.append(f"{name}:{port}")
+            closed_ports.append(f"{name}:{port}@{host}")
 
     alive = len(open_ports) > 0
     result = {"alive": alive, "ts": now,
@@ -544,11 +552,19 @@ def parse_miner_log() -> dict:
     return status
 
 def build_status() -> dict:
+    # Edge pool health from cache (remote host probe)
+    pool_edge_svc = get_service("pool-edge")
+    pool_edge_health = check_service_health(pool_edge_svc) if pool_edge_svc else {"alive": False}
     return {
         "timestamp": datetime.now().isoformat(),
         "node1": parse_node_log("node1"),
         "node2": parse_node_log("node2"),
         "pool": parse_pool_log(),
+        "pool_edge": {
+            "running": pool_edge_health["alive"],
+            "host": pool_edge_svc.get("host", "") if pool_edge_svc else "",
+            "ports_open": pool_edge_health.get("ports_open", []),
+        },
         "miner": parse_miner_log(),
     }
 
@@ -558,8 +574,9 @@ def build_checklist(status: dict) -> dict:
         {"id": "env",       "label": "Env file assembled (.env.mainnet)",       "ok": True},
         {"id": "node1",     "label": "Node 1 running & P2P bound",              "ok": status["node1"]["running"] and status["node1"]["p2p_bind"] is not None},
         {"id": "node2",     "label": "Node 2 running & synced to Node 1",     "ok": status["node2"]["running"] and status["node2"]["known_peers"] > 0},
-        {"id": "pool",      "label": "Pool running & accepting miners",          "ok": status["pool"]["running"] and status["pool"]["bind_addr"] is not None},
-        {"id": "miner",     "label": "GPU miner connected & hashing",            "ok": status["miner"]["running"] and status["miner"]["hashrate"] is not None},
+        {"id": "pool",      "label": "Core Pool running & accepting miners",    "ok": status["pool"]["running"] and status["pool"]["bind_addr"] is not None},
+        {"id": "pool-edge", "label": "Edge Pool reachable from Core",           "ok": status.get("pool_edge", {}).get("running", False)},
+        {"id": "miner",     "label": "GPU miner connected & hashing",         "ok": status["miner"]["running"] and status["miner"]["hashrate"] is not None},
         {"id": "chain",     "label": "Chain height advancing",                 "ok": status["node1"]["chain_height"] is not None and status["node1"]["chain_height"] > 0},
         {"id": "payout",    "label": "Payout mechanism ready (UTXOs funded)",    "ok": status["pool"]["payout_enabled"] is True and status["pool"]["pool_wallet"] is not None},
         {"id": "fee_split", "label": "Fee split 89/5/5/1 active",                "ok": status["pool"]["fee_split"] == "89/5/5/1"},
@@ -758,7 +775,43 @@ def rpc_call(host: str, port: int, method: str, params: dict, timeout: float = 2
     except Exception:
         return None
 
-def parse_premine_addresses() -> list:
+def parse_premine_from_genesis(rpc_host: str = "127.0.0.1", rpc_port: int = 8443) -> list:
+    """Extract premine addresses and amounts from the actual genesis block via RPC.
+    This reflects the true on-chain state, which may differ from PREMINE_ADDRESSES_PUBLIC.txt
+    after wallet rotation."""
+    wallets = []
+    genesis = rpc_call(rpc_host, rpc_port, "getBlockByHeight", {"height": 0})
+    if not genesis or not genesis.get("transactions"):
+        # Fallback to file if RPC unavailable
+        return parse_premine_from_file()
+    labels = [
+        "OASIS + Winners Golden Egg/Xp (Slot 1)",
+        "OASIS + Winners Golden Egg/Xp (Slot 2)",
+        "OASIS + Winners Golden Egg/Xp (Slot 3)",
+        "OASIS + Winners Golden Egg/Xp (Slot 4)",
+        "OASIS + Winners Golden Egg/Xp (Slot 5)",
+        "DAO Treasury — Community Governance (main)",
+        "DAO Treasury — Grants & Bounties",
+        "DAO Treasury — Ecosystem Bootstrap",
+        "Core Development Fund",
+        "Network Infrastructure — P2P Seed Nodes",
+        "Genesis Creator — Lifetime Rent",
+        "Children Future Fund — Humanitarian DAO",
+    ]
+    for i, tx in enumerate(genesis.get("transactions", [])):
+        addr = tx.get("to", "")
+        amount = int(tx.get("amount_zion", 0))
+        wallets.append({
+            "index": i + 1,
+            "address": addr,
+            "label": labels[i] if i < len(labels) else f"Premine Output {i+1}",
+            "amount_zion": amount / 1_000_000_000_000,  # flowers -> ZION
+            "source": "genesis",
+            "category": "premine",
+        })
+    return wallets
+
+def parse_premine_from_file() -> list:
     """Parse PREMINE_ADDRESSES_PUBLIC.txt for canonical premine wallet list."""
     path = REPO_ROOT / "PREMINE_ADDRESSES_PUBLIC.txt"
     wallets = []
@@ -787,7 +840,8 @@ def parse_premine_addresses() -> list:
     return wallets
 
 def find_env_value(key: str) -> str:
-    """Check os.environ first, then scan .env* files in repo root."""
+    """Check os.environ first, then scan .env* files in repo root.
+    Handles both KEY=val and export KEY=val syntax."""
     val = os.environ.get(key)
     if val:
         return val
@@ -800,6 +854,9 @@ def find_env_value(key: str) -> str:
                     line = line.strip()
                     if line.startswith("#") or "=" not in line:
                         continue
+                    # Strip optional "export " prefix
+                    if line.startswith("export "):
+                        line = line[7:].strip()
                     k, _, v = line.partition("=")
                     k = k.strip()
                     if k == key:
@@ -808,25 +865,52 @@ def find_env_value(key: str) -> str:
             continue
     return ""
 
+def parse_node_startup_addresses() -> dict:
+    """Extract the actual addresses the running node uses from its startup log."""
+    path = LOG_DIR / "node1.log"
+    if not path.exists():
+        return {}
+    addresses = {}
+    try:
+        with open(path, "r", encoding="utf-8", errors="ignore") as f:
+            for line in f:
+                line = line.strip()
+                if m := re.search(r'^miner_address=(\S+)', line):
+                    addresses["miner"] = m.group(1)
+                if m := re.search(r'^humanitarian_address=(\S+)', line):
+                    addresses["humanitarian"] = m.group(1)
+                if m := re.search(r'^issobella_address=(\S+)', line):
+                    addresses["issobella"] = m.group(1)
+                if m := re.search(r'^pool_fee_address=(\S+)', line):
+                    addresses["pool_fee"] = m.group(1)
+                # Stop after we've collected the core startup lines (~first 20 lines)
+                if line.startswith("p2p_peer_addr=") or line.startswith("p2p_in="):
+                    break
+    except Exception:
+        pass
+    return addresses
+
 def build_wallets() -> dict:
-    """Collect all known wallets: premine, operational (env), miner (toml)."""
+    """Collect all known wallets: premine (from live genesis block), operational (node/env), miner (toml)."""
     wallets = []
 
-    # 1. Premine wallets from canonical public file
-    premine = parse_premine_addresses()
+    # 1. Premine wallets from LIVE genesis block (actual on-chain state)
+    # Falls back to PREMINE_ADDRESSES_PUBLIC.txt if RPC unavailable
+    premine = parse_premine_from_genesis()
     for w in premine:
         wallets.append(w)
 
-    # 2. Operational wallets from environment / .env files
-    env_vars = {
-        "ZION_MINER_ADDRESS": "Miner Payout",
-        "ZION_HUMANITARIAN_WALLET": "Humanitarian Tithe",
-        "ZION_ISSOBELLA_WALLET": "Issobella Fund",
-        "ZION_POOL_FEE_WALLET": "Pool Fee Recipient",
-        "ZION_POOL_WALLET": "Pool Operational",
-    }
-    for var, label in env_vars.items():
-        val = find_env_value(var)
+    # 2. Operational wallets — prefer node startup log (actual running addresses),
+    #    fallback to .env files
+    node_addrs = parse_node_startup_addresses()
+    op_sources = [
+        (node_addrs.get("miner") or find_env_value("ZION_MINER_ADDRESS"), "Miner Payout", "node"),
+        (node_addrs.get("humanitarian") or find_env_value("ZION_HUMANITARIAN_WALLET"), "Humanitarian Tithe", "node"),
+        (node_addrs.get("issobella") or find_env_value("ZION_ISSOBELLA_WALLET"), "Issobella Fund", "node"),
+        (node_addrs.get("pool_fee") or find_env_value("ZION_POOL_FEE_WALLET"), "Pool Fee Recipient", "node"),
+        (find_env_value("ZION_POOL_WALLET"), "Pool Operational", "env"),
+    ]
+    for val, label, src in op_sources:
         if not val:
             continue
         val = val.strip().strip('"').strip("'")
@@ -835,7 +919,7 @@ def build_wallets() -> dict:
                 wallets.append({
                     "address": val,
                     "label": label,
-                    "source": "env",
+                    "source": src,
                     "category": "operational",
                 })
 
@@ -892,18 +976,111 @@ def build_wallets() -> dict:
             w["balance_atomic"] = None
             w["rpc_ok"] = False
 
-    total_premine = sum(w.get("amount_zion", 0) for w in wallets if w.get("source") == "premine")
+    total_premine = sum(w.get("amount_zion", 0) for w in wallets if w.get("category") == "premine")
     with_balance = [w for w in wallets if w.get("balance_zion") is not None]
+
+    # Category breakdown for premine
+    category_summary = {}
+    for w in wallets:
+        if w.get("category") == "premine":
+            cat = w.get("source", "premine")  # all premine have same category
+            label = w.get("label", "")
+            # Group by purpose
+            if "OASIS" in label:
+                group = "oasis"
+            elif "DAO" in label:
+                group = "dao"
+            elif "Core Dev" in label or "Infrastructure" in label or "Creator" in label or "Seed" in label:
+                group = "infrastructure"
+            elif "Humanitarian" in label or "Children" in label:
+                group = "humanitarian"
+            else:
+                group = "other"
+            category_summary.setdefault(group, {"count": 0, "total_zion": 0, "labels": []})
+            category_summary[group]["count"] += 1
+            amt = w.get("amount_zion", 0)
+            if isinstance(amt, (int, float)):
+                category_summary[group]["total_zion"] += amt
+            category_summary[group]["labels"].append(label[:40])
+
+    # Operational breakdown
+    op_total = sum(w.get("balance_zion", 0) or 0 for w in wallets if w.get("category") == "operational")
+
     return {
         "wallets": wallets,
         "summary": {
             "total_wallets": len(wallets),
             "premine_wallets": len(premine),
-            "operational_wallets": len([w for w in wallets if w.get("source") != "premine"]),
+            "operational_wallets": len([w for w in wallets if w.get("category") == "operational"]),
             "with_live_balance": len(with_balance),
             "total_premine_zion": total_premine,
+            "total_operational_zion": round(op_total, 6),
         },
-        "rpc": {"host": rpc_host, "port": rpc_port, "reachable": len(with_balance) > 0},
+        "category_summary": category_summary,
+        "rpc": {"host": rpc_host, "port": rpc_port, "reachable": len(with_balance) > 0 and with_balance[0].get("rpc_ok")},
+    }
+
+# ── Explorer data builder ──────────────────────────────────────────────
+
+def build_explorer() -> dict:
+    """Fetch blockchain overview for the Explorer tab."""
+    rpc_host, rpc_port = "127.0.0.1", 8443
+    rpc_addr = os.environ.get("ZION_NODE_RPC_ADDR", "")
+    if rpc_addr and ":" in rpc_addr:
+        try:
+            rpc_host, rpc_port_str = rpc_addr.rsplit(":", 1)
+            rpc_port = int(rpc_port_str)
+        except Exception:
+            pass
+    elif rpc_addr:
+        rpc_host = rpc_addr
+
+    info = rpc_call(rpc_host, rpc_port, "getChainInfo", {})
+    genesis = rpc_call(rpc_host, rpc_port, "getBlockByHeight", {"height": 0})
+
+    # Recent blocks: grab last 10 from events / history
+    recent_blocks = []
+    try:
+        # Try to get last 10 blocks via RPC (getBlockByHeight)
+        chain_height = info.get("chain_height", 0) if info else 0
+        for h in range(max(0, chain_height - 9), chain_height + 1):
+            blk = rpc_call(rpc_host, rpc_port, "getBlockByHeight", {"height": h}, timeout=0.8)
+            if blk:
+                recent_blocks.append({
+                    "height": h,
+                    "hash": blk.get("hash_hex", "")[:24] + "…",
+                    "timestamp": blk.get("timestamp", 0),
+                    "tx_count": len(blk.get("transaction_ids", [])),
+                    "difficulty": blk.get("difficulty", 0),
+                })
+    except Exception:
+        pass
+
+    # Mempool
+    mempool_size = info.get("mempool_transactions", 0) if info else 0
+    template_txs = info.get("active_template_transactions", 0) if info else 0
+
+    # Supply estimate
+    chain_height = info.get("chain_height", 0) if info else 0
+    block_reward = 5400.067
+    estimated_mined = chain_height * block_reward
+    total_premine = 16_280_000_000
+    circulating_estimate = total_premine + estimated_mined
+
+    return {
+        "rpc_reachable": info is not None,
+        "network": info.get("network", "unknown") if info else "unknown",
+        "chain_height": chain_height,
+        "tip_hash": info.get("tip_hash", "")[:20] + "…" if info else "—",
+        "accepted_blocks": info.get("accepted_blocks", 0) if info else 0,
+        "mempool_size": mempool_size,
+        "template_txs": template_txs,
+        "block_reward_zion": block_reward,
+        "estimated_circulating_zion": round(circulating_estimate, 2),
+        "total_supply_zion": 144_000_000_000,
+        "premine_zion": total_premine,
+        "genesis_hash": genesis.get("hash_hex", "")[:24] + "…" if genesis else "—",
+        "recent_blocks": recent_blocks,
     }
 
 # ── Mainnet constants & genesis (from V3/L1/core/src/{emission,genesis,fee}.rs) ──
@@ -1208,6 +1385,17 @@ tailwind.config={theme:{extend:{colors:{zion:{900:'#0a0f1e',800:'#131a2e',700:'#
         <div class="text-xs text-amber-400 mb-2" id="val-pool-fee">—</div>
         <div class="flex gap-1 mt-2">
           <button onclick="controlAction('start-pool')" class="flex-1 text-xs px-2 py-1 bg-emerald-700 hover:bg-emerald-600 rounded transition">▶ Start</button>
+        </div>
+      </div>
+
+      <div id="card-pool-edge" class="bg-zion-800 rounded-xl p-4 border border-zion-700 transition">
+        <div class="flex items-center justify-between mb-3"><span class="text-xs font-semibold uppercase tracking-wider text-gray-400">🌐 Edge Pool</span><span id="badge-pool-edge" class="px-2 py-0.5 rounded text-xs font-bold bg-zion-700 text-gray-300">?</span></div>
+        <div class="text-3xl font-bold mb-1 text-emerald-400" id="val-pool-edge-status">—</div><div class="text-xs text-gray-400 mb-2">Reachable</div>
+        <div class="text-xs text-gray-400 mb-1">Host: <span id="val-pool-edge-host" class="text-white font-mono">—</span></div>
+        <div class="text-xs text-gray-400 mb-1">Port: <span id="val-pool-edge-port" class="text-white">—</span></div>
+        <div class="text-xs text-amber-400 mb-2" id="val-pool-edge-detail">—</div>
+        <div class="flex gap-1 mt-2">
+          <button onclick="window.open('http://77.42.71.94:8444','_blank')" class="flex-1 text-xs px-2 py-1 bg-zinc-700 hover:bg-zinc-600 rounded transition">🔗 Public</button>
         </div>
       </div>
 
@@ -1949,6 +2137,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
             })
         elif route == "/api/wallets":
             self._json(build_wallets())
+        elif route == "/api/explorer":
+            self._json(build_explorer())
         elif route.startswith("/api/metrics/"):
             sid = route.split("/")[-1]
             self._json(scrape_metrics(sid))
