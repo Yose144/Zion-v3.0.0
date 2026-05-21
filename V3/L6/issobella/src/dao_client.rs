@@ -3,7 +3,6 @@
 //! This is a placeholder integration. In production it would call the DAO REST API
 //! at `ZION_DAO_API_ADDR` to create treasury proposals.
 
-use crate::error::IssobellaResult;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone)]
@@ -51,7 +50,7 @@ impl DaoClient {
     }
 
     /// Submit a mission/research funding request to the DAO treasury.
-    pub async fn submit_mission_proposal(&self, req: &DaoProposalRequest) -> IssobellaResult<DaoProposalResponse> {
+    pub async fn submit_mission_proposal(&self, req: &DaoProposalRequest) -> anyhow::Result<DaoProposalResponse> {
         let url = format!("{}/api/v1/proposals", self.config.dao_api_url);
         let resp = self.http
             .post(&url)
@@ -59,16 +58,14 @@ impl DaoClient {
             .json(req)
             .send()
             .await
-            .map_err(|e| crate::error::IssobellaError::Other(format!("DAO API error: {}", e)))?;
+            .map_err(|e| anyhow::anyhow!("DAO API error: {}", e))?;
 
         if !resp.status().is_success() {
-            return Err(crate::error::IssobellaError::Other(
-                format!("DAO API returned {}", resp.status())
-            ));
+            return Err(anyhow::anyhow!("DAO API returned {}", resp.status()));
         }
 
         let body = resp.json::<DaoProposalResponse>().await
-            .map_err(|e| crate::error::IssobellaError::Other(format!("DAO parse error: {}", e)))?;
+            .map_err(|e| anyhow::anyhow!("DAO parse error: {}", e))?;
 
         Ok(body)
     }
