@@ -785,6 +785,8 @@ _ALLOW_BASE = {
     "start-miner":       "start-miner",
     "restart-node2":     "start-node2",
     "restart-miner":     "start-miner",
+    "backup-chain":      "backup-chain",
+    "verify-chain":      "verify-chain",
 }
 
 # Windows-only extras
@@ -1738,6 +1740,27 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 with open(install_log, "r", encoding="utf-8", errors="ignore") as f:
                     lines = [ln.rstrip("\n") for ln in f.readlines()[-200:]]
             self._json({"lines": lines, "file": str(install_log)})
+        elif route == "/api/backup/list":
+            backups = []
+            backup_dir = REPO_ROOT / "backups"
+            if backup_dir.exists():
+                for f in sorted(backup_dir.glob("backup_*.zip"), key=lambda p: p.stat().st_mtime, reverse=True):
+                    s = f.stat()
+                    backups.append({
+                        "name": f.name,
+                        "size_mb": round(s.st_size / (1024*1024), 2),
+                        "created": datetime.fromtimestamp(s.st_mtime).isoformat(),
+                    })
+            self._json({"backups": backups})
+        elif route == "/api/backup/verify":
+            res = run_control("verify-chain")
+            # Also parse the log for structured output
+            verify_log = LOG_DIR / "verify-chain.log"
+            log_lines = []
+            if verify_log.exists():
+                with open(verify_log, "r", encoding="utf-8", errors="ignore") as f:
+                    log_lines = [ln.rstrip("\n") for ln in f.readlines()[-50:]]
+            self._json({"result": res, "log": log_lines})
         else:
             self.send_error(404)
 
@@ -1754,6 +1777,60 @@ class DashboardHandler(BaseHTTPRequestHandler):
         if route == "/api/control":
             action = payload.get("action", "")
             self._json(run_control(action))
+        elif route == "/api/backup/create":
+            name = payload.get("name", "").strip()
+            include_logs = payload.get("includeLogs", False)
+            include_env = payload.get("includeEnv", False)
+            script = SCRIPTS_DIR / ("backup-chain" + _SCRIPT_EXT)
+            args = ["powershell.exe", "-ExecutionPolicy", "Bypass", "-File", str(script)]
+            if (name):
+                args += ["-Name", name]
+            if (include_logs):
+                args += ["-IncludeLogs"]
+            if (include_env):
+                args += ["-IncludeEnv"]
+            try:
+                proc = subprocess.Popen(args, cwd=str(REPO_ROOT), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                stdout, stderr = proc.communicate(timeout=60)
+                ok = proc.returncode == 0
+                out = (stdout.decode("utf-8", errors="ignore") + "\n" + stderr.decode("utf-8", errors="ignore")).strip()
+                self._json({"ok": ok, "output": out})
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)})
+        elif route == "/api/backup/restore":
+            name = payload.get("name", "").strip()
+            if not name:
+                self._json({"ok": False, "error": "Backup name required"})
+                return
+            script = SCRIPTS_DIR / ("restore-chain" + _SCRIPT_EXT)
+            try:
+                proc = subprocess.Popen(
+                    ["powershell.exe", "-ExecutionPolicy", "Bypass", "-File", str(script), "-BackupName", name],
+                    cwd=str(REPO_ROOT), stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                )
+                stdout, stderr = proc.communicate(timeout=120)
+                ok = proc.returncode == 0
+                out = (stdout.decode("utf-8", errors="ignore") + "\n" + stderr.decode("utf-8", errors="ignore")).strip()
+                self._json({"ok": ok, "output": out})
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)})
+        elif route == "/api/backup/delete":
+            name = payload.get("name", "").strip()
+            if not name:
+                self._json({"ok": False, "error": "Backup name required"})
+                return
+            backup_file = REPO_ROOT / "backups" / name
+            if not backup_file.exists():
+                # Try with .zip extension
+                backup_file = REPO_ROOT / "backups" / (name + ".zip")
+            if not backup_file.exists():
+                self._json({"ok": False, "error": f"Backup not found: {name}"})
+                return
+            try:
+                backup_file.unlink()
+                self._json({"ok": True, "message": f"Deleted {backup_file.name}"})
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)})
         else:
             self.send_error(404)
 
