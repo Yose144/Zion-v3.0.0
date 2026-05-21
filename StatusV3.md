@@ -618,6 +618,31 @@ nebo má konkrétní aktivační plán v
   - desktop-agent (`wallet-generator.js` — CJS inline bundle s `@noble/hashes`)
   - mobile-app (`CryptoService.js` → `zionAddress.js` → SDK)
 
+### 1.10 L4 OASIS — Consciousness Mining Game (Planned / In Development)
+
+- **Backend crate** `zion-oasis` — Rust Axum server:
+  - Player profile (wallet-linked XP, consciousness levels, achievements)
+  - 9 Sefirot consciousness levels (Malkuth → Keter) with feature unlocks
+  - Guild system (create/join/leave, territory control, guild wars)
+  - Golden Egg treasure hunt (108 clues, 3 Master Keys, prize tiers)
+  - REST API + WebSocket real-time events + Prometheus metrics
+  - SQLite persistence, Docker Compose stack
+- **UE5 Client** — Unreal Engine 5.4 project (`ue5/`):
+  - Open world with 8 territories, MetaHuman characters
+  - Blueprints: GameMode, Character, PlayerController, HUD
+  - Blockchain bridge C++ component (`ZionBlockchainBridge`)
+  - Maps: MainMenu + World level
+- **Avatar system** — 51 core sacred avatars across 7 traditions:
+  - Hindu Deities (Trimurti + Shakti + Vedic) — 17 avatars
+  - Ascended Masters — 10 avatars
+  - Buddhist Masters — 4 avatars
+  - Christian Saints — 4 avatars
+  - Historical Legends — 6 avatars
+  - Matrix Heroes — 4 avatars
+  - ZION Originals — 16 avatars
+  - Extended roster: 151 additional avatars (First Nations, Pacific, Tibet, India Extended, Japan, China, Indonesia, Australia, Aotearoa, Africa, Atlantis, Lemuria, Cosmic, Norse–Celtic, Ancient Egypt, Maya)
+- **Status:** Backend crate a UE5 projekt existují. **Full mainnet launch** plánován **Q3–Q4 2026** (po stabilizaci L1/L2/L3 a external auditu). Dokumentace: [`V3/L4/docs/`](./V3/L4/docs/).
+
 ---
 
 ## 2. Co stále hoří před Genesis (řazeno podle naléhavosti)
@@ -721,6 +746,12 @@ nebo má konkrétní aktivační plán v
 │           + zion-wallet-sdk (TS lib: address, keypair,     │
 │             crypto, tx builder, RPC, storage adapters)      │
 └──────────────────────┬──────────────────────────────────────┘
+                       │ HTTP / WebSocket (UE5 client)
+┌──────────────────────▼──────────────────────────────────────┐
+│ V3/L4/oasis  — Consciousness Mining Game (REST + WS + UE5)  │
+│              avatars, quests, guilds, territories,           │
+│              Golden Egg treasure hunt                        │
+└──────────────────────┬──────────────────────────────────────┘
                        │ JSON-RPC + WebSocket
 ┌──────────────────────▼──────────────────────────────────────┐
 │ V3/cli  — `zion` operátorský binárník                       │
@@ -771,6 +802,7 @@ nebo má konkrétní aktivační plán v
 | Chci spustit lokální nod | `cargo run --release --manifest-path V3/Cargo.toml -p zion-core --bin node` |
 | Chci spustit pool | `ZION_POOL_BIND=0.0.0.0:8444 ZION_NODE_RPC_ADDR=127.0.0.1:8443 cargo run --release --manifest-path V3/Cargo.toml -p zion-pool --bin server` |
 | Chci spustit miner | `ZION_POOL_ADDR=127.0.0.1:8444 cargo run --release --manifest-path V3/Cargo.toml -p zion-miner` |
+| Chci spustit L4 OASIS | `cargo run --manifest-path V3/Cargo.toml -p zion-oasis` |
 | Chci CLI helper | `cargo run --manifest-path V3/Cargo.toml -p zion-cli -- --help` |
 | Chci celý workspace test | `cargo test --manifest-path V3/Cargo.toml --workspace -- --test-threads=1` |
 | Chci Docker stack | `docker compose -f V3/docker/docker-compose.yml --profile mainnet up -d` |
