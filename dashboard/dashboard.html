@@ -178,20 +178,22 @@ button{display:inline-flex;align-items:center;justify-content:center;cursor:poin
   </section>
 
   <!-- Tabs -->
-  <div class="flex gap-1.5 mb-6 overflow-x-auto pb-1 relative z-10">
+  <div class="flex flex-wrap gap-1.5 mb-6 pb-1 relative z-10">
     <button onclick="switchTab('overview')" id="tab-overview" class="tab-btn tab-active">📊 Overview</button>
     <button onclick="switchTab('services')" id="tab-services" class="tab-btn">🧩 Services</button>
     <button onclick="switchTab('l1')" id="tab-l1" class="tab-btn">🔷 L1</button>
     <button onclick="switchTab('l2')" id="tab-l2" class="tab-btn">🌉 L2</button>
     <button onclick="switchTab('l3')" id="tab-l3" class="tab-btn">🌀 L3</button>
     <button onclick="switchTab('l4')" id="tab-l4" class="tab-btn">🪷 L4</button>
-    <button onclick="switchTab('genesis')" id="tab-genesis" class="tab-btn">⚡ Genesis &amp; Premine</button>
-    <button onclick="switchTab('blockers')" id="tab-blockers" class="tab-btn">🚧 P0 Blockers</button>
+    <button onclick="switchTab('l5')" id="tab-l5" class="tab-btn">🕊️ L5</button>
+    <button onclick="switchTab('l6')" id="tab-l6" class="tab-btn">🚀 L6</button>
+    <button onclick="switchTab('genesis')" id="tab-genesis" class="tab-btn">⚡ Genesis</button>
+    <button onclick="switchTab('blockers')" id="tab-blockers" class="tab-btn">🚧 Blockers</button>
     <button onclick="switchTab('controls')" id="tab-controls" class="tab-btn">🎛️ Controls</button>
     <button onclick="switchTab('charts')" id="tab-charts" class="tab-btn">📈 Charts</button>
     <button onclick="switchTab('events')" id="tab-events" class="tab-btn">🧱 Events</button>
     <button onclick="switchTab('env')" id="tab-env" class="tab-btn">⚙️ Env</button>
-    <button onclick="switchTab('database')" id="tab-database" class="tab-btn">🗄️ Database</button>
+    <button onclick="switchTab('database')" id="tab-database" class="tab-btn">🗄️ DB</button>
     <button onclick="switchTab('metrics')" id="tab-metrics" class="tab-btn">📊 Metrics</button>
     <button onclick="switchTab('wizard')" id="tab-wizard" class="tab-btn">🧙 Wizard</button>
     <button onclick="switchTab('logs')" id="tab-logs" class="tab-btn">📜 Logs</button>
@@ -557,6 +559,24 @@ button{display:inline-flex;align-items:center;justify-content:center;cursor:poin
       <h2 class="text-xl font-bold mb-2 flex items-center gap-2"><span class="text-gradient">🪷 L4 — Application Layer</span></h2>
       <p class="text-sm text-gray-400 mb-4">OASIS Avatar Hub — avatar registry and humanitarian impact.</p>
       <div id="layer-l4-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+    </div>
+  </div>
+
+  <!-- ═════════ TAB: L5 Free World ═════════ -->
+  <div id="pane-l5" class="hidden space-y-4">
+    <div class="zion-panel p-6">
+      <h2 class="text-xl font-bold mb-2 flex items-center gap-2"><span class="text-gradient">🕊️ L5 — Free World Humanitarian</span></h2>
+      <p class="text-sm text-gray-400 mb-4">Humanitarian aid coordination — mesh networks, medical tables, community DAOs.</p>
+      <div id="layer-l5-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+    </div>
+  </div>
+
+  <!-- ═════════ TAB: L6 Issobella Space ═════════ -->
+  <div id="pane-l6" class="hidden space-y-4">
+    <div class="zion-panel p-6">
+      <h2 class="text-xl font-bold mb-2 flex items-center gap-2"><span class="text-gradient">🚀 L6 — Issobella Space Layer</span></h2>
+      <p class="text-sm text-gray-400 mb-4">Space infrastructure coordination — satellite relay, off-world settlements, orbital DAOs.</p>
+      <div id="layer-l6-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
     </div>
   </div>
 
