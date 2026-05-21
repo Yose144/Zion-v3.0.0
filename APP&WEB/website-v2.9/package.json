@@ -17,7 +17,7 @@
     "@splinetool/react-spline": "^4.1.0",
     "@tailwindcss/typography": "^0.5.19",
     "clsx": "^2.1.1",
-    "ethers": "^5.8.0",
+    "ethers": "^6.16.0",
     "framer-motion": "^12.23.24",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.473.0",
