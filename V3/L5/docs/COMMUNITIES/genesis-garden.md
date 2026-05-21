@@ -303,6 +303,83 @@ General Circle (all Guardians + long-stay members)
 
 ---
 
+## 11. Marketing & Guest Acquisition
+
+### 11.1 Target Guest Personas
+
+| Persona | Demographics | Motivation | Channel | Price Sensitivity |
+|---------|-----------|-----------|---------|-------------------|
+| **Digital nomad** | 25–35, remote worker | Fast WiFi, community, nature | Nomad List, Facebook groups | Medium |
+| **Surf traveler** | 20–40, active | Waves, yoga, healthy food | Instagram, surf blogs, word-of-mouth | Low–Medium |
+| **Regenerative farmer** | 30–50, WWOOFer alumnus | Skills, land experience, network | WWOOF, Workaway, organic farming forums | Very low (work exchange) |
+| **Burned-out professional** | 35–55, corporate escapee | Silence, digital detox, reconnection | Wellness blogs, LinkedIn, retreats | Medium–High |
+| **ZION curious** | Any age, crypto-adjacent | See L5 in action, meet Guardians | Discord, crypto Twitter, conferences | Low |
+
+### 11.2 Channel Strategy
+
+| Channel | Phase 1 Budget | Phase 2 Budget | Tactics |
+|---------|---------------|---------------|---------|
+| **Instagram / TikTok** | EUR 200/month | EUR 500/month | Daily stories, drone footage, Guardian takeovers, surf clips |
+| **Nomad List / Workaway** | EUR 0 (organic) | EUR 300/year | Profile optimization, photo updates, reviews |
+| **WWOOF Portugal** | EUR 100/year | EUR 100/year | Host listing, volunteer testimonials |
+| **Surf schools (partnership)** | EUR 0 | Revenue share 10% | Referral program, package deals |
+| **ZION Discord / OASIS** | EUR 0 | EUR 0 | Special rates for Guardians, quest rewards for visits |
+| **Retreat aggregators** | EUR 0 | EUR 1,000/year | BookRetreats, RetreatGuru listings |
+| **SEO / blog** | EUR 0 | EUR 0 | Weekly blog: farm diary, recipes, off-grid tips |
+
+### 11.3 Pricing Strategy
+
+| Season | Safari Tent | Eco-Cabin | Yurt (pp) | Notes |
+|--------|-------------|-----------|-----------|-------|
+| **Low (Nov–Mar)** | 35 | 55 | 12 | Rainy, fewer surfers, focus on workshops |
+| **Shoulder (Apr, Oct)** | 50 | 75 | 18 | Good waves, mild weather |
+| **High (May–Sep)** | 65 | 95 | 25 | Peak surf season, full occupancy target |
+| **Work exchange** | 0 | 0 | 0 | 25 hrs/week labor → free accommodation + food |
+
+**Work exchange ratio:** 2 work-exchanged guests per 4 paying guests (max). Ensures labor while maintaining revenue.
+
+### 11.4 Launch Campaign (Q3 2026)
+
+- **Month 1 (Jul):** "Soft open" — friends, family, ZION community. Collect photos, testimonials, fix issues.
+- **Month 2 (Aug):** "Guardian week" — free stays for 10 Guardians from other nodes. Content creation blitz.
+- **Month 3 (Sep):** "Public launch" — paid guests, full pricing, all channels active.
+- **Goal:** 60% occupancy by Q4 2026.
+
+---
+
+## 12. EU Funding & Grants
+
+| Program | Amount | Eligibility | Deadline | Status |
+|---------|--------|-------------|----------|--------|
+| **LEADER / PDRL (rural development)** | EUR 50,000–200,000 | Portuguese rural municipalities, agricultural projects, eco-tourism | Annual calls | 🔵 Researching |
+| **Erasmus+ (KA1, youth exchanges)** | EUR 10,000–30,000/project | Non-profit, youth education, sustainability | Feb/Oct | 🔵 Drafting |
+| **Horizon Europe (EIC Accelerator)** | EUR 0.5–2.5M | Innovative tech (could include ZION node + agri-tech) | Rolling | 🔵 Long shot |
+| **Portugal 2030 / CCDR-Algarve** | Varies | Regional development, renewable energy, tourism | Annual | 🔵 Researching |
+| **European Social Fund+** | EUR 20,000–100,000 | Social inclusion, rural employment | Varies | 🔵 Researching |
+| **LIFE Programme (environment)** | EUR 60,000–500,000 | Biodiversity, climate adaptation | Annual | 🔵 Researching |
+
+**Action items:**
+- [ ] Register entity (Associação) to unlock grant eligibility
+- [ ] Hire grant writer / partner with local development agency (ADRA, INAlentejo)
+- [ ] Prepare first LEADER application (2026 call)
+- [ ] Build Erasmus+ partnership network (3+ EU countries)
+
+---
+
+## 13. Partnerships & Local Integration
+
+| Partner Type | Specific Examples | Value Exchange | Contact Strategy |
+|-------------|-------------------|--------------|----------------|
+| **Surf schools** | Algarve Surf School (Lagos), Wavy Surf Camp (Sagres) | Referral fee 10% or guest exchange | Instagram DM + in-person visit |
+| **Organic markets** | Mercado Biológico de Lagos, Algarve Farmers Market | Wholesale produce + farm visibility | Market manager introduction |
+| **Yoga teachers** | Local freelancers + traveling teachers | Revenue share 70/30 or flat fee | Retreat aggregator outreach |
+| **Eco-builders** | Terra Lusa (cob/strawbale), local timber framers | Labor exchange + testimonial | Visit existing projects |
+| **Universities** | University of Algarve (agriculture), ISA Lisbon | Research partnership, student interns | Email department heads |
+| **Local municipality** | Câmara Municipal de Vila do Bispo / Odemira | Permits, publicity, potential land concession | Formal presentation |
+| **Seed banks** | Banco Português de Germoplasma Vegetal | Rare variety access, conservation partnership | Formal collaboration request |
+
+---
+
 > *"Genesis Garden builds legacy in biological time — not in quarterly reports. Every tree planted here will remain long after this team has departed."*
 
 *Genesis Garden · Terra Nova L5 · Portugal · 2026*

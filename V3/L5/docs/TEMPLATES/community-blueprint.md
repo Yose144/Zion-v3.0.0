@@ -16,7 +16,7 @@
 | **Climate zone** | Mediterranean / Atlantic / Continental / Tropical / Arid / Alpine |
 | **Status** | Vision / Preparation / Active development / Established |
 | **Last modified** | YYYY-MM-DD |
-| **Archetype** | Base Camp / Sanctuary / Regeneration / Innovation / Education |
+| **Archetype** | Base Camp / Sanctuary / Regeneration / Innovation / Education / Paradise |
 
 ### Purpose statement
 
@@ -215,11 +215,21 @@ List the first 10–15 crops you will plant, with seasonality.
 ## 7. Development Timeline
 
 ### Phase 0 — Seed (YYYY QX–QY)
-- [ ] Core team formation (X Guardians)
+- [ ] Core team formation (X Guardians, including at least 1 local / indigenous advisor)
 - [ ] Land scouting
 - [ ] Legal research
 - [ ] Budget draft
 - [ ] First proof-of-concept
+
+**Phase 0 budget estimate:**
+| Item | Cost | Notes |
+|------|------|-------|
+| Travel & scouting | | |
+| Legal registration | | |
+| Initial deposits / option fees | | |
+| Core team living expenses | | |
+| Tools & equipment | | |
+| **Total Phase 0** | | |
 
 ### Phase 1 — Roots (YYYY)
 - [ ] Land acquisition / lease
