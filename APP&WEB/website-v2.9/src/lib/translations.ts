@@ -99,6 +99,15 @@ const t = {
     mode_galactic_core_focus: { cs: 'Governance + posvátné účetní knihy', en: 'Governance + sacred ledgers' },
   },
 
+  countdown: {
+    title: { cs: 'T-29 dní do Mainnet Launch', en: 'T-29 Days to Mainnet Launch' },
+    target_date: { cs: 'Cíl: 20. června 2026', en: 'Target: June 20, 2026' },
+    subtitle: {
+      cs: 'Řízený test mainnet běží. Veřejný mainnet launch se aktivuje při dosažení nuly.',
+      en: 'Controlled test mainnet running. Public mainnet launch activates at zero.',
+    },
+  },
+
   goldenEgg: {
     badge: { cs: 'Hiranyagarbha · Golden Egg', en: 'Hiranyagarbha · Golden Egg' },
     signal: { cs: 'L4 symbolika ukotvená v L1', en: 'L4 symbolism grounded in L1' },
