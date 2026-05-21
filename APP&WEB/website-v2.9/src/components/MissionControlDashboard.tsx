@@ -975,12 +975,12 @@ function V3MetricsSection({
       {/* Header */}
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-3">
-          <p className="text-sm uppercase tracking-[0.4em] text-gray-500">V3 Test Mainnet</p>
+          <p className="text-sm uppercase tracking-[0.4em] text-gray-500">V3 Mainnet</p>
           <span className="text-[10px] uppercase tracking-widest border border-emerald-500/40 bg-emerald-500/10 text-emerald-300 px-2 py-0.5 rounded-full font-semibold">LIVE PROMETHEUS</span>
         </div>
         <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white flex items-center gap-2 sm:gap-3">
           <TrendingUp className="h-7 w-7 text-emerald-400" />
-          V3 Test Mainnet Metrics
+          V3 Mainnet Metrics
         </h2>
         <p className="text-sm text-gray-400">30+ live Prometheus metrics pro controlled rehearsal stack: core node, mining pool, PPLNS engine a host infrastrukturu.</p>
       </div>

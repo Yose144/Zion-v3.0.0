@@ -285,6 +285,27 @@ pub fn execute_proposal(
             action,
             justification,
         } => execute_emergency_action(action, justification)?,
+
+        // L5 governance proposals — these are consent-based, not treasury-based.
+        // Execution means recording the on-chain confirmation + reputation update.
+        ProposalType::Admission { candidate_id, .. } => {
+            format!("Admission confirmed for candidate {}", candidate_id)
+        }
+
+        ProposalType::Bodhisattva { candidate_id, .. } => {
+            format!("Bodhisattva vow confirmed for Guardian {}", candidate_id)
+        }
+
+        ProposalType::Expulsion { accused_id, tier, .. } => {
+            format!("Expulsion executed for {} at tier {}", accused_id, tier)
+        }
+
+        ProposalType::CrossLayer { target_layers, inner_proposal_id, .. } => {
+            format!(
+                "Cross-layer proposal {} consented by layers {:?}",
+                inner_proposal_id, target_layers
+            )
+        }
     };
 
     // Update status

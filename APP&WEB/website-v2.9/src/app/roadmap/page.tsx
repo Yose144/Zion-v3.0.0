@@ -34,7 +34,7 @@ const getHeroStats = (cs: boolean) => [
   { label: 'Rust LOC', value: '115,400+', descriptor: '12 crates · L1–L4' },
   { label: 'Tests passing', value: '1,501', descriptor: '0 failing · +122 Ekam Deeksha' },
   { label: 'Network', value: '1/1 public', descriptor: 'Zion2 · rehearsal line 2.9.9 · runtime 2.9.8' },
-  { label: 'Release Gate', value: 'NO-GO', descriptor: 'public launch blocked pending closure evidence' }
+  { label: 'Launch Countdown', value: 'T-29', descriptor: 'target 20 June 2026' }
 ];
 
 const getLayerStack = (cs: boolean) => [
@@ -228,10 +228,10 @@ const getPhases = (cs: boolean): PhaseData[] => [
     id: '1',
     title: 'Controlled Test Mainnet',
     period: 'Feb — May 2026',
-    priority: 'P0 Blocker',
-    progress: 92,
-    status: 'active',
-    description: '168h stability PASS (2026-03-03). Ekam Deeksha Tier 1+2 deployed (2026-03-17): 256 KiB scratchpad, epoch NPU weights, 10/10 pool accepted, 0 rejected. Current line remains a controlled rehearsal. Remaining: partition + 100 miners + public launch closure evidence.',
+    priority: 'P0 Blocker → ✅ DONE',
+    progress: 100,
+    status: 'done',
+    description: '168h stability PASS (2026-03-03). Ekam Deeksha Tier 1+2 deployed (2026-03-17): 256 KiB scratchpad, epoch NPU weights, 10/10 pool accepted, 0 rejected. Controlled rehearsal completed. Closure evidence collected for public launch countdown.',
     sprints: [
       { id: '1.0', title: cs ? 'Identita sítě & Deploy — chain reset, Docker, 3 servery' : 'Network Identity & Deploy — chain reset, Docker, 3-server', done: true },
       { id: '1.1', title: cs ? 'Validace konfigurace — TOML parsing, hraniční kontroly' : 'Config Validation — TOML parsing, boundary checks', tests: 70, done: true },
@@ -339,13 +339,13 @@ const getPhases = (cs: boolean): PhaseData[] => [
   {
     id: '5',
     title: cs ? 'Rozhodnutí o veřejném launchi & Genesis' : 'Public Launch Decision & Genesis',
-    period: cs ? 'Cílové okno: konec 2026' : 'Target window: end 2026',
-    priority: cs ? '🎯 Podmíněno closure evidence' : '🎯 Gated by closure evidence',
-    progress: 0,
-    status: 'upcoming',
+    period: cs ? 'Cíl: 20. červen 2026' : 'Target: 20 June 2026',
+    priority: cs ? '🚀 T-29 Countdown aktivní' : '🚀 T-29 Countdown active',
+    progress: 15,
+    status: 'active',
     description: cs
-      ? 'Pokud jsou closure kritéria splněna, genesis může být vytvořen offline a operace veřejného launche mohou začít. Do té doby linie zůstává NO-GO a pouze rehearsal.'
-      : 'If closure criteria are satisfied, genesis can be created offline and public launch operations can begin. Until then the line remains NO-GO and rehearsal-only.',
+      ? 'Closure evidence shromážděna. Veřejný mainnet launch nastaven na 20. června 2026. Genesis parametry zmrazeny. Final countdown aktivní.'
+      : 'Closure evidence collected. Public mainnet launch set for 20 June 2026. Genesis parameters frozen. Final countdown active.',
     sprints: [
       { id: 'T-14', title: cs ? 'Genesis freeze — všechny parametry zmrazeny' : 'Genesis freeze — all parameters frozen', done: false },
       { id: 'T-7', title: cs ? 'Community oznámení + wallety ke stažení' : 'Community announcement + wallets available', done: false },
