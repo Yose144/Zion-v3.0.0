@@ -67,6 +67,7 @@ A **zero-dependency**, autonomous, intuitive **command center** for the entire Z
 | `/api/logs/<service>` | GET | Log tail |
 | `/api/genesis` | GET | Constants + premine outputs (12) |
 | `/api/blockers` | GET | P0 launch blockers + `ready_for_launch` |
+| `/api/wallets` | GET | All wallets: premine (12) + operational (env/zion.toml) with live balances |
 | `/api/install/log` | GET | Live install-deps build log |
 | `/api/backup/list` | GET | List backup ZIPs with size and date |
 | `/api/backup/create` | POST | Create backup (opt: includeLogs, includeEnv, name) |
@@ -129,17 +130,18 @@ dashboard\start-dashboard.ps1
 ## Tabs
 
 1. **📊 Overview** — Service cards, checklist, alerts, mini hashrate, payouts (auto-shown on startup)
-2. **🎛️ Controls** — Stack Control Center: Launch Full Stack, Open Terminal, Install/Build, Stop All + individual service grid
-3. **📈 Charts** — Hashrate, height, shares, sessions (Chart.js, last 10 min)
-4. **🧱 Events** — Block discovery feed
-5. **⚙️ Env** — Env file viewer with sensitive redaction
-6. **🧙 Wizard** — 7-step guided launch
-7. **🧩 Services** — All 13 services with health, ports, descriptions
-8. **🗄️ Database** — DB explorer (SQLite + JSON)
-9. **📊 Metrics** — Prometheus scraper + Grafana iframe
-10. **📜 Logs** — All 4 core service log tails
-11. **⚡ Genesis** — Canonical premine data: 144B supply, 16.28B premine (12 outputs), Decade Decay, fee split
-12. **🔥 Blockers** — P0 launch blockers with severity, owner, deadline, status and `ready_for_launch` boolean
+2. **💼 Wallets** — Premine (12) + operational wallets with live balances from Node RPC
+3. **🎛️ Controls** — Stack Control Center: Launch Full Stack, Open Terminal, Install/Build, Stop All + individual service grid
+4. **📈 Charts** — Hashrate, height, shares, sessions (Chart.js, last 10 min)
+5. **🧱 Events** — Block discovery feed
+6. **⚙️ Env** — Env file viewer with sensitive redaction
+7. **🧙 Wizard** — 7-step guided launch
+8. **🧩 Services** — All 13 services with health, ports, descriptions
+9. **🗄️ Database** — DB explorer (SQLite + JSON)
+10. **📊 Metrics** — Prometheus scraper + Grafana iframe
+11. **📜 Logs** — All 4 core service log tails
+12. **⚡ Genesis** — Canonical premine data: 144B supply, 16.28B premine (12 outputs), Decade Decay, fee split
+13. **🔥 Blockers** — P0 launch blockers with severity, owner, deadline, status and `ready_for_launch` boolean
 
 ## Friendly Mode
 

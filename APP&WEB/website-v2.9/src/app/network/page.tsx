@@ -88,15 +88,15 @@ const getHeroStats = (cs: boolean) => [
   },
   {
     label: cs ? 'Topologie' : 'Topology',
-    value: cs ? 'Rehearsal' : 'Rehearsal',
-    descriptor: cs ? '3-region test-mainnet rehearsal topologie' : '3-region test-mainnet rehearsal topology',
+    value: cs ? 'Mainnet' : 'Mainnet',
+    descriptor: cs ? '3-region mainnet launch topologie' : '3-region mainnet launch topology',
   },
   {
     label: cs ? 'Síť' : 'Network',
-    value: 'V3 Test Mainnet',
+    value: 'V3 Mainnet',
     descriptor: cs
-      ? 'Veřejná rehearsal linka v2.9.9 · runtime v2.9.8'
-      : 'Public rehearsal line v2.9.9 · runtime v2.9.8',
+      ? 'Mainnet launch countdown v2.9.9 · runtime v2.9.8'
+      : 'Mainnet launch countdown v2.9.9 · runtime v2.9.8',
   },
 ];
 
@@ -193,7 +193,7 @@ const getGuideBlocks = (cs: boolean) => [
   {
     icon: Globe,
     title: 'P2P Layer',
-    description: 'Native libp2p network for blockchain synchronization on the current rehearsal topology.',
+    description: 'Native libp2p network for blockchain synchronization on the current mainnet launch topology.',
     items: [
       `Public peer: ${SITE_PRIMARY_HOST}:8333`,
       'Internal lanes: 5.78.194.94:8333, 5.223.84.191:8333',
@@ -218,7 +218,7 @@ const getNetworkFacts = (cs: boolean) => [
   },
   { text: cs ? 'Monitoring Prometheus + Grafana' : 'Prometheus + Grafana monitoring', done: true },
   {
-    text: cs ? 'Geo-distribuovaná rehearsal topologie aktivní' : 'Geo-distributed rehearsal topology active',
+    text: cs ? 'Geo-distribuovaná mainnet launch topologie aktivní' : 'Geo-distributed mainnet launch topology active',
     done: true,
   },
 ];
@@ -942,7 +942,7 @@ function NetFAQSection({ cs }: { cs: boolean }) {
     { q: cs ? 'Jak se připojit jako miner?' : 'How to connect as a miner?', a: cs ? 'Stáhněte si XMRig nebo Desktop Agent a použijte stratum+tcp://91.98.122.165:4444 jako pool adresu. Detaily najdete v Connection Guides výše.' : 'Download XMRig or the Desktop Agent and use stratum+tcp://91.98.122.165:4444 as the pool address. See the Connection Guides section above for details.' },
     { q: cs ? 'Jak spustit vlastní full node?' : 'How to run your own full node?', a: cs ? 'Klonujte repo, spusťte cargo build --release v L1/core a pak ./target/release/ziond --p2p-bind-ip 0.0.0.0 --add-exclusive-node 91.98.122.165:21000. Docker compose je k dispozici v docker/docker-compose.mainnet.yml.' : 'Clone the repo, cargo build --release from L1/core and then ./target/release/ziond --p2p-bind-ip 0.0.0.0 --add-exclusive-node 91.98.122.165:21000. Docker compose is available in docker/docker-compose.mainnet.yml.' },
     { q: cs ? 'Jaký pool fee si ZION účtuje?' : 'What pool fee does ZION charge?', a: cs ? '89 % putuje minerovi, 5 % do humanitarian fondu, 5 % do fondu Issobella a 1 % pool provozní poplatek.' : '89% goes to the miner, 5% to the humanitarian fund, 5% to the Issobella fund, and 1% pool operational fee.' },
-    { q: cs ? 'Je síť veřejně spuštěna?' : 'Is the network publicly launched?', a: cs ? 'Interní mainnet je v provozu 24/7 pro testování a validaci. Veřejný launch je aktuálně NO-GO – sledujte roadmapu pro aktualizace.' : 'Internal mainnet is running 24/7 for testing and validation. Public launch is currently NO-GO – follow the roadmap for updates.' },
+    { q: cs ? 'Je síť veřejně spuštěna?' : 'Is the network publicly launched?', a: cs ? 'Interní mainnet je v provozu 24/7 pro testování a validaci. Veřejný launch je naplánován na 20. června 2026 (T-29) – sledujte odpočet na homepage a v roadmapě.' : 'Internal mainnet is running 24/7 for testing and validation. Public launch is scheduled for 20 June 2026 (T-29) – follow the countdown on the homepage and roadmap.' },
   ];
   return (
     <div className="divide-y divide-white/[0.06]">
