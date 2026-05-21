@@ -260,6 +260,32 @@ button{display:inline-flex;align-items:center;justify-content:center;cursor:poin
       </div>
     </div>
 
+    <!-- CLI Node Status (zion-cli data source) -->
+    <div class="zion-panel p-5 mb-4" id="cli-status-widget">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-base font-bold flex items-center gap-2">🖥️ CLI Node Status <span class="text-xs text-gray-500 font-normal">(zion-cli)</span></h2>
+        <span id="cli-status-badge" class="text-xs px-2 py-0.5 rounded-md bg-gray-700 text-gray-400">Loading…</span>
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div class="text-center">
+          <div class="text-2xl font-bold text-gradient" id="cli-val-height">—</div>
+          <div class="text-[10px] text-gray-400">Height</div>
+        </div>
+        <div class="text-center">
+          <div class="text-2xl font-bold text-blue-400" id="cli-val-peers">—</div>
+          <div class="text-[10px] text-gray-400">Peers</div>
+        </div>
+        <div class="text-center">
+          <div class="text-2xl font-bold text-amber-400" id="cli-val-mempool">—</div>
+          <div class="text-[10px] text-gray-400">Mempool</div>
+        </div>
+        <div class="text-center">
+          <div class="text-xs font-mono text-gray-300 truncate" id="cli-val-tip">—</div>
+          <div class="text-[10px] text-gray-400">Tip Hash</div>
+        </div>
+      </div>
+    </div>
+
     <!-- Alerts + Checklist + Hashrate -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
       <div class="zion-panel p-5 lg:col-span-2">
@@ -430,10 +456,20 @@ button{display:inline-flex;align-items:center;justify-content:center;cursor:poin
             </div>
             <button onclick="createBackup()" class="zion-button-primary text-sm w-full">💾 Create Backup</button>
           </div>
-          <div class="zion-panel p-4">
+          <div class="zion-panel p-4 mb-3">
             <div class="text-sm font-bold mb-2">Verify Integrity</div>
             <div class="text-xs text-gray-400 mb-3">Check snapshot JSON, journal, and LMDB files for corruption.</div>
             <button onclick="verifyBackup()" class="zion-button-secondary text-sm w-full">🔍 Verify Chain State</button>
+          </div>
+          <div class="zion-panel p-4">
+            <div class="text-sm font-bold mb-2">Core Utility (Offline LMDB)</div>
+            <div class="text-xs text-gray-400 mb-3">Deep verify, export state, and dump blocks directly from LMDB without running a node.</div>
+            <div class="flex flex-col gap-2">
+              <button onclick="runCoreUtil('verify-db')" class="text-[10px] px-2 py-1 bg-white/5 hover:bg-white/10 rounded transition text-left">🔍 Deep Verify (LMDB)</button>
+              <button onclick="runCoreUtil('export-state')" class="text-[10px] px-2 py-1 bg-white/5 hover:bg-white/10 rounded transition text-left">📤 Export State (JSON)</button>
+              <button onclick="runCoreUtil('dump-blocks')" class="text-[10px] px-2 py-1 bg-white/5 hover:bg-white/10 rounded transition text-left">🧱 Dump Blocks</button>
+              <button onclick="runCoreUtil('tip-height')" class="text-[10px] px-2 py-1 bg-white/5 hover:bg-white/10 rounded transition text-left">📏 Tip Height</button>
+            </div>
           </div>
         </div>
         <div class="lg:col-span-2">
@@ -458,6 +494,27 @@ button{display:inline-flex;align-items:center;justify-content:center;cursor:poin
           <div id="install-log" class="bg-black/40 rounded-xl p-3 max-h-48 overflow-y-auto log-tail text-gray-300">
             <div class="text-gray-500 italic">Run Install / Build to see progress.</div>
           </div>
+        </div>
+      </div>
+
+      <!-- CLI Console -->
+      <h3 class="zion-kicker mb-3">🖥️ CLI Console (zion-cli)</h3>
+      <div class="zion-panel p-4 mb-6">
+        <div class="flex gap-2 mb-3">
+          <input id="cli-input" type="text" placeholder="node status" class="flex-1 bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-zion-gold/50">
+          <button onclick="runCliCommand()" class="zion-button-primary text-sm px-4">▶ Run</button>
+        </div>
+        <div class="flex flex-wrap gap-1.5 mb-3">
+          <button onclick="runCliQuick('node status')" class="text-[10px] px-2 py-1 bg-white/5 hover:bg-white/10 rounded transition">node status</button>
+          <button onclick="runCliQuick('node blocks 10')" class="text-[10px] px-2 py-1 bg-white/5 hover:bg-white/10 rounded transition">node blocks 10</button>
+          <button onclick="runCliQuick('node mempool')" class="text-[10px] px-2 py-1 bg-white/5 hover:bg-white/10 rounded transition">node mempool</button>
+          <button onclick="runCliQuick('wallet balance')" class="text-[10px] px-2 py-1 bg-white/5 hover:bg-white/10 rounded transition">wallet balance</button>
+          <button onclick="runCliQuick('pool status')" class="text-[10px] px-2 py-1 bg-white/5 hover:bg-white/10 rounded transition">pool status</button>
+          <button onclick="runCliQuick('doctor')" class="text-[10px] px-2 py-1 bg-white/5 hover:bg-white/10 rounded transition">doctor</button>
+          <button onclick="runCliQuick('status')" class="text-[10px] px-2 py-1 bg-white/5 hover:bg-white/10 rounded transition">status</button>
+        </div>
+        <div id="cli-output" class="bg-black/40 rounded-xl p-3 max-h-64 overflow-y-auto log-tail text-gray-300 font-mono text-xs">
+          <div class="text-gray-500 italic">Type a command and press Run, or click a quick command.</div>
         </div>
       </div>
     </div>

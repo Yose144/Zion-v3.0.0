@@ -787,6 +787,7 @@ _ALLOW_BASE = {
     "restart-miner":     "start-miner",
     "backup-chain":      "backup-chain",
     "verify-chain":      "verify-chain",
+    "core-util":         "core-util-run",
 }
 
 # Windows-only extras
@@ -1829,6 +1830,98 @@ class DashboardHandler(BaseHTTPRequestHandler):
             try:
                 backup_file.unlink()
                 self._json({"ok": True, "message": f"Deleted {backup_file.name}"})
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)})
+        elif route == "/api/cli/run":
+            cmd = payload.get("cmd", "").strip()
+            if not cmd:
+                self._json({"ok": False, "error": "cmd required"})
+                return
+            # Whitelist allowed command prefixes for security
+            allowed_prefixes = ("node", "wallet", "pool", "mine", "doctor", "status", "explorer", "monitor", "bridge", "dao", "warp", "ncl", "agent", "hiran", "deploy", "compose")
+            first_word = cmd.split()[0].lower()
+            if first_word not in allowed_prefixes:
+                self._json({"ok": False, "error": f"Command '{first_word}' not in whitelist. Allowed: {allowed_prefixes}"})
+                return
+            script = SCRIPTS_DIR / ("zion-cli-run" + _SCRIPT_EXT)
+            try:
+                proc = subprocess.Popen(
+                    ["powershell.exe", "-ExecutionPolicy", "Bypass", "-File", str(script), "-Cmd", cmd],
+                    cwd=str(REPO_ROOT), stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                )
+                stdout, stderr = proc.communicate(timeout=30)
+                # Try to parse JSON output from the wrapper; fallback to raw text
+                out_text = stdout.decode("utf-8", errors="ignore").strip()
+                try:
+                    parsed = json.loads(out_text)
+                    self._json(parsed)
+                except Exception:
+                    self._json({"ok": True, "stdout": out_text, "stderr": stderr.decode("utf-8", errors="ignore"), "exit_code": proc.returncode, "cmd": cmd})
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)})
+        elif route == "/api/cli/node-status":
+            script = SCRIPTS_DIR / ("zion-cli-run" + _SCRIPT_EXT)
+            try:
+                proc = subprocess.Popen(
+                    ["powershell.exe", "-ExecutionPolicy", "Bypass", "-File", str(script), "-Cmd", "node status"],
+                    cwd=str(REPO_ROOT), stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                )
+                stdout, stderr = proc.communicate(timeout=15)
+                out_text = stdout.decode("utf-8", errors="ignore").strip()
+                try:
+                    parsed = json.loads(out_text)
+                    if parsed.get("ok") and parsed.get("stdout"):
+                        self._json({"ok": True, "output": parsed["stdout"], "cli_connected": True})
+                    else:
+                        self._json({"ok": False, "error": parsed.get("stderr", "unknown"), "cli_connected": False})
+                except Exception:
+                    self._json({"ok": True, "output": out_text, "cli_connected": True})
+            except Exception as e:
+                self._json({"ok": False, "error": str(e), "cli_connected": False})
+        elif route == "/api/cli/status":
+            script = SCRIPTS_DIR / ("zion-cli-run" + _SCRIPT_EXT)
+            try:
+                proc = subprocess.Popen(
+                    ["powershell.exe", "-ExecutionPolicy", "Bypass", "-File", str(script), "-Cmd", "status"],
+                    cwd=str(REPO_ROOT), stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                )
+                stdout, stderr = proc.communicate(timeout=15)
+                out_text = stdout.decode("utf-8", errors="ignore").strip()
+                try:
+                    parsed = json.loads(out_text)
+                    if parsed.get("ok") and parsed.get("stdout"):
+                        self._json({"ok": True, "output": parsed["stdout"], "cli_connected": True})
+                    else:
+                        self._json({"ok": False, "error": parsed.get("stderr", "unknown"), "cli_connected": False})
+                except Exception:
+                    self._json({"ok": True, "output": out_text, "cli_connected": True})
+            except Exception as e:
+                self._json({"ok": False, "error": str(e), "cli_connected": False})
+        elif route == "/api/cli/core-util":
+            cmd = payload.get("cmd", "").strip()
+            db = payload.get("db", "V3/data/zion-node-state.db").strip()
+            if not cmd:
+                self._json({"ok": False, "error": "cmd required"})
+                return
+            allowed_cmds = ("export-state", "verify-db", "dump-blocks", "tip-height", "get-block")
+            first_word = cmd.split()[0].lower()
+            if first_word not in allowed_cmds:
+                self._json({"ok": False, "error": f"Command '{first_word}' not in whitelist. Allowed: {allowed_cmds}"})
+                return
+            script = SCRIPTS_DIR / ("core-util-run" + _SCRIPT_EXT)
+            full_cmd = cmd + " " + db
+            try:
+                proc = subprocess.Popen(
+                    ["powershell.exe", "-ExecutionPolicy", "Bypass", "-File", str(script), "-Cmd", full_cmd],
+                    cwd=str(REPO_ROOT), stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                )
+                stdout, stderr = proc.communicate(timeout=30)
+                out_text = stdout.decode("utf-8", errors="ignore").strip()
+                try:
+                    parsed = json.loads(out_text)
+                    self._json(parsed)
+                except Exception:
+                    self._json({"ok": True, "stdout": out_text, "stderr": stderr.decode("utf-8", errors="ignore"), "exit_code": proc.returncode, "cmd": full_cmd})
             except Exception as e:
                 self._json({"ok": False, "error": str(e)})
         else:
