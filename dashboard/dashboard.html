@@ -418,6 +418,34 @@ button{display:inline-flex;align-items:center;justify-content:center;cursor:poin
       <h3 class="zion-kicker mb-3">Individual Services</h3>
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6" id="control-buttons"></div>
 
+      <h3 class="zion-kicker mb-3 flex items-center gap-2">💾 Backup & Recovery <button onclick="loadBackupList()" class="text-[10px] px-2 py-0.5 bg-white/10 hover:bg-white/20 rounded transition">🔄 Refresh</button></h3>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+        <div class="lg:col-span-1">
+          <div class="zion-panel p-4 mb-3">
+            <div class="text-sm font-bold mb-2">Create Backup</div>
+            <div class="text-xs text-gray-400 mb-3">Zips V3/data (chain state + LMDB). Optionally include logs and env files.</div>
+            <div class="flex gap-2 mb-3">
+              <label class="flex items-center gap-1 text-xs text-gray-300"><input type="checkbox" id="backup-logs" class="accent-zion-gold"> Logs</label>
+              <label class="flex items-center gap-1 text-xs text-gray-300"><input type="checkbox" id="backup-env" class="accent-zion-gold"> Env</label>
+            </div>
+            <button onclick="createBackup()" class="zion-button-primary text-sm w-full">💾 Create Backup</button>
+          </div>
+          <div class="zion-panel p-4">
+            <div class="text-sm font-bold mb-2">Verify Integrity</div>
+            <div class="text-xs text-gray-400 mb-3">Check snapshot JSON, journal, and LMDB files for corruption.</div>
+            <button onclick="verifyBackup()" class="zion-button-secondary text-sm w-full">🔍 Verify Chain State</button>
+          </div>
+        </div>
+        <div class="lg:col-span-2">
+          <div id="backup-list" class="space-y-2 max-h-64 overflow-y-auto">
+            <div class="text-gray-500 italic text-sm">Click refresh to load backups.</div>
+          </div>
+          <div id="backup-log" class="bg-black/40 rounded-xl p-3 max-h-32 overflow-y-auto log-tail text-gray-300 mt-3">
+            <div class="text-gray-500 italic text-sm">Backup operations will be logged here.</div>
+          </div>
+        </div>
+      </div>
+
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
         <div>
           <h3 class="zion-kicker mb-3">Action Log</h3>
