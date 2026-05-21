@@ -1,6 +1,6 @@
 'use strict';
 
-const TABS = ['overview','wallets','services','l1','l2','l3','l4','l5','l6','genesis','blockers','controls','charts','events','env','database','metrics','wizard','logs'];
+const TABS = ['overview','wallets','explorer','services','l1','l2','l3','l4','l5','l6','genesis','blockers','controls','charts','events','env','database','metrics','wizard','logs'];
 let autoRefresh = true, refreshTimer = null, currentTab = 'overview';
 let charts = {};
 let friendlyMode = false;
@@ -61,6 +61,7 @@ function switchTab(name){
   if(name === 'genesis') loadGenesis();
   if(name === 'blockers') loadBlockers();
   if(name === 'wallets') loadWallets();
+  if(name === 'explorer') loadExplorer();
   if(['l1','l2','l3','l4','l5','l6'].includes(name)) loadLayer(name);
 }
 
@@ -324,10 +325,112 @@ async function loadWallets(){
         ? `✓ Live balances from Node RPC at ${escapeHtml(rpc.host)}:${rpc.port}`
         : `○ Node RPC unreachable at ${escapeHtml(rpc.host)}:${rpc.port} — balances unavailable. Start node to enable live lookup.`;
     }
+
+    // Category breakdown
+    const cats = data.category_summary || {};
+    const catDisplay = document.getElementById('wallets-categories');
+    if(catDisplay){
+      const catMeta = {
+        oasis: { label: '🌸 OASIS', color: 'text-zion-gold', bg: 'bg-zion-gold/10' },
+        dao:   { label: '🗳️ DAO Treasury', color: 'text-zion-purple', bg: 'bg-zion-purple/10' },
+        infrastructure: { label: '🏗️ Infrastructure', color: 'text-zion-cyan', bg: 'bg-zion-cyan/10' },
+        humanitarian: { label: '💝 Humanitarian', color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
+      };
+      catDisplay.innerHTML = Object.entries(cats).map(([key, val]) => {
+        const meta = catMeta[key] || { label: key, color: 'text-gray-300', bg: 'bg-white/5' };
+        const pct = summary.total_premine_zion ? ((val.total_zion / summary.total_premine_zion) * 100).toFixed(1) : 0;
+        return `
+          <div class="zion-panel-soft p-3 ${meta.bg}">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-xs font-semibold ${meta.color}">${meta.label}</span>
+              <span class="text-[10px] text-gray-400">${val.count} wallets</span>
+            </div>
+            <div class="text-lg font-bold ${meta.color}">${fmtNum(val.total_zion)} ZION</div>
+            <div class="text-[10px] text-gray-500">${pct}% of premine</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    const catBars = document.getElementById('wallets-category-bars');
+    if(catBars && summary.total_premine_zion){
+      const catMeta = {
+        oasis: { label: '🌸 OASIS + Winners', color: '#ffd700' },
+        dao:   { label: '🗳️ DAO Treasury', color: '#9333ea' },
+        infrastructure: { label: '🏗️ Infrastructure', color: '#06b6d4' },
+        humanitarian: { label: '💝 Humanitarian', color: '#10b981' },
+      };
+      catBars.innerHTML = Object.entries(cats).map(([key, val]) => {
+        const meta = catMeta[key] || { label: key, color: '#9ca3af' };
+        const pct = ((val.total_zion / summary.total_premine_zion) * 100).toFixed(1);
+        return `
+          <div class="flex items-center gap-3">
+            <div class="w-32 text-xs text-gray-400 text-right">${meta.label}</div>
+            <div class="flex-1 h-3 bg-white/5 rounded-full overflow-hidden">
+              <div class="h-full rounded-full transition-all duration-500" style="width:${pct}%;background:${meta.color};"></div>
+            </div>
+            <div class="w-24 text-xs font-mono text-right">${fmtNum(val.total_zion)} ZION</div>
+            <div class="w-10 text-[10px] text-gray-500">${pct}%</div>
+          </div>
+        `;
+      }).join('');
+    }
   } catch(e){
     console.error('Wallets load error:', e);
     const tbody = document.getElementById('wallets-table');
     if(tbody) tbody.innerHTML = `<tr><td colspan="7" class="py-4 text-red-400 text-center">Failed to load wallets: ${escapeHtml(e.message)}</td></tr>`;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Explorer tab
+// ─────────────────────────────────────────────────────────────────────
+
+async function loadExplorer(){
+  try {
+    const data = await fetch('/api/explorer').then(r => r.json());
+
+    const badge = document.getElementById('explorer-rpc-badge');
+    if(badge){
+      if(data.rpc_reachable){
+        badge.className = 'text-xs px-2.5 py-1 rounded-full bg-emerald-700 text-emerald-300';
+        badge.textContent = '● RPC Connected';
+      } else {
+        badge.className = 'text-xs px-2.5 py-1 rounded-full bg-red-700 text-red-300';
+        badge.textContent = '⛔ Node Unreachable';
+      }
+    }
+
+    document.getElementById('exp-height').textContent = data.chain_height ?? '—';
+    document.getElementById('exp-blocks').textContent = data.accepted_blocks ?? '—';
+    document.getElementById('exp-mempool').textContent = data.mempool_size ?? '—';
+    document.getElementById('exp-reward').textContent = data.block_reward_zion ? data.block_reward_zion.toFixed(3) + ' ZION' : '—';
+    document.getElementById('exp-tip').textContent = data.tip_hash ?? '—';
+    document.getElementById('exp-genesis').textContent = data.genesis_hash ?? '—';
+    document.getElementById('exp-circulating').textContent = data.estimated_circulating_zion ? fmtNum(data.estimated_circulating_zion) + ' ZION' : '—';
+    document.getElementById('exp-total').textContent = data.total_supply_zion ? fmtNum(data.total_supply_zion) + ' ZION' : '—';
+    document.getElementById('exp-premine').textContent = data.premine_zion ? fmtNum(data.premine_zion) + ' ZION' : '—';
+
+    const tbody = document.getElementById('explorer-blocks');
+    if(tbody){
+      if(!data.recent_blocks || !data.recent_blocks.length){
+        tbody.innerHTML = '<tr><td colspan="5" class="py-4 text-gray-500 italic text-center">No blocks available. Start the node to see recent blocks.</td></tr>';
+      } else {
+        tbody.innerHTML = data.recent_blocks.slice().reverse().map(b => `
+          <tr class="border-b border-white/5 hover:bg-white/3 transition">
+            <td class="py-2 px-3 font-bold text-white">#${b.height}</td>
+            <td class="py-2 px-3 text-gray-300 truncate" title="${escapeHtml(b.hash || '')}">${escapeHtml(b.hash || '—')}</td>
+            <td class="py-2 px-3 text-gray-400">${b.timestamp ? new Date(b.timestamp * 1000).toLocaleString() : '—'}</td>
+            <td class="py-2 px-3 text-right text-gray-300">${b.tx_count ?? 0}</td>
+            <td class="py-2 px-3 text-right text-gray-400">${b.difficulty ? b.difficulty.toLocaleString() : '—'}</td>
+          </tr>
+        `).join('');
+      }
+    }
+  } catch(e){
+    console.error('Explorer load error:', e);
+    const badge = document.getElementById('explorer-rpc-badge');
+    if(badge){ badge.className = 'text-xs px-2.5 py-1 rounded-full bg-red-700 text-red-300'; badge.textContent = '⛔ Error'; }
   }
 }
 

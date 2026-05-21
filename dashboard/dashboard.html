@@ -181,6 +181,7 @@ button{display:inline-flex;align-items:center;justify-content:center;cursor:poin
   <div class="flex flex-wrap gap-1.5 mb-6 pb-1 relative z-10">
     <button onclick="switchTab('overview')" id="tab-overview" class="tab-btn tab-active">📊 Overview</button>
     <button onclick="switchTab('wallets')" id="tab-wallets" class="tab-btn">💼 Wallets</button>
+    <button onclick="switchTab('explorer')" id="tab-explorer" class="tab-btn">🔍 Explorer</button>
     <button onclick="switchTab('services')" id="tab-services" class="tab-btn">🧩 Services</button>
     <button onclick="switchTab('l1')" id="tab-l1" class="tab-btn">🔷 L1</button>
     <button onclick="switchTab('l2')" id="tab-l2" class="tab-btn">🌉 L2</button>
@@ -359,6 +360,94 @@ button{display:inline-flex;align-items:center;justify-content:center;cursor:poin
         </table>
       </div>
       <div id="wallets-rpc-status" class="text-[10px] text-gray-500 mt-3"></div>
+    </div>
+
+    <!-- Category Breakdown -->
+    <div class="zion-panel p-6">
+      <h2 class="text-lg font-bold mb-4 flex items-center gap-2"><span class="text-gradient">📊 Premine Distribution by Category</span></h2>
+      <div id="wallets-categories" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-4"></div>
+      <div class="space-y-2" id="wallets-category-bars"></div>
+    </div>
+  </div>
+
+  <!-- ═════════ TAB: Explorer ═════════ -->
+  <div id="pane-explorer" class="hidden space-y-4">
+    <!-- Chain Overview -->
+    <div class="zion-panel p-6">
+      <div class="flex items-center justify-between mb-5 flex-wrap gap-3">
+        <div>
+          <h2 class="text-xl font-bold flex items-center gap-2"><span class="text-gradient">🔍 ZION Blockchain Explorer</span></h2>
+          <p class="text-xs text-gray-400 mt-1">Live chain state, recent blocks, mempool, and supply metrics.</p>
+        </div>
+        <div id="explorer-rpc-badge" class="text-xs px-2.5 py-1 rounded-full bg-gray-700 text-gray-400">Checking…</div>
+      </div>
+
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+        <div class="zion-panel-soft p-3 text-center">
+          <div class="text-lg font-bold text-gradient" id="exp-height">—</div>
+          <div class="text-[10px] text-gray-400">Chain Height</div>
+        </div>
+        <div class="zion-panel-soft p-3 text-center">
+          <div class="text-lg font-bold text-emerald-400" id="exp-blocks">—</div>
+          <div class="text-[10px] text-gray-400">Accepted Blocks</div>
+        </div>
+        <div class="zion-panel-soft p-3 text-center">
+          <div class="text-lg font-bold text-amber-400" id="exp-mempool">—</div>
+          <div class="text-[10px] text-gray-400">Mempool</div>
+        </div>
+        <div class="zion-panel-soft p-3 text-center">
+          <div class="text-lg font-bold text-zion-cyan" id="exp-reward">—</div>
+          <div class="text-[10px] text-gray-400">Block Reward</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+        <div>
+          <div class="text-xs text-gray-400 mb-1">Tip Hash</div>
+          <div class="font-mono text-xs text-gray-300 bg-black/30 rounded-lg p-2 truncate" id="exp-tip">—</div>
+        </div>
+        <div>
+          <div class="text-xs text-gray-400 mb-1">Genesis Hash</div>
+          <div class="font-mono text-xs text-gray-300 bg-black/30 rounded-lg p-2 truncate" id="exp-genesis">—</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div class="zion-panel-soft p-4 text-center">
+          <div class="text-2xl font-bold text-zion-gold" id="exp-circulating">—</div>
+          <div class="text-[10px] text-gray-400 mt-1">Est. Circulating</div>
+        </div>
+        <div class="zion-panel-soft p-4 text-center">
+          <div class="text-2xl font-bold text-zion-purple" id="exp-total">—</div>
+          <div class="text-[10px] text-gray-400 mt-1">Total Supply</div>
+        </div>
+        <div class="zion-panel-soft p-4 text-center">
+          <div class="text-2xl font-bold text-zion-cyan" id="exp-premine">—</div>
+          <div class="text-[10px] text-gray-400 mt-1">Genesis Premine</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Blocks -->
+    <div class="zion-panel p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-bold flex items-center gap-2">🧱 Recent Blocks</h2>
+        <span class="text-xs text-gray-400">Latest 10</span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="text-xs text-gray-400 border-b border-white/10">
+              <th class="py-2 px-3 font-semibold">Height</th>
+              <th class="py-2 px-3 font-semibold">Hash</th>
+              <th class="py-2 px-3 font-semibold">Time</th>
+              <th class="py-2 px-3 font-semibold text-right">TXs</th>
+              <th class="py-2 px-3 font-semibold text-right">Difficulty</th>
+            </tr>
+          </thead>
+          <tbody id="explorer-blocks" class="text-xs font-mono"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 

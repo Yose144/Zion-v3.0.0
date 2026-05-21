@@ -42,8 +42,8 @@ type LocalizedText = { cs: string; en: string };
 const docsPageCopy = {
   badge: { cs: 'Znalostní báze', en: 'Knowledge Base' },
   overviewNotice: {
-    cs: 'Současná veřejná linka běží jako kontrolovaný V3 test mainnet na linii v2.9.9 Pure Code nad kanonickou runtime v2.9.8 Deeksha/Ekam. Live Index na /docs#live-index je kanonický vstup pro síťový snapshot, baseline repa 2.9.6, mapu release/runtime a launch blockery. Zároveň stránka zvýrazňuje V3 launch cestu (whitepaper, launch path); v panelu Historie je auditovatelná osa 2.9.7 → 2.9.8 → 2.9.9.',
-    en: 'The public line runs as a controlled V3 test mainnet on v2.9.9 Pure Code over the canonical v2.9.8 Deeksha/Ekam runtime. Live Index at /docs#live-index is the canonical entry for the network snapshot, 2.9.6 repo baseline, release/runtime map, and launch blockers. The site also foregrounds the V3 launch path (whitepaper, launch path); the History panel carries the auditable 2.9.7 → 2.9.8 → 2.9.9 timeline.',
+    cs: 'Současná veřejná linka běží jako kontrolovaný V3 mainnet launch countdown na linii v2.9.9 Pure Code nad kanonickou runtime v2.9.8 Deeksha/Ekam. Veřejný mainnet launch je naplánován na 20. června 2026 (T-29). Live Index na /docs#live-index je kanonický vstup pro síťový snapshot, baseline repa 2.9.6 a mapu release/runtime.',
+    en: 'The public line runs as a controlled V3 mainnet launch countdown on v2.9.9 Pure Code over the canonical v2.9.8 Deeksha/Ekam runtime. Public mainnet launch is scheduled for 20 June 2026 (T-29). Live Index at /docs#live-index is the canonical entry for the network snapshot, 2.9.6 repo baseline, and release/runtime map.',
   },
   githubLabel: { cs: 'GitHub', en: 'GitHub' },
   apiHealthLabel: { cs: 'Zdraví API', en: 'API Health' },
@@ -98,7 +98,7 @@ const categoryTitles: Record<string, LocalizedText> = {
 };
 
 const sectionTitles: Record<string, LocalizedText> = {
-  'live-ops': { cs: 'Test-mainnet operace', en: 'Test-Mainnet Ops' },
+  'live-ops': { cs: 'Mainnet operace', en: 'Mainnet Ops' },
   'release-lineage': { cs: 'Release lineage', en: 'Release Lineage' },
   'whitepaper': { cs: 'Whitepaper', en: 'Whitepaper' },
   'architecture': { cs: 'Architektura', en: 'Architecture' },
