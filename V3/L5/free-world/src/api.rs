@@ -128,12 +128,14 @@ async fn approve_grant(State(state): State<AppState>, Path(id): Path<String>, Js
 }
 
 async fn submit_grant_to_dao(State(state): State<AppState>, Path(id): Path<String>) -> (StatusCode, Json<ApiResponse>) {
-    let db = state.db.lock().unwrap();
-    let grants = match db.list_grants(None) {
-        Ok(g) => g,
-        Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(ApiResponse::err(&e.to_string()))),
+    let grant = {
+        let db = state.db.lock().unwrap();
+        match db.list_grants(None) {
+            Ok(grants) => grants.into_iter().find(|g| g.id == id),
+            Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(ApiResponse::err(&e.to_string()))),
+        }
     };
-    match grants.iter().find(|g| g.id == id) {
+    match grant {
         Some(grant) => {
             let client = DaoClient::new(DaoClientConfig::default());
             let req = DaoProposalRequest {
