@@ -9,8 +9,8 @@ mod rpc;
 mod ui;
 
 use commands::{
-    agent, bridge, completions, compose, dao, deploy, doctor, explorer, hiran, mine, monitor, ncl,
-    node, onboard, pool, status, update, wallet, warp,
+    agent, bridge, completions, compose, dao, deploy, doctor, explorer, free_world, hiran,
+    issobella, mine, monitor, ncl, node, onboard, pool, status, update, wallet, warp,
 };
 
 use clap_complete::Shell;
@@ -148,6 +148,16 @@ enum Commands {
         #[command(subcommand)]
         cmd: ncl::NclCmd,
     },
+    /// L5 Free World humanitarian layer
+    FreeWorld {
+        #[command(subcommand)]
+        cmd: free_world::FreeWorldCmd,
+    },
+    /// L6 Issobella space layer
+    Issobella {
+        #[command(subcommand)]
+        cmd: issobella::IssobellaCmd,
+    },
     /// Print shell completion script
     Completions {
         /// Shell: bash | zsh | fish | powershell
@@ -260,6 +270,8 @@ async fn dispatch(cli: Cli) -> Result<()> {
         Commands::Monitor => monitor::run(&cfg).await,
         Commands::Warp { cmd } => warp::run(&cfg, cmd).await,
         Commands::Ncl { cmd } => ncl::run(&cfg, cmd).await,
+        Commands::FreeWorld { cmd } => free_world::run(&cfg, cmd).await,
+        Commands::Issobella { cmd } => issobella::run(&cfg, cmd).await,
         Commands::Compose { cmd } => compose::run(compose::ComposeCmd { command: cmd }).await,
         Commands::Completions { shell } => completions::run(shell),
         Commands::Config { cmd } => match cmd {
