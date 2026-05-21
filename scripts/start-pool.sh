@@ -13,6 +13,8 @@ export ZION_MAX_SESSIONS_PER_IP='10'
 export ZION_POOL_WALLET='zion182e2v4x4r3u2j5r5t305k0d5y643q6l3n6je5f8'
 export ZION_POOL_PAYOUT_SK_HEX='[REDACTED — pool SK removed for security]'
 export ZION_NONCE_COUNT='4096'
+export ZION_VARDIFF_START_DIFF='1'
+export ZION_VARDIFF_MAX_DIFF='1000000'
 
 POOL_EXE="$REPO_ROOT/V3/target/release/server"
 if [[ ! -x "$POOL_EXE" ]]; then

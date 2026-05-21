@@ -1,0 +1,36 @@
+# ZION V3 Issobella (L6) Space Daemon
+# Multi-stage build for minimal production image
+#
+# Build:  cd V3 && docker build -f docker/Dockerfile.issobella -t zion-v3-issobella .
+# Run:    docker run -d --name zion-issobella \
+#           -p 8096:8096 \
+#           -v zion-issobella-data:/data/issobella \
+#           zion-v3-issobella
+
+FROM rust:1.85-bookworm AS builder
+WORKDIR /build
+RUN apt-get update && apt-get install -y \
+        cmake g++ make pkg-config libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+COPY . .
+RUN cargo build --release -p zion-issobella --bin zion-issobella
+
+FROM debian:bookworm-slim
+RUN apt-get update && apt-get install -y \
+        ca-certificates libssl3 curl \
+    && rm -rf /var/lib/apt/lists/*
+RUN groupadd -r zion && useradd -r -g zion -d /data/issobella -s /sbin/nologin zion
+COPY --from=builder /build/target/release/zion-issobella /usr/local/bin/zion-issobella
+RUN mkdir -p /data/issobella && chown -R zion:zion /data/issobella
+
+ENV ISSOBELLA_BIND=0.0.0.0
+ENV ISSOBELLA_PORT=8096
+ENV ISSOBELLA_DB=/data/issobella/issobella.db
+ENV ISSOBELLA_L1_RPC=node:8443
+ENV RUST_LOG=info
+
+WORKDIR /data/issobella
+EXPOSE 8096
+VOLUME ["/data/issobella"]
+USER zion
+ENTRYPOINT ["zion-issobella"]
