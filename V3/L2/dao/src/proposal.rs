@@ -53,6 +53,35 @@ pub enum ProposalType {
         region: String,
         description: String,
     },
+    /// L5: Consciousness admission proposal (Gate 4 DAO confirmation)
+    Admission {
+        candidate_id: String,
+        gate_scores_hash: String,
+        sponsoring_guardians: Vec<String>,
+        community: String,
+    },
+    /// L5: Bodhisattva vow confirmation (distributed witnessing)
+    Bodhisattva {
+        candidate_id: String,
+        ceremony_date: String,
+        ceremony_location: String,
+        vow_text_hash: String,
+        physical_symbol: String,
+    },
+    /// L5: Guardian expulsion (quadratic consent, 75% threshold)
+    Expulsion {
+        accused_id: String,
+        offense_category: String,
+        investigation_hash: String,
+        defense_hash: Option<String>,
+        tier: u8, // 1–4
+    },
+    /// Cross-layer proposal requiring multi-layer consent
+    CrossLayer {
+        target_layers: Vec<u8>,
+        inner_proposal_id: u64,
+        description: String,
+    },
 }
 
 impl ProposalType {
@@ -64,6 +93,12 @@ impl ProposalType {
             ProposalType::Emergency { .. } => 20.0,
             ProposalType::Grant { .. } => 10.0,
             ProposalType::Humanitarian { .. } => 10.0,
+            // L5 governance uses consent model, not token-weighted quorum;
+            // these values are used for hybrid proposals that combine both.
+            ProposalType::Admission { .. } => 60.0,     // 60% of Guardians
+            ProposalType::Bodhisattva { .. } => 60.0,    // 60% of Guardians
+            ProposalType::Expulsion { .. } => 75.0,      // 75% quadratic consent
+            ProposalType::CrossLayer { .. } => 15.0,     // Standard cross-layer
         }
     }
 
@@ -71,7 +106,10 @@ impl ProposalType {
     pub fn voting_period_secs(&self) -> u64 {
         match self {
             ProposalType::Emergency { .. } => 3 * 24 * 60 * 60, // 3 days
-            _ => 7 * 24 * 60 * 60,                              // 7 days
+            ProposalType::Expulsion { .. } => 7 * 24 * 60 * 60,  // 7 days
+            ProposalType::Bodhisattva { .. } => 7 * 24 * 60 * 60, // 7 days
+            ProposalType::CrossLayer { .. } => 7 * 24 * 60 * 60, // 7 days
+            _ => 7 * 24 * 60 * 60,                                 // 7 days
         }
     }
 
@@ -83,6 +121,37 @@ impl ProposalType {
             ProposalType::Emergency { .. } => "emergency",
             ProposalType::Grant { .. } => "grant",
             ProposalType::Humanitarian { .. } => "humanitarian",
+            ProposalType::Admission { .. } => "admission",
+            ProposalType::Bodhisattva { .. } => "bodhisattva",
+            ProposalType::Expulsion { .. } => "expulsion",
+            ProposalType::CrossLayer { .. } => "cross_layer",
+        }
+    }
+
+    /// Whether this proposal type uses the consent model (not token-weighted).
+    pub fn uses_consent(&self) -> bool {
+        matches!(
+            self,
+            ProposalType::Admission { .. }
+                | ProposalType::Bodhisattva { .. }
+                | ProposalType::Expulsion { .. }
+        )
+    }
+
+    /// Which layer primarily governs this proposal type.
+    pub fn governing_layer(&self) -> u8 {
+        match self {
+            ProposalType::Parameter { .. }
+            | ProposalType::Treasury { .. }
+            | ProposalType::Emergency { .. }
+            | ProposalType::Grant { .. }
+            | ProposalType::Humanitarian { .. } => 2,
+            ProposalType::Admission { .. }
+            | ProposalType::Bodhisattva { .. }
+            | ProposalType::Expulsion { .. } => 5,
+            ProposalType::CrossLayer { target_layers, .. } => {
+                target_layers.first().copied().unwrap_or(2)
+            }
         }
     }
 }

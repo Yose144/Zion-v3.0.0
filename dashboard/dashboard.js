@@ -261,26 +261,29 @@ async function loadWallets(){
     const rpc = data.rpc || {};
 
     const stats = document.getElementById('wallets-stats');
-    stats.innerHTML = `
-      <div class="zion-panel-soft p-3 text-center">
-        <div class="text-lg font-bold text-gradient">${wallets.length}</div>
-        <div class="text-[10px] text-gray-400">Total Wallets</div>
-      </div>
-      <div class="zion-panel-soft p-3 text-center">
-        <div class="text-lg font-bold text-zion-gold">${summary.premine_wallets || 0}</div>
-        <div class="text-[10px] text-gray-400">Premine</div>
-      </div>
-      <div class="zion-panel-soft p-3 text-center">
-        <div class="text-lg font-bold text-zion-cyan">${summary.operational_wallets || 0}</div>
-        <div class="text-[10px] text-gray-400">Operational</div>
-      </div>
-      <div class="zion-panel-soft p-3 text-center">
-        <div class="text-lg font-bold text-emerald-400">${summary.with_live_balance || 0}</div>
-        <div class="text-[10px] text-gray-400">Live Balance</div>
-      </div>
-    `;
+    if(stats){
+      stats.innerHTML = `
+        <div class="zion-panel-soft p-3 text-center">
+          <div class="text-lg font-bold text-gradient">${wallets.length}</div>
+          <div class="text-[10px] text-gray-400">Total Wallets</div>
+        </div>
+        <div class="zion-panel-soft p-3 text-center">
+          <div class="text-lg font-bold text-zion-gold">${summary.premine_wallets || 0}</div>
+          <div class="text-[10px] text-gray-400">Premine</div>
+        </div>
+        <div class="zion-panel-soft p-3 text-center">
+          <div class="text-lg font-bold text-zion-cyan">${summary.operational_wallets || 0}</div>
+          <div class="text-[10px] text-gray-400">Operational</div>
+        </div>
+        <div class="zion-panel-soft p-3 text-center">
+          <div class="text-lg font-bold text-emerald-400">${summary.with_live_balance || 0}</div>
+          <div class="text-[10px] text-gray-400">Live Balance</div>
+        </div>
+      `;
+    }
 
     const tbody = document.getElementById('wallets-table');
+    if(!tbody) return;
     if(!wallets.length){
       tbody.innerHTML = '<tr><td colspan="7" class="py-4 text-gray-500 italic text-center">No wallets found. Set environment variables or start the node.</td></tr>';
     } else {
@@ -316,12 +319,15 @@ async function loadWallets(){
     }
 
     const rpcStatus = document.getElementById('wallets-rpc-status');
-    rpcStatus.innerHTML = rpc.reachable
-      ? `✓ Live balances from Node RPC at ${escapeHtml(rpc.host)}:${rpc.port}`
-      : `○ Node RPC unreachable at ${escapeHtml(rpc.host)}:${rpc.port} — balances unavailable. Start node to enable live lookup.`;
+    if(rpcStatus){
+      rpcStatus.innerHTML = rpc.reachable
+        ? `✓ Live balances from Node RPC at ${escapeHtml(rpc.host)}:${rpc.port}`
+        : `○ Node RPC unreachable at ${escapeHtml(rpc.host)}:${rpc.port} — balances unavailable. Start node to enable live lookup.`;
+    }
   } catch(e){
     console.error('Wallets load error:', e);
-    document.getElementById('wallets-table').innerHTML = '<tr><td colspan="7" class="py-4 text-red-400 text-center">Failed to load wallets.</td></tr>';
+    const tbody = document.getElementById('wallets-table');
+    if(tbody) tbody.innerHTML = `<tr><td colspan="7" class="py-4 text-red-400 text-center">Failed to load wallets: ${escapeHtml(e.message)}</td></tr>`;
   }
 }
 
