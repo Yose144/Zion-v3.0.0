@@ -54,7 +54,7 @@ function switchTab(name){
   if(name === 'env') loadEnvFiles();
   if(name === 'wizard') renderWizard();
   if(name === 'logs'){ loadLogs('node1'); loadLogs('node2'); loadLogs('pool'); loadLogs('miner'); }
-  if(name === 'controls') renderControls();
+  if(name === 'controls'){ renderControls(); loadBackupList(); }
   if(name === 'services') loadServices();
   if(name === 'database') loadDatabases();
   if(name === 'metrics') renderMetricsButtons();
@@ -406,6 +406,106 @@ async function controlAction(action){
   } catch(e) {
     if(log) log.insertAdjacentHTML('afterbegin', '<div class="text-red-400">[' + ts + '] ✗ ' + e.message + '</div>');
     toast('Error: ' + e.message, 'error');
+  }
+}
+
+// ── Backup & Recovery ──
+async function loadBackupList(){
+  const list = document.getElementById('backup-list');
+  const log = document.getElementById('backup-log');
+  if(!list) return;
+  try {
+    const data = await fetch('/api/backup/list').then(r => r.json());
+    if(!data.backups || data.backups.length === 0){
+      list.innerHTML = '<div class="text-gray-500 italic text-sm">No backups yet. Click "Create Backup" to make one.</div>';
+      return;
+    }
+    list.innerHTML = data.backups.map(b => `
+      <div class="zion-panel p-3 flex items-center justify-between">
+        <div>
+          <div class="text-sm font-semibold">${escapeHtml(b.name)}</div>
+          <div class="text-xs text-gray-400">${escapeHtml(b.created)} · ${b.size_mb} MB</div>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="restoreBackup('${escapeHtml(b.name)}')" class="text-[10px] px-2 py-1 bg-emerald-700/50 hover:bg-emerald-600 rounded transition">↩ Restore</button>
+          <button onclick="deleteBackup('${escapeHtml(b.name)}')" class="text-[10px] px-2 py-1 bg-red-700/50 hover:bg-red-600 rounded transition">🗑 Delete</button>
+        </div>
+      </div>
+    `).join('');
+    if(log) log.insertAdjacentHTML('afterbegin', '<div class="text-gray-400 text-xs">Loaded ' + data.backups.length + ' backup(s).</div>');
+  } catch(e) {
+    if(log) log.insertAdjacentHTML('afterbegin', '<div class="text-red-400 text-xs">Failed to load backups: ' + e.message + '</div>');
+  }
+}
+
+async function createBackup(){
+  const log = document.getElementById('backup-log');
+  const includeLogs = document.getElementById('backup-logs')?.checked || false;
+  const includeEnv = document.getElementById('backup-env')?.checked || false;
+  if(log) log.insertAdjacentHTML('afterbegin', '<div class="text-zion-gold text-xs">Creating backup (this may take a moment)…</div>');
+  try {
+    const res = await fetch('/api/backup/create', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({includeLogs, includeEnv})
+    }).then(r => r.json());
+    const msg = res.ok ? '<div class="text-emerald-400 text-xs">✓ Backup created.</div>' : '<div class="text-red-400 text-xs">✗ ' + escapeHtml(res.error || 'failed') + '</div>';
+    if(log) log.insertAdjacentHTML('afterbegin', msg + '<pre class="text-[10px] text-gray-400 mt-1">' + escapeHtml(res.output || '') + '</pre>');
+    toast(res.ok ? 'Backup created successfully' : 'Backup failed: ' + (res.error || ''), res.ok ? 'success' : 'error');
+    loadBackupList();
+  } catch(e) {
+    if(log) log.insertAdjacentHTML('afterbegin', '<div class="text-red-400 text-xs">✗ ' + e.message + '</div>');
+    toast('Backup error: ' + e.message, 'error');
+  }
+}
+
+async function restoreBackup(name){
+  if(!confirm('Restore from ' + name + '? This will STOP all services and replace current chain state.\n\nAn emergency backup of current state will be created first.')) return;
+  const log = document.getElementById('backup-log');
+  if(log) log.insertAdjacentHTML('afterbegin', '<div class="text-amber-400 text-xs">Restoring from ' + escapeHtml(name) + '…</div>');
+  try {
+    const res = await fetch('/api/backup/restore', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({name})
+    }).then(r => r.json());
+    const msg = res.ok ? '<div class="text-emerald-400 text-xs">✓ Restored. Restart stack from Controls.</div>' : '<div class="text-red-400 text-xs">✗ ' + escapeHtml(res.error || 'failed') + '</div>';
+    if(log) log.insertAdjacentHTML('afterbegin', msg + '<pre class="text-[10px] text-gray-400 mt-1">' + escapeHtml(res.output || '') + '</pre>');
+    toast(res.ok ? 'Restored from backup. Restart stack.' : 'Restore failed: ' + (res.error || ''), res.ok ? 'success' : 'error');
+    loadBackupList();
+  } catch(e) {
+    if(log) log.insertAdjacentHTML('afterbegin', '<div class="text-red-400 text-xs">✗ ' + e.message + '</div>');
+    toast('Restore error: ' + e.message, 'error');
+  }
+}
+
+async function deleteBackup(name){
+  if(!confirm('Delete backup ' + name + '?')) return;
+  try {
+    const res = await fetch('/api/backup/delete', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({name})
+    }).then(r => r.json());
+    toast(res.ok ? 'Deleted ' + name : 'Delete failed: ' + (res.error || ''), res.ok ? 'success' : 'error');
+    loadBackupList();
+  } catch(e) {
+    toast('Delete error: ' + e.message, 'error');
+  }
+}
+
+async function verifyBackup(){
+  const log = document.getElementById('backup-log');
+  if(log) log.insertAdjacentHTML('afterbegin', '<div class="text-zion-gold text-xs">Verifying chain state integrity…</div>');
+  try {
+    const data = await fetch('/api/backup/verify').then(r => r.json());
+    const ok = data.result && data.result.ok;
+    const msg = ok ? '<div class="text-emerald-400 text-xs">✓ Chain state is healthy.</div>' : '<div class="text-red-400 text-xs">✗ Integrity check failed.</div>';
+    if(log) log.insertAdjacentHTML('afterbegin', msg + '<pre class="text-[10px] text-gray-400 mt-1">' + escapeHtml((data.log || []).join('\n')) + '</pre>');
+    toast(ok ? 'Chain state verified OK' : 'Chain state verification failed', ok ? 'success' : 'error');
+  } catch(e) {
+    if(log) log.insertAdjacentHTML('afterbegin', '<div class="text-red-400 text-xs">✗ ' + e.message + '</div>');
+    toast('Verify error: ' + e.message, 'error');
   }
 }
 
