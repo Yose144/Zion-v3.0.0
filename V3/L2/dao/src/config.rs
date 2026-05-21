@@ -60,6 +60,17 @@ pub struct DaoConfig {
     // ── Guardians ─────────────────────────────────────────────────────────
     #[serde(default)]
     pub guardians: Vec<GuardianConfig>,
+
+    // ── Multi-Layer Co-Admin ────────────────────────────────────────────
+    /// Co-Admins by layer (1–6). Each layer has its own Co-Admin set.
+    #[serde(default)]
+    pub co_admins: Vec<CoAdminConfig>,
+    /// Enable cross-layer veto for proposals affecting multiple layers
+    #[serde(default = "default_true")]
+    pub cross_layer_veto_enabled: bool,
+    /// Minimum layers that must consent for cross-layer proposals
+    #[serde(default = "default_cross_layer_threshold")]
+    pub cross_layer_consent_threshold: u8,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -67,6 +78,29 @@ pub struct GuardianConfig {
     pub name: String,
     pub address: String,
     pub public_key: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CoAdminConfig {
+    pub layer: u8,        // 1–6
+    pub role: String,     // e.g. "validator", "guardian", "relayer", "curator", "community", "steward"
+    pub name: String,
+    pub address: String,
+    pub public_key: String,
+    pub bonded_amount: u64,
+    pub reputation: u64,
+    pub term_start: String, // ISO 8601
+    pub term_end: Option<String>,
+    #[serde(default = "default_true")]
+    pub is_active: bool,
+}
+
+fn default_true() -> bool {
+    true
+}
+
+fn default_cross_layer_threshold() -> u8 {
+    2 // minimum 2 layers must consent for cross-layer proposals
 }
 
 // ─── Defaults ─────────────────────────────────────────────────────────────────
@@ -97,6 +131,9 @@ impl Default for DaoConfig {
             multisig_threshold: 5,
             multisig_total: 7,
             guardians: vec![],
+            co_admins: vec![],
+            cross_layer_veto_enabled: true,
+            cross_layer_consent_threshold: 2,
         }
     }
 }
