@@ -280,12 +280,15 @@ import sqlite3
 
 DB_LOCATIONS = [
     # path, kind ("sqlite" or "json"), service_id, friendly name
-    (Path("C:/Users/yosef/AppData/Local/Temp/zion-node-state.db"),  "json",   "node1", "Node 1 state"),
-    (Path("C:/Users/yosef/AppData/Local/Temp/zion-node2-state.db"), "json",   "node2", "Node 2 state"),
-    (REPO_ROOT / "V3" / "data" / "pool.db",                          "sqlite", "pool",  "Pool PPLNS"),
-    (REPO_ROOT / "V3" / "data" / "bridge.db",                        "sqlite", "bridge","Bridge events"),
-    (REPO_ROOT / "V3" / "data" / "dao.db",                           "sqlite", "dao",   "DAO governance"),
-    (REPO_ROOT / "V3" / "data" / "warp.db",                          "sqlite", "warp",  "WARP relay"),
+    (REPO_ROOT / "V3" / "data" / "zion-node-state.db",  "json",   "node1", "Node 1 state"),
+    (REPO_ROOT / "V3" / "data" / "zion-node2-state.db", "json",   "node2", "Node 2 state"),
+    (REPO_ROOT / "V3" / "data" / "pool.db",            "sqlite", "pool",  "Pool PPLNS"),
+    (REPO_ROOT / "V3" / "data" / "bridge.db",          "sqlite", "bridge","Bridge events"),
+    (REPO_ROOT / "V3" / "data" / "dao.db",             "sqlite", "dao",   "DAO governance"),
+    (REPO_ROOT / "V3" / "data" / "warp.db",            "sqlite", "warp",  "WARP relay"),
+    (REPO_ROOT / "V3" / "data" / "atomic-swap.db",     "sqlite", "atomic-swap", "Atomic Swap"),
+    (REPO_ROOT / "V3" / "data" / "ncl.db",             "sqlite", "ncl",   "NCL Gateway"),
+    (REPO_ROOT / "V3" / "data" / "oasis.db",           "sqlite", "oasis", "OASIS Avatar Hub"),
 ]
 
 def list_databases() -> list:
@@ -1762,6 +1765,42 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 with open(verify_log, "r", encoding="utf-8", errors="ignore") as f:
                     log_lines = [ln.rstrip("\n") for ln in f.readlines()[-50:]]
             self._json({"result": res, "log": log_lines})
+        elif route.startswith("/api/layer/"):
+            layer = route.split("/")[-1].upper()
+            layer_map = {"L1": "L1", "L2": "L2", "L3": "L3", "L4": "L4"}
+            layer = layer_map.get(layer, layer)
+            services = [s for s in SERVICE_REGISTRY if s.get("level") == layer]
+            db_list = list_databases()
+            result = []
+            for svc in services:
+                sid = svc["id"]
+                h = check_service_health(svc)
+                # DB stats
+                svc_dbs = [d for d in db_list if d["service"] == sid]
+                # Metrics
+                m = scrape_metrics(sid)
+                has_metrics = "metrics" in m and not m.get("error")
+                # Log tail (last 20 lines)
+                log_tail = []
+                if svc.get("log"):
+                    log_tail = tail_log(svc["log"], 20)
+                result.append({
+                    "id": sid,
+                    "name": svc["name"],
+                    "icon": svc["icon"],
+                    "kind": svc["kind"],
+                    "purpose": svc["purpose"],
+                    "alive": h["alive"],
+                    "details": h["details"],
+                    "ports_open": h.get("ports_open", []),
+                    "ports_closed": h.get("ports_closed", []),
+                    "databases": svc_dbs,
+                    "has_metrics": has_metrics,
+                    "metrics_count": len(m.get("metrics", {})),
+                    "log_tail": log_tail,
+                    "depends_on": svc.get("depends_on", []),
+                })
+            self._json({"layer": layer, "services": result, "count": len(result)})
         else:
             self.send_error(404)
 
