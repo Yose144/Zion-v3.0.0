@@ -1,5 +1,6 @@
 //! REST API handlers for zion-free-world.
 
+use crate::dao_client::{DaoClient, DaoClientConfig, DaoProposalRequest};
 use crate::db::{FreeWorldDb, GrantRecord, ProjectRecord};
 use crate::metrics::FreeWorldMetrics;
 use crate::metrics::serve_metrics_text;
@@ -54,6 +55,7 @@ pub fn free_world_router(state: AppState) -> Router {
         .route("/metrics", get(metrics_handler))
         .route("/api/v1/grants", get(list_grants).post(create_grant))
         .route("/api/v1/grants/:id/approve", post(approve_grant))
+        .route("/api/v1/grants/:id/submit-to-dao", post(submit_grant_to_dao))
         .route("/api/v1/projects", get(list_projects).post(create_project))
         .route("/api/v1/fund/balance", get(fund_balance))
         .with_state(state)
@@ -122,6 +124,31 @@ async fn approve_grant(State(state): State<AppState>, Path(id): Path<String>, Js
             (StatusCode::OK, Json(ApiResponse::ok("approved")))
         }
         Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(ApiResponse::err(&e.to_string()))),
+    }
+}
+
+async fn submit_grant_to_dao(State(state): State<AppState>, Path(id): Path<String>) -> (StatusCode, Json<ApiResponse>) {
+    let db = state.db.lock().unwrap();
+    let grants = match db.list_grants(None) {
+        Ok(g) => g,
+        Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(ApiResponse::err(&e.to_string()))),
+    };
+    match grants.iter().find(|g| g.id == id) {
+        Some(grant) => {
+            let client = DaoClient::new(DaoClientConfig::default());
+            let req = DaoProposalRequest {
+                title: format!("Grant: {}", grant.title),
+                description: grant.description.clone().unwrap_or_default(),
+                amount_zion: grant.amount_zion,
+                recipient_address: grant.applicant_address.clone().unwrap_or_default(),
+                proposal_type: "treasury".to_string(),
+            };
+            match client.submit_grant_proposal(&req).await {
+                Ok(resp) => (StatusCode::OK, Json(ApiResponse::ok(resp))),
+                Err(e) => (StatusCode::BAD_GATEWAY, Json(ApiResponse::err(&e.to_string()))),
+            }
+        }
+        None => (StatusCode::NOT_FOUND, Json(ApiResponse::err("Grant not found"))),
     }
 }
 

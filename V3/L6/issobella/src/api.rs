@@ -1,5 +1,6 @@
 //! REST API handlers for zion-issobella.
 
+use crate::dao_client::{DaoClient, DaoClientConfig, DaoProposalRequest};
 use crate::db::{IssobellaDb, MissionRecord, ResearchProposal};
 use crate::metrics::IssobellaMetrics;
 use crate::metrics::serve_metrics_text;
@@ -54,6 +55,7 @@ pub fn issobella_router(state: AppState) -> Router {
         .route("/metrics", get(metrics_handler))
         .route("/api/v1/missions", get(list_missions).post(create_mission))
         .route("/api/v1/missions/:id/launch", post(launch_mission))
+        .route("/api/v1/missions/:id/submit-to-dao", post(submit_mission_to_dao))
         .route("/api/v1/proposals", get(list_proposals).post(create_proposal))
         .route("/api/v1/fund/balance", get(fund_balance))
         .with_state(state)
@@ -117,6 +119,31 @@ async fn launch_mission(State(state): State<AppState>, Path(id): Path<String>) -
             (StatusCode::OK, Json(ApiResponse::ok("launched")))
         }
         Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(ApiResponse::err(&e.to_string()))),
+    }
+}
+
+async fn submit_mission_to_dao(State(state): State<AppState>, Path(id): Path<String>) -> (StatusCode, Json<ApiResponse>) {
+    let db = state.db.lock().unwrap();
+    let missions = match db.list_missions(None) {
+        Ok(m) => m,
+        Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(ApiResponse::err(&e.to_string()))),
+    };
+    match missions.iter().find(|m| m.id == id) {
+        Some(mission) => {
+            let client = DaoClient::new(DaoClientConfig::default());
+            let req = DaoProposalRequest {
+                title: format!("Mission: {}", mission.name),
+                description: mission.description.clone().unwrap_or_default(),
+                amount_zion: mission.budget_zion,
+                recipient_address: String::new(),
+                proposal_type: "treasury".to_string(),
+            };
+            match client.submit_mission_proposal(&req).await {
+                Ok(resp) => (StatusCode::OK, Json(ApiResponse::ok(resp))),
+                Err(e) => (StatusCode::BAD_GATEWAY, Json(ApiResponse::err(&e.to_string()))),
+            }
+        }
+        None => (StatusCode::NOT_FOUND, Json(ApiResponse::err("Mission not found"))),
     }
 }
 
