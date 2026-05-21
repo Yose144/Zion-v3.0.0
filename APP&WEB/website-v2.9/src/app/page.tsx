@@ -1,5 +1,6 @@
 import dynamic from 'next/dynamic';
 import Hero from '@/components/Hero';
+import MainnetCountdown from '@/components/MainnetCountdown';
 import GenesisPreview from '@/components/GenesisPreview';
 import QuantumRevolution from '@/components/QuantumRevolution';
 
@@ -16,6 +17,7 @@ export default function Home() {
   return (
     <>
       <Hero />
+      <MainnetCountdown />
       <NewsFeed />
       <LiveDashboard />
       <TerraNovaHomeMilestones />
