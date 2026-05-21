@@ -36,7 +36,8 @@ V3/L5/docs/
 ├── ARCHITECTURE/
 │   └── l5-system-design.md        ← How L5 connects to L1–L4
 ├── GOVERNANCE/
-│   └── community-dao-framework.md ← On-chain + off-chain governance model
+│   ├── community-dao-framework.md      ← On-chain + off-chain governance model
+│   └── consciousness-admission-framework.md ← Age-based entry, 5 Dharmic principles, Bodhisattva vow
 ├── TECH/
 │   ├── zion-node-spec.md          ← Hardware/software spec for Guardian nodes
 │   ├── mesh-network.md            ← LoRa/Meshtastic off-grid communication
@@ -72,6 +73,7 @@ Every L5 community implements the same **baseline protocols**, ensuring interope
 | **Medical Table** | Holistic health protocols, herbal medicine, wellness | Off-chain practice, on-chain reputation |
 | **LoRa / Meshtastic Mesh** | Off-grid communication within and between communities | Message relay, no blockchain dependency |
 | **Sociocratic DAO** | Hybrid governance: off-chain circles + on-chain treasury votes | L2 DAO proposals for capital allocation |
+| **Consciousness Admission** | Age-based entry (free <18), Dharmic principles, Bodhisattva vow for Guardians | Off-chain verification, on-chain registry (Soulbound token) |
 
 ---
 
