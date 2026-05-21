@@ -47,6 +47,7 @@ Toto rozlišení zabraňuje záměně snu s realitou — a přitom nesnižuje am
 | [09-ISSOBELLA.md](./09-ISSOBELLA.md) | Issobella (L6) | Orbitální stanice, SETI, financování, Overview Effect |
 | [10-WARP.md](./10-WARP.md) | WARP | Alcubierre, Harold White, generační lodě, první kontakt |
 | [11-KOMPAS.md](./11-KOMPAS.md) | Zlatý Kompas | Plán 2025–2100, fáze, jak přispět |
+| [12-VLNA-TE-PITI-A-RAPA-NUI.md](./12-VLNA-TE-PITI-A-RAPA-NUI.md) | Vlna: Te Piti a Okraj Světa | Te Pūko Ora (Tahiti), Rapa Nui, varování a naděje |
 | [A-NVIDIA.md](./A-NVIDIA.md) | Příloha A: Nvidia | GTC 2026, hardware pyramida, DGX Spark, OpenClaw |
 | [B-PROROCTVI.md](./B-PROROCTVI.md) | Příloha B: Proroctví | 800 let, Dattatreya→Bhagavan, Oneness University |
 | [C-ZJEVENI.md](./C-ZJEVENI.md) | Příloha C: Zjevení | Apokalypsa, 144 000, Nová Země v Zjevení Janově |
