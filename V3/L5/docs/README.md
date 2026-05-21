@@ -36,8 +36,9 @@ V3/L5/docs/
 ├── ARCHITECTURE/
 │   └── l5-system-design.md        ← How L5 connects to L1–L4
 ├── GOVERNANCE/
-│   ├── community-dao-framework.md      ← On-chain + off-chain governance model
-│   └── consciousness-admission-framework.md ← Age-based entry, 5 Dharmic principles, Bodhisattva vow
+│   ├── community-dao-framework.md         ← On-chain + off-chain governance model
+│   ├── consciousness-admission-framework.md ← Age-based entry, 5 Dharmic principles, Bodhisattva vow
+│   └── multi-layer-dao-governance.md      ← Co-Admin system across L1–L6, cross-layer voting, slashing
 ├── TECH/
 │   ├── zion-node-spec.md          ← Hardware/software spec for Guardian nodes
 │   ├── mesh-network.md            ← LoRa/Meshtastic off-grid communication
