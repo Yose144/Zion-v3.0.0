@@ -5,7 +5,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 > **Status (May 2026):** V3 mainnet live on Prague node (height 26,910+). L2 wZION bridge to Base operational (lock→relay→mint + burn→unlock). DeFi/Explorer stack fully deployed — see [DEFI_ROADMAP.md](DEFI_ROADMAP.md).  
-> Active development: [V3/](V3/) - clean-room mainnet code. Legacy root tree is reference/archive only.
+> Active development: [V3/](V3/) - clean-room mainnet code. Legacy root tree is reference/archive only.  
+> **Lost?** See the complete repository map: [`ROOT_INDEX.md`](ROOT_INDEX.md)
 
 ---
 
@@ -97,11 +98,11 @@ ZION is a decentralized Layer 1 blockchain built from scratch in **Rust**. Live 
 | Layer | Name | Year | Purpose |
 |-------|------|------|---------|
 | **L1** | **ZION TerraNova** ⛏️ | 2026 | PoW blockchain - Deeksha canonical (`cosmic_harmony`), UTXO, fee burn, LWMA DAA |
-| **L2** | **NCL** 🧠 | 2027 | Neural Conscious Layer — AI-native protocol, on-chain model registry |
-| **L3** | **ZION DAO** 🏛️ | 2028 | Decentralized governance, Treasury (4B ZION), community grants |
+| **L2** | **ZION DAO & Bridge** 🏛️ | 2027 | Governance (proposals, treasury, Co-Admins, consent), cross-chain bridge, HTLC swaps |
+| **L3** | **ZION NCL & WARP** 🧠 | 2028 | Neural Conscious Layer, universal cross-chain bridge (7 adapters), AI-native agents |
 | **L4** | **ZION Oasis** 🎮 | 2029 | Economic ecosystem — Golden Egg, Winners, NFT, Game layer |
-| **L5** | **ZION Free World** 🌍 | 2030 | Quantum free energy, humanitarian missions, free communities |
-| **L6** | **ZION Issobella** 🔭 | 2040+ | Earth orbital observatory & research station |
+| **L5** | **ZION Free World** 🌍 | 2030 | Humanitarian grants, projects, free energy research (daemon: zion-free-world) |
+| **L6** | **ZION Issobella** 🔭 | 2040+ | Earth orbital observatory & research station (daemon: zion-issobella) |
 
 > 🏗️ Full architecture spec: [docs/v2.9.6/layer-architecture.md](docs/v2.9.6/layer-architecture.md)
 
