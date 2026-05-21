@@ -229,3 +229,6 @@ HiranV2.1/*.zip
 
 # Hiran v2.3 generated vector DB
 HiranV2.3/knowledge/vector_db/
+*.tar.gz
+*.tar.gz
+zion-v3*.tar.gz
