@@ -1,6 +1,6 @@
 'use strict';
 
-const TABS = ['overview','services','l1','l2','l3','l4','genesis','blockers','controls','charts','events','env','database','metrics','wizard','logs'];
+const TABS = ['overview','services','l1','l2','l3','l4','l5','l6','genesis','blockers','controls','charts','events','env','database','metrics','wizard','logs'];
 let autoRefresh = true, refreshTimer = null, currentTab = 'overview';
 let charts = {};
 let friendlyMode = false;
@@ -60,7 +60,7 @@ function switchTab(name){
   if(name === 'metrics') renderMetricsButtons();
   if(name === 'genesis') loadGenesis();
   if(name === 'blockers') loadBlockers();
-  if(name === 'l1' || name === 'l2' || name === 'l3' || name === 'l4') loadLayer(name);
+  if(['l1','l2','l3','l4','l5','l6'].includes(name)) loadLayer(name);
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -646,7 +646,7 @@ function applyFriendlyMode(){
 }
 
 // ─────────────────────────────────────────────────────────────────────
-// Layer tabs (L1, L2, L3, L4)
+// Layer tabs (L1–L6)
 // ─────────────────────────────────────────────────────────────────────
 
 async function loadLayer(layer){
@@ -717,6 +717,8 @@ async function loadServices(){
     L2: 'border-blue-500/30 bg-blue-500/3',
     L3: 'border-purple-500/30 bg-purple-500/3',
     L4: 'border-pink-500/30 bg-pink-500/3',
+    L5: 'border-orange-500/30 bg-orange-500/3',
+    L6: 'border-cyan-500/30 bg-cyan-500/3',
     Infra: 'border-zion-gold/30 bg-zion-gold/3',
   };
   grid.innerHTML = res.services.map(s => {
