@@ -20,6 +20,10 @@ path = "src/bin/canonical-mainnet-operator-env.rs"
 name = "gen-keys"
 path = "src/bin/gen-keys.rs"
 
+[[bin]]
+name = "core-util"
+path = "src/bin/core-util.rs"
+
 [dependencies]
 anyhow.workspace = true
 blake3.workspace = true
@@ -38,6 +42,7 @@ tokio = { version = "1", features = ["full"] }
 tokio-tungstenite = "0.20"
 futures-util = "0.3"
 chrono = "0.4"
+clap = { version = "4", features = ["derive", "color"] }
 
 [dev-dependencies]
 tempfile.workspace = true
