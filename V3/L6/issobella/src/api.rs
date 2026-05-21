@@ -123,12 +123,14 @@ async fn launch_mission(State(state): State<AppState>, Path(id): Path<String>) -
 }
 
 async fn submit_mission_to_dao(State(state): State<AppState>, Path(id): Path<String>) -> (StatusCode, Json<ApiResponse>) {
-    let db = state.db.lock().unwrap();
-    let missions = match db.list_missions(None) {
-        Ok(m) => m,
-        Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(ApiResponse::err(&e.to_string()))),
+    let mission = {
+        let db = state.db.lock().unwrap();
+        match db.list_missions(None) {
+            Ok(missions) => missions.into_iter().find(|m| m.id == id),
+            Err(e) => return (StatusCode::INTERNAL_SERVER_ERROR, Json(ApiResponse::err(&e.to_string()))),
+        }
     };
-    match missions.iter().find(|m| m.id == id) {
+    match mission {
         Some(mission) => {
             let client = DaoClient::new(DaoClientConfig::default());
             let req = DaoProposalRequest {
