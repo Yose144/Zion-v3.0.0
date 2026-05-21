@@ -1,0 +1,36 @@
+# ZION V3 Free World (L5) Humanitarian Daemon
+# Multi-stage build for minimal production image
+#
+# Build:  cd V3 && docker build -f docker/Dockerfile.free-world -t zion-v3-free-world .
+# Run:    docker run -d --name zion-free-world \
+#           -p 8095:8095 \
+#           -v zion-free-world-data:/data/free-world \
+#           zion-v3-free-world
+
+FROM rust:1.85-bookworm AS builder
+WORKDIR /build
+RUN apt-get update && apt-get install -y \
+        cmake g++ make pkg-config libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+COPY . .
+RUN cargo build --release -p zion-free-world --bin zion-free-world
+
+FROM debian:bookworm-slim
+RUN apt-get update && apt-get install -y \
+        ca-certificates libssl3 curl \
+    && rm -rf /var/lib/apt/lists/*
+RUN groupadd -r zion && useradd -r -g zion -d /data/free-world -s /sbin/nologin zion
+COPY --from=builder /build/target/release/zion-free-world /usr/local/bin/zion-free-world
+RUN mkdir -p /data/free-world && chown -R zion:zion /data/free-world
+
+ENV FREE_WORLD_BIND=0.0.0.0
+ENV FREE_WORLD_PORT=8095
+ENV FREE_WORLD_DB=/data/free-world/free_world.db
+ENV FREE_WORLD_L1_RPC=node:8443
+ENV RUST_LOG=info
+
+WORKDIR /data/free-world
+EXPOSE 8095
+VOLUME ["/data/free-world"]
+USER zion
+ENTRYPOINT ["zion-free-world"]

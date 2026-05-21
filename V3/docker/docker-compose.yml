@@ -136,6 +136,70 @@ services:
     networks:
       - zion-v3
 
+  # ZION Free World Humanitarian Layer (L5)
+  free-world:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.free-world
+    image: zion-v3-free-world:${TAG:-latest}
+    container_name: zion-v3-free-world
+    restart: unless-stopped
+    profiles: ["mainnet", "dev"]
+    ports:
+      - "${FREE_WORLD_PORT:-8095}:8095"
+    volumes:
+      - zion-free-world-data:/data/free-world
+    environment:
+      - RUST_LOG=${RUST_LOG:-info}
+      - FREE_WORLD_BIND=0.0.0.0
+      - FREE_WORLD_PORT=8095
+      - FREE_WORLD_DB=/data/free-world/free_world.db
+      - FREE_WORLD_L1_RPC=node:8443
+      - FREE_WORLD_API_KEY=${FREE_WORLD_API_KEY:-}
+    depends_on:
+      node:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8095/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - zion-v3
+
+  # ZION Issobella Space Layer (L6)
+  issobella:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.issobella
+    image: zion-v3-issobella:${TAG:-latest}
+    container_name: zion-v3-issobella
+    restart: unless-stopped
+    profiles: ["mainnet", "dev"]
+    ports:
+      - "${ISSOBELLA_PORT:-8096}:8096"
+    volumes:
+      - zion-issobella-data:/data/issobella
+    environment:
+      - RUST_LOG=${RUST_LOG:-info}
+      - ISSOBELLA_BIND=0.0.0.0
+      - ISSOBELLA_PORT=8096
+      - ISSOBELLA_DB=/data/issobella/issobella.db
+      - ISSOBELLA_L1_RPC=node:8443
+      - ISSOBELLA_API_KEY=${ISSOBELLA_API_KEY:-}
+    depends_on:
+      node:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8096/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - zion-v3
+
   # Hiran v2.2 Inference Service
   hiran-inference:
     build:
