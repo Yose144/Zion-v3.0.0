@@ -269,6 +269,28 @@
 
 ---
 
+## Cultural Lineages (OASIS L4 Avatar Lines)
+
+| Culture | Path | Status | OASIS Integration |
+|---------|------|--------|-------------------|
+| **Hawaii / Polynesia** | docs/TerraNova/hawaii/ + KNIHA-LEHUA/ | Active | KNIHA-LEHUA book, Pacific protocols |
+| **Maya** | docs/TerraNova/maya/ + KNIHA-HUNABKU/ | Active | KNIHA-HUNABKU book, Hunab Ku cosmology |
+| **Ancient Egypt** | docs/TerraNova/ancient-egypt/ | Active | Avatar lineage, OASIS quest integration |
+| **Norse / Celtic** | docs/TerraNova/norse-celtic/ | Active | Valhalla & spring lore |
+| **Rapa Nui (Easter Island)** | docs/TerraNova/rapa-nui/ | NEW | Edge-world warning + hope, Moai as blocks, Tangata manu DAO |
+| **Africa** | docs/TerraNova/africa/ | Active | Ubuntu lineage |
+| **India** | docs/TerraNova/india/ | Active | Dharma & chakra systems |
+| **China** | docs/TerraNova/china/ | Active | Qi & Tao cosmology |
+| **Japan** | docs/TerraNova/japan/ | Active | Zen & animist lineage |
+| **Australia** | docs/TerraNova/australia/ | Active | Dreamtime & songlines |
+| **Indonesia** | docs/TerraNova/indonesia/ | Active | Maritime archipelago |
+| **New Zealand** | docs/TerraNova/newzealand/ | Active | Maori whakapapa |
+| **Atlantis** | docs/TerraNova/atlantis/ | Mythic | Underwater quest line |
+| **Lemuria** | docs/TerraNova/lemuria/ | Mythic | Lost continent echoes |
+| **Cosmic Federation** | docs/TerraNova/cosmic/ | Future | Galactic civilization |
+
+---
+
 ## Application Layer
 
 | App | Path | Stack | Status |
