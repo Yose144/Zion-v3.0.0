@@ -1,6 +1,6 @@
 # ZION V3 — Status Report (Mainnet Polish)
 
-> **Datum:** 2026-05-12 (Hiran v2.2 CLI integration); **2026-05-07** (security cleanup + agentická obsluha); **2026-05-12**
+> **Datum:** 2026-05-21 (Edge pool + L5/L6 + DAO governance + root docs sync); **2026-05-12** (Hiran v2.2 CLI integration); **2026-05-07** (security cleanup + agentická obsluha).
 > (sjednocení `StatusV3.md` ↔ `StatusV3-Part2.md` — TL;DR, roadmap §6, §8, §5
 > pyramida, odkazy).
 > **Předchozí update:** 2026-05-03 (genesis konsensus — merged na `main`)
@@ -97,6 +97,101 @@ top_p = 0.9
 - `V3/L3/ai-native/src/hiran_inference.rs` (400+ řádků)
 - `V3/docker/grafana/dashboards/hiran-inference-overview.json`
 - `HIRAN_V2.2_CLI_INTEGRATION.md` (dokumentace)
+
+---
+
+## Co je nového 2026-05-21 (Edge Pool + L5/L6 daemon crates + DAO governance + root docs)
+
+### Edge Pool — Core+Edge topologie s Tailscale VPN
+
+||| Komponenta | Stav |
+|---|---|---|
+| **Edge Pool server** | ✅ Hotovo | Pool běží na VPS (`77.42.71.94:8444`) jako **Edge** — přijímá share od minerů a relayuje je do Core poolu přes `ShareRelay` zprávu |
+| **ShareRelay protokol** | ✅ Hotovo | Nová `PoolMessage::ShareRelay` (miner_id, worker_name, height, difficulty, relay_origin); fire-and-forget TCP relay do upstream poolu |
+| **Tailscale VPN tunel** | ✅ Hotovo | Core PC (`100.86.102.5`) ↔ Edge VPS (`100.66.162.125`) — P2P (8333) + Pool (8444) dostupné přes VPN |
+| **Dual-pool dashboard** | ✅ Hotovo | Dashboard ukazuje `pool-edge` i `pool` status, health check přes TCP probe s timeoutem 1.5s |
+| **Edge pool wallet** | ✅ Hotovo | Vygenerována dedikovaná Edge pool adresa `zion1a6z5a4m830w6s6k7r508n300n6z30022q6qt0n7` |
+| **systemd service** | ✅ Hotovo | `zion-edge-pool.service` — binds `0.0.0.0:8444`, UFW port 8444/tcp otevřen |
+| **Network topology docs** | ✅ Hotovo | `scripts/network-topology.md` + `scripts/edge-server-deploy.md` + `scripts/ssh-key-management.md` |
+
+**Operační rozdíl:**
+- **Core mode** (`upstream_pool_addr` není nastaveno): pool vlastní PPLNS okno, provádí payouty
+- **Edge mode** (`ZION_UPSTREAM_POOL_ADDR` nastaveno): pool relayuje share do Core poolu, který vlastní jednotné PPLNS okno
+
+**Vytvořené/modifikované soubory:**
+- `V3/L1/pool/src/bin/server.rs` — `relay_share_fire_and_forget()`, `ZION_UPSTREAM_POOL_ADDR`, `ShareRelay` odesílání po validaci share
+- `V3/L1/pool/src/lib.rs` — `PoolMessage::ShareRelay` enum variant
+- `dashboard/app.py` — `pool-edge` v `SERVICE_REGISTRY`, dual-pool checklist, HTML/JS karta
+- `scripts/edge-server-deploy.md`, `scripts/network-topology.md`, `scripts/ssh-key-management.md`
+
+---
+
+### L5 ZION Free World + L6 ZION Issobella — daemon crates
+
+||| Komponenta | Stav |
+|---|---|---|
+| `zion-free-world` daemon | ✅ Hotovo | Axum API + SQLite + L1 scanner + DAO client — humanitarian grants & projects |
+| `zion-issobella` daemon | ✅ Hotovo | Axum API + SQLite + L1 scanner + DAO client — space missions & research proposals |
+| **DAO client fix** | ✅ Hotovo | `anyhow::Result` místo custom `!Send` resultů; `MutexGuard` scopován před `await` — axum kompilace zelená |
+| **Docker integrace** | ✅ Hotovo | Dockerfiles pro L5 i L6; `docker-compose.yml` profily |
+| **CLI integrace** | ✅ Hotovo | `zion free-world` a `zion issobella` příkazy v CLI |
+| **Dokumentace L5** | ✅ Hotovo | 9 komunitních dokumentů (`V3/L5/docs/`): README, Dharma Temple, Genesis Garden, Te Pīko Ora, rada starších, financování, časová osa, volební systém, consciousness admission |
+| **Dokumentace L6** | ✅ Hotovo | 5 dokumentů stanice Issobella (`V3/L6/issobella/docs/`): README, stanice, software, financování, časová osa (vše v češtině) |
+
+**Klíčové konstanty:**
+- L5 Free World treasury: `FREE_WORLD_MONTHLY_ALLOCATION = 15_000 ZION`
+- L6 Issobella treasury: `ISSOBELLA_MONTHLY_ALLOCATION = 15_000 ZION`
+- Humanitarian tithe: 5% fee split
+- Issobella fund: 5% fee split
+
+---
+
+### L2 DAO — multi-layer governance (Co-Admin, consent, cross-layer)
+
+||| Komponenta | Stav |
+|---|---|---|
+| **Co-Admin registry** | ✅ Hotovo | Multi-layer Co-Admin systém (`co_admin.rs`) — role, reputation, bonding napříč L1–L6 |
+| **Consent engine** | ✅ Hotovo | Distribuované witnessing / sociokracie (`consent.rs`) — consent threshold pro L5 governance |
+| **Cross-layer proposals** | ✅ Hotovo | Multi-layer návrhy s veto supportem (`cross_layer.rs`) — `CrossLayer` proposal type |
+| **Nové proposal types** | ✅ Hotovo | `Admission`, `Bodhisattva`, `Expulsion`, `CrossLayer` přidány do `ProposalType` |
+| **API endpointy** | ✅ Hotovo | `/api/dao/proposals/:id/consent`, `/api/dao/co-admins`, `/api/dao/cross-layer/:id/*` |
+| **Dokumentace L2 DAO** | ✅ Hotovo | 5 dokumentů (`V3/L2/dao/docs/`): README, GOVERNANCE_STRUCTURE, PROTOCOLS, SACRED_TRINITY, V3_SOFTWARE (vše v češtině) |
+
+**Sacred Trinity archetypes:**
+- **Rama** (Admin/Founder) — L1–L6 ultimate authority
+- **Síta** (Guardian/Custodian) — treasury & audit
+- **Hanuman** (Servant/Warrior) — execution & protection
+
+---
+
+### Hiran v2.3 — next-gen AI model
+
+||| Komponenta | Stav |
+|---|---|---|
+| **Base model** | 🔄 Probíhá | `nvidia/OpenReasoning-Nemotron-32B` (Qwen2.5-32B-Instruct derivative) |
+| **Training method** | 🔄 Probíhá | Full Fine-Tuning s DeepSpeed ZeRO-3 (CPU/NVMe offload, BF16) |
+| **Dataset** | ✅ Hotovo | 48,436 instruction pairs napříč 9 stagemi (factual reinforcement, drill patterns, domain expertise, cross-domain, preference alignment, conversation flow, bilingual CZ/EN, code generation, safety) |
+| **Hybrid RAG** | ✅ Hotovo | 33 knowledge documents + ChromaDB + `all-MiniLM-L6-v2` + query router |
+| **Benchmark + provisioning** | ✅ Hotovo | `HiranV2.3/scripts/benchmark_and_provision.py` — Vast.ai workflow |
+
+---
+
+### Root dokumentace + Dev Team + dashboard
+
+||| Komponenta | Stav |
+|---|---|---|
+| **ROOT_INDEX.md** | ✅ Hotovo | Kompletní mapa repozitáře — quick nav, ASCII tree, layer status, AI/Hiran table, contributor rules |
+| **README.md** | ✅ Hotovo | 6-vrstvá architektura aktualizována (L2 DAO & Bridge, L3 NCL & WARP, L5/L6 daemon names) |
+| **Dev Team docs** | ✅ Hotovo | `V3/docs/DEV_TEAM/` — hiring guidelines, onboarding, sacred vow, compensation, code standards, security |
+| **Dashboard L5/L6** | ✅ Hotovo | Dashboard registruje `free-world` a `issobella` služby, zobrazuje jejich status |
+
+---
+
+### GPU miner fix
+
+||| Komponenta | Stav |
+|---|---|---|
+| **Self-test loop fix** | ✅ Hotovo | Miner se zasekl v self-test / no-mining smyčce; opraveno — GPU mining běží normálně |
 
 ---
 

@@ -95,6 +95,19 @@ pub enum PoolMessage {
         coin: String,
         algorithm: String,
     },
+    /// Inter-pool share relay (Edge → Core).
+    /// Carries an accepted share from an Edge relay pool to the master/Core
+    /// pool so that the master can record it in the unified PPLNS window.
+    /// The upstream pool does NOT validate the hash again — it trusts the
+    /// Edge pool to have already verified share_target.
+    ShareRelay {
+        miner_id: String,
+        worker_name: String,
+        height: u64,
+        difficulty: u64,
+        /// Which relay pool forwarded this share (for audit / debugging).
+        relay_origin: String,
+    },
 }
 
 pub fn encode_message(message: &PoolMessage) -> Result<String, serde_json::Error> {
