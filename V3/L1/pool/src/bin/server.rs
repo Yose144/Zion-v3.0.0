@@ -889,9 +889,10 @@ fn handle_client(
                         miner_id, worker_name, submit_miner_id, submit_worker_name
                     );
                 }
-                // Record no-solution in vardiff too — the miner tried but found nothing,
-                // which still affects the timing cadence.
-                vardiff.record_submit();
+                // Do NOT retarget difficulty on no-solution — the miner found nothing,
+                // so there is no valid timing data.  Retargeting here would drive
+                // difficulty to infinity and make the target impossible.
+                // vardiff.record_submit();
                 JobCompletion::NoSolution {
                     attempted_hashes: attempted_hashes.unwrap_or(job.nonce_count),
                     elapsed_ms: elapsed_ms

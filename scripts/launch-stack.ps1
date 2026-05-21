@@ -63,6 +63,8 @@ $env:ZION_MAX_SESSIONS_PER_IP='10'
 $env:ZION_POOL_WALLET='zion182e2v4x4r3u2j5r5t305k0d5y643q6l3n6je5f8'
 $env:ZION_POOL_PAYOUT_SK_HEX='b8d7341c97b9402b67ad2a961ef055c66e3b7fb2568cf48cc78f7b1ffd2098d0'
 $env:ZION_NONCE_COUNT='4096'
+$env:ZION_VARDIFF_START_DIFF='1'
+$env:ZION_VARDIFF_MAX_DIFF='1000000'
 $pp = Start-Process -FilePath $poolExe -RedirectStandardOutput "$logDir\pool.log" -RedirectStandardError "$logDir\pool.err" -WindowStyle Hidden -PassThru
 Write-Host "Started Pool   PID=$($pp.Id)"
 
