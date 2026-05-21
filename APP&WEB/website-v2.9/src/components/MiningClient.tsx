@@ -38,14 +38,14 @@ const minerSteps = [
   {
     title: 'Start native miner',
     code: `python zion_native_miner_v2_9.py \\
-  --pool 91.98.122.165:3333 \\
+  --pool 77.42.71.94:3333 \\
   --wallet YOUR_ZION_ADDRESS \\
   --worker my-worker \\
   --algorithm cosmic_harmony`
   },
   {
     title: 'Start XMRig (Alternative)',
-    code: './target/release/zion-miner --pool 91.98.122.165:3333 --wallet YOUR_ZION_ADDRESS --worker my-worker --algo cosmic_harmony'
+    code: './target/release/zion-miner --pool 77.42.71.94:3333 --wallet YOUR_ZION_ADDRESS --worker my-worker --algo cosmic_harmony'
   }
 ];
 

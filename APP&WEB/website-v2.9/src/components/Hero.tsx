@@ -278,7 +278,7 @@ export default function Hero() {
               <div className="flex items-center gap-2 pt-1">
                 <Rocket className="w-4 h-4 text-zion-gold" />
                 <span className="text-xs text-gray-400">
-                  {SITE_ENVIRONMENT_LABEL} · {SITE_RELEASE_LABEL} · runtime {SITE_RUNTIME_LABEL} · 3-node rehearsal · Prague + USA + Singapore
+                  {SITE_ENVIRONMENT_LABEL} · {SITE_RELEASE_LABEL} · runtime {SITE_RUNTIME_LABEL} · 3-node mainnet · Prague + USA + Singapore
                 </span>
               </div>
             </div>

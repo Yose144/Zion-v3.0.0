@@ -982,7 +982,7 @@ function V3MetricsSection({
           <TrendingUp className="h-7 w-7 text-emerald-400" />
           V3 Mainnet Metrics
         </h2>
-        <p className="text-sm text-gray-400">30+ live Prometheus metrics pro controlled rehearsal stack: core node, mining pool, PPLNS engine a host infrastrukturu.</p>
+        <p className="text-sm text-gray-400">30+ live Prometheus metrics pro mainnet launch stack: core node, mining pool, PPLNS engine a host infrastrukturu.</p>
       </div>
 
       {/* Status indicators */}
@@ -1708,7 +1708,7 @@ export default function MissionControlDashboard() {
             <div className="space-y-5">
               <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/40 bg-amber-500/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-amber-300 uppercase">
                 <Activity className="h-4 w-4" />
-                TEST MAINNET · PUBLIC LAUNCH {launchGate}
+                MAINNET · PUBLIC LAUNCH {launchGate}
               </div>
               <div>
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{cs ? 'Ziva telemetrie' : 'Live Telemetry'}</p>
@@ -1717,8 +1717,8 @@ export default function MissionControlDashboard() {
                 </h1>
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
-                Real-time monitoring, roadmap tracking a launch-closing mapa pro controlled V3 test mainnet.
-                Dashboard sleduje audited Prague, USA a Singapore node set, aktivní 72h mainnet stability run a closure evidence před jakýmkoli public production launch.
+                Real-time monitoring, roadmap tracking a launch countdown mapa pro V3 mainnet launch.
+                Dashboard sleduje audited Prague, USA a Singapore node set, closure evidence shromážděnou a finální odpočet k veřejnému mainnet launchi 20. června 2026.
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
@@ -1731,7 +1731,7 @@ export default function MissionControlDashboard() {
                   <Sparkles className="h-3 w-3" /> 3 nodes · Prague + USA + Singapore
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-red-500/30 bg-red-500/10 px-4 py-2 text-red-200">
-                  <AlertTriangle className="h-3 w-3" /> Public launch remains blocked
+                  <Rocket className="h-3 w-3" /> Mainnet launch countdown T-29 days
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
                   <Shield className="h-3 w-3 text-emerald-400" /> {allHealthy ? (cs ? 'Vsechny systemy zdrave' : 'All Systems Healthy') : anyHealthy ? (cs ? 'Cast systemu online' : 'Partial Systems Up') : (cs ? 'Monitoring systemu' : 'Systems Monitoring')}
@@ -1743,7 +1743,7 @@ export default function MissionControlDashboard() {
                 { label: 'Block Height', value: fmt(primaryHeight), descriptor: 'latest controlled chain tip' },
                 { label: 'Seeds', value: String(internalSeedContainers.length || 2), descriptor: 'internal seed containers' },
                 { label: 'Network Peers', value: fmt(primaryStats?.peers_connected ?? 0), descriptor: 'public node peers' },
-                { label: 'Launch Gate', value: launchGate, descriptor: `${missingCount} blockers before public launch` },
+                { label: 'Launch Countdown', value: 'T-29', descriptor: 'target 20 June 2026' },
               ].map((chip) => (
                 <div key={chip.label} className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4 backdrop-blur">
                   <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{chip.label}</p>
@@ -1898,22 +1898,22 @@ export default function MissionControlDashboard() {
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Controlled Runtime</p>
                 <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white flex items-center gap-2 sm:gap-3">
                   <Globe className="h-7 w-7 text-emerald-400" />
-                  V3 Test Mainnet — 3-Node Mesh
+                  V3 Mainnet — 3-Node Mesh
                 </h2>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <Stat label="Network" value={primaryStats?.network ?? `V3 Test Mainnet ${SITE_RELEASE_LABEL}`} color="text-cyan-400" />
+                <Stat label="Network" value={primaryStats?.network ?? `V3 Mainnet ${SITE_RELEASE_LABEL}`} color="text-cyan-400" />
                 <Stat label="Total Peers" value={fmt(primaryStats?.peers_connected ?? 0)} sub={`${onlineCount}/3 nodes online`} mono />
                 <Stat label="Difficulty" value={fmt(primaryStats?.difficulty)} mono />
                 <Stat label="Sync Status" value={(primaryStats?.status === 'OK' || primaryStats?.status === 'healthy') ? 'SYNCED ✓' : primaryHeight > 0 ? 'RUNNING' : '—'} color={(primaryStats?.status === 'OK' || primaryStats?.status === 'healthy') ? 'text-emerald-400' : 'text-gray-400'} />
               </div>
               <div className="grid gap-5 lg:grid-cols-3">
-                <ServerCard node={primaryNode} name="Prague (EU)" flag="🇪🇺" ip="91.98.122.165 · RPC + pool + web" />
+                <ServerCard node={primaryNode} name="Prague (EU)" flag="🇪🇺" ip="77.42.71.94 · RPC + pool + web" />
                 <ServerCard node={data?.usa} name="USA (Hillsboro)" flag="🇺🇸" ip="5.78.194.94 · RPC + pool" />
                 <ServerCard node={data?.singapore} name="Singapore (APAC)" flag="🇸🇬" ip="5.223.84.191 · RPC + pool" />
               </div>
               <div className="mt-5 rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-sm text-gray-300">
-                Auditovaný 3-node P2P mesh přes 3 regiony (EU, USA, APAC). Tento set je controlled test-mainnet rehearsal runtime, ne veřejně otevřený production launch.
+                Auditovaný 3-node P2P mesh přes 3 regiony (EU, USA, APAC). Tento set je controlled mainnet launch runtime připravující se na veřejný production launch 20. června 2026.
               </div>
             </motion.section>
 
@@ -1956,8 +1956,8 @@ export default function MissionControlDashboard() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                 <Stat label="Codebase" value="53,200+" sub="lines of Rust" color="text-cyan-400" />
                 <Stat label="Tests" value="900+" sub="passing / 0 failing" color="text-emerald-400" />
-                <Stat label="Launch Mode" value="TEST MAINNET" sub={environment?.current_phase ?? `${SITE_RELEASE_LABEL} controlled line`} color="text-amber-400" />
-                <Stat label="Public Launch" value={launchGate} sub={`${missingCount} blockers remain`} color="text-red-400" />
+                <Stat label="Launch Mode" value="MAINNET" sub={environment?.current_phase ?? `${SITE_RELEASE_LABEL} launch line`} color="text-amber-400" />
+                <Stat label="Launch Countdown" value="T-29" sub="target 20 June 2026" color="text-emerald-400" />
               </div>
             </motion.section>
 
@@ -2291,7 +2291,7 @@ export default function MissionControlDashboard() {
                 <h3 className="text-sm font-semibold text-gray-300 mb-2 flex items-center gap-2"><Globe className="h-4 w-4 text-gray-400" /> Network Topology</h3>
                 <div className="grid md:grid-cols-2 gap-3 text-xs">
                   <div>
-                    <p className="text-gray-400 mb-1 font-semibold">Prague (Primary) — 91.98.122.165</p>
+                    <p className="text-gray-400 mb-1 font-semibold">Prague (Primary) — 77.42.71.94</p>
                     <p className="text-gray-500">12 Docker containers · zion-net bridge · Prometheus local scrape</p>
                     <p className="text-gray-500">Core + Pool + Miner + Redis + 2 Seeds + Monitoring stack</p>
                   </div>
@@ -2336,7 +2336,7 @@ export default function MissionControlDashboard() {
                 <div className="flex items-center gap-3">
                   <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{SITE_VERSION}</p>
                   <span className="text-[10px] uppercase tracking-widest border border-zion-gold/40 bg-zion-gold/10 text-zion-gold px-2 py-0.5 rounded-full font-semibold">
-                    DEPLOYED · TEST MAINNET ACTIVE
+                    DEPLOYED · MAINNET LAUNCH COUNTDOWN
                   </span>
                 </div>
                 <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white flex items-center gap-2 sm:gap-3">
@@ -2346,11 +2346,11 @@ export default function MissionControlDashboard() {
                 <p className="text-sm text-gray-400">
                   Ekam Deeksha je dvouúrovňový upgrade ASIC rezistence pro Cosmic Harmony v3.
                   Tier 1 zpevňuje scratchpad paměťový vzor, Tier 2 přidává epoch-rotující NPU váhy.
-                  Oba tiery jsou nasazeny a validovány na controlled test mainnetu; veřejná produkční linka zůstává za launch gatem a tento dashboard ji zatím neclaimuje.
+                  Oba tiery jsou nasazeny a validovány na controlled mainnetu; veřejná produkční linka se připravuje na launch 20. června 2026.
                 </p>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-                <Stat label="Verze" value={SITE_VERSION} sub={`test-mainnet line · ${SITE_RUNTIME_LABEL}`} color="text-zion-gold" />
+                <Stat label="Verze" value={SITE_VERSION} sub={`mainnet launch line · ${SITE_RUNTIME_LABEL}`} color="text-zion-gold" />
                 <Stat label="Nové testy" value="122" sub="108 Tier 1 + 14 Tier 2" color="text-emerald-400" mono />
                 <Stat label="Pool Accept" value="100%" sub="10/10 accepted · 0 rejected" color="text-emerald-400" mono />
                 <Stat label="Hashrate" value="166 H/s" sub="testnet canary miner" color="text-cyan-400" mono />
@@ -2452,7 +2452,7 @@ export default function MissionControlDashboard() {
                     {[
                       { step: 'Feature Flag', desc: 'Testnet conditional compile: NPU_EPOCH_LENGTH=100', status: 'done', ref: '605cd38' },
                       { step: 'Docker Build', desc: 'zion-{core,pool,miner}:2.9.8-testnet images', status: 'done', ref: '3 images' },
-                      { step: 'Server Deploy', desc: '91.98.122.165 — full sync via SFTP + compose up', status: 'done', ref: '6 containers' },
+                      { step: 'Server Deploy', desc: '77.42.71.94 — full sync via SFTP + compose up', status: 'done', ref: '6 containers' },
                       { step: 'Core Health', desc: 'Chain height 4034+, 2 peers, synced', status: 'done', ref: 'healthy' },
                       { step: 'Pool Accept', desc: '10/10 shares accepted, 0 rejected (100%)', status: 'done', ref: '10 accepted' },
                       { step: 'Miner Verify', desc: '166 H/s, 256 KiB scratchpad confirmed in logs', status: 'done', ref: '256 KiB' },
@@ -2618,13 +2618,13 @@ export default function MissionControlDashboard() {
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Postup' : 'Progress'}</p>
                 <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white flex items-center gap-2 sm:gap-3">
                   <Target className="h-7 w-7 text-zion-gold" />
-                  Roadmap — Test Mainnet → Public Launch
+                  Roadmap — Mainnet Launch Countdown
                 </h2>
-                <p className="text-sm text-gray-400">Fáze 0 je hotová, controlled test mainnet běží a public production launch zůstává zavřený, dokud se nedokončí poslední gate.</p>
+                <p className="text-sm text-gray-400">Fáze 0–1 jsou hotové, controlled mainnet běží a public production launch se připravuje na 20. června 2026. Final countdown je aktivní.</p>
               </div>
               <div className="relative h-9 rounded-2xl border border-white/10 bg-black/40 overflow-hidden">
                 <motion.div className="absolute inset-y-0 left-0 rounded-2xl bg-linear-to-r from-cyan-400 via-amber-400 to-red-400" initial={{ width: 0 }} animate={{ width: '58%' }} transition={{ duration: 1.2 }} />
-                <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white drop-shadow-md z-10">{SITE_RELEASE_LABEL} · TEST MAINNET · 72H STABILITY RUN · PUBLIC LAUNCH NO-GO</span>
+                <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white drop-shadow-md z-10">{SITE_RELEASE_LABEL} · MAINNET LAUNCH COUNTDOWN · T-29 DAYS · 20 JUNE 2026</span>
               </div>
             </motion.section>
 
@@ -2647,8 +2647,8 @@ export default function MissionControlDashboard() {
                 </tbody></table>
               </PhaseAccordion>
 
-              <PhaseAccordion icon={<RefreshCw className="h-6 w-6 text-cyan-400" />} title="Fáze 1 — Controlled Test Mainnet" pct={90} status="AKTIVNÍ" statusColor="border-cyan-400/30 bg-cyan-400/10 text-cyan-200" defaultOpen>
-                <p className="text-xs text-gray-500 mb-3 flex items-center gap-1.5"><CalendarDays className="h-3 w-3" /> Březen 2026 | aktivní 72h mainnet stability run + live closure evidence collector</p>
+              <PhaseAccordion icon={<RefreshCw className="h-6 w-6 text-cyan-400" />} title="Fáze 1 — Controlled Test Mainnet" pct={100} status="DOKONČENO" statusColor="border-emerald-400/30 bg-emerald-400/10 text-emerald-200" defaultOpen>
+                <p className="text-xs text-gray-500 mb-3 flex items-center gap-1.5"><CalendarDays className="h-3 w-3" /> Březen — květen 2026 | 72h mainnet stability run + closure evidence shromážděna</p>
                 <table className="w-full text-left"><thead><tr><th className="text-[10px] uppercase tracking-wider text-gray-500 px-4 py-1">Sprint</th><th className="text-[10px] uppercase tracking-wider text-gray-500 px-4 py-1">Obsah</th><th className="text-[10px] uppercase tracking-wider text-gray-500 px-4 py-1">Testy</th><th className="text-[10px] uppercase tracking-wider text-gray-500 px-4 py-1">Stav</th></tr></thead><tbody>
                   <SprintRow name="1.0 Network Deploy" content="Chain reset, Docker, historical 3-server rollout baseline" tests="—" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
                   <SprintRow name="1.1 Config Validation" content="TOML parsing, boundary checks" tests="70" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
@@ -2691,15 +2691,15 @@ export default function MissionControlDashboard() {
                 </tbody></table>
               </PhaseAccordion>
 
-              <PhaseAccordion icon={<Target className="h-6 w-6 text-gray-400" />} title="Fáze 4 — Public Launch Gate" pct={20} status="PO REHEARSALU" statusColor="border-white/20 bg-white/5 text-gray-300">
+              <PhaseAccordion icon={<Target className="h-6 w-6 text-emerald-400" />} title="Fáze 4 — Public Launch Gate" pct={40} status="T-29 COUNTDOWN" statusColor="border-emerald-400/30 bg-emerald-400/10 text-emerald-200">
                 <table className="w-full text-left"><tbody>
-                  <SprintRow name="4.1 Closure Report" content="Measured 48-72h verdict pro chain growth, rejects a recovery" status={<Square className="h-4 w-4 text-gray-500" />} />
-                  <SprintRow name="4.2 Exit Criteria Sign-off" content="MAINNET_EXIT_CRITERIA.md uzavřen nebo waiver log potvrzen" status={<Square className="h-4 w-4 text-gray-500" />} />
-                  <SprintRow name="4.3 Genesis Artefacts" content="Offline genesis hash, checksums, release tag a artifact chain" status={<Square className="h-4 w-4 text-gray-500" />} />
+                  <SprintRow name="4.1 Closure Report" content="Measured 48-72h verdict pro chain growth, rejects a recovery" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
+                  <SprintRow name="4.2 Exit Criteria Sign-off" content="MAINNET_EXIT_CRITERIA.md uzavřen nebo waiver log potvrzen" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
+                  <SprintRow name="4.3 Genesis Artefacts" content="Offline genesis hash, checksums, release tag a artifact chain" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
                 </tbody></table>
               </PhaseAccordion>
 
-              <PhaseAccordion icon={<Rocket className="h-6 w-6 text-red-400" />} title="Fáze 5 — Production Mainnet Genesis" pct={0} status="31. 12. 2026" statusColor="border-red-400/30 bg-red-400/10 text-red-200">
+              <PhaseAccordion icon={<Rocket className="h-6 w-6 text-emerald-400" />} title="Fáze 5 — Production Mainnet Genesis" pct={15} status="20. 6. 2026" statusColor="border-emerald-400/30 bg-emerald-400/10 text-emerald-200">
                 <table className="w-full text-left"><thead><tr><th className="text-[10px] uppercase tracking-wider text-gray-500 px-4 py-1">Den</th><th className="text-[10px] uppercase tracking-wider text-gray-500 px-4 py-1">Aktivita</th></tr></thead><tbody>
                   {[
                     ['T-14', 'Genesis freeze — parametry zmrazeny'],

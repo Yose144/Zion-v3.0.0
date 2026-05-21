@@ -6,32 +6,32 @@ import { useLang } from '@/contexts/LanguageContext';
 
 const getPhaseCards = (cs: boolean) => [
   {
-    name: 'L1 TerraNova — Controlled Test Mainnet',
-    window: 'Mar 2026 – Now',
-    progress: 96,
+    name: 'L1 TerraNova — Controlled Mainnet',
+    window: 'Mar — May 2026',
+    progress: 100,
     highlights: [
-      'v2.9.9 Pure Code deployed — controlled V3 test-mainnet line',
-      '3-node rehearsal mesh active, pool telemetry, and explorer synced',
-      'On-chain 89/5/5/1 split verified; public launch still gated',
+      'v2.9.9 Pure Code deployed — controlled V3 mainnet launch line',
+      '3-node mainnet mesh active, pool telemetry, and explorer synced',
+      'On-chain 89/5/5/1 split verified; mainnet launch countdown active',
     ],
   },
   {
     name: 'Launch Ops & Security Closure',
-    window: 'Q2–Q3 2026',
-    progress: 20,
+    window: 'May — Jun 2026',
+    progress: 65,
     highlights: [
-      'BFG scrub + genesis artifacts / checksums',
-      'External security audit (Q2 2026)',
-      'Measured 48–72h closure report + recovery evidence',
+      'BFG scrub + genesis artifacts / checksums ✅',
+      'External security audit scheduled (Q3 2026)',
+      'Closure evidence collected; T-29 countdown to 20 June 2026',
     ],
   },
   {
     name: 'Public Launch Gate',
-    window: 'Q4 2026',
-    progress: 5,
+    window: '20 June 2026',
+    progress: 15,
     highlights: [
-      'Dress rehearsal + genesis freeze',
-      'Public launch decision only after closure criteria',
+      'Genesis freeze — all parameters locked',
+      'Public launch countdown active — T-29 days',
       'CoinGecko listing + wZION bridge after public genesis',
     ],
   },
@@ -80,8 +80,8 @@ export default function RoadmapPulse() {
               v2.9.9 <span className="text-gradient">Pure Code</span>
             </h2>
             <p className="text-lg text-gray-300 max-w-2xl">
-              The current public line is a controlled V3 test-mainnet rehearsal on the v2.9.9 Pure Code public line over the v2.9.8 Deeksha/Ekam canonical runtime.
-              Priority is closure evidence, telemetry, documentation, and operational discipline before any public launch decision.
+              The current public line is a controlled V3 mainnet launch countdown on the v2.9.9 Pure Code public line over the v2.9.8 Deeksha/Ekam canonical runtime.
+              Public mainnet launch is scheduled for 20 June 2026 (T-29). Priority is final telemetry validation, documentation polish, and operational readiness.
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-4">
