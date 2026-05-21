@@ -172,17 +172,17 @@ ZION není jeden blockchain. Je to ekosystém šesti vrstev, kde každá vrstva 
 
 ```
 ┌──────────────────────────────────────────────┐
-│  L6 — ZION Issobella    Vesmírná stanice LEO  │
+│  L6 — ZION Issobella    Vesmírná stanice LEO │
 ├──────────────────────────────────────────────┤
-│  L5 — ZION Free World   Humanitární & věda    │
+│  L5 — ZION Free World   Humanitární & věda   │
 ├──────────────────────────────────────────────┤
 │  L4 — ZION OASIS        Herní svět (UE5)     │
 ├──────────────────────────────────────────────┤
-│  L3 — NCL · WARP · AI     Distribuovaná AI    │
+│  L3 — NCL · WARP · AI     Distribuovaná AI   │
 ├──────────────────────────────────────────────┤
 │  L2 — Bridge & DeFi     wZION · DEX · DAO    │
 ├──────────────────────────────────────────────┤
-│  L1 — Core Chain        PoW · UTXO · P2P      │
+│  L1 — Core Chain        PoW · UTXO · P2P     │
 └──────────────────────────────────────────────┘
 ```
 
