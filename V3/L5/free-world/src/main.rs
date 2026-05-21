@@ -80,6 +80,7 @@ async fn main() {
         rpc_url: cfg.l1_rpc_url.clone(),
         poll_interval: std::time::Duration::from_secs(cfg.scan_interval_secs),
         fund_address: cfg.humanitarian_fund_address.clone(),
+        finality_blocks: 6,
     };
     let scanner = L1Scanner::new(scanner_cfg, Arc::clone(&db));
 
