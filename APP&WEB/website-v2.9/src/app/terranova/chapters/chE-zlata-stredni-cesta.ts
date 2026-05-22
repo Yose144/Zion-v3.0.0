@@ -1,4 +1,4 @@
-import type { BookChapter } from '../bookMetaPublic';
+import type { BookChapter } from '../bookData';
 
 const chapter: BookChapter = {
   id: 'zlata-stredni-cesta',

@@ -7,7 +7,7 @@ const __dirname = path.dirname(__filename);
 const ROOT = path.join(__dirname, '..');
 
 const EDITIONS = [
-  { id: 'final', name: 'Kanonická větev', dir: path.join(ROOT, 'docs/TerraNova/FINAL'), color: '#00BFFF', rgb: '0,191,255' },
+  { id: 'final', name: 'Kanonická větev', dir: path.join(ROOT, 'docs/TerraNova/BASE_FINAL'), color: '#00BFFF', rgb: '0,191,255' },
 ];
 
 const OUT_PATH = path.join(ROOT, 'APP&WEB/website-v2.9/src/app/terranova/generatedEditions.ts');
