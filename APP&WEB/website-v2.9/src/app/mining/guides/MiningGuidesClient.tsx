@@ -85,7 +85,7 @@ const algorithms = [
     type: "CPU",
     memory: "2 GB",
     bestFor: "CPU-optimized, Monero-proven",
-    stratum: `${PRIMARY_STRATUM_BASE}:3334`,
+    stratum: `${PRIMARY_STRATUM_BASE}:8444`,
     algo: "randomx",
   },
   {
@@ -93,7 +93,7 @@ const algorithms = [
     type: "CPU",
     memory: "4 KB",
     bestFor: "Low-memory devices, RPi",
-    stratum: `${PRIMARY_STRATUM_BASE}:3335`,
+    stratum: `${PRIMARY_STRATUM_BASE}:8444`,
     algo: "yescrypt",
   },
   {
@@ -101,7 +101,7 @@ const algorithms = [
     type: "GPU",
     memory: "2.5 GB",
     bestFor: "GPU mining, Ergo-proven",
-    stratum: `${PRIMARY_STRATUM_BASE}:3336`,
+    stratum: `${PRIMARY_STRATUM_BASE}:8444`,
     algo: "autolykos2",
   },
 ];
@@ -286,7 +286,7 @@ tar xzf xmrig-*.tar.gz && cd xmrig-*
 
 # Start
 ./xmrig \\
-  -o ${PRIMARY_STRATUM_BASE}:3334 \
+  -o ${PRIMARY_STRATUM_BASE}:8444 \
   -u YOUR_ZION_ADDRESS \\
   -p x \\
   -a rx/0 \\
@@ -367,7 +367,7 @@ cargo build --release -p zion-miner --features cuda
 # Run with CUDA
 ./target/release/zion-miner \\
   --algo autolykos2 \\
-  --pool ${PRIMARY_STRATUM_BASE}:3336 \
+  --pool ${PRIMARY_STRATUM_BASE}:8444 \
   --wallet YOUR_ZION_ADDRESS \\
   --gpu cuda \\
   --gpu-devices 0,1      # multi-GPU`}
@@ -393,7 +393,7 @@ cargo build --release -p zion-miner --features opencl
 # Run with OpenCL
 ./target/release/zion-miner \\
   --algo autolykos2 \\
-  --pool ${PRIMARY_STRATUM_BASE}:3336 \
+  --pool ${PRIMARY_STRATUM_BASE}:8444 \
   --wallet YOUR_ZION_ADDRESS \\
   --gpu opencl`}
                   />
@@ -438,10 +438,10 @@ cargo build --release -p zion-miner --features opencl
                   </h4>
                   <div className="space-y-2">
                     {[
-                      { algo: "Cosmic Harmony Deeksha", endpoint: `stratum+tcp://${SITE_PRIMARY_HOST}:3333`, port: 3333 },
-                      { algo: "RandomX", endpoint: `stratum+tcp://${SITE_PRIMARY_HOST}:3334`, port: 3334 },
-                      { algo: "Yescrypt", endpoint: `stratum+tcp://${SITE_PRIMARY_HOST}:3335`, port: 3335 },
-                      { algo: "Autolykos v2", endpoint: `stratum+tcp://${SITE_PRIMARY_HOST}:3336`, port: 3336 },
+                      { algo: "Cosmic Harmony Deeksha", endpoint: `stratum+tcp://${SITE_PRIMARY_HOST}:8444`, port: 8444 },
+                      { algo: "RandomX", endpoint: `stratum+tcp://${SITE_PRIMARY_HOST}:8444`, port: 8444 },
+                      { algo: "Yescrypt", endpoint: `stratum+tcp://${SITE_PRIMARY_HOST}:8444`, port: 8444 },
+                      { algo: "Autolykos v2", endpoint: `stratum+tcp://${SITE_PRIMARY_HOST}:8444`, port: 8444 },
                     ].map((ep, i) => (
                       <div key={i} className="flex flex-col md:flex-row md:items-center justify-between gap-1 py-2 border-b border-white/[0.04] last:border-0">
                         <span className="text-sm text-white/70">{ep.algo}</span>

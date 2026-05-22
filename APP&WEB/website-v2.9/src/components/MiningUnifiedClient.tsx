@@ -90,28 +90,28 @@ const algorithms = [
     type: "CPU + GPU",
     memory: "256 KB",
     bestFor: "Balanced mining, anti-ASIC",
-    stratum: `stratum+tcp://${POOL}:3333`,
+    stratum: `stratum+tcp://${POOL}:8444`,
   },
   {
     name: "RandomX",
     type: "CPU",
     memory: "2 GB",
     bestFor: "CPU-optimized, Monero-proven",
-    stratum: `stratum+tcp://${POOL}:3334`,
+    stratum: `stratum+tcp://${POOL}:8444`,
   },
   {
     name: "Yescrypt",
     type: "CPU",
     memory: "4 KB",
     bestFor: "Low-memory devices, RPi",
-    stratum: `stratum+tcp://${POOL}:3335`,
+    stratum: `stratum+tcp://${POOL}:8444`,
   },
   {
     name: "Autolykos v2",
     type: "GPU",
     memory: "2.5 GB",
     bestFor: "GPU mining, Ergo-proven",
-    stratum: `stratum+tcp://${POOL}:3336`,
+    stratum: `stratum+tcp://${POOL}:8444`,
   },
 ];
 
@@ -159,7 +159,7 @@ const nodeRequirements = [
 const ports = [
   { port: "8333", protocol: "TCP", purpose: "P2P peer-to-peer", required: true },
   { port: "8443", protocol: "TCP", purpose: "JSON-RPC API", required: false },
-  { port: "3333", protocol: "TCP", purpose: "Stratum mining", required: false },
+  { port: "8444", protocol: "TCP", purpose: "Stratum mining", required: false },
   { port: "8080", protocol: "TCP", purpose: "Pool API", required: false },
 ];
 
@@ -269,12 +269,12 @@ export default function MiningUnifiedClient() {
       items: cs
         ? [
             'Stahnete zion-miner pro svuj operacni system',
-            `Spustte: zion-miner --pool stratum+tcp://${POOL}:3333 --wallet YOUR_ADDRESS`,
+            `Spustte: zion-miner --pool stratum+tcp://${POOL}:8444 --wallet YOUR_ADDRESS`,
             'Sledujte hashrate a prijate shares',
           ]
         : [
             'Download zion-miner for your OS',
-            `Run: zion-miner --pool stratum+tcp://${POOL}:3333 --wallet YOUR_ADDRESS`,
+            `Run: zion-miner --pool stratum+tcp://${POOL}:8444 --wallet YOUR_ADDRESS`,
             'Watch hashrate & accepted shares',
           ],
     },
@@ -486,8 +486,8 @@ export default function MiningUnifiedClient() {
           </h2>
           <p className="text-white/40 text-sm mb-5">
             {cs
-              ? 'Cosmic Harmony v3 rotuje RandomX + Yescrypt + Blake3 kvuli ASIC odolnosti. Pripojte se na port 3333 pro auto-algo nebo zvolte dedikovany port.'
-              : 'Cosmic Harmony v3 rotates RandomX + Yescrypt + Blake3 for ASIC resistance. Connect on port 3333 for auto-algo or pick a dedicated port.'}
+              ? 'Cosmic Harmony v3 rotuje RandomX + Yescrypt + Blake3 kvuli ASIC odolnosti. Pripojte se na port 8444 pro auto-algo nebo zvolte dedikovany port.'
+              : 'Cosmic Harmony v3 rotates RandomX + Yescrypt + Blake3 for ASIC resistance. Connect on port 8444 for auto-algo or pick a dedicated port.'}
           </p>
 
           <div className="rounded-2xl border border-white/10 bg-black/40 backdrop-blur-sm overflow-hidden">
@@ -589,7 +589,7 @@ ls -la target/release/zion-miner`}
                     title={cs ? 'Spusteni tezby (pool)' : 'Start mining (pool)'}
                     code={`zion-miner \\
   --algo cosmic_harmony \\
-  --pool stratum+tcp://${POOL}:3333 \\
+  --pool stratum+tcp://${POOL}:8444 \\
   --wallet YOUR_ZION_ADDRESS \\
   --threads $(nproc)`}
                   />
@@ -638,7 +638,7 @@ ls -la target/release/zion-miner`}
 
 ./target/release/zion-miner \\
   --algo cosmic_harmony \\
-  --pool stratum+tcp://${POOL}:3333 \\
+  --pool stratum+tcp://${POOL}:8444 \\
   --wallet YOUR_ZION_ADDRESS \\
   --gpu metal --gpu-intensity 80`}
                   />
@@ -720,7 +720,7 @@ cargo build --release -p zion-miner --features opencl
                   title={cs ? 'Rychly start - pool tezba' : 'Quick start — Pool mining'}
                   code={`zion-miner \\
   --algo cosmic_harmony \\
-  --pool stratum+tcp://${POOL}:3333 \\
+  --pool stratum+tcp://${POOL}:8444 \\
   --wallet YOUR_ZION_ADDRESS \\
   --worker-name my-rig-01 \\
   --threads $(nproc)`}
@@ -988,7 +988,7 @@ block_time = 60
 difficulty_adjustment = "per-block"
 
 [mining]
-stratum_port = 3333
+stratum_port = 8444
 reward_address = "YOUR_ZION_ADDRESS"
 
 [storage]

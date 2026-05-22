@@ -258,6 +258,97 @@ export default function DaoPage() {
           )}
         </motion.section>
 
+        {/* ── Co-Admin Governance + Sacred Trinity ── */}
+        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[32px] border border-zion-gold/30 bg-gradient-to-br from-zion-gold/10 via-zion-purple/10 to-transparent p-8">
+          <div className="flex flex-col gap-2 mb-6">
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Vícevrstvá správa' : 'Multi-Layer Governance'}</p>
+            <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
+              <Crown className="h-7 w-7 text-zion-gold" />
+              {cs ? 'Co-Admin & Posvátná trojice' : 'Co-Admin & Sacred Trinity'}
+            </h2>
+            <p className="text-sm text-gray-400 max-w-3xl">
+              {cs
+                ? 'Multi-vrstvá DAO správa přes L1–L6. Co-Admini koordinují cross-layer veta a politiku, Posvátná trojice symbolizuje kosmické archetypy správy.'
+                : 'Multi-layer DAO governance across L1–L6. Co-Admins coordinate cross-layer vetoes and policy, while the Sacred Trinity embodies cosmic archetypes of stewardship.'}
+            </p>
+          </div>
+          <div className="grid md:grid-cols-2 gap-6 mb-6">
+            {/* Co-Admin system */}
+            <div className="rounded-2xl border border-white/10 bg-black/40 p-5">
+              <div className="flex items-center gap-2 mb-3">
+                <ShieldCheck className="h-5 w-5 text-cyan-400" />
+                <h3 className="font-semibold text-white">{cs ? 'Co-Admin systém' : 'Co-Admin System'}</h3>
+              </div>
+              <p className="text-sm text-gray-400 mb-3">
+                {cs
+                  ? 'Každá vrstva (L1–L6) má svého Co-Admina pro technická rozhodnutí a koordinaci. Cross-layer rozhodnutí vyžadují souhlas dotčených Co-Adminů.'
+                  : 'Each layer (L1–L6) has a Co-Admin for technical decisions and coordination. Cross-layer decisions require consent from affected Co-Admins.'}
+              </p>
+              <div className="space-y-1.5 text-xs">
+                {(['L1 Consensus', 'L2 DAO/Bridge', 'L3 WARP', 'L4 Oasis', 'L5 Free World', 'L6 Issobella'] as const).map((layer) => (
+                  <div key={layer} className="flex items-center justify-between rounded-lg border border-white/5 bg-white/5 px-3 py-1.5">
+                    <span className="text-gray-300 font-mono">{layer}</span>
+                    <span className="text-gray-500">{cs ? 'Co-Admin' : 'Co-Admin'} · {cs ? 'DAO autorita' : 'DAO authority'}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* Sacred Trinity */}
+            <div className="rounded-2xl border border-zion-gold/20 bg-zion-gold/5 p-5">
+              <div className="flex items-center gap-2 mb-3">
+                <Star className="h-5 w-5 text-zion-gold" />
+                <h3 className="font-semibold text-white">{cs ? 'Posvátná trojice' : 'Sacred Trinity'}</h3>
+              </div>
+              <p className="text-sm text-gray-400 mb-4">
+                {cs
+                  ? 'Kosmické archetypy DAO governance — Rama (správce, L1), Síta (srdce, L5), Hanuman (ochránce, L2).'
+                  : 'Cosmic archetypes of DAO governance — Rama (steward, L1), Síta (heart, L5), Hanuman (guardian, L2).'}
+              </p>
+              <div className="space-y-3">
+                {[
+                  { name: 'Rama', role: cs ? 'Správce · Konsenzus · L1' : 'Steward · Consensus · L1', color: 'text-cyan-300', desc: cs ? 'Dharma chainu, fair mining, protokolová integrita' : 'Chain dharma, fair mining, protocol integrity' },
+                  { name: 'Síta', role: cs ? 'Srdce · Komunita · L5' : 'Heart · Community · L5', color: 'text-rose-300', desc: cs ? 'Humanitární fond, fyzické komunity, péče' : 'Humanitarian fund, physical communities, care' },
+                  { name: 'Hanuman', role: cs ? 'Ochránce · Bridge · L2' : 'Guardian · Bridge · L2', color: 'text-amber-300', desc: cs ? 'Přemostění světů, ochrana, věrná služba' : 'Bridging worlds, protection, faithful service' },
+                ].map((archetype) => (
+                  <div key={archetype.name} className="rounded-xl border border-white/10 bg-black/20 p-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className={`font-bold text-sm ${archetype.color}`}>{archetype.name}</span>
+                      <span className="text-[10px] text-gray-500 uppercase tracking-wider">{archetype.role}</span>
+                    </div>
+                    <p className="text-xs text-gray-400">{archetype.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          {/* Consent Engine */}
+          <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/5 p-5">
+            <div className="flex items-center gap-3 mb-3">
+              <Sparkles className="h-5 w-5 text-cyan-400" />
+              <h3 className="font-semibold text-white">{cs ? 'Consent Engine' : 'Consent Engine'}</h3>
+              <span className="text-[10px] uppercase tracking-widest border border-cyan-500/30 bg-cyan-500/10 text-cyan-400 px-2 py-0.5 rounded-full font-semibold">L2 DAO</span>
+            </div>
+            <p className="text-sm text-gray-400 max-w-3xl">
+              {cs
+                ? 'Mechanismus souhlasu zajišťuje, že cross-layer rozhodnutí neprocházejí bez aktivního souhlasu dotčených vrstev. Blokující veto je vyhrazeno pro bezpečnostní incidenty a porušení dohody.'
+                : 'The consent mechanism ensures cross-layer decisions do not pass without active consent from affected layers. Blocking veto is reserved for security incidents and agreement violations.'}
+            </p>
+            <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-2 text-[10px]">
+              {[
+                { label: cs ? 'Návrh' : 'Propose', detail: cs ? 'Jakýkoliv Co-Admin' : 'Any Co-Admin' },
+                { label: cs ? 'Souhlas' : 'Consent', detail: cs ? 'Dotčené vrstvy' : 'Affected layers' },
+                { label: cs ? 'Veto okno' : 'Veto window', detail: '72h' },
+                { label: cs ? 'Provedení' : 'Execute', detail: cs ? 'Po souhlasu' : 'After consent' },
+              ].map((step) => (
+                <div key={step.label} className="rounded-lg border border-white/10 bg-white/5 p-2.5 text-center">
+                  <p className="font-semibold text-cyan-300 text-xs">{step.label}</p>
+                  <p className="text-gray-500 mt-0.5">{step.detail}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </motion.section>
+
         {/* ── Tree of Life ── */}
         <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[32px] border border-white/10 bg-white/5 p-8">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-8">

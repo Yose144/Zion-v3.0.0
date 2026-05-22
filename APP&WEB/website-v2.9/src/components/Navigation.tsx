@@ -64,6 +64,8 @@ export default function Navigation() {
             { href: '/terranova/genesis', label: tr('nav', 'terra_garden_genesis', lang) },
           ],
         },
+        { href: '/l5-free-world', label: 'L5 Free World' },
+        { href: '/l6-issobella', label: 'L6 Issobella' },
         { href: '/bridge', label: tr('nav', 'bridge', lang) },
         { href: '/kompas', label: tr('nav', 'kompas', lang) },
         { href: '/api-reference', label: tr('nav', 'api', lang) },

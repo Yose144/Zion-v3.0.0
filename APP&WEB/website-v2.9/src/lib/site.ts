@@ -9,13 +9,24 @@ export const SITE_PUBLIC_LAUNCH_STATUS = 'Launch Countdown';
 export const SITE_LAUNCH_DATE = '2026-06-20T00:00:00Z';
 export const SITE_LAUNCH_DATE_DISPLAY = '20 June 2026';
 export const SITE_NETWORK_LABEL = `${SITE_ENVIRONMENT_LABEL} · ${SITE_RELEASE_LABEL}`;
+
+// ── Infrastructure (Core + Edge topology, 2026-05-21) ──────────────────────
+// Edge relay — Hetzner VPS, public-facing node + pool stratum
 export const SITE_PRIMARY_HOST = '77.42.71.94';
 export const SITE_PRIMARY_RPC_PORT = 8443;
 export const SITE_PRIMARY_RPC_URL = `${SITE_PRIMARY_HOST}:${SITE_PRIMARY_RPC_PORT}`;
 export const SITE_PRIMARY_POOL_API_URL = `http://${SITE_PRIMARY_HOST}:8080`;
 export const SITE_PRIMARY_DAO_API_URL = `http://${SITE_PRIMARY_HOST}:8081`;
-export const SITE_NETWORK_TOPOLOGY = '3-node test-mainnet rehearsal · Prague + USA + Singapore';
-export const SITE_POOL_PRIMARY = `${SITE_PRIMARY_HOST}:3333`;
+
+// Edge pool stratum port is 8444 (ShareRelay architecture)
+export const SITE_POOL_PRIMARY = `${SITE_PRIMARY_HOST}:8444`;
+
+// Tailscale VPN tunnel — Core (local PC) ↔ Edge (VPS)
+export const SITE_CORE_TAILSCALE_IP = '100.86.102.5';
+export const SITE_EDGE_TAILSCALE_IP = '100.66.162.125';
+
+// Network topology descriptor (USA / Singapore / Helsinki decommissioned 2026-05)
+export const SITE_NETWORK_TOPOLOGY = 'Core + Edge · Hetzner VPS (Edge relay) + local PC (Core via Tailscale VPN)';
 export const EKAM_GOLDEN_EGG_IMAGE = 'https://kajabi-storefronts-production.kajabi-cdn.com/kajabi-storefronts-production/file-uploads/themes/2147915250/settings_images/8802b3-c826-05c7-bcd2-12b608d18d1_ABOUT-ONENESS.webp';
 export const EKAM_BANNER_IMAGE = 'https://onenessoceania.org/wp-content/uploads/2024/04/Ekam-Banner.jpg';
 export const EKAM_FOUNDERS_BANNER_IMAGE = 'https://onenessoceania.org/wp-content/uploads/2024/03/Sri-Amma-Bhagavan-1920x600-1.jpg';

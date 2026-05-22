@@ -71,7 +71,7 @@ const requirements = [
 const ports = [
   { port: "8333", protocol: "TCP", purpose: "P2P peer-to-peer", required: true },
   { port: "8443", protocol: "TCP", purpose: "JSON-RPC API", required: false },
-  { port: "3333", protocol: "TCP", purpose: "Stratum mining", required: false },
+  { port: "8444", protocol: "TCP", purpose: "Stratum mining", required: false },
   { port: "8080", protocol: "TCP", purpose: "Pool API", required: false },
 ];
 
@@ -100,7 +100,7 @@ const cliCommands = [
   { cmd: "zion-node --version", desc: "Check installed version" },
   { cmd: "zion-node --config mainnet.toml", desc: "Start with config file" },
   { cmd: "zion-node --network mainnet --rpc-port 8443", desc: "Override RPC port" },
-  { cmd: "zion-node --peers 77.42.71.94:8333,5.78.194.94:8333,5.223.84.191:8333", desc: "Manual peer list (current mainnet seeds)" },
+  { cmd: "zion-node --peers 77.42.71.94:8333", desc: "Manual peer (Edge VPS seed)" },
   { cmd: "zion-node --log-level debug", desc: "Verbose logging" },
   { cmd: "zion-node --data-dir /custom/path", desc: "Custom data directory" },
 ];
@@ -302,7 +302,7 @@ block_time = 60       # seconds
 difficulty_adjustment = "per-block"
 
 [mining]
-stratum_port = 3333
+stratum_port = 8444
 reward_address = "YOUR_ZION_ADDRESS"
 
 [storage]
@@ -316,9 +316,7 @@ file = "zion.log"
 
 [peers]
 bootstrap = [
-  "77.42.71.94:8333",
-  "5.78.194.94:8333",
-  "5.223.84.191:8333"
+  "77.42.71.94:8333"
 ]`}
             />
           </div>
@@ -485,7 +483,7 @@ curl -s http://localhost:8443 \\
               },
               {
                 q: "No peers connecting",
-                a: "Verify firewall allows TCP 8333. Try manual peers: `--peers 77.42.71.94:8333,5.78.194.94:8333`. Check DNS resolution.",
+                a: "Verify firewall allows TCP 8333. Try manual peer: `--peers 77.42.71.94:8333` (Edge VPS seed). Check DNS resolution.",
               },
               {
                 q: "Sync stuck / slow",
