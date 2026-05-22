@@ -9,10 +9,10 @@ $DataDir = "C:\Users\yosef\Desktop\Zion\2.9.6-main\V3\data"
 New-Item -ItemType Directory -Path $DataDir -Force | Out-Null
 [Environment]::SetEnvironmentVariable('ZION_NODE_STATE_PATH', "$DataDir\zion-node2-state.db", 'Process')
 [Environment]::SetEnvironmentVariable('ZION_SEED_PEERS', '127.0.0.1:8333', 'Process')
-[Environment]::SetEnvironmentVariable('ZION_MINER_ADDRESS', 'zion1e2z646u403s6c7k8m6m8m4q0a6r2a5h5j8534d8', 'Process')
-[Environment]::SetEnvironmentVariable('ZION_HUMANITARIAN_WALLET', 'zion1t4w447d7k4c600h3x893m5r55645w4p057yf4d7', 'Process')
-[Environment]::SetEnvironmentVariable('ZION_ISSOBELLA_WALLET', 'zion1e4t5a390m2r427a8f3s39885v4f2v6n8u3mj3f5', 'Process')
-[Environment]::SetEnvironmentVariable('ZION_POOL_FEE_WALLET', 'zion1f3d840y886x6r658j3t0f583j347l2e2h84z402', 'Process')
+[Environment]::SetEnvironmentVariable('ZION_MINER_ADDRESS', 'zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3', 'Process')
+[Environment]::SetEnvironmentVariable('ZION_HUMANITARIAN_WALLET', 'zion1m4v5z8z850u480c5c208z274e334369275n5y20', 'Process')
+[Environment]::SetEnvironmentVariable('ZION_ISSOBELLA_WALLET', 'zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702', 'Process')
+[Environment]::SetEnvironmentVariable('ZION_POOL_FEE_WALLET', 'zion1p2a7a5q0t2z5z545y6m6j5e864n002v4z6w95w5', 'Process')
 
 # Clean old Temp files if they exist (migration from previous runs)
 Remove-Item -Path 'C:\Users\yosef\AppData\Local\Temp\peers.json' -ErrorAction SilentlyContinue
