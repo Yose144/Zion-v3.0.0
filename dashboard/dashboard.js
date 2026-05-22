@@ -1193,7 +1193,9 @@ function toggleAuto(){
 // Init
 // ─────────────────────────────────────────────────────────────────────
 
+console.log('[ZION Dashboard] Initializing v2 — tabs:', TABS.length);
 applyFriendlyMode();
 switchTab('overview');
 refreshAll();
 refreshTimer = setInterval(refreshAll, 3000);
+console.log('[ZION Dashboard] Auto-refresh started');

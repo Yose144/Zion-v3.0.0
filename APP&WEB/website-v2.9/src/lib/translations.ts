@@ -53,8 +53,8 @@ const t = {
     tagline:        { cs: 'Nativní Rust blockchain s Proof-of-Work konsensem', en: 'Native Rust blockchain with Proof-of-Work consensus' },
     title_sub:      { cs: 'Mainnet launch countdown · Core + Edge · canonical runtime v2.9.8 Ekam Deeksha', en: 'Mainnet launch countdown · Core + Edge · canonical runtime v2.9.8 Ekam Deeksha' },
     description:    {
-      cs: 'ZION TerraNova se připravuje na veřejný mainnet launch 20. června 2026. Aktuálně běží řízený V3 mainnet v Core + Edge topologii (Core PC + Hetzner Edge VPS), s veřejným poolem, mining binárkami a provozní telemetrií.',
-      en: 'ZION TerraNova is preparing for public mainnet launch on 20 June 2026. Currently running a controlled V3 mainnet in Core + Edge topology (Core PC + Hetzner Edge VPS), with public pool, mining binaries, and operational telemetry.',
+      cs: 'ZION TerraNova se připravuje na veřejný mainnet launch 31. prosince 2026. Aktuálně běží řízený V3 mainnet v Core + Edge topologii (Core PC + Hetzner Edge VPS), s veřejným poolem, mining binárkami a provozní telemetrií.',
+      en: 'ZION TerraNova is preparing for public mainnet launch on 31 December 2026. Currently running a controlled V3 mainnet in Core + Edge topology (Core PC + Hetzner Edge VPS), with public pool, mining binaries, and operational telemetry.',
     },
     btn_start:      { cs: 'Začít těžit', en: 'Start Mining' },
     btn_docs:       { cs: 'Dokumentace', en: 'Docs' },
@@ -63,10 +63,10 @@ const t = {
     signal_nodes:   { cs: 'Validátor síť', en: 'Validator Grid' },
     signal_mainnet: { cs: 'Mainnet Launch', en: 'Mainnet Launch' },
     signal_loc:     { cs: 'Core PC + Edge VPS · ShareRelay', en: 'Core PC + Edge VPS · ShareRelay' },
-    signal_target:  { cs: 'T-29 · 20. června 2026', en: 'T-29 · 20 June 2026' },
+    signal_target:  { cs: '31. prosince 2026', en: '31 December 2026' },
     signal_status_l1: { cs: 'Pure Code active · runtime 2.9.8', en: 'Pure Code active · runtime 2.9.8' },
     signal_status_nodes: { cs: 'Core + Edge online', en: 'Core + Edge online' },
-    signal_status_mainnet: { cs: 'Launch countdown · T-29 dní', en: 'Launch countdown · T-29 days' },
+    signal_status_mainnet: { cs: 'Mainnet Launch · 31. prosince 2026', en: 'Mainnet Launch · 31 December 2026' },
     metric_loc:     { cs: 'Řádků kódu (Rust)', en: 'Rust LOC' },
     metric_nodes:   { cs: 'Nódy Online', en: 'Nodes Online' },
     metric_tests:   { cs: 'Testy úspěšně', en: 'Tests Passing' },
@@ -100,8 +100,8 @@ const t = {
   },
 
   countdown: {
-    title: { cs: 'T-29 dní do Mainnet Launch', en: 'T-29 Days to Mainnet Launch' },
-    target_date: { cs: 'Cíl: 20. června 2026', en: 'Target: June 20, 2026' },
+    title: { cs: 'Mainnet Launch — 31. prosince 2026', en: 'Mainnet Launch — 31 December 2026' },
+    target_date: { cs: 'Cíl: 31. prosince 2026', en: 'Target: December 31, 2026' },
     subtitle: {
       cs: 'Core + Edge mainnet běží. Veřejný mainnet launch se aktivuje při dosažení nuly.',
       en: 'Core + Edge mainnet running. Public mainnet launch activates at zero.',
