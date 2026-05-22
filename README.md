@@ -4,9 +4,10 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-> **Status (May 2026):** V3 mainnet live on Prague node (height 26,910+). L2 wZION bridge to Base operational (lock→relay→mint + burn→unlock). DeFi/Explorer stack fully deployed — see [DEFI_ROADMAP.md](DEFI_ROADMAP.md).  
-> Active development: [V3/](V3/) - clean-room mainnet code. Legacy root tree is reference/archive only.  
+> **Status (May 2026):** V3 mainnet READY FOR LAUNCH (20.6.2026). Genesis + fee split konfigurace dokončena. Core+Edge topologie aktivní a synchronizovaná. L2 wZION bridge to Base operational. DeFi/Explorer stack ready — see [DEFI_ROADMAP.md](DEFI_ROADMAP.md).
+> Active development: [V3/](V3/) - clean-room mainnet code. Legacy root tree is reference/archive only.
 > **Lost?** See the complete repository map: [`ROOT_INDEX.md`](ROOT_INDEX.md)
+> **Mainnet Launch:** [MAINNET_LAUNCH_SEQUENCE.md](MAINNET_LAUNCH_SEQUENCE.md) | **Status:** [StatusV3.md](StatusV3.md)
 
 ---
 
