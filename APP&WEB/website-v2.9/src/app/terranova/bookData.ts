@@ -3,9 +3,9 @@
   Source synthesis: docs/TerraNova/ORG + public + cloude
   ═══════════════════════════════════════════════════════════════ */
 
-import chDPublic from './public/chapters/chD-bhagavad-gita';
-import chEPublic from './public/chapters/chE-zlata-stredni-cesta';
-import chFPublic from './public/chapters/chF-zaver-jedno-srdce';
+import chDPublic from './chapters/chD-bhagavad-gita';
+import chEPublic from './chapters/chE-zlata-stredni-cesta';
+import chFPublic from './chapters/chF-zaver-jedno-srdce';
 
 export interface BookChapter {
   id: string;
