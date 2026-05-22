@@ -1,4 +1,4 @@
-// ZION Native Awakening v2.9.6 - Renderer Process
+// ZION V3 Mainnet Ready v2.9.9 - Renderer Process
 // UI logic and state management
 
 // ── Logging: only user-visible events + errors in console.log.
@@ -1476,7 +1476,7 @@ function setupEventListeners() {
     addLogEntry('Mining started successfully', 'info');
     // Mining Console banner
     appendMiningConsole('─'.repeat(60));
-    appendMiningConsole(' * ZION Native Awakening v2.9.6 — Mining started');
+    appendMiningConsole(' * ZION V3 Mainnet Ready v2.9.9 — Mining started');
     appendMiningConsole('─'.repeat(60));
   });
   

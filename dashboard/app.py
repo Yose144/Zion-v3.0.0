@@ -28,7 +28,7 @@ if not LOG_DIR.exists():
     LOG_DIR = Path("../logs")
 
 HOST = "127.0.0.1"
-PORT = 8765
+PORT = 8766
 
 # ── Metrics history (in-memory ring buffer) ─────────────────────────────
 
