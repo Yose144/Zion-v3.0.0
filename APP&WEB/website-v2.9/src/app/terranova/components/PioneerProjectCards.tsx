@@ -15,6 +15,18 @@ import {
   Droplets,
   Mountain,
   Network,
+  Globe,
+  Heart,
+  Shield,
+  Flame,
+  Sparkles,
+  Star,
+  Compass,
+  Wind,
+  Snowflake,
+  Satellite,
+  Terminal,
+  Users,
   LucideIcon,
 } from 'lucide-react';
 
@@ -40,7 +52,7 @@ type ProjectCardData = {
   statusEn: string;
   descriptionCs: string;
   descriptionEn: string;
-  accent: 'emerald' | 'violet';
+  accent: 'emerald' | 'violet' | 'amber' | 'sky' | 'rose' | 'indigo';
   features: CardFeature[];
   metrics: CardMetric[];
 };
@@ -72,9 +84,8 @@ const PROJECTS: ProjectCardData[] = [
   },
   {
     href: '/terranova/dharma-temple',
-    isSecret: true,
     title: 'Dharma Temple',
-    location: 'Evropa',
+    location: 'La Palma · Kanárské ostrovy',
     eyebrow: 'L5 · Sanctuary',
     statusCs: 'V přípravě',
     statusEn: 'In preparation',
@@ -93,6 +104,30 @@ const PROJECTS: ProjectCardData[] = [
       { value: 'UNESCO', labelCs: 'Bioreservace', labelEn: 'Biosphere' },
       { value: 'L5', labelCs: 'Vrstva', labelEn: 'Layer' },
       { value: 'ES', labelCs: 'Region', labelEn: 'Region' },
+    ],
+  },
+  {
+    href: '/terranova/te-piko-ora',
+    title: 'Te Pīko Ora',
+    location: 'Tahiti · Francouzská Polynésie',
+    eyebrow: 'L5 · Paradise Node',
+    statusCs: 'Plánováno',
+    statusEn: 'Planned',
+    descriptionCs:
+      'Tichomořský uzel Terra Nova — ochrana mořského i pozemského dědictví, regenerativní komunita a kulturní most mezi Polynésií a ZION.',
+    descriptionEn:
+      'Pacific Terra Nova node — protection of marine and land heritage, regenerative community, and cultural bridge between Polynesia and ZION.',
+    accent: 'amber',
+    features: [
+      { icon: Globe, labelCs: 'Kulturní obnova', labelEn: 'Cultural revival' },
+      { icon: Heart, labelCs: 'Komunitní fond', labelEn: 'Community fund' },
+      { icon: Shield, labelCs: 'Ochrana dědictví', labelEn: 'Heritage protection' },
+      { icon: Waves, labelCs: 'Oceán & útesy', labelEn: 'Ocean & reefs' },
+    ],
+    metrics: [
+      { value: 'Tahiti', labelCs: 'Lokalita', labelEn: 'Location' },
+      { value: 'L5', labelCs: 'Vrstva', labelEn: 'Layer' },
+      { value: 'PF', labelCs: 'Region', labelEn: 'Region' },
     ],
   },
 ];
@@ -115,6 +150,74 @@ function accentClasses(accent: ProjectCardData['accent']) {
     };
   }
 
+  if (accent === 'amber') {
+    return {
+      border: 'border-amber-400/20 hover:border-amber-300/35',
+      glowA: 'from-amber-500/18 via-orange-400/8 to-transparent',
+      glowB: 'bg-amber-400/20',
+      glowC: 'bg-orange-400/15',
+      badge: 'border-amber-400/25 bg-amber-400/10 text-amber-300',
+      eye: 'text-amber-400/80',
+      title: 'text-amber-200',
+      location: 'text-amber-300',
+      chip: 'border-amber-400/20 bg-amber-400/8 text-amber-200',
+      metric: 'border-amber-400/15 bg-amber-400/6 text-amber-300',
+      cta: 'border-amber-400/25 bg-amber-400/10 text-amber-200 hover:bg-amber-400/16',
+      icon: 'text-amber-300',
+    };
+  }
+
+  if (accent === 'sky') {
+    return {
+      border: 'border-sky-400/20 hover:border-sky-300/35',
+      glowA: 'from-sky-500/18 via-cyan-400/8 to-transparent',
+      glowB: 'bg-sky-400/20',
+      glowC: 'bg-cyan-400/15',
+      badge: 'border-sky-400/25 bg-sky-400/10 text-sky-300',
+      eye: 'text-sky-400/80',
+      title: 'text-sky-200',
+      location: 'text-sky-300',
+      chip: 'border-sky-400/20 bg-sky-400/8 text-sky-200',
+      metric: 'border-sky-400/15 bg-sky-400/6 text-sky-300',
+      cta: 'border-sky-400/25 bg-sky-400/10 text-sky-200 hover:bg-sky-400/16',
+      icon: 'text-sky-300',
+    };
+  }
+
+  if (accent === 'rose') {
+    return {
+      border: 'border-rose-400/20 hover:border-rose-300/35',
+      glowA: 'from-rose-500/18 via-pink-400/8 to-transparent',
+      glowB: 'bg-rose-400/20',
+      glowC: 'bg-pink-400/15',
+      badge: 'border-rose-400/25 bg-rose-400/10 text-rose-300',
+      eye: 'text-rose-400/80',
+      title: 'text-rose-200',
+      location: 'text-rose-300',
+      chip: 'border-rose-400/20 bg-rose-400/8 text-rose-200',
+      metric: 'border-rose-400/15 bg-rose-400/6 text-rose-300',
+      cta: 'border-rose-400/25 bg-rose-400/10 text-rose-200 hover:bg-rose-400/16',
+      icon: 'text-rose-300',
+    };
+  }
+
+  if (accent === 'indigo') {
+    return {
+      border: 'border-indigo-400/20 hover:border-indigo-300/35',
+      glowA: 'from-indigo-500/18 via-blue-400/8 to-transparent',
+      glowB: 'bg-indigo-400/20',
+      glowC: 'bg-blue-400/15',
+      badge: 'border-indigo-400/25 bg-indigo-400/10 text-indigo-300',
+      eye: 'text-indigo-400/80',
+      title: 'text-indigo-200',
+      location: 'text-indigo-300',
+      chip: 'border-indigo-400/20 bg-indigo-400/8 text-indigo-200',
+      metric: 'border-indigo-400/15 bg-indigo-400/6 text-indigo-300',
+      cta: 'border-indigo-400/25 bg-indigo-400/10 text-indigo-200 hover:bg-indigo-400/16',
+      icon: 'text-indigo-300',
+    };
+  }
+
   return {
     border: 'border-violet-400/20 hover:border-violet-300/35',
     glowA: 'from-violet-500/18 via-fuchsia-400/8 to-transparent',
@@ -133,7 +236,7 @@ function accentClasses(accent: ProjectCardData['accent']) {
 
 export default function PioneerProjectCards({ cs }: { cs: boolean }) {
   return (
-    <div className="grid gap-4 md:grid-cols-2">
+    <div className="grid gap-4 md:grid-cols-3">
       {PROJECTS.map((project) => {
         const accent = accentClasses(project.accent);
         const cardClassName = `group relative overflow-hidden rounded-[28px] border bg-black/35 p-5 transition-all duration-500 ${accent.border}${project.isSecret ? ' cursor-default saturate-75' : ''}`;
