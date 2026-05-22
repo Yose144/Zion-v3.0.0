@@ -5,7 +5,7 @@ import { fileURLToPath } from "url";
 const rootDir = dirname(fileURLToPath(import.meta.url));
 
 const nextConfig: NextConfig = {
-  output: "standalone",
+  // output: "standalone", // Disabled for local build on Windows (Next.js 16 bug with client-only)
   images: {
     unoptimized: true,
   },
