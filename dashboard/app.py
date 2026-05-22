@@ -391,16 +391,19 @@ def tail_log(filename: str, n: int = 100) -> list[str]:
     if not path.exists():
         return []
     with open(path, "r", encoding="utf-8", errors="ignore") as f:
-        lines = f.readlines()
-    return [ln.rstrip("\n") for ln in lines[-n:]]
+        return [ln.rstrip("\n") for ln in deque(f, maxlen=n)]
 
 def head_log(filename: str, n: int = 50) -> list[str]:
     path = LOG_DIR / filename
     if not path.exists():
         return []
     with open(path, "r", encoding="utf-8", errors="ignore") as f:
-        lines = f.readlines()
-    return [ln.rstrip("\n") for ln in lines[:n]]
+        lines = []
+        for i, line in enumerate(f):
+            if i >= n:
+                break
+            lines.append(line.rstrip("\n"))
+        return lines
 
 def parse_node_log(name: str) -> dict:
     recent = tail_log(f"{name}.log", 200)

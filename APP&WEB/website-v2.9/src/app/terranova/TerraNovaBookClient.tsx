@@ -127,13 +127,13 @@ const EDITION_INTRO: Record<EditionKey, EditionIntro> = {
 };
 
 const EDITION_CHAPTERS: Record<EditionKey, BookChapter[]> = {
-  unified: CHAPTERS,
+  final: CHAPTERS,
 };
 
 const EDITION_COMPOSITION_LINES: Record<EditionKey, { cs: string[]; en: string[] }> = {
   final: {
-    cs: EDITION_CHAPTERS.unified.map((chapter) => formatChapterLabel(chapter, true)),
-    en: EDITION_CHAPTERS.unified.map((chapter) => formatChapterLabel(chapter, false)),
+    cs: EDITION_CHAPTERS.final.map((chapter) => formatChapterLabel(chapter, true)),
+    en: EDITION_CHAPTERS.final.map((chapter) => formatChapterLabel(chapter, false)),
   },
 };
 
@@ -771,7 +771,7 @@ export default function TerraNovaBookClient() {
   const { lang, setLang } = useLang();
   const cs = lang === 'cs';
 
-  const [activeEdition, setActiveEdition] = useState<EditionKey>('unified');
+  const [activeEdition, setActiveEdition] = useState<EditionKey>('final');
   const currentChapters = EDITION_CHAPTERS[activeEdition];
   const currentEdition = EDITION_OPTIONS.find((option) => option.id === activeEdition) ?? EDITION_OPTIONS[0];
   const meta = EDITION_META[activeEdition];
