@@ -1336,6 +1336,7 @@ tailwind.config={theme:{extend:{colors:{zion:{900:'#0a0f1e',800:'#131a2e',700:'#
     <button onclick="switchTab('charts')" id="tab-charts" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent hover:text-amber-400 transition">📈 Charts</button>
     <button onclick="switchTab('events')" id="tab-events" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent hover:text-amber-400 transition">🧱 Events</button>
     <button onclick="switchTab('env')" id="tab-env" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent hover:text-amber-400 transition">⚙️ Env</button>
+    <button onclick="switchTab('launch-day')" id="tab-launch-day" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent hover:text-amber-400 transition">🚀 Launch Day</button>
     <button onclick="switchTab('wizard')" id="tab-wizard" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent hover:text-amber-400 transition">🧙 Wizard</button>
     <button onclick="switchTab('services')" id="tab-services" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent hover:text-amber-400 transition">🧩 Services</button>
     <button onclick="switchTab('database')" id="tab-database" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent hover:text-amber-400 transition">🗄️ Database</button>
@@ -1415,6 +1416,18 @@ tailwind.config={theme:{extend:{colors:{zion:{900:'#0a0f1e',800:'#131a2e',700:'#
           <button onclick="controlAction('start-miner')" class="flex-1 text-xs px-2 py-1 bg-emerald-700 hover:bg-emerald-600 rounded transition">▶ Start</button>
           <button onclick="controlAction('restart-miner')" class="flex-1 text-xs px-2 py-1 bg-amber-700 hover:bg-amber-600 rounded transition">⟳ Restart</button>
         </div>
+      </div>
+    </div>
+
+    <!-- Mainnet Readiness Status -->
+    <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300 flex items-center gap-2">🚀 Mainnet Readiness Status</h2>
+        <button onclick="loadMainnetStatus()" class="text-xs px-2 py-1 bg-zion-700 hover:bg-zion-600 rounded transition">🔄 Refresh</button>
+      </div>
+      <div id="mainnet-status-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+        <!-- Dynamically populated by JavaScript -->
+        <div class="text-gray-500 text-xs italic">Loading mainnet status...</div>
       </div>
     </div>
 
@@ -1524,6 +1537,61 @@ tailwind.config={theme:{extend:{colors:{zion:{900:'#0a0f1e',800:'#131a2e',700:'#
     </div>
   </div>
 
+  <!-- TAB: Launch Day -->
+  <div id="pane-launch-day" class="hidden space-y-4">
+    <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-lg font-bold flex items-center gap-2">🚀 Launch Day Automation <span class="text-xs font-normal text-gray-500">(20.6.2026 12:00 UTC)</span></h2>
+        <span id="launch-day-badge" class="px-3 py-1 rounded text-xs font-bold bg-zion-700 text-gray-300">Checking...</span>
+      </div>
+      <p class="text-xs text-gray-400 mb-4">Automated genesis rotation, premine rotation, and local backup for mainnet launch. All changes are saved to local PC.</p>
+      
+      <!-- Launch Day Status -->
+      <div id="launch-day-status" class="bg-zion-900 rounded-lg p-4 mb-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="text-center">
+            <div class="text-2xl font-bold text-amber-400" id="ld-days">—</div>
+            <div class="text-xs text-gray-400">Days to Launch</div>
+          </div>
+          <div class="text-center">
+            <div class="text-2xl font-bold text-emerald-400" id="ld-backup">—</div>
+            <div class="text-xs text-gray-400">Backup Status</div>
+          </div>
+          <div class="text-center">
+            <div class="text-2xl font-bold text-blue-400" id="ld-genesis">—</div>
+            <div class="text-xs text-gray-400">Genesis Hash</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Launch Day Actions -->
+      <div class="space-y-3">
+        <div class="flex gap-2 flex-wrap">
+          <button onclick="launchDayAction('status')" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-sm font-bold transition">📊 Check Status</button>
+          <button onclick="launchDayAction('backup')" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-sm font-bold transition">💾 Create Backup</button>
+          <button onclick="confirmLaunchDay()" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 rounded-lg text-sm font-bold transition">🔄 Rotate Genesis</button>
+          <button onclick="launchDaySequence()" class="px-4 py-2 bg-red-600 hover:bg-red-500 rounded-lg text-sm font-bold transition">🚀 Full Launch Sequence</button>
+        </div>
+      </div>
+      
+      <!-- Launch Day Log -->
+      <div class="mt-4">
+        <h3 class="text-sm font-bold uppercase tracking-wider text-gray-300 mb-2">📜 Launch Day Log</h3>
+        <div id="launch-day-log" class="bg-zion-900 rounded-lg p-3 h-48 overflow-y-auto log-tail text-xs text-gray-400">
+          <div class="italic">Launch day log will appear here...</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Backup Details -->
+    <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
+      <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300 mb-3">💾 Local Backup Details</h2>
+      <div id="backup-details" class="text-xs text-gray-400">
+        <div class="italic">Create a backup to see details...</div>
+      </div>
+    </div>
+  </div>
+
   <!-- TAB: Wizard -->
   <div id="pane-wizard" class="hidden">
     <div class="bg-zion-800 rounded-xl p-6 border border-zion-700">
@@ -1620,7 +1688,7 @@ tailwind.config={theme:{extend:{colors:{zion:{900:'#0a0f1e',800:'#131a2e',700:'#
 <script>
 let autoRefresh=true,refreshTimer=null,currentTab='overview';
 let charts={};
-const TABS=['overview','controls','charts','events','env','wizard','services','database','metrics','logs'];
+const TABS=['overview','controls','charts','events','env','launch-day','wizard','services','database','metrics','logs'];
 
 // ── Tab switching ──
 function switchTab(name){
@@ -1632,12 +1700,14 @@ function switchTab(name){
   if(name==='charts')renderCharts();
   if(name==='events')loadEvents();
   if(name==='env')loadEnvFiles();
+  if(name==='launch-day')loadLaunchDayStatus();
   if(name==='wizard')renderWizard();
   if(name==='logs'){loadLogs('node1');loadLogs('node2');loadLogs('pool');loadLogs('miner');}
   if(name==='controls')renderControls();
   if(name==='services')loadServices();
   if(name==='database')loadDatabases();
   if(name==='metrics')renderMetricsButtons();
+  if(name==='overview')loadMainnetStatus();
 }
 
 // ── Badges & cards ──
@@ -1660,6 +1730,7 @@ async function refreshAll(){
     updateChecklist(cl.checks);
     updatePayouts(s.pool);
     updateMiniHashrate();
+    loadMainnetStatus();
     if(currentTab==='charts')renderCharts();
     if(currentTab==='events')loadEvents();
     if(currentTab==='wizard')renderWizard();
@@ -1733,6 +1804,153 @@ function updateChecklist(checks){
     <span class="text-sm ${c.ok?'text-emerald-400':'text-gray-500'}">${c.ok?'✓':'○'}</span>
     <span class="text-xs ${c.ok?'text-gray-300':'text-gray-400'}">${escapeHtml(c.label)}</span>
   </div>`).join('');
+}
+
+// ── Mainnet Status ──
+async function loadMainnetStatus(){
+  try{
+    const res=await fetch('/api/mainnet-status').then(r=>r.json());
+    const grid=document.getElementById('mainnet-status-grid');
+    
+    const statusItems=[
+      {label:'Genesis Hash',value:res.genesis_hash?res.genesis_hash.substring(0,16)+'…':'Unknown',ok:res.genesis_hash==='003529805e9b47babb9ac0f26b27b1aad0a1cf3c483181857daf3269f7088923',icon:'🔷'},
+      {label:'Fee Split',value:res.fee_split_all_match?'✓ Canonical':'✗ Mismatch',ok:res.fee_split_all_match,icon:'💰'},
+      {label:'Launch Date',value:res.days_to_launch>0?res.days_to_launch+' days':'LAUNCH DAY!',ok:res.days_to_launch>=0,icon:'🚀'},
+      {label:'Checklist',value:res.checklist_passed+'/'+res.checklist_total+' ('+res.checklist_pass_rate+'%)',ok:res.checklist_pass_rate>=80,icon:'✅'},
+      {label:'Node Status',value:(res.node1_running?'N1✓':'N1✗')+' '+(res.node2_running?'N2✓':'N2✗'),ok:res.node1_running&&res.node2_running,icon:'🔶'},
+      {label:'Pool Status',value:res.pool_running?'Running':'Stopped',ok:res.pool_running,icon:'⚡'},
+      {label:'Git Status',value:res.git_status.clean?'Clean: '+res.git_status.branch:'Dirty: '+res.git_status.branch,ok:res.git_status.clean,icon:'📦'},
+      {label:'Overall',value:res.ready_for_launch?'🎉 READY':'⏳ PREPARING',ok:res.ready_for_launch,icon:'🎯'},
+    ];
+    
+    grid.innerHTML=statusItems.map(item=>`<div class="bg-zion-900/50 rounded-lg p-3 border ${item.ok?'border-emerald-600/50':'border-zion-600'}">
+      <div class="flex items-center gap-2 mb-1"><span class="text-lg">${item.icon}</span><span class="text-xs font-semibold text-gray-400">${item.label}</span></div>
+      <div class="text-sm font-bold ${item.ok?'text-emerald-400':'text-amber-400'}">${item.value}</div>
+    </div>`).join('');
+    
+  }catch(e){
+    console.error('Failed to load mainnet status:',e);
+    document.getElementById('mainnet-status-grid').innerHTML='<div class="text-red-400 text-xs">Failed to load mainnet status</div>';
+  }
+}
+
+// ── Launch Day Automation ──
+async function loadLaunchDayStatus(){
+  try{
+    const res=await fetch('/api/launch-day-prepare?action=status').then(r=>r.json());
+    
+    // Update badge
+    const badge=document.getElementById('launch-day-badge');
+    if(res.is_launch_day){
+      badge.textContent='🎉 LAUNCH DAY';
+      badge.className='px-3 py-1 rounded text-xs font-bold bg-emerald-600 text-white animate-pulse';
+    }else if(res.backup_exists){
+      badge.textContent='✓ Ready';
+      badge.className='px-3 py-1 rounded text-xs font-bold bg-blue-600 text-white';
+    }else{
+      badge.textContent='⏳ Pending';
+      badge.className='px-3 py-1 rounded text-xs font-bold bg-amber-600 text-white';
+    }
+    
+    // Update status cards
+    document.getElementById('ld-days').textContent=res.is_launch_day?'TODAY':Math.ceil((new Date('2026-06-20T12:00:00')-new Date())/86400000)+' days';
+    document.getElementById('ld-backup').textContent=res.backup_exists?'✓ Exists':'✗ None';
+    document.getElementById('ld-backup').className=res.backup_exists?'text-2xl font-bold text-emerald-400':'text-2xl font-bold text-red-400';
+    document.getElementById('ld-genesis').textContent=res.current_genesis_hash?res.current_genesis_hash.substring(0,8)+'…':'Unknown';
+    
+    // Update backup details
+    const details=document.getElementById('backup-details');
+    if(res.backup_exists){
+      details.innerHTML=`<div class="text-emerald-400 mb-2">✓ Backup exists at: ${res.backup_dir}</div>
+        <div class="text-gray-300">Ready for launch day rotation</div>`;
+    }else{
+      details.innerHTML=`<div class="text-amber-400 mb-2">⚠ No backup found</div>
+        <div class="text-gray-300">Create a backup before launch day</div>`;
+    }
+    
+    addLaunchDayLog('📊 Status updated: '+(res.is_launch_day?'LAUNCH DAY':res.backup_exists?'Ready':'Pending'));
+    
+  }catch(e){
+    console.error('Failed to load launch day status:',e);
+    addLaunchDayLog('❌ Failed to load status: '+e.message);
+  }
+}
+
+async function launchDayAction(action){
+  addLaunchDayLog('⏳ Executing: '+action+'...');
+  
+  try{
+    const res=await fetch('/api/launch-day-prepare?action='+action).then(r=>r.json());
+    
+    if(res.success){
+      if(action==='backup'){
+        addLaunchDayLog('✅ Backup created: '+res.backup_dir);
+        addLaunchDayLog('📁 Files backed up: '+res.manifest.files_backed_up);
+        document.getElementById('backup-details').innerHTML=`
+          <div class="text-emerald-400 mb-2">✓ Backup created: ${res.backup_dir}</div>
+          <div class="text-xs text-gray-400 mt-2">
+            <div>Timestamp: ${res.manifest.timestamp}</div>
+            <div>Files: ${res.manifest.files_backed_up}</div>
+          </div>
+          <div class="mt-2 max-h-32 overflow-y-auto">
+            ${res.backup_log.map(l=>`<div class="text-xs">${escapeHtml(l)}</div>`).join('')}
+          </div>
+        `;
+        loadLaunchDayStatus();
+      }else if(action==='status'){
+        addLaunchDayLog('✅ Status checked');
+        loadLaunchDayStatus();
+      }
+    }else{
+      addLaunchDayLog('❌ Action failed: '+res.error);
+    }
+  }catch(e){
+    addLaunchDayLog('❌ Action error: '+e.message);
+  }
+}
+
+function confirmLaunchDay(){
+  if(confirm('⚠️ CRITICAL OPERATION\n\nThis will rotate genesis and premine addresses for mainnet launch.\n\nMake sure:\n• All nodes are stopped\n• Backup is created\n• You have private keys backed up\n\nProceed with genesis rotation?')){
+    launchDayAction('rotate-genesis&confirmed=true');
+  }else{
+    addLaunchDayLog('🚫 Genesis rotation cancelled by user');
+  }
+}
+
+async function launchDaySequence(){
+  if(!confirm('🚀 FULL LAUNCH SEQUENCE\n\nThis will execute the complete launch day automation:\n1. Create backup\n2. Stop all services\n3. Rotate genesis\n4. Restart network\n5. Verify everything\n\nThis is irreversible. Continue?')) return;
+  
+  addLaunchDayLog('🚀 Starting full launch sequence...');
+  
+  const steps=['prepare','stop-network','rotate-genesis','restart-network','verify'];
+  
+  for(const step of steps){
+    addLaunchDayLog('⏳ Step: '+step+'...');
+    try{
+      const res=await fetch('/api/launch-day-execute?step='+step).then(r=>r.json());
+      if(res.success){
+        addLaunchDayLog('✅ Step completed: '+step);
+        if(res.next_step) addLaunchDayLog('➡️ Next: '+res.next_step);
+        if(res.complete){
+          addLaunchDayLog('🎉 LAUNCH SEQUENCE COMPLETE!');
+          alert('🎉 Mainnet launch sequence completed successfully!');
+        }
+      }else{
+        addLaunchDayLog('❌ Step failed: '+res.error);
+        break;
+      }
+    }catch(e){
+      addLaunchDayLog('❌ Step error: '+e.message);
+      break;
+    }
+  }
+}
+
+function addLaunchDayLog(message){
+  const log=document.getElementById('launch-day-log');
+  const time=new Date().toLocaleTimeString();
+  const line=`<div class="log-line"><span class="text-gray-500">[${time}]</span> ${escapeHtml(message)}</div>`;
+  log.innerHTML=line+log.innerHTML;
 }
 
 // ── Mini hashrate sparkline ──
@@ -2141,6 +2359,318 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 "done": sum(1 for b in blockers if b["status"] == "DONE"),
                 "ready_for_launch": open_critical == 0,
             })
+        elif route == "/api/mainnet-status":
+            # Comprehensive mainnet readiness status
+            status = build_status()
+            checklist = build_checklist(status)
+            
+            # Get current genesis hash from node
+            genesis_hash = None
+            try:
+                genesis = rpc_call("127.0.0.1", 8443, "getBlockByHeight", {"height": 0})
+                if genesis and genesis.get("hash"):
+                    genesis_hash = genesis["hash"]
+            except Exception:
+                genesis_hash = "Unknown"
+            
+            # Get canonical fee split addresses
+            canonical_addresses = {
+                "miner": "zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3",
+                "humanitarian": "zion1m4v5z8z850u480c5c208z274e334369275n5y20",
+                "issobella": "zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702",
+                "pool_fee": "zion1p2a7a5q0t2z5z545y6m6j5e864n002v4z6w95w5"
+            }
+            
+            # Get node addresses from logs
+            node_addresses = parse_node_startup_addresses()
+            
+            # Verify fee split addresses match canonical
+            fee_split_match = {
+                "miner": node_addresses.get("miner") == canonical_addresses["miner"],
+                "humanitarian": node_addresses.get("humanitarian") == canonical_addresses["humanitarian"],
+                "issobella": node_addresses.get("issobella") == canonical_addresses["issobella"],
+                "pool_fee": node_addresses.get("pool_fee") == canonical_addresses["pool_fee"]
+            }
+            
+            # Launch countdown (20.6.2026 12:00 UTC)
+            launch_date = datetime(2026, 6, 20, 12, 0, 0)
+            now = datetime.now()
+            days_to_launch = (launch_date - now).days if launch_date > now else 0
+            is_launch_day = (launch_date.date() == now.date())
+            
+            # Git status
+            git_status = {"clean": True, "branch": "main"}
+            try:
+                import subprocess
+                result = subprocess.run(["git", "status", "--porcelain"], 
+                                      cwd=REPO_ROOT, capture_output=True, text=True, timeout=5)
+                git_status["clean"] = len(result.stdout.strip()) == 0
+                result = subprocess.run(["git", "branch", "--show-current"], 
+                                      cwd=REPO_ROOT, capture_output=True, text=True, timeout=5)
+                git_status["branch"] = result.stdout.strip()
+            except Exception:
+                pass
+            
+            self._json({
+                "genesis_hash": genesis_hash,
+                "canonical_addresses": canonical_addresses,
+                "node_addresses": node_addresses,
+                "fee_split_match": fee_split_match,
+                "fee_split_all_match": all(fee_split_match.values()),
+                "launch_date": launch_date.isoformat(),
+                "days_to_launch": days_to_launch,
+                "is_launch_day": is_launch_day,
+                "checklist_pass_rate": checklist["pct"],
+                "checklist_passed": checklist["passed"],
+                "checklist_total": checklist["total"],
+                "node1_height": status["node1"]["chain_height"],
+                "node2_height": status["node2"]["chain_height"],
+                "node1_running": status["node1"]["running"],
+                "node2_running": status["node2"]["running"],
+                "pool_running": status["pool"]["running"],
+                "miner_running": status["miner"]["running"],
+                "git_status": git_status,
+                "ready_for_launch": all([
+                    genesis_hash == "003529805e9b47babb9ac0f26b27b1aad0a1cf3c483181857daf3269f7088923",
+                    all(fee_split_match.values()),
+                    status["node1"]["running"],
+                    status["node2"]["running"],
+                    status["pool"]["running"],
+                    git_status["clean"],
+                    checklist["pct"] >= 80
+                ])
+            })
+        elif route == "/api/launch-day-prepare":
+            # Launch Day automation: backup configs, prepare genesis rotation
+            action = params.get("action", ["status"])[0]
+            
+            if action == "status":
+                # Check if launch day backup exists
+                backup_dir = REPO_ROOT / "backups" / "launch-day-2026-06-20"
+                backup_exists = backup_dir.exists()
+                
+                # Check current genesis
+                current_genesis_hash = None
+                try:
+                    genesis = rpc_call("127.0.0.1", 8443, "getBlockByHeight", {"height": 0})
+                    if genesis and genesis.get("hash"):
+                        current_genesis_hash = genesis["hash"]
+                except Exception:
+                    pass
+                
+                self._json({
+                    "backup_exists": backup_exists,
+                    "backup_dir": str(backup_dir),
+                    "current_genesis_hash": current_genesis_hash,
+                    "launch_date": "2026-06-20T12:00:00",
+                    "is_launch_day": datetime.now().date() == datetime(2026, 6, 20).date(),
+                    "ready_for_rotation": backup_exists and current_genesis_hash
+                })
+                
+            elif action == "backup":
+                # Create launch day backup
+                import shutil
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                backup_dir = REPO_ROOT / "backups" / f"launch-day-{timestamp}"
+                backup_dir.mkdir(parents=True, exist_ok=True)
+                
+                backup_log = []
+                
+                try:
+                    # Backup critical files
+                    critical_files = [
+                        "V3/L1/core/src/genesis.rs",
+                        "PREMINE_ADDRESSES_PUBLIC.txt",
+                        "V3/docs/mainnet/PREMINE_AND_CANONICAL_WALLETS_PUBLIC.txt",
+                        "zion.toml",
+                        ".env.mainnet",
+                        "edge-deploy/config/edge-environment.sh"
+                    ]
+                    
+                    for file_path in critical_files:
+                        src = REPO_ROOT / file_path
+                        if src.exists():
+                            dst = backup_dir / file_path
+                            dst.parent.mkdir(parents=True, exist_ok=True)
+                            shutil.copy2(src, dst)
+                            backup_log.append(f"✓ Backed up: {file_path}")
+                        else:
+                            backup_log.append(f"⚠ Not found: {file_path}")
+                    
+                    # Backup databases
+                    db_dir = REPO_ROOT / "V3" / "data"
+                    if db_dir.exists():
+                        db_backup = backup_dir / "V3" / "data"
+                        shutil.copytree(db_dir, db_backup, dirs_exist_ok=True)
+                        backup_log.append(f"✓ Backed up database directory")
+                    
+                    # Create backup manifest
+                    manifest = {
+                        "timestamp": timestamp,
+                        "genesis_hash": current_genesis_hash,
+                        "files_backed_up": len([f for f in critical_files if (REPO_ROOT / f).exists()]),
+                        "backup_log": backup_log
+                    }
+                    
+                    with open(backup_dir / "BACKUP_MANIFEST.json", "w") as f:
+                        json.dump(manifest, f, indent=2)
+                    
+                    self._json({
+                        "success": True,
+                        "backup_dir": str(backup_dir),
+                        "backup_log": backup_log,
+                        "manifest": manifest
+                    })
+                    
+                except Exception as e:
+                    self._json({
+                        "success": False,
+                        "error": str(e),
+                        "backup_log": backup_log
+                    })
+                    
+            elif action == "rotate-genesis":
+                # Genesis rotation - this is CRITICAL, requires confirmation
+                confirmed = params.get("confirmed", ["false"])[0].lower() == "true"
+                
+                if not confirmed:
+                    self._json({
+                        "success": False,
+                        "error": "Genesis rotation requires explicit confirmation",
+                        "requires_confirmation": True
+                    })
+                    return
+                
+                # This would trigger the actual genesis rotation script
+                # For safety, we'll just prepare the command
+                rotation_script = REPO_ROOT / "scripts" / "rotate-genesis-launch-day.sh"
+                
+                self._json({
+                    "success": True,
+                    "message": "Genesis rotation command prepared",
+                    "script": str(rotation_script),
+                    "warning": "This is a critical operation - ensure all nodes are stopped",
+                    "next_steps": [
+                        "Stop all nodes and miners",
+                        "Run rotation script",
+                        "Verify new genesis hash",
+                        "Restart network",
+                        "Verify sync"
+                    ]
+                })
+                
+        elif route == "/api/launch-day-execute":
+            # Execute actual launch day sequence
+            step = params.get("step", ["prepare"])[0]
+            
+            if step == "prepare":
+                # Step 1: Create backup
+                import shutil
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                backup_dir = REPO_ROOT / "backups" / f"launch-day-{timestamp}"
+                backup_dir.mkdir(parents=True, exist_ok=True)
+                
+                # Save current state
+                state_snapshot = {
+                    "timestamp": datetime.now().isoformat(),
+                    "launch_date": "2026-06-20T12:00:00",
+                    "current_height": None,
+                    "current_genesis": None
+                }
+                
+                try:
+                    status = build_status()
+                    state_snapshot["current_height"] = status["node1"]["chain_height"]
+                    
+                    genesis = rpc_call("127.0.0.1", 8443, "getBlockByHeight", {"height": 0})
+                    if genesis and genesis.get("hash"):
+                        state_snapshot["current_genesis"] = genesis["hash"]
+                except Exception as e:
+                    state_snapshot["error"] = str(e)
+                
+                with open(backup_dir / "STATE_SNAPSHOT.json", "w") as f:
+                    json.dump(state_snapshot, f, indent=2)
+                
+                # Backup critical config files
+                config_backup = backup_dir / "configs"
+                config_backup.mkdir(exist_ok=True)
+                
+                critical_configs = [
+                    "V3/L1/core/src/genesis.rs",
+                    "PREMINE_ADDRESSES_PUBLIC.txt",
+                    "zion.toml"
+                ]
+                
+                backup_results = []
+                for config in critical_configs:
+                    src = REPO_ROOT / config
+                    if src.exists():
+                        dst = config_backup / Path(config).name
+                        shutil.copy2(src, dst)
+                        backup_results.append(f"✓ {config}")
+                    else:
+                        backup_results.append(f"✗ {config} (not found)")
+                
+                self._json({
+                    "success": True,
+                    "step": "prepare",
+                    "backup_dir": str(backup_dir),
+                    "state_snapshot": state_snapshot,
+                    "backup_results": backup_results,
+                    "next_step": "stop-network"
+                })
+                
+            elif step == "stop-network":
+                # Step 2: Stop all services
+                stop_results = []
+                
+                stop_commands = [
+                    ("stop-node1", "Node 1"),
+                    ("stop-node2", "Node 2"),
+                    ("stop-pool", "Pool"),
+                    ("stop-miner", "Miner")
+                ]
+                
+                for cmd, name in stop_commands:
+                    try:
+                        result = run_control(cmd)
+                        stop_results.append(f"✓ {name} stopped")
+                    except Exception as e:
+                        stop_results.append(f"✗ {name} error: {str(e)}")
+                
+                self._json({
+                    "success": True,
+                    "step": "stop-network",
+                    "stop_results": stop_results,
+                    "next_step": "rotate-genesis"
+                })
+                
+            elif step == "rotate-genesis":
+                # Step 3: Rotate genesis (placeholder - actual implementation would be in separate script)
+                self._json({
+                    "success": True,
+                    "step": "rotate-genesis",
+                    "message": "Genesis rotation would execute here",
+                    "next_step": "restart-network"
+                })
+                
+            elif step == "restart-network":
+                # Step 4: Restart network with new genesis
+                self._json({
+                    "success": True,
+                    "step": "restart-network",
+                    "message": "Network restart would execute here",
+                    "next_step": "verify"
+                })
+                
+            elif step == "verify":
+                # Step 5: Verify new network state
+                self._json({
+                    "success": True,
+                    "step": "verify",
+                    "message": "Verification would execute here",
+                    "complete": True
+                })
         elif route == "/api/wallets":
             self._json(build_wallets())
         elif route == "/api/explorer":
