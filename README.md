@@ -4,10 +4,10 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-> **Status (May 2026):** V3 mainnet READY FOR LAUNCH (20.6.2026). Genesis + fee split konfigurace dokončena. Core+Edge topologie aktivní a synchronizovaná. L2 wZION bridge to Base operational. DeFi/Explorer stack ready — see [DEFI_ROADMAP.md](DEFI_ROADMAP.md).
+> **Status (May 2026):** V3 mainnet READY FOR LAUNCH (20.6.2026). Genesis + fee split konfigurace dokončena. Core+Edge topologie aktivní a synchronizovaná. Dashboard s Launch Day automation běží lokálně. GPU mining ověřen (AMD RX 5600 XT ~5-10 KH/s). L2 wZION bridge to Base operational. DeFi/Explorer stack ready — see [DEFI_ROADMAP.md](DEFI_ROADMAP.md).
 > Active development: [V3/](V3/) - clean-room mainnet code. Legacy root tree is reference/archive only.
 > **Lost?** See the complete repository map: [`ROOT_INDEX.md`](ROOT_INDEX.md)
-> **Mainnet Launch:** [MAINNET_LAUNCH_SEQUENCE.md](MAINNET_LAUNCH_SEQUENCE.md) | **Status:** [StatusV3.md](StatusV3.md)
+> **Mainnet Launch:** [MAINNET_LAUNCH_SEQUENCE.md](MAINNET_LAUNCH_SEQUENCE.md) | **Status:** [StatusV3.md](StatusV3.md) | **Dashboard:** [DASHBOARD_AUTOSTART.md](DASHBOARD_AUTOSTART.md)
 
 ---
 
@@ -129,7 +129,12 @@ ZION is a decentralized Layer 1 blockchain built from scratch in **Rust**. Live 
 
 ZION mainnet runs the single-track Deeksha canonical PoW path (`cosmic_harmony`).
 
-Three pool-mining servers are live:
+**Local GPU mining (verified):**
+- **AMD RX 5600 XT** via OpenCL — **~5–10 KH/s** sustained (Windows 11)
+- Backend: `opencl`, device `gfx1010:xnack-`
+- Pool: local `127.0.0.1:8444` (master) + Edge relay `100.66.162.125:8444`
+
+**Remote pool-mining servers:**
 - **Prague** (91.98.122.165) — ~470 H/s
 - **USA** (5.78.194.94) — ~168 H/s
 - **Singapore** (5.223.84.191)
@@ -138,15 +143,20 @@ Desktop-agent Ekam Deeksha native GPU path is verified on Apple Silicon Metal (~
 
 ---
 
-## Network — Live Mainnet Topology (April 2026)
+## Network — Live Mainnet Topology (May 2026)
 
-| Node | Location | IP | Role |
-|------|----------|----|------|
-| Prague | Hetzner EU | 91.98.122.165 | Core + Pool + Miner + Bridge + Web |
-| USA | Hetzner US | 5.78.194.94 | Core + Pool + Miner |
-| Singapore | Hetzner SG | 5.223.84.191 | Core + Pool + Miner |
+| Node | Location | IP / Tailscale | Role |
+|------|----------|----------------|------|
+| Core (Windows 11) | Local | 100.86.102.5 | Node1 + Pool Master + GPU Miner + Dashboard |
+| Edge | Hetzner EU | 100.66.162.125 | Node + Pool Relay + Public P2P |
+| Praha (legacy) | Hetzner EU | 91.98.122.165 | Reference node (height 26,910) |
 
-Ports: P2P 8334, RPC 8443 (TCP), Stratum 3333, Pool API 8080, Website 443
+**Ports:**
+- P2P: `8333` (node1), `8334` (node2)
+- RPC: `8443` (node1), `8446` (node2)
+- Stratum: `8444` (pool)
+- Dashboard: `8766` (local operator UI)
+- WebSocket: `8445`
 
 ---
 
@@ -156,11 +166,13 @@ Ports: P2P 8334, RPC 8443 (TCP), Stratum 3333, Pool API 8080, Website 443
 
 ```bash
 # Using Docker (recommended, V3 mainnet)
-docker compose -f docker/docker-compose.v3-mainnet.yml build
-docker compose -f docker/docker-compose.v3-mainnet.yml up -d
+docker compose -f V3/docker/docker-compose.yml --profile mainnet up -d
 
 # From source (V3 workspace)
 cargo run --release --manifest-path V3/Cargo.toml -p zion-core --bin node -- --config config/mainnet.toml
+
+# Windows local stack (PowerShell)
+.\scripts\launch-stack.ps1
 ```
 
 ### Mine ZION
@@ -168,14 +180,22 @@ cargo run --release --manifest-path V3/Cargo.toml -p zion-core --bin node -- --c
 ```bash
 # Pool mining (V3 canonical path)
 cargo run --release --manifest-path V3/Cargo.toml -p zion-miner -- \
-     --pool 91.98.122.165:3333 \
+     --pool 127.0.0.1:8444 \
   --wallet YOUR_ZION_ADDRESS \
   --worker my-miner \
   --threads 3 \
      --algo cosmic_harmony
 
 # Solo mining
-cargo run --release --manifest-path V3/Cargo.toml -p zion-miner -- --solo --rpc 127.0.0.1:8332
+cargo run --release --manifest-path V3/Cargo.toml -p zion-miner -- --solo --rpc 127.0.0.1:8443
+```
+
+### Dashboard (Operator UI)
+
+```bash
+# Windows — spusť a otevři v prohlížeči:
+start-dashboard.bat
+# http://127.0.0.1:8766
 ```
 
 ### Generate a Wallet

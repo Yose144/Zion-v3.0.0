@@ -2,7 +2,7 @@
 
 > **Pro koho:** Pro každého — vývojáře, přítele, nováčka, **i úplného laika**, který nikdy nespustil server.
 > **Co se naučíš:** Co je ZION, jak repo funguje, jak si **koupit a nastavit server**, jak **spustit mainnet uzel**, **přijmout/poslat platbu**, **těžit**, použít **zion CLI**, a co dělat když něco nefunguje.
-> **Poslední update:** 2026-05-08 (security cleanup + 3-server mainnet topologie po deprecatu Praha node)
+> **Poslední update:** 2026-05-22 (dashboard + Launch Day automation + GPU mining lokálně + mainnet ready pro 20.6.2026)
 > **Aktuální status repa:** [`StatusV3.md`](./StatusV3.md) + [`StatusV3-Part2.md`](./StatusV3-Part2.md)
 
 ---
@@ -14,14 +14,15 @@
 3. [Mapa repositáře — co je kde](#3-mapa-repositáře)
 4. [Premine peněženky](#4-premine-peněženky)
 5. **[Robustní mainnet deployment od nuly](#5-robustní-mainnet-deployment-od-nuly)** ← hlavní část
-6. [zion CLI — operátorský nástroj](#6-zion-cli)
-7. [Bridge ZION ↔ wZION (Base)](#7-bridge--zion--wzion)
-8. [Desktop, Mobile, Web aplikace](#8-aplikace)
-9. [Monitoring (Prometheus + Grafana)](#9-monitoring)
-10. [Backup & disaster recovery](#10-backup--disaster-recovery)
-11. [Security checklist](#11-security-checklist)
-12. [Troubleshooting (FAQ)](#12-troubleshooting)
-13. [Jak přispět](#13-jak-přispět)
+6. **[Dashboard & Launch Day Automation](#6-dashboard--launch-day-automation)** ← novinka
+7. [zion CLI — operátorský nástroj](#7-zion-cli)
+8. [Bridge ZION ↔ wZION (Base)](#8-bridge--zion--wzion)
+9. [Desktop, Mobile, Web aplikace](#9-aplikace)
+10. [Monitoring (Prometheus + Grafana)](#10-monitoring)
+11. [Backup & disaster recovery](#11-backup--disaster-recovery)
+12. [Security checklist](#12-security-checklist)
+13. [Troubleshooting (FAQ)](#13-troubleshooting)
+14. [Jak přispět](#14-jak-přispět)
 
 ---
 
@@ -80,6 +81,7 @@ Pokud něco nevíš, vrať se sem.
 ├── AGENTS.md                   ← Pravidla pro AI agenty / collaboratory
 ├── StatusV3.md                 ← ⭐ Aktuální stav (mainnet polish)
 ├── StatusV3-Part2.md           ← Independent audit + cleanup
+├── DASHBOARD_AUTOSTART.md      ← Dashboard — instalace autostartu
 ├── PREMINE_ADDRESSES_PUBLIC.txt← 15 genesis peněženek (veřejné adresy)
 │
 ├── V3/                         ← 🚀 AKTIVNÍ MAINNET KÓD
@@ -437,11 +439,62 @@ Všechny 3 by měly hlásit **stejnou výšku ±1**. Pokud se rozcházejí o ví
 
 ---
 
-## 6. zion CLI
+## 6. Dashboard & Launch Day Automation
+
+ZION má vestavěný **operátorský dashboard** — webové rozhraní běžící lokálně, které sleduje všechny komponenty v reálném čase.
+
+### 6.1 Spuštění dashboardu
+
+```bash
+# Windows (jednoduché)
+start-dashboard.bat
+
+# Nebo ručně z root repa:
+cd dashboard && python app.py
+```
+
+Dashboard je dostupný na: **`http://127.0.0.1:8766`**
+
+### 6.2 Co dashboard zobrazuje
+
+| Tab | Obsah |
+|-----|-------|
+| **Overview** | Node status, pool status, miner hashrate, edge relay, mainnet readiness |
+| **Nodes** | Detailní logy Node1 + Node2, výška chainu, P2P peers |
+| **Pool** | Aktivní sessiony, shares, blocks found, fee split, recent payouts |
+| **Miner** | GPU backend, hashrate, accepted/rejected shares, current job |
+| **Settings** | Konfigurace fee split adres, mining parametrů |
+| **Launch Day** | ⭐ **Automatizace pro 20.6.2026** |
+
+### 6.3 Launch Day Tab (20.6.2026 12:00 UTC)
+
+Launch Day tab připravuje a automatizuje **mainnet genesis rotaci**:
+
+- **Status karet:** Počet dní do launchi, backup status, genesis hash
+- **Akce:**
+  - `Check Status` — ověří aktuální stav sítě
+  - `Create Backup` — lokální záloha `backups/launch-day-TIMESTAMP/` (genesis, chain data, konfigurace)
+  - `Rotate Genesis` — připraví nový genesis blok pro mainnet
+  - `Execute Full Launch Sequence` — kompletní automatizovaná sekvence
+- **Launch Day log:** Timestampovaný záznam všech operací
+- **Auto-start:** Dashboard se po instalace spustí automaticky po přihlášení do Windows (`install-dashboard-autostart.bat`)
+
+### 6.4 Auto-start instalace (Windows)
+
+```powershell
+# Vyžaduje admin práva (spusť jako Administrator):
+.\install-dashboard-autostart.bat
+```
+
+Tím se vytvoří Scheduled Task, který spustí dashboard při každém přihlášení uživatele. Detailní návod v [`DASHBOARD_AUTOSTART.md`](./DASHBOARD_AUTOSTART.md).
+
+---
+
+## 7. zion CLI
 
 `zion` je unifikovaný operátorský binární příkaz pro celý stack. Detail v [`V3/docs/CLI_GUIDE.md`](./V3/docs/CLI_GUIDE.md).
 
-### 6.1 Build
+### 7.1 Build
 
 ```bash
 # Z root repa:
@@ -452,7 +505,7 @@ sudo cp V3/target/release/zion /usr/local/bin/
 zion --help
 ```
 
-### 6.2 Nejčastější příkazy
+### 7.2 Nejčastější příkazy
 
 ```bash
 # Interaktivní menu (arrow keys)
@@ -501,7 +554,7 @@ zion explorer
 zion monitor
 ```
 
-### 6.3 Kompletní reference
+### 7.3 Kompletní reference
 
 - [`V3/docs/CLI_GUIDE.md`](./V3/docs/CLI_GUIDE.md) — koncept a top-level
 - [`V3/docs/CLI_REFERENCE.md`](./V3/docs/CLI_REFERENCE.md) — všechny příkazy
@@ -511,11 +564,11 @@ zion monitor
 
 ---
 
-## 7. Bridge — ZION ↔ wZION
+## 8. Bridge — ZION ↔ wZION
 
 Bridge umožňuje převést ZION z hlavního chainu na **Base** (Coinbase L2 nad Ethereem) jako **wZION** (ERC-20).
 
-### 7.1 Smart kontrakty na Base Mainnet
+### 8.1 Smart kontrakty na Base Mainnet
 
 | Kontrakt | Adresa |
 |---|---|
@@ -523,13 +576,13 @@ Bridge umožňuje převést ZION z hlavního chainu na **Base** (Coinbase L2 nad
 | **ZIONBridge** | `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721` |
 | **UniV3 Pool** (wZION/WETH 0.3%) | `0xa88C4C89EB4597Df2e29A8061895300FcDF44FBB` |
 
-### 7.2 Bridge vault adresa (kam posíláš ZION)
+### 8.2 Bridge vault adresa (kam posíláš ZION)
 
 ```
 zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0
 ```
 
-### 7.3 Jak funguje bridge
+### 8.3 Jak funguje bridge
 
 ```
 ZION L1                              Base L2
@@ -550,11 +603,11 @@ ZION L1                              Base L2
                                   7. Vidíš v MetaMask ✅
 ```
 
-### 7.4 Bridge stav (2026-05-08)
+### 8.4 Bridge stav (2026-05-08)
 
 > ⚠️ **Bridge je v staging** (`threshold=1, total_validators=2`). Před produkčním unlock-flow je potřeba provisioning **3/5 multisig** (5 validator klíčů, každý na samostatném serveru). Detail v [`StatusV3.md` § P1](./StatusV3.md).
 
-### 7.5 DeFi Hub & web
+### 8.5 DeFi Hub & web
 
 | Stránka | URL | Popis |
 |---|---|---|
@@ -565,9 +618,9 @@ ZION L1                              Base L2
 
 ---
 
-## 8. Aplikace
+## 9. Aplikace
 
-### 8.1 Desktop Agent (Electron)
+### 9.1 Desktop Agent (Electron)
 
 ```bash
 cd APP\&WEB/desktop-agent
@@ -575,7 +628,7 @@ npm install
 npm start                    # GUI pro mining + wallet
 ```
 
-### 8.2 Mobile App (React Native + Expo)
+### 9.2 Mobile App (React Native + Expo)
 
 ```bash
 cd APP\&WEB/mobile-app
@@ -585,7 +638,7 @@ npx expo start               # naskenuj QR v Expo Go appce
 
 9 obrazovek: Dashboard, Wallet, Send, Receive, Mining, Bridge, Network, Settings, TransactionHistory.
 
-### 8.3 Website (Next.js)
+### 9.3 Website (Next.js)
 
 ```bash
 cd APP\&WEB/website-v2.9
@@ -596,7 +649,7 @@ npm run build && npm start   # produkce
 
 ---
 
-## 9. Monitoring
+## 10. Monitoring
 
 Doporučujeme aktivovat monitoring profile na alespoň jednom ze 3 serverů (typicky server C).
 
@@ -626,9 +679,9 @@ Grafana dashboards jsou v `monitoring/grafana/` v repu.
 
 ---
 
-## 10. Backup & disaster recovery
+## 11. Backup & disaster recovery
 
-### 10.1 Co zálohovat
+### 11.1 Co zálohovat
 
 | Co | Frekvence | Kam |
 |---|---|---|
@@ -639,7 +692,7 @@ Grafana dashboards jsou v `monitoring/grafana/` v repu.
 | Bridge SQLite DB | každých 1 h | dtto |
 | Validator key (`/etc/zion/bridge-validator.key`) | jednorázově | offline; `chmod 600 999:999` |
 
-### 10.2 Backup skript (cron na serveru)
+### 11.2 Backup skript (cron na serveru)
 
 ```bash
 # /home/zion-deploy/zion-backup.sh
@@ -670,7 +723,7 @@ Cron (`crontab -e`):
 0 */6 * * * /home/zion-deploy/zion-backup.sh >> /var/log/zion-backup.log 2>&1
 ```
 
-### 10.3 Disaster recovery scenáře
+### 11.3 Disaster recovery scenáře
 
 | Scénář | Akce |
 |---|---|
@@ -683,7 +736,7 @@ Cron (`crontab -e`):
 
 ---
 
-## 11. Security checklist
+## 12. Security checklist
 
 Před spuštěním produkce projít vše:
 
@@ -710,7 +763,7 @@ Před spuštěním produkce projít vše:
 
 ---
 
-## 12. Troubleshooting
+## 13. Troubleshooting
 
 ### Cargo build selhává
 
@@ -781,17 +834,17 @@ echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
 
 ### Hiran (AI agent) backend nedostupný
 
-Hiran v2.1 je **volitelný** AI agent. Pokud běží jen technické vrstvy (L1+L2), agent nemusí být deployed. Detail v [`HiranV2.1/PLAN_v2.1.md`](./HiranV2.1/PLAN_v2.1.md).
+Hiran v2.3 je **volitelný** AI agent s hybridním RAG + full fine-tuning na 32B modelu. Pokud běží jen technické vrstvy (L1+L2), agent nemusí být deployed. Detail v [`HiranV2.3/PLAN_v2.3.md`](./HiranV2.3/PLAN_v2.3.md).
 
 ```bash
 zion agent status
 # "degraded mode": OK, technické funkce nepostižené
-# Pro plný setup: ./HiranV2.1/bootstrap_workspace.sh
+# Pro plný setup: viz HiranV2.3/ — DeepSpeed ZeRO-3 full FT pipeline
 ```
 
 ---
 
-## 13. Jak přispět
+## 14. Jak přispět
 
 1. Forkni repo na GitHubu (až bude public)
 2. Vytvoř branch: `git checkout -b moje-zmena`
@@ -820,8 +873,9 @@ Pravidla v [`AGENTS.md`](./AGENTS.md), audit kontext v [`StatusV3.md`](./StatusV
 | [`V3/docker/HARDENING.md`](./V3/docker/HARDENING.md) | Production hardening (ufw, log rotation, non-root) |
 | [`docs/MAINNET_CONSTITUTION.md`](./docs/MAINNET_CONSTITUTION.md) | Neměnné parametry protokolu |
 | [`docs/DEFI_FULL_ROADMAP.md`](./docs/DEFI_FULL_ROADMAP.md) | DeFi ecosystem plán (6 waves) |
-| [`HiranV2.1/Hiran_v2.1.md`](./HiranV2.1/Hiran_v2.1.md) | AI agent specifikace + RAG router |
-| [`HiranV2.1/PLAN_v2.1.md`](./HiranV2.1/PLAN_v2.1.md) | AI agent prováděcí plán |
+| [`DASHBOARD_AUTOSTART.md`](./DASHBOARD_AUTOSTART.md) | Dashboard — autostart instalace (Windows) |
+| [`MAINNET_LAUNCH_SEQUENCE.md`](./MAINNET_LAUNCH_SEQUENCE.md) | Kompletní launch plán 20.6.2026 |
+| [`HiranV2.3/PLAN_v2.3.md`](./HiranV2.3/PLAN_v2.3.md) | AI agent v2.3 — DeepSpeed ZeRO-3 full FT + hybrid RAG |
 | [`PREMINE_ADDRESSES_PUBLIC.txt`](./PREMINE_ADDRESSES_PUBLIC.txt) | 15 genesis peněženek (veřejné) |
 
 ---
