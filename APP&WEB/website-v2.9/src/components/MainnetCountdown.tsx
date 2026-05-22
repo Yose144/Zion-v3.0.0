@@ -6,7 +6,7 @@ import { Rocket, Calendar } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { tr } from '@/lib/translations';
 
-const LAUNCH_DATE = new Date('2026-06-20T00:00:00Z');
+const LAUNCH_DATE = new Date('2026-12-31T00:00:00Z');
 
 interface TimeLeft {
   days: number;

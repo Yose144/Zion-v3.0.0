@@ -17,11 +17,12 @@ import Link from 'next/link';
 import { useLang } from '@/contexts/LanguageContext';
 import { ATOMIC_UNITS_PER_ZION } from '@/lib/constants';
 import { CHAPTERS } from './bookData';
+import { EDITIONS_DATA } from './generatedEditions';
 import PioneerProjectCards from './components/PioneerProjectCards';
 import GeographyMenu from './components/GeographyMenu';
 import type { BookChapter } from './bookData';
 
-type EditionKey = 'final';
+type EditionKey = 'unified';
 
 type EditionMeta = {
   titleCs: string;
@@ -64,9 +65,9 @@ const EDITION_OPTIONS: Array<{
   border: string;
 }> = [
   {
-    id: 'final',
-    nameCs: 'FINAL větev',
-    nameEn: 'FINAL Branch',
+    id: 'unified',
+    nameCs: 'Kanonická větev',
+    nameEn: 'Canonical Branch',
     color: '#00BFFF',
     bg: 'rgba(0,191,255,0.1)',
     border: 'rgba(0,191,255,0.3)',
@@ -74,7 +75,7 @@ const EDITION_OPTIONS: Array<{
 ];
 
 const EDITION_META: Record<EditionKey, EditionMeta> = {
-  final: {
+  unified: {
     titleCs: 'Terra Nova',
     titleEn: 'Terra Nova',
     subtitleCs: 'Kanonická větev Terra Novy',
@@ -97,7 +98,7 @@ const EDITION_META: Record<EditionKey, EditionMeta> = {
 };
 
 const EDITION_INTRO: Record<EditionKey, EditionIntro> = {
-  final: {
+  unified: {
     signalsCs: ['Genesis.md', 'ZION CLI v3 RC', 'Terra Nova IV'],
     signalsEn: ['Genesis.md', 'ZION CLI v3 RC', 'Terra Nova IV'],
     eyebrowCs: 'ZION V3 · release candidate · Terra Nova',
@@ -130,7 +131,7 @@ const EDITION_CHAPTERS: Record<EditionKey, BookChapter[]> = {
 };
 
 const EDITION_COMPOSITION_LINES: Record<EditionKey, { cs: string[]; en: string[] }> = {
-  final: {
+  unified: {
     cs: EDITION_CHAPTERS.final.map((chapter) => formatChapterLabel(chapter, true)),
     en: EDITION_CHAPTERS.final.map((chapter) => formatChapterLabel(chapter, false)),
   },
@@ -770,7 +771,7 @@ export default function TerraNovaBookClient() {
   const { lang, setLang } = useLang();
   const cs = lang === 'cs';
 
-  const [activeEdition, setActiveEdition] = useState<EditionKey>('final');
+  const [activeEdition, setActiveEdition] = useState<EditionKey>('unified');
   const currentChapters = EDITION_CHAPTERS[activeEdition];
   const currentEdition = EDITION_OPTIONS.find((option) => option.id === activeEdition) ?? EDITION_OPTIONS[1];
   const meta = EDITION_META[activeEdition];
