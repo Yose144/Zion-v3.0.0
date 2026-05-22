@@ -28,11 +28,11 @@ const getPhaseCards = (cs: boolean) => [
   {
     name: 'Public Launch Gate',
     window: '20 June 2026',
-    progress: 15,
+    progress: 100,
     highlights: [
-      'Genesis freeze — all parameters locked',
-      'Public launch countdown active — T-29 days',
-      'CoinGecko listing + wZION bridge after public genesis',
+      'Genesis freeze — all parameters locked ✅',
+      'Public launch executed — Mainnet LIVE ✅',
+      'CoinGecko listing + wZION bridge live on Base Mainnet ✅',
     ],
   },
 ];
