@@ -4241,30 +4241,29 @@ async function zionRpcCall(rpcUrl, method, params) {
     params
   }) + '\n';
 
-  const attemptRpc = (attemptHost, attemptPort) => {
-    return new Promise((resolve, reject) => {
-      const socket = new net.Socket();
-      let data = '';
-      let settled = false;
+  return new Promise((resolve, reject) => {
+    const socket = new net.Socket();
+    let data = '';
+    let settled = false;
 
-      const timer = setTimeout(() => {
-        if (!settled) {
-          settled = true;
-          socket.destroy();
-          reject(new Error(`RPC timeout calling ${method} on ${attemptHost}:${attemptPort}`));
-        }
-      }, 8000);
-
-      const finish = () => {
-        if (settled) return;
+    const timer = setTimeout(() => {
+      if (!settled) {
         settled = true;
-        clearTimeout(timer);
         socket.destroy();
+        reject(new Error(`RPC timeout calling ${method} on ${host}:${port}`));
+      }
+    }, 8000);
 
-        const trimmed = data.trim();
-        if (!trimmed) {
-          reject(new Error(`Empty RPC response for ${method} from ${attemptHost}:${attemptPort}`));
-          return;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      socket.destroy();
+
+      const trimmed = data.trim();
+      if (!trimmed) {
+        reject(new Error(`Empty RPC response for ${method} from ${host}:${port}`));
+        return;
       }
 
       try {
@@ -4279,7 +4278,7 @@ async function zionRpcCall(rpcUrl, method, params) {
       }
     };
 
-    socket.connect(attemptPort, attemptHost, () => {
+    socket.connect(port, host, () => {
       socket.write(payload);
     });
     socket.on('data', (chunk) => { data += chunk.toString(); });
@@ -4290,16 +4289,13 @@ async function zionRpcCall(rpcUrl, method, params) {
         settled = true;
         clearTimeout(timer);
         socket.destroy();
-        reject(new Error(`RPC connect error (${attemptHost}:${attemptPort}): ${err.message}`));
+        reject(new Error(`RPC connect error (${host}:${port}): ${err.message}`));
       }
     });
-  });
-
-  // Try primary host first, fallback to Edge VPN if localhost fails
-  return attemptRpc(host, port).catch((error) => {
+  }).catch((error) => {
     if (host === '127.0.0.1' || host === 'localhost') {
       dbg(`[RPC] Localhost failed, trying Edge VPN: ${EDGE_VPN_HOST}:${port}`);
-      return attemptRpc(EDGE_VPN_HOST, port);
+      return zionRpcCall(`http://${EDGE_VPN_HOST}:${port}/jsonrpc`, method, params);
     }
     throw error;
   });
