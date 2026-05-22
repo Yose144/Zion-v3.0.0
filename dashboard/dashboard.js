@@ -125,53 +125,86 @@ async function refreshAll(){
 function updateServiceCards(s){
   const n1 = s.node1, n2 = s.node2, p = s.pool, m = s.miner;
   setBadge('badge-node1', n1.running); setCardLive('node1', n1.running);
-  document.getElementById('val-node1-height').textContent = n1.chain_height ?? '—';
-  document.getElementById('val-node1-id').textContent = n1.node_id ?? '—';
-  document.getElementById('val-node1-peers').textContent = n1.known_peers ?? '—';
-  document.getElementById('val-node1-p2p').textContent = n1.p2p_bind ?? '—';
+  const n1h = document.getElementById('val-node1-height');
+  if(n1h) n1h.textContent = n1.chain_height ?? '—';
+  const n1id = document.getElementById('val-node1-id');
+  if(n1id) n1id.textContent = n1.node_id ?? '—';
+  const n1p = document.getElementById('val-node1-peers');
+  if(n1p) n1p.textContent = n1.known_peers ?? '—';
+  const n1p2p = document.getElementById('val-node1-p2p');
+  if(n1p2p) n1p2p.textContent = n1.p2p_bind ?? '—';
 
   setBadge('badge-node2', n2.running); setCardLive('node2', n2.running);
-  document.getElementById('val-node2-height').textContent = n2.chain_height ?? '—';
-  document.getElementById('val-node2-id').textContent = n2.node_id ?? '—';
-  document.getElementById('val-node2-peers').textContent = n2.known_peers ?? '—';
+  const n2h = document.getElementById('val-node2-height');
+  if(n2h) n2h.textContent = n2.chain_height ?? '—';
+  const n2id = document.getElementById('val-node2-id');
+  if(n2id) n2id.textContent = n2.node_id ?? '—';
+  const n2p = document.getElementById('val-node2-peers');
+  if(n2p) n2p.textContent = n2.known_peers ?? '—';
   const synced = n2.chain_height && n1.chain_height && n2.chain_height >= n1.chain_height - 1;
   const syncEl = document.getElementById('val-node2-sync');
-  syncEl.textContent = synced ? '✓ Synced' : (n2.known_peers > 0 ? 'Syncing…' : 'No peers');
-  syncEl.className = synced ? 'text-emerald-400 font-bold' : 'text-amber-400';
+  if(syncEl){
+    syncEl.textContent = synced ? '✓ Synced' : (n2.known_peers > 0 ? 'Syncing…' : 'No peers');
+    syncEl.className = synced ? 'text-emerald-400 font-bold' : 'text-amber-400';
+  }
 
   setBadge('badge-pool', p.running); setCardLive('pool', p.running);
-  document.getElementById('val-pool-sessions').textContent = p.active_sessions ?? '0';
-  document.getElementById('val-pool-blocks').textContent = p.blocks_found ?? '0';
-  document.getElementById('val-pool-shares').textContent = (p.shares_accepted ?? 0) + ' / ' + (p.shares_rejected ?? 0);
-  document.getElementById('val-pool-fee').textContent = p.fee_split ? 'Split: ' + p.fee_split : '—';
+  const ps = document.getElementById('val-pool-sessions');
+  if(ps) ps.textContent = p.active_sessions ?? '0';
+  const pb = document.getElementById('val-pool-blocks');
+  if(pb) pb.textContent = p.blocks_found ?? '0';
+  const psh = document.getElementById('val-pool-shares');
+  if(psh) psh.textContent = (p.shares_accepted ?? 0) + ' / ' + (p.shares_rejected ?? 0);
+  const pf = document.getElementById('val-pool-fee');
+  if(pf) pf.textContent = p.fee_split ? 'Split: ' + p.fee_split : '—';
 
   const pe = s.pool_edge ?? {};
-  setBadge('badge-pool-edge', pe.running); setCardLive('pool-edge', pe.running);
-  document.getElementById('val-pool-edge-status').textContent = pe.running ? '✓ Online' : '✗ Offline';
-  document.getElementById('val-pool-edge-status').className = 'text-3xl font-bold mb-1 ' + (pe.running ? 'text-emerald-400' : 'text-red-400');
-  document.getElementById('val-pool-edge-host').textContent = pe.host ?? '—';
-  document.getElementById('val-pool-edge-port').textContent = pe.ports_open?.[0]?.split(':')[1] ?? '8444';
-  document.getElementById('val-pool-edge-detail').textContent = pe.running ? 'Tailscale + Public ready' : 'Unreachable';
+  const poolEdgeBadge = document.getElementById('badge-pool-edge');
+  const poolEdgeStatus = document.getElementById('val-pool-edge-status');
+  if(poolEdgeBadge) setBadge('badge-pool-edge', pe.running);
+  if(poolEdgeStatus){
+    setCardLive('pool-edge', pe.running);
+    poolEdgeStatus.textContent = pe.running ? '✓ Online' : '✗ Offline';
+    poolEdgeStatus.className = 'text-3xl font-bold mb-1 ' + (pe.running ? 'text-emerald-400' : 'text-red-400');
+    const hostEl = document.getElementById('val-pool-edge-host');
+    const portEl = document.getElementById('val-pool-edge-port');
+    const detailEl = document.getElementById('val-pool-edge-detail');
+    if(hostEl) hostEl.textContent = pe.host ?? '—';
+    if(portEl) portEl.textContent = pe.ports_open?.[0]?.split(':')[1] ?? '8444';
+    if(detailEl) detailEl.textContent = pe.running ? 'Tailscale + Public ready' : 'Unreachable';
+  }
 
   setBadge('badge-miner', m.running && m.hashrate); setCardLive('miner', m.running && m.hashrate);
-  document.getElementById('val-miner-hashrate').textContent = m.hashrate ? m.hashrate.toFixed(2) : '—';
-  document.getElementById('val-miner-gpu').textContent = (m.gpu_backend ? m.gpu_backend + ': ' : '') + (m.gpu_device ?? '—');
-  document.getElementById('val-miner-height').textContent = m.current_height ?? '—';
-  document.getElementById('val-miner-diff').textContent = m.current_diff ?? '—';
+  const mh = document.getElementById('val-miner-hashrate');
+  if(mh) mh.textContent = m.hashrate ? m.hashrate.toFixed(2) : '—';
+  const mg = document.getElementById('val-miner-gpu');
+  if(mg) mg.textContent = (m.gpu_backend ? m.gpu_backend + ': ' : '') + (m.gpu_device ?? '—');
+  const mnh = document.getElementById('val-miner-height');
+  if(mnh) mnh.textContent = m.current_height ?? '—';
+  const md = document.getElementById('val-miner-diff');
+  if(md) md.textContent = m.current_diff ?? '—';
 }
 
 function updatePayouts(p){
-  document.getElementById('payout-wallet').textContent = p.pool_wallet ?? '—';
+  const pw = document.getElementById('payout-wallet');
+  if(pw) pw.textContent = p.pool_wallet ?? '—';
   const en = document.getElementById('payout-enabled');
-  en.textContent = p.payout_enabled === true ? 'YES' : (p.payout_enabled === false ? 'NO' : '—');
-  en.className = p.payout_enabled ? 'font-bold text-emerald-400' : 'font-bold text-red-400';
-  document.getElementById('payout-blocks').textContent = p.blocks_found ?? '0';
-  document.getElementById('payout-nonce').textContent = p.nonce_count ?? '—';
-  document.getElementById('payout-split').textContent = p.fee_split ?? '—';
+  if(en){
+    en.textContent = p.payout_enabled === true ? 'YES' : (p.payout_enabled === false ? 'NO' : '—');
+    en.className = p.payout_enabled ? 'font-bold text-emerald-400' : 'font-bold text-red-400';
+  }
+  const pb = document.getElementById('payout-blocks');
+  if(pb) pb.textContent = p.blocks_found ?? '0';
+  const pn = document.getElementById('payout-nonce');
+  if(pn) pn.textContent = p.nonce_count ?? '—';
+  const ps = document.getElementById('payout-split');
+  if(ps) ps.textContent = p.fee_split ?? '—';
   const pr = document.getElementById('payout-recent');
-  pr.innerHTML = (p.recent_payouts && p.recent_payouts.length)
-    ? p.recent_payouts.map(l => '<div class="truncate text-[10px]">' + escapeHtml(l) + '</div>').join('')
-    : '<div class="text-gray-600 italic text-[10px]">No payout events yet</div>';
+  if(pr){
+    pr.innerHTML = (p.recent_payouts && p.recent_payouts.length)
+      ? p.recent_payouts.map(l => '<div class="truncate text-[10px]">' + escapeHtml(l) + '</div>').join('')
+      : '<div class="text-gray-600 italic text-[10px]">No payout events yet</div>';
+  }
 }
 
 function updateAlerts(alerts){
