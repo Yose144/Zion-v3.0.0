@@ -1853,10 +1853,10 @@ export default function MissionControlDashboard() {
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Launch Map</p>
                 <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white flex items-center gap-2 sm:gap-3">
                   <Map className="h-7 w-7 text-cyan-400" />
-                  Test Mainnet Rehearsal — Co je hotovo a co ještě chybí
+                  Core + Edge Mainnet — Co je hotovo a co ještě chybí
                 </h2>
                 <p className="text-sm text-gray-400">
-                  Tohle je veřejná mapa controlled V3 test mainnetu. Není to stránka pro public production-mainnet GO claim.
+                  Tohle je veřejná mapa Core + Edge mainnetu. Není to stránka pro public production-mainnet GO claim.
                 </p>
               </div>
               <div className="grid gap-4 xl:grid-cols-4">
@@ -2080,7 +2080,7 @@ export default function MissionControlDashboard() {
                     <Gauge className="h-6 w-6 text-cyan-400" />
                     Cluster Snapshot
                   </h2>
-                  <p className="text-xs text-gray-500">Local scrape + remote Germany targets + Redis runtime health</p>
+                  <p className="text-xs text-gray-500">Local scrape + Core PC target + Redis runtime health</p>
                 </div>
                 <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
                   <MiniMetric label="Redis" value={stackSummary.redisUp === 1 ? 'UP' : stackSummary.redisUp === 0 ? 'DOWN' : '—'} color={stackSummary.redisUp === 1 ? 'text-emerald-400' : 'text-red-400'} />
@@ -2781,7 +2781,7 @@ export default function MissionControlDashboard() {
                   <Lock className="h-6 w-6 text-zion-gold" />
                   <div>
                     <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold text-white">Target Mainnet Constitution</h2>
-                    <p className="text-xs sm:text-sm text-gray-400">Plánované produkční parametry; tento dashboard sleduje test-mainnet rehearsal proti nim</p>
+                    <p className="text-xs sm:text-sm text-gray-400">Plánované produkční parametry; tento dashboard sleduje Core + Edge mainnet proti nim</p>
                   </div>
                 </div>
                 <div className="space-y-0">
@@ -2991,8 +2991,8 @@ export default function MissionControlDashboard() {
               </div>
               <div className="mt-6 grid gap-3 lg:grid-cols-3">
                 <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-sm text-gray-300">
-                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-emerald-300">Ready For Rehearsal</p>
-                  <p className="mt-2">Consensus, reward split, metrics base a deploy docs jsou dostatečně silné pro controlled test-mainnet běh.</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-emerald-300">Core + Edge Active</p>
+                  <p className="mt-2">Consensus, reward split, metrics base a deploy docs jsou dostatečně silné pro Core + Edge mainnet běh.</p>
                 </div>
                 <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-4 text-sm text-gray-300">
                   <p className="text-xs font-semibold uppercase tracking-[0.3em] text-red-300">Public Launch Blockers</p>
