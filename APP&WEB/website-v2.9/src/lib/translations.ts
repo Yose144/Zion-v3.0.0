@@ -75,11 +75,11 @@ const t = {
     btn_warp:          { cs: 'Prozkoumat síť',      en: 'Explore Network' },
     btn_guardian_docs: { cs: 'Otevřít dokumentaci',   en: 'Open Docs' },
     btn_native_miner:  { cs: 'Stáhnout miner',          en: 'Download Miner' },
-    teaser_title: { cs: 'Živá testovací síť, ne koncept', en: 'Live test network, not a concept mockup' },
+    teaser_title: { cs: 'Živá Core + Edge síť', en: 'Live Core + Edge network' },
     teaser_badge: { cs: 'Aktivní', en: 'Active' },
     teaser_body: {
-      cs: 'Síťový stav, explorer, pool, downloady i dokumentace jsou na jednom místě. Homepage slouží jako veřejný vstup do testovacího provozu, ne jako oznámení produkčního launch.',
-      en: 'Network status, explorer, pool, downloads, and documentation live in one place. The homepage acts as a public entry point into the rehearsal network, not as a production launch announcement.',
+      cs: 'Síťový stav, explorer, pool, downloady i dokumentace jsou na jednom místě. Homepage slouží jako veřejný vstup do Core + Edge mainnetu, ne jako oznámení produkčního launch.',
+      en: 'Network status, explorer, pool, downloads, and documentation live in one place. The homepage acts as a public entry point into the Core + Edge mainnet, not as a production launch announcement.',
     },
     teaser_cta: { cs: 'Prozkoumat', en: 'Explore' },
     observatory_focus_label: { cs: 'Zaměření signálu', en: 'Signal focus' },
@@ -103,8 +103,8 @@ const t = {
     title: { cs: 'T-29 dní do Mainnet Launch', en: 'T-29 Days to Mainnet Launch' },
     target_date: { cs: 'Cíl: 20. června 2026', en: 'Target: June 20, 2026' },
     subtitle: {
-      cs: 'Řízený test mainnet běží. Veřejný mainnet launch se aktivuje při dosažení nuly.',
-      en: 'Controlled test mainnet running. Public mainnet launch activates at zero.',
+      cs: 'Core + Edge mainnet běží. Veřejný mainnet launch se aktivuje při dosažení nuly.',
+      en: 'Core + Edge mainnet running. Public mainnet launch activates at zero.',
     },
   },
 
@@ -399,8 +399,8 @@ const t = {
       ph1: {
         phase: { cs: 'Fáze 1 · Nyní', en: 'Phase 1 · Now' },
         detail: {
-          cs: 'Kontrolovaný test mainnet — Rust pool, Cosmic Harmony těžba, P2P sync. 92 % dokončeno.',
-          en: 'Controlled test mainnet — Rust pool, Cosmic Harmony mining, P2P sync. 92 % done.',
+          cs: 'Core + Edge mainnet — Rust pool, Cosmic Harmony těžba, P2P sync. 92 % dokončeno.',
+          en: 'Core + Edge mainnet — Rust pool, Cosmic Harmony mining, P2P sync. 92 % done.',
         },
       },
       ph2: {
@@ -473,14 +473,14 @@ const t = {
       en: 'current docs, tools, and sources',
     },
     blurb: {
-      cs: 'Veškerý provozní kontext řízeného test mainnetu na jedné ose — dokumentace, mining nástroje, explorer i zdrojový kód.',
-      en: 'Operational context for the controlled test-mainnet rehearsal in one spine — docs, mining tools, explorer, and source.',
+      cs: 'Veškerý provozní kontext Core + Edge mainnetu na jedné ose — dokumentace, mining nástroje, explorer i zdrojový kód.',
+      en: 'Operational context for the Core + Edge mainnet in one spine — docs, mining tools, explorer, and source.',
     },
     card_open: { cs: 'Otevřít', en: 'Open' },
     res_docs_title: { cs: 'Aktuální dokumentace', en: 'Current docs' },
     res_docs_body: {
-      cs: 'Otevře /docs s live přehledem rehearsal topologie, maticí verzí 2.9.6 / 2.9.8 / 2.9.9 a launch blokery.',
-      en: 'Opens /docs with the rehearsal topology snapshot, versions 2.9.6 / 2.9.8 / 2.9.9, and launch blockers.',
+      cs: 'Otevře /docs s live přehledem Core + Edge topologie, maticí verzí 2.9.6 / 2.9.8 / 2.9.9 a launch blokery.',
+      en: 'Opens /docs with the Core + Edge topology snapshot, versions 2.9.6 / 2.9.8 / 2.9.9, and launch blockers.',
     },
     res_download_title: { cs: 'Stáhnout minera', en: 'Miner downloads' },
     res_download_body: {
