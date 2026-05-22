@@ -71,15 +71,15 @@ const NetworkOperatorToolkit = dynamic(() => import('@/components/network/Networ
 const getHeroStats = (cs: boolean) => [
   {
     label: cs ? 'Veřejné nody' : 'Public Nodes',
-    value: '1',
+    value: '2',
     descriptor: cs
-      ? 'Praha (veřejný host) + interní validátory USA/Singapur'
-      : 'Prague public host + USA/Singapore internal lanes',
+      ? 'Edge relay (Hetzner VPS) + Core (lokální PC přes Tailscale VPN)'
+      : 'Edge relay (Hetzner VPS) + Core (local PC via Tailscale VPN)',
   },
   {
     label: cs ? 'P2P mesh' : 'P2P Mesh',
-    value: cs ? 'Kontrolovaný' : 'Controlled',
-    descriptor: cs ? 'Veřejný host + interní validátorské lane' : 'Public host + internal validator lanes',
+    value: cs ? 'Core + Edge' : 'Core + Edge',
+    descriptor: cs ? 'Tailscale VPN tunel — Core ↔ Edge' : 'Tailscale VPN tunnel — Core ↔ Edge',
   },
   {
     label: cs ? 'Telemetrie' : 'Telemetry',
@@ -88,8 +88,8 @@ const getHeroStats = (cs: boolean) => [
   },
   {
     label: cs ? 'Topologie' : 'Topology',
-    value: cs ? 'Mainnet' : 'Mainnet',
-    descriptor: cs ? '3-region mainnet launch topologie' : '3-region mainnet launch topology',
+    value: cs ? 'Core + Edge' : 'Core + Edge',
+    descriptor: cs ? 'Edge relay + Core master (PPLNS okno na Core)' : 'Edge relay + Core master (PPLNS window on Core)',
   },
   {
     label: cs ? 'Síť' : 'Network',
@@ -103,33 +103,27 @@ const getHeroStats = (cs: boolean) => [
 const getInfraFeatures = (cs: boolean) => [
   {
     icon: Server,
-    title: 'Prague (EU)',
-    detail: 'Primary seed node: chain, pool, web, explorer',
+    title: cs ? 'Edge relay (Hetzner VPS)' : 'Edge Relay (Hetzner VPS)',
+    detail: cs
+      ? 'Veřejný P2P + stratum relay — P2P 8333, Pool 8444, Node RPC 8443'
+      : 'Public P2P + stratum relay — P2P 8333, Pool 8444, Node RPC 8443',
     ip: '77.42.71.94',
-    status: 'Primary',
+    status: cs ? 'Aktivní' : 'Active',
     color: 'text-emerald-400',
     border: 'border-emerald-500/30',
     bg: 'bg-emerald-500/5',
   },
   {
     icon: Server,
-    title: 'USA (Hillsboro)',
-    detail: 'Internal validator lane: chain, pool',
-    ip: '5.78.194.94',
-    status: 'Internal',
+    title: cs ? 'Core (lokální PC)' : 'Core (local PC)',
+    detail: cs
+      ? 'Zdroj pravdy — Node 1 (Genesis), Node 2, Master PPLNS pool, GPU miner'
+      : 'Source of truth — Node 1 (Genesis), Node 2, Master PPLNS pool, GPU miner',
+    ip: '100.86.102.5',
+    status: cs ? 'Tailscale VPN' : 'Tailscale VPN',
     color: 'text-zion-cyan',
     border: 'border-cyan-500/30',
     bg: 'bg-cyan-500/5',
-  },
-  {
-    icon: Server,
-    title: 'Singapore (APAC)',
-    detail: 'Internal validator lane: chain, pool',
-    ip: '5.223.84.191',
-    status: 'Internal',
-    color: 'text-zion-purple',
-    border: 'border-purple-500/30',
-    bg: 'bg-purple-500/5',
   },
 ];
 
@@ -152,7 +146,7 @@ const getRuntimePanels = (cs: boolean) => [
     icon: Globe,
     label: 'P2P Peer',
     value: `${SITE_PRIMARY_HOST}:8333`,
-    detail: 'Primary public peer with internal lanes to USA + Singapore',
+    detail: cs ? 'Veřejný Edge relay — Core sync přes Tailscale VPN' : 'Public Edge relay — Core sync via Tailscale VPN',
     accent: 'text-emerald-400',
   },
   {
@@ -193,32 +187,37 @@ const getGuideBlocks = (cs: boolean) => [
   {
     icon: Globe,
     title: 'P2P Layer',
-    description: 'Native libp2p network for blockchain synchronization on the current mainnet launch topology.',
+    description: cs
+      ? 'Nativní Rust P2P síť — Edge relay přijímá inbound z internetu, Core zůstává za Tailscale VPN.'
+      : 'Native Rust P2P network — Edge relay accepts inbound from the internet, Core stays behind Tailscale VPN.',
     items: [
-      `Public peer: ${SITE_PRIMARY_HOST}:8333`,
-      'Internal lanes: 5.78.194.94:8333, 5.223.84.191:8333',
-      '1 public host + 2 internal validator lanes',
+      `${cs ? 'Veřejný peer (Edge)' : 'Public peer (Edge)'}: ${SITE_PRIMARY_HOST}:8333`,
+      `${cs ? 'Core peer (Tailscale)' : 'Core peer (Tailscale)'}: 100.86.102.5:8333`,
+      cs ? 'VPN tunel: Tailscale WireGuard (Core ↔ Edge)' : 'VPN tunnel: Tailscale WireGuard (Core ↔ Edge)',
     ],
   },
 ];
 
 const getNetworkFacts = (cs: boolean) => [
-  { text: cs ? 'Nativní Rust P2P — libp2p mesh' : 'Native Rust P2P — libp2p mesh', done: true },
+  { text: cs ? 'Nativní Rust P2P — Edge relay veřejný' : 'Native Rust P2P — Edge relay public', done: true },
   {
-    text: cs ? '1 veřejný host + 2 interní validátorské lane' : '1 public host + 2 internal validator lanes',
+    text: cs ? 'Core + Edge topologie s Tailscale VPN tunelem' : 'Core + Edge topology with Tailscale VPN tunnel',
     done: true,
   },
-  { text: cs ? 'Primární stratum endpoint v Praze' : 'Primary stratum endpoint on Prague', done: true },
+  {
+    text: cs ? 'Edge stratum endpoint: 77.42.71.94:8444 (ShareRelay)' : 'Edge stratum endpoint: 77.42.71.94:8444 (ShareRelay)',
+    done: true,
+  },
   { text: cs ? 'JSON-RPC endpointy live (port 8443)' : 'JSON-RPC endpoints live (port 8443)', done: true },
-  { text: cs ? 'Docker kontejnery 24/7 s auto-restartem' : '24/7 Docker containers with auto-restart', done: true },
+  { text: cs ? 'systemd služby s auto-restartem na Edge' : 'systemd services with auto-restart on Edge', done: true },
   { text: cs ? 'LWMA DAA — cíl 60s block time' : 'LWMA DAA — target 60s block time', done: true },
   {
-    text: cs ? 'Archivovaný 3-region relay evidence retained' : 'Archived 3-region relay evidence retained',
+    text: cs ? 'ShareRelay protokol: Edge → Core PPLNS synchronizace' : 'ShareRelay protocol: Edge → Core PPLNS sync',
     done: true,
   },
   { text: cs ? 'Monitoring Prometheus + Grafana' : 'Prometheus + Grafana monitoring', done: true },
   {
-    text: cs ? 'Geo-distribuovaná mainnet launch topologie aktivní' : 'Geo-distributed mainnet launch topology active',
+    text: cs ? 'UFW firewall na Edge (8333, 8444, 22, 41641)' : 'UFW firewall on Edge (8333, 8444, 22, 41641)',
     done: true,
   },
 ];

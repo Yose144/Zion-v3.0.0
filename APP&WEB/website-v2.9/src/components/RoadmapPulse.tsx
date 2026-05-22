@@ -11,7 +11,7 @@ const getPhaseCards = (cs: boolean) => [
     progress: 100,
     highlights: [
       'v2.9.9 Pure Code deployed — controlled V3 mainnet launch line',
-      '3-node mainnet mesh active, pool telemetry, and explorer synced',
+      'Core + Edge mainnet topology active, pool telemetry, and explorer synced',
       'On-chain 89/5/5/1 split verified; mainnet launch countdown active',
     ],
   },

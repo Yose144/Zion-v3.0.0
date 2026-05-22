@@ -23,6 +23,11 @@ services:
       - PROMETHEUS_URL=http://zion-prometheus:9090
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    # AUDIT-FIX-2: Docker runtime overrides the HOSTNAME env var with the
+    # container ID (e.g. 59bec33f4e07). Next.js standalone server.js reads
+    # process.env.HOSTNAME for its bind address, so without this fix it tries
+    # to listen on the container ID and crashes with EAI_AGAIN.
+    command: ["/bin/sh", "-c", "export HOSTNAME=0.0.0.0 && exec node server.js"]
     healthcheck:
       # AUDIT-FIX: localhost can resolve to ::1 in some environments while the
       # Next.js server listens on IPv4 (0.0.0.0). Use explicit 127.0.0.1.

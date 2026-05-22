@@ -251,11 +251,11 @@ export async function GET() {
     },
     servers: [{
       id: 'primary',
-      name: 'Prague Primary',
+      name: 'Edge VPS',
       flag: '🇨🇿',
       host: SITE_PRIMARY_HOST,
       region: 'primary',
-      stratum: 3333,
+      stratum: 8444,
       online: !!poolStats || !!info,
       stats: {
         ...poolStats,

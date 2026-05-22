@@ -345,5 +345,5 @@ When docs disagree, use this order of truth:
 ---
 
 *Last updated: 2026-05-21*
-*Major updates: L5/L6 daemon crates + docs, DAO multi-layer governance, Dev Team docs, Network topology, Dashboard L5/L6*
+*Major updates: L5/L6 daemon crates + docs, DAO multi-layer governance, Dev Team docs, Network topology, Dashboard L5/L6, **TerraNova Chapter 12 (Vlna Te Piti + Rapa Nui)** + Rapa Nui cultural lineage*
 *Repository: `Yose144/2.9.6` · Branch: `main`*

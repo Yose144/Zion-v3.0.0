@@ -211,7 +211,7 @@ export default function LiveDashboard() {
 
             <div className="rounded-2xl border border-white/5 bg-linear-to-br from-zion-purple/20 to-zion-cyan/10 p-4 text-sm text-gray-200">
               Blockchain telemetry pulled live from the {SITE_RELEASE_LABEL} V3 mainnet API every 30 s, on top of the {SITE_RUNTIME_LABEL} runtime.
-              Current public runtime is a controlled 3-node mainnet across Prague, USA, and Singapore.
+              Current public runtime is a Core + Edge topology (Core PC + Hetzner Edge VPS).
             </div>
           </motion.div>
         </div>
