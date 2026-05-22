@@ -106,8 +106,8 @@ function fmtPct(n: number | null | undefined) {
   return n != null ? `${n.toFixed(1)}%` : '—';
 }
 
-const PRAGUE_CORE_UP_QUERY = 'up{job="zion-core-prague",instance="host.docker.internal:9115"}';
-const PRAGUE_POOL_UP_QUERY = 'up{job="zion-pool-prague",instance="zion-pool:8080"}';
+const CORE_UP_QUERY = 'up{job="zion-core",instance="host.docker.internal:9115"}';
+const POOL_UP_QUERY = 'up{job="zion-pool",instance="zion-pool:8080"}';
 
 async function queryPrometheus(query: string): Promise<PrometheusResult[]> {
   const res = await fetch(`/api/metrics?query=${encodeURIComponent(query)}`, {
@@ -180,8 +180,8 @@ async function fetchMetrics(): Promise<MonitoringData> {
     /* 25 */ 'node_filesystem_size_bytes{mountpoint="/"}',
     /* 26 */ 'node_filesystem_avail_bytes{mountpoint="/"}',
     /* 27 */ 'node_boot_time_seconds',
-    /* 28 */ 'up{job="zion-core-prague"}',
-    /* 29 */ 'up{job="zion-pool-prague"}',
+    /* 28 */ 'up{job="zion-core"}',
+    /* 29 */ 'up{job="zion-pool"}',
   ];
 
   const results = await Promise.allSettled(queries.map(q => queryPrometheus(q)));
@@ -577,7 +577,7 @@ export default function MonitoringClient() {
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <HardDrive className="h-5 w-5 text-zion-cyan" />
             Server Infrastructure
-            <span className="ml-2 text-xs text-gray-500 font-normal">Prague · Hetzner</span>
+            <span className="ml-2 text-xs text-gray-500 font-normal">Edge VPS · Hetzner</span>
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {/* CPU Load */}

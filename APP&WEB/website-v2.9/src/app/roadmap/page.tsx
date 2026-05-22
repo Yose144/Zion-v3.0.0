@@ -460,7 +460,7 @@ export default function RoadmapPage() {
                 </h1>
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
-                Realistic plan: stable controlled V3 test-mainnet rehearsal → Base Sepolia bridge ready → WARP implementation complete → public launch decision and then full MainNet launch{' '}
+                Realistic plan: stable controlled V3 Core + Edge mainnet → Base Sepolia bridge ready → WARP implementation complete → public launch decision and then full MainNet launch{' '}
                 <strong className="text-white">31. 12. 2026</strong>.
                 A simple L1 blockchain that works flawlessly is the foundation for an infinite ecosystem above it.
               </p>
@@ -602,7 +602,7 @@ export default function RoadmapPage() {
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Exekuce' : 'Execution'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Activity className="h-7 w-7 text-zion-purple" />
-              Fáze 0 – 5 · Test-mainnet rehearsal → Full MainNet
+              Fáze 0 – 5 · Core + Edge mainnet → Full MainNet
             </h2>
             <p className="text-sm text-gray-400">{cs ? 'Každá fáze má jasné exit criteria. Žádné zkratky.' : 'Every phase has clear exit criteria. No shortcuts.'}</p>
           </div>
