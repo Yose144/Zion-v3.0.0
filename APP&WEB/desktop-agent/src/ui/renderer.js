@@ -24,10 +24,13 @@ let config = {};
 let isRunning = false;
 let isStarting = false;
 
-const PRIMARY_TESTNET_HOST = '91.98.122.165';
-const PRIMARY_POOL_PORT = 3333;
-const PRIMARY_RPC_PORT = 8444;
-const DEFAULT_RPC_URL = `http://${PRIMARY_TESTNET_HOST}:${PRIMARY_RPC_PORT}/jsonrpc`;
+// Mainnet Edge relay (Hetzner VPS, Prague) — public-facing pool + node
+const PRIMARY_MAINNET_HOST = '77.42.71.94';
+const PRIMARY_POOL_PORT = 8444;
+const PRIMARY_RPC_PORT = 8443;
+// Legacy alias
+const PRIMARY_TESTNET_HOST = PRIMARY_MAINNET_HOST;
+const DEFAULT_RPC_URL = `http://${PRIMARY_MAINNET_HOST}:${PRIMARY_RPC_PORT}/jsonrpc`;
 const DESKTOP_PURE_ZION_DEFAULT = true;
 
 function currentPureZionDefault(cfg = config) {
@@ -873,7 +876,7 @@ function setupControls() {
         // Predefined pool
         const [h, p] = poolRadio.value.split(':');
         poolHost = h;
-        poolPort = parseInt(p) || 3333;
+        poolPort = parseInt(p) || PRIMARY_POOL_PORT;
       }
     }
     
@@ -2937,11 +2940,11 @@ function renderServerGrid(servers) {
           <span class="val" style="font-family:monospace;font-size:12px;">${safeHost}</span>
         </div>
         <div class="server-detail">
-          <span class="label">Pool (3333)</span>
+          <span class="label">Pool (8444)</span>
           <span class="val ${poolOk ? 'ok' : 'err'}">${poolOk ? '\u2705 Online' : '\u274c Offline'} ${poolOk ? poolLatency : ''}</span>
         </div>
         <div class="server-detail">
-          <span class="label">RPC (8444)</span>
+          <span class="label">RPC (8443)</span>
           <span class="val ${rpcOk ? 'ok' : 'err'}">${rpcOk ? '\u2705 Online' : '\u274c Offline'} ${rpcOk ? rpcLatency : ''}</span>
         </div>
       </div>
