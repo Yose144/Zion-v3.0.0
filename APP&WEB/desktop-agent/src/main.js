@@ -12,10 +12,13 @@ const QRCode = require('qrcode');
 const crypto = require('crypto');
 
 // ── Network Constants ───────────────────────────────────────────────────────
-const PRIMARY_TESTNET_HOST = '91.98.122.165';
-const PRIMARY_POOL_PORT = 3333;
+// Mainnet Edge relay (Hetzner VPS, Prague) — public-facing pool + node
+const PRIMARY_MAINNET_HOST = '77.42.71.94';
+const PRIMARY_POOL_PORT = 8444;
 const PRIMARY_RPC_PORT = 8443;
-const DEFAULT_RPC_URL = `http://${PRIMARY_TESTNET_HOST}:${PRIMARY_RPC_PORT}/jsonrpc`;
+// Legacy alias kept for internal fallback references
+const PRIMARY_TESTNET_HOST = PRIMARY_MAINNET_HOST;
+const DEFAULT_RPC_URL = `http://${PRIMARY_MAINNET_HOST}:${PRIMARY_RPC_PORT}/jsonrpc`;
 
 // ── Logging: only miner metrics + errors go to console.log.
 // Everything else uses dbg() which outputs console.debug only when ZION_DEBUG=1.
@@ -1585,7 +1588,7 @@ function applyCudaTuning(gpuInfo, tuningConfig) {
 // ============================================================================
 
 const TESTNET_SERVERS = [
-  { id: 'zion2', name: 'Prague', host: PRIMARY_TESTNET_HOST, flag: 'CZ', location: 'EU Primary' },
+  { id: 'zion-edge', name: 'Prague (Mainnet Edge)', host: PRIMARY_MAINNET_HOST, flag: 'CZ', location: 'EU Primary', poolPort: PRIMARY_POOL_PORT },
 ];
 
 async function checkServerPort(host, port, timeout = 3000) {
@@ -1610,7 +1613,7 @@ async function checkServerPort(host, port, timeout = 3000) {
  * to a mining.subscribe JSON-RPC message. Catches cases where TCP is open
  * but the stratum service is dead/broken.
  */
-async function checkStratumHealth(host, port = 3333, timeout = 5000) {
+async function checkStratumHealth(host, port = 8444, timeout = 5000) {
   const net = require('net');
   return new Promise((resolve) => {
     const start = Date.now();
@@ -1628,22 +1631,22 @@ async function checkStratumHealth(host, port = 3333, timeout = 5000) {
     socket.on('close', fail);
 
     socket.on('connect', () => {
-      // Send stratum subscribe
+      // V3 pool protocol: send a hello probe (pool responds with welcome or closes)
       try {
-        socket.write('{"id":1,"method":"mining.subscribe","params":["zion-agent/2.9.6"]}\n');
+        socket.write('{"type":"hello","miner_id":"probe","worker_name":"health-check","algorithm":"cosmic_harmony_ekam_deeksha_v2"}\n');
       } catch { fail(); return; }
     });
 
     socket.on('data', (chunk) => {
       buf += chunk.toString();
-      // Look for a valid JSON line (stratum uses newline-delimited JSON)
+      // V3 pool uses newline-delimited JSON — any valid JSON response = pool alive
       const lines = buf.split('\n');
       for (const line of lines) {
         if (!line.trim()) continue;
         try {
           const msg = JSON.parse(line);
-          // Any valid JSON response from stratum = pool is alive
-          if (msg && (msg.id !== undefined || msg.method)) {
+          // welcome, job, or any valid V3 message = online
+          if (msg && msg.type) {
             if (!responded) {
               responded = true;
               const latency = Date.now() - start;
@@ -1665,8 +1668,9 @@ async function checkStratumHealth(host, port = 3333, timeout = 5000) {
 async function getAllServersStatus() {
   const results = await Promise.all(
     TESTNET_SERVERS.map(async (server) => {
+      const poolPort = server.poolPort || PRIMARY_POOL_PORT;
       const [poolStatus, rpcStatus] = await Promise.all([
-        checkStratumHealth(server.host, 3333),  // deep stratum check, not just TCP
+        checkStratumHealth(server.host, poolPort),  // V3 hello probe
         checkServerPort(server.host, PRIMARY_RPC_PORT)
       ]);
       return {
@@ -1709,7 +1713,7 @@ async function autoSelectBestPool() {
     }
 
     if (config.pool?.host !== best.host) {
-      config.pool = { host: best.host, port: 3333 };
+      config.pool = { host: best.host, port: best.poolPort || PRIMARY_POOL_PORT };
       config.rpcUrl = `http://${best.host}:${PRIMARY_RPC_PORT}/jsonrpc`;
       saveConfig(config);
       dbg(`[auto-select] Config updated to ${best.host}`);
@@ -2148,7 +2152,11 @@ function startMiningV3(config, v3Path) {
     ZION_MINER_ID: wallet,
     ZION_WORKER_NAME: worker || 'desktop',
     ZION_PROFILE: 'pool',
-    ZION_LOOP_COUNT: '4294967295',
+    // Loop count must be large — default of 1 causes pool to send Bye after every iteration
+    ZION_LOOP_COUNT: '1000000',
+    // Nonce count: 4096 matches pool default (ZION_NONCE_COUNT on pool server)
+    // for good GPU batch utilisation; auto-tune can override this per GPU
+    ZION_NONCE_COUNT: '4096',
     ZION_NONCE_AUTOTUNE: 'true',
     ZION_RECONNECT: 'true',
     ZION_METRICS_REPORT_SECS: '10',
@@ -3432,7 +3440,7 @@ function parseMinerOutput(output) {
     minerStats.threads = v3ThreadsMatch[1];
   }
 
-  // ─── V3 pool addr: "pool_addr=91.98.122.165:3333" ───
+  // ─── V3 pool addr: "pool_addr=77.42.71.94:8444" ───
   const v3PoolMatch = output.match(/^pool_addr=(.+)/m);
   if (v3PoolMatch) {
     minerStats.pool = v3PoolMatch[1].trim();
