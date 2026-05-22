@@ -66,8 +66,8 @@ const EDITION_OPTIONS: Array<{
 }> = [
   {
     id: 'final',
-    nameCs: 'Kanonická větev',
-    nameEn: 'Canonical Branch',
+    nameCs: 'BASE FINAL edice',
+    nameEn: 'BASE FINAL edition',
     color: '#00BFFF',
     bg: 'rgba(0,191,255,0.1)',
     border: 'rgba(0,191,255,0.3)',
@@ -78,18 +78,18 @@ const EDITION_META: Record<EditionKey, EditionMeta> = {
   final: {
     titleCs: 'Terra Nova',
     titleEn: 'Terra Nova',
-    subtitleCs: 'Kanonická větev Terra Novy',
-    subtitleEn: 'Canonical Terra Nova Branch',
-    editionCs: 'FINAL edice · kanonická větev · Praha 2026',
-    editionEn: 'FINAL edition · canonical branch · Prague 2026',
+    subtitleCs: 'Zlatý Kompas Nové Země',
+    subtitleEn: 'Golden Compass of the New Earth',
+    editionCs: 'BASE FINAL edice · reader-polish větev · Praha 2026',
+    editionEn: 'BASE FINAL edition · reader-polish branch · Prague 2026',
     aboutCs:
-      'Kanonická větev Terra Novy drží provozně čitelnou knihu. Přibližuje architekturu, stavby, roadmapovou disciplínu a to, co je v síti skutečně realizovatelné už nyní.',
+      'Polished edice Terra Novy — jasně oddělené vrstvy REALITA / ROADMAP / HORIZONT, přesná fakta, čitelný rytmus. Kanonický text pro web, komunity a Guardians.',
     aboutEn:
-      'The canonical Terra Nova branch keeps the book operationally readable. It leans into architecture, builds, roadmap discipline, and what is realistically executable in the network now.',
+      'Polished edition of Terra Nova — clearly separated REALITY / ROADMAP / HORIZON layers, accurate facts, readable rhythm. Canonical text for the web, communities and Guardians.',
     layersCs:
-      'Tahle verze je vhodná pro inženýrské čtení: uzemněná, konkrétní a součástí stejné civilizační linie.',
+      '🟢 REALITA = co funguje dnes · 📋 ROADMAP = co se staví · 🌟 HORIZONT = kam míříme.',
     layersEn:
-      'This version fits engineering-oriented reading: grounded, concrete, and part of the same civilizational line.',
+      '🟢 REALITY = what works today · 📋 ROADMAP = what is being built · 🌟 HORIZON = where we are heading.',
     dedicationCs:
       'Pro Sarah Issobel, Maitreyu Buddhu, Radhu & Situ i Meriam,\npřátele, rodinu, svobodné lidstvo a všechny děti tohoto světa:\nZION je váš. Stavte lepší svět, a dosáhnete ke hvězdám.\nZlatý věk začíná.',
     dedicationEn:
@@ -99,35 +99,35 @@ const EDITION_META: Record<EditionKey, EditionMeta> = {
 
 const EDITION_INTRO: Record<EditionKey, EditionIntro> = {
   final: {
-    signalsCs: ['Genesis.md', 'ZION CLI v3 RC', 'Terra Nova IV'],
-    signalsEn: ['Genesis.md', 'ZION CLI v3 RC', 'Terra Nova IV'],
-    eyebrowCs: 'ZION V3 · release candidate · Terra Nova',
-    eyebrowEn: 'ZION V3 · release candidate · Terra Nova',
-    headlineCs: 'ZION je v release-candidate stavu. Čtvrtá kniha drží mapu.',
-    headlineEn: 'ZION is in release-candidate state. The fourth book carries the map.',
+    signalsCs: ['BASE FINAL', '🟢 REALITA / 📋 ROADMAP / 🌟 HORIZONT', 'Praha 2026'],
+    signalsEn: ['BASE FINAL', '🟢 REALITY / 📋 ROADMAP / 🌟 HORIZON', 'Prague 2026'],
+    eyebrowCs: 'ZION Terra Nova · polished reader edice · 17 kapitol',
+    eyebrowEn: 'ZION Terra Nova · polished reader edition · 17 chapters',
+    headlineCs: 'Terra Nova. Jasná fakta, čitelný rytmus, tři vrstvy.',
+    headlineEn: 'Terra Nova. Clear facts, readable rhythm, three layers.',
     leadCs:
-      'Pražský runtime běží, auditní polish pokračuje a Genesis freeze se připravuje. Stojíte na prahu příběhu, který se staví krok za krokem.',
+      'Každé tvrzení je označeno: co je realita dnes, co je stavební plán a co je horizont na obzoru. Bez sebeklamu, bez přehnaných slibů.',
     leadEn:
-      'The Prague runtime is running, audit polish continues, and Genesis freeze is being prepared. You stand at the threshold of a story being built step by step.',
+      'Every claim is labelled: what is reality today, what is the build plan, and what is the horizon ahead. No self-deception, no inflated promises.',
     bodyCs:
-      'Terra Nova není manifest budoucnosti. Je to pracovní mapa toho, jak ZION funguje dnes, jak poroste zítra a kde končí fantasy a začíná stavební disciplína.',
+      'Sedmnáct kapitol od Prologu po Bhagavad Gítu. Blockchain, AI, komunity, medicína, volná energie, WARP, Issobella — a vždy jasná hranice mezi tím, co je hotovo, co se staví a kam míříme.',
     bodyEn:
-      'Terra Nova is not a manifesto of the future. It is a working map of how ZION operates today, how it grows tomorrow, and where fantasy ends and build discipline begins.',
+      'Seventeen chapters from Prologue to Bhagavad Gita. Blockchain, AI, communities, medicine, free energy, WARP, Issobella — always a clear line between what is done, what is being built, and where we are heading.',
     notesCs: [
-      'Genesis drží počátek, ale finální freeze čeká na podepsané okno.',
-      'ZION CLI je provozní nástroj, ne dekorace.',
-      'Terra Nova tu funguje jako realistická stavební kniha.',
+      '🟢 REALITA = ověřená fakta a fungující systémy k roku 2026.',
+      '📋 ROADMAP = konkrétní plány s časovým horizontem.',
+      '🌟 HORIZONT = vize a výzkumné cíle (2030–2040+).',
     ],
     notesEn: [
-      'Genesis holds the beginning, while the final freeze waits for a signed window.',
-      'ZION CLI is an operational tool, not decoration.',
-      'Terra Nova works here as a realistic construction book.',
+      '🟢 REALITY = verified facts and working systems as of 2026.',
+      '📋 ROADMAP = concrete plans with time horizon.',
+      '🌟 HORIZON = vision and research goals (2030–2040+).',
     ],
   },
 };
 
 const EDITION_CHAPTERS: Record<EditionKey, BookChapter[]> = {
-  final: CHAPTERS,
+  final: EDITIONS_DATA['final'] as unknown as BookChapter[],
 };
 
 const EDITION_COMPOSITION_LINES: Record<EditionKey, { cs: string[]; en: string[] }> = {
