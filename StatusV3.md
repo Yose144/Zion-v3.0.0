@@ -1,6 +1,6 @@
 # ZION V3 — Status Report (Mainnet Polish)
 
-> **Datum:** 2026-05-21 (Edge pool + L5/L6 + DAO governance + root docs sync); **2026-05-12** (Hiran v2.2 CLI integration); **2026-05-07** (security cleanup + agentická obsluha).
+> **Datum:** 2026-05-22 (Genesis + fee split KONFIGURACE DOKONČENA, ready for mainnet launch 20.6.2026); **2026-05-21** (Edge pool + L5/L6 + DAO governance + root docs sync); **2026-05-12** (Hiran v2.2 CLI integration); **2026-05-07** (security cleanup + agentická obsluha).
 > (sjednocení `StatusV3.md` ↔ `StatusV3-Part2.md` — TL;DR, roadmap §6, §8, §5
 > pyramida, odkazy).
 > **Předchozí update:** 2026-05-03 (genesis konsensus — merged na `main`)
@@ -72,6 +72,99 @@ zion hiran deploy --model --platform             # Deployment
 - Backend: llama.cpp s CUDA akcelerací
 - Port: 8002 (OpenAI-compatible API)
 - GPU: NVIDIA RTX 3060+ (6+ GB VRAM)
+
+---
+
+## Co je nového 2026-05-22 (Genesis + Fee Split KONFIGURACE DOKONČENA)
+
+### Mainnet Ready - Genesis a Fee Split Konfigurace
+
+|| Komponenta | Stav |
+|---|---|
+| **Fee split adresy (89/5/5/1)** | ✅ **DOKONČENO** - všechny adresy aktualizovány na kanonické |
+| **Genesis premine adresy** | ✅ **DOKONČENO** - 12 výstupů aktualizováno (16.28B ZION) |
+| **Genesis hash** | ✅ **KONZISTENTNÍ** - `003529805e9b47babb9ac0f26b27b1aad0a1cf3c483181857daf3269f7088923` |
+| **Core server** | ✅ **BĚŽÍ** - Windows 11, height 26+, fee split aktivní |
+| **Edge server** | ✅ **BĚŽÍ** - Hetzner VPS, synchronizováno, fee split aktivní |
+| **P2P synchronizace** | ✅ **FUNKČNÍ** - Core ↔ Edge přes Tailscale VPN |
+| **Pool relay** | ✅ **AKTIVNÍ** - Edge → Core share relay |
+| **Dokumentace** | ✅ **AKTUALIZOVÁNA** - launch sequence, roadmap |
+| **Git připraven** | ✅ **READY** - všechny změny připraveny k commitu |
+
+### Kanonické Fee Split Adresy (89/5/5/1)
+
+| Typ | Adresa | Status |
+|-----|--------|--------|
+| **Miner (89%)** | `zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3` | ✅ Kanonická |
+| **Humanitarian (5%)** | `zion1m4v5z8z850u480c5c208z274e334369275n5y20` | ✅ Kanonická |
+| **Issobella (5%)** | `zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702` | ✅ Kanonická |
+| **Pool Fee (1%)** | `zion1p2a7a5q0t2z5z545y6m6j5e864n002v4z6w95w5` | ✅ Kanonická |
+
+### Genesis Premine Distribuce (16.28B ZION)
+
+| Kategorie | Počet slotů | Celkem ZION | Lock |
+|-----------|-------------|------------|------|
+| **OASIS + Golden Egg** | 5 | 8.25B | Okamžitý |
+| **DAO Treasury** | 3 | 4.0B | 1 rok (height 525,600) |
+| **Infrastructure** | 3 | 2.59B | Okamžitý |
+| **Humanitarian** | 1 | 1.44B | Okamžitý |
+
+### Aktualizované Soubory
+
+**Launch skripty (7 souborů):**
+- `scripts/launch-stack.ps1`
+- `scripts/launch-stack.sh`
+- `scripts/start-node.ps1`
+- `scripts/start-node.sh`
+- `scripts/start-node2.ps1`
+- `scripts/start-node2.sh`
+- `scripts/start-windows-stack.bat`
+
+**Zdrojový kód:**
+- `V3/L1/core/src/genesis.rs` (premine adresy)
+- `PREMINE_ADDRESSES_PUBLIC.txt` (veřejný dokument)
+
+**Dokumentace:**
+- `MAINNET_LAUNCH_SEQUENCE.md` (kompletní launch plán)
+- `scripts/launch-mainnet.ps1` (rychlý launch skript)
+- `edge-deploy/` (Edge deployment balíček)
+
+### Síťová Topologie (Aktivní)
+
+```
+Core (Windows 11)          Edge (Hetzner VPS)
+100.86.102.5              100.66.162.125
+    ↓ Tailscale VPN              ↓
+Node1 (height 26+)          Node (height 25)
+Pool (Master)               Pool (Relay)
+Miner (GPU)                Public P2P: 8333
+Dashboard: 8765            Public Pool: 8444
+```
+
+### Mainnet Launch Plán
+
+**Cílový datum:** **20.6.2026** (Summer Solstice)
+
+**Předpoklady pro launch:**
+- ✅ Genesis hash konzistentní
+- ✅ Fee split adresy kanonické
+- ✅ P2P synchronizace funkční
+- ✅ Infrastruktura stabilní
+- 🔄 Final payout verification
+- 🔄 Security audit
+- 🔄 Community preparation
+
+**Launch sequence viz:** `MAINNET_LAUNCH_SEQUENCE.md`
+
+### Docker Compose (Alternativa)
+
+Pro deployment je také připravena Docker Compose konfigurace:
+- `V3/docker/docker-compose.yml` (unified setup)
+- Profile: `--profile mainnet`
+- Healthchecks na všech službách
+- Environment variables pro fee split
+
+---
 
 **Monitoring:**
 - Prometheus scraping: `zion-hiran-inference` job
