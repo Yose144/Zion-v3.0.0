@@ -16,9 +16,12 @@ const crypto = require('crypto');
 const PRIMARY_MAINNET_HOST = '77.42.71.94';
 const PRIMARY_POOL_PORT = 8444;
 const PRIMARY_RPC_PORT = 8443;
+// Edge VPN IP (Tailscale) for RPC access
+const EDGE_VPN_HOST = '100.66.162.125';
 // Legacy alias kept for internal fallback references
 const PRIMARY_TESTNET_HOST = PRIMARY_MAINNET_HOST;
-const DEFAULT_RPC_URL = `http://${PRIMARY_MAINNET_HOST}:${PRIMARY_RPC_PORT}/jsonrpc`;
+// Default to localhost for users running local node; fallback to Edge VPN
+const DEFAULT_RPC_URL = 'http://127.0.0.1:8443/jsonrpc';
 
 // ── Logging: only miner metrics + errors go to console.log.
 // Everything else uses dbg() which outputs console.debug only when ZION_DEBUG=1.
@@ -1589,6 +1592,7 @@ function applyCudaTuning(gpuInfo, tuningConfig) {
 
 const TESTNET_SERVERS = [
   { id: 'zion-edge', name: 'Prague (Mainnet Edge)', host: PRIMARY_MAINNET_HOST, flag: 'CZ', location: 'EU Primary', poolPort: PRIMARY_POOL_PORT },
+  { id: 'zion-edge-vpn', name: 'Prague (Edge VPN)', host: EDGE_VPN_HOST, flag: 'CZ', location: 'EU VPN', poolPort: PRIMARY_POOL_PORT },
 ];
 
 async function checkServerPort(host, port, timeout = 3000) {
@@ -4237,29 +4241,30 @@ async function zionRpcCall(rpcUrl, method, params) {
     params
   }) + '\n';
 
-  return new Promise((resolve, reject) => {
-    const socket = new net.Socket();
-    let data = '';
-    let settled = false;
+  const attemptRpc = (attemptHost, attemptPort) => {
+    return new Promise((resolve, reject) => {
+      const socket = new net.Socket();
+      let data = '';
+      let settled = false;
 
-    const timer = setTimeout(() => {
-      if (!settled) {
+      const timer = setTimeout(() => {
+        if (!settled) {
+          settled = true;
+          socket.destroy();
+          reject(new Error(`RPC timeout calling ${method} on ${attemptHost}:${attemptPort}`));
+        }
+      }, 8000);
+
+      const finish = () => {
+        if (settled) return;
         settled = true;
+        clearTimeout(timer);
         socket.destroy();
-        reject(new Error(`RPC timeout calling ${method} on ${host}:${port}`));
-      }
-    }, 8000);
 
-    const finish = () => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timer);
-      socket.destroy();
-
-      const trimmed = data.trim();
-      if (!trimmed) {
-        reject(new Error(`Empty RPC response for ${method} from ${host}:${port}`));
-        return;
+        const trimmed = data.trim();
+        if (!trimmed) {
+          reject(new Error(`Empty RPC response for ${method} from ${attemptHost}:${attemptPort}`));
+          return;
       }
 
       try {
@@ -4274,7 +4279,7 @@ async function zionRpcCall(rpcUrl, method, params) {
       }
     };
 
-    socket.connect(port, host, () => {
+    socket.connect(attemptPort, attemptHost, () => {
       socket.write(payload);
     });
     socket.on('data', (chunk) => { data += chunk.toString(); });
@@ -4285,10 +4290,21 @@ async function zionRpcCall(rpcUrl, method, params) {
         settled = true;
         clearTimeout(timer);
         socket.destroy();
-        reject(new Error(`RPC connect error (${host}:${port}): ${err.message}`));
+        reject(new Error(`RPC connect error (${attemptHost}:${attemptPort}): ${err.message}`));
       }
     });
   });
+
+  // Try primary host first, fallback to Edge VPN if localhost fails
+  try {
+    return await attemptRpc(host, port);
+  } catch (error) {
+    if (host === '127.0.0.1' || host === 'localhost') {
+      dbg(`[RPC] Localhost failed, trying Edge VPN: ${EDGE_VPN_HOST}:${port}`);
+      return await attemptRpc(EDGE_VPN_HOST, port);
+    }
+    throw error;
+  }
 }
 
 ipcMain.handle('wallet-get-balance', async (event, { rpcUrl, address }) => {
