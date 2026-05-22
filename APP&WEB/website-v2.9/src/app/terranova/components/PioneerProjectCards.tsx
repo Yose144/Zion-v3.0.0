@@ -27,6 +27,7 @@ import {
   Satellite,
   Terminal,
   Users,
+  Rocket,
   LucideIcon,
 } from 'lucide-react';
 
@@ -128,30 +129,6 @@ const PROJECTS: ProjectCardData[] = [
       { value: 'Tahiti', labelCs: 'Lokalita', labelEn: 'Location' },
       { value: 'L5', labelCs: 'Vrstva', labelEn: 'Layer' },
       { value: 'PF', labelCs: 'Region', labelEn: 'Region' },
-    ],
-  },
-  {
-    isSecret: true,
-    title: 'Projekt 3 — Na tahity',
-    location: 'TBD',
-    eyebrow: 'L5 · Future Node',
-    statusCs: 'Koncept',
-    statusEn: 'Concept',
-    descriptionCs:
-      'Třetí pilotní uzel Terra Nova — lokace a koncept se vyvíjej. Bude se zaměřovat na specifickou komunitní potřebu a kulturní kontext.',
-    descriptionEn:
-      'Third Terra Nova pilot node — location and concept to be developed. Will focus on specific community needs and cultural context.',
-    accent: 'sky',
-    features: [
-      { icon: Sparkles, labelCs: 'Koncept v přípravě', labelEn: 'Concept in preparation' },
-      { icon: Terminal, labelCs: 'Technický výzkum', labelEn: 'Technical research' },
-      { icon: Users, labelCs: 'Komunitní zapojení', labelEn: 'Community engagement' },
-      { icon: Wind, labelCs: 'Regenerativní design', labelEn: 'Regenerative design' },
-    ],
-    metrics: [
-      { value: 'TBD', labelCs: 'Lokalita', labelEn: 'Location' },
-      { value: 'L5', labelCs: 'Vrstva', labelEn: 'Layer' },
-      { value: 'TBD', labelCs: 'Region', labelEn: 'Region' },
     ],
   },
 ];
@@ -260,105 +237,122 @@ function accentClasses(accent: ProjectCardData['accent']) {
 
 export default function PioneerProjectCards({ cs }: { cs: boolean }) {
   return (
-    <div className="grid gap-4 md:grid-cols-4">
-      {PROJECTS.map((project) => {
-        const accent = accentClasses(project.accent);
-        const cardClassName = `group relative overflow-hidden rounded-[28px] border bg-black/35 p-5 transition-all duration-500 ${accent.border}${project.isSecret ? ' cursor-default saturate-75' : ''}`;
-        const content = (
-          <>
-            <div className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${accent.glowA}`} />
-            <div className={`pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full blur-3xl ${accent.glowB}`} />
-            <div className={`pointer-events-none absolute -bottom-10 -left-10 h-32 w-32 rounded-full blur-3xl ${accent.glowC}`} />
-            <div className={`pointer-events-none absolute inset-0 transition-opacity duration-500 ${project.isSecret ? 'opacity-40' : 'opacity-0 group-hover:opacity-100'}`} style={{ background: 'linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.07) 28%, transparent 56%)' }} />
-            {project.isSecret && (
-              <>
-                <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),transparent_42%),repeating-linear-gradient(135deg,rgba(255,255,255,0.03)_0,rgba(255,255,255,0.03)_10px,transparent_10px,transparent_22px)] opacity-80" />
-                <div className="pointer-events-none absolute inset-0 backdrop-blur-[1.5px]" />
-                <div className="pointer-events-none absolute right-4 top-4 inline-flex items-center gap-2 rounded-full border border-violet-300/15 bg-black/45 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.26em] text-violet-100/80 shadow-[0_0_30px_rgba(168,85,247,0.16)]">
-                  <Lock className="h-3.5 w-3.5" />
-                  {cs ? 'Sealed' : 'Sealed'}
-                </div>
-              </>
-            )}
+    <div className="space-y-6">
+      {/* Sekční nadpis */}
+      <div className="flex items-center gap-3 mb-2">
+        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-zion-gold/10 border border-zion-gold/20">
+          <Rocket className="h-5 w-5 text-zion-gold" />
+        </div>
+        <div>
+          <h2 className="text-lg font-semibold text-white">
+            {cs ? 'Pioneer Projekty L5' : 'L5 Pioneer Projects'}
+          </h2>
+          <p className="text-xs text-gray-500">
+            {cs ? 'Živé uzly Terra Nova po celém světě' : 'Live Terra Nova nodes around the world'}
+          </p>
+        </div>
+      </div>
 
-            <div className="relative z-10 space-y-5">
-              <div className="flex items-start justify-between gap-4">
-                <div className="space-y-2">
-                  <p className={`text-[10px] uppercase tracking-[0.28em] ${accent.eye}`}>{project.eyebrow}</p>
-                  <div>
-                    <h3 className={`text-xl font-semibold ${accent.title}`}>{project.title}</h3>
-                    <div className={`mt-1 inline-flex items-center gap-1.5 text-sm ${accent.location}`}>
-                      <MapPin className="h-3.5 w-3.5" />
-                      <span>{project.location}</span>
+      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {PROJECTS.map((project) => {
+          const accent = accentClasses(project.accent);
+          const cardClassName = `group relative overflow-hidden rounded-3xl border bg-black/40 backdrop-blur-sm p-6 transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl ${accent.border}${project.isSecret ? ' cursor-default saturate-75' : ''}`;
+          const content = (
+            <>
+              <div className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${accent.glowA}`} />
+              <div className={`pointer-events-none absolute -right-12 -top-12 h-48 w-48 rounded-full blur-3xl ${accent.glowB}`} />
+              <div className={`pointer-events-none absolute -bottom-10 -left-10 h-36 w-36 rounded-full blur-3xl ${accent.glowC}`} />
+              <div className={`pointer-events-none absolute inset-0 transition-opacity duration-500 ${project.isSecret ? 'opacity-40' : 'opacity-0 group-hover:opacity-100'}`} style={{ background: 'linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.07) 28%, transparent 56%)' }} />
+              {project.isSecret && (
+                <>
+                  <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),transparent_42%),repeating-linear-gradient(135deg,rgba(255,255,255,0.03)_0,rgba(255,255,255,0.03)_10px,transparent_10px,transparent_22px)] opacity-80" />
+                  <div className="pointer-events-none absolute inset-0 backdrop-blur-[1.5px]" />
+                  <div className="pointer-events-none absolute right-4 top-4 inline-flex items-center gap-2 rounded-full border border-violet-300/15 bg-black/45 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.26em] text-violet-100/80 shadow-[0_0_30px_rgba(168,85,247,0.16)]">
+                    <Lock className="h-3.5 w-3.5" />
+                    {cs ? 'Sealed' : 'Sealed'}
+                  </div>
+                </>
+              )}
+
+              <div className="relative z-10 space-y-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="space-y-2">
+                    <p className={`text-[10px] uppercase tracking-[0.28em] ${accent.eye}`}>{project.eyebrow}</p>
+                    <div>
+                      <h3 className={`text-xl font-bold ${accent.title}`}>{project.title}</h3>
+                      <div className={`mt-1 inline-flex items-center gap-1.5 text-sm ${accent.location}`}>
+                        <MapPin className="h-3.5 w-3.5" />
+                        <span>{project.location}</span>
+                      </div>
                     </div>
                   </div>
+
+                  <span className={`inline-flex shrink-0 items-center gap-2 rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] ${accent.badge}`}>
+                    <Network className="h-3.5 w-3.5" />
+                    {cs ? project.statusCs : project.statusEn}
+                  </span>
                 </div>
 
-                <span className={`inline-flex shrink-0 items-center gap-2 rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] ${accent.badge}`}>
-                  <Network className="h-3.5 w-3.5" />
-                  {cs ? project.statusCs : project.statusEn}
-                </span>
-              </div>
+                <p className={`text-sm leading-relaxed ${project.isSecret ? 'text-gray-400' : 'text-gray-300'}`}>
+                  {cs ? project.descriptionCs : project.descriptionEn}
+                </p>
 
-              <p className={`max-w-xl text-sm leading-relaxed ${project.isSecret ? 'text-gray-400' : 'text-gray-300'}`}>
-                {cs ? project.descriptionCs : project.descriptionEn}
-              </p>
+                <div className="grid grid-cols-2 gap-2">
+                  {project.features.map((feature) => {
+                    const Icon = feature.icon;
+                    return (
+                      <div key={feature.labelCs} className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-xs ${accent.chip}${project.isSecret ? ' border-dashed opacity-80' : ''}`}>
+                        <Icon className={`h-4 w-4 shrink-0 ${accent.icon}`} />
+                        <span className="truncate">{cs ? feature.labelCs : feature.labelEn}</span>
+                      </div>
+                    );
+                  })}
+                </div>
 
-              <div className="grid grid-cols-2 gap-2">
-                {project.features.map((feature) => {
-                  const Icon = feature.icon;
-                  return (
-                    <div key={feature.labelCs} className={`flex items-center gap-2 rounded-2xl border px-3 py-2 text-xs ${accent.chip}${project.isSecret ? ' border-dashed opacity-80' : ''}`}>
-                      <Icon className={`h-4 w-4 shrink-0 ${accent.icon}`} />
-                      <span>{cs ? feature.labelCs : feature.labelEn}</span>
+                <div className="grid grid-cols-3 gap-2">
+                  {project.metrics.map((metric) => (
+                    <div key={metric.labelCs} className={`rounded-xl border px-3 py-2.5 text-center ${accent.metric}${project.isSecret ? ' opacity-75' : ''}`}>
+                      <p className="text-sm font-bold">{metric.value}</p>
+                      <p className="mt-0.5 text-[10px] uppercase tracking-[0.16em] text-gray-500">{cs ? metric.labelCs : metric.labelEn}</p>
                     </div>
-                  );
-                })}
-              </div>
+                  ))}
+                </div>
 
-              <div className="grid grid-cols-3 gap-2">
-                {project.metrics.map((metric) => (
-                  <div key={metric.labelCs} className={`rounded-2xl border px-3 py-2 ${accent.metric}${project.isSecret ? ' opacity-75' : ''}`}>
-                    <p className="text-sm font-semibold">{metric.value}</p>
-                    <p className="mt-0.5 text-[10px] uppercase tracking-[0.16em] text-gray-500">{cs ? metric.labelCs : metric.labelEn}</p>
-                  </div>
-                ))}
+                <div className={`flex items-center justify-between rounded-xl border px-4 py-3 text-sm font-semibold transition-colors ${accent.cta}${project.isSecret ? ' border-dashed bg-black/35 text-violet-100/85 opacity-90' : ''}`}>
+                  <span>
+                    {project.isSecret
+                      ? cs
+                        ? 'Sealed concept · doplníme později'
+                        : 'Sealed concept · details later'
+                      : cs
+                        ? 'Otevřít detail projektu'
+                        : 'Open project detail'}
+                  </span>
+                  {project.isSecret ? (
+                    <Lock className="h-4 w-4" />
+                  ) : (
+                    <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+                  )}
+                </div>
               </div>
-
-              <div className={`flex items-center justify-between rounded-2xl border px-4 py-3 text-sm font-semibold transition-colors ${accent.cta}${project.isSecret ? ' border-dashed bg-black/35 text-violet-100/85 opacity-90' : ''}`}>
-                <span>
-                  {project.isSecret
-                    ? cs
-                      ? 'Sealed concept · doplníme později'
-                      : 'Sealed concept · details later'
-                    : cs
-                      ? 'Otevřít detail projektu'
-                      : 'Open project detail'}
-                </span>
-                {project.isSecret ? (
-                  <Lock className="h-4 w-4" />
-                ) : (
-                  <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
-                )}
-              </div>
-            </div>
-          </>
-        );
-
-        if (!project.href || project.isSecret) {
-          return (
-            <div key={project.title} className={cardClassName} aria-disabled="true">
-              {content}
-            </div>
+            </>
           );
-        }
 
-        return (
-          <Link key={project.title} href={project.href} className={cardClassName}>
-            {content}
-          </Link>
-        );
-      })}
+          if (!project.href || project.isSecret) {
+            return (
+              <div key={project.title} className={cardClassName} aria-disabled="true">
+                {content}
+              </div>
+            );
+          }
+
+          return (
+            <Link key={project.title} href={project.href} className={cardClassName}>
+              {content}
+            </Link>
+          );
+        })}
+      </div>
     </div>
   );
 }

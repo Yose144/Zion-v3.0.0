@@ -129,16 +129,55 @@ zion hiran deploy --model --platform             # Deployment
 - `scripts/launch-mainnet.ps1` (rychlý launch skript)
 - `edge-deploy/` (Edge deployment balíček)
 
+### Dashboard & Launch Day Automation
+
+| Komponenta | Stav |
+|---|---|
+| **Dashboard** | ✅ **HOTOVÉ** — Python Flask app, port 8766, 6 tabů |
+| **Launch Day tab** | ✅ **HOTOVÉ** — automatizace pro 20.6.2026 12:00 UTC |
+| **Mainnet readiness** | ✅ **HOTOVÉ** — 8 status karet, auto-refresh 3s |
+| **Backup system** | ✅ **HOTOVÉ** — lokální `backups/launch-day-TIMESTAMP/` |
+| **Auto-start (Windows)** | ✅ **HOTOVÉ** — Scheduled Task při loginu |
+| **API endpoints** | ✅ **HOTOVÉ** — `/api/mainnet-status`, `/api/launch-day-prepare`, `/api/launch-day-execute` |
+
+**Soubory:**
+- `dashboard/app.py` — Flask backend s API
+- `dashboard/dashboard.html` + `dashboard/dashboard.js` — frontend
+- `start-dashboard.bat` — rychlý start
+- `install-dashboard-autostart.bat` — Windows autostart installer
+- `DASHBOARD_AUTOSTART.md` — návod
+
+### GPU Mining — Lokální Ověření (Windows 11)
+
+| Parametr | Hodnota |
+|---|---|
+| **GPU** | AMD RX 5600 XT |
+| **Backend** | OpenCL (`gfx1010:xnack-`) |
+| **Hashrate** | **~5–10 KH/s** sustained (pool stratum) |
+| **Pool** | Local `127.0.0.1:8444` → Edge relay `100.66.162.125:8444` |
+| **Shares** | 100 % accept rate (6/0) |
+| **Vardiff** | Auto-retarget 1 → 4 |
+| **Loop count** | 1,000,000 (optimalizace pro GPU) |
+| **Nonce count** | 4096 (lepší GPU využití) |
+
+**Konfigurace poolu:**
+- `ZION_POOL_LOOP_COUNT=1000000`
+- `ZION_NONCE_COUNT=4096`
+- `ZION_MAX_SESSIONS_PER_IP=100`
+
+**Scripts:** `scripts/launch-stack.ps1`, `scripts/start-pool.ps1`, `scripts/start-miner.ps1`
+
 ### Síťová Topologie (Aktivní)
 
 ```
 Core (Windows 11)          Edge (Hetzner VPS)
 100.86.102.5              100.66.162.125
     ↓ Tailscale VPN              ↓
-Node1 (height 26+)          Node (height 25)
+Node1 (height 100+)         Node (height 100+)
+Node2 (follower)            Public P2P: 8333
 Pool (Master)               Pool (Relay)
-Miner (GPU)                Public P2P: 8333
-Dashboard: 8765            Public Pool: 8444
+Miner (GPU)                 Public Pool: 8444
+Dashboard: 8766             WebSocket: 8445
 ```
 
 ### Mainnet Launch Plán

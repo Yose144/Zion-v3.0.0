@@ -1565,18 +1565,14 @@ export default function TerraNovaBookClient() {
                 </div>
               </div>
 
-              <div className="mt-4 rounded-3xl border border-white/10 bg-black/30 p-4 md:p-5">
-                <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-                  <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">
-                    {cs ? 'L5 projekty pod kompasem' : 'L5 projects under the compass'}
-                  </p>
-                  <p className="text-[11px] text-gray-600">
-                    {cs ? 'Přímý vstup do obou lokalit' : 'Direct access to both locations'}
-                  </p>
-                </div>
+              <div className="mt-6 rounded-[32px] border border-white/10 bg-gradient-to-b from-black/40 to-black/20 p-6 md:p-8 backdrop-blur-md">
                 <PioneerProjectCards cs={cs} />
-                <GeographyMenu cs={cs} />
-                <LayerMenu cs={cs} />
+                <div className="mt-8 pt-6 border-t border-white/5">
+                  <GeographyMenu cs={cs} />
+                </div>
+                <div className="mt-6 pt-6 border-t border-white/5">
+                  <LayerMenu cs={cs} />
+                </div>
               </div>
 
             </div>
