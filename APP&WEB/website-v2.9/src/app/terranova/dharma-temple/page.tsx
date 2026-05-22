@@ -551,10 +551,10 @@ export default function DharmaTemplePage() {
             <span>{cs ? 'Zahrada Genesis' : 'Zahrada Genesis'}</span>
           </Link>
           <Link
-            href="/terranova"
-            className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-violet-400 transition-colors"
+            href="/terranova/te-piko-ora"
+            className="inline-flex items-center gap-2 rounded-xl border border-cyan-500/25 bg-cyan-500/10 hover:bg-cyan-500/20 px-4 py-2 text-sm text-cyan-300 transition-all duration-300"
           >
-            <span>{cs ? 'Terra Nova' : 'Terra Nova'}</span>
+            <span>Te Pīko Ora</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
         </motion.div>
