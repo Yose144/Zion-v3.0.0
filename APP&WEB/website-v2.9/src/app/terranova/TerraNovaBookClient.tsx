@@ -20,6 +20,7 @@ import { CHAPTERS } from './bookData';
 import { EDITIONS_DATA } from './generatedEditions';
 import PioneerProjectCards from './components/PioneerProjectCards';
 import GeographyMenu from './components/GeographyMenu';
+import LayerMenu from './components/LayerMenu';
 import type { BookChapter } from './bookData';
 
 type EditionKey = 'final';
@@ -80,10 +81,10 @@ const EDITION_META: Record<EditionKey, EditionMeta> = {
     titleEn: 'Terra Nova',
     subtitleCs: 'Zlatý Kompas Nové Země',
     subtitleEn: 'Golden Compass of the New Earth',
-    editionCs: 'BASE FINAL edice · reader-polish větev · Praha 2026',
-    editionEn: 'BASE FINAL edition · reader-polish branch · Prague 2026',
+    editionCs: 'BASE FINAL edice · kanonická větev · Praha 2026',
+    editionEn: 'BASE FINAL edition · canonical branch · Prague 2026',
     aboutCs:
-      'Polished edice Terra Novy — jasně oddělené vrstvy REALITA / ROADMAP / HORIZONT, přesná fakta, čitelný rytmus. Kanonický text pro web, komunity a Guardians.',
+      'Kanonická BASE FINAL edice Terra Novy — kompletní 12 kapitol + přílohy (A-F) + geography. Zdroj: docs/TerraNova/BASE_FINAL/.',
     aboutEn:
       'Polished edition of Terra Nova — clearly separated REALITY / ROADMAP / HORIZON layers, accurate facts, readable rhythm. Canonical text for the web, communities and Guardians.',
     layersCs:
@@ -1575,6 +1576,7 @@ export default function TerraNovaBookClient() {
                 </div>
                 <PioneerProjectCards cs={cs} />
                 <GeographyMenu cs={cs} />
+                <LayerMenu cs={cs} />
               </div>
 
             </div>
