@@ -47,7 +47,6 @@ export default function Navigation() {
       items: [
         { href: '/defi',           label: tr('nav', 'defi', lang) },
         { href: '/wallet',         label: 'Wallet' },
-        { href: '/bridge',         label: tr('nav', 'bridge', lang) },
         { href: '/dao',            label: tr('nav', 'dao', lang) },
         { href: '/warp',           label: tr('nav', 'warp', lang) },
       ],
@@ -67,7 +66,6 @@ export default function Navigation() {
         { href: '/l5-free-world', label: 'L5 Free World' },
         { href: '/l6-issobella', label: 'L6 Issobella' },
         { href: '/bridge', label: tr('nav', 'bridge', lang) },
-        { href: '/kompas', label: tr('nav', 'kompas', lang) },
         { href: '/api-reference', label: tr('nav', 'api', lang) },
         { href: '/ai-native', label: tr('nav', 'ai_native', lang) },
       ],
