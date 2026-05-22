@@ -59,8 +59,9 @@ export default function Navigation() {
           href: '/terranova',
           label: tr('nav', 'terranova', lang),
           children: [
-            { href: '/terranova/public', label: tr('nav', 'terranova_public', lang) },
             { href: '/terranova/genesis', label: tr('nav', 'terra_garden_genesis', lang) },
+            { href: '/terranova/dharma-temple', label: 'Dharma Temple' },
+            { href: '/terranova/te-piko-ora', label: 'Te Pīko Ora' },
           ],
         },
         { href: '/l5-free-world', label: 'L5 Free World' },

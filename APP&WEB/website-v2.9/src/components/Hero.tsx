@@ -144,28 +144,28 @@ export default function Hero() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.4 }}
-              className="zion-panel-soft zion-panel-hover relative overflow-hidden border-pink-500/25 bg-gradient-to-br from-pink-500/10 via-violet-500/8 to-transparent p-5"
+              className="zion-panel-soft zion-panel-hover relative overflow-hidden border-emerald-500/25 bg-gradient-to-br from-emerald-500/10 via-violet-500/8 to-transparent p-5"
             >
-              <div className="absolute -inset-px rounded-2xl bg-gradient-to-br from-pink-500/15 to-violet-600/10 blur-sm pointer-events-none" />
+              <div className="absolute -inset-px rounded-2xl bg-gradient-to-br from-emerald-500/15 to-violet-600/10 blur-sm pointer-events-none" />
               <div className="relative flex items-start gap-4">
-                <div className="flex-none w-10 h-10 rounded-xl bg-pink-500/15 flex items-center justify-center">
-                  <BrainCircuit className="w-5 h-5 text-pink-300" />
+                <div className="flex-none w-10 h-10 rounded-xl bg-emerald-500/15 flex items-center justify-center">
+                  <BrainCircuit className="w-5 h-5 text-emerald-300" />
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                      <span className="text-sm font-bold text-white">Mainnet Launch — 31 December 2026</span>
-                    <span className="text-xs bg-pink-500/20 text-pink-300 px-2 py-0.5 rounded-full font-semibold">
-                        Active
+                      <span className="text-sm font-bold text-white">Mainnet LIVE — 20 June 2026</span>
+                    <span className="text-xs bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full font-semibold">
+                        GO
                     </span>
                   </div>
                   <p className="text-sm text-gray-400 leading-relaxed">
-                    Network status, explorer, pool, downloads, and documentation — all preparing for public mainnet launch on {SITE_LAUNCH_DATE_DISPLAY}.
-                      This homepage tracks the final countdown to production launch.
+                    Network status, explorer, pool, downloads, and documentation — mainnet is LIVE since {SITE_LAUNCH_DATE_DISPLAY}.
+                      Core + Edge topology operational, mining active, bridge deployed.
                   </p>
                 </div>
                 <a
                   href="#tree-of-life"
-                  className="flex-none ml-auto text-xs text-pink-300 hover:text-pink-200 flex items-center gap-1 transition"
+                  className="flex-none ml-auto text-xs text-emerald-300 hover:text-emerald-200 flex items-center gap-1 transition"
                 >
                   {tr('hero', 'teaser_cta', lang)} <ArrowRight className="w-3.5 h-3.5" />
                 </a>
