@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- AUDIT-FIX E-04 (16 Feb 2026): Content Security Policy -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' ws://localhost:* wss://localhost:* http://localhost:* https://localhost:* http://91.98.122.165:* https://openrouter.ai https://sepolia.basescan.org; object-src 'none'; base-uri 'self'; form-action 'self';">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' ws://localhost:* wss://localhost:* http://localhost:* https://localhost:* http://77.42.71.94:* https://openrouter.ai https://sepolia.basescan.org; object-src 'none'; base-uri 'self'; form-action 'self';">
   <title>ZION Native Awakening v2.9.6</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -4067,7 +4067,7 @@
                 </label>
                 <label class="floating-field span-2">
                   <span>Chain RPC URL</span>
-                  <input type="text" id="rpc-url" placeholder="http://localhost:8444/jsonrpc" />
+                  <input type="text" id="rpc-url" placeholder="http://localhost:8443/jsonrpc" />
                 </label>
               </div>
 
@@ -4099,14 +4099,14 @@
 
               <div class="pool-grid">
                 <label class="pool-card">
-                  <input type="radio" name="pool-select" value="91.98.122.165:3333" id="pool-primary" checked />
+                  <input type="radio" name="pool-select" value="77.42.71.94:8444" id="pool-primary" checked />
                   <div class="pool-card-body">
                     <div class="pool-meta">
                       <span class="pill pill-purple">Canonical</span>
                       <span class="pill pill-gold">Primary</span>
                     </div>
                     <h4>Canonical Pool</h4>
-                    <p>91.98.122.165:3333</p>
+                    <p>77.42.71.94:8444</p>
                     <div class="pool-meta pool-meta-secondary">
                       <span class="pill pill-cyan">Deeksha</span>
                       <span class="pill pill-gold">ZION only</span>
@@ -4725,14 +4725,14 @@
                   <span class="emoji-16">⛏️</span>
                   <span class="resource-item-label">Mining Pools</span>
                 </div>
-                <span class="resource-item-value">91.98.122.165:3333 · custom endpoint supported</span>
+                <span class="resource-item-value">77.42.71.94:8444 · custom endpoint supported</span>
               </div>
               <div class="resource-item">
                 <div class="resource-item-left">
                   <svg class="icon icon-inline" aria-hidden="true"><use href="#i-link"></use></svg>
                   <span class="resource-item-label">RPC Endpoints</span>
                 </div>
-                <span class="resource-item-value">:8444/jsonrpc · P2P :8334</span>
+                <span class="resource-item-value">:8443/jsonrpc · P2P :8333</span>
               </div>
             </div>
           </div>
