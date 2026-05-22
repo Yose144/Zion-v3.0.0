@@ -44,4 +44,8 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["node", "server.js"]
+# Docker runtime overrides the HOSTNAME env var with the container ID.
+# Next.js standalone server.js reads process.env.HOSTNAME for its bind
+# address, so without this fix it tries to listen on the container ID
+# and crashes with getaddrinfo EAI_AGAIN.
+CMD ["/bin/sh", "-c", "export HOSTNAME=0.0.0.0 && exec node server.js"]

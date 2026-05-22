@@ -24,28 +24,34 @@ const protocols = [
 ];
 
 const supportedAlgorithms = [
-  { name: 'Cosmic Harmony', type: 'Native', detail: 'ZION Native Algorithm · Python/C++ Optimized', port: '3333', algo: 'cosmic_harmony' },
-  { name: 'RandomX', type: 'CPU', detail: 'XMRig Compatible · Modern CPUs', port: '3333', algo: 'randomx' },
-  { name: 'Yescrypt', type: 'CPU', detail: 'Legacy Support · Low Power', port: '3333', algo: 'yescrypt' },
-  { name: 'Autolykos v2', type: 'GPU', detail: 'GPU Mining · 6GB+ VRAM', port: '3333', algo: 'autolykos2' }
+  { name: 'Cosmic Harmony', type: 'Native', detail: 'ZION Native Algorithm · Ekam Deeksha v2 · Rust/OpenCL', port: '8444', algo: 'cosmic_harmony' },
+  { name: 'RandomX', type: 'CPU', detail: 'XMRig Compatible · Modern CPUs', port: '8444', algo: 'randomx' },
+  { name: 'Yescrypt', type: 'CPU', detail: 'Legacy Support · Low Power', port: '8444', algo: 'yescrypt' },
+  { name: 'Autolykos v2', type: 'GPU', detail: 'GPU Mining · 6GB+ VRAM', port: '8444', algo: 'autolykos2' }
 ];
 
 const minerSteps = [
   {
-    title: 'Clone & install',
-    code: 'git clone https://github.com/Zion-TerraNova/2.9.6.git\ncd 2.9.6\nsource .venv/bin/activate\npip install -r requirements.txt'
+    title: 'Build from source',
+    code: 'git clone https://github.com/Zion-TerraNova/2.9.6.git\ncd 2.9.6/V3\ncargo build --release -p zion-miner'
   },
   {
-    title: 'Start native miner',
-    code: `python zion_native_miner_v2_9.py \\
-  --pool 77.42.71.94:3333 \\
-  --wallet YOUR_ZION_ADDRESS \\
-  --worker my-worker \\
-  --algorithm cosmic_harmony`
+    title: 'Start GPU miner (Edge pool)',
+    code: `ZION_POOL_ADDR=77.42.71.94:8444 \\
+ZION_WORKER_NAME=my-worker \\
+ZION_MINER_ID=YOUR_ZION_ADDRESS \\
+ZION_LOOP_COUNT=1000000 \\
+ZION_GPU_BACKEND=opencl \\
+ZION_GPU_WORK_SIZE=4096 \\
+./target/release/zion-miner`
   },
   {
-    title: 'Start XMRig (Alternative)',
-    code: './target/release/zion-miner --pool 77.42.71.94:3333 --wallet YOUR_ZION_ADDRESS --worker my-worker --algo cosmic_harmony'
+    title: 'Start CPU miner (Edge pool)',
+    code: `ZION_POOL_ADDR=77.42.71.94:8444 \\
+ZION_WORKER_NAME=my-worker \\
+ZION_MINER_ID=YOUR_ZION_ADDRESS \\
+ZION_LOOP_COUNT=1000000 \\
+./target/release/zion-miner`
   }
 ];
 

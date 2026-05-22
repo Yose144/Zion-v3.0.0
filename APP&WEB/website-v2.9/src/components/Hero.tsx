@@ -48,12 +48,12 @@ export default function Hero() {
 
   const missionSignals = [
     { title: tr('hero', 'signal_l1', lang),      status: tr('hero', 'signal_status_l1', lang),      value: '52 590 LOC · 780+ tests · Rust', accent: 'text-emerald-300' },
-    { title: tr('hero', 'signal_nodes', lang),   status: tr('hero', 'signal_status_nodes', lang),   value: '3-node P2P mesh',             accent: 'text-zion-cyan' },
+    { title: tr('hero', 'signal_nodes', lang),   status: tr('hero', 'signal_status_nodes', lang),   value: 'Core + Edge topology',        accent: 'text-zion-cyan' },
     { title: tr('hero', 'signal_mainnet', lang), status: tr('hero', 'signal_status_mainnet', lang), value: tr('hero', 'signal_target', lang),  accent: 'text-zion-purple' },
   ];
   const heroMetrics = [
     { label: tr('hero', 'metric_loc', lang),   value: '52 590', icon: Zap },
-    { label: tr('hero', 'metric_nodes', lang), value: '3 / 3',   icon: Satellite },
+    { label: tr('hero', 'metric_nodes', lang), value: '2 / 2',   icon: Satellite },
     { label: tr('hero', 'metric_tests', lang), value: '780+',    icon: Gauge },
   ];
 
@@ -278,7 +278,7 @@ export default function Hero() {
               <div className="flex items-center gap-2 pt-1">
                 <Rocket className="w-4 h-4 text-zion-gold" />
                 <span className="text-xs text-gray-400">
-                  {SITE_ENVIRONMENT_LABEL} · {SITE_RELEASE_LABEL} · runtime {SITE_RUNTIME_LABEL} · 3-node mainnet · Prague + USA + Singapore
+                  {SITE_ENVIRONMENT_LABEL} · {SITE_RELEASE_LABEL} · runtime {SITE_RUNTIME_LABEL} · Core + Edge topology
                 </span>
               </div>
             </div>
