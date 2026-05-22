@@ -130,6 +130,30 @@ const PROJECTS: ProjectCardData[] = [
       { value: 'PF', labelCs: 'Region', labelEn: 'Region' },
     ],
   },
+  {
+    isSecret: true,
+    title: 'Projekt 3 — Na tahity',
+    location: 'TBD',
+    eyebrow: 'L5 · Future Node',
+    statusCs: 'Koncept',
+    statusEn: 'Concept',
+    descriptionCs:
+      'Třetí pilotní uzel Terra Nova — lokace a koncept se vyvíjej. Bude se zaměřovat na specifickou komunitní potřebu a kulturní kontext.',
+    descriptionEn:
+      'Third Terra Nova pilot node — location and concept to be developed. Will focus on specific community needs and cultural context.',
+    accent: 'sky',
+    features: [
+      { icon: Sparkles, labelCs: 'Koncept v přípravě', labelEn: 'Concept in preparation' },
+      { icon: Terminal, labelCs: 'Technický výzkum', labelEn: 'Technical research' },
+      { icon: Users, labelCs: 'Komunitní zapojení', labelEn: 'Community engagement' },
+      { icon: Wind, labelCs: 'Regenerativní design', labelEn: 'Regenerative design' },
+    ],
+    metrics: [
+      { value: 'TBD', labelCs: 'Lokalita', labelEn: 'Location' },
+      { value: 'L5', labelCs: 'Vrstva', labelEn: 'Layer' },
+      { value: 'TBD', labelCs: 'Region', labelEn: 'Region' },
+    ],
+  },
 ];
 
 function accentClasses(accent: ProjectCardData['accent']) {
@@ -236,7 +260,7 @@ function accentClasses(accent: ProjectCardData['accent']) {
 
 export default function PioneerProjectCards({ cs }: { cs: boolean }) {
   return (
-    <div className="grid gap-4 md:grid-cols-3">
+    <div className="grid gap-4 md:grid-cols-4">
       {PROJECTS.map((project) => {
         const accent = accentClasses(project.accent);
         const cardClassName = `group relative overflow-hidden rounded-[28px] border bg-black/35 p-5 transition-all duration-500 ${accent.border}${project.isSecret ? ' cursor-default saturate-75' : ''}`;
