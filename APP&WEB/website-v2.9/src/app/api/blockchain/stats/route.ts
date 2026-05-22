@@ -1,6 +1,6 @@
 /**
  * ZION Explorer — Blockchain Stats API
- * 
+ *
  * Returns comprehensive network statistics from daemon RPC + pool API.
  * Direct RPC for accuracy — no more Pool-only estimates.
  */
@@ -11,16 +11,63 @@ import { NextResponse } from 'next/server';
 import { getZionRpc } from '@/lib/zion-rpc';
 import { ATOMIC_UNITS_PER_ZION } from '@/lib/constants';
 import { resolveSupplySnapshot } from '@/lib/supply';
+import { promises as fs } from 'fs';
+import { join } from 'path';
+
+/** Try to read the actual LMDB/JSON state file size for database_size */
+async function getNodeDatabaseSize(): Promise<number> {
+  try {
+    const candidates = [
+      '/opt/zion/V3/data/zion-node-state.db',
+      '/workspace/V3/data/zion-node-state.db',
+      join(process.cwd(), 'V3/data/zion-node-state.db'),
+      join(process.cwd(), '../V3/data/zion-node-state.db'),
+      '/tmp/zion-node-state.db',
+    ];
+    for (const p of candidates) {
+      const stat = await fs.stat(p).catch(() => null);
+      if (stat) return stat.size;
+    }
+  } catch {}
+  return 0;
+}
+
+/** Try to get pool stats from Prometheus metrics as fallback */
+async function getPoolStatsFromPrometheus(): Promise<any> {
+  try {
+    const res = await fetch('http://127.0.0.1:9550/metrics', {
+      cache: 'no-store',
+      signal: AbortSignal.timeout(2000),
+    });
+    if (!res.ok) return null;
+    const text = await res.text();
+    const lines = text.split('\n');
+    const getGauge = (name: string) => {
+      const line = lines.find((l) => l.startsWith(`${name} `));
+      return line ? parseFloat(line.split(' ')[1]) : 0;
+    };
+    return {
+      pool_hashrate: getGauge('zion_pool_hashrate_hps'),
+      active_miners: getGauge('zion_pool_active_sessions'),
+      blocks_found: getGauge('zion_pool_blocks_found_total'),
+      valid_shares: getGauge('zion_pool_shares_accepted_total'),
+    };
+  } catch {
+    return null;
+  }
+}
 
 export async function GET() {
   const rpc = getZionRpc();
 
   try {
     // Fetch from RPC daemon (authoritative source) + pool for mining stats
-    const [info, lastBlock, poolStats] = await Promise.all([
+    const [info, lastBlock, poolStats, prometheusStats, dbSize] = await Promise.all([
       rpc.getInfo().catch(() => null),
       rpc.getLastBlockHeader().catch(() => null),
       rpc.getPoolStats().catch(() => null),
+      getPoolStatsFromPrometheus().catch(() => null),
+      getNodeDatabaseSize().catch(() => 0),
     ]);
 
     if (!info) {
@@ -31,6 +78,12 @@ export async function GET() {
 
     // Average block time: use daemon target (no extra block fetches)
     const avgBlockTime = info.target || 60;
+
+    // Prefer Prometheus fallback when pool HTTP API is unavailable (V3 stratum pool)
+    const hashrate = poolStats?.hashrate?.pool || poolStats?.pool_hashrate || prometheusStats?.pool_hashrate || 0;
+    const miners   = poolStats?.miners?.active || poolStats?.active_miners || prometheusStats?.active_miners || 0;
+    const blocksF  = poolStats?.blocks?.found || poolStats?.blocks_found || prometheusStats?.blocks_found || 0;
+    const shares   = poolStats?.shares?.valid || poolStats?.valid_shares || prometheusStats?.valid_shares || 0;
 
     const stats = {
       // Chain
@@ -75,18 +128,18 @@ export async function GET() {
       version: info.version || '',
       status: info.status || 'OK',
       start_time: info.start_time || 0,
-      database_size: info.database_size || 0,
+      database_size: dbSize || info.database_size || 0,
 
       // Alt blocks (potential forks)
       alt_blocks_count: info.alt_blocks_count || 0,
 
-      // Mining pool (supplementary)
-      pool_hashrate: poolStats?.hashrate?.pool || poolStats?.pool_hashrate || 0,
-      pool_hashrate_formatted: formatHashrate(poolStats?.hashrate?.pool || poolStats?.pool_hashrate || 0),
-      active_miners: poolStats?.miners?.active || poolStats?.active_miners || 0,
-      total_miners: poolStats?.miners?.total || poolStats?.total_miners || 0,
-      pool_blocks_found: poolStats?.blocks?.found || poolStats?.blocks_found || 0,
-      valid_shares: poolStats?.shares?.valid || poolStats?.valid_shares || 0,
+      // Mining pool (supplementary) — supports both HTTP pool API + Prometheus fallback
+      pool_hashrate: hashrate,
+      pool_hashrate_formatted: formatHashrate(hashrate),
+      active_miners: miners,
+      total_miners: poolStats?.miners?.total || poolStats?.total_miners || miners,
+      pool_blocks_found: blocksF,
+      valid_shares: shares,
       pool_uptime_s: poolStats?.uptime_s || 0,
       pool_pplns_window: poolStats?.pplns_window_size || 0,
       pool_pending_payouts_atomic: poolStats?.payouts?.pending_total_atomic || 0,
