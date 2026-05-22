@@ -77,7 +77,7 @@ function QuantumBubblesComponent({ mode = "deep-space", density = "medium" }: Qu
   const bubbles = useMemo(() => createInstances(mode, density), [mode, density]);
 
   return (
-    <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+    <div className="pointer-events-none fixed inset-0 z-[2] overflow-hidden">
       {bubbles.map((bubble: Bubble) => (
         <span
           key={bubble.id}
