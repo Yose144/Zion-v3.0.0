@@ -22,7 +22,7 @@ import PioneerProjectCards from './components/PioneerProjectCards';
 import GeographyMenu from './components/GeographyMenu';
 import type { BookChapter } from './bookData';
 
-type EditionKey = 'unified';
+type EditionKey = 'final';
 
 type EditionMeta = {
   titleCs: string;
@@ -65,7 +65,7 @@ const EDITION_OPTIONS: Array<{
   border: string;
 }> = [
   {
-    id: 'unified',
+    id: 'final',
     nameCs: 'Kanonická větev',
     nameEn: 'Canonical Branch',
     color: '#00BFFF',
@@ -75,7 +75,7 @@ const EDITION_OPTIONS: Array<{
 ];
 
 const EDITION_META: Record<EditionKey, EditionMeta> = {
-  unified: {
+  final: {
     titleCs: 'Terra Nova',
     titleEn: 'Terra Nova',
     subtitleCs: 'Kanonická větev Terra Novy',
@@ -98,7 +98,7 @@ const EDITION_META: Record<EditionKey, EditionMeta> = {
 };
 
 const EDITION_INTRO: Record<EditionKey, EditionIntro> = {
-  unified: {
+  final: {
     signalsCs: ['Genesis.md', 'ZION CLI v3 RC', 'Terra Nova IV'],
     signalsEn: ['Genesis.md', 'ZION CLI v3 RC', 'Terra Nova IV'],
     eyebrowCs: 'ZION V3 · release candidate · Terra Nova',
@@ -127,13 +127,13 @@ const EDITION_INTRO: Record<EditionKey, EditionIntro> = {
 };
 
 const EDITION_CHAPTERS: Record<EditionKey, BookChapter[]> = {
-  final: CHAPTERS,
+  unified: CHAPTERS,
 };
 
 const EDITION_COMPOSITION_LINES: Record<EditionKey, { cs: string[]; en: string[] }> = {
-  unified: {
-    cs: EDITION_CHAPTERS.final.map((chapter) => formatChapterLabel(chapter, true)),
-    en: EDITION_CHAPTERS.final.map((chapter) => formatChapterLabel(chapter, false)),
+  final: {
+    cs: EDITION_CHAPTERS.unified.map((chapter) => formatChapterLabel(chapter, true)),
+    en: EDITION_CHAPTERS.unified.map((chapter) => formatChapterLabel(chapter, false)),
   },
 };
 
@@ -773,7 +773,7 @@ export default function TerraNovaBookClient() {
 
   const [activeEdition, setActiveEdition] = useState<EditionKey>('unified');
   const currentChapters = EDITION_CHAPTERS[activeEdition];
-  const currentEdition = EDITION_OPTIONS.find((option) => option.id === activeEdition) ?? EDITION_OPTIONS[1];
+  const currentEdition = EDITION_OPTIONS.find((option) => option.id === activeEdition) ?? EDITION_OPTIONS[0];
   const meta = EDITION_META[activeEdition];
   const intro = EDITION_INTRO[activeEdition];
   const compositionLines = cs
