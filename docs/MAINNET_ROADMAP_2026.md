@@ -1,11 +1,11 @@
 # 🚀 ZION MainNet Roadmap 2026
 
-**Verze: 1.7 | Datum: 16. února 2026**  
-**Cíl: L1 MainNet Genesis — 31. prosince 2026**  
+**Verze: 2.0 | Datum: 22. května 2026**  
+**Cíl: L1 MainNet Genesis — 20. června 2026 (Summer Solstice)**  
 **Full Stack: L1 Blockchain → L2 DEX → L3 Warp/AI → L4 Oasis**  
 **Kódová verze: v2.9.6 → v2.9.6-mainnet**  
 **GitHub: [github.com/Yose144/Zion-2.9.5](https://github.com/Yose144/Zion-2.9.5)**  
-**Aktuální stav: ✅ FÁZE 0+1 DOKONČENY | ✅ L2 wZION Bridge hotový | 🏗️ L3 WARP Skeleton — 7 chain adapterů (EVM/Solana/Tron/Stellar/Cardano/Cosmos/Bitcoin)**
+**Aktuální stav: ✅ GENESIS + FEE SPLIT KONFIGURACE DOKONČENA | ✅ CORE+EDGE TOPOLOGIE AKTIVNÍ | ✅ READY FOR MAINNET LAUNCH 20.6.2026**
 
 > *Tento dokument je hlavní řídící roadmapa od současného stavu TestNetu k produkčnímu MainNet launchi.*  
 > *Autoritativní zdroj: WP2.9.5, MAINNET_CONSTITUTION.md*
