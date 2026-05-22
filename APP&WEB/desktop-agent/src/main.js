@@ -4296,15 +4296,13 @@ async function zionRpcCall(rpcUrl, method, params) {
   });
 
   // Try primary host first, fallback to Edge VPN if localhost fails
-  try {
-    return await attemptRpc(host, port);
-  } catch (error) {
+  return attemptRpc(host, port).catch((error) => {
     if (host === '127.0.0.1' || host === 'localhost') {
       dbg(`[RPC] Localhost failed, trying Edge VPN: ${EDGE_VPN_HOST}:${port}`);
-      return await attemptRpc(EDGE_VPN_HOST, port);
+      return attemptRpc(EDGE_VPN_HOST, port);
     }
     throw error;
-  }
+  });
 }
 
 ipcMain.handle('wallet-get-balance', async (event, { rpcUrl, address }) => {
