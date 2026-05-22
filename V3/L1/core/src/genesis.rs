@@ -96,7 +96,7 @@ pub struct PremineOutput {
 pub const PREMINE_OUTPUTS: &[PremineOutput] = &[
     // --- OASIS + Golden Egg (5 × 1.65B = 8.25B) ---
     PremineOutput {
-        address: "zion166e6v3k204h8p5w4w3a7m0x790q5m7z5z6n252p",
+        address: "zion1zz-ILOBeL9pBhE3fBw0RpIYu4Jo",
         purpose: "ZION OASIS + Winners Golden Egg/Xp (Slot 1)",
         amount_zion: 1_650_000_000,
         amount_flowers: 1_650_000_000_000_000_000_000,
@@ -104,7 +104,7 @@ pub const PREMINE_OUTPUTS: &[PremineOutput] = &[
         unlock_height: None,
     },
     PremineOutput {
-        address: "zion1l2h8h0e3h7m6p8e297m6n624c5m7r2k364v684a",
+        address: "zion1ZIJDSPzkhfmw3Lm1p6a-NWwRkY0",
         purpose: "ZION OASIS + Winners Golden Egg/Xp (Slot 2)",
         amount_zion: 1_650_000_000,
         amount_flowers: 1_650_000_000_000_000_000_000,
@@ -112,7 +112,7 @@ pub const PREMINE_OUTPUTS: &[PremineOutput] = &[
         unlock_height: None,
     },
     PremineOutput {
-        address: "zion1e6r0q3g6t0r0v5f6h7k7c5f3v562j0v7e5e5d0a",
+        address: "zion1rzvqWtxKBI2gnPPqKLSudgLVV9s",
         purpose: "ZION OASIS + Winners Golden Egg/Xp (Slot 3)",
         amount_zion: 1_650_000_000,
         amount_flowers: 1_650_000_000_000_000_000_000,
@@ -120,7 +120,7 @@ pub const PREMINE_OUTPUTS: &[PremineOutput] = &[
         unlock_height: None,
     },
     PremineOutput {
-        address: "zion1l7e4c4c5x8l440t295a7m4k5p5x8v8z7r043s23",
+        address: "zion1C5VFW2Ztk-7nciQfclLCkHnVY7Y",
         purpose: "ZION OASIS + Winners Golden Egg/Xp (Slot 4)",
         amount_zion: 1_650_000_000,
         amount_flowers: 1_650_000_000_000_000_000_000,
@@ -128,7 +128,7 @@ pub const PREMINE_OUTPUTS: &[PremineOutput] = &[
         unlock_height: None,
     },
     PremineOutput {
-        address: "zion1n8h2a8p386z274859833h7v6c5n687f7a6k523u",
+        address: "zion1bTaAGdBfhjGyU5oXxCko2Qa32cM",
         purpose: "ZION OASIS + Winners Golden Egg/Xp (Slot 5)",
         amount_zion: 1_650_000_000,
         amount_flowers: 1_650_000_000_000_000_000_000,
@@ -137,7 +137,7 @@ pub const PREMINE_OUTPUTS: &[PremineOutput] = &[
     },
     // --- DAO Treasury (3 slots = 4.0B) — locked until height 525,600 ---
     PremineOutput {
-        address: "zion176u8r6w53768e2k04035d4d3c2z5g555n6l4r3s",
+        address: "zion1-0xPn2NxSraspMeaW_hhhVu9bFQ",
         purpose: "DAO Treasury — Community Governance (main)",
         amount_zion: 2_500_000_000,
         amount_flowers: 2_500_000_000_000_000_000_000,
@@ -145,7 +145,7 @@ pub const PREMINE_OUTPUTS: &[PremineOutput] = &[
         unlock_height: Some(DAO_TREASURY_LOCK_HEIGHT),
     },
     PremineOutput {
-        address: "zion12643n776r3m8f340484756q06485h5w4c2l405m",
+        address: "zion1GP3_T8G29jGnuCcfL__zqZcqg4c",
         purpose: "DAO Treasury — Grants & Bounties",
         amount_zion: 1_000_000_000,
         amount_flowers: 1_000_000_000_000_000_000_000,
@@ -153,7 +153,7 @@ pub const PREMINE_OUTPUTS: &[PremineOutput] = &[
         unlock_height: Some(DAO_TREASURY_LOCK_HEIGHT),
     },
     PremineOutput {
-        address: "zion1k8w734x422f3t6t536r287k2c6n3z0e05257606",
+        address: "zion1zfcwR7ZUE3qP-amglp1mD77H700",
         purpose: "DAO Treasury — Ecosystem Bootstrap",
         amount_zion: 500_000_000,
         amount_flowers: 500_000_000_000_000_000_000,
@@ -162,7 +162,7 @@ pub const PREMINE_OUTPUTS: &[PremineOutput] = &[
     },
     // --- Infrastructure (3 slots = 2.59B) ---
     PremineOutput {
-        address: "zion1q540v6y4f0s4v3n0f8t740t53494z56024u645c",
+        address: "zion1CyKi590pYWUPhxQDNX-nV2w2sPI",
         purpose: "Core Development Fund",
         amount_zion: 1_000_000_000,
         amount_flowers: 1_000_000_000_000_000_000_000,
@@ -170,7 +170,7 @@ pub const PREMINE_OUTPUTS: &[PremineOutput] = &[
         unlock_height: None,
     },
     PremineOutput {
-        address: "zion1h4w39686t8w376g0x0y426e775q6p2q0v698v43",
+        address: "zion17l0YvSq3EJMdXbsiT4ispqbj7es",
         purpose: "Network Infrastructure — P2P Seed Nodes",
         amount_zion: 1_000_000_000,
         amount_flowers: 1_000_000_000_000_000_000_000,
@@ -178,7 +178,7 @@ pub const PREMINE_OUTPUTS: &[PremineOutput] = &[
         unlock_height: None,
     },
     PremineOutput {
-        address: "zion1x638z5x6d2d0y6u3f7y8g7j56054a4a2a2c7l8f",
+        address: "zion15XocoF3pp6P8KmvdRlXg7MfIlNQ",
         purpose: "Genesis Creator — Lifetime Rent",
         amount_zion: 590_000_000,
         amount_flowers: 590_000_000_000_000_000_000,
