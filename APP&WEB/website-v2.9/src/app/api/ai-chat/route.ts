@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const OLLAMA_URL = process.env.OLLAMA_API_URL ?? 'http://91.150.160.38:11764';
+const OLLAMA_URL = process.env.OLLAMA_API_URL ?? 'http://127.0.0.1:11434';
 const MODEL_NAME = 'zion-expert';
 const MAX_PROMPT_LENGTH = 2000;
 

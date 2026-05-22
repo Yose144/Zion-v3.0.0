@@ -1,6 +1,6 @@
 'use strict';
 
-const TABS = ['overview','wallets','explorer','services','l1','l2','l3','l4','l5','l6','genesis','blockers','controls','charts','events','env','database','metrics','wizard','logs'];
+const TABS = ['overview','wallets','explorer','services','l1','l2','l3','l4','l5','l6','genesis','blockers','controls','charts','events','env','database','metrics','launch-day','wizard','logs'];
 let autoRefresh = true, refreshTimer = null, currentTab = 'overview';
 let charts = {};
 let friendlyMode = false;
@@ -63,6 +63,7 @@ function switchTab(name){
   if(name === 'wallets') loadWallets();
   if(name === 'explorer') loadExplorer();
   if(['l1','l2','l3','l4','l5','l6'].includes(name)) loadLayer(name);
+  if(name === 'launch-day') loadLaunchDayStatus();
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -1187,6 +1188,138 @@ function toggleAuto(){
     b.textContent = '⏸ Paused';
     clearInterval(refreshTimer);
   }
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Launch Day Automation
+// ─────────────────────────────────────────────────────────────────────
+
+async function loadLaunchDayStatus(){
+  try{
+    const res = await fetch('/api/launch-day-prepare?action=status').then(r=>r.json());
+    const badge = document.getElementById('launch-day-badge');
+    if(!badge) return;
+
+    // badge
+    if(res.is_launch_day){
+      badge.textContent = '🎉 LAUNCH DAY!';
+      badge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-emerald-500 text-white animate-pulse';
+    } else if(res.backup_exists){
+      badge.textContent = '✓ Záloha existuje';
+      badge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-blue-600 text-white';
+    } else {
+      badge.textContent = '⏳ Záloha chybí';
+      badge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-amber-600 text-white';
+    }
+
+    // countdown
+    const daysEl = document.getElementById('ld-days');
+    if(daysEl){
+      if(res.is_launch_day){
+        daysEl.textContent = 'DNES!';
+        daysEl.className = 'text-3xl font-bold text-emerald-400 mb-1 animate-pulse';
+      } else {
+        const ms = new Date('2026-06-20T12:00:00Z') - Date.now();
+        const days = Math.ceil(ms / 86400000);
+        daysEl.textContent = days + ' dní';
+        daysEl.className = 'text-3xl font-bold text-amber-400 mb-1';
+      }
+    }
+
+    // backup
+    const bkEl = document.getElementById('ld-backup');
+    if(bkEl){
+      bkEl.textContent = res.backup_exists ? '✓ Existuje' : '✗ Chybí';
+      bkEl.className = 'text-3xl font-bold mb-1 ' + (res.backup_exists ? 'text-emerald-400' : 'text-red-400');
+    }
+
+    // genesis hash
+    const ghEl = document.getElementById('ld-genesis');
+    if(ghEl && res.current_genesis_hash){
+      const h = res.current_genesis_hash;
+      ghEl.textContent = h.substring(0,8) + '…' + h.slice(-4);
+      ghEl.title = h;
+    }
+
+    // backup details
+    const detEl = document.getElementById('backup-details');
+    if(detEl){
+      if(res.backup_exists){
+        detEl.innerHTML = `<div class="text-emerald-400 mb-1">✓ Záloha nalezena</div>
+          <div class="font-mono text-xs text-gray-400 break-all">${escapeHtml(res.backup_dir)}</div>`;
+      } else {
+        detEl.innerHTML = `<div class="text-amber-400 mb-1">⚠ Žádná záloha</div>
+          <div class="text-gray-400">Klikni "Zálohovat vše" před launch dayem.</div>`;
+      }
+    }
+
+    addLaunchDayLog('📊 Stav: ' + (res.is_launch_day ? 'LAUNCH DAY!' : res.backup_exists ? 'Záloha OK' : 'Záloha chybí'));
+  } catch(e){
+    addLaunchDayLog('❌ Chyba načítání: ' + e.message);
+  }
+}
+
+async function launchDayAction(action){
+  addLaunchDayLog('⏳ Spouštím: ' + action + '...');
+  try{
+    const res = await fetch('/api/launch-day-prepare?action=' + action).then(r=>r.json());
+    if(action === 'backup' && res.success){
+      addLaunchDayLog('✅ Záloha vytvořena: ' + (res.backup_dir || ''));
+      if(res.manifest) addLaunchDayLog('📁 Souborů: ' + res.manifest.files_backed_up);
+      if(res.backup_log) res.backup_log.forEach(l => addLaunchDayLog(l));
+      const detEl = document.getElementById('backup-details');
+      if(detEl && res.backup_dir) detEl.innerHTML = `
+        <div class="text-emerald-400 mb-2">✅ Záloha uložena na lokální PC</div>
+        <div class="font-mono text-xs text-gray-400 break-all mb-3">${escapeHtml(res.backup_dir)}</div>
+        ${res.backup_log ? res.backup_log.map(l=>`<div class="text-xs ${l.startsWith('✓')?'text-emerald-400':'text-amber-400'}">${escapeHtml(l)}</div>`).join('') : ''}`;
+      loadLaunchDayStatus();
+    } else if(action === 'status'){
+      loadLaunchDayStatus();
+    } else if(res.error){
+      addLaunchDayLog('❌ Chyba: ' + res.error);
+    }
+  } catch(e){
+    addLaunchDayLog('❌ Chyba: ' + e.message);
+  }
+}
+
+function confirmLaunchDay(){
+  if(confirm('⚠️ KRITICKÁ OPERACE\n\nRotace genesis a premine adres pro mainnet launch.\n\nUjisti se:\n• Všechny nodes jsou zastaveny\n• Záloha je vytvořena\n• Máš privátní klíče v bezpečí\n\nPokračovat?')){
+    launchDayAction('rotate-genesis&confirmed=true');
+  } else {
+    addLaunchDayLog('🚫 Rotace zrušena uživatelem');
+  }
+}
+
+async function launchDaySequence(){
+  if(!confirm('🚀 SPUSTIT LAUNCH SEQUENCE?\n\n1. Záloha všeho\n2. Zastavit síť\n3. Rotovat genesis\n4. Restartovat síť\n5. Verifikace\n\nNEVRATITELNÁ OPERACE. Pokračovat?')) return;
+
+  addLaunchDayLog('🚀 ══════ START LAUNCH SEQUENCE ══════');
+  for(const step of ['prepare','stop-network','rotate-genesis','restart-network','verify']){
+    addLaunchDayLog('⏳ Krok: ' + step);
+    try{
+      const res = await fetch('/api/launch-day-execute?step=' + step).then(r=>r.json());
+      if(res.success){
+        addLaunchDayLog('✅ ' + step + ' dokončen');
+        if(res.backup_dir) addLaunchDayLog('💾 Záloha: ' + res.backup_dir);
+        if(res.complete){ addLaunchDayLog('🎉 ══════ LAUNCH SEQUENCE DOKONČENA! ══════'); alert('🎉 Mainnet launch sequence dokončena!'); }
+      } else {
+        addLaunchDayLog('❌ ' + step + ' selhalo: ' + (res.error || 'neznámá chyba'));
+        break;
+      }
+    } catch(e){
+      addLaunchDayLog('❌ Chyba: ' + e.message);
+      break;
+    }
+  }
+}
+
+function addLaunchDayLog(msg){
+  const el = document.getElementById('launch-day-log');
+  if(!el) return;
+  const time = new Date().toLocaleTimeString('cs-CZ');
+  const cls = msg.startsWith('✅') ? 'text-emerald-400' : msg.startsWith('❌') ? 'text-red-400' : msg.startsWith('🚀') ? 'text-amber-400' : 'text-gray-300';
+  el.innerHTML = `<div class="${cls}"><span class="text-gray-600">[${time}]</span> ${escapeHtml(msg)}</div>` + el.innerHTML;
 }
 
 // ─────────────────────────────────────────────────────────────────────
