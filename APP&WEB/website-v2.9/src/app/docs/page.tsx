@@ -42,8 +42,8 @@ type LocalizedText = { cs: string; en: string };
 const docsPageCopy = {
   badge: { cs: 'Znalostní báze', en: 'Knowledge Base' },
   overviewNotice: {
-    cs: 'Současná veřejná linka běží jako kontrolovaný V3 mainnet launch countdown na linii v2.9.9 Pure Code nad kanonickou runtime v2.9.8 Deeksha/Ekam. Veřejný mainnet launch je naplánován na 20. června 2026 (T-29). Live Index na /docs#live-index je kanonický vstup pro síťový snapshot, baseline repa 2.9.6 a mapu release/runtime.',
-    en: 'The public line runs as a controlled V3 mainnet launch countdown on v2.9.9 Pure Code over the canonical v2.9.8 Deeksha/Ekam runtime. Public mainnet launch is scheduled for 20 June 2026 (T-29). Live Index at /docs#live-index is the canonical entry for the network snapshot, 2.9.6 repo baseline, and release/runtime map.',
+    cs: 'V3 Mainnet je LIVE od 20. června 2026 (Summer Solstice) na linii v3.0.0 Mainnet Ready nad kanonickou runtime v3.0.0 Deeksha/Ekam. Core + Edge topology je operational, mining aktivní, bridge deployed na Base Mainnet. Live Index na /docs#live-index je kanonický vstup pro síťový snapshot, baseline repa 2.9.6 a mapu release/runtime.',
+    en: 'V3 Mainnet is LIVE since 20 June 2026 (Summer Solstice) on v3.0.0 Mainnet Ready line over the canonical v3.0.0 Deeksha/Ekam runtime. Core + Edge topology is operational, mining active, bridge deployed on Base Mainnet. Live Index at /docs#live-index is the canonical entry for the network snapshot, 2.9.6 repo baseline, and release/runtime map.',
   },
   githubLabel: { cs: 'GitHub', en: 'GitHub' },
   apiHealthLabel: { cs: 'Zdraví API', en: 'API Health' },

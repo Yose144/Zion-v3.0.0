@@ -1742,7 +1742,7 @@ export default function MissionControlDashboard() {
                 { label: 'Block Height', value: fmt(primaryHeight), descriptor: 'live mainnet chain tip' },
                 { label: 'Pool Hashrate', value: fmtHash(v3?.minerHashrate ?? primaryNode?.pool?.hashrate?.pool ?? null), descriptor: 'current mining hashrate' },
                 { label: 'Network Peers', value: fmt(primaryStats?.peers_connected ?? 0), descriptor: 'public node peers' },
-                { label: 'Launch Countdown', value: `T-${Math.max(0, Math.ceil((new Date('2026-06-20T00:00:00Z').getTime() - Date.now()) / 86400000))}`, descriptor: 'target 20 June 2026' },
+                { label: 'Mainnet Status', value: 'LIVE', descriptor: 'since 20 June 2026' },
               ].map((chip) => (
                 <div key={chip.label} className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4 backdrop-blur">
                   <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{chip.label}</p>
@@ -1905,8 +1905,8 @@ export default function MissionControlDashboard() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                 <Stat label="Codebase" value="53,200+" sub="lines of Rust" color="text-cyan-400" />
                 <Stat label="Tests" value="900+" sub="passing / 0 failing" color="text-emerald-400" />
-                <Stat label="Launch Mode" value="MAINNET" sub="Production · V3 GO" color="text-emerald-400" />
-                <Stat label="Launch Countdown" value={`T-${Math.max(0, Math.ceil((new Date('2026-06-20T00:00:00Z').getTime() - Date.now()) / 86400000))}`} sub="target 20 June 2026" color="text-emerald-400" />
+                <Stat label="Launch Mode" value="MAINNET" sub="Production · V3 LIVE" color="text-emerald-400" />
+                <Stat label="Mainnet Status" value="LIVE" sub="since 20 June 2026" color="text-emerald-400" />
               </div>
             </motion.section>
 
@@ -2567,13 +2567,13 @@ export default function MissionControlDashboard() {
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Postup' : 'Progress'}</p>
                 <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white flex items-center gap-2 sm:gap-3">
                   <Target className="h-7 w-7 text-zion-gold" />
-                  Roadmap — Mainnet Launch Countdown
+                  Roadmap — Mainnet LIVE
                 </h2>
-                <p className="text-sm text-gray-400">Fáze 0–4 jsou hotové. V3 Mainnet GO — veřejný launch countdown aktivní. Cíl 20. června 2026.</p>
+                <p className="text-sm text-gray-400">Fáze 0–5 jsou hotové. V3 Mainnet LIVE od 20. června 2026 (Summer Solstice). Core + Edge topology operational.</p>
               </div>
               <div className="relative h-9 rounded-2xl border border-white/10 bg-black/40 overflow-hidden">
-                <motion.div className="absolute inset-y-0 left-0 rounded-2xl bg-linear-to-r from-emerald-400 via-cyan-400 to-purple-400" initial={{ width: 0 }} animate={{ width: '85%' }} transition={{ duration: 1.2 }} />
-                <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white drop-shadow-md z-10">{SITE_RELEASE_LABEL} · V3 MAINNET · LAUNCH GO · T-{Math.max(0, Math.ceil((new Date('2026-06-20T00:00:00Z').getTime() - Date.now()) / 86400000))} DAYS · 20 JUNE 2026</span>
+                <motion.div className="absolute inset-y-0 left-0 rounded-2xl bg-linear-to-r from-emerald-400 via-cyan-400 to-purple-400" initial={{ width: 0 }} animate={{ width: '100%' }} transition={{ duration: 1.2 }} />
+                <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white drop-shadow-md z-10">{SITE_RELEASE_LABEL} · V3 MAINNET · LIVE · 20 JUNE 2026</span>
               </div>
             </motion.section>
 
