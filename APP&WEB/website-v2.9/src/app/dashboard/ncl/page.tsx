@@ -337,7 +337,7 @@ export default function NCLDashboard() {
             <pre className="bg-black p-4 rounded-lg text-sm overflow-x-auto">
               <code className="text-green-400">
 {`./zion_miner \
-  --pool 77.42.71.94:3333 \
+  --pool 77.42.71.94:8444 \
   --wallet ZION_YOUR_ADDRESS \\
   --ncl-enabled \\
   --ncl-allocation 30`}

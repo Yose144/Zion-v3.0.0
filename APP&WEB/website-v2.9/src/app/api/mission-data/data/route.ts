@@ -172,7 +172,7 @@ function buildMainnetStabilityRun(
   collectorState: StabilityCollectorState | null,
   nowSec: number,
 ): MainnetStabilityRun {
-  const expectedNodes = Math.max(3, Math.floor(toNumber(collectorState?.latest?.expected_nodes) ?? 3));
+  const expectedNodes = Math.max(2, Math.floor(toNumber(collectorState?.latest?.expected_nodes) ?? 2));
   const startIso = collectorState?.started_at ?? DEFAULT_MAINNET_STABILITY_START_ISO;
   const durationSecs = Math.max(
     3600,
@@ -270,9 +270,9 @@ export async function GET() {
   const collectorState = await loadCollectorState();
   // Query all nodes in parallel
   const [primary, usa, singapore] = await Promise.all([
-    fetchNodeData(nodes.find(n => n.id === 'prague-eu')?.id ?? nodes[0]?.id),
-    fetchNodeData(nodes.find(n => n.id === 'usa-west')?.id),
-    fetchNodeData(nodes.find(n => n.id === 'singapore-ap')?.id),
+    fetchNodeData(nodes.find(n => n.id === 'edge-vps')?.id ?? nodes[0]?.id),
+    fetchNodeData(nodes.find(n => n.id === 'core-pc')?.id),
+    Promise.resolve(undefined),
   ]);
 
   const nowSec = Math.floor(Date.now() / 1000);
@@ -289,8 +289,8 @@ export async function GET() {
         detail: 'Live bloky 465, 471 a 472 potvrdily 89/5/5/1 split přímo na chainu, ne jen v pool accounting vrstvě.',
       },
       {
-        title: 'Prague, USA a Singapore drží tip po rolloutu',
-        detail: 'Auditovaný 3-node set zůstal po fee-split deployi bez divergence a s potvrzeným syncem.',
+        title: 'Core PC a Edge VPS drží tip po rolloutu',
+        detail: 'Core + Edge topologie zůstala po fee-split deployi bez divergence a s potvrzeným syncem.',
       },
       {
         title: 'Deploy runbook a operator guide jsou srovnané',
@@ -340,7 +340,7 @@ export async function GET() {
     next_48h: [
       {
         title: 'Hour 0-24 — sběr vzorků bez driftu',
-        detail: 'Držet Prague, USA a Singapore na stejném tipu, zaznamenat peer count, výšku chainu a první pool recovery okno.',
+        detail: 'Držet Core PC a Edge VPS na stejném tipu, zaznamenat peer count, výšku chainu a první pool recovery okno.',
       },
       {
         title: 'Hour 24-48 — restart discipline a recovery',
@@ -363,7 +363,7 @@ export async function GET() {
     mainnet_stability_run: mainnetStabilityRun,
     launch_rehearsal: mainnetStabilityRun,
     readiness_map: readinessMap,
-    current_topology: '3-node-test-mainnet-mesh',
+    current_topology: 'core-edge',
     primary,
     usa,
     singapore,
@@ -386,9 +386,8 @@ function buildLogTail(
   const now = new Date().toISOString().replace('T', ' ').slice(0, 19);
   const lines: string[] = [];
   const entries = [
-    { label: 'PRAGUE (EU) ', data: nodes.primary },
-    { label: 'USA (WEST)  ', data: nodes.usa },
-    { label: 'SINGAPORE   ', data: nodes.singapore },
+    { label: 'EDGE VPS    ', data: nodes.primary },
+    { label: 'CORE PC     ', data: nodes.usa },
   ];
   for (const { label, data } of entries) {
     const s = data?.stats;

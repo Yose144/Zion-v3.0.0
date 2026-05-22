@@ -27,49 +27,47 @@ export type MiningPoolConfig = {
   lon: number;
 };
 
-// Archived 3-region rehearsal mesh configuration
+// Core + Edge topology (Hetzner VPS Edge relay + local Core via Tailscale VPN)
 const DEFAULT_SEED_NODES: SeedNodeConfig[] = [
   {
-    id: 'prague-eu',
-    name: 'Prague (EU)',
+    id: 'edge-vps',
+    name: 'Edge VPS (Hetzner)',
     host: SITE_PRIMARY_HOST,
     region: 'EU',
     lat: 50.08,
     lon: 14.44,
-    ports: { p2p: 8333, rpc: 8443, stratum: 3333, pool_api: 8080 },
+    ports: { p2p: 8333, rpc: 8443, stratum: 8444, pool_api: 8080 },
     poolApiUrl: SITE_PRIMARY_POOL_API_URL,
   },
   {
-    id: 'usa-west',
-    name: 'USA (Hillsboro, OR)',
-    host: '5.78.194.94',
-    region: 'US',
-    lat: 45.52,
-    lon: -122.99,
-    ports: { p2p: 8333, rpc: 8443, stratum: 3333, pool_api: 8080 },
-    poolApiUrl: 'http://5.78.194.94:8080',
-  },
-  {
-    id: 'singapore-ap',
-    name: 'Singapore (APAC)',
-    host: '5.223.84.191',
-    region: 'APAC',
-    lat: 1.35,
-    lon: 103.82,
-    ports: { p2p: 8333, rpc: 8443, stratum: 3333, pool_api: 8080 },
-    poolApiUrl: 'http://5.223.84.191:8080',
+    id: 'core-pc',
+    name: 'Core PC (Tailscale VPN)',
+    host: '100.86.102.5',
+    region: 'CORE',
+    lat: 50.08,
+    lon: 14.44,
+    ports: { p2p: 8333, rpc: 8443, stratum: 8444, pool_api: 8080 },
   },
 ];
 
 const DEFAULT_MINING_POOLS: MiningPoolConfig[] = [
   {
-    id: 'pool-primary',
-    name: 'Primary Pool',
+    id: 'pool-edge',
+    name: 'Edge Pool (public)',
     host: SITE_PRIMARY_HOST,
-    port: 3333,
-    region: 'PRIMARY',
-    lat: 0,
-    lon: 0,
+    port: 8444,
+    region: 'EDGE',
+    lat: 50.08,
+    lon: 14.44,
+  },
+  {
+    id: 'pool-core',
+    name: 'Core Pool (Tailscale)',
+    host: '100.86.102.5',
+    port: 8444,
+    region: 'CORE',
+    lat: 50.08,
+    lon: 14.44,
   },
 ];
 

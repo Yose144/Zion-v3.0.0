@@ -237,8 +237,8 @@ interface StackSummary {
   prometheusUp: number | null;
   nodeExporterUp: number | null;
   redisExporterUp: number | null;
-  germanyPoolUp: number | null;
-  germanyCoreUp: number | null;
+  corePoolUp: number | null;
+  coreNodeUp: number | null;
   hostKernel: string | null;
   prometheusHeadSeries: number | null;
   prometheusHeadChunks: number | null;
@@ -320,8 +320,8 @@ function pvLabel(results: (PromiseSettledResult<PromResult[]> | undefined)[], la
   return null;
 }
 
-const PRAGUE_CORE_UP_QUERY = 'up{job="zion-core-prague",instance="host.docker.internal:9115"}';
-const PRAGUE_POOL_UP_QUERY = 'up{job="zion-pool-prague",instance="zion-pool:8080"}';
+const EDGE_CORE_UP_QUERY = 'up{job="zion-core",instance="host.docker.internal:9115"}';
+const EDGE_POOL_UP_QUERY = 'up{job="zion-pool",instance="zion-pool:8080"}';
 
 async function fetchV3Metrics(): Promise<V3Metrics> {
   const qs = [
@@ -331,7 +331,7 @@ async function fetchV3Metrics(): Promise<V3Metrics> {
     'zion_pool_rejected_total','zion_pool_accept_rate_pct','zion_pool_uptime_seconds',
     'zion_miner_hashrate_hps','zion_miner_hashrate_10s_hps','zion_miner_hashrate_60s_hps',
     'zion_miner_accepted_shares_total','zion_miner_rejected_shares_total','zion_miner_accept_rate_pct',
-    'zion_miner_submit_avg_latency_ms','zion_miner_pool_height','up{job=~"zion-miner-.*|zion-miner-prague"}',
+    'zion_miner_submit_avg_latency_ms','zion_miner_pool_height','up{job=~"zion-miner-.*|zion-miner"}',
     'zion_pool_group_submits','zion_pool_group_accepted',
     'zion_pplns_window_size','zion_pplns_window_used','zion_pplns_registered_miners',
     'zion_pplns_total_paid_flowers','zion_pplns_payout_rounds',
@@ -339,7 +339,7 @@ async function fetchV3Metrics(): Promise<V3Metrics> {
     'node_memory_MemTotal_bytes','node_memory_MemAvailable_bytes',
     'node_filesystem_size_bytes{mountpoint="/"}','node_filesystem_avail_bytes{mountpoint="/"}',
     'node_boot_time_seconds',
-    'up{job="zion-core-prague"}','up{job="zion-pool-prague"}',
+    'up{job="zion-core"}','up{job="zion-pool"}',
   ];
   const res = await Promise.allSettled(qs.map(q => promQuery(q)));
   const minerUp = pv(res, 21) ?? ((pv(res, 13) ?? 0) > 0 ? 1 : 0);
@@ -419,20 +419,20 @@ async function fetchServiceStatuses(): Promise<ServiceStatus[]> {
   };
 
   const STACK: Omit<ServiceStatus, 'up'>[] = [
-    { name: 'zion-core', job: 'zion-core-prague', image: 'zion-core:2.9.8', ports: '8333, 8443, 9115' },
-    { name: 'zion-pool', job: 'zion-pool-prague', image: 'zion-pool:2.9.8', ports: '3333, 8080' },
+    { name: 'zion-core', job: 'zion-core', image: 'zion-core:2.9.8', ports: '8333, 8443, 9115' },
+    { name: 'zion-pool', job: 'zion-pool', image: 'zion-pool:2.9.8', ports: '8444, 8080' },
     { name: 'zion-miner', job: '', image: 'zion-miner:2.9.8', ports: '—', note: 'no scrape target' },
-    { name: 'zion-redis', job: 'redis-prague', image: 'redis:7-alpine', ports: '6379' },
+    { name: 'zion-redis', job: 'redis', image: 'redis:7-alpine', ports: '6379' },
     { name: 'zion-seed-1', job: '', image: 'zion-core:2.9.8', ports: 'internal', note: 'seed node' },
     { name: 'zion-seed-2', job: '', image: 'zion-core:2.9.8', ports: 'internal', note: 'seed node' },
     { name: 'zion-website', job: '', image: 'zion-website:2.9.9', ports: '3000', note: 'this site' },
     { name: 'zion-prometheus', job: resolveJob(['prometheus']) || 'prometheus', image: 'prom/prometheus:v2.53.0', ports: '9090' },
     { name: 'zion-grafana', job: '', image: 'grafana/grafana:11.1.0', ports: '3001', note: '/grafana/' },
-    { name: 'zion-node-exporter', job: 'node-prague', image: 'prom/node-exporter:v1.8.1', ports: '9100' },
-    { name: 'zion-redis-exporter', job: 'redis-prague', image: 'oliver006/redis_exporter:v1.61.0', ports: '9121' },
+    { name: 'zion-node-exporter', job: 'node', image: 'prom/node-exporter:v1.8.1', ports: '9100' },
+    { name: 'zion-redis-exporter', job: 'redis', image: 'oliver006/redis_exporter:v1.61.0', ports: '9121' },
     { name: 'zion-alertmanager', job: '', image: 'prom/alertmanager:v0.27.0', ports: '9093' },
-    { name: 'germany-pool-target', job: 'zion-pool-germany', image: 'remote scrape', ports: '46.225.126.243:8080', note: 'Prometheus remote target' },
-    { name: 'germany-core-target', job: 'zion-core-germany', image: 'remote scrape', ports: '46.225.126.243:9115', note: 'Prometheus remote target' },
+    { name: 'core-pool-target', job: 'zion-pool-core', image: 'tailscale scrape', ports: '100.86.102.5:8080', note: 'Core PC pool target' },
+    { name: 'core-node-target', job: 'zion-core-core', image: 'tailscale scrape', ports: '100.86.102.5:9115', note: 'Core PC node target' },
   ];
   const jobUp: Record<string, boolean> = {};
   for (const r of upResults) { jobUp[r.metric.job ?? ''] = r.value[1] === '1'; }
@@ -448,10 +448,10 @@ async function fetchStackSummary(): Promise<StackSummary> {
     'redis_keyspace_hits_total',
     'redis_keyspace_misses_total',
     'up{job="prometheus"}',
-    'up{job="node-prague"}',
-    'up{job="redis-prague"}',
-    'up{job="zion-pool-germany"}',
-    'up{job="zion-core-germany"}',
+    'up{job="node"}',
+    'up{job="redis"}',
+    'up{job="zion-pool-core"}',
+    'up{job="zion-core-core"}',
     'node_uname_info',
     'prometheus_tsdb_head_series',
     'prometheus_tsdb_head_chunks',
@@ -492,8 +492,8 @@ async function fetchStackSummary(): Promise<StackSummary> {
     prometheusUp: pv(res, 6),
     nodeExporterUp: pv(res, 7),
     redisExporterUp: pv(res, 8),
-    germanyPoolUp: pv(res, 9),
-    germanyCoreUp: pv(res, 10),
+    corePoolUp: pv(res, 9),
+    coreNodeUp: pv(res, 10),
     hostKernel,
     prometheusHeadSeries: pv(res, 12),
     prometheusHeadChunks: pv(res, 13),
@@ -1098,7 +1098,7 @@ function V3MetricsSection({
 
       {/* ── Server Infrastructure ── */}
       <div>
-        <h3 className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2"><HardDrive className="h-4 w-4 text-cyan-400" /> Server Infrastructure <span className="text-[10px] text-gray-500 font-normal">Prague · Hetzner</span></h3>
+        <h3 className="text-sm font-semibold text-gray-300 mb-3 flex items-center gap-2"><HardDrive className="h-4 w-4 text-cyan-400" /> Server Infrastructure <span className="text-[10px] text-gray-500 font-normal">Edge VPS · Hetzner</span></h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div className="rounded-xl bg-white/5 border border-white/10 p-3">
             <p className="text-[9px] uppercase tracking-wider text-gray-400 flex items-center gap-1"><Flame className="h-3 w-3" /> {cs ? 'CPU zatez' : 'CPU Load'}</p>
@@ -1718,7 +1718,7 @@ export default function MissionControlDashboard() {
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
                 Real-time monitoring, roadmap tracking a launch countdown mapa pro V3 mainnet launch.
-                Dashboard sleduje audited Prague, USA a Singapore node set, closure evidence shromážděnou a finální odpočet k veřejnému mainnet launchi 20. června 2026.
+                Dashboard sleduje Core + Edge node set (Hetzner VPS + lokální Core přes Tailscale VPN), closure evidence shromážděnou a finální odpočet k veřejnému mainnet launchi 20. června 2026.
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
@@ -1728,7 +1728,7 @@ export default function MissionControlDashboard() {
                   <Timer className="h-3 w-3 text-amber-300" /> 72h stability run · {rehearsalStatus}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-4 py-2 text-cyan-200">
-                  <Sparkles className="h-3 w-3" /> 3 nodes · Prague + USA + Singapore
+                  <Sparkles className="h-3 w-3" /> 2 nodes · Core + Edge (Tailscale VPN)
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-red-500/30 bg-red-500/10 px-4 py-2 text-red-200">
                   <Rocket className="h-3 w-3" /> Mainnet launch countdown T-29 days
@@ -1898,22 +1898,21 @@ export default function MissionControlDashboard() {
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Controlled Runtime</p>
                 <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white flex items-center gap-2 sm:gap-3">
                   <Globe className="h-7 w-7 text-emerald-400" />
-                  V3 Mainnet — 3-Node Mesh
+                  V3 Mainnet — Core + Edge
                 </h2>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                 <Stat label="Network" value={primaryStats?.network ?? `V3 Mainnet ${SITE_RELEASE_LABEL}`} color="text-cyan-400" />
-                <Stat label="Total Peers" value={fmt(primaryStats?.peers_connected ?? 0)} sub={`${onlineCount}/3 nodes online`} mono />
+                <Stat label="Total Peers" value={fmt(primaryStats?.peers_connected ?? 0)} sub={`${onlineCount}/2 nodes online`} mono />
                 <Stat label="Difficulty" value={fmt(primaryStats?.difficulty)} mono />
                 <Stat label="Sync Status" value={(primaryStats?.status === 'OK' || primaryStats?.status === 'healthy') ? 'SYNCED ✓' : primaryHeight > 0 ? 'RUNNING' : '—'} color={(primaryStats?.status === 'OK' || primaryStats?.status === 'healthy') ? 'text-emerald-400' : 'text-gray-400'} />
               </div>
-              <div className="grid gap-5 lg:grid-cols-3">
-                <ServerCard node={primaryNode} name="Prague (EU)" flag="🇪🇺" ip="77.42.71.94 · RPC + pool + web" />
-                <ServerCard node={data?.usa} name="USA (Hillsboro)" flag="🇺🇸" ip="5.78.194.94 · RPC + pool" />
-                <ServerCard node={data?.singapore} name="Singapore (APAC)" flag="🇸🇬" ip="5.223.84.191 · RPC + pool" />
+              <div className="grid gap-5 lg:grid-cols-2">
+                <ServerCard node={primaryNode} name="Edge VPS (Hetzner)" flag="🌐" ip="77.42.71.94 · pool :8444 + web + relay" />
+                <ServerCard node={data?.primary} name="Core PC (Tailscale)" flag="🏠" ip="100.86.102.5 · consensus + RPC :8443" />
               </div>
               <div className="mt-5 rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-sm text-gray-300">
-                Auditovaný 3-node P2P mesh přes 3 regiony (EU, USA, APAC). Tento set je controlled mainnet launch runtime připravující se na veřejný production launch 20. června 2026.
+                Core + Edge topologie: Edge VPS (Hetzner, 77.42.71.94) jako veřejný relay a pool, Core PC (Tailscale 100.86.102.5) jako primární konsenzus uzel. Peer spojení přes Tailscale VPN.
               </div>
             </motion.section>
 
@@ -2088,8 +2087,8 @@ export default function MissionControlDashboard() {
                   <MiniMetric label="Redis Clients" value={fmt(stackSummary.redisClients)} color="text-cyan-400" />
                   <MiniMetric label="Redis Memory" value={fmtBytes(stackSummary.redisMemoryUsed)} color="text-purple-400" />
                   <MiniMetric label="Cache Hit Rate" value={stackSummary.redisHitRatio != null ? `${stackSummary.redisHitRatio.toFixed(1)}%` : '—'} color={stackSummary.redisHitRatio != null && stackSummary.redisHitRatio > 90 ? 'text-emerald-400' : 'text-amber-400'} />
-                  <MiniMetric label="Germany Pool" value={stackSummary.germanyPoolUp === 1 ? 'UP' : stackSummary.germanyPoolUp === 0 ? 'DOWN' : '—'} color={stackSummary.germanyPoolUp === 1 ? 'text-emerald-400' : 'text-red-400'} />
-                  <MiniMetric label="Germany Core" value={stackSummary.germanyCoreUp === 1 ? 'UP' : stackSummary.germanyCoreUp === 0 ? 'DOWN' : '—'} color={stackSummary.germanyCoreUp === 1 ? 'text-emerald-400' : 'text-red-400'} />
+                  <MiniMetric label="Core Pool" value={stackSummary.corePoolUp === 1 ? 'UP' : stackSummary.corePoolUp === 0 ? 'DOWN' : '—'} color={stackSummary.corePoolUp === 1 ? 'text-emerald-400' : 'text-red-400'} />
+                  <MiniMetric label="Core Node" value={stackSummary.coreNodeUp === 1 ? 'UP' : stackSummary.coreNodeUp === 0 ? 'DOWN' : '—'} color={stackSummary.coreNodeUp === 1 ? 'text-emerald-400' : 'text-red-400'} />
                 </div>
                 <div className="grid md:grid-cols-2 gap-3 mt-4">
                   <div className="rounded-xl border border-white/10 bg-black/30 p-4">
@@ -2131,8 +2130,8 @@ export default function MissionControlDashboard() {
                   <div className="rounded-xl border border-white/10 bg-black/30 p-4">
                     <div className="text-xs uppercase tracking-[0.25em] text-gray-500 mb-2">Remote Coverage</div>
                     <div className="grid grid-cols-2 gap-2">
-                      <MiniMetric label="Germany Pool" value={stackSummary.germanyPoolUp === 1 ? 'UP' : stackSummary.germanyPoolUp === 0 ? 'DOWN' : '—'} color={stackSummary.germanyPoolUp === 1 ? 'text-emerald-400' : 'text-red-400'} />
-                      <MiniMetric label="Germany Core" value={stackSummary.germanyCoreUp === 1 ? 'UP' : stackSummary.germanyCoreUp === 0 ? 'DOWN' : '—'} color={stackSummary.germanyCoreUp === 1 ? 'text-emerald-400' : 'text-red-400'} />
+                      <MiniMetric label="Core Pool" value={stackSummary.corePoolUp === 1 ? 'UP' : stackSummary.corePoolUp === 0 ? 'DOWN' : '—'} color={stackSummary.corePoolUp === 1 ? 'text-emerald-400' : 'text-red-400'} />
+                      <MiniMetric label="Core Node" value={stackSummary.coreNodeUp === 1 ? 'UP' : stackSummary.coreNodeUp === 0 ? 'DOWN' : '—'} color={stackSummary.coreNodeUp === 1 ? 'text-emerald-400' : 'text-red-400'} />
                     </div>
                     <div className="mt-2 text-[10px] text-gray-500">Veřejně scrapeované targety z Helsinek Promethea.</div>
                   </div>
@@ -2169,7 +2168,7 @@ export default function MissionControlDashboard() {
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                   <h2 className="text-xl sm:text-2xl font-semibold text-white flex items-center gap-2 sm:gap-3">
                     <Server className="h-6 w-6 text-emerald-400" />
-                    Ops Panel — Prague + Remote Targets
+                    Ops Panel — Edge VPS + Core PC
                   </h2>
                   <div className="flex flex-wrap gap-2 text-[10px]">
                     <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-emerald-300 font-semibold uppercase tracking-widest">{servicesUp} up</span>
@@ -2268,7 +2267,7 @@ export default function MissionControlDashboard() {
                 <div className="rounded-xl bg-white/5 border border-white/10 p-4 space-y-3">
                   <h3 className="text-sm font-semibold text-purple-400 flex items-center gap-2"><Pickaxe className="h-4 w-4" /> Mining Layer</h3>
                   <div className="space-y-2 text-xs">
-                    <div className="flex justify-between"><span className="text-gray-300">zion-pool</span><span className="text-gray-500 font-mono">:3333 :8080</span></div>
+                    <div className="flex justify-between"><span className="text-gray-300">zion-pool</span><span className="text-gray-500 font-mono">:8444 :8080</span></div>
                     <div className="flex justify-between"><span className="text-gray-300">zion-miner</span><span className="text-gray-500 font-mono">—</span></div>
                   </div>
                   <p className="text-[10px] text-gray-500">Stratum pool · PPLNS engine · Cosmic Harmony PoW · internal miner</p>
@@ -2291,14 +2290,14 @@ export default function MissionControlDashboard() {
                 <h3 className="text-sm font-semibold text-gray-300 mb-2 flex items-center gap-2"><Globe className="h-4 w-4 text-gray-400" /> Network Topology</h3>
                 <div className="grid md:grid-cols-2 gap-3 text-xs">
                   <div>
-                    <p className="text-gray-400 mb-1 font-semibold">Prague (Primary) — 77.42.71.94</p>
-                    <p className="text-gray-500">12 Docker containers · zion-net bridge · Prometheus local scrape</p>
-                    <p className="text-gray-500">Core + Pool + Miner + Redis + 2 Seeds + Monitoring stack</p>
+                    <p className="text-gray-400 mb-1 font-semibold">Edge VPS (Hetzner) — 77.42.71.94</p>
+                    <p className="text-gray-500">Public relay · Pool :8444 · Website :443 · Prometheus scrape</p>
+                    <p className="text-gray-500">Tailscale 100.66.162.125 · Pool + Web + Monitoring stack</p>
                   </div>
                   <div>
-                    <p className="text-gray-400 mb-1 font-semibold">Germany (Remote) — 46.225.126.243</p>
-                    <p className="text-gray-500">Remote Prometheus targets: zion-pool-germany, zion-core-germany</p>
-                    <p className="text-gray-500">Scraped over public IP from Prague Prometheus</p>
+                    <p className="text-gray-400 mb-1 font-semibold">Core PC (Tailscale VPN) — 100.86.102.5</p>
+                    <p className="text-gray-500">Primary consensus node · RPC :8443 · P2P :8333</p>
+                    <p className="text-gray-500">Connected to Edge via Tailscale · local miner</p>
                   </div>
                 </div>
               </div>
@@ -2660,7 +2659,7 @@ export default function MissionControlDashboard() {
                   <SprintRow name="1.7 P2P Rate-Limit" content="200 msgs/peer/60s, escalating bans" tests="13" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
                   <SprintRow name="1.8 Health & Metrics" content="getHealthCheck, getMetrics" tests="8" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
                   <SprintRow name="1.9 Stress Tests" content="High-throughput TX, rapid blocks" tests="21" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
-                  <SprintRow name="1.10 72h Mainnet Stability Run" content="Prague + USA + Singapore tip agreement, restart discipline a pool recovery evidence" tests="—" status={<span className={`${stabilityStatusColor} inline-flex items-center gap-1`}><RefreshCw className="h-3.5 w-3.5" /> {stabilityStatus}</span>} highlight />
+                  <SprintRow name="1.10 72h Mainnet Stability Run" content="Core + Edge tip agreement, restart discipline a pool recovery evidence (Tailscale VPN)" tests="—" status={<span className={`${stabilityStatusColor} inline-flex items-center gap-1`}><RefreshCw className="h-3.5 w-3.5" /> {stabilityStatus}</span>} highlight />
                   <SprintRow name="1.11 Partition Test" content="Izolace node 30 min, reconnect" tests="—" status={<Square className="h-4 w-4 text-gray-500" />} />
                   <SprintRow name="1.12 100 Miners" content="Simulace 100 Stratum klientů" tests="—" status={<Square className="h-4 w-4 text-gray-500" />} />
                   <SprintRow name="1.13 Ekam Tier 1" content="Scratchpad 256 KiB, 4 passes, 256 reads" tests="108" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} highlight />
@@ -2684,7 +2683,7 @@ export default function MissionControlDashboard() {
               <PhaseAccordion icon={<Globe className="h-6 w-6 text-yellow-400" />} title="Fáze 3 — Launch Ops & Security Closure" pct={60} status="PROBÍHÁ" statusColor="border-yellow-400/30 bg-yellow-400/10 text-yellow-200">
                 <p className="text-xs text-gray-500 mb-3 flex items-center gap-1.5"><CalendarDays className="h-3 w-3" /> Březen 2026 | closure práce mezi controlled rehearsal a public launch gatem</p>
                 <table className="w-full text-left"><tbody>
-                  <SprintRow name="3.1 Node Set Audit" content="Prague + USA + Singapore potvrzené po fee-split rolloutu" status={<span className="text-emerald-400">SYNCED</span>} />
+                  <SprintRow name="3.1 Node Set Audit" content="Core + Edge potvrzené po fee-split rolloutu, Tailscale VPN" status={<span className="text-emerald-400">SYNCED</span>} />
                   <SprintRow name="3.2 Release Artefacts" content="runbook ✅, operator guide ✅, checksums ⬜, release tag ⬜" status={<span className="text-yellow-400">2/4</span>} />
                   <SprintRow name="3.3 Security Hygiene" content="fuzz harnessy ✅, BFG scrub ⬜, boundary review ⬜" status={<span className="text-yellow-400">1/3</span>} />
                   <SprintRow name="3.4 Recovery & Alerts" content="metrics ✅, alert routing ⬜, backup/restore ⬜" status={<span className="text-yellow-400">1/3</span>} />
@@ -2881,10 +2880,57 @@ export default function MissionControlDashboard() {
               </div>
             </motion.section>
 
+            {/* L5 / L6 Treasury Allocation */}
             <motion.section
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.16 }}
+              transition={{ delay: 0.20 }}
+              className="rounded-2xl sm:rounded-3xl lg:rounded-4xl border border-white/10 bg-black/40 p-4 sm:p-6 lg:p-8"
+            >
+              <div className="flex flex-col gap-2 mb-6">
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'L5 / L6 Pokladna' : 'L5 / L6 Treasury'}</p>
+                <h2 className="text-xl sm:text-2xl font-semibold text-white flex items-center gap-2 sm:gap-3">
+                  <Heart className="h-6 w-6 text-amber-400" />
+                  {cs ? 'Humanitární fond & Vesmírná stanice' : 'Humanitarian Fund & Space Station'}
+                </h2>
+                <p className="text-sm text-gray-400">{cs ? '5 % každého blokového odměny putuje na L5 humanitární fond a 5 % na L6 Issobella vesmírný fond.' : '5% of every block reward goes to the L5 humanitarian fund and 5% to the L6 Issobella space fund.'}</p>
+              </div>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-4 sm:p-5">
+                  <div className="flex items-center gap-3 mb-3">
+                    <Globe2 className="h-6 w-6 text-amber-400" />
+                    <div>
+                      <p className="font-semibold text-white">L5 — Free World Humanitarian</p>
+                      <p className="text-xs text-amber-400 font-mono">5% block reward → ~15,000 ZION/měsíc</p>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-400 mb-3">{cs ? 'Fyzické komunity, humanitární projekty, Free Energy, terénní governance. Fond odemčen ve výšce bloku ~525,600.' : 'Physical communities, humanitarian projects, Free Energy, on-ground governance. Fund unlocked at block ~525,600.'}</p>
+                  <div className="space-y-1 text-[10px] font-mono text-gray-500">
+                    <p>wallet: zion1t4w447d7k4c600h3x893m5r55645w4p057yf4d7</p>
+                    <p className="text-amber-400">~15,000 ZION / měsíc · DAO řízeno · L5 Radou</p>
+                  </div>
+                </div>
+                <div className="rounded-2xl border border-rose-500/30 bg-rose-500/5 p-4 sm:p-5">
+                  <div className="flex items-center gap-3 mb-3">
+                    <Rocket className="h-6 w-6 text-rose-400" />
+                    <div>
+                      <p className="font-semibold text-white">L6 — ZION Issobella Space Fund</p>
+                      <p className="text-xs text-rose-400 font-mono">5% block reward → ~15,000 ZION/měsíc</p>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-400 mb-3">{cs ? 'Orbitální stanice, vesmírný výzkum, SETI, Overview Effect protokoly. Fond odemčen ve výšce bloku ~525,600.' : 'Orbital station, space research, SETI, Overview Effect protocols. Fund unlocked at block ~525,600.'}</p>
+                  <div className="space-y-1 text-[10px] font-mono text-gray-500">
+                    <p>wallet: zion1e4t5a390m2r427a8f3s39885v4f2v6n8u3mj3f5</p>
+                    <p className="text-rose-400">~15,000 ZION / měsíc · DAO řízeno · L6 Radou</p>
+                  </div>
+                </div>
+              </div>
+            </motion.section>
+
+            <motion.section
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.24 }}
               className="rounded-2xl sm:rounded-3xl lg:rounded-4xl border border-red-500/20 bg-red-500/5 p-4 sm:p-6 lg:p-8 flex items-center gap-3 sm:gap-6"
             >
               <Flame className="h-8 w-8 sm:h-10 sm:w-10 text-red-400 shrink-0" />
@@ -2985,7 +3031,7 @@ export default function MissionControlDashboard() {
                   <div className="relative pl-6 sm:pl-8 border-l-2 border-white/20 space-y-4 sm:space-y-6">
                     {[
                       { done: true, date: 'Únor 2026', title: 'Fáze 0 — Spec Freeze', desc: 'Core rewrite, consensus hardening a základní test floor', color: 'text-emerald-400' },
-                      { active: true, date: 'Březen 2026', title: 'Controlled Test Mainnet', desc: '3-node mesh live, on-chain reward split ověřený', color: 'text-cyan-400' },
+                      { active: true, date: 'Březen 2026', title: 'Controlled Test Mainnet', desc: 'Core + Edge live, on-chain reward split ověřený', color: 'text-cyan-400' },
                       { active: true, date: stabilityRun?.start ? new Date(stabilityRun.start).toLocaleDateString() : 'Březen 2026', title: '72h Mainnet Stability Run', desc: 'Live collector, tip agreement a closure evidence pro launch gate', color: 'text-amber-300' },
                       { date: 'Duben 2026', title: 'Launch Gate Closure', desc: 'BFG, exit criteria, checksumy, backup/alerts, closure report', color: 'text-yellow-400' },
                       { date: 'Později v roce 2026', title: 'PRODUCTION MAINNET GENESIS', desc: 'Až po closure reportu a finálním sign-offu', color: 'text-pink-400' },
@@ -3098,7 +3144,7 @@ export default function MissionControlDashboard() {
                   <tbody>
                     {[
                       { prio: 'DONE', prioColor: 'text-emerald-400 font-bold', task: 'On-chain reward split 89/5/5/1 ověřen live bloky', phase: 'RUNTIME', status: 'VERIFIED', sColor: 'text-emerald-400' },
-                      { prio: 'DONE', prioColor: 'text-emerald-400 font-bold', task: 'Prague + USA + Singapore rollout bez divergence', phase: 'OPS', status: 'SYNCED', sColor: 'text-emerald-400' },
+                      { prio: 'DONE', prioColor: 'text-emerald-400 font-bold', task: 'Core + Edge rollout bez divergence (Tailscale VPN)', phase: 'OPS', status: 'SYNCED', sColor: 'text-emerald-400' },
                       { prio: 'DONE', prioColor: 'text-emerald-400 font-bold', task: 'Runbook + operator guide + go/no-go report', phase: 'DOCS', status: 'ALIGNED', sColor: 'text-emerald-400' },
                       { prio: 'P0', prioColor: 'text-red-400 font-bold', task: 'BFG scrub / git history hygiene', phase: 'R1', status: 'BLOCKER', sColor: 'text-red-400', bg: 'bg-red-500/5' },
                       { prio: 'P0', prioColor: 'text-red-400 font-bold', task: 'Genesis artefakty + checksumy + release tag', phase: 'R2', status: 'BLOCKER', sColor: 'text-red-400', bg: 'bg-red-500/5' },

@@ -75,7 +75,7 @@ async function getNodeStatus(node: SeedNodeConfig): Promise<NodeStatus> {
     status.rpcLatencyMs = Date.now() - rpcStart;
     status.height = info.height ?? 0;
     status.peers = (info.outgoing_connections_count ?? 0) + (info.incoming_connections_count ?? 0);
-    if (node.region === 'PRIMARY' || node.id === 'prague-eu') {
+    if (node.region === 'PRIMARY' || node.id === 'edge-vps') {
       status.hashrate = info.difficulty ? info.difficulty / (info.target || 60) : 0;
     }
     status.online = info.status === 'OK';
@@ -84,7 +84,7 @@ async function getNodeStatus(node: SeedNodeConfig): Promise<NodeStatus> {
   }
 
   // V3 pool metrics via TCP — only primary runs the pool
-  if (node.id === 'prague-eu') {
+  if (node.id === 'edge-vps') {
     try {
       const rpc = getZionRpc();
       const poolStart = Date.now();

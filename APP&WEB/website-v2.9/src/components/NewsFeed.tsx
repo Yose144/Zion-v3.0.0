@@ -146,12 +146,12 @@ export const NEWS_ARTICLES: NewsArticle[] = [
     tag: { cs: 'Mainnet', en: 'Mainnet' },
     tagColor: 'text-blue-400',
     title: {
-      cs: 'V3 Test Mainnet — 3-node mesh síť v provozu',
-      en: 'V3 Test Mainnet — 3-node mesh network operational',
+      cs: 'V3 Mainnet — Core + Edge topologie v provozu',
+      en: 'V3 Mainnet — Core + Edge topology operational',
     },
     summary: {
-      cs: 'ZION V3 test mainnet běží se 3 nody (Praha, USA, Singapur). Kanonický runtime v2.9.8 Ekam Deeksha, veřejný mining pool a Prometheus telemetrie. Chain height přes 470+ bloků.',
-      en: 'ZION V3 test mainnet running with 3 nodes (Prague, USA, Singapore). Canonical runtime v2.9.8 Ekam Deeksha, public mining pool, Prometheus telemetry. Chain height over 470+ blocks.',
+      cs: 'ZION V3 mainnet běží v Core + Edge topologii (Core PC + Hetzner Edge VPS). Kanonický runtime v2.9.8 Ekam Deeksha, veřejný mining pool a Prometheus telemetrie. Chain height přes 470+ bloků.',
+      en: 'ZION V3 mainnet running in Core + Edge topology (Core PC + Hetzner Edge VPS). Canonical runtime v2.9.8 Ekam Deeksha, public mining pool, Prometheus telemetry. Chain height over 470+ blocks.',
     },
     href: '/network',
   },
