@@ -17,11 +17,11 @@ import Link from 'next/link';
 import { useLang } from '@/contexts/LanguageContext';
 import { ATOMIC_UNITS_PER_ZION } from '@/lib/constants';
 import { CHAPTERS } from './bookData';
-import { EDITIONS_DATA } from './generatedEditions';
 import PioneerProjectCards from './components/PioneerProjectCards';
+import GeographyMenu from './components/GeographyMenu';
 import type { BookChapter } from './bookData';
 
-type EditionKey = 'org' | 'final' | 'gemini';
+type EditionKey = 'final';
 
 type EditionMeta = {
   titleCs: string;
@@ -64,87 +64,31 @@ const EDITION_OPTIONS: Array<{
   border: string;
 }> = [
   {
-    id: 'org',
-    nameCs: 'ORG větev',
-    nameEn: 'ORG Branch',
-    color: '#32CD32',
-    bg: 'rgba(50,205,50,0.1)',
-    border: 'rgba(50,205,50,0.3)',
-  },
-  {
     id: 'final',
-    nameCs: 'Cloud / FINAL',
-    nameEn: 'Cloud / FINAL',
+    nameCs: 'FINAL větev',
+    nameEn: 'FINAL Branch',
     color: '#00BFFF',
     bg: 'rgba(0,191,255,0.1)',
     border: 'rgba(0,191,255,0.3)',
   },
-  {
-    id: 'gemini',
-    nameCs: 'Gemini Odysea',
-    nameEn: 'Gemini Odyssey',
-    color: '#8A2BE2',
-    bg: 'rgba(138,43,226,0.15)',
-    border: 'rgba(138,43,226,0.4)',
-  },
 ];
 
 const EDITION_META: Record<EditionKey, EditionMeta> = {
-  org: {
-    titleCs: 'Terra Nova',
-    titleEn: 'Terra Nova',
-    subtitleCs: 'Organická redakce původní linie',
-    subtitleEn: 'Organic redaction of the original line',
-    editionCs: 'ORG edice · uhlazená organická větev · Praha, duben 2026',
-    editionEn: 'ORG edition · polished organic branch · Prague, April 2026',
-    aboutCs:
-      'Tato větev drží Terra Novu v nejklidnější a nejorganictější podobě. Text je očištěnější, méně explikuje technologické detaily a víc nese rytmus knihy jako civilizačního kompasu.',
-    aboutEn:
-      'This branch keeps Terra Nova in its calmest and most organic form. The text is cleaner, less explicit about technical details, and carries the rhythm of the book as a civilizational compass.',
-    layersCs:
-      'ORG verze je vhodná tam, kde má čtenář nejdřív vstoupit do jazyka, směru a vnitřní osy projektu. Technická vrstva zůstává přítomná, ale nepřebíjí hlas knihy.',
-    layersEn:
-      'The ORG version works where the reader should first enter the language, direction, and inner axis of the project. The technical layer stays present, but does not overpower the voice of the book.',
-    dedicationCs:
-      'Pro Sarah Issobel, Maitreyu Buddhu, Radhu & Situ i Meriam,\npřátele, rodinu, svobodné lidstvo a všechny děti tohoto světa:\nZION je váš. Stavte lepší svět, a dosáhnete ke hvězdám.\nZlatý věk začíná.',
-    dedicationEn:
-      'For Sarah Issobel, Maitreya Buddha, Radhu & Situ and Meriam /EnaMaTara/,\nfriends, family, free humanity, and all the children of this world:\nZION is yours. Build a better world where you reach for the stars.\nThe Golden Age begins.',
-  },
   final: {
     titleCs: 'Terra Nova',
     titleEn: 'Terra Nova',
-    subtitleCs: 'Technická a realistická cloudová větev',
-    subtitleEn: 'Technical and realistic cloud branch',
-    editionCs: 'FINAL edice · technická větev od Claude/Cloud · Praha, duben 2026',
-    editionEn: 'FINAL edition · technical branch from Claude/Cloud · Prague, April 2026',
+    subtitleCs: 'Kanonická větev Terra Novy',
+    subtitleEn: 'Canonical Terra Nova Branch',
+    editionCs: 'FINAL edice · kanonická větev · Praha 2026',
+    editionEn: 'FINAL edition · canonical branch · Prague 2026',
     aboutCs:
-      'FINAL větev drží Terra Novu jako provozně čitelnou knihu. Přibližuje architekturu, stavby, roadmapovou disciplínu a to, co je v síti skutečně realizovatelné už nyní.',
+      'Kanonická větev Terra Novy drží provozně čitelnou knihu. Přibližuje architekturu, stavby, roadmapovou disciplínu a to, co je v síti skutečně realizovatelné už nyní.',
     aboutEn:
-      'The FINAL branch keeps Terra Nova as an operationally readable book. It leans into architecture, builds, roadmap discipline, and what is realistically executable in the network now.',
+      'The canonical Terra Nova branch keeps the book operationally readable. It leans into architecture, builds, roadmap discipline, and what is realistically executable in the network now.',
     layersCs:
-      'Tahle verze je vhodná pro inženýrské čtení: víc uzemněná, konkrétnější a méně mytická. Pořád však zůstává součástí stejné civilizační linie.',
+      'Tahle verze je vhodná pro inženýrské čtení: uzemněná, konkrétní a součástí stejné civilizační linie.',
     layersEn:
-      'This version fits engineering-oriented reading: more grounded, more concrete, and less mythic. It still remains part of the same civilizational line.',
-    dedicationCs:
-      'Pro Sarah Issobel, Maitreyu Buddhu, Radhu & Situ i Meriam,\npřátele, rodinu, svobodné lidstvo a všechny děti tohoto světa:\nZION je váš. Stavte lepší svět, a dosáhnete ke hvězdám.\nZlatý věk začíná.',
-    dedicationEn:
-      'For Sarah Issobel, Maitreya Buddha, Radhu & Situ and Meriam /EnaMaTara/,\nfriends, family, free humanity, and all the children of this world:\nZION is yours. Build a better world where you reach for the stars.\nThe Golden Age begins.',
-  },
-  gemini: {
-    titleCs: 'Terra Nova',
-    titleEn: 'Terra Nova',
-    subtitleCs: 'Vesmírná odysea a sci-fi příběh projektu ZION',
-    subtitleEn: 'Space odyssey and sci-fi narrative of the ZION project',
-    editionCs: 'Gemini edice · sci-fi příběh přímo v UI · Praha, duben 2026',
-    editionEn: 'Gemini edition · sci-fi story directly in the UI · Prague, April 2026',
-    aboutCs:
-      'Gemini větev bere stejné ideje a nechává je dýchat jako kosmický příběh. Je nejvíc narativní, obrazná a mytická, ale pořád ukotvená ve stejné ose Terra Novy.',
-    aboutEn:
-      'The Gemini branch takes the same ideas and lets them breathe as a cosmic story. It is the most narrative, visual, and mythic edition, while still anchored in the same Terra Nova axis.',
-    layersCs:
-      'Tato verze slouží tam, kde má UI nést i sci-fi rozměr projektu. Čtenáře vede přes příběh, ne přes specifikaci, a proto potřebuje vlastní hlavičku i tón.',
-    layersEn:
-      'This version serves where the UI should also carry the project’s sci-fi dimension. It guides the reader through story rather than specification, so it needs its own header and tone.',
+      'This version fits engineering-oriented reading: grounded, concrete, and part of the same civilizational line.',
     dedicationCs:
       'Pro Sarah Issobel, Maitreyu Buddhu, Radhu & Situ i Meriam,\npřátele, rodinu, svobodné lidstvo a všechny děti tohoto světa:\nZION je váš. Stavte lepší svět, a dosáhnete ke hvězdám.\nZlatý věk začíná.',
     dedicationEn:
@@ -153,32 +97,6 @@ const EDITION_META: Record<EditionKey, EditionMeta> = {
 };
 
 const EDITION_INTRO: Record<EditionKey, EditionIntro> = {
-  org: {
-    signalsCs: ['ORG manuscript', 'Civilizační kompas', 'Organická větev'],
-    signalsEn: ['ORG manuscript', 'Civilizational compass', 'Organic branch'],
-    eyebrowCs: 'Terra Nova · organická redakce',
-    eyebrowEn: 'Terra Nova · organic redaction',
-    headlineCs: 'Klidnější větev. Stejný kompas. Čitelnější tok.',
-    headlineEn: 'A calmer branch. The same compass. A clearer flow.',
-    leadCs:
-      'Tahle vrstva čistí jazyk a drží míru knihy. Terra Nova tu mluví klidněji, ale pořád nese stejnou osu projektu.',
-    leadEn:
-      'This layer cleans the language and preserves the measure of the book. Terra Nova speaks more calmly here while carrying the same project axis.',
-    bodyCs:
-      'Pokud má čtenář nejdřív vstoupit do hlasu knihy, ne do specifikace, začíná tady. Organická větev vede přes rytmus, směr a vnitřní osu.',
-    bodyEn:
-      'If the reader should first enter the voice of the book rather than the specification, this is the place to start. The organic branch leads through rhythm, direction, and inner axis.',
-    notesCs: [
-      'Jazyk je uhlazenější a méně technicky agresivní.',
-      'Projekt zůstává čitelný jako civilizační kompas.',
-      'Dobrá vstupní vrstva pro čtení celé linie Terra Novy.',
-    ],
-    notesEn: [
-      'The language is smoother and less technically aggressive.',
-      'The project remains readable as a civilizational compass.',
-      'A strong entry layer for reading the whole Terra Nova line.',
-    ],
-  },
   final: {
     signalsCs: ['Genesis.md', 'ZION CLI v3 RC', 'Terra Nova IV'],
     signalsEn: ['Genesis.md', 'ZION CLI v3 RC', 'Terra Nova IV'],
@@ -205,52 +123,16 @@ const EDITION_INTRO: Record<EditionKey, EditionIntro> = {
       'Terra Nova works here as a realistic construction book.',
     ],
   },
-  gemini: {
-    signalsCs: ['Issobella deck', 'Sci-fi odysea', 'Hvězdný horizont'],
-    signalsEn: ['Issobella deck', 'Sci-fi odyssey', 'Stellar horizon'],
-    eyebrowCs: 'Terra Nova · gemini odysea',
-    eyebrowEn: 'Terra Nova · gemini odyssey',
-    headlineCs: 'Orbitální příběh je otevřený. Čtvrtá kniha dýchá jako sci-fi.',
-    headlineEn: 'The orbital story is open. The fourth book breathes as sci-fi.',
-    leadCs:
-      'Tady Terra Nova nevede čtenáře přes specifikaci, ale přes obraz, atmosféru a hvězdný horizont projektu ZION.',
-    leadEn:
-      'Here Terra Nova does not lead the reader through specification, but through image, atmosphere, and the stellar horizon of the ZION project.',
-    bodyCs:
-      'Gemini větev je narativní vrstva přímo v UI. Má nést kosmický rozměr knihy, aniž by ztratila technickou osu, ze které vyrůstá.',
-    bodyEn:
-      'The Gemini branch is the narrative layer directly in the UI. It is meant to carry the cosmic dimension of the book without losing the technical axis it grows from.',
-    notesCs: [
-      'Issobella a hvězdný horizont jsou v popředí čtenářského toku.',
-      'Příběh je obraznější, ale stále navázaný na stejné vrstvy projektu.',
-      'Nejvhodnější větev pro atmosféru, vizi a sci-fi přenos do UI.',
-    ],
-    notesEn: [
-      'Issobella and the stellar horizon move to the front of the reading flow.',
-      'The story is more visual, but still bound to the same project layers.',
-      'The best branch for atmosphere, vision, and sci-fi transfer into the UI.',
-    ],
-  },
 };
 
 const EDITION_CHAPTERS: Record<EditionKey, BookChapter[]> = {
-  org: EDITIONS_DATA.org ?? CHAPTERS,
   final: CHAPTERS,
-  gemini: EDITIONS_DATA.gemini ?? CHAPTERS,
 };
 
 const EDITION_COMPOSITION_LINES: Record<EditionKey, { cs: string[]; en: string[] }> = {
-  org: {
-    cs: EDITION_CHAPTERS.org.map((chapter) => formatChapterLabel(chapter, true)),
-    en: EDITION_CHAPTERS.org.map((chapter) => formatChapterLabel(chapter, false)),
-  },
   final: {
     cs: EDITION_CHAPTERS.final.map((chapter) => formatChapterLabel(chapter, true)),
     en: EDITION_CHAPTERS.final.map((chapter) => formatChapterLabel(chapter, false)),
-  },
-  gemini: {
-    cs: EDITION_CHAPTERS.gemini.map((chapter) => formatChapterLabel(chapter, true)),
-    en: EDITION_CHAPTERS.gemini.map((chapter) => formatChapterLabel(chapter, false)),
   },
 };
 
@@ -1266,11 +1148,11 @@ export default function TerraNovaBookClient() {
             </p>
           </div>
 
-          {/* ── Edition switcher ── */}
+          {/* ── Canonical branch banner ── */}
           <div className="mb-6 overflow-hidden rounded-4xl border border-white/10 bg-black/40 shadow-[0_20px_70px_rgba(0,0,0,0.32)]">
-            <div className="border-b border-white/6 px-5 py-3 flex items-center justify-between gap-3">
+            <div className="px-5 py-3 flex items-center justify-between gap-3">
               <p className="text-[10px] uppercase tracking-[0.4em] text-zion-gold/60">
-                {cs ? 'Čtecí větev Terra Novy — vyber edici' : 'Terra Nova Reading Branch — choose edition'}
+                {cs ? 'Kanonická větev Terra Novy' : 'Canonical Terra Nova Branch'}
               </p>
               <button
                 onClick={() => setLang(lang === 'cs' ? 'en' : 'cs')}
@@ -1279,52 +1161,6 @@ export default function TerraNovaBookClient() {
               >
                 {lang === 'cs' ? 'EN' : 'CS'}
               </button>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3">
-              {EDITION_OPTIONS.map((ed, idx) => {
-                const isActive = activeEdition === ed.id;
-                const icons = ['◈', '◉', '◆'];
-                const subtitlesCs = ['Organická · Praha', 'Technická · Cloud', 'AI · Gemini'];
-                const subtitlesEn = ['Organic · Prague', 'Technical · Cloud', 'AI · Gemini'];
-                return (
-                  <button
-                    key={`compass-edition-${ed.id}`}
-                    onClick={() => { setActiveEdition(ed.id); setActiveChapter(0); }}
-                    className="relative flex flex-col items-center gap-1.5 border-b sm:border-b-0 sm:border-r border-white/6 last:border-0 px-5 py-5 transition-all duration-300 group"
-                    style={{
-                      backgroundColor: isActive ? `rgba(${ed.id === 'org' ? '50,205,50' : ed.id === 'final' ? '0,191,255' : '138,43,226'},0.07)` : 'transparent',
-                    }}
-                  >
-                    {isActive && (
-                      <span
-                        className="pointer-events-none absolute inset-0 rounded-none"
-                        style={{ boxShadow: `inset 0 0 60px rgba(${ed.id === 'org' ? '50,205,50' : ed.id === 'final' ? '0,191,255' : '138,43,226'},0.12)` }}
-                      />
-                    )}
-                    {isActive && (
-                      <span
-                        className="absolute bottom-0 left-0 right-0 h-[2px] rounded-full"
-                        style={{ backgroundColor: ed.color, boxShadow: `0 0 12px ${ed.color}` }}
-                      />
-                    )}
-                    <span
-                      className="text-2xl transition-all duration-300"
-                      style={{ color: isActive ? ed.color : 'rgba(255,255,255,0.2)', filter: isActive ? `drop-shadow(0 0 8px ${ed.color})` : 'none' }}
-                    >
-                      {icons[idx]}
-                    </span>
-                    <span
-                      className="text-sm font-bold uppercase tracking-[0.22em] transition-colors duration-300"
-                      style={{ color: isActive ? ed.color : 'rgba(255,255,255,0.55)' }}
-                    >
-                      {cs ? ed.nameCs : ed.nameEn}
-                    </span>
-                    <span className="text-[10px] uppercase tracking-[0.2em] text-gray-600 group-hover:text-gray-400 transition-colors">
-                      {cs ? subtitlesCs[idx] : subtitlesEn[idx]}
-                    </span>
-                  </button>
-                );
-              })}
             </div>
           </div>
 
@@ -1737,6 +1573,7 @@ export default function TerraNovaBookClient() {
                   </p>
                 </div>
                 <PioneerProjectCards cs={cs} />
+                <GeographyMenu cs={cs} />
               </div>
 
             </div>

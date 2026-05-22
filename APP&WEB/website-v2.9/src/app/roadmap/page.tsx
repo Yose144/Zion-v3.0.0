@@ -252,7 +252,7 @@ const getPhases = (cs: boolean): PhaseData[] => [
       { id: '1.16', title: 'Canary Deploy — pool 10/10 accepted, 0 rejected, 166 H/s', done: true }
     ],
     exitCriteria: [
-      { text: 'Controlled V3 test-mainnet deployed on 3 servers', done: true },
+      { text: 'Controlled V3 Core + Edge mainnet deployed on 2 nodes (Edge VPS + Core PC)', done: true },
       { text: 'Reorg/double-spend/fork tests (29 tests)', done: true },
       { text: 'IBD hardening (42 tests)', done: true },
       { text: 'Pool payout batch TX (23 tests)', done: true },

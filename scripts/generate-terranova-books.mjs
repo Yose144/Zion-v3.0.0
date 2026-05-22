@@ -7,9 +7,7 @@ const __dirname = path.dirname(__filename);
 const ROOT = path.join(__dirname, '..');
 
 const EDITIONS = [
-  { id: 'org', name: 'ORG (Uhlazená)', dir: path.join(ROOT, 'docs/TerraNova/ORG'), color: '#32CD32', rgb: '50,205,50' },
-  { id: 'final', name: 'ZION Core (Technická)', dir: path.join(ROOT, 'docs/TerraNova/FINAL'), color: '#00BFFF', rgb: '0,191,255' },
-  { id: 'gemini', name: 'Vesmírná Odysea (Sci-Fi)', dir: path.join(ROOT, 'docs/TerraNova/gemini'), color: '#8A2BE2', rgb: '138,43,226' },
+  { id: 'final', name: 'ZION Core (Kanonická)', dir: path.join(ROOT, 'docs/TerraNova/FINAL'), color: '#00BFFF', rgb: '0,191,255' },
 ];
 
 const OUT_PATH = path.join(ROOT, 'APP&WEB/website-v2.9/src/app/terranova/generatedEditions.ts');
