@@ -153,7 +153,7 @@ export default function Hero() {
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                      <span className="text-sm font-bold text-white">Mainnet launch countdown — T-29 days</span>
+                      <span className="text-sm font-bold text-white">Mainnet Launch — 31 December 2026</span>
                     <span className="text-xs bg-pink-500/20 text-pink-300 px-2 py-0.5 rounded-full font-semibold">
                         Active
                     </span>
