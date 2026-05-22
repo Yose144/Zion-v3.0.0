@@ -1,7 +1,7 @@
 {
   "name": "zion-desktop-agent",
   "version": "2.9.9",
-  "description": "ZION Ekam Deeksha v2.9.9 Desktop Mining Agent - GPU + CPU mining with 256 KiB hardened scratchpad",
+  "description": "ZION V3 Mainnet Ready v2.9.9 Desktop Mining Agent - GPU + CPU mining with 256 KiB hardened scratchpad",
   "homepage": "https://zionterranova.com",
   "main": "src/main.js",
   "scripts": {
