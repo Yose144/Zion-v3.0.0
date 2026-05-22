@@ -69,8 +69,8 @@ export default function BackgroundOrchestrator({ variant = 'default' }: { varian
 
   const bubbleDensity = isHomeVariant ? 'medium' : observatory.bubbleDensity;
   const overlayClass = isHomeVariant
-    ? 'pointer-events-none fixed inset-0 -z-40 bg-[radial-gradient(circle_at_50%_12%,rgba(255,214,120,0.16),rgba(255,168,76,0.08)_18%,rgba(19,14,34,0.34)_34%,rgba(6,10,24,0.76)_58%,rgba(0,0,0,0.95)_100%)]'
-    : 'pointer-events-none fixed inset-0 -z-40 bg-[radial-gradient(circle_at_50%_20%,rgba(10,12,28,0.65),rgba(0,0,0,0.95))]';
+    ? 'pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(circle_at_50%_12%,rgba(255,214,120,0.16),rgba(255,168,76,0.08)_18%,rgba(19,14,34,0.34)_34%,rgba(6,10,24,0.76)_58%,rgba(0,0,0,0.95)_100%)]'
+    : 'pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(circle_at_50%_20%,rgba(10,12,28,0.65),rgba(0,0,0,0.95))]';
 
   return (
     <>
