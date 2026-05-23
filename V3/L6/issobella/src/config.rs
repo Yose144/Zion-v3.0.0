@@ -14,6 +14,8 @@ pub struct IssobellaConfig {
     pub issobella_fund_address: String,
     pub min_mission_budget_zion: u64,
     pub max_mission_budget_zion: u64,
+    pub hiran_endpoint: Option<String>,
+    pub hiran_enabled: bool,
 }
 
 impl Default for IssobellaConfig {
@@ -29,6 +31,8 @@ impl Default for IssobellaConfig {
             issobella_fund_address: "zion1issobella000000000000000000000000".to_string(),
             min_mission_budget_zion: 10_000,
             max_mission_budget_zion: 100_000_000,
+            hiran_endpoint: Some("http://localhost:8002".to_string()),
+            hiran_enabled: false,
         }
     }
 }
@@ -51,6 +55,12 @@ impl IssobellaConfig {
         }
         if let Ok(key) = std::env::var("ISSOBELLA_API_KEY") {
             cfg.api_key = key;
+        }
+        if let Ok(url) = std::env::var("ISSOBELLA_HIRAN_URL") {
+            cfg.hiran_endpoint = Some(url);
+        }
+        if let Ok(enabled) = std::env::var("ISSOBELLA_HIRAN_ENABLED") {
+            cfg.hiran_enabled = enabled.eq_ignore_ascii_case("true");
         }
 
         if let Some(p) = path {
