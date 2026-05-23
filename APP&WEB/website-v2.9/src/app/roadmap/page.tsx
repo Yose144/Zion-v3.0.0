@@ -33,8 +33,8 @@ import { useLang } from '@/contexts/LanguageContext';
 const getHeroStats = (cs: boolean) => [
   { label: 'Rust LOC', value: '115,400+', descriptor: '12 crates · L1–L4' },
   { label: 'Tests passing', value: '1,501', descriptor: '0 failing · +122 Ekam Deeksha' },
-  { label: 'Network', value: 'LIVE', descriptor: 'V3 Mainnet · Core + Edge topology · mining active' },
-  { label: 'Mainnet Status', value: 'GO', descriptor: 'Launched 20 June 2026 (Summer Solstice)' }
+  { label: 'Network', value: 'Countdown', descriptor: 'V3 Mainnet · Core + Edge topology · mining test' },
+  { label: 'Mainnet Status', value: 'TBD', descriptor: 'Target 31 Dec 2026 (New Year\'s Eve)' }
 ];
 
 const getLayerStack = (cs: boolean) => [
@@ -341,25 +341,25 @@ const getPhases = (cs: boolean): PhaseData[] => [
   {
     id: '5',
     title: cs ? 'Rozhodnutí o veřejném launchi & Genesis' : 'Public Launch Decision & Genesis',
-    period: cs ? 'Dokončeno: 20. červen 2026' : 'Completed: 20 June 2026',
-    priority: '🚀 P0 Blocker → ✅ DONE',
-    progress: 100,
-    status: 'done',
+    period: cs ? 'Target: 31. prosinec 2026 (Silvestr)' : 'Target: 31 December 2026 (New Year\'s Eve)',
+    priority: '🚀 P0 Blocker → IN PROGRESS',
+    progress: 65,
+    status: 'active',
     description: cs
-      ? 'Veřejný mainnet launch úspěšně proveden 20. června 2026 (Summer Solstice). Genesis parametry zmrazeny, fee split 89/5/5/1 aktivní, Core + Edge topology operational. Closure evidence shromážděna.'
-      : 'Public mainnet launch successfully executed on 20 June 2026 (Summer Solstice). Genesis parameters frozen, fee split 89/5/5/1 active, Core + Edge topology operational. Closure evidence collected.',
+      ? 'Příprava veřejného mainnet launchu — target 31. prosince 2026 (New Year\'s Eve). Genesis parametry se finalizují, fee split 89/5/5/1 je aktivní v testnetu, Core + Edge topology v testování. Closure evidence se shromažďuje.'
+      : 'Preparing public mainnet launch — target 31 December 2026 (New Year\'s Eve). Genesis parameters being finalized, fee split 89/5/5/1 active in testnet, Core + Edge topology in testing. Closure evidence being collected.',
     sprints: [
-      { id: 'T-14', title: cs ? 'Genesis freeze — všechny parametry zmrazeny' : 'Genesis freeze — all parameters frozen', done: true },
-      { id: 'T-7', title: cs ? 'Community oznámení + wallety ke stažení' : 'Community announcement + wallets available', done: true },
-      { id: 'T-2', title: cs ? 'Finální release node software' : 'Final node software release', done: true },
-      { id: 'T-0', title: cs ? '🚀 Veřejný genesis — GO rozhodnutí provedeno' : '🚀 Public genesis — GO decision executed', done: true },
+      { id: 'T-14', title: cs ? 'Genesis freeze — všechny parametry zmrazeny' : 'Genesis freeze — all parameters frozen', done: false },
+      { id: 'T-7', title: cs ? 'Community oznámení + wallety ke stažení' : 'Community announcement + wallets available', done: false },
+      { id: 'T-2', title: cs ? 'Finální release node software' : 'Final node software release', done: false },
+      { id: 'T-0', title: cs ? '🚀 Veřejný genesis — GO rozhodnutí' : '🚀 Public genesis — GO decision', done: false },
     ],
     exitCriteria: [
-      { text: cs ? 'Genesis block hash publikován' : 'Genesis block hash published', done: true },
-      { text: cs ? 'Bootstrap hosty online (veřejný + interní quorum)' : 'Bootstrap hosts online (public + internal quorum)', done: true },
-      { text: cs ? 'Pool + solo mining otevřen' : 'Pool + solo mining open', done: true },
-      { text: cs ? 'Block explorer živě' : 'Block explorer live', done: true },
-      { text: cs ? 'Supply API živě' : 'Supply API live', done: true },
+      { text: cs ? 'Genesis block hash publikován' : 'Genesis block hash published', done: false },
+      { text: cs ? 'Bootstrap hosty online (veřejný + interní quorum)' : 'Bootstrap hosts online (public + internal quorum)', done: false },
+      { text: cs ? 'Pool + solo mining otevřen' : 'Pool + solo mining open', done: false },
+      { text: cs ? 'Block explorer živě' : 'Block explorer live', done: false },
+      { text: cs ? 'Supply API živě' : 'Supply API live', done: false },
     ],
   },
 ];
