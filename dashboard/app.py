@@ -3217,12 +3217,27 @@ class DashboardHandler(BaseHTTPRequestHandler):
             except Exception as e:
                 alive = False
                 backend = f"error: {str(e)[:60]}"
+            # Try to read GPU layers from stderr log
+            gpu_layers = 0
+            try:
+                err_log = REPO_ROOT / "logs" / "hiran-inference.err"
+                if err_log.exists():
+                    import re
+                    with open(err_log, "r", encoding="utf-8", errors="ignore") as f:
+                        for line in reversed(f.readlines()):
+                            m = re.search(r"offloaded\s+(\d+)\/(\d+)\s+layers?\s+to\s+GPU", line)
+                            if m:
+                                gpu_layers = int(m.group(1))
+                                break
+            except Exception:
+                pass
             self._json({
                 "alive": alive,
                 "backend": backend,
                 "model": model_name,
                 "uptime_s": uptime_s,
                 "endpoint": hiran_url,
+                "gpu_layers": gpu_layers,
             })
         elif route == "/api/hiranyagarbha/health":
             orch_url = "http://127.0.0.1:8001"
