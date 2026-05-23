@@ -1,12 +1,12 @@
 'use client';
 
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
+import { OrbitControls, useTexture } from '@react-three/drei';
 import { useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import clsx from 'clsx';
 
-/* Morpho-style interactive hologram globe: fresnel rim, scan lines, wireframe shell, orbit + zoom. */
+/* Real Earth texture + subtle holographic wireframe / atmosphere overlay */
 
 const HOLO_VERT = /* glsl */ `
 varying vec3 vWorldPosition;
@@ -43,12 +43,37 @@ void main() {
   vec3 rimCyan = uRim * fresnel * (1.28 + noise);
   vec3 rimGold = uAccent * fresnel * fresnel * 0.85;
 
-  float alpha = 0.22 + fresnel * 0.72 + meridians * 0.14;
+  // Softer alpha for atmosphere-only overlay
+  float alpha = 0.05 + fresnel * 0.28 + meridians * 0.06;
   gl_FragColor = vec4(core + rimCyan + rimGold, alpha);
 }
 `;
 
-function HologramGlobe() {
+function EarthGlobe() {
+  const [colorMap, bumpMap] = useTexture([
+    '/textures/earth-blue-marble.jpg',
+    '/textures/earth-topology.png',
+  ]);
+
+  if (colorMap) colorMap.colorSpace = THREE.SRGBColorSpace;
+
+  return (
+    <group>
+      <mesh castShadow={false} receiveShadow={false} rotation={[0, -Math.PI / 2, 0]}>
+        <sphereGeometry args={[1, 128, 128]} />
+        <meshStandardMaterial
+          map={colorMap}
+          bumpMap={bumpMap}
+          bumpScale={0.045}
+          roughness={0.7}
+          metalness={0.05}
+        />
+      </mesh>
+    </group>
+  );
+}
+
+function HologramShell() {
   const matRef = useRef<THREE.ShaderMaterial | null>(null);
 
   const uniforms = useMemo(
@@ -69,19 +94,7 @@ function HologramGlobe() {
 
   return (
     <group>
-      <mesh castShadow={false} receiveShadow={false}>
-        <sphereGeometry args={[1, 72, 72]} />
-        <shaderMaterial
-          ref={matRef}
-          transparent
-          depthWrite
-          depthTest
-          side={THREE.DoubleSide}
-          uniforms={uniforms}
-          vertexShader={HOLO_VERT}
-          fragmentShader={HOLO_FRAG}
-        />
-      </mesh>
+      {/* Wireframe shell */}
       <mesh scale={1.028}>
         <sphereGeometry args={[1, 48, 48]} />
         <meshBasicMaterial
@@ -93,15 +106,18 @@ function HologramGlobe() {
           blending={THREE.AdditiveBlending}
         />
       </mesh>
+      {/* Atmosphere glow — backside holographic shader */}
       <mesh scale={1.06}>
         <sphereGeometry args={[1, 32, 32]} />
-        <meshBasicMaterial
-          color="#67f3df"
+        <shaderMaterial
+          ref={matRef}
           transparent
-          opacity={0.04}
           depthWrite={false}
           side={THREE.BackSide}
           blending={THREE.AdditiveBlending}
+          uniforms={uniforms}
+          vertexShader={HOLO_VERT}
+          fragmentShader={HOLO_FRAG}
         />
       </mesh>
     </group>
@@ -111,11 +127,12 @@ function HologramGlobe() {
 function Scene() {
   return (
     <>
-      <ambientLight intensity={0.12} />
-      <pointLight position={[4.2, 1.2, 5]} intensity={1.0} color="#b8fff8" />
-      <pointLight position={[-4, -0.5, 3.2]} intensity={0.55} color="#8c9cff" />
-      <pointLight position={[0, 3.5, 1]} intensity={0.35} color="#ffe8a6" />
-      <HologramGlobe />
+      <ambientLight intensity={0.55} />
+      <pointLight position={[10, 5, 10]} intensity={1.2} color="#ffffff" />
+      <pointLight position={[-8, -2, 5]} intensity={0.4} color="#8c9cff" />
+      <pointLight position={[0, 6, 2]} intensity={0.25} color="#ffe8a6" />
+      <EarthGlobe />
+      <HologramShell />
       <OrbitControls
         makeDefault
         enablePan={false}
@@ -152,7 +169,7 @@ export default function HolographicEarth({ className }: HolographicEarthProps) {
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[45%] bg-gradient-to-t from-black/40 to-transparent" />
       <div className="pointer-events-none absolute inset-3 rounded-[16px] border border-white/[0.06]" />
       <p className="pointer-events-none absolute inset-x-0 top-2.5 z-10 text-center text-[9px] font-medium uppercase tracking-[0.42em] text-cyan-100/50">
-        Holographic mesh · drag orbit
+        Holographic Earth · drag orbit
       </p>
       <div className="absolute inset-x-0 bottom-0 top-9 sm:top-10">
         <Canvas
