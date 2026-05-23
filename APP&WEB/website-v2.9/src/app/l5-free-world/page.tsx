@@ -28,6 +28,7 @@ const getCommunities = (cs: boolean) => [
       ? 'Vzdělávací a meditační centrum s decentralizovanou správou a free energy projekty.'
       : 'Educational and meditation center with decentralized governance and free energy projects.',
     tags: ['Education', 'Free Energy', 'Meditation'],
+    href: '/terranova/dharma-temple',
   },
   {
     name: 'Te Pīko Ora',
@@ -37,6 +38,7 @@ const getCommunities = (cs: boolean) => [
       ? 'Kulturní obnova Rapa Nui skrze ZION protokol, místní fond a ochranu dědictví.'
       : 'Rapa Nui cultural revival through ZION protocol, local fund, and heritage protection.',
     tags: ['Cultural Revival', 'Heritage', 'L5 Fund'],
+    href: '/terranova/te-piko-ora',
   },
 ];
 
@@ -188,25 +190,40 @@ export default function L5FreeWorldPage() {
             </h2>
           </div>
           <div className="grid md:grid-cols-3 gap-5">
-            {communities.map((community) => (
-              <div key={community.name} className={`rounded-2xl border p-5 ${community.status === 'planned' ? 'border-amber-500/30 bg-amber-500/5' : 'border-white/10 bg-white/5'}`}>
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <h3 className="font-semibold text-white">{community.name}</h3>
-                    <p className="text-xs text-gray-500">{community.location}</p>
+            {communities.map((community) => {
+              const Card = (
+                <div className={`rounded-2xl border p-5 transition-all duration-300 ${community.status === 'planned' ? 'border-amber-500/30 bg-amber-500/5' : 'border-white/10 bg-white/5'} ${community.href ? 'hover:border-amber-500/50 hover:bg-amber-500/10 cursor-pointer' : ''}`}>
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <h3 className="font-semibold text-white">{community.name}</h3>
+                      <p className="text-xs text-gray-500">{community.location}</p>
+                    </div>
+                    <span className={`text-[10px] uppercase tracking-widest px-2 py-1 rounded-full font-semibold ${community.status === 'planned' ? 'border border-amber-500/30 bg-amber-500/10 text-amber-300' : 'border border-white/10 bg-white/5 text-gray-400'}`}>
+                      {community.status}
+                    </span>
                   </div>
-                  <span className={`text-[10px] uppercase tracking-widest px-2 py-1 rounded-full font-semibold ${community.status === 'planned' ? 'border border-amber-500/30 bg-amber-500/10 text-amber-300' : 'border border-white/10 bg-white/5 text-gray-400'}`}>
-                    {community.status}
-                  </span>
+                  <p className="text-sm text-gray-400 mb-3">{community.desc}</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {community.tags.map((tag) => (
+                      <span key={tag} className="text-[10px] rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-gray-400">{tag}</span>
+                    ))}
+                  </div>
+                  {community.href && (
+                    <div className="mt-3 flex items-center gap-1 text-xs text-amber-300/70 group-hover:text-amber-300 transition-colors">
+                      <ArrowRight className="h-3 w-3" />
+                      {cs ? 'Podrobnosti' : 'Details'}
+                    </div>
+                  )}
                 </div>
-                <p className="text-sm text-gray-400 mb-3">{community.desc}</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {community.tags.map((tag) => (
-                    <span key={tag} className="text-[10px] rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-gray-400">{tag}</span>
-                  ))}
-                </div>
-              </div>
-            ))}
+              );
+              return community.href ? (
+                <Link key={community.name} href={community.href} className="group block">
+                  {Card}
+                </Link>
+              ) : (
+                <div key={community.name}>{Card}</div>
+              );
+            })}
           </div>
           <p className="text-xs text-gray-500 mt-4 text-center">
             {cs ? 'Chceš navrhnout novou L5 komunitu? Otevři PR do V3/L5/docs/COMMUNITIES/' : 'Want to propose a new L5 community? Open a PR to V3/L5/docs/COMMUNITIES/'}
