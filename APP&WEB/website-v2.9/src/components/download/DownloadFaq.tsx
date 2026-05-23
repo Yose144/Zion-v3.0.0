@@ -12,11 +12,11 @@ function getFaqItems(cs: boolean): FaqItem[] {
   return [
     {
       q: cs ? 'Potrebuji pro tezbu Node?' : 'Do I need a Node to mine?',
-      a: cs ? 'Ne. Pripojte minera k verejnemu poolu (pool.zionterranova.com). Pool resi komunikaci s blockchainem. Node potrebujete jen pokud chcete sami overovat transakce nebo provozovat vlastni pool.' : 'No. Connect your miner to the public pool (pool.zionterranova.com). The pool handles blockchain communication. A node is only needed if you want to verify transactions yourself or run your own pool.',
+      a: cs ? 'Ne. Pripojte se k verejnemu poolu (zionterranova.com/pool). Pool resi komunikaci s blockchainem. Node potrebujete jen pokud chcete sami overovat transakce nebo provozovat vlastni pool.' : 'No. Connect to the public pool (zionterranova.com/pool). The pool handles blockchain communication. A node is only needed if you want to verify transactions yourself or run your own pool.',
     },
     {
       q: cs ? 'Jak vytvorim penezenku?' : 'How do I create a wallet?',
-      a: cs ? 'Stahnete Wallet CLI a spustte: zion-wallet gen-mnemonic --out my-wallet.json --print. Zapisete si 24 slov na papir — to je vase zaloha. Nikdy je nesdilejte online.' : 'Download the Wallet CLI and run: zion-wallet gen-mnemonic --out my-wallet.json --print. Write down the 24 words on paper — they are your backup. Never share them online.',
+      a: cs ? 'Stahnete ZION CLI a spustte: zion wallet new --mnemonic --out my-wallet.json --print. Zapisete si 24 slov na papir — to je vase zaloha. Nikdy je nesdilejte online.' : 'Download ZION CLI and run: zion wallet new --mnemonic --out my-wallet.json --print. Write down the 24 words on paper — they are your backup. Never share them online.',
     },
     {
       q: cs ? 'Windows Defender blokuje binarku?' : 'Windows Defender blocks the binary?',
@@ -24,7 +24,7 @@ function getFaqItems(cs: boolean): FaqItem[] {
     },
     {
       q: cs ? 'macOS pise cannot be opened?' : 'macOS says cannot be opened?',
-      a: cs ? 'Spustte: xattr -d com.apple.quarantine zion-miner-macos-arm64 nebo jdete do System Settings -> Privacy & Security -> Allow Anyway.' : 'Run: xattr -d com.apple.quarantine zion-miner-macos-arm64 or go to System Settings -> Privacy & Security -> Allow Anyway.',
+      a: cs ? 'Spustte: xattr -d com.apple.quarantine zion-cli-macos-arm64 nebo jdete do System Settings -> Privacy & Security -> Allow Anyway.' : 'Run: xattr -d com.apple.quarantine zion-cli-macos-arm64 or go to System Settings -> Privacy & Security -> Allow Anyway.',
     },
     {
       q: cs ? 'Co je Consciousness Mining?' : 'What is Consciousness Mining?',
@@ -32,7 +32,7 @@ function getFaqItems(cs: boolean): FaqItem[] {
     },
     {
       q: cs ? 'Mohu tezit na Raspberry Pi?' : 'Can I mine on Raspberry Pi?',
-      a: cs ? 'Ano. Stahnete verzi linux-arm64. RPi 4/5 funguje dobre. Hashrate bude nizsi nez u desktop CPU, ale plne funkcni.' : 'Yes. Download the linux-arm64 version. RPi 4/5 works well. Hashrate will be lower than desktop CPUs but fully functional.',
+      a: cs ? 'Linux ARM64 build je ve vyvoji. RPi 4/5 bude podporovano — sledujte releases na zionterranova.com/download.' : 'The Linux ARM64 build is in progress. RPi 4/5 will be supported — watch releases at zionterranova.com/download.',
     },
   ];
 }
