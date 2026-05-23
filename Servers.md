@@ -250,9 +250,17 @@ powershell -ExecutionPolicy Bypass -File .\dashboard\start-dashboard.ps1
 - [x] **Edge wallet**: Pool wallet vygenerován (`zion1a6z5a4m830w6s6k7r508n300n6z30022q6qt0n7`)
 - [x] **ShareRelay**: Edge → Core PPLNS synchronizace implementována
 - [x] **Dashboard**: Dual-pool view (Core + Edge)
-- [ ] **Genesis #0**: Ověřit genesis block hash shodu mezi Core a Edge
-- [ ] **Test miner na Edge**: Připojit externího mineru k `77.42.71.94:8444`
-- [ ] **Test block propagation**: Najít block na Core, ověřit relay na Edge
+- [x] **Genesis #0**: Ověřit genesis block hash shodu mezi Core a Edge
+  - Core: `85d8d6b29cdfa32b036068c70416c948b6eca63ba18bb20d0bfeb051f44ec897`
+  - Edge: `85d8d6b29cdfa32b036068c70416c948b6eca63ba18bb20d0bfeb051f44ec897`
+  - Status: **IDENTICAL**
+- [x] **Test miner na Edge**: Připojit externího mineru k `77.42.71.94:8444`
+  - TCP connect: OK, Hello/Welcome: OK, Job: OK (height=468), Result: OK
+  - Status: **POOL COMMUNICATION WORKS**
+- [x] **Test block propagation**: Najít block na Core, ověřit relay na Edge
+  - Core height: 467, tip: `00000f899559d1929bd9e2c90167bec35e0824ae844f79354d9655b29a72544f`
+  - Edge height: 467, tip: `00000f899559d1929bd9e2c90167bec35e0824ae844f79354d9655b29a72544f`
+  - Status: **SYNCED**
 
 ### Fáze 1: Soft Launch (1–3 dny)
 
