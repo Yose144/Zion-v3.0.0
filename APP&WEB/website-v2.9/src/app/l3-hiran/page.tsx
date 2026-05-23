@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import {
@@ -7,10 +8,13 @@ import {
   CheckCircle2, Clock, Server, Activity, BookOpen,
   ShoppingCart, Database, MessageCircle, Layers, Shield,
   Microchip, FlaskConical, BarChart3, Cable, Bot,
-  Gamepad2
+  Gamepad2, Wifi, WifiOff
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import HiranyagarbhaChat from '@/components/HiranyagarbhaChat';
+
+const HIRAN_API = process.env.NEXT_PUBLIC_HIRAN_API ?? 'http://127.0.0.1:8002';
+const HIRANYAGARBHA_API = process.env.NEXT_PUBLIC_HIRANYAGARBHA_API ?? 'http://127.0.0.1:8001';
 
 const getOrchestration = (cs: boolean) => [
   {
@@ -184,6 +188,32 @@ export default function L3HiranPage() {
   const ragArch = getRagArch(cs);
   const marketplace = getMarketplace(cs);
 
+  const [hiranStatus, setHiranStatus] = useState<'checking' | 'online' | 'offline'>('checking');
+  const [orchStatus, setOrchStatus] = useState<'checking' | 'online' | 'offline'>('checking');
+  const [agentCount, setAgentCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    async function checkStatus() {
+      try {
+        const r = await fetch(`${HIRAN_API}/health`, { cache: 'no-store' });
+        setHiranStatus(r.ok ? 'online' : 'offline');
+      } catch {
+        setHiranStatus('offline');
+      }
+      try {
+        const r2 = await fetch(`${HIRANYAGARBHA_API}/health`, { cache: 'no-store' });
+        const d = await r2.json();
+        setOrchStatus(r2.ok ? 'online' : 'offline');
+        if (d.active_agents !== undefined) setAgentCount(d.active_agents);
+      } catch {
+        setOrchStatus('offline');
+      }
+    }
+    checkStatus();
+    const id = setInterval(checkStatus, 10000);
+    return () => clearInterval(id);
+  }, []);
+
   return (
     <div className="pt-28 pb-24 overflow-x-hidden">
       <div className="zion-container max-w-7xl space-y-16">
@@ -195,9 +225,23 @@ export default function L3HiranPage() {
           className="rounded-3xl border border-purple-500/30 bg-gradient-to-br from-purple-500/10 via-black/60 to-cyan-500/10 p-6 md:p-10 backdrop-blur-xl"
         >
           <div className="space-y-5 max-w-3xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-purple-500/40 bg-purple-500/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-purple-300 uppercase">
-              <Brain className="h-4 w-4" />
-              L3 · Hiran · AI Layer
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="inline-flex items-center gap-2 rounded-full border border-purple-500/40 bg-purple-500/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-purple-300 uppercase">
+                <Brain className="h-4 w-4" />
+                L3 · Hiran · AI Layer
+              </div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-xs">
+                {hiranStatus === 'checking' ? <Clock className="h-3 w-3 text-amber-400 animate-spin" /> : hiranStatus === 'online' ? <Wifi className="h-3 w-3 text-emerald-400" /> : <WifiOff className="h-3 w-3 text-red-400" />}
+                <span className={hiranStatus === 'online' ? 'text-emerald-300' : hiranStatus === 'offline' ? 'text-red-300' : 'text-amber-300'}>
+                  Hiran {hiranStatus === 'checking' ? '…' : hiranStatus}
+                </span>
+              </div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-purple-500/30 bg-purple-500/10 px-3 py-1 text-xs">
+                {orchStatus === 'checking' ? <Clock className="h-3 w-3 text-amber-400 animate-spin" /> : orchStatus === 'online' ? <Wifi className="h-3 w-3 text-emerald-400" /> : <WifiOff className="h-3 w-3 text-red-400" />}
+                <span className={orchStatus === 'online' ? 'text-emerald-300' : orchStatus === 'offline' ? 'text-red-300' : 'text-amber-300'}>
+                  Orchestrator {orchStatus === 'checking' ? '…' : orchStatus}{agentCount !== null ? ` · ${agentCount} agent` : ''}
+                </span>
+              </div>
             </div>
             <div>
               <p className="text-sm uppercase tracking-[0.4em] text-gray-400">
