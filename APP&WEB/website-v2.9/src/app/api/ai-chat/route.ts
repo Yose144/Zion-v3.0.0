@@ -12,7 +12,7 @@ import { NextRequest, NextResponse } from 'next/server';
  * The component (HiranyagarbhaChat.tsx) posts to /api/ai-chat with { prompt }.
  */
 
-const HIRAN_API_URL   = process.env.HIRAN_API_URL   ?? 'http://127.0.0.1:8002';
+const HIRAN_API_URL   = process.env.HIRAN_API_URL ?? process.env.NEXT_PUBLIC_HIRAN_API ?? 'http://127.0.0.1:8002';
 const LMSTUDIO_URL    = process.env.LMSTUDIO_URL    ?? 'http://127.0.0.1:1234';
 const OLLAMA_URL      = process.env.OLLAMA_API_URL  ?? 'http://127.0.0.1:11434';
 const MODEL_NAME      = process.env.HIRAN_MODEL     ?? 'hiran-v2.2';
@@ -138,8 +138,12 @@ export async function POST(req: NextRequest) {
     }
 
     console.error('[ai-chat] All backends failed:', errors);
+    const isProd = !HIRAN_API_URL.includes('127.0.0.1') && !HIRAN_API_URL.includes('localhost');
+    const message = isProd
+      ? 'Hiran inference server is unreachable. Verify HIRAN_API_URL and ensure the inference container is running.'
+      : 'AI model is currently unavailable. Start Hiran Inference locally (llama-server on :8002, LM Studio on :1234, or Ollama on :11434), or set HIRAN_API_URL / NEXT_PUBLIC_HIRAN_API to a remote inference endpoint.';
     return NextResponse.json(
-      { error: 'AI model is currently unavailable. Start Hiran Inference via the dashboard (Services tab).', backends_tried: errors },
+      { error: message, backends_tried: errors },
       { status: 502 },
     );
   } catch (err) {
