@@ -1,4 +1,4 @@
-# ZION Web v2.8.9 - Hybrid Dashboard
+# ZION Web v3.0.0 — Core+Edge Dashboard
 
 Modern Next.js 16 website combining the best features from websitev3-next and webv3.3, with live API integration for real-time blockchain metrics.
 
@@ -72,7 +72,7 @@ Static export to `out/` directory (ready for deployment)
 ## 📁 Project Structure
 
 ```
-website-v2.8.9/
+website-v3.0.0/
 ├── src/
 │   ├── app/
 │   │   ├── layout.tsx           # Root layout with navigation
@@ -187,7 +187,7 @@ rsync -avz --delete out/ root@www.zionterranova.com:/var/www/zionterranova.com/
 
 ## 📄 License
 
-Part of ZION Blockchain v2.8.9 project
+Part of ZION Blockchain v3.0.0 project
 
 ## 🔗 Links
 
@@ -198,6 +198,6 @@ Part of ZION Blockchain v2.8.9 project
 
 ---
 
-**Version:** v2.8.9  
+**Version:** v3.0.0  
 **Built with:** Next.js 16 + React 19 + TypeScript  
 **Status:** Production Ready ✅
