@@ -40,6 +40,12 @@ async fn main() -> anyhow::Result<()> {
     if let Ok(bind) = std::env::var("OASIS_BIND") {
         config.bind = bind;
     }
+    if let Ok(url) = std::env::var("OASIS_HIRAN_URL") {
+        config.hiran_endpoint = Some(url);
+    }
+    if let Ok(enabled) = std::env::var("OASIS_HIRAN_ENABLED") {
+        config.hiran_enabled = enabled.eq_ignore_ascii_case("true");
+    }
 
     // Database
     let db_path = std::env::var("OASIS_DB").unwrap_or_else(|_| "./oasis.db".to_string());
@@ -78,10 +84,21 @@ async fn main() -> anyhow::Result<()> {
     // WebSocket broadcast hub
     let ws_hub = WsHub::new();
 
-    let state = OasisState::new(db, config, quest_mgr, metrics, Some(ws_hub));
-
     info!("Consciousness levels: 9 (Physical → OnTheStar)");
     info!("Reward pool: 8,250,000,000 ZION over 10 years");
+    if config.hiran_enabled {
+        info!(
+            "🤖 Hiran AI enabled — endpoint: {}",
+            config
+                .hiran_endpoint
+                .as_deref()
+                .unwrap_or("http://localhost:8002")
+        );
+    } else {
+        info!("Hiran AI disabled (set OASIS_HIRAN_ENABLED=true to enable)");
+    }
+
+    let state = OasisState::new(db, config, quest_mgr, metrics, Some(ws_hub));
 
     start_server(state).await
 }
