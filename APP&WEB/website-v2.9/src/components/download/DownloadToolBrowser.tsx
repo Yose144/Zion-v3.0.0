@@ -6,7 +6,7 @@ import { ArrowDownToLine, Server, TerminalSquare, Wallet, Zap } from 'lucide-rea
 import type { ReactNode } from 'react';
 import { SITE_POOL_PRIMARY } from '@/lib/site';
 
-const DL = 'https://zionterranova.com/api/downloads';
+const DL = '/downloads';
 
 type CLIBuild = {
   os: string;
