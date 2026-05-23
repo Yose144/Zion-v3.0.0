@@ -1,0 +1,124 @@
+# ZION V3 Core+Edge Alert Rules
+# Mount as /etc/prometheus/alert_rules.yml in the Prometheus container
+
+groups:
+  - name: zion_core_alerts
+    rules:
+      - alert: CoreNode1Down
+        expr: up{job="zion-core-node1"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          team: infra
+        annotations:
+          summary: "Core Node 1 is DOWN"
+          description: "ZION Core Node 1 has been unreachable for > 2 minutes."
+
+      - alert: CoreNode2Down
+        expr: up{job="zion-core-node2"} == 0
+        for: 2m
+        labels:
+          severity: warning
+          team: infra
+        annotations:
+          summary: "Core Node 2 is DOWN"
+          description: "ZION Core Node 2 (follower) has been unreachable for > 2 minutes."
+
+      - alert: CoreLowPeers
+        expr: zion_peer_count{job=~"zion-core-node.*"} < 1
+        for: 5m
+        labels:
+          severity: warning
+          team: infra
+        annotations:
+          summary: "Core node {{ $labels.instance }} has no peers"
+          description: "Peer count is {{ $value }} for > 5 minutes."
+
+      - alert: CoreSyncStalled
+        expr: changes(zion_chain_height{job=~"zion-core-node.*"}[10m]) == 0
+        for: 10m
+        labels:
+          severity: critical
+          team: infra
+        annotations:
+          summary: "Core node {{ $labels.instance }} chain height stalled"
+          description: "Chain height has not changed in 10 minutes."
+
+      - alert: CoreBlockRejectionSurge
+        expr: |
+          rate(zion_blocks_rejected_total{job=~"zion-core-node.*"}[5m])
+          /
+          (rate(zion_blocks_accepted_total{job=~"zion-core-node.*"}[5m]) + 0.001)
+          > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          team: infra
+        annotations:
+          summary: "Core node {{ $labels.instance }} block rejection rate > 10%"
+          description: "Rejection rate is {{ $value | humanizePercentage }}."
+
+  - name: zion_pool_alerts
+    rules:
+      - alert: PoolDown
+        expr: up{job="zion-pool"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          team: infra
+        annotations:
+          summary: "Pool is DOWN"
+          description: "ZION Pool has been unreachable for > 2 minutes."
+
+      - alert: PoolNoConnections
+        expr: zion_pool_active_sessions{job="zion-pool"} == 0
+        for: 5m
+        labels:
+          severity: warning
+          team: pool
+        annotations:
+          summary: "Pool has zero active miners"
+          description: "No active stratum connections for 5 minutes."
+
+      - alert: PoolHighRejectRate
+        expr: |
+          rate(zion_pool_rejected_total{job="zion-pool"}[5m])
+          /
+          (rate(zion_pool_accepted_total{job="zion-pool"}[5m]) + rate(zion_pool_rejected_total{job="zion-pool"}[5m]) + 0.001)
+          > 0.15
+        for: 5m
+        labels:
+          severity: warning
+          team: pool
+        annotations:
+          summary: "Pool reject rate > 15%"
+          description: "Share rejection rate is {{ $value | humanizePercentage }}."
+
+  - name: zion_sync_gap_alerts
+    rules:
+      - alert: CoreEdgeSyncGap
+        expr: |
+          (
+            zion_chain_height{job="zion-core-node1"}
+            -
+            zion_chain_height{job="zion-core-node2"}
+          ) > 5
+        for: 5m
+        labels:
+          severity: warning
+          team: infra
+        annotations:
+          summary: "Sync gap between Core Node 1 and Node 2 > 5 blocks"
+          description: "Height difference is {{ $value }} blocks for > 5 minutes."
+
+  - name: zion_infra_alerts
+    rules:
+      - alert: HostDown
+        expr: up{job="zion-node-exporter"} == 0
+        for: 3m
+        labels:
+          severity: critical
+          team: infra
+        annotations:
+          summary: "Host exporter is DOWN"
+          description: "Node exporter unreachable for > 3 minutes."

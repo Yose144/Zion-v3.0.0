@@ -8,16 +8,39 @@ rule_files:
 alerting:
   alertmanagers:
     - static_configs:
-        - targets: []
+        - targets:
+            - alertmanager:9093
 
 scrape_configs:
+  # When running natively on the host (Windows / Linux), use host.docker.internal.
+  # When running fully in Docker, replace host.docker.internal with service names (node, pool, etc.).
+
+  - job_name: zion-core-node1
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - host.docker.internal:9115
+        labels:
+          instance: core-node1
+          role: core
+
+  - job_name: zion-core-node2
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - host.docker.internal:9116
+        labels:
+          instance: core-node2
+          role: core
+
   - job_name: zion-pool
     metrics_path: /metrics
     static_configs:
       - targets:
-          - pool:9550
+          - host.docker.internal:9550
         labels:
-          instance: zion-v3-pool
+          instance: core-pool
+          role: pool
 
   - job_name: zion-hiran-inference
     metrics_path: /metrics

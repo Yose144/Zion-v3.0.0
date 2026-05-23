@@ -41,6 +41,14 @@ function copyToClipboard(text){
 // Tab switching
 // ─────────────────────────────────────────────────────────────────────
 
+function toggleSidebar(){
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('sidebarOverlay');
+  if(!sb) return;
+  const open = sb.classList.toggle('open');
+  if(ov) ov.classList.toggle('open', open);
+}
+
 function switchTab(name){
   currentTab = name;
   TABS.forEach(t => {
@@ -49,6 +57,9 @@ function switchTab(name){
     if(pane) pane.classList.toggle('hidden', t !== name);
     if(btn) btn.classList.toggle('tab-active', t === name);
   });
+  // Close sidebar on mobile after tab selection
+  const sb = document.getElementById('sidebar');
+  if(sb && sb.classList.contains('open')) toggleSidebar();
   if(name === 'charts') renderCharts();
   if(name === 'events') loadEvents();
   if(name === 'env') loadEnvFiles();
