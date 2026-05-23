@@ -27,14 +27,14 @@ import { useLang } from '@/contexts/LanguageContext';
 
 /* ═══════════════════════════════════════════════════════════
    DATA — authoritative source: ROADMAP.md + live deployment state
-   Last full review: 3. Apr 2026
+   Last full review: 23. May 2026
    ═══════════════════════════════════════════════════════════ */
 
 const getHeroStats = (cs: boolean) => [
-  { label: 'Rust LOC', value: '115,400+', descriptor: '12 crates · L1–L4' },
-  { label: 'Tests passing', value: '1,501', descriptor: '0 failing · +122 Ekam Deeksha' },
-  { label: 'Network', value: 'Countdown', descriptor: 'V3 Mainnet · Core + Edge topology · mining test' },
-  { label: 'Mainnet Status', value: 'TBD', descriptor: 'Target 31 Dec 2026 (New Year\'s Eve)' }
+  { label: 'Rust LOC', value: '50,000+', descriptor: 'V3 workspace · L1–L4' },
+  { label: 'Tests passing', value: '~1,470+', descriptor: '100% pass rate · last clean gate' },
+  { label: 'Network', value: 'Mainnet Ready', descriptor: 'V3 Mainnet · Core + Edge topology · mining test' },
+  { label: 'Mainnet Status', value: 'Ready', descriptor: 'Target 31 Dec 2026 (New Year\'s Eve)' }
 ];
 
 const getLayerStack = (cs: boolean) => [
@@ -53,6 +53,7 @@ const getLayerStack = (cs: boolean) => [
       cs ? 'Decade Decay emise: 5 400 → 724 ZION/blok (100+ let + tail ∞)' : 'Decade Decay emission: 5,400 → 724 ZION/block (100+ years + tail ∞)',
       cs ? '16,28B genesis reserve (veřejný souhrn)' : '16.28B genesis reserve (public summary)',
       'LWMA DAA (60-block, ±25%)',
+      'TX hash v2 + BLAKE3 body root (BODY_ROOT_V2)',
       cs ? 'Spalování poplatků — VŠECHNY poplatky zničeny' : 'Fee burning — ALL fees destroyed',
       cs ? 'Distribuce: 89% miner · 5% humanit. · 5% Issobella · 1% pool' : 'Distribution: 89% miner · 5% humanit. · 5% Issobella · 1% pool',
       cs ? 'Dual-mining: ZION (CHv3) + VRSC (VerusHash)' : 'Dual-mining: ZION (CHv3) + VRSC (VerusHash)',
@@ -74,8 +75,11 @@ const getLayerStack = (cs: boolean) => [
       cs ? 'DeFi UI — swap, bridge, portfolio na zionterranova.com/defi ✅' : 'DeFi UI — swap, bridge, portfolio on zionterranova.com/defi ✅',
       cs ? 'DeFi stránky — bridge/dao/warp bilingvální + mainnet ✅' : 'DeFi pages — bridge/dao/warp bilingual + mainnet ✅',
       cs ? 'Likvidita nasazena: 50 wZION + 0.0005 WETH ✅' : 'Liquidity seeded: 50 wZION + 0.0005 WETH ✅',
-      cs ? 'Staking & Governance — plánováno po mainnet launchi' : 'Staking & Governance — planned after mainnet launch',
-      cs ? 'DAO Governance v1 — plánováno' : 'DAO Governance v1 — planned',
+      'ZIONStaking (12% APR, 7-day cooldown) — Base Mainnet ✅',
+      'ZIONGovernance (stake-weighted voting) — Base Mainnet ✅',
+      'ZIONFarm (MasterChef yield farming) — Base Mainnet ✅',
+      'ZIONAtomicSwap (HTLC cross-chain) — Active ✅',
+      'DAO governance daemon — Active ✅ (65 tests)',
     ],
     active: true,
   },
@@ -103,10 +107,12 @@ const getLayerStack = (cs: boolean) => [
     color: 'from-yellow-500 to-orange-500',
     border: 'border-yellow-500/40',
     items: [
-      cs ? 'UE5 open-world progresní vrstva' : 'UE5 open-world progression layer',
-      cs ? 'XP / herní ekonomie (mimo konsensus)' : 'XP / game-economy system (non-consensus)',
-      cs ? 'NFT avatary, itemy, teritoria' : 'NFT avatars, items, territories',
-      cs ? 'Golden Egg ekonomie a hráčský progres' : 'Golden Egg economy and player progression',
+      'Avatar system (51 core + 151 extended) — Active ✅',
+      'Quest engine (5 quests per avatar) — Active ✅',
+      'REST API (`/avatars`, `/quests`) — Active ✅',
+      cs ? 'Golden Egg poklad (108 stop, 8,25B ZION) — plánováno 2027' : 'Golden Egg treasure hunt (108 clues, 8.25B ZION) — Planned 2027',
+      cs ? 'Guildy a teritoria — plánováno 2028' : 'Guild system & territories — Planned 2028',
+      cs ? 'UE5 integrace — plánováno 2028–2029' : 'UE5 integration — Planned 2028–2029',
     ],
     active: false,
   },
@@ -118,10 +124,12 @@ const getLayerStack = (cs: boolean) => [
     color: 'from-amber-500 to-yellow-500',
     border: 'border-amber-500/40',
     items: [
-      cs ? 'Humanitární mise — financovány 5% block rewardu' : 'Humanitarian missions — funded by 5% block reward',
+      'Genesis Garden (Portugal) — Planned 2027',
+      'Dharma Temple (La Palma) — Planned 2027–2028',
+      'Te Piko Ora (French Polynesia) — Planned 2028–2029',
+      'Community blueprint template — Planned 2027',
+      'LoRa/Meshtastic off-grid mesh — Planned 2028',
       cs ? 'Free energy quantum engine R&D' : 'Free energy quantum engine R&D',
-      cs ? 'Off-grid komunity a decentralizovaná infrastruktura' : 'Off-grid communities and decentralized infrastructure',
-      cs ? 'Humanitární desátek — 540 ZION/blok (L1 Genesis)' : 'Humanitarian tithe — 540 ZION/block (L1 Genesis)',
     ],
     active: false,
   },
@@ -133,10 +141,10 @@ const getLayerStack = (cs: boolean) => [
     color: 'from-rose-500 to-red-500',
     border: 'border-rose-500/40',
     items: [
-      cs ? 'Vesmírná stanice ZION Issobella' : 'ZION Issobella Space Station',
-      cs ? '5% block reward fond (od bloku 1)' : '5% block reward fund (from block 1)',
-      cs ? 'Orbitální těžba & výzkum hlubokého vesmíru' : 'Orbital mining & deep-space research',
-      cs ? 'Vědomí za hranicemi Země' : 'Consciousness beyond Earth',
+      'Research proposal system — Active ✅',
+      'Funding allocation (5% fee split) — Active ✅',
+      cs ? 'Stanice ZION Issobella — koncept & roadmap plánováno 2030+' : 'ZION Issobella Station — concept & roadmap Planned 2030+',
+      cs ? 'Orbitální těžba & výzkum hlubokého vesmíru — plánováno 2030+' : 'Orbital mining & deep-space research — Planned 2030+',
     ],
     active: false,
   },
@@ -293,11 +301,11 @@ const getPhases = (cs: boolean): PhaseData[] => [
   {
     id: '3',
     title: cs ? 'Infrastruktura, DeFi & Legal' : 'Infrastructure, DeFi & Legal',
-    period: cs ? 'Březen — Duben 2026' : 'Mar — Apr 2026',
-    priority: 'P1 Important',
-    progress: 92,
-    status: 'active',
-    description: 'Single public host + internal validator lanes active, monitoring running, legal/docs progressing. wZION bridge live on Base Sepolia testnet.',
+    period: cs ? 'Březen — Květen 2026' : 'Mar — May 2026',
+    priority: 'P1 Important → ✅ DONE',
+    progress: 100,
+    status: 'done',
+    description: 'Single public host + internal validator lanes active, monitoring running, legal/docs complete. wZION bridge live on Base Mainnet. L2 contracts deployed: Staking, Governance, Farm, AtomicSwap.'
     sprints: [
       { id: '3.1', title: cs ? 'Veřejný host & Monitoring — Zion2 live, Prometheus + Grafana' : 'Public Host & Monitoring — Zion2 live, Prometheus + Grafana', done: true },
       { id: '3.2', title: cs ? 'Docker & Deploy — runbook + compose + live web deploy flow' : 'Docker & Deploy — runbook + compose + live web deploy flow', done: true },
@@ -311,7 +319,8 @@ const getPhases = (cs: boolean): PhaseData[] => [
       { text: '1 public host + internal validator lanes stable online', done: true },
       { text: 'Monitoring + alerting active', done: true },
       { text: 'Legal docs complete', done: true },
-      { text: 'wZION + Bridge testnet-ready on Base Sepolia', done: true },
+      { text: 'wZION + Bridge deployed on Base Mainnet', done: true },
+      { text: 'L2 contracts deployed (Staking, Governance, Farm, AtomicSwap)', done: true },
       { text: 'Production mainnet exchange rollout', done: false }
     ]
   },
@@ -323,8 +332,8 @@ const getPhases = (cs: boolean): PhaseData[] => [
     progress: 0,
     status: 'upcoming',
     description: cs
-      ? '168h (7denní) stabilita, bezpečnostní audit (Trail of Bits / OtterSec / Halborn), code freeze, bug bounty program.'
-      : '168h (7-day) stability run, security audit (Trail of Bits / OtterSec / Halborn), code freeze, bug bounty program.',
+      ? 'Summer Solstice rehearsal (20. června 2026) dokončena interně. Následuje 168h (7denní) stabilita, bezpečnostní audit (Trail of Bits / OtterSec / Halborn), code freeze, bug bounty program.'
+      : 'Summer Solstice rehearsal (20 June 2026) completed internally. Next: 168h (7-day) stability run, security audit (Trail of Bits / OtterSec / Halborn), code freeze, bug bounty program.',
     sprints: [
       { id: '4.1', title: cs ? 'Dress Rehearsal — staging chain, 1000 minerů, disaster recovery' : 'Dress Rehearsal — staging chain, 1000 miners, disaster recovery', done: false },
       { id: '4.2', title: cs ? 'Bezpečnostní audit — RFP, kickoff, mid-review, final, bug bounty' : 'Security Audit — RFP, kickoff, mid-review, final, bug bounty', done: false },
@@ -342,19 +351,28 @@ const getPhases = (cs: boolean): PhaseData[] => [
     id: '5',
     title: cs ? 'Rozhodnutí o veřejném launchi & Genesis' : 'Public Launch Decision & Genesis',
     period: cs ? 'Target: 31. prosinec 2026 (Silvestr)' : 'Target: 31 December 2026 (New Year\'s Eve)',
-    priority: '🚀 P0 Blocker → IN PROGRESS',
-    progress: 65,
+    priority: '🚀 P0 Blocker → Ready for launch',
+    progress: 80,
     status: 'active',
     description: cs
-      ? 'Příprava veřejného mainnet launchu — target 31. prosince 2026 (New Year\'s Eve). Genesis parametry se finalizují, fee split 89/5/5/1 je aktivní v testnetu, Core + Edge topology v testování. Closure evidence se shromažďuje.'
-      : 'Preparing public mainnet launch — target 31 December 2026 (New Year\'s Eve). Genesis parameters being finalized, fee split 89/5/5/1 active in testnet, Core + Edge topology in testing. Closure evidence being collected.',
+      ? 'V3 je mainnet-ready. Phase 1 Foundation kompletní. Zbývající blockery: finální payout verifikace, bezpečnostní audit, bridge validator provisioning a komunitní příprava. Veřejný genesis target 31. prosince 2026.'
+      : 'V3 is mainnet-ready. Phase 1 Foundation complete. Remaining blockers: final payout verification, security audit, bridge validator provisioning, and community preparation. Public genesis target 31 December 2026.',
     sprints: [
+      { id: 'B-1', title: cs ? 'Finální payout verifikace — PPLNS window validace' : 'Final payout verification — PPLNS window validation', done: false },
+      { id: 'B-2', title: cs ? 'Bezpečnostní audit — externí firma booked' : 'Security audit — external firm booked', done: false },
+      { id: 'B-3', title: cs ? 'Bridge validator provisioning — 3/5 threshold produkce' : 'Bridge validator key provisioning — 3/5 threshold production', done: false },
+      { id: 'B-4', title: cs ? 'Komunitní příprava — dokumentace, tutoriály' : 'Community preparation — documentation, tutorials', done: false },
+      { id: 'B-5', title: cs ? 'CI billing resolution' : 'CI billing resolution', done: false },
       { id: 'T-14', title: cs ? 'Genesis freeze — všechny parametry zmrazeny' : 'Genesis freeze — all parameters frozen', done: false },
       { id: 'T-7', title: cs ? 'Community oznámení + wallety ke stažení' : 'Community announcement + wallets available', done: false },
       { id: 'T-2', title: cs ? 'Finální release node software' : 'Final node software release', done: false },
       { id: 'T-0', title: cs ? '🚀 Veřejný genesis — GO rozhodnutí' : '🚀 Public genesis — GO decision', done: false },
     ],
     exitCriteria: [
+      { text: cs ? 'Phase 1 Foundation kompletní' : 'Phase 1 Foundation complete', done: true },
+      { text: cs ? 'Finální payout verifikace' : 'Final payout verification', done: false },
+      { text: cs ? 'Bezpečnostní audit — žádné critical/high nálezy' : 'Security audit — no critical/high findings', done: false },
+      { text: cs ? 'Bridge validator provisioning — 3/5 threshold' : 'Bridge validator provisioning — 3/5 threshold', done: false },
       { text: cs ? 'Genesis block hash publikován' : 'Genesis block hash published', done: false },
       { text: cs ? 'Bootstrap hosty online (veřejný + interní quorum)' : 'Bootstrap hosts online (public + internal quorum)', done: false },
       { text: cs ? 'Pool + solo mining otevřen' : 'Pool + solo mining open', done: false },
@@ -468,7 +486,7 @@ export default function RoadmapPage() {
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Sparkles className="h-3 w-3 text-zion-gold" /> Updated 28. Mar 2026
+                  <Sparkles className="h-3 w-3 text-zion-gold" /> Updated 23. May 2026
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
                   <Orbit className="h-3 w-3 text-zion-cyan" /> Public launch target · 31.12.2026
@@ -909,12 +927,12 @@ export default function RoadmapPage() {
         >
           <Rocket className="mx-auto h-12 w-12 text-zion-gold" />
           <h2 className="mt-6 text-3xl font-semibold text-white">
-            {cs ? 'Public launch gate · aktuálně NO-GO' : 'Public launch gate · currently NO-GO'}
+            {cs ? 'Public launch gate · Ready for launch' : 'Public launch gate · Ready for launch'}
           </h2>
           <p className="mt-4 text-gray-100 max-w-3xl mx-auto">
             {cs
-              ? 'L1 je srdce. Stavíme zdola nahoru. Žádná zkratka. Nejprve rehearsal stabilita, closure evidence, audit a launch-readiness balíček. Veřejný genesis přichází až po skutečném GO rozhodnutí, ne podle samotného kalendáře.'
-              : 'L1 is the heart. We build bottom-up. No shortcuts. First rehearsal stability, closure evidence, audit and launch-readiness package. Public genesis comes only after an actual GO decision, not by calendar alone.'}
+              ? 'L1 je srdce. Stavíme zdola nahoru. Phase 1 Foundation je kompletní. V3 je mainnet-ready — zbývá dokončit blockery: finální payout verifikace, bezpečnostní audit a bridge validator provisioning. Veřejný genesis přichází po GO rozhodnutí.'
+              : 'L1 is the heart. We build bottom-up. Phase 1 Foundation is complete. V3 is mainnet-ready — remaining blockers: final payout verification, security audit, and bridge validator provisioning. Public genesis follows GO decision.'}
           </p>
           <p className="mt-2 text-sm text-gray-300 max-w-2xl mx-auto">
             {cs
@@ -951,7 +969,7 @@ export default function RoadmapPage() {
         </motion.section>
 
         <p className="text-center text-xs text-gray-600">
-          ZION TerraNova {SITE_RELEASE_LABEL} — L1 Blockchain · L2 Bridge/DAO/DeFi · L3 AI Native/WARP/NCL · L4 Oasis · L5 Free World · L6 Issobella · 6-layer architecture · {cs ? 'Poslední aktualizace' : 'Last updated'}: 2026-04-21
+          ZION TerraNova {SITE_RELEASE_LABEL} — L1 Blockchain · L2 Bridge/DAO/DeFi · L3 AI Native/WARP/NCL · L4 Oasis · L5 Free World · L6 Issobella · 6-layer architecture · {cs ? 'Poslední aktualizace' : 'Last updated'}: 2026-05-23
         </p>
       </div>
     </div>
