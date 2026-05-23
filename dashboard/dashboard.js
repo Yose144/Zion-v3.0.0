@@ -1372,6 +1372,32 @@ function addLaunchDayLog(msg){
 // ─────────────────────────────────────────────────────────────────────
 
 async function checkAiStatus(){
+  // ── Hiran Inference (port 8002) ──
+  const hiranBadge = document.getElementById('hiran-badge');
+  const hiranDetail = document.getElementById('hiran-inference-detail');
+  const gpuDetail = document.getElementById('hiran-gpu-detail');
+  const gpuBadge = document.getElementById('hiran-gpu-badge');
+  if(hiranBadge) hiranBadge.textContent = 'CHECKING…';
+  try{
+    const r1 = await fetch('/api/hiran/health');
+    const d1 = await r1.json();
+    if(d1.alive){
+      if(hiranBadge){ hiranBadge.textContent = 'LIVE'; hiranBadge.className = 'px-2 py-0.5 rounded text-xs font-bold bg-emerald-600 text-white animate-pulse'; }
+      if(hiranDetail) hiranDetail.textContent = (d1.model || 'hiran-v2.2') + ' · up ' + (d1.uptime_s != null ? Math.round(d1.uptime_s) + 's' : '—');
+      if(gpuDetail) gpuDetail.textContent = d1.gpu_layers > 0 ? d1.gpu_layers + ' GPU layers' : 'CPU only';
+      if(gpuBadge){ gpuBadge.textContent = d1.gpu_layers > 0 ? d1.gpu_layers + '/33' : 'CPU'; gpuBadge.className = 'px-2 py-0.5 rounded text-xs font-bold ' + (d1.gpu_layers > 0 ? 'bg-purple-600 text-white' : 'bg-gray-700 text-white'); }
+    } else {
+      if(hiranBadge){ hiranBadge.textContent = 'OFFLINE'; hiranBadge.className = 'px-2 py-0.5 rounded text-xs font-bold bg-red-700 text-white'; }
+      if(hiranDetail) hiranDetail.textContent = 'Spusť: ▶ Start';
+      if(gpuDetail) gpuDetail.textContent = '—';
+      if(gpuBadge){ gpuBadge.textContent = '—'; gpuBadge.className = 'px-2 py-0.5 rounded text-xs font-bold bg-gray-700 text-white'; }
+    }
+  }catch(e){
+    if(hiranBadge){ hiranBadge.textContent = 'OFFLINE'; hiranBadge.className = 'px-2 py-0.5 rounded text-xs font-bold bg-red-700 text-white'; }
+    if(hiranDetail) hiranDetail.textContent = 'Spusť: ▶ Start';
+  }
+
+  // ── Hiranyagarbha (port 8001) ──
   const orchBadge = document.getElementById('hiranyagarbha-badge');
   const orchDetail = document.getElementById('hiranyagarbha-detail');
   const orchPanel = document.getElementById('orch-stats-panel');
