@@ -37,7 +37,6 @@ export default function Footer() {
       links: [
         { href: '/docs', label: tr('nav', 'docs', lang), Icon: BookOpen },
         { href: '/terranova', label: tr('nav', 'terranova', lang), Icon: BookMarked },
-        { href: '/kompas', label: tr('nav', 'kompas', lang), Icon: Compass },
         { href: '/docs#wp-v3-mainnet', label: tr('footer', 'whitepaper', lang), Icon: FileText },
         { href: '/download', label: tr('footer', 'downloads', lang), Icon: Download },
       ],
