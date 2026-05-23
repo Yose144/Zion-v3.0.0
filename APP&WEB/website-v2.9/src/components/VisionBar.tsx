@@ -2,28 +2,21 @@
 
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Leaf, Sprout, Landmark, Crown } from 'lucide-react';
+import { Sprout, Landmark, Crown, ArrowUpRight } from 'lucide-react';
 
 const VISIONS = [
-  {
-    href: '/l5-free-world',
-    icon: Leaf,
-    label: 'L5 Free World',
-    desc: 'Komunitní vrstva — Terra Nova off-grid, autonomní zóny, P2P ekonomika',
-    accent: 'text-emerald-300',
-    border: 'border-emerald-500/20',
-    bg: 'from-emerald-500/8 via-transparent',
-    glow: 'shadow-[0_0_24px_rgba(16,185,129,0.08)]',
-  },
   {
     href: '/genesis',
     icon: Sprout,
     label: 'Genesis',
     desc: 'Zahrada stvoření — původní blockchainový kód, první blok, seed vědomí',
     accent: 'text-cyan-300',
-    border: 'border-cyan-500/20',
-    bg: 'from-cyan-500/8 via-transparent',
-    glow: 'shadow-[0_0_24px_rgba(6,182,212,0.08)]',
+    border: 'border-cyan-400/20',
+    bg: 'from-cyan-500/10 via-cyan-500/3 to-transparent',
+    glow: 'shadow-[0_0_28px_rgba(6,182,212,0.10)]',
+    iconBg: 'bg-cyan-500/12',
+    iconBorder: 'border-cyan-400/25',
+    ring: 'ring-cyan-400/15',
   },
   {
     href: '/terranova/dharma-temple',
@@ -31,9 +24,12 @@ const VISIONS = [
     label: 'Dharma Temple',
     desc: 'Chrám Dharmy — Ekam, Deeksha, Oneness, posvátná geometrie v kódu',
     accent: 'text-violet-300',
-    border: 'border-violet-500/20',
-    bg: 'from-violet-500/8 via-transparent',
-    glow: 'shadow-[0_0_24px_rgba(139,92,246,0.08)]',
+    border: 'border-violet-400/20',
+    bg: 'from-violet-500/10 via-violet-500/3 to-transparent',
+    glow: 'shadow-[0_0_28px_rgba(139,92,246,0.10)]',
+    iconBg: 'bg-violet-500/12',
+    iconBorder: 'border-violet-400/25',
+    ring: 'ring-violet-400/15',
   },
   {
     href: '/terranova/te-piko-ora',
@@ -41,9 +37,12 @@ const VISIONS = [
     label: 'Te Pīko Ora',
     desc: 'Koruna života — vrcholná komunitní vize, Rapa Nui, Guardian Edge',
     accent: 'text-amber-300',
-    border: 'border-amber-500/20',
-    bg: 'from-amber-500/8 via-transparent',
-    glow: 'shadow-[0_0_24px_rgba(245,158,11,0.08)]',
+    border: 'border-amber-400/20',
+    bg: 'from-amber-500/10 via-amber-500/3 to-transparent',
+    glow: 'shadow-[0_0_28px_rgba(245,158,11,0.10)]',
+    iconBg: 'bg-amber-500/12',
+    iconBorder: 'border-amber-400/25',
+    ring: 'ring-amber-400/15',
   },
 ];
 
@@ -53,29 +52,40 @@ export default function VisionBar() {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.9, delay: 1.4 }}
-      className="w-full max-w-4xl mx-auto"
+      className="w-full max-w-4xl mx-auto px-4"
     >
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 px-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {VISIONS.map((v, i) => (
           <motion.div
             key={v.href}
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 1.6 + i * 0.1 }}
+            transition={{ duration: 0.5, delay: 1.6 + i * 0.12 }}
           >
             <Link
               href={v.href}
-              className={`group flex flex-col gap-2 rounded-2xl border ${v.border} ${v.glow} bg-gradient-to-br ${v.bg} to-transparent p-4 backdrop-blur-sm transition-all hover:scale-[1.03] hover:bg-white/5`}
+              className={`group relative flex flex-col gap-3 rounded-2xl border ${v.border} ${v.glow} bg-gradient-to-br ${v.bg} p-5 backdrop-blur-sm transition-all duration-300 hover:scale-[1.04] hover:border-white/20 hover:shadow-[0_0_40px_rgba(255,255,255,0.06)]`}
             >
-              <div className="flex items-center gap-2.5">
-                <div className={`flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 bg-white/5`}>
-                  <v.icon className={`h-4 w-4 ${v.accent}`} />
+              {/* subtle radial glow on hover */}
+              <div className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${v.bg} opacity-0 transition-opacity duration-300 group-hover:opacity-100`} />
+              <div className="absolute -inset-px rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-[radial-gradient(ellipse_at_50%_0%,rgba(255,255,255,0.04),transparent_60%)]" />
+
+              <div className="relative flex items-center justify-between">
+                <div className={`flex h-10 w-10 items-center justify-center rounded-xl border ${v.iconBorder} ${v.iconBg} ring-1 ${v.ring} transition-transform duration-300 group-hover:scale-110`}>
+                  <v.icon className={`h-5 w-5 ${v.accent}`} />
                 </div>
-                <span className={`text-sm font-bold ${v.accent}`}>{v.label}</span>
+                <ArrowUpRight className="h-4 w-4 text-gray-500 transition-all duration-300 group-hover:text-white group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
               </div>
-              <p className="text-[11px] leading-relaxed text-gray-400 group-hover:text-gray-300 transition-colors">
-                {v.desc}
-              </p>
+
+              <div className="relative">
+                <span className={`text-sm font-bold ${v.accent} tracking-wide`}>{v.label}</span>
+                <p className="mt-1.5 text-[11px] leading-relaxed text-gray-400 group-hover:text-gray-300 transition-colors duration-300">
+                  {v.desc}
+                </p>
+              </div>
+
+              {/* bottom accent line */}
+              <div className={`relative mt-1 h-px w-full bg-gradient-to-r from-transparent via-current to-transparent opacity-10 group-hover:opacity-25 transition-opacity duration-300 ${v.accent}`} />
             </Link>
           </motion.div>
         ))}

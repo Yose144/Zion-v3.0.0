@@ -12,6 +12,7 @@ import { ZionWalletProvider } from "@/contexts/ZionWalletContext";
 import ClientBackgrounds from "@/components/ClientBackgrounds";
 import TahitiFlower from "@/components/TahitiFlower";
 import VisionBar from "@/components/VisionBar";
+import OasisBanner from "@/components/OasisBanner";
 import { SITE_NETWORK_TOPOLOGY, SITE_RELEASE_LABEL, SITE_RUNTIME_LABEL, SITE_VERSION } from '@/lib/site';
 
 const inter = Inter({ 
@@ -61,10 +62,11 @@ export default function RootLayout({
                     <ClientBackgrounds />
                     <div className="relative z-10">
                       <Navigation />
-                      {/* ── Tiare Tahiti + Vision Bar ── */}
+                      {/* ── Tiare Tahiti + Vision Bar + Oasis Banner ── */}
                       <div className="relative z-20 pt-20 pb-2 flex flex-col items-center">
                         <TahitiFlower className="mb-1" />
                         <VisionBar />
+                        <OasisBanner />
                       </div>
                       <main className="zion-shell min-h-screen">
                         {children}
