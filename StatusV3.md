@@ -26,7 +26,7 @@
 |---|---|
 | OpenAI API key (`sk-proj-CsUPFB…`) | ✅ **úplně zrušen** uživatelem (bez replacement) |
 | Starý GitHub PAT (`ghp_7gxI3Y…`) | ✅ revoke; nový PAT vystaven mimo repo |
-| Praha node `91.98.122.165` (deployment SSH key) | ⚠️ **AKTIVNÍ NODE** - běží V3 mainnet (height 26,910); SSH klíče rotovány, nutná obnova přístupu; ostatní servery (US/SG/Helsinki) nedostupné |
+| Praha node `91.98.122.165` | ❌ **VYŘAZEN** — server ukončen, IP neaktivní; veškerá infrastruktura přesunuta na Core + Edge topologii |
 | `git filter-repo` history rewrite | ✅ proveden; bare backup `2.9.6-backup-20260507-2229.git` |
 | Working-tree leftovers | ✅ smazáno (ZION_KEYS, V3-src*.tar/.zip, V3_upload.zip, local-stack-*.err) |
 | Force-push `origin/main` | ✅ repo je private, fork notifikace nepotřebná |
@@ -358,27 +358,25 @@ top_p = 0.9
 
 ### Infrastruktura — Live check 2026-05-12
 
-**Praha node (91.98.122.165) — AKTIVNÍ:**
-- ✅ Běží V3 mainnet node (height: 26,910+)
-- ✅ RPC endpoint: http://91.98.122.165:8443 (health OK)
-- ✅ Prometheus metrics: http://91.98.122.165:9115/metrics
-- ✅ Next.js website: https://91.98.122.165 (v2.9.9 branding)
-- ✅ Mining aktivní (template připraven)
-- ✅ Pool server BĚŽÍ (porty 3333 Stratum + 8080 API)
-- ✅ SSH přístup FUNKČNÍ (zion_hetzner_key)
-- ✅ Všechny služby v Dockeru (12 kontejnerů)
-- ⚠️ Isolated mode (1 peer - self only, ostatní servery nedostupné)
+**Edge node (77.42.71.94) — AKTIVNÍ:**
+- ✅ Běží V3 mainnet node (relay)
+- ✅ RPC endpoint: http://100.66.162.125:8443 (přes Tailscale VPN)
+- ✅ Public P2P: 77.42.71.94:8333
+- ✅ Pool relay: 77.42.71.94:8444 (ShareRelay → Core)
+- ✅ SSH přístup FUNKČNÍ (ssh-key-zion-edge)
+- ✅ Tailscale: 100.66.162.125 (stejný tailnet jako Core)
 
-**Ostatní servery — NEDOSTUPNÉ:**
-- ❌ US (5.78.194.94): žádná odpověď na health endpoint
-- ❌ SG (5.223.84.191): žádná odpověď na health endpoint
-- ❌ Helsinki (157.180.41.213): connection refused
+**Starší servery — VYŘAZENY:**
+- ❌ Praha (91.98.122.165): server ukončen, IP neaktivní
+- ❌ US (5.78.194.94): server ukončen
+- ❌ SG (5.223.84.191): server ukončen
+- ❌ Helsinki (157.180.41.213): server ukončen
 
 **Akce potřebné:**
-1. ✅ SSH přístup obnoven (zion_hetzner_key funguje)
-2. ✅ Pool server běží (0 aktivních minerů, připraven pro připojení)
-3. Konfigurace seed peers (ostatní servery nedostupné - Prague běží isolated)
-4. Deploy nebo provisioning ostatních serverů (US/SG/Helsinki)
+1. ✅ SSH přístup na Edge ověřen
+2. ✅ ShareRelay Core → Edge synchronizace funkční
+3. ✅ Genesis #0 ověřit shodu mezi Core a Edge
+4. 🔄 Test miner na Edge pool (externí připojení)
 
 **Další kroky:**
 1. Dokončit model upload na Vast.ai (čeká se na 5.4GB)
@@ -692,9 +690,8 @@ nebo má konkrétní aktivační plán v
    - **GitHub PAT** (`ghp_7gxI3Y…`) → ✅ revoke; nový PAT vystaven mimo repo
    - **OpenAI API key** (`sk-proj-CsUPFB…`) → ✅ **kompletně zrušen** (žádný
      replacement, AI cesta odložena)
-   - **SSH deployment key** (`91.98.122.165` Praha) → ✅ **node deprecated**;
-     mainnet poběží na **3 nových serverech** s čerstvým keysetem (žádný
-     carry-over starého klíče)
+   - **SSH deployment key** (starý Praha node `91.98.122.165`) → ❌ **server
+     vyřazen**; aktuální Edge používá nový keyset `ssh-key-zion-edge`
    - **`git filter-repo` history rewrite** → ✅ proveden; bare backup uložen
    - **Force-push `origin/main`** → ✅ provedeno (repo je private)
 
