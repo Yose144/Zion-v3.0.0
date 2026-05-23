@@ -4940,7 +4940,7 @@ function _isNewerVersion(latest, current) {
 
 // App lifecycle
 app.whenReady().then(async () => {
-  console.log('ZION Native Awakening v2.9.6 started');
+  console.log('ZION Native Awakening v3.0.0 started');
 
   // Initialize auto-tuner
 
