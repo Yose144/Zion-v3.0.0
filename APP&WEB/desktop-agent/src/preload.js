@@ -1,4 +1,4 @@
-// ZION Ekam Deeksha v2.9.9 - Preload Script
+// ZION Ekam Deeksha v3.0.0 - Preload Script
 // IPC bridge between main process and renderer (security layer)
 
 const { contextBridge, ipcRenderer } = require('electron');
@@ -110,7 +110,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   fixSecurityBlocks: () => ipcRenderer.invoke('fix-security-blocks'),
   openDefenderSettings: () => ipcRenderer.invoke('open-defender-settings'),
 
-  // ── Ekam Deeksha v2.9.9 GPU + Dual Mining ──────────────────────────────
+  // ── Hiran AI Chat ───────────────────────────────────────────────────────
+  aiChatAsk: (data) => ipcRenderer.invoke('ai-chat-ask', data),
+  aiChatStatus: () => ipcRenderer.invoke('ai-chat-status'),
+
+  // ── Ekam Deeksha v3.0.0 GPU + Dual Mining ──────────────────────────────
   runGpuBenchmark: (options) => ipcRenderer.invoke('run-gpu-benchmark', options),
   getGpuDevices: () => ipcRenderer.invoke('get-gpu-devices'),
   setDualMining: (config) => ipcRenderer.invoke('set-dual-mining', config),
