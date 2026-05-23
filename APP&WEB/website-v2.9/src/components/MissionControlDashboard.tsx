@@ -431,8 +431,8 @@ async function fetchServiceStatuses(): Promise<ServiceStatus[]> {
     { name: 'zion-node-exporter', job: 'node', image: 'prom/node-exporter:v1.8.1', ports: '9100' },
     { name: 'zion-redis-exporter', job: 'redis', image: 'oliver006/redis_exporter:v1.61.0', ports: '9121' },
     { name: 'zion-alertmanager', job: '', image: 'prom/alertmanager:v0.27.0', ports: '9093' },
-    { name: 'core-pool-target', job: 'zion-pool-core', image: 'tailscale scrape', ports: '100.86.102.5:8080', note: 'Core PC pool target' },
-    { name: 'core-node-target', job: 'zion-core-core', image: 'tailscale scrape', ports: '100.86.102.5:9115', note: 'Core PC node target' },
+    { name: 'core-pool-target', job: 'zion-pool-core', image: 'VPN scrape', ports: 'private', note: 'Core PC pool target' },
+    { name: 'core-node-target', job: 'zion-core-core', image: 'VPN scrape', ports: 'private', note: 'Core PC node target' },
   ];
   const jobUp: Record<string, boolean> = {};
   for (const r of upResults) { jobUp[r.metric.job ?? ''] = r.value[1] === '1'; }
@@ -560,7 +560,7 @@ function getFallbackReadinessMap(cs: boolean): ReadinessMap {
     done: [
       { title: cs ? 'Fáze 1 — Foundation' : 'Phase 1 — Foundation', detail: cs ? 'Core, consensus, infrastructure, L2 bridge' : 'Core, consensus, infrastructure, L2 bridge' },
       { title: cs ? 'Fee split 89/5/5/1' : 'Fee split 89/5/5/1', detail: cs ? 'PPLNS payout ověřen a aktivní' : 'PPLNS payout verified and active' },
-      { title: cs ? 'Core + Edge topologie' : 'Core + Edge topology', detail: cs ? 'Tailscale VPN aktivní' : 'Tailscale VPN active' },
+      { title: cs ? 'Core + Edge topologie' : 'Core + Edge topology', detail: cs ? 'Privátní VPN aktivní' : 'Private VPN active' },
       { title: cs ? 'Docker Compose mainnet' : 'Docker Compose mainnet', detail: cs ? 'Připraveno pro deployment' : 'Ready for deployment' },
       { title: cs ? 'Bezpečnostní cleanup' : 'Security cleanup', detail: cs ? 'Credential rotation dokončen' : 'Credential rotation complete' },
     ],
@@ -1746,7 +1746,7 @@ export default function MissionControlDashboard() {
                 </h1>
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
-                Real-time monitoring V3 Mainnet. Dashboard sleduje Core + Edge node set (Hetzner VPS + lokální Core přes Tailscale VPN) — live chain metriky, pool hashrate a síťový stav.
+                Real-time monitoring V3 Mainnet. Dashboard sleduje Core + Edge node set (Hetzner VPS + lokální Core přes privátní VPN) — live chain metriky, pool hashrate a síťový stav.
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
@@ -1756,7 +1756,7 @@ export default function MissionControlDashboard() {
                   <CheckCircle2 className="h-3 w-3" /> Security Gate · PASS
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-4 py-2 text-cyan-200">
-                  <Sparkles className="h-3 w-3" /> 2 nodes · Core + Edge (Tailscale VPN)
+                  <Sparkles className="h-3 w-3" /> 2 nodes · Core + Edge (private VPN)
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-emerald-200">
                   <Rocket className="h-3 w-3" /> Mainnet launch countdown T-{Math.max(0, Math.ceil((new Date('2026-06-20T00:00:00Z').getTime() - Date.now()) / 86400000))} days
@@ -1888,10 +1888,10 @@ export default function MissionControlDashboard() {
               </div>
               <div className="grid gap-5 lg:grid-cols-2">
                 <ServerCard node={primaryNode} name="Edge VPS (Hetzner)" flag="🌐" ip="77.42.71.94 · pool :8444 + web + relay" />
-                <ServerCard node={data?.primary} name="Core PC (Tailscale)" flag="🏠" ip="100.86.102.5 · consensus + RPC :8443" />
+                <ServerCard node={data?.primary} name="Core PC (private VPN)" flag="🏠" ip="Private · consensus + RPC :8443" />
               </div>
               <div className="mt-5 rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-sm text-gray-300">
-                Core + Edge topologie: Edge VPS (Hetzner, 77.42.71.94) jako veřejný relay a pool, Core PC (Tailscale 100.86.102.5) jako primární konsenzus uzel. Peer spojení přes Tailscale VPN.
+                Core + Edge topologie: Edge VPS (Hetzner, 77.42.71.94) jako veřejný relay a pool, Core PC (privátní VPN) jako primární konsenzus uzel. Peer spojení přes privátní VPN tunel.
               </div>
             </motion.section>
 
@@ -2321,12 +2321,12 @@ export default function MissionControlDashboard() {
                   <div>
                     <p className="text-gray-400 mb-1 font-semibold">Edge VPS (Hetzner) — 77.42.71.94</p>
                     <p className="text-gray-500">Public relay · Pool :8444 · Website :443 · Prometheus scrape</p>
-                    <p className="text-gray-500">Tailscale 100.66.162.125 · Pool + Web + Monitoring stack</p>
+                    <p className="text-gray-500">VPN endpoint · Pool + Web + Monitoring stack</p>
                   </div>
                   <div>
-                    <p className="text-gray-400 mb-1 font-semibold">Core PC (Tailscale VPN) — 100.86.102.5</p>
+                    <p className="text-gray-400 mb-1 font-semibold">Core PC (private VPN)</p>
                     <p className="text-gray-500">Primary consensus node · RPC :8443 · P2P :8333</p>
-                    <p className="text-gray-500">Connected to Edge via Tailscale · local miner</p>
+                    <p className="text-gray-500">Connected to Edge via private VPN · local miner</p>
                   </div>
                 </div>
               </div>
@@ -2688,7 +2688,7 @@ export default function MissionControlDashboard() {
                   <SprintRow name="1.7 P2P Rate-Limit" content="200 msgs/peer/60s, escalating bans" tests="13" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
                   <SprintRow name="1.8 Health & Metrics" content="getHealthCheck, getMetrics" tests="8" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
                   <SprintRow name="1.9 Stress Tests" content="High-throughput TX, rapid blocks" tests="21" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} />
-                  <SprintRow name="1.10 72h Mainnet Stability Run" content="Core + Edge tip agreement, restart discipline a pool recovery evidence (Tailscale VPN)" tests="—" status={<span className={`${stabilityStatusColor} inline-flex items-center gap-1`}><RefreshCw className="h-3.5 w-3.5" /> {stabilityStatus}</span>} highlight />
+                  <SprintRow name="1.10 72h Mainnet Stability Run" content="Core + Edge tip agreement, restart discipline a pool recovery evidence (private VPN)" tests="—" status={<span className={`${stabilityStatusColor} inline-flex items-center gap-1`}><RefreshCw className="h-3.5 w-3.5" /> {stabilityStatus}</span>} highlight />
                   <SprintRow name="1.11 Partition Test" content="Izolace node 30 min, reconnect" tests="—" status={<Square className="h-4 w-4 text-gray-500" />} />
                   <SprintRow name="1.12 100 Miners" content="Simulace 100 Stratum klientů" tests="—" status={<Square className="h-4 w-4 text-gray-500" />} />
                   <SprintRow name="1.13 Ekam Tier 1" content="Scratchpad 256 KiB, 4 passes, 256 reads" tests="108" status={<CheckCircle2 className="h-4 w-4 text-emerald-400" />} highlight />
@@ -2712,7 +2712,7 @@ export default function MissionControlDashboard() {
               <PhaseAccordion icon={<CheckCircle2 className="h-6 w-6 text-emerald-400" />} title="Fáze 3 — Launch Ops & Security Closure" pct={100} status="DOKONČENO" statusColor="border-emerald-400/30 bg-emerald-400/10 text-emerald-200">
                 <p className="text-xs text-gray-500 mb-3 flex items-center gap-1.5"><CalendarDays className="h-3 w-3" /> Duben — Květen 2026 | Všechny closure položky uzavřeny</p>
                 <table className="w-full text-left"><tbody>
-                  <SprintRow name="3.1 Node Set Audit" content="Core + Edge potvrzené po fee-split rolloutu, Tailscale VPN" status={<span className="text-emerald-400">SYNCED</span>} />
+                  <SprintRow name="3.1 Node Set Audit" content="Core + Edge potvrzené po fee-split rolloutu, privátní VPN" status={<span className="text-emerald-400">SYNCED</span>} />
                   <SprintRow name="3.2 Release Artefacts" content="runbook ✅, operator guide ✅, checksums ✅, release tag ✅" status={<span className="text-emerald-400">4/4</span>} />
                   <SprintRow name="3.3 Security Hygiene" content="fuzz harnessy ✅, BFG scrub ✅, boundary review ✅" status={<span className="text-emerald-400">3/3</span>} />
                   <SprintRow name="3.4 Recovery & Alerts" content="metrics ✅, alert routing ✅, backup/restore ✅" status={<span className="text-emerald-400">3/3</span>} />

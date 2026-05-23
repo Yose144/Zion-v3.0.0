@@ -73,13 +73,13 @@ const getHeroStats = (cs: boolean) => [
     label: cs ? 'Veřejné nody' : 'Public Nodes',
     value: '2',
     descriptor: cs
-      ? 'Edge relay (Hetzner VPS) + Core (lokální PC přes Tailscale VPN)'
-      : 'Edge relay (Hetzner VPS) + Core (local PC via Tailscale VPN)',
+      ? 'Edge relay (Hetzner VPS) + Core (privátní master)'
+      : 'Edge relay (Hetzner VPS) + Core (private master)',
   },
   {
     label: cs ? 'P2P mesh' : 'P2P Mesh',
     value: cs ? 'Core + Edge' : 'Core + Edge',
-    descriptor: cs ? 'Tailscale VPN tunel — Core ↔ Edge' : 'Tailscale VPN tunnel — Core ↔ Edge',
+    descriptor: cs ? 'VPN tunel — Core ↔ Edge' : 'VPN tunnel — Core ↔ Edge',
   },
   {
     label: cs ? 'Telemetrie' : 'Telemetry',
@@ -115,12 +115,12 @@ const getInfraFeatures = (cs: boolean) => [
   },
   {
     icon: Server,
-    title: cs ? 'Core (lokální PC)' : 'Core (local PC)',
+    title: cs ? 'Core (privátní master)' : 'Core (private master)',
     detail: cs
       ? 'Zdroj pravdy — Node 1 (Genesis), Node 2, Master PPLNS pool, GPU miner'
       : 'Source of truth — Node 1 (Genesis), Node 2, Master PPLNS pool, GPU miner',
-    ip: '100.86.102.5',
-    status: cs ? 'Tailscale VPN' : 'Tailscale VPN',
+    ip: cs ? 'Privátní VPN' : 'Private VPN',
+    status: cs ? 'VPN tunel' : 'VPN tunnel',
     color: 'text-zion-cyan',
     border: 'border-cyan-500/30',
     bg: 'bg-cyan-500/5',
@@ -146,7 +146,7 @@ const getRuntimePanels = (cs: boolean) => [
     icon: Globe,
     label: 'P2P Peer',
     value: `${SITE_PRIMARY_HOST}:8333`,
-    detail: cs ? 'Veřejný Edge relay — Core sync přes Tailscale VPN' : 'Public Edge relay — Core sync via Tailscale VPN',
+    detail: cs ? 'Veřejný Edge relay — Core sync přes privátní VPN' : 'Public Edge relay — Core sync via private VPN',
     accent: 'text-emerald-400',
   },
   {
@@ -188,12 +188,12 @@ const getGuideBlocks = (cs: boolean) => [
     icon: Globe,
     title: 'P2P Layer',
     description: cs
-      ? 'Nativní Rust P2P síť — Edge relay přijímá inbound z internetu, Core zůstává za Tailscale VPN.'
-      : 'Native Rust P2P network — Edge relay accepts inbound from the internet, Core stays behind Tailscale VPN.',
+      ? 'Nativní Rust P2P síť — Edge relay přijímá inbound z internetu, Core zůstává za privátní VPN.'
+      : 'Native Rust P2P network — Edge relay accepts inbound from the internet, Core stays behind private VPN.',
     items: [
       `${cs ? 'Veřejný peer (Edge)' : 'Public peer (Edge)'}: ${SITE_PRIMARY_HOST}:8333`,
-      `${cs ? 'Core peer (Tailscale)' : 'Core peer (Tailscale)'}: 100.86.102.5:8333`,
-      cs ? 'VPN tunel: Tailscale WireGuard (Core ↔ Edge)' : 'VPN tunnel: Tailscale WireGuard (Core ↔ Edge)',
+      cs ? 'Core peer (VPN): Privátní peer (neveřejný)' : 'Core peer (VPN): Private peer (non-public)',
+      cs ? 'VPN tunel: WireGuard (Core ↔ Edge)' : 'VPN tunnel: WireGuard (Core ↔ Edge)',
     ],
   },
 ];
@@ -201,7 +201,7 @@ const getGuideBlocks = (cs: boolean) => [
 const getNetworkFacts = (cs: boolean) => [
   { text: cs ? 'Nativní Rust P2P — Edge relay veřejný' : 'Native Rust P2P — Edge relay public', done: true },
   {
-    text: cs ? 'Core + Edge topologie s Tailscale VPN tunelem' : 'Core + Edge topology with Tailscale VPN tunnel',
+    text: cs ? 'Core + Edge topologie s privátním VPN tunelem' : 'Core + Edge topology with private VPN tunnel',
     done: true,
   },
   {
