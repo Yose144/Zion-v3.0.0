@@ -75,6 +75,25 @@ zion hiran deploy --model --platform             # Deployment
 
 ---
 
+## Co je nového 2026-05-23 (Phase 2 Hardening — Core+Edge infra)
+
+### Phase 2 Hardening — DONE
+
+| Komponenta | Stav | Detail |
+|---|---|---|
+| **Core backup** | ✅ Hotovo | `scripts/backup-core.ps1` — timestamped zip do `C:\ZION-Backups\` (data, env, SSH pub key, git state) |
+| **Edge snapshot** | ✅ Hotovo | Hetzner snapshot ID `631712387075142` — kompletní VPS image pro disaster recovery |
+| **Failover test** | ✅ Hotovo | Edge zastaven → Core miner pokračoval (height 493, žádný gap) → Edge restart úspěšný |
+| **Monitoring** | 🟡 Částečně | Prometheus + Grafana běží; node/pool-specific dashboardy potřeba dodělat |
+| **Alerting** | 🔄 Probíhá | 5 alert rules definováno; potřeba aktivovat Alertmanager + notifikační kanál |
+| **Tailscale ACL** | 🔄 Probíhá | Ruční konfigurace v Tailscale admin UI — omezit traffic na `tag:zion` uzly |
+
+**Soubory:**
+- `scripts/backup-core.ps1` — Windows backup skript
+- `archive/2.9.9/docs/Servers.md` — kompletní Core+Edge dokumentace s Phase 0/1/2 výsledky
+
+---
+
 ## Co je nového 2026-05-22 (Genesis + Fee Split KONFIGURACE DOKONČENA)
 
 ### Mainnet Ready - Genesis a Fee Split Konfigurace
