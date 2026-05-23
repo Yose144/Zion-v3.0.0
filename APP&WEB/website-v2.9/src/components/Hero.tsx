@@ -20,6 +20,8 @@ import { tr } from '@/lib/translations';
 import { SITE_ENVIRONMENT_LABEL, SITE_RELEASE_LABEL, SITE_RUNTIME_LABEL, SITE_LAUNCH_DATE_DISPLAY } from '@/lib/site';
 import CosmicFlowers from './CosmicFlowers';
 import HolographicEarth from './HolographicEarth';
+import HiranMiniChat from './HiranMiniChat';
+import ZionTicker from './ZionTicker';
 
 export default function Hero() {
   const { mode, setMode, availableModes } = useObservatory();
@@ -202,6 +204,28 @@ export default function Hero() {
 
             <div className="mb-5 z-10 mx-auto flex w-full max-w-md justify-center lg:max-w-xl">
               <HolographicEarth className="w-full shrink-0" />
+            </div>
+
+            {/* ── Hiran v2.2 Mini Chat ── */}
+            <div className="mb-4 z-10 mx-auto w-full max-w-md lg:max-w-xl px-2">
+              <HiranMiniChat lang={lang} />
+            </div>
+
+            {/* ── L3 Hiran link ── */}
+            <div className="mb-5 flex justify-center">
+              <a
+                href="https://www.zionterranova.com/l3-hiran"
+                className="group inline-flex items-center gap-2 text-xs font-medium text-purple-300 hover:text-purple-200 transition-colors"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                <span>Full AI Layer — L3 Hiran v2.2</span>
+                <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-1" />
+              </a>
+            </div>
+
+            {/* ── Interactive Ticker ── */}
+            <div className="mb-5 mx-auto w-full max-w-md lg:max-w-xl px-2">
+              <ZionTicker />
             </div>
 
             <div className="zion-panel relative rounded-[28px] p-6 space-y-5">
