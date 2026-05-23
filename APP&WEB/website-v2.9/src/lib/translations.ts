@@ -29,6 +29,7 @@ const t = {
     defi:       { cs: 'DeFi Hub',    en: 'DeFi Hub' },
     defi_group: { cs: 'DeFi · L2',   en: 'DeFi · L2' },
     kompas:     { cs: 'Zlatý Kompas', en: 'Golden Compass' },
+    info_group: { cs: 'Info', en: 'Info' },
     layers_group: { cs: 'Vrstvy', en: 'Layers' },
     l4_oasis:   { cs: 'L4 Oasis', en: 'L4 Oasis' },
     l5_free_world: { cs: 'L5 Free World', en: 'L5 Free World' },
@@ -544,10 +545,8 @@ const t = {
 
   /* ─── Footer ─── */
   footer: {
-    group_protocol: { cs: 'Protokol', en: 'Protocol' },
-    group_explore: { cs: 'Průzkum', en: 'Explore' },
+    group_info: { cs: 'Info', en: 'Info' },
     group_layers: { cs: 'Vrstvy', en: 'Layers' },
-    group_knowledge: { cs: 'Znalosti', en: 'Knowledge' },
     whitepaper: { cs: 'Whitepaper', en: 'Whitepaper' },
     downloads: { cs: 'Downloady', en: 'Downloads' },
     tagline: {

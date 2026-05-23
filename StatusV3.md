@@ -15,6 +15,10 @@
 > funguje, co je hotové, co ještě hoří, a co je *nice-to-have*. Psáno tak, aby
 > tomu rozuměl jak vývojář, tak laik (ne-vývojář si může číst jen sekce **TL;DR**
 > a **Co stále hoří před Genesis**).
+> **Archivní upozornění:** Všechny dokumenty, skripty nebo konfigurace obsahující
+> starý Praha server (`91.98.122.165`) nebo historickou multi-server topologii
+> (Prague, SG, Helsinki, US) jsou **archivní / historické**, pokud není explicitně
+> uvedeno jinak. Aktuální živá topologie je **Core + Edge** (viz sekce Infrastruktura).
 
 ---
 
