@@ -9,27 +9,59 @@ use crate::ui;
 #[derive(Subcommand)]
 pub enum NodeCmd {
     /// Tip height, hash, peers, sync status
-    Status,
+    Status {
+        /// Target node: core | edge | local | vpn (default: core)
+        #[arg(default_value = "core")]
+        target: String,
+    },
     /// List connected P2P peers
-    Peers,
+    Peers {
+        /// Target node: core | edge | local | vpn (default: core)
+        #[arg(default_value = "core")]
+        target: String,
+    },
     /// Last N blocks (default 10)
     Blocks {
         #[arg(default_value = "10")]
         n: u64,
+        /// Target node: core | edge | local | vpn (default: core)
+        #[arg(default_value = "core")]
+        target: String,
     },
     /// Block detail by height or hash
-    Block { id: String },
+    Block {
+        id: String,
+        /// Target node: core | edge | local | vpn (default: core)
+        #[arg(default_value = "core")]
+        target: String,
+    },
     /// Transaction lookup
-    Tx { txid: String },
+    Tx {
+        txid: String,
+        /// Target node: core | edge | local | vpn (default: core)
+        #[arg(default_value = "core")]
+        target: String,
+    },
     /// Pending transactions in mempool
-    Mempool,
+    Mempool {
+        /// Target node: core | edge | local | vpn (default: core)
+        #[arg(default_value = "core")]
+        target: String,
+    },
     /// Force peer sync / bootstrap
-    Sync,
+    Sync {
+        /// Target node: core | edge | local | vpn (default: core)
+        #[arg(default_value = "core")]
+        target: String,
+    },
     /// Raw JSON-RPC call: zion node rpc <method> [params_json]
     Rpc {
         method: String,
         #[arg(default_value = "{}")]
         params: String,
+        /// Target node: core | edge | local | vpn (default: core)
+        #[arg(default_value = "core")]
+        target: String,
     },
     /// WebSocket subscriptions
     Websocket {
@@ -65,17 +97,33 @@ pub enum WebSocketCmd {
 }
 
 pub async fn run(cfg: &Config, cmd: NodeCmd) -> Result<()> {
-    let host = &cfg.node.rpc_host;
-    let port = cfg.node.rpc_port;
-
     match cmd {
-        NodeCmd::Status => node_status(host, port).await,
-        NodeCmd::Peers => node_peers(host, port).await,
-        NodeCmd::Blocks { n } => node_blocks(host, port, n).await,
-        NodeCmd::Block { id } => node_block(host, port, &id).await,
-        NodeCmd::Tx { txid } => node_tx(host, port, &txid).await,
-        NodeCmd::Mempool => node_mempool(host, port).await,
-        NodeCmd::Sync => {
+        NodeCmd::Status { target } => {
+            let (host, port) = cfg.target_rpc(&target);
+            node_status(host, port).await
+        }
+        NodeCmd::Peers { target } => {
+            let (host, port) = cfg.target_rpc(&target);
+            node_peers(host, port).await
+        }
+        NodeCmd::Blocks { n, target } => {
+            let (host, port) = cfg.target_rpc(&target);
+            node_blocks(host, port, n).await
+        }
+        NodeCmd::Block { id, target } => {
+            let (host, port) = cfg.target_rpc(&target);
+            node_block(host, port, &id).await
+        }
+        NodeCmd::Tx { txid, target } => {
+            let (host, port) = cfg.target_rpc(&target);
+            node_tx(host, port, &txid).await
+        }
+        NodeCmd::Mempool { target } => {
+            let (host, port) = cfg.target_rpc(&target);
+            node_mempool(host, port).await
+        }
+        NodeCmd::Sync { target } => {
+            let (host, port) = cfg.target_rpc(&target);
             ui::print_info("Triggering peer sync...");
             let result = node_rpc::call0(host, port, "sync_peers").await;
             match result {
@@ -87,7 +135,8 @@ pub async fn run(cfg: &Config, cmd: NodeCmd) -> Result<()> {
             }
             Ok(())
         }
-        NodeCmd::Rpc { method, params } => {
+        NodeCmd::Rpc { method, params, target } => {
+            let (host, port) = cfg.target_rpc(&target);
             let params_val: serde_json::Value = serde_json::from_str(&params).unwrap_or(json!({}));
             let result = node_rpc::call(host, port, &method, params_val).await?;
             println!("{}", serde_json::to_string_pretty(&result)?);
@@ -98,7 +147,7 @@ pub async fn run(cfg: &Config, cmd: NodeCmd) -> Result<()> {
 }
 
 async fn node_status(host: &str, port: u16) -> Result<()> {
-    ui::print_header("Node Status");
+    ui::print_header(&format!("Node Status ({}:{})", host, port));
 
     let chain = node_rpc::call0(host, port, "getChainInfo").await;
     let node = node_rpc::call0(host, port, "getNodeInfo").await;

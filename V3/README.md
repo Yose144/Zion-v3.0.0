@@ -48,9 +48,9 @@ Out of scope for the bootstrap:
 - **Phase 18 UTXO coinbase + pool payout E2E deployed (2026-04-01):** `getBalance` combines account+UTXO for zion1 addresses (previously returned 0). `build_template()` generates UTXO coinbase with 4 outputs (89/5/5/1 split). Pool payout pipeline deployed with Ed25519 UTXO signing. Chain height 6801, miner balance 14.12B ZION.
 - **Humanitarian tithe verified on-chain (2026-04-01):** Per-block fee split is exact to the flower: 89% miner, 5% humanitarian ([12] zion1m4v5z...), 5% issobella ([13] zion170a37...), 1% pool_fee ([14] zion1y5u65...). Cumulative balances consistent across all tithe wallets.
 - **BaseScan verification (2026-04-01):** All 3 Base mainnet contracts (wZION, ZIONBridge, ZIONAtomicSwap) verified on BaseScan.
-- **All bridge blockers resolved (2026-04-01):** Deterministic keyless vault address (`zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0`), crypto validator proof (secp256k1 ECDSA in `submitBridgeUnlock`), L1 wallet CLI (`wallet.rs`), bridge mainnet config enabled. Bridge relay deployed on Prague server — 3/5 threshold, L1+EVM watchers active, scanning Base mainnet (chain 8453).
+- **All bridge blockers resolved (2026-04-01):** Deterministic keyless vault address (`zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0`), crypto validator proof (secp256k1 ECDSA in `submitBridgeUnlock`), L1 wallet CLI (`wallet.rs`), bridge mainnet config enabled. Bridge relay deployed on Edge server (Hetzner VPS, Core + Edge topology) — 3/5 threshold, L1+EVM watchers active, scanning Base mainnet (chain 8453).
 - **V3 mainnet fee-split rollout verified live (2026-03-28):** core now enforces deterministic on-chain reward split `89/5/5/1` to miner, humanitarian, issobella, and pool-fee wallets; first explicitly verified split-enabled block was height `465`, with subsequent confirmation on audited nodes at heights `471` and `472`
-- **Historical cross-node rollout evidence (2026-03-28):** Prague, USA, and Singapore accepted the fee-split rollout during the original rehearsal; the current operational topology has since been consolidated to Prague-only.
+- **Historical cross-node rollout evidence (2026-03-28):** Prague, USA, and Singapore accepted the fee-split rollout during the original rehearsal; the current operational topology has since been consolidated to **Core + Edge**.
 - canonical Ekam Deeksha consensus crate migrated into `L1/cosmic-harmony`
 - `L1/core` now provides block headers, mining jobs, target validation, revenue snapshots, node config defaults, active block-template state, template-aware RPC submit flow, and a basic TCP `node` binary
 - `L1/core` now also persists chain snapshots to disk, restores accepted-block state on restart, and exposes accepted-block indexes by height and template ID inside the node runtime
@@ -80,7 +80,7 @@ Out of scope for the bootstrap:
 - `L1/core` now carries genesis ceremony and launch readiness: frozen genesis hash, checkpoint system, 9 launch readiness checks (genesis integrity, emission, decay, tail, difficulty, DAO lock, premine addresses, checkpoints, zeroize) (`launch.rs`)
 - `L1/core` now carries the node bootstrap orchestrator: `NodeHandle` wiring ChainDb + IbdEngine + PeerManager + NodeMetrics + RpcRouter, open-from-disk or genesis init, status/advance_tip/register_peer/heartbeat/prometheus/health_check (`node_builder.rs`)
 - `L1/core` now carries DAO treasury lock enforcement as Step 11 in the 11-step `validate_block()` pipeline, blocking DAO Treasury spends before height 525,600 (`validation.rs`)
-- `L1/core` mainnet defaults are currently pinned to the Prague primary bootstrap node; stale DNS seed hostnames were retired until a new audited seed set exists
+- `L1/core` mainnet defaults are configured for Core + Edge topology; stale DNS seed hostnames were retired until a new audited seed set exists
 - `L1/core` now carries the genesis dedication message embedded in block 0 coinbase hash: ASCII art + ZION banner + dedication to Sarah Issobel, Maitreya Buddha, family, and humanity (`GENESIS_MESSAGE.txt`, `genesis.rs`)
 - `L1/core` now carries flood-fill block propagation: `SeenBlocks` dedup cache, `plan_relay()` flood-fill logic, `PropagationStats` telemetry, and node binary relay on both peer announce and RPC submit (`propagation.rs`)
 - `L1/core` now carries P2P hardening (Phase 10): persistent inbound connections (message loop per stream), outbound peer thread with periodic sync + heartbeat Ping/Pong, PeerManager wired into node (scoring, subnet diversity, idle disconnect), PeerSecurity wired into node (rate limiting, ban on accept, protocol violation punishment)
@@ -88,7 +88,7 @@ Out of scope for the bootstrap:
 - `L1/core` now carries block validation hardening (Phase 12): `validate_peer_block()` verifies PoW (hash recomputed from header+nonce meets difficulty target), timestamp sanity (±2 hr median-time-past), checkpoint enforcement, header-field consistency; `AcceptedBlock` now stores `header_hex` for PoW-verifiable blocks; backwards-compatible with legacy persisted chain state (`lib.rs`, `validation.rs`, `genesis.rs`)
 - `L1/core` now carries chain linkage verification (Phase 13): `AcceptedBlock` stores `previous_hash_hex` for explicit parent-chain linkage; `import_peer_block()` and `import_peer_blocks()` verify that each block's previous_hash links to the expected parent (local tip or preceding batch block); `validate_peer_block()` cross-checks `previous_hash_hex` against `header.previous_hash`; backwards-compatible with legacy blocks via `#[serde(default)]` (`lib.rs`, `genesis.rs`)
 - Docker images: multi-stage production builds for node, pool, miner (self-contained V3/ context, `rust:1.85-bookworm` builder → `debian:bookworm-slim` runtime)
-- Deployed to Hetzner (91.98.122.165): 7-service Docker compose stack running live, chain height 40+ and growing (19. 3. 2026)
+- Deployed to Hetzner Edge (Core + Edge topology): 7-service Docker compose stack running live, chain height 40+ and growing (19. 3. 2026)
 - **Testnet fixes (19. 3. 2026):** Docker compose rewritten for env-var config (`from_env()` only, CLI args ignored), raw TCP JSON-RPC health checks on port 8332, `netcat-openbsd` replacing curl in Dockerfiles, state path must be file (`chain_state.json`) not directory, pool/miner loop_count=4294967295 for continuous operation, nonce tuning (500K/180s TTL)
 - **P2P bug fix (19. 3. 2026):** duplicate block check moved before `validate_peer_block()` in `import_peer_block()` — eliminates spurious LWMA difficulty mismatch errors when seeds re-announce already-accepted blocks (`f2ca370`)
 - **Zero P2P errors** after fix deployment — chain growing continuously with 100% share acceptance rate
@@ -263,13 +263,15 @@ rsync -avz --exclude target --exclude .git V3/ root@SERVER:/opt/zion/
 ssh root@SERVER "cd /opt/zion && docker compose -f docker/docker-compose.v3-mainnet.yml build && docker compose -f docker/docker-compose.v3-mainnet.yml up -d"
 ```
 
-### Live Server
+### Live Topology (Core + Edge)
 
-- **91.98.122.165** (Prague, Hetzner) — current primary V3 mainnet host
-- Node P2P: `91.98.122.165:8333`
-- Node RPC: raw TCP JSON-RPC on `91.98.122.165:8443`
-- Pool stratum: `91.98.122.165:3333`
+- **Core** (Windows 11, Tailscale `100.86.102.5`) — local node + pool master + GPU miner
+- **Edge** (Hetzner VPS, Tailscale `100.66.162.125`) — public relay node + pool
+  - Public P2P: `77.42.71.94:8333`
+  - Public Pool: `77.42.71.94:8444`
 - Website bridge status reaches the host-networked bridge via `host.docker.internal:9101`
+
+> Archive notice: the old Prague server (`91.98.122.165`) and multi-server topology (Prague, USA, Singapore, Helsinki) are historical. Current live topology is **Core + Edge only**.
 
 ## Wire Protocol
 

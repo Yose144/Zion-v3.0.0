@@ -225,7 +225,7 @@ This roadmap follows the release progression already defined in the repository d
 
 - `cargo test --manifest-path V3/Cargo.toml` passes
 - local release build for `zion-core` passed before live rollout
-- live V3 fee-split rollout passed after manifest correction, with Prague / USA / Singapore synchronized post-deploy
+- live V3 fee-split rollout passed after manifest correction, with legacy Prague / USA / Singapore nodes synchronized post-deploy (historical multi-server topology)
 - pool/miner remote TCP smoke test passes
 - repeated miner sessions against one shared pool instance pass
 - core node scaffold responds over both P2P and RPC TCP endpoints
@@ -259,10 +259,10 @@ This roadmap follows the release progression already defined in the repository d
 - **Phase 20: Miner DCR/GPU runtime integration — DCR worker modules wired into miner entrypoint, OpenCL kernel/build glue added, GPU backend smoke path validated (`ZION_DCR_BACKEND=gpu`, `ZION_LOOP_COUNT=1`)**
 - **Phase 20b: Native-FFI baseline + runtime hook — `L1/native-ffi` builds with `--features native-all` on Windows MSVC, and miner DCR CPU path now supports explicit hash dispatch (`ZION_DCR_HASH_IMPL=rust|native`) with safe fallback when native feature is not enabled**
 - **Phase 21: Tier 1+2 ASIC resistance V3 port — 256 KiB scratchpad (4× v1, 4 passes, 256 reads), epoch-rotating NPU (MlpTopology×4, 2016-block epochs, Blake3 seed), Ekam Deeksha v2 canonical pipeline, height-aware dispatch, meets_difficulty(), optimized GPU kernel (46841 bytes). 81 cosmic-harmony tests passing. Ported from L1 commits c423a5e (Tier 1) + 79c903a (Tier 2).**
-- **Phase 22: Docker testnet deploy & P2P fix — Docker compose rewritten for env-var config (`from_env()` only), raw TCP JSON-RPC health checks, netcat Dockerfiles, P2P duplicate block dedup before validation (eliminates difficulty mismatch on seed re-announce). 7-service stack on 91.98.122.165, chain height 40+, 100% accept, 0 P2P errors. 393 core + 13 pool tests pass.**
-- **Phase 23: WebSocket subscriptions — real-time event streaming for new blocks, pending transactions, address updates, network status; tokio async WebSocket server with subscription management; frontend WebSocket client with React hooks; CLI WebSocket commands; backend notification hooks in NodeRuntime; E2E tested on Prague server (2026-05-13)**
+- **Phase 22: Docker testnet deploy & P2P fix — Docker compose rewritten for env-var config (`from_env()` only), raw TCP JSON-RPC health checks, netcat Dockerfiles, P2P duplicate block dedup before validation (eliminates difficulty mismatch on seed re-announce). 7-service stack on legacy Prague server (91.98.122.165), chain height 40+, 100% accept, 0 P2P errors. 393 core + 13 pool tests pass.**
+- **Phase 23: WebSocket subscriptions — real-time event streaming for new blocks, pending transactions, address updates, network status; tokio async WebSocket server with subscription management; frontend WebSocket client with React hooks; CLI WebSocket commands; backend notification hooks in NodeRuntime; E2E tested on legacy Prague server (2026-05-13)**
 - **Phase 22b: Pool active-session metrics — `AtomicU64` session counter with RAII `SessionGuard` (lock-free inc on connect, auto-dec on thread exit), `snapshot_json_ext()` adds `active_sessions` + `uptime_s` to JSON, `snapshot_prometheus_ext()` adds `zion_pool_active_sessions` gauge + `zion_pool_uptime_seconds` counter to Prometheus output, website `getPoolStats()` maps `active_sessions` → dashboard `miners.active`**
-- **Phase 22: Docker testnet deployment & P2P fix — complete Docker compose rewrite for env-var config (V3 binaries use `from_env()` exclusively, CLI args ignored), raw TCP JSON-RPC health checks on port 8332, `netcat-openbsd` in Dockerfiles replacing curl, ZION_NODE_STATE_PATH must be file path not directory, pool/miner loop_count=4294967295 for continuous operation, nonce_count tuned (500K), job TTL 180s. P2P bug fix: moved duplicate block check before `validate_peer_block()` in `import_peer_block()` to prevent spurious difficulty mismatch errors when seeds re-announce blocks (LWMA window already advanced). Deployed to 91.98.122.165: 7-service stack, chain height 40+, 100% share acceptance, zero P2P errors. Commits: 98fa4b5, f2ca370.**
+- **Phase 22: Docker testnet deployment & P2P fix — complete Docker compose rewrite for env-var config (V3 binaries use `from_env()` exclusively, CLI args ignored), raw TCP JSON-RPC health checks on port 8332, `netcat-openbsd` in Dockerfiles replacing curl, ZION_NODE_STATE_PATH must be file path not directory, pool/miner loop_count=4294967295 for continuous operation, nonce_count tuned (500K), job TTL 180s. P2P bug fix: moved duplicate block check before `validate_peer_block()` in `import_peer_block()` to prevent spurious difficulty mismatch errors when seeds re-announce blocks (LWMA window already advanced). Deployed to legacy Prague server (91.98.122.165): 7-service stack, chain height 40+, 100% share acceptance, zero P2P errors. Commits: 98fa4b5, f2ca370.**
 - **Sprint 4 (Upgrade Plan): config profiles (pool/solo/benchmark/dual via `ZION_PROFILE`), enhanced PowerShell dashboard (PPLNS panel + miner fleet + log tail), V3 CI/CD (`v3-ci.yml` + `v3-release.yml`). Miner 59 tests, pool 37 tests = 96 miner+pool tests. Commit: ab7b55d.**
 - **Sprint 5 (Upgrade Plan — pre-launch): Pool test coverage expanded to 73 tests (wire protocol edge cases, hex parsing, share lifecycle, revenue routing, session groups, Prometheus output). Security checklist completed (`SECURITY_CHECKLIST.md`). Public mining guide (`MINING_GUIDE.md`) and node operator guide (`NODE_OPERATOR_GUIDE.md`) published. Total: 393 core + 73 pool + 59 miner + 81 cosmic-harmony = 606 tests, 0 failures.**
 - **Sprint 6 (Upgrade Plan — hardening): Production unwrap() audit (zero unsafe unwrap in hot paths). cargo-fuzz harnesses: pool (`fuzz_decode_message`, `fuzz_parse_hex`) + core (`fuzz_merkle_root`, `fuzz_validate_header`). `parse_fixed_hex` promoted to pub for fuzz surface. Phase 23/24/25 status reconciliation — monitoring complete, security mostly complete (BFG deferred), infra mostly complete (seed expansion pending). D2 block explorer marked done (live at zionterranova.com/explorer — 7 pages, pool dashboard, 10+ API endpoints).**
@@ -284,7 +284,7 @@ This roadmap follows the release progression already defined in the repository d
 - DesktopApp runtime supervision for node, pool, miner, release provenance, and signing workflows
 - ~~difficulty auto-tuning in live mining~~ → ✅ Sprint 7 (DifficultyStats, difficulty_stats(), predict_difficulty() — 10 new tests, 31 total)
 - ~~HIC / CHv4.2 algorithm~~ → ✅ Sprint 7 (Merkabah Dual-Spin: forward+backward HIC passes, v3 pipeline + mining helper, fork-gated at u64::MAX, 14 new tests, 95 total cosmic-harmony)
-- ~~Docker testnet deployment to 91.98.122.165~~ → ✅ Phase 22 (7-service stack, env-var config, P2P dedup fix)
+- ~~Docker testnet deployment to legacy Prague server~~ → ✅ Phase 22 (7-service stack, env-var config, P2P dedup fix)
 
 ### L1 Testnet → V3 Mainnet Migration Tracker
 
@@ -345,7 +345,7 @@ Audit date: 2026-03-12. Each item maps to the constitutional parameter table abo
 | G6 | Max reorg depth | 10 blocks | ✅ `chain.rs` — MAX_REORG_DEPTH=10, enforced in evaluate_reorg | ~~Phase 6a~~ done |
 | G7 | Coinbase maturity | 100 blocks | ✅ `validation.rs` — COINBASE_MATURITY=100, enforced in validate_block | ~~Phase 6b~~ done |
 | G8 | Fee burn | 100% of fees burned | ✅ `fee.rs` — 100% burn, BURN_ADDRESS defined | ~~Phase 6b~~ done |
-| G9 | Seed peers | 5+ required for eclipse resistance | ⚠️ Current runtime is Prague-only bootstrap; audited multi-seed expansion must be reintroduced before broader public rollout | re-opened |
+| G9 | Seed peers | 5+ required for eclipse resistance | ⚠️ Current runtime uses Core + Edge topology; audited multi-seed expansion must be reintroduced before broader public rollout | re-opened |
 | G10 | Premine unlock_height | DAO Treasury cliff at ~525,600 | ✅ `validation.rs` Step 11: `validate_premine_locks()` calls `genesis::is_premine_transfer_allowed()` | ~~Phase 8~~ done |
 
 #### MEDIUM — required before production launch, not for testnet
@@ -808,7 +808,7 @@ Exit criteria:
 - non-code assets are aligned with the final runtime shape
 - all audit P0 and P1 findings verified resolved
 
-Status: in progress — code done; Docker images built and deployed to 91.98.122.165 (Hetzner Zion2); testnet live with chain growing (Phase 22); BFG scrub and CI/CD remain
+Status: in progress — code done; Docker images built and deployed to Hetzner Edge (Core + Edge topology); testnet live with chain growing (Phase 22); BFG scrub and CI/CD remain
 
 ### Phase 8a: Docker & Deployment
 
@@ -863,7 +863,7 @@ Completed work:
 - **Fix**: moved the `accepted_by_height` duplicate check BEFORE `validate_peer_block()` — duplicates now return `Ok(None)` immediately without triggering expensive and incorrect difficulty recomputation.
 - **Result**: zero P2P errors post-fix (was dozens per minute before).
 
-#### Live Deployment (91.98.122.165)
+#### Live Deployment (Core + Edge)
 - 7-service Docker stack: core, seed1, seed2, pool, miner, redis, website
 - Chain height 40+ within 30 minutes, continuously growing
 - 100% share acceptance rate, 0 rejections
@@ -1272,7 +1272,7 @@ Progress:
 - ✅ G1: Mining guide (Sprint 5 — MINING_GUIDE.md: profiles, env vars, Docker/systemd, FAQ)
 - ✅ G2: Node operator guide (Sprint 5 — NODE_OPERATOR_GUIDE.md: deployment, monitoring, hardening)
 - ✅ D2: Block explorer + pool dashboard (live at zionterranova.com/explorer — Next.js 16, 7 pages, pool dashboard)
-- ⏳ E4: Seed nodes (2 EU seeds at 91.98.122.165 + 46.225.126.243; need 3 more regions)
+- ⏳ E4: Seed nodes (Core + Edge topology: 100.66.162.125 + 77.42.71.94; multi-region expansion deferred to infra phase)
 
 Status: mostly complete (seed node expansion pending)
 

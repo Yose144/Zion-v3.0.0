@@ -118,7 +118,7 @@ DAO = **Decentralized Autonomous Organization** = demokratické hlasování o zm
 │          │                                               │
 │   ┌──────┴───────┐                                      │
 │   │  Servery      │                                      │
-│   │  Prague (EU)  │ ← Bridge + Swap + DAO běží tady     │
+│   │  Edge (EU)    │ ← Bridge + Swap + DAO běží tady     │
 │   │  USA          │ ← L1 peer node                      │
 │   │  Singapore    │ ← L1 peer node                      │
 │   └──────────────┘                                      │
@@ -263,7 +263,7 @@ Všechny 3 nody:  synced na stejném tipu
 │     → Kontrakty existují, ale bridge je PAUSED               │
 │     → Ready to flip — až L1 bude připravená                 │
 │                                                              │
-│  ✅ Nechat bridge relay na Prague běžet na TESTNET           │
+│  ✅ Nechat bridge relay na Edge běžet na TESTNET            │
 │     → Testuje reálný flow, zachytává bugy                   │
 │     → Žádné riziko ztráty peněz                             │
 │                                                              │
@@ -333,8 +333,8 @@ npx hardhat verify --network base <SWAP_ADRESA>
 ### Přepnutí bridge relay na mainnet (AŽ bude L1 ready):
 
 ```bash
-# Na Prague serveru:
-ssh root@91.98.122.165
+# Na Edge serveru:
+ssh root@100.66.162.125
 
 # Změň env proměnnou
 # V .env souboru pro L2:
