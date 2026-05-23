@@ -1,8 +1,8 @@
 'use client';
 
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, useTexture } from '@react-three/drei';
-import { useMemo, useRef } from 'react';
+import { OrbitControls } from '@react-three/drei';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import clsx from 'clsx';
 
@@ -50,20 +50,30 @@ void main() {
 `;
 
 function EarthGlobe() {
-  const [colorMap, bumpMap] = useTexture([
-    '/textures/earth-blue-marble.jpg',
-    '/textures/earth-topology.png',
-  ]);
+  const [maps, setMaps] = useState<{
+    color?: THREE.Texture;
+    bump?: THREE.Texture;
+  }>({});
 
-  if (colorMap) colorMap.colorSpace = THREE.SRGBColorSpace;
+  useEffect(() => {
+    const loader = new THREE.TextureLoader();
+    loader.load('/textures/earth-blue-marble.jpg', (color) => {
+      color.colorSpace = THREE.SRGBColorSpace;
+      loader.load('/textures/earth-topology.png', (bump) => {
+        setMaps({ color, bump });
+      });
+    });
+  }, []);
+
+  if (!maps.color || !maps.bump) return null;
 
   return (
     <group>
       <mesh castShadow={false} receiveShadow={false} rotation={[0, -Math.PI / 2, 0]}>
         <sphereGeometry args={[1, 128, 128]} />
         <meshStandardMaterial
-          map={colorMap}
-          bumpMap={bumpMap}
+          map={maps.color}
+          bumpMap={maps.bump}
           bumpScale={0.045}
           roughness={0.7}
           metalness={0.05}
