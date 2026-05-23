@@ -115,12 +115,10 @@ impl NodeConfig {
             pool_bind: PeerEndpoint::new("0.0.0.0", 8444),
             websocket_bind: PeerEndpoint::new("0.0.0.0", 8445),
             seed_peers: vec![
-                // Primary bootstrap (current fleet entrypoint)
-                PeerEndpoint::new("204.168.245.175", 8333),
-                // Legacy / regional peers (same chain only — trim via ZION_SEED_PEERS if greenfield solo)
-                PeerEndpoint::new("91.98.122.165", 8333),
-                PeerEndpoint::new("5.78.194.94", 8333),
-                PeerEndpoint::new("5.223.84.191", 8333),
+                // Core + Edge topology — Edge public P2P entrypoint
+                PeerEndpoint::new("77.42.71.94", 8333),
+                // Tailscale fallback (private VPN between Core and Edge)
+                PeerEndpoint::new("100.66.162.125", 8333),
             ],
         }
     }
