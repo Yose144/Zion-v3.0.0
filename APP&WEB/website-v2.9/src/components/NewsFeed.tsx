@@ -21,6 +21,66 @@ export interface NewsArticle {
 
 export const NEWS_ARTICLES: NewsArticle[] = [
   {
+    slug: 'v3-mainnet-ready-countdown',
+    date: '2026-05-23',
+    tag: { cs: 'Mainnet', en: 'Mainnet' },
+    tagColor: 'text-amber-400',
+    title: {
+      cs: 'ZION V3.0.0 "Mainnet Ready" — Launch Countdown do 31. 12. 2026',
+      en: 'ZION V3.0.0 "Mainnet Ready" — Launch Countdown to 31 Dec 2026',
+    },
+    summary: {
+      cs: 'Website přešel na countdown mód — mainnet launch se přesunul na Silvestr 2026. Core + Edge topologie je stabilní, pool a miner běží. Dokumentace a roadmapa synchronizována.',
+      en: 'Website switched to countdown mode — mainnet launch moved to New Year\'s Eve 2026. Core + Edge topology is stable, pool and miner running. Docs and roadmap synchronized.',
+    },
+    href: '/network',
+  },
+  {
+    slug: 'l3-hiran-orchestration',
+    date: '2026-05-23',
+    tag: { cs: 'AI', en: 'AI' },
+    tagColor: 'text-purple-400',
+    title: {
+      cs: 'L3 Hiran v2.2 — AI orchestrace, chat a marketplace',
+      en: 'L3 Hiran v2.2 — AI orchestration, chat & marketplace',
+    },
+    summary: {
+      cs: 'Nová stránka /l3-hiran s kompletním přehledem AI vrstvy: deployment GPU, monitoring, RAG pipeline, QLoRA fine-tuning, live chat a AI marketplace s modely a datasety.',
+      en: 'New /l3-hiran page with complete AI layer overview: GPU deployment, monitoring, RAG pipeline, QLoRA fine-tuning, live chat and AI marketplace with models and datasets.',
+    },
+    href: '/l3-hiran',
+  },
+  {
+    slug: 'wiki-section-launch',
+    date: '2026-05-23',
+    tag: { cs: 'Wiki', en: 'Wiki' },
+    tagColor: 'text-emerald-400',
+    title: {
+      cs: 'Wiki sekce — TerraNova, Genesis, Dokumentace na jednom místě',
+      en: 'Wiki section — TerraNova, Genesis, Docs in one place',
+    },
+    summary: {
+      cs: 'Nová /wiki landing page a reorganizace navigace do 3 skupin (Info, Vrstvy, Wiki). Přímý přístup k TerraNova knize, Genesis specifikaci a dokumentaci.',
+      en: 'New /wiki landing page and navigation reorganized into 3 groups (Info, Layers, Wiki). Direct access to TerraNova book, Genesis spec, and documentation.',
+    },
+    href: '/wiki',
+  },
+  {
+    slug: 'l4-oasis-page',
+    date: '2026-05-23',
+    tag: { cs: 'Layers', en: 'Layers' },
+    tagColor: 'text-orange-400',
+    title: {
+      cs: 'L4 Oasis — UE5 metaverse stránka a reorganizace menu',
+      en: 'L4 Oasis — UE5 metaverse page and menu reorganization',
+    },
+    summary: {
+      cs: 'Nová /l4-oasis stránka pro herní vrstvu ZION. Reorganizace navigace do skupin Info, Vrstvy (L2-L6) a Wiki. L5 komunitní karty prolinkované s TerraNova.',
+      en: 'New /l4-oasis page for ZION game layer. Navigation reorganized into Info, Layers (L2-L6), and Wiki groups. L5 community cards linked to TerraNova.',
+    },
+    href: '/l4-oasis',
+  },
+  {
     slug: 'v3-internal-audit-complete',
     date: '2026-05-04',
     tag: { cs: 'Audit', en: 'Audit' },
