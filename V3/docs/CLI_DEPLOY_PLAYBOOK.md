@@ -143,7 +143,7 @@ For now, rollback discipline means:
 
 In practice, that means a bad website change and a bad AI runtime change should not be rolled out together.
 
-## Prague Host Reality
+## Edge Host Reality
 
 The current production host is resource-constrained.
 

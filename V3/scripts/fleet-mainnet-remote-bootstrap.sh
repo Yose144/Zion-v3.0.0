@@ -41,7 +41,7 @@ REPO_LOCAL="$(cd "$V3_LOCAL/.." && pwd)"
 : "${ZION_TEMPLATE_HOST:?Set ZION_TEMPLATE_HOST (Core/Edge ops template, e.g. 100.66.162.125)}"
 : "${ZION_TARGET_HOST:?Set ZION_TARGET_HOST (new mainnet coordinator or follower)}"
 : "${ZION_FLEET_ROLE:=coordinator}"
-: "${ZION_COORD_P2P:=204.168.245.175:8333}"
+: "${ZION_COORD_P2P:=100.66.162.125:8333}"
 : "${ZION_TEMPLATE_REPO:=/root/zion-2.9.6}"
 : "${ZION_REMOTE_V3_PARENT:=/root/zion-v3-fleet}"
 : "${ZION_FETCH_TEMPLATE:=1}"
@@ -156,7 +156,7 @@ for line in text.splitlines():
 
 ex_path.write_text("\n".join(repl_lines) + "\n", encoding="utf-8")
 PY
-  echo "✓ Merge Praha + lokální .env.example (seed + NODE_ID)."
+  echo "✓ Merge šablony + lokální .env.example (seed + NODE_ID)."
 else
   python3 <<PY
 from pathlib import Path

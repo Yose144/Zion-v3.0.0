@@ -24,6 +24,7 @@ use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 use zion_free_world::api::{free_world_router, AppState};
 use zion_free_world::config::FreeWorldConfig;
 use zion_free_world::db::FreeWorldDb;
+use zion_free_world::hiran_bridge::FreeWorldHiranBridge;
 use zion_free_world::l1_scanner::{L1Scanner, ScannerConfig};
 use zion_free_world::metrics::FreeWorldMetrics;
 

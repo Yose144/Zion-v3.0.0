@@ -108,7 +108,7 @@
 | 2026-05-07 | **F3b + F6 CLOSED** — leaked paths removed from all commits | `StatusV3.md` §2 |
 | 2026-05-07 | Bare backup: `2.9.6-backup-20260507-2229.git` | `StatusV3.md` |
 | 2026-05-12 | **Hiran v2.2 CLI integration** — `zion hiran` commands, Docker service, config, monitoring | `StatusV3.md` |
-| 2026-05-12 | **Prague node active** — height 26,910+, RPC, pool, 12 Docker containers | `StatusV3.md` |
+| 2026-05-12 | **Edge node active** — height 26,910+, RPC, pool, 12 Docker containers (Core + Edge topology) | `StatusV3.md` |
 | 2026-05-12 | DeFi ecosystem complete — 72 Next.js static routes, bridge tracker, mempool viewer, network stats, supply dashboard, UTXO view, unified search, TradingView charts, price oracle, staking, DAO, farming, swap aggregator | `StatusV3.md` |
 | 2026-05-12 | zion-wallet-sdk integrated into all 3 frontends | `StatusV3.md` |
 | 2026-05-18 | **Revenue Phases A–E COMPLETE** — on-chain fee payouts, External Pool Proxy, startup replay, bug fixes, audit hardening | `REVENUE_IMPLEMENTATION_PLAN.md` |

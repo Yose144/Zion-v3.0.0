@@ -14,6 +14,8 @@ pub struct FreeWorldConfig {
     pub humanitarian_fund_address: String,
     pub min_grant_amount_zion: u64,
     pub max_grant_amount_zion: u64,
+    pub hiran_endpoint: Option<String>,
+    pub hiran_enabled: bool,
 }
 
 impl Default for FreeWorldConfig {
@@ -29,6 +31,8 @@ impl Default for FreeWorldConfig {
             humanitarian_fund_address: "zion1humanitarian0000000000000000000000".to_string(),
             min_grant_amount_zion: 1_000,
             max_grant_amount_zion: 10_000_000,
+            hiran_endpoint: Some("http://localhost:8002".to_string()),
+            hiran_enabled: false,
         }
     }
 }
@@ -51,6 +55,12 @@ impl FreeWorldConfig {
         }
         if let Ok(key) = std::env::var("FREE_WORLD_API_KEY") {
             cfg.api_key = key;
+        }
+        if let Ok(url) = std::env::var("FREE_WORLD_HIRAN_URL") {
+            cfg.hiran_endpoint = Some(url);
+        }
+        if let Ok(enabled) = std::env::var("FREE_WORLD_HIRAN_ENABLED") {
+            cfg.hiran_enabled = enabled.eq_ignore_ascii_case("true");
         }
 
         if let Some(p) = path {

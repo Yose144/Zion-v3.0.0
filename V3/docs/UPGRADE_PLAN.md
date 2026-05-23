@@ -9,7 +9,7 @@
 ## Přehled stavu
 
 V3 mainnet kódová základna je **funkčně kompletní** pro consensus, node, pool a miner.
-Canary stack na Hetzner (91.98.122.165) běží, 5/5 accepted shares potvrzeno, revenue routing operační.
+Canary stack na Hetzner Edge (Core + Edge topology) běží, 5/5 accepted shares potvrzeno, revenue routing operační.
 
 **Co máme:**
 - Ekam Deeksha PoW — kanonický, otestovaný, stabilní
@@ -289,7 +289,7 @@ Scope: po stabilizaci core L1 runtime
 
 | Region | Provider | Role |
 |--------|----------|------|
-| EU-Prague | Hetzner | Primary seed + pool |
+| EU-Edge | Hetzner | Primary seed + pool |
 | EU-Frankfurt | Hetzner | Seed + backup pool |
 | US-East | -- | Seed node |
 | US-West | -- | Seed node |
@@ -407,7 +407,7 @@ Scope: po stabilizaci core L1 runtime
 ═══ Sprint 5 (pre-launch) ═══  ✅ HOTOVO
   F1: Full security checklist completion  ✅ (SECURITY_CHECKLIST.md — cargo audit clean, panic audit, input validation review, rate limit, crypto safety)
   B4: Pool test coverage target  ✅ (38 → 73 pool tests: wire protocol edge cases, hex parsing, share lifecycle, revenue routing, session groups, Prometheus output)
-  E4: Seed node deployment  ⏳ (existing EU seeds at 91.98.122.165 + 46.225.126.243; multi-region expansion deferred to infra phase)
+  E4: Seed node deployment  ⏳ (Core + Edge topology: 100.66.162.125 + 77.42.71.94; multi-region expansion deferred to infra phase)
   G1-G3: Public documentation and guides  ✅ (MINING_GUIDE.md, NODE_OPERATOR_GUIDE.md published)
 
 ═══ Sprint 6 (hardening) ═══
