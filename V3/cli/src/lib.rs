@@ -7,9 +7,11 @@ pub mod ui;
 use clap::{Parser, Subcommand};
 use clap_complete::Shell;
 use commands::{
-    agent, bridge, compose, dao, deploy, free_world, hiran,
+    agent, bridge, compose, dao, free_world, hiran,
     issobella, mine, ncl, node, pool, topology, wallet, warp,
 };
+#[cfg(feature = "admin")]
+use commands::deploy;
 
 #[derive(Parser)]
 #[command(
@@ -46,29 +48,39 @@ pub enum Commands {
     /// First-time setup wizard
     Onboard,
     /// Start service(s): all | node | pool | miner | agent | ai-native | bridge | dao | website | redis | monitoring
+    #[cfg(feature = "admin")]
     Start {
         #[arg(default_value = "all")]
         service: String,
     },
     /// Stop service(s): all | node | pool | miner | agent | ai-native | bridge | dao | website | redis | monitoring
+    #[cfg(feature = "admin")]
     Stop {
         #[arg(default_value = "all")]
         service: String,
     },
     /// Restart service(s): all | node | pool | miner | agent | ai-native | bridge | dao | website | redis | monitoring
+    #[cfg(feature = "admin")]
     Restart {
         #[arg(default_value = "all")]
         service: String,
+    },
+    /// Tail logs for a service
+    #[cfg(feature = "admin")]
+    Logs {
+        #[arg(default_value = "node")]
+        service: String,
+    },
+    /// Server deployment
+    #[cfg(feature = "admin")]
+    Deploy {
+        #[command(subcommand)]
+        cmd: deploy::DeployCmd,
     },
     /// Health check — all layers
     Status,
     /// Run preflight diagnostics for config, local tools, and endpoints
     Doctor,
-    /// Tail logs for a service
-    Logs {
-        #[arg(default_value = "node")]
-        service: String,
-    },
     /// Open web dashboard in browser
     Dashboard,
 
@@ -107,11 +119,6 @@ pub enum Commands {
     Hiran {
         #[command(subcommand)]
         cmd: hiran::HiranCmd,
-    },
-    /// Server deployment
-    Deploy {
-        #[command(subcommand)]
-        cmd: deploy::DeployCmd,
     },
     /// Config management
     Config {
