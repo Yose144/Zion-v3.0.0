@@ -142,6 +142,48 @@ zion hiran deploy --model --platform             # Deployment
 
 ---
 
+## Co je nového 2026-05-23 (AI Layer — Hiranyagarbha + Hiran Inference)
+
+### AI Layer — Kompletní integrace do dashboardu, webu a desktop agenta
+
+| Komponenta | Stav | Detail |
+|---|---|---|
+| **Hiran v2.2 GGUF** | ✅ Hotovo | Q4_K_M (4.6 GB) + F16 (15 GB) v `HiranV2.2/models/hiran-v2.2-merged/` |
+| **llama-server.exe** | ✅ Hotovo | build b4524 (AVX2) v `llama.cpp-bin/`, spouští GGUF nativně bez Pythonu |
+| **Hiranyagarbha API** | ✅ Hotovo | Port 8001 — Rust/Axum orchestrator: `/agents`, `/tasks/dispatch`, `/orchestrator/status`, `/health` |
+| **Hiran Inference** | ✅ Hotovo | Port 8002 — llama-server.exe (preferred) nebo serve.py s auto-detekcí backendu |
+| **Dashboard start/stop** | ✅ Hotovo | `SERVICE_REGISTRY`: `hiranyagarbha` + `ai-native`, `_ALLOW_BASE`: start + restart akce |
+| **Dashboard log panely** | ✅ Hotovo | `GET /api/service-log?id=<svc>` — tail pro `hiranyagarbha.log` + `hiran-inference.log` |
+| **Dashboard health proxy** | ✅ Hotovo | `GET /api/hiranyagarbha/health` (port 8001) + `/api/hiran/health` (port 8002) |
+| **Website /api/ai-chat** | ✅ Hotovo | Cascade: port 8002 → LM Studio (1234) → Ollama (11434) |
+| **Desktop Agent AI tab** | ✅ Hotovo | Status panel s BACKEND/Uptime metrikami, ▶ Start Hiran Inference tlačítko |
+| **GPU offload (Vulkan)** | ✅ Hotovo | `$env:HIRAN_GPU_LAYERS = "20"` pro AMD RX 5600 XT |
+
+**Start skripty:**
+```powershell
+scripts\start-hiranyagarbha.ps1      # Port 8001 — Rust orchestrator
+scripts\start-hiran-inference.ps1    # Port 8002 — llama-server.exe / LM Studio / Ollama / serve.py
+```
+
+**Architektura:**
+```
+Dashboard (8766)
+  ├── Hiranyagarbha (8001) — agent lifecycle, task dispatch, RAG, consciousness
+  └── Hiran Inference (8002) — OpenAI-compatible LLM serving (llama-server.exe)
+
+Website (/api/ai-chat)     →  cascade 8002 → 1234 → 11434
+Desktop Agent (Hiran AI)   →  localhost:8002
+```
+
+**Soubory:**
+- `scripts/start-hiranyagarbha.ps1` — Hiranyagarbha start skript
+- `scripts/start-hiran-inference.ps1` — Inference start s auto-detekcí backendu
+- `V3/L3/ai-native/src/bin/zion-ai-native-api.rs` — Hiranyagarbha HTTP API
+- `HiranV2.2/inference/serve.py` — Python inference server (llamaserver:/lmstudio:/ollama:/.gguf)
+- `HIRAN_LOCAL_SETUP.md` — Kompletní lokální setup guide
+
+---
+
 ## Co je nového 2026-05-22 (Genesis + Fee Split KONFIGURACE DOKONČENA)
 
 ### Mainnet Ready - Genesis a Fee Split Konfigurace
