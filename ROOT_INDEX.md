@@ -1,4 +1,4 @@
-# ZION TerraNova v2.9.6 — Root Repository Index
+# ZION TerraNova v3.0.0 — Root Repository Index
 
 > **Complete map of the `2.9.6-main` monorepo.**
 >
@@ -27,10 +27,14 @@
 2.9.6-main/
 ├── AGENTS.md                          ← Agent operating rules (Devin, WARP, Copilot)
 ├── Cargo.toml                         ← Rust workspace manifest
+├── Genesis.md                         ← Genesis block art + hash
 ├── LICENSE                            ← MIT License
+├── MAINNET_LAUNCH_SEQUENCE.md         ← Current mainnet launch plan
+├── PREMINE_ADDRESSES_PUBLIC.txt       ← Genesis premine addresses
 ├── README.md                          ← Main project README
-├── StatusV3.md                        ← Current V3 status + blockers
 ├── ROOT_INDEX.md                      ← You are here
+├── StatusV3.md                        ← Current V3 status + blockers
+├── zion.toml                          ← ZION node configuration
 │
 ├── V3/                                ← [ACTIVE] Clean-room mainnet code
 │   ├── L1/ core, pool, miner          ← Blockchain consensus, mining, PPLNS
@@ -48,7 +52,13 @@
 │   ├── mobile-app/                    ← React Native mobile app
 │   └── website-v2.9/                  ← Next.js marketing + explorer website
 │
-├── docs/                              ← Project documentation
+├── archive/                           ← Legacy archive (v2.9.x era)
+│   └── 2.9.9/
+│       ├── legacy-code/               ← Pre-V3 L1-L6 code
+│       ├── docs/                      ← Historical documentation
+│       └── ops/                       ← Runtime data, monitoring, tests
+│
+├── docs/                              ← Active project documentation
 │   ├── TerraNova/                     ← Literary + operational docs
 │   │   ├── KNIHA-LEHUA/               ← Hawaii/Pacific lineage texts
 │   │   ├── maya/                      ← Mayan literary branch (KNIHA-HUNABKU)
@@ -69,33 +79,22 @@
 │   ├── scripts/                       ← Training + benchmark scripts
 │   └── rag/                           ← Hybrid RAG (ChromaDB + vector search)
 │
-├── L1/                                ← [LEGACY] Pre-V3 blockchain code
-├── L2/                                ← [LEGACY] Pre-V3 DAO / bridge code
-├── L3/                                ← [LEGACY] Pre-V3 warp code
-├── L4/                                ← [LEGACY] Pre-V3 OASIS code
-├── L5/                                ← [LEGACY] Vision docs only (README)
-├── L6/                                ← [LEGACY] Vision docs only (README)
-│
 ├── legal/                             ← Legal documents
 ├── config/                            ← Runtime configuration files
-├── docker/                            ← Root-level Docker configs
 ├── dashboard/                         ← Python monitoring dashboard (app.py)
-├── monitoring/                        ← Prometheus/Grafana configs
-├── data/                              ← Runtime data (databases, caches)
-├── logs/                              ← Log files
+├── docker/                            ← Root-level Docker configs
+├── edge-deploy/                       ← Edge server deployment package
+├── logs/                              ← Log files (runtime)
+├── opencl_sdk/                        ← GPU mining OpenCL SDK
+├── ops/                               ← Operations runbooks
 ├── run/                               ← Runtime state
-├── backups/                           ← Backup archives
-│
 ├── scripts/                           ← Deployment + operations scripts
 │   ├── deploy-*.sh                    ← Deployment scripts
 │   ├── autopilot-2.9.8.sh            ← Validation + deploy pipeline
 │   ├── launch-stack.ps1              ← Windows launch script
 │   └── [various]                      ← Helper scripts
 │
-├── tests/                             ← Integration + e2e tests
-├── tools/                             ← Developer tools
-├── opencl_sdk/                        ← GPU mining OpenCL SDK
-├── ops/                               ← Operations runbooks
+├── ZionOS/                            ← ZionOS operating system
 │
 └── [Root files]                       ← See "Root Files" section below
 ```
@@ -111,61 +110,30 @@
 | `README.md` | Main project introduction, architecture, emission schedule |
 | `AGENTS.md` | Operating guidance for Devin, WARP, Copilot, future AI agents |
 | `StatusV3.md` | Current V3 status, launch blockers, audit results |
-| `StatusV3-Part2.md` | Independent audit + 2026-05-07 cleanup notes |
+| `Genesis.md` | Genesis block art + hash |
 | `Cargo.toml` | Root Rust workspace manifest |
+| `zion.toml` | ZION node configuration |
 | `LICENSE` | MIT License |
 
-### Roadmaps & Plans
+### Launch & Mainnet
 
 | File | Purpose |
 |------|---------|
-| `ROADMAP.md` | Historical multi-layer roadmap |
-| `DEFI_ROADMAP.md` | DeFi + Explorer deployment roadmap |
-| `HIRANYAGARBHA_UPGRADE_PLAN.md` | Hiran AI model upgrade plan |
-| `HIRAN_V2.2_CLI_INTEGRATION.md` | Hiran v2.2 CLI integration spec |
-| `HIRAN_V2.2_COMPLETION_PLAN.md` | Hiran v2.2 completion checklist |
-| `planHv2.2train.md` | Hiran v2.2 training plan |
-| `planTestingMainetDocker.md` | Mainnet Docker testing plan |
-| `NCL_INTEGRATION.md` | NCL (Neural Conscious Layer) gateway integration |
-| `REVENUE_IMPLEMENTATION_PLAN.md` | Revenue system implementation |
-| `REVENUE_DEEP_ANALYSIS.md` | Revenue model deep dive |
-| `REVENUE_SYSTEM_ROBUST.md` | Revenue system robustness analysis |
-| `revenue.md` | Revenue summary |
-
-### Launch & Status Files
-
-| File | Purpose |
-|------|---------|
-| `MainnetLaunch.md` | Mainnet launch checklist |
-| `MAINNETREADYrun.md` | Mainnet ready-to-run guide |
-| `MAINNETSTATUSW11.md` | Windows 11 mainnet status |
-| `reportv3.md` | V3 status report |
-
-### Addresses & Registry
-
-| File | Purpose |
-|------|---------|
+| `MAINNET_LAUNCH_SEQUENCE.md` | Current mainnet launch plan |
 | `PREMINE_ADDRESSES_PUBLIC.txt` | Genesis premine addresses (public) |
-| `Oasis.md` | OASIS system documentation |
-| `FORSITA.md` | FORSITA documentation |
-| `analzak2.6.md` | Analysis document |
 
-### Guides
+### Archived Files (v2.9.x era)
 
-| File | Purpose |
-|------|---------|
-| `DUALBOOT_GUIDE.md` | Dual-boot setup guide |
-| `install.sh` | Installation script |
-| `find_nonce.py` | Nonce finding utility |
-| `patch_edition_selector.js` | Edition selector patch |
-
-### Log Files (runtime)
-
-| File | Purpose |
-|------|---------|
-| `node_test7.log` | Node test log |
-| `pool_test7.log` | Pool test log |
-| `nul` | Empty/null file (Windows artifact) |
+Historical docs, roadmaps, and analysis moved to [`archive/2.9.9/docs/`](archive/2.9.9/docs/):
+- `FORSITA.md`, `STATUS.md`, `StatusV3-Part2.md`
+- `ROADMAP.md`, `DEFI_ROADMAP.md`
+- `LAUNCH_PLAN_20_6_2026.md`, `MainnetLaunch.md`, `MAINNETREADYrun.md`, `MAINNETSTATUSW11.md`
+- `revenue.md`, `REVENUE_*.md`
+- `Oasis.md`, `zion.md`, `ZION-CLI.md`
+- `NCL_INTEGRATION.md`, `DUALBOOT_GUIDE.md`, `WINDOWS11_DOCKER_STACK.md`
+- `HIRAN_V2.2_*.md`, `planHv2.2train.md`
+- `analzak2.6.md`, `reportv3.md`, `webupdate.md`
+- Test reports: `test-results-V3-mainnet-e2e-*.md`
 
 ---
 
@@ -179,7 +147,7 @@
 | `V3/L1/pool/` | 🟢 Active | Stratum pool server, PPLNS, share validation |
 | `V3/L1/miner/` | 🟢 Active | CPU/GPU miner, OpenCL/CUDA backends |
 | `V3/L1/cosmic-harmony/` | 🟢 Active | Revenue distribution (89/5/5/1 split) |
-| `L1/` | 🟡 Legacy | Pre-V3 reference code |
+| `archive/2.9.9/legacy-code/L1/` | 🟡 Legacy | Pre-V3 reference code |
 
 ### L2 — Governance & Bridge
 
@@ -188,21 +156,21 @@
 | `V3/L2/dao/` | 🟢 Active | Proposal engine, voting, treasury, multi-layer Co-Admin governance, consent engine, cross-layer vetoes |
 | `V3/L2/bridge/` | 🟢 Active | EVM bridge relay, L1 watcher |
 | `V3/L2/atomic-swap/` | 🟢 Active | HTLC swap daemon |
-| `L2/` | 🟡 Legacy | Pre-V3 reference code |
+| `archive/2.9.9/legacy-code/L2/` | 🟡 Legacy | Pre-V3 reference code |
 
 ### L3 — WARP (Cross-Chain)
 
 | Path | Status | Description |
 |------|--------|-------------|
 | `V3/L3/warp/` | 🟢 Active | Cross-chain relay, Axum API |
-| `L3/` | 🟡 Legacy | Pre-V3 reference code |
+| `archive/2.9.9/legacy-code/L3/` | 🟡 Legacy | Pre-V3 reference code |
 
 ### L4 — OASIS (Digital Realm)
 
 | Path | Status | Description |
 |------|--------|-------------|
-| `V3/L4/oasis/` | 🔵 Planned | Avatar system, quests, reputation |
-| `L4/` | 🟡 Legacy | Pre-V3 reference code |
+| `V3/L4/oasis/` | 🟢 Active | Avatar system, quests, reputation, REST API |
+| `archive/2.9.9/legacy-code/L4/` | 🟡 Legacy | Pre-V3 reference code |
 
 ### L5 — Terra Nova (Physical Communities)
 
@@ -210,7 +178,7 @@
 |------|--------|-------------|
 | `V3/L5/free-world/` | 🟢 Active | `zion-free-world` daemon — humanitarian grants, projects, L1 scanner, DAO client |
 | `V3/L5/docs/` | 🟢 Active | **Community documentation** (see below) |
-| `L5/` | 🟡 Legacy | Vision README only |
+| `archive/2.9.9/legacy-code/L5/` | 🟡 Legacy | Vision README only |
 | `docs/TerraNova/Projects/` | 🟡 Active | Project sheets (Portugal, La Palma, Polynesia) |
 
 **`V3/L5/docs/` detail:**
@@ -248,7 +216,7 @@
 |------|--------|-------------|
 | `V3/L6/issobella/` | 🟢 Active | `zion-issobella` daemon — space missions, research proposals, L1 scanner, DAO client |
 | `V3/L6/issobella/docs/` | 🟢 Active | **Station documentation** (see below) |
-| `L6/` | 🟡 Legacy | Vision README only |
+| `archive/2.9.9/legacy-code/L6/` | 🟡 Legacy | Vision README only |
 
 **`V3/L6/issobella/docs/` detail:**
 - `README.md` — L6 overview, links, constants
@@ -326,12 +294,12 @@
 
 When docs disagree, use this order of truth:
 
-1. `StatusV3.md` / `StatusV3-Part2.md` — current operational truth
+1. `StatusV3.md` — current operational truth
 2. `V3/README.md` / `V3/ROADMAP.md` — V3 planning
 3. `V3/docs/**` — V3 detailed docs
 4. `ROOT_INDEX.md` — this file (structural map)
 5. `README.md` (root) — project overview
-6. `docs/2.9.9/archive/` — legacy archive
+6. `archive/2.9.9/docs/` — v2.9.x legacy archive (historical reference)
 
 ---
 
@@ -344,6 +312,6 @@ When docs disagree, use this order of truth:
 
 ---
 
-*Last updated: 2026-05-21*
-*Major updates: L5/L6 daemon crates + docs, DAO multi-layer governance, Dev Team docs, Network topology, Dashboard L5/L6, **TerraNova Chapter 12 (Vlna Te Piti + Rapa Nui)** + Rapa Nui cultural lineage*
+*Last updated: 2026-05-23*
+*Major updates: Root directory cleanup — legacy L1-L6, docs, monitoring, tests moved to `archive/2.9.9/`; Genesis.md moved to root; v3.0.0 Mainnet Ready structure*
 *Repository: `Yose144/2.9.6` · Branch: `main`*
