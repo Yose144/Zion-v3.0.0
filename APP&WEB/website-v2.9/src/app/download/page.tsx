@@ -84,10 +84,11 @@ export default function DownloadPage() {
               </h1>
             </div>
             <p className="text-lg text-gray-300">
-              {cs ? `ZION CLI bootstrap bundle pro verejnou rehearsal linii ${SITE_VERSION} — ` : `ZION CLI bootstrap bundle for the public rehearsal line ${SITE_VERSION} — `}<span className="text-white font-semibold">CLI</span>,{' '}
+              {cs ? `ZION CLI v3.0.0 — oficiální release s Core+Edge topologií, Hiran v2.2 a E2E testy.` : `ZION CLI v3.0.0 — official release with Core+Edge topology, Hiran v2.2, and E2E tests.`}{' '}
+              <span className="text-white font-semibold">CLI</span>,{' '}
               <span className="text-zion-gold font-semibold">Miner</span>,{' '}
               <span className="text-zion-cyan font-semibold">Wallet</span> {cs ? 'a' : '&'}{' '}
-              <span className="text-zion-purple font-semibold">Node</span>{cs ? ' — pro Windows, Linux a macOS. Predkompilovane nativni Rust binarky. Aktualni download artefakty jsou stale hostovane pod release tagem v2.9.6, ale zustavaji kompatibilni s verejnou linii v2.9.9 Pure Code nad kanonickou runtime cestou v2.9.8.' : ' — for Windows, Linux & macOS. Pre-compiled native Rust binaries. Current download artifacts are still hosted under the v2.9.6 release tag, but remain compatible with the public v2.9.9 Pure Code line on top of the canonical v2.9.8 runtime path.'}
+              <span className="text-zion-purple font-semibold">Node</span>{cs ? ' — nativní Rust binárky pro Windows, Linux a macOS. Stáhněte si Windows build přímo níže, další platformy brzy.' : ' — native Rust binaries for Windows, Linux & macOS. Download the Windows build directly below, more platforms coming soon.'}
             </p>
             <div className="flex flex-wrap gap-3">
               <Link
