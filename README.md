@@ -161,7 +161,9 @@ Miner (GPU)               Public P2P: 8333
 ```
 
 - **Core**: Local node + pool + GPU mining
-- **Edge**: Public-facing relay (Prague) — accepts miner connections, relays shares to Core
+- **Edge**: Public-facing relay (Hetzner VPS) — accepts miner connections, relays shares to Core
+
+> **Archive notice:** Any document or script referencing the old Prague server (`91.98.122.165`) or multi-server topology (Prague, SG, Helsinki, US) is historical. Current live topology is **Core + Edge only**.
 
 ---
 

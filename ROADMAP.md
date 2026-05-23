@@ -48,7 +48,7 @@
 | Feature | Status |
 |---------|--------|
 | Core node (Windows 11) | ✅ Running |
-| Edge node (Hetzner VPS, Prague) | ✅ Running |
+| Edge node (Hetzner VPS) | ✅ Running |
 | Tailscale VPN tunnel (Core ↔ Edge) | ✅ Active |
 | Edge pool relay (public 77.42.71.94:8444) | ✅ Active |
 | Docker Compose (mainnet + monitoring profiles) | ✅ Ready |
