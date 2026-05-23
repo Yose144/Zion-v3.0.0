@@ -14,18 +14,18 @@ export default function HeroSection() {
       <TahitiFlower
         className="mb-1"
         expanded={expanded}
-        onToggle={() => setExpanded((e) => !e)}
+        onToggle={() => setExpanded((v) => !v)}
       />
 
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {expanded && (
           <motion.div
             key="hero-panel"
-            initial={{ opacity: 0, height: 0, y: -10 }}
-            animate={{ opacity: 1, height: 'auto', y: 0 }}
-            exit={{ opacity: 0, height: 0, y: -10 }}
-            transition={{ duration: 0.7, ease: 'easeInOut' }}
-            className="w-full overflow-hidden"
+            initial={{ opacity: 0, scale: 0.92, y: -16 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.92, y: -16 }}
+            transition={{ duration: 0.6, ease: 'easeOut' }}
+            className="w-full"
           >
             <div className="flex flex-col items-center gap-5 pt-5 pb-2">
               <VisionBar />

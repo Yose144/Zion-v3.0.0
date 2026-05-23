@@ -36,14 +36,17 @@ export default function TahitiFlower({
 
   return (
     <motion.div
-      className={`flex flex-col items-center select-none ${className}`}
+      className={`flex flex-col items-center select-none cursor-pointer ${className}`}
       aria-hidden
       initial={{ opacity: 0, y: -16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 1, ease: 'easeOut', delay: 0.6 }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      onClick={onToggle}
+      onClick={(e) => {
+        e.stopPropagation();
+        onToggle?.();
+      }}
     >
       {/* flower */}
       <motion.div
@@ -102,7 +105,7 @@ export default function TahitiFlower({
         className="mt-2 flex flex-col items-center"
       >
         <span className="font-mono text-sm font-light uppercase tracking-[0.42em] text-cyan-200/65">
-          Maeva
+          Aloha
         </span>
         <span className="mt-0.5 text-[9px] text-gray-500 tracking-wider">
           {expanded ? 'Klikni pro zavreni' : 'Klikni pro otevreni portalu'}
