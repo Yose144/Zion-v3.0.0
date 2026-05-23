@@ -135,9 +135,9 @@ ZION mainnet runs the single-track Deeksha canonical PoW path (`cosmic_harmony`)
 - Pool: local `127.0.0.1:8444` (master) + Edge relay `100.66.162.125:8444`
 
 **Remote pool-mining servers:**
-- **Prague** (91.98.122.165) — ~470 H/s
-- **USA** (5.78.194.94) — ~168 H/s
-- **Singapore** (5.223.84.191)
+- **Edge** (77.42.71.94) — Hetzner VPS, pool relay + public P2P
+
+> ✅ Core + Edge topologie: Core PC (lokální, source of truth) + Edge VPS (Hetzner, public relay). Všechny starší servery (Praha, USA, Singapore, Helsinki) byly vyřazeny.
 
 Desktop-agent Ekam Deeksha native GPU path is verified on Apple Silicon Metal (~5575.5 H/s benchmark).
 
@@ -147,9 +147,8 @@ Desktop-agent Ekam Deeksha native GPU path is verified on Apple Silicon Metal (~
 
 | Node | Location | IP / Tailscale | Role |
 |------|----------|----------------|------|
-| Core (Windows 11) | Local | 100.86.102.5 | Node1 + Pool Master + GPU Miner + Dashboard |
-| Edge | Hetzner EU | 100.66.162.125 | Node + Pool Relay + Public P2P |
-| Praha (legacy) | Hetzner EU | 91.98.122.165 | Reference node (height 26,910) |
+| Core (Windows 11) | Local | 100.86.102.5 | Node1 + Node2 + Pool Master + GPU Miner + Dashboard + Zálohy |
+| Edge | Hetzner EU | 100.66.162.125 | Node (relay) + Pool (relay) + Public P2P |
 
 **Ports:**
 - P2P: `8333` (node1), `8334` (node2)
@@ -254,7 +253,7 @@ cargo run --release --manifest-path V3/Cargo.toml -p zion-core --bin wallet
 
 ### Live ✅
 
-- [x] V3 clean-room mainnet running on Prague node (height 26,910+)
+- [x] V3 clean-room mainnet running on Core + Edge topology
 - [x] CHv3 PoW consensus — single Deeksha canonical path (TX_HASH_V2 + BODY_ROOT_V2 from genesis)
 - [x] Mining pool with PPLNS, fee-split (89/5/5/1), LWMA DAA
 - [x] Decade Decay emission — `reward.rs` implementation
