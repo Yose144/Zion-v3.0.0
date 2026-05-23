@@ -66,6 +66,7 @@ export default function Navigation() {
         },
         { href: '/l5-free-world', label: 'L5 Free World' },
         { href: '/l6-issobella', label: 'L6 Issobella' },
+        { href: '/resonance', label: tr('nav', 'resonance', lang) },
         { href: '/bridge', label: tr('nav', 'bridge', lang) },
         { href: '/api-reference', label: tr('nav', 'api', lang) },
         { href: '/ai-native', label: tr('nav', 'ai_native', lang) },
