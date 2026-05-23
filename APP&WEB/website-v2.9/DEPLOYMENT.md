@@ -1,4 +1,4 @@
-# ZION Web v2.9.9 - Deployment Guide
+# ZION Web v3.0.0 — Deployment Guide
 
 > Last verified production deploy: 20. dubna 2026
 
@@ -207,6 +207,6 @@ fetch('https://zionterranova.com/api/health')
 
 ---
 
-**Version:** v2.9.9  
+**Version:** v3.0.0  
 **Build Date:** 20. dubna 2026  
 **Status:** ✅ Deployed and verified on Edge
