@@ -88,7 +88,7 @@ zion hiran deploy --model --platform             # Deployment
 | **Core backup** | ✅ Hotovo | `scripts/backup-core.ps1` — timestamped zip do `C:\ZION-Backups\` (data, env, SSH pub key, git state) |
 | **Edge snapshot** | ✅ Hotovo | Hetzner snapshot ID `631712387075142` — kompletní VPS image pro disaster recovery |
 | **Failover test** | ✅ Hotovo | Edge zastaven → Core miner pokračoval (height 493, žádný gap) → Edge restart úspěšný |
-| **Monitoring** | 🟡 Částečně | Prometheus + Grafana běží; node/pool-specific dashboardy potřeba dodělat |
+| **Monitoring** | ✅ Hotovo | Prometheus + Grafana běží; pool dashboard (`zion-pool-overview`) + node dashboard (`zion-node-overview`) + Hiran inference dashboard |
 | **Alerting** | 🟡 Částečně | 8 alert rules (Prometheus) + Alertmanager konfigurace s webhook receiverem + šablony Discord/Slack/Email. Notifikační kanál potřeba aktivovat ručně (webhook URL). |
 | **Tailscale ACL** | 🔄 Probíhá | Ruční konfigurace v Tailscale admin UI — omezit traffic na `tag:zion` uzly |
 
@@ -176,6 +176,25 @@ zion hiran deploy --model --platform             # Deployment
 **Soubory:**
 - `V3/docker/alertmanager/alertmanager.yml` — hlavní konfigurace
 - `scripts/alertmanager-webhook-receiver.py` — lokální webhook pro testování
+
+### Monitoring Stack — Grafana Dashboards
+
+| Dashboard | Popis | Soubor |
+|---|---|---|
+| **ZION V3 Pool Overview** | Pool metriky: active sessions, uptime, shares, PPLNS, revenue distribution, host CPU/memory/disk | `V3/docker/grafana/dashboards/zion-pool-overview.json` |
+| **ZION V3 Node Overview** | Node metriky: chain height, peers, mempool, difficulty, sync lag, IBD progress, hashrate, uptime, bytes | `V3/docker/grafana/dashboards/zion-node-overview.json` |
+| **Hiran Inference Overview** | AI inference: latency, GPU util, request rate, token throughput | `V3/docker/grafana/dashboards/hiran-inference-overview.json` |
+
+**Grafana provisioning:**
+- Datasource: Prometheus na `http://prometheus:9090`
+- Dashboardy se načtou automaticky z `/var/lib/grafana/dashboards` při startu containeru
+- Přístup: `http://<host>:3000` (admin / admin při prvním spuštění — změnit!)
+
+**Prometheus scrape targets:**
+- `zion-core-node1` / `zion-core-node2` — node metrics endpoint (text exposition)
+- `zion-pool` — pool metrics
+- `zion-node-exporter` — host OS metrics
+- `zion-hiran-inference` — AI inference metrics
 
 ---
 
