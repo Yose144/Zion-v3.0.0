@@ -1,4 +1,4 @@
-// ZION V3 Mainnet Ready v2.9.9 - Renderer Process
+// ZION V3 Mainnet Ready v3.0.0 - Renderer Process
 // UI logic and state management
 
 // ── Logging: only user-visible events + errors in console.log.
@@ -1476,7 +1476,7 @@ function setupEventListeners() {
     addLogEntry('Mining started successfully', 'info');
     // Mining Console banner
     appendMiningConsole('─'.repeat(60));
-    appendMiningConsole(' * ZION V3 Mainnet Ready v2.9.9 — Mining started');
+    appendMiningConsole(' * ZION V3 Mainnet Ready v3.0.0 — Mining started');
     appendMiningConsole('─'.repeat(60));
   });
   
@@ -2541,6 +2541,44 @@ async function loadWalletsList() {
   `}).join('');
 
   container.innerHTML = html;
+
+  // ── Payouts tab: refresh button ──
+  const refreshPayoutsBtn = document.getElementById('refresh-payouts-btn');
+  const payoutListEl = document.getElementById('payout-history-list');
+  if (refreshPayoutsBtn) {
+    refreshPayoutsBtn.addEventListener('click', async () => {
+      if (payoutListEl) payoutListEl.textContent = 'Loading…';
+      try {
+        const rpcUrl = getRpcUrl();
+        const info = await window.electronAPI.walletGetBalance?.({ rpcUrl, address: getActiveAddress() });
+        const txs = info?.transactions || [];
+        const payouts = txs.filter(tx => tx.purpose === 'payout' || tx.purpose === 'pool_payout' || (tx.inputs && tx.inputs.length === 1 && tx.inputs[0].coinbase));
+        if (!payouts.length) {
+          if (payoutListEl) payoutListEl.innerHTML = '<div style="text-align:center;padding:20px;color:rgba(255,255,255,0.35)">No payouts recorded yet.<br><span style="font-size:11px">Payouts appear here when the pool finds a block.</span></div>';
+          return;
+        }
+        const htmlRows = payouts.slice(0, 20).map(tx => {
+          const h = tx.height || '—';
+          const amt = tx.total_output ? (Number(tx.total_output) / 1e9).toFixed(4) : '—';
+          const t = tx.time ? new Date(tx.time * 1000).toLocaleString() : '—';
+          const id = tx.txid ? escapeHtml(tx.txid.slice(0, 24) + '…') : '—';
+          return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:rgba(255,255,255,0.03);border-radius:10px;border:1px solid rgba(255,255,255,0.05);margin-bottom:6px">
+            <div>
+              <div style="font-size:11px;color:var(--zion-cyan);font-weight:600">Block #${h}</div>
+              <div style="font-size:10px;color:rgba(255,255,255,0.35);margin-top:2px">${id}</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:13px;color:var(--zion-gold);font-weight:700">+${amt} ZION</div>
+              <div style="font-size:10px;color:rgba(255,255,255,0.35)">${t}</div>
+            </div>
+          </div>`;
+        }).join('');
+        if (payoutListEl) payoutListEl.innerHTML = htmlRows;
+      } catch (e) {
+        if (payoutListEl) payoutListEl.textContent = 'Error loading payouts: ' + (e?.message || String(e));
+      }
+    });
+  }
 }
 
 // Global functions for wallet actions
@@ -3469,6 +3507,28 @@ async function _nodeRefresh() {
       // Peers list
       if (r.peers?.known) _nodeRenderPeers(r.peers.known);
 
+      // Pool / Network metrics (from local pool API + RPC)
+      try {
+        if (typeof window.electronAPI.getNetworkMetrics === 'function') {
+          const net = await window.electronAPI.getNetworkMetrics();
+          if (net?.success) {
+            const summ = net.summary || {};
+            const phEl = document.getElementById('node-pool-hashrate');
+            const pmEl = document.getElementById('node-pool-miners');
+            const sgEl = document.getElementById('node-sync-gap');
+            const pbEl = document.getElementById('node-pool-blocks');
+            if (phEl) phEl.textContent = summ.totalHashrate > 0 ? `${(summ.totalHashrate / 1e6).toFixed(2)} MH/s` : '—';
+            if (pmEl) pmEl.textContent = summ.totalMiners ?? '—';
+            if (sgEl) {
+              const gap = (summ.maxHeight && summ.minHeight) ? (summ.maxHeight - summ.minHeight) : 0;
+              sgEl.textContent = gap > 0 ? `${gap} blocks` : '0';
+              sgEl.style.color = gap > 5 ? '#f87171' : (gap > 2 ? '#fbbf24' : '#6ee7b7');
+            }
+            if (pbEl) pbEl.textContent = summ.totalBlocks ?? '—';
+          }
+        }
+      } catch (e) { dbg('[NODE] Network metrics error:', e.message); }
+
     } else if (!r.running) {
       if (!_nodeRunning) {
         _nodeSetStatus(false, 'Offline');
@@ -3695,3 +3755,87 @@ function initDefiView() {
     void refreshDefiData();
   }, 30000);
 }
+
+// ═════════════════════════════════════════════════════════════════════════════
+// HIRAN AI CHAT VIEW
+// ═════════════════════════════════════════════════════════════════════════════
+
+function initAiView() {
+  const sendBtn = document.getElementById('ai-chat-send');
+  const input = document.getElementById('ai-chat-input');
+  const history = document.getElementById('ai-chat-history');
+  const status = document.getElementById('ai-chat-status');
+  const testBtn = document.getElementById('ai-test-connection');
+
+  async function appendMessage(role, text) {
+    if (!history) return;
+    const div = document.createElement('div');
+    div.style.marginBottom = '10px';
+    div.style.padding = '8px 12px';
+    div.style.borderRadius = '10px';
+    div.style.maxWidth = '85%';
+    div.style.wordBreak = 'break-word';
+    if (role === 'user') {
+      div.style.background = 'rgba(147,51,234,0.15)';
+      div.style.marginLeft = 'auto';
+      div.style.border = '1px solid rgba(147,51,234,0.2)';
+    } else {
+      div.style.background = 'rgba(255,255,255,0.04)';
+      div.style.border = '1px solid rgba(255,255,255,0.08)';
+    }
+    div.innerHTML = `<div style="font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,0.4);margin-bottom:3px">${escapeHtml(role)}</div><div style="color:rgba(255,255,255,0.9)">${escapeHtml(text).replace(/\n/g, '<br>')}</div>`;
+    history.appendChild(div);
+    history.scrollTop = history.scrollHeight;
+  }
+
+  async function doSend() {
+    if (!input || !status) return;
+    const msg = input.value.trim();
+    if (!msg) return;
+    input.value = '';
+    await appendMessage('user', msg);
+    status.textContent = 'Thinking…';
+    try {
+      const res = await window.electronAPI.aiChatAsk({ message: msg });
+      if (res?.success) {
+        await appendMessage('hiran', res.reply);
+        status.textContent = `Latency: ${res.latencyMs || 0}ms`;
+      } else {
+        await appendMessage('system', 'Error: ' + (res?.error || 'Unknown'));
+        status.textContent = 'Error';
+      }
+    } catch (err) {
+      await appendMessage('system', 'Error: ' + (err?.message || String(err)));
+      status.textContent = 'Error';
+    }
+  }
+
+  if (sendBtn) sendBtn.addEventListener('click', doSend);
+  if (input) {
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') doSend();
+    });
+  }
+
+  if (testBtn) {
+    testBtn.addEventListener('click', async () => {
+      const stEl = document.getElementById('ai-inference-status');
+      const latEl = document.getElementById('ai-latency');
+      if (stEl) stEl.textContent = 'Checking…';
+      try {
+        const res = await window.electronAPI.aiChatStatus();
+        if (res?.up) {
+          if (stEl) stEl.textContent = 'Online';
+          if (latEl) latEl.textContent = 'Ready';
+        } else {
+          if (stEl) stEl.textContent = 'Offline';
+          if (latEl) latEl.textContent = '—';
+        }
+      } catch {
+        if (stEl) stEl.textContent = 'Offline';
+      }
+    });
+  }
+}
+
+_viewInitFns.ai = () => initAiView();
