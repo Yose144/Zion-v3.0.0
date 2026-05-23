@@ -1,6 +1,6 @@
 # ZION V3 — Status Report (Mainnet Polish)
 
-> **Datum:** 2026-05-22 (Genesis + fee split KONFIGURACE DOKONČENA, ready for mainnet launch 20.6.2026); **2026-05-21** (Edge pool + L5/L6 + DAO governance + root docs sync); **2026-05-12** (Hiran v2.2 CLI integration); **2026-05-07** (security cleanup + agentická obsluha).
+> **Datum:** 2026-05-22 (Genesis + fee split KONFIGURACE DOKONČENA, ready for mainnet launch 31.12.2026); **2026-05-21** (Edge pool + L5/L6 + DAO governance + root docs sync); **2026-05-12** (Hiran v2.2 CLI integration); **2026-05-07** (security cleanup + agentická obsluha).
 > (sjednocení `StatusV3.md` ↔ `StatusV3-Part2.md` — TL;DR, roadmap §6, §8, §5
 > pyramida, odkazy).
 > **Předchozí update:** 2026-05-03 (genesis konsensus — merged na `main`)
@@ -134,7 +134,7 @@ zion hiran deploy --model --platform             # Deployment
 | Komponenta | Stav |
 |---|---|
 | **Dashboard** | ✅ **HOTOVÉ** — Python Flask app, port 8766, 6 tabů |
-| **Launch Day tab** | ✅ **HOTOVÉ** — automatizace pro 20.6.2026 12:00 UTC |
+| **Launch Day tab** | ✅ **HOTOVÉ** — automatizace pro 31.12.2026 12:00 UTC |
 | **Mainnet readiness** | ✅ **HOTOVÉ** — 8 status karet, auto-refresh 3s |
 | **Backup system** | ✅ **HOTOVÉ** — lokální `backups/launch-day-TIMESTAMP/` |
 | **Auto-start (Windows)** | ✅ **HOTOVÉ** — Scheduled Task při loginu |
@@ -182,7 +182,7 @@ Dashboard: 8766             WebSocket: 8445
 
 ### Mainnet Launch Plán
 
-**Cílový datum:** **20.6.2026** (Summer Solstice)
+**Cílový datum:** **31.12.2026** (New Year's Eve / Silvestr)
 
 **Předpoklady pro launch:**
 - ✅ Genesis hash konzistentní

@@ -2,7 +2,7 @@
 
 > **Pro koho:** Pro každého — vývojáře, přítele, nováčka, **i úplného laika**, který nikdy nespustil server.
 > **Co se naučíš:** Co je ZION, jak repo funguje, jak si **koupit a nastavit server**, jak **spustit mainnet uzel**, **přijmout/poslat platbu**, **těžit**, použít **zion CLI**, a co dělat když něco nefunguje.
-> **Poslední update:** 2026-05-22 (dashboard + Launch Day automation + GPU mining lokálně + mainnet ready pro 20.6.2026)
+> **Poslední update:** 2026-05-22 (dashboard + Launch Day automation + GPU mining lokálně + mainnet ready pro 31.12.2026)
 > **Aktuální status repa:** [`StatusV3.md`](./StatusV3.md) + [`StatusV3-Part2.md`](./StatusV3-Part2.md)
 
 ---
@@ -464,9 +464,9 @@ Dashboard je dostupný na: **`http://127.0.0.1:8766`**
 | **Pool** | Aktivní sessiony, shares, blocks found, fee split, recent payouts |
 | **Miner** | GPU backend, hashrate, accepted/rejected shares, current job |
 | **Settings** | Konfigurace fee split adres, mining parametrů |
-| **Launch Day** | ⭐ **Automatizace pro 20.6.2026** |
+| **Launch Day** | ⭐ **Automatizace pro 31.12.2026** |
 
-### 6.3 Launch Day Tab (20.6.2026 12:00 UTC)
+### 6.3 Launch Day Tab (31.12.2026 12:00 UTC)
 
 Launch Day tab připravuje a automatizuje **mainnet genesis rotaci**:
 
@@ -874,7 +874,7 @@ Pravidla v [`AGENTS.md`](./AGENTS.md), audit kontext v [`StatusV3.md`](./StatusV
 | [`docs/MAINNET_CONSTITUTION.md`](./docs/MAINNET_CONSTITUTION.md) | Neměnné parametry protokolu |
 | [`docs/DEFI_FULL_ROADMAP.md`](./docs/DEFI_FULL_ROADMAP.md) | DeFi ecosystem plán (6 waves) |
 | [`DASHBOARD_AUTOSTART.md`](./DASHBOARD_AUTOSTART.md) | Dashboard — autostart instalace (Windows) |
-| [`MAINNET_LAUNCH_SEQUENCE.md`](./MAINNET_LAUNCH_SEQUENCE.md) | Kompletní launch plán 20.6.2026 |
+| [`MAINNET_LAUNCH_SEQUENCE.md`](./MAINNET_LAUNCH_SEQUENCE.md) | Kompletní launch plán 31.12.2026 |
 | [`HiranV2.3/PLAN_v2.3.md`](./HiranV2.3/PLAN_v2.3.md) | AI agent v2.3 — DeepSpeed ZeRO-3 full FT + hybrid RAG |
 | [`PREMINE_ADDRESSES_PUBLIC.txt`](./PREMINE_ADDRESSES_PUBLIC.txt) | 15 genesis peněženek (veřejné) |
 

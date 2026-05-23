@@ -1226,7 +1226,7 @@ export default function PoolDashboard() {
             {cs ? 'Těžte ZION s Cosmic Harmony — férový a transparentní PoW pool s humanitárním přesahem zabudovaným do každého bloku.' : 'Mine ZION with Cosmic Harmony — a fair, transparent PoW pool with humanitarian impact built into every block.'}
           </p>
           <p className="mt-2 text-sm text-gray-300 max-w-2xl mx-auto">
-            89% miner · 5% humanitarian · 5% Issobella fund · 1% pool fee · PPLNS · Mainnet LIVE since 20 June 2026
+            89% miner · 5% humanitarian · 5% Issobella fund · 1% pool fee · PPLNS · Launch Countdown to 31 December 2026
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <a href="#start-mining" className="inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-zion-cyan to-zion-purple px-6 py-3 text-sm font-semibold text-black">
