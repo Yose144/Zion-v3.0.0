@@ -305,7 +305,7 @@ const getPhases = (cs: boolean): PhaseData[] => [
     priority: 'P1 Important → ✅ DONE',
     progress: 100,
     status: 'done',
-    description: 'Single public host + internal validator lanes active, monitoring running, legal/docs complete. wZION bridge live on Base Mainnet. L2 contracts deployed: Staking, Governance, Farm, AtomicSwap.'
+    description: 'Single public host + internal validator lanes active, monitoring running, legal/docs complete. wZION bridge live on Base Mainnet. L2 contracts deployed: Staking, Governance, Farm, AtomicSwap.',
     sprints: [
       { id: '3.1', title: cs ? 'Veřejný host & Monitoring — Zion2 live, Prometheus + Grafana' : 'Public Host & Monitoring — Zion2 live, Prometheus + Grafana', done: true },
       { id: '3.2', title: cs ? 'Docker & Deploy — runbook + compose + live web deploy flow' : 'Docker & Deploy — runbook + compose + live web deploy flow', done: true },
