@@ -50,6 +50,12 @@ pub struct OasisConfig {
     /// L3 AI-Native endpoint for AI agents
     pub ai_native_endpoint: Option<String>,
 
+    // === Hiran AI ===
+    /// Hiran v2.2 inference endpoint (OpenAI-compatible)
+    pub hiran_endpoint: Option<String>,
+    /// Enable Hiran AI integration
+    pub hiran_enabled: bool,
+
     // === UE5 Client ===
     /// WebSocket port for real-time UE5 updates
     pub ws_port: u16,
@@ -86,6 +92,9 @@ impl Default for OasisConfig {
             l1_rpc_endpoints: Vec::new(),
             ncl_endpoint: Some("http://localhost:8090".to_string()),
             ai_native_endpoint: Some("http://localhost:8091".to_string()),
+
+            hiran_endpoint: Some("http://localhost:8002".to_string()),
+            hiran_enabled: false,
 
             ws_port: 8095,
             max_ws_connections: 1000,
