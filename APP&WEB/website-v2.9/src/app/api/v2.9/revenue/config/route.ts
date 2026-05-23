@@ -8,6 +8,7 @@ type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string
 
 const DEFAULT_REVENUE_CONFIG_CANDIDATES = [
   process.env.ZION_REVENUE_CONFIG_PATH,
+  path.resolve(process.cwd(), 'data/ch3-settings.json'),
   path.resolve(process.cwd(), '../../../config/ch3_zion_only_settings.json'),
   path.resolve(process.cwd(), '../../../config/ch3_revenue_settings.json'),
   path.resolve(process.cwd(), '../../config/ch3_zion_only_settings.json'),
