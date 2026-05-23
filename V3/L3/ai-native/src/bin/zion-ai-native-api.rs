@@ -5,17 +5,21 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
-use axum::extract::State;
+use axum::extract::{Path, State};
 use axum::routing::{get, post};
 use axum::{Json, Router};
 use chrono::Utc;
 use serde::Deserialize;
 use serde_json::{json, Value};
+use uuid::Uuid;
 use zion_ai_native::autotuner::DharmaAutotuner;
 use zion_ai_native::consciousness_engine::ConsciousnessEngine;
 use zion_ai_native::knowledge_base::KnowledgeConfig;
 use zion_ai_native::llm_backend::RemoteHttpBackend;
+use zion_ai_native::orchestrator::Orchestrator;
 use zion_ai_native::rag::EmbeddingInputType;
+use zion_ai_native::task::{AiTask, AiTaskType, TaskQueue};
+use zion_ai_native::types::{Agent, AgentCapability};
 use zion_ai_native::{
     chunk_document_text, collect_markdown_chunks_from_relative_roots,
     BUDDHISM_CLASSICAL_CORPUS_ROOTS, BUDDHISM_RAG_CORPUS_ROOTS, BUDDHISM_TIBETAN_CORPUS_ROOTS,
@@ -45,6 +49,8 @@ struct AppState {
     session_count: AtomicU64,
     node_rpc_addr: String,
     pool_api_url: String,
+    orchestrator: Mutex<Orchestrator>,
+    task_queue: Mutex<TaskQueue>,
 }
 
 #[derive(Deserialize)]
@@ -56,6 +62,45 @@ struct ChatRequest {
 struct RagQueryRequest {
     query: String,
 }
+
+// ─── Orchestrator request types ───────────────────────────────────────────────
+
+#[derive(Deserialize)]
+struct RegisterAgentRequest {
+    name: String,
+    owner: String,
+    wallet_address: String,
+    #[serde(default)]
+    staked_zion: u64,
+}
+
+#[derive(Deserialize)]
+struct GrantCapabilityRequest {
+    capability: String,
+}
+
+#[derive(Deserialize)]
+struct ElevateConsciousnessRequest {
+    level: u8,
+}
+
+#[derive(Deserialize)]
+struct DispatchTaskRequest {
+    task_type: String,
+    model_id: String,
+    submitter: String,
+    input: Value,
+    #[serde(default = "default_reward")]
+    reward_flowers: u64,
+    #[serde(default = "default_priority")]
+    priority: u8,
+    #[serde(default = "default_consciousness")]
+    required_consciousness: u8,
+}
+
+fn default_reward() -> u64 { 1_000 }
+fn default_priority() -> u8 { 5 }
+fn default_consciousness() -> u8 { 1 }
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -107,9 +152,18 @@ async fn main() -> anyhow::Result<()> {
         .route("/rag/query", post(rag_query))
         .route("/rag/autotune", post(rag_autotune))
         .route("/tasks", get(tasks))
+        .route("/tasks/dispatch", post(tasks_dispatch))
         .route("/warp/status", get(warp_status))
         .route("/ncl/status", get(ncl_status))
         .route("/oasis/status", get(oasis_status))
+        // ── Orchestrator: agent management ────────────────────────────────
+        .route("/agents", get(agents_list).post(agents_register))
+        .route("/agents/:id", get(agents_get).delete(agents_terminate))
+        .route("/agents/:id/capabilities", post(agents_grant_capability))
+        .route("/agents/:id/consciousness", post(agents_elevate_consciousness))
+        .route("/agents/:id/messages", get(agents_get_messages))
+        // ── Orchestrator: status ──────────────────────────────────────────
+        .route("/orchestrator/status", get(orchestrator_status))
         .with_state(state);
 
     let listener = tokio::net::TcpListener::bind(bind).await?;
@@ -140,6 +194,11 @@ impl AppState {
 
         let backend_mode = backend_pref.clone();
 
+        let max_agents = std::env::var("HIRANYAGARBHA_MAX_AGENTS")
+            .ok()
+            .and_then(|v| v.parse::<usize>().ok())
+            .unwrap_or(100);
+
         Self {
             started_at: Instant::now(),
             started_at_rfc3339: Utc::now().to_rfc3339(),
@@ -160,6 +219,8 @@ impl AppState {
                 .unwrap_or_else(|_| "127.0.0.1:8443".to_string()),
             pool_api_url: std::env::var("ZION_POOL_API_URL")
                 .unwrap_or_else(|_| "http://127.0.0.1:8080".to_string()),
+            orchestrator: Mutex::new(Orchestrator::new(max_agents)),
+            task_queue: Mutex::new(TaskQueue::new()),
         }
     }
 }
@@ -636,8 +697,194 @@ async fn rag_autotune(State(state): State<Arc<AppState>>) -> Json<Value> {
     }
 }
 
-async fn tasks(State(_state): State<Arc<AppState>>) -> Json<Value> {
-    Json(json!({ "tasks": [], "queued": 0, "active": 0 }))
+async fn tasks(State(state): State<Arc<AppState>>) -> Json<Value> {
+    let q = state.task_queue.lock().expect("task_queue lock poisoned");
+    Json(json!({ "tasks": [], "queued": q.len(), "active": 0 }))
+}
+
+// ─── Orchestrator handlers ─────────────────────────────────────────────────
+
+async fn orchestrator_status(State(state): State<Arc<AppState>>) -> Json<Value> {
+    let orch = state.orchestrator.lock().expect("orchestrator lock poisoned");
+    let status = orch.coordinate();
+    let q = state.task_queue.lock().expect("task_queue lock poisoned");
+    Json(json!({
+        "layer": "L3",
+        "service": "orchestrator",
+        "status": "active",
+        "agents": {
+            "active": status.active_agents,
+            "suspended": status.suspended_agents,
+            "terminated": status.terminated_agents,
+            "total_actions": status.total_actions,
+        },
+        "message_queue": status.queued_messages,
+        "task_queue": q.len(),
+        "max_agents": 100,
+    }))
+}
+
+async fn agents_list(State(state): State<Arc<AppState>>) -> Json<Value> {
+    let orch = state.orchestrator.lock().expect("orchestrator lock poisoned");
+    let status = orch.coordinate();
+    Json(json!({
+        "total": orch.total_count(),
+        "active": status.active_agents,
+        "suspended": status.suspended_agents,
+        "terminated": status.terminated_agents,
+    }))
+}
+
+async fn agents_register(
+    State(state): State<Arc<AppState>>,
+    Json(req): Json<RegisterAgentRequest>,
+) -> Json<Value> {
+    let mut agent = Agent::new(req.name, req.owner, req.wallet_address);
+    agent.staked_zion = req.staked_zion;
+    let mut orch = state.orchestrator.lock().expect("orchestrator lock poisoned");
+    match orch.register_agent(agent) {
+        Ok(id) => {
+            tracing::info!(%id, "agent_registered");
+            Json(json!({ "ok": true, "agent_id": id.to_string() }))
+        }
+        Err(e) => Json(json!({ "ok": false, "error": e.to_string() })),
+    }
+}
+
+async fn agents_get(
+    State(state): State<Arc<AppState>>,
+    Path(id_str): Path<String>,
+) -> Json<Value> {
+    let id = match Uuid::parse_str(&id_str) {
+        Ok(v) => v,
+        Err(_) => return Json(json!({ "error": "invalid UUID" })),
+    };
+    let orch = state.orchestrator.lock().expect("orchestrator lock poisoned");
+    match orch.get_agent(&id) {
+        Some(agent) => Json(json!(agent)),
+        None => Json(json!({ "error": "agent not found" })),
+    }
+}
+
+async fn agents_terminate(
+    State(state): State<Arc<AppState>>,
+    Path(id_str): Path<String>,
+) -> Json<Value> {
+    let id = match Uuid::parse_str(&id_str) {
+        Ok(v) => v,
+        Err(_) => return Json(json!({ "error": "invalid UUID" })),
+    };
+    let mut orch = state.orchestrator.lock().expect("orchestrator lock poisoned");
+    match orch.terminate_agent(id) {
+        Ok(()) => {
+            tracing::info!(%id, "agent_terminated");
+            Json(json!({ "ok": true }))
+        }
+        Err(e) => Json(json!({ "ok": false, "error": e.to_string() })),
+    }
+}
+
+async fn agents_grant_capability(
+    State(state): State<Arc<AppState>>,
+    Path(id_str): Path<String>,
+    Json(req): Json<GrantCapabilityRequest>,
+) -> Json<Value> {
+    let id = match Uuid::parse_str(&id_str) {
+        Ok(v) => v,
+        Err(_) => return Json(json!({ "error": "invalid UUID" })),
+    };
+    let cap = match req.capability.to_lowercase().as_str() {
+        "transact" => AgentCapability::Transact,
+        "compute" => AgentCapability::Compute,
+        "govern" => AgentCapability::Govern,
+        "bridge" => AgentCapability::Bridge,
+        other => AgentCapability::Custom(other.to_string()),
+    };
+    let mut orch = state.orchestrator.lock().expect("orchestrator lock poisoned");
+    match orch.grant_capability(id, cap) {
+        Ok(()) => Json(json!({ "ok": true })),
+        Err(e) => Json(json!({ "ok": false, "error": e.to_string() })),
+    }
+}
+
+async fn agents_elevate_consciousness(
+    State(state): State<Arc<AppState>>,
+    Path(id_str): Path<String>,
+    Json(req): Json<ElevateConsciousnessRequest>,
+) -> Json<Value> {
+    let id = match Uuid::parse_str(&id_str) {
+        Ok(v) => v,
+        Err(_) => return Json(json!({ "error": "invalid UUID" })),
+    };
+    let mut orch = state.orchestrator.lock().expect("orchestrator lock poisoned");
+    match orch.elevate_consciousness(id, req.level) {
+        Ok(()) => Json(json!({ "ok": true, "new_level": req.level })),
+        Err(e) => Json(json!({ "ok": false, "error": e.to_string() })),
+    }
+}
+
+async fn agents_get_messages(
+    State(state): State<Arc<AppState>>,
+    Path(id_str): Path<String>,
+) -> Json<Value> {
+    let id = match Uuid::parse_str(&id_str) {
+        Ok(v) => v,
+        Err(_) => return Json(json!({ "error": "invalid UUID" })),
+    };
+    let mut orch = state.orchestrator.lock().expect("orchestrator lock poisoned");
+    let msgs = orch.get_messages(id);
+    let count = msgs.len();
+    Json(json!({ "agent_id": id.to_string(), "messages": msgs, "count": count }))
+}
+
+fn parse_task_type(s: &str) -> AiTaskType {
+    match s.to_lowercase().as_str() {
+        "llm_inference" | "llm" | "chat" => AiTaskType::LlmInference,
+        "image_generation" | "image" => AiTaskType::ImageGeneration,
+        "model_training" | "training" => AiTaskType::ModelTraining,
+        "embeddings" | "embedding" => AiTaskType::Embeddings,
+        "code_analysis" | "code" => AiTaskType::CodeAnalysis,
+        _ => AiTaskType::Custom,
+    }
+}
+
+async fn tasks_dispatch(
+    State(state): State<Arc<AppState>>,
+    Json(req): Json<DispatchTaskRequest>,
+) -> Json<Value> {
+    let task_type = parse_task_type(&req.task_type);
+    let mut task = AiTask::new(task_type, req.model_id, req.submitter, req.input, req.reward_flowers)
+        .with_priority(req.priority)
+        .with_consciousness(req.required_consciousness);
+
+    let task_id = task.id;
+
+    // Try to dispatch to a registered agent
+    let mut orch = state.orchestrator.lock().expect("orchestrator lock poisoned");
+    match orch.dispatch_task(&mut task) {
+        Ok(agent_id) => {
+            tracing::info!(%task_id, %agent_id, "task_dispatched");
+            Json(json!({
+                "ok": true,
+                "task_id": task_id.to_string(),
+                "assigned_agent": agent_id.to_string(),
+                "status": "assigned",
+            }))
+        }
+        Err(_) => {
+            // No agent available — queue it
+            let mut q = state.task_queue.lock().expect("task_queue lock poisoned");
+            q.push(task);
+            tracing::info!(%task_id, "task_queued_no_agent");
+            Json(json!({
+                "ok": true,
+                "task_id": task_id.to_string(),
+                "assigned_agent": null,
+                "status": "queued",
+                "message": "No eligible agent available; task queued",
+            }))
+        }
+    }
 }
 
 async fn warp_status(State(state): State<Arc<AppState>>) -> Json<Value> {
