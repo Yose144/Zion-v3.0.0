@@ -1,4 +1,4 @@
-// ZION V3 Mainnet Ready v2.9.9 - Main Process
+// ZION V3 Mainnet Ready v3.0.0 - Main Process
 // Electron main process with system tray, auto-start, GPU mining, IPC
 
 const { app, BrowserWindow, Tray, Menu, ipcMain, dialog } = require('electron');
@@ -1956,7 +1956,7 @@ function createTray() {
   
   trayMenu = Menu.buildFromTemplate([
     {
-      label: 'ZION Miner v2.9.9 Ekam Deeksha',
+      label: 'ZION Miner v3.0.0 Ekam Deeksha',
       enabled: false
     },
     { type: 'separator' },
@@ -2010,7 +2010,7 @@ function createTray() {
   ]);
 
   tray.setContextMenu(trayMenu);
-  tray.setToolTip('ZION Miner v2.9.9 Ekam Deeksha');
+  tray.setToolTip('ZION Miner v3.0.0 Ekam Deeksha');
   
   tray.on('click', () => {
     showWindow();
@@ -3864,7 +3864,7 @@ ipcMain.handle('get-gpu-info', () => {
   }
 });
 
-// ── Ekam Deeksha v2.9.9 — GPU device enumeration ──
+// ── Ekam Deeksha v3.0.0 — GPU device enumeration ──
 ipcMain.handle('get-gpu-devices', () => {
   try {
     const info = detectGPU();
@@ -3874,7 +3874,7 @@ ipcMain.handle('get-gpu-devices', () => {
   }
 });
 
-// ── Ekam Deeksha v2.9.9 — GPU benchmark (runs miner in benchmark mode) ──
+// ── Ekam Deeksha v3.0.0 — GPU benchmark (runs miner in benchmark mode) ──
 ipcMain.handle('run-gpu-benchmark', async (_event, options = {}) => {
   try {
     const gpuInfo = detectGPU();
@@ -4854,6 +4854,79 @@ async function _checkGitHubRelease() {
     return { success: false, error: err?.message || String(err), currentVersion: app.getVersion() };
   }
 }
+
+// ── Hiran AI Inference IPC ─────────────────────────────────────────────────
+const HIRAN_INFERENCE_URL = process.env.HIRAN_INFERENCE_URL || 'http://localhost:8002';
+
+ipcMain.handle('ai-chat-ask', async (_event, { message, temperature = 0.7 }) => {
+  try {
+    const url = `${HIRAN_INFERENCE_URL}/v1/chat/completions`;
+    const https = require('https');
+    const http = require('http');
+    const client = url.startsWith('https:') ? https : http;
+
+    const body = JSON.stringify({
+      model: 'hiran-v2.2',
+      messages: [
+        { role: 'system', content: 'You are the Zion DAO technical assistant. Answer accurately about ZION blockchain, mining, governance, and ecosystem. Fee split is 89/5/5/1.' },
+        { role: 'user', content: message }
+      ],
+      temperature,
+      max_tokens: 512
+    });
+
+    const result = await new Promise((resolve, reject) => {
+      const req = client.request(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(body)
+        },
+        timeout: 30000
+      }, (res) => {
+        let data = '';
+        res.on('data', (chunk) => data += chunk);
+        res.on('end', () => {
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            try { resolve(JSON.parse(data)); } catch { resolve({ raw: data }); }
+          } else {
+            reject(new Error(`HTTP ${res.statusCode}: ${data.slice(0, 200)}`));
+          }
+        });
+      });
+      req.on('error', reject);
+      req.on('timeout', () => { req.destroy(); reject(new Error('Timeout')); });
+      req.write(body);
+      req.end();
+    });
+
+    const reply = result?.choices?.[0]?.message?.content || result?.raw || 'No response from AI.';
+    return { success: true, reply, latencyMs: result?.latency || 0 };
+  } catch (err) {
+    logApp('ai-chat-error', JSON.stringify({ error: err?.message || String(err) }));
+    return { success: false, error: err?.message || String(err) };
+  }
+});
+
+ipcMain.handle('ai-chat-status', async () => {
+  try {
+    const http = require('http');
+    const result = await new Promise((resolve) => {
+      const req = http.get(`${HIRAN_INFERENCE_URL}/health`, { timeout: 5000 }, (res) => {
+        let data = '';
+        res.on('data', (chunk) => data += chunk);
+        res.on('end', () => {
+          try { resolve({ up: true, info: JSON.parse(data) }); } catch { resolve({ up: true }); }
+        });
+      });
+      req.on('error', () => resolve({ up: false }));
+      req.on('timeout', () => { req.destroy(); resolve({ up: false }); });
+    });
+    return { success: true, ...result };
+  } catch (err) {
+    return { success: false, up: false, error: err?.message || String(err) };
+  }
+});
 
 function _isNewerVersion(latest, current) {
   const a = latest.split('.').map(Number);
