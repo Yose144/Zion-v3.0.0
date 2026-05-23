@@ -5,9 +5,9 @@ export const SITE_RUNTIME_VERSION = 'v3.0.0';
 export const SITE_RUNTIME_NAME = 'Deeksha/Ekam canonical';
 export const SITE_RUNTIME_LABEL = `${SITE_RUNTIME_VERSION} ${SITE_RUNTIME_NAME}`;
 export const SITE_ENVIRONMENT_LABEL = 'V3 Mainnet';
-export const SITE_PUBLIC_LAUNCH_STATUS = 'MAINNET LIVE';
-export const SITE_LAUNCH_DATE = '2026-06-20T00:00:00Z';
-export const SITE_LAUNCH_DATE_DISPLAY = '20 June 2026 (Summer Solstice)';
+export const SITE_PUBLIC_LAUNCH_STATUS = 'Launch Countdown';
+export const SITE_LAUNCH_DATE = '2026-12-31T00:00:00Z';
+export const SITE_LAUNCH_DATE_DISPLAY = '31 December 2026 (New Year\'s Eve)';
 export const SITE_NETWORK_LABEL = `${SITE_ENVIRONMENT_LABEL} · ${SITE_RELEASE_LABEL}`;
 
 // ── Infrastructure (Core + Edge topology, 2026-05-21) ──────────────────────
