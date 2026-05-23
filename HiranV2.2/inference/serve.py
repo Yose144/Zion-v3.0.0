@@ -19,7 +19,9 @@ Použití:
 """
 
 import argparse
+import hashlib
 import json
+import os
 import time
 import urllib.request
 import urllib.error
@@ -33,6 +35,14 @@ app = Flask(__name__)
 model_state: Dict[str, Any] = {}
 model = None
 tokenizer = None
+
+# Runtime stats
+_stats: Dict[str, Any] = {
+    "started_at": 0.0,
+    "request_count": 0,
+    "error_count": 0,
+    "total_latency_ms": 0.0,
+}
 
 
 def load_model(model_path: str, ollama_base: str = "http://localhost:11434"):
@@ -207,7 +217,12 @@ def chat_completions():
         })
 
     except Exception as e:
+        _stats["error_count"] += 1
         return jsonify({"error": str(e)}), 500
+
+    finally:
+        _stats["request_count"] += 1
+        _stats["total_latency_ms"] += round((time.time() - start_time) * 1000, 2)
 
 
 @app.route("/v1/models", methods=["GET"])
@@ -222,6 +237,156 @@ def list_models():
             "owned_by": "zion"
         }]
     })
+
+
+@app.route("/status", methods=["GET"])
+def status():
+    """Detailed inference service status (used by hiran_inference.rs client)."""
+    backend = model_state.get("backend", "none")
+    uptime = time.time() - _stats["started_at"] if _stats["started_at"] else 0.0
+    req_count = _stats["request_count"]
+    avg_latency = (
+        _stats["total_latency_ms"] / req_count if req_count > 0 else 0.0
+    )
+
+    # Try to get GPU info (optional — only if pynvml or subprocess available)
+    gpu_info: Dict[str, Any] = {}
+    try:
+        import subprocess
+        result = subprocess.run(
+            ["nvidia-smi", "--query-gpu=utilization.gpu,memory.used,memory.total",
+             "--format=csv,noheader,nounits"],
+            capture_output=True, text=True, timeout=2
+        )
+        if result.returncode == 0:
+            parts = result.stdout.strip().split(", ")
+            if len(parts) >= 3:
+                gpu_info = {
+                    "utilization_pct": int(parts[0]),
+                    "memory_used_mb": int(parts[1]),
+                    "memory_total_mb": int(parts[2]),
+                }
+    except Exception:
+        pass
+
+    extra: Dict[str, Any] = {}
+    if backend == "ollama":
+        extra["ollama_model"] = model_state.get("model_name")
+        extra["ollama_base"] = model_state.get("ollama_base")
+
+    return jsonify({
+        "status": "ok" if model_state else "no_model",
+        "model": "hiran-v2.2",
+        "backend": backend,
+        "model_loaded": bool(model_state),
+        "uptime_secs": round(uptime, 1),
+        "requests_total": req_count,
+        "errors_total": _stats["error_count"],
+        "avg_latency_ms": round(avg_latency, 2),
+        "gpu": gpu_info,
+        **extra,
+    })
+
+
+@app.route("/v1/embeddings", methods=["POST"])
+def embeddings():
+    """Text embeddings endpoint — used by hiran_inference.rs RAG pipeline.
+
+    Returns deterministic mock embeddings (dim=512) when no embedding model
+    is loaded.  For production, set HIRAN_EMBEDDING_MODEL env var to a
+    sentence-transformers model name and install the package.
+    """
+    data = request.json or {}
+    input_texts = data.get("input", [])
+    if isinstance(input_texts, str):
+        input_texts = [input_texts]
+
+    model_name = data.get("model", "hiran-v2.2-embed")
+    dim = 512
+
+    # Try real sentence-transformers if available
+    embedding_model_name = os.environ.get("HIRAN_EMBEDDING_MODEL", "")
+    if embedding_model_name:
+        try:
+            from sentence_transformers import SentenceTransformer
+            _embed_model = SentenceTransformer(embedding_model_name)
+            vecs = _embed_model.encode(input_texts).tolist()
+            embeddings_data = [
+                {"object": "embedding", "index": i, "embedding": v}
+                for i, v in enumerate(vecs)
+            ]
+            return jsonify({
+                "object": "list",
+                "data": embeddings_data,
+                "model": embedding_model_name,
+                "usage": {
+                    "prompt_tokens": sum(len(t.split()) for t in input_texts),
+                    "total_tokens": sum(len(t.split()) for t in input_texts),
+                },
+            })
+        except Exception:
+            pass
+
+    # Deterministic mock embeddings — hash-based, consistent across calls
+    embeddings_data = []
+    for i, text in enumerate(input_texts):
+        h = hashlib.sha256(text.encode()).digest()
+        # Expand to dim floats in [-1, 1] by cycling through hash bytes
+        vec = []
+        for j in range(dim):
+            byte_val = h[j % len(h)]
+            vec.append((byte_val / 127.5) - 1.0)
+        # L2-normalise
+        norm = sum(x * x for x in vec) ** 0.5 or 1.0
+        vec = [round(x / norm, 6) for x in vec]
+        embeddings_data.append({"object": "embedding", "index": i, "embedding": vec})
+
+    return jsonify({
+        "object": "list",
+        "data": embeddings_data,
+        "model": model_name,
+        "usage": {
+            "prompt_tokens": sum(len(t.split()) for t in input_texts),
+            "total_tokens": sum(len(t.split()) for t in input_texts),
+        },
+    })
+
+
+@app.route("/metrics", methods=["GET"])
+def metrics():
+    """Prometheus-compatible plain-text metrics endpoint."""
+    uptime = time.time() - _stats["started_at"] if _stats["started_at"] else 0.0
+    req_count = _stats["request_count"]
+    err_count = _stats["error_count"]
+    avg_lat = (
+        _stats["total_latency_ms"] / req_count if req_count > 0 else 0.0
+    )
+    backend = model_state.get("backend", "none")
+    loaded = 1 if model_state else 0
+
+    lines = [
+        "# HELP hiran_up Whether the Hiran inference server is up (1=up)",
+        "# TYPE hiran_up gauge",
+        f"hiran_up {loaded}",
+        "",
+        "# HELP hiran_uptime_seconds Server uptime in seconds",
+        "# TYPE hiran_uptime_seconds counter",
+        f"hiran_uptime_seconds {uptime:.1f}",
+        "",
+        "# HELP hiran_requests_total Total inference requests received",
+        "# TYPE hiran_requests_total counter",
+        f'hiran_requests_total{{backend="{backend}"}} {req_count}',
+        "",
+        "# HELP hiran_errors_total Total inference errors",
+        "# TYPE hiran_errors_total counter",
+        f'hiran_errors_total{{backend="{backend}"}} {err_count}',
+        "",
+        "# HELP hiran_avg_latency_ms Average inference latency in ms",
+        "# TYPE hiran_avg_latency_ms gauge",
+        f'hiran_avg_latency_ms{{backend="{backend}"}} {avg_lat:.2f}',
+        "",
+    ]
+    return "\n".join(lines), 200, {"Content-Type": "text/plain; charset=utf-8"}
 
 
 def main():
@@ -248,10 +413,14 @@ def main():
 
     print("Načítám model...")
     model_state = load_model(args.model_path, ollama_base=args.ollama_base)
+    _stats["started_at"] = time.time()
     print(f"✅ Model načten (backend: {model_state['backend']})")
     print()
-    print(f"API:    http://{args.host}:{args.port}/v1/chat/completions")
-    print(f"Health: http://{args.host}:{args.port}/health")
+    print(f"API:     http://{args.host}:{args.port}/v1/chat/completions")
+    print(f"Health:  http://{args.host}:{args.port}/health")
+    print(f"Status:  http://{args.host}:{args.port}/status")
+    print(f"Embed:   http://{args.host}:{args.port}/v1/embeddings")
+    print(f"Metrics: http://{args.host}:{args.port}/metrics")
     print()
 
     app.run(host=args.host, port=args.port, threaded=True)
