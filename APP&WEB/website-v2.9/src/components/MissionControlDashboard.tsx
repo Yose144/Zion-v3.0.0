@@ -3169,7 +3169,7 @@ export default function MissionControlDashboard() {
                     {[
                       { prio: 'DONE', prioColor: 'text-emerald-400 font-bold', task: 'On-chain reward split 89/5/5/1 ověřen live bloky', phase: 'RUNTIME', status: 'VERIFIED', sColor: 'text-emerald-400' },
                       { prio: 'DONE', prioColor: 'text-emerald-400 font-bold', task: 'PPLNS payout logic + fee split wiring', phase: 'POOL', status: 'VERIFIED', sColor: 'text-emerald-400' },
-                      { prio: 'DONE', prioColor: 'text-emerald-400 font-bold', task: 'Core + Edge rollout bez divergence (Tailscale VPN)', phase: 'OPS', status: 'SYNCED', sColor: 'text-emerald-400' },
+                      { prio: 'DONE', prioColor: 'text-emerald-400 font-bold', task: 'Core + Edge rollout bez divergence (privátní VPN)', phase: 'OPS', status: 'SYNCED', sColor: 'text-emerald-400' },
                       { prio: 'DONE', prioColor: 'text-emerald-400 font-bold', task: 'Runbook + operator guide + go/no-go report', phase: 'DOCS', status: 'ALIGNED', sColor: 'text-emerald-400' },
                       { prio: 'DONE', prioColor: 'text-emerald-400 font-bold', task: 'BFG scrub / git history hygiene', phase: 'R1', status: 'CLOSED', sColor: 'text-emerald-400' },
                       { prio: 'DONE', prioColor: 'text-emerald-400 font-bold', task: 'Genesis artefakty + checksumy + release tag', phase: 'R2', status: 'CLOSED', sColor: 'text-emerald-400' },
