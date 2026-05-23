@@ -4,7 +4,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-> **Status (May 2026):** V3 mainnet READY FOR LAUNCH (20.6.2026). Genesis + fee split konfigurace dokončena. Core+Edge topologie aktivní a synchronizovaná. Dashboard s Launch Day automation běží lokálně. GPU mining ověřen (AMD RX 5600 XT ~5-10 KH/s). L2 wZION bridge to Base operational. DeFi/Explorer stack ready — see [DEFI_ROADMAP.md](DEFI_ROADMAP.md).
+> **Status (May 2026):** V3 mainnet READY FOR LAUNCH (31.12.2026). Genesis + fee split konfigurace dokončena. Core+Edge topologie aktivní a synchronizovaná. Dashboard s Launch Day automation běží lokálně. GPU mining ověřen (AMD RX 5600 XT ~5-10 KH/s). L2 wZION bridge to Base operational. DeFi/Explorer stack ready — see [DEFI_ROADMAP.md](DEFI_ROADMAP.md).
 > Active development: [V3/](V3/) - clean-room mainnet code. Legacy root tree is reference/archive only.
 > **Lost?** See the complete repository map: [`ROOT_INDEX.md`](ROOT_INDEX.md)
 > **Mainnet Launch:** [MAINNET_LAUNCH_SEQUENCE.md](MAINNET_LAUNCH_SEQUENCE.md) | **Status:** [StatusV3.md](StatusV3.md) | **Dashboard:** [DASHBOARD_AUTOSTART.md](DASHBOARD_AUTOSTART.md)
