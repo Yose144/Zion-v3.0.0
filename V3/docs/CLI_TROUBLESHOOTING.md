@@ -113,7 +113,7 @@ zion config show
 Then re-apply the intended value:
 
 ```bash
-zion config set server.host 91.98.122.165
+zion config set server.host 100.66.162.125
 ```
 
 If the file is incomplete or stale, re-run:

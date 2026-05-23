@@ -133,25 +133,26 @@ pub async fn run(cfg: &Config) -> Result<()> {
         ui::print_warn(&format!("SSH key        missing at {}", ssh_key));
     }
 
-    match tcp_probe(&cfg.node.rpc_host, SSH_PORT, Duration::from_secs(3)) {
+    let edge_ssh_host = &cfg.topology.edge.rpc_host;
+    match tcp_probe(edge_ssh_host, SSH_PORT, Duration::from_secs(3)) {
         Ok(()) => ui::print_ok(&format!(
             "SSH port       {}:{} reachable",
-            cfg.node.rpc_host, SSH_PORT
+            edge_ssh_host, SSH_PORT
         )),
         Err(err) => {
             hard_failures += 1;
             ui::print_err(&format!(
                 "SSH port       {}:{} — {}",
-                cfg.node.rpc_host, SSH_PORT, err
+                edge_ssh_host, SSH_PORT, err
             ));
         }
     }
 
     if command_exists("ssh") && std::path::Path::new(&ssh_key).exists() {
-        match ssh_probe(&cfg.node.rpc_host, &ssh_key, &cfg.deploy.ssh_user, "true") {
+        match ssh_probe(edge_ssh_host, &ssh_key, &cfg.deploy.ssh_user, "true") {
             Ok(None) => ui::print_ok(&format!(
                 "SSH auth       {}@{}",
-                cfg.deploy.ssh_user, cfg.node.rpc_host
+                cfg.deploy.ssh_user, edge_ssh_host
             )),
             Ok(Some(detail)) => {
                 hard_failures += 1;
@@ -164,7 +165,7 @@ pub async fn run(cfg: &Config) -> Result<()> {
         }
 
         match ssh_probe(
-            &cfg.node.rpc_host,
+            edge_ssh_host,
             &ssh_key,
             &cfg.deploy.ssh_user,
             &format!(
@@ -184,24 +185,80 @@ pub async fn run(cfg: &Config) -> Result<()> {
         }
     }
 
-    ui::print_header("Remote Endpoints");
-    match node_rpc::call0(&cfg.node.rpc_host, cfg.node.rpc_port, "getChainInfo").await {
+    ui::print_header("Core Endpoints");
+    let (core_host, core_rpc_port) = cfg.core_rpc();
+    match node_rpc::call0(core_host, core_rpc_port, "getChainInfo").await {
         Ok(v) => {
             let height = v["chain_height"].as_u64().unwrap_or(0);
             let hash = v["tip_hash"].as_str().unwrap_or("?");
             let short = if hash.len() > 12 { &hash[..12] } else { hash };
             ui::print_ok(&format!(
-                "Node RPC      {}:{} height={} tip={}...",
-                cfg.node.rpc_host, cfg.node.rpc_port, height, short
+                "Core RPC      {}:{} height={} tip={}...",
+                core_host, core_rpc_port, height, short
             ));
         }
         Err(err) => {
-            hard_failures += 1;
-            ui::print_err(&format!(
-                "Node RPC      {}:{} — {}",
-                cfg.node.rpc_host, cfg.node.rpc_port, err
+            ui::print_warn(&format!(
+                "Core RPC      {}:{} — {}",
+                core_host, core_rpc_port, err
             ));
         }
+    }
+    let (_, core_pool_port) = cfg.core_pool();
+    match tcp_probe(core_host, core_pool_port, Duration::from_secs(3)) {
+        Ok(()) => ui::print_ok(&format!(
+            "Core pool     {}:{} reachable",
+            core_host, core_pool_port
+        )),
+        Err(err) => ui::print_warn(&format!(
+            "Core pool     {}:{} — {}",
+            core_host, core_pool_port, err
+        )),
+    }
+
+    ui::print_header("Edge Endpoints");
+    let (edge_host, edge_rpc_port) = cfg.edge_rpc();
+    match node_rpc::call0(edge_host, edge_rpc_port, "getChainInfo").await {
+        Ok(v) => {
+            let height = v["chain_height"].as_u64().unwrap_or(0);
+            let hash = v["tip_hash"].as_str().unwrap_or("?");
+            let short = if hash.len() > 12 { &hash[..12] } else { hash };
+            ui::print_ok(&format!(
+                "Edge RPC      {}:{} height={} tip={}...",
+                edge_host, edge_rpc_port, height, short
+            ));
+        }
+        Err(err) => {
+            ui::print_warn(&format!(
+                "Edge RPC      {}:{} — {}",
+                edge_host, edge_rpc_port, err
+            ));
+        }
+    }
+    let (edge_pool_host, edge_pool_port) = cfg.edge_pool();
+    match tcp_probe(edge_pool_host, edge_pool_port, Duration::from_secs(3)) {
+        Ok(()) => ui::print_ok(&format!(
+            "Edge pool     {}:{} reachable",
+            edge_pool_host, edge_pool_port
+        )),
+        Err(err) => ui::print_warn(&format!(
+            "Edge pool     {}:{} — {}",
+            edge_pool_host, edge_pool_port, err
+        )),
+    }
+
+    ui::print_header("VPN / Tailscale");
+    if let (Some(core_vpn), Some(edge_vpn)) = (&cfg.topology.core.vpn_ip, &cfg.topology.edge.vpn_ip) {
+        match tcp_probe(core_vpn, core_rpc_port, Duration::from_secs(5)) {
+            Ok(()) => ui::print_ok(&format!("Core VPN      {}:{} reachable", core_vpn, core_rpc_port)),
+            Err(err) => ui::print_warn(&format!("Core VPN      {}:{} — {}", core_vpn, core_rpc_port, err)),
+        }
+        match tcp_probe(edge_vpn, edge_rpc_port, Duration::from_secs(5)) {
+            Ok(()) => ui::print_ok(&format!("Edge VPN      {}:{} reachable", edge_vpn, edge_rpc_port)),
+            Err(err) => ui::print_warn(&format!("Edge VPN      {}:{} — {}", edge_vpn, edge_rpc_port, err)),
+        }
+    } else {
+        ui::print_warn("VPN IPs not configured; skipping VPN probe");
     }
 
     match agent_rpc::health(&cfg.agent.url).await {

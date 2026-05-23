@@ -1,5 +1,7 @@
 # ZION V3 Mainnet Deploy Runbook
 
+> **Aktuální topologie:** Core + Edge (Hetzner VPS). Historické multi-server reference (Prague, USA, Singapore) v tomto runbooku byly aktualizovány na Core + Edge. Postup zůstává platný.
+
 Shell-ready rollout procedure for V3 core deploys that affect consensus, block templates, payout routing, or peer sync behavior.
 
 This runbook is based on the live 2026-03-28 fee-split rollout and the failure mode discovered during that deploy.
@@ -12,11 +14,10 @@ Use this for deploys that touch:
 - `V3/Cargo.toml`
 - `docker/docker-compose.v3-mainnet.yml`
 
-Current audited node set:
+Current live topology:
 
-- Prague: `91.98.122.165`
-- USA: `5.78.194.94`
-- Singapore: `5.223.84.191`
+- **Core:** Windows 11 node (Tailscale `100.86.102.5`)
+- **Edge:** Hetzner VPS relay (Tailscale `100.66.162.125`, public `77.42.71.94`)
 
 ## 1. Local Preflight
 
@@ -42,7 +43,7 @@ Set the remote repo root once before rollout.
 
 ```bash
 export REMOTE_DIR="/path/to/deployed/2.9.6"
-export NODES="91.98.122.165 5.78.194.94 5.223.84.191"
+export NODES="100.66.162.125 77.42.71.94"
 ```
 
 For audited fleet nodes, write `SEED_PEERS` per host and exclude the host's own public address. Fresh external nodes can still bootstrap from the full public list.
@@ -106,7 +107,7 @@ Expected for fee-split deploys:
 - `ZION_ISSOBELLA_WALLET`
 - `ZION_POOL_FEE_WALLET`
 
-Also verify `ZION_SEED_PEERS` does not include the current host's own public `host:8333` entry when deploying the audited Prague/USA/Singapore fleet.
+Also verify `ZION_SEED_PEERS` does not include the current host's own public `host:8333` entry when deploying the Core + Edge fleet.
 
 ## 7. Cross-Node Chain Health
 
@@ -126,10 +127,10 @@ Confirm all nodes agree on:
 
 ## 8. Wait For First New Block
 
-Use Prague as the primary observation point.
+Use Edge as the primary observation point.
 
 ```bash
-ssh root@91.98.122.165 '
+ssh root@100.66.162.125 '
 last=$(printf "%s\n" "{\"jsonrpc\":\"2.0\",\"method\":\"getChainInfo\",\"params\":[],\"id\":1}" | nc -w 2 127.0.0.1 8443 | python3 -c "import sys,json; print(json.load(sys.stdin)[\"result\"][\"chain_height\"])")
 echo "starting_height=${last}"
 while true; do
@@ -150,7 +151,7 @@ Replace `HEIGHT` with the first new block height observed after deploy.
 ```bash
 export HEIGHT=465
 
-ssh root@91.98.122.165 "printf '%s\n' '{\"jsonrpc\":\"2.0\",\"method\":\"getBlockByHeight\",\"params\":[${HEIGHT}],\"id\":1}' | nc -w 2 127.0.0.1 8443"
+ssh root@100.66.162.125 "printf '%s\n' '{\"jsonrpc\":\"2.0\",\"method\":\"getBlockByHeight\",\"params\":[${HEIGHT}],\"id\":1}' | nc -w 2 127.0.0.1 8443"
 ```
 
 For fee-split rollouts, verify in the returned block:
@@ -170,12 +171,12 @@ Expected 2026-03-28 split example:
 
 ## 10. Primary Pool and Miner Sanity
 
-Prague primary host:
+Edge primary host:
 
 ```bash
-ssh root@91.98.122.165 "docker logs --since 20m zion-pool | tail -120"
-ssh root@91.98.122.165 "docker logs --since 20m zion-miner | tail -120"
-ssh root@91.98.122.165 "curl -s http://127.0.0.1:8080/stats"
+ssh root@100.66.162.125 "docker logs --since 20m zion-pool | tail -120"
+ssh root@100.66.162.125 "docker logs --since 20m zion-miner | tail -120"
+ssh root@100.66.162.125 "curl -s http://127.0.0.1:8080/stats"
 ```
 
 Acceptable immediately after restart:
@@ -216,8 +217,8 @@ The rollout is considered successful only if all of the following are true:
 - live env inside `zion-core` contains the intended runtime variables
 - all audited nodes agree on `chain_height` and `tip_hash`
 - at least one post-deploy block proves the intended runtime behavior on-chain
-- Prague pool resumes accepted share flow after restart
-- USA and Singapore accept and relay the updated blocks without divergence
+- Edge pool resumes accepted share flow after restart
+- Core and Edge accept and relay the updated blocks without divergence
 
 ## 13. Failure Pattern Learned On 2026-03-28
 

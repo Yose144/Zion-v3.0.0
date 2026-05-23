@@ -13,23 +13,50 @@ pub enum DeployCmd {
     Server {
         #[arg(long)]
         host: Option<String>,
+        /// Target host key: core | edge (default: edge)
+        #[arg(long, default_value = "edge")]
+        target: String,
     },
     /// Deploy website only
     Website,
     /// Pull latest images + recreate containers
-    Update,
+    Update {
+        /// Target host key: core | edge (default: edge)
+        #[arg(long, default_value = "edge")]
+        target: String,
+    },
     /// docker system prune -f on server
-    Prune,
+    Prune {
+        /// Target host key: core | edge (default: edge)
+        #[arg(long, default_value = "edge")]
+        target: String,
+    },
     /// Open SSH session to server
-    Ssh,
+    Ssh {
+        /// Target host key: core | edge (default: edge)
+        #[arg(long, default_value = "edge")]
+        target: String,
+    },
     /// Remote container health status
-    Status,
+    Status {
+        /// Target host key: core | edge (default: edge)
+        #[arg(long, default_value = "edge")]
+        target: String,
+    },
+}
+
+fn resolve_deploy_host(cfg: &Config, target: &str) -> String {
+    match target.trim().to_ascii_lowercase().as_str() {
+        "core" | "local" | "master" => cfg.topology.core.rpc_host.clone(),
+        "edge" | "vpn" | "relay" => cfg.topology.edge.rpc_host.clone(),
+        other => other.to_string(),
+    }
 }
 
 pub async fn run(cfg: &Config, cmd: DeployCmd) -> Result<()> {
     match cmd {
-        DeployCmd::Server { host } => {
-            let h = host.unwrap_or_else(|| cfg.node.rpc_host.clone());
+        DeployCmd::Server { host, target } => {
+            let h = host.unwrap_or_else(|| resolve_deploy_host(cfg, &target));
             ui::print_header(&format!("Deploying to {}", h));
             run_local_script(SERVER_DEPLOY_SCRIPT, &cfg)
         }
@@ -37,22 +64,22 @@ pub async fn run(cfg: &Config, cmd: DeployCmd) -> Result<()> {
             ui::print_header("Deploying Website");
             run_local_script("APP&WEB/website-v2.9/scripts/deploy.sh", &cfg)
         }
-        DeployCmd::Update => {
-            let host = &cfg.node.rpc_host;
+        DeployCmd::Update { target } => {
+            let host = resolve_deploy_host(cfg, &target);
             let key = config::expand_path(&cfg.deploy.ssh_key);
             let user = &cfg.deploy.ssh_user;
             ui::print_header(&format!("Update containers on {}", host));
-            ssh_exec(host, &key, user, "cd /root/zion-2.9.6/docker && docker compose -f docker-compose.v3-mainnet.yml pull && docker compose -f docker-compose.v3-mainnet.yml up -d")
+            ssh_exec(&host, &key, user, "cd /root/zion-2.9.6/docker && docker compose -f docker-compose.v3-mainnet.yml pull && docker compose -f docker-compose.v3-mainnet.yml up -d")
         }
-        DeployCmd::Prune => {
-            let host = &cfg.node.rpc_host;
+        DeployCmd::Prune { target } => {
+            let host = resolve_deploy_host(cfg, &target);
             let key = config::expand_path(&cfg.deploy.ssh_key);
             let user = &cfg.deploy.ssh_user;
             ui::print_header(&format!("docker system prune -f on {}", host));
-            ssh_exec(host, &key, user, "docker system prune -f")
+            ssh_exec(&host, &key, user, "docker system prune -f")
         }
-        DeployCmd::Ssh => {
-            let host = &cfg.node.rpc_host;
+        DeployCmd::Ssh { target } => {
+            let host = resolve_deploy_host(cfg, &target);
             let key = config::expand_path(&cfg.deploy.ssh_key);
             let user = &cfg.deploy.ssh_user;
             ui::print_info(&format!("Opening SSH session to {}@{}", user, host));
@@ -61,13 +88,13 @@ pub async fn run(cfg: &Config, cmd: DeployCmd) -> Result<()> {
                 .status()?;
             Ok(())
         }
-        DeployCmd::Status => remote_status(cfg).await,
+        DeployCmd::Status { target } => remote_status(cfg, &target).await,
     }
 }
 
 pub async fn start_service(cfg: &Config, service: &str) -> Result<()> {
     let compose_svc = validate_service_target(service)?;
-    let host = &cfg.node.rpc_host;
+    let host = resolve_deploy_host(cfg, "edge");
     let key = config::expand_path(&cfg.deploy.ssh_key);
     let user = &cfg.deploy.ssh_user;
 
@@ -80,12 +107,12 @@ pub async fn start_service(cfg: &Config, service: &str) -> Result<()> {
             compose_svc
         )
     };
-    ssh_exec(host, &key, user, &cmd)
+    ssh_exec(&host, &key, user, &cmd)
 }
 
 pub async fn stop_service(cfg: &Config, service: &str) -> Result<()> {
     let compose_svc = validate_service_target(service)?;
-    let host = &cfg.node.rpc_host;
+    let host = resolve_deploy_host(cfg, "edge");
     let key = config::expand_path(&cfg.deploy.ssh_key);
     let user = &cfg.deploy.ssh_user;
 
@@ -98,12 +125,12 @@ pub async fn stop_service(cfg: &Config, service: &str) -> Result<()> {
             compose_svc
         )
     };
-    ssh_exec(host, &key, user, &cmd)
+    ssh_exec(&host, &key, user, &cmd)
 }
 
 pub async fn restart_service(cfg: &Config, service: &str) -> Result<()> {
     let compose_svc = validate_service_target(service)?;
-    let host = &cfg.node.rpc_host;
+    let host = resolve_deploy_host(cfg, "edge");
     let key = config::expand_path(&cfg.deploy.ssh_key);
     let user = &cfg.deploy.ssh_user;
 
@@ -113,12 +140,12 @@ pub async fn restart_service(cfg: &Config, service: &str) -> Result<()> {
         "cd /root/zion-2.9.6/docker && docker compose -f docker-compose.v3-mainnet.yml restart {}",
         if compose_svc == "all" { "".into() } else { compose_svc }
     );
-    ssh_exec(host, &key, user, &cmd)
+    ssh_exec(&host, &key, user, &cmd)
 }
 
 pub async fn tail_logs(cfg: &Config, service: &str) -> Result<()> {
     let compose_svc = validate_service_target(service)?;
-    let host = &cfg.node.rpc_host;
+    let host = resolve_deploy_host(cfg, "edge");
     let key = config::expand_path(&cfg.deploy.ssh_key);
     let user = &cfg.deploy.ssh_user;
 
@@ -133,14 +160,14 @@ pub async fn tail_logs(cfg: &Config, service: &str) -> Result<()> {
     Ok(())
 }
 
-async fn remote_status(cfg: &Config) -> Result<()> {
-    let host = &cfg.node.rpc_host;
+async fn remote_status(cfg: &Config, target: &str) -> Result<()> {
+    let host = resolve_deploy_host(cfg, target);
     let key = config::expand_path(&cfg.deploy.ssh_key);
     let user = &cfg.deploy.ssh_user;
 
     ui::print_header(&format!("Container Status on {}", host));
     ssh_exec(
-        host,
+        &host,
         &key,
         user,
         "docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'",

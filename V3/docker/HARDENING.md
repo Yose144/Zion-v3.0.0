@@ -1,6 +1,6 @@
 # ZION V3 Server Hardening — Quick Reference
 #
-# Target host: Hetzner VPS (91.98.122.165)
+# Target host: Hetzner VPS (Core + Edge topology)
 
 ## Firewall (ufw)
 

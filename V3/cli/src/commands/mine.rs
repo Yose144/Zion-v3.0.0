@@ -364,7 +364,10 @@ fn resolve_start_options(
 ) -> Result<ResolvedStartOptions> {
     let requested_profile = profile.as_deref().unwrap_or(cfg.miner.profile.as_str());
     let normalized_profile = normalize_profile(requested_profile)?;
-    let pool_addr = pool.unwrap_or_else(|| format!("{}:{}", cfg.pool.host, cfg.pool.port));
+    let pool_addr = pool.unwrap_or_else(|| {
+        let (host, port) = cfg.edge_pool();
+        format!("{}:{}", host, port)
+    });
     let wallet_addr = wallet.unwrap_or_else(|| cfg.miner.wallet.clone());
     if !wallet_addr.trim().is_empty() && !zion_core::crypto::is_valid_address(wallet_addr.trim()) {
         anyhow::bail!(
