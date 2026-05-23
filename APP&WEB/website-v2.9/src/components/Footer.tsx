@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Github, MessageCircle, Globe, BookOpen, BookMarked, Compass, Map, Download, Pickaxe, FileText, Orbit, ArrowLeftRight } from 'lucide-react';
+import { Github, MessageCircle, Globe, BookOpen, BookMarked, Compass, Map, Download, Pickaxe, FileText, Orbit, ArrowLeftRight, Gamepad2, Rocket, Star } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { tr } from '@/lib/translations';
 import { SITE_RELEASE_LABEL, SITE_RUNTIME_VERSION } from '@/lib/site';
@@ -33,6 +33,14 @@ export default function Footer() {
       ],
     },
     {
+      title: tr('footer', 'group_layers', lang),
+      links: [
+        { href: '/l4-oasis', label: tr('nav', 'l4_oasis', lang), Icon: Gamepad2 },
+        { href: '/l5-free-world', label: tr('nav', 'l5_free_world', lang), Icon: Globe },
+        { href: '/l6-issobella', label: tr('nav', 'l6_issobella', lang), Icon: Star },
+      ],
+    },
+    {
       title: tr('footer', 'group_knowledge', lang),
       links: [
         { href: '/docs', label: tr('nav', 'docs', lang), Icon: BookOpen },
@@ -49,7 +57,7 @@ export default function Footer() {
       <div className="pointer-events-none absolute -left-32 top-0 h-72 w-72 rounded-full bg-zion-purple/10 blur-3xl" />
       <div className="pointer-events-none absolute -right-32 bottom-0 h-72 w-72 rounded-full bg-zion-cyan/10 blur-3xl" />
       <div className="zion-container py-12">
-        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-6">
           {/* Brand column */}
           <div className="md:col-span-2 space-y-4">
             <h3 className="text-xl font-bold text-gradient-soft">ZION TerraNova</h3>
