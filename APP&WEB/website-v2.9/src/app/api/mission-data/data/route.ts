@@ -330,8 +330,8 @@ export async function GET() {
     ],
     next_48h: [
       {
-        title: 'Mainnet LIVE — 20. června 2026',
-        detail: 'Launch úspěšně proveden. Core + Edge běží stabilně, pool přijímá shares, monitoring aktivní.',
+        title: 'Launch Countdown — 31. prosince 2026',
+        detail: 'Příprava launch pokračuje. Core + Edge v testování, pool přijímá test shares, monitoring aktivní.',
       },
       {
         title: 'Post-Launch — L2/L3 roadmap',
