@@ -1,17 +1,17 @@
 {
     "nodes": [
         {
-            "id": "v3-testnet-1",
-            "host": "91.98.122.165",
+            "id": "v3-edge-1",
+            "host": "100.66.162.125",
             "ports": {
-                "rpc": 8332,
-                "p2p": 8334,
-                "stratum": 3416,
+                "rpc": 8443,
+                "p2p": 8333,
+                "stratum": 8444,
                 "health": 8080,
                 "pool_api": 8080,
                 "discovery_udp": 8335
             },
-            "role": ["node", "pool", "miner"]
+            "role": ["node", "pool"]
         }
     ],
     "alerting": {
