@@ -1,0 +1,18 @@
+[Unit]
+Description=ZION V3 Read-Only JSON-RPC Proxy
+After=network.target zion-edge.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /usr/local/bin/zion-rpc-readonly-proxy.py
+Restart=always
+RestartSec=5
+Environment="ZION_UPSTREAM_HOST=127.0.0.1"
+Environment="ZION_UPSTREAM_PORT=8443"
+Environment="ZION_PROXY_HOST=127.0.0.1"
+Environment="ZION_PROXY_PORT=8447"
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
