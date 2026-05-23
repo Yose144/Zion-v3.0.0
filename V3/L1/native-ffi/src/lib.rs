@@ -1164,7 +1164,7 @@ pub mod randomx {
 
 /// Returns the list of native algorithm names compiled into this build.
 pub fn compiled_algorithms() -> Vec<&'static str> {
-    let v = Vec::new();
+    let mut v = Vec::new();
     #[cfg(feature = "native-etchash")]
     {
         v.push("etchash");
@@ -1222,7 +1222,7 @@ pub struct AlgoTestResult {
 /// Call this once at miner startup.  If any result has `passed == false`,
 /// the corresponding algorithm should not be used for real mining.
 pub fn runtime_self_test() -> Vec<AlgoTestResult> {
-    let results = Vec::new();
+    let mut results = Vec::new();
 
     #[cfg(feature = "native-etchash")]
     {
