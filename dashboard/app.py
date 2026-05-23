@@ -133,10 +133,16 @@ SERVICE_REGISTRY = [
      "purpose": "Network Computing Layer gateway — distributed compute fabric.",
      "child_says": "🧠 Helps many computers think together as one big brain!",
      "depends_on": ["node1"]},
-    {"id": "ai-native", "name": "AI Native (Hiran)", "icon": "🤖", "level": "L3", "kind": "ai",
+    {"id": "hiranyagarbha", "name": "Hiranyagarbha API", "icon": "🧬", "level": "L3", "kind": "ai",
+     "ports": {"api": 8001},
+     "log": "hiranyagarbha.log", "start": "start-hiranyagarbha", "stop": None,
+     "purpose": "Orchestrator API — agent lifecycle, task dispatch, RAG, consciousness engine. Port 8001.",
+     "child_says": "🧬 The brain that coordinates all AI agents in ZION!",
+     "depends_on": []},
+    {"id": "ai-native", "name": "Hiran Inference", "icon": "🤖", "level": "L3", "kind": "ai",
      "ports": {"api": 8002},
-     "log": "hiran-inference.log", "start": None, "stop": None,
-     "purpose": "Hiran v2.2 language model serving inference for ZION ecosystem queries.",
+     "log": "hiran-inference.log", "start": "start-hiran-inference", "stop": None,
+     "purpose": "Hiran v2.2 LLM inference server — OpenAI-compatible API on port 8002.",
      "child_says": "🤖 A robot helper that knows everything about ZION!",
      "depends_on": []},
 
@@ -1184,19 +1190,24 @@ P0_BLOCKERS = [
 _SCRIPT_EXT = ".ps1" if os.name == "nt" else ".sh"
 
 _ALLOW_BASE = {
-    "install-deps":      "install-deps",
-    "launch-stack":      "launch-stack",
-    "stop-stack":        "stop-stack",
-    "stop-all":          "stop-all",
-    "start-node1":       "start-node",
-    "start-node2":       "start-node2",
-    "start-pool":        "start-pool",
-    "start-miner":       "start-miner",
-    "restart-node2":     "start-node2",
-    "restart-miner":     "start-miner",
-    "backup-chain":      "backup-chain",
-    "verify-chain":      "verify-chain",
-    "core-util":         "core-util-run",
+    "install-deps":           "install-deps",
+    "launch-stack":           "launch-stack",
+    "stop-stack":             "stop-stack",
+    "stop-all":               "stop-all",
+    "start-node1":            "start-node",
+    "start-node2":            "start-node2",
+    "start-pool":             "start-pool",
+    "start-miner":            "start-miner",
+    "restart-node2":          "start-node2",
+    "restart-miner":          "start-miner",
+    "backup-chain":           "backup-chain",
+    "verify-chain":           "verify-chain",
+    "core-util":              "core-util-run",
+    # ── AI Layer ─────────────────────────────────────────────────────────
+    "start-hiranyagarbha":    "start-hiranyagarbha",
+    "start-hiran-inference":  "start-hiran-inference",
+    "restart-hiranyagarbha":  "start-hiranyagarbha",
+    "restart-hiran-inference":"start-hiran-inference",
 }
 
 # Windows-only extras
@@ -1679,26 +1690,72 @@ tailwind.config={theme:{extend:{colors:{zion:{900:'#0a0f1e',800:'#131a2e',700:'#
 
   <!-- ── Hiran AI Tab ─────────────────────────────────────────────────────── -->
   <div id="pane-hiran" class="hidden space-y-4">
-    <!-- Status banner -->
-    <div class="bg-zion-800 rounded-xl p-4 border border-zion-700 flex items-center gap-4">
-      <div class="text-3xl">🤖</div>
-      <div class="flex-1">
-        <div class="text-sm font-bold text-gray-200">Hiran v2.2 — AI Inference Server</div>
-        <div class="text-xs text-gray-400 mt-1">OpenAI-compatible API · port 8002 · <span id="hiran-backend-label" class="text-amber-400">—</span></div>
+
+    <!-- Service cards row -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+      <!-- Hiranyagarbha Orchestrator (port 8001) -->
+      <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="text-2xl">🧬</div>
+          <div class="flex-1">
+            <div class="text-sm font-bold text-gray-200">Hiranyagarbha API</div>
+            <div class="text-xs text-gray-400">Orchestrator · RAG · Consciousness · port 8001</div>
+          </div>
+          <span id="hiranyagarbha-badge" class="px-2 py-0.5 rounded text-xs font-bold bg-zion-700 text-gray-400">CHECKING…</span>
+        </div>
+        <div class="text-xs text-gray-500 mb-3" id="hiranyagarbha-detail">—</div>
+        <div class="flex gap-2">
+          <button onclick="aiLayerStart('start-hiranyagarbha','hiranyagarbha-badge','hiranyagarbha-detail')"
+                  class="flex-1 px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-medium rounded transition">
+            ▶ Start
+          </button>
+          <button onclick="loadHiranHealth()" class="px-3 py-1.5 bg-zion-700 hover:bg-zion-600 text-gray-300 text-xs rounded transition">🔄</button>
+        </div>
       </div>
-      <div>
-        <span id="hiran-status-badge" class="px-3 py-1 rounded text-xs font-bold bg-zion-700 text-gray-400">CHECKING…</span>
+
+      <!-- Hiran Inference (port 8002) -->
+      <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
+        <div class="flex items-center gap-3 mb-3">
+          <div class="text-2xl">🤖</div>
+          <div class="flex-1">
+            <div class="text-sm font-bold text-gray-200">Hiran Inference</div>
+            <div class="text-xs text-gray-400">LLM · OpenAI API · <span id="hiran-backend-label" class="text-amber-400">—</span> · port 8002</div>
+          </div>
+          <span id="hiran-status-badge" class="px-2 py-0.5 rounded text-xs font-bold bg-zion-700 text-gray-400">CHECKING…</span>
+        </div>
+        <div class="text-xs text-gray-500 mb-3" id="hiran-inference-detail">—</div>
+        <div class="flex gap-2">
+          <button onclick="aiLayerStart('start-hiran-inference','hiran-status-badge','hiran-inference-detail')"
+                  class="flex-1 px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-medium rounded transition">
+            ▶ Start
+          </button>
+          <button onclick="loadHiranHealth()" class="px-3 py-1.5 bg-zion-700 hover:bg-zion-600 text-gray-300 text-xs rounded transition">🔄</button>
+        </div>
       </div>
-      <button onclick="loadHiranHealth()" class="text-xs text-gray-400 hover:text-white px-2 py-1 bg-zion-700 rounded">🔄 Refresh</button>
     </div>
 
-    <!-- Start instructions (shown when offline) -->
+    <!-- Offline hint (shown when inference offline) -->
     <div id="hiran-offline-hint" class="hidden bg-zion-800 rounded-xl p-4 border border-amber-800/40">
-      <div class="text-xs font-bold text-amber-400 mb-2">⚠️ Hiran není spuštěn — jak spustit:</div>
+      <div class="text-xs font-bold text-amber-400 mb-2">⚠️ Hiran Inference offline — detekce backendu:</div>
       <div class="text-xs text-gray-300 space-y-1">
-        <div><span class="text-amber-400">Option 1 (Ollama + AMD GPU):</span> Spusť <code class="bg-zion-900 px-1 rounded">HiranV2.2\\inference\\start_hiran_ollama.bat</code></div>
-        <div><span class="text-amber-400">Option 2 (llama.cpp Vulkan):</span> Spusť <code class="bg-zion-900 px-1 rounded">HiranV2.2\\inference\\start_hiran_llamacpp.bat</code></div>
-        <div class="text-gray-500 mt-2">Nemáš GGUF? Spusť nejprve: <code class="bg-zion-900 px-1 rounded">uv run HiranV2.2\\quantization\\convert_to_gguf.py</code></div>
+        <div><span class="text-amber-400">Automaticky detekuje:</span> LM Studio (port 1234) → Ollama (port 11434) → GGUF soubor</div>
+        <div>Klikni <strong class="text-white">▶ Start</strong> — skript sám najde dostupný backend.</div>
+        <div class="text-gray-500 mt-1">Nebo spusť ručně: <code class="bg-zion-900 px-1 rounded">scripts\\start-hiran-inference.ps1</code></div>
+      </div>
+    </div>
+
+    <!-- Orchestrator live stats (shown when hiranyagarbha online) -->
+    <div id="orch-stats-panel" class="hidden bg-zion-800 rounded-xl p-4 border border-zion-700">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300">🧬 Orchestrator Status</h2>
+        <button onclick="loadOrchestratorStats()" class="text-xs text-gray-400 hover:text-white">🔄</button>
+      </div>
+      <div id="orch-stats-content" class="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
+        <div class="bg-zion-900 rounded-lg p-3"><div class="text-xs text-gray-400 mb-1">Active Agents</div><div id="orch-active" class="text-lg font-bold text-emerald-400">—</div></div>
+        <div class="bg-zion-900 rounded-lg p-3"><div class="text-xs text-gray-400 mb-1">Task Queue</div><div id="orch-tasks" class="text-lg font-bold text-amber-400">—</div></div>
+        <div class="bg-zion-900 rounded-lg p-3"><div class="text-xs text-gray-400 mb-1">Msg Queue</div><div id="orch-msgs" class="text-lg font-bold text-blue-400">—</div></div>
+        <div class="bg-zion-900 rounded-lg p-3"><div class="text-xs text-gray-400 mb-1">Total Actions</div><div id="orch-actions" class="text-lg font-bold text-gray-300">—</div></div>
       </div>
     </div>
 
@@ -1730,8 +1787,28 @@ tailwind.config={theme:{extend:{colors:{zion:{900:'#0a0f1e',800:'#131a2e',700:'#
         <button onclick="hiranQuickPrompt('Jak funguje humanitární tithe v ZION?')" class="px-3 py-1.5 bg-zion-700 hover:bg-zion-600 rounded text-xs text-gray-300 transition">Humanitarian Tithe</button>
         <button onclick="hiranQuickPrompt('Jaký je aktuální stav ZION sítě a hash rate?')" class="px-3 py-1.5 bg-zion-700 hover:bg-zion-600 rounded text-xs text-gray-300 transition">Stav sítě</button>
         <button onclick="hiranQuickPrompt('Vysvětli WARP protokol a cross-chain bridge')" class="px-3 py-1.5 bg-zion-700 hover:bg-zion-600 rounded text-xs text-gray-300 transition">WARP Bridge</button>
+        <button onclick="hiranQuickPrompt('Kolik aktivních agentů je v orchestrátoru?')" class="px-3 py-1.5 bg-zion-700 hover:bg-zion-600 rounded text-xs text-gray-300 transition">Orchestrátor</button>
       </div>
     </div>
+
+    <!-- Log panels -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300">Hiranyagarbha Log</h2>
+          <button onclick="loadLogs('hiranyagarbha')" class="text-xs text-gray-400 hover:text-white">🔄</button>
+        </div>
+        <pre id="log-hiranyagarbha" class="log-tail bg-zion-900 rounded-lg p-3 h-48 overflow-y-auto text-gray-300"></pre>
+      </div>
+      <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300">Hiran Inference Log</h2>
+          <button onclick="loadLogs('hiran-inference')" class="text-xs text-gray-400 hover:text-white">🔄</button>
+        </div>
+        <pre id="log-hiran-inference" class="log-tail bg-zion-900 rounded-lg p-3 h-48 overflow-y-auto text-gray-300"></pre>
+      </div>
+    </div>
+
   </div>
 
   <footer class="text-center text-xs text-gray-600 pt-6 pb-4 border-t border-zion-700 mt-6">
@@ -1771,26 +1848,105 @@ function switchTab(name){
 
 // ── Hiran AI ──
 async function loadHiranHealth(){
+  // ── Hiran Inference (port 8002) ─────────────────────────────────────
   const badge=document.getElementById('hiran-status-badge');
   const backend=document.getElementById('hiran-backend-label');
+  const detail=document.getElementById('hiran-inference-detail');
   const hint=document.getElementById('hiran-offline-hint');
   if(badge)badge.textContent='CHECKING…';
   try{
     const r=await fetch('/api/hiran/health');
     const d=await r.json();
     if(d.alive){
-      if(badge){badge.textContent='LIVE';badge.className='px-3 py-1 rounded text-xs font-bold bg-emerald-600 text-white animate-pulse';}
-      if(backend)backend.textContent=d.backend+' · '+d.model;
+      if(badge){badge.textContent='LIVE';badge.className='px-2 py-0.5 rounded text-xs font-bold bg-emerald-600 text-white animate-pulse';}
+      if(backend)backend.textContent=d.backend;
+      if(detail)detail.textContent=(d.model||'—')+' · '+(d.uptime_s!=null?'up '+Math.round(d.uptime_s)+'s':'');
       if(hint)hint.classList.add('hidden');
     }else{
-      if(badge){badge.textContent='OFFLINE';badge.className='px-3 py-1 rounded text-xs font-bold bg-red-700 text-white';}
+      if(badge){badge.textContent='OFFLINE';badge.className='px-2 py-0.5 rounded text-xs font-bold bg-red-700 text-white';}
       if(backend)backend.textContent=d.backend||'nedosažitelný';
+      if(detail)detail.textContent='Spusť: ▶ Start';
       if(hint)hint.classList.remove('hidden');
     }
   }catch(e){
-    if(badge){badge.textContent='OFFLINE';badge.className='px-3 py-1 rounded text-xs font-bold bg-red-700 text-white';}
+    if(badge){badge.textContent='OFFLINE';badge.className='px-2 py-0.5 rounded text-xs font-bold bg-red-700 text-white';}
+    if(detail)detail.textContent='Spusť: ▶ Start';
     if(hint)hint.classList.remove('hidden');
   }
+  // ── Hiranyagarbha Orchestrator (port 8001) ──────────────────────────
+  const orchBadge=document.getElementById('hiranyagarbha-badge');
+  const orchDetail=document.getElementById('hiranyagarbha-detail');
+  const orchPanel=document.getElementById('orch-stats-panel');
+  if(orchBadge)orchBadge.textContent='CHECKING…';
+  try{
+    const r2=await fetch('/api/hiranyagarbha/health');
+    const d2=await r2.json();
+    if(d2.alive){
+      if(orchBadge){orchBadge.textContent='LIVE';orchBadge.className='px-2 py-0.5 rounded text-xs font-bold bg-emerald-600 text-white animate-pulse';}
+      if(orchDetail)orchDetail.textContent='v'+( d2.version||'?')+' · agents: '+(d2.active_agents??'—')+' · tasks: '+(d2.task_queue??'—');
+      if(orchPanel)orchPanel.classList.remove('hidden');
+      loadOrchestratorStats();
+    }else{
+      if(orchBadge){orchBadge.textContent='OFFLINE';orchBadge.className='px-2 py-0.5 rounded text-xs font-bold bg-red-700 text-white';}
+      if(orchDetail)orchDetail.textContent='Spusť: ▶ Start';
+      if(orchPanel)orchPanel.classList.add('hidden');
+    }
+  }catch(e){
+    if(orchBadge){orchBadge.textContent='OFFLINE';orchBadge.className='px-2 py-0.5 rounded text-xs font-bold bg-red-700 text-white';}
+    if(orchDetail)orchDetail.textContent='Spusť: ▶ Start';
+    if(orchPanel)orchPanel.classList.add('hidden');
+  }
+}
+
+// ── Hiranyagarbha orchestrator live stats ──────────────────────────────
+async function loadOrchestratorStats(){
+  try{
+    const r=await fetch('http://127.0.0.1:8001/orchestrator/status');
+    if(!r.ok)return;
+    const d=await r.json();
+    const s=d.status||d;
+    const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v??'—';};
+    set('orch-active', s.active_agents??s.agent_count??'—');
+    set('orch-tasks',  s.task_queue_depth??s.tasks_pending??'—');
+    set('orch-msgs',   s.message_queue_depth??s.messages??'—');
+    set('orch-actions',s.total_actions_dispatched??s.total_actions??'—');
+  }catch(_){}
+}
+
+// ── Start an AI layer service via dashboard control API ───────────────
+async function aiLayerStart(action, badgeId, detailId){
+  const badge=document.getElementById(badgeId);
+  const detail=document.getElementById(detailId);
+  if(badge){badge.textContent='STARTING…';badge.className='px-2 py-0.5 rounded text-xs font-bold bg-amber-500 text-white animate-pulse';}
+  if(detail)detail.textContent='Spouštím…';
+  try{
+    const r=await fetch('/api/control',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action})});
+    const d=await r.json();
+    if(d.ok||d.status==='launched'){
+      if(detail)detail.textContent='Spuštěno — čekám na odpověď…';
+      // poll health after short delay
+      setTimeout(()=>loadHiranHealth(), 3000);
+      setTimeout(()=>loadHiranHealth(), 7000);
+    }else{
+      if(badge){badge.textContent='ERR';badge.className='px-2 py-0.5 rounded text-xs font-bold bg-red-700 text-white';}
+      if(detail)detail.textContent=d.error||d.detail||'Chyba při spouštění';
+    }
+  }catch(e){
+    if(badge){badge.textContent='ERR';badge.className='px-2 py-0.5 rounded text-xs font-bold bg-red-700 text-white';}
+    if(detail)detail.textContent='Chyba: '+String(e);
+  }
+}
+
+// ── Service log tail ─────────────────────────────────────────────────
+async function loadLogs(serviceId){
+  const el=document.getElementById('log-'+serviceId);
+  if(!el)return;
+  try{
+    const r=await fetch('/api/service-log?id='+encodeURIComponent(serviceId)+'&lines=80');
+    const d=await r.json();
+    el.textContent=d.lines||(d.error?'Error: '+d.error:'(empty)');
+    el.scrollTop=el.scrollHeight;
+  }catch(e){el.textContent='Chyba: '+String(e);}
 }
 
 function hiranQuickPrompt(text){
@@ -3051,10 +3207,38 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     self._json({"ok": True, "stdout": out_text, "stderr": stderr.decode("utf-8", errors="ignore"), "exit_code": proc.returncode, "cmd": full_cmd})
             except Exception as e:
                 self._json({"ok": False, "error": str(e)})
+        # ── Service log tail ─────────────────────────────────────────────────
+        elif route == "/api/service-log":
+            svc_id = params.get("id", [""])[0].strip()
+            n_lines = int(params.get("lines", ["80"])[0])
+            # Map service id → log filename
+            _log_map = {
+                "hiranyagarbha":    "hiranyagarbha.log",
+                "hiran-inference":  "hiran-inference.log",
+                "node1":            "node.log",
+                "node2":            "node2.log",
+                "pool":             "pool.log",
+                "miner":            "miner.log",
+            }
+            log_name = _log_map.get(svc_id)
+            if not log_name:
+                self._json({"error": "unknown service", "lines": ""})
+            else:
+                log_file = REPO_ROOT / "logs" / log_name
+                if not log_file.exists():
+                    self._json({"lines": f"(log file {log_name} not found)", "exists": False})
+                else:
+                    try:
+                        with open(log_file, "r", encoding="utf-8", errors="ignore") as f:
+                            all_lines = f.readlines()
+                        tail = "".join(all_lines[-n_lines:])
+                        self._json({"lines": tail, "exists": True, "total_lines": len(all_lines)})
+                    except Exception as e:
+                        self._json({"error": str(e), "lines": ""})
         # ── Hiran AI endpoints ────────────────────────────────────────────────
         elif route == "/api/hiran/health":
             hiran_url = "http://127.0.0.1:8002"
-            alive, backend, model_name = False, "none", "—"
+            alive, backend, model_name, uptime_s = False, "none", "—", None
             try:
                 req = urllib.request.Request(
                     f"{hiran_url}/health",
@@ -3065,6 +3249,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     alive = data_h.get("status") == "ok"
                     backend = data_h.get("backend", "unknown")
                     model_name = data_h.get("model", "hiran-v2.2")
+                    uptime_s = data_h.get("uptime_s")
             except Exception as e:
                 alive = False
                 backend = f"error: {str(e)[:60]}"
@@ -3072,7 +3257,31 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 "alive": alive,
                 "backend": backend,
                 "model": model_name,
+                "uptime_s": uptime_s,
                 "endpoint": hiran_url,
+            })
+        elif route == "/api/hiranyagarbha/health":
+            orch_url = "http://127.0.0.1:8001"
+            alive, version, active_agents, task_queue = False, None, None, None
+            try:
+                req = urllib.request.Request(
+                    f"{orch_url}/health",
+                    headers={"Accept": "application/json"},
+                )
+                with urllib.request.urlopen(req, timeout=2) as r:
+                    data_o = json.loads(r.read())
+                    alive = data_o.get("status") in ("ok", "healthy")
+                    version = data_o.get("version")
+                    active_agents = data_o.get("active_agents")
+                    task_queue = data_o.get("task_queue_depth") or data_o.get("task_queue")
+            except Exception as e:
+                alive = False
+            self._json({
+                "alive": alive,
+                "version": version,
+                "active_agents": active_agents,
+                "task_queue": task_queue,
+                "endpoint": orch_url,
             })
         else:
             self.send_error(404)
