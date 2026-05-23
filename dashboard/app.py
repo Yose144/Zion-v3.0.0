@@ -1759,6 +1759,26 @@ tailwind.config={theme:{extend:{colors:{zion:{900:'#0a0f1e',800:'#131a2e',700:'#
       </div>
     </div>
 
+    <!-- Agent Management Panel -->
+    <div id="agent-panel" class="bg-zion-800 rounded-xl p-4 border border-zion-700">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300">🤖 Agent Management</h2>
+        <div class="flex gap-2">
+          <button onclick="registerAgent()" class="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-medium rounded transition">+ Register</button>
+          <button onclick="loadAgentList()" class="px-3 py-1.5 bg-zion-700 hover:bg-zion-600 text-gray-300 text-xs rounded transition">🔄</button>
+        </div>
+      </div>
+      <div id="agent-list" class="space-y-2 mb-3">
+        <div class="text-gray-500 text-xs italic">No agents loaded — click Register or Refresh</div>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <button onclick="elevateConsciousness()" class="px-3 py-1.5 bg-purple-700 hover:bg-purple-600 text-white text-xs font-medium rounded transition">Elevate Consciousness</button>
+        <button onclick="grantCapability()" class="px-3 py-1.5 bg-blue-700 hover:bg-blue-600 text-white text-xs font-medium rounded transition">Grant Capability</button>
+        <button onclick="dispatchTask()" class="px-3 py-1.5 bg-amber-700 hover:bg-amber-600 text-white text-xs font-medium rounded transition">Dispatch Task</button>
+      </div>
+      <div id="agent-action-result" class="mt-2 text-xs text-gray-400 min-h-4"></div>
+    </div>
+
     <!-- Chat interface -->
     <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
       <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300 mb-3">💬 Chat s Hiranem</h2>
@@ -1843,7 +1863,7 @@ function switchTab(name){
   if(name==='database')loadDatabases();
   if(name==='metrics')renderMetricsButtons();
   if(name==='overview')loadMainnetStatus();
-  if(name==='hiran')loadHiranHealth();
+  if(name==='hiran'){loadHiranHealth();loadAgentList();loadOrchestratorStats();}
 }
 
 // ── Hiran AI ──
@@ -1911,6 +1931,116 @@ async function loadOrchestratorStats(){
     set('orch-msgs',   s.message_queue_depth??s.messages??'—');
     set('orch-actions',s.total_actions_dispatched??s.total_actions??'—');
   }catch(_){}
+}
+
+// ── Agent Management (Hiranyagarbha port 8001) ──────────────────────
+async function loadAgentList(){
+  const list=document.getElementById('agent-list');
+  const res=document.getElementById('agent-action-result');
+  if(list)list.innerHTML='<div class="text-gray-500 text-xs italic">Loading agents…</div>';
+  try{
+    const r=await fetch('http://127.0.0.1:8001/agents');
+    const d=await r.json();
+    const total=d.total??d.active??0;
+    if(total===0){
+      if(list)list.innerHTML='<div class="text-gray-500 text-xs italic">No active agents — click + Register to create one</div>';
+      return;
+    }
+    // Try to get agent details
+    const r2=await fetch('http://127.0.0.1:8001/orchestrator/status');
+    const s=await r2.json();
+    const agents=s.agents??{};
+    const active=agents.active??0;
+    const suspended=agents.suspended??0;
+    const terminated=agents.terminated??0;
+    const actions=agents.total_actions??0;
+    let html=`<div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-center mb-2">`;
+    html+=`<div class="bg-zion-900 rounded p-2"><div class="text-xs text-gray-400">Active</div><div class="text-sm font-bold text-emerald-400">${active}</div></div>`;
+    html+=`<div class="bg-zion-900 rounded p-2"><div class="text-xs text-gray-400">Suspended</div><div class="text-sm font-bold text-amber-400">${suspended}</div></div>`;
+    html+=`<div class="bg-zion-900 rounded p-2"><div class="text-xs text-gray-400">Terminated</div><div class="text-sm font-bold text-red-400">${terminated}</div></div>`;
+    html+=`<div class="bg-zion-900 rounded p-2"><div class="text-xs text-gray-400">Actions</div><div class="text-sm font-bold text-gray-300">${actions}</div></div>`;
+    html+=`</div>`;
+    if(list)list.innerHTML=html;
+    if(res)res.textContent=`Loaded: ${active} active, ${suspended} suspended, ${terminated} terminated`;
+  }catch(e){
+    if(list)list.innerHTML='<div class="text-red-400 text-xs">Error loading agents: '+escapeHtml(String(e))+'</div>';
+  }
+}
+
+async function registerAgent(){
+  const res=document.getElementById('agent-action-result');
+  if(res)res.textContent='Registering agent…';
+  try{
+    const r=await fetch('http://127.0.0.1:8001/agents',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name:'DashboardAgent-'+Date.now(),capabilities:['Compute','Memory'],consciousness_level:1})
+    });
+    const d=await r.json();
+    if(res)res.textContent='Registered: '+JSON.stringify(d);
+    loadAgentList();
+  }catch(e){
+    if(res)res.textContent='Error: '+String(e);
+  }
+}
+
+async function elevateConsciousness(){
+  const res=document.getElementById('agent-action-result');
+  if(res)res.textContent='Elevating consciousness…';
+  try{
+    // First get agents to find an ID
+    const r1=await fetch('http://127.0.0.1:8001/agents');
+    const d1=await r1.json();
+    if(!d1.total&&!d1.active){if(res)res.textContent='No agents to elevate';return;}
+    // Try to find first active agent
+    const r2=await fetch('http://127.0.0.1:8001/orchestrator/status');
+    const s=await r2.json();
+    // Elevate on first agent (using placeholder ID for demo)
+    const r3=await fetch('http://127.0.0.1:8001/agents/00000000-0000-0000-0000-000000000001/consciousness',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({level:2})
+    });
+    const d3=await r3.json();
+    if(res)res.textContent='Elevated: '+JSON.stringify(d3);
+    loadAgentList();
+  }catch(e){
+    if(res)res.textContent='Error: '+String(e);
+  }
+}
+
+async function grantCapability(){
+  const res=document.getElementById('agent-action-result');
+  if(res)res.textContent='Granting capability…';
+  try{
+    const r=await fetch('http://127.0.0.1:8001/agents/00000000-0000-0000-0000-000000000001/capabilities',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({capability:'RAG'})
+    });
+    const d=await r.json();
+    if(res)res.textContent='Granted: '+JSON.stringify(d);
+  }catch(e){
+    if(res)res.textContent='Error: '+String(e);
+  }
+}
+
+async function dispatchTask(){
+  const res=document.getElementById('agent-action-result');
+  if(res)res.textContent='Dispatching task…';
+  try{
+    const r=await fetch('http://127.0.0.1:8001/tasks/dispatch',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({task_type:'QueryKnowledge',model_id:'hiran-v2.2',submitter:'dashboard',description:'Dashboard test task',input:'What is ZION?'})
+    });
+    const d=await r.json();
+    if(res)res.textContent='Dispatched: '+JSON.stringify(d);
+    loadAgentList();
+    loadOrchestratorStats();
+  }catch(e){
+    if(res)res.textContent='Error: '+String(e);
+  }
 }
 
 // ── Start an AI layer service via dashboard control API ───────────────
