@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
 
-const PROMETHEUS_URL = process.env.PROMETHEUS_URL || 'http://zion-prometheus:9090';
+const PROMETHEUS_URL = process.env.PROMETHEUS_URL || 'http://127.0.0.1:9090';
 
 // Allowlisted metric prefixes — only V3 + infra metrics, nothing sensitive
 const ALLOWED_PREFIXES = [

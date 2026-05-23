@@ -12,7 +12,7 @@ import {
 } from '@/lib/constants';
 import { SITE_PRIMARY_HOST, SITE_PRIMARY_POOL_API_URL } from '@/lib/site';
 
-const PROMETHEUS_URL = process.env.PROMETHEUS_URL || 'http://zion-prometheus:9090';
+const PROMETHEUS_URL = process.env.PROMETHEUS_URL || 'http://127.0.0.1:9090';
 
 interface PromResult {
   metric: Record<string, string>;
