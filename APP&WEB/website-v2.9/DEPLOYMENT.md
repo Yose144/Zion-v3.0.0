@@ -5,10 +5,10 @@
 ## Current Production Status
 
 - Local `npm run build` passes cleanly on the current tree.
-- Production deploy target is Prague primary: `91.98.122.165`.
+- Production deploy target is **Edge** (Hetzner VPS): `77.42.71.94`.
 - Canonical remote paths:
-  - source: `/root/zion-2.9.6/APP&WEB/website-v2.9`
-  - compose: `/root/zion-2.9.6/docker`
+  - source: `/root/zion-2.9.6-main/APP&WEB/website-v2.9`
+  - compose: `/root/zion-2.9.6-main/docker`
 - Website bridge status now reaches the host-networked bridge via `host.docker.internal:9101` from `docker-compose.website.yml`.
 - Verified live after deploy on 2026-04-20:
   - `https://zionterranova.com/api/health`
@@ -27,20 +27,20 @@
   
 - **Documentation:** 19 markdown files from webv3.3
 - **Build Time:** ~3-4 seconds
-- **Status:** ✅ Buildable and deployed on Prague primary
+- **Status:** ✅ Buildable and deployed on Edge (Hetzner)
 
 ## 🚀 Deployment Commands
 
 ### Automated Deploy (recommended)
 ```bash
 cd APP\&WEB/website-v2.9
-bash ./scripts/deploy.sh --host 91.98.122.165 --user root
+bash ./scripts/deploy.sh --host 77.42.71.94 --user root
 ```
 
 Default production paths are now:
 
-- remote source: /root/zion-2.9.6/APP&WEB/website-v2.9
-- remote compose: /root/zion-2.9.6/docker
+- remote source: /root/zion-2.9.6-main/APP&WEB/website-v2.9
+- remote compose: /root/zion-2.9.6-main/docker
 
 If you need a different remote layout, use:
 
@@ -55,17 +55,17 @@ bash ./scripts/deploy.sh \
 ### Manual Deploy to Main Domain
 ```bash
 rsync -avz --delete \
-  -e "ssh -i ~/.ssh/zion_hetzner_key" \
-  ./ root@91.98.122.165:/root/zion-2.9.6/APP\&WEB/website-v2.9/ \
+  -e "ssh -i ~/.ssh/ssh-key-zion-edge" \
+  ./ root@77.42.71.94:/root/zion-2.9.6-main/APP\&WEB/website-v2.9/ \
   --exclude node_modules --exclude .next --exclude out --exclude .env.local
 
 rsync -avz \
-  -e "ssh -i ~/.ssh/zion_hetzner_key" \
-  /Users/yeshuae/Projects/2.9.6/docker/docker-compose.website.yml \
-  root@91.98.122.165:/root/zion-2.9.6/docker/
+  -e "ssh -i ~/.ssh/ssh-key-zion-edge" \
+  ./docker/docker-compose.website.yml \
+  root@77.42.71.94:/root/zion-2.9.6-main/docker/
 
-ssh -i ~/.ssh/zion_hetzner_key root@91.98.122.165 \
-  "cd /root/zion-2.9.6/docker && docker compose -f docker-compose.website.yml build --no-cache website && docker compose -f docker-compose.website.yml up -d website"
+ssh -i ~/.ssh/ssh-key-zion-edge root@77.42.71.94 \
+  "cd /root/zion-2.9.6-main/docker && docker compose -f docker-compose.website.yml build --no-cache website && docker compose -f docker-compose.website.yml up -d website"
 ```
 
 ## 📋 Pre-Deployment Checklist
@@ -203,10 +203,10 @@ fetch('https://zionterranova.com/api/health')
 - **Main Site:** https://zionterranova.com
 - **API:** https://zionterranova.com/api
 - **GitHub:** https://github.com/Zion-TerraNova
-- **Production Host:** 91.98.122.165
+- **Production Host:** 77.42.71.94 (Edge · Hetzner)
 
 ---
 
 **Version:** v2.9.9  
 **Build Date:** 20. dubna 2026  
-**Status:** ✅ Deployed and verified on Prague primary
+**Status:** ✅ Deployed and verified on Edge
