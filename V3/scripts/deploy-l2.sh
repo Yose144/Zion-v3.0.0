@@ -9,7 +9,7 @@
 #   - Git repo cloned at the same path on the server
 #
 # Usage:
-#   ssh root@91.98.122.165 'cd /path/to/2.9.6 && bash V3/scripts/deploy-l2.sh'
+#   ssh root@<EDGE_IP> 'cd /path/to/2.9.6 && bash V3/scripts/deploy-l2.sh'
 #
 # Environment overrides:
 #   BRIDGE_PROFILE=mainnet  (default: testnet)

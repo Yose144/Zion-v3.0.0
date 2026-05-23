@@ -33,6 +33,8 @@ pub struct Config {
     pub dao: DaoConfig,
     #[serde(default)]
     pub cli: CliConfig,
+    #[serde(default)]
+    pub topology: TopologyConfig,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -110,12 +112,32 @@ pub struct DaoConfig {
     pub port: u16,
 }
 
+/// Host configuration for a single node in the core+edge topology.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TopologyHostConfig {
+    pub rpc_host: String,
+    pub rpc_port: u16,
+    pub p2p_port: u16,
+    pub pool_host: String,
+    pub pool_port: u16,
+    pub vpn_ip: Option<String>,
+}
+
+/// Overall topology configuration (core + edge).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TopologyConfig {
+    #[serde(default)]
+    pub core: TopologyHostConfig,
+    #[serde(default)]
+    pub edge: TopologyHostConfig,
+}
+
 impl Default for NodeConfig {
     fn default() -> Self {
         Self {
-            rpc_host: "204.168.245.175".into(),
+            rpc_host: "127.0.0.1".into(),
             rpc_port: 8443,
-            p2p_port: 8334,
+            p2p_port: 8333,
             websocket_port: Some(8445),
         }
     }
@@ -124,8 +146,44 @@ impl Default for NodeConfig {
 impl Default for PoolConfig {
     fn default() -> Self {
         Self {
-            host: "204.168.245.175".into(),
-            port: 3333,
+            host: "77.42.71.94".into(),
+            port: 8444,
+        }
+    }
+}
+
+impl Default for TopologyHostConfig {
+    fn default() -> Self {
+        Self {
+            rpc_host: "127.0.0.1".into(),
+            rpc_port: 8443,
+            p2p_port: 8333,
+            pool_host: "127.0.0.1".into(),
+            pool_port: 8444,
+            vpn_ip: None,
+        }
+    }
+}
+
+impl Default for TopologyConfig {
+    fn default() -> Self {
+        Self {
+            core: TopologyHostConfig {
+                rpc_host: "127.0.0.1".into(),
+                rpc_port: 8443,
+                p2p_port: 8333,
+                pool_host: "127.0.0.1".into(),
+                pool_port: 8444,
+                vpn_ip: Some("100.86.102.5".into()),
+            },
+            edge: TopologyHostConfig {
+                rpc_host: "100.66.162.125".into(),
+                rpc_port: 8443,
+                p2p_port: 8333,
+                pool_host: "77.42.71.94".into(),
+                pool_port: 8444,
+                vpn_ip: Some("100.66.162.125".into()),
+            },
         }
     }
 }
@@ -145,8 +203,8 @@ impl Default for MinerConfig {
 impl Default for AgentConfig {
     fn default() -> Self {
         Self {
-            url: "http://204.168.245.175:8001".into(),
-            model: "hiranyagarbha-v1".into(),
+            url: "http://127.0.0.1:8002".into(),
+            model: "hiranyagarbha-v2.2".into(),
         }
     }
 }
@@ -199,6 +257,65 @@ impl Default for Config {
             bridge: BridgeConfig::default(),
             dao: DaoConfig::default(),
             cli: CliConfig::default(),
+            topology: TopologyConfig::default(),
+        }
+    }
+}
+
+impl Config {
+    /// Resolve the active RPC endpoint for the core node.
+    pub fn core_rpc(&self) -> (&str, u16) {
+        (&self.topology.core.rpc_host, self.topology.core.rpc_port)
+    }
+
+    /// Resolve the active RPC endpoint for the edge node.
+    pub fn edge_rpc(&self) -> (&str, u16) {
+        (&self.topology.edge.rpc_host, self.topology.edge.rpc_port)
+    }
+
+    /// Resolve the active pool endpoint for the core node.
+    pub fn core_pool(&self) -> (&str, u16) {
+        (&self.topology.core.pool_host, self.topology.core.pool_port)
+    }
+
+    /// Resolve the active pool endpoint for the edge node.
+    pub fn edge_pool(&self) -> (&str, u16) {
+        (&self.topology.edge.pool_host, self.topology.edge.pool_port)
+    }
+
+    /// Pick the appropriate RPC endpoint based on a target name.
+    /// Recognised targets: `core`, `edge`, `local` (alias for core), `vpn` (alias for edge).
+    pub fn target_rpc(&self, target: &str) -> (&str, u16) {
+        match target.trim().to_ascii_lowercase().as_str() {
+            "edge" | "vpn" | "relay" => self.edge_rpc(),
+            "core" | "local" | "master" => self.core_rpc(),
+            _ => {
+                // Fallback: if target looks like host:port, use it directly
+                if target.contains(':') {
+                    let parts: Vec<&str> = target.splitn(2, ':').collect();
+                    if let Ok(port) = parts[1].parse() {
+                        return (parts[0], port);
+                    }
+                }
+                self.core_rpc()
+            }
+        }
+    }
+
+    /// Pick the appropriate pool endpoint based on a target name.
+    pub fn target_pool(&self, target: &str) -> (&str, u16) {
+        match target.trim().to_ascii_lowercase().as_str() {
+            "edge" | "vpn" | "relay" => self.edge_pool(),
+            "core" | "local" | "master" => self.core_pool(),
+            _ => {
+                if target.contains(':') {
+                    let parts: Vec<&str> = target.splitn(2, ':').collect();
+                    if let Ok(port) = parts[1].parse() {
+                        return (parts[0], port);
+                    }
+                }
+                self.edge_pool()
+            }
         }
     }
 }
@@ -301,7 +418,21 @@ pub fn set_value(key: &str, value: &str) -> Result<()> {
         ["bridge", "port"] => cfg.bridge.port = value.parse()?,
         ["dao", "port"] => cfg.dao.port = value.parse()?,
         ["cli", "auto_update_check"] => cfg.cli.auto_update_check = value.parse()?,
-        _ => anyhow::bail!("Unknown config key: {}. Valid keys: node.rpc_host, node.rpc_port, node.p2p_port, node.websocket_port, pool.host, pool.port, miner.wallet, miner.btc_wallet, miner.threads, miner.backend, miner.profile, agent.url, agent.model, hiran.model_path, hiran.backend, hiran.device, hiran.port, hiran.max_context, hiran.temperature, hiran.top_p, deploy.ssh_key, deploy.ssh_user, deploy.default_server, bridge.port, dao.port, cli.auto_update_check", key),
+        // topology.core.*
+        ["topology.core", "rpc_host"] => cfg.topology.core.rpc_host = value.into(),
+        ["topology.core", "rpc_port"] => cfg.topology.core.rpc_port = value.parse()?,
+        ["topology.core", "p2p_port"] => cfg.topology.core.p2p_port = value.parse()?,
+        ["topology.core", "pool_host"] => cfg.topology.core.pool_host = value.into(),
+        ["topology.core", "pool_port"] => cfg.topology.core.pool_port = value.parse()?,
+        ["topology.core", "vpn_ip"] => cfg.topology.core.vpn_ip = Some(value.into()),
+        // topology.edge.*
+        ["topology.edge", "rpc_host"] => cfg.topology.edge.rpc_host = value.into(),
+        ["topology.edge", "rpc_port"] => cfg.topology.edge.rpc_port = value.parse()?,
+        ["topology.edge", "p2p_port"] => cfg.topology.edge.p2p_port = value.parse()?,
+        ["topology.edge", "pool_host"] => cfg.topology.edge.pool_host = value.into(),
+        ["topology.edge", "pool_port"] => cfg.topology.edge.pool_port = value.parse()?,
+        ["topology.edge", "vpn_ip"] => cfg.topology.edge.vpn_ip = Some(value.into()),
+        _ => anyhow::bail!("Unknown config key: {}. Valid keys: node.rpc_host, node.rpc_port, node.p2p_port, node.websocket_port, pool.host, pool.port, miner.wallet, miner.btc_wallet, miner.threads, miner.backend, miner.profile, agent.url, agent.model, hiran.model_path, hiran.backend, hiran.device, hiran.port, hiran.max_context, hiran.temperature, hiran.top_p, deploy.ssh_key, deploy.ssh_user, deploy.default_server, bridge.port, dao.port, cli.auto_update_check, topology.core.rpc_host, topology.core.rpc_port, topology.core.p2p_port, topology.core.pool_host, topology.core.pool_port, topology.core.vpn_ip, topology.edge.rpc_host, topology.edge.rpc_port, topology.edge.p2p_port, topology.edge.pool_host, topology.edge.pool_port, topology.edge.vpn_ip", key),
     }
     save(&cfg)?;
     println!("✓ {} = {}", key, value);

@@ -2,12 +2,12 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # fleet-mainnet-remote-bootstrap.sh
 #
-# Automaticky: (1) stáhne Pražskou šablonu .env (pool klíče, miner wallet),
-# (2) nasyncuje lokální V3/** na target host, (3) složí .env (.env.example + Prague),
+# Automaticky: (1) stáhne šablonu .env z Core/Edge (pool klíče, miner wallet),
+# (2) nasyncuje lokální V3/** na target host, (3) složí .env (.env.example + šablona),
 # (4) volitelně zresetuje volumy genesis (docker compose down -v),
 # (5) nabuilduje a spustí docker-compose.v3-mainnet.yml na cíli.
 #
-# Pražský canonical runtime (stav 2026-05): /root/zion-2.9.6/docker — vlastní
+# Canonical runtime (Core + Edge topology, stav 2026-05): /root/zion-2.9.6/docker — vlastní
 # compose (host networking, pool 3333). Tento skript používá *kanonický* compose
 # z repa (V3/docker/docker-compose.v3-mainnet.yml, pool port 8444, RPC jen localhost).
 #
@@ -15,16 +15,16 @@
 #
 #   export ZION_SSH_USER=root
 #   export ZION_SSH_IDENTITY="${HOME}/.ssh/zion_hetzner_key"
-#   export ZION_TEMPLATE_HOST=91.98.122.165      # Prague — čte jen docker/.env šablony
-#   export ZION_TARGET_HOST=204.168.245.175       # Helsinki (nebo SG/USA)
-#   export ZION_FLEET_ROLE=coordinator            # coordinator | follower
-#   export ZION_COORD_P2P=204.168.245.175:8333    # pro follower povinný seed
+#   export ZION_TEMPLATE_HOST=<TEMPLATE_HOST_IP>      # Core/Edge — čte jen docker/.env šablony
+#   export ZION_TARGET_HOST=<TARGET_HOST_IP>            # nový mainnet coordinator nebo follower
+#   export ZION_FLEET_ROLE=coordinator                # coordinator | follower
+#   export ZION_COORD_P2P=<COORD_P2P_IP>:8333         # pro follower povinný seed
 #
 #   ./V3/scripts/fleet-mainnet-remote-bootstrap.sh
 #
 # Env:
 #   ZION_REMOTE_V3_PARENT=/root/zion-v3-fleet      # kde bude REMOTE_PARENT/V3/...
-#   ZION_FETCH_TEMPLATE=1                          # výchozí 1 — stáhnout Prague .env a sloučit
+#   ZION_FETCH_TEMPLATE=1                          # výchozí 1 — stáhnout šablonu .env a sloučit
 #   ZION_GENESIS_VOLUME_RESET=1                  # výchozí 1 — down -v před up (greenfield)
 #   ZION_INSTALL_DOCKER=1                         # výchozí 1 — get.docker.com když chybí docker
 #   ZION_SKIP_BUILD=0                             # 1 = jen config + rsync, bez compose build
@@ -38,7 +38,7 @@ REPO_LOCAL="$(cd "$V3_LOCAL/.." && pwd)"
 
 : "${ZION_SSH_USER:=root}"
 : "${ZION_SSH_IDENTITY:?Set ZION_SSH_IDENTITY to private key path (e.g. ~/.ssh/zion_hetzner_key)}"
-: "${ZION_TEMPLATE_HOST:?Set ZION_TEMPLATE_HOST (Prague ops template, e.g. 91.98.122.165)}"
+: "${ZION_TEMPLATE_HOST:?Set ZION_TEMPLATE_HOST (Core/Edge ops template, e.g. 100.66.162.125)}"
 : "${ZION_TARGET_HOST:?Set ZION_TARGET_HOST (new mainnet coordinator or follower)}"
 : "${ZION_FLEET_ROLE:=coordinator}"
 : "${ZION_COORD_P2P:=204.168.245.175:8333}"
