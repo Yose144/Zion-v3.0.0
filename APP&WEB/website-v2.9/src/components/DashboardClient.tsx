@@ -110,6 +110,16 @@ const getGrafanaDashboards = (cs: boolean) => [
   }
 ];
 
+type TabId = 'overview' | 'health' | 'blockchain' | 'pool' | 'roadmap';
+
+const TABS: { id: TabId; icon: typeof LayoutDashboard; labelCs: string; labelEn: string }[] = [
+  { id: 'overview', icon: LayoutDashboard, labelCs: 'Přehled', labelEn: 'Overview' },
+  { id: 'health', icon: Activity, labelCs: 'Zdraví systému', labelEn: 'System Health' },
+  { id: 'blockchain', icon: Blocks, labelCs: 'Blockchain', labelEn: 'Blockchain' },
+  { id: 'pool', icon: Pickaxe, labelCs: 'Těžba & Pool', labelEn: 'Mining & Pool' },
+  { id: 'roadmap', icon: Map, labelCs: 'Plán', labelEn: 'Roadmap' },
+];
+
 export default function DashboardClient({ stats, health, blocks, poolStats }: DashboardClientProps) {
   const { lang } = useLang();
   const cs = lang === 'cs';
@@ -178,8 +188,6 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
         </div>
 
         {/* ═══════ OVERVIEW ═══════ */}
-        {activeTab === 'overview' && (
-        <div className="space-y-12">
         <div className="grid gap-6 lg:grid-cols-2">
           {(activeTab === 'overview' || activeTab === 'health') && (
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-panel rounded-[28px] bg-black/50 p-6">
@@ -488,7 +496,9 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
             </div>
           </div>
         </motion.div>
+        )}
 
+        {(activeTab === 'overview' || activeTab === 'blockchain') && (
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-panel rounded-[28px] p-6">
           <div className="flex items-center gap-3 mb-4">
             <Cpu className="w-6 h-6 text-zion-gold" />
@@ -516,7 +526,9 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
             <div className="text-center text-gray-400 py-12">{cs ? 'Z API nebyl detekovan zadny block feed.' : 'No block feed detected from API.'}</div>
           )}
         </motion.div>
+        )}
 
+        {(activeTab === 'overview' || activeTab === 'roadmap') && (
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-panel rounded-4xl border-zion-gold/30 bg-linear-to-r from-zion-purple/20 via-zion-gold/10 to-zion-cyan/20 p-8">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
@@ -546,6 +558,7 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
             ))}
           </div>
         </motion.div>
+        )}
       </div>
     </div>
   );
@@ -559,13 +572,3 @@ function MetricCard({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
-
-type TabId = 'overview' | 'health' | 'blockchain' | 'pool' | 'roadmap';
-
-const TABS: { id: TabId; icon: typeof LayoutDashboard; labelCs: string; labelEn: string }[] = [
-  { id: 'overview', icon: LayoutDashboard, labelCs: 'Přehled', labelEn: 'Overview' },
-  { id: 'health', icon: Activity, labelCs: 'Zdraví systému', labelEn: 'System Health' },
-  { id: 'blockchain', icon: Blocks, labelCs: 'Blockchain', labelEn: 'Blockchain' },
-  { id: 'pool', icon: Pickaxe, labelCs: 'Těžba & Pool', labelEn: 'Mining & Pool' },
-  { id: 'roadmap', icon: Map, labelCs: 'Plán', labelEn: 'Roadmap' },
-];
