@@ -52,6 +52,14 @@ export default function Navigation() {
       ],
     },
     {
+      title: 'Layers',
+      items: [
+        { href: '/l4-oasis', label: tr('nav', 'l4_oasis', lang) },
+        { href: '/l5-free-world', label: tr('nav', 'l5_free_world', lang) },
+        { href: '/l6-issobella', label: tr('nav', 'l6_issobella', lang) },
+      ],
+    },
+    {
       title: 'Reference',
       items: [
         { href: '/docs', label: tr('nav', 'docs', lang) },
@@ -64,8 +72,6 @@ export default function Navigation() {
             { href: '/terranova/te-piko-ora', label: 'Te Pīko Ora' },
           ],
         },
-        { href: '/l5-free-world', label: 'L5 Free World' },
-        { href: '/l6-issobella', label: 'L6 Issobella' },
         { href: '/resonance', label: tr('nav', 'resonance', lang) },
         { href: '/bridge', label: tr('nav', 'bridge', lang) },
         { href: '/api-reference', label: tr('nav', 'api', lang) },
@@ -79,6 +85,7 @@ export default function Navigation() {
     Core: tr('nav', 'mission', lang),
     Build:  tr('nav', 'stacks', lang),
     DeFi: tr('nav', 'defi_group', lang),
+    Layers: tr('nav', 'layers_group', lang),
     Reference: tr('nav', 'knowledge', lang),
   };
 

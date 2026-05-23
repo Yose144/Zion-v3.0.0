@@ -29,6 +29,10 @@ const t = {
     defi:       { cs: 'DeFi Hub',    en: 'DeFi Hub' },
     defi_group: { cs: 'DeFi · L2',   en: 'DeFi · L2' },
     kompas:     { cs: 'Zlatý Kompas', en: 'Golden Compass' },
+    layers_group: { cs: 'Vrstvy', en: 'Layers' },
+    l4_oasis:   { cs: 'L4 Oasis', en: 'L4 Oasis' },
+    l5_free_world: { cs: 'L5 Free World', en: 'L5 Free World' },
+    l6_issobella: { cs: 'L6 Issobella', en: 'L6 Issobella' },
     terranova:  { cs: 'Terra Nova',   en: 'Terra Nova' },
     terranova_public: { cs: 'Veřejná edice', en: 'Public edition' },
     terra_garden_genesis: { cs: 'Zahrada Genesis', en: 'Garden of Genesis' },
@@ -542,6 +546,7 @@ const t = {
   footer: {
     group_protocol: { cs: 'Protokol', en: 'Protocol' },
     group_explore: { cs: 'Průzkum', en: 'Explore' },
+    group_layers: { cs: 'Vrstvy', en: 'Layers' },
     group_knowledge: { cs: 'Znalosti', en: 'Knowledge' },
     whitepaper: { cs: 'Whitepaper', en: 'Whitepaper' },
     downloads: { cs: 'Downloady', en: 'Downloads' },
