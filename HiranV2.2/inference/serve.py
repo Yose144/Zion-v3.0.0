@@ -48,6 +48,28 @@ _stats: Dict[str, Any] = {
 def load_model(model_path: str, ollama_base: str = "http://localhost:11434"):
     """Load model based on format / path prefix."""
 
+    # ── LM Studio OpenAI-compatible backend ───────────────────────────────────
+    if model_path.startswith("lmstudio:") or model_path.startswith("lm-studio:"):
+        # LM Studio exposes OpenAI-compatible API on port 1234
+        model_name = model_path.split(":", 1)[1]
+        lmstudio_base = os.environ.get("LMSTUDIO_BASE_URL", "http://localhost:1234")
+        try:
+            req = urllib.request.urlopen(f"{lmstudio_base}/v1/models", timeout=5)
+            raw = json.loads(req.read())
+            req.close()
+            available = [m["id"] for m in raw.get("data", [])]
+            if not available:
+                raise RuntimeError("LM Studio server běží, ale žádný model není načten. Načti model v LM Studio GUI.")
+            # Use first available model if "hiran" not found
+            selected = next((m for m in available if "hiran" in m.lower()), available[0])
+            print(f"✅ LM Studio backend: {lmstudio_base}, model: {selected}")
+            return {"backend": "lmstudio", "model_name": selected, "lmstudio_base": lmstudio_base}
+        except urllib.error.URLError as e:
+            raise RuntimeError(
+                f"LM Studio server nedosažitelný na {lmstudio_base}: {e}\n"
+                "Otevři LM Studio → Developer → Start Server (port 1234)"
+            )
+
     # ── Ollama proxy backend ───────────────────────────────────────────────────
     if model_path.startswith("ollama:"):
         model_name = model_path[len("ollama:"):]
@@ -129,8 +151,30 @@ def chat_completions():
     backend = model_state.get("backend", "")
 
     try:
+        # ── LM Studio proxy (OpenAI-compatible, port 1234) ────────────────────
+        if backend == "lmstudio":
+            lmstudio_base = model_state["lmstudio_base"]
+            model_name = model_state["model_name"]
+            payload = json.dumps({
+                "model": model_name,
+                "messages": messages,
+                "max_tokens": max_tokens,
+                "temperature": temperature,
+                "top_p": top_p,
+                "stream": False,
+            }).encode()
+            req = urllib.request.Request(
+                f"{lmstudio_base}/v1/chat/completions",
+                data=payload,
+                headers={"Content-Type": "application/json"},
+                method="POST",
+            )
+            with urllib.request.urlopen(req, timeout=120) as resp:
+                result = json.loads(resp.read())
+            response_text = result["choices"][0]["message"]["content"]
+
         # ── Ollama proxy ──────────────────────────────────────────────────────
-        if backend == "ollama":
+        elif backend == "ollama":
             ollama_base = model_state["ollama_base"]
             model_name = model_state["model_name"]
             payload = json.dumps({
@@ -273,6 +317,9 @@ def status():
     if backend == "ollama":
         extra["ollama_model"] = model_state.get("model_name")
         extra["ollama_base"] = model_state.get("ollama_base")
+    elif backend == "lmstudio":
+        extra["lmstudio_model"] = model_state.get("model_name")
+        extra["lmstudio_base"] = model_state.get("lmstudio_base")
 
     return jsonify({
         "status": "ok" if model_state else "no_model",
