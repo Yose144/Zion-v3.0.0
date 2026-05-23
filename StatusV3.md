@@ -109,7 +109,7 @@ zion hiran deploy --model --platform             # Deployment
 | **Node monitoring** | ✅ Hotovo | Node view rozšířen o pool metriky: hashrate, miners, sync gap (>5 = červená), blocks found |
 | **Wallet payouts** | ✅ Hotovo | Nová "Payouts" záložka s fee split vizualizací (89/5/5/1) a payout history |
 | **GPU OpenCL** | ✅ Hotovo | Ověřeno naživo — AMD `gfx1010:xnack-` (RX 5600 XT) detekováno, benchmark běží |
-| **GPU CUDA** | 🔄 Čeká | Scaffold v kódu — test přes Vast.ai (RTX 4090/3090) naplánován |
+| **GPU CUDA** | ✅ Hotovo | Test na Vast.ai — RTX 3060, CUDA 12.2, build s `gpu-cuda` prošel, Ekam Deeksha benchmark: **12.03 KH/s** |
 | **CPU/GPU/Both toggle** | ✅ Hotovo | Radio buttons `cpu`/`gpu`/`dual` — renderer ukládá `miningMode`, main.js nastaví `--gpu <backend>` a `ZION_BACKEND` env |
 | **Public RPC** | ✅ Hotovo | Desktop agent default RPC URL = `http://77.42.71.94:8443` (veřejný read-only endpoint) |
 
