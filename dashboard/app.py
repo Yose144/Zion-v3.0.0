@@ -3042,6 +3042,81 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     "depends_on": svc.get("depends_on", []),
                 })
             self._json({"layer": layer, "services": result, "count": len(result)})
+        # ── Service log tail ─────────────────────────────────────────────────
+        elif route == "/api/service-log":
+            svc_id = params.get("id", [""])[0].strip()
+            n_lines = int(params.get("lines", ["80"])[0])
+            _log_map = {
+                "hiranyagarbha":    "hiranyagarbha.log",
+                "hiran-inference":  "hiran-inference.log",
+                "node1":            "node.log",
+                "node2":            "node2.log",
+                "pool":             "pool.log",
+                "miner":            "miner.log",
+            }
+            log_name = _log_map.get(svc_id)
+            if not log_name:
+                self._json({"error": "unknown service", "lines": ""})
+            else:
+                log_file = REPO_ROOT / "logs" / log_name
+                if not log_file.exists():
+                    self._json({"lines": f"(log file {log_name} not found)", "exists": False})
+                else:
+                    try:
+                        with open(log_file, "r", encoding="utf-8", errors="ignore") as f:
+                            all_lines = f.readlines()
+                        tail = "".join(all_lines[-n_lines:])
+                        self._json({"lines": tail, "exists": True, "total_lines": len(all_lines)})
+                    except Exception as e:
+                        self._json({"error": str(e), "lines": ""})
+        # ── Hiran AI endpoints ────────────────────────────────────────────────
+        elif route == "/api/hiran/health":
+            hiran_url = "http://127.0.0.1:8002"
+            alive, backend, model_name, uptime_s = False, "none", "—", None
+            try:
+                req = urllib.request.Request(
+                    f"{hiran_url}/health",
+                    headers={"Accept": "application/json"},
+                )
+                with urllib.request.urlopen(req, timeout=2) as r:
+                    data_h = json.loads(r.read())
+                    alive = data_h.get("status") == "ok"
+                    backend = data_h.get("backend", "unknown")
+                    model_name = data_h.get("model", "hiran-v2.2")
+                    uptime_s = data_h.get("uptime_s")
+            except Exception as e:
+                alive = False
+                backend = f"error: {str(e)[:60]}"
+            self._json({
+                "alive": alive,
+                "backend": backend,
+                "model": model_name,
+                "uptime_s": uptime_s,
+                "endpoint": hiran_url,
+            })
+        elif route == "/api/hiranyagarbha/health":
+            orch_url = "http://127.0.0.1:8001"
+            alive, version, active_agents, task_queue = False, None, None, None
+            try:
+                req = urllib.request.Request(
+                    f"{orch_url}/health",
+                    headers={"Accept": "application/json"},
+                )
+                with urllib.request.urlopen(req, timeout=2) as r:
+                    data_o = json.loads(r.read())
+                    alive = data_o.get("status") in ("ok", "healthy")
+                    version = data_o.get("version")
+                    active_agents = data_o.get("active_agents")
+                    task_queue = data_o.get("task_queue_depth") or data_o.get("task_queue")
+            except Exception as e:
+                alive = False
+            self._json({
+                "alive": alive,
+                "version": version,
+                "active_agents": active_agents,
+                "task_queue": task_queue,
+                "endpoint": orch_url,
+            })
         else:
             self.send_error(404)
 
@@ -3207,82 +3282,6 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     self._json({"ok": True, "stdout": out_text, "stderr": stderr.decode("utf-8", errors="ignore"), "exit_code": proc.returncode, "cmd": full_cmd})
             except Exception as e:
                 self._json({"ok": False, "error": str(e)})
-        # ── Service log tail ─────────────────────────────────────────────────
-        elif route == "/api/service-log":
-            svc_id = params.get("id", [""])[0].strip()
-            n_lines = int(params.get("lines", ["80"])[0])
-            # Map service id → log filename
-            _log_map = {
-                "hiranyagarbha":    "hiranyagarbha.log",
-                "hiran-inference":  "hiran-inference.log",
-                "node1":            "node.log",
-                "node2":            "node2.log",
-                "pool":             "pool.log",
-                "miner":            "miner.log",
-            }
-            log_name = _log_map.get(svc_id)
-            if not log_name:
-                self._json({"error": "unknown service", "lines": ""})
-            else:
-                log_file = REPO_ROOT / "logs" / log_name
-                if not log_file.exists():
-                    self._json({"lines": f"(log file {log_name} not found)", "exists": False})
-                else:
-                    try:
-                        with open(log_file, "r", encoding="utf-8", errors="ignore") as f:
-                            all_lines = f.readlines()
-                        tail = "".join(all_lines[-n_lines:])
-                        self._json({"lines": tail, "exists": True, "total_lines": len(all_lines)})
-                    except Exception as e:
-                        self._json({"error": str(e), "lines": ""})
-        # ── Hiran AI endpoints ────────────────────────────────────────────────
-        elif route == "/api/hiran/health":
-            hiran_url = "http://127.0.0.1:8002"
-            alive, backend, model_name, uptime_s = False, "none", "—", None
-            try:
-                req = urllib.request.Request(
-                    f"{hiran_url}/health",
-                    headers={"Accept": "application/json"},
-                )
-                with urllib.request.urlopen(req, timeout=2) as r:
-                    data_h = json.loads(r.read())
-                    alive = data_h.get("status") == "ok"
-                    backend = data_h.get("backend", "unknown")
-                    model_name = data_h.get("model", "hiran-v2.2")
-                    uptime_s = data_h.get("uptime_s")
-            except Exception as e:
-                alive = False
-                backend = f"error: {str(e)[:60]}"
-            self._json({
-                "alive": alive,
-                "backend": backend,
-                "model": model_name,
-                "uptime_s": uptime_s,
-                "endpoint": hiran_url,
-            })
-        elif route == "/api/hiranyagarbha/health":
-            orch_url = "http://127.0.0.1:8001"
-            alive, version, active_agents, task_queue = False, None, None, None
-            try:
-                req = urllib.request.Request(
-                    f"{orch_url}/health",
-                    headers={"Accept": "application/json"},
-                )
-                with urllib.request.urlopen(req, timeout=2) as r:
-                    data_o = json.loads(r.read())
-                    alive = data_o.get("status") in ("ok", "healthy")
-                    version = data_o.get("version")
-                    active_agents = data_o.get("active_agents")
-                    task_queue = data_o.get("task_queue_depth") or data_o.get("task_queue")
-            except Exception as e:
-                alive = False
-            self._json({
-                "alive": alive,
-                "version": version,
-                "active_agents": active_agents,
-                "task_queue": task_queue,
-                "endpoint": orch_url,
-            })
         else:
             self.send_error(404)
 
