@@ -1,0 +1,68 @@
+{
+  "version": "3.0.0",
+  "streams": {
+    "zion": {
+      "stream": 1,
+      "name": "ZION",
+      "description": "Cosmic Fusion base mining",
+      "enabled": true,
+      "target_share": 0.5,
+      "configurable": false,
+      "algorithm": "cosmic_fusion"
+    },
+    "etc": {
+      "stream": 2,
+      "name": "ETC",
+      "description": "Keccak256 merged mining to Ethereum Classic",
+      "enabled": true,
+      "target_share": 0.2,
+      "configurable": true,
+      "algorithm": "keccak256",
+      "pool": {
+        "stratum": "stratum+tcp://etc.2miners.com:1010",
+        "wallet": "0x...",
+        "worker": "zion_merged"
+      }
+    },
+    "nxs": {
+      "stream": 3,
+      "name": "NXS",
+      "description": "SHA3-512 merged mining to Nexus",
+      "enabled": true,
+      "target_share": 0.05,
+      "configurable": true,
+      "algorithm": "sha3_512",
+      "pool": {
+        "stratum": "stratum+tcp://pool.nexus.io:9549",
+        "wallet": "NXS...",
+        "worker": "zion_merged"
+      }
+    },
+    "dynamic_gpu": {
+      "stream": 4,
+      "name": "Dynamic GPU",
+      "description": "Profit-switched GPU mining",
+      "enabled": true,
+      "target_share": 0.2,
+      "configurable": true,
+      "mode": "auto",
+      "current_coin": "ERG",
+      "preferred_coins": ["ERG", "RVN", "KAS", "ALPH"]
+    },
+    "ncl": {
+      "stream": 5,
+      "name": "NCL AI Bonus",
+      "description": "Neural Compute Layer AI inference",
+      "enabled": true,
+      "target_share": 0.05,
+      "configurable": true,
+      "npu_allocation": 0.3,
+      "mining_allocation": 0.7
+    }
+  },
+  "summary": {
+    "enabled_streams": 5,
+    "stream_names": ["ZION", "ETC", "NXS", "Dynamic GPU", "NCL AI"],
+    "total_target_share": 1.0
+  }
+}

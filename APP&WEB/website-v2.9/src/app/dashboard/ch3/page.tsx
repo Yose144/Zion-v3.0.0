@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface StreamConfig {
   stream: number;
@@ -62,8 +62,8 @@ const GPU_COINS = [
   { id: "FLUX", name: "Flux", algo: "Equihash", color: "text-indigo-400" },
 ];
 
-const MOCK_SETTINGS: CH3Settings = {
-  version: "1.0.0",
+const DEFAULT_SETTINGS: CH3Settings = {
+  version: "3.0.0",
   streams: {
     zion: {
       stream: 1,
@@ -132,14 +132,39 @@ const MOCK_SETTINGS: CH3Settings = {
 };
 
 export default function CH3SettingsPage() {
-  const [settings, setSettings] = useState<CH3Settings>(MOCK_SETTINGS);
-  const [loading] = useState(false);
+  const [settings, setSettings] = useState<CH3Settings | null>(null);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("overview");
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function loadSettings() {
+      try {
+        const res = await fetch('/api/v2.9/revenue/config', { cache: 'no-store' });
+        if (!res.ok) throw new Error(`API error: ${res.status}`);
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        // Validate expected shape
+        if (data.streams && data.summary) {
+          setSettings(data as CH3Settings);
+        } else {
+          setSettings(DEFAULT_SETTINGS);
+        }
+        setError(null);
+      } catch (err) {
+        console.warn('Failed to load CH3 settings, using defaults:', err);
+        setSettings(DEFAULT_SETTINGS);
+        setError(err instanceof Error ? err.message : 'Load failed');
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadSettings();
+  }, []);
 
   const toggleStream = (streamKey: string) => {
     if (!settings || streamKey === "zion") return;
-    
     setSettings({
       ...settings,
       streams: {
@@ -182,10 +207,23 @@ export default function CH3SettingsPage() {
   };
 
   const saveSettings = async () => {
+    if (!settings) return;
     setSaving(true);
-    // In production: POST to /api/ch3/save
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setSaving(false);
+    try {
+      const res = await fetch('/api/v2.9/revenue/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings),
+      });
+      if (!res.ok) throw new Error(`Save failed: ${res.status}`);
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Save failed');
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (loading) {
@@ -618,13 +656,20 @@ export default function CH3SettingsPage() {
         )}
       </div>
 
+      {/* Error Banner */}
+      {error && (
+        <div className="mt-4 bg-red-900/30 border border-red-500/50 rounded-xl p-4 text-red-300 text-sm">
+          ⚠️ {error}
+        </div>
+      )}
+
       {/* Save Button */}
       <div className="mt-8 flex justify-end">
         <button
           onClick={saveSettings}
-          disabled={saving}
+          disabled={saving || !settings}
           className={`px-8 py-3 rounded-xl font-bold text-lg ${
-            saving
+            saving || !settings
               ? "bg-gray-700 text-gray-400 cursor-wait"
               : "bg-yellow-500 text-black hover:bg-yellow-400"
           }`}
