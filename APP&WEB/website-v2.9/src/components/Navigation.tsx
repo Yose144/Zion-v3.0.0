@@ -19,7 +19,7 @@ export default function Navigation() {
   const { lang, setLang } = useLang();
 
   const navItemMatches = (href: string) =>
-    pathname === href || (href === '/terranova' && pathname.startsWith('/terranova'));
+    pathname === href || (href === '/terranova' && pathname.startsWith('/terranova')) || (href === '/wiki' && pathname === '/wiki');
   const navGroups: NavGroup[] = [
     {
       title: 'Info',
@@ -35,7 +35,6 @@ export default function Navigation() {
         { href: '/miner-stats', label: tr('nav', 'miner_stats', lang) },
         { href: '/download', label: tr('nav', 'download', lang) },
         { href: '/roadmap', label: tr('nav', 'roadmap', lang) },
-        { href: '/docs', label: tr('nav', 'docs', lang) },
         { href: '/api-reference', label: tr('nav', 'api', lang) },
       ],
     },
@@ -63,6 +62,12 @@ export default function Navigation() {
         { href: '/l4-oasis', label: tr('nav', 'l4_oasis', lang) },
         { href: '/l5-free-world', label: tr('nav', 'l5_free_world', lang) },
         { href: '/l6-issobella', label: tr('nav', 'l6_issobella', lang) },
+      ],
+    },
+    {
+      title: 'Wiki',
+      items: [
+        { href: '/wiki', label: 'Wiki' },
         {
           href: '/terranova',
           label: tr('nav', 'terranova', lang),
@@ -72,6 +77,8 @@ export default function Navigation() {
             { href: '/terranova/te-piko-ora', label: 'Te Pīko Ora' },
           ],
         },
+        { href: '/genesis', label: tr('nav', 'genesis', lang) },
+        { href: '/docs', label: tr('nav', 'docs', lang) },
       ],
     },
   ];
@@ -80,6 +87,7 @@ export default function Navigation() {
   const groupLabels: Record<string, string> = {
     Info: tr('nav', 'info_group', lang),
     Vrstvy: tr('nav', 'layers_group', lang),
+    Wiki: tr('nav', 'wiki_group', lang),
   };
 
   /* Close mobile menu on route change */
