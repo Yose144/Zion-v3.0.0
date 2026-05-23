@@ -17,7 +17,8 @@ This file provides operating guidance to Devin, WARP, Copilot, and future automa
 - Root guidance baseline: `.github/copilot-instructions.md` (applies repo-wide).
 - Current status and launch blockers: [`StatusV3.md`](./StatusV3.md) + [`StatusV3-Part2.md`](./StatusV3-Part2.md) (independent audit + 2026-05-07 cleanup).
 - Current V3 planning/status references: `V3/README.md`, `V3/ROADMAP.md`, and `V3/docs/**`.
-- Hiranyagarbha / Hiran **v2.1** roadmap (ZION-domain model + curated non-ZION RAG corpora): [`HiranV2.1/Hiran_v2.1.md`](./HiranV2.1/Hiran_v2.1.md) (oddíl 3.6 / § 1.1 agent contract); prováděcí plán: [`HiranV2.1/PLAN_v2.1.md`](./HiranV2.1/PLAN_v2.1.md); LoRA / Vast fine-tune: [`HiranV2.1/finetune/README.md`](./HiranV2.1/finetune/README.md); upgrade context: [`HIRANYAGARBHA_UPGRADE_PLAN.md`](./HIRANYAGARBHA_UPGRADE_PLAN.md) § 0.2.1.
+- Hiran **v2.2** local inference setup (GGUF ready, llama-server.exe ready): [`HIRAN_LOCAL_SETUP.md`](./HIRAN_LOCAL_SETUP.md) — canonical guide for running inference locally. Use this, not v2.1 docs, for current runtime.
+- Hiranyagarbha / Hiran **v2.1** roadmap (historical): [`HiranV2.1/Hiran_v2.1.md`](./HiranV2.1/Hiran_v2.1.md); upgrade context: [`HIRANYAGARBHA_UPGRADE_PLAN.md`](./HIRANYAGARBHA_UPGRADE_PLAN.md).
 - Historical archive exists at `docs/2.9.9/archive/WARP.md`; treat it as legacy context, not current source of truth for V3 runtime behavior.
 
 ## Agent operating rules
@@ -28,7 +29,9 @@ This file provides operating guidance to Devin, WARP, Copilot, and future automa
 - Do not open, copy, print, or reintroduce leaked private keys or credential values. Refer to documented secret-bearing paths by filename only, and recommend rotation/scrub.
 - Keep launch/security blockers visible: credential rotation, history scrub, clean Genesis #0 rollout, bridge 3/5 validator provisioning, CI billing, external audit, and bug bounty.
 - Prefer `V3/cli` and documented runbooks over ad-hoc scripts for operations.
-- For Hiran v2.1 work, keep `V3/` + `StatusV3.md` as the technical canon; use external corpora through licensed, cited RAG snapshots rather than dumping copyrighted material into SFT weights.
+- For Hiran v2.2 work, keep `V3/` + `StatusV3.md` as the technical canon; use external corpora through licensed, cited RAG snapshots rather than dumping copyrighted material into SFT weights.
+- Hiran v2.2 GGUF files live at `HiranV2.2/models/hiran-v2.2-merged/` — do NOT regenerate unless explicitly asked; conversion took ~10 min.
+- The canonical inference start script is `scripts/start-hiran-inference.ps1` — it auto-detects backend priority (llama-server.exe > LM Studio > Ollama > serve.py).
 
 ## Common commands
 
@@ -196,9 +199,10 @@ Miner (GPU)               Public P2P: 8333
 | Pool Stratum | 8444 | TCP | Miner connections (Edge public-facing) |
 | Pool metrics | 9100 | HTTP | Prometheus metrics (pool) |
 | Node metrics | 9115 | HTTP | Prometheus metrics (node) |
-| Dashboard | 8766 | HTTP | Python Flask dashboard (changed from 8765) |
+| Dashboard | 8766 | HTTP | Python stdlib dashboard |
 | Website | 3000 | HTTP | Next.js dev server |
-| Hiran inference | 8002 | HTTP | OpenAI-compatible API |
+| **Hiranyagarbha API** | **8001** | HTTP | Orchestrator · RAG · Consciousness · Axum (Rust) |
+| **Hiran Inference** | **8002** | HTTP | OpenAI-compatible LLM API (llama-server.exe / serve.py) |
 
 ### Canonical URLs & Endpoints
 
@@ -275,46 +279,84 @@ Verify against `PREMINE_ADDRESSES_PUBLIC.txt` and `V3/L1/core/src/genesis.rs`.
 
 ---
 
-## 7) Hiran v2.2 AI Model Training (Completed 2026-05-18)
+## 7) AI Layer — Hiran v2.2 + Hiranyagarbha (Live, 2026-05-23)
 
-Hiran v2.2 is a domain-specific fine-tuned model for the Zion ecosystem. Training artifacts and evaluation reports live in `HiranV2.2/`.
+The ZION AI layer consists of two services. Both are started via the dashboard or PowerShell scripts.
 
-### Training stack
+### Architecture
+
+```
+Dashboard (port 8766)
+  ├── ▶ Start Hiranyagarbha  →  scripts/start-hiranyagarbha.ps1
+  │       └── zion-ai-native-api (Rust/Axum)  →  http://127.0.0.1:8001
+  │           Endpoints: /agents, /tasks/dispatch, /orchestrator/status,
+  │                      /health, /v1/chat/completions, /v1/embeddings
+  │
+  └── ▶ Start Hiran Inference  →  scripts/start-hiran-inference.ps1
+          └── llama-server.exe (preferred) OR serve.py  →  http://127.0.0.1:8002
+              Backend priority: llama-server.exe > LM Studio (1234) > Ollama (11434) > serve.py
+
+Website (/api/ai-chat)  →  cascade: port 8002 → LM Studio → Ollama
+Desktop Agent (Hiran AI tab)  →  HIRAN_INFERENCE_URL (default localhost:8002)
+```
+
+### Hiran v2.2 Model (✅ GGUF ready, 2026-05-23)
+
+| Artifact | Path | Status |
+|----------|------|--------|
+| FP16 safetensors | `HiranV2.2/models/hiran-v2.2-merged/` | ✅ 4 × safetensors |
+| Q4_K_M GGUF | `HiranV2.2/models/hiran-v2.2-merged/hiran-v2.2.q4_k_m.gguf` | ✅ 4.6 GB |
+| F16 GGUF | `HiranV2.2/models/hiran-v2.2-merged/hiran-v2.2.f16.gguf` | ✅ 15 GB |
+| llama-server binary | `llama.cpp-bin/llama-server.exe` | ✅ build b4524, AVX2 |
+| convert script | `llama.cpp-bin/convert_hf_to_gguf.py` | ✅ b4524 |
+| Start script | `scripts/start-hiran-inference.ps1` | ✅ auto-detects backend |
+
+**Do NOT re-run GGUF conversion** unless model weights change — it takes ~10 min.
+
+### Hiranyagarbha Orchestrator API (✅ Rust, port 8001)
+
+- Crate: `V3/L3/ai-native` (`zion-ai-native` binary in `src/bin/zion-ai-native-api.rs`)
+- Endpoints: `GET/POST /agents`, `GET/DELETE /agents/:id`, `POST /agents/:id/capabilities`,
+  `POST /agents/:id/consciousness`, `GET /orchestrator/status`, `POST /tasks/dispatch`,
+  `GET /health`, `POST /v1/chat/completions`, `POST /v1/embeddings`
+- Env: `HIRANYAGARBHA_MAX_AGENTS` (default 100), `HIRANYAGARBHA_PORT` (default 8001)
+- Start script: `scripts/start-hiranyagarbha.ps1`
+
+### Hiran Inference API (✅ llama-server.exe / serve.py, port 8002)
+
+- Primary backend: `llama.cpp-bin/llama-server.exe` with Q4_K_M GGUF (no Python needed)
+- Fallback backends: LM Studio (port 1234) → Ollama (port 11434) → serve.py with llama-cpp-python
+- Python serve.py: `HiranV2.2/inference/serve.py` — supports backends: `llamaserver:`, `lmstudio:`, `ollama:`, `.gguf`, HuggingFace dir
+- GPU offload: set `HIRAN_GPU_LAYERS=<n>` before running start script (0 = CPU only, 33 = full GPU for RX 5600 XT)
+- Full setup guide: [`HIRAN_LOCAL_SETUP.md`](./HIRAN_LOCAL_SETUP.md)
+
+### AI Layer env vars
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `HIRAN_GPU_LAYERS` | `0` | GPU layers for llama-server Vulkan/CUDA offload |
+| `HIRAN_INFERENCE_URL` | `http://localhost:8002` | Desktop agent → inference URL |
+| `HIRAN_API_URL` | `http://127.0.0.1:8002` | Website → inference URL |
+| `LMSTUDIO_URL` | `http://127.0.0.1:1234` | Website → LM Studio fallback |
+| `OLLAMA_API_URL` | `http://127.0.0.1:11434` | Website → Ollama fallback |
+| `HIRAN_MODEL` | `hiran-v2.2` | Model name in API requests |
+| `HIRANYAGARBHA_MAX_AGENTS` | `100` | Max agents in orchestrator |
+| `HIRANYAGARBHA_PORT` | `8001` | Hiranyagarbha HTTP port |
+
+### Dashboard integration
+
+- `SERVICE_REGISTRY`: `hiranyagarbha` (port 8001, `start-hiranyagarbha`) + `ai-native` (port 8002, `start-hiran-inference`)
+- `_ALLOW_BASE`: `start-hiranyagarbha`, `start-hiran-inference`, `restart-hiranyagarbha`, `restart-hiran-inference`
+- New GET endpoints: `/api/hiranyagarbha/health`, `/api/hiran/health`, `/api/service-log?id=<svc>&lines=<n>`
+- Log files: `logs/hiranyagarbha.log`, `logs/hiran-inference.log`
+
+### Training summary (Hiran v2.2, completed 2026-05-18)
+
 - **Base model:** `unsloth/Meta-Llama-3.1-8B-Instruct`
-- **Method:** QLoRA (curriculum, 5 stages)
-- **Dataset:** 22,181 instruction/output pairs across:
-  - `foundation` (3,869) → rank 16, 2 epochs, final loss ~1.297
-  - `zion_core` (2,368) → rank 32, 3 epochs
-  - `zion_advanced` (2,458) → rank 32, 2 epochs, final loss ~1.040
-  - `cross_domain` (11,434) → rank 64, 2 epochs, final loss ~1.246
-  - `rag_synthesis` (2,052) → rank 64, 1 epoch, final loss ~2.469
-- **Hardware:** Vast.ai RTX 4090 (contract #37028568, IP 213.181.123.6:32264)
-- **Merged model size:** ~15 GB (FP16)
-- **Training script:** `HiranV2.2/scripts/train_v2.2.py`
-- **Merge script:** `HiranV2.2/scripts/merge_and_quantize.py`
-
-### Key learnings from this run
-1. **QLoRA limits:** With 22K pairs and max rank 64, the model learned *concepts* and *style* but did **not** reliably memorize exact numeric facts (e.g. fee split 89/5/5/1). Base model parameters dominated for precise percentages.
-2. **Temperature sensitivity:** Low temperatures (`<0.3`) without system prompts triggered base model contamination (e.g. hallucinating Mormon church associations with "Zion").
-3. **System prompt anchoring works:** Adding an explicit system prompt ("You are the Zion DAO technical assistant...") eliminated religious contamination and anchored responses to the crypto project.
-4. **Few-shot is inconsistent:** Even with explicit examples of correct percentages, the model sometimes invented new numbers (e.g. 6% instead of 5% for Issobella).
-5. **Adversarial safety:** Model refused to assist with attack scenarios (manipulating fee splits), which is a positive safety signal.
-6. **Inference speed:** ~40 tokens/s on RTX 4090 with FP16, ~16 GB VRAM usage.
-
-### Evaluation artifacts
-- `HiranV2.2/MODEL_INTERVIEW_REPORT.md` — 20-question structured interview
-- `HiranV2.2/model_interview_results.json` — machine-readable responses
-- `HiranV2.2/gpu_experiment_results.json` — benchmark + temperature sweep + factual recall
-- `HiranV2.2/gpu_experiment_results_v2.json` — system prompt + few-shot + chain-of-thought tests
-
-### Vast.ai workflow (for future runs)
-1. Provision instance via `vastai create instance` (prefer RTX 4090/3090, ~$0.46/hr)
-2. Attach SSH key: `vastai attach ssh <contract_id> $(cat ~/.ssh/vast_hiran_key.pub)`
-3. Get actual endpoint: `vastai ssh-url <contract_id>` (advertised endpoint != actual!)
-4. Sync: use `HiranV2.2/scripts/sync_to_current_vast.sh` or manual `scp -r`
-5. Training: `cd /workspace/hiran-v2.2 && bash scripts/run_training.sh`
-6. Post-training: merge with `scripts/merge_and_quantize.py`, evaluate with `scripts/interview_model.py`
-7. Keep instance alive for evaluation; artifacts can stay remote if bandwidth is concern
+- **Method:** QLoRA (curriculum, 5 stages), 22,181 instruction pairs
+- **Hardware:** Vast.ai RTX 4090 (~$0.46/hr)
+- **Key finding:** System prompt anchoring required — low temperature without system prompt causes base model contamination (hallucinated non-ZION associations). Always include system prompt in production.
+- Evaluation artifacts: `HiranV2.2/MODEL_INTERVIEW_REPORT.md`, `HiranV2.2/gpu_experiment_results_v2.json`
 
 ## 7) Hiran v2.3 AI Model Training (In Progress)
 
