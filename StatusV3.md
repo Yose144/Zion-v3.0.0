@@ -98,6 +98,50 @@ zion hiran deploy --model --platform             # Deployment
 
 ---
 
+## Co je nového 2026-05-23 (Desktop Agent v3.0.0 + Public RPC Proxy)
+
+### Desktop Agent v3.0.0 — Public Miner Release
+
+| Komponenta | Stav | Detail |
+|---|---|---|
+| **Verze** | ✅ Hotovo | Bumped na `3.0.0` (`package.json`, HTML, renderer, main, preload) |
+| **Hiran AI chat** | ✅ Hotovo | Nová záložka v docku — inference přes `localhost:8002` /v1/chat/completions s system prompt pro ZION ekosystém |
+| **Node monitoring** | ✅ Hotovo | Node view rozšířen o pool metriky: hashrate, miners, sync gap (>5 = červená), blocks found |
+| **Wallet payouts** | ✅ Hotovo | Nová "Payouts" záložka s fee split vizualizací (89/5/5/1) a payout history |
+| **GPU OpenCL** | ✅ Hotovo | Ověřeno naživo — AMD `gfx1010:xnack-` (RX 5600 XT) detekováno, benchmark běží |
+| **GPU CUDA** | 🔄 Čeká | Scaffold v kódu — test přes Vast.ai (RTX 4090/3090) naplánován |
+| **CPU/GPU/Both toggle** | ✅ Hotovo | Radio buttons `cpu`/`gpu`/`dual` — renderer ukládá `miningMode`, main.js nastaví `--gpu <backend>` a `ZION_BACKEND` env |
+| **Public RPC** | ✅ Hotovo | Desktop agent default RPC URL = `http://77.42.71.94:8443` (veřejný read-only endpoint) |
+
+**Soubory:**
+- `APP&WEB/desktop-agent/src/ui/index.html` — Hiran AI + Payouts UI
+- `APP&WEB/desktop-agent/src/ui/renderer.js` — AI chat handler, pool metrics, payout history
+- `APP&WEB/desktop-agent/src/main.js` — IPC `ai-chat-ask`/`ai-chat-status`, public RPC URL
+- `APP&WEB/desktop-agent/src/preload.js` — `aiChatAsk`, `aiChatStatus` expose
+
+### Public Read-Only RPC Proxy — Edge Server
+
+| Komponenta | Stav | Detail |
+|---|---|---|
+| **Python proxy** | ✅ Hotovo | `/usr/local/bin/zion-rpc-readonly-proxy.py` — whitelisted read-only JSON-RPC metody |
+| **systemd service** | ✅ Hotovo | `zion-rpc-proxy` na `localhost:8447` |
+| **Nginx** | ✅ Hotovo | `77.42.71.94:8443` → proxy → node `127.0.0.1:8443` |
+| **Node RPC hardening** | ✅ Hotovo | `ZION_RPC_BIND=127.0.0.1:8443` (byl `0.0.0.0`) — node není přímo veřejný |
+| **Whitelist** | ✅ Hotovo | `getBalance`, `getChainInfo`, `getTransaction`, `getBlock`, `getPeers`, `getSyncStatus`, `validateaddress`... |
+| **Bezpečnost** | ✅ Hotovo | `submitTransaction` vrací 403-style JSON-RPC error |
+
+**Ověření:**
+- `getChainInfo` → height 704 ✅
+- `getBalance` → 0 ZION ✅
+- `submitTransaction` → blocked `"Method not allowed on read-only endpoint"` ✅
+
+**Soubory:**
+- `scripts/zion-rpc-readonly-proxy.py` — proxy implementace
+- `scripts/zion-rpc-proxy.service` — systemd unit
+- `scripts/nginx-rpc.conf` — nginx server block
+
+---
+
 ## Co je nového 2026-05-22 (Genesis + Fee Split KONFIGURACE DOKONČENA)
 
 ### Mainnet Ready - Genesis a Fee Split Konfigurace
