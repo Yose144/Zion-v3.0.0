@@ -1342,6 +1342,7 @@ tailwind.config={theme:{extend:{colors:{zion:{900:'#0a0f1e',800:'#131a2e',700:'#
     <button onclick="switchTab('database')" id="tab-database" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent hover:text-amber-400 transition">🗄️ Database</button>
     <button onclick="switchTab('metrics')" id="tab-metrics" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent hover:text-amber-400 transition">📊 Metrics</button>
     <button onclick="switchTab('logs')" id="tab-logs" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent hover:text-amber-400 transition">📜 Logs</button>
+    <button onclick="switchTab('hiran')" id="tab-hiran" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent hover:text-amber-400 transition">🤖 Hiran AI</button>
   </div>
 
   <!-- Progress -->
@@ -1676,6 +1677,63 @@ tailwind.config={theme:{extend:{colors:{zion:{900:'#0a0f1e',800:'#131a2e',700:'#
     </div>
   </div>
 
+  <!-- ── Hiran AI Tab ─────────────────────────────────────────────────────── -->
+  <div id="pane-hiran" class="hidden space-y-4">
+    <!-- Status banner -->
+    <div class="bg-zion-800 rounded-xl p-4 border border-zion-700 flex items-center gap-4">
+      <div class="text-3xl">🤖</div>
+      <div class="flex-1">
+        <div class="text-sm font-bold text-gray-200">Hiran v2.2 — AI Inference Server</div>
+        <div class="text-xs text-gray-400 mt-1">OpenAI-compatible API · port 8002 · <span id="hiran-backend-label" class="text-amber-400">—</span></div>
+      </div>
+      <div>
+        <span id="hiran-status-badge" class="px-3 py-1 rounded text-xs font-bold bg-zion-700 text-gray-400">CHECKING…</span>
+      </div>
+      <button onclick="loadHiranHealth()" class="text-xs text-gray-400 hover:text-white px-2 py-1 bg-zion-700 rounded">🔄 Refresh</button>
+    </div>
+
+    <!-- Start instructions (shown when offline) -->
+    <div id="hiran-offline-hint" class="hidden bg-zion-800 rounded-xl p-4 border border-amber-800/40">
+      <div class="text-xs font-bold text-amber-400 mb-2">⚠️ Hiran není spuštěn — jak spustit:</div>
+      <div class="text-xs text-gray-300 space-y-1">
+        <div><span class="text-amber-400">Option 1 (Ollama + AMD GPU):</span> Spusť <code class="bg-zion-900 px-1 rounded">HiranV2.2\\inference\\start_hiran_ollama.bat</code></div>
+        <div><span class="text-amber-400">Option 2 (llama.cpp Vulkan):</span> Spusť <code class="bg-zion-900 px-1 rounded">HiranV2.2\\inference\\start_hiran_llamacpp.bat</code></div>
+        <div class="text-gray-500 mt-2">Nemáš GGUF? Spusť nejprve: <code class="bg-zion-900 px-1 rounded">uv run HiranV2.2\\quantization\\convert_to_gguf.py</code></div>
+      </div>
+    </div>
+
+    <!-- Chat interface -->
+    <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
+      <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300 mb-3">💬 Chat s Hiranem</h2>
+      <div id="hiran-chat-log" class="bg-zion-900 rounded-lg p-3 h-72 overflow-y-auto space-y-3 mb-3 text-sm">
+        <div class="text-gray-500 text-xs italic">Hiran je připraven odpovídat na dotazy o ZION ekosystému…</div>
+      </div>
+      <div class="flex gap-2">
+        <input id="hiran-chat-input" type="text" placeholder="Zeptej se Hirana… (např. 'Jak funguje ZION těžba?')"
+               class="flex-1 bg-zion-900 border border-zion-600 rounded-lg px-3 py-2 text-sm text-gray-200 placeholder-gray-500 focus:outline-none focus:border-amber-500"
+               onkeydown="if(event.key==='Enter')sendHiranMessage()"/>
+        <button onclick="sendHiranMessage()" id="hiran-send-btn"
+                class="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white text-sm font-medium rounded-lg transition">
+          Odeslat
+        </button>
+      </div>
+      <div id="hiran-latency" class="text-xs text-gray-500 mt-1 h-4"></div>
+    </div>
+
+    <!-- Quick prompts -->
+    <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
+      <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300 mb-3">⚡ Rychlé dotazy</h2>
+      <div class="flex flex-wrap gap-2">
+        <button onclick="hiranQuickPrompt('Jaké je rozdělení poplatků v ZION těžbě?')" class="px-3 py-1.5 bg-zion-700 hover:bg-zion-600 rounded text-xs text-gray-300 transition">Fee split</button>
+        <button onclick="hiranQuickPrompt('Vysvětli ZION OASIS a 9 úrovní vědomí')" class="px-3 py-1.5 bg-zion-700 hover:bg-zion-600 rounded text-xs text-gray-300 transition">OASIS vědomí</button>
+        <button onclick="hiranQuickPrompt('Co je ZION Issobella fond a jak funguje?')" class="px-3 py-1.5 bg-zion-700 hover:bg-zion-600 rounded text-xs text-gray-300 transition">Issobella</button>
+        <button onclick="hiranQuickPrompt('Jak funguje humanitární tithe v ZION?')" class="px-3 py-1.5 bg-zion-700 hover:bg-zion-600 rounded text-xs text-gray-300 transition">Humanitarian Tithe</button>
+        <button onclick="hiranQuickPrompt('Jaký je aktuální stav ZION sítě a hash rate?')" class="px-3 py-1.5 bg-zion-700 hover:bg-zion-600 rounded text-xs text-gray-300 transition">Stav sítě</button>
+        <button onclick="hiranQuickPrompt('Vysvětli WARP protokol a cross-chain bridge')" class="px-3 py-1.5 bg-zion-700 hover:bg-zion-600 rounded text-xs text-gray-300 transition">WARP Bridge</button>
+      </div>
+    </div>
+  </div>
+
   <footer class="text-center text-xs text-gray-600 pt-6 pb-4 border-t border-zion-700 mt-6">
     ZION V3 Dashboard 2.0 — Zero-dependency Python stdlib server — Auto-refresh 3s
     <span class="text-gray-500"> · </span>
@@ -1688,7 +1746,7 @@ tailwind.config={theme:{extend:{colors:{zion:{900:'#0a0f1e',800:'#131a2e',700:'#
 <script>
 let autoRefresh=true,refreshTimer=null,currentTab='overview';
 let charts={};
-const TABS=['overview','controls','charts','events','env','launch-day','wizard','services','database','metrics','logs'];
+const TABS=['overview','controls','charts','events','env','launch-day','wizard','services','database','metrics','logs','hiran'];
 
 // ── Tab switching ──
 function switchTab(name){
@@ -1708,6 +1766,82 @@ function switchTab(name){
   if(name==='database')loadDatabases();
   if(name==='metrics')renderMetricsButtons();
   if(name==='overview')loadMainnetStatus();
+  if(name==='hiran')loadHiranHealth();
+}
+
+// ── Hiran AI ──
+async function loadHiranHealth(){
+  const badge=document.getElementById('hiran-status-badge');
+  const backend=document.getElementById('hiran-backend-label');
+  const hint=document.getElementById('hiran-offline-hint');
+  if(badge)badge.textContent='CHECKING…';
+  try{
+    const r=await fetch('/api/hiran/health');
+    const d=await r.json();
+    if(d.alive){
+      if(badge){badge.textContent='LIVE';badge.className='px-3 py-1 rounded text-xs font-bold bg-emerald-600 text-white animate-pulse';}
+      if(backend)backend.textContent=d.backend+' · '+d.model;
+      if(hint)hint.classList.add('hidden');
+    }else{
+      if(badge){badge.textContent='OFFLINE';badge.className='px-3 py-1 rounded text-xs font-bold bg-red-700 text-white';}
+      if(backend)backend.textContent=d.backend||'nedosažitelný';
+      if(hint)hint.classList.remove('hidden');
+    }
+  }catch(e){
+    if(badge){badge.textContent='OFFLINE';badge.className='px-3 py-1 rounded text-xs font-bold bg-red-700 text-white';}
+    if(hint)hint.classList.remove('hidden');
+  }
+}
+
+function hiranQuickPrompt(text){
+  const inp=document.getElementById('hiran-chat-input');
+  if(inp){inp.value=text;sendHiranMessage();}
+}
+
+async function sendHiranMessage(){
+  const inp=document.getElementById('hiran-chat-input');
+  const log=document.getElementById('hiran-chat-log');
+  const btn=document.getElementById('hiran-send-btn');
+  const lat=document.getElementById('hiran-latency');
+  if(!inp||!log)return;
+  const msg=inp.value.trim();
+  if(!msg)return;
+  inp.value='';
+  // Append user bubble
+  const userDiv=document.createElement('div');
+  userDiv.className='flex justify-end';
+  userDiv.innerHTML=`<div class="max-w-xs lg:max-w-md px-3 py-2 bg-amber-700/40 rounded-lg text-gray-200 text-xs">${escapeHtml(msg)}</div>`;
+  log.appendChild(userDiv);
+  log.scrollTop=log.scrollHeight;
+  // Spinner
+  const spinDiv=document.createElement('div');
+  spinDiv.className='flex justify-start';
+  spinDiv.innerHTML='<div class="px-3 py-2 bg-zion-700 rounded-lg text-gray-400 text-xs animate-pulse">Hiran přemýšlí…</div>';
+  log.appendChild(spinDiv);
+  log.scrollTop=log.scrollHeight;
+  if(btn)btn.disabled=true;
+  try{
+    const t0=Date.now();
+    const r=await fetch('/api/hiran/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg})});
+    const d=await r.json();
+    log.removeChild(spinDiv);
+    const aiDiv=document.createElement('div');
+    aiDiv.className='flex justify-start';
+    const text=d.ok?d.reply:`❌ ${d.error}`;
+    aiDiv.innerHTML=`<div class="max-w-xs lg:max-w-2xl px-3 py-2 bg-zion-700 rounded-lg text-gray-200 text-xs whitespace-pre-wrap">${escapeHtml(text)}</div>`;
+    log.appendChild(aiDiv);
+    log.scrollTop=log.scrollHeight;
+    const elapsed=d.latency_ms!=null?d.latency_ms:Date.now()-t0;
+    if(lat)lat.textContent=`Odpověď za ${Math.round(elapsed)} ms`;
+  }catch(e){
+    log.removeChild(spinDiv);
+    const errDiv=document.createElement('div');
+    errDiv.className='flex justify-start';
+    errDiv.innerHTML=`<div class="px-3 py-2 bg-red-900/40 rounded-lg text-red-400 text-xs">Chyba: ${escapeHtml(String(e))}</div>`;
+    log.appendChild(errDiv);
+  }finally{
+    if(btn)btn.disabled=false;
+  }
 }
 
 // ── Badges & cards ──
@@ -2765,7 +2899,10 @@ class DashboardHandler(BaseHTTPRequestHandler):
         except Exception:
             payload = {}
 
-        if route == "/api/control":
+        if route == "/api/hiran/chat":
+            self._handle_hiran_chat_post(payload)
+            return
+        elif route == "/api/control":
             action = payload.get("action", "")
             self._json(run_control(action))
         elif route == "/api/backup/create":
@@ -2914,8 +3051,62 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     self._json({"ok": True, "stdout": out_text, "stderr": stderr.decode("utf-8", errors="ignore"), "exit_code": proc.returncode, "cmd": full_cmd})
             except Exception as e:
                 self._json({"ok": False, "error": str(e)})
+        # ── Hiran AI endpoints ────────────────────────────────────────────────
+        elif route == "/api/hiran/health":
+            hiran_url = "http://127.0.0.1:8002"
+            alive, backend, model_name = False, "none", "—"
+            try:
+                req = urllib.request.Request(
+                    f"{hiran_url}/health",
+                    headers={"Accept": "application/json"},
+                )
+                with urllib.request.urlopen(req, timeout=2) as r:
+                    data_h = json.loads(r.read())
+                    alive = data_h.get("status") == "ok"
+                    backend = data_h.get("backend", "unknown")
+                    model_name = data_h.get("model", "hiran-v2.2")
+            except Exception as e:
+                alive = False
+                backend = f"error: {str(e)[:60]}"
+            self._json({
+                "alive": alive,
+                "backend": backend,
+                "model": model_name,
+                "endpoint": hiran_url,
+            })
         else:
             self.send_error(404)
+
+    def _handle_hiran_chat_post(self, payload: dict):
+        """Proxy POST /api/hiran/chat → Hiran inference server."""
+        message = payload.get("message", "").strip()
+        if not message:
+            self._json({"ok": False, "error": "message required"})
+            return
+        hiran_url = "http://127.0.0.1:8002"
+        body = json.dumps({
+            "model": "hiran-v2.2",
+            "messages": [
+                {"role": "system", "content": "Jsi Hiran v2.2, AI asistent projektu ZION TerraNova. Odpovídáš stručně a technicky přesně."},
+                {"role": "user", "content": message},
+            ],
+            "temperature": 0.7,
+            "max_tokens": 400,
+        }).encode()
+        try:
+            req = urllib.request.Request(
+                f"{hiran_url}/v1/chat/completions",
+                data=body,
+                headers={"Content-Type": "application/json"},
+                method="POST",
+            )
+            with urllib.request.urlopen(req, timeout=60) as r:
+                result = json.loads(r.read())
+            reply = result.get("choices", [{}])[0].get("message", {}).get("content", "")
+            latency = result.get("latency_ms", None)
+            self._json({"ok": True, "reply": reply, "latency_ms": latency})
+        except Exception as e:
+            self._json({"ok": False, "error": str(e)[:200]})
 
 # ── Main ────────────────────────────────────────────────────────────────
 
