@@ -196,6 +196,20 @@ zion hiran deploy --model --platform             # Deployment
 - `zion-node-exporter` — host OS metrics
 - `zion-hiran-inference` — AI inference metrics
 
+### Tailscale ACL — Network Security (Ruční krok)
+
+| Krok | Stav | Detail |
+|---|---|---|
+| **Šablona** | ✅ Hotovo | `scripts/tailscale-acl.hujson` — tagy `zion-core`, `zion-edge`, `zion-miner`, admin SSH |
+| **Aplikace ACL** | 🔄 Čeká | Nutné ručně vložit do https://login.tailscale.com/admin/acls |
+| **Tagování uzlů** | 🔄 Čeká | Core → `tag:zion-core`, Edge → `tag:zion-edge`, miners → `tag:zion-miner` |
+
+**Postup:**
+1. Nahraď `USER_EMAIL` v `scripts/tailscale-acl.hujson` svým Tailscale loginem.
+2. Otevři https://login.tailscale.com/admin/acls a vlož obsah souboru.
+3. Nastav tagy na uzlech: `tailscale up --advertise-tags=tag:zion-core` (na Core), atd.
+4. Ověř konektivitu: `tailscale status` a `tailscale ping <node>`.
+
 ---
 
 ## Co je nového 2026-05-23 (AI Layer — Hiranyagarbha + Hiran Inference)
