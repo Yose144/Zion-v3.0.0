@@ -51,7 +51,7 @@ OASIS_METRICS_PORT=9101
 
 # Node identification
 ZION_NODE_ID=v3-mainnet-local
-ZION_SEED_PEERS=91.98.122.165:8333
+ZION_SEED_PEERS=77.42.71.94:8333
 ZION_MINER_ADDRESS=zion1yourmineraddresshere
 
 # Performance

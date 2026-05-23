@@ -10,31 +10,48 @@ use crate::ui;
 #[derive(Subcommand)]
 pub enum PoolCmd {
     /// Pool stats: connected miners, hashrate, shares
-    Stats,
+    Stats {
+        /// Target pool: core | edge | local | vpn (default: edge)
+        #[arg(default_value = "edge")]
+        target: String,
+    },
     /// List active workers and hashrate
-    Miners,
+    Miners {
+        /// Target pool: core | edge | local | vpn (default: edge)
+        #[arg(default_value = "edge")]
+        target: String,
+    },
     /// Show pool config
-    Config,
+    Config {
+        /// Target pool: core | edge | local | vpn (default: edge)
+        #[arg(default_value = "edge")]
+        target: String,
+    },
     /// PPLNS earnings for an address
     Earnings {
         #[arg(long)]
         address: Option<String>,
+        /// Target pool: core | edge | local | vpn (default: edge)
+        #[arg(default_value = "edge")]
+        target: String,
     },
 }
 
 pub async fn run(cfg: &Config, cmd: PoolCmd) -> Result<()> {
     match cmd {
-        PoolCmd::Stats => pool_stats(cfg).await,
-        PoolCmd::Miners => pool_miners(cfg).await,
-        PoolCmd::Config => {
+        PoolCmd::Stats { target } => pool_stats(cfg, &target).await,
+        PoolCmd::Miners { target } => pool_miners(cfg, &target).await,
+        PoolCmd::Config { target } => {
+            let (host, port) = cfg.target_pool(&target);
             ui::print_header("Pool Config");
-            ui::print_row("Host", &cfg.pool.host);
-            ui::print_row("Port", &cfg.pool.port.to_string());
+            ui::print_row("Host", host);
+            ui::print_row("Port", &port.to_string());
             ui::print_row("Algorithm", "cosmic_harmony_ekam_deeksha_v2");
             println!();
             Ok(())
         }
-        PoolCmd::Earnings { address } => {
+        PoolCmd::Earnings { address, target } => {
+            let (rpc_host, rpc_port) = cfg.target_rpc(&target);
             ui::print_header("PPLNS Earnings");
             let addr = address.unwrap_or_else(|| cfg.miner.wallet.clone());
             if addr.is_empty() {
@@ -43,8 +60,8 @@ pub async fn run(cfg: &Config, cmd: PoolCmd) -> Result<()> {
             }
             // Query pool stats endpoint on node RPC for now
             let result = node_rpc::call(
-                &cfg.node.rpc_host,
-                cfg.node.rpc_port,
+                rpc_host,
+                rpc_port,
                 "get_miner_stats",
                 json!({ "address": addr }),
             )
@@ -59,13 +76,12 @@ pub async fn run(cfg: &Config, cmd: PoolCmd) -> Result<()> {
     }
 }
 
-async fn pool_stats(cfg: &Config) -> Result<()> {
+async fn pool_stats(cfg: &Config, target: &str) -> Result<()> {
+    let (host, port) = cfg.target_pool(target);
     ui::print_header("Pool Stats");
 
     // The V3 pool is a pure TCP stratum server — no HTTP stats API.
     // Probe liveness via TCP, then show node-side mempool context.
-    let host = &cfg.pool.host;
-    let port = cfg.pool.port;
     let alive = tcp_probe(host, port, std::time::Duration::from_secs(3));
 
     ui::print_row("Pool host", &format!("{}:{}", host, port));
@@ -82,8 +98,9 @@ async fn pool_stats(cfg: &Config) -> Result<()> {
     }
 
     // Pull chain context from node to show block template info
+    let (rpc_host, rpc_port) = cfg.target_rpc(target);
     let node_result =
-        node_rpc::call0(&cfg.node.rpc_host, cfg.node.rpc_port, "getMempoolInfo").await;
+        node_rpc::call0(rpc_host, rpc_port, "getMempoolInfo").await;
     if let Ok(v) = node_result {
         let size = v["size"].as_u64().unwrap_or(0);
         let tmpl_txs = v["template_transactions"].as_u64().unwrap_or(0);
@@ -95,18 +112,20 @@ async fn pool_stats(cfg: &Config) -> Result<()> {
     Ok(())
 }
 
-async fn pool_miners(cfg: &Config) -> Result<()> {
+async fn pool_miners(cfg: &Config, target: &str) -> Result<()> {
+    let (host, port) = cfg.target_pool(target);
+    let (rpc_host, rpc_port) = cfg.target_rpc(target);
     ui::print_header("Active Workers");
 
     // Pool is stratum-only; get template info from node as proxy indicator
     ui::print_info(&format!(
         "Pool stratum: {}:{}",
-        cfg.pool.host, cfg.pool.port
+        host, port
     ));
 
     let alive = tcp_probe(
-        &cfg.pool.host,
-        cfg.pool.port,
+        host,
+        port,
         std::time::Duration::from_secs(3),
     );
     if !alive {
@@ -117,7 +136,7 @@ async fn pool_miners(cfg: &Config) -> Result<()> {
 
     // Pool does not expose an HTTP session API; worker list would require
     // pool internal state. Show node block template as proxy for current work.
-    let tmpl = node_rpc::call0(&cfg.node.rpc_host, cfg.node.rpc_port, "getBlockTemplate").await;
+    let tmpl = node_rpc::call0(rpc_host, rpc_port, "getBlockTemplate").await;
     match tmpl {
         Ok(v) => {
             let height = v["height"].as_u64().unwrap_or(0);

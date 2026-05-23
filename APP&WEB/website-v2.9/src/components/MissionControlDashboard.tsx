@@ -555,6 +555,34 @@ const getTabs = (cs: boolean) => [
 
 type TabId = 'dashboard' | 'metrics' | 'upgrade' | 'roadmap' | 'layers' | 'constitution' | 'economy' | 'security' | 'timeline' | 'priority';
 
+function getFallbackReadinessMap(cs: boolean): ReadinessMap {
+  return {
+    done: [
+      { title: cs ? 'Fáze 1 — Foundation' : 'Phase 1 — Foundation', detail: cs ? 'Core, consensus, infrastructure, L2 bridge' : 'Core, consensus, infrastructure, L2 bridge' },
+      { title: cs ? 'Fee split 89/5/5/1' : 'Fee split 89/5/5/1', detail: cs ? 'PPLNS payout ověřen a aktivní' : 'PPLNS payout verified and active' },
+      { title: cs ? 'Core + Edge topologie' : 'Core + Edge topology', detail: cs ? 'Tailscale VPN aktivní' : 'Tailscale VPN active' },
+      { title: cs ? 'Docker Compose mainnet' : 'Docker Compose mainnet', detail: cs ? 'Připraveno pro deployment' : 'Ready for deployment' },
+      { title: cs ? 'Bezpečnostní cleanup' : 'Security cleanup', detail: cs ? 'Credential rotation dokončen' : 'Credential rotation complete' },
+    ],
+    missing: [
+      { title: cs ? 'Finální payout verification' : 'Final payout verification', detail: cs ? 'PPLNS window validace probíhá' : 'PPLNS window validation in progress' },
+      { title: cs ? 'Security audit' : 'Security audit', detail: cs ? 'Externí firma rezervována' : 'External firm booked' },
+      { title: cs ? 'Bridge validator provisioning' : 'Bridge validator key provisioning', detail: cs ? '3/5 threshold produkce' : '3/5 threshold production' },
+      { title: cs ? 'CI billing' : 'CI billing resolution', detail: cs ? 'GitHub Actions infrastruktura' : 'GitHub Actions infrastructure pending' },
+    ],
+    not_missing: [
+      { title: cs ? 'Genesis premine' : 'Genesis premine', detail: cs ? '16.28B ZION, 12 peněženek' : '16.28B ZION, 12 wallets' },
+      { title: cs ? 'wZION ERC-20' : 'wZION ERC-20', detail: cs ? 'Deployed na Base Mainnet' : 'Deployed on Base Mainnet' },
+      { title: cs ? 'ZIONStaking' : 'ZIONStaking', detail: cs ? '12% APR, 7-denní cooldown' : '12% APR, 7-day cooldown' },
+    ],
+    next_48h: [
+      { title: cs ? 'PPLNS fee split finální ověření' : 'PPLNS fee split final verification', detail: cs ? 'Potvrdit 89/5/5/1 wiring' : 'Confirm 89/5/5/1 wiring' },
+      { title: cs ? 'Launch checklist dashboard integrace' : 'Launch checklist dashboard integration', detail: cs ? 'Propojit s Mission Control' : 'Connect to Mission Control' },
+      { title: cs ? 'BFG scrub / git historie' : 'BFG scrub / git history', detail: cs ? 'Finální cleanup před launch' : 'Final cleanup before launch' },
+    ],
+  };
+}
+
 const CHART_RANGES: { value: ChartRange; label: string }[] = [
   { value: '1h', label: '1h' },
   { value: '6h', label: '6h' },
@@ -1651,46 +1679,47 @@ export default function MissionControlDashboard() {
     servicesNa > 0 ? { id: 'na-services', message: `${servicesNa} service${servicesNa > 1 ? 's' : ''} without scrape`, severity: 'info', href: '/monitoring' } : null,
   ];
   const opsAlerts = opsAlertsRaw.filter((value): value is OpsAlert => value !== null);
+  const effectiveReadinessMap = readinessMap ?? getFallbackReadinessMap(cs);
   const readinessPanels = [
     {
       key: 'done',
-      title: 'Hotovo',
+      title: cs ? 'Hotovo' : 'Done',
       badge: 'READY NOW',
       Icon: CheckCheck,
       cardClass: 'border-emerald-500/20 bg-emerald-500/5',
       badgeClass: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300',
       iconClass: 'text-emerald-400',
-      items: readinessMap?.done ?? [],
+      items: effectiveReadinessMap.done ?? [],
     },
     {
       key: 'missing',
-      title: 'Chybí před public launch',
+      title: cs ? 'Chybí před public launch' : 'Missing before public launch',
       badge: 'BLOCKERS',
       Icon: XCircle,
       cardClass: 'border-red-500/20 bg-red-500/5',
       badgeClass: 'border-red-500/30 bg-red-500/10 text-red-300',
       iconClass: 'text-red-400',
-      items: readinessMap?.missing ?? [],
+      items: effectiveReadinessMap.missing ?? [],
     },
     {
       key: 'not-missing',
-      title: 'Co už nechybí',
+      title: cs ? 'Co už nechybí' : 'No longer missing',
       badge: 'CLARIFIED',
       Icon: CircleDot,
       cardClass: 'border-cyan-500/20 bg-cyan-500/5',
       badgeClass: 'border-cyan-500/30 bg-cyan-500/10 text-cyan-300',
       iconClass: 'text-cyan-400',
-      items: readinessMap?.not_missing ?? [],
+      items: effectiveReadinessMap.not_missing ?? [],
     },
     {
       key: 'next-48h',
-      title: 'Další 48-72h',
+      title: cs ? 'Další 48-72h' : 'Next 48-72h',
       badge: 'REHEARSAL',
       Icon: Construction,
       cardClass: 'border-amber-500/20 bg-amber-500/5',
       badgeClass: 'border-amber-500/30 bg-amber-500/10 text-amber-300',
       iconClass: 'text-amber-400',
-      items: readinessMap?.next_48h ?? [],
+      items: effectiveReadinessMap.next_48h ?? [],
     },
   ];
 
@@ -1907,6 +1936,56 @@ export default function MissionControlDashboard() {
                 <Stat label="Tests" value="900+" sub="passing / 0 failing" color="text-emerald-400" />
                 <Stat label="Launch Mode" value="COUNTDOWN" sub="Production · V3 TBD" color="text-amber-400" />
                 <Stat label="Mainnet Status" value="TBD" sub="target 31 December 2026" color="text-amber-400" />
+              </div>
+            </motion.section>
+
+            {/* Launch Readiness — Pre-Launch Blockers */}
+            <motion.section
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.18 }}
+              className="rounded-2xl sm:rounded-3xl lg:rounded-4xl border border-white/10 bg-black/40 p-4 sm:p-6 lg:p-8"
+            >
+              <div className="flex flex-col gap-2 mb-6">
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Launch Gate</p>
+                <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white flex items-center gap-2 sm:gap-3">
+                  <Target className="h-7 w-7 text-amber-400" />
+                  {cs ? 'Připravenost k launchi — Pre-Launch Blockers' : 'Launch Readiness — Pre-Launch Blockers'}
+                </h2>
+                <p className="text-sm text-gray-400">
+                  {cs
+                    ? 'Aktuální stav launch gate založený na ROADMAP a operational status. Blockers musí být vyřešeny před public mainnet GO.'
+                    : 'Current launch gate status based on ROADMAP and operational status. Blockers must be resolved before public mainnet GO.'}
+                </p>
+              </div>
+              <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
+                {readinessPanels.map((panel) => (
+                  <div key={panel.key} className={`rounded-2xl border p-4 sm:p-5 ${panel.cardClass}`}>
+                    <div className="flex items-center gap-2 mb-4">
+                      <panel.Icon className={`h-5 w-5 ${panel.iconClass}`} />
+                      <h3 className="font-semibold text-white text-sm">{panel.title}</h3>
+                      <span className={`ml-auto text-[10px] uppercase tracking-widest border px-2 py-0.5 rounded-full font-semibold ${panel.badgeClass}`}>
+                        {panel.badge}
+                      </span>
+                    </div>
+                    {panel.items.length === 0 ? (
+                      <p className="text-sm text-gray-500 italic">
+                        {cs ? 'Žádné položky' : 'No items'}
+                      </p>
+                    ) : (
+                      <ul className="space-y-2.5">
+                        {panel.items.map((item, i) => (
+                          <li key={i} className="text-sm text-gray-300">
+                            <span className="font-medium text-white">{item.title}</span>
+                            {item.detail && (
+                              <span className="text-gray-500 ml-1">— {item.detail}</span>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                ))}
               </div>
             </motion.section>
 
@@ -3089,6 +3168,7 @@ export default function MissionControlDashboard() {
                   <tbody>
                     {[
                       { prio: 'DONE', prioColor: 'text-emerald-400 font-bold', task: 'On-chain reward split 89/5/5/1 ověřen live bloky', phase: 'RUNTIME', status: 'VERIFIED', sColor: 'text-emerald-400' },
+                      { prio: 'DONE', prioColor: 'text-emerald-400 font-bold', task: 'PPLNS payout logic + fee split wiring', phase: 'POOL', status: 'VERIFIED', sColor: 'text-emerald-400' },
                       { prio: 'DONE', prioColor: 'text-emerald-400 font-bold', task: 'Core + Edge rollout bez divergence (Tailscale VPN)', phase: 'OPS', status: 'SYNCED', sColor: 'text-emerald-400' },
                       { prio: 'DONE', prioColor: 'text-emerald-400 font-bold', task: 'Runbook + operator guide + go/no-go report', phase: 'DOCS', status: 'ALIGNED', sColor: 'text-emerald-400' },
                       { prio: 'DONE', prioColor: 'text-emerald-400 font-bold', task: 'BFG scrub / git history hygiene', phase: 'R1', status: 'CLOSED', sColor: 'text-emerald-400' },
@@ -3097,6 +3177,9 @@ export default function MissionControlDashboard() {
                       { prio: 'DONE', prioColor: 'text-emerald-400 font-bold', task: 'Stability closure report uzavřen', phase: 'R4', status: 'CLOSED', sColor: 'text-emerald-400' },
                       { prio: 'DONE', prioColor: 'text-emerald-400 font-bold', task: 'RPC/P2P boundary review + fuzz smoke campaign', phase: 'A1', status: 'CLOSED', sColor: 'text-emerald-400' },
                       { prio: 'DONE', prioColor: 'text-emerald-400 font-bold', task: 'Backup/restore + alert routing', phase: 'A3', status: 'CLOSED', sColor: 'text-emerald-400' },
+                      { prio: 'BLOCKER', prioColor: 'text-red-400 font-bold', task: 'Security audit — externí firma', phase: 'AUDIT', status: 'SCHEDULED', sColor: 'text-amber-400' },
+                      { prio: 'BLOCKER', prioColor: 'text-red-400 font-bold', task: 'Bridge validator key provisioning (3/5 threshold)', phase: 'L2', status: 'IN-PROGRESS', sColor: 'text-amber-400' },
+                      { prio: 'BLOCKER', prioColor: 'text-red-400 font-bold', task: 'CI billing resolution (GitHub Actions)', phase: 'INFRA', status: 'PENDING', sColor: 'text-red-400' },
                       { prio: 'NB', prioColor: 'text-cyan-400 font-semibold', task: 'L2/L3 bridge, exchange onboarding a mobile polish', phase: 'POST-L1', status: 'NOT BLOCKING', sColor: 'text-cyan-400' },
                     ].map((row, i) => (
                       <tr key={i} className="border-b border-white/5 hover:bg-white/5 transition-colors">

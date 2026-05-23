@@ -71,7 +71,7 @@ What is done:
 - All 3 Base mainnet contracts deployed and verified on BaseScan (wZION, ZIONBridge, ZIONAtomicSwap).
 - 132 Solidity tests pass. 260 Rust L2 tests pass.
 - L1 mining is live with UTXO coinbase, pool payout enabled, humanitarian tithe verified (89/5/5/1).
-- Bridge daemon runs on Prague server (testnet mode).
+- Bridge daemon runs on Edge server (Core + Edge topology, testnet mode).
 
 What still blocks bridge activation:
 

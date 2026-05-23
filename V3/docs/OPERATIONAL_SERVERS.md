@@ -1,14 +1,19 @@
 # ZION TerraNova — Operational Server Topology
 
+> **ARCHIVNÍ DOKUMENT — HISTORICKÁ TOPOLOGIE**
+>
 > **Datum:** květen 2026
-> **Provozní server:** Prague Hetzner (91.98.122.165)
-> **Účel:** Dokumentace kontejnerové topologie, portů, závislostí a deploymentu pro multi-server mainnet
+> **Původní provozní server:** Prague Hetzner (91.98.122.165) — **VYŘAZEN**
+> **Účel:** Historická dokumentace kontejnerové topologie z období před konsolidací na Core + Edge.
+>
+> **Aktuální živá topologie:** Core (Windows 11, Tailscale 100.86.102.5) + Edge (Hetzner VPS, Tailscale 100.66.162.125).
+> Veškeré odkazy na Prahu / USA / Singapore / Helsinki v tomto dokumentu jsou archivní.
 
 ---
 
 ## Přehled
 
-Tento dokument popisuje aktuální provozní topologii ZION V3 na Praha serveru. Slouží jako blueprint pro nasazení identické konfigurace na nové servery (USA, Singapore, Helsinki) před mainnet Genesis #0.
+Tento dokument popisuje **historickou** provozní topologii ZION V3 na Praha serveru. Sloužil jako blueprint pro nasazení identické konfigurace na nové servery (USA, Singapore, Helsinki) před mainnet Genesis #0. Aktuální provoz je konsolidován na **Core + Edge** topologii.
 
 ---
 
@@ -198,7 +203,7 @@ docker run -d \
   -p 3000:3000 \
   -e NODE_ENV=production \
   -e PORT=3000 \
-  -e ZION_NETWORK_NODES_JSON='[{"id":"prague-local","name":"Prague (Docker)","host":"zion-v3-node","region":"EU","lat":50.08,"lon":14.44,"ports":{"p2p":8333,"rpc":8443,"stratum":3333,"pool_api":8080},"poolApiUrl":"http://zion-pool:8080"}]' \
+  -e ZION_NETWORK_NODES_JSON='[{"id":"edge-local","name":"Edge (Docker)","host":"zion-v3-node","region":"EU","lat":50.08,"lon":14.44,"ports":{"p2p":8333,"rpc":8443,"stratum":8444,"pool_api":8080},"poolApiUrl":"http://zion-pool:8080"}]' \
   --restart unless-stopped \
   zion-website:2.9.10
 ```
@@ -427,7 +432,9 @@ curl -s http://localhost:9090/api/v1/status/targets | head -c 100
 
 ---
 
-## Server Role Map (Future Multi-Host)
+## Server Role Map (Historical Multi-Host — ARCHIVNÍ)
+
+> Tato sekce popisuje plánovanou multi-server topologii z května 2026, která **nebyla realizována**. Aktuální provoz je **Core + Edge**.
 
 | Server | Role | Porty navíc | Poznámka |
 |--------|------|-------------|----------|
@@ -436,7 +443,7 @@ curl -s http://localhost:9090/api/v1/status/targets | head -c 100
 | **Singapore (APAC)** | Core + Pool | 3333, 8080 | Miner pool pro APAC region |
 | **Helsinki (Backup)** | Core + Seed | 8335 | Backup seed node |
 
-### Multi-Host DNS / Seed Peers
+### Multi-Host DNS / Seed Peers (historický plán)
 
 ```
 Prague:  ZION_SEED_PEERS="usa:8333,singapore:8333,helsinki:8333"
@@ -578,7 +585,9 @@ curl -s http://localhost:8080/stats | head -c 200
 
 ---
 
-## Multi-Host Role Map (Future)
+## Multi-Host Role Map (Historical — ARCHIVNÍ)
+
+> Tato sekce popisuje plánovanou multi-server topologii z května 2026. Aktuální provoz je **Core + Edge**.
 
 | Server | Location | Role | Porty navíc | Poznámka |
 |--------|----------|------|-------------|----------|
@@ -587,7 +596,7 @@ curl -s http://localhost:8080/stats | head -c 200
 | **Singapore** | `5.223.84.191` | Core + Pool | 3333, 8080 | Miner pool pro APAC region |
 | **Helsinki** | `157.180.41.213` | Core + Seed | 8335 | Backup seed node |
 
-### Seed Peer Konfigurace (per host)
+### Seed Peer Konfigurace (per host — historický plán)
 
 ```bash
 # Prague
@@ -619,5 +628,5 @@ ZION_SEED_PEERS="91.98.122.165:8333,5.78.194.94:8333,5.223.84.191:8333"
 
 ---
 
-*Vygenerováno květen 2026 z aktuální provozní topologie Praha serveru (91.98.122.165).*
-*Dokument slouží jako blueprint pro nasazení identické konfigurace na nové servery před mainnet Genesis #0.*
+*Vygenerováno květen 2026 z historické provozní topologie Praha serveru (91.98.122.165).*
+*Dokument slouží jako archivní blueprint; aktuální provoz je konsolidován na Core + Edge topologii.*

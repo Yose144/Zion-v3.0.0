@@ -16,6 +16,7 @@ pub mod node;
 pub mod onboard;
 pub mod pool;
 pub mod status;
+pub mod topology;
 pub mod update;
 pub mod wallet;
 pub mod warp;

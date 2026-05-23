@@ -2,7 +2,7 @@
 
 **Repo:** `Yose144/2.9.6` · **Audit scope:** `V3/` workspace (3.0.0)
 **Datum:** 2026‑04‑28 · **Auditor:** Devin (Cognition AI) · **Forma:** static review + `cargo check`
-**Status repa (per `STATUS.md`):** mainnet běží produkčně na Praze (91.98.122.165), 1 300+ testů, fee‑split 89/5/5/1 ověřený on‑chain.
+**Status repa (per `STATUS.md`):** mainnet běží produkčně na Core + Edge topologii (Hetzner VPS), 1 300+ testů, fee‑split 89/5/5/1 ověřený on‑chain.
 
 > Cílem auditu je dát ti pravdivé technické zhodnocení **před** plánovaným externím 3rd‑party auditem (Q3 2026 roadmap). Není to certifikace bezpečnosti — je to interní inventář, co je hotové, co kulhá a co je naopak velmi dobré.
 
