@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Github, MessageCircle, Globe, BookOpen, BookMarked, Compass, Map, Download, Pickaxe, FileText, Orbit, ArrowLeftRight, Gamepad2, Star, Wallet } from 'lucide-react';
+import { Github, MessageCircle, Globe, BookOpen, BookMarked, Compass, Map, Download, Pickaxe, FileText, Orbit, ArrowLeftRight, Gamepad2, Star, Wallet, Sprout } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { tr } from '@/lib/translations';
 import { SITE_RELEASE_LABEL, SITE_RUNTIME_VERSION } from '@/lib/site';
@@ -28,7 +28,6 @@ export default function Footer() {
         { href: '/miner-stats', label: tr('nav', 'miner_stats', lang), Icon: Star },
         { href: '/download', label: tr('nav', 'download', lang), Icon: Download },
         { href: '/roadmap', label: tr('nav', 'roadmap', lang), Icon: Map },
-        { href: '/docs', label: tr('nav', 'docs', lang), Icon: BookOpen },
         { href: '/api-reference', label: tr('nav', 'api', lang), Icon: FileText },
       ],
     },
@@ -44,7 +43,15 @@ export default function Footer() {
         { href: '/l4-oasis', label: tr('nav', 'l4_oasis', lang), Icon: Gamepad2 },
         { href: '/l5-free-world', label: tr('nav', 'l5_free_world', lang), Icon: Globe },
         { href: '/l6-issobella', label: tr('nav', 'l6_issobella', lang), Icon: Star },
+      ],
+    },
+    {
+      title: tr('footer', 'group_wiki', lang),
+      links: [
+        { href: '/wiki', label: 'Wiki', Icon: BookOpen },
         { href: '/terranova', label: tr('nav', 'terranova', lang), Icon: BookMarked },
+        { href: '/genesis', label: tr('nav', 'genesis', lang), Icon: Sprout },
+        { href: '/docs', label: tr('nav', 'docs', lang), Icon: FileText },
       ],
     },
   ];
@@ -55,7 +62,7 @@ export default function Footer() {
       <div className="pointer-events-none absolute -left-32 top-0 h-72 w-72 rounded-full bg-zion-purple/10 blur-3xl" />
       <div className="pointer-events-none absolute -right-32 bottom-0 h-72 w-72 rounded-full bg-zion-cyan/10 blur-3xl" />
       <div className="zion-container py-12">
-        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-5">
           {/* Brand column */}
           <div className="md:col-span-2 space-y-4">
             <h3 className="text-xl font-bold text-gradient-soft">ZION TerraNova</h3>
