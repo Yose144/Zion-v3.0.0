@@ -94,13 +94,10 @@ export default function TahitiFlower({ className = '' }: { className?: string })
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1.2, duration: 0.8 }}
-          className="mt-1.5 flex flex-col items-center"
+          className="mt-2 flex flex-col items-center"
         >
-          <span className="text-[10px] font-medium uppercase tracking-[0.35em] text-cyan-200/60">
+          <span className="font-mono text-sm font-light uppercase tracking-[0.42em] text-cyan-200/65">
             Maeva
-          </span>
-          <span className="mt-0.5 text-[11px] text-amber-200/70">
-            Vítejte v ráji
           </span>
         </motion.div>
       </AnimatePresence>

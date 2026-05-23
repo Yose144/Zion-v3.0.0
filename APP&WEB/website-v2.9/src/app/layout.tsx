@@ -63,7 +63,7 @@ export default function RootLayout({
                     <div className="relative z-10">
                       <Navigation />
                       {/* ── Tiare Tahiti + Vision Bar + Oasis Banner ── */}
-                      <div className="relative z-20 pt-20 pb-2 flex flex-col items-center">
+                      <div className="relative z-20 pt-28 pb-2 flex flex-col items-center">
                         <TahitiFlower className="mb-1" />
                         <VisionBar />
                         <OasisBanner />
