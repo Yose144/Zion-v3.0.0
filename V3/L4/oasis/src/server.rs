@@ -19,6 +19,7 @@ use crate::combat::{ActionType, CombatAction, CombatEngine, Combatant};
 use crate::config::OasisConfig;
 use crate::db::OasisDb;
 use crate::guild::Guild;
+use crate::hiran_bridge::OasisHiranBridge;
 use crate::metrics::{serve_metrics, OasisMetrics};
 use crate::quests::QuestManager;
 use crate::rate_limit::{rate_limit_middleware, RateLimiter};
@@ -48,6 +49,7 @@ pub struct OasisState {
     pub quest_mgr: Arc<QuestManager>,
     pub metrics: Arc<OasisMetrics>,
     pub ws_hub: Option<Arc<WsHub>>,
+    pub hiran: Arc<OasisHiranBridge>,
 }
 
 impl OasisState {
@@ -59,6 +61,7 @@ impl OasisState {
         ws_hub: Option<Arc<WsHub>>,
     ) -> Self {
         let daily_cap = config.daily_xp_cap;
+        let hiran = Arc::new(OasisHiranBridge::new(&config));
         Self {
             db,
             config,
@@ -66,6 +69,7 @@ impl OasisState {
             quest_mgr,
             metrics,
             ws_hub,
+            hiran,
         }
     }
 }
@@ -121,6 +125,14 @@ pub fn build_router(state: OasisState) -> Router {
         // WebSocket feeds
         .route("/api/v1/oasis/ws/leaderboard", get(ws_leaderboard_handler))
         .route("/api/v1/oasis/ws/events", get(ws_events_handler))
+        // ── Hiran AI endpoints ──────────────────────────────────────────────
+        .route("/api/v1/oasis/ai/quest-narrative", post(ai_quest_narrative))
+        .route(
+            "/api/v1/oasis/ai/consciousness-eval",
+            post(ai_consciousness_eval),
+        )
+        .route("/api/v1/oasis/ai/npc-dialogue", post(ai_npc_dialogue))
+        .route("/api/v1/oasis/ai/hiran-health", get(ai_hiran_health))
         .with_state(state)
 }
 
@@ -859,6 +871,119 @@ async fn resolve_combat(
         .combat_resolutions_total
         .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
     (StatusCode::OK, Json(ApiResponse::ok(resp)))
+}
+
+// ── Hiran AI Handlers ─────────────────────────────────────────────────────────
+
+#[derive(Debug, Deserialize)]
+pub struct AiQuestNarrativeRequest {
+    pub player_address: String,
+    pub consciousness_level: String,
+    pub quest_theme: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct AiTextResponse {
+    pub result: String,
+}
+
+/// POST /api/v1/oasis/ai/quest-narrative
+async fn ai_quest_narrative(
+    State(state): State<OasisState>,
+    Json(req): Json<AiQuestNarrativeRequest>,
+) -> impl IntoResponse {
+    match state
+        .hiran
+        .generate_quest_narrative(&req.player_address, &req.consciousness_level, &req.quest_theme)
+        .await
+    {
+        Ok(result) => (
+            StatusCode::OK,
+            Json(ApiResponse::ok(AiTextResponse { result })),
+        )
+            .into_response(),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ApiResponse::<()>::error(&e.to_string())),
+        )
+            .into_response(),
+    }
+}
+
+#[derive(Debug, Deserialize)]
+pub struct AiConsciousnessEvalRequest {
+    pub player_address: String,
+    pub total_xp: u64,
+    pub current_level: String,
+    pub blocks_mined: u64,
+}
+
+/// POST /api/v1/oasis/ai/consciousness-eval
+async fn ai_consciousness_eval(
+    State(state): State<OasisState>,
+    Json(req): Json<AiConsciousnessEvalRequest>,
+) -> impl IntoResponse {
+    match state
+        .hiran
+        .evaluate_consciousness(
+            &req.player_address,
+            req.total_xp,
+            &req.current_level,
+            req.blocks_mined,
+        )
+        .await
+    {
+        Ok(result) => (
+            StatusCode::OK,
+            Json(ApiResponse::ok(AiTextResponse { result })),
+        )
+            .into_response(),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ApiResponse::<()>::error(&e.to_string())),
+        )
+            .into_response(),
+    }
+}
+
+#[derive(Debug, Deserialize)]
+pub struct AiNpcDialogueRequest {
+    pub npc_name: String,
+    pub npc_role: String,
+    pub player_question: String,
+}
+
+/// POST /api/v1/oasis/ai/npc-dialogue
+async fn ai_npc_dialogue(
+    State(state): State<OasisState>,
+    Json(req): Json<AiNpcDialogueRequest>,
+) -> impl IntoResponse {
+    match state
+        .hiran
+        .npc_dialogue(&req.npc_name, &req.npc_role, &req.player_question)
+        .await
+    {
+        Ok(result) => (
+            StatusCode::OK,
+            Json(ApiResponse::ok(AiTextResponse { result })),
+        )
+            .into_response(),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ApiResponse::<()>::error(&e.to_string())),
+        )
+            .into_response(),
+    }
+}
+
+/// GET /api/v1/oasis/ai/hiran-health
+async fn ai_hiran_health(State(state): State<OasisState>) -> impl IntoResponse {
+    let enabled = state.hiran.is_enabled();
+    let reachable = state.hiran.health().await;
+    Json(ApiResponse::ok(serde_json::json!({
+        "enabled": enabled,
+        "reachable": reachable,
+    })))
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────────

@@ -4720,6 +4720,7 @@ dependencies = [
  "async-trait",
  "axum",
  "chrono",
+ "reqwest",
  "rusqlite",
  "serde",
  "serde_json",
