@@ -119,6 +119,21 @@ zion hiran deploy --model --platform             # Deployment
 - `APP&WEB/desktop-agent/src/main.js` — IPC `ai-chat-ask`/`ai-chat-status`, public RPC URL
 - `APP&WEB/desktop-agent/src/preload.js` — `aiChatAsk`, `aiChatStatus` expose
 
+#### Build Verification (2026-05-23)
+
+| Test | Výsledek | Detail |
+|---|---|---|
+| **JS syntax** | ✅ Pass | `node --check` na `main.js`, `preload.js`, `renderer.js` |
+| **Rust miner build** | ✅ Pass | `prepare-rust-miner.js --auto` — `zion-miner.exe` zkompilován s `gpu-opencl` + `native-cosmic-harmony` |
+| **Deeksha cdylib** | ✅ Pass | `cosmic-harmony` cdylib zkompilován a připraven |
+| **GPU kernel sync** | ✅ Pass | 2 V3 GPU kernel assets synchronizovány do `resources/` |
+| **HTML elementy** | ✅ Pass | Všechny nové ID (`ai-chat-*`, `node-pool-*`, `wallet-payouts`, `payout-history-list`) existují v `index.html` |
+| **IPC wiring** | ✅ Pass | `aiChatAsk` / `aiChatStatus` / `getNetworkMetrics` exposed v preload + handler v main |
+
+**Poznámky:**
+- Při prvním buildu se objevily 2 Rust chyby mutability v `V3/L1/native-ffi/src/lib.rs` (`compiled_algorithms()` a `runtime_self_test()`) — opraveno přidáním `mut` k `Vec::new()`. Druhý build prošel čistě.
+- Žádné chybějící nativní DLL — OpenCL backend běží přímo přes `ocl` crate.
+
 ### Public Read-Only RPC Proxy — Edge Server
 
 | Komponenta | Stav | Detail |
