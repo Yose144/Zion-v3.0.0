@@ -6,6 +6,10 @@ license.workspace = true
 authors.workspace = true
 description = "Zion CLI — unified gateway for the entire ZION stack"
 
+[lib]
+name = "zion_cli"
+path = "src/lib.rs"
+
 [[bin]]
 name = "zion"
 path = "src/main.rs"

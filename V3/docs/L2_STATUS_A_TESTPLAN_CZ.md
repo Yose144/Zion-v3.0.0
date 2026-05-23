@@ -14,7 +14,7 @@
 | ZIONBridge | `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721` | ✅ Live, threshold=1, not paused | ✅ Verified |
 | ZIONAtomicSwap | `0x3DE9Ad42716854083ab837706E3961d10B0e63Eb` | ✅ Live, fee=0bps, not paused | ✅ Verified |
 
-### Služby na serveru (Prague)
+### Služby na serveru (Edge)
 
 | Služba | Kontejner | Stav |
 |--------|-----------|------|
@@ -112,12 +112,12 @@ Očekávaný výsledek:
 Cíl: Ověřit celý bridge flow na testnetu
 
 Předpoklady:
-- Bridge relay běží na Prague (✅ ano)
+- Bridge relay běží na Edge (✅ ano)
 - wZION na Base Sepolia existuje (✅ ano)
 
 Kroky:
 1. Pošli ZION na vault adresu na L1 s memo "BRIDGE:base_sepolia:0xTVOJE_ADRESA"
-2. Sleduj logy: ssh root@91.98.122.165 docker logs -f zion-v3-bridge
+2. Sleduj logy: ssh root@100.66.162.125 docker logs -f zion-v3-bridge
 3. Počkej na "lock detected" → "proof submitted" → "mint confirmed"
 4. Zkontroluj wZION balance v MetaMasku (Base Sepolia)
 
@@ -165,7 +165,7 @@ Očekávaný výsledek:
 Cíl: Ověřit DAO health a proposal flow
 
 Kroky:
-curl http://91.98.122.165:8081/api/dao/health
+curl http://100.66.162.125:8081/api/dao/health
 
 Očekávaný výsledek:
 {"data":{"service":"zion-dao","status":"ok",...}}   ✅ (ověřeno)
@@ -305,5 +305,5 @@ cd L2/contracts && npx hardhat test
 cd V3/L1 && cargo test -p zion-core -p zion-pool
 
 # Server L2 health:
-curl -s http://91.98.122.165:8081/api/dao/health | python3 -m json.tool
+curl -s http://100.66.162.125:8081/api/dao/health | python3 -m json.tool
 ```

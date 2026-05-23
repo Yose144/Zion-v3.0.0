@@ -2,6 +2,7 @@
 
 use crate::dao_client::{DaoClient, DaoClientConfig, DaoProposalRequest};
 use crate::db::{FreeWorldDb, GrantRecord, ProjectRecord};
+use crate::hiran_bridge::FreeWorldHiranBridge;
 use crate::metrics::FreeWorldMetrics;
 use crate::metrics::serve_metrics_text;
 use axum::{
@@ -20,6 +21,7 @@ pub struct AppState {
     pub db: Arc<Mutex<FreeWorldDb>>,
     pub api_key: String,
     pub metrics: Arc<FreeWorldMetrics>,
+    pub hiran: Arc<FreeWorldHiranBridge>,
 }
 
 /// Generic API response wrapper using serde_json::Value for data.
@@ -58,6 +60,8 @@ pub fn free_world_router(state: AppState) -> Router {
         .route("/api/v1/grants/:id/submit-to-dao", post(submit_grant_to_dao))
         .route("/api/v1/projects", get(list_projects).post(create_project))
         .route("/api/v1/fund/balance", get(fund_balance))
+        .route("/ai/analyze-grant", post(ai_analyze_grant))
+        .route("/ai/suggest-projects", post(ai_suggest_projects))
         .with_state(state)
 }
 
@@ -191,5 +195,54 @@ async fn fund_balance(State(state): State<AppState>) -> impl IntoResponse {
     match db.get_fund_balance() {
         Ok(balance) => (StatusCode::OK, Json(ApiResponse::ok(balance))),
         Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(ApiResponse::err(&e.to_string()))),
+    }
+}
+
+// ── AI / Hiran endpoints ──────────────────────────────────────────────────────
+
+#[derive(Deserialize)]
+pub struct AiAnalyzeGrantRequest {
+    pub title: String,
+    pub description: String,
+    pub amount_zion: u64,
+}
+
+async fn ai_analyze_grant(
+    State(state): State<AppState>,
+    Json(req): Json<AiAnalyzeGrantRequest>,
+) -> impl IntoResponse {
+    match state
+        .hiran
+        .analyze_grant_proposal(&req.title, &req.description, req.amount_zion)
+        .await
+    {
+        Ok(analysis) => (StatusCode::OK, Json(ApiResponse::ok(analysis))),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ApiResponse::err(&e.to_string())),
+        ),
+    }
+}
+
+#[derive(Deserialize)]
+pub struct AiSuggestProjectsRequest {
+    pub need: String,
+    pub region: String,
+}
+
+async fn ai_suggest_projects(
+    State(state): State<AppState>,
+    Json(req): Json<AiSuggestProjectsRequest>,
+) -> impl IntoResponse {
+    match state
+        .hiran
+        .suggest_community_projects(&req.need, &req.region)
+        .await
+    {
+        Ok(suggestions) => (StatusCode::OK, Json(ApiResponse::ok(suggestions))),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ApiResponse::err(&e.to_string())),
+        ),
     }
 }

@@ -49,7 +49,7 @@ chmod +x zion-smos/zion-miner zion-smos/start-zion-miner.sh
 Edit `zion-smos/smos.env`:
 
 - `ZION_MINER_ID=zion1...` (required)
-- `ZION_POOL_ADDR=91.98.122.165:3333` (or your preferred pool)
+- `ZION_POOL_ADDR=77.42.71.94:8444` (or your preferred pool)
 - `ZION_WORKER_NAME=` leave empty if you want SMOS rig name fallback
 - optional tuning: `ZION_GPU_BACKEND`, `ZION_CUDA_WORK_CAP`, `ZION_CUDA_TPB`
 

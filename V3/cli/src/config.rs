@@ -226,8 +226,8 @@ impl Default for HiranConfig {
 impl Default for DeployConfig {
     fn default() -> Self {
         Self {
-            default_server: "prague".into(),
-            ssh_key: "~/.ssh/zion_hetzner_key".into(),
+            default_server: "edge".into(),
+            ssh_key: "~/.ssh/ssh-key-zion-edge".into(),
             ssh_user: "root".into(),
         }
     }
@@ -285,14 +285,14 @@ impl Config {
 
     /// Pick the appropriate RPC endpoint based on a target name.
     /// Recognised targets: `core`, `edge`, `local` (alias for core), `vpn` (alias for edge).
-    pub fn target_rpc(&self, target: &str) -> (&str, u16) {
+    pub fn target_rpc<'a>(&'a self, target: &'a str) -> (&'a str, u16) {
         match target.trim().to_ascii_lowercase().as_str() {
             "edge" | "vpn" | "relay" => self.edge_rpc(),
             "core" | "local" | "master" => self.core_rpc(),
             _ => {
                 // Fallback: if target looks like host:port, use it directly
                 if target.contains(':') {
-                    let parts: Vec<&str> = target.splitn(2, ':').collect();
+                    let parts: Vec<&'a str> = target.splitn(2, ':').collect();
                     if let Ok(port) = parts[1].parse() {
                         return (parts[0], port);
                     }
@@ -303,13 +303,13 @@ impl Config {
     }
 
     /// Pick the appropriate pool endpoint based on a target name.
-    pub fn target_pool(&self, target: &str) -> (&str, u16) {
+    pub fn target_pool<'a>(&'a self, target: &'a str) -> (&'a str, u16) {
         match target.trim().to_ascii_lowercase().as_str() {
             "edge" | "vpn" | "relay" => self.edge_pool(),
             "core" | "local" | "master" => self.core_pool(),
             _ => {
                 if target.contains(':') {
-                    let parts: Vec<&str> = target.splitn(2, ':').collect();
+                    let parts: Vec<&'a str> = target.splitn(2, ':').collect();
                     if let Ok(port) = parts[1].parse() {
                         return (parts[0], port);
                     }
@@ -470,6 +470,32 @@ pub fn validate(cfg: &Config) -> ValidationReport {
     }
     if cfg.pool.port == 0 {
         errors.push("pool.port must be greater than 0".to_string());
+    }
+
+    // Validate topology config
+    if cfg.topology.core.rpc_host.trim().is_empty() {
+        errors.push("topology.core.rpc_host must not be empty".to_string());
+    }
+    if cfg.topology.core.rpc_port == 0 {
+        errors.push("topology.core.rpc_port must be greater than 0".to_string());
+    }
+    if cfg.topology.edge.rpc_host.trim().is_empty() {
+        errors.push("topology.edge.rpc_host must not be empty".to_string());
+    }
+    if cfg.topology.edge.rpc_port == 0 {
+        errors.push("topology.edge.rpc_port must be greater than 0".to_string());
+    }
+    if cfg.topology.edge.pool_host.trim().is_empty() {
+        errors.push("topology.edge.pool_host must not be empty".to_string());
+    }
+    if cfg.topology.edge.pool_port == 0 {
+        errors.push("topology.edge.pool_port must be greater than 0".to_string());
+    }
+    if cfg.topology.core.vpn_ip.as_ref().map(|s| s.trim().is_empty()).unwrap_or(false) {
+        warnings.push("topology.core.vpn_ip is empty".to_string());
+    }
+    if cfg.topology.edge.vpn_ip.as_ref().map(|s| s.trim().is_empty()).unwrap_or(false) {
+        warnings.push("topology.edge.vpn_ip is empty".to_string());
     }
 
     match cfg.miner.backend.trim().to_ascii_lowercase().as_str() {

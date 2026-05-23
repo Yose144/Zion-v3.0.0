@@ -17,23 +17,68 @@ pub async fn run(_cfg: &Config) -> Result<()> {
 
     let mut cfg = Config::default();
 
-    // Step 1: Node endpoint
-    println!("  Step 1/4  Node endpoint");
-    let host: String = Input::new()
-        .with_prompt("    RPC host")
-        .default("204.168.245.175".into())
-        .interact_text()?;
-    let port_str: String = Input::new()
-        .with_prompt("    RPC port")
-        .default("8443".into())
-        .interact_text()?;
-    let port: u16 = port_str.parse().unwrap_or(8443);
+    // Step 1: Topology setup
+    println!("  Step 1/5  Core+Edge Topology");
+    let topology_mode = &["Standard (Core local + Edge VPS)", "Custom"];
+    let topo_idx = Select::new()
+        .with_prompt("    Topology preset")
+        .items(topology_mode)
+        .default(0)
+        .interact()?;
+    if topo_idx == 0 {
+        // Defaults already set in Config::default()
+        ui::print_ok("Using standard topology:");
+        ui::print_row("      Core RPC", &format!("{}:{}", cfg.topology.core.rpc_host, cfg.topology.core.rpc_port));
+        ui::print_row("      Edge RPC", &format!("{}:{}", cfg.topology.edge.rpc_host, cfg.topology.edge.rpc_port));
+        ui::print_row("      Edge Pool", &format!("{}:{}", cfg.topology.edge.pool_host, cfg.topology.edge.pool_port));
+    } else {
+        let core_host: String = Input::new()
+            .with_prompt("    Core RPC host")
+            .default(cfg.topology.core.rpc_host.clone())
+            .interact_text()?;
+        let core_port: u16 = Input::new()
+            .with_prompt("    Core RPC port")
+            .default(cfg.topology.core.rpc_port.to_string())
+            .interact_text()?.parse().unwrap_or(8443);
+        let edge_host: String = Input::new()
+            .with_prompt("    Edge RPC host")
+            .default(cfg.topology.edge.rpc_host.clone())
+            .interact_text()?;
+        let edge_port: u16 = Input::new()
+            .with_prompt("    Edge RPC port")
+            .default(cfg.topology.edge.rpc_port.to_string())
+            .interact_text()?.parse().unwrap_or(8443);
+        let edge_pool_host: String = Input::new()
+            .with_prompt("    Edge pool host")
+            .default(cfg.topology.edge.pool_host.clone())
+            .interact_text()?;
+        let edge_pool_port: u16 = Input::new()
+            .with_prompt("    Edge pool port")
+            .default(cfg.topology.edge.pool_port.to_string())
+            .interact_text()?.parse().unwrap_or(8444);
+        cfg.topology.core.rpc_host = core_host.clone();
+        cfg.topology.core.rpc_port = core_port;
+        cfg.topology.edge.rpc_host = edge_host.clone();
+        cfg.topology.edge.rpc_port = edge_port;
+        cfg.topology.edge.pool_host = edge_pool_host.clone();
+        cfg.topology.edge.pool_port = edge_pool_port;
+        cfg.node.rpc_host = core_host.clone();
+        cfg.node.rpc_port = core_port;
+        cfg.pool.host = edge_pool_host.clone();
+        cfg.pool.port = edge_pool_port;
+    }
 
-    cfg.node.rpc_host = host.clone();
-    cfg.node.rpc_port = port;
-
-    print!("    Connecting... ");
-    let result = node_rpc::call0(&host, port, "getChainInfo").await;
+    print!("    Core connecting... ");
+    let result = node_rpc::call0(&cfg.topology.core.rpc_host, cfg.topology.core.rpc_port, "getChainInfo").await;
+    match result {
+        Ok(v) => {
+            let h = v["chain_height"].as_u64().unwrap_or(0);
+            println!("✓ height {}", h);
+        }
+        Err(e) => println!("⚠ {}", e),
+    }
+    print!("    Edge connecting... ");
+    let result = node_rpc::call0(&cfg.topology.edge.rpc_host, cfg.topology.edge.rpc_port, "getChainInfo").await;
     match result {
         Ok(v) => {
             let h = v["chain_height"].as_u64().unwrap_or(0);
@@ -44,7 +89,7 @@ pub async fn run(_cfg: &Config) -> Result<()> {
     println!();
 
     // Step 2: Mining wallet
-    println!("  Step 2/4  Mining wallet");
+    println!("  Step 2/5  Mining wallet");
     let wallet_mode = &[
         "Use existing address",
         "Generate new mnemonic wallet",
@@ -116,7 +161,7 @@ pub async fn run(_cfg: &Config) -> Result<()> {
     println!();
 
     // Step 3: Mining backend
-    println!("  Step 3/4  Mining backend");
+    println!("  Step 3/5  Mining backend");
     let backends = &["auto", "cpu", "gpu (Metal)", "gpu (OpenCL)"];
     let idx = Select::new()
         .with_prompt("    Backend")
@@ -133,10 +178,10 @@ pub async fn run(_cfg: &Config) -> Result<()> {
     println!();
 
     // Step 4: Hiranyagarbha agent
-    println!("  Step 4/4  Hiranyagarbha AI Agent");
+    println!("  Step 4/5  Hiranyagarbha AI Agent");
     let agent_url: String = Input::new()
         .with_prompt("    Agent URL")
-        .default(format!("http://{}:8001", host))
+        .default(cfg.agent.url.clone())
         .interact_text()?;
     cfg.agent.url = agent_url.clone();
 
@@ -149,13 +194,21 @@ pub async fn run(_cfg: &Config) -> Result<()> {
     }
     println!();
 
-    // Save config
+    // Step 5: Confirm & save
+    println!("  Step 5/5  Save Configuration");
+    ui::print_info(&format!("Core RPC: {}:{}", cfg.topology.core.rpc_host, cfg.topology.core.rpc_port));
+    ui::print_info(&format!("Edge RPC: {}:{}", cfg.topology.edge.rpc_host, cfg.topology.edge.rpc_port));
+    ui::print_info(&format!("Edge Pool: {}:{}", cfg.topology.edge.pool_host, cfg.topology.edge.pool_port));
+    ui::print_info(&format!("Mining wallet: {}", if cfg.miner.wallet.is_empty() { "(not set)" } else { &cfg.miner.wallet }));
+    println!();
+
     config::save(&cfg)?;
     let path = config::config_path()?;
     ui::print_ok(&format!("Config saved to {}", path.display()));
     println!();
-    println!("  Run 'zion status' to verify the stack.");
-    println!("  Run 'zion mine start' to start mining.");
+    println!("  Run 'zion topology status' to verify core+edge health.");
+    println!("  Run 'zion topology e2e' to run end-to-end checks.");
+    println!("  Run 'zion mine start' to start mining (defaults to edge pool).");
     println!("  Run 'zion agent chat' to talk to Hiranyagarbha.");
     println!();
 

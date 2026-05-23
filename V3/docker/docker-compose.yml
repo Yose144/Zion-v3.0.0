@@ -127,6 +127,13 @@ services:
       - OASIS_BIND=0.0.0.0
       - OASIS_PORT=8094
       - OASIS_DB=/data/oasis/oasis.db
+      - OASIS_HIRAN_URL=http://hiran-inference:8002
+      - OASIS_HIRAN_ENABLED=true
+    depends_on:
+      hiran-inference:
+        condition: service_healthy
+      node:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8094/health"]
       interval: 30s
@@ -156,7 +163,11 @@ services:
       - FREE_WORLD_DB=/data/free-world/free_world.db
       - FREE_WORLD_L1_RPC=node:8443
       - FREE_WORLD_API_KEY=${FREE_WORLD_API_KEY:-}
+      - FREE_WORLD_HIRAN_URL=http://hiran-inference:8002
+      - FREE_WORLD_HIRAN_ENABLED=true
     depends_on:
+      hiran-inference:
+        condition: service_healthy
       node:
         condition: service_healthy
     healthcheck:
@@ -188,7 +199,11 @@ services:
       - ISSOBELLA_DB=/data/issobella/issobella.db
       - ISSOBELLA_L1_RPC=node:8443
       - ISSOBELLA_API_KEY=${ISSOBELLA_API_KEY:-}
+      - ISSOBELLA_HIRAN_URL=http://hiran-inference:8002
+      - ISSOBELLA_HIRAN_ENABLED=true
     depends_on:
+      hiran-inference:
+        condition: service_healthy
       node:
         condition: service_healthy
     healthcheck:

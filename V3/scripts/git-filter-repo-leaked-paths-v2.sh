@@ -28,7 +28,7 @@
 # Pre-flight checklist (StatusV3-Part2.md §8 P0):
 #   [ ] PAT  ghp_7gxI3Y…  revoked at https://github.com/settings/tokens
 #   [ ] OpenAI sk-proj-CsUPFB…  deleted at https://platform.openai.com/api-keys
-#   [ ] SSH key rotated on 91.98.122.165 (and old key removed from authorized_keys)
+#   [ ] SSH key rotated on all production servers (legacy Prague 91.98.122.165 included)
 #   [ ] All collaborators warned: "rewrite incoming, re-clone after force-push"
 #   [ ] All open PRs from forks acknowledged as needing rebase
 #   [ ] Backup clone location verified writable
