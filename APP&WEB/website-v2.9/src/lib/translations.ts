@@ -32,6 +32,7 @@ const t = {
     info_group: { cs: 'Info', en: 'Info' },
     layers_group: { cs: 'Vrstvy', en: 'Layers' },
     wiki_group: { cs: 'Wiki', en: 'Wiki' },
+    l3_hiran:   { cs: 'L3 Hiran', en: 'L3 Hiran' },
     l4_oasis:   { cs: 'L4 Oasis', en: 'L4 Oasis' },
     l5_free_world: { cs: 'L5 Free World', en: 'L5 Free World' },
     l6_issobella: { cs: 'L6 Issobella', en: 'L6 Issobella' },

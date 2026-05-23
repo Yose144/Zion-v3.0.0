@@ -3,9 +3,11 @@ use clap::{CommandFactory, Parser};
 use std::io::{self, IsTerminal};
 
 use zion_cli::commands::{
-    agent, bridge, completions, compose, dao, deploy, doctor, explorer, free_world, hiran,
+    agent, bridge, completions, compose, dao, doctor, explorer, free_world, hiran,
     issobella, mine, monitor, ncl, node, onboard, pool, status, topology, update, wallet, warp,
 };
+#[cfg(feature = "admin")]
+use zion_cli::commands::deploy;
 use zion_cli::config;
 use zion_cli::menu;
 use zion_cli::ui;
@@ -78,23 +80,28 @@ async fn dispatch(cli: Cli) -> Result<()> {
         Commands::Version => update::print_version_surface(&cfg),
         Commands::Update { check, yes } => update::run(&cfg, check, yes).await,
         Commands::Onboard => onboard::run(&cfg).await,
+        #[cfg(feature = "admin")]
+        Commands::Start { service } => deploy::start_service(&cfg, &service).await,
+        #[cfg(feature = "admin")]
+        Commands::Stop { service } => deploy::stop_service(&cfg, &service).await,
+        #[cfg(feature = "admin")]
+        Commands::Restart { service } => deploy::restart_service(&cfg, &service).await,
         Commands::Status => status::run(&cfg).await,
         Commands::Doctor => doctor::run(&cfg).await,
+        #[cfg(feature = "admin")]
+        Commands::Logs { service } => deploy::tail_logs(&cfg, &service).await,
         Commands::Dashboard => {
             let url = format!("http://{}:3000", cfg.node.rpc_host);
             ui::print_info(&format!("Opening {}", url));
             open_browser(&url)
         }
-        Commands::Start { service } => deploy::start_service(&cfg, &service).await,
-        Commands::Stop { service } => deploy::stop_service(&cfg, &service).await,
-        Commands::Restart { service } => deploy::restart_service(&cfg, &service).await,
-        Commands::Logs { service } => deploy::tail_logs(&cfg, &service).await,
         Commands::Node { cmd } => node::run(&cfg, cmd).await,
         Commands::Pool { cmd } => pool::run(&cfg, cmd).await,
         Commands::Mine { cmd } => mine::run(&cfg, cmd).await,
         Commands::Wallet { cmd } => wallet::run(&cfg, cmd).await,
         Commands::Agent { cmd } => agent::run(&cfg, cmd).await,
         Commands::Hiran { cmd } => hiran::run(&cfg, cmd).await,
+        #[cfg(feature = "admin")]
         Commands::Deploy { cmd } => deploy::run(&cfg, cmd).await,
         Commands::Bridge { cmd } => bridge::run(&cfg, cmd).await,
         Commands::Dao { cmd } => dao::run(&cfg, cmd).await,
