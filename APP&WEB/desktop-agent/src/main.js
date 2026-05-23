@@ -20,8 +20,9 @@ const PRIMARY_RPC_PORT = 8443;
 const EDGE_VPN_HOST = '100.66.162.125';
 // Legacy alias kept for internal fallback references
 const PRIMARY_TESTNET_HOST = PRIMARY_MAINNET_HOST;
-// Default to localhost for users running local node; fallback to Edge VPN
-const DEFAULT_RPC_URL = 'http://127.0.0.1:8443/jsonrpc';
+// Default to public Edge read-only RPC for public miners.
+// Users with local Core node can override via Settings → RPC URL.
+const DEFAULT_RPC_URL = 'http://77.42.71.94:8443/jsonrpc';
 
 // ── Logging: only miner metrics + errors go to console.log.
 // Everything else uses dbg() which outputs console.debug only when ZION_DEBUG=1.
