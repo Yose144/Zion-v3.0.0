@@ -320,7 +320,7 @@ Pokud ne (epoch derivace přidá extra kontext), pak epoch-rotating NPU se aktiv
 
 ## 4. Testnet Deployment (Týden 3)
 
-### 4.1 Canary Server (91.98.122.165)
+### 4.1 Canary Server (legacy Prague 91.98.122.165 — ARCHIVNÍ)
 
 ```
 1. Build nový docker image s Tier 1+2 změnami

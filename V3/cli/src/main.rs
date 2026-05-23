@@ -1,183 +1,15 @@
 use anyhow::Result;
-use clap::{CommandFactory, Parser, Subcommand};
+use clap::{CommandFactory, Parser};
 use std::io::{self, IsTerminal};
 
-mod commands;
-mod config;
-mod menu;
-mod rpc;
-mod ui;
-
-use commands::{
+use zion_cli::commands::{
     agent, bridge, completions, compose, dao, deploy, doctor, explorer, free_world, hiran,
-    issobella, mine, monitor, ncl, node, onboard, pool, status, update, wallet, warp,
+    issobella, mine, monitor, ncl, node, onboard, pool, status, topology, update, wallet, warp,
 };
-
-use clap_complete::Shell;
-#[allow(unused_imports)]
-use toml;
-
-#[derive(Parser)]
-#[command(
-    name = "zion",
-    about = "Zion CLI — unified gateway for the entire ZION stack",
-    long_about = None,
-    version,
-    propagate_version = true,
-)]
-struct Cli {
-    /// Config file (default: ~/.zion/zion.toml)
-    #[arg(long, global = true)]
-    config: Option<String>,
-
-    #[command(subcommand)]
-    command: Option<Commands>,
-}
-
-#[derive(Subcommand)]
-enum Commands {
-    /// Open interactive arrow-key operator menu
-    Menu,
-    /// Print release metadata and manual update guidance
-    Version,
-    /// Check for and install the latest published CLI artifact
-    Update {
-        /// Only compare the local binary with the published artifact
-        #[arg(long)]
-        check: bool,
-        /// Skip interactive confirmation and apply the update immediately
-        #[arg(long)]
-        yes: bool,
-    },
-    /// First-time setup wizard
-    Onboard,
-    /// Start service(s): all | node | pool | miner | agent | ai-native | bridge | dao | website | redis | monitoring
-    Start {
-        #[arg(default_value = "all")]
-        service: String,
-    },
-    /// Stop service(s): all | node | pool | miner | agent | ai-native | bridge | dao | website | redis | monitoring
-    Stop {
-        #[arg(default_value = "all")]
-        service: String,
-    },
-    /// Restart service(s): all | node | pool | miner | agent | ai-native | bridge | dao | website | redis | monitoring
-    Restart {
-        #[arg(default_value = "all")]
-        service: String,
-    },
-    /// Health check — all layers
-    Status,
-    /// Run preflight diagnostics for config, local tools, and endpoints
-    Doctor,
-    /// Tail logs for a service
-    Logs {
-        #[arg(default_value = "node")]
-        service: String,
-    },
-    /// Open web dashboard in browser
-    Dashboard,
-
-    /// Docker Compose integration (up, down, logs, ps, doctor)
-    Compose {
-        #[command(subcommand)]
-        cmd: compose::ComposeSubcommand,
-    },
-
-    /// L1 core node commands
-    Node {
-        #[command(subcommand)]
-        cmd: node::NodeCmd,
-    },
-    /// L1 pool commands
-    Pool {
-        #[command(subcommand)]
-        cmd: pool::PoolCmd,
-    },
-    /// L1 miner commands
-    Mine {
-        #[command(subcommand)]
-        cmd: mine::MineCmd,
-    },
-    /// Wallet operations
-    Wallet {
-        #[command(subcommand)]
-        cmd: wallet::WalletCmd,
-    },
-    /// L3 Hiranyagarbha AI Native agent gateway
-    Agent {
-        #[command(subcommand)]
-        cmd: agent::AgentCmd,
-    },
-    /// Hiran v2.2 inference service
-    Hiran {
-        #[command(subcommand)]
-        cmd: hiran::HiranCmd,
-    },
-    /// Server deployment
-    Deploy {
-        #[command(subcommand)]
-        cmd: deploy::DeployCmd,
-    },
-    /// Config management
-    Config {
-        #[command(subcommand)]
-        cmd: ConfigCmd,
-    },
-    /// L2 bridge gateway
-    Bridge {
-        #[command(subcommand)]
-        cmd: bridge::BridgeCmd,
-    },
-    /// L2 DAO governance
-    Dao {
-        #[command(subcommand)]
-        cmd: dao::DaoCmd,
-    },
-    /// Block explorer TUI
-    Explorer,
-    /// Live stack monitor TUI (all layers)
-    Monitor,
-    /// L3 Warp cross-chain relay
-    Warp {
-        #[command(subcommand)]
-        cmd: warp::WarpCmd,
-    },
-    /// L3 NCL Neural Compute Layer
-    Ncl {
-        #[command(subcommand)]
-        cmd: ncl::NclCmd,
-    },
-    /// L5 Free World humanitarian layer
-    FreeWorld {
-        #[command(subcommand)]
-        cmd: free_world::FreeWorldCmd,
-    },
-    /// L6 Issobella space layer
-    Issobella {
-        #[command(subcommand)]
-        cmd: issobella::IssobellaCmd,
-    },
-    /// Print shell completion script
-    Completions {
-        /// Shell: bash | zsh | fish | powershell
-        shell: Shell,
-    },
-}
-
-#[derive(Subcommand)]
-enum ConfigCmd {
-    /// Print effective config
-    Show,
-    /// Set a config value
-    Set { key: String, value: String },
-    /// Show config file path
-    Path,
-    /// Validate current config values
-    Validate,
-    /// Re-run onboarding wizard
-    Init,
-}
+use zion_cli::config;
+use zion_cli::menu;
+use zion_cli::ui;
+use zion_cli::{Cli, Commands, ConfigCmd};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -270,6 +102,7 @@ async fn dispatch(cli: Cli) -> Result<()> {
         Commands::Monitor => monitor::run(&cfg).await,
         Commands::Warp { cmd } => warp::run(&cfg, cmd).await,
         Commands::Ncl { cmd } => ncl::run(&cfg, cmd).await,
+        Commands::Topology { cmd } => topology::run(&cfg, cmd).await,
         Commands::FreeWorld { cmd } => free_world::run(&cfg, cmd).await,
         Commands::Issobella { cmd } => issobella::run(&cfg, cmd).await,
         Commands::Compose { cmd } => compose::run(compose::ComposeCmd { command: cmd }).await,

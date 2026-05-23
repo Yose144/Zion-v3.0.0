@@ -1,0 +1,10 @@
+C:\Users\yosef\Desktop\Zion\2.9.6-main\V3/target-check\debug\deps\hex_conservative-1983576d85f6d8c1.d: C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\hex-conservative-0.1.2\src\lib.rs C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\hex-conservative-0.1.2\src\buf_encoder.rs C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\hex-conservative-0.1.2\src\display.rs C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\hex-conservative-0.1.2\src\error.rs C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\hex-conservative-0.1.2\src\iter.rs C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\hex-conservative-0.1.2\src\parse.rs
+
+C:\Users\yosef\Desktop\Zion\2.9.6-main\V3/target-check\debug\deps\libhex_conservative-1983576d85f6d8c1.rmeta: C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\hex-conservative-0.1.2\src\lib.rs C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\hex-conservative-0.1.2\src\buf_encoder.rs C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\hex-conservative-0.1.2\src\display.rs C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\hex-conservative-0.1.2\src\error.rs C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\hex-conservative-0.1.2\src\iter.rs C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\hex-conservative-0.1.2\src\parse.rs
+
+C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\hex-conservative-0.1.2\src\lib.rs:
+C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\hex-conservative-0.1.2\src\buf_encoder.rs:
+C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\hex-conservative-0.1.2\src\display.rs:
+C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\hex-conservative-0.1.2\src\error.rs:
+C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\hex-conservative-0.1.2\src\iter.rs:
+C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\hex-conservative-0.1.2\src\parse.rs:

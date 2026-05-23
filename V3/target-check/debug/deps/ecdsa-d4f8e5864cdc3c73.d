@@ -1,0 +1,12 @@
+C:\Users\yosef\Desktop\Zion\2.9.6-main\V3/target-check\debug\deps\ecdsa-d4f8e5864cdc3c73.d: C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ecdsa-0.16.9\src\lib.rs C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ecdsa-0.16.9\src\normalized.rs C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ecdsa-0.16.9\src\recovery.rs C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ecdsa-0.16.9\src\der.rs C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ecdsa-0.16.9\src\hazmat.rs C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ecdsa-0.16.9\src\signing.rs C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ecdsa-0.16.9\src\verifying.rs C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ecdsa-0.16.9\src\../README.md
+
+C:\Users\yosef\Desktop\Zion\2.9.6-main\V3/target-check\debug\deps\libecdsa-d4f8e5864cdc3c73.rmeta: C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ecdsa-0.16.9\src\lib.rs C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ecdsa-0.16.9\src\normalized.rs C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ecdsa-0.16.9\src\recovery.rs C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ecdsa-0.16.9\src\der.rs C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ecdsa-0.16.9\src\hazmat.rs C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ecdsa-0.16.9\src\signing.rs C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ecdsa-0.16.9\src\verifying.rs C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ecdsa-0.16.9\src\../README.md
+
+C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ecdsa-0.16.9\src\lib.rs:
+C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ecdsa-0.16.9\src\normalized.rs:
+C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ecdsa-0.16.9\src\recovery.rs:
+C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ecdsa-0.16.9\src\der.rs:
+C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ecdsa-0.16.9\src\hazmat.rs:
+C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ecdsa-0.16.9\src\signing.rs:
+C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ecdsa-0.16.9\src\verifying.rs:
+C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\ecdsa-0.16.9\src\../README.md:
