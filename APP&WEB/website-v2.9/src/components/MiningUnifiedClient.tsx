@@ -468,8 +468,11 @@ export default function MiningUnifiedClient() {
             </p>
             <div className="rounded-xl bg-black/60 p-3 font-mono text-xs text-gray-300 overflow-x-auto">
               <span className="text-gray-500">$</span>{" "}
-              curl -fsSL https://raw.githubusercontent.com/Zion-TerraNova/2.9.6/main/install.sh | bash
+              curl -fsSL https://zionterranova.com/downloads/zion-cli-linux-x86_64 -o zion && chmod +x zion
             </div>
+            <p className="text-xs text-gray-500 mt-2">
+              {cs ? 'Poznámka: ZION CLI je unifikovaná binárka — miner, node, wallet i pool jsou subpříkazy.' : 'Note: ZION CLI is a unified binary — miner, node, wallet and pool are subcommands.'}
+            </p>
           </div>
         </motion.section>
 
@@ -568,15 +571,13 @@ export default function MiningUnifiedClient() {
                 <div className="space-y-4">
                   <CodeBlock
                     title={cs ? 'Moznost A - predkompilovana binarka (doporuceno)' : 'Option A — Pre-compiled binary (recommended)'}
-                    code={`# Download from GitHub Release
-# → https://github.com/Zion-TerraNova/2.9.6/releases/tag/v2.9.8
+                    code={`# Download ZION CLI (unified binary)
+# → https://zionterranova.com/downloads
 
-# Linux/macOS — one-line install:
-curl -fsSL https://raw.githubusercontent.com/Zion-TerraNova/2.9.6/main/install.sh | bash
-
-# Or download manually and make executable:
-chmod +x zion-miner-linux-x86_64
-./zion-miner-linux-x86_64 --version`}
+# Linux/macOS — manual download:
+curl -fsSL https://zionterranova.com/downloads/zion-cli-linux-x86_64 -o zion
+chmod +x zion
+./zion mine --version`}
                   />
                   <CodeBlock
                     title={cs ? 'Moznost B - build ze zdroje' : 'Option B — Build from source'}
@@ -901,15 +902,13 @@ cargo build --release -p zion-miner --features opencl
                 <h4 className="text-white font-medium">{cs ? 'Predkompilovana binarka (doporuceno)' : 'Pre-compiled Binary (recommended)'}</h4>
               </div>
               <CodeBlock
-                code={`# Download from GitHub Release
-# → ${GH_RELEASE}
+                code={`# Download ZION CLI (unified binary)
+# → https://zionterranova.com/downloads
 
-# Or use one-line install:
-curl -fsSL https://raw.githubusercontent.com/Zion-TerraNova/2.9.6/main/install.sh | bash
-
-# Manual:
-chmod +x zion-node-linux-x86_64
-./zion-node-linux-x86_64 --version`}
+# Linux/macOS — manual download:
+curl -fsSL https://zionterranova.com/downloads/zion-cli-linux-x86_64 -o zion
+chmod +x zion
+./zion node --version`}
               />
             </div>
 

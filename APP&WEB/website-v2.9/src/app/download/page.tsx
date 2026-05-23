@@ -33,27 +33,27 @@ const getCliQuickstartSteps = (cs: boolean) => [
   {
     title: cs ? '1. Vytvoř peněženku' : '1. Create Wallet',
     items: [
-      cs ? 'Stáhni zion-wallet pro svůj OS' : 'Download zion-wallet for your OS',
-      'Run: zion-wallet gen-mnemonic --out my-wallet.json --print',
+      cs ? 'Stáhni ZION CLI pro Windows níže' : 'Download ZION CLI for Windows below',
+      'Run: zion wallet new --mnemonic --out my-wallet.json --print',
       cs ? 'Zapiš si 24 slov na papír — to je tvá záloha!' : 'Write down 24 words on paper — this is your backup!',
     ],
   },
   {
     title: cs ? '2. Spusť těžbu' : '2. Start Mining',
     items: [
-      cs ? 'Stáhni zion-miner pro svůj OS' : 'Download zion-miner for your OS',
-      `Run: zion-miner --pool stratum+tcp://${SITE_POOL_PRIMARY} --wallet YOUR_ADDRESS`,
+      cs ? 'Nastav adresu: zion config set miner.wallet YOUR_ADDRESS' : 'Set address: zion config set miner.wallet YOUR_ADDRESS',
+      `Run: zion mine start --pool stratum+tcp://${SITE_POOL_PRIMARY}`,
       cs ? 'Sleduj hashrate a přijaté shares v konzoli' : 'Watch hashrate & accepted shares in console',
     ],
   },
   {
     title: cs ? '3. Zkontroluj zůstatek' : '3. Check Balance',
     items: [
-      'Run: zion-wallet balance --address YOUR_ADDRESS --node https://node.zionterranova.com',
+      'Run: zion wallet balance --address YOUR_ADDRESS',
       cs ? 'Nebo navštiv Explorer na zionterranova.com/explorer' : 'Or visit the Explorer at zionterranova.com/explorer',
       cs
-        ? 'Poslat ZION: zion-wallet send --wallet my-wallet.json --to RECIPIENT --amount 100'
-        : 'Send ZION: zion-wallet send --wallet my-wallet.json --to RECIPIENT --amount 100',
+        ? 'Poslat ZION: zion wallet send --to RECIPIENT --amount 100'
+        : 'Send ZION: zion wallet send --to RECIPIENT --amount 100',
     ],
   },
 ];
@@ -78,17 +78,19 @@ export default function DownloadPage() {
               {SITE_RELEASE_LABEL}
             </div>
             <div>
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{cs ? '16 nativnich Rust binarek · 4 platformy' : '16 native Rust binaries · 4 platforms'}</p>
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{cs ? '1 unifikovaná binárka · 4 platformy · Windows dostupný' : '1 unified binary · 4 platforms · Windows ready'}</p>
               <h1 className="text-3xl sm:text-5xl font-semibold text-gradient leading-tight">
                 {cs ? 'Stahni. Tez. Vydelavej.' : 'Download. Mine. Earn.'}
               </h1>
             </div>
             <p className="text-lg text-gray-300">
-              {cs ? `ZION CLI v3.0.0 — oficiální release s Core+Edge topologií, Hiran v2.2 a E2E testy.` : `ZION CLI v3.0.0 — official release with Core+Edge topology, Hiran v2.2, and E2E tests.`}{' '}
-              <span className="text-white font-semibold">CLI</span>,{' '}
-              <span className="text-zion-gold font-semibold">Miner</span>,{' '}
-              <span className="text-zion-cyan font-semibold">Wallet</span> {cs ? 'a' : '&'}{' '}
-              <span className="text-zion-purple font-semibold">Node</span>{cs ? ' — nativní Rust binárky pro Windows, Linux a macOS. Stáhněte si Windows build přímo níže, další platformy brzy.' : ' — native Rust binaries for Windows, Linux & macOS. Download the Windows build directly below, more platforms coming soon.'}
+              {cs ? `ZION CLI v3.0.0 — oficiální release s Core+Edge topologií. Jedna unifikovaná binárka obsahuje celý stack:` : `ZION CLI v3.0.0 — official release with Core+Edge topology. One unified binary contains the whole stack:`}{' '}
+              <span className="text-white font-semibold">node</span>,{' '}
+              <span className="text-zion-gold font-semibold">miner</span>,{' '}
+              <span className="text-zion-cyan font-semibold">wallet</span>,{' '}
+              <span className="text-zion-purple font-semibold">pool</span>,{' '}
+              <span className="text-white font-semibold">bridge</span>,{' '}
+              <span className="text-white font-semibold">dao</span>{cs ? ' a další. Stáhněte si Windows build přímo níže, další platformy brzy.' : ' and more. Download the Windows build directly below, more platforms coming soon.'}
             </p>
             <div className="flex flex-wrap gap-3">
               <Link
@@ -247,7 +249,7 @@ export default function DownloadPage() {
               { label: cs ? 'Minimum' : 'Minimum', value: cs ? '2jadrovy CPU, 2 GB RAM, 100 MB disk' : '2-core CPU, 2 GB RAM, 100 MB disk' },
               { label: cs ? 'Doporucene' : 'Recommended', value: cs ? '4+ jadrovy CPU, 4 GB RAM, 500 MB SSD' : '4+ core CPU, 4 GB RAM, 500 MB SSD' },
               { label: cs ? 'Podporovane OS' : 'Supported OS', value: cs ? 'Windows 10/11, Linux (x86_64/ARM64), macOS (Apple Silicon)' : 'Windows 10/11, Linux (x86_64/ARM64), macOS (Apple Silicon)' },
-              { label: cs ? 'Sit' : 'Network', value: cs ? 'Stabilni internet, odchozi TCP port 3333' : 'Stable internet, outbound TCP port 3333' },
+              { label: cs ? 'Sit' : 'Network', value: cs ? 'Stabilni internet, odchozi TCP port 8444 (pool stratum)' : 'Stable internet, outbound TCP port 8444 (pool stratum)' },
             ].map((req) => (
               <div key={req.label} className="rounded-2xl border border-white/10 bg-white/5 p-5">
                 <div className="flex items-center gap-3">
