@@ -1,0 +1,42 @@
+// ZION Tailscale ACL Policy
+// Apply via: https://login.tailscale.com/admin/acls
+// Or via CLI: tailscale login --acls <this-file>
+// Note: this is a template — replace USER_EMAIL with your actual Tailscale login email.
+
+{
+  "tagOwners": {
+    "tag:zion-core": ["USER_EMAIL"],
+    "tag:zion-edge": ["USER_EMAIL"],
+    "tag:zion-miner": ["USER_EMAIL"]
+  },
+
+  "acls": [
+    // Allow all ZION-tagged devices to talk to each other on all ports
+    {
+      "action": "accept",
+      "src": ["tag:zion-core", "tag:zion-edge", "tag:zion-miner"],
+      "dst": ["tag:zion-core:*", "tag:zion-edge:*", "tag:zion-miner:*"]
+    },
+    // Allow admin (you) to SSH into any ZION device
+    {
+      "action": "accept",
+      "src": ["USER_EMAIL"],
+      "dst": ["tag:zion-core:22", "tag:zion-edge:22"],
+      "proto": "tcp"
+    }
+  ],
+
+  "ssh": [
+    // Tailscale SSH: allow admin to SSH into core/edge nodes
+    {
+      "action": "check",
+      "src": ["USER_EMAIL"],
+      "dst": ["tag:zion-core", "tag:zion-edge"],
+      "users": ["root", "autogroup:nonroot"]
+    }
+  ],
+
+  // Disable default “allow all” — only tagged traffic and explicit rules pass.
+  // Uncomment the next line if you want to drop all other traffic by default:
+  // "nodeAttrs": [ { "target": ["*"], "attr": ["funnel"] } ]
+}

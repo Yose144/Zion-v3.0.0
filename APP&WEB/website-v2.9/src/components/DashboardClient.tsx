@@ -2,14 +2,19 @@
 
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { useState } from 'react';
 import { useLang } from '@/contexts/LanguageContext';
 import {
   Activity,
   ArrowRight,
   BarChart3,
+  Blocks,
   Cpu,
   Gauge,
+  LayoutDashboard,
   LineChart,
+  Map,
+  Pickaxe,
   ShieldCheck,
   SignalHigh,
   TrendingUp,
@@ -108,6 +113,7 @@ const getGrafanaDashboards = (cs: boolean) => [
 export default function DashboardClient({ stats, health, blocks, poolStats }: DashboardClientProps) {
   const { lang } = useLang();
   const cs = lang === 'cs';
+  const [activeTab, setActiveTab] = useState<TabId>('overview');
   const missionMetrics = getMissionMetrics(cs);
   const roadmapSlices = getRoadmapSlices(cs);
   const grafanaDashboards = getGrafanaDashboards(cs);
@@ -147,7 +153,35 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
           </div>
         </motion.div>
 
+        {/* Tab Navigation */}
+        <div className="sticky top-20 z-30 -mx-2 px-2 py-3 bg-black/80 backdrop-blur-xl border-b border-white/5">
+          <div className="flex flex-wrap gap-2">
+            {TABS.map((tab) => {
+              const isActive = activeTab === tab.id;
+              const TabIcon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 text-sm font-semibold transition-all ${
+                    isActive
+                      ? 'border-zion-gold/40 bg-zion-gold/10 text-zion-gold shadow-[0_4px_20px_rgba(147,51,234,0.2)]'
+                      : 'border-white/8 bg-white/5 text-gray-400 hover:border-white/18 hover:bg-white/8 hover:text-white'
+                  }`}
+                >
+                  <TabIcon className="h-4 w-4" />
+                  {cs ? tab.labelCs : tab.labelEn}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* ═══════ OVERVIEW ═══════ */}
+        {activeTab === 'overview' && (
+        <div className="space-y-12">
         <div className="grid gap-6 lg:grid-cols-2">
+          {(activeTab === 'overview' || activeTab === 'health') && (
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-panel rounded-[28px] bg-black/50 p-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -229,7 +263,9 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
               </div>
             </div>
           </motion.div>
+          )}
 
+          {(activeTab === 'overview' || activeTab === 'blockchain') && (
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-panel rounded-[28px] bg-black/50 p-6">
             <div className="flex items-center gap-3 mb-4">
               <TrendingUp className="w-6 h-6 text-zion-gold" />
@@ -272,8 +308,10 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
               <div className="text-gray-400 text-center py-12">{cs ? 'Cekam na blockchain metriky…' : 'Awaiting blockchain metrics…'}</div>
             )}
           </motion.div>
+          )}
         </div>
 
+        {(activeTab === 'overview' || activeTab === 'pool') && (
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-panel rounded-[28px] bg-black/50 p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -359,7 +397,9 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
             <div className="text-gray-400 text-center py-12">{cs ? 'Metriky poolu nejsou dostupne' : 'Pool metrics unavailable'}</div>
           )}
         </motion.div>
+        )}
 
+        {(activeTab === 'overview' || activeTab === 'pool') && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -519,3 +559,13 @@ function MetricCard({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
+
+type TabId = 'overview' | 'health' | 'blockchain' | 'pool' | 'roadmap';
+
+const TABS: { id: TabId; icon: typeof LayoutDashboard; labelCs: string; labelEn: string }[] = [
+  { id: 'overview', icon: LayoutDashboard, labelCs: 'Přehled', labelEn: 'Overview' },
+  { id: 'health', icon: Activity, labelCs: 'Zdraví systému', labelEn: 'System Health' },
+  { id: 'blockchain', icon: Blocks, labelCs: 'Blockchain', labelEn: 'Blockchain' },
+  { id: 'pool', icon: Pickaxe, labelCs: 'Těžba & Pool', labelEn: 'Mining & Pool' },
+  { id: 'roadmap', icon: Map, labelCs: 'Plán', labelEn: 'Roadmap' },
+];
