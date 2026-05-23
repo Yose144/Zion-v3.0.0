@@ -10,7 +10,7 @@ const getPhaseCards = (cs: boolean) => [
     window: 'Mar — May 2026',
     progress: 100,
     highlights: [
-      'v2.9.9 Pure Code deployed — controlled V3 mainnet launch line',
+      'v3.0.0 Mainnet Ready deployed — controlled V3 mainnet launch line',
       'Core + Edge mainnet topology active, pool telemetry, and explorer synced',
       'On-chain 89/5/5/1 split verified; mainnet launch countdown active',
     ],
@@ -77,10 +77,10 @@ export default function RoadmapPulse() {
           <div className="flex-1 space-y-3">
             <p className="text-sm uppercase tracking-[0.4em] text-zion-gold">{cs ? 'Roadmapa' : 'Roadmap'}</p>
             <h2 className="text-4xl md:text-5xl font-bold text-white">
-              v2.9.9 <span className="text-gradient">Pure Code</span>
+              v3.0.0 <span className="text-gradient">Mainnet Ready</span>
             </h2>
             <p className="text-lg text-gray-300 max-w-2xl">
-              The current public line is a controlled V3 mainnet launch countdown on the v2.9.9 Pure Code public line over the v2.9.8 Deeksha/Ekam canonical runtime.
+              The current public line is a controlled V3 mainnet launch countdown on the v3.0.0 Mainnet Ready public line over the v2.9.9 Pure Code / Deeksha/Ekam canonical runtime.
               Public mainnet launch is scheduled for 31 December 2026 (New Year's Eve). Priority is final telemetry validation, documentation polish, security audit, and operational readiness.
             </p>
           </div>
