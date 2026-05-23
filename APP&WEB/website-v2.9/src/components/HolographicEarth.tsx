@@ -53,6 +53,7 @@ function EarthGlobe() {
   const [maps, setMaps] = useState<{
     color?: THREE.Texture;
     bump?: THREE.Texture;
+    night?: THREE.Texture;
   }>({});
 
   useEffect(() => {
@@ -60,7 +61,10 @@ function EarthGlobe() {
     loader.load('/textures/earth-blue-marble.jpg', (color) => {
       color.colorSpace = THREE.SRGBColorSpace;
       loader.load('/textures/earth-topology.png', (bump) => {
-        setMaps({ color, bump });
+        loader.load('/textures/earth-dark.jpg', (night) => {
+          night.colorSpace = THREE.SRGBColorSpace;
+          setMaps({ color, bump, night });
+        });
       });
     });
   }, []);
@@ -70,13 +74,16 @@ function EarthGlobe() {
   return (
     <group>
       <mesh castShadow={false} receiveShadow={false} rotation={[0, -Math.PI / 2, 0]}>
-        <sphereGeometry args={[1, 128, 128]} />
+        <sphereGeometry args={[1, 64, 64]} />
         <meshStandardMaterial
           map={maps.color}
           bumpMap={maps.bump}
           bumpScale={0.045}
-          roughness={0.7}
-          metalness={0.05}
+          roughness={0.45}
+          metalness={0.1}
+          emissiveMap={maps.night ?? undefined}
+          emissive={maps.night ? new THREE.Color('#ffeedd') : undefined}
+          emissiveIntensity={maps.night ? 1.4 : 0}
         />
       </mesh>
     </group>
@@ -104,21 +111,21 @@ function HologramShell() {
 
   return (
     <group>
-      {/* Wireframe shell */}
+      {/* Wireframe shell — ultra subtle */}
       <mesh scale={1.028}>
-        <sphereGeometry args={[1, 48, 48]} />
+        <sphereGeometry args={[1, 24, 24]} />
         <meshBasicMaterial
           color="#a8fff8"
           wireframe
           transparent
-          opacity={0.13}
+          opacity={0.055}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
         />
       </mesh>
       {/* Atmosphere glow — backside holographic shader */}
       <mesh scale={1.06}>
-        <sphereGeometry args={[1, 32, 32]} />
+        <sphereGeometry args={[1, 16, 16]} />
         <shaderMaterial
           ref={matRef}
           transparent
@@ -134,13 +141,45 @@ function HologramShell() {
   );
 }
 
+function StarField() {
+  const geometry = useMemo(() => {
+    const count = 1200;
+    const positions = new Float32Array(count * 3);
+    for (let i = 0; i < count; i++) {
+      const r = 18 + Math.random() * 22;
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(2 * Math.random() - 1);
+      positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+      positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+      positions[i * 3 + 2] = r * Math.cos(phi);
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    return geo;
+  }, []);
+
+  return (
+    <points geometry={geometry}>
+      <pointsMaterial
+        size={0.035}
+        color="#c4e0ff"
+        transparent
+        opacity={0.75}
+        sizeAttenuation
+        depthWrite={false}
+      />
+    </points>
+  );
+}
+
 function Scene() {
   return (
     <>
-      <ambientLight intensity={0.55} />
-      <pointLight position={[10, 5, 10]} intensity={1.2} color="#ffffff" />
-      <pointLight position={[-8, -2, 5]} intensity={0.4} color="#8c9cff" />
-      <pointLight position={[0, 6, 2]} intensity={0.25} color="#ffe8a6" />
+      <ambientLight intensity={0.6} />
+      <pointLight position={[10, 5, 10]} intensity={1.5} color="#ffffff" />
+      <pointLight position={[-8, -2, 5]} intensity={0.5} color="#8c9cff" />
+      <pointLight position={[0, 6, 2]} intensity={0.3} color="#ffe8a6" />
+      <StarField />
       <EarthGlobe />
       <HologramShell />
       <OrbitControls
