@@ -89,7 +89,7 @@ export default function MainnetCountdown() {
                   </h2>
                   <div className="flex items-center gap-2 mt-1 text-sm text-gray-400">
                     <Calendar className="w-4 h-4 text-zion-cyan" />
-                    <span>Launched 20 June 2026 (Summer Solstice)</span>
+                    <span>Target: 31 December 2026 (New Year's Eve)</span>
                     <span className="text-emerald-400 font-semibold">GO</span>
                   </div>
                 </div>
