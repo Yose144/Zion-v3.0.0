@@ -1,7 +1,7 @@
 # Hiran v2.2 — Lokální spuštění (AMD RX 5600 XT, Windows)
 
 Tento dokument popisuje jak spustit Hiran v2.2 inference server lokálně
-na Windows s AMD GPU RX 5600 XT (8 GB VRAM) a propojit ho s mainnet dashboardem.
+na Windows s AMD GPU RX 5600 XT (6 GB VRAM) a propojit ho s mainnet dashboardem.
 
 ---
 
@@ -41,7 +41,7 @@ Skript **automaticky** najde `llama-server.exe` + GGUF Q4_K_M a spustí je.
 | GGUF Q4_K_M | `HiranV2.2\models\hiran-v2.2-merged\hiran-v2.2.q4_k_m.gguf` (~4.6 GB) |
 | GGUF F16 | `HiranV2.2\models\hiran-v2.2-merged\hiran-v2.2.f16.gguf` (~15 GB) |
 | Inference server | `llama.cpp-bin\llama-server.exe` (build b4524, AVX2) |
-| GPU | AMD RX 5600 XT, 8 GB VRAM (nebo CPU fallback) |
+| GPU | AMD RX 5600 XT, 6 GB VRAM (nebo CPU fallback) |
 | Port | 8002 (OpenAI-compatible API) |
 | Dashboard | http://localhost:8766 → záložka "🤖 Hiran AI" |
 | Desktop Agent | Záložka "Hiran AI" → Status panel |
@@ -62,7 +62,7 @@ Skript **automaticky** najde `llama-server.exe` + GGUF Q4_K_M a spustí je.
 
 ```powershell
 # Nastav počet vrstev na GPU (0 = CPU only, 33 = full GPU):
-$env:HIRAN_GPU_LAYERS = "20"   # ~6 GB VRAM pro RX 5600 XT
+$env:HIRAN_GPU_LAYERS = "15"   # ~4 GB VRAM pro RX 5600 XT 6GB
 scripts\start-hiran-inference.ps1
 ```
 
@@ -134,7 +134,8 @@ HiranV2.2\inference\start_hiran_llamacpp.bat
 
 Server poběží přímo na `http://localhost:8002` s OpenAI-compatible API.
 
-- `GPU_LAYERS=33` — dá všechny vrstvy na GPU (Q4_K_M = ~4.5 GB, vejde se do 8 GB VRAM)
+- `GPU_LAYERS=33` — dá všechny vrstvy na GPU (Q4_K_M = ~4.5 GB + KV cache, vyžaduje 8+ GB VRAM)
+- `GPU_LAYERS=15` — kompromis pro 6 GB VRAM (RX 5600 XT), ~5 tok/s, stabilní
 - `GPU_LAYERS=0` — CPU only fallback
 
 **AMD GPU s Vulkan:**
@@ -263,7 +264,7 @@ set ISSOBELLA_HIRAN_ENABLED=true
 | Q8_0 | ~8.0 GB | 8-12 | Hranice VRAM! |
 | F16 | ~15 GB | — | Nevejde se |
 
-Použij **Q4_K_M** — optimální kompromis kvality a rychlosti pro 8 GB VRAM.
+Použij **Q4_K_M** — optimální kompromis kvality a rychlosti pro 6 GB VRAM.
 
 ---
 
