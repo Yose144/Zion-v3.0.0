@@ -79,12 +79,10 @@
 │   ├── scripts/                       ← Training + benchmark scripts
 │   └── rag/                           ← Hybrid RAG (ChromaDB + vector search)
 │
-├── legal/                             ← Legal documents
-├── config/                            ← Runtime configuration files
+├── docs/legal/                        ← Legal documents (licence, disclaimers, premine)
 ├── dashboard/                         ← Python monitoring dashboard (app.py)
-├── docker/                            ← Root-level Docker configs
 ├── edge-deploy/                       ← Edge server deployment package
-├── logs/                              ← Log files (runtime)
+├── logs/                              ← Runtime log files (untracked)
 ├── opencl_sdk/                        ← GPU mining OpenCL SDK
 ├── ops/                               ← Operations runbooks
 ├── run/                               ← Runtime state
