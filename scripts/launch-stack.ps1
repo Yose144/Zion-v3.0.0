@@ -59,6 +59,7 @@ $minerExe = "C:\Users\yosef\Desktop\Zion\2.9.6-main\V3\target\release\zion-miner
 $env:ZION_NODE_ID='w11-native-node'
 $env:ZION_P2P_BIND='0.0.0.0:8333'
 $env:ZION_RPC_BIND='0.0.0.0:8443'
+$env:ZION_METRICS_BIND='0.0.0.0:9115'
 $env:ZION_NODE_STATE_PATH="$DataDir\zion-node-state.db"
 $env:ZION_SEED_PEERS=$seedPeers
 $env:ZION_MINER_ADDRESS='zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3'
@@ -89,6 +90,7 @@ Start-Sleep -Seconds 2
 # ── Pool ──
 $env:ZION_POOL_BIND='0.0.0.0:8444'
 $env:ZION_NODE_RPC_ADDR='127.0.0.1:8443'
+$env:ZION_ROUTING_METRICS_BIND='0.0.0.0:9550'
 $env:ZION_POOL_LOOP_COUNT='1000000'
 $env:ZION_MAX_SESSIONS_PER_IP='10'
 $env:ZION_POOL_WALLET='zion182e2v4x4r3u2j5r5t305k0d5y643q6l3n6je5f8'

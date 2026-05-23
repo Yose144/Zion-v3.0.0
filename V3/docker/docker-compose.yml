@@ -249,12 +249,30 @@ services:
       - "9090:9090"
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
       - prometheus-data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
       - '--web.console.libraries=/usr/share/prometheus/console_libraries'
       - '--web.console.templates=/usr/share/prometheus/consoles'
+    networks:
+      - zion-v3
+
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    container_name: zion-alertmanager
+    profiles: ["monitoring"]
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager-data:/alertmanager
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+    depends_on:
+      - prometheus
     networks:
       - zion-v3
 
@@ -283,6 +301,7 @@ volumes:
   zion-issobella-data:
   prometheus-data:
   grafana-data:
+  alertmanager-data:
   hiran-models:
   hiran-cache:
   hiran-logs:
