@@ -3816,25 +3816,61 @@ function initAiView() {
     });
   }
 
+  async function checkAiStatus() {
+    const stEl  = document.getElementById('ai-inference-status');
+    const latEl = document.getElementById('ai-latency');
+    const beEl  = document.getElementById('ai-backend');
+    const upEl  = document.getElementById('ai-uptime');
+    if (stEl) stEl.textContent = 'Checking…';
+    try {
+      const t0 = Date.now();
+      const res = await window.electronAPI.aiChatStatus();
+      const ms  = Date.now() - t0;
+      if (res?.up) {
+        if (stEl) { stEl.textContent = 'Online'; stEl.style.color = 'var(--zion-cyan)'; }
+        if (latEl) latEl.textContent = ms + ' ms';
+        if (beEl)  beEl.textContent  = res?.info?.backend ?? 'llama-server';
+        if (upEl && res?.info?.uptime_s) upEl.textContent = Math.floor(res.info.uptime_s) + 's';
+      } else {
+        if (stEl) { stEl.textContent = 'Offline'; stEl.style.color = 'rgb(239,68,68)'; }
+        if (latEl) latEl.textContent = '—';
+        if (beEl)  beEl.textContent  = '—';
+      }
+    } catch {
+      if (stEl) stEl.textContent = 'Offline';
+    }
+  }
+
   if (testBtn) {
-    testBtn.addEventListener('click', async () => {
-      const stEl = document.getElementById('ai-inference-status');
-      const latEl = document.getElementById('ai-latency');
-      if (stEl) stEl.textContent = 'Checking…';
+    testBtn.addEventListener('click', checkAiStatus);
+  }
+
+  // ── ▶ Start Hiran Inference button ────────────────────────────────────
+  const startBtn   = document.getElementById('ai-start-service');
+  const startResult = document.getElementById('ai-start-result');
+  if (startBtn) {
+    startBtn.addEventListener('click', async () => {
+      if (startResult) startResult.textContent = 'Starting…';
+      startBtn.disabled = true;
       try {
-        const res = await window.electronAPI.aiChatStatus();
-        if (res?.up) {
-          if (stEl) stEl.textContent = 'Online';
-          if (latEl) latEl.textContent = 'Ready';
+        if (window.electronAPI?.runScript) {
+          const res = await window.electronAPI.runScript('start-hiran-inference');
+          if (startResult) startResult.textContent = res?.ok ? 'Started — polling health…' : ('Error: ' + (res?.error ?? ''));
         } else {
-          if (stEl) stEl.textContent = 'Offline';
-          if (latEl) latEl.textContent = '—';
+          if (startResult) startResult.textContent = 'runScript API not available — use dashboard Start button.';
         }
-      } catch {
-        if (stEl) stEl.textContent = 'Offline';
+      } catch (e) {
+        if (startResult) startResult.textContent = 'Error: ' + String(e);
+      } finally {
+        startBtn.disabled = false;
+        setTimeout(checkAiStatus, 5000);
+        setTimeout(checkAiStatus, 10000);
       }
     });
   }
+
+  // Auto-check on view open
+  checkAiStatus();
 }
 
 _viewInitFns.ai = () => initAiView();

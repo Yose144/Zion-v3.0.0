@@ -48,6 +48,22 @@ _stats: Dict[str, Any] = {
 def load_model(model_path: str, ollama_base: str = "http://localhost:11434"):
     """Load model based on format / path prefix."""
 
+    # ── llama-server proxy backend (llama.cpp native server) ─────────────────
+    # model_path = "llamaserver:<base_url>" e.g. "llamaserver:http://127.0.0.1:8002"
+    # Used when llama-server.exe is already running (started by ps1 script).
+    if model_path.startswith("llamaserver:"):
+        base_url = model_path[len("llamaserver:"):]
+        try:
+            req = urllib.request.urlopen(f"{base_url}/health", timeout=5)
+            req.close()
+        except Exception as e:
+            raise RuntimeError(
+                f"llama-server nedosažitelný na {base_url}: {e}\n"
+                "Spusť scripts\\start-hiran-inference.ps1"
+            )
+        print(f"✅ llama-server backend: {base_url}")
+        return {"backend": "llamaserver", "base_url": base_url, "model_name": "hiran-v2.2"}
+
     # ── LM Studio OpenAI-compatible backend ───────────────────────────────────
     if model_path.startswith("lmstudio:") or model_path.startswith("lm-studio:"):
         # LM Studio exposes OpenAI-compatible API on port 1234
@@ -151,8 +167,29 @@ def chat_completions():
     backend = model_state.get("backend", "")
 
     try:
+        # ── llama-server proxy (OpenAI-compatible, llama.cpp native) ─────────
+        if backend == "llamaserver":
+            base_url = model_state["base_url"]
+            payload = json.dumps({
+                "model": "hiran-v2.2",
+                "messages": messages,
+                "max_tokens": max_tokens,
+                "temperature": temperature,
+                "top_p": top_p,
+                "stream": False,
+            }).encode()
+            req = urllib.request.Request(
+                f"{base_url}/v1/chat/completions",
+                data=payload,
+                headers={"Content-Type": "application/json"},
+                method="POST",
+            )
+            with urllib.request.urlopen(req, timeout=120) as resp:
+                result = json.loads(resp.read())
+            response_text = result["choices"][0]["message"]["content"]
+
         # ── LM Studio proxy (OpenAI-compatible, port 1234) ────────────────────
-        if backend == "lmstudio":
+        elif backend == "lmstudio":
             lmstudio_base = model_state["lmstudio_base"]
             model_name = model_state["model_name"]
             payload = json.dumps({
