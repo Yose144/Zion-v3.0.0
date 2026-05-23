@@ -10,7 +10,6 @@ import {
   Sparkles,
   Terminal,
   X,
-  Compass,
   ArrowRight,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -2054,16 +2053,7 @@ export default function TerraNovaBookClient() {
                 })}
               </nav>
 
-              <div className="mt-8 pt-4 border-t border-white/5">
-                <Link
-                  href="/kompas"
-                  className="flex items-center gap-2 text-xs text-zion-gold/70 hover:text-zion-gold transition-colors"
-                  onClick={() => setTocOpen(false)}
-                >
-                  <Compass className="w-3.5 h-3.5" />
-                  {cs ? 'Interaktivní Kompas' : 'Interactive Compass'}
-                </Link>
-              </div>
+
             </motion.div>
           </>
         )}
