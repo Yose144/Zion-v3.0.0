@@ -1742,7 +1742,7 @@ export default function MissionControlDashboard() {
                 { label: 'Block Height', value: fmt(primaryHeight), descriptor: 'live mainnet chain tip' },
                 { label: 'Pool Hashrate', value: fmtHash(v3?.minerHashrate ?? primaryNode?.pool?.hashrate?.pool ?? null), descriptor: 'current mining hashrate' },
                 { label: 'Network Peers', value: fmt(primaryStats?.peers_connected ?? 0), descriptor: 'public node peers' },
-                { label: 'Mainnet Status', value: 'LIVE', descriptor: 'since 20 June 2026' },
+                { label: 'Mainnet Status', value: 'TBD', descriptor: 'target 31 December 2026' },
               ].map((chip) => (
                 <div key={chip.label} className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4 backdrop-blur">
                   <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{chip.label}</p>
@@ -1830,10 +1830,10 @@ export default function MissionControlDashboard() {
                 <Stat label="Tip Agreement" value={tipAgreement ? 'LOCKED' : (anyHealthy ? 'SYNCING' : '—')} color={tipAgreement ? 'text-emerald-400' : 'text-amber-300'} />
                 <Stat label="Pool Accept" value={poolAcceptRate != null ? `${poolAcceptRate}%` : (primaryNode?.pool?.ok ? '100%' : '—')} color={(poolAcceptRate ?? 100) >= 95 ? 'text-emerald-400' : 'text-amber-300'} mono />
                 <Stat label="Security Gate" value="PASS" color="text-emerald-400" sub="all blockers resolved" />
-                <Stat label="Launch Gate" value="GO" color="text-emerald-400" sub="20 June 2026" />
+                <Stat label="Launch Gate" value="TBD" color="text-amber-400" sub="31 December 2026" />
               </div>
               <div className="mt-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 px-5 py-4 text-sm text-gray-300">
-                <span className="font-semibold text-emerald-300">Mainnet GO</span> — BFG scrub hotov, genesis artefakty + checksumy potvrzeny, exit criteria uzavřeny, stability closure report kompletní. Core + Edge běží bez divergence.
+                <span className="font-semibold text-amber-300">Mainnet TBD</span> — BFG scrub v přípravě, genesis artefakty + checksumy se finalizují, exit criteria se shromažďují, stability closure report se sestavuje. Core + Edge v testování.
               </div>
             </motion.section>
 
@@ -1905,8 +1905,8 @@ export default function MissionControlDashboard() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                 <Stat label="Codebase" value="53,200+" sub="lines of Rust" color="text-cyan-400" />
                 <Stat label="Tests" value="900+" sub="passing / 0 failing" color="text-emerald-400" />
-                <Stat label="Launch Mode" value="MAINNET" sub="Production · V3 LIVE" color="text-emerald-400" />
-                <Stat label="Mainnet Status" value="LIVE" sub="since 20 June 2026" color="text-emerald-400" />
+                <Stat label="Launch Mode" value="COUNTDOWN" sub="Production · V3 TBD" color="text-amber-400" />
+                <Stat label="Mainnet Status" value="TBD" sub="target 31 December 2026" color="text-amber-400" />
               </div>
             </motion.section>
 
@@ -2567,13 +2567,13 @@ export default function MissionControlDashboard() {
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Postup' : 'Progress'}</p>
                 <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-white flex items-center gap-2 sm:gap-3">
                   <Target className="h-7 w-7 text-zion-gold" />
-                  Roadmap — Mainnet LIVE
+                  Roadmap — Launch Countdown
                 </h2>
-                <p className="text-sm text-gray-400">Fáze 0–5 jsou hotové. V3 Mainnet LIVE od 20. června 2026 (Summer Solstice). Core + Edge topology operational.</p>
+                <p className="text-sm text-gray-400">Fáze 0–4 hotové, fáze 5 v přípravě. V3 Mainnet target 31. prosince 2026 (Silvestr). Core + Edge topology v testování.</p>
               </div>
               <div className="relative h-9 rounded-2xl border border-white/10 bg-black/40 overflow-hidden">
-                <motion.div className="absolute inset-y-0 left-0 rounded-2xl bg-linear-to-r from-emerald-400 via-cyan-400 to-purple-400" initial={{ width: 0 }} animate={{ width: '100%' }} transition={{ duration: 1.2 }} />
-                <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white drop-shadow-md z-10">{SITE_RELEASE_LABEL} · V3 MAINNET · LIVE · 20 JUNE 2026</span>
+                <motion.div className="absolute inset-y-0 left-0 rounded-2xl bg-linear-to-r from-amber-400 via-cyan-400 to-purple-400" initial={{ width: 0 }} animate={{ width: '65%' }} transition={{ duration: 1.2 }} />
+                <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-white drop-shadow-md z-10">{SITE_RELEASE_LABEL} · V3 MAINNET · COUNTDOWN · 31 DEC 2026</span>
               </div>
             </motion.section>
 
@@ -3115,7 +3115,7 @@ export default function MissionControlDashboard() {
 
         {/* ══════════════ FOOTER ══════════════ */}
         <div className="text-center text-xs text-gray-600 pt-8 border-t border-white/10">
-          ZION TerraNova {SITE_RELEASE_LABEL} · runtime {SITE_RUNTIME_LABEL} · V3 Mainnet · public launch GO · 20 June 2026<br />
+          ZION TerraNova {SITE_RELEASE_LABEL} · runtime {SITE_RUNTIME_LABEL} · V3 Mainnet · launch countdown · 31 December 2026<br />
           <em>6-layer architecture · operations-first web shell</em><br /><br />
           Last update: {data?.timestamp ? new Date(data.timestamp).toLocaleString() : '—'} · Auto-refresh: 30s
         </div>

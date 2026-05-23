@@ -80,7 +80,7 @@ const networkConfigs = [
     name: "Mainnet",
     file: "mainnet.toml",
     badge: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-    description: "Mainnet launch line — countdown to 20 June 2026",
+    description: "Mainnet launch line — countdown to 31 December 2026",
   },
   {
     name: "Testnet",

@@ -1,5 +1,5 @@
 # ZION V3 Mainnet Final Verification Checklist
-**Cílový Launch Date:** 20.6.2026 (Summer Solstice)
+**Cílový Launch Date:** 31.12.2026 (New Year's Eve / Silvestr)
 **Status:** READY FOR LAUNCH ✅
 
 ---
@@ -105,7 +105,7 @@
 ### Aktualizované Dokumenty
 - [x] **StatusV3.md**: Aktualizován s novým statusem
 - [x] **README.md**: Aktualizován s launch datem
-- [x] **MAINNET_ROADMAP_2026.md**: Aktualizován (20.6.2026)
+- [x] **MAINNET_ROADMAP_2026.md**: Aktualizován (31.12.2026)
 - [x] **MAINNET_LAUNCH_SEQUENCE.md**: Kompletní launch plán
 - [x] **PREMINE_ADDRESSES_PUBLIC.txt**: Aktualizován
 - [x] **Servers.md**: Topologie dokumentace
@@ -137,7 +137,7 @@
 
 ---
 
-## ⚠️ ZBÝVAJÍCÍ ÚKOLY (Před 20.6.2026)
+## ⚠️ ZBÝVAJÍCÍ ÚKOLY (Před 31.12.2026)
 
 ### Před Launchem
 - [ ] **Final security audit**: Externí audit kódu
@@ -146,7 +146,7 @@
 - [ ] **Backup strategy**: Záloha konfigurace a klíčů
 - [ ] **Incident response**: Plán pro řešení problémů
 
-### Po Launchu (20.6.2026+)
+### Po Launchu (31.12.2026+)
 - [ ] **Block monitoring**: Sledování prvního blocku
 - [ ] **Fee split ověření**: Ověřit první payout
 - [ ] **Pool monitoring**: Sledování hashrate a shares
@@ -180,7 +180,7 @@
 
 ## ✅ FINAL ROZHODNUTÍ
 
-**STATUS: READY FOR MAINNET LAUNCH 20.6.2026**
+**STATUS: READY FOR MAINNET LAUNCH 31.12.2026**
 
 Všechny technické aspekty jsou připraveny:
 - ✅ Genesis hash konzistentní
@@ -192,7 +192,7 @@ Všechny technické aspekty jsou připraveny:
 - ✅ Git repozitář aktuální
 
 **Doporučení:**
-- Technicky připraveno pro launch 20.6.2026
+- Technicky připraveno pro launch 31.12.2026
 - Zbývající úkoly jsou organizační (community, monitoring, backup)
 - Doporučeno dokončit zbývající úkoly před launchem
 
@@ -200,6 +200,6 @@ Všechny technické aspekty jsou připraveny:
 
 ---
 
-**Verifikováno:** 22.5.2026
-**Next Verification:** 15.6.2026 (před launchem)
-**Launch Date:** 20.6.2026 (Summer Solstice)
+**Verifikováno:** 23.5.2026
+**Next Verification:** 15.12.2026 (před launchem)
+**Launch Date:** 31.12.2026 (New Year's Eve / Silvestr)

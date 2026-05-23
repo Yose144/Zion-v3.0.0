@@ -1,6 +1,6 @@
-# ZION V3 Mainnet Launch Plan - 20.6.2026
-**Summer Solstice Launch**
-**Launch Date:** Saturday, June 20, 2026
+# ZION V3 Mainnet Launch Plan - 31.12.2026
+**New Year's Eve Launch**
+**Launch Date:** Thursday, December 31, 2026
 **Launch Time:** 12:00 UTC (14:00 CEST)
 **Genesis Hash:** `003529805e9b47babb9ac0f26b27b1aad0a1cf3c483181857daf3269f7088923`
 
@@ -9,9 +9,9 @@
 ## 🎯 LAUNCH OVERVIEW
 
 ### Symbolický Význam
-- **Summer Solstice**: Nejdelší den roku - symbol začátku éry světla
+- **New Year's Eve**: Přechod do nového roku - symbol nového začátku
 - **Cosmic Harmony**: Zarovnání s kosmickými cykly
-- **20.6.2026**: Astrologicky významný den pro nový začátek
+- **31.12.2026**: Astrologicky významný den pro nový začátek
 
 ### Technical Cíle
 - Spuštění L1 mainnet s novým genesis blokem
@@ -25,19 +25,19 @@
 
 ### Před-Launch (T-MINUS 24 HODIN)
 
-**19.6.2026 (Friday) - 12:00 UTC**
+**30.12.2026 (Wednesday) - 12:00 UTC**
 - [ ] Final check všech serverů (Core + Edge)
 - [ ] Backup konfigurací a klíčů
 - [ ] Monitoring setup (Prometheus + Grafana)
 - [ ] Community oznámení (Twitter, Discord, Website)
 
-**19.6.2026 (Friday) - 18:00 UTC**
+**30.12.2026 (Wednesday) - 18:00 UTC**
 - [ ] Final verification genesis hash
 - [ ] Test launch sequence (dry run)
 - [ ] Team připravenost check
 - [ ] Emergency plán review
 
-**20.6.2026 (Saturday) - 06:00 UTC (T-MINUS 6 HODIN)**
+**31.12.2026 (Thursday) - 06:00 UTC (T-MINUS 6 HODIN)**
 - [ ] Stop všech testovacích služeb
 - [ ] Clean data directories
 - [ ] Final configuration check
@@ -45,7 +45,7 @@
 
 ---
 
-## 🚀 LAUNCH SEQUENCE (20.6.2026)
+## 🚀 LAUNCH SEQUENCE (31.12.2026)
 
 ### T-MINUS 1 HODINA (11:00 UTC)
 
@@ -227,19 +227,19 @@ tail -f logs/node1.log | grep "relay_block"
 
 ## 📱 COMMUNICATION PLAN
 
-### Pre-Launch (19.6.2026)
+### Pre-Launch (30.12.2026)
 - **Website:** Countdown timer
 - **Discord:** Launch announcement
 - **Twitter/X:** Teaser posts
 - **Email:** Newsletter update
 
-### Launch Moment (20.6.2026 12:00 UTC)
+### Launch Moment (31.12.2026 12:00 UTC)
 - **Website:** "MAINNET LIVE" banner
 - **Discord:** Live launch party
 - **Twitter/X:** "ZION Mainnet is LIVE!"
 - **GitHub:** Release tag v3.0.0-mainnet
 
-### Post-Launch (20.6.2026+)
+### Post-Launch (31.12.2026+)
 - **Website:** Live statistics
 - **Discord:** Mining support
 - **Twitter/X:** Progress updates
@@ -297,9 +297,9 @@ Pokud launch proběhne úspěšně:
 
 ---
 
-**Dokument připraven:** 22.5.2026
-**Final review:** 15.6.2026
-**Launch execution:** 20.6.2026 12:00 UTC
+**Dokument připraven:** 23.5.2026
+**Final review:** 15.12.2026
+**Launch execution:** 31.12.2026 12:00 UTC
 
 **V případě problémů kontaktuj:**
 - Technical Lead: [TBD]
