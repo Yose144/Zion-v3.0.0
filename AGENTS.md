@@ -106,6 +106,11 @@ docker compose -f V3/docker/docker-compose.v3-mainnet.yml up -d
   - `npm --prefix "APP&WEB/website-v2.9" run dev`
   - `npm --prefix "APP&WEB/website-v2.9" run build`
   - `npm --prefix "APP&WEB/website-v2.9" run lint`
+  - **Edge deployment (production):**
+    - Build runs on Edge server (`77.42.71.94`) inside `/root/zion-2.9.6-main/APP&WEB/website-v2.9`
+    - Docker image is built from host artifacts (`.next` + `node_modules` copied into `node:20-alpine` runner) — `npm install` inside Docker fails due to local `.tgz` dependency, so use the host-built artifacts
+    - Production compose file: `/root/zion-web/docker-compose.yml` uses `image: zion-website:<version>`
+    - Caddy reverse proxies to `localhost:3000`
 - Mobile app:
   - `npm --prefix "APP&WEB/mobile-app" install`
   - `npm --prefix "APP&WEB/mobile-app" run test`
