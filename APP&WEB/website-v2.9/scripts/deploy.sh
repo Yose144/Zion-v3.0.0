@@ -7,11 +7,11 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 REPO_ROOT="$(cd "$ROOT_DIR/../.." && pwd)"
 LOG_PREFIX="[deploy]"
 
-REMOTE_HOST="${REMOTE_HOST:-91.98.122.165}"
+REMOTE_HOST="${REMOTE_HOST:-77.42.71.94}"
 REMOTE_USER="${REMOTE_USER:-root}"
-REMOTE_SRC="${REMOTE_SRC:-/root/zion-2.9.6/APP&WEB/website-v2.9}"
-REMOTE_COMPOSE="${REMOTE_COMPOSE:-/root/zion-2.9.6/docker}"
-SSH_KEY="${SSH_KEY:-$HOME/.ssh/zion_hetzner_key}"
+REMOTE_SRC="${REMOTE_SRC:-/root/zion-2.9.6-main/APP&WEB/website-v2.9}"
+REMOTE_COMPOSE="${REMOTE_COMPOSE:-/root/zion-2.9.6-main/docker}"
+SSH_KEY="${SSH_KEY:-$HOME/.ssh/ssh-key-zion-edge}"
 COMPOSE_FILE="docker-compose.website.yml"
 SKIP_SYNC=0
 DRY_RUN=0
@@ -23,11 +23,11 @@ Usage: scripts/deploy.sh [options]
 Docker-based website deployment: rsync source -> rebuild image -> recreate container.
 
 Options:
-  --host <hostname>        Target SSH host (default: $REMOTE_HOST or 91.98.122.165)
+  --host <hostname>        Target SSH host (default: $REMOTE_HOST or 77.42.71.94)
   --user <user>            SSH user (default: $REMOTE_USER or root)
-  --remote-src <path>      Remote source path (default: /root/zion-2.9.6/APP&WEB/website-v2.9)
-  --remote-compose <path>  Remote Docker compose directory (default: /root/zion-2.9.6/docker)
-  --ssh-key <path>         SSH private key (default: $SSH_KEY or ~/.ssh/zion_hetzner_key)
+  --remote-src <path>      Remote source path (default: /root/zion-2.9.6-main/APP&WEB/website-v2.9)
+  --remote-compose <path>  Remote Docker compose directory (default: /root/zion-2.9.6-main/docker)
+  --ssh-key <path>         SSH private key (default: $SSH_KEY or ~/.ssh/ssh-key-zion-edge)
   --skip-sync              Skip rsync (rebuild from existing remote source)
   --dry-run                Sync only; skip Docker rebuild
   -h, --help               Show this help
