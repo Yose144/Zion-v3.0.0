@@ -22,9 +22,16 @@ function Petal({ angle, scale = 1 }: { angle: number; scale?: number }) {
   );
 }
 
-export default function TahitiFlower({ className = '' }: { className?: string }) {
+export default function TahitiFlower({
+  className = '',
+  expanded = false,
+  onToggle,
+}: {
+  className?: string;
+  expanded?: boolean;
+  onToggle?: () => void;
+}) {
   const [hovered, setHovered] = useState(false);
-  const [clicked, setClicked] = useState(false);
   const petals = Array.from({ length: 7 }, (_, i) => i);
 
   return (
@@ -35,13 +42,13 @@ export default function TahitiFlower({ className = '' }: { className?: string })
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 1, ease: 'easeOut', delay: 0.6 }}
       onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => { setHovered(false); setClicked(false); }}
-      onClick={() => setClicked((c) => !c)}
+      onMouseLeave={() => setHovered(false)}
+      onClick={onToggle}
     >
       {/* flower */}
       <motion.div
         animate={{
-          scale: hovered ? 1.12 : clicked ? 0.95 : 1,
+          scale: hovered ? 1.12 : expanded ? 0.9 : 1,
           rotate: hovered ? [0, -3, 3, 0] : 0,
         }}
         transition={{ duration: 0.6, ease: 'easeOut' }}
@@ -87,20 +94,20 @@ export default function TahitiFlower({ className = '' }: { className?: string })
         </svg>
       </motion.div>
 
-      {/* greeting label */}
-      <AnimatePresence>
-        <motion.div
-          key="greeting"
-          initial={{ opacity: 0, y: 4 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1.2, duration: 0.8 }}
-          className="mt-2 flex flex-col items-center"
-        >
-          <span className="font-mono text-sm font-light uppercase tracking-[0.42em] text-cyan-200/65">
-            Maeva
-          </span>
-        </motion.div>
-      </AnimatePresence>
+      {/* MAEVA label */}
+      <motion.div
+        initial={{ opacity: 0, y: 4 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 1.2, duration: 0.8 }}
+        className="mt-2 flex flex-col items-center"
+      >
+        <span className="font-mono text-sm font-light uppercase tracking-[0.42em] text-cyan-200/65">
+          Maeva
+        </span>
+        <span className="mt-0.5 text-[9px] text-gray-500 tracking-wider">
+          {expanded ? 'Klikni pro zavreni' : 'Klikni pro otevreni portalu'}
+        </span>
+      </motion.div>
 
       {/* hover tooltip */}
       <AnimatePresence>
