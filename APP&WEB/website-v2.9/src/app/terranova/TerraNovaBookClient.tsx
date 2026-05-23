@@ -1881,21 +1881,7 @@ export default function TerraNovaBookClient() {
                 ))}
               </div>
 
-              {/* Kompas link for chapter VII */}
-              {chapter.id === 'kompas' && (
-                <div className="mt-10 pt-6 border-t border-white/5">
-                  <Link
-                    href="/kompas"
-                    className="inline-flex items-center gap-2 rounded-2xl border border-zion-gold/30 bg-zion-gold/8 px-5 py-3 text-sm font-semibold text-zion-gold hover:bg-zion-gold/15 transition-colors"
-                  >
-                    <Compass className="w-4 h-4" />
-                    {cs
-                      ? 'Otevřít interaktivní Zlatý Kompas'
-                      : 'Open Interactive Golden Compass'}
-                    <ArrowRight className="w-4 h-4" />
-                  </Link>
-                </div>
-              )}
+
 
               {/* ── Chapter navigation ── */}
               <div className="mt-10 flex items-center justify-between border-t border-white/5 pt-6 md:mt-12">
@@ -1950,14 +1936,7 @@ export default function TerraNovaBookClient() {
               ? 'Mrtvé mapy bývají přesné jen na papíře. Živé mapy dokážou přežít i cestu.'
               : 'Dead maps tend to be precise only on paper. Living maps can survive the journey.'}
           </p>
-          <div className="flex items-center justify-center gap-4">
-            <Link
-              href="/kompas"
-              className="inline-flex items-center gap-2 rounded-2xl border border-zion-gold/20 bg-zion-gold/5 px-5 py-2.5 text-sm font-semibold text-zion-gold hover:bg-zion-gold/10 transition-colors"
-            >
-              <Compass className="w-4 h-4" />
-              {cs ? 'Zlatý Kompas' : 'Golden Compass'}
-            </Link>
+          <div className="flex items-center justify-center">
             <Link
               href="/docs"
               className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-5 py-2.5 text-sm font-semibold text-white hover:bg-white/10 transition-colors"
