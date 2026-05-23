@@ -6,7 +6,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import clsx from 'clsx';
 
-/* Real Earth texture + subtle holographic wireframe / atmosphere overlay */
+/* Real Earth texture + Moon orbit + Sun glow + starfield */
 
 const HOLO_VERT = /* glsl */ `
 varying vec3 vWorldPosition;
@@ -43,7 +43,6 @@ void main() {
   vec3 rimCyan = uRim * fresnel * (1.28 + noise);
   vec3 rimGold = uAccent * fresnel * fresnel * 0.85;
 
-  // Softer alpha for atmosphere-only overlay
   float alpha = 0.05 + fresnel * 0.28 + meridians * 0.06;
   gl_FragColor = vec4(core + rimCyan + rimGold, alpha);
 }
@@ -90,6 +89,67 @@ function EarthGlobe() {
   );
 }
 
+function Moon() {
+  const groupRef = useRef<THREE.Group>(null);
+  const angleRef = useRef(Math.PI * 0.3);
+
+  useFrame((_state, delta) => {
+    if (!groupRef.current) return;
+    angleRef.current += delta * 0.15;
+    const r = 4.2;
+    groupRef.current.position.set(
+      Math.cos(angleRef.current) * r,
+      Math.sin(angleRef.current * 0.6) * 0.4,
+      Math.sin(angleRef.current) * r,
+    );
+    groupRef.current.rotation.y += delta * 0.08;
+  });
+
+  return (
+    <group ref={groupRef}>
+      <mesh>
+        <sphereGeometry args={[0.27, 32, 32]} />
+        <meshStandardMaterial color="#c8c8c8" roughness={0.92} metalness={0.05} />
+      </mesh>
+      {/* faint moon glow */}
+      <mesh scale={1.35}>
+        <sphereGeometry args={[0.27, 16, 16]} />
+        <meshBasicMaterial color="#dceeff" transparent opacity={0.06} depthWrite={false} blending={THREE.AdditiveBlending} />
+      </mesh>
+    </group>
+  );
+}
+
+function Sun() {
+  const sunRef = useRef<THREE.Mesh>(null);
+
+  useFrame((_state, delta) => {
+    if (sunRef.current) {
+      sunRef.current.rotation.y += delta * 0.02;
+    }
+  });
+
+  return (
+    <group position={[18, 6, -14]}>
+      {/* core sun */}
+      <mesh ref={sunRef}>
+        <sphereGeometry args={[2.8, 32, 32]} />
+        <meshBasicMaterial color="#ffdb78" />
+      </mesh>
+      {/* inner corona */}
+      <mesh scale={1.4}>
+        <sphereGeometry args={[2.8, 24, 24]} />
+        <meshBasicMaterial color="#ffaa44" transparent opacity={0.18} depthWrite={false} blending={THREE.AdditiveBlending} />
+      </mesh>
+      {/* outer corona */}
+      <mesh scale={2.2}>
+        <sphereGeometry args={[2.8, 16, 16]} />
+        <meshBasicMaterial color="#ffeebb" transparent opacity={0.06} depthWrite={false} blending={THREE.AdditiveBlending} />
+      </mesh>
+    </group>
+  );
+}
+
 function HologramShell() {
   const matRef = useRef<THREE.ShaderMaterial | null>(null);
 
@@ -123,7 +183,7 @@ function HologramShell() {
           blending={THREE.AdditiveBlending}
         />
       </mesh>
-      {/* Atmosphere glow — backside holographic shader */}
+      {/* Atmosphere glow */}
       <mesh scale={1.06}>
         <sphereGeometry args={[1, 16, 16]} />
         <shaderMaterial
@@ -180,7 +240,9 @@ function Scene() {
       <pointLight position={[-8, -2, 5]} intensity={0.5} color="#8c9cff" />
       <pointLight position={[0, 6, 2]} intensity={0.3} color="#ffe8a6" />
       <StarField />
+      <Sun />
       <EarthGlobe />
+      <Moon />
       <HologramShell />
       <OrbitControls
         makeDefault

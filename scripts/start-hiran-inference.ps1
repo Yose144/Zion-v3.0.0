@@ -53,7 +53,7 @@ if ($ggufFile -and (Test-Path $llamaServer)) {
     )
 
     # Add GPU offload if available (Vulkan / CUDA layers)
-    $gpuLayers = [int](${env:HIRAN_GPU_LAYERS} ?? "0")
+    $gpuLayers = if ($env:HIRAN_GPU_LAYERS) { [int]$env:HIRAN_GPU_LAYERS } else { 0 }
     if ($gpuLayers -gt 0) {
         $llamaArgs += @("--n-gpu-layers", $gpuLayers)
         Write-Host "     GPU layers: $gpuLayers"
@@ -137,7 +137,8 @@ $pythonArgs = @(
     "--port", $port
 )
 
-$uvExe = (Get-Command "uv" -ErrorAction SilentlyContinue)?.Source
+$uvCmd = Get-Command "uv" -ErrorAction SilentlyContinue
+$uvExe = if ($uvCmd) { $uvCmd.Source } else { $null }
 if ($uvExe) {
     $allArgs = @("run", "python") + $pythonArgs
     $p = Start-Process -FilePath $uvExe -ArgumentList $allArgs `
