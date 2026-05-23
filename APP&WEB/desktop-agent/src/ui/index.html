@@ -5165,13 +5165,23 @@
                 <div class="metric-value gold" id="ai-model">Hiran v2.2</div>
               </div>
               <div class="metric-card purple">
+                <div class="metric-kicker">BACKEND</div>
+                <div class="metric-value purple" id="ai-backend">—</div>
+              </div>
+              <div class="metric-card blue">
+                <div class="metric-kicker">UPTIME</div>
+                <div class="metric-value blue" id="ai-uptime">—</div>
+              </div>
+              <div class="metric-card green">
                 <div class="metric-kicker">LATENCY</div>
-                <div class="metric-value purple" id="ai-latency">—</div>
+                <div class="metric-value green" id="ai-latency">—</div>
               </div>
             </div>
-            <div style="margin-top:16px">
+            <div style="margin-top:16px;display:flex;gap:8px">
               <button class="btn btn-ghost btn-sm" id="ai-test-connection">Test Connection</button>
+              <button class="btn btn-primary btn-sm" id="ai-start-service">▶ Start Hiran Inference</button>
             </div>
+            <div id="ai-start-result" style="margin-top:8px;font-size:11px;color:rgba(255,255,255,0.45);min-height:14px"></div>
           </div>
         </div>
       </div>

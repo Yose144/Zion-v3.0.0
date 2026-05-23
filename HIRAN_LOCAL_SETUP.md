@@ -5,16 +5,31 @@ na Windows s AMD GPU RX 5600 XT (8 GB VRAM) a propojit ho s mainnet dashboardem.
 
 ---
 
-## TL;DR — Nejrychlejší cesta (Ollama)
+## ✅ STATUS (2026-05-23) — GGUF připraven, llama-server k dispozici
 
-```
-1. Stáhni Ollama:   https://ollama.com/download
-2. Nainstaluj
-3. Spusť:           HiranV2.2\inference\start_hiran_ollama.bat
-4. Otevři dashboard: http://localhost:8766  → záložka "🤖 Hiran AI"
+| Soubor | Cesta | Stav |
+|--------|-------|------|
+| Q4_K_M GGUF | `HiranV2.2\models\hiran-v2.2-merged\hiran-v2.2.q4_k_m.gguf` | ✅ 4.6 GB |
+| F16 GGUF | `HiranV2.2\models\hiran-v2.2-merged\hiran-v2.2.f16.gguf` | ✅ 15 GB |
+| llama-server.exe | `llama.cpp-bin\llama-server.exe` | ✅ build b4524 |
+| start skript | `scripts\start-hiran-inference.ps1` | ✅ auto-detekce backendu |
+
+---
+
+## TL;DR — Nejrychlejší spuštění (2026)
+
+```powershell
+# Z ZION dashboardu (http://localhost:8766):
+#   Záložka "🤖 Hiran AI" → karta "Hiran Inference" → ▶ Start
+
+# Nebo ručně (PowerShell):
+scripts\start-hiran-inference.ps1
+
+# Ověření:
+curl http://localhost:8002/health
 ```
 
-Ale nejprve potřebuješ GGUF soubor — viz Krok 1 níže.
+Skript **automaticky** najde `llama-server.exe` + GGUF Q4_K_M a spustí je.
 
 ---
 
@@ -23,18 +38,43 @@ Ale nejprve potřebuješ GGUF soubor — viz Krok 1 níže.
 | Komponenta | Popis |
 |------------|-------|
 | Model | Hiran v2.2 (Meta-Llama-3.1-8B-Instruct + ZION QLoRA) |
-| Formát | FP16 safetensors → GGUF Q4_K_M (konverze nutná) |
-| Velikost GGUF | ~4.5 GB (Q4_K_M) |
-| GPU | AMD RX 5600 XT, 8 GB VRAM |
+| GGUF Q4_K_M | `HiranV2.2\models\hiran-v2.2-merged\hiran-v2.2.q4_k_m.gguf` (~4.6 GB) |
+| GGUF F16 | `HiranV2.2\models\hiran-v2.2-merged\hiran-v2.2.f16.gguf` (~15 GB) |
+| Inference server | `llama.cpp-bin\llama-server.exe` (build b4524, AVX2) |
+| GPU | AMD RX 5600 XT, 8 GB VRAM (nebo CPU fallback) |
 | Port | 8002 (OpenAI-compatible API) |
 | Dashboard | http://localhost:8766 → záložka "🤖 Hiran AI" |
+| Desktop Agent | Záložka "Hiran AI" → Status panel |
+| Website | `HiranyagarbhaChat` widget → /api/ai-chat → port 8002 |
 
 ---
 
-## Krok 1 — Konverze modelu do GGUF
+## Backend priorita (`start-hiran-inference.ps1`)
 
-Model je aktuálně ve formátu FP16 safetensors (~15 GB).
-Pro AMD GPU potřebujeme GGUF kvantizaci Q4_K_M (~4.5 GB).
+1. **llama-server.exe + Q4_K_M GGUF** — nejrychlejší, není třeba Python
+2. **LM Studio** (port 1234) — pokud je spuštěn a načten model
+3. **Ollama** (port 11434) — fallback
+4. **serve.py + GGUF** (llama-cpp-python) — Python fallback
+
+---
+
+## GPU akcelerace (Vulkan / AMD)
+
+```powershell
+# Nastav počet vrstev na GPU (0 = CPU only, 33 = full GPU):
+$env:HIRAN_GPU_LAYERS = "20"   # ~6 GB VRAM pro RX 5600 XT
+scripts\start-hiran-inference.ps1
+```
+
+---
+
+## Krok 1 — Konverze modelu do GGUF (pokud chybí)
+
+> **GGUF soubory již existují** — tento krok přeskočíš.
+> Postup níže je jen pro případ, že bys model znovu konvertoval.
+
+Model je ve formátu FP16 safetensors (~15 GB).
+Pro AMD GPU doporučujeme GGUF kvantizaci Q4_K_M (~4.6 GB).
 
 ### Prerekvizity
 
