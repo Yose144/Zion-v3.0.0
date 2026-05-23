@@ -84,7 +84,7 @@ const EDITION_META: Record<EditionKey, EditionMeta> = {
     editionCs: 'BASE FINAL edice · kanonická větev · Praha 2026',
     editionEn: 'BASE FINAL edition · canonical branch · Prague 2026',
     aboutCs:
-      'Kanonická BASE FINAL edice Terra Novy — kompletní 12 kapitol + přílohy (A-F) + geography. Zdroj: docs/TerraNova/BASE_FINAL/.',
+      'Kanonická BASE FINAL edice Terra Novy — kompletní 17 kapitol + přílohy (A-F) + geography. Zdroj: docs/TerraNova/BASE_FINAL/.',
     aboutEn:
       'Polished edition of Terra Nova — clearly separated REALITY / ROADMAP / HORIZON layers, accurate facts, readable rhythm. Canonical text for the web, communities and Guardians.',
     layersCs:
@@ -1565,7 +1565,7 @@ export default function TerraNovaBookClient() {
                 </div>
               </div>
 
-              <div className="mt-6 rounded-[32px] border border-white/10 bg-gradient-to-b from-black/40 to-black/20 p-6 md:p-8 backdrop-blur-md">
+              <div className="mt-8 rounded-2xl border border-white/10 bg-black/20 p-6 md:p-8">
                 <PioneerProjectCards cs={cs} />
                 <div className="mt-8 pt-6 border-t border-white/5">
                   <GeographyMenu cs={cs} />

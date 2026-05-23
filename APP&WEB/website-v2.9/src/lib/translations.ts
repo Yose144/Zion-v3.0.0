@@ -33,6 +33,7 @@ const t = {
     terranova_public: { cs: 'Veřejná edice', en: 'Public edition' },
     terra_garden_genesis: { cs: 'Zahrada Genesis', en: 'Garden of Genesis' },
     terra_dharma_temple: { cs: 'Dharma Temple', en: 'Dharma Temple' },
+    resonance: { cs: 'Rezonance', en: 'Resonance' },
     menu_title: { cs: 'Menu ZION', en: 'ZION Menu' },
     switch_to_en: { cs: 'Přepnout do angličtiny', en: 'Switch to English' },
     switch_to_cs: { cs: 'Přepnout do češtiny', en: 'Switch to Czech' },
@@ -48,25 +49,25 @@ const t = {
 
   /* ─── Hero ─── */
   hero: {
-    badge_version:  { cs: 'V3 Mainnet · v3.0.0 Mainnet Ready · LIVE', en: 'V3 Mainnet · v3.0.0 Mainnet Ready · LIVE' },
+    badge_version:  { cs: 'V3 Mainnet · v3.0.0 Mainnet Ready', en: 'V3 Mainnet · v3.0.0 Mainnet Ready' },
     badge_chv4:     { cs: 'Core + Edge topologie', en: 'Core + Edge topology' },
     tagline:        { cs: 'Nativní Rust blockchain s Proof-of-Work konsensem', en: 'Native Rust blockchain with Proof-of-Work consensus' },
-    title_sub:      { cs: 'Mainnet LIVE · Core + Edge · canonical runtime v3.0.0 Ekam Deeksha', en: 'Mainnet LIVE · Core + Edge · canonical runtime v3.0.0 Ekam Deeksha' },
+    title_sub:      { cs: 'Launch Countdown · Core + Edge · canonical runtime v3.0.0 Ekam Deeksha', en: 'Launch Countdown · Core + Edge · canonical runtime v3.0.0 Ekam Deeksha' },
     description:    {
-      cs: 'ZION TerraNova mainnet je LIVE od 20. června 2026 (Summer Solstice). Běží V3 mainnet v Core + Edge topologii (Core PC + Hetzner Edge VPS), s veřejným poolem, mining binárkami a provozní telemetrií.',
-      en: 'ZION TerraNova mainnet is LIVE since 20 June 2026 (Summer Solstice). Running V3 mainnet in Core + Edge topology (Core PC + Hetzner Edge VPS), with public pool, mining binaries, and operational telemetry.',
+      cs: 'ZION TerraNova mainnet launch countdown — 31. prosinec 2026 (Silvestr). Příprava V3 mainnet v Core + Edge topologii (Core PC + Hetzner Edge VPS), s veřejným poolem, mining binárkami a provozní telemetrií.',
+      en: 'ZION TerraNova mainnet launch countdown — 31 December 2026 (New Year\'s Eve). Preparing V3 mainnet in Core + Edge topology (Core PC + Hetzner Edge VPS), with public pool, mining binaries, and operational telemetry.',
     },
     btn_start:      { cs: 'Začít těžit', en: 'Start Mining' },
     btn_docs:       { cs: 'Dokumentace', en: 'Docs' },
     btn_whitepaper: { cs: 'WhitePaper', en: 'WhitePaper' },
     signal_l1:      { cs: 'L1 Jádro', en: 'L1 Core' },
     signal_nodes:   { cs: 'Validátor síť', en: 'Validator Grid' },
-    signal_mainnet: { cs: 'Mainnet LIVE', en: 'Mainnet LIVE' },
+    signal_mainnet: { cs: 'Launch Countdown', en: 'Launch Countdown' },
     signal_loc:     { cs: 'Core PC + Edge VPS · ShareRelay', en: 'Core PC + Edge VPS · ShareRelay' },
-    signal_target:  { cs: '20. června 2026', en: '20 June 2026' },
+    signal_target:  { cs: '31. prosince 2026', en: '31 December 2026' },
     signal_status_l1: { cs: 'Mainnet Ready active · runtime v3.0.0', en: 'Mainnet Ready active · runtime v3.0.0' },
     signal_status_nodes: { cs: 'Core + Edge online', en: 'Core + Edge online' },
-    signal_status_mainnet: { cs: 'Mainnet LIVE · 20. června 2026', en: 'Mainnet LIVE · 20 June 2026' },
+    signal_status_mainnet: { cs: 'Launch Countdown · 31. prosince 2026', en: 'Launch Countdown · 31 December 2026' },
     metric_loc:     { cs: 'Řádků kódu (Rust)', en: 'Rust LOC' },
     metric_nodes:   { cs: 'Nódy Online', en: 'Nodes Online' },
     metric_tests:   { cs: 'Testy úspěšně', en: 'Tests Passing' },
@@ -100,11 +101,11 @@ const t = {
   },
 
   countdown: {
-    title: { cs: 'Mainnet LIVE — 20. června 2026', en: 'Mainnet LIVE — 20 June 2026' },
-    target_date: { cs: 'Launched: 20. června 2026', en: 'Launched: June 20, 2026' },
+    title: { cs: 'Launch Countdown — 31. prosince 2026', en: 'Launch Countdown — 31 December 2026' },
+    target_date: { cs: 'Target: 31. prosince 2026', en: 'Target: December 31, 2026' },
     subtitle: {
-      cs: 'V3 Mainnet je operational · Core + Edge topology · Mining active · Bridge deployed',
-      en: 'V3 Mainnet is operational · Core + Edge topology · Mining active · Bridge deployed',
+      cs: 'Příprava V3 Mainnet · Core + Edge topology · Mining test · Bridge v přípravě',
+      en: 'Preparing V3 Mainnet · Core + Edge topology · Mining test · Bridge in preparation',
     },
   },
 
