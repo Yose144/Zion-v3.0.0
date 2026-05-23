@@ -42,8 +42,8 @@ type LocalizedText = { cs: string; en: string };
 const docsPageCopy = {
   badge: { cs: 'Znalostní báze', en: 'Knowledge Base' },
   overviewNotice: {
-    cs: 'V3 Mainnet je LIVE od 20. června 2026 (Summer Solstice) na linii v3.0.0 Mainnet Ready nad kanonickou runtime v3.0.0 Deeksha/Ekam. Core + Edge topology je operational, mining aktivní, bridge deployed na Base Mainnet. Live Index na /docs#live-index je kanonický vstup pro síťový snapshot, baseline repa 2.9.6 a mapu release/runtime.',
-    en: 'V3 Mainnet is LIVE since 20 June 2026 (Summer Solstice) on v3.0.0 Mainnet Ready line over the canonical v3.0.0 Deeksha/Ekam runtime. Core + Edge topology is operational, mining active, bridge deployed on Base Mainnet. Live Index at /docs#live-index is the canonical entry for the network snapshot, 2.9.6 repo baseline, and release/runtime map.',
+    cs: 'V3 Mainnet je v přípravě — target launch 31. prosince 2026 (Silvestr) na linii v3.0.0 Mainnet Ready nad kanonickou runtime v3.0.0 Deeksha/Ekam. Core + Edge topology je v testování, mining test aktivní, bridge v přípravě na Base Mainnet. Live Index na /docs#live-index je kanonický vstup pro síťový snapshot, baseline repa 2.9.6 a mapu release/runtime.',
+    en: 'V3 Mainnet is in preparation — target launch 31 December 2026 (New Year\'s Eve) on v3.0.0 Mainnet Ready line over the canonical v3.0.0 Deeksha/Ekam runtime. Core + Edge topology is in testing, mining test active, bridge in preparation on Base Mainnet. Live Index at /docs#live-index is the canonical entry for the network snapshot, 2.9.6 repo baseline, and release/runtime map.',
   },
   githubLabel: { cs: 'GitHub', en: 'GitHub' },
   apiHealthLabel: { cs: 'Zdraví API', en: 'API Health' },
