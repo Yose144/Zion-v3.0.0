@@ -1541,7 +1541,7 @@ tailwind.config={theme:{extend:{colors:{zion:{900:'#0a0f1e',800:'#131a2e',700:'#
   <div id="pane-launch-day" class="hidden space-y-4">
     <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
       <div class="flex items-center justify-between mb-3">
-        <h2 class="text-lg font-bold flex items-center gap-2">🚀 Launch Day Automation <span class="text-xs font-normal text-gray-500">(20.6.2026 12:00 UTC)</span></h2>
+        <h2 class="text-lg font-bold flex items-center gap-2">🚀 Launch Day Automation <span class="text-xs font-normal text-gray-500">(31.12.2026 12:00 UTC)</span></h2>
         <span id="launch-day-badge" class="px-3 py-1 rounded text-xs font-bold bg-zion-700 text-gray-300">Checking...</span>
       </div>
       <p class="text-xs text-gray-400 mb-4">Automated genesis rotation, premine rotation, and local backup for mainnet launch. All changes are saved to local PC.</p>
@@ -2392,8 +2392,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 "pool_fee": node_addresses.get("pool_fee") == canonical_addresses["pool_fee"]
             }
             
-            # Launch countdown (20.6.2026 12:00 UTC)
-            launch_date = datetime(2026, 6, 20, 12, 0, 0)
+            # Launch countdown (31.12.2026 12:00 UTC)
+            launch_date = datetime(2026, 12, 31, 12, 0, 0)
             now = datetime.now()
             days_to_launch = (launch_date - now).days if launch_date > now else 0
             is_launch_day = (launch_date.date() == now.date())
