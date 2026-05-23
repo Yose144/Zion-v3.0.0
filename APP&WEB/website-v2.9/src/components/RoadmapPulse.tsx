@@ -17,22 +17,22 @@ const getPhaseCards = (cs: boolean) => [
   },
   {
     name: 'Launch Ops & Security Closure',
-    window: 'May — Jun 2026',
+    window: 'May — Dec 2026',
     progress: 65,
     highlights: [
-      'BFG scrub + genesis artifacts / checksums ✅',
-      'External security audit scheduled (Q3 2026)',
-      'Closure evidence collected; T-29 countdown to 20 June 2026',
+      'BFG scrub + genesis artifacts / checksums in progress',
+      'External security audit scheduled (Q4 2026)',
+      'Closure evidence being collected; countdown to 31 Dec 2026',
     ],
   },
   {
     name: 'Public Launch Gate',
-    window: '20 June 2026',
-    progress: 100,
+    window: '31 Dec 2026',
+    progress: 35,
     highlights: [
-      'Genesis freeze — all parameters locked ✅',
-      'Public launch executed — Mainnet LIVE ✅',
-      'CoinGecko listing + wZION bridge live on Base Mainnet ✅',
+      'Genesis freeze — all parameters being finalized',
+      'Public launch scheduled — Launch Countdown active',
+      'CoinGecko listing + wZION bridge in preparation',
     ],
   },
 ];
@@ -81,7 +81,7 @@ export default function RoadmapPulse() {
             </h2>
             <p className="text-lg text-gray-300 max-w-2xl">
               The current public line is a controlled V3 mainnet launch countdown on the v2.9.9 Pure Code public line over the v2.9.8 Deeksha/Ekam canonical runtime.
-              Public mainnet launch is scheduled for 20 June 2026 (T-29). Priority is final telemetry validation, documentation polish, and operational readiness.
+              Public mainnet launch is scheduled for 31 December 2026 (New Year's Eve). Priority is final telemetry validation, documentation polish, security audit, and operational readiness.
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-4">
