@@ -218,6 +218,7 @@ button{display:inline-flex;align-items:center;justify-content:center;cursor:poin
         <button onclick="switchTab('controls')" id="tab-controls" class="sidebar-item">🎛️ Controls</button>
         <button onclick="switchTab('launch-day')" id="tab-launch-day" class="sidebar-item">🚀 Launch Day</button>
         <button onclick="switchTab('wizard')" id="tab-wizard" class="sidebar-item">🧙 Wizard</button>
+        <button onclick="switchTab('hiran')" id="tab-hiran" class="sidebar-item">🤖 Hiran AI</button>
         <button onclick="switchTab('genesis')" id="tab-genesis" class="sidebar-item">⚡ Genesis</button>
         <button onclick="switchTab('blockers')" id="tab-blockers" class="sidebar-item">🚧 Blockers</button>
       </div>
@@ -897,6 +898,86 @@ button{display:inline-flex;align-items:center;justify-content:center;cursor:poin
       <div class="zion-panel p-5"><div class="flex items-center justify-between mb-2"><h3 class="zion-kicker">Node 2</h3><button onclick="loadLogs('node2')" class="text-xs text-gray-400 hover:text-white">🔄</button></div><pre id="log-node2" class="log-tail bg-black/40 rounded-xl p-3 h-72 overflow-auto text-gray-300"></pre></div>
       <div class="zion-panel p-5"><div class="flex items-center justify-between mb-2"><h3 class="zion-kicker">Pool</h3><button onclick="loadLogs('pool')" class="text-xs text-gray-400 hover:text-white">🔄</button></div><pre id="log-pool" class="log-tail bg-black/40 rounded-xl p-3 h-72 overflow-auto text-gray-300"></pre></div>
       <div class="zion-panel p-5"><div class="flex items-center justify-between mb-2"><h3 class="zion-kicker">Miner</h3><button onclick="loadLogs('miner')" class="text-xs text-gray-400 hover:text-white">🔄</button></div><pre id="log-miner" class="log-tail bg-black/40 rounded-xl p-3 h-72 overflow-auto text-gray-300"></pre></div>
+    </div>
+  </div>
+
+  <!-- ═════════ TAB: Hiran AI ═════════ -->
+  <div id="pane-hiran" class="hidden space-y-4">
+    <div class="zion-panel p-6">
+      <h2 class="text-xl font-bold mb-2 flex items-center gap-2"><span class="text-gradient">🤖 Hiran AI — Agent Management</span></h2>
+      <p class="text-sm text-gray-400 mb-4">Hiran v2.2 inference + Hiranyagarbha orchestrator (port 8001).</p>
+
+      <!-- Status row -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+        <div class="zion-panel p-3 flex items-center justify-between">
+          <div>
+            <div class="text-xs text-gray-400">Hiran Inference</div>
+            <div class="text-sm font-bold text-gray-200">localhost:8002</div>
+          </div>
+          <span id="hiran-badge" class="px-2 py-0.5 rounded text-xs font-bold bg-gray-700 text-white">CHECKING…</span>
+        </div>
+        <div class="zion-panel p-3 flex items-center justify-between">
+          <div>
+            <div class="text-xs text-gray-400">Hiranyagarbha</div>
+            <div class="text-sm font-bold text-gray-200">localhost:8001</div>
+          </div>
+          <span id="hiranyagarbha-badge" class="px-2 py-0.5 rounded text-xs font-bold bg-gray-700 text-white">CHECKING…</span>
+        </div>
+        <div class="zion-panel p-3 flex items-center justify-between">
+          <div>
+            <div class="text-xs text-gray-400">GPU Offload</div>
+            <div id="hiran-gpu-detail" class="text-sm font-bold text-gray-200">CPU</div>
+          </div>
+          <span id="hiran-gpu-badge" class="px-2 py-0.5 rounded text-xs font-bold bg-gray-700 text-white">layers</span>
+        </div>
+      </div>
+
+      <!-- Orchestrator stats -->
+      <div id="orch-stats-panel" class="zion-panel p-4 mb-4 hidden">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="zion-kicker">Orchestrator Stats</h3>
+          <span id="hiranyagarbha-detail" class="text-xs text-gray-400"></span>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div class="bg-black/30 rounded-lg p-3"><div class="text-xs text-gray-400 mb-1">Active Agents</div><div id="orch-active" class="text-lg font-bold text-emerald-400">—</div></div>
+          <div class="bg-black/30 rounded-lg p-3"><div class="text-xs text-gray-400 mb-1">Task Queue</div><div id="orch-tasks" class="text-lg font-bold text-amber-400">—</div></div>
+          <div class="bg-black/30 rounded-lg p-3"><div class="text-xs text-gray-400 mb-1">Msg Queue</div><div id="orch-msgs" class="text-lg font-bold text-blue-400">—</div></div>
+          <div class="bg-black/30 rounded-lg p-3"><div class="text-xs text-gray-400 mb-1">Total Actions</div><div id="orch-actions" class="text-lg font-bold text-gray-300">—</div></div>
+        </div>
+      </div>
+
+      <!-- Agent Management Panel -->
+      <div id="agent-panel" class="zion-panel p-4 mb-4">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="zion-kicker">Agent Management</h3>
+          <div class="flex gap-2">
+            <button onclick="registerAgent()" class="zion-button-primary text-xs px-3 py-1.5">+ Register</button>
+            <button onclick="loadAgentList()" class="zion-button-secondary text-xs px-3 py-1.5">🔄</button>
+          </div>
+        </div>
+        <div id="agent-list" class="space-y-2 mb-3">
+          <div class="text-gray-500 text-xs italic">No agents loaded — click Register or Refresh</div>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button onclick="elevateConsciousness()" class="zion-button-secondary text-xs px-3 py-1.5 bg-purple-700/40 border-purple-500/40 hover:bg-purple-600/40">Elevate Consciousness</button>
+          <button onclick="grantCapability()" class="zion-button-secondary text-xs px-3 py-1.5 bg-blue-700/40 border-blue-500/40 hover:bg-blue-600/40">Grant Capability</button>
+          <button onclick="dispatchTask()" class="zion-button-secondary text-xs px-3 py-1.5 bg-amber-700/40 border-amber-500/40 hover:bg-amber-600/40">Dispatch Task</button>
+        </div>
+        <div id="agent-action-result" class="mt-2 text-xs text-gray-400 min-h-4"></div>
+      </div>
+
+      <!-- Chat interface -->
+      <div class="zion-panel p-4">
+        <h3 class="zion-kicker mb-3">Chat s Hiranem</h3>
+        <div id="chat-history" class="space-y-3 mb-3 max-h-80 overflow-y-auto">
+          <div class="flex gap-2"><div class="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-xs font-bold shrink-0">AI</div><div class="bg-black/30 rounded-xl p-3 text-sm text-gray-200"><p class="text-gray-400 italic">Zadej dotaz a stiskni Enter. Model: hiran-v2.2 (Q4_K_M GGUF).</p></div></div>
+        </div>
+        <div class="flex gap-2">
+          <input id="chat-input" type="text" placeholder="Zeptej se Hiran AI…" class="flex-1 bg-black/30 border border-white/10 rounded-xl px-4 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50">
+          <button onclick="sendChat()" class="zion-button-primary px-4 py-2 text-sm">Odeslat</button>
+        </div>
+        <div id="chat-status" class="mt-2 text-xs text-gray-500"></div>
+      </div>
     </div>
   </div>
     </main>
