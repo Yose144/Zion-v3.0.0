@@ -700,11 +700,10 @@ function setupControls() {
   const backendStatusEl = document.getElementById('backend-status');
 
   const setModeStatus = (mode) => {
-    const pureZionMode = isPureZionDesktopMode(config);
     const labels = {
-      'cpu': 'CPU mining only (~600 kH/s)',
-      'gpu': 'GPU mining only (~8.5 GH/s)',
-      'dual': 'Dual mining uses both CPU and GPU simultaneously (MAX POWER!)'
+      'cpu': 'CPU mining only — efficient for laptops and low-power rigs',
+      'gpu': 'GPU mining only — maximum hashrate via OpenCL/CUDA/Metal',
+      'dual': 'Dual mining uses both CPU and GPU simultaneously for maximum ZION hashrate'
     };
     if (modeStatusEl) modeStatusEl.textContent = labels[mode] || '';
   };
