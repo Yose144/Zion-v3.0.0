@@ -167,7 +167,115 @@ In practice: **node is source of chain truth**, pool is coordination layer, mine
 - `scripts/autopilot-2.9.8.sh` encodes a practical validation/deploy sequence when tasks touch miner/desktop-agent/deploy pipelines.
 - If GitHub Actions jobs finish in seconds with no runner/steps, treat it as the known billing/infrastructure issue in `StatusV3.md`, not as code validation.
 
-## 6) Hiran v2.2 AI Model Training (Completed 2026-05-18)
+## 6) Canonical Operational Settings (v3.0.0 Mainnet)
+
+### Network Topology
+
+Current live topology is **Core + Edge over Tailscale VPN**. Do not reference old multi-server topologies (Praha, SG, Helsinki, US) — those are deprecated.
+
+```
+Core (Windows 11)          Edge (Hetzner VPS)
+100.86.102.5              100.66.162.125
+    | Tailscale VPN            |
+Node + Pool (Master)    Node + Pool (Relay)
+Miner (GPU)               Public P2P: 8333
+                          Public Pool: 8444
+```
+
+| Role | Host | VPN IP | Public IP | Ports |
+|------|------|--------|-----------|-------|
+| Core | Local PC | 100.86.102.5 | (dynamic) | P2P: 8333, RPC: 8443 |
+| Edge | Hetzner VPS | 100.66.162.125 | 77.42.71.94 | P2P: 8333, Pool: 8444, RPC: 8443 |
+
+### Canonical Ports & Services
+
+| Service | Port | Protocol | Notes |
+|---------|------|----------|-------|
+| Node P2P | 8333 | TCP | Peer-to-peer sync |
+| Node RPC | 8443 | TCP | JSON-RPC 2.0, wallet queries |
+| Pool Stratum | 8444 | TCP | Miner connections (Edge public-facing) |
+| Pool metrics | 9100 | HTTP | Prometheus metrics (pool) |
+| Node metrics | 9115 | HTTP | Prometheus metrics (node) |
+| Dashboard | 8766 | HTTP | Python Flask dashboard (changed from 8765) |
+| Website | 3000 | HTTP | Next.js dev server |
+| Hiran inference | 8002 | HTTP | OpenAI-compatible API |
+
+### Canonical URLs & Endpoints
+
+| Purpose | URL |
+|---------|-----|
+| **Edge Pool (public mining)** | `77.42.71.94:8444` |
+| **Edge RPC (public)** | `http://77.42.71.94:8443/jsonrpc` |
+| **Edge RPC (VPN fallback)** | `http://100.66.162.125:8443/jsonrpc` |
+| **Local RPC (default)** | `http://127.0.0.1:8443/jsonrpc` |
+| **Desktop agent default RPC** | `http://127.0.0.1:8443/jsonrpc` (auto-fallback to Edge VPN) |
+| **Website production** | `https://zionterranova.com` |
+| **Dashboard** | `http://127.0.0.1:8766` |
+
+### SSH Access
+
+- **Edge server SSH key:** `ssh-key-zion-edge` (private), `ssh-key-zion-edge.pub` (public) — kept in root for operational access.
+- **Never commit private keys.** The existing keys in root are grandfathered; rotate if compromised.
+- **SSH endpoint:** Use Tailscale SSH (`100.66.162.125`) or direct Hetzner console for Edge server management.
+
+### Dashboard Configuration
+
+The Python dashboard (`dashboard/app.py`) monitors Core + Edge services:
+
+| Config | Value |
+|--------|-------|
+| Host | `127.0.0.1` |
+| Port | `8766` |
+| Services monitored | `node1`, `node2` (via VPN), `pool`, `pool-edge`, `miner` |
+| Auto-start | See `DASHBOARD_AUTOSTART.md` + `install-dashboard-autostart.bat` |
+
+### Desktop Agent Defaults
+
+```javascript
+// src/main.js constants
+const PRIMARY_MAINNET_HOST = '77.42.71.94';
+const PRIMARY_POOL_PORT = 8444;
+const PRIMARY_RPC_PORT = 8443;
+const EDGE_VPN_HOST = '100.66.162.125';
+const DEFAULT_RPC_URL = 'http://127.0.0.1:8443/jsonrpc';  // localhost first, Edge VPN fallback
+```
+
+### Environment Variables (canonical)
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `ZION_NODE_ID` | `local-node` | Node identifier |
+| `ZION_P2P_BIND` | `0.0.0.0:8333` | P2P listener |
+| `ZION_RPC_BIND` | `0.0.0.0:8443` | RPC listener |
+| `ZION_POOL_BIND` | `0.0.0.0:8444` | Pool stratum listener |
+| `ZION_NODE_RPC_ADDR` | `127.0.0.1:8443` | Pool → node RPC upstream |
+| `ZION_POOL_ADDR` | `127.0.0.1:8444` | Miner → pool address |
+| `ZION_WORKER_NAME` | `desktop-agent` | Miner worker name |
+| `ZION_LOOP_COUNT` | `1000000` | Miner sustained GPU loops (avoid reconnects) |
+| `ZION_POOL_LOOP_COUNT` | `1000000` | Pool sustained loops |
+| `ZION_NONCE_COUNT` | `4096` | Pool nonce batch size (raise from 1024 for GPU) |
+| `ZION_GPU_WORK_SIZE` | `4096` | GPU work batch size |
+
+### Fee Split Addresses (canonical, on-chain)
+
+| Type | Address | Share |
+|------|---------|-------|
+| Miner | `zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3` | 89% |
+| Humanitarian | `zion1m4v5z8z850u480c5c208z274e334369275n5y20` | 5% |
+| Issobella | `zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702` | 5% |
+| Pool Fee | `zion1p2a7a5q0t2z5z545y6m6j5e864n002v4z6w95w5` | 1% |
+
+### Genesis Hash (canonical)
+
+```
+003529805e9b47babb9ac0f26b27b1aad0a1cf3c483181857daf3269f7088923
+```
+
+Verify against `PREMINE_ADDRESSES_PUBLIC.txt` and `V3/L1/core/src/genesis.rs`.
+
+---
+
+## 7) Hiran v2.2 AI Model Training (Completed 2026-05-18)
 
 Hiran v2.2 is a domain-specific fine-tuned model for the Zion ecosystem. Training artifacts and evaluation reports live in `HiranV2.2/`.
 
