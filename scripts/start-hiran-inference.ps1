@@ -48,12 +48,13 @@ if ($ggufFile -and (Test-Path $llamaServer)) {
         "--ctx-size", "4096",
         "--threads", "8",
         "--n-predict", "-1",
-        "--parallel", "2",
-        "--log-format", "text"
+        "--parallel", "2"
     )
 
     # Add GPU offload if available (Vulkan / CUDA layers)
-    $gpuLayers = if ($env:HIRAN_GPU_LAYERS) { [int]$env:HIRAN_GPU_LAYERS } else { 0 }
+    # Default 15 layers for AMD RX 5600 XT 6GB VRAM (stable, ~5 tok/s).
+    # Set HIRAN_GPU_LAYERS=0 for CPU-only, or HIRAN_GPU_LAYERS=33 for full GPU if you have >8GB VRAM.
+    $gpuLayers = if ($env:HIRAN_GPU_LAYERS) { [int]$env:HIRAN_GPU_LAYERS } else { 15 }
     if ($gpuLayers -gt 0) {
         $llamaArgs += @("--n-gpu-layers", $gpuLayers)
         Write-Host "     GPU layers: $gpuLayers"
