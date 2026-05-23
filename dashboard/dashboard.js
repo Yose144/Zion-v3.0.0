@@ -1,6 +1,6 @@
 'use strict';
 
-const TABS = ['overview','wallets','explorer','services','l1','l2','l3','l4','l5','l6','genesis','blockers','controls','charts','events','env','database','metrics','launch-day','wizard','logs'];
+const TABS = ['overview','wallets','explorer','services','l1','l2','l3','l4','l5','l6','genesis','blockers','controls','charts','events','env','database','metrics','launch-day','wizard','logs','hiran'];
 let autoRefresh = true, refreshTimer = null, currentTab = 'overview';
 let charts = {};
 let friendlyMode = false;
@@ -75,6 +75,7 @@ function switchTab(name){
   if(name === 'explorer') loadExplorer();
   if(['l1','l2','l3','l4','l5','l6'].includes(name)) loadLayer(name);
   if(name === 'launch-day') loadLaunchDayStatus();
+  if(name === 'hiran'){ loadAgentList(); checkAiStatus(); }
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -1364,6 +1365,196 @@ function addLaunchDayLog(msg){
   const time = new Date().toLocaleTimeString('cs-CZ');
   const cls = msg.startsWith('✅') ? 'text-emerald-400' : msg.startsWith('❌') ? 'text-red-400' : msg.startsWith('🚀') ? 'text-amber-400' : 'text-gray-300';
   el.innerHTML = `<div class="${cls}"><span class="text-gray-600">[${time}]</span> ${escapeHtml(msg)}</div>` + el.innerHTML;
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Hiran AI — Agent Management
+// ─────────────────────────────────────────────────────────────────────
+
+async function checkAiStatus(){
+  const orchBadge = document.getElementById('hiranyagarbha-badge');
+  const orchDetail = document.getElementById('hiranyagarbha-detail');
+  const orchPanel = document.getElementById('orch-stats-panel');
+  if(orchBadge) orchBadge.textContent = 'CHECKING…';
+  try{
+    const r2 = await fetch('/api/hiranyagarbha/health');
+    const d2 = await r2.json();
+    if(d2.alive){
+      if(orchBadge){ orchBadge.textContent = 'LIVE'; orchBadge.className = 'px-2 py-0.5 rounded text-xs font-bold bg-emerald-600 text-white animate-pulse'; }
+      if(orchDetail) orchDetail.textContent = 'v' + (d2.version || '?') + ' · agents: ' + (d2.active_agents ?? '—') + ' · tasks: ' + (d2.task_queue ?? '—');
+      if(orchPanel) orchPanel.classList.remove('hidden');
+      loadOrchestratorStats();
+    } else {
+      if(orchBadge){ orchBadge.textContent = 'OFFLINE'; orchBadge.className = 'px-2 py-0.5 rounded text-xs font-bold bg-red-700 text-white'; }
+      if(orchDetail) orchDetail.textContent = 'Start: ▶ Start';
+      if(orchPanel) orchPanel.classList.add('hidden');
+    }
+  }catch(e){
+    if(orchBadge){ orchBadge.textContent = 'OFFLINE'; orchBadge.className = 'px-2 py-0.5 rounded text-xs font-bold bg-red-700 text-white'; }
+    if(orchDetail) orchDetail.textContent = 'Start: ▶ Start';
+    if(orchPanel) orchPanel.classList.add('hidden');
+  }
+}
+
+async function loadOrchestratorStats(){
+  try{
+    const r = await fetch('http://127.0.0.1:8001/orchestrator/status');
+    if(!r.ok) return;
+    const d = await r.json();
+    const s = d.status || d;
+    const set = (id, v) => { const el = document.getElementById(id); if(el) el.textContent = v ?? '—'; };
+    set('orch-active', s.active_agents ?? s.agent_count ?? '—');
+    set('orch-tasks', s.task_queue_depth ?? s.tasks_pending ?? '—');
+    set('orch-msgs', s.message_queue_depth ?? s.messages ?? '—');
+    set('orch-actions', s.total_actions_dispatched ?? s.total_actions ?? '—');
+  }catch(_){}
+}
+
+async function loadAgentList(){
+  const list = document.getElementById('agent-list');
+  const res = document.getElementById('agent-action-result');
+  if(list) list.innerHTML = '<div class="text-gray-500 text-xs italic">Loading agents…</div>';
+  try{
+    const r = await fetch('http://127.0.0.1:8001/agents');
+    const d = await r.json();
+    const total = d.total ?? d.active ?? 0;
+    if(total === 0){
+      if(list) list.innerHTML = '<div class="text-gray-500 text-xs italic">No active agents — click + Register to create one</div>';
+      return;
+    }
+    const r2 = await fetch('http://127.0.0.1:8001/orchestrator/status');
+    const s = await r2.json();
+    const agents = s.agents ?? {};
+    const active = agents.active ?? 0;
+    const suspended = agents.suspended ?? 0;
+    const terminated = agents.terminated ?? 0;
+    const actions = agents.total_actions ?? 0;
+    let html = '<div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-center mb-2">';
+    html += '<div class="bg-zion-900 rounded p-2"><div class="text-xs text-gray-400">Active</div><div class="text-sm font-bold text-emerald-400">' + active + '</div></div>';
+    html += '<div class="bg-zion-900 rounded p-2"><div class="text-xs text-gray-400">Suspended</div><div class="text-sm font-bold text-amber-400">' + suspended + '</div></div>';
+    html += '<div class="bg-zion-900 rounded p-2"><div class="text-xs text-gray-400">Terminated</div><div class="text-sm font-bold text-red-400">' + terminated + '</div></div>';
+    html += '<div class="bg-zion-900 rounded p-2"><div class="text-xs text-gray-400">Actions</div><div class="text-sm font-bold text-gray-300">' + actions + '</div></div>';
+    html += '</div>';
+    if(list) list.innerHTML = html;
+    if(res) res.textContent = 'Loaded: ' + active + ' active, ' + suspended + ' suspended, ' + terminated + ' terminated';
+  }catch(e){
+    if(list) list.innerHTML = '<div class="text-red-400 text-xs">Error loading agents: ' + escapeHtml(String(e)) + '</div>';
+  }
+}
+
+async function registerAgent(){
+  const res = document.getElementById('agent-action-result');
+  if(res) res.textContent = 'Registering agent…';
+  try{
+    const r = await fetch('http://127.0.0.1:8001/agents',{
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({name:'DashboardAgent-'+Date.now(), capabilities:['Compute','Memory'], consciousness_level:1})
+    });
+    const d = await r.json();
+    if(res) res.textContent = 'Registered: ' + JSON.stringify(d);
+    loadAgentList();
+  }catch(e){
+    if(res) res.textContent = 'Error: ' + String(e);
+  }
+}
+
+async function elevateConsciousness(){
+  const res = document.getElementById('agent-action-result');
+  if(res) res.textContent = 'Elevating consciousness…';
+  try{
+    const r1 = await fetch('http://127.0.0.1:8001/agents');
+    const d1 = await r1.json();
+    if(!d1.total && !d1.active){ if(res) res.textContent = 'No agents to elevate'; return; }
+    const r3 = await fetch('http://127.0.0.1:8001/agents/00000000-0000-0000-0000-000000000001/consciousness',{
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({level:2})
+    });
+    const d3 = await r3.json();
+    if(res) res.textContent = 'Elevated: ' + JSON.stringify(d3);
+    loadAgentList();
+  }catch(e){
+    if(res) res.textContent = 'Error: ' + String(e);
+  }
+}
+
+async function grantCapability(){
+  const res = document.getElementById('agent-action-result');
+  if(res) res.textContent = 'Granting capability…';
+  try{
+    const r = await fetch('http://127.0.0.1:8001/agents/00000000-0000-0000-0000-000000000001/capabilities',{
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({capability:'RAG'})
+    });
+    const d = await r.json();
+    if(res) res.textContent = 'Granted: ' + JSON.stringify(d);
+  }catch(e){
+    if(res) res.textContent = 'Error: ' + String(e);
+  }
+}
+
+async function dispatchTask(){
+  const res = document.getElementById('agent-action-result');
+  if(res) res.textContent = 'Dispatching task…';
+  try{
+    const r = await fetch('http://127.0.0.1:8001/tasks/dispatch',{
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({task_type:'QueryKnowledge', model_id:'hiran-v2.2', submitter:'dashboard', description:'Dashboard test task', input:'What is ZION?'})
+    });
+    const d = await r.json();
+    if(res) res.textContent = 'Dispatched: ' + JSON.stringify(d);
+    loadAgentList();
+    loadOrchestratorStats();
+  }catch(e){
+    if(res) res.textContent = 'Error: ' + String(e);
+  }
+}
+
+async function sendChat(){
+  const inp = document.getElementById('chat-input');
+  const log = document.getElementById('chat-history');
+  const status = document.getElementById('chat-status');
+  if(!inp || !log) return;
+  const msg = inp.value.trim();
+  if(!msg) return;
+  inp.value = '';
+  // User bubble
+  const userDiv = document.createElement('div');
+  userDiv.className = 'flex gap-2';
+  userDiv.innerHTML = '<div class="w-8 h-8 rounded-full bg-emerald-600 flex items-center justify-center text-xs font-bold shrink-0">U</div><div class="bg-black/30 rounded-xl p-3 text-sm text-gray-200">' + escapeHtml(msg) + '</div>';
+  log.appendChild(userDiv);
+  log.scrollTop = log.scrollHeight;
+  // Spinner
+  const spinDiv = document.createElement('div');
+  spinDiv.className = 'flex gap-2';
+  spinDiv.innerHTML = '<div class="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-xs font-bold shrink-0">AI</div><div class="bg-black/30 rounded-xl p-3 text-sm text-gray-400 animate-pulse">Hiran přemýšlí…</div>';
+  log.appendChild(spinDiv);
+  log.scrollTop = log.scrollHeight;
+  if(status) status.textContent = 'Odesílám…';
+  try{
+    const t0 = Date.now();
+    const r = await fetch('/api/hiran/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg})});
+    const d = await r.json();
+    log.removeChild(spinDiv);
+    const aiDiv = document.createElement('div');
+    aiDiv.className = 'flex gap-2';
+    const text = d.ok ? d.reply : 'Chyba: ' + (d.error || 'neznámá chyba');
+    aiDiv.innerHTML = '<div class="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-xs font-bold shrink-0">AI</div><div class="bg-black/30 rounded-xl p-3 text-sm text-gray-200 whitespace-pre-wrap">' + escapeHtml(text) + '</div>';
+    log.appendChild(aiDiv);
+    log.scrollTop = log.scrollHeight;
+    const elapsed = d.latency_ms != null ? d.latency_ms : Date.now()-t0;
+    if(status) status.textContent = 'Odpověď za ' + Math.round(elapsed) + ' ms · tokenů: ' + (d.tokens || '—');
+  }catch(e){
+    log.removeChild(spinDiv);
+    const errDiv = document.createElement('div');
+    errDiv.className = 'flex gap-2';
+    errDiv.innerHTML = '<div class="w-8 h-8 rounded-full bg-red-600 flex items-center justify-center text-xs font-bold shrink-0">!</div><div class="bg-black/30 rounded-xl p-3 text-sm text-red-400">Chyba: ' + escapeHtml(String(e)) + '</div>';
+    log.appendChild(errDiv);
+    if(status) status.textContent = 'Chyba spojení';
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────
