@@ -16,6 +16,7 @@ path = "src/main.rs"
 
 [features]
 default = []
+admin = []
 testnet_fork_rehearsal = ["zion-core/testnet_fork_rehearsal"]
 
 [dependencies]

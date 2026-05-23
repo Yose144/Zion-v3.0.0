@@ -52,9 +52,10 @@ export default function Navigation() {
           ],
         },
         {
-          href: '/warp',
+          href: '/l3-hiran',
           label: 'L3',
           children: [
+            { href: '/l3-hiran', label: tr('nav', 'l3_hiran', lang) },
             { href: '/warp', label: tr('nav', 'warp', lang) },
             { href: '/ai-native', label: tr('nav', 'ai_native', lang) },
           ],
