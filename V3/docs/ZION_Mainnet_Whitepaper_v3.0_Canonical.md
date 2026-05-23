@@ -744,9 +744,9 @@ ZION is a **community-run open-source protocol** and is **not operated by a sing
 
 See also:
 
-- `legal/DISCLAIMER.md`
-- `legal/TOKEN_NOT_SECURITY.md`
-- `legal/RISK_DISCLOSURE.md`
+- `../../docs/legal/DISCLAIMER.md`
+- `../../docs/legal/TOKEN_NOT_SECURITY.md`
+- `../../docs/legal/RISK_DISCLOSURE.md`
 
 ---
 
