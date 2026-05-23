@@ -8,8 +8,8 @@ const VISIONS = [
   {
     href: '/genesis',
     icon: Sprout,
-    label: 'Genesis',
-    desc: 'Zahrada stvoření — původní blockchainový kód, první blok, seed vědomí',
+    label: 'Zahrada Genesis',
+    desc: 'Puvodni blockchainovy kod, prvni blok, seed vedomi — zahrada stvoreni',
     accent: 'text-cyan-300',
     border: 'border-cyan-400/20',
     bg: 'from-cyan-500/10 via-cyan-500/3 to-transparent',
@@ -22,7 +22,7 @@ const VISIONS = [
     href: '/terranova/dharma-temple',
     icon: Landmark,
     label: 'Dharma Temple',
-    desc: 'Chrám Dharmy — Ekam, Deeksha, Oneness, posvátná geometrie v kódu',
+    desc: 'Chram Dharmy — Ekam, Deeksha, Oneness, posvatna geometrie v kodu',
     accent: 'text-violet-300',
     border: 'border-violet-400/20',
     bg: 'from-violet-500/10 via-violet-500/3 to-transparent',
@@ -34,8 +34,8 @@ const VISIONS = [
   {
     href: '/terranova/te-piko-ora',
     icon: Crown,
-    label: 'Te Pīko Ora',
-    desc: 'Koruna života — vrcholná komunitní vize, Rapa Nui, Guardian Edge',
+    label: 'Te Piko Ora',
+    desc: 'Koruna zivota — vrcholna komunitni vize, Rapa Nui, Guardian Edge',
     accent: 'text-amber-300',
     border: 'border-amber-400/20',
     bg: 'from-amber-500/10 via-amber-500/3 to-transparent',
@@ -51,7 +51,7 @@ export default function VisionBar() {
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.9, delay: 1.4 }}
+      transition={{ duration: 0.9, delay: 0.3 }}
       className="w-full max-w-4xl mx-auto px-4"
     >
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -60,13 +60,12 @@ export default function VisionBar() {
             key={v.href}
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 1.6 + i * 0.12 }}
+            transition={{ duration: 0.5, delay: 0.5 + i * 0.12 }}
           >
             <Link
               href={v.href}
               className={`group relative flex flex-col gap-3 rounded-2xl border ${v.border} ${v.glow} bg-gradient-to-br ${v.bg} p-5 backdrop-blur-sm transition-all duration-300 hover:scale-[1.04] hover:border-white/20 hover:shadow-[0_0_40px_rgba(255,255,255,0.06)]`}
             >
-              {/* subtle radial glow on hover */}
               <div className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${v.bg} opacity-0 transition-opacity duration-300 group-hover:opacity-100`} />
               <div className="absolute -inset-px rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-[radial-gradient(ellipse_at_50%_0%,rgba(255,255,255,0.04),transparent_60%)]" />
 
@@ -84,7 +83,6 @@ export default function VisionBar() {
                 </p>
               </div>
 
-              {/* bottom accent line */}
               <div className={`relative mt-1 h-px w-full bg-gradient-to-r from-transparent via-current to-transparent opacity-10 group-hover:opacity-25 transition-opacity duration-300 ${v.accent}`} />
             </Link>
           </motion.div>
