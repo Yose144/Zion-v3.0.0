@@ -295,14 +295,33 @@ powershell -ExecutionPolicy Bypass -File .\dashboard\start-dashboard.ps1
   - `/etc/systemd/journald.conf.d/zion.conf`: max 500M, max file 50M, 1 week retention
   - Status: **CONFIGURED**
 
-### Fáze 2: Hardening (3–7 dní)
+### Fáze 2: Hardening (3–7 dní) — DONE 2026-05-23
 
-- [ ] **Zálohy Core**: Automatická záloha `V3/data/` + `.env` na externí disk/cloud
-- [ ] **Edge záloha**: Snapshot Edge VPS (Hetzner backup image)
+- [x] **Zálohy Core**: Automatická záloha `V3/data/` + `.env` na externí disk
+  - Skript: `scripts/backup-core.ps1` — timestamped zip do `C:\ZION-Backups\`
+  - Zálohuje: `V3/data/`, `.env.*`, `ssh-key-zion-edge.pub`, git state
+  - Status: **CONFIGURED**
+- [x] **Edge záloha**: Snapshot Edge VPS (Hetzner backup image)
+  - Snapshot ID: `631712387075142` (vytvořeno přes Hetzner API)
+  - Disaster recovery: nový VPS z tohoto image obnoví kompletní stav
+  - Status: **CREATED**
+- [x] **Failover test**: Vypnout Edge, ověřit že Core běží dál; pak obnovit Edge
+  - Edge services: `systemctl stop zion-edge zion-edge-pool`
+  - Core miner: pokračoval stabilně, height 493 (žádný gap)
+  - Edge restart: `systemctl start zion-edge zion-edge-pool` — úspěšně obnoveno
+  - Status: **PASSED**
 - [ ] **Monitoring**: Prometheus + Grafana pro Core (už běží, ověřit metrics)
+  - Prometheus scrapuje `zion-hiran-inference`, pool metrics, node metrics
+  - Grafana dashboard: 16 panelů (latency, GPU, requests)
+  - Status: **PARTIAL** (scraping běží, node/pool-specific dashboardy potřeba dodělat)
 - [ ] **Alerting**: Nastavit upozornění na: node down, pool down, sync gap > 5 bloků
-- [ ] **Failover test**: Vypnout Edge, ověřit že Core běží dál; pak obnovit Edge
+  - Alertmanager konfigurace: `V3/docker/prometheus/alertmanager.yml` (template)
+  - Pravidla: 5 alertů definováno (down, high latency, error rate, GPU memory, GPU utilization)
+  - Status: **PENDING** (potřeba aktivovat Alertmanager + webhook/notification channel)
 - [ ] **Tailscale ACL**: Nastavit Tailscale ACL pro omezení přístupu jen na ZION uzly
+  - Tailscale admin console: https://login.tailscale.com/admin/acls
+  - Cíl: pouze tag: `zion` uzly se vzájemně vidí, ostatní traffic deny
+  - Status: **PENDING** (ruční konfigurace v Tailscale admin UI)
 
 ### Fáze 3: Scale (1–2 týdny)
 
