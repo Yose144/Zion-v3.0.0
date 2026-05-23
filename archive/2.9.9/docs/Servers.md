@@ -106,6 +106,7 @@ tailscale ping 100.86.102.5
 | ZION Node P2P | `8333/tcp` | `0.0.0.0` | Veřejný P2P — inbound z internetu |
 | ZION Pool Stratum | `8444/tcp` | `0.0.0.0` | Veřejný pool — externí minery |
 | ZION Node RPC | `8443/tcp` | `127.0.0.1` | Interní RPC (jen localhost) |
+| **ZION Public RPC** | `8443/tcp` | `77.42.71.94` | **Read-only proxy** (getBalance, getChainInfo, getTransaction...) — nginx + Python filter |
 | Tailscale | `41641/udp` | — | VPN tunnel |
 | SSH | `22/tcp` | `0.0.0.0` | Admin přístup (klíč-only) |
 
