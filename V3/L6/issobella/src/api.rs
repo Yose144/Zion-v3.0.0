@@ -2,6 +2,7 @@
 
 use crate::dao_client::{DaoClient, DaoClientConfig, DaoProposalRequest};
 use crate::db::{IssobellaDb, MissionRecord, ResearchProposal};
+use crate::hiran_bridge::IssobellaHiranBridge;
 use crate::metrics::IssobellaMetrics;
 use crate::metrics::serve_metrics_text;
 use axum::{
@@ -20,6 +21,7 @@ pub struct AppState {
     pub db: Arc<Mutex<IssobellaDb>>,
     pub api_key: String,
     pub metrics: Arc<IssobellaMetrics>,
+    pub hiran: Arc<IssobellaHiranBridge>,
 }
 
 /// Generic API response wrapper using serde_json::Value for data.
@@ -58,6 +60,10 @@ pub fn issobella_router(state: AppState) -> Router {
         .route("/api/v1/missions/:id/submit-to-dao", post(submit_mission_to_dao))
         .route("/api/v1/proposals", get(list_proposals).post(create_proposal))
         .route("/api/v1/fund/balance", get(fund_balance))
+        // ── Hiran AI endpoints ──────────────────────────────────────────────
+        .route("/api/v1/ai/evaluate-mission", post(ai_evaluate_mission))
+        .route("/api/v1/ai/analyze-proposal", post(ai_analyze_proposal))
+        .route("/api/v1/ai/hiran-health", get(ai_hiran_health))
         .with_state(state)
 }
 
@@ -188,4 +194,70 @@ async fn fund_balance(State(state): State<AppState>) -> impl IntoResponse {
         Ok(balance) => (StatusCode::OK, Json(ApiResponse::ok(balance))),
         Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(ApiResponse::err(&e.to_string()))),
     }
+}
+
+// ── Hiran AI handlers ────────────────────────────────────────────────────────
+
+#[derive(Deserialize)]
+pub struct AiEvaluateMissionRequest {
+    pub mission_name: String,
+    pub description: String,
+    pub budget_zion: u64,
+}
+
+#[derive(Serialize)]
+pub struct AiTextResponse {
+    pub result: String,
+}
+
+async fn ai_evaluate_mission(
+    State(state): State<AppState>,
+    Json(req): Json<AiEvaluateMissionRequest>,
+) -> impl IntoResponse {
+    match state
+        .hiran
+        .evaluate_mission_plan(&req.mission_name, &req.description, req.budget_zion)
+        .await
+    {
+        Ok(result) => (StatusCode::OK, Json(ApiResponse::ok(AiTextResponse { result }))),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ApiResponse::err(&e.to_string())),
+        ),
+    }
+}
+
+#[derive(Deserialize)]
+pub struct AiAnalyzeProposalRequest {
+    pub title: String,
+    pub abstract_text: String,
+}
+
+async fn ai_analyze_proposal(
+    State(state): State<AppState>,
+    Json(req): Json<AiAnalyzeProposalRequest>,
+) -> impl IntoResponse {
+    match state
+        .hiran
+        .summarize_research(&req.title, &req.abstract_text)
+        .await
+    {
+        Ok(result) => (StatusCode::OK, Json(ApiResponse::ok(AiTextResponse { result }))),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(ApiResponse::err(&e.to_string())),
+        ),
+    }
+}
+
+async fn ai_hiran_health(State(state): State<AppState>) -> impl IntoResponse {
+    let alive = state.hiran.health().await;
+    let enabled = state.hiran.is_enabled();
+    (
+        StatusCode::OK,
+        Json(ApiResponse::ok(serde_json::json!({
+            "enabled": enabled,
+            "reachable": alive,
+        }))),
+    )
 }

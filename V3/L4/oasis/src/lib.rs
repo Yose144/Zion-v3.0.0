@@ -58,6 +58,7 @@ pub mod db;
 pub mod error;
 pub mod golden_egg;
 pub mod guild;
+pub mod hiran_bridge;
 pub mod leaderboard;
 pub mod levels;
 pub mod metrics;

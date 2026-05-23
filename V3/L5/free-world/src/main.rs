@@ -56,6 +56,18 @@ async fn main() {
     let metrics = Arc::new(FreeWorldMetrics::new());
     info!("📊 Prometheus metrics: http://0.0.0.0:{}/metrics", cfg.port);
 
+    let hiran = Arc::new(FreeWorldHiranBridge::new(&cfg));
+    if cfg.hiran_enabled {
+        info!(
+            "🤖 Hiran AI enabled — endpoint: {}",
+            cfg.hiran_endpoint
+                .as_deref()
+                .unwrap_or("http://localhost:8002")
+        );
+    } else {
+        info!("Hiran AI disabled (set FREE_WORLD_HIRAN_ENABLED=true to enable)");
+    }
+
     let cors = CorsLayer::new()
         .allow_origin(Any)
         .allow_methods([Method::GET, Method::POST, Method::OPTIONS])
@@ -65,6 +77,7 @@ async fn main() {
         db: Arc::clone(&db),
         api_key: cfg.api_key.clone(),
         metrics: Arc::clone(&metrics),
+        hiran,
     };
 
     let app = free_world_router(state)
