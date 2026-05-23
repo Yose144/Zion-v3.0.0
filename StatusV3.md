@@ -89,7 +89,7 @@ zion hiran deploy --model --platform             # Deployment
 | **Edge snapshot** | ✅ Hotovo | Hetzner snapshot ID `631712387075142` — kompletní VPS image pro disaster recovery |
 | **Failover test** | ✅ Hotovo | Edge zastaven → Core miner pokračoval (height 493, žádný gap) → Edge restart úspěšný |
 | **Monitoring** | 🟡 Částečně | Prometheus + Grafana běží; node/pool-specific dashboardy potřeba dodělat |
-| **Alerting** | 🔄 Probíhá | 5 alert rules definováno; potřeba aktivovat Alertmanager + notifikační kanál |
+| **Alerting** | 🟡 Částečně | 8 alert rules (Prometheus) + Alertmanager konfigurace s webhook receiverem + šablony Discord/Slack/Email. Notifikační kanál potřeba aktivovat ručně (webhook URL). |
 | **Tailscale ACL** | 🔄 Probíhá | Ruční konfigurace v Tailscale admin UI — omezit traffic na `tag:zion` uzly |
 
 **Soubory:**
@@ -154,6 +154,28 @@ zion hiran deploy --model --platform             # Deployment
 - `scripts/zion-rpc-readonly-proxy.py` — proxy implementace
 - `scripts/zion-rpc-proxy.service` — systemd unit
 - `scripts/nginx-rpc.conf` — nginx server block
+
+### Alertmanager — Notifikace a alerting (2026-05-23)
+
+| Komponenta | Stav | Detail |
+|---|---|---|
+| **Prometheus rules** | ✅ Hotovo | 8 alert rules: `CoreNode1Down`, `CoreNode2Down`, `CoreLowPeers`, `CoreSyncStalled`, `CoreBlockRejectionSurge`, `PoolDown`, `PoolNoConnections`, `PoolHighRejectRate`, `CoreEdgeSyncGap`, `HostDown` |
+| **Alertmanager config** | ✅ Hotovo | `V3/docker/alertmanager/alertmanager.yml` — routing `critical` / `warning` + inhibition rules |
+| **Local webhook receiver** | ✅ Hotovo | `scripts/alertmanager-webhook-receiver.py` — Flask server na portu 9999, loguje alerty do `logs/alertmanager-webhook.log` |
+| **Discord šablona** | 🟡 Připraveno | Commented `discord_configs` — stačí vložit webhook URL a odkomentovat |
+| **Slack šablona** | 🟡 Připraveno | Commented `slack_configs` — stačí vložit webhook URL a odkomentovat |
+| **Email šablona** | 🟡 Připraveno | Commented `email_configs` — vyžaduje SMTP server + credentials |
+
+**Jak aktivovat notifikace:**
+1. Vyber kanál (Discord doporučeno — použito v minulých ZION ops).
+2. Vytvoř webhook v Discord/Slack a zkopíruj URL.
+3. V `V3/docker/alertmanager/alertmanager.yml` odkomentuj příslušný `discord_configs` nebo `slack_configs` blok a vlož URL.
+4. Restartuj alertmanager: `docker compose -f V3/docker/docker-compose.yml restart alertmanager`
+5. Testni: `curl -X POST http://localhost:9093/api/v1/alerts -H 'Content-Type: application/json' -d '[{"labels":{"alertname":"TestAlert","severity":"critical"},"annotations":{"summary":"Test"}}]'`
+
+**Soubory:**
+- `V3/docker/alertmanager/alertmanager.yml` — hlavní konfigurace
+- `scripts/alertmanager-webhook-receiver.py` — lokální webhook pro testování
 
 ---
 
