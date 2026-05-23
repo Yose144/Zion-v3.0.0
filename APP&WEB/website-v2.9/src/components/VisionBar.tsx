@@ -6,7 +6,7 @@ import { Sprout, Landmark, Crown, ArrowUpRight } from 'lucide-react';
 
 const VISIONS = [
   {
-    href: '/genesis',
+    href: '/terranova/genesis',
     icon: Sprout,
     label: 'Zahrada Genesis',
     desc: 'Puvodni blockchainovy kod, prvni blok, seed vedomi — zahrada stvoreni',
