@@ -1,11 +1,11 @@
 [node]
-rpc_host = "91.98.122.165"
+rpc_host = "127.0.0.1"
 rpc_port = 8443
 p2p_port = 8334
 
 [pool]
-host = "91.98.122.165"
-port = 3333
+host = "127.0.0.1"
+port = 8444
 
 [miner]
 wallet = "zion16853d8r885l4g4u8p8t7v5n8u6v7e0f445dr3f8"
@@ -19,8 +19,8 @@ url = "https://zionterranova.com/agent"
 model = "hiranyagarbha-v1"
 
 [deploy]
-default_server = "prague"
-ssh_key = "~/.ssh/zion_hetzner_key"
+default_server = "edge"
+ssh_key = "~/.ssh/ssh-key-zion-edge"
 ssh_user = "root"
 
 [bridge]
