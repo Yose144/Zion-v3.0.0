@@ -5130,6 +5130,10 @@
             <svg class="tab-icon icon" aria-hidden="true"><use href="#i-info"></use></svg>
             <span>Status</span>
           </div>
+          <div class="section-tab" data-section="ncl-compute">
+            <span class="tab-dot"></span>
+            <span>NCL Compute</span>
+          </div>
         </div>
 
         <div id="ai-chat" class="section-panel active">
@@ -5182,6 +5186,46 @@
               <button class="btn btn-primary btn-sm" id="ai-start-service">▶ Start Hiran Inference</button>
             </div>
             <div id="ai-start-result" style="margin-top:8px;font-size:11px;color:rgba(255,255,255,0.45);min-height:14px"></div>
+          </div>
+        </div>
+
+        <div id="ncl-compute" class="section-panel" style="display:none">
+          <div class="control-panel">
+            <h2 class="panel-header-title">Neural Compute Layer</h2>
+            <div class="metric-grid">
+              <div class="metric-card blue">
+                <div class="metric-kicker">ORCHESTRATOR</div>
+                <div class="metric-value blue" id="ncl-orch-status">Unknown</div>
+              </div>
+              <div class="metric-card green">
+                <div class="metric-kicker">NCL STATUS</div>
+                <div class="metric-value green" id="ncl-health">Unknown</div>
+              </div>
+              <div class="metric-card gold">
+                <div class="metric-kicker">ACTIVE WORKERS</div>
+                <div class="metric-value gold" id="ncl-worker-count">0</div>
+              </div>
+              <div class="metric-card purple">
+                <div class="metric-kicker">COMPUTE PRICE</div>
+                <div class="metric-value purple" id="ncl-compute-price">--</div>
+              </div>
+            </div>
+
+            <h3 style="margin-top:20px;font-size:14px;color:rgba(255,255,255,0.7)">Submit Compute Job</h3>
+            <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
+              <select id="ncl-job-type" style="flex:1;padding:8px;border-radius:8px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);color:white">
+                <option value="inference">Inference</option>
+                <option value="embedding">Embedding</option>
+                <option value="training">Fine-tuning</option>
+              </select>
+              <button class="btn btn-primary btn-sm" id="ncl-submit-btn">Submit Job</button>
+            </div>
+            <div id="ncl-job-result" style="margin-top:8px;font-size:11px;color:rgba(255,255,255,0.45);min-height:14px"></div>
+
+            <h3 style="margin-top:20px;font-size:14px;color:rgba(255,255,255,0.7)">Leaderboard</h3>
+            <div id="ncl-leaderboard-list" style="max-height:240px;overflow-y:auto;border-radius:10px;background:rgba(0,0,0,0.22);border:1px solid rgba(255,255,255,0.06);padding:8px;margin-top:8px">
+              <div style="color:rgba(255,255,255,0.35);text-align:center;padding:20px">Loading...</div>
+            </div>
           </div>
         </div>
       </div>
