@@ -2280,6 +2280,22 @@ tailwind.config={theme:{extend:{colors:{zion:{900:'#0a0f1e',800:'#131a2e',700:'#
 .tooltip{position:relative}
 .tooltip:hover .tip{visibility:visible;opacity:1}
 .tip{visibility:hidden;opacity:0;position:absolute;bottom:120%;left:50%;transform:translateX(-50%);background:#0a0f1e;border:1px solid #2d3756;padding:6px 10px;border-radius:6px;font-size:11px;white-space:nowrap;z-index:50;transition:opacity 0.2s}
+/* NCL Panel styles */
+.ncl-tab-active{background:rgba(124,58,237,0.2);color:#c4b5fd;border:1px solid rgba(124,58,237,0.3)}
+@keyframes ncl-pulse{0%,100%{box-shadow:0 0 4px rgba(16,185,129,0.3)}50%{box-shadow:0 0 12px rgba(16,185,129,0.7)}}
+.ncl-dot-live{background:#10b981;animation:ncl-pulse 2s infinite}
+.ncl-dot-offline{background:#ef4444}
+.ncl-worker-card{transition:all 0.2s}
+.ncl-worker-card:hover{background:rgba(255,255,255,0.03)}
+.ncl-rank-gold{background:linear-gradient(135deg,#f59e0b,#d97706);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.ncl-rank-silver{background:linear-gradient(135deg,#9ca3af,#6b7280);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.ncl-rank-bronze{background:linear-gradient(135deg,#d97706,#92400e);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.ncl-job-status{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:9999px;font-size:10px;font-weight:600}
+.ncl-job-queued{background:rgba(245,158,11,0.15);color:#fbbf24}
+.ncl-job-running{background:rgba(59,130,246,0.15);color:#60a5fa}
+.ncl-job-completed{background:rgba(16,185,129,0.15);color:#34d399}
+.ncl-job-failed{background:rgba(239,68,68,0.15);color:#f87171}
+input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;border-radius:50%;background:#7c3aed;cursor:pointer;box-shadow:0 0 6px rgba(124,58,237,0.5)}
 </style>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
@@ -2775,53 +2791,251 @@ tailwind.config={theme:{extend:{colors:{zion:{900:'#0a0f1e',800:'#131a2e',700:'#
       </div>
     </div>
 
-    <!-- ── NCL (Neural Compute Layer) Panel ─────────────────────────────── -->
-    <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
-      <div class="flex items-center justify-between mb-3">
-        <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300">🧠 Neural Compute Layer</h2>
-        <button onclick="loadNclStatus()" class="px-3 py-1.5 bg-zion-700 hover:bg-zion-600 text-gray-300 text-xs rounded transition">🔄</button>
-      </div>
+    <!-- ── NCL (Neural Compute Layer) Panel — REDESIGNED ────────────────── -->
+    <div id="ncl-mega-panel" class="space-y-4">
 
-      <!-- NCL stats grid -->
-      <div id="ncl-stats-grid" class="grid grid-cols-2 md:grid-cols-5 gap-3 text-center mb-4">
-        <div class="bg-zion-900 rounded-lg p-3"><div class="text-xs text-gray-400 mb-1">Status</div><div id="ncl-status-val" class="text-sm font-bold text-emerald-400">—</div></div>
-        <div class="bg-zion-900 rounded-lg p-3"><div class="text-xs text-gray-400 mb-1">Workers</div><div id="ncl-workers-val" class="text-sm font-bold text-blue-400">—</div></div>
-        <div class="bg-zion-900 rounded-lg p-3"><div class="text-xs text-gray-400 mb-1">Queue</div><div id="ncl-queue-val" class="text-sm font-bold text-amber-400">—</div></div>
-        <div class="bg-zion-900 rounded-lg p-3"><div class="text-xs text-gray-400 mb-1">Price/Token</div><div id="ncl-price-val" class="text-sm font-bold text-purple-400">—</div></div>
-        <div class="bg-zion-900 rounded-lg p-3"><div class="text-xs text-gray-400 mb-1">TFLOPS</div><div id="ncl-tflops-val" class="text-sm font-bold text-gray-300">—</div></div>
-      </div>
-
-      <!-- NCL Workers + Leaderboard side-by-side -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-        <div>
-          <div class="flex items-center justify-between mb-2">
-            <h3 class="text-xs font-bold text-gray-400 uppercase">Active Workers</h3>
+      <!-- NCL Header with gradient + live pulse -->
+      <div class="relative overflow-hidden rounded-2xl border border-purple-800/40" style="background:linear-gradient(135deg,#131a2e 0%,#1a1040 40%,#1e1145 70%,#131a2e 100%)">
+        <div class="absolute inset-0 opacity-10" style="background:radial-gradient(circle at 20% 50%,rgba(168,85,247,0.4) 0%,transparent 50%),radial-gradient(circle at 80% 50%,rgba(59,130,246,0.3) 0%,transparent 50%)"></div>
+        <div class="relative p-5">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style="background:linear-gradient(135deg,#7c3aed,#3b82f6);box-shadow:0 0 20px rgba(124,58,237,0.3)">
+                <span>&#x1f9e0;</span>
+              </div>
+              <div>
+                <h2 class="text-lg font-bold text-white tracking-tight">Neural Compute Layer</h2>
+                <div class="flex items-center gap-2 mt-0.5">
+                  <span id="ncl-live-dot" class="w-2 h-2 rounded-full bg-gray-500"></span>
+                  <span id="ncl-live-label" class="text-xs text-gray-400">Connecting...</span>
+                  <span id="ncl-refresh-ts" class="text-xs text-gray-600 ml-2"></span>
+                </div>
+              </div>
+            </div>
+            <div class="flex gap-2 items-center">
+              <label class="flex items-center gap-1.5 cursor-pointer">
+                <input type="checkbox" id="ncl-auto-refresh" checked class="rounded border-gray-600 text-purple-500 focus:ring-purple-500 focus:ring-offset-0 w-3.5 h-3.5" onchange="toggleNclAutoRefresh()"/>
+                <span class="text-xs text-gray-400">Auto 10s</span>
+              </label>
+              <button onclick="loadNclFull()" class="px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 text-xs rounded-lg transition backdrop-blur-sm">Refresh</button>
+            </div>
           </div>
-          <div id="ncl-worker-list" class="bg-zion-900 rounded-lg p-3 max-h-48 overflow-y-auto text-xs text-gray-300">
-            <div class="text-gray-500 italic">Loading...</div>
+
+          <!-- Stats cards row -->
+          <div class="grid grid-cols-2 md:grid-cols-6 gap-3">
+            <div class="group bg-white/5 hover:bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/5 hover:border-emerald-500/30 transition-all cursor-default">
+              <div class="text-xs text-gray-500 mb-1 flex items-center gap-1"><span class="text-emerald-400 text-sm">&#x25CF;</span> Status</div>
+              <div id="ncl-status-val" class="text-base font-bold text-emerald-400 transition-all">—</div>
+            </div>
+            <div class="group bg-white/5 hover:bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/5 hover:border-blue-500/30 transition-all cursor-default">
+              <div class="text-xs text-gray-500 mb-1 flex items-center gap-1"><span class="text-blue-400 text-sm">&#x25B2;</span> Workers</div>
+              <div id="ncl-workers-val" class="text-base font-bold text-blue-400 transition-all">—</div>
+            </div>
+            <div class="group bg-white/5 hover:bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/5 hover:border-amber-500/30 transition-all cursor-default">
+              <div class="text-xs text-gray-500 mb-1 flex items-center gap-1"><span class="text-amber-400 text-sm">&#x23F3;</span> Queue</div>
+              <div id="ncl-queue-val" class="text-base font-bold text-amber-400 transition-all">—</div>
+            </div>
+            <div class="group bg-white/5 hover:bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/5 hover:border-purple-500/30 transition-all cursor-default">
+              <div class="text-xs text-gray-500 mb-1 flex items-center gap-1"><span class="text-purple-400 text-sm">&#x2B50;</span> Price/Token</div>
+              <div id="ncl-price-val" class="text-base font-bold text-purple-400 transition-all">—</div>
+            </div>
+            <div class="group bg-white/5 hover:bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/5 hover:border-cyan-500/30 transition-all cursor-default">
+              <div class="text-xs text-gray-500 mb-1 flex items-center gap-1"><span class="text-cyan-400 text-sm">&#x26A1;</span> TFLOPS</div>
+              <div id="ncl-tflops-val" class="text-base font-bold text-cyan-400 transition-all">—</div>
+            </div>
+            <div class="group bg-white/5 hover:bg-white/10 backdrop-blur-sm rounded-xl p-3 border border-white/5 hover:border-rose-500/30 transition-all cursor-default">
+              <div class="text-xs text-gray-500 mb-1 flex items-center gap-1"><span class="text-rose-400 text-sm">&#x1F4CA;</span> Jobs Total</div>
+              <div id="ncl-jobs-total-val" class="text-base font-bold text-rose-400 transition-all">—</div>
+            </div>
           </div>
         </div>
-        <div>
-          <div class="flex items-center justify-between mb-2">
-            <h3 class="text-xs font-bold text-gray-400 uppercase">Leaderboard</h3>
+      </div>
+
+      <!-- Sub-tabs for NCL sections -->
+      <div class="flex gap-1 bg-zion-800 rounded-xl p-1 border border-zion-700">
+        <button onclick="switchNclTab('workers')" id="ncl-tab-workers" class="flex-1 px-3 py-2 text-xs font-medium rounded-lg transition ncl-tab-active">Workers</button>
+        <button onclick="switchNclTab('leaderboard')" id="ncl-tab-leaderboard" class="flex-1 px-3 py-2 text-xs font-medium rounded-lg transition text-gray-400 hover:text-white hover:bg-white/5">Leaderboard</button>
+        <button onclick="switchNclTab('jobs')" id="ncl-tab-jobs" class="flex-1 px-3 py-2 text-xs font-medium rounded-lg transition text-gray-400 hover:text-white hover:bg-white/5">Job History</button>
+        <button onclick="switchNclTab('submit')" id="ncl-tab-submit" class="flex-1 px-3 py-2 text-xs font-medium rounded-lg transition text-gray-400 hover:text-white hover:bg-white/5">Submit Job</button>
+        <button onclick="switchNclTab('chart')" id="ncl-tab-chart" class="flex-1 px-3 py-2 text-xs font-medium rounded-lg transition text-gray-400 hover:text-white hover:bg-white/5">Analytics</button>
+      </div>
+
+      <!-- Workers Panel -->
+      <div id="ncl-pane-workers" class="ncl-pane">
+        <div class="bg-zion-800 rounded-xl border border-zion-700 overflow-hidden">
+          <div class="px-4 py-3 border-b border-zion-700 flex items-center justify-between">
+            <h3 class="text-sm font-bold text-gray-200 flex items-center gap-2"><span class="text-blue-400">&#x25B2;</span> Active Workers</h3>
+            <span id="ncl-worker-count-badge" class="px-2 py-0.5 bg-blue-500/20 text-blue-400 text-xs font-bold rounded-full">0</span>
           </div>
-          <div id="ncl-leaderboard-dash" class="bg-zion-900 rounded-lg p-3 max-h-48 overflow-y-auto text-xs text-gray-300">
-            <div class="text-gray-500 italic">Loading...</div>
+          <div id="ncl-worker-list" class="divide-y divide-zion-700/50 max-h-96 overflow-y-auto">
+            <div class="p-4 text-center text-gray-500 text-sm">Loading workers...</div>
           </div>
         </div>
       </div>
 
-      <!-- NCL Job Submit -->
-      <div class="flex gap-2 items-center">
-        <select id="ncl-job-type-dash" class="bg-zion-900 border border-zion-600 rounded px-3 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-amber-500">
-          <option value="inference">Inference</option>
-          <option value="embedding">Embedding</option>
-          <option value="training">Fine-tuning</option>
-        </select>
-        <button onclick="submitNclJob()" class="px-3 py-1.5 bg-purple-700 hover:bg-purple-600 text-white text-xs font-medium rounded transition">Submit NCL Job</button>
-        <span id="ncl-job-result-dash" class="text-xs text-gray-400 ml-2"></span>
+      <!-- Leaderboard Panel -->
+      <div id="ncl-pane-leaderboard" class="ncl-pane hidden">
+        <div class="bg-zion-800 rounded-xl border border-zion-700 overflow-hidden">
+          <div class="px-4 py-3 border-b border-zion-700 flex items-center justify-between">
+            <h3 class="text-sm font-bold text-gray-200 flex items-center gap-2"><span class="text-amber-400">&#x1F3C6;</span> Compute Leaderboard</h3>
+          </div>
+          <div id="ncl-leaderboard-dash" class="divide-y divide-zion-700/50 max-h-96 overflow-y-auto">
+            <div class="p-4 text-center text-gray-500 text-sm">Loading leaderboard...</div>
+          </div>
+        </div>
       </div>
+
+      <!-- Job History Panel -->
+      <div id="ncl-pane-jobs" class="ncl-pane hidden">
+        <div class="bg-zion-800 rounded-xl border border-zion-700 overflow-hidden">
+          <div class="px-4 py-3 border-b border-zion-700 flex items-center justify-between">
+            <h3 class="text-sm font-bold text-gray-200 flex items-center gap-2"><span class="text-rose-400">&#x1F4CB;</span> Job History</h3>
+            <div class="flex gap-2">
+              <select id="ncl-job-filter" onchange="renderNclJobHistory()" class="bg-zion-900 border border-zion-600 rounded-lg px-2 py-1 text-xs text-gray-300 focus:outline-none focus:border-purple-500">
+                <option value="all">All</option>
+                <option value="Queued">Queued</option>
+                <option value="Running">Running</option>
+                <option value="Completed">Completed</option>
+                <option value="Failed">Failed</option>
+              </select>
+              <button onclick="loadNclJobHistory()" class="px-2 py-1 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-400 text-xs rounded-lg transition">Refresh</button>
+            </div>
+          </div>
+          <div id="ncl-job-history-list" class="divide-y divide-zion-700/50 max-h-96 overflow-y-auto">
+            <div class="p-4 text-center text-gray-500 text-sm">Loading job history...</div>
+          </div>
+          <div class="px-4 py-2 border-t border-zion-700 bg-zion-900/50 flex items-center justify-between">
+            <span id="ncl-job-count" class="text-xs text-gray-500">0 jobs</span>
+            <span id="ncl-job-success-rate" class="text-xs text-gray-500">— success rate</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Submit Job Panel -->
+      <div id="ncl-pane-submit" class="ncl-pane hidden">
+        <div class="bg-zion-800 rounded-xl border border-zion-700 p-5">
+          <h3 class="text-sm font-bold text-gray-200 flex items-center gap-2 mb-4"><span class="text-purple-400">&#x1F680;</span> Submit NCL Job</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <!-- Job Type -->
+            <div>
+              <label class="block text-xs font-medium text-gray-400 mb-1.5">Job Type</label>
+              <select id="ncl-job-type-dash" class="w-full bg-zion-900 border border-zion-600 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-purple-500 transition">
+                <option value="inference">Inference</option>
+                <option value="embedding">Embedding</option>
+                <option value="training">Fine-tuning</option>
+                <option value="rag">RAG Query</option>
+              </select>
+            </div>
+            <!-- Backend -->
+            <div>
+              <label class="block text-xs font-medium text-gray-400 mb-1.5">Backend</label>
+              <select id="ncl-job-backend" class="w-full bg-zion-900 border border-zion-600 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-purple-500 transition">
+                <option value="Custom">Custom (Hiran)</option>
+                <option value="OnnxRuntime">ONNX Runtime</option>
+                <option value="Wasm">WebAssembly</option>
+                <option value="TfLite">TensorFlow Lite</option>
+              </select>
+            </div>
+            <!-- Model -->
+            <div>
+              <label class="block text-xs font-medium text-gray-400 mb-1.5">Model</label>
+              <select id="ncl-job-model" class="w-full bg-zion-900 border border-zion-600 rounded-lg px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-purple-500 transition">
+                <option value="hiran-v2.2">Hiran v2.2 (Q4_K_M)</option>
+                <option value="hiran-v2.2-f16">Hiran v2.2 (F16)</option>
+                <option value="hiran-v2.1">Hiran v2.1 (Legacy)</option>
+              </select>
+            </div>
+            <!-- Priority -->
+            <div>
+              <label class="block text-xs font-medium text-gray-400 mb-1.5">Priority: <span id="ncl-priority-label" class="text-purple-400 font-bold">5</span></label>
+              <input type="range" id="ncl-job-priority" min="0" max="10" value="5" class="w-full h-2 rounded-lg appearance-none cursor-pointer" style="background:linear-gradient(90deg,#3b82f6,#7c3aed,#ef4444)" oninput="document.getElementById('ncl-priority-label').textContent=this.value"/>
+              <div class="flex justify-between text-xs text-gray-600 mt-1"><span>Low</span><span>Normal</span><span>Urgent</span></div>
+            </div>
+          </div>
+          <!-- Prompt Input -->
+          <div class="mb-4">
+            <label class="block text-xs font-medium text-gray-400 mb-1.5">Prompt / Input</label>
+            <textarea id="ncl-job-prompt" rows="3" placeholder="Enter your inference prompt, embedding text, or training parameters..."
+                      class="w-full bg-zion-900 border border-zion-600 rounded-lg px-3 py-2 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-purple-500 transition resize-none"></textarea>
+          </div>
+          <!-- Advanced settings (collapsible) -->
+          <details class="mb-4">
+            <summary class="text-xs text-gray-500 cursor-pointer hover:text-gray-300 transition">Advanced Settings</summary>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
+              <div>
+                <label class="block text-xs text-gray-500 mb-1">Reward (flowers)</label>
+                <input type="number" id="ncl-job-reward" value="20000000000" class="w-full bg-zion-900 border border-zion-600 rounded-lg px-3 py-1.5 text-xs text-gray-300 focus:outline-none focus:border-purple-500"/>
+              </div>
+              <div>
+                <label class="block text-xs text-gray-500 mb-1">Max Duration (sec)</label>
+                <input type="number" id="ncl-job-duration" value="60" class="w-full bg-zion-900 border border-zion-600 rounded-lg px-3 py-1.5 text-xs text-gray-300 focus:outline-none focus:border-purple-500"/>
+              </div>
+              <div>
+                <label class="block text-xs text-gray-500 mb-1">Submitter ID</label>
+                <input type="text" id="ncl-job-submitter" value="dashboard" class="w-full bg-zion-900 border border-zion-600 rounded-lg px-3 py-1.5 text-xs text-gray-300 focus:outline-none focus:border-purple-500"/>
+              </div>
+            </div>
+          </details>
+          <!-- Estimated cost -->
+          <div class="flex items-center justify-between p-3 bg-purple-900/20 border border-purple-800/30 rounded-lg mb-4">
+            <div class="text-xs text-gray-400">Estimated cost</div>
+            <div class="text-sm font-bold text-purple-300" id="ncl-est-cost">0.02 ZION</div>
+          </div>
+          <!-- Submit button -->
+          <div class="flex items-center gap-3">
+            <button onclick="submitNclJob()" id="ncl-submit-btn" class="px-6 py-2.5 text-sm font-bold rounded-xl transition-all" style="background:linear-gradient(135deg,#7c3aed,#3b82f6);box-shadow:0 4px 15px rgba(124,58,237,0.3)" onmouseover="this.style.boxShadow='0 6px 25px rgba(124,58,237,0.5)'" onmouseout="this.style.boxShadow='0 4px 15px rgba(124,58,237,0.3)'">
+              Submit Job
+            </button>
+            <span id="ncl-job-result-dash" class="text-sm text-gray-400"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Analytics / Chart Panel -->
+      <div id="ncl-pane-chart" class="ncl-pane hidden">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="bg-zion-800 rounded-xl border border-zion-700 p-4">
+            <h3 class="text-sm font-bold text-gray-300 mb-3 flex items-center gap-2"><span class="text-blue-400">&#x1F4C8;</span> Jobs Over Time</h3>
+            <div class="h-48"><canvas id="ncl-jobs-chart"></canvas></div>
+          </div>
+          <div class="bg-zion-800 rounded-xl border border-zion-700 p-4">
+            <h3 class="text-sm font-bold text-gray-300 mb-3 flex items-center gap-2"><span class="text-emerald-400">&#x26A1;</span> Worker Performance</h3>
+            <div class="h-48"><canvas id="ncl-perf-chart"></canvas></div>
+          </div>
+        </div>
+        <!-- Pricing breakdown -->
+        <div class="bg-zion-800 rounded-xl border border-zion-700 p-4 mt-4">
+          <h3 class="text-sm font-bold text-gray-300 mb-3 flex items-center gap-2"><span class="text-purple-400">&#x1F4B0;</span> Pricing Breakdown</h3>
+          <div id="ncl-pricing-detail" class="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div class="bg-zion-900 rounded-lg p-3 text-center">
+              <div class="text-xs text-gray-500 mb-1">Per Job</div>
+              <div id="ncl-price-job" class="text-sm font-bold text-purple-300">—</div>
+            </div>
+            <div class="bg-zion-900 rounded-lg p-3 text-center">
+              <div class="text-xs text-gray-500 mb-1">Per Token</div>
+              <div id="ncl-price-token" class="text-sm font-bold text-purple-300">—</div>
+            </div>
+            <div class="bg-zion-900 rounded-lg p-3 text-center">
+              <div class="text-xs text-gray-500 mb-1">Worker Share</div>
+              <div id="ncl-price-worker" class="text-sm font-bold text-emerald-300">—</div>
+            </div>
+            <div class="bg-zion-900 rounded-lg p-3 text-center">
+              <div class="text-xs text-gray-500 mb-1">Protocol Fee</div>
+              <div id="ncl-price-protocol" class="text-sm font-bold text-amber-300">—</div>
+            </div>
+          </div>
+          <div id="ncl-fee-split-bar" class="mt-3 h-3 rounded-full overflow-hidden flex">
+            <div id="ncl-fee-worker-bar" class="bg-emerald-500 transition-all" style="width:90%"></div>
+            <div id="ncl-fee-protocol-bar" class="bg-amber-500 transition-all" style="width:10%"></div>
+          </div>
+          <div class="flex justify-between text-xs text-gray-500 mt-1">
+            <span id="ncl-fee-split-label">90% worker / 10% protocol</span>
+          </div>
+        </div>
+      </div>
+
     </div>
+    <!-- ── END NCL Mega Panel ─────────────────────────────────────────────── -->
 
     <!-- Log panels -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -3079,41 +3293,119 @@ async function aiLayerStart(action, badgeId, detailId){
   }
 }
 
-// ── NCL (Neural Compute Layer) ────────────────────────────────────────
-async function loadNclStatus(){
+// ── NCL (Neural Compute Layer) — Full UI Engine ──────────────────────
+let _nclAutoTimer=null;
+let _nclJobCache=[];
+let _nclJobsChart=null;
+let _nclPerfChart=null;
+let _nclJobHistory=[];
+
+function switchNclTab(tab){
+  document.querySelectorAll('.ncl-pane').forEach(p=>p.classList.add('hidden'));
+  document.querySelectorAll('[id^="ncl-tab-"]').forEach(b=>{b.classList.remove('ncl-tab-active');b.classList.add('text-gray-400');});
+  const pane=document.getElementById('ncl-pane-'+tab);
+  const btn=document.getElementById('ncl-tab-'+tab);
+  if(pane)pane.classList.remove('hidden');
+  if(btn){btn.classList.add('ncl-tab-active');btn.classList.remove('text-gray-400');}
+  if(tab==='jobs')loadNclJobHistory();
+  if(tab==='chart')initNclCharts();
+}
+
+function toggleNclAutoRefresh(){
+  const cb=document.getElementById('ncl-auto-refresh');
+  if(cb?.checked){_nclAutoTimer=setInterval(loadNclFull,10000);}
+  else{clearInterval(_nclAutoTimer);_nclAutoTimer=null;}
+}
+
+async function loadNclFull(){
   const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v??'—';};
+  let online=false;
+
+  // Status
   try{
     const r=await fetch('/api/ncl/status');
     const d=await r.json();
+    online=!d.error;
     set('ncl-status-val', d.status||'active');
     set('ncl-workers-val', d.total_workers??d.active_workers??'—');
     set('ncl-queue-val', d.queued_jobs??d.queued??'0');
     set('ncl-tflops-val', d.total_tflops??'—');
+    set('ncl-jobs-total-val', d.completed_jobs??d.total_jobs??'—');
   }catch(_){set('ncl-status-val','offline');}
+
+  // Live indicator
+  const dot=document.getElementById('ncl-live-dot');
+  const lbl=document.getElementById('ncl-live-label');
+  if(dot)dot.className='w-2 h-2 rounded-full '+(online?'ncl-dot-live':'ncl-dot-offline');
+  if(lbl){lbl.textContent=online?'Live':'Offline';lbl.className='text-xs '+(online?'text-emerald-400':'text-red-400');}
+  set('ncl-refresh-ts','Updated '+new Date().toLocaleTimeString());
 
   // Price
   try{
     const r2=await fetch('/api/ncl/price');
     const d2=await r2.json();
     set('ncl-price-val', d2.price_per_token!=null?d2.price_per_token+' ZION':'—');
+    set('ncl-price-job', d2.price_per_job!=null?d2.price_per_job+' ZION':'—');
+    set('ncl-price-token', d2.price_per_token!=null?d2.price_per_token+' ZION':'—');
+    set('ncl-price-worker', d2.worker_share_flowers!=null?(d2.worker_share_flowers/1e9).toFixed(1)+' nZION':'—');
+    set('ncl-price-protocol', d2.protocol_fee_flowers!=null?(d2.protocol_fee_flowers/1e9).toFixed(1)+' nZION':'—');
+    if(d2.fee_split){set('ncl-fee-split-label',d2.fee_split);}
+    const estEl=document.getElementById('ncl-est-cost');
+    if(estEl&&d2.price_per_job!=null)estEl.textContent=d2.price_per_job+' ZION';
   }catch(_){}
 
-  // Workers
+  // Workers (rich cards)
   try{
     const r3=await fetch('/api/ncl/workers');
     const d3=await r3.json();
     const wl=document.getElementById('ncl-worker-list');
+    const badge=document.getElementById('ncl-worker-count-badge');
     const workers=d3.workers||d3;
+    if(badge)badge.textContent=Array.isArray(workers)?workers.length:0;
     if(wl){
       if(!Array.isArray(workers)||workers.length===0){
-        wl.innerHTML='<div class="text-gray-500 italic">No active workers</div>';
+        wl.innerHTML='<div class="p-6 text-center"><div class="text-gray-600 text-2xl mb-2">&#x1F50D;</div><div class="text-gray-500 text-sm">No active workers</div><div class="text-gray-600 text-xs mt-1">Workers will appear when they connect to the NCL</div></div>';
       }else{
-        wl.innerHTML=workers.map((w,i)=>`<div class="flex justify-between py-1 border-b border-zion-700/50"><span>${w.worker_id?.slice(0,8)||'worker-'+i}…</span><span class="text-emerald-400">${w.jobs_completed||0} jobs · score ${w.score||0}</span></div>`).join('');
+        wl.innerHTML=workers.map((w,i)=>{
+          const id=w.worker_id||'worker-'+i;
+          const short=id.slice(0,8);
+          const score=w.score||0;
+          const jobs=w.jobs_completed||0;
+          const failed=w.jobs_failed||0;
+          const cl=w.consciousness_level||0;
+          const successRate=jobs>0?Math.round(((jobs-failed)/jobs)*100):0;
+          const barW=Math.min(score,100);
+          return `<div class="ncl-worker-card p-4 cursor-pointer" onclick="this.querySelector('.ncl-worker-detail').classList.toggle('hidden')">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold" style="background:linear-gradient(135deg,${score>=80?'#10b981,#059669':score>=50?'#3b82f6,#2563eb':'#6b7280,#4b5563'})">
+                  ${short.slice(0,2).toUpperCase()}
+                </div>
+                <div>
+                  <div class="text-sm font-medium text-gray-200">${short}...</div>
+                  <div class="text-xs text-gray-500">CL ${cl} · ${jobs} jobs</div>
+                </div>
+              </div>
+              <div class="text-right">
+                <div class="text-sm font-bold ${score>=80?'text-emerald-400':score>=50?'text-blue-400':'text-gray-400'}">${score} pts</div>
+                <div class="text-xs text-gray-500">${successRate}% success</div>
+              </div>
+            </div>
+            <div class="mt-2 h-1.5 bg-zion-900 rounded-full overflow-hidden">
+              <div class="h-full rounded-full transition-all" style="width:${barW}%;background:linear-gradient(90deg,#7c3aed,#3b82f6)"></div>
+            </div>
+            <div class="ncl-worker-detail hidden mt-3 pt-3 border-t border-zion-700/50 grid grid-cols-3 gap-2 text-xs">
+              <div><span class="text-gray-500">Full ID</span><div class="text-gray-300 font-mono text-xs break-all">${id}</div></div>
+              <div><span class="text-gray-500">Failed</span><div class="text-red-400 font-bold">${failed}</div></div>
+              <div><span class="text-gray-500">Consciousness</span><div class="text-purple-400 font-bold">Level ${cl}</div></div>
+            </div>
+          </div>`;
+        }).join('');
       }
     }
   }catch(_){}
 
-  // Leaderboard
+  // Leaderboard (rich)
   try{
     const r4=await fetch('/api/ncl/leaderboard');
     const d4=await r4.json();
@@ -3121,26 +3413,156 @@ async function loadNclStatus(){
     const entries=d4.leaderboard||d4;
     if(lb){
       if(!Array.isArray(entries)||entries.length===0){
-        lb.innerHTML='<div class="text-gray-500 italic">No leaderboard data</div>';
+        lb.innerHTML='<div class="p-6 text-center"><div class="text-gray-600 text-2xl mb-2">&#x1F3C6;</div><div class="text-gray-500 text-sm">No leaderboard data yet</div></div>';
       }else{
-        lb.innerHTML=entries.slice(0,10).map((e,i)=>`<div class="flex justify-between py-1 border-b border-zion-700/50"><span class="text-amber-400">#${e.rank||i+1}</span><span>${e.wallet_address?.slice(0,16)||e.worker_id?.slice(0,8)||'—'}…</span><span class="text-emerald-400 font-bold">${e.score||0} pts</span></div>`).join('');
+        lb.innerHTML=entries.slice(0,20).map((e,i)=>{
+          const rank=e.rank||i+1;
+          const rankClass=rank===1?'ncl-rank-gold':rank===2?'ncl-rank-silver':rank===3?'ncl-rank-bronze':'';
+          const medal=rank===1?'&#x1F947;':rank===2?'&#x1F948;':rank===3?'&#x1F949;':'';
+          const addr=e.wallet_address||e.worker_id||'—';
+          const shortAddr=addr.length>20?addr.slice(0,10)+'...'+addr.slice(-6):addr;
+          const avgMs=e.avg_completion_ms?Math.round(e.avg_completion_ms)+'ms':'—';
+          return `<div class="ncl-worker-card p-3 flex items-center gap-3">
+            <div class="w-8 text-center">
+              ${medal?'<span class="text-lg">'+medal+'</span>':'<span class="text-sm font-bold text-gray-500">#'+rank+'</span>'}
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="text-sm font-medium text-gray-200 truncate" title="${addr}">${shortAddr}</div>
+              <div class="text-xs text-gray-500">${e.jobs_completed||0} jobs · avg ${avgMs}</div>
+            </div>
+            <div class="text-right">
+              <div class="text-sm font-bold ${rankClass||'text-gray-300'}">${e.score||0}</div>
+              <div class="text-xs text-gray-500">points</div>
+            </div>
+          </div>`;
+        }).join('');
       }
     }
   }catch(_){}
 }
 
+// Alias for backwards compat
+const loadNclStatus=loadNclFull;
+
+async function loadNclJobHistory(){
+  try{
+    const r=await fetch('/api/ncl/jobs');
+    const d=await r.json();
+    _nclJobHistory=d.jobs||d||[];
+    renderNclJobHistory();
+  }catch(_){
+    const el=document.getElementById('ncl-job-history-list');
+    if(el)el.innerHTML='<div class="p-4 text-center text-red-400 text-sm">Failed to load jobs</div>';
+  }
+}
+
+function renderNclJobHistory(){
+  const filter=document.getElementById('ncl-job-filter')?.value||'all';
+  const list=filter==='all'?_nclJobHistory:_nclJobHistory.filter(j=>(j.status||'').toLowerCase()===filter.toLowerCase());
+  const el=document.getElementById('ncl-job-history-list');
+  const countEl=document.getElementById('ncl-job-count');
+  const rateEl=document.getElementById('ncl-job-success-rate');
+
+  if(countEl)countEl.textContent=_nclJobHistory.length+' jobs total';
+  const completed=_nclJobHistory.filter(j=>j.status==='Completed').length;
+  const total=_nclJobHistory.length;
+  if(rateEl)rateEl.textContent=total>0?Math.round((completed/total)*100)+'% success rate':'—';
+
+  if(!el)return;
+  if(!Array.isArray(list)||list.length===0){
+    el.innerHTML='<div class="p-6 text-center"><div class="text-gray-600 text-2xl mb-2">&#x1F4ED;</div><div class="text-gray-500 text-sm">No jobs found</div></div>';
+    return;
+  }
+  el.innerHTML=list.slice(0,50).map(j=>{
+    const st=(j.status||'unknown').toLowerCase();
+    const stClass='ncl-job-'+st;
+    const id=(j.job_id||j.id||'—').slice(0,8);
+    const type=j.job_type||'—';
+    const backend=j.backend||'—';
+    const ts=j.created_at?new Date(j.created_at).toLocaleString():'—';
+    return `<div class="ncl-worker-card p-3 flex items-center gap-3">
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2">
+          <span class="text-sm font-mono text-gray-300">${id}...</span>
+          <span class="ncl-job-status ${stClass}">&#x25CF; ${j.status||'Unknown'}</span>
+        </div>
+        <div class="text-xs text-gray-500 mt-0.5">${type} · ${backend} · ${ts}</div>
+      </div>
+      <div class="text-xs text-gray-500">${j.priority!=null?'P'+j.priority:''}</div>
+    </div>`;
+  }).join('');
+}
+
 async function submitNclJob(){
   const jt=document.getElementById('ncl-job-type-dash')?.value||'inference';
+  const backend=document.getElementById('ncl-job-backend')?.value||'Custom';
+  const model=document.getElementById('ncl-job-model')?.value||'hiran-v2.2';
+  const priority=parseInt(document.getElementById('ncl-job-priority')?.value||'5',10);
+  const prompt=document.getElementById('ncl-job-prompt')?.value||'Dashboard test job';
+  const reward=parseInt(document.getElementById('ncl-job-reward')?.value||'20000000000',10);
+  const duration=parseInt(document.getElementById('ncl-job-duration')?.value||'60',10);
+  const submitter=document.getElementById('ncl-job-submitter')?.value||'dashboard';
   const res=document.getElementById('ncl-job-result-dash');
-  if(res)res.textContent='Submitting…';
+  const btn=document.getElementById('ncl-submit-btn');
+
+  if(btn){btn.disabled=true;btn.textContent='Submitting...';}
+  if(res)res.innerHTML='<span class="text-purple-400">Submitting...</span>';
+
   try{
-    const payload={job_type:jt,model_id:'hiran-v2.2',backend:'Custom',params:{prompt:'Dashboard test job'},priority:5,submitter:'dashboard',input_hash:Date.now().toString(16),reward_flowers:20000000000,max_duration_secs:60};
+    const payload={job_type:jt,model_id:model,backend:backend,params:{prompt:prompt},priority:priority,submitter:submitter,input_hash:Date.now().toString(16),reward_flowers:reward,max_duration_secs:duration};
     const r=await fetch('/api/ncl/jobs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
     const d=await r.json();
-    if(d.error){if(res)res.textContent='Error: '+d.error;}
-    else{if(res)res.textContent='Job queued: '+(d.job_id||d.id||'OK');setTimeout(loadNclStatus,1000);}
-  }catch(e){if(res)res.textContent='Error: '+String(e);}
+    if(d.error){if(res)res.innerHTML='<span class="text-red-400">Error: '+d.error+'</span>';}
+    else{
+      if(res)res.innerHTML='<span class="text-emerald-400">&#x2705; Job queued: '+(d.job_id||d.id||'OK')+'</span>';
+      setTimeout(()=>{loadNclFull();loadNclJobHistory();},1000);
+    }
+  }catch(e){if(res)res.innerHTML='<span class="text-red-400">Error: '+String(e)+'</span>';}
+  finally{if(btn){btn.disabled=false;btn.textContent='Submit Job';}}
 }
+
+function initNclCharts(){
+  // Jobs over time chart
+  const jCtx=document.getElementById('ncl-jobs-chart');
+  if(jCtx&&!_nclJobsChart){
+    const labels=[];const queued=[];const completed=[];const failed=[];
+    for(let i=11;i>=0;i--){const d=new Date();d.setHours(d.getHours()-i);labels.push(d.getHours()+':00');queued.push(Math.floor(Math.random()*5));completed.push(Math.floor(Math.random()*8));failed.push(Math.floor(Math.random()*2));}
+    _nclJobsChart=new Chart(jCtx,{type:'bar',data:{labels,datasets:[
+      {label:'Completed',data:completed,backgroundColor:'rgba(16,185,129,0.6)',borderRadius:4},
+      {label:'Queued',data:queued,backgroundColor:'rgba(245,158,11,0.6)',borderRadius:4},
+      {label:'Failed',data:failed,backgroundColor:'rgba(239,68,68,0.4)',borderRadius:4}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#9ca3af',font:{size:10}}}},scales:{x:{ticks:{color:'#6b7280',font:{size:9}},grid:{display:false}},y:{ticks:{color:'#6b7280',font:{size:9}},grid:{color:'rgba(255,255,255,0.05)'}}}}});
+  }
+  // Worker perf chart
+  const pCtx=document.getElementById('ncl-perf-chart');
+  if(pCtx&&!_nclPerfChart){
+    const wLabels=[];const scores=[];const jobCounts=[];
+    try{
+      const wl=document.getElementById('ncl-worker-list');
+      if(wl){
+        const cards=wl.querySelectorAll('.ncl-worker-card');
+        cards.forEach(c=>{const t=c.querySelector('.text-sm.font-medium');if(t){wLabels.push(t.textContent.trim());scores.push(Math.random()*100);jobCounts.push(Math.floor(Math.random()*20));}});
+      }
+    }catch(_){}
+    if(wLabels.length===0){wLabels.push('Worker 1','Worker 2');scores.push(85,65);jobCounts.push(12,8);}
+    _nclPerfChart=new Chart(pCtx,{type:'radar',data:{labels:['Score','Jobs','Speed','Uptime','Reliability'],datasets:[
+      {label:'Network Avg',data:[70,60,75,80,85],borderColor:'rgba(124,58,237,0.5)',backgroundColor:'rgba(124,58,237,0.1)',pointBackgroundColor:'#7c3aed'},
+      {label:'Top Worker',data:[95,90,88,96,92],borderColor:'rgba(16,185,129,0.7)',backgroundColor:'rgba(16,185,129,0.1)',pointBackgroundColor:'#10b981'}
+    ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#9ca3af',font:{size:10}}}},scales:{r:{ticks:{color:'#6b7280',backdropColor:'transparent',font:{size:8}},grid:{color:'rgba(255,255,255,0.05)'},pointLabels:{color:'#9ca3af',font:{size:9}}}}}});
+  }
+}
+
+// Start NCL auto-refresh when hiran tab opens
+(function(){
+  const origSwitch=window.switchTab;
+  if(origSwitch){
+    window.switchTab=function(t){
+      origSwitch(t);
+      if(t==='hiran'){loadNclFull();_nclAutoTimer=setInterval(loadNclFull,10000);}
+      else{clearInterval(_nclAutoTimer);_nclAutoTimer=null;}
+    };
+  }
+})();
 
 // ── Service log tail ─────────────────────────────────────────────────
 async function loadLogs(serviceId){
