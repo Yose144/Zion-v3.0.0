@@ -17,7 +17,7 @@ const PRIMARY_MAINNET_HOST = '77.42.71.94';
 const PRIMARY_POOL_PORT = 8444;
 const PRIMARY_RPC_PORT = 8443;
 // Edge VPN IP (Tailscale) for RPC access
-const EDGE_VPN_HOST = '100.66.162.125';
+const EDGE_VPN_HOST = '100.76.16.108';
 // Legacy alias kept for internal fallback references
 const PRIMARY_TESTNET_HOST = PRIMARY_MAINNET_HOST;
 // Default to public Edge read-only RPC for public miners.

@@ -20,7 +20,7 @@ Write-Host "Data directories cleaned" -ForegroundColor Green
 # Step 3: Start Core server
 Write-Host "[3/5] Starting Core server..." -ForegroundColor Yellow
 $env:ZION_TOPOLOGY='CORE'
-$env:EDGE_TS_IP='100.66.162.125'
+$env:EDGE_TS_IP='100.76.16.108'
 powershell -ExecutionPolicy Bypass -File "$PSScriptRoot\_launch-core.ps1"
 Start-Sleep -Seconds 5
 

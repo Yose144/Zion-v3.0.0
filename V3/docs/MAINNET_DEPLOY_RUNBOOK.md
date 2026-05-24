@@ -17,7 +17,7 @@ Use this for deploys that touch:
 Current live topology:
 
 - **Core:** Windows 11 node (Tailscale `100.86.102.5`)
-- **Edge:** Hetzner VPS relay (Tailscale `100.66.162.125`, public `77.42.71.94`)
+- **Edge:** Hetzner VPS relay (Tailscale `100.76.16.108`, public `77.42.71.94`)
 
 ## 1. Local Preflight
 
@@ -43,7 +43,7 @@ Set the remote repo root once before rollout.
 
 ```bash
 export REMOTE_DIR="/path/to/deployed/2.9.6"
-export NODES="100.66.162.125 77.42.71.94"
+export NODES="100.76.16.108 77.42.71.94"
 ```
 
 For audited fleet nodes, write `SEED_PEERS` per host and exclude the host's own public address. Fresh external nodes can still bootstrap from the full public list.
@@ -130,7 +130,7 @@ Confirm all nodes agree on:
 Use Edge as the primary observation point.
 
 ```bash
-ssh root@100.66.162.125 '
+ssh root@100.76.16.108 '
 last=$(printf "%s\n" "{\"jsonrpc\":\"2.0\",\"method\":\"getChainInfo\",\"params\":[],\"id\":1}" | nc -w 2 127.0.0.1 8443 | python3 -c "import sys,json; print(json.load(sys.stdin)[\"result\"][\"chain_height\"])")
 echo "starting_height=${last}"
 while true; do
@@ -151,7 +151,7 @@ Replace `HEIGHT` with the first new block height observed after deploy.
 ```bash
 export HEIGHT=465
 
-ssh root@100.66.162.125 "printf '%s\n' '{\"jsonrpc\":\"2.0\",\"method\":\"getBlockByHeight\",\"params\":[${HEIGHT}],\"id\":1}' | nc -w 2 127.0.0.1 8443"
+ssh root@100.76.16.108 "printf '%s\n' '{\"jsonrpc\":\"2.0\",\"method\":\"getBlockByHeight\",\"params\":[${HEIGHT}],\"id\":1}' | nc -w 2 127.0.0.1 8443"
 ```
 
 For fee-split rollouts, verify in the returned block:
@@ -174,9 +174,9 @@ Expected 2026-03-28 split example:
 Edge primary host:
 
 ```bash
-ssh root@100.66.162.125 "docker logs --since 20m zion-pool | tail -120"
-ssh root@100.66.162.125 "docker logs --since 20m zion-miner | tail -120"
-ssh root@100.66.162.125 "curl -s http://127.0.0.1:8080/stats"
+ssh root@100.76.16.108 "docker logs --since 20m zion-pool | tail -120"
+ssh root@100.76.16.108 "docker logs --since 20m zion-miner | tail -120"
+ssh root@100.76.16.108 "curl -s http://127.0.0.1:8080/stats"
 ```
 
 Acceptable immediately after restart:

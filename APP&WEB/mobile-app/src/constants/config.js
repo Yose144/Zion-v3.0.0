@@ -10,7 +10,7 @@ export const CONFIG = {
       chainId: 'zion-mainnet-1',
       rpcNodes: [
         'http://77.42.71.94:8443/jsonrpc',
-        'http://100.66.162.125:8443/jsonrpc',
+        'http://100.76.16.108:8443/jsonrpc',
       ],
       poolHost: '77.42.71.94',
       poolPort: 8444,

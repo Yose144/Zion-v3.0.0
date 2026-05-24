@@ -226,7 +226,7 @@ export default function CH3SettingsPage() {
     }
   };
 
-  if (loading) {
+  if (loading || !settings) {
     return (
       <div className="flex items-center justify-center">
         <div className="text-yellow-400 text-2xl animate-pulse">Loading CH v3 Settings...</div>

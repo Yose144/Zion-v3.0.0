@@ -333,7 +333,7 @@ Desktop Agent (Hiran AI)   →  localhost:8002
 | **GPU** | AMD RX 5600 XT |
 | **Backend** | OpenCL (`gfx1010:xnack-`) |
 | **Hashrate** | **~5–10 KH/s** sustained (pool stratum) |
-| **Pool** | Local `127.0.0.1:8444` → Edge relay `100.66.162.125:8444` |
+| **Pool** | Local `127.0.0.1:8444` → Edge relay `100.76.16.108:8444` |
 | **Shares** | 100 % accept rate (6/0) |
 | **Vardiff** | Auto-retarget 1 → 4 |
 | **Loop count** | 1,000,000 (optimalizace pro GPU) |
@@ -350,7 +350,7 @@ Desktop Agent (Hiran AI)   →  localhost:8002
 
 ```
 Core (Windows 11)          Edge (Hetzner VPS)
-100.86.102.5              100.66.162.125
+100.86.102.5              100.76.16.108
     ↓ Tailscale VPN              ↓
 Node1 (height 100+)         Node (height 100+)
 Node2 (follower)            Public P2P: 8333
@@ -419,7 +419,7 @@ top_p = 0.9
 |---|---|---|
 | **Edge Pool server** | ✅ Hotovo | Pool běží na VPS (`77.42.71.94:8444`) jako **Edge** — přijímá share od minerů a relayuje je do Core poolu přes `ShareRelay` zprávu |
 | **ShareRelay protokol** | ✅ Hotovo | Nová `PoolMessage::ShareRelay` (miner_id, worker_name, height, difficulty, relay_origin); fire-and-forget TCP relay do upstream poolu |
-| **Tailscale VPN tunel** | ✅ Hotovo | Core PC (`100.86.102.5`) ↔ Edge VPS (`100.66.162.125`) — P2P (8333) + Pool (8444) dostupné přes VPN |
+| **Tailscale VPN tunel** | ✅ Hotovo | Core PC (`100.86.102.5`) ↔ Edge VPS (`100.76.16.108`) — P2P (8333) + Pool (8444) dostupné přes VPN |
 | **Dual-pool dashboard** | ✅ Hotovo | Dashboard ukazuje `pool-edge` i `pool` status, health check přes TCP probe s timeoutem 1.5s |
 | **Edge pool wallet** | ✅ Hotovo | Vygenerována dedikovaná Edge pool adresa `zion1a6z5a4m830w6s6k7r508n300n6z30022q6qt0n7` |
 | **systemd service** | ✅ Hotovo | `zion-edge-pool.service` — binds `0.0.0.0:8444`, UFW port 8444/tcp otevřen |
@@ -539,11 +539,11 @@ top_p = 0.9
 
 **Edge node (77.42.71.94) — AKTIVNÍ:**
 - ✅ Běží V3 mainnet node (relay)
-- ✅ RPC endpoint: http://100.66.162.125:8443 (přes Tailscale VPN)
+- ✅ RPC endpoint: http://100.76.16.108:8443 (přes Tailscale VPN)
 - ✅ Public P2P: 77.42.71.94:8333
 - ✅ Pool relay: 77.42.71.94:8444 (ShareRelay → Core)
 - ✅ SSH přístup FUNKČNÍ (ssh-key-zion-edge)
-- ✅ Tailscale: 100.66.162.125 (stejný tailnet jako Core)
+- ✅ Tailscale: 100.76.16.108 (stejný tailnet jako Core)
 
 **Starší servery — VYŘAZENY:**
 - ❌ Praha (91.98.122.165): server ukončen, IP neaktivní
