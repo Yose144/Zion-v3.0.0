@@ -42,7 +42,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob: https:",
               "font-src 'self' data:",
-              "connect-src 'self' https://*.zionterranova.com wss://*.zionterranova.com https://prod.spline.design https://*.spline.design https://sepolia.base.org https://mainnet.base.org",
+              "connect-src 'self' https://*.zionterranova.com wss://*.zionterranova.com http://77.42.71.94:8443 http://77.42.71.94:8080 http://77.42.71.94:8444 http://100.76.16.108:8443 https://prod.spline.design https://*.spline.design https://sepolia.base.org https://mainnet.base.org https://base-rpc.publicnode.com",
               "frame-ancestors 'none'",
               "base-uri 'self'",
               "form-action 'self'",
