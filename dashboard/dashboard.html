@@ -632,31 +632,24 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
       </div>
     </div>
 
-    <!-- Service Terminal -->
+    <!-- Quick log preview → links to full Logs tab -->
     <div class="zion-panel p-5">
       <div class="flex items-center justify-between mb-3">
-        <h2 class="text-base font-bold flex items-center gap-2">🖥️ Service Terminal</h2>
-        <div class="flex gap-2">
-          <select id="terminal-service" class="text-[10px] px-2 py-1 bg-black/40 border border-white/10 rounded text-white">
+        <h2 class="text-base font-bold flex items-center gap-2">📋 Live Logs</h2>
+        <div class="flex gap-2 items-center">
+          <select id="overview-log-svc" class="text-[10px] px-2 py-1 bg-black/40 border border-white/10 rounded text-white" onchange="overviewLogSwitch(this.value)">
             <option value="node1">Node 1</option>
             <option value="node2">Node 2</option>
             <option value="pool">Pool</option>
             <option value="miner">Miner</option>
             <option value="hiranyagarbha">Hiranyagarbha</option>
-            <option value="ai-native">Hiran Inference</option>
+            <option value="hiran">Hiran AI</option>
           </select>
-          <button onclick="loadTerminalLog()" class="text-[10px] px-2 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded font-semibold transition">Refresh</button>
-          <button onclick="clearTerminal()" class="text-[10px] px-2 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded font-semibold transition">Clear</button>
+          <button onclick="overviewLogSwitch(document.getElementById('overview-log-svc').value)" class="text-[10px] px-2 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded transition">⟳</button>
+          <button onclick="switchTab('logs')" class="text-[10px] px-3 py-1 bg-purple-700/30 hover:bg-purple-700/50 border border-purple-500/20 rounded-lg font-semibold transition">Full Logs →</button>
         </div>
       </div>
-      <div id="terminal-output" class="bg-black/60 rounded-xl p-3 max-h-48 overflow-y-auto font-mono text-[11px] text-gray-300 leading-relaxed border border-white/5">
-        <div class="text-gray-500 italic">Select a service and click Refresh to view live output...</div>
-      </div>
-      <div class="flex gap-2 mt-3">
-        <button onclick="controlAction('start-'+document.getElementById('terminal-service').value)" class="text-[10px] px-3 py-1.5 bg-emerald-700/50 hover:bg-emerald-600 rounded-lg font-semibold transition">▶ Start</button>
-        <button onclick="controlAction('stop-'+document.getElementById('terminal-service').value)" class="text-[10px] px-3 py-1.5 bg-red-700/50 hover:bg-red-600 rounded-lg font-semibold transition">⏹ Stop</button>
-        <button onclick="controlAction('restart-'+document.getElementById('terminal-service').value)" class="text-[10px] px-3 py-1.5 bg-amber-700/50 hover:bg-amber-600 rounded-lg font-semibold transition">⟳ Restart</button>
-      </div>
+      <pre id="overview-log-output" class="bg-black/60 rounded-xl p-3 max-h-48 overflow-y-auto font-mono text-[11px] text-gray-300 leading-relaxed border border-white/5">Vyberte službu…</pre>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -2290,27 +2283,96 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 
   <!-- ═════════ TAB: Logs ═════════ -->
   <div id="pane-logs" class="hidden space-y-4">
-    <!-- Log Search -->
-    <div class="zion-panel p-5">
-      <h2 class="text-lg font-bold mb-3 flex items-center gap-2">🔍 Log Search</h2>
-      <div class="flex gap-2 mb-3">
-        <input id="log-search-input" type="text" placeholder="Search across all log files…" class="flex-1 bg-black/30 border border-zion-700 rounded-md px-3 py-2 text-xs text-white focus:outline-none focus:border-zion-gold" onkeydown="if(event.key==='Enter')runLogSearch()">
-        <select id="log-level-filter" class="bg-black/30 border border-zion-700 rounded-md px-2 py-2 text-xs text-white focus:outline-none focus:border-zion-gold" onchange="runLogSearch()">
-          <option value="all">All levels</option>
-          <option value="error">Error</option>
-          <option value="warn">Warn</option>
-          <option value="info">Info</option>
-        </select>
-        <button onclick="runLogSearch()" class="text-xs px-3 py-1.5 bg-emerald-700/50 hover:bg-emerald-600 rounded-md font-semibold transition">Search</button>
+
+    <!-- ── Header ── -->
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gradient">📋 Logs &amp; Terminals</h1>
+        <p class="text-xs text-gray-400 mt-1">Live SSE streaming · Cross-service log search · Open native terminal (W11 / Ubuntu / macOS)</p>
       </div>
-      <div id="log-search-results" class="max-h-64 overflow-y-auto text-xs font-mono space-y-1"></div>
+      <div class="flex gap-2 items-center">
+        <span id="log-stream-badge" class="text-[10px] px-3 py-1 rounded-full bg-gray-700 text-gray-400">Idle</span>
+        <button onclick="logSearchAll()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">Search All</button>
+      </div>
     </div>
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      <div class="zion-panel p-5"><div class="flex items-center justify-between mb-2"><h3 class="zion-kicker">Node 1</h3><button onclick="loadLogs('node1')" class="text-xs text-gray-400 hover:text-white">🔄</button></div><pre id="log-node1" class="log-tail bg-black/40 rounded-xl p-3 h-72 overflow-auto text-gray-300"></pre></div>
-      <div class="zion-panel p-5"><div class="flex items-center justify-between mb-2"><h3 class="zion-kicker">Node 2</h3><button onclick="loadLogs('node2')" class="text-xs text-gray-400 hover:text-white">🔄</button></div><pre id="log-node2" class="log-tail bg-black/40 rounded-xl p-3 h-72 overflow-auto text-gray-300"></pre></div>
-      <div class="zion-panel p-5"><div class="flex items-center justify-between mb-2"><h3 class="zion-kicker">Pool</h3><button onclick="loadLogs('pool')" class="text-xs text-gray-400 hover:text-white">🔄</button></div><pre id="log-pool" class="log-tail bg-black/40 rounded-xl p-3 h-72 overflow-auto text-gray-300"></pre></div>
-      <div class="zion-panel p-5"><div class="flex items-center justify-between mb-2"><h3 class="zion-kicker">Miner</h3><button onclick="loadLogs('miner')" class="text-xs text-gray-400 hover:text-white">🔄</button></div><pre id="log-miner" class="log-tail bg-black/40 rounded-xl p-3 h-72 overflow-auto text-gray-300"></pre></div>
+
+    <!-- ── Global search bar ── -->
+    <div class="zion-panel p-4">
+      <div class="flex gap-2 flex-wrap">
+        <input id="log-search-input" type="text" placeholder="Search across all log files…"
+          class="flex-1 min-w-[200px] bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-zion-gold/50 font-mono"
+          onkeydown="if(event.key==='Enter')logSearchAll()">
+        <select id="log-level-filter" class="bg-black/40 border border-white/10 rounded-lg px-2 py-2 text-xs text-white focus:outline-none">
+          <option value="all">All levels</option>
+          <option value="error">ERROR</option>
+          <option value="warn">WARN</option>
+          <option value="info">INFO</option>
+          <option value="debug">DEBUG</option>
+        </select>
+        <select id="log-svc-filter" class="bg-black/40 border border-white/10 rounded-lg px-2 py-2 text-xs text-white focus:outline-none">
+          <option value="">All services</option>
+          <option value="node1">node1</option>
+          <option value="node2">node2</option>
+          <option value="pool">pool</option>
+          <option value="miner">miner</option>
+          <option value="hiranyagarbha">hiranyagarbha</option>
+          <option value="hiran">hiran</option>
+          <option value="bridge">bridge</option>
+          <option value="dao-daemon">dao-daemon</option>
+          <option value="atomic-swap">atomic-swap</option>
+          <option value="warp">warp</option>
+        </select>
+        <button onclick="logSearchAll()" class="text-xs px-4 py-2 bg-emerald-700/50 hover:bg-emerald-600 rounded-lg font-semibold transition">Search</button>
+        <button onclick="document.getElementById('log-search-results').innerHTML=''" class="text-xs px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">Clear</button>
+      </div>
+      <div id="log-search-results" class="mt-3 max-h-48 overflow-y-auto font-mono text-[11px] space-y-0.5 hidden"></div>
     </div>
+
+    <!-- ── Service tab bar ── -->
+    <div class="zion-panel p-0 overflow-hidden">
+      <!-- Tab buttons -->
+      <div class="flex overflow-x-auto bg-black/40 border-b border-white/5 gap-0" id="log-tab-bar">
+        <!-- generated by JS -->
+      </div>
+
+      <!-- Toolbar for active terminal -->
+      <div class="flex items-center gap-2 px-4 py-2 bg-black/20 border-b border-white/5">
+        <span class="text-[10px] text-gray-500 uppercase tracking-wider">Active:</span>
+        <span id="log-active-svc-label" class="text-[10px] text-white font-mono">—</span>
+        <div class="flex-1"></div>
+        <button onclick="logStreamToggle()" id="log-stream-btn"
+          class="text-[10px] px-3 py-1 bg-emerald-700/50 hover:bg-emerald-600 rounded font-semibold transition">▶ Stream</button>
+        <button onclick="logStreamStop()" class="text-[10px] px-3 py-1 bg-red-700/50 hover:bg-red-600 rounded font-semibold transition">⏹ Stop</button>
+        <button onclick="logClearPanel()" class="text-[10px] px-3 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded transition">Clear</button>
+        <button onclick="logScrollBottom()" class="text-[10px] px-3 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded transition">↓ Bottom</button>
+        <span class="text-gray-600 text-[10px] mx-1">|</span>
+        <button onclick="openNativeTerminal()" id="log-open-native-btn"
+          class="text-[10px] px-3 py-1 bg-purple-700/50 hover:bg-purple-600 rounded font-semibold transition">⬛ Open Terminal</button>
+        <span id="log-line-count" class="text-[10px] text-gray-500 ml-2">0 lines</span>
+      </div>
+
+      <!-- Terminal output -->
+      <pre id="log-terminal-output"
+        class="bg-[#0a0a0f] text-[11px] font-mono text-gray-300 p-4 min-h-[480px] max-h-[600px] overflow-y-auto leading-5 whitespace-pre-wrap break-all"
+        style="tab-size:2">Vyberte službu vlevo a klikněte ▶ Stream…</pre>
+    </div>
+
+    <!-- ── Service grid (status + quick actions) ── -->
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3" id="log-svc-grid">
+      <!-- filled by JS -->
+    </div>
+
+    <!-- ── Log files on disk ── -->
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-sm font-bold">Log Files on Disk</h3>
+        <button onclick="refreshLogFiles()" class="text-[10px] px-2 py-0.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded transition">Refresh</button>
+      </div>
+      <div id="log-files-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 text-xs">
+        <div class="text-gray-500 italic text-xs">Loading…</div>
+      </div>
+    </div>
+
   </div>
 
   <!-- ═════════ TAB: Hiran AI ═════════ -->

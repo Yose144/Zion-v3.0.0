@@ -4375,6 +4375,197 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 procs = {k: {"pid": v["pid"], "age_min": int((time.time() - v["ts"]) / 60),
                              "alive": is_process_alive(v["pid"])} for k, v in PROCESS_REGISTRY.items()}
             self._json({"processes": procs})
+        elif route == "/api/logs/stream":
+            # SSE live log streaming: /api/logs/stream?svc=node1&lines=200
+            svc_id   = params.get("svc",   ["node1"])[0].strip()
+            n_init   = min(int(params.get("lines", ["150"])[0]), 500)
+            _STREAM_MAP = {
+                "node1":          "node1.log",
+                "node2":          "node2.log",
+                "pool":           "pool.log",
+                "miner":          "miner.log",
+                "hiranyagarbha":  "hiranyagarbha.log",
+                "hiran":          "hiran-inference.log",
+                "bridge":         "bridge.log",
+                "dao-daemon":     "dao.log",
+                "atomic-swap":    "atomic-swap.log",
+                "warp":           "warp.log",
+                "dashboard":      "dashboard.log",
+                "control-audit":  "control-audit.txt",
+            }
+            log_name = _STREAM_MAP.get(svc_id)
+            self.send_response(200)
+            self.send_header("Content-Type", "text/event-stream; charset=utf-8")
+            self.send_header("Cache-Control", "no-cache")
+            self.send_header("X-Accel-Buffering", "no")
+            self.end_headers()
+            try:
+                def _sse(data: str):
+                    msg = "data: " + data.replace("\n", "\ndata: ") + "\n\n"
+                    self.wfile.write(msg.encode("utf-8", errors="replace"))
+                    self.wfile.flush()
+                if not log_name:
+                    _sse(f"[error] unknown service '{svc_id}'")
+                    return
+                log_path = LOG_DIR / log_name
+                # Send initial tail
+                if log_path.exists():
+                    with open(log_path, "r", encoding="utf-8", errors="ignore") as f:
+                        lines_all = f.readlines()
+                    for ln in lines_all[-n_init:]:
+                        _sse(ln.rstrip())
+                else:
+                    _sse(f"[info] Log file not found yet: {log_path}")
+                # Tail new lines (poll every 0.8 s, max 10 min)
+                import time as _time
+                pos = log_path.stat().st_size if log_path.exists() else 0
+                deadline = _time.time() + 600
+                while _time.time() < deadline:
+                    _time.sleep(0.8)
+                    if not log_path.exists():
+                        continue
+                    cur_size = log_path.stat().st_size
+                    if cur_size < pos:
+                        pos = 0  # rotated
+                    if cur_size > pos:
+                        with open(log_path, "r", encoding="utf-8", errors="ignore") as f:
+                            f.seek(pos)
+                            new_data = f.read()
+                        pos = cur_size
+                        for ln in new_data.splitlines():
+                            _sse(ln)
+                    else:
+                        # heartbeat to keep connection alive
+                        self.wfile.write(b": ping\n\n")
+                        self.wfile.flush()
+            except (BrokenPipeError, ConnectionResetError):
+                pass
+            return
+        elif route == "/api/terminal/open":
+            # Open a native terminal window (W11/Ubuntu/macOS)
+            svc_id = params.get("svc", [""])[0].strip()
+            _TERM_CMDS = {
+                "node1":         ("cargo run ... (node1)", "node status"),
+                "node2":         ("cargo run ... (node2)", ""),
+                "pool":          ("pool server",           "pool status"),
+                "miner":         ("miner",                 ""),
+                "hiranyagarbha": ("hiranyagarbha",         ""),
+                "hiran":         ("hiran-inference",       ""),
+            }
+            # Determine the log file to tail as the default command
+            _TAIL_MAP = {
+                "node1":         str(LOG_DIR / "node1.log"),
+                "node2":         str(LOG_DIR / "node2.log"),
+                "pool":          str(LOG_DIR / "pool.log"),
+                "miner":         str(LOG_DIR / "miner.log"),
+                "hiranyagarbha": str(LOG_DIR / "hiranyagarbha.log"),
+                "hiran":         str(LOG_DIR / "hiran-inference.log"),
+                "bridge":        str(LOG_DIR / "bridge.log"),
+                "dao-daemon":    str(LOG_DIR / "dao.log"),
+                "atomic-swap":   str(LOG_DIR / "atomic-swap.log"),
+                "warp":          str(LOG_DIR / "warp.log"),
+            }
+            log_file = _TAIL_MAP.get(svc_id, str(LOG_DIR / f"{svc_id}.log"))
+            try:
+                if os.name == "nt":
+                    # Windows: open Windows Terminal or fallback to PowerShell
+                    tail_cmd = f"Get-Content -Wait -Tail 200 '{log_file}'"
+                    wt_args = ["wt.exe", "-w", "0", "new-tab", "--title", f"ZION {svc_id}",
+                               "powershell.exe", "-NoExit", "-Command", tail_cmd]
+                    ps_args = ["powershell.exe", "-NoExit", "-Command", tail_cmd]
+                    try:
+                        subprocess.Popen(wt_args, creationflags=getattr(subprocess, "CREATE_NEW_CONSOLE", 0x10))
+                    except FileNotFoundError:
+                        subprocess.Popen(ps_args, creationflags=getattr(subprocess, "CREATE_NEW_CONSOLE", 0x10))
+                    self._json({"ok": True, "svc": svc_id, "platform": "windows", "cmd": tail_cmd})
+                else:
+                    import shutil
+                    tail_cmd = f"tail -n 200 -f '{log_file}'; echo '[end]'; bash"
+                    launched = False
+                    # Try common terminal emulators in order
+                    for term_bin, term_args in [
+                        ("gnome-terminal", ["gnome-terminal", "--", "bash", "-c", tail_cmd]),
+                        ("xterm",          ["xterm", "-e", tail_cmd]),
+                        ("konsole",        ["konsole", "-e", tail_cmd]),
+                        ("xfce4-terminal", ["xfce4-terminal", "-e", tail_cmd]),
+                        ("open",           ["open", "-a", "Terminal", log_file]),  # macOS
+                    ]:
+                        if shutil.which(term_bin):
+                            subprocess.Popen(term_args)
+                            launched = True
+                            break
+                    self._json({"ok": launched, "svc": svc_id, "platform": "unix", "cmd": tail_cmd})
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)})
+            return
+        elif route == "/api/log-files":
+            # List all log files on disk with size + mtime
+            SVC_LOG_MAP = {
+                "node1.log": "node1", "node2.log": "node2",
+                "pool.log": "pool", "miner.log": "miner",
+                "hiranyagarbha.log": "hiranyagarbha", "hiran-inference.log": "hiran",
+                "bridge.log": "bridge", "dao.log": "dao-daemon",
+                "atomic-swap.log": "atomic-swap", "warp.log": "warp",
+                "dashboard.log": "dashboard", "control-audit.txt": "control-audit",
+            }
+            files = []
+            if LOG_DIR.exists():
+                import datetime as _dt
+                for fp in sorted(LOG_DIR.iterdir()):
+                    if fp.suffix in (".log", ".txt", ".err") and fp.is_file():
+                        try:
+                            st = fp.stat()
+                            files.append({
+                                "name": fp.name,
+                                "svc_id": SVC_LOG_MAP.get(fp.name, fp.stem),
+                                "size_kb": round(st.st_size / 1024, 1),
+                                "modified": _dt.datetime.fromtimestamp(st.st_mtime).strftime("%Y-%m-%d %H:%M"),
+                            })
+                        except Exception:
+                            pass
+            self._json({"files": files, "log_dir": str(LOG_DIR)})
+        elif route == "/api/log-search":
+            # Fast grep across all log files
+            query      = params.get("q",     [""])[0].strip()
+            level_filt = params.get("level", ["all"])[0].lower()
+            svc_filt   = params.get("svc",   [""])[0].strip()
+            results    = []
+            MAX_HITS   = 500
+            SVC_LOG_MAP2 = {
+                "node1.log": "node1", "node2.log": "node2",
+                "pool.log": "pool", "miner.log": "miner",
+                "hiranyagarbha.log": "hiranyagarbha", "hiran-inference.log": "hiran",
+                "bridge.log": "bridge", "dao.log": "dao-daemon",
+                "atomic-swap.log": "atomic-swap", "warp.log": "warp",
+                "control-audit.txt": "control-audit",
+            }
+            if LOG_DIR.exists():
+                for fp in sorted(LOG_DIR.iterdir()):
+                    if len(results) >= MAX_HITS:
+                        break
+                    if fp.suffix not in (".log", ".txt") or not fp.is_file():
+                        continue
+                    svc_id = SVC_LOG_MAP2.get(fp.name, fp.stem)
+                    if svc_filt and svc_id != svc_filt:
+                        continue
+                    try:
+                        with open(fp, "r", encoding="utf-8", errors="ignore") as f:
+                            for lineno, line in enumerate(f, 1):
+                                if len(results) >= MAX_HITS:
+                                    break
+                                line_s = line.rstrip()
+                                if not line_s:
+                                    continue
+                                ll = line_s.lower()
+                                if level_filt != "all":
+                                    if level_filt not in ll:
+                                        continue
+                                if query and query.lower() not in ll:
+                                    continue
+                                results.append({"svc": svc_id, "file": fp.name, "lineno": lineno, "line": line_s})
+                    except Exception:
+                        pass
+            self._json({"results": results, "total": len(results), "capped": len(results) >= MAX_HITS})
         elif route.startswith("/api/dao"):
             # Proxy all /api/dao/* requests to DAO daemon on port 8081
             self._proxy_to_dao("GET", route, None, dict(self.headers))
