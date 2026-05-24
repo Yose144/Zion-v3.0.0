@@ -861,7 +861,9 @@ def parse_node_log(name: str) -> dict:
             if status["known_peers"] == 0 and not peer_hosts:
                 status["known_peers"] = 1
         if "Error" in line or "error" in line.lower():
-            status["last_error"] = line[:120]
+            # Ignore benign RPC "Method not found" errors (dashboard probing unsupported methods)
+            if "Method not found" not in line:
+                status["last_error"] = line[:120]
 
     if peer_hosts:
         status["known_peers"] = len(peer_hosts)
@@ -1554,29 +1556,16 @@ def get_mempool_detail() -> dict:
     info = rpc_call(rpc_host, rpc_port, "getChainInfo", {}, timeout=1.5)
     if not info or info.get("_rpc_error"):
         return {"rpc_reachable": False, "tx_count": 0, "transactions": []}
-    # Some nodes expose getMempool; if not, return template-based estimate
-    txs = []
+    # Use data from getChainInfo (getMempool method is not implemented in node)
     mempool_txs = info.get("mempool_transactions", 0)
     template_txs = info.get("active_template_transactions", 0)
     total_fees = info.get("active_template_total_fees_zion", 0)
-    # Attempt getMempool call
-    mempool_raw = rpc_call(rpc_host, rpc_port, "getMempool", {}, timeout=1.5)
-    if mempool_raw and not mempool_raw.get("_rpc_error"):
-        for tx in mempool_raw.get("transactions", []):
-            txs.append({
-                "tx_id": tx.get("tx_id", "—"),
-                "from": tx.get("from_address", "—"),
-                "to": tx.get("to_address", "—"),
-                "amount_zion": tx.get("amount_zion", 0),
-                "fee_zion": tx.get("fee_zion", 0),
-                "size_bytes": tx.get("size_bytes", 0),
-            })
     return {
         "rpc_reachable": True,
         "tx_count": mempool_txs,
         "template_tx_count": template_txs,
         "total_fees_zion": total_fees,
-        "transactions": txs,
+        "transactions": [],
     }
 
 # ── Miner shares history ──────────────────────────────────────────────
