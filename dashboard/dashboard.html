@@ -109,6 +109,27 @@ button{display:inline-flex;align-items:center;justify-content:center;cursor:poin
 @media(max-width:1024px){#mobileMenuBtn{display:inline-flex;}}
 #sidebarOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:55;}
 @media(max-width:1024px){#sidebarOverlay.open{display:block;}}
+/* NCL Panel styles */
+.ncl-tab-btn{padding:0.5rem 0.85rem;font-size:0.75rem;font-weight:600;border-radius:0.65rem;cursor:pointer;transition:all 180ms;color:#9ca3af;background:transparent;border:1px solid transparent;}
+.ncl-tab-btn:hover{color:#fff;background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.08);}
+.ncl-tab-btn.active{color:#e9d5ff;background:linear-gradient(135deg,rgba(147,51,234,0.12),rgba(6,182,212,0.08));border-color:rgba(147,51,234,0.35);box-shadow:0 4px 16px rgba(147,51,234,0.2);}
+@keyframes ncl-heartbeat{0%,100%{box-shadow:0 0 4px rgba(16,185,129,0.3)}50%{box-shadow:0 0 14px rgba(16,185,129,0.8)}}
+.ncl-dot-live{width:8px;height:8px;border-radius:50%;background:#10b981;animation:ncl-heartbeat 2s infinite;}
+.ncl-dot-off{width:8px;height:8px;border-radius:50%;background:#ef4444;}
+.ncl-worker-row{transition:background 150ms,transform 150ms;cursor:pointer;}
+.ncl-worker-row:hover{background:rgba(255,255,255,0.03);transform:translateX(2px);}
+.ncl-medal-gold{background:linear-gradient(135deg,#fbbf24,#f59e0b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;}
+.ncl-medal-silver{background:linear-gradient(135deg,#d1d5db,#9ca3af);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;}
+.ncl-medal-bronze{background:linear-gradient(135deg,#f59e0b,#b45309);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;}
+.ncl-status-pill{display:inline-flex;align-items:center;gap:4px;padding:2px 10px;border-radius:9999px;font-size:10px;font-weight:700;letter-spacing:0.04em;}
+.ncl-st-queued{background:rgba(251,191,36,0.12);color:#fbbf24;border:1px solid rgba(251,191,36,0.2);}
+.ncl-st-running{background:rgba(96,165,250,0.12);color:#60a5fa;border:1px solid rgba(96,165,250,0.2);}
+.ncl-st-completed{background:rgba(52,211,153,0.12);color:#34d399;border:1px solid rgba(52,211,153,0.2);}
+.ncl-st-failed{background:rgba(248,113,113,0.12);color:#f87171;border:1px solid rgba(248,113,113,0.2);}
+.ncl-score-bar{height:5px;border-radius:9999px;background:rgba(255,255,255,0.06);overflow:hidden;}
+.ncl-score-fill{height:100%;border-radius:9999px;background:linear-gradient(90deg,#9333ea,#06b6d4);transition:width 400ms ease;}
+input[type=range].ncl-slider{-webkit-appearance:none;height:6px;border-radius:9999px;background:linear-gradient(90deg,#3b82f6,#9333ea,#ef4444);outline:none;}
+input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 0 8px rgba(147,51,234,0.5);cursor:pointer;}
 </style>
 </head>
 <body class="zion-shell">
@@ -131,6 +152,7 @@ button{display:inline-flex;align-items:center;justify-content:center;cursor:poin
       </div>
     </div>
     <div class="flex flex-wrap gap-2 items-center">
+      <span id="connection-badge" class="text-[10px] px-2 py-0.5 rounded-full font-bold bg-emerald-700/50 text-emerald-300">● Connected</span>
       <span id="alertCount" class="hidden px-3 py-1.5 bg-red-600 rounded-full text-xs font-bold animate-pulse">0 alerts</span>
       <button onclick="toggleFriendly()" id="friendlyBtn" class="zion-button-secondary text-xs">🧒 Kid Mode</button>
       <button onclick="refreshAll()" class="zion-button-secondary text-xs">🔄 Refresh</button>
@@ -684,39 +706,97 @@ button{display:inline-flex;align-items:center;justify-content:center;cursor:poin
       </div>
     </div>
 
-    <!-- Recent Blocks -->
-    <div class="zion-panel p-6">
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="text-lg font-bold flex items-center gap-2">🧱 Recent Blocks</h2>
-        <span class="text-xs text-gray-400">Latest 10</span>
+    <!-- Block/TX Search -->
+    <div class="zion-panel p-4">
+      <div class="flex gap-2">
+        <input id="explorer-search" type="text" placeholder="Search by block height, hash, or address..." class="flex-1 bg-black/30 border border-zion-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-zion-gold" onkeydown="if(event.key==='Enter')explorerSearch()">
+        <button onclick="explorerSearch()" class="px-4 py-2 bg-emerald-700/50 hover:bg-emerald-600 rounded-lg text-xs font-semibold transition">Search</button>
       </div>
-      <div class="overflow-x-auto">
-        <table class="w-full text-left border-collapse">
-          <thead>
-            <tr class="text-xs text-gray-400 border-b border-white/10">
-              <th class="py-2 px-3 font-semibold">Height</th>
-              <th class="py-2 px-3 font-semibold">Hash</th>
-              <th class="py-2 px-3 font-semibold">Time</th>
-              <th class="py-2 px-3 font-semibold text-right">TXs</th>
-              <th class="py-2 px-3 font-semibold text-right">Difficulty</th>
-            </tr>
-          </thead>
-          <tbody id="explorer-blocks" class="text-xs font-mono"></tbody>
-        </table>
+      <div id="explorer-search-result" class="mt-3 hidden"></div>
+    </div>
+
+    <!-- Recent Blocks + Mempool side by side -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div class="lg:col-span-2 zion-panel p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-bold flex items-center gap-2">🧱 Recent Blocks</h2>
+          <span class="text-xs text-gray-400">Latest 10</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="text-xs text-gray-400 border-b border-white/10">
+                <th class="py-2 px-3 font-semibold">Height</th>
+                <th class="py-2 px-3 font-semibold">Hash</th>
+                <th class="py-2 px-3 font-semibold">Time</th>
+                <th class="py-2 px-3 font-semibold text-right">TXs</th>
+                <th class="py-2 px-3 font-semibold text-right">Difficulty</th>
+              </tr>
+            </thead>
+            <tbody id="explorer-blocks" class="text-xs font-mono"></tbody>
+          </table>
+        </div>
+      </div>
+      <!-- Mempool panel -->
+      <div class="zion-panel p-5">
+        <h3 class="text-sm font-bold mb-3 zion-kicker">Mempool</h3>
+        <div id="explorer-mempool" class="space-y-2">
+          <div class="bg-black/30 rounded-lg p-3 text-center">
+            <div id="exp-mempool-size" class="text-lg font-bold text-amber-400">—</div>
+            <div class="text-[10px] text-gray-500">Pending TXs</div>
+          </div>
+          <div class="bg-black/30 rounded-lg p-3 text-center">
+            <div id="exp-mempool-bytes" class="text-sm font-bold text-gray-300">—</div>
+            <div class="text-[10px] text-gray-500">Total Size</div>
+          </div>
+        </div>
+        <div class="mt-3">
+          <h4 class="text-[10px] text-gray-500 uppercase tracking-wider mb-2">Recent TXs</h4>
+          <div id="exp-mempool-txs" class="space-y-1 max-h-48 overflow-y-auto text-[10px] font-mono text-gray-400">
+            <div class="italic text-gray-600">No mempool data</div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 
   <!-- ═════════ TAB: Alerts ═════════ -->
   <div id="pane-alerts" class="hidden space-y-4">
-    <div class="zion-panel p-6">
-      <div class="flex items-center justify-between mb-5">
-        <h2 class="text-xl font-bold flex items-center gap-2">🚨 Alert History</h2>
-        <button onclick="loadAlertHistory()" class="text-xs px-3 py-1.5 bg-zion-700 hover:bg-zion-600 rounded-lg transition">🔄 Refresh</button>
+    <!-- Alert summary cards -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div class="zion-panel p-4 text-center" style="border-color:rgba(239,68,68,0.3)">
+        <div id="alert-count-critical" class="text-2xl font-bold text-red-400">0</div>
+        <div class="text-[10px] text-gray-500 uppercase tracking-wider mt-1">Critical</div>
       </div>
-      <p class="text-sm text-gray-400 mb-4">Persisted alerts from the last 100 events. Critical and warning alerts are auto-saved every 60 seconds.</p>
-      <div id="alert-history-list" class="space-y-2 max-h-[600px] overflow-y-auto">
-        <div class="text-gray-500 italic text-sm">Loading alert history…</div>
+      <div class="zion-panel p-4 text-center" style="border-color:rgba(245,158,11,0.3)">
+        <div id="alert-count-warning" class="text-2xl font-bold text-amber-400">0</div>
+        <div class="text-[10px] text-gray-500 uppercase tracking-wider mt-1">Warning</div>
+      </div>
+      <div class="zion-panel p-4 text-center" style="border-color:rgba(59,130,246,0.3)">
+        <div id="alert-count-info" class="text-2xl font-bold text-blue-400">0</div>
+        <div class="text-[10px] text-gray-500 uppercase tracking-wider mt-1">Info</div>
+      </div>
+      <div class="zion-panel p-4 text-center">
+        <div id="alert-count-total" class="text-2xl font-bold text-gray-300">0</div>
+        <div class="text-[10px] text-gray-500 uppercase tracking-wider mt-1">Total</div>
+      </div>
+    </div>
+    <!-- Alert history with filters -->
+    <div class="zion-panel p-6">
+      <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+        <h2 class="text-xl font-bold flex items-center gap-2">🚨 Alert History</h2>
+        <div class="flex items-center gap-2">
+          <div class="flex gap-1">
+            <button onclick="filterAlerts('all')" class="alert-filter-btn text-[10px] px-2.5 py-1 rounded bg-emerald-900/30 text-emerald-300 border border-emerald-500/30" data-filter="all">All</button>
+            <button onclick="filterAlerts('critical')" class="alert-filter-btn text-[10px] px-2.5 py-1 rounded bg-black/30 text-gray-400 hover:text-red-300" data-filter="critical">Critical</button>
+            <button onclick="filterAlerts('warning')" class="alert-filter-btn text-[10px] px-2.5 py-1 rounded bg-black/30 text-gray-400 hover:text-amber-300" data-filter="warning">Warning</button>
+            <button onclick="filterAlerts('info')" class="alert-filter-btn text-[10px] px-2.5 py-1 rounded bg-black/30 text-gray-400 hover:text-blue-300" data-filter="info">Info</button>
+          </div>
+          <button onclick="loadAlertHistory()" class="text-[10px] px-2.5 py-1 bg-zion-700 hover:bg-zion-600 rounded transition">Refresh</button>
+        </div>
+      </div>
+      <div id="alert-history-list" class="space-y-2 max-h-[500px] overflow-y-auto">
+        <div class="text-gray-500 italic text-sm">Loading alert history...</div>
       </div>
     </div>
   </div>
@@ -727,14 +807,38 @@ button{display:inline-flex;align-items:center;justify-content:center;cursor:poin
       <div class="flex items-center justify-between mb-5 flex-wrap gap-3">
         <div>
           <h2 class="text-xl font-bold flex items-center gap-2"><span class="text-gradient">🧩 All Mainnet Services</span></h2>
-          <p class="text-xs text-gray-400 mt-1">L1 Consensus · L2 Bridge/DAO · L3 Advanced · L4 Apps · Infrastructure — 13 services</p>
+          <p class="text-xs text-gray-400 mt-1">L1 Consensus · L2 Bridge/DAO · L3 Advanced · L4 Apps · Infrastructure — 21 services</p>
         </div>
         <div class="flex gap-2">
           <button onclick="controlAction('launch-full')" class="zion-button-primary text-sm">🚀 Launch ALL</button>
           <button onclick="if(confirm('Stop everything?')) controlAction('stop-all')" class="zion-button-secondary text-sm" style="color:#fca5a5;">⏹ Stop ALL</button>
         </div>
       </div>
+      <!-- Quick stats row -->
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-5">
+        <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Live</div><div id="svc-count-live" class="text-lg font-bold text-emerald-400">—</div></div>
+        <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Down</div><div id="svc-count-down" class="text-lg font-bold text-red-400">—</div></div>
+        <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Total</div><div id="svc-count-total" class="text-lg font-bold text-gray-300">—</div></div>
+        <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">CPU</div><div id="svc-cpu" class="text-lg font-bold text-amber-400">—</div></div>
+        <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">RAM</div><div id="svc-ram" class="text-lg font-bold text-purple-400">—</div></div>
+      </div>
+      <!-- Layer filter tabs -->
+      <div class="flex gap-1 mb-4 flex-wrap">
+        <button onclick="filterServices('all')" class="svc-layer-btn text-[10px] px-2.5 py-1 rounded bg-emerald-900/30 text-emerald-300 border border-emerald-500/30" data-layer="all">All</button>
+        <button onclick="filterServices('L1')" class="svc-layer-btn text-[10px] px-2.5 py-1 rounded bg-black/30 text-gray-400" data-layer="L1">L1</button>
+        <button onclick="filterServices('L2')" class="svc-layer-btn text-[10px] px-2.5 py-1 rounded bg-black/30 text-gray-400" data-layer="L2">L2</button>
+        <button onclick="filterServices('L3')" class="svc-layer-btn text-[10px] px-2.5 py-1 rounded bg-black/30 text-gray-400" data-layer="L3">L3</button>
+        <button onclick="filterServices('L4')" class="svc-layer-btn text-[10px] px-2.5 py-1 rounded bg-black/30 text-gray-400" data-layer="L4">L4</button>
+        <button onclick="filterServices('L5')" class="svc-layer-btn text-[10px] px-2.5 py-1 rounded bg-black/30 text-gray-400" data-layer="L5">L5</button>
+        <button onclick="filterServices('L6')" class="svc-layer-btn text-[10px] px-2.5 py-1 rounded bg-black/30 text-gray-400" data-layer="L6">L6</button>
+        <button onclick="filterServices('Infra')" class="svc-layer-btn text-[10px] px-2.5 py-1 rounded bg-black/30 text-gray-400" data-layer="Infra">Infra</button>
+      </div>
       <div id="services-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3"></div>
+    </div>
+    <!-- Dependency graph -->
+    <div class="zion-panel p-5">
+      <h3 class="text-sm font-bold mb-3 zion-kicker">Dependency Graph</h3>
+      <div id="svc-dep-graph" class="text-xs font-mono text-gray-400 bg-black/30 rounded-lg p-4 overflow-x-auto whitespace-pre">Loading...</div>
     </div>
   </div>
 
@@ -973,64 +1077,223 @@ button{display:inline-flex;align-items:center;justify-content:center;cursor:poin
   <!-- ═════════ TAB: L1 Consensus ═════════ -->
   <div id="pane-l1" class="hidden space-y-4">
     <div class="zion-panel p-6">
-      <h2 class="text-xl font-bold mb-2 flex items-center gap-2"><span class="text-gradient">🔷 L1 — Consensus Layer</span></h2>
-      <p class="text-sm text-gray-400 mb-4">Node 1, Node 2, Pool, Miner — live data from all sources.</p>
-      <div id="layer-l1-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+      <div class="flex items-center justify-between mb-5">
+        <div>
+          <h2 class="text-xl font-bold flex items-center gap-2"><span class="text-gradient">🔷 L1 — Consensus Layer</span></h2>
+          <p class="text-sm text-gray-400 mt-1">Node 1, Node 2, Pool, Miner — live chain data, PoW mining, block production.</p>
+        </div>
+        <button onclick="loadLayerFull('l1')" class="zion-button-secondary text-xs px-3 py-1.5">Refresh</button>
+      </div>
+      <!-- L1 KPI row -->
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-5">
+        <div class="bg-black/30 rounded-xl p-3.5 text-center"><div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Chain Height</div><div id="l1-height" class="text-lg font-bold text-emerald-400">—</div></div>
+        <div class="bg-black/30 rounded-xl p-3.5 text-center"><div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Hashrate</div><div id="l1-hashrate" class="text-lg font-bold text-blue-400">—</div></div>
+        <div class="bg-black/30 rounded-xl p-3.5 text-center"><div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Peers</div><div id="l1-peers" class="text-lg font-bold text-amber-400">—</div></div>
+        <div class="bg-black/30 rounded-xl p-3.5 text-center"><div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Pool Sessions</div><div id="l1-sessions" class="text-lg font-bold text-purple-400">—</div></div>
+        <div class="bg-black/30 rounded-xl p-3.5 text-center"><div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Blocks Found</div><div id="l1-blocks" class="text-lg font-bold text-cyan-400">—</div></div>
+      </div>
+      <!-- L1 Service cards -->
+      <div id="layer-l1-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5"></div>
+      <!-- L1 Recent blocks mini-table -->
+      <div class="zion-panel p-4">
+        <h3 class="zion-kicker mb-3">Recent Blocks</h3>
+        <div id="l1-recent-blocks" class="space-y-1.5 max-h-48 overflow-y-auto text-xs">
+          <div class="text-gray-500 italic">Loading...</div>
+        </div>
+      </div>
     </div>
   </div>
 
   <!-- ═════════ TAB: L2 Bridge & DAO ═════════ -->
   <div id="pane-l2" class="hidden space-y-4">
     <div class="zion-panel p-6">
-      <h2 class="text-xl font-bold mb-2 flex items-center gap-2"><span class="text-gradient">🌉 L2 — Bridge & DAO</span></h2>
-      <p class="text-sm text-gray-400 mb-4">Bridge, DAO, Atomic Swap — cross-chain relay, governance, HTLC.</p>
-      <div id="layer-l2-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+      <div class="flex items-center justify-between mb-5">
+        <div>
+          <h2 class="text-xl font-bold flex items-center gap-2"><span class="text-gradient">🌉 L2 — Bridge &amp; DAO</span></h2>
+          <p class="text-sm text-gray-400 mt-1">Cross-chain relay, decentralized governance, HTLC atomic swaps.</p>
+        </div>
+        <button onclick="loadLayerFull('l2')" class="zion-button-secondary text-xs px-3 py-1.5">Refresh</button>
+      </div>
+      <!-- L2 KPI row -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+        <div class="bg-black/30 rounded-xl p-3.5 text-center"><div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Bridge Relays</div><div id="l2-relays" class="text-lg font-bold text-emerald-400">—</div></div>
+        <div class="bg-black/30 rounded-xl p-3.5 text-center"><div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">DAO Proposals</div><div id="l2-proposals" class="text-lg font-bold text-blue-400">—</div></div>
+        <div class="bg-black/30 rounded-xl p-3.5 text-center"><div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Active Swaps</div><div id="l2-swaps" class="text-lg font-bold text-amber-400">—</div></div>
+        <div class="bg-black/30 rounded-xl p-3.5 text-center"><div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Treasury</div><div id="l2-treasury" class="text-lg font-bold text-purple-400">—</div></div>
+      </div>
+      <!-- L2 Service cards -->
+      <div id="layer-l2-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-5"></div>
+      <!-- Bridge activity -->
+      <div class="zion-panel p-4">
+        <h3 class="zion-kicker mb-3">Bridge Activity Log</h3>
+        <div id="l2-bridge-log" class="space-y-1.5 max-h-48 overflow-y-auto text-xs font-mono text-gray-400">
+          <div class="italic text-gray-600">Loading bridge events...</div>
+        </div>
+      </div>
     </div>
   </div>
 
   <!-- ═════════ TAB: L3 Advanced ═════════ -->
   <div id="pane-l3" class="hidden space-y-4">
     <div class="zion-panel p-6">
-      <h2 class="text-xl font-bold mb-2 flex items-center gap-2"><span class="text-gradient">🌀 L3 — Advanced Layer</span></h2>
-      <p class="text-sm text-gray-400 mb-4">WARP Relay, NCL Gateway, AI Native (Hiran).</p>
-      <div id="layer-l3-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+      <div class="flex items-center justify-between mb-5">
+        <div>
+          <h2 class="text-xl font-bold flex items-center gap-2"><span class="text-gradient">🌀 L3 — Advanced Layer</span></h2>
+          <p class="text-sm text-gray-400 mt-1">WARP Relay, NCL Gateway, Hiran AI — multi-chain relay, neural compute, inference.</p>
+        </div>
+        <button onclick="loadLayerFull('l3')" class="zion-button-secondary text-xs px-3 py-1.5">Refresh</button>
+      </div>
+      <!-- L3 KPI row -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+        <div class="bg-black/30 rounded-xl p-3.5 text-center"><div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">WARP Chains</div><div id="l3-warp-chains" class="text-lg font-bold text-emerald-400">—</div></div>
+        <div class="bg-black/30 rounded-xl p-3.5 text-center"><div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">NCL Workers</div><div id="l3-ncl-workers" class="text-lg font-bold text-blue-400">—</div></div>
+        <div class="bg-black/30 rounded-xl p-3.5 text-center"><div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">AI Agents</div><div id="l3-agents" class="text-lg font-bold text-purple-400">—</div></div>
+        <div class="bg-black/30 rounded-xl p-3.5 text-center"><div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Compute TFLOPS</div><div id="l3-tflops" class="text-lg font-bold text-cyan-400">—</div></div>
+      </div>
+      <!-- L3 Service cards -->
+      <div id="layer-l3-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
     </div>
   </div>
 
   <!-- ═════════ TAB: L4 Apps ═════════ -->
   <div id="pane-l4" class="hidden space-y-4">
     <div class="zion-panel p-6">
-      <h2 class="text-xl font-bold mb-2 flex items-center gap-2"><span class="text-gradient">🪷 L4 — Application Layer</span></h2>
-      <p class="text-sm text-gray-400 mb-4">OASIS Avatar Hub — avatar registry and humanitarian impact.</p>
-      <div id="layer-l4-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+      <div class="flex items-center justify-between mb-5">
+        <div>
+          <h2 class="text-xl font-bold flex items-center gap-2"><span class="text-gradient">🪷 L4 — OASIS Application Layer</span></h2>
+          <p class="text-sm text-gray-400 mt-1">Avatar registry, guild system, territories, 9-level consciousness progression.</p>
+        </div>
+        <button onclick="loadLayerFull('l4')" class="zion-button-secondary text-xs px-3 py-1.5">Refresh</button>
+      </div>
+      <!-- L4 KPI row -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+        <div class="bg-black/30 rounded-xl p-3.5 text-center"><div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Avatars</div><div id="l4-avatars" class="text-lg font-bold text-emerald-400">—</div></div>
+        <div class="bg-black/30 rounded-xl p-3.5 text-center"><div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Guilds</div><div id="l4-guilds" class="text-lg font-bold text-blue-400">—</div></div>
+        <div class="bg-black/30 rounded-xl p-3.5 text-center"><div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Territories</div><div id="l4-territories" class="text-lg font-bold text-amber-400">—</div></div>
+        <div class="bg-black/30 rounded-xl p-3.5 text-center"><div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Avg CL</div><div id="l4-avg-cl" class="text-lg font-bold text-purple-400">—</div></div>
+      </div>
+      <div id="layer-l4-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5"></div>
+      <!-- Consciousness levels visualization -->
+      <div class="zion-panel p-4">
+        <h3 class="zion-kicker mb-3">Consciousness Levels (9 Stages)</h3>
+        <div id="l4-cl-bars" class="space-y-2">
+          <div class="flex items-center gap-2"><span class="text-[10px] text-gray-500 w-20">1. Mineral</span><div class="flex-1 h-2 rounded-full bg-black/40 overflow-hidden"><div class="h-full rounded-full bg-gray-500" style="width:0%" id="l4-cl-1"></div></div><span class="text-[10px] text-gray-500 w-8" id="l4-cl-1-n">0</span></div>
+          <div class="flex items-center gap-2"><span class="text-[10px] text-gray-500 w-20">2. Plant</span><div class="flex-1 h-2 rounded-full bg-black/40 overflow-hidden"><div class="h-full rounded-full bg-green-700" style="width:0%" id="l4-cl-2"></div></div><span class="text-[10px] text-gray-500 w-8" id="l4-cl-2-n">0</span></div>
+          <div class="flex items-center gap-2"><span class="text-[10px] text-gray-500 w-20">3. Animal</span><div class="flex-1 h-2 rounded-full bg-black/40 overflow-hidden"><div class="h-full rounded-full bg-amber-600" style="width:0%" id="l4-cl-3"></div></div><span class="text-[10px] text-gray-500 w-8" id="l4-cl-3-n">0</span></div>
+          <div class="flex items-center gap-2"><span class="text-[10px] text-gray-500 w-20">4. Human</span><div class="flex-1 h-2 rounded-full bg-black/40 overflow-hidden"><div class="h-full rounded-full bg-blue-500" style="width:0%" id="l4-cl-4"></div></div><span class="text-[10px] text-gray-500 w-8" id="l4-cl-4-n">0</span></div>
+          <div class="flex items-center gap-2"><span class="text-[10px] text-gray-500 w-20">5. Awakened</span><div class="flex-1 h-2 rounded-full bg-black/40 overflow-hidden"><div class="h-full rounded-full bg-purple-500" style="width:0%" id="l4-cl-5"></div></div><span class="text-[10px] text-gray-500 w-8" id="l4-cl-5-n">0</span></div>
+          <div class="flex items-center gap-2"><span class="text-[10px] text-gray-500 w-20">6. Enlightened</span><div class="flex-1 h-2 rounded-full bg-black/40 overflow-hidden"><div class="h-full rounded-full bg-indigo-500" style="width:0%" id="l4-cl-6"></div></div><span class="text-[10px] text-gray-500 w-8" id="l4-cl-6-n">0</span></div>
+          <div class="flex items-center gap-2"><span class="text-[10px] text-gray-500 w-20">7. Cosmic</span><div class="flex-1 h-2 rounded-full bg-black/40 overflow-hidden"><div class="h-full rounded-full bg-cyan-400" style="width:0%" id="l4-cl-7"></div></div><span class="text-[10px] text-gray-500 w-8" id="l4-cl-7-n">0</span></div>
+          <div class="flex items-center gap-2"><span class="text-[10px] text-gray-500 w-20">8. Transcendent</span><div class="flex-1 h-2 rounded-full bg-black/40 overflow-hidden"><div class="h-full rounded-full" style="width:0%;background:linear-gradient(90deg,#9333ea,#06b6d4)" id="l4-cl-8"></div></div><span class="text-[10px] text-gray-500 w-8" id="l4-cl-8-n">0</span></div>
+          <div class="flex items-center gap-2"><span class="text-[10px] text-gray-500 w-20">9. Unity</span><div class="flex-1 h-2 rounded-full bg-black/40 overflow-hidden"><div class="h-full rounded-full" style="width:0%;background:linear-gradient(90deg,#ffd700,#9333ea,#06b6d4)" id="l4-cl-9"></div></div><span class="text-[10px] text-gray-500 w-8" id="l4-cl-9-n">0</span></div>
+        </div>
+      </div>
     </div>
   </div>
 
   <!-- ═════════ TAB: L5 Free World ═════════ -->
   <div id="pane-l5" class="hidden space-y-4">
     <div class="zion-panel p-6">
-      <h2 class="text-xl font-bold mb-2 flex items-center gap-2"><span class="text-gradient">🕊️ L5 — Free World Humanitarian</span></h2>
-      <p class="text-sm text-gray-400 mb-4">Humanitarian aid coordination — mesh networks, medical tables, community DAOs.</p>
-      <div id="layer-l5-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+      <div class="flex items-center justify-between mb-5">
+        <div>
+          <h2 class="text-xl font-bold flex items-center gap-2"><span class="text-gradient">🕊️ L5 — Free World Humanitarian</span></h2>
+          <p class="text-sm text-gray-400 mt-1">Humanitarian aid, mesh networks, medical logistics, community-driven DAOs.</p>
+        </div>
+        <button onclick="loadLayerFull('l5')" class="zion-button-secondary text-xs px-3 py-1.5">Refresh</button>
+      </div>
+      <!-- L5 KPI row -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+        <div class="bg-black/30 rounded-xl p-3.5 text-center"><div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Active Regions</div><div id="l5-regions" class="text-lg font-bold text-emerald-400">—</div></div>
+        <div class="bg-black/30 rounded-xl p-3.5 text-center"><div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Aid Distributed</div><div id="l5-aid" class="text-lg font-bold text-blue-400">—</div></div>
+        <div class="bg-black/30 rounded-xl p-3.5 text-center"><div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Mesh Nodes</div><div id="l5-mesh" class="text-lg font-bold text-amber-400">—</div></div>
+        <div class="bg-black/30 rounded-xl p-3.5 text-center"><div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Community DAOs</div><div id="l5-daos" class="text-lg font-bold text-purple-400">—</div></div>
+      </div>
+      <div id="layer-l5-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5"></div>
+      <!-- Humanitarian tithe info -->
+      <div class="zion-panel p-4" style="border-color:rgba(16,185,129,0.2);background:linear-gradient(135deg,rgba(15,20,35,0.95),rgba(16,185,129,0.04));">
+        <h3 class="zion-kicker mb-3">5% Humanitarian Tithe</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div class="bg-black/30 rounded-lg p-3"><div class="text-[10px] text-gray-500 mb-1">Tithe Address</div><div class="text-xs font-mono text-emerald-300 break-all">zion1m4v5z8z850u480c5c208z274e334369275n5y20</div></div>
+          <div class="bg-black/30 rounded-lg p-3"><div class="text-[10px] text-gray-500 mb-1">Total Collected</div><div id="l5-tithe-total" class="text-sm font-bold text-emerald-400">—</div></div>
+          <div class="bg-black/30 rounded-lg p-3"><div class="text-[10px] text-gray-500 mb-1">Last Distribution</div><div id="l5-tithe-last" class="text-sm font-bold text-gray-300">—</div></div>
+        </div>
+      </div>
     </div>
   </div>
 
   <!-- ═════════ TAB: L6 Issobella Space ═════════ -->
   <div id="pane-l6" class="hidden space-y-4">
     <div class="zion-panel p-6">
-      <h2 class="text-xl font-bold mb-2 flex items-center gap-2"><span class="text-gradient">🚀 L6 — Issobella Space Layer</span></h2>
-      <p class="text-sm text-gray-400 mb-4">Space infrastructure coordination — satellite relay, off-world settlements, orbital DAOs.</p>
-      <div id="layer-l6-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+      <div class="flex items-center justify-between mb-5">
+        <div>
+          <h2 class="text-xl font-bold flex items-center gap-2"><span class="text-gradient">🚀 L6 — Issobella Space Layer</span></h2>
+          <p class="text-sm text-gray-400 mt-1">Space infrastructure coordination — satellite relay, orbital DAOs, off-world settlements.</p>
+        </div>
+        <button onclick="loadLayerFull('l6')" class="zion-button-secondary text-xs px-3 py-1.5">Refresh</button>
+      </div>
+      <!-- L6 KPI row -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+        <div class="bg-black/30 rounded-xl p-3.5 text-center"><div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Satellites</div><div id="l6-satellites" class="text-lg font-bold text-emerald-400">—</div></div>
+        <div class="bg-black/30 rounded-xl p-3.5 text-center"><div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Orbital DAOs</div><div id="l6-orbital-daos" class="text-lg font-bold text-blue-400">—</div></div>
+        <div class="bg-black/30 rounded-xl p-3.5 text-center"><div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Settlements</div><div id="l6-settlements" class="text-lg font-bold text-amber-400">—</div></div>
+        <div class="bg-black/30 rounded-xl p-3.5 text-center"><div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Relay Uptime</div><div id="l6-uptime" class="text-lg font-bold text-purple-400">—</div></div>
+      </div>
+      <div id="layer-l6-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5"></div>
+      <!-- Issobella fund info -->
+      <div class="zion-panel p-4" style="border-color:rgba(147,51,234,0.2);background:linear-gradient(135deg,rgba(15,20,35,0.95),rgba(147,51,234,0.04));">
+        <h3 class="zion-kicker mb-3">5% Issobella Space Fund</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div class="bg-black/30 rounded-lg p-3"><div class="text-[10px] text-gray-500 mb-1">Fund Address</div><div class="text-xs font-mono text-purple-300 break-all">zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702</div></div>
+          <div class="bg-black/30 rounded-lg p-3"><div class="text-[10px] text-gray-500 mb-1">Total Collected</div><div id="l6-fund-total" class="text-sm font-bold text-purple-400">—</div></div>
+          <div class="bg-black/30 rounded-lg p-3"><div class="text-[10px] text-gray-500 mb-1">Next Milestone</div><div id="l6-fund-next" class="text-sm font-bold text-gray-300">—</div></div>
+        </div>
+      </div>
     </div>
   </div>
 
   <!-- ═════════ TAB: Charts ═════════ -->
   <div id="pane-charts" class="hidden space-y-4">
+    <!-- Timeframe selector & controls -->
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <span class="text-xs text-gray-500">Timeframe:</span>
+        <div class="flex gap-1">
+          <button onclick="setChartTimeframe('2m')" class="chart-tf-btn text-[10px] px-2.5 py-1 rounded bg-black/30 text-gray-400 hover:bg-emerald-900/20 hover:text-emerald-300 transition" data-tf="2m">2m</button>
+          <button onclick="setChartTimeframe('5m')" class="chart-tf-btn text-[10px] px-2.5 py-1 rounded bg-emerald-900/30 text-emerald-300 border border-emerald-500/30 transition" data-tf="5m">5m</button>
+          <button onclick="setChartTimeframe('10m')" class="chart-tf-btn text-[10px] px-2.5 py-1 rounded bg-black/30 text-gray-400 hover:bg-emerald-900/20 hover:text-emerald-300 transition" data-tf="10m">10m</button>
+          <button onclick="setChartTimeframe('all')" class="chart-tf-btn text-[10px] px-2.5 py-1 rounded bg-black/30 text-gray-400 hover:bg-emerald-900/20 hover:text-emerald-300 transition" data-tf="all">All</button>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <label class="flex items-center gap-1.5 text-[10px] text-gray-500 cursor-pointer">
+          <input type="checkbox" id="chart-live-toggle" checked class="w-3 h-3 accent-emerald-400">
+          Live update
+        </label>
+        <button onclick="refreshCharts()" class="text-[10px] px-2 py-1 rounded bg-black/30 text-gray-400 hover:text-white transition">Refresh</button>
+      </div>
+    </div>
+    <!-- Main charts grid -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <div class="zion-panel p-5"><h3 class="text-sm font-bold mb-3 zion-kicker">Hashrate (KH/s)</h3><canvas id="chart-hashrate" height="160"></canvas></div>
       <div class="zion-panel p-5"><h3 class="text-sm font-bold mb-3 zion-kicker">Chain Height Progression</h3><canvas id="chart-height" height="160"></canvas></div>
       <div class="zion-panel p-5"><h3 class="text-sm font-bold mb-3 zion-kicker">Shares Accepted / Rejected</h3><canvas id="chart-shares" height="160"></canvas></div>
       <div class="zion-panel p-5"><h3 class="text-sm font-bold mb-3 zion-kicker">Active Sessions &amp; Peers</h3><canvas id="chart-sessions" height="160"></canvas></div>
+    </div>
+    <!-- Additional analytics row -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div class="zion-panel p-5"><h3 class="text-sm font-bold mb-3 zion-kicker">Block Time (seconds)</h3><canvas id="chart-blocktime" height="140"></canvas></div>
+      <div class="zion-panel p-5"><h3 class="text-sm font-bold mb-3 zion-kicker">Resource Usage (CPU/RAM)</h3><canvas id="chart-resources" height="140"></canvas></div>
+      <div class="zion-panel p-5">
+        <h3 class="text-sm font-bold mb-3 zion-kicker">Summary Statistics</h3>
+        <div class="space-y-2.5 text-xs">
+          <div class="flex justify-between items-center"><span class="text-gray-500">Avg Hashrate</span><span id="stat-avg-hr" class="font-bold text-emerald-400">—</span></div>
+          <div class="flex justify-between items-center"><span class="text-gray-500">Peak Hashrate</span><span id="stat-peak-hr" class="font-bold text-blue-400">—</span></div>
+          <div class="flex justify-between items-center"><span class="text-gray-500">Share Rate</span><span id="stat-share-rate" class="font-bold text-amber-400">—</span></div>
+          <div class="flex justify-between items-center"><span class="text-gray-500">Reject Rate</span><span id="stat-reject-rate" class="font-bold text-red-400">—</span></div>
+          <div class="flex justify-between items-center"><span class="text-gray-500">Uptime</span><span id="stat-uptime" class="font-bold text-purple-400">—</span></div>
+          <div class="flex justify-between items-center"><span class="text-gray-500">Avg Block Time</span><span id="stat-avg-bt" class="font-bold text-cyan-400">—</span></div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1275,6 +1538,244 @@ button{display:inline-flex;align-items:center;justify-content:center;cursor:poin
         </div>
         <div id="chat-status" class="mt-2 text-xs text-gray-500"></div>
       </div>
+
+      <!-- ════════════════════════════════════════════════════════════════════
+           NCL — Neural Compute Layer  (full redesign)
+           ════════════════════════════════════════════════════════════════════ -->
+
+      <!-- NCL Hero Header -->
+      <div class="relative overflow-hidden rounded-2xl mt-6" style="border:1px solid rgba(147,51,234,0.25);background:linear-gradient(135deg,rgba(15,20,35,0.96) 0%,rgba(30,18,60,0.92) 40%,rgba(35,20,68,0.88) 70%,rgba(15,20,35,0.96) 100%);box-shadow:0 24px 60px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.05);">
+        <div class="absolute inset-0 opacity-20 pointer-events-none" style="background:radial-gradient(circle at 20% 50%,rgba(147,51,234,0.35) 0%,transparent 50%),radial-gradient(circle at 80% 50%,rgba(6,182,212,0.25) 0%,transparent 50%)"></div>
+        <div class="relative p-6">
+          <div class="flex items-center justify-between mb-5">
+            <div class="flex items-center gap-4">
+              <div class="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl" style="background:linear-gradient(135deg,#9333ea,#06b6d4);box-shadow:0 0 28px rgba(147,51,234,0.35);">&#x1f9e0;</div>
+              <div>
+                <h2 class="text-xl font-bold text-white tracking-tight">Neural Compute Layer</h2>
+                <div class="flex items-center gap-2 mt-1">
+                  <span id="ncl-live-dot" class="ncl-dot-off"></span>
+                  <span id="ncl-live-label" class="text-xs text-gray-400">Connecting...</span>
+                  <span class="text-gray-700">|</span>
+                  <span id="ncl-refresh-ts" class="text-xs text-gray-600"></span>
+                </div>
+              </div>
+            </div>
+            <div class="flex gap-2 items-center">
+              <label class="flex items-center gap-2 cursor-pointer select-none">
+                <input type="checkbox" id="ncl-auto-refresh" checked onchange="toggleNclAutoRefresh()" class="w-4 h-4 rounded border-gray-600 accent-purple-500"/>
+                <span class="text-xs text-gray-400 font-medium">Auto 10s</span>
+              </label>
+              <button onclick="loadNclFull()" class="zion-button-secondary text-xs px-3 py-1.5">Refresh</button>
+            </div>
+          </div>
+
+          <!-- Stat cards -->
+          <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+            <div class="bg-white/[0.04] hover:bg-white/[0.07] backdrop-blur rounded-xl p-3.5 border border-white/[0.06] hover:border-emerald-500/30 transition-all">
+              <div class="text-[10px] text-gray-500 font-semibold uppercase tracking-wider mb-1">Status</div>
+              <div id="ncl-status-val" class="text-lg font-bold text-emerald-400">—</div>
+            </div>
+            <div class="bg-white/[0.04] hover:bg-white/[0.07] backdrop-blur rounded-xl p-3.5 border border-white/[0.06] hover:border-blue-500/30 transition-all">
+              <div class="text-[10px] text-gray-500 font-semibold uppercase tracking-wider mb-1">Workers</div>
+              <div id="ncl-workers-val" class="text-lg font-bold text-blue-400">—</div>
+            </div>
+            <div class="bg-white/[0.04] hover:bg-white/[0.07] backdrop-blur rounded-xl p-3.5 border border-white/[0.06] hover:border-amber-500/30 transition-all">
+              <div class="text-[10px] text-gray-500 font-semibold uppercase tracking-wider mb-1">Queue</div>
+              <div id="ncl-queue-val" class="text-lg font-bold text-amber-400">—</div>
+            </div>
+            <div class="bg-white/[0.04] hover:bg-white/[0.07] backdrop-blur rounded-xl p-3.5 border border-white/[0.06] hover:border-purple-500/30 transition-all">
+              <div class="text-[10px] text-gray-500 font-semibold uppercase tracking-wider mb-1">Price/Token</div>
+              <div id="ncl-price-val" class="text-lg font-bold text-purple-400">—</div>
+            </div>
+            <div class="bg-white/[0.04] hover:bg-white/[0.07] backdrop-blur rounded-xl p-3.5 border border-white/[0.06] hover:border-cyan-500/30 transition-all">
+              <div class="text-[10px] text-gray-500 font-semibold uppercase tracking-wider mb-1">TFLOPS</div>
+              <div id="ncl-tflops-val" class="text-lg font-bold text-cyan-400">—</div>
+            </div>
+            <div class="bg-white/[0.04] hover:bg-white/[0.07] backdrop-blur rounded-xl p-3.5 border border-white/[0.06] hover:border-rose-500/30 transition-all">
+              <div class="text-[10px] text-gray-500 font-semibold uppercase tracking-wider mb-1">Jobs Total</div>
+              <div id="ncl-jobs-total-val" class="text-lg font-bold text-rose-400">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- NCL Sub-tabs -->
+      <div class="flex gap-1 p-1 rounded-xl mt-4" style="background:rgba(15,20,35,0.7);border:1px solid rgba(255,255,255,0.08);">
+        <button onclick="switchNclTab('workers')" id="ncl-tab-workers" class="ncl-tab-btn active flex-1">Workers</button>
+        <button onclick="switchNclTab('leaderboard')" id="ncl-tab-leaderboard" class="ncl-tab-btn flex-1">Leaderboard</button>
+        <button onclick="switchNclTab('jobs')" id="ncl-tab-jobs" class="ncl-tab-btn flex-1">Job History</button>
+        <button onclick="switchNclTab('submit')" id="ncl-tab-submit" class="ncl-tab-btn flex-1">Submit Job</button>
+        <button onclick="switchNclTab('analytics')" id="ncl-tab-analytics" class="ncl-tab-btn flex-1">Analytics</button>
+      </div>
+
+      <!-- Workers Pane -->
+      <div id="ncl-pane-workers" class="ncl-pane">
+        <div class="zion-panel overflow-hidden">
+          <div class="px-5 py-3 flex items-center justify-between" style="border-bottom:1px solid rgba(255,255,255,0.08);">
+            <h3 class="text-sm font-bold text-gray-200 flex items-center gap-2">Active Workers</h3>
+            <span id="ncl-worker-count-badge" class="px-2.5 py-0.5 bg-blue-500/15 text-blue-400 text-xs font-bold rounded-full border border-blue-500/20">0</span>
+          </div>
+          <div id="ncl-worker-list" class="divide-y divide-white/[0.04] max-h-[480px] overflow-y-auto">
+            <div class="p-6 text-center text-gray-500 text-sm">Loading workers...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Leaderboard Pane -->
+      <div id="ncl-pane-leaderboard" class="ncl-pane hidden">
+        <div class="zion-panel overflow-hidden">
+          <div class="px-5 py-3 flex items-center justify-between" style="border-bottom:1px solid rgba(255,255,255,0.08);">
+            <h3 class="text-sm font-bold text-gray-200 flex items-center gap-2">&#x1F3C6; Compute Leaderboard</h3>
+          </div>
+          <div id="ncl-leaderboard-dash" class="divide-y divide-white/[0.04] max-h-[480px] overflow-y-auto">
+            <div class="p-6 text-center text-gray-500 text-sm">Loading leaderboard...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Job History Pane -->
+      <div id="ncl-pane-jobs" class="ncl-pane hidden">
+        <div class="zion-panel overflow-hidden">
+          <div class="px-5 py-3 flex items-center justify-between" style="border-bottom:1px solid rgba(255,255,255,0.08);">
+            <h3 class="text-sm font-bold text-gray-200 flex items-center gap-2">&#x1F4CB; Job History</h3>
+            <div class="flex gap-2">
+              <select id="ncl-job-filter" onchange="renderNclJobHistory()" class="bg-black/30 border border-white/10 rounded-lg px-2 py-1 text-xs text-gray-300 focus:outline-none focus:border-purple-500/50">
+                <option value="all">All</option>
+                <option value="Queued">Queued</option>
+                <option value="Running">Running</option>
+                <option value="Completed">Completed</option>
+                <option value="Failed">Failed</option>
+              </select>
+              <button onclick="loadNclJobHistory()" class="zion-button-secondary text-xs px-2 py-1">Refresh</button>
+            </div>
+          </div>
+          <div id="ncl-job-history-list" class="divide-y divide-white/[0.04] max-h-[480px] overflow-y-auto">
+            <div class="p-6 text-center text-gray-500 text-sm">Loading job history...</div>
+          </div>
+          <div class="px-5 py-2 flex items-center justify-between" style="border-top:1px solid rgba(255,255,255,0.06);background:rgba(0,0,0,0.2);">
+            <span id="ncl-job-count" class="text-xs text-gray-500">0 jobs</span>
+            <span id="ncl-job-success-rate" class="text-xs text-gray-500">— success rate</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Submit Job Pane -->
+      <div id="ncl-pane-submit" class="ncl-pane hidden">
+        <div class="zion-panel p-6">
+          <h3 class="text-sm font-bold text-gray-200 flex items-center gap-2 mb-5">&#x1F680; Submit NCL Job</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+            <div>
+              <label class="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Job Type</label>
+              <select id="ncl-job-type-dash" class="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-purple-500/50 transition">
+                <option value="inference">Inference</option>
+                <option value="embedding">Embedding</option>
+                <option value="training">Fine-tuning</option>
+                <option value="rag">RAG Query</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Backend</label>
+              <select id="ncl-job-backend" class="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-purple-500/50 transition">
+                <option value="Custom">Custom (Hiran)</option>
+                <option value="OnnxRuntime">ONNX Runtime</option>
+                <option value="Wasm">WebAssembly</option>
+                <option value="TfLite">TensorFlow Lite</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Model</label>
+              <select id="ncl-job-model" class="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-gray-200 focus:outline-none focus:border-purple-500/50 transition">
+                <option value="hiran-v2.2">Hiran v2.2 (Q4_K_M)</option>
+                <option value="hiran-v2.2-f16">Hiran v2.2 (F16)</option>
+                <option value="hiran-v2.1">Hiran v2.1 (Legacy)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Priority: <span id="ncl-priority-label" class="text-purple-400">5</span></label>
+              <input type="range" id="ncl-job-priority" min="0" max="10" value="5" class="ncl-slider w-full mt-1" oninput="document.getElementById('ncl-priority-label').textContent=this.value"/>
+              <div class="flex justify-between text-[10px] text-gray-600 mt-1"><span>Low (0)</span><span>Normal (5)</span><span>Urgent (10)</span></div>
+            </div>
+          </div>
+          <!-- Prompt -->
+          <div class="mb-5">
+            <label class="block text-xs font-semibold text-gray-400 mb-1.5 uppercase tracking-wider">Prompt / Input</label>
+            <textarea id="ncl-job-prompt" rows="3" placeholder="Enter inference prompt, embedding text, or training params..."
+                      class="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-purple-500/50 transition resize-none"></textarea>
+          </div>
+          <!-- Advanced -->
+          <details class="mb-5 group">
+            <summary class="text-xs text-gray-500 cursor-pointer hover:text-gray-300 transition font-semibold uppercase tracking-wider">Advanced Settings</summary>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3 pt-3" style="border-top:1px solid rgba(255,255,255,0.06);">
+              <div>
+                <label class="block text-[10px] text-gray-500 mb-1">Reward (flowers)</label>
+                <input type="number" id="ncl-job-reward" value="20000000000" class="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-gray-300 focus:outline-none focus:border-purple-500/50"/>
+              </div>
+              <div>
+                <label class="block text-[10px] text-gray-500 mb-1">Max Duration (sec)</label>
+                <input type="number" id="ncl-job-duration" value="60" class="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-gray-300 focus:outline-none focus:border-purple-500/50"/>
+              </div>
+              <div>
+                <label class="block text-[10px] text-gray-500 mb-1">Submitter ID</label>
+                <input type="text" id="ncl-job-submitter" value="dashboard" class="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-gray-300 focus:outline-none focus:border-purple-500/50"/>
+              </div>
+            </div>
+          </details>
+          <!-- Cost estimate -->
+          <div class="flex items-center justify-between p-3.5 rounded-xl mb-5" style="background:linear-gradient(135deg,rgba(147,51,234,0.08),rgba(6,182,212,0.06));border:1px solid rgba(147,51,234,0.15);">
+            <div class="text-xs text-gray-400 font-medium">Estimated cost</div>
+            <div class="text-sm font-bold text-purple-300" id="ncl-est-cost">0.02 ZION</div>
+          </div>
+          <!-- Submit -->
+          <div class="flex items-center gap-3">
+            <button onclick="submitNclJob()" id="ncl-submit-btn" class="zion-button-primary px-6 py-2.5 text-sm">Submit Job</button>
+            <span id="ncl-job-result-dash" class="text-sm text-gray-400"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Analytics Pane -->
+      <div id="ncl-pane-analytics" class="ncl-pane hidden">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="zion-panel p-5">
+            <h3 class="text-sm font-bold text-gray-300 mb-3 flex items-center gap-2">&#x1F4C8; Jobs Over Time</h3>
+            <div style="height:200px;"><canvas id="ncl-jobs-chart"></canvas></div>
+          </div>
+          <div class="zion-panel p-5">
+            <h3 class="text-sm font-bold text-gray-300 mb-3 flex items-center gap-2">&#x26A1; Worker Performance</h3>
+            <div style="height:200px;"><canvas id="ncl-perf-chart"></canvas></div>
+          </div>
+        </div>
+        <!-- Pricing breakdown -->
+        <div class="zion-panel p-5 mt-4">
+          <h3 class="text-sm font-bold text-gray-300 mb-3 flex items-center gap-2">&#x1F4B0; Pricing Breakdown</h3>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+            <div class="bg-black/30 rounded-xl p-3.5 text-center">
+              <div class="text-[10px] text-gray-500 font-semibold uppercase tracking-wider mb-1">Per Job</div>
+              <div id="ncl-price-job" class="text-sm font-bold text-purple-300">—</div>
+            </div>
+            <div class="bg-black/30 rounded-xl p-3.5 text-center">
+              <div class="text-[10px] text-gray-500 font-semibold uppercase tracking-wider mb-1">Per Token</div>
+              <div id="ncl-price-token" class="text-sm font-bold text-purple-300">—</div>
+            </div>
+            <div class="bg-black/30 rounded-xl p-3.5 text-center">
+              <div class="text-[10px] text-gray-500 font-semibold uppercase tracking-wider mb-1">Worker Share</div>
+              <div id="ncl-price-worker" class="text-sm font-bold text-emerald-300">—</div>
+            </div>
+            <div class="bg-black/30 rounded-xl p-3.5 text-center">
+              <div class="text-[10px] text-gray-500 font-semibold uppercase tracking-wider mb-1">Protocol Fee</div>
+              <div id="ncl-price-protocol" class="text-sm font-bold text-amber-300">—</div>
+            </div>
+          </div>
+          <div class="h-3 rounded-full overflow-hidden flex" style="background:rgba(255,255,255,0.04);">
+            <div id="ncl-fee-worker-bar" class="bg-emerald-500 transition-all" style="width:90%"></div>
+            <div id="ncl-fee-protocol-bar" class="bg-amber-500 transition-all" style="width:10%"></div>
+          </div>
+          <div class="flex justify-between text-[10px] text-gray-500 mt-1">
+            <span id="ncl-fee-split-label">90% worker / 10% protocol</span>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -1445,6 +1946,38 @@ button{display:inline-flex;align-items:center;justify-content:center;cursor:poin
             <button onclick="controlAction('start-desktop-agent')" class="text-[10px] px-2 py-1 bg-emerald-700/50 hover:bg-emerald-600 rounded font-semibold">▶ Desktop</button>
             <button onclick="window.open('https://zionterranova.com','_blank')" class="text-[10px] px-2 py-1 bg-blue-700/50 hover:bg-blue-600 rounded font-semibold">Open Web</button>
           </div>
+        </div>
+      </div>
+    </div>
+    <!-- Sync Gap & Health Timeline -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="zion-panel p-5">
+        <h3 class="text-sm font-bold mb-3 zion-kicker">Sync Gap (Node1 vs Node2)</h3>
+        <div class="flex items-center gap-4 mb-3">
+          <div class="flex-1">
+            <div class="flex justify-between text-[10px] text-gray-500 mb-1"><span>Node1</span><span id="topo-sync-n1">—</span></div>
+            <div class="h-2.5 rounded-full bg-black/40 overflow-hidden"><div id="topo-sync-bar-n1" class="h-full rounded-full bg-emerald-500 transition-all" style="width:50%"></div></div>
+          </div>
+          <div class="text-center">
+            <div id="topo-sync-gap" class="text-lg font-bold text-amber-400">0</div>
+            <div class="text-[10px] text-gray-500">gap</div>
+          </div>
+          <div class="flex-1">
+            <div class="flex justify-between text-[10px] text-gray-500 mb-1"><span>Node2</span><span id="topo-sync-n2">—</span></div>
+            <div class="h-2.5 rounded-full bg-black/40 overflow-hidden"><div id="topo-sync-bar-n2" class="h-full rounded-full bg-purple-500 transition-all" style="width:50%"></div></div>
+          </div>
+        </div>
+        <div class="text-[10px] text-gray-500 mt-2">Sync health:
+          <span id="topo-sync-verdict" class="font-bold text-emerald-400">Checking...</span>
+        </div>
+      </div>
+      <div class="zion-panel p-5">
+        <h3 class="text-sm font-bold mb-3 zion-kicker">Service Latency (ms)</h3>
+        <div id="topo-latency-grid" class="space-y-2">
+          <div class="flex items-center gap-2"><span class="text-[10px] text-gray-500 w-24">Node RPC</span><div class="flex-1 h-2 rounded-full bg-black/40 overflow-hidden"><div id="lat-rpc" class="h-full rounded-full bg-emerald-500 transition-all" style="width:0%"></div></div><span id="lat-rpc-ms" class="text-[10px] text-gray-400 w-12 text-right">—</span></div>
+          <div class="flex items-center gap-2"><span class="text-[10px] text-gray-500 w-24">Pool</span><div class="flex-1 h-2 rounded-full bg-black/40 overflow-hidden"><div id="lat-pool" class="h-full rounded-full bg-blue-500 transition-all" style="width:0%"></div></div><span id="lat-pool-ms" class="text-[10px] text-gray-400 w-12 text-right">—</span></div>
+          <div class="flex items-center gap-2"><span class="text-[10px] text-gray-500 w-24">Hiranyagarbha</span><div class="flex-1 h-2 rounded-full bg-black/40 overflow-hidden"><div id="lat-hiran" class="h-full rounded-full bg-purple-500 transition-all" style="width:0%"></div></div><span id="lat-hiran-ms" class="text-[10px] text-gray-400 w-12 text-right">—</span></div>
+          <div class="flex items-center gap-2"><span class="text-[10px] text-gray-500 w-24">Dashboard</span><div class="flex-1 h-2 rounded-full bg-black/40 overflow-hidden"><div id="lat-dash" class="h-full rounded-full bg-amber-500 transition-all" style="width:0%"></div></div><span id="lat-dash-ms" class="text-[10px] text-gray-400 w-12 text-right">—</span></div>
         </div>
       </div>
     </div>

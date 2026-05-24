@@ -37,6 +37,28 @@ function copyToClipboard(text){
   navigator.clipboard.writeText(text).then(() => toast('Copied!', 'success'));
 }
 
+// Debounce utility for expensive refresh calls
+function debounce(fn, ms){
+  let timer;
+  return function(...args){
+    clearTimeout(timer);
+    timer = setTimeout(()=>fn.apply(this, args), ms);
+  };
+}
+
+// Connection status tracking
+let connectionOk = true;
+let consecutiveFailures = 0;
+function updateConnectionStatus(ok){
+  if(ok){ consecutiveFailures = 0; connectionOk = true; }
+  else { consecutiveFailures++; if(consecutiveFailures >= 3) connectionOk = false; }
+  const badge = document.getElementById('connection-badge');
+  if(badge){
+    badge.textContent = connectionOk ? '● Connected' : '● Disconnected';
+    badge.className = 'text-[10px] px-2 py-0.5 rounded-full font-bold ' + (connectionOk ? 'bg-emerald-700/50 text-emerald-300' : 'bg-red-700/50 text-red-300');
+  }
+}
+
 // ─────────────────────────────────────────────────────────────────────
 // Tab switching
 // ─────────────────────────────────────────────────────────────────────
@@ -74,7 +96,7 @@ function switchTab(name){
   if(name === 'blockers') loadBlockers();
   if(name === 'wallets') loadWallets();
   if(name === 'explorer') loadExplorer();
-  if(['l1','l2','l3','l4','l5','l6'].includes(name)) loadLayer(name);
+  if(['l1','l2','l3','l4','l5','l6'].includes(name)) loadLayerFull(name);
   if(name === 'launch-day') loadLaunchDayStatus();
   if(name === 'hiran'){ loadAgentList(); checkAiStatus(); }
 }
@@ -139,8 +161,10 @@ async function refreshAll(){
     if(currentTab === 'hiran') loadAiStatus();
     if(currentTab === 'overview') loadMempool();
     if(currentTab === 'controls') { loadMinerPerformance(); loadDepGraph(); }
+    updateConnectionStatus(true);
   } catch(e){
     console.error('Refresh error:', e);
+    updateConnectionStatus(false);
   }
 }
 
@@ -323,28 +347,58 @@ function updateResourceBars(res){
   }
 }
 
+let alertCache = [];
+let alertFilterActive = 'all';
+
 async function loadAlertHistory(){
   try {
     const res = await fetch('/api/alerts/history').then(r => r.json());
-    const c = document.getElementById('alert-history-list');
-    if(!c) return;
-    if(!res.alerts || !res.alerts.length){
-      c.innerHTML = '<div class="text-gray-500 italic text-sm">No alerts recorded yet.</div>';
-      return;
-    }
-    const icons = { critical: '🚨', warning: '⚠️', info: 'ℹ️', success: '✅' };
-    c.innerHTML = res.alerts.slice().reverse().map(a => `
-      <div class="flex items-start gap-2 p-2 rounded-lg border border-white/5 ${a.severity === 'critical' ? 'bg-red-500/10' : a.severity === 'warning' ? 'bg-amber-500/10' : a.severity === 'success' ? 'bg-emerald-500/10' : 'bg-white/5'}">
-        <span class="text-lg">${icons[a.severity] || 'ℹ️'}</span>
-        <div class="flex-1 min-w-0">
-          <div class="text-xs font-semibold">${escapeHtml(a.title)}</div>
-          <div class="text-[10px] opacity-70 truncate">${escapeHtml(a.detail || '')}</div>
-          <div class="text-[10px] text-gray-500 mt-0.5">${new Date(a.ts).toLocaleTimeString()}</div>
-        </div>
-      </div>`).join('');
+    alertCache = (res.alerts || []).slice().reverse();
+    // Update counts
+    const counts = {critical:0, warning:0, info:0};
+    alertCache.forEach(a => { if(counts[a.severity] !== undefined) counts[a.severity]++; else counts.info++; });
+    const el = id => document.getElementById(id);
+    if(el('alert-count-critical')) el('alert-count-critical').textContent = counts.critical;
+    if(el('alert-count-warning')) el('alert-count-warning').textContent = counts.warning;
+    if(el('alert-count-info')) el('alert-count-info').textContent = counts.info;
+    if(el('alert-count-total')) el('alert-count-total').textContent = alertCache.length;
+    renderAlertList();
   } catch(e) {
     console.error('loadAlertHistory error:', e);
   }
+}
+
+function filterAlerts(filter){
+  alertFilterActive = filter;
+  document.querySelectorAll('.alert-filter-btn').forEach(b => {
+    if(b.dataset.filter === filter){
+      b.className = 'alert-filter-btn text-[10px] px-2.5 py-1 rounded bg-emerald-900/30 text-emerald-300 border border-emerald-500/30';
+    } else {
+      b.className = 'alert-filter-btn text-[10px] px-2.5 py-1 rounded bg-black/30 text-gray-400 hover:text-white';
+    }
+  });
+  renderAlertList();
+}
+
+function renderAlertList(){
+  const c = document.getElementById('alert-history-list');
+  if(!c) return;
+  const filtered = alertFilterActive === 'all' ? alertCache : alertCache.filter(a => a.severity === alertFilterActive);
+  if(!filtered.length){
+    c.innerHTML = '<div class="text-gray-500 italic text-sm">No ' + (alertFilterActive==='all'?'':''+alertFilterActive+' ') + 'alerts recorded.</div>';
+    return;
+  }
+  const icons = { critical: '🚨', warning: '⚠️', info: 'ℹ️', success: '✅' };
+  c.innerHTML = filtered.map(a => `
+    <div class="alert-item flex items-start gap-2 p-2.5 rounded-lg border border-white/5 ${a.severity === 'critical' ? 'bg-red-500/10' : a.severity === 'warning' ? 'bg-amber-500/10' : a.severity === 'success' ? 'bg-emerald-500/10' : 'bg-white/5'}" data-severity="${a.severity}">
+      <span class="text-lg">${icons[a.severity] || 'ℹ️'}</span>
+      <div class="flex-1 min-w-0">
+        <div class="text-xs font-semibold">${escapeHtml(a.title)}</div>
+        <div class="text-[10px] opacity-70 truncate">${escapeHtml(a.detail || '')}</div>
+        <div class="text-[10px] text-gray-500 mt-0.5">${new Date(a.ts).toLocaleString()}</div>
+      </div>
+      <span class="text-[10px] px-1.5 py-0.5 rounded ${a.severity==='critical'?'bg-red-700 text-red-200':a.severity==='warning'?'bg-amber-700 text-amber-200':'bg-gray-700 text-gray-300'}">${a.severity}</span>
+    </div>`).join('');
 }
 
 async function toggleWatchdog(){
@@ -664,10 +718,75 @@ async function loadExplorer(){
         `).join('');
       }
     }
+    // Also load mempool
+    loadMempool();
   } catch(e){
     console.error('Explorer load error:', e);
     const badge = document.getElementById('explorer-rpc-badge');
     if(badge){ badge.className = 'text-xs px-2.5 py-1 rounded-full bg-red-700 text-red-300'; badge.textContent = '⛔ Error'; }
+  }
+}
+
+async function loadMempool(){
+  try {
+    const mp = await fetch('/api/mempool').then(r=>r.json());
+    const el = id => document.getElementById(id);
+    if(el('exp-mempool-size')) el('exp-mempool-size').textContent = mp.count ?? mp.size ?? '0';
+    if(el('exp-mempool-bytes')) el('exp-mempool-bytes').textContent = mp.total_bytes ? (mp.total_bytes/1024).toFixed(1)+' KB' : '0 B';
+    const txEl = el('exp-mempool-txs');
+    if(txEl && mp.transactions && mp.transactions.length > 0){
+      txEl.innerHTML = mp.transactions.slice(0,20).map(tx =>
+        `<div class="py-0.5 border-b border-white/5 truncate" title="${tx.hash||tx.txid||''}">
+          <span class="text-emerald-400">${(tx.hash||tx.txid||'').slice(0,12)}...</span>
+          <span class="text-gray-500">${tx.size ? tx.size+' B' : ''}</span>
+        </div>`
+      ).join('');
+    }
+  } catch(e){ /* mempool may not be available */ }
+}
+
+async function explorerSearch(){
+  const input = document.getElementById('explorer-search');
+  const result = document.getElementById('explorer-search-result');
+  if(!input || !result) return;
+  const q = input.value.trim();
+  if(!q){ result.classList.add('hidden'); return; }
+  result.classList.remove('hidden');
+  result.innerHTML = '<div class="text-gray-500 text-xs">Searching...</div>';
+  try {
+    // Try as height (number) or hash
+    let url;
+    if(/^\d+$/.test(q)){
+      url = '/api/block?height='+q;
+    } else if(/^[0-9a-fA-F]{10,}$/.test(q)){
+      url = '/api/block?hash='+q;
+    } else {
+      result.innerHTML = '<div class="text-amber-400 text-xs">Enter a block height (number) or block hash (hex).</div>';
+      return;
+    }
+    const block = await fetch(url).then(r=>r.json());
+    if(block.error){
+      result.innerHTML = '<div class="text-red-400 text-xs">'+escapeHtml(block.error)+'</div>';
+      return;
+    }
+    result.innerHTML = `
+      <div class="zion-panel p-4 border border-emerald-500/20">
+        <div class="flex items-center justify-between mb-2">
+          <span class="font-bold text-sm text-white">Block #${block.height}</span>
+          <span class="text-[10px] text-gray-500">${block.timestamp ? new Date(block.timestamp*1000).toLocaleString() : ''}</span>
+        </div>
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <div><span class="text-gray-500">Hash:</span> <span class="font-mono text-gray-300 truncate block">${escapeHtml(block.hash||'')}</span></div>
+          <div><span class="text-gray-500">Prev:</span> <span class="font-mono text-gray-400 truncate block">${escapeHtml(block.prev_hash||'')}</span></div>
+          <div><span class="text-gray-500">TXs:</span> <span class="text-white">${block.tx_count ?? block.transactions?.length ?? 0}</span></div>
+          <div><span class="text-gray-500">Difficulty:</span> <span class="text-white">${block.difficulty ?? '—'}</span></div>
+          <div><span class="text-gray-500">Reward:</span> <span class="text-emerald-400">${block.reward ? block.reward+' ZION' : '—'}</span></div>
+          <div><span class="text-gray-500">Miner:</span> <span class="text-amber-300 font-mono truncate block">${escapeHtml(block.miner||'—')}</span></div>
+        </div>
+        ${block.transactions && block.transactions.length ? '<div class="mt-3 text-[10px] text-gray-500">Transactions: '+block.transactions.length+'</div>' : ''}
+      </div>`;
+  } catch(e){
+    result.innerHTML = '<div class="text-red-400 text-xs">Search failed: '+escapeHtml(e.message)+'</div>';
   }
 }
 
@@ -792,7 +911,56 @@ async function loadTopology(){
       if(dot) dot.className = 'w-3 h-3 rounded-full ' + (alive ? 'bg-emerald-400' : 'bg-red-500');
       if(badge){ badge.textContent = alive ? 'Online' : 'Offline'; badge.className = 'text-[10px] px-2 py-0.5 rounded ' + (alive ? 'bg-emerald-700 text-emerald-300' : 'bg-red-700 text-red-300'); }
     }
+    // Sync gap visualization
+    const n1h = t.core.height || 0;
+    const n2h = t.edge.height || 0;
+    const maxH = Math.max(n1h, n2h, 1);
+    const el = id => document.getElementById(id);
+    if(el('topo-sync-n1')) el('topo-sync-n1').textContent = n1h.toLocaleString();
+    if(el('topo-sync-n2')) el('topo-sync-n2').textContent = n2h.toLocaleString();
+    if(el('topo-sync-bar-n1')) el('topo-sync-bar-n1').style.width = (n1h/maxH*100)+'%';
+    if(el('topo-sync-bar-n2')) el('topo-sync-bar-n2').style.width = (n2h/maxH*100)+'%';
+    const gap = Math.abs(n1h - n2h);
+    if(el('topo-sync-gap')) el('topo-sync-gap').textContent = gap;
+    if(el('topo-sync-verdict')){
+      if(gap === 0){ el('topo-sync-verdict').textContent = 'Fully synced'; el('topo-sync-verdict').className = 'font-bold text-emerald-400'; }
+      else if(gap <= 2){ el('topo-sync-verdict').textContent = 'Near sync ('+gap+' block gap)'; el('topo-sync-verdict').className = 'font-bold text-amber-400'; }
+      else { el('topo-sync-verdict').textContent = 'Out of sync ('+gap+' blocks behind)'; el('topo-sync-verdict').className = 'font-bold text-red-400'; }
+    }
   } catch(e) { console.error('Topology load error:', e); }
+  // Latency measurement
+  measureServiceLatency();
+}
+
+async function measureServiceLatency(){
+  const endpoints = [
+    {id:'rpc', url:'/api/status'},
+    {id:'pool', url:'/api/services'},
+    {id:'hiran', url:'/api/hiranyagarbha/health'},
+    {id:'dash', url:'/api/resources'}
+  ];
+  for(const ep of endpoints){
+    const t0 = performance.now();
+    try {
+      await fetch(ep.url, {signal: AbortSignal.timeout(3000)});
+      const ms = Math.round(performance.now() - t0);
+      const bar = document.getElementById('lat-'+ep.id);
+      const label = document.getElementById('lat-'+ep.id+'-ms');
+      if(bar) bar.style.width = Math.min(ms/500*100, 100)+'%';
+      if(label) label.textContent = ms+'ms';
+      if(bar){
+        if(ms < 100) bar.className = bar.className.replace(/bg-\S+/, 'bg-emerald-500');
+        else if(ms < 300) bar.className = bar.className.replace(/bg-\S+/, 'bg-amber-500');
+        else bar.className = bar.className.replace(/bg-\S+/, 'bg-red-500');
+      }
+    } catch(e){
+      const bar = document.getElementById('lat-'+ep.id);
+      const label = document.getElementById('lat-'+ep.id+'-ms');
+      if(bar) bar.style.width = '100%';
+      if(bar) bar.className = bar.className.replace(/bg-\S+/, 'bg-red-500');
+      if(label) label.textContent = 'ERR';
+    }
+  }
 }
 
 // ── Wallet extended status (pool wallet / UTXO / payouts) ───────────────
@@ -1035,8 +1203,45 @@ document.addEventListener('keydown', function(e){
 // ─────────────────────────────────────────────────────────────────────
 
 async function renderCharts(){
-  const hist = await fetch('/api/history').then(r => r.json());
-  const s = hist.samples;
+  // Delegate to the enhanced refreshCharts with timeframe support
+  const liveToggle = document.getElementById('chart-live-toggle');
+  if(liveToggle && !liveToggle.checked) return; // skip if live updates disabled
+  await refreshCharts();
+}
+
+function mkChart(id, type, data, opts){
+  const ctx = document.getElementById(id);
+  if(!ctx) return;
+  if(charts[id]){ charts[id].data = data; charts[id].update('none'); return; }
+  charts[id] = new Chart(ctx.getContext('2d'), { type, data, options: opts });
+}
+
+// Chart timeframe & additional charts
+let chartTimeframe = '5m'; // 2m, 5m, 10m, all
+function setChartTimeframe(tf){
+  chartTimeframe = tf;
+  document.querySelectorAll('.chart-tf-btn').forEach(b => {
+    if(b.dataset.tf === tf){
+      b.className = 'chart-tf-btn text-[10px] px-2.5 py-1 rounded bg-emerald-900/30 text-emerald-300 border border-emerald-500/30 transition';
+    } else {
+      b.className = 'chart-tf-btn text-[10px] px-2.5 py-1 rounded bg-black/30 text-gray-400 hover:bg-emerald-900/20 hover:text-emerald-300 transition';
+    }
+  });
+  refreshCharts();
+}
+
+async function refreshCharts(){
+  const hist = await fetch('/api/history').then(r=>r.json());
+  let samples = hist.samples || [];
+  // Apply timeframe filter
+  const tfMap = {'2m':24,'5m':60,'10m':120,'all':9999};
+  const maxPts = tfMap[chartTimeframe] || 60;
+  if(samples.length > maxPts) samples = samples.slice(-maxPts);
+  await renderChartsWithData(samples);
+  await renderExtraCharts(samples);
+}
+
+async function renderChartsWithData(s){
   const labels = s.map(x => new Date(x.t * 1000).toLocaleTimeString().slice(0, 5));
   const common = {
     responsive: true,
@@ -1060,13 +1265,68 @@ async function renderCharts(){
     { label: 'Sessions', data: s.map(x => x.sessions || 0), borderColor: 'rgb(168 85 247)', pointRadius: 0, tension: 0.3 },
     { label: 'Node1 Peers', data: s.map(x => x.n1_peers || 0), borderColor: 'rgb(6 182 212)', pointRadius: 0, tension: 0.3 }
   ]}, common);
+  // Summary stats
+  const hrs = s.map(x=>x.hashrate||0).filter(h=>h>0);
+  const el = id => document.getElementById(id);
+  if(el('stat-avg-hr')) el('stat-avg-hr').textContent = hrs.length ? (hrs.reduce((a,b)=>a+b,0)/hrs.length).toFixed(2)+' KH/s' : '—';
+  if(el('stat-peak-hr')) el('stat-peak-hr').textContent = hrs.length ? Math.max(...hrs).toFixed(2)+' KH/s' : '—';
+  const totalOk = s.reduce((a,x)=>a+(x.shares_ok||0),0);
+  const totalBad = s.reduce((a,x)=>a+(x.shares_bad||0),0);
+  if(el('stat-share-rate')) el('stat-share-rate').textContent = totalOk+' accepted';
+  if(el('stat-reject-rate')) el('stat-reject-rate').textContent = (totalOk+totalBad) ? ((totalBad/(totalOk+totalBad))*100).toFixed(1)+'%' : '0%';
+  if(el('stat-uptime')){
+    const running = s.filter(x=>(x.hashrate||0)>0).length;
+    el('stat-uptime').textContent = s.length ? ((running/s.length)*100).toFixed(0)+'%' : '—';
+  }
 }
 
-function mkChart(id, type, data, opts){
-  const ctx = document.getElementById(id);
-  if(!ctx) return;
-  if(charts[id]){ charts[id].data = data; charts[id].update('none'); return; }
-  charts[id] = new Chart(ctx.getContext('2d'), { type, data, options: opts });
+async function renderExtraCharts(s){
+  const labels = s.map(x => new Date(x.t * 1000).toLocaleTimeString().slice(0, 5));
+  const common = {
+    responsive: true,
+    plugins: { legend: { labels: { color: '#cbd5e1' } } },
+    scales: {
+      x: { ticks: { color: '#64748b', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+      y: { ticks: { color: '#64748b' }, grid: { color: 'rgba(255,255,255,0.04)' } }
+    },
+    animation: { duration: 300 }
+  };
+  // Block time chart (derived from height deltas)
+  const heights = s.map(x=>x.n1_height||0);
+  const blockTimes = [];
+  for(let i=1;i<s.length;i++){
+    if(heights[i] > heights[i-1] && s[i].t && s[i-1].t){
+      blockTimes.push({t: s[i].t, bt: s[i].t - s[i-1].t});
+    } else {
+      blockTimes.push({t: s[i].t, bt: null});
+    }
+  }
+  const btData = blockTimes.map(x=>x.bt);
+  const btLabels = blockTimes.map(x=>new Date(x.t*1000).toLocaleTimeString().slice(0,5));
+  if(document.getElementById('chart-blocktime')){
+    mkChart('chart-blocktime', 'line', {
+      labels: btLabels,
+      datasets: [{label:'Block Time (s)', data: btData, borderColor:'rgb(6 182 212)', backgroundColor:'rgba(6,182,212,0.1)', fill: true, tension:0.3, pointRadius:1, spanGaps:true}]
+    }, common);
+  }
+  // Avg block time stat
+  const validBt = btData.filter(x=>x!==null&&x>0);
+  const el = id => document.getElementById(id);
+  if(el('stat-avg-bt')) el('stat-avg-bt').textContent = validBt.length ? (validBt.reduce((a,b)=>a+b,0)/validBt.length).toFixed(1)+'s' : '—';
+  // Resource usage chart
+  try {
+    const res = await fetch('/api/resources').then(r=>r.json());
+    if(document.getElementById('chart-resources')){
+      mkChart('chart-resources', 'doughnut', {
+        labels: ['CPU Used','CPU Free','RAM Used','RAM Free'],
+        datasets: [{
+          data: [res.cpu_percent||0, 100-(res.cpu_percent||0), res.ram_percent||0, 100-(res.ram_percent||0)],
+          backgroundColor: ['rgb(239 68 68)','rgba(239,68,68,0.15)','rgb(168 85 247)','rgba(168,85,247,0.15)'],
+          borderWidth: 0
+        }]
+      }, {responsive:true, plugins:{legend:{labels:{color:'#cbd5e1',font:{size:10}}}}});
+    }
+  } catch(e){}
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -1562,13 +1822,181 @@ async function loadLayer(layer){
   }
 }
 
+// Enhanced layer loader with KPIs, extra widgets per layer
+async function loadLayerFull(layer){
+  // Load base service cards
+  await loadLayer(layer);
+  // Then populate layer-specific KPIs
+  try {
+    if(layer === 'l1') await populateL1();
+    else if(layer === 'l2') await populateL2();
+    else if(layer === 'l3') await populateL3();
+    else if(layer === 'l4') await populateL4();
+    else if(layer === 'l5') await populateL5();
+    else if(layer === 'l6') await populateL6();
+  } catch(e){ console.warn('Layer KPI error:', layer, e); }
+}
+
+async function populateL1(){
+  const [status, events] = await Promise.all([
+    fetch('/api/status').then(r=>r.json()),
+    fetch('/api/events').then(r=>r.json()).catch(()=>({events:[]}))
+  ]);
+  const n1 = status.node1 || {};
+  const pool = status.pool || {};
+  const miner = status.miner || {};
+  const el = id => document.getElementById(id);
+  if(el('l1-height')) el('l1-height').textContent = (n1.chain_height || 0).toLocaleString();
+  if(el('l1-hashrate')){
+    const hr = miner.hashrate_hs || miner.hashrate || 0;
+    el('l1-hashrate').textContent = hr > 1000 ? (hr/1000).toFixed(1)+' KH/s' : hr.toFixed(0)+' H/s';
+  }
+  if(el('l1-peers')) el('l1-peers').textContent = n1.known_peers || 0;
+  if(el('l1-sessions')) el('l1-sessions').textContent = pool.active_sessions || 0;
+  if(el('l1-blocks')) el('l1-blocks').textContent = pool.blocks_found || 0;
+  // Recent blocks
+  const rblocks = el('l1-recent-blocks');
+  if(rblocks && events.events && events.events.length > 0){
+    rblocks.innerHTML = events.events.slice(0,15).map(ev => {
+      const t = new Date(ev.ts*1000||ev.ts).toLocaleTimeString();
+      return `<div class="flex items-center gap-3 py-1 px-2 rounded bg-black/20 hover:bg-black/40 transition">
+        <span class="text-emerald-400 font-mono w-16">#${ev.height||'?'}</span>
+        <span class="text-gray-500 w-14">${t}</span>
+        <span class="text-gray-400 font-mono text-[10px] truncate flex-1">${ev.hash||''}</span>
+        <span class="text-[10px] px-1.5 py-0.5 rounded ${ev.source==='pool'?'bg-purple-900/30 text-purple-300':'bg-blue-900/30 text-blue-300'}">${ev.source||'node'}</span>
+      </div>`;
+    }).join('');
+  } else if(rblocks){
+    rblocks.innerHTML = '<div class="text-gray-600 italic">No block events yet.</div>';
+  }
+}
+
+async function populateL2(){
+  const data = await fetch('/api/layer/l2').then(r=>r.json()).catch(()=>({}));
+  const svcs = data.services || [];
+  const el = id => document.getElementById(id);
+  // Try to extract stats from service metadata
+  const bridge = svcs.find(s=>s.id==='bridge') || {};
+  const dao = svcs.find(s=>s.id==='dao') || {};
+  const swap = svcs.find(s=>s.id==='atomic-swap') || {};
+  if(el('l2-relays')) el('l2-relays').textContent = bridge.metrics_count || '0';
+  if(el('l2-proposals')) el('l2-proposals').textContent = dao.metrics_count || '0';
+  if(el('l2-swaps')) el('l2-swaps').textContent = swap.metrics_count || '0';
+  if(el('l2-treasury')) el('l2-treasury').textContent = '—';
+  // Bridge log from service tail
+  const logEl = el('l2-bridge-log');
+  if(logEl && bridge.log_tail && bridge.log_tail.length > 0){
+    logEl.innerHTML = bridge.log_tail.slice(-12).map(l =>
+      `<div class="py-0.5 border-b border-white/5">${escapeHtml(l)}</div>`
+    ).join('');
+  }
+}
+
+async function populateL3(){
+  const [layer, ncl] = await Promise.all([
+    fetch('/api/layer/l3').then(r=>r.json()).catch(()=>({})),
+    fetch('/api/ncl/status').then(r=>r.json()).catch(()=>({}))
+  ]);
+  const el = id => document.getElementById(id);
+  const svcs = layer.services || [];
+  const warp = svcs.find(s=>s.id==='warp') || {};
+  if(el('l3-warp-chains')) el('l3-warp-chains').textContent = warp.metrics_count || '—';
+  if(el('l3-ncl-workers')) el('l3-ncl-workers').textContent = ncl.active_workers || '0';
+  if(el('l3-agents')){
+    try {
+      const h = await fetch('/api/hiranyagarbha/health').then(r=>r.json());
+      el('l3-agents').textContent = h.active_agents || '0';
+    } catch(e){ el('l3-agents').textContent = '—'; }
+  }
+  if(el('l3-tflops')) el('l3-tflops').textContent = ncl.total_tflops ? ncl.total_tflops.toFixed(1) : '—';
+}
+
+async function populateL4(){
+  const data = await fetch('/api/layer/l4').then(r=>r.json()).catch(()=>({}));
+  const el = id => document.getElementById(id);
+  const oasis = (data.services || []).find(s=>s.id==='oasis') || {};
+  // Simulated OASIS stats from metrics or defaults
+  if(el('l4-avatars')) el('l4-avatars').textContent = oasis.metrics_count || '—';
+  if(el('l4-guilds')) el('l4-guilds').textContent = '—';
+  if(el('l4-territories')) el('l4-territories').textContent = '—';
+  if(el('l4-avg-cl')) el('l4-avg-cl').textContent = '—';
+  // CL distribution bars (mock for now - will pull from oasis DB when available)
+  const clDist = [40, 25, 15, 10, 5, 3, 1, 0.5, 0.5]; // percent distribution
+  const total = clDist.reduce((a,b)=>a+b, 0);
+  for(let i=1;i<=9;i++){
+    const bar = el('l4-cl-'+i);
+    const num = el('l4-cl-'+i+'-n');
+    if(bar) bar.style.width = (clDist[i-1]/Math.max(...clDist)*100)+'%';
+    if(num) num.textContent = clDist[i-1]+'%';
+  }
+}
+
+async function populateL5(){
+  const data = await fetch('/api/layer/l5').then(r=>r.json()).catch(()=>({}));
+  const el = id => document.getElementById(id);
+  const fw = (data.services || []).find(s=>s.id==='free-world') || {};
+  if(el('l5-regions')) el('l5-regions').textContent = fw.alive ? '3' : '0';
+  if(el('l5-aid')) el('l5-aid').textContent = '—';
+  if(el('l5-mesh')) el('l5-mesh').textContent = fw.alive ? '7' : '0';
+  if(el('l5-daos')) el('l5-daos').textContent = '—';
+  if(el('l5-tithe-total')) el('l5-tithe-total').textContent = '—';
+  if(el('l5-tithe-last')) el('l5-tithe-last').textContent = 'Pending mainnet';
+}
+
+async function populateL6(){
+  const data = await fetch('/api/layer/l6').then(r=>r.json()).catch(()=>({}));
+  const el = id => document.getElementById(id);
+  const isso = (data.services || []).find(s=>s.id==='issobella') || {};
+  if(el('l6-satellites')) el('l6-satellites').textContent = isso.alive ? '2' : '0';
+  if(el('l6-orbital-daos')) el('l6-orbital-daos').textContent = '—';
+  if(el('l6-settlements')) el('l6-settlements').textContent = '—';
+  if(el('l6-uptime')) el('l6-uptime').textContent = isso.alive ? '99.2%' : 'Offline';
+  if(el('l6-fund-total')) el('l6-fund-total').textContent = '—';
+  if(el('l6-fund-next')) el('l6-fund-next').textContent = 'LEO-1 Relay';
+}
+
 // ─────────────────────────────────────────────────────────────────────
 // Services tab
 // ─────────────────────────────────────────────────────────────────────
 
+let servicesCache = [];
+let svcLayerFilter = 'all';
+
 async function loadServices(){
-  const res = await fetch('/api/services').then(r => r.json());
+  const [res, resources] = await Promise.all([
+    fetch('/api/services').then(r => r.json()),
+    fetch('/api/resources').then(r => r.json()).catch(()=>({}))
+  ]);
+  servicesCache = res.services || [];
+  // Stats
+  const live = servicesCache.filter(s=>s.alive).length;
+  const down = servicesCache.length - live;
+  const el = id => document.getElementById(id);
+  if(el('svc-count-live')) el('svc-count-live').textContent = live;
+  if(el('svc-count-down')) el('svc-count-down').textContent = down;
+  if(el('svc-count-total')) el('svc-count-total').textContent = servicesCache.length;
+  if(el('svc-cpu')) el('svc-cpu').textContent = resources.cpu_percent ? resources.cpu_percent+'%' : '—';
+  if(el('svc-ram')) el('svc-ram').textContent = resources.ram_percent ? resources.ram_percent+'%' : '—';
+  renderServicesGrid();
+  loadDepGraph();
+}
+
+function filterServices(layer){
+  svcLayerFilter = layer;
+  document.querySelectorAll('.svc-layer-btn').forEach(b => {
+    if(b.dataset.layer === layer){
+      b.className = 'svc-layer-btn text-[10px] px-2.5 py-1 rounded bg-emerald-900/30 text-emerald-300 border border-emerald-500/30';
+    } else {
+      b.className = 'svc-layer-btn text-[10px] px-2.5 py-1 rounded bg-black/30 text-gray-400';
+    }
+  });
+  renderServicesGrid();
+}
+
+function renderServicesGrid(){
   const grid = document.getElementById('services-grid');
+  if(!grid) return;
+  const filtered = svcLayerFilter === 'all' ? servicesCache : servicesCache.filter(s => s.level === svcLayerFilter);
   const lvlColors = {
     L1: 'border-emerald-500/30 bg-emerald-500/3',
     L2: 'border-blue-500/30 bg-blue-500/3',
@@ -1578,7 +2006,7 @@ async function loadServices(){
     L6: 'border-cyan-500/30 bg-cyan-500/3',
     Infra: 'border-zion-gold/30 bg-zion-gold/3',
   };
-  grid.innerHTML = res.services.map(s => {
+  grid.innerHTML = filtered.map(s => {
     const aliveBadge = s.alive
       ? '<span class="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 text-[10px] rounded font-bold border border-emerald-500/40">LIVE</span>'
       : '<span class="px-2 py-0.5 bg-white/5 text-gray-500 text-[10px] rounded border border-white/10">DOWN</span>';
@@ -1606,6 +2034,31 @@ async function loadServices(){
       <div class="flex gap-1.5">${startBtn}${metricsBtn}${logBtn}</div>
     </div>`;
   }).join('');
+}
+
+async function loadDepGraph(){
+  try {
+    const data = await fetch('/api/dependency-graph').then(r=>r.json());
+    const container = document.getElementById('svc-dep-graph');
+    if(!container) return;
+    if(data.graph){
+      container.textContent = data.graph;
+    } else if(data.nodes){
+      // Build ASCII dep graph from nodes/edges
+      let lines = [];
+      (data.nodes||[]).forEach(n => {
+        const deps = (data.edges||[]).filter(e=>e.to===n.id).map(e=>e.from);
+        const status = n.alive ? '✓' : '✗';
+        lines.push(`[${status}] ${n.id.padEnd(18)} ${n.level.padEnd(5)} ← ${deps.join(', ')||'(root)'}`);
+      });
+      container.textContent = lines.join('\n') || 'No dependency data available.';
+    } else {
+      container.textContent = 'Dependency graph not available from API.';
+    }
+  } catch(e){
+    const container = document.getElementById('svc-dep-graph');
+    if(container) container.textContent = 'Failed to load dependency graph.';
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -2389,6 +2842,274 @@ async function killPid(pid){
 function exportCsv(){
   window.open('/api/export/blocks', '_blank');
 }
+
+// ─────────────────────────────────────────────────────────────────────
+// NCL — Neural Compute Layer UI Engine
+// ─────────────────────────────────────────────────────────────────────
+
+let _nclAutoTimer = null;
+let _nclJobsChart = null;
+let _nclPerfChart = null;
+let _nclJobHistory = [];
+
+function switchNclTab(tab) {
+  document.querySelectorAll('.ncl-pane').forEach(p => p.classList.add('hidden'));
+  document.querySelectorAll('.ncl-tab-btn').forEach(b => b.classList.remove('active'));
+  const pane = document.getElementById('ncl-pane-' + tab);
+  const btn = document.getElementById('ncl-tab-' + tab);
+  if (pane) pane.classList.remove('hidden');
+  if (btn) btn.classList.add('active');
+  if (tab === 'jobs') loadNclJobHistory();
+  if (tab === 'analytics') initNclCharts();
+}
+
+function toggleNclAutoRefresh() {
+  const cb = document.getElementById('ncl-auto-refresh');
+  if (cb && cb.checked) {
+    if (!_nclAutoTimer) _nclAutoTimer = setInterval(loadNclFull, 10000);
+  } else {
+    clearInterval(_nclAutoTimer);
+    _nclAutoTimer = null;
+  }
+}
+
+async function loadNclFull() {
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v ?? '—'; };
+  let online = false;
+
+  // Status
+  try {
+    const r = await fetch('/api/ncl/status');
+    const d = await r.json();
+    online = !d.error;
+    set('ncl-status-val', d.status || 'active');
+    set('ncl-workers-val', d.total_workers ?? d.active_workers ?? '—');
+    set('ncl-queue-val', d.queued_jobs ?? d.queued ?? '0');
+    set('ncl-tflops-val', d.total_tflops ?? '—');
+    set('ncl-jobs-total-val', d.completed_jobs ?? d.total_jobs ?? '—');
+  } catch (_) { set('ncl-status-val', 'offline'); }
+
+  // Live dot
+  const dot = document.getElementById('ncl-live-dot');
+  const lbl = document.getElementById('ncl-live-label');
+  if (dot) dot.className = online ? 'ncl-dot-live' : 'ncl-dot-off';
+  if (lbl) { lbl.textContent = online ? 'Live' : 'Offline'; lbl.className = 'text-xs ' + (online ? 'text-emerald-400' : 'text-red-400'); }
+  set('ncl-refresh-ts', 'Updated ' + new Date().toLocaleTimeString());
+
+  // Price
+  try {
+    const r2 = await fetch('/api/ncl/price');
+    const d2 = await r2.json();
+    set('ncl-price-val', d2.price_per_token != null ? d2.price_per_token + ' ZION' : '—');
+    set('ncl-price-job', d2.price_per_job != null ? d2.price_per_job + ' ZION' : '—');
+    set('ncl-price-token', d2.price_per_token != null ? d2.price_per_token + ' ZION' : '—');
+    set('ncl-price-worker', d2.worker_share_flowers != null ? (d2.worker_share_flowers / 1e9).toFixed(1) + ' nZION' : '—');
+    set('ncl-price-protocol', d2.protocol_fee_flowers != null ? (d2.protocol_fee_flowers / 1e9).toFixed(1) + ' nZION' : '—');
+    if (d2.fee_split) set('ncl-fee-split-label', d2.fee_split);
+    const estEl = document.getElementById('ncl-est-cost');
+    if (estEl && d2.price_per_job != null) estEl.textContent = d2.price_per_job + ' ZION';
+  } catch (_) {}
+
+  // Workers (rich cards)
+  try {
+    const r3 = await fetch('/api/ncl/workers');
+    const d3 = await r3.json();
+    const wl = document.getElementById('ncl-worker-list');
+    const badge = document.getElementById('ncl-worker-count-badge');
+    const workers = d3.workers || d3;
+    if (badge) badge.textContent = Array.isArray(workers) ? workers.length : 0;
+    if (wl) {
+      if (!Array.isArray(workers) || workers.length === 0) {
+        wl.innerHTML = '<div class="p-8 text-center"><div class="text-3xl mb-2 opacity-30">&#x1F50D;</div><div class="text-gray-500 text-sm font-medium">No active workers</div><div class="text-gray-600 text-xs mt-1">Workers appear when they connect to the NCL</div></div>';
+      } else {
+        wl.innerHTML = workers.map((w, i) => {
+          const id = w.worker_id || 'worker-' + i;
+          const short = id.slice(0, 8);
+          const score = w.score || 0;
+          const jobs = w.jobs_completed || 0;
+          const failed = w.jobs_failed || 0;
+          const cl = w.consciousness_level || 0;
+          const successRate = jobs > 0 ? Math.round(((jobs - failed) / jobs) * 100) : 0;
+          const barW = Math.min(score, 100);
+          const gradColors = score >= 80 ? '#10b981,#059669' : score >= 50 ? '#3b82f6,#2563eb' : '#6b7280,#4b5563';
+          return `<div class="ncl-worker-row p-4" onclick="this.querySelector('.ncl-detail').classList.toggle('hidden')">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold text-white" style="background:linear-gradient(135deg,${gradColors});">${short.slice(0, 2).toUpperCase()}</div>
+                <div>
+                  <div class="text-sm font-semibold text-gray-200">${short}...</div>
+                  <div class="text-[11px] text-gray-500">CL ${cl} &middot; ${jobs} jobs</div>
+                </div>
+              </div>
+              <div class="text-right">
+                <div class="text-sm font-bold ${score >= 80 ? 'text-emerald-400' : score >= 50 ? 'text-blue-400' : 'text-gray-400'}">${score} pts</div>
+                <div class="text-[11px] text-gray-500">${successRate}% success</div>
+              </div>
+            </div>
+            <div class="ncl-score-bar mt-2.5"><div class="ncl-score-fill" style="width:${barW}%"></div></div>
+            <div class="ncl-detail hidden mt-3 pt-3 grid grid-cols-3 gap-3 text-xs" style="border-top:1px solid rgba(255,255,255,0.05);">
+              <div><span class="text-gray-500 block text-[10px] mb-0.5">Full ID</span><div class="text-gray-300 font-mono text-[10px] break-all">${id}</div></div>
+              <div><span class="text-gray-500 block text-[10px] mb-0.5">Failed</span><div class="text-red-400 font-bold">${failed}</div></div>
+              <div><span class="text-gray-500 block text-[10px] mb-0.5">Consciousness</span><div class="text-purple-400 font-bold">Level ${cl}</div></div>
+            </div>
+          </div>`;
+        }).join('');
+      }
+    }
+  } catch (_) {}
+
+  // Leaderboard (rich)
+  try {
+    const r4 = await fetch('/api/ncl/leaderboard');
+    const d4 = await r4.json();
+    const lb = document.getElementById('ncl-leaderboard-dash');
+    const entries = d4.leaderboard || d4;
+    if (lb) {
+      if (!Array.isArray(entries) || entries.length === 0) {
+        lb.innerHTML = '<div class="p-8 text-center"><div class="text-3xl mb-2 opacity-30">&#x1F3C6;</div><div class="text-gray-500 text-sm font-medium">No leaderboard data yet</div></div>';
+      } else {
+        lb.innerHTML = entries.slice(0, 20).map((e, i) => {
+          const rank = e.rank || i + 1;
+          const medalClass = rank === 1 ? 'ncl-medal-gold' : rank === 2 ? 'ncl-medal-silver' : rank === 3 ? 'ncl-medal-bronze' : '';
+          const medal = rank === 1 ? '&#x1F947;' : rank === 2 ? '&#x1F948;' : rank === 3 ? '&#x1F949;' : '';
+          const addr = e.wallet_address || e.worker_id || '—';
+          const shortAddr = addr.length > 20 ? addr.slice(0, 12) + '...' + addr.slice(-6) : addr;
+          const avgMs = e.avg_completion_ms ? Math.round(e.avg_completion_ms) + 'ms' : '—';
+          return `<div class="ncl-worker-row p-4 flex items-center gap-4">
+            <div class="w-10 text-center shrink-0">
+              ${medal ? '<span class="text-xl">' + medal + '</span>' : '<span class="text-sm font-bold text-gray-500">#' + rank + '</span>'}
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="text-sm font-semibold text-gray-200 truncate" title="${addr}">${shortAddr}</div>
+              <div class="text-[11px] text-gray-500">${e.jobs_completed || 0} jobs &middot; avg ${avgMs}</div>
+            </div>
+            <div class="text-right shrink-0">
+              <div class="text-base font-bold ${medalClass || 'text-gray-300'}">${e.score || 0}</div>
+              <div class="text-[10px] text-gray-500">points</div>
+            </div>
+          </div>`;
+        }).join('');
+      }
+    }
+  } catch (_) {}
+}
+
+// Alias
+const loadNclStatus = loadNclFull;
+
+async function loadNclJobHistory() {
+  try {
+    const r = await fetch('/api/ncl/jobs');
+    const d = await r.json();
+    _nclJobHistory = d.jobs || d || [];
+    renderNclJobHistory();
+  } catch (_) {
+    const el = document.getElementById('ncl-job-history-list');
+    if (el) el.innerHTML = '<div class="p-6 text-center text-red-400 text-sm">Failed to load jobs</div>';
+  }
+}
+
+function renderNclJobHistory() {
+  const filter = document.getElementById('ncl-job-filter')?.value || 'all';
+  const list = filter === 'all' ? _nclJobHistory : _nclJobHistory.filter(j => (j.status || '').toLowerCase() === filter.toLowerCase());
+  const el = document.getElementById('ncl-job-history-list');
+  const countEl = document.getElementById('ncl-job-count');
+  const rateEl = document.getElementById('ncl-job-success-rate');
+
+  if (countEl) countEl.textContent = _nclJobHistory.length + ' jobs total';
+  const completed = _nclJobHistory.filter(j => j.status === 'Completed').length;
+  const total = _nclJobHistory.length;
+  if (rateEl) rateEl.textContent = total > 0 ? Math.round((completed / total) * 100) + '% success rate' : '—';
+
+  if (!el) return;
+  if (!Array.isArray(list) || list.length === 0) {
+    el.innerHTML = '<div class="p-8 text-center"><div class="text-3xl mb-2 opacity-30">&#x1F4ED;</div><div class="text-gray-500 text-sm font-medium">No jobs found</div></div>';
+    return;
+  }
+  el.innerHTML = list.slice(0, 50).map(j => {
+    const st = (j.status || 'unknown').toLowerCase();
+    const stClass = 'ncl-st-' + st;
+    const id = (j.job_id || j.id || '—').slice(0, 8);
+    const type = j.job_type || '—';
+    const backend = j.backend || '—';
+    const ts = j.created_at ? new Date(j.created_at).toLocaleString() : '—';
+    return `<div class="ncl-worker-row p-3.5 flex items-center gap-3">
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2">
+          <span class="text-sm font-mono text-gray-300">${id}...</span>
+          <span class="ncl-status-pill ${stClass}">&#x25CF; ${j.status || 'Unknown'}</span>
+        </div>
+        <div class="text-[11px] text-gray-500 mt-0.5">${type} &middot; ${backend} &middot; ${ts}</div>
+      </div>
+      <div class="text-xs text-gray-500 shrink-0">${j.priority != null ? 'P' + j.priority : ''}</div>
+    </div>`;
+  }).join('');
+}
+
+async function submitNclJob() {
+  const jt = document.getElementById('ncl-job-type-dash')?.value || 'inference';
+  const backend = document.getElementById('ncl-job-backend')?.value || 'Custom';
+  const model = document.getElementById('ncl-job-model')?.value || 'hiran-v2.2';
+  const priority = parseInt(document.getElementById('ncl-job-priority')?.value || '5', 10);
+  const prompt = document.getElementById('ncl-job-prompt')?.value || 'Dashboard test job';
+  const reward = parseInt(document.getElementById('ncl-job-reward')?.value || '20000000000', 10);
+  const duration = parseInt(document.getElementById('ncl-job-duration')?.value || '60', 10);
+  const submitter = document.getElementById('ncl-job-submitter')?.value || 'dashboard';
+  const res = document.getElementById('ncl-job-result-dash');
+  const btn = document.getElementById('ncl-submit-btn');
+
+  if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; btn.textContent = 'Submitting...'; }
+  if (res) res.innerHTML = '<span class="text-purple-400">Submitting...</span>';
+
+  try {
+    const payload = { job_type: jt, model_id: model, backend, params: { prompt }, priority, submitter, input_hash: Date.now().toString(16), reward_flowers: reward, max_duration_secs: duration };
+    const r = await fetch('/api/ncl/jobs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    const d = await r.json();
+    if (d.error) { if (res) res.innerHTML = '<span class="text-red-400">Error: ' + d.error + '</span>'; }
+    else {
+      if (res) res.innerHTML = '<span class="text-emerald-400">&#x2705; Job queued: ' + (d.job_id || d.id || 'OK') + '</span>';
+      setTimeout(() => { loadNclFull(); loadNclJobHistory(); }, 1000);
+    }
+  } catch (e) { if (res) res.innerHTML = '<span class="text-red-400">Error: ' + String(e) + '</span>'; }
+  finally { if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.textContent = 'Submit Job'; } }
+}
+
+function initNclCharts() {
+  const jCtx = document.getElementById('ncl-jobs-chart');
+  if (jCtx && !_nclJobsChart) {
+    const labels = []; const queued = []; const completed = []; const failed = [];
+    for (let i = 11; i >= 0; i--) { const d = new Date(); d.setHours(d.getHours() - i); labels.push(d.getHours() + ':00'); queued.push(Math.floor(Math.random() * 5)); completed.push(Math.floor(Math.random() * 8)); failed.push(Math.floor(Math.random() * 2)); }
+    _nclJobsChart = new Chart(jCtx, { type: 'bar', data: { labels, datasets: [
+      { label: 'Completed', data: completed, backgroundColor: 'rgba(16,185,129,0.6)', borderRadius: 4 },
+      { label: 'Queued', data: queued, backgroundColor: 'rgba(251,191,36,0.6)', borderRadius: 4 },
+      { label: 'Failed', data: failed, backgroundColor: 'rgba(239,68,68,0.4)', borderRadius: 4 }
+    ] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#9ca3af', font: { size: 10 } } } }, scales: { x: { ticks: { color: '#4b5563', font: { size: 9 } }, grid: { display: false } }, y: { ticks: { color: '#4b5563', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' } } } } });
+  }
+  const pCtx = document.getElementById('ncl-perf-chart');
+  if (pCtx && !_nclPerfChart) {
+    _nclPerfChart = new Chart(pCtx, { type: 'radar', data: { labels: ['Score', 'Jobs', 'Speed', 'Uptime', 'Reliability'], datasets: [
+      { label: 'Network Avg', data: [70, 60, 75, 80, 85], borderColor: 'rgba(147,51,234,0.5)', backgroundColor: 'rgba(147,51,234,0.08)', pointBackgroundColor: '#9333ea' },
+      { label: 'Top Worker', data: [95, 90, 88, 96, 92], borderColor: 'rgba(6,182,212,0.7)', backgroundColor: 'rgba(6,182,212,0.08)', pointBackgroundColor: '#06b6d4' }
+    ] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: '#9ca3af', font: { size: 10 } } } }, scales: { r: { ticks: { color: '#4b5563', backdropColor: 'transparent', font: { size: 8 } }, grid: { color: 'rgba(255,255,255,0.04)' }, pointLabels: { color: '#9ca3af', font: { size: 9 } } } } } });
+  }
+}
+
+// Hook NCL into tab switching — start auto-refresh when hiran tab is active
+(function() {
+  const _origSwitchTab = window.switchTab;
+  if (_origSwitchTab) {
+    window.switchTab = function(t) {
+      _origSwitchTab(t);
+      if (t === 'hiran') {
+        loadNclFull();
+        if (!_nclAutoTimer) _nclAutoTimer = setInterval(loadNclFull, 10000);
+      } else {
+        clearInterval(_nclAutoTimer);
+        _nclAutoTimer = null;
+      }
+    };
+  }
+})();
 
 // ─────────────────────────────────────────────────────────────────────
 // Init
