@@ -2230,6 +2230,7 @@ function startMiningV3(config, v3Path) {
     minerProcess = null;
     startMiningInProgress = false;
     if (startMiningGuardTimer) { clearTimeout(startMiningGuardTimer); startMiningGuardTimer = null; }
+    try { sendToRenderer('miner-error', { message: `Spawn failed: ${spawnErr?.message}` }); } catch {}
     return { success: false, error: `Spawn failed: ${spawnErr?.message}` };
   }
 
@@ -2258,7 +2259,6 @@ function startMiningV3(config, v3Path) {
 
   // ── 13. Log write helper ───────────────────────────────────────────────────
   const shouldSkipFileLogLine = (line) => /^\[METRICS\]/.test(line.trim());
-  const maybeEmitBlockFound = (_output) => {};
   const safeMinerLogWriteV3 = (text) => {
     try {
       appendToFileBuffered(LOG_PATH, text, {
@@ -2319,6 +2319,7 @@ function startMiningV3(config, v3Path) {
   minerProcess.on('error', (err) => {
     logErr(`[V3-FAST] Process error: ${err?.message || String(err)}\n`);
     logApp('v3-fast-error', JSON.stringify({ error: err?.message || String(err) }));
+    try { sendToRenderer('miner-error', { message: err?.message || String(err) }); } catch {}
   });
 
   // ── 17. Update tray and stats ──────────────────────────────────────────────
@@ -3022,8 +3023,10 @@ function parseMinerOutput(output) {
   // ─── XMRig block found: "█ BLOCK FOUND █ ★ height 1523 (total: 2)" ───
   const blockMatch = output.match(/BLOCK FOUND.*?height\s+(\d+).*?\(total:\s*(\d+)\)/i);
   if (blockMatch) {
-    minerStats.last_block_height = parseInt(blockMatch[1]);
+    const height = parseInt(blockMatch[1]);
+    minerStats.last_block_height = height;
     minerStats.blocks_found = parseInt(blockMatch[2]);
+    try { sendToRenderer('block-found', { height }); } catch {}
   }
 
   // ─── Full status panel fields ───
@@ -4926,6 +4929,89 @@ ipcMain.handle('ai-chat-status', async () => {
     return { success: true, ...result };
   } catch (err) {
     return { success: false, up: false, error: err?.message || String(err) };
+  }
+});
+
+// ── Security / AV Troubleshooting IPC ───────────────────────────────────────
+ipcMain.handle('get-security-status', () => {
+  try {
+    const resourceBase = IS_PACKAGED ? process.resourcesPath : path.join(APP_ROOT, 'resources');
+    const binaryNames = ['zion-miner', 'zion-universal-miner'];
+    if (process.platform === 'win32') {
+      binaryNames.push('zion-miner.exe', 'zion-universal-miner.exe');
+    }
+    const targetPaths = binaryNames
+      .map(name => path.join(resourceBase, name))
+      .filter(p => fs.existsSync(p));
+
+    const binaries = {};
+    for (const targetPath of targetPaths) {
+      const name = path.basename(targetPath);
+      const exists = fs.existsSync(targetPath);
+      let executable = false;
+      let quarantined = false;
+      if (exists && process.platform !== 'win32') {
+        try {
+          const stat = fs.statSync(targetPath);
+          executable = (stat.mode & 0o111) !== 0;
+        } catch {}
+      }
+      if (process.platform === 'darwin' && exists) {
+        try {
+          const { execSync } = require('child_process');
+          const attr = execSync(`xattr -p com.apple.quarantine "${targetPath}" 2>/dev/null || true`, { encoding: 'utf8', timeout: 3000 }).trim();
+          quarantined = attr.length > 0 && attr !== 'true';
+        } catch {}
+      }
+      binaries[name] = { exists, executable, quarantined };
+    }
+
+    const recommendations = [];
+    const allOk = Object.values(binaries).every(b => b.exists && (process.platform === 'win32' || b.executable) && !b.quarantined);
+    if (allOk) {
+      recommendations.push({ type: 'ok', title: 'Vše v pořádku', description: 'Všechny binární soubory jsou dostupné a nemají žádná omezení.' });
+    } else {
+      for (const [name, info] of Object.entries(binaries)) {
+        if (!info.exists) {
+          recommendations.push({ type: 'warning', title: `${name} chybí`, description: 'Soubor nebyl nalezen. Možná ho smazal antivirus nebo Gatekeeper.' });
+        } else if (process.platform !== 'win32' && !info.executable) {
+          recommendations.push({ type: 'warning', title: `${name} není spustitelný`, description: 'Chybí exec práva. Klikněte na Opravit automaticky.', command: `chmod +x "${name}"` });
+        } else if (info.quarantined) {
+          recommendations.push({ type: 'warning', title: `${name} je v karanténě`, description: 'macOS Gatekeeper soubor blokoval. Klikněte na Opravit automaticky.', command: `xattr -dr com.apple.quarantine "${name}"` });
+        }
+      }
+    }
+
+    return { success: true, binaries, recommendations, platform: process.platform };
+  } catch (err) {
+    return { success: false, error: err?.message || String(err), binaries: {}, recommendations: [], platform: process.platform };
+  }
+});
+
+ipcMain.handle('fix-security-blocks', () => {
+  try {
+    const result = fixSecurityBlocks();
+    return { success: true, fixed: result.fixed, errors: result.errors };
+  } catch (err) {
+    return { success: false, error: err?.message || String(err) };
+  }
+});
+
+ipcMain.handle('open-defender-settings', async () => {
+  try {
+    if (process.platform === 'win32') {
+      const { spawn } = require('child_process');
+      spawn('start', ['windowsdefender:'], { shell: true, windowsHide: true, detached: true });
+    } else {
+      // On macOS/Linux, open Security & Privacy / system settings
+      const { spawn } = require('child_process');
+      if (process.platform === 'darwin') {
+        spawn('open', ['x-apple.systempreferences:com.apple.preference.security'], { detached: true });
+      }
+    }
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err?.message || String(err) };
   }
 });
 
