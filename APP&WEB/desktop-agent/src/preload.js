@@ -46,7 +46,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getGpuInfo: () => ipcRenderer.invoke('get-gpu-info'),
   getServerStatus: () => ipcRenderer.invoke('get-server-status'),
   getNetworkMetrics: () => ipcRenderer.invoke('get-network-metrics'),
-  getCh3Status: () => ipcRenderer.invoke('get-ch3-status'),
   autoSelectPool: () => ipcRenderer.invoke('auto-select-pool'),
   getPeerList: () => ipcRenderer.invoke('get-peer-list'),
 
@@ -117,11 +116,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // ── Ekam Deeksha v3.0.0 GPU + Dual Mining ──────────────────────────────
   runGpuBenchmark: (options) => ipcRenderer.invoke('run-gpu-benchmark', options),
   getGpuDevices: () => ipcRenderer.invoke('get-gpu-devices'),
-  setDualMining: (config) => ipcRenderer.invoke('set-dual-mining', config),
-  getDualMiningStatus: () => ipcRenderer.invoke('get-dual-mining-status'),
-  onGpuBenchmarkResult: (callback) => {
-    ipcRenderer.on('gpu-benchmark-result', (event, data) => callback(data));
-  },
 
   // Cleanup listeners
   removeAllListeners: (channel) => {
