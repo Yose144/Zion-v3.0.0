@@ -62,6 +62,216 @@ HISTORY = MetricsHistory()
 BLOCK_EVENTS: deque = deque(maxlen=50)
 LAST_BLOCK_EVENT_TIME = {"node1": 0, "node2": 0, "pool": 0}
 
+# ── Log Rotation ─────────────────────────────────────────────────────────
+LOG_ROTATION_LOCK = threading.Lock()
+LOG_ROTATION_MAX_BYTES = 100 * 1024 * 1024  # 100 MB
+LOG_ROTATION_MAX_AGE_HOURS = 24
+
+def rotate_log_file(path: Path):
+    """Rotate a single log file if it exceeds size or age threshold."""
+    if not path.exists():
+        return
+    size = path.stat().st_size
+    age_hours = (time.time() - path.stat().st_mtime) / 3600
+    if size > LOG_ROTATION_MAX_BYTES or age_hours > LOG_ROTATION_MAX_AGE_HOURS:
+        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        rotated = path.parent / f"{path.stem}.{ts}{path.suffix}"
+        try:
+            path.rename(rotated)
+            # Touch new empty log so services can continue writing
+            path.write_text("")
+        except Exception:
+            pass
+
+def rotate_all_logs():
+    """Rotate all log files in LOG_DIR."""
+    with LOG_ROTATION_LOCK:
+        for svc in SERVICE_REGISTRY:
+            log_name = svc.get("log")
+            if log_name:
+                rotate_log_file(LOG_DIR / log_name)
+                rotate_log_file(LOG_DIR / (log_name.replace(".log", ".err")))
+        # Rotate control audit log too
+        rotate_log_file(LOG_DIR / "control-audit.txt")
+
+# ── Process health ──────────────────────────────────────────────────────
+# Track known PIDs so we can check if a service's process is actually alive.
+# Populated by run_control and consulted by check_service_health.
+PROCESS_REGISTRY = {}  # service_id -> {"pid": int, "ts": float, "image": str}
+PROCESS_LOCK = threading.Lock()
+
+def register_process(sid: str, pid: int, image: str = ""):
+    with PROCESS_LOCK:
+        PROCESS_REGISTRY[sid] = {"pid": pid, "ts": time.time(), "image": image}
+
+def is_process_alive(pid: int) -> bool:
+    """Cross-platform PID liveness check (no external deps)."""
+    if os.name == "nt":
+        try:
+            import ctypes
+            kernel = ctypes.windll.kernel32
+            SYNCHRONIZE = 0x00100000
+            PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+            h = kernel.OpenProcess(SYNCHRONIZE | PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
+            if h:
+                kernel.CloseHandle(h)
+                return True
+            return False
+        except Exception:
+            return False
+    else:
+        try:
+            os.kill(pid, 0)
+            return True
+        except (OSError, ProcessLookupError):
+            return False
+
+def check_process_for_service(sid: str) -> dict:
+    """Check whether the registered PID for a service is still alive."""
+    with PROCESS_LOCK:
+        rec = PROCESS_REGISTRY.get(sid)
+    if not rec:
+        return {"has_pid": False, "alive": False}
+    return {"has_pid": True, "alive": is_process_alive(rec["pid"]), "pid": rec["pid"],
+            "age_min": int((time.time() - rec["ts"]) / 60)}
+
+# ── Resource monitoring ─────────────────────────────────────────────────
+RESOURCE_CACHE = {"ts": 0, "data": {}}
+RESOURCE_LOCK = threading.Lock()
+
+def get_resource_usage() -> dict:
+    """Return CPU, RAM, and disk usage (cross-platform, stdlib only)."""
+    now = time.time()
+    with RESOURCE_LOCK:
+        if now - RESOURCE_CACHE["ts"] < 5:
+            return RESOURCE_CACHE["data"]
+
+    result = {"cpu_percent": None, "ram_used_gb": None, "ram_total_gb": None,
+              "disk_used_gb": None, "disk_total_gb": None, "disk_percent": None}
+    try:
+        if os.name == "nt":
+            # Windows: WMI via ctypes (simplified) or perf counters
+            import ctypes
+            class MEMORYSTATUS(ctypes.Structure):
+                _fields_ = [("dwLength", ctypes.c_uint32), ("dwMemoryLoad", ctypes.c_uint32),
+                            ("ullTotalPhys", ctypes.c_uint64), ("ullAvailPhys", ctypes.c_uint64),
+                            ("ullTotalPageFile", ctypes.c_uint64), ("ullAvailPageFile", ctypes.c_uint64),
+                            ("ullTotalVirtual", ctypes.c_uint64), ("ullAvailVirtual", ctypes.c_uint64),
+                            ("ullAvailExtendedVirtual", ctypes.c_uint64)]
+            mem = MEMORYSTATUS()
+            mem.dwLength = ctypes.sizeof(MEMORYSTATUS)
+            ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(mem))
+            total_gb = mem.ullTotalPhys / (1024**3)
+            avail_gb = mem.ullAvailPhys / (1024**3)
+            result["ram_total_gb"] = round(total_gb, 2)
+            result["ram_used_gb"] = round(total_gb - avail_gb, 2)
+            result["ram_percent"] = round((total_gb - avail_gb) / total_gb * 100, 1) if total_gb > 0 else 0
+            # Disk
+            free_bytes = ctypes.c_ulonglong(0)
+            total_bytes = ctypes.c_ulonglong(0)
+            ctypes.windll.kernel32.GetDiskFreeSpaceExW(ctypes.c_wchar_p(str(REPO_ROOT)),
+                                                        ctypes.byref(free_bytes),
+                                                        ctypes.byref(total_bytes), None)
+            total_disk_gb = total_bytes.value / (1024**3)
+            free_disk_gb = free_bytes.value / (1024**3)
+            result["disk_total_gb"] = round(total_disk_gb, 2)
+            result["disk_used_gb"] = round(total_disk_gb - free_disk_gb, 2)
+            result["disk_percent"] = round((total_disk_gb - free_disk_gb) / total_disk_gb * 100, 1) if total_disk_gb > 0 else 0
+        else:
+            # Linux: /proc/meminfo + statvfs
+            with open("/proc/meminfo") as f:
+                meminfo = {k.strip(): int(v.split()[0]) for k, v in (line.split(":") for line in f if ":" in line)}
+            total_kb = meminfo.get("MemTotal", 0)
+            avail_kb = meminfo.get("MemAvailable", meminfo.get("MemFree", 0))
+            total_gb = total_kb / (1024**2)
+            result["ram_total_gb"] = round(total_gb, 2)
+            result["ram_used_gb"] = round(total_gb - avail_kb / (1024**2), 2)
+            result["ram_percent"] = round((total_kb - avail_kb) / total_kb * 100, 1) if total_kb > 0 else 0
+            import shutil
+            du = shutil.disk_usage(str(REPO_ROOT))
+            result["disk_total_gb"] = round(du.total / (1024**3), 2)
+            result["disk_used_gb"] = round((du.total - du.free) / (1024**3), 2)
+            result["disk_percent"] = round((du.total - du.free) / du.total * 100, 1) if du.total > 0 else 0
+    except Exception:
+        pass
+
+    with RESOURCE_LOCK:
+        RESOURCE_CACHE["ts"] = now
+        RESOURCE_CACHE["data"] = result
+    return result
+
+# ── Alert history ───────────────────────────────────────────────────────
+ALERT_HISTORY_PATH = LOG_DIR / "alert-history.json"
+ALERT_HISTORY_MAX = 100
+ALERT_HISTORY_LOCK = threading.Lock()
+
+def load_alert_history() -> list:
+    try:
+        if ALERT_HISTORY_PATH.exists():
+            with open(ALERT_HISTORY_PATH, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                if isinstance(data, list):
+                    return data[-ALERT_HISTORY_MAX:]
+    except Exception:
+        pass
+    return []
+
+def append_alert(alert: dict):
+    with ALERT_HISTORY_LOCK:
+        history = load_alert_history()
+        alert["ts"] = datetime.now().isoformat()
+        history.append(alert)
+        history = history[-ALERT_HISTORY_MAX:]
+        try:
+            with open(ALERT_HISTORY_PATH, "w", encoding="utf-8") as f:
+                json.dump(history, f, indent=2)
+        except Exception:
+            pass
+        return history
+
+# ── Watchdog ────────────────────────────────────────────────────────────
+WATCHDOG_ENABLED = True
+WATCHDOG_RESTART_COOLDOWN_SEC = 300  # 5 min between auto-restarts per service
+WATCHDOG_LAST_RESTART = {}  # sid -> ts
+
+def watchdog_check():
+    """Auto-restart critical services that have gone down unexpectedly."""
+    if not WATCHDOG_ENABLED:
+        return
+    now = time.time()
+    critical = ["node1", "pool"]
+    for sid in critical:
+        svc = get_service(sid)
+        if not svc:
+            continue
+        # Only restart if we previously started it and it died
+        proc_info = check_process_for_service(sid)
+        if not proc_info["has_pid"]:
+            continue
+        if proc_info["alive"]:
+            continue
+        # Check cooldown
+        last_restart = WATCHDOG_LAST_RESTART.get(sid, 0)
+        if now - last_restart < WATCHDOG_RESTART_COOLDOWN_SEC:
+            continue
+        start_script = svc.get("start")
+        if not start_script:
+            continue
+        action = start_script.replace("-", "_")  # e.g. start-node1 -> start_node1
+        # Map back to allowed action name
+        action_map = {"start_node1": "start-node1", "start_node2": "start-node2",
+                      "start_pool": "start-pool", "start_miner": "start-miner"}
+        action = action_map.get(action, action)
+        if action not in ALLOWED_ACTIONS:
+            continue
+        result = run_control(action)
+        if result.get("ok"):
+            WATCHDOG_LAST_RESTART[sid] = now
+            register_process(sid, result["pid"])
+            append_alert({"severity": "warning", "title": f"Watchdog restarted {svc['name']}",
+                          "detail": f"PID {proc_info['pid']} died. Auto-restarted at {datetime.now().isoformat()}",
+                          "action": None})
+
 # ── Service Registry ────────────────────────────────────────────────────
 # Single source of truth: every service the mainnet stack might run.
 # Used to render service cards, health checks, network topology, and controls.
@@ -216,40 +426,59 @@ def check_service_health(svc: dict) -> dict:
     if cached and now - cached["ts"] < HEALTH_TTL:
         return cached
 
+    # Try PID check first for services we launched
+    proc_info = check_process_for_service(sid)
     ports = svc.get("ports", {})
-    if not ports:
-        # No ports → infer from log file activity
-        if svc.get("log"):
-            path = LOG_DIR / svc["log"]
-            if path.exists():
-                mtime_age = now - int(path.stat().st_mtime)
-                alive = mtime_age < 60
-                result = {"alive": alive, "ts": now,
-                          "details": f"log mtime {mtime_age}s ago",
-                          "ports_open": [], "ports_closed": []}
-            else:
-                result = {"alive": False, "ts": now, "details": "no log file",
-                          "ports_open": [], "ports_closed": []}
-        else:
-            result = {"alive": False, "ts": now, "details": "no ports & no log",
-                      "ports_open": [], "ports_closed": []}
-        HEALTH_CACHE[sid] = result
-        return result
-
     open_ports = []
     closed_ports = []
     host = svc.get("host", "127.0.0.1")
-    timeout = 1.5 if host != "127.0.0.1" else 0.15
-    for name, port in ports.items():
-        if tcp_probe(host, port, timeout):
-            open_ports.append(f"{name}:{port}@{host}")
-        else:
-            closed_ports.append(f"{name}:{port}@{host}")
 
-    alive = len(open_ports) > 0
+    if ports:
+        timeout = 1.5 if host != "127.0.0.1" else 0.15
+        for name, port in ports.items():
+            if tcp_probe(host, port, timeout):
+                open_ports.append(f"{name}:{port}@{host}")
+            else:
+                closed_ports.append(f"{name}:{port}@{host}")
+
+    # Log-based check (last resort for portless services)
+    log_alive = False
+    log_age = None
+    if svc.get("log"):
+        path = LOG_DIR / svc["log"]
+        if path.exists():
+            mtime_age = now - int(path.stat().st_mtime)
+            log_age = mtime_age
+            log_alive = mtime_age < 60
+
+    # Determine overall alive status
+    # Priority: PID > ports > log
+    alive = False
+    details_parts = []
+    if proc_info["alive"]:
+        alive = True
+        details_parts.append(f"PID {proc_info['pid']} alive")
+    elif proc_info["has_pid"]:
+        details_parts.append(f"PID {proc_info['pid']} dead")
+    if open_ports:
+        alive = True
+        details_parts.append(f"{len(open_ports)}/{len(ports)} ports open")
+    elif ports:
+        details_parts.append(f"{len(ports)} ports closed")
+    if log_alive:
+        if not alive:
+            alive = True  # fallback for portless services
+        details_parts.append(f"log {log_age}s ago")
+    elif log_age is not None:
+        details_parts.append(f"log stale ({log_age}s)")
+    elif not ports:
+        details_parts.append("no log file")
+
     result = {"alive": alive, "ts": now,
-              "details": f"{len(open_ports)}/{len(ports)} ports open",
-              "ports_open": open_ports, "ports_closed": closed_ports}
+              "details": "; ".join(details_parts) if details_parts else "unknown",
+              "ports_open": open_ports, "ports_closed": closed_ports,
+              "pid_alive": proc_info["alive"], "pid": proc_info.get("pid"),
+              "log_age": log_age}
     HEALTH_CACHE[sid] = result
     return result
 
@@ -660,6 +889,28 @@ def build_alerts(status: dict) -> list:
                        "action": None})
 
     return alerts
+
+_LAST_ALERT_SIGNATURES = set()
+_LAST_ALERT_TS = 0
+
+def persist_new_alerts(alerts: list):
+    """Persist only alerts that changed since last call (dedup by title+severity)."""
+    global _LAST_ALERT_SIGNATURES, _LAST_ALERT_TS
+    now = time.time()
+    if now - _LAST_ALERT_TS < 60:
+        return  # throttle to once per minute
+    current_sigs = {f"{a['severity']}:{a['title']}" for a in alerts if a["severity"] in ("critical", "warning")}
+    new_sigs = current_sigs - _LAST_ALERT_SIGNATURES
+    for a in alerts:
+        sig = f"{a['severity']}:{a['title']}"
+        if sig in new_sigs:
+            append_alert(a)
+    # Persist "all clear" when returning from alert state
+    if _LAST_ALERT_SIGNATURES and not current_sigs:
+        append_alert({"severity": "success", "title": "All systems nominal",
+                      "detail": "Previous alerts resolved.", "action": None})
+    _LAST_ALERT_SIGNATURES = current_sigs
+    _LAST_ALERT_TS = now
 
 # ── Block events feed (parsed from logs) ────────────────────────────────
 
@@ -1278,6 +1529,14 @@ def run_control(action: str, env_overrides: dict = None) -> dict:
                 env=env,
             )
         _log_control(f"dispatched action={action} script={script} pid={proc.pid} env={list(env_overrides.keys()) if env_overrides else []}")
+        # Auto-register PID for services we can map back to service IDs
+        action_to_sid = {"start-node1": "node1", "start-node2": "node2",
+                         "start-pool": "pool", "start-miner": "miner",
+                         "start-miner-cpu": "miner", "start-miner-gpu": "miner",
+                         "start-hiranyagarbha": "hiranyagarbha", "start-hiran-inference": "ai-native"}
+        sid = action_to_sid.get(action)
+        if sid:
+            register_process(sid, proc.pid)
         return {"ok": True, "action": action, "script": str(script), "pid": proc.pid}
     except Exception as e:
         _log_control(f"FAILED action={action} error={e}")
@@ -1286,16 +1545,40 @@ def run_control(action: str, env_overrides: dict = None) -> dict:
 # ── Background sampler ──────────────────────────────────────────────────
 
 def background_sampler():
-    """Periodically polls status, records history, scans for block events, warms health cache."""
+    """Periodically polls status, records history, scans for block events, warms health cache,
+    rotates logs, runs watchdog, and collects resource metrics."""
+    rotation_counter = 0
     while True:
         try:
             st = build_status()
             HISTORY.record(st)
             scan_block_events()
+            # Persist new alerts (throttled)
+            try:
+                persist_new_alerts(build_alerts(st))
+            except Exception:
+                pass
             # Pre-warm health cache for all services in parallel
             for svc in SERVICE_REGISTRY:
                 HEALTH_CACHE.pop(svc["id"], None)  # invalidate
                 check_service_health(svc)
+            # Log rotation every ~10 min (120 iterations * 5s)
+            rotation_counter += 1
+            if rotation_counter % 120 == 0:
+                try:
+                    rotate_all_logs()
+                except Exception as e:
+                    print(f"[sampler] log rotation error: {e}", file=sys.stderr)
+            # Watchdog
+            try:
+                watchdog_check()
+            except Exception as e:
+                print(f"[sampler] watchdog error: {e}", file=sys.stderr)
+            # Resource monitoring (cache warming)
+            try:
+                get_resource_usage()
+            except Exception:
+                pass
         except Exception as e:
             print(f"[sampler] error: {e}", file=sys.stderr)
         time.sleep(5)
@@ -2771,6 +3054,26 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json({"actions": sorted(ALLOWED_ACTIONS.keys())})
         elif route == "/api/services":
             self._json({"services": all_services_health()})
+        elif route == "/api/resources":
+            self._json(get_resource_usage())
+        elif route == "/api/alerts/history":
+            self._json({"alerts": load_alert_history()})
+        elif route == "/api/watchdog/toggle":
+            global WATCHDOG_ENABLED
+            WATCHDOG_ENABLED = not WATCHDOG_ENABLED
+            self._json({"enabled": WATCHDOG_ENABLED})
+        elif route == "/api/logs/rotate":
+            try:
+                rotate_all_logs()
+                self._json({"ok": True, "message": "Log rotation triggered"})
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)})
+        elif route == "/api/processes":
+            # Return process registry snapshot
+            with PROCESS_LOCK:
+                procs = {k: {"pid": v["pid"], "age_min": int((time.time() - v["ts"]) / 60),
+                             "alive": is_process_alive(v["pid"])} for k, v in PROCESS_REGISTRY.items()}
+            self._json({"processes": procs})
         elif route == "/api/genesis":
             total_premine = sum(p["amount_zion"] for p in PREMINE_OUTPUTS)
             self._json({
@@ -3294,6 +3597,16 @@ class DashboardHandler(BaseHTTPRequestHandler):
             action = payload.get("action", "")
             env_overrides = payload.get("env")
             self._json(run_control(action, env_overrides))
+        elif route == "/api/watchdog/toggle":
+            global WATCHDOG_ENABLED
+            WATCHDOG_ENABLED = not WATCHDOG_ENABLED
+            self._json({"enabled": WATCHDOG_ENABLED})
+        elif route == "/api/logs/rotate":
+            try:
+                rotate_all_logs()
+                self._json({"ok": True, "message": "Log rotation triggered"})
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)})
         elif route == "/api/backup/create":
             name = payload.get("name", "").strip()
             include_logs = payload.get("includeLogs", False)
