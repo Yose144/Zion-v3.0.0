@@ -2,7 +2,7 @@ import React, {createContext, useState, useEffect, useContext, useCallback, useR
 import WalletService from '../services/WalletService';
 import BlockchainRPC from '../services/BlockchainRPC';
 import {createSignedTransaction} from '../services/TransactionBuilder';
-import {atomicToZion} from '../constants/blockchain';
+import {CONFIG} from '../constants/config';
 
 const WalletContext = createContext();
 
@@ -21,20 +21,53 @@ export const WalletProvider = ({children}) => {
   const [balance, setBalance] = useState(0);
   const [utxos, setUtxos] = useState([]);
   const [balanceLoading, setBalanceLoading] = useState(false);
+  const [locked, setLocked] = useState(false);
   const refreshTimerRef = useRef(null);
+  const lockTimerRef = useRef(null);
+  const lastActivityRef = useRef(Date.now());
+  const autoLockMinutes = CONFIG.AUTO_LOCK_MINUTES ?? 5;
+
+  const bumpActivity = useCallback(() => {
+    lastActivityRef.current = Date.now();
+  }, []);
+
+  const lock = useCallback(() => {
+    setLocked(true);
+    setBalance(0);
+    setUtxos([]);
+  }, []);
+
+  const unlock = useCallback((password) => {
+    if (!password || password.length < 1) return false;
+    bumpActivity();
+    setLocked(false);
+    return true;
+  }, [bumpActivity]);
+
+  // Auto-lock timer
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (!locked && Date.now() - lastActivityRef.current > autoLockMinutes * 60 * 1000) {
+        console.log('🔒 Auto-lock triggered');
+        lock();
+      }
+    }, 30000); // Check every 30s
+    return () => clearInterval(interval);
+  }, [locked, autoLockMinutes, lock]);
 
   useEffect(() => {
     initializeWallet();
     return () => {
       if (refreshTimerRef.current) clearInterval(refreshTimerRef.current);
+      if (lockTimerRef.current) clearInterval(lockTimerRef.current);
     };
   }, []);
 
   // Auto-refresh balance when active wallet changes
   useEffect(() => {
+    if (locked) return;
     if (activeWallet?.address) {
       refreshBalance();
-      // Refresh every 30s
       if (refreshTimerRef.current) clearInterval(refreshTimerRef.current);
       refreshTimerRef.current = setInterval(() => refreshBalance(), 30000);
     } else {
@@ -44,7 +77,7 @@ export const WalletProvider = ({children}) => {
     return () => {
       if (refreshTimerRef.current) clearInterval(refreshTimerRef.current);
     };
-  }, [activeWallet?.address]);
+  }, [activeWallet?.address, locked]);
 
   const initializeWallet = async () => {
     try {
@@ -66,29 +99,32 @@ export const WalletProvider = ({children}) => {
    * Refresh balance & UTXOs from blockchain
    */
   const refreshBalance = useCallback(async () => {
-    if (!activeWallet?.address) return;
+    if (!activeWallet?.address || locked) return;
+    bumpActivity();
     try {
       setBalanceLoading(true);
       const [bal, utxoList] = await Promise.all([
         BlockchainRPC.getBalance(activeWallet.address),
         BlockchainRPC.getUTXOs(activeWallet.address).catch(() => []),
       ]);
-      setBalance(typeof bal === 'number' ? bal : 0);
+      setBalance(bal?.zion ?? 0);
       setUtxos(Array.isArray(utxoList) ? utxoList : []);
     } catch (error) {
       console.error('Failed to refresh balance:', error);
     } finally {
       setBalanceLoading(false);
     }
-  }, [activeWallet?.address]);
+  }, [activeWallet?.address, locked, bumpActivity]);
 
   const createWallet = async (name, password, chainId) => {
+    bumpActivity();
     const wallet = await WalletService.generateWallet(name, password, chainId);
     refreshWallets();
     return wallet;
   };
 
   const importWallet = async (privateKeyOrMnemonic, name, password, chainId) => {
+    bumpActivity();
     let wallet;
     if (privateKeyOrMnemonic.includes(' ')) {
       wallet = await WalletService.importFromMnemonic(privateKeyOrMnemonic, name, password, chainId);
@@ -100,22 +136,26 @@ export const WalletProvider = ({children}) => {
   };
 
   const addExternalWallet = async ({chainId, address, name}) => {
+    bumpActivity();
     const wallet = await WalletService.addExternalWallet({chainId, address, name});
     refreshWallets();
     return wallet;
   };
 
   const switchWallet = async (walletId) => {
+    bumpActivity();
     await WalletService.setActiveWallet(walletId);
     refreshWallets();
   };
 
   const deleteWallet = async (walletId) => {
+    bumpActivity();
     await WalletService.deleteWallet(walletId);
     refreshWallets();
   };
 
   const exportWallet = async (walletId, password) => {
+    bumpActivity();
     return await WalletService.exportWallet(walletId, password);
   };
 
@@ -127,7 +167,9 @@ export const WalletProvider = ({children}) => {
    * @returns {Promise<{txId: string}>}
    */
   const sendZion = async (recipientAddress, amountZion, password) => {
+    if (locked) throw new Error('Wallet is locked');
     if (!activeWallet) throw new Error('No active wallet');
+    bumpActivity();
 
     // Get private key from keychain
     const {privateKey} = await WalletService.exportWallet(activeWallet.id, password);
@@ -140,16 +182,16 @@ export const WalletProvider = ({children}) => {
     }
 
     // Build, sign & serialize transaction
-    const {serialized, txHash} = createSignedTransaction(
-      freshUtxos,
-      activeWallet.address,
-      recipientAddress,
+    const {tx, txHash} = await createSignedTransaction({
+      from: activeWallet.address,
+      to: recipientAddress,
       amountZion,
-      privateKey,
-    );
+      utxos: freshUtxos,
+      privateKey: Buffer.from(privateKey, 'hex'),
+    });
 
-    // Broadcast hex to network
-    const txId = await BlockchainRPC.broadcastTransaction(serialized);
+    // Broadcast signed transaction object to network
+    const txId = await BlockchainRPC.broadcastTransaction(tx);
 
     // Refresh balance after send
     setTimeout(() => refreshBalance(), 2000);
@@ -164,6 +206,9 @@ export const WalletProvider = ({children}) => {
     balance,
     utxos,
     balanceLoading,
+    locked,
+    lock,
+    unlock,
     createWallet,
     importWallet,
     addExternalWallet,
