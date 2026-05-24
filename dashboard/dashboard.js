@@ -66,7 +66,7 @@ function switchTab(name){
   if(name === 'env') loadEnvFiles();
   if(name === 'wizard') renderWizard();
   if(name === 'logs'){ loadLogs('node1'); loadLogs('node2'); loadLogs('pool'); loadLogs('miner'); }
-  if(name === 'controls'){ renderControls(); loadBackupList(); }
+  if(name === 'controls'){ renderControls(); loadBackupList(); loadDepGraph(); loadProcessRegistry(); }
   if(name === 'services') loadServices();
   if(name === 'database') loadDatabases();
   if(name === 'metrics') renderMetricsButtons();
@@ -1022,6 +1022,10 @@ document.addEventListener('keydown', function(e){
   }
   if(key === ' ' && !e.ctrlKey && !e.altKey && !e.metaKey){
     toggleAutoRefresh();
+    e.preventDefault();
+  }
+  if(key === 's' && !e.ctrlKey && !e.altKey && !e.metaKey){
+    openSettingsModal();
     e.preventDefault();
   }
 });
@@ -2197,12 +2201,205 @@ async function sendChat(){
 }
 
 // ─────────────────────────────────────────────────────────────────────
+// Settings
+// ─────────────────────────────────────────────────────────────────────
+
+async function loadSettings(){
+  try{
+    const r = await fetch('/api/settings');
+    const s = await r.json();
+    applySettings(s);
+    return s;
+  }catch(e){ console.warn('Settings load failed', e); return {}; }
+}
+
+function applySettings(s){
+  if(!s) return;
+  // theme
+  const themeSel = document.getElementById('settings-theme');
+  if(themeSel && s.theme){ themeSel.value = s.theme; }
+  // tab
+  const tabSel = document.getElementById('settings-default-tab');
+  if(tabSel && s.default_tab){ tabSel.value = s.default_tab; }
+  // refresh interval
+  const refSel = document.getElementById('settings-refresh');
+  if(refSel && s.refresh_interval_ms != null){ refSel.value = String(s.refresh_interval_ms); }
+  // thresholds
+  const hrIn = document.getElementById('settings-hashrate-threshold');
+  if(hrIn && s.alert_threshold_hashrate != null){ hrIn.value = String(s.alert_threshold_hashrate); }
+  const syncIn = document.getElementById('settings-sync-threshold');
+  if(syncIn && s.alert_threshold_sync_gap != null){ syncIn.value = String(s.alert_threshold_sync_gap); }
+  const lvlSel = document.getElementById('settings-log-level');
+  if(lvlSel && s.log_level_filter){ lvlSel.value = s.log_level_filter; }
+  // toggles
+  const wd = document.getElementById('settings-watchdog');
+  if(wd && s.auto_launch_watchdog != null){ wd.checked = !!s.auto_launch_watchdog; }
+  const tt = document.getElementById('settings-tooltips');
+  if(tt && s.show_tooltips != null){ tt.checked = !!s.show_tooltips; }
+  // apply theme
+  if(s.theme === 'light'){ document.body.classList.add('light-mode'); }
+  else { document.body.classList.remove('light-mode'); }
+  // apply refresh interval
+  if(s.refresh_interval_ms && refreshTimer){
+    clearInterval(refreshTimer);
+    refreshTimer = setInterval(refreshAll, s.refresh_interval_ms);
+  }
+}
+
+function openSettingsModal(){
+  const m = document.getElementById('settings-modal');
+  if(m) m.classList.remove('hidden');
+  loadSettings();
+}
+function closeSettingsModal(){
+  const m = document.getElementById('settings-modal');
+  if(m) m.classList.add('hidden');
+}
+
+async function saveSettings(){
+  const payload = {};
+  const theme = document.getElementById('settings-theme');
+  if(theme) payload.theme = theme.value;
+  const tab = document.getElementById('settings-default-tab');
+  if(tab) payload.default_tab = tab.value;
+  const ref = document.getElementById('settings-refresh');
+  if(ref) payload.refresh_interval_ms = parseInt(ref.value, 10) || 3000;
+  const hr = document.getElementById('settings-hashrate-threshold');
+  if(hr) payload.alert_threshold_hashrate = parseFloat(hr.value) || 0.1;
+  const sync = document.getElementById('settings-sync-threshold');
+  if(sync) payload.alert_threshold_sync_gap = parseInt(sync.value, 10) || 5;
+  const lvl = document.getElementById('settings-log-level');
+  if(lvl) payload.log_level_filter = lvl.value;
+  const wd = document.getElementById('settings-watchdog');
+  if(wd) payload.auto_launch_watchdog = wd.checked;
+  const tt = document.getElementById('settings-tooltips');
+  if(tt) payload.show_tooltips = tt.checked;
+  try{
+    const r = await fetch('/api/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const d = await r.json();
+    applySettings(d.settings || d);
+    const status = document.getElementById('settings-save-status');
+    if(status){ status.textContent = 'Saved!'; setTimeout(()=> status.textContent='', 1500); }
+  }catch(e){
+    const status = document.getElementById('settings-save-status');
+    if(status){ status.textContent = 'Error: '+String(e); }
+  }
+}
+
+async function resetSettings(){
+  if(!confirm('Reset settings to defaults?')) return;
+  try{
+    const r = await fetch('/api/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})});
+    const d = await r.json();
+    applySettings(d.settings || d);
+    const status = document.getElementById('settings-save-status');
+    if(status){ status.textContent = 'Reset!'; setTimeout(()=> status.textContent='', 1500); }
+  }catch(e){
+    const status = document.getElementById('settings-save-status');
+    if(status){ status.textContent = 'Error: '+String(e); }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Log Search
+// ─────────────────────────────────────────────────────────────────────
+
+async function runLogSearch(){
+  const q = document.getElementById('log-search-input').value.trim();
+  const level = document.getElementById('log-level-filter').value;
+  const out = document.getElementById('log-search-results');
+  if(!q && level === 'all'){ if(out) out.innerHTML = '<div class="text-gray-500 italic">Enter a query or choose a level filter</div>'; return; }
+  if(out) out.innerHTML = '<div class="text-gray-500 italic animate-pulse">Searching…</div>';
+  try{
+    const r = await fetch('/api/logs/search?q=' + encodeURIComponent(q) + '&max=100');
+    const d = await r.json();
+    let rows = d.results || [];
+    if(level !== 'all'){
+      rows = rows.filter(x => {
+        const line = (x.text || '').toLowerCase();
+        if(level === 'error') return line.includes('error') || line.includes('err') || line.includes('panic') || line.includes('fail');
+        if(level === 'warn') return line.includes('warn') || line.includes('warning');
+        if(level === 'info') return line.includes('info') || line.includes('information');
+        return true;
+      });
+    }
+    if(rows.length === 0){ if(out) out.innerHTML = '<div class="text-gray-500 italic">No results</div>'; return; }
+    let html = '<div class="text-gray-400 text-xs mb-1">'+rows.length+' result(s)</div>';
+    for(const row of rows){
+      const cls = syntaxHighlightClass(row.text || '');
+      html += '<div class="bg-black/20 rounded px-2 py-1 border-l-2 ' + cls.border + '">' +
+              '<div class="text-gray-500 text-[10px] truncate">' + escapeHtml(row.file || '') + ':' + (row.line || 0) + '</div>' +
+              '<div class="text-gray-200 ' + cls.text + '">' + escapeHtml(row.text || '') + '</div></div>';
+    }
+    if(out) out.innerHTML = html;
+  }catch(e){
+    if(out) out.innerHTML = '<div class="text-red-400">Error: ' + escapeHtml(String(e)) + '</div>';
+  }
+}
+
+function syntaxHighlightClass(line){
+  const l = line.toLowerCase();
+  if(l.includes('error') || l.includes('panic') || l.includes('fail')) return { border: 'border-red-500', text: 'text-red-300' };
+  if(l.includes('warn')) return { border: 'border-amber-500', text: 'text-amber-300' };
+  if(l.includes('info')) return { border: 'border-emerald-500', text: 'text-emerald-300' };
+  return { border: 'border-zion-600', text: 'text-gray-300' };
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Process Manager
+// ─────────────────────────────────────────────────────────────────────
+
+async function loadProcessRegistry(){
+  const container = document.getElementById('process-registry');
+  if(!container) return;
+  try{
+    const r = await fetch('/api/processes');
+    const d = await r.json();
+    const procs = d.processes || [];
+    if(procs.length === 0){ container.innerHTML = '<div class="text-gray-500 italic text-xs">No processes tracked</div>'; return; }
+    let html = '<div class="grid grid-cols-1 md:grid-cols-2 gap-2">';
+    for(const p of procs){
+      html += '<div class="bg-black/20 rounded-md p-2 flex items-center justify-between">' +
+              '<div><div class="text-xs font-semibold text-gray-200">' + escapeHtml(p.name || 'Unknown') + '</div>' +
+              '<div class="text-[10px] text-gray-400">PID ' + (p.pid || '—') + ' · CPU ' + (p.cpu_percent ?? '—') + '% · MEM ' + (p.memory_mb ?? '—') + ' MB</div></div>' +
+              '<button onclick="killPid(' + (p.pid || 0) + ')" class="text-[10px] px-2 py-1 bg-red-700/50 hover:bg-red-600 rounded text-white">Kill</button>' +
+              '</div>';
+    }
+    html += '</div>';
+    container.innerHTML = html;
+  }catch(e){
+    if(container) container.innerHTML = '<div class="text-red-400 text-xs">Error: ' + escapeHtml(String(e)) + '</div>';
+  }
+}
+
+async function killPid(pid){
+  if(!pid || !confirm('Kill process ' + pid + '?')) return;
+  try{
+    const r = await fetch('/api/processes/kill?pid=' + encodeURIComponent(pid));
+    const d = await r.json();
+    alert(d.ok ? 'Killed PID ' + pid : 'Failed: ' + (d.error || 'unknown'));
+    loadProcessRegistry();
+  }catch(e){ alert('Error: ' + String(e)); }
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Export CSV
+// ─────────────────────────────────────────────────────────────────────
+
+function exportCsv(){
+  window.open('/api/export/blocks', '_blank');
+}
+
+// ─────────────────────────────────────────────────────────────────────
 // Init
 // ─────────────────────────────────────────────────────────────────────
 
 console.log('[ZION Dashboard] Initializing v2 — tabs:', TABS.length);
 applyFriendlyMode();
-switchTab('overview');
+loadSettings().then(s => {
+  if(s && s.default_tab){ switchTab(s.default_tab); }
+  else { switchTab('overview'); }
+});
 refreshAll();
 refreshTimer = setInterval(refreshAll, 3000);
 setTimeout(loadMinerConfig, 500);
