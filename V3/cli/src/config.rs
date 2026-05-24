@@ -177,12 +177,12 @@ impl Default for TopologyConfig {
                 vpn_ip: Some("100.86.102.5".into()),
             },
             edge: TopologyHostConfig {
-                rpc_host: "100.66.162.125".into(),
+                rpc_host: "100.76.16.108".into(),
                 rpc_port: 8443,
                 p2p_port: 8333,
                 pool_host: "77.42.71.94".into(),
                 pool_port: 8444,
-                vpn_ip: Some("100.66.162.125".into()),
+                vpn_ip: Some("100.76.16.108".into()),
             },
         }
     }

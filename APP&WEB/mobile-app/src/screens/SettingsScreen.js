@@ -14,12 +14,22 @@ import {CONFIG} from '../constants/config';
 
 const SettingsScreen = () => {
   const [biometricEnabled, setBiometricEnabled] = React.useState(true);
+  const [networkMode, setNetworkMode] = React.useState(CONFIG.NETWORK_MODE || 'mainnet');
   const [notifications, setNotifications] = React.useState({
     newBlock: true,
     payout: true,
     levelUp: true,
     miningWarning: true,
   });
+
+  const activeNet = CONFIG.activeNetwork;
+
+  const toggleNetwork = () => {
+    const next = networkMode === 'mainnet' ? 'testnet' : 'mainnet';
+    CONFIG.NETWORK_MODE = next;
+    setNetworkMode(next);
+    // In production this would persist to AsyncStorage and require app restart
+  };
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -113,17 +123,30 @@ const SettingsScreen = () => {
       <GlassCard style={styles.card}>
         <Text style={styles.sectionTitle}>Network</Text>
 
+        {/* Network Mode Switch */}
+        <SettingRow
+          icon={networkMode === 'mainnet' ? 'earth' : 'test-tube'}
+          label="Network Mode"
+          value={networkMode === 'mainnet'}
+          onToggle={toggleNetwork}
+        />
+        <View style={styles.networkBadge}>
+          <Text style={styles.networkBadgeText}>
+            {activeNet.name}  •  {activeNet.chainId}
+          </Text>
+        </View>
+
         <SettingItem
           icon="server"
           label="Pool Primary"
-          value={`Helsinki  •  ${CONFIG.POOL_HOST}:${CONFIG.POOL_PORT}`}
+          value={`${activeNet.poolHosts?.[0]?.name || 'Edge'}  •  ${activeNet.poolHost}:${activeNet.poolPort}`}
         />
-        {CONFIG.POOL_HOSTS?.slice(1).map((n) => (
+        {activeNet.poolHosts?.slice(1).map((n) => (
           <SettingItem
             key={n.host}
             icon="server-network"
             label={`Pool ${n.name}`}
-            value={`${n.host}:${CONFIG.POOL_PORT}`}
+            value={`${n.host}:${activeNet.poolPort}`}
           />
         ))}
         <SettingItem
@@ -134,7 +157,7 @@ const SettingsScreen = () => {
         <SettingItem
           icon="web"
           label="Explorer"
-          value={CONFIG.EXPLORER_URL}
+          value={activeNet.explorerUrl}
         />
       </GlassCard>
 
@@ -332,6 +355,25 @@ const styles = StyleSheet.create({
   settingValue: {
     ...typography.caption,
     marginTop: spacing.xs,
+  },
+  networkBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(59,130,246,0.1)',
+    borderRadius: 8,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    marginTop: spacing.sm,
+    marginBottom: spacing.md,
+    gap: spacing.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(59,130,246,0.25)',
+  },
+  networkBadgeText: {
+    fontSize: 12,
+    color: colors.primary.cyan,
+    fontWeight: '600',
+    flex: 1,
   },
   footer: {
     alignItems: 'center',

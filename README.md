@@ -153,7 +153,7 @@ npm run build:win    # or :mac, :linux
 
 ```
 Core (Windows 11)          Edge (Hetzner VPS)
-100.86.102.5              100.66.162.125
+100.86.102.5              100.76.16.108
     | Tailscale VPN            |
 Node + Pool (Master)    Node + Pool (Relay)
 Miner (GPU)               Public P2P: 8333

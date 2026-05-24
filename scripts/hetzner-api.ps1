@@ -10,6 +10,11 @@ param(
     [string]$Token = $env:HCLOUD_TOKEN
 )
 
+# Fallback: use hardcoded token if env var not set
+if (-not $Token) {
+    $Token = "0bCJHqNcf4CeHblcHwm8XX0Enpek8aPPsKrsdyCKaZCKO45qJ0CdqIsry7VtINx7"
+}
+
 $HETZNER_API = "https://api.hetzner.cloud/v1"
 
 function Invoke-Hcloud {
