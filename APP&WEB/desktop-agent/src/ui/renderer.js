@@ -3957,11 +3957,17 @@ function initNclView() {
       try {
         const result = await window.electronAPI.nclSubmitJob({
           job_type: jobType,
-          params: { model: 'hiran-v2.2' },
-          priority: 'normal'
+          model_id: 'hiran-v2.2',
+          backend: 'Custom',
+          params: { prompt: 'Desktop agent test' },
+          priority: 5,
+          submitter: 'desktop-agent',
+          input_hash: Date.now().toString(16),
+          reward_flowers: 20000000000,
+          max_duration_secs: 60
         });
         if (result?.success) {
-          if (jobResult) jobResult.textContent = `Job submitted: ${result.job?.id || 'OK'}`;
+          if (jobResult) jobResult.textContent = `Job queued: ${result.job?.job_id || result.job?.id || 'OK'}`;
           refreshNclStatus();
         } else {
           if (jobResult) jobResult.textContent = `Error: ${result?.error || 'Unknown'}`;
