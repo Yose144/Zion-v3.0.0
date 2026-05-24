@@ -1490,6 +1490,124 @@ def build_wallets() -> dict:
         "rpc": {"host": rpc_host, "port": rpc_port, "reachable": len(with_balance) > 0 and with_balance[0].get("rpc_ok")},
     }
 
+# ── Block detail ────────────────────────────────────────────────────────
+
+def get_block_detail(height: int = None, hash_hex: str = None) -> dict:
+    """Fetch full block details by height or hash."""
+    rpc_host, rpc_port = "127.0.0.1", 8443
+    blk = None
+    if height is not None:
+        blk = rpc_call(rpc_host, rpc_port, "getBlockByHeight", {"height": height}, timeout=2)
+    elif hash_hex:
+        blk = rpc_call(rpc_host, rpc_port, "getBlockByHash", {"hash": hash_hex}, timeout=2)
+    if not blk or blk.get("_rpc_error"):
+        return {"found": False, "error": blk.get("_rpc_error") if blk else "RPC unavailable"}
+    tx_list = []
+    for tx in blk.get("transactions", []):
+        tx_list.append({
+            "tx_id": tx.get("tx_id", "—"),
+            "type": tx.get("tx_type", "transfer"),
+            "from": tx.get("from_address", "—"),
+            "to": tx.get("to_address", "—"),
+            "amount_zion": tx.get("amount_zion", 0),
+            "fee_zion": tx.get("fee_zion", 0),
+        })
+    return {
+        "found": True,
+        "height": blk.get("height"),
+        "hash": blk.get("hash_hex", "—"),
+        "timestamp": blk.get("timestamp"),
+        "difficulty": blk.get("difficulty"),
+        "miner": blk.get("miner_address", "—"),
+        "reward_zion": blk.get("reward_zion", 0),
+        "total_fees_zion": blk.get("total_fees_zion", 0),
+        "nonce": blk.get("nonce"),
+        "prev_hash": blk.get("prev_hash_hex", "—"),
+        "tx_count": len(tx_list),
+        "transactions": tx_list,
+        "body_hash": blk.get("body_hash_hex", "—"),
+    }
+
+# ── Mempool detail ────────────────────────────────────────────────────
+
+def get_mempool_detail() -> dict:
+    """Fetch mempool transactions and stats."""
+    rpc_host, rpc_port = "127.0.0.1", 8443
+    info = rpc_call(rpc_host, rpc_port, "getChainInfo", {}, timeout=1.5)
+    if not info or info.get("_rpc_error"):
+        return {"rpc_reachable": False, "tx_count": 0, "transactions": []}
+    # Some nodes expose getMempool; if not, return template-based estimate
+    txs = []
+    mempool_txs = info.get("mempool_transactions", 0)
+    template_txs = info.get("active_template_transactions", 0)
+    total_fees = info.get("active_template_total_fees_zion", 0)
+    # Attempt getMempool call
+    mempool_raw = rpc_call(rpc_host, rpc_port, "getMempool", {}, timeout=1.5)
+    if mempool_raw and not mempool_raw.get("_rpc_error"):
+        for tx in mempool_raw.get("transactions", []):
+            txs.append({
+                "tx_id": tx.get("tx_id", "—"),
+                "from": tx.get("from_address", "—"),
+                "to": tx.get("to_address", "—"),
+                "amount_zion": tx.get("amount_zion", 0),
+                "fee_zion": tx.get("fee_zion", 0),
+                "size_bytes": tx.get("size_bytes", 0),
+            })
+    return {
+        "rpc_reachable": True,
+        "tx_count": mempool_txs,
+        "template_tx_count": template_txs,
+        "total_fees_zion": total_fees,
+        "transactions": txs,
+    }
+
+# ── Miner shares history ──────────────────────────────────────────────
+
+def get_miner_shares_history(limit: int = 50) -> dict:
+    """Parse miner.log for accepted/rejected shares over time."""
+    recent = tail_log("miner.log", 500)
+    history = []
+    for line in recent:
+        if m := re.search(r'accepted\s+(\d+)/(\d+)', line):
+            history.append({
+                "accepted": int(m.group(1)),
+                "rejected": int(m.group(2)),
+                "line": line[:120],
+            })
+    # Deduplicate by accepted count (keep last occurrence)
+    seen = set()
+    dedup = []
+    for h in reversed(history):
+        key = (h["accepted"], h["rejected"])
+        if key not in seen:
+            seen.add(key)
+            dedup.append(h)
+    dedup.reverse()
+    return {"samples": dedup[-limit:]}
+
+# ── Service dependency graph data ─────────────────────────────────────
+
+def get_dependency_graph() -> dict:
+    """Return nodes and edges for the service dependency DAG."""
+    nodes = []
+    edges = []
+    health = all_services_health()
+    health_map = {h["id"]: h for h in health}
+    for svc in SERVICE_REGISTRY:
+        sid = svc["id"]
+        h = health_map.get(sid, {})
+        nodes.append({
+            "id": sid,
+            "name": svc.get("name", sid),
+            "icon": svc.get("icon", "🔹"),
+            "alive": h.get("alive", False),
+            "kind": svc.get("kind", "unknown"),
+            "level": svc.get("level", "L?"),
+        })
+        for dep in svc.get("depends_on", []):
+            edges.append({"from": dep, "to": sid})
+    return {"nodes": nodes, "edges": edges}
+
 # ── Explorer data builder ──────────────────────────────────────────────
 
 def build_explorer() -> dict:
@@ -3870,6 +3988,17 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json(build_wallets())
         elif route == "/api/explorer":
             self._json(build_explorer())
+        elif route == "/api/block":
+            h = params.get("height", [""])[0].strip()
+            hash_hex = params.get("hash", [""])[0].strip()
+            height = int(h) if h.isdigit() else None
+            self._json(get_block_detail(height=height, hash_hex=hash_hex if hash_hex else None))
+        elif route == "/api/mempool":
+            self._json(get_mempool_detail())
+        elif route == "/api/miner/shares":
+            self._json(get_miner_shares_history())
+        elif route == "/api/dependency-graph":
+            self._json(get_dependency_graph())
         elif route == "/api/backup/status":
             self._json(get_backup_status())
         elif route == "/api/wallet/status":
