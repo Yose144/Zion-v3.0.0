@@ -1,5 +1,5 @@
 /**
- * ZION Wallet Screen v2.9.6
+ * ZION Wallet Screen v3.0.0
  *
  * Multi-chain wallet management:
  * - Create / import wallets (ZION, BTC, ETH, SOL, TRX, XLM)

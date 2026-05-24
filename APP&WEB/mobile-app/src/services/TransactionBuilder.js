@@ -1,5 +1,5 @@
 /**
- * ZION UTXO Transaction Builder v2.9.5
+ * ZION UTXO Transaction Builder v3.0.0
  *
  * Client-side UTXO selection and transaction construction
  * compatible with the Rust core (core/src/tx.rs).
