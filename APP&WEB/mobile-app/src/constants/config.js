@@ -1,21 +1,19 @@
-// ZION Configuration v2.9.6 — synchronized with desktop-agent/src/main.js
+// ZION Configuration v3.0.0 — Mainnet
 export const CONFIG = {
-  // ── Network settings — V3 mainnet nodes (port 8443 RPC, 8080 pool API) ────────────
+  // ── Network settings — V3 mainnet nodes (port 8443 RPC, 8444 pool stratum) ─────────
   RPC_NODES: [
-    'http://91.98.122.165:8443/jsonrpc',  // Prague (CZ, primary)
-  ],
-  POOL_API_NODES: [
-    'http://91.98.122.165:8080',          // Prague pool API
+    'http://77.42.71.94:8443/jsonrpc',     // Edge (public primary)
+    'http://100.66.162.125:8443/jsonrpc',  // Edge (Tailscale VPN fallback)
   ],
   POOL_URL: 'https://pool.zionterranova.com',
   API_URL: 'https://api.zionterranova.com',
   EXPLORER_URL: 'https://explorer.zionterranova.com',
 
   // Pool stratum endpoints
-  POOL_HOST: '91.98.122.165',
-  POOL_PORT: 3333,
+  POOL_HOST: '77.42.71.94',
+  POOL_PORT: 8444,
   POOL_HOSTS: [
-    { host: '91.98.122.165',    name: 'Prague' },
+    { host: '77.42.71.94',     name: 'Edge' },
   ],
 
   // P2P network
@@ -96,8 +94,8 @@ export const CONFIG = {
   AUTO_LOCK_MINUTES: 5,
   
   // Version
-  VERSION: '2.9.6',
-  BUILD_NUMBER: 6,
+  VERSION: '3.0.0',
+  BUILD_NUMBER: 7,
   CODENAME: 'TerraNova',
 
   // ── wZION Bridge (L1 ↔ EVM) ──────────────────────────────

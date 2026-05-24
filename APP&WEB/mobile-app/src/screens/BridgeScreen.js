@@ -1,5 +1,5 @@
 /**
- * BridgeScreen.js — wZION L1 ↔ EVM Bridge v2.9.6
+ * BridgeScreen.js — wZION L1 ↔ EVM Bridge v3.0.0
  * ──────────────────────────────────────────────────────────────────────
  * Lets users bridge ZION between the native L1 chain and Base network (EVM).
  *

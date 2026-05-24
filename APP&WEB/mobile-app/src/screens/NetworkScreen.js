@@ -1,9 +1,9 @@
 /**
- * ZION Network Screen v2.9.6
+ * ZION Network Screen v3.0.0
  *
  * Shows real-time network topology, node health, chain info,
  * and sync status from the Rust core via RPC / Pool API.
- * Uses POOL_HOSTS (Helsinki / USA / Asia) — CHv4 era.
+ * Uses POOL_HOSTS (Edge mainnet) — V3 mainnet era.
  */
 
 import React, {useState, useEffect} from 'react';
