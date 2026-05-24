@@ -113,6 +113,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
   aiChatAsk: (data) => ipcRenderer.invoke('ai-chat-ask', data),
   aiChatStatus: () => ipcRenderer.invoke('ai-chat-status'),
 
+  // ── Hiranyagarbha + NCL (Neural Compute Layer) ─────────────────────────
+  aiNativeStatus: () => ipcRenderer.invoke('ai-native-status'),
+  nclGetStatus: () => ipcRenderer.invoke('ncl-get-status'),
+  nclGetWorkers: () => ipcRenderer.invoke('ncl-get-workers'),
+  nclGetLeaderboard: () => ipcRenderer.invoke('ncl-get-leaderboard'),
+  nclSubmitJob: (data) => ipcRenderer.invoke('ncl-submit-job', data),
+  nclGetPrice: () => ipcRenderer.invoke('ncl-get-price'),
+
   // ── Ekam Deeksha v3.0.0 GPU + Dual Mining ──────────────────────────────
   runGpuBenchmark: (options) => ipcRenderer.invoke('run-gpu-benchmark', options),
   getGpuDevices: () => ipcRenderer.invoke('get-gpu-devices'),
