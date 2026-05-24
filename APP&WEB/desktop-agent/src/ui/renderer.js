@@ -3873,4 +3873,106 @@ function initAiView() {
   checkAiStatus();
 }
 
-_viewInitFns.ai = () => initAiView();
+_viewInitFns.ai = () => { initAiView(); initNclView(); };
+
+// ═══════════════════════════════════════════════════════════════════════════
+// NCL (Neural Compute Layer) — Dashboard Tab
+// ═══════════════════════════════════════════════════════════════════════════
+
+function initNclView() {
+  const submitBtn = document.getElementById('ncl-submit-btn');
+  const jobTypeSelect = document.getElementById('ncl-job-type');
+  const jobResult = document.getElementById('ncl-job-result');
+
+  async function refreshNclStatus() {
+    try {
+      // Check orchestrator health
+      const orchStatus = await window.electronAPI.aiNativeStatus();
+      const orchEl = document.getElementById('ncl-orch-status');
+      if (orchEl) {
+        if (orchStatus?.up) {
+          orchEl.textContent = 'Online';
+          orchEl.style.color = '';
+        } else {
+          orchEl.textContent = 'Offline';
+          orchEl.style.color = 'rgb(239,68,68)';
+        }
+      }
+
+      // NCL health
+      const nclStatus = await window.electronAPI.nclGetStatus();
+      const healthEl = document.getElementById('ncl-health');
+      if (healthEl) {
+        if (nclStatus?.success) {
+          healthEl.textContent = 'Active';
+          healthEl.style.color = '';
+        } else {
+          healthEl.textContent = orchStatus?.up ? 'Idle' : 'Offline';
+          healthEl.style.color = orchStatus?.up ? '' : 'rgb(239,68,68)';
+        }
+      }
+
+      // Workers
+      const workers = await window.electronAPI.nclGetWorkers();
+      const workerEl = document.getElementById('ncl-worker-count');
+      if (workerEl && workers?.success) {
+        const list = Array.isArray(workers.workers) ? workers.workers : [];
+        workerEl.textContent = String(list.length);
+      }
+
+      // Pricing
+      const price = await window.electronAPI.nclGetPrice();
+      const priceEl = document.getElementById('ncl-compute-price');
+      if (priceEl && price?.success && price.pricing) {
+        const p = price.pricing;
+        priceEl.textContent = p.price_per_token ? `${p.price_per_token} ZION/tok` : 'Free tier';
+      }
+
+      // Leaderboard
+      const lb = await window.electronAPI.nclGetLeaderboard();
+      const lbEl = document.getElementById('ncl-leaderboard-list');
+      if (lbEl && lb?.success) {
+        const entries = Array.isArray(lb.leaderboard) ? lb.leaderboard : [];
+        if (entries.length === 0) {
+          lbEl.innerHTML = '<div style="color:rgba(255,255,255,0.35);text-align:center;padding:20px">No workers registered yet</div>';
+        } else {
+          lbEl.innerHTML = entries.slice(0, 10).map((w, i) => `
+            <div style="padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;justify-content:space-between;align-items:center">
+              <span style="color:rgba(255,255,255,0.8)">${i + 1}. ${w.wallet || w.worker_id || w.id || 'Worker'}</span>
+              <span style="color:var(--zion-cyan,#06b6d4);font-weight:600">${w.reputation ?? w.score ?? 0} pts</span>
+            </div>
+          `).join('');
+        }
+      }
+    } catch (err) {
+      console.error('NCL status refresh failed:', err);
+    }
+  }
+
+  // Submit job button
+  if (submitBtn) {
+    submitBtn.addEventListener('click', async () => {
+      const jobType = jobTypeSelect?.value || 'inference';
+      if (jobResult) jobResult.textContent = 'Submitting...';
+      try {
+        const result = await window.electronAPI.nclSubmitJob({
+          job_type: jobType,
+          params: { model: 'hiran-v2.2' },
+          priority: 'normal'
+        });
+        if (result?.success) {
+          if (jobResult) jobResult.textContent = `Job submitted: ${result.job?.id || 'OK'}`;
+          refreshNclStatus();
+        } else {
+          if (jobResult) jobResult.textContent = `Error: ${result?.error || 'Unknown'}`;
+        }
+      } catch (err) {
+        if (jobResult) jobResult.textContent = `Error: ${err.message}`;
+      }
+    });
+  }
+
+  // Auto-refresh every 10s
+  let nclInterval = setInterval(refreshNclStatus, 10000);
+  refreshNclStatus();
+}
