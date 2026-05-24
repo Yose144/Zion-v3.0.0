@@ -4566,6 +4566,113 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     except Exception:
                         pass
             self._json({"results": results, "total": len(results), "capped": len(results) >= MAX_HITS})
+        elif route == "/api/layer-status":
+            # Aggregate status for any layer (l1-l6) from real sources
+            layer = params.get("layer", ["l1"])[0].strip()
+            result = {"layer": layer, "ok": False, "services": {}}
+            # Pull from build_status() which already has node1/node2/pool/miner
+            try:
+                s = build_status()
+                if layer == "l1":
+                    result["ok"] = s.get("node1", {}).get("running", False)
+                    result["block_height"] = s.get("node1", {}).get("chain_height", 0)
+                    result["peers"] = s.get("node1", {}).get("known_peers", 0)
+                    result["hashrate"] = s.get("miner", {}).get("hashrate", 0)
+                    result["shares_accepted"] = s.get("pool", {}).get("shares_accepted", 0)
+                    result["pool_alive"] = s.get("pool", {}).get("running", False)
+                    result["miner_alive"] = s.get("miner", {}).get("running", False)
+                    result["node2_alive"] = s.get("node2", {}).get("running", False)
+                    result["edge_alive"] = s.get("pool_edge", {}).get("running", False)
+                    result["services"] = {
+                        "node1": s.get("node1", {}).get("running", False),
+                        "node2": s.get("node2", {}).get("running", False),
+                        "pool": s.get("pool", {}).get("running", False),
+                        "miner": s.get("miner", {}).get("running", False),
+                        "pool-edge": s.get("pool_edge", {}).get("running", False),
+                    }
+            except Exception as e:
+                result["error"] = str(e)
+            self._json(result)
+        elif route == "/api/ncl/submit":
+            # Proxy NCL job submit to Hiranyagarbha on port 8001
+            try:
+                import urllib.request as _ur
+                body_data = json.dumps({"job_type": "inference", "payload": "", "submitted_via": "dashboard"}).encode()
+                req = _ur.Request("http://127.0.0.1:8001/ncl/schedule",
+                    data=body_data, headers={"Content-Type": "application/json"}, method="POST")
+                with _ur.urlopen(req, timeout=4) as r:
+                    self._json(json.loads(r.read()))
+            except Exception as e:
+                self._json({"ok": False, "offline": True, "error": str(e)[:120]})
+        elif route == "/api/hiran/agents":
+            # Get agent list from Hiranyagarbha orchestrator
+            try:
+                import urllib.request as _ur
+                req = _ur.Request("http://127.0.0.1:8001/agents",
+                    headers={"Accept": "application/json"})
+                with _ur.urlopen(req, timeout=3) as r:
+                    data_a = json.loads(r.read())
+                agents = data_a if isinstance(data_a, list) else data_a.get("agents", [])
+                self._json({"ok": True, "agents": agents, "count": len(agents)})
+            except Exception as e:
+                # Return empty list with offline flag — no error thrown
+                self._json({"ok": False, "agents": [], "count": 0, "offline": True, "error": str(e)[:80]})
+        elif route == "/api/metrics/scrape":
+            # Scrape Prometheus-format metrics from node/pool
+            svc = params.get("svc", ["node1"])[0].strip()
+            port_map = {"node1": 9115, "node2": 9116, "pool": 9100, "miner": 9200}
+            port = port_map.get(svc, 9115)
+            try:
+                import urllib.request as _ur
+                with _ur.urlopen(f"http://127.0.0.1:{port}/metrics", timeout=3) as r:
+                    raw = r.read().decode("utf-8", errors="ignore")
+                # Parse key metrics
+                lines = [l for l in raw.splitlines() if l and not l.startswith("#")]
+                parsed = {}
+                for ln in lines[:200]:
+                    parts = ln.rsplit(" ", 1)
+                    if len(parts) == 2:
+                        try: parsed[parts[0]] = float(parts[1])
+                        except ValueError: pass
+                self._json({"ok": True, "svc": svc, "port": port, "metrics": parsed, "raw_lines": len(lines)})
+            except Exception as e:
+                self._json({"ok": False, "svc": svc, "port": port, "offline": True, "error": str(e)[:80]})
+        elif route == "/api/topology":
+            # Real topology: ping Core+Edge, check Tailscale
+            import time as _time
+            core_rpc = "http://127.0.0.1:8443/jsonrpc"
+            edge_rpc = "http://100.76.16.108:8443/jsonrpc"
+            def _ping_rpc(url, timeout=2):
+                try:
+                    import urllib.request as _ur
+                    body = json.dumps({"jsonrpc":"2.0","method":"zion_getStatus","params":[],"id":1}).encode()
+                    req = _ur.Request(url, data=body, headers={"Content-Type":"application/json"})
+                    t0 = _time.time()
+                    with _ur.urlopen(req, timeout=timeout) as r:
+                        d = json.loads(r.read())
+                        return True, round((_time.time()-t0)*1000), d.get("result", {})
+                except Exception as ex:
+                    return False, None, {"error": str(ex)[:60]}
+            core_ok, core_ms, core_data = _ping_rpc(core_rpc)
+            edge_ok, edge_ms, edge_data = _ping_rpc(edge_rpc)
+            # Check Tailscale status
+            ts_status = "unknown"
+            try:
+                import subprocess as _sp
+                r = _sp.run(["tailscale", "status", "--json"], capture_output=True, text=True, timeout=3)
+                if r.returncode == 0:
+                    ts_data = json.loads(r.stdout)
+                    ts_status = "connected" if ts_data.get("BackendState") == "Running" else ts_data.get("BackendState", "unknown")
+                else:
+                    ts_status = "not_running"
+            except Exception:
+                ts_status = "not_available"
+            self._json({
+                "core": {"host": "127.0.0.1", "rpc_port": 8443, "alive": core_ok, "latency_ms": core_ms, "data": core_data},
+                "edge": {"host": "100.76.16.108", "rpc_port": 8443, "alive": edge_ok, "latency_ms": edge_ms, "data": edge_data},
+                "tailscale": ts_status,
+                "timestamp": _time.time(),
+            })
         elif route.startswith("/api/dao"):
             # Proxy all /api/dao/* requests to DAO daemon on port 8081
             self._proxy_to_dao("GET", route, None, dict(self.headers))
