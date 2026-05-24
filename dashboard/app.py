@@ -2128,7 +2128,12 @@ _ALLOW_BASE = {
     "start-miner-cpu":        "start-miner-cpu",
     "start-miner-gpu":        "start-miner-gpu",
     "stop-miner":             "stop-miner",
+    "stop-node1":             "stop-node1",
+    "stop-node2":             "stop-node2",
+    "stop-pool":              "stop-pool",
+    "restart-node1":          "start-node1",
     "restart-node2":          "start-node2",
+    "restart-pool":           "start-pool",
     "restart-miner":          "start-miner",
     "backup-chain":           "backup-chain",
     "verify-chain":           "verify-chain",
@@ -2136,8 +2141,11 @@ _ALLOW_BASE = {
     # ── AI Layer ─────────────────────────────────────────────────────────
     "start-hiranyagarbha":    "start-hiranyagarbha",
     "start-hiran-inference":  "start-hiran-inference",
+    "stop-hiranyagarbha":     "stop-hiranyagarbha",
+    "stop-ai-native":         "stop-ai-native",
     "restart-hiranyagarbha":  "start-hiranyagarbha",
     "restart-hiran-inference":"start-hiran-inference",
+    "restart-ai-native":      "start-hiran-inference",
 }
 
 # Windows-only extras
@@ -4221,6 +4229,31 @@ class DashboardHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def _get_service_log(self, svc_name, lines=50):
+        """Read last N lines from a service's log file."""
+        import collections
+        # Map service names to log file paths
+        log_dir = os.path.join(os.path.dirname(__file__), "logs")
+        log_map = {
+            "node1": os.path.join(log_dir, "node1.log"),
+            "node2": os.path.join(log_dir, "node2.log"),
+            "pool": os.path.join(log_dir, "pool.log"),
+            "miner": os.path.join(log_dir, "miner.log"),
+            "hiranyagarbha": os.path.join(log_dir, "hiranyagarbha.log"),
+            "ai-native": os.path.join(log_dir, "hiran-inference.log"),
+        }
+        log_path = log_map.get(svc_name)
+        if not log_path:
+            return {"ok": False, "error": f"Unknown service: {svc_name}"}
+        if not os.path.exists(log_path):
+            return {"ok": False, "error": f"No log file for {svc_name}"}
+        try:
+            with open(log_path, "r", encoding="utf-8", errors="replace") as f:
+                tail = collections.deque(f, maxlen=lines)
+            return {"ok": True, "service": svc_name, "lines": [l.rstrip() for l in tail]}
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+
     def do_GET(self):
         parsed = urllib.parse.urlparse(self.path)
         route = parsed.path
@@ -4283,6 +4316,16 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 procs = {k: {"pid": v["pid"], "age_min": int((time.time() - v["ts"]) / 60),
                              "alive": is_process_alive(v["pid"])} for k, v in PROCESS_REGISTRY.items()}
             self._json({"processes": procs})
+        elif route.startswith("/api/service-log/"):
+            svc_name = route.split("/api/service-log/")[1].split("?")[0]
+            lines_param = 50
+            if "?" in route:
+                qs = route.split("?")[1]
+                for part in qs.split("&"):
+                    if part.startswith("lines="):
+                        try: lines_param = int(part.split("=")[1])
+                        except: pass
+            self._json(self._get_service_log(svc_name, lines_param))
         elif route == "/api/launch/status":
             self._json(get_launch_state())
         elif route == "/api/genesis":

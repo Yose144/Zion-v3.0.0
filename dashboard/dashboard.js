@@ -150,6 +150,11 @@ async function refreshAll(){
     updateMiniHashrate();
     loadCliNodeStatus();
     updateResourceBars(res);
+    // Feed overview built-in charts with system_cpu/system_mem from resources
+    if(typeof feedOverviewCharts === 'function'){
+      const chartData = { ...s, system_cpu: res.cpu_percent || 0, system_mem: res.mem_percent || 0 };
+      feedOverviewCharts(chartData);
+    }
 
     if(currentTab === 'charts') renderCharts();
     if(currentTab === 'events') loadEvents();
@@ -514,14 +519,14 @@ async function updateMiniHashrate(){
 }
 
 async function loadCliNodeStatus(){
+  const badge = document.getElementById('cli-status-badge');
+  if(!badge) return;
   try {
+    // First try CLI endpoint
     const data = await fetch('/api/cli/node-status').then(r => r.json());
-    const badge = document.getElementById('cli-status-badge');
-    if(!badge) return;
     if(data.ok && data.cli_connected){
       badge.className = 'text-xs px-2 py-0.5 rounded-md bg-emerald-700 text-emerald-300';
-      badge.textContent = 'Connected';
-      // Try to parse output
+      badge.textContent = 'CLI Connected';
       const out = data.output || '';
       const height = out.match(/Height\s+(\d+)/); 
       const peers = out.match(/Peers\s+(\d+)/);
@@ -531,13 +536,28 @@ async function loadCliNodeStatus(){
       if(peers) document.getElementById('cli-val-peers').textContent = peers[1];
       if(mempool) document.getElementById('cli-val-mempool').textContent = mempool[1];
       if(tip) document.getElementById('cli-val-tip').textContent = tip[1].substring(0,16) + '…';
+      return;
+    }
+  } catch(e) { /* CLI unavailable, fall through to RPC */ }
+  // Fallback: use /api/status RPC data directly
+  try {
+    const st = await fetch('/api/status').then(r => r.json());
+    const n1 = st.node1 || {};
+    if(n1.running){
+      badge.className = 'text-xs px-2 py-0.5 rounded-md bg-blue-700 text-blue-300';
+      badge.textContent = 'RPC Direct';
+      const el = id => document.getElementById(id);
+      if(el('cli-val-height')) el('cli-val-height').textContent = n1.chain_height ?? '—';
+      if(el('cli-val-peers')) el('cli-val-peers').textContent = n1.known_peers ?? '—';
+      if(el('cli-val-mempool')) el('cli-val-mempool').textContent = n1.mempool_size ?? '0';
+      if(el('cli-val-tip') && n1.tip_hash) el('cli-val-tip').textContent = n1.tip_hash.substring(0,16) + '…';
     } else {
-      badge.className = 'text-xs px-2 py-0.5 rounded-md bg-gray-700 text-gray-400';
-      badge.textContent = 'Unavailable';
+      badge.className = 'text-xs px-2 py-0.5 rounded-md bg-red-700/50 text-red-300';
+      badge.textContent = 'Node Offline';
     }
   } catch(e) {
-    const badge = document.getElementById('cli-status-badge');
-    if(badge){ badge.className = 'text-xs px-2 py-0.5 rounded-md bg-gray-700 text-gray-400'; badge.textContent = 'Error'; }
+    badge.className = 'text-xs px-2 py-0.5 rounded-md bg-gray-700 text-gray-400';
+    badge.textContent = 'Error';
   }
 }
 
@@ -1515,7 +1535,8 @@ async function startMiner(mode){
   } else if(backend === 'dual'){
     env['ZION_GPU_BACKEND'] = 'opencl';  // dual uses both
   }
-  const action = mode === 'gpu' ? 'start-miner-gpu' : 'start-miner-cpu';
+  const action = mode === 'dual' ? 'start-miner-gpu' : (mode === 'gpu' ? 'start-miner-gpu' : 'start-miner-cpu');
+  if(mode === 'dual') env['ZION_GPU_BACKEND'] = 'opencl'; // dual uses GPU + CPU threads
   const log = document.getElementById('control-log');
   const ts = new Date().toLocaleTimeString();
   if(log) log.insertAdjacentHTML('afterbegin', '<div class="text-zion-gold">[' + ts + '] dispatching ' + action + ' (pool=' + cfg.pool + ', backend=' + backend + ')…</div>');
@@ -3112,6 +3133,160 @@ function initNclCharts() {
 })();
 
 // ─────────────────────────────────────────────────────────────────────
+// Overview Built-in Charts (Grafana Fallback)
+// ─────────────────────────────────────────────────────────────────────
+
+const _ovCharts = {};
+const _ovHistory = { heights: [], shares_ok: [], shares_rej: [], sessions: [], cpu: [], mem: [], labels: [] };
+const OV_MAX_POINTS = 30;
+
+function pushOvData(label, data){
+  _ovHistory.labels.push(label);
+  _ovHistory.heights.push(data.height || 0);
+  _ovHistory.shares_ok.push(data.shares_ok || 0);
+  _ovHistory.shares_rej.push(data.shares_rej || 0);
+  _ovHistory.sessions.push(data.sessions || 0);
+  _ovHistory.cpu.push(data.cpu || 0);
+  _ovHistory.mem.push(data.mem || 0);
+  if(_ovHistory.labels.length > OV_MAX_POINTS){
+    Object.keys(_ovHistory).forEach(k => _ovHistory[k].shift());
+  }
+}
+
+function updateOverviewCharts(){
+  const chartOpts = { responsive: true, maintainAspectRatio: false, animation: { duration: 300 }, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { ticks: { color: '#4b5563', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.03)' } } } };
+  // Height chart
+  const hCtx = document.getElementById('chart-overview-height');
+  if(hCtx && typeof Chart !== 'undefined'){
+    if(!_ovCharts.height){
+      _ovCharts.height = new Chart(hCtx, { type: 'line', data: { labels: _ovHistory.labels, datasets: [{ label: 'Height', data: _ovHistory.heights, borderColor: '#FFD700', backgroundColor: 'rgba(255,215,0,0.08)', tension: 0.3, borderWidth: 2, pointRadius: 0 }] }, options: chartOpts });
+    } else { _ovCharts.height.data.labels = _ovHistory.labels; _ovCharts.height.data.datasets[0].data = _ovHistory.heights; _ovCharts.height.update('none'); }
+  }
+  // Shares chart
+  const sCtx = document.getElementById('chart-overview-shares');
+  if(sCtx && typeof Chart !== 'undefined'){
+    if(!_ovCharts.shares){
+      _ovCharts.shares = new Chart(sCtx, { type: 'bar', data: { labels: _ovHistory.labels, datasets: [{ label: 'OK', data: _ovHistory.shares_ok, backgroundColor: 'rgba(16,185,129,0.6)', borderRadius: 2 },{ label: 'Rej', data: _ovHistory.shares_rej, backgroundColor: 'rgba(239,68,68,0.5)', borderRadius: 2 }] }, options: { ...chartOpts, plugins: { legend: { display: true, position: 'bottom', labels: { color: '#9ca3af', font: { size: 9 } } } } } });
+    } else { _ovCharts.shares.data.labels = _ovHistory.labels; _ovCharts.shares.data.datasets[0].data = _ovHistory.shares_ok; _ovCharts.shares.data.datasets[1].data = _ovHistory.shares_rej; _ovCharts.shares.update('none'); }
+  }
+  // Sessions chart
+  const ssCtx = document.getElementById('chart-overview-sessions');
+  if(ssCtx && typeof Chart !== 'undefined'){
+    if(!_ovCharts.sessions){
+      _ovCharts.sessions = new Chart(ssCtx, { type: 'line', data: { labels: _ovHistory.labels, datasets: [{ label: 'Sessions', data: _ovHistory.sessions, borderColor: '#06B6D4', backgroundColor: 'rgba(6,182,212,0.1)', tension: 0.3, borderWidth: 2, pointRadius: 0, fill: true }] }, options: chartOpts });
+    } else { _ovCharts.sessions.data.labels = _ovHistory.labels; _ovCharts.sessions.data.datasets[0].data = _ovHistory.sessions; _ovCharts.sessions.update('none'); }
+  }
+  // Resources chart
+  const rCtx = document.getElementById('chart-overview-resources');
+  if(rCtx && typeof Chart !== 'undefined'){
+    if(!_ovCharts.resources){
+      _ovCharts.resources = new Chart(rCtx, { type: 'line', data: { labels: _ovHistory.labels, datasets: [{ label: 'CPU%', data: _ovHistory.cpu, borderColor: '#9333EA', backgroundColor: 'rgba(147,51,234,0.08)', tension: 0.3, borderWidth: 2, pointRadius: 0 },{ label: 'MEM%', data: _ovHistory.mem, borderColor: '#06B6D4', backgroundColor: 'rgba(6,182,212,0.05)', tension: 0.3, borderWidth: 2, pointRadius: 0 }] }, options: { ...chartOpts, plugins: { legend: { display: true, position: 'bottom', labels: { color: '#9ca3af', font: { size: 9 } } } } } });
+    } else { _ovCharts.resources.data.labels = _ovHistory.labels; _ovCharts.resources.data.datasets[0].data = _ovHistory.cpu; _ovCharts.resources.data.datasets[1].data = _ovHistory.mem; _ovCharts.resources.update('none'); }
+  }
+}
+
+// Feed overview charts from refreshAll data
+function feedOverviewCharts(statusData){
+  const now = new Date().toLocaleTimeString().slice(0,5);
+  const n1 = statusData.node1 || {};
+  const pool = statusData.pool || {};
+  const miner = statusData.miner || {};
+  pushOvData(now, {
+    height: n1.chain_height || 0,
+    shares_ok: miner.shares_ok || pool.shares_accepted || 0,
+    shares_rej: miner.shares_rejected || pool.shares_rejected || 0,
+    sessions: pool.active_sessions || 0,
+    cpu: statusData.system_cpu || 0,
+    mem: statusData.system_mem || 0
+  });
+  updateOverviewCharts();
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// NCL + Hiran Overview Widgets (for Overview tab)
+// ─────────────────────────────────────────────────────────────────────
+
+async function loadNclOverview(){
+  try {
+    const data = await fetch('/api/ncl/status').then(r => r.json());
+    const badge = document.getElementById('ncl-overview-badge');
+    if(badge){
+      if(data.ok || data.status === 'ok'){
+        badge.className = 'text-[10px] px-2 py-0.5 rounded-full bg-emerald-700/50 text-emerald-300';
+        badge.textContent = 'Online';
+      } else {
+        badge.className = 'text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400';
+        badge.textContent = 'Offline';
+      }
+    }
+    const el = id => document.getElementById(id);
+    if(el('ncl-ov-workers')) el('ncl-ov-workers').textContent = data.workers ?? data.total_workers ?? '—';
+    if(el('ncl-ov-jobs')) el('ncl-ov-jobs').textContent = data.jobs ?? data.active_jobs ?? '—';
+    if(el('ncl-ov-tflops')) el('ncl-ov-tflops').textContent = data.tflops ?? data.compute_tflops ?? '—';
+  } catch(e) {
+    const badge = document.getElementById('ncl-overview-badge');
+    if(badge){ badge.className = 'text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400'; badge.textContent = 'Offline'; }
+  }
+}
+
+async function loadHiranOverview(){
+  try {
+    const data = await fetch('/api/hiran/status').then(r => r.json());
+    const badge = document.getElementById('hiran-overview-badge');
+    if(badge){
+      if(data.ok || data.status === 'ok'){
+        badge.className = 'text-[10px] px-2 py-0.5 rounded-full bg-emerald-700/50 text-emerald-300';
+        badge.textContent = 'Online';
+      } else {
+        badge.className = 'text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400';
+        badge.textContent = 'Offline';
+      }
+    }
+    const el = id => document.getElementById(id);
+    if(el('hiran-ov-model')) el('hiran-ov-model').textContent = data.model || data.model_id || '—';
+    if(el('hiran-ov-uptime')) el('hiran-ov-uptime').textContent = data.uptime || '—';
+    if(el('hiran-ov-backend')) el('hiran-ov-backend').textContent = data.backend || data.engine || '—';
+  } catch(e) {
+    const badge = document.getElementById('hiran-overview-badge');
+    if(badge){ badge.className = 'text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400'; badge.textContent = 'Offline'; }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Service Terminal
+// ─────────────────────────────────────────────────────────────────────
+
+async function loadTerminalLog(){
+  const svc = document.getElementById('terminal-service').value;
+  const out = document.getElementById('terminal-output');
+  if(!out) return;
+  out.innerHTML = '<div class="text-gray-500">Loading ' + svc + ' logs...</div>';
+  try {
+    const data = await fetch('/api/service-log/' + svc + '?lines=50').then(r => r.json());
+    if(data.ok && data.lines){
+      const html = data.lines.map(l => {
+        let cls = 'text-gray-300';
+        if(l.includes('ERROR') || l.includes('error')) cls = 'text-red-400';
+        else if(l.includes('WARN') || l.includes('warn')) cls = 'text-amber-400';
+        else if(l.includes('✓') || l.includes('accept') || l.includes('OK')) cls = 'text-emerald-400';
+        return '<div class="' + cls + '">' + escapeHtml(l) + '</div>';
+      }).join('');
+      out.innerHTML = html || '<div class="text-gray-500">No output</div>';
+      out.scrollTop = out.scrollHeight;
+    } else {
+      out.innerHTML = '<div class="text-gray-500">' + (data.error || 'No logs available') + '</div>';
+    }
+  } catch(e) {
+    out.innerHTML = '<div class="text-red-400">Failed to load logs: ' + escapeHtml(e.message) + '</div>';
+  }
+}
+
+function clearTerminal(){
+  const out = document.getElementById('terminal-output');
+  if(out) out.innerHTML = '<div class="text-gray-500 italic">Terminal cleared</div>';
+}
+
+// ─────────────────────────────────────────────────────────────────────
 // Init
 // ─────────────────────────────────────────────────────────────────────
 
@@ -3124,4 +3299,7 @@ loadSettings().then(s => {
 refreshAll();
 refreshTimer = setInterval(refreshAll, 3000);
 setTimeout(loadMinerConfig, 500);
+// Load overview widgets on startup
+setTimeout(() => { loadNclOverview(); loadHiranOverview(); }, 1500);
+setInterval(() => { loadNclOverview(); loadHiranOverview(); }, 15000);
 console.log('[ZION Dashboard] Auto-refresh started');
