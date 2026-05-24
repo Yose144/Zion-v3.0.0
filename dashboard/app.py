@@ -2150,6 +2150,27 @@ _ALLOW_BASE = {
     "start-dao":              "start-dao",
     "stop-dao":               "stop-dao",
     "restart-dao":            "start-dao",
+    # ── Bridge ───────────────────────────────────────────────────────────
+    "start-bridge":           "start-bridge",
+    "stop-bridge":            "stop-bridge",
+    "restart-bridge":         "start-bridge",
+    # ── Atomic Swap ──────────────────────────────────────────────────────
+    "start-atomic-swap":      "start-atomic-swap",
+    "stop-atomic-swap":       "stop-atomic-swap",
+    "restart-atomic-swap":    "start-atomic-swap",
+    # ── WARP ─────────────────────────────────────────────────────────────
+    "start-warp":             "start-warp",
+    "stop-warp":              "stop-warp",
+    "restart-warp":           "start-warp",
+    # ── OASIS (L4) ───────────────────────────────────────────────────────
+    "start-oasis":            "start-oasis",
+    "stop-oasis":             "stop-oasis",
+    # ── L5 Humanitarian ──────────────────────────────────────────────────
+    "start-humanitarian":     "start-humanitarian",
+    "stop-humanitarian":      "stop-humanitarian",
+    # ── L6 Issobella Space ───────────────────────────────────────────────
+    "start-space":            "start-space",
+    "stop-space":             "stop-space",
 }
 
 # Windows-only extras

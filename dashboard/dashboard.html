@@ -1206,149 +1206,901 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 
   <!-- ═════════ TAB: L2 Bridge & DAO ═════════ -->
   <div id="pane-l2" class="hidden space-y-4">
-    <div class="zion-panel p-6">
-      <div class="flex items-center justify-between mb-5">
-        <div>
-          <h2 class="text-xl font-bold flex items-center gap-2"><span class="text-gradient">🌉 L2 — Bridge &amp; DAO</span></h2>
-          <p class="text-sm text-gray-400 mt-1">Cross-chain relay, decentralized governance, HTLC atomic swaps.</p>
+
+  <!-- L2 Header -->
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-bold text-gradient">🌉 L2 — Bridge, DAO &amp; Atomic Swap</h1>
+      <p class="text-xs text-gray-400 mt-1">Cross-chain relay · On-chain governance · HTLC atomic swaps · DeFi primitives</p>
+    </div>
+    <div class="flex gap-2">
+      <span id="l2-daemon-badge" class="text-xs px-3 py-1 rounded-full bg-gray-700 text-gray-400">Checking…</span>
+      <button onclick="loadLayerFull('l2')" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
+    </div>
+  </div>
+
+  <!-- L2 KPI row -->
+  <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+    <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-emerald-400" id="l2-relays">—</div><div class="text-[10px] text-gray-400 mt-1">Bridge Relays</div></div>
+    <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-blue-400" id="l2-proposals">—</div><div class="text-[10px] text-gray-400 mt-1">DAO Proposals</div></div>
+    <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-amber-400" id="l2-swaps">—</div><div class="text-[10px] text-gray-400 mt-1">Active Swaps</div></div>
+    <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-purple-400" id="l2-treasury">4B</div><div class="text-[10px] text-gray-400 mt-1">Treasury ZION</div></div>
+    <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-cyan-400" id="l2-bridge-volume">—</div><div class="text-[10px] text-gray-400 mt-1">Bridge Volume</div></div>
+    <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-zion-gold" id="l2-swap-volume">—</div><div class="text-[10px] text-gray-400 mt-1">Swap Volume</div></div>
+  </div>
+
+  <!-- Bridge + DAO side by side -->
+  <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
+
+    <!-- Bridge Panel -->
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-base font-bold flex items-center gap-2">🌉 Cross-Chain Bridge</h2>
+        <span id="l2-bridge-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400">Offline</span>
+      </div>
+      <div class="grid grid-cols-2 gap-3 mb-4 text-xs">
+        <div class="bg-black/30 rounded-lg p-3"><div class="text-gray-400 mb-1">L1 RPC</div><div class="text-white font-mono">127.0.0.1:8443</div></div>
+        <div class="bg-black/30 rounded-lg p-3"><div class="text-gray-400 mb-1">EVM RPC</div><div class="text-white font-mono" id="l2-bridge-evm">—</div></div>
+        <div class="bg-black/30 rounded-lg p-3"><div class="text-gray-400 mb-1">API Port</div><div class="text-white font-mono">8082</div></div>
+        <div class="bg-black/30 rounded-lg p-3"><div class="text-gray-400 mb-1">Confirmations</div><div class="text-white font-mono" id="l2-bridge-confirms">12</div></div>
+        <div class="bg-black/30 rounded-lg p-3"><div class="text-gray-400 mb-1">Total Relays</div><div class="text-emerald-400 font-bold" id="l2-bridge-total-relays">—</div></div>
+        <div class="bg-black/30 rounded-lg p-3"><div class="text-gray-400 mb-1">Pending</div><div class="text-amber-400 font-bold" id="l2-bridge-pending">—</div></div>
+      </div>
+      <div class="mb-3">
+        <div class="text-[10px] text-gray-500 mb-2 uppercase">Recent Bridge Events</div>
+        <div id="l2-bridge-log" class="bg-black/40 rounded-lg p-3 max-h-32 overflow-y-auto font-mono text-[10px] text-gray-400 space-y-0.5">
+          <div class="text-gray-600 italic">No events — bridge daemon offline</div>
         </div>
-        <button onclick="loadLayerFull('l2')" class="zion-button-secondary text-xs px-3 py-1.5">Refresh</button>
       </div>
-      <!-- L2 KPI row -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
-        <div class="bg-black/30 rounded-xl p-3.5 text-center"><div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Bridge Relays</div><div id="l2-relays" class="text-lg font-bold text-emerald-400">—</div></div>
-        <div class="bg-black/30 rounded-xl p-3.5 text-center"><div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">DAO Proposals</div><div id="l2-proposals" class="text-lg font-bold text-blue-400">—</div></div>
-        <div class="bg-black/30 rounded-xl p-3.5 text-center"><div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Active Swaps</div><div id="l2-swaps" class="text-lg font-bold text-amber-400">—</div></div>
-        <div class="bg-black/30 rounded-xl p-3.5 text-center"><div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Treasury</div><div id="l2-treasury" class="text-lg font-bold text-purple-400">—</div></div>
+      <div class="flex gap-2">
+        <button onclick="controlAction('start-bridge')" class="text-xs px-3 py-1.5 bg-emerald-700/50 hover:bg-emerald-600 rounded-lg font-semibold transition">▶ Start</button>
+        <button onclick="controlAction('stop-bridge')" class="text-xs px-3 py-1.5 bg-red-700/50 hover:bg-red-600 rounded-lg font-semibold transition">⏹ Stop</button>
+        <button onclick="controlAction('restart-bridge')" class="text-xs px-3 py-1.5 bg-amber-700/50 hover:bg-amber-600 rounded-lg font-semibold transition">⟳ Restart</button>
       </div>
-      <!-- L2 Service cards -->
-      <div id="layer-l2-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-5"></div>
-      <!-- Bridge activity -->
-      <div class="zion-panel p-4">
-        <h3 class="zion-kicker mb-3">Bridge Activity Log</h3>
-        <div id="l2-bridge-log" class="space-y-1.5 max-h-48 overflow-y-auto text-xs font-mono text-gray-400">
-          <div class="italic text-gray-600">Loading bridge events...</div>
+    </div>
+
+    <!-- DAO Summary Panel (link to DAO tab) -->
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-base font-bold flex items-center gap-2">🗳️ DAO Governance</h2>
+        <button onclick="switchTab('dao')" class="text-[10px] px-3 py-1 bg-purple-700/30 hover:bg-purple-700/50 border border-purple-500/20 rounded-lg font-semibold transition">Full DAO Panel →</button>
+      </div>
+      <div class="grid grid-cols-2 gap-3 mb-4">
+        <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-xl font-bold text-emerald-400" id="l2-dao-active">—</div><div class="text-[10px] text-gray-400">Active Proposals</div></div>
+        <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-xl font-bold text-zion-gold" id="l2-dao-treasury">4B</div><div class="text-[10px] text-gray-400">Treasury ZION</div></div>
+        <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-xl font-bold text-blue-400" id="l2-dao-passed">—</div><div class="text-[10px] text-gray-400">Passed</div></div>
+        <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-xl font-bold text-amber-400" id="l2-dao-multisig">5/7</div><div class="text-[10px] text-gray-400">Multisig</div></div>
+      </div>
+      <div class="space-y-2 text-xs mb-4">
+        <div class="flex justify-between"><span class="text-gray-400">Quorum</span><span class="text-white">15%</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">Voting Period</span><span class="text-white">14 days</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">Timelock</span><span class="text-white">72 hours</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">Proposal Threshold</span><span class="text-white">10M ZION</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">DAO API</span><span class="text-white font-mono">:8081</span></div>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="controlAction('start-dao')" class="text-xs px-3 py-1.5 bg-emerald-700/50 hover:bg-emerald-600 rounded-lg font-semibold transition">▶ Start DAO</button>
+        <button onclick="controlAction('restart-dao')" class="text-xs px-3 py-1.5 bg-amber-700/50 hover:bg-amber-600 rounded-lg font-semibold transition">⟳ Restart</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Atomic Swap Panel -->
+  <div class="zion-panel p-5">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-base font-bold flex items-center gap-2">⚡ HTLC Atomic Swaps</h2>
+      <span id="l2-swap-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400">Offline</span>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+      <!-- Swap Stats -->
+      <div class="space-y-3">
+        <div class="bg-black/30 rounded-xl p-4 text-center">
+          <div class="text-2xl font-bold text-zion-gold" id="l2-swap-active-count">—</div>
+          <div class="text-[10px] text-gray-400 mt-1">Active HTLCs</div>
+        </div>
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <div class="bg-black/30 rounded-lg p-2"><div class="text-gray-400 mb-0.5">Completed</div><div class="text-emerald-400 font-bold" id="l2-swap-completed">—</div></div>
+          <div class="bg-black/30 rounded-lg p-2"><div class="text-gray-400 mb-0.5">Refunded</div><div class="text-red-400 font-bold" id="l2-swap-refunded">—</div></div>
+          <div class="bg-black/30 rounded-lg p-2"><div class="text-gray-400 mb-0.5">API Port</div><div class="text-white font-mono">8083</div></div>
+          <div class="bg-black/30 rounded-lg p-2"><div class="text-gray-400 mb-0.5">Timelock</div><div class="text-white font-mono" id="l2-swap-timelock">24h</div></div>
+        </div>
+      </div>
+      <!-- Initiate Swap Form -->
+      <div class="md:col-span-2 space-y-3">
+        <h3 class="text-sm font-semibold text-gray-300">Initiate Swap</h3>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-[10px] text-gray-400 uppercase tracking-wider">From Chain</label>
+            <select id="l2-swap-from-chain" class="w-full mt-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-xs text-white focus:border-purple-500 focus:outline-none transition">
+              <option value="zion">ZION (L1)</option>
+              <option value="eth">Ethereum</option>
+              <option value="bsc">BSC</option>
+              <option value="polygon">Polygon</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-[10px] text-gray-400 uppercase tracking-wider">To Chain</label>
+            <select id="l2-swap-to-chain" class="w-full mt-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-xs text-white focus:border-purple-500 focus:outline-none transition">
+              <option value="eth">Ethereum</option>
+              <option value="zion">ZION (L1)</option>
+              <option value="bsc">BSC</option>
+              <option value="polygon">Polygon</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-[10px] text-gray-400 uppercase tracking-wider">Amount (ZION)</label>
+            <input type="number" id="l2-swap-amount" placeholder="1000" min="1" class="w-full mt-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-xs text-white focus:border-purple-500 focus:outline-none transition">
+          </div>
+          <div>
+            <label class="text-[10px] text-gray-400 uppercase tracking-wider">Recipient Address</label>
+            <input type="text" id="l2-swap-recipient" placeholder="0x… or zion1…" class="w-full mt-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-xs text-white font-mono focus:border-purple-500 focus:outline-none transition">
+          </div>
+        </div>
+        <div id="l2-swap-status" class="text-xs hidden rounded-lg p-2"></div>
+        <div class="flex gap-2">
+          <button onclick="initiateAtomicSwap()" class="flex-1 text-xs px-4 py-2 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-500 hover:to-amber-700 rounded-lg font-semibold transition">⚡ Initiate Swap</button>
+          <button onclick="controlAction('start-atomic-swap')" class="text-xs px-3 py-2 bg-emerald-700/50 hover:bg-emerald-600 rounded-lg font-semibold transition">▶ Start Daemon</button>
+          <button onclick="controlAction('stop-atomic-swap')" class="text-xs px-3 py-2 bg-red-700/50 hover:bg-red-600 rounded-lg font-semibold transition">⏹</button>
         </div>
       </div>
     </div>
+    <!-- Active HTLCs table -->
+    <div class="mt-4">
+      <div class="text-[10px] text-gray-500 uppercase mb-2">Active HTLCs</div>
+      <div id="l2-htlc-list" class="space-y-1.5 max-h-40 overflow-y-auto">
+        <div class="text-gray-600 text-xs italic">No active HTLCs — swap daemon offline</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DeFi Primitives Info -->
+  <div class="zion-panel p-5">
+    <h2 class="text-base font-bold mb-4 flex items-center gap-2">💹 DeFi Primitives</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+      <div class="bg-black/30 rounded-xl p-4">
+        <div class="text-sm font-bold text-amber-400 mb-2">⚡ HTLC Swaps</div>
+        <div class="space-y-1 text-gray-300">
+          <div>• Hash Time-Lock Contracts</div>
+          <div>• ZION ↔ ETH / BSC / Polygon</div>
+          <div>• 24h default timelock</div>
+          <div>• Auto-refund on expiry</div>
+          <div class="text-gray-500 mt-2">API: <span class="font-mono">:8083</span></div>
+        </div>
+      </div>
+      <div class="bg-black/30 rounded-xl p-4">
+        <div class="text-sm font-bold text-blue-400 mb-2">🌉 Bridge Relay</div>
+        <div class="space-y-1 text-gray-300">
+          <div>• L1 ↔ EVM event watcher</div>
+          <div>• SQLite persistence</div>
+          <div>• 12-block finality</div>
+          <div>• Prometheus metrics</div>
+          <div class="text-gray-500 mt-2">API: <span class="font-mono">:8082</span></div>
+        </div>
+      </div>
+      <div class="bg-black/30 rounded-xl p-4">
+        <div class="text-sm font-bold text-purple-400 mb-2">🗳️ DAO Treasury</div>
+        <div class="space-y-1 text-gray-300">
+          <div>• 4B ZION locked (unlock #525,600)</div>
+          <div>• 5-of-7 multisig</div>
+          <div>• 100M ZION daily limit</div>
+          <div>• On-chain voting 1 ZION = 1 vote</div>
+          <div class="text-gray-500 mt-2">API: <span class="font-mono">:8081</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   </div>
 
   <!-- ═════════ TAB: L3 Advanced ═════════ -->
   <div id="pane-l3" class="hidden space-y-4">
-    <div class="zion-panel p-6">
-      <div class="flex items-center justify-between mb-5">
-        <div>
-          <h2 class="text-xl font-bold flex items-center gap-2"><span class="text-gradient">🌀 L3 — Advanced Layer</span></h2>
-          <p class="text-sm text-gray-400 mt-1">WARP Relay, NCL Gateway, Hiran AI — multi-chain relay, neural compute, inference.</p>
-        </div>
-        <button onclick="loadLayerFull('l3')" class="zion-button-secondary text-xs px-3 py-1.5">Refresh</button>
-      </div>
-      <!-- L3 KPI row -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
-        <div class="bg-black/30 rounded-xl p-3.5 text-center"><div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">WARP Chains</div><div id="l3-warp-chains" class="text-lg font-bold text-emerald-400">—</div></div>
-        <div class="bg-black/30 rounded-xl p-3.5 text-center"><div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">NCL Workers</div><div id="l3-ncl-workers" class="text-lg font-bold text-blue-400">—</div></div>
-        <div class="bg-black/30 rounded-xl p-3.5 text-center"><div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">AI Agents</div><div id="l3-agents" class="text-lg font-bold text-purple-400">—</div></div>
-        <div class="bg-black/30 rounded-xl p-3.5 text-center"><div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Compute TFLOPS</div><div id="l3-tflops" class="text-lg font-bold text-cyan-400">—</div></div>
-      </div>
-      <!-- L3 Service cards -->
-      <div id="layer-l3-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+  <!-- L3 Header -->
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-bold text-gradient">🌀 L3 — WARP, NCL &amp; DeFi</h1>
+      <p class="text-xs text-gray-400 mt-1">Multi-chain relay · Neural Compute Layer · Hiran AI · Cross-chain DeFi</p>
     </div>
+    <div class="flex gap-2">
+      <button onclick="loadLayerFull('l3')" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
+    </div>
+  </div>
+
+  <!-- L3 KPI row -->
+  <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+    <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-emerald-400" id="l3-warp-chains">—</div><div class="text-[10px] text-gray-400 mt-1">WARP Chains</div></div>
+    <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-blue-400" id="l3-ncl-workers">—</div><div class="text-[10px] text-gray-400 mt-1">NCL Workers</div></div>
+    <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-purple-400" id="l3-agents">—</div><div class="text-[10px] text-gray-400 mt-1">AI Agents</div></div>
+    <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-cyan-400" id="l3-tflops">—</div><div class="text-[10px] text-gray-400 mt-1">TFLOPS</div></div>
+    <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-amber-400" id="l3-ncl-jobs">—</div><div class="text-[10px] text-gray-400 mt-1">Active Jobs</div></div>
+    <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-zion-gold" id="l3-warp-volume">—</div><div class="text-[10px] text-gray-400 mt-1">WARP Volume</div></div>
+  </div>
+
+  <!-- WARP + NCL side by side -->
+  <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
+
+    <!-- WARP Relay Panel -->
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-base font-bold flex items-center gap-2">🌀 WARP Cross-Chain Relay</h2>
+        <span id="l3-warp-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400">Offline</span>
+      </div>
+      <div class="grid grid-cols-2 gap-3 mb-4 text-xs">
+        <div class="bg-black/30 rounded-lg p-3"><div class="text-gray-400 mb-1">API Port</div><div class="text-white font-mono">8084</div></div>
+        <div class="bg-black/30 rounded-lg p-3"><div class="text-gray-400 mb-1">L1 RPC</div><div class="text-white font-mono">127.0.0.1:8443</div></div>
+        <div class="bg-black/30 rounded-lg p-3"><div class="text-gray-400 mb-1">Relayed Txs</div><div class="text-emerald-400 font-bold" id="l3-warp-relayed">—</div></div>
+        <div class="bg-black/30 rounded-lg p-3"><div class="text-gray-400 mb-1">Pending</div><div class="text-amber-400 font-bold" id="l3-warp-pending">—</div></div>
+      </div>
+      <div class="mb-3">
+        <div class="text-[10px] text-gray-500 uppercase mb-2">Supported Chains</div>
+        <div class="flex flex-wrap gap-2" id="l3-warp-chains-list">
+          <span class="text-[10px] px-2 py-0.5 bg-blue-700/30 border border-blue-500/20 rounded-full text-blue-300">Ethereum</span>
+          <span class="text-[10px] px-2 py-0.5 bg-yellow-700/30 border border-yellow-500/20 rounded-full text-yellow-300">BSC</span>
+          <span class="text-[10px] px-2 py-0.5 bg-purple-700/30 border border-purple-500/20 rounded-full text-purple-300">Polygon</span>
+          <span class="text-[10px] px-2 py-0.5 bg-red-700/30 border border-red-500/20 rounded-full text-red-300">Avalanche</span>
+          <span class="text-[10px] px-2 py-0.5 bg-cyan-700/30 border border-cyan-500/20 rounded-full text-cyan-300">Arbitrum</span>
+        </div>
+      </div>
+      <div class="mb-3">
+        <div class="text-[10px] text-gray-500 uppercase mb-1">Activity Log</div>
+        <div id="l3-warp-log" class="bg-black/40 rounded-lg p-2 max-h-24 overflow-y-auto font-mono text-[10px] text-gray-400">
+          <div class="text-gray-600 italic">WARP daemon offline</div>
+        </div>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="controlAction('start-warp')" class="text-xs px-3 py-1.5 bg-emerald-700/50 hover:bg-emerald-600 rounded-lg font-semibold transition">▶ Start</button>
+        <button onclick="controlAction('stop-warp')" class="text-xs px-3 py-1.5 bg-red-700/50 hover:bg-red-600 rounded-lg font-semibold transition">⏹ Stop</button>
+        <button onclick="controlAction('restart-warp')" class="text-xs px-3 py-1.5 bg-amber-700/50 hover:bg-amber-600 rounded-lg font-semibold transition">⟳ Restart</button>
+      </div>
+    </div>
+
+    <!-- NCL Panel -->
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-base font-bold flex items-center gap-2">🧠 Neural Compute Layer</h2>
+        <div class="flex gap-2">
+          <span id="l3-ncl-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400">Offline</span>
+          <button onclick="switchTab('hiran')" class="text-[10px] px-2 py-0.5 bg-purple-700/30 hover:bg-purple-700/50 border border-purple-500/20 rounded-lg font-semibold transition">Full AI →</button>
+        </div>
+      </div>
+      <div class="grid grid-cols-3 gap-3 mb-4">
+        <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-xl font-bold text-purple-400" id="l3-ncl-workers-2">—</div><div class="text-[10px] text-gray-400">Workers</div></div>
+        <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-xl font-bold text-cyan-400" id="l3-ncl-jobs-2">—</div><div class="text-[10px] text-gray-400">Jobs</div></div>
+        <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-xl font-bold text-zion-gold" id="l3-ncl-tflops-2">—</div><div class="text-[10px] text-gray-400">TFLOPS</div></div>
+      </div>
+      <!-- Submit NCL Job -->
+      <div class="space-y-2 mb-3">
+        <div class="text-[10px] text-gray-500 uppercase">Submit Compute Job</div>
+        <div class="flex gap-2">
+          <select id="l3-ncl-job-type" class="flex-1 px-2 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs text-white focus:border-purple-500 focus:outline-none transition">
+            <option value="inference">AI Inference</option>
+            <option value="embedding">Embedding</option>
+            <option value="training">Fine-tuning</option>
+            <option value="rag">RAG Query</option>
+          </select>
+          <input type="text" id="l3-ncl-job-payload" placeholder="Job payload / prompt…" class="flex-1 px-2 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs text-white focus:border-purple-500 focus:outline-none transition">
+        </div>
+        <div id="l3-ncl-job-status" class="text-[10px] hidden rounded p-1.5"></div>
+        <button onclick="submitNclJob()" class="w-full text-xs px-3 py-1.5 bg-gradient-to-r from-purple-700 to-purple-900 hover:from-purple-600 hover:to-purple-800 rounded-lg font-semibold transition">Submit Job →</button>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="controlAction('start-hiranyagarbha')" class="flex-1 text-xs px-3 py-1.5 bg-emerald-700/50 hover:bg-emerald-600 rounded-lg font-semibold transition">▶ Start Hiranyagarbha</button>
+        <button onclick="controlAction('start-hiran-inference')" class="flex-1 text-xs px-3 py-1.5 bg-blue-700/50 hover:bg-blue-600 rounded-lg font-semibold transition">▶ Start Hiran</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hiran AI Status -->
+  <div class="zion-panel p-5">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-base font-bold flex items-center gap-2">🤖 Hiran AI v2.2</h2>
+      <span id="l3-hiran-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400">Checking…</span>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div class="bg-black/30 rounded-xl p-4 text-center">
+        <div class="text-sm font-bold text-emerald-400" id="l3-hiran-model">hiran-v2.2</div>
+        <div class="text-[10px] text-gray-400 mt-1">Model</div>
+      </div>
+      <div class="bg-black/30 rounded-xl p-4 text-center">
+        <div class="text-sm font-bold text-blue-400" id="l3-hiran-backend">llama-server</div>
+        <div class="text-[10px] text-gray-400 mt-1">Backend</div>
+      </div>
+      <div class="bg-black/30 rounded-xl p-4 text-center">
+        <div class="text-sm font-bold text-purple-400">Q4_K_M</div>
+        <div class="text-[10px] text-gray-400 mt-1">Quantization</div>
+      </div>
+      <div class="bg-black/30 rounded-xl p-4 text-center">
+        <div class="text-sm font-bold text-amber-400">4.6 GB</div>
+        <div class="text-[10px] text-gray-400 mt-1">Model Size</div>
+      </div>
+    </div>
+    <div class="mt-3 text-xs text-gray-500">Ports: Hiranyagarbha <span class="font-mono text-white">:8001</span> · Hiran Inference <span class="font-mono text-white">:8002</span> · GGUF at <span class="font-mono text-white">HiranV2.2/models/hiran-v2.2-merged/</span></div>
+  </div>
+
+  <!-- DeFi / Cross-chain Info -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="zion-panel p-5">
+      <div class="text-sm font-bold text-amber-400 mb-3">🌀 WARP Protocol</div>
+      <div class="space-y-1 text-xs text-gray-300">
+        <div>• Cross-chain message relay</div>
+        <div>• Axum HTTP API + background watcher</div>
+        <div>• Optional SQLite persistence</div>
+        <div>• Config-first startup</div>
+        <div class="text-gray-500 mt-2">API: <span class="font-mono">:8084</span></div>
+      </div>
+    </div>
+    <div class="zion-panel p-5">
+      <div class="text-sm font-bold text-purple-400 mb-3">🧠 NCL Architecture</div>
+      <div class="space-y-1 text-xs text-gray-300">
+        <div>• Decentralized GPU compute</div>
+        <div>• Job scheduling + leaderboard</div>
+        <div>• ZION token incentives</div>
+        <div>• REST API via Hiranyagarbha</div>
+        <div class="text-gray-500 mt-2">Routes: <span class="font-mono">/ncl/*</span></div>
+      </div>
+    </div>
+    <div class="zion-panel p-5">
+      <div class="text-sm font-bold text-cyan-400 mb-3">🤖 Hiran v2.2</div>
+      <div class="space-y-1 text-xs text-gray-300">
+        <div>• ZION-native AI layer</div>
+        <div>• Consciousness-aware reasoning</div>
+        <div>• llama-server.exe / serve.py</div>
+        <div>• OpenAI-compatible API</div>
+        <div class="text-gray-500 mt-2">API: <span class="font-mono">:8002</span></div>
+      </div>
+    </div>
+  </div>
   </div>
 
   <!-- ═════════ TAB: L4 Apps ═════════ -->
   <div id="pane-l4" class="hidden space-y-4">
-    <div class="zion-panel p-6">
-      <div class="flex items-center justify-between mb-5">
-        <div>
-          <h2 class="text-xl font-bold flex items-center gap-2"><span class="text-gradient">🪷 L4 — OASIS Application Layer</span></h2>
-          <p class="text-sm text-gray-400 mt-1">Avatar registry, guild system, territories, 9-level consciousness progression.</p>
+  <!-- L4 Header -->
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-bold text-gradient">🏝️ L4 — OASIS</h1>
+      <p class="text-xs text-gray-400 mt-1">On-chain Avatars · Guilds · Territories · Quests · OASIS DeFi · OASIS Governance</p>
+    </div>
+    <div class="flex gap-2">
+      <button onclick="loadLayerFull('l4')" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
+    </div>
+  </div>
+
+  <!-- L4 KPI row -->
+  <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+    <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-emerald-400" id="l4-avatars">—</div><div class="text-[10px] text-gray-400 mt-1">Avatars</div></div>
+    <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-blue-400" id="l4-guilds">—</div><div class="text-[10px] text-gray-400 mt-1">Guilds</div></div>
+    <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-amber-400" id="l4-territories">—</div><div class="text-[10px] text-gray-400 mt-1">Territories</div></div>
+    <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-purple-400" id="l4-quests">—</div><div class="text-[10px] text-gray-400 mt-1">Active Quests</div></div>
+    <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-cyan-400" id="l4-players">—</div><div class="text-[10px] text-gray-400 mt-1">Online Players</div></div>
+    <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-zion-gold" id="l4-economy">—</div><div class="text-[10px] text-gray-400 mt-1">ZION Economy</div></div>
+  </div>
+
+  <!-- Avatars + Guilds -->
+  <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
+
+    <!-- Avatars -->
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-base font-bold flex items-center gap-2">👤 On-chain Avatars</h2>
+        <span id="l4-avatar-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400">Offline</span>
+      </div>
+      <div class="grid grid-cols-3 gap-3 mb-4">
+        <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-xl font-bold text-emerald-400" id="l4-avatar-count">—</div><div class="text-[10px] text-gray-400">Total</div></div>
+        <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-xl font-bold text-blue-400" id="l4-avatar-active">—</div><div class="text-[10px] text-gray-400">Active</div></div>
+        <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-xl font-bold text-amber-400" id="l4-avatar-nft">—</div><div class="text-[10px] text-gray-400">NFT Minted</div></div>
+      </div>
+      <div class="space-y-2 text-xs mb-4">
+        <div class="text-[10px] text-gray-500 uppercase mb-1">Avatar Tiers</div>
+        <div class="flex gap-2 flex-wrap">
+          <span class="px-2 py-0.5 bg-gray-700/50 border border-gray-500/20 rounded-full text-gray-300 text-[10px]">⚪ Common</span>
+          <span class="px-2 py-0.5 bg-green-700/30 border border-green-500/20 rounded-full text-green-300 text-[10px]">🟢 Rare</span>
+          <span class="px-2 py-0.5 bg-blue-700/30 border border-blue-500/20 rounded-full text-blue-300 text-[10px]">🔵 Epic</span>
+          <span class="px-2 py-0.5 bg-purple-700/30 border border-purple-500/20 rounded-full text-purple-300 text-[10px]">🟣 Legendary</span>
+          <span class="px-2 py-0.5 bg-yellow-700/30 border border-yellow-500/20 rounded-full text-yellow-300 text-[10px]">⭐ Divine</span>
         </div>
-        <button onclick="loadLayerFull('l4')" class="zion-button-secondary text-xs px-3 py-1.5">Refresh</button>
       </div>
-      <!-- L4 KPI row -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
-        <div class="bg-black/30 rounded-xl p-3.5 text-center"><div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Avatars</div><div id="l4-avatars" class="text-lg font-bold text-emerald-400">—</div></div>
-        <div class="bg-black/30 rounded-xl p-3.5 text-center"><div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Guilds</div><div id="l4-guilds" class="text-lg font-bold text-blue-400">—</div></div>
-        <div class="bg-black/30 rounded-xl p-3.5 text-center"><div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Territories</div><div id="l4-territories" class="text-lg font-bold text-amber-400">—</div></div>
-        <div class="bg-black/30 rounded-xl p-3.5 text-center"><div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Avg CL</div><div id="l4-avg-cl" class="text-lg font-bold text-purple-400">—</div></div>
-      </div>
-      <div id="layer-l4-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5"></div>
-      <!-- Consciousness levels visualization -->
-      <div class="zion-panel p-4">
-        <h3 class="zion-kicker mb-3">Consciousness Levels (9 Stages)</h3>
-        <div id="l4-cl-bars" class="space-y-2">
-          <div class="flex items-center gap-2"><span class="text-[10px] text-gray-500 w-20">1. Mineral</span><div class="flex-1 h-2 rounded-full bg-black/40 overflow-hidden"><div class="h-full rounded-full bg-gray-500" style="width:0%" id="l4-cl-1"></div></div><span class="text-[10px] text-gray-500 w-8" id="l4-cl-1-n">0</span></div>
-          <div class="flex items-center gap-2"><span class="text-[10px] text-gray-500 w-20">2. Plant</span><div class="flex-1 h-2 rounded-full bg-black/40 overflow-hidden"><div class="h-full rounded-full bg-green-700" style="width:0%" id="l4-cl-2"></div></div><span class="text-[10px] text-gray-500 w-8" id="l4-cl-2-n">0</span></div>
-          <div class="flex items-center gap-2"><span class="text-[10px] text-gray-500 w-20">3. Animal</span><div class="flex-1 h-2 rounded-full bg-black/40 overflow-hidden"><div class="h-full rounded-full bg-amber-600" style="width:0%" id="l4-cl-3"></div></div><span class="text-[10px] text-gray-500 w-8" id="l4-cl-3-n">0</span></div>
-          <div class="flex items-center gap-2"><span class="text-[10px] text-gray-500 w-20">4. Human</span><div class="flex-1 h-2 rounded-full bg-black/40 overflow-hidden"><div class="h-full rounded-full bg-blue-500" style="width:0%" id="l4-cl-4"></div></div><span class="text-[10px] text-gray-500 w-8" id="l4-cl-4-n">0</span></div>
-          <div class="flex items-center gap-2"><span class="text-[10px] text-gray-500 w-20">5. Awakened</span><div class="flex-1 h-2 rounded-full bg-black/40 overflow-hidden"><div class="h-full rounded-full bg-purple-500" style="width:0%" id="l4-cl-5"></div></div><span class="text-[10px] text-gray-500 w-8" id="l4-cl-5-n">0</span></div>
-          <div class="flex items-center gap-2"><span class="text-[10px] text-gray-500 w-20">6. Enlightened</span><div class="flex-1 h-2 rounded-full bg-black/40 overflow-hidden"><div class="h-full rounded-full bg-indigo-500" style="width:0%" id="l4-cl-6"></div></div><span class="text-[10px] text-gray-500 w-8" id="l4-cl-6-n">0</span></div>
-          <div class="flex items-center gap-2"><span class="text-[10px] text-gray-500 w-20">7. Cosmic</span><div class="flex-1 h-2 rounded-full bg-black/40 overflow-hidden"><div class="h-full rounded-full bg-cyan-400" style="width:0%" id="l4-cl-7"></div></div><span class="text-[10px] text-gray-500 w-8" id="l4-cl-7-n">0</span></div>
-          <div class="flex items-center gap-2"><span class="text-[10px] text-gray-500 w-20">8. Transcendent</span><div class="flex-1 h-2 rounded-full bg-black/40 overflow-hidden"><div class="h-full rounded-full" style="width:0%;background:linear-gradient(90deg,#9333ea,#06b6d4)" id="l4-cl-8"></div></div><span class="text-[10px] text-gray-500 w-8" id="l4-cl-8-n">0</span></div>
-          <div class="flex items-center gap-2"><span class="text-[10px] text-gray-500 w-20">9. Unity</span><div class="flex-1 h-2 rounded-full bg-black/40 overflow-hidden"><div class="h-full rounded-full" style="width:0%;background:linear-gradient(90deg,#ffd700,#9333ea,#06b6d4)" id="l4-cl-9"></div></div><span class="text-[10px] text-gray-500 w-8" id="l4-cl-9-n">0</span></div>
+      <div class="space-y-2">
+        <div class="text-[10px] text-gray-500 uppercase">Top Avatars</div>
+        <div id="l4-avatar-list" class="space-y-1 max-h-32 overflow-y-auto text-xs">
+          <div class="text-gray-600 italic">OASIS daemon offline</div>
         </div>
       </div>
     </div>
+
+    <!-- Guilds -->
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-base font-bold flex items-center gap-2">⚔️ Guilds</h2>
+        <span id="l4-guild-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400">Offline</span>
+      </div>
+      <div class="grid grid-cols-3 gap-3 mb-4">
+        <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-xl font-bold text-blue-400" id="l4-guild-count">—</div><div class="text-[10px] text-gray-400">Guilds</div></div>
+        <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-xl font-bold text-emerald-400" id="l4-guild-members">—</div><div class="text-[10px] text-gray-400">Members</div></div>
+        <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-xl font-bold text-amber-400" id="l4-guild-treasury">—</div><div class="text-[10px] text-gray-400">Treasury</div></div>
+      </div>
+      <div class="space-y-2">
+        <div class="text-[10px] text-gray-500 uppercase">Top Guilds</div>
+        <div id="l4-guild-list" class="space-y-1.5 max-h-36 overflow-y-auto text-xs">
+          <div class="text-gray-600 italic">OASIS daemon offline</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Territories + Quests -->
+  <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
+    <!-- Territories -->
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-base font-bold flex items-center gap-2">🗺️ Territories</h2>
+      </div>
+      <div class="grid grid-cols-2 gap-3 mb-3">
+        <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-xl font-bold text-amber-400" id="l4-territory-count">—</div><div class="text-[10px] text-gray-400">Territories</div></div>
+        <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-xl font-bold text-red-400" id="l4-territory-contested">—</div><div class="text-[10px] text-gray-400">Contested</div></div>
+      </div>
+      <div class="space-y-1.5 text-xs" id="l4-territory-list">
+        <div class="flex justify-between items-center bg-black/30 rounded-lg px-3 py-2">
+          <span class="text-gray-300">🏔️ Crystal Mountains</span>
+          <span class="text-emerald-400 font-mono text-[10px]">Guild Alpha</span>
+        </div>
+        <div class="flex justify-between items-center bg-black/30 rounded-lg px-3 py-2">
+          <span class="text-gray-300">🌊 Neon Shores</span>
+          <span class="text-blue-400 font-mono text-[10px]">Unclaimed</span>
+        </div>
+        <div class="flex justify-between items-center bg-black/30 rounded-lg px-3 py-2">
+          <span class="text-gray-300">🌋 Lava Fields</span>
+          <span class="text-red-400 font-mono text-[10px]">Contested</span>
+        </div>
+        <div class="flex justify-between items-center bg-black/30 rounded-lg px-3 py-2">
+          <span class="text-gray-300">🌿 Digital Forest</span>
+          <span class="text-amber-400 font-mono text-[10px]">Guild Beta</span>
+        </div>
+        <div class="flex justify-between items-center bg-black/30 rounded-lg px-3 py-2">
+          <span class="text-gray-300">🏙️ Cyber City</span>
+          <span class="text-purple-400 font-mono text-[10px]">Guild Zion</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quests -->
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-base font-bold flex items-center gap-2">🗡️ Quests</h2>
+        <button onclick="loadL4Quests()" class="text-[10px] px-2 py-0.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">Load</button>
+      </div>
+      <div class="grid grid-cols-3 gap-3 mb-3">
+        <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-xl font-bold text-purple-400" id="l4-quest-active">—</div><div class="text-[10px] text-gray-400">Active</div></div>
+        <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-xl font-bold text-emerald-400" id="l4-quest-completed">—</div><div class="text-[10px] text-gray-400">Completed</div></div>
+        <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-xl font-bold text-zion-gold" id="l4-quest-rewards">—</div><div class="text-[10px] text-gray-400">Rewards</div></div>
+      </div>
+      <div id="l4-quest-list" class="space-y-1.5 max-h-40 overflow-y-auto text-xs">
+        <div class="bg-black/30 rounded-lg px-3 py-2">
+          <div class="flex justify-between"><span class="text-purple-300 font-semibold">🗡️ The Lost Shard</span><span class="text-[10px] text-emerald-400">500 ZION</span></div>
+          <div class="text-[10px] text-gray-500 mt-0.5">Retrieve the crystal shard from the dark server</div>
+        </div>
+        <div class="bg-black/30 rounded-lg px-3 py-2">
+          <div class="flex justify-between"><span class="text-amber-300 font-semibold">⚔️ Guild War Season 3</span><span class="text-[10px] text-zion-gold">5000 ZION</span></div>
+          <div class="text-[10px] text-gray-500 mt-0.5">Capture 3 territories in 7 days</div>
+        </div>
+        <div class="bg-black/30 rounded-lg px-3 py-2">
+          <div class="flex justify-between"><span class="text-blue-300 font-semibold">🧠 Neural Forge</span><span class="text-[10px] text-blue-400">1000 ZION</span></div>
+          <div class="text-[10px] text-gray-500 mt-0.5">Contribute 100 TFLOPS to NCL network</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OASIS DeFi + Governance -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="zion-panel p-5">
+      <div class="text-sm font-bold text-zion-gold mb-3">💰 OASIS Economy</div>
+      <div class="space-y-2 text-xs">
+        <div class="flex justify-between"><span class="text-gray-400">In-world Currency</span><span class="text-white font-mono">OASIS Token</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">Exchange Rate</span><span class="text-emerald-400 font-mono">1 ZION = 100 OAS</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">Marketplace Volume</span><span class="text-white font-mono" id="l4-market-vol">—</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">NFT Sales (24h)</span><span class="text-white font-mono" id="l4-nft-sales">—</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">Staking APY</span><span class="text-zion-gold font-mono">12%</span></div>
+      </div>
+    </div>
+    <div class="zion-panel p-5">
+      <div class="text-sm font-bold text-purple-400 mb-3">🗳️ OASIS Governance</div>
+      <div class="space-y-2 text-xs">
+        <div class="flex justify-between"><span class="text-gray-400">Land Votes</span><span class="text-white font-mono">Per avatar</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">Guild Proposals</span><span class="text-white font-mono" id="l4-gov-proposals">—</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">Quorum</span><span class="text-white font-mono">10%</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">Period</span><span class="text-white font-mono">7 days</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">API</span><span class="text-white font-mono">:8085</span></div>
+      </div>
+    </div>
+    <div class="zion-panel p-5">
+      <div class="text-sm font-bold text-cyan-400 mb-3">🎮 OASIS Server</div>
+      <div class="space-y-2 text-xs mb-4">
+        <div class="flex justify-between"><span class="text-gray-400">Status</span><span id="l4-server-status" class="text-gray-400">Offline</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">Players</span><span class="text-white" id="l4-server-players">0/1000</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">Tick Rate</span><span class="text-white font-mono">20 Hz</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">API</span><span class="text-white font-mono">:8085</span></div>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="controlAction('start-oasis')" class="flex-1 text-xs px-2 py-1.5 bg-emerald-700/50 hover:bg-emerald-600 rounded-lg font-semibold transition">▶ Start</button>
+        <button onclick="controlAction('stop-oasis')" class="flex-1 text-xs px-2 py-1.5 bg-red-700/50 hover:bg-red-600 rounded-lg font-semibold transition">⏹ Stop</button>
+      </div>
+    </div>
+  </div>
   </div>
 
   <!-- ═════════ TAB: L5 Free World ═════════ -->
   <div id="pane-l5" class="hidden space-y-4">
-    <div class="zion-panel p-6">
-      <div class="flex items-center justify-between mb-5">
-        <div>
-          <h2 class="text-xl font-bold flex items-center gap-2"><span class="text-gradient">🕊️ L5 — Free World Humanitarian</span></h2>
-          <p class="text-sm text-gray-400 mt-1">Humanitarian aid, mesh networks, medical logistics, community-driven DAOs.</p>
+  <!-- L5 Header -->
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-bold text-gradient">🌍 L5 — Free World</h1>
+      <p class="text-xs text-gray-400 mt-1">Humanitarian DAO · Mesh Network · Medical AI · Community DAOs · Decentralized Education</p>
+    </div>
+    <div class="flex gap-2">
+      <button onclick="loadLayerFull('l5')" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
+    </div>
+  </div>
+
+  <!-- L5 KPI row -->
+  <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+    <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-emerald-400" id="l5-nodes">—</div><div class="text-[10px] text-gray-400 mt-1">Mesh Nodes</div></div>
+    <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-blue-400" id="l5-communities">—</div><div class="text-[10px] text-gray-400 mt-1">Communities</div></div>
+    <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-amber-400" id="l5-aid-tx">—</div><div class="text-[10px] text-gray-400 mt-1">Aid Txs</div></div>
+    <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-purple-400" id="l5-medical-queries">—</div><div class="text-[10px] text-gray-400 mt-1">Medical AI</div></div>
+    <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-cyan-400" id="l5-daos">—</div><div class="text-[10px] text-gray-400 mt-1">Active DAOs</div></div>
+    <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-zion-gold" id="l5-fund">—</div><div class="text-[10px] text-gray-400 mt-1">Humanitarian Fund</div></div>
+  </div>
+
+  <!-- Humanitarian DAO + Mesh Network -->
+  <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
+
+    <!-- Humanitarian DAO -->
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-base font-bold flex items-center gap-2">❤️ Humanitarian DAO</h2>
+        <span id="l5-hum-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400">Offline</span>
+      </div>
+      <div class="grid grid-cols-3 gap-3 mb-4">
+        <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-xl font-bold text-emerald-400" id="l5-hum-fund">—</div><div class="text-[10px] text-gray-400">Fund (ZION)</div></div>
+        <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-xl font-bold text-blue-400" id="l5-hum-beneficiaries">—</div><div class="text-[10px] text-gray-400">Beneficiaries</div></div>
+        <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-xl font-bold text-amber-400" id="l5-hum-dispatched">—</div><div class="text-[10px] text-gray-400">Dispatched</div></div>
+      </div>
+      <div class="mb-3 space-y-1.5">
+        <div class="text-[10px] text-gray-500 uppercase">Active Aid Programs</div>
+        <div class="flex justify-between items-center bg-black/30 rounded-lg px-3 py-2 text-xs">
+          <span class="text-gray-300">🌾 Food Security Fund</span>
+          <span class="text-emerald-400 font-mono">100M ZION</span>
         </div>
-        <button onclick="loadLayerFull('l5')" class="zion-button-secondary text-xs px-3 py-1.5">Refresh</button>
+        <div class="flex justify-between items-center bg-black/30 rounded-lg px-3 py-2 text-xs">
+          <span class="text-gray-300">💊 Medical Supply Chain</span>
+          <span class="text-blue-400 font-mono">50M ZION</span>
+        </div>
+        <div class="flex justify-between items-center bg-black/30 rounded-lg px-3 py-2 text-xs">
+          <span class="text-gray-300">🏫 Education Access</span>
+          <span class="text-purple-400 font-mono">30M ZION</span>
+        </div>
+        <div class="flex justify-between items-center bg-black/30 rounded-lg px-3 py-2 text-xs">
+          <span class="text-gray-300">💧 Clean Water Projects</span>
+          <span class="text-cyan-400 font-mono">20M ZION</span>
+        </div>
       </div>
-      <!-- L5 KPI row -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
-        <div class="bg-black/30 rounded-xl p-3.5 text-center"><div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Active Regions</div><div id="l5-regions" class="text-lg font-bold text-emerald-400">—</div></div>
-        <div class="bg-black/30 rounded-xl p-3.5 text-center"><div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Aid Distributed</div><div id="l5-aid" class="text-lg font-bold text-blue-400">—</div></div>
-        <div class="bg-black/30 rounded-xl p-3.5 text-center"><div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Mesh Nodes</div><div id="l5-mesh" class="text-lg font-bold text-amber-400">—</div></div>
-        <div class="bg-black/30 rounded-xl p-3.5 text-center"><div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Community DAOs</div><div id="l5-daos" class="text-lg font-bold text-purple-400">—</div></div>
+      <div class="flex gap-2">
+        <button onclick="controlAction('start-humanitarian')" class="text-xs px-3 py-1.5 bg-emerald-700/50 hover:bg-emerald-600 rounded-lg font-semibold transition">▶ Start DAO</button>
+        <button onclick="controlAction('stop-humanitarian')" class="text-xs px-3 py-1.5 bg-red-700/50 hover:bg-red-600 rounded-lg font-semibold transition">⏹ Stop</button>
       </div>
-      <div id="layer-l5-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5"></div>
-      <!-- Humanitarian tithe info -->
-      <div class="zion-panel p-4" style="border-color:rgba(16,185,129,0.2);background:linear-gradient(135deg,rgba(15,20,35,0.95),rgba(16,185,129,0.04));">
-        <h3 class="zion-kicker mb-3">5% Humanitarian Tithe</h3>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <div class="bg-black/30 rounded-lg p-3"><div class="text-[10px] text-gray-500 mb-1">Tithe Address</div><div class="text-xs font-mono text-emerald-300 break-all">zion1m4v5z8z850u480c5c208z274e334369275n5y20</div></div>
-          <div class="bg-black/30 rounded-lg p-3"><div class="text-[10px] text-gray-500 mb-1">Total Collected</div><div id="l5-tithe-total" class="text-sm font-bold text-emerald-400">—</div></div>
-          <div class="bg-black/30 rounded-lg p-3"><div class="text-[10px] text-gray-500 mb-1">Last Distribution</div><div id="l5-tithe-last" class="text-sm font-bold text-gray-300">—</div></div>
+    </div>
+
+    <!-- Mesh Network -->
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-base font-bold flex items-center gap-2">📡 Mesh Network</h2>
+        <span id="l5-mesh-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400">Offline</span>
+      </div>
+      <div class="grid grid-cols-3 gap-3 mb-4">
+        <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-xl font-bold text-emerald-400" id="l5-mesh-nodes">—</div><div class="text-[10px] text-gray-400">Nodes</div></div>
+        <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-xl font-bold text-blue-400" id="l5-mesh-coverage">—</div><div class="text-[10px] text-gray-400">Coverage km²</div></div>
+        <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-xl font-bold text-amber-400" id="l5-mesh-bandwidth">—</div><div class="text-[10px] text-gray-400">Mbps</div></div>
+      </div>
+      <div class="space-y-1.5 mb-3 text-xs">
+        <div class="text-[10px] text-gray-500 uppercase mb-1">Node Regions</div>
+        <div class="flex flex-wrap gap-2">
+          <span class="px-2 py-0.5 bg-emerald-700/30 border border-emerald-500/20 rounded-full text-emerald-300 text-[10px]">🌍 Africa</span>
+          <span class="px-2 py-0.5 bg-blue-700/30 border border-blue-500/20 rounded-full text-blue-300 text-[10px]">🌏 Asia</span>
+          <span class="px-2 py-0.5 bg-amber-700/30 border border-amber-500/20 rounded-full text-amber-300 text-[10px]">🌎 S.America</span>
+          <span class="px-2 py-0.5 bg-purple-700/30 border border-purple-500/20 rounded-full text-purple-300 text-[10px]">🌐 Remote</span>
+        </div>
+      </div>
+      <div class="space-y-2 text-xs">
+        <div class="flex justify-between"><span class="text-gray-400">Protocol</span><span class="text-white font-mono">LoRa + WiFi</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">Encryption</span><span class="text-white font-mono">AES-256</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">API Port</span><span class="text-white font-mono">8086</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Medical AI + Community DAOs -->
+  <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
+
+    <!-- Medical AI -->
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-base font-bold flex items-center gap-2">🏥 Medical AI</h2>
+        <span id="l5-medical-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400">Offline</span>
+      </div>
+      <div class="grid grid-cols-2 gap-3 mb-4">
+        <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-xl font-bold text-emerald-400" id="l5-med-queries">—</div><div class="text-[10px] text-gray-400">Queries (24h)</div></div>
+        <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-xl font-bold text-blue-400" id="l5-med-diagnoses">—</div><div class="text-[10px] text-gray-400">Diagnoses</div></div>
+        <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-xl font-bold text-purple-400" id="l5-med-clinics">—</div><div class="text-[10px] text-gray-400">Clinics</div></div>
+        <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-xl font-bold text-amber-400" id="l5-med-accuracy">—</div><div class="text-[10px] text-gray-400">Accuracy</div></div>
+      </div>
+      <div class="space-y-1 text-xs mb-3">
+        <div class="text-[10px] text-gray-500 uppercase">Capabilities</div>
+        <div class="text-gray-300">• Symptom triage &amp; diagnosis support</div>
+        <div class="text-gray-300">• Drug interaction checking</div>
+        <div class="text-gray-300">• Malaria / Cholera pattern detection</div>
+        <div class="text-gray-300">• Offline-capable via mesh</div>
+        <div class="text-gray-500 mt-1">Powered by Hiran AI v2.2 + medical fine-tune</div>
+      </div>
+    </div>
+
+    <!-- Community DAOs -->
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-base font-bold flex items-center gap-2">🏘️ Community DAOs</h2>
+        <span id="l5-dao-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400">Offline</span>
+      </div>
+      <div class="grid grid-cols-2 gap-3 mb-4">
+        <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-xl font-bold text-cyan-400" id="l5-dao-count">—</div><div class="text-[10px] text-gray-400">Active DAOs</div></div>
+        <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-xl font-bold text-emerald-400" id="l5-dao-members">—</div><div class="text-[10px] text-gray-400">Members</div></div>
+      </div>
+      <div class="space-y-1.5 text-xs" id="l5-dao-list">
+        <div class="flex justify-between items-center bg-black/30 rounded-lg px-3 py-2">
+          <div><div class="text-gray-300 font-semibold">🌾 Farmer Cooperative DAO</div><div class="text-gray-500 text-[10px]">12 villages · East Africa</div></div>
+          <span class="text-emerald-400 font-mono text-[10px]">Active</span>
+        </div>
+        <div class="flex justify-between items-center bg-black/30 rounded-lg px-3 py-2">
+          <div><div class="text-gray-300 font-semibold">📚 Education DAO</div><div class="text-gray-500 text-[10px]">5000 students · Global</div></div>
+          <span class="text-blue-400 font-mono text-[10px]">Active</span>
+        </div>
+        <div class="flex justify-between items-center bg-black/30 rounded-lg px-3 py-2">
+          <div><div class="text-gray-300 font-semibold">⚡ Energy Access DAO</div><div class="text-gray-500 text-[10px]">Solar · Off-grid</div></div>
+          <span class="text-amber-400 font-mono text-[10px]">Active</span>
+        </div>
+        <div class="flex justify-between items-center bg-black/30 rounded-lg px-3 py-2">
+          <div><div class="text-gray-300 font-semibold">🏗️ Housing DAO</div><div class="text-gray-500 text-[10px]">Disaster relief</div></div>
+          <span class="text-purple-400 font-mono text-[10px]">Forming</span>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- ═════════ TAB: L6 Issobella Space ═════════ -->
-  <div id="pane-l6" class="hidden space-y-4">
-    <div class="zion-panel p-6">
-      <div class="flex items-center justify-between mb-5">
-        <div>
-          <h2 class="text-xl font-bold flex items-center gap-2"><span class="text-gradient">🚀 L6 — Issobella Space Layer</span></h2>
-          <p class="text-sm text-gray-400 mt-1">Space infrastructure coordination — satellite relay, orbital DAOs, off-world settlements.</p>
+  <!-- Free World Architecture -->
+  <div class="zion-panel p-5">
+    <h2 class="text-base font-bold mb-4">🌐 Free World Architecture</h2>
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
+      <div class="bg-black/30 rounded-xl p-4">
+        <div class="text-sm font-bold text-emerald-400 mb-2">❤️ Humanitarian Layer</div>
+        <div class="space-y-1 text-gray-300">
+          <div>• On-chain aid disbursement</div>
+          <div>• Verifiable impact tracking</div>
+          <div>• NGO integration API</div>
+          <div>• UBI pilot programs</div>
         </div>
-        <button onclick="loadLayerFull('l6')" class="zion-button-secondary text-xs px-3 py-1.5">Refresh</button>
       </div>
-      <!-- L6 KPI row -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
-        <div class="bg-black/30 rounded-xl p-3.5 text-center"><div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Satellites</div><div id="l6-satellites" class="text-lg font-bold text-emerald-400">—</div></div>
-        <div class="bg-black/30 rounded-xl p-3.5 text-center"><div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Orbital DAOs</div><div id="l6-orbital-daos" class="text-lg font-bold text-blue-400">—</div></div>
-        <div class="bg-black/30 rounded-xl p-3.5 text-center"><div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Settlements</div><div id="l6-settlements" class="text-lg font-bold text-amber-400">—</div></div>
-        <div class="bg-black/30 rounded-xl p-3.5 text-center"><div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Relay Uptime</div><div id="l6-uptime" class="text-lg font-bold text-purple-400">—</div></div>
+      <div class="bg-black/30 rounded-xl p-4">
+        <div class="text-sm font-bold text-blue-400 mb-2">📡 Mesh Network</div>
+        <div class="space-y-1 text-gray-300">
+          <div>• LoRa + WiFi mesh</div>
+          <div>• Offline blockchain sync</div>
+          <div>• Solar-powered nodes</div>
+          <div>• 10 km² per node</div>
+        </div>
       </div>
-      <div id="layer-l6-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5"></div>
-      <!-- Issobella fund info -->
-      <div class="zion-panel p-4" style="border-color:rgba(147,51,234,0.2);background:linear-gradient(135deg,rgba(15,20,35,0.95),rgba(147,51,234,0.04));">
-        <h3 class="zion-kicker mb-3">5% Issobella Space Fund</h3>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <div class="bg-black/30 rounded-lg p-3"><div class="text-[10px] text-gray-500 mb-1">Fund Address</div><div class="text-xs font-mono text-purple-300 break-all">zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702</div></div>
-          <div class="bg-black/30 rounded-lg p-3"><div class="text-[10px] text-gray-500 mb-1">Total Collected</div><div id="l6-fund-total" class="text-sm font-bold text-purple-400">—</div></div>
-          <div class="bg-black/30 rounded-lg p-3"><div class="text-[10px] text-gray-500 mb-1">Next Milestone</div><div id="l6-fund-next" class="text-sm font-bold text-gray-300">—</div></div>
+      <div class="bg-black/30 rounded-xl p-4">
+        <div class="text-sm font-bold text-purple-400 mb-2">🏥 Medical AI</div>
+        <div class="space-y-1 text-gray-300">
+          <div>• Hiran medical fine-tune</div>
+          <div>• WHO guidelines integrated</div>
+          <div>• Multilingual support</div>
+          <div>• Privacy-preserving</div>
+        </div>
+      </div>
+      <div class="bg-black/30 rounded-xl p-4">
+        <div class="text-sm font-bold text-amber-400 mb-2">🏘️ Community DAO</div>
+        <div class="space-y-1 text-gray-300">
+          <div>• Village-level governance</div>
+          <div>• 1 person = 1 vote (KYC)</div>
+          <div>• Grant disbursement</div>
+          <div>• Proposal templates</div>
         </div>
       </div>
     </div>
+  </div>
+  </div>
+
+  <!-- ═════════ TAB: L6 Issobella Space ═════════ -->
+  <div id="pane-l6" class="hidden space-y-4">
+  <!-- L6 Header -->
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-bold text-gradient">🛸 L6 — Issobella Space</h1>
+      <p class="text-xs text-gray-400 mt-1">Satellites · Orbital Stations · Lunar / Mars Settlements · Space Fund · Space DAO</p>
+    </div>
+    <div class="flex gap-2">
+      <button onclick="loadLayerFull('l6')" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
+    </div>
+  </div>
+
+  <!-- L6 KPI row -->
+  <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+    <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-emerald-400" id="l6-satellites">—</div><div class="text-[10px] text-gray-400 mt-1">Satellites</div></div>
+    <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-blue-400" id="l6-stations">—</div><div class="text-[10px] text-gray-400 mt-1">Orbital Stations</div></div>
+    <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-amber-400" id="l6-settlements">—</div><div class="text-[10px] text-gray-400 mt-1">Settlements</div></div>
+    <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-purple-400" id="l6-missions">—</div><div class="text-[10px] text-gray-400 mt-1">Active Missions</div></div>
+    <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-cyan-400" id="l6-uplinks">—</div><div class="text-[10px] text-gray-400 mt-1">Uplinks/s</div></div>
+    <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-zion-gold" id="l6-fund">—</div><div class="text-[10px] text-gray-400 mt-1">Space Fund</div></div>
+  </div>
+
+  <!-- Satellites + Orbital Stations -->
+  <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
+
+    <!-- Satellite Network -->
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-base font-bold flex items-center gap-2">🛰️ Satellite Network</h2>
+        <span id="l6-sat-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400">Offline</span>
+      </div>
+      <div class="grid grid-cols-3 gap-3 mb-4">
+        <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-xl font-bold text-emerald-400" id="l6-sat-active">—</div><div class="text-[10px] text-gray-400">Active</div></div>
+        <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-xl font-bold text-blue-400" id="l6-sat-orbits">—</div><div class="text-[10px] text-gray-400">Orbits</div></div>
+        <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-xl font-bold text-amber-400" id="l6-sat-lat">—</div><div class="text-[10px] text-gray-400">Latency ms</div></div>
+      </div>
+      <div class="space-y-1.5 mb-3 text-xs">
+        <div class="text-[10px] text-gray-500 uppercase mb-1">Constellation Status</div>
+        <div class="flex justify-between items-center bg-black/30 rounded-lg px-3 py-1.5">
+          <span class="text-gray-300">🛰️ ZION-SAT-01 (LEO)</span>
+          <span class="text-emerald-400 text-[10px]">Operational</span>
+        </div>
+        <div class="flex justify-between items-center bg-black/30 rounded-lg px-3 py-1.5">
+          <span class="text-gray-300">🛰️ ZION-SAT-02 (LEO)</span>
+          <span class="text-emerald-400 text-[10px]">Operational</span>
+        </div>
+        <div class="flex justify-between items-center bg-black/30 rounded-lg px-3 py-1.5">
+          <span class="text-gray-300">🛰️ ISSOBELLA-1 (GEO)</span>
+          <span class="text-amber-400 text-[10px]">Planned 2026</span>
+        </div>
+        <div class="flex justify-between items-center bg-black/30 rounded-lg px-3 py-1.5">
+          <span class="text-gray-300">🛰️ ISSOBELLA-2 (MEO)</span>
+          <span class="text-gray-500 text-[10px]">Design Phase</span>
+        </div>
+      </div>
+      <div class="space-y-1 text-xs">
+        <div class="flex justify-between"><span class="text-gray-400">Ground Stations</span><span class="text-white font-mono" id="l6-ground-stations">3</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">Coverage</span><span class="text-white font-mono">Global</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">API Port</span><span class="text-white font-mono">8087</span></div>
+      </div>
+    </div>
+
+    <!-- Orbital Stations -->
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-base font-bold flex items-center gap-2">🚀 Orbital Stations</h2>
+        <span id="l6-orbital-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400">Offline</span>
+      </div>
+      <div class="grid grid-cols-2 gap-3 mb-4">
+        <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-xl font-bold text-purple-400" id="l6-orbital-count">—</div><div class="text-[10px] text-gray-400">Stations</div></div>
+        <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-xl font-bold text-cyan-400" id="l6-orbital-crew">—</div><div class="text-[10px] text-gray-400">Crew</div></div>
+      </div>
+      <div class="space-y-2 text-xs mb-4">
+        <div class="text-[10px] text-gray-500 uppercase">Station Registry</div>
+        <div class="bg-black/30 rounded-lg px-3 py-2">
+          <div class="flex justify-between"><span class="text-purple-300 font-semibold">🏗️ Issobella Station Alpha</span><span class="text-amber-400 text-[10px]">Planned</span></div>
+          <div class="text-gray-500 text-[10px] mt-0.5">LEO 400km · 50-person capacity · DAO-governed</div>
+        </div>
+        <div class="bg-black/30 rounded-lg px-3 py-2">
+          <div class="flex justify-between"><span class="text-blue-300 font-semibold">🔬 Lunar Gateway Node</span><span class="text-gray-500 text-[10px]">2027 Target</span></div>
+          <div class="text-gray-500 text-[10px] mt-0.5">Lunar orbit · Research · Blockchain relay</div>
+        </div>
+        <div class="bg-black/30 rounded-lg px-3 py-2">
+          <div class="flex justify-between"><span class="text-emerald-300 font-semibold">🌌 Deep Space Relay</span><span class="text-gray-500 text-[10px]">2030 Target</span></div>
+          <div class="text-gray-500 text-[10px] mt-0.5">L4/L5 Lagrange · Interplanetary ZION relay</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settlements + Missions -->
+  <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
+
+    <!-- Settlements -->
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-base font-bold flex items-center gap-2">🌙 Settlements</h2>
+      </div>
+      <div class="grid grid-cols-3 gap-3 mb-4">
+        <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-xl font-bold text-emerald-400" id="l6-lunar-pops">—</div><div class="text-[10px] text-gray-400">Lunar Pop.</div></div>
+        <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-xl font-bold text-red-400" id="l6-mars-pops">—</div><div class="text-[10px] text-gray-400">Mars Pop.</div></div>
+        <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-xl font-bold text-zion-gold" id="l6-settle-fund">—</div><div class="text-[10px] text-gray-400">Fund ZION</div></div>
+      </div>
+      <div class="space-y-1.5 text-xs">
+        <div class="bg-black/30 rounded-lg px-3 py-2">
+          <div class="flex justify-between"><span class="text-gray-300">🌙 Lunar Colony Alpha</span><span class="text-amber-400 text-[10px]">2026 Target</span></div>
+          <div class="text-gray-500 text-[10px]">12 crew · Self-sustaining · ISRU mining · ZION-governed</div>
+        </div>
+        <div class="bg-black/30 rounded-lg px-3 py-2">
+          <div class="flex justify-between"><span class="text-gray-300">🔴 Mars Base Zion-I</span><span class="text-gray-500 text-[10px]">2031 Target</span></div>
+          <div class="text-gray-500 text-[10px]">6 crew · Robotic pre-deployment · In-situ ZION mining</div>
+        </div>
+        <div class="bg-black/30 rounded-lg px-3 py-2">
+          <div class="flex justify-between"><span class="text-gray-300">🪨 Asteroid Mining Node</span><span class="text-gray-500 text-[10px]">2029 Target</span></div>
+          <div class="text-gray-500 text-[10px]">Automated · Rare earth · DAO revenue share</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Missions -->
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-base font-bold flex items-center gap-2">🎯 Active Missions</h2>
+        <button onclick="loadL6Missions()" class="text-[10px] px-2 py-0.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">Load</button>
+      </div>
+      <div id="l6-mission-list" class="space-y-1.5 text-xs">
+        <div class="bg-black/30 rounded-lg px-3 py-2">
+          <div class="flex justify-between"><span class="text-purple-300 font-semibold">🛰️ Satellite Deployment #3</span><span class="text-[10px] text-blue-400">In Progress</span></div>
+          <div class="text-gray-500 text-[10px]">LEO insertion · 45° inclination · 2025-Q3</div>
+          <div class="w-full bg-gray-800 rounded-full h-1 mt-1"><div class="bg-blue-500 h-1 rounded-full" style="width:60%"></div></div>
+        </div>
+        <div class="bg-black/30 rounded-lg px-3 py-2">
+          <div class="flex justify-between"><span class="text-amber-300 font-semibold">🌙 Lunar Recon Survey</span><span class="text-[10px] text-amber-400">Planning</span></div>
+          <div class="text-gray-500 text-[10px]">Site selection for Colony Alpha · 2025-Q4</div>
+          <div class="w-full bg-gray-800 rounded-full h-1 mt-1"><div class="bg-amber-500 h-1 rounded-full" style="width:20%"></div></div>
+        </div>
+        <div class="bg-black/30 rounded-lg px-3 py-2">
+          <div class="flex justify-between"><span class="text-emerald-300 font-semibold">📡 Deep Space Link Test</span><span class="text-[10px] text-emerald-400">Planned</span></div>
+          <div class="text-gray-500 text-[10px]">Inter-planetary ZION tx test · 2026-Q1</div>
+          <div class="w-full bg-gray-800 rounded-full h-1 mt-1"><div class="bg-emerald-500 h-1 rounded-full" style="width:5%"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Space Fund + DAO + Architecture -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="zion-panel p-5">
+      <div class="text-sm font-bold text-zion-gold mb-3">💰 Space Fund</div>
+      <div class="space-y-2 text-xs">
+        <div class="flex justify-between"><span class="text-gray-400">Total Fund</span><span class="text-zion-gold font-mono" id="l6-fund-total">1B ZION</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">Allocated</span><span class="text-white font-mono" id="l6-fund-allocated">—</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">Available</span><span class="text-emerald-400 font-mono" id="l6-fund-available">—</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">Missions Funded</span><span class="text-white font-mono" id="l6-missions-funded">—</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">ROI Target</span><span class="text-emerald-400 font-mono">10x (10yr)</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">API</span><span class="text-white font-mono">:8087</span></div>
+      </div>
+    </div>
+    <div class="zion-panel p-5">
+      <div class="text-sm font-bold text-purple-400 mb-3">🗳️ Space DAO</div>
+      <div class="space-y-2 text-xs">
+        <div class="flex justify-between"><span class="text-gray-400">Mission Proposals</span><span class="text-white font-mono" id="l6-dao-proposals">—</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">Quorum</span><span class="text-white font-mono">5%</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">Voting Period</span><span class="text-white font-mono">30 days</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">Proposal Cost</span><span class="text-white font-mono">50M ZION</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">Timelock</span><span class="text-white font-mono">7 days</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">Gov Token</span><span class="text-white font-mono">ZION</span></div>
+      </div>
+    </div>
+    <div class="zion-panel p-5">
+      <div class="text-sm font-bold text-cyan-400 mb-3">🛸 Issobella API</div>
+      <div class="space-y-2 text-xs mb-3">
+        <div class="flex justify-between"><span class="text-gray-400">Status</span><span id="l6-api-status" class="text-gray-400">Offline</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">API Port</span><span class="text-white font-mono">8087</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">gRPC</span><span class="text-white font-mono">8088</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">WebSocket</span><span class="text-white font-mono">8089</span></div>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="controlAction('start-space')" class="flex-1 text-xs px-2 py-1.5 bg-emerald-700/50 hover:bg-emerald-600 rounded-lg font-semibold transition">▶ Start</button>
+        <button onclick="controlAction('stop-space')" class="flex-1 text-xs px-2 py-1.5 bg-red-700/50 hover:bg-red-600 rounded-lg font-semibold transition">⏹ Stop</button>
+      </div>
+    </div>
+  </div>
   </div>
 
   <!-- ═════════ TAB: Charts ═════════ -->
@@ -2082,80 +2834,8 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
       </div>
     </div>
   </div>
-    </main>
-  </div>
 
-  <!-- Footer -->
-  <footer class="text-center text-xs text-gray-600 pt-8 pb-4">
-    <hr class="zion-divider mb-4">
-    <span class="text-gradient font-semibold">ZION TerraNova V3</span> · Mainnet Command Center · Zero-dep Python stdlib server
-    <span class="text-gray-500"> · </span>
-    <a href="../MAINNETREADYrun.md" target="_blank" class="text-zion-gold hover:underline">Runbook</a>
-    <span class="text-gray-500"> · </span>
-    <a href="../V3/docs/MAINNET_CONSTANTS.md" target="_blank" class="text-zion-gold hover:underline">Constants</a>
-    <span class="text-gray-500"> · </span>
-    <a href="../MainnetLaunch.md" target="_blank" class="text-zion-gold hover:underline">Playbook</a>
-    <div class="mt-2 italic">"In code we trust. 144 billion ZION. Not one satoshi more."</div>
-  </footer>
-</div>
-
-<!-- Settings Modal -->
-<div id="settings-modal" class="fixed inset-0 bg-black/80 hidden items-center justify-center z-50 p-4" onclick="if(event.target===this)closeSettingsModal()">
-  <div class="zion-panel w-full max-w-lg max-h-[80vh] overflow-y-auto p-6 relative">
-    <button onclick="closeSettingsModal()" class="absolute top-3 right-3 text-gray-400 hover:text-white text-xl">&times;</button>
-    <h2 class="text-xl font-bold mb-4 text-gradient">⚙️ Settings</h2>
-    <div class="space-y-4">
-      <div class="grid grid-cols-2 gap-3">
-        <div>
-          <label class="text-xs text-gray-400 block mb-1">Theme</label>
-          <select id="settings-theme" class="w-full bg-black/30 border border-zion-700 rounded-md px-2 py-2 text-xs text-white focus:outline-none focus:border-zion-gold">
-            <option value="dark">Dark</option>
-            <option value="light">Light</option>
-          </select>
-        </div>
-        <div>
-          <label class="text-xs text-gray-400 block mb-1">Default Tab</label>
-          <select id="settings-default-tab" class="w-full bg-black/30 border border-zion-700 rounded-md px-2 py-2 text-xs text-white focus:outline-none focus:border-zion-gold">
-            <option value="overview">Overview</option>
-            <option value="controls">Controls</option>
-            <option value="explorer">Explorer</option>
-            <option value="topology">Topology</option>
-            <option value="ops">Ops</option>
-          </select>
-        </div>
-      </div>
-      <div>
-        <label class="text-xs text-gray-400 block mb-1">Refresh Interval (ms)</label>
-        <input id="settings-refresh" type="number" min="1000" max="30000" step="500" class="w-full bg-black/30 border border-zion-700 rounded-md px-2 py-2 text-xs text-white focus:outline-none focus:border-zion-gold">
-      </div>
-      <div class="grid grid-cols-2 gap-3">
-        <div>
-          <label class="text-xs text-gray-400 block mb-1">Hashrate Alert Threshold (KH/s)</label>
-          <input id="settings-hashrate-th" type="number" min="0" max="100" step="0.1" class="w-full bg-black/30 border border-zion-700 rounded-md px-2 py-2 text-xs text-white focus:outline-none focus:border-zion-gold">
-        </div>
-        <div>
-          <label class="text-xs text-gray-400 block mb-1">Sync Gap Alert Threshold (blocks)</label>
-          <input id="settings-sync-th" type="number" min="1" max="100" step="1" class="w-full bg-black/30 border border-zion-700 rounded-md px-2 py-2 text-xs text-white focus:outline-none focus:border-zion-gold">
-        </div>
-      </div>
-      <div class="flex items-center gap-3">
-        <label class="flex items-center gap-2 text-xs text-gray-300 cursor-pointer">
-          <input id="settings-watchdog" type="checkbox" class="accent-zion-gold"> Auto-launch watchdog
-        </label>
-        <label class="flex items-center gap-2 text-xs text-gray-300 cursor-pointer">
-          <input id="settings-tooltips" type="checkbox" class="accent-zion-gold"> Show tooltips
-        </label>
-      </div>
-      <div class="flex gap-2 pt-2">
-        <button onclick="saveSettings()" class="text-xs px-3 py-1.5 bg-emerald-700/50 hover:bg-emerald-600 rounded-md font-semibold transition">💾 Save</button>
-        <button onclick="resetSettings()" class="text-xs px-3 py-1.5 bg-gray-700/50 hover:bg-gray-600 rounded-md font-semibold transition">↺ Reset</button>
-        <span id="settings-save-status" class="text-xs text-emerald-400 self-center"></span>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ═════════ TAB: DAO Governance ═════════ -->
+  <!-- ═════════ TAB: DAO Governance (inside main) ═════════ -->
 <div id="pane-dao" class="hidden space-y-5">
 
   <!-- Header -->
@@ -2421,7 +3101,81 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
   </div>
 </div>
 
-<!-- Block Detail Modal -->
+
+    </main>
+  </div>
+
+  <!-- Footer -->
+  <footer class="text-center text-xs text-gray-600 pt-8 pb-4">
+    <hr class="zion-divider mb-4">
+    <span class="text-gradient font-semibold">ZION TerraNova V3</span> · Mainnet Command Center · Zero-dep Python stdlib server
+    <span class="text-gray-500"> · </span>
+    <a href="../MAINNETREADYrun.md" target="_blank" class="text-zion-gold hover:underline">Runbook</a>
+    <span class="text-gray-500"> · </span>
+    <a href="../V3/docs/MAINNET_CONSTANTS.md" target="_blank" class="text-zion-gold hover:underline">Constants</a>
+    <span class="text-gray-500"> · </span>
+    <a href="../MainnetLaunch.md" target="_blank" class="text-zion-gold hover:underline">Playbook</a>
+    <div class="mt-2 italic">"In code we trust. 144 billion ZION. Not one satoshi more."</div>
+  </footer>
+</div>
+
+<!-- Settings Modal -->
+<div id="settings-modal" class="fixed inset-0 bg-black/80 hidden items-center justify-center z-50 p-4" onclick="if(event.target===this)closeSettingsModal()">
+  <div class="zion-panel w-full max-w-lg max-h-[80vh] overflow-y-auto p-6 relative">
+    <button onclick="closeSettingsModal()" class="absolute top-3 right-3 text-gray-400 hover:text-white text-xl">&times;</button>
+    <h2 class="text-xl font-bold mb-4 text-gradient">⚙️ Settings</h2>
+    <div class="space-y-4">
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs text-gray-400 block mb-1">Theme</label>
+          <select id="settings-theme" class="w-full bg-black/30 border border-zion-700 rounded-md px-2 py-2 text-xs text-white focus:outline-none focus:border-zion-gold">
+            <option value="dark">Dark</option>
+            <option value="light">Light</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs text-gray-400 block mb-1">Default Tab</label>
+          <select id="settings-default-tab" class="w-full bg-black/30 border border-zion-700 rounded-md px-2 py-2 text-xs text-white focus:outline-none focus:border-zion-gold">
+            <option value="overview">Overview</option>
+            <option value="controls">Controls</option>
+            <option value="explorer">Explorer</option>
+            <option value="topology">Topology</option>
+            <option value="ops">Ops</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <label class="text-xs text-gray-400 block mb-1">Refresh Interval (ms)</label>
+        <input id="settings-refresh" type="number" min="1000" max="30000" step="500" class="w-full bg-black/30 border border-zion-700 rounded-md px-2 py-2 text-xs text-white focus:outline-none focus:border-zion-gold">
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs text-gray-400 block mb-1">Hashrate Alert Threshold (KH/s)</label>
+          <input id="settings-hashrate-th" type="number" min="0" max="100" step="0.1" class="w-full bg-black/30 border border-zion-700 rounded-md px-2 py-2 text-xs text-white focus:outline-none focus:border-zion-gold">
+        </div>
+        <div>
+          <label class="text-xs text-gray-400 block mb-1">Sync Gap Alert Threshold (blocks)</label>
+          <input id="settings-sync-th" type="number" min="1" max="100" step="1" class="w-full bg-black/30 border border-zion-700 rounded-md px-2 py-2 text-xs text-white focus:outline-none focus:border-zion-gold">
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <label class="flex items-center gap-2 text-xs text-gray-300 cursor-pointer">
+          <input id="settings-watchdog" type="checkbox" class="accent-zion-gold"> Auto-launch watchdog
+        </label>
+        <label class="flex items-center gap-2 text-xs text-gray-300 cursor-pointer">
+          <input id="settings-tooltips" type="checkbox" class="accent-zion-gold"> Show tooltips
+        </label>
+      </div>
+      <div class="flex gap-2 pt-2">
+        <button onclick="saveSettings()" class="text-xs px-3 py-1.5 bg-emerald-700/50 hover:bg-emerald-600 rounded-md font-semibold transition">💾 Save</button>
+        <button onclick="resetSettings()" class="text-xs px-3 py-1.5 bg-gray-700/50 hover:bg-gray-600 rounded-md font-semibold transition">↺ Reset</button>
+        <span id="settings-save-status" class="text-xs text-emerald-400 self-center"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═════════ TAB: DAO Governance ═════════ --><!-- Block Detail Modal -->
 <div id="block-modal" class="fixed inset-0 bg-black/80 hidden items-center justify-center z-50 p-4" onclick="if(event.target===this)closeBlockModal()">
   <div class="zion-panel w-full max-w-2xl max-h-[80vh] overflow-y-auto p-6 relative">
     <button onclick="closeBlockModal()" class="absolute top-3 right-3 text-gray-400 hover:text-white text-xl">&times;</button>
