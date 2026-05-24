@@ -795,11 +795,16 @@ def parse_node_log(name: str) -> dict:
         "name": name,
         "running": bool(recent),
         "node_id": None,
+        "version": None,
         "p2p_bind": None,
         "rpc_bind": None,
         "chain_height": None,
         "tip_hash": None,
         "known_peers": 0,
+        "mempool_size": 0,
+        "last_block_time": None,
+        "uptime_seconds": None,
+        "version": None,
         "last_error": None,
         "recent_lines": recent[-10:],
     }
@@ -821,16 +826,29 @@ def parse_node_log(name: str) -> dict:
             status["tip_hash"] = m.group(1)[:16] + "…"
         if m := re.search(r'"known_peers":\[(.*?)\]', line):
             status["known_peers"] = len(re.findall(r'\{', m.group(1)))
+        if m := re.search(r'"mempool_size":(\d+)', line):
+            status["mempool_size"] = int(m.group(1))
+        if m := re.search(r'"uptime_ms":(\d+)', line):
+            status["uptime_seconds"] = int(m.group(1)) // 1000
+        if m := re.search(r'"version":"([^"]+)"', line):
+            status["version"] = m.group(1)
 
         # Node 2 / follower format: relay_block height=... hash=...
         if m := re.search(r'relay_block height=(\d+)', line):
             h = int(m.group(1))
             if status["chain_height"] is None or h > status["chain_height"]:
                 status["chain_height"] = h
+                status["last_block_time"] = datetime.now().isoformat()
         if m := re.search(r'outbound_sync.*our_height=(\d+)', line):
             h = int(m.group(1))
             if status["chain_height"] is None or h > status["chain_height"]:
                 status["chain_height"] = h
+        if m := re.search(r'mempool_size=(\d+)', line):
+            status["mempool_size"] = max(status["mempool_size"], int(m.group(1)))
+        if m := re.search(r'version=(\S+)', line):
+            status["version"] = m.group(1)
+        if m := re.search(r'uptime=(\d+)', line):
+            status["uptime_seconds"] = int(m.group(1))
 
         # Peer counting — both node formats
         if m := re.search(r'discovery_connect_ok peer=([^\s:]+)', line):
@@ -942,15 +960,49 @@ def build_status() -> dict:
     # Edge pool health from cache (remote host probe)
     pool_edge_svc = get_service("pool-edge")
     pool_edge_health = check_service_health(pool_edge_svc) if pool_edge_svc else {"alive": False}
+    # Try to scrape Edge pool metrics if Prometheus has them
+    edge_metrics = {"active_miners": None, "hashrate": None, "blocks_found": None}
+    try:
+        metrics_port = pool_edge_svc.get("ports", {}).get("metrics") if pool_edge_svc else None
+        if metrics_port and pool_edge_health.get("alive"):
+            url = f"http://{pool_edge_svc.get('host', '127.0.0.1')}:{metrics_port}/metrics"
+            with _urlreq.urlopen(url, timeout=1.0) as r:
+                body = r.read().decode("utf-8", errors="ignore")
+                for line in body.splitlines():
+                    if line.startswith("zion_pool_active_sessions "):
+                        edge_metrics["active_miners"] = int(float(line.split()[-1]))
+                    elif line.startswith("zion_pool_total_hashes "):
+                        # Approximate hashrate from total hashes (not ideal but informative)
+                        pass
+                    elif line.startswith("zion_pool_blocks_found "):
+                        edge_metrics["blocks_found"] = int(float(line.split()[-1]))
+    except Exception:
+        pass
+    # Compute sync gap between core and edge nodes
+    n1 = parse_node_log("node1")
+    n2 = parse_node_log("node2")
+    sync_gap = None
+    if n1.get("chain_height") and n2.get("chain_height"):
+        sync_gap = abs(n1["chain_height"] - n2["chain_height"])
     return {
         "timestamp": datetime.now().isoformat(),
-        "node1": parse_node_log("node1"),
-        "node2": parse_node_log("node2"),
+        "node1": n1,
+        "node2": n2,
         "pool": parse_pool_log(),
         "pool_edge": {
             "running": pool_edge_health["alive"],
             "host": pool_edge_svc.get("host", "") if pool_edge_svc else "",
+            "public_ip": "77.42.71.94",
+            "tailscale_ip": "100.66.162.125",
             "ports_open": pool_edge_health.get("ports_open", []),
+            "ports_closed": pool_edge_health.get("ports_closed", []),
+            "pid_alive": pool_edge_health.get("pid_alive", False),
+            "pid": pool_edge_health.get("pid"),
+            "active_miners": edge_metrics["active_miners"],
+            "hashrate": edge_metrics["hashrate"],
+            "blocks_found": edge_metrics["blocks_found"],
+            "sync_gap": sync_gap,
+            "details": pool_edge_health.get("details", ""),
         },
         "miner": parse_miner_log(),
     }
@@ -3763,7 +3815,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 if LAUNCH_STATE["running"]:
                     self._json({"ok": False, "error": "Launch already in progress", "state": get_launch_state()})
                     return
-            sids = ["node1", "pool", "miner"]
+            sids = ["node1", "node2", "pool", "miner"]
             thread = threading.Thread(target=run_dependency_launch, args=(sids,), daemon=True)
             thread.start()
             self._json({"ok": True, "message": "Stack launch started", "services": sids, "state": get_launch_state()})
