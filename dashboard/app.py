@@ -485,12 +485,12 @@ SERVICE_REGISTRY = [
      "purpose": "Multi-chain relay for fast cross-chain messaging.",
      "child_says": "🌀 A super-fast message tube between blockchains!",
      "depends_on": []},
-    {"id": "ncl", "name": "NCL Gateway", "icon": "🧠", "level": "L3", "kind": "gateway",
-     "ports": {"api": 8590},
-     "log": "ncl.log", "start": None, "stop": None,
-     "purpose": "Network Computing Layer gateway — distributed compute fabric.",
+    {"id": "ncl", "name": "NCL Compute Layer", "icon": "🧠", "level": "L3", "kind": "gateway",
+     "ports": {"api": 8001},
+     "log": "hiranyagarbha.log", "start": "start-hiranyagarbha", "stop": None,
+     "purpose": "Neural Compute Layer — job scheduler, worker reputation, pricing. Integrated into Hiranyagarbha at /ncl/*.",
      "child_says": "🧠 Helps many computers think together as one big brain!",
-     "depends_on": ["node1"]},
+     "depends_on": ["hiranyagarbha"]},
     {"id": "hiranyagarbha", "name": "Hiranyagarbha API", "icon": "🧬", "level": "L3", "kind": "ai",
      "ports": {"api": 8001},
      "log": "hiranyagarbha.log", "start": "start-hiranyagarbha", "stop": None,
@@ -1552,6 +1552,257 @@ def build_explorer() -> dict:
         "genesis_hash": genesis.get("hash_hex", "")[:24] + "…" if genesis else "—",
         "recent_blocks": recent_blocks,
     }
+
+# ── Backup status ────────────────────────────────────────────────────────
+
+def get_backup_status() -> dict:
+    """List backups + datadir sizes + last backup time."""
+    backups = []
+    backup_dir = REPO_ROOT / "backups"
+    total_backup_mb = 0
+    if backup_dir.exists():
+        for f in sorted(backup_dir.glob("backup_*.zip"), key=lambda p: p.stat().st_mtime, reverse=True):
+            s = f.stat()
+            size_mb = round(s.st_size / (1024*1024), 2)
+            total_backup_mb += size_mb
+            backups.append({
+                "name": f.name,
+                "size_mb": size_mb,
+                "created": datetime.fromtimestamp(s.st_mtime).isoformat(),
+            })
+    # Datadir sizes
+    datadirs = {}
+    for name, path in [("node1", REPO_ROOT / "data" / "node1"), ("node2", REPO_ROOT / "data" / "node2"), ("pool", REPO_ROOT / "data" / "pool")]:
+        if path.exists():
+            try:
+                total = sum(f.stat().st_size for f in path.rglob("*") if f.is_file())
+                datadirs[name] = round(total / (1024*1024), 2)
+            except Exception:
+                datadirs[name] = None
+        else:
+            datadirs[name] = None
+    last_backup = backups[0]["created"] if backups else None
+    return {
+        "backups": backups[:10],
+        "total_backup_mb": round(total_backup_mb, 2),
+        "datadir_mb": datadirs,
+        "last_backup": last_backup,
+        "backup_dir": str(backup_dir),
+    }
+
+# ── Pool wallet / UTXO / payout status ───────────────────────────────────
+
+def get_pool_wallet_status() -> dict:
+    """Scrape pool.log for wallet, UTXO, payout, fee-split state."""
+    recent = tail_log("pool.log", 300)
+    startup = head_log("pool.log", 50)
+    status = {
+        "pool_wallet": None,
+        "payout_enabled": False,
+        "utxo_count": None,
+        "balance_zion": None,
+        "blocks_found": 0,
+        "pending_payouts": 0,
+        "last_payout_time": None,
+        "last_payout_error": None,
+        "fee_split": None,
+        "shares_accepted": 0,
+        "shares_rejected": 0,
+    }
+    for line in startup:
+        if m := re.search(r'pool_wallet=(\S+)', line):
+            status["pool_wallet"] = m.group(1)
+        if m := re.search(r'payout=(\S+)', line):
+            status["payout_enabled"] = m.group(1).lower() in ("true", "enabled", "on")
+        if m := re.search(r'fee_split=([\d/]+)', line):
+            status["fee_split"] = m.group(1)
+    for line in recent:
+        if m := re.search(r'payout_submit_ok.*miners=(\d+)', line):
+            status["pending_payouts"] = int(m.group(1))
+        if m := re.search(r'payout_submit_failed.*error=(.+)', line):
+            status["last_payout_error"] = m.group(1).strip()
+        if m := re.search(r'BLOCK_FOUND.*height=(\d+)', line):
+            status["blocks_found"] = max(status["blocks_found"], int(m.group(1)))
+        if m := re.search(r'utxo_count=(\d+)', line):
+            status["utxo_count"] = int(m.group(1))
+        if m := re.search(r'balance_zion=(\d+\.?\d*)', line):
+            status["balance_zion"] = float(m.group(1))
+        if m := re.search(r'accepted\s+(\d+)/(\d+)', line):
+            status["shares_accepted"] = int(m.group(1))
+            status["shares_rejected"] = int(m.group(2))
+    # Fallback: try RPC for pool wallet balance
+    wallet = status["pool_wallet"]
+    if wallet and wallet.startswith("zion1"):
+        bal = rpc_call("127.0.0.1", 8443, "getBalance", {"address": wallet})
+        if bal and not bal.get("_rpc_error"):
+            atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
+            status["balance_zion"] = bal.get("balance_zion") if isinstance(bal.get("balance_zion"), (int, float)) else atomic / 1_000_000_000_000
+    return status
+
+# ── AI services status (Hiran + Hiranyagarbha) ───────────────────────────
+
+def get_ai_services_status() -> dict:
+    """Unified AI layer health snapshot."""
+    # Hiran Inference (port 8002)
+    hiran = {"alive": False, "backend": "none", "model": "—", "vram_mb": None}
+    try:
+        import urllib.request
+        with urllib.request.urlopen("http://127.0.0.1:8002/health", timeout=2) as r:
+            d = json.loads(r.read().decode())
+            hiran["alive"] = True
+            hiran["backend"] = d.get("backend", "unknown")
+            hiran["model"] = d.get("model", "—")
+            hiran["vram_mb"] = d.get("vram_used_mb")
+    except Exception:
+        pass
+    # Hiranyagarbha (port 8001)
+    orch = {"alive": False, "version": "—", "agents": 0, "tasks": 0}
+    try:
+        with urllib.request.urlopen("http://127.0.0.1:8001/health", timeout=2) as r:
+            d = json.loads(r.read().decode())
+            orch["alive"] = True
+            orch["version"] = d.get("version", "—")
+            orch["agents"] = d.get("active_agents", 0)
+            orch["tasks"] = d.get("pending_tasks", 0)
+    except Exception:
+        pass
+    return {"hiran": hiran, "hiranyagarbha": orch}
+
+# ── Network topology + App connectivity ──────────────────────────────────
+
+def get_network_topology() -> dict:
+    """Core↔Edge topology + Web/Desktop/Mobile/CLI connectivity."""
+    # Core node
+    core_node = parse_node_log("node1")
+    core_alive = core_node["running"] and core_node["chain_height"] is not None
+    # Edge node (via RPC on VPN IP)
+    edge_rpc_alive = False
+    edge_height = None
+    try:
+        info = rpc_call("100.76.16.108", 8443, "getChainInfo", {}, timeout=2)
+        if info and not info.get("_rpc_error"):
+            edge_rpc_alive = True
+            edge_height = info.get("chain_height")
+    except Exception:
+        pass
+    # Tailscale ping
+    tailscale_ok = False
+    try:
+        res = subprocess.run(["ping", "-n", "1", "100.76.16.108"], capture_output=True, timeout=5)
+        tailscale_ok = res.returncode == 0
+    except Exception:
+        pass
+    # Website
+    web_alive = False
+    try:
+        with urllib.request.urlopen("https://zionterranova.com", timeout=3) as r:
+            web_alive = r.status == 200
+    except Exception:
+        pass
+    # Desktop agent (localhost RPC)
+    desktop_alive = False
+    try:
+        with urllib.request.urlopen("http://127.0.0.1:8443/jsonrpc", timeout=1) as r:
+            desktop_alive = r.status == 200
+    except Exception:
+        pass
+    # zion-cli version check
+    cli_version = None
+    try:
+        res = subprocess.run(
+            ["cargo", "run", "--manifest-path", str(REPO_ROOT / "V3" / "Cargo.toml"), "-p", "zion-cli", "--", "--version"],
+            capture_output=True, text=True, timeout=15
+        )
+        if res.returncode == 0:
+            cli_version = res.stdout.strip().split()[-1] if res.stdout.strip() else "dev"
+    except Exception:
+        pass
+    return {
+        "core": {
+            "host": "100.86.102.5",
+            "alive": core_alive,
+            "height": core_node.get("chain_height"),
+            "peers": core_node.get("known_peers"),
+            "p2p": "0.0.0.0:8333",
+            "rpc": "0.0.0.0:8443",
+        },
+        "edge": {
+            "host": "100.76.16.108",
+            "public_ip": "77.42.71.94",
+            "alive": edge_rpc_alive,
+            "height": edge_height,
+            "p2p": "0.0.0.0:8333",
+            "rpc": "0.0.0.0:8443",
+            "pool": "0.0.0.0:8444",
+        },
+        "tailscale": {"vpn_ok": tailscale_ok, "core_ip": "100.86.102.5", "edge_ip": "100.76.16.108"},
+        "apps": {
+            "website": {"url": "https://zionterranova.com", "alive": web_alive},
+            "desktop_agent": {"rpc": "http://127.0.0.1:8443/jsonrpc", "alive": desktop_alive},
+            "mobile_app": {"status": "dev_build_ready", "alive": True},  # placeholder until health endpoint
+            "cli": {"version": cli_version, "alive": cli_version is not None},
+        },
+        "ports": {
+            "node_p2p": check_port_open("127.0.0.1", 8333),
+            "node_rpc": check_port_open("127.0.0.1", 8443),
+            "pool_stratum": check_port_open("127.0.0.1", 8444),
+            "dashboard": check_port_open("127.0.0.1", 8766),
+            "hiranyagarbha": check_port_open("127.0.0.1", 8001),
+            "hiran_inference": check_port_open("127.0.0.1", 8002),
+        },
+    }
+
+# ── CLI runner ────────────────────────────────────────────────────────────
+
+def run_zion_cli(command: str) -> dict:
+    """Run a zion-cli subcommand and return stdout/stderr/returncode."""
+    allowed = {"status", "doctor", "version", "help", "backup", "config", "node", "pool", "miner"}
+    # Sanitize: no shell metacharacters, no pipes
+    clean = command.strip()
+    if not clean:
+        return {"ok": False, "error": "Empty command"}
+    if any(ch in clean for ch in ";|&`$<>\n\r"):
+        return {"ok": False, "error": "Shell metacharacters not allowed"}
+    cmd_parts = clean.split()
+    if cmd_parts[0] not in allowed:
+        return {"ok": False, "error": f"Command '{cmd_parts[0]}' not in allowed list: {allowed}"}
+    args = ["cargo", "run", "--manifest-path", str(REPO_ROOT / "V3" / "Cargo.toml"), "-p", "zion-cli", "--"] + cmd_parts
+    try:
+        proc = subprocess.Popen(args, cwd=str(REPO_ROOT), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        stdout, stderr = proc.communicate(timeout=60)
+        return {
+            "ok": proc.returncode == 0,
+            "returncode": proc.returncode,
+            "stdout": stdout[:4000],
+            "stderr": stderr[:2000],
+        }
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        return {"ok": False, "error": "CLI command timed out after 60s"}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+# ── Alert config persistence ─────────────────────────────────────────────
+
+ALERT_CONFIG_PATH = LOG_DIR / "alert-config.json"
+
+def load_alert_config() -> dict:
+    defaults = {"webhook_url": "", "slack_webhook": "", "email": "", "enabled": True}
+    if ALERT_CONFIG_PATH.exists():
+        try:
+            with open(ALERT_CONFIG_PATH, "r", encoding="utf-8") as f:
+                return {**defaults, **json.load(f)}
+        except Exception:
+            pass
+    return defaults
+
+def save_alert_config(cfg: dict) -> dict:
+    try:
+        with open(ALERT_CONFIG_PATH, "w", encoding="utf-8") as f:
+            json.dump(cfg, f, indent=2)
+        return {"ok": True}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
 
 # ── Mainnet constants & genesis (from V3/L1/core/src/{emission,genesis,fee}.rs) ──
 
@@ -3619,6 +3870,19 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json(build_wallets())
         elif route == "/api/explorer":
             self._json(build_explorer())
+        elif route == "/api/backup/status":
+            self._json(get_backup_status())
+        elif route == "/api/wallet/status":
+            self._json(get_pool_wallet_status())
+        elif route == "/api/ai/status":
+            self._json(get_ai_services_status())
+        elif route == "/api/topology":
+            self._json(get_network_topology())
+        elif route == "/api/cli/run":
+            cmd = params.get("cmd", [""])[0].strip()
+            self._json(run_zion_cli(cmd))
+        elif route == "/api/alerts/config":
+            self._json(load_alert_config())
         elif route.startswith("/api/metrics/"):
             sid = route.split("/")[-1]
             self._json(scrape_metrics(sid))
@@ -3982,6 +4246,22 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     self._json({"ok": True, "stdout": out_text, "stderr": stderr.decode("utf-8", errors="ignore"), "exit_code": proc.returncode, "cmd": full_cmd})
             except Exception as e:
                 self._json({"ok": False, "error": str(e)})
+        elif route == "/api/backup/trigger":
+            script = SCRIPTS_DIR / ("backup-chain" + _SCRIPT_EXT)
+            try:
+                proc = subprocess.Popen(
+                    ["powershell.exe", "-ExecutionPolicy", "Bypass", "-File", str(script)],
+                    cwd=str(REPO_ROOT), stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                )
+                stdout, stderr = proc.communicate(timeout=120)
+                ok = proc.returncode == 0
+                out = (stdout.decode("utf-8", errors="ignore") + "\n" + stderr.decode("utf-8", errors="ignore")).strip()
+                self._json({"ok": ok, "output": out})
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)})
+        elif route == "/api/alerts/config":
+            cfg = payload if payload else {}
+            self._json(save_alert_config(cfg))
         else:
             self.send_error(404)
 

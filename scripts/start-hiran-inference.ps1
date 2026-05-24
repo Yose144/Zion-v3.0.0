@@ -1,11 +1,11 @@
-# ZION V3 — Start Hiran v2.2 Inference Server (port 8002)
+# ZION V3 - Start Hiran v2.2 Inference Server (port 8002)
 # OpenAI-compatible API: /v1/chat/completions, /health, /status, /metrics, /v1/embeddings
 #
 # Backend priority:
-#   1. llama-server.exe + GGUF (llama.cpp-bin\llama-server.exe) — fastest, no Python needed
-#   2. LM Studio server (port 1234) — DirectML / AMD GPU via LM Studio
-#   3. Ollama server (port 11434) — fallback if Ollama is running
-#   4. serve.py + GGUF (llama-cpp-python) — Python fallback
+#   1. llama-server.exe + GGUF (llama.cpp-bin\llama-server.exe) - fastest, no Python needed
+#   2. LM Studio server (port 1234) - DirectML / AMD GPU via LM Studio
+#   3. Ollama server (port 11434) - fallback if Ollama is running
+#   4. serve.py + GGUF (llama-cpp-python) - Python fallback
 #
 $repoRoot     = "C:\Users\yosef\Desktop\Zion\2.9.6-main"
 $logDir       = "$repoRoot\logs"
@@ -18,14 +18,14 @@ $host_        = "127.0.0.1"
 
 New-Item -ItemType Directory -Path $logDir -Force | Out-Null
 
-# ── Check if already running ──────────────────────────────────────────────────
+# -- Check if already running --------------------------------------------------
 try {
     $check = Invoke-WebRequest -Uri "http://${host_}:${port}/health" -TimeoutSec 2 -UseBasicParsing -ErrorAction Stop
     Write-Host "[OK] Hiran Inference already running on port $port"
     exit 0
 } catch { }
 
-# ── Pick GGUF file ────────────────────────────────────────────────────────────
+# -- Pick GGUF file ------------------------------------------------------------
 $ggufFile = $null
 if (Test-Path $ggufQ4) {
     $ggufFile = $ggufQ4
@@ -35,7 +35,7 @@ if (Test-Path $ggufQ4) {
     Write-Host "[OK] GGUF: F16 ($ggufF16)"
 }
 
-# ── Backend 1: llama-server.exe (preferred — no Python, OpenAI-compatible) ────
+# -- Backend 1: llama-server.exe (preferred - no Python, OpenAI-compatible) ----
 if ($ggufFile -and (Test-Path $llamaServer)) {
     Write-Host "[OK] Backend: llama-server.exe (llama.cpp native)"
     Write-Host "     Model:   $ggufFile"
@@ -83,12 +83,12 @@ if ($ggufFile -and (Test-Path $llamaServer)) {
     if ($ready) {
         Write-Host "[OK] Hiran Inference READY on http://${host_}:${port}"
     } else {
-        Write-Host "[WARN] llama-server did not respond within 30s — check $logDir\hiran-inference.log"
+        Write-Host "[WARN] llama-server did not respond within 30s - check $logDir\hiran-inference.log"
     }
     exit 0
 }
 
-# ── Backend 2: LM Studio (port 1234) ─────────────────────────────────────────
+# -- Backend 2: LM Studio (port 1234) -----------------------------------------
 $modelPath   = $null
 $backendName = $null
 
@@ -98,7 +98,7 @@ try {
     $backendName = "LM Studio (port 1234)"
 } catch { }
 
-# ── Backend 3: Ollama (port 11434) ────────────────────────────────────────────
+# -- Backend 3: Ollama (port 11434) --------------------------------------------
 if (-not $modelPath) {
     try {
         $resp = Invoke-WebRequest -Uri "http://localhost:11434/api/tags" -TimeoutSec 2 -UseBasicParsing -ErrorAction Stop
@@ -107,7 +107,7 @@ if (-not $modelPath) {
     } catch { }
 }
 
-# ── Backend 4: serve.py + GGUF ────────────────────────────────────────────────
+# -- Backend 4: serve.py + GGUF ------------------------------------------------
 if (-not $modelPath -and $ggufFile) {
     $modelPath   = $ggufFile
     $backendName = "serve.py + GGUF llama-cpp-python"
@@ -130,7 +130,7 @@ if (-not $modelPath) {
 Write-Host "[OK] Backend: $backendName"
 Write-Host "[OK] Model:   $modelPath"
 
-# ── Spusti serve.py ───────────────────────────────────────────────────────────
+# -- Spusti serve.py -----------------------------------------------------------
 $pythonArgs = @(
     $servePy,
     "--model_path", $modelPath,
