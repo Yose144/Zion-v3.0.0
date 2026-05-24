@@ -254,6 +254,10 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         <button onclick="switchTab('overview')" id="tab-overview" class="sidebar-item tab-active">📊 Overview</button>
       </div>
       <div class="sidebar-group">
+        <div class="sidebar-title">Governance</div>
+        <button onclick="switchTab('dao')" id="tab-dao" class="sidebar-item">🗳️ DAO Governance</button>
+      </div>
+      <div class="sidebar-group">
         <div class="sidebar-title">Layers</div>
         <button onclick="switchTab('l1')" id="tab-l1" class="sidebar-item">🔷 L1 Consensus</button>
         <button onclick="switchTab('l2')" id="tab-l2" class="sidebar-item">🌉 L2 Bridge / DAO</button>
@@ -2146,6 +2150,272 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         <button onclick="saveSettings()" class="text-xs px-3 py-1.5 bg-emerald-700/50 hover:bg-emerald-600 rounded-md font-semibold transition">💾 Save</button>
         <button onclick="resetSettings()" class="text-xs px-3 py-1.5 bg-gray-700/50 hover:bg-gray-600 rounded-md font-semibold transition">↺ Reset</button>
         <span id="settings-save-status" class="text-xs text-emerald-400 self-center"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═════════ TAB: DAO Governance ═════════ -->
+<div id="pane-dao" class="hidden space-y-5">
+
+  <!-- Header -->
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-bold text-gradient">🗳️ ZION DAO Governance</h1>
+      <p class="text-xs text-gray-400 mt-1">On-chain governance · 1 ZION = 1 vote · 5-of-7 multisig treasury</p>
+    </div>
+    <div class="flex gap-2 items-center">
+      <span id="dao-status-badge" class="text-xs px-3 py-1 rounded-full bg-gray-700 text-gray-400">Checking…</span>
+      <button onclick="loadDaoAll()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
+      <button onclick="openCreateProposalModal()" class="text-xs px-4 py-1.5 bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-500 hover:to-purple-700 rounded-lg font-semibold transition shadow-lg">+ New Proposal</button>
+    </div>
+  </div>
+
+  <!-- Stats Row -->
+  <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+    <div class="zion-panel p-4 text-center">
+      <div class="text-2xl font-bold text-purple-400" id="dao-stat-total">—</div>
+      <div class="text-[10px] text-gray-400 mt-1">Total Proposals</div>
+    </div>
+    <div class="zion-panel p-4 text-center">
+      <div class="text-2xl font-bold text-emerald-400" id="dao-stat-active">—</div>
+      <div class="text-[10px] text-gray-400 mt-1">Active</div>
+    </div>
+    <div class="zion-panel p-4 text-center">
+      <div class="text-2xl font-bold text-blue-400" id="dao-stat-passed">—</div>
+      <div class="text-[10px] text-gray-400 mt-1">Passed</div>
+    </div>
+    <div class="zion-panel p-4 text-center">
+      <div class="text-2xl font-bold text-zion-gold" id="dao-stat-executed">—</div>
+      <div class="text-[10px] text-gray-400 mt-1">Executed</div>
+    </div>
+    <div class="zion-panel p-4 text-center">
+      <div class="text-lg font-bold text-zion-cyan" id="dao-stat-treasury">4 B</div>
+      <div class="text-[10px] text-gray-400 mt-1">Treasury ZION</div>
+    </div>
+    <div class="zion-panel p-4 text-center">
+      <div class="text-lg font-bold text-white" id="dao-stat-quorum">10%</div>
+      <div class="text-[10px] text-gray-400 mt-1">Quorum</div>
+    </div>
+    <div class="zion-panel p-4 text-center">
+      <div class="text-lg font-bold text-amber-400" id="dao-stat-multisig">5-of-7</div>
+      <div class="text-[10px] text-gray-400 mt-1">Multisig</div>
+    </div>
+  </div>
+
+  <!-- Proposals + Treasury side by side -->
+  <div class="grid grid-cols-1 xl:grid-cols-3 gap-5">
+
+    <!-- Proposals List (2/3 width) -->
+    <div class="xl:col-span-2 zion-panel p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-base font-bold flex items-center gap-2">📋 Proposals</h2>
+        <div class="flex gap-2">
+          <select id="dao-filter-status" onchange="loadDaoProposals()" class="text-[10px] px-2 py-1 bg-black/40 border border-white/10 rounded text-white">
+            <option value="">All</option>
+            <option value="Active">Active</option>
+            <option value="Passed">Passed</option>
+            <option value="Rejected">Rejected</option>
+            <option value="Executed">Executed</option>
+            <option value="Pending">Pending</option>
+          </select>
+          <button onclick="loadDaoProposals()" class="text-[10px] px-2 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded transition">Refresh</button>
+        </div>
+      </div>
+      <div id="dao-proposals-list" class="space-y-3">
+        <div class="text-gray-500 text-sm text-center py-6">Loading proposals…</div>
+      </div>
+      <div class="flex items-center justify-between mt-4 text-[10px] text-gray-500">
+        <span id="dao-proposals-count"></span>
+        <div class="flex gap-2">
+          <button id="dao-prev-btn" onclick="daoPrevPage()" class="px-2 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded transition disabled:opacity-30">← Prev</button>
+          <span id="dao-page-label" class="self-center">Page 1</span>
+          <button id="dao-next-btn" onclick="daoNextPage()" class="px-2 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded transition">Next →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Treasury Panel (1/3 width) -->
+    <div class="space-y-4">
+      <div class="zion-panel p-5">
+        <h2 class="text-base font-bold mb-4 flex items-center gap-2">🏛️ Treasury</h2>
+        <div class="space-y-3">
+          <div class="bg-black/30 rounded-xl p-4 text-center">
+            <div class="text-3xl font-bold text-zion-gold" id="dao-treas-available">—</div>
+            <div class="text-[10px] text-gray-400 mt-1">Available ZION</div>
+          </div>
+          <div class="space-y-2 text-xs">
+            <div class="flex justify-between">
+              <span class="text-gray-400">Total Locked</span>
+              <span class="text-white font-mono" id="dao-treas-total">4,000,000,000</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-400">Multisig</span>
+              <span class="text-amber-400 font-bold" id="dao-treas-multisig">5-of-7</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-400">Daily Limit</span>
+              <span class="text-white font-mono" id="dao-treas-daily">100M ZION</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-400">Pending Ops</span>
+              <span class="text-purple-400 font-bold" id="dao-treas-pending">—</span>
+            </div>
+          </div>
+          <hr class="border-white/10">
+          <div class="text-[10px] text-gray-500 mb-1">Treasury Addresses</div>
+          <div class="space-y-1">
+            <div class="font-mono text-[9px] text-gray-400 truncate bg-black/30 rounded px-2 py-1">zion176u8r6w53768e2k04035d4d3c2z5g555n6l4r3s</div>
+            <div class="font-mono text-[9px] text-gray-400 truncate bg-black/30 rounded px-2 py-1">zion12643n776r3m8f340484756q06485h5w4c2l405m</div>
+            <div class="font-mono text-[9px] text-gray-400 truncate bg-black/30 rounded px-2 py-1">zion1k8w734x422f3t6t536r287k2c6n3z0e05257606</div>
+          </div>
+          <div class="text-[10px] text-gray-500 mt-2">Unlock height: <span class="text-white">525,600</span></div>
+        </div>
+      </div>
+
+      <!-- Governance Config -->
+      <div class="zion-panel p-5">
+        <h2 class="text-base font-bold mb-3 flex items-center gap-2">⚙️ Config</h2>
+        <div class="space-y-2 text-xs">
+          <div class="flex justify-between"><span class="text-gray-400">Voting period</span><span class="text-white">14 days</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">Timelock</span><span class="text-white">72 hours</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">Proposal threshold</span><span class="text-white">10M ZION</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">Min vote weight</span><span class="text-white">1 ZION</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">Quorum</span><span class="text-white">15%</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">Finality blocks</span><span class="text-white">12</span></div>
+          <div class="flex justify-between"><span class="text-gray-400">DAO API port</span><span class="text-white font-mono">8081</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Co-Admins Table -->
+  <div class="zion-panel p-5">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-base font-bold flex items-center gap-2">👥 Co-Admins <span class="text-xs text-gray-500 font-normal">Multi-layer governance participants</span></h2>
+      <div class="flex gap-2">
+        <select id="dao-coadmin-layer" onchange="loadDaoCoAdmins()" class="text-[10px] px-2 py-1 bg-black/40 border border-white/10 rounded text-white">
+          <option value="">All Layers</option>
+          <option value="1">L1 Consensus</option>
+          <option value="2">L2 Bridge/DAO</option>
+          <option value="3">L3 WARP</option>
+          <option value="4">L4 OASIS</option>
+          <option value="5">L5 Humanitarian</option>
+          <option value="6">L6 Space</option>
+        </select>
+      </div>
+    </div>
+    <div id="dao-coadmins-table" class="overflow-x-auto">
+      <table class="w-full text-xs">
+        <thead>
+          <tr class="text-gray-500 border-b border-white/10">
+            <th class="text-left pb-2">Name</th>
+            <th class="text-left pb-2">Layer</th>
+            <th class="text-left pb-2">Role</th>
+            <th class="text-left pb-2">Address</th>
+            <th class="text-left pb-2">Bonded</th>
+            <th class="text-left pb-2">Rep</th>
+            <th class="text-left pb-2">Status</th>
+          </tr>
+        </thead>
+        <tbody id="dao-coadmins-tbody">
+          <tr><td colspan="7" class="text-gray-500 text-center py-4">Loading co-admins…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- DAO Daemon Control -->
+  <div class="zion-panel p-5">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-base font-bold flex items-center gap-2">⚡ DAO Daemon</h2>
+      <span id="dao-daemon-badge" class="text-xs px-2 py-0.5 rounded-full bg-gray-700 text-gray-400">Unknown</span>
+    </div>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4 text-xs">
+      <div class="bg-black/30 rounded-lg p-3"><div class="text-gray-400 mb-1">API Port</div><div class="text-white font-mono">8081</div></div>
+      <div class="bg-black/30 rounded-lg p-3"><div class="text-gray-400 mb-1">L1 Scan Interval</div><div class="text-white font-mono">15s</div></div>
+      <div class="bg-black/30 rounded-lg p-3"><div class="text-gray-400 mb-1">DB Path</div><div class="text-white font-mono truncate">/data/dao/dao.db</div></div>
+      <div class="bg-black/30 rounded-lg p-3"><div class="text-gray-400 mb-1">L1 RPC</div><div class="text-white font-mono">127.0.0.1:8443</div></div>
+    </div>
+    <div class="flex gap-2">
+      <button onclick="controlAction('start-dao')" class="text-xs px-4 py-2 bg-emerald-700/50 hover:bg-emerald-600 rounded-lg font-semibold transition">▶ Start</button>
+      <button onclick="controlAction('stop-dao')" class="text-xs px-4 py-2 bg-red-700/50 hover:bg-red-600 rounded-lg font-semibold transition">⏹ Stop</button>
+      <button onclick="controlAction('restart-dao')" class="text-xs px-4 py-2 bg-amber-700/50 hover:bg-amber-600 rounded-lg font-semibold transition">⟳ Restart</button>
+      <button onclick="loadDaoAll()" class="text-xs px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition ml-auto">⟳ Refresh Status</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- DAO Create Proposal Modal -->
+<div id="dao-proposal-modal" class="fixed inset-0 bg-black/85 hidden items-center justify-center z-50 p-4" onclick="if(event.target===this)closeCreateProposalModal()">
+  <div class="zion-panel w-full max-w-lg p-6 relative">
+    <button onclick="closeCreateProposalModal()" class="absolute top-3 right-3 text-gray-400 hover:text-white text-xl">&times;</button>
+    <h2 class="text-lg font-bold mb-1 text-gradient">📝 Create Proposal</h2>
+    <p class="text-xs text-gray-400 mb-4">Requires X-DAO-Key. Minimum proposer balance: 10M ZION.</p>
+
+    <div class="space-y-3">
+      <div>
+        <label class="text-[10px] text-gray-400 uppercase tracking-wider">Title</label>
+        <input type="text" id="dao-new-title" placeholder="Short descriptive title…" class="w-full mt-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:border-purple-500 focus:outline-none transition">
+      </div>
+      <div>
+        <label class="text-[10px] text-gray-400 uppercase tracking-wider">Description</label>
+        <textarea id="dao-new-desc" rows="3" placeholder="Detailed proposal description…" class="w-full mt-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:border-purple-500 focus:outline-none transition resize-none"></textarea>
+      </div>
+      <div>
+        <label class="text-[10px] text-gray-400 uppercase tracking-wider">Proposer Address</label>
+        <input type="text" id="dao-new-proposer" placeholder="zion1…" class="w-full mt-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white font-mono focus:border-purple-500 focus:outline-none transition">
+      </div>
+      <div>
+        <label class="text-[10px] text-gray-400 uppercase tracking-wider">Proposal Type</label>
+        <select id="dao-new-type" class="w-full mt-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:border-purple-500 focus:outline-none transition">
+          <option value="GeneralVote">General Vote</option>
+          <option value="TreasurySpend">Treasury Spend</option>
+          <option value="ParameterChange">Parameter Change</option>
+          <option value="HumanitarianGrant">Humanitarian Grant</option>
+          <option value="BridgeUpgrade">Bridge Upgrade</option>
+          <option value="EmergencyPause">Emergency Pause</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-[10px] text-gray-400 uppercase tracking-wider">DAO API Key</label>
+        <input type="password" id="dao-new-apikey" placeholder="X-DAO-Key…" class="w-full mt-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:border-purple-500 focus:outline-none transition">
+      </div>
+      <div id="dao-modal-status" class="text-xs rounded-lg p-2 hidden"></div>
+      <div class="flex gap-2 pt-2">
+        <button onclick="submitCreateProposal()" class="flex-1 px-4 py-2.5 bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-500 hover:to-purple-700 rounded-lg text-sm font-semibold transition">Submit Proposal</button>
+        <button onclick="closeCreateProposalModal()" class="px-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-sm transition">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DAO Vote Modal -->
+<div id="dao-vote-modal" class="fixed inset-0 bg-black/85 hidden items-center justify-center z-50 p-4" onclick="if(event.target===this)closeDaoVoteModal()">
+  <div class="zion-panel w-full max-w-md p-6 relative">
+    <button onclick="closeDaoVoteModal()" class="absolute top-3 right-3 text-gray-400 hover:text-white text-xl">&times;</button>
+    <h2 class="text-lg font-bold mb-1 text-gradient">🗳️ Cast Vote</h2>
+    <div id="dao-vote-proposal-title" class="text-sm text-gray-300 mb-4"></div>
+    <input type="hidden" id="dao-vote-proposal-id">
+    <div class="space-y-3">
+      <div>
+        <label class="text-[10px] text-gray-400 uppercase tracking-wider">Your Address</label>
+        <input type="text" id="dao-vote-voter" placeholder="zion1…" class="w-full mt-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white font-mono focus:border-purple-500 focus:outline-none transition">
+      </div>
+      <div>
+        <label class="text-[10px] text-gray-400 uppercase tracking-wider">Vote Weight (ZION balance)</label>
+        <input type="number" id="dao-vote-weight" placeholder="1000000" min="1" class="w-full mt-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:border-purple-500 focus:outline-none transition">
+      </div>
+      <div>
+        <label class="text-[10px] text-gray-400 uppercase tracking-wider">DAO API Key</label>
+        <input type="password" id="dao-vote-apikey" placeholder="X-DAO-Key…" class="w-full mt-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:border-purple-500 focus:outline-none transition">
+      </div>
+      <div id="dao-vote-status" class="text-xs rounded-lg p-2 hidden"></div>
+      <div class="flex gap-2 pt-2">
+        <button onclick="submitDaoVote('yes')" class="flex-1 px-4 py-2.5 bg-emerald-700 hover:bg-emerald-600 rounded-lg text-sm font-bold transition">✓ Yes</button>
+        <button onclick="submitDaoVote('no')" class="flex-1 px-4 py-2.5 bg-red-700 hover:bg-red-600 rounded-lg text-sm font-bold transition">✗ No</button>
+        <button onclick="submitDaoVote('abstain')" class="flex-1 px-4 py-2.5 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-bold transition">~ Abstain</button>
       </div>
     </div>
   </div>
