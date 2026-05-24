@@ -15,7 +15,8 @@ function Get-EnvOrDefault($name, $default) {
 [Environment]::SetEnvironmentVariable('ZION_MINER_THREADS',     (Get-EnvOrDefault 'ZION_MINER_THREADS'     '4'),                   'Process')
 [Environment]::SetEnvironmentVariable('ZION_WORKER_NAME',       (Get-EnvOrDefault 'ZION_WORKER_NAME'       'worker1'),             'Process')
 [Environment]::SetEnvironmentVariable('ZION_MINER_ID',          (Get-EnvOrDefault 'ZION_MINER_ID'          'w11-cpu-miner-01'),    'Process')
-# CPU only — no GPU vars
+[Environment]::SetEnvironmentVariable('ZION_GPU_BACKEND',       (Get-EnvOrDefault 'ZION_GPU_BACKEND'       'cpu'),                 'Process')
+# CPU only — GPU backend forced to 'cpu' so miner skips GPU init
 
 $minerExe = 'C:\Users\yosef\Desktop\Zion\2.9.6-main\V3\target\release\zion-miner.exe'
 $p = Start-Process -FilePath $minerExe -RedirectStandardOutput "$logDir\miner.log" -RedirectStandardError "$logDir\miner.err" -WindowStyle Hidden -PassThru
