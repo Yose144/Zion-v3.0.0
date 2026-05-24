@@ -132,6 +132,11 @@ async function refreshAll(){
     if(currentTab === 'charts') renderCharts();
     if(currentTab === 'events') loadEvents();
     if(currentTab === 'wizard') renderWizard();
+    if(currentTab === 'ops') loadOps();
+    if(currentTab === 'topology') loadTopology();
+    if(currentTab === 'wallets') { loadWallets(); loadWalletStatus(); }
+    if(currentTab === 'explorer') loadExplorer();
+    if(currentTab === 'hiran') loadAiStatus();
   } catch(e){
     console.error('Refresh error:', e);
   }
@@ -662,6 +667,176 @@ async function loadExplorer(){
     const badge = document.getElementById('explorer-rpc-badge');
     if(badge){ badge.className = 'text-xs px-2.5 py-1 rounded-full bg-red-700 text-red-300'; badge.textContent = '⛔ Error'; }
   }
+}
+
+// ── Ops tab (Backup / CLI / Alerts) ───────────────────────────────────
+
+async function loadOps(){
+  try {
+    const b = await fetch('/api/backup/status').then(r => r.json());
+    document.getElementById('ops-last-backup').textContent = b.last_backup ? new Date(b.last_backup).toLocaleString() : 'Never';
+    document.getElementById('ops-total-backups').textContent = b.backups?.length ?? 0;
+    document.getElementById('ops-backup-size').textContent = b.total_backup_mb ? b.total_backup_mb.toFixed(1) + ' MB' : '—';
+    document.getElementById('ops-datadir-n1').textContent = b.datadir_mb?.node1 != null ? b.datadir_mb.node1.toFixed(0) + ' MB' : '—';
+    document.getElementById('ops-datadir-n2').textContent = b.datadir_mb?.node2 != null ? b.datadir_mb.node2.toFixed(0) + ' MB' : '—';
+    document.getElementById('ops-datadir-pool').textContent = b.datadir_mb?.pool != null ? b.datadir_mb.pool.toFixed(0) + ' MB' : '—';
+  } catch(e) { console.error('loadOps backup error:', e); }
+  // Load alert config once (lazy)
+  if(!window._alertCfgLoaded){
+    try {
+      const cfg = await fetch('/api/alerts/config').then(r => r.json());
+      const wh = document.getElementById('alert-webhook');
+      const sl = document.getElementById('alert-slack');
+      const em = document.getElementById('alert-email');
+      const en = document.getElementById('alert-enabled');
+      if(wh) wh.value = cfg.webhook_url || '';
+      if(sl) sl.value = cfg.slack_webhook || '';
+      if(em) em.value = cfg.email || '';
+      if(en) en.checked = !!cfg.enabled;
+      window._alertCfgLoaded = true;
+    } catch(e) { console.error('loadOps alert cfg error:', e); }
+  }
+}
+
+async function triggerBackup(){
+  const log = document.getElementById('ops-backup-log');
+  if(log) log.textContent = 'Running backup…';
+  try {
+    const res = await fetch('/api/backup/trigger', {method: 'POST'}).then(r => r.json());
+    if(log) log.textContent = (res.ok ? '✓ ' : '✗ ') + (res.output || res.error || 'Done');
+    toast(res.ok ? 'Backup triggered' : 'Backup failed', res.ok ? 'success' : 'error');
+    loadOps();
+  } catch(e) {
+    if(log) log.textContent = 'Error: ' + e.message;
+    toast('Backup error: ' + e.message, 'error');
+  }
+}
+
+async function verifyBackup(){
+  const log = document.getElementById('ops-backup-log');
+  if(log) log.textContent = 'Verifying chain…';
+  try {
+    const res = await fetch('/api/backup/verify').then(r => r.json());
+    const out = res.log?.slice(-10).join('\n') || res.result?.output || 'Done';
+    if(log) log.textContent = out;
+  } catch(e) { if(log) log.textContent = 'Error: ' + e.message; }
+}
+
+async function runCliCommand(){
+  const input = document.getElementById('cli-input');
+  const out = document.getElementById('cli-output');
+  const cmd = input.value.trim();
+  if(!cmd) return;
+  out.textContent = 'Running: zion-cli ' + cmd + '\n…';
+  try {
+    const res = await fetch('/api/cli/run', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({cmd})}).then(r => r.json());
+    if(res.stdout !== undefined || res.stderr !== undefined){
+      out.textContent = (res.stdout || '') + (res.stderr ? '\n[stderr]\n' + res.stderr : '');
+    } else if(res.output !== undefined){
+      out.textContent = res.output;
+    } else {
+      out.textContent = JSON.stringify(res, null, 2);
+    }
+  } catch(e) { out.textContent = 'Error: ' + e.message; }
+}
+
+function fillCli(text){ const el = document.getElementById('cli-input'); if(el){ el.value = text; el.focus(); } }
+
+async function saveAlertConfig(){
+  const cfg = {
+    webhook_url: document.getElementById('alert-webhook')?.value || '',
+    slack_webhook: document.getElementById('alert-slack')?.value || '',
+    email: document.getElementById('alert-email')?.value || '',
+    enabled: document.getElementById('alert-enabled')?.checked || false,
+  };
+  try {
+    const res = await fetch('/api/alerts/config', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(cfg)}).then(r => r.json());
+    const st = document.getElementById('alert-config-status');
+    if(st) { st.textContent = res.ok ? 'Saved ✓' : 'Error'; st.className = res.ok ? 'text-xs text-emerald-400' : 'text-xs text-red-400'; }
+  } catch(e) { toast('Save alert config failed: ' + e.message, 'error'); }
+}
+
+// ── Topology tab ──────────────────────────────────────────────────────
+
+async function loadTopology(){
+  try {
+    const t = await fetch('/api/topology').then(r => r.json());
+    const coreDot = document.getElementById('topo-core-dot');
+    const edgeDot = document.getElementById('topo-edge-dot');
+    if(coreDot) coreDot.className = 'w-3 h-3 rounded-full ' + (t.core.alive ? 'bg-emerald-400' : 'bg-red-500');
+    if(edgeDot) edgeDot.className = 'w-3 h-3 rounded-full ' + (t.edge.alive ? 'bg-emerald-400' : 'bg-red-500');
+    document.getElementById('topo-core-height').textContent = t.core.height ?? '—';
+    document.getElementById('topo-edge-height').textContent = t.edge.height ?? '—';
+    const tsIcon = document.getElementById('topo-tailscale-icon');
+    const tsStatus = document.getElementById('topo-tailscale-status');
+    if(tsIcon) tsIcon.textContent = t.tailscale.vpn_ok ? '🟢' : '🔴';
+    if(tsStatus) { tsStatus.textContent = t.tailscale.vpn_ok ? 'Connected' : 'Unreachable'; tsStatus.className = t.tailscale.vpn_ok ? 'text-emerald-400 font-bold' : 'text-red-400'; }
+    const portMap = {p2p:'node_p2p', rpc:'node_rpc', pool:'pool_stratum', dash:'dashboard', hiran:'hiran_inference', orch:'hiranyagarbha'};
+    for(const [key, apiKey] of Object.entries(portMap)){
+      const el = document.getElementById('topo-port-' + key);
+      if(el){ el.textContent = t.ports[apiKey] ? 'Open' : 'Closed'; el.className = 'text-xs font-bold ' + (t.ports[apiKey] ? 'text-emerald-400' : 'text-red-400'); }
+    }
+    // Apps
+    const apps = t.apps || {};
+    const appMap = [
+      ['web', apps.website?.alive],
+      ['desktop', apps.desktop_agent?.alive],
+      ['mobile', apps.mobile_app?.alive],
+      ['cli', apps.cli?.alive],
+    ];
+    for(const [id, alive] of appMap){
+      const dot = document.getElementById('app-' + id + '-dot');
+      const badge = document.getElementById('app-' + id + '-badge');
+      if(dot) dot.className = 'w-3 h-3 rounded-full ' + (alive ? 'bg-emerald-400' : 'bg-red-500');
+      if(badge){ badge.textContent = alive ? 'Online' : 'Offline'; badge.className = 'text-[10px] px-2 py-0.5 rounded ' + (alive ? 'bg-emerald-700 text-emerald-300' : 'bg-red-700 text-red-300'); }
+    }
+  } catch(e) { console.error('Topology load error:', e); }
+}
+
+// ── Wallet extended status (pool wallet / UTXO / payouts) ───────────────
+
+async function loadWalletStatus(){
+  try {
+    const w = await fetch('/api/wallet/status').then(r => r.json());
+    const container = document.getElementById('wallet-pool-status');
+    if(!container) return;
+    container.innerHTML = `
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div class="bg-black/30 rounded-lg p-3"><div class="text-xs text-gray-400">Pool Wallet</div><div class="text-sm font-bold text-white truncate" title="${escapeHtml(w.pool_wallet||'—')}">${escapeHtml(w.pool_wallet ? w.pool_wallet.slice(0,14)+'…' : '—')}</div></div>
+        <div class="bg-black/30 rounded-lg p-3"><div class="text-xs text-gray-400">Balance</div><div class="text-sm font-bold text-emerald-400">${w.balance_zion != null ? w.balance_zion.toFixed(4) + ' Z' : '—'}</div></div>
+        <div class="bg-black/30 rounded-lg p-3"><div class="text-xs text-gray-400">UTXOs</div><div class="text-sm font-bold text-white">${w.utxo_count ?? '—'}</div></div>
+        <div class="bg-black/30 rounded-lg p-3"><div class="text-xs text-gray-400">Blocks Found</div><div class="text-sm font-bold text-amber-400">${w.blocks_found ?? '—'}</div></div>
+        <div class="bg-black/30 rounded-lg p-3"><div class="text-xs text-gray-400">Payouts Enabled</div><div class="text-sm font-bold ${w.payout_enabled?'text-emerald-400':'text-red-400'}">${w.payout_enabled?'Yes':'No'}</div></div>
+        <div class="bg-black/30 rounded-lg p-3"><div class="text-xs text-gray-400">Fee Split</div><div class="text-sm font-bold text-white">${w.fee_split ?? '—'}</div></div>
+        <div class="bg-black/30 rounded-lg p-3"><div class="text-xs text-gray-400">Shares A/R</div><div class="text-sm font-bold text-white">${w.shares_accepted}/${w.shares_rejected}</div></div>
+        <div class="bg-black/30 rounded-lg p-3"><div class="text-xs text-gray-400">Last Error</div><div class="text-sm font-bold text-red-400 truncate" title="${escapeHtml(w.last_payout_error||'')}">${w.last_payout_error ? 'Error' : 'None'}</div></div>
+      </div>
+    `;
+  } catch(e) { console.error('loadWalletStatus error:', e); }
+}
+
+// ── AI services status ────────────────────────────────────────────────
+
+async function loadAiStatus(){
+  try {
+    const ai = await fetch('/api/ai/status').then(r => r.json());
+    const h = ai.hiran || {};
+    const o = ai.hiranyagarbha || {};
+    const hBadge = document.getElementById('hiran-badge');
+    const oBadge = document.getElementById('hiranyagarbha-badge');
+    const hGpu = document.getElementById('hiran-gpu-detail');
+    const hGpuBadge = document.getElementById('hiran-gpu-badge');
+    const oDetail = document.getElementById('hiranyagarbha-detail');
+    const oActive = document.getElementById('orch-active');
+    if(hBadge){ hBadge.textContent = h.alive ? 'Online' : 'Offline'; hBadge.className = 'px-2 py-0.5 rounded text-xs font-bold ' + (h.alive ? 'bg-emerald-700 text-emerald-300' : 'bg-red-700 text-red-300'); }
+    if(oBadge){ oBadge.textContent = o.alive ? 'Online' : 'Offline'; oBadge.className = 'px-2 py-0.5 rounded text-xs font-bold ' + (o.alive ? 'bg-emerald-700 text-emerald-300' : 'bg-red-700 text-red-300'); }
+    if(hGpu) hGpu.textContent = h.backend + (h.vram_mb ? ' (' + h.vram_mb + ' MB)' : '');
+    if(hGpuBadge) hGpuBadge.textContent = h.alive ? (h.backend === 'cpu' ? 'CPU' : 'GPU') : '—';
+    if(oDetail) oDetail.textContent = o.alive ? 'v' + o.version : '—';
+    if(oActive) oActive.textContent = o.agents ?? '—';
+    const orchPanel = document.getElementById('orch-stats-panel');
+    if(orchPanel) orchPanel.classList.toggle('hidden', !o.alive);
+  } catch(e) { console.error('loadAiStatus error:', e); }
 }
 
 // ─────────────────────────────────────────────────────────────────────
