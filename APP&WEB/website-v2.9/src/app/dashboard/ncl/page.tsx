@@ -66,20 +66,43 @@ export default function NCLDashboard() {
 
   usePolling(async () => {
     try {
-      const res = await fetch('/api/ncl/status', { cache: 'no-store' });
-      if (!res.ok) throw new Error(`API error: ${res.status}`);
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
+      // Fetch overview stats (tries live Hiranyagarbha backend, falls back to JSON)
+      const statusRes = await fetch('/api/ncl/status', { cache: 'no-store' });
+      if (statusRes.ok) {
+        const data = await statusRes.json();
+        if (!data.error) {
+          setStatus({
+            enabled: data.enabled ?? true,
+            workers: data.workers ?? { total: 0, active: 0 },
+            tasks: data.tasks ?? { pending: 0, active: 0, completed: 0 },
+            rewards: data.rewards ?? { total_paid: 0, avg_per_task: 0 },
+          });
+          // Use embedded lists as initial fallback
+          if (Array.isArray(data.worker_list)) setWorkers(data.worker_list);
+          if (Array.isArray(data.leaderboard)) setLeaderboard(data.leaderboard);
+        }
+      }
 
-      setStatus({
-        enabled: data.enabled ?? true,
-        workers: data.workers ?? { total: 0, active: 0 },
-        tasks: data.tasks ?? { pending: 0, active: 0, completed: 0 },
-        rewards: data.rewards ?? { total_paid: 0, avg_per_task: 0 },
-      });
+      // Fetch live workers from dedicated proxy route
+      const workersRes = await fetch('/api/ncl/workers', { cache: 'no-store' });
+      if (workersRes.ok) {
+        const wd = await workersRes.json();
+        if (!wd.error) {
+          const list = Array.isArray(wd) ? wd : Array.isArray(wd.workers) ? wd.workers : null;
+          if (list) setWorkers(list);
+        }
+      }
 
-      setWorkers(Array.isArray(data.worker_list) ? data.worker_list : []);
-      setLeaderboard(Array.isArray(data.leaderboard) ? data.leaderboard : []);
+      // Fetch live leaderboard from dedicated proxy route
+      const lbRes = await fetch('/api/ncl/leaderboard', { cache: 'no-store' });
+      if (lbRes.ok) {
+        const lb = await lbRes.json();
+        if (!lb.error) {
+          const list = Array.isArray(lb) ? lb : Array.isArray(lb.leaderboard) ? lb.leaderboard : null;
+          if (list) setLeaderboard(list);
+        }
+      }
+
       setLoading(false);
     } catch (error) {
       console.error("Failed to fetch NCL data:", error);

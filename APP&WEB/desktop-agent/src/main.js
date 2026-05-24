@@ -4932,6 +4932,140 @@ ipcMain.handle('ai-chat-status', async () => {
   }
 });
 
+// ── Hiranyagarbha + NCL (Neural Compute Layer) IPC ──────────────────────────
+const HIRANYAGARBHA_URL = process.env.HIRANYAGARBHA_URL || 'http://localhost:8001';
+
+ipcMain.handle('ai-native-status', async () => {
+  try {
+    const http = require('http');
+    const result = await new Promise((resolve) => {
+      const req = http.get(`${HIRANYAGARBHA_URL}/health`, { timeout: 5000 }, (res) => {
+        let data = '';
+        res.on('data', (chunk) => data += chunk);
+        res.on('end', () => {
+          try { resolve({ up: true, info: JSON.parse(data) }); } catch { resolve({ up: true }); }
+        });
+      });
+      req.on('error', () => resolve({ up: false }));
+      req.on('timeout', () => { req.destroy(); resolve({ up: false }); });
+    });
+    return { success: true, ...result };
+  } catch (err) {
+    return { success: false, up: false, error: err?.message || String(err) };
+  }
+});
+
+ipcMain.handle('ncl-get-status', async () => {
+  try {
+    const http = require('http');
+    const result = await new Promise((resolve) => {
+      const req = http.get(`${HIRANYAGARBHA_URL}/ncl/status`, { timeout: 5000 }, (res) => {
+        let data = '';
+        res.on('data', (chunk) => data += chunk);
+        res.on('end', () => {
+          try { resolve({ success: true, status: JSON.parse(data) }); } catch { resolve({ success: false }); }
+        });
+      });
+      req.on('error', (err) => resolve({ success: false, error: err.message }));
+      req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Timeout' }); });
+    });
+    return result;
+  } catch (err) {
+    return { success: false, error: err?.message || String(err) };
+  }
+});
+
+ipcMain.handle('ncl-get-workers', async () => {
+  try {
+    const http = require('http');
+    const result = await new Promise((resolve) => {
+      const req = http.get(`${HIRANYAGARBHA_URL}/ncl/workers`, { timeout: 5000 }, (res) => {
+        let data = '';
+        res.on('data', (chunk) => data += chunk);
+        res.on('end', () => {
+          try { resolve({ success: true, workers: JSON.parse(data) }); } catch { resolve({ success: false }); }
+        });
+      });
+      req.on('error', (err) => resolve({ success: false, error: err.message }));
+      req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Timeout' }); });
+    });
+    return result;
+  } catch (err) {
+    return { success: false, error: err?.message || String(err) };
+  }
+});
+
+ipcMain.handle('ncl-get-leaderboard', async () => {
+  try {
+    const http = require('http');
+    const result = await new Promise((resolve) => {
+      const req = http.get(`${HIRANYAGARBHA_URL}/ncl/leaderboard`, { timeout: 5000 }, (res) => {
+        let data = '';
+        res.on('data', (chunk) => data += chunk);
+        res.on('end', () => {
+          try { resolve({ success: true, leaderboard: JSON.parse(data) }); } catch { resolve({ success: false }); }
+        });
+      });
+      req.on('error', (err) => resolve({ success: false, error: err.message }));
+      req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Timeout' }); });
+    });
+    return result;
+  } catch (err) {
+    return { success: false, error: err?.message || String(err) };
+  }
+});
+
+ipcMain.handle('ncl-submit-job', async (_event, { job_type, params, priority = 'normal' }) => {
+  try {
+    const http = require('http');
+    const body = JSON.stringify({ job_type, params, priority, timestamp: new Date().toISOString() });
+    const result = await new Promise((resolve, reject) => {
+      const req = http.request(`${HIRANYAGARBHA_URL}/ncl/jobs`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
+        timeout: 30000
+      }, (res) => {
+        let data = '';
+        res.on('data', (chunk) => data += chunk);
+        res.on('end', () => {
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            try { resolve({ success: true, job: JSON.parse(data) }); } catch { resolve({ success: true }); }
+          } else {
+            resolve({ success: false, error: `HTTP ${res.statusCode}: ${data.slice(0, 200)}` });
+          }
+        });
+      });
+      req.on('error', (err) => resolve({ success: false, error: err.message }));
+      req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Timeout' }); });
+      req.write(body);
+      req.end();
+    });
+    return result;
+  } catch (err) {
+    return { success: false, error: err?.message || String(err) };
+  }
+});
+
+ipcMain.handle('ncl-get-price', async () => {
+  try {
+    const http = require('http');
+    const result = await new Promise((resolve) => {
+      const req = http.get(`${HIRANYAGARBHA_URL}/ncl/price`, { timeout: 5000 }, (res) => {
+        let data = '';
+        res.on('data', (chunk) => data += chunk);
+        res.on('end', () => {
+          try { resolve({ success: true, pricing: JSON.parse(data) }); } catch { resolve({ success: false }); }
+        });
+      });
+      req.on('error', (err) => resolve({ success: false, error: err.message }));
+      req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Timeout' }); });
+    });
+    return result;
+  } catch (err) {
+    return { success: false, error: err?.message || String(err) };
+  }
+});
+
 // ── Security / AV Troubleshooting IPC ───────────────────────────────────────
 ipcMain.handle('get-security-status', () => {
   try {

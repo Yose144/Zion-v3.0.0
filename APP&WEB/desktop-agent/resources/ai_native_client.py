@@ -16,7 +16,7 @@ from typing import Dict, List, Optional
 logging.basicConfig(level=logging.INFO, format='%(message)s')
 logger = logging.getLogger("AIClient")
 
-DEFAULT_SERVER_URL = "http://91.98.122.165:8001"
+DEFAULT_SERVER_URL = "http://127.0.0.1:8001"
 LOCAL_FALLBACK_URL = "http://localhost:8001"
 
 

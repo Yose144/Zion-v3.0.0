@@ -1,0 +1,46 @@
+export const dynamic = 'force-dynamic';
+
+import { NextResponse } from 'next/server';
+
+const HIRANYAGARBHA_URL = process.env.HIRANYAGARBHA_URL || 'http://127.0.0.1:8001';
+const TIMEOUT_MS = 10_000;
+
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+};
+
+export async function GET() {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+    const res = await fetch(`${HIRANYAGARBHA_URL}/ncl/health`, {
+      method: 'GET',
+      signal: controller.signal,
+      headers: { 'Accept': 'application/json' },
+    });
+
+    clearTimeout(timeout);
+
+    const data = await res.json();
+    return NextResponse.json(data, {
+      status: res.status,
+      headers: { 'Cache-Control': 'no-store', ...CORS_HEADERS },
+    });
+  } catch (error: any) {
+    const message = error?.name === 'AbortError'
+      ? 'Backend request timed out'
+      : error?.message || 'Backend unreachable';
+
+    return NextResponse.json(
+      { error: message },
+      { status: 502, headers: { ...CORS_HEADERS } },
+    );
+  }
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 204, headers: { ...CORS_HEADERS } });
+}
