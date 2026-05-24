@@ -70,6 +70,15 @@
     "react-test-renderer": "18.2.0",
     "typescript": "^5.3.3"
   },
+  "jest": {
+    "preset": "react-native",
+    "transformIgnorePatterns": [
+      "node_modules/(?!((react-native.*)|(@react-native.*)|(@noble/.*)|(bip39)))"
+    ],
+    "moduleNameMapper": {
+      "^@noble/hashes/sha2$": "<rootDir>/node_modules/@noble/hashes/sha2.js"
+    }
+  },
   "engines": {
     "node": ">=18"
   }
