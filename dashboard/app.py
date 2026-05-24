@@ -1870,6 +1870,99 @@ def get_network_topology() -> dict:
         },
     }
 
+# ── Log Search ─────────────────────────────────────────────────────────
+
+def search_logs(query: str, max_results: int = 50) -> list:
+    """Search across all log files for lines matching query (case-insensitive)."""
+    results = []
+    if not LOG_DIR.exists():
+        return results
+    query_lower = query.lower()
+    log_files = [f for f in LOG_DIR.glob("*.log") if f.is_file()]
+    for lf in sorted(log_files, key=lambda p: p.stat().st_mtime, reverse=True):
+        try:
+            with open(lf, "r", encoding="utf-8", errors="ignore") as f:
+                lines = f.readlines()
+            for i, line in enumerate(lines):
+                if query_lower in line.lower():
+                    results.append({
+                        "file": lf.name,
+                        "line": i + 1,
+                        "text": line.rstrip("\n")[:300],
+                    })
+                    if len(results) >= max_results:
+                        return results
+        except Exception:
+            pass
+    return results
+
+# ── Settings persistence ────────────────────────────────────────────────
+
+SETTINGS_PATH = LOG_DIR / "dashboard-settings.json"
+
+DEFAULT_SETTINGS = {
+    "theme": "dark",
+    "refresh_interval_ms": 3000,
+    "default_tab": "overview",
+    "alert_threshold_hashrate": 1.0,
+    "alert_threshold_sync_gap": 10,
+    "log_level_filter": "all",  # all, error, warn, info
+    "auto_launch_watchdog": True,
+    "show_tooltips": True,
+}
+
+def load_settings() -> dict:
+    if SETTINGS_PATH.exists():
+        try:
+            with open(SETTINGS_PATH, "r", encoding="utf-8") as f:
+                return {**DEFAULT_SETTINGS, **json.load(f)}
+        except Exception:
+            pass
+    return DEFAULT_SETTINGS.copy()
+
+def save_settings(settings: dict) -> dict:
+    try:
+        merged = {**load_settings(), **settings}
+        with open(SETTINGS_PATH, "w", encoding="utf-8") as f:
+            json.dump(merged, f, indent=2)
+        return {"ok": True, "settings": merged}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+# ── Process manager (kill PID) ───────────────────────────────────────────
+
+def kill_process(pid: int) -> dict:
+    """Kill a process by PID (cross-platform)."""
+    try:
+        if sys.platform == "win32":
+            import ctypes
+            h = ctypes.windll.kernel32.OpenProcess(1, False, pid)  # 1 = PROCESS_TERMINATE
+            if not h:
+                return {"ok": False, "error": f"Cannot open process {pid}"}
+            res = ctypes.windll.kernel32.TerminateProcess(h, 1)
+            ctypes.windll.kernel32.CloseHandle(h)
+            if res:
+                return {"ok": True, "message": f"Process {pid} terminated"}
+            return {"ok": False, "error": f"TerminateProcess failed for {pid}"}
+        else:
+            import os
+            os.kill(pid, 9)
+            return {"ok": True, "message": f"Process {pid} killed with SIGKILL"}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+# ── Export data ───────────────────────────────────────────────────────
+
+def export_csv(data: list, headers: list) -> str:
+    """Generate CSV string from list of dicts."""
+    import io
+    out = io.StringIO()
+    out.write(",".join(headers) + "\n")
+    for row in data:
+        vals = [str(row.get(h, "")).replace(",", ";") for h in headers]
+        out.write(",".join(vals) + "\n")
+    return out.getvalue()
+
 # ── CLI runner ────────────────────────────────────────────────────────────
 
 def run_zion_cli(command: str) -> dict:
@@ -2682,6 +2775,54 @@ tailwind.config={theme:{extend:{colors:{zion:{900:'#0a0f1e',800:'#131a2e',700:'#
       </div>
     </div>
 
+    <!-- ── NCL (Neural Compute Layer) Panel ─────────────────────────────── -->
+    <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300">🧠 Neural Compute Layer</h2>
+        <button onclick="loadNclStatus()" class="px-3 py-1.5 bg-zion-700 hover:bg-zion-600 text-gray-300 text-xs rounded transition">🔄</button>
+      </div>
+
+      <!-- NCL stats grid -->
+      <div id="ncl-stats-grid" class="grid grid-cols-2 md:grid-cols-5 gap-3 text-center mb-4">
+        <div class="bg-zion-900 rounded-lg p-3"><div class="text-xs text-gray-400 mb-1">Status</div><div id="ncl-status-val" class="text-sm font-bold text-emerald-400">—</div></div>
+        <div class="bg-zion-900 rounded-lg p-3"><div class="text-xs text-gray-400 mb-1">Workers</div><div id="ncl-workers-val" class="text-sm font-bold text-blue-400">—</div></div>
+        <div class="bg-zion-900 rounded-lg p-3"><div class="text-xs text-gray-400 mb-1">Queue</div><div id="ncl-queue-val" class="text-sm font-bold text-amber-400">—</div></div>
+        <div class="bg-zion-900 rounded-lg p-3"><div class="text-xs text-gray-400 mb-1">Price/Token</div><div id="ncl-price-val" class="text-sm font-bold text-purple-400">—</div></div>
+        <div class="bg-zion-900 rounded-lg p-3"><div class="text-xs text-gray-400 mb-1">TFLOPS</div><div id="ncl-tflops-val" class="text-sm font-bold text-gray-300">—</div></div>
+      </div>
+
+      <!-- NCL Workers + Leaderboard side-by-side -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-xs font-bold text-gray-400 uppercase">Active Workers</h3>
+          </div>
+          <div id="ncl-worker-list" class="bg-zion-900 rounded-lg p-3 max-h-48 overflow-y-auto text-xs text-gray-300">
+            <div class="text-gray-500 italic">Loading...</div>
+          </div>
+        </div>
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-xs font-bold text-gray-400 uppercase">Leaderboard</h3>
+          </div>
+          <div id="ncl-leaderboard-dash" class="bg-zion-900 rounded-lg p-3 max-h-48 overflow-y-auto text-xs text-gray-300">
+            <div class="text-gray-500 italic">Loading...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- NCL Job Submit -->
+      <div class="flex gap-2 items-center">
+        <select id="ncl-job-type-dash" class="bg-zion-900 border border-zion-600 rounded px-3 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-amber-500">
+          <option value="inference">Inference</option>
+          <option value="embedding">Embedding</option>
+          <option value="training">Fine-tuning</option>
+        </select>
+        <button onclick="submitNclJob()" class="px-3 py-1.5 bg-purple-700 hover:bg-purple-600 text-white text-xs font-medium rounded transition">Submit NCL Job</button>
+        <span id="ncl-job-result-dash" class="text-xs text-gray-400 ml-2"></span>
+      </div>
+    </div>
+
     <!-- Log panels -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
@@ -2734,7 +2875,7 @@ function switchTab(name){
   if(name==='database')loadDatabases();
   if(name==='metrics')renderMetricsButtons();
   if(name==='overview')loadMainnetStatus();
-  if(name==='hiran'){loadHiranHealth();loadAgentList();loadOrchestratorStats();}
+  if(name==='hiran'){loadHiranHealth();loadAgentList();loadOrchestratorStats();loadNclStatus();}
 }
 
 // ── Hiran AI ──
@@ -2936,6 +3077,69 @@ async function aiLayerStart(action, badgeId, detailId){
     if(badge){badge.textContent='ERR';badge.className='px-2 py-0.5 rounded text-xs font-bold bg-red-700 text-white';}
     if(detail)detail.textContent='Chyba: '+String(e);
   }
+}
+
+// ── NCL (Neural Compute Layer) ────────────────────────────────────────
+async function loadNclStatus(){
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v??'—';};
+  try{
+    const r=await fetch('/api/ncl/status');
+    const d=await r.json();
+    set('ncl-status-val', d.status||'active');
+    set('ncl-workers-val', d.total_workers??d.active_workers??'—');
+    set('ncl-queue-val', d.queued_jobs??d.queued??'0');
+    set('ncl-tflops-val', d.total_tflops??'—');
+  }catch(_){set('ncl-status-val','offline');}
+
+  // Price
+  try{
+    const r2=await fetch('/api/ncl/price');
+    const d2=await r2.json();
+    set('ncl-price-val', d2.price_per_token!=null?d2.price_per_token+' ZION':'—');
+  }catch(_){}
+
+  // Workers
+  try{
+    const r3=await fetch('/api/ncl/workers');
+    const d3=await r3.json();
+    const wl=document.getElementById('ncl-worker-list');
+    const workers=d3.workers||d3;
+    if(wl){
+      if(!Array.isArray(workers)||workers.length===0){
+        wl.innerHTML='<div class="text-gray-500 italic">No active workers</div>';
+      }else{
+        wl.innerHTML=workers.map((w,i)=>`<div class="flex justify-between py-1 border-b border-zion-700/50"><span>${w.worker_id?.slice(0,8)||'worker-'+i}…</span><span class="text-emerald-400">${w.jobs_completed||0} jobs · score ${w.score||0}</span></div>`).join('');
+      }
+    }
+  }catch(_){}
+
+  // Leaderboard
+  try{
+    const r4=await fetch('/api/ncl/leaderboard');
+    const d4=await r4.json();
+    const lb=document.getElementById('ncl-leaderboard-dash');
+    const entries=d4.leaderboard||d4;
+    if(lb){
+      if(!Array.isArray(entries)||entries.length===0){
+        lb.innerHTML='<div class="text-gray-500 italic">No leaderboard data</div>';
+      }else{
+        lb.innerHTML=entries.slice(0,10).map((e,i)=>`<div class="flex justify-between py-1 border-b border-zion-700/50"><span class="text-amber-400">#${e.rank||i+1}</span><span>${e.wallet_address?.slice(0,16)||e.worker_id?.slice(0,8)||'—'}…</span><span class="text-emerald-400 font-bold">${e.score||0} pts</span></div>`).join('');
+      }
+    }
+  }catch(_){}
+}
+
+async function submitNclJob(){
+  const jt=document.getElementById('ncl-job-type-dash')?.value||'inference';
+  const res=document.getElementById('ncl-job-result-dash');
+  if(res)res.textContent='Submitting…';
+  try{
+    const payload={job_type:jt,model_id:'hiran-v2.2',backend:'Custom',params:{prompt:'Dashboard test job'},priority:5,submitter:'dashboard',input_hash:Date.now().toString(16),reward_flowers:20000000000,max_duration_secs:60};
+    const r=await fetch('/api/ncl/jobs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const d=await r.json();
+    if(d.error){if(res)res.textContent='Error: '+d.error;}
+    else{if(res)res.textContent='Job queued: '+(d.job_id||d.id||'OK');setTimeout(loadNclStatus,1000);}
+  }catch(e){if(res)res.textContent='Error: '+String(e);}
 }
 
 // ── Service log tail ─────────────────────────────────────────────────
@@ -4012,6 +4216,28 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json(run_zion_cli(cmd))
         elif route == "/api/alerts/config":
             self._json(load_alert_config())
+        elif route == "/api/settings":
+            self._json(load_settings())
+        elif route == "/api/logs/search":
+            q = params.get("q", [""])[0].strip()
+            max_r = int(params.get("max", ["50"])[0])
+            self._json({"query": q, "results": search_logs(q, max_r)})
+        elif route == "/api/processes/kill":
+            pid = int(params.get("pid", ["0"])[0])
+            self._json(kill_process(pid))
+        elif route == "/api/export/blocks":
+            # Export recent blocks as CSV
+            expl = build_explorer()
+            headers = ["height", "hash", "timestamp", "tx_count", "difficulty"]
+            csv = export_csv(expl.get("recent_blocks", []), headers)
+            self.send_response(200)
+            self.send_header("Content-Type", "text/csv; charset=utf-8")
+            self.send_header("Content-Disposition", "attachment; filename=blocks.csv")
+            body = csv.encode("utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            return
         elif route.startswith("/api/metrics/"):
             sid = route.split("/")[-1]
             self._json(scrape_metrics(sid))
@@ -4179,6 +4405,19 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 "task_queue": task_queue,
                 "endpoint": orch_url,
             })
+        # ── NCL API proxy endpoints (forward to Hiranyagarbha :8001/ncl/*) ──
+        elif route in ("/api/ncl/status", "/api/ncl/health", "/api/ncl/workers",
+                       "/api/ncl/leaderboard", "/api/ncl/price", "/api/ncl/jobs"):
+            ncl_path = route.replace("/api/ncl/", "/ncl/")
+            try:
+                req = urllib.request.Request(
+                    f"http://127.0.0.1:8001{ncl_path}",
+                    headers={"Accept": "application/json"},
+                )
+                with urllib.request.urlopen(req, timeout=5) as r:
+                    self._json(json.loads(r.read()))
+            except Exception as e:
+                self._json({"error": f"NCL backend unreachable: {str(e)[:80]}"})
         else:
             self.send_error(404)
 
@@ -4194,6 +4433,21 @@ class DashboardHandler(BaseHTTPRequestHandler):
 
         if route == "/api/hiran/chat":
             self._handle_hiran_chat_post(payload)
+            return
+        elif route == "/api/ncl/jobs":
+            # Forward NCL job submission to Hiranyagarbha
+            try:
+                body = json.dumps(payload).encode("utf-8")
+                req = urllib.request.Request(
+                    "http://127.0.0.1:8001/ncl/jobs",
+                    data=body,
+                    headers={"Content-Type": "application/json", "Accept": "application/json"},
+                    method="POST",
+                )
+                with urllib.request.urlopen(req, timeout=10) as r:
+                    self._json(json.loads(r.read()))
+            except Exception as e:
+                self._json({"error": f"NCL job submission failed: {str(e)[:80]}"})
             return
         elif route == "/api/control":
             action = payload.get("action", "")
@@ -4283,6 +4537,9 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 self._json({"ok": True, "message": f"Deleted {backup_file.name}"})
             except Exception as e:
                 self._json({"ok": False, "error": str(e)})
+        elif route == "/api/settings":
+            settings = payload if payload else {}
+            self._json(save_settings(settings))
         elif route == "/api/cli/run":
             cmd = payload.get("cmd", "").strip()
             if not cmd:
