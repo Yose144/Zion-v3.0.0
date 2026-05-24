@@ -324,6 +324,13 @@ const EDGE_CORE_UP_QUERY = 'up{job="zion-core",instance="host.docker.internal:91
 const EDGE_POOL_UP_QUERY = 'up{job="zion-pool",instance="zion-pool:8080"}';
 
 async function fetchV3Metrics(): Promise<V3Metrics> {
+  try {
+    const r = await fetch('/api/dashboard-metrics', { cache: 'no-store', signal: AbortSignal.timeout(5000) });
+    if (r.ok) {
+      const d = await r.json();
+      if (!d.error) return d as V3Metrics;
+    }
+  } catch { /* fall back to Prometheus */ }
   const qs = [
     'zion_chain_height','zion_peer_count','zion_mempool_size','zion_blocks_accepted_total',
     'zion_template_height','zion_template_txs','zion_template_fees_zion',
@@ -363,6 +370,21 @@ async function fetchV3Metrics(): Promise<V3Metrics> {
   };
 }
 async function fetchV3Sparklines(): Promise<V3Sparklines> {
+  try {
+    const r = await fetch('/api/dashboard-history', { cache: 'no-store', signal: AbortSignal.timeout(5000) });
+    if (r.ok) {
+      const d = await r.json();
+      const s = d.samples ?? [];
+      if (s.length > 0) {
+        return {
+          chainHeight: s.map((x: any) => x.n1_height ?? 0),
+          poolSessions: s.map((x: any) => x.sessions ?? 0),
+          shares: s.map((x: any) => x.shares_ok ?? 0),
+          minerHashrate: s.map((x: any) => (x.hashrate ?? 0) * 1000),
+        };
+      }
+    }
+  } catch { /* fall back to Prometheus */ }
   const [h,s,a,m] = await Promise.allSettled([
     promRange('zion_chain_height','1h','120'),
     promRange('zion_pool_active_sessions','1h','120'),
@@ -376,6 +398,25 @@ async function fetchV3Sparklines(): Promise<V3Sparklines> {
 }
 
 async function fetchV3Charts(range: ChartRange): Promise<V3Charts> {
+  try {
+    const r = await fetch('/api/dashboard-history', { cache: 'no-store', signal: AbortSignal.timeout(5000) });
+    if (r.ok) {
+      const d = await r.json();
+      const s = d.samples ?? [];
+      if (s.length > 0) {
+        return {
+          chainHeight: s.map((x: any) => x.n1_height ?? 0),
+          poolSessions: s.map((x: any) => x.sessions ?? 0),
+          shares: s.map((x: any) => x.shares_ok ?? 0),
+          minerHashrate: s.map((x: any) => (x.hashrate ?? 0) * 1000),
+          cpuLoad: [],
+          memPct: [],
+          redisMemory: [],
+          timestamps: s.map((x: any) => x.t ?? 0),
+        };
+      }
+    }
+  } catch { /* fall back to Prometheus */ }
   const step = range === '1h' ? '60' : range === '6h' ? '300' : '600';
   const [h,s,a,m,cpu,memTotal,memAvail,redisMem] = await Promise.allSettled([
     promRange('zion_chain_height', range, step),
