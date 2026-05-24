@@ -1,6 +1,6 @@
 'use strict';
 
-const TABS = ['overview','wallets','explorer','services','l1','l2','l3','l4','l5','l6','genesis','blockers','controls','charts','events','env','database','metrics','launch-day','wizard','logs','hiran'];
+const TABS = ['overview','wallets','explorer','services','alerts','l1','l2','l3','l4','l5','l6','genesis','blockers','controls','charts','events','env','database','metrics','launch-day','wizard','logs','hiran'];
 let autoRefresh = true, refreshTimer = null, currentTab = 'overview';
 let charts = {};
 let friendlyMode = false;
@@ -62,6 +62,7 @@ function switchTab(name){
   if(sb && sb.classList.contains('open')) toggleSidebar();
   if(name === 'charts') renderCharts();
   if(name === 'events') loadEvents();
+  if(name === 'alerts') loadAlertHistory();
   if(name === 'env') loadEnvFiles();
   if(name === 'wizard') renderWizard();
   if(name === 'logs'){ loadLogs('node1'); loadLogs('node2'); loadLogs('pool'); loadLogs('miner'); }
@@ -99,11 +100,12 @@ function setCardLive(id, ok){
 
 async function refreshAll(){
   try {
-    const [s, cl, al, blk] = await Promise.all([
+    const [s, cl, al, blk, res] = await Promise.all([
       fetch('/api/status').then(r => r.json()),
       fetch('/api/checklist').then(r => r.json()),
       fetch('/api/alerts').then(r => r.json()),
       fetch('/api/blockers').then(r => r.json()),
+      fetch('/api/resources').then(r => r.json()).catch(() => ({})),
     ]);
 
     document.getElementById('timestamp').textContent = '⏱ ' + new Date(s.timestamp).toLocaleTimeString();
@@ -125,6 +127,7 @@ async function refreshAll(){
     updatePayouts(s.pool);
     updateMiniHashrate();
     loadCliNodeStatus();
+    updateResourceBars(res);
 
     if(currentTab === 'charts') renderCharts();
     if(currentTab === 'events') loadEvents();
@@ -262,6 +265,67 @@ function updateAlerts(alerts){
       </div>
       ${a.action ? `<button onclick="controlAction('${a.action}')" class="text-xs px-2.5 py-1 bg-white/10 hover:bg-white/20 rounded-md transition whitespace-nowrap font-semibold">Fix</button>` : ''}
     </div>`).join('');
+}
+
+function updateResourceBars(res){
+  const ramEl = document.getElementById('res-ram-bar');
+  const ramText = document.getElementById('res-ram-text');
+  if(ramEl && res.ram_percent !== undefined){
+    ramEl.style.width = Math.min(res.ram_percent, 100) + '%';
+    ramEl.className = 'h-full rounded-full transition-all ' + (res.ram_percent > 90 ? 'bg-red-500' : res.ram_percent > 70 ? 'bg-amber-500' : 'bg-emerald-500');
+    if(ramText) ramText.textContent = Math.round(res.ram_percent) + '% · ' + res.ram_used_gb + '/' + res.ram_total_gb + ' GB';
+  }
+  const diskEl = document.getElementById('res-disk-bar');
+  const diskText = document.getElementById('res-disk-text');
+  if(diskEl && res.disk_percent !== undefined){
+    diskEl.style.width = Math.min(res.disk_percent, 100) + '%';
+    diskEl.className = 'h-full rounded-full transition-all ' + (res.disk_percent > 90 ? 'bg-red-500' : res.disk_percent > 70 ? 'bg-amber-500' : 'bg-emerald-500');
+    if(diskText) diskText.textContent = Math.round(res.disk_percent) + '% · ' + res.disk_used_gb + '/' + res.disk_total_gb + ' GB';
+  }
+}
+
+async function loadAlertHistory(){
+  try {
+    const res = await fetch('/api/alerts/history').then(r => r.json());
+    const c = document.getElementById('alert-history-list');
+    if(!c) return;
+    if(!res.alerts || !res.alerts.length){
+      c.innerHTML = '<div class="text-gray-500 italic text-sm">No alerts recorded yet.</div>';
+      return;
+    }
+    const icons = { critical: '🚨', warning: '⚠️', info: 'ℹ️', success: '✅' };
+    c.innerHTML = res.alerts.slice().reverse().map(a => `
+      <div class="flex items-start gap-2 p-2 rounded-lg border border-white/5 ${a.severity === 'critical' ? 'bg-red-500/10' : a.severity === 'warning' ? 'bg-amber-500/10' : a.severity === 'success' ? 'bg-emerald-500/10' : 'bg-white/5'}">
+        <span class="text-lg">${icons[a.severity] || 'ℹ️'}</span>
+        <div class="flex-1 min-w-0">
+          <div class="text-xs font-semibold">${escapeHtml(a.title)}</div>
+          <div class="text-[10px] opacity-70 truncate">${escapeHtml(a.detail || '')}</div>
+          <div class="text-[10px] text-gray-500 mt-0.5">${new Date(a.ts).toLocaleTimeString()}</div>
+        </div>
+      </div>`).join('');
+  } catch(e) {
+    console.error('loadAlertHistory error:', e);
+  }
+}
+
+async function toggleWatchdog(){
+  try {
+    const res = await fetch('/api/watchdog/toggle', {method: 'POST'}).then(r => r.json());
+    toast('Watchdog ' + (res.enabled ? 'enabled' : 'disabled'), res.enabled ? 'success' : 'warning');
+    const btn = document.getElementById('watchdog-toggle-btn');
+    if(btn) btn.textContent = res.enabled ? '🛡️ Watchdog ON' : '⚪ Watchdog OFF';
+  } catch(e) {
+    toast('Failed to toggle watchdog: ' + e.message, 'error');
+  }
+}
+
+async function rotateLogsNow(){
+  try {
+    const res = await fetch('/api/logs/rotate', {method: 'POST'}).then(r => r.json());
+    toast(res.ok ? 'Logs rotated successfully' : ('Rotation failed: ' + res.error), res.ok ? 'success' : 'error');
+  } catch(e) {
+    toast('Failed to rotate logs: ' + e.message, 'error');
+  }
 }
 
 function updateChecklist(checks){

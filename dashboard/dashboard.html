@@ -189,6 +189,32 @@ button{display:inline-flex;align-items:center;justify-content:center;cursor:poin
             <div class="text-[10px] uppercase tracking-wider text-gray-500">Height</div>
           </div>
         </div>
+        <!-- Resource Monitoring Mini Widgets -->
+        <div class="grid grid-cols-2 gap-2 mt-3">
+          <div class="zion-panel-soft p-2">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-[10px] text-gray-400 uppercase">RAM</span>
+              <span class="text-[10px] font-mono text-gray-300" id="res-ram-text">—</span>
+            </div>
+            <div class="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+              <div id="res-ram-bar" class="h-full rounded-full bg-emerald-500 transition-all" style="width:0%"></div>
+            </div>
+          </div>
+          <div class="zion-panel-soft p-2">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-[10px] text-gray-400 uppercase">Disk</span>
+              <span class="text-[10px] font-mono text-gray-300" id="res-disk-text">—</span>
+            </div>
+            <div class="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+              <div id="res-disk-bar" class="h-full rounded-full bg-emerald-500 transition-all" style="width:0%"></div>
+            </div>
+          </div>
+        </div>
+        <!-- Ops Buttons -->
+        <div class="flex gap-2 mt-3">
+          <button id="watchdog-toggle-btn" onclick="toggleWatchdog()" class="flex-1 text-[10px] px-2 py-1.5 bg-zion-700/50 hover:bg-zion-600 rounded-md font-semibold transition">🛡️ Watchdog ON</button>
+          <button onclick="rotateLogsNow()" class="flex-1 text-[10px] px-2 py-1.5 bg-zion-700/50 hover:bg-zion-600 rounded-md font-semibold transition">📜 Rotate Logs</button>
+        </div>
       </div>
     </div>
   </section>
@@ -225,6 +251,7 @@ button{display:inline-flex;align-items:center;justify-content:center;cursor:poin
       <div class="sidebar-group">
         <div class="sidebar-title">Diagnostics</div>
         <button onclick="switchTab('services')" id="tab-services" class="sidebar-item">🧩 Services</button>
+        <button onclick="switchTab('alerts')" id="tab-alerts" class="sidebar-item">🚨 Alerts</button>
         <button onclick="switchTab('charts')" id="tab-charts" class="sidebar-item">📈 Charts</button>
         <button onclick="switchTab('events')" id="tab-events" class="sidebar-item">🧱 Events</button>
         <button onclick="switchTab('metrics')" id="tab-metrics" class="sidebar-item">📊 Metrics</button>
@@ -593,6 +620,20 @@ button{display:inline-flex;align-items:center;justify-content:center;cursor:poin
           </thead>
           <tbody id="explorer-blocks" class="text-xs font-mono"></tbody>
         </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═════════ TAB: Alerts ═════════ -->
+  <div id="pane-alerts" class="hidden space-y-4">
+    <div class="zion-panel p-6">
+      <div class="flex items-center justify-between mb-5">
+        <h2 class="text-xl font-bold flex items-center gap-2">🚨 Alert History</h2>
+        <button onclick="loadAlertHistory()" class="text-xs px-3 py-1.5 bg-zion-700 hover:bg-zion-600 rounded-lg transition">🔄 Refresh</button>
+      </div>
+      <p class="text-sm text-gray-400 mb-4">Persisted alerts from the last 100 events. Critical and warning alerts are auto-saved every 60 seconds.</p>
+      <div id="alert-history-list" class="space-y-2 max-h-[600px] overflow-y-auto">
+        <div class="text-gray-500 italic text-sm">Loading alert history…</div>
       </div>
     </div>
   </div>
