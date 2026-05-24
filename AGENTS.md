@@ -206,7 +206,8 @@ Miner (GPU)               Public P2P: 8333
 | Node metrics | 9115 | HTTP | Prometheus metrics (node) |
 | Dashboard | 8766 | HTTP | Python stdlib dashboard |
 | Website | 3000 | HTTP | Next.js dev server |
-| **Hiranyagarbha API** | **8001** | HTTP | Orchestrator · RAG · Consciousness · Axum (Rust) |
+| **Hiranyagarbha API** | **8001** | HTTP | Orchestrator · RAG · Consciousness · NCL · Axum (Rust) |
+| **NCL (via Hiranyagarbha)** | **8001** | HTTP | Neural Compute Layer at `/ncl/*` (jobs, workers, leaderboard) |
 | **Hiran Inference** | **8002** | HTTP | OpenAI-compatible LLM API (llama-server.exe / serve.py) |
 
 ### Canonical URLs & Endpoints
@@ -296,11 +297,14 @@ Dashboard (port 8766)
   │       └── zion-ai-native-api (Rust/Axum)  →  http://127.0.0.1:8001
   │           Endpoints: /agents, /tasks/dispatch, /orchestrator/status,
   │                      /health, /v1/chat/completions, /v1/embeddings
+  │           NCL routes: /ncl/health, /ncl/jobs, /ncl/workers, /ncl/leaderboard,
+  │                       /ncl/schedule, /ncl/price, /ncl/status
   │
   └── ▶ Start Hiran Inference  →  scripts/start-hiran-inference.ps1
           └── llama-server.exe (preferred) OR serve.py  →  http://127.0.0.1:8002
               Backend priority: llama-server.exe > LM Studio (1234) > Ollama (11434) > serve.py
 
+CLI: zion ncl status/submit/workers/...  →  http://127.0.0.1:8001/ncl/*
 Website (/api/ai-chat)  →  cascade: port 8002 → LM Studio → Ollama
 Desktop Agent (Hiran AI tab)  →  HIRAN_INFERENCE_URL (default localhost:8002)
 ```
@@ -326,6 +330,29 @@ Desktop Agent (Hiran AI tab)  →  HIRAN_INFERENCE_URL (default localhost:8002)
   `GET /health`, `POST /v1/chat/completions`, `POST /v1/embeddings`
 - Env: `HIRANYAGARBHA_MAX_AGENTS` (default 100), `HIRANYAGARBHA_PORT` (default 8001)
 - Start script: `scripts/start-hiranyagarbha.ps1`
+
+### NCL — Neural Compute Layer (✅ Integrated into Hiranyagarbha, port 8001)
+
+NCL is the decentralized AI task marketplace. Workers register GPU/NPU compute and earn ZION for executing inference jobs.
+
+- **Library crate:** `V3/L3/ncl` (`zion-ncl`)
+- **Integration:** Mounted at `/ncl/*` inside Hiranyagarbha (`zion-ai-native-api`)
+- **CLI:** `zion ncl status|submit|job|jobs|workers|leaderboard|schedule|price`
+- **API endpoints (all at port 8001):**
+  - `GET /ncl/health` — scheduler status (queued, active, workers)
+  - `POST /ncl/jobs` — submit compute job
+  - `GET /ncl/jobs/:id` — get job status
+  - `POST /ncl/jobs/:id/complete` — mark job done (updates reputation)
+  - `POST /ncl/jobs/:id/fail` — mark job failed
+  - `POST /ncl/workers` — register compute worker
+  - `GET /ncl/workers` — list workers with reputation
+  - `GET /ncl/leaderboard` — ranked worker scores
+  - `POST /ncl/schedule` — trigger scheduling cycle
+  - `GET /ncl/price?model=...` — pricing for model
+  - `GET /ncl/status` — high-level status summary
+- **Pricing:** 10% protocol fee, 90% to worker. Base price 0.01 ZION per unit.
+- **Reputation:** 0-100 scale, weighted by completion time and success rate.
+- **Database:** `V3/data/ncl.db` (SQLite)
 
 ### Hiran Inference API (✅ llama-server.exe / serve.py, port 8002)
 
