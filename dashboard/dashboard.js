@@ -87,7 +87,7 @@ function switchTab(name){
   if(name === 'alerts') loadAlertHistory();
   if(name === 'env') loadEnvFiles();
   if(name === 'wizard') renderWizard();
-  if(name === 'logs'){ loadLogs('node1'); loadLogs('node2'); loadLogs('pool'); loadLogs('miner'); }
+  if(name === 'logs'){ initLogPane(); }
   if(name === 'controls'){ renderControls(); loadBackupList(); loadDepGraph(); loadProcessRegistry(); }
   if(name === 'services') loadServices();
   if(name === 'database') loadDatabases();
@@ -3256,34 +3256,24 @@ async function loadHiranOverview(){
 // Service Terminal
 // ─────────────────────────────────────────────────────────────────────
 
-async function loadTerminalLog(){
-  const svc = document.getElementById('terminal-service').value;
-  const out = document.getElementById('terminal-output');
+// Compatibility stubs — full terminal is now in Logs pane
+async function loadTerminalLog(){ await overviewLogSwitch(document.getElementById('overview-log-svc')?.value || 'node1'); }
+function clearTerminal(){ const o = document.getElementById('overview-log-output'); if(o) o.textContent = ''; }
+
+// Overview quick log preview (last 40 lines, no SSE — just static tail)
+async function overviewLogSwitch(svcId){
+  const out = document.getElementById('overview-log-output');
   if(!out) return;
-  out.innerHTML = '<div class="text-gray-500">Loading ' + svc + ' logs...</div>';
+  out.textContent = 'Loading ' + svcId + '…';
   try {
-    const data = await fetch('/api/service-log/' + svc + '?lines=50').then(r => r.json());
-    if(data.ok && data.lines){
-      const html = data.lines.map(l => {
-        let cls = 'text-gray-300';
-        if(l.includes('ERROR') || l.includes('error')) cls = 'text-red-400';
-        else if(l.includes('WARN') || l.includes('warn')) cls = 'text-amber-400';
-        else if(l.includes('✓') || l.includes('accept') || l.includes('OK')) cls = 'text-emerald-400';
-        return '<div class="' + cls + '">' + escapeHtml(l) + '</div>';
-      }).join('');
-      out.innerHTML = html || '<div class="text-gray-500">No output</div>';
+    const data = await fetch('/api/service-log?id=' + encodeURIComponent(svcId) + '&lines=40').then(r => r.json());
+    if(data.lines){
+      out.textContent = typeof data.lines === 'string' ? data.lines : data.lines;
       out.scrollTop = out.scrollHeight;
     } else {
-      out.innerHTML = '<div class="text-gray-500">' + (data.error || 'No logs available') + '</div>';
+      out.textContent = data.error || 'Log file not found';
     }
-  } catch(e) {
-    out.innerHTML = '<div class="text-red-400">Failed to load logs: ' + escapeHtml(e.message) + '</div>';
-  }
-}
-
-function clearTerminal(){
-  const out = document.getElementById('terminal-output');
-  if(out) out.innerHTML = '<div class="text-gray-500 italic">Terminal cleared</div>';
+  } catch(e) { out.textContent = 'Error: ' + e.message; }
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -3846,5 +3836,254 @@ async function loadL6Missions() {
       </div>`).join('');
   } catch(e) {}
 }
+
+// ═══════════════════════════════════════════════════════════════════════
+// LOGS & TERMINALS — full SSE streaming, search, native terminal launch
+// ═══════════════════════════════════════════════════════════════════════
+
+const LOG_SERVICES = [
+  { id: 'node1',         label: 'Node 1',       icon: '⛓️',  color: 'emerald', group: 'core'  },
+  { id: 'node2',         label: 'Node 2',       icon: '⛓️',  color: 'blue',    group: 'core'  },
+  { id: 'pool',          label: 'Pool',         icon: '🏊',  color: 'cyan',    group: 'core'  },
+  { id: 'miner',         label: 'Miner',        icon: '⛏️',  color: 'amber',   group: 'core'  },
+  { id: 'hiranyagarbha', label: 'Hiranyagarbha',icon: '🧠',  color: 'purple',  group: 'ai'    },
+  { id: 'hiran',         label: 'Hiran AI',     icon: '🤖',  color: 'violet',  group: 'ai'    },
+  { id: 'bridge',        label: 'Bridge',       icon: '🌉',  color: 'indigo',  group: 'l2'    },
+  { id: 'dao-daemon',    label: 'DAO Daemon',   icon: '🗳️', color: 'purple',  group: 'l2'    },
+  { id: 'atomic-swap',   label: 'Atomic Swap',  icon: '⚡',  color: 'amber',   group: 'l2'    },
+  { id: 'warp',          label: 'WARP',         icon: '🌀',  color: 'cyan',    group: 'l3'    },
+  { id: 'control-audit', label: 'Audit Log',    icon: '📝',  color: 'gray',    group: 'system'},
+];
+
+let _logActiveSvc   = 'node1';
+let _logSseSource   = null;   // current EventSource
+let _logLineCount   = 0;
+let _logAutoScroll  = true;
+
+// ── Build tab bar & service grid on first open ──────────────────────────
+function initLogPane() {
+  const tabBar  = document.getElementById('log-tab-bar');
+  const svcGrid = document.getElementById('log-svc-grid');
+  if (!tabBar || tabBar.dataset.built) return;
+  tabBar.dataset.built = '1';
+
+  const colorMap = {
+    emerald:'text-emerald-300 border-emerald-500/40',
+    blue:   'text-blue-300 border-blue-500/40',
+    cyan:   'text-cyan-300 border-cyan-500/40',
+    amber:  'text-amber-300 border-amber-500/40',
+    purple: 'text-purple-300 border-purple-500/40',
+    violet: 'text-violet-300 border-violet-500/40',
+    indigo: 'text-indigo-300 border-indigo-500/40',
+    gray:   'text-gray-300 border-gray-500/40',
+  };
+
+  LOG_SERVICES.forEach(s => {
+    // Tab button
+    const btn = document.createElement('button');
+    btn.id = `log-tab-${s.id}`;
+    btn.dataset.svc = s.id;
+    btn.className = `flex items-center gap-1.5 px-3 py-2.5 text-[11px] font-mono whitespace-nowrap border-b-2 border-transparent text-gray-400 hover:text-white transition shrink-0`;
+    btn.innerHTML = `${s.icon} ${s.label}`;
+    btn.onclick = () => logSelectSvc(s.id);
+    tabBar.appendChild(btn);
+
+    // Service card in grid
+    const card = document.createElement('div');
+    card.id = `log-svc-card-${s.id}`;
+    card.className = 'zion-panel p-3 cursor-pointer hover:border-white/20 transition';
+    card.innerHTML = `
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-sm">${s.icon}</span>
+        <span id="log-svc-dot-${s.id}" class="w-2 h-2 rounded-full bg-gray-600"></span>
+      </div>
+      <div class="text-[11px] font-mono text-gray-200 mb-1">${s.label}</div>
+      <div class="text-[10px] text-gray-500 uppercase mb-2">${s.group}</div>
+      <div class="flex gap-1 flex-wrap">
+        <button onclick="logSelectSvc('${s.id}');logStreamStart()" class="text-[10px] px-2 py-0.5 bg-emerald-700/40 hover:bg-emerald-600 rounded transition">▶ Stream</button>
+        <button onclick="openNativeTerminalFor('${s.id}')" class="text-[10px] px-2 py-0.5 bg-purple-700/40 hover:bg-purple-600 rounded transition">⬛ Term</button>
+      </div>`;
+    svcGrid.appendChild(card);
+  });
+
+  // Select first by default
+  logSelectSvc('node1');
+  refreshLogFiles();
+}
+
+function logSelectSvc(svcId) {
+  _logActiveSvc = svcId;
+  // Update tab highlight
+  LOG_SERVICES.forEach(s => {
+    const btn = document.getElementById(`log-tab-${s.id}`);
+    if (!btn) return;
+    if (s.id === svcId) {
+      btn.classList.add('border-b-2', 'border-zion-gold', 'text-white');
+      btn.classList.remove('border-transparent', 'text-gray-400');
+    } else {
+      btn.classList.remove('border-zion-gold', 'text-white');
+      btn.classList.add('border-transparent', 'text-gray-400');
+    }
+  });
+  const svc = LOG_SERVICES.find(s => s.id === svcId);
+  const lbl = document.getElementById('log-active-svc-label');
+  if (lbl) lbl.textContent = svc ? `${svc.icon} ${svc.label}` : svcId;
+}
+
+// ── SSE streaming ───────────────────────────────────────────────────────
+function logStreamStart() {
+  logStreamStop();
+  const out = document.getElementById('log-terminal-output');
+  if (!out) return;
+  _logLineCount = 0;
+  out.textContent = '';
+  _logAutoScroll = true;
+  const badge = document.getElementById('log-stream-badge');
+  const btn   = document.getElementById('log-stream-btn');
+  if (badge) { badge.textContent = `Streaming: ${_logActiveSvc}`; badge.className = 'text-[10px] px-3 py-1 rounded-full bg-emerald-700/50 text-emerald-300'; }
+  if (btn) btn.textContent = '⏸ Streaming';
+
+  // Color-code ANSI-less log lines
+  const colorLine = (line) => {
+    if (/error|ERROR|ERRO|panic/i.test(line)) return `\x1b[31m${line}\x1b[0m`; // red via span
+    if (/warn|WARN/i.test(line))              return `<span class="text-amber-400">${escapeHtml(line)}</span>`;
+    if (/info|INFO/i.test(line))              return `<span class="text-emerald-300/70">${escapeHtml(line)}</span>`;
+    if (/debug|DEBUG|trace|TRACE/i.test(line))return `<span class="text-gray-500">${escapeHtml(line)}</span>`;
+    return escapeHtml(line);
+  };
+
+  const url = `/api/logs/stream?svc=${encodeURIComponent(_logActiveSvc)}&lines=200`;
+  _logSseSource = new EventSource(url);
+  _logSseSource.onmessage = (e) => {
+    _logLineCount++;
+    const span = document.createElement('span');
+    const line = e.data;
+    if (/error|ERROR|ERRO|panic/i.test(line)) span.className = 'text-red-400';
+    else if (/warn|WARN/i.test(line))          span.className = 'text-amber-400';
+    else if (/info|INFO/i.test(line))          span.className = 'text-emerald-300/70';
+    else if (/debug|DEBUG|trace|TRACE/i.test(line)) span.className = 'text-gray-500';
+    span.textContent = line + '\n';
+    out.appendChild(span);
+    // Keep max 2000 lines in DOM
+    while (out.childNodes.length > 2000) out.removeChild(out.firstChild);
+    const lc = document.getElementById('log-line-count');
+    if (lc) lc.textContent = `${_logLineCount} lines`;
+    if (_logAutoScroll) out.scrollTop = out.scrollHeight;
+  };
+  _logSseSource.onerror = () => {
+    if (badge) { badge.textContent = 'Stream error'; badge.className = 'text-[10px] px-3 py-1 rounded-full bg-red-700/50 text-red-300'; }
+    logStreamStop();
+  };
+
+  // Track scroll position to pause auto-scroll when user scrolls up
+  out.onscroll = () => {
+    _logAutoScroll = (out.scrollHeight - out.scrollTop - out.clientHeight) < 50;
+  };
+
+  // Update dot indicator
+  const dot = document.getElementById(`log-svc-dot-${_logActiveSvc}`);
+  if (dot) { dot.className = 'w-2 h-2 rounded-full bg-emerald-500 animate-pulse'; }
+}
+
+function logStreamStop() {
+  if (_logSseSource) { _logSseSource.close(); _logSseSource = null; }
+  const badge = document.getElementById('log-stream-badge');
+  const btn   = document.getElementById('log-stream-btn');
+  if (badge) { badge.textContent = 'Idle'; badge.className = 'text-[10px] px-3 py-1 rounded-full bg-gray-700 text-gray-400'; }
+  if (btn)   btn.textContent = '▶ Stream';
+  // Clear dot
+  LOG_SERVICES.forEach(s => {
+    const dot = document.getElementById(`log-svc-dot-${s.id}`);
+    if (dot && dot.classList.contains('animate-pulse')) { dot.className = 'w-2 h-2 rounded-full bg-gray-600'; }
+  });
+}
+
+function logStreamToggle() {
+  if (_logSseSource) logStreamStop();
+  else logStreamStart();
+}
+
+function logClearPanel() {
+  const out = document.getElementById('log-terminal-output');
+  if (out) { out.textContent = ''; _logLineCount = 0; }
+  const lc = document.getElementById('log-line-count');
+  if (lc) lc.textContent = '0 lines';
+}
+
+function logScrollBottom() {
+  const out = document.getElementById('log-terminal-output');
+  if (out) { out.scrollTop = out.scrollHeight; _logAutoScroll = true; }
+}
+
+// ── Native terminal ─────────────────────────────────────────────────────
+async function openNativeTerminal() {
+  await openNativeTerminalFor(_logActiveSvc);
+}
+
+async function openNativeTerminalFor(svcId) {
+  try {
+    const r = await fetch(`/api/terminal/open?svc=${encodeURIComponent(svcId)}`).then(r => r.json());
+    if (r.ok) toast(`Terminal opened for ${svcId}`, 'success');
+    else toast(`Failed to open terminal: ${r.error || 'unknown'}`, 'error');
+  } catch(e) { toast('Terminal open error: ' + e.message, 'error'); }
+}
+
+// ── Global log search ───────────────────────────────────────────────────
+async function logSearchAll() {
+  const q       = (document.getElementById('log-search-input')?.value || '').trim();
+  const level   = document.getElementById('log-level-filter')?.value || 'all';
+  const svcFilt = document.getElementById('log-svc-filter')?.value || '';
+  const resEl   = document.getElementById('log-search-results');
+  if (!resEl) return;
+  if (!q && level === 'all' && !svcFilt) { resEl.classList.add('hidden'); return; }
+  resEl.innerHTML = '<div class="text-gray-500 text-[11px]">Searching…</div>';
+  resEl.classList.remove('hidden');
+  try {
+    const url = `/api/log-search?q=${encodeURIComponent(q)}&level=${level}&svc=${encodeURIComponent(svcFilt)}`;
+    const r = await fetch(url).then(r => r.json());
+    const hits = r.results || [];
+    if (!hits.length) { resEl.innerHTML = '<div class="text-gray-500 text-[11px]">No results</div>'; return; }
+    resEl.innerHTML = hits.slice(0, 500).map(h => {
+      const lvlClass = /error|ERROR/i.test(h.line) ? 'text-red-400' : /warn|WARN/i.test(h.line) ? 'text-amber-400' : /info|INFO/i.test(h.line) ? 'text-emerald-300/80' : 'text-gray-300';
+      return `<div class="flex gap-2"><span class="text-gray-600 shrink-0 w-24">${h.svc}:${h.lineno}</span><span class="${lvlClass}">${escapeHtml(h.line)}</span></div>`;
+    }).join('');
+  } catch(e) { resEl.innerHTML = `<div class="text-red-400 text-[11px]">Error: ${e.message}</div>`; }
+}
+
+// ── Disk log file list ───────────────────────────────────────────────────
+async function refreshLogFiles() {
+  const el = document.getElementById('log-files-list');
+  if (!el) return;
+  try {
+    const r = await fetch('/api/log-files').then(r => r.json());
+    const files = r.files || [];
+    if (!files.length) { el.innerHTML = '<div class="text-gray-500 italic">No log files found in logs/</div>'; return; }
+    el.innerHTML = files.map(f => `
+      <div class="bg-black/30 rounded-lg px-3 py-2 flex items-center justify-between">
+        <div>
+          <div class="text-gray-200 font-mono">${escapeHtml(f.name)}</div>
+          <div class="text-[10px] text-gray-500">${f.size_kb ? f.size_kb + ' KB' : '—'} · ${f.modified || '—'}</div>
+        </div>
+        <button onclick="logSelectAndOpen('${escapeHtml(f.svc_id || f.name)}')"
+          class="text-[10px] px-2 py-0.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded transition">View</button>
+      </div>`).join('');
+  } catch(e) { el.innerHTML = `<div class="text-red-400 text-xs">Error: ${e.message}</div>`; }
+}
+
+function logSelectAndOpen(svcId) {
+  // Find matching service or use as-is
+  const match = LOG_SERVICES.find(s => s.id === svcId || svcId.startsWith(s.id));
+  logSelectSvc(match ? match.id : svcId);
+  logStreamStart();
+  // Scroll to terminal
+  document.getElementById('log-terminal-output')?.scrollIntoView({ behavior: 'smooth' });
+}
+
+// ── Hook into switchTab for logs ─────────────────────────────────────────
+// (handled in the existing switchTab via: if(name === 'logs'){...})
+// We augment it by wrapping the call:
+const _origSwitchTab = switchTab;
+// Override logs init in switchTab — patch the call site instead
+// Already handled via initLogPane() called from the patched switchTab listener below.
 
 console.log('[ZION Dashboard] Auto-refresh started');
