@@ -266,7 +266,7 @@ ssh root@SERVER "cd /opt/zion && docker compose -f docker/docker-compose.v3-main
 ### Live Topology (Core + Edge)
 
 - **Core** (Windows 11, Tailscale `100.86.102.5`) — local node + pool master + GPU miner
-- **Edge** (Hetzner VPS, Tailscale `100.66.162.125`) — public relay node + pool
+- **Edge** (Hetzner VPS, Tailscale `100.76.16.108`) — public relay node + pool
   - Public P2P: `77.42.71.94:8333`
   - Public Pool: `77.42.71.94:8444`
 - Website bridge status reaches the host-networked bridge via `host.docker.internal:9101`

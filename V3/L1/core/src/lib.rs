@@ -118,7 +118,7 @@ impl NodeConfig {
                 // Core + Edge topology — Edge public P2P entrypoint
                 PeerEndpoint::new("77.42.71.94", 8333),
                 // Tailscale fallback (private VPN between Core and Edge)
-                PeerEndpoint::new("100.66.162.125", 8333),
+                PeerEndpoint::new("100.76.16.108", 8333),
             ],
         }
     }

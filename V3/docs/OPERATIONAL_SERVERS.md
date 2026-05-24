@@ -6,7 +6,7 @@
 > **Původní provozní server:** Prague Hetzner (91.98.122.165) — **VYŘAZEN**
 > **Účel:** Historická dokumentace kontejnerové topologie z období před konsolidací na Core + Edge.
 >
-> **Aktuální živá topologie:** Core (Windows 11, Tailscale 100.86.102.5) + Edge (Hetzner VPS, Tailscale 100.66.162.125).
+> **Aktuální živá topologie:** Core (Windows 11, Tailscale 100.86.102.5) + Edge (Hetzner VPS, Tailscale 100.76.16.108).
 > Veškeré odkazy na Prahu / USA / Singapore / Helsinki v tomto dokumentu jsou archivní.
 
 ---

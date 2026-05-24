@@ -3,6 +3,7 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 COPY package*.json ./
+COPY ../zion-wallet-sdk ./zion-wallet-sdk
 RUN npm install
 
 COPY . .

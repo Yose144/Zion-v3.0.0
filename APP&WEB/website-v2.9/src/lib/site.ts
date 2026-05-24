@@ -23,7 +23,7 @@ export const SITE_POOL_PRIMARY = `${SITE_PRIMARY_HOST}:8444`;
 
 // Tailscale VPN tunnel — Core (local PC) ↔ Edge (VPS)
 export const SITE_CORE_TAILSCALE_IP = '100.86.102.5';
-export const SITE_EDGE_TAILSCALE_IP = '100.66.162.125';
+export const SITE_EDGE_TAILSCALE_IP = '100.76.16.108';
 
 // Network topology descriptor (USA / Singapore / Helsinki decommissioned 2026-05)
 export const SITE_NETWORK_TOPOLOGY = 'Core + Edge · Hetzner VPS (Edge relay) + local PC (Core via Tailscale VPN)';
