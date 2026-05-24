@@ -1,22 +1,22 @@
 [node]
 rpc_host = "127.0.0.1"
 rpc_port = 8443
-p2p_port = 8334
+p2p_port = 8333
 
 [pool]
-host = "127.0.0.1"
+host = "77.42.71.94"
 port = 8444
 
 [miner]
-wallet = "zion16853d8r885l4g4u8p8t7v5n8u6v7e0f445dr3f8"
+wallet = "zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3"
 btc_wallet = ""
 threads = "auto"
 backend = "auto"
 profile = "pool"
 
 [agent]
-url = "https://zionterranova.com/agent"
-model = "hiranyagarbha-v1"
+url = "https://zionterranova.com/api/ai-chat"
+model = "hiran-v2.2"
 
 [deploy]
 default_server = "edge"
