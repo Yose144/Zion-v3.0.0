@@ -945,8 +945,15 @@ def parse_miner_log() -> dict:
     for line in recent:
         if m := re.search(r'gpu_backend=(\S+)', line):
             status["gpu_backend"] = m.group(1)
+        # Primary: xmrig-style speed summary
         if m := re.search(r'speed\s+\d+s/\d+s/\d+m\s+(\d+\.\d+)', line):
             status["hashrate"] = float(m.group(1))
+        # Fallback: session_status hps_10s (hashes per second → KH/s)
+        if status["hashrate"] is None:
+            if m := re.search(r'hps_10s=(\d+\.\d+)', line):
+                status["hashrate"] = float(m.group(1)) / 1000.0
+            elif m := re.search(r'gpu_hps=(\d+\.\d+)', line):
+                status["hashrate"] = float(m.group(1)) / 1000.0
         if m := re.search(r'accepted\s+(\d+)/(\d+)', line):
             status["shares_accepted"] = int(m.group(1))
             status["shares_rejected"] = int(m.group(2))
