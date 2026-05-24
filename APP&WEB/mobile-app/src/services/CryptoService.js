@@ -201,37 +201,83 @@ export const verifySignature = async (txHash, signature, publicKey) => {
   }
 };
 
+// ---------------------------------------------------------------------------
+// PBKDF2 + AES encryption (v2) — stronger than direct AES(password)
+// ---------------------------------------------------------------------------
+
+const PBKDF2_ITERATIONS = 100_000;
+const KEY_SIZE_BITS = 256;
+const SALT_SIZE_BYTES = 16;
+
+const deriveKey = (password, salt) => {
+  return CryptoJS.PBKDF2(password, salt, {
+    keySize: KEY_SIZE_BITS / 32,
+    iterations: PBKDF2_ITERATIONS,
+  });
+};
+
+const encryptV2 = (plaintext, password) => {
+  const salt = CryptoJS.lib.WordArray.random(SALT_SIZE_BYTES);
+  const key = deriveKey(password, salt);
+  const encrypted = CryptoJS.AES.encrypt(plaintext, key);
+  const saltB64 = CryptoJS.enc.Base64.stringify(salt);
+  const cipherB64 = encrypted.toString();
+  return `v2:${saltB64}:${cipherB64}`;
+};
+
+const decryptV2 = (ciphertext, password) => {
+  const parts = ciphertext.split(':');
+  if (parts.length !== 3 || parts[0] !== 'v2') {
+    throw new Error('Invalid v2 ciphertext format');
+  }
+  const salt = CryptoJS.enc.Base64.parse(parts[1]);
+  const cipher = parts[2];
+  const key = deriveKey(password, salt);
+  const decrypted = CryptoJS.AES.decrypt(cipher, key);
+  return decrypted.toString(CryptoJS.enc.Utf8);
+};
+
+const decryptV1Fallback = (ciphertext, password) => {
+  const decrypted = CryptoJS.AES.decrypt(ciphertext, password);
+  return decrypted.toString(CryptoJS.enc.Utf8);
+};
+
 /**
- * Encrypt private key with password (AES-256-GCM)
+ * Encrypt private key with password (PBKDF2 + AES-256).
+ * Format: v2:base64(salt):base64(ciphertext)
  * @param {Buffer} privateKey - 32-byte Ed25519 private key
  * @param {string} password - User password
- * @returns {string} Encrypted private key (base64)
+ * @returns {string} Encrypted private key
  */
 export const encryptPrivateKey = (privateKey, password) => {
   try {
     const privateKeyHex = privateKey.toString('hex');
-    const encrypted = CryptoJS.AES.encrypt(privateKeyHex, password);
-    return encrypted.toString();
+    return encryptV2(privateKeyHex, password);
   } catch (error) {
     throw new Error(`Encryption failed: ${error.message}`);
   }
 };
 
 /**
- * Decrypt private key with password
- * @param {string} encryptedPrivateKey - Encrypted private key (base64)
+ * Decrypt private key with password.
+ * Tries v2 format first, falls back to legacy v1.
+ * @param {string} encryptedPrivateKey - Encrypted private key
  * @param {string} password - User password
  * @returns {Buffer} Decrypted private key
  */
 export const decryptPrivateKey = (encryptedPrivateKey, password) => {
   try {
-    const decrypted = CryptoJS.AES.decrypt(encryptedPrivateKey, password);
-    const privateKeyHex = decrypted.toString(CryptoJS.enc.Utf8);
-    
-    if (!privateKeyHex) {
+    let privateKeyHex;
+    if (encryptedPrivateKey.startsWith('v2:')) {
+      privateKeyHex = decryptV2(encryptedPrivateKey, password);
+    } else {
+      privateKeyHex = decryptV1Fallback(encryptedPrivateKey, password);
+    }
+
+    if (!privateKeyHex || privateKeyHex.length !== 64) {
       throw new Error('Invalid password');
     }
-    
+
     return Buffer.from(privateKeyHex, 'hex');
   } catch (error) {
     throw new Error('Invalid password or corrupted data');
@@ -239,35 +285,39 @@ export const decryptPrivateKey = (encryptedPrivateKey, password) => {
 };
 
 /**
- * Encrypt mnemonic with password
+ * Encrypt mnemonic with password (PBKDF2 + AES-256).
  * @param {string} mnemonic - BIP39 mnemonic
  * @param {string} password - User password
- * @returns {string} Encrypted mnemonic (base64)
+ * @returns {string} Encrypted mnemonic
  */
 export const encryptMnemonic = (mnemonic, password) => {
   try {
-    const encrypted = CryptoJS.AES.encrypt(mnemonic, password);
-    return encrypted.toString();
+    return encryptV2(mnemonic, password);
   } catch (error) {
     throw new Error(`Mnemonic encryption failed: ${error.message}`);
   }
 };
 
 /**
- * Decrypt mnemonic with password
- * @param {string} encryptedMnemonic - Encrypted mnemonic (base64)
+ * Decrypt mnemonic with password.
+ * Tries v2 format first, falls back to legacy v1.
+ * @param {string} encryptedMnemonic - Encrypted mnemonic
  * @param {string} password - User password
  * @returns {string} Decrypted mnemonic
  */
 export const decryptMnemonic = (encryptedMnemonic, password) => {
   try {
-    const decrypted = CryptoJS.AES.decrypt(encryptedMnemonic, password);
-    const mnemonic = decrypted.toString(CryptoJS.enc.Utf8);
-    
+    let mnemonic;
+    if (encryptedMnemonic.startsWith('v2:')) {
+      mnemonic = decryptV2(encryptedMnemonic, password);
+    } else {
+      mnemonic = decryptV1Fallback(encryptedMnemonic, password);
+    }
+
     if (!mnemonic || !validateMnemonic(mnemonic)) {
       throw new Error('Invalid password');
     }
-    
+
     return mnemonic;
   } catch (error) {
     throw new Error('Invalid password or corrupted data');
