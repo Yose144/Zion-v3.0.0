@@ -1,6 +1,6 @@
 'use strict';
 
-const TABS = ['overview','wallets','explorer','services','alerts','l1','l2','l3','l4','l5','l6','genesis','blockers','controls','charts','events','env','database','metrics','launch-day','wizard','logs','hiran'];
+const TABS = ['overview','wallets','explorer','services','alerts','l1','l2','l3','l4','l5','l6','genesis','blockers','controls','charts','events','env','database','metrics','launch-day','wizard','logs','hiran','dao'];
 let autoRefresh = true, refreshTimer = null, currentTab = 'overview';
 let charts = {};
 let friendlyMode = false;
@@ -3284,6 +3284,311 @@ async function loadTerminalLog(){
 function clearTerminal(){
   const out = document.getElementById('terminal-output');
   if(out) out.innerHTML = '<div class="text-gray-500 italic">Terminal cleared</div>';
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// DAO Governance Tab
+// ─────────────────────────────────────────────────────────────────────
+
+const DAO_API = 'http://127.0.0.1:8081';
+const DAO_PAGE_SIZE = 10;
+let _daoPage = 0;
+let _daoTotalProposals = 0;
+
+// Hook into tab switch to auto-load DAO data
+(function() {
+  const _orig = window.switchTab;
+  if(_orig) {
+    window.switchTab = function(t) {
+      _orig(t);
+      if(t === 'dao') loadDaoAll();
+    };
+  }
+})();
+
+async function loadDaoAll() {
+  await Promise.allSettled([loadDaoStats(), loadDaoProposals(), loadDaoTreasury(), loadDaoCoAdmins(), checkDaoDaemon()]);
+}
+
+async function checkDaoDaemon() {
+  const badge = document.getElementById('dao-status-badge');
+  const daemonBadge = document.getElementById('dao-daemon-badge');
+  try {
+    const r = await fetch('/api/dao/health', { signal: AbortSignal.timeout(3000) }).then(r => r.json());
+    const ok = r.success && r.data && r.data.status === 'ok';
+    const cls = ok ? 'text-xs px-3 py-1 rounded-full bg-emerald-700/50 text-emerald-300' : 'text-xs px-3 py-1 rounded-full bg-red-700/50 text-red-300';
+    const txt = ok ? '🟢 DAO Online' : '🔴 DAO Offline';
+    if(badge) { badge.className = cls; badge.textContent = txt; }
+    if(daemonBadge) { daemonBadge.className = cls.replace('px-3','px-2').replace('py-1','py-0.5'); daemonBadge.textContent = ok ? 'Online' : 'Offline'; }
+  } catch(e) {
+    if(badge) { badge.className = 'text-xs px-3 py-1 rounded-full bg-gray-700 text-gray-400'; badge.textContent = '⚫ DAO Offline'; }
+    if(daemonBadge) { daemonBadge.className = 'text-xs px-2 py-0.5 rounded-full bg-gray-700 text-gray-400'; daemonBadge.textContent = 'Offline'; }
+  }
+}
+
+async function loadDaoStats() {
+  try {
+    const r = await fetch('/api/dao/stats', { signal: AbortSignal.timeout(4000) }).then(r => r.json());
+    const d = r.data || r;
+    const el = id => document.getElementById(id);
+    if(el('dao-stat-total')) el('dao-stat-total').textContent = d.total_proposals ?? '0';
+    if(el('dao-stat-active')) el('dao-stat-active').textContent = d.active ?? '0';
+    if(el('dao-stat-passed')) el('dao-stat-passed').textContent = d.passed ?? '0';
+    if(el('dao-stat-executed')) el('dao-stat-executed').textContent = d.executed ?? '0';
+    if(el('dao-stat-treasury')) el('dao-stat-treasury').textContent = d.treasury_total_zion ? (Number(d.treasury_total_zion) / 1e9).toFixed(1) + ' B' : '4 B';
+    if(el('dao-stat-quorum')) el('dao-stat-quorum').textContent = (d.quorum_percent ?? 10) + '%';
+    if(el('dao-stat-multisig')) el('dao-stat-multisig').textContent = d.multisig ?? '5-of-7';
+  } catch(e) { /* DAO offline */ }
+}
+
+async function loadDaoProposals() {
+  const list = document.getElementById('dao-proposals-list');
+  const statusFilter = document.getElementById('dao-filter-status')?.value || '';
+  if(!list) return;
+  list.innerHTML = '<div class="text-gray-500 text-sm text-center py-6">Loading…</div>';
+  try {
+    const offset = _daoPage * DAO_PAGE_SIZE;
+    let url = `/api/dao/proposals?limit=${DAO_PAGE_SIZE}&offset=${offset}`;
+    if(statusFilter) url += `&status=${statusFilter}`;
+    const r = await fetch(url, { signal: AbortSignal.timeout(5000) }).then(r => r.json());
+    const d = r.data || r;
+    const proposals = d.proposals || [];
+    _daoTotalProposals = d.total || proposals.length;
+
+    if(!proposals.length) {
+      list.innerHTML = '<div class="text-gray-500 text-sm text-center py-8">No proposals found.</div>';
+    } else {
+      list.innerHTML = proposals.map(p => renderDaoProposalCard(p)).join('');
+    }
+
+    const countEl = document.getElementById('dao-proposals-count');
+    if(countEl) countEl.textContent = `${proposals.length} of ${_daoTotalProposals} proposals`;
+    const pageEl = document.getElementById('dao-page-label');
+    if(pageEl) pageEl.textContent = `Page ${_daoPage + 1} of ${Math.max(1, Math.ceil(_daoTotalProposals / DAO_PAGE_SIZE))}`;
+    const prevBtn = document.getElementById('dao-prev-btn');
+    const nextBtn = document.getElementById('dao-next-btn');
+    if(prevBtn) prevBtn.disabled = _daoPage === 0;
+    if(nextBtn) nextBtn.disabled = offset + DAO_PAGE_SIZE >= _daoTotalProposals;
+  } catch(e) {
+    list.innerHTML = '<div class="text-red-400 text-sm text-center py-6">DAO daemon offline — start it to load proposals.</div>';
+  }
+}
+
+function renderDaoProposalCard(p) {
+  const statusColor = {
+    'Active': 'bg-emerald-700/40 text-emerald-300',
+    'Passed': 'bg-blue-700/40 text-blue-300',
+    'Rejected': 'bg-red-700/40 text-red-300',
+    'Executed': 'bg-yellow-700/40 text-yellow-300',
+    'Pending': 'bg-gray-700/40 text-gray-300',
+    'Timelocked': 'bg-purple-700/40 text-purple-300',
+  }[p.status] || 'bg-gray-700/40 text-gray-300';
+
+  const typeIcon = {
+    'TreasurySpend': '💰',
+    'ParameterChange': '⚙️',
+    'HumanitarianGrant': '🕊️',
+    'BridgeUpgrade': '🌉',
+    'EmergencyPause': '🚨',
+    'GeneralVote': '🗳️',
+  }[p.proposal_type] || '📋';
+
+  // Vote bar (yes/no/abstain)
+  const yes = p.votes_yes || 0, no = p.votes_no || 0, abs = p.votes_abstain || 0;
+  const total = yes + no + abs;
+  const yesPct = total ? Math.round(yes / total * 100) : 0;
+  const noPct  = total ? Math.round(no  / total * 100) : 0;
+
+  const votingEnds = p.voting_ends_at ? new Date(p.voting_ends_at).toLocaleDateString() : '—';
+
+  return `<div class="bg-black/30 rounded-xl p-4 border border-white/5 hover:border-white/10 transition">
+    <div class="flex items-start justify-between gap-3 mb-2">
+      <div class="flex items-center gap-2 min-w-0">
+        <span class="text-base shrink-0">${typeIcon}</span>
+        <div class="min-w-0">
+          <div class="font-semibold text-sm text-white truncate">#${p.id} — ${escapeHtml(p.title || '(no title)')}</div>
+          <div class="text-[10px] text-gray-500 mt-0.5">by <span class="font-mono text-gray-400">${(p.proposer || '').substring(0,20)}…</span> · votes end ${votingEnds}</div>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 shrink-0">
+        <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold ${statusColor}">${p.status}</span>
+        ${p.status === 'Active' ? `<button onclick="openDaoVoteModal(${p.id}, ${JSON.stringify(escapeHtml(p.title || '')).replace(/"/g,"'")})" class="text-[10px] px-2 py-0.5 bg-purple-700/50 hover:bg-purple-600 rounded-full font-semibold transition">Vote</button>` : ''}
+      </div>
+    </div>
+    ${p.description ? `<div class="text-[11px] text-gray-400 line-clamp-2 mb-2">${escapeHtml(p.description)}</div>` : ''}
+    ${total > 0 ? `<div class="mt-2">
+      <div class="flex gap-0.5 h-1.5 rounded-full overflow-hidden bg-white/5 mb-1">
+        <div class="bg-emerald-500 rounded-l-full" style="width:${yesPct}%"></div>
+        <div class="bg-red-500" style="width:${noPct}%"></div>
+        <div class="bg-gray-600 rounded-r-full flex-1"></div>
+      </div>
+      <div class="flex gap-3 text-[10px]">
+        <span class="text-emerald-400">✓ ${yesPct}% Yes</span>
+        <span class="text-red-400">✗ ${noPct}% No</span>
+        <span class="text-gray-500 ml-auto">Total weight: ${total.toLocaleString()}</span>
+      </div>
+    </div>` : '<div class="text-[10px] text-gray-600 mt-1">No votes yet</div>'}
+  </div>`;
+}
+
+function daoPrevPage() { if(_daoPage > 0){ _daoPage--; loadDaoProposals(); } }
+function daoNextPage() { if((_daoPage+1)*DAO_PAGE_SIZE < _daoTotalProposals){ _daoPage++; loadDaoProposals(); } }
+
+async function loadDaoTreasury() {
+  try {
+    const r = await fetch('/api/dao/treasury', { signal: AbortSignal.timeout(4000) }).then(r => r.json());
+    const d = r.data || r;
+    const el = id => document.getElementById(id);
+    if(el('dao-treas-available')) el('dao-treas-available').textContent = d.available_zion ? Number(d.available_zion).toLocaleString() : '—';
+    if(el('dao-treas-total')) el('dao-treas-total').textContent = d.total_zion ? Number(d.total_zion).toLocaleString() : '4,000,000,000';
+    if(el('dao-treas-multisig')) el('dao-treas-multisig').textContent = d.multisig ?? '5-of-7';
+    if(el('dao-treas-pending')) el('dao-treas-pending').textContent = d.pending_operations ?? '0';
+  } catch(e) { /* DAO offline */ }
+}
+
+async function loadDaoCoAdmins() {
+  const tbody = document.getElementById('dao-coadmins-tbody');
+  if(!tbody) return;
+  const layer = document.getElementById('dao-coadmin-layer')?.value || '';
+  try {
+    const url = layer ? `/api/dao/co-admins/${layer}` : '/api/dao/co-admins';
+    const r = await fetch(url, { signal: AbortSignal.timeout(4000) }).then(r => r.json());
+    const d = r.data || r;
+    const admins = d.co_admins || [];
+    if(!admins.length) {
+      tbody.innerHTML = '<tr><td colspan="7" class="text-gray-500 text-center py-4">No co-admins configured yet.</td></tr>';
+      return;
+    }
+    const roleColor = { Validator:'text-blue-400', CoreDev:'text-purple-400', Treasury:'text-yellow-400', Bridge:'text-cyan-400', Security:'text-red-400', Steward:'text-pink-400' };
+    tbody.innerHTML = admins.map(a => {
+      const rc = roleColor[a.role] || 'text-gray-300';
+      const bonded = a.bonded ? (a.bonded / 1e12).toFixed(0) + ' ZION' : '—';
+      return `<tr class="border-b border-white/5 hover:bg-white/2 transition">
+        <td class="py-2 pr-3 font-semibold text-white">${escapeHtml(a.name || '—')}</td>
+        <td class="py-2 pr-3 text-gray-300">L${a.layer}</td>
+        <td class="py-2 pr-3 ${rc} font-mono">${a.role || '—'}</td>
+        <td class="py-2 pr-3 font-mono text-gray-400 text-[9px]">${(a.address||'').substring(0,18)}…</td>
+        <td class="py-2 pr-3 text-white">${bonded}</td>
+        <td class="py-2 pr-3 text-cyan-400">${a.reputation ?? '—'}</td>
+        <td class="py-2">${a.is_active ? '<span class="text-emerald-400">● Active</span>' : '<span class="text-gray-500">○ Inactive</span>'}</td>
+      </tr>`;
+    }).join('');
+  } catch(e) {
+    tbody.innerHTML = '<tr><td colspan="7" class="text-gray-500 text-center py-4">DAO daemon offline.</td></tr>';
+  }
+}
+
+// ── Create Proposal Modal ────────────────────────────────────────────
+
+function openCreateProposalModal() {
+  const modal = document.getElementById('dao-proposal-modal');
+  if(modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
+}
+
+function closeCreateProposalModal() {
+  const modal = document.getElementById('dao-proposal-modal');
+  if(modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+  const st = document.getElementById('dao-modal-status');
+  if(st) st.classList.add('hidden');
+}
+
+async function submitCreateProposal() {
+  const title    = document.getElementById('dao-new-title')?.value?.trim();
+  const desc     = document.getElementById('dao-new-desc')?.value?.trim();
+  const proposer = document.getElementById('dao-new-proposer')?.value?.trim();
+  const ptype    = document.getElementById('dao-new-type')?.value;
+  const apiKey   = document.getElementById('dao-new-apikey')?.value;
+  const stEl     = document.getElementById('dao-modal-status');
+
+  const setStatus = (msg, ok) => {
+    if(!stEl) return;
+    stEl.className = `text-xs rounded-lg p-2 ${ok ? 'bg-emerald-900/50 text-emerald-300' : 'bg-red-900/50 text-red-300'}`;
+    stEl.textContent = msg;
+    stEl.classList.remove('hidden');
+  };
+
+  if(!title || !desc || !proposer) return setStatus('Title, description and proposer address are required.', false);
+  if(!proposer.startsWith('zion1')) return setStatus('Proposer must be a valid zion1… address.', false);
+  if(!apiKey) return setStatus('DAO API Key is required for write operations.', false);
+
+  const body = {
+    title, description: desc, proposer,
+    proposal_type: { [ptype]: {} }
+  };
+
+  try {
+    const r = await fetch('/api/dao/proposals', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-DAO-Key': apiKey },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(8000)
+    }).then(r => r.json());
+
+    if(r.success && r.data?.id) {
+      setStatus(`✓ Proposal #${r.data.id} created successfully! Voting ends: ${r.data.voting_ends_at?.split('T')[0]}`, true);
+      setTimeout(() => { closeCreateProposalModal(); loadDaoAll(); }, 2000);
+    } else {
+      setStatus('Error: ' + (r.error || JSON.stringify(r)), false);
+    }
+  } catch(e) {
+    setStatus('Failed to connect to DAO daemon: ' + e.message, false);
+  }
+}
+
+// ── Vote Modal ───────────────────────────────────────────────────────
+
+function openDaoVoteModal(proposalId, proposalTitle) {
+  document.getElementById('dao-vote-proposal-id').value = proposalId;
+  document.getElementById('dao-vote-proposal-title').textContent = `Proposal #${proposalId}: ${proposalTitle}`;
+  const stEl = document.getElementById('dao-vote-status');
+  if(stEl) stEl.classList.add('hidden');
+  const modal = document.getElementById('dao-vote-modal');
+  if(modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
+}
+
+function closeDaoVoteModal() {
+  const modal = document.getElementById('dao-vote-modal');
+  if(modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+}
+
+async function submitDaoVote(choice) {
+  const id     = document.getElementById('dao-vote-proposal-id')?.value;
+  const voter  = document.getElementById('dao-vote-voter')?.value?.trim();
+  const weight = parseInt(document.getElementById('dao-vote-weight')?.value) || 0;
+  const apiKey = document.getElementById('dao-vote-apikey')?.value;
+  const stEl   = document.getElementById('dao-vote-status');
+
+  const setStatus = (msg, ok) => {
+    if(!stEl) return;
+    stEl.className = `text-xs rounded-lg p-2 ${ok ? 'bg-emerald-900/50 text-emerald-300' : 'bg-red-900/50 text-red-300'}`;
+    stEl.textContent = msg;
+    stEl.classList.remove('hidden');
+  };
+
+  if(!voter || !voter.startsWith('zion1')) return setStatus('Valid zion1… voter address required.', false);
+  if(weight <= 0) return setStatus('Vote weight (ZION balance) must be > 0.', false);
+  if(!apiKey) return setStatus('DAO API Key required.', false);
+
+  // Convert ZION to flowers (× 10^12)
+  const weightFlowers = weight * 1_000_000_000_000;
+
+  try {
+    const r = await fetch(`/api/dao/proposals/${id}/vote`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-DAO-Key': apiKey },
+      body: JSON.stringify({ voter, choice, weight: weightFlowers }),
+      signal: AbortSignal.timeout(8000)
+    }).then(r => r.json());
+
+    if(r.success) {
+      setStatus(`✓ Vote "${choice}" recorded for proposal #${id}`, true);
+      setTimeout(() => { closeDaoVoteModal(); loadDaoProposals(); }, 1500);
+    } else {
+      setStatus('Error: ' + (r.error || JSON.stringify(r)), false);
+    }
+  } catch(e) {
+    setStatus('Failed: ' + e.message, false);
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────
