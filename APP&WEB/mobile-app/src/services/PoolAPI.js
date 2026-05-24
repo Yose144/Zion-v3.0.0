@@ -2,7 +2,7 @@ import axios from 'axios';
 import {CONFIG} from '../constants/config';
 
 /**
- * Pool API Service v2.9.6
+ * Pool API Service v3.0.0
  * Komunikace s ZION mining pool (port 8080)
  *
  * Endpoints match Rust pool server:

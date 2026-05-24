@@ -1,5 +1,5 @@
 /**
- * ZION Transaction History Screen v2.9.6
+ * ZION Transaction History Screen v3.0.0
  * 
  * Features:
  * - List all transactions (ZION)
