@@ -96,7 +96,7 @@ export ZION_P2P_BIND="0.0.0.0:8333"
 export ZION_RPC_BIND="0.0.0.0:8443"
 export ZION_POOL_BIND="0.0.0.0:8444"
 export ZION_METRICS_BIND="0.0.0.0:9115"
-export ZION_SEED_PEERS="77.42.71.94:8333,100.66.162.125:8333"
+export ZION_SEED_PEERS="77.42.71.94:8333,100.76.16.108:8333"
 export ZION_MINER_ADDRESS="zion1..."
 
 # Set all three fee-wallet vars together, or none of them.

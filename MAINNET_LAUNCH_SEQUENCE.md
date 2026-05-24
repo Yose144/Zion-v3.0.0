@@ -30,7 +30,7 @@
   - Miner: GPU mining aktivní
   - Dashboard: Běží na portu 8765
 
-- [x] **Edge server** (Hetzner VPS, Tailscale: 100.66.162.125)
+- [x] **Edge server** (Hetzner VPS, Tailscale: 100.76.16.108)
   - Node (Relay): Synchronizováno s Core
   - Pool (Relay): Share relay aktivní
   - Veřejné porty: 8333 (P2P), 8444 (Pool)
@@ -65,7 +65,7 @@ ssh -i ssh-key-zion-edge root@77.42.71.94 "cat /root/zion-2.9.6-main/edge-enviro
 ```powershell
 # 1. Spustit Core server
 $env:ZION_TOPOLOGY='CORE'
-$env:EDGE_TS_IP='100.66.162.125'
+$env:EDGE_TS_IP='100.76.16.108'
 powershell -ExecutionPolicy Bypass -File .\scripts\_launch-core.ps1
 
 # 2. Spustit Edge server
@@ -184,7 +184,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\_launch-core.ps1
 ## 📝 KONTAKTY A SUPPORT
 
 - **Core Server:** Windows 11 (100.86.102.5)
-- **Edge Server:** Hetzner VPS (77.42.71.94 / 100.66.162.125)
+- **Edge Server:** Hetzner VPS (77.42.71.94 / 100.76.16.108)
 - **Dashboard:** http://127.0.0.1:8765
 - **Logs:** `logs/` (Core), `/var/log/journal/` (Edge)
 

@@ -688,8 +688,8 @@ The pool server reconstructs accumulated revenue state from `RevenueJournal` JSO
 
 **Edge node (Hetzner VPS, Core + Edge topology) — ACTIVE:**
 - V3 mainnet node (height: 26,910+)
-- RPC endpoint: http://100.66.162.125:8443 (Tailscale VPN)
-- Prometheus metrics: http://100.66.162.125:9115/metrics
+- RPC endpoint: http://100.76.16.108:8443 (Tailscale VPN)
+- Prometheus metrics: http://100.76.16.108:9115/metrics
 - Next.js website: https://77.42.71.94
 - Pool server running (ports 8444 Stratum + 8080 API)
 - 12 Docker containers

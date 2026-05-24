@@ -318,7 +318,7 @@ zion config show
 zion config path
 zion config validate
 zion doctor
-zion config set node.rpc_host 100.66.162.125
+zion config set node.rpc_host 100.76.16.108
 zion onboard
 ```
 

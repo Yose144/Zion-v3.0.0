@@ -21,12 +21,12 @@ fn default_topology_matches_canonical_operational_settings() {
     assert_eq!(cfg.topology.core.vpn_ip.as_deref(), Some("100.86.102.5"));
 
     // Edge defaults: Hetzner VPS
-    assert_eq!(cfg.topology.edge.rpc_host, "100.66.162.125");
+    assert_eq!(cfg.topology.edge.rpc_host, "100.76.16.108");
     assert_eq!(cfg.topology.edge.rpc_port, 8443);
     assert_eq!(cfg.topology.edge.p2p_port, 8333);
     assert_eq!(cfg.topology.edge.pool_host, "77.42.71.94");
     assert_eq!(cfg.topology.edge.pool_port, 8444);
-    assert_eq!(cfg.topology.edge.vpn_ip.as_deref(), Some("100.66.162.125"));
+    assert_eq!(cfg.topology.edge.vpn_ip.as_deref(), Some("100.76.16.108"));
 }
 
 #[test]
@@ -60,15 +60,15 @@ fn target_rpc_resolves_core_aliases() {
 fn target_rpc_resolves_edge_aliases() {
     let cfg = Config::default();
     let (host, port) = cfg.target_rpc("edge");
-    assert_eq!(host, "100.66.162.125");
+    assert_eq!(host, "100.76.16.108");
     assert_eq!(port, 8443);
 
     let (host, port) = cfg.target_rpc("vpn");
-    assert_eq!(host, "100.66.162.125");
+    assert_eq!(host, "100.76.16.108");
     assert_eq!(port, 8443);
 
     let (host, port) = cfg.target_rpc("relay");
-    assert_eq!(host, "100.66.162.125");
+    assert_eq!(host, "100.76.16.108");
     assert_eq!(port, 8443);
 }
 
