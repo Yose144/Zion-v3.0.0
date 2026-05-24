@@ -97,7 +97,7 @@ function switchTab(name){
   if(name === 'wallets') loadWallets();
   if(name === 'explorer') loadExplorer();
   if(['l1','l2','l3','l4','l5','l6'].includes(name)) loadLayerFull(name);
-  if(name === 'launch-day') loadLaunchDayStatus();
+  if(name === 'launch-day'){ loadLaunchDayStatus(); startLaunchCountdown(); }
   if(name === 'hiran'){ loadAgentList(); checkAiStatus(); }
 }
 
@@ -700,6 +700,7 @@ async function loadWallets(){
 async function loadExplorer(){
   try {
     const data = await fetch('/api/explorer').then(r => r.json());
+    const set = (elId, val) => { const el = document.getElementById(elId); if(el) el.textContent = val; };
 
     const badge = document.getElementById('explorer-rpc-badge');
     if(badge){
@@ -712,15 +713,24 @@ async function loadExplorer(){
       }
     }
 
-    document.getElementById('exp-height').textContent = data.chain_height ?? '—';
-    document.getElementById('exp-blocks').textContent = data.accepted_blocks ?? '—';
-    document.getElementById('exp-mempool').textContent = data.mempool_size ?? '—';
-    document.getElementById('exp-reward').textContent = data.block_reward_zion ? data.block_reward_zion.toFixed(3) + ' ZION' : '—';
-    document.getElementById('exp-tip').textContent = data.tip_hash ?? '—';
-    document.getElementById('exp-genesis').textContent = data.genesis_hash ?? '—';
-    document.getElementById('exp-circulating').textContent = data.estimated_circulating_zion ? fmtNum(data.estimated_circulating_zion) + ' ZION' : '—';
-    document.getElementById('exp-total').textContent = data.total_supply_zion ? fmtNum(data.total_supply_zion) + ' ZION' : '—';
-    document.getElementById('exp-premine').textContent = data.premine_zion ? fmtNum(data.premine_zion) + ' ZION' : '—';
+    // Original KPI elements
+    set('exp-height', data.chain_height ?? '—');
+    set('exp-blocks', data.accepted_blocks ?? '—');
+    set('exp-mempool', data.mempool_size ?? '—');
+    set('exp-reward', data.block_reward_zion ? data.block_reward_zion.toFixed(3) + ' ZION' : '—');
+    set('exp-tip', data.tip_hash ?? '—');
+    set('exp-genesis', data.genesis_hash ?? '—');
+    set('exp-circulating', data.estimated_circulating_zion ? fmtNum(data.estimated_circulating_zion) + ' ZION' : '—');
+    set('exp-total', data.total_supply_zion ? fmtNum(data.total_supply_zion) + ' ZION' : '—');
+    set('exp-premine', data.premine_zion ? fmtNum(data.premine_zion) + ' ZION' : '—');
+
+    // New named elements required by spec
+    set('explorer-height', data.chain_height ?? '—');
+    set('explorer-hash', data.tip_hash ?? '—');
+    set('explorer-genesis', data.genesis_hash ?? '—');
+    set('explorer-supply', data.total_supply_zion ? fmtNum(data.total_supply_zion) + ' ZION' : '—');
+    set('explorer-peers', data.peers ?? data.peer_count ?? '—');
+    set('explorer-mempool', data.mempool_size ?? '—');
 
     const tbody = document.getElementById('explorer-blocks');
     if(tbody){
@@ -738,7 +748,7 @@ async function loadExplorer(){
         `).join('');
       }
     }
-    // Also load mempool
+    // Also load mempool (populates exp-mempool-* and explorer-mempool-count/list)
     loadMempool();
   } catch(e){
     console.error('Explorer load error:', e);
@@ -751,16 +761,24 @@ async function loadMempool(){
   try {
     const mp = await fetch('/api/mempool').then(r=>r.json());
     const el = id => document.getElementById(id);
-    if(el('exp-mempool-size')) el('exp-mempool-size').textContent = mp.count ?? mp.size ?? '0';
+    const count = mp.count ?? mp.size ?? 0;
+    if(el('exp-mempool-size')) el('exp-mempool-size').textContent = count;
     if(el('exp-mempool-bytes')) el('exp-mempool-bytes').textContent = mp.total_bytes ? (mp.total_bytes/1024).toFixed(1)+' KB' : '0 B';
+    // New spec elements
+    if(el('explorer-mempool-count')) el('explorer-mempool-count').textContent = count;
     const txEl = el('exp-mempool-txs');
-    if(txEl && mp.transactions && mp.transactions.length > 0){
-      txEl.innerHTML = mp.transactions.slice(0,20).map(tx =>
+    const listEl = el('explorer-mempool-list');
+    if(mp.transactions && mp.transactions.length > 0){
+      const txHtml = mp.transactions.slice(0,20).map(tx =>
         `<div class="py-0.5 border-b border-white/5 truncate" title="${tx.hash||tx.txid||''}">
           <span class="text-emerald-400">${(tx.hash||tx.txid||'').slice(0,12)}...</span>
           <span class="text-gray-500">${tx.size ? tx.size+' B' : ''}</span>
         </div>`
       ).join('');
+      if(txEl) txEl.innerHTML = txHtml;
+      if(listEl) listEl.innerHTML = txHtml;
+    } else {
+      if(listEl) listEl.innerHTML = '<div class="text-gray-500 italic text-xs">Mempool empty</div>';
     }
   } catch(e){ /* mempool may not be available */ }
 }
@@ -774,17 +792,8 @@ async function explorerSearch(){
   result.classList.remove('hidden');
   result.innerHTML = '<div class="text-gray-500 text-xs">Searching...</div>';
   try {
-    // Try as height (number) or hash
-    let url;
-    if(/^\d+$/.test(q)){
-      url = '/api/block?height='+q;
-    } else if(/^[0-9a-fA-F]{10,}$/.test(q)){
-      url = '/api/block?hash='+q;
-    } else {
-      result.innerHTML = '<div class="text-amber-400 text-xs">Enter a block height (number) or block hash (hex).</div>';
-      return;
-    }
-    const block = await fetch(url).then(r=>r.json());
+    // Primary: /api/block?q=<input> — backend handles height / hash / address disambiguation
+    const block = await fetch('/api/block?q=' + encodeURIComponent(q)).then(r=>r.json());
     if(block.error){
       result.innerHTML = '<div class="text-red-400 text-xs">'+escapeHtml(block.error)+'</div>';
       return;
@@ -901,53 +910,79 @@ async function saveAlertConfig(){
 
 async function loadTopology(){
   try {
-    const t = await fetch('/api/topology').then(r => r.json());
-    const coreDot = document.getElementById('topo-core-dot');
-    const edgeDot = document.getElementById('topo-edge-dot');
-    if(coreDot) coreDot.className = 'w-3 h-3 rounded-full ' + (t.core.alive ? 'bg-emerald-400' : 'bg-red-500');
-    if(edgeDot) edgeDot.className = 'w-3 h-3 rounded-full ' + (t.edge.alive ? 'bg-emerald-400' : 'bg-red-500');
-    document.getElementById('topo-core-height').textContent = t.core.height ?? '—';
-    document.getElementById('topo-edge-height').textContent = t.edge.height ?? '—';
-    const tsIcon = document.getElementById('topo-tailscale-icon');
-    const tsStatus = document.getElementById('topo-tailscale-status');
-    if(tsIcon) tsIcon.textContent = t.tailscale.vpn_ok ? '🟢' : '🔴';
-    if(tsStatus) { tsStatus.textContent = t.tailscale.vpn_ok ? 'Connected' : 'Unreachable'; tsStatus.className = t.tailscale.vpn_ok ? 'text-emerald-400 font-bold' : 'text-red-400'; }
+    const data = await fetch('/api/topology', { signal: AbortSignal.timeout(8000) }).then(r=>r.json());
+    const el = id => document.getElementById(id);
+
+    // ── Real-time status bar (new elements) ──────────────────────────────
+    // Core
+    if(el('topo-core-status')){
+      const alive = data.core?.alive;
+      el('topo-core-status').textContent = alive ? 'Online' : 'Offline';
+      el('topo-core-status').className   = alive ? 'text-emerald-400 font-bold' : 'text-red-400 font-bold';
+    }
+    if(el('topo-core-latency')) el('topo-core-latency').textContent = data.core?.latency_ms ? data.core.latency_ms+'ms' : '—';
+    if(el('topo-core-height'))  el('topo-core-height').textContent  = data.core?.data?.height ?? data.core?.data?.result?.height ?? data.core?.height ?? '—';
+
+    // Edge
+    if(el('topo-edge-status')){
+      const alive = data.edge?.alive;
+      el('topo-edge-status').textContent = alive ? 'Online' : 'Offline';
+      el('topo-edge-status').className   = alive ? 'text-emerald-400 font-bold' : 'text-red-400 font-bold';
+    }
+    if(el('topo-edge-latency')) el('topo-edge-latency').textContent = data.edge?.latency_ms ? data.edge.latency_ms+'ms' : '—';
+    if(el('topo-edge-height'))  el('topo-edge-height').textContent  = data.edge?.data?.height ?? data.edge?.data?.result?.height ?? data.edge?.height ?? '—';
+
+    // Tailscale
+    if(el('topo-tailscale')){
+      const ts = data.tailscale?.vpn_ok != null
+        ? (data.tailscale.vpn_ok ? 'connected' : 'unreachable')
+        : (data.tailscale || 'unknown');
+      el('topo-tailscale').textContent = typeof ts === 'string' ? ts : 'unknown';
+      el('topo-tailscale').className = (ts === 'connected') ? 'text-emerald-400 font-bold' : 'text-amber-400';
+    }
+
+    // Sync gap
+    const coreH = data.core?.data?.height ?? data.core?.height ?? 0;
+    const edgeH = data.edge?.data?.height ?? data.edge?.height ?? 0;
+    const gap = Math.abs(coreH - edgeH);
+    if(el('topo-sync-gap')){
+      el('topo-sync-gap').textContent = gap + ' blocks';
+      el('topo-sync-gap').className   = gap === 0 ? 'text-emerald-400' : gap < 10 ? 'text-amber-400' : 'text-red-400';
+    }
+
+    // ── Legacy elements (dots, icons, ports, apps, sync verdict) ─────────
+    const coreDot = el('topo-core-dot');
+    const edgeDot = el('topo-edge-dot');
+    if(coreDot) coreDot.className = 'w-3 h-3 rounded-full ' + (data.core?.alive ? 'bg-emerald-400' : 'bg-red-500');
+    if(edgeDot) edgeDot.className = 'w-3 h-3 rounded-full ' + (data.edge?.alive ? 'bg-emerald-400' : 'bg-red-500');
+    const tsIcon = el('topo-tailscale-icon');
+    const tsStatus = el('topo-tailscale-status');
+    if(tsIcon) tsIcon.textContent = data.tailscale?.vpn_ok ? '🟢' : '🔴';
+    if(tsStatus){ tsStatus.textContent = data.tailscale?.vpn_ok ? 'Connected' : 'Unreachable'; tsStatus.className = data.tailscale?.vpn_ok ? 'text-emerald-400 font-bold' : 'text-red-400'; }
     const portMap = {p2p:'node_p2p', rpc:'node_rpc', pool:'pool_stratum', dash:'dashboard', hiran:'hiran_inference', orch:'hiranyagarbha'};
     for(const [key, apiKey] of Object.entries(portMap)){
-      const el = document.getElementById('topo-port-' + key);
-      if(el){ el.textContent = t.ports[apiKey] ? 'Open' : 'Closed'; el.className = 'text-xs font-bold ' + (t.ports[apiKey] ? 'text-emerald-400' : 'text-red-400'); }
+      const pe = el('topo-port-' + key);
+      if(pe){ pe.textContent = data.ports?.[apiKey] ? 'Open' : 'Closed'; pe.className = 'text-xs font-bold ' + (data.ports?.[apiKey] ? 'text-emerald-400' : 'text-red-400'); }
     }
-    // Apps
-    const apps = t.apps || {};
-    const appMap = [
-      ['web', apps.website?.alive],
-      ['desktop', apps.desktop_agent?.alive],
-      ['mobile', apps.mobile_app?.alive],
-      ['cli', apps.cli?.alive],
-    ];
+    const apps = data.apps || {};
+    const appMap = [['web', apps.website?.alive],['desktop', apps.desktop_agent?.alive],['mobile', apps.mobile_app?.alive],['cli', apps.cli?.alive]];
     for(const [id, alive] of appMap){
-      const dot = document.getElementById('app-' + id + '-dot');
-      const badge = document.getElementById('app-' + id + '-badge');
+      const dot = el('app-' + id + '-dot');
+      const badge = el('app-' + id + '-badge');
       if(dot) dot.className = 'w-3 h-3 rounded-full ' + (alive ? 'bg-emerald-400' : 'bg-red-500');
       if(badge){ badge.textContent = alive ? 'Online' : 'Offline'; badge.className = 'text-[10px] px-2 py-0.5 rounded ' + (alive ? 'bg-emerald-700 text-emerald-300' : 'bg-red-700 text-red-300'); }
     }
-    // Sync gap visualization
-    const n1h = t.core.height || 0;
-    const n2h = t.edge.height || 0;
-    const maxH = Math.max(n1h, n2h, 1);
-    const el = id => document.getElementById(id);
-    if(el('topo-sync-n1')) el('topo-sync-n1').textContent = n1h.toLocaleString();
-    if(el('topo-sync-n2')) el('topo-sync-n2').textContent = n2h.toLocaleString();
-    if(el('topo-sync-bar-n1')) el('topo-sync-bar-n1').style.width = (n1h/maxH*100)+'%';
-    if(el('topo-sync-bar-n2')) el('topo-sync-bar-n2').style.width = (n2h/maxH*100)+'%';
-    const gap = Math.abs(n1h - n2h);
-    if(el('topo-sync-gap')) el('topo-sync-gap').textContent = gap;
+    const maxH = Math.max(coreH, edgeH, 1);
+    if(el('topo-sync-n1')) el('topo-sync-n1').textContent = coreH.toLocaleString();
+    if(el('topo-sync-n2')) el('topo-sync-n2').textContent = edgeH.toLocaleString();
+    if(el('topo-sync-bar-n1')) el('topo-sync-bar-n1').style.width = (coreH/maxH*100)+'%';
+    if(el('topo-sync-bar-n2')) el('topo-sync-bar-n2').style.width = (edgeH/maxH*100)+'%';
     if(el('topo-sync-verdict')){
       if(gap === 0){ el('topo-sync-verdict').textContent = 'Fully synced'; el('topo-sync-verdict').className = 'font-bold text-emerald-400'; }
       else if(gap <= 2){ el('topo-sync-verdict').textContent = 'Near sync ('+gap+' block gap)'; el('topo-sync-verdict').className = 'font-bold text-amber-400'; }
       else { el('topo-sync-verdict').textContent = 'Out of sync ('+gap+' blocks behind)'; el('topo-sync-verdict').className = 'font-bold text-red-400'; }
     }
-  } catch(e) { console.error('Topology load error:', e); }
+  } catch(e) { console.warn('loadTopology', e); }
   // Latency measurement
   measureServiceLatency();
 }
@@ -1237,17 +1272,19 @@ function mkChart(id, type, data, opts){
 }
 
 // Chart timeframe & additional charts
-let chartTimeframe = '5m'; // 2m, 5m, 10m, all
+let chartTimeframe = '5m'; // 2m, 5m, 10m, all (legacy compat)
+let _chartTimeframe = '5m';
 function setChartTimeframe(tf){
-  chartTimeframe = tf;
-  document.querySelectorAll('.chart-tf-btn').forEach(b => {
-    if(b.dataset.tf === tf){
-      b.className = 'chart-tf-btn text-[10px] px-2.5 py-1 rounded bg-emerald-900/30 text-emerald-300 border border-emerald-500/30 transition';
-    } else {
-      b.className = 'chart-tf-btn text-[10px] px-2.5 py-1 rounded bg-black/30 text-gray-400 hover:bg-emerald-900/20 hover:text-emerald-300 transition';
-    }
+  _chartTimeframe = tf;
+  chartTimeframe = tf; // keep legacy compat
+  // Update button styles
+  ['2m','5m','10m','all'].forEach(t => {
+    const btn = document.getElementById('chart-tf-' + t);
+    if(btn) btn.classList.toggle('bg-zion-gold/20', t === tf);
+    if(btn) btn.classList.toggle('text-zion-gold', t === tf);
+    if(btn) btn.classList.toggle('border-zion-gold/40', t === tf);
   });
-  refreshCharts();
+  renderCharts();
 }
 
 async function refreshCharts(){
@@ -1609,22 +1646,22 @@ function runCliQuick(cmd){
 }
 
 async function runCoreUtil(cmd){
-  const log = document.getElementById('backup-log');
-  const db = 'V3/data/zion-node-state.db';
-  if(log) log.insertAdjacentHTML('afterbegin', '<div class="text-zion-gold text-xs">Running core-util ' + cmd + '…</div>');
+  const out = document.getElementById('install-log') || document.getElementById('cli-output');
+  if(out){ out.innerHTML = `<div class="text-gray-400">Running core-util: ${escapeHtml(cmd)}…</div>`; }
   try {
-    const res = await fetch('/api/cli/core-util', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({cmd, db})
-    }).then(r => r.json());
-    const msg = res.ok ? '<div class="text-emerald-400 text-xs">✓ core-util ' + cmd + '</div>' : '<div class="text-red-400 text-xs">✗ ' + escapeHtml(res.error || 'failed') + '</div>';
-    if(log) log.insertAdjacentHTML('afterbegin', msg + '<pre class="text-[10px] text-gray-400 mt-1 whitespace-pre-wrap">' + escapeHtml(res.stdout || res.output || '') + '</pre>');
-    toast(res.ok ? 'core-util ' + cmd + ' done' : 'core-util failed: ' + (res.error || ''), res.ok ? 'success' : 'error');
-  } catch(e) {
-    if(log) log.insertAdjacentHTML('afterbegin', '<div class="text-red-400 text-xs">✗ ' + e.message + '</div>');
-    toast('core-util error: ' + e.message, 'error');
-  }
+    const r = await fetch('/api/cli/core-util?cmd='+encodeURIComponent(cmd)).then(r=>r.json());
+    if(out){
+      const lines = (r.stdout||r.output||r.result||'(no output)').split('\n');
+      out.innerHTML = lines.map(l => {
+        let cls='text-gray-300';
+        if(/error|Error/i.test(l)) cls='text-red-400';
+        else if(/ok|success|✓/i.test(l)) cls='text-emerald-400';
+        return `<div class="${cls}">${escapeHtml(l)}</div>`;
+      }).join('');
+      out.scrollTop = out.scrollHeight;
+    }
+    if(r.error) toast('Core util error: '+r.error, 'error');
+  } catch(e){ if(out) out.innerHTML = `<div class="text-red-400">Error: ${escapeHtml(e.message)}</div>`; }
 }
 
 // ── Backup & Recovery ──
@@ -1890,6 +1927,17 @@ async function populateL1(){
   } else if(rblocks){
     rblocks.innerHTML = '<div class="text-gray-600 italic">No block events yet.</div>';
   }
+  // Populate real-time bar
+  const rt = id => document.getElementById(id);
+  if(rt('l1-rt-height')) rt('l1-rt-height').textContent = fmtNum(n1.height || n1.chain_height || 0);
+  if(rt('l1-rt-peers'))  rt('l1-rt-peers').textContent  = n1.peers ?? n1.known_peers ?? '—';
+  if(rt('l1-rt-hashrate')) rt('l1-rt-hashrate').textContent = status.pool?.hashrate ? fmtNum(status.pool.hashrate)+'H/s' : '—';
+  if(rt('l1-rt-shares'))   rt('l1-rt-shares').textContent   = fmtNum(status.pool?.shares_accepted ?? 0);
+  const mkBadge = (alive) => alive ? '● LIVE' : '● DOWN';
+  const mkCls   = (alive, el) => { if(el){ el.textContent = mkBadge(alive); el.className = 'text-lg font-bold ' + (alive?'text-emerald-400':'text-red-400'); } };
+  mkCls(n1.alive ?? n1.running, rt('l1-rt-node1-badge'));
+  mkCls(status.pool?.alive ?? status.pool?.running, rt('l1-rt-pool-badge'));
+  mkCls(status.pool_edge?.alive ?? status.pool_edge?.running, rt('l1-rt-edge-badge'));
 }
 
 async function populateL2(){
@@ -2529,33 +2577,24 @@ async function loadOrchestratorStats(){
 
 async function loadAgentList(){
   const list = document.getElementById('agent-list');
-  const res = document.getElementById('agent-action-result');
-  if(list) list.innerHTML = '<div class="text-gray-500 text-xs italic">Loading agents…</div>';
-  try{
-    const r = await fetch('http://127.0.0.1:8001/agents');
-    const d = await r.json();
-    const total = d.total ?? d.active ?? 0;
-    if(total === 0){
-      if(list) list.innerHTML = '<div class="text-gray-500 text-xs italic">No active agents — click + Register to create one</div>';
+  if(!list) return;
+  try {
+    const data = await fetch('/api/hiran/agents', { signal: AbortSignal.timeout(4000) }).then(r=>r.json());
+    const agents = data.agents || [];
+    if(!agents.length){
+      list.innerHTML = `<div class="text-gray-500 italic text-xs p-3">${data.offline ? 'Hiranyagarbha offline — start it first' : 'No agents registered'}</div>`;
       return;
     }
-    const r2 = await fetch('http://127.0.0.1:8001/orchestrator/status');
-    const s = await r2.json();
-    const agents = s.agents ?? {};
-    const active = agents.active ?? 0;
-    const suspended = agents.suspended ?? 0;
-    const terminated = agents.terminated ?? 0;
-    const actions = agents.total_actions ?? 0;
-    let html = '<div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-center mb-2">';
-    html += '<div class="bg-zion-900 rounded p-2"><div class="text-xs text-gray-400">Active</div><div class="text-sm font-bold text-emerald-400">' + active + '</div></div>';
-    html += '<div class="bg-zion-900 rounded p-2"><div class="text-xs text-gray-400">Suspended</div><div class="text-sm font-bold text-amber-400">' + suspended + '</div></div>';
-    html += '<div class="bg-zion-900 rounded p-2"><div class="text-xs text-gray-400">Terminated</div><div class="text-sm font-bold text-red-400">' + terminated + '</div></div>';
-    html += '<div class="bg-zion-900 rounded p-2"><div class="text-xs text-gray-400">Actions</div><div class="text-sm font-bold text-gray-300">' + actions + '</div></div>';
-    html += '</div>';
-    if(list) list.innerHTML = html;
-    if(res) res.textContent = 'Loaded: ' + active + ' active, ' + suspended + ' suspended, ' + terminated + ' terminated';
-  }catch(e){
-    if(list) list.innerHTML = '<div class="text-red-400 text-xs">Error loading agents: ' + escapeHtml(String(e)) + '</div>';
+    list.innerHTML = agents.map(a => `
+      <div class="flex items-center justify-between bg-black/30 rounded-lg px-3 py-2">
+        <div>
+          <div class="text-sm font-semibold text-gray-200">${escapeHtml(a.name||a.id||'Agent')}</div>
+          <div class="text-[10px] text-gray-500">${escapeHtml(a.type||'')} · ${escapeHtml(a.status||'idle')}</div>
+        </div>
+        <span class="text-[10px] px-2 py-0.5 rounded-full ${a.status==='active'?'bg-emerald-700/50 text-emerald-300':'bg-gray-700 text-gray-400'}">${escapeHtml(a.status||'idle')}</span>
+      </div>`).join('');
+  } catch(e){
+    if(list) list.innerHTML = `<div class="text-red-400 text-xs p-3">Error: ${escapeHtml(e.message)}</div>`;
   }
 }
 
@@ -3084,7 +3123,7 @@ async function submitNclJob() {
 
   try {
     const payload = { job_type: jt, model_id: model, backend, params: { prompt }, priority, submitter, input_hash: Date.now().toString(16), reward_flowers: reward, max_duration_secs: duration };
-    const r = await fetch('/api/ncl/jobs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    const r = await fetch('/api/ncl/submit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     const d = await r.json();
     if (d.error) { if (res) res.innerHTML = '<span class="text-red-400">Error: ' + d.error + '</span>'; }
     else {
@@ -3718,7 +3757,7 @@ async function submitNclJob() {
   };
   if(!payload) return setStatus('Payload required.', false);
   try {
-    const r = await fetch('/api/ncl/jobs', {
+    const r = await fetch('/api/ncl/submit', {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ job_type: jobType, payload }),
@@ -4077,6 +4116,25 @@ function logSelectAndOpen(svcId) {
   logStreamStart();
   // Scroll to terminal
   document.getElementById('log-terminal-output')?.scrollIntoView({ behavior: 'smooth' });
+}
+
+// ── Launch Day countdown ───────────────────────────────────────────────
+function startLaunchCountdown(){
+  const el = document.getElementById('launch-countdown');
+  if(!el) return;
+  const target = new Date('2026-12-31T12:00:00Z');
+  function tick(){
+    const now = new Date();
+    const diff = target - now;
+    if(diff <= 0){ el.textContent = '🚀 LAUNCH NOW'; return; }
+    const d = Math.floor(diff/86400000);
+    const h = Math.floor((diff%86400000)/3600000);
+    const m = Math.floor((diff%3600000)/60000);
+    const s = Math.floor((diff%60000)/1000);
+    el.textContent = `${d}d ${h}h ${m}m ${s}s`;
+  }
+  tick();
+  setInterval(tick, 1000);
 }
 
 // ── Hook into switchTab for logs ─────────────────────────────────────────
