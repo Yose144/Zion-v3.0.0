@@ -135,6 +135,7 @@ button{display:inline-flex;align-items:center;justify-content:center;cursor:poin
       <button onclick="toggleFriendly()" id="friendlyBtn" class="zion-button-secondary text-xs">🧒 Kid Mode</button>
       <button onclick="refreshAll()" class="zion-button-secondary text-xs">🔄 Refresh</button>
       <button onclick="toggleAuto()" id="autoBtn" class="zion-button-secondary text-xs">⚡ Auto</button>
+      <button onclick="openSettingsModal()" class="zion-button-secondary text-xs" title="Settings (S)">⚙️</button>
     </div>
   </header>
 
@@ -265,6 +266,7 @@ button{display:inline-flex;align-items:center;justify-content:center;cursor:poin
         <div class="sidebar-title">Tools</div>
         <button onclick="switchTab('wallets')" id="tab-wallets" class="sidebar-item">💼 Wallets</button>
         <button onclick="switchTab('explorer')" id="tab-explorer" class="sidebar-item">🔍 Explorer</button>
+        <button onclick="openSettingsModal()" class="sidebar-item">⚙️ Settings</button>
       </div>
     </aside>
 
@@ -630,7 +632,10 @@ button{display:inline-flex;align-items:center;justify-content:center;cursor:poin
           <h2 class="text-xl font-bold flex items-center gap-2"><span class="text-gradient">🔍 ZION Blockchain Explorer</span></h2>
           <p class="text-xs text-gray-400 mt-1">Live chain state, recent blocks, mempool, and supply metrics.</p>
         </div>
-        <div id="explorer-rpc-badge" class="text-xs px-2.5 py-1 rounded-full bg-gray-700 text-gray-400">Checking…</div>
+        <div class="flex gap-2">
+          <a href="/api/export/blocks" class="text-xs px-2.5 py-1 rounded-full bg-blue-700/50 text-blue-300 hover:bg-blue-600 transition">📥 Export CSV</a>
+          <div id="explorer-rpc-badge" class="text-xs px-2.5 py-1 rounded-full bg-gray-700 text-gray-400">Checking…</div>
+        </div>
       </div>
 
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
@@ -954,6 +959,15 @@ button{display:inline-flex;align-items:center;justify-content:center;cursor:poin
         <div id="dep-graph-viz" class="flex flex-wrap gap-3"></div>
       </div>
     </div>
+
+    <!-- Process Registry -->
+    <div class="zion-panel p-6 mb-4">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-lg font-bold flex items-center gap-2">🖥️ Process Registry</h2>
+        <button onclick="loadProcessRegistry()" class="text-[10px] px-2 py-1 bg-white/10 hover:bg-white/20 rounded transition">🔄 Refresh</button>
+      </div>
+      <div id="process-registry" class="text-xs"></div>
+    </div>
   </div>
 
   <!-- ═════════ TAB: L1 Consensus ═════════ -->
@@ -1160,7 +1174,22 @@ button{display:inline-flex;align-items:center;justify-content:center;cursor:poin
   </div>
 
   <!-- ═════════ TAB: Logs ═════════ -->
-  <div id="pane-logs" class="hidden">
+  <div id="pane-logs" class="hidden space-y-4">
+    <!-- Log Search -->
+    <div class="zion-panel p-5">
+      <h2 class="text-lg font-bold mb-3 flex items-center gap-2">🔍 Log Search</h2>
+      <div class="flex gap-2 mb-3">
+        <input id="log-search-input" type="text" placeholder="Search across all log files…" class="flex-1 bg-black/30 border border-zion-700 rounded-md px-3 py-2 text-xs text-white focus:outline-none focus:border-zion-gold" onkeydown="if(event.key==='Enter')runLogSearch()">
+        <select id="log-level-filter" class="bg-black/30 border border-zion-700 rounded-md px-2 py-2 text-xs text-white focus:outline-none focus:border-zion-gold" onchange="runLogSearch()">
+          <option value="all">All levels</option>
+          <option value="error">Error</option>
+          <option value="warn">Warn</option>
+          <option value="info">Info</option>
+        </select>
+        <button onclick="runLogSearch()" class="text-xs px-3 py-1.5 bg-emerald-700/50 hover:bg-emerald-600 rounded-md font-semibold transition">Search</button>
+      </div>
+      <div id="log-search-results" class="max-h-64 overflow-y-auto text-xs font-mono space-y-1"></div>
+    </div>
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <div class="zion-panel p-5"><div class="flex items-center justify-between mb-2"><h3 class="zion-kicker">Node 1</h3><button onclick="loadLogs('node1')" class="text-xs text-gray-400 hover:text-white">🔄</button></div><pre id="log-node1" class="log-tail bg-black/40 rounded-xl p-3 h-72 overflow-auto text-gray-300"></pre></div>
       <div class="zion-panel p-5"><div class="flex items-center justify-between mb-2"><h3 class="zion-kicker">Node 2</h3><button onclick="loadLogs('node2')" class="text-xs text-gray-400 hover:text-white">🔄</button></div><pre id="log-node2" class="log-tail bg-black/40 rounded-xl p-3 h-72 overflow-auto text-gray-300"></pre></div>
@@ -1435,6 +1464,62 @@ button{display:inline-flex;align-items:center;justify-content:center;cursor:poin
     <a href="../MainnetLaunch.md" target="_blank" class="text-zion-gold hover:underline">Playbook</a>
     <div class="mt-2 italic">"In code we trust. 144 billion ZION. Not one satoshi more."</div>
   </footer>
+</div>
+
+<!-- Settings Modal -->
+<div id="settings-modal" class="fixed inset-0 bg-black/80 hidden items-center justify-center z-50 p-4" onclick="if(event.target===this)closeSettingsModal()">
+  <div class="zion-panel w-full max-w-lg max-h-[80vh] overflow-y-auto p-6 relative">
+    <button onclick="closeSettingsModal()" class="absolute top-3 right-3 text-gray-400 hover:text-white text-xl">&times;</button>
+    <h2 class="text-xl font-bold mb-4 text-gradient">⚙️ Settings</h2>
+    <div class="space-y-4">
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs text-gray-400 block mb-1">Theme</label>
+          <select id="settings-theme" class="w-full bg-black/30 border border-zion-700 rounded-md px-2 py-2 text-xs text-white focus:outline-none focus:border-zion-gold">
+            <option value="dark">Dark</option>
+            <option value="light">Light</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs text-gray-400 block mb-1">Default Tab</label>
+          <select id="settings-default-tab" class="w-full bg-black/30 border border-zion-700 rounded-md px-2 py-2 text-xs text-white focus:outline-none focus:border-zion-gold">
+            <option value="overview">Overview</option>
+            <option value="controls">Controls</option>
+            <option value="explorer">Explorer</option>
+            <option value="topology">Topology</option>
+            <option value="ops">Ops</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <label class="text-xs text-gray-400 block mb-1">Refresh Interval (ms)</label>
+        <input id="settings-refresh" type="number" min="1000" max="30000" step="500" class="w-full bg-black/30 border border-zion-700 rounded-md px-2 py-2 text-xs text-white focus:outline-none focus:border-zion-gold">
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs text-gray-400 block mb-1">Hashrate Alert Threshold (KH/s)</label>
+          <input id="settings-hashrate-th" type="number" min="0" max="100" step="0.1" class="w-full bg-black/30 border border-zion-700 rounded-md px-2 py-2 text-xs text-white focus:outline-none focus:border-zion-gold">
+        </div>
+        <div>
+          <label class="text-xs text-gray-400 block mb-1">Sync Gap Alert Threshold (blocks)</label>
+          <input id="settings-sync-th" type="number" min="1" max="100" step="1" class="w-full bg-black/30 border border-zion-700 rounded-md px-2 py-2 text-xs text-white focus:outline-none focus:border-zion-gold">
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <label class="flex items-center gap-2 text-xs text-gray-300 cursor-pointer">
+          <input id="settings-watchdog" type="checkbox" class="accent-zion-gold"> Auto-launch watchdog
+        </label>
+        <label class="flex items-center gap-2 text-xs text-gray-300 cursor-pointer">
+          <input id="settings-tooltips" type="checkbox" class="accent-zion-gold"> Show tooltips
+        </label>
+      </div>
+      <div class="flex gap-2 pt-2">
+        <button onclick="saveSettings()" class="text-xs px-3 py-1.5 bg-emerald-700/50 hover:bg-emerald-600 rounded-md font-semibold transition">💾 Save</button>
+        <button onclick="resetSettings()" class="text-xs px-3 py-1.5 bg-gray-700/50 hover:bg-gray-600 rounded-md font-semibold transition">↺ Reset</button>
+        <span id="settings-save-status" class="text-xs text-emerald-400 self-center"></span>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- Block Detail Modal -->
