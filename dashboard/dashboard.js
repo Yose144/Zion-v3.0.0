@@ -1850,11 +1850,11 @@ async function loadLayerFull(layer){
   // Then populate layer-specific KPIs
   try {
     if(layer === 'l1') await populateL1();
-    else if(layer === 'l2') await populateL2();
-    else if(layer === 'l3') await populateL3();
-    else if(layer === 'l4') await populateL4();
-    else if(layer === 'l5') await populateL5();
-    else if(layer === 'l6') await populateL6();
+    else if(layer === 'l2') { await populateL2(); loadL2Data(); }
+    else if(layer === 'l3') { await populateL3(); loadL3Data(); }
+    else if(layer === 'l4') { await populateL4(); loadL4Data(); }
+    else if(layer === 'l5') { await populateL5(); loadL5Data(); }
+    else if(layer === 'l6') { await populateL6(); loadL6Data(); }
   } catch(e){ console.warn('Layer KPI error:', layer, e); }
 }
 
@@ -3607,4 +3607,244 @@ setTimeout(loadMinerConfig, 500);
 // Load overview widgets on startup
 setTimeout(() => { loadNclOverview(); loadHiranOverview(); }, 1500);
 setInterval(() => { loadNclOverview(); loadHiranOverview(); }, 15000);
+// ─────────────────────────────────────────────────────────────────────
+// L2 Layer Functions
+// ─────────────────────────────────────────────────────────────────────
+
+async function loadL2Data() {
+  // Bridge status via proxy
+  try {
+    const r = await fetch('/api/bridge/health', { signal: AbortSignal.timeout(3000) }).then(r => r.json());
+    const ok = r.ok || r.status === 'ok';
+    const badge = document.getElementById('l2-bridge-badge');
+    if(badge){ badge.className = ok ? 'text-[10px] px-2 py-0.5 rounded-full bg-emerald-700/50 text-emerald-300' : 'text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400'; badge.textContent = ok ? 'Online' : 'Offline'; }
+    if(r.total_relays !== undefined) document.getElementById('l2-relays')?.setAttribute('data-val', r.total_relays);
+  } catch(e) {}
+
+  // DAO stats
+  try {
+    const r = await fetch('/api/dao/stats', { signal: AbortSignal.timeout(3000) }).then(r => r.json());
+    const d = r.data || r;
+    const el = id => document.getElementById(id);
+    if(el('l2-proposals')) el('l2-proposals').textContent = d.total_proposals ?? '—';
+    if(el('l2-dao-active')) el('l2-dao-active').textContent = d.active ?? '—';
+    if(el('l2-dao-passed')) el('l2-dao-passed').textContent = d.passed ?? '—';
+  } catch(e) {}
+
+  // Swap status
+  try {
+    const r = await fetch('/api/swap/health', { signal: AbortSignal.timeout(3000) }).then(r => r.json());
+    const ok = r.ok || r.status === 'ok';
+    const badge = document.getElementById('l2-swap-badge');
+    if(badge){ badge.className = ok ? 'text-[10px] px-2 py-0.5 rounded-full bg-emerald-700/50 text-emerald-300' : 'text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400'; badge.textContent = ok ? 'Online' : 'Offline'; }
+    const el = id => document.getElementById(id);
+    if(el('l2-swap-active-count')) el('l2-swap-active-count').textContent = r.active_htlcs ?? '—';
+    if(el('l2-swap-completed')) el('l2-swap-completed').textContent = r.completed ?? '—';
+    if(el('l2-swap-refunded')) el('l2-swap-refunded').textContent = r.refunded ?? '—';
+    if(el('l2-swaps')) el('l2-swaps').textContent = r.active_htlcs ?? '—';
+  } catch(e) {}
+}
+
+async function initiateAtomicSwap() {
+  const fromChain = document.getElementById('l2-swap-from-chain')?.value;
+  const toChain   = document.getElementById('l2-swap-to-chain')?.value;
+  const amount    = document.getElementById('l2-swap-amount')?.value;
+  const recipient = document.getElementById('l2-swap-recipient')?.value?.trim();
+  const stEl      = document.getElementById('l2-swap-status');
+  const setStatus = (msg, ok) => {
+    if(!stEl) return;
+    stEl.className = `text-xs rounded-lg p-2 ${ok ? 'bg-emerald-900/50 text-emerald-300' : 'bg-red-900/50 text-red-300'}`;
+    stEl.textContent = msg; stEl.classList.remove('hidden');
+  };
+  if(!amount || !recipient) return setStatus('Amount and recipient address required.', false);
+  try {
+    const r = await fetch('/api/swap/initiate', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ from_chain: fromChain, to_chain: toChain, amount_zion: Number(amount), recipient }),
+      signal: AbortSignal.timeout(8000)
+    }).then(r => r.json());
+    if(r.ok || r.htlc_id) setStatus(`✓ HTLC initiated: ${r.htlc_id || 'pending'}`, true);
+    else setStatus('Error: ' + (r.error || 'Swap daemon offline'), false);
+  } catch(e) { setStatus('Swap daemon offline: ' + e.message, false); }
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// L3 Layer Functions
+// ─────────────────────────────────────────────────────────────────────
+
+async function loadL3Data() {
+  // WARP health
+  try {
+    const r = await fetch('/api/warp/health', { signal: AbortSignal.timeout(3000) }).then(r => r.json());
+    const ok = r.ok || r.status === 'ok';
+    const badge = document.getElementById('l3-warp-badge');
+    if(badge){ badge.className = ok ? 'text-[10px] px-2 py-0.5 rounded-full bg-emerald-700/50 text-emerald-300' : 'text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400'; badge.textContent = ok ? 'Online' : 'Offline'; }
+    const el = id => document.getElementById(id);
+    if(el('l3-warp-relayed')) el('l3-warp-relayed').textContent = r.total_relayed ?? '—';
+    if(el('l3-warp-pending')) el('l3-warp-pending').textContent = r.pending ?? '—';
+    if(el('l3-warp-chains')) el('l3-warp-chains').textContent = r.chain_count ?? '5';
+  } catch(e) {}
+
+  // NCL
+  try {
+    const r = await fetch('/api/ncl/status', { signal: AbortSignal.timeout(3000) }).then(r => r.json());
+    const ok = r.ok || r.status === 'ok';
+    const badge = document.getElementById('l3-ncl-badge');
+    if(badge){ badge.className = ok ? 'text-[10px] px-2 py-0.5 rounded-full bg-emerald-700/50 text-emerald-300' : 'text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400'; badge.textContent = ok ? 'Online' : 'Offline'; }
+    const el = id => document.getElementById(id);
+    const workers = r.workers ?? r.total_workers ?? '—';
+    const jobs = r.jobs ?? r.active_jobs ?? '—';
+    const tflops = r.tflops ?? r.compute_tflops ?? '—';
+    if(el('l3-ncl-workers')) el('l3-ncl-workers').textContent = workers;
+    if(el('l3-ncl-workers-2')) el('l3-ncl-workers-2').textContent = workers;
+    if(el('l3-ncl-jobs')) el('l3-ncl-jobs').textContent = jobs;
+    if(el('l3-ncl-jobs-2')) el('l3-ncl-jobs-2').textContent = jobs;
+    if(el('l3-tflops')) el('l3-tflops').textContent = tflops;
+    if(el('l3-ncl-tflops-2')) el('l3-ncl-tflops-2').textContent = tflops;
+  } catch(e) {}
+
+  // Hiran inference
+  try {
+    const r = await fetch('/api/hiran/status', { signal: AbortSignal.timeout(3000) }).then(r => r.json());
+    const ok = r.ok || r.status === 'ok';
+    const badge = document.getElementById('l3-hiran-badge');
+    if(badge){ badge.className = ok ? 'text-[10px] px-2 py-0.5 rounded-full bg-emerald-700/50 text-emerald-300' : 'text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400'; badge.textContent = ok ? 'Online' : 'Offline'; }
+    const el = id => document.getElementById(id);
+    if(el('l3-hiran-model') && r.model) el('l3-hiran-model').textContent = r.model;
+    if(el('l3-hiran-backend') && r.backend) el('l3-hiran-backend').textContent = r.backend;
+    if(el('l3-agents')) el('l3-agents').textContent = r.agents ?? '—';
+  } catch(e) {}
+}
+
+async function submitNclJob() {
+  const jobType = document.getElementById('l3-ncl-job-type')?.value;
+  const payload = document.getElementById('l3-ncl-job-payload')?.value?.trim();
+  const stEl = document.getElementById('l3-ncl-job-status');
+  const setStatus = (msg, ok) => {
+    if(!stEl) return;
+    stEl.className = `text-[10px] rounded p-1.5 ${ok ? 'bg-emerald-900/50 text-emerald-300' : 'bg-red-900/50 text-red-300'}`;
+    stEl.textContent = msg; stEl.classList.remove('hidden');
+  };
+  if(!payload) return setStatus('Payload required.', false);
+  try {
+    const r = await fetch('/api/ncl/jobs', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ job_type: jobType, payload }),
+      signal: AbortSignal.timeout(8000)
+    }).then(r => r.json());
+    if(r.job_id || r.ok) setStatus('✓ Job submitted: ' + (r.job_id || 'queued'), true);
+    else setStatus('Error: ' + (r.error || 'NCL offline'), false);
+  } catch(e) { setStatus('NCL offline: ' + e.message, false); }
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// L4 OASIS Layer Functions
+// ─────────────────────────────────────────────────────────────────────
+
+async function loadL4Data() {
+  try {
+    const r = await fetch('/api/oasis/stats', { signal: AbortSignal.timeout(3000) }).then(r => r.json());
+    const el = id => document.getElementById(id);
+    if(el('l4-avatars')) el('l4-avatars').textContent = r.avatars ?? '—';
+    if(el('l4-avatar-count')) el('l4-avatar-count').textContent = r.avatars ?? '—';
+    if(el('l4-avatar-active')) el('l4-avatar-active').textContent = r.active_avatars ?? '—';
+    if(el('l4-avatar-nft')) el('l4-avatar-nft').textContent = r.nfts_minted ?? '—';
+    if(el('l4-guilds')) el('l4-guilds').textContent = r.guilds ?? '—';
+    if(el('l4-guild-count')) el('l4-guild-count').textContent = r.guilds ?? '—';
+    if(el('l4-guild-members')) el('l4-guild-members').textContent = r.guild_members ?? '—';
+    if(el('l4-territories')) el('l4-territories').textContent = r.territories ?? '—';
+    if(el('l4-territory-count')) el('l4-territory-count').textContent = r.territories ?? '—';
+    if(el('l4-territory-contested')) el('l4-territory-contested').textContent = r.contested ?? '—';
+    if(el('l4-quests')) el('l4-quests').textContent = r.active_quests ?? '—';
+    if(el('l4-quest-active')) el('l4-quest-active').textContent = r.active_quests ?? '—';
+    if(el('l4-quest-completed')) el('l4-quest-completed').textContent = r.completed_quests ?? '—';
+    if(el('l4-players')) el('l4-players').textContent = r.online_players ?? '—';
+    if(el('l4-server-players')) el('l4-server-players').textContent = `${r.online_players ?? 0}/1000`;
+    if(el('l4-server-status')){
+      const ok = r.online;
+      el('l4-server-status').textContent = ok ? 'Online' : 'Offline';
+      el('l4-server-status').className = ok ? 'text-emerald-400' : 'text-gray-400';
+    }
+  } catch(e) {}
+}
+
+async function loadL4Quests() {
+  try {
+    const r = await fetch('/api/oasis/quests', { signal: AbortSignal.timeout(3000) }).then(r => r.json());
+    const list = document.getElementById('l4-quest-list');
+    if(!list) return;
+    const quests = r.quests || r;
+    if(!Array.isArray(quests) || !quests.length) return;
+    list.innerHTML = quests.map(q => `
+      <div class="bg-black/30 rounded-lg px-3 py-2">
+        <div class="flex justify-between"><span class="text-purple-300 font-semibold">${q.name || 'Quest'}</span><span class="text-[10px] text-zion-gold">${q.reward || '—'} ZION</span></div>
+        <div class="text-[10px] text-gray-500 mt-0.5">${q.description || ''}</div>
+      </div>`).join('');
+  } catch(e) {}
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// L5 Free World Layer Functions
+// ─────────────────────────────────────────────────────────────────────
+
+async function loadL5Data() {
+  try {
+    const r = await fetch('/api/freeworld/stats', { signal: AbortSignal.timeout(3000) }).then(r => r.json());
+    const el = id => document.getElementById(id);
+    if(el('l5-nodes')) el('l5-nodes').textContent = r.mesh_nodes ?? '—';
+    if(el('l5-mesh-nodes')) el('l5-mesh-nodes').textContent = r.mesh_nodes ?? '—';
+    if(el('l5-communities')) el('l5-communities').textContent = r.communities ?? '—';
+    if(el('l5-aid-tx')) el('l5-aid-tx').textContent = r.aid_transactions ?? '—';
+    if(el('l5-medical-queries')) el('l5-medical-queries').textContent = r.medical_queries ?? '—';
+    if(el('l5-med-queries')) el('l5-med-queries').textContent = r.medical_queries ?? '—';
+    if(el('l5-daos')) el('l5-daos').textContent = r.active_daos ?? '—';
+    if(el('l5-dao-count')) el('l5-dao-count').textContent = r.active_daos ?? '—';
+    if(el('l5-fund')) el('l5-fund').textContent = r.fund_zion ? (r.fund_zion/1e6).toFixed(0)+'M' : '—';
+    if(el('l5-hum-fund')) el('l5-hum-fund').textContent = r.fund_zion ? (r.fund_zion/1e6).toFixed(0)+'M' : '—';
+  } catch(e) {}
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// L6 Issobella Space Layer Functions
+// ─────────────────────────────────────────────────────────────────────
+
+async function loadL6Data() {
+  try {
+    const r = await fetch('/api/space/stats', { signal: AbortSignal.timeout(3000) }).then(r => r.json());
+    const el = id => document.getElementById(id);
+    if(el('l6-satellites')) el('l6-satellites').textContent = r.satellites ?? '—';
+    if(el('l6-sat-active')) el('l6-sat-active').textContent = r.satellites ?? '—';
+    if(el('l6-stations')) el('l6-stations').textContent = r.stations ?? '—';
+    if(el('l6-orbital-count')) el('l6-orbital-count').textContent = r.stations ?? '—';
+    if(el('l6-settlements')) el('l6-settlements').textContent = r.settlements ?? '—';
+    if(el('l6-missions')) el('l6-missions').textContent = r.active_missions ?? '—';
+    if(el('l6-missions-funded')) el('l6-missions-funded').textContent = r.missions_funded ?? '—';
+    if(el('l6-uplinks')) el('l6-uplinks').textContent = r.uplinks_per_sec ?? '—';
+    if(el('l6-fund')) el('l6-fund').textContent = r.fund_zion ? (r.fund_zion/1e9).toFixed(1)+'B' : '—';
+    if(el('l6-fund-allocated')) el('l6-fund-allocated').textContent = r.fund_allocated ? (r.fund_allocated/1e6).toFixed(0)+'M' : '—';
+    if(el('l6-fund-available')) el('l6-fund-available').textContent = r.fund_available ? (r.fund_available/1e6).toFixed(0)+'M' : '—';
+    if(el('l6-dao-proposals')) el('l6-dao-proposals').textContent = r.dao_proposals ?? '—';
+    const ok = r.online;
+    if(el('l6-api-status')){ el('l6-api-status').textContent = ok ? 'Online' : 'Offline'; el('l6-api-status').className = ok ? 'text-emerald-400' : 'text-gray-400'; }
+  } catch(e) {}
+}
+
+async function loadL6Missions() {
+  try {
+    const r = await fetch('/api/space/missions', { signal: AbortSignal.timeout(3000) }).then(r => r.json());
+    const list = document.getElementById('l6-mission-list');
+    if(!list) return;
+    const missions = r.missions || r;
+    if(!Array.isArray(missions) || !missions.length) return;
+    list.innerHTML = missions.map(m => `
+      <div class="bg-black/30 rounded-lg px-3 py-2">
+        <div class="flex justify-between"><span class="text-purple-300 font-semibold">${m.name || 'Mission'}</span><span class="text-[10px] text-blue-400">${m.status || '—'}</span></div>
+        <div class="text-gray-500 text-[10px]">${m.description || ''}</div>
+        <div class="w-full bg-gray-800 rounded-full h-1 mt-1"><div class="bg-blue-500 h-1 rounded-full" style="width:${m.progress || 0}%"></div></div>
+      </div>`).join('');
+  } catch(e) {}
+}
+
 console.log('[ZION Dashboard] Auto-refresh started');
