@@ -28,6 +28,7 @@ use zion_ai_native::{
     EchoBackend, EmbeddingBackend, LlmBackend, LlmRequest, MemoryEntry, MemoryEventKind,
     MmlModality, MockEmbeddingBackend, RagDocument, VectorStore,
 };
+use zion_ncl::{create_router as ncl_router, NclAppState, JobScheduler, PricingEngine, ReputationRegistry};
 
 struct RagIndexState {
     store: VectorStore,
@@ -51,6 +52,8 @@ struct AppState {
     pool_api_url: String,
     orchestrator: Mutex<Orchestrator>,
     task_queue: Mutex<TaskQueue>,
+    ncl_state: NclAppState,
+    ncl_pricing: PricingEngine,
 }
 
 #[derive(Deserialize)]
@@ -141,6 +144,9 @@ async fn main() -> anyhow::Result<()> {
         }
     });
 
+    // Mount full NCL router at /ncl/* (scheduler, jobs, workers, leaderboard)
+    let ncl_app = ncl_router(state.ncl_state.clone());
+
     let app = Router::new()
         .route("/health", get(health))
         .route("/status", get(status))
@@ -155,6 +161,7 @@ async fn main() -> anyhow::Result<()> {
         .route("/tasks/dispatch", post(tasks_dispatch))
         .route("/warp/status", get(warp_status))
         .route("/ncl/status", get(ncl_status))
+        .route("/ncl/price", get(ncl_price))
         .route("/oasis/status", get(oasis_status))
         // ── Orchestrator: agent management ────────────────────────────────
         .route("/agents", get(agents_list).post(agents_register))
@@ -164,7 +171,9 @@ async fn main() -> anyhow::Result<()> {
         .route("/agents/:id/messages", get(agents_get_messages))
         // ── Orchestrator: status ──────────────────────────────────────────
         .route("/orchestrator/status", get(orchestrator_status))
-        .with_state(state);
+        .with_state(state)
+        // ── NCL: Neural Compute Layer (full API at /ncl/*) ────────────────
+        .nest("/ncl", ncl_app);
 
     let listener = tokio::net::TcpListener::bind(bind).await?;
     tracing::info!(%bind, "hiranyagarbha_api_ready");
@@ -221,6 +230,11 @@ impl AppState {
                 .unwrap_or_else(|_| "http://127.0.0.1:8080".to_string()),
             orchestrator: Mutex::new(Orchestrator::new(max_agents)),
             task_queue: Mutex::new(TaskQueue::new()),
+            ncl_state: NclAppState {
+                scheduler: Arc::new(Mutex::new(JobScheduler::new(1000))),
+                reputation: Arc::new(Mutex::new(ReputationRegistry::new())),
+            },
+            ncl_pricing: PricingEngine::with_defaults(),
         }
     }
 }
@@ -898,12 +912,48 @@ async fn warp_status(State(state): State<Arc<AppState>>) -> Json<Value> {
 }
 
 async fn ncl_status(State(state): State<Arc<AppState>>) -> Json<Value> {
+    let sched = state.ncl_state.scheduler.lock().expect("ncl scheduler lock");
+    let rep = state.ncl_state.reputation.lock().expect("ncl reputation lock");
     Json(json!({
         "layer": "L3",
         "service": "ncl",
-        "status": "configured",
+        "status": "active",
         "mode": "compute-lane-ready",
         "pool_api_url": state.pool_api_url,
+        "active_workers": sched.online_workers(),
+        "queued_jobs": sched.queued_count(),
+        "active_jobs": sched.active_count(),
+        "total_workers": sched.worker_count(),
+        "total_capacity": format!("{} workers", sched.worker_count()),
+        "total_tflops": sched.worker_count() as f64 * 2.5,
+        "leaderboard_size": rep.leaderboard().len(),
+    }))
+}
+
+/// `GET /ncl/price?model=...` — pricing for a given model.
+async fn ncl_price(
+    State(state): State<Arc<AppState>>,
+    axum::extract::Query(params): axum::extract::Query<HashMap<String, String>>,
+) -> Json<Value> {
+    let model = params.get("model").cloned().unwrap_or_else(|| "default".to_string());
+    let backend = match model.to_lowercase().as_str() {
+        m if m.contains("onnx") => zion_ncl::ComputeBackend::OnnxRuntime,
+        m if m.contains("wasm") => zion_ncl::ComputeBackend::Wasm,
+        m if m.contains("tflite") => zion_ncl::ComputeBackend::TfLite,
+        _ => zion_ncl::ComputeBackend::Custom,
+    };
+    let price_per_unit = state.ncl_pricing.calculate_price(backend, 1);
+    let (worker_share, protocol_fee) = state.ncl_pricing.split_reward(price_per_unit);
+    // Convert from flowers (12 decimals) to ZION
+    let price_zion = price_per_unit as f64 / 1_000_000_000_000.0;
+    Json(json!({
+        "model": model,
+        "price_per_token": price_zion / 1000.0,
+        "price_per_job": price_zion,
+        "price_flowers": price_per_unit,
+        "worker_share_flowers": worker_share,
+        "protocol_fee_flowers": protocol_fee,
+        "fee_split": "90% worker / 10% protocol",
     }))
 }
 
