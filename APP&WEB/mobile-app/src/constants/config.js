@@ -1,20 +1,49 @@
 // ZION Configuration v3.0.0 — Mainnet
 export const CONFIG = {
-  // ── Network settings — V3 mainnet nodes (port 8443 RPC, 8444 pool stratum) ─────────
-  RPC_NODES: [
-    'http://77.42.71.94:8443/jsonrpc',     // Edge (public primary)
-    'http://100.66.162.125:8443/jsonrpc',  // Edge (Tailscale VPN fallback)
-  ],
+  // ── Active network mode (mainnet | testnet) ──────────────────────────────────────
+  NETWORK_MODE: 'mainnet',
+
+  // ── Network profiles ───────────────────────────────────────────────────────────
+  NETWORKS: {
+    mainnet: {
+      name: 'ZION Mainnet',
+      chainId: 'zion-mainnet-1',
+      rpcNodes: [
+        'http://77.42.71.94:8443/jsonrpc',
+        'http://100.66.162.125:8443/jsonrpc',
+      ],
+      poolHost: '77.42.71.94',
+      poolPort: 8444,
+      poolHosts: [{ host: '77.42.71.94', name: 'Edge' }],
+      explorerUrl: 'https://explorer.zionterranova.com',
+    },
+    testnet: {
+      name: 'ZION Testnet',
+      chainId: 'zion-testnet-1',
+      rpcNodes: [
+        'http://127.0.0.1:8444/jsonrpc',
+      ],
+      poolHost: '127.0.0.1',
+      poolPort: 8444,
+      poolHosts: [{ host: '127.0.0.1', name: 'Local' }],
+      explorerUrl: 'https://testnet.explorer.zionterranova.com',
+    },
+  },
+
+  // ── Active network settings (derived from NETWORK_MODE) ──────────────────────────
+  get activeNetwork() {
+    return this.NETWORKS[this.NETWORK_MODE] || this.NETWORKS.mainnet;
+  },
+
+  // Backwards-compat aliases
+  get RPC_NODES() { return this.activeNetwork.rpcNodes; },
+  get POOL_HOST() { return this.activeNetwork.poolHost; },
+  get POOL_PORT() { return this.activeNetwork.poolPort; },
+  get POOL_HOSTS() { return this.activeNetwork.poolHosts; },
+  get EXPLORER_URL() { return this.activeNetwork.explorerUrl; },
+
   POOL_URL: 'https://pool.zionterranova.com',
   API_URL: 'https://api.zionterranova.com',
-  EXPLORER_URL: 'https://explorer.zionterranova.com',
-
-  // Pool stratum endpoints
-  POOL_HOST: '77.42.71.94',
-  POOL_PORT: 8444,
-  POOL_HOSTS: [
-    { host: '77.42.71.94',     name: 'Edge' },
-  ],
 
   // P2P network
   P2P_PORT: 8334,

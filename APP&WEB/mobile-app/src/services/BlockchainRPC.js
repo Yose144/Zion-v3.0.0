@@ -29,6 +29,7 @@ class BlockchainRPC {
         'Content-Type': 'application/json',
       },
     });
+    this.healthStatus = new Map();
   }
 
   /**
@@ -47,13 +48,16 @@ class BlockchainRPC {
   }
 
   /**
-   * Send JSON-RPC request with automatic failover
+   * Send JSON-RPC request with automatic failover and exponential backoff.
+   * Retries across all nodes with a short delay between attempts.
    */
-  async rpcCall(method, params = {}) {
-    const maxRetries = this.rpcNodes.length;
+  async rpcCall(method, params = {}, options = {}) {
+    const maxRetriesPerNode = options.maxRetriesPerNode ?? 2;
+    const baseDelayMs = options.baseDelayMs ?? 500;
+    const maxAttempts = this.rpcNodes.length * maxRetriesPerNode;
     let lastError = null;
 
-    for (let i = 0; i < maxRetries; i++) {
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
       try {
         const response = await this.client.post(this.rpcUrl, {
           jsonrpc: '2.0',
@@ -66,15 +70,22 @@ class BlockchainRPC {
           throw new Error(response.data.error.message || 'RPC Error');
         }
 
+        this.healthStatus.set(this.rpcUrl, { ok: true, lastOk: Date.now() });
         return response.data.result;
       } catch (error) {
         lastError = error;
-        console.error(`RPC call failed on ${this.rpcUrl}:`, error.message);
+        this.healthStatus.set(this.rpcUrl, { ok: false, lastError: error.message, lastFail: Date.now() });
+        console.error(`RPC call failed on ${this.rpcUrl} (attempt ${attempt + 1}/${maxAttempts}):`, error.message);
+
+        // Exponential backoff before next attempt
+        const delay = Math.min(baseDelayMs * Math.pow(2, attempt), 8000);
+        await new Promise(resolve => setTimeout(resolve, delay));
+
         this.nextNode();
       }
     }
 
-    throw new Error(`All RPC nodes failed: ${lastError?.message}`);
+    throw new Error(`All RPC nodes failed after ${maxAttempts} attempts: ${lastError?.message}`);
   }
 
   // ==================== BLOCKCHAIN QUERIES ====================
@@ -119,40 +130,52 @@ class BlockchainRPC {
   // ==================== WALLET QUERIES ====================
 
   /**
-   * Get address balance (in atomic units → convert to ZION)
+   * Get address balance (in ZION human units).
    * @param {string} address - ZION address (zion1...)
-   * @returns {Promise<number>} Balance in ZION
+   * @returns {Promise<{zion:number, atomic:string, utxoCount:number, chainHeight:number}>}
    */
   async getBalance(address) {
     try {
       const result = await this.rpcCall('getBalance', { address });
-      // V3 returns: { balance_flowers, utxo_balance_flowers, chain_height, ... }
-      // balance_flowers is in atomic flowers (1 ZION = 1e12 flowers)
-      if (result?.balance_flowers !== undefined) {
-        return result.balance_flowers / 1_000_000_000_000;
-      }
-      // Fallback: balance_zion string (e.g. "1234.000000000000")
-      if (result?.balance_zion !== undefined) {
-        return parseFloat(result.balance_zion) || 0;
-      }
-      const raw = result?.balance ?? result ?? 0;
-      return typeof raw === 'number' ? raw : parseFloat(raw) || 0;
+      // V3 returns: { balance_flowers: "...", utxo_balance_flowers, chain_height, ... }
+      // balance_flowers is a string in atomic flowers (1 ZION = 1e12 flowers)
+      const flowers = result?.balance_flowers !== undefined
+        ? (typeof result.balance_flowers === 'string'
+            ? BigInt(result.balance_flowers)
+            : BigInt(result.balance_flowers))
+        : 0n;
+      const zion = Number(flowers) / 1_000_000_000_000;
+
+      return {
+        zion,
+        atomic: flowers.toString(),
+        utxoCount: result?.utxo_count ?? 0,
+        chainHeight: result?.chain_height ?? 0,
+        raw: result,
+      };
     } catch (error) {
       console.error('getBalance error:', error);
-      return 0;
+      return { zion: 0, atomic: '0', utxoCount: 0, chainHeight: 0, raw: null };
     }
   }
 
   /**
-   * Get address UTXO set.
-   * Each UTXO: { txid, vout, amount (atomic), height, coinbase }
+   * Get spendable UTXOs for an address.
+   * Normalized to TransactionBuilder format: { txid, vout, amount }.
    * @param {string} address - ZION address
-   * @returns {Promise<Array>} Array of UTXO objects
+   * @returns {Promise<Array<{txid:string, vout:number, amount:number}>>}
    */
   async getUTXOs(address) {
     try {
       const result = await this.rpcCall('getUtxos', { address });
-      return result?.utxos || result || [];
+      const raw = result?.utxos || [];
+      return raw.map(u => ({
+        txid: u.tx_hash || u.txid,
+        vout: u.output_index !== undefined ? u.output_index : u.vout,
+        amount: Number(u.amount),
+        address: u.address,
+        height: u.height,
+      }));
     } catch (error) {
       console.error('getUTXOs error:', error);
       return [];
@@ -387,6 +410,41 @@ class BlockchainRPC {
     } catch (error) {
       return { synced: true, currentBlock: 0, highestBlock: 0, progress: 1.0 };
     }
+  }
+
+  /**
+   * Alias: broadcast via sendRawTransaction (matches Rust core method name).
+   */
+  async sendRawTransaction(signedTxObj) {
+    return this.broadcastTransaction(signedTxObj);
+  }
+
+  /**
+   * Health-check all configured RPC nodes.
+   * @returns {Promise<Array<{url:string, ok:boolean, height?:number, latencyMs:number, error?:string}>>}
+   */
+  async healthCheck() {
+    const results = [];
+    for (const url of this.rpcNodes) {
+      const start = Date.now();
+      try {
+        const response = await this.client.post(url, {
+          jsonrpc: '2.0',
+          id: Date.now(),
+          method: 'getChainInfo',
+          params: {},
+        }, { timeout: 5000 });
+        const latency = Date.now() - start;
+        if (response.data.error) {
+          results.push({ url, ok: false, latencyMs: latency, error: response.data.error.message });
+        } else {
+          results.push({ url, ok: true, height: response.data.result?.height ?? response.data.result?.chain_height, latencyMs: latency });
+        }
+      } catch (error) {
+        results.push({ url, ok: false, latencyMs: Date.now() - start, error: error.message });
+      }
+    }
+    return results;
   }
 
   /**
