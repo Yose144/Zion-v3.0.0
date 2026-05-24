@@ -137,6 +137,16 @@ async function refreshAll(){
   }
 }
 
+function formatUptime(sec){
+  if(sec == null || sec === undefined || isNaN(sec)) return '—';
+  const d = Math.floor(sec / 86400);
+  const h = Math.floor((sec % 86400) / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  if(d > 0) return `${d}d ${h}h ${m}m`;
+  if(h > 0) return `${h}h ${m}m`;
+  return `${m}m`;
+}
+
 function updateServiceCards(s){
   const n1 = s.node1, n2 = s.node2, p = s.pool, m = s.miner;
   setBadge('badge-node1', n1.running); setCardLive('node1', n1.running);
@@ -148,6 +158,10 @@ function updateServiceCards(s){
   if(n1p) n1p.textContent = n1.known_peers ?? '—';
   const n1p2p = document.getElementById('val-node1-p2p');
   if(n1p2p) n1p2p.textContent = n1.p2p_bind ?? '—';
+  const n1m = document.getElementById('val-node1-mempool');
+  if(n1m) n1m.textContent = n1.mempool_size ?? '—';
+  const n1u = document.getElementById('val-node1-uptime');
+  if(n1u) n1u.textContent = formatUptime(n1.uptime_seconds);
 
   setBadge('badge-node2', n2.running); setCardLive('node2', n2.running);
   const n2h = document.getElementById('val-node2-height');
@@ -162,6 +176,10 @@ function updateServiceCards(s){
     syncEl.textContent = synced ? '✓ Synced' : (n2.known_peers > 0 ? 'Syncing…' : 'No peers');
     syncEl.className = synced ? 'text-emerald-400 font-bold' : 'text-amber-400';
   }
+  const n2m = document.getElementById('val-node2-mempool');
+  if(n2m) n2m.textContent = n2.mempool_size ?? '—';
+  const n2u = document.getElementById('val-node2-uptime');
+  if(n2u) n2u.textContent = formatUptime(n2.uptime_seconds);
 
   setBadge('badge-pool', p.running); setCardLive('pool', p.running);
   const ps = document.getElementById('val-pool-sessions');
@@ -187,6 +205,20 @@ function updateServiceCards(s){
     if(hostEl) hostEl.textContent = pe.host ?? '—';
     if(portEl) portEl.textContent = pe.ports_open?.[0]?.split(':')[1] ?? '8444';
     if(detailEl) detailEl.textContent = pe.running ? 'Tailscale + Public ready' : 'Unreachable';
+  }
+  // Extended Edge Pool details
+  const peMiners = document.getElementById('val-pool-edge-miners');
+  if(peMiners) peMiners.textContent = pe.active_miners ?? '—';
+  const peHash = document.getElementById('val-pool-edge-hashrate');
+  if(peHash) peHash.textContent = pe.hashrate ? pe.hashrate.toFixed(2) + ' KH/s' : '—';
+  const peBlocks = document.getElementById('val-pool-edge-blocks');
+  if(peBlocks) peBlocks.textContent = pe.blocks_found ?? '—';
+  const pePorts = document.getElementById('val-pool-edge-ports');
+  if(pePorts){
+    const ports = pe.ports_open || [];
+    pePorts.innerHTML = ports.length
+      ? ports.map(p => `<span class="text-[10px] px-1.5 py-0.5 bg-emerald-500/20 text-emerald-300 rounded">${escapeHtml(p)}</span>`).join('')
+      : '<span class="text-[10px] text-gray-500">No open ports detected</span>';
   }
 
   setBadge('badge-miner', m.running && m.hashrate); setCardLive('miner', m.running && m.hashrate);
