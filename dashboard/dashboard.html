@@ -729,17 +729,17 @@ button{display:inline-flex;align-items:center;justify-content:center;cursor:poin
       <p class="text-sm text-gray-400 mb-6">All actions execute whitelisted PowerShell scripts via detached subprocess. Logs appear below.</p>
 
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <button onclick="controlAction('launch-full')" class="zion-panel zion-panel-hover p-6 text-left relative overflow-hidden"
+        <button onclick="startDependencyLaunch('stack')" class="zion-panel zion-panel-hover p-6 text-left relative overflow-hidden"
                 style="background:linear-gradient(135deg,rgba(16,185,129,0.35),rgba(16,185,129,0.12));border-color:rgba(16,185,129,0.65);">
           <div class="text-4xl mb-3">🚀</div>
-          <div class="text-lg font-bold mb-1">Launch Full Stack</div>
-          <div class="text-xs text-emerald-300/80">Core + Prometheus + Grafana</div>
+          <div class="text-lg font-bold mb-1">Launch Core Stack</div>
+          <div class="text-xs text-emerald-300/80">Sequential: node1 → pool → miner</div>
         </button>
-        <button onclick="controlAction('open-terminal')" class="zion-panel zion-panel-hover p-6 text-left relative overflow-hidden"
-                style="background:linear-gradient(135deg,rgba(59,130,246,0.35),rgba(59,130,246,0.12));border-color:rgba(59,130,246,0.65);">
-          <div class="text-4xl mb-3">🖥️</div>
-          <div class="text-lg font-bold mb-1">Open Terminal</div>
-          <div class="text-xs text-blue-300/80">Visible console with live logs</div>
+        <button onclick="startDependencyLaunch('full')" class="zion-panel zion-panel-hover p-6 text-left relative overflow-hidden"
+                style="background:linear-gradient(135deg,rgba(6,182,212,0.35),rgba(6,182,212,0.12));border-color:rgba(6,182,212,0.65);">
+          <div class="text-4xl mb-3">🔀</div>
+          <div class="text-lg font-bold mb-1">Launch Full Stack</div>
+          <div class="text-xs text-cyan-300/80">All services with deps resolved</div>
         </button>
         <button onclick="if(confirm('Run dependency check and build? This may take several minutes.')) controlAction('install-deps')" class="zion-panel zion-panel-hover p-6 text-left relative overflow-hidden"
                 style="background:linear-gradient(135deg,rgba(245,158,11,0.35),rgba(245,158,11,0.12));border-color:rgba(245,158,11,0.65);">
@@ -753,6 +753,19 @@ button{display:inline-flex;align-items:center;justify-content:center;cursor:poin
           <div class="text-lg font-bold mb-1">Stop All Services</div>
           <div class="text-xs text-red-300/80">Terminates everything</div>
         </button>
+      </div>
+
+      <!-- Dependency Launch Progress -->
+      <div id="launch-progress-panel" class="zion-panel p-4 mb-6 hidden">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-sm font-semibold" id="launch-progress-title">Stack Launch</span>
+          <span class="text-xs font-mono text-gray-400" id="launch-progress-pct">0%</span>
+        </div>
+        <div class="w-full h-2 bg-white/5 rounded-full overflow-hidden mb-2">
+          <div id="launch-progress-bar" class="h-full rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 transition-all" style="width:0%"></div>
+        </div>
+        <div class="text-xs text-gray-400" id="launch-progress-step">Waiting…</div>
+        <div class="mt-2 space-y-1" id="launch-progress-results"></div>
       </div>
 
       <h3 class="zion-kicker mb-3">Individual Services</h3>
