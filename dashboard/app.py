@@ -1198,6 +1198,9 @@ _ALLOW_BASE = {
     "start-node2":            "start-node2",
     "start-pool":             "start-pool",
     "start-miner":            "start-miner",
+    "start-miner-cpu":        "start-miner-cpu",
+    "start-miner-gpu":        "start-miner-gpu",
+    "stop-miner":             "stop-miner",
     "restart-node2":          "start-node2",
     "restart-miner":          "start-miner",
     "backup-chain":           "backup-chain",
@@ -1231,14 +1234,20 @@ def _log_control(msg: str):
     except Exception:
         pass
 
-def run_control(action: str) -> dict:
-    """Execute an allowed control script in the background (cross-platform)."""
+def run_control(action: str, env_overrides: dict = None) -> dict:
+    """Execute an allowed control script in the background (cross-platform).
+    Optional env_overrides merges into the subprocess environment."""
     if action not in ALLOWED_ACTIONS:
         return {"ok": False, "error": f"Unknown action '{action}'. Allowed: {sorted(ALLOWED_ACTIONS)}"}
     script = SCRIPTS_DIR / ALLOWED_ACTIONS[action]
     if not script.exists():
         return {"ok": False, "error": f"Script not found: {script}"}
     try:
+        # Build env
+        env = os.environ.copy()
+        if env_overrides:
+            for k, v in env_overrides.items():
+                env[k] = str(v)
         if os.name == "nt":
             # Windows: PowerShell hidden (no console window), output discarded
             si = None
@@ -1256,6 +1265,7 @@ def run_control(action: str) -> dict:
                 startupinfo=si,
                 creationflags=creation,
                 close_fds=True,
+                env=env,
             )
         else:
             # Linux/macOS: bash + nohup so the script survives SIGHUP
@@ -1265,8 +1275,9 @@ def run_control(action: str) -> dict:
                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL,
                 close_fds=True,
                 preexec_fn=os.setsid if hasattr(os, "setsid") else None,
+                env=env,
             )
-        _log_control(f"dispatched action={action} script={script} pid={proc.pid}")
+        _log_control(f"dispatched action={action} script={script} pid={proc.pid} env={list(env_overrides.keys()) if env_overrides else []}")
         return {"ok": True, "action": action, "script": str(script), "pid": proc.pid}
     except Exception as e:
         _log_control(f"FAILED action={action} error={e}")
@@ -1425,8 +1436,9 @@ tailwind.config={theme:{extend:{colors:{zion:{900:'#0a0f1e',800:'#131a2e',700:'#
         <div class="text-xs text-gray-400 mb-1">Height: <span id="val-miner-height" class="text-white">—</span></div>
         <div class="text-xs text-gray-400 mb-2">Diff: <span id="val-miner-diff">—</span></div>
         <div class="flex gap-1 mt-2">
-          <button onclick="controlAction('start-miner')" class="flex-1 text-xs px-2 py-1 bg-emerald-700 hover:bg-emerald-600 rounded transition">▶ Start</button>
-          <button onclick="controlAction('restart-miner')" class="flex-1 text-xs px-2 py-1 bg-amber-700 hover:bg-amber-600 rounded transition">⟳ Restart</button>
+          <button onclick="controlAction('start-miner-gpu')" class="flex-1 text-xs px-2 py-1 bg-purple-700 hover:bg-purple-600 rounded transition">🎮 GPU</button>
+          <button onclick="controlAction('start-miner-cpu')" class="flex-1 text-xs px-2 py-1 bg-blue-700 hover:bg-blue-600 rounded transition">💻 CPU</button>
+          <button onclick="controlAction('stop-miner')" class="flex-1 text-xs px-2 py-1 bg-red-700 hover:bg-red-600 rounded transition">⏹ Stop</button>
         </div>
       </div>
     </div>
@@ -2498,7 +2510,7 @@ async function renderWizard(){
 async function renderControls(){
   const res=await fetch('/api/controls').then(r=>r.json());
   const c=document.getElementById('control-buttons');
-  const icons={'start-node1':'🔷','start-node2':'🔶','start-pool':'⚡','start-miner':'⛏️','restart-node2':'⟳ 🔶','restart-miner':'⟳ ⛏️','launch-stack':'🚀','stop-stack':'⏹️'};
+  const icons={'start-node1':'🔷','start-node2':'🔶','start-pool':'⚡','start-miner':'⛏️','start-miner-gpu':'🎮','start-miner-cpu':'💻','stop-miner':'⏹','restart-node2':'⟳ 🔶','restart-miner':'⟳ ⛏️','launch-stack':'🚀','stop-stack':'⏹️'};
   c.innerHTML=res.actions.filter(a=>!['launch-stack','stop-stack'].includes(a)).map(a=>`<button onclick="controlAction('${a}')" class="p-3 bg-zion-700 hover:bg-zion-600 rounded-lg text-left transition">
     <div class="text-xl mb-1">${icons[a]||'⚙️'}</div>
     <div class="text-xs font-medium">${a}</div>
@@ -3280,7 +3292,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
             return
         elif route == "/api/control":
             action = payload.get("action", "")
-            self._json(run_control(action))
+            env_overrides = payload.get("env")
+            self._json(run_control(action, env_overrides))
         elif route == "/api/backup/create":
             name = payload.get("name", "").strip()
             include_logs = payload.get("includeLogs", False)

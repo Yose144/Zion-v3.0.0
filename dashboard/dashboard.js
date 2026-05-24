@@ -191,10 +191,33 @@ function updateServiceCards(s){
   if(mh) mh.textContent = m.hashrate ? m.hashrate.toFixed(2) : '—';
   const mg = document.getElementById('val-miner-gpu');
   if(mg) mg.textContent = (m.gpu_backend ? m.gpu_backend + ': ' : '') + (m.gpu_device ?? '—');
+  const mb = document.getElementById('val-miner-backend');
+  if(mb) mb.textContent = m.gpu_backend ?? 'cpu';
   const mnh = document.getElementById('val-miner-height');
   if(mnh) mnh.textContent = m.current_height ?? '—';
   const md = document.getElementById('val-miner-diff');
   if(md) md.textContent = m.current_diff ?? '—';
+  const mso = document.getElementById('val-miner-shares-ok');
+  if(mso) mso.textContent = m.shares_accepted ?? '—';
+  const msr = document.getElementById('val-miner-shares-rej');
+  if(msr) msr.textContent = m.shares_rejected ?? '—';
+  const mp = document.getElementById('val-miner-pool');
+  if(mp) mp.textContent = m.pool_addr ?? '—';
+  // Status message
+  const msgEl = document.getElementById('miner-status-msg');
+  if(msgEl){
+    if(!m.running){
+      msgEl.textContent = '⚠️ Miner not running. Configure pool address and start miner.';
+      msgEl.className = 'text-xs p-2 rounded-lg bg-red-500/20 text-red-300 border border-red-500/30';
+      msgEl.classList.remove('hidden');
+    } else if(m.running && !m.hashrate){
+      msgEl.textContent = '⚠️ Miner connected but no hashrate. Check pool connectivity (' + (m.pool_addr ?? 'unknown') + ') and GPU init.';
+      msgEl.className = 'text-xs p-2 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/30';
+      msgEl.classList.remove('hidden');
+    } else {
+      msgEl.classList.add('hidden');
+    }
+  }
 }
 
 function updatePayouts(p){
@@ -635,6 +658,7 @@ async function renderControls(){
     const icons = {
       'install-deps': '📦', 'open-terminal': '🖥️',
       'start-node1': '🔷', 'start-node2': '🔶', 'start-pool': '⚡', 'start-miner': '⛏️',
+      'start-miner-gpu': '🎮', 'start-miner-cpu': '💻', 'stop-miner': '⏹',
       'restart-node2': '⟳ 🔶', 'restart-miner': '⟳ ⛏️',
       'start-monitoring': '📊', 'stop-monitoring': '⏸ 📊',
       'start-prometheus': '📊', 'start-grafana': '📈',
@@ -656,10 +680,84 @@ async function renderControls(){
   loadInstallLog();
 }
 
+// ── Miner config helpers ──
+function saveMinerConfig(){
+  const cfg = {
+    pool: document.getElementById('miner-cfg-pool')?.value || '127.0.0.1:8444',
+    worker: document.getElementById('miner-cfg-worker')?.value || 'worker1',
+    backend: document.getElementById('miner-cfg-backend')?.value || 'gpu-opencl',
+    threads: document.getElementById('miner-cfg-threads')?.value || '4',
+    workSize: document.getElementById('miner-cfg-worksize')?.value || '4096',
+    loops: document.getElementById('miner-cfg-loops')?.value || '1000000',
+    hiranLayers: document.getElementById('miner-cfg-hiran-layers')?.value || '33',
+  };
+  try { localStorage.setItem('zion-miner-cfg', JSON.stringify(cfg)); } catch(e) {}
+  return cfg;
+}
+
+function loadMinerConfig(){
+  try {
+    const cfg = JSON.parse(localStorage.getItem('zion-miner-cfg') || '{}');
+    if(cfg.pool) document.getElementById('miner-cfg-pool').value = cfg.pool;
+    if(cfg.worker) document.getElementById('miner-cfg-worker').value = cfg.worker;
+    if(cfg.backend) document.getElementById('miner-cfg-backend').value = cfg.backend;
+    if(cfg.threads){
+      document.getElementById('miner-cfg-threads').value = cfg.threads;
+      document.getElementById('miner-cfg-threads-range').value = cfg.threads;
+    }
+    if(cfg.workSize) document.getElementById('miner-cfg-worksize').value = cfg.workSize;
+    if(cfg.loops) document.getElementById('miner-cfg-loops').value = cfg.loops;
+    if(cfg.hiranLayers){
+      document.getElementById('miner-cfg-hiran-layers').value = cfg.hiranLayers;
+      document.getElementById('hiran-gpu-layers-val').textContent = cfg.hiranLayers;
+    }
+  } catch(e) {}
+}
+
+async function startMiner(mode){
+  const cfg = saveMinerConfig();
+  const env = {
+    'ZION_POOL_ADDR': cfg.pool,
+    'ZION_WORKER_NAME': cfg.worker,
+    'ZION_LOOP_COUNT': cfg.loops,
+    'ZION_MINER_THREADS': cfg.threads,
+    'ZION_GPU_WORK_SIZE': cfg.workSize,
+    'ZION_MINER_ID': 'dashboard-' + cfg.worker,
+    'HIRAN_GPU_LAYERS': cfg.hiranLayers,
+  };
+  // Backend-specific env vars
+  const backend = cfg.backend;
+  if(backend === 'gpu-opencl'){
+    env['ZION_GPU_BACKEND'] = 'opencl';
+  } else if(backend === 'gpu-cuda'){
+    env['ZION_GPU_BACKEND'] = 'cuda';
+  } else if(backend === 'cpu'){
+    env['ZION_GPU_BACKEND'] = '';  // CPU only
+  } else if(backend === 'dual'){
+    env['ZION_GPU_BACKEND'] = 'opencl';  // dual uses both
+  }
+  const action = mode === 'gpu' ? 'start-miner-gpu' : 'start-miner-cpu';
+  const log = document.getElementById('control-log');
+  const ts = new Date().toLocaleTimeString();
+  if(log) log.insertAdjacentHTML('afterbegin', '<div class="text-zion-gold">[' + ts + '] dispatching ' + action + ' (pool=' + cfg.pool + ', backend=' + backend + ')…</div>');
+  try {
+    const res = await fetch('/api/control', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, env }) }).then(r => r.json());
+    const msg = res.ok ? '<div class="text-emerald-400">[' + ts + '] ✓ ' + action + ' started (PID ' + res.pid + ')</div>' : '<div class="text-red-400">[' + ts + '] ✗ ' + (res.error || 'failed') + '</div>';
+    if(log) log.insertAdjacentHTML('afterbegin', msg);
+    toast(res.ok ? ('▶ ' + action + ' dispatched') : ('Failed: ' + (res.error || action)), res.ok ? 'success' : 'error');
+    if(res.ok){
+      setTimeout(() => { toast('Miner should connect to ' + cfg.pool + '. Check Overview tab.', 'success'); refreshAll(); }, 8000);
+    }
+  } catch(e) {
+    if(log) log.insertAdjacentHTML('afterbegin', '<div class="text-red-400">[' + ts + '] ✗ ' + e.message + '</div>');
+    toast('Error: ' + e.message, 'error');
+  }
+}
+
 async function controlAction(action){
   const log = document.getElementById('control-log');
   const ts = new Date().toLocaleTimeString();
-  const launchActions = ['launch-full','launch-stack','start-node1','start-node2','start-pool','start-miner'];
+  const launchActions = ['launch-full','launch-stack','start-node1','start-node2','start-pool','start-miner','start-miner-gpu','start-miner-cpu'];
   const note = launchActions.includes(action) ? ' (may take ~15s)' : '';
   if(log) log.insertAdjacentHTML('afterbegin', '<div class="text-zion-gold">[' + ts + '] dispatching ' + action + note + '…</div>');
   try {
@@ -1592,4 +1690,5 @@ applyFriendlyMode();
 switchTab('overview');
 refreshAll();
 refreshTimer = setInterval(refreshAll, 3000);
+setTimeout(loadMinerConfig, 500);
 console.log('[ZION Dashboard] Auto-refresh started');
