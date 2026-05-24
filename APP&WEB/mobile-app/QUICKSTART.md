@@ -131,7 +131,7 @@ colors = {
   - Použít `react-native-bip39` pro mnemonic
   - Použít `@ethersproject/wallet` pro key derivation
   - Hardware-backed keystore
-- [ ] **Stratum mining** - Připojit k pool.zionterranova.com:3333
+- [ ] **Stratum mining** - Připojit k pool.zionterranova.com:8444
   - Port mining logiky z desktop-agent
   - WebSocket nebo native TCP connection
 - [ ] **Transaction signing** - Podepisování transakcí
@@ -236,7 +236,7 @@ Změnit v `src/constants/config.js`:
 POOL_URL: 'https://pool.zionterranova.com',
 API_URL: 'https://api.zionterranova.com',
 POOL_HOST: 'pool.zionterranova.com',
-POOL_PORT: 3333,
+POOL_PORT: 8444,
 ```
 
 ## 💡 Tips

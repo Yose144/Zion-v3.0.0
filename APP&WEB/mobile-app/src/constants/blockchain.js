@@ -1,12 +1,12 @@
 /**
- * ZION TerraNova v2.9.6 — Blockchain Constants
+ * ZION TerraNova v3.0.0 — Blockchain Constants
  *
- * Mirror of Rust core: core/src/blockchain/emission.rs + premine.rs
+ * Mirror of Rust core: V3/L1/core/src/emission.rs + genesis.rs
  * These values are IMMUTABLE after MainNet genesis.
  *
- * 1 ZION = 1,000,000 atomic units (6 decimal places)
+ * 1 ZION = 1_000_000_000_000 flowers (12 decimal places)
  *
- * Synchronizováno s desktop-agent/src/main.js (CHv4, revenue split 89/5/5/1)
+ * Synchronizováno s AGENTS.md (V3 mainnet, CHv4, revenue split 89/5/5/1)
  */
 
 // ---------------------------------------------------------------------------
@@ -35,24 +35,34 @@ export const BLOCK_TIME_SECONDS = 60;
 /** Blocks per year: 525,600 */
 export const BLOCKS_PER_YEAR = 525_600;
 
+/** Blocks per decade: 5,256,000 */
+export const BLOCKS_PER_DECADE = 5_256_000;
+
+/** Decades with active decay before tail emission */
+export const MAX_DECAY_DECADES = 10;
+
 /** Mining duration: 45 years */
 export const MINING_YEARS = 100; // 10 dekád Decade Decay — WP3.0 spec
 
 /** Total mineable blocks: 23,652,000 */
 export const TOTAL_MINING_BLOCKS = MINING_YEARS * BLOCKS_PER_YEAR;
 
-/** Constant block reward: 5,400.067 ZION (= 5,400,067,000 atomic) */
+/** Base block reward (Decade 1): 5,400.067 ZION */
 export const BLOCK_REWARD_ZION = 5400.067;
 export const BLOCK_REWARD_ATOMIC = 5_400_067_000_000_000; // 5400.067 ZION × 1e12 flowers — WP3.0 Decade 1
 
-/** Daily emission: 5,400.067 × 1440 blocks = ~7,776,096.48 ZION/day */
+/** Tail emission reward (~724.785 ZION) after decade 10 */
+export const TAIL_REWARD_ZION = 724.784723787776;
+export const TAIL_REWARD_ATOMIC = 724_784_723_787_776;
+
+/** Daily emission (Decade 1): 5,400.067 × 1440 blocks = ~7,776,096.48 ZION/day */
 export const DAILY_EMISSION = BLOCK_REWARD_ZION * 1440;
 
-/** Annual emission: 5,400.067 × 525,600 = ~2,838,275,203 ZION/year */
+/** Annual emission (Decade 1): 5,400.067 × 525,600 = ~2,838,275,203 ZION/year */
 export const ANNUAL_EMISSION = BLOCK_REWARD_ZION * BLOCKS_PER_YEAR;
 
 // ---------------------------------------------------------------------------
-// Reward distribution (per block) — v2.9.6: 89% / 5% / 5% / 1%
+// Reward distribution (per block) — v3.0.0: 89% / 5% / 5% / 1%
 // ---------------------------------------------------------------------------
 
 /** Miner share: 89% */
@@ -79,6 +89,17 @@ export const ISSOBELLA_REWARD_ZION = BLOCK_REWARD_ZION * ISSOBELLA_PCT / 100;
 
 /** Pool fee per block: 54.00067 ZION */
 export const POOL_FEE_ZION = BLOCK_REWARD_ZION * POOL_FEE_PERCENT / 100;
+
+/** Canonical fee-split addresses (mainnet) — matches V3/L1/core/src/genesis.rs */
+export const FEE_SPLIT_ADDRESSES = {
+  MINER: 'zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3',
+  HUMANITARIAN: 'zion1m4v5z8z850u480c5c208z274e334369275n5y20',
+  ISSOBELLA: 'zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702',
+  POOL_FEE: 'zion1p2a7a5q0t2z5z545y6m6j5e864n002v4z6w95w5',
+};
+
+/** Frozen genesis block hash — all nodes must agree */
+export const GENESIS_HASH = '003529805e9b47babb9ac0f26b27b1aad0a1cf3c483181857daf3269f7088923';
 
 // ---------------------------------------------------------------------------
 // Genesis premine allocation
@@ -178,14 +199,14 @@ export const NETWORKS = {
     chainId: 'zion-testnet-1',
     p2pPort: 8334,
     rpcPort: 8444,
-    stratumPort: 3333,
+    stratumPort: 8444,
     poolApiPort: 8080,
   },
   mainnet: {
     chainId: 'zion-mainnet-1',
     p2pPort: 8333,
     rpcPort: 8443,
-    stratumPort: 3333,
+    stratumPort: 8444,
     poolApiPort: 8080,
   },
 };
@@ -229,14 +250,23 @@ export function formatZion(zion, decimals = 6) {
 
 /**
  * Calculate block reward at given height.
- * Mirrors Rust: emission::calculate()
+ * Mirrors Rust: emission::block_subsidy()
+ * Decade Decay: reward × (4/5) every 5,256,000 blocks.
+ * After decade 10: perpetual tail emission.
  * @param {number} height
- * @returns {number} Reward in ZION (0 for genesis and post-emission)
+ * @returns {number} Reward in ZION (0 for genesis)
  */
 export function blockRewardAt(height) {
   if (height === 0) return 0;
-  if (height > TOTAL_MINING_BLOCKS) return 0;
-  return BLOCK_REWARD_ZION;
+  const decade = Math.floor((height - 1) / BLOCKS_PER_DECADE);
+  if (decade >= MAX_DECAY_DECADES) {
+    return TAIL_REWARD_ZION;
+  }
+  let reward = BLOCK_REWARD_ZION;
+  for (let i = 0; i < decade; i++) {
+    reward = reward * 4 / 5;
+  }
+  return reward;
 }
 
 /**
@@ -245,8 +275,18 @@ export function blockRewardAt(height) {
  * @returns {number} Circulating supply in ZION (premine + mined)
  */
 export function circulatingSupply(height) {
-  const minedBlocks = Math.min(Math.max(0, height), TOTAL_MINING_BLOCKS);
-  return GENESIS_PREMINE + minedBlocks * BLOCK_REWARD_ZION;
+  if (height <= 0) return GENESIS_PREMINE;
+  const blocks = Math.min(height, TOTAL_MINING_BLOCKS);
+  let supply = GENESIS_PREMINE;
+  let currentHeight = 1;
+  while (currentHeight <= blocks) {
+    const decade = Math.floor((currentHeight - 1) / BLOCKS_PER_DECADE);
+    const endOfDecade = Math.min((decade + 1) * BLOCKS_PER_DECADE, blocks);
+    const blocksInSpan = endOfDecade - currentHeight + 1;
+    supply += blocksInSpan * blockRewardAt(currentHeight);
+    currentHeight = endOfDecade + 1;
+  }
+  return supply;
 }
 
 /**

@@ -1,5 +1,5 @@
 /**
- * ZION Blockchain RPC Service v2.9.8
+ * ZION Blockchain RPC Service v3.0.0
  * Direct communication with ZION V3 blockchain nodes
  * 
  * Features:
@@ -16,7 +16,7 @@ import { CONFIG } from '../constants/config';
 // Default RPC endpoints (with failover) — V3 mainnet canonical port 8443
 const DEFAULT_RPC_NODES = [
   'https://rpc.zionterranova.com',
-  'http://91.98.122.165:8443/jsonrpc',   // Prague (CZ, primary)
+  'http://77.42.71.94:8443/jsonrpc',     // Edge (public primary)
 ];
 
 class BlockchainRPC {
@@ -305,7 +305,7 @@ class BlockchainRPC {
    */
   async getPoolStats() {
     try {
-      const poolUrl = CONFIG.POOL_API_URL || 'http://91.98.122.165:8080';
+      const poolUrl = CONFIG.POOL_URL || 'https://pool.zionterranova.com';
       const response = await this.client.get(`${poolUrl}/api/pool/stats`);
       return response.data;
     } catch (error) {
@@ -319,7 +319,7 @@ class BlockchainRPC {
    */
   async getMinerStats(address) {
     try {
-      const poolUrl = CONFIG.POOL_API_URL || 'http://91.98.122.165:8080';
+      const poolUrl = CONFIG.POOL_URL || 'https://pool.zionterranova.com';
       const response = await this.client.get(`${poolUrl}/api/miner/${address}`);
       return response.data;
     } catch (error) {
