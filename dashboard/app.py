@@ -460,21 +460,21 @@ SERVICE_REGISTRY = [
 
     # ── L2: Bridge & DAO ────────────────────────────────────────────────
     {"id": "bridge", "name": "ZION Bridge", "icon": "🌉", "level": "L2", "kind": "bridge",
-     "ports": {"api": 8550, "metrics": 9551},
+     "ports": {"metrics": 9101},
      "log": "bridge.log", "start": None, "stop": None,
-     "purpose": "Cross-chain relay: moves ZION between L1 and EVM chains (Ethereum, Polygon).",
+     "purpose": "Cross-chain relay: moves ZION between L1 and EVM chains (Base). Metrics on 9101.",
      "child_says": "🌉 A magical bridge to send ZION to other crypto worlds!",
      "depends_on": ["node1"]},
     {"id": "dao", "name": "ZION DAO", "icon": "🗳️", "level": "L2", "kind": "dao",
-     "ports": {"api": 8560, "metrics": 9552},
+     "ports": {"api": 8081},
      "log": "dao.log", "start": None, "stop": None,
-     "purpose": "Decentralized governance: proposals, voting, treasury management.",
+     "purpose": "Decentralized governance: proposals, voting, treasury management. API on 8081.",
      "child_says": "🗳️ Everyone votes here to decide what ZION should do next!",
      "depends_on": ["node1"]},
     {"id": "atomic-swap", "name": "Atomic Swap", "icon": "🔄", "level": "L2", "kind": "swap",
-     "ports": {"api": 8570, "metrics": 9553},
+     "ports": {"api": 8888},
      "log": "atomic-swap.log", "start": None, "stop": None,
-     "purpose": "HTLC-based atomic swaps between ZION and other chains (no middleman).",
+     "purpose": "HTLC-based atomic swaps between ZION and other chains (no middleman). API on 8888.",
      "child_says": "🔄 Trade coins safely with strangers without anyone cheating!",
      "depends_on": ["node1"]},
 
@@ -506,9 +506,9 @@ SERVICE_REGISTRY = [
 
     # ── L4: Apps ─────────────────────────────────────────────────────────
     {"id": "oasis", "name": "OASIS Avatar Hub", "icon": "🪷", "level": "L4", "kind": "app",
-     "ports": {"api": 8600},
+     "ports": {"api": 8094},
      "log": "oasis.log", "start": None, "stop": None,
-     "purpose": "Avatar registry and humanitarian impact tracking.",
+     "purpose": "Avatar registry, guilds, territories, consciousness XP. API on 8094.",
      "child_says": "🪷 A garden where your ZION avatar lives and helps the world!",
      "depends_on": ["node1"]},
 
