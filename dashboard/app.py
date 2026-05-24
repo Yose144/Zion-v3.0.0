@@ -1668,6 +1668,15 @@ def get_ai_services_status() -> dict:
         pass
     return {"hiran": hiran, "hiranyagarbha": orch}
 
+def check_port_open(host: str, port: int, timeout: float = 1.0) -> bool:
+    """Quick TCP connect to test if a port is open."""
+    import socket
+    try:
+        with socket.create_connection((host, port), timeout=timeout):
+            return True
+    except Exception:
+        return False
+
 # ── Network topology + App connectivity ──────────────────────────────────
 
 def get_network_topology() -> dict:
@@ -1685,38 +1694,29 @@ def get_network_topology() -> dict:
             edge_height = info.get("chain_height")
     except Exception:
         pass
-    # Tailscale ping
-    tailscale_ok = False
-    try:
-        res = subprocess.run(["ping", "-n", "1", "100.76.16.108"], capture_output=True, timeout=5)
-        tailscale_ok = res.returncode == 0
-    except Exception:
-        pass
+    # Tailscale VPN check (quick TCP probe to edge RPC instead of ICMP ping)
+    tailscale_ok = check_port_open("100.76.16.108", 8443, timeout=1.5)
     # Website
     web_alive = False
     try:
-        with urllib.request.urlopen("https://zionterranova.com", timeout=3) as r:
+        with urllib.request.urlopen("https://zionterranova.com", timeout=2) as r:
             web_alive = r.status == 200
     except Exception:
         pass
     # Desktop agent (localhost RPC)
-    desktop_alive = False
-    try:
-        with urllib.request.urlopen("http://127.0.0.1:8443/jsonrpc", timeout=1) as r:
-            desktop_alive = r.status == 200
-    except Exception:
-        pass
-    # zion-cli version check
+    desktop_alive = check_port_open("127.0.0.1", 8443, timeout=0.8)
+    # zion-cli version check (fast binary path probe, skip cargo run)
     cli_version = None
-    try:
-        res = subprocess.run(
-            ["cargo", "run", "--manifest-path", str(REPO_ROOT / "V3" / "Cargo.toml"), "-p", "zion-cli", "--", "--version"],
-            capture_output=True, text=True, timeout=15
-        )
-        if res.returncode == 0:
-            cli_version = res.stdout.strip().split()[-1] if res.stdout.strip() else "dev"
-    except Exception:
-        pass
+    cli_exe = REPO_ROOT / "V3" / "target" / "release" / "zion-cli.exe"
+    if not cli_exe.exists():
+        cli_exe = REPO_ROOT / "V3" / "target" / "debug" / "zion-cli.exe"
+    if cli_exe.exists():
+        try:
+            res = subprocess.run([str(cli_exe), "--version"], capture_output=True, text=True, timeout=3)
+            if res.returncode == 0:
+                cli_version = res.stdout.strip().split()[-1] if res.stdout.strip() else "dev"
+        except Exception:
+            pass
     return {
         "core": {
             "host": "100.86.102.5",
