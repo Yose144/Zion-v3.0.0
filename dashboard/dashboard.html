@@ -556,6 +556,25 @@ button{display:inline-flex;align-items:center;justify-content:center;cursor:poin
         <div id="payout-recent" class="space-y-1 max-h-24 overflow-y-auto log-tail text-gray-400"></div>
       </div>
     </div>
+
+    <!-- Mempool Live -->
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-base font-bold flex items-center gap-2">📦 Mempool Live</h2>
+        <span id="mempool-badge" class="text-xs px-2 py-0.5 rounded-full bg-gray-700 text-gray-300">Loading…</span>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+        <div class="bg-black/30 rounded-lg p-3 text-center"><div class="text-[10px] text-gray-400">Pending TXs</div><div id="mempool-tx-count" class="text-xl font-bold text-amber-400">—</div></div>
+        <div class="bg-black/30 rounded-lg p-3 text-center"><div class="text-[10px] text-gray-400">Template TXs</div><div id="mempool-template-count" class="text-xl font-bold text-white">—</div></div>
+        <div class="bg-black/30 rounded-lg p-3 text-center"><div class="text-[10px] text-gray-400">Total Fees</div><div id="mempool-total-fees" class="text-xl font-bold text-emerald-400">—</div></div>
+      </div>
+      <div class="overflow-x-auto max-h-48 overflow-y-auto">
+        <table class="w-full text-left text-xs">
+          <thead><tr class="text-gray-400 border-b border-white/10"><th class="py-1 px-2">TX ID</th><th class="py-1 px-2">From</th><th class="py-1 px-2">To</th><th class="py-1 px-2 text-right">Amount</th><th class="py-1 px-2 text-right">Fee</th></tr></thead>
+          <tbody id="mempool-tx-table" class="font-mono"></tbody>
+        </table>
+      </div>
+    </div>
   </div>
 
   <!-- ═════════ TAB: Wallets ═════════ -->
@@ -902,6 +921,37 @@ button{display:inline-flex;align-items:center;justify-content:center;cursor:poin
         <div id="cli-output" class="bg-black/40 rounded-xl p-3 max-h-64 overflow-y-auto log-tail text-gray-300 font-mono text-xs">
           <div class="text-gray-500 italic">Type a command and press Run, or click a quick command.</div>
         </div>
+      </div>
+    </div>
+
+    <!-- Miner Performance -->
+    <div class="zion-panel p-6 mb-4">
+      <h2 class="text-lg font-bold mb-3 flex items-center gap-2">⛏️ Miner Performance</h2>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div>
+          <div class="text-xs text-gray-400 mb-2">Shares Accepted / Rejected Trend (last 50)</div>
+          <canvas id="miner-shares-chart" height="120"></canvas>
+        </div>
+        <div>
+          <div class="text-xs text-gray-400 mb-2">Session Stats</div>
+          <div class="grid grid-cols-2 md:grid-cols-3 gap-2" id="miner-session-stats">
+            <div class="bg-black/30 rounded-lg p-2 text-center"><div class="text-[10px] text-gray-400">Iterations</div><div id="perf-iterations" class="text-sm font-bold text-white">—</div></div>
+            <div class="bg-black/30 rounded-lg p-2 text-center"><div class="text-[10px] text-gray-400">Accepted</div><div id="perf-accepted" class="text-sm font-bold text-emerald-400">—</div></div>
+            <div class="bg-black/30 rounded-lg p-2 text-center"><div class="text-[10px] text-gray-400">Rejected</div><div id="perf-rejected" class="text-sm font-bold text-red-400">—</div></div>
+            <div class="bg-black/30 rounded-lg p-2 text-center"><div class="text-[10px] text-gray-400">Best Batch</div><div id="perf-best-batch" class="text-sm font-bold text-white">—</div></div>
+            <div class="bg-black/30 rounded-lg p-2 text-center"><div class="text-[10px] text-gray-400">GPU HPS</div><div id="perf-gpu-hps" class="text-sm font-bold text-amber-400">—</div></div>
+            <div class="bg-black/30 rounded-lg p-2 text-center"><div class="text-[10px] text-gray-400">Epoch</div><div id="perf-epoch" class="text-sm font-bold text-white">—</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dependency Graph -->
+    <div class="zion-panel p-6 mb-4">
+      <h2 class="text-lg font-bold mb-3 flex items-center gap-2">🕸️ Service Dependency Graph</h2>
+      <div id="dep-graph-container" class="bg-black/30 rounded-xl p-4 min-h-[200px] overflow-auto">
+        <div class="text-sm text-gray-400 mb-2">Green = alive, Red = dead, arrows = depends_on</div>
+        <div id="dep-graph-viz" class="flex flex-wrap gap-3"></div>
       </div>
     </div>
   </div>
@@ -1385,6 +1435,17 @@ button{display:inline-flex;align-items:center;justify-content:center;cursor:poin
     <a href="../MainnetLaunch.md" target="_blank" class="text-zion-gold hover:underline">Playbook</a>
     <div class="mt-2 italic">"In code we trust. 144 billion ZION. Not one satoshi more."</div>
   </footer>
+</div>
+
+<!-- Block Detail Modal -->
+<div id="block-modal" class="fixed inset-0 bg-black/80 hidden items-center justify-center z-50 p-4" onclick="if(event.target===this)closeBlockModal()">
+  <div class="zion-panel w-full max-w-2xl max-h-[80vh] overflow-y-auto p-6 relative">
+    <button onclick="closeBlockModal()" class="absolute top-3 right-3 text-gray-400 hover:text-white text-xl">&times;</button>
+    <h2 class="text-xl font-bold mb-4 text-gradient">🔍 Block Detail</h2>
+    <div id="block-modal-content" class="space-y-3 text-sm">
+      <div class="text-gray-400">Click a block in Explorer to see details.</div>
+    </div>
+  </div>
 </div>
 
 <script src="/dashboard.js?v=2"></script>

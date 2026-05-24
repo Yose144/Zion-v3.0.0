@@ -137,6 +137,8 @@ async function refreshAll(){
     if(currentTab === 'wallets') { loadWallets(); loadWalletStatus(); }
     if(currentTab === 'explorer') loadExplorer();
     if(currentTab === 'hiran') loadAiStatus();
+    if(currentTab === 'overview') loadMempool();
+    if(currentTab === 'controls') { loadMinerPerformance(); loadDepGraph(); }
   } catch(e){
     console.error('Refresh error:', e);
   }
@@ -652,7 +654,7 @@ async function loadExplorer(){
         tbody.innerHTML = '<tr><td colspan="5" class="py-4 text-gray-500 italic text-center">No blocks available. Start the node to see recent blocks.</td></tr>';
       } else {
         tbody.innerHTML = data.recent_blocks.slice().reverse().map(b => `
-          <tr class="border-b border-white/5 hover:bg-white/3 transition">
+          <tr class="border-b border-white/5 hover:bg-white/3 transition cursor-pointer" onclick="openBlockModal(${b.height})" title="Click for block detail">
             <td class="py-2 px-3 font-bold text-white">#${b.height}</td>
             <td class="py-2 px-3 text-gray-300 truncate" title="${escapeHtml(b.hash || '')}">${escapeHtml(b.hash || '—')}</td>
             <td class="py-2 px-3 text-gray-400">${b.timestamp ? new Date(b.timestamp * 1000).toLocaleString() : '—'}</td>
@@ -838,6 +840,191 @@ async function loadAiStatus(){
     if(orchPanel) orchPanel.classList.toggle('hidden', !o.alive);
   } catch(e) { console.error('loadAiStatus error:', e); }
 }
+
+// ── Mempool Live ──────────────────────────────────────────────────────
+
+async function loadMempool(){
+  try {
+    const mp = await fetch('/api/mempool').then(r => r.json());
+    const badge = document.getElementById('mempool-badge');
+    if(badge){ badge.textContent = mp.rpc_reachable ? 'Live' : 'RPC Unreachable'; badge.className = 'text-xs px-2 py-0.5 rounded-full ' + (mp.rpc_reachable ? 'bg-emerald-700 text-emerald-300' : 'bg-red-700 text-red-300'); }
+    document.getElementById('mempool-tx-count').textContent = mp.tx_count ?? '—';
+    document.getElementById('mempool-template-count').textContent = mp.template_tx_count ?? '—';
+    document.getElementById('mempool-total-fees').textContent = mp.total_fees_zion != null ? mp.total_fees_zion.toFixed(4) + ' Z' : '—';
+    const tbody = document.getElementById('mempool-tx-table');
+    if(tbody){
+      if(!mp.transactions || !mp.transactions.length){
+        tbody.innerHTML = '<tr><td colspan="5" class="py-2 text-gray-500 italic text-center">No pending transactions</td></tr>';
+      } else {
+        tbody.innerHTML = mp.transactions.map(tx => `
+          <tr class="border-b border-white/5 hover:bg-white/3">
+            <td class="py-1 px-2 text-gray-300 truncate max-w-[120px]" title="${escapeHtml(tx.tx_id)}">${escapeHtml(tx.tx_id.slice(0,12))}…</td>
+            <td class="py-1 px-2 text-gray-400 truncate max-w-[100px]">${escapeHtml(tx.from?.slice(0,10)||'—')}…</td>
+            <td class="py-1 px-2 text-gray-400 truncate max-w-[100px]">${escapeHtml(tx.to?.slice(0,10)||'—')}…</td>
+            <td class="py-1 px-2 text-right text-emerald-300">${tx.amount_zion ? tx.amount_zion.toFixed(4) : '—'}</td>
+            <td class="py-1 px-2 text-right text-gray-400">${tx.fee_zion != null ? tx.fee_zion.toFixed(6) : '—'}</td>
+          </tr>
+        `).join('');
+      }
+    }
+  } catch(e) { console.error('loadMempool error:', e); }
+}
+
+// ── Miner Performance (shares trend + session stats) ────────────────────
+
+async function loadMinerPerformance(){
+  try {
+    const hist = await fetch('/api/miner/shares').then(r => r.json());
+    const samples = hist.samples || [];
+    // Update session stats from most recent log tail
+    const recent = samples.length ? samples[samples.length-1] : null;
+    if(recent){
+      document.getElementById('perf-accepted').textContent = recent.accepted ?? '—';
+      document.getElementById('perf-rejected').textContent = recent.rejected ?? '—';
+    }
+    // Parse extra session stats from latest miner log line
+    const logLines = await fetch('/api/logs/miner').then(r => r.json()).catch(() => ({lines:[]}));
+    const lines = logLines.lines || [];
+    let sessionLine = '';
+    for(let i=lines.length-1; i>=0; i--){ if(lines[i].includes('session_status')){ sessionLine = lines[i]; break; } }
+    if(sessionLine){
+      const mIter = sessionLine.match(/iter=(\d+)/); if(mIter) document.getElementById('perf-iterations').textContent = mIter[1];
+      const mBest = sessionLine.match(/best_batch_ms=(\d+)/); if(mBest) document.getElementById('perf-best-batch').textContent = mBest[1] + 'ms';
+      const mGpu = sessionLine.match(/gpu_hps=(\d+\.?\d*)/); if(mGpu) document.getElementById('perf-gpu-hps').textContent = (parseFloat(mGpu[1])/1000).toFixed(2) + ' KH/s';
+      const mEpoch = sessionLine.match(/epoch=(\d+)/); if(mEpoch) document.getElementById('perf-epoch').textContent = mEpoch[1];
+    }
+    // Render shares trend chart
+    const ctx = document.getElementById('miner-shares-chart');
+    if(ctx && typeof Chart !== 'undefined'){
+      const labels = samples.map((_,i) => '');
+      const accepted = samples.map(s => s.accepted);
+      const rejected = samples.map(s => s.rejected);
+      if(!window._sharesChart){
+        window._sharesChart = new Chart(ctx.getContext('2d'), {
+          type: 'line',
+          data: { labels, datasets: [
+            { label: 'Accepted', data: accepted, borderColor: 'rgb(16,185,129)', backgroundColor: 'rgba(16,185,129,0.1)', fill: true, tension: 0.3, pointRadius: 0, borderWidth: 2 },
+            { label: 'Rejected', data: rejected, borderColor: 'rgb(239,68,68)', backgroundColor: 'rgba(239,68,68,0.1)', fill: true, tension: 0.3, pointRadius: 0, borderWidth: 2 },
+          ]},
+          options: { responsive: true, plugins: { legend: { display: true, labels: { color: '#cbd5e1', font: { size: 10 } } } }, scales: { x: { display: false }, y: { ticks: { color: '#64748b', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } } }, animation: { duration: 300 } }
+        });
+      } else {
+        window._sharesChart.data.labels = labels;
+        window._sharesChart.data.datasets[0].data = accepted;
+        window._sharesChart.data.datasets[1].data = rejected;
+        window._sharesChart.update('none');
+      }
+    }
+  } catch(e) { console.error('loadMinerPerformance error:', e); }
+}
+
+// ── Dependency Graph ──────────────────────────────────────────────────
+
+async function loadDepGraph(){
+  try {
+    const g = await fetch('/api/dependency-graph').then(r => r.json());
+    const container = document.getElementById('dep-graph-viz');
+    if(!container) return;
+    let html = '';
+    // Simple flow layout: rows by level
+    const levels = {};
+    for(const n of g.nodes){
+      const lv = n.level || 'L?';
+      if(!levels[lv]) levels[lv] = [];
+      levels[lv].push(n);
+    }
+    for(const lv of Object.keys(levels).sort()){
+      html += '<div class="flex items-center gap-2 flex-wrap mb-2">';
+      html += '<span class="text-[10px] text-gray-500 w-8">' + lv + '</span>';
+      for(const n of levels[lv]){
+        const color = n.alive ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : 'bg-red-500/20 text-red-300 border-red-500/40';
+        html += '<span class="text-xs px-2 py-1 rounded border ' + color + ' cursor-default" title="' + n.id + '">' + n.icon + ' ' + n.name + '</span>';
+      }
+      html += '</div>';
+    }
+    // Edges summary
+    html += '<div class="text-[10px] text-gray-500 mt-2">' + g.edges.length + ' dependencies</div>';
+    container.innerHTML = html;
+  } catch(e) { console.error('loadDepGraph error:', e); }
+}
+
+// ── Block Detail Modal ──────────────────────────────────────────────
+
+async function openBlockModal(height){
+  try {
+    const b = await fetch('/api/block?height=' + encodeURIComponent(height)).then(r => r.json());
+    const content = document.getElementById('block-modal-content');
+    if(!b.found){
+      content.innerHTML = '<div class="text-red-400">Block not found: ' + escapeHtml(b.error || '') + '</div>';
+    } else {
+      const ts = b.timestamp ? new Date(b.timestamp * 1000).toLocaleString() : '—';
+      content.innerHTML = `
+        <div class="grid grid-cols-2 gap-3 text-xs">
+          <div class="bg-black/30 rounded-lg p-3"><div class="text-gray-400">Height</div><div class="text-lg font-bold text-white">#${b.height}</div></div>
+          <div class="bg-black/30 rounded-lg p-3"><div class="text-gray-400">Timestamp</div><div class="text-sm font-bold text-white">${ts}</div></div>
+          <div class="bg-black/30 rounded-lg p-3 col-span-2"><div class="text-gray-400">Hash</div><div class="text-sm font-mono text-zion-gold break-all">${escapeHtml(b.hash)}</div></div>
+          <div class="bg-black/30 rounded-lg p-3"><div class="text-gray-400">Miner</div><div class="text-sm font-mono text-white truncate">${escapeHtml(b.miner)}</div></div>
+          <div class="bg-black/30 rounded-lg p-3"><div class="text-gray-400">Difficulty</div><div class="text-sm font-bold text-white">${b.difficulty != null ? b.difficulty.toLocaleString() : '—'}</div></div>
+          <div class="bg-black/30 rounded-lg p-3"><div class="text-gray-400">Reward</div><div class="text-sm font-bold text-emerald-400">${b.reward_zion != null ? b.reward_zion.toFixed(4) + ' Z' : '—'}</div></div>
+          <div class="bg-black/30 rounded-lg p-3"><div class="text-gray-400">Total Fees</div><div class="text-sm font-bold text-amber-400">${b.total_fees_zion != null ? b.total_fees_zion.toFixed(4) + ' Z' : '—'}</div></div>
+          <div class="bg-black/30 rounded-lg p-3"><div class="text-gray-400">Nonce</div><div class="text-sm font-mono text-white">${b.nonce ?? '—'}</div></div>
+          <div class="bg-black/30 rounded-lg p-3"><div class="text-gray-400">TX Count</div><div class="text-sm font-bold text-white">${b.tx_count ?? 0}</div></div>
+          <div class="bg-black/30 rounded-lg p-3 col-span-2"><div class="text-gray-400">Prev Hash</div><div class="text-sm font-mono text-gray-300 break-all">${escapeHtml(b.prev_hash)}</div></div>
+        </div>
+        ${b.transactions && b.transactions.length ? `
+          <div class="mt-3"><div class="text-xs text-gray-400 mb-1">Transactions</div>
+          <div class="overflow-x-auto max-h-48 overflow-y-auto">
+            <table class="w-full text-left text-xs">
+              <thead><tr class="text-gray-400 border-b border-white/10"><th class="py-1 px-2">ID</th><th class="py-1 px-2">Type</th><th class="py-1 px-2">From</th><th class="py-1 px-2">To</th><th class="py-1 px-2 text-right">Amount</th><th class="py-1 px-2 text-right">Fee</th></tr></thead>
+              <tbody class="font-mono">${b.transactions.map(tx => `
+                <tr class="border-b border-white/5 hover:bg-white/3">
+                  <td class="py-1 px-2 text-gray-300 truncate max-w-[120px]" title="${escapeHtml(tx.tx_id)}">${escapeHtml(tx.tx_id.slice(0,12))}…</td>
+                  <td class="py-1 px-2 text-gray-400">${escapeHtml(tx.type)}</td>
+                  <td class="py-1 px-2 text-gray-400 truncate max-w-[100px]">${escapeHtml(tx.from?.slice(0,10)||'—')}…</td>
+                  <td class="py-1 px-2 text-gray-400 truncate max-w-[100px]">${escapeHtml(tx.to?.slice(0,10)||'—')}…</td>
+                  <td class="py-1 px-2 text-right text-emerald-300">${tx.amount_zion != null ? tx.amount_zion.toFixed(4) : '—'}</td>
+                  <td class="py-1 px-2 text-right text-gray-400">${tx.fee_zion != null ? tx.fee_zion.toFixed(6) : '—'}</td>
+                </tr>
+              `).join('')}</tbody>
+            </table>
+          </div></div>
+        ` : ''}
+      `;
+    }
+    document.getElementById('block-modal').classList.remove('hidden');
+    document.getElementById('block-modal').classList.add('flex');
+  } catch(e) { console.error('openBlockModal error:', e); }
+}
+
+function closeBlockModal(){
+  const el = document.getElementById('block-modal');
+  if(el){ el.classList.add('hidden'); el.classList.remove('flex'); }
+}
+
+// ── Keyboard Shortcuts ────────────────────────────────────────────────
+
+document.addEventListener('keydown', function(e){
+  if(e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable)) return;
+  const map = {
+    '1': 'overview', '2': 'l1', '3': 'l2', '4': 'l3', '5': 'l4', '6': 'l5', '7': 'l6',
+    'o': 'overview', 'c': 'controls', 'e': 'explorer', 'w': 'wallets', 'a': 'alerts',
+    't': 'topology', 'p': 'ops', 'h': 'hiran', 'g': 'charts',
+  };
+  const key = e.key.toLowerCase();
+  if(map[key] && !e.ctrlKey && !e.altKey && !e.metaKey){
+    switchTab(map[key]);
+    e.preventDefault();
+  }
+  if(key === 'r' && !e.ctrlKey && !e.altKey && !e.metaKey){
+    refreshAll();
+    toast('Refreshed', 'info');
+    e.preventDefault();
+  }
+  if(key === ' ' && !e.ctrlKey && !e.altKey && !e.metaKey){
+    toggleAutoRefresh();
+    e.preventDefault();
+  }
+});
 
 // ─────────────────────────────────────────────────────────────────────
 // Charts tab
