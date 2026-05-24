@@ -521,7 +521,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
     <!-- Live Metrics + Edge Pool -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
       <!-- Built-in Metrics Charts (replaces Grafana when offline) -->
-      <div class="zion-panel p-5 lg:col-span-2">
+      <div class="zion-panel p-5 lg:col-span-2 overflow-hidden">
         <div class="flex items-center justify-between mb-3">
           <h2 class="text-base font-bold flex items-center gap-2">📊 Live Metrics</h2>
           <div class="flex gap-2 items-center">
@@ -532,19 +532,19 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <div class="text-[10px] text-gray-400 uppercase mb-1">Block Height (Core vs Edge)</div>
-            <canvas id="chart-overview-height" height="100"></canvas>
+            <div style="position:relative;height:120px;"><canvas id="chart-overview-height"></canvas></div>
           </div>
           <div>
             <div class="text-[10px] text-gray-400 uppercase mb-1">Shares Accepted/Rejected</div>
-            <canvas id="chart-overview-shares" height="100"></canvas>
+            <div style="position:relative;height:120px;"><canvas id="chart-overview-shares"></canvas></div>
           </div>
           <div>
             <div class="text-[10px] text-gray-400 uppercase mb-1">Active Pool Sessions</div>
-            <canvas id="chart-overview-sessions" height="100"></canvas>
+            <div style="position:relative;height:120px;"><canvas id="chart-overview-sessions"></canvas></div>
           </div>
           <div>
             <div class="text-[10px] text-gray-400 uppercase mb-1">Resource Usage (%)</div>
-            <canvas id="chart-overview-resources" height="100"></canvas>
+            <div style="position:relative;height:120px;"><canvas id="chart-overview-resources"></canvas></div>
           </div>
         </div>
       </div>
