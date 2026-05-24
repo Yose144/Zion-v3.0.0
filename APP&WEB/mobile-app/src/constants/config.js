@@ -127,6 +127,21 @@ export const CONFIG = {
   BUILD_NUMBER: 7,
   CODENAME: 'TerraNova',
 
+  // ── Hiran AI Inference + Hiranyagarbha Orchestrator ─────────────────────────
+  AI: {
+    HIRAN_INFERENCE_URL: 'http://localhost:8002',
+    HIRANYAGARBHA_URL: 'http://localhost:8001',
+    HIRAN_MODEL: 'hiran-v2.2',
+    TIMEOUT: 30000,
+  },
+
+  // ── Neural Compute Layer (NCL) — routed through Hiranyagarbha /ncl/* ────────
+  NCL: {
+    ENABLED: true,
+    API_BASE: 'http://localhost:8001/ncl',
+    JOB_TIMEOUT: 60000,
+  },
+
   // ── wZION Bridge (L1 ↔ EVM) ──────────────────────────────
   BRIDGE: {
     // Base Sepolia testnet (live 21.2.2026)

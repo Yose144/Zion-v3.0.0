@@ -14,6 +14,7 @@ import DashboardScreen from './src/screens/DashboardScreen';
 import MiningScreen from './src/screens/MiningScreen';
 import NetworkScreen from './src/screens/NetworkScreen';
 import BridgeScreen from './src/screens/BridgeScreen';
+import AIScreen from './src/screens/AIScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 import {WalletProvider} from './src/context/WalletContext';
 import {MiningProvider} from './src/context/MiningContext';
@@ -90,6 +91,9 @@ const MainTabs = () => (
           case 'Bridge':
             iconName = 'swap-horizontal';
             break;
+          case 'AI':
+            iconName = 'brain';
+            break;
           case 'Settings':
             iconName = 'cog';
             break;
@@ -148,6 +152,11 @@ const MainTabs = () => (
       name="Bridge"
       component={BridgeScreen}
       options={{title: 'wZION Bridge'}}
+    />
+    <Tab.Screen
+      name="AI"
+      component={AIScreen}
+      options={{title: 'Hiran AI'}}
     />
     <Tab.Screen
       name="Settings"
