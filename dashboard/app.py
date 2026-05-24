@@ -2146,6 +2146,10 @@ _ALLOW_BASE = {
     "restart-hiranyagarbha":  "start-hiranyagarbha",
     "restart-hiran-inference":"start-hiran-inference",
     "restart-ai-native":      "start-hiran-inference",
+    # ── DAO ──────────────────────────────────────────────────────────────
+    "start-dao":              "start-dao",
+    "stop-dao":               "stop-dao",
+    "restart-dao":            "start-dao",
 }
 
 # Windows-only extras
@@ -4235,6 +4239,34 @@ class DashboardHandler(BaseHTTPRequestHandler):
         except (ConnectionAbortedError, ConnectionResetError, BrokenPipeError):
             pass  # client closed connection early — benign
 
+    def _proxy_to_dao(self, method, route, body, req_headers):
+        """Proxy a request to the DAO daemon on port 8081, preserving auth headers."""
+        DAO_PORT = 8081
+        # Reconstruct full path including query string
+        full_path = self.path if self.path.startswith("/api/dao") else route
+        url = f"http://127.0.0.1:{DAO_PORT}{full_path}"
+        try:
+            fwd_headers = {"Accept": "application/json"}
+            # Forward content-type and auth header
+            ct = req_headers.get("Content-Type") or req_headers.get("content-type")
+            if ct:
+                fwd_headers["Content-Type"] = ct
+            dao_key = req_headers.get("X-DAO-Key") or req_headers.get("x-dao-key")
+            if dao_key:
+                fwd_headers["X-DAO-Key"] = dao_key
+            req = urllib.request.Request(url, data=body if body else None, headers=fwd_headers, method=method)
+            with urllib.request.urlopen(req, timeout=8) as r:
+                data = json.loads(r.read())
+            self._json(data)
+        except urllib.error.HTTPError as e:
+            try:
+                data = json.loads(e.read())
+            except Exception:
+                data = {"success": False, "error": f"DAO HTTP {e.code}"}
+            self._json(data, e.code)
+        except Exception as e:
+            self._json({"success": False, "error": f"DAO daemon unreachable: {str(e)[:120]}", "offline": True})
+
     def _get_service_log(self, svc_name, lines=50):
         """Read last N lines from a service's log file."""
         import collections
@@ -4322,6 +4354,9 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 procs = {k: {"pid": v["pid"], "age_min": int((time.time() - v["ts"]) / 60),
                              "alive": is_process_alive(v["pid"])} for k, v in PROCESS_REGISTRY.items()}
             self._json({"processes": procs})
+        elif route.startswith("/api/dao"):
+            # Proxy all /api/dao/* requests to DAO daemon on port 8081
+            self._proxy_to_dao("GET", route, None, dict(self.headers))
         elif route.startswith("/api/service-log/"):
             svc_name = route.split("/api/service-log/")[1].split("?")[0]
             lines_param = 50
@@ -4909,7 +4944,11 @@ class DashboardHandler(BaseHTTPRequestHandler):
         except Exception:
             payload = {}
 
-        if route == "/api/hiran/chat":
+        if route.startswith("/api/dao"):
+            # Proxy POST /api/dao/* to DAO daemon on port 8081
+            self._proxy_to_dao("POST", route, raw, dict(self.headers))
+            return
+        elif route == "/api/hiran/chat":
             self._handle_hiran_chat_post(payload)
             return
         elif route == "/api/ncl/jobs":
