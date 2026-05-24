@@ -15,7 +15,7 @@
  * Broadcast: hex-encoded JSON via RPC `sendrawtransaction`.
  */
 
-import { sha256 } from '@noble/hashes/sha2';
+import CryptoJS from 'crypto-js';
 import * as ed25519 from '@noble/ed25519';
 import { Buffer } from 'buffer';
 import {
@@ -193,8 +193,8 @@ export function transactionHash(tx) {
   };
 
   const json = JSON.stringify(forHash, Object.keys(forHash).sort());
-  const bytes = new TextEncoder().encode(json);
-  return sha256(bytes);
+  const hashHex = CryptoJS.SHA256(json).toString();
+  return Buffer.from(hashHex, 'hex');
 }
 
 /**

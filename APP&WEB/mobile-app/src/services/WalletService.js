@@ -7,19 +7,17 @@ import {CHAIN_IDS} from '../constants/chains';
 import {validateAddress} from '../utils/addressValidation';
 
 /**
- * Wallet Service v2.9.3
+ * Wallet Service v3.0.0
  * Správa ZION wallet (generování, import, export, signing)
- * 
+ *
  * SECURITY UPDATES:
- * v2.9.1 - Removed DEFAULT_PASSWORD, added password validation, biometric auth
+ * v3.0.0 - Ed25519 signing, PBKDF2+AES encryption, V3 mainnet ready
  * v2.9.2 - Migrated to Keychain/Keystore, transaction confirmation UI
- * v2.9.3 - Replaced crypto.js mock with real BIP39/BIP32/secp256k1 libraries
- * 
+ *
  * Features:
  * - Real BIP39 mnemonic (12/24 words) ✅
- * - BIP32/BIP44 HD derivation ✅
- * - secp256k1 ECDSA signing ✅
- * - Bech32 address encoding (zion1...) ✅
+ * - Ed25519 signing (post-quantum ready) ✅
+ * - Custom Bech32 address encoding (zion1...) ✅
  * - Keychain/Keystore secure storage ✅
  * - Biometric authentication ✅
  * - Transaction validation ✅
