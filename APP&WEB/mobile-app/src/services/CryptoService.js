@@ -1,23 +1,18 @@
 /**
- * ZION Wallet CryptoService v2.9.4
+ * ZION Wallet CryptoService v3.0.0
  * Production-ready cryptographic implementation with Ed25519
- * 
- * ⚠️ CHANGED FROM v2.9.3:
- * - secp256k1 → Ed25519 (Curve25519)
- * - Standard Bech32 → Custom Bech32 (presale-compatible)
- * - BIP32 derivation → Direct seed-to-key
- * 
+ *
  * Security Features:
  * - Real BIP39 mnemonic generation (12/24 words)
  * - Ed25519 signatures (Curve25519, post-quantum ready)
  * - Custom Bech32 address encoding (zion1... presale-compatible)
- * - AES-256-GCM encryption for private keys
- * 
+ * - PBKDF2(100k iter) + AES-256 encryption for private keys
+ *
  * Libraries Used:
  * - bip39: Mnemonic generation and validation
  * - @noble/ed25519: Pure JavaScript Ed25519 implementation
- * - crypto-js: AES encryption, SHA256, RIPEMD160
- * 
+ * - crypto-js: PBKDF2, AES, SHA256
+ *
  * Compatibility:
  * ✅ ZION Presale API (wallet_api_v3.py)
  * ✅ ZION Genesis/Premine wallets
