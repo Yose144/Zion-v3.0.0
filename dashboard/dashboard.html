@@ -456,12 +456,18 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
           </div>
 
           <!-- Action Buttons -->
-          <div class="flex gap-2 pt-2">
-            <button onclick="startMiner('gpu')" class="flex-1 px-4 py-2.5 bg-gradient-to-r from-purple-700 to-purple-900 hover:from-purple-600 hover:to-purple-800 rounded-lg text-sm font-semibold transition shadow-lg">
-              🎮 Start GPU Miner
+          <div class="flex gap-2 pt-2 flex-wrap">
+            <button onclick="startMiner('gpu')" class="flex-1 min-w-[120px] px-4 py-2.5 bg-gradient-to-r from-purple-700 to-purple-900 hover:from-purple-600 hover:to-purple-800 rounded-lg text-sm font-semibold transition shadow-lg">
+              🎮 Start GPU
             </button>
-            <button onclick="startMiner('cpu')" class="flex-1 px-4 py-2.5 bg-gradient-to-r from-blue-700 to-blue-900 hover:from-blue-600 hover:to-blue-800 rounded-lg text-sm font-semibold transition shadow-lg">
-              💻 Start CPU Miner
+            <button onclick="startMiner('cpu')" class="flex-1 min-w-[120px] px-4 py-2.5 bg-gradient-to-r from-blue-700 to-blue-900 hover:from-blue-600 hover:to-blue-800 rounded-lg text-sm font-semibold transition shadow-lg">
+              💻 Start CPU
+            </button>
+            <button onclick="startMiner('dual')" class="flex-1 min-w-[120px] px-4 py-2.5 bg-gradient-to-r from-cyan-700 to-cyan-900 hover:from-cyan-600 hover:to-cyan-800 rounded-lg text-sm font-semibold transition shadow-lg">
+              🔀 Dual Mode
+            </button>
+            <button onclick="controlAction('restart-miner')" class="px-4 py-2.5 bg-gradient-to-r from-amber-700 to-amber-900 hover:from-amber-600 hover:to-amber-800 rounded-lg text-sm font-semibold transition shadow-lg">
+              ⟳ Restart
             </button>
             <button onclick="controlAction('stop-miner')" class="px-4 py-2.5 bg-gradient-to-r from-red-700 to-red-900 hover:from-red-600 hover:to-red-800 rounded-lg text-sm font-semibold transition shadow-lg">
               ⏹ Stop
@@ -512,23 +518,33 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
       </div>
     </div>
 
-    <!-- Grafana + Edge Pool Overview -->
+    <!-- Live Metrics + Edge Pool -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-      <!-- Grafana iframe (2 cols wide) -->
+      <!-- Built-in Metrics Charts (replaces Grafana when offline) -->
       <div class="zion-panel p-5 lg:col-span-2">
         <div class="flex items-center justify-between mb-3">
-          <h2 class="text-base font-bold flex items-center gap-2">📊 Grafana Dashboard</h2>
-          <div class="flex gap-2">
-            <a href="http://127.0.0.1:3000" target="_blank" class="text-[10px] px-2 py-1 bg-zion-700 hover:bg-zion-600 rounded transition">Open Grafana ↗</a>
-            <button onclick="controlAction('start-monitoring')" class="text-[10px] px-2 py-1 bg-emerald-700 hover:bg-emerald-600 rounded transition">▶ Start</button>
+          <h2 class="text-base font-bold flex items-center gap-2">📊 Live Metrics</h2>
+          <div class="flex gap-2 items-center">
+            <span id="grafana-status" class="text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400">Built-in</span>
+            <a href="http://127.0.0.1:3000" target="_blank" class="text-[10px] px-2 py-1 bg-white/5 hover:bg-white/10 rounded transition border border-white/10">Grafana ↗</a>
           </div>
         </div>
-        <div class="relative">
-          <iframe src="http://127.0.0.1:3000/d/zion-pool-overview" id="grafana-iframe-main" class="w-full bg-black/40 rounded-xl border border-white/10" style="height:400px;" sandbox="allow-scripts allow-same-origin allow-forms" onerror="this.style.display='none';document.getElementById('grafana-offline').classList.remove('hidden');"></iframe>
-          <div id="grafana-offline" class="hidden absolute inset-0 flex flex-col items-center justify-center bg-black/80 rounded-xl">
-            <div class="text-4xl mb-2">📊</div>
-            <div class="text-sm text-gray-400">Grafana not running</div>
-            <button onclick="controlAction('start-monitoring')" class="mt-3 text-xs px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 rounded transition">▶ Start Monitoring</button>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <div class="text-[10px] text-gray-400 uppercase mb-1">Block Height (Core vs Edge)</div>
+            <canvas id="chart-overview-height" height="100"></canvas>
+          </div>
+          <div>
+            <div class="text-[10px] text-gray-400 uppercase mb-1">Shares Accepted/Rejected</div>
+            <canvas id="chart-overview-shares" height="100"></canvas>
+          </div>
+          <div>
+            <div class="text-[10px] text-gray-400 uppercase mb-1">Active Pool Sessions</div>
+            <canvas id="chart-overview-sessions" height="100"></canvas>
+          </div>
+          <div>
+            <div class="text-[10px] text-gray-400 uppercase mb-1">Resource Usage (%)</div>
+            <canvas id="chart-overview-resources" height="100"></canvas>
           </div>
         </div>
       </div>
@@ -556,6 +572,86 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         <hr class="zion-divider my-3">
         <div class="text-[10px] text-gray-500 mb-1">Open Ports</div>
         <div id="val-pool-edge-ports" class="flex flex-wrap gap-1"></div>
+      </div>
+    </div>
+
+    <!-- NCL + AI Status Widget -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="zion-panel p-5">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-base font-bold flex items-center gap-2">🧠 NCL Compute Layer</h2>
+          <span id="ncl-overview-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400">Checking…</span>
+        </div>
+        <div class="grid grid-cols-3 gap-3 mb-3">
+          <div class="bg-black/30 rounded-lg p-3 text-center">
+            <div class="text-xl font-bold text-purple-400" id="ncl-ov-workers">—</div>
+            <div class="text-[10px] text-gray-400">Workers</div>
+          </div>
+          <div class="bg-black/30 rounded-lg p-3 text-center">
+            <div class="text-xl font-bold text-zion-cyan" id="ncl-ov-jobs">—</div>
+            <div class="text-[10px] text-gray-400">Jobs</div>
+          </div>
+          <div class="bg-black/30 rounded-lg p-3 text-center">
+            <div class="text-xl font-bold text-zion-gold" id="ncl-ov-tflops">—</div>
+            <div class="text-[10px] text-gray-400">TFLOPS</div>
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="switchTab('hiran')" class="flex-1 text-[10px] px-2 py-1.5 bg-purple-700/30 hover:bg-purple-700/50 border border-purple-500/20 rounded-lg font-semibold transition">Open NCL Panel →</button>
+          <button onclick="controlAction('start-hiranyagarbha')" class="text-[10px] px-3 py-1.5 bg-emerald-700/50 hover:bg-emerald-600 rounded-lg font-semibold transition">▶ Start</button>
+        </div>
+      </div>
+
+      <div class="zion-panel p-5">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-base font-bold flex items-center gap-2">🤖 Hiran AI Inference</h2>
+          <span id="hiran-overview-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400">Checking…</span>
+        </div>
+        <div class="grid grid-cols-3 gap-3 mb-3">
+          <div class="bg-black/30 rounded-lg p-3 text-center">
+            <div class="text-sm font-bold text-emerald-400" id="hiran-ov-model">—</div>
+            <div class="text-[10px] text-gray-400">Model</div>
+          </div>
+          <div class="bg-black/30 rounded-lg p-3 text-center">
+            <div class="text-sm font-bold text-white" id="hiran-ov-uptime">—</div>
+            <div class="text-[10px] text-gray-400">Uptime</div>
+          </div>
+          <div class="bg-black/30 rounded-lg p-3 text-center">
+            <div class="text-sm font-bold text-blue-400" id="hiran-ov-backend">—</div>
+            <div class="text-[10px] text-gray-400">Backend</div>
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="switchTab('hiran')" class="flex-1 text-[10px] px-2 py-1.5 bg-blue-700/30 hover:bg-blue-700/50 border border-blue-500/20 rounded-lg font-semibold transition">Open AI Panel →</button>
+          <button onclick="controlAction('start-hiran-inference')" class="text-[10px] px-3 py-1.5 bg-emerald-700/50 hover:bg-emerald-600 rounded-lg font-semibold transition">▶ Start</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Service Terminal -->
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-base font-bold flex items-center gap-2">🖥️ Service Terminal</h2>
+        <div class="flex gap-2">
+          <select id="terminal-service" class="text-[10px] px-2 py-1 bg-black/40 border border-white/10 rounded text-white">
+            <option value="node1">Node 1</option>
+            <option value="node2">Node 2</option>
+            <option value="pool">Pool</option>
+            <option value="miner">Miner</option>
+            <option value="hiranyagarbha">Hiranyagarbha</option>
+            <option value="ai-native">Hiran Inference</option>
+          </select>
+          <button onclick="loadTerminalLog()" class="text-[10px] px-2 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded font-semibold transition">Refresh</button>
+          <button onclick="clearTerminal()" class="text-[10px] px-2 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded font-semibold transition">Clear</button>
+        </div>
+      </div>
+      <div id="terminal-output" class="bg-black/60 rounded-xl p-3 max-h-48 overflow-y-auto font-mono text-[11px] text-gray-300 leading-relaxed border border-white/5">
+        <div class="text-gray-500 italic">Select a service and click Refresh to view live output...</div>
+      </div>
+      <div class="flex gap-2 mt-3">
+        <button onclick="controlAction('start-'+document.getElementById('terminal-service').value)" class="text-[10px] px-3 py-1.5 bg-emerald-700/50 hover:bg-emerald-600 rounded-lg font-semibold transition">▶ Start</button>
+        <button onclick="controlAction('stop-'+document.getElementById('terminal-service').value)" class="text-[10px] px-3 py-1.5 bg-red-700/50 hover:bg-red-600 rounded-lg font-semibold transition">⏹ Stop</button>
+        <button onclick="controlAction('restart-'+document.getElementById('terminal-service').value)" class="text-[10px] px-3 py-1.5 bg-amber-700/50 hover:bg-amber-600 rounded-lg font-semibold transition">⟳ Restart</button>
       </div>
     </div>
 
