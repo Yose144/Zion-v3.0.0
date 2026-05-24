@@ -183,7 +183,7 @@ Current live topology is **Core + Edge over Tailscale VPN**. Do not reference ol
 
 ```
 Core (Windows 11)          Edge (Hetzner VPS)
-100.86.102.5              100.66.162.125
+100.86.102.5              100.76.16.108
     | Tailscale VPN            |
 Node + Pool (Master)    Node + Pool (Relay)
 Miner (GPU)               Public P2P: 8333
@@ -193,7 +193,7 @@ Miner (GPU)               Public P2P: 8333
 | Role | Host | VPN IP | Public IP | Ports |
 |------|------|--------|-----------|-------|
 | Core | Local PC | 100.86.102.5 | (dynamic) | P2P: 8333, RPC: 8443 |
-| Edge | Hetzner VPS | 100.66.162.125 | 77.42.71.94 | P2P: 8333, Pool: 8444, RPC: 8443 |
+| Edge | Hetzner VPS | 100.76.16.108 | 77.42.71.94 | P2P: 8333, Pool: 8444, RPC: 8443 |
 
 ### Canonical Ports & Services
 
@@ -215,7 +215,7 @@ Miner (GPU)               Public P2P: 8333
 |---------|-----|
 | **Edge Pool (public mining)** | `77.42.71.94:8444` |
 | **Edge RPC (public)** | `http://77.42.71.94:8443/jsonrpc` |
-| **Edge RPC (VPN fallback)** | `http://100.66.162.125:8443/jsonrpc` |
+| **Edge RPC (VPN fallback)** | `http://100.76.16.108:8443/jsonrpc` |
 | **Local RPC (default)** | `http://127.0.0.1:8443/jsonrpc` |
 | **Desktop agent default RPC** | `http://127.0.0.1:8443/jsonrpc` (auto-fallback to Edge VPN) |
 | **Website production** | `https://zionterranova.com` |
@@ -225,7 +225,7 @@ Miner (GPU)               Public P2P: 8333
 
 - **Edge server SSH key:** `ssh-key-zion-edge` (private), `ssh-key-zion-edge.pub` (public) — kept in root for operational access.
 - **Never commit private keys.** The existing keys in root are grandfathered; rotate if compromised.
-- **SSH endpoint:** Use Tailscale SSH (`100.66.162.125`) or direct Hetzner console for Edge server management.
+- **SSH endpoint:** Use Tailscale SSH (`100.76.16.108`) or direct Hetzner console for Edge server management.
 
 ### Dashboard Configuration
 
@@ -245,7 +245,7 @@ The Python dashboard (`dashboard/app.py`) monitors Core + Edge services:
 const PRIMARY_MAINNET_HOST = '77.42.71.94';
 const PRIMARY_POOL_PORT = 8444;
 const PRIMARY_RPC_PORT = 8443;
-const EDGE_VPN_HOST = '100.66.162.125';
+const EDGE_VPN_HOST = '100.76.16.108';
 const DEFAULT_RPC_URL = 'http://127.0.0.1:8443/jsonrpc';  // localhost first, Edge VPN fallback
 ```
 

@@ -885,7 +885,7 @@ async function startMiner(mode){
   } else if(backend === 'gpu-cuda'){
     env['ZION_GPU_BACKEND'] = 'cuda';
   } else if(backend === 'cpu'){
-    env['ZION_GPU_BACKEND'] = '';  // CPU only
+    env['ZION_GPU_BACKEND'] = 'cpu';  // force CPU backend, skip GPU init
   } else if(backend === 'dual'){
     env['ZION_GPU_BACKEND'] = 'opencl';  // dual uses both
   }

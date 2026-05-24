@@ -44,7 +44,7 @@ pub const BOOTSTRAP_NODES: &[(&str, u16)] = &[
     // Edge public entrypoint (Hetzner VPS)
     ("77.42.71.94", 8335),
     // Tailscale fallback (private VPN)
-    ("100.66.162.125", 8335),
+    ("100.76.16.108", 8335),
 ];
 
 // ── Types ──────────────────────────────────────────────────────────────

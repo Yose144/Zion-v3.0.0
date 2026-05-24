@@ -334,7 +334,7 @@ npx hardhat verify --network base <SWAP_ADRESA>
 
 ```bash
 # Na Edge serveru:
-ssh root@100.66.162.125
+ssh root@100.76.16.108
 
 # Změň env proměnnou
 # V .env souboru pro L2:
