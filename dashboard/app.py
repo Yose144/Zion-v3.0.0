@@ -84,7 +84,8 @@ def rotate_log_file(path: Path):
             pass
 
 def rotate_all_logs():
-    """Rotate all log files in LOG_DIR."""
+    """Rotate all log files in LOG_DIR (with optional pre-rotate auto-backup)."""
+    auto_backup_if_needed()
     with LOG_ROTATION_LOCK:
         for svc in SERVICE_REGISTRY:
             log_name = svc.get("log")
@@ -271,6 +272,153 @@ def watchdog_check():
             append_alert({"severity": "warning", "title": f"Watchdog restarted {svc['name']}",
                           "detail": f"PID {proc_info['pid']} died. Auto-restarted at {datetime.now().isoformat()}",
                           "action": None})
+
+# ── Dependency-Aware Stack Launch ─────────────────────────────────────────
+# Shared mutable state for the background launch thread.
+LAUNCH_STATE_LOCK = threading.Lock()
+LAUNCH_STATE = {
+    "running": False,
+    "started_at": None,
+    "completed_at": None,
+    "progress_pct": 0,
+    "current_step": None,
+    "results": [],
+    "error": None,
+}
+
+# Map service IDs to their start action names.
+SID_TO_ACTION = {
+    "node1": "start-node1",
+    "node2": "start-node2",
+    "pool": "start-pool",
+    "miner": "start-miner",
+    "hiranyagarbha": "start-hiranyagarbha",
+    "ai-native": "start-hiran-inference",
+}
+
+# How long to wait after a service starts before starting dependents.
+SID_STARTUP_DELAY = {
+    "node1": 8,   # Node needs a few seconds for P2P + RPC
+    "node2": 5,
+    "pool": 5,    # Pool needs RPC to be ready
+    "miner": 2,
+    "hiranyagarbha": 3,
+    "ai-native": 3,
+}
+
+def _topo_sort(sids: list) -> list:
+    """Return services in dependency order (Kahn's algorithm)."""
+    # Build adjacency + in-degree
+    adj = {sid: [] for sid in sids}
+    indeg = {sid: 0 for sid in sids}
+    for sid in sids:
+        svc = get_service(sid)
+        if not svc:
+            continue
+        for dep in svc.get("depends_on", []):
+            if dep in sids:
+                adj[dep].append(sid)
+                indeg[sid] += 1
+    # Kahn
+    queue = [s for s in sids if indeg[s] == 0]
+    out = []
+    while queue:
+        n = queue.pop(0)
+        out.append(n)
+        for m in adj[n]:
+            indeg[m] -= 1
+            if indeg[m] == 0:
+                queue.append(m)
+    # Append any remaining (cycle or missing deps) in original order
+    for s in sids:
+        if s not in out:
+            out.append(s)
+    return out
+
+def run_dependency_launch(sids: list):
+    """Background thread: start services in topo order with delays."""
+    global LAUNCH_STATE
+    ordered = _topo_sort(sids)
+    with LAUNCH_STATE_LOCK:
+        LAUNCH_STATE = {
+            "running": True,
+            "started_at": datetime.now().isoformat(),
+            "completed_at": None,
+            "progress_pct": 0,
+            "current_step": None,
+            "results": [],
+            "error": None,
+        }
+    total = len(ordered)
+    try:
+        for i, sid in enumerate(ordered, 1):
+            svc = get_service(sid)
+            action = SID_TO_ACTION.get(sid)
+            step_name = svc["name"] if svc else sid
+            with LAUNCH_STATE_LOCK:
+                LAUNCH_STATE["current_step"] = f"Starting {step_name}…"
+                LAUNCH_STATE["progress_pct"] = int((i - 1) / total * 100)
+            if not action or action not in ALLOWED_ACTIONS:
+                with LAUNCH_STATE_LOCK:
+                    LAUNCH_STATE["results"].append({"sid": sid, "ok": False, "error": "No start action mapped"})
+                continue
+            result = run_control(action)
+            with LAUNCH_STATE_LOCK:
+                LAUNCH_STATE["results"].append({"sid": sid, "ok": result.get("ok"), "pid": result.get("pid"), "error": result.get("error")})
+            if not result.get("ok"):
+                # Stop on first failure for core stack, but log it
+                with LAUNCH_STATE_LOCK:
+                    LAUNCH_STATE["error"] = f"Failed to start {step_name}: {result.get('error', 'unknown')}"
+                break
+            delay = SID_STARTUP_DELAY.get(sid, 3)
+            for remaining in range(delay, 0, -1):
+                with LAUNCH_STATE_LOCK:
+                    LAUNCH_STATE["current_step"] = f"Waiting for {step_name} to stabilise… {remaining}s"
+                time.sleep(1)
+            with LAUNCH_STATE_LOCK:
+                LAUNCH_STATE["progress_pct"] = int(i / total * 100)
+    except Exception as e:
+        with LAUNCH_STATE_LOCK:
+            LAUNCH_STATE["error"] = str(e)
+    finally:
+        with LAUNCH_STATE_LOCK:
+            LAUNCH_STATE["running"] = False
+            LAUNCH_STATE["completed_at"] = datetime.now().isoformat()
+            LAUNCH_STATE["progress_pct"] = 100 if not LAUNCH_STATE.get("error") else LAUNCH_STATE["progress_pct"]
+            LAUNCH_STATE["current_step"] = LAUNCH_STATE.get("error") or "Stack launch complete"
+
+def get_launch_state() -> dict:
+    with LAUNCH_STATE_LOCK:
+        return dict(LAUNCH_STATE)
+
+# ── Auto-backup before log rotation ────────────────────────────────────
+BACKUP_BEFORE_ROTATE = True
+
+def auto_backup_if_needed():
+    if not BACKUP_BEFORE_ROTATE:
+        return
+    script = SCRIPTS_DIR / ("backup-chain" + _SCRIPT_EXT)
+    if not script.exists():
+        return
+    try:
+        if os.name == "nt":
+            si = subprocess.STARTUPINFO()
+            si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+            si.wShowWindow = 0
+            subprocess.Popen(
+                ["powershell.exe", "-ExecutionPolicy", "Bypass", "-File", str(script), "-Name", "pre-rotate-auto"],
+                cwd=str(REPO_ROOT), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                startupinfo=si, creationflags=getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
+            )
+        else:
+            subprocess.Popen(
+                ["bash", str(script), "pre-rotate-auto"],
+                cwd=str(REPO_ROOT), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                preexec_fn=os.setsid if hasattr(os, "setsid") else None
+            )
+        _log_control("auto-backup pre-rotate triggered")
+    except Exception:
+        pass
 
 # ── Service Registry ────────────────────────────────────────────────────
 # Single source of truth: every service the mainnet stack might run.
@@ -3074,6 +3222,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 procs = {k: {"pid": v["pid"], "age_min": int((time.time() - v["ts"]) / 60),
                              "alive": is_process_alive(v["pid"])} for k, v in PROCESS_REGISTRY.items()}
             self._json({"processes": procs})
+        elif route == "/api/launch/status":
+            self._json(get_launch_state())
         elif route == "/api/genesis":
             total_premine = sum(p["amount_zion"] for p in PREMINE_OUTPUTS)
             self._json({
@@ -3607,6 +3757,26 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 self._json({"ok": True, "message": "Log rotation triggered"})
             except Exception as e:
                 self._json({"ok": False, "error": str(e)})
+        elif route == "/api/launch/stack":
+            # Dependency-aware sequential stack launch
+            with LAUNCH_STATE_LOCK:
+                if LAUNCH_STATE["running"]:
+                    self._json({"ok": False, "error": "Launch already in progress", "state": get_launch_state()})
+                    return
+            sids = ["node1", "pool", "miner"]
+            thread = threading.Thread(target=run_dependency_launch, args=(sids,), daemon=True)
+            thread.start()
+            self._json({"ok": True, "message": "Stack launch started", "services": sids, "state": get_launch_state()})
+        elif route == "/api/launch/full":
+            # Launch everything that has a start script
+            with LAUNCH_STATE_LOCK:
+                if LAUNCH_STATE["running"]:
+                    self._json({"ok": False, "error": "Launch already in progress", "state": get_launch_state()})
+                    return
+            sids = [svc["id"] for svc in SERVICE_REGISTRY if svc.get("start")]
+            thread = threading.Thread(target=run_dependency_launch, args=(sids,), daemon=True)
+            thread.start()
+            self._json({"ok": True, "message": "Full launch started", "services": sids, "state": get_launch_state()})
         elif route == "/api/backup/create":
             name = payload.get("name", "").strip()
             include_logs = payload.get("includeLogs", False)
