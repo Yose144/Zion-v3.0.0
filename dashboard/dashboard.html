@@ -292,19 +292,124 @@ button{display:inline-flex;align-items:center;justify-content:center;cursor:poin
         </div>
       </div>
 
-      <div id="card-miner" class="zion-panel zion-panel-hover svc-card p-5">
-        <div class="flex items-center justify-between mb-3 relative z-10">
-          <span class="zion-kicker">⛏️ GPU Miner</span>
-          <span id="badge-miner" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white/5 text-gray-400">?</span>
+    </div>
+
+    <!-- Miner Control Panel (full width) -->
+    <div id="card-miner" class="zion-panel zion-panel-hover svc-card p-5 mt-4">
+      <div class="flex items-center justify-between mb-4">
+        <span class="zion-kicker">⛏️ Miner Control Center</span>
+        <span id="badge-miner" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white/5 text-gray-400">?</span>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <!-- Stats Column -->
+        <div class="space-y-3">
+          <div class="text-center p-3 bg-white/5 rounded-xl">
+            <div class="text-4xl font-bold text-gradient" id="val-miner-hashrate">—</div>
+            <div class="text-xs text-gray-400 mt-1">KH/s (10s avg)</div>
+          </div>
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <div class="p-2 bg-white/5 rounded-lg">
+              <div class="text-gray-400 mb-0.5">Device</div>
+              <div class="text-white font-mono truncate" id="val-miner-gpu">—</div>
+            </div>
+            <div class="p-2 bg-white/5 rounded-lg">
+              <div class="text-gray-400 mb-0.5">Backend</div>
+              <div class="text-white font-mono truncate" id="val-miner-backend">—</div>
+            </div>
+            <div class="p-2 bg-white/5 rounded-lg">
+              <div class="text-gray-400 mb-0.5">Height</div>
+              <div class="text-white font-mono" id="val-miner-height">—</div>
+            </div>
+            <div class="p-2 bg-white/5 rounded-lg">
+              <div class="text-gray-400 mb-0.5">Diff</div>
+              <div class="text-white font-mono" id="val-miner-diff">—</div>
+            </div>
+            <div class="p-2 bg-white/5 rounded-lg">
+              <div class="text-gray-400 mb-0.5">Shares OK</div>
+              <div class="text-emerald-400 font-bold" id="val-miner-shares-ok">—</div>
+            </div>
+            <div class="p-2 bg-white/5 rounded-lg">
+              <div class="text-gray-400 mb-0.5">Shares Rej</div>
+              <div class="text-red-400 font-bold" id="val-miner-shares-rej">—</div>
+            </div>
+            <div class="p-2 bg-white/5 rounded-lg col-span-2">
+              <div class="text-gray-400 mb-0.5">Pool</div>
+              <div class="text-white font-mono truncate" id="val-miner-pool">—</div>
+            </div>
+          </div>
+          <div id="miner-status-msg" class="text-xs p-2 rounded-lg hidden"></div>
         </div>
-        <div class="text-4xl font-bold mb-1 text-gradient relative z-10" id="val-miner-hashrate">—</div>
-        <div class="text-xs text-gray-400 mb-3 relative z-10">KH/s (10s avg)</div>
-        <div class="text-xs text-gray-400 mb-1 relative z-10 truncate">GPU: <span id="val-miner-gpu" class="text-white text-[10px]">—</span></div>
-        <div class="text-xs text-gray-400 mb-1 relative z-10">Height: <span id="val-miner-height" class="text-white">—</span></div>
-        <div class="text-xs text-gray-400 mb-3 relative z-10">Diff: <span id="val-miner-diff">—</span></div>
-        <div class="flex gap-1.5 relative z-10">
-          <button onclick="controlAction('start-miner')" class="text-[10px] px-2.5 py-1 bg-emerald-700/50 hover:bg-emerald-600 rounded-md font-semibold transition">▶ Start</button>
-          <button onclick="controlAction('restart-miner')" class="text-[10px] px-2.5 py-1 bg-amber-700/50 hover:bg-amber-600 rounded-md font-semibold transition">⟳ Restart</button>
+
+        <!-- Config Column -->
+        <div class="lg:col-span-2 space-y-3">
+          <h3 class="text-sm font-semibold text-gray-300 mb-2">⚙️ Configuration</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label class="text-[10px] text-gray-400 uppercase tracking-wider">Pool Address</label>
+              <input type="text" id="miner-cfg-pool" value="127.0.0.1:8444" class="w-full mt-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:border-purple-500 focus:outline-none transition">
+            </div>
+            <div>
+              <label class="text-[10px] text-gray-400 uppercase tracking-wider">Worker Name</label>
+              <input type="text" id="miner-cfg-worker" value="worker1" class="w-full mt-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:border-purple-500 focus:outline-none transition">
+            </div>
+            <div>
+              <label class="text-[10px] text-gray-400 uppercase tracking-wider">Backend</label>
+              <select id="miner-cfg-backend" class="w-full mt-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:border-purple-500 focus:outline-none transition">
+                <option value="gpu-opencl">🎮 GPU (OpenCL)</option>
+                <option value="gpu-cuda">🎮 GPU (CUDA)</option>
+                <option value="cpu">💻 CPU Only</option>
+                <option value="dual">🔀 Dual (CPU+GPU)</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-[10px] text-gray-400 uppercase tracking-wider">CPU Threads</label>
+              <div class="flex items-center gap-2 mt-1">
+                <input type="range" id="miner-cfg-threads-range" min="1" max="16" value="4" class="flex-1 accent-purple-500" oninput="document.getElementById('miner-cfg-threads').value=this.value">
+                <input type="number" id="miner-cfg-threads" value="4" min="1" max="16" class="w-14 px-2 py-1 bg-white/5 border border-white/10 rounded-lg text-sm text-white text-center focus:border-purple-500 focus:outline-none transition" oninput="document.getElementById('miner-cfg-threads-range').value=this.value">
+              </div>
+            </div>
+            <div>
+              <label class="text-[10px] text-gray-400 uppercase tracking-wider">GPU Work Size</label>
+              <select id="miner-cfg-worksize" class="w-full mt-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:border-purple-500 focus:outline-none transition">
+                <option value="1024">1024 (Low VRAM)</option>
+                <option value="2048">2048</option>
+                <option value="4096" selected>4096 (Recommended)</option>
+                <option value="8192">8192 (High Perf)</option>
+                <option value="16384">16384 (Max)</option>
+              </select>
+            </div>
+            <div>
+              <label class="text-[10px] text-gray-400 uppercase tracking-wider">Loop Count</label>
+              <select id="miner-cfg-loops" class="w-full mt-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:border-purple-500 focus:outline-none transition">
+                <option value="10000">10K (Test)</option>
+                <option value="100000">100K</option>
+                <option value="1000000" selected>1M (Sustained)</option>
+                <option value="10000000">10M (Max)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- GPU Layers (for Hiran inference when miner is idle) -->
+          <div class="pt-2 border-t border-white/10">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs text-gray-400">Hiran GPU Layers (when idle)</span>
+              <span class="text-xs text-purple-300 font-mono" id="hiran-gpu-layers-val">33</span>
+            </div>
+            <input type="range" id="miner-cfg-hiran-layers" min="0" max="50" value="33" class="w-full accent-purple-500" oninput="document.getElementById('hiran-gpu-layers-val').textContent=this.value">
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="flex gap-2 pt-2">
+            <button onclick="startMiner('gpu')" class="flex-1 px-4 py-2.5 bg-gradient-to-r from-purple-700 to-purple-900 hover:from-purple-600 hover:to-purple-800 rounded-lg text-sm font-semibold transition shadow-lg">
+              🎮 Start GPU Miner
+            </button>
+            <button onclick="startMiner('cpu')" class="flex-1 px-4 py-2.5 bg-gradient-to-r from-blue-700 to-blue-900 hover:from-blue-600 hover:to-blue-800 rounded-lg text-sm font-semibold transition shadow-lg">
+              💻 Start CPU Miner
+            </button>
+            <button onclick="controlAction('stop-miner')" class="px-4 py-2.5 bg-gradient-to-r from-red-700 to-red-900 hover:from-red-600 hover:to-red-800 rounded-lg text-sm font-semibold transition shadow-lg">
+              ⏹ Stop
+            </button>
+          </div>
         </div>
       </div>
     </div>
