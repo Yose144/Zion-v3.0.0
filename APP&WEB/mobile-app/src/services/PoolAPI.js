@@ -12,17 +12,15 @@ import {CONFIG} from '../constants/config';
  *   GET /api/pool/blocks       — Recent pool blocks
  *   GET /api/network/info      — Chain info forwarded from core
  *
- * Uzly (synchronizováno s desktop-agent, 2026-03-03):
- *   Helsinki  77.42.31.72:8080    (primární)
- *   USA       178.156.240.160:8080
- *   Asia      5.223.43.93:8080
+ * Uzly (aktualizováno 2026-05-24, Core+Edge topologie):
+ *   Edge      77.42.71.94:8080    (primární, Hetzner VPS)
+ *   Edge VPN  100.76.16.108:8080  (Tailscale fallback)
  */
 
-// Pool server URLs with failover (shodné s desktop-agent)
+// Pool server URLs with failover (Core+Edge topology, 2026-05-24)
 const POOL_NODES = [
-  'http://77.42.31.72:8080',       // Helsinki (EU, primární)
-  'http://178.156.240.160:8080',   // USA (US-East)
-  'http://5.223.43.93:8080',       // Asia (AP-Singapore)
+  'http://77.42.71.94:8080',       // Edge (Hetzner VPS, primární)
+  'http://100.76.16.108:8080',     // Edge VPN (Tailscale fallback)
 ];
 
 class PoolAPI {
