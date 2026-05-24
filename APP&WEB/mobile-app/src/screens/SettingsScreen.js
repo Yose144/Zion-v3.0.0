@@ -129,7 +129,7 @@ const SettingsScreen = () => {
         <SettingItem
           icon="api"
           label="Pool API"
-          value={CONFIG.POOL_API_NODES?.[0] || CONFIG.API_URL}
+          value={CONFIG.POOL_URL || CONFIG.API_URL}
         />
         <SettingItem
           icon="web"

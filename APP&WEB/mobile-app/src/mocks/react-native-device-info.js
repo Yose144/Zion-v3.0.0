@@ -2,7 +2,7 @@
  * Web mock for react-native-device-info
  */
 export default {
-  getVersion: () => '2.9.5',
+  getVersion: () => '3.0.0',
   getBuildNumber: () => '5',
   getDeviceId: () => 'web-browser',
   getModel: () => 'Web Browser',

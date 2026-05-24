@@ -1,5 +1,5 @@
 /**
- * ZION Receive Screen v2.9.5
+ * ZION Receive Screen v3.0.0
  * 
  * Features:
  * - Display wallet QR code
