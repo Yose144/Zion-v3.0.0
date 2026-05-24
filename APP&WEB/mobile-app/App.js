@@ -6,6 +6,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {StatusBar} from 'react-native';
 
 import GalacticBackground from './src/components/common/GalacticBackground';
+import OnboardingScreen from './src/screens/OnboardingScreen';
 import WalletScreen from './src/screens/WalletScreen';
 import SendScreen from './src/screens/SendScreen';
 import TransactionHistoryScreen from './src/screens/TransactionHistoryScreen';
@@ -20,6 +21,7 @@ import {colors} from './src/constants/theme';
 
 const Tab = createBottomTabNavigator();
 const WalletStack = createStackNavigator();
+const RootStack = createStackNavigator();
 
 /** Stack navigator for Wallet tab — Wallet → Send, Transactions */
 const WalletNavigator = () => (
@@ -66,6 +68,95 @@ const navTheme = {
   },
 };
 
+/** Main tab navigator */
+const MainTabs = () => (
+  <Tab.Navigator
+    screenOptions={({route}) => ({
+      tabBarIcon: ({focused, color, size}) => {
+        let iconName;
+        switch (route.name) {
+          case 'Wallet':
+            iconName = 'wallet';
+            break;
+          case 'Dashboard':
+            iconName = 'view-dashboard';
+            break;
+          case 'Mining':
+            iconName = 'pickaxe';
+            break;
+          case 'Network':
+            iconName = 'lan';
+            break;
+          case 'Bridge':
+            iconName = 'swap-horizontal';
+            break;
+          case 'Settings':
+            iconName = 'cog';
+            break;
+          default:
+            iconName = 'circle';
+        }
+        return <Icon name={iconName} size={size} color={color} />;
+      },
+      tabBarActiveTintColor: colors.primary.gold,
+      tabBarInactiveTintColor: colors.text.muted,
+      tabBarStyle: {
+        backgroundColor: 'rgba(12, 14, 30, 0.85)',
+        borderTopColor: 'rgba(255,255,255,0.08)',
+        borderTopWidth: 1,
+        height: 65,
+        paddingBottom: 8,
+        paddingTop: 8,
+      },
+      tabBarLabelStyle: {
+        fontSize: 11,
+        fontWeight: '600',
+      },
+      headerStyle: {
+        backgroundColor: 'rgba(10, 12, 28, 0.6)',
+        elevation: 0,
+        shadowOpacity: 0,
+        borderBottomWidth: 0,
+      },
+      headerTintColor: colors.text.primary,
+      headerTitleStyle: {
+        fontWeight: 'bold',
+        fontSize: 20,
+      },
+    })}>
+    <Tab.Screen
+      name="Wallet"
+      component={WalletNavigator}
+      options={{title: 'ZION Wallet', headerShown: false}}
+    />
+    <Tab.Screen
+      name="Dashboard"
+      component={DashboardScreen}
+      options={{title: 'Dashboard'}}
+    />
+    <Tab.Screen
+      name="Mining"
+      component={MiningScreen}
+      options={{title: 'Mining'}}
+    />
+    <Tab.Screen
+      name="Network"
+      component={NetworkScreen}
+      options={{title: 'Network'}}
+    />
+    <Tab.Screen
+      name="Bridge"
+      component={BridgeScreen}
+      options={{title: 'wZION Bridge'}}
+    />
+    <Tab.Screen
+      name="Settings"
+      component={SettingsScreen}
+      options={{title: 'Settings'}}
+    />
+  </Tab.Navigator>
+);
+
 const App = () => {
   return (
     <WalletProvider>
@@ -77,93 +168,22 @@ const App = () => {
               backgroundColor="transparent"
               translucent
             />
-            <Tab.Navigator
-              screenOptions={({route}) => ({
-                tabBarIcon: ({focused, color, size}) => {
-                  let iconName;
-                  switch (route.name) {
-                    case 'Wallet':
-                      iconName = 'wallet';
-                      break;
-                    case 'Dashboard':
-                      iconName = 'view-dashboard';
-                      break;
-                    case 'Mining':
-                      iconName = 'pickaxe';
-                      break;
-                    case 'Network':
-                      iconName = 'lan';
-                      break;
-                    case 'Bridge':
-                      iconName = 'swap-horizontal';
-                      break;
-                    case 'Settings':
-                      iconName = 'cog';
-                      break;
-                    default:
-                      iconName = 'circle';
-                  }
-                  return <Icon name={iconName} size={size} color={color} />;
-                },
-                tabBarActiveTintColor: colors.primary.gold,
-                tabBarInactiveTintColor: colors.text.muted,
-                tabBarStyle: {
-                  backgroundColor: 'rgba(12, 14, 30, 0.85)',
-                  borderTopColor: 'rgba(255,255,255,0.08)',
-                  borderTopWidth: 1,
-                  height: 65,
-                  paddingBottom: 8,
-                  paddingTop: 8,
-                },
-                tabBarLabelStyle: {
-                  fontSize: 11,
-                  fontWeight: '600',
-                },
-                headerStyle: {
-                  backgroundColor: 'rgba(10, 12, 28, 0.6)',
-                  elevation: 0,
-                  shadowOpacity: 0,
-                  borderBottomWidth: 0,
-                },
-                headerTintColor: colors.text.primary,
-                headerTitleStyle: {
-                  fontWeight: 'bold',
-                  fontSize: 20,
-                },
-              })}>
-              <Tab.Screen
-              name="Wallet"
-              component={WalletNavigator}
-              options={{title: 'ZION Wallet', headerShown: false}}
-            />
-            <Tab.Screen
-              name="Dashboard"
-              component={DashboardScreen}
-              options={{title: 'Dashboard'}}
-            />
-            <Tab.Screen
-              name="Mining"
-              component={MiningScreen}
-              options={{title: 'Mining'}}
-            />
-            <Tab.Screen
-              name="Network"
-              component={NetworkScreen}
-              options={{title: 'Network'}}
-            />
-            <Tab.Screen
-              name="Bridge"
-              component={BridgeScreen}
-              options={{title: 'wZION Bridge'}}
-            />
-            <Tab.Screen
-              name="Settings"
-              component={SettingsScreen}
-              options={{title: 'Settings'}}
-            />
-          </Tab.Navigator>
-        </NavigationContainer>
-      </GalacticBackground>
+            <RootStack.Navigator
+              screenOptions={{
+                headerShown: false,
+                cardStyle: {backgroundColor: 'transparent'},
+              }}>
+              <RootStack.Screen
+                name="Onboarding"
+                component={OnboardingScreen}
+              />
+              <RootStack.Screen
+                name="Main"
+                component={MainTabs}
+              />
+            </RootStack.Navigator>
+          </NavigationContainer>
+        </GalacticBackground>
       </MiningProvider>
     </WalletProvider>
   );
