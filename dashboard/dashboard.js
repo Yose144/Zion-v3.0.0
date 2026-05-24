@@ -328,6 +328,63 @@ async function rotateLogsNow(){
   }
 }
 
+// ── Dependency-Aware Stack Launch ──
+let launchPollTimer = null;
+
+async function startDependencyLaunch(mode){
+  const panel = document.getElementById('launch-progress-panel');
+  if(panel) panel.classList.remove('hidden');
+  updateLaunchProgress({running: true, progress_pct: 0, current_step: 'Initiating…', results: []});
+  try {
+    const res = await fetch('/api/launch/' + mode, {method: 'POST'}).then(r => r.json());
+    if(!res.ok){
+      toast('Launch failed: ' + (res.error || 'unknown'), 'error');
+      updateLaunchProgress({running: false, error: res.error, current_step: res.error});
+      return;
+    }
+    toast(res.message, 'success');
+    // Start polling
+    if(launchPollTimer) clearInterval(launchPollTimer);
+    launchPollTimer = setInterval(pollLaunchStatus, 1000);
+  } catch(e) {
+    toast('Launch error: ' + e.message, 'error');
+    updateLaunchProgress({running: false, error: e.message, current_step: e.message});
+  }
+}
+
+async function pollLaunchStatus(){
+  try {
+    const st = await fetch('/api/launch/status').then(r => r.json());
+    updateLaunchProgress(st);
+    if(!st.running){
+      clearInterval(launchPollTimer);
+      launchPollTimer = null;
+      if(!st.error) toast('Stack launch complete', 'success');
+    }
+  } catch(e) {
+    console.error('pollLaunchStatus error:', e);
+  }
+}
+
+function updateLaunchProgress(st){
+  const bar = document.getElementById('launch-progress-bar');
+  const pct = document.getElementById('launch-progress-pct');
+  const step = document.getElementById('launch-progress-step');
+  const results = document.getElementById('launch-progress-results');
+  if(bar) bar.style.width = (st.progress_pct || 0) + '%';
+  if(pct) pct.textContent = (st.progress_pct || 0) + '%';
+  if(step) step.textContent = st.current_step || 'Waiting…';
+  if(results && st.results){
+    results.innerHTML = st.results.map(r =>
+      `<div class="text-[10px] ${r.ok ? 'text-emerald-400' : 'text-red-400'}">` +
+      `${r.ok ? '✓' : '✗'} ${escapeHtml(r.sid)}` +
+      (r.pid ? ` <span class="text-gray-500">PID=${r.pid}</span>` : '') +
+      (r.error ? ` <span class="text-red-300">${escapeHtml(r.error)}</span>` : '') +
+      `</div>`
+    ).join('');
+  }
+}
+
 function updateChecklist(checks){
   document.getElementById('checklist').innerHTML = checks.map(c => `
     <div class="flex items-center gap-2 py-1.5 px-2.5 rounded-lg ${c.ok ? 'bg-emerald-500/10' : 'bg-white/3'}">
