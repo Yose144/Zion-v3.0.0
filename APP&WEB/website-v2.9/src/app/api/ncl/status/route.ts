@@ -33,8 +33,36 @@ async function readNclConfig(): Promise<{ path: string; data: Record<string, Jso
   return { path: filePath, data: parsed };
 }
 
+const HIRANYAGARBHA_URL = process.env.HIRANYAGARBHA_URL || 'http://127.0.0.1:8001';
+
+async function fetchFromBackend(): Promise<Record<string, JsonValue> | null> {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10_000);
+    const res = await fetch(`${HIRANYAGARBHA_URL}/ncl/status`, {
+      method: 'GET',
+      signal: controller.signal,
+      headers: { 'Accept': 'application/json' },
+    });
+    clearTimeout(timeout);
+    if (!res.ok) return null;
+    return await res.json() as Record<string, JsonValue>;
+  } catch {
+    return null;
+  }
+}
+
 export async function GET() {
   try {
+    // Try live Hiranyagarbha backend first
+    const liveData = await fetchFromBackend();
+    if (liveData) {
+      return NextResponse.json(liveData, {
+        headers: { 'Cache-Control': 'no-store' },
+      });
+    }
+
+    // Fallback to local JSON file
     const { data } = await readNclConfig();
     return NextResponse.json(data, {
       headers: { 'Cache-Control': 'no-store' },
