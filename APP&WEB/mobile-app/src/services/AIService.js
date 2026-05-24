@@ -114,10 +114,18 @@ class AIService {
 
   async submitNCLJob(jobType, params = {}) {
     try {
-      const response = await this._nclClient.post('/ncl/jobs', {
+      const payload = {
         job_type: jobType,
+        model_id: 'hiran-v2.2',
+        backend: 'Custom',
         params,
-      });
+        priority: 5,
+        submitter: 'mobile-app',
+        input_hash: Date.now().toString(16),
+        reward_flowers: 20000000000,
+        max_duration_secs: 60,
+      };
+      const response = await this._nclClient.post('/ncl/jobs', payload);
       return response.data;
     } catch (error) {
       console.error('submitNCLJob error:', error.message);
