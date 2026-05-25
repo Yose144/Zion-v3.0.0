@@ -5,10 +5,14 @@ Zero-dependency: uses only Python stdlib. Serves a live HTML dashboard
 and parses local log files via a JSON API.
 """
 
+import base64
+import hashlib
 import json
 import os
 import re
 import shutil
+import socket
+import struct
 import subprocess
 import sys
 import threading
@@ -4270,6 +4274,203 @@ refreshTimer=setInterval(refreshAll,3000);
 </body>
 </html>"""
 
+# ── WebSocket Hub (stdlib-only, RFC 6455) ────────────────────────────────
+
+_WS_GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
+
+class _WsClient:
+    """Minimal RFC 6455 WebSocket framing over a raw socket."""
+    def __init__(self, sock: socket.socket):
+        self.sock = sock
+        self.alive = True
+
+    def send_text(self, text: str) -> None:
+        if not self.alive:
+            return
+        data = text.encode("utf-8")
+        try:
+            self.sock.sendall(_ws_frame(data, opcode=0x1))
+        except Exception:
+            self.alive = False
+
+    def close(self) -> None:
+        self.alive = False
+        try:
+            self.sock.sendall(_ws_frame(b"", opcode=0x8))
+        except Exception:
+            pass
+        try:
+            self.sock.close()
+        except Exception:
+            pass
+
+
+def _ws_frame(payload: bytes, opcode: int = 0x1) -> bytes:
+    length = len(payload)
+    frame = bytearray()
+    frame.append(0x80 | opcode)      # FIN + opcode
+    if length < 126:
+        frame.append(length)
+    elif length < 65536:
+        frame.append(126)
+        frame.extend(struct.pack(">H", length))
+    else:
+        frame.append(127)
+        frame.extend(struct.pack(">Q", length))
+    frame.extend(payload)
+    return bytes(frame)
+
+
+class WsHub:
+    """Thread-safe broadcast hub for all connected WebSocket clients."""
+    def __init__(self):
+        self._clients: list[_WsClient] = []
+        self._lock = threading.Lock()
+
+    def add(self, client: _WsClient) -> None:
+        with self._lock:
+            self._clients.append(client)
+
+    def remove(self, client: _WsClient) -> None:
+        with self._lock:
+            self._clients = [c for c in self._clients if c is not client]
+
+    def broadcast(self, msg: dict) -> None:
+        text = json.dumps(msg)
+        dead = []
+        with self._lock:
+            clients = list(self._clients)
+        for c in clients:
+            c.send_text(text)
+            if not c.alive:
+                dead.append(c)
+        if dead:
+            with self._lock:
+                self._clients = [c for c in self._clients if c not in dead]
+
+    @property
+    def count(self) -> int:
+        with self._lock:
+            return len(self._clients)
+
+
+WS_HUB = WsHub()
+
+
+def _ws_push_loop():
+    """Background thread: push status + health to all WS clients every 5 s."""
+    while True:
+        time.sleep(5)
+        if WS_HUB.count == 0:
+            continue
+        try:
+            status = build_status()
+            WS_HUB.broadcast({"type": "status", "data": status})
+        except Exception:
+            pass
+        try:
+            health = _build_health_map()
+            WS_HUB.broadcast({"type": "health", "data": health})
+        except Exception:
+            pass
+
+
+def _build_health_map() -> dict:
+    """Return {service: health_status} for all known services."""
+    from functools import lru_cache
+    svc_map = {
+        "node1": (HOST, 8443),
+        "node2": ("100.76.16.108", 8443),
+        "pool":  (HOST, 8444),
+        "pool-edge": ("100.76.16.108", 8444),
+        "miner": (HOST, 9200),   # metrics port
+        "hiran": (HOST, 8002),
+        "hiranyagarbha": (HOST, 8001),
+        "bridge": (HOST, 8010),
+        "dao":   (HOST, 8011),
+        "swap":  (HOST, 8012),
+        "warp":  (HOST, 8013),
+    }
+    result = {}
+    for name, (h, p) in svc_map.items():
+        try:
+            cached = _HEALTH_CACHE.get(name)
+            if cached:
+                result[name] = cached
+            else:
+                result[name] = "unknown"
+        except Exception:
+            result[name] = "unknown"
+    return result
+
+
+def _handle_websocket(handler: "DashboardHandler", key: str) -> None:
+    """Perform WS handshake and loop reading/discarding frames."""
+    # Handshake
+    accept = base64.b64encode(
+        hashlib.sha1((key + _WS_GUID).encode()).digest()
+    ).decode()
+    response = (
+        "HTTP/1.1 101 Switching Protocols\r\n"
+        "Upgrade: websocket\r\n"
+        "Connection: Upgrade\r\n"
+        f"Sec-WebSocket-Accept: {accept}\r\n\r\n"
+    )
+    conn = handler.connection
+    conn.sendall(response.encode())
+    client = _WsClient(conn)
+    WS_HUB.add(client)
+    # Send immediate status snapshot
+    try:
+        WS_HUB.broadcast({"type": "status", "data": build_status()})
+    except Exception:
+        pass
+    # Read loop (ping/pong, close, discard data frames)
+    try:
+        while client.alive:
+            header = _recv_exact(conn, 2)
+            if not header:
+                break
+            b0, b1 = header
+            opcode = b0 & 0x0F
+            masked = (b1 & 0x80) != 0
+            length = b1 & 0x7F
+            if length == 126:
+                ext = _recv_exact(conn, 2)
+                if not ext:
+                    break
+                length = struct.unpack(">H", ext)[0]
+            elif length == 127:
+                ext = _recv_exact(conn, 8)
+                if not ext:
+                    break
+                length = struct.unpack(">Q", ext)[0]
+            mask_key = _recv_exact(conn, 4) if masked else b""
+            payload = bytearray(_recv_exact(conn, length) or b"")
+            if masked and mask_key:
+                for i in range(len(payload)):
+                    payload[i] ^= mask_key[i % 4]
+            if opcode == 0x8:   # Close
+                break
+            if opcode == 0x9:   # Ping → Pong
+                client.sock.sendall(_ws_frame(bytes(payload), opcode=0xA))
+    except Exception:
+        pass
+    finally:
+        client.close()
+        WS_HUB.remove(client)
+
+
+def _recv_exact(conn: socket.socket, n: int) -> bytes:
+    data = b""
+    while len(data) < n:
+        chunk = conn.recv(n - len(data))
+        if not chunk:
+            return b""
+        data += chunk
+    return data
+
+
 # ── HTTP Handler ────────────────────────────────────────────────────────
 
 class DashboardHandler(BaseHTTPRequestHandler):
@@ -4357,6 +4558,38 @@ class DashboardHandler(BaseHTTPRequestHandler):
         parsed = urllib.parse.urlparse(self.path)
         route = parsed.path
         params = urllib.parse.parse_qs(parsed.query)
+
+        # ── WebSocket upgrade (/ws) ──────────────────────────────────────
+        if route == "/ws":
+            upgrade = self.headers.get("Upgrade", "").lower()
+            ws_key  = self.headers.get("Sec-WebSocket-Key", "")
+            if upgrade == "websocket" and ws_key:
+                _handle_websocket(self, ws_key)
+            else:
+                self.send_error(400, "WebSocket upgrade required")
+            return
+
+        # ── SPA static files (dashboard v2 dist/) ───────────────────────
+        dist_dir = SCRIPT_DIR / "v2" / "dist"
+        if dist_dir.exists():
+            # Serve static assets
+            if route.startswith("/assets/") or route in ("/favicon.ico", "/manifest.json"):
+                static_file = dist_dir / route.lstrip("/")
+                if static_file.exists() and static_file.is_file():
+                    body = static_file.read_bytes()
+                    ct_map = {".js": "application/javascript", ".css": "text/css",
+                              ".svg": "image/svg+xml", ".png": "image/png",
+                              ".ico": "image/x-icon", ".json": "application/json"}
+                    ct = ct_map.get(static_file.suffix, "application/octet-stream")
+                    self.send_response(200)
+                    self.send_header("Content-Type", ct)
+                    self.send_header("Content-Length", str(len(body)))
+                    self.send_header("Cache-Control", "public, max-age=31536000")
+                    self.end_headers()
+                    self.wfile.write(body)
+                    return
+                self.send_error(404)
+                return
 
         if route == "/" or route == "/index.html":
             # Prefer external dashboard.html if it exists (new design)
@@ -5671,6 +5904,10 @@ if __name__ == "__main__":
     # Start background sampler (history + block events)
     sampler_thread = threading.Thread(target=background_sampler, daemon=True)
     sampler_thread.start()
+
+    # Start WebSocket push thread
+    ws_thread = threading.Thread(target=_ws_push_loop, daemon=True)
+    ws_thread.start()
 
     open_browser()
     server = ThreadingHTTPServer((HOST, PORT), DashboardHandler)
