@@ -88,7 +88,7 @@ function switchTab(name){
   if(name === 'env') loadEnvFiles();
   if(name === 'wizard') renderWizard();
   if(name === 'logs'){ initLogPane(); }
-  if(name === 'controls'){ renderControls(); loadBackupList(); loadDepGraph(); loadProcessRegistry(); }
+  if(name === 'controls'){ renderControls(); loadBackupList(); loadDepGraphControls(); loadProcessRegistry(); }
   if(name === 'services') loadServices();
   if(name === 'database') loadDatabases();
   if(name === 'metrics') renderMetricsButtons();
@@ -496,7 +496,7 @@ function updateChecklist(checks){
 // ─────────────────────────────────────────────────────────────────────
 
 async function updateMiniHashrate(){
-  const hist = await fetch('/api/history').then(r => r.json());
+  const hist = await fetch('/api/history').then(r => r.json()).catch(()=>({samples:[]}));
   const data = hist.samples.map(s => s.hashrate || 0);
   if(!charts.mini){
     const ctx = document.getElementById('mini-hashrate').getContext('2d');
@@ -749,7 +749,7 @@ async function loadExplorer(){
       }
     }
     // Also load mempool (populates exp-mempool-* and explorer-mempool-count/list)
-    loadMempool();
+    loadExplorerMempool();
   } catch(e){
     console.error('Explorer load error:', e);
     const badge = document.getElementById('explorer-rpc-badge');
@@ -757,11 +757,12 @@ async function loadExplorer(){
   }
 }
 
-async function loadMempool(){
+async function loadExplorerMempool(){
+  // Loads mempool data into Explorer tab elements (exp-mempool-*)
   try {
-    const mp = await fetch('/api/mempool').then(r=>r.json());
+    const mp = await fetch('/api/mempool').then(r=>r.json()).catch(()=>({}));
     const el = id => document.getElementById(id);
-    const count = mp.count ?? mp.size ?? 0;
+    const count = mp.tx_count ?? mp.count ?? mp.size ?? 0;
     if(el('exp-mempool-size')) el('exp-mempool-size').textContent = count;
     if(el('exp-mempool-bytes')) el('exp-mempool-bytes').textContent = mp.total_bytes ? (mp.total_bytes/1024).toFixed(1)+' KB' : '0 B';
     // New spec elements
@@ -862,33 +863,18 @@ async function triggerBackup(){
   }
 }
 
-async function verifyBackup(){
+async function verifyBackupOps(){
+  // Ops-tab version — uses 'ops-backup-log' element
   const log = document.getElementById('ops-backup-log');
   if(log) log.textContent = 'Verifying chain…';
   try {
-    const res = await fetch('/api/backup/verify').then(r => r.json());
+    const res = await fetch('/api/backup/verify').then(r => r.json()).catch(e=>({error:e.message}));
     const out = res.log?.slice(-10).join('\n') || res.result?.output || 'Done';
     if(log) log.textContent = out;
   } catch(e) { if(log) log.textContent = 'Error: ' + e.message; }
 }
 
-async function runCliCommand(){
-  const input = document.getElementById('cli-input');
-  const out = document.getElementById('cli-output');
-  const cmd = input.value.trim();
-  if(!cmd) return;
-  out.textContent = 'Running: zion-cli ' + cmd + '\n…';
-  try {
-    const res = await fetch('/api/cli/run', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({cmd})}).then(r => r.json());
-    if(res.stdout !== undefined || res.stderr !== undefined){
-      out.textContent = (res.stdout || '') + (res.stderr ? '\n[stderr]\n' + res.stderr : '');
-    } else if(res.output !== undefined){
-      out.textContent = res.output;
-    } else {
-      out.textContent = JSON.stringify(res, null, 2);
-    }
-  } catch(e) { out.textContent = 'Error: ' + e.message; }
-}
+// runCliCommand is defined below (Controls tab version with HTML formatting)
 
 function fillCli(text){ const el = document.getElementById('cli-input'); if(el){ el.value = text; el.focus(); } }
 
@@ -1143,7 +1129,8 @@ async function loadMinerPerformance(){
 
 // ── Dependency Graph ──────────────────────────────────────────────────
 
-async function loadDepGraph(){
+async function loadDepGraphControls(){
+  // Renders dep graph into 'dep-graph-viz' (Controls tab)
   try {
     const g = await fetch('/api/dependency-graph').then(r => r.json());
     const container = document.getElementById('dep-graph-viz');
@@ -1168,7 +1155,7 @@ async function loadDepGraph(){
     // Edges summary
     html += '<div class="text-[10px] text-gray-500 mt-2">' + g.edges.length + ' dependencies</div>';
     container.innerHTML = html;
-  } catch(e) { console.error('loadDepGraph error:', e); }
+  } catch(e) { console.error('loadDepGraphControls error:', e); }
 }
 
 // ── Block Detail Modal ──────────────────────────────────────────────
@@ -1244,7 +1231,7 @@ document.addEventListener('keydown', function(e){
     e.preventDefault();
   }
   if(key === ' ' && !e.ctrlKey && !e.altKey && !e.metaKey){
-    toggleAutoRefresh();
+    toggleAuto();
     e.preventDefault();
   }
   if(key === 's' && !e.ctrlKey && !e.altKey && !e.metaKey){
@@ -1288,7 +1275,7 @@ function setChartTimeframe(tf){
 }
 
 async function refreshCharts(){
-  const hist = await fetch('/api/history').then(r=>r.json());
+  const hist = await fetch('/api/history').then(r=>r.json()).catch(()=>({samples:[]}));
   let samples = hist.samples || [];
   // Apply timeframe filter
   const tfMap = {'2m':24,'5m':60,'10m':120,'all':9999};
@@ -1391,7 +1378,7 @@ async function renderExtraCharts(s){
 // ─────────────────────────────────────────────────────────────────────
 
 async function loadEvents(){
-  const res = await fetch('/api/events').then(r => r.json());
+  const res = await fetch('/api/events').then(r => r.json()).catch(()=>({events:[]}));
   const c = document.getElementById('events-feed');
   if(!res.events || !res.events.length){
     c.innerHTML = '<div class="text-gray-500 italic text-sm">No block events recorded yet. Events appear as nodes mine and relay blocks.</div>';
@@ -1418,8 +1405,9 @@ async function loadEvents(){
 let currentEnvFile = null;
 
 async function loadEnvFiles(){
-  const res = await fetch('/api/env').then(r => r.json());
+  const res = await fetch('/api/env').then(r => r.json()).catch(()=>({files:[]}));
   const c = document.getElementById('env-file-list');
+  if(!c) return;
   c.innerHTML = res.files.map(f => `
     <button onclick="selectEnv('${escapeHtml(f.name)}')" class="zion-panel-soft px-4 py-2.5 hover:border-zion-gold/40 transition ${currentEnvFile === f.name ? 'ring-2 ring-zion-gold' : ''}">
       <div class="font-bold text-zion-gold text-xs font-mono">${escapeHtml(f.name)}</div>
@@ -1490,7 +1478,7 @@ async function renderControls(){
   const c = document.getElementById('control-buttons');
   if(!c) return;
   try {
-    const res = await fetch('/api/controls').then(r => r.json());
+    const res = await fetch('/api/controls').then(r => r.json()).catch(()=>({actions:[]}));
     const icons = {
       'install-deps': '📦', 'open-terminal': '🖥️',
       'start-node1': '🔷', 'start-node2': '🔶', 'start-pool': '⚡', 'start-miner': '⛏️',
@@ -2135,7 +2123,7 @@ async function loadDepGraph(){
 // ─────────────────────────────────────────────────────────────────────
 
 async function loadDatabases(){
-  const res = await fetch('/api/db').then(r => r.json());
+  const res = await fetch('/api/db').then(r => r.json()).catch(()=>({databases:[]}));
   const list = document.getElementById('db-list');
   list.innerHTML = res.databases.map(d => {
     const sizeStr = d.size > 1024 * 1024 ? (d.size / 1024 / 1024).toFixed(1) + ' MB' : d.size > 1024 ? (d.size / 1024).toFixed(1) + ' KB' : d.size + ' B';
@@ -2196,7 +2184,7 @@ async function inspectDb(path){
 // ─────────────────────────────────────────────────────────────────────
 
 async function renderMetricsButtons(){
-  const svcRes = await fetch('/api/services').then(r => r.json());
+  const svcRes = await fetch('/api/services').then(r => r.json()).catch(()=>({services:[]}));
   const c = document.getElementById('metrics-buttons');
   const scrapable = svcRes.services.filter(s => s.ports.metrics || s.ports.api);
   c.innerHTML = scrapable.map(s => `
@@ -2230,8 +2218,8 @@ async function loadMetrics(sid){
 // ─────────────────────────────────────────────────────────────────────
 
 async function loadGenesis(){
-  const res = await fetch('/api/genesis').then(r => r.json());
-  const C = res.constants;
+  const res = await fetch('/api/genesis').then(r => r.json()).catch(()=>({constants:{},premine:[]}));
+  const C = res.constants || {};
 
   // Stats grid
   const stats = [
@@ -2319,7 +2307,7 @@ async function loadGenesis(){
 // ─────────────────────────────────────────────────────────────────────
 
 async function loadBlockers(){
-  const res = await fetch('/api/blockers').then(r => r.json());
+  const res = await fetch('/api/blockers').then(r => r.json()).catch(()=>({blockers:[],open:0,done:0,ready_for_launch:false}));
   const summary = document.getElementById('blockers-summary');
   summary.innerHTML = `
     <span class="zion-kicker" style="background:rgba(239,68,68,0.15);color:#fca5a5;border-color:rgba(239,68,68,0.3);">${res.open_critical} critical</span>
