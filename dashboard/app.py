@@ -8,6 +8,7 @@ and parses local log files via a JSON API.
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import threading
@@ -178,21 +179,53 @@ def get_resource_usage() -> dict:
             result["disk_total_gb"] = round(total_disk_gb, 2)
             result["disk_used_gb"] = round(total_disk_gb - free_disk_gb, 2)
             result["disk_percent"] = round((total_disk_gb - free_disk_gb) / total_disk_gb * 100, 1) if total_disk_gb > 0 else 0
+        elif sys.platform == "darwin":
+            # macOS: sysctl + vm_stat + shutil.disk_usage
+            try:
+                total_bytes = int(subprocess.run(["sysctl", "-n", "hw.memsize"], capture_output=True, text=True, timeout=2).stdout.strip())
+                total_gb = total_bytes / (1024**3)
+                result["ram_total_gb"] = round(total_gb, 2)
+                vm = subprocess.run(["vm_stat"], capture_output=True, text=True, timeout=2).stdout
+                pagesize = 4096
+                page_map = {}
+                for line in vm.splitlines():
+                    if ":" in line:
+                        k, v = line.split(":", 1)
+                        page_map[k.strip()] = int(v.strip().replace(".", ""))
+                used_pages = (page_map.get("Pages active", 0) + page_map.get("Pages inactive", 0)
+                              + page_map.get("Pages wired down", 0) + page_map.get("Pages occupied by compressor", 0))
+                used_gb = used_pages * pagesize / (1024**3)
+                result["ram_used_gb"] = round(used_gb, 2)
+                result["ram_percent"] = round(used_gb / total_gb * 100, 1) if total_gb > 0 else 0
+            except Exception:
+                pass
+            try:
+                du = shutil.disk_usage(str(REPO_ROOT))
+                result["disk_total_gb"] = round(du.total / (1024**3), 2)
+                result["disk_used_gb"] = round((du.total - du.free) / (1024**3), 2)
+                result["disk_percent"] = round((du.total - du.free) / du.total * 100, 1) if du.total > 0 else 0
+            except Exception:
+                pass
         else:
             # Linux: /proc/meminfo + statvfs
-            with open("/proc/meminfo") as f:
-                meminfo = {k.strip(): int(v.split()[0]) for k, v in (line.split(":") for line in f if ":" in line)}
-            total_kb = meminfo.get("MemTotal", 0)
-            avail_kb = meminfo.get("MemAvailable", meminfo.get("MemFree", 0))
-            total_gb = total_kb / (1024**2)
-            result["ram_total_gb"] = round(total_gb, 2)
-            result["ram_used_gb"] = round(total_gb - avail_kb / (1024**2), 2)
-            result["ram_percent"] = round((total_kb - avail_kb) / total_kb * 100, 1) if total_kb > 0 else 0
-            import shutil
-            du = shutil.disk_usage(str(REPO_ROOT))
-            result["disk_total_gb"] = round(du.total / (1024**3), 2)
-            result["disk_used_gb"] = round((du.total - du.free) / (1024**3), 2)
-            result["disk_percent"] = round((du.total - du.free) / du.total * 100, 1) if du.total > 0 else 0
+            try:
+                with open("/proc/meminfo") as f:
+                    meminfo = {k.strip(): int(v.split()[0]) for k, v in (line.split(":") for line in f if ":" in line)}
+                total_kb = meminfo.get("MemTotal", 0)
+                avail_kb = meminfo.get("MemAvailable", meminfo.get("MemFree", 0))
+                total_gb = total_kb / (1024**2)
+                result["ram_total_gb"] = round(total_gb, 2)
+                result["ram_used_gb"] = round(total_gb - avail_kb / (1024**2), 2)
+                result["ram_percent"] = round((total_kb - avail_kb) / total_kb * 100, 1) if total_kb > 0 else 0
+            except Exception:
+                pass
+            try:
+                du = shutil.disk_usage(str(REPO_ROOT))
+                result["disk_total_gb"] = round(du.total / (1024**3), 2)
+                result["disk_used_gb"] = round((du.total - du.free) / (1024**3), 2)
+                result["disk_percent"] = round((du.total - du.free) / du.total * 100, 1) if du.total > 0 else 0
+            except Exception:
+                pass
     except Exception:
         pass
 
@@ -2274,10 +2307,10 @@ def background_sampler():
                 persist_new_alerts(build_alerts(st))
             except Exception:
                 pass
-            # Pre-warm health cache for all services in parallel
+            # Invalidate health cache so next API call refreshes lazily
+            # (do NOT synchronously probe here — TCP timeouts can block 15s+)
             for svc in SERVICE_REGISTRY:
-                HEALTH_CACHE.pop(svc["id"], None)  # invalidate
-                check_service_health(svc)
+                HEALTH_CACHE.pop(svc["id"], None)
             # Log rotation every ~10 min (120 iterations * 5s)
             rotation_counter += 1
             if rotation_counter % 120 == 0:
