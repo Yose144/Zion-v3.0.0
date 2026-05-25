@@ -12,6 +12,11 @@ export default defineConfig({
         target: 'http://127.0.0.1:8766',
         changeOrigin: true,
       },
+      '/ncl': {
+        // NCL routes go directly to Hiranyagarbha on :8001
+        target: 'http://127.0.0.1:8001',
+        changeOrigin: true,
+      },
       '/ws': {
         target: 'ws://127.0.0.1:8766',
         ws: true,

@@ -5,7 +5,7 @@ import {
   BarChart2, Server, Cpu, Layers, Brain,
   Vote, Wallet, AlertTriangle, Settings,
   Shield, Zap, Globe, Rocket, Database,
-  CalendarClock, Wrench, Network, ChevronLeft, ChevronRight,
+  CalendarClock, Wrench, Network, ChevronLeft, ChevronRight, X,
 } from 'lucide-react';
 import { useUnreadAlerts } from '../../stores/alertStore';
 import { useSettingsStore } from '../../stores/settingsStore';
@@ -59,17 +59,37 @@ const GROUPS = ['Core', 'Infra', 'Layers', 'AI', 'Gov', 'Ops'];
 interface SidebarProps {
   active: TabId;
   onSelect: (id: TabId) => void;
+  mobileOpen?: boolean;
+  onMobileClose?: () => void;
 }
 
-export function Sidebar({ active, onSelect }: SidebarProps) {
+export function Sidebar({ active, onSelect, mobileOpen = false, onMobileClose }: SidebarProps) {
   const unread = useUnreadAlerts();
   const collapsed = useSettingsStore(s => s.sidebarCollapsed);
   const update = useSettingsStore(s => s.update);
   const connected = useStatusStore(s => s.connected);
 
+  const handleSelect = (id: TabId) => {
+    onSelect(id);
+    onMobileClose?.();
+  };
+
   return (
+    <>
+      {/* Mobile backdrop */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/50 md:hidden"
+          onClick={onMobileClose}
+        />
+      )}
     <aside
-      className={`flex flex-col shrink-0 bg-(--color-bg-panel) border-r border-(--color-border) h-full transition-all duration-200 ${collapsed ? 'w-14' : 'w-52'}`}
+      className={`
+        flex flex-col shrink-0 bg-(--color-bg-panel) border-r border-(--color-border) h-full transition-all duration-200
+        fixed md:relative inset-y-0 left-0 z-40
+        ${collapsed ? 'w-14' : 'w-52'}
+        ${mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+      `}
     >
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-4 border-b border-(--color-border)">
@@ -79,9 +99,18 @@ export function Sidebar({ active, onSelect }: SidebarProps) {
             <span className="text-xs text-(--color-text-muted)">v2</span>
           </div>
         )}
+        {/* Mobile close button (only visible on mobile) */}
+        {onMobileClose && (
+          <button
+            onClick={onMobileClose}
+            className="p-1 rounded hover:bg-(--color-bg-hover) text-(--color-text-muted) hover:text-(--color-text) transition-colors md:hidden"
+          >
+            <X size={16} />
+          </button>
+        )}
         <button
           onClick={() => update({ sidebarCollapsed: !collapsed })}
-          className="p-1 rounded hover:bg-(--color-bg-hover) text-(--color-text-muted) hover:text-(--color-text) transition-colors ml-auto"
+          className="p-1 rounded hover:bg-(--color-bg-hover) text-(--color-text-muted) hover:text-(--color-text) transition-colors ml-auto hidden md:block"
         >
           {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
         </button>
@@ -114,7 +143,7 @@ export function Sidebar({ active, onSelect }: SidebarProps) {
                   return (
                     <li key={item.id}>
                       <button
-                        onClick={() => onSelect(item.id)}
+                        onClick={() => handleSelect(item.id)}
                         title={collapsed ? item.label : undefined}
                         className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-all
                           ${isActive
@@ -150,5 +179,6 @@ export function Sidebar({ active, onSelect }: SidebarProps) {
         </div>
       )}
     </aside>
+    </>
   );
 }

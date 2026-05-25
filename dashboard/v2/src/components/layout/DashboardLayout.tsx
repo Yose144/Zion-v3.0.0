@@ -1,11 +1,15 @@
 // ─── ZION Dashboard v2 — DashboardLayout ─────────────────────────────────────
 import React, { useState, useEffect, lazy, Suspense } from 'react';
+import { Menu } from 'lucide-react';
 import { Sidebar, type TabId } from './Sidebar';
 import { useWebSocket } from '../../hooks/useWebSocket';
 import { useStatusStore } from '../../stores/statusStore';
 import { useAlertStore } from '../../stores/alertStore';
 import { usePolling } from '../../hooks/usePolling';
+import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
 import { Toast } from '../ui/Toast';
+import { KeyboardHelp } from '../ui/KeyboardHelp';
+import { useSettingsStore } from '../../stores/settingsStore';
 import type { Alert } from '../../types/api';
 
 // ── Lazy tab imports ────────────────────────────────────────────────────────
@@ -64,6 +68,11 @@ function TabContent({ active }: { active: TabId }) {
 export function DashboardLayout() {
   const [activeTab, setActiveTab] = useState<TabId>('overview');
   const [toasts, setToasts] = useState<Alert[]>([]);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
+
+  const collapsed = useSettingsStore(s => s.sidebarCollapsed);
+  const update = useSettingsStore(s => s.update);
 
   // Init WebSocket (binds to stores)
   useWebSocket();
@@ -83,6 +92,13 @@ export function DashboardLayout() {
   usePolling(fetchStatus);
   usePolling(fetchHealth, 2);
 
+  // Keyboard shortcuts
+  useKeyboardShortcuts({
+    onTabChange: setActiveTab,
+    onToggleSidebar: () => update({ sidebarCollapsed: !collapsed }),
+    onShowHelp: () => setShowHelp(true),
+  });
+
   // Toast listener
   useEffect(() => {
     const handler = (e: Event) => {
@@ -98,14 +114,37 @@ export function DashboardLayout() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-(--color-bg-base)">
-      <Sidebar active={activeTab} onSelect={setActiveTab} />
+      <Sidebar
+        active={activeTab}
+        onSelect={setActiveTab}
+        mobileOpen={mobileOpen}
+        onMobileClose={() => setMobileOpen(false)}
+      />
 
       <main className="flex-1 overflow-hidden flex flex-col min-w-0">
         {/* Tab title bar */}
-        <header className="shrink-0 px-6 py-3 border-b border-(--color-border) flex items-center gap-3 bg-(--color-bg-panel)">
-          <h1 className="text-sm font-semibold text-(--color-text) capitalize">
+        <header className="shrink-0 px-4 md:px-6 py-3 border-b border-(--color-border) flex items-center gap-3 bg-(--color-bg-panel)">
+          {/* Hamburger — mobile only */}
+          <button
+            className="md:hidden p-1 rounded hover:bg-(--color-bg-hover) text-(--color-text-muted) hover:text-(--color-text) transition-colors"
+            onClick={() => setMobileOpen(true)}
+            aria-label="Open navigation"
+          >
+            <Menu size={18} />
+          </button>
+
+          <h1 className="text-sm font-semibold text-(--color-text) capitalize flex-1">
             {activeTab.replace(/-/g, ' ')}
           </h1>
+
+          {/* Help button */}
+          <button
+            className="p-1 rounded hover:bg-(--color-bg-hover) text-(--color-text-muted) hover:text-(--color-text) transition-colors text-xs font-mono"
+            onClick={() => setShowHelp(true)}
+            title="Keyboard shortcuts (?)"
+          >
+            ?
+          </button>
         </header>
 
         {/* Tab content */}
@@ -122,6 +161,9 @@ export function DashboardLayout() {
           <Toast key={t.id} alert={t} onDismiss={dismissToast} />
         ))}
       </div>
+
+      {/* Keyboard help modal */}
+      {showHelp && <KeyboardHelp onClose={() => setShowHelp(false)} />}
     </div>
   );
 }
