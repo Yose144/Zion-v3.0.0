@@ -247,6 +247,32 @@ export interface CliRunResponse {
   duration_ms: number;
 }
 
+// ── NCL (Neural Compute Layer via Hiranyagarbha :8001) ────────────────────
+
+export interface NclJob {
+  id: string;
+  type: string;
+  status: 'pending' | 'running' | 'done' | 'failed';
+  created_ts: number;
+  worker_id?: string;
+  result?: string;
+}
+
+export interface NclWorker {
+  id: string;
+  name: string;
+  status: 'online' | 'offline';
+  jobs_completed: number;
+  score: number;
+}
+
+export interface NclEntry {
+  rank: number;
+  worker_id: string;
+  score: number;
+  jobs: number;
+}
+
 // ── WebSocket message union ───────────────────────────────────────────────
 
 export interface WsLogMessage {
