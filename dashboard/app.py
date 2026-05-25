@@ -4483,7 +4483,9 @@ class DashboardHandler(BaseHTTPRequestHandler):
             body = json.dumps(data).encode("utf-8")
             self.send_response(status)
             self.send_header("Content-Type", "application/json; charset=utf-8")
-            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Access-Control-Allow-Origin", "http://localhost:5173")
+            self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+            self.send_header("Access-Control-Allow-Headers", "Content-Type")
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()
             self.wfile.write(body)
@@ -4495,6 +4497,9 @@ class DashboardHandler(BaseHTTPRequestHandler):
             body = html.encode("utf-8")
             self.send_response(status)
             self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Access-Control-Allow-Origin", "http://localhost:5173")
+            self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+            self.send_header("Access-Control-Allow-Headers", "Content-Type")
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()
             self.wfile.write(body)
@@ -4609,6 +4614,18 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 self.wfile.write(body)
             else:
                 self.send_error(404)
+        elif route == "/api/v2/status":
+            # Batch endpoint: single call returns everything dashboard v2 needs on boot
+            st = build_status()
+            self._json({
+                "status":    st,
+                "health":    _build_health_map(),
+                "events":    list(BLOCK_EVENTS)[-10:][::-1],
+                "checklist": build_checklist(st),
+            })
+        elif route == "/api/v2/batch":
+            # Handled by POST — return error for GET
+            self.send_error(405)
         elif route == "/api/status":
             self._json(build_status())
         elif route == "/api/checklist":
@@ -5610,6 +5627,14 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 self._json({"error": f"NCL backend unreachable: {str(e)[:80]}"})
         else:
             self.send_error(404)
+
+    def do_OPTIONS(self):
+        """CORS preflight — allow Vite dev server (localhost:5173)."""
+        self.send_response(204)
+        self.send_header("Access-Control-Allow-Origin", "http://localhost:5173")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.end_headers()
 
     def do_POST(self):
         parsed = urllib.parse.urlparse(self.path)
