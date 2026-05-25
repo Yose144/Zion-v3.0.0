@@ -44,14 +44,14 @@ class MetricsHistory:
         with self.lock:
             self.samples.append({
                 "t": int(time.time()),
-                "n1_height": status["node1"]["chain_height"],
-                "n2_height": status["node2"]["chain_height"],
-                "n1_peers": status["node1"]["known_peers"],
-                "hashrate": status["miner"]["hashrate"],
-                "shares_ok": status["pool"]["shares_accepted"],
-                "shares_bad": status["pool"]["shares_rejected"],
-                "blocks": status["pool"]["blocks_found"],
-                "sessions": status["pool"]["active_sessions"],
+                "n1_height": status.get("node1", {}).get("chain_height", 0),
+                "n2_height": status.get("node2", {}).get("chain_height", 0),
+                "n1_peers": status.get("node1", {}).get("known_peers", 0),
+                "hashrate": status.get("miner", {}).get("hashrate", 0),
+                "shares_ok": status.get("pool", {}).get("shares_accepted", 0),
+                "shares_bad": status.get("pool", {}).get("shares_rejected", 0),
+                "blocks": status.get("pool", {}).get("blocks_found", 0),
+                "sessions": status.get("pool", {}).get("active_sessions", 0),
             })
 
     def snapshot(self) -> list:
@@ -2115,6 +2115,13 @@ P0_BLOCKERS = [
 
 # OS suffix: .ps1 on Windows, .sh on Linux/macOS
 _SCRIPT_EXT = ".ps1" if os.name == "nt" else ".sh"
+
+def _script_cmd(script_path, *extra_args):
+    """Build a cross-platform command list to run a .ps1/.sh script."""
+    if os.name == "nt":
+        return ["powershell.exe", "-ExecutionPolicy", "Bypass", "-File", str(script_path)] + list(extra_args)
+    else:
+        return ["bash", str(script_path)] + list(extra_args)
 
 _ALLOW_BASE = {
     "install-deps":           "install-deps",
@@ -4673,6 +4680,84 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 "tailscale": ts_status,
                 "timestamp": _time.time(),
             })
+        elif route == "/api/hiran/status":
+            # Alias of /api/hiran/health — return combined inference + orchestrator status
+            self._json(get_ai_services_status())
+        elif route == "/api/hiran/health":
+            # Quick health probe of Hiran inference server
+            try:
+                import urllib.request as _ur
+                with _ur.urlopen("http://127.0.0.1:8002/health", timeout=2) as r:
+                    self._json({"ok": True, "status": "online", "data": json.loads(r.read())})
+            except Exception as e:
+                self._json({"ok": False, "status": "offline", "error": str(e)[:80]})
+        elif route == "/api/hiranyagarbha/health":
+            # Quick health probe of Hiranyagarbha orchestrator
+            try:
+                import urllib.request as _ur
+                with _ur.urlopen("http://127.0.0.1:8001/health", timeout=2) as r:
+                    self._json({"ok": True, "status": "online", "data": json.loads(r.read())})
+            except Exception as e:
+                self._json({"ok": False, "status": "offline", "error": str(e)[:80]})
+        elif route == "/api/bridge/health":
+            alive = check_port_open("127.0.0.1", 8550, timeout=1.5)
+            self._json({"ok": alive, "service": "bridge", "port": 8550,
+                        "status": "online" if alive else "offline"})
+        elif route == "/api/swap/health":
+            alive = check_port_open("127.0.0.1", 8570, timeout=1.5)
+            self._json({"ok": alive, "service": "atomic-swap", "port": 8570,
+                        "status": "online" if alive else "offline"})
+        elif route == "/api/swap/initiate":
+            self._json({"ok": False, "error": "Swap initiation requires POST — use POST /api/swap/initiate"})
+        elif route == "/api/warp/health":
+            alive = check_port_open("127.0.0.1", 8580, timeout=1.5)
+            self._json({"ok": alive, "service": "warp", "port": 8580,
+                        "status": "online" if alive else "offline"})
+        elif route == "/api/oasis/stats":
+            alive = check_port_open("127.0.0.1", 8600, timeout=1.5)
+            self._json({"ok": alive, "service": "oasis", "port": 8600,
+                        "status": "online" if alive else "offline",
+                        "avatars": 0, "active_quests": 0})
+        elif route == "/api/oasis/quests":
+            self._json({"ok": True, "quests": [], "total": 0, "note": "OASIS not yet deployed"})
+        elif route == "/api/freeworld/stats":
+            self._json({"ok": True, "service": "freeworld", "status": "planned",
+                        "settlements": 0, "citizens": 0, "note": "Free World layer not yet deployed"})
+        elif route == "/api/space/stats":
+            self._json({"ok": True, "service": "issobella-space", "status": "planned",
+                        "missions": 0, "satellites": 0, "note": "Issobella Space layer not yet deployed"})
+        elif route == "/api/space/missions":
+            self._json({"ok": True, "missions": [], "total": 0, "note": "Issobella Space not yet deployed"})
+        elif route == "/api/mempool":
+            # Return mempool data from node RPC
+            try:
+                mp = rpc_call("127.0.0.1", 8443, "getMempool", {}, timeout=2)
+                if mp and not mp.get("_rpc_error"):
+                    txs = mp.get("transactions", [])
+                    self._json({"ok": True, "tx_count": len(txs), "transactions": txs[:50],
+                                "total_fees": sum(t.get("fee", 0) for t in txs)})
+                else:
+                    self._json({"ok": False, "tx_count": 0, "transactions": [],
+                                "error": mp.get("_rpc_error", "RPC error") if mp else "No response"})
+            except Exception as e:
+                self._json({"ok": False, "tx_count": 0, "transactions": [], "error": str(e)[:80]})
+        elif route == "/api/block":
+            # Block lookup: /api/block?q=<hash_or_height>
+            q = params.get("q", [""])[0].strip()
+            if not q:
+                self._json({"ok": False, "error": "query parameter 'q' required"})
+            else:
+                try:
+                    if q.isdigit():
+                        block = rpc_call("127.0.0.1", 8443, "getBlockByHeight", {"height": int(q)}, timeout=3)
+                    else:
+                        block = rpc_call("127.0.0.1", 8443, "getBlockByHash", {"hash": q}, timeout=3)
+                    if block and not block.get("_rpc_error"):
+                        self._json({"ok": True, "block": block})
+                    else:
+                        self._json({"ok": False, "error": "Block not found", "query": q})
+                except Exception as e:
+                    self._json({"ok": False, "error": str(e)[:80], "query": q})
         elif route.startswith("/api/dao"):
             # Proxy all /api/dao/* requests to DAO daemon on port 8081
             self._proxy_to_dao("GET", route, None, dict(self.headers))
@@ -4822,9 +4907,18 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 backup_dir = REPO_ROOT / "backups" / f"launch-day-{timestamp}"
                 backup_dir.mkdir(parents=True, exist_ok=True)
-                
+
+                # Fetch current genesis hash for the manifest
+                current_genesis_hash = None
+                try:
+                    genesis = rpc_call("127.0.0.1", 8443, "getBlockByHeight", {"height": 0}, timeout=3)
+                    if genesis and genesis.get("hash"):
+                        current_genesis_hash = genesis["hash"]
+                except Exception:
+                    pass
+
                 backup_log = []
-                
+
                 try:
                     # Backup critical files
                     critical_files = [
@@ -5041,8 +5135,6 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json(get_pool_wallet_status())
         elif route == "/api/ai/status":
             self._json(get_ai_services_status())
-        elif route == "/api/topology":
-            self._json(get_network_topology())
         elif route == "/api/cli/run":
             cmd = params.get("cmd", [""])[0].strip()
             self._json(run_zion_cli(cmd))
@@ -5154,7 +5246,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
             _log_map = {
                 "hiranyagarbha":    "hiranyagarbha.log",
                 "hiran-inference":  "hiran-inference.log",
-                "node1":            "node.log",
+                "node1":            "node1.log",
                 "node2":            "node2.log",
                 "pool":             "pool.log",
                 "miner":            "miner.log",
@@ -5324,7 +5416,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
             include_logs = payload.get("includeLogs", False)
             include_env = payload.get("includeEnv", False)
             script = SCRIPTS_DIR / ("backup-chain" + _SCRIPT_EXT)
-            args = ["powershell.exe", "-ExecutionPolicy", "Bypass", "-File", str(script)]
+            args = _script_cmd(script)
             if (name):
                 args += ["-Name", name]
             if (include_logs):
@@ -5347,7 +5439,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
             script = SCRIPTS_DIR / ("restore-chain" + _SCRIPT_EXT)
             try:
                 proc = subprocess.Popen(
-                    ["powershell.exe", "-ExecutionPolicy", "Bypass", "-File", str(script), "-BackupName", name],
+                    _script_cmd(script, "-BackupName", name),
                     cwd=str(REPO_ROOT), stdout=subprocess.PIPE, stderr=subprocess.PIPE
                 )
                 stdout, stderr = proc.communicate(timeout=120)
@@ -5390,7 +5482,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
             script = SCRIPTS_DIR / ("zion-cli-run" + _SCRIPT_EXT)
             try:
                 proc = subprocess.Popen(
-                    ["powershell.exe", "-ExecutionPolicy", "Bypass", "-File", str(script), "-Cmd", cmd],
+                    _script_cmd(script, "-Cmd", cmd),
                     cwd=str(REPO_ROOT), stdout=subprocess.PIPE, stderr=subprocess.PIPE
                 )
                 stdout, stderr = proc.communicate(timeout=30)
@@ -5407,7 +5499,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
             script = SCRIPTS_DIR / ("zion-cli-run" + _SCRIPT_EXT)
             try:
                 proc = subprocess.Popen(
-                    ["powershell.exe", "-ExecutionPolicy", "Bypass", "-File", str(script), "-Cmd", "node status"],
+                    _script_cmd(script, "-Cmd", "node status"),
                     cwd=str(REPO_ROOT), stdout=subprocess.PIPE, stderr=subprocess.PIPE
                 )
                 stdout, stderr = proc.communicate(timeout=15)
@@ -5426,7 +5518,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
             script = SCRIPTS_DIR / ("zion-cli-run" + _SCRIPT_EXT)
             try:
                 proc = subprocess.Popen(
-                    ["powershell.exe", "-ExecutionPolicy", "Bypass", "-File", str(script), "-Cmd", "status"],
+                    _script_cmd(script, "-Cmd", "status"),
                     cwd=str(REPO_ROOT), stdout=subprocess.PIPE, stderr=subprocess.PIPE
                 )
                 stdout, stderr = proc.communicate(timeout=15)
@@ -5456,7 +5548,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
             full_cmd = cmd + " " + db
             try:
                 proc = subprocess.Popen(
-                    ["powershell.exe", "-ExecutionPolicy", "Bypass", "-File", str(script), "-Cmd", full_cmd],
+                    _script_cmd(script, "-Cmd", full_cmd),
                     cwd=str(REPO_ROOT), stdout=subprocess.PIPE, stderr=subprocess.PIPE
                 )
                 stdout, stderr = proc.communicate(timeout=30)
@@ -5472,7 +5564,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
             script = SCRIPTS_DIR / ("backup-chain" + _SCRIPT_EXT)
             try:
                 proc = subprocess.Popen(
-                    ["powershell.exe", "-ExecutionPolicy", "Bypass", "-File", str(script)],
+                    _script_cmd(script),
                     cwd=str(REPO_ROOT), stdout=subprocess.PIPE, stderr=subprocess.PIPE
                 )
                 stdout, stderr = proc.communicate(timeout=120)
@@ -5484,6 +5576,17 @@ class DashboardHandler(BaseHTTPRequestHandler):
         elif route == "/api/alerts/config":
             cfg = payload if payload else {}
             self._json(save_alert_config(cfg))
+        elif route == "/api/swap/initiate":
+            # Proxy swap initiation to atomic-swap daemon on port 8570
+            try:
+                import urllib.request as _ur
+                body_data = json.dumps(payload or {}).encode()
+                req = _ur.Request("http://127.0.0.1:8570/api/swap/initiate",
+                    data=body_data, headers={"Content-Type": "application/json"}, method="POST")
+                with _ur.urlopen(req, timeout=10) as r:
+                    self._json(json.loads(r.read()))
+            except Exception as e:
+                self._json({"ok": False, "offline": True, "error": str(e)[:120]})
         else:
             self.send_error(404)
 
