@@ -50,12 +50,18 @@ function debounce(fn, ms){
 let connectionOk = true;
 let consecutiveFailures = 0;
 function updateConnectionStatus(ok){
+  const wasOk = connectionOk;
   if(ok){ consecutiveFailures = 0; connectionOk = true; }
   else { consecutiveFailures++; if(consecutiveFailures >= 3) connectionOk = false; }
   const badge = document.getElementById('connection-badge');
   if(badge){
     badge.textContent = connectionOk ? '● Connected' : '● Disconnected';
     badge.className = 'text-[10px] px-2 py-0.5 rounded-full font-bold ' + (connectionOk ? 'bg-emerald-700/50 text-emerald-300' : 'bg-red-700/50 text-red-300');
+  }
+  // Adaptive refresh: slow down when disconnected, speed up when reconnected
+  if(autoRefresh && wasOk !== connectionOk && refreshTimer){
+    clearInterval(refreshTimer);
+    refreshTimer = setInterval(refreshAll, connectionOk ? REFRESH_INTERVAL_OK : REFRESH_INTERVAL_SLOW);
   }
 }
 
@@ -165,7 +171,7 @@ async function refreshAll(){
     if(currentTab === 'explorer') loadExplorer();
     if(currentTab === 'hiran') loadAiStatus();
     if(currentTab === 'overview') loadMempool();
-    if(currentTab === 'controls') { loadMinerPerformance(); loadDepGraph(); }
+    if(currentTab === 'controls') { loadMinerPerformance(); loadDepGraphControls(); }
     updateConnectionStatus(true);
   } catch(e){
     console.error('Refresh error:', e);
@@ -2350,12 +2356,15 @@ async function loadBlockers(){
 // Auto refresh
 // ─────────────────────────────────────────────────────────────────────
 
+const REFRESH_INTERVAL_OK = 5000;   // 5s when connected
+const REFRESH_INTERVAL_SLOW = 10000; // 10s when disconnected
+
 function toggleAuto(){
   autoRefresh = !autoRefresh;
   const b = document.getElementById('autoBtn');
   if(autoRefresh){
     b.textContent = '⚡ Auto';
-    refreshTimer = setInterval(refreshAll, 3000);
+    refreshTimer = setInterval(refreshAll, REFRESH_INTERVAL_OK);
   } else {
     b.textContent = '⏸ Paused';
     clearInterval(refreshTimer);
@@ -3619,7 +3628,7 @@ loadSettings().then(s => {
   else { switchTab('overview'); }
 });
 refreshAll();
-refreshTimer = setInterval(refreshAll, 3000);
+refreshTimer = setInterval(refreshAll, REFRESH_INTERVAL_OK);
 setTimeout(loadMinerConfig, 500);
 // Load overview widgets on startup
 setTimeout(() => { loadNclOverview(); loadHiranOverview(); }, 1500);
