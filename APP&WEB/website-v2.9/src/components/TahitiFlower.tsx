@@ -2,25 +2,9 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Image from 'next/image';
 
-/* Holographic Tiare Tahiti (Gardenia taitensis) — national flower of French Polynesia */
-
-function Petal({ angle, scale = 1 }: { angle: number; scale?: number }) {
-  const rad = (angle * Math.PI) / 180;
-  const cx = Math.cos(rad) * 34 * scale;
-  const cy = Math.sin(rad) * 34 * scale;
-  return (
-    <ellipse
-      cx={cx}
-      cy={cy}
-      rx={10 * scale}
-      ry={24 * scale}
-      transform={`rotate(${angle + 90}, ${cx}, ${cy})`}
-      fill="url(#petalGrad)"
-      opacity={0.65}
-    />
-  );
-}
+/* Real Tiare Tahiti (Gardenia taitensis) — national flower of French Polynesia */
 
 export default function TahitiFlower({
   className = '',
@@ -32,7 +16,6 @@ export default function TahitiFlower({
   onToggle?: () => void;
 }) {
   const [hovered, setHovered] = useState(false);
-  const petals = Array.from({ length: 7 }, (_, i) => i);
 
   return (
     <motion.div
@@ -48,56 +31,27 @@ export default function TahitiFlower({
         onToggle?.();
       }}
     >
-      {/* flower */}
+      {/* Real flower photo with glow */}
       <motion.div
         animate={{
-          scale: hovered ? 1.12 : expanded ? 0.9 : 1,
-          rotate: hovered ? [0, -3, 3, 0] : 0,
+          scale: hovered ? 1.08 : expanded ? 0.92 : 1,
+          rotate: hovered ? [0, -2, 2, 0] : 0,
         }}
         transition={{ duration: 0.6, ease: 'easeOut' }}
-        className="cursor-pointer"
+        className="cursor-pointer relative"
+        style={{ filter: 'drop-shadow(0 0 18px rgba(103,243,223,0.5))' }}
       >
-        <svg
-          viewBox="-60 -60 120 120"
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-20 w-20 sm:h-24 sm:w-24"
-          style={{ filter: 'drop-shadow(0 0 14px rgba(103,243,223,0.45))' }}
-        >
-          <defs>
-            <radialGradient id="petalGrad" cx="50%" cy="20%" r="80%">
-              <stop offset="0%" stopColor="rgba(165,243,252,0.9)" />
-              <stop offset="50%" stopColor="rgba(103,243,223,0.6)" />
-              <stop offset="100%" stopColor="rgba(147,51,234,0.3)" />
-            </radialGradient>
-            <radialGradient id="centerGrad" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="rgba(255,235,160,0.95)" />
-              <stop offset="100%" stopColor="rgba(249,168,38,0.5)" />
-            </radialGradient>
-            <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-              <feGaussianBlur stdDeviation="3" result="blur" />
-              <feMerge>
-                <feMergeNode in="blur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-          </defs>
-
-          <g filter="url(#glow)">
-            {petals.map((i) => (
-              <Petal key={i} angle={(i * 360) / 7} scale={1} />
-            ))}
-            {petals.map((i) => (
-              <Petal key={`inner-${i}`} angle={(i * 360) / 7 + 360 / 14} scale={0.55} />
-            ))}
-            <circle r={9} fill="url(#centerGrad)" opacity={0.8} />
-          </g>
-
-          <ellipse cx={-28} cy={18} rx={18} ry={8} transform="rotate(-35, -28, 18)" fill="rgba(6,182,212,0.25)" opacity={0.5} />
-          <ellipse cx={28} cy={20} rx={16} ry={7} transform="rotate(35, 28, 20)" fill="rgba(147,51,234,0.25)" opacity={0.45} />
-        </svg>
+        <Image
+          src="/tiare-tahiti.jpg"
+          alt="Tiare Tahiti — květina Francouzské Polynésie"
+          width={96}
+          height={96}
+          className="h-20 w-20 sm:h-24 sm:w-24 rounded-full object-cover border-2 border-cyan-200/30"
+          priority
+        />
       </motion.div>
 
-      {/* MAEVA label */}
+      {/* Label */}
       <motion.div
         initial={{ opacity: 0, y: 4 }}
         animate={{ opacity: 1, y: 0 }}
