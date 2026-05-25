@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, RefreshCw, Clock, Hash, Layers } from 'lucide-react';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
+import { TableSkeleton } from '../ui/Skeleton';
 import api from '../../api/client';
 import type { BlockSummary, MempoolEntry } from '../../types/api';
 import { formatDistanceToNow } from 'date-fns';
@@ -64,6 +65,9 @@ export default function ExplorerTab() {
           className="xl:col-span-2"
           actions={<span className="text-xs text-(--color-text-muted)">{filtered.length} shown</span>}
         >
+          {loading && blocks.length === 0 ? (
+            <TableSkeleton rows={8} />
+          ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
@@ -103,6 +107,7 @@ export default function ExplorerTab() {
               </tbody>
             </table>
           </div>
+          )}
         </Card>
 
         {/* Mempool */}

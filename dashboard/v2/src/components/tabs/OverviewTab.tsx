@@ -5,6 +5,7 @@ import { useStatusStore } from '../../stores/statusStore';
 import { useAlertStore } from '../../stores/alertStore';
 import { Card } from '../ui/Card';
 import { HealthBadge } from '../ui/Badge';
+import { CardSkeleton } from '../ui/Skeleton';
 import type { HealthStatus } from '../../types/api';
 
 // ── Stat card ─────────────────────────────────────────────────────────────────
@@ -117,36 +118,45 @@ export default function OverviewTab() {
       )}
 
       {/* Hero stats */}
-      <div className="flex flex-wrap gap-4">
-        <StatCard
-          label="Block Height"
-          value={node1?.block_height?.toLocaleString() ?? '—'}
-          sub={node1?.syncing ? 'syncing...' : 'in sync'}
-          icon={Layers}
-          accent="gold"
-        />
-        <StatCard
-          label="Hashrate"
-          value={miner ? `${(miner.hashrate_hs / 1000).toFixed(1)} KH/s` : '—'}
-          sub={miner?.running ? 'mining' : 'stopped'}
-          icon={Zap}
-          accent="cyan"
-        />
-        <StatCard
-          label="Peers"
-          value={node1?.peers ?? '—'}
-          sub="connected"
-          icon={Users}
-          accent="purple"
-        />
-        <StatCard
-          label="CPU"
-          value={`${cpuPct.toFixed(1)}%`}
-          sub={res ? `${res.ram_used_mb} / ${res.ram_total_mb} MB RAM` : undefined}
-          icon={Cpu}
-          accent="green"
-        />
-      </div>
+      {status === null ? (
+        <div className="flex flex-wrap gap-4">
+          <CardSkeleton />
+          <CardSkeleton />
+          <CardSkeleton />
+          <CardSkeleton />
+        </div>
+      ) : (
+        <div className="flex flex-wrap gap-4">
+          <StatCard
+            label="Block Height"
+            value={node1?.block_height?.toLocaleString() ?? '—'}
+            sub={node1?.syncing ? 'syncing...' : 'in sync'}
+            icon={Layers}
+            accent="gold"
+          />
+          <StatCard
+            label="Hashrate"
+            value={miner ? `${(miner.hashrate_hs / 1000).toFixed(1)} KH/s` : '—'}
+            sub={miner?.running ? 'mining' : 'stopped'}
+            icon={Zap}
+            accent="cyan"
+          />
+          <StatCard
+            label="Peers"
+            value={node1?.peers ?? '—'}
+            sub="connected"
+            icon={Users}
+            accent="purple"
+          />
+          <StatCard
+            label="CPU"
+            value={`${cpuPct.toFixed(1)}%`}
+            sub={res ? `${res.ram_used_mb} / ${res.ram_total_mb} MB RAM` : undefined}
+            icon={Cpu}
+            accent="green"
+          />
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
 

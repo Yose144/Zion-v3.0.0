@@ -5,6 +5,7 @@ import type {
   EnvFile, ControlsConfig, Alert, TopologyResponse,
   HiranStatus, HiranChatRequest, HiranChatResponse,
   DaoProposal, BackupInfo, CliRunRequest, CliRunResponse,
+  NclJob, NclWorker, NclEntry,
 } from '../types/api';
 
 // ── Config ──────────────────────────────────────────────────────────────────
@@ -153,6 +154,21 @@ export const api = {
   // ── Launch day ───────────────────────────────────────────────────────────
 
   launchDayStatus: () => apiFetch<Record<string, unknown>>('/api/launch-day/status'),
+
+  // ── v2 batch ─────────────────────────────────────────────────────────────
+
+  v2Status: () => apiFetch<{
+    status: StatusResponse;
+    health: HealthMap;
+    events: ZionEvent[];
+    checklist: Record<string, unknown>;
+  }>('/api/v2/status'),
+
+  // ── NCL (via Hiranyagarbha :8001) ─────────────────────────────────────────
+
+  nclJobs:        () => apiFetch<{ jobs: NclJob[] }>('/ncl/jobs'),
+  nclWorkers:     () => apiFetch<{ workers: NclWorker[] }>('/ncl/workers'),
+  nclLeaderboard: () => apiFetch<{ entries: NclEntry[] }>('/ncl/leaderboard'),
 };
 
 export { ApiError };
