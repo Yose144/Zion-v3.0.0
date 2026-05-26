@@ -1,9 +1,8 @@
 // ─── ZION Dashboard v2 — Wallets Tab (v2.9 glass) ───────────────────────────
 import React, { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
 import { Copy, RefreshCw, CheckCheck, Wallet, Hash } from 'lucide-react';
-import { Card } from '../ui/Card';
 import { Badge } from '../ui/Badge';
-import { Button } from '../ui/Button';
 import api from '../../api/client';
 import type { WalletEntry } from '../../types/api';
 
@@ -53,104 +52,122 @@ export default function WalletsTab() {
   useEffect(() => { load(); }, []);
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 max-w-[1600px] mx-auto">
 
-      {/* ── Header ── */}
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-3">
-          <Wallet size={15} style={{ color: 'rgb(255,215,0)' }} />
-          <h2 className="text-sm font-bold text-gradient tracking-wide">Wallets</h2>
+      {/* ── Wallets Panel ── */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0 * 0.06 }}
+        className="rounded-[28px] border border-white/8 bg-black/60 backdrop-blur-2xl overflow-hidden"
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-white/6">
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-xl bg-zion-gold/10 flex items-center justify-center">
+              <Wallet size={15} className="text-zion-gold" />
+            </div>
+            <div>
+              <h3 className="text-base font-semibold text-white">Wallets</h3>
+              <p className="text-[11px] text-gray-500">Live balances from backend</p>
+            </div>
+          </div>
+          <button
+            onClick={load}
+            className="px-4 py-2 rounded-xl border border-white/10 bg-white/5 text-sm text-gray-300 hover:text-white hover:border-white/20 transition-colors flex items-center gap-2"
+          >
+            <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
+          </button>
         </div>
-        <Button variant="secondary" size="sm" onClick={load} loading={loading}>
-          <RefreshCw size={12} />
-        </Button>
-      </div>
 
-      {/* ── Dynamic wallets ── */}
-      {wallets.length === 0 ? (
-        <div
-          className="flex items-center justify-center py-12 rounded-2xl"
-          style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}
-        >
-          <p className="text-sm text-slate-500">No wallets data from backend.</p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {wallets.map((w, i) => {
-            const variant = TYPE_VARIANT[w.type] ?? 'gray';
-            const glowColor = variant === 'gold' ? '255,215,0' : variant === 'cyan' ? '6,182,212' : '147,51,234';
-            return (
-              <div
-                key={i}
-                className="zion-panel zion-panel-hover p-5 flex items-start justify-between gap-4 flex-wrap"
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-2">
-                    <p className="text-sm font-bold text-slate-100">{w.label}</p>
-                    <Badge variant={variant}>{w.type}</Badge>
+        {/* Dynamic wallets */}
+        <div className="px-6 py-4">
+          {wallets.length === 0 ? (
+            <div
+              className="flex items-center justify-center py-12 rounded-2xl"
+              style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}
+            >
+              <p className="text-sm text-slate-500">No wallets data from backend.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {wallets.map((w, i) => {
+                const variant = TYPE_VARIANT[w.type] ?? 'gray';
+                const glowColor = variant === 'gold' ? '255,215,0' : variant === 'cyan' ? '6,182,212' : '147,51,234';
+                return (
+                  <div
+                    key={i}
+                    className="rounded-2xl bg-white/5 border border-white/8 p-4 flex items-start justify-between gap-4 flex-wrap"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-2">
+                        <p className="text-sm font-bold text-slate-100">{w.label}</p>
+                        <Badge variant={variant}>{w.type}</Badge>
+                      </div>
+                      <button
+                        onClick={() => copy(w.address)}
+                        className="group flex items-center gap-2 text-left"
+                        title="Copy address"
+                      >
+                        <span className="font-mono text-xs text-slate-500 group-hover:text-slate-300 transition-colors truncate max-w-xs">
+                          {w.address}
+                        </span>
+                        <span className="shrink-0 text-slate-600 group-hover:text-slate-300 transition-colors">
+                          {copied === w.address
+                            ? <CheckCheck size={11} style={{ color: 'rgb(52,211,153)' }} />
+                            : <Copy size={11} />}
+                        </span>
+                        {copied === w.address && (
+                          <span className="text-[10px]" style={{ color: 'rgb(52,211,153)' }}>Copied!</span>
+                        )}
+                      </button>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-[11px] text-slate-600 uppercase tracking-wider font-medium mb-1">Balance</p>
+                      <p
+                        className="text-2xl font-bold font-mono"
+                        style={{ color: `rgb(${glowColor})`, textShadow: `0 0 20px rgba(${glowColor},0.3)` }}
+                      >
+                        {w.balance.toLocaleString(undefined, { maximumFractionDigits: 6 })}
+                      </p>
+                      <p className="text-[10px] text-slate-600 mt-0.5">ZION</p>
+                    </div>
                   </div>
-                  <button
-                    onClick={() => copy(w.address)}
-                    className="group flex items-center gap-2 text-left"
-                    title="Copy address"
-                  >
-                    <span className="font-mono text-xs text-slate-500 group-hover:text-slate-300 transition-colors truncate max-w-xs">
-                      {w.address}
-                    </span>
-                    <span className="shrink-0 text-slate-600 group-hover:text-slate-300 transition-colors">
-                      {copied === w.address
-                        ? <CheckCheck size={11} style={{ color: 'rgb(52,211,153)' }} />
-                        : <Copy size={11} />}
-                    </span>
-                    {copied === w.address && (
-                      <span className="text-[10px]" style={{ color: 'rgb(52,211,153)' }}>Copied!</span>
-                    )}
-                  </button>
-                </div>
-                <div className="text-right shrink-0">
-                  <p className="text-[11px] text-slate-600 uppercase tracking-wider font-medium mb-1">Balance</p>
-                  <p
-                    className="text-2xl font-bold font-mono"
-                    style={{ color: `rgb(${glowColor})`, textShadow: `0 0 20px rgba(${glowColor},0.3)` }}
-                  >
-                    {w.balance.toLocaleString(undefined, { maximumFractionDigits: 6 })}
-                  </p>
-                  <p className="text-[10px] text-slate-600 mt-0.5">ZION</p>
-                </div>
-              </div>
-            );
-          })}
+                );
+              })}
+            </div>
+          )}
         </div>
-      )}
+      </motion.div>
 
-      {/* ── Fee Split Addresses ── */}
-      <div>
-        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-600 mb-3">
-          Fee Split Addresses
-        </p>
-        <Card accent="gold">
-          <p className="text-xs text-slate-500 mb-4">
-            Canonical on-chain fee distribution. Hardcoded in the ZION protocol.
-          </p>
-          <div className="space-y-0">
+      {/* ── Fee Split Panel ── */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 1 * 0.06 }}
+        className="rounded-[28px] border border-white/8 bg-black/60 backdrop-blur-2xl overflow-hidden"
+      >
+        <div className="flex items-center gap-3 px-6 py-4 border-b border-white/6">
+          <div className="h-9 w-9 rounded-xl bg-zion-gold/10 flex items-center justify-center">
+            <Wallet size={15} className="text-zion-gold" />
+          </div>
+          <div>
+            <h3 className="text-base font-semibold text-white">Fee Split Addresses</h3>
+            <p className="text-[11px] text-gray-500">Canonical on-chain fee distribution · hardcoded in ZION protocol</p>
+          </div>
+        </div>
+        <div className="px-6 py-4">
+          <div className="rounded-2xl bg-white/5 border border-white/8 p-4">
             {FEE_SPLIT_ADDRESSES.map((row, i) => (
               <div
                 key={row.label}
-                className="flex items-center gap-3 py-3 group"
-                style={{ borderBottom: i < FEE_SPLIT_ADDRESSES.length - 1 ? '1px solid rgba(255,255,255,0.05)' : undefined }}
+                className="flex items-center gap-3 py-3 group border-b border-white/4 last:border-0"
               >
-                {/* Share pill */}
                 <Badge variant={row.variant}>{row.share}</Badge>
-
-                {/* Label */}
                 <span className="text-sm text-slate-300 font-medium w-28 shrink-0">{row.label}</span>
-
-                {/* Address */}
                 <span className="flex-1 font-mono text-xs text-slate-500 truncate min-w-0">
                   {row.address}
                 </span>
-
-                {/* Copy button */}
                 <button
                   onClick={() => copy(row.address)}
                   className="opacity-0 group-hover:opacity-100 shrink-0 p-1.5 rounded-lg text-slate-600 hover:text-slate-200 hover:bg-white/5 transition-all"
@@ -163,27 +180,26 @@ export default function WalletsTab() {
               </div>
             ))}
           </div>
-        </Card>
-      </div>
+        </div>
+      </motion.div>
 
-      {/* ── Genesis Hash ── */}
-      <div>
-        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-600 mb-3">
-          Genesis Hash
-        </p>
-        <div
-          className="rounded-2xl p-4"
-          style={{ background: 'rgba(6,182,212,0.05)', border: '1px solid rgba(6,182,212,0.15)' }}
-        >
-          <div className="flex items-center gap-2 mb-3">
-            <Hash size={12} style={{ color: 'rgb(6,182,212)' }} />
-            <p className="text-xs text-slate-500">
-              Block #0 — verify against{' '}
-              <code className="text-slate-400 font-mono">PREMINE_ADDRESSES_PUBLIC.txt</code>
-              {' '}and{' '}
-              <code className="text-slate-400 font-mono">V3/L1/core/src/genesis.rs</code>
-            </p>
+      {/* ── Genesis Hash Panel ── */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 2 * 0.06 }}
+        className="rounded-[28px] border border-white/8 bg-black/60 backdrop-blur-2xl overflow-hidden"
+      >
+        <div className="flex items-center gap-3 px-6 py-4 border-b border-white/6">
+          <div className="h-9 w-9 rounded-xl bg-zion-gold/10 flex items-center justify-center">
+            <Hash size={15} className="text-zion-gold" />
           </div>
+          <div>
+            <h3 className="text-base font-semibold text-white">Genesis Hash</h3>
+            <p className="text-[11px] text-gray-500">Block #0 · verify against PREMINE_ADDRESSES_PUBLIC.txt</p>
+          </div>
+        </div>
+        <div className="px-6 py-4">
           <div
             className="flex items-center gap-3 rounded-xl px-4 py-3"
             style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(6,182,212,0.2)' }}
@@ -210,7 +226,7 @@ export default function WalletsTab() {
             </button>
           </div>
         </div>
-      </div>
+      </motion.div>
 
     </div>
   );
