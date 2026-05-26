@@ -27,6 +27,17 @@
     --zion-shadow-panel:   0 24px 90px rgba(0,0,0,0.42);
     --zion-shadow-glow:    0 0 42px rgba(147,51,234,0.28);
     --font-mono: 'JetBrains Mono', 'Cascadia Code', 'Fira Code', ui-monospace, monospace;
+
+    /* ── Semantic text / bg / border variables used by dashboard tabs ── */
+    --color-text:         rgba(229, 231, 235, 1);       /* gray-200 */
+    --color-text-muted:   rgba(107, 114, 128, 1);       /* gray-500 */
+    --color-text-dim:     rgba(75, 85, 99, 1);          /* gray-600 */
+    --color-bg-base:      rgba(0, 0, 0, 0.4);
+    --color-bg-hover:     rgba(255, 255, 255, 0.06);
+    --color-border:       rgba(255, 255, 255, 0.08);
+    --color-border-dim:   rgba(255, 255, 255, 0.05);
+    --color-zion-green:   rgb(34, 197, 94);
+    --color-zion-red:     rgb(239, 68, 68);
   }
 
   /* Theme variants — identical to website */
