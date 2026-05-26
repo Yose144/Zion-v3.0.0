@@ -6,6 +6,7 @@ import { useAlertStore } from '../../stores/alertStore';
 import { Card } from '../ui/Card';
 import { HealthBadge } from '../ui/Badge';
 import { CardSkeleton } from '../ui/Skeleton';
+import { ChecklistWidget } from '../ui/ChecklistWidget';
 import type { HealthStatus } from '../../types/api';
 
 // ── Hero stat card ─────────────────────────────────────────────────────────────
@@ -285,6 +286,9 @@ export default function OverviewTab() {
         </Card>
 
       </div>
+
+      {/* ── Launch checklist ── */}
+      <ChecklistWidget />
 
       {/* ── Pool detail ── */}
       {pool && (
