@@ -46,8 +46,8 @@ export default function EnvTab() {
                 onClick={() => setSelected(f.path)}
                 className={`w-full text-left text-xs font-mono px-3 py-2 rounded transition-colors truncate
                   ${selected === f.path
-                    ? 'bg-(--color-zion-purple)/20 text-(--color-zion-purple) border border-(--color-zion-purple)/40'
-                    : 'text-(--color-text-muted) hover:bg-(--color-bg-hover) hover:text-(--color-text)'
+                    ? 'bg-zion-purple/20 text-zion-purple border border-zion-purple/40'
+                    : 'text-gray-500 hover:bg-white/5 hover:text-gray-200'
                   }`}
               >
                 {f.path.split('/').pop() ?? f.path}
@@ -58,7 +58,7 @@ export default function EnvTab() {
           {/* File content */}
           {current && (
             <Card className="flex-1 min-w-0" accent="cyan" title={current.path}>
-              <pre className="text-xs font-mono text-(--color-text-dim) whitespace-pre-wrap overflow-auto max-h-96 bg-(--color-bg-base) rounded p-3">
+              <pre className="text-xs font-mono text-gray-600 whitespace-pre-wrap overflow-auto max-h-96 bg-black/40 rounded p-3">
                 {current.content}
               </pre>
             </Card>
