@@ -99,14 +99,39 @@ export const api = {
   serviceStop:    (svc: string) => apiPost<{ ok: boolean }>(`/api/service/${svc}/stop`, {}),
   serviceRestart: (svc: string) => apiPost<{ ok: boolean }>(`/api/service/${svc}/restart`, {}),
 
-  // ── Node actions ─────────────────────────────────────────────────────────
+  // ── Stack launch / stop ──────────────────────────────────────────────────
+
+  stackLaunch: () => apiPost<{ ok: boolean; message?: string }>('/api/stack/launch', {}),
+  stackStop:   () => apiPost<{ ok: boolean; message?: string }>('/api/stack/stop', {}),
+  stopAll:     () => apiPost<{ ok: boolean; message?: string }>('/api/stack/stop-all', {}),
+
+  // ── Node 1 / Node 2 ──────────────────────────────────────────────────────
+
+  node1Start:   () => apiPost<{ ok: boolean }>('/api/node1/start', {}),
+  node1Stop:    () => apiPost<{ ok: boolean }>('/api/node1/stop', {}),
+  node1Restart: () => apiPost<{ ok: boolean }>('/api/node1/restart', {}),
+  node2Start:   () => apiPost<{ ok: boolean }>('/api/node2/start', {}),
+  node2Stop:    () => apiPost<{ ok: boolean }>('/api/node2/stop', {}),
+  node2Restart: () => apiPost<{ ok: boolean }>('/api/node2/restart', {}),
+
+  // ── Pool ─────────────────────────────────────────────────────────────────
+
+  poolStart:   () => apiPost<{ ok: boolean }>('/api/pool/start', {}),
+  poolStop:    () => apiPost<{ ok: boolean }>('/api/pool/stop', {}),
+  poolRestart: () => apiPost<{ ok: boolean }>('/api/pool/restart', {}),
+
+  // ── Miner ────────────────────────────────────────────────────────────────
+
+  minerStart:    () => apiPost<{ ok: boolean }>('/api/miner/start', {}),
+  minerStop:     () => apiPost<{ ok: boolean }>('/api/miner/stop', {}),
+  minerRestart:  () => apiPost<{ ok: boolean }>('/api/miner/restart', {}),
+  minerStartGpu: () => apiPost<{ ok: boolean }>('/api/miner/start-gpu', {}),
+  minerStartCpu: () => apiPost<{ ok: boolean }>('/api/miner/start-cpu', {}),
+
+  // ── Generic node start (aliases) ─────────────────────────────────────────
 
   nodeStart: ()  => apiPost<{ ok: boolean }>('/api/node/start', {}),
   nodeStop:  ()  => apiPost<{ ok: boolean }>('/api/node/stop', {}),
-  poolStart: ()  => apiPost<{ ok: boolean }>('/api/pool/start', {}),
-  poolStop:  ()  => apiPost<{ ok: boolean }>('/api/pool/stop', {}),
-  minerStart: () => apiPost<{ ok: boolean }>('/api/miner/start', {}),
-  minerStop:  () => apiPost<{ ok: boolean }>('/api/miner/stop', {}),
 
   // ── CLI ──────────────────────────────────────────────────────────────────
 
