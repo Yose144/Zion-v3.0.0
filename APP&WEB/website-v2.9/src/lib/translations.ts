@@ -16,6 +16,7 @@ const t = {
     api:      { cs: 'API', en: 'API' },
     docs:     { cs: 'Dokumentace', en: 'Docs' },
     dashboard:  { cs: 'Přehled',  en: 'Dashboard' },
+    guardian:   { cs: 'Guardian', en: 'Guardian' },
     warp:       { cs: 'WARP',        en: 'WARP' },
     dao:        { cs: 'DAO',         en: 'DAO' },
     bridge:     { cs: 'Most',        en: 'Bridge' },
