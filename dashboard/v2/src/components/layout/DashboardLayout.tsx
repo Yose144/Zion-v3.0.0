@@ -35,9 +35,9 @@ const SettingsTab    = lazy(() => import('../tabs/SettingsTab'));
 function TabFallback() {
   return (
     <div className="flex items-center justify-center h-64">
-      <div className="flex items-center gap-3 text-slate-500">
-        <Activity size={16} className="animate-pulse text-purple-400" />
-        <span className="text-sm font-medium tracking-wide">Loading module…</span>
+      <div className="flex items-center gap-3 text-gray-500">
+        <Activity size={16} className="animate-pulse text-zion-purple" />
+        <span className="text-sm font-medium tracking-wide text-gray-400">Loading module…</span>
       </div>
     </div>
   );
@@ -143,7 +143,7 @@ export function DashboardLayout() {
     setToasts(prev => prev.filter(t => t.id !== id));
 
   return (
-    <div className="flex h-screen overflow-hidden zion-shell">
+    <div className="flex h-screen overflow-hidden bg-black">
       <Sidebar
         active={activeTab}
         onSelect={setActiveTab}
@@ -152,46 +152,35 @@ export function DashboardLayout() {
       />
 
       <main className="flex-1 overflow-hidden flex flex-col min-w-0">
-        {/* Top header bar */}
-        <header
-          className="shrink-0 px-4 md:px-6 py-3 flex items-center gap-3"
-          style={{
-            background: 'rgba(5, 7, 16, 0.7)',
-            borderBottom: '1px solid rgba(255,255,255,0.07)',
-            backdropFilter: 'blur(20px)',
-          }}
-        >
+        {/* Top header bar — same as website nav style */}
+        <header className="shrink-0 px-4 md:px-6 py-3 flex items-center gap-3 border-b border-white/8 bg-black/80 backdrop-blur-2xl">
           {/* Hamburger — mobile only */}
           <button
-            className="md:hidden p-1.5 rounded-lg text-slate-500 hover:text-slate-200 hover:bg-white/5 transition-colors"
+            className="md:hidden p-1.5 rounded-xl border border-white/10 bg-white/5 text-gray-400 hover:text-white hover:border-white/20 transition-colors"
             onClick={() => setMobileOpen(true)}
             aria-label="Open navigation"
           >
             <Menu size={17} />
           </button>
 
-          {/* Tab title — gradient on active */}
-          <h1 className="text-sm font-semibold text-gradient flex-1">
+          {/* Tab title */}
+          <h1 className="text-sm font-semibold text-white flex-1">
             {TAB_LABELS[activeTab] ?? activeTab.replace(/-/g, ' ')}
           </h1>
 
           {/* Live indicator */}
-          <div className="hidden sm:flex items-center gap-2">
-            <span className={`w-1.5 h-1.5 rounded-full ${connected ? 'dot-healthy pulse-live' : 'dot-down'}`} />
-            <span className="text-[11px] font-medium tracking-wide"
-              style={{ color: connected ? 'rgba(134,239,172,0.7)' : 'rgba(248,113,113,0.7)' }}
-            >
+          <div className="hidden sm:flex items-center gap-2 px-3 py-1 rounded-full border border-white/8 bg-white/5">
+            <span className={`w-1.5 h-1.5 rounded-full ${connected ? 'bg-green-400' : 'bg-red-400'}`}
+              style={connected ? { boxShadow: '0 0 6px rgba(74,222,128,0.8)' } : undefined}
+            />
+            <span className={`text-[11px] font-medium tracking-wide ${connected ? 'text-green-400' : 'text-red-400'}`}>
               {connected ? 'live' : 'polling'}
             </span>
           </div>
 
           {/* Help button */}
           <button
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-500 hover:text-slate-200 transition-colors text-xs font-bold font-mono"
-            style={{
-              border: '1px solid rgba(255,255,255,0.1)',
-              background: 'rgba(255,255,255,0.04)',
-            }}
+            className="w-7 h-7 rounded-xl flex items-center justify-center border border-white/10 bg-white/5 text-gray-500 hover:text-white hover:border-white/20 transition-colors text-xs font-bold font-mono"
             onClick={() => setShowHelp(true)}
             title="Keyboard shortcuts (?)"
           >
