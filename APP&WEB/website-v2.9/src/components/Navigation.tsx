@@ -29,6 +29,7 @@ export default function Navigation() {
         { href: '/network', label: tr('nav', 'network', lang) },
         { href: '/explorer', label: tr('nav', 'explorer', lang) },
         { href: '/dashboard', label: tr('nav', 'dashboard', lang) },
+        { href: '/dashboard/guardian', label: tr('nav', 'guardian', lang) },
         { href: '/pool', label: tr('nav', 'pool', lang) },
         { href: '/mining', label: tr('nav', 'mining', lang) },
         { href: '/benchmarks', label: tr('nav', 'benchmarks', lang) },
