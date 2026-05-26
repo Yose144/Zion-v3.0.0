@@ -1,13 +1,69 @@
 # DASHV2 — ZION Dashboard v2.0 Upgrade Plan
 
-> **Datum:** 2026-05-25
+> **Datum:** 2026-05-26
 > **Autor:** Devin / ZION Core Team
-> **Cíl:** Kompletní přepis a modernizace dashboardu z monolitického Python+Vanilla-JS stacku na modularizovaný, typovaný, výkonný systém.
-> **Status:** ✅ MVP hotov — branch `feat/dashboard-v2`, commit `bc07d88c`
+> **Cíl:** Trojdílná dashboard architektura — lokální control, DAO správa, Guardian portal.
+> **Status:** ✅ MVP v2 hotov — branch `feat/dashboard-v2`, commit `688d2831`
 
 ---
 
-## Stav implementace (2026-05-25)
+## Trojdílná dashboard architektura
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    ZION Dashboard Ecosystem (3 produkty)                       │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌──────────────┐   ┌──────────────┐   ┌──────────────┐                    │
+│  │  LOCAL v1    │   │  DAO v2      │   │  GUARDIAN    │                    │
+│  │  (app.py)    │   │  (Vite+React)│   │  (web v2.9)  │                    │
+│  │              │   │              │   │              │                    │
+│  │  Fullstack   │   │  DAO + Ops   │   │  Monitoring  │                    │
+│  │  Control     │   │  + Wallets   │   │  + Treasury  │                    │
+│  │              │   │              │   │              │                    │
+│  │  Who: Core   │   │  Who: DAO    │   │  Who: Guard  │                    │
+│  │  Operator    │   │  Team        │   │  Team        │                    │
+│  │  (W11 local) │   │  (Vite dev)  │   │  (web public)│                    │
+│  └──────┬───────┘   └──────┬───────┘   └──────┬───────┘                    │
+│         │                  │                  │                             │
+│         ▼                  ▼                  ▼                             │
+│  ┌──────────────────────────────────────────────────────┐                  │
+│  │           Python Backend (app.py :8766)               │                  │
+│  │  ├── /api/health  ──►  HealthMap                     │                  │
+│  │  ├── /api/status  ──►  StatusResponse                 │                  │
+│  │  ├── /api/blocks  ──►  BlockSummary[]                 │                  │
+│  │  ├── /api/v2/status ──► batch                         │                  │
+│  │  ├── /api/controls ──►  run_control()                 │                  │
+│  │  ├── /api/logs/*  ──►  tail_log()                     │                  │
+│  │  └── /api/dao/*   ──►  proxy 8081                     │                  │
+│  └──────────────────────────────────────────────────────┘                  │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Local Control Dashboard (`/dashboard` — app.py)
+- **Host:** `127.0.0.1:8766` (lokální, přístupný jen z W11)
+- **Účel:** Fullstack spuštění/zastavení — Node1, Node2, Pool, Miner, AI
+- **Taby:** Controls, Logs, Env, Launch Day, Ops, Settings
+- **Přístup:** Žádná autentizace — předpokládá se lokální použití
+- **Bezpečnost:** Port 8766 není veřejně exposovaný
+
+### DAO Management Dashboard (`dashboard/v2/` — Vite+React)
+- **Host:** `localhost:5173` (dev) nebo servované z app.py
+- **Účel:** DAO governance, treasury management, proposal view
+- **Taby:** DAO, Wallets, L1–L6 layers, Alerts, Explorer, Services
+- **Přístup:** Vite dev server (pro vývojáře DAO teamu)
+- **Bezpečnost:** Žádná autentizace v MVP — později API key
+
+### Guardian Portal (`APP&WEB/website-v2.9/dashboard/` — Next.js)
+- **Host:** `zionterranova.com/dashboard` (public)
+- **Účel:** Read-only monitoring pro Guardian tým — pool stats, treasury, alerts
+- **Autentizace:** ZION wallet connect (MetaMask / ZION L1 SDK)
+- **Taby:** Pool Metrics, System Health, Treasury (read-only), Alerts
+- **Bezpečnost:** Wallet sign-in + role-based access (Guardian role)
+
+---
+
+## Stav implementace (2026-05-26)
 
 ### ✅ Dokončeno
 
@@ -354,7 +410,7 @@ Všechny existující `/api/*` endpointy zůstávají. Nové endpointy:
 
 ---
 
-*Poslední aktualizace: 2026-05-25 (commit `bc07d88c`)*
+*Poslední aktualizace: 2026-05-26 (commit `688d2831`)*
 
 *Generated with [Devin](https://cli.devin.ai/docs)*
 *Co-Authored-By: Devin <158243242+devin-ai-integration[bot]@users.noreply.github.com>*
