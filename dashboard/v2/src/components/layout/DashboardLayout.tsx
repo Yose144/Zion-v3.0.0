@@ -1,6 +1,6 @@
-// ─── ZION Dashboard v2 — DashboardLayout ─────────────────────────────────────
+// ─── ZION Dashboard v2 — DashboardLayout (v2.9 aesthetic) ───────────────────
 import React, { useState, useEffect, lazy, Suspense } from 'react';
-import { Menu } from 'lucide-react';
+import { Menu, Activity } from 'lucide-react';
 import { Sidebar, type TabId } from './Sidebar';
 import { useWebSocket } from '../../hooks/useWebSocket';
 import { useStatusStore } from '../../stores/statusStore';
@@ -35,7 +35,10 @@ const SettingsTab    = lazy(() => import('../tabs/SettingsTab'));
 function TabFallback() {
   return (
     <div className="flex items-center justify-center h-64">
-      <div className="text-(--color-text-muted) text-sm animate-pulse">Loading...</div>
+      <div className="flex items-center gap-3 text-slate-500">
+        <Activity size={16} className="animate-pulse text-purple-400" />
+        <span className="text-sm font-medium tracking-wide">Loading module…</span>
+      </div>
     </div>
   );
 }
@@ -61,9 +64,35 @@ function TabContent({ active }: { active: TabId }) {
     case 'ops':         return <OpsTab />;
     case 'launch-day':  return <LaunchDayTab />;
     case 'settings':    return <SettingsTab />;
-    default:            return <div className="p-8 text-(--color-text-muted)">Tab not found</div>;
+    default:            return <div className="p-8 text-slate-500">Tab not found</div>;
   }
 }
+
+// Tab label prettifier
+const TAB_LABELS: Partial<Record<TabId, string>> = {
+  'overview':   'Overview',
+  'logs':       'Live Logs',
+  'explorer':   'Block Explorer',
+  'controls':   'Node Controls',
+  'charts':     'Analytics',
+  'services':   'Services',
+  'l1':         'L1 Consensus',
+  'l2':         'L2 Bridge',
+  'l3':         'L3 Warp',
+  'l4':         'L4 Oasis',
+  'l5':         'L5 Space',
+  'l6':         'L6 Free',
+  'hiran':      'Hiran AI',
+  'dao':        'DAO Governance',
+  'wallets':    'Wallets',
+  'alerts':     'Alerts',
+  'topology':   'Network Topology',
+  'env':        'Env Files',
+  'database':   'Database',
+  'ops':        'Ops',
+  'launch-day': 'Launch Day',
+  'settings':   'Settings',
+};
 
 export function DashboardLayout() {
   const [activeTab, setActiveTab] = useState<TabId>('overview');
@@ -73,6 +102,7 @@ export function DashboardLayout() {
 
   const collapsed = useSettingsStore(s => s.sidebarCollapsed);
   const update = useSettingsStore(s => s.update);
+  const connected = useStatusStore(s => s.connected);
 
   // Init WebSocket (binds to stores)
   useWebSocket();
@@ -113,7 +143,7 @@ export function DashboardLayout() {
     setToasts(prev => prev.filter(t => t.id !== id));
 
   return (
-    <div className="flex h-screen overflow-hidden bg-(--color-bg-base)">
+    <div className="flex h-screen overflow-hidden zion-shell">
       <Sidebar
         active={activeTab}
         onSelect={setActiveTab}
@@ -122,24 +152,46 @@ export function DashboardLayout() {
       />
 
       <main className="flex-1 overflow-hidden flex flex-col min-w-0">
-        {/* Tab title bar */}
-        <header className="shrink-0 px-4 md:px-6 py-3 border-b border-(--color-border) flex items-center gap-3 bg-(--color-bg-panel)">
+        {/* Top header bar */}
+        <header
+          className="shrink-0 px-4 md:px-6 py-3 flex items-center gap-3"
+          style={{
+            background: 'rgba(5, 7, 16, 0.7)',
+            borderBottom: '1px solid rgba(255,255,255,0.07)',
+            backdropFilter: 'blur(20px)',
+          }}
+        >
           {/* Hamburger — mobile only */}
           <button
-            className="md:hidden p-1 rounded hover:bg-(--color-bg-hover) text-(--color-text-muted) hover:text-(--color-text) transition-colors"
+            className="md:hidden p-1.5 rounded-lg text-slate-500 hover:text-slate-200 hover:bg-white/5 transition-colors"
             onClick={() => setMobileOpen(true)}
             aria-label="Open navigation"
           >
-            <Menu size={18} />
+            <Menu size={17} />
           </button>
 
-          <h1 className="text-sm font-semibold text-(--color-text) capitalize flex-1">
-            {activeTab.replace(/-/g, ' ')}
+          {/* Tab title — gradient on active */}
+          <h1 className="text-sm font-semibold text-gradient flex-1">
+            {TAB_LABELS[activeTab] ?? activeTab.replace(/-/g, ' ')}
           </h1>
+
+          {/* Live indicator */}
+          <div className="hidden sm:flex items-center gap-2">
+            <span className={`w-1.5 h-1.5 rounded-full ${connected ? 'dot-healthy pulse-live' : 'dot-down'}`} />
+            <span className="text-[11px] font-medium tracking-wide"
+              style={{ color: connected ? 'rgba(134,239,172,0.7)' : 'rgba(248,113,113,0.7)' }}
+            >
+              {connected ? 'live' : 'polling'}
+            </span>
+          </div>
 
           {/* Help button */}
           <button
-            className="p-1 rounded hover:bg-(--color-bg-hover) text-(--color-text-muted) hover:text-(--color-text) transition-colors text-xs font-mono"
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-slate-500 hover:text-slate-200 transition-colors text-xs font-bold font-mono"
+            style={{
+              border: '1px solid rgba(255,255,255,0.1)',
+              background: 'rgba(255,255,255,0.04)',
+            }}
             onClick={() => setShowHelp(true)}
             title="Keyboard shortcuts (?)"
           >
