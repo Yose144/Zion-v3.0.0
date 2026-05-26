@@ -1,7 +1,7 @@
 // ─── ZION Dashboard v2 — Status Store ───────────────────────────────────────
 import { create } from 'zustand';
 import type { StatusResponse, HealthMap, MetricPoint } from '../types/api';
-import api from '../api/client';
+import api, { apiFetch } from '../api/client';
 
 interface StatusState {
   status: StatusResponse | null;
@@ -49,7 +49,9 @@ export const useStatusStore = create<StatusState>((set) => ({
 
   fetchHistory: async () => {
     try {
-      const history = await api.history();
+      // Server returns { samples: MetricPoint[] } — unwrap here
+      const raw = await apiFetch<{ samples?: MetricPoint[] } | MetricPoint[]>('/api/history');
+      const history = Array.isArray(raw) ? raw : (raw as { samples?: MetricPoint[] }).samples ?? [];
       set({ history });
     } catch {
       // non-critical
