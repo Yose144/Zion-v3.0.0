@@ -1,378 +1,339 @@
 @import "tailwindcss";
 
 /* ══════════════════════════════════════════════════════════════════════
-   ZION Dashboard v2 — Design System (v2.9 aesthetic)
-   Mirrors website-v2.9/src/app/globals.css design language
+   ZION Dashboard v2 — Design System
+   ✦ Exact mirror of website-v2.9/src/app/globals.css
+   ✦ bg-black body, rgba(var(--color-*)) triplets, zion-* Tailwind tokens
    ══════════════════════════════════════════════════════════════════════ */
 
-/* ── Tailwind theme tokens ────────────────────────────────────────────── */
+/* ── CSS custom properties (RGB triplets, same as website-v2.9) ───── */
+@layer base {
+  :root {
+    --color-zion-gold:   255 215 0;
+    --color-zion-purple: 147 51 234;
+    --color-zion-cyan:   6 182 212;
+    --color-zion-blue:   30 58 138;
+    --color-bg:          0 0 0;
+    --color-fg:          255 255 255;
+    --zion-radius-sm:    0.85rem;
+    --zion-radius-md:    1.2rem;
+    --zion-radius-lg:    1.65rem;
+    --zion-radius-xl:    2rem;
+    --zion-border-subtle:  rgba(255,255,255,0.1);
+    --zion-border-strong:  rgba(255,255,255,0.18);
+    --zion-surface:        rgba(7,10,20,0.68);
+    --zion-surface-soft:   rgba(255,255,255,0.045);
+    --zion-surface-hover:  rgba(255,255,255,0.075);
+    --zion-shadow-panel:   0 24px 90px rgba(0,0,0,0.42);
+    --zion-shadow-glow:    0 0 42px rgba(147,51,234,0.28);
+    --font-mono: 'JetBrains Mono', 'Cascadia Code', 'Fira Code', ui-monospace, monospace;
+  }
+
+  /* Theme variants — identical to website */
+  [data-theme="cyber"] {
+    --color-zion-gold:   255 0 128;
+    --color-zion-purple: 168 85 247;
+    --color-zion-cyan:   34 211 238;
+    --color-bg:          6 8 20;
+    --color-fg:          230 255 255;
+  }
+
+  [data-theme="matrix-light"] {
+    --color-zion-gold:   180 255 200;
+    --color-zion-purple: 34 197 94;
+    --color-zion-cyan:   74 222 128;
+    --color-bg:          5 8 5;
+    --color-fg:          230 255 240;
+  }
+
+  /* Body — bg-black + same radial mesh as website */
+  body {
+    font-family: system-ui, 'Inter', -apple-system, sans-serif;
+    background:
+      radial-gradient(circle at 18% -8%, rgba(var(--color-zion-purple), 0.18), transparent 34rem),
+      radial-gradient(circle at 86% 8%,  rgba(var(--color-zion-cyan),   0.12), transparent 30rem),
+      linear-gradient(180deg, rgb(2 4 12), rgb(var(--color-bg)) 36rem);
+    color: rgb(var(--color-fg));
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: "cv02","cv03","cv04","cv11";
+  }
+
+  ::selection {
+    background: rgba(var(--color-zion-gold), 0.28);
+    color: white;
+  }
+
+  a, button { -webkit-tap-highlight-color: transparent; }
+
+  :focus-visible {
+    outline: 2px solid rgba(var(--color-zion-cyan), 0.85);
+    outline-offset: 3px;
+  }
+}
+
+/* ── Tailwind v4 theme tokens (enables bg-zion-gold/10, text-zion-cyan etc.) ── */
 @theme {
-  /* RGB triplets — enables `rgba(var(--color-*), <alpha>)` in Tailwind */
-  --color-zion-gold:    255 215 0;
-  --color-zion-purple:  147 51 234;
-  --color-zion-cyan:    6 182 212;
-  --color-zion-green:   34 197 94;
-  --color-zion-red:     239 68 68;
-  --color-zion-orange:  249 115 22;
-  --color-bg:           2 4 12;
-  --color-fg:           203 213 225;
-
-  /* Legacy hex tokens (used by some components) */
-  --color-bg-base:      #02040C;
-  --color-bg-panel:     rgba(7, 10, 20, 0.68);
-  --color-bg-card:      rgba(7, 10, 20, 0.55);
-  --color-bg-hover:     rgba(255, 255, 255, 0.06);
-  --color-border:       rgba(255, 255, 255, 0.1);
-  --color-border-strong: rgba(255, 255, 255, 0.18);
-  --color-text:         #CBD5E1;
-  --color-text-muted:   #64748B;
-  --color-text-dim:     #94A3B8;
-
-  --font-mono: ui-monospace, 'Cascadia Code', 'Fira Code', Consolas, monospace;
-
-  /* Border radii (v2.9 scale) */
-  --zion-radius-sm:   0.85rem;
-  --zion-radius-md:   1.2rem;
-  --zion-radius-lg:   1.65rem;
-  --zion-radius-xl:   2rem;
-
-  /* Surfaces */
-  --zion-surface:       rgba(7, 10, 20, 0.68);
-  --zion-surface-soft:  rgba(255, 255, 255, 0.045);
-  --zion-surface-hover: rgba(255, 255, 255, 0.075);
-
-  /* Borders */
-  --zion-border-subtle: rgba(255, 255, 255, 0.1);
-  --zion-border-strong: rgba(255, 255, 255, 0.18);
-
-  /* Shadows */
-  --zion-shadow-panel: 0 24px 90px rgba(0, 0, 0, 0.42);
-  --zion-shadow-glow:  0 0 42px rgba(147, 51, 234, 0.28);
+  --color-zion-gold:   rgb(255 215 0);
+  --color-zion-purple: rgb(147 51 234);
+  --color-zion-cyan:   rgb(6 182 212);
+  --color-zion-blue:   rgb(30 58 138);
+  --color-zion-green:  rgb(34 197 94);
+  --color-zion-red:    rgb(239 68 68);
 }
 
-/* ── Theme variants ───────────────────────────────────────────────────── */
-[data-theme="cyber"] {
-  --color-zion-gold:   255 0 128;
-  --color-zion-purple: 168 85 247;
-  --color-zion-cyan:   34 211 238;
-  --color-bg:          6 8 20;
-  --color-fg:          230 255 255;
-}
-
-[data-theme="matrix"] {
-  --color-zion-gold:   180 255 200;
-  --color-zion-purple: 34 197 94;
-  --color-zion-cyan:   74 222 128;
-  --color-bg:          5 8 5;
-  --color-fg:          230 255 240;
-}
-
-/* ── Base reset ───────────────────────────────────────────────────────── */
-*, *::before, *::after { box-sizing: border-box; }
-
-html, body, #root {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  background:
-    radial-gradient(circle at 18% -8%, rgba(var(--color-zion-purple), 0.18), transparent 34rem),
-    radial-gradient(circle at 86% 8%,  rgba(var(--color-zion-cyan), 0.12),   transparent 30rem),
-    linear-gradient(180deg, rgb(2 4 12), rgb(var(--color-bg)) 60rem);
-  color: rgb(var(--color-fg));
-  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
-  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-}
-
-/* ── Selection highlight ──────────────────────────────────────────────── */
-::selection {
-  background: rgba(var(--color-zion-gold), 0.28);
-  color: white;
-}
-
-/* ── Focus ring ───────────────────────────────────────────────────────── */
-:focus-visible {
-  outline: 2px solid rgba(var(--color-zion-cyan), 0.85);
-  outline-offset: 3px;
-}
-
-/* ── Scrollbar ────────────────────────────────────────────────────────── */
-::-webkit-scrollbar         { width: 6px; height: 6px; }
-::-webkit-scrollbar-track   { background: rgb(2 4 12); }
-::-webkit-scrollbar-thumb   {
-  background: linear-gradient(180deg,
-    rgb(var(--color-zion-gold)),
-    rgb(var(--color-zion-purple)));
-  border-radius: 3px;
+/* ── Scrollbar ─────────────────────────────────────────────────────────── */
+::-webkit-scrollbar       { width: 10px; }
+::-webkit-scrollbar-track { background: #1a1a1a; }
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #FFD700, #9333EA);
+  border-radius: 5px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg,
-    rgb(var(--color-zion-purple)),
-    rgb(var(--color-zion-cyan)));
+  background: linear-gradient(180deg, #9333EA, #06B6D4);
 }
 
 /* ══════════════════════════════════════════════════════════════════════
-   ZION Utility Classes — mirrored from website-v2.9
+   Utility classes — exact mirror of website-v2.9/globals.css
    ══════════════════════════════════════════════════════════════════════ */
 
-/* ── Glassmorphism panels ─────────────────────────────────────────────── */
-.zion-panel {
-  border-radius: clamp(1rem, 2.5vw, 1.5rem);
-  border: 1px solid var(--zion-border-subtle);
-  background:
-    linear-gradient(135deg, rgba(255,255,255,0.075), rgba(255,255,255,0.028)),
-    var(--zion-surface);
-  backdrop-filter: blur(22px) saturate(140%);
-  box-shadow: var(--zion-shadow-panel);
+@layer utilities {
+
+  /* ── zion-shell: root container with grid overlay ── */
+  .zion-shell {
+    min-height: 100vh;
+    position: relative;
+    background: transparent;
+    isolation: isolate;
+  }
+  .zion-shell::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: -1;
+    background:
+      linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.014) 1px, transparent 1px),
+      radial-gradient(circle at 12% 18%, rgba(var(--color-zion-purple), 0.12), transparent 48%),
+      radial-gradient(circle at 88% 74%, rgba(var(--color-zion-cyan),   0.08), transparent 44%);
+    background-size: 96px 96px, 96px 96px, auto, auto;
+    mask-image: linear-gradient(to bottom, black 0%, black 70%, transparent 100%);
+  }
+
+  /* ── zion-panel: main glass panel ── */
+  .zion-panel {
+    border-radius: clamp(1rem, 2.5vw, 1.5rem);
+    border: 1px solid var(--zion-border-subtle);
+    background:
+      linear-gradient(135deg, rgba(255,255,255,0.075), rgba(255,255,255,0.028)),
+      var(--zion-surface);
+    backdrop-filter: blur(22px) saturate(140%);
+    box-shadow: var(--zion-shadow-panel);
+  }
+
+  /* ── zion-panel-soft: lighter variant ── */
+  .zion-panel-soft {
+    border-radius: var(--zion-radius-lg);
+    border: 1px solid var(--zion-border-subtle);
+    background: var(--zion-surface-soft);
+    backdrop-filter: blur(18px);
+  }
+
+  /* ── zion-panel-hover ── */
+  .zion-panel-hover {
+    transition: border-color 180ms ease, background-color 180ms ease,
+                transform 180ms ease, box-shadow 180ms ease;
+  }
+  .zion-panel-hover:hover {
+    transform: translateY(-2px);
+    border-color: var(--zion-border-strong);
+    background-color: var(--zion-surface-hover);
+    box-shadow: var(--zion-shadow-panel), var(--zion-shadow-glow);
+  }
+
+  /* ── zion-glass: gold-tint glass ── */
+  .zion-glass {
+    border: 1px solid var(--zion-border-subtle);
+    background:
+      radial-gradient(circle at top left, rgba(var(--color-zion-gold), 0.12), transparent 28rem),
+      linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
+    backdrop-filter: blur(24px) saturate(150%);
+  }
+
+  /* ── zion-kicker: pill label ── */
+  .zion-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-radius: 9999px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: linear-gradient(90deg, rgba(255,255,255,0.07), rgba(255,255,255,0.035));
+    padding: 0.3rem 0.8rem;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: rgb(209 213 219);
+  }
+
+  /* ── Gradient text ── */
+  .text-gradient {
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    background-image: linear-gradient(to right,
+      rgb(var(--color-zion-gold)),
+      rgb(var(--color-zion-purple)),
+      rgb(var(--color-zion-cyan)));
+  }
+  .text-gradient-soft {
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    background-image: linear-gradient(110deg,
+      #fff7c2,
+      rgb(var(--color-zion-gold)),
+      rgb(var(--color-zion-cyan)));
+  }
+
+  /* ── Divider ── */
+  .zion-divider {
+    height: 1px;
+    border: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.14), transparent);
+  }
+
+  /* ── Buttons ── */
+  .zion-button-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem;
+    border-radius: var(--zion-radius-md);
+    background-image: linear-gradient(110deg,
+      rgb(var(--color-zion-gold)),
+      rgb(var(--color-zion-purple)) 52%,
+      rgb(var(--color-zion-cyan)));
+    padding: 0.9rem 1.35rem;
+    font-weight: 700;
+    color: white;
+    box-shadow: 0 18px 45px rgba(147,51,234,0.34);
+    transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
+    cursor: pointer;
+    border: none;
+  }
+  .zion-button-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 24px 60px rgba(147,51,234,0.44);
+    filter: saturate(1.08);
+  }
+  .zion-button-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  .zion-button-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem;
+    border-radius: var(--zion-radius-md);
+    border: 1px solid var(--zion-border-subtle);
+    background: rgba(255,255,255,0.055);
+    padding: 0.9rem 1.35rem;
+    font-weight: 650;
+    color: white;
+    backdrop-filter: blur(16px);
+    transition: border-color 180ms ease, background-color 180ms ease, transform 180ms ease;
+    cursor: pointer;
+  }
+  .zion-button-secondary:hover {
+    transform: translateY(-1px);
+    border-color: var(--zion-border-strong);
+    background: rgba(255,255,255,0.085);
+  }
+  .zion-button-secondary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  /* ── Glow effects ── */
+  .glow        { text-shadow: 0 0 20px rgba(255,215,0,0.5); }
+  .card-glow   { box-shadow: 0 0 30px rgba(147,51,234,0.3); }
+  .neon-border { box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 0 20px rgba(147,51,234,0.25); }
+
+  /* ── HUD grid ── */
+  .hud-grid {
+    background-image:
+      linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px),
+      linear-gradient(0deg,  rgba(255,255,255,0.04) 1px, transparent 1px);
+    background-size: 120px 120px;
+    border: 1px solid rgba(255,255,255,0.04);
+  }
+
+  /* ── Halo ring ── */
+  .halo-ring { position: relative; }
+  .halo-ring::after {
+    content: "";
+    position: absolute;
+    inset: -2px;
+    border-radius: inherit;
+    background: radial-gradient(circle, rgba(249,217,118,0.25), transparent 70%);
+    filter: blur(20px);
+    z-index: -1;
+  }
+
+  /* ── Log line colors ── */
+  .log-error   { color: #f87171; }
+  .log-warn    { color: #fbbf24; }
+  .log-info    { color: #60a5fa; }
+  .log-debug   { color: #6b7280; }
+  .log-success { color: #4ade80; }
+
+  /* ── Health dots ── */
+  .dot-healthy  { background: #22C55E; box-shadow: 0 0 6px rgba(34,197,94,0.7); }
+  .dot-degraded { background: #F97316; box-shadow: 0 0 6px rgba(249,115,22,0.7); }
+  .dot-down     { background: #EF4444; box-shadow: 0 0 6px rgba(239,68,68,0.7); }
+  .dot-unknown  { background: #6B7280; }
+
+  /* Mobile scroll lock */
+  body.menu-open { overflow: hidden; position: fixed; inset: 0; }
 }
 
-.zion-panel-soft {
-  border-radius: var(--zion-radius-lg);
-  border: 1px solid var(--zion-border-subtle);
-  background: var(--zion-surface-soft);
-  backdrop-filter: blur(18px);
+/* ── Animations ─────────────────────────────────────────────────────────── */
+@keyframes bubble-drift {
+  0%   { transform: translate3d(0, 0, 0) scale(0.95); }
+  50%  { transform: translate3d(12px, -18px, 0) scale(1.05); }
+  100% { transform: translate3d(-10px, 22px, 0) scale(1); }
 }
+.animate-bubble-drift { animation: bubble-drift 28s ease-in-out infinite alternate; }
 
-.zion-panel-hover {
-  transition: border-color 180ms ease, background-color 180ms ease,
-              transform 180ms ease, box-shadow 180ms ease;
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
-.zion-panel-hover:hover {
-  transform: translateY(-2px);
-  border-color: var(--zion-border-strong);
-  background-color: var(--zion-surface-hover);
-  box-shadow: var(--zion-shadow-panel), var(--zion-shadow-glow);
-}
+.animate-fadeIn { animation: fadeIn 0.3s ease-out; }
 
-/* Gold glass variant (for hero / overview cards) */
-.zion-glass {
-  border: 1px solid var(--zion-border-subtle);
-  background:
-    radial-gradient(circle at top left, rgba(var(--color-zion-gold), 0.12), transparent 28rem),
-    linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
-  backdrop-filter: blur(24px) saturate(150%);
-}
-
-/* ── Background grid overlay (zion-shell) ─────────────────────────────── */
-.zion-shell {
-  position: relative;
-  isolation: isolate;
-}
-.zion-shell::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: -1;
-  background:
-    linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.014) 1px, transparent 1px),
-    radial-gradient(circle at 12% 18%, rgba(var(--color-zion-purple), 0.12), transparent 48%),
-    radial-gradient(circle at 88% 74%, rgba(var(--color-zion-cyan), 0.08),   transparent 44%);
-  background-size: 96px 96px, 96px 96px, auto, auto;
-  mask-image: linear-gradient(to bottom, black 0%, black 70%, transparent 100%);
-}
-
-/* ── Typography ───────────────────────────────────────────────────────── */
-.text-gradient {
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-  background-image: linear-gradient(to right,
-    rgb(var(--color-zion-gold)),
-    rgb(var(--color-zion-purple)),
-    rgb(var(--color-zion-cyan)));
-}
-
-.text-gradient-soft {
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-  background-image: linear-gradient(110deg,
-    #fff7c2,
-    rgb(var(--color-zion-gold)),
-    rgb(var(--color-zion-cyan)));
-}
-
-/* ── Kicker badge ─────────────────────────────────────────────────────── */
-.zion-kicker {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  border-radius: 9999px;
-  border: 1px solid rgba(255,255,255,0.12);
-  background: linear-gradient(90deg, rgba(255,255,255,0.07), rgba(255,255,255,0.035));
-  padding: 0.3rem 0.8rem;
-  font-size: 0.65rem;
-  font-weight: 600;
-  letter-spacing: 0.28em;
-  text-transform: uppercase;
-  color: rgb(209 213 219);
-}
-
-/* ── Divider ──────────────────────────────────────────────────────────── */
-.zion-divider {
-  height: 1px;
-  border: 0;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.14), transparent);
-}
-
-/* ── Stat grid ────────────────────────────────────────────────────────── */
-.zion-stat-grid {
-  display: grid;
-  gap: 1rem;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
-}
-
-/* ── Buttons ──────────────────────────────────────────────────────────── */
-.zion-btn-primary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.55rem;
-  border-radius: var(--zion-radius-md);
-  background-image: linear-gradient(110deg,
-    rgb(var(--color-zion-gold)),
-    rgb(var(--color-zion-purple)) 52%,
-    rgb(var(--color-zion-cyan)));
-  padding: 0.75rem 1.25rem;
-  font-weight: 700;
-  font-size: 0.85rem;
-  color: white;
-  border: none;
-  cursor: pointer;
-  box-shadow: 0 18px 45px rgba(147, 51, 234, 0.34);
-  transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
-}
-.zion-btn-primary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 24px 60px rgba(147, 51, 234, 0.44);
-  filter: saturate(1.08);
-}
-.zion-btn-primary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.zion-btn-secondary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.55rem;
-  border-radius: var(--zion-radius-md);
-  border: 1px solid var(--zion-border-subtle);
-  background: rgba(255,255,255,0.055);
-  padding: 0.75rem 1.25rem;
-  font-weight: 600;
-  font-size: 0.85rem;
-  color: white;
-  cursor: pointer;
-  backdrop-filter: blur(16px);
-  transition: border-color 180ms ease, background-color 180ms ease, transform 180ms ease;
-}
-.zion-btn-secondary:hover {
-  transform: translateY(-1px);
-  border-color: var(--zion-border-strong);
-  background: rgba(255,255,255,0.085);
-}
-.zion-btn-secondary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-}
-
-/* ── Glow utilities ───────────────────────────────────────────────────── */
-.glow       { text-shadow: 0 0 20px rgba(255, 215, 0, 0.5); }
-.glow-gold  { text-shadow: 0 0 18px rgba(255, 215, 0, 0.65); }
-.glow-purple{ text-shadow: 0 0 18px rgba(147, 51, 234, 0.65); }
-.glow-cyan  { text-shadow: 0 0 18px rgba(6, 182, 212, 0.65); }
-.glow-green { text-shadow: 0 0 14px rgba(34, 197, 94, 0.55); }
-.glow-red   { text-shadow: 0 0 14px rgba(239, 68, 68, 0.55); }
-
-.card-glow  { box-shadow: 0 0 30px rgba(147, 51, 234, 0.3); }
-.neon-border {
-  box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 0 20px rgba(147,51,234,0.25);
-}
-
-/* ── Health indicator dots ────────────────────────────────────────────── */
-.dot-healthy  { background: #22C55E; box-shadow: 0 0 6px rgba(34,197,94,0.7); }
-.dot-degraded { background: #F97316; box-shadow: 0 0 6px rgba(249,115,22,0.7); }
-.dot-down     { background: #EF4444; box-shadow: 0 0 6px rgba(239,68,68,0.7); }
-.dot-unknown  { background: #6B7280; }
-
-/* ── Log line coloring ────────────────────────────────────────────────── */
-.log-error   { color: #f87171; }
-.log-warn    { color: #fbbf24; }
-.log-info    { color: #60a5fa; }
-.log-debug   { color: #6b7280; }
-.log-success { color: #4ade80; }
-
-/* ── Animations ───────────────────────────────────────────────────────── */
 @keyframes pulse-glow {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.4; }
-}
-.pulse-live { animation: pulse-glow 2s ease-in-out infinite; }
-
-@keyframes pulse-glow-ring {
   0%, 100% { filter: drop-shadow(0 0 8px currentColor); }
   50%       { filter: drop-shadow(0 0 16px currentColor); }
 }
-.animate-pulse-glow { animation: pulse-glow-ring 2s ease-in-out infinite; }
+.animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
 
 @keyframes shimmer {
   0%   { background-position: -200% center; }
   100% { background-position:  200% center; }
 }
 .shimmer {
-  background: linear-gradient(90deg,
-    transparent 0%, rgba(255,255,255,0.08) 50%, transparent 100%);
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.08) 50%, transparent 100%);
   background-size: 200% auto;
   animation: shimmer 2s linear infinite;
 }
 
-@keyframes bubble-drift {
-  0%   { transform: translate3d(0,   0,   0) scale(0.95); }
-  50%  { transform: translate3d(12px, -18px, 0) scale(1.05); }
-  100% { transform: translate3d(-10px, 22px, 0) scale(1); }
-}
-.animate-bubble-drift { animation: bubble-drift 28s ease-in-out infinite alternate; }
-
-/* ── HUD grid background ──────────────────────────────────────────────── */
-.hud-grid {
-  background-image:
-    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px),
-    linear-gradient(0deg,  rgba(255,255,255,0.04) 1px, transparent 1px);
-  background-size: 120px 120px;
-  border: 1px solid rgba(255,255,255,0.04);
-}
-
-/* ── Halo ring glow ───────────────────────────────────────────────────── */
-.halo-ring { position: relative; }
-.halo-ring::after {
-  content: "";
-  position: absolute;
-  inset: -2px;
-  border-radius: inherit;
-  background: radial-gradient(circle, rgba(249,217,118,0.25), transparent 70%);
-  filter: blur(20px);
-  z-index: -1;
-}
-
-/* ── Mobile menu lock ─────────────────────────────────────────────────── */
-body.menu-open {
-  overflow: hidden;
-  position: fixed;
-  inset: 0;
-}
-
-/* ── Reduced motion ───────────────────────────────────────────────────── */
+/* ── Reduced motion ─────────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
+
+/* ── GPU canvas ─────────────────────────────────────────────────────────── */
+canvas.fixed { will-change: transform; contain: strict; }
