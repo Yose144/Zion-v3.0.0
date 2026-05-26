@@ -5465,6 +5465,37 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 with open(install_log, "r", encoding="utf-8", errors="ignore") as f:
                     lines = [ln.rstrip("\n") for ln in f.readlines()[-200:]]
             self._json({"lines": lines, "file": str(install_log)})
+        # ── Dashboard v2 compatibility endpoints ─────────────────────────────
+        elif route == "/api/health":
+            # v2 client: GET /api/health → returns HealthMap {service: status}
+            self._json(_build_health_map())
+        elif route == "/api/blocks":
+            # v2 client: GET /api/blocks?limit=N → returns array of BlockSummary
+            limit = int(params.get("limit", ["20"])[0])
+            expl = build_explorer()
+            blocks = expl.get("recent_blocks", [])[:limit]
+            # Normalise to BlockSummary shape expected by v2
+            result = []
+            for b in blocks:
+                result.append({
+                    "height": b.get("height", 0),
+                    "hash": b.get("hash", b.get("hash_hex", "")),
+                    "ts": b.get("timestamp", 0),
+                    "txns": b.get("tx_count", 0),
+                    "size": b.get("size", 0),
+                    "difficulty": b.get("difficulty", 0),
+                })
+            self._json(result)
+        elif route.startswith("/api/block/"):
+            # v2 client: GET /api/block/{hashOrHeight}
+            slug = route.split("/api/block/", 1)[1].strip()
+            if slug.isdigit():
+                self._json(get_block_detail(height=int(slug)))
+            else:
+                self._json(get_block_detail(hash_hex=slug))
+        elif route == "/api/launch-day/status":
+            # v2 client alias for launch-day-prepare?action=status
+            self._json(get_launch_state())
         elif route == "/api/backup/list":
             backups = []
             backup_dir = REPO_ROOT / "backups"
@@ -5668,6 +5699,25 @@ class DashboardHandler(BaseHTTPRequestHandler):
             except Exception as e:
                 self._json({"error": f"NCL job submission failed: {str(e)[:80]}"})
             return
+        # ── Dashboard v2 compatibility: POST service/node/pool/miner control ─
+        elif re.match(r"^/api/service/[^/]+/(start|stop|restart)$", route):
+            parts = route.strip("/").split("/")  # ["api","service","<id>","<act>"]
+            svc_id, svc_action = parts[2], parts[3]
+            action_map = {
+                "start":   f"start-{svc_id}",
+                "stop":    f"stop-{svc_id}",
+                "restart": f"restart-{svc_id}",
+            }
+            self._json(run_control(action_map[svc_action]))
+        elif route in ("/api/node/start", "/api/node/stop"):
+            act = "start-node" if route.endswith("start") else "stop-node"
+            self._json(run_control(act))
+        elif route in ("/api/pool/start", "/api/pool/stop"):
+            act = "start-pool" if route.endswith("start") else "stop-pool"
+            self._json(run_control(act))
+        elif route in ("/api/miner/start", "/api/miner/stop"):
+            act = "start-miner" if route.endswith("start") else "stop-miner"
+            self._json(run_control(act))
         elif route == "/api/control":
             action = payload.get("action", "")
             env_overrides = payload.get("env")

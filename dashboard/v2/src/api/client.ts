@@ -16,7 +16,7 @@ const MAX_RETRIES = 2;
 
 // ── Fetch wrapper ────────────────────────────────────────────────────────────
 
-async function apiFetch<T>(
+export async function apiFetch<T>(
   path: string,
   options: RequestInit & { timeout?: number } = {},
   retries = MAX_RETRIES,
