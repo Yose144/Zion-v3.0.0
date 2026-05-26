@@ -5709,15 +5709,45 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 "restart": f"restart-{svc_id}",
             }
             self._json(run_control(action_map[svc_action]))
-        elif route in ("/api/node/start", "/api/node/stop"):
-            act = "start-node" if route.endswith("start") else "stop-node"
-            self._json(run_control(act))
-        elif route in ("/api/pool/start", "/api/pool/stop"):
-            act = "start-pool" if route.endswith("start") else "stop-pool"
-            self._json(run_control(act))
-        elif route in ("/api/miner/start", "/api/miner/stop"):
-            act = "start-miner" if route.endswith("start") else "stop-miner"
-            self._json(run_control(act))
+        # ── Stack-level endpoints ───────────────────────────────────────────
+        elif route == "/api/stack/launch":
+            self._json(run_control("launch-stack"))
+        elif route == "/api/stack/stop":
+            self._json(run_control("stop-stack"))
+        elif route == "/api/stack/stop-all":
+            self._json(run_control("stop-all"))
+        # ── Node 1 ───────────────────────────────────────────────────────────
+        elif route == "/api/node1/start":
+            self._json(run_control("start-node1"))
+        elif route == "/api/node1/stop":
+            self._json(run_control("stop-node1"))
+        elif route == "/api/node1/restart":
+            self._json(run_control("restart-node1"))
+        # ── Node 2 ───────────────────────────────────────────────────────────
+        elif route == "/api/node2/start":
+            self._json(run_control("start-node2"))
+        elif route == "/api/node2/stop":
+            self._json(run_control("stop-node2"))
+        elif route == "/api/node2/restart":
+            self._json(run_control("restart-node2"))
+        # ── Pool ─────────────────────────────────────────────────────────────
+        elif route in ("/api/pool/start", "/api/node/start"):
+            self._json(run_control("start-pool"))
+        elif route in ("/api/pool/stop", "/api/node/stop"):
+            self._json(run_control("stop-pool"))
+        elif route == "/api/pool/restart":
+            self._json(run_control("restart-pool"))
+        # ── Miner ────────────────────────────────────────────────────────────
+        elif route == "/api/miner/start":
+            self._json(run_control("start-miner"))
+        elif route == "/api/miner/stop":
+            self._json(run_control("stop-miner"))
+        elif route == "/api/miner/restart":
+            self._json(run_control("restart-miner"))
+        elif route == "/api/miner/start-gpu":
+            self._json(run_control("start-miner-gpu"))
+        elif route == "/api/miner/start-cpu":
+            self._json(run_control("start-miner-cpu"))
         elif route == "/api/control":
             action = payload.get("action", "")
             env_overrides = payload.get("env")
