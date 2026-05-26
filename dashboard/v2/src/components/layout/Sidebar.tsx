@@ -88,32 +88,17 @@ export function Sidebar({ active, onSelect, mobileOpen = false, onMobileClose }:
         className={`
           flex flex-col shrink-0 h-full transition-all duration-200
           fixed md:relative inset-y-0 left-0 z-40
+          border-r border-white/8 bg-black/80 backdrop-blur-2xl
           ${collapsed ? 'w-14' : 'w-52'}
           ${mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
         `}
-        style={{
-          background:
-            'linear-gradient(180deg, rgba(7,10,20,0.92) 0%, rgba(5,7,16,0.88) 100%)',
-          borderRight: '1px solid rgba(255,255,255,0.08)',
-          backdropFilter: 'blur(24px) saturate(140%)',
-        }}
       >
         {/* Header — ZION logo */}
-        <div
-          className="flex items-center justify-between px-3 py-4"
-          style={{ borderBottom: '1px solid rgba(255,255,255,0.07)' }}
-        >
+        <div className="flex items-center justify-between px-3 py-4 border-b border-white/8">
           {!collapsed && (
             <div className="flex items-center gap-2">
-              <span className="text-lg font-bold text-gradient glow tracking-widest">ZION</span>
-              <span
-                className="text-[10px] font-semibold tracking-widest uppercase px-1.5 py-0.5 rounded-full"
-                style={{
-                  background: 'rgba(255,215,0,0.1)',
-                  border: '1px solid rgba(255,215,0,0.25)',
-                  color: 'rgb(253 224 71)',
-                }}
-              >
+              <span className="text-lg font-bold text-gradient-soft tracking-widest">ZION</span>
+              <span className="text-[10px] font-semibold tracking-widest uppercase px-1.5 py-0.5 rounded-full bg-zion-gold/10 border border-zion-gold/25 text-yellow-300">
                 v2
               </span>
             </div>
@@ -123,7 +108,7 @@ export function Sidebar({ active, onSelect, mobileOpen = false, onMobileClose }:
           {onMobileClose && (
             <button
               onClick={onMobileClose}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-white/5 transition-colors md:hidden"
+              className="p-1.5 rounded-xl border border-white/10 bg-white/5 text-gray-400 hover:text-white transition-colors md:hidden"
             >
               <X size={15} />
             </button>
@@ -132,7 +117,7 @@ export function Sidebar({ active, onSelect, mobileOpen = false, onMobileClose }:
           {/* Collapse toggle */}
           <button
             onClick={() => update({ sidebarCollapsed: !collapsed })}
-            className="p-1.5 rounded-lg text-slate-500 hover:text-slate-300 hover:bg-white/5 transition-colors ml-auto hidden md:block"
+            className="p-1.5 rounded-xl border border-white/8 bg-white/4 text-gray-500 hover:text-gray-200 hover:border-white/20 transition-colors ml-auto hidden md:block"
             title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
@@ -141,11 +126,12 @@ export function Sidebar({ active, onSelect, mobileOpen = false, onMobileClose }:
 
         {/* Connection indicator */}
         {!collapsed && (
-          <div className="px-3 py-2.5 flex items-center gap-2.5">
-            <span className={`w-2 h-2 rounded-full ${connected ? 'dot-healthy pulse-live' : 'dot-down'}`} />
-            <span className="text-[11px] font-medium tracking-wide"
-              style={{ color: connected ? 'rgb(134 239 172)' : 'rgb(248 113 113)' }}
-            >
+          <div className="px-3 py-2.5 flex items-center gap-2">
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${connected ? 'bg-green-400' : 'bg-red-400'}`}
+              style={connected ? { boxShadow: '0 0 6px rgba(74,222,128,0.8)' } : undefined}
+            />
+            <span className={`text-[11px] font-medium ${connected ? 'text-green-400' : 'text-red-400'}`}>
               {connected ? 'Live · WebSocket' : 'Polling mode'}
             </span>
           </div>
@@ -158,7 +144,7 @@ export function Sidebar({ active, onSelect, mobileOpen = false, onMobileClose }:
             return (
               <div key={group}>
                 {!collapsed && (
-                  <p className="px-3 mb-1.5 text-[9px] font-bold uppercase tracking-[0.2em] text-slate-600">
+                  <p className="px-3 mb-1.5 text-[9px] font-bold uppercase tracking-[0.3em] text-gray-600">
                     {group}
                   </p>
                 )}
@@ -177,35 +163,22 @@ export function Sidebar({ active, onSelect, mobileOpen = false, onMobileClose }:
                             transition-all duration-150 relative
                             ${collapsed ? 'justify-center' : ''}
                             ${isActive
-                              ? 'font-semibold'
-                              : 'text-slate-500 hover:text-slate-200 font-medium'
+                              ? 'bg-white/10 border border-white/15 text-white font-semibold'
+                              : 'border border-transparent text-gray-500 hover:text-gray-200 hover:bg-white/5 font-medium'
                             }
                           `}
-                          style={isActive ? {
-                            background:
-                              'linear-gradient(135deg, rgba(147,51,234,0.18), rgba(6,182,212,0.08))',
-                            border: '1px solid rgba(147,51,234,0.3)',
-                            color: 'rgb(216 180 254)',
-                            boxShadow: '0 0 18px rgba(147,51,234,0.15)',
-                          } : {
-                            background: 'transparent',
-                            border: '1px solid transparent',
-                          }}
                         >
                           <Icon
                             size={15}
-                            className={`shrink-0 ${isActive ? 'text-violet-400' : ''}`}
+                            className={`shrink-0 ${isActive ? 'text-zion-cyan' : ''}`}
                           />
                           {!collapsed && (
                             <span className="truncate flex-1 text-left">{item.label}</span>
                           )}
                           {isAlerts && unread > 0 && (
                             <span
-                              className={`${collapsed ? 'absolute -top-1 -right-1' : ''} text-white text-[9px] rounded-full px-1.5 py-0.5 leading-none font-bold`}
-                              style={{
-                                background: 'linear-gradient(135deg, rgb(239,68,68), rgb(220,38,38))',
-                                boxShadow: '0 0 8px rgba(239,68,68,0.5)',
-                              }}
+                              className={`${collapsed ? 'absolute -top-1 -right-1' : ''} text-white text-[9px] rounded-full px-1.5 py-0.5 leading-none font-bold bg-red-500`}
+                              style={{ boxShadow: '0 0 8px rgba(239,68,68,0.5)' }}
                             >
                               {unread}
                             </span>
@@ -222,10 +195,7 @@ export function Sidebar({ active, onSelect, mobileOpen = false, onMobileClose }:
 
         {/* Footer */}
         {!collapsed && (
-          <div
-            className="px-3 py-3 text-[10px] text-slate-600 font-medium tracking-wide"
-            style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
-          >
+          <div className="px-3 py-3 border-t border-white/6 text-[10px] text-gray-600 font-medium tracking-wide">
             <span className="text-gradient-soft opacity-70">ZION 2.9.6</span>
             <span className="mx-1.5 opacity-30">·</span>
             <span className="opacity-50">Dashboard v2</span>

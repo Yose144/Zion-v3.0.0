@@ -1,5 +1,6 @@
 // ─── ZION Dashboard v2 — Logs Tab (v2.9 glass aesthetic) ────────────────────
 import React, { useCallback, useRef } from 'react';
+import { motion } from 'framer-motion';
 import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
 import { Search, Trash2, ArrowDown } from 'lucide-react';
 import { useLogStore, type LogLine } from '../../stores/logStore';
@@ -62,66 +63,42 @@ export default function LogsTab() {
   }, [lines.length]);
 
   return (
-    <div className="flex flex-col h-full">
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      className="flex flex-col h-full bg-black"
+    >
 
       {/* Toolbar */}
-      <div
-        className="shrink-0 flex items-center gap-2 px-4 py-2.5 flex-wrap"
-        style={{
-          background: 'rgba(5,7,16,0.8)',
-          borderBottom: '1px solid rgba(255,255,255,0.07)',
-          backdropFilter: 'blur(12px)',
-        }}
-      >
-        {/* Service selector pills */}
-        <div className="flex gap-1 flex-wrap overflow-x-auto">
-          {SERVICES.map(svc => (
+      <div className="shrink-0 px-4 py-3 border-b border-white/8 bg-black/80 backdrop-blur-xl flex items-center gap-3 flex-wrap">
+
+        {/* Service filter tabs */}
+        <div className="flex gap-1.5 flex-wrap overflow-x-auto">
+          {SERVICES.map(s => (
             <button
-              key={svc}
-              onClick={() => setActive(svc)}
-              className="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-medium transition-all whitespace-nowrap"
-              style={activeService === svc ? {
-                background: 'rgba(147,51,234,0.2)',
-                border: '1px solid rgba(147,51,234,0.4)',
-                color: 'rgb(196,181,253)',
-              } : {
-                background: 'transparent',
-                border: '1px solid transparent',
-                color: 'rgb(100,116,139)',
-              }}
-              onMouseEnter={e => {
-                if (activeService !== svc) {
-                  (e.currentTarget as HTMLButtonElement).style.color = 'rgb(203,213,225)';
-                  (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.04)';
-                }
-              }}
-              onMouseLeave={e => {
-                if (activeService !== svc) {
-                  (e.currentTarget as HTMLButtonElement).style.color = 'rgb(100,116,139)';
-                  (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
-                }
-              }}
+              key={s}
+              onClick={() => setActive(s)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-colors ${
+                activeService === s
+                  ? 'bg-white/10 border border-white/15 text-white'
+                  : 'border border-white/6 text-gray-500 hover:text-gray-200 hover:bg-white/5'
+              }`}
             >
-              {svc}
+              {s}
             </button>
           ))}
         </div>
 
-        {/* Search */}
-        <div
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl ml-auto"
-          style={{
-            background: 'rgba(255,255,255,0.05)',
-            border: '1px solid rgba(255,255,255,0.1)',
-          }}
-        >
-          <Search size={11} className="text-slate-500" />
+        {/* Search input */}
+        <div className="flex items-center gap-1.5 ml-auto">
+          <Search size={12} className="text-slate-500 shrink-0" />
           <input
             type="text"
             placeholder="Search logs…"
             value={searchQuery}
             onChange={e => setSearch(e.target.value)}
-            className="bg-transparent outline-none text-xs text-slate-200 w-36 placeholder:text-slate-600"
+            className="flex-1 min-w-[150px] px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-white/20"
           />
         </div>
 
@@ -157,10 +134,7 @@ export default function LogsTab() {
       {/* Virtualized list */}
       {lines.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center text-slate-600 gap-3">
-          <div
-            className="w-12 h-12 rounded-2xl flex items-center justify-center"
-            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
-          >
+          <div className="rounded-2xl bg-white/5 border border-white/8 p-3 w-12 h-12 flex items-center justify-center">
             <Search size={20} className="text-slate-600" />
           </div>
           <p className="text-sm text-slate-500">No logs yet</p>
@@ -175,6 +149,6 @@ export default function LogsTab() {
           itemContent={(_, line) => <LogRow key={line.id} line={line} showTs={showTs} />}
         />
       )}
-    </div>
+    </motion.div>
   );
 }
