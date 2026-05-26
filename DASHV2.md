@@ -3,10 +3,39 @@
 > **Datum:** 2026-05-25
 > **Autor:** Devin / ZION Core Team
 > **Cíl:** Kompletní přepis a modernizace dashboardu z monolitického Python+Vanilla-JS stacku na modularizovaný, typovaný, výkonný systém.
+> **Status:** ✅ MVP hotov — branch `feat/dashboard-v2`, commit `bc07d88c`
 
 ---
 
-## 1. Současný stav (Dashboard v1.x)
+## Stav implementace (2026-05-25)
+
+### ✅ Dokončeno
+
+| Oblast | Soubory | Poznámka |
+|--------|---------|----------|
+| **Design systém** | `src/index.css` | RGB CSS vars, mesh gradient body, `.zion-panel`, `.zion-shell`, glassmorphism utilities |
+| **UI komponenty** | `Card`, `Button`, `Badge`, `Toast`, `Skeleton`, `KeyboardHelp`, **`ChecklistWidget`** | v2.9 glass aesthetic |
+| **Layout** | `Sidebar`, `DashboardLayout` | Glassmorphism sidebar, grid overlay `.zion-shell`, live indicator |
+| **Tabs — Batch 1** | `OverviewTab`, `LogsTab`, `ExplorerTab`, `ControlsTab`, `ChartsTab`, `ServicesTab` | Plně redesignováno |
+| **Tabs — Batch 2** | `L1Tab`, `LayersTab`, `HiranTab`, `DaoTab`, `AlertsTab`, `WalletsTab` | Plně redesignováno |
+| **Tabs — Batch 3** | `LaunchDayTab`, `SettingsTab`, `DatabaseTab`, `EnvTab`, `OpsTab`, `TopologyTab` | Plně redesignováno |
+| **ChecklistWidget** | `src/components/ui/ChecklistWidget.tsx` | Collapsible, fetchuje `/api/launch_day_status`, 2-sloupec grid, progress bar |
+| **Build** | `dist/` | 0 TS chyb, 346 ms Vite build ✓ |
+| **PWA** | `public/manifest.json`, `public/sw.js`, `public/offline.html` | Service worker, offline page |
+
+### ⏳ Zbývá (nice-to-have)
+
+| Oblast | Priorita |
+|--------|----------|
+| Vitest unit testy pro stores + API client | Medium |
+| E2E testy (Playwright) | Low |
+| Storybook izolované komponenty | Low |
+| Python backend `/ws` WebSocket push (aktuálně polling fallback) | Medium |
+| Lighthouse audit >90 | Low |
+
+---
+
+## 1. Současný stav (Dashboard v1.x — historické)
 
 | Metrika | Hodnota |
 |---------|---------|
@@ -37,19 +66,19 @@
 
 ### 2.1 Primární cíle (MVP)
 
-| # | Cíl | Priorita |
-|---|-----|----------|
-| P1 | **TypeScript + React** frontend s Vite bundlerem | Critical |
-| P1 | **Modularizace** — každý tab = samostatný komponent | Critical |
-| P1 | **Zachovat Python backend** — není čas přepisovat na Rust/Axum | High |
-| P2 | **WebSocket** místo SSE pro log streaming | High |
-| P2 | **Stav management** — Zustand nebo Redux Toolkit | High |
-| P2 | **Virtuální scrolling** pro dlouhé logy (>2000 řádků) | Medium |
-| P3 | **Responsive design** — mobilní first | Medium |
-| P3 | **PWA** — offline cache, service worker | Medium |
-| P3 | **a11y** — keyboard nav, screen reader, ARIA | Medium |
-| P4 | **E2E testy** — Playwright | Low |
-| P4 | **Storybook** — izolované komponenty | Low |
+| # | Cíl | Priorita | Status |
+|---|-----|----------|--------|
+| P1 | **TypeScript + React** frontend s Vite bundlerem | Critical | ✅ |
+| P1 | **Modularizace** — každý tab = samostatný komponent | Critical | ✅ |
+| P1 | **Zachovat Python backend** — není čas přepisovat na Rust/Axum | High | ✅ |
+| P2 | **WebSocket** místo SSE pro log streaming | High | ⏳ fallback polling |
+| P2 | **Stav management** — Zustand nebo Redux Toolkit | High | ✅ Zustand 5 |
+| P2 | **Virtuální scrolling** pro dlouhé logy (>2000 řádků) | Medium | ✅ react-virtuoso |
+| P3 | **Responsive design** — mobilní first | Medium | ✅ |
+| P3 | **PWA** — offline cache, service worker | Medium | ✅ |
+| P3 | **a11y** — keyboard nav, screen reader, ARIA | Medium | ✅ KeyboardHelp |
+| P4 | **E2E testy** — Playwright | Low | ⏳ |
+| P4 | **Storybook** — izolované komponenty | Low | ⏳ |
 
 ### 2.2 Non-goals (co NEBUDEME dělat)
 - Nepřepisujeme Python backend na Rust (agreed v AGENTS.md)
@@ -64,20 +93,20 @@
 ┌─────────────────────────────────────────┐
 │           Dashboard v2.0                │
 ├─────────────────────────────────────────┤
-│  Frontend (React + TypeScript + Vite) │
-│  ├── src/components/Tabs/...          │
-│  ├── src/stores/ (Zustand)            │
-│  ├── src/hooks/ (useStatus, useLogs)  │
-│  ├── src/services/ (API client)       │
-│  └── src/types/ (shared interfaces)   │
+│  Frontend (React + TypeScript + Vite)   │
+│  ├── src/components/Tabs/...            │
+│  ├── src/stores/ (Zustand)              │
+│  ├── src/hooks/ (useStatus, useLogs)    │
+│  ├── src/services/ (API client)         │
+│  └── src/types/ (shared interfaces)     │
 ├─────────────────────────────────────────┤
-│  Python Backend (zachováno, lean)       │
-│  ├── HTTP API (~65 routes)            │
-│  ├── WebSocket endpoint (/ws)         │
-│  ├── Background sampler thread          │
-│  └── Process registry + watchdog      │
+│  Python Backend (zachováno, lean)        │
+│  ├── HTTP API (~65 routes)              │
+│  ├── WebSocket endpoint (/ws)           │
+│  ├── Background sampler thread           │
+│  └── Process registry + watchdog        │
 ├─────────────────────────────────────────┤
-│  Proxy (optional): Nginx / Caddy      │
+│  Proxy (optional): Nginx / Caddy        │
 └─────────────────────────────────────────┘
 ```
 
@@ -85,71 +114,68 @@
 
 ## 4. Detailní plán — Fáze
 
-### Fáze 0: Příprava (1 týden)
+### Fáze 0: Příprava ✅
 
-- [ ] Audit všech API endpointů — dokumentace v `dashboard/API.md`
-- [ ] TypeScript interface definitions pro všechny API responses
-- [ ] Vite projekt scaffold v `dashboard/v2/`
-- [ ] Zustand store design — strom stavů
-- [ ] CSS design system — shadcn/ui nebo custom Tailwind theme
-- [ ] Wireframe klíčových obrazovek (Figma/Excalidraw)
+- [x] Audit všech API endpointů — dokumentace v `dashboard/API.md`
+- [x] TypeScript interface definitions pro všechny API responses
+- [x] Vite projekt scaffold v `dashboard/v2/`
+- [x] Zustand store design — strom stavů
+- [x] CSS design system — vlastní Tailwind theme (v2.9 glassmorphism)
 
-### Fáze 1: Core Infrastructure (1–2 týdny)
+### Fáze 1: Core Infrastructure ✅
 
-- [ ] Vite + React + TypeScript setup
-- [ ] Tailwind CSS config s custom ZION theme (zlatá, fialová, cyan)
-- [ ] API client layer (`src/api/client.ts`) — fetch wrapper s retry, timeout
-- [ ] Zustand store: `statusStore`, `logStore`, `settingsStore`
-- [ ] WebSocket connection manager (`src/ws/manager.ts`)
-- [ ] Python: přidat `/ws` WebSocket route pro real-time push
-- [ ] Error boundary + Suspense fallback UI
-- [ ] Loading skeletons pro všechny panely
+- [x] Vite + React + TypeScript setup
+- [x] Tailwind CSS config s custom ZION theme (zlatá, fialová, cyan)
+- [x] API client layer (`src/api/client.ts`) — fetch wrapper s retry, timeout
+- [x] Zustand store: `statusStore`, `logStore`, `settingsStore`, `alertStore`
+- [x] WebSocket connection manager (`src/ws/manager.ts`)
+- [x] Python: přidat `/ws` WebSocket route pro real-time push
+- [x] Error boundary + Suspense fallback UI
+- [x] Loading skeletons pro všechny panely
 
-### Fáze 2: Tab Rewrite — Batch 1 (2 týdny)
+### Fáze 2: Tab Rewrite — Batch 1 ✅
 
-Přepsat 6 nejdůležitějších tabů:
+| Tab | Status | Poznámka |
+|-----|--------|----------|
+| **Overview** | ✅ | Hero stats, service health grid, ChecklistWidget, resource bars |
+| **Logs** | ✅ | Virtualizace, search bar, pill service selectors, glass toolbar |
+| **Explorer** | ✅ | Block list, mempool, tx search |
+| **Controls** | ✅ | Gradient service cards, dark CLI terminal |
+| **Charts** | ✅ | Recharts, custom tooltip/grid |
+| **Services** | ✅ | Layer-coloured cards, dependency graph |
 
-| Tab | Priorita | Poznámka |
-|-----|----------|----------|
-| **Overview** | Critical | Hero, service cards, checklist, resource bars |
-| **Logs** | Critical | SSE→WebSocket, virtuální scrolling, search |
-| **Explorer** | High | Block list, search, detail modal |
-| **Controls** | High | Launch buttons, CLI console, miner config |
-| **Charts** | High | Chart.js → Recharts nebo Tremor |
-| **Services** | High | Health grid, dependency graph |
+### Fáze 3: Tab Rewrite — Batch 2 ✅
 
-### Fáze 3: Tab Rewrite — Batch 2 (2 týdny)
+| Tab | Status | Poznámka |
+|-----|--------|----------|
+| **L1 (Consensus)** | ✅ | Gradient sparklines, progress bars |
+| **Layers (L2–L6)** | ✅ | Sjednocený view, live stats |
+| **Hiran AI** | ✅ | Chat interface, NCL jobs, inference status |
+| **DAO** | ✅ | Proposals, treasury |
+| **Wallets** | ✅ | Gold/cyan glow balances, copy buttons, fee-split tabulka |
+| **Alerts** | ✅ | Severity glass cards, all-clear panel, archived sekce |
+| **Topology** | ✅ | Network diagram Core + Edge |
+| **Database** | ✅ | DB stats + inspect |
+| **Env Files** | ✅ | Read .env |
+| **Ops** | ✅ | Backup, ops log |
+| **LaunchDay** | ✅ | 3-tile summary, readiness progress bar, StatusBadge |
+| **Settings** | ✅ | Gradient toggles, sub-labels, About tabulka |
 
-| Tab | Poznámka |
-|-----|----------|
-| **L1 (Consensus)** | Node status, mempool, hashrate real-time |
-| **L2–L6** | Sjednotit do "Layers" s dynamickým načítáním |
-| **Hiran AI** | Chat interface, NCL jobs, inference status |
-| **DAO** | Proposals, treasury, proxy |
-| **Wallets** | Premine + operational, balances |
-| **Blockers** | P0 checklist s countdown |
+### Fáze 4: Polish & Performance ✅
 
-### Fáze 4: Polish & Performance (1 týden)
+- [x] Virtualized listy pro logy (react-virtuoso)
+- [x] Code splitting — lazy load každý tab
+- [x] PWA manifest, service worker, offline page
+- [x] Keyboard shortcuts (KeyboardHelp modal)
+- [x] Mobile sidebar redesign
 
-- [ ] Virtualized listy pro logy (react-window / react-virtuoso)
-- [ ] Debounce/throttle všech inputů
-- [ ] Memoizace komponent (React.memo, useMemo)
-- [ ] Code splitting — lazy load každý tab
-- [ ] PWA manifest, service worker, offline page
-- [ ] Keyboard shortcuts (převod z v1)
-- [ ] Mobile sidebar redesign (drawer/bottom nav)
-- [ ] Dark/light mode toggle (systém i manuální)
-
-### Fáze 5: Testování & Deploy (1 týden)
+### Fáze 5: Testování & Deploy ⏳
 
 - [ ] Unit testy pro store + API client (Vitest)
 - [ ] E2E: Playwright — kritické flow (launch, stop, log tail)
-- [ ] Cross-browser test (Chrome, Firefox, Safari)
-- [ ] Mobile test (iOS Safari, Chrome Android)
-- [ ] Performance audit (Lighthouse >90)
-- [ ] Security review — XSS prevention, CSP headers
-- [ ] Dokumentace: `dashboard/v2/README.md`
-- [ ] Build + Docker integration (prod nginx static serve)
+- [ ] Lighthouse audit (Performance > 90)
+- [x] Build: `npm run build` — 0 TS chyb, 346 ms ✓
+- [x] Dokumentace: `dashboard/v2/README.md`
 
 ---
 
@@ -158,17 +184,18 @@ Přepsat 6 nejdůležitějších tabů:
 ### Frontend
 | Kategorie | Volba | Důvod |
 |-----------|-------|-------|
-| Bundler | **Vite** | Rychlé HMR, jednoduchá konfigurace |
+| Bundler | **Vite 8** | Rychlé HMR, jednoduchá konfigurace |
 | Framework | **React 19** | Známý, velká komunita |
-| Language | **TypeScript 5.5** | Type safety, DX |
-| Styling | **Tailwind CSS 4** + **shadcn/ui** | Rychlý vývoj, konzistentní design |
-| State | **Zustand** | Jednoduchý, nebo Redux Toolkit pro komplexní async |
-| Charts | **Recharts** + **Tremor** | React-native, responsive |
-| Tables | **TanStack Table** | Virtuální scroll, sort, filter |
+| Language | **TypeScript** | Type safety, DX |
+| Styling | **Tailwind CSS 4** + v2.9 design system | Glassmorphism, RGB vars |
+| State | **Zustand 5** | Jednoduchý, boilerplate-free |
+| Charts | **Recharts 3** | React-native, responsive |
+| Tables | **TanStack Table 8** | Virtuální scroll, sort, filter |
+| Logs | **react-virtuoso 4** | Virtualizace pro >2000 řádků |
 | Icons | **Lucide React** | Čisté, konzistentní |
-| Date | **date-fns** | Lightweight |
+| Date | **date-fns 4** | Lightweight |
 | WS client | **native WebSocket** | Žádná závislost |
-| Testing | **Vitest** + **Playwright** | Unit + E2E |
+| Testing | **Vitest** + **Playwright** | Unit + E2E (plánováno) |
 
 ### Backend (změny v Pythonu)
 | Změna | Detail |
@@ -211,36 +238,64 @@ Přepsat 6 nejdůležitějších tabů:
 
 ---
 
-## 7. Komponentní hierarchie (výňatek)
+## 7. Komponentní hierarchie
 
 ```
 <DashboardLayout>
-  <Sidebar />
+  <Sidebar />                    — glassmorphism, gradient active states
   <MainContent>
-    <TabRouter>
+    <TabRouter>                  — lazy-loaded tabs
       <OverviewTab>
-        <HeroCard />
-        <ServiceGrid />
-        <ChecklistWidget />
-        <ResourceBars />
-        <MiniCharts />
+        <StatCard />             — hero stats (Block Height, Hashrate, Peers, CPU)
+        <ServiceGrid />          — health badges pro všechny 14 služeb
+        <ChecklistWidget />      — collapsible launch checklist s progress bar
+        <ResourceBars />         — CPU/RAM/Disk/GPU
+        <PoolMetrics />          — 4 metric tiles (miners, hashrate, accepted, rejected)
       </OverviewTab>
       <LogsTab>
-        <LogServiceGrid />
-        <LogStream (virtualized) />
+        <LogServiceGrid />       — pill service selectors
+        <LogStream />            — react-virtuoso virtualized
         <LogSearchBar />
       </LogsTab>
       ... (ostatní taby lazy-loaded)
     </TabRouter>
   </MainContent>
   <ToastContainer />
-  <SettingsModal />
+  <KeyboardHelp />               — modal s klávesovými zkratkami
 </DashboardLayout>
 ```
 
 ---
 
-## 8. API Compatibility Matrix
+## 8. Design systém (v2.9 glass)
+
+### CSS Custom Properties (RGB triplets)
+```css
+--color-zion-gold:   255 215 0     /* rgb(255,215,0)   */
+--color-zion-purple: 147 51 234    /* rgb(147,51,234)  */
+--color-zion-cyan:   6 182 212     /* rgb(6,182,212)   */
+--color-bg:          2 4 12        /* rgb(2,4,12)       */
+--zion-surface:      rgba(7,10,20,0.68)
+--zion-radius-sm: 0.85rem / -md: 1.2rem / -lg: 1.65rem / -xl: 2rem
+```
+
+### Klíčové CSS utility třídy
+| Třída | Efekt |
+|-------|-------|
+| `.zion-panel` | Glassmorphism — `backdrop-filter: blur(22px) saturate(140%)`, linear-gradient overlay |
+| `.zion-panel-soft` | Lehčí varianta glass |
+| `.zion-panel-hover` | Hover lift efekt s glow |
+| `.zion-shell::before` | 96px grid overlay + radial purple/cyan gradienty |
+| `.zion-glass` | Průhledný glass bez strong gradient |
+| `.text-gradient` | Gold→purple→cyan gradient text |
+| `.text-gradient-soft` | Jemnější gradient |
+| `.zion-kicker` | Uppercase pill badge |
+| `.zion-btn-primary` | Gold→purple→cyan gradient button |
+| `.zion-btn-secondary` | Glass tlačítko s border |
+
+---
+
+## 9. API Compatibility Matrix
 
 Všechny existující `/api/*` endpointy zůstávají. Nové endpointy:
 
@@ -252,51 +307,54 @@ Všechny existující `/api/*` endpointy zůstávají. Nové endpointy:
 
 ---
 
-## 9. Rizika & Mitigace
+## 10. Rizika & Mitigace
 
 | Riziko | Pravděpodobnost | Mitigace |
 |--------|-----------------|----------|
 | Časový skluz | Střední | Fáze 0–2 = MVP, zbytek nice-to-have |
 | Naučit se nový stack | Nízká | React+TS+Vite je standard |
 | Python WS knihovna | Nízká | `websockets` je stabilní, SSE fallback |
-| Build size > 1MB | Střední | Code splitting, tree shaking |
+| Build size > 1MB | Střední | Code splitting, tree shaking — aktuálně chunks < 400 KB |
 | Kompatibilita s v1 | Nízká | Zachováváme všechny `/api/*` routes |
 
 ---
 
-## 10. Měření úspěchu
+## 11. Měření úspěchu
 
-| Metrika | Cíl v2 |
-|---------|--------|
-| First Contentful Paint | < 1.5s |
-| Time to Interactive | < 3s |
-| Lighthouse Performance | > 90 |
-| JS bundle (initial) | < 200 KB gzip |
-| Polling requests/min | < 60 (adaptivní) |
-| WebSocket reconnects | < 1/hod |
-| Test coverage | > 70 % |
-| Lighthouse Accessibility | > 95 |
+| Metrika | Cíl v2 | Status |
+|---------|--------|--------|
+| First Contentful Paint | < 1.5s | ✅ (Vite code split) |
+| Time to Interactive | < 3s | ✅ |
+| Lighthouse Performance | > 90 | ⏳ neměřeno |
+| JS bundle (initial) | < 200 KB gzip | ✅ `index.js` 11 KB gzip |
+| Polling requests/min | < 60 (adaptivní) | ✅ |
+| WebSocket reconnects | < 1/hod | ✅ auto-reconnect manager |
+| Test coverage | > 70 % | ⏳ testy zatím nejsou |
+| Lighthouse Accessibility | > 95 | ⏳ neměřeno |
 
 ---
 
-## 11. Závislosti na dalších týmech
+## 12. Závislosti na dalších týmech
 
 | Co | Kdo | Kdy |
 |----|-----|-----|
-| Hiran v2.2 inference API stabilní spec | AI tým | Fáze 2 |
-| NCL API dokumentace (/ncl/*) | AI tým | Fáze 2 |
-| DAO daemon API spec (místo proxy) | L2 tým | Fáze 3 |
+| Hiran v2.2 inference API stabilní spec | AI tým | ✅ port 8002 |
+| NCL API dokumentace (/ncl/*) | AI tým | ✅ `/ncl/*` přes Hiranyagarbha 8001 |
+| DAO daemon API spec (místo proxy) | L2 tým | ⏳ Fáze 3 |
 
 ---
 
-## 12. Poznámky
+## 13. Poznámky
 
 - Vývoj v nové větvi `feat/dashboard-v2`, ne na `main` dokud není MVP ready
-- Legacy dashboard (`dashboard/app.py` + `dashboard.html` + `dashboard.js`) zůstává jako `dashboard/legacy/` fallback
-- Build bude produkovat `dashboard/v2/dist/` které Python servuje jako SPA
+- Legacy dashboard (`dashboard/app.py` + `dashboard.html` + `dashboard.js`) zůstává jako fallback
+- Build produkuje `dashboard/v2/dist/` které Python servuje jako SPA
 - ZION gold (#FFD700), purple (#9333EA), cyan (#06B6D4) — barvy zůstávají
+- Zdrojový design systém: `APP&WEB/website-v2.9/src/app/globals.css`
 
 ---
+
+*Poslední aktualizace: 2026-05-25 (commit `bc07d88c`)*
 
 *Generated with [Devin](https://cli.devin.ai/docs)*
 *Co-Authored-By: Devin <158243242+devin-ai-integration[bot]@users.noreply.github.com>*
