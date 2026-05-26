@@ -1,7 +1,7 @@
 // ─── ZION Dashboard v2 — Alert Store ────────────────────────────────────────
 import { create } from 'zustand';
 import type { Alert } from '../types/api';
-import api from '../api/client';
+import api, { apiFetch } from '../api/client';
 
 interface AlertState {
   alerts: Alert[];
@@ -18,7 +18,9 @@ export const useAlertStore = create<AlertState>((set, get) => ({
 
   fetchAlerts: async () => {
     try {
-      const alerts = await api.alerts();
+      // Server returns { alerts: Alert[] } — unwrap here
+      const raw = await apiFetch<{ alerts?: Alert[] } | Alert[]>('/api/alerts');
+      const alerts = Array.isArray(raw) ? raw : (raw as { alerts?: Alert[] }).alerts ?? [];
       set({ alerts, unreadCount: alerts.filter(a => !a.dismissed).length });
     } catch { /* non-critical */ }
   },
