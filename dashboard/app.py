@@ -29,6 +29,7 @@ SCRIPT_DIR = Path(__file__).parent.resolve()
 REPO_ROOT = SCRIPT_DIR.parent
 LOG_DIR = REPO_ROOT / "logs"
 SCRIPTS_DIR = REPO_ROOT / "scripts"
+V2_DIST = SCRIPT_DIR / "v2" / "dist"
 if not LOG_DIR.exists():
     LOG_DIR = Path("../logs")
 
@@ -4596,13 +4597,39 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 self.send_error(404)
                 return
 
+        # ── Dashboard v2 SPA static files ────────────────────────────────────
         if route == "/" or route == "/index.html":
-            # Prefer external dashboard.html if it exists (new design)
+            v2_index = V2_DIST / "index.html"
+            if v2_index.exists():
+                self._html(v2_index.read_text(encoding="utf-8"))
+                return
+            # Fallback to legacy v1 dashboard
             html_path = SCRIPT_DIR / "dashboard.html"
             if html_path.exists():
                 self._html(html_path.read_text(encoding="utf-8"))
             else:
                 self._html(HTML_DASHBOARD)
+            return
+        elif route.startswith("/assets/") or route in ("/manifest.json", "/sw.js", "/offline.html", "/favicon.svg", "/icons.svg"):
+            v2_file = V2_DIST / route.lstrip("/")
+            if v2_file.exists():
+                content_type = {
+                    ".js":   "application/javascript; charset=utf-8",
+                    ".css":  "text/css; charset=utf-8",
+                    ".json": "application/json; charset=utf-8",
+                    ".svg":  "image/svg+xml",
+                    ".html": "text/html; charset=utf-8",
+                }.get(v2_file.suffix, "application/octet-stream")
+                body = v2_file.read_bytes()
+                self.send_response(200)
+                self.send_header("Content-Type", content_type)
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+                return
+            else:
+                self.send_error(404)
+                return
         elif route == "/dashboard.js":
             js_path = SCRIPT_DIR / "dashboard.js"
             if js_path.exists():
