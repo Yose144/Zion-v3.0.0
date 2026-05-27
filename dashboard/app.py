@@ -4359,7 +4359,8 @@ WS_HUB = WsHub()
 
 
 def _ws_push_loop():
-    """Background thread: push status + health to all WS clients every 5 s."""
+    """Background thread: push status + health + alerts to all WS clients every 5 s."""
+    _last_alert_hash = None
     while True:
         time.sleep(5)
         if WS_HUB.count == 0:
@@ -4372,6 +4373,14 @@ def _ws_push_loop():
         try:
             health = _build_health_map()
             WS_HUB.broadcast({"type": "health", "data": health})
+        except Exception:
+            pass
+        try:
+            alerts = build_alerts(build_status())
+            alert_hash = hashlib.sha1(json.dumps(alerts, sort_keys=True).encode()).hexdigest()[:16]
+            if alert_hash != _last_alert_hash:
+                _last_alert_hash = alert_hash
+                WS_HUB.broadcast({"type": "alert", "data": alerts})
         except Exception:
             pass
 
@@ -4421,9 +4430,17 @@ def _handle_websocket(handler: "DashboardHandler", key: str) -> None:
     conn.sendall(response.encode())
     client = _WsClient(conn)
     WS_HUB.add(client)
-    # Send immediate status snapshot
+    # Send immediate status + health + alert snapshot
     try:
         WS_HUB.broadcast({"type": "status", "data": build_status()})
+    except Exception:
+        pass
+    try:
+        WS_HUB.broadcast({"type": "health", "data": _build_health_map()})
+    except Exception:
+        pass
+    try:
+        WS_HUB.broadcast({"type": "alert", "data": build_alerts(build_status())})
     except Exception:
         pass
     # Read loop (ping/pong, close, discard data frames)

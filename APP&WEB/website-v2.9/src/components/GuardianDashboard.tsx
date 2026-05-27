@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import {
   Shield, Wallet, TrendingUp, Scale, Vote, Activity,
   ChevronRight, Lock, Unlock, RefreshCw, AlertTriangle, CheckCircle2,
-  Server, Pickaxe, Layers, Globe, Database, XCircle,
+  Server, Pickaxe, Layers, Globe, Database, XCircle, Flame, Trophy, Users,
 } from 'lucide-react';
 import { useZionWallet } from '@/contexts/ZionWalletContext';
 import { usePolling } from '@/hooks/usePolling';
@@ -35,6 +35,31 @@ interface DaoProposal {
   deadline: string;
 }
 
+interface AlertItem {
+  id: string;
+  severity: 'critical' | 'warning' | 'info';
+  title: string;
+  detail: string;
+  ts: number;
+  dismissed: boolean;
+}
+
+interface NclWorker {
+  id: string;
+  name: string;
+  status: string;
+  tasks_completed: number;
+  uptime_hours: number;
+}
+
+interface NclEntry {
+  rank: number;
+  worker_id: string;
+  name: string;
+  score: number;
+  tasks: number;
+}
+
 /* ═════════════════ CONSTANTS ════════════════════════ */
 
 const TREASURY: TreasuryItem[] = [
@@ -48,6 +73,8 @@ const TABS = [
   { id: 'monitoring', label: 'Monitoring', icon: Activity },
   { id: 'treasury',   label: 'Treasury',   icon: Shield },
   { id: 'dao',        label: 'DAO',        icon: Vote },
+  { id: 'alerts',     label: 'Alerts',     icon: AlertTriangle },
+  { id: 'ncl',        label: 'NCL',        icon: Trophy },
 ] as const;
 
 /* ═════════════════ HELPERS ══════════════════════════ */
@@ -444,11 +471,210 @@ function DaoTab() {
   );
 }
 
+function AlertsTab() {
+  const [alerts, setAlerts] = useState<AlertItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState('');
+
+  const fetchAlerts = useCallback(async () => {
+    setLoading(true);
+    setErr('');
+    try {
+      const r = await fetch('/api/alerts', { signal: AbortSignal.timeout(8000) });
+      const d = await r.json();
+      const list = d.alerts ?? [];
+      setAlerts(list.map((a: any, i: number) => ({
+        id: a.id ?? `${i}`,
+        severity: a.severity ?? 'info',
+        title: a.title ?? a.message ?? 'Alert',
+        detail: a.detail ?? a.recommendation ?? '',
+        ts: a.ts ?? Date.now(),
+        dismissed: a.dismissed ?? false,
+      })));
+    } catch (e: any) {
+      setErr('Dashboard alerts unreachable');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchAlerts(); }, [fetchAlerts]);
+
+  const dismiss = (id: string) => setAlerts((prev) => prev.filter((a) => a.id !== id));
+
+  const severityIcon = (s: string) => {
+    if (s === 'critical') return <XCircle size={16} className="text-red-400 shrink-0" />;
+    if (s === 'warning') return <AlertTriangle size={16} className="text-amber-400 shrink-0" />;
+    return <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />;
+  };
+
+  const severityBorder = (s: string) => {
+    if (s === 'critical') return 'border-red-500/20 bg-red-500/5';
+    if (s === 'warning') return 'border-amber-500/20 bg-amber-500/5';
+    return 'border-emerald-500/20 bg-emerald-500/5';
+  };
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-white">Live Alerts</h3>
+        <button
+          onClick={fetchAlerts}
+          disabled={loading}
+          className="p-2 rounded-xl border border-white/10 hover:border-white/20 transition-colors"
+        >
+          <RefreshCw size={14} className={`text-gray-400 ${loading ? 'animate-spin' : ''}`} />
+        </button>
+      </div>
+
+      {err && (
+        <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-400 flex items-center gap-2">
+          <AlertTriangle size={16} /> {err}
+        </div>
+      )}
+
+      {alerts.length === 0 && !err && !loading ? (
+        <Card>
+          <p className="text-sm text-gray-400 text-center py-8 flex items-center justify-center gap-2">
+            <CheckCircle2 size={16} className="text-emerald-400" /> No active alerts.
+          </p>
+        </Card>
+      ) : (
+        <div className="space-y-3">
+          {alerts.map((a) => (
+            <Card key={a.id} className={`flex items-start gap-3 ${severityBorder(a.severity)}`}>
+              {severityIcon(a.severity)}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-white">{a.title}</p>
+                <p className="text-xs text-gray-400 mt-0.5">{a.detail}</p>
+                <p className="text-[10px] text-gray-500 mt-1">{new Date(a.ts).toLocaleString()}</p>
+              </div>
+              <button
+                onClick={() => dismiss(a.id)}
+                className="p-1.5 rounded-lg hover:bg-white/10 transition-colors shrink-0"
+                title="Dismiss"
+              >
+                <XCircle size={14} className="text-gray-500" />
+              </button>
+            </Card>
+          ))}
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
+function NclTab() {
+  const [leaderboard, setLeaderboard] = useState<NclEntry[]>([]);
+  const [workers, setWorkers] = useState<NclWorker[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState('');
+
+  const fetchNcl = useCallback(async () => {
+    setLoading(true);
+    setErr('');
+    try {
+      const [lbRes, wRes] = await Promise.all([
+        fetch('/api/ncl/leaderboard', { signal: AbortSignal.timeout(8000) }),
+        fetch('/api/ncl/workers', { signal: AbortSignal.timeout(8000) }),
+      ]);
+      const lb = await lbRes.json().catch(() => ({}));
+      const w = await wRes.json().catch(() => ({}));
+      setLeaderboard(Array.isArray(lb.leaderboard) ? lb.leaderboard : Array.isArray(lb) ? lb : []);
+      setWorkers(Array.isArray(w.workers) ? w.workers : Array.isArray(w) ? w : []);
+    } catch (e: any) {
+      setErr('NCL backend unreachable');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchNcl(); }, [fetchNcl]);
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-white">NCL Leaderboard</h3>
+        <button
+          onClick={fetchNcl}
+          disabled={loading}
+          className="p-2 rounded-xl border border-white/10 hover:border-white/20 transition-colors"
+        >
+          <RefreshCw size={14} className={`text-gray-400 ${loading ? 'animate-spin' : ''}`} />
+        </button>
+      </div>
+
+      {err && (
+        <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-400 flex items-center gap-2">
+          <AlertTriangle size={16} /> {err}
+        </div>
+      )}
+
+      {/* Leaderboard */}
+      <div className="space-y-3">
+        {leaderboard.length === 0 && !err && !loading ? (
+          <Card>
+            <p className="text-sm text-gray-400 text-center py-8">No leaderboard data yet.</p>
+          </Card>
+        ) : (
+          leaderboard.map((entry) => (
+            <Card key={entry.worker_id ?? entry.rank} className="flex items-center gap-4">
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold ${
+                entry.rank === 1 ? 'bg-amber-500/15 text-amber-400' :
+                entry.rank === 2 ? 'bg-gray-300/15 text-gray-300' :
+                entry.rank === 3 ? 'bg-orange-700/15 text-orange-400' :
+                'bg-white/5 text-gray-400'
+              }`}>
+                {entry.rank}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-white truncate">{entry.name ?? entry.worker_id}</p>
+                <p className="text-xs text-gray-500 font-mono">{entry.tasks?.toLocaleString()} tasks</p>
+              </div>
+              <div className="text-right shrink-0">
+                <p className="text-lg font-mono font-bold text-white">{entry.score?.toLocaleString()}</p>
+                <p className="text-[10px] text-gray-500">score</p>
+              </div>
+            </Card>
+          ))
+        )}
+      </div>
+
+      {/* Workers */}
+      <h3 className="text-sm font-semibold text-white pt-2">Active Workers</h3>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        {workers.length === 0 && !err && !loading ? (
+          <Card className="col-span-full">
+            <p className="text-sm text-gray-400 text-center py-8">No workers online.</p>
+          </Card>
+        ) : (
+          workers.map((w) => (
+            <Card key={w.id} className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Flame size={14} className="text-zion-gold" />
+                <span className="text-sm font-semibold text-white truncate">{w.name ?? w.id}</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs">
+                <span className={`w-2 h-2 rounded-full ${w.status === 'online' ? 'bg-emerald-400' : w.status === 'busy' ? 'bg-amber-400' : 'bg-gray-500'}`} />
+                <span className="text-gray-400 capitalize">{w.status}</span>
+              </div>
+              <div className="flex justify-between text-xs text-gray-500">
+                <span>Tasks: <span className="text-gray-300 font-mono">{w.tasks_completed?.toLocaleString()}</span></span>
+                <span>Uptime: <span className="text-gray-300 font-mono">{w.uptime_hours}h</span></span>
+              </div>
+            </Card>
+          ))
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
 /* ═════════════════ MAIN ═══════════════════════════════ */
 
 export default function GuardianDashboard() {
   const { activeWallet, disconnect, initialized } = useZionWallet();
-  const [activeTab, setActiveTab] = useState<'monitoring' | 'treasury' | 'dao'>('monitoring');
+  const [activeTab, setActiveTab] = useState<'monitoring' | 'treasury' | 'dao' | 'alerts' | 'ncl'>('monitoring');
   const [metrics, setMetrics] = useState<V3Metrics | null>(null);
   const [authenticated, setAuthenticated] = useState(false);
 
@@ -537,6 +763,8 @@ export default function GuardianDashboard() {
         {activeTab === 'monitoring' && <MonitoringTab metrics={metrics} />}
         {activeTab === 'treasury' && <TreasuryTab />}
         {activeTab === 'dao' && <DaoTab />}
+        {activeTab === 'alerts' && <AlertsTab />}
+        {activeTab === 'ncl' && <NclTab />}
       </main>
 
       {/* Footer */}
