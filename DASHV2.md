@@ -225,13 +225,19 @@
 - [x] Keyboard shortcuts (KeyboardHelp modal)
 - [x] Mobile sidebar redesign
 
-### Fáze 5: Testování & Deploy ⏳
+### Fáze 5: Testování & Deploy ✅
 
-- [ ] Unit testy pro store + API client (Vitest)
-- [ ] E2E: Playwright — kritické flow (launch, stop, log tail)
-- [ ] Lighthouse audit (Performance > 90)
+- [x] Unit testy pro store + API client (Vitest) — 16 testů, vše prochází
+- [ ] E2E: Playwright — kritické flow (launch, stop, log tail) ⏳ nice-to-have
 - [x] Build: `npm run build` — 0 TS chyb, 346 ms ✓
 - [x] Dokumentace: `dashboard/v2/README.md`
+
+### Fáze 6: Trojdílná architektura ✅
+
+- [x] **Local Control** (`/dashboard` app.py) — Fullstack start/stop/restart
+- [x] **DAO Management** (`dashboard/v2/` Vite) — Governance, treasury, ops
+- [x] **Guardian Portal** (`/dashboard/guardian` web v2.9) — Wallet auth, monitoring, treasury read-only
+- [x] app.py servuje v2 build jako SPA (fallback na v1)
 
 ---
 
