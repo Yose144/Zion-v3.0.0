@@ -4,7 +4,7 @@ import wsManager from '../ws/manager';
 import { useStatusStore } from '../stores/statusStore';
 import { useLogStore }    from '../stores/logStore';
 import { useAlertStore }  from '../stores/alertStore';
-import type { WsMessage } from '../types/api';
+import type { WsMessage, Alert } from '../types/api';
 
 export function useWebSocket() {
   const applyStatus  = useStatusStore((s) => s.applyWsStatus);
@@ -12,6 +12,7 @@ export function useWebSocket() {
   const setConnected = useStatusStore((s) => s.setConnected);
   const appendLine   = useLogStore((s) => s.appendLine);
   const appendAlert  = useAlertStore((s) => s.appendAlert);
+  const applyWsAlerts = useAlertStore((s) => s.applyWsAlerts);
 
   useEffect(() => {
     wsManager.connect();
@@ -21,7 +22,13 @@ export function useWebSocket() {
         case 'status': applyStatus(msg.data); break;
         case 'health': applyHealth(msg.data); break;
         case 'log':    appendLine(msg.service, msg.line, msg.ts); break;
-        case 'alert':  appendAlert(msg.data); break;
+        case 'alert':
+          if (Array.isArray(msg.data)) {
+            applyWsAlerts(msg.data as Alert[]);
+          } else {
+            appendAlert(msg.data as Alert);
+          }
+          break;
       }
     });
 

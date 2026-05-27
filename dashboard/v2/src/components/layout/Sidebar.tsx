@@ -108,9 +108,10 @@ export function Sidebar({ active, onSelect, mobileOpen = false, onMobileClose }:
           {onMobileClose && (
             <button
               onClick={onMobileClose}
-              className="p-1.5 rounded-xl border border-white/10 bg-white/5 text-gray-400 hover:text-white transition-colors md:hidden"
+              className="p-2 rounded-xl border border-white/10 bg-white/5 text-gray-400 hover:text-white transition-colors md:hidden"
+              aria-label="Close navigation"
             >
-              <X size={15} />
+              <X size={18} />
             </button>
           )}
 

@@ -1,6 +1,6 @@
 // ─── ZION Dashboard v2 — DashboardLayout (v2.9 aesthetic) ───────────────────
-import React, { useState, useEffect, lazy, Suspense } from 'react';
-import { Menu, Activity } from 'lucide-react';
+import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
+import { Menu, Activity, Sun, Moon, Monitor } from 'lucide-react';
 import { Sidebar, type TabId } from './Sidebar';
 import { useWebSocket } from '../../hooks/useWebSocket';
 import { useStatusStore } from '../../stores/statusStore';
@@ -31,6 +31,54 @@ const DatabaseTab    = lazy(() => import('../tabs/DatabaseTab'));
 const OpsTab         = lazy(() => import('../tabs/OpsTab'));
 const LaunchDayTab   = lazy(() => import('../tabs/LaunchDayTab'));
 const SettingsTab    = lazy(() => import('../tabs/SettingsTab'));
+
+function ThemeSwitcher({ current, onChange }: { current: string; onChange: (t: 'dark' | 'light' | 'system') => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const icon =
+    current === 'light' ? <Sun size={14} className="text-amber-400" /> :
+    current === 'dark'  ? <Moon size={14} className="text-indigo-300" /> :
+    <Monitor size={14} className="text-gray-400" />;
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen(v => !v)}
+        className="w-7 h-7 rounded-xl flex items-center justify-center border border-white/10 bg-white/5 hover:border-white/20 transition-colors"
+        title={`Theme: ${current}`}
+      >
+        {icon}
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full mt-1 flex flex-col gap-0.5 p-1 rounded-xl border border-white/10 bg-black/90 backdrop-blur-xl shadow-xl z-50 min-w-[7rem]">
+          {(['dark','light','system'] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => { onChange(t); setOpen(false); }}
+              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[11px] capitalize transition-colors ${
+                current === t ? 'bg-white/10 text-white' : 'text-gray-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              {t === 'light' && <Sun size={12} className="text-amber-400" />}
+              {t === 'dark' && <Moon size={12} className="text-indigo-300" />}
+              {t === 'system' && <Monitor size={12} className="text-gray-400" />}
+              {t}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function TabFallback() {
   return (
@@ -103,6 +151,7 @@ export function DashboardLayout() {
   const collapsed = useSettingsStore(s => s.sidebarCollapsed);
   const update = useSettingsStore(s => s.update);
   const connected = useStatusStore(s => s.connected);
+  const theme = useSettingsStore(s => s.theme);
 
   // Init WebSocket (binds to stores)
   useWebSocket();
@@ -143,7 +192,7 @@ export function DashboardLayout() {
     setToasts(prev => prev.filter(t => t.id !== id));
 
   return (
-    <div className="flex h-screen overflow-hidden bg-black">
+    <div className="flex h-screen overflow-hidden" style={{ background: 'rgb(var(--color-bg))' }}>
       <Sidebar
         active={activeTab}
         onSelect={setActiveTab}
@@ -153,7 +202,7 @@ export function DashboardLayout() {
 
       <main className="flex-1 overflow-hidden flex flex-col min-w-0">
         {/* Top header bar — same as website nav style */}
-        <header className="shrink-0 px-4 md:px-6 py-3 flex items-center gap-3 border-b border-white/8 bg-black/80 backdrop-blur-2xl">
+        <header className="shrink-0 px-3 md:px-6 py-2.5 md:py-3 flex items-center gap-2 md:gap-3 border-b border-white/8 bg-black/80 backdrop-blur-2xl">
           {/* Hamburger — mobile only */}
           <button
             className="md:hidden p-1.5 rounded-xl border border-white/10 bg-white/5 text-gray-400 hover:text-white hover:border-white/20 transition-colors"
@@ -178,6 +227,9 @@ export function DashboardLayout() {
             </span>
           </div>
 
+          {/* Theme switcher */}
+          <ThemeSwitcher current={theme} onChange={(t) => update({ theme: t })} />
+
           {/* Help button */}
           <button
             className="w-7 h-7 rounded-xl flex items-center justify-center border border-white/10 bg-white/5 text-gray-500 hover:text-white hover:border-white/20 transition-colors text-xs font-bold font-mono"
@@ -197,7 +249,7 @@ export function DashboardLayout() {
       </main>
 
       {/* Toast stack */}
-      <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none">
+      <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 z-50 flex flex-col gap-2 pointer-events-none items-center md:items-end">
         {toasts.map(t => (
           <Toast key={t.id} alert={t} onDismiss={dismissToast} />
         ))}
