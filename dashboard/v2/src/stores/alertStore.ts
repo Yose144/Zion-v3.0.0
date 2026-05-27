@@ -10,6 +10,7 @@ interface AlertState {
   fetchAlerts: () => Promise<void>;
   dismiss: (id: string) => Promise<void>;
   appendAlert: (a: Alert) => void;
+  applyWsAlerts: (alerts: Alert[]) => void;
 }
 
 export const useAlertStore = create<AlertState>((set, get) => ({
@@ -44,8 +45,16 @@ export const useAlertStore = create<AlertState>((set, get) => ({
     window.dispatchEvent(new CustomEvent('zion:alert', { detail: a }));
   },
 
-  // convenience alias for WS use
-  ...{} as Record<string, unknown>,
+  applyWsAlerts: (incoming) => {
+    set((state) => {
+      const map = new Map(state.alerts.map(a => [a.id, a]));
+      for (const a of incoming) {
+        if (!map.has(a.id)) map.set(a.id, a);
+      }
+      const alerts = Array.from(map.values()).sort((a, b) => b.ts - a.ts).slice(0, 200);
+      return { alerts, unreadCount: alerts.filter(a => !a.dismissed).length };
+    });
+  },
 }));
 
 export function useUnreadAlerts() {
