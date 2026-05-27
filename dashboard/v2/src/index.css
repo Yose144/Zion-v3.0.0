@@ -57,7 +57,29 @@
     --color-fg:          230 255 240;
   }
 
-  /* Body — bg-black + same radial mesh as website */
+  [data-theme="light"] {
+    --color-zion-gold:   180 140 0;
+    --color-zion-purple: 126 34 206;
+    --color-zion-cyan:   8 145 178;
+    --color-bg:          248 250 252;
+    --color-fg:          15 23 42;
+    --zion-border-subtle:  rgba(15,23,42,0.10);
+    --zion-border-strong:  rgba(15,23,42,0.20);
+    --zion-surface:        rgba(255,255,255,0.80);
+    --zion-surface-soft:   rgba(15,23,42,0.04);
+    --zion-surface-hover:  rgba(15,23,42,0.06);
+    --color-text:         rgba(15, 23, 42, 1);
+    --color-text-muted:   rgba(100, 116, 139, 1);
+    --color-text-dim:     rgba(148, 163, 184, 1);
+    --color-bg-base:      rgba(248, 250, 252, 0.8);
+    --color-bg-hover:     rgba(15, 23, 42, 0.04);
+    --color-border:       rgba(15, 23, 42, 0.10);
+    --color-border-dim:   rgba(15, 23, 42, 0.06);
+    --color-zion-green:   rgb(21, 128, 61);
+    --color-zion-red:     rgb(185, 28, 28);
+  }
+
+  /* Body — adaptive background */
   body {
     font-family: system-ui, 'Inter', -apple-system, sans-serif;
     background:
@@ -68,6 +90,13 @@
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     font-feature-settings: "cv02","cv03","cv04","cv11";
+  }
+
+  [data-theme="light"] body {
+    background:
+      radial-gradient(circle at 18% -8%, rgba(var(--color-zion-purple), 0.10), transparent 34rem),
+      radial-gradient(circle at 86% 8%,  rgba(var(--color-zion-cyan),   0.08), transparent 30rem),
+      linear-gradient(180deg, rgb(241 245 249), rgb(var(--color-bg)) 36rem);
   }
 
   ::selection {
@@ -104,6 +133,11 @@
   background: linear-gradient(180deg, #9333EA, #06B6D4);
 }
 
+[data-theme="light"] ::-webkit-scrollbar-track { background: #e2e8f0; }
+[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #b45309, #7e22ce);
+}
+
 /* ══════════════════════════════════════════════════════════════════════
    Utility classes — exact mirror of website-v2.9/globals.css
    ══════════════════════════════════════════════════════════════════════ */
@@ -130,6 +164,14 @@
       radial-gradient(circle at 88% 74%, rgba(var(--color-zion-cyan),   0.08), transparent 44%);
     background-size: 96px 96px, 96px 96px, auto, auto;
     mask-image: linear-gradient(to bottom, black 0%, black 70%, transparent 100%);
+  }
+
+  [data-theme="light"] .zion-shell::before {
+    background:
+      linear-gradient(rgba(15,23,42,0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(15,23,42,0.05) 1px, transparent 1px),
+      radial-gradient(circle at 12% 18%, rgba(var(--color-zion-purple), 0.08), transparent 48%),
+      radial-gradient(circle at 88% 74%, rgba(var(--color-zion-cyan),   0.06), transparent 44%);
   }
 
   /* ── zion-panel: main glass panel ── */
@@ -348,3 +390,22 @@
 
 /* ── GPU canvas ─────────────────────────────────────────────────────────── */
 canvas.fixed { will-change: transform; contain: strict; }
+
+/* ── Mobile optimizations ──────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  html { font-size: 14px; }
+  .zion-panel { border-radius: var(--zion-radius-sm); }
+  .zion-button-primary,
+  .zion-button-secondary { padding: 0.75rem 1rem; }
+}
+
+/* Touch target minimum 44px for interactive elements */
+button, a, [role="button"] {
+  min-height: 32px;
+  min-width: 32px;
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .zion-panel-hover:hover { transform: none; }
+}
