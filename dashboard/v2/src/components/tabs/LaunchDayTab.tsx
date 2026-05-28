@@ -171,7 +171,7 @@ export default function LaunchDayTab() {
             </div>
           ) : (
             <div className="rounded-2xl bg-white/5 border border-white/8 p-4">
-              {checks.map((c, i) => {
+              {checks.map((c) => {
                 const Icon = STATUS_CONFIG[c.status].icon;
                 const color = STATUS_CONFIG[c.status].color;
                 return (
