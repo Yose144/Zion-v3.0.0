@@ -20,18 +20,6 @@ function KV({ k, v }: { k: string; v: unknown }) {
   );
 }
 
-function StatsCard({ title, stats }: { title: string; stats: Record<string, unknown> }) {
-  return (
-    <Card title={title} accent="cyan">
-      <div className="space-y-0">
-        {Object.entries(stats).map(([k, v]) => (
-          <KV key={k} k={k} v={v} />
-        ))}
-      </div>
-    </Card>
-  );
-}
-
 function ErrorBox({ msg }: { msg: string }) {
   return (
     <div className="text-xs text-(--color-zion-red) bg-red-950/30 border border-red-900 rounded p-3">
@@ -111,7 +99,7 @@ function L2Tab() {
     }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, []);  
 
   return (
     <div className="space-y-4">
@@ -201,7 +189,7 @@ function L3Tab() {
     }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, []);  
 
   return (
     <div className="space-y-4">
@@ -259,7 +247,7 @@ function StatsLayer({
     }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="space-y-4">

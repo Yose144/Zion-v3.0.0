@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { LineChart, Line, ResponsiveContainer, Tooltip } from 'recharts';
 import {
-  Zap, Server, Pickaxe, Layers, Activity, TrendingUp, Cpu,
+  Zap, Server, Pickaxe, Layers, Activity, TrendingUp,
 } from 'lucide-react';
 import { useStatusStore } from '../../stores/statusStore';
 import { usePolling } from '../../hooks/usePolling';
