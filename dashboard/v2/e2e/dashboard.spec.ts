@@ -1,6 +1,6 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 
-async function openSidebarIfMobile(page: any) {
+async function openSidebarIfMobile(page: Page) {
   if ((page.viewportSize()?.width ?? 1280) < 768) {
     await page.click('button[aria-label="Open navigation"]');
   }
@@ -28,7 +28,7 @@ test.describe('Dashboard v2 E2E', () => {
     for (const t of tabs) {
       await openSidebarIfMobile(page);
       await page.locator('nav button', { hasText: t.label }).first().dispatchEvent('click');
-      await expect(page.getByRole('heading', { name: t.text })).toBeVisible();
+      await expect(page.getByRole('heading', { name: t.text, exact: true }).first()).toBeVisible();
     }
   });
 
