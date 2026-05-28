@@ -21,7 +21,7 @@ export default function EnvTab() {
     finally { setLoading(false); }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const current = files.find(f => f.path === selected);
 
