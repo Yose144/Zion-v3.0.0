@@ -158,7 +158,7 @@ export default function WalletsTab() {
         </div>
         <div className="px-6 py-4">
           <div className="rounded-2xl bg-white/5 border border-white/8 p-4">
-            {FEE_SPLIT_ADDRESSES.map((row, i) => (
+            {FEE_SPLIT_ADDRESSES.map((row) => (
               <div
                 key={row.label}
                 className="flex items-center gap-3 py-3 group border-b border-white/4 last:border-0"

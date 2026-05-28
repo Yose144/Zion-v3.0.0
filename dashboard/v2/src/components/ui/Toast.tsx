@@ -1,6 +1,6 @@
 // ─── Toast notification (v2.9 glass aesthetic) ───────────────────────────────
 import React, { useEffect, useState } from 'react';
-import { X, AlertTriangle, Info, AlertOctagon, CheckCircle } from 'lucide-react';
+import { X, AlertTriangle, Info, AlertOctagon } from 'lucide-react';
 import type { Alert } from '../../types/api';
 
 const ICONS = {

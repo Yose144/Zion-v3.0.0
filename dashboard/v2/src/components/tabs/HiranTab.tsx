@@ -31,36 +31,6 @@ function AgeBadge({ ts }: { ts: number }) {
   return <span className="text-xs font-mono text-gray-500">{label}</span>;
 }
 
-// ── Panel wrapper ────────────────────────────────────────────────────────────
-function Panel({ title, sub, iconColor, icon: Icon, actions, children }: {
-  title: string; sub?: string;
-  iconColor: string; icon: React.ComponentType<{ size?: number; className?: string }>;
-  actions?: React.ReactNode; children: React.ReactNode;
-}) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-      className="rounded-[28px] border border-white/8 bg-black/60 backdrop-blur-2xl overflow-hidden"
-    >
-      <div className="flex items-center justify-between px-6 py-4 border-b border-white/6">
-        <div className="flex items-center gap-3">
-          <div className={`h-9 w-9 rounded-xl flex items-center justify-center ${iconColor}`}>
-            <Icon size={15} className={iconColor.replace('bg-', 'text-').replace('/10', '')} />
-          </div>
-          <div>
-            <h3 className="text-base font-semibold text-white">{title}</h3>
-            {sub && <p className="text-[11px] text-gray-500">{sub}</p>}
-          </div>
-        </div>
-        {actions}
-      </div>
-      <div className="px-6 py-4">{children}</div>
-    </motion.div>
-  );
-}
-
 // ── Chat panel ───────────────────────────────────────────────────────────────
 function ChatPanel({ status, onReloadStatus }: { status: HiranStatus | null; onReloadStatus: () => void }) {
   const [messages, setMessages] = useState<HiranChatMessage[]>([

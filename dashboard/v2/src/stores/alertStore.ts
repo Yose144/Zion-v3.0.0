@@ -13,7 +13,7 @@ interface AlertState {
   applyWsAlerts: (alerts: Alert[]) => void;
 }
 
-export const useAlertStore = create<AlertState>((set, get) => ({
+export const useAlertStore = create<AlertState>((set) => ({
   alerts: [],
   unreadCount: 0,
 
