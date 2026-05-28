@@ -1,6 +1,6 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 
-async function openControls(page: any) {
+async function openControls(page: Page) {
   await page.goto('/');
   const isMobile = (page.viewportSize()?.width ?? 1280) < 768;
   if (isMobile) {

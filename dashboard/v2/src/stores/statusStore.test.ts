@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useStatusStore } from './statusStore';
+import type { StatusResponse, HealthMap } from '../types/api';
 
 describe('useStatusStore', () => {
   beforeEach(() => {
@@ -30,7 +31,7 @@ describe('useStatusStore', () => {
   });
 
   it('applyWsStatus updates status and lastUpdated', () => {
-    const mockStatus = { node1: { running: true, block_height: 100 } } as any;
+    const mockStatus = { node1: { running: true, block_height: 100 } } as unknown as StatusResponse;
     useStatusStore.getState().applyWsStatus(mockStatus);
     const state = useStatusStore.getState();
     expect(state.status).toEqual(mockStatus);
@@ -38,7 +39,7 @@ describe('useStatusStore', () => {
   });
 
   it('applyWsHealth updates health map', () => {
-    const mockHealth = { node1: 'healthy', pool: 'degraded' };
+    const mockHealth = { node1: 'healthy', pool: 'degraded' } as unknown as HealthMap;
     useStatusStore.getState().applyWsHealth(mockHealth);
     expect(useStatusStore.getState().health).toEqual(mockHealth);
   });
