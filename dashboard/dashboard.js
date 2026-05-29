@@ -1,5 +1,8 @@
 'use strict';
 
+import { escapeHtml, fmtNum, toast, copyToClipboard } from './ui.js';
+import { apiFetch, debounce, connectionOk, consecutiveFailures, updateConnectionStatus } from './api.js';
+
 const TABS = ['overview','wallets','explorer','services','alerts','l1','l2','l3','l4','l5','l6','genesis','blockers','controls','charts','events','env','database','metrics','launch-day','wizard','logs','hiran','dao'];
 let autoRefresh = true, refreshTimer = null, currentTab = 'overview';
 let charts = {};
@@ -7,66 +10,6 @@ let friendlyMode = false;
 let _overviewWidgetTimer = null;
 let _countdownTimer = null;
 try { friendlyMode = localStorage.getItem('zion-friendly') === '1'; } catch(e) {}
-
-// ─────────────────────────────────────────────────────────────────────
-// Utilities
-// ─────────────────────────────────────────────────────────────────────
-
-function escapeHtml(s){
-  return String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-}
-
-function fmtNum(n){
-  if(n === null || n === undefined) return '—';
-  if(n >= 1e9) return (n/1e9).toFixed(2) + 'B';
-  if(n >= 1e6) return (n/1e6).toFixed(2) + 'M';
-  if(n >= 1e3) return (n/1e3).toFixed(1) + 'K';
-  return n.toString();
-}
-
-function toast(msg, kind){
-  const t = document.createElement('div');
-  t.className = 'fixed bottom-4 right-4 px-4 py-2.5 rounded-xl text-sm font-medium z-50 shadow-lg backdrop-blur-md ' +
-    (kind === 'error' ? 'bg-red-600/90 text-white' : 'bg-emerald-600/90 text-white');
-  t.style.cssText += 'animation:slide-in 0.3s ease-out;';
-  t.textContent = msg;
-  document.body.appendChild(t);
-  setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity 0.3s'; }, 2500);
-  setTimeout(() => t.remove(), 3000);
-}
-
-function copyToClipboard(text){
-  navigator.clipboard.writeText(text).then(() => toast('Copied!', 'success'));
-}
-
-// Safe fetch wrapper: checks .ok, throws on HTTP error, parses JSON
-async function apiFetch(url, opts={}){
-  const res = await fetch(url, opts);
-  if(!res.ok) throw new Error('HTTP ' + res.status + ' on ' + url);
-  return res.json();
-}
-
-// Debounce utility for expensive refresh calls
-function debounce(fn, ms){
-  let timer;
-  return function(...args){
-    clearTimeout(timer);
-    timer = setTimeout(()=>fn.apply(this, args), ms);
-  };
-}
-
-// Connection status tracking
-let connectionOk = true;
-let consecutiveFailures = 0;
-function updateConnectionStatus(ok){
-  if(ok){ consecutiveFailures = 0; connectionOk = true; }
-  else { consecutiveFailures++; if(consecutiveFailures >= 3) connectionOk = false; }
-  const badge = document.getElementById('connection-badge');
-  if(badge){
-    badge.textContent = connectionOk ? '● Connected' : '● Disconnected';
-    badge.className = 'text-[10px] px-2 py-0.5 rounded-full font-bold ' + (connectionOk ? 'bg-emerald-700/50 text-emerald-300' : 'bg-red-700/50 text-red-300');
-  }
-}
 
 // ─────────────────────────────────────────────────────────────────────
 // Tab switching
