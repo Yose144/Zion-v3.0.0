@@ -4,6 +4,8 @@ const TABS = ['overview','wallets','explorer','services','alerts','l1','l2','l3'
 let autoRefresh = true, refreshTimer = null, currentTab = 'overview';
 let charts = {};
 let friendlyMode = false;
+let _overviewWidgetTimer = null;
+let _countdownTimer = null;
 try { friendlyMode = localStorage.getItem('zion-friendly') === '1'; } catch(e) {}
 
 // ─────────────────────────────────────────────────────────────────────
@@ -35,6 +37,13 @@ function toast(msg, kind){
 
 function copyToClipboard(text){
   navigator.clipboard.writeText(text).then(() => toast('Copied!', 'success'));
+}
+
+// Safe fetch wrapper: checks .ok, throws on HTTP error, parses JSON
+async function apiFetch(url, opts={}){
+  const res = await fetch(url, opts);
+  if(!res.ok) throw new Error('HTTP ' + res.status + ' on ' + url);
+  return res.json();
 }
 
 // Debounce utility for expensive refresh calls
@@ -122,37 +131,44 @@ function setCardLive(id, ok){
 
 async function refreshAll(){
   try {
-    const [s, cl, al, blk, res] = await Promise.all([
-      fetch('/api/status').then(r => r.json()),
-      fetch('/api/checklist').then(r => r.json()),
-      fetch('/api/alerts').then(r => r.json()),
-      fetch('/api/blockers').then(r => r.json()),
-      fetch('/api/resources').then(r => r.json()).catch(() => ({})),
+    const [s, cl, al, blk, res] = await Promise.allSettled([
+      apiFetch('/api/status'),
+      apiFetch('/api/checklist'),
+      apiFetch('/api/alerts'),
+      apiFetch('/api/blockers'),
+      apiFetch('/api/resources').catch(() => ({})),
     ]);
+    // Unwrap settled results
+    const unwrap = (p) => p.status === 'fulfilled' ? p.value : {};
+    const statusData = unwrap(s);
+    const checklistData = unwrap(cl);
+    const alertsData = unwrap(al);
+    const blockersData = unwrap(blk);
+    const resourcesData = unwrap(res);
 
-    document.getElementById('timestamp').textContent = '⏱ ' + new Date(s.timestamp).toLocaleTimeString();
-    document.getElementById('progressText').textContent = cl.passed + '/' + cl.total;
-    document.getElementById('progressBar').style.width = cl.pct + '%';
+    document.getElementById('timestamp').textContent = '⏱ ' + new Date(statusData.timestamp).toLocaleTimeString();
+    document.getElementById('progressText').textContent = checklistData.passed + '/' + checklistData.total;
+    document.getElementById('progressBar').style.width = checklistData.pct + '%';
 
     // Hero stats
-    const live = [s.node1, s.node2, s.pool, s.miner].filter(x => x.running).length;
+    const live = [statusData.node1, statusData.node2, statusData.pool, statusData.miner].filter(x => x.running).length;
     document.getElementById('hero-services-up').textContent = live;
-    document.getElementById('hero-blockers-open').textContent = blk.open;
-    document.getElementById('hero-chain-height').textContent = s.node1.chain_height ?? '—';
-    document.getElementById('hero-status-kicker').textContent = blk.ready_for_launch
+    document.getElementById('hero-blockers-open').textContent = blockersData.open;
+    document.getElementById('hero-chain-height').textContent = statusData.node1.chain_height ?? '—';
+    document.getElementById('hero-status-kicker').textContent = blockersData.ready_for_launch
       ? '✅ Ready · All P0 Blockers Resolved'
-      : '⏳ Pre-Launch · ' + blk.open_critical + ' critical blockers';
+      : '⏳ Pre-Launch · ' + blockersData.open_critical + ' critical blockers';
 
-    updateServiceCards(s);
-    updateAlerts(al.alerts);
-    updateChecklist(cl.checks);
-    updatePayouts(s.pool);
+    updateServiceCards(statusData);
+    updateAlerts(alertsData.alerts);
+    updateChecklist(checklistData.checks);
+    updatePayouts(statusData.pool);
     updateMiniHashrate();
     loadCliNodeStatus();
-    updateResourceBars(res);
+    updateResourceBars(resourcesData);
     // Feed overview built-in charts with system_cpu/system_mem from resources
     if(typeof feedOverviewCharts === 'function'){
-      const chartData = { ...s, system_cpu: res.cpu_percent || 0, system_mem: res.mem_percent || 0 };
+      const chartData = { ...statusData, system_cpu: resourcesData.cpu_percent || 0, system_mem: resourcesData.mem_percent || 0 };
       feedOverviewCharts(chartData);
     }
 
@@ -331,7 +347,7 @@ function updateAlerts(alerts){
         <div class="text-sm font-semibold">${escapeHtml(a.title)}</div>
         <div class="text-xs opacity-80 mt-0.5">${escapeHtml(a.detail)}</div>
       </div>
-      ${a.action ? `<button onclick="controlAction('${a.action}')" class="text-xs px-2.5 py-1 bg-white/10 hover:bg-white/20 rounded-md transition whitespace-nowrap font-semibold">Fix</button>` : ''}
+      ${a.action ? `<button data-action="${a.action}" class="action-btn text-xs px-2.5 py-1 bg-white/10 hover:bg-white/20 rounded-md transition whitespace-nowrap font-semibold">Fix</button>` : ''}
     </div>`).join('');
 }
 
@@ -620,7 +636,7 @@ async function loadWallets(){
           <td class="py-2 px-3 font-semibold text-white">${label}</td>
           <td class="py-2 px-3">
             <span class="text-gray-300" title="${addr}">${shortAddr}</span>
-            <button onclick="copyToClipboard('${addr}')" class="ml-1 text-[10px] text-zion-gold hover:underline">copy</button>
+            <button data-copy="${addr}" class="copy-btn ml-1 text-[10px] text-zion-gold hover:underline">copy</button>
           </td>
           <td class="py-2 px-3">${sourceBadge}</td>
           <td class="py-2 px-3">${catBadge}</td>
@@ -738,7 +754,7 @@ async function loadExplorer(){
         tbody.innerHTML = '<tr><td colspan="5" class="py-4 text-gray-500 italic text-center">No blocks available. Start the node to see recent blocks.</td></tr>';
       } else {
         tbody.innerHTML = data.recent_blocks.slice().reverse().map(b => `
-          <tr class="border-b border-white/5 hover:bg-white/3 transition cursor-pointer" onclick="openBlockModal(${b.height})" title="Click for block detail">
+          <tr class="border-b border-white/5 hover:bg-white/3 transition cursor-pointer" data-block-height="${b.height}" title="Click for block detail">
             <td class="py-2 px-3 font-bold text-white">#${b.height}</td>
             <td class="py-2 px-3 text-gray-300 truncate" title="${escapeHtml(b.hash || '')}">${escapeHtml(b.hash || '—')}</td>
             <td class="py-2 px-3 text-gray-400">${b.timestamp ? new Date(b.timestamp * 1000).toLocaleString() : '—'}</td>
@@ -1421,7 +1437,7 @@ async function loadEnvFiles(){
   const res = await fetch('/api/env').then(r => r.json());
   const c = document.getElementById('env-file-list');
   c.innerHTML = res.files.map(f => `
-    <button onclick="selectEnv('${escapeHtml(f.name)}')" class="zion-panel-soft px-4 py-2.5 hover:border-zion-gold/40 transition ${currentEnvFile === f.name ? 'ring-2 ring-zion-gold' : ''}">
+    <button data-env="${escapeHtml(f.name)}" class="env-btn zion-panel-soft px-4 py-2.5 hover:border-zion-gold/40 transition ${currentEnvFile === f.name ? 'ring-2 ring-zion-gold' : ''}">
       <div class="font-bold text-zion-gold text-xs font-mono">${escapeHtml(f.name)}</div>
       <div class="text-[10px] text-gray-400">${f.vars} vars · ${(f.size / 1024).toFixed(1)} KB</div>
     </button>`).join('');
@@ -1458,14 +1474,14 @@ async function renderWizard(){
   const [st, cl] = await Promise.all([fetch('/api/status').then(r => r.json()), fetch('/api/checklist').then(r => r.json())]);
   const C = (id) => cl.checks.find(c => c.id === id);
   const steps = [
-    { n: 1, title: 'Prepare environment', desc: 'Generate keys (gen-keys), assemble .env with all wallets and ZION_POOL_PAYOUT_SK_HEX.', done: C('env').ok, actions: [{ label: 'View env files', cb: `switchTab('env')` }] },
-    { n: 2, title: 'Start Node 1 (Genesis)', desc: 'Source-of-truth node at 0.0.0.0:8333 (P2P) / 0.0.0.0:8443 (RPC).', done: C('node1').ok, actions: [{ label: '▶ Start Node 1', cb: `controlAction('start-node1')` }] },
-    { n: 3, title: 'Start Node 2 (Follower)', desc: 'Connects to Node1 as peer, validates P2P handshake & block sync.', done: C('node2').ok, actions: [{ label: '▶ Start Node 2', cb: `controlAction('start-node2')` }] },
-    { n: 4, title: 'Start Pool', desc: 'Pulls templates from Node1 RPC, accepts miners on 0.0.0.0:8444.', done: C('pool').ok, actions: [{ label: '▶ Start Pool', cb: `controlAction('start-pool')` }] },
-    { n: 5, title: 'Start GPU Miner', desc: 'Connects to pool, performs cosmic_harmony hashing on GPU.', done: C('miner').ok, actions: [{ label: '▶ Start Miner', cb: `controlAction('start-miner')` }] },
-    { n: 6, title: 'Start Monitoring', desc: 'Launch Prometheus + Grafana via Docker for metrics dashboards.', done: false, actions: [{ label: '▶ Start Monitoring', cb: `controlAction('start-monitoring')` }, { label: 'Open Grafana', cb: `window.open('http://127.0.0.1:3000')` }] },
-    { n: 7, title: 'Verify chain progression', desc: 'Confirm chain height advances and blocks propagate to Node 2.', done: C('chain').ok, actions: [{ label: 'View events', cb: `switchTab('events')` }] },
-    { n: 8, title: 'Confirm fee split & payouts', desc: 'Validate 89/5/5/1 distribution and payout wallet funded.', done: C('fee_split').ok && C('payout').ok, actions: [{ label: 'View payouts', cb: `switchTab('overview')` }] },
+    { n: 1, title: 'Prepare environment', desc: 'Generate keys (gen-keys), assemble .env with all wallets and ZION_POOL_PAYOUT_SK_HEX.', done: C('env').ok, actions: [{ label: 'View env files', tab: 'env' }] },
+    { n: 2, title: 'Start Node 1 (Genesis)', desc: 'Source-of-truth node at 0.0.0.0:8333 (P2P) / 0.0.0.0:8443 (RPC).', done: C('node1').ok, actions: [{ label: '▶ Start Node 1', control: 'start-node1' }] },
+    { n: 3, title: 'Start Node 2 (Follower)', desc: 'Connects to Node1 as peer, validates P2P handshake & block sync.', done: C('node2').ok, actions: [{ label: '▶ Start Node 2', control: 'start-node2' }] },
+    { n: 4, title: 'Start Pool', desc: 'Pulls templates from Node1 RPC, accepts miners on 0.0.0.0:8444.', done: C('pool').ok, actions: [{ label: '▶ Start Pool', control: 'start-pool' }] },
+    { n: 5, title: 'Start GPU Miner', desc: 'Connects to pool, performs cosmic_harmony hashing on GPU.', done: C('miner').ok, actions: [{ label: '▶ Start Miner', control: 'start-miner' }] },
+    { n: 6, title: 'Start Monitoring', desc: 'Launch Prometheus + Grafana via Docker for metrics dashboards.', done: false, actions: [{ label: '▶ Start Monitoring', control: 'start-monitoring' }, { label: 'Open Grafana', href: 'http://127.0.0.1:3000' }] },
+    { n: 7, title: 'Verify chain progression', desc: 'Confirm chain height advances and blocks propagate to Node 2.', done: C('chain').ok, actions: [{ label: 'View events', tab: 'events' }] },
+    { n: 8, title: 'Confirm fee split & payouts', desc: 'Validate 89/5/5/1 distribution and payout wallet funded.', done: C('fee_split').ok && C('payout').ok, actions: [{ label: 'View payouts', tab: 'overview' }] },
   ];
   const cont = document.getElementById('wizard-steps');
   cont.innerHTML = steps.map((s, i) => {
@@ -1476,7 +1492,12 @@ async function renderWizard(){
       <div class="flex-1">
         <div class="font-bold text-base mb-1 ${next ? 'text-zion-gold' : ''}">${escapeHtml(s.title)}</div>
         <div class="text-xs text-gray-400 mb-2">${escapeHtml(s.desc)}</div>
-        <div class="flex gap-2 flex-wrap">${s.actions.map(a => `<button onclick="${a.cb}" class="text-xs px-3 py-1 bg-white/5 hover:bg-zion-gold/20 rounded-md transition">${escapeHtml(a.label)}</button>`).join('')}</div>
+        <div class="flex gap-2 flex-wrap">${s.actions.map(a => {
+          if(a.control) return `<button data-control="${a.control}" class="ctrl-btn text-xs px-3 py-1 bg-white/5 hover:bg-zion-gold/20 rounded-md transition">${escapeHtml(a.label)}</button>`;
+          if(a.tab) return `<button data-tab="${a.tab}" class="tab-btn text-xs px-3 py-1 bg-white/5 hover:bg-zion-gold/20 rounded-md transition">${escapeHtml(a.label)}</button>`;
+          if(a.href) return `<a href="${a.href}" target="_blank" class="text-xs px-3 py-1 bg-white/5 hover:bg-zion-gold/20 rounded-md transition inline-block">${escapeHtml(a.label)}</a>`;
+          return '';
+        }).join('')}</div>
       </div>
     </div>`;
   }).join('');
@@ -1505,7 +1526,7 @@ async function renderControls(){
     const hidden = ['launch-stack','stop-stack','launch-full','stop-all','open-terminal'];
     const actions = (res.actions || []).filter(a => !hidden.includes(a));
     c.innerHTML = actions.map(a =>
-      `<button onclick="controlAction('${a}')" class="zion-panel-soft p-3 text-left hover:border-zion-gold/40 transition zion-panel-hover">
+      `<button data-control="${a}" class="ctrl-btn zion-panel-soft p-3 text-left hover:border-zion-gold/40 transition zion-panel-hover">
         <div class="text-2xl mb-1">${icons[a] || '⚙️'}</div>
         <div class="text-xs font-semibold">${a}</div>
       </button>`).join('');
@@ -1682,8 +1703,8 @@ async function loadBackupList(){
           <div class="text-xs text-gray-400">${escapeHtml(b.created)} · ${b.size_mb} MB</div>
         </div>
         <div class="flex gap-2">
-          <button onclick="restoreBackup('${escapeHtml(b.name)}')" class="text-[10px] px-2 py-1 bg-emerald-700/50 hover:bg-emerald-600 rounded transition">↩ Restore</button>
-          <button onclick="deleteBackup('${escapeHtml(b.name)}')" class="text-[10px] px-2 py-1 bg-red-700/50 hover:bg-red-600 rounded transition">🗑 Delete</button>
+          <button data-backup="${escapeHtml(b.name)}" data-cmd="restore" class="backup-btn text-[10px] px-2 py-1 bg-emerald-700/50 hover:bg-emerald-600 rounded transition">↩ Restore</button>
+          <button data-backup="${escapeHtml(b.name)}" data-cmd="delete" class="backup-btn text-[10px] px-2 py-1 bg-red-700/50 hover:bg-red-600 rounded transition">🗑 Delete</button>
         </div>
       </div>
     `).join('');
@@ -2084,9 +2105,9 @@ function renderServicesGrid(){
       return `<span class="text-[10px] font-mono ${isOpen ? 'text-emerald-400' : 'text-gray-600'}" title="${k}">${k}:${v}</span>`;
     }).join(' · ');
     const desc = friendlyMode ? s.child_says : s.purpose;
-    const startBtn = s.start ? `<button onclick="controlAction('${s.start}')" class="text-[10px] px-2.5 py-1 bg-emerald-700/50 hover:bg-emerald-600 rounded font-semibold transition">▶ Start</button>` : '';
-    const metricsBtn = (s.ports.metrics || s.ports.api) ? `<button onclick="loadMetrics('${s.id}')" class="text-[10px] px-2.5 py-1 bg-white/5 hover:bg-white/15 rounded font-semibold transition">📊</button>` : '';
-    const logBtn = s.log ? `<button onclick="switchTab('logs');setTimeout(()=>loadLogs('${s.id}'),300)" class="text-[10px] px-2.5 py-1 bg-white/5 hover:bg-white/15 rounded font-semibold transition">📜</button>` : '';
+    const startBtn = s.start ? `<button data-control="${s.start}" class="ctrl-btn text-[10px] px-2.5 py-1 bg-emerald-700/50 hover:bg-emerald-600 rounded font-semibold transition">▶ Start</button>` : '';
+    const metricsBtn = (s.ports.metrics || s.ports.api) ? `<button data-metrics="${s.id}" class="metrics-btn text-[10px] px-2.5 py-1 bg-white/5 hover:bg-white/15 rounded font-semibold transition">📊</button>` : '';
+    const logBtn = s.log ? `<button data-log-svc="${s.id}" class="logsvc-btn text-[10px] px-2.5 py-1 bg-white/5 hover:bg-white/15 rounded font-semibold transition">📜</button>` : '';
     return `<div class="zion-panel-soft zion-panel-hover p-4 rounded-xl border ${lvlColors[s.level] || 'border-white/10'} ${s.alive ? 'svc-live' : ''}">
       <div class="flex items-center justify-between mb-2">
         <div class="flex items-center gap-2">
@@ -2141,7 +2162,7 @@ async function loadDatabases(){
     const sizeStr = d.size > 1024 * 1024 ? (d.size / 1024 / 1024).toFixed(1) + ' MB' : d.size > 1024 ? (d.size / 1024).toFixed(1) + ' KB' : d.size + ' B';
     const kindBadge = d.kind === 'sqlite' ? 'bg-blue-500/20 text-blue-300' : 'bg-amber-500/20 text-amber-300';
     const dis = d.available ? '' : 'opacity-40';
-    return `<button onclick="inspectDb('${escapeHtml(d.path)}')" ${d.available ? '' : 'disabled'} class="${dis} zion-panel-soft zion-panel-hover text-left p-4 rounded-xl border border-white/5">
+    return `<button data-db="${escapeHtml(d.path)}" ${d.available ? '' : 'disabled'} class="db-btn ${dis} zion-panel-soft zion-panel-hover text-left p-4 rounded-xl border border-white/5">
       <div class="flex items-center justify-between mb-1">
         <span class="text-sm font-bold">${escapeHtml(d.name)}</span>
         <span class="text-[10px] px-2 py-0.5 rounded ${kindBadge} uppercase font-bold">${d.kind}</span>
@@ -2200,7 +2221,7 @@ async function renderMetricsButtons(){
   const c = document.getElementById('metrics-buttons');
   const scrapable = svcRes.services.filter(s => s.ports.metrics || s.ports.api);
   c.innerHTML = scrapable.map(s => `
-    <button onclick="loadMetrics('${s.id}')" class="zion-button-secondary text-xs flex items-center gap-1.5">
+    <button data-metrics="${s.id}" class="metrics-btn zion-button-secondary text-xs flex items-center gap-1.5">
       <span>${s.icon}</span><span>${escapeHtml(s.name)}</span>
       <span class="text-[10px] ${s.alive ? 'text-emerald-400' : 'text-gray-500'}">${s.alive ? '●' : '○'}</span>
     </button>`).join('');
@@ -2293,8 +2314,8 @@ async function loadGenesis(){
       <div class="flex-1 min-w-0">
         <div class="text-sm font-semibold truncate">${escapeHtml(p.purpose)}</div>
         <div class="text-[10px] font-mono text-gray-500 truncate flex items-center gap-2">
-          <span class="hover:text-zion-gold cursor-pointer" onclick="copyToClipboard('${escapeHtml(p.address)}')">${escapeHtml(p.address)}</span>
-          <button onclick="copyToClipboard('${escapeHtml(p.address)}')" class="text-gray-500 hover:text-white text-[10px]">📋</button>
+          <span class="hover:text-zion-gold cursor-pointer" data-copy="${escapeHtml(p.address)}">${escapeHtml(p.address)}</span>
+          <button data-copy="${escapeHtml(p.address)}" class="copy-btn text-gray-500 hover:text-white text-[10px]">📋</button>
         </div>
       </div>
       <div class="text-right">
@@ -2310,7 +2331,7 @@ async function loadGenesis(){
     <div class="zion-panel-soft p-3 flex items-center gap-3">
       <span class="zion-kicker">${escapeHtml(k)}</span>
       <code class="text-xs font-mono text-zion-gold flex-1 truncate">${escapeHtml(v)}</code>
-      <button onclick="copyToClipboard('${escapeHtml(v)}')" class="text-xs text-gray-400 hover:text-white">📋</button>
+      <button data-copy="${escapeHtml(v)}" class="copy-btn text-xs text-gray-400 hover:text-white">📋</button>
     </div>`).join('');
 }
 
@@ -2367,10 +2388,12 @@ function toggleAuto(){
   const b = document.getElementById('autoBtn');
   if(autoRefresh){
     b.textContent = '⚡ Auto';
+    if(refreshTimer) clearInterval(refreshTimer);
     refreshTimer = setInterval(refreshAll, 3000);
   } else {
     b.textContent = '⏸ Paused';
-    clearInterval(refreshTimer);
+    if(refreshTimer) clearInterval(refreshTimer);
+    refreshTimer = null;
   }
 }
 
@@ -2413,7 +2436,7 @@ async function loadLaunchDayStatus(){
     // backup
     const bkEl = document.getElementById('ld-backup');
     if(bkEl){
-      bkEl.textContent = res.backup_exists ? '✓ Existuje' : '✗ Chybí';
+      bkEl.textContent = res.backup_exists ? '✓ Exists' : '✗ Missing';
       bkEl.className = 'text-3xl font-bold mb-1 ' + (res.backup_exists ? 'text-emerald-400' : 'text-red-400');
     }
 
@@ -2429,70 +2452,70 @@ async function loadLaunchDayStatus(){
     const detEl = document.getElementById('backup-details');
     if(detEl){
       if(res.backup_exists){
-        detEl.innerHTML = `<div class="text-emerald-400 mb-1">✓ Záloha nalezena</div>
+        detEl.innerHTML = `<div class="text-emerald-400 mb-1">✓ Backup found</div>
           <div class="font-mono text-xs text-gray-400 break-all">${escapeHtml(res.backup_dir)}</div>`;
       } else {
-        detEl.innerHTML = `<div class="text-amber-400 mb-1">⚠ Žádná záloha</div>
-          <div class="text-gray-400">Klikni "Zálohovat vše" před launch dayem.</div>`;
+        detEl.innerHTML = `<div class="text-amber-400 mb-1">⚠ No backup</div>
+          <div class="text-gray-400">Click "Backup All" before launch day.</div>`;
       }
     }
 
-    addLaunchDayLog('📊 Stav: ' + (res.is_launch_day ? 'LAUNCH DAY!' : res.backup_exists ? 'Záloha OK' : 'Záloha chybí'));
+    addLaunchDayLog('📊 Status: ' + (res.is_launch_day ? 'LAUNCH DAY!' : res.backup_exists ? 'Backup OK' : 'Backup missing'));
   } catch(e){
-    addLaunchDayLog('❌ Chyba načítání: ' + e.message);
+    addLaunchDayLog('❌ Load error: ' + e.message);
   }
 }
 
 async function launchDayAction(action){
-  addLaunchDayLog('⏳ Spouštím: ' + action + '...');
+  addLaunchDayLog('⏳ Starting: ' + action + '...');
   try{
     const res = await fetch('/api/launch-day-prepare?action=' + action).then(r=>r.json());
     if(action === 'backup' && res.success){
-      addLaunchDayLog('✅ Záloha vytvořena: ' + (res.backup_dir || ''));
-      if(res.manifest) addLaunchDayLog('📁 Souborů: ' + res.manifest.files_backed_up);
+      addLaunchDayLog('✅ Backup created: ' + (res.backup_dir || ''));
+      if(res.manifest) addLaunchDayLog('📁 Files: ' + res.manifest.files_backed_up);
       if(res.backup_log) res.backup_log.forEach(l => addLaunchDayLog(l));
       const detEl = document.getElementById('backup-details');
       if(detEl && res.backup_dir) detEl.innerHTML = `
-        <div class="text-emerald-400 mb-2">✅ Záloha uložena na lokální PC</div>
+        <div class="text-emerald-400 mb-2">✅ Backup saved to local PC</div>
         <div class="font-mono text-xs text-gray-400 break-all mb-3">${escapeHtml(res.backup_dir)}</div>
         ${res.backup_log ? res.backup_log.map(l=>`<div class="text-xs ${l.startsWith('✓')?'text-emerald-400':'text-amber-400'}">${escapeHtml(l)}</div>`).join('') : ''}`;
       loadLaunchDayStatus();
     } else if(action === 'status'){
       loadLaunchDayStatus();
     } else if(res.error){
-      addLaunchDayLog('❌ Chyba: ' + res.error);
+      addLaunchDayLog('❌ Error: ' + res.error);
     }
   } catch(e){
-    addLaunchDayLog('❌ Chyba: ' + e.message);
+    addLaunchDayLog('❌ Error: ' + e.message);
   }
 }
 
 function confirmLaunchDay(){
-  if(confirm('⚠️ KRITICKÁ OPERACE\n\nRotace genesis a premine adres pro mainnet launch.\n\nUjisti se:\n• Všechny nodes jsou zastaveny\n• Záloha je vytvořena\n• Máš privátní klíče v bezpečí\n\nPokračovat?')){
+  if(confirm('⚠️ CRITICAL OPERATION\n\nGenesis and premine address rotation for mainnet launch.\n\nMake sure:\n• All nodes are stopped\n• Backup is created\n• You have private keys secured\n\nContinue?')){
     launchDayAction('rotate-genesis&confirmed=true');
   } else {
-    addLaunchDayLog('🚫 Rotace zrušena uživatelem');
+    addLaunchDayLog('🚫 Rotation cancelled by user');
   }
 }
 
 async function launchDaySequence(){
-  if(!confirm('🚀 SPUSTIT LAUNCH SEQUENCE?\n\n1. Záloha všeho\n2. Zastavit síť\n3. Rotovat genesis\n4. Restartovat síť\n5. Verifikace\n\nNEVRATITELNÁ OPERACE. Pokračovat?')) return;
+  if(!confirm('🚀 START LAUNCH SEQUENCE?\n\n1. Backup everything\n2. Stop network\n3. Rotate genesis\n4. Restart network\n5. Verification\n\nIRREVERSIBLE OPERATION. Continue?')) return;
 
   addLaunchDayLog('🚀 ══════ START LAUNCH SEQUENCE ══════');
   for(const step of ['prepare','stop-network','rotate-genesis','restart-network','verify']){
-    addLaunchDayLog('⏳ Krok: ' + step);
+    addLaunchDayLog('⏳ Step: ' + step);
     try{
       const res = await fetch('/api/launch-day-execute?step=' + step).then(r=>r.json());
       if(res.success){
-        addLaunchDayLog('✅ ' + step + ' dokončen');
-        if(res.backup_dir) addLaunchDayLog('💾 Záloha: ' + res.backup_dir);
-        if(res.complete){ addLaunchDayLog('🎉 ══════ LAUNCH SEQUENCE DOKONČENA! ══════'); alert('🎉 Mainnet launch sequence dokončena!'); }
+        addLaunchDayLog('✅ ' + step + ' completed');
+        if(res.backup_dir) addLaunchDayLog('💾 Backup: ' + res.backup_dir);
+        if(res.complete){ addLaunchDayLog('🎉 ══════ LAUNCH SEQUENCE COMPLETED! ══════'); alert('🎉 Mainnet launch sequence completed!'); }
       } else {
-        addLaunchDayLog('❌ ' + step + ' selhalo: ' + (res.error || 'neznámá chyba'));
+        addLaunchDayLog('❌ ' + step + ' failed: ' + (res.error || 'unknown error'));
         break;
       }
     } catch(e){
-      addLaunchDayLog('❌ Chyba: ' + e.message);
+      addLaunchDayLog('❌ Error: ' + e.message);
       break;
     }
   }
@@ -2501,7 +2524,7 @@ async function launchDaySequence(){
 function addLaunchDayLog(msg){
   const el = document.getElementById('launch-day-log');
   if(!el) return;
-  const time = new Date().toLocaleTimeString('cs-CZ');
+  const time = new Date().toLocaleTimeString('en-US');
   const cls = msg.startsWith('✅') ? 'text-emerald-400' : msg.startsWith('❌') ? 'text-red-400' : msg.startsWith('🚀') ? 'text-amber-400' : 'text-gray-300';
   el.innerHTML = `<div class="${cls}"><span class="text-gray-600">[${time}]</span> ${escapeHtml(msg)}</div>` + el.innerHTML;
 }
@@ -2527,13 +2550,13 @@ async function checkAiStatus(){
       if(gpuBadge){ gpuBadge.textContent = d1.gpu_layers > 0 ? d1.gpu_layers + '/33' : 'CPU'; gpuBadge.className = 'px-2 py-0.5 rounded text-xs font-bold ' + (d1.gpu_layers > 0 ? 'bg-purple-600 text-white' : 'bg-gray-700 text-white'); }
     } else {
       if(hiranBadge){ hiranBadge.textContent = 'OFFLINE'; hiranBadge.className = 'px-2 py-0.5 rounded text-xs font-bold bg-red-700 text-white'; }
-      if(hiranDetail) hiranDetail.textContent = 'Spusť: ▶ Start';
+      if(hiranDetail) hiranDetail.textContent = 'Start: ▶ Start';
       if(gpuDetail) gpuDetail.textContent = '—';
       if(gpuBadge){ gpuBadge.textContent = '—'; gpuBadge.className = 'px-2 py-0.5 rounded text-xs font-bold bg-gray-700 text-white'; }
     }
   }catch(e){
     if(hiranBadge){ hiranBadge.textContent = 'OFFLINE'; hiranBadge.className = 'px-2 py-0.5 rounded text-xs font-bold bg-red-700 text-white'; }
-    if(hiranDetail) hiranDetail.textContent = 'Spusť: ▶ Start';
+    if(hiranDetail) hiranDetail.textContent = 'Start: ▶ Start';
   }
 
   // ── Hiranyagarbha (port 8001) ──
@@ -2686,10 +2709,10 @@ async function sendChat(){
   // Spinner
   const spinDiv = document.createElement('div');
   spinDiv.className = 'flex gap-2';
-  spinDiv.innerHTML = '<div class="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-xs font-bold shrink-0">AI</div><div class="bg-black/30 rounded-xl p-3 text-sm text-gray-400 animate-pulse">Hiran přemýšlí…</div>';
+  spinDiv.innerHTML = '<div class="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-xs font-bold shrink-0">AI</div><div class="bg-black/30 rounded-xl p-3 text-sm text-gray-400 animate-pulse">Hiran is thinking…</div>';
   log.appendChild(spinDiv);
   log.scrollTop = log.scrollHeight;
-  if(status) status.textContent = 'Odesílám…';
+  if(status) status.textContent = 'Sending…';
   try{
     const t0 = Date.now();
     const r = await fetch('/api/hiran/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg})});
@@ -2697,19 +2720,19 @@ async function sendChat(){
     log.removeChild(spinDiv);
     const aiDiv = document.createElement('div');
     aiDiv.className = 'flex gap-2';
-    const text = d.ok ? d.reply : 'Chyba: ' + (d.error || 'neznámá chyba');
+    const text = d.ok ? d.reply : 'Error: ' + (d.error || 'unknown error');
     aiDiv.innerHTML = '<div class="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-xs font-bold shrink-0">AI</div><div class="bg-black/30 rounded-xl p-3 text-sm text-gray-200 whitespace-pre-wrap">' + escapeHtml(text) + '</div>';
     log.appendChild(aiDiv);
     log.scrollTop = log.scrollHeight;
     const elapsed = d.latency_ms != null ? d.latency_ms : Date.now()-t0;
-    if(status) status.textContent = 'Odpověď za ' + Math.round(elapsed) + ' ms · tokenů: ' + (d.tokens || '—');
+    if(status) status.textContent = 'Response in ' + Math.round(elapsed) + ' ms · tokens: ' + (d.tokens || '—');
   }catch(e){
     log.removeChild(spinDiv);
     const errDiv = document.createElement('div');
     errDiv.className = 'flex gap-2';
-    errDiv.innerHTML = '<div class="w-8 h-8 rounded-full bg-red-600 flex items-center justify-center text-xs font-bold shrink-0">!</div><div class="bg-black/30 rounded-xl p-3 text-sm text-red-400">Chyba: ' + escapeHtml(String(e)) + '</div>';
+    errDiv.innerHTML = '<div class="w-8 h-8 rounded-full bg-red-600 flex items-center justify-center text-xs font-bold shrink-0">!</div><div class="bg-black/30 rounded-xl p-3 text-sm text-red-400">Error: ' + escapeHtml(String(e)) + '</div>';
     log.appendChild(errDiv);
-    if(status) status.textContent = 'Chyba spojení';
+    if(status) status.textContent = 'Connection error';
   }
 }
 
@@ -2875,7 +2898,7 @@ async function loadProcessRegistry(){
       html += '<div class="bg-black/20 rounded-md p-2 flex items-center justify-between">' +
               '<div><div class="text-xs font-semibold text-gray-200">' + escapeHtml(p.name || 'Unknown') + '</div>' +
               '<div class="text-[10px] text-gray-400">PID ' + (p.pid || '—') + ' · CPU ' + (p.cpu_percent ?? '—') + '% · MEM ' + (p.memory_mb ?? '—') + ' MB</div></div>' +
-              '<button onclick="killPid(' + (p.pid || 0) + ')" class="text-[10px] px-2 py-1 bg-red-700/50 hover:bg-red-600 rounded text-white">Kill</button>' +
+              '<button data-kill-pid="' + (p.pid || 0) + '" class="kill-btn text-[10px] px-2 py-1 bg-red-700/50 hover:bg-red-600 rounded text-white">Kill</button>' +
               '</div>';
     }
     html += '</div>';
@@ -2992,7 +3015,7 @@ async function loadNclFull() {
           const successRate = jobs > 0 ? Math.round(((jobs - failed) / jobs) * 100) : 0;
           const barW = Math.min(score, 100);
           const gradColors = score >= 80 ? '#10b981,#059669' : score >= 50 ? '#3b82f6,#2563eb' : '#6b7280,#4b5563';
-          return `<div class="ncl-worker-row p-4" onclick="this.querySelector('.ncl-detail').classList.toggle('hidden')">
+          return `<div class="ncl-worker-row p-4 ncl-toggle" data-toggle-detail="1">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-3">
                 <div class="w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold text-white" style="background:linear-gradient(135deg,${gradColors});">${short.slice(0, 2).toUpperCase()}</div>
@@ -3441,7 +3464,7 @@ function renderDaoProposalCard(p) {
       </div>
       <div class="flex items-center gap-2 shrink-0">
         <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold ${statusColor}">${p.status}</span>
-        ${p.status === 'Active' ? `<button onclick="openDaoVoteModal(${p.id}, ${JSON.stringify(escapeHtml(p.title || '')).replace(/"/g,"'")})" class="text-[10px] px-2 py-0.5 bg-purple-700/50 hover:bg-purple-600 rounded-full font-semibold transition">Vote</button>` : ''}
+        ${p.status === 'Active' ? `<button data-dao-id="${p.id}" data-dao-title="${escapeHtml(p.title || '')}" class="daovote-btn text-[10px] px-2 py-0.5 bg-purple-700/50 hover:bg-purple-600 rounded-full font-semibold transition">Vote</button>` : ''}
       </div>
     </div>
     ${p.description ? `<div class="text-[11px] text-gray-400 line-clamp-2 mb-2">${escapeHtml(p.description)}</div>` : ''}
@@ -3631,11 +3654,13 @@ loadSettings().then(s => {
   else { switchTab('overview'); }
 });
 refreshAll();
+if(refreshTimer) clearInterval(refreshTimer);
 refreshTimer = setInterval(refreshAll, 3000);
 setTimeout(loadMinerConfig, 500);
 // Load overview widgets on startup
 setTimeout(() => { loadNclOverview(); loadHiranOverview(); }, 1500);
-setInterval(() => { loadNclOverview(); loadHiranOverview(); }, 15000);
+if(_overviewWidgetTimer) clearInterval(_overviewWidgetTimer);
+_overviewWidgetTimer = setInterval(() => { loadNclOverview(); loadHiranOverview(); }, 15000);
 // ─────────────────────────────────────────────────────────────────────
 // L2 Layer Functions
 // ─────────────────────────────────────────────────────────────────────
@@ -3939,8 +3964,8 @@ function initLogPane() {
       <div class="text-[11px] font-mono text-gray-200 mb-1">${s.label}</div>
       <div class="text-[10px] text-gray-500 uppercase mb-2">${s.group}</div>
       <div class="flex gap-1 flex-wrap">
-        <button onclick="logSelectSvc('${s.id}');logStreamStart()" class="text-[10px] px-2 py-0.5 bg-emerald-700/40 hover:bg-emerald-600 rounded transition">▶ Stream</button>
-        <button onclick="openNativeTerminalFor('${s.id}')" class="text-[10px] px-2 py-0.5 bg-purple-700/40 hover:bg-purple-600 rounded transition">⬛ Term</button>
+        <button data-stream="${s.id}" class="stream-btn text-[10px] px-2 py-0.5 bg-emerald-700/40 hover:bg-emerald-600 rounded transition">▶ Stream</button>
+        <button data-term="${s.id}" class="term-btn text-[10px] px-2 py-0.5 bg-purple-700/40 hover:bg-purple-600 rounded transition">⬛ Term</button>
       </div>`;
     svcGrid.appendChild(card);
   });
@@ -4103,8 +4128,8 @@ async function refreshLogFiles() {
           <div class="text-gray-200 font-mono">${escapeHtml(f.name)}</div>
           <div class="text-[10px] text-gray-500">${f.size_kb ? f.size_kb + ' KB' : '—'} · ${f.modified || '—'}</div>
         </div>
-        <button onclick="logSelectAndOpen('${escapeHtml(f.svc_id || f.name)}')"
-          class="text-[10px] px-2 py-0.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded transition">View</button>
+        <button data-log-open="${escapeHtml(f.svc_id || f.name)}"
+          class="logopen-btn text-[10px] px-2 py-0.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded transition">View</button>
       </div>`).join('');
   } catch(e) { el.innerHTML = `<div class="text-red-400 text-xs">Error: ${e.message}</div>`; }
 }
@@ -4134,7 +4159,8 @@ function startLaunchCountdown(){
     el.textContent = `${d}d ${h}h ${m}m ${s}s`;
   }
   tick();
-  setInterval(tick, 1000);
+  if(_countdownTimer) clearInterval(_countdownTimer);
+  _countdownTimer = setInterval(tick, 1000);
 }
 
 // ── Hook into switchTab for logs ─────────────────────────────────────────
@@ -4143,5 +4169,45 @@ function startLaunchCountdown(){
 const _origSwitchTab = switchTab;
 // Override logs init in switchTab — patch the call site instead
 // Already handled via initLogPane() called from the patched switchTab listener below.
+
+// Event delegation for data-action buttons (replaces inline onclick)
+document.body.addEventListener('click', (e) => {
+  const btn = e.target.closest('.action-btn');
+  if(btn && btn.dataset.action){ controlAction(btn.dataset.action); return; }
+  const bkp = e.target.closest('.backup-btn');
+  if(bkp && bkp.dataset.backup){
+    if(bkp.dataset.cmd === 'restore') restoreBackup(bkp.dataset.backup);
+    else if(bkp.dataset.cmd === 'delete') deleteBackup(bkp.dataset.backup);
+    return;
+  }
+  const cpy = e.target.closest('[data-copy]');
+  if(cpy && cpy.dataset.copy){ copyToClipboard(cpy.dataset.copy); return; }
+  const ctrl = e.target.closest('.ctrl-btn');
+  if(ctrl && ctrl.dataset.control){ controlAction(ctrl.dataset.control); return; }
+  const met = e.target.closest('.metrics-btn');
+  if(met && met.dataset.metrics){ loadMetrics(met.dataset.metrics); return; }
+  const lsvc = e.target.closest('.logsvc-btn');
+  if(lsvc && lsvc.dataset.logSvc){ switchTab('logs'); setTimeout(()=>loadLogs(lsvc.dataset.logSvc), 300); return; }
+  const env = e.target.closest('.env-btn');
+  if(env && env.dataset.env){ selectEnv(env.dataset.env); return; }
+  const db = e.target.closest('.db-btn');
+  if(db && db.dataset.db){ inspectDb(db.dataset.db); return; }
+  const kill = e.target.closest('.kill-btn');
+  if(kill && kill.dataset.killPid){ killPid(kill.dataset.killPid); return; }
+  const stream = e.target.closest('.stream-btn');
+  if(stream && stream.dataset.stream){ logSelectSvc(stream.dataset.stream); logStreamStart(); return; }
+  const term = e.target.closest('.term-btn');
+  if(term && term.dataset.term){ openNativeTerminalFor(term.dataset.term); return; }
+  const lopen = e.target.closest('.logopen-btn');
+  if(lopen && lopen.dataset.logOpen){ logSelectAndOpen(lopen.dataset.logOpen); return; }
+  const blk = e.target.closest('[data-block-height]');
+  if(blk && blk.dataset.blockHeight){ openBlockModal(parseInt(blk.dataset.blockHeight, 10)); return; }
+  const tbtn = e.target.closest('.tab-btn');
+  if(tbtn && tbtn.dataset.tab){ switchTab(tbtn.dataset.tab); return; }
+  const dao = e.target.closest('.daovote-btn');
+  if(dao && dao.dataset.daoId){ openDaoVoteModal(parseInt(dao.dataset.daoId, 10), dao.dataset.daoTitle); return; }
+  const ncl = e.target.closest('.ncl-toggle');
+  if(ncl && ncl.dataset.toggleDetail){ ncl.querySelector('.ncl-detail')?.classList.toggle('hidden'); return; }
+});
 
 console.log('[ZION Dashboard] Auto-refresh started');
