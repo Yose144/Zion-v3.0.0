@@ -31,6 +31,8 @@ from services.processes import PROCESS_REGISTRY, PROCESS_LOCK, register_process,
 from services.health import HEALTH_CACHE, tcp_probe, http_probe, check_service_health, all_services_health, scrape_metrics
 from services.logs import LOG_ROTATION_LOCK, rotate_log_file, rotate_all_logs, tail_log, head_log
 from services.rpc import rpc_call
+from services.search import search_logs
+from services.settings import load_settings, save_settings
 
 # ── Resource monitoring ─────────────────────────────────────────────────
 RESOURCE_CACHE = {"ts": 0, "data": {}}
@@ -1586,65 +1588,6 @@ def get_network_topology() -> dict:
             "hiran_inference": check_port_open("127.0.0.1", 8002),
         },
     }
-
-# ── Log Search ─────────────────────────────────────────────────────────
-
-def search_logs(query: str, max_results: int = 50) -> list:
-    """Search across all log files for lines matching query (case-insensitive)."""
-    results = []
-    if not LOG_DIR.exists():
-        return results
-    query_lower = query.lower()
-    log_files = [f for f in LOG_DIR.glob("*.log") if f.is_file()]
-    for lf in sorted(log_files, key=lambda p: p.stat().st_mtime, reverse=True):
-        try:
-            with open(lf, "r", encoding="utf-8", errors="ignore") as f:
-                lines = f.readlines()
-            for i, line in enumerate(lines):
-                if query_lower in line.lower():
-                    results.append({
-                        "file": lf.name,
-                        "line": i + 1,
-                        "text": line.rstrip("\n")[:300],
-                    })
-                    if len(results) >= max_results:
-                        return results
-        except Exception:
-            pass
-    return results
-
-# ── Settings persistence ────────────────────────────────────────────────
-
-SETTINGS_PATH = LOG_DIR / "dashboard-settings.json"
-
-DEFAULT_SETTINGS = {
-    "theme": "dark",
-    "refresh_interval_ms": 3000,
-    "default_tab": "overview",
-    "alert_threshold_hashrate": 1.0,
-    "alert_threshold_sync_gap": 10,
-    "log_level_filter": "all",  # all, error, warn, info
-    "auto_launch_watchdog": True,
-    "show_tooltips": True,
-}
-
-def load_settings() -> dict:
-    if SETTINGS_PATH.exists():
-        try:
-            with open(SETTINGS_PATH, "r", encoding="utf-8") as f:
-                return {**DEFAULT_SETTINGS, **json.load(f)}
-        except Exception:
-            pass
-    return DEFAULT_SETTINGS.copy()
-
-def save_settings(settings: dict) -> dict:
-    try:
-        merged = {**load_settings(), **settings}
-        with open(SETTINGS_PATH, "w", encoding="utf-8") as f:
-            json.dump(merged, f, indent=2)
-        return {"ok": True, "settings": merged}
-    except Exception as e:
-        return {"ok": False, "error": str(e)}
 
 # ── Process manager (kill PID) ───────────────────────────────────────────
 
