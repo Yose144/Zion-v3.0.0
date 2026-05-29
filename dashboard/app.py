@@ -4091,6 +4091,28 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 self.wfile.write(body)
             else:
                 self.send_error(404)
+        elif route == "/ui.js":
+            js_path = SCRIPT_DIR / "ui.js"
+            if js_path.exists():
+                body = js_path.read_bytes()
+                self.send_response(200)
+                self.send_header("Content-Type", "application/javascript; charset=utf-8")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+            else:
+                self.send_error(404)
+        elif route == "/api.js":
+            js_path = SCRIPT_DIR / "api.js"
+            if js_path.exists():
+                body = js_path.read_bytes()
+                self.send_response(200)
+                self.send_header("Content-Type", "application/javascript; charset=utf-8")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+            else:
+                self.send_error(404)
         elif route == "/health":
             self._json({"status": "ok", "version": "v2.0", "uptime_sec": int(time.time() - _STARTUP_TS)})
         elif route == "/api/status":
