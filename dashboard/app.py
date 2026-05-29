@@ -30,6 +30,7 @@ from auth import DASHBOARD_API_KEY, _CSRF_TOKEN, check_rate_limit
 from services.processes import PROCESS_REGISTRY, PROCESS_LOCK, register_process, is_process_alive, check_process_for_service
 from services.health import HEALTH_CACHE, tcp_probe, http_probe, check_service_health, all_services_health, scrape_metrics
 from services.logs import LOG_ROTATION_LOCK, rotate_log_file, rotate_all_logs, tail_log, head_log
+from services.rpc import rpc_call
 
 # ── Resource monitoring ─────────────────────────────────────────────────
 RESOURCE_CACHE = {"ts": 0, "data": {}}
@@ -971,40 +972,6 @@ def load_env_file(name: str) -> dict:
     return {"file": name, "vars": variables, "missing_required": missing, "total": len(variables)}
 
 # ── Wallet discovery & RPC balance lookup ──────────────────────────────
-
-def rpc_call(host: str, port: int, method: str, params: dict, timeout: float = 2.0) -> dict:
-    """Simple TCP JSON-RPC call to ZION node. Returns result dict or None on failure."""
-    try:
-        payload = json.dumps({"jsonrpc": "2.0", "id": 1, "method": method, "params": params}) + "\n"
-        with socket.create_connection((host, port), timeout=timeout) as sock:
-            sock.sendall(payload.encode("utf-8"))
-            sock.settimeout(timeout)
-            data = b""
-            while True:
-                try:
-                    chunk = sock.recv(4096)
-                    if not chunk:
-                        break
-                    data += chunk
-                    if b"\n" in data:
-                        break
-                except socket.timeout:
-                    break
-        for line in data.decode("utf-8", errors="ignore").splitlines():
-            line = line.strip()
-            if not line:
-                continue
-            try:
-                resp = json.loads(line)
-                if "result" in resp:
-                    return resp["result"]
-                if "error" in resp and resp["error"]:
-                    return {"_rpc_error": resp["error"]}
-            except json.JSONDecodeError:
-                continue
-        return None
-    except Exception:
-        return None
 
 def parse_premine_from_genesis(rpc_host: str = "127.0.0.1", rpc_port: int = 8443) -> list:
     """Extract premine addresses and amounts from the actual genesis block via RPC.
