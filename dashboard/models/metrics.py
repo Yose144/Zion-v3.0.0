@@ -102,5 +102,5 @@ class MetricsHistory:
             return list(self.samples)
 
 
-# Global singleton — instantiated after optional config override in app.py
-HISTORY = None  # type: MetricsHistory | None
+# Global singleton — instantiated once at import time after config is loaded
+HISTORY = MetricsHistory()
