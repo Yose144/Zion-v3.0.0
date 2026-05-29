@@ -8,6 +8,7 @@ and parses local log files via a JSON API.
 import json
 import os
 import re
+import secrets
 import subprocess
 import sys
 import threading
@@ -27,32 +28,115 @@ SCRIPTS_DIR = REPO_ROOT / "scripts"
 if not LOG_DIR.exists():
     LOG_DIR = Path("../logs")
 
-HOST = "127.0.0.1"
-PORT = 8766
+# Load optional dashboard.json config
+def _load_dashboard_config():
+    cfg_path = SCRIPT_DIR / "config.json"
+    if cfg_path.exists():
+        try:
+            return json.loads(cfg_path.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+    return {}
 
-# ── Metrics history (in-memory ring buffer) ─────────────────────────────
+_DASH_CFG = _load_dashboard_config()
+
+HOST = _DASH_CFG.get("host", "127.0.0.1")
+PORT = _DASH_CFG.get("port", 8766)
+LOG_ROTATION_MAX_BYTES = _DASH_CFG.get("log_rotation_max_bytes", 100 * 1024 * 1024)
+LOG_ROTATION_MAX_AGE_HOURS = _DASH_CFG.get("log_rotation_max_age_hours", 24)
+HEALTH_TTL = _DASH_CFG.get("health_ttl", 5)
+MAX_RPS = _DASH_CFG.get("rate_limit_max_rps", 10)
+RATE_WINDOW = _DASH_CFG.get("rate_limit_window_sec", 10)
+# ── Metrics history (SQLite-backed + in-memory cache) ───────────────────
 
 class MetricsHistory:
-    """Keeps last N samples for charting. Polled every 5s by background thread."""
+    """Keeps last N samples for charting. Persisted to SQLite so history survives restarts."""
     MAX_POINTS = 120  # ~10 min at 5s interval
+    _DB_PATH = REPO_ROOT / "V3" / "data" / "dashboard-metrics.db"
 
     def __init__(self):
         self.lock = threading.Lock()
         self.samples = deque(maxlen=self.MAX_POINTS)
+        self._ensure_table()
+        self._load_from_db()
+
+    def _ensure_table(self):
+        try:
+            self._DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+            con = sqlite3.connect(str(self._DB_PATH))
+            cur = con.cursor()
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS metrics (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    ts INTEGER NOT NULL,
+                    n1_height INTEGER,
+                    n2_height INTEGER,
+                    n1_peers INTEGER,
+                    hashrate REAL,
+                    shares_ok INTEGER,
+                    shares_bad INTEGER,
+                    blocks INTEGER,
+                    sessions INTEGER
+                )
+            """)
+            con.commit()
+            con.close()
+        except Exception as e:
+            print(f"[metrics] DB init error: {e}", file=sys.stderr)
+
+    def _load_from_db(self):
+        try:
+            con = sqlite3.connect(str(self._DB_PATH))
+            cur = con.cursor()
+            cur.execute(
+                "SELECT ts, n1_height, n2_height, n1_peers, hashrate, shares_ok, shares_bad, blocks, sessions "
+                "FROM metrics ORDER BY id DESC LIMIT ?",
+                (self.MAX_POINTS,),
+            )
+            rows = cur.fetchall()
+            con.close()
+            # Reverse to chronological order
+            for row in reversed(rows):
+                self.samples.append({
+                    "t": row[0], "n1_height": row[1], "n2_height": row[2],
+                    "n1_peers": row[3], "hashrate": row[4], "shares_ok": row[5],
+                    "shares_bad": row[6], "blocks": row[7], "sessions": row[8],
+                })
+        except Exception as e:
+            print(f"[metrics] DB load error: {e}", file=sys.stderr)
 
     def record(self, status: dict):
+        sample = {
+            "t": int(time.time()),
+            "n1_height": status["node1"]["chain_height"],
+            "n2_height": status["node2"]["chain_height"],
+            "n1_peers": status["node1"]["known_peers"],
+            "hashrate": status["miner"]["hashrate"],
+            "shares_ok": status["pool"]["shares_accepted"],
+            "shares_bad": status["pool"]["shares_rejected"],
+            "blocks": status["pool"]["blocks_found"],
+            "sessions": status["pool"]["active_sessions"],
+        }
         with self.lock:
-            self.samples.append({
-                "t": int(time.time()),
-                "n1_height": status["node1"]["chain_height"],
-                "n2_height": status["node2"]["chain_height"],
-                "n1_peers": status["node1"]["known_peers"],
-                "hashrate": status["miner"]["hashrate"],
-                "shares_ok": status["pool"]["shares_accepted"],
-                "shares_bad": status["pool"]["shares_rejected"],
-                "blocks": status["pool"]["blocks_found"],
-                "sessions": status["pool"]["active_sessions"],
-            })
+            self.samples.append(sample)
+        self._persist(sample)
+
+    def _persist(self, sample: dict):
+        try:
+            con = sqlite3.connect(str(self._DB_PATH))
+            cur = con.cursor()
+            cur.execute(
+                "INSERT INTO metrics (ts, n1_height, n2_height, n1_peers, hashrate, shares_ok, shares_bad, blocks, sessions) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (sample["t"], sample["n1_height"], sample["n2_height"], sample["n1_peers"],
+                 sample["hashrate"], sample["shares_ok"], sample["shares_bad"], sample["blocks"], sample["sessions"]),
+            )
+            # Keep only last MAX_POINTS * 2 rows to prevent unbounded growth
+            cur.execute("DELETE FROM metrics WHERE id <= (SELECT MAX(id) FROM metrics) - ?", (self.MAX_POINTS * 2,))
+            con.commit()
+            con.close()
+        except Exception as e:
+            print(f"[metrics] DB persist error: {e}", file=sys.stderr)
 
     def snapshot(self) -> list:
         with self.lock:
@@ -61,11 +145,15 @@ class MetricsHistory:
 HISTORY = MetricsHistory()
 BLOCK_EVENTS: deque = deque(maxlen=50)
 LAST_BLOCK_EVENT_TIME = {"node1": 0, "node2": 0, "pool": 0}
+_STARTUP_TS = time.time()  # Dashboard process uptime for /health
+
+# Apply config override for MetricsHistory after class is defined
+if _DASH_CFG:
+    MetricsHistory.MAX_POINTS = _DASH_CFG.get("metrics_max_points", 120)
+    HISTORY = MetricsHistory()  # Re-init with new maxlen
 
 # ── Log Rotation ─────────────────────────────────────────────────────────
 LOG_ROTATION_LOCK = threading.Lock()
-LOG_ROTATION_MAX_BYTES = 100 * 1024 * 1024  # 100 MB
-LOG_ROTATION_MAX_AGE_HOURS = 24
 
 def rotate_log_file(path: Path):
     """Rotate a single log file if it exceeds size or age threshold."""
@@ -553,6 +641,22 @@ import urllib.request as _urlreq
 HEALTH_CACHE = {}  # id -> {"alive": bool, "ts": int, "details": str}
 HEALTH_TTL = 5  # seconds
 
+# ── Rate limiting ───────────────────────────────────────────────────────
+_RATE_LIMIT = {}  # ip -> [timestamp, ...]
+MAX_RPS = 10
+RATE_WINDOW = 10  # seconds
+
+def check_rate_limit(ip: str) -> bool:
+    now = time.time()
+    stamps = _RATE_LIMIT.get(ip, [])
+    # Keep only stamps within window
+    stamps = [t for t in stamps if now - t < RATE_WINDOW]
+    _RATE_LIMIT[ip] = stamps
+    if len(stamps) >= MAX_RPS:
+        return False
+    stamps.append(now)
+    return True
+
 def tcp_probe(host: str, port: int, timeout: float = 0.15) -> bool:
     try:
         with socket.create_connection((host, port), timeout=timeout):
@@ -752,12 +856,15 @@ def inspect_database(path_str: str, limit: int = 50) -> dict:
             tables = [r[0] for r in cur.fetchall()]
             tables_info = []
             for tname in tables:
+                # Whitelist table names to prevent injection via malicious sqlite files
+                if not re.fullmatch(r'[a-zA-Z0-9_]+', tname):
+                    continue
                 cur.execute(f'SELECT COUNT(*) FROM "{tname}"')
                 count = cur.fetchone()[0]
                 cur.execute(f'PRAGMA table_info("{tname}")')
                 cols = [{"name": r[1], "type": r[2]} for r in cur.fetchall()]
                 # Sample rows
-                cur.execute(f'SELECT * FROM "{tname}" LIMIT {limit}')
+                cur.execute(f'SELECT * FROM "{tname}" LIMIT ?', (limit,))
                 rows = [dict(r) for r in cur.fetchall()]
                 tables_info.append({"name": tname, "rows": count, "columns": cols, "sample": rows})
             con.close()
@@ -4232,10 +4339,35 @@ refreshTimer=setInterval(refreshAll,3000);
 
 # ── HTTP Handler ────────────────────────────────────────────────────────
 
+# API key: if set via env, all state-changing endpoints require it in X-API-Key header
+DASHBOARD_API_KEY = os.environ.get("DASHBOARD_API_KEY", "")
+# CSRF token (rotates on each restart; enough for localhost scenarios)
+_CSRF_TOKEN = secrets.token_hex(16) if DASHBOARD_API_KEY else ""
+
 class DashboardHandler(BaseHTTPRequestHandler):
     def log_message(self, fmt, *args):
         # suppress default request logging
         pass
+
+    def _require_auth(self):
+        """Return False if auth check passes, otherwise send 401 and return True."""
+        if not DASHBOARD_API_KEY:
+            return False
+        key = self.headers.get("X-API-Key", "")
+        if key != DASHBOARD_API_KEY:
+            self.send_error(401, "Unauthorized")
+            return True
+        return False
+
+    def _require_csrf(self, payload):
+        """Return False if CSRF check passes, otherwise send 403 and return True."""
+        if not DASHBOARD_API_KEY or not _CSRF_TOKEN:
+            return False
+        token = payload.get("_csrf", "") or self.headers.get("X-CSRF-Token", "")
+        if token != _CSRF_TOKEN:
+            self.send_error(403, "Invalid CSRF token")
+            return True
+        return False
 
     def _json(self, data, status=200):
         try:
@@ -4314,6 +4446,10 @@ class DashboardHandler(BaseHTTPRequestHandler):
             return {"ok": False, "error": str(e)}
 
     def do_GET(self):
+        client_ip = self.client_address[0]
+        if not check_rate_limit(client_ip):
+            self.send_error(429, "Rate limit exceeded")
+            return
         parsed = urllib.parse.urlparse(self.path)
         route = parsed.path
         params = urllib.parse.parse_qs(parsed.query)
@@ -4336,6 +4472,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 self.wfile.write(body)
             else:
                 self.send_error(404)
+        elif route == "/health":
+            self._json({"status": "ok", "version": "v2.0", "uptime_sec": int(time.time() - _STARTUP_TS)})
         elif route == "/api/status":
             self._json(build_status())
         elif route == "/api/checklist":
@@ -4349,6 +4487,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
         elif route == "/api/env":
             self._json({"files": list_env_files()})
         elif route == "/api/env/load":
+            if self._require_auth(): return
             name = (params.get("name", [".env.mainnet"])[0])
             self._json(load_env_file(name))
         elif route == "/api/controls":
@@ -4360,10 +4499,12 @@ class DashboardHandler(BaseHTTPRequestHandler):
         elif route == "/api/alerts/history":
             self._json({"alerts": load_alert_history()})
         elif route == "/api/watchdog/toggle":
+            if self._require_auth(): return
             global WATCHDOG_ENABLED
             WATCHDOG_ENABLED = not WATCHDOG_ENABLED
             self._json({"enabled": WATCHDOG_ENABLED})
         elif route == "/api/logs/rotate":
+            if self._require_auth(): return
             try:
                 rotate_all_logs()
                 self._json({"ok": True, "message": "Log rotation triggered"})
@@ -4790,6 +4931,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 ])
             })
         elif route == "/api/launch-day-prepare":
+            if self._require_auth(): return
             # Launch Day automation: backup configs, prepare genesis rotation
             action = params.get("action", ["status"])[0]
             
@@ -4909,6 +5051,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 })
                 
         elif route == "/api/launch-day-execute":
+            if self._require_auth(): return
             # Execute actual launch day sequence
             step = params.get("step", ["prepare"])[0]
             
@@ -5055,6 +5198,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
             max_r = int(params.get("max", ["50"])[0])
             self._json({"query": q, "results": search_logs(q, max_r)})
         elif route == "/api/processes/kill":
+            if self._require_auth(): return
             pid = int(params.get("pid", ["0"])[0])
             self._json(kill_process(pid))
         elif route == "/api/export/blocks":
@@ -5254,6 +5398,12 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self.send_error(404)
 
     def do_POST(self):
+        client_ip = self.client_address[0]
+        if not check_rate_limit(client_ip):
+            self.send_error(429, "Rate limit exceeded")
+            return
+        if self._require_auth():
+            return
         parsed = urllib.parse.urlparse(self.path)
         route = parsed.path
         length = int(self.headers.get("Content-Length", "0"))
@@ -5262,6 +5412,10 @@ class DashboardHandler(BaseHTTPRequestHandler):
             payload = json.loads(raw.decode("utf-8")) if raw else {}
         except Exception:
             payload = {}
+        # CSRF check for all state-changing POSTs (skip proxy/chat endpoints)
+        if route not in ("/api/hiran/chat", "/api/ncl/submit") and DASHBOARD_API_KEY:
+            if self._require_csrf(payload):
+                return
 
         if route.startswith("/api/dao"):
             # Proxy POST /api/dao/* to DAO daemon on port 8081
@@ -5315,10 +5469,12 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 if LAUNCH_STATE["running"]:
                     self._json({"ok": False, "error": "Launch already in progress", "state": get_launch_state()})
                     return
-            sids = [svc["id"] for svc in SERVICE_REGISTRY if svc.get("start")]
-            thread = threading.Thread(target=run_dependency_launch, args=(sids,), daemon=True)
+            # Launch everything that has a start script EXCEPT AI layer
+            # (hiranyagarbha / Hiran inference must be started manually)
+            auto_sids = [svc["id"] for svc in SERVICE_REGISTRY if svc.get("start") and svc["id"] not in ("hiranyagarbha", "ai-native")]
+            thread = threading.Thread(target=run_dependency_launch, args=(auto_sids,), daemon=True)
             thread.start()
-            self._json({"ok": True, "message": "Full launch started", "services": sids, "state": get_launch_state()})
+            self._json({"ok": True, "message": "Full launch started (AI layer excluded — start manually if needed)", "services": auto_sids, "state": get_launch_state()})
         elif route == "/api/backup/create":
             name = payload.get("name", "").strip()
             include_logs = payload.get("includeLogs", False)
@@ -5361,10 +5517,20 @@ class DashboardHandler(BaseHTTPRequestHandler):
             if not name:
                 self._json({"ok": False, "error": "Backup name required"})
                 return
-            backup_file = REPO_ROOT / "backups" / name
+            # Validate name to prevent path traversal
+            import re
+            if not re.fullmatch(r'[a-zA-Z0-9_.\-]+', name):
+                self._json({"ok": False, "error": "Invalid backup name"})
+                return
+            backup_file = (REPO_ROOT / "backups" / name).resolve()
             if not backup_file.exists():
                 # Try with .zip extension
-                backup_file = REPO_ROOT / "backups" / (name + ".zip")
+                backup_file = (REPO_ROOT / "backups" / (name + ".zip")).resolve()
+            # Ensure resolved path is still inside backups dir
+            backups_dir = (REPO_ROOT / "backups").resolve()
+            if not str(backup_file).startswith(str(backups_dir) + os.sep) and backup_file != backups_dir:
+                self._json({"ok": False, "error": "Invalid backup path"})
+                return
             if not backup_file.exists():
                 self._json({"ok": False, "error": f"Backup not found: {name}"})
                 return
