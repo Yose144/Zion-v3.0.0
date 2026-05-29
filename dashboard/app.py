@@ -19,210 +19,17 @@ from datetime import datetime
 from pathlib import Path
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-# ── Config ──────────────────────────────────────────────────────────────
-
-SCRIPT_DIR = Path(__file__).parent.resolve()
-REPO_ROOT = SCRIPT_DIR.parent
-LOG_DIR = REPO_ROOT / "logs"
-SCRIPTS_DIR = REPO_ROOT / "scripts"
-if not LOG_DIR.exists():
-    LOG_DIR = Path("../logs")
-
-# Load optional dashboard.json config
-def _load_dashboard_config():
-    cfg_path = SCRIPT_DIR / "config.json"
-    if cfg_path.exists():
-        try:
-            return json.loads(cfg_path.read_text(encoding="utf-8"))
-        except Exception:
-            pass
-    return {}
-
-_DASH_CFG = _load_dashboard_config()
-
-HOST = _DASH_CFG.get("host", "127.0.0.1")
-PORT = _DASH_CFG.get("port", 8766)
-LOG_ROTATION_MAX_BYTES = _DASH_CFG.get("log_rotation_max_bytes", 100 * 1024 * 1024)
-LOG_ROTATION_MAX_AGE_HOURS = _DASH_CFG.get("log_rotation_max_age_hours", 24)
-HEALTH_TTL = _DASH_CFG.get("health_ttl", 5)
-MAX_RPS = _DASH_CFG.get("rate_limit_max_rps", 10)
-RATE_WINDOW = _DASH_CFG.get("rate_limit_window_sec", 10)
-# ── Metrics history (SQLite-backed + in-memory cache) ───────────────────
-
-class MetricsHistory:
-    """Keeps last N samples for charting. Persisted to SQLite so history survives restarts."""
-    MAX_POINTS = 120  # ~10 min at 5s interval
-    _DB_PATH = REPO_ROOT / "V3" / "data" / "dashboard-metrics.db"
-
-    def __init__(self):
-        self.lock = threading.Lock()
-        self.samples = deque(maxlen=self.MAX_POINTS)
-        self._ensure_table()
-        self._load_from_db()
-
-    def _ensure_table(self):
-        try:
-            self._DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-            con = sqlite3.connect(str(self._DB_PATH))
-            cur = con.cursor()
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS metrics (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    ts INTEGER NOT NULL,
-                    n1_height INTEGER,
-                    n2_height INTEGER,
-                    n1_peers INTEGER,
-                    hashrate REAL,
-                    shares_ok INTEGER,
-                    shares_bad INTEGER,
-                    blocks INTEGER,
-                    sessions INTEGER
-                )
-            """)
-            con.commit()
-            con.close()
-        except Exception as e:
-            print(f"[metrics] DB init error: {e}", file=sys.stderr)
-
-    def _load_from_db(self):
-        try:
-            con = sqlite3.connect(str(self._DB_PATH))
-            cur = con.cursor()
-            cur.execute(
-                "SELECT ts, n1_height, n2_height, n1_peers, hashrate, shares_ok, shares_bad, blocks, sessions "
-                "FROM metrics ORDER BY id DESC LIMIT ?",
-                (self.MAX_POINTS,),
-            )
-            rows = cur.fetchall()
-            con.close()
-            # Reverse to chronological order
-            for row in reversed(rows):
-                self.samples.append({
-                    "t": row[0], "n1_height": row[1], "n2_height": row[2],
-                    "n1_peers": row[3], "hashrate": row[4], "shares_ok": row[5],
-                    "shares_bad": row[6], "blocks": row[7], "sessions": row[8],
-                })
-        except Exception as e:
-            print(f"[metrics] DB load error: {e}", file=sys.stderr)
-
-    def record(self, status: dict):
-        sample = {
-            "t": int(time.time()),
-            "n1_height": status["node1"]["chain_height"],
-            "n2_height": status["node2"]["chain_height"],
-            "n1_peers": status["node1"]["known_peers"],
-            "hashrate": status["miner"]["hashrate"],
-            "shares_ok": status["pool"]["shares_accepted"],
-            "shares_bad": status["pool"]["shares_rejected"],
-            "blocks": status["pool"]["blocks_found"],
-            "sessions": status["pool"]["active_sessions"],
-        }
-        with self.lock:
-            self.samples.append(sample)
-        self._persist(sample)
-
-    def _persist(self, sample: dict):
-        try:
-            con = sqlite3.connect(str(self._DB_PATH))
-            cur = con.cursor()
-            cur.execute(
-                "INSERT INTO metrics (ts, n1_height, n2_height, n1_peers, hashrate, shares_ok, shares_bad, blocks, sessions) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (sample["t"], sample["n1_height"], sample["n2_height"], sample["n1_peers"],
-                 sample["hashrate"], sample["shares_ok"], sample["shares_bad"], sample["blocks"], sample["sessions"]),
-            )
-            # Keep only last MAX_POINTS * 2 rows to prevent unbounded growth
-            cur.execute("DELETE FROM metrics WHERE id <= (SELECT MAX(id) FROM metrics) - ?", (self.MAX_POINTS * 2,))
-            con.commit()
-            con.close()
-        except Exception as e:
-            print(f"[metrics] DB persist error: {e}", file=sys.stderr)
-
-    def snapshot(self) -> list:
-        with self.lock:
-            return list(self.samples)
-
-HISTORY = MetricsHistory()
-BLOCK_EVENTS: deque = deque(maxlen=50)
-LAST_BLOCK_EVENT_TIME = {"node1": 0, "node2": 0, "pool": 0}
-_STARTUP_TS = time.time()  # Dashboard process uptime for /health
-
-# Apply config override for MetricsHistory after class is defined
-if _DASH_CFG:
-    MetricsHistory.MAX_POINTS = _DASH_CFG.get("metrics_max_points", 120)
-    HISTORY = MetricsHistory()  # Re-init with new maxlen
-
-# ── Log Rotation ─────────────────────────────────────────────────────────
-LOG_ROTATION_LOCK = threading.Lock()
-
-def rotate_log_file(path: Path):
-    """Rotate a single log file if it exceeds size or age threshold."""
-    if not path.exists():
-        return
-    size = path.stat().st_size
-    age_hours = (time.time() - path.stat().st_mtime) / 3600
-    if size > LOG_ROTATION_MAX_BYTES or age_hours > LOG_ROTATION_MAX_AGE_HOURS:
-        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-        rotated = path.parent / f"{path.stem}.{ts}{path.suffix}"
-        try:
-            path.rename(rotated)
-            # Touch new empty log so services can continue writing
-            path.write_text("")
-        except Exception:
-            pass
-
-def rotate_all_logs():
-    """Rotate all log files in LOG_DIR (with optional pre-rotate auto-backup)."""
-    auto_backup_if_needed()
-    with LOG_ROTATION_LOCK:
-        for svc in SERVICE_REGISTRY:
-            log_name = svc.get("log")
-            if log_name:
-                rotate_log_file(LOG_DIR / log_name)
-                rotate_log_file(LOG_DIR / (log_name.replace(".log", ".err")))
-        # Rotate control audit log too
-        rotate_log_file(LOG_DIR / "control-audit.txt")
-
-# ── Process health ──────────────────────────────────────────────────────
-# Track known PIDs so we can check if a service's process is actually alive.
-# Populated by run_control and consulted by check_service_health.
-PROCESS_REGISTRY = {}  # service_id -> {"pid": int, "ts": float, "image": str}
-PROCESS_LOCK = threading.Lock()
-
-def register_process(sid: str, pid: int, image: str = ""):
-    with PROCESS_LOCK:
-        PROCESS_REGISTRY[sid] = {"pid": pid, "ts": time.time(), "image": image}
-
-def is_process_alive(pid: int) -> bool:
-    """Cross-platform PID liveness check (no external deps)."""
-    if os.name == "nt":
-        try:
-            import ctypes
-            kernel = ctypes.windll.kernel32
-            SYNCHRONIZE = 0x00100000
-            PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
-            h = kernel.OpenProcess(SYNCHRONIZE | PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
-            if h:
-                kernel.CloseHandle(h)
-                return True
-            return False
-        except Exception:
-            return False
-    else:
-        try:
-            os.kill(pid, 0)
-            return True
-        except (OSError, ProcessLookupError):
-            return False
-
-def check_process_for_service(sid: str) -> dict:
-    """Check whether the registered PID for a service is still alive."""
-    with PROCESS_LOCK:
-        rec = PROCESS_REGISTRY.get(sid)
-    if not rec:
-        return {"has_pid": False, "alive": False}
-    return {"has_pid": True, "alive": is_process_alive(rec["pid"]), "pid": rec["pid"],
-            "age_min": int((time.time() - rec["ts"]) / 60)}
+from models.config import (
+    HOST, PORT, SCRIPT_DIR, REPO_ROOT, LOG_DIR, SCRIPTS_DIR,
+    LOG_ROTATION_MAX_BYTES, LOG_ROTATION_MAX_AGE_HOURS,
+    HEALTH_TTL, MAX_RPS, RATE_WINDOW,
+)
+from models.metrics import MetricsHistory, HISTORY
+from models.state import BLOCK_EVENTS, LAST_BLOCK_EVENT_TIME, _STARTUP_TS
+from auth import DASHBOARD_API_KEY, _CSRF_TOKEN, check_rate_limit
+from services.processes import PROCESS_REGISTRY, PROCESS_LOCK, register_process, is_process_alive, check_process_for_service
+from services.health import HEALTH_CACHE, tcp_probe, http_probe, check_service_health, all_services_health, scrape_metrics
+from services.logs import LOG_ROTATION_LOCK, rotate_log_file, rotate_all_logs, tail_log, head_log
 
 # ── Resource monitoring ─────────────────────────────────────────────────
 RESOURCE_CACHE = {"ts": 0, "data": {}}
@@ -634,158 +441,6 @@ SERVICE_REGISTRY = [
 def get_service(sid: str) -> dict:
     return next((s for s in SERVICE_REGISTRY if s["id"] == sid), None)
 
-# ── Health checks ───────────────────────────────────────────────────────
-
-import socket
-import urllib.request as _urlreq
-HEALTH_CACHE = {}  # id -> {"alive": bool, "ts": int, "details": str}
-HEALTH_TTL = 5  # seconds
-
-# ── Rate limiting ───────────────────────────────────────────────────────
-_RATE_LIMIT = {}  # ip -> [timestamp, ...]
-MAX_RPS = 10
-RATE_WINDOW = 10  # seconds
-
-def check_rate_limit(ip: str) -> bool:
-    now = time.time()
-    stamps = _RATE_LIMIT.get(ip, [])
-    # Keep only stamps within window
-    stamps = [t for t in stamps if now - t < RATE_WINDOW]
-    _RATE_LIMIT[ip] = stamps
-    if len(stamps) >= MAX_RPS:
-        return False
-    stamps.append(now)
-    return True
-
-def tcp_probe(host: str, port: int, timeout: float = 0.15) -> bool:
-    try:
-        with socket.create_connection((host, port), timeout=timeout):
-            return True
-    except Exception:
-        return False
-
-def http_probe(url: str, timeout: float = 0.5) -> tuple[bool, str]:
-    try:
-        with _urlreq.urlopen(url, timeout=timeout) as r:
-            return (r.status < 500, f"HTTP {r.status}")
-    except Exception as e:
-        return (False, str(e)[:60])
-
-def check_service_health(svc: dict) -> dict:
-    sid = svc["id"]
-    cached = HEALTH_CACHE.get(sid)
-    now = int(time.time())
-    if cached and now - cached["ts"] < HEALTH_TTL:
-        return cached
-
-    # Try PID check first for services we launched
-    proc_info = check_process_for_service(sid)
-    ports = svc.get("ports", {})
-    open_ports = []
-    closed_ports = []
-    host = svc.get("host", "127.0.0.1")
-
-    if ports:
-        timeout = 1.5 if host != "127.0.0.1" else 0.15
-        for name, port in ports.items():
-            if tcp_probe(host, port, timeout):
-                open_ports.append(f"{name}:{port}@{host}")
-            else:
-                closed_ports.append(f"{name}:{port}@{host}")
-
-    # Log-based check (last resort for portless services)
-    log_alive = False
-    log_age = None
-    if svc.get("log"):
-        path = LOG_DIR / svc["log"]
-        if path.exists():
-            mtime_age = now - int(path.stat().st_mtime)
-            log_age = mtime_age
-            log_alive = mtime_age < 60
-
-    # Determine overall alive status
-    # Priority: PID > ports > log
-    alive = False
-    details_parts = []
-    if proc_info["alive"]:
-        alive = True
-        details_parts.append(f"PID {proc_info['pid']} alive")
-    elif proc_info["has_pid"]:
-        details_parts.append(f"PID {proc_info['pid']} dead")
-    if open_ports:
-        alive = True
-        details_parts.append(f"{len(open_ports)}/{len(ports)} ports open")
-    elif ports:
-        details_parts.append(f"{len(ports)} ports closed")
-    if log_alive:
-        if not alive:
-            alive = True  # fallback for portless services
-        details_parts.append(f"log {log_age}s ago")
-    elif log_age is not None:
-        details_parts.append(f"log stale ({log_age}s)")
-    elif not ports:
-        details_parts.append("no log file")
-
-    result = {"alive": alive, "ts": now,
-              "details": "; ".join(details_parts) if details_parts else "unknown",
-              "ports_open": open_ports, "ports_closed": closed_ports,
-              "pid_alive": proc_info["alive"], "pid": proc_info.get("pid"),
-              "log_age": log_age}
-    HEALTH_CACHE[sid] = result
-    return result
-
-def all_services_health() -> list:
-    out = []
-    for svc in SERVICE_REGISTRY:
-        h = check_service_health(svc)
-        out.append({
-            "id": svc["id"], "name": svc["name"], "icon": svc["icon"],
-            "level": svc["level"], "kind": svc["kind"],
-            "purpose": svc["purpose"], "child_says": svc["child_says"],
-            "ports": svc["ports"], "depends_on": svc["depends_on"],
-            "log": svc["log"], "start": svc["start"],
-            "alive": h["alive"], "details": h["details"],
-            "ports_open": h["ports_open"], "ports_closed": h["ports_closed"],
-        })
-    return out
-
-# ── Prometheus metrics scraper ─────────────────────────────────────────
-
-def scrape_metrics(svc_id: str) -> dict:
-    svc = get_service(svc_id)
-    if not svc:
-        return {"error": f"unknown service {svc_id}"}
-    ports = svc.get("ports", {})
-    metrics_port = ports.get("metrics") or ports.get("web") or ports.get("api")
-    if not metrics_port:
-        return {"error": "no metrics endpoint"}
-
-    url = f"http://127.0.0.1:{metrics_port}/metrics"
-    try:
-        with _urlreq.urlopen(url, timeout=1.0) as r:
-            body = r.read().decode("utf-8", errors="ignore")
-    except Exception as e:
-        return {"error": str(e)[:120], "url": url}
-
-    # Parse Prometheus text format (simplified)
-    metrics = {}
-    for line in body.splitlines():
-        line = line.strip()
-        if not line or line.startswith("#"):
-            continue
-        # Format: metric_name{labels} value [timestamp]
-        m = re.match(r'^([a-zA-Z_:][a-zA-Z0-9_:]*)(\{[^}]*\})?\s+([\d\.\-eE+inf]+)', line)
-        if m:
-            name = m.group(1)
-            labels = m.group(2) or ""
-            try:
-                val = float(m.group(3))
-                key = f"{name}{labels}" if labels else name
-                metrics[key] = val
-            except ValueError:
-                pass
-    return {"url": url, "count": len(metrics), "metrics": metrics}
-
 # ── Database explorer ──────────────────────────────────────────────────
 
 import sqlite3
@@ -875,25 +530,6 @@ def inspect_database(path_str: str, limit: int = 50) -> dict:
     return {"error": f"Unknown kind: {kind}"}
 
 # ── Log parsers ─────────────────────────────────────────────────────────
-
-def tail_log(filename: str, n: int = 100) -> list[str]:
-    path = LOG_DIR / filename
-    if not path.exists():
-        return []
-    with open(path, "r", encoding="utf-8", errors="ignore") as f:
-        return [ln.rstrip("\n") for ln in deque(f, maxlen=n)]
-
-def head_log(filename: str, n: int = 50) -> list[str]:
-    path = LOG_DIR / filename
-    if not path.exists():
-        return []
-    with open(path, "r", encoding="utf-8", errors="ignore") as f:
-        lines = []
-        for i, line in enumerate(f):
-            if i >= n:
-                break
-            lines.append(line.rstrip("\n"))
-        return lines
 
 def parse_node_log(name: str) -> dict:
     recent = tail_log(f"{name}.log", 200)
@@ -1705,7 +1341,7 @@ def get_dependency_graph() -> dict:
     """Return nodes and edges for the service dependency DAG."""
     nodes = []
     edges = []
-    health = all_services_health()
+    health = all_services_health(SERVICE_REGISTRY)
     health_map = {h["id"]: h for h in health}
     for svc in SERVICE_REGISTRY:
         sid = svc["id"]
@@ -2382,7 +2018,7 @@ def background_sampler():
             rotation_counter += 1
             if rotation_counter % 120 == 0:
                 try:
-                    rotate_all_logs()
+                    rotate_all_logs(SERVICE_REGISTRY)
                 except Exception as e:
                     print(f"[sampler] log rotation error: {e}", file=sys.stderr)
             # Watchdog
@@ -4339,11 +3975,6 @@ refreshTimer=setInterval(refreshAll,3000);
 
 # ── HTTP Handler ────────────────────────────────────────────────────────
 
-# API key: if set via env, all state-changing endpoints require it in X-API-Key header
-DASHBOARD_API_KEY = os.environ.get("DASHBOARD_API_KEY", "")
-# CSRF token (rotates on each restart; enough for localhost scenarios)
-_CSRF_TOKEN = secrets.token_hex(16) if DASHBOARD_API_KEY else ""
-
 class DashboardHandler(BaseHTTPRequestHandler):
     def log_message(self, fmt, *args):
         # suppress default request logging
@@ -4351,23 +3982,11 @@ class DashboardHandler(BaseHTTPRequestHandler):
 
     def _require_auth(self):
         """Return False if auth check passes, otherwise send 401 and return True."""
-        if not DASHBOARD_API_KEY:
-            return False
-        key = self.headers.get("X-API-Key", "")
-        if key != DASHBOARD_API_KEY:
-            self.send_error(401, "Unauthorized")
-            return True
-        return False
+        return auth.require_auth(self)
 
     def _require_csrf(self, payload):
         """Return False if CSRF check passes, otherwise send 403 and return True."""
-        if not DASHBOARD_API_KEY or not _CSRF_TOKEN:
-            return False
-        token = payload.get("_csrf", "") or self.headers.get("X-CSRF-Token", "")
-        if token != _CSRF_TOKEN:
-            self.send_error(403, "Invalid CSRF token")
-            return True
-        return False
+        return auth.require_csrf(self, payload)
 
     def _json(self, data, status=200):
         try:
@@ -4493,7 +4112,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
         elif route == "/api/controls":
             self._json({"actions": sorted(ALLOWED_ACTIONS.keys())})
         elif route == "/api/services":
-            self._json({"services": all_services_health()})
+            self._json({"services": all_services_health(SERVICE_REGISTRY)})
         elif route == "/api/resources":
             self._json(get_resource_usage())
         elif route == "/api/alerts/history":
@@ -4506,7 +4125,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
         elif route == "/api/logs/rotate":
             if self._require_auth(): return
             try:
-                rotate_all_logs()
+                rotate_all_logs(SERVICE_REGISTRY)
                 self._json({"ok": True, "message": "Log rotation triggered"})
             except Exception as e:
                 self._json({"ok": False, "error": str(e)})
@@ -5216,7 +4835,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
             return
         elif route.startswith("/api/metrics/"):
             sid = route.split("/")[-1]
-            self._json(scrape_metrics(sid))
+            self._json(scrape_metrics(sid, get_service))
         elif route == "/api/db":
             self._json({"databases": list_databases()})
         elif route == "/api/db/inspect":
@@ -5268,7 +4887,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 # DB stats
                 svc_dbs = [d for d in db_list if d["service"] == sid]
                 # Metrics
-                m = scrape_metrics(sid)
+                m = scrape_metrics(sid, get_service)
                 has_metrics = "metrics" in m and not m.get("error")
                 # Log tail (last 20 lines)
                 log_tail = []
@@ -5449,7 +5068,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json({"enabled": WATCHDOG_ENABLED})
         elif route == "/api/logs/rotate":
             try:
-                rotate_all_logs()
+                rotate_all_logs(SERVICE_REGISTRY)
                 self._json({"ok": True, "message": "Log rotation triggered"})
             except Exception as e:
                 self._json({"ok": False, "error": str(e)})
