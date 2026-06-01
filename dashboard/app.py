@@ -1807,6 +1807,87 @@ def get_pool_wallet_status() -> dict:
             status["balance_zion"] = bal.get("balance_zion") if isinstance(bal.get("balance_zion"), (int, float)) else atomic / 1_000_000_000_000
     return status
 
+# ── Payout System Status Builder ─────────────────────────────────────────
+
+def build_payout_status() -> dict:
+    """Build comprehensive payout status for the Payout dashboard tab."""
+    recent = tail_log("pool.log", 500)
+    startup = head_log("pool.log", 50)
+    status = {
+        "pool_wallet": None,
+        "pool_wallet_balance": None,
+        "payout_enabled": False,
+        "fee_split": None,
+        "blocks_found": 0,
+        "last_block_height": None,
+        "last_payout_time": None,
+        "last_payout_tx": None,
+        "miner_wallet": None,
+        "humanitarian_wallet": None,
+        "issobella_wallet": None,
+        "pool_fee_wallet": None,
+        "miner_payouts": [],
+        "fee_payouts": [],
+        "errors": [],
+    }
+    # Parse startup config
+    for line in startup:
+        if m := re.search(r'pool_wallet=(\S+)', line):
+            status["pool_wallet"] = m.group(1)
+        if m := re.search(r'payout_execution=(\S+)', line):
+            status["payout_enabled"] = m.group(1) == "enabled"
+        if m := re.search(r'fee_split: miners=(\d+)% humanitarian=(\d+)% issobella=(\d+)% pool_fee=(\d+)%', line):
+            status["fee_split"] = f"{m.group(1)}/{m.group(2)}/{m.group(3)}/{m.group(4)}"
+        if m := re.search(r'humanitarian_wallet=(\S+)', line):
+            status["humanitarian_wallet"] = m.group(1)
+        if m := re.search(r'issobella_wallet=(\S+)', line):
+            status["issobella_wallet"] = m.group(1)
+        if m := re.search(r'pool_fee_wallet=(\S+)', line):
+            status["pool_fee_wallet"] = m.group(1)
+    # Miner wallet from node startup
+    node_startup = head_log("node1.log", 30)
+    for line in node_startup:
+        if m := re.search(r'miner_address=.*(zion1\S+)', line):
+            status["miner_wallet"] = m.group(1)
+    # Fallback from env
+    if not status["pool_wallet"]:
+        status["pool_wallet"] = os.environ.get("ZION_POOL_WALLET") or os.environ.get("ZION_MINER_ADDRESS")
+    if not status["miner_wallet"]:
+        status["miner_wallet"] = os.environ.get("ZION_MINER_ADDRESS")
+    if not status["humanitarian_wallet"]:
+        status["humanitarian_wallet"] = os.environ.get("ZION_HUMANITARIAN_WALLET")
+    if not status["issobella_wallet"]:
+        status["issobella_wallet"] = os.environ.get("ZION_ISSOBELLA_WALLET")
+    if not status["pool_fee_wallet"]:
+        status["pool_fee_wallet"] = os.environ.get("ZION_POOL_FEE_WALLET")
+    # Parse recent events
+    for line in recent:
+        if m := re.search(r'BLOCK_FOUND.*height=(\d+)', line):
+            h = int(m.group(1))
+            status["blocks_found"] += 1
+            if status["last_block_height"] is None or h > status["last_block_height"]:
+                status["last_block_height"] = h
+        if "payout_account_model" in line or "payout_submitted" in line:
+            status["miner_payouts"].append(line.strip()[:200])
+            if m := re.search(r'tx_id=(\S+)', line):
+                status["last_payout_tx"] = m.group(1)
+                status["last_payout_time"] = datetime.now().strftime("%H:%M:%S")
+        if "fee_payout_account_model" in line or "fee_payout_submitted" in line:
+            status["fee_payouts"].append(line.strip()[:200])
+        if "payout_submit_failed" in line or "fee_payout_failed" in line:
+            status["errors"].append(line.strip()[:250])
+    status["miner_payouts"] = status["miner_payouts"][-10:]
+    status["fee_payouts"] = status["fee_payouts"][-10:]
+    status["errors"] = status["errors"][-10:]
+    # Get pool wallet balance via RPC
+    wallet = status["pool_wallet"]
+    if wallet and wallet.startswith("zion1"):
+        bal = rpc_call("127.0.0.1", 8443, "getBalance", {"address": wallet})
+        if bal and not bal.get("_rpc_error"):
+            atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
+            status["pool_wallet_balance"] = atomic
+    return status
+
 # ── AI services status (Hiran + Hiranyagarbha) ───────────────────────────
 
 def get_ai_services_status() -> dict:
@@ -2644,6 +2725,7 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
     <button onclick="switchTab('metrics')" id="tab-metrics" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent hover:text-amber-400 transition">📊 Metrics</button>
     <button onclick="switchTab('logs')" id="tab-logs" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent hover:text-amber-400 transition">📜 Logs</button>
     <button onclick="switchTab('hiran')" id="tab-hiran" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent hover:text-amber-400 transition">🤖 Hiran AI</button>
+    <button onclick="switchTab('payout')" id="tab-payout" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent hover:text-amber-400 transition">💰 Payout</button>
   </div>
 
   <!-- Progress -->
@@ -3368,6 +3450,90 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
 
   </div>
 
+  <!-- TAB: Payout -->
+  <div id="pane-payout" class="hidden space-y-4">
+    <!-- Payout Overview Header -->
+    <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300 flex items-center gap-2">💰 Pool Payout System</h2>
+        <button onclick="refreshPayout()" class="text-xs px-2 py-1 bg-zion-700 hover:bg-zion-600 rounded transition">🔄 Refresh</button>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-3" id="payout-summary">
+        <div class="bg-zion-900 rounded-lg p-3 border border-zion-700">
+          <div class="text-xs text-gray-400 mb-1">Pool Wallet</div>
+          <div class="text-sm font-mono text-amber-400 truncate" id="payout-wallet">—</div>
+          <div class="text-xs text-gray-500 mt-1" id="payout-wallet-balance">Balance: —</div>
+        </div>
+        <div class="bg-zion-900 rounded-lg p-3 border border-zion-700">
+          <div class="text-xs text-gray-400 mb-1">Payout Status</div>
+          <div class="text-sm font-bold text-emerald-400" id="payout-status">—</div>
+          <div class="text-xs text-gray-500 mt-1" id="payout-fee-split">Fee split: —</div>
+        </div>
+        <div class="bg-zion-900 rounded-lg p-3 border border-zion-700">
+          <div class="text-xs text-gray-400 mb-1">Blocks Found</div>
+          <div class="text-2xl font-bold text-amber-400" id="payout-blocks">—</div>
+          <div class="text-xs text-gray-500 mt-1" id="payout-last-block">Last: —</div>
+        </div>
+        <div class="bg-zion-900 rounded-lg p-3 border border-zion-700">
+          <div class="text-xs text-gray-400 mb-1">Last Payout</div>
+          <div class="text-sm font-bold text-emerald-400" id="payout-last">—</div>
+          <div class="text-xs text-gray-500 mt-1" id="payout-last-tx">TX: —</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fee Split Recipients -->
+    <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
+      <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300 mb-3">📋 Fee Split Recipients (89/5/5/1)</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3" id="payout-recipients">
+        <div class="bg-zion-900 rounded-lg p-3 border border-zion-700">
+          <div class="text-xs text-gray-400 mb-1">⛏️ Miner Share (89%)</div>
+          <div class="text-sm font-mono text-amber-400 truncate" id="payout-miner-wallet">—</div>
+          <div class="text-xs text-gray-500 mt-1">PPLNS redistribution</div>
+        </div>
+        <div class="bg-zion-900 rounded-lg p-3 border border-zion-700">
+          <div class="text-xs text-gray-400 mb-1">🌍 Humanitarian (5%)</div>
+          <div class="text-sm font-mono text-emerald-400 truncate" id="payout-humanitarian-wallet">—</div>
+          <div class="text-xs text-gray-500 mt-1">Children Future Fund</div>
+        </div>
+        <div class="bg-zion-900 rounded-lg p-3 border border-zion-700">
+          <div class="text-xs text-gray-400 mb-1">🚀 Issobella (5%)</div>
+          <div class="text-sm font-mono text-purple-400 truncate" id="payout-issobella-wallet">—</div>
+          <div class="text-xs text-gray-500 mt-1">L5/L6 Space Layer</div>
+        </div>
+        <div class="bg-zion-900 rounded-lg p-3 border border-zion-700">
+          <div class="text-xs text-gray-400 mb-1">⚡ Pool Fee (1%)</div>
+          <div class="text-sm font-mono text-blue-400 truncate" id="payout-pool-fee-wallet">—</div>
+          <div class="text-xs text-gray-500 mt-1">Operator fee</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Payout Log -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
+        <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300 mb-2">📝 Recent Miner Payouts</h2>
+        <div id="payout-miner-log" class="space-y-2 text-xs text-gray-300 max-h-64 overflow-y-auto">
+          <div class="text-gray-500 italic">Loading...</div>
+        </div>
+      </div>
+      <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
+        <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300 mb-2">📝 Recent Fee Payouts</h2>
+        <div id="payout-fee-log" class="space-y-2 text-xs text-gray-300 max-h-64 overflow-y-auto">
+          <div class="text-gray-500 italic">Loading...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Payout Error Log -->
+    <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
+      <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300 mb-2">⚠️ Payout Errors (if any)</h2>
+      <div id="payout-error-log" class="space-y-2 text-xs text-gray-300 max-h-48 overflow-y-auto">
+        <div class="text-gray-500 italic">No errors detected</div>
+      </div>
+    </div>
+  </div>
+
   <footer class="text-center text-xs text-gray-600 pt-6 pb-4 border-t border-zion-700 mt-6">
     ZION V3 Dashboard 2.0 — Zero-dependency Python stdlib server — Auto-refresh 3s
     <span class="text-gray-500"> · </span>
@@ -3380,7 +3546,7 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
 <script>
 let autoRefresh=true,refreshTimer=null,currentTab='overview';
 let charts={};
-const TABS=['overview','controls','charts','events','env','launch-day','wizard','services','database','metrics','logs','hiran'];
+const TABS=['overview','controls','charts','events','env','launch-day','wizard','services','database','metrics','logs','hiran','payout'];
 
 // ── Tab switching ──
 function switchTab(name){
@@ -3401,6 +3567,56 @@ function switchTab(name){
   if(name==='metrics')renderMetricsButtons();
   if(name==='overview')loadMainnetStatus();
   if(name==='hiran'){loadHiranHealth();loadAgentList();loadOrchestratorStats();loadNclStatus();}
+  if(name==='payout')refreshPayout();
+}
+
+// ── Payout System ──
+async function refreshPayout(){
+  try{
+    const data=await fetch('/api/payout').then(r=>r.json());
+    document.getElementById('payout-wallet').textContent=data.pool_wallet||'—';
+    document.getElementById('payout-wallet-balance').textContent='Balance: '+(data.pool_wallet_balance?formatFlowers(data.pool_wallet_balance):'—');
+    document.getElementById('payout-status').textContent=data.payout_enabled?'✅ ENABLED':'❌ DISABLED';
+    document.getElementById('payout-status').className=data.payout_enabled?'text-sm font-bold text-emerald-400':'text-sm font-bold text-red-400';
+    document.getElementById('payout-fee-split').textContent='Fee split: '+(data.fee_split||'—');
+    document.getElementById('payout-blocks').textContent=data.blocks_found||'—';
+    document.getElementById('payout-last-block').textContent='Last: height '+(data.last_block_height||'—');
+    document.getElementById('payout-last').textContent=data.last_payout_time||'—';
+    document.getElementById('payout-last-tx').textContent='TX: '+(data.last_payout_tx||'—');
+
+    // Recipients
+    if(data.miner_wallet)document.getElementById('payout-miner-wallet').textContent=data.miner_wallet;
+    if(data.humanitarian_wallet)document.getElementById('payout-humanitarian-wallet').textContent=data.humanitarian_wallet;
+    if(data.issobella_wallet)document.getElementById('payout-issobella-wallet').textContent=data.issobella_wallet;
+    if(data.pool_fee_wallet)document.getElementById('payout-pool-fee-wallet').textContent=data.pool_fee_wallet;
+
+    // Miner payout log
+    const minerLog=document.getElementById('payout-miner-log');
+    if(data.miner_payouts&&data.miner_payouts.length>0){
+      minerLog.innerHTML=data.miner_payouts.map(l=>`<div class="bg-zion-900 rounded p-2 border-l-2 border-emerald-500">${escapeHtml(l)}</div>`).join('');
+    }else{minerLog.innerHTML='<div class="text-gray-500 italic">No recent miner payouts</div>';}
+
+    // Fee payout log
+    const feeLog=document.getElementById('payout-fee-log');
+    if(data.fee_payouts&&data.fee_payouts.length>0){
+      feeLog.innerHTML=data.fee_payouts.map(l=>`<div class="bg-zion-900 rounded p-2 border-l-2 border-blue-500">${escapeHtml(l)}</div>`).join('');
+    }else{feeLog.innerHTML='<div class="text-gray-500 italic">No recent fee payouts</div>';}
+
+    // Error log
+    const errLog=document.getElementById('payout-error-log');
+    if(data.errors&&data.errors.length>0){
+      errLog.innerHTML=data.errors.map(l=>`<div class="bg-zion-900 rounded p-2 border-l-2 border-red-500 text-red-300">${escapeHtml(l)}</div>`).join('');
+    }else{errLog.innerHTML='<div class="text-gray-500 italic">No errors detected</div>';}
+  }catch(e){
+    console.error('refreshPayout error',e);
+  }
+}
+function formatFlowers(v){
+  if(!v&&v!==0)return'—';
+  const zion=v/1_000_000_000_000;
+  if(zion>=1_000_000)return(zion/1_000_000).toFixed(2)+' MZION';
+  if(zion>=1_000)return(zion/1_000).toFixed(2)+' KZION';
+  return zion.toFixed(4)+' ZION';
 }
 
 // ── Hiran AI ──
@@ -5675,6 +5891,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json(build_wallets())
         elif route == "/api/explorer":
             self._json(build_explorer())
+        elif route == "/api/payout":
+            self._json(build_payout_status())
         elif route == "/api/block":
             h = params.get("height", [""])[0].strip()
             hash_hex = params.get("hash", [""])[0].strip()
