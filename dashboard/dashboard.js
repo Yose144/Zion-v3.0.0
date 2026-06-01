@@ -4297,10 +4297,13 @@ document.body.addEventListener('click', (e) => {
 // ════════════════════════════════════════════════════════════════════════
 // FEATURE C — Service Health Timeline (24h heatmap)
 // ════════════════════════════════════════════════════════════════════════
-const SERVICE_HISTORY_LABELS = ['node','pool','miner','bridge','dao','atomic-swap','swap-escrow','web','ai-native','hiranyagarbha','dashboard'];
-const SVC_LABEL_MAP = { node:'Node', pool:'Pool', miner:'Miner', bridge:'Bridge', dao:'DAO', 'atomic-swap':'Atomic Swap', 'swap-escrow':'Escrow', web:'Web', 'ai-native':'AI Native', hiranyagarbha:'Hiran', dashboard:'Dashboard' };
+// All service IDs that backend can persist in health history (ordered by layer L1→L2→L3→Infra)
+const SERVICE_HISTORY_LABELS = ['node1','node2','pool','pool-edge','miner','bridge','dao','atomic-swap','warp','ncl','hiranyagarbha','ai-native','oasis','free-world','issobella','prometheus','grafana','dashboard'];
+const SVC_LABEL_MAP = { node1:'Node 1', node2:'Node 2', pool:'Pool', 'pool-edge':'Pool Edge', miner:'Miner', bridge:'Bridge', dao:'DAO', 'atomic-swap':'Atomic Swap', warp:'WARP', ncl:'NCL', hiranyagarbha:'Hiran API', 'ai-native':'AI Native', oasis:'OASIS', 'free-world':'Free World', issobella:'Issobella', prometheus:'Prometheus', grafana:'Grafana', dashboard:'Dashboard' };
+const SVC_LEVEL_ORDER = { 'L1':0, 'L2':1, 'L3':2, 'L4':3, 'L5':4, 'L6':5, 'Infra':6 };
 let serviceHealthData = null;
 let healthRangeBuckets = 48; // default 4h
+let _lastServicesForTimeline = null; // cache from /api/services
 
 async function refreshServiceHealth() {
   try {
@@ -4327,15 +4330,34 @@ function _uptimePct(states, key, total) {
   return Math.round((up / total) * 100) + '%';
 }
 
-function renderServiceHealthTimeline() {
+function _getOrderedLabels(services) {
+  // Order by layer then name
+  if (!services || !services.length) return SERVICE_HISTORY_LABELS;
+  const order = [...services].sort((a,b) => {
+    const la = SVC_LEVEL_ORDER[a.level] ?? 99;
+    const lb = SVC_LEVEL_ORDER[b.level] ?? 99;
+    if (la !== lb) return la - lb;
+    return (a.name||a.id).localeCompare(b.name||b.id);
+  });
+  return order.map(s => s.id);
+}
+
+function renderServiceHealthTimeline(services) {
   const el = document.getElementById('service-health-timeline');
   if (!el) return;
   const buckets = serviceHealthData || [];
   if (!buckets.length) { el.innerHTML = '<div class="text-gray-500 text-xs italic">No history yet — data accumulates every 5 minutes.</div>'; return; }
 
   const recent = buckets.slice(-healthRangeBuckets);
-  const svcCount = SERVICE_HISTORY_LABELS.length;
+  const orderedLabels = _getOrderedLabels(services);
+  const svcCount = orderedLabels.length;
   const cellSize = healthRangeBuckets <= 12 ? 10 : (healthRangeBuckets <= 48 ? 8 : 5);
+
+  // Build level grouping for labels
+  const levelMap = {};
+  if (services && services.length) {
+    for (const s of services) levelMap[s.id] = s.level;
+  }
 
   let html = '<div style="display:flex;gap:1.5px;overflow-x:auto;padding-bottom:6px;">';
   for (let c = 0; c < recent.length; c++) {
@@ -4344,7 +4366,7 @@ function renderServiceHealthTimeline() {
     const tLabel = _fmtTime(bucket.t);
     let col = `<div style="display:flex;flex-direction:column;gap:1.5px;min-width:${cellSize}px;" title="${tLabel}">`;
     for (let s = 0; s < svcCount; s++) {
-      const key = SERVICE_HISTORY_LABELS[s];
+      const key = orderedLabels[s];
       const alive = states[key] === true;
       const hasData = states[key] !== undefined && states[key] !== null;
       const color = alive ? '#22c55e' : (hasData ? '#ef4444' : '#374151');
@@ -4356,7 +4378,14 @@ function renderServiceHealthTimeline() {
   html += '</div>';
 
   html += '<div class="flex flex-col gap-1 mt-2">';
-  for (const svc of SERVICE_HISTORY_LABELS) {
+  let lastLevel = null;
+  for (const svc of orderedLabels) {
+    const lvl = levelMap[svc] || '?';
+    // Inject layer header when layer changes
+    if (lvl !== lastLevel) {
+      html += `<div class="text-[9px] uppercase tracking-wider text-gray-500 mt-1 mb-0.5 font-semibold">${lvl}</div>`;
+      lastLevel = lvl;
+    }
     const last = recent.length ? (recent[recent.length-1].services || recent[recent.length-1].states || {})[svc] : null;
     const statusDot = last === true ? '<span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>' : (last === false ? '<span class="w-2 h-2 rounded-full bg-rose-500 inline-block"></span>' : '<span class="w-2 h-2 rounded-full bg-gray-600 inline-block"></span>');
     const uptime = _uptimePct(recent.map(b => b.services || b.states || {}), svc, recent.length);
@@ -4623,6 +4652,7 @@ const TOPO_ID_MAP = {
 
 function _statusColor(status) {
   if (status === 'running' || status === 'online' || status === true) return '#22c55e';
+  if (status === 'degraded') return '#f59e0b';
   if (status === 'stopped' || status === 'offline' || status === false) return '#ef4444';
   if (status === 'starting' || status === 'restarting') return '#f59e0b';
   return '#6b7280';
@@ -4633,20 +4663,21 @@ function renderTopology(services) {
   if (!container) return;
   const tooltip = document.getElementById('topology-tooltip');
 
-  // Build service status map
+  // Build rich status map: id -> {status, derived, depends_on}
   const svcMap = {};
   if (services && services.length) {
     for (const s of services) {
       const mapped = TOPO_ID_MAP[s.id] || TOPO_ID_MAP[s.id.replace(/[-_]/g,'')] || s.id;
-      svcMap[mapped] = s.status;
-      svcMap[s.id] = s.status;
+      const info = { status: s.status, derived: s.derived, depends_on: s.depends_on || [] };
+      svcMap[mapped] = info;
+      svcMap[s.id] = info;
     }
   }
 
   // Update node state
   const nodes = TOPO_NODES.map(n => {
-    const status = svcMap[n.id] || svcMap[n.id.replace(/[-_]/g,'')] || 'unknown';
-    return { ...n, status, color: _statusColor(status) };
+    const info = svcMap[n.id] || svcMap[n.id.replace(/[-_]/g,'')] || {status:'unknown'};
+    return { ...n, status: info.status, color: _statusColor(info.status) };
   });
 
   let svg = `<svg viewBox="0 0 800 320" width="100%" height="100%" style="background:#0b0f19; border-radius:12px;" id="topo-svg">`;
@@ -4655,29 +4686,42 @@ function renderTopology(services) {
   svg += `<defs><pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,0.03)" stroke-width="1"/></pattern></defs>`;
   svg += `<rect width="100%" height="100%" fill="url(#grid)" />`;
 
-  // Curved edges (quadratic bezier via mid-point offset)
+  // Curved edges with dependency awareness
   for (const [a,b] of TOPO_EDGES) {
     const nA = nodes.find(n=>n.id===a);
     const nB = nodes.find(n=>n.id===b);
     if (!nA || !nB) continue;
-    const active = (nA.status==='running'||nA.status==='online'||nA.status===true) && (nB.status==='running'||nB.status==='online'||nB.status===true);
-    const stroke = active ? 'rgba(34,197,94,0.35)' : 'rgba(107,114,128,0.2)';
-    const sw = active ? 2 : 1.2;
+    const infoA = svcMap[nA.id] || {};
+    const infoB = svcMap[nB.id] || {};
+    const aOk = infoA.status==='running' || infoA.status==='online' || infoA.status===true;
+    const bOk = infoB.status==='running' || infoB.status==='online' || infoB.status===true;
+    // Edge is active only if BOTH endpoints healthy
+    const bothAlive = aOk && bOk;
+    // Dependency check: if this edge represents a dependency (a depends on b or b depends on a)
+    const depAonB = (infoA.depends_on || []).includes(nB.id) || (infoA.depends_on || []).includes(TOPO_ID_MAP[nB.id]);
+    const depBonA = (infoB.depends_on || []).includes(nA.id) || (infoB.depends_on || []).includes(TOPO_ID_MAP[nA.id]);
+    const dependencySatisfied = !(depAonB && !bOk) && !(depBonA && !aOk);
+    const fullyHealthy = bothAlive && dependencySatisfied;
+
+    const stroke = fullyHealthy ? 'rgba(34,197,94,0.35)' : (bothAlive ? 'rgba(245,158,11,0.3)' : 'rgba(107,114,128,0.15)');
+    const sw = fullyHealthy ? 2 : (bothAlive ? 1.8 : 1);
+    // Animated dash for degraded dependency
+    const dash = !dependencySatisfied ? ' stroke-dasharray="4,3"' : '';
     // Compute midpoint with slight curve
     const mx = (nA.x + nB.x) / 2;
     const my = (nA.y + nB.y) / 2;
-    // Offset perpendicular
     const dx = nB.x - nA.x, dy = nB.y - nA.y;
     const len = Math.sqrt(dx*dx + dy*dy) || 1;
     const off = len * 0.15;
     const qx = mx - (dy/len) * off;
     const qy = my + (dx/len) * off;
-    svg += `<path d="M${nA.x},${nA.y} Q${qx},${qy} ${nB.x},${nB.y}" stroke="${stroke}" stroke-width="${sw}" fill="none" stroke-linecap="round" />`;
+    svg += `<path d="M${nA.x},${nA.y} Q${qx},${qy} ${nB.x},${nB.y}" stroke="${stroke}" stroke-width="${sw}" fill="none" stroke-linecap="round"${dash} />`;
   }
 
   // Nodes
   for (const n of nodes) {
     const isAlive = n.color === '#22c55e';
+    const isDegraded = n.color === '#f59e0b';
     const pulse = isAlive ? `<animate attributeName="r" values="18;22;18" dur="2s" repeatCount="indefinite" />` : '';
     svg += `<g class="topo-node" data-id="${n.id}" data-label="${escapeHtml(n.label)}" data-status="${escapeHtml(n.status)}" style="cursor:pointer;">`;
     // Glow ring (pulsing for alive)
@@ -4687,8 +4731,12 @@ function renderTopology(services) {
     // Core dot
     svg += `<circle cx="${n.x}" cy="${n.y}" r="8" fill="${n.color}" stroke="#0b0f19" stroke-width="2" />`;
     // Status badge (small inner dot)
-    const badgeColor = isAlive ? '#4ade80' : (n.color==='#ef4444'?'#f87171':'#9ca3af');
+    const badgeColor = isAlive ? '#4ade80' : (isDegraded?'#fbbf24':(n.color==='#ef4444'?'#f87171':'#9ca3af'));
     svg += `<circle cx="${n.x+6}" cy="${n.y-6}" r="3" fill="${badgeColor}" stroke="#0b0f19" stroke-width="1" />`;
+    // Degraded warning triangle for degraded nodes
+    if (isDegraded) {
+      svg += `<text x="${n.x}" y="${n.y-12}" text-anchor="middle" fill="#fbbf24" font-size="8">⚠</text>`;
+    }
     // Label
     svg += `<text x="${n.x}" y="${n.y+26}" text-anchor="middle" fill="#9ca3af" font-size="9" font-family="sans-serif">${escapeHtml(n.label)}</text>`;
     // Layer badge
@@ -4708,7 +4756,7 @@ function renderTopology(services) {
       if (!g) { tooltip.classList.add('hidden'); return; }
       const label = g.dataset.label;
       const status = g.dataset.status;
-      const statusText = status==='running'||status==='online'?'online':(status==='stopped'?'offline':status);
+      const statusText = status==='running'||status==='online'?'online':(status==='stopped'?'offline':(status==='degraded'?'degraded (dependency down)':status));
       tooltip.innerHTML = `<strong class="text-gray-200">${escapeHtml(label)}</strong><br/><span class="text-gray-400">${escapeHtml(statusText)}</span>`;
       tooltip.classList.remove('hidden');
       const rect = container.getBoundingClientRect();
@@ -4725,16 +4773,19 @@ refreshAll = async function() {
   await _origRefreshAll.apply(this, arguments);
   // C: Service health
   await refreshServiceHealth();
-  renderServiceHealthTimeline();
+  // F: Topology + service ordering
+  let services = [];
+  try {
+    const svc = await fetch('/api/services').then(r => r.json());
+    services = svc.services || [];
+    _lastServicesForTimeline = services;
+    renderTopology(services);
+  } catch(e) { /* silent */ }
+  renderServiceHealthTimeline(services.length ? services : _lastServicesForTimeline);
   // E: Mempool sparkline (read from existing mempool counter)
   const mpEl = document.getElementById('mempool-tx-count');
   const mpSize = mpEl ? parseInt(mpEl.textContent, 10) || 0 : 0;
   renderMempoolSparkline(mpSize);
-  // F: Topology
-  try {
-    const svc = await fetch('/api/services').then(r => r.json());
-    renderTopology(svc.services || []);
-  } catch(e) { /* silent */ }
   // D: Payout charts (if on payouts tab or always refresh)
   try {
     const pay = await fetch('/api/payout').then(r => r.json());
