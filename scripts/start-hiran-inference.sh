@@ -19,6 +19,13 @@ PORT=8002
 HOST="127.0.0.1"
 mkdir -p "$LOG_DIR"
 
+# Local Ollama with ROCm (AMD GPU)
+OLLAMA_BIN="$REPO_ROOT/ollama-bin/bin/ollama"
+OLLAMA_LIB="$REPO_ROOT/ollama-bin/lib"
+export OLLAMA_HOST="${OLLAMA_HOST:-127.0.0.1:11434}"
+export OLLAMA_MODELS="${OLLAMA_MODELS:-$HOME/.ollama/models}"
+VENV_PY="$REPO_ROOT/venv-hiran/bin/python3"
+
 # -- Already running? ----------------------------------------------------------
 if curl -fsS --max-time 2 "http://${HOST}:${PORT}/health" >/dev/null 2>&1; then
     echo "[OK] Hiran Inference already running on port $PORT"
@@ -65,9 +72,30 @@ if curl -fsS --max-time 2 "http://localhost:1234/v1/models" >/dev/null 2>&1; the
     MODEL_PATH="lmstudio:hiran-v2.2"; BACKEND_NAME="LM Studio (port 1234)"
 fi
 
-# -- Backend 3: Ollama ---------------------------------------------------------
-if [[ -z "$MODEL_PATH" ]] && curl -fsS --max-time 2 "http://localhost:11434/api/tags" >/dev/null 2>&1; then
-    MODEL_PATH="ollama:hiran-v2.2"; BACKEND_NAME="Ollama (port 11434)"
+# -- Backend 3: Ollama (local ROCm build) --------------------------------------
+OLLAMA_URL="http://${OLLAMA_HOST#http://}"
+OLLAMA_URL="${OLLAMA_URL#https://}"
+if [[ -z "$MODEL_PATH" ]]; then
+    if curl -fsS --max-time 2 "${OLLAMA_URL}/api/tags" >/dev/null 2>&1; then
+        MODEL_PATH="ollama:hiran-v2.2"; BACKEND_NAME="Ollama (port ${OLLAMA_HOST})"
+    elif [[ -x "$OLLAMA_BIN" ]]; then
+        echo "[INFO] Starting local Ollama server (ROCm) from $OLLAMA_BIN ..."
+        mkdir -p "$OLLAMA_MODELS"
+        nohup "$OLLAMA_BIN" serve > "$LOG_DIR/ollama.log" 2>&1 &
+        local OLLAMA_PID=$!
+        echo "[OK] Ollama server PID=$OLLAMA_PID -> $OLLAMA_URL"
+        for _ in $(seq 1 30); do
+            sleep 1
+            if curl -fsS --max-time 2 "${OLLAMA_URL}/api/tags" >/dev/null 2>&1; then
+                break
+            fi
+        done
+        if curl -fsS --max-time 2 "${OLLAMA_URL}/api/tags" >/dev/null 2>&1; then
+            MODEL_PATH="ollama:hiran-v2.2"; BACKEND_NAME="Ollama (port ${OLLAMA_HOST})"
+        else
+            echo "[WARN] Local Ollama server did not become ready within 30s"
+        fi
+    fi
 fi
 
 # -- Backend 4: serve.py + GGUF ------------------------------------------------
@@ -90,7 +118,10 @@ echo "[OK] Backend: $BACKEND_NAME"
 echo "[OK] Model:   $MODEL_PATH"
 
 PY_ARGS=("$SERVE_PY" --model_path "$MODEL_PATH" --host "$HOST" --port "$PORT")
-if command -v uv >/dev/null 2>&1; then
+if [[ -x "$VENV_PY" ]]; then
+    nohup "$VENV_PY" "${PY_ARGS[@]}" \
+        > "$LOG_DIR/hiran-inference.log" 2> "$LOG_DIR/hiran-inference.err" &
+elif command -v uv >/dev/null 2>&1; then
     nohup uv run python "${PY_ARGS[@]}" \
         > "$LOG_DIR/hiran-inference.log" 2> "$LOG_DIR/hiran-inference.err" &
 else
