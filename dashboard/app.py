@@ -2421,14 +2421,13 @@ _ALLOW_BASE = {
     "stop-space":             "stop-space",
 }
 
-# Windows-only extras
-if os.name == "nt":
-    _ALLOW_BASE["launch-full"] = "launch-full"
-    _ALLOW_BASE["start-monitoring"] = "start-monitoring"
-    _ALLOW_BASE["stop-monitoring"] = "stop-monitoring"
-    _ALLOW_BASE["start-prometheus"] = "start-monitoring"
-    _ALLOW_BASE["start-grafana"] = "start-monitoring"
-    _ALLOW_BASE["open-terminal"] = "open-terminal"
+# Extras available on all platforms (Windows .ps1 + Linux/macOS .sh now exist)
+_ALLOW_BASE["launch-full"] = "launch-full"
+_ALLOW_BASE["start-monitoring"] = "start-monitoring"
+_ALLOW_BASE["stop-monitoring"] = "stop-monitoring"
+_ALLOW_BASE["start-prometheus"] = "start-monitoring"
+_ALLOW_BASE["start-grafana"] = "start-monitoring"
+_ALLOW_BASE["open-terminal"] = "open-terminal"
 
 ALLOWED_ACTIONS = {k: v + _SCRIPT_EXT for k, v in _ALLOW_BASE.items()}
 

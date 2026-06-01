@@ -1,0 +1,23 @@
+[Unit]
+Description=ZION V3 Mainnet Launch Dashboard
+After=network.target
+
+[Service]
+Type=simple
+User=zionserver
+WorkingDirectory=/home/zionserver/2.9.6-main/dashboard
+ExecStart=/usr/bin/python3 /home/zionserver/2.9.6-main/dashboard/app.py
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/home/zionserver/2.9.6-main/logs
+
+[Install]
+WantedBy=multi-user.target
