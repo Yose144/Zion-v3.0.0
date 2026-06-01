@@ -302,6 +302,21 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 
   <!-- ═════════ TAB: Overview ═════════ -->
   <div id="pane-overview" class="space-y-5">
+    <!-- Readiness Score Panel -->
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-base font-bold flex items-center gap-2"><span class="text-gradient">🚀 Mainnet Readiness</span></h2>
+        <span id="readiness-label" class="text-xs text-gray-400">Computing...</span>
+      </div>
+      <div class="relative w-full h-6 bg-black/30 rounded-full overflow-hidden mb-2">
+        <div id="readiness-bar" class="h-full rounded-full transition-all duration-700 ease-out" style="width:0%; background:#374151;"></div>
+        <div class="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white">
+          <span id="readiness-score">—</span>%
+        </div>
+      </div>
+      <div id="readiness-breakdown" class="flex flex-wrap gap-2 text-[10px]"></div>
+    </div>
+
     <!-- Service Cards (top 4) -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       <div id="card-node1" class="zion-panel zion-panel-hover svc-card p-5">
@@ -3481,6 +3496,6 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
   </div>
 </div>
 
-<script src="/dashboard.js?v=6"></script>
+<script src="/dashboard.js?v=7"></script>
 </body>
 </html>
