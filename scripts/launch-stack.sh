@@ -77,13 +77,14 @@ sleep 2
 # ── Miner ──
 export ZION_POOL_ADDR='127.0.0.1:8444'
 export ZION_LOOP_COUNT='1000000'
-export ZION_MINER_THREADS='4'
+export ZION_MINER_THREADS='2'
 export ZION_WORKER_NAME='worker1'
 export ZION_MINER_ID='gpu-miner-01'
 export ZION_GPU_BACKEND='opencl'
 export ZION_GPU_WORK_SIZE='4096'
 
-nohup "$MINER_EXE" > "$LOG_DIR/miner.log" 2> "$LOG_DIR/miner.err" &
+# nice -n 19 keeps the system responsive while mining
+nice -n 19 nohup "$MINER_EXE" > "$LOG_DIR/miner.log" 2> "$LOG_DIR/miner.err" &
 PM=$!
 echo "Started Miner  PID=$PM"
 
