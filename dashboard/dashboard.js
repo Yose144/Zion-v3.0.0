@@ -4294,4 +4294,246 @@ document.body.addEventListener('click', (e) => {
   if(ncl && ncl.dataset.toggleDetail){ ncl.querySelector('.ncl-detail')?.classList.toggle('hidden'); return; }
 });
 
+// ── Feature C: Service Health Timeline (24h heatmap) ───────────────────────
+const SERVICE_HISTORY_LABELS = ['node','pool','miner','bridge','dao','atomic-swap','swap-escrow','web','ai-native','hiranyagarbha','dashboard'];
+let serviceHealthData = null;
+
+async function refreshServiceHealth() {
+  try {
+    const r = await fetch('/api/service-history').then(r => r.json());
+    serviceHealthData = r.buckets || [];
+  } catch(e) { /* silent */ }
+}
+
+function renderServiceHealthTimeline() {
+  const el = document.getElementById('service-health-timeline');
+  if (!el || !serviceHealthData) return;
+  const buckets = serviceHealthData;
+  if (!buckets.length) { el.innerHTML = '<div class="text-gray-500 text-xs italic">No history yet</div>'; return; }
+
+  const cols = 48; // show last 48 buckets (4h) in detail, rest summarized
+  const recent = buckets.slice(-cols);
+  const svcCount = SERVICE_HISTORY_LABELS.length;
+
+  let html = '<div style="display:flex;gap:1px;overflow-x:auto;padding-bottom:4px;">';
+  for (let c = 0; c < recent.length; c++) {
+    const bucket = recent[c];
+    const states = bucket.states || {};
+    let col = '<div style="display:flex;flex-direction:column;gap:1px;min-width:6px;">';
+    for (let s = 0; s < svcCount; s++) {
+      const key = SERVICE_HISTORY_LABELS[s];
+      const alive = states[key] === true;
+      const color = alive ? '#22c55e' : (states[key] === false ? '#ef4444' : '#374151');
+      col += `<div style="width:6px;height:6px;background:${color};border-radius:1px;" title="${key}: ${alive?'online':(states[key]===false?'offline':'no data')}"></div>`;
+    }
+    col += '</div>';
+    html += col;
+  }
+  html += '</div>';
+
+  // Legend
+  html += `<div class="flex items-center gap-3 mt-2 text-[10px] text-gray-400">
+    <span class="flex items-center gap-1"><span style="width:8px;height:8px;background:#22c55e;border-radius:1px;display:inline-block;"></span> Online</span>
+    <span class="flex items-center gap-1"><span style="width:8px;height:8px;background:#ef4444;border-radius:1px;display:inline-block;"></span> Offline</span>
+    <span class="flex items-center gap-1"><span style="width:8px;height:8px;background:#374151;border-radius:1px;display:inline-block;"></span> No data</span>
+    <span class="ml-auto">${recent.length} buckets (~${(recent.length*5/60).toFixed(1)}h)</span>
+  </div>`;
+
+  // Service labels
+  html += '<div class="flex flex-col gap-0.5 mt-1 text-[9px] text-gray-500">';
+  for (const svc of SERVICE_HISTORY_LABELS) {
+    const last = recent.length ? (recent[recent.length-1].states || {})[svc] : null;
+    const status = last === true ? '🟢' : (last === false ? '🔴' : '⚪');
+    html += `<div>${status} ${svc}</div>`;
+  }
+  html += '</div>';
+
+  el.innerHTML = html;
+}
+
+// ── Feature D: Payout fee-split donut chart + history ───────────────────
+let payoutDonutChart = null;
+let payoutHistoryChart = null;
+
+function renderPayoutDonut(payouts) {
+  const ctx = document.getElementById('chart-payout-donut')?.getContext('2d');
+  if (!ctx) return;
+  if (!payouts || !payouts.length) {
+    if (payoutDonutChart) { payoutDonutChart.destroy(); payoutDonutChart = null; }
+    return;
+  }
+  // Aggregate all fee splits from payouts
+  const totals = { miner:0, charity:0, dev:0, pool:0 };
+  for (const p of payouts) {
+    const s = p.fee_split || p.split || {};
+    totals.miner += parseFloat(s.miner || p.miner_amount || 0);
+    totals.charity += parseFloat(s.charity || p.charity_amount || 0);
+    totals.dev += parseFloat(s.dev || p.dev_amount || 0);
+    totals.pool += parseFloat(s.pool || p.pool_fee || 0);
+  }
+  const data = [totals.miner, totals.charity, totals.dev, totals.pool];
+  const labels = ['Miner (89%)','Charity (5%)','Dev (5%)','Pool (1%)'];
+  const colors = ['#22c55e','#f59e0b','#3b82f6','#8b5cf6'];
+
+  if (payoutDonutChart) payoutDonutChart.destroy();
+  payoutDonutChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 0 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position:'right', labels:{color:'#9ca3af',font:{size:10}} }, tooltip: {callbacks:{label:(c)=>` ${c.label}: ${c.parsed.toFixed(4)} ZION`}} },
+      cutout: '60%'
+    }
+  });
+}
+
+function renderPayoutHistory(payouts) {
+  const ctx = document.getElementById('chart-payout-history')?.getContext('2d');
+  if (!ctx) return;
+  if (!payouts || payouts.length < 2) {
+    if (payoutHistoryChart) { payoutHistoryChart.destroy(); payoutHistoryChart = null; }
+    return;
+  }
+  // Sort by block height ascending
+  const sorted = [...payouts].sort((a,b) => (a.block_height||0)-(b.block_height||0));
+  const labels = sorted.map(p => '#' + (p.block_height || p.block || '—'));
+  const miner = sorted.map(p => parseFloat((p.fee_split||p.split||{}).miner || p.miner_amount || 0));
+  const charity = sorted.map(p => parseFloat((p.fee_split||p.split||{}).charity || p.charity_amount || 0));
+  const dev = sorted.map(p => parseFloat((p.fee_split||p.split||{}).dev || p.dev_amount || 0));
+  const pool = sorted.map(p => parseFloat((p.fee_split||p.split||{}).pool || p.pool_fee || 0));
+
+  if (payoutHistoryChart) payoutHistoryChart.destroy();
+  payoutHistoryChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label:'Miner', data:miner, backgroundColor:'#22c55e', stack:'stack1' },
+        { label:'Charity', data:charity, backgroundColor:'#f59e0b', stack:'stack1' },
+        { label:'Dev', data:dev, backgroundColor:'#3b82f6', stack:'stack1' },
+        { label:'Pool', data:pool, backgroundColor:'#8b5cf6', stack:'stack1' },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: {
+        x: { ticks:{color:'#9ca3af',font:{size:8}}, grid:{display:false} },
+        y: { ticks:{color:'#9ca3af',font:{size:8}}, grid:{color:'rgba(255,255,255,0.05)'} }
+      },
+      plugins: { legend: { labels:{color:'#9ca3af',font:{size:9}} } }
+    }
+  });
+}
+
+// ── Feature E: Mempool live sparkline ─────────────────────────────────────
+let mempoolSparkline = null;
+
+function renderMempoolSparkline(mempoolSize) {
+  const ctx = document.getElementById('chart-mempool-sparkline')?.getContext('2d');
+  if (!ctx) return;
+  // Keep rolling buffer in global
+  if (!window._mempoolHistory) window._mempoolHistory = [];
+  window._mempoolHistory.push(mempoolSize || 0);
+  if (window._mempoolHistory.length > 50) window._mempoolHistory.shift();
+  const data = window._mempoolHistory;
+  const labels = data.map((_,i) => '');
+
+  if (mempoolSparkline) mempoolSparkline.destroy();
+  mempoolSparkline = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{ data, borderColor:'#f59e0b', backgroundColor:'rgba(245,158,11,0.1)', fill:true, pointRadius:0, tension:0.3, borderWidth:1.5 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: { x:{display:false}, y:{display:false} },
+      plugins: { legend:{display:false}, tooltip:{enabled:false} },
+      animation: { duration: 0 }
+    }
+  });
+}
+
+// ── Feature F: Network topology SVG map ───────────────────────────────────
+let topologyNodes = [
+  { id:'node1', label:'Node 1', x:400, y:160, color:'#22c55e', status:'online' },
+  { id:'pool', label:'Pool', x:200, y:80, color:'#3b82f6', status:'online' },
+  { id:'miner1', label:'Miner 1', x:100, y:40, color:'#a855f7', status:'online' },
+  { id:'miner2', label:'Miner 2', x:100, y:120, color:'#a855f7', status:'online' },
+  { id:'bridge', label:'Bridge', x:600, y:80, color:'#f59e0b', status:'online' },
+  { id:'dao', label:'DAO', x:600, y:160, color:'#ec4899', status:'online' },
+  { id:'atomic', label:'Atomic Swap', x:600, y:240, color:'#14b8a6', status:'online' },
+  { id:'web', label:'Web', x:400, y:260, color:'#6366f1', status:'online' },
+  { id:'ai', label:'AI Native', x:200, y:240, color:'#ef4444', status:'online' },
+];
+
+const topologyEdges = [
+  ['node1','pool'],['pool','miner1'],['pool','miner2'],
+  ['node1','bridge'],['node1','dao'],['node1','atomic'],
+  ['node1','web'],['node1','ai'],['bridge','dao'],['dao','atomic']
+];
+
+function renderTopology(services) {
+  const container = document.getElementById('topology-svg-container');
+  if (!container) return;
+
+  // Update node colors based on live service status
+  const svcMap = {};
+  if (services && services.length) {
+    for (const s of services) svcMap[s.id] = s.status;
+  }
+  for (const n of topologyNodes) {
+    const status = svcMap[n.id] || svcMap[n.label.toLowerCase().replace(/\s+/g,'-')] || 'unknown';
+    n.status = status;
+    n.color = status === 'running' || status === 'online' ? '#22c55e' : (status === 'stopped' ? '#ef4444' : '#6b7280');
+  }
+
+  let svg = `<svg viewBox="0 0 800 320" width="100%" height="100%" style="background:#0b0f19;">`;
+  // Draw edges
+  for (const [a,b] of topologyEdges) {
+    const nA = topologyNodes.find(n=>n.id===a);
+    const nB = topologyNodes.find(n=>n.id===b);
+    if (!nA || !nB) continue;
+    const active = (nA.status==='running'||nA.status==='online') && (nB.status==='running'||nB.status==='online');
+    const stroke = active ? 'rgba(34,197,94,0.4)' : 'rgba(107,114,128,0.3)';
+    svg += `<line x1="${nA.x}" y1="${nA.y}" x2="${nB.x}" y2="${nB.y}" stroke="${stroke}" stroke-width="1.5" />`;
+  }
+  // Draw nodes
+  for (const n of topologyNodes) {
+    svg += `<g transform="translate(${n.x},${n.y})">
+      <circle r="18" fill="${n.color}" opacity="0.2" />
+      <circle r="10" fill="${n.color}" stroke="#0b0f19" stroke-width="2" />
+      <text y="28" text-anchor="middle" fill="#9ca3af" font-size="9" font-family="sans-serif">${escapeHtml(n.label)}</text>
+    </g>`;
+  }
+  svg += '</svg>';
+  container.innerHTML = svg;
+}
+
+// ── Wire new features into refreshAll ─────────────────────────────────────
+const _origRefreshAll = refreshAll;
+refreshAll = async function() {
+  await _origRefreshAll.apply(this, arguments);
+  // C: Service health
+  await refreshServiceHealth();
+  renderServiceHealthTimeline();
+  // E: Mempool sparkline (read from existing mempool counter)
+  const mpEl = document.getElementById('mempool-tx-count');
+  const mpSize = mpEl ? parseInt(mpEl.textContent, 10) || 0 : 0;
+  renderMempoolSparkline(mpSize);
+  // F: Topology
+  try {
+    const svc = await fetch('/api/services').then(r => r.json());
+    renderTopology(svc.services || []);
+  } catch(e) { /* silent */ }
+  // D: Payout charts (if on payouts tab or always refresh)
+  try {
+    const pay = await fetch('/api/payout').then(r => r.json());
+    if (pay && pay.payouts) {
+      renderPayoutDonut(pay.payouts);
+      renderPayoutHistory(pay.payouts);
+    }
+  } catch(e) { /* silent */ }
+};
+
 console.log('[ZION Dashboard] Auto-refresh started');
