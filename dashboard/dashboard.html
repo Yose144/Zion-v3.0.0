@@ -680,10 +680,11 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         <h2 class="text-base font-bold flex items-center gap-2">📦 Mempool Live</h2>
         <span id="mempool-badge" class="text-xs px-2 py-0.5 rounded-full bg-gray-700 text-gray-300">Loading…</span>
       </div>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-3">
         <div class="bg-black/30 rounded-lg p-3 text-center"><div class="text-[10px] text-gray-400">Pending TXs</div><div id="mempool-tx-count" class="text-xl font-bold text-amber-400">—</div></div>
         <div class="bg-black/30 rounded-lg p-3 text-center"><div class="text-[10px] text-gray-400">Template TXs</div><div id="mempool-template-count" class="text-xl font-bold text-white">—</div></div>
         <div class="bg-black/30 rounded-lg p-3 text-center"><div class="text-[10px] text-gray-400">Total Fees</div><div id="mempool-total-fees" class="text-xl font-bold text-emerald-400">—</div></div>
+        <div class="bg-black/30 rounded-lg p-3 text-center"><div class="text-[10px] text-gray-400">TX Trend (10m)</div><div style="position:relative;height:40px;"><canvas id="chart-mempool-sparkline"></canvas></div></div>
       </div>
       <div class="overflow-x-auto max-h-48 overflow-y-auto">
         <table class="w-full text-left text-xs">
@@ -745,6 +746,35 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
           <div class="text-[10px] font-bold text-gray-300">Issobella</div>
           <div class="text-[10px] text-gray-400 mt-0.5" id="val-issobella-status">—</div>
         </div>
+      </div>
+    </div>
+
+    <!-- ═══════ Service Health Timeline (24h) ═══════ -->
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-base font-bold flex items-center gap-2"><span class="text-gradient">⏱️ Service Health Timeline</span></h2>
+        <span class="text-xs text-gray-400">Last 24 hours · 5-min buckets</span>
+      </div>
+      <div id="service-health-timeline" class="overflow-x-auto">
+        <div class="text-xs text-gray-500 italic">Loading health history…</div>
+      </div>
+      <div class="flex gap-4 mt-2 text-[10px] text-gray-400">
+        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-emerald-500 inline-block"></span> Online</span>
+        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-rose-500 inline-block"></span> Offline</span>
+        <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-sm bg-gray-600 inline-block"></span> No data</span>
+      </div>
+    </div>
+
+    <!-- ═══════ Network Topology Map ═══════ -->
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-base font-bold flex items-center gap-2"><span class="text-gradient">🕸️ Network Topology</span></h2>
+        <span class="text-xs text-gray-400">Live service dependencies</span>
+      </div>
+      <div id="topology-svg-container" class="flex justify-center" style="min-height:320px;">
+        <svg id="topology-svg" width="800" height="320" viewBox="0 0 800 320" class="max-w-full" style="background:rgba(0,0,0,0.3);border-radius:12px;">
+          <text x="400" y="160" text-anchor="middle" fill="#6b7280" font-size="12">Loading topology…</text>
+        </svg>
       </div>
     </div>
   </div>
@@ -3323,6 +3353,18 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         </div>
       </div>
 
+      <!-- Payout Visualizations -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        <div class="zion-panel-soft p-4">
+          <h3 class="text-sm font-bold text-gray-300 mb-2">🍩 Fee Split Distribution</h3>
+          <div style="position:relative;height:200px;"><canvas id="chart-payout-donut"></canvas></div>
+        </div>
+        <div class="zion-panel-soft p-4">
+          <h3 class="text-sm font-bold text-gray-300 mb-2">📈 Blocks & Payouts Over Time</h3>
+          <div style="position:relative;height:200px;"><canvas id="chart-payout-history"></canvas></div>
+        </div>
+      </div>
+
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div class="zion-panel-soft p-4">
           <h3 class="text-sm font-bold text-gray-300 mb-2">📝 Recent Miner Payouts</h3>
@@ -3431,6 +3473,6 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
   </div>
 </div>
 
-<script src="/dashboard.js?v=4"></script>
+<script src="/dashboard.js?v=5"></script>
 </body>
 </html>

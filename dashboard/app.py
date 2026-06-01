@@ -28,6 +28,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 SCRIPT_DIR = Path(__file__).parent.resolve()
 REPO_ROOT = SCRIPT_DIR.parent
 LOG_DIR = REPO_ROOT / "logs"
+DATA_DIR = REPO_ROOT / "V3" / "data"
 SCRIPTS_DIR = REPO_ROOT / "scripts"
 V2_DIST = SCRIPT_DIR / "v2" / "dist"
 SERVICES_MANIFEST = SCRIPT_DIR / "services.json"
@@ -63,6 +64,7 @@ class MetricsHistory:
                 "shares_bad": status.get("pool", {}).get("shares_rejected", 0),
                 "blocks": status.get("pool", {}).get("blocks_found", 0),
                 "sessions": status.get("pool", {}).get("active_sessions", 0),
+                "mempool": status.get("mempool", 0),
             })
 
     def snapshot(self) -> list:
@@ -70,6 +72,62 @@ class MetricsHistory:
             return list(self.samples)
 
 HISTORY = MetricsHistory()
+
+# ── Service health history (24h ring buffer, persisted) ────────────────
+
+class ServiceHealthHistory:
+    """Keeps last 288 samples (24h at 5min interval) of per-service alive state."""
+    INTERVAL = 300  # 5 minutes
+    MAX_BUCKETS = 288  # 24h
+    PERSIST_PATH = DATA_DIR / "service-health-history.json"
+
+    def __init__(self):
+        self.lock = threading.Lock()
+        self.buckets: deque = deque(maxlen=self.MAX_BUCKETS)
+        self.last_flush = 0
+        self._load()
+
+    def _load(self):
+        try:
+            if self.PERSIST_PATH.exists():
+                with open(self.PERSIST_PATH, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    if isinstance(data, list):
+                        for item in data[-self.MAX_BUCKETS:]:
+                            self.buckets.append(item)
+        except Exception:
+            pass
+
+    def _save(self):
+        try:
+            with open(self.PERSIST_PATH, "w", encoding="utf-8") as f:
+                json.dump(list(self.buckets), f)
+        except Exception:
+            pass
+
+    def record(self, health: list):
+        now = int(time.time())
+        # Only record if enough time elapsed
+        if self.buckets and now - self.buckets[-1].get("t", 0) < self.INTERVAL:
+            return
+        entry = {"t": now, "services": {h["id"]: h["alive"] for h in health}}
+        with self.lock:
+            self.buckets.append(entry)
+        # Flush to disk every 10 min
+        if now - self.last_flush > 600:
+            self._save()
+            self.last_flush = now
+
+    def snapshot(self) -> list:
+        with self.lock:
+            return list(self.buckets)
+
+    def payout_history(self) -> list:
+        """Return payout-relevant events (blocks found) from history."""
+        # Reuse the same buckets, caller filters
+        return self.snapshot()
+
+SERVICE_HISTORY = ServiceHealthHistory()
 BLOCK_EVENTS: deque = deque(maxlen=50)
 LAST_BLOCK_EVENT_TIME = {"node1": 0, "node2": 0, "pool": 0}
 
@@ -1763,6 +1821,36 @@ def get_backup_status() -> dict:
         "backup_dir": str(backup_dir),
     }
 
+# ── Emission helpers (mirror V3/L1/core/src/emission.rs) ───────────────
+
+BLOCKS_PER_DECADE = 5_256_000
+MAX_DECAY_DECADES = 10
+BASE_REWARD = 5_400_067_000_000_000
+TAIL_REWARD = 580_184_552_960_000
+
+
+def block_subsidy(height: int) -> int:
+    """Block subsidy in flowers for a given height."""
+    if height <= 0:
+        return 0
+    decade = (height - 1) // BLOCKS_PER_DECADE
+    if decade >= MAX_DECAY_DECADES:
+        return TAIL_REWARD
+    reward = BASE_REWARD
+    for _ in range(decade):
+        reward = reward * 4 // 5
+    return reward
+
+
+def fee_split(subsidy: int) -> tuple:
+    """Return (miner, humanitarian, issobella, pool_fee) in flowers."""
+    humanitarian = subsidy * 5 // 100
+    issobella = subsidy * 5 // 100
+    pool_fee = subsidy * 1 // 100
+    miner = subsidy - humanitarian - issobella - pool_fee
+    return (miner, humanitarian, issobella, pool_fee)
+
+
 # ── Pool wallet / UTXO / payout status ───────────────────────────────────
 
 def get_pool_wallet_status() -> dict:
@@ -1884,6 +1972,48 @@ def build_payout_status() -> dict:
     status["miner_payouts"] = status["miner_payouts"][-10:]
     status["fee_payouts"] = status["fee_payouts"][-10:]
     status["errors"] = status["errors"][-10:]
+    # Build structured payouts array for charts
+    payouts = []
+    seen_heights = set()
+    for line in recent:
+        if m := re.search(r'BLOCK_FOUND.*height=(\d+)', line):
+            h = int(m.group(1))
+            if h in seen_heights:
+                continue
+            seen_heights.add(h)
+            subsidy = block_subsidy(h)
+            miner, humanitarian, issobella, pool_fee = fee_split(subsidy)
+            payouts.append({
+                "block_height": h,
+                "subsidy_flowers": subsidy,
+                "fee_split": {
+                    "miner": miner / 1_000_000_000_000,
+                    "charity": humanitarian / 1_000_000_000_000,
+                    "dev": issobella / 1_000_000_000_000,
+                    "pool": pool_fee / 1_000_000_000_000,
+                }
+            })
+    # Also add any payout_submitted lines without a matching BLOCK_FOUND
+    for line in recent:
+        if m := re.search(r'payout_submitted.*height=(\d+)', line):
+            h = int(m.group(1))
+            if h in seen_heights:
+                continue
+            seen_heights.add(h)
+            subsidy = block_subsidy(h)
+            miner, humanitarian, issobella, pool_fee = fee_split(subsidy)
+            payouts.append({
+                "block_height": h,
+                "subsidy_flowers": subsidy,
+                "fee_split": {
+                    "miner": miner / 1_000_000_000_000,
+                    "charity": humanitarian / 1_000_000_000_000,
+                    "dev": issobella / 1_000_000_000_000,
+                    "pool": pool_fee / 1_000_000_000_000,
+                }
+            })
+    payouts.sort(key=lambda x: x["block_height"])
+    status["payouts"] = payouts[-20:]
     # Get pool wallet balance via RPC
     wallet = status["pool_wallet"]
     if wallet and wallet.startswith("zion1"):
@@ -2618,6 +2748,7 @@ def background_sampler():
         try:
             st = build_status()
             HISTORY.record(st)
+            SERVICE_HISTORY.record(all_services_health())
             scan_block_events()
             # Persist new alerts (throttled)
             try:
@@ -5150,6 +5281,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json({"actions": sorted(actions)})
         elif route == "/api/services":
             self._json({"services": all_services_health()})
+        elif route == "/api/service-history":
+            self._json({"buckets": SERVICE_HISTORY.snapshot()})
         elif route == "/api/resources":
             self._json(get_resource_usage())
         elif route == "/api/alerts/history":
