@@ -905,7 +905,7 @@ fn run_local_session(
         "running",
     );
 
-    let hello_line = encode_message(&pool.hello_message(&config.miner_id, &config.worker_name))?;
+    let hello_line = encode_message(&pool.hello_message(&config.miner_id, &config.worker_name, &config.payout_address))?;
     let welcome_line = encode_message(&pool.welcome_message())?;
     if VERBOSE.load(Ordering::Relaxed) {
         println!("wire_hello={}", hello_line.trim());
@@ -1199,6 +1199,7 @@ fn run_remote_session(
         miner_id: config.miner_id.clone(),
         worker_name: config.worker_name.clone(),
         algorithm: zion_core::consensus_profile().to_string(),
+        payout_address: config.payout_address.clone(),
     };
     let hello_line = write_wire_message(&mut writer, &hello_message)?;
     println!("wire_hello={hello_line}");
@@ -1945,6 +1946,8 @@ struct SessionOutcome {
 struct MinerConfig {
     miner_id: String,
     worker_name: String,
+    /// Payout address for pool rewards (zion1…). Falls back to miner_id if unset.
+    payout_address: String,
     pool_addr: Option<String>,
     loop_count: u32,
     job_ttl_ms: u64,
@@ -1982,7 +1985,7 @@ impl MinerConfig {
                     i += 2;
                 }
                 "--wallet" if i + 1 < args.len() => {
-                    std::env::set_var("ZION_MINER_ID", &args[i + 1]);
+                    std::env::set_var("ZION_PAYOUT_ADDRESS", &args[i + 1]);
                     i += 2;
                 }
                 "--worker" if i + 1 < args.len() => {
@@ -2010,7 +2013,7 @@ impl MinerConfig {
                     println!();
                     println!("One-click mining:");
                     println!("  --pool HOST:PORT    Pool address (default: env ZION_POOL_ADDR)");
-                    println!("  --wallet ADDR       Wallet / miner ID (default: local-miner)");
+                    println!("  --wallet ADDR       Payout wallet address (zion1…, default: miner_id)");
                     println!("  --worker NAME       Worker name (default: cpu-rig-0)");
                     println!("  --threads N         CPU thread count (default: auto-detect)");
                     println!("  --gpu BACKEND       GPU backend: auto, metal, opencl, cpu (default: auto)");
@@ -2039,9 +2042,16 @@ impl MinerConfig {
             .and_then(|v| v.parse().ok())
             .unwrap_or_else(parallel::detect_threads);
 
+        let miner_id = env_or_default("ZION_MINER_ID", "local-miner");
+        let payout_address = std::env::var("ZION_PAYOUT_ADDRESS")
+            .ok()
+            .filter(|value| !value.trim().is_empty())
+            .unwrap_or_else(|| miner_id.clone());
+
         Ok(Self {
-            miner_id: env_or_default("ZION_MINER_ID", "local-miner"),
+            miner_id,
             worker_name: env_or_default("ZION_WORKER_NAME", "cpu-rig-0"),
+            payout_address,
             pool_addr: std::env::var("ZION_POOL_ADDR")
                 .ok()
                 .filter(|value| !value.trim().is_empty()),
