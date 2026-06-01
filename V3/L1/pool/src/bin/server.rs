@@ -4244,7 +4244,9 @@ fn execute_pool_payout(
     // Fall back to account-model payouts in that case.
     if utxos.is_empty() {
         let account_balance = fetch_pool_account_balance(node_rpc_addr, pool_wallet_addr)?;
-        let total_needed: u128 = payouts.iter().map(|p| p.amount as u128).sum();
+        let min_tx_fee = zion_core::fee::MIN_TX_FEE as u128;
+        let total_needed: u128 = payouts.iter().map(|p| p.amount as u128).sum::<u128>()
+            + (payouts.len() as u128 * min_tx_fee);
 
         if account_balance == 0 {
             return Err(anyhow!(
@@ -4263,7 +4265,7 @@ fn execute_pool_payout(
         let base_nonce = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap_or_default()
-            .as_secs();
+            .as_millis() as u64;
         let mut executed = Vec::new();
         let mut first_tx_id = String::new();
 
@@ -4275,7 +4277,7 @@ fn execute_pool_payout(
                 from: pool_wallet_addr.to_string(),
                 to: payout.address.clone(),
                 amount_zion: payout.amount as u128,
-                fee_zion: 0,
+                fee_zion: zion_core::fee::MIN_TX_FEE,
                 nonce,
             };
             match submit_account_transaction(node_rpc_addr, &tx) {
@@ -4556,7 +4558,9 @@ fn execute_fee_payout(
     // ── Account-model fallback ─────────────────────────────────────────
     if utxos.is_empty() {
         let account_balance = fetch_pool_account_balance(node_rpc_addr, pool_wallet_addr)?;
-        let total_needed: u128 = recipients.iter().map(|r| r.amount as u128).sum();
+        let min_tx_fee = zion_core::fee::MIN_TX_FEE as u128;
+        let total_needed: u128 = recipients.iter().map(|r| r.amount as u128).sum::<u128>()
+            + (recipients.len() as u128 * min_tx_fee);
 
         if account_balance == 0 {
             return Err(anyhow!(
@@ -4575,7 +4579,7 @@ fn execute_fee_payout(
         let base_nonce = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap_or_default()
-            .as_secs();
+            .as_millis() as u64;
         let mut first_tx_id = String::new();
 
         for (i, recipient) in recipients.iter().enumerate() {
@@ -4586,7 +4590,7 @@ fn execute_fee_payout(
                 from: pool_wallet_addr.to_string(),
                 to: recipient.address.clone(),
                 amount_zion: recipient.amount as u128,
-                fee_zion: 0,
+                fee_zion: zion_core::fee::MIN_TX_FEE,
                 nonce,
             };
             match submit_account_transaction(node_rpc_addr, &tx) {
