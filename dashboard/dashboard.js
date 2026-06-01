@@ -170,6 +170,7 @@ async function refreshAll(){
     updateAlerts(alertsData.alerts);
     updateChecklist(checklistData.checks);
     updatePayouts(statusData.pool);
+    updateLayerServices();
     updateMiniHashrate();
     loadCliNodeStatus();
     updateResourceBars(resourcesData);
@@ -311,6 +312,45 @@ function updateServiceCards(s){
     } else {
       msgEl.classList.add('hidden');
     }
+  }
+}
+
+// ── Layer Services (L2–L6) mini-cards ──
+async function updateLayerServices(){
+  try{
+    const res = await fetch('/api/services').then(r => r.json());
+    const services = res.services || [];
+    const map = {
+      'bridge': 'val-bridge-status',
+      'dao': 'val-dao-status',
+      'atomic-swap': 'val-swap-status',
+      'warp': 'val-warp-status',
+      'hiranyagarbha': 'val-hiranya-status',
+      'oasis': 'val-oasis-status',
+      'free-world': 'val-free-world-status',
+      'issobella': 'val-issobella-status',
+    };
+    for(const [sid, elId] of Object.entries(map)){
+      const svc = services.find(s => s.id === sid);
+      const el = document.getElementById(elId);
+      const card = document.getElementById('card-' + sid);
+      if(!el) continue;
+      if(svc && svc.alive){
+        el.textContent = '● LIVE';
+        el.className = 'text-[10px] text-emerald-400 font-bold mt-0.5';
+        if(card) card.classList.add('svc-live');
+      } else if(svc){
+        el.textContent = '○ Down';
+        el.className = 'text-[10px] text-gray-500 mt-0.5';
+        if(card) card.classList.remove('svc-live');
+      } else {
+        el.textContent = '—';
+        el.className = 'text-[10px] text-gray-500 mt-0.5';
+        if(card) card.classList.remove('svc-live');
+      }
+    }
+  }catch(e){
+    console.error('updateLayerServices error:', e);
   }
 }
 
