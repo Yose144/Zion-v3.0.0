@@ -30,6 +30,11 @@ REPO_ROOT = SCRIPT_DIR.parent
 LOG_DIR = REPO_ROOT / "logs"
 SCRIPTS_DIR = REPO_ROOT / "scripts"
 V2_DIST = SCRIPT_DIR / "v2" / "dist"
+SERVICES_MANIFEST = SCRIPT_DIR / "services.json"
+DOTENV_FILE = SCRIPT_DIR / ".env"
+# Cross-platform release binary directory + executable suffix
+RELEASE_BIN_DIR = REPO_ROOT / "V3" / "target" / "release"
+EXE_SUFFIX = ".exe" if os.name == "nt" else ""
 if not LOG_DIR.exists():
     LOG_DIR = Path("../logs")
 
@@ -2161,6 +2166,204 @@ def _script_cmd(script_path, *extra_args):
     else:
         return ["bash", str(script_path)] + list(extra_args)
 
+# ── Service manifest (cross-platform, script-free start/stop) ─────────────
+# services.json is the single source of truth for simple "set env + launch
+# binary + redirect logs" services. The same spec works on Windows, Linux and
+# macOS — only the .exe suffix and the detached-launch mechanics differ.
+
+_DOTENV_CACHE = None
+
+def load_dotenv() -> dict:
+    """Parse dashboard/.env (KEY=VALUE lines) into a dict. Cached."""
+    global _DOTENV_CACHE
+    if _DOTENV_CACHE is not None:
+        return _DOTENV_CACHE
+    data = {}
+    try:
+        if DOTENV_FILE.exists():
+            for raw in DOTENV_FILE.read_text(encoding="utf-8").splitlines():
+                line = raw.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                k, v = line.split("=", 1)
+                data[k.strip()] = v.strip().strip('"').strip("'")
+    except Exception as e:
+        print(f"[services] .env parse error: {e}", file=sys.stderr)
+    _DOTENV_CACHE = data
+    return data
+
+_PLACEHOLDER_RE = re.compile(r"\$\{([A-Z0-9_]+)\}")
+
+def _resolve_env_value(val: str, secrets: dict):
+    """Substitute ${VAR} placeholders from .env / os.environ.
+    Returns None if any referenced placeholder is unresolved (so the var is
+    omitted and the binary falls back to its own default)."""
+    missing = []
+    def repl(m):
+        name = m.group(1)
+        if name in secrets:
+            return secrets[name]
+        if os.environ.get(name):
+            return os.environ[name]
+        missing.append(name)
+        return ""
+    out = _PLACEHOLDER_RE.sub(repl, val)
+    return None if missing else out
+
+_SERVICES_CACHE = None
+
+def load_services_manifest() -> dict:
+    """Load + cache services.json. Returns {} on any error (callers fall back
+    to scripts)."""
+    global _SERVICES_CACHE
+    if _SERVICES_CACHE is not None:
+        return _SERVICES_CACHE
+    services = {}
+    try:
+        if SERVICES_MANIFEST.exists():
+            raw = json.loads(SERVICES_MANIFEST.read_text(encoding="utf-8"))
+            services = {k: v for k, v in raw.items() if not k.startswith("_")}
+    except Exception as e:
+        print(f"[services] manifest load error: {e}", file=sys.stderr)
+    _SERVICES_CACHE = services
+    return services
+
+def _spawn_detached(argv, log_basename: str, env: dict):
+    """Launch argv detached from the dashboard, cross-platform.
+    stdout/stderr go to logs/<log_basename>.log/.err. Returns the PID."""
+    out_path = LOG_DIR / f"{log_basename}.log"
+    err_path = LOG_DIR / f"{log_basename}.err"
+    out_f = open(out_path, "ab")
+    err_f = open(err_path, "ab")
+    try:
+        if os.name == "nt":
+            si = None
+            try:
+                si = subprocess.STARTUPINFO()
+                si.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+                si.wShowWindow = 0  # SW_HIDE
+            except Exception:
+                pass
+            creation = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
+            proc = subprocess.Popen(
+                argv, cwd=str(REPO_ROOT),
+                stdout=out_f, stderr=err_f, stdin=subprocess.DEVNULL,
+                startupinfo=si, creationflags=creation, close_fds=True, env=env,
+            )
+        else:
+            proc = subprocess.Popen(
+                argv, cwd=str(REPO_ROOT),
+                stdout=out_f, stderr=err_f, stdin=subprocess.DEVNULL,
+                close_fds=True,
+                preexec_fn=os.setsid if hasattr(os, "setsid") else None,
+                env=env,
+            )
+        return proc.pid
+    finally:
+        out_f.close()
+        err_f.close()
+
+def run_service(service_key: str, env_overrides: dict = None) -> dict:
+    """Start a manifest-defined service by launching its binary directly.
+    Returns {ok, pid, ...} or {ok: False, error}."""
+    spec = load_services_manifest().get(service_key)
+    if not spec:
+        return {"ok": False, "error": f"Unknown service '{service_key}'"}
+    bin_name = spec.get("bin", "") + EXE_SUFFIX
+    bin_path = RELEASE_BIN_DIR / bin_name
+    if not bin_path.exists():
+        return {"ok": False, "error": f"Binary not found: {bin_path}. Build the V3 workspace first."}
+    # Ensure log + extra dirs exist
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+    for d in spec.get("mkdirs", []):
+        try:
+            (REPO_ROOT / d).mkdir(parents=True, exist_ok=True)
+        except Exception:
+            pass
+    # Build environment: base os.environ + resolved manifest env + overrides
+    secrets = load_dotenv()
+    env = os.environ.copy()
+    for k, v in (spec.get("env") or {}).items():
+        resolved = _resolve_env_value(str(v), secrets)
+        if resolved is None:
+            _log_control(f"service={service_key} skipped env {k} (unresolved placeholder)")
+            continue
+        env[k] = resolved
+    if env_overrides:
+        for k, v in env_overrides.items():
+            env[k] = str(v)
+    argv = [str(bin_path)] + [str(a) for a in spec.get("args", [])]
+    try:
+        pid = _spawn_detached(argv, spec.get("log", service_key), env)
+    except Exception as e:
+        _log_control(f"FAILED service={service_key} error={e}")
+        return {"ok": False, "error": str(e), "service": service_key}
+    sid = spec.get("service_id")
+    if sid:
+        register_process(sid, pid, image=spec.get("bin", ""))
+    _log_control(f"started service={service_key} bin={bin_name} pid={pid}")
+    return {"ok": True, "service": service_key, "pid": pid}
+
+def _kill_by_release_bin(bin_name: str) -> int:
+    """Best-effort kill of our release binary, matched by its FULL release path
+    so we never hit unrelated processes that merely share a name (e.g. the ZION
+    `node` binary vs. Node.js `node`). Returns 1 if a kill was attempted."""
+    if not bin_name:
+        return 0
+    bin_path = RELEASE_BIN_DIR / (bin_name + EXE_SUFFIX)
+    try:
+        if os.name == "nt":
+            # Filter Get-Process by executable Path, not just name.
+            ps = (
+                f"Get-Process -Name '{bin_name}' -ErrorAction SilentlyContinue | "
+                f"Where-Object {{ $_.Path -eq '{bin_path}' }} | Stop-Process -Force"
+            )
+            subprocess.run(["powershell.exe", "-NoProfile", "-Command", ps],
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=10)
+        else:
+            # Match the full absolute path → safe, won't match same-named procs.
+            subprocess.run(["pkill", "-f", str(bin_path)],
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=10)
+        return 1
+    except Exception:
+        return 0
+
+def stop_service(service_key: str) -> dict:
+    """Stop a manifest-defined service: kill the tracked PID if we started it,
+    otherwise best-effort kill by binary name."""
+    spec = load_services_manifest().get(service_key)
+    if not spec:
+        return {"ok": False, "error": f"Unknown service '{service_key}'"}
+    sid = spec.get("service_id")
+    killed = False
+    rec = None
+    if sid:
+        with PROCESS_LOCK:
+            rec = PROCESS_REGISTRY.get(sid)
+    if rec and is_process_alive(rec["pid"]):
+        pid = rec["pid"]
+        try:
+            if os.name == "nt":
+                subprocess.run(["taskkill", "/PID", str(pid), "/F", "/T"],
+                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=10)
+            else:
+                # Kill the whole process group created via setsid
+                try:
+                    os.killpg(os.getpgid(pid), 15)
+                except Exception:
+                    os.kill(pid, 15)
+            killed = True
+        except Exception as e:
+            return {"ok": False, "error": f"kill failed: {e}", "service": service_key}
+    # Always also sweep by full release path (covers externally-started
+    # instances) — path-matched so we never touch unrelated same-named procs.
+    _kill_by_release_bin(spec.get("bin", ""))
+    if sid:
+        with PROCESS_LOCK:
+            PROCESS_REGISTRY.pop(sid, None)
+    _log_control(f"stopped service={service_key} pid_killed={killed}")
+    return {"ok": True, "service": service_key, "pid_killed": killed}
+
 _ALLOW_BASE = {
     "install-deps":           "install-deps",
     "launch-stack":           "launch-stack",
@@ -2239,9 +2442,33 @@ def _log_control(msg: str):
     except Exception:
         pass
 
+def _manifest_dispatch(action: str, env_overrides: dict = None):
+    """If `action` targets a manifest service, run it directly (no scripts) and
+    return the result dict. Returns None if the action is not manifest-backed,
+    so the caller falls back to the .ps1/.sh script path."""
+    for prefix in ("start-", "stop-", "restart-"):
+        if action.startswith(prefix):
+            key = action[len(prefix):]
+            if key in load_services_manifest():
+                if prefix == "start-":
+                    return run_service(key, env_overrides)
+                if prefix == "stop-":
+                    return stop_service(key)
+                # restart: stop, brief settle, start
+                stop_service(key)
+                time.sleep(0.5)
+                return run_service(key, env_overrides)
+            return None
+    return None
+
 def run_control(action: str, env_overrides: dict = None) -> dict:
-    """Execute an allowed control script in the background (cross-platform).
+    """Execute a control action in the background (cross-platform).
+    Manifest-backed services (services.json) are launched directly; everything
+    else falls back to an allowed .ps1/.sh script in scripts/.
     Optional env_overrides merges into the subprocess environment."""
+    manifest_result = _manifest_dispatch(action, env_overrides)
+    if manifest_result is not None:
+        return manifest_result
     if action not in ALLOWED_ACTIONS:
         return {"ok": False, "error": f"Unknown action '{action}'. Allowed: {sorted(ALLOWED_ACTIONS)}"}
     script = SCRIPTS_DIR / ALLOWED_ACTIONS[action]
@@ -4686,7 +4913,11 @@ class DashboardHandler(BaseHTTPRequestHandler):
             name = (params.get("name", [".env.mainnet"])[0])
             self._json(load_env_file(name))
         elif route == "/api/controls":
-            self._json({"actions": sorted(ALLOWED_ACTIONS.keys())})
+            # Merge script-backed actions with manifest-backed start/stop/restart
+            actions = set(ALLOWED_ACTIONS.keys())
+            for key in load_services_manifest():
+                actions.update({f"start-{key}", f"stop-{key}", f"restart-{key}"})
+            self._json({"actions": sorted(actions)})
         elif route == "/api/services":
             self._json({"services": all_services_health()})
         elif route == "/api/resources":
