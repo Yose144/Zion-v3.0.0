@@ -1289,33 +1289,94 @@ def build_checklist(status: dict) -> dict:
 
 # ── Alerts & recommendations ────────────────────────────────────────────
 
+# ── Readiness Score ───────────────────────────────────────────────────────
+
+LAYER_WEIGHTS = {
+    "L1": 50,      # Node1 20%, Node2 10%, Pool 10%, Miner 10%
+    "L2": 25,      # Bridge 8%, DAO 8%, Atomic Swap 5%, Warp 4%
+    "L3": 15,      # AI Native 5%, Hiranyagarbha 3%, NCL 2%, Oasis 3%, Free World 2%
+    "L4": 5,       # Oasis 3%, Free World 2%
+    "L5": 3,       # Free World 2%, Issobella 1%
+    "L6": 2,       # Issobella 2%
+    "Infra": 0,    # Not counted in readiness (monitoring only)
+}
+
+SERVICE_WEIGHTS = {
+    "node1": 20, "node2": 10, "pool": 10, "miner": 10,
+    "bridge": 8, "dao": 8, "atomic-swap": 5, "warp": 4,
+    "ai-native": 5, "hiranyagarbha": 3, "ncl": 2, "oasis": 3, "free-world": 2, "issobella": 2,
+    "pool-edge": 0, "prometheus": 0, "grafana": 0, "dashboard": 0,
+}
+
+
+def build_readiness_score(health: list) -> dict:
+    """Compute 0-100 readiness score from service health.
+    L1 services carry the most weight."""
+    total_weight = 0
+    earned_weight = 0
+    breakdown = []
+    for h in health:
+        sid = h["id"]
+        w = SERVICE_WEIGHTS.get(sid, 0)
+        if w == 0:
+            continue
+        total_weight += w
+        if h.get("alive"):
+            earned_weight += w
+            breakdown.append({"id": sid, "weight": w, "alive": True})
+        else:
+            breakdown.append({"id": sid, "weight": w, "alive": False, "status": h.get("status", "unknown")})
+
+    score = round((earned_weight / total_weight) * 100, 1) if total_weight else 0
+    # Color bucket
+    if score >= 85:
+        color = "green"
+    elif score >= 60:
+        color = "yellow"
+    else:
+        color = "red"
+    return {
+        "score": score,
+        "color": color,
+        "total_weight": total_weight,
+        "earned_weight": earned_weight,
+        "breakdown": breakdown,
+        "timestamp": datetime.now().isoformat(),
+    }
+
+
 def build_alerts(status: dict) -> list:
-    """Auto-detect common issues and produce actionable alerts."""
+    """Auto-detect common issues and produce actionable alerts.
+    Severity is now derived from SERVICE_REGISTRY."""
     alerts = []
     n1, n2, pool, miner = status["node1"], status["node2"], status["pool"], status["miner"]
 
+    def _sev(svc_id: str, default: str = "warning") -> str:
+        svc = get_service(svc_id)
+        return svc.get("severity", default) if svc else default
+
     if not n1["running"]:
-        alerts.append({"severity": "critical", "title": "Node 1 not running",
-                       "detail": "Logs/node1.log is empty or missing. Start Node 1 from controls.",
+        alerts.append({"severity": _sev("node1", "critical"), "title": "Node 1 not running",
+                       "detail": "Node 1 process not responding or RPC unreachable. Start Node 1 from controls.",
                        "action": "start-node1"})
     elif n1["chain_height"] == 0:
-        alerts.append({"severity": "warning", "title": "Chain stuck at height 0",
+        alerts.append({"severity": _sev("node1", "warning"), "title": "Chain stuck at height 0",
                        "detail": "Node 1 is up but no blocks have been mined yet.",
                        "action": None})
 
     if n1["running"] and n2["running"] and n1["chain_height"] and n2["chain_height"]:
         if abs(n1["chain_height"] - n2["chain_height"]) > 5:
-            alerts.append({"severity": "warning", "title": "Nodes out of sync",
+            alerts.append({"severity": _sev("node2", "warning"), "title": "Nodes out of sync",
                            "detail": f"Node1@{n1['chain_height']} vs Node2@{n2['chain_height']} — gap {abs(n1['chain_height']-n2['chain_height'])}",
                            "action": "restart-node2"})
 
     if pool["running"] and pool["fee_split"] and pool["fee_split"] != "89/5/5/1":
-        alerts.append({"severity": "critical", "title": "Wrong fee split",
+        alerts.append({"severity": _sev("pool", "critical"), "title": "Wrong fee split",
                        "detail": f"Detected {pool['fee_split']}, mainnet must be 89/5/5/1",
                        "action": None})
 
     if pool["running"] and pool["payout_enabled"] is False:
-        alerts.append({"severity": "warning", "title": "Payouts disabled",
+        alerts.append({"severity": _sev("pool", "warning"), "title": "Payouts disabled",
                        "detail": "Pool is running but payout_execution=disabled. Set ZION_POOL_PAYOUT_SK_HEX.",
                        "action": None})
 
@@ -1325,7 +1386,7 @@ def build_alerts(status: dict) -> list:
                        "action": None})
 
     if miner["running"] and not miner["hashrate"]:
-        alerts.append({"severity": "warning", "title": "Miner not hashing",
+        alerts.append({"severity": _sev("miner", "warning"), "title": "Miner not hashing",
                        "detail": "Miner is connected but no hashrate samples in recent logs. Check GPU init.",
                        "action": "restart-miner"})
 
@@ -1337,7 +1398,7 @@ def build_alerts(status: dict) -> list:
     if pool["running"] and pool["shares_rejected"] > 0 and pool["shares_accepted"]:
         ratio = pool["shares_rejected"] / max(1, pool["shares_accepted"])
         if ratio > 0.05:
-            alerts.append({"severity": "warning", "title": "High share rejection rate",
+            alerts.append({"severity": _sev("pool", "warning"), "title": "High share rejection rate",
                            "detail": f"{pool['shares_rejected']} rejected vs {pool['shares_accepted']} accepted ({ratio*100:.1f}%)",
                            "action": None})
 
@@ -5410,6 +5471,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json({"actions": sorted(actions)})
         elif route == "/api/services":
             self._json({"services": all_services_health()})
+        elif route == "/api/readiness":
+            self._json(build_readiness_score(all_services_health()))
         elif route == "/api/service-history":
             self._json({"buckets": SERVICE_HISTORY.snapshot()})
         elif route == "/api/resources":
