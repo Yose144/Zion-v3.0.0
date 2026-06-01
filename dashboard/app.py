@@ -4834,31 +4834,41 @@ def _ws_push_loop():
 
 def _build_health_map() -> dict:
     """Return {service: health_status} for all known services."""
-    from functools import lru_cache
-    svc_map = {
-        "node1": (HOST, 8443),
-        "node2": ("100.76.16.108", 8443),
-        "pool":  (HOST, 8444),
-        "pool-edge": ("100.76.16.108", 8444),
-        "miner": (HOST, 9200),   # metrics port
-        "hiran": (HOST, 8002),
-        "hiranyagarbha": (HOST, 8001),
-        "bridge": (HOST, 8010),
-        "dao":   (HOST, 8011),
-        "swap":  (HOST, 8012),
-        "warp":  (HOST, 8013),
+    status = build_status()
+    health = {}
+    # Core services from build_status()
+    for key in ("node1", "node2", "pool", "pool_edge", "miner"):
+        s = status.get(key, {})
+        running = s.get("running", False)
+        # For services with known sub-conditions, report richer status
+        if key == "node1":
+            health["node1"] = "up" if running and s.get("p2p_bind") else "down"
+        elif key == "node2":
+            health["node2"] = "up" if running and s.get("known_peers", 0) > 0 else "down"
+        elif key == "pool":
+            health["pool"] = "up" if running and s.get("active_sessions", 0) > 0 else "down"
+        elif key == "miner":
+            health["miner"] = "up" if running and s.get("hashrate") else "down"
+        else:
+            health[key] = "up" if running else "down"
+    # Extended services from service registry + health cache
+    ext_map = {
+        "hiran": 8002, "hiranyagarbha": 8001, "bridge": 8550,
+        "dao": 8081, "swap": 8083, "warp": 8084,
     }
-    result = {}
-    for name, (h, p) in svc_map.items():
-        try:
-            cached = _HEALTH_CACHE.get(name)
-            if cached:
-                result[name] = cached
-            else:
-                result[name] = "unknown"
-        except Exception:
-            result[name] = "unknown"
-    return result
+    for sid, port in ext_map.items():
+        svc = get_service(sid)
+        if svc:
+            h = check_service_health(svc)
+            health[sid] = "up" if h["alive"] else "down"
+        else:
+            # Fallback TCP probe
+            try:
+                alive = tcp_probe("127.0.0.1", port, timeout=0.15)
+                health[sid] = "up" if alive else "down"
+            except Exception:
+                health[sid] = "unknown"
+    return health
 
 
 def _handle_websocket(handler: "DashboardHandler", key: str) -> None:
@@ -5507,16 +5517,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
         elif route == "/api/space/missions":
             self._json({"ok": True, "missions": [], "total": 0, "note": "Issobella Space not yet deployed"})
         elif route == "/api/mempool":
-            # Return mempool data from node RPC
             try:
-                mp = rpc_call("127.0.0.1", 8443, "getMempool", {}, timeout=2)
-                if mp and not mp.get("_rpc_error"):
-                    txs = mp.get("transactions", [])
-                    self._json({"ok": True, "tx_count": len(txs), "transactions": txs[:50],
-                                "total_fees": sum(t.get("fee", 0) for t in txs)})
-                else:
-                    self._json({"ok": False, "tx_count": 0, "transactions": [],
-                                "error": mp.get("_rpc_error", "RPC error") if mp else "No response"})
+                self._json(get_mempool_detail())
             except Exception as e:
                 self._json({"ok": False, "tx_count": 0, "transactions": [], "error": str(e)[:80]})
         elif route == "/api/block":
