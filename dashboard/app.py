@@ -503,9 +503,9 @@ SERVICE_REGISTRY = [
 
     # ── L2: Bridge & DAO ────────────────────────────────────────────────
     {"id": "bridge", "name": "ZION Bridge", "icon": "🌉", "level": "L2", "kind": "bridge",
-     "ports": {},
+     "ports": {"metrics": 9102},
      "log": "bridge.log", "start": "start-bridge", "stop": "stop-bridge",
-     "purpose": "Cross-chain relay: moves ZION between L1 and EVM chains (Base). Metrics on 9101.",
+     "purpose": "Cross-chain relay: moves ZION between L1 and EVM chains (Base). Metrics on 9102.",
      "child_says": "🌉 A magical bridge to send ZION to other crypto worlds!",
      "depends_on": ["node1"]},
     {"id": "dao", "name": "ZION DAO", "icon": "🗳️", "level": "L2", "kind": "dao",
