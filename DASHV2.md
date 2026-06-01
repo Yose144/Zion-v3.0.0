@@ -41,11 +41,18 @@
 ```
 
 ### Local Control Dashboard (`/dashboard` — app.py)
-- **Host:** `127.0.0.1:8766` (lokální, přístupný jen z W11)
+- **Host:** `127.0.0.1:8766` (lokální)
+- **Platforma:** **Multiplatformní — Windows 11 / Linux / macOS** (stdlib-only Python)
 - **Účel:** Fullstack spuštění/zastavení — Node1, Node2, Pool, Miner, AI
 - **Taby:** Controls, Logs, Env, Launch Day, Ops, Settings
 - **Přístup:** Žádná autentizace — předpokládá se lokální použití
 - **Bezpečnost:** Port 8766 není veřejně exposovaný
+- **Service control:** Jednoduché services jsou deklarativně v `dashboard/services.json`
+  a backend (`run_service`/`stop_service`) je spouští přímo cross-platform (`.exe`
+  suffix, hidden/detached launch, process-group teardown dle OS). Jen komplexní akce
+  (`install-deps`, build, `start-hiran-inference`, `launch-stack`) používají per-OS
+  skripty v `scripts/` (`.ps1` na Windows, `.sh` jinde). Secrety přes `${VAR}`
+  placeholdery z gitignored `dashboard/.env` (viz `.env.example`).
 
 ### DAO Management Dashboard (`dashboard/v2/` — Vite+React)
 - **Host:** `localhost:5173` (dev) nebo servované z app.py

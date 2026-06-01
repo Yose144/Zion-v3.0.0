@@ -1,0 +1,184 @@
+{
+  "_comment": "ZION dashboard service manifest — single source of truth for simple start/stop services. Cross-platform: the backend resolves `bin` against V3/target/release/<bin>(.exe), creates `mkdirs`, redirects stdout/stderr to logs/<log>.log/.err, and launches detached (hidden on Windows, setsid+nohup on POSIX). `${VAR}` values are substituted from the process environment / dashboard/.env at launch; if unresolved the env var is omitted so the binary falls back to its own default. Complex actions (install-deps, build, start-hiran-inference, launch-stack) remain per-OS scripts in scripts/.",
+
+  "node1": {
+    "bin": "node",
+    "log": "node1",
+    "service_id": "node1",
+    "mkdirs": ["V3/data"],
+    "env": {
+      "ZION_NODE_ID": "node1",
+      "ZION_P2P_BIND": "0.0.0.0:8333",
+      "ZION_RPC_BIND": "0.0.0.0:8443",
+      "ZION_NODE_STATE_PATH": "V3/data/zion-node-state.db",
+      "ZION_SEED_PEERS": "none",
+      "ZION_MINER_ADDRESS": "zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3",
+      "ZION_HUMANITARIAN_WALLET": "zion1m4v5z8z850u480c5c208z274e334369275n5y20",
+      "ZION_ISSOBELLA_WALLET": "zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702",
+      "ZION_POOL_FEE_WALLET": "zion1p2a7a5q0t2z5z545y6m6j5e864n002v4z6w95w5"
+    }
+  },
+
+  "node2": {
+    "bin": "node",
+    "log": "node2",
+    "service_id": "node2",
+    "mkdirs": ["V3/data"],
+    "env": {
+      "ZION_NODE_ID": "node2",
+      "ZION_P2P_BIND": "0.0.0.0:8334",
+      "ZION_RPC_BIND": "0.0.0.0:8446",
+      "ZION_NODE_STATE_PATH": "V3/data/zion-node2-state.db",
+      "ZION_SEED_PEERS": "127.0.0.1:8333",
+      "ZION_MINER_ADDRESS": "zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3",
+      "ZION_HUMANITARIAN_WALLET": "zion1m4v5z8z850u480c5c208z274e334369275n5y20",
+      "ZION_ISSOBELLA_WALLET": "zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702",
+      "ZION_POOL_FEE_WALLET": "zion1p2a7a5q0t2z5z545y6m6j5e864n002v4z6w95w5"
+    }
+  },
+
+  "pool": {
+    "bin": "server",
+    "log": "pool",
+    "service_id": "pool",
+    "env": {
+      "ZION_POOL_BIND": "0.0.0.0:8444",
+      "ZION_NODE_RPC_ADDR": "127.0.0.1:8443",
+      "ZION_POOL_LOOP_COUNT": "1000000",
+      "ZION_MAX_SESSIONS_PER_IP": "100",
+      "ZION_POOL_WALLET": "zion182e2v4x4r3u2j5r5t305k0d5y643q6l3n6je5f8",
+      "ZION_POOL_PAYOUT_SK_HEX": "${ZION_POOL_PAYOUT_SK_HEX}",
+      "ZION_NONCE_COUNT": "4096",
+      "ZION_VARDIFF_START_DIFF": "1",
+      "ZION_VARDIFF_MAX_DIFF": "1000000"
+    }
+  },
+
+  "miner": {
+    "bin": "zion-miner",
+    "log": "miner",
+    "service_id": "miner",
+    "env": {
+      "ZION_POOL_ADDR": "127.0.0.1:8444",
+      "ZION_LOOP_COUNT": "1000000",
+      "ZION_MINER_THREADS": "2",
+      "ZION_WORKER_NAME": "worker1",
+      "ZION_MINER_ID": "native-gpu-miner-01",
+      "ZION_GPU_BACKEND": "opencl",
+      "ZION_GPU_WORK_SIZE": "4096"
+    }
+  },
+
+  "miner-cpu": {
+    "bin": "zion-miner",
+    "log": "miner",
+    "service_id": "miner",
+    "env": {
+      "ZION_POOL_ADDR": "127.0.0.1:8444",
+      "ZION_LOOP_COUNT": "1000000",
+      "ZION_MINER_THREADS": "4",
+      "ZION_WORKER_NAME": "worker1",
+      "ZION_MINER_ID": "native-cpu-miner-01",
+      "ZION_GPU_BACKEND": "cpu"
+    }
+  },
+
+  "miner-gpu": {
+    "bin": "zion-miner",
+    "log": "miner",
+    "service_id": "miner",
+    "env": {
+      "ZION_POOL_ADDR": "127.0.0.1:8444",
+      "ZION_LOOP_COUNT": "1000000",
+      "ZION_MINER_THREADS": "2",
+      "ZION_WORKER_NAME": "worker1",
+      "ZION_MINER_ID": "native-gpu-miner-01",
+      "ZION_GPU_BACKEND": "opencl",
+      "ZION_GPU_WORK_SIZE": "4096"
+    }
+  },
+
+  "hiranyagarbha": {
+    "bin": "zion-ai-native-api",
+    "log": "hiranyagarbha",
+    "service_id": "hiranyagarbha",
+    "env": {
+      "HIRANYAGARBHA_BIND": "0.0.0.0:8001",
+      "HIRANYAGARBHA_BACKEND": "auto",
+      "HIRANYAGARBHA_MAX_AGENTS": "100",
+      "ZION_NODE_RPC_ADDR": "127.0.0.1:8443",
+      "ZION_POOL_API_URL": "http://127.0.0.1:8080",
+      "LLM_BASE_URL": "http://127.0.0.1:8002/v1",
+      "LLM_MODEL": "hiran-v2.2",
+      "ZION_WORKSPACE_ROOT": ".",
+      "ZION_RAG_CHUNK_DOCS": "1"
+    }
+  },
+
+  "dao": {
+    "bin": "zion-dao",
+    "log": "dao",
+    "service_id": "dao",
+    "mkdirs": ["V3/data"],
+    "env": {
+      "DAO_API_PORT": "8450",
+      "DAO_DB_PATH": "V3/data/zion-dao.db",
+      "DAO_L1_RPC": "http://127.0.0.1:8443/jsonrpc",
+      "ZION_DAO_API_KEY": "${ZION_DAO_API_KEY}"
+    }
+  },
+
+  "bridge": {
+    "bin": "zion-bridge",
+    "log": "bridge",
+    "service_id": "bridge",
+    "mkdirs": ["V3/data"],
+    "args": ["--config", "V3/L2/bridge/config.toml"],
+    "env": {
+      "ANKR_API_KEY": "${ANKR_API_KEY}",
+      "ZION_VALIDATOR_PRIVATE_KEY": "${ZION_VALIDATOR_PRIVATE_KEY}"
+    }
+  },
+
+  "atomic-swap": {
+    "bin": "zion-atomic-swap",
+    "log": "atomic-swap",
+    "service_id": "atomic-swap",
+    "mkdirs": ["V3/data"],
+    "args": ["--config", "V3/L2/atomic-swap/config.toml"],
+    "env": {
+      "ZION_RPC_TOKEN": "${ZION_RPC_TOKEN}",
+      "ZION_SWAP_ESCROW_KEY": "${ZION_SWAP_ESCROW_KEY}"
+    }
+  },
+
+  "warp": {
+    "bin": "zion-warp-server",
+    "log": "warp",
+    "service_id": "warp",
+    "mkdirs": ["V3/data"],
+    "args": ["--config", "V3/L3/warp/config.toml"],
+    "env": {}
+  },
+
+  "oasis": {
+    "bin": "zion-oasis",
+    "log": "oasis",
+    "service_id": "oasis",
+    "env": {}
+  },
+
+  "humanitarian": {
+    "bin": "zion-free-world",
+    "log": "humanitarian",
+    "service_id": "free-world",
+    "env": {}
+  },
+
+  "space": {
+    "bin": "zion-issobella",
+    "log": "space",
+    "service_id": "issobella",
+    "env": {}
+  }
+}
