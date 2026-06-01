@@ -29,7 +29,8 @@ export ZION_P2P_BIND='0.0.0.0:8333'
 export ZION_RPC_BIND='0.0.0.0:8443'
 export ZION_NODE_STATE_PATH="/tmp/zion-node-state.db"
 export ZION_SEED_PEERS='none'
-export ZION_MINER_ADDRESS='zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3'
+# Pool payout wallet receives the 89% miner share so PPLNS can redistribute
+export ZION_MINER_ADDRESS='zion182e2v4x4r3u2j5r5t305k0d5y643q6l3n6je5f8'
 export ZION_HUMANITARIAN_WALLET='zion1m4v5z8z850u480c5c208z274e334369275n5y20'
 export ZION_ISSOBELLA_WALLET='zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702'
 export ZION_POOL_FEE_WALLET='zion1p2a7a5q0t2z5z545y6m6j5e864n002v4z6w95w5'
