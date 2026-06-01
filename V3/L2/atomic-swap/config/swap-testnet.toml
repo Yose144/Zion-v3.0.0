@@ -22,7 +22,7 @@ poll_interval_secs = 5
 # ── Database ─────────────────────────────────────────────────────────────────
 
 [database]
-path = "/data/atomic-swap/swap.db"
+path = "V3/data/atomic-swap.db"
 
 # ── HTTP API ─────────────────────────────────────────────────────────────────
 
