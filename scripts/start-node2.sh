@@ -26,4 +26,5 @@ if [[ ! -x "$NODE_EXE" ]]; then
 fi
 
 nohup "$NODE_EXE" > "$LOG_DIR/node2.log" 2> "$LOG_DIR/node2.err" &
+echo $! > "$LOG_DIR/node2.pid"
 echo "Started Node2  PID=$!"
