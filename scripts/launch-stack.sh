@@ -27,14 +27,15 @@ done
 export ZION_NODE_ID='native-node'
 export ZION_P2P_BIND='0.0.0.0:8333'
 export ZION_RPC_BIND='0.0.0.0:8443'
-export ZION_NODE_STATE_PATH="/tmp/zion-node-state.db"
+export ZION_NODE_STATE_PATH="$REPO_ROOT/V3/data/zion-node-state.db"
 export ZION_SEED_PEERS='none'
 # Pool payout wallet receives the 89% miner share so PPLNS can redistribute
 export ZION_MINER_ADDRESS='zion182e2v4x4r3u2j5r5t305k0d5y643q6l3n6je5f8'
 export ZION_HUMANITARIAN_WALLET='zion1m4v5z8z850u480c5c208z274e334369275n5y20'
 export ZION_ISSOBELLA_WALLET='zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702'
 export ZION_POOL_FEE_WALLET='zion1p2a7a5q0t2z5z545y6m6j5e864n002v4z6w95w5'
-rm -f /tmp/peers.json /tmp/zion-node-state.db /tmp/zion-node-state.db-lock
+
+mkdir -p "$REPO_ROOT/V3/data"
 
 nohup "$NODE_EXE" > "$LOG_DIR/node1.log" 2> "$LOG_DIR/node1.err" &
 P1=$!
@@ -45,9 +46,10 @@ sleep 3
 export ZION_NODE_ID='native-node2'
 export ZION_P2P_BIND='0.0.0.0:8334'
 export ZION_RPC_BIND='0.0.0.0:8446'
-export ZION_NODE_STATE_PATH="/tmp/zion-node2-state.db"
+export ZION_NODE_STATE_PATH="$REPO_ROOT/V3/data/zion-node2-state.db"
 export ZION_SEED_PEERS='127.0.0.1:8333'
-rm -f /tmp/zion-node2-state.db /tmp/zion-node2-state.db-lock
+
+mkdir -p "$REPO_ROOT/V3/data"
 
 nohup "$NODE_EXE" > "$LOG_DIR/node2.log" 2> "$LOG_DIR/node2.err" &
 P2=$!
