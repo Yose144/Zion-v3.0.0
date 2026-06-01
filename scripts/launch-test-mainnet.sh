@@ -85,15 +85,15 @@ for binary in node server zion-miner; do
 done
 
 # ---------------------------------------------------------------------------
-# 4. Clean old state (optional — keep for chain continuity)
+# 4. Ensure data dir exists
 # ---------------------------------------------------------------------------
-rm -f /tmp/zion-node-state.db /tmp/zion-node-state.db-lock
+mkdir -p "$V3_DIR/data"
 
 # ---------------------------------------------------------------------------
 # 5. Start Node
 # ---------------------------------------------------------------------------
 echo "[launch] Starting zion-node ..."
-ZION_NODE_STATE_PATH=/tmp/zion-node-state.db \
+ZION_NODE_STATE_PATH="$V3_DIR/data/zion-node-state.db" \
 nohup "$V3_DIR/target/release/node" > "$LOG_DIR/node.log" 2>&1 &
 echo $! > "$PID_DIR/node.pid"
 NODE_PID=$!

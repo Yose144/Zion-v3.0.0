@@ -1,6 +1,6 @@
 'use strict';
 
-const TABS = ['overview','wallets','explorer','services','alerts','l1','l2','l3','l4','l5','l6','genesis','blockers','controls','charts','events','env','database','metrics','launch-day','wizard','logs','hiran','dao'];
+const TABS = ['overview','wallets','explorer','services','alerts','l1','l2','l3','l4','l5','l6','genesis','blockers','controls','charts','events','env','database','metrics','launch-day','wizard','logs','hiran','dao','payout'];
 let autoRefresh = true, refreshTimer = null, currentTab = 'overview';
 let charts = {};
 let friendlyMode = false;
@@ -114,6 +114,7 @@ function switchTab(name){
   if(['l1','l2','l3','l4','l5','l6'].includes(name)) loadLayerFull(name);
   if(name === 'launch-day'){ loadLaunchDayStatus(); startLaunchCountdown(); }
   if(name === 'hiran'){ loadAgentList(); checkAiStatus(); }
+  if(name === 'payout') refreshPayout();
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -332,6 +333,52 @@ function updatePayouts(p){
     pr.innerHTML = (p.recent_payouts && p.recent_payouts.length)
       ? p.recent_payouts.map(l => '<div class="truncate text-[10px]">' + escapeHtml(l) + '</div>').join('')
       : '<div class="text-gray-600 italic text-[10px]">No payout events yet</div>';
+  }
+}
+
+function formatFlowers(v){
+  if(!v && v !== 0) return '—';
+  const zion = v / 1_000_000_000_000;
+  if(zion >= 1_000_000) return (zion / 1_000_000).toFixed(2) + ' MZION';
+  if(zion >= 1_000) return (zion / 1_000).toFixed(2) + ' KZION';
+  return zion.toFixed(4) + ' ZION';
+}
+
+async function refreshPayout(){
+  try{
+    const data = await fetch('/api/payout').then(r => r.json());
+    const set = (id, text) => { const el = document.getElementById(id); if(el) el.textContent = text; };
+    set('payout-tab-wallet', data.pool_wallet || '—');
+    set('payout-tab-balance', 'Balance: ' + (data.pool_wallet_balance ? formatFlowers(data.pool_wallet_balance) : '—'));
+    const st = document.getElementById('payout-tab-status');
+    if(st){ st.textContent = data.payout_enabled ? '✅ ENABLED' : '❌ DISABLED'; st.className = data.payout_enabled ? 'text-lg font-bold text-emerald-400' : 'text-lg font-bold text-red-400'; }
+    set('payout-tab-fee-split', 'Fee split: ' + (data.fee_split || '—'));
+    set('payout-tab-blocks', data.blocks_found || '—');
+    set('payout-tab-last-block', 'Last: height ' + (data.last_block_height || '—'));
+    set('payout-tab-last', data.last_payout_time || '—');
+    set('payout-tab-last-tx', 'TX: ' + (data.last_payout_tx || '—'));
+
+    if(data.miner_wallet) set('payout-tab-miner-wallet', data.miner_wallet);
+    if(data.humanitarian_wallet) set('payout-tab-humanitarian-wallet', data.humanitarian_wallet);
+    if(data.issobella_wallet) set('payout-tab-issobella-wallet', data.issobella_wallet);
+    if(data.pool_fee_wallet) set('payout-tab-pool-fee-wallet', data.pool_fee_wallet);
+
+    const minerLog = document.getElementById('payout-tab-miner-log');
+    if(minerLog) minerLog.innerHTML = (data.miner_payouts && data.miner_payouts.length)
+      ? data.miner_payouts.map(l => '<div class="bg-black/20 rounded p-2 border-l-2 border-emerald-500 text-[10px]">' + escapeHtml(l) + '</div>').join('')
+      : '<div class="text-gray-500 italic text-[10px]">No recent miner payouts</div>';
+
+    const feeLog = document.getElementById('payout-tab-fee-log');
+    if(feeLog) feeLog.innerHTML = (data.fee_payouts && data.fee_payouts.length)
+      ? data.fee_payouts.map(l => '<div class="bg-black/20 rounded p-2 border-l-2 border-blue-500 text-[10px]">' + escapeHtml(l) + '</div>').join('')
+      : '<div class="text-gray-500 italic text-[10px]">No recent fee payouts</div>';
+
+    const errLog = document.getElementById('payout-tab-error-log');
+    if(errLog) errLog.innerHTML = (data.errors && data.errors.length)
+      ? data.errors.map(l => '<div class="bg-black/20 rounded p-2 border-l-2 border-red-500 text-red-300 text-[10px]">' + escapeHtml(l) + '</div>').join('')
+      : '<div class="text-gray-500 italic text-[10px]">No errors detected</div>';
+  }catch(e){
+    console.error('refreshPayout error:', e);
   }
 }
 
