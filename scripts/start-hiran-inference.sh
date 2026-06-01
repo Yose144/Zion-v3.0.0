@@ -16,7 +16,7 @@ GGUF_Q4="$REPO_ROOT/HiranV2.2/models/hiran-v2.2-merged/hiran-v2.2.q4_k_m.gguf"
 GGUF_F16="$REPO_ROOT/HiranV2.2/models/hiran-v2.2-merged/hiran-v2.2.f16.gguf"
 SERVE_PY="$REPO_ROOT/HiranV2.2/inference/serve.py"
 PORT=8002
-HOST="127.0.0.1"
+HOST="0.0.0.0"
 mkdir -p "$LOG_DIR"
 
 # Local Ollama with ROCm (AMD GPU)
