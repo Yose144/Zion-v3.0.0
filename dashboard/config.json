@@ -5,7 +5,7 @@
   "log_rotation_max_age_hours": 24,
   "health_ttl": 5,
   "metrics_max_points": 120,
-  "rate_limit_max_rps": 10,
+  "rate_limit_max_rps": 100,
   "rate_limit_window_sec": 10,
   "api_key": "",
   "csrf_enabled": false

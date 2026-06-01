@@ -22,4 +22,5 @@ if [[ ! -x "$MINER_EXE" ]]; then
 fi
 
 nohup "$MINER_EXE" > "$LOG_DIR/miner.log" 2> "$LOG_DIR/miner.err" &
+echo $! > "$LOG_DIR/miner.pid"
 echo "Started Miner  PID=$!"
