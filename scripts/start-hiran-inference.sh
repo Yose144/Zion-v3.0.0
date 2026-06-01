@@ -75,9 +75,15 @@ fi
 # -- Backend 3: Ollama (local ROCm build) --------------------------------------
 OLLAMA_URL="http://${OLLAMA_HOST#http://}"
 OLLAMA_URL="${OLLAMA_URL#https://}"
+HIRAN_MODEL="hiran-v2.2-fast"
 if [[ -z "$MODEL_PATH" ]]; then
     if curl -fsS --max-time 2 "${OLLAMA_URL}/api/tags" >/dev/null 2>&1; then
-        MODEL_PATH="ollama:hiran-v2.2"; BACKEND_NAME="Ollama (port ${OLLAMA_HOST})"
+        # Check if fast model exists, fallback to standard
+        if curl -fsS --max-time 2 "${OLLAMA_URL}/api/tags" | grep -q "$HIRAN_MODEL"; then
+            MODEL_PATH="ollama:${HIRAN_MODEL}"; BACKEND_NAME="Ollama (port ${OLLAMA_HOST}, GPU-fast)"
+        else
+            MODEL_PATH="ollama:hiran-v2.2"; BACKEND_NAME="Ollama (port ${OLLAMA_HOST})"
+        fi
     elif [[ -x "$OLLAMA_BIN" ]]; then
         echo "[INFO] Starting local Ollama server (ROCm) from $OLLAMA_BIN ..."
         mkdir -p "$OLLAMA_MODELS"
@@ -91,7 +97,11 @@ if [[ -z "$MODEL_PATH" ]]; then
             fi
         done
         if curl -fsS --max-time 2 "${OLLAMA_URL}/api/tags" >/dev/null 2>&1; then
-            MODEL_PATH="ollama:hiran-v2.2"; BACKEND_NAME="Ollama (port ${OLLAMA_HOST})"
+            if curl -fsS --max-time 2 "${OLLAMA_URL}/api/tags" | grep -q "$HIRAN_MODEL"; then
+                MODEL_PATH="ollama:${HIRAN_MODEL}"; BACKEND_NAME="Ollama (port ${OLLAMA_HOST}, GPU-fast)"
+            else
+                MODEL_PATH="ollama:hiran-v2.2"; BACKEND_NAME="Ollama (port ${OLLAMA_HOST})"
+            fi
         else
             echo "[WARN] Local Ollama server did not become ready within 30s"
         fi
