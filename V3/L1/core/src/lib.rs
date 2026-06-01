@@ -1791,12 +1791,6 @@ impl Transaction {
         if !is_valid_account_id(&self.from) || !is_valid_account_id(&self.to) {
             return Err("transaction endpoints must use 3-64 ascii wallet ids".to_string());
         }
-        if looks_like_utxo_address(&self.from) || looks_like_utxo_address(&self.to) {
-            return Err(
-                "transaction endpoints must use account-style wallet ids; zion1 UTXO addresses are not accepted by the active runtime"
-                    .to_string(),
-            );
-        }
         if self.from == self.to {
             return Err("transaction sender and recipient must differ".to_string());
         }
