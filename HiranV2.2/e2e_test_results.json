@@ -1,0 +1,134 @@
+{
+  "timestamp": "2026-06-01T23:25:03.343944",
+  "target": "http://127.0.0.1:8002",
+  "model": "hiran-v2.2",
+  "backend": "ollama",
+  "ollama_model": "hiran-v2.2",
+  "total_questions": 20,
+  "success": 3,
+  "errors": 17,
+  "avg_latency_ms": 57190.61,
+  "total_duration_sec": 171.57,
+  "results": [
+    {
+      "tag": "dao_mission",
+      "question": "What is Zion DAO and what is its primary mission?",
+      "response": "The Zion DAO (Decentralized Autonomous Organization) is a decentralized governing body responsible for overseeing the development and growth of the ZION blockchain network. Our primary mission is to secure the chain, increase adoption, and expand the ecosystem through community-driven decision-making.\n\nAs a decentralized governance model, the Zion DAO empowers holders of $ZION tokens to participate in key decisions that shape the future of our project. This includes voting on proposals related to:\n\n1. **Core development**: Prioritizing new feature development, optimizing performance, or addressing security concerns.\n2. **Treasury allocation**: Deciding how funds are allocated for marketing, partnerships, community building, and other initiatives.\n3. **Governance model evolution**: Refining the DAO's structure and voting mechanisms to ensure they remain effective and representative of the community.\n\nBy entrusting decision-making power to token holders, we foster a more inclusive and participatory environment that aligns with the interests of our users and stakeholders.\n\nWould you like to know more about how the Zion DAO operates or get involved in governance?",
+      "latency_ms": 69954.61
+    },
+    {
+      "tag": "categories",
+      "question": "List the 7 humanitarian categories in Zion DAO and briefly describe each.",
+      "response": "The 7 core Humanitarian Categories within the Zion DAO focus on delivering tangible impact worldwide. These categories are:\n\n1. **Emergency Response & Disaster Relief**: Providing immediate aid to areas affected by natural disasters, conflicts, or pandemics.\n2. **Food Insecurity & Sustainable Agriculture**: Supporting projects that ensure global food security through sustainable agriculture practices and access to nutritious meals.\n3. **Clean Water Access & Sanitation**: Ensuring communities have safe drinking water and proper sanitation facilities.\n4. **Education, Literacy, & Digital Skills**: Empowering individuals with essential education, literacy skills, and digital training for a brighter future.\n5. **Healthcare Infrastructure & Medical Aid**: Building or upgrading healthcare infrastructure, delivering medical aid, and supporting disease prevention programs.\n6. **Refugee Support & Social Services**: Providing assistance to refugees, internally displaced persons (IDPs), and other vulnerable populations.\n7. **Climate Action & Environmental Stewardship**: Combating climate change through renewable energy initiatives, reforestation efforts, and promoting eco-friendly practices.\n\nThese categories guide our grant-making decisions and ensure that Zion DAO's humanitarian efforts are focused on the most pressing global needs.",
+      "latency_ms": 82978.44
+    },
+    {
+      "tag": "fee_split",
+      "question": "Explain the exact fee split percentages in Zion mining pools: miner, humanitarian, issobella, and pool.",
+      "response": "The current fee split for the Zion Pools is as follows:\n\n- Miner Reward: 95%\n- Humanitarian Fund: 3% \n- ISSOBELLA (ZION DAO Treasury): 2%\n\nPlease note that this distribution may be subject to change based on proposals approved by the ZION DAO.",
+      "latency_ms": 18638.77
+    },
+    {
+      "tag": "issobella_wallet",
+      "question": "What is the Issobella wallet and how is it generated in Zion?",
+      "response": "ERROR: Remote end closed connection without response",
+      "latency_ms": null
+    },
+    {
+      "tag": "governance",
+      "question": "How does the Zion DAO governance process work for proposing and voting on humanitarian projects?",
+      "response": "ERROR: <urlopen error [Errno 111] Connection refused>",
+      "latency_ms": null
+    },
+    {
+      "tag": "revenue_proxy",
+      "question": "Describe the role of the Revenue Proxy in the Zion mining pool architecture.",
+      "response": "ERROR: <urlopen error [Errno 111] Connection refused>",
+      "latency_ms": null
+    },
+    {
+      "tag": "layers",
+      "question": "What is the difference between L1, L2, L3, L4, L5 and L6 in the Zion architecture?",
+      "response": "ERROR: <urlopen error [Errno 111] Connection refused>",
+      "latency_ms": null
+    },
+    {
+      "tag": "environment",
+      "question": "How does Zion handle environmental conservation funding through its DAO?",
+      "response": "ERROR: <urlopen error [Errno 111] Connection refused>",
+      "latency_ms": null
+    },
+    {
+      "tag": "community_dev",
+      "question": "Explain the community development process in Zion DAO from proposal to execution.",
+      "response": "ERROR: <urlopen error [Errno 111] Connection refused>",
+      "latency_ms": null
+    },
+    {
+      "tag": "security",
+      "question": "What security measures does Zion implement for its smart contracts and wallet infrastructure?",
+      "response": "ERROR: <urlopen error [Errno 111] Connection refused>",
+      "latency_ms": null
+    },
+    {
+      "tag": "cross_chain",
+      "question": "How does Zion implement cross-chain interoperability between Ethereum and Binance Smart Chain?",
+      "response": "ERROR: <urlopen error [Errno 111] Connection refused>",
+      "latency_ms": null
+    },
+    {
+      "tag": "bridge",
+      "question": "Describe the token bridge mechanism used by Zion for cross-chain transfers.",
+      "response": "ERROR: <urlopen error [Errno 111] Connection refused>",
+      "latency_ms": null
+    },
+    {
+      "tag": "consensus",
+      "question": "What consensus mechanism does Zion use and how does it differ from Proof of Work?",
+      "response": "ERROR: <urlopen error [Errno 111] Connection refused>",
+      "latency_ms": null
+    },
+    {
+      "tag": "rag",
+      "question": "How does Zion's RAG (Retrieval Augmented Generation) system work for synthesizing documentation?",
+      "response": "ERROR: <urlopen error [Errno 111] Connection refused>",
+      "latency_ms": null
+    },
+    {
+      "tag": "synthesis",
+      "question": "What is the role of the synthesis engine in combining data from multiple Zion layers?",
+      "response": "ERROR: <urlopen error [Errno 111] Connection refused>",
+      "latency_ms": null
+    },
+    {
+      "tag": "validation",
+      "question": "How does Zion validate information retrieved from external sources before incorporating it into DAO decisions?",
+      "response": "ERROR: <urlopen error [Errno 111] Connection refused>",
+      "latency_ms": null
+    },
+    {
+      "tag": "crisis_response",
+      "question": "A new humanitarian crisis emerges in a region without internet access. How would Zion DAO respond?",
+      "response": "ERROR: <urlopen error [Errno 111] Connection refused>",
+      "latency_ms": null
+    },
+    {
+      "tag": "fee_safeguards",
+      "question": "If a miner tries to manipulate the fee split in a Zion pool, what safeguards prevent this?",
+      "response": "ERROR: <urlopen error [Errno 111] Connection refused>",
+      "latency_ms": null
+    },
+    {
+      "tag": "ngo_comparison",
+      "question": "Compare Zion's humanitarian approach to traditional NGO funding models. What are the advantages?",
+      "response": "ERROR: <urlopen error [Errno 111] Connection refused>",
+      "latency_ms": null
+    },
+    {
+      "tag": "transparency",
+      "question": "How does Zion ensure transparency in its fund allocation across all 7 humanitarian categories?",
+      "response": "ERROR: <urlopen error [Errno 111] Connection refused>",
+      "latency_ms": null
+    }
+  ]
+}
