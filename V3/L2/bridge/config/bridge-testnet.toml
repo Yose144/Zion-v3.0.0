@@ -62,7 +62,7 @@ auto_pause_on_anomaly = true
 # ── Database ─────────────────────────────────────────────────────────────────
 
 [database]
-path                = "/data/bridge/bridge.db"
+path                = "V3/data/bridge/bridge.db"
 backup_interval_secs = 3600
 
 # ── Metrics ──────────────────────────────────────────────────────────────────
