@@ -503,28 +503,28 @@ SERVICE_REGISTRY = [
 
     # ── L2: Bridge & DAO ────────────────────────────────────────────────
     {"id": "bridge", "name": "ZION Bridge", "icon": "🌉", "level": "L2", "kind": "bridge",
-     "ports": {"metrics": 9101},
-     "log": "bridge.log", "start": None, "stop": None,
+     "ports": {},
+     "log": "bridge.log", "start": "start-bridge", "stop": "stop-bridge",
      "purpose": "Cross-chain relay: moves ZION between L1 and EVM chains (Base). Metrics on 9101.",
      "child_says": "🌉 A magical bridge to send ZION to other crypto worlds!",
      "depends_on": ["node1"]},
     {"id": "dao", "name": "ZION DAO", "icon": "🗳️", "level": "L2", "kind": "dao",
      "ports": {"api": 8081},
-     "log": "dao.log", "start": None, "stop": None,
+     "log": "dao.log", "start": "start-dao", "stop": "stop-dao",
      "purpose": "Decentralized governance: proposals, voting, treasury management. API on 8081.",
      "child_says": "🗳️ Everyone votes here to decide what ZION should do next!",
      "depends_on": ["node1"]},
     {"id": "atomic-swap", "name": "Atomic Swap", "icon": "🔄", "level": "L2", "kind": "swap",
      "ports": {"api": 8888},
-     "log": "atomic-swap.log", "start": None, "stop": None,
+     "log": "atomic-swap.log", "start": "start-atomic-swap", "stop": "stop-atomic-swap",
      "purpose": "HTLC-based atomic swaps between ZION and other chains (no middleman). API on 8888.",
      "child_says": "🔄 Trade coins safely with strangers without anyone cheating!",
      "depends_on": ["node1"]},
 
     # ── L3: Advanced ─────────────────────────────────────────────────────
     {"id": "warp", "name": "WARP Relay", "icon": "🌀", "level": "L3", "kind": "relay",
-     "ports": {"api": 8580, "metrics": 9554},
-     "log": "warp.log", "start": None, "stop": None,
+     "ports": {"api": 9333},
+     "log": "warp.log", "start": "start-warp", "stop": "stop-warp",
      "purpose": "Multi-chain relay for fast cross-chain messaging.",
      "child_says": "🌀 A super-fast message tube between blockchains!",
      "depends_on": []},
@@ -550,7 +550,7 @@ SERVICE_REGISTRY = [
     # ── L4: Apps ─────────────────────────────────────────────────────────
     {"id": "oasis", "name": "OASIS Avatar Hub", "icon": "🪷", "level": "L4", "kind": "app",
      "ports": {"api": 8094},
-     "log": "oasis.log", "start": None, "stop": None,
+     "log": "oasis.log", "start": "start-oasis", "stop": "stop-oasis",
      "purpose": "Avatar registry, guilds, territories, consciousness XP. API on 8094.",
      "child_says": "🪷 A garden where your ZION avatar lives and helps the world!",
      "depends_on": ["node1"]},
@@ -558,7 +558,7 @@ SERVICE_REGISTRY = [
     # ── L5: Free World Humanitarian ──────────────────────────────────────
     {"id": "free-world", "name": "Free World Humanitarian", "icon": "🕊️", "level": "L5", "kind": "humanitarian",
      "ports": {"api": 8095},
-     "log": "free-world.log", "start": None, "stop": None,
+     "log": "free-world.log", "start": "start-humanitarian", "stop": "stop-humanitarian",
      "purpose": "Humanitarian aid coordination — mesh networks, medical tables, community DAOs.",
      "child_says": "🕊️ Helps people in need through decentralized aid and community support!",
      "depends_on": ["node1"]},
@@ -566,7 +566,7 @@ SERVICE_REGISTRY = [
     # ── L6: Issobella Space ──────────────────────────────────────────────
     {"id": "issobella", "name": "Issobella Space Layer", "icon": "🚀", "level": "L6", "kind": "space",
      "ports": {"api": 8096},
-     "log": "issobella.log", "start": None, "stop": None,
+     "log": "issobella.log", "start": "start-space", "stop": "stop-space",
      "purpose": "Space infrastructure coordination — satellite relay, off-world settlements, orbital DAOs.",
      "child_says": "🚀 Takes ZION beyond Earth — to the stars and beyond!",
      "depends_on": ["node1"]},
@@ -4853,8 +4853,8 @@ def _build_health_map() -> dict:
             health[key] = "up" if running else "down"
     # Extended services from service registry + health cache
     ext_map = {
-        "hiran": 8002, "hiranyagarbha": 8001, "bridge": 8550,
-        "dao": 8081, "swap": 8083, "warp": 8084,
+        "hiran": 8002, "hiranyagarbha": 8001, "bridge": None,
+        "dao": 8081, "swap": 8888, "warp": 9333,
     }
     for sid, port in ext_map.items():
         svc = get_service(sid)
@@ -5488,22 +5488,26 @@ class DashboardHandler(BaseHTTPRequestHandler):
             except Exception as e:
                 self._json({"ok": False, "status": "offline", "error": str(e)[:80]})
         elif route == "/api/bridge/health":
-            alive = check_port_open("127.0.0.1", 8550, timeout=1.5)
-            self._json({"ok": alive, "service": "bridge", "port": 8550,
-                        "status": "online" if alive else "offline"})
+            svc = get_service("bridge")
+            h = check_service_health(svc) if svc else {"alive": False}
+            self._json({"ok": h["alive"], "service": "bridge",
+                        "status": "online" if h["alive"] else "offline",
+                        "details": h.get("details", "")})
         elif route == "/api/swap/health":
-            alive = check_port_open("127.0.0.1", 8570, timeout=1.5)
-            self._json({"ok": alive, "service": "atomic-swap", "port": 8570,
-                        "status": "online" if alive else "offline"})
+            svc = get_service("atomic-swap")
+            h = check_service_health(svc) if svc else {"alive": False}
+            self._json({"ok": h["alive"], "service": "atomic-swap",
+                        "status": "online" if h["alive"] else "offline",
+                        "details": h.get("details", "")})
         elif route == "/api/swap/initiate":
             self._json({"ok": False, "error": "Swap initiation requires POST — use POST /api/swap/initiate"})
         elif route == "/api/warp/health":
-            alive = check_port_open("127.0.0.1", 8580, timeout=1.5)
-            self._json({"ok": alive, "service": "warp", "port": 8580,
+            alive = check_port_open("127.0.0.1", 9333, timeout=1.5)
+            self._json({"ok": alive, "service": "warp", "port": 9333,
                         "status": "online" if alive else "offline"})
         elif route == "/api/oasis/stats":
-            alive = check_port_open("127.0.0.1", 8600, timeout=1.5)
-            self._json({"ok": alive, "service": "oasis", "port": 8600,
+            alive = check_port_open("127.0.0.1", 8094, timeout=1.5)
+            self._json({"ok": alive, "service": "oasis", "port": 8094,
                         "status": "online" if alive else "offline",
                         "avatars": 0, "active_quests": 0})
         elif route == "/api/oasis/quests":
