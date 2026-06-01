@@ -8,7 +8,7 @@ mkdir -p "$LOG_DIR"
 
 export ZION_POOL_ADDR='127.0.0.1:8444'
 export ZION_LOOP_COUNT='1000000'
-export ZION_MINER_THREADS='2'
+export ZION_MINER_THREADS='4'
 export ZION_WORKER_NAME='worker1'
 export ZION_MINER_ID='w11-gpu-miner-01'
 export ZION_GPU_BACKEND='opencl'
