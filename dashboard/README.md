@@ -167,15 +167,33 @@ dashboard/app.py (~1600 LOC)
 ├── BLOCK_EVENTS          deque of detected blocks
 ├── background_sampler    thread: status + events + health pre-warm
 ├── build_alerts          9 heuristic alert generators
-├── run_control           whitelisted PowerShell action dispatcher
+├── services.json         service manifest (single source of truth for start/stop)
+├── run_service/stop_service  cross-platform binary launcher (Win/Linux/macOS)
+├── run_control           manifest dispatch + .ps1/.sh script fallback
 └── ThreadingHTTPServer   parallel request handling
 ```
+
+## Cross-platform service control
+
+The dashboard runs the same on **Windows 11, Linux and macOS**. Simple
+"set env → launch binary → redirect logs" services are defined declaratively in
+[`services.json`](./services.json) and launched directly by the backend
+(`run_service`/`stop_service`), which transparently handles the `.exe` suffix,
+detached/hidden launch, and process-group teardown per OS. Only complex actions
+(`install-deps`, build, `start-hiran-inference`, `launch-stack`) still use
+per-OS scripts in `scripts/` (`.ps1` on Windows, `.sh` elsewhere).
+
+Secrets referenced by the manifest (`${VAR}` placeholders, e.g.
+`ZION_POOL_PAYOUT_SK_HEX`) are loaded from `dashboard/.env` (gitignored — copy
+from [`.env.example`](./.env.example)). Unresolved placeholders are omitted so
+the binary falls back to its own default.
 
 ## Requirements
 
 - Python 3.10+ (only stdlib: `http.server`, `sqlite3`, `subprocess`, `socket`)
+- Built V3 release binaries (`cargo build --release --manifest-path V3/Cargo.toml --workspace`)
 - Docker (only for Prometheus/Grafana monitoring stack)
-- PowerShell scripts in `scripts/` for native Windows control
+- For the few script-backed actions: PowerShell on Windows, `bash` on Linux/macOS
 
 ## Security
 
