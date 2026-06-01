@@ -753,7 +753,14 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
     <div class="zion-panel p-5">
       <div class="flex items-center justify-between mb-3">
         <h2 class="text-base font-bold flex items-center gap-2"><span class="text-gradient">⏱️ Service Health Timeline</span></h2>
-        <span class="text-xs text-gray-400">Last 24 hours · 5-min buckets</span>
+        <div class="flex items-center gap-2">
+          <div class="flex bg-black/30 rounded-lg p-0.5" id="health-range-toggle">
+            <button data-range="12" class="health-toggle px-2 py-0.5 text-[10px] rounded-md transition text-gray-400 hover:text-white">1h</button>
+            <button data-range="48" class="health-toggle px-2 py-0.5 text-[10px] rounded-md transition bg-white/10 text-white">4h</button>
+            <button data-range="288" class="health-toggle px-2 py-0.5 text-[10px] rounded-md transition text-gray-400 hover:text-white">24h</button>
+          </div>
+          <span class="text-xs text-gray-400 ml-1" id="health-range-label">Last 4h · 5-min buckets</span>
+        </div>
       </div>
       <div id="service-health-timeline" class="overflow-x-auto">
         <div class="text-xs text-gray-500 italic">Loading health history…</div>
@@ -771,10 +778,11 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         <h2 class="text-base font-bold flex items-center gap-2"><span class="text-gradient">🕸️ Network Topology</span></h2>
         <span class="text-xs text-gray-400">Live service dependencies</span>
       </div>
-      <div id="topology-svg-container" class="flex justify-center" style="min-height:320px;">
+      <div id="topology-svg-container" class="flex justify-center relative" style="min-height:320px;">
         <svg id="topology-svg" width="800" height="320" viewBox="0 0 800 320" class="max-w-full" style="background:rgba(0,0,0,0.3);border-radius:12px;">
           <text x="400" y="160" text-anchor="middle" fill="#6b7280" font-size="12">Loading topology…</text>
         </svg>
+        <div id="topology-tooltip" class="absolute hidden bg-gray-900 border border-white/10 rounded-lg px-2 py-1 text-[10px] text-gray-200 shadow-lg pointer-events-none z-50" style="transform:translate(-50%,-120%);"></div>
       </div>
     </div>
   </div>
@@ -3473,6 +3481,6 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
   </div>
 </div>
 
-<script src="/dashboard.js?v=5"></script>
+<script src="/dashboard.js?v=6"></script>
 </body>
 </html>
