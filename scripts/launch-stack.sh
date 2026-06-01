@@ -46,6 +46,8 @@ sleep 3
 export ZION_NODE_ID='native-node2'
 export ZION_P2P_BIND='0.0.0.0:8334'
 export ZION_RPC_BIND='0.0.0.0:8446'
+export ZION_METRICS_BIND='0.0.0.0:9116'
+export ZION_WEBSOCKET_BIND='0.0.0.0:8447'
 export ZION_NODE_STATE_PATH="$REPO_ROOT/V3/data/zion-node2-state.db"
 export ZION_SEED_PEERS='127.0.0.1:8333'
 
