@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+# Hiran wrapper — masquerades as Claude Code for OpenClaw coding-agent skill
+# Routes all prompts to local Hiran v2.2 (Ollama GPU) instead of Anthropic API.
+#
+# OpenClaw calls:
+#   claude --permission-mode bypassPermissions --print < prompt.txt
+#
+# We accept any args, read prompt from stdin, send to Hiran API.
+
+set -euo pipefail
+
+OLLAMA_HOST="${OLLAMA_HOST:-127.0.0.1:11434}"
+HIRAN_MODEL="hiran-v2.2-fast"
+
+# Handle --version / -v (OpenClaw probes binary availability)
+for arg in "$@"; do
+    case "$arg" in
+        --version|-v|--help|-h)
+            echo "Hiran-Claude-Wrapper 1.0 (Hiran v2.2-fast via Ollama)"
+            exit 0
+            ;;
+    esac
+done
+
+# Read prompt from stdin
+PROMPT="$(cat)"
+
+if [[ -z "$PROMPT" ]]; then
+    echo "[hiran-claude-wrapper] No prompt provided via stdin." >&2
+    exit 1
+fi
+
+# Call Hiran via Ollama API directly (no serve.py needed)
+PAYLOAD=$(python3 -c "
+import json, sys
+prompt = sys.argv[1]
+msg = {
+    'model': '${HIRAN_MODEL}',
+    'messages': [{'role': 'user', 'content': prompt}],
+    'stream': False,
+    'options': {'temperature': 0.7}
+}
+print(json.dumps(msg))
+" "$PROMPT")
+
+RESPONSE=$(curl -s --max-time 180 \
+    "${OLLAMA_HOST}/api/chat" \
+    -H "Content-Type: application/json" \
+    -d "$PAYLOAD" 2>/dev/null)
+
+if [[ -z "$RESPONSE" ]]; then
+    echo "[hiran-claude-wrapper] ERROR: No response from Hiran (Ollama ${OLLAMA_HOST})" >&2
+    exit 1
+fi
+
+# Extract message content
+python3 -c "
+import json, sys
+try:
+    data = json.loads(sys.argv[1])
+    print(data['message']['content'])
+except Exception as e:
+    print(f'[hiran-claude-wrapper] Parse error: {e}', file=sys.stderr)
+    sys.exit(1)
+" "$RESPONSE"
