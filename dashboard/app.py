@@ -530,18 +530,23 @@ SERVICE_REGISTRY = [
     {"id": "node1", "name": "Node 1 (Genesis)", "icon": "🔷", "level": "L1", "kind": "node",
      "ports": {"p2p": 8333, "rpc": 8443, "ws": 8445, "metrics": 9115},
      "log": "node1.log", "start": "start-node1", "stop": None,
+     "health_method": "rpc", "severity": "critical", "autoheal": False,
+     "health_endpoint": "http://127.0.0.1:8443/health",
      "purpose": "Source of chain truth: validates blocks, manages mempool, talks to peers via P2P.",
      "child_says": "🔷 This is the boss — it remembers every block ever made.",
      "depends_on": []},
     {"id": "node2", "name": "Node 2 (Follower)", "icon": "🔶", "level": "L1", "kind": "node",
      "ports": {"p2p": 8334, "rpc": 8446, "ws": 8447},
      "log": "node2.log", "start": "start-node2", "stop": None,
+     "health_method": "rpc", "severity": "critical", "autoheal": False,
+     "health_endpoint": "http://127.0.0.1:8446/health",
      "purpose": "Backup node — syncs from Node 1 and validates independently for redundancy.",
      "child_says": "🔶 Like Node 1's twin — they double-check each other!",
      "depends_on": ["node1"]},
     {"id": "pool", "name": "Core Mining Pool", "icon": "⚡", "level": "L1", "kind": "pool",
      "ports": {"stratum": 8444, "metrics": 9550},
      "log": "pool.log", "start": "start-pool", "stop": None,
+     "health_method": "tcp", "severity": "critical", "autoheal": False,
      "purpose": "Primary pool — local miners, validates shares, distributes payouts (89/5/5/1).",
      "child_says": "⚡ The pool helps lots of computers work together to find blocks!",
      "depends_on": ["node1"]},
@@ -549,12 +554,14 @@ SERVICE_REGISTRY = [
      "ports": {"stratum": 8444, "metrics": 9550},
      "host": "100.76.16.108",
      "log": None, "start": None, "stop": None,
+     "health_method": "tcp", "severity": "warning", "autoheal": False,
      "purpose": "Edge relay pool — accepts external miners via public IP, syncs with Core pool.",
      "child_says": "🌐 The edge pool lets miners from all over the world connect!",
      "depends_on": ["node1"]},
     {"id": "miner", "name": "GPU Miner", "icon": "⛏️", "level": "L1", "kind": "miner",
      "ports": {},
      "log": "miner.log", "start": "start-miner", "stop": None,
+     "health_method": "log", "severity": "warning", "autoheal": True,
      "purpose": "Performs cosmic_harmony PoW hashing on GPU to find new blocks.",
      "child_says": "⛏️ The miner is like a digger — it digs for new gold (ZION coins)!",
      "depends_on": ["pool"]},
@@ -563,18 +570,21 @@ SERVICE_REGISTRY = [
     {"id": "bridge", "name": "ZION Bridge", "icon": "🌉", "level": "L2", "kind": "bridge",
      "ports": {"metrics": 9102},
      "log": "bridge.log", "start": "start-bridge", "stop": "stop-bridge",
+     "health_method": "tcp", "severity": "warning", "autoheal": False,
      "purpose": "Cross-chain relay: moves ZION between L1 and EVM chains (Base). Metrics on 9102.",
      "child_says": "🌉 A magical bridge to send ZION to other crypto worlds!",
      "depends_on": ["node1"]},
     {"id": "dao", "name": "ZION DAO", "icon": "🗳️", "level": "L2", "kind": "dao",
      "ports": {"api": 8081},
      "log": "dao.log", "start": "start-dao", "stop": "stop-dao",
+     "health_method": "tcp", "severity": "warning", "autoheal": False,
      "purpose": "Decentralized governance: proposals, voting, treasury management. API on 8081.",
      "child_says": "🗳️ Everyone votes here to decide what ZION should do next!",
      "depends_on": ["node1"]},
     {"id": "atomic-swap", "name": "Atomic Swap", "icon": "🔄", "level": "L2", "kind": "swap",
      "ports": {"api": 8888},
      "log": "atomic-swap.log", "start": "start-atomic-swap", "stop": "stop-atomic-swap",
+     "health_method": "tcp", "severity": "warning", "autoheal": False,
      "purpose": "HTLC-based atomic swaps between ZION and other chains (no middleman). API on 8888.",
      "child_says": "🔄 Trade coins safely with strangers without anyone cheating!",
      "depends_on": ["node1"]},
@@ -583,24 +593,30 @@ SERVICE_REGISTRY = [
     {"id": "warp", "name": "WARP Relay", "icon": "🌀", "level": "L3", "kind": "relay",
      "ports": {"api": 9333},
      "log": "warp.log", "start": "start-warp", "stop": "stop-warp",
+     "health_method": "tcp", "severity": "info", "autoheal": False,
      "purpose": "Multi-chain relay for fast cross-chain messaging.",
      "child_says": "🌀 A super-fast message tube between blockchains!",
      "depends_on": []},
     {"id": "ncl", "name": "NCL Compute Layer", "icon": "🧠", "level": "L3", "kind": "gateway",
      "ports": {"api": 8001},
      "log": "hiranyagarbha.log", "start": "start-hiranyagarbha", "stop": None,
+     "health_method": "tcp", "severity": "info", "autoheal": False,
      "purpose": "Neural Compute Layer — job scheduler, worker reputation, pricing. Integrated into Hiranyagarbha at /ncl/*.",
      "child_says": "🧠 Helps many computers think together as one big brain!",
      "depends_on": ["hiranyagarbha"]},
     {"id": "hiranyagarbha", "name": "Hiranyagarbha API", "icon": "🧬", "level": "L3", "kind": "ai",
      "ports": {"api": 8001},
      "log": "hiranyagarbha.log", "start": "start-hiranyagarbha", "stop": None,
+     "health_method": "http", "severity": "info", "autoheal": False,
+     "health_endpoint": "http://127.0.0.1:8001/health",
      "purpose": "Orchestrator API — agent lifecycle, task dispatch, RAG, consciousness engine. Port 8001.",
      "child_says": "🧬 The brain that coordinates all AI agents in ZION!",
      "depends_on": []},
     {"id": "ai-native", "name": "Hiran Inference", "icon": "🤖", "level": "L3", "kind": "ai",
      "ports": {"api": 8002},
      "log": "hiran-inference.log", "start": "start-hiran-inference", "stop": None,
+     "health_method": "http", "severity": "info", "autoheal": False,
+     "health_endpoint": "http://127.0.0.1:8002/health",
      "purpose": "Hiran v2.2 LLM inference server — OpenAI-compatible API on port 8002.",
      "child_says": "🤖 A robot helper that knows everything about ZION!",
      "depends_on": []},
@@ -609,6 +625,7 @@ SERVICE_REGISTRY = [
     {"id": "oasis", "name": "OASIS Avatar Hub", "icon": "🪷", "level": "L4", "kind": "app",
      "ports": {"api": 8094},
      "log": "oasis.log", "start": "start-oasis", "stop": "stop-oasis",
+     "health_method": "tcp", "severity": "info", "autoheal": False,
      "purpose": "Avatar registry, guilds, territories, consciousness XP. API on 8094.",
      "child_says": "🪷 A garden where your ZION avatar lives and helps the world!",
      "depends_on": ["node1"]},
@@ -617,6 +634,7 @@ SERVICE_REGISTRY = [
     {"id": "free-world", "name": "Free World Humanitarian", "icon": "🕊️", "level": "L5", "kind": "humanitarian",
      "ports": {"api": 8095},
      "log": "free-world.log", "start": "start-humanitarian", "stop": "stop-humanitarian",
+     "health_method": "tcp", "severity": "info", "autoheal": False,
      "purpose": "Humanitarian aid coordination — mesh networks, medical tables, community DAOs.",
      "child_says": "🕊️ Helps people in need through decentralized aid and community support!",
      "depends_on": ["node1"]},
@@ -625,6 +643,7 @@ SERVICE_REGISTRY = [
     {"id": "issobella", "name": "Issobella Space Layer", "icon": "🚀", "level": "L6", "kind": "space",
      "ports": {"api": 8096},
      "log": "issobella.log", "start": "start-space", "stop": "stop-space",
+     "health_method": "tcp", "severity": "info", "autoheal": False,
      "purpose": "Space infrastructure coordination — satellite relay, off-world settlements, orbital DAOs.",
      "child_says": "🚀 Takes ZION beyond Earth — to the stars and beyond!",
      "depends_on": ["node1"]},
@@ -633,15 +652,24 @@ SERVICE_REGISTRY = [
     {"id": "prometheus", "name": "Prometheus", "icon": "📊", "level": "Infra", "kind": "metrics",
      "ports": {"web": 9090},
      "log": None, "start": "start-prometheus", "stop": None,
+     "health_method": "tcp", "severity": "info", "autoheal": False,
      "purpose": "Collects and stores metrics from all services (every 15s).",
      "child_says": "📊 A super-memory that remembers all the numbers!",
      "depends_on": []},
     {"id": "grafana", "name": "Grafana", "icon": "📈", "level": "Infra", "kind": "dashboards",
      "ports": {"web": 3000},
      "log": None, "start": "start-grafana", "stop": None,
+     "health_method": "tcp", "severity": "info", "autoheal": False,
      "purpose": "Beautiful charts and dashboards for Prometheus metrics.",
      "child_says": "📈 Pretty pictures showing how everything is doing!",
      "depends_on": ["prometheus"]},
+    {"id": "dashboard", "name": "ZION Dashboard", "icon": "📋", "level": "Infra", "kind": "dashboard",
+     "ports": {"web": 8766},
+     "log": None, "start": None, "stop": None,
+     "health_method": "tcp", "severity": "info", "autoheal": False,
+     "purpose": "Operational control plane — this UI.",
+     "child_says": "📋 The control room where we watch everything!",
+     "depends_on": ["node1"]},
 ]
 
 def get_service(sid: str) -> dict:
@@ -669,80 +697,167 @@ def http_probe(url: str, timeout: float = 0.5) -> tuple[bool, str]:
         return (False, str(e)[:60])
 
 def check_service_health(svc: dict) -> dict:
+    """Determine service health using its configured health_method.
+    Priority: rpc > http > tcp > process > log.  Logs are fallback only."""
     sid = svc["id"]
     cached = HEALTH_CACHE.get(sid)
     now = int(time.time())
     if cached and now - cached["ts"] < HEALTH_TTL:
         return cached
 
-    # Try PID check first for services we launched
-    proc_info = check_process_for_service(sid)
+    method = svc.get("health_method", "log")
+    host = svc.get("host", "127.0.0.1")
     ports = svc.get("ports", {})
     open_ports = []
     closed_ports = []
-    host = svc.get("host", "127.0.0.1")
 
+    # ── TCP probes (used by tcp, rpc, http methods) ──────────────────────
     if ports:
         timeout = 1.5 if host != "127.0.0.1" else 0.15
-        for name, port in ports.items():
+        for pname, port in ports.items():
             if tcp_probe(host, port, timeout):
-                open_ports.append(f"{name}:{port}@{host}")
+                open_ports.append(f"{pname}:{port}@{host}")
             else:
-                closed_ports.append(f"{name}:{port}@{host}")
+                closed_ports.append(f"{pname}:{port}@{host}")
 
-    # Log-based check (last resort for portless services)
+    # ── RPC probe (JSONRPC health) ───────────────────────────────────────
+    rpc_ok = False
+    rpc_detail = ""
+    if method == "rpc" and svc.get("health_endpoint"):
+        rpc_ok, rpc_detail = http_probe(svc["health_endpoint"], timeout=1.0)
+
+    # ── HTTP probe ─────────────────────────────────────────────────────────
+    http_ok = False
+    http_detail = ""
+    if method == "http" and svc.get("health_endpoint"):
+        http_ok, http_detail = http_probe(svc["health_endpoint"], timeout=1.0)
+
+    # ── Process probe ──────────────────────────────────────────────────────
+    proc_info = check_process_for_service(sid)
+
+    # ── Log probe (fallback, never primary) ────────────────────────────────
     log_alive = False
     log_age = None
     if svc.get("log"):
-        path = LOG_DIR / svc["log"]
-        if path.exists():
-            mtime_age = now - int(path.stat().st_mtime)
+        log_path = latest_log_path(svc["log"])
+        if log_path and log_path.exists():
+            mtime_age = now - int(log_path.stat().st_mtime)
             log_age = mtime_age
-            log_alive = mtime_age < 60
+            log_alive = mtime_age < 120
 
-    # Determine overall alive status
-    # Priority: PID > ports > log
+    # ── Determine status based on health_method ────────────────────────────
     alive = False
+    status = "unknown"
     details_parts = []
-    if proc_info["alive"]:
-        alive = True
-        details_parts.append(f"PID {proc_info['pid']} alive")
-    elif proc_info["has_pid"]:
-        details_parts.append(f"PID {proc_info['pid']} dead")
-    if open_ports:
-        alive = True
-        details_parts.append(f"{len(open_ports)}/{len(ports)} ports open")
-    elif ports:
-        details_parts.append(f"{len(ports)} ports closed")
-    if log_alive:
-        if not alive:
-            alive = True  # fallback for portless services
-        details_parts.append(f"log {log_age}s ago")
-    elif log_age is not None:
-        details_parts.append(f"log stale ({log_age}s)")
-    elif not ports:
-        details_parts.append("no log file")
 
-    result = {"alive": alive, "ts": now,
-              "details": "; ".join(details_parts) if details_parts else "unknown",
-              "ports_open": open_ports, "ports_closed": closed_ports,
-              "pid_alive": proc_info["alive"], "pid": proc_info.get("pid"),
-              "log_age": log_age}
+    if method == "rpc":
+        alive = rpc_ok and bool(open_ports)
+        status = "running" if alive else ("degraded" if rpc_ok or open_ports else "stopped")
+        if rpc_ok:
+            details_parts.append("RPC OK")
+        else:
+            details_parts.append(f"RPC fail: {rpc_detail}")
+        if open_ports:
+            details_parts.append(f"{len(open_ports)}/{len(ports)} ports open")
+        elif ports:
+            details_parts.append("ports closed")
+
+    elif method == "http":
+        alive = http_ok
+        status = "running" if alive else "stopped"
+        details_parts.append(f"HTTP {'OK' if http_ok else 'fail'}: {http_detail if http_detail else svc.get('health_endpoint', '')}")
+        if open_ports:
+            details_parts.append(f"{len(open_ports)}/{len(ports)} ports open")
+
+    elif method == "tcp":
+        alive = bool(open_ports)
+        status = "running" if alive else "stopped"
+        if open_ports:
+            details_parts.append(f"{len(open_ports)}/{len(ports)} ports open")
+        else:
+            details_parts.append(f"{len(ports)} ports closed")
+
+    elif method == "process":
+        alive = proc_info["alive"]
+        status = "running" if alive else "stopped"
+        if alive:
+            details_parts.append(f"PID {proc_info['pid']} alive")
+        elif proc_info["has_pid"]:
+            details_parts.append(f"PID {proc_info['pid']} dead")
+        else:
+            details_parts.append("no PID file")
+
+    else:  # log fallback
+        alive = log_alive or proc_info["alive"] or bool(open_ports)
+        status = "running" if alive else "stopped"
+        if log_alive:
+            details_parts.append(f"log {log_age}s ago")
+        elif log_age is not None:
+            details_parts.append(f"log stale ({log_age}s)")
+        if proc_info["alive"]:
+            details_parts.append(f"PID {proc_info['pid']} alive")
+        if open_ports:
+            details_parts.append(f"{len(open_ports)}/{len(ports)} ports open")
+        if not details_parts:
+            details_parts.append("no signal")
+
+    result = {
+        "alive": alive,
+        "status": status,
+        "ts": now,
+        "details": "; ".join(details_parts) if details_parts else "unknown",
+        "ports_open": open_ports,
+        "ports_closed": closed_ports,
+        "pid_alive": proc_info["alive"],
+        "pid": proc_info.get("pid"),
+        "log_age": log_age,
+        "severity": svc.get("severity", "info"),
+        "autoheal": svc.get("autoheal", False),
+        "health_method": method,
+    }
     HEALTH_CACHE[sid] = result
     return result
 
+
+def _compute_derived_status(svc: dict, health_map: dict) -> dict:
+    """Propagate dependency failures: if a dependency is down, mark dependent as degraded."""
+    h = health_map.get(svc["id"], {})
+    if not h.get("alive"):
+        return h
+    for dep_id in svc.get("depends_on", []):
+        dep = health_map.get(dep_id, {})
+        if not dep.get("alive"):
+            return {
+                **h,
+                "alive": False,
+                "status": "degraded",
+                "details": f"Dependency {dep_id} is {dep.get('status', 'down')}; {h.get('details', '')}",
+                "derived": True,
+            }
+    return h
+
+
 def all_services_health() -> list:
+    # First pass: raw health
+    raw = {}
+    for svc in SERVICE_REGISTRY:
+        raw[svc["id"]] = check_service_health(svc)
+
+    # Second pass: dependency propagation
     out = []
     for svc in SERVICE_REGISTRY:
-        h = check_service_health(svc)
+        h = _compute_derived_status(svc, raw)
         out.append({
             "id": svc["id"], "name": svc["name"], "icon": svc["icon"],
             "level": svc["level"], "kind": svc["kind"],
             "purpose": svc["purpose"], "child_says": svc["child_says"],
             "ports": svc["ports"], "depends_on": svc["depends_on"],
             "log": svc["log"], "start": svc["start"],
-            "alive": h["alive"], "details": h["details"],
+            "alive": h["alive"], "status": h.get("status", "unknown"),
+            "details": h["details"], "severity": h.get("severity", "info"),
             "ports_open": h["ports_open"], "ports_closed": h["ports_closed"],
+            "autoheal": h.get("autoheal", False),
+            "health_method": h.get("health_method", "log"),
         })
     return out
 
@@ -889,9 +1004,23 @@ def head_log(filename: str, n: int = 50) -> list[str]:
             lines.append(line.rstrip("\n"))
         return lines
 
+def latest_log_path(name: str) -> Path | None:
+    """Find the most recent log file for a service.
+    Prefers timestamped logs (name.YYYYMMDD_HHMMSS.log) then falls back to name.log.
+    Accepts name with or without .log suffix."""
+    base = name.removesuffix(".log")
+    candidates = sorted(LOG_DIR.glob(f"{base}.*.log"), key=lambda p: p.stat().st_mtime, reverse=True)
+    if candidates:
+        return candidates[0]
+    fallback = LOG_DIR / f"{base}.log"
+    if fallback.exists():
+        return fallback
+    return None
+
 def parse_node_log(name: str) -> dict:
-    recent = tail_log(f"{name}.log", 200)
-    startup = head_log(f"{name}.log", 50)
+    log_path = latest_log_path(name)
+    recent = tail_log(log_path.name, 200) if log_path else []
+    startup = head_log(log_path.name, 50) if log_path else []
     status = {
         "name": name,
         "running": bool(recent),
