@@ -69,5 +69,5 @@ backup_interval_secs = 3600
 
 [metrics]
 enabled   = true
-port      = 9101          # 9100 occupied by node-exporter on Edge
+port      = 9102          # 9101 occupied by zion-oasis; 9100 by node-exporter
 log_level = "debug"      # verbose for testnet; use "info" in production
