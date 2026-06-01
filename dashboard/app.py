@@ -2112,6 +2112,9 @@ def build_payout_status() -> dict:
         "miner_payouts": [],
         "fee_payouts": [],
         "errors": [],
+        "payouts": [],
+        "pending_payouts": 0,
+        "miner_perf": {},
     }
     # Parse startup config
     for line in startup:
@@ -2162,6 +2165,26 @@ def build_payout_status() -> dict:
     status["miner_payouts"] = status["miner_payouts"][-10:]
     status["fee_payouts"] = status["fee_payouts"][-10:]
     status["errors"] = status["errors"][-10:]
+    # Pending payout count from deferred miner payouts
+    for line in recent:
+        if "payout_deferred" in line:
+            status["pending_payouts"] += 1
+    # Miner performance from pool log lines
+    perf = {}
+    for line in recent:
+        if m := re.search(r'hashrate[:=]\s*([\d.]+)\s*([a-zA-Z]*)', line):
+            perf["hashrate"] = float(m.group(1))
+            if m.group(2) and m.group(2)[0].upper() == 'M':
+                perf["hashrate"] *= 1_000  # MH/s -> KH/s
+            elif m.group(2) and m.group(2)[0].upper() == 'H':
+                perf["hashrate"] /= 1_000  # H/s -> KH/s
+        if m := re.search(r'shares_accepted[:=]\s*(\d+)', line):
+            perf["shares_accepted"] = int(m.group(1))
+        if m := re.search(r'shares_rejected[:=]\s*(\d+)', line):
+            perf["shares_rejected"] = int(m.group(1))
+        if m := re.search(r'current_height[:=]\s*(\d+)', line):
+            perf["current_height"] = int(m.group(1))
+    status["miner_perf"] = perf
     # Build structured payouts array for charts
     payouts = []
     seen_heights = set()

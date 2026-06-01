@@ -398,11 +398,65 @@ async function refreshPayout(){
     set('payout-tab-last', data.last_payout_time || '—');
     set('payout-tab-last-tx', 'TX: ' + (data.last_payout_tx || '—'));
 
-    if(data.miner_wallet) set('payout-tab-miner-wallet', data.miner_wallet);
-    if(data.humanitarian_wallet) set('payout-tab-humanitarian-wallet', data.humanitarian_wallet);
-    if(data.issobella_wallet) set('payout-tab-issobella-wallet', data.issobella_wallet);
-    if(data.pool_fee_wallet) set('payout-tab-pool-fee-wallet', data.pool_fee_wallet);
+    // Total paid out from structured payouts
+    let totalPaid = 0;
+    let totalBlocks = 0;
+    if (data.payouts && data.payouts.length) {
+      totalBlocks = data.payouts.length;
+      for (const p of data.payouts) {
+        const s = p.fee_split || {};
+        totalPaid += parseFloat(s.miner || 0) + parseFloat(s.charity || 0) + parseFloat(s.dev || 0) + parseFloat(s.pool || 0);
+      }
+    }
+    set('payout-tab-total-paid', totalPaid > 0 ? _zionFmt(totalPaid) + ' ZION' : '—');
+    set('payout-tab-total-blocks', 'Across ' + totalBlocks + ' blocks');
+    set('payout-tab-pending', data.pending_payouts || '—');
+    set('payout-tab-pending-detail', data.pending_payouts > 0 ? 'PPLNS deferred' : 'Up to date');
 
+    // Fee split breakdown table
+    if (data.miner_wallet) set('payout-breakdown-miner-addr', data.miner_wallet);
+    if (data.humanitarian_wallet) set('payout-breakdown-charity-addr', data.humanitarian_wallet);
+    if (data.issobella_wallet) set('payout-breakdown-dev-addr', data.issobella_wallet);
+    if (data.pool_fee_wallet) set('payout-breakdown-pool-addr', data.pool_fee_wallet);
+    // Compute per-block amounts from latest payout
+    if (data.payouts && data.payouts.length) {
+      const latest = data.payouts[data.payouts.length - 1];
+      const s = latest.fee_split || {};
+      set('payout-breakdown-miner-amount', _zionFmt(s.miner || 0) + ' Z');
+      set('payout-breakdown-charity-amount', _zionFmt(s.charity || 0) + ' Z');
+      set('payout-breakdown-dev-amount', _zionFmt(s.dev || 0) + ' Z');
+      set('payout-breakdown-pool-amount', _zionFmt(s.pool || 0) + ' Z');
+    }
+
+    // Structured payout history table
+    const histTable = document.getElementById('payout-history-table');
+    if (histTable) {
+      if (data.payouts && data.payouts.length) {
+        histTable.innerHTML = data.payouts.slice(-10).reverse().map(p => {
+          const s = p.fee_split || {};
+          return `<tr class="border-b border-white/5 hover:bg-white/5 transition">
+            <td class="py-2 px-2 text-white">#${p.block_height}</td>
+            <td class="py-2 px-2 text-right text-gray-300">${_zionFmt(p.subsidy_flowers / 1e12)} Z</td>
+            <td class="py-2 px-2 text-right text-amber-400">${_zionFmt(s.miner || 0)}</td>
+            <td class="py-2 px-2 text-right text-emerald-400">${_zionFmt(s.charity || 0)}</td>
+            <td class="py-2 px-2 text-right text-purple-400">${_zionFmt(s.dev || 0)}</td>
+            <td class="py-2 px-2 text-right text-blue-400">${_zionFmt(s.pool || 0)}</td>
+          </tr>`;
+        }).join('');
+      } else {
+        histTable.innerHTML = '<tr><td colspan="6" class="py-2 px-2 text-gray-500 italic">No payout history yet</td></tr>';
+      }
+    }
+
+    // Miner performance
+    if (data.miner_perf) {
+      set('miner-perf-hashrate', data.miner_perf.hashrate != null ? data.miner_perf.hashrate.toFixed(2) : '—');
+      set('miner-perf-accepted', data.miner_perf.shares_accepted ?? '—');
+      set('miner-perf-rejected', data.miner_perf.shares_rejected ?? '—');
+      set('miner-perf-height', data.miner_perf.current_height ?? '—');
+    }
+
+    // Raw logs
     const minerLog = document.getElementById('payout-tab-miner-log');
     if(minerLog) minerLog.innerHTML = (data.miner_payouts && data.miner_payouts.length)
       ? data.miner_payouts.map(l => '<div class="bg-black/20 rounded p-2 border-l-2 border-emerald-500 text-[10px]">' + escapeHtml(l) + '</div>').join('')
