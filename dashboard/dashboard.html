@@ -3329,7 +3329,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
       </div>
       <p class="text-sm text-gray-400 mb-4">Live payout status, fee split recipients, and recent transaction logs.</p>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3 mb-6">
         <div class="zion-panel-soft p-4">
           <div class="text-xs text-gray-400 uppercase tracking-wider mb-1">Pool Wallet</div>
           <div class="text-sm font-mono text-amber-400 truncate" id="payout-tab-wallet">—</div>
@@ -3350,30 +3350,61 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
           <div class="text-sm font-bold text-emerald-400" id="payout-tab-last">—</div>
           <div class="text-xs text-gray-500 mt-1 truncate" id="payout-tab-last-tx">TX: —</div>
         </div>
+        <div class="zion-panel-soft p-4">
+          <div class="text-xs text-gray-400 uppercase tracking-wider mb-1">Total Paid Out</div>
+          <div class="text-lg font-bold text-emerald-400" id="payout-tab-total-paid">—</div>
+          <div class="text-xs text-gray-500 mt-1" id="payout-tab-total-blocks">Across — blocks</div>
+        </div>
+        <div class="zion-panel-soft p-4">
+          <div class="text-xs text-gray-400 uppercase tracking-wider mb-1">Pending</div>
+          <div class="text-lg font-bold text-amber-400" id="payout-tab-pending">—</div>
+          <div class="text-xs text-gray-500 mt-1" id="payout-tab-pending-detail">PPLNS deferred</div>
+        </div>
       </div>
 
-      <h3 class="text-sm font-bold text-gray-300 mb-3">📋 Fee Split Recipients (89/5/5/1)</h3>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-        <div class="zion-panel-soft p-3">
-          <div class="text-xs text-gray-400 mb-1">⛏️ Miner Share (89%)</div>
-          <div class="text-sm font-mono text-amber-400 truncate" id="payout-tab-miner-wallet">—</div>
-          <div class="text-xs text-gray-500 mt-1">PPLNS redistribution</div>
-        </div>
-        <div class="zion-panel-soft p-3">
-          <div class="text-xs text-gray-400 mb-1">🌍 Humanitarian (5%)</div>
-          <div class="text-sm font-mono text-emerald-400 truncate" id="payout-tab-humanitarian-wallet">—</div>
-          <div class="text-xs text-gray-500 mt-1">Children Future Fund</div>
-        </div>
-        <div class="zion-panel-soft p-3">
-          <div class="text-xs text-gray-400 mb-1">🚀 Issobella (5%)</div>
-          <div class="text-sm font-mono text-purple-400 truncate" id="payout-tab-issobella-wallet">—</div>
-          <div class="text-xs text-gray-500 mt-1">L5/L6 Space Layer</div>
-        </div>
-        <div class="zion-panel-soft p-3">
-          <div class="text-xs text-gray-400 mb-1">⚡ Pool Fee (1%)</div>
-          <div class="text-sm font-mono text-blue-400 truncate" id="payout-tab-pool-fee-wallet">—</div>
-          <div class="text-xs text-gray-500 mt-1">Operator fee</div>
-        </div>
+      <h3 class="text-sm font-bold text-gray-300 mb-3">📋 Fee Split Breakdown</h3>
+      <div class="zion-panel-soft p-4 mb-6 overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead>
+            <tr class="text-gray-400 border-b border-white/10">
+              <th class="py-2 px-2">Recipient</th>
+              <th class="py-2 px-2 text-right">%</th>
+              <th class="py-2 px-2 text-right">Per Block</th>
+              <th class="py-2 px-2">Address</th>
+              <th class="py-2 px-2">Purpose</th>
+            </tr>
+          </thead>
+          <tbody class="font-mono">
+            <tr class="border-b border-white/5">
+              <td class="py-2 px-2 text-amber-400">⛏️ Miner</td>
+              <td class="py-2 px-2 text-right text-white">89%</td>
+              <td class="py-2 px-2 text-right text-amber-400" id="payout-breakdown-miner-amount">—</td>
+              <td class="py-2 px-2 text-gray-300 truncate max-w-[200px]" id="payout-breakdown-miner-addr">—</td>
+              <td class="py-2 px-2 text-gray-500">PPLNS redistribution</td>
+            </tr>
+            <tr class="border-b border-white/5">
+              <td class="py-2 px-2 text-emerald-400">🌍 Humanitarian</td>
+              <td class="py-2 px-2 text-right text-white">5%</td>
+              <td class="py-2 px-2 text-right text-emerald-400" id="payout-breakdown-charity-amount">—</td>
+              <td class="py-2 px-2 text-gray-300 truncate max-w-[200px]" id="payout-breakdown-charity-addr">—</td>
+              <td class="py-2 px-2 text-gray-500">Children Future Fund</td>
+            </tr>
+            <tr class="border-b border-white/5">
+              <td class="py-2 px-2 text-purple-400">🚀 Issobella</td>
+              <td class="py-2 px-2 text-right text-white">5%</td>
+              <td class="py-2 px-2 text-right text-purple-400" id="payout-breakdown-dev-amount">—</td>
+              <td class="py-2 px-2 text-gray-300 truncate max-w-[200px]" id="payout-breakdown-dev-addr">—</td>
+              <td class="py-2 px-2 text-gray-500">L5/L6 Space Layer</td>
+            </tr>
+            <tr>
+              <td class="py-2 px-2 text-blue-400">⚡ Pool Fee</td>
+              <td class="py-2 px-2 text-right text-white">1%</td>
+              <td class="py-2 px-2 text-right text-blue-400" id="payout-breakdown-pool-amount">—</td>
+              <td class="py-2 px-2 text-gray-300 truncate max-w-[200px]" id="payout-breakdown-pool-addr">—</td>
+              <td class="py-2 px-2 text-gray-500">Operator fee</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
       <!-- Payout Visualizations -->
@@ -3388,6 +3419,28 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         </div>
       </div>
 
+      <!-- Payout History Table -->
+      <div class="zion-panel-soft p-4 mb-4">
+        <h3 class="text-sm font-bold text-gray-300 mb-3">📜 Payout History</h3>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead>
+              <tr class="text-gray-400 border-b border-white/10">
+                <th class="py-2 px-2">Block</th>
+                <th class="py-2 px-2 text-right">Subsidy</th>
+                <th class="py-2 px-2 text-right">Miner (89%)</th>
+                <th class="py-2 px-2 text-right">Charity (5%)</th>
+                <th class="py-2 px-2 text-right">Dev (5%)</th>
+                <th class="py-2 px-2 text-right">Pool (1%)</th>
+              </tr>
+            </thead>
+            <tbody id="payout-history-table" class="font-mono">
+              <tr><td colspan="6" class="py-2 px-2 text-gray-500 italic">No payout history yet</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div class="zion-panel-soft p-4">
           <h3 class="text-sm font-bold text-gray-300 mb-2">📝 Recent Miner Payouts</h3>
@@ -3399,6 +3452,33 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
           <h3 class="text-sm font-bold text-gray-300 mb-2">📝 Recent Fee Payouts</h3>
           <div id="payout-tab-fee-log" class="space-y-2 text-xs text-gray-300 max-h-64 overflow-y-auto log-tail">
             <div class="text-gray-500 italic">Loading...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Miner Performance -->
+      <div class="zion-panel-soft p-4 mt-4">
+        <h3 class="text-sm font-bold text-gray-300 mb-3">⛏️ Miner Performance</h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div class="bg-black/20 rounded-lg p-3 text-center">
+            <div class="text-[10px] text-gray-400">Hashrate</div>
+            <div class="text-lg font-bold text-amber-400" id="miner-perf-hashrate">—</div>
+            <div class="text-[10px] text-gray-500">KH/s</div>
+          </div>
+          <div class="bg-black/20 rounded-lg p-3 text-center">
+            <div class="text-[10px] text-gray-400">Shares Accepted</div>
+            <div class="text-lg font-bold text-emerald-400" id="miner-perf-accepted">—</div>
+            <div class="text-[10px] text-gray-500">total</div>
+          </div>
+          <div class="bg-black/20 rounded-lg p-3 text-center">
+            <div class="text-[10px] text-gray-400">Shares Rejected</div>
+            <div class="text-lg font-bold text-rose-400" id="miner-perf-rejected">—</div>
+            <div class="text-[10px] text-gray-500">total</div>
+          </div>
+          <div class="bg-black/20 rounded-lg p-3 text-center">
+            <div class="text-[10px] text-gray-400">Current Height</div>
+            <div class="text-lg font-bold text-blue-400" id="miner-perf-height">—</div>
+            <div class="text-[10px] text-gray-500">block</div>
           </div>
         </div>
       </div>
@@ -3496,6 +3576,6 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
   </div>
 </div>
 
-<script src="/dashboard.js?v=7"></script>
+<script src="/dashboard.js?v=8"></script>
 </body>
 </html>
