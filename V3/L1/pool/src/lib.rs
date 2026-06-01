@@ -28,6 +28,9 @@ pub enum PoolMessage {
         miner_id: String,
         worker_name: String,
         algorithm: String,
+        /// Optional payout address. When empty the pool falls back to miner_id.
+        #[serde(default)]
+        payout_address: String,
     },
     Welcome {
         protocol_version: String,
@@ -274,11 +277,12 @@ impl MiningPool {
         }
     }
 
-    pub fn hello_message(&self, miner_id: &str, worker_name: &str) -> PoolMessage {
+    pub fn hello_message(&self, miner_id: &str, worker_name: &str, payout_address: &str) -> PoolMessage {
         PoolMessage::Hello {
             miner_id: miner_id.to_string(),
             worker_name: worker_name.to_string(),
             algorithm: advertised_algorithm().to_string(),
+            payout_address: payout_address.to_string(),
         }
     }
 
@@ -770,7 +774,7 @@ mod tests {
     #[test]
     fn pool_protocol_roundtrip_is_stable() {
         let pool = MiningPool::default();
-        let message = pool.hello_message("miner-7", "rig-z");
+        let message = pool.hello_message("miner-7", "rig-z", "zion1rigz");
         let encoded = encode_message(&message).expect("encode hello");
         let decoded = decode_message(&encoded).expect("decode hello");
         assert_eq!(decoded, message);
@@ -876,6 +880,7 @@ mod tests {
                 miner_id: "m".to_string(),
                 worker_name: "w".to_string(),
                 algorithm: "algo".to_string(),
+                payout_address: "zion1mw".to_string(),
             },
             PoolMessage::Welcome {
                 protocol_version: "v1".to_string(),
@@ -937,6 +942,7 @@ mod tests {
             miner_id: "m".to_string(),
             worker_name: "w".to_string(),
             algorithm: "a".to_string(),
+            payout_address: "zion1mw".to_string(),
         };
         let encoded = encode_message(&msg).unwrap();
         assert_eq!(
