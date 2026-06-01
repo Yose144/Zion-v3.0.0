@@ -1887,7 +1887,7 @@ def get_network_topology() -> dict:
             pass
     return {
         "core": {
-            "host": "100.86.102.5",
+            "host": "100.74.34.40",
             "alive": core_alive,
             "height": core_node.get("chain_height"),
             "peers": core_node.get("known_peers"),
@@ -1903,7 +1903,7 @@ def get_network_topology() -> dict:
             "rpc": "0.0.0.0:8443",
             "pool": "0.0.0.0:8444",
         },
-        "tailscale": {"vpn_ok": tailscale_ok, "core_ip": "100.86.102.5", "edge_ip": "100.76.16.108"},
+        "tailscale": {"vpn_ok": tailscale_ok, "core_ip": "100.74.34.40", "edge_ip": "100.76.16.108"},
         "apps": {
             "website": {"url": "https://zionterranova.com", "alive": web_alive},
             "desktop_agent": {"rpc": "http://127.0.0.1:8443/jsonrpc", "alive": desktop_alive},
@@ -2137,7 +2137,7 @@ P0_BLOCKERS = [
     {"id": 2, "title": "Ankr API key (premium tier)", "owner": "Ops", "deadline": "T-7", "status": "OPEN", "severity": "critical",
      "detail": "bridge-mainnet.toml line 28: api_key=\"\". Requires premium Ankr account for EVM watcher reliability."},
     {"id": 3, "title": "Seed peer bootstrap mesh", "owner": "Ops", "deadline": "T-3", "status": "DONE", "severity": "info",
-     "detail": "Core + Edge topology active. Core (100.86.102.5) seeds Edge (100.76.16.108) via Tailscale VPN. Legacy multi-node mesh (Helsinki/US/SG/Prague) decommissioned."},
+     "detail": "Core + Edge topology active. Core (100.74.34.40) seeds Edge (100.76.16.108) via Tailscale VPN. Legacy multi-node mesh (Helsinki/US/SG/Prague) decommissioned."},
     {"id": 4, "title": "Premine wallet rotation", "owner": "Security", "deadline": "T-14", "status": "DONE", "severity": "info",
      "detail": "✅ Done 2026-05-14. Old 12 BIP-39 seeds burned, new addresses generated, public addresses in PREMINE_ADDRESSES_PUBLIC.txt."},
     {"id": 5, "title": "CI / GitHub Actions billing", "owner": "DevOps", "deadline": "T-14", "status": "OPEN", "severity": "warning",
