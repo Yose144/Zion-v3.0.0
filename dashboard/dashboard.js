@@ -4295,6 +4295,47 @@ document.body.addEventListener('click', (e) => {
 });
 
 // ════════════════════════════════════════════════════════════════════════
+// FEATURE R — Readiness Score
+// ════════════════════════════════════════════════════════════════════════
+let lastReadinessData = null;
+
+async function refreshReadiness() {
+  try {
+    const r = await fetch('/api/readiness').then(r => r.json());
+    lastReadinessData = r;
+    renderReadiness(r);
+  } catch(e) { /* silent */ }
+}
+
+function renderReadiness(data) {
+  if (!data) return;
+  const bar = document.getElementById('readiness-bar');
+  const scoreEl = document.getElementById('readiness-score');
+  const label = document.getElementById('readiness-label');
+  const breakdown = document.getElementById('readiness-breakdown');
+  if (!bar || !scoreEl) return;
+
+  const score = data.score ?? 0;
+  const color = data.color || 'gray';
+  const colorMap = { green: '#22c55e', yellow: '#f59e0b', red: '#ef4444', gray: '#374151' };
+  bar.style.width = score + '%';
+  bar.style.background = colorMap[color] || colorMap.gray;
+  scoreEl.textContent = score;
+
+  const labelText = score >= 85 ? 'Ready for mainnet' : (score >= 60 ? 'Partially ready' : 'Not ready');
+  if (label) label.textContent = `${labelText} · ${data.earned_weight}/${data.total_weight} pts`;
+
+  if (breakdown && data.breakdown) {
+    breakdown.innerHTML = data.breakdown.map(b => {
+      const dot = b.alive ? '🟢' : '🔴';
+      const name = SVC_LABEL_MAP[b.id] || b.id;
+      return `<span class="px-1.5 py-0.5 rounded bg-black/20 ${b.alive?'text-emerald-400':'text-rose-400'}">${dot} ${escapeHtml(name)} (${b.weight})</span>`;
+    }).join('');
+  }
+}
+
+
+// ════════════════════════════════════════════════════════════════════════
 // FEATURE C — Service Health Timeline (24h heatmap)
 // ════════════════════════════════════════════════════════════════════════
 // All service IDs that backend can persist in health history (ordered by layer L1→L2→L3→Infra)
@@ -4771,6 +4812,8 @@ function renderTopology(services) {
 const _origRefreshAll = refreshAll;
 refreshAll = async function() {
   await _origRefreshAll.apply(this, arguments);
+  // R: Readiness score
+  await refreshReadiness();
   // C: Service health
   await refreshServiceHealth();
   // F: Topology + service ordering
