@@ -11,6 +11,7 @@ use zion_core::wallet::{BatchRecipient, SpendableUtxo};
 use zion_core::{
     decode_rpc_response, encode_rpc_request, BlockTemplate, ConsensusConfig, CoreRuntime,
     DifficultyTarget, MiningHeader, MiningSolution, RevenueSource, RpcRequest, RpcResponse,
+    Transaction as AccountTransaction,
 };
 use zion_pool::ncl_gateway::{
     NclDispatcher, NclGatewayClient, NclHeartbeatConfig, NclPricing,
@@ -3956,6 +3957,127 @@ fn parse_hex_bytes(hex_str: &str) -> Option<Vec<u8>> {
     Some(bytes)
 }
 
+/// Generate a deterministic 64-hex-char tx_id for an account payout transaction.
+fn generate_account_tx_id(from: &str, to: &str, amount: u64, nonce: u64) -> String {
+    let mut bytes = [0u8; 32];
+    let ts = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_nanos();
+    bytes[..16].copy_from_slice(&(ts as u128).to_le_bytes());
+    bytes[16..24].copy_from_slice(&(amount as u64).to_le_bytes());
+    bytes[24..32].copy_from_slice(&(nonce as u64).to_le_bytes());
+    // XOR-in sender and recipient for uniqueness
+    for (i, b) in from.bytes().chain(to.bytes()).enumerate() {
+        bytes[i % 32] ^= b;
+    }
+    hex::encode(bytes)
+}
+
+/// Fetch pool wallet's account balance (flowers) from the node via getBalance RPC.
+fn fetch_pool_account_balance(node_rpc_addr: &str, address: &str) -> Result<u128> {
+    let request_body = serde_json::json!({
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "getBalance",
+        "params": { "address": address }
+    });
+
+    let mut stream = TcpStream::connect(node_rpc_addr)
+        .with_context(|| format!("failed to connect to node rpc at {node_rpc_addr}"))?;
+    let mut request_line = serde_json::to_string(&request_body)?;
+    request_line.push('\n');
+    stream.write_all(request_line.as_bytes())?;
+    stream.flush()?;
+
+    let mut reader = BufReader::new(stream);
+    let mut response_line = String::new();
+    reader.read_line(&mut response_line)?;
+
+    let response: serde_json::Value = serde_json::from_str(&response_line)
+        .context("failed to parse getBalance response")?;
+
+    if let Some(error) = response.get("error") {
+        if !error.is_null() {
+            let msg = error
+                .get("message")
+                .and_then(|m| m.as_str())
+                .unwrap_or("unknown");
+            return Err(anyhow!("getBalance error: {}", msg));
+        }
+    }
+
+    let result = response
+        .get("result")
+        .ok_or_else(|| anyhow!("missing result in getBalance response"))?;
+
+    // Use total balance (account + UTXO) as the spendable amount.
+    let balance_str = result
+        .get("balance_flowers")
+        .and_then(|v| v.as_str())
+        .unwrap_or("0");
+
+    balance_str
+        .parse::<u128>()
+        .map_err(|e| anyhow!("failed to parse balance_flowers '{}': {}", balance_str, e))
+}
+
+/// Submit an account-model transaction to the node via submitAccountTransaction RPC.
+fn submit_account_transaction(node_rpc_addr: &str, tx: &AccountTransaction) -> Result<String> {
+    let tx_json = serde_json::to_value(tx)?;
+    let request_body = serde_json::json!({
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "submitAccountTransaction",
+        "params": { "transaction": tx_json }
+    });
+
+    let mut stream = TcpStream::connect(node_rpc_addr)
+        .with_context(|| format!("failed to connect to node rpc at {node_rpc_addr}"))?;
+    let mut request_line = serde_json::to_string(&request_body)?;
+    request_line.push('\n');
+    stream.write_all(request_line.as_bytes())?;
+    stream.flush()?;
+
+    let mut reader = BufReader::new(stream);
+    let mut response_line = String::new();
+    reader.read_line(&mut response_line)?;
+
+    let response: serde_json::Value = serde_json::from_str(&response_line)
+        .context("failed to parse submitAccountTransaction response")?;
+
+    if let Some(error) = response.get("error") {
+        if !error.is_null() {
+            let msg = error
+                .get("message")
+                .and_then(|m| m.as_str())
+                .unwrap_or("unknown");
+            return Err(anyhow!("submitAccountTransaction error: {}", msg));
+        }
+    }
+
+    let result = response
+        .get("result")
+        .ok_or_else(|| anyhow!("missing result in submitAccountTransaction response"))?;
+    let accepted = result
+        .get("accepted")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+    if !accepted {
+        let reason = result
+            .get("reason")
+            .and_then(|v| v.as_str())
+            .unwrap_or("rejected");
+        return Err(anyhow!("account transaction rejected: {}", reason));
+    }
+
+    let tx_id = result
+        .get("tx_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("unknown");
+    Ok(tx_id.to_string())
+}
+
 /// Fetch pool wallet's spendable UTXOs from the node via JSON-RPC 2.0.
 fn fetch_pool_utxos(node_rpc_addr: &str, address: &str) -> Result<Vec<SpendableUtxo>> {
     let request_body = serde_json::json!({
@@ -4101,11 +4223,80 @@ fn execute_pool_payout(
 
     // Fetch spendable UTXOs for the pool wallet.
     let utxos = fetch_pool_utxos(node_rpc_addr, pool_wallet_addr)?;
+
+    // ── Account-model fallback ─────────────────────────────────────────
+    // When the node creates account-model coinbase transactions (instead of
+    // UTXO outputs), the pool wallet has account balance but no UTXOs.
+    // Fall back to account-model payouts in that case.
     if utxos.is_empty() {
-        return Err(anyhow!(
-            "pool payout wallet {} has no spendable UTXOs (balance will accumulate from new blocks)",
-            pool_wallet_addr,
-        ));
+        let account_balance = fetch_pool_account_balance(node_rpc_addr, pool_wallet_addr)?;
+        let total_needed: u128 = payouts.iter().map(|p| p.amount as u128).sum();
+
+        if account_balance == 0 {
+            return Err(anyhow!(
+                "pool payout wallet {} has no spendable UTXOs and zero account balance (balance will accumulate from new blocks)",
+                pool_wallet_addr,
+            ));
+        }
+
+        if account_balance < total_needed {
+            return Err(anyhow!(
+                "pool payout wallet {} account balance {} < total payout {} (deferring)",
+                pool_wallet_addr, account_balance, total_needed,
+            ));
+        }
+
+        let base_nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs();
+        let mut executed = Vec::new();
+        let mut first_tx_id = String::new();
+
+        for (i, payout) in payouts.iter().enumerate() {
+            let nonce = base_nonce + i as u64;
+            let tx_id = generate_account_tx_id(pool_wallet_addr, &payout.address, payout.amount, nonce);
+            let tx = AccountTransaction {
+                tx_id: tx_id.clone(),
+                from: pool_wallet_addr.to_string(),
+                to: payout.address.clone(),
+                amount_zion: payout.amount as u128,
+                fee_zion: 0,
+                nonce,
+            };
+            match submit_account_transaction(node_rpc_addr, &tx) {
+                Ok(submitted_tx_id) => {
+                    if first_tx_id.is_empty() {
+                        first_tx_id = submitted_tx_id;
+                    }
+                    executed.push(payout.clone());
+                }
+                Err(err) => {
+                    return Err(anyhow!(
+                        "account payout failed for miner {} ({}): {}. executed={} deferred={}",
+                        payout.miner_id, payout.address, err,
+                        executed.len(), payouts.len() - executed.len(),
+                    ));
+                }
+            }
+        }
+
+        println!(
+            "payout_account_model height={} recipients={} wallet={} tx_id={}",
+            height, executed.len(), pool_wallet_addr, first_tx_id,
+        );
+
+        let deferred: Vec<PayoutEntry> = payouts
+            .iter()
+            .filter(|p| !executed.iter().any(|e| e.miner_id == p.miner_id))
+            .cloned()
+            .collect();
+
+        return Ok(PayoutExecutionOutcome {
+            tx_id: first_tx_id,
+            executed,
+            deferred,
+        });
     }
 
     // Build the largest payable batch: sort ascending and trim largest payouts
