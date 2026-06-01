@@ -521,13 +521,21 @@ fn handle_client(
         return Ok(());
     }
 
-    let (miner_id, worker_name, algorithm) = match hello_message {
+    let (miner_id, worker_name, algorithm, payout_address) = match hello_message {
         PoolMessage::Hello {
             miner_id,
             worker_name,
             algorithm,
+            payout_address,
             ..
-        } => (miner_id, worker_name, algorithm),
+        } => {
+            let payout = if payout_address.trim().is_empty() {
+                miner_id.clone()
+            } else {
+                payout_address
+            };
+            (miner_id, worker_name, algorithm, payout)
+        }
         other => return Err(anyhow!("expected hello from miner, got {other:?}")),
     };
 
@@ -562,11 +570,11 @@ fn handle_client(
         telemetry.touch_session(&miner_id, &worker_name);
     }
 
-    // Register miner_id as payout address (miner_id is expected to be a zion1… address).
+    // Register miner payout address for PPLNS distribution.
     pplns_engine
         .lock()
         .expect("pplns lock poisoned")
-        .register_address(&miner_id, &miner_id);
+        .register_address(&miner_id, &payout_address);
 
     let welcome_message = pool.lock().expect("pool lock poisoned").welcome_message();
     let welcome_line = write_wire_message(&mut writer, &welcome_message)?;
@@ -3142,6 +3150,7 @@ mod tests {
             revenue_proxy_addr: None,
             revenue_proxy_coin: "KAS".to_string(),
             fee_config: FeeConfig::default(),
+            upstream_pool_addr: None,
         };
         let (pool_addr, pool_handle) = spawn_pool_server(config)?;
 
@@ -3155,6 +3164,7 @@ mod tests {
                 miner_id: "test-miner".to_string(),
                 worker_name: "rig-test".to_string(),
                 algorithm: zion_core::consensus_profile().to_string(),
+                payout_address: "zion1test".to_string(),
             },
         )?;
 
@@ -3366,6 +3376,7 @@ mod tests {
             revenue_proxy_addr: None,
             revenue_proxy_coin: "KAS".to_string(),
             fee_config: FeeConfig::default(),
+            upstream_pool_addr: None,
         };
 
         let group = resolve_session_group("user-miner", "rig-01", &config);
@@ -3405,6 +3416,7 @@ mod tests {
             revenue_proxy_addr: None,
             revenue_proxy_coin: "KAS".to_string(),
             fee_config: FeeConfig::default(),
+            upstream_pool_addr: None,
         };
 
         let group = resolve_session_group("backend-miner-1", "rig-01", &config);
@@ -3444,6 +3456,7 @@ mod tests {
             revenue_proxy_addr: None,
             revenue_proxy_coin: "KAS".to_string(),
             fee_config: FeeConfig::default(),
+            upstream_pool_addr: None,
         };
 
         let group = resolve_session_group("miner-a", "backend-revenue-1", &config);
@@ -3647,6 +3660,7 @@ mod tests {
             revenue_proxy_addr: None,
             revenue_proxy_coin: "KAS".to_string(),
             fee_config: FeeConfig::default(),
+            upstream_pool_addr: None,
         };
 
         // Even though miner_id is in backend list, explicit hint wins
@@ -4538,11 +4552,65 @@ fn execute_fee_payout(
     }
 
     let utxos = fetch_pool_utxos(node_rpc_addr, pool_wallet_addr)?;
+
+    // ── Account-model fallback ─────────────────────────────────────────
     if utxos.is_empty() {
-        return Err(anyhow!(
-            "pool payout wallet {} has no spendable UTXOs for fee payout",
-            pool_wallet_addr,
-        ));
+        let account_balance = fetch_pool_account_balance(node_rpc_addr, pool_wallet_addr)?;
+        let total_needed: u128 = recipients.iter().map(|r| r.amount as u128).sum();
+
+        if account_balance == 0 {
+            return Err(anyhow!(
+                "pool payout wallet {} has no spendable UTXOs and zero account balance for fee payout",
+                pool_wallet_addr,
+            ));
+        }
+
+        if account_balance < total_needed {
+            return Err(anyhow!(
+                "pool payout wallet {} account balance {} < fee payout {} (deferring)",
+                pool_wallet_addr, account_balance, total_needed,
+            ));
+        }
+
+        let base_nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs();
+        let mut first_tx_id = String::new();
+
+        for (i, recipient) in recipients.iter().enumerate() {
+            let nonce = base_nonce + i as u64;
+            let tx_id = generate_account_tx_id(pool_wallet_addr, &recipient.address, recipient.amount, nonce);
+            let tx = AccountTransaction {
+                tx_id: tx_id.clone(),
+                from: pool_wallet_addr.to_string(),
+                to: recipient.address.clone(),
+                amount_zion: recipient.amount as u128,
+                fee_zion: 0,
+                nonce,
+            };
+            match submit_account_transaction(node_rpc_addr, &tx) {
+                Ok(submitted_tx_id) => {
+                    if first_tx_id.is_empty() {
+                        first_tx_id = submitted_tx_id;
+                    }
+                }
+                Err(err) => {
+                    return Err(anyhow!(
+                        "account fee payout failed for {}: {}. executed={}/{}",
+                        recipient.address, err,
+                        i, recipients.len(),
+                    ));
+                }
+            }
+        }
+
+        println!(
+            "fee_payout_account_model height={} recipients={} wallet={} tx_id={}",
+            height, recipients.len(), pool_wallet_addr, first_tx_id,
+        );
+
+        return Ok(first_tx_id);
     }
 
     let fee = zion_core::fee::minimum_fee_for_size(zion_core::fee::estimate_tx_size(
