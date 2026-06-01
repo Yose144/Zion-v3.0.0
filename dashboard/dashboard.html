@@ -273,6 +273,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         <button onclick="switchTab('launch-day')" id="tab-launch-day" class="sidebar-item">🚀 Launch Day</button>
         <button onclick="switchTab('wizard')" id="tab-wizard" class="sidebar-item">🧙 Wizard</button>
         <button onclick="switchTab('hiran')" id="tab-hiran" class="sidebar-item">🤖 Hiran AI</button>
+        <button onclick="switchTab('payout')" id="tab-payout" class="sidebar-item">💰 Payout</button>
         <button onclick="switchTab('genesis')" id="tab-genesis" class="sidebar-item">⚡ Genesis</button>
         <button onclick="switchTab('blockers')" id="tab-blockers" class="sidebar-item">🚧 Blockers</button>
       </div>
@@ -3211,6 +3212,85 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
   </div>
 </div>
 
+  <!-- ═════════ TAB: Payout ═════════ -->
+  <div id="pane-payout" class="hidden space-y-4">
+    <div class="zion-panel p-6">
+      <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
+        <h2 class="text-xl font-bold flex items-center gap-2"><span class="text-gradient">💰 Pool Payout System</span></h2>
+        <button onclick="refreshPayout()" class="zion-button-secondary text-xs">🔄 Refresh</button>
+      </div>
+      <p class="text-sm text-gray-400 mb-4">Live payout status, fee split recipients, and recent transaction logs.</p>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div class="zion-panel-soft p-4">
+          <div class="text-xs text-gray-400 uppercase tracking-wider mb-1">Pool Wallet</div>
+          <div class="text-sm font-mono text-amber-400 truncate" id="payout-tab-wallet">—</div>
+          <div class="text-xs text-gray-500 mt-1" id="payout-tab-balance">Balance: —</div>
+        </div>
+        <div class="zion-panel-soft p-4">
+          <div class="text-xs text-gray-400 uppercase tracking-wider mb-1">Payout Status</div>
+          <div class="text-lg font-bold text-emerald-400" id="payout-tab-status">—</div>
+          <div class="text-xs text-gray-500 mt-1" id="payout-tab-fee-split">Fee split: —</div>
+        </div>
+        <div class="zion-panel-soft p-4">
+          <div class="text-xs text-gray-400 uppercase tracking-wider mb-1">Blocks Found</div>
+          <div class="text-2xl font-bold text-amber-400" id="payout-tab-blocks">—</div>
+          <div class="text-xs text-gray-500 mt-1" id="payout-tab-last-block">Last: —</div>
+        </div>
+        <div class="zion-panel-soft p-4">
+          <div class="text-xs text-gray-400 uppercase tracking-wider mb-1">Last Payout</div>
+          <div class="text-sm font-bold text-emerald-400" id="payout-tab-last">—</div>
+          <div class="text-xs text-gray-500 mt-1 truncate" id="payout-tab-last-tx">TX: —</div>
+        </div>
+      </div>
+
+      <h3 class="text-sm font-bold text-gray-300 mb-3">📋 Fee Split Recipients (89/5/5/1)</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+        <div class="zion-panel-soft p-3">
+          <div class="text-xs text-gray-400 mb-1">⛏️ Miner Share (89%)</div>
+          <div class="text-sm font-mono text-amber-400 truncate" id="payout-tab-miner-wallet">—</div>
+          <div class="text-xs text-gray-500 mt-1">PPLNS redistribution</div>
+        </div>
+        <div class="zion-panel-soft p-3">
+          <div class="text-xs text-gray-400 mb-1">🌍 Humanitarian (5%)</div>
+          <div class="text-sm font-mono text-emerald-400 truncate" id="payout-tab-humanitarian-wallet">—</div>
+          <div class="text-xs text-gray-500 mt-1">Children Future Fund</div>
+        </div>
+        <div class="zion-panel-soft p-3">
+          <div class="text-xs text-gray-400 mb-1">🚀 Issobella (5%)</div>
+          <div class="text-sm font-mono text-purple-400 truncate" id="payout-tab-issobella-wallet">—</div>
+          <div class="text-xs text-gray-500 mt-1">L5/L6 Space Layer</div>
+        </div>
+        <div class="zion-panel-soft p-3">
+          <div class="text-xs text-gray-400 mb-1">⚡ Pool Fee (1%)</div>
+          <div class="text-sm font-mono text-blue-400 truncate" id="payout-tab-pool-fee-wallet">—</div>
+          <div class="text-xs text-gray-500 mt-1">Operator fee</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="zion-panel-soft p-4">
+          <h3 class="text-sm font-bold text-gray-300 mb-2">📝 Recent Miner Payouts</h3>
+          <div id="payout-tab-miner-log" class="space-y-2 text-xs text-gray-300 max-h-64 overflow-y-auto log-tail">
+            <div class="text-gray-500 italic">Loading...</div>
+          </div>
+        </div>
+        <div class="zion-panel-soft p-4">
+          <h3 class="text-sm font-bold text-gray-300 mb-2">📝 Recent Fee Payouts</h3>
+          <div id="payout-tab-fee-log" class="space-y-2 text-xs text-gray-300 max-h-64 overflow-y-auto log-tail">
+            <div class="text-gray-500 italic">Loading...</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="zion-panel-soft p-4 mt-4">
+        <h3 class="text-sm font-bold text-gray-300 mb-2">⚠️ Payout Errors (if any)</h3>
+        <div id="payout-tab-error-log" class="space-y-2 text-xs text-gray-300 max-h-48 overflow-y-auto log-tail">
+          <div class="text-gray-500 italic">No errors detected</div>
+        </div>
+      </div>
+    </div>
+  </div>
 
     </main>
   </div>
@@ -3296,6 +3376,6 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
   </div>
 </div>
 
-<script src="/dashboard.js?v=2"></script>
+<script src="/dashboard.js?v=3"></script>
 </body>
 </html>

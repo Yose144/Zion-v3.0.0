@@ -970,8 +970,13 @@ def parse_pool_log() -> dict:
             status["shares_accepted"] += 1
         if m := re.search(r'share_status=Rejected', line):
             status["shares_rejected"] += 1
-        if m := re.search(r'session_start.*active_sessions=(\d+)', line):
-            status["active_sessions"] = int(m.group(1))
+        # Pool server v3 logs session activity via iteration/wire_submit lines
+        # (not session_start). Parse miner references to count active sessions.
+        for pattern in (r'iteration=\d+\s+miner=(\S+)', r'valid_share\s+miner=(\S+)', r'"miner_id":"([^"]+)"', r'"worker_name":"([^"]+)"'):
+            if m := re.search(pattern, line):
+                miner_name = m.group(1)
+                if miner_name and miner_name != "null":
+                    status["active_sessions"] = max(status["active_sessions"], 1)
         if any(k in line for k in ("payout_submitted", "payout_submit_failed", "pplns_rollback", "fee_payout_submitted")):
             status["recent_payouts"].append(line[:200])
     status["recent_payouts"] = status["recent_payouts"][-5:]
