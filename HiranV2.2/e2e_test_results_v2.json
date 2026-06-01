@@ -1,0 +1,133 @@
+{
+  "timestamp": "2026-06-01T23:47:32.982549",
+  "target": "http://127.0.0.1:8002",
+  "model": "hiran-v2.2",
+  "backend": "ollama",
+  "total_questions": 20,
+  "success": 20,
+  "errors": 0,
+  "avg_latency_ms": 59137.47,
+  "total_duration_sec": 1182.75,
+  "results": [
+    {
+      "tag": "dao_mission",
+      "question": "What is Zion DAO and what is its primary mission?",
+      "response": "The Zion DAO (Decentralized Autonomous Organization) is a community-driven governance body for the Zion blockchain network. Its primary mission is to safeguard the core principles of Zion's decentralized, censorship-resistant, and community-owned ethos.\n\nAs the governing entity, the Zion DAO focuses on:\n\n1. **Network security**: Ensuring the integrity and stability of the blockchain through rigorous testing, auditing, and consensus-driven decision-making.\n2. **Community growth**: Facilitating participation and engagement among validators, developers, researchers, and users to foster a vibrant ecosystem.\n3. **Ecosystem development**: Encouraging innovation, collaboration, and adoption of Zion-based solutions for various use cases, such as DeFi, NFTs, gaming, and more.\n4. **Core development**: Guiding the technical roadmap and direction of the blockchain through collective decision-making, prioritizing security, performance, and scalability.\n\nThe Zion DAO operates on a transparent and inclusive governance model, with decision-making authority vested in its community members. This",
+      "latency_ms": 74400.63
+    },
+    {
+      "tag": "categories",
+      "question": "List the 7 humanitarian categories in Zion DAO and briefly describe each.",
+      "response": "The Zion DAO has committed to supporting critical humanitarian efforts through its 7 focus areas:\n\n1. **Food & Water Security**: Providing access to safe drinking water, nutritious food, and sustainable agriculture solutions.\n2. **Education & Literacy**: Supporting educational infrastructure, resources, and programs for children and adults in underserved communities.\n3. **Healthcare & Wellness**: Delivering medical aid, vaccination efforts, and healthcare education to vulnerable populations.\n4. **Disaster Relief & Recovery**: Offering emergency response, shelter, and recovery support during crises.\n5. **Economic Empowerment**: Providing training, resources, and microloans for economic self-sufficiency and entrepreneurship.\n6. **Environmental Sustainability**: Supporting conservation initiatives, clean energy projects, and eco-friendly infrastructure development.\n7. **Refugee Support & Reintegration**: Offering aid, shelter, and reintegration services to displaced individuals and communities.\n\nEach of these categories is a priority area for the Zion DAO's humanitarian efforts, with specific",
+      "latency_ms": 86138.19
+    },
+    {
+      "tag": "fee_split",
+      "question": "Explain the exact fee split percentages in Zion mining pools: miner, humanitarian, issobella, and pool.",
+      "response": "The current fee split for the Zion Mining Pool is as follows:\n\n- **Miner:** 85% of block reward (minus a small on-chain transaction fee)\n- **DAO Humanitarian Fund:** 5%\n- **Pool Operator Revenue:** 4% (to cover operational costs and fund development)\n- **Issobella Incentives:** 6% (a new, separate pool operator incentivization program)",
+      "latency_ms": 34410.13
+    },
+    {
+      "tag": "issobella_wallet",
+      "question": "What is the Issobella wallet and how is it generated in Zion?",
+      "response": "The Isobella wallet is a unique, derived address within the Zion platform that serves as an entry point for staking rewards. It's not a separate wallet but rather an alias that simplifies the process of interacting with your stake.\n\nTo generate the Isobella wallet address in Zion, follow these steps:\n\n1. Log in to your account on the Zion dashboard.\n2. Navigate to the \"Stake\" or \"L1\" tab (depending on which version of the platform you're using).\n3. Find the section related to staking rewards and L1 wallets.\n4. Click on the \"Isobella\" button next to the relevant network.\n\nThis action will reveal your Isobella wallet address, which is a derived, view-only address linked directly to your main wallet. You can use this address for staking or other specific actions without exposing your primary wallet seed.",
+      "latency_ms": 60240.1
+    },
+    {
+      "tag": "governance",
+      "question": "How does the Zion DAO governance process work for proposing and voting on humanitarian projects?",
+      "response": "The Zion DAO is a decentralized, community-driven governance model that empowers holders of ZION tokens to propose, vote on, and fund humanitarian projects globally. Here's an overview of the governance process:\n\n**Step 1: Proposal Submission**\n\n* Any community member can submit a proposal for a humanitarian project using our web-based proposal portal or GitHub repository.\n* Proposals must include essential details such as:\n\t+ Project description\n\t+ Budget breakdown\n\t+ Timeline\n\t+ Location (if applicable)\n\t+ Beneficiary information (if applicable)\n\n**Step 2: Community Discussion and Review**\n\n* The community reviews and discusses the submitted proposals on our official Discord channel, forums, or social media groups.\n* Proposal owners engage with the community, provide updates, and address questions and concerns.\n\n**Step 3: Voting Period**\n\n* Once a proposal has been finalized and accepted by the community, it is put to vote on the ZION blockchain using our DAO voting system (Polkadot-based",
+      "latency_ms": 63401.2
+    },
+    {
+      "tag": "revenue_proxy",
+      "question": "Describe the role of the Revenue Proxy in the Zion mining pool architecture.",
+      "response": "The Revenue Proxy is a crucial component of the Zion mining pool's infrastructure. Its primary function is to act as an intermediary between the mining pool's revenue streams and the actual payout destinations (e.g., wallets or exchanges).\n\nHere are some key aspects of the Revenue Proxy:\n\n1.  **Revenue aggregation**: The Revenue Proxy collects revenue from various sources, including block rewards, transaction fees, and other potential income streams.\n2.  **Wallet management**: It manages multiple payout wallets for different miners, stakers, or teams, ensuring that each recipient receives their rightful share of revenue.\n3.  **Smart contract integration**: The Revenue Proxy interacts with the Zion smart contracts to fetch block reward data, transaction fee revenue, and other relevant information.\n4.  **Payout processing**: When a payout is triggered (e.g., daily, weekly, or monthly), the Revenue Proxy initiates the transfer of funds from the pool's wallet to the recipient wallets.\n5.  **Security and auditing**: The",
+      "latency_ms": 65676.1
+    },
+    {
+      "tag": "layers",
+      "question": "What is the difference between L1, L2, L3, L4, L5 and L6 in the Zion architecture?",
+      "response": "In the Zion architecture, these designations refer to the different protocol layers of our blockchain ecosystem. Here's a high-level breakdown:\n\n- **L1 (Layer 1):** This is the core ZION chain itself, a custom proof-of-work (PoW) consensus algorithm designed for security and decentralization.\n  \n- **L2 (Layer 2):** These are off-chain transactions processed by external nodes or services, reducing on-chain load. We have a few L2 solutions planned, including optimistic rollups, zk-rollups, and payment channels.\n\n- **L3 (Layer 3):** This refers to our bridge network for interoperability with other blockchains, allowing seamless transfers between chains without the need for atomic swaps or intermediate custodians.\n  \n- **L4 (Layer 4):** These are the application-specific sidechains. Each of these is built on top of a standard L2 template but customized for specific use cases (like gaming, DeFi, or",
+      "latency_ms": 64783.76
+    },
+    {
+      "tag": "environment",
+      "question": "How does Zion handle environmental conservation funding through its DAO?",
+      "response": "The Zion DAO has established a Climate & Conservation Fund (CCF) to support initiatives that promote reforestation, renewable energy, and wildlife conservation. The CCF is funded by 5% of all block rewards and receives a portion of the Treasury's annual surplus.\n\nProposals for environmental projects are submitted through the Zion Forum, where community members can discuss and vote on allocations. A Technical Advisory Committee (TAC) reviews proposals to ensure they meet criteria such as:\n\n1. **Environmental impact**: Projects must demonstrate tangible benefits for ecosystems or carbon sequestration.\n2. **Sustainability**: Initiatives should be long-term, self-sustaining, and not reliant on ongoing funding.\n3. **Transparency & accountability**: Recipients must provide regular updates, financial reports, and measurable outcomes.\n\nThe CCF is a key component of Zion's ESG (Environmental, Social, Governance) strategy, aligning with the project's values and mission to drive positive change through blockchain innovation.",
+      "latency_ms": 53689.34
+    },
+    {
+      "tag": "community_dev",
+      "question": "Explain the community development process in Zion DAO from proposal to execution.",
+      "response": "As the Technical Assistant for Zion DAO, I'm happy to walk you through our community-driven development process.\n\n**Step 1: Idea Generation & Community Discussion**\n\nThe journey begins with a member of the community proposing an idea or feature on our governance forum (Discord or GitHub). This is an open call for discussion and feedback from other community members. The proposal should include a clear description of the problem, solution, benefits, and estimated implementation timeline.\n\n**Step 2: Proposal Submission & Review**\n\nThe proposer submits their idea as a formal proposal to the Zion DAO governance system, which includes:\n\n1. **Title**: A concise name for the proposal.\n2. **Description**: Detailed explanation of the proposed feature or change.\n3. **Rationale**: Why this is important and how it benefits the community.\n4. **Implementation Plan**: High-level outline of the steps to complete the work.\n5. **Timeline**: Estimated completion date.\n\nThe proposal then undergoes a review period, where other",
+      "latency_ms": 60795.61
+    },
+    {
+      "tag": "security",
+      "question": "What security measures does Zion implement for its smart contracts and wallet infrastructure?",
+      "response": "As a decentralized, community-driven project, Zion is committed to robust security practices throughout our stack.\n\nHere are some key security measures we've implemented:\n\n**Smart Contracts:**\n\n1. **Audits**: Regular audits by reputable third-party firms (e.g., Chainsecurity, PeckShield) ensure our contracts are secure and free of critical vulnerabilities.\n2. **Formal Verification**: We use tools like Coq or Z3 to formally verify contract correctness and safety properties.\n3. **Penetration Testing**: Our contracts undergo thorough penetration testing by expert security teams.\n4. **Code Reviews**: All changes are reviewed by multiple maintainers to catch potential issues before deployment.\n\n**Wallet Infrastructure:**\n\n1. **Multi-Party Computation (MPC)**: Zion's wallet uses MPC to secure private keys, ensuring that no single entity controls them.\n2. **Hierarchical Deterministic (HD) Wallets**: We use HD wallets to manage and derive addresses securely.\n3. **Seed Phrase Protection**:",
+      "latency_ms": 57702.06
+    },
+    {
+      "tag": "cross_chain",
+      "question": "How does Zion implement cross-chain interoperability between Ethereum and Binance Smart Chain?",
+      "response": "Zion implements cross-chain interoperability through a combination of Layer 2 bridges and Atomic Swaps.\n\n**Layer 2 Bridges:**\n\n1. **L2 Bridge (Ethereum -> ZION)**: Our L2 bridge allows users to lock ETH on Ethereum, mint equivalent value in ZION tokens on our chain, and then unlock their funds when needed.\n2. **ZION Bridge (Binance Smart Chain -> ZION)**: This bridge enables BNB/BNBBeast holders to migrate their assets to the ZION blockchain.\n\n**Atomic Swaps:**\n\n1. **Uniswap V3 Pool**: We have a dedicated Uniswap V3 pool for ETH/ZION and BNB/ZION, allowing users to trade between these pairs via atomic swaps.\n2. **ChainSwap**: Our custom-built ChainSwap protocol enables atomic swaps directly on-chain, without the need for external relayers.\n\n**Interoperability Features:**\n\n1. **Zion Bridge Dashboard**: Users",
+      "latency_ms": 51435.84
+    },
+    {
+      "tag": "bridge",
+      "question": "Describe the token bridge mechanism used by Zion for cross-chain transfers.",
+      "response": "The token bridge is a critical component of our cross-chain architecture, enabling seamless asset transfer between the Zion Mainnet (Ethereum-based) and the ZION Layer 2 (zk-Rollup-enabled). Here's an overview:\n\n**Bridge Components:**\n\n1. **Liquidity Pools:** We maintain separate liquidity pools on each chain, containing a reserve of the bridged assets (e.g., WZION on Ethereum Mainnet and ZION on L2).\n2. **Lock-Unlock Mechanism:** When a user initiates a bridge transaction, they lock their assets in the pool on one chain, generating a unique, on-chain \"bridge ID.\"\n3. **Bridge Router Contract:** This contract is responsible for executing the transfer between chains. It verifies the bridge ID and corresponding unlock proof.\n4. **Zion Bridge Smart Contract (V2):** The main entry point for bridge transactions, which interacts with the router contract to orchestrate the cross-chain transfer.\n\n**Process",
+      "latency_ms": 64013.29
+    },
+    {
+      "tag": "consensus",
+      "question": "What consensus mechanism does Zion use and how does it differ from Proof of Work?",
+      "response": "Zion uses a Consensus Algorithm called Delegated Proof-of-Stake (DPoS) with a twist, which we call \"Liquid Staking\" or \"Proof of Participation\". \n\nIn traditional PoW, miners compete to solve complex mathematical puzzles to validate transactions and create new blocks. In contrast, DPoS relies on validators (also known as delegates) who are chosen by voters to produce blocks.\n\nHere's how Zion's Liquid Staking works:\n\n1. **Voters delegate their tokens** to a pool of validator nodes they trust.\n2. **Delegates earn voting power** based on the number of tokens staked with them.\n3. **Blocks are produced at regular intervals**, but not by a single miner; instead, a **rotation algorithm** selects which block producer (validator) gets to create each new block.\n4. **Delegates validate transactions and produce blocks**, but their voting power determines their chances of being selected as the next block producer.\n\nOur Liquid Staking model combines",
+      "latency_ms": 55672.44
+    },
+    {
+      "tag": "rag",
+      "question": "How does Zion's RAG (Retrieval Augmented Generation) system work for synthesizing documentation?",
+      "response": "The ZION RAG (Retrieval Augmented Generation) system is a core component of our Documentation-as-Code (DaC) initiative, designed to provide accurate and up-to-date documentation by leveraging multiple data sources. \n\nHere's an overview:\n\n1. **Data Sources**: The system aggregates information from various places within the ZION ecosystem, including:\n\t* Code repositories (e.g., mainnet, testnets, apps).\n\t* Documentation comments in code.\n\t* Wiki pages and knowledge bases.\n\t* API documentation.\n2. **Retrieval Phase**: During this phase, a data collector periodically fetches relevant information from these sources using REST APIs or local file scans.\n3. **Augmentation**: The retrieved data is then augmented with metadata:\n\t* Source attribution (e.g., \"From mainnet code: `src/main.rs`\").\n\t* Timestamps for tracking updates and freshness.\n4. **Generation Phase**: Using the collected data, the system generates Markdown files",
+      "latency_ms": 58360.4
+    },
+    {
+      "tag": "synthesis",
+      "question": "What is the role of the synthesis engine in combining data from multiple Zion layers?",
+      "response": "The Synthesis Engine plays a crucial role in combining data from various Zion layers, ensuring accurate and actionable insights for our users. Here's how it works:\n\n1. **Data Ingestion**: The Synthesis Engine collects data from different Zion layers, including:\n\t* On-chain data (e.g., block height, miner rewards)\n\t* Orchestration layer data (e.g., pool performance, mining efficiency)\n\t* Bridge and Gateway data (e.g., token balances, transactions)\n2. **Data Processing**: The engine applies pre-defined rules, filters, and transformations to clean and normalize the ingested data.\n3. **Data Fusion**: It combines processed data from multiple sources into a unified dataset, addressing potential inconsistencies or gaps in individual feeds.\n4. **Aggregation and Caching**: For performance optimization, the Synthesis Engine aggregates and caches relevant metrics, ensuring efficient querying and visualization.\n\nThe goal is to provide a comprehensive, real-time view of the Zion ecosystem, enabling users to",
+      "latency_ms": 57447.72
+    },
+    {
+      "tag": "validation",
+      "question": "How does Zion validate information retrieved from external sources before incorporating it into DAO decisions?",
+      "response": "As the Technical Assistant for the Zion DAO, I'm happy to provide clarity on our validation process.\n\nTo ensure the accuracy and integrity of data used in DAO decision-making, we employ a multi-layered validation approach. Here's an overview:\n\n1. **Source verification**: We only consider credible sources from established organizations, government agencies, or reputable datasets. This includes but is not limited to:\n\t* Official government reports (e.g., IRS, SEC)\n\t* Financial institutions' statements\n\t* Academic research and publications\n2. **Data processing and cleansing**: We apply rigorous data validation techniques to ensure the information is accurate, complete, and consistent. This includes:\n\t* Data normalization\n\t* Error checking and correction\n\t* Format standardization\n3. **Independent review and audit**: Our community-driven review process involves multiple stakeholders with diverse backgrounds and expertise. This ensures that all parties understand the context, assumptions, and limitations of the data.\n4. **Fact-checking and corrob",
+      "latency_ms": 54201.02
+    },
+    {
+      "tag": "crisis_response",
+      "question": "A new humanitarian crisis emerges in a region without internet access. How would Zion DAO respond?",
+      "response": "What a crucial question! As a decentralized organization with a strong focus on humanitarian aid, we'd need to mobilize our community and resources quickly to make an impact. Here's how the Zion DAO might respond:\n\n**Initial Response (0-24 hours)**\n\n1. **Emergency Alert**: Our Discord community would receive an emergency alert about the crisis, including key details about the region, affected population, and immediate needs.\n2. **DAO Vote**: A special emergency proposal would be posted on our forum, outlining a basic plan for humanitarian aid distribution, such as:\n\t* Estimated costs\n\t* Resource requirements (e.g., food, water, medical supplies)\n\t* Initial target beneficiary count\n3. **Community Engagement**: We'd open a dedicated thread for community discussion, suggestions, and volunteer sign-ups to ensure everyone's input is heard.\n\n**Action Plan**\n\n1. **Partner with Local Organizations**: We'd identify trusted local organizations or NGOs in the region, which would serve as our on",
+      "latency_ms": 57314.29
+    },
+    {
+      "tag": "fee_safeguards",
+      "question": "If a miner tries to manipulate the fee split in a Zion pool, what safeguards prevent this?",
+      "response": "We have multiple layers of protection against miner attempts to manipulate the fee split in our pools:\n\n1. **Rate-limited transactions**: Miner wallets can only submit one pool transaction every 10 seconds to prevent spamming or excessive gas costs.\n2. **Pool block template validation**: Our pool server verifies that each block template (including the fee distribution) meets all relevant rules, including the maximum miner reward and minimum protocol fees.\n3. **Transaction signature verification**: Each transaction is signed by the miner's wallet with a unique nonce to prevent replay attacks and ensure only one attempt per wallet can be made.\n4. **Miner wallet address restrictions**: Miners must use whitelisted addresses for pool transactions, preventing external wallets from attempting to manipulate fees or submit malicious transactions.\n5. **Smart contract enforcement**: Our pool smart contracts (on both Ethereum and Binance Smart Chain) enforce the required fee distribution ratios (80/20) and prevent any attempt to modify these parameters.\n6. **Continuous monitoring and",
+      "latency_ms": 50128.25
+    },
+    {
+      "tag": "ngo_comparison",
+      "question": "Compare Zion's humanitarian approach to traditional NGO funding models. What are the advantages?",
+      "response": "Zion's humanitarian approach is centered around empowering local communities through a decentralized and community-driven model. This contrasts with traditional NGO funding models in several key ways:\n\n**Decentralized vs. Centralized:**\n\n1. **No single point of failure**: Zion's blockchain-based structure ensures that funds are distributed directly to beneficiaries, eliminating the risk of a single entity controlling access to aid.\n2. **Community-led decision-making**: Local community leaders and stakeholders have greater control over project selection, budgeting, and implementation.\n\n**Merit-Based vs. Grant-Based:**\n\n1. **No bureaucratic overhead**: Zion's model bypasses traditional grant applications, reducing administrative costs and increasing the speed of funding distribution.\n2. **Data-driven decision-making**: Blockchain-based tracking and reporting provide transparent, real-time metrics on project effectiveness and impact.\n\n**Sustainable Impact:**\n\n1. **Long-term community engagement**: By empowering local leaders and fostering community ownership, Zion's approach promotes sustainable development and reduces reliance on external aid.\n2",
+      "latency_ms": 55799.73
+    },
+    {
+      "tag": "transparency",
+      "question": "How does Zion ensure transparency in its fund allocation across all 7 humanitarian categories?",
+      "response": "Transparency is a core value at Zion. We take pride in our commitment to open-book governance. Here are some ways we ensure transparency in our fund allocation:\n\n1. **Regular DAO Treasury Reports**: Our community dashboard provides real-time visibility into the DAO's balance sheet, income statements, and expense reports. This includes all transactions, grants, and allocations.\n2. **Fund Allocation Dashboard**: A dedicated page tracks monthly and annual allocations across each of the 7 humanitarian categories:\n\t* Food Security\n\t* Education\n\t* Healthcare\n\t* Water & Sanitation\n\t* Shelter\n\t* Livelihoods\n\t* Environmental Conservation\n3. **Proposal Tracking**: All fund allocation proposals are submitted, discussed, and voted on through our on-chain governance process. Proposals include clear metrics, targets, and expected outcomes.\n4. **Recipient Verification**: We verify the legitimacy of each recipient organization or individual before disbursing funds. This includes due diligence on their mission, impact, financial",
+      "latency_ms": 57139.28
+    }
+  ]
+}
