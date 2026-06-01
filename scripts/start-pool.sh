@@ -24,4 +24,5 @@ if [[ ! -x "$POOL_EXE" ]]; then
 fi
 
 nohup "$POOL_EXE" > "$LOG_DIR/pool.log" 2> "$LOG_DIR/pool.err" &
+echo $! > "$LOG_DIR/pool.pid"
 echo "Started Pool   PID=$!"
