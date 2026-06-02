@@ -2545,6 +2545,7 @@ fn build_miners_payload(
             serde_json::json!({
                 "address": miner_id,
                 "worker_name": miner.worker_name,
+                "payout_address": pplns_engine.address_for(miner_id).unwrap_or(""),
                 "last_share": miner.last_share_time_s,
                 "last_seen": miner.last_seen_s,
                 "hashrate": miner.hashrate_for_window(HASHRATE_WINDOW_LIVE_S, now_s),
