@@ -448,6 +448,23 @@ async function refreshPayout(){
       }
     }
 
+    // Live pool stats
+    const ps = data.pool_stats || {};
+    if (ps.hashrate && ps.hashrate.pool != null) {
+      set('pool-stat-hashrate', ps.hashrate.pool.toFixed(2));
+    } else if (data.miner_perf && data.miner_perf.hashrate != null) {
+      set('pool-stat-hashrate', data.miner_perf.hashrate.toFixed(2));
+    }
+    if (ps.miners) {
+      set('pool-stat-miners', ps.miners.active ?? '—');
+    }
+    if (ps.routing && ps.routing.accept_rate_pct != null) {
+      set('pool-stat-accept-rate', ps.routing.accept_rate_pct.toFixed(1));
+    }
+    if (ps.pplns) {
+      set('pool-stat-pplns', ps.pplns.window_used + '/' + ps.pplns.window_size);
+    }
+
     // Miner performance
     if (data.miner_perf) {
       set('miner-perf-hashrate', data.miner_perf.hashrate != null ? data.miner_perf.hashrate.toFixed(2) : '—');
