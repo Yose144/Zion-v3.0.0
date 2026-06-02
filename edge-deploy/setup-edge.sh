@@ -1,14 +1,33 @@
 #!/usr/bin/env bash
-# ZION Edge Server — One-Time Setup (run directly on Edge server as root)
-# Sets up systemd services so Edge runs autonomously 24/7.
+# ZION Edge Server — Multi-Node Setup (run directly on Edge server as root)
+# Sets up systemd services so Edge runs autonomously 24/7 with:
+#   - 2 P2P nodes (primary + follower)
+#   - Primary mining pool
+#   - All L2/L3 non-AI services (bridge, DAO, atomic-swap, WARP)
+#
+# Local PC runs:
+#   - Backup node (syncs from Edge)
+#   - Miners (connect to Edge pool)
+#   - AI services (Hiran + Hiranyagarbha) — requires local GPU
 
 set -euo pipefail
 
 REPO_ROOT="/root/zion-2.9.6-main"
 SERVICE_DIR="/etc/systemd/system"
-ENV_FILE="${REPO_ROOT}/edge-environment.sh"
+ENV_FILE="${REPO_ROOT}/edge-deploy/config/edge-environment.sh"
 
-echo "=== ZION Edge Primary Setup ==="
+SERVICES=(
+  zion-edge-node1
+  zion-edge-node2
+  zion-edge-pool
+  zion-edge-bridge
+  zion-edge-dao
+  zion-edge-atomic-swap
+  zion-edge-warp
+  zion-edge-watchdog
+)
+
+echo "=== ZION Edge Multi-Node Setup ==="
 echo "Date: $(date)"
 echo ""
 
@@ -24,27 +43,60 @@ if [[ ! -d "$REPO_ROOT" ]]; then
     exit 1
 fi
 
-if [[ ! -f "$REPO_ROOT/V3/target/release/node" ]]; then
-    echo "[WARN] Node binary not found. Building now..."
-    cd "$REPO_ROOT/V3" && cargo build --release --bin node
-fi
+# ── Build binaries if missing ──
+BINS=(node server zion-bridge zion-dao zion-atomic-swap zion-warp-server)
+for bin in "${BINS[@]}"; do
+    if [[ ! -f "$REPO_ROOT/V3/target/release/$bin" ]]; then
+        echo "[WARN] Binary '$bin' not found. Building now..."
+        cd "$REPO_ROOT/V3" && cargo build --release --bin "$bin"
+    fi
+done
 
-if [[ ! -f "$REPO_ROOT/V3/target/release/server" ]]; then
-    echo "[WARN] Pool binary not found. Building now..."
-    cd "$REPO_ROOT/V3" && cargo build --release --bin server
-fi
-
-# ── Create environment file from template ──
+# ── Ensure environment file exists ──
 if [[ ! -f "$ENV_FILE" ]]; then
     echo "[INFO] Creating environment file: $ENV_FILE"
-    cp "$REPO_ROOT/edge-deploy/config/edge-environment.sh" "$ENV_FILE"
+    mkdir -p "$(dirname "$ENV_FILE")"
+    cat > "$ENV_FILE" << 'ENVEOF'
+# ZION Edge Server — Common Environment
+# Updated: 2026-06-02 - Multi-node Edge topology (2 nodes + pool + all non-AI services)
+
+# ── Canonical Fee Split Addresses (89/5/5/0 burn model — no pool fee wallet) ──
+ZION_MINER_ADDRESS=zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3
+ZION_HUMANITARIAN_WALLET=zion1m4v5z8z850u480c5c208z274e334369275n5y20
+ZION_ISSOBELLA_WALLET=zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702
+
+# ── Pool Configuration (PRIMARY — accepts all miners) ──
+ZION_POOL_BIND=0.0.0.0:8444
+ZION_NODE_RPC_ADDR=127.0.0.1:8443
+ZION_POOL_LOOP_COUNT=1000000
+ZION_MAX_SESSIONS_PER_IP=10
+ZION_NONCE_COUNT=4096
+ZION_VARDIFF_START_DIFF=1
+ZION_VARDIFF_MAX_DIFF=10000
+ZION_PPLNS_WINDOW_SIZE=500000
+ZION_ROUTING_METRICS_BIND=0.0.0.0:8455
+
+# Pool wallet (Edge primary — handles all payouts)
+ZION_POOL_WALLET=zion1a6z5a4m830w6s6k7r508n300n6z30022q6qt0n7
+ZION_POOL_PAYOUT_SK_HEX=[REDACTED — pool SK removed for security]
+ENVEOF
     echo "[WARN] Review $ENV_FILE — especially ZION_POOL_PAYOUT_SK_HEX!"
 fi
 
+# ── Create data directories ──
+mkdir -p "$REPO_ROOT/data"
+
 # ── Install systemd services ──
 echo "[INFO] Installing systemd services..."
-cp "$REPO_ROOT/edge-deploy/systemd/zion-edge-node.service" "$SERVICE_DIR/"
-cp "$REPO_ROOT/edge-deploy/systemd/zion-edge-pool.service" "$SERVICE_DIR/"
+for svc in "${SERVICES[@]}"; do
+    src="$REPO_ROOT/edge-deploy/systemd/${svc}.service"
+    if [[ -f "$src" ]]; then
+        cp "$src" "$SERVICE_DIR/"
+        echo "  + ${svc}.service"
+    else
+        echo "  - ${svc}.service (missing, skipped)"
+    fi
+done
 
 # ── Reload systemd ──
 echo "[INFO] Reloading systemd daemon..."
@@ -52,8 +104,9 @@ systemctl daemon-reload
 
 # ── Enable auto-start on boot ──
 echo "[INFO] Enabling auto-start on boot..."
-systemctl enable zion-edge-node.service
-systemctl enable zion-edge-pool.service
+for svc in "${SERVICES[@]}"; do
+    systemctl enable "${svc}.service" 2>/dev/null || echo "  ! ${svc}.service (not found)"
+done
 
 # ── (Optional) Logrotate for journal ──
 if [[ ! -f "/etc/logrotate.d/zion-edge" ]]; then
@@ -75,19 +128,20 @@ fi
 echo ""
 echo "=== Setup Complete ==="
 echo "Services installed:"
-echo "  zion-edge-node.service  — primary chain node"
-echo "  zion-edge-pool.service  — primary mining pool"
+for svc in "${SERVICES[@]}"; do
+    echo "  ${svc}.service"
+done
 echo ""
 echo "To START now:"
-echo "  systemctl start zion-edge-node zion-edge-pool"
+echo "  systemctl start zion-edge-node1 zion-edge-node2 zion-edge-pool"
+echo "  systemctl start zion-edge-bridge zion-edge-dao zion-edge-atomic-swap zion-edge-warp"
 echo ""
 echo "To CHECK status:"
-echo "  systemctl status zion-edge-node zion-edge-pool"
-echo "  journalctl -u zion-edge-node -f"
-echo "  journalctl -u zion-edge-pool -f"
+echo "  systemctl status zion-edge-node1 zion-edge-node2 zion-edge-pool"
+echo "  journalctl -u zion-edge-node1 -f"
 echo ""
 echo "To STOP:"
-echo "  systemctl stop zion-edge-pool zion-edge-node"
+echo "  systemctl stop zion-edge-pool zion-edge-node2 zion-edge-node1"
 echo ""
 echo "Logs: /var/log/journal/ (journalctl)"
 echo "Data: ${REPO_ROOT}/data/"

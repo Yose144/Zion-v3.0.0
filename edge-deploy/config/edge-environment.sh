@@ -1,22 +1,27 @@
-# ZION Edge Server Environment Configuration
-# Updated: 2026-06-02 - Edge-as-Primary topology, burn model (89/5/5/0)
+# ZION Edge Server — Common Environment
+# Updated: 2026-06-02 - Multi-node Edge topology (2 nodes + pool + all non-AI services)
 #
-# This is the PRIMARY node + pool. Runs 24/7 on Hetzner VPS.
-# Local PC (Core) connects to this as seed peer and runs backup node + miners.
+# This file contains SHARED environment variables for ALL Edge services.
+# Service-specific overrides (node ID, bind ports, state paths) are set
+# in each systemd service via Environment= directives.
+#
+# Edge runs:
+#   - Node 1 (Primary / Genesis) — P2P 8333, RPC 8443 (localhost)
+#   - Node 2 (Follower / P2P peer) — P2P 8334, RPC 8446 (localhost)
+#   - Pool (Primary) — connects to Node 1 RPC, Stratum 8444 public
+#   - Bridge, DAO, Atomic-Swap, WARP — all connect to Node 1 RPC
+#
+# Local PC (Core) runs:
+#   - Backup Node — syncs from Edge Node 1 via Tailscale
+#   - Miners — connect to Edge Pool via Tailscale
+#   - AI services (Hiran + Hiranyagarbha) — local GPU required
 
-# Node Configuration
-ZION_NODE_ID=zion-edge-primary
-ZION_P2P_BIND=0.0.0.0:8333
-ZION_RPC_BIND=127.0.0.1:8443
-ZION_SEED_PEERS=none
-ZION_NODE_STATE_PATH=/root/zion-2.9.6-main/data/edge-state.db
-
-# Canonical Fee Split Addresses (89/5/5/0 burn model — no pool fee wallet)
+# ── Canonical Fee Split Addresses (89/5/5/0 burn model — no pool fee wallet) ──
 ZION_MINER_ADDRESS=zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3
 ZION_HUMANITARIAN_WALLET=zion1m4v5z8z850u480c5c208z274e334369275n5y20
 ZION_ISSOBELLA_WALLET=zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702
 
-# Pool Configuration (PRIMARY — accepts all miners)
+# ── Pool Configuration (PRIMARY — accepts all miners) ──
 ZION_POOL_BIND=0.0.0.0:8444
 ZION_NODE_RPC_ADDR=127.0.0.1:8443
 ZION_POOL_LOOP_COUNT=1000000
@@ -25,6 +30,7 @@ ZION_NONCE_COUNT=4096
 ZION_VARDIFF_START_DIFF=1
 ZION_VARDIFF_MAX_DIFF=10000
 ZION_PPLNS_WINDOW_SIZE=500000
+ZION_ROUTING_METRICS_BIND=0.0.0.0:8455
 
 # Pool wallet (Edge primary — handles all payouts)
 ZION_POOL_WALLET=zion1a6z5a4m830w6s6k7r508n300n6z30022q6qt0n7
