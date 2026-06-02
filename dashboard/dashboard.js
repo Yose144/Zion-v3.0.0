@@ -1837,14 +1837,19 @@ async function controlAction(action){
       return;
     }
     res = await fetch('/api/control', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action }) }).then(r => r.json());
-    const msg = res.ok ? '<div class="text-emerald-400">[' + ts + '] ✓ ' + action + ' started (PID ' + res.pid + ')</div>' : '<div class="text-red-400">[' + ts + '] ✗ ' + (res.error || 'failed') + '</div>';
+    const stopActions = ['stop-all','stop-stack','stop-node1','stop-node2','stop-pool','stop-miner','stop-miner-cpu','stop-miner-gpu'];
+    const isStop = stopActions.includes(action);
+    const msg = res.ok ? '<div class="text-emerald-400">[' + ts + '] ✓ ' + action + (isStop ? ' executed' : ' started') + (res.pid ? ' (PID ' + res.pid + ')' : '') + '</div>' : '<div class="text-red-400">[' + ts + '] ✗ ' + (res.error || 'failed') + '</div>';
     if(log) log.insertAdjacentHTML('afterbegin', msg);
-    toast(res.ok ? ('▶ ' + action + ' dispatched' + note) : ('Failed: ' + (res.error || action)), res.ok ? 'success' : 'error');
+    toast(res.ok ? ((isStop ? '⏹ ' : '▶ ') + action + (isStop ? ' executed' : ' dispatched') + note) : ('Failed: ' + (res.error || action)), res.ok ? 'success' : 'error');
     if(action === 'install-deps' && res.ok){
       startInstallLogPolling();
     }
     if(res.ok && launchActions.includes(action)){
       setTimeout(() => { toast('Services should be live. Check Overview tab.', 'success'); refreshAll(); }, 12000);
+    }
+    if(res.ok && isStop){
+      setTimeout(() => { toast('Services stopped. Refreshing status...', 'info'); refreshAll(); }, 3000);
     }
   } catch(e) {
     if(log) log.insertAdjacentHTML('afterbegin', '<div class="text-red-400">[' + ts + '] ✗ ' + e.message + '</div>');
