@@ -424,16 +424,23 @@ async function refreshPayout(){
       set('payout-breakdown-pool-amount', _zionFmt(s.pool || 0) + ' Z');
     }
 
-    // Fee split live balances
+    // Fee split live balances (on-chain total — may include premine)
     const bals = data.balances || {};
-    if (data.miner_wallet) set('fs-bal-miner-addr', data.miner_wallet);
-    if (data.humanitarian_wallet) set('fs-bal-charity-addr', data.humanitarian_wallet);
-    if (data.issobella_wallet) set('fs-bal-dev-addr', data.issobella_wallet);
-    if (data.pool_fee_wallet) set('fs-bal-pool-addr', data.pool_fee_wallet);
+    if (data.miner_wallet) set('fs-earn-miner-addr', data.miner_wallet);
+    if (data.humanitarian_wallet) set('fs-earn-charity-addr', data.humanitarian_wallet);
+    if (data.issobella_wallet) set('fs-earn-dev-addr', data.issobella_wallet);
+    if (data.pool_fee_wallet) set('fs-earn-pool-addr', data.pool_fee_wallet);
     set('fs-bal-miner',  bals.miner ? _zionFmt(bals.miner.zion) : '—');
     set('fs-bal-charity', bals.humanitarian ? _zionFmt(bals.humanitarian.zion) : '—');
     set('fs-bal-dev',    bals.issobella ? _zionFmt(bals.issobella.zion) : '—');
     set('fs-bal-pool',   bals.pool_fee ? _zionFmt(bals.pool_fee.zion) : '—');
+
+    // Fee split earnings (estimated from blocks_found × subsidy × pct)
+    const earn = data.fee_split_earnings || {};
+    set('fs-earn-miner',  earn.miner != null ? _zionFmt(earn.miner) : '—');
+    set('fs-earn-charity', earn.humanitarian != null ? _zionFmt(earn.humanitarian) : '—');
+    set('fs-earn-dev',    earn.issobella != null ? _zionFmt(earn.issobella) : '—');
+    set('fs-earn-pool',   earn.pool_fee != null ? _zionFmt(earn.pool_fee) : '—');
 
     // Structured payout history table
     const histTable = document.getElementById('payout-history-table');
