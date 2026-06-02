@@ -32,7 +32,7 @@ export ZION_SEED_PEERS='none'
 # Pool payout wallet receives the 89% miner share so PPLNS can redistribute.
 # Coinbase mints 89/5/5 (miner/humanitarian/issobella); the 1% pool fee is
 # BURNED (never minted), so no ZION_POOL_FEE_WALLET is configured.
-export ZION_MINER_ADDRESS='zion182e2v4x4r3u2j5r5t305k0d5y643q6l3n6je5f8'
+export ZION_MINER_ADDRESS='zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3'
 export ZION_HUMANITARIAN_WALLET='zion1m4v5z8z850u480c5c208z274e334369275n5y20'
 export ZION_ISSOBELLA_WALLET='zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702'
 

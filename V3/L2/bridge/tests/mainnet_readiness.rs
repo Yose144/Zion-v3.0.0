@@ -192,8 +192,10 @@ fn base_mainnet_chain() -> EvmChainConfig {
         evm_chain_id: 8453,
         rpc_url: Some("wss://base-mainnet.publicnode.com".into()),
         rpc_url_backup: Some("wss://base.llamarpc.com".into()),
-        wzion_address: "0x0000000000000000000000000000000000000000".into(), // TODO: deploy
-        bridge_contract_address: "0x0000000000000000000000000000000000000000".into(), // TODO: deploy
+        // Placeholder — update after T1 bridge deploy via:
+        //   ./scripts/deploy-bridge-base.sh base
+        wzion_address: "0x0000000000000000000000000000000000000000".into(),
+        bridge_contract_address: "0x0000000000000000000000000000000000000000".into(),
         finality_blocks: 12, // Base mainnet: 12 blocks ≈ 24s
         enabled: false,      // NOT enabled until contracts deployed
         gas_strategy: "eip1559".into(),
