@@ -83,7 +83,7 @@ fi
 # -- Backend 3: Ollama (local ROCm build) --------------------------------------
 OLLAMA_URL="http://${OLLAMA_HOST#http://}"
 OLLAMA_URL="${OLLAMA_URL#https://}"
-HIRAN_MODEL="hiran-v2.2-fast-4k"
+HIRAN_MODEL="hiran-v2.2-fast-safe"
 HIRAN_FALLBACK="hiran-v2.2-fast"
 if [[ -z "$MODEL_PATH" ]]; then
     if curl -fsS --max-time 2 "${OLLAMA_URL}/api/tags" >/dev/null 2>&1; then
