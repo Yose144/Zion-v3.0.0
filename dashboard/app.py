@@ -2656,18 +2656,20 @@ def get_pool_wallet_status() -> dict:
 
 def fetch_pool_stats() -> dict:
     """Fetch live pool stats from routing metrics endpoint (port 8455)."""
+    host = "100.76.16.108" if TOPOLOGY == "edge-primary" else "127.0.0.1"
     try:
         import urllib.request
-        with urllib.request.urlopen("http://127.0.0.1:8455/stats", timeout=2) as r:
+        with urllib.request.urlopen(f"http://{host}:8455/stats", timeout=3) as r:
             return json.loads(r.read().decode())
     except Exception:
         return {}
 
 def fetch_pool_miners() -> list:
     """Fetch active miners from routing metrics endpoint (port 8455)."""
+    host = "100.76.16.108" if TOPOLOGY == "edge-primary" else "127.0.0.1"
     try:
         import urllib.request
-        with urllib.request.urlopen("http://127.0.0.1:8455/miners?limit=50", timeout=2) as r:
+        with urllib.request.urlopen(f"http://{host}:8455/miners?limit=50", timeout=3) as r:
             data = json.loads(r.read().decode())
             return data.get("miners", [])
     except Exception:
@@ -2857,6 +2859,23 @@ def build_payout_status() -> dict:
     # Fetch pool stats and miners
     status["pool_stats"] = fetch_pool_stats()
     status["miners"] = fetch_pool_miners()
+    # JS compatibility: map pool miners to expected miner_stats format
+    miner_stats = []
+    for m in status["miners"]:
+        miner_stats.append({
+            "address": m.get("address", "—"),
+            "worker_name": m.get("worker_name", "—"),
+            "valid_shares": m.get("valid_shares", 0),
+            "hashrate": m.get("hashrate", 0),
+            "hashrate_1h": m.get("hashrate_1h", 0),
+            "total_paid": m.get("total_paid", 0),
+            "on_chain_balance_zion": m.get("on_chain_balance_zion"),
+            "pending_balance": m.get("pending_balance", 0),
+            "blocks_found": m.get("blocks_found", 0),
+        })
+    status["miner_stats"] = miner_stats
+    # JS compatibility: alias for payout detail table
+    status["miner_payouts_detail"] = status["miner_payouts"]
     return status
 
 # ── AI services status (Hiran + Hiranyagarbha) ───────────────────────────
