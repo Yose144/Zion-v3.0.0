@@ -352,6 +352,21 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         </div>
       </div>
 
+      <div id="card-edge-node" class="zion-panel zion-panel-hover svc-card p-5 hidden">
+        <div class="flex items-center justify-between mb-3 relative z-10">
+          <span class="zion-kicker">🌍 Edge Node (Primary)</span>
+          <span id="badge-edge-node" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white/5 text-gray-400">?</span>
+        </div>
+        <div class="text-4xl font-bold mb-1 text-gradient relative z-10" id="val-edge-node-height">—</div>
+        <div class="text-xs text-gray-400 mb-3 relative z-10">Chain Height</div>
+        <div class="text-xs font-mono text-gray-300 truncate mb-1 relative z-10" id="val-edge-node-hash">—</div>
+        <div class="text-xs text-gray-400 mb-1 relative z-10">Peers: <span id="val-edge-node-peers" class="text-white font-semibold">—</span></div>
+        <div class="text-xs text-gray-400 mb-1 relative z-10">Host: <span id="val-edge-node-host" class="font-mono">100.76.16.108</span></div>
+        <div class="flex gap-1.5 relative z-10">
+          <button onclick="window.open('http://100.76.16.108:8443/jsonrpc','_blank')" class="flex-1 text-[10px] px-2.5 py-1 bg-zinc-700/50 hover:bg-zinc-600 rounded-md font-semibold transition">🔗 RPC</button>
+        </div>
+      </div>
+
       <div id="card-node2" class="zion-panel zion-panel-hover svc-card p-5">
         <div class="flex items-center justify-between mb-3 relative z-10">
           <span class="zion-kicker">🔶 Node 2</span>
