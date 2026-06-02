@@ -6,7 +6,9 @@ New-Item -ItemType Directory -Path $logDir -Force | Out-Null
 [Environment]::SetEnvironmentVariable('ZION_NODE_RPC_ADDR', '127.0.0.1:8443', 'Process')
 [Environment]::SetEnvironmentVariable('ZION_POOL_LOOP_COUNT', '1000000', 'Process')
 [Environment]::SetEnvironmentVariable('ZION_MAX_SESSIONS_PER_IP', '100', 'Process')
-[Environment]::SetEnvironmentVariable('ZION_POOL_WALLET', 'zion182e2v4x4r3u2j5r5t305k0d5y643q6l3n6je5f8', 'Process')
+# WARNING: ZION_POOL_WALLET and ZION_POOL_PAYOUT_SK_HEX must be a matched pair.
+# The SK_HEX below corresponds to the OLD pool wallet. Update both together.
+[Environment]::SetEnvironmentVariable('ZION_POOL_WALLET', 'zion1a6z5a4m830w6s6k7r508n300n6z30022q6qt0n7', 'Process')
 [Environment]::SetEnvironmentVariable('ZION_POOL_PAYOUT_SK_HEX', '[REDACTED — pool SK removed for security]', 'Process')
 [Environment]::SetEnvironmentVariable('ZION_NONCE_COUNT', '4096', 'Process')
 [Environment]::SetEnvironmentVariable('ZION_VARDIFF_START_DIFF', '1', 'Process')

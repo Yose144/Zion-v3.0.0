@@ -11,8 +11,14 @@ use tracing::{debug, info, warn};
 // ─────────────────────────────────────────────────────────────────────────────
 fn wzion_asset(network: &str) -> Option<&'static str> {
     match network {
-        "mainnet" => Some("5a71011c726573745a494f4e"), // TODO: real policy+name
-        "preprod" => Some("5a71011c726573745a494f4e74"), // TODO: preprod
+        "mainnet" => {
+            warn!("[WARP][cardano] mainnet wZION asset is a placeholder — update with real policy_id+asset_name after deployment");
+            Some("5a71011c726573745a494f4e")
+        }
+        "preprod" => {
+            warn!("[WARP][cardano] preprod wZION asset is a placeholder");
+            Some("5a71011c726573745a494f4e74")
+        }
         _ => None,
     }
 }

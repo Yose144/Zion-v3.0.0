@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 
 /// OASIS world configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
 pub struct OasisConfig {
     /// API server port
     pub port: u16,
@@ -105,10 +106,24 @@ impl Default for OasisConfig {
 }
 
 impl OasisConfig {
-    /// Load from TOML file (stub — will implement with real config)
-    pub fn load(_path: &str) -> Result<Self, String> {
-        // TODO: Load from TOML file
-        Ok(Self::default())
+    /// Load from a TOML file on disk. Falls back to `Self::default()` if the file
+    /// does not exist, so a missing config is not a fatal error.
+    pub fn load(path: &str) -> Result<Self, String> {
+        use std::fs;
+
+        if !std::path::Path::new(path).exists() {
+            tracing::info!("OASIS config file not found at {}; using defaults", path);
+            return Ok(Self::default());
+        }
+
+        let contents = fs::read_to_string(path)
+            .map_err(|e| format!("Failed to read OASIS config at {}: {}", path, e))?;
+
+        let config: OasisConfig = toml::from_str(&contents)
+            .map_err(|e| format!("Failed to parse OASIS config at {}: {}", path, e))?;
+
+        tracing::info!("OASIS config loaded from {}", path);
+        Ok(config)
     }
 }
 
@@ -122,5 +137,55 @@ mod tests {
         assert_eq!(config.port, 8094);
         assert_eq!(config.reward_pool_total, 8_250_000_000);
         assert!(config.l1_rpc_endpoints.is_empty());
+    }
+
+    #[test]
+    fn test_load_from_toml() {
+        use std::io::Write;
+
+        let mut tmp = tempfile::NamedTempFile::new().unwrap();
+        let toml = r#"
+port = 9099
+bind = "127.0.0.1"
+daily_xp_cap = 5000
+xp_per_block_base = 5
+meditation_bonus_pct = 10
+max_guild_size = 50
+min_quest_members = 3
+guild_xp_per_level = 5000
+max_guild_level = 25
+territory_claim_cost = 5000
+territory_mining_bonus_pct = 5
+territory_capacity = 25
+reward_pool_total = 1000000
+reward_slot_allocation = 200000
+l1_rpc_endpoints = ["http://localhost:8443"]
+ncl_endpoint = "http://localhost:8090"
+ai_native_endpoint = "http://localhost:8091"
+hiran_endpoint = "http://localhost:8002"
+hiran_enabled = true
+ws_port = 9095
+max_ws_connections = 500
+metrics_port = 9102
+"#;
+        tmp.write_all(toml.as_bytes()).unwrap();
+
+        let config = OasisConfig::load(tmp.path().to_str().unwrap()).unwrap();
+        assert_eq!(config.port, 9099);
+        assert_eq!(config.bind, "127.0.0.1");
+        assert_eq!(config.daily_xp_cap, 5000);
+        assert_eq!(config.max_guild_size, 50);
+        assert_eq!(config.territory_claim_cost, 5000);
+        assert_eq!(config.reward_pool_total, 1_000_000);
+        assert_eq!(config.l1_rpc_endpoints, vec!["http://localhost:8443"]);
+        assert!(config.hiran_enabled);
+        assert_eq!(config.metrics_port, 9102);
+    }
+
+    #[test]
+    fn test_load_missing_file_uses_defaults() {
+        let config = OasisConfig::load("/nonexistent/path/oasis.toml").unwrap();
+        assert_eq!(config.port, 8094);
+        assert_eq!(config.reward_pool_total, 8_250_000_000);
     }
 }

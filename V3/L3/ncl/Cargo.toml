@@ -17,5 +17,13 @@ chrono = { version = "0.4", features = ["serde"] }
 rusqlite = { version = "0.31", features = ["bundled"] }
 axum = "0.7"
 
+# Optional ONNX Runtime backend (heavy — not enabled by default)
+# Using pre-release RC because stable 2.0 is not yet published.
+ort = { version = "2.0.0-rc.12", optional = true }
+
+[features]
+default = []
+onnx = ["dep:ort"]
+
 [dev-dependencies]
 tokio = { version = "1", features = ["full", "test-util"] }
