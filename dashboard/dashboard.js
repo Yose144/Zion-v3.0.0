@@ -1754,7 +1754,16 @@ async function controlAction(action){
   const note = launchActions.includes(action) ? ' (may take ~15s)' : '';
   if(log) log.insertAdjacentHTML('afterbegin', '<div class="text-zion-gold">[' + ts + '] dispatching ' + action + note + '…</div>');
   try {
-    const res = await fetch('/api/control', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action }) }).then(r => r.json());
+    let res;
+    if(action === 'doctor'){
+      res = await fetch('/api/cli/run', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cmd: 'doctor' }) }).then(r => r.json());
+      const msg = res.ok ? '<div class="text-emerald-400">[' + ts + '] ✓ doctor OK</div>' : '<div class="text-red-400">[' + ts + '] ✗ ' + (res.error || 'doctor failed') + '</div>';
+      if(log) log.insertAdjacentHTML('afterbegin', msg);
+      toast(res.ok ? '🩺 Doctor OK' : ('Doctor: ' + (res.error || 'failed')), res.ok ? 'success' : 'error');
+      setTimeout(() => { refreshAll(); }, 3000);
+      return;
+    }
+    res = await fetch('/api/control', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action }) }).then(r => r.json());
     const msg = res.ok ? '<div class="text-emerald-400">[' + ts + '] ✓ ' + action + ' started (PID ' + res.pid + ')</div>' : '<div class="text-red-400">[' + ts + '] ✗ ' + (res.error || 'failed') + '</div>';
     if(log) log.insertAdjacentHTML('afterbegin', msg);
     toast(res.ok ? ('▶ ' + action + ' dispatched' + note) : ('Failed: ' + (res.error || action)), res.ok ? 'success' : 'error');

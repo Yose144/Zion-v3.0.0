@@ -315,6 +315,20 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         </div>
       </div>
       <div id="readiness-breakdown" class="flex flex-wrap gap-2 text-[10px]"></div>
+      <div class="flex flex-wrap gap-2 mt-3">
+        <button onclick="controlAction('launch-stack')" class="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-medium rounded transition flex items-center gap-1">
+          <span>▶</span> Start Stack
+        </button>
+        <button onclick="controlAction('stop-stack')" class="px-3 py-1.5 bg-rose-700 hover:bg-rose-600 text-white text-xs font-medium rounded transition flex items-center gap-1">
+          <span>⏹</span> Stop Stack
+        </button>
+        <button onclick="controlAction('restart-node2');controlAction('restart-miner')" class="px-3 py-1.5 bg-amber-700 hover:bg-amber-600 text-white text-xs font-medium rounded transition flex items-center gap-1">
+          <span>⟳</span> Restart
+        </button>
+        <button onclick="controlAction('doctor')" class="px-3 py-1.5 bg-blue-700 hover:bg-blue-600 text-white text-xs font-medium rounded transition flex items-center gap-1">
+          <span>🩺</span> Doctor Fix
+        </button>
+      </div>
     </div>
 
     <!-- Service Cards (top 4) -->
@@ -3576,6 +3590,6 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
   </div>
 </div>
 
-<script src="/dashboard.js?v=8"></script>
+<script src="/dashboard.js?v=9"></script>
 </body>
 </html>
