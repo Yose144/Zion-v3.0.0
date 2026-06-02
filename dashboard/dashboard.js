@@ -203,7 +203,7 @@ async function refreshAll(){
     if(currentTab === 'wallets') { loadWallets(); loadWalletStatus(); }
     if(currentTab === 'explorer') loadExplorer();
     if(currentTab === 'hiran') loadAiStatus();
-    if(currentTab === 'overview') loadMempool();
+    if(currentTab === 'overview') { loadMempool(); loadMonitoringStatus(); }
     if(currentTab === 'controls') { loadMinerPerformance(); loadDepGraphControls(); }
     updateMainnetMetrics(statusData);
     updateConnectionStatus(true);
@@ -1452,6 +1452,44 @@ async function loadMempool(){
       }
     }
   } catch(e) { console.error('loadMempool error:', e); }
+}
+
+// ── Edge Monitoring (Prometheus + Grafana) ────────────────────────────
+
+async function loadMonitoringStatus(){
+  try {
+    const data = await fetch('/api/monitoring/status').then(r => r.json());
+    const prom = data.prometheus || {};
+    const graf = data.grafana || {};
+
+    // Badge
+    const badge = document.getElementById('monitoring-status-badge');
+    if(badge){
+      const allOk = prom.alive && graf.alive;
+      badge.textContent = allOk ? 'Online' : (prom.alive || graf.alive ? 'Partial' : 'Offline');
+      badge.className = 'text-[10px] px-2 py-0.5 rounded-full ' + (allOk
+        ? 'bg-emerald-600/20 text-emerald-300 border border-emerald-600/30'
+        : prom.alive || graf.alive
+          ? 'bg-amber-600/20 text-amber-300 border border-amber-600/30'
+          : 'bg-red-600/20 text-red-300 border border-red-600/30');
+    }
+
+    // Prometheus dot + text
+    const promDot = document.getElementById('prom-status-dot');
+    if(promDot) promDot.className = 'w-2 h-2 rounded-full ' + (prom.alive ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]' : 'bg-red-500');
+    const promTargets = document.getElementById('prom-targets');
+    if(promTargets) promTargets.textContent = prom.alive ? `${prom.targets_up}/${prom.targets_total} up` : '—';
+    const promVer = document.getElementById('prom-version');
+    if(promVer) promVer.textContent = prom.version || '—';
+
+    // Grafana dot + text
+    const grafDot = document.getElementById('graf-status-dot');
+    if(grafDot) grafDot.className = 'w-2 h-2 rounded-full ' + (graf.alive ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]' : 'bg-red-500');
+    const grafVer = document.getElementById('graf-version');
+    if(grafVer) grafVer.textContent = graf.version || '—';
+    const grafDb = document.getElementById('graf-db');
+    if(grafDb) grafDb.textContent = graf.database || '—';
+  } catch(e) { console.error('loadMonitoringStatus error:', e); }
 }
 
 // ── Miner Performance (shares trend + session stats) ────────────────────

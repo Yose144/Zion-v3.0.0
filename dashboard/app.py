@@ -329,6 +329,59 @@ def get_resource_usage() -> dict:
         RESOURCE_CACHE["data"] = result
     return result
 
+# ── Monitoring (Prometheus + Grafana on Edge) ────────────────────────────
+MONITORING_CACHE = {"ts": 0, "data": {}}
+MONITORING_LOCK = threading.Lock()
+
+def get_monitoring_status() -> dict:
+    """Probe Edge Prometheus + Grafana APIs. Cached 15 s."""
+    now = time.time()
+    with MONITORING_LOCK:
+        if now - MONITORING_CACHE["ts"] < 15:
+            return MONITORING_CACHE["data"]
+
+    edge_ip = "100.76.16.108"
+    result = {
+        "prometheus": {"url": f"http://{edge_ip}:9090", "alive": False, "version": None, "targets_up": 0, "targets_total": 0},
+        "grafana": {"url": f"http://{edge_ip}:3100", "alive": False, "version": None, "database": None},
+        "timestamp": now,
+    }
+
+    # Prometheus health + targets
+    try:
+        r = urllib.request.urlopen(f"http://{edge_ip}:9090/api/v1/targets", timeout=5)
+        data = json.loads(r.read().decode("utf-8"))
+        if data.get("status") == "success":
+            targets = data.get("data", {}).get("activeTargets", [])
+            up = sum(1 for t in targets if t.get("health") == "up")
+            result["prometheus"]["alive"] = True
+            result["prometheus"]["targets_up"] = up
+            result["prometheus"]["targets_total"] = len(targets)
+    except Exception:
+        pass
+
+    try:
+        r = urllib.request.urlopen(f"http://{edge_ip}:9090/-/healthy", timeout=3)
+        if r.status == 200:
+            result["prometheus"]["alive"] = True
+    except Exception:
+        pass
+
+    # Grafana health
+    try:
+        r = urllib.request.urlopen(f"http://{edge_ip}:3100/api/health", timeout=5)
+        data = json.loads(r.read().decode("utf-8"))
+        result["grafana"]["alive"] = True
+        result["grafana"]["version"] = data.get("version")
+        result["grafana"]["database"] = data.get("database")
+    except Exception:
+        pass
+
+    with MONITORING_LOCK:
+        MONITORING_CACHE["ts"] = now
+        MONITORING_CACHE["data"] = result
+    return result
+
 # ── Alert history ───────────────────────────────────────────────────────
 ALERT_HISTORY_PATH = LOG_DIR / "alert-history.json"
 ALERT_HISTORY_MAX = 100
@@ -6130,6 +6183,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json({"buckets": SERVICE_HISTORY.snapshot()})
         elif route == "/api/resources":
             self._json(get_resource_usage())
+        elif route == "/api/monitoring/status":
+            self._json(get_monitoring_status())
         elif route == "/api/alerts/history":
             self._json({"alerts": load_alert_history()})
         elif route == "/api/watchdog/toggle":

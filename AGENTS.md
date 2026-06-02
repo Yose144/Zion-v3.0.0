@@ -226,6 +226,9 @@ Public Pool: 8444
 | Pool Stratum | 8444 | TCP | Miner connections (Edge public-facing) |
 | Pool metrics | 8455 | HTTP | Prometheus metrics (pool, Edge public) |
 | Node metrics | 9115 | HTTP | Prometheus metrics (node, local) |
+| Prometheus | 9090 | HTTP | Edge monitoring stack (Docker host network) |
+| Grafana | 3100 | HTTP | Edge monitoring dashboards (Docker host network) |
+| Node Exporter | 9100 | HTTP | Edge host system metrics (Docker host network) |
 | Dashboard | 8766 | HTTP | Python stdlib dashboard |
 | Website | 3000 | HTTP | Next.js dev server |
 | **Hiranyagarbha API** | **8001** | HTTP | Orchestrator · RAG · Consciousness · NCL · Axum (Rust) |
