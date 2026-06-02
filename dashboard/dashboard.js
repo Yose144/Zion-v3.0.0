@@ -426,6 +426,10 @@ async function refreshPayout(){
 
     // On-chain balances (includes premine + pooled + fee-split earnings)
     const bals = data.balances || {};
+    set('payout-breakdown-miner-bal',  bals.miner ? _zionFmt(bals.miner.zion) + ' Z' : '—');
+    set('payout-breakdown-charity-bal', bals.humanitarian ? _zionFmt(bals.humanitarian.zion) + ' Z' : '—');
+    set('payout-breakdown-dev-bal',    bals.issobella ? _zionFmt(bals.issobella.zion) + ' Z' : '—');
+    set('payout-breakdown-pool-bal',   bals.pool_fee ? _zionFmt(bals.pool_fee.zion) + ' Z' : '—');
     if (data.miner_wallet) set('fs-bal-miner-addr', data.miner_wallet);
     if (data.humanitarian_wallet) set('fs-bal-charity-addr', data.humanitarian_wallet);
     if (data.issobella_wallet) set('fs-bal-dev-addr', data.issobella_wallet);
