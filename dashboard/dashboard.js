@@ -584,15 +584,37 @@ function updateAlerts(alerts){
   else topBadge.classList.add('hidden');
 
   const icons = { critical: '🚨', warning: '⚠️', info: 'ℹ️', success: '✅' };
-  cont.innerHTML = alerts.map(a => `
-    <div class="flex items-start gap-3 p-3 rounded-xl border alert-${a.severity}">
+  cont.innerHTML = alerts.map(a => {
+    const showDismiss = a.id && a.severity !== 'success';
+    return `
+    <div class="flex items-start gap-3 p-3 rounded-xl border alert-${a.severity}" data-aid="${a.id||''}">
       <span class="text-xl">${icons[a.severity] || 'ℹ️'}</span>
       <div class="flex-1 min-w-0">
         <div class="text-sm font-semibold">${escapeHtml(a.title)}</div>
         <div class="text-xs opacity-80 mt-0.5">${escapeHtml(a.detail)}</div>
       </div>
-      ${a.action ? `<button data-action="${a.action}" class="action-btn text-xs px-2.5 py-1 bg-white/10 hover:bg-white/20 rounded-md transition whitespace-nowrap font-semibold">Fix</button>` : ''}
-    </div>`).join('');
+      <div class="flex gap-2">
+        ${a.action ? `<button data-action="${a.action}" class="action-btn text-xs px-2.5 py-1 bg-white/10 hover:bg-white/20 rounded-md transition whitespace-nowrap font-semibold">Fix</button>` : ''}
+        ${showDismiss ? `<button data-dismiss="${a.id}" class="dismiss-btn text-xs px-2 py-1 text-gray-400 hover:text-white rounded-md transition" title="Dismiss">✕</button>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+
+  // Attach dismiss handlers
+  cont.querySelectorAll('.dismiss-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.getAttribute('data-dismiss');
+      if(!id) return;
+      try {
+        const res = await fetch('/api/alerts/dismiss', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({id})});
+        const data = await res.json();
+        if(data.ok) {
+          const card = btn.closest('[data-aid]');
+          if(card) card.remove();
+        }
+      } catch(e) { console.error('dismiss failed', e); }
+    });
+  });
 }
 
 function updateResourceBars(res){
