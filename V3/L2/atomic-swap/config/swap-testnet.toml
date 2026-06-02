@@ -27,7 +27,7 @@ path = "V3/data/atomic-swap.db"
 # ── HTTP API ─────────────────────────────────────────────────────────────────
 
 [api]
-bind = "0.0.0.0:8888"
+bind = "0.0.0.0:8452"
 # bearer_token = ""   # set for production; open for testnet
 
 # ── Refund Automation ────────────────────────────────────────────────────────
