@@ -12,8 +12,14 @@ use tracing::{debug, info, warn};
 // ─────────────────────────────────────────────────────────────────────────────
 fn wzion_contract(network: &str) -> Option<&'static str> {
     match network {
-        "mainnet" => Some("TWZIONxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"), // TODO mainnet
-        "nile" => Some("TXxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxtest"),     // TODO testnet
+        "mainnet" => {
+            warn!("[WARP][tron] mainnet wZION contract is a placeholder — update after deployment");
+            Some("TWZIONxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+        }
+        "nile" => {
+            warn!("[WARP][tron] nile testnet wZION contract is a placeholder");
+            Some("TXxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxtest")
+        }
         _ => None,
     }
 }

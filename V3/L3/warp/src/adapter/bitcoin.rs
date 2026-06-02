@@ -16,8 +16,14 @@ const WARP_OP_RETURN_PREFIX: &str = "WARP_INBOUND:bitcoin:";
 
 fn htlc_address(network: &str) -> Option<&'static str> {
     match network {
-        "mainnet" => Some("bc1qzionhtlcxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"), // TODO mainnet
-        "testnet" => Some("tb1qzionhtlctest0000000000000000000000000000"),    // TODO testnet
+        "mainnet" => {
+            warn!("[WARP][bitcoin] mainnet HTLC address is a placeholder — update after deployment");
+            Some("bc1qzionhtlcxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+        }
+        "testnet" => {
+            warn!("[WARP][bitcoin] testnet HTLC address is a placeholder");
+            Some("tb1qzionhtlctest0000000000000000000000000000")
+        }
         _ => None,
     }
 }
