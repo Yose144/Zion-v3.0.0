@@ -1,4 +1,8 @@
+import { invoke } from '@tauri-apps/api/core';
+
 const API_BASE = 'http://127.0.0.1:8766';
+
+// ── Types ─────────────────────────────────────────────────
 
 export interface ServiceHealth {
   id: string;
@@ -92,6 +96,61 @@ export interface PayoutStatus {
     fee_split: { miner: number; charity: number; dev: number; pool: number };
   }>;
 }
+
+// ── Native Tauri commands ─────────────────────────────────
+
+export async function probeTcp(host: string, port: number, timeoutMs = 2000): Promise<boolean> {
+  try {
+    return await invoke('probe_tcp', { host, port, timeoutMs });
+  } catch (e) {
+    console.error('probeTcp error', e);
+    return false;
+  }
+}
+
+export async function rpcCall(url: string, method: string, params?: unknown): Promise<unknown> {
+  return invoke('rpc_call', { url, method, params });
+}
+
+export async function tailLog(path: string, lines = 100): Promise<string[]> {
+  return invoke('tail_log', { path, lines });
+}
+
+export async function runCommand(cmd: string, args: string[]): Promise<string> {
+  return invoke('run_command', { cmd, args });
+}
+
+export async function startLocalBackup(repoRoot?: string): Promise<string> {
+  return invoke('start_local_backup', { repoRoot });
+}
+
+export async function stopLocalBackup(repoRoot?: string): Promise<string> {
+  return invoke('stop_local_backup', { repoRoot });
+}
+
+export async function getLocalBackupStatus(repoRoot?: string): Promise<{
+  node_running: boolean;
+  miner_running: boolean;
+}> {
+  return invoke('get_local_backup_status', { repoRoot });
+}
+
+export async function tailscalePing(target: string = '100.76.16.108'): Promise<{
+  ok: boolean;
+  latency_ms?: number;
+  error?: string;
+}> {
+  try {
+    const stdout = await runCommand('tailscale', ['ping', '-c', '1', '-timeout', '3s', target]);
+    const match = stdout.match(/(\d+)\.?\d*ms/);
+    const latency = match ? parseInt(match[1], 10) : undefined;
+    return { ok: true, latency_ms: latency };
+  } catch (e: any) {
+    return { ok: false, error: String(e) };
+  }
+}
+
+// ── HTTP Fallback (Python dashboard backend) ──────────────
 
 export async function apiFetch<T>(path: string): Promise<T | null> {
   try {
