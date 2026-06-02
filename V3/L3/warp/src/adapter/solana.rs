@@ -13,8 +13,14 @@ use tracing::{debug, info, warn};
 // ─────────────────────────────────────────────────────────────────────────────
 fn wzion_mint(cluster: &str) -> Option<&'static str> {
     match cluster {
-        "mainnet-beta" => Some("ZIONmintXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"), // TODO mainnet
-        "devnet" => Some("ZIONdevXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"),      // TODO devnet
+        "mainnet-beta" => {
+            warn!("[WARP][solana] mainnet-beta wZION mint is a placeholder — real SPL token not yet deployed");
+            Some("ZIONmintXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+        }
+        "devnet" => {
+            warn!("[WARP][solana] devnet wZION mint is a placeholder");
+            Some("ZIONdevXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+        }
         _ => None,
     }
 }

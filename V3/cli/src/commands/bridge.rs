@@ -35,6 +35,15 @@ pub enum BridgeCmd {
         #[arg(long)]
         token: String,
     },
+    /// Deploy bridge contracts on EVM chain (Base mainnet / Sepolia)
+    Deploy {
+        /// Target network: base, base-sepolia, arbitrum, bsc, polygon
+        #[arg(long, default_value = "base-sepolia")]
+        network: String,
+        /// Dry-run: print deployment steps without executing
+        #[arg(long)]
+        dry_run: bool,
+    },
 }
 
 pub async fn run(cfg: &Config, cmd: BridgeCmd) -> Result<()> {
@@ -127,6 +136,26 @@ pub async fn run(cfg: &Config, cmd: BridgeCmd) -> Result<()> {
             ui::print_row("To", &to_chain);
             ui::print_row("Amount", &format!("{} {}", amount, token));
             ui::print_warn("Full signing support in Phase 4. No transaction was submitted.");
+            println!();
+            Ok(())
+        }
+        BridgeCmd::Deploy { network, dry_run } => {
+            ui::print_header(&format!("Bridge Contract Deployment — {}", network));
+            if dry_run {
+                ui::print_info("DRY-RUN mode — no transactions will be submitted.");
+            }
+            ui::print_info("Deployment workflow:");
+            println!("  1. Ensure Foundry is installed:  curl -L https://foundry.paradigm.xyz | bash");
+            println!("  2. Set RPC URL:  export BASE_RPC=https://base-mainnet.publicnode.com");
+            println!("  3. Set deployer key:  export PRIVATE_KEY=0x...");
+            println!("  4. Run deploy script:  ./scripts/deploy-bridge-base.sh {}", network);
+            println!();
+            ui::print_info("Contracts to deploy:");
+            println!("  - wZION ERC-20 (wrapped ZION)");
+            println!("  - ZIONBridge (lock/mint + burn/unlock)");
+            println!("  - BridgeValidator (multisig 3/5)");
+            println!();
+            ui::print_warn("Mainnet deploy costs real ETH. Test on Sepolia first.");
             println!();
             Ok(())
         }

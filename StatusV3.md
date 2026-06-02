@@ -22,6 +22,31 @@
 
 ---
 
+## Co je nového 2026-06-03 (Upgrade 3.0.1 — Polish & Gap Closure)
+
+> Verze: **3.0.1** (Cargo workspace bump)
+
+### P0/P1 Gap Closure
+
+| Gap | Soubor | Akce | Stav |
+|-----|--------|------|------|
+| **OASIS config stub** | `V3/L4/oasis/src/config.rs` | Real TOML loading + `#[serde(default)]` + test | ✅ |
+| **NCL ONNX dead code** | `V3/L3/ncl/src/backend.rs` | Feature-gated `ort` backend (`onnx` feature), graceful fallback | ✅ |
+| **WARP placeholder addresses** | `V3/L3/warp/src/adapter/*.rs` | `warn!` log místo tichého TODO; dokumentace Base mainnet dependency na T1 | ✅ |
+| **Alertmanager Discord** | `V3/docker/alertmanager/alertmanager.yml` | Aktivační instrukce + `DISCORD_WEBHOOK_URL` v `.env.example`; test script | ✅ |
+| **Bridge deploy CLI** | `V3/cli/src/commands/bridge.rs` | `zion bridge deploy --network base` s guided workflow + `scripts/deploy-bridge-base.sh` | ✅ |
+| **Bridge mainnet test** | `V3/L2/bridge/tests/mainnet_readiness.rs` | Komentáře odkazují na deploy script; `enabled: false` dokud není deploy | ✅ |
+
+### Detaily
+
+- **OASIS:** `OasisConfig::load(path)` nyní čte TOML ze souboru; při chybějícím souboru fallback na default. Testy pokrývají load z temp file i missing file.
+- **NCL ONNX:** Přidán optional `ort` crate s feature `onnx`. Bez feature (default) je backend `available=false` s informativní chybou. S feature se pokusí inicializovat ONNX Runtime a nastaví `available=true` (pokud je runtime nainstalovaný). Inference samotná je stále "not yet implemented" — čeká na end-to-end marketplace wiring.
+- **WARP:** Všechny chain adaptery (EVM, Solana, Bitcoin, Cardano, Tron) nyní logují `warn!` při použití placeholder adresy místo tichého průchodu. Base mainnet wZION address je označená jako závislá na T1 bridge deploy.
+- **Alertmanager:** Discord konfigurace má jasný 2-krokový postup aktivace (`.env` → restart). `scripts/test-alertmanager.sh` posílá test alert přes curl.
+- **Bridge:** CLI příkaz `zion bridge deploy` vypíše kompletní workflow (Foundry install → RPC → deploy). `scripts/deploy-bridge-base.sh` je připravený pro reálný deploy (nebo vypíše manual steps pokud `contracts/` neexistují).
+
+---
+
 ## Co je nového 2026-05-07 (security cleanup + agentická obsluha)
 
 ### Security cleanup
