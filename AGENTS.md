@@ -214,23 +214,33 @@ Public Pool: 8444
 
 | Role | Host | VPN IP | Public IP | Ports |
 |------|------|--------|-----------|-------|
-| Edge | Hetzner VPS | 100.76.16.108 | 77.42.71.94 | P2P: 8333, Pool: 8444, RPC: 8443 |
-| Core | Local PC | 100.86.102.5 | (dynamic) | P2P: 8333, RPC: 8443 |
+| Edge | Hetzner VPS | 100.76.16.108 | 77.42.71.94 | P2P: 8333/8334, RPC: 8443/8446, Pool: 8444, Metrics: 8455/9090/9100/9102/9115/9116 |
+| Core | Local PC | 100.86.102.5 | (dynamic) | P2P: 8333, RPC: 8443, Metrics: 9115 |
 
 ### Canonical Ports & Services
 
 | Service | Port | Protocol | Notes |
 |---------|------|----------|-------|
-| Node P2P | 8333 | TCP | Peer-to-peer sync |
+| Node P2P | 8333 | TCP | Peer-to-peer sync (both Edge + Local) |
+| Node 2 P2P | 8334 | TCP | Edge follower node only |
 | Node RPC | 8443 | TCP | JSON-RPC 2.0, wallet queries |
+| Node 1 WebSocket | 8445 | TCP | Node event stream (Edge public, Local 127.0.0.1) |
+| Node 2 RPC | 8446 | TCP | Edge follower node JSON-RPC |
+| Node 2 WebSocket | 8447 | TCP | Edge follower node event stream |
 | Pool Stratum | 8444 | TCP | Miner connections (Edge public-facing) |
+| DAO API | 8450 | HTTP | Edge DAO daemon Axum API |
+| Atomic Swap API | 8452 | HTTP | Edge HTLC swap daemon API |
+| WARP Relay API | 8453 | HTTP | Edge cross-chain relay Axum API |
 | Pool metrics | 8455 | HTTP | Prometheus metrics (pool, Edge public) |
 | Node metrics | 9115 | HTTP | Prometheus metrics (node, local) |
+| Node 2 metrics | 9116 | HTTP | Prometheus metrics (Edge follower node) |
+| Bridge metrics | 9102 | HTTP | Prometheus metrics (Edge bridge) |
 | Prometheus | 9090 | HTTP | Edge monitoring stack (Docker host network) |
 | Grafana | 3100 | HTTP | Edge monitoring dashboards (Docker host network) |
 | Node Exporter | 9100 | HTTP | Edge host system metrics (Docker host network) |
-| Dashboard | 8766 | HTTP | Python stdlib dashboard |
-| Website | 3000 | HTTP | Next.js dev server |
+| Dashboard | 8766 | HTTP | Python stdlib dashboard (Local only, 127.0.0.1) |
+| Website | 3000 | HTTP | Next.js dev server (Edge) |
+| Pool API Proxy | 8080 | HTTP | Edge pool REST proxy |
 | **Hiranyagarbha API** | **8001** | HTTP | Orchestrator · RAG · Consciousness · NCL · Axum (Rust) |
 | **NCL (via Hiranyagarbha)** | **8001** | HTTP | Neural Compute Layer at `/ncl/*` (jobs, workers, leaderboard) |
 | **Hiran Inference** | **8002** | HTTP | OpenAI-compatible LLM API (llama-server.exe / serve.py) |
@@ -246,6 +256,8 @@ Public Pool: 8444
 | **Desktop agent default RPC** | `http://127.0.0.1:8443/jsonrpc` (auto-fallback to Edge VPN) |
 | **Website production** | `https://zionterranova.com` |
 | **Dashboard** | `http://127.0.0.1:8766` |
+| **Edge Grafana** | `http://100.76.16.108:3100` |
+| **Edge Prometheus** | `http://100.76.16.108:9090` |
 
 ### SSH Access
 
