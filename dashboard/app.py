@@ -2255,6 +2255,24 @@ def build_payout_status() -> dict:
         if bal and not bal.get("_rpc_error"):
             atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
             status["pool_wallet_balance"] = atomic
+
+    # Get fee-split recipient balances via RPC
+    def _bal(addr):
+        if not addr or not addr.startswith("zion1"):
+            return None
+        b = rpc_call("127.0.0.1", 8443, "getBalance", {"address": addr})
+        if b and not b.get("_rpc_error"):
+            atomic = int(b.get("balance_flowers") or b.get("balance_atomic") or 0)
+            return {"flowers": atomic, "zion": atomic / 1_000_000_000_000}
+        return None
+
+    status["balances"] = {
+        "miner": _bal(status.get("miner_wallet")),
+        "humanitarian": _bal(status.get("humanitarian_wallet")),
+        "issobella": _bal(status.get("issobella_wallet")),
+        "pool_fee": _bal(status.get("pool_fee_wallet")),
+    }
+
     # Enrich with live pool stats from routing metrics endpoint
     pool_stats = fetch_pool_stats()
     if pool_stats:
