@@ -1695,6 +1695,12 @@ def build_readiness_score(health: list) -> dict:
     }
 
 
+def _alert_id(a: dict) -> str:
+    """Stable ID for an alert based on title+severity."""
+    import hashlib
+    raw = f"{a.get('severity','info')}:{a.get('title','')}"
+    return hashlib.md5(raw.encode()).hexdigest()[:12]
+
 def build_alerts(status: dict) -> list:
     """Auto-detect common issues and produce actionable alerts.
     Severity is now derived from SERVICE_REGISTRY. Topology-aware."""
@@ -1811,10 +1817,44 @@ def build_alerts(status: dict) -> list:
                        "detail": "No issues detected. Stack is ready for mainnet operations.",
                        "action": None})
 
-    return alerts
+    # Assign stable IDs and filter dismissed
+    dismissed = _load_dismissed()
+    out = []
+    for a in alerts:
+        a["id"] = _alert_id(a)
+        if a["id"] not in dismissed:
+            out.append(a)
+    return out
 
 _LAST_ALERT_SIGNATURES = set()
 _LAST_ALERT_TS = 0
+_DISMISS_FILE = SCRIPT_DIR / ".dismissed_alerts.json"
+
+def _load_dismissed() -> set:
+    """Load set of dismissed alert IDs."""
+    try:
+        if _DISMISS_FILE.exists():
+            with open(_DISMISS_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                return set(data.get("dismissed", []))
+    except Exception:
+        pass
+    return set()
+
+def _save_dismissed(dismissed: set):
+    """Save dismissed alert IDs to disk."""
+    try:
+        with open(_DISMISS_FILE, "w", encoding="utf-8") as f:
+            json.dump({"dismissed": sorted(dismissed)}, f, indent=2)
+    except Exception:
+        pass
+
+def dismiss_alert(alert_id: str) -> bool:
+    """Dismiss an alert by ID."""
+    dismissed = _load_dismissed()
+    dismissed.add(alert_id)
+    _save_dismissed(dismissed)
+    return True
 
 def persist_new_alerts(alerts: list):
     """Persist only alerts that changed since last call (dedup by title+severity)."""
@@ -6981,6 +7021,14 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     self._json(json.loads(r.read()))
             except Exception as e:
                 self._json({"error": f"NCL backend unreachable: {str(e)[:80]}"})
+        elif route == "/api/alerts/dismiss":
+            alert_id = payload.get("id", "").strip()
+            if not alert_id:
+                self._json({"ok": False, "error": "id required"})
+                return
+            dismiss_alert(alert_id)
+            self._json({"ok": True, "dismissed": alert_id})
+            return
         else:
             self.send_error(404)
 
