@@ -1,7 +1,7 @@
 {
   "version": "2.9.8",
-  "generated_at": "2026-05-24T17:23:02.401Z",
-  "platform": "win32",
+  "generated_at": "2026-06-01T15:24:58.128Z",
+  "platform": "linux",
   "arch": "x64",
   "gpu_features": "gpu-opencl,native-cosmic-harmony",
   "recommendations": {

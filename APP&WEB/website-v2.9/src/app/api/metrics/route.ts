@@ -2,7 +2,9 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
 
-const PROMETHEUS_URL = process.env.PROMETHEUS_URL || 'http://127.0.0.1:9090';
+import { coreUrl } from '@/lib/core-endpoints';
+
+const PROMETHEUS_URL = coreUrl('prometheus', process.env.PROMETHEUS_URL);
 
 // Allowlisted metric prefixes — only V3 + infra metrics, nothing sensitive
 const ALLOWED_PREFIXES = [

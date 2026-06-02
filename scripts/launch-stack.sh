@@ -29,11 +29,12 @@ export ZION_P2P_BIND='0.0.0.0:8333'
 export ZION_RPC_BIND='0.0.0.0:8443'
 export ZION_NODE_STATE_PATH="$REPO_ROOT/V3/data/zion-node-state.db"
 export ZION_SEED_PEERS='none'
-# Pool payout wallet receives the 89% miner share so PPLNS can redistribute
+# Pool payout wallet receives the 89% miner share so PPLNS can redistribute.
+# Coinbase mints 89/5/5 (miner/humanitarian/issobella); the 1% pool fee is
+# BURNED (never minted), so no ZION_POOL_FEE_WALLET is configured.
 export ZION_MINER_ADDRESS='zion182e2v4x4r3u2j5r5t305k0d5y643q6l3n6je5f8'
 export ZION_HUMANITARIAN_WALLET='zion1m4v5z8z850u480c5c208z274e334369275n5y20'
 export ZION_ISSOBELLA_WALLET='zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702'
-export ZION_POOL_FEE_WALLET='zion1p2a7a5q0t2z5z545y6m6j5e864n002v4z6w95w5'
 
 mkdir -p "$REPO_ROOT/V3/data"
 
@@ -59,6 +60,8 @@ echo "Started Node2  PID=$P2"
 sleep 2
 
 # ── Pool ──
+# Pool fee (1%) is burned at the coinbase level, so ZION_POOL_FEE_WALLET is
+# intentionally NOT set here.
 export ZION_POOL_BIND='0.0.0.0:8444'
 export ZION_NODE_RPC_ADDR='127.0.0.1:8443'
 export ZION_POOL_LOOP_COUNT='1000000'
@@ -75,21 +78,34 @@ PP=$!
 echo "Started Pool   PID=$PP"
 sleep 2
 
-# ── Miner (CPU, minimal load) ──
+# ── Miner 1: CPU (minimal load, distinct payout address) ──
 export ZION_POOL_ADDR='127.0.0.1:8444'
 export ZION_LOOP_COUNT='1000000'
 export ZION_MINER_THREADS='1'
-export ZION_WORKER_NAME='worker1'
+export ZION_WORKER_NAME='cpu-worker1'
 export ZION_MINER_ID='cpu-miner-01'
 export ZION_GPU_BACKEND='cpu'
+export ZION_PAYOUT_ADDRESS='zion1q044z2h8q0s742y87428d3q0r638s357h8385w4'
 
 # nice -n 19 keeps the system responsive while CPU mining
 nice -n 19 nohup "$MINER_EXE" > "$LOG_DIR/miner.log" 2> "$LOG_DIR/miner.err" &
 PM=$!
-echo "Started Miner (CPU, 1 thread)  PID=$PM"
+echo "Started Miner CPU (1 thread)  PID=$PM"
+sleep 1
+
+# ── Miner 2: GPU (OpenCL, distinct payout address) ──
+export ZION_WORKER_NAME='gpu-worker1'
+export ZION_MINER_ID='gpu-miner-01'
+export ZION_GPU_BACKEND='opencl'
+export ZION_GPU_WORK_SIZE='4096'
+export ZION_PAYOUT_ADDRESS='zion100y03888k3k467t228j0t8r675l8r2t2h00y7a2'
+
+nohup "$MINER_EXE" > "$LOG_DIR/miner-gpu.log" 2> "$LOG_DIR/miner-gpu.err" &
+PG=$!
+echo "Started Miner GPU (OpenCL)    PID=$PG"
 
 echo ""
-echo "[launch] All processes started. PIDs: node1=$P1 node2=$P2 pool=$PP miner=$PM"
+echo "[launch] All processes started. PIDs: node1=$P1 node2=$P2 pool=$PP cpu-miner=$PM gpu-miner=$PG"
 echo "[launch] Logs: $LOG_DIR"
 echo "[launch] To watch live:   bash scripts/watch-logs.sh"
 echo "[launch] Quick overview:  bash scripts/live-logs.sh"

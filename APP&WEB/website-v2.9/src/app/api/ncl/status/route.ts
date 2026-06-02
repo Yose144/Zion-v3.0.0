@@ -33,7 +33,9 @@ async function readNclConfig(): Promise<{ path: string; data: Record<string, Jso
   return { path: filePath, data: parsed };
 }
 
-const HIRANYAGARBHA_URL = process.env.HIRANYAGARBHA_URL || 'http://127.0.0.1:8001';
+import { coreUrl } from '@/lib/core-endpoints';
+
+const HIRANYAGARBHA_URL = coreUrl('hiranyagarbha', process.env.HIRANYAGARBHA_URL);
 
 async function fetchFromBackend(): Promise<Record<string, JsonValue> | null> {
   try {

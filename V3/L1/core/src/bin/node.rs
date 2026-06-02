@@ -55,16 +55,17 @@ fn main() -> Result<()> {
     let miner_address = std::env::var("ZION_MINER_ADDRESS").unwrap_or_default();
     let humanitarian_address = std::env::var("ZION_HUMANITARIAN_WALLET").unwrap_or_default();
     let issobella_address = std::env::var("ZION_ISSOBELLA_WALLET").unwrap_or_default();
-    let pool_fee_address = std::env::var("ZION_POOL_FEE_WALLET").unwrap_or_default();
-    let has_any_fee_address = !humanitarian_address.is_empty()
-        || !issobella_address.is_empty()
-        || !pool_fee_address.is_empty();
-    let has_all_fee_addresses = !humanitarian_address.is_empty()
-        && !issobella_address.is_empty()
-        && !pool_fee_address.is_empty();
+    // The pool-fee 1% slot is BURNED (never minted), so ZION_POOL_FEE_WALLET is
+    // no longer required or used for the coinbase. Only humanitarian + issobella
+    // need addresses; an empty string is passed for the (burned) pool-fee slot.
+    let pool_fee_address = String::new();
+    let has_any_fee_address =
+        !humanitarian_address.is_empty() || !issobella_address.is_empty();
+    let has_all_fee_addresses =
+        !humanitarian_address.is_empty() && !issobella_address.is_empty();
     if has_any_fee_address && !has_all_fee_addresses {
         return Err(anyhow!(
-            "ZION_HUMANITARIAN_WALLET, ZION_ISSOBELLA_WALLET, and ZION_POOL_FEE_WALLET must all be set together"
+            "ZION_HUMANITARIAN_WALLET and ZION_ISSOBELLA_WALLET must both be set together"
         ));
     }
     let runtime = Arc::new(Mutex::new({
@@ -107,7 +108,7 @@ fn main() -> Result<()> {
     if has_all_fee_addresses {
         println!("humanitarian_address={}", humanitarian_address);
         println!("issobella_address={}", issobella_address);
-        println!("pool_fee_address={}", pool_fee_address);
+        println!("pool_fee=burned(1%)");
     }
     println!("protocol_version={}", node_protocol_version());
     println!("p2p_bind={}", config.node_config.p2p_bind.address());
