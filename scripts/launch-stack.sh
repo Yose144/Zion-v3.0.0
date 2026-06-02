@@ -74,19 +74,18 @@ PP=$!
 echo "Started Pool   PID=$PP"
 sleep 2
 
-# ── Miner ──
+# ── Miner (CPU, minimal load) ──
 export ZION_POOL_ADDR='127.0.0.1:8444'
 export ZION_LOOP_COUNT='1000000'
-export ZION_MINER_THREADS='2'
+export ZION_MINER_THREADS='1'
 export ZION_WORKER_NAME='worker1'
-export ZION_MINER_ID='gpu-miner-01'
-export ZION_GPU_BACKEND='opencl'
-export ZION_GPU_WORK_SIZE='4096'
+export ZION_MINER_ID='cpu-miner-01'
+export ZION_GPU_BACKEND='cpu'
 
-# nice -n 19 keeps the system responsive while mining
+# nice -n 19 keeps the system responsive while CPU mining
 nice -n 19 nohup "$MINER_EXE" > "$LOG_DIR/miner.log" 2> "$LOG_DIR/miner.err" &
 PM=$!
-echo "Started Miner  PID=$PM"
+echo "Started Miner (CPU, 1 thread)  PID=$PM"
 
 echo ""
 echo "[launch] All processes started. PIDs: node1=$P1 node2=$P2 pool=$PP miner=$PM"
