@@ -49,7 +49,7 @@ if ($edgeStatus) {
 
 Write-Host ""
 Write-Host "=== MAINNET LAUNCH COMPLETE ===" -ForegroundColor Green
-Write-Host "Core Dashboard: http://127.0.0.1:8765" -ForegroundColor Cyan
+Write-Host "Core Dashboard: http://127.0.0.1:8766" -ForegroundColor Cyan
 Write-Host "Edge Public Pool: 77.42.71.94:8444" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "Monitor logs:" -ForegroundColor Yellow

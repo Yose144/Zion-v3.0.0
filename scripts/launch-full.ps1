@@ -37,7 +37,7 @@ Write-Host "║                 FULL STACK READY                  ║" -Foregrou
 Write-Host "╚═══════════════════════════════════════════════════╝" -ForegroundColor Green
 Write-Host ""
 Write-Host "Endpoints:" -ForegroundColor White
-Write-Host "  Dashboard  : http://127.0.0.1:8765"  -ForegroundColor White
+Write-Host "  Dashboard  : http://127.0.0.1:8766"  -ForegroundColor White
 Write-Host "  Node 1 RPC : http://127.0.0.1:8443"  -ForegroundColor White
 Write-Host "  Pool       : tcp://127.0.0.1:8444"   -ForegroundColor White
 Write-Host "  Prometheus : http://127.0.0.1:9090"  -ForegroundColor White

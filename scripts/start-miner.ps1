@@ -2,7 +2,8 @@
 $logDir = "C:\Users\yosef\Desktop\Zion\2.9.6-main\logs"
 New-Item -ItemType Directory -Path $logDir -Force | Out-Null
 
-[Environment]::SetEnvironmentVariable('ZION_POOL_ADDR', '127.0.0.1:8444', 'Process')
+# Edge-primary topology: connect to Edge pool via Tailscale VPN
+[Environment]::SetEnvironmentVariable('ZION_POOL_ADDR', '100.76.16.108:8444', 'Process')
 [Environment]::SetEnvironmentVariable('ZION_LOOP_COUNT', '1000000', 'Process')
 [Environment]::SetEnvironmentVariable('ZION_MINER_THREADS', '2', 'Process')
 [Environment]::SetEnvironmentVariable('ZION_WORKER_NAME', 'worker1', 'Process')
