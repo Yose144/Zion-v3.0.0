@@ -22,7 +22,9 @@ export const SITE_PRIMARY_DAO_API_URL = `http://${SITE_PRIMARY_HOST}:8081`;
 export const SITE_POOL_PRIMARY = `${SITE_PRIMARY_HOST}:8444`;
 
 // Tailscale VPN tunnel — Core (local PC) ↔ Edge (VPS)
-export const SITE_CORE_TAILSCALE_IP = '100.86.102.5';
+// NOTE: Original Windows Core (100.86.102.5) offline since 2026-05-30.
+// Current active Core is zionserver-144 (Linux) at 100.74.34.40.
+export const SITE_CORE_TAILSCALE_IP = '100.74.34.40';
 export const SITE_EDGE_TAILSCALE_IP = '100.76.16.108';
 
 // Network topology descriptor (USA / Singapore / Helsinki decommissioned 2026-05)
