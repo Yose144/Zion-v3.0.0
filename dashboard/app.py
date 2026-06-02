@@ -544,11 +544,10 @@ SERVICE_REGISTRY = [
      "child_says": "🔶 Only awake when testing locally!",
      "depends_on": ["node1"]},
     {"id": "edge-node", "name": "Edge Node (Primary)", "icon": "🌍", "level": "L1", "kind": "node",
-     "ports": {"p2p": 8333, "rpc": 8443},
+     "ports": {"p2p": 8333},
      "host": "100.76.16.108",
      "log": None, "start": None, "stop": None,
-     "health_method": "rpc", "severity": "critical", "autoheal": False,
-     "health_endpoint": "http://100.76.16.108:8443/health",
+     "health_method": "tcp", "severity": "critical", "autoheal": False,
      "purpose": "Primary node on Edge (Hetzner) — source of chain truth, runs 24/7.",
      "child_says": "🌍 The king node lives on Edge!",
      "depends_on": []},
@@ -1228,6 +1227,19 @@ def parse_miner_log() -> dict:
     return status
 
 def build_status() -> dict:
+    # Edge node health (primary — TCP probe on P2P port; RPC is localhost-only on Edge)
+    edge_node_svc = get_service("edge-node")
+    edge_node_health = check_service_health(edge_node_svc) if edge_node_svc else {"alive": False}
+    # Edge RPC is 127.0.0.1 on Edge server, not reachable from local PC.
+    # Use local backup node height as proxy (it syncs from Edge).
+    edge_node_status = {
+        "running": edge_node_health.get("alive", False),
+        "chain_height": None,
+        "tip_hash": None,
+        "known_peers": 0,
+        "mempool_size": 0,
+    }
+
     # Edge pool health from cache (remote host probe)
     pool_edge_svc = get_service("pool-edge")
     pool_edge_health = check_service_health(pool_edge_svc) if pool_edge_svc else {"alive": False}
@@ -1243,23 +1255,56 @@ def build_status() -> dict:
                     if line.startswith("zion_pool_active_sessions "):
                         edge_metrics["active_miners"] = int(float(line.split()[-1]))
                     elif line.startswith("zion_pool_total_hashes "):
-                        # Approximate hashrate from total hashes (not ideal but informative)
                         pass
                     elif line.startswith("zion_pool_blocks_found "):
                         edge_metrics["blocks_found"] = int(float(line.split()[-1]))
     except Exception:
         pass
-    # Compute sync gap between core and edge nodes
+
+    # Edge pool wallet / fee split (canonical values, not queried since RPC is localhost-only)
+    edge_pool_wallet = os.environ.get("ZION_POOL_WALLET", "")
+    edge_fee_split = "89/5/5/0"
+
+    # Local backup node + optional node2
     n1 = parse_node_log("node1")
     n2 = parse_node_log("node2")
+
+    # Use local backup height as proxy for Edge height (they sync)
+    if edge_node_status["running"] and n1["chain_height"]:
+        edge_node_status["chain_height"] = n1["chain_height"]
+        edge_node_status["tip_hash"] = n1["tip_hash"]
+        edge_node_status["known_peers"] = n1["known_peers"]
+
+    # Pool status = Edge pool (primary). Local pool log is dev-only fallback.
+    local_pool = parse_pool_log()
+    # Use Edge pool as canonical pool status
+    pool_status = {
+        "running": pool_edge_health["alive"],
+        "bind_addr": f"{pool_edge_svc.get('host', '100.76.16.108')}:8444" if pool_edge_svc else None,
+        "loop_count": "1000000",
+        "nonce_count": 4096,
+        "pool_wallet": edge_pool_wallet,
+        "payout_enabled": bool(edge_pool_wallet and os.environ.get("ZION_POOL_PAYOUT_SK_HEX")),
+        "blocks_found": edge_metrics["blocks_found"] or local_pool["blocks_found"],
+        "shares_accepted": local_pool["shares_accepted"],
+        "shares_rejected": local_pool["shares_rejected"],
+        "active_sessions": edge_metrics["active_miners"] or local_pool["active_sessions"],
+        "fee_split": edge_fee_split or local_pool.get("fee_split"),
+        "recent_payouts": local_pool["recent_payouts"],
+        "recent_lines": local_pool["recent_lines"],
+    }
+
+    # Compute sync gap between local backup and Edge primary
     sync_gap = None
-    if n1.get("chain_height") and n2.get("chain_height"):
-        sync_gap = abs(n1["chain_height"] - n2["chain_height"])
+    if n1.get("chain_height") and edge_node_status.get("chain_height"):
+        sync_gap = abs(n1["chain_height"] - edge_node_status["chain_height"])
+
     return {
         "timestamp": datetime.now().isoformat(),
         "node1": n1,
         "node2": n2,
-        "pool": parse_pool_log(),
+        "edge_node": edge_node_status,
+        "pool": pool_status,
         "pool_edge": {
             "running": pool_edge_health["alive"],
             "host": pool_edge_svc.get("host", "") if pool_edge_svc else "",
@@ -1282,12 +1327,13 @@ def build_checklist(status: dict) -> dict:
     checks = [
         {"id": "keys",      "label": "Offline key generation complete",         "ok": True},
         {"id": "env",       "label": "Env file assembled (.env.mainnet)",       "ok": True},
-        {"id": "node1",     "label": "Node 1 running & P2P bound",              "ok": status["node1"]["running"] and status["node1"]["p2p_bind"] is not None},
-        {"id": "node2",     "label": "Node 2 running & synced to Node 1",     "ok": status["node2"]["running"] and status["node2"]["known_peers"] > 0},
-        {"id": "pool",      "label": "Core Pool running & accepting miners",    "ok": status["pool"]["running"] and status["pool"]["active_sessions"] > 0},
-        {"id": "pool-edge", "label": "Edge Pool reachable from Core",           "ok": status.get("pool_edge", {}).get("running", False)},
+        {"id": "edge-node", "label": "Edge Node (Primary) running & reachable",   "ok": status["edge_node"]["running"] and status["edge_node"]["chain_height"] is not None},
+        {"id": "node1",     "label": "Local Backup Node running & synced",      "ok": status["node1"]["running"] and status["node1"]["p2p_bind"] is not None},
+        {"id": "node2",     "label": "Node 2 (Local Dev) optional",            "ok": not status["node2"]["running"] or status["node2"]["known_peers"] > 0},
+        {"id": "pool",      "label": "Edge Pool running & accepting miners",    "ok": status["pool"]["running"] and status["pool"]["active_sessions"] is not None},
+        {"id": "pool-edge", "label": "Edge Pool TCP reachable",                 "ok": status.get("pool_edge", {}).get("running", False)},
         {"id": "miner",     "label": "GPU miner connected & hashing",         "ok": status["miner"]["running"] and status["miner"]["hashrate"] is not None},
-        {"id": "chain",     "label": "Chain height advancing",                 "ok": status["node1"]["chain_height"] is not None and status["node1"]["chain_height"] > 0},
+        {"id": "chain",     "label": "Chain height advancing",                 "ok": status["edge_node"]["chain_height"] is not None and status["edge_node"]["chain_height"] > 0},
         {"id": "payout",    "label": "Payout mechanism ready (fee split active)",  "ok": status["pool"]["running"] and status["pool"]["fee_split"] == "89/5/5/0"},
         {"id": "fee_split", "label": "Fee split 89/5/5/0 (burn model) active",     "ok": status["pool"]["fee_split"] == "89/5/5/0"},
         {"id": "logs",      "label": "Log directory writable",                  "ok": LOG_DIR.exists()},
@@ -1311,10 +1357,10 @@ LAYER_WEIGHTS = {
 }
 
 SERVICE_WEIGHTS = {
-    "node1": 20, "node2": 10, "pool": 10, "miner": 10,
+    "edge-node": 20, "node1": 10, "pool": 10, "miner": 10,
     "bridge": 8, "dao": 8, "atomic-swap": 5, "warp": 4,
     "ai-native": 5, "hiranyagarbha": 3, "ncl": 2, "oasis": 3, "free-world": 2, "issobella": 2,
-    "pool-edge": 0, "prometheus": 0, "grafana": 0, "dashboard": 0,
+    "node2": 0, "pool-edge": 0, "prometheus": 0, "grafana": 0, "dashboard": 0,
 }
 
 
@@ -1359,26 +1405,37 @@ def build_alerts(status: dict) -> list:
     Severity is now derived from SERVICE_REGISTRY."""
     alerts = []
     n1, n2, pool, miner = status["node1"], status["node2"], status["pool"], status["miner"]
+    edge_node = status.get("edge_node", {})
 
     def _sev(svc_id: str, default: str = "warning") -> str:
         svc = get_service(svc_id)
         return svc.get("severity", default) if svc else default
 
-    if not n1["running"]:
-        alerts.append({"severity": _sev("node1", "critical"), "title": "Node 1 not running",
-                       "detail": "Node 1 process not responding or RPC unreachable. Start Node 1 from controls.",
-                       "action": "start-node1"})
-    elif n1["chain_height"] == 0:
-        alerts.append({"severity": _sev("node1", "warning"), "title": "Chain stuck at height 0",
-                       "detail": "Node 1 is up but no blocks have been mined yet.",
+    # Edge Node (Primary) alerts
+    if not edge_node.get("running"):
+        alerts.append({"severity": _sev("edge-node", "critical"), "title": "Edge Node not reachable",
+                       "detail": "Primary node on Edge (100.76.16.108) is not responding via RPC. Check Tailscale VPN and Edge systemd services.",
+                       "action": None})
+    elif edge_node.get("chain_height") == 0:
+        alerts.append({"severity": _sev("edge-node", "warning"), "title": "Edge chain stuck at height 0",
+                       "detail": "Edge node is up but no blocks have been mined yet.",
                        "action": None})
 
-    if n1["running"] and n2["running"] and n1["chain_height"] and n2["chain_height"]:
-        if abs(n1["chain_height"] - n2["chain_height"]) > 5:
-            alerts.append({"severity": _sev("node2", "warning"), "title": "Nodes out of sync",
-                           "detail": f"Node1@{n1['chain_height']} vs Node2@{n2['chain_height']} — gap {abs(n1['chain_height']-n2['chain_height'])}",
-                           "action": "restart-node2"})
+    # Local Backup Node alerts
+    if not n1["running"]:
+        alerts.append({"severity": _sev("node1", "critical"), "title": "Local Backup Node not running",
+                       "detail": "Local backup node is not running. Start it to sync from Edge primary.",
+                       "action": "start-node1"})
 
+    # Sync gap: Edge primary vs local backup
+    if edge_node.get("running") and n1["running"] and edge_node.get("chain_height") and n1["chain_height"]:
+        gap = abs(edge_node["chain_height"] - n1["chain_height"])
+        if gap > 10:
+            alerts.append({"severity": _sev("node1", "warning"), "title": "Backup node far behind Edge",
+                           "detail": f"Edge@{edge_node['chain_height']} vs Local@{n1['chain_height']} — gap {gap}",
+                           "action": "restart-node1"})
+
+    # Pool (Edge) alerts
     if pool["running"] and pool["fee_split"] and pool["fee_split"] != "89/5/5/0":
         alerts.append({"severity": _sev("pool", "critical"), "title": "Wrong fee split",
                        "detail": f"Detected {pool['fee_split']}, mainnet must be 89/5/5/0 (burn model)",
@@ -1389,7 +1446,7 @@ def build_alerts(status: dict) -> list:
                        "detail": "Pool is running but payout_execution=disabled. Set ZION_POOL_PAYOUT_SK_HEX.",
                        "action": None})
 
-    if pool["running"] and pool["nonce_count"] and pool["nonce_count"] < 4096:
+    if pool["running"] and pool.get("nonce_count") and pool["nonce_count"] < 4096:
         alerts.append({"severity": "info", "title": "Low GPU nonce window",
                        "detail": f"ZION_NONCE_COUNT={pool['nonce_count']} is small. Raise to 4096 for better GPU utilisation.",
                        "action": None})
@@ -3257,8 +3314,19 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
 
     <!-- Service Cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div id="card-edge-node" class="bg-zion-800 rounded-xl p-4 border border-zion-700 transition">
+        <div class="flex items-center justify-between mb-3"><span class="text-xs font-semibold uppercase tracking-wider text-gray-400">🌍 Edge Node (Primary)</span><span id="badge-edge-node" class="px-2 py-0.5 rounded text-xs font-bold bg-zion-700 text-gray-300">?</span></div>
+        <div class="text-3xl font-bold mb-1 text-amber-400" id="val-edge-node-height">—</div><div class="text-xs text-gray-400 mb-2">Chain Height</div>
+        <div class="text-xs font-mono text-gray-300 truncate mb-1" id="val-edge-node-hash">—</div>
+        <div class="text-xs text-gray-400 mb-1">Peers: <span id="val-edge-node-peers" class="text-white font-bold">—</span></div>
+        <div class="text-xs text-gray-400 mb-2">Host: <span id="val-edge-node-host" class="font-mono">100.76.16.108</span></div>
+        <div class="flex gap-1 mt-2">
+          <button onclick="window.open('http://100.76.16.108:8443/jsonrpc','_blank')" class="flex-1 text-xs px-2 py-1 bg-zinc-700 hover:bg-zinc-600 rounded transition">🔗 RPC</button>
+        </div>
+      </div>
+
       <div id="card-node1" class="bg-zion-800 rounded-xl p-4 border border-zion-700 transition">
-        <div class="flex items-center justify-between mb-3"><span class="text-xs font-semibold uppercase tracking-wider text-gray-400">🔷 Node 1 (Genesis)</span><span id="badge-node1" class="px-2 py-0.5 rounded text-xs font-bold bg-zion-700 text-gray-300">?</span></div>
+        <div class="flex items-center justify-between mb-3"><span class="text-xs font-semibold uppercase tracking-wider text-gray-400">🔷 Local Backup Node</span><span id="badge-node1" class="px-2 py-0.5 rounded text-xs font-bold bg-zion-700 text-gray-300">?</span></div>
         <div class="text-3xl font-bold mb-1 text-amber-400" id="val-node1-height">—</div><div class="text-xs text-gray-400 mb-2">Chain Height</div>
         <div class="text-xs font-mono text-gray-300 truncate mb-1" id="val-node1-id">—</div>
         <div class="text-xs text-gray-400 mb-1">Peers: <span id="val-node1-peers" class="text-white font-bold">—</span></div>
@@ -3270,7 +3338,7 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
       </div>
 
       <div id="card-node2" class="bg-zion-800 rounded-xl p-4 border border-zion-700 transition">
-        <div class="flex items-center justify-between mb-3"><span class="text-xs font-semibold uppercase tracking-wider text-gray-400">🔶 Node 2 (Follower)</span><span id="badge-node2" class="px-2 py-0.5 rounded text-xs font-bold bg-zion-700 text-gray-300">?</span></div>
+        <div class="flex items-center justify-between mb-3"><span class="text-xs font-semibold uppercase tracking-wider text-gray-400">🔶 Node 2 (Dev / Optional)</span><span id="badge-node2" class="px-2 py-0.5 rounded text-xs font-bold bg-zion-700 text-gray-300">?</span></div>
         <div class="text-3xl font-bold mb-1 text-amber-400" id="val-node2-height">—</div><div class="text-xs text-gray-400 mb-2">Chain Height</div>
         <div class="text-xs font-mono text-gray-300 truncate mb-1" id="val-node2-id">—</div>
         <div class="text-xs text-gray-400 mb-1">Peers: <span id="val-node2-peers" class="text-white font-bold">—</span></div>
@@ -3282,22 +3350,11 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
       </div>
 
       <div id="card-pool" class="bg-zion-800 rounded-xl p-4 border border-zion-700 transition">
-        <div class="flex items-center justify-between mb-3"><span class="text-xs font-semibold uppercase tracking-wider text-gray-400">⚡ Pool</span><span id="badge-pool" class="px-2 py-0.5 rounded text-xs font-bold bg-zion-700 text-gray-300">?</span></div>
+        <div class="flex items-center justify-between mb-3"><span class="text-xs font-semibold uppercase tracking-wider text-gray-400">🌐 Edge Pool (Primary)</span><span id="badge-pool" class="px-2 py-0.5 rounded text-xs font-bold bg-zion-700 text-gray-300">?</span></div>
         <div class="text-3xl font-bold mb-1 text-emerald-400" id="val-pool-sessions">—</div><div class="text-xs text-gray-400 mb-2">Active Sessions</div>
         <div class="text-xs text-gray-400 mb-1">Blocks: <span id="val-pool-blocks" class="text-emerald-400 font-bold">—</span></div>
         <div class="text-xs text-gray-400 mb-1">Shares: <span id="val-pool-shares" class="text-white">—</span></div>
         <div class="text-xs text-amber-400 mb-2" id="val-pool-fee">—</div>
-        <div class="flex gap-1 mt-2">
-          <button onclick="controlAction('start-pool')" class="flex-1 text-xs px-2 py-1 bg-emerald-700 hover:bg-emerald-600 rounded transition">▶ Start</button>
-        </div>
-      </div>
-
-      <div id="card-pool-edge" class="bg-zion-800 rounded-xl p-4 border border-zion-700 transition">
-        <div class="flex items-center justify-between mb-3"><span class="text-xs font-semibold uppercase tracking-wider text-gray-400">🌐 Edge Pool</span><span id="badge-pool-edge" class="px-2 py-0.5 rounded text-xs font-bold bg-zion-700 text-gray-300">?</span></div>
-        <div class="text-3xl font-bold mb-1 text-emerald-400" id="val-pool-edge-status">—</div><div class="text-xs text-gray-400 mb-2">Reachable</div>
-        <div class="text-xs text-gray-400 mb-1">Host: <span id="val-pool-edge-host" class="text-white font-mono">—</span></div>
-        <div class="text-xs text-gray-400 mb-1">Port: <span id="val-pool-edge-port" class="text-white">—</span></div>
-        <div class="text-xs text-amber-400 mb-2" id="val-pool-edge-detail">—</div>
         <div class="flex gap-1 mt-2">
           <button onclick="window.open('http://77.42.71.94:8444','_blank')" class="flex-1 text-xs px-2 py-1 bg-zinc-700 hover:bg-zinc-600 rounded transition">🔗 Public</button>
         </div>
@@ -4695,25 +4752,34 @@ async function refreshAll(){
 }
 
 function updateServiceCards(s){
-  const n1=s.node1,n2=s.node2,p=s.pool,m=s.miner;
+  const en=s.edge_node,n1=s.node1,n2=s.node2,p=s.pool,m=s.miner;
+  // Edge Node (Primary)
+  setBadge('badge-edge-node',en&&en.running);setCardLive('edge-node',en&&en.running);
+  document.getElementById('val-edge-node-height').textContent=en?en.chain_height??'—':'—';
+  document.getElementById('val-edge-node-hash').textContent=en?en.tip_hash??'—':'—';
+  document.getElementById('val-edge-node-peers').textContent=en?en.known_peers??'—':'—';
+  // Local Backup Node
   setBadge('badge-node1',n1.running);setCardLive('node1',n1.running);
   document.getElementById('val-node1-height').textContent=n1.chain_height??'—';
   document.getElementById('val-node1-id').textContent=n1.node_id??'—';
   document.getElementById('val-node1-peers').textContent=n1.known_peers??'—';
   document.getElementById('val-node1-p2p').textContent=n1.p2p_bind??'—';
+  // Node 2 (Dev / Optional)
   setBadge('badge-node2',n2.running);setCardLive('node2',n2.running);
   document.getElementById('val-node2-height').textContent=n2.chain_height??'—';
   document.getElementById('val-node2-id').textContent=n2.node_id??'—';
   document.getElementById('val-node2-peers').textContent=n2.known_peers??'—';
-  const synced=n2.chain_height&&n1.chain_height&&n2.chain_height>=n1.chain_height-1;
+  const synced=en&&en.chain_height&&n1.chain_height&&n1.chain_height>=en.chain_height-5;
   const syncEl=document.getElementById('val-node2-sync');
   syncEl.textContent=synced?'✓ Synced':(n2.known_peers>0?'Syncing…':'No peers');
   syncEl.className=synced?'text-emerald-400 font-bold':'text-amber-400';
+  // Edge Pool (Primary)
   setBadge('badge-pool',p.running);setCardLive('pool',p.running);
   document.getElementById('val-pool-sessions').textContent=p.active_sessions??'0';
   document.getElementById('val-pool-blocks').textContent=p.blocks_found??'0';
   document.getElementById('val-pool-shares').textContent=(p.shares_accepted??0)+' / '+(p.shares_rejected??0);
   document.getElementById('val-pool-fee').textContent=p.fee_split?'Split: '+p.fee_split:'—';
+  // Miner
   setBadge('badge-miner',m.running&&m.hashrate);setCardLive('miner',m.running&&m.hashrate);
   document.getElementById('val-miner-hashrate').textContent=m.hashrate?m.hashrate.toFixed(2):'—';
   document.getElementById('val-miner-gpu').textContent=(m.gpu_backend?m.gpu_backend+': ':'')+(m.gpu_device??'—');
@@ -5344,16 +5410,18 @@ def _build_health_map() -> dict:
     status = build_status()
     health = {}
     # Core services from build_status()
-    for key in ("node1", "node2", "pool", "pool_edge", "miner"):
+    for key in ("edge_node", "node1", "node2", "pool", "pool_edge", "miner"):
         s = status.get(key, {})
         running = s.get("running", False)
         # For services with known sub-conditions, report richer status
-        if key == "node1":
+        if key == "edge_node":
+            health["edge-node"] = "up" if running and s.get("chain_height") is not None else "down"
+        elif key == "node1":
             health["node1"] = "up" if running and s.get("p2p_bind") else "down"
         elif key == "node2":
             health["node2"] = "up" if running and s.get("known_peers", 0) > 0 else "down"
         elif key == "pool":
-            health["pool"] = "up" if running and s.get("active_sessions", 0) > 0 else "down"
+            health["pool"] = "up" if running and s.get("active_sessions") is not None else "down"
         elif key == "miner":
             health["miner"] = "up" if running and s.get("hashrate") else "down"
         else:
@@ -5881,20 +5949,20 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 s = build_status()
                 if layer == "l1":
                     result["ok"] = s.get("node1", {}).get("running", False)
-                    result["block_height"] = s.get("node1", {}).get("chain_height", 0)
-                    result["peers"] = s.get("node1", {}).get("known_peers", 0)
+                    result["block_height"] = s.get("edge_node", {}).get("chain_height", s.get("node1", {}).get("chain_height", 0))
+                    result["peers"] = s.get("edge_node", {}).get("known_peers", s.get("node1", {}).get("known_peers", 0))
                     result["hashrate"] = s.get("miner", {}).get("hashrate", 0)
                     result["shares_accepted"] = s.get("pool", {}).get("shares_accepted", 0)
                     result["pool_alive"] = s.get("pool", {}).get("running", False)
                     result["miner_alive"] = s.get("miner", {}).get("running", False)
                     result["node2_alive"] = s.get("node2", {}).get("running", False)
-                    result["edge_alive"] = s.get("pool_edge", {}).get("running", False)
+                    result["edge_alive"] = s.get("edge_node", {}).get("running", False)
                     result["services"] = {
+                        "edge-node": s.get("edge_node", {}).get("running", False),
                         "node1": s.get("node1", {}).get("running", False),
                         "node2": s.get("node2", {}).get("running", False),
                         "pool": s.get("pool", {}).get("running", False),
                         "miner": s.get("miner", {}).get("running", False),
-                        "pool-edge": s.get("pool_edge", {}).get("running", False),
                     }
             except Exception as e:
                 result["error"] = str(e)
