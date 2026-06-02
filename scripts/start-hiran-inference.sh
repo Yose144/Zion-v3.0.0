@@ -24,6 +24,14 @@ OLLAMA_BIN="$REPO_ROOT/ollama-bin/bin/ollama"
 OLLAMA_LIB="$REPO_ROOT/ollama-bin/lib"
 export OLLAMA_HOST="${OLLAMA_HOST:-127.0.0.1:11434}"
 export OLLAMA_MODELS="${OLLAMA_MODELS:-$HOME/.ollama/models}"
+
+# Performance tuning: use free RAM for more parallel inference
+export OLLAMA_NUM_PARALLEL="${OLLAMA_NUM_PARALLEL:-4}"
+export OLLAMA_MAX_LOADED_MODELS="${OLLAMA_MAX_LOADED_MODELS:-2}"
+export OLLAMA_FLASH_ATTENTION="${OLLAMA_FLASH_ATTENTION:-1}"
+export OLLAMA_KV_CACHE_TYPE="${OLLAMA_KV_CACHE_TYPE:-q4_0}"
+export OLLAMA_KEEP_ALIVE="${OLLAMA_KEEP_ALIVE:-30m}"
+
 VENV_PY="$REPO_ROOT/venv-hiran/bin/python3"
 
 # -- Already running? ----------------------------------------------------------
@@ -75,12 +83,15 @@ fi
 # -- Backend 3: Ollama (local ROCm build) --------------------------------------
 OLLAMA_URL="http://${OLLAMA_HOST#http://}"
 OLLAMA_URL="${OLLAMA_URL#https://}"
-HIRAN_MODEL="hiran-v2.2-fast"
+HIRAN_MODEL="hiran-v2.2-fast-8k"
+HIRAN_FALLBACK="hiran-v2.2-fast"
 if [[ -z "$MODEL_PATH" ]]; then
     if curl -fsS --max-time 2 "${OLLAMA_URL}/api/tags" >/dev/null 2>&1; then
-        # Check if fast model exists, fallback to standard
+        # Prefer 8k context model, fallback to standard fast
         if curl -fsS --max-time 2 "${OLLAMA_URL}/api/tags" | grep -q "$HIRAN_MODEL"; then
-            MODEL_PATH="ollama:${HIRAN_MODEL}"; BACKEND_NAME="Ollama (port ${OLLAMA_HOST}, GPU-fast)"
+            MODEL_PATH="ollama:${HIRAN_MODEL}"; BACKEND_NAME="Ollama (port ${OLLAMA_HOST}, GPU-fast 8K)"
+        elif curl -fsS --max-time 2 "${OLLAMA_URL}/api/tags" | grep -q "$HIRAN_FALLBACK"; then
+            MODEL_PATH="ollama:${HIRAN_FALLBACK}"; BACKEND_NAME="Ollama (port ${OLLAMA_HOST}, GPU-fast)"
         else
             MODEL_PATH="ollama:hiran-v2.2"; BACKEND_NAME="Ollama (port ${OLLAMA_HOST})"
         fi
@@ -98,7 +109,9 @@ if [[ -z "$MODEL_PATH" ]]; then
         done
         if curl -fsS --max-time 2 "${OLLAMA_URL}/api/tags" >/dev/null 2>&1; then
             if curl -fsS --max-time 2 "${OLLAMA_URL}/api/tags" | grep -q "$HIRAN_MODEL"; then
-                MODEL_PATH="ollama:${HIRAN_MODEL}"; BACKEND_NAME="Ollama (port ${OLLAMA_HOST}, GPU-fast)"
+                MODEL_PATH="ollama:${HIRAN_MODEL}"; BACKEND_NAME="Ollama (port ${OLLAMA_HOST}, GPU-fast 8K)"
+            elif curl -fsS --max-time 2 "${OLLAMA_URL}/api/tags" | grep -q "$HIRAN_FALLBACK"; then
+                MODEL_PATH="ollama:${HIRAN_FALLBACK}"; BACKEND_NAME="Ollama (port ${OLLAMA_HOST}, GPU-fast)"
             else
                 MODEL_PATH="ollama:hiran-v2.2"; BACKEND_NAME="Ollama (port ${OLLAMA_HOST})"
             fi
