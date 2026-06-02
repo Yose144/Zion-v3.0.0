@@ -95,7 +95,15 @@ impl FeeConfig {
 /// PPLNS engine configuration.
 #[derive(Debug, Clone)]
 pub struct PplnsConfig {
-    /// Maximum number of shares in the sliding window.
+    /// Maximum total difficulty in the sliding window.
+    ///
+    /// The window is measured in **work units** (sum of share difficulties),
+    /// not raw share count. A share with difficulty 4096 consumes 4096
+    /// units of window capacity. This makes the window size independent of
+    /// vardiff and gives fair PPLNS regardless of per-miner difficulty.
+    ///
+    /// Default 50_000 gives ~25 shares per miner at diff 2000 with 1000
+    /// miners, or several minutes of history at typical submit rates.
     pub window_size: usize,
     /// Minimum payout amount in flowers. Miners below this accumulate.
     pub min_payout_flowers: u64,
@@ -106,7 +114,7 @@ pub struct PplnsConfig {
 impl Default for PplnsConfig {
     fn default() -> Self {
         Self {
-            window_size: 1_000,
+            window_size: 50_000,
             min_payout_flowers: zion_core::wallet::MIN_PAYOUT_AMOUNT,
             fee_config: FeeConfig::default(),
         }
@@ -119,6 +127,9 @@ pub struct PplnsEngine {
     config: PplnsConfig,
     /// Sliding window of recent accepted shares (newest at back).
     window: VecDeque<PplnsShare>,
+    /// Sum of difficulties of all shares currently in the window.
+    /// Used for difficulty-weighted eviction (work-unit PPLNS).
+    window_total_difficulty: u128,
     /// Registered payout addresses per miner_id.
     addresses: HashMap<String, String>,
     /// Accumulated unpaid balance per miner_id (flowers).
@@ -140,6 +151,7 @@ impl PplnsEngine {
         Self {
             config,
             window: VecDeque::with_capacity(1_024),
+            window_total_difficulty: 0,
             addresses: HashMap::new(),
             unpaid: HashMap::new(),
             total_paid_flowers: 0,
@@ -182,17 +194,23 @@ impl PplnsEngine {
             .unwrap_or_default()
             .as_millis() as u64;
 
+        let diff = difficulty.max(1);
         self.window.push_back(PplnsShare {
             miner_id: miner_id.to_string(),
             worker_name: worker_name.to_string(),
             timestamp_ms,
             height,
-            difficulty: difficulty.max(1),
+            difficulty: diff,
         });
+        self.window_total_difficulty += diff as u128;
 
-        // Evict oldest shares beyond the window.
-        while self.window.len() > self.config.window_size {
-            self.window.pop_front();
+        // Evict oldest shares until total difficulty fits the window limit.
+        while self.window_total_difficulty > self.config.window_size as u128 {
+            if let Some(oldest) = self.window.pop_front() {
+                self.window_total_difficulty -= oldest.difficulty as u128;
+            } else {
+                break;
+            }
         }
     }
 
@@ -216,15 +234,21 @@ impl PplnsEngine {
         timestamp_ms: u64,
         difficulty: u64,
     ) {
+        let diff = difficulty.max(1);
         self.window.push_back(PplnsShare {
             miner_id: miner_id.to_string(),
             worker_name: worker_name.to_string(),
             timestamp_ms,
             height,
-            difficulty: difficulty.max(1),
+            difficulty: diff,
         });
-        while self.window.len() > self.config.window_size {
-            self.window.pop_front();
+        self.window_total_difficulty += diff as u128;
+        while self.window_total_difficulty > self.config.window_size as u128 {
+            if let Some(oldest) = self.window.pop_front() {
+                self.window_total_difficulty -= oldest.difficulty as u128;
+            } else {
+                break;
+            }
         }
     }
 
@@ -676,7 +700,7 @@ mod tests {
     #[test]
     fn default_config_uses_core_constants() {
         let cfg = PplnsConfig::default();
-        assert_eq!(cfg.window_size, 1_000);
+        assert_eq!(cfg.window_size, 50_000);
         assert_eq!(cfg.min_payout_flowers, zion_core::wallet::MIN_PAYOUT_AMOUNT);
         // Guard against drift with zion_core::emission constants.
         assert_eq!(cfg.fee_config.humanitarian_pct, zion_core::emission::HUMANITARIAN_PCT);
