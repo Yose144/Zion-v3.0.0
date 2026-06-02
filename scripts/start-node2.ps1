@@ -1,4 +1,4 @@
-# ZION V3 — Start Node 2 (Follower) with log redirect
+# ZION V3 — Start Node 2 (Local Dev / Optional)
 $logDir = "C:\Users\yosef\Desktop\Zion\2.9.6-main\logs"
 New-Item -ItemType Directory -Path $logDir -Force | Out-Null
 

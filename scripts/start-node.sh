@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# ZION V3 — Start Node 1 (Genesis) with log redirect
+# ZION V3 — Start Local Backup Node (syncs from Edge primary)
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
