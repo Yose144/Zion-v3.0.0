@@ -1,14 +1,14 @@
 [Unit]
 Description=ZION Edge Pool (Primary)
-After=network-online.target tailscaled.service zion-edge-node.service
+After=network-online.target tailscaled.service zion-edge-node1.service
 Wants=network-online.target
-Requires=zion-edge-node.service
+Requires=zion-edge-node1.service
 
 [Service]
 Type=simple
 User=root
 WorkingDirectory=/root/zion-2.9.6-main
-EnvironmentFile=/root/zion-2.9.6-main/edge-environment.sh
+EnvironmentFile=/root/zion-2.9.6-main/edge-deploy/config/edge-environment.sh
 Environment="RUST_LOG=info,zion_pool=debug"
 ExecStart=/root/zion-2.9.6-main/V3/target/release/server
 Restart=always
