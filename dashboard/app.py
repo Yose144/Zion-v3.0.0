@@ -2314,6 +2314,27 @@ def build_payout_status() -> dict:
                         m["invalid_shares"] = s.get("stats", {}).get("invalid_shares")
                 except Exception:
                     pass
+                # Fetch on-chain balance for the miner's payout address
+                payout_addr = m.get("payout_address", "")
+                if payout_addr and payout_addr.startswith("zion1"):
+                    try:
+                        # rpc_call returns the "result" dict directly (not wrapped).
+                        bal = rpc_call("127.0.0.1", 8443, "getBalance", {"address": payout_addr})
+                        if bal:
+                            # balance_flowers may be returned as a string by the RPC.
+                            bal_raw = bal.get("balance_flowers", 0)
+                            bal_flowers = int(bal_raw) if bal_raw else 0
+                            m["on_chain_balance_flowers"] = bal_flowers
+                            m["on_chain_balance_zion"] = bal_flowers / 1_000_000_000_000
+                        else:
+                            m["on_chain_balance_flowers"] = 0
+                            m["on_chain_balance_zion"] = 0
+                    except Exception:
+                        m["on_chain_balance_flowers"] = 0
+                        m["on_chain_balance_zion"] = 0
+                else:
+                    m["on_chain_balance_flowers"] = 0
+                    m["on_chain_balance_zion"] = 0
                 status["miner_stats"].append(m)
                 # Fetch recent payouts
                 payouts_url = f"http://127.0.0.1:8455/api/v1/miner/{addr}/payouts"
