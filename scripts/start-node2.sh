@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# ZION V3 — Start Node 2 (Follower) with log redirect
+# ZION V3 — Start Node 2 (Local Dev / Optional)
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"

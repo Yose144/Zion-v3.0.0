@@ -1683,13 +1683,12 @@ async function renderWizard(){
   const C = (id) => cl.checks.find(c => c.id === id);
   const steps = [
     { n: 1, title: 'Prepare environment', desc: 'Generate keys (gen-keys), assemble .env with all wallets and ZION_POOL_PAYOUT_SK_HEX.', done: C('env').ok, actions: [{ label: 'View env files', tab: 'env' }] },
-    { n: 2, title: 'Start Node 1 (Genesis)', desc: 'Source-of-truth node at 0.0.0.0:8333 (P2P) / 0.0.0.0:8443 (RPC).', done: C('node1').ok, actions: [{ label: '▶ Start Node 1', control: 'start-node1' }] },
-    { n: 3, title: 'Start Node 2 (Follower)', desc: 'Connects to Node1 as peer, validates P2P handshake & block sync.', done: C('node2').ok, actions: [{ label: '▶ Start Node 2', control: 'start-node2' }] },
-    { n: 4, title: 'Start Pool', desc: 'Pulls templates from Node1 RPC, accepts miners on 0.0.0.0:8444.', done: C('pool').ok, actions: [{ label: '▶ Start Pool', control: 'start-pool' }] },
-    { n: 5, title: 'Start GPU Miner', desc: 'Connects to pool, performs cosmic_harmony hashing on GPU.', done: C('miner').ok, actions: [{ label: '▶ Start Miner', control: 'start-miner' }] },
-    { n: 6, title: 'Start Monitoring', desc: 'Launch Prometheus + Grafana via Docker for metrics dashboards.', done: false, actions: [{ label: '▶ Start Monitoring', control: 'start-monitoring' }, { label: 'Open Grafana', href: 'http://127.0.0.1:3000' }] },
-    { n: 7, title: 'Verify chain progression', desc: 'Confirm chain height advances and blocks propagate to Node 2.', done: C('chain').ok, actions: [{ label: 'View events', tab: 'events' }] },
-    { n: 8, title: 'Confirm fee split & payouts', desc: 'Validate 89/5/5/1 distribution and payout wallet funded.', done: C('fee_split').ok && C('payout').ok, actions: [{ label: 'View payouts', tab: 'overview' }] },
+    { n: 2, title: 'Start Local Backup Node', desc: 'Syncs from Edge primary via Tailscale VPN. 0.0.0.0:8333 (P2P) / 0.0.0.0:8443 (RPC).', done: C('node1').ok, actions: [{ label: '▶ Start Backup Node', control: 'start-node1' }] },
+    { n: 3, title: 'Connect to Edge Pool', desc: 'Edge (100.76.16.108) runs the primary pool. Verify VPN connectivity.', done: C('pool-edge').ok, actions: [{ label: 'Check Edge Pool', control: 'check-pool-edge' }] },
+    { n: 4, title: 'Start GPU Miner', desc: 'Connects to Edge pool, performs cosmic_harmony hashing on GPU.', done: C('miner').ok, actions: [{ label: '▶ Start Miner', control: 'start-miner' }] },
+    { n: 5, title: 'Start Monitoring', desc: 'Launch Prometheus + Grafana via Docker for metrics dashboards.', done: false, actions: [{ label: '▶ Start Monitoring', control: 'start-monitoring' }, { label: 'Open Grafana', href: 'http://127.0.0.1:3000' }] },
+    { n: 6, title: 'Verify chain progression', desc: 'Confirm local backup node syncs with Edge and chain height advances.', done: C('chain').ok, actions: [{ label: 'View events', tab: 'events' }] },
+    { n: 7, title: 'Confirm fee split & payouts', desc: 'Validate 89/5/5 burn-model distribution and payout wallet funded.', done: C('fee_split').ok && C('payout').ok, actions: [{ label: 'View payouts', tab: 'overview' }] },
   ];
   const cont = document.getElementById('wizard-steps');
   cont.innerHTML = steps.map((s, i) => {
@@ -4628,7 +4627,7 @@ function renderPayoutDonut(payouts) {
     }
   }
   const data = hasData ? [totals.miner, totals.charity, totals.dev, totals.pool] : [1,1,1,1];
-  const labels = ['Miner (89%)','Charity (5%)','Dev (5%)','Pool (1%)'];
+  const labels = ['Miner (89%)','Charity (5%)','Dev (5%)','Burned (1%)'];
   const colors = ['#22c55e','#f59e0b','#3b82f6','#8b5cf6'];
   const emptyColors = ['rgba(34,197,94,0.15)','rgba(245,158,11,0.15)','rgba(59,130,246,0.15)','rgba(139,92,246,0.15)'];
 
