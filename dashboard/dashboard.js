@@ -168,11 +168,15 @@ async function refreshAll(){
     document.getElementById('progressText').textContent = checklistData.passed + '/' + checklistData.total;
     document.getElementById('progressBar').style.width = checklistData.pct + '%';
 
-    // Hero stats
-    const live = [statusData.node1, statusData.node2, statusData.pool, statusData.miner].filter(x => x.running).length;
+    // Hero stats (topology-aware)
+    const isEdge = statusData.topology === 'edge-primary';
+    const live = isEdge
+      ? [statusData.node1, statusData.edge_node, statusData.pool, statusData.miner].filter(x => x && x.running).length
+      : [statusData.node1, statusData.node2, statusData.pool, statusData.miner].filter(x => x && x.running).length;
     document.getElementById('hero-services-up').textContent = live;
     document.getElementById('hero-blockers-open').textContent = blockersData.open;
-    document.getElementById('hero-chain-height').textContent = statusData.node1.chain_height ?? '—';
+    const heroHeight = isEdge ? (statusData.edge_node?.chain_height ?? statusData.node1?.chain_height) : statusData.node1?.chain_height;
+    document.getElementById('hero-chain-height').textContent = heroHeight ?? '—';
     document.getElementById('hero-status-kicker').textContent = blockersData.ready_for_launch
       ? '✅ Ready · All P0 Blockers Resolved'
       : '⏳ Pre-Launch · ' + blockersData.open_critical + ' critical blockers';
@@ -312,7 +316,7 @@ function updateServiceCards(s){
       : '<span class="text-[10px] text-gray-500">No open ports detected</span>';
   }
 
-  setBadge('badge-miner', m.running && m.hashrate); setCardLive('miner', m.running && m.hashrate);
+  setBadge('badge-miner', m.running); setCardLive('miner', m.running);
   const mh = document.getElementById('val-miner-hashrate');
   if(mh) mh.textContent = m.hashrate ? m.hashrate.toFixed(2) : '—';
   const mg = document.getElementById('val-miner-gpu');
@@ -387,9 +391,9 @@ async function updateLayerServices(){
 
 function updatePayouts(p, topology){
   // Update payout section based on topology
-  // In edge-primary: pool data comes from Edge pool (pool_edge)
+  // In edge-primary: pool data comes from Edge pool (pool status object)
   // In local-dev: pool data comes from local pool
-  const poolData = topology === 'edge-primary' ? window.currentStatus?.pool_edge : p;
+  const poolData = topology === 'edge-primary' ? (p || window.currentStatus?.pool) : p;
   
   const pw = document.getElementById('payout-wallet');
   if(pw) pw.textContent = poolData?.pool_wallet ?? '—';
@@ -5093,3 +5097,4 @@ refreshAll = async function() {
 };
 
 console.log('[ZION Dashboard] Auto-refresh started');
+loadMinerConfig();
