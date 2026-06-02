@@ -5968,6 +5968,35 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 self.wfile.write(body)
             else:
                 self.send_error(404)
+        # ── Dashboard v3 SPA static files ────────────────────────────────────
+        elif route == "/v3" or route == "/v3/" or route == "/v3/index.html":
+            v3_index = SCRIPT_DIR / "v3" / "index.html"
+            if v3_index.exists():
+                self._html(v3_index.read_text(encoding="utf-8"))
+            else:
+                self.send_error(404, "Dashboard V3 not found. Run: mkdir -p dashboard/v3 && create index.html")
+            return
+        elif route.startswith("/v3/"):
+            v3_file = SCRIPT_DIR / "v3" / route[4:].lstrip("/")
+            if v3_file.exists() and v3_file.is_file():
+                content_type = {
+                    ".css":  "text/css; charset=utf-8",
+                    ".js":   "application/javascript; charset=utf-8",
+                    ".html": "text/html; charset=utf-8",
+                    ".json": "application/json",
+                    ".png":  "image/png",
+                    ".jpg":  "image/jpeg",
+                    ".svg":  "image/svg+xml",
+                }.get(v3_file.suffix, "application/octet-stream")
+                body = v3_file.read_bytes()
+                self.send_response(200)
+                self.send_header("Content-Type", content_type)
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+            else:
+                self.send_error(404)
+            return
         elif route == "/api/v2/status":
             # Batch endpoint: single call returns everything dashboard v2 needs on boot
             st = build_status()
