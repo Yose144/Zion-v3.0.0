@@ -114,7 +114,7 @@ export default function Footer() {
           <p className="text-[11px] leading-relaxed text-gray-600 max-w-3xl">
             {tr('footer', 'disclaimer', lang)}
             {' '}{tr('footer', 'legal_suffix', lang)}{' '}
-            <Link href="/legal" className="text-gray-500 hover:text-gray-300 underline underline-offset-2 transition-colors">
+            <Link href="/docs#legal" className="text-gray-500 hover:text-gray-300 underline underline-offset-2 transition-colors">
               {tr('footer', 'legal_disclaimer', lang)}
             </Link>{' '}
             {tr('footer', 'legal_suffix_tail', lang)}

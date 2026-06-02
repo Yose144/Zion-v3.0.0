@@ -413,7 +413,6 @@ async function refreshPayout(){
     if (data.miner_wallet) set('payout-breakdown-miner-addr', data.miner_wallet);
     if (data.humanitarian_wallet) set('payout-breakdown-charity-addr', data.humanitarian_wallet);
     if (data.issobella_wallet) set('payout-breakdown-dev-addr', data.issobella_wallet);
-    if (data.pool_fee_wallet) set('payout-breakdown-pool-addr', data.pool_fee_wallet);
     // Compute per-block amounts from latest payout
     if (data.payouts && data.payouts.length) {
       const latest = data.payouts[data.payouts.length - 1];
@@ -429,15 +428,16 @@ async function refreshPayout(){
     set('payout-breakdown-miner-bal',  bals.miner ? _zionFmt(bals.miner.zion) + ' Z' : '—');
     set('payout-breakdown-charity-bal', bals.humanitarian ? _zionFmt(bals.humanitarian.zion) + ' Z' : '—');
     set('payout-breakdown-dev-bal',    bals.issobella ? _zionFmt(bals.issobella.zion) + ' Z' : '—');
-    set('payout-breakdown-pool-bal',   bals.pool_fee ? _zionFmt(bals.pool_fee.zion) + ' Z' : '—');
+    // Pool-fee row shows cumulative BURNED total (never minted).
+    set('payout-breakdown-pool-bal',   data.burned_total != null ? _zionFmt(data.burned_total) + ' Z' : '—');
     if (data.miner_wallet) set('fs-bal-miner-addr', data.miner_wallet);
     if (data.humanitarian_wallet) set('fs-bal-charity-addr', data.humanitarian_wallet);
     if (data.issobella_wallet) set('fs-bal-dev-addr', data.issobella_wallet);
-    if (data.pool_fee_wallet) set('fs-bal-pool-addr', data.pool_fee_wallet);
     set('fs-bal-miner',  bals.miner ? _zionFmt(bals.miner.zion) : '—');
     set('fs-bal-charity', bals.humanitarian ? _zionFmt(bals.humanitarian.zion) : '—');
     set('fs-bal-dev',    bals.issobella ? _zionFmt(bals.issobella.zion) : '—');
-    set('fs-bal-pool',   bals.pool_fee ? _zionFmt(bals.pool_fee.zion) : '—');
+    // Cumulative burned (1% pool-fee slot, never minted).
+    set('fs-burned-total', data.burned_total != null ? _zionFmt(data.burned_total) : '—');
 
     // Active Miners table
     const minersTable = document.getElementById('payout-miners-table');

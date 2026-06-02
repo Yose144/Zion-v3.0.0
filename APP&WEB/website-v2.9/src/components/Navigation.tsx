@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { Menu, X, SignalHigh, Orbit, ChevronDown, LayoutDashboard, Pickaxe } from 'lucide-react';
+import { Menu, X, SignalHigh, Orbit, ChevronDown, LayoutDashboard, Pickaxe, Shield } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { tr } from '@/lib/translations';
 import { SITE_RELEASE_LABEL } from '@/lib/site';
@@ -29,6 +29,7 @@ export default function Navigation() {
         { href: '/network', label: tr('nav', 'network', lang) },
         { href: '/explorer', label: tr('nav', 'explorer', lang) },
         { href: '/dashboard', label: tr('nav', 'dashboard', lang) },
+        { href: '/dashboard/mission-control', label: 'Mission Control' },
         { href: '/dashboard/guardian', label: tr('nav', 'guardian', lang) },
         { href: '/pool', label: tr('nav', 'pool', lang) },
         { href: '/mining', label: tr('nav', 'mining', lang) },
@@ -348,7 +349,7 @@ export default function Navigation() {
                     {lang === 'cs' ? tr('nav', 'language_toggle_mobile_cs', lang) : tr('nav', 'language_toggle_mobile_en', lang)}
                   </button>
                 </div>
-                <div className="grid grid-cols-3 gap-2 text-xs">
+                <div className="grid grid-cols-2 gap-2 text-xs">
                   <Link
                     href="/explorer"
                     onClick={() => setIsOpen(false)}
@@ -369,6 +370,20 @@ export default function Navigation() {
                     className="rounded-xl bg-linear-to-r from-zion-gold via-zion-purple to-zion-cyan px-3 py-3 inline-flex items-center gap-2 text-white min-h-[44px] font-semibold"
                   >
                     {tr('nav', 'dashboard', lang)}
+                  </Link>
+                  <Link
+                    href="/dashboard/mission-control"
+                    onClick={() => setIsOpen(false)}
+                    className="rounded-xl border border-white/10 bg-white/5 px-3 py-3 inline-flex items-center gap-2 min-h-[44px] active:bg-white/10"
+                  >
+                    <LayoutDashboard className="w-3 h-3 text-zion-gold shrink-0" /> Mission Control
+                  </Link>
+                  <Link
+                    href="/dashboard/guardian"
+                    onClick={() => setIsOpen(false)}
+                    className="rounded-xl border border-white/10 bg-white/5 px-3 py-3 inline-flex items-center gap-2 min-h-[44px] active:bg-white/10"
+                  >
+                    <Shield className="w-3 h-3 text-zion-gold shrink-0" /> {tr('nav', 'guardian', lang)}
                   </Link>
                 </div>
               </div>
