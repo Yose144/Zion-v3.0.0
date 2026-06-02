@@ -2092,6 +2092,25 @@ def get_pool_wallet_status() -> dict:
 
 # ── Payout System Status Builder ─────────────────────────────────────────
 
+def fetch_pool_stats() -> dict:
+    """Fetch live pool stats from routing metrics endpoint (port 8455)."""
+    try:
+        import urllib.request
+        with urllib.request.urlopen("http://127.0.0.1:8455/stats", timeout=2) as r:
+            return json.loads(r.read().decode())
+    except Exception:
+        return {}
+
+def fetch_pool_miners() -> list:
+    """Fetch active miners from routing metrics endpoint (port 8455)."""
+    try:
+        import urllib.request
+        with urllib.request.urlopen("http://127.0.0.1:8455/miners?limit=50", timeout=2) as r:
+            data = json.loads(r.read().decode())
+            return data.get("miners", [])
+    except Exception:
+        return []
+
 def build_payout_status() -> dict:
     """Build comprehensive payout status for the Payout dashboard tab."""
     recent = tail_log("pool.log", 500)
@@ -2115,6 +2134,8 @@ def build_payout_status() -> dict:
         "payouts": [],
         "pending_payouts": 0,
         "miner_perf": {},
+        "pool_stats": {},
+        "miners": [],
     }
     # Parse startup config
     for line in startup:
@@ -2234,6 +2255,39 @@ def build_payout_status() -> dict:
         if bal and not bal.get("_rpc_error"):
             atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
             status["pool_wallet_balance"] = atomic
+    # Enrich with live pool stats from routing metrics endpoint
+    pool_stats = fetch_pool_stats()
+    if pool_stats:
+        status["pool_stats"] = pool_stats
+        status["miners"] = fetch_pool_miners()
+        # Override blocks_found with telemetry count if available
+        if pool_stats.get("blocks", {}).get("found"):
+            status["blocks_found"] = pool_stats["blocks"]["found"]
+        # Override fee_split with live data
+        fs = pool_stats.get("fee_split", {})
+        if fs.get("miner_pct"):
+            status["fee_split"] = f"{fs['miner_pct']}/{fs['humanitarian_pct']}/{fs['issobella_pct']}/{fs['pool_fee_pct']}"
+        # Wallets from live config
+        if fs.get("humanitarian_wallet"):
+            status["humanitarian_wallet"] = fs["humanitarian_wallet"]
+        if fs.get("issobella_wallet"):
+            status["issobella_wallet"] = fs["issobella_wallet"]
+        if fs.get("pool_fee_wallet"):
+            status["pool_fee_wallet"] = fs["pool_fee_wallet"]
+        # Pending from PPLNS
+        payouts_data = pool_stats.get("payouts", {})
+        if payouts_data.get("pending_total_atomic") is not None:
+            status["pending_payouts"] = payouts_data["pending_miners"]
+        # Hashrate from telemetry
+        hr = pool_stats.get("hashrate", {})
+        if hr.get("pool"):
+            status["miner_perf"]["hashrate"] = hr["pool"]
+        # Shares from routing stats
+        routing = pool_stats.get("routing", {})
+        if routing.get("accepted") is not None:
+            status["miner_perf"]["shares_accepted"] = routing["accepted"]
+        if routing.get("rejected") is not None:
+            status["miner_perf"]["shares_rejected"] = routing["rejected"]
     return status
 
 # ── AI services status (Hiran + Hiranyagarbha) ───────────────────────────
