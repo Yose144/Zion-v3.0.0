@@ -2289,6 +2289,47 @@ def build_payout_status() -> dict:
     else:
         status["fee_split_earnings"] = {}
 
+    # Fetch detailed miner payout data from pool routing metrics
+    status["miner_payouts_detail"] = []
+    status["miner_stats"] = []
+    try:
+        import urllib.request
+        with urllib.request.urlopen("http://127.0.0.1:8455/miners?limit=50", timeout=2) as r:
+            miners_data = json.loads(r.read().decode())
+            for m in miners_data.get("miners", []):
+                addr = m.get("address", "")
+                if addr.startswith("__"):
+                    continue
+                # Fetch stats
+                stats_url = f"http://127.0.0.1:8455/api/v1/miner/{addr}/stats"
+                try:
+                    with urllib.request.urlopen(stats_url, timeout=2) as sr:
+                        s = json.loads(sr.read().decode())
+                        m["total_paid"] = s.get("stats", {}).get("total_paid")
+                        m["pending_balance"] = s.get("stats", {}).get("pending_balance")
+                        m["valid_shares"] = s.get("stats", {}).get("valid_shares")
+                        m["invalid_shares"] = s.get("stats", {}).get("invalid_shares")
+                except Exception:
+                    pass
+                status["miner_stats"].append(m)
+                # Fetch recent payouts
+                payouts_url = f"http://127.0.0.1:8455/api/v1/miner/{addr}/payouts"
+                try:
+                    with urllib.request.urlopen(payouts_url, timeout=2) as pr:
+                        p = json.loads(pr.read().decode())
+                        for entry in p.get("pending_payouts", [])[:10]:
+                            entry["miner_address"] = addr
+                            entry["miner_worker"] = m.get("worker_name", "")
+                            entry["amount_zion"] = entry.get("amount", 0) / 1_000_000_000_000
+                            status["miner_payouts_detail"].append(entry)
+                except Exception:
+                    pass
+    except Exception:
+        pass
+    # Sort payouts by height desc
+    status["miner_payouts_detail"].sort(key=lambda x: x.get("height", 0), reverse=True)
+    status["miner_payouts_detail"] = status["miner_payouts_detail"][:20]
+
     # Enrich with live pool stats from routing metrics endpoint
     pool_stats = fetch_pool_stats()
     if pool_stats:

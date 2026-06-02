@@ -3394,37 +3394,77 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
       </div>
     </div>
 
-    <!-- Fee Split Earnings (calculated from blocks_found × subsidy × %) -->
-    <h3 class="text-sm font-bold text-gray-300 mb-3">💎 Fee Split Earnings</h3>
-    <p class="text-xs text-gray-500 mb-3">Estimated from blocks found × block subsidy × fee %. On-chain balances may include premine or other inflows.</p>
+    <!-- Active Miners -->
+    <div class="zion-panel p-5">
+      <h3 class="text-sm font-bold mb-3">⛏️ Active Miners</h3>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead>
+            <tr class="text-gray-400 border-b border-white/10">
+              <th class="py-2 px-2">Miner ID</th>
+              <th class="py-2 px-2">Worker</th>
+              <th class="py-2 px-2 text-right">Valid Shares</th>
+              <th class="py-2 px-2 text-right">Hashrate</th>
+              <th class="py-2 px-2 text-right">Total Paid</th>
+              <th class="py-2 px-2 text-right">Pending</th>
+            </tr>
+          </thead>
+          <tbody id="payout-miners-table" class="font-mono">
+            <tr><td colspan="6" class="py-2 px-2 text-gray-500 italic">No miners connected</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- PPLNS Payouts -->
+    <div class="zion-panel p-5">
+      <h3 class="text-sm font-bold mb-3">📜 PPLNS Payouts to Miners</h3>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead>
+            <tr class="text-gray-400 border-b border-white/10">
+              <th class="py-2 px-2">Block</th>
+              <th class="py-2 px-2">Miner</th>
+              <th class="py-2 px-2 text-right">Amount</th>
+              <th class="py-2 px-2 text-right">Shares</th>
+              <th class="py-2 px-2">Status</th>
+              <th class="py-2 px-2">TX ID</th>
+            </tr>
+          </thead>
+          <tbody id="payout-detail-table" class="font-mono">
+            <tr><td colspan="6" class="py-2 px-2 text-gray-500 italic">No payouts yet</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- On-chain Balances -->
+    <h3 class="text-sm font-bold text-gray-300 mb-3">💎 On-chain Balances</h3>
+    <p class="text-xs text-gray-500 mb-3">Total on-chain balance per address (includes fee-split earnings, premine, and other inflows).</p>
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
       <div class="zion-panel p-4 text-center">
-        <div class="text-[10px] text-gray-400 mb-1">⛏️ Miner (89%)</div>
-        <div class="text-sm font-mono text-white truncate" id="fs-earn-miner-addr">—</div>
-        <div class="text-xl font-bold text-amber-400 mt-1" id="fs-earn-miner">—</div>
-        <div class="text-[10px] text-gray-500">ZION earned</div>
-        <div class="text-[10px] text-gray-500 mt-1">On-chain: <span id="fs-bal-miner" class="text-gray-300">—</span></div>
+        <div class="text-[10px] text-gray-400 mb-1">⛏️ Miner</div>
+        <div class="text-sm font-mono text-white truncate" id="fs-bal-miner-addr">—</div>
+        <div class="text-xl font-bold text-amber-400 mt-1" id="fs-bal-miner">—</div>
+        <div class="text-[10px] text-gray-500">ZION</div>
       </div>
       <div class="zion-panel p-4 text-center">
-        <div class="text-[10px] text-gray-400 mb-1">🌍 Humanitarian (5%)</div>
-        <div class="text-sm font-mono text-white truncate" id="fs-earn-charity-addr">—</div>
-        <div class="text-xl font-bold text-emerald-400 mt-1" id="fs-earn-charity">—</div>
-        <div class="text-[10px] text-gray-500">ZION earned</div>
-        <div class="text-[10px] text-gray-500 mt-1">On-chain: <span id="fs-bal-charity" class="text-gray-300">—</span></div>
+        <div class="text-[10px] text-gray-400 mb-1">🌍 Humanitarian</div>
+        <div class="text-sm font-mono text-white truncate" id="fs-bal-charity-addr">—</div>
+        <div class="text-xl font-bold text-emerald-400 mt-1" id="fs-bal-charity">—</div>
+        <div class="text-[10px] text-gray-500">ZION</div>
       </div>
       <div class="zion-panel p-4 text-center">
-        <div class="text-[10px] text-gray-400 mb-1">🚀 Issobella (5%)</div>
-        <div class="text-sm font-mono text-white truncate" id="fs-earn-dev-addr">—</div>
-        <div class="text-xl font-bold text-purple-400 mt-1" id="fs-earn-dev">—</div>
-        <div class="text-[10px] text-gray-500">ZION earned</div>
-        <div class="text-[10px] text-gray-500 mt-1">On-chain: <span id="fs-bal-dev" class="text-gray-300">—</span></div>
+        <div class="text-[10px] text-gray-400 mb-1">🚀 Issobella</div>
+        <div class="text-sm font-mono text-white truncate" id="fs-bal-dev-addr">—</div>
+        <div class="text-xl font-bold text-purple-400 mt-1" id="fs-bal-dev">—</div>
+        <div class="text-[10px] text-gray-500">ZION</div>
       </div>
       <div class="zion-panel p-4 text-center">
-        <div class="text-[10px] text-gray-400 mb-1">⚡ Pool Fee (1%)</div>
-        <div class="text-sm font-mono text-white truncate" id="fs-earn-pool-addr">—</div>
-        <div class="text-xl font-bold text-blue-400 mt-1" id="fs-earn-pool">—</div>
-        <div class="text-[10px] text-gray-500">ZION earned</div>
-        <div class="text-[10px] text-gray-500 mt-1">On-chain: <span id="fs-bal-pool" class="text-gray-300">—</span></div>
+        <div class="text-[10px] text-gray-400 mb-1">⚡ Pool Fee</div>
+        <div class="text-sm font-mono text-white truncate" id="fs-bal-pool-addr">—</div>
+        <div class="text-xl font-bold text-blue-400 mt-1" id="fs-bal-pool">—</div>
+        <div class="text-[10px] text-gray-500">ZION</div>
       </div>
     </div>
 
@@ -3642,6 +3682,6 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
   </div>
 </div>
 
-<script src="/dashboard.js?v=13"></script>
+<script src="/dashboard.js?v=14"></script>
 </body>
 </html>
