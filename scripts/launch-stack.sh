@@ -68,6 +68,7 @@ export ZION_POOL_PAYOUT_SK_HEX='[REDACTED — pool SK removed for security]'
 export ZION_NONCE_COUNT='4096'
 export ZION_VARDIFF_START_DIFF='1'
 export ZION_VARDIFF_MAX_DIFF='1000000'
+export ZION_ROUTING_METRICS_BIND='0.0.0.0:8455'
 
 nohup "$POOL_EXE" > "$LOG_DIR/pool.log" 2> "$LOG_DIR/pool.err" &
 PP=$!
