@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# ZION V3 — Stop Node 2 (Follower). Uses PID file (node1 + node2 share the same binary).
+# ZION V3 — Stop Node 2 (Local Dev). Uses PID file (node1 + node2 share the same binary).
 set -uo pipefail
 source "$(dirname "$0")/_lib.sh"
 stop_pidfile "node2" "node2"
