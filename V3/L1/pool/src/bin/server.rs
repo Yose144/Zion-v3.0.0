@@ -975,13 +975,16 @@ fn handle_client(
                     }
                     let payouts = {
                         if job.height > 0 {
-                            // Pass only the miner share (89%) — core already
-                            // distributes protocol fees via coinbase outputs.
+                            // Core already distributes the protocol fees
+                            // (humanitarian / issobella / pool_fee) atomically via
+                            // the coinbase outputs, and credits the pool wallet with
+                            // only the 89% miner slice. Redistribute that ENTIRE
+                            // slice to miners here — no second fee split.
                             let (miner_share, _, _, _) = zion_core::emission::fee_split(
                                 zion_core::emission::block_subsidy(job.height),
                             );
                             let mut pplns = pplns_engine.lock().expect("pplns lock poisoned");
-                            pplns.compute_payouts(miner_share)
+                            pplns.compute_miner_payouts(miner_share)
                         } else {
                             Vec::new()
                         }
@@ -1077,82 +1080,13 @@ fn handle_client(
                                 deferred_payouts.len()
                             );
                         }
-                        if payout_executed {
-                            let (humanitarian, issobella, pool_fee) = {
-                                let mut pplns = pplns_engine.lock().expect("pplns lock poisoned");
-                                pplns.drain_fees()
-                            };
-                            let fee_recipients = fee_payout_recipients(
-                                humanitarian,
-                                issobella,
-                                pool_fee,
-                                &config.fee_config,
-                            );
-                            if !fee_recipients.is_empty() {
-                                let fee_result = if let Some(node_rpc_addr) =
-                                    config.node_rpc_addr.as_deref()
-                                {
-                                    if let Some(ref pool_wallet_addr) = config.pool_wallet_address {
-                                        if let Some(ref signing_key) = config.pool_signing_key {
-                                            execute_fee_payout(
-                                                node_rpc_addr,
-                                                pool_wallet_addr,
-                                                signing_key,
-                                                &fee_recipients,
-                                                job.height,
-                                            )
-                                        } else {
-                                            Err(anyhow!("missing signing key"))
-                                        }
-                                    } else {
-                                        Err(anyhow!("missing pool wallet address"))
-                                    }
-                                } else {
-                                    Err(anyhow!("missing node RPC address"))
-                                };
-                                match fee_result {
-                                    Ok(tx_id) => {
-                                        println!(
-                                            "fee_payout_submitted height={} recipients={} tx_id={}",
-                                            job.height,
-                                            fee_recipients.len(),
-                                            tx_id
-                                        );
-                                        let mut telemetry = miner_telemetry
-                                            .lock()
-                                            .expect("miner telemetry lock poisoned");
-                                        telemetry.record_fee_payout(
-                                            job.height,
-                                            &tx_id,
-                                            humanitarian,
-                                            issobella,
-                                            pool_fee,
-                                        );
-                                    }
-                                    Err(err) => {
-                                        {
-                                            let mut pplns =
-                                                pplns_engine.lock().expect("pplns lock poisoned");
-                                            pplns.restore_fees(humanitarian, issobella, pool_fee);
-                                        }
-                                        println!(
-                                            "fee_payout_failed height={} humanitarian={} issobella={} pool_fee={} error={}",
-                                            job.height, humanitarian, issobella, pool_fee, err
-                                        );
-                                        let mut telemetry = miner_telemetry
-                                            .lock()
-                                            .expect("miner telemetry lock poisoned");
-                                        telemetry.record_failed_fee_payout(
-                                            job.height,
-                                            &format!("{err}"),
-                                            humanitarian,
-                                            issobella,
-                                            pool_fee,
-                                        );
-                                    }
-                                }
-                            }
-                        }
+                        // NOTE: Protocol fees (humanitarian / issobella / pool_fee)
+                        // are paid atomically by the core coinbase outputs at block
+                        // creation — see ChainState::build_template. The pool must
+                        // NOT pay them a second time here, otherwise the fee
+                        // recipients receive ~2x their share and miners are
+                        // short-changed. The previous drain_fees/execute_fee_payout
+                        // block was removed for this reason.
                     }
                 }
                 {
@@ -1702,6 +1636,10 @@ impl MinerTelemetryRegistry {
     }
 
     /// Record a successful protocol-fee payout (humanitarian / issobella / pool).
+    ///
+    /// Retained for the alternative "pool distributes fees" architecture; the
+    /// active model pays fees via the core coinbase, so this is currently unused.
+    #[allow(dead_code)]
     fn record_fee_payout(
         &mut self,
         height: u64,
@@ -1730,6 +1668,10 @@ impl MinerTelemetryRegistry {
     }
 
     /// Record a failed protocol-fee payout.
+    ///
+    /// Retained for the alternative "pool distributes fees" architecture; the
+    /// active model pays fees via the core coinbase, so this is currently unused.
+    #[allow(dead_code)]
     fn record_failed_fee_payout(
         &mut self,
         height: u64,
@@ -4514,6 +4456,10 @@ fn execute_pool_payout(
 /// Execute a protocol-fee payout: humanitarian tithe, issobella fund, and
 /// pool operator fee.  Builds a single batch transaction with up to three
 /// outputs and submits it to the node RPC.
+///
+/// Retained for the alternative "pool distributes fees" architecture; the
+/// active model pays fees via the core coinbase, so this is currently unused.
+#[allow(dead_code)]
 fn fee_payout_recipients(
     humanitarian: u64,
     issobella: u64,
@@ -4542,6 +4488,7 @@ fn fee_payout_recipients(
     recipients
 }
 
+#[allow(dead_code)]
 fn execute_fee_payout(
     node_rpc_addr: &str,
     pool_wallet_addr: &str,
