@@ -391,10 +391,8 @@ async function refreshPayout(){
     set('payout-tab-wallet', data.pool_wallet || '—');
     set('payout-tab-balance', 'Balance: ' + (data.pool_wallet_balance ? formatFlowers(data.pool_wallet_balance) : '—'));
     const st = document.getElementById('payout-tab-status');
-    if(st){ st.textContent = data.payout_enabled ? '✅ ENABLED' : '❌ DISABLED'; st.className = data.payout_enabled ? 'text-lg font-bold text-emerald-400' : 'text-lg font-bold text-red-400'; }
-    set('payout-tab-fee-split', 'Fee split: ' + (data.fee_split || '—'));
+    if(st){ st.textContent = data.payout_enabled ? '✅ ENABLED' : '❌ DISABLED'; st.className = data.payout_enabled ? 'text-xl font-bold text-emerald-400' : 'text-xl font-bold text-red-400'; }
     set('payout-tab-blocks', data.blocks_found || '—');
-    set('payout-tab-last-block', 'Last: height ' + (data.last_block_height || '—'));
     set('payout-tab-last', data.last_payout_time || '—');
     set('payout-tab-last-tx', 'TX: ' + (data.last_payout_tx || '—'));
 
@@ -409,9 +407,7 @@ async function refreshPayout(){
       }
     }
     set('payout-tab-total-paid', totalPaid > 0 ? _zionFmt(totalPaid) + ' ZION' : '—');
-    set('payout-tab-total-blocks', 'Across ' + totalBlocks + ' blocks');
     set('payout-tab-pending', data.pending_payouts || '—');
-    set('payout-tab-pending-detail', data.pending_payouts > 0 ? 'PPLNS deferred' : 'Up to date');
 
     // Fee split breakdown table
     if (data.miner_wallet) set('payout-breakdown-miner-addr', data.miner_wallet);
