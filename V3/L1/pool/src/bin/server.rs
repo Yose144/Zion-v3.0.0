@@ -4187,8 +4187,9 @@ fn execute_pool_payout(
     if utxos.is_empty() {
         let account_balance = fetch_pool_account_balance(node_rpc_addr, pool_wallet_addr)?;
         let min_tx_fee = zion_core::fee::MIN_TX_FEE as u128;
-        let total_needed: u128 = payouts.iter().map(|p| p.amount as u128).sum::<u128>()
-            + (payouts.len() as u128 * min_tx_fee);
+        // Deduct tx fee from each miner payout so total needed equals the miner
+        // reward accumulated in the pool wallet (no external buffer required).
+        let total_needed: u128 = payouts.iter().map(|p| p.amount as u128).sum::<u128>();
 
         if account_balance == 0 {
             return Err(anyhow!(
@@ -4213,12 +4214,16 @@ fn execute_pool_payout(
 
         for (i, payout) in payouts.iter().enumerate() {
             let nonce = base_nonce + i as u64;
-            let tx_id = generate_account_tx_id(pool_wallet_addr, &payout.address, payout.amount, nonce);
+            let net_amount = (payout.amount as u128).saturating_sub(min_tx_fee);
+            if net_amount == 0 {
+                continue;
+            }
+            let tx_id = generate_account_tx_id(pool_wallet_addr, &payout.address, net_amount as u64, nonce);
             let tx = AccountTransaction {
                 tx_id: tx_id.clone(),
                 from: pool_wallet_addr.to_string(),
                 to: payout.address.clone(),
-                amount_zion: payout.amount as u128,
+                amount_zion: net_amount,
                 fee_zion: zion_core::fee::MIN_TX_FEE,
                 nonce,
             };
