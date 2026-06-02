@@ -1727,14 +1727,23 @@ async function selectEnv(name){
 async function renderWizard(){
   const [st, cl] = await Promise.all([fetch('/api/status').then(r => r.json()), fetch('/api/checklist').then(r => r.json())]);
   const C = (id) => cl.checks.find(c => c.id === id);
-  const steps = [
-    { n: 1, title: 'Prepare environment', desc: 'Generate keys (gen-keys), assemble .env with all wallets and ZION_POOL_PAYOUT_SK_HEX.', done: C('env').ok, actions: [{ label: 'View env files', tab: 'env' }] },
-    { n: 2, title: 'Start Local Backup Node', desc: 'Syncs from Edge primary via Tailscale VPN. 0.0.0.0:8333 (P2P) / 0.0.0.0:8443 (RPC).', done: C('node1').ok, actions: [{ label: '▶ Start Backup Node', control: 'start-node1' }] },
-    { n: 3, title: 'Connect to Edge Pool', desc: 'Edge (100.76.16.108) runs the primary pool. Verify VPN connectivity.', done: C('pool-edge').ok, actions: [{ label: 'Check Edge Pool', control: 'check-pool-edge' }] },
-    { n: 4, title: 'Start GPU Miner', desc: 'Connects to Edge pool, performs cosmic_harmony hashing on GPU.', done: C('miner').ok, actions: [{ label: '▶ Start Miner', control: 'start-miner' }] },
+  const isEdge = st.topology === 'edge-primary';
+  const steps = isEdge ? [
+    { n: 1, title: 'Prepare environment', desc: 'Generate keys (gen-keys), assemble .env with all wallets and ZION_POOL_PAYOUT_SK_HEX.', done: C('env')?.ok, actions: [{ label: 'View env files', tab: 'env' }] },
+    { n: 2, title: 'Start Local Backup Node', desc: 'Syncs from Edge primary via Tailscale VPN. 0.0.0.0:8333 (P2P) / 0.0.0.0:8443 (RPC).', done: C('node1')?.ok, actions: [{ label: '▶ Start Backup Node', control: 'start-node1' }] },
+    { n: 3, title: 'Connect to Edge Pool', desc: 'Edge (100.76.16.108) runs the primary pool. Verify VPN connectivity.', done: C('pool-edge')?.ok, actions: [{ label: 'Check Edge Pool', tab: 'overview' }] },
+    { n: 4, title: 'Start GPU Miner', desc: 'Connects to Edge pool, performs cosmic_harmony hashing on GPU.', done: C('miner')?.ok, actions: [{ label: '▶ Start Miner', control: 'start-miner' }] },
     { n: 5, title: 'Start Monitoring', desc: 'Launch Prometheus + Grafana via Docker for metrics dashboards.', done: false, actions: [{ label: '▶ Start Monitoring', control: 'start-monitoring' }, { label: 'Open Grafana', href: 'http://127.0.0.1:3000' }] },
-    { n: 6, title: 'Verify chain progression', desc: 'Confirm local backup node syncs with Edge and chain height advances.', done: C('chain').ok, actions: [{ label: 'View events', tab: 'events' }] },
-    { n: 7, title: 'Confirm fee split & payouts', desc: 'Validate 89/5/5 burn-model distribution and payout wallet funded.', done: C('fee_split').ok && C('payout').ok, actions: [{ label: 'View payouts', tab: 'overview' }] },
+    { n: 6, title: 'Verify chain progression', desc: 'Confirm local backup node syncs with Edge and chain height advances.', done: C('chain')?.ok, actions: [{ label: 'View events', tab: 'events' }] },
+    { n: 7, title: 'Confirm fee split & payouts', desc: 'Validate 89/5/5 burn-model distribution and payout wallet funded.', done: C('fee_split')?.ok && C('payout')?.ok, actions: [{ label: 'View payouts', tab: 'overview' }] },
+  ] : [
+    { n: 1, title: 'Prepare environment', desc: 'Generate keys (gen-keys), assemble .env with all wallets and ZION_POOL_PAYOUT_SK_HEX.', done: C('env')?.ok, actions: [{ label: 'View env files', tab: 'env' }] },
+    { n: 2, title: 'Start Genesis Node', desc: 'Local genesis node. 0.0.0.0:8333 (P2P) / 0.0.0.0:8443 (RPC).', done: C('node1')?.ok, actions: [{ label: '▶ Start Node', control: 'start-node1' }] },
+    { n: 3, title: 'Start Local Pool', desc: 'Accepts miners, validates shares, distributes payouts (89/5/5 burn model).', done: C('pool')?.ok, actions: [{ label: '▶ Start Pool', control: 'start-pool' }] },
+    { n: 4, title: 'Start GPU Miner', desc: 'Connects to local pool, performs cosmic_harmony hashing on GPU.', done: C('miner')?.ok, actions: [{ label: '▶ Start Miner', control: 'start-miner' }] },
+    { n: 5, title: 'Start Monitoring', desc: 'Launch Prometheus + Grafana via Docker for metrics dashboards.', done: false, actions: [{ label: '▶ Start Monitoring', control: 'start-monitoring' }, { label: 'Open Grafana', href: 'http://127.0.0.1:3000' }] },
+    { n: 6, title: 'Verify chain progression', desc: 'Confirm node is mining and chain height advances.', done: C('chain')?.ok, actions: [{ label: 'View events', tab: 'events' }] },
+    { n: 7, title: 'Confirm fee split & payouts', desc: 'Validate 89/5/5 burn-model distribution and payout wallet funded.', done: C('fee_split')?.ok && C('payout')?.ok, actions: [{ label: 'View payouts', tab: 'overview' }] },
   ];
   const cont = document.getElementById('wizard-steps');
   cont.innerHTML = steps.map((s, i) => {
