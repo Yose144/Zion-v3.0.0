@@ -1,4 +1,4 @@
-# ZION V3 — Start Node 1 (Genesis) with log redirect
+# ZION V3 — Start Local Backup Node (syncs from Edge primary)
 $logDir = "C:\Users\yosef\Desktop\Zion\2.9.6-main\logs"
 New-Item -ItemType Directory -Path $logDir -Force | Out-Null
 

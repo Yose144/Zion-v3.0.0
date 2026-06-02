@@ -18,7 +18,7 @@ foreach ($n in $names) {
 }
 Start-Sleep -Seconds 1
 
-# Node 1 (Genesis)
+# Local Backup Node (syncs from Edge primary)
 $env:ZION_NODE_ID='w11-native-node'
 $env:ZION_P2P_BIND='0.0.0.0:8333'
 $env:ZION_RPC_BIND='0.0.0.0:8443'

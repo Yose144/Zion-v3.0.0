@@ -179,21 +179,21 @@ In practice: **node is source of chain truth**, pool is coordination layer, mine
 
 ### Network Topology
 
-Current live topology is **Core + Edge over Tailscale VPN**. Do not reference old multi-server topologies (Praha, SG, Helsinki, US) — those are deprecated.
+Current live topology is **Edge-as-Primary (Hetzner) + Core-as-Backup (Local PC) over Tailscale VPN**. Edge runs the canonical 24/7 node and pool. Core (local) acts as a backup node and GPU miner host. Do not reference old multi-server topologies (Praha, SG, Helsinki, US) — those are deprecated.
 
 ```
-Core (Windows 11)          Edge (Hetzner VPS)
-100.86.102.5              100.76.16.108
-    | Tailscale VPN            |
-Node + Pool (Master)    Node + Pool (Relay)
-Miner (GPU)               Public P2P: 8333
-                          Public Pool: 8444
+Edge (Hetzner VPS)          Core (Windows 11)
+100.76.16.108               100.86.102.5
+    | Tailscale VPN               |
+Node + Pool (PRIMARY)    Node (backup sync)
+Public P2P: 8333         GPU Miner -> Edge pool
+Public Pool: 8444
 ```
 
 | Role | Host | VPN IP | Public IP | Ports |
 |------|------|--------|-----------|-------|
-| Core | Local PC | 100.86.102.5 | (dynamic) | P2P: 8333, RPC: 8443 |
 | Edge | Hetzner VPS | 100.76.16.108 | 77.42.71.94 | P2P: 8333, Pool: 8444, RPC: 8443 |
+| Core | Local PC | 100.86.102.5 | (dynamic) | P2P: 8333, RPC: 8443 |
 
 ### Canonical Ports & Services
 
@@ -230,14 +230,21 @@ Miner (GPU)               Public P2P: 8333
 
 ### Dashboard Configuration
 
-The Python dashboard (`dashboard/app.py`) monitors Core + Edge services:
+The Python dashboard (`dashboard/app.py`) monitors Edge (primary) + Core (backup) services:
 
 | Config | Value |
 |--------|-------|
 | Host | `127.0.0.1` |
 | Port | `8766` |
-| Services monitored | `node1`, `node2` (via VPN), `pool`, `pool-edge`, `miner` |
+| Services monitored | `edge-node` (primary, VPN), `node1` (local backup), `pool-edge` (primary), `miner` (local) |
 | Auto-start | See `DASHBOARD_AUTOSTART.md` + `install-dashboard-autostart.bat` |
+
+### Launch Scripts
+
+| Script | Topology | Purpose |
+|--------|----------|---------|
+| `scripts/launch-stack.sh` | Full local | Runs node1 + node2 + pool + miners on one host. Use for local dev/testing only. |
+| `scripts/launch-local-backup.sh` | Edge-primary | Local PC runs backup node (syncs from Edge) + miners (connect to Edge pool). This is the production topology. |
 
 ### Desktop Agent Defaults
 

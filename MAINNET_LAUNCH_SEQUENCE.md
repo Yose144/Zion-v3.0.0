@@ -7,11 +7,11 @@
 ## ✅ PŘEDLAUNCE CHECKLIST (VŠECHNO HOTOVO)
 
 ### Konfigurace
-- [x] **Fee split adresy aktualizovány** (89/5/5/1)
+- [x] **Fee split adresy aktualizovány** (89/5/5/0 burn model)
   - Miner: `zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3`
   - Humanitarian: `zion1m4v5z8z850u480c5c208z274e334369275n5y20`
   - Issobella: `zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702`
-  - Pool Fee: `zion1p2a7a5q0t2z5z545y6m6j5e864n002v4z6w95w5`
+  - Pool Fee: BURNED (žádná peněženka)
 
 - [x] **Genesis premine adresy aktualizovány** (12 výstupů, 16.28B ZION)
   - 5× OASIS + Golden Egg (8.25B ZION)
@@ -22,19 +22,17 @@
 - [x] **Genesis hash ověřen** na obou serverech
 - [x] **Všechny launch skripty aktualizovány** s novými adresami
 
-### Infrastruktura
-- [x] **Core server** (Windows 11, Tailscale: 100.86.102.5)
-  - Node 1 (Genesis): Běží na height 26+
-  - Node 2 (Follower): Synchronizováno
-  - Pool (Master): PPLNS aktivní
-  - Miner: GPU mining aktivní
-  - Dashboard: Běží na portu 8765
+### Infrastruktura (Edge-as-Primary)
+- [x] **Edge server** (Hetzner VPS, Tailscale: 100.76.16.108, Public: 77.42.71.94)
+  - Node (Primary / Genesis): Běží 24/7, source of chain truth
+  - Pool (Primary): PPLNS aktivní, přijímá všechny minery
+  - Veřejné porty: 8333 (P2P), 8444 (Pool), 8443 (RPC)
+  - Fee split: 89/5/5 burn model
 
-- [x] **Edge server** (Hetzner VPS, Tailscale: 100.76.16.108)
-  - Node (Relay): Synchronizováno s Core
-  - Pool (Relay): Share relay aktivní
-  - Veřejné porty: 8333 (P2P), 8444 (Pool)
-  - Fee split adresy správně načteny
+- [x] **Core server** (Windows 11, Tailscale: 100.86.102.5)
+  - Node (Backup): Synchronizuje z Edge
+  - Miner: GPU mining aktivní, připojen k Edge pool
+  - Dashboard: Běží na portu 8766
 
 - [x] **P2P synchronizace Core-Edge** funkční
 - [x] **Tailscale VPN** stabilní

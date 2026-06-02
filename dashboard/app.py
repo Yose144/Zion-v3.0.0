@@ -341,7 +341,7 @@ def watchdog_check():
     if not WATCHDOG_ENABLED:
         return
     now = time.time()
-    critical = ["node1", "pool"]
+    critical = ["node1", "edge-node", "pool-edge"]
     for sid in critical:
         svc = get_service(sid)
         if not svc:
@@ -527,36 +527,45 @@ def auto_backup_if_needed():
 
 SERVICE_REGISTRY = [
     # ── L1: Consensus ────────────────────────────────────────────────────
-    {"id": "node1", "name": "Node 1 (Genesis)", "icon": "🔷", "level": "L1", "kind": "node",
+    {"id": "node1", "name": "Local Backup Node", "icon": "🔷", "level": "L1", "kind": "node",
      "ports": {"p2p": 8333, "rpc": 8443, "ws": 8445, "metrics": 9115},
      "log": "node1.log", "start": "start-node1", "stop": None,
      "health_method": "rpc", "severity": "critical", "autoheal": False,
      "health_endpoint": "http://127.0.0.1:8443/health",
-     "purpose": "Source of chain truth: validates blocks, manages mempool, talks to peers via P2P.",
-     "child_says": "🔷 This is the boss — it remembers every block ever made.",
+     "purpose": "Backup node — syncs from Edge primary (100.76.16.108) via Tailscale VPN.",
+     "child_says": "🔷 Syncs from Edge to keep a local copy of the chain!",
      "depends_on": []},
-    {"id": "node2", "name": "Node 2 (Follower)", "icon": "🔶", "level": "L1", "kind": "node",
+    {"id": "node2", "name": "Node 2 (Local Dev)", "icon": "🔶", "level": "L1", "kind": "node",
      "ports": {"p2p": 8334, "rpc": 8446, "ws": 8447},
      "log": "node2.log", "start": "start-node2", "stop": None,
-     "health_method": "rpc", "severity": "critical", "autoheal": False,
+     "health_method": "rpc", "severity": "info", "autoheal": False,
      "health_endpoint": "http://127.0.0.1:8446/health",
-     "purpose": "Backup node — syncs from Node 1 and validates independently for redundancy.",
-     "child_says": "🔶 Like Node 1's twin — they double-check each other!",
+     "purpose": "Optional local dev node — not used in Edge-primary topology. Use for local testing only.",
+     "child_says": "🔶 Only awake when testing locally!",
      "depends_on": ["node1"]},
-    {"id": "pool", "name": "Core Mining Pool", "icon": "⚡", "level": "L1", "kind": "pool",
+    {"id": "edge-node", "name": "Edge Node (Primary)", "icon": "🌍", "level": "L1", "kind": "node",
+     "ports": {"p2p": 8333, "rpc": 8443},
+     "host": "100.76.16.108",
+     "log": None, "start": None, "stop": None,
+     "health_method": "rpc", "severity": "critical", "autoheal": False,
+     "health_endpoint": "http://100.76.16.108:8443/health",
+     "purpose": "Primary node on Edge (Hetzner) — source of chain truth, runs 24/7.",
+     "child_says": "🌍 The king node lives on Edge!",
+     "depends_on": []},
+    {"id": "pool", "name": "Local Pool (Dev Only)", "icon": "⚡", "level": "L1", "kind": "pool",
      "ports": {"stratum": 8444, "metrics": 9550},
      "log": "pool.log", "start": "start-pool", "stop": None,
-     "health_method": "tcp", "severity": "critical", "autoheal": False,
-     "purpose": "Primary pool — local miners, validates shares, distributes payouts (89/5/5/1).",
-     "child_says": "⚡ The pool helps lots of computers work together to find blocks!",
+     "health_method": "tcp", "severity": "info", "autoheal": False,
+     "purpose": "Local dev pool — not used in Edge-primary topology. Use `launch-stack.sh` for local testing.",
+     "child_says": "⚡ Only for local testing!",
      "depends_on": ["node1"]},
-    {"id": "pool-edge", "name": "Edge Mining Pool", "icon": "🌐", "level": "L1", "kind": "pool",
+    {"id": "pool-edge", "name": "Edge Pool (Primary)", "icon": "🌐", "level": "L1", "kind": "pool",
      "ports": {"stratum": 8444, "metrics": 9550},
      "host": "100.76.16.108",
      "log": None, "start": None, "stop": None,
-     "health_method": "tcp", "severity": "warning", "autoheal": False,
-     "purpose": "Edge relay pool — accepts external miners via public IP, syncs with Core pool.",
-     "child_says": "🌐 The edge pool lets miners from all over the world connect!",
+     "health_method": "tcp", "severity": "critical", "autoheal": False,
+     "purpose": "Primary pool on Edge — accepts all miners, validates shares, distributes payouts (89/5/5 burn model).",
+     "child_says": "🌐 The main pool lives on Edge now!",
      "depends_on": ["node1"]},
     {"id": "miner", "name": "GPU Miner", "icon": "⛏️", "level": "L1", "kind": "miner",
      "ports": {},
@@ -564,7 +573,7 @@ SERVICE_REGISTRY = [
      "health_method": "log", "severity": "warning", "autoheal": True,
      "purpose": "Performs cosmic_harmony PoW hashing on GPU to find new blocks.",
      "child_says": "⛏️ The miner is like a digger — it digs for new gold (ZION coins)!",
-     "depends_on": ["pool"]},
+     "depends_on": ["pool-edge"]},
 
     # ── L2: Bridge & DAO ────────────────────────────────────────────────
     {"id": "bridge", "name": "ZION Bridge", "icon": "🌉", "level": "L2", "kind": "bridge",
@@ -1146,7 +1155,7 @@ def parse_pool_log() -> dict:
         if pw:
             status["pool_wallet"] = pw
     # Fallback: detect payout readiness from fee_split + SK presence
-    if status["payout_enabled"] is None and status["fee_split"] == "89/5/5/1":
+    if status["payout_enabled"] is None and status["fee_split"] == "89/5/5/0":
         sk = os.environ.get("ZION_POOL_PAYOUT_SK_HEX", "")
         if sk and len(sk) >= 32:
             status["payout_enabled"] = True
@@ -1279,8 +1288,8 @@ def build_checklist(status: dict) -> dict:
         {"id": "pool-edge", "label": "Edge Pool reachable from Core",           "ok": status.get("pool_edge", {}).get("running", False)},
         {"id": "miner",     "label": "GPU miner connected & hashing",         "ok": status["miner"]["running"] and status["miner"]["hashrate"] is not None},
         {"id": "chain",     "label": "Chain height advancing",                 "ok": status["node1"]["chain_height"] is not None and status["node1"]["chain_height"] > 0},
-        {"id": "payout",    "label": "Payout mechanism ready (fee split active)",  "ok": status["pool"]["running"] and status["pool"]["fee_split"] == "89/5/5/1"},
-        {"id": "fee_split", "label": "Fee split 89/5/5/1 active",                "ok": status["pool"]["fee_split"] == "89/5/5/1"},
+        {"id": "payout",    "label": "Payout mechanism ready (fee split active)",  "ok": status["pool"]["running"] and status["pool"]["fee_split"] == "89/5/5/0"},
+        {"id": "fee_split", "label": "Fee split 89/5/5/0 (burn model) active",     "ok": status["pool"]["fee_split"] == "89/5/5/0"},
         {"id": "logs",      "label": "Log directory writable",                  "ok": LOG_DIR.exists()},
     ]
     total = len(checks)
@@ -1370,9 +1379,9 @@ def build_alerts(status: dict) -> list:
                            "detail": f"Node1@{n1['chain_height']} vs Node2@{n2['chain_height']} — gap {abs(n1['chain_height']-n2['chain_height'])}",
                            "action": "restart-node2"})
 
-    if pool["running"] and pool["fee_split"] and pool["fee_split"] != "89/5/5/1":
+    if pool["running"] and pool["fee_split"] and pool["fee_split"] != "89/5/5/0":
         alerts.append({"severity": _sev("pool", "critical"), "title": "Wrong fee split",
-                       "detail": f"Detected {pool['fee_split']}, mainnet must be 89/5/5/1",
+                       "detail": f"Detected {pool['fee_split']}, mainnet must be 89/5/5/0 (burn model)",
                        "action": None})
 
     if pool["running"] and pool["payout_enabled"] is False:
@@ -2387,8 +2396,8 @@ def build_payout_status() -> dict:
             status["miner_perf"]["shares_accepted"] = routing["accepted"]
         if routing.get("rejected") is not None:
             status["miner_perf"]["shares_rejected"] = routing["rejected"]
-    # Normalize fee-split label: the 1% pool slot is burned, not paid out.
-    status["fee_split"] = "89/5/5 (+1% burned)"
+    # Normalize fee-split label: burn model — the 1% pool slot is burned, not paid out.
+    status["fee_split"] = "89/5/5/0"
     return status
 
 # ── AI services status (Hiran + Hiranyagarbha) ───────────────────────────
@@ -3988,7 +3997,7 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
 
     <!-- Fee Split Recipients -->
     <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
-      <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300 mb-3">📋 Fee Split Recipients (89/5/5/1)</h2>
+      <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300 mb-3">📋 Fee Split Recipients (89/5/5/0 burn model)</h2>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3" id="payout-recipients">
         <div class="bg-zion-900 rounded-lg p-3 border border-zion-700">
           <div class="text-xs text-gray-400 mb-1">⛏️ Miner Share (89%)</div>
@@ -5000,12 +5009,11 @@ async function renderWizard(){
   const[st,cl]=await Promise.all([fetch('/api/status').then(r=>r.json()),fetch('/api/checklist').then(r=>r.json())]);
   const steps=[
     {n:1,title:'Prepare environment',desc:'Generate keys (gen-keys), assemble .env file with all wallets and ZION_POOL_PAYOUT_SK_HEX.',done:cl.checks.find(c=>c.id==='env').ok,actions:[{label:'View env files',cb:`switchTab('env')`}]},
-    {n:2,title:'Start Node 1 (Genesis)',desc:'Brings up the source-of-truth node at 0.0.0.0:8333 (P2P) / 0.0.0.0:8443 (RPC).',done:cl.checks.find(c=>c.id==='node1').ok,actions:[{label:'▶ Start Node 1',cb:`controlAction('start-node1')`}]},
-    {n:3,title:'Start Node 2 (Follower)',desc:'Connects to Node1 as a peer, validates P2P handshake & block sync.',done:cl.checks.find(c=>c.id==='node2').ok,actions:[{label:'▶ Start Node 2',cb:`controlAction('start-node2')`}]},
-    {n:4,title:'Start Pool',desc:'Pulls templates from Node1 RPC, accepts miner sessions on 0.0.0.0:8444.',done:cl.checks.find(c=>c.id==='pool').ok,actions:[{label:'▶ Start Pool',cb:`controlAction('start-pool')`}]},
-    {n:5,title:'Start GPU Miner',desc:'Connects to pool, performs cosmic_harmony hashing on GPU.',done:cl.checks.find(c=>c.id==='miner').ok,actions:[{label:'▶ Start Miner',cb:`controlAction('start-miner')`}]},
-    {n:6,title:'Verify chain progression',desc:'Confirm chain height advances and blocks propagate to Node 2.',done:cl.checks.find(c=>c.id==='chain').ok,actions:[{label:'View events',cb:`switchTab('events')`}]},
-    {n:7,title:'Confirm fee split & payouts',desc:'Validate 89/5/5/1 distribution and payout wallet is funded.',done:cl.checks.find(c=>c.id==='fee_split').ok&&cl.checks.find(c=>c.id==='payout').ok,actions:[{label:'View payouts',cb:`switchTab('overview')`}]},
+    {n:2,title:'Start Local Backup Node',desc:'Syncs from Edge primary via Tailscale VPN. 0.0.0.0:8333 (P2P) / 0.0.0.0:8443 (RPC).',done:cl.checks.find(c=>c.id==='node1').ok,actions:[{label:'▶ Start Backup Node',cb:`controlAction('start-node1')`}]},
+    {n:3,title:'Connect to Edge Pool',desc:'Edge (100.76.16.108) runs the primary pool. Verify VPN connectivity.',done:cl.checks.find(c=>c.id==='pool-edge').ok,actions:[{label:'Check Edge Pool',cb:`controlAction('check-pool-edge')`}]},
+    {n:4,title:'Start GPU Miner',desc:'Connects to Edge pool, performs cosmic_harmony hashing on GPU.',done:cl.checks.find(c=>c.id==='miner').ok,actions:[{label:'▶ Start Miner',cb:`controlAction('start-miner')`}]},
+    {n:5,title:'Verify chain progression',desc:'Confirm local backup node syncs with Edge and chain height advances.',done:cl.checks.find(c=>c.id==='chain').ok,actions:[{label:'View events',cb:`switchTab('events')`}]},
+    {n:6,title:'Confirm fee split & payouts',desc:'Validate 89/5/5/0 burn-model distribution and payout wallet is funded.',done:cl.checks.find(c=>c.id==='fee_split').ok&&cl.checks.find(c=>c.id==='payout').ok,actions:[{label:'View payouts',cb:`switchTab('overview')`}]},
   ];
   const cont=document.getElementById('wizard-steps');
   cont.innerHTML=steps.map((s,i)=>{
