@@ -424,6 +424,17 @@ async function refreshPayout(){
       set('payout-breakdown-pool-amount', _zionFmt(s.pool || 0) + ' Z');
     }
 
+    // Fee split live balances
+    const bals = data.balances || {};
+    if (data.miner_wallet) set('fs-bal-miner-addr', data.miner_wallet);
+    if (data.humanitarian_wallet) set('fs-bal-charity-addr', data.humanitarian_wallet);
+    if (data.issobella_wallet) set('fs-bal-dev-addr', data.issobella_wallet);
+    if (data.pool_fee_wallet) set('fs-bal-pool-addr', data.pool_fee_wallet);
+    set('fs-bal-miner',  bals.miner ? _zionFmt(bals.miner.zion) : '—');
+    set('fs-bal-charity', bals.humanitarian ? _zionFmt(bals.humanitarian.zion) : '—');
+    set('fs-bal-dev',    bals.issobella ? _zionFmt(bals.issobella.zion) : '—');
+    set('fs-bal-pool',   bals.pool_fee ? _zionFmt(bals.pool_fee.zion) : '—');
+
     // Structured payout history table
     const histTable = document.getElementById('payout-history-table');
     if (histTable) {
