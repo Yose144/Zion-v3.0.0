@@ -1431,11 +1431,39 @@ def _build_status_edge_primary() -> dict:
         "mempool_size": 0,
     }
 
+    # ── Direct RPC to Edge Node for canonical mainnet metrics ──
+    # Try Tailscale VPN IP first, fallback to public IP if VPN is down
+    edge_rpc_info = rpc_call("100.76.16.108", 8443, "getChainInfo", {}, timeout=2.0)
+    if not edge_rpc_info or edge_rpc_info.get("_rpc_error"):
+        edge_rpc_info = rpc_call("77.42.71.94", 8443, "getChainInfo", {}, timeout=3.0)
+    if edge_rpc_info and not edge_rpc_info.get("_rpc_error"):
+        edge_node1_status["chain_height"] = edge_rpc_info.get("chain_height")
+        edge_node1_status["tip_hash"] = edge_rpc_info.get("tip_hash")
+        edge_node1_status["known_peers"] = edge_rpc_info.get("known_peers", 0)
+        edge_node1_status["mempool_size"] = edge_rpc_info.get("mempool_transactions", 0)
+        edge_node1_status["network"] = edge_rpc_info.get("network")
+        edge_node1_status["protocol_version"] = edge_rpc_info.get("protocol_version")
+        edge_node1_status["consensus_profile"] = edge_rpc_info.get("consensus_profile")
+        edge_node1_status["accepted_blocks"] = edge_rpc_info.get("accepted_blocks")
+
+    # ── Direct RPC to Local Backup Node ──
+    local_rpc_info = rpc_call("127.0.0.1", 8443, "getChainInfo", {}, timeout=2.0)
+    n1 = parse_node_log("node1")
+    if local_rpc_info and not local_rpc_info.get("_rpc_error"):
+        n1["running"] = True
+        if not n1.get("p2p_bind"):
+            n1["p2p_bind"] = "0.0.0.0:8333"
+        n1["chain_height"] = local_rpc_info.get("chain_height")
+        n1["known_peers"] = local_rpc_info.get("known_peers", n1.get("known_peers", 0))
+        n1["mempool_size"] = local_rpc_info.get("mempool_transactions", n1.get("mempool_size", 0))
+        n1["protocol_version"] = local_rpc_info.get("protocol_version")
+        n1["consensus_profile"] = local_rpc_info.get("consensus_profile")
+
     # Edge pool health from cache (remote host probe)
     pool_edge_svc = get_service("pool-edge")
     pool_edge_health = check_service_health(pool_edge_svc) if pool_edge_svc else {"alive": False}
     # Try to scrape Edge pool metrics if Prometheus has them
-    edge_metrics = {"active_miners": None, "hashrate": None, "blocks_found": None}
+    edge_metrics = {"active_miners": None, "hashrate": None, "blocks_found": None, "total_hashes": None, "total_shares": None}
     try:
         metrics_port = pool_edge_svc.get("ports", {}).get("metrics") if pool_edge_svc else None
         if metrics_port and pool_edge_health.get("alive"):
@@ -1446,9 +1474,13 @@ def _build_status_edge_primary() -> dict:
                     if line.startswith("zion_pool_active_sessions "):
                         edge_metrics["active_miners"] = int(float(line.split()[-1]))
                     elif line.startswith("zion_pool_total_hashes "):
-                        pass
+                        edge_metrics["total_hashes"] = int(float(line.split()[-1]))
+                    elif line.startswith("zion_pool_total_shares "):
+                        edge_metrics["total_shares"] = int(float(line.split()[-1]))
                     elif line.startswith("zion_pool_blocks_found "):
                         edge_metrics["blocks_found"] = int(float(line.split()[-1]))
+                    elif line.startswith("zion_pool_hashrate_khs "):
+                        edge_metrics["hashrate"] = float(line.split()[-1])
     except Exception:
         pass
 
@@ -1456,14 +1488,11 @@ def _build_status_edge_primary() -> dict:
     edge_pool_wallet = os.environ.get("ZION_POOL_WALLET", "")
     edge_fee_split = "89/5/5/0"
 
-    # Local backup node (no node2 on local PC in this topology)
-    n1 = parse_node_log("node1")
-
-    # Use local backup height as proxy for Edge height (they sync)
-    if edge_node1_status["running"] and n1["chain_height"]:
+    # Use local backup height as proxy for Edge height if RPC failed
+    if edge_node1_status["chain_height"] is None and n1.get("chain_height"):
         edge_node1_status["chain_height"] = n1["chain_height"]
-        edge_node1_status["tip_hash"] = n1["tip_hash"]
-        edge_node1_status["known_peers"] = n1["known_peers"]
+        edge_node1_status["tip_hash"] = n1.get("tip_hash")
+        edge_node1_status["known_peers"] = n1.get("known_peers", 0)
 
     # Pool status = Edge pool (primary). Local pool log is dev-only fallback.
     local_pool = parse_pool_log()
@@ -1481,12 +1510,24 @@ def _build_status_edge_primary() -> dict:
         "fee_split": edge_fee_split or local_pool.get("fee_split"),
         "recent_payouts": local_pool["recent_payouts"],
         "recent_lines": local_pool["recent_lines"],
+        "total_hashes": edge_metrics["total_hashes"],
+        "total_shares": edge_metrics["total_shares"],
+        "hashrate_khs": edge_metrics["hashrate"],
     }
 
     # Compute sync gap between local backup and Edge primary
     sync_gap = None
     if n1.get("chain_height") and edge_node1_status.get("chain_height"):
         sync_gap = abs(n1["chain_height"] - edge_node1_status["chain_height"])
+
+    # Tailscale connectivity check
+    tailscale_ok = False
+    try:
+        result = subprocess.run(["tailscale", "ping", "-c", "1", "-timeout", "3s", "100.76.16.108"],
+                               capture_output=True, text=True, timeout=5)
+        tailscale_ok = result.returncode == 0
+    except Exception:
+        pass
 
     return {
         "timestamp": datetime.now().isoformat(),
@@ -1508,10 +1549,13 @@ def _build_status_edge_primary() -> dict:
             "active_miners": edge_metrics["active_miners"],
             "hashrate": edge_metrics["hashrate"],
             "blocks_found": edge_metrics["blocks_found"],
+            "total_hashes": edge_metrics["total_hashes"],
+            "total_shares": edge_metrics["total_shares"],
             "sync_gap": sync_gap,
             "details": pool_edge_health.get("details", ""),
         },
         "miner": parse_miner_log(),
+        "tailscale": {"vpn_ok": tailscale_ok, "edge_ip": "100.76.16.108"},
     }
 
 def _build_status_local_dev() -> dict:
@@ -6347,6 +6391,20 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 self._json({"ok": True, "svc": svc, "port": port, "metrics": parsed, "raw_lines": len(lines)})
             except Exception as e:
                 self._json({"ok": False, "svc": svc, "port": port, "offline": True, "error": str(e)[:80]})
+        elif route == "/api/metrics/collector":
+            # Read metrics.json written by Rust metrics collector
+            metrics_path = DATA_DIR / "metrics.json"
+            try:
+                if metrics_path.exists():
+                    with open(metrics_path, "r", encoding="utf-8") as f:
+                        data = json.load(f)
+                    data["_source"] = "rust-collector"
+                    data["_file_age_sec"] = int(time.time() - metrics_path.stat().st_mtime)
+                    self._json(data)
+                else:
+                    self._json({"ok": False, "error": "metrics.json not found. Run: cargo run --release --manifest-path dashboard/metrics-collector/Cargo.toml"})
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)})
         elif route == "/api/topology":
             # Real topology: ping Core+Edge, check Tailscale
             import time as _time
