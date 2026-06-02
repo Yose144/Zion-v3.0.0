@@ -33,14 +33,41 @@ SCRIPTS_DIR = REPO_ROOT / "scripts"
 V2_DIST = SCRIPT_DIR / "v2" / "dist"
 SERVICES_MANIFEST = SCRIPT_DIR / "services.json"
 DOTENV_FILE = SCRIPT_DIR / ".env"
+CONFIG_FILE = SCRIPT_DIR / "config.json"
 # Cross-platform release binary directory + executable suffix
 RELEASE_BIN_DIR = REPO_ROOT / "V3" / "target" / "release"
 EXE_SUFFIX = ".exe" if os.name == "nt" else ""
 if not LOG_DIR.exists():
     LOG_DIR = Path("../logs")
 
-HOST = "127.0.0.1"
-PORT = 8766
+# Load config
+def load_config() -> dict:
+    defaults = {
+        "host": "127.0.0.1",
+        "port": 8766,
+        "topology": "edge-primary",  # "edge-primary" or "local-dev"
+        "log_rotation_max_bytes": 104857600,
+        "log_rotation_max_age_hours": 24,
+        "health_ttl": 5,
+        "metrics_max_points": 120,
+        "rate_limit_max_rps": 100,
+        "rate_limit_window_sec": 10,
+        "api_key": "",
+        "csrf_enabled": False,
+    }
+    try:
+        if CONFIG_FILE.exists():
+            with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+                loaded = json.load(f)
+                defaults.update(loaded)
+    except Exception:
+        pass
+    return defaults
+
+CONFIG = load_config()
+HOST = CONFIG["host"]
+PORT = CONFIG["port"]
+TOPOLOGY = CONFIG["topology"]
 
 # ── Metrics history (in-memory ring buffer) ─────────────────────────────
 
@@ -337,11 +364,15 @@ WATCHDOG_RESTART_COOLDOWN_SEC = 300  # 5 min between auto-restarts per service
 WATCHDOG_LAST_RESTART = {}  # sid -> ts
 
 def watchdog_check():
-    """Auto-restart critical services that have gone down unexpectedly."""
+    """Auto-restart critical services that have gone down unexpectedly. Topology-aware."""
     if not WATCHDOG_ENABLED:
         return
     now = time.time()
-    critical = ["node1", "edge-node", "pool-edge"]
+    # Critical services depend on topology
+    if TOPOLOGY == "edge-primary":
+        critical = ["edge-node", "pool-edge", "node1"]  # Edge primary + local backup
+    else:
+        critical = ["node1", "pool"]  # Local genesis + local pool
     for sid in critical:
         svc = get_service(sid)
         if not svc:
@@ -392,6 +423,8 @@ SID_TO_ACTION = {
     "node1": "start-node1",
     "node2": "start-node2",
     "pool": "start-pool",
+    "pool-edge": None,  # Edge pool is remote, no local start action
+    "edge-node": None,  # Edge node is remote, no local start action
     "miner": "start-miner",
     "hiranyagarbha": "start-hiranyagarbha",
     "ai-native": "start-hiran-inference",
@@ -402,6 +435,8 @@ SID_STARTUP_DELAY = {
     "node1": 8,   # Node needs a few seconds for P2P + RPC
     "node2": 5,
     "pool": 5,    # Pool needs RPC to be ready
+    "pool-edge": 0,  # Edge pool is remote, no local startup delay
+    "edge-node": 0,  # Edge node is remote, no local startup delay
     "miner": 2,
     "hiranyagarbha": 3,
     "ai-native": 3,
@@ -522,27 +557,11 @@ def auto_backup_if_needed():
         pass
 
 # ── Service Registry ────────────────────────────────────────────────────
-# Single source of truth: every service the mainnet stack might run.
-# Used to render service cards, health checks, network topology, and controls.
+# Dual topology: edge-primary (production) vs local-dev (testing)
+# SERVICE_REGISTRY is set dynamically based on TOPOLOGY config
 
-SERVICE_REGISTRY = [
-    # ── L1: Consensus ────────────────────────────────────────────────────
-    {"id": "node1", "name": "Local Backup Node", "icon": "🔷", "level": "L1", "kind": "node",
-     "ports": {"p2p": 8333, "rpc": 8443, "ws": 8445, "metrics": 9115},
-     "log": "node1.log", "start": "start-node1", "stop": None,
-     "health_method": "rpc", "severity": "critical", "autoheal": False,
-     "health_endpoint": "http://127.0.0.1:8443/health",
-     "purpose": "Backup node — syncs from Edge primary (100.76.16.108) via Tailscale VPN.",
-     "child_says": "🔷 Syncs from Edge to keep a local copy of the chain!",
-     "depends_on": []},
-    {"id": "node2", "name": "Node 2 (Local Dev)", "icon": "🔶", "level": "L1", "kind": "node",
-     "ports": {"p2p": 8334, "rpc": 8446, "ws": 8447},
-     "log": "node2.log", "start": "start-node2", "stop": None,
-     "health_method": "rpc", "severity": "info", "autoheal": False,
-     "health_endpoint": "http://127.0.0.1:8446/health",
-     "purpose": "Optional local dev node — not used in Edge-primary topology. Use for local testing only.",
-     "child_says": "🔶 Only awake when testing locally!",
-     "depends_on": ["node1"]},
+SERVICE_REGISTRY_EDGE_PRIMARY = [
+    # ── L1: Consensus (Edge-primary topology) ────────────────────────────
     {"id": "edge-node", "name": "Edge Node (Primary)", "icon": "🌍", "level": "L1", "kind": "node",
      "ports": {"p2p": 8333},
      "host": "100.76.16.108",
@@ -551,13 +570,14 @@ SERVICE_REGISTRY = [
      "purpose": "Primary node on Edge (Hetzner) — source of chain truth, runs 24/7.",
      "child_says": "🌍 The king node lives on Edge!",
      "depends_on": []},
-    {"id": "pool", "name": "Local Pool (Dev Only)", "icon": "⚡", "level": "L1", "kind": "pool",
-     "ports": {"stratum": 8444, "metrics": 9550},
-     "log": "pool.log", "start": "start-pool", "stop": None,
-     "health_method": "tcp", "severity": "info", "autoheal": False,
-     "purpose": "Local dev pool — not used in Edge-primary topology. Use `launch-stack.sh` for local testing.",
-     "child_says": "⚡ Only for local testing!",
-     "depends_on": ["node1"]},
+    {"id": "node1", "name": "Local Backup Node", "icon": "🔷", "level": "L1", "kind": "node",
+     "ports": {"p2p": 8333, "rpc": 8443, "ws": 8445, "metrics": 9115},
+     "log": "node1.log", "start": "start-node1", "stop": None,
+     "health_method": "rpc", "severity": "critical", "autoheal": False,
+     "health_endpoint": "http://127.0.0.1:8443/health",
+     "purpose": "Backup node — syncs from Edge primary (100.76.16.108) via Tailscale VPN.",
+     "child_says": "🔷 Syncs from Edge to keep a local copy of the chain!",
+     "depends_on": []},
     {"id": "pool-edge", "name": "Edge Pool (Primary)", "icon": "🌐", "level": "L1", "kind": "pool",
      "ports": {"stratum": 8444, "metrics": 9550},
      "host": "100.76.16.108",
@@ -565,12 +585,12 @@ SERVICE_REGISTRY = [
      "health_method": "tcp", "severity": "critical", "autoheal": False,
      "purpose": "Primary pool on Edge — accepts all miners, validates shares, distributes payouts (89/5/5 burn model).",
      "child_says": "🌐 The main pool lives on Edge now!",
-     "depends_on": ["node1"]},
+     "depends_on": ["edge-node"]},
     {"id": "miner", "name": "GPU Miner", "icon": "⛏️", "level": "L1", "kind": "miner",
      "ports": {},
      "log": "miner.log", "start": "start-miner", "stop": None,
      "health_method": "log", "severity": "warning", "autoheal": True,
-     "purpose": "Performs cosmic_harmony PoW hashing on GPU to find new blocks.",
+     "purpose": "Performs cosmic_harmony PoW hashing on GPU to find new blocks. Connects to Edge pool.",
      "child_says": "⛏️ The miner is like a digger — it digs for new gold (ZION coins)!",
      "depends_on": ["pool-edge"]},
 
@@ -679,6 +699,148 @@ SERVICE_REGISTRY = [
      "child_says": "📋 The control room where we watch everything!",
      "depends_on": ["node1"]},
 ]
+
+SERVICE_REGISTRY_LOCAL_DEV = [
+    # ── L1: Consensus (Local-dev topology) ───────────────────────────────
+    {"id": "node1", "name": "Node 1 (Genesis)", "icon": "🔷", "level": "L1", "kind": "node",
+     "ports": {"p2p": 8333, "rpc": 8443, "ws": 8445, "metrics": 9115},
+     "log": "node1.log", "start": "start-node1", "stop": None,
+     "health_method": "rpc", "severity": "critical", "autoheal": False,
+     "health_endpoint": "http://127.0.0.1:8443/health",
+     "purpose": "Genesis node — source of chain truth in local dev mode.",
+     "child_says": "🔷 The genesis node starts the chain!",
+     "depends_on": []},
+    {"id": "node2", "name": "Node 2 (Follower)", "icon": "🔶", "level": "L1", "kind": "node",
+     "ports": {"p2p": 8334, "rpc": 8446, "ws": 8447, "metrics": 9116},
+     "log": "node2.log", "start": "start-node2", "stop": None,
+     "health_method": "rpc", "severity": "warning", "autoheal": False,
+     "health_endpoint": "http://127.0.0.1:8446/health",
+     "purpose": "Follower node — syncs from node1 for redundancy.",
+     "child_says": "🔶 Follows node1 to keep a backup copy!",
+     "depends_on": ["node1"]},
+    {"id": "pool", "name": "Local Pool", "icon": "🌐", "level": "L1", "kind": "pool",
+     "ports": {"stratum": 8444, "metrics": 9550},
+     "log": "pool.log", "start": "start-pool", "stop": None,
+     "health_method": "tcp", "severity": "critical", "autoheal": False,
+     "purpose": "Local pool — accepts miners, validates shares, distributes payouts (89/5/5 burn model).",
+     "child_says": "🌐 The local pool manages mining rewards!",
+     "depends_on": ["node1"]},
+    {"id": "miner", "name": "GPU Miner", "icon": "⛏️", "level": "L1", "kind": "miner",
+     "ports": {},
+     "log": "miner.log", "start": "start-miner", "stop": None,
+     "health_method": "log", "severity": "warning", "autoheal": True,
+     "purpose": "Performs cosmic_harmony PoW hashing on GPU to find new blocks. Connects to local pool.",
+     "child_says": "⛏️ The miner digs for new gold (ZION coins)!",
+     "depends_on": ["pool"]},
+
+    # ── L2: Bridge & DAO ────────────────────────────────────────────────
+    {"id": "bridge", "name": "ZION Bridge", "icon": "🌉", "level": "L2", "kind": "bridge",
+     "ports": {"metrics": 9102},
+     "log": "bridge.log", "start": "start-bridge", "stop": "stop-bridge",
+     "health_method": "tcp", "severity": "warning", "autoheal": False,
+     "purpose": "Cross-chain relay: moves ZION between L1 and EVM chains (Base). Metrics on 9102.",
+     "child_says": "🌉 A magical bridge to send ZION to other crypto worlds!",
+     "depends_on": ["node1"]},
+    {"id": "dao", "name": "ZION DAO", "icon": "🗳️", "level": "L2", "kind": "dao",
+     "ports": {"api": 8081},
+     "log": "dao.log", "start": "start-dao", "stop": "stop-dao",
+     "health_method": "tcp", "severity": "warning", "autoheal": False,
+     "purpose": "Decentralized governance: proposals, voting, treasury management. API on 8081.",
+     "child_says": "🗳️ Everyone votes here to decide what ZION should do next!",
+     "depends_on": ["node1"]},
+    {"id": "atomic-swap", "name": "Atomic Swap", "icon": "🔄", "level": "L2", "kind": "swap",
+     "ports": {"api": 8888},
+     "log": "atomic-swap.log", "start": "start-atomic-swap", "stop": "stop-atomic-swap",
+     "health_method": "tcp", "severity": "warning", "autoheal": False,
+     "purpose": "HTLC-based atomic swaps between ZION and other chains (no middleman). API on 8888.",
+     "child_says": "🔄 Trade coins safely with strangers without anyone cheating!",
+     "depends_on": ["node1"]},
+
+    # ── L3: Advanced ─────────────────────────────────────────────────────
+    {"id": "warp", "name": "WARP Relay", "icon": "🌀", "level": "L3", "kind": "relay",
+     "ports": {"api": 9333},
+     "log": "warp.log", "start": "start-warp", "stop": "stop-warp",
+     "health_method": "tcp", "severity": "info", "autoheal": False,
+     "purpose": "Multi-chain relay for fast cross-chain messaging.",
+     "child_says": "🌀 A super-fast message tube between blockchains!",
+     "depends_on": []},
+    {"id": "ncl", "name": "NCL Compute Layer", "icon": "🧠", "level": "L3", "kind": "gateway",
+     "ports": {"api": 8001},
+     "log": "hiranyagarbha.log", "start": "start-hiranyagarbha", "stop": None,
+     "health_method": "tcp", "severity": "info", "autoheal": False,
+     "purpose": "Neural Compute Layer — job scheduler, worker reputation, pricing. Integrated into Hiranyagarbha at /ncl/*.",
+     "child_says": "🧠 Helps many computers think together as one big brain!",
+     "depends_on": ["hiranyagarbha"]},
+    {"id": "hiranyagarbha", "name": "Hiranyagarbha API", "icon": "🧬", "level": "L3", "kind": "ai",
+     "ports": {"api": 8001},
+     "log": "hiranyagarbha.log", "start": "start-hiranyagarbha", "stop": None,
+     "health_method": "http", "severity": "info", "autoheal": False,
+     "health_endpoint": "http://127.0.0.1:8001/health",
+     "purpose": "Orchestrator API — agent lifecycle, task dispatch, RAG, consciousness engine. Port 8001.",
+     "child_says": "🧬 The brain that coordinates all AI agents in ZION!",
+     "depends_on": []},
+    {"id": "ai-native", "name": "Hiran Inference", "icon": "🤖", "level": "L3", "kind": "ai",
+     "ports": {"api": 8002},
+     "log": "hiran-inference.log", "start": "start-hiran-inference", "stop": None,
+     "health_method": "http", "severity": "info", "autoheal": False,
+     "health_endpoint": "http://127.0.0.1:8002/health",
+     "purpose": "Hiran v2.2 LLM inference server — OpenAI-compatible API on port 8002.",
+     "child_says": "🤖 A robot helper that knows everything about ZION!",
+     "depends_on": []},
+
+    # ── L4: Apps ─────────────────────────────────────────────────────────
+    {"id": "oasis", "name": "OASIS Avatar Hub", "icon": "🪷", "level": "L4", "kind": "app",
+     "ports": {"api": 8094},
+     "log": "oasis.log", "start": "start-oasis", "stop": "stop-oasis",
+     "health_method": "tcp", "severity": "info", "autoheal": False,
+     "purpose": "Avatar registry, guilds, territories, consciousness XP. API on 8094.",
+     "child_says": "🪷 A garden where your ZION avatar lives and helps the world!",
+     "depends_on": ["node1"]},
+
+    # ── L5: Free World Humanitarian ──────────────────────────────────────
+    {"id": "free-world", "name": "Free World Humanitarian", "icon": "🕊️", "level": "L5", "kind": "humanitarian",
+     "ports": {"api": 8095},
+     "log": "free-world.log", "start": "start-humanitarian", "stop": "stop-humanitarian",
+     "health_method": "tcp", "severity": "info", "autoheal": False,
+     "purpose": "Humanitarian aid coordination — mesh networks, medical tables, community DAOs.",
+     "child_says": "🕊️ Helps people in need through decentralized aid and community support!",
+     "depends_on": ["node1"]},
+
+    # ── L6: Issobella Space ──────────────────────────────────────────────
+    {"id": "issobella", "name": "Issobella Space Layer", "icon": "🚀", "level": "L6", "kind": "space",
+     "ports": {"api": 8096},
+     "log": "issobella.log", "start": "start-space", "stop": "stop-space",
+     "health_method": "tcp", "severity": "info", "autoheal": False,
+     "purpose": "Space infrastructure coordination — satellite relay, off-world settlements, orbital DAOs.",
+     "child_says": "🚀 Takes ZION beyond Earth — to the stars and beyond!",
+     "depends_on": ["node1"]},
+
+    # ── Infrastructure ───────────────────────────────────────────────────
+    {"id": "prometheus", "name": "Prometheus", "icon": "📊", "level": "Infra", "kind": "metrics",
+     "ports": {"web": 9090},
+     "log": None, "start": "start-prometheus", "stop": None,
+     "health_method": "tcp", "severity": "info", "autoheal": False,
+     "purpose": "Collects and stores metrics from all services (every 15s).",
+     "child_says": "📊 A super-memory that remembers all the numbers!",
+     "depends_on": []},
+    {"id": "grafana", "name": "Grafana", "icon": "📈", "level": "Infra", "kind": "dashboards",
+     "ports": {"web": 3000},
+     "log": None, "start": "start-grafana", "stop": None,
+     "health_method": "tcp", "severity": "info", "autoheal": False,
+     "purpose": "Beautiful charts and dashboards for Prometheus metrics.",
+     "child_says": "📈 Pretty pictures showing how everything is doing!",
+     "depends_on": ["prometheus"]},
+    {"id": "dashboard", "name": "ZION Dashboard", "icon": "📋", "level": "Infra", "kind": "dashboard",
+     "ports": {"web": 8766},
+     "log": None, "start": None, "stop": None,
+     "health_method": "tcp", "severity": "info", "autoheal": False,
+     "purpose": "Operational control plane — this UI.",
+     "child_says": "📋 The control room where we watch everything!",
+     "depends_on": ["node1"]},
+]
+
+# Dynamic SERVICE_REGISTRY selection based on TOPOLOGY
+SERVICE_REGISTRY = SERVICE_REGISTRY_EDGE_PRIMARY if TOPOLOGY == "edge-primary" else SERVICE_REGISTRY_LOCAL_DEV
 
 def get_service(sid: str) -> dict:
     return next((s for s in SERVICE_REGISTRY if s["id"] == sid), None)
@@ -1227,6 +1389,14 @@ def parse_miner_log() -> dict:
     return status
 
 def build_status() -> dict:
+    # Topology-aware status building
+    if TOPOLOGY == "edge-primary":
+        return _build_status_edge_primary()
+    else:
+        return _build_status_local_dev()
+
+def _build_status_edge_primary() -> dict:
+    """Build status for edge-primary topology: edge-node, pool-edge, local backup node1, miner"""
     # Edge node health (primary — TCP probe on P2P port; RPC is localhost-only on Edge)
     edge_node_svc = get_service("edge-node")
     edge_node_health = check_service_health(edge_node_svc) if edge_node_svc else {"alive": False}
@@ -1303,6 +1473,7 @@ def build_status() -> dict:
 
     return {
         "timestamp": datetime.now().isoformat(),
+        "topology": "edge-primary",
         "node1": n1,
         "node2": n2,
         "edge_node": edge_node_status,
@@ -1325,21 +1496,120 @@ def build_status() -> dict:
         "miner": parse_miner_log(),
     }
 
+def _build_status_local_dev() -> dict:
+    """Build status for local-dev topology: node1 (genesis), node2 (follower), local pool, miner"""
+    # Local nodes
+    n1 = parse_node_log("node1")
+    n2 = parse_node_log("node2")
+
+    # Local pool
+    pool_svc = get_service("pool")
+    pool_health = check_service_health(pool_svc) if pool_svc else {"alive": False}
+    local_pool = parse_pool_log()
+
+    # Try to scrape local pool metrics
+    pool_metrics = {"active_miners": None, "hashrate": None, "blocks_found": None}
+    try:
+        metrics_port = pool_svc.get("ports", {}).get("metrics") if pool_svc else None
+        if metrics_port and pool_health.get("alive"):
+            url = f"http://127.0.0.1:{metrics_port}/metrics"
+            with _urlreq.urlopen(url, timeout=1.0) as r:
+                body = r.read().decode("utf-8", errors="ignore")
+                for line in body.splitlines():
+                    if line.startswith("zion_pool_active_sessions "):
+                        pool_metrics["active_miners"] = int(float(line.split()[-1]))
+                    elif line.startswith("zion_pool_total_hashes "):
+                        pass
+                    elif line.startswith("zion_pool_blocks_found "):
+                        pool_metrics["blocks_found"] = int(float(line.split()[-1]))
+    except Exception:
+        pass
+
+    pool_status = {
+        "running": pool_health["alive"],
+        "bind_addr": "127.0.0.1:8444",
+        "loop_count": "1000000",
+        "nonce_count": 4096,
+        "pool_wallet": os.environ.get("ZION_POOL_WALLET", ""),
+        "payout_enabled": pool_health["alive"] and local_pool.get("fee_split") == "89/5/5/0",
+        "blocks_found": pool_metrics["blocks_found"] or local_pool["blocks_found"],
+        "shares_accepted": local_pool["shares_accepted"],
+        "shares_rejected": local_pool["shares_rejected"],
+        "active_sessions": pool_metrics["active_miners"] or local_pool["active_sessions"],
+        "fee_split": local_pool.get("fee_split", "89/5/5/0"),
+        "recent_payouts": local_pool["recent_payouts"],
+        "recent_lines": local_pool["recent_lines"],
+    }
+
+    # Compute sync gap between node1 and node2
+    sync_gap = None
+    if n1.get("chain_height") and n2.get("chain_height"):
+        sync_gap = abs(n1["chain_height"] - n2["chain_height"])
+
+    return {
+        "timestamp": datetime.now().isoformat(),
+        "topology": "local-dev",
+        "node1": n1,
+        "node2": n2,
+        "edge_node": {
+            "running": False,
+            "chain_height": None,
+            "tip_hash": None,
+            "known_peers": 0,
+            "mempool_size": 0,
+        },
+        "pool": pool_status,
+        "pool_edge": {
+            "running": False,
+            "host": "",
+            "public_ip": "",
+            "tailscale_ip": "",
+            "ports_open": [],
+            "ports_closed": [],
+            "pid_alive": False,
+            "pid": None,
+            "active_miners": None,
+            "hashrate": None,
+            "blocks_found": None,
+            "sync_gap": None,
+            "details": "Not applicable in local-dev topology",
+        },
+        "miner": parse_miner_log(),
+    }
+
 def build_checklist(status: dict) -> dict:
-    checks = [
-        {"id": "keys",      "label": "Offline key generation complete",         "ok": True},
-        {"id": "env",       "label": "Env file assembled (.env.mainnet)",       "ok": True},
-        {"id": "edge-node", "label": "Edge Node (Primary) running & reachable",   "ok": status["edge_node"]["running"] and status["edge_node"]["chain_height"] is not None},
-        {"id": "node1",     "label": "Local Backup Node running & synced",      "ok": status["node1"]["running"] and status["node1"]["p2p_bind"] is not None},
-        {"id": "node2",     "label": "Node 2 (Local Dev) optional",            "ok": not status["node2"]["running"] or status["node2"]["known_peers"] > 0},
-        {"id": "pool",      "label": "Edge Pool running & accepting miners",    "ok": status["pool"]["running"] and status["pool"]["active_sessions"] is not None},
-        {"id": "pool-edge", "label": "Edge Pool TCP reachable",                 "ok": status.get("pool_edge", {}).get("running", False)},
-        {"id": "miner",     "label": "GPU miner connected & hashing",         "ok": status["miner"]["running"] and status["miner"]["hashrate"] is not None},
-        {"id": "chain",     "label": "Chain height advancing",                 "ok": status["edge_node"]["chain_height"] is not None and status["edge_node"]["chain_height"] > 0},
-        {"id": "payout",    "label": "Payout mechanism ready (fee split active)",  "ok": status["pool"]["running"] and status["pool"]["fee_split"] == "89/5/5/0"},
-        {"id": "fee_split", "label": "Fee split 89/5/5/0 (burn model) active",     "ok": status["pool"]["fee_split"] == "89/5/5/0"},
-        {"id": "logs",      "label": "Log directory writable",                  "ok": LOG_DIR.exists()},
-    ]
+    # Topology-aware checklist
+    topology = status.get("topology", TOPOLOGY)
+    
+    if topology == "edge-primary":
+        checks = [
+            {"id": "keys",      "label": "Offline key generation complete",         "ok": True},
+            {"id": "env",       "label": "Env file assembled (.env.mainnet)",       "ok": True},
+            {"id": "edge-node", "label": "Edge Node (Primary) running & reachable",   "ok": status["edge_node"]["running"] and status["edge_node"]["chain_height"] is not None},
+            {"id": "node1",     "label": "Local Backup Node running & synced",      "ok": status["node1"]["running"] and status["node1"]["p2p_bind"] is not None},
+            {"id": "node2",     "label": "Node 2 (Local Dev) optional",            "ok": not status["node2"]["running"] or status["node2"]["known_peers"] > 0},
+            {"id": "pool",      "label": "Edge Pool running & accepting miners",    "ok": status["pool"]["running"] and status["pool"]["active_sessions"] is not None},
+            {"id": "pool-edge", "label": "Edge Pool TCP reachable",                 "ok": status.get("pool_edge", {}).get("running", False)},
+            {"id": "miner",     "label": "GPU miner connected & hashing",         "ok": status["miner"]["running"] and status["miner"]["hashrate"] is not None},
+            {"id": "chain",     "label": "Chain height advancing",                 "ok": status["edge_node"]["chain_height"] is not None and status["edge_node"]["chain_height"] > 0},
+            {"id": "payout",    "label": "Payout mechanism ready (fee split active)",  "ok": status["pool"]["running"] and status["pool"]["fee_split"] == "89/5/5/0"},
+            {"id": "fee_split", "label": "Fee split 89/5/5/0 (burn model) active",     "ok": status["pool"]["fee_split"] == "89/5/5/0"},
+            {"id": "logs",      "label": "Log directory writable",                  "ok": LOG_DIR.exists()},
+        ]
+    else:  # local-dev
+        checks = [
+            {"id": "keys",      "label": "Offline key generation complete",         "ok": True},
+            {"id": "env",       "label": "Env file assembled (.env.mainnet)",       "ok": True},
+            {"id": "node1",     "label": "Node 1 (Genesis) running",               "ok": status["node1"]["running"] and status["node1"]["p2p_bind"] is not None},
+            {"id": "node2",     "label": "Node 2 (Follower) running & synced",    "ok": not status["node2"]["running"] or status["node2"]["known_peers"] > 0},
+            {"id": "pool",      "label": "Local Pool running & accepting miners",  "ok": status["pool"]["running"] and status["pool"]["active_sessions"] is not None},
+            {"id": "miner",     "label": "GPU miner connected & hashing",         "ok": status["miner"]["running"] and status["miner"]["hashrate"] is not None},
+            {"id": "chain",     "label": "Chain height advancing",                 "ok": status["node1"]["chain_height"] is not None and status["node1"]["chain_height"] > 0},
+            {"id": "payout",    "label": "Payout mechanism ready (fee split active)",  "ok": status["pool"]["running"] and status["pool"]["fee_split"] == "89/5/5/0"},
+            {"id": "fee_split", "label": "Fee split 89/5/5/0 (burn model) active",     "ok": status["pool"]["fee_split"] == "89/5/5/0"},
+            {"id": "logs",      "label": "Log directory writable",                  "ok": LOG_DIR.exists()},
+        ]
+    
     total = len(checks)
     passed = sum(1 for c in checks if c["ok"])
     return {"checks": checks, "passed": passed, "total": total, "pct": round(100*passed/total, 1)}
@@ -1359,10 +1629,15 @@ LAYER_WEIGHTS = {
 }
 
 SERVICE_WEIGHTS = {
-    "edge-node": 20, "node1": 10, "pool": 10, "miner": 10,
+    # Edge-primary topology weights
+    "edge-node": 20, "node1": 10, "pool-edge": 10, "miner": 10,
+    # Local-dev topology weights (node1 becomes primary)
+    "pool": 10,
+    # Common L2-L6 weights
     "bridge": 8, "dao": 8, "atomic-swap": 5, "warp": 4,
     "ai-native": 5, "hiranyagarbha": 3, "ncl": 2, "oasis": 3, "free-world": 2, "issobella": 2,
-    "node2": 0, "pool-edge": 0, "prometheus": 0, "grafana": 0, "dashboard": 0,
+    # Optional/infra
+    "node2": 0, "prometheus": 0, "grafana": 0, "dashboard": 0,
 }
 
 
@@ -1404,8 +1679,9 @@ def build_readiness_score(health: list) -> dict:
 
 def build_alerts(status: dict) -> list:
     """Auto-detect common issues and produce actionable alerts.
-    Severity is now derived from SERVICE_REGISTRY."""
+    Severity is now derived from SERVICE_REGISTRY. Topology-aware."""
     alerts = []
+    topology = status.get("topology", TOPOLOGY)
     n1, n2, pool, miner = status["node1"], status["node2"], status["pool"], status["miner"]
     edge_node = status.get("edge_node", {})
 
@@ -1413,31 +1689,50 @@ def build_alerts(status: dict) -> list:
         svc = get_service(svc_id)
         return svc.get("severity", default) if svc else default
 
-    # Edge Node (Primary) alerts
-    if not edge_node.get("running"):
-        alerts.append({"severity": _sev("edge-node", "critical"), "title": "Edge Node not reachable",
-                       "detail": "Primary node on Edge (100.76.16.108) is not responding via RPC. Check Tailscale VPN and Edge systemd services.",
-                       "action": None})
-    elif edge_node.get("chain_height") == 0:
-        alerts.append({"severity": _sev("edge-node", "warning"), "title": "Edge chain stuck at height 0",
-                       "detail": "Edge node is up but no blocks have been mined yet.",
-                       "action": None})
+    if topology == "edge-primary":
+        # Edge Node (Primary) alerts
+        if not edge_node.get("running"):
+            alerts.append({"severity": _sev("edge-node", "critical"), "title": "Edge Node not reachable",
+                           "detail": "Primary node on Edge (100.76.16.108) is not responding via RPC. Check Tailscale VPN and Edge systemd services.",
+                           "action": None})
+        elif edge_node.get("chain_height") == 0:
+            alerts.append({"severity": _sev("edge-node", "warning"), "title": "Edge chain stuck at height 0",
+                           "detail": "Edge node is up but no blocks have been mined yet.",
+                           "action": None})
 
-    # Local Backup Node alerts
-    if not n1["running"]:
-        alerts.append({"severity": _sev("node1", "critical"), "title": "Local Backup Node not running",
-                       "detail": "Local backup node is not running. Start it to sync from Edge primary.",
-                       "action": "start-node1"})
+        # Local Backup Node alerts
+        if not n1["running"]:
+            alerts.append({"severity": _sev("node1", "critical"), "title": "Local Backup Node not running",
+                           "detail": "Local backup node is not running. Start it to sync from Edge primary.",
+                           "action": "start-node1"})
 
-    # Sync gap: Edge primary vs local backup
-    if edge_node.get("running") and n1["running"] and edge_node.get("chain_height") and n1["chain_height"]:
-        gap = abs(edge_node["chain_height"] - n1["chain_height"])
-        if gap > 10:
-            alerts.append({"severity": _sev("node1", "warning"), "title": "Backup node far behind Edge",
-                           "detail": f"Edge@{edge_node['chain_height']} vs Local@{n1['chain_height']} — gap {gap}",
-                           "action": "restart-node1"})
+        # Sync gap: Edge primary vs local backup
+        if edge_node.get("running") and n1["running"] and edge_node.get("chain_height") and n1["chain_height"]:
+            gap = abs(edge_node["chain_height"] - n1["chain_height"])
+            if gap > 10:
+                alerts.append({"severity": _sev("node1", "warning"), "title": "Backup node far behind Edge",
+                               "detail": f"Edge@{edge_node['chain_height']} vs Local@{n1['chain_height']} — gap {gap}",
+                               "action": "restart-node1"})
+    else:  # local-dev
+        # Node 1 (Genesis) alerts
+        if not n1["running"]:
+            alerts.append({"severity": _sev("node1", "critical"), "title": "Node 1 (Genesis) not running",
+                           "detail": "Genesis node is not running. Start it to begin the chain.",
+                           "action": "start-node1"})
+        elif n1.get("chain_height") == 0:
+            alerts.append({"severity": _sev("node1", "warning"), "title": "Genesis chain stuck at height 0",
+                           "detail": "Genesis node is up but no blocks have been mined yet.",
+                           "action": None})
 
-    # Pool (Edge) alerts
+        # Node 2 (Follower) alerts
+        if n2["running"] and n1["running"] and n1["chain_height"] and n2["chain_height"]:
+            gap = abs(n1["chain_height"] - n2["chain_height"])
+            if gap > 10:
+                alerts.append({"severity": _sev("node2", "warning"), "title": "Follower node far behind genesis",
+                               "detail": f"Genesis@{n1['chain_height']} vs Follower@{n2['chain_height']} — gap {gap}",
+                               "action": "restart-node2"})
+
+    # Pool alerts (common to both topologies)
     if pool["running"] and pool["fee_split"] and pool["fee_split"] != "89/5/5/0":
         alerts.append({"severity": _sev("pool", "critical"), "title": "Wrong fee split",
                        "detail": f"Detected {pool['fee_split']}, mainnet must be 89/5/5/0 (burn model)",
@@ -1445,7 +1740,7 @@ def build_alerts(status: dict) -> list:
 
     if pool["running"] and pool["payout_enabled"] is False:
         alerts.append({"severity": _sev("pool", "warning"), "title": "Payouts disabled",
-                       "detail": "Pool is running but payout_execution=disabled. Check Edge pool has ZION_POOL_PAYOUT_SK_HEX set.",
+                       "detail": "Pool is running but payout_execution=disabled. Check pool has ZION_POOL_PAYOUT_SK_HEX set.",
                        "action": None})
 
     if pool["running"] and pool.get("nonce_count") and pool["nonce_count"] < 4096:
@@ -5706,6 +6001,14 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self.send_error(405)
         elif route == "/api/status":
             self._json(build_status())
+        elif route == "/api/config":
+            # GET: return current config (read-only)
+            self._json({
+                "topology": TOPOLOGY,
+                "host": HOST,
+                "port": PORT,
+                "available_topologies": ["edge-primary", "local-dev"],
+            })
         elif route == "/api/checklist":
             self._json(build_checklist(build_status()))
         elif route == "/api/alerts":
@@ -6846,6 +7149,25 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 self._json({"ok": True, "message": "Log rotation triggered"})
             except Exception as e:
                 self._json({"ok": False, "error": str(e)})
+        elif route == "/api/config":
+            # POST: allow topology switching (requires restart)
+            try:
+                new_topology = payload.get("topology")
+                if new_topology not in ["edge-primary", "local-dev"]:
+                    self._json({"ok": False, "error": f"Invalid topology: {new_topology}. Must be 'edge-primary' or 'local-dev'."})
+                    return
+                # Update config file
+                try:
+                    with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+                        config = json.load(f)
+                    config["topology"] = new_topology
+                    with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+                        json.dump(config, f, indent=2)
+                    self._json({"ok": True, "message": f"Topology changed to {new_topology}. Restart dashboard to apply.", "new_topology": new_topology})
+                except Exception as e:
+                    self._json({"ok": False, "error": f"Failed to update config: {str(e)}"})
+            except Exception as e:
+                self._json({"ok": False, "error": f"Invalid request: {str(e)}"})
         elif route == "/api/launch/stack":
             # Dependency-aware sequential stack launch
             with LAUNCH_STATE_LOCK:
