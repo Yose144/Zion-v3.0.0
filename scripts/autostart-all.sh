@@ -9,8 +9,8 @@ mkdir -p "$LOG_DIR"
 
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] ZION autostart — launching full stack..." >> "$LOG_DIR/autostart.log"
 
-# 1. Core stack (node1 + node2 + pool + CPU miner)
-bash "$REPO_ROOT/scripts/launch-stack.sh" >> "$LOG_DIR/autostart.log" 2>&1
+# 1. Core stack (Edge-primary: local backup node + miners pointing to Edge pool)
+bash "$REPO_ROOT/scripts/launch-local-backup.sh" >> "$LOG_DIR/autostart.log" 2>&1
 sleep 5
 
 # 2. L2 services (best-effort)
