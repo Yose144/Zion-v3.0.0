@@ -2273,6 +2273,22 @@ def build_payout_status() -> dict:
         "pool_fee": _bal(status.get("pool_fee_wallet")),
     }
 
+    # Estimate total fee-split earnings from blocks_found + block_subsidy
+    if status["blocks_found"] > 0 and status["last_block_height"]:
+        total_subsidy = 0
+        start_h = max(1, status["last_block_height"] - status["blocks_found"] + 1)
+        for h in range(start_h, status["last_block_height"] + 1):
+            total_subsidy += block_subsidy(h)
+        miner_e, hum_e, iss_e, fee_e = fee_split(total_subsidy)
+        status["fee_split_earnings"] = {
+            "miner": miner_e / 1_000_000_000_000,
+            "humanitarian": hum_e / 1_000_000_000_000,
+            "issobella": iss_e / 1_000_000_000_000,
+            "pool_fee": fee_e / 1_000_000_000_000,
+        }
+    else:
+        status["fee_split_earnings"] = {}
+
     # Enrich with live pool stats from routing metrics endpoint
     pool_stats = fetch_pool_stats()
     if pool_stats:
