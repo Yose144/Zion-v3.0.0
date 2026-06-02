@@ -25,10 +25,10 @@ $env:ZION_RPC_BIND='0.0.0.0:8443'
 $env:ZION_POOL_BIND='0.0.0.0:8444'
 $env:ZION_NODE_STATE_PATH='C:\Users\yosef\Desktop\Zion\2.9.6-main\V3\data\zion-node-state.db'
 $env:ZION_SEED_PEERS='none'
-$env:ZION_MINER_ADDRESS='zion1e2z646u403s6c7k8m6m8m4q0a6r2a5h5j8534d8'
-$env:ZION_HUMANITARIAN_WALLET='zion1t4w447d7k4c600h3x893m5r55645w4p057yf4d7'
-$env:ZION_ISSOBELLA_WALLET='zion1e4t5a390m2r427a8f3s39885v4f2v6n8u3mj3f5'
-$env:ZION_POOL_FEE_WALLET='zion1f3d840y886x6r658j3t0f583j347l2e2h84z402'
+$env:ZION_MINER_ADDRESS='zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3'
+$env:ZION_HUMANITARIAN_WALLET='zion1m4v5z8z850u480c5c208z274e334369275n5y20'
+$env:ZION_ISSOBELLA_WALLET='zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702'
+# Note: 89/5/5/0 burn model — no pool fee wallet (1% is burned, never minted)
 $p1 = Start-Process -FilePath $nodeExe -RedirectStandardOutput "$logDir\diag-node1.log" -RedirectStandardError "$logDir\diag-node1.err" -WindowStyle Hidden -PassThru
 Write-Host "Started Node1  PID=$($p1.Id)"
 
@@ -50,7 +50,9 @@ $env:ZION_POOL_BIND='0.0.0.0:8444'
 $env:ZION_NODE_RPC_ADDR='127.0.0.1:8443'
 $env:ZION_POOL_LOOP_COUNT='1000000'
 $env:ZION_MAX_SESSIONS_PER_IP='10'
-$env:ZION_POOL_WALLET='zion182e2v4x4r3u2j5r5t305k0d5y643q6l3n6je5f8'
+# WARNING: ZION_POOL_WALLET and ZION_POOL_PAYOUT_SK_HEX must be a matched pair.
+# The SK_HEX below corresponds to the OLD pool wallet. Update both together.
+$env:ZION_POOL_WALLET='zion1a6z5a4m830w6s6k7r508n300n6z30022q6qt0n7'
 $env:ZION_POOL_PAYOUT_SK_HEX='b8d7341c97b9402b67ad2a961ef055c66e3b7fb2568cf48cc78f7b1ffd2098d0'
 $env:ZION_NONCE_COUNT='4096'
 $env:ZION_VARDIFF_START_DIFF='1'
