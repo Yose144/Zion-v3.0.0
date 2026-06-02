@@ -228,6 +228,51 @@ Public Pool: 8444
 - **Never commit private keys.** The existing keys in root are grandfathered; rotate if compromised.
 - **SSH endpoint:** Use Tailscale SSH (`100.76.16.108`) or direct Hetzner console for Edge server management.
 
+### Edge Server Deployment (Autonomous 24/7)
+
+The Edge server runs as the canonical primary node + pool. It must survive reboots without local PC intervention.
+
+**Systemd services** (installed by `edge-deploy/setup-edge.sh` or `edge-deploy/deploy-edge.sh`):
+
+| Service | Binary | Role | Auto-restart |
+|---------|--------|------|-------------|
+| `zion-edge-node.service` | `V3/target/release/node` | Primary chain node | `Restart=always` |
+| `zion-edge-pool.service` | `V3/target/release/server` | Primary mining pool | `Restart=always` |
+| `zion-edge-watchdog.timer` | `edge-deploy/watchdog.sh` | Healthcheck every 2 min | systemd timer |
+
+**First-time setup (run on Edge server as root):**
+```bash
+cd /root/zion-2.9.6-main
+bash edge-deploy/setup-edge.sh
+systemctl start zion-edge-node zion-edge-pool
+systemctl start zion-edge-watchdog.timer
+```
+
+**Deploy updates from local PC:**
+```bash
+cd /root/zion-2.9.6-main   # or wherever repo lives locally
+bash edge-deploy/deploy-edge.sh
+```
+
+**Operational commands:**
+```bash
+# Status
+systemctl status zion-edge-node zion-edge-pool
+
+# Logs (journalctl)
+journalctl -u zion-edge-node -f
+journalctl -u zion-edge-pool -f
+
+# Restart
+systemctl restart zion-edge-node
+systemctl restart zion-edge-pool
+
+# Stop (for maintenance)
+systemctl stop zion-edge-pool zion-edge-node
+```
+
+**Important:** Edge uses `ZION_SEED_PEERS=none` because it is the greenfield genesis source. Never point Edge to a local PC as seed unless you are intentionally reversing the topology.
+
 ### Dashboard Configuration
 
 The Python dashboard (`dashboard/app.py`) monitors Edge (primary) + Core (backup) services:
