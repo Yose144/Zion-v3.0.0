@@ -97,6 +97,23 @@ export interface PayoutStatus {
   }>;
 }
 
+export interface MonitoringStatus {
+  prometheus: {
+    url: string;
+    alive: boolean;
+    version: string | null;
+    targets_up: number;
+    targets_total: number;
+  };
+  grafana: {
+    url: string;
+    alive: boolean;
+    version: string | null;
+    database: string | null;
+  };
+  timestamp: number;
+}
+
 // ── Native Tauri commands ─────────────────────────────────
 
 export async function probeTcp(host: string, port: number, timeoutMs = 2000): Promise<boolean> {

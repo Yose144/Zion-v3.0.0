@@ -9,6 +9,7 @@ import ReadinessBar from './components/ReadinessBar';
 import PerformanceCharts from './components/PerformanceCharts';
 import ControlsPanel from './components/ControlsPanel';
 import LogViewer from './components/LogViewer';
+import MonitoringPanel from './components/MonitoringPanel';
 import {
   apiFetch,
   probeTcp,
@@ -17,6 +18,7 @@ import {
   type ServiceHealth,
   type AlertItem,
   type ReadinessScore,
+  type MonitoringStatus,
 } from './lib/api';
 
 const REFRESH_INTERVAL = 5000;
@@ -31,6 +33,7 @@ export default function App() {
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [lastError, setLastError] = useState<string | null>(null);
   const [nativeActive, setNativeActive] = useState(false);
+  const [monitoring, setMonitoring] = useState<MonitoringStatus | null>(null);
 
   const nativeProbeAll = useCallback(async () => {
     const [edgeRpc, edgePool, localRpc, localP2p] = await Promise.all([
@@ -148,12 +151,14 @@ export default function App() {
 
     // 1) Try Python dashboard backend (HTTP)
     try {
-      const [st, sv, al, rd] = await Promise.all([
+      const [st, sv, al, rd, mon] = await Promise.all([
         apiFetch<V3Status>('/api/status'),
         apiFetch<{ services: ServiceHealth[] }>('/api/services'),
         apiFetch<{ alerts: AlertItem[] }>('/api/alerts'),
         apiFetch<ReadinessScore>('/api/readiness'),
+        apiFetch<MonitoringStatus>('/api/monitoring/status'),
       ]);
+      if (mon) setMonitoring(mon);
       if (st) setStatus(st);
       if (sv) {
         setServices(sv.services);
@@ -255,6 +260,8 @@ export default function App() {
           </div>
           <ServiceGrid services={services} />
         </section>
+
+        <MonitoringPanel monitoring={monitoring} />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <ControlsPanel />
