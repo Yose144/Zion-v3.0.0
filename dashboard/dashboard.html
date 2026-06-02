@@ -3440,10 +3440,10 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 
     <!-- On-chain Balances -->
     <h3 class="text-sm font-bold text-gray-300 mb-3">💎 On-chain Balances</h3>
-    <p class="text-xs text-gray-500 mb-3">Total on-chain balance per address (includes fee-split earnings, premine, and other inflows).</p>
+    <p class="text-xs text-gray-500 mb-3">Total on-chain balance per address. Humanitarian balance includes 1.44B ZION genesis premine — fee-split earnings are only a tiny fraction.</p>
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
       <div class="zion-panel p-4 text-center">
-        <div class="text-[10px] text-gray-400 mb-1">⛏️ Miner</div>
+        <div class="text-[10px] text-gray-400 mb-1">⛏️ Pool / Miner Wallet</div>
         <div class="text-sm font-mono text-white truncate" id="fs-bal-miner-addr">—</div>
         <div class="text-xl font-bold text-amber-400 mt-1" id="fs-bal-miner">—</div>
         <div class="text-[10px] text-gray-500">ZION</div>
@@ -3485,7 +3485,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
           </thead>
           <tbody class="font-mono">
             <tr class="border-b border-white/5">
-              <td class="py-2 px-2 text-amber-400">⛏️ Miner</td>
+              <td class="py-2 px-2 text-amber-400">⛏️ Pool / Miner</td>
               <td class="py-2 px-2 text-right text-white">89%</td>
               <td class="py-2 px-2 text-right text-amber-400" id="payout-breakdown-miner-amount">—</td>
               <td class="py-2 px-2 text-gray-300 truncate max-w-[200px]" id="payout-breakdown-miner-addr">—</td>
@@ -3687,6 +3687,6 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
   </div>
 </div>
 
-<script src="/dashboard.js?v=15"></script>
+<script src="/dashboard.js?v=16"></script>
 </body>
 </html>
