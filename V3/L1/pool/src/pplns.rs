@@ -873,4 +873,82 @@ mod tests {
         e.restore_fees(1, 0, 0);
         assert_eq!(e.fee_stats().humanitarian_accumulated_flowers, u64::MAX);
     }
+
+    /// Ten miners with different hashrates (simulated via difficulty).
+    /// Each miner submits shares proportional to their simulated hashrate.
+    /// Verify that payout ratio per unit difficulty is equal across all miners.
+    #[test]
+    fn ten_miners_payout_ratio_is_fair() {
+        // Simulated hashrates (arbitrary units) and corresponding share difficulty.
+        let miners: Vec<(&str, u64)> = vec![
+            ("miner_01", 100),
+            ("miner_02", 200),
+            ("miner_03", 300),
+            ("miner_04", 400),
+            ("miner_05", 500),
+            ("miner_06", 600),
+            ("miner_07", 700),
+            ("miner_08", 800),
+            ("miner_09", 900),
+            ("miner_10", 1000),
+        ];
+        let total_simulated_hashrate: u64 = miners.iter().map(|(_, h)| h).sum();
+
+        // Use a large window so all shares fit.
+        let mut e = engine(1_000_000, 1);
+        for (id, diff) in &miners {
+            e.register_address(id, &format!("zion1{id}"));
+        }
+
+        // Each miner submits 100 shares at their own difficulty.
+        // Total work in window = sum(100 * diff) = 100 * total_simulated_hashrate.
+        for (id, diff) in &miners {
+            for _ in 0..100 {
+                e.record_share_at_diff(id, "rig", 1, 1000, *diff);
+            }
+        }
+
+        let block_reward = 10_000_000_000u64;
+        let payouts = e.compute_miner_payouts(block_reward);
+        assert_eq!(payouts.len(), miners.len(), "all 10 miners should be paid");
+
+        // Expected payout for each miner = block_reward * (miner_work / total_work).
+        let total_work: u128 = miners.iter().map(|(_, d)| 100u128 * *d as u128).sum();
+        for (id, diff) in &miners {
+            let miner_work = 100u128 * *diff as u128;
+            let expected = (block_reward as u128 * miner_work / total_work) as u64;
+            let actual = payouts.iter().find(|p| p.miner_id == *id).map(|p| p.amount).unwrap_or(0);
+            // Allow up to N-1 flowers rounding error (dust handled by last-miner-gets-remainder).
+            let delta = if expected > actual { expected - actual } else { actual - expected };
+            assert!(
+                delta <= miners.len() as u64,
+                "miner {id}: expected ~{expected}, got {actual}, delta={delta}"
+            );
+        }
+
+        // Total payouts must equal the block reward exactly (no dust lost).
+        let total_payout: u64 = payouts.iter().map(|p| p.amount).sum();
+        assert_eq!(total_payout, block_reward, "total payout must equal block reward");
+
+        // Verify payout ratio per unit work is identical across miners (<0.1% deviation).
+        let mut ratios = Vec::new();
+        for (id, diff) in &miners {
+            let payout = payouts.iter().find(|p| p.miner_id == *id).map(|p| p.amount).unwrap_or(0);
+            let work = 100u128 * *diff as u128;
+            let ratio = payout as f64 / work as f64;
+            ratios.push(ratio);
+        }
+        let first_ratio = ratios[0];
+        for (i, ratio) in ratios.iter().enumerate() {
+            let rel_diff = (ratio - first_ratio).abs() / first_ratio;
+            assert!(
+                rel_diff < 0.001,
+                "miner {} ratio {:.12} deviates from first {:.12} by {:.6}%",
+                i + 1,
+                ratio,
+                first_ratio,
+                rel_diff * 100.0
+            );
+        }
+    }
 }
