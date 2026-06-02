@@ -5969,7 +5969,12 @@ class DashboardHandler(BaseHTTPRequestHandler):
             else:
                 self.send_error(404)
         # ── Dashboard v3 SPA static files ────────────────────────────────────
-        elif route == "/v3" or route == "/v3/" or route == "/v3/index.html":
+        elif route == "/v3":
+            self.send_response(302)
+            self.send_header("Location", "/v3/")
+            self.end_headers()
+            return
+        elif route == "/v3/" or route == "/v3/index.html":
             v3_index = SCRIPT_DIR / "v3" / "index.html"
             if v3_index.exists():
                 self._html(v3_index.read_text(encoding="utf-8"))
