@@ -625,6 +625,34 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
       </div>
     </div>
 
+    <!-- Edge Monitoring (Prometheus + Grafana) -->
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-base font-bold flex items-center gap-2">📡 Edge Monitoring</h2>
+        <span id="monitoring-status-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400">Loading…</span>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="bg-black/30 border border-white/5 rounded-lg p-3">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-sm font-bold text-orange-400">Prometheus</span>
+            <span id="prom-status-dot" class="w-2 h-2 rounded-full bg-gray-600"></span>
+          </div>
+          <div class="text-xs text-gray-400 mb-1">Targets: <span id="prom-targets" class="text-white font-mono">—</span></div>
+          <div class="text-xs text-gray-400 mb-2">Version: <span id="prom-version" class="text-white font-mono">—</span></div>
+          <a href="http://100.76.16.108:9090" target="_blank" class="inline-block text-[10px] px-2 py-1 bg-orange-500/10 text-orange-300 border border-orange-500/20 rounded hover:bg-orange-500/20 transition">Open Prometheus ↗</a>
+        </div>
+        <div class="bg-black/30 border border-white/5 rounded-lg p-3">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-sm font-bold text-cyan-400">Grafana</span>
+            <span id="graf-status-dot" class="w-2 h-2 rounded-full bg-gray-600"></span>
+          </div>
+          <div class="text-xs text-gray-400 mb-1">Version: <span id="graf-version" class="text-white font-mono">—</span></div>
+          <div class="text-xs text-gray-400 mb-2">Database: <span id="graf-db" class="text-white font-mono">—</span></div>
+          <a href="http://100.76.16.108:3100" target="_blank" class="inline-block text-[10px] px-2 py-1 bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 rounded hover:bg-cyan-500/20 transition">Open Grafana ↗</a>
+        </div>
+      </div>
+    </div>
+
     <!-- NCL + AI Status Widget -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <div class="zion-panel p-5">
@@ -3732,6 +3760,6 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
   </div>
 </div>
 
-<script src="/dashboard.js?v=18"></script>
+<script src="/dashboard.js?v=19"></script>
 </body>
 </html>
