@@ -5,6 +5,11 @@ description = "ZION V3 Dashboard — Edge-Primary Command Center"
 authors = ["ZION Team"]
 edition = "2021"
 
+[workspace]
+# Explicit standalone workspace — do NOT inherit from parent Zion monorepo
+members = ["."]
+resolver = "2"
+
 [build-dependencies]
 tauri-build = { version = "2.0.0", features = [] }
 
