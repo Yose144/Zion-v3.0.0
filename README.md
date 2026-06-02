@@ -147,23 +147,42 @@ npm install
 npm run build:win    # or :mac, :linux
 ```
 
+### Monitor
+
+**Web dashboard:** `http://127.0.0.1:8766` (Python HTTP server)
+**Tauri desktop dashboard:** `APP&WEB/desktop-dashboard/` (Rust + React)
+
+```bash
+cd APP&WEB/desktop-dashboard
+npm install
+cargo tauri dev        # dev mode
+cargo tauri build      # production build
+```
+
 ---
 
 ## Network Topology
 
 ```
-Core (Windows 11)          Edge (Hetzner VPS)
-100.86.102.5              100.76.16.108
-    | Tailscale VPN            |
-Node + Pool (Master)    Node + Pool (Relay)
-Miner (GPU)               Public P2P: 8333
-                          Public Pool: 8444
+Edge (Hetzner VPS)          Core (Windows 11)
+77.42.71.94                 100.86.102.5 (Tailscale)
+    |                           |
+Node 1 (Primary)           Node (Backup — syncs from Edge)
+Pool (Primary)             Miner (GPU/CPU → Edge pool)
+Public P2P: 8333
+Public Pool: 8444
+Public RPC: 8443
 ```
 
-- **Core**: Local node + pool + GPU mining
-- **Edge**: Public-facing relay (Hetzner VPS) — accepts miner connections, relays shares to Core
+| Role | Host | Public IP | VPN IP | Ports |
+|------|------|-----------|--------|-------|
+| **Edge** | Hetzner VPS | `77.42.71.94` | `100.76.16.108` | P2P: 8333, Pool: 8444, RPC: 8443, Metrics: 8455 |
+| **Core** | Windows 11 | — | `100.86.102.5` | P2P: 8333, RPC: 8443 |
 
-> **Archive notice:** Any document or script referencing the old Prague server (`91.98.122.165`) or multi-server topology (Prague, SG, Helsinki, US) is historical. Current live topology is **Core + Edge only**.
+- **Edge**: Primary 24/7 node + pool. Source of truth for chain. Accepts public miner connections.
+- **Core**: Local backup node (syncs from Edge) + GPU/CPU miner (connects to Edge pool). Runs dashboard + AI services.
+
+> **Archive notice:** Any document or script referencing the old Prague server (`91.98.122.165`) or multi-server topology (Prague, SG, Helsinki, US) is historical. Current live topology is **Edge-as-Primary + Core-as-Backup only**.
 
 ---
 
@@ -171,7 +190,7 @@ Miner (GPU)               Public P2P: 8333
 
 | Document | Purpose |
 |----------|---------|
-| [StatusV3.md](StatusV3.md) | Current status, blockers, audit results |
+| [StatusV3.md](StatusV3.md) | Current status, blockers, audit results, dashboard v3, desktop Tauri |
 | [ROOT_INDEX.md](ROOT_INDEX.md) | Complete repository map |
 | [AGENTS.md](AGENTS.md) | AI agent operating rules |
 | [MAINNET_LAUNCH_SEQUENCE.md](MAINNET_LAUNCH_SEQUENCE.md) | Launch plan |
@@ -179,6 +198,8 @@ Miner (GPU)               Public P2P: 8333
 | [V3/ROADMAP.md](V3/ROADMAP.md) | V3 roadmap |
 | [V3/docker/DOCKER.md](V3/docker/DOCKER.md) | Docker deployment guide |
 | [V3/docker/HARDENING.md](V3/docker/HARDENING.md) | Production hardening |
+| [dashboard/README.md](dashboard/README.md) | Python web dashboard guide |
+| [APP&WEB/desktop-dashboard/README.md](APP&WEB/desktop-dashboard/README.md) | Tauri desktop dashboard guide |
 
 ---
 
@@ -188,5 +209,5 @@ MIT — see [LICENSE](LICENSE).
 
 ---
 
-*Last updated: 2026-05-23*
+*Last updated: 2026-06-03*
 *Repository: `Yose144/2.9.6` · Branch: `main` · Version: v3.0.0*

@@ -76,12 +76,13 @@ Run from repository root unless noted.
 
 PowerShell equivalents for W11 development. Build first: `cargo build --release --manifest-path V3/Cargo.toml --workspace`.
 
-- Node (backup, edge-primary):
-  - `$env:ZION_NODE_ID='local-backup-node'; $env:ZION_P2P_BIND='0.0.0.0:8333'; $env:ZION_RPC_BIND='0.0.0.0:8443'; $env:ZION_SEED_PEERS='100.76.16.108:8333'; cargo run --release --manifest-path V3/Cargo.toml -p zion-core --bin node`
+- Node (backup, edge-primary — uses public IP if Tailscale down):
+  - `$env:ZION_NODE_ID='local-backup-node'; $env:ZION_P2P_BIND='0.0.0.0:8333'; $env:ZION_RPC_BIND='0.0.0.0:8443'; $env:ZION_SEED_PEERS='77.42.71.94:8333'; $env:ZION_NODE_STATE_PATH='V3/data/zion-node-state.db'; $env:ZION_MINER_ADDRESS='zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3'; $env:ZION_HUMANITARIAN_WALLET='zion1m4v5z8z850u480c5c208z274e334369275n5y20'; $env:ZION_ISSOBELLA_WALLET='zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702'; cargo run --release --manifest-path V3/Cargo.toml -p zion-core --bin node`
 - Pool server (local-dev only):
   - `$env:ZION_POOL_BIND='0.0.0.0:8444'; $env:ZION_NODE_RPC_ADDR='127.0.0.1:8443'; cargo run --release --manifest-path V3/Cargo.toml -p zion-pool --bin server`
-- Miner (edge-primary):
-  - `$env:ZION_POOL_ADDR='100.76.16.108:8444'; $env:ZION_WORKER_NAME='<name>'; $env:ZION_MINER_ID='<id>'; $env:ZION_LOOP_COUNT='1000000'; $env:ZION_GPU_BACKEND='opencl'; cargo run --release --manifest-path V3/Cargo.toml -p zion-miner`
+- Miner (edge-primary — connects to public pool):
+  - `$env:ZION_POOL_ADDR='77.42.71.94:8444'; $env:ZION_WORKER_NAME='<name>'; $env:ZION_MINER_ID='<id>'; $env:ZION_LOOP_COUNT='1000000'; $env:ZION_GPU_BACKEND='opencl'; cargo run --release --manifest-path V3/Cargo.toml -p zion-miner`
+  - **GPU compile:** `cargo build --release --manifest-path V3/Cargo.toml -p zion-miner --features gpu-opencl` (or `gpu-cuda`, `gpu-metal`)
 - Unified operator CLI:
   - `cargo run --manifest-path V3/Cargo.toml -p zion-cli -- --help`
 
@@ -128,10 +129,18 @@ docker compose -f V3/docker/docker-compose.v3-mainnet.yml up -d
   - `npm --prefix "APP&WEB/mobile-app" install`
   - `npm --prefix "APP&WEB/mobile-app" run test`
   - `npm --prefix "APP&WEB/mobile-app" run lint`
-- Desktop agent:
+- Desktop agent (legacy Electron):
   - `npm --prefix "APP&WEB/desktop-agent" install`
   - `npm --prefix "APP&WEB/desktop-agent" run start`
   - `npm --prefix "APP&WEB/desktop-agent" run test`
+- Desktop dashboard (Tauri v2 + React — new):
+  - `npm --prefix "APP&WEB/desktop-dashboard" install`
+  - `cargo tauri dev --manifest-path "APP&WEB/desktop-dashboard/src-tauri/Cargo.toml"`
+  - `cargo tauri build --manifest-path "APP&WEB/desktop-dashboard/src-tauri/Cargo.toml"`
+  - Features: system tray, native Rust IPC, hybrid refresh (native probes + HTTP fallback), L1-L6 service grid, chain/pool/miner panels, log viewer, alerts
+- Web dashboard (Python):
+  - `python dashboard/app.py` → `http://127.0.0.1:8766`
+  - `python dashboard/metrics-collector/` — standalone Rust binary for native metrics polling
 
 ## High-level architecture (big picture)
 
@@ -215,8 +224,8 @@ Public Pool: 8444
 | Node P2P | 8333 | TCP | Peer-to-peer sync |
 | Node RPC | 8443 | TCP | JSON-RPC 2.0, wallet queries |
 | Pool Stratum | 8444 | TCP | Miner connections (Edge public-facing) |
-| Pool metrics | 9100 | HTTP | Prometheus metrics (pool) |
-| Node metrics | 9115 | HTTP | Prometheus metrics (node) |
+| Pool metrics | 8455 | HTTP | Prometheus metrics (pool, Edge public) |
+| Node metrics | 9115 | HTTP | Prometheus metrics (node, local) |
 | Dashboard | 8766 | HTTP | Python stdlib dashboard |
 | Website | 3000 | HTTP | Next.js dev server |
 | **Hiranyagarbha API** | **8001** | HTTP | Orchestrator · RAG · Consciousness · NCL · Axum (Rust) |
@@ -249,7 +258,12 @@ The Edge server runs as the canonical primary node + pool. It must survive reboo
 
 | Service | Binary | Role | Auto-restart |
 |---------|--------|------|-------------|
-| `zion-edge-node.service` | `V3/target/release/node` | Primary chain node | `Restart=always` |
+| `zion-edge-node1.service` | `V3/target/release/node` | Primary chain node (Genesis) | `Restart=always` |
+| `zion-edge-node2.service` | `V3/target/release/node` | Follower / P2P peer | `Restart=always` |
+| `zion-edge-bridge.service` | `V3/target/release/zion-bridge` | L2 cross-chain relay | `Restart=always` |
+| `zion-edge-dao.service` | `V3/target/release/zion-dao` | L2 governance | `Restart=always` |
+| `zion-edge-atomic-swap.service` | `V3/target/release/zion-atomic-swap` | L2 HTLC swap | `Restart=always` |
+| `zion-edge-warp.service` | `V3/target/release/zion-warp-server` | L3 cross-chain relay | `Restart=always` |
 | `zion-edge-pool.service` | `V3/target/release/server` | Primary mining pool | `Restart=always` |
 | `zion-edge-watchdog.timer` | `edge-deploy/watchdog.sh` | Healthcheck every 2 min | systemd timer |
 
@@ -257,7 +271,7 @@ The Edge server runs as the canonical primary node + pool. It must survive reboo
 ```bash
 cd /root/zion-2.9.6-main
 bash edge-deploy/setup-edge.sh
-systemctl start zion-edge-node zion-edge-pool
+systemctl start zion-edge-node1 zion-edge-node2 zion-edge-pool zion-edge-bridge zion-edge-dao zion-edge-atomic-swap zion-edge-warp
 systemctl start zion-edge-watchdog.timer
 ```
 
@@ -270,18 +284,18 @@ bash edge-deploy/deploy-edge.sh
 **Operational commands:**
 ```bash
 # Status
-systemctl status zion-edge-node zion-edge-pool
+systemctl status zion-edge-node1 zion-edge-node2 zion-edge-pool zion-edge-bridge zion-edge-dao zion-edge-atomic-swap zion-edge-warp
 
 # Logs (journalctl)
-journalctl -u zion-edge-node -f
+journalctl -u zion-edge-node1 -f
 journalctl -u zion-edge-pool -f
 
 # Restart
-systemctl restart zion-edge-node
+systemctl restart zion-edge-node1
 systemctl restart zion-edge-pool
 
 # Stop (for maintenance)
-systemctl stop zion-edge-pool zion-edge-node
+systemctl stop zion-edge-pool zion-edge-node1 zion-edge-node2 zion-edge-bridge zion-edge-dao zion-edge-atomic-swap zion-edge-warp
 ```
 
 **Important:** Edge uses `ZION_SEED_PEERS=none` because it is the greenfield genesis source. Never point Edge to a local PC as seed unless you are intentionally reversing the topology.
@@ -294,8 +308,16 @@ The Python dashboard (`dashboard/app.py`) monitors Edge (primary) + Core (backup
 |--------|-------|
 | Host | `127.0.0.1` |
 | Port | `8766` |
-| Services monitored | `edge-node` (primary, VPN), `node1` (local backup), `pool-edge` (primary), `miner` (local) |
+| Services monitored | L1–L6: edge-node, local backup node, edge pool, miner, bridge, DAO, atomic-swap, WARP, OASIS, Hiranyagarbha, Hiran |
+| Edge RPC fallback | Tailscale VPN (`100.76.16.108:8443`) → public IP (`77.42.71.94:8443`) |
+| Rust metrics collector | `dashboard/metrics-collector/` — standalone binary polling Edge + Local + pool Prometheus |
 | Auto-start | See `DASHBOARD_AUTOSTART.md` + `install-dashboard-autostart.bat` |
+
+**Tauri desktop dashboard** (`APP&WEB/desktop-dashboard/`):
+- System tray integration, hide-on-close
+- Native Rust IPC: TCP probe, JSON-RPC, log tail, process control
+- Hybrid refresh: native probes first, HTTP fallback
+- L1–L6 service grid, chain/pool/miner panels, alerts, charts
 
 ### Launch Scripts
 
