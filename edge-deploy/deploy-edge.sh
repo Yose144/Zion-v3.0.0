@@ -37,7 +37,7 @@ else
     echo -e "${GREEN}[deploy] Using public IP: ${EDGE_HOST}${NC}"
 fi
 
-SSH_OPTS="-i ${SSH_KEY} -o StrictHostKeyChecking=accept-new -o ConnectTimeout=10"
+SSH_OPTS="-o StrictHostKeyChecking=accept-new -o ConnectTimeout=10"
 
 # ── Step 0: Verify SSH ──
 echo -e "${YELLOW}[deploy] Verifying SSH access to Edge...${NC}"
@@ -139,9 +139,9 @@ echo -e "${GREEN}=== Deployment Complete ===${NC}"
 echo "Backup: ${BACKUP_PATH}"
 echo ""
 echo "Quick checks:"
-echo "  ssh -i ${SSH_KEY} ${EDGE_USER}@${EDGE_HOST} 'journalctl -u zion-edge-node1 -n 20 --no-pager'"
-echo "  ssh -i ${SSH_KEY} ${EDGE_USER}@${EDGE_HOST} 'journalctl -u zion-edge-node2 -n 20 --no-pager'"
-echo "  ssh -i ${SSH_KEY} ${EDGE_USER}@${EDGE_HOST} 'curl -s http://127.0.0.1:8443/health'"
+echo "  ssh ${EDGE_USER}@${EDGE_HOST} 'journalctl -u zion-edge-node1 -n 20 --no-pager'"
+echo "  ssh ${EDGE_USER}@${EDGE_HOST} 'journalctl -u zion-edge-node2 -n 20 --no-pager'"
+echo "  ssh ${EDGE_USER}@${EDGE_HOST} 'curl -s http://127.0.0.1:8443/health'"
 echo ""
 echo "Pool endpoint: ${EDGE_HOST}:8444 (miners connect here)"
 echo "Node 1 P2P:    100.76.16.108:8333 (local backup seeds here)"
