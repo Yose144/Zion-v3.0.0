@@ -35,3 +35,6 @@ ZION_ROUTING_METRICS_BIND=0.0.0.0:8455
 # Pool wallet (Edge primary — handles all payouts)
 ZION_POOL_WALLET=zion1a6z5a4m830w6s6k7r508n300n6z30022q6qt0n7
 ZION_POOL_PAYOUT_SK_HEX=[REDACTED — pool SK removed for security]
+
+# Atomic Swap escrow key (testnet placeholder — rotate for mainnet)
+ZION_SWAP_ESCROW_KEY=0000000000000000000000000000000000000000000000000000000000000001
