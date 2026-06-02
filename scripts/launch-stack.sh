@@ -70,7 +70,8 @@ export ZION_POOL_WALLET='zion182e2v4x4r3u2j5r5t305k0d5y643q6l3n6je5f8'
 export ZION_POOL_PAYOUT_SK_HEX='[REDACTED — pool SK removed for security]'
 export ZION_NONCE_COUNT='4096'
 export ZION_VARDIFF_START_DIFF='1'
-export ZION_VARDIFF_MAX_DIFF='1000000'
+export ZION_VARDIFF_MAX_DIFF='10000'
+export ZION_PPLNS_WINDOW_SIZE='500000'
 export ZION_ROUTING_METRICS_BIND='0.0.0.0:8455'
 
 nohup "$POOL_EXE" > "$LOG_DIR/pool.log" 2> "$LOG_DIR/pool.err" &

@@ -114,7 +114,7 @@ pub struct PplnsConfig {
 impl Default for PplnsConfig {
     fn default() -> Self {
         Self {
-            window_size: 50_000,
+            window_size: 500_000,
             min_payout_flowers: zion_core::wallet::MIN_PAYOUT_AMOUNT,
             fee_config: FeeConfig::default(),
         }
@@ -700,7 +700,7 @@ mod tests {
     #[test]
     fn default_config_uses_core_constants() {
         let cfg = PplnsConfig::default();
-        assert_eq!(cfg.window_size, 50_000);
+        assert_eq!(cfg.window_size, 500_000);
         assert_eq!(cfg.min_payout_flowers, zion_core::wallet::MIN_PAYOUT_AMOUNT);
         // Guard against drift with zion_core::emission constants.
         assert_eq!(cfg.fee_config.humanitarian_pct, zion_core::emission::HUMANITARIAN_PCT);
