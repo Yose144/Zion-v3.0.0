@@ -1,13 +1,11 @@
 import { NextResponse } from 'next/server';
-import { SITE_PRIMARY_DAO_API_URL } from '@/lib/site';
+import { coreUrl } from '@/lib/core-endpoints';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 const DAO_UPSTREAM_BASE =
-  process.env.ZION_DAO_INTERNAL_URL ||
-  process.env.ZION_DAO_API_URL ||
-  SITE_PRIMARY_DAO_API_URL;
+  coreUrl('dao', process.env.ZION_DAO_API_URL);
 
 function buildUpstreamUrl(request: Request, path: string[]) {
   const incoming = new URL(request.url);

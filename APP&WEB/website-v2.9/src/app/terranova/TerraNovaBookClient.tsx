@@ -13,6 +13,8 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import Link from 'next/link';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { useLang } from '@/contexts/LanguageContext';
 import { ATOMIC_UNITS_PER_ZION } from '@/lib/constants';
 import { CHAPTERS } from './bookData';
@@ -1840,44 +1842,27 @@ export default function TerraNovaBookClient() {
 
               {/* Chapter body */}
               <div className="relative max-w-3xl space-y-7 md:space-y-8">
-                {sections.map((sec, si) => (
-                  <div
-                    key={si}
-                    className="scroll-mt-36"
-                  >
-                    {sec.heading && (
-                      <h3 className="mb-3 text-base font-semibold text-white sm:text-lg md:text-xl">
-                        {sec.heading}
-                      </h3>
-                    )}
-                    {sec.body.split('\n\n').map((para, pi) => {
-                      const isLeadParagraph = si === 0 && pi === 0;
-                      const leadCharacter = para.charAt(0);
-                      const body = para.slice(1);
+                {sections.map((sec, si) => {
+                  const isLeadSection = si === 0;
+                  const leadCharacter = isLeadSection ? sec.body.charAt(0) : '';
+                  const bodyRest = isLeadSection ? sec.body.slice(1) : sec.body;
+                  const dropCapBody = isLeadSection ? (leadCharacter + bodyRest) : sec.body;
 
-                      return (
-                        <p
-                          key={pi}
-                          className={`mb-4 text-[15px] leading-[1.9] text-gray-300 last:mb-0 sm:text-[16px] md:text-[17px] md:leading-[1.92] ${isLeadParagraph ? 'text-gray-200' : ''}`}
-                        >
-                          {isLeadParagraph ? (
-                            <>
-                              <span
-                                className="float-left mr-3 mt-1 text-4xl font-semibold leading-none sm:text-5xl md:text-6xl"
-                                style={{ color: chapter.color }}
-                              >
-                                {leadCharacter}
-                              </span>
-                              {body}
-                            </>
-                          ) : (
-                            para
-                          )}
-                        </p>
-                      );
-                    })}
-                  </div>
-                ))}
+                  return (
+                    <div key={si} className="scroll-mt-36">
+                      {sec.heading && (
+                        <h3 className="mb-3 text-base font-semibold text-white sm:text-lg md:text-xl">
+                          {sec.heading}
+                        </h3>
+                      )}
+                      <article className="prose prose-invert prose-lg max-w-none">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {dropCapBody}
+                        </ReactMarkdown>
+                      </article>
+                    </div>
+                  );
+                })}
               </div>
 
 

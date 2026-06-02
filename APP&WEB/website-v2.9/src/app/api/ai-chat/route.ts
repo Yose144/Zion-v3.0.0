@@ -12,7 +12,9 @@ import { NextRequest, NextResponse } from 'next/server';
  * The component (HiranyagarbhaChat.tsx) posts to /api/ai-chat with { prompt }.
  */
 
-const HIRAN_API_URL   = process.env.HIRAN_API_URL ?? process.env.NEXT_PUBLIC_HIRAN_API ?? 'http://127.0.0.1:8002';
+import { coreUrl } from '@/lib/core-endpoints';
+
+const HIRAN_API_URL   = coreUrl('hiranInference', process.env.HIRAN_API_URL ?? process.env.NEXT_PUBLIC_HIRAN_API);
 const LMSTUDIO_URL    = process.env.LMSTUDIO_URL    ?? 'http://127.0.0.1:1234';
 const OLLAMA_URL      = process.env.OLLAMA_API_URL  ?? 'http://127.0.0.1:11434';
 const MODEL_NAME      = process.env.HIRAN_MODEL     ?? 'hiran-v2.2';
