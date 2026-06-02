@@ -1,0 +1,35 @@
+{
+  "timestamp": 1780441854,
+  "topology": "edge-primary",
+  "edge_node": {
+    "running": true,
+    "chain_height": 82,
+    "tip_hash": "00009c6809bcb32ee153eb073a02476d472654a29f8ba56b69136a03696f9945",
+    "known_peers": 0,
+    "mempool_size": 0,
+    "network": "Mainnet",
+    "protocol_version": null,
+    "consensus_profile": "cosmic_harmony_ekam_deeksha_v2",
+    "accepted_blocks": 83
+  },
+  "local_node": {
+    "running": true,
+    "chain_height": 82,
+    "tip_hash": "00009c6809bcb32ee153eb073a02476d472654a29f8ba56b69136a03696f9945",
+    "known_peers": 0,
+    "mempool_size": 0,
+    "network": "Mainnet",
+    "protocol_version": null,
+    "consensus_profile": "cosmic_harmony_ekam_deeksha_v2",
+    "accepted_blocks": 83
+  },
+  "pool": {
+    "running": true,
+    "active_miners": 1,
+    "hashrate_khs": null,
+    "blocks_found": null,
+    "total_hashes": null,
+    "total_shares": null
+  },
+  "tailscale_ok": false
+}
