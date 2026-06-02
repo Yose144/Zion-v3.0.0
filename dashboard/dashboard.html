@@ -1350,6 +1350,10 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
       <div class="text-lg font-bold" id="l1-rt-edge-badge">—</div>
       <div class="text-[10px] text-gray-400">Edge</div>
     </div>
+    <div class="zion-panel p-3 text-center">
+      <div class="text-lg font-bold" id="l1-rt-sync">—</div>
+      <div class="text-[10px] text-gray-400">Sync Gap</div>
+    </div>
   </div>
     <div class="zion-panel p-6">
       <div class="flex items-center justify-between mb-5">
@@ -2306,6 +2310,12 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
       <div class="zion-panel p-5"><h3 class="text-sm font-bold mb-3 zion-kicker">Shares Accepted / Rejected</h3><canvas id="chart-shares" height="160"></canvas></div>
       <div class="zion-panel p-5"><h3 class="text-sm font-bold mb-3 zion-kicker">Active Sessions &amp; Peers</h3><canvas id="chart-sessions" height="160"></canvas></div>
     </div>
+    <!-- Mainnet analytics row -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div class="zion-panel p-5"><h3 class="text-sm font-bold mb-3 zion-kicker">Mainnet: Edge vs Local Height</h3><canvas id="chart-mainnet-height" height="140"></canvas></div>
+      <div class="zion-panel p-5"><h3 class="text-sm font-bold mb-3 zion-kicker">Mainnet: Pool Miners & Hashrate</h3><canvas id="chart-mainnet-pool" height="140"></canvas></div>
+      <div class="zion-panel p-5"><h3 class="text-sm font-bold mb-3 zion-kicker">Mainnet: Mempool & Peers</h3><canvas id="chart-mainnet-network" height="140"></canvas></div>
+    </div>
     <!-- Additional analytics row -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
       <div class="zion-panel p-5"><h3 class="text-sm font-bold mb-3 zion-kicker">Block Time (seconds)</h3><canvas id="chart-blocktime" height="140"></canvas></div>
@@ -2388,6 +2398,11 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
       <div class="flex gap-2 mb-4 flex-wrap" id="metrics-buttons"></div>
       <div id="metrics-detail" class="bg-black/40 rounded-xl p-3 max-h-72 overflow-auto log-tail mb-6">
         <div class="text-gray-500 italic">Click a service above to scrape its /metrics endpoint.</div>
+      </div>
+      <!-- Rust Metrics Collector Snapshot -->
+      <div class="mb-4">
+        <h3 class="zion-kicker mb-2">🦀 Rust Metrics Collector</h3>
+        <div id="metrics-collector" class="text-gray-500 italic text-xs">Loading collector snapshot…</div>
       </div>
       <div class="flex items-center justify-between mb-3">
         <h3 class="zion-kicker">Grafana Dashboard</h3>
