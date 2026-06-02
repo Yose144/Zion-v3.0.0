@@ -1,0 +1,8 @@
+[Unit]
+Description=ZION Edge Watchdog (healthcheck + auto-restart)
+
+[Service]
+Type=oneshot
+ExecStart=/root/zion-2.9.6-main/edge-deploy/watchdog.sh
+StandardOutput=journal
+StandardError=journal
