@@ -43,10 +43,10 @@ export default function PoolPanel({ pool, poolEdge }: Props) {
       </div>
 
       <div className="flex gap-2">
-        <button onClick={() => window.open('http://127.0.0.1:8766/v3/#payout', '_self')} className="flex-1 py-2 rounded-lg bg-purple-700/40 hover:bg-purple-700/60 border border-purple-500/30 text-xs font-semibold transition">
+        <button onClick={() => window.open('http://127.0.0.1:8766/#payout', '_self')} className="flex-1 py-2 rounded-lg bg-purple-700/40 hover:bg-purple-700/60 border border-purple-500/30 text-xs font-semibold transition">
           💰 Payouts
         </button>
-        <button onClick={() => window.open('http://127.0.0.1:8766/v3/#explorer', '_self')} className="flex-1 py-2 rounded-lg bg-blue-700/40 hover:bg-blue-700/60 border border-blue-500/30 text-xs font-semibold transition">
+        <button onClick={() => window.open('http://127.0.0.1:8766/#explorer', '_self')} className="flex-1 py-2 rounded-lg bg-blue-700/40 hover:bg-blue-700/60 border border-blue-500/30 text-xs font-semibold transition">
           🔍 Explorer
         </button>
       </div>
