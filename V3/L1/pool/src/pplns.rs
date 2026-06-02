@@ -269,6 +269,26 @@ impl PplnsEngine {
         self.fee_issobella_flowers = self.fee_issobella_flowers.saturating_add(issobella_share);
         self.fee_pool_flowers = self.fee_pool_flowers.saturating_add(pool_fee_share);
 
+        self.distribute_to_miners(miner_reward)
+    }
+
+    /// Distribute a pre-split miner reward to miners proportional to their
+    /// difficulty-weighted share count, WITHOUT deducting any protocol fees.
+    ///
+    /// Use this when the protocol fee split (humanitarian / issobella / pool
+    /// fee) is already performed upstream — e.g. by the core coinbase, which
+    /// pays the four 89/5/5/1 outputs atomically at block creation. In that
+    /// model the pool wallet receives only the 89% miner slice, and that
+    /// entire slice must be redistributed to miners here (no second split).
+    pub fn compute_miner_payouts(&mut self, miner_reward_flowers: u64) -> Vec<PayoutEntry> {
+        if self.window.is_empty() || miner_reward_flowers == 0 {
+            return Vec::new();
+        }
+        self.distribute_to_miners(miner_reward_flowers)
+    }
+
+    /// Shared distribution + threshold-collection logic for the PPLNS window.
+    fn distribute_to_miners(&mut self, miner_reward: u64) -> Vec<PayoutEntry> {
         // Weighted share totals per miner in the current window (difficulty-weighted).
         let mut share_weights: HashMap<String, u128> = HashMap::new();
         let mut share_counts: HashMap<String, u64> = HashMap::new();
@@ -744,6 +764,44 @@ mod tests {
         e.record_share_at("alice", "rig1", 1, 1000);
         let payouts = e.compute_payouts(1_000_000);
         assert_eq!(payouts[0].amount, 1_000_000);
+    }
+
+    #[test]
+    fn compute_miner_payouts_distributes_full_amount_without_fee_deduction() {
+        // Even with a fee config present, compute_miner_payouts must NOT deduct
+        // protocol fees — the core coinbase already did the 89/5/5/1 split, and
+        // the pool wallet holds only the 89% miner slice that must be fully
+        // redistributed to miners.
+        let mut e = engine_with_fees(100, 1);
+        e.register_address("alice", "zion1alice");
+        e.register_address("bob", "zion1bob");
+        for i in 0..6 {
+            e.record_share_at("alice", "rig1", 1, 1000 + i);
+        }
+        for i in 0..4 {
+            e.record_share_at("bob", "rig2", 1, 2000 + i);
+        }
+
+        // miner_share = 89% of subsidy already (passed in by the server).
+        let miner_share: u64 = 4_806_059_630_000_000;
+        let payouts = e.compute_miner_payouts(miner_share);
+
+        // The full miner_share is distributed; nothing is skimmed for fees.
+        let total: u64 = payouts.iter().map(|p| p.amount).sum();
+        assert_eq!(total, miner_share);
+
+        // No fees accumulated by this path.
+        let fs = e.fee_stats();
+        assert_eq!(fs.humanitarian_accumulated_flowers, 0);
+        assert_eq!(fs.issobella_accumulated_flowers, 0);
+        assert_eq!(fs.pool_fee_accumulated_flowers, 0);
+    }
+
+    #[test]
+    fn compute_miner_payouts_empty_window_returns_nothing() {
+        let mut e = engine_with_fees(100, 1);
+        e.register_address("alice", "zion1alice");
+        assert!(e.compute_miner_payouts(1_000_000).is_empty());
     }
 
     #[test]
