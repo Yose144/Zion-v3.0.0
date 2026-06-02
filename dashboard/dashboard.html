@@ -152,6 +152,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
       </div>
     </div>
     <div class="flex flex-wrap gap-2 items-center">
+      <span id="topology-badge" class="text-[10px] px-2 py-0.5 rounded-full font-bold bg-purple-700/50 text-purple-300">🌍 Edge-Primary</span>
       <span id="connection-badge" class="text-[10px] px-2 py-0.5 rounded-full font-bold bg-emerald-700/50 text-emerald-300">● Connected</span>
       <span id="alertCount" class="hidden px-3 py-1.5 bg-red-600 rounded-full text-xs font-bold animate-pulse">0 alerts</span>
       <button onclick="toggleFriendly()" id="friendlyBtn" class="zion-button-secondary text-xs">🧒 Kid Mode</button>
@@ -3646,6 +3647,18 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
             <option value="ops">Ops</option>
           </select>
         </div>
+      </div>
+      <div>
+        <label class="text-xs text-gray-400 block mb-1">Topology Mode</label>
+        <select id="settings-topology" class="w-full bg-black/30 border border-zion-700 rounded-md px-2 py-2 text-xs text-white focus:outline-none focus:border-zion-gold">
+          <option value="edge-primary">🌍 Edge-Primary (Production)</option>
+          <option value="local-dev">🔷 Local-Dev (Testing)</option>
+        </select>
+        <p class="text-[10px] text-gray-500 mt-1">Edge-primary: Edge server runs node+pool, local PC is backup. Local-dev: All services run locally for testing.</p>
+      </div>
+      <div class="flex items-center justify-between pt-2">
+        <span class="text-xs text-gray-400">Requires dashboard restart to apply topology change</span>
+        <button onclick="saveSettings()" class="zion-button-primary text-xs px-3 py-1.5">Save & Restart</button>
       </div>
       <div>
         <label class="text-xs text-gray-400 block mb-1">Refresh Interval (ms)</label>
