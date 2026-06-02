@@ -446,6 +446,7 @@ async function refreshPayout(){
         minersTable.innerHTML = data.miner_stats.map(m => {
           const hr = (m.hashrate_1h || m.hashrate || 0).toFixed(2);
           const paid = m.total_paid != null ? _zionFmt(m.total_paid / 1e12) : '—';
+          const onChain = m.on_chain_balance_zion != null ? _zionFmt(m.on_chain_balance_zion) : '—';
           const pending = m.pending_balance != null ? _zionFmt(m.pending_balance / 1e12) : '—';
           return `<tr class="border-b border-white/5 hover:bg-white/5 transition">
             <td class="py-2 px-2 text-white">${m.address}</td>
@@ -453,11 +454,12 @@ async function refreshPayout(){
             <td class="py-2 px-2 text-right text-gray-300">${m.valid_shares != null ? m.valid_shares : '—'}</td>
             <td class="py-2 px-2 text-right text-amber-400">${hr} H/s</td>
             <td class="py-2 px-2 text-right text-emerald-400">${paid} Z</td>
+            <td class="py-2 px-2 text-right text-cyan-400">${onChain} Z</td>
             <td class="py-2 px-2 text-right text-purple-400">${pending} Z</td>
           </tr>`;
         }).join('');
       } else {
-        minersTable.innerHTML = '<tr><td colspan="6" class="py-2 px-2 text-gray-500 italic">No miners connected</td></tr>';
+        minersTable.innerHTML = '<tr><td colspan="7" class="py-2 px-2 text-gray-500 italic">No miners connected</td></tr>';
       }
     }
 
