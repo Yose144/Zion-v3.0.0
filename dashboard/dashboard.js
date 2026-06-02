@@ -219,7 +219,24 @@ function formatUptime(sec){
 }
 
 function updateServiceCards(s){
-  const n1 = s.node1, n2 = s.node2, p = s.pool, m = s.miner;
+  const en = s.edge_node, n1 = s.node1, n2 = s.node2, p = s.pool, m = s.miner;
+  const isEdgePrimary = s.topology === 'edge-primary';
+  // Topology-aware visibility
+  const node2Card = document.getElementById('card-node2');
+  if(node2Card) node2Card.classList.toggle('hidden', isEdgePrimary);
+  const edgeNodeCard = document.getElementById('card-edge-node');
+  if(edgeNodeCard) edgeNodeCard.classList.toggle('hidden', !isEdgePrimary);
+
+  // Edge Node (Primary)
+  setBadge('badge-edge-node', en && en.running); setCardLive('edge-node', en && en.running);
+  const enh = document.getElementById('val-edge-node-height');
+  if(enh) enh.textContent = en ? (en.chain_height ?? '—') : '—';
+  const enhash = document.getElementById('val-edge-node-hash');
+  if(enhash) enhash.textContent = en ? (en.tip_hash ?? '—') : '—';
+  const enp = document.getElementById('val-edge-node-peers');
+  if(enp) enp.textContent = en ? (en.known_peers ?? '—') : '—';
+
+  // Local Backup Node
   setBadge('badge-node1', n1.running); setCardLive('node1', n1.running);
   const n1h = document.getElementById('val-node1-height');
   if(n1h) n1h.textContent = n1.chain_height ?? '—';
@@ -234,23 +251,26 @@ function updateServiceCards(s){
   const n1u = document.getElementById('val-node1-uptime');
   if(n1u) n1u.textContent = formatUptime(n1.uptime_seconds);
 
-  setBadge('badge-node2', n2.running); setCardLive('node2', n2.running);
-  const n2h = document.getElementById('val-node2-height');
-  if(n2h) n2h.textContent = n2.chain_height ?? '—';
-  const n2id = document.getElementById('val-node2-id');
-  if(n2id) n2id.textContent = n2.node_id ?? '—';
-  const n2p = document.getElementById('val-node2-peers');
-  if(n2p) n2p.textContent = n2.known_peers ?? '—';
-  const synced = n2.chain_height && n1.chain_height && n2.chain_height >= n1.chain_height - 1;
-  const syncEl = document.getElementById('val-node2-sync');
-  if(syncEl){
-    syncEl.textContent = synced ? '✓ Synced' : (n2.known_peers > 0 ? 'Syncing…' : 'No peers');
-    syncEl.className = synced ? 'text-emerald-400 font-bold' : 'text-amber-400';
+  // Node 2 (Dev / Optional)
+  if(!isEdgePrimary){
+    setBadge('badge-node2', n2.running); setCardLive('node2', n2.running);
+    const n2h = document.getElementById('val-node2-height');
+    if(n2h) n2h.textContent = n2.chain_height ?? '—';
+    const n2id = document.getElementById('val-node2-id');
+    if(n2id) n2id.textContent = n2.node_id ?? '—';
+    const n2p = document.getElementById('val-node2-peers');
+    if(n2p) n2p.textContent = n2.known_peers ?? '—';
+    const synced = en && en.chain_height && n1.chain_height && n1.chain_height >= en.chain_height - 5;
+    const syncEl = document.getElementById('val-node2-sync');
+    if(syncEl){
+      syncEl.textContent = synced ? '✓ Synced' : (n2.known_peers > 0 ? 'Syncing…' : 'No peers');
+      syncEl.className = synced ? 'text-emerald-400 font-bold' : 'text-amber-400';
+    }
+    const n2m = document.getElementById('val-node2-mempool');
+    if(n2m) n2m.textContent = n2.mempool_size ?? '—';
+    const n2u = document.getElementById('val-node2-uptime');
+    if(n2u) n2u.textContent = formatUptime(n2.uptime_seconds);
   }
-  const n2m = document.getElementById('val-node2-mempool');
-  if(n2m) n2m.textContent = n2.mempool_size ?? '—';
-  const n2u = document.getElementById('val-node2-uptime');
-  if(n2u) n2u.textContent = formatUptime(n2.uptime_seconds);
 
   setBadge('badge-pool', p.running); setCardLive('pool', p.running);
   const ps = document.getElementById('val-pool-sessions');
@@ -5053,11 +5073,15 @@ refreshAll = async function() {
     _lastServicesForTimeline = services;
     renderTopology(services);
   } catch(e) { /* silent */ }
-  renderServiceHealthTimeline(services.length ? services : _lastServicesForTimeline);
+  try {
+    renderServiceHealthTimeline(services.length ? services : _lastServicesForTimeline);
+  } catch(e) { /* silent */ }
   // E: Mempool sparkline (read from existing mempool counter)
   const mpEl = document.getElementById('mempool-tx-count');
   const mpSize = mpEl ? parseInt(mpEl.textContent, 10) || 0 : 0;
-  renderMempoolSparkline(mpSize);
+  try {
+    renderMempoolSparkline(mpSize);
+  } catch(e) { console.error('renderMempoolSparkline error:', e); }
   // D: Payout charts (if on payouts tab or always refresh)
   try {
     const pay = await fetch('/api/payout').then(r => r.json());
