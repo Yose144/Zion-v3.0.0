@@ -27,6 +27,10 @@ dashboard/.env
 !.env.example
 !dashboard/.env.example
 
+# Runtime / misc
+/APP/
+lact-*.deb
+
 # Logs
 *.log
 *.err
