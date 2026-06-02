@@ -3299,6 +3299,9 @@ _ALLOW_BASE = {
     "stop-space":             "stop-space",
 }
 
+# Edge-primary topology launcher (W11 / Linux)
+_ALLOW_BASE["launch-local-backup"] = "launch-local-backup"
+
 # Extras available on all platforms (Windows .ps1 + Linux/macOS .sh now exist)
 _ALLOW_BASE["launch-full"] = "launch-full"
 _ALLOW_BASE["start-monitoring"] = "start-monitoring"
@@ -3656,10 +3659,15 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
       <p class="text-sm text-gray-400 mb-6">Launch and manage the full ZION mainnet stack. All actions execute PowerShell scripts in <code class="text-amber-400">scripts/</code> via detached processes.</p>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <button onclick="controlAction('launch-stack')" class="group p-6 bg-gradient-to-br from-emerald-700 to-emerald-900 hover:from-emerald-600 hover:to-emerald-800 rounded-xl text-left transition shadow-lg">
+        <button id="btn-launch-stack" onclick="controlAction('launch-stack')" class="group p-6 bg-gradient-to-br from-emerald-700 to-emerald-900 hover:from-emerald-600 hover:to-emerald-800 rounded-xl text-left transition shadow-lg">
           <div class="text-3xl mb-2">🚀</div>
           <div class="text-lg font-bold mb-1">Launch Full Stack</div>
           <div class="text-xs text-emerald-200 opacity-80">Starts Node1 + Node2 + Pool + Miner with logging</div>
+        </button>
+        <button id="btn-launch-local-backup" onclick="controlAction('launch-local-backup')" class="group p-6 bg-gradient-to-br from-emerald-700 to-emerald-900 hover:from-emerald-600 hover:to-emerald-800 rounded-xl text-left transition shadow-lg" style="display:none">
+          <div class="text-3xl mb-2">🌐</div>
+          <div class="text-lg font-bold mb-1">Launch Local Backup</div>
+          <div class="text-xs text-emerald-200 opacity-80">Starts Backup Node + GPU Miner (Edge-primary topology)</div>
         </button>
         <button onclick="if(confirm('Stop all ZION processes?')) controlAction('stop-stack')" class="group p-6 bg-gradient-to-br from-red-700 to-red-900 hover:from-red-600 hover:to-red-800 rounded-xl text-left transition shadow-lg">
           <div class="text-3xl mb-2">⏹️</div>
@@ -4981,6 +4989,14 @@ async function refreshAll(){
 
 function updateServiceCards(s){
   const en=s.edge_node,n1=s.node1,n2=s.node2,p=s.pool,m=s.miner;
+  // Topology-aware visibility
+  const isEdgePrimary = s.topology === 'edge-primary';
+  const node2Card = document.getElementById('card-node2');
+  if(node2Card) node2Card.style.display = isEdgePrimary ? 'none' : '';
+  const launchStackBtn = document.getElementById('btn-launch-stack');
+  if(launchStackBtn) launchStackBtn.style.display = isEdgePrimary ? 'none' : '';
+  const launchBackupBtn = document.getElementById('btn-launch-local-backup');
+  if(launchBackupBtn) launchBackupBtn.style.display = isEdgePrimary ? '' : 'none';
   // Edge Node (Primary)
   setBadge('badge-edge-node',en&&en.running);setCardLive('edge-node',en&&en.running);
   document.getElementById('val-edge-node-height').textContent=en?en.chain_height??'—':'—';
@@ -4993,14 +5009,16 @@ function updateServiceCards(s){
   document.getElementById('val-node1-peers').textContent=n1.known_peers??'—';
   document.getElementById('val-node1-p2p').textContent=n1.p2p_bind??'—';
   // Node 2 (Dev / Optional)
-  setBadge('badge-node2',n2.running);setCardLive('node2',n2.running);
-  document.getElementById('val-node2-height').textContent=n2.chain_height??'—';
-  document.getElementById('val-node2-id').textContent=n2.node_id??'—';
-  document.getElementById('val-node2-peers').textContent=n2.known_peers??'—';
-  const synced=en&&en.chain_height&&n1.chain_height&&n1.chain_height>=en.chain_height-5;
-  const syncEl=document.getElementById('val-node2-sync');
-  syncEl.textContent=synced?'✓ Synced':(n2.known_peers>0?'Syncing…':'No peers');
-  syncEl.className=synced?'text-emerald-400 font-bold':'text-amber-400';
+  if(!isEdgePrimary){
+    setBadge('badge-node2',n2.running);setCardLive('node2',n2.running);
+    document.getElementById('val-node2-height').textContent=n2.chain_height??'—';
+    document.getElementById('val-node2-id').textContent=n2.node_id??'—';
+    document.getElementById('val-node2-peers').textContent=n2.known_peers??'—';
+    const synced=en&&en.chain_height&&n1.chain_height&&n1.chain_height>=en.chain_height-5;
+    const syncEl=document.getElementById('val-node2-sync');
+    syncEl.textContent=synced?'✓ Synced':(n2.known_peers>0?'Syncing…':'No peers');
+    syncEl.className=synced?'text-emerald-400 font-bold':'text-amber-400';
+  }
   // Edge Pool (Primary)
   setBadge('badge-pool',p.running);setCardLive('pool',p.running);
   document.getElementById('val-pool-sessions').textContent=p.active_sessions??'0';
@@ -5301,13 +5319,14 @@ async function selectEnv(name){
 // ── Wizard ──
 async function renderWizard(){
   const[st,cl]=await Promise.all([fetch('/api/status').then(r=>r.json()),fetch('/api/checklist').then(r=>r.json())]);
+  const isEdge = st.topology === 'edge-primary';
   const steps=[
-    {n:1,title:'Prepare environment',desc:'Generate keys (gen-keys), assemble .env file with all wallets and ZION_POOL_PAYOUT_SK_HEX.',done:cl.checks.find(c=>c.id==='env').ok,actions:[{label:'View env files',cb:`switchTab('env')`}]},
-    {n:2,title:'Start Local Backup Node',desc:'Syncs from Edge primary via Tailscale VPN. 0.0.0.0:8333 (P2P) / 0.0.0.0:8443 (RPC).',done:cl.checks.find(c=>c.id==='node1').ok,actions:[{label:'▶ Start Backup Node',cb:`controlAction('start-node1')`}]},
-    {n:3,title:'Connect to Edge Pool',desc:'Edge (100.76.16.108) runs the primary pool. Verify VPN connectivity.',done:cl.checks.find(c=>c.id==='pool-edge').ok,actions:[{label:'Check Edge Pool',cb:`controlAction('check-pool-edge')`}]},
-    {n:4,title:'Start GPU Miner',desc:'Connects to Edge pool, performs cosmic_harmony hashing on GPU.',done:cl.checks.find(c=>c.id==='miner').ok,actions:[{label:'▶ Start Miner',cb:`controlAction('start-miner')`}]},
-    {n:5,title:'Verify chain progression',desc:'Confirm local backup node syncs with Edge and chain height advances.',done:cl.checks.find(c=>c.id==='chain').ok,actions:[{label:'View events',cb:`switchTab('events')`}]},
-    {n:6,title:'Confirm fee split & payouts',desc:'Validate 89/5/5/0 burn-model distribution and payout wallet is funded.',done:cl.checks.find(c=>c.id==='fee_split').ok&&cl.checks.find(c=>c.id==='payout').ok,actions:[{label:'View payouts',cb:`switchTab('overview')`}]},
+    {n:1,title:'Prepare environment',desc:'Generate keys (gen-keys), assemble .env file with all wallets and ZION_POOL_PAYOUT_SK_HEX.',done:cl.checks.find(c=>c.id==='env')?.ok,actions:[{label:'View env files',cb:`switchTab('env')`}]},
+    {n:2,title:isEdge?'Start Local Backup Node':'Start Genesis Node',desc:isEdge?'Syncs from Edge primary via Tailscale VPN. 0.0.0.0:8333 (P2P) / 0.0.0.0:8443 (RPC).':'Local genesis node. 0.0.0.0:8333 (P2P) / 0.0.0.0:8443 (RPC).',done:cl.checks.find(c=>c.id==='node1')?.ok,actions:[{label:'▶ Start Node',cb:`controlAction('start-node1')`}]},
+    isEdge?{n:3,title:'Connect to Edge Pool',desc:'Edge (100.76.16.108) runs the primary pool. Verify VPN connectivity.',done:cl.checks.find(c=>c.id==='pool-edge')?.ok,actions:[{label:'Check Edge Pool',cb:`switchTab('overview')`}]}:{n:3,title:'Start Local Pool',desc:'Accepts miners, validates shares, distributes payouts (89/5/5 burn model).',done:cl.checks.find(c=>c.id==='pool')?.ok,actions:[{label:'▶ Start Pool',cb:`controlAction('start-pool')`}]},
+    {n:4,title:'Start GPU Miner',desc:'Connects to pool, performs cosmic_harmony hashing on GPU.',done:cl.checks.find(c=>c.id==='miner')?.ok,actions:[{label:'▶ Start Miner',cb:`controlAction('start-miner')`}]},
+    {n:5,title:'Verify chain progression',desc:'Confirm node syncs with network and chain height advances.',done:cl.checks.find(c=>c.id==='chain')?.ok,actions:[{label:'View events',cb:`switchTab('events')`}]},
+    {n:6,title:'Confirm fee split & payouts',desc:'Validate 89/5/5/0 burn-model distribution and payout wallet is funded.',done:cl.checks.find(c=>c.id==='fee_split')?.ok&&cl.checks.find(c=>c.id==='payout')?.ok,actions:[{label:'View payouts',cb:`switchTab('overview')`}]},
   ];
   const cont=document.getElementById('wizard-steps');
   cont.innerHTML=steps.map((s,i)=>{
@@ -5328,7 +5347,7 @@ async function renderWizard(){
 async function renderControls(){
   const res=await fetch('/api/controls').then(r=>r.json());
   const c=document.getElementById('control-buttons');
-  const icons={'start-node1':'🔷','start-node2':'🔶','start-pool':'⚡','start-miner':'⛏️','start-miner-gpu':'🎮','start-miner-cpu':'💻','stop-miner':'⏹','restart-node2':'⟳ 🔶','restart-miner':'⟳ ⛏️','launch-stack':'🚀','stop-stack':'⏹️'};
+  const icons={'start-node1':'🔷','start-node2':'🔶','start-pool':'⚡','start-miner':'⛏️','start-miner-gpu':'🎮','start-miner-cpu':'💻','stop-miner':'⏹','restart-node2':'⟳ 🔶','restart-miner':'⟳ ⛏️','launch-stack':'🚀','launch-local-backup':'🌐','stop-stack':'⏹️'};
   c.innerHTML=res.actions.filter(a=>!['launch-stack','stop-stack'].includes(a)).map(a=>`<button onclick="controlAction('${a}')" class="p-3 bg-zion-700 hover:bg-zion-600 rounded-lg text-left transition">
     <div class="text-xl mb-1">${icons[a]||'⚙️'}</div>
     <div class="text-xs font-medium">${a}</div>
@@ -5349,15 +5368,6 @@ async function controlAction(action){
     toast('Error: '+e.message,'error');
   }
 }
-
-// ── Logs ──
-async function loadLogs(service){
-  try{const res=await fetch('/api/logs/'+service);const data=await res.json();
-    const el=document.getElementById('log-'+service);
-    if(el)el.textContent=data.lines.slice(-50).join('\\n');
-  }catch(e){console.error(e);}
-}
-
 
 // ── Friendly mode ──
 let friendlyMode = localStorage.getItem('zion-friendly') === '1';
@@ -5958,7 +5968,16 @@ class DashboardHandler(BaseHTTPRequestHandler):
             actions = set(ALLOWED_ACTIONS.keys())
             for key in load_services_manifest():
                 actions.update({f"start-{key}", f"stop-{key}", f"restart-{key}"})
-            self._json({"actions": sorted(actions)})
+            # Topology-aware filtering
+            if TOPOLOGY == "edge-primary":
+                # In edge-primary, local PC only runs backup node + miners.
+                # Remove local-dev-only actions (node2, local pool, launch-stack).
+                actions -= {"start-node2", "stop-node2", "restart-node2",
+                            "start-pool", "stop-pool", "restart-pool", "launch-stack"}
+            else:
+                # In local-dev, remove edge-primary-only launcher.
+                actions -= {"launch-local-backup"}
+            self._json({"actions": sorted(actions), "topology": TOPOLOGY})
         elif route == "/api/services":
             self._json({"services": all_services_health()})
         elif route == "/api/readiness":
@@ -6340,23 +6359,6 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 self._json(get_mempool_detail())
             except Exception as e:
                 self._json({"ok": False, "tx_count": 0, "transactions": [], "error": str(e)[:80]})
-        elif route == "/api/block":
-            # Block lookup: /api/block?q=<hash_or_height>
-            q = params.get("q", [""])[0].strip()
-            if not q:
-                self._json({"ok": False, "error": "query parameter 'q' required"})
-            else:
-                try:
-                    if q.isdigit():
-                        block = rpc_call("127.0.0.1", 8443, "getBlockByHeight", {"height": int(q)}, timeout=3)
-                    else:
-                        block = rpc_call("127.0.0.1", 8443, "getBlockByHash", {"hash": q}, timeout=3)
-                    if block and not block.get("_rpc_error"):
-                        self._json({"ok": True, "block": block})
-                    else:
-                        self._json({"ok": False, "error": "Block not found", "query": q})
-                except Exception as e:
-                    self._json({"ok": False, "error": str(e)[:80], "query": q})
         elif route.startswith("/api/dao"):
             # Proxy all /api/dao/* requests to DAO daemon on port 8081
             self._proxy_to_dao("GET", route, None, dict(self.headers))
@@ -6720,12 +6722,17 @@ class DashboardHandler(BaseHTTPRequestHandler):
         elif route == "/api/payout":
             self._json(build_payout_status())
         elif route == "/api/block":
+            q = params.get("q", [""])[0].strip()
             h = params.get("height", [""])[0].strip()
             hash_hex = params.get("hash", [""])[0].strip()
-            height = int(h) if h.isdigit() else None
-            self._json(get_block_detail(height=height, hash_hex=hash_hex if hash_hex else None))
-        elif route == "/api/mempool":
-            self._json(get_mempool_detail())
+            if q:
+                if q.isdigit():
+                    self._json(get_block_detail(height=int(q)))
+                else:
+                    self._json(get_block_detail(hash_hex=q))
+            else:
+                height = int(h) if h.isdigit() else None
+                self._json(get_block_detail(height=height, hash_hex=hash_hex if hash_hex else None))
         elif route == "/api/miner/shares":
             self._json(get_miner_shares_history())
         elif route == "/api/dependency-graph":
@@ -7070,16 +7077,6 @@ class DashboardHandler(BaseHTTPRequestHandler):
             action = payload.get("action", "")
             env_overrides = payload.get("env")
             self._json(run_control(action, env_overrides))
-        elif route == "/api/watchdog/toggle":
-            global WATCHDOG_ENABLED
-            WATCHDOG_ENABLED = not WATCHDOG_ENABLED
-            self._json({"enabled": WATCHDOG_ENABLED})
-        elif route == "/api/logs/rotate":
-            try:
-                rotate_all_logs()
-                self._json({"ok": True, "message": "Log rotation triggered"})
-            except Exception as e:
-                self._json({"ok": False, "error": str(e)})
         elif route == "/api/config":
             # POST: allow topology switching (requires restart)
             try:

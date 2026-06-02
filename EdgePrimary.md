@@ -222,7 +222,7 @@ RestartSec=10
 
 ---
 
-## 3. Local PC (Linux Backup + Miners)
+## 3. Local PC (Backup + Miners)
 
 ### 3.1 Host Details
 
@@ -230,20 +230,22 @@ RestartSec=10
 |----------|-------|
 | Tailscale IP | `100.74.34.40` (Linux) / `100.86.102.5` (W11) |
 | Tailscale name | `zionserver-144` |
-| Working dir | `/home/zionserver/2.9.6-main/` |
+| Working dir (Linux) | `/home/zionserver/2.9.6-main/` |
+| Working dir (W11) | `C:\Users\yosef\Desktop\Zion\2.9.6-main` |
 
 ### 3.2 Local Services
 
-| Service | Script / Binary | Purpose |
-|---------|---------------|---------|
-| Backup Node | `scripts/launch-local-backup.sh` | Syncs from Edge 100.76.16.108:8333 |
-| CPU Miner | `zion-miner` | Connects to Edge 100.76.16.108:8444 |
-| GPU Miner | `zion-miner` | OpenCL, connects to Edge pool |
-| Dashboard | `dashboard/app.py` | Python dashboard on 8766 |
+| Service | Script (Linux) | Script (W11) | Purpose |
+|---------|----------------|--------------|---------|
+| Backup Node | `scripts/launch-local-backup.sh` | `scripts/launch-local-backup.ps1` | Syncs from Edge 100.76.16.108:8333 |
+| CPU Miner | `zion-miner` | `zion-miner.exe` | Connects to Edge 100.76.16.108:8444 |
+| GPU Miner | `zion-miner` | `zion-miner.exe` | OpenCL, connects to Edge pool |
+| Dashboard | `dashboard/app.py` | `dashboard/app.py` | Python dashboard on 8766 |
 
 ### 3.3 Backup Node Environment
 
 ```bash
+# Linux
 ZION_NODE_ID='local-backup-node'
 ZION_P2P_BIND='0.0.0.0:8333'
 ZION_RPC_BIND='0.0.0.0:8443'
@@ -251,15 +253,35 @@ ZION_SEED_PEERS='100.76.16.108:8333'        # Edge primary via Tailscale
 ZION_NODE_STATE_PATH="$REPO_ROOT/V3/data/zion-node-state.db"
 ```
 
+```powershell
+# Windows 11
+$env:ZION_NODE_ID='local-backup-node'
+$env:ZION_P2P_BIND='0.0.0.0:8333'
+$env:ZION_RPC_BIND='0.0.0.0:8443'
+$env:ZION_SEED_PEERS='100.76.16.108:8333'    # Edge primary via Tailscale
+$env:ZION_NODE_STATE_PATH='V3\data\zion-node-state.db'
+```
+
 ### 3.4 Miner Environment
 
 ```bash
+# Linux
 ZION_POOL_ADDR='100.76.16.108:8444'         # Edge pool via Tailscale
 ZION_LOOP_COUNT='1000000'                   # Avoid reconnect loops
 ZION_GPU_BACKEND='opencl'                   # or 'cpu'
 ZION_GPU_WORK_SIZE='4096'
 ZION_WORKER_NAME='gpu-worker-local'
 ZION_MINER_ID='gpu-miner-local-01'
+```
+
+```powershell
+# Windows 11
+$env:ZION_POOL_ADDR='100.76.16.108:8444'     # Edge pool via Tailscale
+$env:ZION_LOOP_COUNT='1000000'
+$env:ZION_GPU_BACKEND='opencl'
+$env:ZION_GPU_WORK_SIZE='4096'
+$env:ZION_WORKER_NAME='gpu-worker-local'
+$env:ZION_MINER_ID='gpu-miner-local-01'
 ```
 
 ### 3.5 Dashboard
@@ -271,24 +293,43 @@ ZION_MINER_ID='gpu-miner-local-01'
   "port": 8766,
   "topology": "edge-primary"
 }
+```
 
+**Linux:**
+```bash
 # Systemd user service
 systemctl --user status zion-dashboard.service
 ```
 
+**Windows 11:**
+```powershell
+# Manual start
+.\dashboard\start-dashboard.ps1
+# Or double-click start-dashboard.bat in repo root
+# Auto-start: run install-dashboard-autostart.bat as Administrator
+```
+
 ---
 
-## 4. Windows 11 Dashboard Plan
+## 4. Windows 11 Dashboard
 
-> This section describes the plan for a Windows 11 native dashboard that replaces or complements the Python dashboard for operators running W11 as their primary desktop.
+> The Python dashboard (`dashboard/app.py`) already runs natively on Windows 11 using PowerShell launchers. A future native desktop app (Tauri/Electron) is optional.
 
-### 4.1 Goals
+### 4.1 Current W11 Setup (Working)
 
-- Provide a single-pane-of-glass overview of Edge + Local services
-- Native Windows look & feel (system tray, notifications)
-- One-click start/stop for local services
-- Real-time hashrate and chain height charts
-- Auto-restart on boot (via Windows Task Scheduler)
+The Python stdlib dashboard is fully functional on W11:
+
+```powershell
+# Manual start (opens browser automatically)
+.\dashboard\start-dashboard.ps1
+# Or double-click start-dashboard.bat in repo root
+```
+
+Features already working:
+- Service grid with Edge + Local services
+- Color-coded status, port probes, chain height, pool stats
+- Start/Stop/Restart buttons for local services
+- Log viewer, alerts, auto-start via `install-dashboard-autostart.bat`
 
 ### 4.2 Tech Stack Options
 
