@@ -1278,13 +1278,15 @@ def build_status() -> dict:
     # Pool status = Edge pool (primary). Local pool log is dev-only fallback.
     local_pool = parse_pool_log()
     # Use Edge pool as canonical pool status
+    # For Edge-primary topology, payout_enabled is inferred from fee_split (89/5/5/0 = burn model with payouts)
+    # Edge pool has ZION_POOL_PAYOUT_SK_HEX set server-side; dashboard doesn't need the private key.
     pool_status = {
         "running": pool_edge_health["alive"],
         "bind_addr": f"{pool_edge_svc.get('host', '100.76.16.108')}:8444" if pool_edge_svc else None,
         "loop_count": "1000000",
         "nonce_count": 4096,
         "pool_wallet": edge_pool_wallet,
-        "payout_enabled": bool(edge_pool_wallet and os.environ.get("ZION_POOL_PAYOUT_SK_HEX")),
+        "payout_enabled": pool_edge_health["alive"] and edge_fee_split == "89/5/5/0",
         "blocks_found": edge_metrics["blocks_found"] or local_pool["blocks_found"],
         "shares_accepted": local_pool["shares_accepted"],
         "shares_rejected": local_pool["shares_rejected"],
@@ -1443,7 +1445,7 @@ def build_alerts(status: dict) -> list:
 
     if pool["running"] and pool["payout_enabled"] is False:
         alerts.append({"severity": _sev("pool", "warning"), "title": "Payouts disabled",
-                       "detail": "Pool is running but payout_execution=disabled. Set ZION_POOL_PAYOUT_SK_HEX.",
+                       "detail": "Pool is running but payout_execution=disabled. Check Edge pool has ZION_POOL_PAYOUT_SK_HEX set.",
                        "action": None})
 
     if pool["running"] and pool.get("nonce_count") and pool["nonce_count"] < 4096:
