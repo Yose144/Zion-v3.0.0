@@ -49,6 +49,7 @@ Output: `src-tauri/target/release/bundle/` (`.msi` on Windows)
 - **Chain Sync**: Edge height vs Local height with sync gap visualization
 - **Alerts**: Real-time alerts with severity colors and Fix actions
 - **Performance Chart**: Rolling hashrate history via Recharts
+- **Edge Monitoring**: Prometheus + Grafana status panel with live target health
 - **Auto-refresh**: 3s polling with toggle button
 
 ## Icons
