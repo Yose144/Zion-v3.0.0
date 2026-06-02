@@ -176,7 +176,9 @@ fn base_testnet_chain() -> EvmChainConfig {
         rpc_url: Some("wss://base-sepolia.publicnode.com".into()),
         rpc_url_backup: None,
         wzion_address: "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6".into(),
-        bridge_contract_address: "0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721".into(),
+        // Bridge contract: ZIONBridge deployed on Base Sepolia 23.2.2026
+        // Source: archive/2.9.9/legacy-code/config/bridge-testnet.toml
+        bridge_contract_address: "0xF4BF85443ad6c9b88f3a5314cC3Fb59C32Cedca1".into(),
         finality_blocks: 15,
         enabled: true,
         gas_strategy: "eip1559".into(),
