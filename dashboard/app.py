@@ -5809,9 +5809,13 @@ class DashboardHandler(BaseHTTPRequestHandler):
     def _json(self, data, status=200):
         try:
             body = json.dumps(data).encode("utf-8")
+            origin = self.headers.get("Origin", "")
+            # Allow localhost dev servers and Tauri desktop apps
+            allowed = ["http://localhost:5173", "http://localhost:1420", "http://localhost:3000", "tauri://localhost"]
+            cors_origin = origin if origin in allowed else "*"
             self.send_response(status)
             self.send_header("Content-Type", "application/json; charset=utf-8")
-            self.send_header("Access-Control-Allow-Origin", "http://localhost:5173")
+            self.send_header("Access-Control-Allow-Origin", cors_origin)
             self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
             self.send_header("Access-Control-Allow-Headers", "Content-Type")
             self.send_header("Content-Length", str(len(body)))
@@ -5823,9 +5827,12 @@ class DashboardHandler(BaseHTTPRequestHandler):
     def _html(self, html, status=200):
         try:
             body = html.encode("utf-8")
+            origin = self.headers.get("Origin", "")
+            allowed = ["http://localhost:5173", "http://localhost:1420", "http://localhost:3000", "tauri://localhost"]
+            cors_origin = origin if origin in allowed else "*"
             self.send_response(status)
             self.send_header("Content-Type", "text/html; charset=utf-8")
-            self.send_header("Access-Control-Allow-Origin", "http://localhost:5173")
+            self.send_header("Access-Control-Allow-Origin", cors_origin)
             self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
             self.send_header("Access-Control-Allow-Headers", "Content-Type")
             self.send_header("Content-Length", str(len(body)))
@@ -7067,9 +7074,12 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self.send_error(404)
 
     def do_OPTIONS(self):
-        """CORS preflight — allow Vite dev server (localhost:5173)."""
+        """CORS preflight — allow Vite dev server and Tauri desktop app."""
+        origin = self.headers.get("Origin", "")
+        allowed = ["http://localhost:5173", "http://localhost:1420", "http://localhost:3000", "tauri://localhost"]
+        cors_origin = origin if origin in allowed else "*"
         self.send_response(204)
-        self.send_header("Access-Control-Allow-Origin", "http://localhost:5173")
+        self.send_header("Access-Control-Allow-Origin", cors_origin)
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
         self.end_headers()
