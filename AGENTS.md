@@ -72,6 +72,19 @@ Run from repository root unless noted.
 - Unified operator CLI:
   - `cargo run --manifest-path V3/Cargo.toml -p zion-cli -- --help`
 
+### Running core binaries from source (Windows 11)
+
+PowerShell equivalents for W11 development. Build first: `cargo build --release --manifest-path V3/Cargo.toml --workspace`.
+
+- Node (backup, edge-primary):
+  - `$env:ZION_NODE_ID='local-backup-node'; $env:ZION_P2P_BIND='0.0.0.0:8333'; $env:ZION_RPC_BIND='0.0.0.0:8443'; $env:ZION_SEED_PEERS='100.76.16.108:8333'; cargo run --release --manifest-path V3/Cargo.toml -p zion-core --bin node`
+- Pool server (local-dev only):
+  - `$env:ZION_POOL_BIND='0.0.0.0:8444'; $env:ZION_NODE_RPC_ADDR='127.0.0.1:8443'; cargo run --release --manifest-path V3/Cargo.toml -p zion-pool --bin server`
+- Miner (edge-primary):
+  - `$env:ZION_POOL_ADDR='100.76.16.108:8444'; $env:ZION_WORKER_NAME='<name>'; $env:ZION_MINER_ID='<id>'; $env:ZION_LOOP_COUNT='1000000'; $env:ZION_GPU_BACKEND='opencl'; cargo run --release --manifest-path V3/Cargo.toml -p zion-miner`
+- Unified operator CLI:
+  - `cargo run --manifest-path V3/Cargo.toml -p zion-cli -- --help`
+
 ### Docker (V3 stack) — Updated 2026-05
 
 **Recommended (new unified setup):**

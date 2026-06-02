@@ -86,7 +86,7 @@ ssh -i ssh-key-zion-edge root@77.42.71.94 "journalctl -u zion-edge-pool -f | gre
 
 # 3. Spustit dashboard
 powershell -ExecutionPolicy Bypass -File .\dashboard\start-dashboard.ps1
-# Otevřít http://127.0.0.1:8765
+# Otevřít http://127.0.0.1:8766
 ```
 
 ### Fáze 4: Veřejný Launch (T+0 MINUT)
@@ -125,7 +125,7 @@ ssh -i ssh-key-zion-edge root@77.42.71.94 "journalctl -u zion-edge-pool -f | gre
 
 ### Dashboard Monitoring
 
-- **URL:** http://127.0.0.1:8765
+- **URL:** http://127.0.0.1:8766
 - **Metriky:** Hashrate, Block height, Fee split revenue, Pool sessions
 
 ---
@@ -183,7 +183,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\_launch-core.ps1
 
 - **Core Server:** Windows 11 (100.86.102.5)
 - **Edge Server:** Hetzner VPS (77.42.71.94 / 100.76.16.108)
-- **Dashboard:** http://127.0.0.1:8765
+- **Dashboard:** http://127.0.0.1:8766
 - **Logs:** `logs/` (Core), `/var/log/journal/` (Edge)
 
 ---
