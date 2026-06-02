@@ -750,17 +750,26 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "child_says": "📊 A super-memory that remembers all the numbers!",
      "depends_on": []},
     {"id": "grafana", "name": "Grafana", "icon": "📈", "level": "Infra", "kind": "dashboards",
-     "ports": {"web": 3000},
+     "ports": {"web": 3100},
+     "host": "100.76.16.108",
      "log": None, "start": "start-grafana", "stop": None,
      "health_method": "tcp", "severity": "info", "autoheal": False,
-     "purpose": "Beautiful charts and dashboards for Prometheus metrics.",
+     "purpose": "Beautiful charts and dashboards for Prometheus metrics on Edge (port 3100).",
      "child_says": "📈 Pretty pictures showing how everything is doing!",
      "depends_on": ["prometheus"]},
+    {"id": "node-exporter", "name": "Node Exporter", "icon": "🔧", "level": "Infra", "kind": "metrics",
+     "ports": {"metrics": 9100},
+     "host": "100.76.16.108",
+     "log": None, "start": None, "stop": None,
+     "health_method": "tcp", "severity": "info", "autoheal": False,
+     "purpose": "Edge host system metrics (CPU, RAM, disk, network).",
+     "child_says": "🔧 Tells us how hard the computer is working!",
+     "depends_on": []},
     {"id": "dashboard", "name": "ZION Dashboard", "icon": "📋", "level": "Infra", "kind": "dashboard",
      "ports": {"web": 8766},
      "log": None, "start": None, "stop": None,
      "health_method": "tcp", "severity": "info", "autoheal": False,
-     "purpose": "Operational control plane — this UI.",
+     "purpose": "Operational control plane — this UI (Local PC only).",
      "child_says": "📋 The control room where we watch everything!",
      "depends_on": ["node1"]},
 ]
@@ -889,17 +898,26 @@ SERVICE_REGISTRY_LOCAL_DEV = [
      "child_says": "📊 A super-memory that remembers all the numbers!",
      "depends_on": []},
     {"id": "grafana", "name": "Grafana", "icon": "📈", "level": "Infra", "kind": "dashboards",
-     "ports": {"web": 3000},
+     "ports": {"web": 3100},
+     "host": "100.76.16.108",
      "log": None, "start": "start-grafana", "stop": None,
      "health_method": "tcp", "severity": "info", "autoheal": False,
-     "purpose": "Beautiful charts and dashboards for Prometheus metrics.",
+     "purpose": "Beautiful charts and dashboards for Prometheus metrics on Edge (port 3100).",
      "child_says": "📈 Pretty pictures showing how everything is doing!",
      "depends_on": ["prometheus"]},
+    {"id": "node-exporter", "name": "Node Exporter", "icon": "🔧", "level": "Infra", "kind": "metrics",
+     "ports": {"metrics": 9100},
+     "host": "100.76.16.108",
+     "log": None, "start": None, "stop": None,
+     "health_method": "tcp", "severity": "info", "autoheal": False,
+     "purpose": "Edge host system metrics (CPU, RAM, disk, network).",
+     "child_says": "🔧 Tells us how hard the computer is working!",
+     "depends_on": []},
     {"id": "dashboard", "name": "ZION Dashboard", "icon": "📋", "level": "Infra", "kind": "dashboard",
      "ports": {"web": 8766},
      "log": None, "start": None, "stop": None,
      "health_method": "tcp", "severity": "info", "autoheal": False,
-     "purpose": "Operational control plane — this UI.",
+     "purpose": "Operational control plane — this UI (Local PC only).",
      "child_says": "📋 The control room where we watch everything!",
      "depends_on": ["node1"]},
 ]
@@ -2921,7 +2939,7 @@ def get_network_topology() -> dict:
             pass
     return {
         "core": {
-            "host": "100.74.34.40",
+            "host": "100.86.102.5",
             "alive": core_alive,
             "height": core_node.get("chain_height"),
             "peers": core_node.get("known_peers"),
@@ -2937,7 +2955,7 @@ def get_network_topology() -> dict:
             "rpc": "0.0.0.0:8443",
             "pool": "0.0.0.0:8444",
         },
-        "tailscale": {"vpn_ok": tailscale_ok, "core_ip": "100.74.34.40", "edge_ip": "100.76.16.108"},
+        "tailscale": {"vpn_ok": tailscale_ok, "core_ip": "100.86.102.5", "edge_ip": "100.76.16.108"},
         "apps": {
             "website": {"url": "https://zionterranova.com", "alive": web_alive},
             "desktop_agent": {"rpc": "http://127.0.0.1:8443/jsonrpc", "alive": desktop_alive},
@@ -3171,7 +3189,7 @@ P0_BLOCKERS = [
     {"id": 2, "title": "Ankr API key (premium tier)", "owner": "Ops", "deadline": "T-7", "status": "OPEN", "severity": "critical",
      "detail": "bridge-mainnet.toml line 28: api_key=\"\". Requires premium Ankr account for EVM watcher reliability."},
     {"id": 3, "title": "Seed peer bootstrap mesh", "owner": "Ops", "deadline": "T-3", "status": "DONE", "severity": "info",
-     "detail": "Core + Edge topology active. Core (100.74.34.40) seeds Edge (100.76.16.108) via Tailscale VPN. Legacy multi-node mesh (Helsinki/US/SG/Prague) decommissioned."},
+     "detail": "Core + Edge topology active. Core (100.86.102.5) seeds Edge (100.76.16.108) via Tailscale VPN. Legacy multi-node mesh (Helsinki/US/SG/Prague) decommissioned."},
     {"id": 4, "title": "Premine wallet rotation", "owner": "Security", "deadline": "T-14", "status": "DONE", "severity": "info",
      "detail": "✅ Done 2026-05-14. Old 12 BIP-39 seeds burned, new addresses generated, public addresses in PREMINE_ADDRESSES_PUBLIC.txt."},
     {"id": 5, "title": "CI / GitHub Actions billing", "owner": "DevOps", "deadline": "T-14", "status": "OPEN", "severity": "warning",
@@ -3988,12 +4006,12 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
         <div class="flex items-center justify-between mb-2">
           <h3 class="text-sm font-bold uppercase tracking-wider text-gray-300">Grafana Dashboard</h3>
           <div class="flex gap-2">
-            <a href="http://127.0.0.1:3000" target="_blank" class="text-xs px-3 py-1 bg-zion-700 hover:bg-zion-600 rounded transition">Open Grafana ↗</a>
-            <a href="http://127.0.0.1:9090" target="_blank" class="text-xs px-3 py-1 bg-zion-700 hover:bg-zion-600 rounded transition">Open Prometheus ↗</a>
+            <a href="http://100.76.16.108:3100" target="_blank" class="text-xs px-3 py-1 bg-zion-700 hover:bg-zion-600 rounded transition">Open Grafana ↗</a>
+            <a href="http://100.76.16.108:9090" target="_blank" class="text-xs px-3 py-1 bg-zion-700 hover:bg-zion-600 rounded transition">Open Prometheus ↗</a>
             <button onclick="controlAction('start-monitoring')" class="text-xs px-3 py-1 bg-emerald-700 hover:bg-emerald-600 rounded transition">▶ Start Monitoring</button>
           </div>
         </div>
-        <iframe src="http://127.0.0.1:3000" id="grafana-iframe" class="w-full bg-zion-900 rounded-lg border border-zion-700" style="height:600px" onerror="this.style.display='none'" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
+        <iframe src="http://100.76.16.108:3100" id="grafana-iframe" class="w-full bg-zion-900 rounded-lg border border-zion-700" style="height:600px" onerror="this.style.display='none'" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
         <div id="grafana-offline" class="hidden text-center text-gray-500 text-sm py-12">
           Grafana not running. Click <button onclick="controlAction('start-monitoring')" class="text-amber-400 underline">▶ Start Monitoring</button> to launch Prometheus + Grafana via Docker.
         </div>
