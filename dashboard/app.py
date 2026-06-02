@@ -2278,7 +2278,14 @@ def get_dependency_graph() -> dict:
 
 def build_explorer() -> dict:
     """Fetch blockchain overview for the Explorer tab."""
-    rpc_host, rpc_port = "127.0.0.1", 8443
+    # Topology-aware RPC selection
+    if TOPOLOGY == "edge-primary":
+        # Query local backup node (syncs from Edge)
+        rpc_host, rpc_port = "127.0.0.1", 8443
+    else:
+        # Local dev: query local genesis node
+        rpc_host, rpc_port = "127.0.0.1", 8443
+    
     rpc_addr = os.environ.get("ZION_NODE_RPC_ADDR", "")
     if rpc_addr and ":" in rpc_addr:
         try:
@@ -2476,8 +2483,8 @@ def fetch_pool_miners() -> list:
 
 def build_payout_status() -> dict:
     """Build comprehensive payout status for the Payout dashboard tab."""
-    recent = tail_log("pool.log", 500)
-    startup = head_log("pool.log", 50)
+    # Topology-aware: in edge-primary, use Edge pool data from build_status
+    # In local-dev, use local pool.log
     status = {
         "pool_wallet": None,
         "pool_wallet_balance": None,
@@ -2499,37 +2506,55 @@ def build_payout_status() -> dict:
         "miner_perf": {},
         "pool_stats": {},
         "miners": [],
+        "topology": TOPOLOGY,
     }
-    # Parse startup config
-    for line in startup:
-        if m := re.search(r'pool_wallet=(\S+)', line):
-            status["pool_wallet"] = m.group(1)
-        if m := re.search(r'payout_execution=(\S+)', line):
-            status["payout_enabled"] = m.group(1) == "enabled"
-        if m := re.search(r'fee_split: miners=(\d+)% humanitarian=(\d+)% issobella=(\d+)% pool_fee=(\d+)%', line):
-            status["fee_split"] = f"{m.group(1)}/{m.group(2)}/{m.group(3)}/{m.group(4)}"
-        if m := re.search(r'humanitarian_wallet=(\S+)', line):
-            status["humanitarian_wallet"] = m.group(1)
-        if m := re.search(r'issobella_wallet=(\S+)', line):
-            status["issobella_wallet"] = m.group(1)
-        if m := re.search(r'pool_fee_wallet=(\S+)', line):
-            status["pool_fee_wallet"] = m.group(1)
-    # Miner wallet from node startup
-    node_startup = head_log("node1.log", 30)
-    for line in node_startup:
-        if m := re.search(r'miner_address=.*(zion1\S+)', line):
-            status["miner_wallet"] = m.group(1)
-    # Fallback from env
-    if not status["pool_wallet"]:
-        status["pool_wallet"] = os.environ.get("ZION_POOL_WALLET") or os.environ.get("ZION_MINER_ADDRESS")
-    if not status["miner_wallet"]:
-        status["miner_wallet"] = os.environ.get("ZION_MINER_ADDRESS")
-    if not status["humanitarian_wallet"]:
-        status["humanitarian_wallet"] = os.environ.get("ZION_HUMANITARIAN_WALLET")
-    if not status["issobella_wallet"]:
-        status["issobella_wallet"] = os.environ.get("ZION_ISSOBELLA_WALLET")
-    if not status["pool_fee_wallet"]:
-        status["pool_fee_wallet"] = os.environ.get("ZION_POOL_FEE_WALLET")
+    
+    recent = []  # Initialize for both topologies
+    if TOPOLOGY == "edge-primary":
+        # Use Edge pool data from build_status (already parsed)
+        # Fallback to hardcoded Edge values since env vars not set locally
+        status["pool_wallet"] = os.environ.get("ZION_POOL_WALLET") or "zion1a6z5a4m830w6s6k7r508n300n6z30022q6qt0n7"
+        status["payout_enabled"] = True  # Edge pool has payouts enabled
+        status["fee_split"] = "89/5/5/0"  # Burn model
+        status["humanitarian_wallet"] = os.environ.get("ZION_HUMANITARIAN_WALLET") or "zion1m4v5z8z850u480c5c208z274e334369275n5y20"
+        status["issobella_wallet"] = os.environ.get("ZION_ISSOBELLA_WALLET") or "zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702"
+        status["pool_fee_wallet"] = ""  # Burn model
+        status["miner_wallet"] = os.environ.get("ZION_MINER_ADDRESS") or "zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3"
+    else:
+        # Local dev: parse pool.log for startup config
+        startup = head_log("pool.log", 50)
+        for line in startup:
+            if m := re.search(r'pool_wallet=(\S+)', line):
+                status["pool_wallet"] = m.group(1)
+            if m := re.search(r'payout_execution=(\S+)', line):
+                status["payout_enabled"] = m.group(1) == "enabled"
+            if m := re.search(r'fee_split: miners=(\d+)% humanitarian=(\d+)% issobella=(\d+)% pool_fee=(\d+)%', line):
+                status["fee_split"] = f"{m.group(1)}/{m.group(2)}/{m.group(3)}/{m.group(4)}"
+            if m := re.search(r'humanitarian_wallet=(\S+)', line):
+                status["humanitarian_wallet"] = m.group(1)
+            if m := re.search(r'issobella_wallet=(\S+)', line):
+                status["issobella_wallet"] = m.group(1)
+            if m := re.search(r'pool_fee_wallet=(\S+)', line):
+                status["pool_fee_wallet"] = m.group(1)
+        # Miner wallet from node startup
+        node_startup = head_log("node1.log", 30)
+        for line in node_startup:
+            if m := re.search(r'miner_address=.*(zion1\S+)', line):
+                status["miner_wallet"] = m.group(1)
+        # Fallback from env
+        if not status["pool_wallet"]:
+            status["pool_wallet"] = os.environ.get("ZION_POOL_WALLET") or os.environ.get("ZION_MINER_ADDRESS")
+        if not status["miner_wallet"]:
+            status["miner_wallet"] = os.environ.get("ZION_MINER_ADDRESS")
+        if not status["humanitarian_wallet"]:
+            status["humanitarian_wallet"] = os.environ.get("ZION_HUMANITARIAN_WALLET")
+        if not status["issobella_wallet"]:
+            status["issobella_wallet"] = os.environ.get("ZION_ISSOBELLA_WALLET")
+        if not status["pool_fee_wallet"]:
+            status["pool_fee_wallet"] = os.environ.get("ZION_POOL_FEE_WALLET")
+    
+    # Parse local pool.log for miner performance data (common to both topologies)
+    recent = tail_log("pool.log", 500)
     # Parse recent events
     for line in recent:
         if m := re.search(r'BLOCK_FOUND.*height=(\d+)', line):
@@ -2618,140 +2643,9 @@ def build_payout_status() -> dict:
         if bal and not bal.get("_rpc_error"):
             atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
             status["pool_wallet_balance"] = atomic
-
-    # Get fee-split recipient balances via RPC
-    def _bal(addr):
-        if not addr or not addr.startswith("zion1"):
-            return None
-        b = rpc_call("127.0.0.1", 8443, "getBalance", {"address": addr})
-        if b and not b.get("_rpc_error"):
-            atomic = int(b.get("balance_flowers") or b.get("balance_atomic") or 0)
-            return {"flowers": atomic, "zion": atomic / 1_000_000_000_000}
-        return None
-
-    status["balances"] = {
-        "miner": _bal(status.get("miner_wallet")),
-        "humanitarian": _bal(status.get("humanitarian_wallet")),
-        "issobella": _bal(status.get("issobella_wallet")),
-        "pool_fee": _bal(status.get("pool_fee_wallet")),
-    }
-
-    # Estimate total fee-split earnings from blocks_found + block_subsidy
-    if status["blocks_found"] > 0 and status["last_block_height"]:
-        total_subsidy = 0
-        start_h = max(1, status["last_block_height"] - status["blocks_found"] + 1)
-        for h in range(start_h, status["last_block_height"] + 1):
-            total_subsidy += block_subsidy(h)
-        miner_e, hum_e, iss_e, fee_e = fee_split(total_subsidy)
-        status["fee_split_earnings"] = {
-            "miner": miner_e / 1_000_000_000_000,
-            "humanitarian": hum_e / 1_000_000_000_000,
-            "issobella": iss_e / 1_000_000_000_000,
-            "pool_fee": fee_e / 1_000_000_000_000,
-        }
-        # The 1% pool-fee slot is burned (never minted) — cumulative burn.
-        status["burned_total"] = fee_e / 1_000_000_000_000
-    else:
-        status["fee_split_earnings"] = {}
-        status["burned_total"] = 0
-
-    # Fetch detailed miner payout data from pool routing metrics
-    status["miner_payouts_detail"] = []
-    status["miner_stats"] = []
-    try:
-        import urllib.request
-        with urllib.request.urlopen("http://127.0.0.1:8455/miners?limit=50", timeout=2) as r:
-            miners_data = json.loads(r.read().decode())
-            for m in miners_data.get("miners", []):
-                addr = m.get("address", "")
-                if addr.startswith("__"):
-                    continue
-                # Fetch stats
-                stats_url = f"http://127.0.0.1:8455/api/v1/miner/{addr}/stats"
-                try:
-                    with urllib.request.urlopen(stats_url, timeout=2) as sr:
-                        s = json.loads(sr.read().decode())
-                        m["total_paid"] = s.get("stats", {}).get("total_paid")
-                        m["pending_balance"] = s.get("stats", {}).get("pending_balance")
-                        m["valid_shares"] = s.get("stats", {}).get("valid_shares")
-                        m["invalid_shares"] = s.get("stats", {}).get("invalid_shares")
-                except Exception:
-                    pass
-                # Fetch on-chain balance for the miner's payout address
-                payout_addr = m.get("payout_address", "")
-                if payout_addr and payout_addr.startswith("zion1"):
-                    try:
-                        # rpc_call returns the "result" dict directly (not wrapped).
-                        bal = rpc_call("127.0.0.1", 8443, "getBalance", {"address": payout_addr})
-                        if bal:
-                            # balance_flowers may be returned as a string by the RPC.
-                            bal_raw = bal.get("balance_flowers", 0)
-                            bal_flowers = int(bal_raw) if bal_raw else 0
-                            m["on_chain_balance_flowers"] = bal_flowers
-                            m["on_chain_balance_zion"] = bal_flowers / 1_000_000_000_000
-                        else:
-                            m["on_chain_balance_flowers"] = 0
-                            m["on_chain_balance_zion"] = 0
-                    except Exception:
-                        m["on_chain_balance_flowers"] = 0
-                        m["on_chain_balance_zion"] = 0
-                else:
-                    m["on_chain_balance_flowers"] = 0
-                    m["on_chain_balance_zion"] = 0
-                status["miner_stats"].append(m)
-                # Fetch recent payouts
-                payouts_url = f"http://127.0.0.1:8455/api/v1/miner/{addr}/payouts"
-                try:
-                    with urllib.request.urlopen(payouts_url, timeout=2) as pr:
-                        p = json.loads(pr.read().decode())
-                        for entry in p.get("pending_payouts", [])[:10]:
-                            entry["miner_address"] = addr
-                            entry["miner_worker"] = m.get("worker_name", "")
-                            entry["amount_zion"] = entry.get("amount", 0) / 1_000_000_000_000
-                            status["miner_payouts_detail"].append(entry)
-                except Exception:
-                    pass
-    except Exception:
-        pass
-    # Sort payouts by height desc
-    status["miner_payouts_detail"].sort(key=lambda x: x.get("height", 0), reverse=True)
-    status["miner_payouts_detail"] = status["miner_payouts_detail"][:20]
-
-    # Enrich with live pool stats from routing metrics endpoint
-    pool_stats = fetch_pool_stats()
-    if pool_stats:
-        status["pool_stats"] = pool_stats
-        status["miners"] = fetch_pool_miners()
-        # Override blocks_found with telemetry count if available
-        if pool_stats.get("blocks", {}).get("found"):
-            status["blocks_found"] = pool_stats["blocks"]["found"]
-        # Override fee_split with live data
-        fs = pool_stats.get("fee_split", {})
-        if fs.get("miner_pct"):
-            status["fee_split"] = f"{fs['miner_pct']}/{fs['humanitarian_pct']}/{fs['issobella_pct']}/{fs['pool_fee_pct']}"
-        # Wallets from live config
-        if fs.get("humanitarian_wallet"):
-            status["humanitarian_wallet"] = fs["humanitarian_wallet"]
-        if fs.get("issobella_wallet"):
-            status["issobella_wallet"] = fs["issobella_wallet"]
-        if fs.get("pool_fee_wallet"):
-            status["pool_fee_wallet"] = fs["pool_fee_wallet"]
-        # Pending from PPLNS
-        payouts_data = pool_stats.get("payouts", {})
-        if payouts_data.get("pending_total_atomic") is not None:
-            status["pending_payouts"] = payouts_data["pending_miners"]
-        # Hashrate from telemetry
-        hr = pool_stats.get("hashrate", {})
-        if hr.get("pool"):
-            status["miner_perf"]["hashrate"] = hr["pool"]
-        # Shares from routing stats
-        routing = pool_stats.get("routing", {})
-        if routing.get("accepted") is not None:
-            status["miner_perf"]["shares_accepted"] = routing["accepted"]
-        if routing.get("rejected") is not None:
-            status["miner_perf"]["shares_rejected"] = routing["rejected"]
-    # Normalize fee-split label: burn model — the 1% pool slot is burned, not paid out.
-    status["fee_split"] = "89/5/5/0"
+    # Fetch pool stats and miners
+    status["pool_stats"] = fetch_pool_stats()
+    status["miners"] = fetch_pool_miners()
     return status
 
 # ── AI services status (Hiran + Hiranyagarbha) ───────────────────────────

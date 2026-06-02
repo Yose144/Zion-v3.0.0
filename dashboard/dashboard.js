@@ -152,6 +152,9 @@ async function refreshAll(){
     const alertsData = unwrap(al);
     const blockersData = unwrap(blk);
     const resourcesData = unwrap(res);
+    
+    // Store current status for topology-aware functions
+    window.currentStatus = statusData;
 
     document.getElementById('timestamp').textContent = '⏱ ' + new Date(statusData.timestamp).toLocaleTimeString();
     // Update topology badge
@@ -177,7 +180,7 @@ async function refreshAll(){
     updateServiceCards(statusData);
     updateAlerts(alertsData.alerts);
     updateChecklist(checklistData.checks);
-    updatePayouts(statusData.pool);
+    updatePayouts(statusData.pool, statusData.topology);
     updateLayerServices();
     updateMiniHashrate();
     loadCliNodeStatus();
@@ -362,25 +365,38 @@ async function updateLayerServices(){
   }
 }
 
-function updatePayouts(p){
+function updatePayouts(p, topology){
+  // Update payout section based on topology
+  // In edge-primary: pool data comes from Edge pool (pool_edge)
+  // In local-dev: pool data comes from local pool
+  const poolData = topology === 'edge-primary' ? window.currentStatus?.pool_edge : p;
+  
   const pw = document.getElementById('payout-wallet');
-  if(pw) pw.textContent = p.pool_wallet ?? '—';
+  if(pw) pw.textContent = poolData?.pool_wallet ?? '—';
   const en = document.getElementById('payout-enabled');
   if(en){
-    en.textContent = p.payout_enabled === true ? 'YES' : (p.payout_enabled === false ? 'NO' : '—');
-    en.className = p.payout_enabled ? 'font-bold text-emerald-400' : 'font-bold text-red-400';
+    en.textContent = poolData?.payout_enabled === true ? 'YES' : (poolData?.payout_enabled === false ? 'NO' : '—');
+    en.className = poolData?.payout_enabled ? 'font-bold text-emerald-400' : 'font-bold text-red-400';
   }
   const pb = document.getElementById('payout-blocks');
-  if(pb) pb.textContent = p.blocks_found ?? '0';
+  if(pb) pb.textContent = poolData?.blocks_found ?? '0';
   const pn = document.getElementById('payout-nonce');
-  if(pn) pn.textContent = p.nonce_count ?? '—';
+  if(pn) pn.textContent = poolData?.nonce_count ?? '—';
   const ps = document.getElementById('payout-split');
-  if(ps) ps.textContent = p.fee_split ?? '—';
+  if(ps) ps.textContent = poolData?.fee_split ?? '—';
   const pr = document.getElementById('payout-recent');
   if(pr){
-    pr.innerHTML = (p.recent_payouts && p.recent_payouts.length)
-      ? p.recent_payouts.map(l => '<div class="truncate text-[10px]">' + escapeHtml(l) + '</div>').join('')
+    pr.innerHTML = (poolData?.recent_payouts && poolData.recent_payouts.length)
+      ? poolData.recent_payouts.map(l => '<div class="truncate text-[10px]">' + escapeHtml(l) + '</div>').join('')
       : '<div class="text-gray-600 italic text-[10px]">No payout events yet</div>';
+  }
+  
+  // Update payout tab header to show which pool
+  const header = document.querySelector('#pane-payout h1');
+  if(header && topology){
+    header.textContent = topology === 'edge-primary' 
+      ? '💰 Edge Pool Payout System' 
+      : '💰 Local Pool Payout System';
   }
 }
 
