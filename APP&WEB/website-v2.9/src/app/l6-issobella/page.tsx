@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 
-const ISSOBELLA_WALLET = 'zion1e4t5a390m2r427a8f3s39885v4f2v6n8u3mj3f5';
+const ISSOBELLA_WALLET = 'zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702';
 
 const getMissions = (cs: boolean) => [
   {
@@ -118,7 +118,7 @@ export default function L6IssobellaPage() {
                 <Star className="h-3 w-3" /> {cs ? '5 % z každého bloku → L6 fond' : '5% of every block → L6 fund'}
               </span>
               <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-emerald-200">
-                <CheckCircle2 className="h-3 w-3" /> {cs ? '~15 000 ZION / měsíc' : '~15,000 ZION / month'}
+                <CheckCircle2 className="h-3 w-3" /> {cs ? '~11,7 M ZION / měsíc' : '~11.7M ZION / month'}
               </span>
               <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
                 <Clock className="h-3 w-3" /> {cs ? 'Odemčeno blok ~525 600' : 'Unlocked block ~525,600'}
@@ -144,7 +144,7 @@ export default function L6IssobellaPage() {
             </div>
             <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-4 text-center">
               <p className="text-xs uppercase tracking-wider text-gray-400 mb-1">{cs ? 'Přibližně / měsíc' : 'Approx / month'}</p>
-              <p className="text-3xl font-bold text-emerald-400">~15k</p>
+              <p className="text-3xl font-bold text-emerald-400">~11,7M</p>
               <p className="text-xs text-gray-500 mt-1">ZION</p>
             </div>
             <div className="rounded-2xl border border-purple-500/30 bg-purple-500/5 p-4 text-center">
