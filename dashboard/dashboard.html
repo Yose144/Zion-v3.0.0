@@ -818,51 +818,70 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 
   <!-- ═════════ TAB: Wallets ═════════ -->
   <div id="pane-wallets" class="hidden space-y-4">
-  <!-- Wallets header -->
-  <div class="flex items-center justify-between">
-    <div>
-      <h1 class="text-2xl font-bold text-gradient">💳 Wallets</h1>
-      <p class="text-xs text-gray-400 mt-1">Addresses · Balances · Transaction history</p>
+    <!-- Wallets header -->
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gradient">💳 Wallets</h1>
+        <p class="text-xs text-gray-400 mt-1">Premine · Operational · Live balances</p>
+      </div>
+      <button onclick="loadWallets()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
     </div>
-    <button onclick="loadWallets()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
-  </div>
-  <!-- KPI row -->
-  <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-    <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-emerald-400" id="wallet-total-balance">—</div><div class="text-[10px] text-gray-400 mt-1">Total Balance (ZION)</div></div>
-    <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-blue-400" id="wallet-count">—</div><div class="text-[10px] text-gray-400 mt-1">Addresses</div></div>
-    <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-amber-400" id="wallet-pending-tx">—</div><div class="text-[10px] text-gray-400 mt-1">Pending TX</div></div>
-    <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-purple-400" id="wallet-last-tx">—</div><div class="text-[10px] text-gray-400 mt-1">Last TX</div></div>
-  </div>
-  <!-- Address list -->
-  <div class="zion-panel p-5">
-    <div class="flex items-center justify-between mb-3">
-      <h3 class="text-sm font-bold">Addresses &amp; Balances</h3>
-      <div class="flex gap-2">
-        <input id="wallet-search" type="text" placeholder="Search address…" class="text-xs px-2 py-1.5 bg-black/40 border border-white/10 rounded-lg text-white font-mono focus:outline-none w-48">
-        <button onclick="loadWallets()" class="text-xs px-2 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">Search</button>
+    <!-- KPI row (populated by JS) -->
+    <div id="wallets-stats" class="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-emerald-400">—</div><div class="text-[10px] text-gray-400 mt-1">Total Wallets</div></div>
+      <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-zion-gold">—</div><div class="text-[10px] text-gray-400 mt-1">Premine</div></div>
+      <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-zion-cyan">—</div><div class="text-[10px] text-gray-400 mt-1">Operational</div></div>
+      <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-emerald-400">—</div><div class="text-[10px] text-gray-400 mt-1">Live Balance</div></div>
+    </div>
+    <!-- Address table -->
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-sm font-bold">Addresses &amp; Balances</h3>
+        <div class="flex gap-2">
+          <input id="wallet-search" type="text" placeholder="Search address…" class="text-xs px-2 py-1.5 bg-black/40 border border-white/10 rounded-lg text-white font-mono focus:outline-none w-48">
+          <button onclick="loadWallets()" class="text-xs px-2 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">Search</button>
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead>
+            <tr class="text-gray-400 border-b border-white/10">
+              <th class="py-2 px-2">#</th>
+              <th class="py-2 px-2">Label</th>
+              <th class="py-2 px-2">Address</th>
+              <th class="py-2 px-2">Source</th>
+              <th class="py-2 px-2">Category</th>
+              <th class="py-2 px-2 text-right">Premine</th>
+              <th class="py-2 px-2 text-right">Balance</th>
+            </tr>
+          </thead>
+          <tbody id="wallets-table" class="font-mono">
+            <tr><td colspan="7" class="py-4 text-gray-500 italic text-center">Loading wallets…</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="wallets-rpc-status" class="text-xs text-gray-500 mt-2"></div>
+    </div>
+    <!-- Category breakdown -->
+    <div class="zion-panel p-5">
+      <h3 class="text-sm font-bold mb-3">Category Breakdown</h3>
+      <div id="wallets-categories" class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div class="text-gray-500 italic text-xs">Loading…</div>
+      </div>
+      <div id="wallets-category-bars" class="space-y-2 mt-4">
+        <!-- JS populates progress bars here -->
       </div>
     </div>
-    <div id="wallet-address-list" class="space-y-2 max-h-64 overflow-y-auto">
-      <div class="text-gray-500 italic text-xs">Loading…</div>
+    <!-- Known Addresses (static) -->
+    <div class="zion-panel p-5">
+      <h3 class="text-sm font-bold mb-3">Known Addresses</h3>
+      <div class="space-y-2 text-xs">
+        <div class="flex justify-between items-center bg-black/30 rounded-lg px-3 py-2"><span class="text-gray-400">Miner (89%)</span><span class="font-mono text-white text-[10px]">zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3</span><button onclick="copyToClipboard('zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3')" class="text-[10px] text-gray-500 hover:text-white ml-2">Copy</button></div>
+        <div class="flex justify-between items-center bg-black/30 rounded-lg px-3 py-2"><span class="text-gray-400">Humanitarian (5%)</span><span class="font-mono text-white text-[10px]">zion1m4v5z8z850u480c5c208z274e334369275n5y20</span><button onclick="copyToClipboard('zion1m4v5z8z850u480c5c208z274e334369275n5y20')" class="text-[10px] text-gray-500 hover:text-white ml-2">Copy</button></div>
+        <div class="flex justify-between items-center bg-black/30 rounded-lg px-3 py-2"><span class="text-gray-400">Issobella (5%)</span><span class="font-mono text-white text-[10px]">zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702</span><button onclick="copyToClipboard('zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702')" class="text-[10px] text-gray-500 hover:text-white ml-2">Copy</button></div>
+        <div class="flex justify-between items-center bg-black/30 rounded-lg px-3 py-2"><span class="text-gray-400">Pool Fee (1%)</span><span class="font-mono text-white text-[10px]">zion1p2a7a5q0t2z5z545y6m6j5e864n002v4z6w95w5</span><button onclick="copyToClipboard('zion1p2a7a5q0t2z5z545y6m6j5e864n002v4z6w95w5')" class="text-[10px] text-gray-500 hover:text-white ml-2">Copy</button></div>
+      </div>
     </div>
-  </div>
-  <!-- TX history -->
-  <div class="zion-panel p-5">
-    <h3 class="text-sm font-bold mb-3">Recent Transactions</h3>
-    <div id="wallet-tx-list" class="space-y-1.5 max-h-48 overflow-y-auto text-xs">
-      <div class="text-gray-500 italic">No transactions loaded</div>
-    </div>
-  </div>
-  <!-- Special addresses (from genesis) -->
-  <div class="zion-panel p-5">
-    <h3 class="text-sm font-bold mb-3">Known Addresses</h3>
-    <div class="space-y-2 text-xs">
-      <div class="flex justify-between items-center bg-black/30 rounded-lg px-3 py-2"><span class="text-gray-400">Miner (89%)</span><span class="font-mono text-white text-[10px]">zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3</span><button onclick="copyToClipboard('zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3')" class="text-[10px] text-gray-500 hover:text-white ml-2">Copy</button></div>
-      <div class="flex justify-between items-center bg-black/30 rounded-lg px-3 py-2"><span class="text-gray-400">Humanitarian (5%)</span><span class="font-mono text-white text-[10px]">zion1m4v5z8z850u480c5c208z274e334369275n5y20</span><button onclick="copyToClipboard('zion1m4v5z8z850u480c5c208z274e334369275n5y20')" class="text-[10px] text-gray-500 hover:text-white ml-2">Copy</button></div>
-      <div class="flex justify-between items-center bg-black/30 rounded-lg px-3 py-2"><span class="text-gray-400">Issobella (5%)</span><span class="font-mono text-white text-[10px]">zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702</span><button onclick="copyToClipboard('zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702')" class="text-[10px] text-gray-500 hover:text-white ml-2">Copy</button></div>
-      <div class="flex justify-between items-center bg-black/30 rounded-lg px-3 py-2"><span class="text-gray-400">Pool Fee (1%)</span><span class="font-mono text-white text-[10px]">zion1p2a7a5q0t2z5z545y6m6j5e864n002v4z6w95w5</span><button onclick="copyToClipboard('zion1p2a7a5q0t2z5z545y6m6j5e864n002v4z6w95w5')" class="text-[10px] text-gray-500 hover:text-white ml-2">Copy</button></div>
-    </div>
-  </div>
   </div>
 
   <!-- ═════════ TAB: Explorer ═════════ -->
@@ -3336,73 +3355,49 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 
   <!-- ═════════ TAB: Payout ═════════ -->
   <div id="pane-payout" class="hidden space-y-4">
-    <div class="zion-panel p-6">
-      <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
-        <h2 class="text-xl font-bold flex items-center gap-2"><span class="text-gradient">💰 Pool Payout System</span></h2>
-        <button onclick="refreshPayout()" class="zion-button-secondary text-xs">🔄 Refresh</button>
+    <!-- Payout header -->
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gradient">💰 Pool Payout System</h1>
+        <p class="text-xs text-gray-400 mt-1">Live payout status, fee split, and pool telemetry</p>
       </div>
-      <p class="text-sm text-gray-400 mb-4">Live payout status, fee split recipients, and recent transaction logs.</p>
+      <button onclick="refreshPayout()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">🔄 Refresh</button>
+    </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3 mb-6">
-        <div class="zion-panel-soft p-4">
-          <div class="text-xs text-gray-400 uppercase tracking-wider mb-1">Pool Wallet</div>
-          <div class="text-sm font-mono text-amber-400 truncate" id="payout-tab-wallet">—</div>
-          <div class="text-xs text-gray-500 mt-1" id="payout-tab-balance">Balance: —</div>
-        </div>
-        <div class="zion-panel-soft p-4">
-          <div class="text-xs text-gray-400 uppercase tracking-wider mb-1">Payout Status</div>
-          <div class="text-lg font-bold text-emerald-400" id="payout-tab-status">—</div>
-          <div class="text-xs text-gray-500 mt-1" id="payout-tab-fee-split">Fee split: —</div>
-        </div>
-        <div class="zion-panel-soft p-4">
-          <div class="text-xs text-gray-400 uppercase tracking-wider mb-1">Blocks Found</div>
-          <div class="text-2xl font-bold text-amber-400" id="payout-tab-blocks">—</div>
-          <div class="text-xs text-gray-500 mt-1" id="payout-tab-last-block">Last: —</div>
-        </div>
-        <div class="zion-panel-soft p-4">
-          <div class="text-xs text-gray-400 uppercase tracking-wider mb-1">Last Payout</div>
-          <div class="text-sm font-bold text-emerald-400" id="payout-tab-last">—</div>
-          <div class="text-xs text-gray-500 mt-1 truncate" id="payout-tab-last-tx">TX: —</div>
-        </div>
-        <div class="zion-panel-soft p-4">
-          <div class="text-xs text-gray-400 uppercase tracking-wider mb-1">Total Paid Out</div>
-          <div class="text-lg font-bold text-emerald-400" id="payout-tab-total-paid">—</div>
-          <div class="text-xs text-gray-500 mt-1" id="payout-tab-total-blocks">Across — blocks</div>
-        </div>
-        <div class="zion-panel-soft p-4">
-          <div class="text-xs text-gray-400 uppercase tracking-wider mb-1">Pending</div>
-          <div class="text-lg font-bold text-amber-400" id="payout-tab-pending">—</div>
-          <div class="text-xs text-gray-500 mt-1" id="payout-tab-pending-detail">PPLNS deferred</div>
-        </div>
+    <!-- Primary KPIs -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-amber-400" id="payout-tab-blocks">—</div><div class="text-[10px] text-gray-400 mt-1">Blocks Found</div></div>
+      <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-emerald-400" id="payout-tab-status">—</div><div class="text-[10px] text-gray-400 mt-1">Payout Status</div></div>
+      <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-purple-400" id="payout-tab-pending">—</div><div class="text-[10px] text-gray-400 mt-1">Pending Miners</div></div>
+      <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-blue-400" id="pool-stat-accept-rate">—</div><div class="text-[10px] text-gray-400 mt-1">Accept Rate %</div></div>
+    </div>
+
+    <!-- Pool telemetry row -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-amber-400" id="pool-stat-hashrate">—</div><div class="text-[10px] text-gray-400 mt-1">Pool Hashrate (KH/s)</div></div>
+      <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-emerald-400" id="pool-stat-miners">—</div><div class="text-[10px] text-gray-400 mt-1">Active Miners</div></div>
+      <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-zion-gold" id="payout-tab-total-paid">—</div><div class="text-[10px] text-gray-400 mt-1">Total Paid Out</div></div>
+      <div class="zion-panel p-4 text-center"><div class="text-xl font-bold text-zion-cyan" id="pool-stat-pplns">—</div><div class="text-[10px] text-gray-400 mt-1">PPLNS Window</div></div>
+    </div>
+
+    <!-- Pool wallet & last payout -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div class="zion-panel p-4">
+        <div class="text-[10px] text-gray-400 mb-1">Pool Wallet</div>
+        <div class="text-sm font-mono text-amber-400 truncate" id="payout-tab-wallet">—</div>
+        <div class="text-xs text-gray-500 mt-1" id="payout-tab-balance">Balance: —</div>
       </div>
-
-      <!-- Live Pool Stats -->
-      <h3 class="text-sm font-bold text-gray-300 mb-3">📊 Live Pool Stats</h3>
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-        <div class="zion-panel-soft p-3 text-center">
-          <div class="text-[10px] text-gray-400">Pool Hashrate</div>
-          <div class="text-lg font-bold text-amber-400" id="pool-stat-hashrate">—</div>
-          <div class="text-[10px] text-gray-500">KH/s</div>
-        </div>
-        <div class="zion-panel-soft p-3 text-center">
-          <div class="text-[10px] text-gray-400">Active Miners</div>
-          <div class="text-lg font-bold text-emerald-400" id="pool-stat-miners">—</div>
-          <div class="text-[10px] text-gray-500">connected</div>
-        </div>
-        <div class="zion-panel-soft p-3 text-center">
-          <div class="text-[10px] text-gray-400">Accept Rate</div>
-          <div class="text-lg font-bold text-blue-400" id="pool-stat-accept-rate">—</div>
-          <div class="text-[10px] text-gray-500">%</div>
-        </div>
-        <div class="zion-panel-soft p-3 text-center">
-          <div class="text-[10px] text-gray-400">PPLNS Window</div>
-          <div class="text-lg font-bold text-purple-400" id="pool-stat-pplns">—</div>
-          <div class="text-[10px] text-gray-500">shares</div>
-        </div>
+      <div class="zion-panel p-4">
+        <div class="text-[10px] text-gray-400 mb-1">Last Payout</div>
+        <div class="text-sm font-bold text-emerald-400" id="payout-tab-last">—</div>
+        <div class="text-xs text-gray-500 mt-1 truncate" id="payout-tab-last-tx">TX: —</div>
       </div>
+    </div>
 
-      <h3 class="text-sm font-bold text-gray-300 mb-3">📋 Fee Split Breakdown</h3>
-      <div class="zion-panel-soft p-4 mb-6 overflow-x-auto">
+    <!-- Fee Split Breakdown -->
+    <div class="zion-panel p-5">
+      <h3 class="text-sm font-bold mb-3">📋 Fee Split Breakdown</h3>
+      <div class="overflow-x-auto">
         <table class="w-full text-left text-xs">
           <thead>
             <tr class="text-gray-400 border-b border-white/10">
@@ -3445,88 +3440,86 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
           </tbody>
         </table>
       </div>
+    </div>
 
-      <!-- Payout Visualizations -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-        <div class="zion-panel-soft p-4">
-          <h3 class="text-sm font-bold text-gray-300 mb-2">🍩 Fee Split Distribution</h3>
-          <div style="position:relative;height:200px;"><canvas id="chart-payout-donut"></canvas></div>
-        </div>
-        <div class="zion-panel-soft p-4">
-          <h3 class="text-sm font-bold text-gray-300 mb-2">📈 Blocks & Payouts Over Time</h3>
-          <div style="position:relative;height:200px;"><canvas id="chart-payout-history"></canvas></div>
+    <!-- Payout Visualizations -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="zion-panel p-5">
+        <h3 class="text-sm font-bold mb-3">🍩 Fee Split Distribution</h3>
+        <div style="position:relative;height:200px;"><canvas id="chart-payout-donut"></canvas></div>
+      </div>
+      <div class="zion-panel p-5">
+        <h3 class="text-sm font-bold mb-3">📈 Blocks & Payouts Over Time</h3>
+        <div style="position:relative;height:200px;"><canvas id="chart-payout-history"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Payout History Table -->
+    <div class="zion-panel p-5">
+      <h3 class="text-sm font-bold mb-3">📜 Payout History</h3>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead>
+            <tr class="text-gray-400 border-b border-white/10">
+              <th class="py-2 px-2">Block</th>
+              <th class="py-2 px-2 text-right">Subsidy</th>
+              <th class="py-2 px-2 text-right">Miner (89%)</th>
+              <th class="py-2 px-2 text-right">Charity (5%)</th>
+              <th class="py-2 px-2 text-right">Dev (5%)</th>
+              <th class="py-2 px-2 text-right">Pool (1%)</th>
+            </tr>
+          </thead>
+          <tbody id="payout-history-table" class="font-mono">
+            <tr><td colspan="6" class="py-2 px-2 text-gray-500 italic">No payout history yet</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Logs grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="zion-panel p-5">
+        <h3 class="text-sm font-bold mb-3">📝 Recent Miner Payouts</h3>
+        <div id="payout-tab-miner-log" class="space-y-2 text-xs text-gray-300 max-h-64 overflow-y-auto log-tail">
+          <div class="text-gray-500 italic">Loading...</div>
         </div>
       </div>
-
-      <!-- Payout History Table -->
-      <div class="zion-panel-soft p-4 mb-4">
-        <h3 class="text-sm font-bold text-gray-300 mb-3">📜 Payout History</h3>
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs">
-            <thead>
-              <tr class="text-gray-400 border-b border-white/10">
-                <th class="py-2 px-2">Block</th>
-                <th class="py-2 px-2 text-right">Subsidy</th>
-                <th class="py-2 px-2 text-right">Miner (89%)</th>
-                <th class="py-2 px-2 text-right">Charity (5%)</th>
-                <th class="py-2 px-2 text-right">Dev (5%)</th>
-                <th class="py-2 px-2 text-right">Pool (1%)</th>
-              </tr>
-            </thead>
-            <tbody id="payout-history-table" class="font-mono">
-              <tr><td colspan="6" class="py-2 px-2 text-gray-500 italic">No payout history yet</td></tr>
-            </tbody>
-          </table>
+      <div class="zion-panel p-5">
+        <h3 class="text-sm font-bold mb-3">📝 Recent Fee Payouts</h3>
+        <div id="payout-tab-fee-log" class="space-y-2 text-xs text-gray-300 max-h-64 overflow-y-auto log-tail">
+          <div class="text-gray-500 italic">Loading...</div>
         </div>
       </div>
+    </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div class="zion-panel-soft p-4">
-          <h3 class="text-sm font-bold text-gray-300 mb-2">📝 Recent Miner Payouts</h3>
-          <div id="payout-tab-miner-log" class="space-y-2 text-xs text-gray-300 max-h-64 overflow-y-auto log-tail">
-            <div class="text-gray-500 italic">Loading...</div>
-          </div>
+    <!-- Miner Performance -->
+    <div class="zion-panel p-5">
+      <h3 class="text-sm font-bold mb-3">⛏️ Miner Performance</h3>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div class="zion-panel p-3 text-center">
+          <div class="text-xl font-bold text-amber-400" id="miner-perf-hashrate">—</div>
+          <div class="text-[10px] text-gray-400 mt-1">Hashrate (KH/s)</div>
         </div>
-        <div class="zion-panel-soft p-4">
-          <h3 class="text-sm font-bold text-gray-300 mb-2">📝 Recent Fee Payouts</h3>
-          <div id="payout-tab-fee-log" class="space-y-2 text-xs text-gray-300 max-h-64 overflow-y-auto log-tail">
-            <div class="text-gray-500 italic">Loading...</div>
-          </div>
+        <div class="zion-panel p-3 text-center">
+          <div class="text-xl font-bold text-emerald-400" id="miner-perf-accepted">—</div>
+          <div class="text-[10px] text-gray-400 mt-1">Shares Accepted</div>
+        </div>
+        <div class="zion-panel p-3 text-center">
+          <div class="text-xl font-bold text-rose-400" id="miner-perf-rejected">—</div>
+          <div class="text-[10px] text-gray-400 mt-1">Shares Rejected</div>
+        </div>
+        <div class="zion-panel p-3 text-center">
+          <div class="text-xl font-bold text-blue-400" id="miner-perf-height">—</div>
+          <div class="text-[10px] text-gray-400 mt-1">Current Height</div>
         </div>
       </div>
+    </div>
 
-      <!-- Miner Performance -->
-      <div class="zion-panel-soft p-4 mt-4">
-        <h3 class="text-sm font-bold text-gray-300 mb-3">⛏️ Miner Performance</h3>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div class="bg-black/20 rounded-lg p-3 text-center">
-            <div class="text-[10px] text-gray-400">Hashrate</div>
-            <div class="text-lg font-bold text-amber-400" id="miner-perf-hashrate">—</div>
-            <div class="text-[10px] text-gray-500">KH/s</div>
-          </div>
-          <div class="bg-black/20 rounded-lg p-3 text-center">
-            <div class="text-[10px] text-gray-400">Shares Accepted</div>
-            <div class="text-lg font-bold text-emerald-400" id="miner-perf-accepted">—</div>
-            <div class="text-[10px] text-gray-500">total</div>
-          </div>
-          <div class="bg-black/20 rounded-lg p-3 text-center">
-            <div class="text-[10px] text-gray-400">Shares Rejected</div>
-            <div class="text-lg font-bold text-rose-400" id="miner-perf-rejected">—</div>
-            <div class="text-[10px] text-gray-500">total</div>
-          </div>
-          <div class="bg-black/20 rounded-lg p-3 text-center">
-            <div class="text-[10px] text-gray-400">Current Height</div>
-            <div class="text-lg font-bold text-blue-400" id="miner-perf-height">—</div>
-            <div class="text-[10px] text-gray-500">block</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="zion-panel-soft p-4 mt-4">
-        <h3 class="text-sm font-bold text-gray-300 mb-2">⚠️ Payout Errors (if any)</h3>
-        <div id="payout-tab-error-log" class="space-y-2 text-xs text-gray-300 max-h-48 overflow-y-auto log-tail">
-          <div class="text-gray-500 italic">No errors detected</div>
-        </div>
+    <!-- Errors -->
+    <div class="zion-panel p-5">
+      <h3 class="text-sm font-bold mb-3">⚠️ Payout Errors (if any)</h3>
+      <div id="payout-tab-error-log" class="space-y-2 text-xs text-gray-300 max-h-48 overflow-y-auto log-tail">
+        <div class="text-gray-500 italic">No errors detected</div>
       </div>
     </div>
   </div>
@@ -3615,6 +3608,6 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
   </div>
 </div>
 
-<script src="/dashboard.js?v=10"></script>
+<script src="/dashboard.js?v=11"></script>
 </body>
 </html>
