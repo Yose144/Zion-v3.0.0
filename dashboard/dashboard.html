@@ -3376,6 +3376,31 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         </div>
       </div>
 
+      <!-- Live Pool Stats -->
+      <h3 class="text-sm font-bold text-gray-300 mb-3">📊 Live Pool Stats</h3>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        <div class="zion-panel-soft p-3 text-center">
+          <div class="text-[10px] text-gray-400">Pool Hashrate</div>
+          <div class="text-lg font-bold text-amber-400" id="pool-stat-hashrate">—</div>
+          <div class="text-[10px] text-gray-500">KH/s</div>
+        </div>
+        <div class="zion-panel-soft p-3 text-center">
+          <div class="text-[10px] text-gray-400">Active Miners</div>
+          <div class="text-lg font-bold text-emerald-400" id="pool-stat-miners">—</div>
+          <div class="text-[10px] text-gray-500">connected</div>
+        </div>
+        <div class="zion-panel-soft p-3 text-center">
+          <div class="text-[10px] text-gray-400">Accept Rate</div>
+          <div class="text-lg font-bold text-blue-400" id="pool-stat-accept-rate">—</div>
+          <div class="text-[10px] text-gray-500">%</div>
+        </div>
+        <div class="zion-panel-soft p-3 text-center">
+          <div class="text-[10px] text-gray-400">PPLNS Window</div>
+          <div class="text-lg font-bold text-purple-400" id="pool-stat-pplns">—</div>
+          <div class="text-[10px] text-gray-500">shares</div>
+        </div>
+      </div>
+
       <h3 class="text-sm font-bold text-gray-300 mb-3">📋 Fee Split Breakdown</h3>
       <div class="zion-panel-soft p-4 mb-6 overflow-x-auto">
         <table class="w-full text-left text-xs">
@@ -3590,6 +3615,6 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
   </div>
 </div>
 
-<script src="/dashboard.js?v=9"></script>
+<script src="/dashboard.js?v=10"></script>
 </body>
 </html>
