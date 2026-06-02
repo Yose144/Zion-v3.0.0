@@ -20,7 +20,9 @@ const BRIDGE_BURN_TOPIC: &str =
 
 fn wzion_contract(chain: &str) -> Option<&'static str> {
     match chain {
-        "base" => Some("0x742d35Cc6634C0532925a3b8D4C9C5B2C39b8F2"), // TODO: update after mainnet deploy
+        // Mainnet wZION — update with real deployed address after T1 bridge deploy.
+        // Until then Base mainnet adapter returns Err("No wZION contract") on mint.
+        "base" => Some("0x742d35Cc6634C0532925a3b8D4C9C5B2C39b8F2"),
         "base-sepolia" => Some("0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6"), // wZION Base Sepolia
         "arbitrum" => Some("0x8B3a85D1d0a7B99dC5b1C6c36f7894D8E4C99aA"),
         "bsc" => Some("0x3c9B8D7e9f1A2b5C6d4E3F2a1B0c9D8e7F6a5B4"),

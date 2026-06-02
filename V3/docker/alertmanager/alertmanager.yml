@@ -69,8 +69,11 @@ receivers:
         send_resolved: true
 
     # ── Discord (preferred — used in previous ZION ops) ──
+    # To activate:
+    #   1. Set DISCORD_WEBHOOK_URL in V3/docker/.env
+    #   2. Run: docker compose -f V3/docker/docker-compose.yml restart alertmanager
     # discord_configs:
-    #   - webhook_url: 'https://discord.com/api/webhooks/YOUR_ID/YOUR_TOKEN'
+    #   - webhook_url: 'YOUR_DISCORD_WEBHOOK_URL'
     #     title: '{{ range .Alerts }}{{ .Annotations.summary }}{{ end }}'
     #     message: |
     #       {{ range .Alerts }}
@@ -104,8 +107,9 @@ receivers:
         send_resolved: true
 
     # ── Discord ──
+    # See critical receiver for activation instructions.
     # discord_configs:
-    #   - webhook_url: 'https://discord.com/api/webhooks/YOUR_ID/YOUR_TOKEN'
+    #   - webhook_url: 'YOUR_DISCORD_WEBHOOK_URL'
     #     title: '{{ range .Alerts }}{{ .Annotations.summary }}{{ end }}'
     #     send_resolved: true
 

@@ -10,7 +10,9 @@ export ZION_POOL_BIND='0.0.0.0:8444'
 export ZION_NODE_RPC_ADDR='127.0.0.1:8443'
 export ZION_POOL_LOOP_COUNT='1000000'
 export ZION_MAX_SESSIONS_PER_IP='10'
-export ZION_POOL_WALLET='zion182e2v4x4r3u2j5r5t305k0d5y643q6l3n6je5f8'
+# WARNING: ZION_POOL_WALLET and ZION_POOL_PAYOUT_SK_HEX must be a matched pair.
+# The SK_HEX below corresponds to the OLD pool wallet. Update both together.
+export ZION_POOL_WALLET='zion1a6z5a4m830w6s6k7r508n300n6z30022q6qt0n7'
 export ZION_POOL_PAYOUT_SK_HEX='b8d7341c97b9402b67ad2a961ef055c66e3b7fb2568cf48cc78f7b1ffd2098d0'
 export ZION_NONCE_COUNT='4096'
 export ZION_VARDIFF_START_DIFF='1'
