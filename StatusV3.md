@@ -622,6 +622,100 @@ smoke na **novém** deploy cíli (legacy Pražský uzel k 2026-05-07 deprecated)
 
 ---
 
+## Co je nového 2026-06-03 (Dashboard v3 + Desktop Tauri + Full Stack Operational)
+
+### Dashboard v3 — L1–L6 Monitoring & Mainnet Metrics
+
+| Komponenta | Stav | Detail |
+|---|---|---|
+| **L1 služby** | ✅ Hotovo | Node, pool, miner monitoring s real-time KPI (height, peers, mempool, hashrate, shares, blocks) |
+| **L2 služby** | ✅ Hotovo | Bridge, DAO, Atomic Swap — port probe + status badge |
+| **L3 služby** | ✅ Hotovo | WARP relay monitoring |
+| **L4+ služby** | ✅ Hotovo | OASIS, Hiranyagarbha, Hiran inference — status + port checks |
+| **Mainnet chain metrics** | ✅ Hotovo | Edge vs Local height bar chart, sync gap, protocol version, consensus profile, accepted blocks, mempool transactions |
+| **Pool metrics** | ✅ Hotovo | Active miners, hashrate (KH/s), total hashes, total shares, blocks found — scraped from Prometheus `zion_pool_*` |
+| **Rust metrics collector** | ✅ Hotovo | Standalone binary `zion-dashboard-metrics.exe` polling Edge + Local RPC + pool Prometheus + Tailscale, snapshot every 5s |
+| **Legacy web dashboard** | ✅ Hotovo | `dashboard/app.py` — hybridní přístup: Rust collector → HTTP fallback → native probe |
+
+**Soubory:**
+- `dashboard/app.py` — Python HTTP dashboard s `/api/status`, `/api/metrics/collector`, `/api/events`
+- `dashboard/dashboard.html` — L1–L6 panely, mainnet charts (Chart.js), realtime bar, sync gap indicator
+- `dashboard/dashboard.js` — `populateL1()`–`populateL6()`, `updateMainnetMetrics()`, `renderMainnetCharts()`
+- `dashboard/metrics-collector/` — Isolated Rust workspace, polls `getChainInfo` from Edge (`77.42.71.94:8443`) and Local (`127.0.0.1:8443`)
+
+### Tauri Desktop Dashboard v3
+
+| Komponenta | Stav | Detail |
+|---|---|---|
+| **System tray** | ✅ Hotovo | `TrayIconBuilder` s Quit/Show menu, hide-on-close |
+| **Native IPC** | ✅ Hotovo | Rust commands: `probe_tcp`, `rpc_call` (JSON-RPC via `ureq`), `tail_log`, `run_command`, `start/stop_local_backup`, `get_local_backup_status` |
+| **Hybrid refresh** | ✅ Hotovo | App.tsx attempts native TCP probes + `rpcCall(getChainInfo)` to Edge + Local, falls back to native probe data if Python backend unreachable |
+| **Controls panel** | ✅ Hotovo | `ControlsPanel.tsx` wrapping `startLocalBackup`/`stopLocalBackup` invoking PowerShell scripts |
+| **Service grid** | ✅ Hotovo | `ServiceGrid.tsx` — L1–L6 cards with status, ports, purpose |
+| **Chain panel** | ✅ Hotovo | `ChainPanel.tsx` — Edge vs Local height, sync gap, network info |
+| **Pool panel** | ✅ Hotovo | `PoolPanel.tsx` — miners, hashrate, shares, blocks |
+| **Miner panel** | ✅ Hotovo | `MinerPanel.tsx` — hashrate, GPU/CPU backend, worker name |
+| **Log viewer** | ✅ Hotovo | `LogViewer.tsx` — tail local logs with Tauri `tail_log` command |
+| **Alerts panel** | ✅ Hotovo | `AlertsPanel.tsx` — severity-based alert list |
+| **Performance charts** | ✅ Hotovo | `PerformanceCharts.tsx` — Recharts line/bar charts |
+
+**Soubory:**
+- `APP&WEB/desktop-dashboard/` — Tauri v2 + React + Tailwind + Recharts
+- `APP&WEB/desktop-dashboard/src-tauri/src/main.rs` — Rust backend with tray, IPC commands, process control
+- `APP&WEB/desktop-dashboard/src/App.tsx` — Hybrid frontend refresh path
+- `APP&WEB/desktop-dashboard/src/components/` — Panel components
+
+### Edge Server Fix (2026-06-03)
+
+| Problém | Řešení | Stav |
+|---|---|---|
+| Zombie procesy `/usr/local/bin/zion-node` a `/usr/local/bin/zion-pool` držely porty | Ukončeny staré procesy, systemd služby restartovány | ✅ Fixed |
+| RPC bind `127.0.0.1:8443` — neveřejný | Upraveno na `0.0.0.0:8443` v `/etc/systemd/system/zion-edge-node1.service` | ✅ Fixed |
+| `zion-edge-node.service` neexistoval | Správná služba je `zion-edge-node1.service` | ✅ Fixed |
+
+**Ověření:**
+- Edge RPC `getChainInfo` → height 81 ✅
+- Edge pool stratum `77.42.71.94:8444` → accepting connections ✅
+- Pool metrics `77.42.71.94:8455/metrics` → Prometheus data ✅
+
+### Local Backup Node + Miner (2026-06-03)
+
+| Komponenta | Stav | Detail |
+|---|---|---|
+| **Local backup node** | ✅ Running | Synced from Edge via public IP (`77.42.71.94:8333`), height 81, Mainnet |
+| **GPU/CPU miner** | ✅ Hashing | Connected to Edge pool (`77.42.71.94:8444`), hashrate ~48.75 KH/s (CPU fallback, GPU compile flag missing) |
+| **Checklist** | ✅ 12/12 (100%) | All systems nominal — no alerts |
+
+**Postup spuštění (Windows 11):**
+```powershell
+# Build latest binaries
+cargo build --release --manifest-path V3/Cargo.toml --workspace
+
+# Start local backup node (syncs from Edge)
+$env:ZION_NODE_ID="local-backup-node"
+$env:ZION_P2P_BIND="0.0.0.0:8333"
+$env:ZION_RPC_BIND="0.0.0.0:8443"
+$env:ZION_SEED_PEERS="77.42.71.94:8333"
+$env:ZION_NODE_STATE_PATH="V3/data/zion-node-state.db"
+$env:ZION_MINER_ADDRESS="zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3"
+$env:ZION_HUMANITARIAN_WALLET="zion1m4v5z8z850u480c5c208z274e334369275n5y20"
+$env:ZION_ISSOBELLA_WALLET="zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702"
+.\V3\target\release\node.exe
+
+# Start miner (connects to Edge pool)
+$env:ZION_POOL_ADDR="77.42.71.94:8444"
+$env:ZION_LOOP_COUNT="1000000"
+$env:ZION_WORKER_NAME="gpu-worker-local"
+$env:ZION_MINER_ID="gpu-miner-local-01"
+.\V3\target\release\zion-miner.exe --pool 77.42.71.94:8444 --worker gpu-worker-local --loops 1000000
+```
+
+**Poznámky:**
+- Lokální node vyžaduje smazání starého testovacího chainu (`V3/data/zion-node-state.db`) před prvním syncem z Edge — starý chain (height 2106) byl neslučitelný s Edge chainem (height 81).
+- GPU mining vyžaduje build s `--features gpu-opencl` (nebo `gpu-cuda`, `gpu-metal`). Bez feature flagu miner fallbackne na CPU.
+
+---
+
 ## TL;DR pro laika
 
 Síť ZION V3 je v **„release candidate"** stavu. Core funkčnost (běžící nod,

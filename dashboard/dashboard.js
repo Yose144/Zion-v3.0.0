@@ -205,6 +205,7 @@ async function refreshAll(){
     if(currentTab === 'hiran') loadAiStatus();
     if(currentTab === 'overview') loadMempool();
     if(currentTab === 'controls') { loadMinerPerformance(); loadDepGraphControls(); }
+    updateMainnetMetrics(statusData);
     updateConnectionStatus(true);
   } catch(e){
     console.error('Refresh error:', e);
@@ -383,10 +384,78 @@ async function updateLayerServices(){
         el.className = 'text-[10px] text-gray-500 mt-0.5';
         if(card) card.classList.remove('svc-live');
       }
+      // Update port details if element exists
+      const portsEl = document.getElementById('val-' + sid + '-ports');
+      if(portsEl && svc){
+        const open = svc.ports_open || [];
+        const closed = svc.ports_closed || [];
+        const ports = svc.ports || {};
+        if(open.length > 0){
+          portsEl.innerHTML = open.map(p => `<span class="text-[10px] px-1 py-0.5 bg-emerald-500/20 text-emerald-300 rounded">${escapeHtml(p)}</span>`).join(' ');
+        } else if(Object.keys(ports).length > 0){
+          portsEl.innerHTML = '<span class="text-[10px] text-gray-500">All ports closed</span>';
+        } else {
+          portsEl.innerHTML = '<span class="text-[10px] text-gray-500">No ports configured</span>';
+        }
+      }
+      // Update purpose tooltip
+      const purposeEl = document.getElementById('val-' + sid + '-purpose');
+      if(purposeEl && svc){
+        purposeEl.textContent = svc.purpose || '';
+      }
     }
   }catch(e){
     console.error('updateLayerServices error:', e);
   }
+}
+
+// ── Mainnet Overview Metrics ──
+function updateMainnetMetrics(s){
+  if(!s) return;
+  const isEdge = s.topology === 'edge-primary';
+  const en = s.edge_node || {};
+  const pe = s.pool_edge || {};
+  const tailscale = s.tailscale || {};
+
+  // Tailscale VPN badge
+  const tsEl = document.getElementById('val-tailscale-status');
+  if(tsEl){
+    const ok = tailscale.vpn_ok;
+    tsEl.textContent = ok ? '● VPN OK' : '○ VPN Down';
+    tsEl.className = 'text-[10px] font-bold ' + (ok ? 'text-emerald-400' : 'text-red-400');
+  }
+
+  // Edge Node extra metrics
+  const enNet = document.getElementById('val-edge-node-network');
+  if(enNet) enNet.textContent = en.network || '—';
+  const enProto = document.getElementById('val-edge-node-protocol');
+  if(enProto) enProto.textContent = en.protocol_version || '—';
+  const enCons = document.getElementById('val-edge-node-consensus');
+  if(enCons) enCons.textContent = en.consensus_profile || '—';
+  const enBlocks = document.getElementById('val-edge-node-accepted-blocks');
+  if(enBlocks) enBlocks.textContent = en.accepted_blocks ?? '—';
+
+  // Sync gap
+  const syncEl = document.getElementById('val-sync-gap');
+  if(syncEl){
+    const gap = pe.sync_gap;
+    if(gap != null){
+      syncEl.textContent = gap === 0 ? '✓ Synced' : gap + ' blocks behind';
+      syncEl.className = 'text-xs font-bold ' + (gap === 0 ? 'text-emerald-400' : 'text-amber-400');
+    } else {
+      syncEl.textContent = '—';
+      syncEl.className = 'text-xs text-gray-500';
+    }
+  }
+
+  // Pool extra metrics
+  const p = s.pool || {};
+  const ph = document.getElementById('val-pool-total-hashes');
+  if(ph) ph.textContent = p.total_hashes != null ? fmtNum(p.total_hashes) : '—';
+  const ps = document.getElementById('val-pool-total-shares');
+  if(ps) ps.textContent = p.total_shares != null ? fmtNum(p.total_shares) : '—';
+  const phr = document.getElementById('val-pool-hashrate');
+  if(phr) phr.textContent = p.hashrate_khs != null ? p.hashrate_khs.toFixed(2) + ' KH/s' : '—';
 }
 
 function updatePayouts(p, topology){
@@ -1677,6 +1746,67 @@ async function renderExtraCharts(s){
       }, {responsive:true, plugins:{legend:{labels:{color:'#cbd5e1',font:{size:10}}}}});
     }
   } catch(e){}
+  // Mainnet charts from Rust collector
+  try { await renderMainnetCharts(); } catch(e){ console.error('mainnet charts', e); }
+}
+
+async function renderMainnetCharts(){
+  const res = await fetch('/api/metrics/collector').then(r => r.json()).catch(()=>null);
+  if(!res || res.error) return;
+
+  const common = {
+    responsive: true,
+    plugins: { legend: { labels: { color: '#cbd5e1' } } },
+    scales: {
+      x: { ticks: { color: '#64748b', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+      y: { ticks: { color: '#64748b' }, grid: { color: 'rgba(255,255,255,0.04)' } }
+    },
+    animation: { duration: 300 }
+  };
+
+  const en = res.edge_node || {};
+  const ln = res.local_node || {};
+  const pool = res.pool || {};
+
+  // Single-point bar charts for current mainnet state
+  if(document.getElementById('chart-mainnet-height')){
+    mkChart('chart-mainnet-height', 'bar', {
+      labels: ['Edge Node', 'Local Backup'],
+      datasets: [{
+        label: 'Chain Height',
+        data: [en.chain_height || 0, ln.chain_height || 0],
+        backgroundColor: ['rgb(6 182 212)', 'rgb(147 51 234)'],
+        borderRadius: 4
+      }]
+    }, common);
+  }
+
+  if(document.getElementById('chart-mainnet-pool')){
+    mkChart('chart-mainnet-pool', 'bar', {
+      labels: ['Active Miners', 'Blocks Found'],
+      datasets: [{
+        label: 'Count',
+        data: [pool.active_miners || 0, pool.blocks_found || 0],
+        backgroundColor: ['rgb(16 185 129)', 'rgb(255 215 0)'],
+        borderRadius: 4
+      }]
+    }, common);
+  }
+
+  if(document.getElementById('chart-mainnet-network')){
+    mkChart('chart-mainnet-network', 'bar', {
+      labels: ['Edge Peers', 'Edge Mempool', 'Local Peers', 'Local Mempool'],
+      datasets: [{
+        label: 'Count',
+        data: [
+          en.known_peers || 0, en.mempool_size || 0,
+          ln.known_peers || 0, ln.mempool_size || 0
+        ],
+        backgroundColor: ['rgb(6 182 212)', 'rgb(59 130 246)', 'rgb(147 51 234)', 'rgb(236 72 153)'],
+        borderRadius: 4
+      }]
+    }, common);
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -2217,22 +2347,35 @@ async function loadLayerFull(layer){
 }
 
 async function populateL1(){
-  const [status, events] = await Promise.all([
+  const [status, events, collector] = await Promise.all([
     fetch('/api/status').then(r=>r.json()),
-    fetch('/api/events').then(r=>r.json()).catch(()=>({events:[]}))
+    fetch('/api/events').then(r=>r.json()).catch(()=>({events:[]})),
+    fetch('/api/metrics/collector').then(r=>r.json()).catch(()=>null)
   ]);
   const n1 = status.node1 || {};
+  const en = status.edge_node || {};
   const pool = status.pool || {};
   const miner = status.miner || {};
+  const pe = status.pool_edge || {};
   const el = id => document.getElementById(id);
-  if(el('l1-height')) el('l1-height').textContent = (n1.chain_height || 0).toLocaleString();
+
+  // L1 KPIs — prefer collector data for mainnet metrics
+  const cEdge = collector?.edge_node || {};
+  const cLocal = collector?.local_node || {};
+  const cPool = collector?.pool || {};
+
+  const edgeHeight = cEdge.chain_height ?? en.chain_height ?? '—';
+  const localHeight = cLocal.chain_height ?? n1.chain_height ?? '—';
+  if(el('l1-height')) el('l1-height').textContent = edgeHeight !== '—' ? fmtNum(edgeHeight) : fmtNum(localHeight);
+
   if(el('l1-hashrate')){
-    const hr = miner.hashrate_hs || miner.hashrate || 0;
-    el('l1-hashrate').textContent = hr > 1000 ? (hr/1000).toFixed(1)+' KH/s' : hr.toFixed(0)+' H/s';
+    const hr = cPool.hashrate_khs ?? miner.hashrate ?? 0;
+    el('l1-hashrate').textContent = hr > 0 ? hr.toFixed(2)+' KH/s' : '—';
   }
-  if(el('l1-peers')) el('l1-peers').textContent = n1.known_peers || 0;
-  if(el('l1-sessions')) el('l1-sessions').textContent = pool.active_sessions || 0;
-  if(el('l1-blocks')) el('l1-blocks').textContent = pool.blocks_found || 0;
+  if(el('l1-peers')) el('l1-peers').textContent = cEdge.known_peers ?? en.known_peers ?? n1.known_peers ?? 0;
+  if(el('l1-sessions')) el('l1-sessions').textContent = cPool.active_miners ?? pool.active_sessions ?? 0;
+  if(el('l1-blocks')) el('l1-blocks').textContent = cPool.blocks_found ?? pool.blocks_found ?? 0;
+
   // Recent blocks
   const rblocks = el('l1-recent-blocks');
   if(rblocks && events.events && events.events.length > 0){
@@ -2248,17 +2391,31 @@ async function populateL1(){
   } else if(rblocks){
     rblocks.innerHTML = '<div class="text-gray-600 italic">No block events yet.</div>';
   }
-  // Populate real-time bar
+
+  // Populate real-time bar with full mainnet data
   const rt = id => document.getElementById(id);
-  if(rt('l1-rt-height')) rt('l1-rt-height').textContent = fmtNum(n1.height || n1.chain_height || 0);
-  if(rt('l1-rt-peers'))  rt('l1-rt-peers').textContent  = n1.peers ?? n1.known_peers ?? '—';
-  if(rt('l1-rt-hashrate')) rt('l1-rt-hashrate').textContent = status.pool?.hashrate ? fmtNum(status.pool.hashrate)+'H/s' : '—';
-  if(rt('l1-rt-shares'))   rt('l1-rt-shares').textContent   = fmtNum(status.pool?.shares_accepted ?? 0);
+  if(rt('l1-rt-height')) rt('l1-rt-height').textContent = edgeHeight !== '—' ? fmtNum(edgeHeight) : fmtNum(localHeight);
+  if(rt('l1-rt-peers'))  rt('l1-rt-peers').textContent  = cEdge.known_peers ?? en.known_peers ?? n1.known_peers ?? '—';
+  if(rt('l1-rt-hashrate')) rt('l1-rt-hashrate').textContent = cPool.hashrate_khs ? cPool.hashrate_khs.toFixed(2)+' KH/s' : (miner.hashrate ? fmtNum(miner.hashrate)+'H/s' : '—');
+  if(rt('l1-rt-shares'))   rt('l1-rt-shares').textContent   = fmtNum(cPool.total_shares ?? pool.shares_accepted ?? 0);
+
   const mkBadge = (alive) => alive ? '● LIVE' : '● DOWN';
   const mkCls   = (alive, el) => { if(el){ el.textContent = mkBadge(alive); el.className = 'text-lg font-bold ' + (alive?'text-emerald-400':'text-red-400'); } };
-  mkCls(n1.alive ?? n1.running, rt('l1-rt-node1-badge'));
-  mkCls(status.pool?.alive ?? status.pool?.running, rt('l1-rt-pool-badge'));
-  mkCls(status.pool_edge?.alive ?? status.pool_edge?.running, rt('l1-rt-edge-badge'));
+  mkCls(en.running ?? n1.running, rt('l1-rt-node1-badge'));
+  mkCls(pool.running, rt('l1-rt-pool-badge'));
+  mkCls(pe.running, rt('l1-rt-edge-badge'));
+
+  // Sync gap indicator
+  if(rt('l1-rt-sync')){
+    const gap = pe.sync_gap;
+    if(gap != null){
+      rt('l1-rt-sync').textContent = gap === 0 ? '✓ Synced' : gap + ' behind';
+      rt('l1-rt-sync').className = 'text-lg font-bold ' + (gap === 0 ? 'text-emerald-400' : 'text-amber-400');
+    } else {
+      rt('l1-rt-sync').textContent = '—';
+      rt('l1-rt-sync').className = 'text-lg font-bold text-gray-500';
+    }
+  }
 }
 
 async function populateL2(){
@@ -2525,6 +2682,63 @@ async function renderMetricsButtons(){
       <span>${s.icon}</span><span>${escapeHtml(s.name)}</span>
       <span class="text-[10px] ${s.alive ? 'text-emerald-400' : 'text-gray-500'}">${s.alive ? '●' : '○'}</span>
     </button>`).join('');
+  // Also load Rust collector snapshot
+  loadMetricsCollector();
+}
+
+async function loadMetricsCollector(){
+  const container = document.getElementById('metrics-collector');
+  if(!container) return;
+  try{
+    const res = await fetch('/api/metrics/collector').then(r => r.json());
+    if(res.error || res.ok === false){
+      container.innerHTML = '<div class="text-amber-400 text-xs">Rust collector offline — ' + escapeHtml(res.error || 'unknown') + '</div>';
+      return;
+    }
+    const ts = new Date(res.timestamp * 1000).toLocaleTimeString();
+    const age = res._file_age_sec != null ? res._file_age_sec + 's ago' : 'unknown';
+    const en = res.edge_node || {};
+    const ln = res.local_node || {};
+    const pool = res.pool || {};
+
+    let html = '<div class="text-xs text-emerald-400 mb-2">✓ Rust collector snapshot (' + escapeHtml(age) + ') @ ' + escapeHtml(ts) + '</div>';
+    html += '<div class="grid grid-cols-1 md:grid-cols-3 gap-3">';
+
+    // Edge Node
+    html += '<div class="zion-panel p-3"><div class="text-[10px] text-gray-400 uppercase mb-1">Edge Node</div>';
+    html += '<div class="text-lg font-bold">' + (en.chain_height != null ? fmtNum(en.chain_height) : '—') + '</div>';
+    html += '<div class="text-[10px] text-gray-400">Height</div>';
+    html += '<div class="text-xs mt-1">Peers: <span class="text-white">' + (en.known_peers ?? '—') + '</span> · Mempool: <span class="text-white">' + (en.mempool_size ?? '—') + '</span></div>';
+    html += '<div class="text-[10px] text-gray-500">' + (en.network || '—') + ' · v' + (en.protocol_version ?? '—') + ' · ' + (en.consensus_profile || '—') + '</div>';
+    html += '</div>';
+
+    // Local Node
+    html += '<div class="zion-panel p-3"><div class="text-[10px] text-gray-400 uppercase mb-1">Local Backup</div>';
+    html += '<div class="text-lg font-bold">' + (ln.chain_height != null ? fmtNum(ln.chain_height) : '—') + '</div>';
+    html += '<div class="text-[10px] text-gray-400">Height</div>';
+    html += '<div class="text-xs mt-1">Peers: <span class="text-white">' + (ln.known_peers ?? '—') + '</span> · Mempool: <span class="text-white">' + (ln.mempool_size ?? '—') + '</span></div>';
+    html += '</div>';
+
+    // Pool
+    html += '<div class="zion-panel p-3"><div class="text-[10px] text-gray-400 uppercase mb-1">Edge Pool</div>';
+    html += '<div class="text-lg font-bold">' + (pool.active_miners != null ? pool.active_miners : '—') + '</div>';
+    html += '<div class="text-[10px] text-gray-400">Active Miners</div>';
+    html += '<div class="text-xs mt-1">Hashrate: <span class="text-white">' + (pool.hashrate_khs != null ? pool.hashrate_khs.toFixed(2) + ' KH/s' : '—') + '</span></div>';
+    html += '<div class="text-xs">Blocks: <span class="text-white">' + (pool.blocks_found ?? '—') + '</span> · Hashes: <span class="text-white">' + (pool.total_hashes != null ? fmtNum(pool.total_hashes) : '—') + '</span></div>';
+    html += '</div>';
+
+    html += '</div>';
+
+    // Tailscale
+    html += '<div class="mt-2 flex items-center gap-2">';
+    html += '<span class="text-[10px] px-2 py-0.5 rounded ' + (res.tailscale_ok ? 'bg-emerald-500/20 text-emerald-300' : 'bg-red-500/20 text-red-300') + '">';
+    html += res.tailscale_ok ? '● Tailscale VPN OK' : '○ Tailscale VPN Down';
+    html += '</span></div>';
+
+    container.innerHTML = html;
+  }catch(e){
+    container.innerHTML = '<div class="text-red-400 text-xs">Failed to load collector: ' + escapeHtml(e.message) + '</div>';
+  }
 }
 
 async function loadMetrics(sid){
