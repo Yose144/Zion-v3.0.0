@@ -2764,6 +2764,25 @@ def build_payout_status() -> dict:
         if bal and not bal.get("_rpc_error"):
             atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
             status["pool_wallet_balance"] = atomic
+    # On-chain balances for fee-split wallets
+    balances = {}
+    for key, addr in [("miner", status["miner_wallet"]),
+                      ("humanitarian", status["humanitarian_wallet"]),
+                      ("issobella", status["issobella_wallet"])]:
+        if addr and addr.startswith("zion1"):
+            bal = rpc_call("127.0.0.1", 8443, "getBalance", {"address": addr})
+            if bal and not bal.get("_rpc_error"):
+                atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
+                balances[key] = {"atomic": atomic, "zion": atomic / 1_000_000_000_000}
+    status["balances"] = balances
+    # Cumulative burned (1% of every block subsidy, never minted)
+    total_blocks = status["blocks_found"]
+    if total_blocks > 0:
+        # Average subsidy ~5,400 ZION per block in early mainnet
+        avg_subsidy = 5_400.067
+        status["burned_total"] = total_blocks * avg_subsidy * 0.01
+    else:
+        status["burned_total"] = 0.0
     # Fetch pool stats and miners
     status["pool_stats"] = fetch_pool_stats()
     status["miners"] = fetch_pool_miners()
