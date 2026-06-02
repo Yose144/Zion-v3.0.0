@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 
-const HUMANITARIAN_WALLET = 'zion1t4w447d7k4c600h3x893m5r55645w4p057yf4d7';
+const HUMANITARIAN_WALLET = 'zion1m4v5z8z850u480c5c208z274e334369275n5y20';
 
 const getCommunities = (cs: boolean) => [
   {
@@ -116,7 +116,7 @@ export default function L5FreeWorldPage() {
                 <Heart className="h-3 w-3" /> {cs ? '5 % z každého bloku → L5 fond' : '5% of every block → L5 fund'}
               </span>
               <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-emerald-200">
-                <CheckCircle2 className="h-3 w-3" /> {cs ? '~15 000 ZION / měsíc' : '~15,000 ZION / month'}
+                <CheckCircle2 className="h-3 w-3" /> {cs ? '~11,7 M ZION / měsíc' : '~11.7M ZION / month'}
               </span>
               <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
                 <Clock className="h-3 w-3" /> {cs ? 'Odemčeno blok ~525 600' : 'Unlocked block ~525,600'}
@@ -142,7 +142,7 @@ export default function L5FreeWorldPage() {
             </div>
             <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-4 text-center">
               <p className="text-xs uppercase tracking-wider text-gray-400 mb-1">{cs ? 'Přibližně / měsíc' : 'Approx / month'}</p>
-              <p className="text-3xl font-bold text-emerald-400">~15k</p>
+              <p className="text-3xl font-bold text-emerald-400">~11,7M</p>
               <p className="text-xs text-gray-500 mt-1">ZION</p>
             </div>
             <div className="rounded-2xl border border-cyan-500/30 bg-cyan-500/5 p-4 text-center">
