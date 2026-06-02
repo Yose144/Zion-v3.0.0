@@ -154,6 +154,14 @@ async function refreshAll(){
     const resourcesData = unwrap(res);
 
     document.getElementById('timestamp').textContent = '⏱ ' + new Date(statusData.timestamp).toLocaleTimeString();
+    // Update topology badge
+    const topoBadge = document.getElementById('topology-badge');
+    if(topoBadge && statusData.topology){
+      topoBadge.textContent = statusData.topology === 'edge-primary' ? '🌍 Edge-Primary' : '🔷 Local-Dev';
+      topoBadge.className = statusData.topology === 'edge-primary' 
+        ? 'text-[10px] px-2 py-0.5 rounded-full font-bold bg-purple-700/50 text-purple-300'
+        : 'text-[10px] px-2 py-0.5 rounded-full font-bold bg-blue-700/50 text-blue-300';
+    }
     document.getElementById('progressText').textContent = checklistData.passed + '/' + checklistData.total;
     document.getElementById('progressBar').style.width = checklistData.pct + '%';
 
@@ -2996,6 +3004,9 @@ function applySettings(s){
   if(wd && s.auto_launch_watchdog != null){ wd.checked = !!s.auto_launch_watchdog; }
   const tt = document.getElementById('settings-tooltips');
   if(tt && s.show_tooltips != null){ tt.checked = !!s.show_tooltips; }
+  // topology
+  const topoSel = document.getElementById('settings-topology');
+  if(topoSel && s.topology){ topoSel.value = s.topology; }
   // apply theme
   if(s.theme === 'light'){ document.body.classList.add('light-mode'); }
   else { document.body.classList.remove('light-mode'); }
@@ -3010,6 +3021,18 @@ function openSettingsModal(){
   const m = document.getElementById('settings-modal');
   if(m) m.classList.remove('hidden');
   loadSettings();
+  loadTopologyConfig();
+}
+
+async function loadTopologyConfig(){
+  try{
+    const r = await fetch('/api/config');
+    const d = await r.json();
+    const topoSel = document.getElementById('settings-topology');
+    if(topoSel && d.topology){ topoSel.value = d.topology; }
+  }catch(e){
+    console.warn('Failed to load topology config', e);
+  }
 }
 function closeSettingsModal(){
   const m = document.getElementById('settings-modal');
@@ -3034,10 +3057,29 @@ async function saveSettings(){
   if(wd) payload.auto_launch_watchdog = wd.checked;
   const tt = document.getElementById('settings-tooltips');
   if(tt) payload.show_tooltips = tt.checked;
+  const topo = document.getElementById('settings-topology');
+  if(topo) payload.topology = topo.value;
   try{
+    // Save regular settings
     const r = await fetch('/api/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
     const d = await r.json();
     applySettings(d.settings || d);
+    
+    // Handle topology switch separately
+    if(topo && payload.topology){
+      try{
+        const cr = await fetch('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({topology: payload.topology})});
+        const cd = await cr.json();
+        if(cd.ok){
+          alert('Topology changed to '+payload.topology+'. Dashboard restart required. Please refresh the page.');
+        }else{
+          console.warn('Topology switch failed', cd);
+        }
+      }catch(e){
+        console.warn('Topology switch error', e);
+      }
+    }
+    
     const status = document.getElementById('settings-save-status');
     if(status){ status.textContent = 'Saved!'; setTimeout(()=> status.textContent='', 1500); }
   }catch(e){
