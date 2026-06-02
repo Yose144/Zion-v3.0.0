@@ -41,6 +41,7 @@ export async function GET() {
       : 0;
 
     const metrics = {
+      // Legacy flat format (keep for backward compat)
       chainHeight: last.n1_height ?? 0,
       peerCount: last.n1_peers ?? 0,
       mempoolSize: 0,
@@ -86,6 +87,32 @@ export async function GET() {
       bootTime: 0,
       coreUp: last.n1_height != null ? 1 : 0,
       poolUp: last.sessions != null ? 1 : 0,
+
+      // V3 nested format ( GuardianDashboard.tsx expects this )
+      chain: {
+        height: last.n1_height ?? 0,
+        peers: last.n1_peers ?? 0,
+        mempool: 0,
+        tps: 0,
+      },
+      pool: {
+        sessions: last.sessions ?? 0,
+        hashrate_hps: (last.hashrate ?? 0) * 1000,
+        accept_rate_pct: acceptRate,
+        uptime_secs: 0,
+      },
+      miner: {
+        hashrate_hps: (last.hashrate ?? 0) * 1000,
+        accepted: last.shares_ok ?? 0,
+        rejected: last.shares_bad ?? 0,
+        accept_rate_pct: acceptRate,
+      },
+      system: {
+        load1: 0,
+        mem_used_gb: 0,
+        mem_total_gb: 0,
+        disk_used_pct: 0,
+      },
     };
 
     return NextResponse.json(metrics, {

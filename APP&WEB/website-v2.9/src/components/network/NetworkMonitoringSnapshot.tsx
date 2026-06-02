@@ -63,18 +63,87 @@ async function metricValue(query: string): Promise<number | null> {
   }
 }
 
-const EDGE_CORE_UP_QUERY = 'up{job="zion-core",instance="host.docker.internal:9115"}';
-const EDGE_POOL_UP_QUERY = 'up{job="zion-pool",instance="zion-pool:8080"}';
+async function fetchBlockchainStats(): Promise<{
+  height: number | null;
+  difficulty: number | null;
+  status: string | null;
+}> {
+  try {
+    const res = await fetch('/api/blockchain/stats', {
+      cache: 'no-store',
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) return { height: null, difficulty: null, status: null };
+    const data = await res.json();
+    return {
+      height: data.block_height ?? null,
+      difficulty: data.difficulty ?? null,
+      status: data.status ?? null,
+    };
+  } catch {
+    return { height: null, difficulty: null, status: null };
+  }
+}
+
+async function fetchPoolStats(): Promise<{
+  sessions: number | null;
+  acceptRate: number | null;
+  uptime: number | null;
+  hashrate: number | null;
+}> {
+  try {
+    const res = await fetch('/api/pool/stats', {
+      cache: 'no-store',
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) return { sessions: null, acceptRate: null, uptime: null, hashrate: null };
+    const data = await res.json();
+    const runtime = data.runtime ?? {};
+    const agg = data.aggregate ?? {};
+    return {
+      sessions: runtime.active_miners ?? agg.active_miners ?? null,
+      acceptRate: runtime.accept_rate_pct ?? agg.accept_rate_pct ?? null,
+      uptime: runtime.pool_uptime_seconds ?? null,
+      hashrate: agg.hashrate ?? null,
+    };
+  } catch {
+    return { sessions: null, acceptRate: null, uptime: null, hashrate: null };
+  }
+}
+
+async function fetchNetworkStatus(): Promise<{
+  coreOnline: boolean;
+  poolOnline: boolean;
+}> {
+  try {
+    const res = await fetch('/api/network', {
+      cache: 'no-store',
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) return { coreOnline: false, poolOnline: false };
+    const data = await res.json();
+    const nodes = data.nodes ?? [];
+    const core = nodes.find((n: any) => n.id === 'core-pc');
+    const edge = nodes.find((n: any) => n.id === 'edge-vps');
+    return {
+      coreOnline: core?.online ?? false,
+      poolOnline: edge?.online ?? false,
+    };
+  } catch {
+    return { coreOnline: false, poolOnline: false };
+  }
+}
 
 async function fetchMonitoringSnapshot(): Promise<MonitoringSnapshot> {
-  const values = await Promise.all([
-    metricValue('zion_chain_height'),
-    metricValue(EDGE_CORE_UP_QUERY),
-    metricValue(EDGE_POOL_UP_QUERY),
-    metricValue('zion_pool_active_sessions'),
-    metricValue('zion_pool_accept_rate_pct'),
-    metricValue('zion_pool_uptime_seconds'),
-    metricValue('zion_template_fees_zion'),
+  // Primary data from live APIs (always available)
+  const [chain, pool, network] = await Promise.all([
+    fetchBlockchainStats(),
+    fetchPoolStats(),
+    fetchNetworkStatus(),
+  ]);
+
+  // Enrichment from Prometheus (optional — may be null if Prometheus is down)
+  const [load1, memAvailable, memTotal, diskAvailable, diskTotal] = await Promise.all([
     metricValue('node_load1'),
     metricValue('node_memory_MemAvailable_bytes'),
     metricValue('node_memory_MemTotal_bytes'),
@@ -83,18 +152,18 @@ async function fetchMonitoringSnapshot(): Promise<MonitoringSnapshot> {
   ]);
 
   return {
-    chainHeight: values[0],
-    coreUp: values[1],
-    poolUp: values[2],
-    poolSessions: values[3],
-    poolAcceptRate: values[4],
-    poolUptime: values[5],
-    templateFees: values[6],
-    load1: values[7],
-    memAvailable: values[8],
-    memTotal: values[9],
-    diskAvailable: values[10],
-    diskTotal: values[11],
+    chainHeight: chain.height,
+    coreUp: network.coreOnline ? 1 : 0,
+    poolUp: network.poolOnline ? 1 : 0,
+    poolSessions: pool.sessions,
+    poolAcceptRate: pool.acceptRate,
+    poolUptime: pool.uptime,
+    templateFees: null, // Not exposed by current API; placeholder for future
+    load1,
+    memAvailable,
+    memTotal,
+    diskAvailable,
+    diskTotal,
   };
 }
 

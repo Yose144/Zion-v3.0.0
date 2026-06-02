@@ -2501,12 +2501,13 @@ impl ChainState {
         let mut seen_sender_nonces = HashSet::new();
         let mut coinbase_count = 0usize;
         let mut total_coinbase_zion = 0u64;
-        let has_fee_addresses = !block.humanitarian_address.is_empty()
-            || !block.issobella_address.is_empty()
-            || !block.pool_fee_address.is_empty();
-        let has_all_fee_addresses = !block.humanitarian_address.is_empty()
-            && !block.issobella_address.is_empty()
-            && !block.pool_fee_address.is_empty();
+        // Fee split is active when humanitarian + issobella funds are present.
+        // The pool-fee 1% slot is burned (never minted), so it has no address
+        // and no coinbase output.
+        let has_fee_addresses =
+            !block.humanitarian_address.is_empty() || !block.issobella_address.is_empty();
+        let has_all_fee_addresses =
+            !block.humanitarian_address.is_empty() && !block.issobella_address.is_empty();
         if has_fee_addresses && !has_all_fee_addresses {
             return Err("peer block fee split metadata must provide all fee addresses".to_string());
         }
@@ -2514,8 +2515,10 @@ impl ChainState {
             expected_miner_reward,
             expected_humanitarian_reward,
             expected_issobella_reward,
-            expected_pool_fee_reward,
+            expected_burned_pool_fee,
         ) = emission::fee_split(block.subsidy_zion);
+        // Total newly-minted coinbase = subsidy minus the burned pool fee.
+        let expected_minted = block.subsidy_zion - expected_burned_pool_fee;
         let total_fees_zion = block
             .transactions
             .iter()
@@ -2594,14 +2597,6 @@ impl ChainState {
                                     block.height, block.issobella_address
                                 ),
                             ),
-                            3 => (
-                                block.pool_fee_address.as_str(),
-                                expected_pool_fee_reward,
-                                format!(
-                                    "coinbase_pool_fee:{}:{}",
-                                    block.height, block.pool_fee_address
-                                ),
-                            ),
                             _ => {
                                 return Err(
                                     "peer block contains too many split coinbase transactions"
@@ -2651,17 +2646,18 @@ impl ChainState {
             .collect::<Result<Vec<_>, String>>()?
             .into_iter()
             .sum::<u64>();
-        if coinbase_count > 4 {
-            return Err("peer block contains more than four coinbase transactions".to_string());
+        if coinbase_count > 3 {
+            return Err("peer block contains more than three coinbase transactions".to_string());
         }
         if !block.miner_address.is_empty() && coinbase_count == 0 {
             return Err(
                 "peer block miner_address is set but coinbase transaction is missing".to_string(),
             );
         }
-        if has_all_fee_addresses && coinbase_count != 4 {
+        if has_all_fee_addresses && coinbase_count != 3 {
             return Err(
-                "peer block with fee split metadata must contain four coinbase transactions"
+                "peer block with fee split metadata must contain three coinbase transactions \
+                 (miner/humanitarian/issobella; the 1% pool fee is burned)"
                     .to_string(),
             );
         }
@@ -2671,10 +2667,17 @@ impl ChainState {
                     .to_string(),
             );
         }
-        if total_coinbase_zion != 0 && total_coinbase_zion != block.subsidy_zion {
+        // With fee split, the coinbase mints 99% (89/5/5) and burns the 1% pool
+        // fee; without it, the single coinbase mints the full subsidy.
+        let expected_coinbase_total = if has_all_fee_addresses {
+            expected_minted
+        } else {
+            block.subsidy_zion
+        };
+        if total_coinbase_zion != 0 && total_coinbase_zion != expected_coinbase_total {
             return Err(format!(
-                "peer block coinbase total {} does not match subsidy {}",
-                total_coinbase_zion, block.subsidy_zion
+                "peer block coinbase total {} does not match expected {}",
+                total_coinbase_zion, expected_coinbase_total
             ));
         }
         if total_fees_zion != block.total_fees_zion {
@@ -2683,7 +2686,7 @@ impl ChainState {
         if block.body_hash_hex != body_hash_hex(&block.transactions) {
             return Err("peer block body hash does not match serialized transactions".to_string());
         }
-        let expected_block_miner_reward = if has_all_fee_addresses && coinbase_count == 4 {
+        let expected_block_miner_reward = if has_all_fee_addresses && coinbase_count == 3 {
             expected_miner_reward
         } else {
             block.subsidy_zion
@@ -3177,7 +3180,8 @@ impl ChainState {
         miner_address: &str,
         humanitarian_address: &str,
         issobella_address: &str,
-        pool_fee_address: &str,
+        // The pool-fee 1% slot is burned (never minted), so no address is used.
+        _pool_fee_address: &str,
     ) -> TemplateState {
         let next_height = current_height.saturating_add(1);
         let mut selected_transactions = select_template_transactions(mempool);
@@ -3191,13 +3195,16 @@ impl ChainState {
         // Phase 14: Generate coinbase transaction(s) when miner_address is configured.
         if !miner_address.is_empty() {
             let subsidy = emission::block_subsidy(next_height);
-            let has_fee_addresses = !humanitarian_address.is_empty()
-                && !issobella_address.is_empty()
-                && !pool_fee_address.is_empty();
+            // Fee split is active when the humanitarian + issobella funds are
+            // configured. The pool-fee 1% slot is BURNED (never minted), so it
+            // requires no address and produces no coinbase output.
+            let has_fee_addresses =
+                !humanitarian_address.is_empty() && !issobella_address.is_empty();
 
             if has_fee_addresses {
-                // Multi-output coinbase: split subsidy 89/5/5/1
-                let (miner_amt, humanitarian_amt, issobella_amt, pool_fee_amt) =
+                // Multi-output coinbase: mint 89/5/5 (miner/humanitarian/issobella).
+                // The remaining 1% (pool_fee) is burned — no output is created.
+                let (miner_amt, humanitarian_amt, issobella_amt, _burned_pool_fee) =
                     emission::fee_split(subsidy);
 
                 let mk_coinbase = |label_prefix: &str, addr: &str, amount: u64| {
@@ -3213,11 +3220,7 @@ impl ChainState {
                     }
                 };
 
-                // Insert in reverse order so positions are: 0=miner, 1=humanitarian, 2=issobella, 3=pool_fee
-                selected_transactions.insert(
-                    0,
-                    mk_coinbase("coinbase_pool_fee", pool_fee_address, pool_fee_amt),
-                );
+                // Insert in reverse order so positions are: 0=miner, 1=humanitarian, 2=issobella
                 selected_transactions.insert(
                     0,
                     mk_coinbase("coinbase_issobella", issobella_address, issobella_amt),
@@ -5108,23 +5111,26 @@ mod tests {
     }
 
     #[test]
-    fn template_with_fee_split_has_four_coinbase_outputs() {
+    fn template_with_fee_split_has_three_coinbase_outputs() {
         let mut runtime = NodeRuntime::new("node-cb-split-template", NodeConfig::mainnet());
         runtime.set_miner_address("alice-wallet".to_string());
         runtime.set_fee_addresses(
             "human-wallet".to_string(),
             "issobella-wallet".to_string(),
-            "pool-wallet".to_string(),
+            // pool-fee slot is burned — address is ignored.
+            String::new(),
         );
 
         let template = runtime.active_template();
         let expected_subsidy = emission::block_subsidy(template.height);
-        let (miner_amount, humanitarian_amount, issobella_amount, pool_fee_amount) =
+        let (miner_amount, humanitarian_amount, issobella_amount, _burned_pool_fee) =
             emission::fee_split(expected_subsidy);
         let transactions = runtime.chain_state.active_template.account_transactions();
 
-        assert_eq!(template.transaction_count, 4);
-        assert_eq!(transactions.len(), 4);
+        // Only 3 coinbase outputs (miner/humanitarian/issobella); the 1% pool
+        // fee is burned and produces no output.
+        assert_eq!(template.transaction_count, 3);
+        assert_eq!(transactions.len(), 3);
         assert_eq!(template.estimated_miner_reward_zion, miner_amount);
 
         assert_eq!(transactions[0].from, "coinbase");
@@ -5139,19 +5145,19 @@ mod tests {
         assert_eq!(transactions[2].to, "issobella-wallet");
         assert_eq!(transactions[2].amount_zion, u128::from(issobella_amount));
 
-        assert_eq!(transactions[3].from, "coinbase");
-        assert_eq!(transactions[3].to, "pool-wallet");
-        assert_eq!(transactions[3].amount_zion, u128::from(pool_fee_amount));
+        // Minted total = 99% of subsidy; the 1% pool fee is burned.
+        let minted: u128 = transactions.iter().map(|t| t.amount_zion).sum();
+        assert_eq!(minted, u128::from(emission::minted_subsidy(expected_subsidy)));
     }
 
     #[test]
-    fn mined_block_with_fee_split_has_four_coinbase_outputs() {
+    fn mined_block_with_fee_split_has_three_coinbase_outputs() {
         let mut source = NodeRuntime::new("node-cb-split-src", NodeConfig::mainnet());
         source.set_miner_address("alice-wallet".to_string());
         source.set_fee_addresses(
             "human-wallet".to_string(),
             "issobella-wallet".to_string(),
-            "pool-wallet".to_string(),
+            String::new(),
         );
 
         let template = source.chain_state.active_template.clone();
@@ -5190,14 +5196,14 @@ mod tests {
             .expect("split coinbase peer block should validate and import");
 
         let block = &target.accepted_blocks()[1];
-        let (miner_amount, humanitarian_amount, issobella_amount, pool_fee_amount) =
+        let (miner_amount, humanitarian_amount, issobella_amount, _burned_pool_fee) =
             emission::fee_split(block.subsidy_zion);
 
         assert_eq!(block.miner_address, "alice-wallet");
         assert_eq!(block.humanitarian_address, "human-wallet");
         assert_eq!(block.issobella_address, "issobella-wallet");
-        assert_eq!(block.pool_fee_address, "pool-wallet");
-        assert_eq!(block.transactions.len(), 4);
+        // pool_fee slot is burned — no address, no output.
+        assert_eq!(block.transactions.len(), 3);
         assert_eq!(block.miner_reward_zion, miner_amount);
 
         assert_eq!(block.transactions[0].to, "alice-wallet");
@@ -5212,19 +5218,15 @@ mod tests {
             block.transactions[2].amount_zion,
             u128::from(issobella_amount)
         );
-        assert_eq!(block.transactions[3].to, "pool-wallet");
-        assert_eq!(
-            block.transactions[3].amount_zion,
-            u128::from(pool_fee_amount)
-        );
 
+        // Minted total = 99% of subsidy; the 1% pool fee is burned.
         assert_eq!(
             block
                 .transactions
                 .iter()
                 .map(|transaction| transaction.amount_zion)
                 .sum::<u128>(),
-            u128::from(block.subsidy_zion)
+            u128::from(emission::minted_subsidy(block.subsidy_zion))
         );
     }
 

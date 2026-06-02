@@ -393,7 +393,8 @@ function DaoTab() {
     try {
       const r = await fetch('/api/dao/proposals', { signal: AbortSignal.timeout(8000) });
       const d = await r.json();
-      setProposals(Array.isArray(d) ? d : d.proposals ?? []);
+      const list = Array.isArray(d) ? d : d.data?.proposals ?? d.proposals ?? [];
+      setProposals(list);
     } catch (e: any) {
       setErr('DAO backend unreachable');
     } finally {

@@ -67,18 +67,38 @@ pub const HUMANITARIAN_PCT: u64 = 5;
 /// Issobella fund: 5% of block subsidy.
 pub const ISSOBELLA_PCT: u64 = 5;
 
-/// Pool operator fee: 1% of block subsidy.
+/// Pool fee: 1% of block subsidy. This slot is **BURNED** — it is never
+/// minted into any wallet. The coinbase only creates the miner / humanitarian
+/// / issobella outputs (89/5/5), so the effective per-block emission is 99% of
+/// the subsidy and the remaining 1% is permanently removed from supply.
 pub const POOL_FEE_PCT: u64 = 1;
 
 /// Compute the fee split for a given block subsidy.
 /// Returns (miner, humanitarian, issobella, pool_fee) in flowers.
-/// The miner portion absorbs any rounding dust so the parts always sum to subsidy.
+///
+/// `pool_fee` is the BURNED amount — it is NOT paid to any address. It is
+/// returned for ratio/accounting reference only (see [`minted_subsidy`] and
+/// [`burned_subsidy`]). The miner portion absorbs any rounding dust so the
+/// four parts always sum to `subsidy`.
 pub fn fee_split(subsidy: u64) -> (u64, u64, u64, u64) {
     let humanitarian = subsidy * HUMANITARIAN_PCT / 100;
     let issobella = subsidy * ISSOBELLA_PCT / 100;
     let pool_fee = subsidy * POOL_FEE_PCT / 100;
     let miner = subsidy - humanitarian - issobella - pool_fee;
     (miner, humanitarian, issobella, pool_fee)
+}
+
+/// Amount burned per block: the 1% pool-fee slot that is never minted.
+pub fn burned_subsidy(subsidy: u64) -> u64 {
+    let (_miner, _humanitarian, _issobella, pool_fee) = fee_split(subsidy);
+    pool_fee
+}
+
+/// Total newly-minted coinbase amount per block: `subsidy` minus the burned
+/// pool fee. This is the sum of the three coinbase outputs (miner 89% +
+/// humanitarian 5% + issobella 5%).
+pub fn minted_subsidy(subsidy: u64) -> u64 {
+    subsidy - burned_subsidy(subsidy)
 }
 
 /// Block subsidy for a given height in flowers.

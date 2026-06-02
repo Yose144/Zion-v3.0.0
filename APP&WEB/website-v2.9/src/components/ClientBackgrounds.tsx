@@ -6,14 +6,12 @@ import { usePathname } from 'next/navigation';
 const BACKGROUND_DISABLED_PREFIXES = [
   '/api-reference',
   '/bridge',
-  '/dashboard',
   '/defi',
   '/docs',
   '/download',
   '/explorer',
   '/monitoring',
   '/network',
-  '/pool',
 ];
 
 const BackgroundOrchestrator = dynamic(

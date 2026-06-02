@@ -2,14 +2,14 @@ import type { Metadata } from "next";
 import dynamic from 'next/dynamic';
 import { SITE_RELEASE_LABEL } from '@/lib/site';
 
-const MissionControlDashboard = dynamic(() => import('@/components/MissionControlDashboard'));
+const DashboardMain = dynamic(() => import('@/components/DashboardMain'));
 
 export const metadata: Metadata = {
-  title: `Mission Control Dashboard · ZION ${SITE_RELEASE_LABEL}`,
-  description: 'Mission Control: launch status, blockers, pool metrics, roadmap, security gates, and Core + Edge topology telemetry.',
-  keywords: "ZION dashboard, mainnet, blockchain metrics, node status, mining pool, roadmap, security gate",
+  title: `ZION Dashboard · ${SITE_RELEASE_LABEL}`,
+  description: 'ZION Dashboard — chain telemetry, pool stats, treasury overview, and DAO governance. Read-only Guardian view.',
+  keywords: "ZION dashboard, mainnet, blockchain metrics, node status, mining pool, treasury, dao",
 };
 
 export default function DashboardPage() {
-  return <MissionControlDashboard />;
+  return <DashboardMain />;
 }

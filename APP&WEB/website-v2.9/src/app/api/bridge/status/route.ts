@@ -1,19 +1,17 @@
 import { NextResponse } from 'next/server';
+import { coreUrl } from '@/lib/core-endpoints';
 
 /**
  * GET /api/bridge/status
  *
  * Server-side proxy: fetches Prometheus metrics from the ZION bridge relay
- * (port 9101) and returns parsed JSON.
- *
- * Config: BRIDGE_METRICS_URL env var.
+ * (port 9102) and returns parsed JSON.
  */
 
-// Produkce: bridge běží v host network mode, website ho tedy čte přes host-gateway.
-// 9100 je node-exporter; bridge health/metrics běží na 9101.
-// Override přes env var BRIDGE_METRICS_URL
+// NOTE: Next.js inlines env vars at build time, so we use the runtime
+// core-endpoints helper which hardcodes the active Core Tailscale IP.
 const BRIDGE_METRICS_URL =
-  process.env.BRIDGE_METRICS_URL ?? 'http://host.docker.internal:9101/metrics';
+  coreUrl('bridgeMetrics', process.env.BRIDGE_METRICS_URL) + '/metrics';
 
 /** Parse a single Prometheus metric line: "metric_name{...} value" → number */
 function parse(text: string, name: string): number {
