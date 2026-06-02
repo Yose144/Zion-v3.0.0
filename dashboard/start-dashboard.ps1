@@ -3,7 +3,7 @@
 # Zero dependencies: uses only Python stdlib (http.server).
 
 param(
-    [int]$Port = 8765
+    [int]$Port = 8766
 )
 
 $DashboardDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
@@ -26,17 +26,17 @@ foreach ($p in $Existing) {
 Write-Host "Starting ZION Mainnet Launch Dashboard on port $Port ..." -ForegroundColor Cyan
 Write-Host "Log directory: $LogDir" -ForegroundColor Gray
 
-# Start dashboard server in background
+# Start dashboard server in background using Start-Process (more reliable than Start-Job)
 $PythonPath = (Get-Command python -ErrorAction SilentlyContinue).Source
+if (-not $PythonPath) {
+    $PythonPath = (Get-Command python3 -ErrorAction SilentlyContinue).Source
+}
 if (-not $PythonPath) {
     Write-Error "Python not found in PATH. Please install Python 3.10+ and try again."
     exit 1
 }
 
-$job = Start-Job -ScriptBlock {
-    param($dd, $pp)
-    & $pp "$dd\app.py"
-} -ArgumentList $DashboardDir, $PythonPath
+$proc = Start-Process -FilePath $PythonPath -ArgumentList "$DashboardDir\app.py" -WorkingDirectory $DashboardDir -WindowStyle Hidden -PassThru
 
 Start-Sleep -Seconds 3
 
@@ -44,9 +44,7 @@ Start-Sleep -Seconds 3
 $tcpTest = Test-NetConnection -ComputerName 127.0.0.1 -Port $Port -WarningAction SilentlyContinue
 if (-not $tcpTest.TcpTestSucceeded) {
     Write-Warning "Dashboard did not start on port $Port. Check Python availability or port conflicts."
-    Write-Host "Job output:" -ForegroundColor Gray
-    Receive-Job $job
-    Stop-Job $job; Remove-Job $job
+    Write-Host "Process output may be in logs." -ForegroundColor Gray
     exit 1
 }
 
@@ -57,6 +55,5 @@ Write-Host "Dashboard running at http://127.0.0.1:$Port" -ForegroundColor Green
 Write-Host "Press Enter to stop the dashboard server." -ForegroundColor Gray
 Read-Host
 
-Stop-Job $job
-Remove-Job $job
+Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
 Write-Host "Dashboard stopped." -ForegroundColor Cyan
