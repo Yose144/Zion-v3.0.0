@@ -7,15 +7,14 @@
     "service_id": "node1",
     "mkdirs": ["V3/data"],
     "env": {
-      "ZION_NODE_ID": "node1",
+      "ZION_NODE_ID": "local-backup-node",
       "ZION_P2P_BIND": "0.0.0.0:8333",
       "ZION_RPC_BIND": "0.0.0.0:8443",
       "ZION_NODE_STATE_PATH": "V3/data/zion-node-state.db",
-      "ZION_SEED_PEERS": "none",
+      "ZION_SEED_PEERS": "100.76.16.108:8333",
       "ZION_MINER_ADDRESS": "zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3",
       "ZION_HUMANITARIAN_WALLET": "zion1m4v5z8z850u480c5c208z274e334369275n5y20",
-      "ZION_ISSOBELLA_WALLET": "zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702",
-      "ZION_POOL_FEE_WALLET": "zion1p2a7a5q0t2z5z545y6m6j5e864n002v4z6w95w5"
+      "ZION_ISSOBELLA_WALLET": "zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702"
     }
   },
 
@@ -32,12 +31,12 @@
       "ZION_SEED_PEERS": "127.0.0.1:8333",
       "ZION_MINER_ADDRESS": "zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3",
       "ZION_HUMANITARIAN_WALLET": "zion1m4v5z8z850u480c5c208z274e334369275n5y20",
-      "ZION_ISSOBELLA_WALLET": "zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702",
-      "ZION_POOL_FEE_WALLET": "zion1p2a7a5q0t2z5z545y6m6j5e864n002v4z6w95w5"
+      "ZION_ISSOBELLA_WALLET": "zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702"
     }
   },
 
   "pool": {
+    "_comment": "Edge-primary topology: pool runs on Edge server (100.76.16.108:8444). This entry is kept for dev/testing only; do not start on local PC in production.",
     "bin": "server",
     "log": "pool",
     "service_id": "pool",
@@ -59,7 +58,7 @@
     "log": "miner",
     "service_id": "miner",
     "env": {
-      "ZION_POOL_ADDR": "127.0.0.1:8444",
+      "ZION_POOL_ADDR": "100.76.16.108:8444",
       "ZION_LOOP_COUNT": "1000000",
       "ZION_MINER_THREADS": "2",
       "ZION_WORKER_NAME": "worker1",
@@ -74,7 +73,7 @@
     "log": "miner",
     "service_id": "miner",
     "env": {
-      "ZION_POOL_ADDR": "127.0.0.1:8444",
+      "ZION_POOL_ADDR": "100.76.16.108:8444",
       "ZION_LOOP_COUNT": "1000000",
       "ZION_MINER_THREADS": "4",
       "ZION_WORKER_NAME": "worker1",
@@ -88,7 +87,7 @@
     "log": "miner",
     "service_id": "miner",
     "env": {
-      "ZION_POOL_ADDR": "127.0.0.1:8444",
+      "ZION_POOL_ADDR": "100.76.16.108:8444",
       "ZION_LOOP_COUNT": "1000000",
       "ZION_MINER_THREADS": "2",
       "ZION_WORKER_NAME": "worker1",
