@@ -221,4 +221,4 @@ the binary falls back to its own default.
 | Grafana iframe blank | Click "▶ Start Monitoring" — Docker must be running |
 | SQLite DBs show "Not yet created" | They're created on first run of the L2/L3 services |
 | Slow first probe | Initial probe takes ~2s; subsequent are cached 5s |
-| Port 8765 in use | `Get-Process python \| Stop-Process -Force` then restart |
+| Port 8766 in use | `Get-Process python \| Stop-Process -Force` then restart |

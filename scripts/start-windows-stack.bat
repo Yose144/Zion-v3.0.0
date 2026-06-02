@@ -1,6 +1,16 @@
 @echo off
-:: ZION V3 Full Stack — Windows 11 Native
-:: Node + Pool + GPU Miner
+:: ============================================================================
+::  LEGACY / LOCAL-DEV ONLY  —  NOT FOR EDGE-PRIMARY TOPOLOGY
+:: ============================================================================
+::  This script starts a FULL LOCAL stack (genesis node + pool + miner).
+::  In edge-primary topology, the primary node + pool run on Edge (Hetzner).
+::  Local PC should ONLY run backup node + miners connecting to Edge pool.
+::
+::  For edge-primary on W11, use instead:
+::    .\scripts\launch-local-backup.ps1
+::
+::  This script is kept for local-dev testing only.
+:: ============================================================================
 
 cd /d C:\Users\yosef\Desktop\Zion\2.9.6-main
 

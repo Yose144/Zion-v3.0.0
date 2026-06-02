@@ -2,13 +2,14 @@
 $logDir = "C:\Users\yosef\Desktop\Zion\2.9.6-main\logs"
 New-Item -ItemType Directory -Path $logDir -Force | Out-Null
 
-[Environment]::SetEnvironmentVariable('ZION_NODE_ID', 'w11-native-node', 'Process')
+[Environment]::SetEnvironmentVariable('ZION_NODE_ID', 'local-backup-node', 'Process')
 [Environment]::SetEnvironmentVariable('ZION_P2P_BIND', '0.0.0.0:8333', 'Process')
 [Environment]::SetEnvironmentVariable('ZION_RPC_BIND', '0.0.0.0:8443', 'Process')
 $DataDir = "C:\Users\yosef\Desktop\Zion\2.9.6-main\V3\data"
 New-Item -ItemType Directory -Path $DataDir -Force | Out-Null
 [Environment]::SetEnvironmentVariable('ZION_NODE_STATE_PATH', "$DataDir\zion-node-state.db", 'Process')
-[Environment]::SetEnvironmentVariable('ZION_SEED_PEERS', 'none', 'Process')
+# Edge-primary topology: sync from Edge primary via Tailscale VPN
+[Environment]::SetEnvironmentVariable('ZION_SEED_PEERS', '100.76.16.108:8333', 'Process')
 [Environment]::SetEnvironmentVariable('ZION_MINER_ADDRESS', 'zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3', 'Process')
 [Environment]::SetEnvironmentVariable('ZION_HUMANITARIAN_WALLET', 'zion1m4v5z8z850u480c5c208z274e334369275n5y20', 'Process')
 [Environment]::SetEnvironmentVariable('ZION_ISSOBELLA_WALLET', 'zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702', 'Process')
