@@ -120,7 +120,7 @@ fn main() -> Result<()> {
         println!("issobella_wallet={}", fee_config.issobella_wallet);
     }
     let pplns_engine = Arc::new(Mutex::new(PplnsEngine::new(PplnsConfig {
-        window_size: parse_env_u64("ZION_PPLNS_WINDOW_SIZE", 50_000).unwrap_or(50_000) as usize,
+        window_size: parse_env_u64("ZION_PPLNS_WINDOW_SIZE", 500_000).unwrap_or(500_000) as usize,
         min_payout_flowers: parse_env_u64(
             "ZION_PPLNS_MIN_PAYOUT",
             zion_core::wallet::MIN_PAYOUT_AMOUNT,
