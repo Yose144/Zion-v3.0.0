@@ -17,17 +17,18 @@
 $ErrorActionPreference = "Stop"
 
 $RepoRoot = "C:\Users\yosef\Desktop\Zion\2.9.6-main"
-$LogDir = "$RepoRoot\logs"
-$DataDir = "$RepoRoot\V3\data"
-
+$LogDir   = "$RepoRoot\logs"
+$DataDir  = "$RepoRoot\V3\data"
+$PidDir   = "$RepoRoot\.pids"
 New-Item -ItemType Directory -Path $LogDir -Force | Out-Null
 New-Item -ItemType Directory -Path $DataDir -Force | Out-Null
+New-Item -ItemType Directory -Path $PidDir -Force | Out-Null
 
 # Clean old logs
 Remove-Item -Path "$LogDir\*.log" -ErrorAction SilentlyContinue
 Remove-Item -Path "$LogDir\*.err" -ErrorAction SilentlyContinue
 
-$NodeExe = "$RepoRoot\V3\target\release\node.exe"
+$NodeExe  = "$RepoRoot\V3\target\release\node.exe"
 $MinerExe = "$RepoRoot\V3\target\release\zion-miner.exe"
 
 foreach ($exe in @($NodeExe, $MinerExe)) {
@@ -37,7 +38,19 @@ foreach ($exe in @($NodeExe, $MinerExe)) {
     }
 }
 
+function Stop-ByPidFile($name) {
+    $f = "$PidDir\$name.pid"
+    if (Test-Path $f) {
+        $old = Get-Content $f -ErrorAction SilentlyContinue
+        if ($old) {
+            $proc = Get-Process -Id $old -ErrorAction SilentlyContinue
+            if ($proc) { $proc | Stop-Process -Force; Start-Sleep -Seconds 1 }
+        }
+    }
+}
+
 # ── Backup Node (syncs from Edge primary) ──
+Stop-ByPidFile "node1"
 [Environment]::SetEnvironmentVariable('ZION_NODE_ID', 'local-backup-node', 'Process')
 [Environment]::SetEnvironmentVariable('ZION_P2P_BIND', '0.0.0.0:8333', 'Process')
 [Environment]::SetEnvironmentVariable('ZION_RPC_BIND', '0.0.0.0:8443', 'Process')
@@ -49,12 +62,14 @@ foreach ($exe in @($NodeExe, $MinerExe)) {
 [Environment]::SetEnvironmentVariable('ZION_HUMANITARIAN_WALLET', 'zion1m4v5z8z850u480c5c208z274e334369275n5y20', 'Process')
 [Environment]::SetEnvironmentVariable('ZION_ISSOBELLA_WALLET', 'zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702', 'Process')
 
-$p = Start-Process -FilePath $NodeExe -RedirectStandardOutput "$LogDir\node1.log" -RedirectStandardError "$LogDir\node1.err" -WindowStyle Hidden -PassThru
+$p = Start-Process -FilePath $NodeExe -WorkingDirectory $RepoRoot -RedirectStandardOutput "$LogDir\node1.log" -RedirectStandardError "$LogDir\node1.err" -WindowStyle Hidden -PassThru
+$p.Id | Out-File "$PidDir\node1.pid" -Encoding utf8
 $P1 = $p.Id
 Write-Host "Started Backup Node  PID=$P1 (seeding from 100.76.16.108:8333)"
 Start-Sleep -Seconds 3
 
 # ── Miner: GPU (OpenCL) ──
+Stop-ByPidFile "miner"
 # Connects to Edge pool via Tailscale VPN
 [Environment]::SetEnvironmentVariable('ZION_POOL_ADDR', '100.76.16.108:8444', 'Process')
 [Environment]::SetEnvironmentVariable('ZION_LOOP_COUNT', '1000000', 'Process')
@@ -64,7 +79,8 @@ Start-Sleep -Seconds 3
 [Environment]::SetEnvironmentVariable('ZION_GPU_BACKEND', 'opencl', 'Process')
 [Environment]::SetEnvironmentVariable('ZION_GPU_WORK_SIZE', '4096', 'Process')
 
-$p = Start-Process -FilePath $MinerExe -RedirectStandardOutput "$LogDir\miner.log" -RedirectStandardError "$LogDir\miner.err" -WindowStyle Hidden -PassThru
+$p = Start-Process -FilePath $MinerExe -WorkingDirectory $RepoRoot -RedirectStandardOutput "$LogDir\miner.log" -RedirectStandardError "$LogDir\miner.err" -WindowStyle Hidden -PassThru
+$p.Id | Out-File "$PidDir\miner.pid" -Encoding utf8
 $PM = $p.Id
 Write-Host "Started Miner GPU (OpenCL)  PID=$PM -> Edge pool 100.76.16.108:8444"
 
