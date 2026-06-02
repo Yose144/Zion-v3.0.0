@@ -2286,8 +2286,11 @@ def build_payout_status() -> dict:
             "issobella": iss_e / 1_000_000_000_000,
             "pool_fee": fee_e / 1_000_000_000_000,
         }
+        # The 1% pool-fee slot is burned (never minted) — cumulative burn.
+        status["burned_total"] = fee_e / 1_000_000_000_000
     else:
         status["fee_split_earnings"] = {}
+        status["burned_total"] = 0
 
     # Fetch detailed miner payout data from pool routing metrics
     status["miner_payouts_detail"] = []
@@ -2363,6 +2366,8 @@ def build_payout_status() -> dict:
             status["miner_perf"]["shares_accepted"] = routing["accepted"]
         if routing.get("rejected") is not None:
             status["miner_perf"]["shares_rejected"] = routing["rejected"]
+    # Normalize fee-split label: the 1% pool slot is burned, not paid out.
+    status["fee_split"] = "89/5/5 (+1% burned)"
     return status
 
 # ── AI services status (Hiran + Hiranyagarbha) ───────────────────────────
