@@ -424,23 +424,59 @@ async function refreshPayout(){
       set('payout-breakdown-pool-amount', _zionFmt(s.pool || 0) + ' Z');
     }
 
-    // Fee split live balances (on-chain total — may include premine)
+    // On-chain balances (includes premine + pooled + fee-split earnings)
     const bals = data.balances || {};
-    if (data.miner_wallet) set('fs-earn-miner-addr', data.miner_wallet);
-    if (data.humanitarian_wallet) set('fs-earn-charity-addr', data.humanitarian_wallet);
-    if (data.issobella_wallet) set('fs-earn-dev-addr', data.issobella_wallet);
-    if (data.pool_fee_wallet) set('fs-earn-pool-addr', data.pool_fee_wallet);
+    if (data.miner_wallet) set('fs-bal-miner-addr', data.miner_wallet);
+    if (data.humanitarian_wallet) set('fs-bal-charity-addr', data.humanitarian_wallet);
+    if (data.issobella_wallet) set('fs-bal-dev-addr', data.issobella_wallet);
+    if (data.pool_fee_wallet) set('fs-bal-pool-addr', data.pool_fee_wallet);
     set('fs-bal-miner',  bals.miner ? _zionFmt(bals.miner.zion) : '—');
     set('fs-bal-charity', bals.humanitarian ? _zionFmt(bals.humanitarian.zion) : '—');
     set('fs-bal-dev',    bals.issobella ? _zionFmt(bals.issobella.zion) : '—');
     set('fs-bal-pool',   bals.pool_fee ? _zionFmt(bals.pool_fee.zion) : '—');
 
-    // Fee split earnings (estimated from blocks_found × subsidy × pct)
-    const earn = data.fee_split_earnings || {};
-    set('fs-earn-miner',  earn.miner != null ? _zionFmt(earn.miner) : '—');
-    set('fs-earn-charity', earn.humanitarian != null ? _zionFmt(earn.humanitarian) : '—');
-    set('fs-earn-dev',    earn.issobella != null ? _zionFmt(earn.issobella) : '—');
-    set('fs-earn-pool',   earn.pool_fee != null ? _zionFmt(earn.pool_fee) : '—');
+    // Active Miners table
+    const minersTable = document.getElementById('payout-miners-table');
+    if (minersTable) {
+      if (data.miner_stats && data.miner_stats.length) {
+        minersTable.innerHTML = data.miner_stats.map(m => {
+          const hr = (m.hashrate_1h || m.hashrate || 0).toFixed(2);
+          const paid = m.total_paid != null ? _zionFmt(m.total_paid / 1e12) : '—';
+          const pending = m.pending_balance != null ? _zionFmt(m.pending_balance / 1e12) : '—';
+          return `<tr class="border-b border-white/5 hover:bg-white/5 transition">
+            <td class="py-2 px-2 text-white">${m.address}</td>
+            <td class="py-2 px-2 text-gray-300">${m.worker_name || '—'}</td>
+            <td class="py-2 px-2 text-right text-gray-300">${m.valid_shares != null ? m.valid_shares : '—'}</td>
+            <td class="py-2 px-2 text-right text-amber-400">${hr} H/s</td>
+            <td class="py-2 px-2 text-right text-emerald-400">${paid} Z</td>
+            <td class="py-2 px-2 text-right text-purple-400">${pending} Z</td>
+          </tr>`;
+        }).join('');
+      } else {
+        minersTable.innerHTML = '<tr><td colspan="6" class="py-2 px-2 text-gray-500 italic">No miners connected</td></tr>';
+      }
+    }
+
+    // PPLNS Payouts detail table
+    const payoutDetailTable = document.getElementById('payout-detail-table');
+    if (payoutDetailTable) {
+      if (data.miner_payouts_detail && data.miner_payouts_detail.length) {
+        payoutDetailTable.innerHTML = data.miner_payouts_detail.map(p => {
+          const statusClass = p.status === 'confirmed' ? 'text-emerald-400' : (p.status === 'pending' ? 'text-amber-400' : 'text-gray-300');
+          const txLink = p.tx_id ? `<a href="#" class="text-blue-400 hover:underline" onclick="event.preventDefault(); copyToClipboard('${p.tx_id}')">${p.tx_id.substring(0,16)}…</a>` : '—';
+          return `<tr class="border-b border-white/5 hover:bg-white/5 transition">
+            <td class="py-2 px-2 text-white">#${p.height}</td>
+            <td class="py-2 px-2 text-gray-300">${p.miner_address} <span class="text-gray-500">${p.miner_worker}</span></td>
+            <td class="py-2 px-2 text-right text-emerald-400">${_zionFmt(p.amount_zion)} Z</td>
+            <td class="py-2 px-2 text-right text-amber-400">${p.share_count ?? '—'}</td>
+            <td class="py-2 px-2 ${statusClass}">${p.status || '—'}</td>
+            <td class="py-2 px-2">${txLink}</td>
+          </tr>`;
+        }).join('');
+      } else {
+        payoutDetailTable.innerHTML = '<tr><td colspan="6" class="py-2 px-2 text-gray-500 italic">No payouts yet</td></tr>';
+      }
+    }
 
     // Structured payout history table
     const histTable = document.getElementById('payout-history-table');
