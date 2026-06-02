@@ -12,7 +12,8 @@ EnvironmentFile=/root/zion-2.9.6-main/edge-deploy/config/edge-environment.sh
 Environment="WARP_API_BIND=0.0.0.0:8453"
 Environment="WARP_METRICS_BIND=0.0.0.0:9104"
 Environment="RUST_LOG=info,zion_warp=debug"
-ExecStart=/root/zion-2.9.6-main/V3/target/release/zion-warp-server --config /root/zion-2.9.6-main/V3/L3/warp/config/warp-testnet.toml
+ExecStart=/root/zion-2.9.6-main/V3/target/release/zion-warp-server
+Environment="WARP_CONFIG=/root/zion-2.9.6-main/V3/L3/warp/config/warp-testnet.toml"
 Restart=always
 RestartSec=10
 KillMode=process
