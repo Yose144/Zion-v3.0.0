@@ -1352,8 +1352,8 @@ async function loadMinerPerformance(){
       document.getElementById('perf-rejected').textContent = recent.rejected ?? '—';
     }
     // Parse extra session stats from latest miner log line
-    const logLines = await fetch('/api/logs/miner').then(r => r.json()).catch(() => ({lines:[]}));
-    const lines = logLines.lines || [];
+    const logLines = await fetch('/api/service-log?id=miner&lines=80').then(r => r.json()).catch(() => ({lines:''}));
+    const lines = (typeof logLines.lines === 'string' ? logLines.lines.split('\n') : logLines.lines) || [];
     let sessionLine = '';
     for(let i=lines.length-1; i>=0; i--){ if(lines[i].includes('session_status')){ sessionLine = lines[i]; break; } }
     if(sessionLine){
@@ -2062,10 +2062,10 @@ function stopInstallLogPolling(){
 
 async function loadLogs(service){
   try {
-    const res = await fetch('/api/logs/' + service);
+    const res = await fetch('/api/service-log?id=' + encodeURIComponent(service));
     const data = await res.json();
     const el = document.getElementById('log-' + service);
-    if(el) el.textContent = data.lines.slice(-60).join('\n');
+    if(el) el.textContent = data.lines || (data.error ? 'Error: ' + data.error : '(empty)');
   } catch(e) { console.error(e); }
 }
 
