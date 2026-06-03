@@ -25,7 +25,7 @@ struct AuthConfig {
 async fn main() -> anyhow::Result<()> {
     let bind_addr = std::env::var("ZIONOS_BIND").unwrap_or_else(|_| "0.0.0.0:8888".into());
     let pool_metrics = std::env::var("ZIONOS_POOL_METRICS")
-        .unwrap_or_else(|_| "http://127.0.0.1:9090".into());
+        .unwrap_or_else(|_| "http://77.42.71.94:8444".into());
     let data_dir = std::env::var("ZIONOS_DATA_DIR").unwrap_or_else(|_| "dashboard/data".into());
     let persist_path = std::env::var("ZIONOS_STATE_FILE")
         .map(std::path::PathBuf::from)
@@ -319,7 +319,7 @@ fn seed_demo_rigs() -> Vec<RigState> {
             name: "ZionRig-Vega64".into(),
             wallet: "zion1n7n5t28663h3f3d8s8y596h5f3z582z8638d073".into(),
             worker: "vega64-smos".into(),
-            pool_addr: "91.98.122.165:3333".into(),
+            pool_addr: "77.42.71.94:8444".into(),
             status: RigStatus::Offline,
             gpu: Some(GpuInfo {
                 name: "AMD RX Vega 64".into(),
@@ -341,7 +341,7 @@ fn seed_demo_rigs() -> Vec<RigState> {
             name: "DevRig-RX5600".into(),
             wallet: "zion1n7n5t28663h3f3d8s8y596h5f3z582z8638d073".into(),
             worker: "rx5600-local".into(),
-            pool_addr: "91.98.122.165:3333".into(),
+            pool_addr: "77.42.71.94:8444".into(),
             status: RigStatus::Stopped,
             gpu: Some(GpuInfo {
                 name: "AMD RX 5600 XT".into(),
@@ -369,7 +369,7 @@ fn seed_demo_flight_sheets() -> Vec<FlightSheet> {
             name: "ZION — Default CPU".into(),
             coin: "ZION".into(),
             algo: "Ekam Deeksha v2".into(),
-            pool_addr: "91.98.122.165:3333".into(),
+            pool_addr: "77.42.71.94:8444".into(),
             wallet: "zion1n7n5t28663h3f3d8s8y596h5f3z582z8638d073".into(),
             miner_args: "--threads 4".into(),
             gpu_mode: "cpu".into(),
@@ -382,7 +382,7 @@ fn seed_demo_flight_sheets() -> Vec<FlightSheet> {
             name: "ZION — OpenCL GPU".into(),
             coin: "ZION".into(),
             algo: "Ekam Deeksha v2".into(),
-            pool_addr: "91.98.122.165:3333".into(),
+            pool_addr: "77.42.71.94:8444".into(),
             wallet: "zion1n7n5t28663h3f3d8s8y596h5f3z582z8638d073".into(),
             miner_args: "--gpu-mode opencl --intensity 0.8".into(),
             gpu_mode: "opencl".into(),
