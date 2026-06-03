@@ -36,6 +36,18 @@
     "@noble/hashes": "^2.0.1",
     "bip39": "^3.1.0"
   },
+  "peerDependencies": {
+    "@trezor/connect-web": "^9",
+    "@trezor/connect": "^9"
+  },
+  "peerDependenciesMeta": {
+    "@trezor/connect-web": {
+      "optional": true
+    },
+    "@trezor/connect": {
+      "optional": true
+    }
+  },
   "devDependencies": {
     "@babel/core": "^7.29.0",
     "@babel/preset-env": "^7.29.5",
