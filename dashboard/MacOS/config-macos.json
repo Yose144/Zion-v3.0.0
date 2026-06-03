@@ -1,0 +1,68 @@
+{
+  "platform": "macos",
+  "topology": "local-dev",
+  "python_detection": [
+    "python3",
+    "/usr/bin/python3",
+    "/opt/homebrew/bin/python3"
+  ],
+  "ports": {
+    "dashboard": 8766,
+    "node_p2p": 8333,
+    "node_rpc": 8443,
+    "pool_stratum": 8444,
+    "pool_metrics": 8455,
+    "hiran_api": 8001,
+    "hiran_inference": 8002
+  },
+  "paths": {
+    "logs": "../logs",
+    "v3_data": "../V3/data",
+    "scripts": "../scripts",
+    "v3_bin": "../V3/L1/target/release"
+  },
+  "local_node": {
+    "enabled": true,
+    "node_id": "macos-local-node",
+    "bin": "../V3/target/release/node",
+    "miner_bin": "../V3/target/release/zion-miner",
+    "data_dir": "../V3/data",
+    "seed_peers": "100.76.16.108:8333",
+    "miner_address": "zion1a59644y2a2z3p5p2f88308d2u536f0e2e3rd5a8",
+    "miner_secret_key": "4ad78f484623640d08e33d63b35925d3c519a9b32f04cf854e41a1877920235c",
+    "humanitarian_wallet": "zion1m4v5z8z850u480c5c208z274e334369275n5y20",
+    "issobella_wallet": "zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702",
+    "gpu_backend": "metal",
+    "gpu_device": "Apple M1"
+  },
+  "edge_server": {
+    "vpn_ip": "100.76.16.108",
+    "public_ip": "77.42.71.94",
+    "ssh_command": "tailscale ssh root@100.76.16.108"
+  },
+  "windows_server": {
+    "vpn_ip": "100.86.102.5",
+    "ssh_command": "tailscale ssh root@100.86.102.5"
+  },
+  "monitoring": {
+    "resource_check_interval": 5,
+    "log_rotation_max_bytes": 104857600,
+    "log_rotation_max_age_hours": 24
+  },
+  "tailscale": {
+    "enabled": true,
+    "vpn_ip": "100.76.16.108",
+    "edge_host": "100.76.16.108",
+    "edge_public_ip": "77.42.71.94",
+    "install_method": "homebrew",
+    "cli_path": "/usr/local/bin/tailscale",
+    "status_command": "tailscale status",
+    "ssh_command": "tailscale ssh root@100.76.16.108",
+    "devices": {
+      "macos": "100.100.46.39",
+      "edge": "100.76.16.108",
+      "zionserver-144": "100.74.34.40",
+      "zionserver": "100.86.102.5"
+    }
+  }
+}
