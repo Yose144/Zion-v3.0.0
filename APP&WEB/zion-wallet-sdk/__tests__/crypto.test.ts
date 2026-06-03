@@ -4,7 +4,6 @@ import {
   upgradeEncryption,
   hashPassword,
   constantTimeEqual,
-  LEGACY_PBKDF2_ITERATIONS,
   CURRENT_PBKDF2_ITERATIONS,
   type EncryptedPayload,
 } from '../src/core/crypto';
