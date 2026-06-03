@@ -1423,8 +1423,20 @@ def parse_pool_log() -> dict:
     return status
 
 def parse_miner_log() -> dict:
+    # Use the most recently modified miner log file
     recent = tail_log("miner.log", 200)
     startup = head_log("miner.log", 50)
+    low_recent = tail_log("miner-low.log", 200)
+    # Prefer miner-low.log if it is newer (based on mtime)
+    miner_path = LOG_DIR / "miner.log"
+    low_path = LOG_DIR / "miner-low.log"
+    if low_path.exists() and miner_path.exists():
+        if low_path.stat().st_mtime > miner_path.stat().st_mtime:
+            recent = low_recent
+            startup = head_log("miner-low.log", 50)
+    elif low_path.exists() and not miner_path.exists():
+        recent = low_recent
+        startup = head_log("miner-low.log", 50)
     status = {
         "running": bool(recent),
         "miner_id": None,
@@ -2422,8 +2434,10 @@ def get_mempool_detail() -> dict:
 # ── Miner shares history ──────────────────────────────────────────────
 
 def get_miner_shares_history(limit: int = 50) -> dict:
-    """Parse miner.log for accepted/rejected shares over time."""
+    """Parse miner.log (or miner-low.log) for accepted/rejected shares over time."""
     recent = tail_log("miner.log", 500)
+    if not recent:
+        recent = tail_log("miner-low.log", 500)
     history = []
     for line in recent:
         if m := re.search(r'accepted\s+(\d+)/(\d+)', line):
@@ -2766,6 +2780,15 @@ def build_payout_status() -> dict:
     # ── Parse logs (local + miner log for cross-topology visibility) ──
     recent_pool = tail_log("pool.log", 500)
     recent_miner = tail_log("miner.log", 300)
+    low_miner = tail_log("miner-low.log", 300)
+    # Prefer the most recently modified miner log
+    miner_path = LOG_DIR / "miner.log"
+    low_path = LOG_DIR / "miner-low.log"
+    if low_path.exists() and miner_path.exists():
+        if low_path.stat().st_mtime > miner_path.stat().st_mtime:
+            recent_miner = low_miner
+    elif low_path.exists():
+        recent_miner = low_miner
     all_lines = recent_pool + recent_miner
 
     seen_blocks = set()
