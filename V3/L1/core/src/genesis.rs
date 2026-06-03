@@ -2,8 +2,8 @@
 //!
 //! Constitutional reference: `docs/mainnet/MAINNET_CONSTITUTION.md` §1–§2
 //!
-//! The genesis block (height 0) carries 12 premine outputs totalling
-//! 16,280,000,000 ZION (11.31 % of the 144 B total supply).
+//! The genesis block (height 0) carries 13 premine outputs totalling
+//! 16,780,000,000 ZION (11.65 % of the 144 B total supply).
 //! Block subsidy at height 0 is 0 — the premine is the sole coinbase.
 //!
 //! Mining subsidy **89/5/5/1** routing and default-operator `zion1` addresses live in constants
@@ -91,8 +91,8 @@ pub struct PremineOutput {
     pub unlock_height: Option<u64>,
 }
 
-/// All 12 premine allocations, ordered by category then slot.
-/// Total: 16,280,000,000 ZION = 16,280,000,000,000,000,000,000 flowers.
+/// All 13 premine allocations, ordered by category then slot.
+/// Total: 16,780,000,000 ZION = 16,780,000,000,000,000,000,000 flowers.
 pub const PREMINE_OUTPUTS: &[PremineOutput] = &[
     // --- OASIS + Golden Egg (5 × 1.65B = 8.25B) ---
     PremineOutput {
@@ -194,6 +194,15 @@ pub const PREMINE_OUTPUTS: &[PremineOutput] = &[
         category: "humanitarian",
         unlock_height: None,
     },
+    // --- Bridge Seed Fund (1 slot = 0.5B) — immediate unlock for EVM bridge liquidity ---
+    PremineOutput {
+        address: "zion1f6m2j0h0l773j4074324q5r528y475w4j7m9685",
+        purpose: "Bridge Seed Fund — EVM Bridge Liquidity",
+        amount_zion: 500_000_000,
+        amount_flowers: 500_000_000_000_000_000_000,
+        category: "bridge_seed",
+        unlock_height: None,
+    },
 ];
 
 // ---------------------------------------------------------------------------
@@ -206,7 +215,7 @@ pub const PREMINE_OUTPUTS: &[PremineOutput] = &[
 /// - height 0, template_id 0, nonce 0
 /// - timestamp = `GENESIS_TIMESTAMP`
 /// - difficulty = `GENESIS_DIFFICULTY`
-/// - 12 premine "transactions" (one per output) with special coinbase tx_ids
+/// - 13 premine "transactions" (one per output) with special coinbase tx_ids
 /// - subsidy = 0 (no mining reward at height 0)
 /// - miner_reward = 0
 pub fn genesis_block() -> AcceptedBlock {
@@ -330,6 +339,17 @@ pub fn validate_premine() -> Result<(), String> {
         ));
     }
 
+    let bridge_seed: u128 = PREMINE_OUTPUTS
+        .iter()
+        .filter(|o| o.category == "bridge_seed")
+        .map(|o| o.amount_flowers)
+        .sum();
+    if bridge_seed != 500_000_000_000_000_000_000 {
+        return Err(format!(
+            "Bridge Seed total {bridge_seed} != 0.5B flowers"
+        ));
+    }
+
     let grand_total: u128 = PREMINE_OUTPUTS.iter().map(|o| o.amount_flowers).sum();
     if grand_total != crate::emission::GENESIS_PREMINE {
         return Err(format!(
@@ -405,8 +425,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn premine_has_12_outputs() {
-        assert_eq!(PREMINE_OUTPUTS.len(), 12);
+    fn premine_has_13_outputs() {
+        assert_eq!(PREMINE_OUTPUTS.len(), 13);
     }
 
     #[test]
@@ -415,9 +435,9 @@ mod tests {
     }
 
     #[test]
-    fn premine_total_is_16_28b_zion() {
+    fn premine_total_is_16_78b_zion() {
         let total_zion: u64 = PREMINE_OUTPUTS.iter().map(|o| o.amount_zion).sum();
-        assert_eq!(total_zion, 16_280_000_000);
+        assert_eq!(total_zion, 16_780_000_000);
     }
 
     #[test]
@@ -514,8 +534,8 @@ mod tests {
         assert_eq!(block.subsidy_zion, 0);
         assert_eq!(block.miner_reward_zion, 0);
         assert_eq!(block.total_fees_zion, 0);
-        assert_eq!(block.transactions.len(), 12);
-        assert_eq!(block.transaction_ids.len(), 12);
+        assert_eq!(block.transactions.len(), 13);
+        assert_eq!(block.transaction_ids.len(), 13);
     }
 
     #[test]

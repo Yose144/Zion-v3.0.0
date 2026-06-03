@@ -2,7 +2,7 @@ ZION V3 — Public premine recipients (genesis height 0) + canonical subsidy / o
 ================================================================================
 Source code: `L1/core/src/genesis.rs`
 
-Genesis premine (12 outputs, 16,280,000,000 ZION total) — unchanged
+Genesis premine (13 outputs, 16,780,000,000 ZION total) — unchanged
 --------------------------------------------------------------------------------
 Slots are listed in genesis `PREMINE_OUTPUTS`; public copy also in operator guides.
 
@@ -24,6 +24,9 @@ These fund from **block subsidy splits** (89/5/5/1 when enabled) + PPLNS payout 
 
   • Pool payout signer (PPLNS batch)     = zion1l56685k280p364g686j88644g3j4r375755e8p7
                          label: ZION_V3_MAINNET_CANONICAL_POOL_PPLNS_PAYOUT_SIGNER_v1
+
+  • Bridge Seed Fund (premine slot 13)   = zion1f6m2j0h0l773j4074324q5r528y475w4j7m9685
+                         purpose: EVM bridge liquidity / initial bridge seed
 
 Reproducible `ZION_POOL_PAYOUT_SK_HEX` and `.env` block:
     cargo run --manifest-path V3/Cargo.toml -p zion-core --release --bin canonical-mainnet-operator-env

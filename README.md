@@ -60,7 +60,7 @@ Each decade = 5,256,000 blocks.
 
 ### Genesis Premine
 
-11.31% of total supply (16.28B ZION) — on-chain verifiable, unlocked from genesis:
+**13 outputs** totalling **11.65%** of total supply (**16.78B ZION**) — on-chain verifiable, unlocked from genesis:
 
 | Category | Amount |
 |----------|--------|
@@ -68,6 +68,7 @@ Each decade = 5,256,000 blocks.
 | DAO Treasury | 4.0B |
 | Infrastructure | 2.59B |
 | Humanitarian | 1.44B |
+| **Bridge Seed Fund** | **0.5B** |
 
 ---
 
