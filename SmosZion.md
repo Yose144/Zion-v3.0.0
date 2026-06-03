@@ -3,7 +3,12 @@
 ## Current Status (2026-06-03)
 
 ### Problem Summary
-GPU miner crashes every 30 seconds on Vega 64 rig due to **GPU self-test failure on s4_memhard stage**. CPU and GPU produce different hash results for the memory-hard transform, which should be deterministic.
+GPU miner crashes every 30 seconds on Vega 64 rig due to **GPU self-test failure on s4_memhard stage**. CPU and GPU produce different hash results for the memory-hard transform.
+
+### Critical Finding (2026-06-03 17:20)
+**GPU OpenCL kernel uses SHA3-512 chain, CPU uses Blake3 XOF + AES cascade** - these are completely different implementations. OpenCL kernel is outdated and doesn't match mainnet CPU implementation.
+
+**User Note**: GPU mining works locally, so issue is specific to SMOS/AMD Vega 64 environment, not the algorithm itself.
 
 ### Rig Details
 - **Rig ID**: 518837 (ZionRig)
@@ -91,18 +96,17 @@ if std::env::var("ZION_SKIP_GPU_SELF_TEST").is_err() {
 **Priority: CRITICAL**
 
 The GPU and CPU producing different results for s4_memhard is the root cause. This suggests:
-- OpenCL kernel implementation bug
-- Memory alignment issues on Vega 64
-- Scratchpad buffer synchronization problem
-- Different precision/rounding in GPU vs CPU
+- **CRITICAL FINDING**: GPU OpenCL kernel uses SHA3-512 chain, CPU uses Blake3 XOF + AES cascade
+- These are **completely different implementations** - not a bug, but version mismatch
+- OpenCL kernel is outdated and doesn't match mainnet CPU implementation
+- If it works locally, the issue is specific to SMOS/AMD Vega 64 environment
 
 **Action Items:**
-- Review OpenCL kernel code for s4_memhard stage
-- Check scratchpad buffer allocation and synchronization
-- Verify memory alignment requirements for Vega 64
-- Add detailed logging to GPU kernel to identify divergence point
-- Test with different work sizes and local work sizes
-- Compare GPU kernel output with CPU implementation step-by-step
+- Compare local vs SMOS OpenCL environment (clinfo, driver versions)
+- Check OpenCL kernel compilation flags and work sizes
+- Verify memory alignment requirements for Vega 64 on SMOS
+- Consider updating OpenCL kernel to Blake3 XOF + AES cascade (major rewrite)
+- Test with different work sizes and local work sizes on SMOS
 
 ### 2. Fix Edge Server Pool Service
 **Priority: HIGH**
