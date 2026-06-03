@@ -1452,6 +1452,186 @@ def parse_pool_log() -> dict:
     status["recent_payouts"] = status["recent_payouts"][-5:]
     return status
 
+def load_nodes_config() -> dict:
+    """Load nodes configuration from nodes.json"""
+    config_path = Path(__file__).parent / "nodes.json"
+    if config_path.exists():
+        try:
+            with open(config_path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {"nodes": {}, "miners": {}, "detection": {}}
+
+def detect_nodes() -> dict:
+    """Auto-detect all nodes and miners using multiple methods"""
+    config = load_nodes_config()
+    detected_nodes = {}
+    detected_miners = {}
+
+    # Detect configured nodes
+    for node_id, node_config in config.get("nodes", {}).items():
+        if not node_config.get("auto_detect", True):
+            continue
+
+        node_status = {
+            "id": node_id,
+            "name": node_config.get("name", node_id),
+            "host": node_config.get("host"),
+            "rpc_port": node_config.get("rpc_port", 8443),
+            "p2p_port": node_config.get("p2p_port", 8333),
+            "platform": node_config.get("platform"),
+            "location": node_config.get("location"),
+            "role": node_config.get("role"),
+            "connection": node_config.get("connection"),
+            "running": False,
+            "chain_height": None,
+            "tip_hash": None,
+            "known_peers": 0,
+            "mempool_size": 0,
+            "protocol_version": None,
+            "consensus_profile": None,
+            "network": None,
+            "last_error": None
+        }
+
+        # RPC probe
+        try:
+            rpc_info = rpc_call(node_config["host"], node_config["rpc_port"], "getChainInfo", {}, timeout=2.0)
+            if rpc_info and not rpc_info.get("_rpc_error"):
+                node_status["running"] = True
+                node_status["chain_height"] = rpc_info.get("chain_height")
+                node_status["tip_hash"] = rpc_info.get("tip_hash")
+                node_status["known_peers"] = rpc_info.get("known_peers", 0)
+                node_status["mempool_size"] = rpc_info.get("mempool_transactions", 0)
+                node_status["protocol_version"] = rpc_info.get("protocol_version")
+                node_status["consensus_profile"] = rpc_info.get("consensus_profile")
+                node_status["network"] = rpc_info.get("network")
+        except Exception as e:
+            node_status["last_error"] = str(e)
+
+        detected_nodes[node_id] = node_status
+
+    # Detect configured miners
+    for miner_id, miner_config in config.get("miners", {}).items():
+        miner_status = {
+            "id": miner_id,
+            "name": miner_config.get("name", miner_id),
+            "worker_name": miner_config.get("worker_name"),
+            "miner_id": miner_config.get("miner_id"),
+            "pool_addr": miner_config.get("pool_addr"),
+            "platform": miner_config.get("platform"),
+            "role": miner_config.get("role"),
+            "connection": miner_config.get("connection"),
+            "running": False,
+            "hashrate": None,
+            "shares_accepted": 0,
+            "shares_rejected": 0,
+            "current_height": None,
+            "current_diff": None,
+            "active_sessions": None
+        }
+
+        # Detect miner/pool based on method
+        detect_method = miner_config.get("detect_method", "log_detection")
+
+        if detect_method == "port_scan" and miner_config.get("role") == "pool":
+            # Pool detection via port scan
+            host = miner_config.get("host")
+            port = miner_config.get("stratum_port", 8444)
+            try:
+                if check_port_open(host, port, timeout=2.0):
+                    miner_status["running"] = True
+                    # Try to get metrics
+                    metrics_port = miner_config.get("metrics_port", 8455)
+                    try:
+                        with _urlreq.urlopen(f"http://{host}:{metrics_port}/metrics", timeout=1.0) as r:
+                            body = r.read().decode("utf-8", errors="ignore")
+                            for line in body.splitlines():
+                                if line.startswith("zion_pool_active_sessions "):
+                                    miner_status["active_sessions"] = int(float(line.split()[-1]))
+                                elif line.startswith("zion_pool_hashrate_khs "):
+                                    miner_status["hashrate"] = float(line.split()[-1])
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+        else:
+            # Miner detection from logs
+            log_file = f"miner-{miner_config.get('platform', 'local')}.log"
+            try:
+                miner_log = parse_miner_log_specific(log_file)
+                if miner_log.get("running"):
+                    miner_status["running"] = True
+                    miner_status["hashrate"] = miner_log.get("hashrate")
+                    miner_status["shares_accepted"] = miner_log.get("shares_accepted", 0)
+                    miner_status["shares_rejected"] = miner_log.get("shares_rejected", 0)
+                    miner_status["current_height"] = miner_log.get("current_height")
+                    miner_status["current_diff"] = miner_log.get("current_diff")
+            except Exception:
+                pass
+
+        detected_miners[miner_id] = miner_status
+
+    return {
+        "nodes": detected_nodes,
+        "miners": detected_miners,
+        "config": config.get("detection", {}),
+        "timestamp": datetime.now().isoformat()
+    }
+
+def parse_miner_log_specific(log_file: str) -> dict:
+    """Parse specific miner log file"""
+    recent = tail_log(log_file, 200)
+    startup = head_log(log_file, 50)
+
+    status = {
+        "running": bool(recent),
+        "miner_id": None,
+        "worker_name": None,
+        "pool_addr": None,
+        "hashrate": None,
+        "gpu_backend": None,
+        "gpu_device": None,
+        "shares_accepted": 0,
+        "shares_rejected": 0,
+        "current_height": None,
+        "current_diff": None,
+        "recent_lines": recent[-10:],
+    }
+
+    for line in startup:
+        if m := re.search(r'miner_id=(\S+)', line):
+            status["miner_id"] = m.group(1)
+        if m := re.search(r'worker_name=(\S+)', line):
+            status["worker_name"] = m.group(1)
+        if m := re.search(r'pool_addr=(\S+)', line):
+            status["pool_addr"] = m.group(1)
+        if m := re.search(r'backend=(\S+)', line):
+            status["gpu_backend"] = m.group(1)
+        if m := re.search(r'device="([^"]+)"', line):
+            status["gpu_device"] = m.group(1)
+
+    for line in recent:
+        if m := re.search(r'gpu_backend=(\S+)', line):
+            status["gpu_backend"] = m.group(1)
+        if m := re.search(r'speed\s+\d+s/\d+s/\d+m\s+(\d+\.\d+)', line):
+            status["hashrate"] = float(m.group(1))
+        if status["hashrate"] is None:
+            if m := re.search(r'hps_10s=(\d+\.\d+)', line):
+                status["hashrate"] = float(m.group(1)) / 1000.0
+            elif m := re.search(r'gpu_hps=(\d+\.\d+)', line):
+                status["hashrate"] = float(m.group(1)) / 1000.0
+        if m := re.search(r'accepted\s+(\d+)/(\d+)', line):
+            status["shares_accepted"] = int(m.group(1))
+            status["shares_rejected"] = int(m.group(2))
+        if m := re.search(r'height=(\d+)', line):
+            status["current_height"] = int(m.group(1))
+        if m := re.search(r'diff\s+(\d+)', line):
+            status["current_diff"] = int(m.group(1))
+
+    return status
+
 def parse_miner_log() -> dict:
     # Use the most recently modified miner log file
     recent = tail_log("miner.log", 200)
@@ -6308,6 +6488,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self.send_error(405)
         elif route == "/api/status":
             self._json(build_status())
+        elif route == "/api/nodes":
+            self._json(detect_nodes())
         elif route == "/api/config":
             # GET: return current config (read-only)
             self._json({
