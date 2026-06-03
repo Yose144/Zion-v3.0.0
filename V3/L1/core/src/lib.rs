@@ -3712,6 +3712,19 @@ pub(crate) fn hex(bytes: &[u8]) -> String {
 mod tests {
     use super::*;
     use std::fs;
+
+    /// Deterministic test keypair for signing account transactions in tests.
+    fn test_keypair() -> (ed25519_dalek::SigningKey, ed25519_dalek::VerifyingKey) {
+        crypto::keypair_from_canonical_label("__test_dummy_signer_v1__")
+    }
+
+    /// Sign a test transaction with the dummy test keypair.
+    fn sign_test_tx(tx: &mut Transaction) {
+        let (sk, vk) = test_keypair();
+        let sig = crypto::sign(&sk, tx.tx_id.as_bytes());
+        tx.signature = hex(&sig);
+        tx.public_key = hex(vk.as_bytes());
+    }
     use zion_cosmic_harmony::{
         generate_ekam_test_vector, BODY_ROOT_V2_ACTIVATION_HEIGHT, EKAM_CANONICAL_TEST_VECTOR_HEX,
     };
@@ -3736,7 +3749,7 @@ mod tests {
             tx_hex.push('0');
         }
         tx_hex.truncate(64);
-        Transaction {
+        let mut tx = Transaction {
             tx_id: tx_hex,
             from: "wallet.alpha".to_string(),
             to: "wallet.beta".to_string(),
@@ -3745,7 +3758,9 @@ mod tests {
             nonce,
             signature: String::new(),
             public_key: String::new(),
-        }
+        };
+        sign_test_tx(&mut tx);
+        tx
     }
 
     #[test]
@@ -4051,11 +4066,11 @@ mod tests {
                 accepted: false,
                 reason: Some(ref reason),
                 ..
-            } if reason.contains("zion1") || reason.contains("UTXO")
+            } if reason.contains("signature verification failed")
         ));
 
         let first = sample_transaction("tx-nonce-a", 2, 9);
-        let reused_nonce = Transaction {
+        let mut reused_nonce = Transaction {
             tx_id: sample_transaction("tx-nonce-b", 4, 9).tx_id,
             from: first.from.clone(),
             to: first.to.clone(),
@@ -4065,6 +4080,7 @@ mod tests {
             signature: String::new(),
             public_key: String::new(),
         };
+        sign_test_tx(&mut reused_nonce);
         assert!(matches!(
             runtime.handle_rpc_request(RpcRequest::SubmitTransaction {
                 transaction: first.clone()
