@@ -116,16 +116,19 @@ Zion OS je komplexní interní systém pro správu celého ZION Mainnetu. Centra
 ```
 ZION_OS/
 ├── README.md                 # Tento soubor
+├── IMPLEMENTATION_PLAN.md     # Implementation plan
 ├── dashboard/               # Central dashboard
 │   ├── app.py              # Python Flask backend
 │   ├── dashboard.html      # v1 HTML dashboard
 │   ├── dashboard.js        # v1 JS logic
 │   ├── v2/                 # v2 React SPA
 │   ├── nodes.json          # Node detection config
-│   └── MacOS/              # macOS specific setup
-├── desktop-agent/          # Desktop Electron app
-│   ├── src/                # Electron main + renderer
-│   └── resources/          # Assets
+│   ├── MacOS/              # macOS specific setup
+│   ├── Ubuntu/             # Ubuntu specific setup
+│   └── Windows/            # Windows specific setup
+├── desktop-dashboard/      # Desktop Tauri app
+│   ├── src/                # Tauri main + renderer
+│   └── src-tauri/          # Rust backend
 ├── mobile-app/             # React Native app
 │   ├── src/                # React Native source
 │   └── android/ios/        # Platform specific
@@ -133,10 +136,10 @@ ZION_OS/
 │   ├── Cargo.toml          # Rust project
 │   ├── src/main.rs         # Agent logic
 │   └── test_e2e_pool.sh    # E2E test
-├── auto-update/             # Auto-update system
+├── auto-update/             # Auto-update system (TODO)
 │   ├── Cargo.toml          # Rust project
 │   └── src/               # Update logic
-└── monitoring/             # Monitoring stack
+└── monitoring/             # Monitoring stack (TODO)
     ├── prometheus/        # Prometheus config
     ├── grafana/           # Grafana dashboards
     └── alertmanager/      # Alert rules
@@ -146,21 +149,21 @@ ZION_OS/
 
 ### 1. Start Central Dashboard
 ```bash
-cd dashboard
+cd ZION_OS/dashboard
 python3 app.py
 # Open http://127.0.0.1:8766
 ```
 
-### 2. Start Desktop Agent
+### 2. Start Desktop Dashboard
 ```bash
-cd APP&WEB/desktop-agent
+cd ZION_OS/desktop-dashboard
 npm install
-npm start
+cargo tauri dev --manifest-path src-tauri/Cargo.toml
 ```
 
 ### 3. Start Mining Agent
 ```bash
-cd APP&WEB/mining-agent
+cd ZION_OS/mining-agent
 cargo build --release --features gpu-metal
 ./target/release/mining-agent --pool 100.76.16.108:8444 --backend auto
 ```

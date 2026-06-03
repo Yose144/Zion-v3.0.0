@@ -1,6 +1,6 @@
 'use strict';
 
-const TABS = ['overview','nodes','wallets','explorer','services','alerts','l1','l2','l3','l4','l5','l6','bridge','genesis','blockers','controls','charts','events','env','database','metrics','launch-day','wizard','logs','hiran','dao','payout'];
+const TABS = ['overview','nodes','orchestrator','wallets','explorer','services','alerts','l1','l2','l3','l4','l5','l6','bridge','genesis','blockers','controls','charts','events','env','database','metrics','launch-day','wizard','logs','hiran','dao','payout'];
 let autoRefresh = true, refreshTimer = null, currentTab = 'overview';
 let charts = {};
 let friendlyMode = false;
@@ -5574,6 +5574,134 @@ function renderNodes(data){
   container.innerHTML = html;
 }
 
+// ── Orchestrator Panel ──────────────────────────────────────────────────
+async function refreshOrchestrator(){
+  try {
+    const [status, services] = await Promise.all([
+      fetch('/api/orchestrator/status').then(r => r.json()),
+      fetch('/api/orchestrator/services').then(r => r.json())
+    ]);
+    renderOrchestrator(status, services);
+  } catch(e) {
+    document.getElementById('orchestrator-container').innerHTML = `<div class="text-red-400 text-sm">Error: ${e.message}</div>`;
+  }
+}
+
+function renderOrchestrator(status, servicesData){
+  const container = document.getElementById('orchestrator-container');
+  if(!container) return;
+
+  const svcStatus = status.services || {};
+  const svcConfig = servicesData.services || {};
+  const layers = servicesData.layers || [];
+
+  let html = `<div class="text-xs text-gray-500 mb-3">Last update: ${new Date(status.timestamp).toLocaleString()}</div>`;
+
+  // Summary bar
+  const total = Object.keys(svcStatus).length;
+  const running = Object.values(svcStatus).filter(s => s.state === 'running').length;
+  const stopped = Object.values(svcStatus).filter(s => s.state === 'stopped').length;
+  html += `
+    <div class="flex gap-4 mb-4 text-xs">
+      <div class="bg-gray-800/50 border border-white/10 rounded-lg px-3 py-2">
+        <span class="text-gray-400">Total:</span> <span class="text-white font-bold">${total}</span>
+      </div>
+      <div class="bg-green-900/30 border border-green-500/30 rounded-lg px-3 py-2">
+        <span class="text-green-400">Running:</span> <span class="text-green-400 font-bold">${running}</span>
+      </div>
+      <div class="bg-red-900/30 border border-red-500/30 rounded-lg px-3 py-2">
+        <span class="text-red-400">Stopped:</span> <span class="text-red-400 font-bold">${stopped}</span>
+      </div>
+    </div>
+  `;
+
+  // Services by layer
+  for(const layer of layers){
+    const layerServices = Object.entries(svcStatus).filter(([_, s]) => s.layer === layer);
+    if(layerServices.length === 0) continue;
+
+    const layerColors = {
+      'L1': 'text-blue-400', 'L2': 'text-purple-400', 'L3': 'text-pink-400',
+      'L4': 'text-orange-400', 'L5': 'text-yellow-400', 'L6': 'text-green-400',
+      'monitoring': 'text-cyan-400', 'auto-update': 'text-gray-400', 'SDK': 'text-gray-400'
+    };
+    const layerColor = layerColors[layer] || 'text-gray-400';
+
+    html += `<div class="mb-4"><h3 class="text-sm font-bold ${layerColor} mb-2">${layer}</h3>`;
+    html += `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">`;
+
+    for(const [name, svc] of layerServices){
+      const config = svcConfig[name] || {};
+      const isRunning = svc.state === 'running';
+      const statusColor = isRunning ? 'text-green-400' : 'text-red-400';
+      const statusEmoji = isRunning ? '🟢' : '🔴';
+      const ports = Object.entries(svc.ports || {}).map(([k,v]) => `${k}:${v}`).join(', ') || 'N/A';
+      const autoRestart = svc.auto_restart ? '♻️' : '';
+
+      html += `
+        <div class="bg-gray-800/50 border border-white/10 rounded-lg p-3">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-sm font-bold text-gray-200">${name}</span>
+            <span class="${statusColor} text-xs">${statusEmoji} ${svc.state}</span>
+          </div>
+          <div class="space-y-1 text-xs">
+            <div class="flex justify-between">
+              <span class="text-gray-400">Description:</span>
+              <span class="text-gray-300 text-right max-w-[150px] truncate">${config.description || 'N/A'}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-400">PID:</span>
+              <span class="text-gray-300">${svc.pid || 'N/A'}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-400">Ports:</span>
+              <span class="text-gray-300 text-[10px]">${ports}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-400">Auto-restart:</span>
+              <span class="text-gray-300">${autoRestart || 'No'}</span>
+            </div>
+            <div class="flex gap-1 mt-2">
+              <button onclick="controlService('${name}', 'start')" class="text-[10px] bg-green-600 hover:bg-green-700 text-white px-2 py-0.5 rounded">▶</button>
+              <button onclick="controlService('${name}', 'stop')" class="text-[10px] bg-red-600 hover:bg-red-700 text-white px-2 py-0.5 rounded">⏹</button>
+              <button onclick="controlService('${name}', 'restart')" class="text-[10px] bg-yellow-600 hover:bg-yellow-700 text-white px-2 py-0.5 rounded">↻</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    html += `</div></div>`;
+  }
+
+  container.innerHTML = html;
+}
+
+async function controlService(service, action){
+  try {
+    const resp = await fetch('/api/orchestrator/' + action, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({service})
+    });
+    const data = await resp.json();
+    alert(data.message || data.error || 'Done');
+    refreshOrchestrator();
+  } catch(e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+async function startProfile(){
+  const select = document.getElementById('orchestrator-profile');
+  const profile = select ? select.value : '';
+  if(!profile) {
+    alert('Please select a profile');
+    return;
+  }
+  if(!confirm('Start all services for profile: ' + profile + '?')) return;
+  alert('Profile start not yet implemented in web UI. Use: python3 orchestrator.py start --profile ' + profile);
+}
+
 // ── Wire new features into refreshAll ─────────────────────────────────────
 const _origRefreshAll = refreshAll;
 refreshAll = async function() {
@@ -5584,6 +5712,8 @@ refreshAll = async function() {
   await refreshServiceHealth();
   // N: Nodes panel
   if(currentTab === 'nodes') await refreshNodes();
+  // O: Orchestrator panel
+  if(currentTab === 'orchestrator') await refreshOrchestrator();
   // F: Topology + service ordering
   let services = [];
   try {
