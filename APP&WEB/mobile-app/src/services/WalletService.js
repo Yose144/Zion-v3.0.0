@@ -5,7 +5,7 @@ import MultiChainCryptoService from './MultiChainCryptoService';
 import {CONFIG} from '../constants/config';
 import {CHAIN_IDS} from '../constants/chains';
 import {validateAddress} from '../utils/addressValidation';
-import {TrezorWallet} from 'zion-wallet-sdk';
+import {TrezorWallet, LedgerWallet} from 'zion-wallet-sdk';
 
 /**
  * Wallet Service v3.0.0
@@ -494,6 +494,49 @@ class WalletService {
       return wallet;
     } finally {
       trezor.disconnect();
+    }
+  }
+
+  /**
+   * Import wallet from Ledger hardware device (Ed25519 public key export).
+   * @param {string} name - Wallet display name
+   * @param {string} path - BIP-32 path (default: "m/1852'/1815'/0'/0/0")
+   */
+  async importFromLedger(name = 'Ledger Wallet', path = "m/1852'/1815'/0'/0/0") {
+    const ledger = new LedgerWallet();
+    await ledger.connect();
+    try {
+      const {address, publicKey} = await ledger.getAddress(path, true);
+
+      const wallet = {
+        id: `ledger_${Date.now()}`,
+        name,
+        chainId: CHAIN_IDS.ZION,
+        walletType: 'ledger',
+        address,
+        publicKey,
+        privateKey: null,
+        mnemonic: null,
+        path,
+        imported: true,
+        created: new Date().toISOString(),
+        balance: 0,
+        consciousness: {
+          level: 'PHYSICAL',
+          xp: 0,
+        },
+      };
+
+      this.wallets.push(wallet);
+      await this.saveWallets();
+
+      if (this.wallets.length === 1) {
+        await this.setActiveWallet(wallet.id);
+      }
+
+      return wallet;
+    } finally {
+      ledger.disconnect();
     }
   }
 

@@ -67,6 +67,20 @@ export {
   type TrezorManifest,
 } from './hardware/trezor-wallet.js';
 
+export {
+  LedgerWallet,
+  DEFAULT_LEDGER_PATH,
+  type LedgerAddressResult,
+} from './hardware/ledger-wallet.js';
+
+export {
+  GenericHIDWallet,
+  HIDWalletRegistry,
+  type GenericAddressResult,
+  type GenericHIDWalletOptions,
+  type HIDDeviceInfo,
+} from './hardware/generic-hid-wallet.js';
+
 // Convenience class that wires everything together
 import { WalletManager } from './wallet/wallet-manager.js';
 import type { StorageInterface } from './storage/storage-interface.js';

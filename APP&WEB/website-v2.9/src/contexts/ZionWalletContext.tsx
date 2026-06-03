@@ -28,6 +28,7 @@ interface ZionWalletState {
   importFromMnemonic: (mnemonic: string, name: string, password: string) => Promise<void>;
   importFromPrivateKey: (privateKeyHex: string, name: string, password: string) => Promise<void>;
   importFromTrezor: (name?: string) => Promise<void>;
+  importFromLedger: (name?: string) => Promise<void>;
   setActiveWallet: (id: string) => Promise<void>;
   deleteWallet: (id: string) => Promise<void>;
   refreshBalance: () => Promise<void>;
@@ -48,6 +49,7 @@ const defaultState: ZionWalletState = {
   importFromMnemonic: async () => {},
   importFromPrivateKey: async () => {},
   importFromTrezor: async () => {},
+  importFromLedger: async () => {},
   setActiveWallet: async () => {},
   deleteWallet: async () => {},
   refreshBalance: async () => {},
@@ -152,6 +154,21 @@ export function ZionWalletProvider({ children }: { children: ReactNode }) {
     }
   }, [manager, refreshWallets]);
 
+  const importFromLedger = useCallback(async (name?: string) => {
+    if (!manager) throw new Error('Wallet manager not initialized');
+    setLoading(true);
+    setError(null);
+    try {
+      await manager.importFromLedger({ name });
+      refreshWallets(manager);
+    } catch (e: any) {
+      setError(e.message || 'Failed to connect Ledger');
+      throw e;
+    } finally {
+      setLoading(false);
+    }
+  }, [manager, refreshWallets]);
+
   const setActiveWalletCb = useCallback(async (id: string) => {
     if (!manager) return;
     await manager.setActiveWallet(id);
@@ -227,6 +244,7 @@ export function ZionWalletProvider({ children }: { children: ReactNode }) {
         importFromMnemonic,
         importFromPrivateKey,
         importFromTrezor,
+        importFromLedger,
         setActiveWallet: setActiveWalletCb,
         deleteWallet,
         refreshBalance,
