@@ -22,6 +22,41 @@
 
 ---
 
+## Co je nového 2026-06-03 (Upgrade 3.0.1 — Polish & Gap Closure + Bridge Premine)
+
+> Verze: **3.0.1** (Cargo workspace bump)
+
+### Bridge Premine Slot 13 — E2E Mainnet Launch Ready
+
+> Genesis premine rozšířen z 12 na 13 outputs pro bridge seed liquidity.
+
+| Parametr | Hodnota |
+|----------|---------|
+| **Adresa** | `zion1f6m2j0h0l773j4074324q5r528y475w4j7m9685` |
+| **Amount** | 500,000,000 ZION |
+| **Unlock** | immediate (od genesis #0) |
+| **Účel** | EVM bridge liquidity — seed pro první L1→Base bridge operace |
+| **Bridge vault** | `zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0` (keyless) |
+
+**Změny:**
+- `genesis.rs` — 13 outputs, total 16.78B ZION (předtím 12 / 16.28B)
+- `emission.rs` — `GENESIS_PREMINE` aktualizován
+- `launch.rs` — integrity check očekává 13 TX
+- `PREMINE_ADDRESSES_PUBLIC.txt` + `V3/docs/mainnet/PREMINE_AND_CANONICAL_WALLETS_PUBLIC.txt` — aktualizováno
+- `bridge-mainnet.toml` — vault adresa opravena na canonical `zion1w0r0...`, wZION + ZIONBridge adresy naplněny reálnými hodnotami z existujícího deploye
+
+**Připraveno pro upgrade existujícího ZIONBridge:**
+- `V3/scripts/upgrade-bridge-mainnet.sh` — upgrade z 1/2 na 3/5 validátorů
+- 5 validátor adres vygenerováno (3 nové EVM klíče)
+
+**E2E flow po genesis:**
+1. Bridge Seed Fund obdrží 500M ZION v genesis #0
+2. Z seed fund se pošle ZION na keyless vault `zion1w0r0...`
+3. Validátoři sledují L1 lock TX → submitují proof na Base → wZION se mintuje
+4. Bridge funguje od prvního bloku
+
+---
+
 ## Co je nového 2026-06-03 (Upgrade 3.0.1 — Polish & Gap Closure)
 
 > Verze: **3.0.1** (Cargo workspace bump)
