@@ -4,6 +4,7 @@ import { Sidebar } from "./components/ui/Sidebar";
 import { GpuGauge } from "./components/canvas/GpuGauge";
 import { CpuHeatmap } from "./components/canvas/CpuHeatmap";
 import { Sparkline } from "./components/canvas/Sparkline";
+import { NetworkScene } from "./components/three/NetworkScene";
 import { useState } from "react";
 
 type Tab = "overview" | "services" | "topology" | "gpu" | "logs" | "settings";
@@ -31,9 +32,9 @@ function App() {
             </div>
           )}
           {activeTab === "topology" && (
-            <div className="glass-panel p-6">
-              <h2 className="text-xl font-bold text-zion-info mb-4">Network Topology (3D — Coming Soon)</h2>
-              <p className="text-zion-dim">React Three Fiber 3D scene will render here</p>
+            <div className="space-y-4">
+              <h2 className="text-xl font-bold text-zion-info font-mono">Network Topology</h2>
+              <NetworkScene />
             </div>
           )}
           {activeTab === "gpu" && (
