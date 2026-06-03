@@ -357,7 +357,7 @@ impl WebSocketServer {
                 "model": "account",
                 "from": account_tx.from,
                 "to": account_tx.to,
-                "amount_zion": account_tx.amount_zion,
+                "amount_zion": account_tx.amount_zion.to_string(),
                 "fee_zion": account_tx.fee_zion,
                 "timestamp": chrono::Utc::now().to_rfc3339(),
             });

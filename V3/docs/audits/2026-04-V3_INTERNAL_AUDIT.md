@@ -88,7 +88,7 @@ Rychlý sanity (Python): `5_400_067_000_000_000 * (4/5)**10 ≈ 5.79847779e14` f
 
 ### 2.2 Premine (`V3/L1/core/src/genesis.rs`)
 
-- 13 premine outputů, 5 Oasis + Golden Egg slotů á 1.65B ZION, 3 DAO Treasury sloty (4.0B) **uzamčené** do `DAO_TREASURY_LOCK_HEIGHT = 525_600` (~1 rok).
+- 14 premine outputů, 5 Oasis + Golden Egg slotů á 1.65B ZION, 3 DAO Treasury sloty (4.0B) **uzamčené** do `DAO_TREASURY_LOCK_HEIGHT = 525_600` (~1 rok), 1 Bridge Vault UTXO Seed (0.1B).
 - `amount_flowers: u128` — STATUS.md uvádí, že tohle byl recent fix (předtím u64 přetekl při 1.65B × 1e12 ≈ 1.65e21 > u64::MAX ≈ 1.84e19). **Sedí: 1.65e21 nelze do u64.**
 - `GENESIS_TIMESTAMP = 1_767_225_600` = 2026‑01‑01 00:00:00 UTC. OK.
 - `validate_premine_locks` v `validation.rs` existuje, ale viz F1 níže — pipeline se z produkce **nevolá**. *Lock se ale dále kontroluje v `validate_peer_block`? Ne, tam jsem ho nenašel — je to potenciální obejití DAO timelocku, viz F1.*

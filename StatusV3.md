@@ -50,8 +50,8 @@
 - 5 validátor adres vygenerováno (3 nové EVM klíče)
 
 **E2E flow po genesis:**
-1. Bridge Seed Fund obdrží 500M ZION v genesis #0
-2. Z seed fund se pošle ZION na keyless vault `zion1w0r0...`
+1. Bridge Seed Fund obdrží 400M ZION (account model) v genesis #0
+2. Bridge Vault UTXO Seed obdrží 100M ZION (UTXO) v genesis #0 pro unlock liquidity
 3. Validátoři sledují L1 lock TX → submitují proof na Base → wZION se mintuje
 4. Bridge funguje od prvního bloku
 

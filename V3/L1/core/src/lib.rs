@@ -1230,7 +1230,7 @@ impl NodeRuntime {
         self.chain_state.height
     }
 
-    pub fn utxo_balance(&self, address: &str) -> u64 {
+    pub fn utxo_balance(&self, address: &str) -> u128 {
         self.chain_state.utxo_balance(address)
     }
 
@@ -1891,11 +1891,11 @@ impl ChainState {
     }
 
     /// Compute balance for a `zion1...` address by summing unspent UTXO outputs.
-    fn utxo_balance(&self, address: &str) -> u64 {
+    fn utxo_balance(&self, address: &str) -> u128 {
         self.utxo_set()
             .values()
             .filter(|u| u.address == address)
-            .map(|u| u.amount)
+            .map(|u| u.amount as u128)
             .sum()
     }
 
