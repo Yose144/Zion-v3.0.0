@@ -26,7 +26,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 # ── Config ──────────────────────────────────────────────────────────────
 
 SCRIPT_DIR = Path(__file__).parent.resolve()
-REPO_ROOT = SCRIPT_DIR.parent
+REPO_ROOT = SCRIPT_DIR.parent.parent
 LOG_DIR = REPO_ROOT / "logs"
 DATA_DIR = REPO_ROOT / "V3" / "data"
 SCRIPTS_DIR = REPO_ROOT / "scripts"
@@ -1462,6 +1462,107 @@ def load_nodes_config() -> dict:
         except Exception:
             pass
     return {"nodes": {}, "miners": {}, "detection": {}}
+
+# ── Orchestrator Integration ────────────────────────────────────────────────
+
+ORCHESTRATOR_MANIFEST = REPO_ROOT / "ZION_OS" / "orchestrator" / "manifest.yaml"
+
+def load_orchestrator_manifest() -> dict:
+    """Load Zion OS Orchestrator manifest"""
+    try:
+        import yaml
+        with open(ORCHESTRATOR_MANIFEST, "r", encoding="utf-8") as f:
+            return yaml.safe_load(f)
+    except Exception:
+        return {}
+
+def get_orchestrator_services() -> dict:
+    """Return list of all services from manifest"""
+    manifest = load_orchestrator_manifest()
+    services = manifest.get("services", {})
+    result = {}
+    for name, cfg in services.items():
+        result[name] = {
+            "name": name,
+            "layer": cfg.get("layer", "unknown"),
+            "description": cfg.get("description", ""),
+            "ports": cfg.get("ports", {}),
+            "depends_on": cfg.get("depends_on", []),
+            "auto_restart": cfg.get("auto_restart", False),
+            "type": cfg.get("type", "service"),
+        }
+    return {"services": result, "profiles": manifest.get("profiles", {}), "layers": sorted(set(s.get("layer", "unknown") for s in services.values()))}
+
+def get_orchestrator_status() -> dict:
+    """Check status of all services defined in manifest"""
+    manifest = load_orchestrator_manifest()
+    services = manifest.get("services", {})
+    status = {}
+    for name, cfg in services.items():
+        binary = cfg.get("binary", "")
+        # Check if process is running
+        pid = None
+        state = "stopped"
+        try:
+            if binary:
+                result = subprocess.run(["pgrep", "-f", binary], capture_output=True, text=True)
+                if result.returncode == 0:
+                    pid = int(result.stdout.strip().split('\n')[0])
+                    state = "running"
+        except Exception:
+            pass
+        status[name] = {
+            "name": name,
+            "layer": cfg.get("layer", "unknown"),
+            "state": state,
+            "pid": pid,
+            "auto_restart": cfg.get("auto_restart", False),
+            "ports": cfg.get("ports", {}),
+        }
+    return {"timestamp": datetime.now().isoformat(), "services": status}
+
+def orchestrator_control(action: str, service: str) -> dict:
+    """Start, stop, or restart a service"""
+    manifest = load_orchestrator_manifest()
+    services = manifest.get("services", {})
+    if service not in services:
+        return {"ok": False, "error": f"Service '{service}' not found in manifest"}
+    cfg = services[service]
+    binary = cfg.get("binary", "")
+    args = cfg.get("args", [])
+    env = cfg.get("env", {})
+    log_file = cfg.get("log_file", f"logs/{service}.log")
+    if action == "start":
+        # Check if already running
+        try:
+            result = subprocess.run(["pgrep", "-f", binary], capture_output=True, text=True)
+            if result.returncode == 0:
+                return {"ok": True, "message": f"{service} is already running", "action": "start"}
+        except Exception:
+            pass
+        # Start service
+        try:
+            service_env = os.environ.copy()
+            service_env.update(env)
+            cmd = [binary] + args if args else [binary]
+            os.makedirs(os.path.dirname(log_file) if os.path.dirname(log_file) else ".", exist_ok=True)
+            with open(log_file, 'a') as log:
+                log.write(f"\n[{datetime.now().isoformat()}] Starting {service}\n")
+                process = subprocess.Popen(cmd, stdout=log, stderr=subprocess.STDOUT, env=service_env, start_new_session=True)
+            return {"ok": True, "message": f"Started {service} (PID: {process.pid})", "pid": process.pid, "action": "start"}
+        except Exception as e:
+            return {"ok": False, "error": str(e), "action": "start"}
+    elif action == "stop":
+        try:
+            result = subprocess.run(["pkill", "-f", binary], capture_output=True, text=True)
+            return {"ok": True, "message": f"Stopped {service}", "action": "stop"}
+        except Exception as e:
+            return {"ok": False, "error": str(e), "action": "stop"}
+    elif action == "restart":
+        orchestrator_control("stop", service)
+        time.sleep(2)
+        return orchestrator_control("start", service)
+    return {"ok": False, "error": f"Unknown action: {action}"}
 
 def detect_nodes() -> dict:
     """Auto-detect all nodes and miners using multiple methods"""
@@ -6490,6 +6591,10 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json(build_status())
         elif route == "/api/nodes":
             self._json(detect_nodes())
+        elif route == "/api/orchestrator/status":
+            self._json(get_orchestrator_status())
+        elif route == "/api/orchestrator/services":
+            self._json(get_orchestrator_services())
         elif route == "/api/config":
             # GET: return current config (read-only)
             self._json({
@@ -7680,6 +7785,16 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json(run_control("stop-stack"))
         elif route == "/api/stack/stop-all":
             self._json(run_control("stop-all"))
+        # ── Orchestrator endpoints ─────────────────────────────────────────
+        elif route == "/api/orchestrator/start":
+            svc = payload.get("service", "")
+            self._json(orchestrator_control("start", svc))
+        elif route == "/api/orchestrator/stop":
+            svc = payload.get("service", "")
+            self._json(orchestrator_control("stop", svc))
+        elif route == "/api/orchestrator/restart":
+            svc = payload.get("service", "")
+            self._json(orchestrator_control("restart", svc))
         # ── Node 1 ───────────────────────────────────────────────────────────
         elif route == "/api/node1/start":
             self._json(run_control("start-node1"))
