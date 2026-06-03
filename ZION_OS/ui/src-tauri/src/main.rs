@@ -2,6 +2,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod hardware;
+mod tray;
 
 use std::process::Command;
 use std::collections::HashMap;
@@ -218,6 +219,7 @@ fn main() {
         .setup(|app| {
             let window = app.get_webview_window("main").unwrap();
             window.set_title("Zion OS — RTX Spark").ok();
+            tray::setup_tray(app).ok();
             Ok(())
         })
         .run(tauri::generate_context!())
