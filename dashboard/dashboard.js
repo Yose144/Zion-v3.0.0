@@ -1,6 +1,6 @@
 'use strict';
 
-const TABS = ['overview','wallets','explorer','services','alerts','l1','l2','l3','l4','l5','l6','bridge','genesis','blockers','controls','charts','events','env','database','metrics','launch-day','wizard','logs','hiran','dao','payout'];
+const TABS = ['overview','nodes','wallets','explorer','services','alerts','l1','l2','l3','l4','l5','l6','bridge','genesis','blockers','controls','charts','events','env','database','metrics','launch-day','wizard','logs','hiran','dao','payout'];
 let autoRefresh = true, refreshTimer = null, currentTab = 'overview';
 let charts = {};
 let friendlyMode = false;
@@ -5430,6 +5430,150 @@ function renderTopology(services) {
   }
 }
 
+// ── Nodes Panel ─────────────────────────────────────────────────────────────
+async function refreshNodes(){
+  try {
+    const data = await fetch('/api/nodes').then(r => r.json());
+    renderNodes(data);
+  } catch(e) {
+    document.getElementById('nodes-container').innerHTML = `<div class="text-red-400 text-sm">Error loading nodes: ${e.message}</div>`;
+  }
+}
+
+function renderNodes(data){
+  const container = document.getElementById('nodes-container');
+  if(!container) return;
+
+  const nodes = data.nodes || {};
+  const miners = data.miners || {};
+  const timestamp = data.timestamp || new Date().toISOString();
+
+  let html = `<div class="text-xs text-gray-500 mb-3">Last scan: ${new Date(timestamp).toLocaleString()}</div>`;
+
+  // Nodes section
+  html += `<div class="mb-4"><h3 class="text-sm font-bold text-gray-300 mb-2">🖥️ Nodes</h3>`;
+  html += `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">`;
+
+  for(const [id, node] of Object.entries(nodes)){
+    const statusColor = node.running ? 'text-green-400' : 'text-red-400';
+    const statusText = node.running ? '✅ Running' : '❌ Offline';
+    const roleBadge = node.role === 'primary' ? 'bg-blue-600' : (node.role === 'backup' ? 'bg-yellow-600' : 'bg-purple-600');
+    const connBadge = node.connection === 'tailscale_vpn' ? 'bg-green-700' : 'bg-gray-600';
+
+    html += `
+      <div class="bg-gray-800/50 border border-white/10 rounded-lg p-3">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-sm font-bold text-gray-200">${node.name}</span>
+          <span class="${statusColor} text-xs">${statusText}</span>
+        </div>
+        <div class="space-y-1 text-xs">
+          <div class="flex justify-between">
+            <span class="text-gray-400">ID:</span>
+            <span class="text-gray-300">${id}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-400">Host:</span>
+            <span class="text-gray-300">${node.host}:${node.rpc_port}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-400">Platform:</span>
+            <span class="text-gray-300">${node.platform}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-400">Location:</span>
+            <span class="text-gray-300">${node.location}</span>
+          </div>
+          <div class="flex gap-1 mt-2">
+            <span class="${roleBadge} text-white px-2 py-0.5 rounded text-[10px]">${node.role}</span>
+            <span class="${connBadge} text-white px-2 py-0.5 rounded text-[10px]">${node.connection}</span>
+          </div>
+          ${node.running ? `
+            <div class="mt-2 pt-2 border-t border-white/10">
+              <div class="flex justify-between">
+                <span class="text-gray-400">Height:</span>
+                <span class="text-green-400">${node.chain_height}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-400">Peers:</span>
+                <span class="text-gray-300">${node.known_peers}</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-400">Version:</span>
+                <span class="text-gray-300 text-[10px]">${node.protocol_version || 'N/A'}</span>
+              </div>
+            </div>
+          ` : ''}
+        </div>
+      </div>
+    `;
+  }
+
+  html += `</div></div>`;
+
+  // Miners section
+  html += `<div><h3 class="text-sm font-bold text-gray-300 mb-2">⛏️ Miners</h3>`;
+  html += `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">`;
+
+  for(const [id, miner] of Object.entries(miners)){
+    const statusColor = miner.running ? 'text-green-400' : 'text-red-400';
+    const statusText = miner.running ? '✅ Running' : '❌ Offline';
+    const roleBadge = miner.role === 'pool' ? 'bg-blue-600' : 'bg-orange-600';
+
+    html += `
+      <div class="bg-gray-800/50 border border-white/10 rounded-lg p-3">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-sm font-bold text-gray-200">${miner.name}</span>
+          <span class="${statusColor} text-xs">${statusText}</span>
+        </div>
+        <div class="space-y-1 text-xs">
+          <div class="flex justify-between">
+            <span class="text-gray-400">ID:</span>
+            <span class="text-gray-300">${id}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-400">Worker:</span>
+            <span class="text-gray-300">${miner.worker_name || 'N/A'}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-400">Pool:</span>
+            <span class="text-gray-300">${miner.pool_addr || 'N/A'}</span>
+          </div>
+          <div class="flex gap-1 mt-2">
+            <span class="${roleBadge} text-white px-2 py-0.5 rounded text-[10px]">${miner.role}</span>
+            <span class="bg-gray-600 text-white px-2 py-0.5 rounded text-[10px]">${miner.connection}</span>
+          </div>
+          ${miner.running ? `
+            <div class="mt-2 pt-2 border-t border-white/10">
+              ${miner.role === 'pool' ? `
+                <div class="flex justify-between">
+                  <span class="text-gray-400">Active Sessions:</span>
+                  <span class="text-green-400">${miner.active_sessions || 'N/A'}</span>
+                </div>
+              ` : `
+                <div class="flex justify-between">
+                  <span class="text-gray-400">Hashrate:</span>
+                  <span class="text-green-400">${miner.hashrate ? miner.hashrate.toFixed(2) + ' KH/s' : 'N/A'}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-400">Shares:</span>
+                  <span class="text-gray-300">${miner.shares_accepted}/${miner.shares_rejected}</span>
+                </div>
+                <div class="flex justify-between">
+                  <span class="text-gray-400">Height:</span>
+                  <span class="text-gray-300">${miner.current_height || 'N/A'}</span>
+                </div>
+              `}
+            </div>
+          ` : ''}
+        </div>
+      </div>
+    `;
+  }
+
+  html += `</div></div>`;
+  container.innerHTML = html;
+}
+
 // ── Wire new features into refreshAll ─────────────────────────────────────
 const _origRefreshAll = refreshAll;
 refreshAll = async function() {
@@ -5438,6 +5582,8 @@ refreshAll = async function() {
   await refreshReadiness();
   // C: Service health
   await refreshServiceHealth();
+  // N: Nodes panel
+  if(currentTab === 'nodes') await refreshNodes();
   // F: Topology + service ordering
   let services = [];
   try {
