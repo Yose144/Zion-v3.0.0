@@ -720,8 +720,15 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
             <option value="node2">Node 2</option>
             <option value="pool">Pool</option>
             <option value="miner">Miner</option>
+            <option value="miner-low">Miner Low</option>
             <option value="hiranyagarbha">Hiranyagarbha</option>
             <option value="hiran">Hiran AI</option>
+            <option value="bridge">Bridge</option>
+            <option value="dao-daemon">DAO Daemon</option>
+            <option value="atomic-swap">Atomic Swap</option>
+            <option value="warp">WARP</option>
+            <option value="dashboard">Dashboard</option>
+            <option value="control-audit">Audit Log</option>
           </select>
           <button onclick="overviewLogSwitch(document.getElementById('overview-log-svc').value)" class="text-[10px] px-2 py-1 bg-white/5 hover:bg-white/10 border border-white/10 rounded transition">⟳</button>
           <button onclick="switchTab('logs')" class="text-[10px] px-3 py-1 bg-purple-700/30 hover:bg-purple-700/50 border border-purple-500/20 rounded-lg font-semibold transition">Full Logs →</button>
@@ -742,6 +749,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         <h2 class="text-base font-bold mb-3">💰 Payouts &amp; Fee Split <span class="text-xs text-gray-500 font-normal">(89/5/5/0 burn model)</span></h2>
         <div class="space-y-2">
           <div class="flex justify-between text-xs"><span class="text-gray-400">Pool Wallet</span><span id="payout-wallet" class="font-mono text-white truncate max-w-[260px]">—</span></div>
+          <div class="flex justify-between text-xs"><span class="text-gray-400">Pool Balance</span><span id="payout-balance" class="text-amber-400 font-bold">—</span></div>
           <div class="flex justify-between text-xs"><span class="text-gray-400">Payout Enabled</span><span id="payout-enabled" class="font-bold">—</span></div>
           <div class="flex justify-between text-xs"><span class="text-gray-400">Active Split</span><span id="payout-split" class="text-zion-gold font-mono font-bold">—</span></div>
           <div class="flex justify-between text-xs"><span class="text-gray-400">Blocks Found</span><span id="payout-blocks" class="text-emerald-400 font-bold">—</span></div>
@@ -3989,6 +3997,6 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
   </div>
 </div>
 
-<script src="/dashboard.js?v=19"></script>
+<script src="/dashboard.js?v=23"></script>
 </body>
 </html>
