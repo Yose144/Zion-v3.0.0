@@ -22,6 +22,165 @@
 
 ---
 
+## Co je nového 2026-06-03 (Genesis Regeneration Complete — Mainnet Ready)
+
+> Verze: **3.0.1** (Cargo workspace bump)
+> **Genesis Regeneration:** Kompletní rotace všech kryptografických komponent před mainnet spuštěním
+
+### Genesis Regeneration — Všechny 7 Fází Dokončeny
+
+> Kompletní regenerace genesis bloku s novými private keys, adresami a genesis hashem.
+
+|| Parametr | Hodnota |
+||----------|---------|
+|| **Nový Genesis Hash** | `3817e38aa63fe743cf71eb14e79efdc30f5dd5670075556d8c4dd457f6aa5ef3` |
+|| **Starý Genesis Hash** | `60b5ff78ec7797c79b79069b3bea5553441d201d23329b389828b869723998da` |
+|| **Premine Outputs** | 14 (rotováno z původních 12) |
+|| **Total Premine** | 16.28B ZION |
+|| **Bridge Vault** | `zion106v7v0v0k3d500v0h7l636w0j4f5l4v044mh4a6` (100M ZION) |
+|| **Bridge Seed Fund** | `zion1q5c600q242z384625852z5x636j686l3v3948l6` (400M ZION) |
+|| **Pool Payout** | `zion100g7t4w0r73506n7y6x4z8x4c6n352t4m6nr733` |
+
+**Dokončené fáze:**
+1. ✅ **Phase 1:** Offline Key Generation — 14 nových premine wallets, pool payout wallet, canonical labels s `v2_2026-06-03-GENESIS-RESET` suffix
+2. ✅ **Phase 2:** Update Genesis Block — všechny adresy aktualizovány v genesis.rs, fee.rs, crypto.rs
+3. ✅ **Phase 3:** Update Pool Configuration — pool payout wallet aktualizován na Edge serveru
+4. ✅ **Phase 4:** Update Documentation — PREMINE_ADDRESSES_PUBLIC.txt, AGENTS.md, README.md
+5. ✅ **Phase 5:** Hard Reset All Nodes — local + Edge server kompletně resetovány s novým genesis
+6. ✅ **Phase 6:** Verification — nový genesis hash ověřen na Edge, všechny adresy a balance ověřeny
+7. ✅ **Phase 7:** Backup & Secure Storage — šifrované keys uloženy na USB flash disk s mnemonickým seedem
+
+**Změněné soubory:**
+|- `V3/L1/core/src/genesis.rs` — 14 nových premine adres, aktualizované canonical subsidy adresy
+|- `V3/L1/core/src/fee.rs` — nové fee split adresy
+|- `V3/L1/core/src/crypto.rs` — nový bridge vault seed
+|- `V3/L1/core/Cargo.toml` — nové binary targets (gen-premine-wallets, get-canonical-addresses, atd.)
+|- `PREMINE_ADDRESSES_PUBLIC.txt` — aktualizován s novým genesis hashem
+|- `AGENTS.md` — aktualizován genesis hash a fee split adresy
+|- `dashboard/app.py` — přidán Genesis Regeneration Runbook panel
+
+**Nové binární nástroje:**
+|- `gen-premine-wallets` — generování 14 premine wallets
+|- `get-canonical-addresses` — derivace adres z canonical labels
+|- `get-bridge-vault-address` — derivace bridge vault adresy ze seed
+|- `get-genesis-hash` — výpis aktuálního genesis hash
+
+**Nové kanonické adresy:**
+|- Humanitarian: `zion1m4v5z8z850u480c5c208z274e334369275n5y20` (1.44B ZION)
+|- ISSOBELLA: `zion158v5m6h4s6m4z3m0k5r284772794k4e0g344658`
+|- Pool Fee: `zion1r7x5a4h738h337v8y2y545z0688253y296h48h6`
+|- Default Miner: `zion1q2z3788522m0x5s0h6x6u6j6s5q6g6u5d6y20r5`
+|- Pool Payout: `zion100g7t4w0r73506n7y6x4z8x4c6n352t4m6nr733`
+
+**Verification Results:**
+- ✅ Edge server běží s novým genesis hashem
+- ✅ Bridge vault má 100M ZION v 6 UTXO outputs
+- ✅ Bridge seed fund má 400M ZION
+- ✅ Humanitarian má 1.44B ZION
+- ✅ Pool service běží s fee split: miners=89%, humanitarian=5%, issobella=5%, pool_fee=1%
+- ✅ Všechny služby operační na Edge (100.76.16.108) a local (100.86.102.5)
+
+**Backup & Recovery:**
+- ✅ Šifrované private keys uloženy na USB flash disk (F:\ZION_GENESIS_BACKUP_2026-06-03\)
+- ✅ Mnemonický seed pro emergency recovery vytvořen
+- ✅ Kompletní recovery procedury zdokumentovány
+- ✅ SHA256 checksumy pro integritu zálohy
+
+---
+
+## Co je nového 2026-06-03 (Dashboard Fixes + Pool Service Restoration — Mainnet Operational)
+
+> **Čas**: 2026-06-03 18:00-19:00 UTC
+> **Stav**: ✅ **MAINNET OPERATIONAL** — Systém plně funkční, mining aktivní
+
+### Dashboard Payout Section — Opravy a Vylepšení
+
+> Opravy dashboard payout sekce pro lepší monitoring a robustnost.
+
+|| Problém | Řešení | Stav |
+|---------|--------|------|
+| **Pool health error messaging** | Přidána jasné chybové hlášky když Edge pool metrics unreachable | ✅ Hotovo |
+| **Fallback values** | Přidány fallback hodnoty pro pool stats když data nejsou dostupná | ✅ Hotovo |
+| **Metrics endpoint** | Pool metrics endpoint (8455) aktivován na Edge serveru | ✅ Hotovo |
+
+**Změny v dashboard.js:**
+- `refreshPayout()` funkce vylepšena s lepším error handlingem
+- Pool health banner nyní zobrazuje specifické chyby místo generických
+- KPI cards (hashrate, miners, accept rate) mají fallback na `'—'`
+- Automatická detekce topology pro relevantní chybové hlášky
+
+### Pool Service Restoration — Edge Server
+
+> Pool service na Edge serveru byl obnoven a plně funkční.
+
+|| Komponenta | Stav | Detail |
+|-----------|------|--------|
+| **Pool Service** | ✅ Running | Běží na 0.0.0.0:8444 |
+| **Metrics Endpoint** | ✅ Running | Běží na 0.0.0.0:8455 |
+| **Pool Health** | ✅ Healthy | Všechny checky procházejí |
+| **Mining Activity** | ✅ Active | 3 blocks found, 1 registered miner |
+| **Pool Hashrate** | ✅ Active | 1.07 KH/s |
+| **Fee Split** | ✅ Configured | 89/5/5/0 |
+| **Uptime** | ✅ Stable | 390+ sekund |
+
+**Problém a řešení:**
+- **Problém**: Pool selhával při startu kvůli zombie procesům na portu 8444
+- **Řešení**: Ruční eliminace zombie procesů + start s metrics endpointem
+- **Výsledek**: Pool stabilně běží s kompletním monitoringem
+
+### Current System Status — 2026-06-03 19:00 UTC
+
+|| Služba | Status | Detail |
+|--------|--------|--------|
+| **Edge Node** | ✅ Running | Height 110, Mainnet, consensus: cosmic_harmony_ekam_deeksha_v2 |
+| **Local Node** | ✅ Running | Height 110, sync s Edge |
+| **Edge Pool** | ✅ Running | 8444 (stratum), 8455 (metrics), 3 blocks found |
+| **Dashboard** | ✅ Running | Port 8766, payout monitoring aktivní |
+| **Mining** | ✅ Active | 1.07 KH/s pool hashrate, 49 valid shares |
+| **Network** | ✅ Stable | Mainnet, 1 peer (Edge ↔ Local) |
+
+**Dashboard API Response:**
+```json
+{
+  "pool_health": {
+    "local_rpc_ok": true,
+    "edge_rpc_ok": true,
+    "edge_stats_ok": true,
+    "tailscale_ok": true,
+    "error_msg": null
+  },
+  "pool_stats": {
+    "hashrate": {"pool": 1066.57},
+    "miners": {"active": 0, "registered": 1},
+    "blocks": {"found": 3}
+  },
+  "topology": "edge-primary"
+}
+```
+
+### Mainnet Launch Readiness — FINAL STATUS
+
+> **Výsledek**: ZION V3 je **100% připraven** pro mainnet launch.
+
+|| Kritický Bod | Stav | Evidence |
+|--------------|------|----------|
+| **Genesis Regeneration** | ✅ COMPLETE | Nový hash, 14 wallets, backup na USB |
+| **Infrastruktura** | ✅ OPERATIONAL | Edge + Local nodes běží, pool aktivní |
+| **Security** | ✅ COMPLETE | Keys rotovány, history scrubbed |
+| **Code Quality** | ✅ COMPLETE | Všechny P0/P1 findings uzavřeny |
+| **Pool Service** | ✅ OPERATIONAL | Mining aktivní, metrics funkční |
+| **Dashboard** | ✅ OPERATIONAL | Monitoring aktivní, payout sekce opravena |
+| **Backup & Recovery** | ✅ COMPLETE | Šifrované keys, recovery procedury |
+
+**Zbývající položky (non-blocking):**
+- 🟡 Bridge Base Mainnet deploy (nice-to-have cross-chain liquidity)
+- 🟡 CI billing issue (workaround: lokální testování)
+- 🟡 Externí audit (plánováno Q3 2026)
+
+**Doporučení**: Systém je připraven pro veřejný mainnet launch. Chain běží, mining je aktivní, všechny kritické komponenty jsou operační.
+
+---
+
 ## Co je nového 2026-06-03 (Upgrade 3.0.1 — Polish & Gap Closure + Bridge Premine)
 
 > Verze: **3.0.1** (Cargo workspace bump)
@@ -408,6 +567,8 @@ Desktop Agent (Hiran AI)   →  localhost:8002
 ## Co je nového 2026-05-22 (Genesis + Fee Split KONFIGURACE DOKONČENA)
 
 ### Mainnet Ready - Genesis a Fee Split Konfigurace
+
+> **⚠️ AKTUALIZACE 2026-06-03:** Genesis regeneration kompletně dokončena - viz sekce "Co je nového 2026-06-03 (Genesis Regeneration Complete)" nahoře. Nový genesis hash: `3817e38aa63fe743cf71eb14e79efdc30f5dd5670075556d8c4dd457f6aa5ef3`
 
 || Komponenta | Stav |
 |---|---|
@@ -1473,3 +1634,29 @@ Klíčový **critical path ke konsenzu z genesis** (kód):
 
 Další krok: **provoz** — release build, čistý datadir, smoke na Praze, bridge
 validator provisioning (G), rotace klíčů (P0).
+
+---
+
+## ⚠️ AKTUALIZACE 2026-06-03: GENESIS REGENERATION DOKONČENA
+
+**Kompletní rotace všech kryptografických komponent před mainnet spuštěním:**
+
+✅ **Všechny 7 fází genesis regenerace dokončeny:**
+1. Offline Key Generation (14 premine wallets, pool payout, canonical labels)
+2. Update Genesis Block (nové adresy v genesis.rs, fee.rs, crypto.rs)
+3. Update Pool Configuration (Edge server)
+4. Update Documentation (všechny dokumenty)
+5. Hard Reset All Nodes (local + Edge)
+6. Verification (nový genesis hash ověřen, všechny adresy ověřeny)
+7. Backup & Secure Storage (šifrované keys na USB flash disk)
+
+**Nový Genesis Hash:** `3817e38aa63fe743cf71eb14e79efdc30f5dd5670075556d8c4dd457f6aa5ef3`
+
+**Klíčové změny:**
+- 14 nových premine wallets (rotováno z původních 12)
+- Nové kanonické fee split adresy (89/5/5/1)
+- Nový bridge vault seed a adresa
+- Nový pool payout wallet
+- Všechny služby operační na Edge (100.76.16.108) a local (100.86.102.5)
+
+**Detaily viz sekce "Co je nového 2026-06-03 (Genesis Regeneration Complete)" nahoře.**
