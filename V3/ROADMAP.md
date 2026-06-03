@@ -1283,17 +1283,26 @@ Status: mostly complete (seed node expansion pending)
 
 Goal: Users can bridge ZION cross-chain without touching CLI.
 
-#### 26a: Bridge Dashboard (Python, port 8766)
+#### 26a: Bridge Dashboard (Python, port 8766) ✅ DONE 2026-06-03
 
 | # | Deliverable | Status |
 |---|-------------|--------|
-| D1 | Bridge Status Card (online/last block/volume) | 🔄 Planned |
-| D2 | Cross-chain Transfer Form (chain selector, amount, fee estimate) | 🔄 Planned |
-| D3 | Transaction History (pending + completed with explorer links) | 🔄 Planned |
-| D4 | Liquidity Display (L1 locked, wZION minted, 24h volume) | 🔄 Planned |
-| D5 | Validator 3/5 Status (online indicators, last signature) | 🔄 Planned |
+| D1 | Bridge Status Card (online/last block/volume) | ✅ Done |
+| D2 | Cross-chain Transfer Form (chain selector, amount, fee estimate) | ✅ Placeholder UI (disabled until 26b) |
+| D3 | Transaction History (pending + completed with explorer links) | ✅ Done — SQLite bridge.db integration |
+| D4 | Liquidity Display (L1 locked, wZION minted, 24h volume) | ✅ Partial — total volume from DB |
+| D5 | Validator 3/5 Status (online indicators, last signature) | ✅ Placeholder — shows deployer only |
+| D6 | Contract Links with Base Sepolia Explorer | ✅ Done |
+| D7 | Readiness Checklist (8 items with ✓/○) | ✅ Done |
+| D8 | Keyboard shortcut (`b` → Bridge tab) | ✅ Done |
 
 **API:** `GET /api/bridge/*` endpoints in `dashboard/app.py`.
+```
+GET /api/bridge/status      → {online, pending_count, last_block, total_volume, validators_online, contract_verified}
+GET /api/bridge/history     → {transfers: [...]}
+GET /api/bridge/chains      → {chains: [...]}
+GET /api/bridge/validators  → {validators: [...], threshold, total}
+```
 
 #### 26b: Website Bridge Page (Next.js, `/bridge`)
 
