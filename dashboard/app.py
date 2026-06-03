@@ -40,6 +40,27 @@ EXE_SUFFIX = ".exe" if os.name == "nt" else ""
 if not LOG_DIR.exists():
     LOG_DIR = Path("../logs")
 
+# Unified service → log file mapping used by all log endpoints
+SERVICE_LOG_MAP = {
+    "node1":           "node1.log",
+    "node2":           "node2.log",
+    "pool":            "pool.log",
+    "miner":           "miner.log",
+    "miner-low":       "miner-low.log",
+    "miner-cpu":       "miner-cpu.log",
+    "miner-gpu":       "miner-gpu.log",
+    "hiranyagarbha":   "hiranyagarbha.log",
+    "hiran":           "hiran-inference.log",
+    "hiran-inference": "hiran-inference.log",
+    "bridge":          "bridge.log",
+    "dao-daemon":      "dao.log",
+    "dao":             "dao.log",
+    "atomic-swap":     "atomic-swap.log",
+    "warp":            "warp.log",
+    "dashboard":       "dashboard.log",
+    "control-audit":   "control-audit.txt",
+}
+
 # Load config
 def load_config() -> dict:
     defaults = {
@@ -991,12 +1012,21 @@ def check_service_health(svc: dict) -> dict:
     # ── Log probe (fallback, never primary) ────────────────────────────────
     log_alive = False
     log_age = None
-    if svc.get("log"):
-        log_path = latest_log_path(svc["log"])
+    log_candidates = [svc["log"]] if svc.get("log") else []
+    # Miner: check all miner log variants and pick the freshest
+    if sid == "miner":
+        log_candidates = ["miner.log", "miner-low.log", "miner-cpu.log", "miner-gpu.log"]
+    for cand in log_candidates:
+        if not cand:
+            continue
+        log_path = latest_log_path(cand)
         if log_path and log_path.exists():
             mtime_age = now - int(log_path.stat().st_mtime)
-            log_age = mtime_age
-            log_alive = mtime_age < 120
+            if log_age is None or mtime_age < log_age:
+                log_age = mtime_age
+            if mtime_age < 120:
+                log_alive = True
+                break
 
     # ── Determine status based on health_method ────────────────────────────
     alive = False
@@ -1608,7 +1638,8 @@ def _build_status_edge_primary() -> dict:
     try:
         result = subprocess.run(["tailscale", "ping", "-c", "1", "-timeout", "3s", "100.76.16.108"],
                                capture_output=True, text=True, timeout=5)
-        tailscale_ok = result.returncode == 0
+        # tailscale ping returns 1 for relay connections even when pong is received
+        tailscale_ok = result.returncode == 0 or "pong from" in result.stdout
     except Exception:
         pass
 
@@ -3109,7 +3140,7 @@ def search_logs(query: str, max_results: int = 50) -> list:
     if not LOG_DIR.exists():
         return results
     query_lower = query.lower()
-    log_files = [f for f in LOG_DIR.glob("*.log") if f.is_file()]
+    log_files = [f for f in LOG_DIR.glob("*.log") if f.is_file()] + [f for f in LOG_DIR.glob("*.txt") if f.is_file()]
     for lf in sorted(log_files, key=lambda p: p.stat().st_mtime, reverse=True):
         try:
             with open(lf, "r", encoding="utf-8", errors="ignore") as f:
@@ -6135,20 +6166,11 @@ class DashboardHandler(BaseHTTPRequestHandler):
     def _get_service_log(self, svc_name, lines=50):
         """Read last N lines from a service's log file."""
         import collections
-        # Map service names to log file paths
-        log_dir = os.path.join(os.path.dirname(__file__), "logs")
-        log_map = {
-            "node1": os.path.join(log_dir, "node1.log"),
-            "node2": os.path.join(log_dir, "node2.log"),
-            "pool": os.path.join(log_dir, "pool.log"),
-            "miner": os.path.join(log_dir, "miner.log"),
-            "hiranyagarbha": os.path.join(log_dir, "hiranyagarbha.log"),
-            "ai-native": os.path.join(log_dir, "hiran-inference.log"),
-        }
-        log_path = log_map.get(svc_name)
-        if not log_path:
+        log_name = SERVICE_LOG_MAP.get(svc_name)
+        if not log_name:
             return {"ok": False, "error": f"Unknown service: {svc_name}"}
-        if not os.path.exists(log_path):
+        log_path = LOG_DIR / log_name
+        if not log_path.exists():
             return {"ok": False, "error": f"No log file for {svc_name}"}
         try:
             with open(log_path, "r", encoding="utf-8", errors="replace") as f:
@@ -6354,21 +6376,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
             # SSE live log streaming: /api/logs/stream?svc=node1&lines=200
             svc_id   = params.get("svc",   ["node1"])[0].strip()
             n_init   = min(int(params.get("lines", ["150"])[0]), 500)
-            _STREAM_MAP = {
-                "node1":          "node1.log",
-                "node2":          "node2.log",
-                "pool":           "pool.log",
-                "miner":          "miner.log",
-                "hiranyagarbha":  "hiranyagarbha.log",
-                "hiran":          "hiran-inference.log",
-                "bridge":         "bridge.log",
-                "dao-daemon":     "dao.log",
-                "atomic-swap":    "atomic-swap.log",
-                "warp":           "warp.log",
-                "dashboard":      "dashboard.log",
-                "control-audit":  "control-audit.txt",
-            }
-            log_name = _STREAM_MAP.get(svc_id)
+            log_name = SERVICE_LOG_MAP.get(svc_id)
             self.send_response(200)
             self.send_header("Content-Type", "text/event-stream; charset=utf-8")
             self.send_header("Cache-Control", "no-cache")
@@ -6433,12 +6441,15 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 "node2":         str(LOG_DIR / "node2.log"),
                 "pool":          str(LOG_DIR / "pool.log"),
                 "miner":         str(LOG_DIR / "miner.log"),
+                "miner-low":     str(LOG_DIR / "miner-low.log"),
                 "hiranyagarbha": str(LOG_DIR / "hiranyagarbha.log"),
                 "hiran":         str(LOG_DIR / "hiran-inference.log"),
                 "bridge":        str(LOG_DIR / "bridge.log"),
                 "dao-daemon":    str(LOG_DIR / "dao.log"),
                 "atomic-swap":   str(LOG_DIR / "atomic-swap.log"),
                 "warp":          str(LOG_DIR / "warp.log"),
+                "dashboard":     str(LOG_DIR / "dashboard.log"),
+                "control-audit": str(LOG_DIR / "control-audit.txt"),
             }
             log_file = _TAIL_MAP.get(svc_id, str(LOG_DIR / f"{svc_id}.log"))
             try:
@@ -6478,6 +6489,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
             SVC_LOG_MAP = {
                 "node1.log": "node1", "node2.log": "node2",
                 "pool.log": "pool", "miner.log": "miner",
+                "miner-low.log": "miner-low", "miner-cpu.log": "miner-cpu",
+                "miner-gpu.log": "miner-gpu",
                 "hiranyagarbha.log": "hiranyagarbha", "hiran-inference.log": "hiran",
                 "bridge.log": "bridge", "dao.log": "dao-daemon",
                 "atomic-swap.log": "atomic-swap", "warp.log": "warp",
@@ -6509,9 +6522,12 @@ class DashboardHandler(BaseHTTPRequestHandler):
             SVC_LOG_MAP2 = {
                 "node1.log": "node1", "node2.log": "node2",
                 "pool.log": "pool", "miner.log": "miner",
+                "miner-low.log": "miner-low", "miner-cpu.log": "miner-cpu",
+                "miner-gpu.log": "miner-gpu",
                 "hiranyagarbha.log": "hiranyagarbha", "hiran-inference.log": "hiran",
                 "bridge.log": "bridge", "dao.log": "dao-daemon",
                 "atomic-swap.log": "atomic-swap", "warp.log": "warp",
+                "dashboard.log": "dashboard",
                 "control-audit.txt": "control-audit",
             }
             if LOG_DIR.exists():
@@ -7140,8 +7156,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json(inspect_database(path))
         elif route.startswith("/api/logs/"):
             service = route.split("/")[-1]
-            mapping = {"node1": "node1.log", "node2": "node2.log", "pool": "pool.log", "miner": "miner.log"}
-            filename = mapping.get(service, f"{service}.log")
+            filename = SERVICE_LOG_MAP.get(service, f"{service}.log")
             self._json({"lines": tail_log(filename, 200)})
         elif route == "/api/install/log":
             install_log = LOG_DIR / "install-deps.log"
@@ -7242,19 +7257,11 @@ class DashboardHandler(BaseHTTPRequestHandler):
         elif route == "/api/service-log":
             svc_id = params.get("id", [""])[0].strip()
             n_lines = int(params.get("lines", ["80"])[0])
-            _log_map = {
-                "hiranyagarbha":    "hiranyagarbha.log",
-                "hiran-inference":  "hiran-inference.log",
-                "node1":            "node1.log",
-                "node2":            "node2.log",
-                "pool":             "pool.log",
-                "miner":            "miner.log",
-            }
-            log_name = _log_map.get(svc_id)
+            log_name = SERVICE_LOG_MAP.get(svc_id)
             if not log_name:
                 self._json({"error": "unknown service", "lines": ""})
             else:
-                log_file = REPO_ROOT / "logs" / log_name
+                log_file = LOG_DIR / log_name
                 if not log_file.exists():
                     self._json({"lines": f"(log file {log_name} not found)", "exists": False})
                 else:
