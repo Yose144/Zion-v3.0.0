@@ -442,6 +442,13 @@ class WalletService {
   }
 
   /**
+   * Check if active wallet is a hardware wallet (watch-only, cannot sign TX).
+   */
+  isHardwareWallet() {
+    return this.activeWallet && ['trezor', 'ledger'].includes(this.activeWallet.walletType);
+  }
+
+  /**
    * Nastavit aktivní wallet
    */
   async setActiveWallet(walletId) {
