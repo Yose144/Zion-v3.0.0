@@ -196,6 +196,7 @@ async function refreshAll(){
     }
 
     if(currentTab === 'charts') renderCharts();
+    if(currentTab === 'payout') refreshPayout();
     if(currentTab === 'events') loadEvents();
     if(currentTab === 'wizard') renderWizard();
     if(currentTab === 'ops') loadOps();
@@ -356,6 +357,7 @@ async function updateLayerServices(){
   try{
     const res = await fetch('/api/services').then(r => r.json());
     const services = res.services || [];
+    const isEdgePrimary = window.currentStatus?.topology === 'edge-primary';
     const map = {
       'bridge': 'val-bridge-status',
       'dao': 'val-dao-status',
@@ -371,10 +373,17 @@ async function updateLayerServices(){
       const el = document.getElementById(elId);
       const card = document.getElementById('card-' + sid);
       if(!el) continue;
+      // In edge-primary mode, services hosted on Edge (not localhost) are expected there
+      const host = svc?.host || '127.0.0.1';
+      const isEdgeHosted = isEdgePrimary && host !== '127.0.0.1';
       if(svc && svc.alive){
         el.textContent = '● LIVE';
         el.className = 'text-[10px] text-emerald-400 font-bold mt-0.5';
         if(card) card.classList.add('svc-live');
+      } else if(svc && isEdgeHosted){
+        el.textContent = '● Edge';
+        el.className = 'text-[10px] text-blue-400 font-bold mt-0.5';
+        if(card) card.classList.remove('svc-live');
       } else if(svc){
         el.textContent = '○ Down';
         el.className = 'text-[10px] text-gray-500 mt-0.5';
@@ -463,7 +472,7 @@ function updatePayouts(p, topology){
   // In edge-primary: pool data comes from Edge pool (pool status object)
   // In local-dev: pool data comes from local pool
   const poolData = topology === 'edge-primary' ? (p || window.currentStatus?.pool) : p;
-  
+
   const pw = document.getElementById('payout-wallet');
   if(pw) pw.textContent = poolData?.pool_wallet ?? '—';
   const en = document.getElementById('payout-enabled');
@@ -483,14 +492,18 @@ function updatePayouts(p, topology){
       ? poolData.recent_payouts.map(l => '<div class="truncate text-[10px]">' + escapeHtml(l) + '</div>').join('')
       : '<div class="text-gray-600 italic text-[10px]">No payout events yet</div>';
   }
-  
-  // Update payout tab header to show which pool
-  const header = document.querySelector('#pane-payout h1');
-  if(header && topology){
-    header.textContent = topology === 'edge-primary' 
-      ? '💰 Edge Pool Payout System' 
-      : '💰 Local Pool Payout System';
-  }
+
+  // Fetch balance from /api/payout for overview panel
+  fetch('/api/payout')
+    .then(r => r.ok ? r.json() : null)
+    .then(pay => {
+      if(!pay) return;
+      const balEl = document.getElementById('payout-balance');
+      if(balEl && pay.pool_wallet_balance != null){
+        balEl.textContent = formatFlowers(pay.pool_wallet_balance);
+      }
+    })
+    .catch(() => {});
 }
 
 function formatFlowers(v){
@@ -4594,12 +4607,14 @@ const LOG_SERVICES = [
   { id: 'node2',         label: 'Node 2',       icon: '⛓️',  color: 'blue',    group: 'core'  },
   { id: 'pool',          label: 'Pool',         icon: '🏊',  color: 'cyan',    group: 'core'  },
   { id: 'miner',         label: 'Miner',        icon: '⛏️',  color: 'amber',   group: 'core'  },
+  { id: 'miner-low',     label: 'Miner Low',    icon: '⛏️',  color: 'amber',   group: 'core'  },
   { id: 'hiranyagarbha', label: 'Hiranyagarbha',icon: '🧠',  color: 'purple',  group: 'ai'    },
   { id: 'hiran',         label: 'Hiran AI',     icon: '🤖',  color: 'violet',  group: 'ai'    },
   { id: 'bridge',        label: 'Bridge',       icon: '🌉',  color: 'indigo',  group: 'l2'    },
   { id: 'dao-daemon',    label: 'DAO Daemon',   icon: '🗳️', color: 'purple',  group: 'l2'    },
   { id: 'atomic-swap',   label: 'Atomic Swap',  icon: '⚡',  color: 'amber',   group: 'l2'    },
   { id: 'warp',          label: 'WARP',         icon: '🌀',  color: 'cyan',    group: 'l3'    },
+  { id: 'dashboard',     label: 'Dashboard',    icon: '📊',  color: 'gray',    group: 'system'},
   { id: 'control-audit', label: 'Audit Log',    icon: '📝',  color: 'gray',    group: 'system'},
 ];
 
