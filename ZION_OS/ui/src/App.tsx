@@ -1,9 +1,7 @@
 import { DashboardLayout } from "./components/layout/DashboardLayout";
+import { GpuMetricsPanel } from "./components/layout/GpuMetricsPanel";
 import { ServiceGrid } from "./components/ui/ServiceGrid";
 import { Sidebar } from "./components/ui/Sidebar";
-import { GpuGauge } from "./components/canvas/GpuGauge";
-import { CpuHeatmap } from "./components/canvas/CpuHeatmap";
-import { Sparkline } from "./components/canvas/Sparkline";
 import { NetworkScene } from "./components/three/NetworkScene";
 import { LogTail } from "./components/ui/LogTail";
 import { useState } from "react";
@@ -38,36 +36,7 @@ function App() {
               <NetworkScene />
             </div>
           )}
-          {activeTab === "gpu" && (
-            <div className="space-y-4">
-              <h2 className="text-xl font-bold text-zion-warn font-mono">GPU / Hardware Metrics</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div className="glass-panel p-4 flex flex-col items-center">
-                  <GpuGauge value={87} label="GPU Util" sublabel="Apple M1 Metal" color="#00ccff" />
-                </div>
-                <div className="glass-panel p-4 flex flex-col items-center">
-                  <GpuGauge value={45} label="GPU VRAM" sublabel="3.2 / 8 GB" color="#ffcc00" />
-                </div>
-                <div className="glass-panel p-4 flex flex-col items-center">
-                  <GpuGauge value={62} label="GPU Temp" sublabel="72°C" color="#ff3366" />
-                </div>
-                <div className="glass-panel p-4 flex flex-col items-center">
-                  <GpuGauge value={38} label="CPU Util" sublabel="8 cores" color="#00ffaa" />
-                  <div className="mt-3">
-                    <CpuHeatmap cores={[12, 34, 56, 78, 23, 45, 67, 89]} size={100} />
-                  </div>
-                </div>
-                <div className="glass-panel p-4 flex flex-col items-center">
-                  <GpuGauge value={58} label="Memory" sublabel="18.5 / 32 GB" color="#cc66ff" />
-                </div>
-                <div className="glass-panel p-4">
-                  <p className="text-xs text-zion-dim font-mono mb-2">GPU Hashrate History</p>
-                  <Sparkline data={[210, 230, 245, 280, 310, 295, 330, 350, 340, 360, 380, 390, 410, 395, 420]} color="#00ffaa" />
-                  <p className="text-xs text-zion-ok font-mono mt-1">420 H/s</p>
-                </div>
-              </div>
-            </div>
-          )}
+          {activeTab === "gpu" && <GpuMetricsPanel />}
           {activeTab === "logs" && (
             <div className="space-y-4">
               <h2 className="text-xl font-bold text-zion-ok font-mono">System Logs</h2>
