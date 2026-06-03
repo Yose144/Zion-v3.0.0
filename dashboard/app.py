@@ -2944,7 +2944,7 @@ def build_payout_status() -> dict:
     miner_stats = []
     for m in miners:
         miner_stats.append({
-            "address": m.get("address") or m.get("payout_address") or "—",
+            "address": m.get("payout_address") or m.get("address") or "—",
             "worker_name": m.get("worker_name") or m.get("id") or "—",
             "valid_shares": m.get("valid_shares", 0),
             "hashrate": m.get("hashrate", 0),
