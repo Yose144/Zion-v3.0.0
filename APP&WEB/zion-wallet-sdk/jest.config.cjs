@@ -9,6 +9,10 @@ module.exports = {
       'ts-jest',
       {
         useESM: true,
+        tsconfig: {
+          module: 'esnext',
+          target: 'es2022',
+        },
       },
     ],
     '^.+\\.js$': 'babel-jest',
