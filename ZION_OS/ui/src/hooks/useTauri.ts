@@ -33,6 +33,24 @@ export async function restartService(service: string): Promise<string> {
   return invoke("restart_service", { service });
 }
 
+export interface HardwareMetricsData {
+  cpu_usage: number;
+  cpu_cores: number[];
+  cpu_temp: number;
+  gpu_usage: number;
+  gpu_vram_used: number;
+  gpu_vram_total: number;
+  gpu_temp: number;
+  memory_total: number;
+  memory_used: number;
+  network_rx: number;
+  network_tx: number;
+}
+
+export async function getHardwareMetrics(): Promise<HardwareMetricsData | null> {
+  return invoke("get_hardware_metrics_cmd");
+}
+
 export async function getSystemInfo(): Promise<{
   os: string;
   arch: string;

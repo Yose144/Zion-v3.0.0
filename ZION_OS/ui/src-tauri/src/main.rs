@@ -1,9 +1,12 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+mod hardware;
+
 use std::process::Command;
 use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
+use hardware::HardwareMetrics;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 struct ServiceStatus {
@@ -187,6 +190,11 @@ async fn restart_service(service: String) -> Result<String, String> {
 }
 
 #[tauri::command]
+fn get_hardware_metrics_cmd() -> Option<HardwareMetrics> {
+    hardware::get_hardware_metrics()
+}
+
+#[tauri::command]
 fn get_system_info() -> serde_json::Value {
     serde_json::json!({
         "os": std::env::consts::OS,
@@ -204,6 +212,7 @@ fn main() {
             start_service,
             stop_service,
             restart_service,
+            get_hardware_metrics_cmd,
             get_system_info
         ])
         .setup(|app| {
