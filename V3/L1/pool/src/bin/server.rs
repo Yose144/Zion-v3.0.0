@@ -4213,6 +4213,7 @@ fn execute_pool_payout(
         let mut executed = Vec::new();
         let mut first_tx_id = String::new();
 
+        let pk_hex = hex::encode(signing_key.verifying_key().as_bytes());
         for (i, payout) in payouts.iter().enumerate() {
             let nonce = base_nonce + i as u64;
             let net_amount = (payout.amount as u128).saturating_sub(min_tx_fee);
@@ -4220,6 +4221,7 @@ fn execute_pool_payout(
                 continue;
             }
             let tx_id = generate_account_tx_id(pool_wallet_addr, &payout.address, net_amount as u64, nonce);
+            let sig = zion_core::crypto::sign(signing_key, tx_id.as_bytes());
             let tx = AccountTransaction {
                 tx_id: tx_id.clone(),
                 from: pool_wallet_addr.to_string(),
@@ -4227,6 +4229,8 @@ fn execute_pool_payout(
                 amount_zion: net_amount,
                 fee_zion: zion_core::fee::MIN_TX_FEE,
                 nonce,
+                signature: hex::encode(&sig),
+                public_key: pk_hex.clone(),
             };
             match submit_account_transaction(node_rpc_addr, &tx) {
                 Ok(submitted_tx_id) => {
@@ -4535,9 +4539,11 @@ fn execute_fee_payout(
             .as_millis() as u64;
         let mut first_tx_id = String::new();
 
+        let pk_hex = hex::encode(signing_key.verifying_key().as_bytes());
         for (i, recipient) in recipients.iter().enumerate() {
             let nonce = base_nonce + i as u64;
             let tx_id = generate_account_tx_id(pool_wallet_addr, &recipient.address, recipient.amount, nonce);
+            let sig = zion_core::crypto::sign(signing_key, tx_id.as_bytes());
             let tx = AccountTransaction {
                 tx_id: tx_id.clone(),
                 from: pool_wallet_addr.to_string(),
@@ -4545,6 +4551,8 @@ fn execute_fee_payout(
                 amount_zion: recipient.amount as u128,
                 fee_zion: zion_core::fee::MIN_TX_FEE,
                 nonce,
+                signature: hex::encode(&sig),
+                public_key: pk_hex.clone(),
             };
             match submit_account_transaction(node_rpc_addr, &tx) {
                 Ok(submitted_tx_id) => {
