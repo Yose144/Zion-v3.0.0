@@ -51,8 +51,8 @@ ZION je kryptoměna s vlastním blockchainem (řetězcem bloků). Síť tvoří 
 ### Peníze v síti
 
 - Celkový počet ZION, který kdy bude existovat: **144 miliard**
-- Na začátku (genesis blok) bylo vytvořeno **16.28 miliard** ZION do 12 peněženek (premine)
-- Zbytek (**127.72 miliard**) se postupně vytěží — odměna za blok začíná na ~5,400 ZION a každých ~10 let klesne na 80 % předchozí hodnoty
+- Na začátku (genesis blok) bylo vytvořeno **16.78 miliard** ZION do 13 peněženek (premine)
+- Zbytek (**127.22 miliard**) se postupně vytěží — odměna za blok začíná na ~5,400 ZION a každých ~10 let klesne na 80 % předchozí hodnoty
 
 ---
 
@@ -89,9 +89,9 @@ Aktuálně běží na Hetzner v Helsinkách: `157.180.41.213` (8 vCPU, 16 GB RAM
 
 ### Co je premine?
 
-Při vytvoření blockchainu (genesis blok) bylo do 12 peněženek vloženo **16.28 miliard ZION**. Tyto peněženky jsou natrvalo zapsané v kódu — adresy jsou veřejné, ale **privátní klíče musí zůstat v bezpečí**.
+Při vytvoření blockchainu (genesis blok) bylo do 13 peněženek vloženo **16.78 miliard ZION**. Tyto peněženky jsou natrvalo zapsané v kódu — adresy jsou veřejné, ale **privátní klíče musí zůstat v bezpečí**.
 
-### 12 premine adres
+### 13 premine adres
 
 | # | Účel | Adresa | Částka (ZION) | Zamčeno? |
 |---|------|--------|---------------|----------|
@@ -107,6 +107,7 @@ Při vytvoření blockchainu (genesis blok) bylo do 12 peněženek vloženo **16
 | 10 | Seed Nodes | `zion1h4w39686t8w376g0x0y426e775q6p2q0v698v43` | 1,000,000,000 | NE |
 | 11 | Genesis Creator | `zion1x638z5x6d2d0y6u3f7y8g7j56054a4a2a2c7l8f` | 590,000,000 | NE |
 | 12 | Children Future Fund | `zion1m4v5z8z850u480c5c208z274e334369275n5y20` | 1,440,000,000 | NE |
+|| 13 | Bridge Seed Fund | `zion1f6m2j0h0l773j4074324q5r528y475w4j7m9685` | 500,000,000 | NE |
 
 > **"Zamčeno — 1 rok"** znamená, že z těchto adres (6, 7, 8) nelze nic poslat, dokud
 > síť nedosáhne bloku číslo 525,600 (asi 1 rok po startu). To je zakódováno
@@ -114,7 +115,7 @@ Při vytvoření blockchainu (genesis blok) bylo do 12 peněženek vloženo **16
 
 ### Kde jsou privátní klíče?
 
-Soubor `PREMINE_WALLETS_BACKUP.json` obsahuje privátní klíče ke všem 12 peněženkám.
+Soubor `PREMINE_WALLETS_BACKUP.json` obsahuje privátní klíče ke všem 13 peněženkám.
 
 **KRITICKY DŮLEŽITÉ:**
 
@@ -447,7 +448,7 @@ docker compose -f docker/docker-compose.v3-mainnet.yml up -d
 
 | Co | Kde to je | Jak často | Proč |
 |----|-----------|-----------|------|
-| Premine klíče | Offline USB/trezor | Jednorázově | **Ztráta = ztráta 16.28B ZION** |
+| Premine klíče | Offline USB/trezor | Jednorázově | **Ztráta = ztráta 16.78B ZION** |
 | Blockchain data | Docker volume `zion-node-data` | Týdně | Pro rychlý restart bez stahování |
 | peers.json | Uvnitř Docker volume | Automaticky | Seznam známých uzlů |
 | Tento návod | Minimálně 2 kopie | Při změnách | Abys věděla, co dělat |

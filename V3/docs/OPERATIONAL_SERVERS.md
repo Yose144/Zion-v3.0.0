@@ -481,9 +481,9 @@ Helsinki: ZION_SEED_PEERS="prague:8333,usa:8333,singapore:8333"
 | **No presale** | ❌ NEEXISTUJE — fair launch only | `MAINNET_CONSTITUTION.md` §4 |
 | **No admin key** | ❌ NEEXISTUJE — plně permissionless | `MAINNET_CONSTITUTION.md` §6 |
 
-### Genesis Premine — 12 Wallets
+### Genesis Premine — 13 Wallets
 
-> **16.28B ZION** vytvořeno v genesis bloku do 12 peněženek. **Privátní klíče musí být offline** (USB, trezor, papír).
+> **16.78B ZION** vytvořeno v genesis bloku do 13 peněženek. **Privátní klíče musí být offline** (USB, trezor, papír).
 
 | # | Účel | Adresa | Částka | Zamčeno? |
 |---|------|--------|--------|----------|
@@ -499,6 +499,7 @@ Helsinki: ZION_SEED_PEERS="prague:8333,usa:8333,singapore:8333"
 | 10 | Seed Nodes | `zion1h4w39686t8w376g0x0y426e775q6p2q0v698v43` | 1.00B | NE |
 | 11 | Genesis Creator | `zion1x638z5x6d2d0y6u3f7y8g7j56054a4a2a2c7l8f` | 590M | NE |
 | 12 | Children Future Fund | `zion1m4v5z8z850u480c5c208z274e334369275n5y20` | 1.44B | NE |
+|| 13 | Bridge Seed Fund | `zion1f6m2j0h0l773j4074324q5r528y475w4j7m9685` | 500M | NE |
 
 > **Soubor `PREMINE_WALLETS_BACKUP.json`** obsahuje privátní klíče. **Nikdy na serveru, vždy offline.** BFG scrub před zveřejněním repa.
 
