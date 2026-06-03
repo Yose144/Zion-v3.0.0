@@ -177,12 +177,12 @@ export default function BridgePage() {
               </div>
               <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-400">
                 <Shield className="h-3 w-3" />
-                Base Mainnet · Replay-safe
+                Base Sepolia Testnet · Replay-safe
               </div>
             </div>
 
             <div>
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-400">ZION ↔ wZION · Base Mainnet</p>
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-400">ZION ↔ wZION · Base Sepolia Testnet</p>
               <h1 className="text-3xl sm:text-5xl md:text-6xl font-semibold text-gradient leading-tight">
                 {cs ? <>Bridge nativní ZION<br className="hidden sm:block" /> do EVM světa</> : <>Bridge native ZION<br className="hidden sm:block" /> to the EVM world</>}
               </h1>
@@ -482,7 +482,7 @@ export default function BridgePage() {
               { label: '→', arrow: true },
               { label: 'ZIONBridge.sol', sub: 'EVM contract', color: 'border-blue-500/40 bg-blue-500/10', text: 'text-blue-400' },
               { label: '→', arrow: true },
-              { label: 'wZION ERC-20', sub: 'Base Mainnet', color: 'border-emerald-500/40 bg-emerald-500/10', text: 'text-emerald-400' },
+              { label: 'wZION ERC-20', sub: 'Base Sepolia Testnet', color: 'border-emerald-500/40 bg-emerald-500/10', text: 'text-emerald-400' },
             ].map((node, i) =>
               'arrow' in node ? (
                 <div key={i} className="text-gray-600 text-3xl font-light">→</div>
@@ -588,13 +588,40 @@ export default function BridgePage() {
           </div>
         </motion.section>
 
+        {/* ── READINESS CHECKLIST ── */}
+        <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[28px] border border-white/10 bg-white/5 p-6 md:p-8">
+          <div className="flex items-center gap-3 mb-6">
+            <CheckCircle2 className="h-5 w-5 text-emerald-400" />
+            <h2 className="text-xl font-semibold text-white">{cs ? 'Readiness kontrola' : 'Readiness checklist'}</h2>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              { label: cs ? 'wZION kontrakt' : 'wZION contract', done: true },
+              { label: cs ? 'ZIONBridge kontrakt' : 'ZIONBridge contract', done: true },
+              { label: cs ? 'BaseScan verifikace' : 'BaseScan verified', done: false },
+              { label: cs ? '3/5 Guardian multisig' : '3/5 Guardian multisig', done: false },
+              { label: cs ? 'Relay metrics' : 'Relay metrics', done: true },
+              { label: cs ? 'Burn widget (live)' : 'Burn widget (live)', done: true },
+              { label: cs ? 'L1 → Base (mint)' : 'L1 → Base (mint)', done: true },
+              { label: cs ? 'Base → L1 (unlock)' : 'Base → L1 (unlock)', done: true },
+            ].map((item) => (
+              <div key={item.label} className={`flex items-center gap-3 rounded-2xl border px-4 py-3 ${item.done ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-yellow-500/30 bg-yellow-500/5'}`}>
+                <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${item.done ? 'bg-emerald-500/20 text-emerald-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
+                  {item.done ? <CheckCircle2 className="h-3.5 w-3.5" /> : <Clock className="h-3.5 w-3.5" />}
+                </div>
+                <span className={`text-sm font-medium ${item.done ? 'text-emerald-300' : 'text-yellow-300'}`}>{item.label}</span>
+              </div>
+            ))}
+          </div>
+        </motion.section>
+
         {/* ── RESOURCES ── */}
         <motion.section initial={{ opacity: 0, scale: 0.98 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} className="rounded-[28px] border border-zion-gold/30 bg-gradient-to-r from-zion-purple/20 via-zion-gold/10 to-zion-purple/20 p-8">
           <h2 className="text-2xl font-semibold text-white mb-6 text-center">{cs ? 'Zdroje' : 'Resources'}</h2>
           <div className="grid gap-4 md:grid-cols-3">
             {[
               { label: cs ? 'Dokumentace' : 'Architecture docs', href: '/docs', desc: cs ? 'Relay design, Guardian flow, bezpečnostní model.' : 'Relay design, Guardian flow, security model.' },
-              { label: 'wZION (BaseScan)', href: `${BRIDGE_CONTRACTS.explorer_base}${BRIDGE_CONTRACTS.wzion_address}`, desc: cs ? 'Kód wZION kontraktu na Base Mainnet.' : 'wZION contract source on Base Mainnet.', external: true },
+              { label: 'wZION (BaseScan)', href: `${BRIDGE_CONTRACTS.explorer_base}${BRIDGE_CONTRACTS.wzion_address}`, desc: cs ? 'Kód wZION kontraktu na Base Sepolia Testnet.' : 'wZION contract source on Base Sepolia Testnet.', external: true },
               { label: 'DeFi Hub', href: '/defi', desc: cs ? 'Swap wZION/ETH, portfolio, pool cena.' : 'Swap wZION/ETH, portfolio, pool price.' },
             ].map((res) => (
               <Link key={res.label} href={res.href} target={'external' in res ? '_blank' : undefined} rel={'external' in res ? 'noreferrer' : undefined} className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-black/40 p-5 hover:bg-white/5 transition-colors group">

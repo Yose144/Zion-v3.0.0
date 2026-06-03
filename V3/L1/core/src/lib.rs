@@ -353,6 +353,12 @@ pub struct Transaction {
     pub amount_zion: u128,
     pub fee_zion: u64,
     pub nonce: u64,
+    /// Ed25519 signature (hex, 128 chars). Required for non-coinbase transactions.
+    #[serde(default)]
+    pub signature: String,
+    /// Ed25519 public key (hex, 64 chars). Required for non-coinbase transactions.
+    #[serde(default)]
+    pub public_key: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -1805,6 +1811,27 @@ impl Transaction {
         }
         Ok(())
     }
+
+    /// Verify Ed25519 signature for non-coinbase transactions.
+    /// Coinbase transactions (from == "coinbase") are always valid.
+    /// Returns true if the signature is valid or if the transaction is coinbase.
+    pub fn verify_signature(&self) -> bool {
+        if self.from == "coinbase" {
+            return true;
+        }
+        if self.signature.len() != 128 || self.public_key.len() != 64 {
+            return false;
+        }
+        let pk_bytes = match hex::decode(&self.public_key) {
+            Ok(v) if v.len() == 32 => v,
+            _ => return false,
+        };
+        let sig_bytes = match hex::decode(&self.signature) {
+            Ok(v) if v.len() == 64 => v,
+            _ => return false,
+        };
+        crypto::verify(&pk_bytes, self.tx_id.as_bytes(), &sig_bytes)
+    }
 }
 
 /// A spendable UTXO: output that has not been consumed by any accepted block.
@@ -2844,6 +2871,9 @@ impl ChainState {
         transaction: Transaction,
     ) -> Result<(), String> {
         transaction.validate()?;
+        if !transaction.verify_signature() {
+            return Err("account transaction signature verification failed".to_string());
+        }
         if self.mempool.len() >= MAX_MEMPOOL_TRANSACTIONS {
             return Err(format!(
                 "mempool capacity reached: {MAX_MEMPOOL_TRANSACTIONS}"
@@ -3217,6 +3247,8 @@ impl ChainState {
                         amount_zion: u128::from(amount),
                         fee_zion: 0,
                         nonce: next_height,
+                        signature: String::new(),
+                        public_key: String::new(),
                     }
                 };
 
@@ -3246,6 +3278,8 @@ impl ChainState {
                     amount_zion: u128::from(subsidy),
                     fee_zion: 0,
                     nonce: next_height,
+                    signature: String::new(),
+                    public_key: String::new(),
                 };
                 selected_transactions.insert(0, coinbase_tx);
             }
@@ -3709,6 +3743,8 @@ mod tests {
             amount_zion: 25,
             fee_zion,
             nonce,
+            signature: String::new(),
+            public_key: String::new(),
         }
     }
 
@@ -3984,6 +4020,8 @@ mod tests {
                 amount_zion: 10,
                 fee_zion: 1,
                 nonce: 1,
+                signature: String::new(),
+                public_key: String::new(),
             },
         });
         assert!(matches!(
@@ -4003,6 +4041,8 @@ mod tests {
                 amount_zion: 10,
                 fee_zion: 1,
                 nonce: 2,
+                signature: String::new(),
+                public_key: String::new(),
             },
         });
         assert!(matches!(
@@ -4022,6 +4062,8 @@ mod tests {
             amount_zion: 22,
             fee_zion: 4,
             nonce: first.nonce,
+            signature: String::new(),
+            public_key: String::new(),
         };
         assert!(matches!(
             runtime.handle_rpc_request(RpcRequest::SubmitTransaction {

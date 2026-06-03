@@ -16,6 +16,7 @@ import { toPublicView } from './wallet.js';
 import { buildUtxoTransaction, transactionToRpcPayload } from '../core/transaction.js';
 import { ZionRPC } from '../rpc/zion-rpc.js';
 import type { RpcConfig } from '../rpc/zion-rpc.js';
+import { TrezorWallet } from '../hardware/trezor-wallet.js';
 
 const STORAGE_KEY_WALLETS = 'zion_wallet_index';
 const STORAGE_KEY_ACTIVE = 'zion_wallet_active';
@@ -87,13 +88,12 @@ export class WalletManager {
   // ─── Wallet Creation ────────────────────────────────────────────────
 
   async createWallet(options: CreateWalletOptions): Promise<WalletPublicView> {
-    const { privateKey, publicKey } = await deriveKeypairFromMnemonic(
-      generateMnemonic(options.strength ?? 256)
-    );
+    const mnemonic = generateMnemonic(options.strength ?? 256);
+    const { privateKey, publicKey } = await deriveKeypairFromMnemonic(mnemonic);
 
     const address = publicKeyToAddress(publicKey);
     const encryptedPrivateKey = await encrypt(Buffer.from(privateKey).toString('hex'), options.password);
-    const encryptedMnemonic = await encrypt(generateMnemonic(options.strength ?? 256), options.password);
+    const encryptedMnemonic = await encrypt(mnemonic, options.password);
 
     const wallet: Wallet = {
       id: this.generateId(),
@@ -171,6 +171,46 @@ export class WalletManager {
     return toPublicView(wallet);
   }
 
+  // ─── Hardware Wallet (Trezor) ───────────────────────────────────────
+
+  async importFromTrezor(options: {
+    name?: string;
+    path?: string;
+    trezorWallet?: TrezorWallet;
+  }): Promise<WalletPublicView> {
+    const trezor = options.trezorWallet ?? new TrezorWallet();
+    await trezor.connect();
+
+    try {
+      const { address, publicKey, path } = await trezor.getAddress(
+        options.path,
+        true // verify on device
+      );
+
+      const wallet: Wallet = {
+        id: this.generateId(),
+        name: options.name ?? 'Trezor Wallet',
+        address,
+        publicKey,
+        privateKey: '', // hardware wallet — key never leaves device
+        mnemonic: null,
+        keyType: 'trezor',
+        path: path ?? options.path ?? null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      await this.saveWallet(wallet);
+      if (!this.activeWalletId) {
+        await this.setActiveWallet(wallet.id);
+      }
+
+      return toPublicView(wallet);
+    } finally {
+      trezor.disconnect();
+    }
+  }
+
   // ─── Wallet Retrieval ───────────────────────────────────────────────
 
   listWallets(): WalletPublicView[] {
@@ -222,6 +262,7 @@ export class WalletManager {
   async exportMnemonic(walletId: string, password: string): Promise<string> {
     const wallet = this.wallets.get(walletId);
     if (!wallet) throw new Error('Wallet not found');
+    if (wallet.keyType === 'trezor') throw new Error('Hardware wallet mnemonic never leaves the device');
     if (!wallet.mnemonic) throw new Error('No mnemonic available for this wallet');
 
     const payload = JSON.parse(wallet.mnemonic);
@@ -231,6 +272,7 @@ export class WalletManager {
   async exportPrivateKey(walletId: string, password: string): Promise<string> {
     const wallet = this.wallets.get(walletId);
     if (!wallet) throw new Error('Wallet not found');
+    if (wallet.keyType === 'trezor') throw new Error('Hardware wallet private key never leaves the device');
 
     const payload = JSON.parse(wallet.privateKey);
     return decrypt(payload, password);
@@ -255,6 +297,14 @@ export class WalletManager {
   async send(options: SendOptions): Promise<string> {
     const wallet = this.wallets.get(options.walletId);
     if (!wallet) throw new Error('Wallet not found');
+
+    if (wallet.keyType === 'trezor') {
+      throw new Error(
+        'Transaction signing for Trezor hardware wallets is not yet supported. ' +
+        'Trezor firmware lacks generic Ed25519 signing for custom coins. ' +
+        'Please use a software wallet for spending, or connect a Ledger device.'
+      );
+    }
 
     if (!isValidAddress(options.toAddress)) {
       throw new Error('Invalid recipient address');
