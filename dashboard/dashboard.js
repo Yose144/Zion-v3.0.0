@@ -1,6 +1,6 @@
 'use strict';
 
-const TABS = ['overview','wallets','explorer','services','alerts','l1','l2','l3','l4','l5','l6','genesis','blockers','controls','charts','events','env','database','metrics','launch-day','wizard','logs','hiran','dao','payout'];
+const TABS = ['overview','wallets','explorer','services','alerts','l1','l2','l3','l4','l5','l6','bridge','genesis','blockers','controls','charts','events','env','database','metrics','launch-day','wizard','logs','hiran','dao','payout'];
 let autoRefresh = true, refreshTimer = null, currentTab = 'overview';
 let charts = {};
 let friendlyMode = false;
@@ -5347,6 +5347,97 @@ refreshAll = async function() {
     }
   } catch(e) { /* silent */ }
 };
+
+// ════════════════════════════════════════════════════════════════════════
+// Bridge UI (Phase 26a)
+// ════════════════════════════════════════════════════════════════════════
+
+async function refreshBridgeHistory() {
+  const tbody = document.getElementById('bridge-history-body');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="6" class="py-4 text-gray-500 italic text-center">Loading bridge history…</td></tr>';
+  try {
+    const res = await fetch('/api/bridge/history').then(r => r.json());
+    if (res.transfers && res.transfers.length > 0) {
+      let html = '';
+      for (const tx of res.transfers) {
+        const statusColor = tx.status === 'completed' ? 'text-emerald-400' : (tx.status === 'pending' ? 'text-amber-400' : 'text-red-400');
+        html += `<tr class="border-b border-white/5">
+          <td class="py-2 px-2 font-mono text-[10px]"><a href="${tx.explorer_url || '#'}" target="_blank" class="text-blue-400 hover:underline">${tx.tx_hash ? tx.tx_hash.substring(0,18)+'…' : '—'}</a></td>
+          <td class="py-2 px-2">${escapeHtml(tx.from_chain || '—')}</td>
+          <td class="py-2 px-2">${escapeHtml(tx.to_chain || '—')}</td>
+          <td class="py-2 px-2 text-right font-mono">${tx.amount || '—'}</td>
+          <td class="py-2 px-2 text-center ${statusColor}">${tx.status || 'unknown'}</td>
+          <td class="py-2 px-2 text-gray-400">${tx.timestamp || '—'}</td>
+        </tr>`;
+      }
+      tbody.innerHTML = html;
+    } else {
+      tbody.innerHTML = '<tr><td colspan="6" class="py-4 text-gray-500 italic text-center">No bridge transfers recorded yet. Start the bridge relay to see activity.</td></tr>';
+    }
+  } catch (e) {
+    tbody.innerHTML = '<tr><td colspan="6" class="py-4 text-red-400 text-center">Error loading history: ' + escapeHtml(e.message) + '</td></tr>';
+  }
+}
+
+async function loadBridgeStats() {
+  try {
+    const status = await fetch('/api/bridge/status').then(r => r.json());
+    const badge = document.getElementById('bridge-status-badge');
+    if (badge) {
+      if (status.online) {
+        badge.className = 'px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+        badge.textContent = '● Online';
+      } else {
+        badge.className = 'px-3 py-1 rounded-full text-xs font-semibold bg-red-500/20 text-red-300 border border-red-500/30';
+        badge.textContent = '● Offline';
+      }
+    }
+    const lastBlock = document.getElementById('bridge-last-block');
+    if (lastBlock) lastBlock.textContent = status.last_block || '—';
+    const volume = document.getElementById('bridge-total-volume');
+    if (volume) volume.textContent = status.total_volume ? status.total_volume.toLocaleString() : '—';
+    const pending = document.getElementById('bridge-pending');
+    if (pending) pending.textContent = status.pending_count !== undefined ? status.pending_count : '—';
+    const validators = document.getElementById('bridge-validators');
+    if (validators) validators.textContent = status.validators_online !== undefined ? status.validators_online + '/5' : '—';
+    const contract = document.getElementById('bridge-contract');
+    if (contract) contract.textContent = status.contract_verified ? '✓ Yes' : '○ No';
+  } catch (e) {
+    console.warn('Bridge stats load failed:', e);
+  }
+}
+
+// Hook into tab switch to auto-load bridge data
+(function() {
+  const _orig = window.switchTab;
+  if (_orig) {
+    window.switchTab = function(t) {
+      _orig(t);
+      if (t === 'bridge') {
+        loadBridgeStats();
+        refreshBridgeHistory();
+      }
+    };
+  }
+})();
+
+// Keyboard shortcut: 'b' for bridge
+(function() {
+  const _origMap = {
+    '1': 'overview', '2': 'l1', '3': 'l2', '4': 'l3', '5': 'l4', '6': 'l5', '7': 'l6',
+    'o': 'overview', 'c': 'controls', 'e': 'explorer', 'w': 'wallets', 'a': 'alerts',
+    't': 'topology', 'p': 'ops', 'h': 'hiran', 'g': 'charts',
+  };
+  document.addEventListener('keydown', function(e) {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable)) return;
+    const key = e.key.toLowerCase();
+    if (key === 'b' && !e.ctrlKey && !e.altKey && !e.metaKey) {
+      switchTab('bridge');
+      e.preventDefault();
+    }
+  });
+})();
 
 console.log('[ZION Dashboard] Auto-refresh started');
 loadMinerConfig();

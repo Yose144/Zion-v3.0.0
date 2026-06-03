@@ -269,6 +269,10 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         <button onclick="switchTab('l6')" id="tab-l6" class="sidebar-item">🚀 L6 Space</button>
       </div>
       <div class="sidebar-group">
+        <div class="sidebar-title">Cross-Chain</div>
+        <button onclick="switchTab('bridge')" id="tab-bridge" class="sidebar-item">🌉 Bridge</button>
+      </div>
+      <div class="sidebar-group">
         <div class="sidebar-title">Operations</div>
         <button onclick="switchTab('controls')" id="tab-controls" class="sidebar-item">🎛️ Controls</button>
         <button onclick="switchTab('ops')" id="tab-ops" class="sidebar-item">🔧 Ops (Backup / CLI)</button>
@@ -2623,6 +2627,147 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
       </div>
     </div>
 
+  </div>
+
+  <!-- ═════════ TAB: Bridge ═════════ -->
+  <div id="pane-bridge" class="hidden space-y-4">
+    <!-- Bridge Header -->
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gradient">🌉 ZION Bridge</h1>
+        <p class="text-xs text-gray-400 mt-1">Cross-chain relay — L1 ↔ Base Sepolia Testnet (mainnet soon)</p>
+      </div>
+      <div class="flex gap-2">
+        <div id="bridge-status-badge" class="px-3 py-1 rounded-full text-xs font-semibold bg-gray-700/50 text-gray-300 border border-white/10">● Checking…</div>
+      </div>
+    </div>
+
+    <!-- Bridge Stats Row -->
+    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+      <div class="zion-panel p-4 text-center">
+        <div class="text-xl font-bold text-emerald-400" id="bridge-last-block">—</div>
+        <div class="text-[10px] text-gray-400 mt-1">Last Scanned Block</div>
+      </div>
+      <div class="zion-panel p-4 text-center">
+        <div class="text-xl font-bold text-blue-400" id="bridge-total-volume">—</div>
+        <div class="text-[10px] text-gray-400 mt-1">Total Volume (wZION)</div>
+      </div>
+      <div class="zion-panel p-4 text-center">
+        <div class="text-xl font-bold text-amber-400" id="bridge-pending">—</div>
+        <div class="text-[10px] text-gray-400 mt-1">Pending Transfers</div>
+      </div>
+      <div class="zion-panel p-4 text-center">
+        <div class="text-xl font-bold text-purple-400" id="bridge-chains">1</div>
+        <div class="text-[10px] text-gray-400 mt-1">Active Chains</div>
+      </div>
+      <div class="zion-panel p-4 text-center">
+        <div class="text-xl font-bold text-cyan-400" id="bridge-validators">—</div>
+        <div class="text-[10px] text-gray-400 mt-1">Validators Online</div>
+      </div>
+      <div class="zion-panel p-4 text-center">
+        <div class="text-xl font-bold text-zion-gold" id="bridge-contract">—</div>
+        <div class="text-[10px] text-gray-400 mt-1">Contract Verified</div>
+      </div>
+    </div>
+
+    <!-- Bridge Contracts -->
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-sm font-bold">Base Sepolia Contracts (Verified)</h3>
+        <span class="text-[10px] px-2 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded">Testnet LIVE</span>
+      </div>
+      <div class="space-y-2 text-xs font-mono">
+        <div class="flex items-center justify-between p-2 bg-black/30 rounded-lg border border-white/5">
+          <div>
+            <span class="text-gray-400">wZION ERC-20</span>
+            <a href="https://sepolia.basescan.org/address/0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6" target="_blank" class="text-blue-400 hover:text-blue-300 ml-2">0x0c49…2bb6 ↗</a>
+          </div>
+          <span class="text-emerald-400">● LIVE (11 tx)</span>
+        </div>
+        <div class="flex items-center justify-between p-2 bg-black/30 rounded-lg border border-white/5">
+          <div>
+            <span class="text-gray-400">ZIONBridge</span>
+            <a href="https://sepolia.basescan.org/address/0xF4BF85443ad6c9b88f3a5314cC3Fb59C32Cedca1" target="_blank" class="text-blue-400 hover:text-blue-300 ml-2">0xF4BF…edca1 ↗</a>
+          </div>
+          <span class="text-emerald-400">● LIVE (3 tx)</span>
+        </div>
+        <div class="flex items-center justify-between p-2 bg-black/30 rounded-lg border border-white/5">
+          <div>
+            <span class="text-gray-400">Deployer / Validator</span>
+            <a href="https://sepolia.basescan.org/address/0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186" target="_blank" class="text-blue-400 hover:text-blue-300 ml-2">0xdde1…9D186 ↗</a>
+          </div>
+          <span class="text-gray-400">50 wZION + UNI-V3-POS</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bridge Transfer Form -->
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-sm font-bold">Cross-Chain Transfer</h3>
+        <span class="text-[10px] text-gray-500">Coming in Phase 26b</span>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+        <div>
+          <label class="text-[10px] text-gray-400 block mb-1">From Chain</label>
+          <select id="bridge-from" class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-zion-gold/50">
+            <option value="zion">ZION L1 Mainnet</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-[10px] text-gray-400 block mb-1">To Chain</label>
+          <select id="bridge-to" class="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-zion-gold/50">
+            <option value="base-sepolia">Base Sepolia Testnet</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-[10px] text-gray-400 block mb-1">Amount (ZION)</label>
+          <div class="flex gap-2">
+            <input type="number" id="bridge-amount" placeholder="0.0" min="0" step="0.01" class="flex-1 bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-zion-gold/50" disabled>
+            <button class="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-xs text-gray-400" disabled>MAX</button>
+          </div>
+        </div>
+      </div>
+      <div class="flex items-center justify-between p-3 bg-black/30 rounded-lg border border-white/5 mb-3">
+        <div class="text-xs text-gray-400">Estimated fee: <span class="text-white font-mono">—</span></div>
+        <div class="text-xs text-gray-400">ETA: <span class="text-white font-mono">—</span></div>
+      </div>
+      <button class="w-full py-2.5 bg-gradient-to-r from-zion-gold/20 to-purple-500/20 border border-zion-gold/30 rounded-lg text-sm font-semibold text-gray-400 cursor-not-allowed" disabled>
+        🚧 Bridge UI coming in 3.1.0 — use CLI: zion bridge transfer
+      </button>
+    </div>
+
+    <!-- Bridge Transaction History -->
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-sm font-bold">Recent Transfers</h3>
+        <button onclick="refreshBridgeHistory()" class="text-[10px] px-2 py-0.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded transition">Refresh</button>
+      </div>
+      <div id="bridge-history-table" class="overflow-x-auto">
+        <table class="w-full text-xs">
+          <thead><tr class="text-gray-400 border-b border-white/10"><th class="py-2 px-2 text-left">TX Hash</th><th class="py-2 px-2 text-left">From</th><th class="py-2 px-2 text-left">To</th><th class="py-2 px-2 text-right">Amount</th><th class="py-2 px-2 text-center">Status</th><th class="py-2 px-2 text-left">Time</th></tr></thead>
+          <tbody id="bridge-history-body"><tr><td colspan="6" class="py-4 text-gray-500 italic text-center">No bridge transfers yet. Bridge relay must be running to record history.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Bridge Readiness -->
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-sm font-bold">Readiness Checklist</h3>
+        <a href="https://github.com/Yose144/Zion-v3.0.0/blob/main/V3/docs/BRIDGE_READINESS_100.md" target="_blank" class="text-[10px] px-2 py-0.5 bg-purple-700/30 hover:bg-purple-700/50 border border-purple-500/20 rounded-lg font-semibold transition">Full Plan ↗</a>
+      </div>
+      <div class="space-y-1.5 text-xs">
+        <div class="flex items-center gap-2"><span class="text-emerald-400">✓</span> <span>wZION ERC-20 deployed on Base Sepolia</span></div>
+        <div class="flex items-center gap-2"><span class="text-emerald-400">✓</span> <span>ZIONBridge deployed on Base Sepolia</span></div>
+        <div class="flex items-center gap-2"><span class="text-emerald-400">✓</span> <span>Deployer wallet holds wZION + tested on Uniswap V3</span></div>
+        <div class="flex items-center gap-2"><span class="text-gray-500">○</span> <span class="text-gray-400">Contract source verified on BaseScan</span></div>
+        <div class="flex items-center gap-2"><span class="text-gray-500">○</span> <span class="text-gray-400">BridgeValidator (3/5 multisig) deployed</span></div>
+        <div class="flex items-center gap-2"><span class="text-gray-500">○</span> <span class="text-gray-400">End-to-end transfer test passed</span></div>
+        <div class="flex items-center gap-2"><span class="text-gray-500">○</span> <span class="text-gray-400">Base Mainnet deploy</span></div>
+        <div class="flex items-center gap-2"><span class="text-gray-500">○</span> <span class="text-gray-400">Contract audit (Certik/SlowMist)</span></div>
+      </div>
+    </div>
   </div>
 
   <!-- ═════════ TAB: Hiran AI ═════════ -->
