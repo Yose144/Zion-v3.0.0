@@ -5,9 +5,10 @@ import { Sidebar } from "./components/ui/Sidebar";
 import { SettingsPanel } from "./components/ui/SettingsPanel";
 import { NetworkScene } from "./components/three/NetworkScene";
 import { LogTail } from "./components/ui/LogTail";
+import { OasisPanel } from "./components/ui/OasisPanel";
 import { useState } from "react";
 
-type Tab = "overview" | "services" | "topology" | "gpu" | "logs" | "settings";
+type Tab = "overview" | "services" | "topology" | "gpu" | "oasis" | "logs" | "settings";
 
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>("services");
@@ -38,6 +39,7 @@ function App() {
             </div>
           )}
           {activeTab === "gpu" && <GpuMetricsPanel />}
+          {activeTab === "oasis" && <OasisPanel />}
           {activeTab === "logs" && (
             <div className="space-y-4">
               <h2 className="text-xl font-bold text-zion-ok font-mono">System Logs</h2>
