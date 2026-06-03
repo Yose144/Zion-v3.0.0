@@ -33,6 +33,17 @@ describe('WalletManager', () => {
     expect(wallet.name).toBe('Test');
   });
 
+  it('creates a wallet whose mnemonic matches the derived keypair (no double generation)', async () => {
+    const wallet = await manager.createWallet({ name: 'BugCheck', password: 'Password123!' });
+    // Export the mnemonic and re-derive the keypair — must match the wallet address
+    const exportedMnemonic = await manager.exportMnemonic(wallet.id, 'Password123!');
+    const { deriveKeypairFromMnemonic } = await import('../src/core/keypair');
+    const { publicKeyToAddress } = await import('../src/core/address');
+    const { publicKey } = await deriveKeypairFromMnemonic(exportedMnemonic);
+    const derivedAddress = publicKeyToAddress(publicKey);
+    expect(derivedAddress).toBe(wallet.address);
+  });
+
   it('imports from mnemonic', async () => {
     const mnemonic =
       'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
@@ -79,5 +90,13 @@ describe('WalletManager', () => {
     const w = await manager.createWallet({ name: 'A', password: 'Password123!' });
     const pk = await manager.exportPrivateKey(w.id, 'Password123!');
     expect(pk).toHaveLength(64); // 32 bytes hex
+  });
+
+  it('stores encrypted payload with current PBKDF2 iterations', async () => {
+    const w = await manager.createWallet({ name: 'IterCheck', password: 'Password123!' });
+    const raw = await (manager as any).storage.getItem(`zion_wallet_${w.id}`);
+    const wallet = JSON.parse(raw!);
+    const privateKeyPayload = JSON.parse(wallet.privateKey);
+    expect(privateKeyPayload.iterations).toBeGreaterThanOrEqual(600_000);
   });
 });

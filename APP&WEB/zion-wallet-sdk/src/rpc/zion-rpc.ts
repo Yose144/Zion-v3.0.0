@@ -10,7 +10,8 @@ export interface RpcConfig {
 
 const DEFAULT_NODES = [
   'https://rpc.zionterranova.com',
-  'http://91.98.122.165:8443',
+  'http://77.42.71.94:8443',      // Edge primary (Hetzner VPS)
+  'http://100.76.16.108:8443',    // Edge VPN (Tailscale fallback)
 ];
 
 export class ZionRPC {

@@ -21,7 +21,16 @@ export {
   verifySignature,
 } from './core/keypair.js';
 
-export { encrypt, decrypt, hashPassword, constantTimeEqual } from './core/crypto.js';
+export {
+  encrypt,
+  decrypt,
+  upgradeEncryption,
+  hashPassword,
+  constantTimeEqual,
+  LEGACY_PBKDF2_ITERATIONS,
+  CURRENT_PBKDF2_ITERATIONS,
+  type EncryptedPayload,
+} from './core/crypto.js';
 
 export {
   buildUtxoTransaction,
