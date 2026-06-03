@@ -59,6 +59,28 @@
 
 **Next:** Kompletní bridge readiness plán včetně UI tracku → [`V3/docs/BRIDGE_READINESS_100.md`](./V3/docs/BRIDGE_READINESS_100.md)
 
+### Bridge Dashboard UI — Phase 26a (2026-06-03)
+
+> Nová záložka "🌉 Bridge" v dashboardu (port 8766).
+
+| Funkce | Stav | Detail |
+|--------|------|--------|
+| Bridge Status Card | ✅ Hotovo | Online/offline badge, last scanned block, total volume, pending count |
+| Contract Links | ✅ Hotovo | wZION + ZIONBridge + Deployer s přímými linky na Base Sepolia explorer |
+| Transfer Form | ✅ Placeholder | UI ready, disabled — waiting for Phase 26b backend wiring |
+| Transaction History | ✅ Hotovo | `/api/bridge/history` — čte z `bridge.db` (SQLite), 50 posledních transferů |
+| Readiness Checklist | ✅ Hotovo | 8 položek s ✓/○ indikátory + link na `BRIDGE_READINESS_100.md` |
+| Keyboard Shortcut | ✅ Hotovo | `b` — přepne na Bridge tab |
+| Auto-load | ✅ Hotovo | Data se načtou při přepnutí na Bridge tab |
+
+**API Endpoints:**
+```
+GET /api/bridge/status      → {online, pending_count, last_block, total_volume, validators_online, contract_verified}
+GET /api/bridge/history     → {transfers: [{tx_hash, from_chain, to_chain, amount, status, timestamp, explorer_url}]}
+GET /api/bridge/chains      → {chains: [{id, name, enabled, type, wzion_address, bridge_address}]}
+GET /api/bridge/validators  → {validators: [{address, online, last_signature}], threshold, total}
+```
+
 ---
 
 ## Co je nového 2026-05-07 (security cleanup + agentická obsluha)
