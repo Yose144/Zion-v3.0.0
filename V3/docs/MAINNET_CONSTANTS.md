@@ -11,8 +11,8 @@
 |----------|-------|-------------|
 | `FLOWERS_PER_ZION` | `1_000_000_000_000` | 1 ZION = 10^12 flowers (12 decimals) |
 | `TOTAL_SUPPLY` | `144_000_000_000 * FLOWERS_PER_ZION` | Hard cap in flowers (~1.44e23) |
-| `GENESIS_PREMINE` | `16_280_000_000 * FLOWERS_PER_ZION` | Genesis reserve in flowers |
-| `MINING_EMISSION` | `TOTAL_SUPPLY - GENESIS_PREMINE` | ~127.72B ZION |
+| `GENESIS_PREMINE` | `16_780_000_000 * FLOWERS_PER_ZION` | Genesis reserve in flowers |
+| `MINING_EMISSION` | `TOTAL_SUPPLY - GENESIS_PREMINE` | ~127.22B ZION |
 | `BLOCK_TIME_SECONDS` | `60` | Target block time |
 | `BLOCKS_PER_YEAR` | `525_600` | 60 s × 365 days |
 | `BLOCKS_PER_DECADE` | `10 * BLOCKS_PER_YEAR` = `5_256_000` | Decay interval |
@@ -38,9 +38,9 @@
 | `DAO_TREASURY_LOCK_HEIGHT` | `525_600` | ~1 year lock (~525,600 blocks) |
 | `GENESIS_TIMESTAMP` | `1_767_225_600` | Unix seconds (TBD at ceremony) |
 | `GENESIS_MESSAGE` | Embedded ASCII dedication | See `GENESIS_MESSAGE.txt` |
-| `PREMINE_OUTPUTS` | 12 outputs | See table below |
+| `PREMINE_OUTPUTS` | 13 outputs | See table below |
 
-### Premine Distribution (12 outputs)
+### Premine Distribution (13 outputs)
 
 | # | Category | Amount (ZION) |
 |---|----------|---------------|
@@ -52,7 +52,8 @@
 | 10 | Network Infrastructure | 1,000,000,000 |
 | 11 | Genesis Creator | 590,000,000 |
 | 12 | Humanitarian — Children Future Fund | 1,440,000,000 |
-| | **Total** | **16,280,000,000** |
+| 13 | **Bridge Seed Fund — EVM Bridge Liquidity** | **500,000,000** |
+| | **Total** | **16,780,000,000** |
 
 ### Subsidy Wallets (canonical addresses)
 
