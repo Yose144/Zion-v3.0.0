@@ -29,8 +29,8 @@ if timeout 3 bash -c "exec 3<>/dev/tcp/${POOL_HOST}/${POOL_PORT}" 2>/dev/null; t
 fi
 
 if [[ "$NODE_OK" == "false" ]]; then
-    log_msg "[ALERT] Node healthcheck failed. Restarting zion-edge-node..."
-    systemctl restart zion-edge-node
+    log_msg "[ALERT] Node healthcheck failed. Restarting zion-edge-node1..."
+    systemctl restart zion-edge-node1
     sleep 10
     if curl -sf "$NODE_RPC" >/dev/null 2>&1; then
         log_msg "[RECOVER] Node restarted successfully."

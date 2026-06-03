@@ -1276,6 +1276,62 @@ Progress:
 
 Status: mostly complete (seed node expansion pending)
 
+### Phase 26: Bridge UI & User Experience (2026-06)
+
+> **On-chain verified:** Base Sepolia wZION (`0x0c49...2bb6`) + ZIONBridge (`0xF4BF...edca1`) are LIVE.
+> **Source:** [`V3/docs/BRIDGE_READINESS_100.md`](./docs/BRIDGE_READINESS_100.md)
+
+Goal: Users can bridge ZION cross-chain without touching CLI.
+
+#### 26a: Bridge Dashboard (Python, port 8766)
+
+| # | Deliverable | Status |
+|---|-------------|--------|
+| D1 | Bridge Status Card (online/last block/volume) | 🔄 Planned |
+| D2 | Cross-chain Transfer Form (chain selector, amount, fee estimate) | 🔄 Planned |
+| D3 | Transaction History (pending + completed with explorer links) | 🔄 Planned |
+| D4 | Liquidity Display (L1 locked, wZION minted, 24h volume) | 🔄 Planned |
+| D5 | Validator 3/5 Status (online indicators, last signature) | 🔄 Planned |
+
+**API:** `GET /api/bridge/*` endpoints in `dashboard/app.py`.
+
+#### 26b: Website Bridge Page (Next.js, `/bridge`)
+
+| # | Deliverable | Status |
+|---|-------------|--------|
+| W1 | Bridge Widget React component | 🔄 Planned |
+| W2 | Chain selector with logos (Base, Arbitrum, BSC, Polygon, ZION L1) | 🔄 Planned |
+| W3 | Real-time fee estimate (gas + bridge fee) | 🔄 Planned |
+| W4 | Step-by-step transaction tracker (Lock → Confirm → Mint) | 🔄 Planned |
+| W5 | Bridge stats page (total volume, top chains, 24h activity) | 🔄 Planned |
+
+**Components:** `src/components/bridge/*.tsx`, `src/app/bridge/page.tsx`.
+
+#### 26c: Desktop Agent Bridge Tab (Electron)
+
+| # | Deliverable | Status |
+|---|-------------|--------|
+| E1 | Mini bridge widget in dock | 🔄 Planned |
+| E2 | Transfer completion toast notification | 🔄 Planned |
+| E3 | Local bridge history storage | 🔄 Planned |
+
+#### 26d: Contract Hardening
+
+| # | Deliverable | Status |
+|---|-------------|--------|
+| C1 | Verify ZIONBridge + wZION source on BaseScan | 🔄 Planned |
+| C2 | Deploy BridgeValidator (3/5 multisig) on Base Sepolia | 🔄 Planned |
+| C3 | Base Mainnet deploy (after Sepolia success) | 🔄 Planned |
+| C4 | Contract audit (Certik/SlowMist) | 🔄 Planned |
+
+**Exit criteria:**
+- Full roundtrip L1 → Base Sepolia → L1 in < 5 min via UI
+- 3/5 validator signatures per transfer
+- Daily limit (10M wZION) enforced
+- Contract source verified on BaseScan
+
+---
+
 ## Rules For Future Work
 
 - If `V3/` scope changes materially, update this file and `V3/README.md` in the same change.
