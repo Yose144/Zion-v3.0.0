@@ -8,11 +8,19 @@ import { sha256 } from '@noble/hashes/sha2.js';
 // Use Node.js crypto when available, otherwise Web Crypto API
 const nodeCrypto = typeof require !== 'undefined' ? require('crypto') : null;
 
-interface EncryptedPayload {
+/** Legacy PBKDF2 iteration count (v1.0.0 wallets). */
+export const LEGACY_PBKDF2_ITERATIONS = 100_000;
+
+/** Current PBKDF2 iteration count (OWASP 2023 recommendation). */
+export const CURRENT_PBKDF2_ITERATIONS = 600_000;
+
+export interface EncryptedPayload {
   ciphertext: string; // hex
   salt: string; // hex
   iv: string; // hex
   authTag: string; // hex
+  /** PBKDF2 iterations used to derive the key. Absent = legacy 100k. */
+  iterations?: number;
 }
 
 function getRandomBytes(size: number): Uint8Array {
@@ -25,9 +33,12 @@ function getRandomBytes(size: number): Uint8Array {
   throw new Error('No secure random source available');
 }
 
-async function deriveKey(password: string, salt: Uint8Array): Promise<Uint8Array> {
+async function deriveKey(
+  password: string,
+  salt: Uint8Array,
+  iterations: number = CURRENT_PBKDF2_ITERATIONS
+): Promise<Uint8Array> {
   if (typeof crypto !== 'undefined' && crypto.subtle) {
-    // Web Crypto API — cast to any to work around TS 5.3 DOM lib strict typing
     const encoder = new TextEncoder();
     const keyMaterial = await (crypto.subtle.importKey as any)(
       'raw',
@@ -40,7 +51,7 @@ async function deriveKey(password: string, salt: Uint8Array): Promise<Uint8Array
       {
         name: 'PBKDF2',
         salt,
-        iterations: 100000,
+        iterations,
         hash: 'SHA-256',
       },
       keyMaterial,
@@ -52,7 +63,7 @@ async function deriveKey(password: string, salt: Uint8Array): Promise<Uint8Array
   // Node.js fallback
   if (nodeCrypto) {
     return new Uint8Array(
-      nodeCrypto.pbkdf2Sync(password, Buffer.from(salt), 100000, 32, 'sha256')
+      nodeCrypto.pbkdf2Sync(password, Buffer.from(salt), iterations, 32, 'sha256')
     );
   }
 
@@ -60,12 +71,12 @@ async function deriveKey(password: string, salt: Uint8Array): Promise<Uint8Array
 }
 
 /**
- * Encrypt data with AES-256-GCM.
+ * Encrypt data with AES-256-GCM using the current PBKDF2 iteration count.
  */
 export async function encrypt(data: string, password: string): Promise<EncryptedPayload> {
   const salt = getRandomBytes(16);
   const iv = getRandomBytes(12);
-  const key = await deriveKey(password, salt);
+  const key = await deriveKey(password, salt, CURRENT_PBKDF2_ITERATIONS);
 
   if (typeof crypto !== 'undefined' && crypto.subtle) {
     const cryptoKey = await (crypto.subtle.importKey as any)('raw', key, 'AES-GCM', false, ['encrypt']);
@@ -82,6 +93,7 @@ export async function encrypt(data: string, password: string): Promise<Encrypted
       salt: Buffer.from(salt).toString('hex'),
       iv: Buffer.from(iv).toString('hex'),
       authTag: Buffer.from(authTag).toString('hex'),
+      iterations: CURRENT_PBKDF2_ITERATIONS,
     };
   }
 
@@ -95,6 +107,7 @@ export async function encrypt(data: string, password: string): Promise<Encrypted
       salt: Buffer.from(salt).toString('hex'),
       iv: Buffer.from(iv).toString('hex'),
       authTag: authTag.toString('hex'),
+      iterations: CURRENT_PBKDF2_ITERATIONS,
     };
   }
 
@@ -103,13 +116,15 @@ export async function encrypt(data: string, password: string): Promise<Encrypted
 
 /**
  * Decrypt data encrypted with AES-256-GCM.
+ * Automatically detects legacy payloads (missing `iterations` → 100k).
  */
 export async function decrypt(payload: EncryptedPayload, password: string): Promise<string> {
   const salt = Buffer.from(payload.salt, 'hex');
   const iv = Buffer.from(payload.iv, 'hex');
   const authTag = Buffer.from(payload.authTag, 'hex');
   const ciphertext = Buffer.from(payload.ciphertext, 'hex');
-  const key = await deriveKey(password, new Uint8Array(salt));
+  const iterations = payload.iterations ?? LEGACY_PBKDF2_ITERATIONS;
+  const key = await deriveKey(password, new Uint8Array(salt), iterations);
 
   if (typeof crypto !== 'undefined' && crypto.subtle) {
     const cryptoKey = await (crypto.subtle.importKey as any)('raw', key, 'AES-GCM', false, ['decrypt']);
@@ -134,6 +149,17 @@ export async function decrypt(payload: EncryptedPayload, password: string): Prom
   }
 
   throw new Error('No AES-GCM implementation available');
+}
+
+/**
+ * Re-encrypt a decrypted plaintext with the current (higher) iteration count.
+ * Use this to migrate legacy wallets to stronger PBKDF2 after successful unlock.
+ */
+export async function upgradeEncryption(
+  plaintext: string,
+  password: string
+): Promise<EncryptedPayload> {
+  return encrypt(plaintext, password);
 }
 
 /**
