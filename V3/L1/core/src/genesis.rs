@@ -229,6 +229,8 @@ pub fn genesis_block() -> AcceptedBlock {
                 amount_zion: output.amount_flowers,
                 fee_zion: 0,
                 nonce: i as u64,
+                signature: String::new(),
+                public_key: String::new(),
             }
         })
         .collect();
