@@ -112,7 +112,7 @@ function switchTab(name){
   if(name === 'wallets') loadWallets();
   if(name === 'explorer') loadExplorer();
   if(['l1','l2','l3','l4','l5','l6'].includes(name)) loadLayerFull(name);
-  if(name === 'launch-day'){ loadLaunchDayStatus(); startLaunchCountdown(); }
+  if(name === 'launch-day'){ loadLaunchDayStatus(); startLaunchCountdown(); loadGenesisBackupList(); }
   if(name === 'hiran'){ loadAgentList(); checkAiStatus(); }
   if(name === 'payout') refreshPayout();
 }
@@ -557,6 +557,9 @@ async function refreshPayout(){
       if(ph.error_msg){
         healthErr.textContent = ph.error_msg;
         healthErr.classList.remove('hidden');
+      } else if(!ph.edge_stats_ok && data.topology === 'edge-primary'){
+        healthErr.textContent = 'Edge pool metrics endpoint (8455) unreachable. Pool may not be running on Edge server.';
+        healthErr.classList.remove('hidden');
       } else {
         healthErr.classList.add('hidden');
       }
@@ -725,13 +728,17 @@ async function refreshPayout(){
       set('pool-stat-hashrate', ps.hashrate.pool.toFixed(2));
     } else if (data.miner_perf && data.miner_perf.hashrate != null) {
       set('pool-stat-hashrate', data.miner_perf.hashrate.toFixed(2));
+    } else {
+      set('pool-stat-hashrate', '—');
     }
     const sess = data.session_stats || {};
-    set('pool-stat-miners', sess.active_sessions != null ? sess.active_sessions : (ps.miners?.active ?? '—'));
+    set('pool-stat-miners', sess.active_sessions != null ? sess.active_sessions : (ps.miners?.active ?? data.miner_stats?.length ?? '—'));
     if (ps.routing && ps.routing.accept_rate_pct != null) {
       set('pool-stat-accept-rate', ps.routing.accept_rate_pct.toFixed(1));
     } else if (sess.accept_rate_pct != null) {
       set('pool-stat-accept-rate', sess.accept_rate_pct.toFixed(1));
+    } else {
+      set('pool-stat-accept-rate', '—');
     }
     if (ps.pplns) {
       set('pool-stat-pplns', ps.pplns.window_used + '/' + ps.pplns.window_size);
@@ -5515,6 +5522,111 @@ async function loadBridgeStats() {
     if (contract) contract.textContent = status.contract_verified ? '✓ Yes' : '○ No';
   } catch (e) {
     console.warn('Bridge stats load failed:', e);
+  }
+}
+
+// ── Genesis Backup/Restore ──
+async function loadGenesisBackupList(){
+  try{
+    const res=await fetch('/api/genesis-backup?action=list').then(r=>r.json());
+    const listEl=document.getElementById('genesis-backup-list');
+    
+    if(res.success && res.backups.length>0){
+      let html='';
+      res.backups.forEach(backup=>{
+        html+=`<div class="flex items-center justify-between bg-black/40 rounded p-2 text-xs border border-white/5">
+          <div>
+            <div class="font-bold text-emerald-400">${escapeHtml(backup.name)}</div>
+            <div class="text-gray-400">📅 ${backup.timestamp} | 🔗 ${backup.genesis_hash?backup.genesis_hash.substring(0,8)+'…':'N/A'}</div>
+          </div>
+          <div class="text-right">
+            <div class="text-purple-400">${backup.wallet_count} wallets</div>
+            <div class="text-gray-500">${backup.size_kb} KB | 🔄 ${backup.redundancy}</div>
+          </div>
+        </div>`;
+      });
+      listEl.innerHTML=html;
+    }else{
+      listEl.innerHTML='<div class="text-xs text-gray-500 italic">Žádné zálohy nenalezeny. Vytvořte svou první zálohu.</div>';
+    }
+  }catch(e){
+    console.error('Failed to load genesis backup list:',e);
+    document.getElementById('genesis-backup-list').innerHTML='<div class="text-xs text-red-400">Nepodařilo se načíst zálohy</div>';
+  }
+}
+
+async function genesisBackupAction(action){
+  const details=document.getElementById('genesis-backup-details');
+  details.innerHTML='<div class="text-blue-400">⏳ Zpracuji...</div>';
+  
+  try{
+    if(action==='list'){
+      loadGenesisBackupList();
+      details.innerHTML='<div class="text-emerald-400">✅ Seznam záloh aktualizován</div>';
+    }else if(action==='create'){
+      const res=await fetch('/api/genesis-backup?action=create').then(r=>r.json());
+      
+      if(res.success){
+        let html=`<div class="text-emerald-400 mb-2">✅ Záloha úspěšně vytvořena</div>`;
+        html+=`<div class="text-gray-400">📁 Umístění: ${escapeHtml(res.backup_path)}</div>`;
+        html+=`<div class="text-gray-400">🔑 Wallets: ${res.wallet_count}</div>`;
+        html+=`<div class="text-gray-400">🔄 Redundance: ${escapeHtml(res.redundancy)}</div>`;
+        html+=`<div class="text-gray-400">📊 Metadata: ${JSON.stringify(res.metadata, null, 2)}</div>`;
+        details.innerHTML=html;
+        loadGenesisBackupList();
+      }else{
+        details.innerHTML='<div class="text-red-400">❌ Chyba: '+escapeHtml(res.error)+'</div>';
+      }
+    }else if(action==='restore'){
+      // Prompt for backup path
+      const backupPath=prompt('Zadejte cestu k záloze (např. C:/Users/yosef/Desktop/Zion/2.9.6-main/backups/genesis-backup-20260603_120000):');
+      if(!backupPath){
+        details.innerHTML='<div class="text-amber-400">⚠️ Obnova zrušena</div>';
+        return;
+      }
+      
+      const password=prompt('Zadejte heslo (volitelné - stiskněte Enter pro žádné):');
+      const res=await fetch('/api/genesis-backup?action=restore&backup_path='+encodeURIComponent(backupPath)+'&password='+encodeURIComponent(password||'')).then(r=>r.json());
+      
+      if(res.success){
+        let html=`<div class="text-emerald-400 mb-2">✅ Záloha úspěšně obnovena</div>`;
+        html+=`<div class="text-gray-400">🔗 Genesis Hash: ${res.genesis_hash?res.genesis_hash.substring(0,8)+'…':'N/A'}</div>`;
+        html+=`<div class="text-gray-400">📅 Timestamp zálohy: ${res.backup_timestamp}</div>`;
+        html+=`<div class="text-gray-400">📁 Obnovené soubory: ${res.restored_files.length}</div>`;
+        if(res.errors.length>0){
+          html+='<div class="text-amber-400 mt-2">⚠️ Chyby:</div><ul class="list-disc ml-2">';
+          res.errors.forEach(err=>html+=`<li>${escapeHtml(err)}</li>`);
+          html+='</ul>';
+        }
+        details.innerHTML=html;
+      }else{
+        details.innerHTML='<div class="text-red-400">❌ Chyba: '+escapeHtml(res.error)+'</div>';
+      }
+    }else if(action==='delete'){
+      // Prompt for backup path
+      const backupPath=prompt('Zadejte cestu k záloze pro smazání:');
+      if(!backupPath){
+        details.innerHTML='<div class="text-amber-400">⚠️ Smazání zrušeno</div>';
+        return;
+      }
+      
+      if(!confirm('Opravdu chcete smazat tuto zálohu? Tato akce nelze vrátit zpět.')){
+        details.innerHTML='<div class="text-amber-400">⚠️ Smazání zrušeno</div>';
+        return;
+      }
+      
+      const res=await fetch('/api/genesis-backup?action=delete&backup_path='+encodeURIComponent(backupPath)).then(r=>r.json());
+      
+      if(res.success){
+        details.innerHTML='<div class="text-emerald-400">✅ '+escapeHtml(res.message)+'</div>';
+        loadGenesisBackupList();
+      }else{
+        details.innerHTML='<div class="text-red-400">❌ Chyba: '+escapeHtml(res.error)+'</div>';
+      }
+    }
+  }catch(e){
+    console.error('Genesis backup action failed:',e);
+    details.innerHTML='<div class="text-red-400">❌ Chyba: '+escapeHtml(e.message)+'</div>';
   }
 }
 
