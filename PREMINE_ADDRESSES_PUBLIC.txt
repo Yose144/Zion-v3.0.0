@@ -1,5 +1,5 @@
 # ZION Mainnet Genesis Premine — Public Addresses
-# Generated: 2026-05-14
+# Generated: 2026-06-03
 # Total: 16,780,000,000 ZION (11.65% of max supply)
 # Distribution matches MAINNET_CONSTITUTION.md
 #
@@ -30,8 +30,11 @@
 # 12: Humanitarian — Children Future Fund (1.44B ZION)
 12 zion1m4v5z8z850u480c5c208z274e334369275n5y20    Children_Future_Fund 1,440,000,000
 
-# 13: Bridge Seed Fund — EVM Bridge Liquidity (0.5B ZION)
-13 zion1f6m2j0h0l773j4074324q5r528y475w4j7m9685    Bridge_Seed_Fund     500,000,000
+# 13: Bridge Seed Fund — EVM Bridge Liquidity (0.4B ZION)
+13 zion1f6m2j0h0l773j4074324q5r528y475w4j7m9685    Bridge_Seed_Fund     400,000,000
+
+# 14: Bridge Vault UTXO Seed — EVM Bridge Unlock Liquidity (0.1B ZION)
+14 zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0    Bridge_Vault_UTXO    100,000,000
 
 # Lock: DAO Treasury (wallets 6–8) cliff at ~525,600 blocks (~1 year).
 # All others: immediate unlock at Genesis #0.

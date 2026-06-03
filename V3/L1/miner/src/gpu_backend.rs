@@ -328,8 +328,8 @@ pub mod opencl_deeksha {
             .and_then(|v| v.trim().parse::<usize>().ok())
             .unwrap_or(usize::MAX);
 
-        // GCN devices (Vega, Polaris) cap at 128 work items to reduce register
-        // spill pressure and memory contention with the 256 KiB scratchpad.
+        // GCN devices (Vega, Polaris) cap at 512 work items (increased from 128)
+        // to allow larger scratchpad for memory-hard transform.
         let dev = device.name().unwrap_or_default().to_ascii_lowercase();
         let gcn_cap = if dev.contains("vega")
             || dev.contains("polaris")
@@ -340,7 +340,7 @@ pub mod opencl_deeksha {
             || dev.contains("gfx8")
             || dev.contains("gfx9")
         {
-            128
+            512  // Increased from 128 to fix s4_memhard mismatch on Vega 64
         } else {
             usize::MAX
         };

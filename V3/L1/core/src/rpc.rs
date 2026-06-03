@@ -245,11 +245,11 @@ fn looks_like_utxo_address(value: &str) -> bool {
     value.starts_with("zion1")
 }
 
-fn format_flowers_as_zion(amount: u64) -> String {
+fn format_flowers_as_zion(amount: u128) -> String {
     format!(
         "{}.{:012}",
-        amount / emission::FLOWERS_PER_ZION,
-        amount % emission::FLOWERS_PER_ZION
+        amount / emission::FLOWERS_PER_ZION as u128,
+        amount % emission::FLOWERS_PER_ZION as u128
     )
 }
 
@@ -585,7 +585,7 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
 
                 // Get balance using existing logic (similar to getBalance)
                 let balance_flowers: u128 = if looks_like_utxo_address(address) {
-                    rt.utxo_balance(address) as u128
+                    rt.utxo_balance(address)
                 } else {
                     // Account model balance
                     let mut account_balance: i128 = 0;
@@ -631,7 +631,7 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
                 Ok(json!({
                     "address": address,
                     "balance_flowers": balance_flowers.to_string(),
-                    "balance_zion": format_flowers_as_zion(balance_flowers as u64),
+                    "balance_zion": format_flowers_as_zion(balance_flowers),
                     "transaction_count": tx_count,
                     "utxo_count": utxo_count,
                     "first_seen_height": first_seen_height,
@@ -677,7 +677,7 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
                     }
                     let account_balance = account_balance.max(0) as u128;
                     let utxo_count = rt.spendable_utxos(account_id).len() as u64;
-                    let total = utxo_balance as u128 + account_balance;
+                    let total = utxo_balance + account_balance;
                     return Ok(json!({
                         "address": account_id,
                         "balance_flowers": total.to_string(),
@@ -762,7 +762,7 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
                         "balance_flowers": total.to_string(),
                         "utxo_balance_flowers": utxo_balance,
                         "account_balance_flowers": account_balance.to_string(),
-                        "balance_zion": format_flowers_as_zion(total as u64),
+                        "balance_zion": format_flowers_as_zion(total),
                         "transaction_model": ACTIVE_TRANSACTION_MODEL,
                         "balance_scope": "confirmed_chain_only",
                     }));
@@ -902,7 +902,7 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
                                 "recipient_chain": recipient_chain,
                                 "recipient": recipient,
                                 "amount_flowers": output.amount,
-                                "amount_zion": format_flowers_as_zion(output.amount),
+                                "amount_zion": format_flowers_as_zion(output.amount as u128),
                                 "memo": memo,
                                 "confirmed": true,
                             }));
@@ -1233,12 +1233,12 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
 
                 Ok(json!({
                     "estimated_fee_flowers": estimated_fee.to_string(),
-                    "estimated_fee_zion": format_flowers_as_zion(estimated_fee),
+                    "estimated_fee_zion": format_flowers_as_zion(estimated_fee as u128),
                     "amount_zion": amount_zion,
                     "mempool_size": mempool_size,
                     "congestion_multiplier": congestion_multiplier,
                     "min_fee_flowers": base_fee.to_string(),
-                    "min_fee_zion": format_flowers_as_zion(base_fee),
+                    "min_fee_zion": format_flowers_as_zion(base_fee as u128),
                 }))
             }),
         );
