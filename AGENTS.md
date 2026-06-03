@@ -135,17 +135,52 @@ docker compose -f V3/docker/docker-compose.v3-mainnet.yml up -d
   - `npm --prefix "APP&WEB/desktop-agent" run start`
   - `npm --prefix "APP&WEB/desktop-agent" run test`
 - Desktop dashboard (Tauri v2 + React — new):
-  - `npm --prefix "APP&WEB/desktop-dashboard" install`
-  - `cargo tauri dev --manifest-path "APP&WEB/desktop-dashboard/src-tauri/Cargo.toml"`
-  - `cargo tauri build --manifest-path "APP&WEB/desktop-dashboard/src-tauri/Cargo.toml"`
+  - `npm --prefix "ZION_OS/desktop-dashboard" install`
+  - `cargo tauri dev --manifest-path "ZION_OS/desktop-dashboard/src-tauri/Cargo.toml"`
+  - `cargo tauri build --manifest-path "ZION_OS/desktop-dashboard/src-tauri/Cargo.toml"`
   - Features: system tray, native Rust IPC, hybrid refresh (native probes + HTTP fallback), L1-L6 service grid, chain/pool/miner panels, log viewer, alerts
 - Web dashboard (Python):
-  - `python dashboard/app.py` → `http://127.0.0.1:8766`
-  - `python dashboard/metrics-collector/` — standalone Rust binary for native metrics polling
+  - `python ZION_OS/dashboard/app.py` → `http://127.0.0.1:8766`
+  - `python ZION_OS/dashboard/metrics-collector/` — standalone Rust binary for native metrics polling
   - **Dashboard Payout Section**: Enhanced error handling and fallback values for pool monitoring
   - **Pool Metrics Endpoint**: Running on Edge server port 8455 for real-time pool statistics
 
 ## High-level architecture (big picture)
+
+## 0) Zion OS - ZION Mainnet Operations System
+
+**Zion OS** is the unified operations system for managing the entire ZION Mainnet. It centralizes dashboard, desktop agent, mobile app, auto-update, monitoring, and mining into a single cohesive platform.
+
+**Location:** `ZION_OS/`
+
+**Components:**
+- **Central Dashboard:** Python Flask + React v1/v2 (multi-node detection, monitoring, alerts)
+- **Desktop Dashboard:** Tauri v2 + React (native system tray, IPC, service grid)
+- **Mobile App:** React Native (mobile monitoring, push notifications)
+- **Mining Agent:** Rust multi-GPU (CUDA, AMD, Metal support)
+- **Auto-Update:** Rust semantic versioning with rollback
+- **Monitoring:** Prometheus + Grafana + Alertmanager
+
+**Quick Start:**
+```bash
+# Central Dashboard
+cd ZION_OS/dashboard
+python3 app.py
+
+# Desktop Dashboard
+cd ZION_OS/desktop-dashboard
+npm install
+cargo tauri dev --manifest-path src-tauri/Cargo.toml
+
+# Mining Agent
+cd ZION_OS/mining-agent
+cargo build --release --features gpu-metal
+./target/release/mining-agent --pool 100.76.16.108:8444 --backend auto
+```
+
+**Documentation:**
+- `ZION_OS/README.md` - Complete system documentation
+- `ZION_OS/IMPLEMENTATION_PLAN.md` - 4-phase implementation plan
 
 ## 1) Repository shape
 
