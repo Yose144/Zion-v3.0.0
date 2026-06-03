@@ -89,9 +89,9 @@ Aktuálně běží na Hetzner v Helsinkách: `157.180.41.213` (8 vCPU, 16 GB RAM
 
 ### Co je premine?
 
-Při vytvoření blockchainu (genesis blok) bylo do 13 peněženek vloženo **16.78 miliard ZION**. Tyto peněženky jsou natrvalo zapsané v kódu — adresy jsou veřejné, ale **privátní klíče musí zůstat v bezpečí**.
+Při vytvoření blockchainu (genesis blok) bylo do 14 peněženek vloženo **16.78 miliard ZION**. Tyto peněženky jsou natrvalo zapsané v kódu — adresy jsou veřejné, ale **privátní klíče musí zůstat v bezpečí**.
 
-### 13 premine adres
+### 14 premine adres
 
 | # | Účel | Adresa | Částka (ZION) | Zamčeno? |
 |---|------|--------|---------------|----------|
@@ -107,7 +107,8 @@ Při vytvoření blockchainu (genesis blok) bylo do 13 peněženek vloženo **16
 | 10 | Seed Nodes | `zion1h4w39686t8w376g0x0y426e775q6p2q0v698v43` | 1,000,000,000 | NE |
 | 11 | Genesis Creator | `zion1x638z5x6d2d0y6u3f7y8g7j56054a4a2a2c7l8f` | 590,000,000 | NE |
 | 12 | Children Future Fund | `zion1m4v5z8z850u480c5c208z274e334369275n5y20` | 1,440,000,000 | NE |
-|| 13 | Bridge Seed Fund | `zion1f6m2j0h0l773j4074324q5r528y475w4j7m9685` | 500,000,000 | NE |
+|| 13 | Bridge Seed Fund | `zion1f6m2j0h0l773j4074324q5r528y475w4j7m9685` | 400,000,000 | NE |
+| 14 | Bridge Vault UTXO Seed | `zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0` | 100,000,000 | NE |
 
 > **"Zamčeno — 1 rok"** znamená, že z těchto adres (6, 7, 8) nelze nic poslat, dokud
 > síť nedosáhne bloku číslo 525,600 (asi 1 rok po startu). To je zakódováno

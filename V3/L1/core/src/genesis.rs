@@ -2,7 +2,7 @@
 //!
 //! Constitutional reference: `docs/mainnet/MAINNET_CONSTITUTION.md` §1–§2
 //!
-//! The genesis block (height 0) carries 13 premine outputs totalling
+//! The genesis block (height 0) carries 14 premine outputs totalling
 //! 16,780,000,000 ZION (11.65 % of the 144 B total supply).
 //! Block subsidy at height 0 is 0 — the premine is the sole coinbase.
 //!
@@ -13,6 +13,7 @@
 //! Source: `PREMINE_ADDRESSES_PUBLIC.txt` + `L1/core/src/blockchain/premine.rs`
 
 use crate::{difficulty, AcceptedBlock, MiningHeader, Transaction};
+use crate::tx::{self, TxOutput};
 use zion_cosmic_harmony::{cosmic_harmony_ekam_deeksha, cosmic_harmony_with_height};
 
 // ---------------------------------------------------------------------------
@@ -91,7 +92,7 @@ pub struct PremineOutput {
     pub unlock_height: Option<u64>,
 }
 
-/// All 13 premine allocations, ordered by category then slot.
+/// All 14 premine allocations, ordered by category then slot.
 /// Total: 16,780,000,000 ZION = 16,780,000,000,000,000,000,000 flowers.
 pub const PREMINE_OUTPUTS: &[PremineOutput] = &[
     // --- OASIS + Golden Egg (5 × 1.65B = 8.25B) ---
@@ -194,13 +195,22 @@ pub const PREMINE_OUTPUTS: &[PremineOutput] = &[
         category: "humanitarian",
         unlock_height: None,
     },
-    // --- Bridge Seed Fund (1 slot = 0.5B) — immediate unlock for EVM bridge liquidity ---
+    // --- Bridge Seed Fund (1 slot = 0.4B) — immediate unlock for EVM bridge liquidity ---
     PremineOutput {
         address: "zion1f6m2j0h0l773j4074324q5r528y475w4j7m9685",
         purpose: "Bridge Seed Fund — EVM Bridge Liquidity",
-        amount_zion: 500_000_000,
-        amount_flowers: 500_000_000_000_000_000_000,
+        amount_zion: 400_000_000,
+        amount_flowers: 400_000_000_000_000_000_000,
         category: "bridge_seed",
+        unlock_height: None,
+    },
+    // --- Bridge Vault UTXO Seed (1 slot = 0.1B) — UTXO liquidity for bridge unlocks ---
+    PremineOutput {
+        address: "zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0",
+        purpose: "Bridge Vault UTXO Seed — EVM Bridge Unlock Liquidity",
+        amount_zion: 100_000_000,
+        amount_flowers: 100_000_000_000_000_000_000,
+        category: "bridge_vault_utxo",
         unlock_height: None,
     },
 ];
@@ -215,23 +225,50 @@ pub const PREMINE_OUTPUTS: &[PremineOutput] = &[
 /// - height 0, template_id 0, nonce 0
 /// - timestamp = `GENESIS_TIMESTAMP`
 /// - difficulty = `GENESIS_DIFFICULTY`
-/// - 13 premine "transactions" (one per output) with special coinbase tx_ids
+/// - 13 account-model premine transactions + 1 UTXO coinbase
 /// - subsidy = 0 (no mining reward at height 0)
 /// - miner_reward = 0
 pub fn genesis_block() -> AcceptedBlock {
-    let transactions: Vec<Transaction> = PREMINE_OUTPUTS
-        .iter()
-        .enumerate()
-        .map(|(i, output)| {
-            // Deterministic tx_id: for tx 0, include genesis message in the hash
-            // (Bitcoin-style coinbase scriptSig heritage)
+    let mut transactions: Vec<Transaction> = Vec::new();
+    let mut utxo_transactions: Vec<tx::Transaction> = Vec::new();
+
+    for (i, output) in PREMINE_OUTPUTS.iter().enumerate() {
+        if output.category == "bridge_vault_utxo" {
+            // UTXO coinbase for bridge vault — 100M ZION split into 6 outputs
+            // so each fits in u64.
+            const VAULT_AMOUNT_PER_OUTPUT: u64 = 16_666_666_666_666_666_666;
+            const VAULT_AMOUNT_LAST: u64 = 16_666_666_666_666_666_670;
+            let mut utxo = tx::Transaction {
+                id: [0u8; 32],
+                version: tx::TX_HASH_V2_VERSION,
+                inputs: vec![],
+                outputs: vec![],
+                fee: 0,
+                timestamp: GENESIS_TIMESTAMP,
+            };
+            for _ in 0..5 {
+                utxo.outputs.push(TxOutput {
+                    amount: VAULT_AMOUNT_PER_OUTPUT,
+                    address: output.address.to_string(),
+                    memo: None,
+                });
+            }
+            utxo.outputs.push(TxOutput {
+                amount: VAULT_AMOUNT_LAST,
+                address: output.address.to_string(),
+                memo: None,
+            });
+            utxo.id = utxo.calculate_hash();
+            utxo_transactions.push(utxo);
+        } else {
+            // Standard account-model genesis transaction
             let tag = if i == 0 {
                 format!("genesis-premine-{i:02}:{}", GENESIS_MESSAGE)
             } else {
                 format!("genesis-premine-{i:02}")
             };
             let tx_id = genesis_tx_id(&tag);
-            Transaction {
+            transactions.push(Transaction {
                 tx_id,
                 from: "genesis".to_string(),
                 to: output.address.to_string(),
@@ -240,16 +277,21 @@ pub fn genesis_block() -> AcceptedBlock {
                 nonce: i as u64,
                 signature: String::new(),
                 public_key: String::new(),
-            }
-        })
-        .collect();
+            });
+        }
+    }
 
     let transaction_ids: Vec<String> = transactions.iter().map(|tx| tx.tx_id.clone()).collect();
+    let utxo_transaction_ids: Vec<String> = utxo_transactions
+        .iter()
+        .map(|tx| crate::hex(&tx.id))
+        .collect();
 
     // Build the genesis header, hash it, and produce the canonical hash.
     let genesis_target = difficulty::difficulty_to_target(difficulty::GENESIS_DIFFICULTY);
     let genesis_bits = difficulty::target_to_compact(&genesis_target);
-    let merkle_root = genesis_merkle_root(&transactions);
+    let merkle_root =
+        crate::derive_template_merkle_root_v2_blake3(&transactions, &utxo_transactions);
 
     let header = MiningHeader {
         version: 3,
@@ -284,8 +326,8 @@ pub fn genesis_block() -> AcceptedBlock {
         humanitarian_address: String::new(),
         issobella_address: String::new(),
         pool_fee_address: String::new(),
-        utxo_transaction_ids: vec![],
-        utxo_transactions: vec![],
+        utxo_transaction_ids,
+        utxo_transactions,
     }
 }
 
@@ -344,9 +386,20 @@ pub fn validate_premine() -> Result<(), String> {
         .filter(|o| o.category == "bridge_seed")
         .map(|o| o.amount_flowers)
         .sum();
-    if bridge_seed != 500_000_000_000_000_000_000 {
+    if bridge_seed != 400_000_000_000_000_000_000 {
         return Err(format!(
-            "Bridge Seed total {bridge_seed} != 0.5B flowers"
+            "Bridge Seed total {bridge_seed} != 0.4B flowers"
+        ));
+    }
+
+    let bridge_vault_utxo: u128 = PREMINE_OUTPUTS
+        .iter()
+        .filter(|o| o.category == "bridge_vault_utxo")
+        .map(|o| o.amount_flowers)
+        .sum();
+    if bridge_vault_utxo != 100_000_000_000_000_000_000 {
+        return Err(format!(
+            "Bridge Vault UTXO total {bridge_vault_utxo} != 0.1B flowers"
         ));
     }
 
@@ -425,8 +478,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn premine_has_13_outputs() {
-        assert_eq!(PREMINE_OUTPUTS.len(), 13);
+    fn premine_has_14_outputs() {
+        assert_eq!(PREMINE_OUTPUTS.len(), 14);
     }
 
     #[test]
@@ -536,18 +589,42 @@ mod tests {
         assert_eq!(block.total_fees_zion, 0);
         assert_eq!(block.transactions.len(), 13);
         assert_eq!(block.transaction_ids.len(), 13);
+        assert_eq!(block.utxo_transactions.len(), 1);
+        assert_eq!(block.utxo_transaction_ids.len(), 1);
     }
 
     #[test]
     fn genesis_block_outputs_match_premine() {
         let block = genesis_block();
-        for (i, output) in PREMINE_OUTPUTS.iter().enumerate() {
-            let tx = &block.transactions[i];
-            assert_eq!(tx.to, output.address);
-            assert_eq!(tx.amount_zion, output.amount_flowers);
-            assert_eq!(tx.from, "genesis");
-            assert_eq!(tx.fee_zion, 0);
+        let mut account_idx = 0;
+        for output in PREMINE_OUTPUTS.iter() {
+            if output.category == "bridge_vault_utxo" {
+                // UTXO premine output is in utxo_transactions, not transactions
+                let utxo_tx = block.utxo_transactions.first().expect("bridge vault utxo should exist");
+                let total_utxo: u128 = utxo_tx.outputs.iter().map(|o| o.amount as u128).sum();
+                assert_eq!(total_utxo, output.amount_flowers);
+                assert!(utxo_tx.outputs.iter().all(|o| o.address == output.address));
+            } else {
+                let tx = &block.transactions[account_idx];
+                assert_eq!(tx.to, output.address);
+                assert_eq!(tx.amount_zion, output.amount_flowers);
+                assert_eq!(tx.from, "genesis");
+                assert_eq!(tx.fee_zion, 0);
+                account_idx += 1;
+            }
         }
+        assert_eq!(account_idx, block.transactions.len());
+    }
+
+    #[test]
+    fn genesis_vault_utxo_has_six_outputs() {
+        let block = genesis_block();
+        let utxo_tx = block.utxo_transactions.first().expect("vault utxo should exist");
+        assert_eq!(utxo_tx.outputs.len(), 6);
+        assert!(utxo_tx.inputs.is_empty(), "genesis UTXO should be coinbase (no inputs)");
+        assert_eq!(utxo_tx.fee, 0);
+        let total: u128 = utxo_tx.outputs.iter().map(|o| o.amount as u128).sum();
+        assert_eq!(total, 100_000_000_000_000_000_000_u128);
     }
 
     #[test]
