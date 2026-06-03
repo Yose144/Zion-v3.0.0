@@ -76,7 +76,7 @@
 |---|---|---|---|
 | `FLOWERS_PER_ZION` | 1 000 000 000 000 (1e12) | konstituce | OK |
 | `TOTAL_SUPPLY` (u128) | 144 000 000 000 ZION × 1e12 = 1.44e23 flowers | konstituce | OK (u128 nutný) |
-| `GENESIS_PREMINE` (u128) | 16 280 000 000 ZION × 1e12 = 1.628e22 | 11.31 % | OK (≈11.305 %) |
+| `GENESIS_PREMINE` (u128) | 16 780 000 000 ZION × 1e12 = 1.678e22 | 11.65 % | OK (≈11.653 %) |
 | `BLOCK_TIME_SECONDS` | 60 | konstituce | OK |
 | `BLOCKS_PER_DECADE` | 5 256 000 | 10×525 600 | OK |
 | `DECAY_NUMERATOR/DENOMINATOR` | 4/5 (−20 % per dekáda) | konstituce | OK |
@@ -88,7 +88,7 @@ Rychlý sanity (Python): `5_400_067_000_000_000 * (4/5)**10 ≈ 5.79847779e14` f
 
 ### 2.2 Premine (`V3/L1/core/src/genesis.rs`)
 
-- 12 premine outputů, 5 Oasis + Golden Egg slotů á 1.65B ZION, 3 DAO Treasury sloty (4.0B) **uzamčené** do `DAO_TREASURY_LOCK_HEIGHT = 525_600` (~1 rok).
+- 13 premine outputů, 5 Oasis + Golden Egg slotů á 1.65B ZION, 3 DAO Treasury sloty (4.0B) **uzamčené** do `DAO_TREASURY_LOCK_HEIGHT = 525_600` (~1 rok).
 - `amount_flowers: u128` — STATUS.md uvádí, že tohle byl recent fix (předtím u64 přetekl při 1.65B × 1e12 ≈ 1.65e21 > u64::MAX ≈ 1.84e19). **Sedí: 1.65e21 nelze do u64.**
 - `GENESIS_TIMESTAMP = 1_767_225_600` = 2026‑01‑01 00:00:00 UTC. OK.
 - `validate_premine_locks` v `validation.rs` existuje, ale viz F1 níže — pipeline se z produkce **nevolá**. *Lock se ale dále kontroluje v `validate_peer_block`? Ne, tam jsem ho nenašel — je to potenciální obejití DAO timelocku, viz F1.*
