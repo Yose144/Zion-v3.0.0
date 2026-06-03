@@ -255,6 +255,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         <div class="sidebar-title">Mission</div>
         <button onclick="switchTab('overview')" id="tab-overview" class="sidebar-item tab-active">📊 Overview</button>
         <button onclick="switchTab('nodes')" id="tab-nodes" class="sidebar-item">🖥️ Nodes</button>
+        <button onclick="switchTab('orchestrator')" id="tab-orchestrator" class="sidebar-item">🎛️ Orchestrator</button>
       </div>
       <div class="sidebar-group">
         <div class="sidebar-title">Governance</div>
@@ -883,6 +884,29 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
       </div>
       <div id="nodes-container" class="space-y-4">
         <div class="text-gray-400 text-sm">Loading nodes...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═════════ TAB: Orchestrator ═════════ -->
+  <div id="pane-orchestrator" class="hidden space-y-4">
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-base font-bold flex items-center gap-2"><span class="text-gradient">🎛️ Zion OS Orchestrator</span></h2>
+        <div class="flex gap-2">
+          <button onclick="refreshOrchestrator()" class="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded">🔄 Refresh</button>
+          <select id="orchestrator-profile" class="text-xs bg-gray-700 text-white px-2 py-1 rounded">
+            <option value="">-- Select Profile --</option>
+            <option value="minimal">Minimal</option>
+            <option value="dev">Dev</option>
+            <option value="mainnet">Mainnet</option>
+            <option value="full">Full</option>
+          </select>
+          <button onclick="startProfile()" class="text-xs bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded">▶ Start Profile</button>
+        </div>
+      </div>
+      <div id="orchestrator-container" class="space-y-4">
+        <div class="text-gray-400 text-sm">Loading orchestrator status...</div>
       </div>
     </div>
   </div>

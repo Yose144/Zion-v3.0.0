@@ -5,7 +5,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
 MINER_BIN="$REPO_ROOT/V3/target/release/zion-miner"
 WALLET="zion1a59644y2a2z3p5p2f88308d2u536f0e2e3rd5a8"
 POOL="100.76.16.108:8444"
