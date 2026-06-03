@@ -2,10 +2,9 @@
 #  ZION Bridge Relay Configuration — V3 Mainnet (Base)
 # ──────────────────────────────────────────────────────────────
 #
-#  !! PRE-DEPLOY STATUS !!
-#  wZION + ZIONBridge addresses are PLACEHOLDERS.
-#  Run `scripts/deploy-bridge-base.sh base` to get real addresses,
-#  then update `wzion_address` and `bridge_contract_address` below.
+#  Base Mainnet bridge contracts deployed 2026-04-01.
+#  ZIONBridge upgraded to 3/5 validator multisig 2026-06-03.
+#  Set `enabled = true` only after L1 vault is funded and validators are live.
 #
 #  Usage: ZION_BRIDGE_CONFIG=V3/config/bridge-mainnet.toml cargo run -p zion-bridge
 
@@ -18,22 +17,21 @@ network = "mainnet"
 [l1]
 rpc_url        = "http://127.0.0.1:8443"
 rpc_url_backup = "http://100.76.16.108:8443"
-bridge_address = "zion1s6y6h7k6l033f2n7e0y0r8t6a8h474t0x5398d0"
+bridge_address = "zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0"
 finality_blocks     = 60
 poll_interval_secs  = 15
 
 # ── EVM Chains ──────────────────────────────────────────────
 
-# -- Base Mainnet — DEPLOY REQUIRED --
+# -- Base Mainnet — DEPLOYED 2026-04-01, UPGRADED 2026-06-03 --
 [[evm_chains]]
 chain_id                = "base"
 name                    = "Base (Mainnet)"
 evm_chain_id            = 8453
 rpc_url                 = "wss://base-mainnet.publicnode.com"
 rpc_url_backup          = "wss://base-mainnet.g.alchemy.com/v2/YOUR_KEY"
-# PLACEHOLDER — update after `scripts/deploy-bridge-base.sh base`
-wzion_address           = "0x0000000000000000000000000000000000000000"
-bridge_contract_address = "0x0000000000000000000000000000000000000000"
+wzion_address           = "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6"
+bridge_contract_address = "0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721"
 finality_blocks         = 64
 enabled                 = false
 gas_strategy            = "eip1559"
