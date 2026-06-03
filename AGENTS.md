@@ -325,7 +325,8 @@ The bridge connects ZION L1 to Base Mainnet (chain 8453). Canonical addresses an
 | **wZION** | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` | ERC-20 wrapper, minted by bridge |
 | **ZIONBridge** | `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721` | 3/5 validator multisig controller |
 | **Bridge Vault (L1)** | `zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0` | Keyless vault — **no private key exists** |
-| **Bridge Seed Fund** | `zion1f6m2j0h0l773j4074324q5r528y475w4j7m9685` | Genesis slot 13 (0.5B ZION), funds the vault |
+| **Bridge Seed Fund** | `zion1f6m2j0h0l773j4074324q5r528y475w4j7m9685` | Genesis slot 13 (0.4B ZION), operational bridge budget |
+| **Bridge Vault UTXO Seed** | `zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0` | Genesis slot 14 (0.1B ZION), UTXO liquidity for bridge unlocks |
 
 **Validator setup:**
 - Threshold: 3-of-5
@@ -414,10 +415,16 @@ const DEFAULT_RPC_URL = 'http://127.0.0.1:8443/jsonrpc';  // localhost first, Ed
 ### Genesis Hash (canonical)
 
 ```
-003529805e9b47babb9ac0f26b27b1aad0a1cf3c483181857daf3269f7088923
+60b5ff78ec7797c79b79069b3bea5553441d201d23329b389828b869723998da
 ```
 
 Verify against `PREMINE_ADDRESSES_PUBLIC.txt` and `V3/L1/core/src/genesis.rs`.
+
+**2026-06-03 upgrade note:** Genesis changed from 13 → 14 premine outputs. Bridge Seed Fund split into:
+- Slot 13: 400M ZION (account model) → `zion1f6m2j0h0l773j4074324q5r528y475w4j7m9685`
+- Slot 14: 100M ZION (UTXO coinbase, 6 outputs) → `zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0`
+
+This gives the keyless bridge vault native UTXO liquidity for unlock operations without requiring any wallet private key. Both local PC and Edge server were hard-reset with the new genesis.
 
 ---
 
@@ -563,3 +570,56 @@ Because general knowledge is too large for 32B parameters, v2.3 uses RAG alongsi
 - `HiranV2.3/config/deepspeed_zero3.json` — ZeRO-3 configuration
 - `HiranV2.3/rag/query_router.py` — query classification
 - `HiranV2.3/rag/indexer.py` / `retriever.py` — vector DB operations
+
+---
+
+## Edge Server Operational Notes
+
+### Hard-reset procedure (both local + Edge must agree on genesis)
+
+When genesis changes (premine outputs, merkle root, etc.), ALL nodes must be hard-reset:
+
+**Local PC:**
+```powershell
+ps aux | grep zion | grep -v grep | awk '{print $1}' | xargs kill
+rm -f V3/data/zion-node-state.db V3/data/node.pid V3/data/peers.json
+```
+
+**Edge (Hetzner) via SSH:**
+```bash
+ssh -i ssh-key-zion-edge root@100.76.16.108
+systemctl stop zion-node.service zion-pool.service
+rm -f /root/zion-2.9.6-main/data/zion-node-state.db /root/zion-2.9.6-main/data/node.pid /root/zion-2.9.6-main/data/peers.json
+```
+
+### Edge build from source (no Docker, no pre-built binary)
+
+Edge has no `cargo` in default PATH; Rust is installed under `/root/.cargo`:
+```bash
+source /root/.cargo/env
+cd /root/zion-2.9.6-main/V3
+cargo build --release --manifest-path Cargo.toml -p zion-core --bin node
+cargo build --release --manifest-path Cargo.toml -p zion-pool --bin server
+cp target/release/node /usr/local/bin/zion-node
+cp target/release/server /usr/local/bin/zion-pool-server
+systemctl daemon-reload
+systemctl start zion-node.service zion-pool.service
+```
+
+### Edge cleanup after build
+
+```bash
+rm -rf /root/zion-2.9.6-main/V3/target /tmp/v3-sources.tar.gz
+docker system prune -a -f --volumes
+```
+
+### Verifying new genesis on Edge
+
+```bash
+curl -s -X POST http://127.0.0.1:8443/jsonrpc \
+  -d '{"jsonrpc":"2.0","id":1,"method":"getChainInfo","params":{}}' | python3 -m json.tool
+# tip_hash must match local node exactly
+curl -s -X POST http://127.0.0.1:8443/jsonrpc \
+  -d '{"jsonrpc":"2.0","id":1,"method":"getAddressInfo","params":{"address":"zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0"}}' | python3 -m json.tool
+# utxo_count == 6, balance_flowers == 100000000000000000000
+```

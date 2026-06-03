@@ -52,7 +52,8 @@
 | 10 | Network Infrastructure | 1,000,000,000 |
 | 11 | Genesis Creator | 590,000,000 |
 | 12 | Humanitarian — Children Future Fund | 1,440,000,000 |
-| 13 | **Bridge Seed Fund — EVM Bridge Liquidity** | **500,000,000** |
+| 13 | Bridge Seed Fund — EVM Bridge Liquidity | 400,000,000 |
+| 14 | **Bridge Vault UTXO Seed — EVM Bridge Unlock Liquidity** | **100,000,000** |
 | | **Total** | **16,780,000,000** |
 
 ### Subsidy Wallets (canonical addresses)
