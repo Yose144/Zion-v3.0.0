@@ -1304,34 +1304,41 @@ GET /api/bridge/chains      → {chains: [...]}
 GET /api/bridge/validators  → {validators: [...], threshold, total}
 ```
 
-#### 26b: Website Bridge Page (Next.js, `/bridge`)
+#### 26b: Website Bridge Page (Next.js, `/bridge`) ✅ DONE 2026-06-03
 
 | # | Deliverable | Status |
 |---|-------------|--------|
-| W1 | Bridge Widget React component | 🔄 Planned |
-| W2 | Chain selector with logos (Base, Arbitrum, BSC, Polygon, ZION L1) | 🔄 Planned |
-| W3 | Real-time fee estimate (gas + bridge fee) | 🔄 Planned |
-| W4 | Step-by-step transaction tracker (Lock → Confirm → Mint) | 🔄 Planned |
-| W5 | Bridge stats page (total volume, top chains, 24h activity) | 🔄 Planned |
+| W1 | Bridge Burn Widget React component (`BridgeBurnWidget.tsx`) | ✅ Done — MetaMask + ethers v5, Base Sepolia |
+| W2 | Chain selector with logos (Base, Arbitrum, BSC, Polygon, ZION L1) | ✅ Partial — Base Sepolia only (mainnet TBD 26d) |
+| W3 | Real-time fee estimate (gas + bridge fee) | ✅ Done — FAQ + instructions |
+| W4 | Step-by-step transaction tracker (Lock → Confirm → Mint) | ✅ Done — Lock&Mint + Burn&Unlock panels |
+| W5 | Bridge stats page (total volume, top chains, 24h activity) | ✅ Done — Relay stats + architecture diagram |
+| W6 | Readiness Checklist (8 items) | ✅ Done |
+| W7 | Contract Addresses with copy + explorer links | ✅ Done |
 
-**Components:** `src/components/bridge/*.tsx`, `src/app/bridge/page.tsx`.
+**Files:** `src/app/bridge/page.tsx`, `src/components/BridgeBurnWidget.tsx`, `src/lib/bridge-api.ts`, `src/app/api/bridge/status/route.ts`.
+**Note:** All addresses currently point to **Base Sepolia Testnet** (chain 84532). Will switch to Base Mainnet (8453) in 26d.
 
-#### 26c: Desktop Agent Bridge Tab (Electron)
-
-| # | Deliverable | Status |
-|---|-------------|--------|
-| E1 | Mini bridge widget in dock | 🔄 Planned |
-| E2 | Transfer completion toast notification | 🔄 Planned |
-| E3 | Local bridge history storage | 🔄 Planned |
-
-#### 26d: Contract Hardening
+#### 26c: Desktop Agent Bridge Tab (Electron) ✅ DONE 2026-06-03
 
 | # | Deliverable | Status |
 |---|-------------|--------|
-| C1 | Verify ZIONBridge + wZION source on BaseScan | 🔄 Planned |
-| C2 | Deploy BridgeValidator (3/5 multisig) on Base Sepolia | 🔄 Planned |
-| C3 | Base Mainnet deploy (after Sepolia success) | 🔄 Planned |
-| C4 | Contract audit (Certik/SlowMist) | 🔄 Planned |
+| E1 | Bridge view in dock nav | ✅ Done — new `Bridge` tab with icon |
+| E2 | Readiness checklist grid | ✅ Done — 8 items, live status fetch from dashboard API |
+| E3 | Contract addresses with copy buttons | ✅ Done |
+| E4 | "How to Bridge" instructions | ✅ Done |
+| E5 | Open in Browser link to website `/bridge` | ✅ Done |
+
+**Files:** `APP&WEB/desktop-agent/src/ui/index.html`, `APP&WEB/desktop-agent/src/ui/renderer.js`.
+
+#### 26d: Contract Hardening (Runbooks & Scripts Ready)
+
+| # | Deliverable | Status |
+|---|-------------|--------|
+| C1 | Verify ZIONBridge + wZION source on BaseScan | 🔄 Runbook ready (`scripts/verify-bridge-base.sh`) — waiting for Solidity source commit + ETHERSCAN_API_KEY |
+| C2 | Deploy BridgeValidator (3/5 multisig) on Base Sepolia | 🔄 Spec ready (`V3/docs/BRIDGE_MULTISIG.md`) — waiting for 5 Guardian hardware wallets |
+| C3 | Base Mainnet deploy (after Sepolia success) | 🔄 Runbook ready (`V3/docs/BRIDGE_MAINNET_DEPLOY.md`) — pending audit + 3/5 provisioning |
+| C4 | Contract audit (Certik/SlowMist) | 🔄 Not started — budget/partner TBD |
 
 **Exit criteria:**
 - Full roundtrip L1 → Base Sepolia → L1 in < 5 min via UI

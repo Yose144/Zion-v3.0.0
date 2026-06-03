@@ -81,6 +81,37 @@ GET /api/bridge/chains      → {chains: [{id, name, enabled, type, wzion_addres
 GET /api/bridge/validators  → {validators: [{address, online, last_signature}], threshold, total}
 ```
 
+### Bridge Website & Desktop — Phase 26b + 26c (2026-06-03)
+
+> Kompletní bridge UI across all platforms.
+
+#### 26b: Website Bridge Page (`/bridge`)
+
+| Soubor | Změna |
+|--------|-------|
+| `APP&WEB/website-v2.9/src/app/bridge/page.tsx` | Base Sepolia Testnet · Replay-safe hero, Lock&Mint + Burn&Unlock směry, FAQ, Memo builder, Relay stats, Architecture diagram, Readiness checklist, Contract addresses |
+| `APP&WEB/website-v2.9/src/components/BridgeBurnWidget.tsx` | MetaMask + ethers v5 burn widget pro Base Sepolia; fix explorer link na `sepolia.basescan.org` |
+| `APP&WEB/website-v2.9/src/lib/bridge-api.ts` | `BRIDGE_CONTRACTS` → Base Sepolia adresy (chain 84532); `switchToBaseSepolia()` pro MetaMask switch |
+| `APP&WEB/website-v2.9/src/app/api/bridge/status/route.ts` | Prometheus metrics proxy na port 9102 |
+
+#### 26c: Desktop Agent Bridge Tab
+
+| Soubor | Změna |
+|--------|-------|
+| `APP&WEB/desktop-agent/src/ui/index.html` | Nový `bridge-view` s Readiness checklist, Contract addresses (copy buttons), How-to instrukce, Open in Browser link |
+| `APP&WEB/desktop-agent/src/ui/renderer.js` | `initBridgeView()` — populace checklist gridu, fetch stavu z dashboard API (`:8766/api/bridge/status`), `copyToClipboard()` helper |
+| `APP&WEB/desktop-agent/src/ui/index.html` | Nový dock item `Bridge` s `i-bridge` SVG ikonou |
+
+#### 26d: Contract Hardening (Runbooks Ready)
+
+| Artifact | Popis |
+|----------|-------|
+| `scripts/verify-bridge-base.sh` | Foundry verify skript pro BaseScan — `forge verify-contract` s `--watch` |
+| `V3/docs/BRIDGE_MULTISIG.md` | 3/5 Guardian spec — role, adresy, `BridgeValidator.sol` interface, emergency procedury |
+| `V3/docs/BRIDGE_MAINNET_DEPLOY.md` | Kompletní 8-krokový runbook pro Base Mainnet deploy, konfiguraci relaye, website sync, rollback plan |
+
+**Next (26d execution):** Commit Solidity source → verify on BaseScan → provision 5 Guardian hardware wallets → deploy 3/5 multisig on Sepolia → externí audit → Base Mainnet deploy.
+
 ---
 
 ## Co je nového 2026-05-07 (security cleanup + agentická obsluha)

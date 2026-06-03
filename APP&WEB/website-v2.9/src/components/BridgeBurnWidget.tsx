@@ -260,7 +260,7 @@ export default function BridgeBurnWidget() {
                 <Copy className="h-3 w-3 text-gray-400" />
               </button>
               <a
-                href={`https://basescan.org/tx/${txInfo.hash}`}
+                href={`https://sepolia.basescan.org/tx/${txInfo.hash}`}
                 target="_blank"
                 rel="noreferrer"
                 className="shrink-0 rounded-lg border border-white/10 bg-white/5 p-1.5 hover:bg-white/10 transition-colors"
@@ -390,7 +390,7 @@ export default function BridgeBurnWidget() {
             BaseScan <ExternalLink className="h-3 w-3" />
           </a>
         </p>
-        <p className="text-xs text-gray-500">{cs ? 'Síť' : 'Network'}: Base Mainnet (chain 8453) · 18 {cs ? 'desetinných míst' : 'decimals'} · {cs ? 'žádný protokolový poplatek' : 'no protocol fee'}</p>
+        <p className="text-xs text-gray-500">{cs ? 'Síť' : 'Network'}: Base Sepolia Testnet (chain 84532) · 18 {cs ? 'desetinných míst' : 'decimals'} · {cs ? 'žádný protokolový poplatek' : 'no protocol fee'}</p>
       </div>
 
       <button
