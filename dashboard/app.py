@@ -2676,9 +2676,10 @@ def fetch_pool_miners() -> list:
         return []
 
 def build_payout_status() -> dict:
-    """Build comprehensive payout status for the Payout dashboard tab."""
-    # Topology-aware: in edge-primary, use Edge pool data from build_status
-    # In local-dev, use local pool.log
+    """Build comprehensive payout status for the Payout dashboard tab.
+    Robust: topology-aware RPC fallbacks, structured payout history, validation, health."""
+
+    now = datetime.now()
     status = {
         "pool_wallet": None,
         "pool_wallet_balance": None,
@@ -2701,21 +2702,38 @@ def build_payout_status() -> dict:
         "pool_stats": {},
         "miners": [],
         "topology": TOPOLOGY,
+        "pool_health": {},
+        "recent_payouts": [],
+        "session_stats": {},
+        "payout_validation": {},
     }
-    
-    recent = []  # Initialize for both topologies
-    if TOPOLOGY == "edge-primary":
-        # Use Edge pool data from build_status (already parsed)
-        # Fallback to hardcoded Edge values since env vars not set locally
+
+    # ── Topology-aware config discovery ───────────────────────────────
+    is_edge = TOPOLOGY == "edge-primary"
+    edge_host = "100.76.16.108"
+    local_rpc_alive = check_port_open("127.0.0.1", 8443, timeout=1.0)
+    edge_rpc_alive = check_port_open(edge_host, 8443, timeout=1.5) if is_edge else False
+    edge_stats_alive = check_port_open(edge_host, 8455, timeout=1.5) if is_edge else False
+    tailscale_ok = check_port_open(edge_host, 8443, timeout=1.5) if is_edge else True
+
+    status["pool_health"] = {
+        "local_rpc_ok": local_rpc_alive,
+        "edge_rpc_ok": edge_rpc_alive,
+        "edge_stats_ok": edge_stats_alive,
+        "tailscale_ok": tailscale_ok,
+        "last_update": now.isoformat(),
+        "error_msg": None,
+    }
+
+    if is_edge:
         status["pool_wallet"] = os.environ.get("ZION_POOL_WALLET") or "zion1a6z5a4m830w6s6k7r508n300n6z30022q6qt0n7"
-        status["payout_enabled"] = True  # Edge pool has payouts enabled
-        status["fee_split"] = "89/5/5/0"  # Burn model
+        status["payout_enabled"] = True
+        status["fee_split"] = "89/5/5/0"
         status["humanitarian_wallet"] = os.environ.get("ZION_HUMANITARIAN_WALLET") or "zion1m4v5z8z850u480c5c208z274e334369275n5y20"
         status["issobella_wallet"] = os.environ.get("ZION_ISSOBELLA_WALLET") or "zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702"
-        status["pool_fee_wallet"] = ""  # Burn model
+        status["pool_fee_wallet"] = ""
         status["miner_wallet"] = os.environ.get("ZION_MINER_ADDRESS") or "zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3"
     else:
-        # Local dev: parse pool.log for startup config
         startup = head_log("pool.log", 50)
         for line in startup:
             if m := re.search(r'pool_wallet=(\S+)', line):
@@ -2730,12 +2748,10 @@ def build_payout_status() -> dict:
                 status["issobella_wallet"] = m.group(1)
             if m := re.search(r'pool_fee_wallet=(\S+)', line):
                 status["pool_fee_wallet"] = m.group(1)
-        # Miner wallet from node startup
         node_startup = head_log("node1.log", 30)
         for line in node_startup:
             if m := re.search(r'miner_address=.*(zion1\S+)', line):
                 status["miner_wallet"] = m.group(1)
-        # Fallback from env
         if not status["pool_wallet"]:
             status["pool_wallet"] = os.environ.get("ZION_POOL_WALLET") or os.environ.get("ZION_MINER_ADDRESS")
         if not status["miner_wallet"]:
@@ -2746,41 +2762,100 @@ def build_payout_status() -> dict:
             status["issobella_wallet"] = os.environ.get("ZION_ISSOBELLA_WALLET")
         if not status["pool_fee_wallet"]:
             status["pool_fee_wallet"] = os.environ.get("ZION_POOL_FEE_WALLET")
-    
-    # Parse local pool.log for miner performance data (common to both topologies)
-    recent = tail_log("pool.log", 500)
-    # Parse recent events
-    for line in recent:
+
+    # ── Parse logs (local + miner log for cross-topology visibility) ──
+    recent_pool = tail_log("pool.log", 500)
+    recent_miner = tail_log("miner.log", 300)
+    all_lines = recent_pool + recent_miner
+
+    seen_blocks = set()
+    recent_payouts = []
+    errors = []
+    deferred = 0
+    last_tx = None
+    last_time = None
+    valid_addr_count = 0
+    invalid_addr_count = 0
+    missing_addr_count = 0
+    last_validation_error = None
+
+    for line in all_lines:
+        # Blocks found
         if m := re.search(r'BLOCK_FOUND.*height=(\d+)', line):
             h = int(m.group(1))
-            status["blocks_found"] += 1
+            if h not in seen_blocks:
+                seen_blocks.add(h)
+                status["blocks_found"] += 1
             if status["last_block_height"] is None or h > status["last_block_height"]:
                 status["last_block_height"] = h
-        if "payout_account_model" in line or "payout_submitted" in line:
+
+        # Payout submitted / account model
+        if (m := re.search(r'payout_(?:submitted|account_model).*height=(\d+).*?(?:recipients=(\d+))?.*?(?:wallet=(\S+))?.*?(?:tx_id=(\S+))?', line)):
+            h = int(m.group(1))
+            tx_id = m.group(4) or None
+            wallet = m.group(3) or status["pool_wallet"]
+            recipients = int(m.group(2)) if m.group(2) else 0
+            recent_payouts.append({
+                "block_height": h,
+                "tx_id": tx_id,
+                "wallet": wallet,
+                "recipients": recipients,
+                "timestamp": now.isoformat(),
+                "amount_zion": None,  # parsed below if we have subsidy
+                "status": "confirmed" if tx_id else "pending",
+            })
+            if tx_id:
+                last_tx = tx_id
+                last_time = now.strftime("%H:%M:%S")
             status["miner_payouts"].append(line.strip()[:200])
-            if m := re.search(r'tx_id=(\S+)', line):
-                status["last_payout_tx"] = m.group(1)
-                status["last_payout_time"] = datetime.now().strftime("%H:%M:%S")
+
+        # Fee payouts
         if "fee_payout_account_model" in line or "fee_payout_submitted" in line:
             status["fee_payouts"].append(line.strip()[:200])
-        if "payout_submit_failed" in line or "fee_payout_failed" in line:
-            status["errors"].append(line.strip()[:250])
+
+        # Deferred
+        if "payout_deferred" in line:
+            deferred += 1
+
+        # Errors
+        if "payout_submit_failed" in line or "fee_payout_failed" in line or "payout_address required" in line or "invalid payout_address" in line:
+            errors.append(line.strip()[:250])
+            if "invalid payout_address" in line or "payout_address required" in line:
+                invalid_addr_count += 1
+                if "payout_address required" in line:
+                    missing_addr_count += 1
+                last_validation_error = line.strip()[:200]
+
+        # Valid address accepted (pool log: miner connected with valid address)
+        if re.search(r'miner.*payout_address=zion1\S+', line):
+            valid_addr_count += 1
+
+    status["pending_payouts"] = deferred
     status["miner_payouts"] = status["miner_payouts"][-10:]
     status["fee_payouts"] = status["fee_payouts"][-10:]
-    status["errors"] = status["errors"][-10:]
-    # Pending payout count from deferred miner payouts
-    for line in recent:
-        if "payout_deferred" in line:
-            status["pending_payouts"] += 1
-    # Miner performance from pool log lines
+    status["errors"] = errors[-10:]
+    status["last_payout_tx"] = last_tx
+    status["last_payout_time"] = last_time or (recent_payouts[-1]["timestamp"][11:19] if recent_payouts else None)
+
+    # Payout validation summary
+    status["payout_validation"] = {
+        "valid_addresses": valid_addr_count,
+        "invalid_addresses": invalid_addr_count,
+        "missing_addresses": missing_addr_count,
+        "last_error": last_validation_error,
+        "safe_to_payout": invalid_addr_count == 0 and missing_addr_count == 0,
+    }
+
+    # ── Miner performance ─────────────────────────────────────────────
     perf = {}
-    for line in recent:
+    for line in recent_miner + recent_pool:
         if m := re.search(r'hashrate[:=]\s*([\d.]+)\s*([a-zA-Z]*)', line):
             perf["hashrate"] = float(m.group(1))
-            if m.group(2) and m.group(2)[0].upper() == 'M':
-                perf["hashrate"] *= 1_000  # MH/s -> KH/s
-            elif m.group(2) and m.group(2)[0].upper() == 'H':
-                perf["hashrate"] /= 1_000  # H/s -> KH/s
+            unit = m.group(2) or ""
+            if unit.upper().startswith("M"):
+                perf["hashrate"] *= 1_000
+            elif unit.upper().startswith("H"):
+                perf["hashrate"] /= 1_000
         if m := re.search(r'shares_accepted[:=]\s*(\d+)', line):
             perf["shares_accepted"] = int(m.group(1))
         if m := re.search(r'shares_rejected[:=]\s*(\d+)', line):
@@ -2788,83 +2863,89 @@ def build_payout_status() -> dict:
         if m := re.search(r'current_height[:=]\s*(\d+)', line):
             perf["current_height"] = int(m.group(1))
     status["miner_perf"] = perf
-    # Build structured payouts array for charts
+
+    # ── Structured payouts for charts ─────────────────────────────────
     payouts = []
     seen_heights = set()
-    for line in recent:
-        if m := re.search(r'BLOCK_FOUND.*height=(\d+)', line):
-            h = int(m.group(1))
-            if h in seen_heights:
-                continue
-            seen_heights.add(h)
-            subsidy = block_subsidy(h)
-            miner, humanitarian, issobella, pool_fee = fee_split(subsidy)
-            payouts.append({
-                "block_height": h,
-                "subsidy_flowers": subsidy,
-                "fee_split": {
-                    "miner": miner / 1_000_000_000_000,
-                    "charity": humanitarian / 1_000_000_000_000,
-                    "dev": issobella / 1_000_000_000_000,
-                    "pool": pool_fee / 1_000_000_000_000,
-                }
-            })
-    # Also add any payout_submitted lines without a matching BLOCK_FOUND
-    for line in recent:
-        if m := re.search(r'payout_submitted.*height=(\d+)', line):
-            h = int(m.group(1))
-            if h in seen_heights:
-                continue
-            seen_heights.add(h)
-            subsidy = block_subsidy(h)
-            miner, humanitarian, issobella, pool_fee = fee_split(subsidy)
-            payouts.append({
-                "block_height": h,
-                "subsidy_flowers": subsidy,
-                "fee_split": {
-                    "miner": miner / 1_000_000_000_000,
-                    "charity": humanitarian / 1_000_000_000_000,
-                    "dev": issobella / 1_000_000_000_000,
-                    "pool": pool_fee / 1_000_000_000_000,
-                }
-            })
+    for line in recent_pool:
+        for pattern in [r'BLOCK_FOUND.*height=(\d+)', r'payout_submitted.*height=(\d+)']:
+            if m := re.search(pattern, line):
+                h = int(m.group(1))
+                if h in seen_heights:
+                    continue
+                seen_heights.add(h)
+                subsidy = block_subsidy(h)
+                miner, humanitarian, issobella, pool_fee = fee_split(subsidy)
+                payouts.append({
+                    "block_height": h,
+                    "subsidy_flowers": subsidy,
+                    "fee_split": {
+                        "miner": miner / 1_000_000_000_000,
+                        "charity": humanitarian / 1_000_000_000_000,
+                        "dev": issobella / 1_000_000_000_000,
+                        "pool": pool_fee / 1_000_000_000_000,
+                    }
+                })
+                # Enrich recent_payouts with amount if block matches
+                for rp in recent_payouts:
+                    if rp["block_height"] == h and rp["amount_zion"] is None:
+                        rp["amount_zion"] = miner / 1_000_000_000_000
+                break
     payouts.sort(key=lambda x: x["block_height"])
     status["payouts"] = payouts[-20:]
-    # Get pool wallet balance via RPC
-    wallet = status["pool_wallet"]
-    if wallet and wallet.startswith("zion1"):
-        bal = rpc_call("127.0.0.1", 8443, "getBalance", {"address": wallet})
+    recent_payouts.sort(key=lambda x: x["block_height"], reverse=True)
+    status["recent_payouts"] = recent_payouts[:20]
+
+    # ── Wallet balances (RPC with Edge→local fallback) ────────────────
+    rpc_host = edge_host if (is_edge and edge_rpc_alive) else "127.0.0.1"
+    if status["pool_wallet"] and status["pool_wallet"].startswith("zion1"):
+        bal = rpc_call(rpc_host, 8443, "getBalance", {"address": status["pool_wallet"]}, timeout=2.5)
         if bal and not bal.get("_rpc_error"):
             atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
             status["pool_wallet_balance"] = atomic
-    # On-chain balances for fee-split wallets
+        elif is_edge and local_rpc_alive:
+            # Fallback to local backup node
+            bal = rpc_call("127.0.0.1", 8443, "getBalance", {"address": status["pool_wallet"]}, timeout=2)
+            if bal and not bal.get("_rpc_error"):
+                atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
+                status["pool_wallet_balance"] = atomic
+
     balances = {}
     for key, addr in [("miner", status["miner_wallet"]),
                       ("humanitarian", status["humanitarian_wallet"]),
                       ("issobella", status["issobella_wallet"])]:
         if addr and addr.startswith("zion1"):
-            bal = rpc_call("127.0.0.1", 8443, "getBalance", {"address": addr})
+            bal = rpc_call(rpc_host, 8443, "getBalance", {"address": addr}, timeout=2.5)
             if bal and not bal.get("_rpc_error"):
                 atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
                 balances[key] = {"atomic": atomic, "zion": atomic / 1_000_000_000_000}
     status["balances"] = balances
-    # Cumulative burned (1% of every block subsidy, never minted)
+
+    # ── Burned total ──────────────────────────────────────────────────
     total_blocks = status["blocks_found"]
-    if total_blocks > 0:
-        # Average subsidy ~5,400 ZION per block in early mainnet
-        avg_subsidy = 5_400.067
-        status["burned_total"] = total_blocks * avg_subsidy * 0.01
-    else:
-        status["burned_total"] = 0.0
-    # Fetch pool stats and miners
-    status["pool_stats"] = fetch_pool_stats()
-    status["miners"] = fetch_pool_miners()
-    # JS compatibility: map pool miners to expected miner_stats format
+    status["burned_total"] = total_blocks * 5_400.067 * 0.01 if total_blocks > 0 else 0.0
+
+    # ── Pool stats / miners from Edge or local ──────────────────────────
+    pool_stats = fetch_pool_stats()
+    miners = fetch_pool_miners()
+    status["pool_stats"] = pool_stats
+    status["miners"] = miners
+
+    # Session stats
+    active_sessions = pool_stats.get("miners", {}).get("active", len(miners)) if isinstance(pool_stats.get("miners"), dict) else len(miners)
+    status["session_stats"] = {
+        "active_sessions": active_sessions,
+        "total_shares_1h": sum(m.get("valid_shares", 0) for m in miners),
+        "blocks_24h": total_blocks,
+        "accept_rate_pct": pool_stats.get("routing", {}).get("accept_rate_pct") if isinstance(pool_stats.get("routing"), dict) else None,
+    }
+
+    # JS miner_stats compatibility
     miner_stats = []
-    for m in status["miners"]:
+    for m in miners:
         miner_stats.append({
-            "address": m.get("address", "—"),
-            "worker_name": m.get("worker_name", "—"),
+            "address": m.get("address") or m.get("payout_address") or "—",
+            "worker_name": m.get("worker_name") or m.get("id") or "—",
             "valid_shares": m.get("valid_shares", 0),
             "hashrate": m.get("hashrate", 0),
             "hashrate_1h": m.get("hashrate_1h", 0),
@@ -2872,10 +2953,16 @@ def build_payout_status() -> dict:
             "on_chain_balance_zion": m.get("on_chain_balance_zion"),
             "pending_balance": m.get("pending_balance", 0),
             "blocks_found": m.get("blocks_found", 0),
+            "connected_since": m.get("connected_since"),
+            "last_share": m.get("last_share"),
         })
     status["miner_stats"] = miner_stats
-    # JS compatibility: alias for payout detail table
     status["miner_payouts_detail"] = status["miner_payouts"]
+
+    # If Edge stats are dead, surface a warning
+    if is_edge and not edge_stats_alive:
+        status["pool_health"]["error_msg"] = "Edge pool metrics endpoint (8455) unreachable. Stats/miners may be stale."
+
     return status
 
 # ── AI services status (Hiran + Hiranyagarbha) ───────────────────────────

@@ -503,8 +503,68 @@ function formatFlowers(v){
 
 async function refreshPayout(){
   try{
-    const data = await fetch('/api/payout').then(r => r.json());
+    const res = await fetch('/api/payout');
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
     const set = (id, text) => { const el = document.getElementById(id); if(el) el.textContent = text; };
+    const setHtml = (id, html) => { const el = document.getElementById(id); if(el) el.innerHTML = html; };
+
+    // Timestamp
+    set('payout-last-update', new Date().toLocaleTimeString() + ' refreshed');
+
+    // ── Pool Health Banner ──────────────────────────────────────────
+    const ph = data.pool_health || {};
+    const healthBanner = document.getElementById('pool-health-banner');
+    const healthDot = document.getElementById('pool-health-dot');
+    const healthText = document.getElementById('pool-health-text');
+    const healthErr = document.getElementById('pool-health-error');
+    if(healthBanner && healthDot && healthText){
+      const allOk = ph.edge_rpc_ok && ph.edge_stats_ok && ph.tailscale_ok;
+      const someOk = ph.edge_rpc_ok || ph.edge_stats_ok || ph.local_rpc_ok;
+      if(allOk){
+        healthBanner.className = 'zion-panel p-4 border-l-4 border-emerald-500';
+        healthDot.className = 'w-3 h-3 rounded-full bg-emerald-500 animate-pulse';
+        healthText.className = 'text-sm font-semibold text-emerald-400';
+        healthText.textContent = 'Pool Healthy';
+      } else if(someOk){
+        healthBanner.className = 'zion-panel p-4 border-l-4 border-amber-500';
+        healthDot.className = 'w-3 h-3 rounded-full bg-amber-500 animate-pulse';
+        healthText.className = 'text-sm font-semibold text-amber-400';
+        healthText.textContent = 'Pool Degraded';
+      } else {
+        healthBanner.className = 'zion-panel p-4 border-l-4 border-red-500';
+        healthDot.className = 'w-3 h-3 rounded-full bg-red-500 animate-pulse';
+        healthText.className = 'text-sm font-semibold text-red-400';
+        healthText.textContent = 'Pool Unreachable';
+      }
+      set('health-edge-rpc', 'Edge RPC: ' + (ph.edge_rpc_ok ? '✓' : '✗'));
+      set('health-edge-stats', 'Edge Stats: ' + (ph.edge_stats_ok ? '✓' : '✗'));
+      set('health-tailscale', 'Tailscale: ' + (ph.tailscale_ok ? '✓' : '✗'));
+      set('health-local-rpc', 'Local RPC: ' + (ph.local_rpc_ok ? '✓' : '✗'));
+      if(ph.error_msg){
+        healthErr.textContent = ph.error_msg;
+        healthErr.classList.remove('hidden');
+      } else {
+        healthErr.classList.add('hidden');
+      }
+    }
+
+    // ── Fee Split Bar ───────────────────────────────────────────────
+    const fsText = data.fee_split || '89/5/5/0';
+    set('fee-split-label', fsText);
+    const fsParts = fsText.split('/').map(x => parseFloat(x) || 0);
+    const [minerPct, charPct, devPct, poolPct] = fsParts.length >= 4 ? fsParts : [89,5,5,1];
+    const setWidth = (id, pct) => { const el = document.getElementById(id); if(el) el.style.width = pct + '%'; };
+    setWidth('fee-bar-miner', minerPct);
+    setWidth('fee-bar-charity', charPct);
+    setWidth('fee-bar-dev', devPct);
+    setWidth('fee-bar-pool', poolPct);
+    set('fee-pct-miner', minerPct + '%');
+    set('fee-pct-charity', charPct + '%');
+    set('fee-pct-dev', devPct + '%');
+    set('fee-pct-pool', poolPct + '%');
+
+    // ── Core KPIs ─────────────────────────────────────────────────
     set('payout-tab-wallet', data.pool_wallet || '—');
     set('payout-tab-balance', 'Balance: ' + (data.pool_wallet_balance ? formatFlowers(data.pool_wallet_balance) : '—'));
     const st = document.getElementById('payout-tab-status');
@@ -513,11 +573,8 @@ async function refreshPayout(){
     set('payout-tab-last', data.last_payout_time || '—');
     set('payout-tab-last-tx', 'TX: ' + (data.last_payout_tx || '—'));
 
-    // Total paid out from structured payouts
     let totalPaid = 0;
-    let totalBlocks = 0;
     if (data.payouts && data.payouts.length) {
-      totalBlocks = data.payouts.length;
       for (const p of data.payouts) {
         const s = p.fee_split || {};
         totalPaid += parseFloat(s.miner || 0) + parseFloat(s.charity || 0) + parseFloat(s.dev || 0) + parseFloat(s.pool || 0);
@@ -526,11 +583,34 @@ async function refreshPayout(){
     set('payout-tab-total-paid', totalPaid > 0 ? _zionFmt(totalPaid) + ' ZION' : '—');
     set('payout-tab-pending', data.pending_payouts || '—');
 
-    // Fee split breakdown table
+    // ── Validation Status ─────────────────────────────────────────
+    const val = data.payout_validation || {};
+    const valDot = document.getElementById('validation-dot');
+    const valStatus = document.getElementById('validation-status');
+    const valDetail = document.getElementById('validation-detail');
+    if(valDot && valStatus){
+      if(val.safe_to_payout){
+        valDot.className = 'w-2 h-2 rounded-full bg-emerald-500';
+        valStatus.className = 'text-sm font-bold text-emerald-400';
+        valStatus.textContent = 'Safe';
+      } else {
+        valDot.className = 'w-2 h-2 rounded-full bg-red-500';
+        valStatus.className = 'text-sm font-bold text-red-400';
+        valStatus.textContent = 'Unsafe';
+      }
+    }
+    if(valDetail){
+      const parts = [];
+      if(val.valid_addresses) parts.push(`${val.valid_addresses} valid`);
+      if(val.invalid_addresses) parts.push(`${val.invalid_addresses} invalid`);
+      if(val.missing_addresses) parts.push(`${val.missing_addresses} missing`);
+      valDetail.textContent = parts.length ? parts.join(' · ') : 'No validation data yet';
+    }
+
+    // ── Fee split breakdown table ─────────────────────────────────
     if (data.miner_wallet) set('payout-breakdown-miner-addr', data.miner_wallet);
     if (data.humanitarian_wallet) set('payout-breakdown-charity-addr', data.humanitarian_wallet);
     if (data.issobella_wallet) set('payout-breakdown-dev-addr', data.issobella_wallet);
-    // Compute per-block amounts from latest payout
     if (data.payouts && data.payouts.length) {
       const latest = data.payouts[data.payouts.length - 1];
       const s = latest.fee_split || {};
@@ -540,12 +620,11 @@ async function refreshPayout(){
       set('payout-breakdown-pool-amount', _zionFmt(s.pool || 0) + ' Z');
     }
 
-    // On-chain balances (includes premine + pooled + fee-split earnings)
+    // ── On-chain balances ─────────────────────────────────────────
     const bals = data.balances || {};
     set('payout-breakdown-miner-bal',  bals.miner ? _zionFmt(bals.miner.zion) + ' Z' : '—');
     set('payout-breakdown-charity-bal', bals.humanitarian ? _zionFmt(bals.humanitarian.zion) + ' Z' : '—');
     set('payout-breakdown-dev-bal',    bals.issobella ? _zionFmt(bals.issobella.zion) + ' Z' : '—');
-    // Pool-fee row shows cumulative BURNED total (never minted).
     set('payout-breakdown-pool-bal',   data.burned_total != null ? _zionFmt(data.burned_total) + ' Z' : '—');
     if (data.miner_wallet) set('fs-bal-miner-addr', data.miner_wallet);
     if (data.humanitarian_wallet) set('fs-bal-charity-addr', data.humanitarian_wallet);
@@ -553,11 +632,12 @@ async function refreshPayout(){
     set('fs-bal-miner',  bals.miner ? _zionFmt(bals.miner.zion) : '—');
     set('fs-bal-charity', bals.humanitarian ? _zionFmt(bals.humanitarian.zion) : '—');
     set('fs-bal-dev',    bals.issobella ? _zionFmt(bals.issobella.zion) : '—');
-    // Cumulative burned (1% pool-fee slot, never minted).
     set('fs-burned-total', data.burned_total != null ? _zionFmt(data.burned_total) : '—');
 
-    // Active Miners table
+    // ── Active Miners table (robust 8-col) ──────────────────────────
     const minersTable = document.getElementById('payout-miners-table');
+    const minersBadge = document.getElementById('miners-count-badge');
+    if(minersBadge) minersBadge.textContent = (data.miner_stats?.length || 0) + ' miners';
     if (minersTable) {
       if (data.miner_stats && data.miner_stats.length) {
         minersTable.innerHTML = data.miner_stats.map(m => {
@@ -565,35 +645,40 @@ async function refreshPayout(){
           const paid = m.total_paid != null ? _zionFmt(m.total_paid / 1e12) : '—';
           const onChain = m.on_chain_balance_zion != null ? _zionFmt(m.on_chain_balance_zion) : '—';
           const pending = m.pending_balance != null ? _zionFmt(m.pending_balance / 1e12) : '—';
+          const addr = escapeHtml(m.address || '—');
+          const worker = escapeHtml(m.worker_name || '—');
           return `<tr class="border-b border-white/5 hover:bg-white/5 transition">
-            <td class="py-2 px-2 text-white">${m.address}</td>
-            <td class="py-2 px-2 text-gray-300">${m.worker_name || '—'}</td>
+            <td class="py-2 px-2 text-white truncate max-w-[180px]" title="${addr}">${addr}</td>
+            <td class="py-2 px-2 text-gray-300">${worker}</td>
             <td class="py-2 px-2 text-right text-gray-300">${m.valid_shares != null ? m.valid_shares : '—'}</td>
             <td class="py-2 px-2 text-right text-amber-400">${hr} H/s</td>
             <td class="py-2 px-2 text-right text-emerald-400">${paid} Z</td>
             <td class="py-2 px-2 text-right text-cyan-400">${onChain} Z</td>
             <td class="py-2 px-2 text-right text-purple-400">${pending} Z</td>
+            <td class="py-2 px-2 text-right text-gray-300">${m.blocks_found ?? '—'}</td>
           </tr>`;
         }).join('');
       } else {
-        minersTable.innerHTML = '<tr><td colspan="7" class="py-2 px-2 text-gray-500 italic">No miners connected</td></tr>';
+        minersTable.innerHTML = '<tr><td colspan="8" class="py-2 px-2 text-gray-500 italic">No miners connected</td></tr>';
       }
     }
 
-    // PPLNS Payouts detail table
+    // ── Recent Payouts Timeline (structured) ────────────────────────
     const payoutDetailTable = document.getElementById('payout-detail-table');
     if (payoutDetailTable) {
-      if (data.miner_payouts_detail && data.miner_payouts_detail.length) {
-        payoutDetailTable.innerHTML = data.miner_payouts_detail.map(p => {
+      const recent = data.recent_payouts || [];
+      if (recent.length) {
+        payoutDetailTable.innerHTML = recent.map(p => {
           const statusClass = p.status === 'confirmed' ? 'text-emerald-400' : (p.status === 'pending' ? 'text-amber-400' : 'text-gray-300');
           const txLink = p.tx_id ? `<a href="#" class="text-blue-400 hover:underline" onclick="event.preventDefault(); copyToClipboard('${p.tx_id}')">${p.tx_id.substring(0,16)}…</a>` : '—';
+          const timeStr = p.timestamp ? p.timestamp.substring(11,19) : '—';
           return `<tr class="border-b border-white/5 hover:bg-white/5 transition">
-            <td class="py-2 px-2 text-white">#${p.height}</td>
-            <td class="py-2 px-2 text-gray-300">${p.miner_address} <span class="text-gray-500">${p.miner_worker}</span></td>
-            <td class="py-2 px-2 text-right text-emerald-400">${_zionFmt(p.amount_zion)} Z</td>
-            <td class="py-2 px-2 text-right text-amber-400">${p.share_count ?? '—'}</td>
+            <td class="py-2 px-2 text-white">#${p.block_height}</td>
+            <td class="py-2 px-2 text-right text-emerald-400">${p.amount_zion != null ? _zionFmt(p.amount_zion) : '—'} Z</td>
+            <td class="py-2 px-2 text-right text-gray-300">${p.recipients ?? '—'}</td>
             <td class="py-2 px-2 ${statusClass}">${p.status || '—'}</td>
             <td class="py-2 px-2">${txLink}</td>
+            <td class="py-2 px-2 text-gray-400">${timeStr}</td>
           </tr>`;
         }).join('');
       } else {
@@ -601,7 +686,7 @@ async function refreshPayout(){
       }
     }
 
-    // Structured payout history table
+    // ── Structured payout history table ────────────────────────────
     const histTable = document.getElementById('payout-history-table');
     if (histTable) {
       if (data.payouts && data.payouts.length) {
@@ -621,24 +706,27 @@ async function refreshPayout(){
       }
     }
 
-    // Live pool stats
+    // ── Live pool stats ─────────────────────────────────────────────
     const ps = data.pool_stats || {};
     if (ps.hashrate && ps.hashrate.pool != null) {
       set('pool-stat-hashrate', ps.hashrate.pool.toFixed(2));
     } else if (data.miner_perf && data.miner_perf.hashrate != null) {
       set('pool-stat-hashrate', data.miner_perf.hashrate.toFixed(2));
     }
-    if (ps.miners) {
-      set('pool-stat-miners', ps.miners.active ?? '—');
-    }
+    const sess = data.session_stats || {};
+    set('pool-stat-miners', sess.active_sessions != null ? sess.active_sessions : (ps.miners?.active ?? '—'));
     if (ps.routing && ps.routing.accept_rate_pct != null) {
       set('pool-stat-accept-rate', ps.routing.accept_rate_pct.toFixed(1));
+    } else if (sess.accept_rate_pct != null) {
+      set('pool-stat-accept-rate', sess.accept_rate_pct.toFixed(1));
     }
     if (ps.pplns) {
       set('pool-stat-pplns', ps.pplns.window_used + '/' + ps.pplns.window_size);
+    } else {
+      set('pool-stat-pplns', '—');
     }
 
-    // Miner performance
+    // ── Miner performance ─────────────────────────────────────────
     if (data.miner_perf) {
       set('miner-perf-hashrate', data.miner_perf.hashrate != null ? data.miner_perf.hashrate.toFixed(2) : '—');
       set('miner-perf-accepted', data.miner_perf.shares_accepted ?? '—');
@@ -646,7 +734,7 @@ async function refreshPayout(){
       set('miner-perf-height', data.miner_perf.current_height ?? '—');
     }
 
-    // Raw logs
+    // ── Raw logs ────────────────────────────────────────────────────
     const minerLog = document.getElementById('payout-tab-miner-log');
     if(minerLog) minerLog.innerHTML = (data.miner_payouts && data.miner_payouts.length)
       ? data.miner_payouts.map(l => '<div class="bg-black/20 rounded p-2 border-l-2 border-emerald-500 text-[10px]">' + escapeHtml(l) + '</div>').join('')
@@ -663,6 +751,13 @@ async function refreshPayout(){
       : '<div class="text-gray-500 italic text-[10px]">No errors detected</div>';
   }catch(e){
     console.error('refreshPayout error:', e);
+    const healthText = document.getElementById('pool-health-text');
+    if(healthText){
+      healthText.textContent = 'Dashboard Error';
+      healthText.className = 'text-sm font-semibold text-red-400';
+    }
+    const healthDot = document.getElementById('pool-health-dot');
+    if(healthDot) healthDot.className = 'w-3 h-3 rounded-full bg-red-500';
   }
 }
 
