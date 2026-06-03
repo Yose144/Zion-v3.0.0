@@ -27,13 +27,29 @@ export interface BridgeContractInfo {
   explorer_base: string;
 }
 
-export const BRIDGE_CONTRACTS: BridgeContractInfo = {
+/** Base Sepolia Testnet contracts (LIVE) */
+export const BRIDGE_CONTRACTS_SEPOLIA: BridgeContractInfo = {
   wzion_address: '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6',
   bridge_address: '0xF4BF85443ad6c9b88f3a5314cC3Fb59C32Cedca1',
   network: 'Base Sepolia Testnet',
   chain_id: 84532,
   explorer_base: 'https://sepolia.basescan.org/address/',
 };
+
+/** Base Mainnet contracts — PLACEHOLDERS.
+ *  Run `scripts/deploy-bridge-base.sh base` and update these addresses
+ *  before enabling the burn widget on mainnet.
+ */
+export const BRIDGE_CONTRACTS_MAINNET: BridgeContractInfo = {
+  wzion_address: '0x0000000000000000000000000000000000000000',
+  bridge_address: '0x0000000000000000000000000000000000000000',
+  network: 'Base Mainnet',
+  chain_id: 8453,
+  explorer_base: 'https://basescan.org/address/',
+};
+
+/** Active contract set — change to BRIDGE_CONTRACTS_MAINNET after deploy */
+export const BRIDGE_CONTRACTS = BRIDGE_CONTRACTS_MAINNET;
 
 const defaultStatus: BridgeStatus = {
   online: false,
@@ -104,15 +120,51 @@ export const WZION_ABI = [
   'event BurnForBridge(address indexed burner, uint256 amount, string l1Recipient)',
 ] as const;
 
+/** Base Mainnet chain ID */
+export const BASE_MAINNET_CHAIN_ID = 8453;
+export const BASE_MAINNET_HEX_ID = '0x2105'; // 8453 in hex
+
 /** Base Sepolia Testnet chain ID */
 export const BASE_SEPOLIA_CHAIN_ID = 84532;
 export const BASE_SEPOLIA_HEX_ID = '0x14a34'; // 84532 in hex
 
-/** @deprecated — use BASE_SEPOLIA_CHAIN_ID */
-export const BASE_CHAIN_ID = BASE_SEPOLIA_CHAIN_ID;
+/** @deprecated — use BASE_MAINNET_CHAIN_ID */
+export const BASE_CHAIN_ID = BASE_MAINNET_CHAIN_ID;
 
-/** @deprecated — use BASE_SEPOLIA_HEX_ID */
-export const BASE_HEX_ID = BASE_SEPOLIA_HEX_ID;
+/** @deprecated — use BASE_MAINNET_HEX_ID */
+export const BASE_HEX_ID = BASE_MAINNET_HEX_ID;
+
+/** Add / switch MetaMask to Base Mainnet */
+export async function switchToBaseMainnet(): Promise<void> {
+  const { ethereum } = window as Window & { ethereum?: unknown };
+  if (!ethereum) throw new Error('MetaMask not found');
+  const eth = ethereum as {
+    request(args: { method: string; params?: unknown[] }): Promise<unknown>;
+  };
+  try {
+    await eth.request({
+      method: 'wallet_switchEthereumChain',
+      params: [{ chainId: BASE_MAINNET_HEX_ID }],
+    });
+  } catch (e: unknown) {
+    if ((e as { code?: number }).code === 4902) {
+      await eth.request({
+        method: 'wallet_addEthereumChain',
+        params: [
+          {
+            chainId: BASE_MAINNET_HEX_ID,
+            chainName: 'Base',
+            nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+            rpcUrls: ['https://mainnet.base.org'],
+            blockExplorerUrls: ['https://basescan.org'],
+          },
+        ],
+      });
+    } else {
+      throw e;
+    }
+  }
+}
 
 /** Add / switch MetaMask to Base Sepolia Testnet */
 export async function switchToBaseSepolia(): Promise<void> {
@@ -127,7 +179,6 @@ export async function switchToBaseSepolia(): Promise<void> {
       params: [{ chainId: BASE_SEPOLIA_HEX_ID }],
     });
   } catch (e: unknown) {
-    // 4902 = chain not added yet
     if ((e as { code?: number }).code === 4902) {
       await eth.request({
         method: 'wallet_addEthereumChain',
@@ -147,5 +198,5 @@ export async function switchToBaseSepolia(): Promise<void> {
   }
 }
 
-/** @deprecated — use switchToBaseSepolia() */
-export const switchToBase = switchToBaseSepolia;
+/** @deprecated — use switchToBaseMainnet() */
+export const switchToBase = switchToBaseMainnet;

@@ -3,7 +3,7 @@
 /**
  * BridgeBurnWidget — interactive wZION → ZION burn widget.
  * Uses MetaMask (window.ethereum) + ethers v5 to call burn(amount, l1Recipient)
- * on the wZION ERC-20 contract on Base Sepolia.
+ * on the wZION ERC-20 contract on Base Mainnet.
  */
 
 import { useState, useEffect, useCallback } from 'react';
@@ -13,8 +13,8 @@ import { useLang } from '@/contexts/LanguageContext';
 import {
   BRIDGE_CONTRACTS,
   WZION_ABI,
-  BASE_CHAIN_ID,
-  switchToBase,
+  BASE_MAINNET_CHAIN_ID,
+  switchToBaseMainnet,
 } from '@/lib/bridge-api';
 
 // wZION on Base Mainnet has 18 decimals (standard ERC-20)
@@ -86,11 +86,11 @@ export default function BridgeBurnWidget() {
       if (!accounts[0]) throw new Error('No account returned');
 
       setPhase('switching-chain');
-      await switchToBase();
+      await switchToBaseMainnet();
 
       const network = await provider.getNetwork();
-      if (network.chainId !== BASE_CHAIN_ID) {
-        throw new Error(`Wrong network: expected Base Mainnet (${BASE_CHAIN_ID}), got ${network.chainId}`);
+      if (network.chainId !== BASE_MAINNET_CHAIN_ID) {
+        throw new Error(`Wrong network: expected Base Mainnet (${BASE_MAINNET_CHAIN_ID}), got ${network.chainId}`);
       }
 
       setAccount(accounts[0] as string);
@@ -151,12 +151,12 @@ export default function BridgeBurnWidget() {
     setPhase('confirming');
     try {
       const provider = getProvider();
-      await switchToBase();
+      await switchToBaseMainnet();
       const signer = provider.getSigner();
 
       // ensure still on right network
       const network = await provider.getNetwork();
-      if (network.chainId !== BASE_CHAIN_ID) {
+      if (network.chainId !== BASE_MAINNET_CHAIN_ID) {
         throw new Error(cs ? 'Přepněte prosím v MetaMask na Base' : 'Please switch to Base in MetaMask');
       }
 
@@ -260,7 +260,7 @@ export default function BridgeBurnWidget() {
                 <Copy className="h-3 w-3 text-gray-400" />
               </button>
               <a
-                href={`https://sepolia.basescan.org/tx/${txInfo.hash}`}
+                href={`https://basescan.org/tx/${txInfo.hash}`}
                 target="_blank"
                 rel="noreferrer"
                 className="shrink-0 rounded-lg border border-white/10 bg-white/5 p-1.5 hover:bg-white/10 transition-colors"
@@ -390,7 +390,7 @@ export default function BridgeBurnWidget() {
             BaseScan <ExternalLink className="h-3 w-3" />
           </a>
         </p>
-        <p className="text-xs text-gray-500">{cs ? 'Síť' : 'Network'}: Base Sepolia Testnet (chain 84532) · 18 {cs ? 'desetinných míst' : 'decimals'} · {cs ? 'žádný protokolový poplatek' : 'no protocol fee'}</p>
+        <p className="text-xs text-gray-500">{cs ? 'Síť' : 'Network'}: Base Mainnet (chain 8453) · 18 {cs ? 'desetinných míst' : 'decimals'} · {cs ? 'žádný protokolový poplatek' : 'no protocol fee'}</p>
       </div>
 
       <button

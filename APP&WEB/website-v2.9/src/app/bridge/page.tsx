@@ -177,12 +177,12 @@ export default function BridgePage() {
               </div>
               <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-400">
                 <Shield className="h-3 w-3" />
-                Base Sepolia Testnet · Replay-safe
+                Base Mainnet · Replay-safe
               </div>
             </div>
 
             <div>
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-400">ZION ↔ wZION · Base Sepolia Testnet</p>
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-400">ZION ↔ wZION · Base Mainnet</p>
               <h1 className="text-3xl sm:text-5xl md:text-6xl font-semibold text-gradient leading-tight">
                 {cs ? <>Bridge nativní ZION<br className="hidden sm:block" /> do EVM světa</> : <>Bridge native ZION<br className="hidden sm:block" /> to the EVM world</>}
               </h1>
@@ -482,7 +482,7 @@ export default function BridgePage() {
               { label: '→', arrow: true },
               { label: 'ZIONBridge.sol', sub: 'EVM contract', color: 'border-blue-500/40 bg-blue-500/10', text: 'text-blue-400' },
               { label: '→', arrow: true },
-              { label: 'wZION ERC-20', sub: 'Base Sepolia Testnet', color: 'border-emerald-500/40 bg-emerald-500/10', text: 'text-emerald-400' },
+              { label: 'wZION ERC-20', sub: 'Base Mainnet', color: 'border-emerald-500/40 bg-emerald-500/10', text: 'text-emerald-400' },
             ].map((node, i) =>
               'arrow' in node ? (
                 <div key={i} className="text-gray-600 text-3xl font-light">→</div>
@@ -621,7 +621,7 @@ export default function BridgePage() {
           <div className="grid gap-4 md:grid-cols-3">
             {[
               { label: cs ? 'Dokumentace' : 'Architecture docs', href: '/docs', desc: cs ? 'Relay design, Guardian flow, bezpečnostní model.' : 'Relay design, Guardian flow, security model.' },
-              { label: 'wZION (BaseScan)', href: `${BRIDGE_CONTRACTS.explorer_base}${BRIDGE_CONTRACTS.wzion_address}`, desc: cs ? 'Kód wZION kontraktu na Base Sepolia Testnet.' : 'wZION contract source on Base Sepolia Testnet.', external: true },
+              { label: 'wZION (BaseScan)', href: `${BRIDGE_CONTRACTS.explorer_base}${BRIDGE_CONTRACTS.wzion_address}`, desc: cs ? 'Kód wZION kontraktu na Base Mainnet.' : 'wZION contract source on Base Mainnet.', external: true },
               { label: 'DeFi Hub', href: '/defi', desc: cs ? 'Swap wZION/ETH, portfolio, pool cena.' : 'Swap wZION/ETH, portfolio, pool price.' },
             ].map((res) => (
               <Link key={res.label} href={res.href} target={'external' in res ? '_blank' : undefined} rel={'external' in res ? 'noreferrer' : undefined} className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-black/40 p-5 hover:bg-white/5 transition-colors group">
