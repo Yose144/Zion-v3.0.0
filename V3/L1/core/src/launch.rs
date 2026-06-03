@@ -31,9 +31,9 @@ pub fn verify_genesis_integrity() -> Result<(), String> {
     if block.height != 0 {
         return Err(format!("genesis height {} != 0", block.height));
     }
-    if block.transactions.len() != 12 {
+    if block.transactions.len() != 13 {
         return Err(format!(
-            "genesis has {} transactions, expected 12",
+            "genesis has {} transactions, expected 13",
             block.transactions.len()
         ));
     }
