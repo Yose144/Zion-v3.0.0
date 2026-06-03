@@ -7239,6 +7239,85 @@ class DashboardHandler(BaseHTTPRequestHandler):
             dismiss_alert(alert_id)
             self._json({"ok": True, "dismissed": alert_id})
             return
+        # ── Bridge API (Phase 26a) ────────────────────────────────────────────
+        elif route == "/api/bridge/status":
+            svc = get_service("bridge")
+            h = check_service_health(svc) if svc else {"alive": False, "details": "bridge not in registry"}
+            bridge_db = REPO_ROOT / "V3" / "data" / "bridge.db"
+            pending = 0
+            last_block = None
+            total_volume = 0
+            try:
+                if bridge_db.exists():
+                    con = sqlite3.connect(str(bridge_db))
+                    cur = con.cursor()
+                    cur.execute("SELECT COUNT(*) FROM transfers WHERE status = 'pending'")
+                    pending = cur.fetchone()[0]
+                    cur.execute("SELECT MAX(block_height) FROM transfers")
+                    row = cur.fetchone()
+                    last_block = row[0] if row and row[0] else None
+                    cur.execute("SELECT SUM(amount_flowers) FROM transfers WHERE status = 'completed'")
+                    row = cur.fetchone()
+                    if row and row[0]:
+                        total_volume = round(row[0] / 1_000_000_000_000, 2)
+                    con.close()
+            except Exception:
+                pass
+            self._json({
+                "online": h["alive"],
+                "status": "online" if h["alive"] else "offline",
+                "details": h.get("details", ""),
+                "pending_count": pending,
+                "last_block": last_block,
+                "total_volume": total_volume,
+                "validators_online": 0,  # Will be populated when 3/5 is deployed
+                "contract_verified": False,
+                "chains": [{"id": "base-sepolia", "name": "Base Sepolia", "enabled": True}],
+            })
+        elif route == "/api/bridge/history":
+            bridge_db = REPO_ROOT / "V3" / "data" / "bridge.db"
+            transfers = []
+            try:
+                if bridge_db.exists():
+                    con = sqlite3.connect(str(bridge_db))
+                    cur = con.cursor()
+                    cur.execute("SELECT tx_hash, from_chain, to_chain, amount_flowers, status, created_at, block_height FROM transfers ORDER BY created_at DESC LIMIT 50")
+                    for row in cur.fetchall():
+                        tx_hash, from_chain, to_chain, amt, status, created, block = row
+                        explorer = ""
+                        if tx_hash and tx_hash.startswith("0x"):
+                            explorer = f"https://sepolia.basescan.org/tx/{tx_hash}"
+                        transfers.append({
+                            "tx_hash": tx_hash,
+                            "from_chain": from_chain or "zion",
+                            "to_chain": to_chain or "base-sepolia",
+                            "amount": round(amt / 1_000_000_000_000, 4) if amt else 0,
+                            "status": status or "unknown",
+                            "timestamp": created or "—",
+                            "block_height": block,
+                            "explorer_url": explorer,
+                        })
+                    con.close()
+            except Exception as e:
+                self._json({"transfers": [], "error": str(e)[:80]})
+                return
+            self._json({"transfers": transfers, "count": len(transfers)})
+        elif route == "/api/bridge/chains":
+            self._json({
+                "chains": [
+                    {"id": "zion", "name": "ZION L1 Mainnet", "enabled": True, "type": "l1"},
+                    {"id": "base-sepolia", "name": "Base Sepolia Testnet", "enabled": True, "type": "evm", "wzion_address": "0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6", "bridge_address": "0xF4BF85443ad6c9b88f3a5314cC3Fb59C32Cedca1"},
+                ]
+            })
+        elif route == "/api/bridge/validators":
+            self._json({
+                "validators": [
+                    {"address": "0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186", "online": True, "last_signature": "—"},
+                ],
+                "threshold": 3,
+                "total": 5,
+                "note": "3/5 multisig not yet deployed — only deployer validator active",
+            })
         else:
             self.send_error(404)
 
