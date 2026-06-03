@@ -149,7 +149,7 @@ export const CONFIG = {
       CHAIN_ID: 84532,
       RPC_URL: 'https://sepolia.base.org',
       WZION_ADDRESS: '0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6',
-      BRIDGE_ADDRESS: '0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721',
+      BRIDGE_ADDRESS: '0xF4BF85443ad6c9b88f3a5314cC3Fb59C32Cedca1',
       EXPLORER: 'https://sepolia.basescan.org',
       NAME: 'Base Sepolia',
     },
