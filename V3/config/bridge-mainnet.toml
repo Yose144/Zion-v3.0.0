@@ -1,0 +1,86 @@
+# ──────────────────────────────────────────────────────────────
+#  ZION Bridge Relay Configuration — V3 Mainnet (Base)
+# ──────────────────────────────────────────────────────────────
+#
+#  !! PRE-DEPLOY STATUS !!
+#  wZION + ZIONBridge addresses are PLACEHOLDERS.
+#  Run `scripts/deploy-bridge-base.sh base` to get real addresses,
+#  then update `wzion_address` and `bridge_contract_address` below.
+#
+#  Usage: ZION_BRIDGE_CONFIG=V3/config/bridge-mainnet.toml cargo run -p zion-bridge
+
+[bridge]
+name    = "ZION Bridge Relay V3"
+version = "3.0.1"
+network = "mainnet"
+
+# ── ZION L1 Connection ──────────────────────────────────────
+[l1]
+rpc_url        = "http://127.0.0.1:8443"
+rpc_url_backup = "http://100.76.16.108:8443"
+bridge_address = "zion1s6y6h7k6l033f2n7e0y0r8t6a8h474t0x5398d0"
+finality_blocks     = 60
+poll_interval_secs  = 15
+
+# ── EVM Chains ──────────────────────────────────────────────
+
+# -- Base Mainnet — DEPLOY REQUIRED --
+[[evm_chains]]
+chain_id                = "base"
+name                    = "Base (Mainnet)"
+evm_chain_id            = 8453
+rpc_url                 = "wss://base-mainnet.publicnode.com"
+rpc_url_backup          = "wss://base-mainnet.g.alchemy.com/v2/YOUR_KEY"
+# PLACEHOLDER — update after `scripts/deploy-bridge-base.sh base`
+wzion_address           = "0x0000000000000000000000000000000000000000"
+bridge_contract_address = "0x0000000000000000000000000000000000000000"
+finality_blocks         = 64
+enabled                 = false
+gas_strategy            = "eip1559"
+max_gas_gwei            = 5
+start_block             = 0
+
+# -- Arbitrum One (Mainnet) — NOT DEPLOYED --
+[[evm_chains]]
+chain_id                = "arbitrum"
+name                    = "Arbitrum One (Mainnet)"
+evm_chain_id            = 42161
+rpc_url                 = "wss://arb-mainnet.g.alchemy.com/v2/YOUR_KEY"
+wzion_address           = "0x0000000000000000000000000000000000000000"
+bridge_contract_address = "0x0000000000000000000000000000000000000000"
+finality_blocks         = 10
+enabled                 = false
+gas_strategy            = "eip1559"
+max_gas_gwei            = 2
+
+# ── Validator Config ────────────────────────────────────────
+[validator]
+# 3/5 Guardian multisig — see V3/docs/BRIDGE_MULTISIG.md
+# After BridgeValidator.sol deploy, copy guardian addresses to:
+#   V3/config/guardians-base-mainnet.json
+# And set `private_key_file` to the active guardian's key.
+private_key_file = "keys/validator.key"
+validator_id     = "validator-1"
+threshold        = 3
+total_validators = 5
+
+# ── Security ──────────────────────────────────────────────
+[security]
+max_single_amount   = "5000000000000000000000000"
+daily_limit         = "10000000000000000000000000"
+min_bridge_amount   = "100000000000000000000"
+timelock_threshold  = "1000000000000000000000000"
+max_ops_per_hour    = 100
+l1_block_timeout_secs = 300
+auto_pause_on_anomaly = true
+
+# ── Database ──────────────────────────────────────────────
+[database]
+path = "data/bridge-mainnet.db"
+backup_interval_secs = 3600
+
+# ── Metrics ───────────────────────────────────────────────
+[metrics]
+enabled   = true
+port      = 9102
+log_level = "info"

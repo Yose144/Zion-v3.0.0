@@ -112,6 +112,30 @@ GET /api/bridge/validators  → {validators: [{address, online, last_signature}]
 
 **Next (26d execution):** Commit Solidity source → verify on BaseScan → provision 5 Guardian hardware wallets → deploy 3/5 multisig on Sepolia → externí audit → Base Mainnet deploy.
 
+### Bridge Mainnet Prep (2026-06-03) — Ready for Launch
+
+> Všechny UI vrstvy a konfigurace přepnuty na Base Mainnet (chain 8453).
+> Kontrakty jsou PLACEHOLDERY — vyžadují reálný deploy před aktivací.
+
+| Artifact | Stav | Detail |
+|----------|------|--------|
+| `V3/config/bridge-mainnet.toml` | ✅ Ready | Placeholder adresy, `enabled = false` do deploye |
+| `V3/L2/bridge/contracts/BridgeValidator.sol` | ✅ Ready | 3/5 multisig, immutable threshold |
+| `scripts/provision-bridge-validators.sh` | ✅ Ready | Generuje 5 EVM adres + `guardians-base-mainnet.json` |
+| `V3/docs/BRIDGE_MAINNET_LAUNCH_CHECKLIST.md` | ✅ Ready | 6 fází: Pre-deploy → Guardians → Deploy → Sync → Verify → Smoke test |
+| Website `bridge-api.ts` | ✅ Ready | `BRIDGE_CONTRACTS = BRIDGE_CONTRACTS_MAINNET`, `switchToBaseMainnet()` |
+| Website `BridgeBurnWidget.tsx` | ✅ Ready | `BASE_MAINNET_CHAIN_ID`, `basescan.org` explorer links |
+| Desktop agent bridge view | ✅ Ready | "Base Mainnet" badge |
+| Mobile app `config.js` | ✅ Ready | `MAINNET` sekce s placeholder adresami |
+
+**Pro aktivaci po deployi:**
+1. `scripts/deploy-bridge-base.sh base` → získat wZION + ZIONBridge + BridgeValidator adresy
+2. Aktualizovat `V3/config/bridge-mainnet.toml` → `enabled = true`
+3. Aktualizovat `BRIDGE_CONTRACTS_MAINNET` v `bridge-api.ts`
+4. Aktualizovat `CONFIG.BRIDGE.MAINNET` v mobile app
+5. Rebuild & deploy UI (`npm run build` na Edge)
+6. Start relay: `docker compose --profile mainnet up -d bridge`
+
 ---
 
 ## Co je nového 2026-05-07 (security cleanup + agentická obsluha)

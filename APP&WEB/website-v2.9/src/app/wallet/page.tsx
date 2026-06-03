@@ -7,7 +7,7 @@ import { useZionWallet } from '@/contexts/ZionWalletContext';
 import {
   Wallet, Plus, Import, Send, RefreshCw, Trash2, Copy, Eye, EyeOff,
   Shield, KeyRound, Download, BookOpen, ArrowRight, Lock, Fingerprint,
-  Zap, Globe2
+  Zap, Globe2, Usb, AlertTriangle
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 
@@ -53,12 +53,15 @@ export default function WalletPage() {
     createWallet,
     importFromMnemonic,
     importFromPrivateKey,
+    importFromTrezor,
+    importFromLedger,
     setActiveWallet,
     deleteWallet,
     refreshBalance,
     send,
     exportMnemonic,
     exportPrivateKey,
+    isHardwareWallet,
   } = useZionWallet();
 
   const [tab, setTab] = useState<'create' | 'import' | 'send' | 'export'>('create');
@@ -146,6 +149,20 @@ export default function WalletPage() {
       const pk = await exportPrivateKey(activeWallet.id, password);
       setExportedSecret(pk);
       setShowSecret(false);
+    } catch (e: any) { alert(e.message); }
+  };
+
+  const handleImportTrezor = async () => {
+    try {
+      await importFromTrezor(walletName);
+      alert(cs ? 'Trezor peněženka připojena!' : 'Trezor wallet connected!');
+    } catch (e: any) { alert(e.message); }
+  };
+
+  const handleImportLedger = async () => {
+    try {
+      await importFromLedger(walletName);
+      alert(cs ? 'Ledger peněženka připojena!' : 'Ledger wallet connected!');
     } catch (e: any) { alert(e.message); }
   };
 
@@ -258,6 +275,19 @@ export default function WalletPage() {
               <p className="text-2xl font-bold text-zion-cyan mt-3">
                 {balance !== null ? `${balance.toFixed(6)} ZION` : '---'}
               </p>
+              {isHardwareWallet && (
+                <div className="mt-4 flex items-start gap-2 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">
+                  <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+                  <div className="text-sm text-amber-200">
+                    <p className="font-medium">{cs ? 'Hardware peněženka — pouze pro sledování' : 'Hardware Wallet — Watch Only'}</p>
+                    <p className="text-amber-300/80 mt-1">
+                      {cs
+                        ? 'Trezor/Ledger firmware zatím nepodporuje podepisování transakcí pro ZION. Pro odeslání tokenů použijte software peněženku se stejným seedem (méně bezpečné) nebo počkejte na Ledger aplikaci.'
+                        : 'Trezor/Ledger firmware does not yet support transaction signing for ZION. To send tokens, use a software wallet with the same seed (less secure) or wait for the Ledger app.'}
+                    </p>
+                  </div>
+                </div>
+              )}
             </motion.div>
           )}
 
@@ -417,6 +447,31 @@ export default function WalletPage() {
                         {loading ? (cs ? 'Importování...' : 'Importing...') : (cs ? 'Importovat z Private Key' : 'Import from Private Key')}
                       </button>
                     </div>
+                  </div>
+                  <div className="rounded-2xl border border-white/10 bg-black/30 p-5">
+                    <p className="text-sm font-medium text-gray-300 mb-3">{cs ? 'Hardware peněženka (Watch-only)' : 'Hardware Wallet (Watch-only)'}</p>
+                    <p className="text-xs text-gray-400 mb-3">{cs ? 'Importujte veřejný klíč z Trezoru nebo Ledgeru.' : 'Import public key from Trezor or Ledger.'}</p>
+                    <div className="flex flex-wrap gap-3">
+                      <button
+                        onClick={handleImportTrezor}
+                        disabled={loading}
+                        className="inline-flex items-center gap-2 rounded-2xl border border-green-500/30 bg-green-500/10 px-5 py-3 text-sm font-semibold text-green-300 transition hover:bg-green-500/20 disabled:opacity-50"
+                      >
+                        {loading ? (cs ? 'Připojování...' : 'Connecting...') : 'Trezor'}
+                      </button>
+                      <button
+                        onClick={handleImportLedger}
+                        disabled={loading}
+                        className="inline-flex items-center gap-2 rounded-2xl border border-purple-500/30 bg-purple-500/10 px-5 py-3 text-sm font-semibold text-purple-300 transition hover:bg-purple-500/20 disabled:opacity-50"
+                      >
+                        {loading ? (cs ? 'Připojování...' : 'Connecting...') : 'Ledger'}
+                      </button>
+                    </div>
+                    <p className="text-xs text-amber-300/70 mt-2">
+                      {cs
+                        ? 'Varování: Trezor/Ledger firmware zatím neumožňuje podepisování transakcí pro ZION. Peněženka bude pouze pro sledování.'
+                        : 'Warning: Trezor/Ledger firmware does not yet support transaction signing for ZION. Wallet will be watch-only.'}
+                    </p>
                   </div>
                 </div>
               </div>
