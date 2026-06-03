@@ -36,6 +36,8 @@ interface ZionWalletState {
   exportMnemonic: (walletId: string, password: string) => Promise<string>;
   exportPrivateKey: (walletId: string, password: string) => Promise<string>;
   disconnect: () => void;
+  /** True if active wallet is a hardware wallet (watch-only, cannot sign TX). */
+  isHardwareWallet: boolean;
 }
 
 const defaultState: ZionWalletState = {
@@ -57,6 +59,7 @@ const defaultState: ZionWalletState = {
   exportMnemonic: async () => '',
   exportPrivateKey: async () => '',
   disconnect: () => {},
+  isHardwareWallet: false,
 };
 
 const ZionWalletContext = createContext<ZionWalletState>(defaultState);
@@ -252,6 +255,7 @@ export function ZionWalletProvider({ children }: { children: ReactNode }) {
         exportMnemonic,
         exportPrivateKey,
         disconnect,
+        isHardwareWallet: activeWallet ? ['trezor', 'ledger', 'hid'].includes(activeWallet.keyType) : false,
       }}
     >
       {children}

@@ -530,10 +530,17 @@ fn handle_client(
             ..
         } => {
             let payout = if payout_address.trim().is_empty() {
-                miner_id.clone()
+                return Err(anyhow!(
+                    "payout_address required: set ZION_PAYOUT_ADDRESS to a valid zion1 address"
+                ));
             } else {
                 payout_address
             };
+            if !zion_core::crypto::is_valid_address(&payout) {
+                return Err(anyhow!(
+                    "invalid payout_address {payout}: must be a valid zion1 address"
+                ));
+            }
             (miner_id, worker_name, algorithm, payout)
         }
         other => return Err(anyhow!("expected hello from miner, got {other:?}")),
@@ -3107,7 +3114,7 @@ mod tests {
                 miner_id: "test-miner".to_string(),
                 worker_name: "rig-test".to_string(),
                 algorithm: zion_core::consensus_profile().to_string(),
-                payout_address: "zion1test".to_string(),
+                payout_address: "zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3".to_string(),
             },
         )?;
 
