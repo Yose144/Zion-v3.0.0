@@ -5,6 +5,7 @@ import { GpuGauge } from "./components/canvas/GpuGauge";
 import { CpuHeatmap } from "./components/canvas/CpuHeatmap";
 import { Sparkline } from "./components/canvas/Sparkline";
 import { NetworkScene } from "./components/three/NetworkScene";
+import { LogTail } from "./components/ui/LogTail";
 import { useState } from "react";
 
 type Tab = "overview" | "services" | "topology" | "gpu" | "logs" | "settings";
@@ -68,9 +69,9 @@ function App() {
             </div>
           )}
           {activeTab === "logs" && (
-            <div className="glass-panel p-6">
-              <h2 className="text-xl font-bold text-zion-ok mb-4">Log Tail (ANSI — Coming Soon)</h2>
-              <p className="text-zion-dim">Real-time log streaming will appear here</p>
+            <div className="space-y-4">
+              <h2 className="text-xl font-bold text-zion-ok font-mono">System Logs</h2>
+              <LogTail />
             </div>
           )}
           {activeTab === "settings" && (
