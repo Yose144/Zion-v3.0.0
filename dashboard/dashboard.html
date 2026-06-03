@@ -254,6 +254,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
       <div class="sidebar-group">
         <div class="sidebar-title">Mission</div>
         <button onclick="switchTab('overview')" id="tab-overview" class="sidebar-item tab-active">📊 Overview</button>
+        <button onclick="switchTab('nodes')" id="tab-nodes" class="sidebar-item">🖥️ Nodes</button>
       </div>
       <div class="sidebar-group">
         <div class="sidebar-title">Governance</div>
@@ -869,6 +870,19 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
           <text x="400" y="160" text-anchor="middle" fill="#6b7280" font-size="12">Loading topology…</text>
         </svg>
         <div id="topology-tooltip" class="absolute hidden bg-gray-900 border border-white/10 rounded-lg px-2 py-1 text-[10px] text-gray-200 shadow-lg pointer-events-none z-50" style="transform:translate(-50%,-120%);"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═════════ TAB: Nodes ═════════ -->
+  <div id="pane-nodes" class="hidden space-y-4">
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-base font-bold flex items-center gap-2"><span class="text-gradient">🖥️ Multi-Node Detection</span></h2>
+        <button onclick="refreshNodes()" class="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded">🔄 Refresh</button>
+      </div>
+      <div id="nodes-container" class="space-y-4">
+        <div class="text-gray-400 text-sm">Loading nodes...</div>
       </div>
     </div>
   </div>
