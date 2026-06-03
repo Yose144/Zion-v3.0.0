@@ -111,6 +111,79 @@ groups:
           summary: "Sync gap between Core Node 1 and Node 2 > 5 blocks"
           description: "Height difference is {{ $value }} blocks for > 5 minutes."
 
+  - name: zion_bridge_alerts
+    rules:
+      - alert: BridgeRelayDown
+        expr: up{job="zion-bridge"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          team: bridge
+        annotations:
+          summary: "Bridge relay is DOWN"
+          description: "ZION Bridge relay has been unreachable for > 2 minutes."
+
+      - alert: BridgeL1WatcherStalled
+        expr: |
+          changes(zion_bridge_last_l1_height[10m]) == 0
+        for: 10m
+        labels:
+          severity: critical
+          team: bridge
+        annotations:
+          summary: "Bridge L1 watcher stalled"
+          description: "Last L1 height has not changed in 10 minutes."
+
+      - alert: BridgeEVMWatcherStalled
+        expr: |
+          changes(zion_bridge_last_evm_block[10m]) == 0
+        for: 10m
+        labels:
+          severity: critical
+          team: bridge
+        annotations:
+          summary: "Bridge EVM watcher stalled"
+          description: "Last EVM block has not changed in 10 minutes."
+
+      - alert: BridgeErrorSurge
+        expr: |
+          rate(zion_bridge_errors_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          team: bridge
+        annotations:
+          summary: "Bridge error rate elevated"
+          description: "Error rate is {{ $value | humanizePercentage }} per second."
+
+      - alert: BridgeMintFailure
+        expr: |
+          (
+            zion_bridge_l1_locks_finalized_total
+            - zion_bridge_evm_mints_confirmed_total
+          ) > 5
+        for: 10m
+        labels:
+          severity: warning
+          team: bridge
+        annotations:
+          summary: "Bridge mint backlog > 5"
+          description: "{{ $value }} finalized locks without confirmed mints for > 10 min."
+
+      - alert: BridgeUnlockFailure
+        expr: |
+          (
+            zion_bridge_evm_burns_detected_total
+            - zion_bridge_l1_unlocks_confirmed_total
+          ) > 5
+        for: 10m
+        labels:
+          severity: warning
+          team: bridge
+        annotations:
+          summary: "Bridge unlock backlog > 5"
+          description: "{{ $value }} detected burns without confirmed unlocks for > 10 min."
+
   - name: zion_infra_alerts
     rules:
       - alert: HostDown
