@@ -612,6 +612,7 @@ function _getViewEls() {
 const _viewInitFns = {
   node:      () => initNodeView(),
   about:     () => { initUpdateUI(); initSecurityUI(); },
+  bridge:    () => initBridgeView(),
 };
 
 function switchView(view) {
@@ -3286,6 +3287,68 @@ async function loadSecurityStatus() {
   } catch (err) {
     if (listEl) listEl.innerHTML = `<p style="color:#f87171">Chyba: ${err?.message || '?'}</p>`;
   }
+}
+
+// ============================================================================
+// BRIDGE VIEW — Cross-chain bridge status + readiness checklist
+// ============================================================================
+function copyToClipboard(text, badgeId) {
+  try {
+    navigator.clipboard.writeText(text).then(() => {
+      const badge = document.getElementById(badgeId);
+      if (badge) { badge.classList.remove('hidden'); setTimeout(() => badge.classList.add('hidden'), 2000); }
+    }).catch(() => {});
+  } catch {}
+}
+
+let _bridgeInitialized = false;
+function initBridgeView() {
+  if (_bridgeInitialized) return;
+  _bridgeInitialized = true;
+  dbg('[BRIDGE] Initializing Bridge view');
+
+  const grid = document.getElementById('bridge-readiness-grid');
+  const countEl = document.getElementById('bridge-readiness-count');
+  if (!grid) return;
+
+  const items = [
+    { label: 'wZION contract', done: true },
+    { label: 'ZIONBridge contract', done: true },
+    { label: 'BaseScan verified', done: false },
+    { label: '3/5 Guardian multisig', done: false },
+    { label: 'Relay metrics', done: true },
+    { label: 'Burn widget (live)', done: true },
+    { label: 'L1 → Base (mint)', done: true },
+    { label: 'Base → L1 (unlock)', done: true },
+  ];
+
+  const doneCount = items.filter(i => i.done).length;
+  if (countEl) countEl.textContent = `${doneCount}/${items.length} done`;
+
+  grid.innerHTML = items.map(item => {
+    const color = item.done ? 'rgba(16,185,129,.6)' : 'rgba(234,179,8,.6)';
+    const bg = item.done ? 'rgba(16,185,129,.08)' : 'rgba(234,179,8,.08)';
+    const text = item.done ? '#6ee7b7' : '#fcd34d';
+    const icon = item.done ? '✓' : '◐';
+    return `<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;border:1px solid ${color};background:${bg};">
+      <span style="font-size:14px;width:20px;text-align:center;">${icon}</span>
+      <span style="font-size:13px;color:${text};font-weight:500;">${escapeHtml(item.label)}</span>
+    </div>`;
+  }).join('');
+
+  // Try to fetch bridge status from local dashboard API
+  fetch('http://127.0.0.1:8766/api/bridge/status', { signal: AbortSignal.timeout(3000) })
+    .then(r => r.ok ? r.json() : null)
+    .then(data => {
+      if (!data) return;
+      const chip = document.getElementById('bridge-status-chip');
+      if (chip) {
+        const online = data.online ? 'Online' : 'Offline';
+        const uptime = data.uptime_seconds ? ` · ${Math.floor(data.uptime_seconds / 3600)}h uptime` : '';
+        chip.innerHTML = `<svg class="icon icon-inline" aria-hidden="true"><use href="#i-star"></use></svg>Base Sepolia Testnet · ${online}${uptime}`;
+      }
+    })
+    .catch(() => {});
 }
 
 dbg('Renderer script loaded');
