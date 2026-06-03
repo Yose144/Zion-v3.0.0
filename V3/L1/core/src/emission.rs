@@ -13,8 +13,8 @@ pub const FLOWERS_PER_ZION: u64 = 1_000_000_000_000;
 /// Total supply: 144,000,000,000 ZION in flowers (u128 required).
 pub const TOTAL_SUPPLY: u128 = 144_000_000_000_u128 * FLOWERS_PER_ZION as u128;
 
-/// Genesis premine: 16,280,000,000 ZION in flowers.
-pub const GENESIS_PREMINE: u128 = 16_280_000_000_u128 * FLOWERS_PER_ZION as u128;
+/// Genesis premine: 16,780,000,000 ZION in flowers.
+pub const GENESIS_PREMINE: u128 = 16_780_000_000_u128 * FLOWERS_PER_ZION as u128;
 
 /// Mining emission: total supply minus premine.
 pub const MINING_EMISSION: u128 = TOTAL_SUPPLY - GENESIS_PREMINE;
@@ -247,7 +247,7 @@ mod tests {
     fn constants_consistency() {
         assert_eq!(MINING_EMISSION, TOTAL_SUPPLY - GENESIS_PREMINE);
         assert_eq!(TOTAL_SUPPLY, 144_000_000_000_000_000_000_000_u128);
-        assert_eq!(GENESIS_PREMINE, 16_280_000_000_000_000_000_000_u128);
+        assert_eq!(GENESIS_PREMINE, 16_780_000_000_000_000_000_000_u128);
         assert_eq!(MINING_EMISSION, 127_720_000_000_000_000_000_000_u128);
         assert_eq!(BLOCKS_PER_DECADE, 5_256_000);
         assert_eq!(BLOCKS_PER_YEAR, 525_600);

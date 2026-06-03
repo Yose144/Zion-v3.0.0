@@ -60,7 +60,7 @@ Out of scope for the bootstrap:
 - `L1/core` now also supports bootstrap catch-up from `ZION_SEED_PEERS`, so a fresh node can import a contiguous accepted-block batch on startup without manual announce steps
 - `L1/core` now carries the constitutional emission schedule: atomic units (flowers), decade decay, tail emission, and subsidy validation in peer block import
 - `L1/core` now carries the LWMA difficulty adjustment algorithm: 60-block window, integer-only ±25% clamp, solve-time bounds 30–120 s, target ↔ difficulty conversion, compact nBits encoding, and difficulty validation in both template creation and peer block import
-- `L1/core` now carries the canonical genesis block with all 12 constitutional premine outputs, frozen genesis hash, and ChainState initialization from genesis
+- `L1/core` now carries the canonical genesis block with all **13** constitutional premine outputs (incl. Bridge Seed Fund 0.5B ZION), frozen genesis hash, and ChainState initialization from genesis
 - `L1/core` now carries the full cryptographic foundation: Ed25519 keygen/sign/verify, BLAKE3 general hashing, and `zion1...` 44-character address derivation with checksum (`crypto.rs`)
 - `L1/core` now carries the UTXO transaction model: `TxInput`/`TxOutput`/`Transaction` with SegWit-style BLAKE3 txid and Ed25519 signature verification (`tx.rs`)
 - `L1/core` now carries fee policy enforcement: MIN_TX_FEE=1000, MIN_FEE_RATE=1, MAX_TX_SIZE=100KB, 100% fee burn, burn/DAO addresses (`fee.rs`)
