@@ -1,7 +1,8 @@
-import { useOrchestratorStore, type ServiceStatus } from "../../stores/orchestratorStore";
+import { type ServiceStatus } from "../../hooks/useTauri";
 
 interface Props {
   service: ServiceStatus;
+  onControl: (name: string, action: "start" | "stop" | "restart") => void;
 }
 
 const LAYER_COLORS: Record<string, string> = {
@@ -42,19 +43,7 @@ function getBorderClass(state: string) {
   }
 }
 
-export function ServiceCard({ service }: Props) {
-  const updateService = useOrchestratorStore((s) => s.updateService);
-
-  const handleControl = async (action: "start" | "stop" | "restart") => {
-    // TODO: Call Tauri command or HTTP API
-    console.log(`${action} ${service.name}`);
-    if (action === "start") {
-      updateService(service.name, { state: "running", pid: Math.floor(Math.random() * 10000) + 1000 });
-    } else if (action === "stop") {
-      updateService(service.name, { state: "stopped", pid: null });
-    }
-  };
-
+export function ServiceCard({ service, onControl }: Props) {
   const ports = Object.entries(service.ports)
     .map(([k, v]) => `${k}:${v}`)
     .join(", ") || "N/A";
@@ -72,7 +61,7 @@ export function ServiceCard({ service }: Props) {
           <span className={`text-xs font-mono ${getStatusColor(service.state)}`}>
             {service.state === "running" ? "●" : "○"} {service.state}
           </span>
-          {service.autoRestart && <span className="text-[10px] text-zion-warn">♻</span>}
+          {service.auto_restart && <span className="text-[10px] text-zion-warn">♻</span>}
         </div>
       </div>
 
@@ -91,19 +80,19 @@ export function ServiceCard({ service }: Props) {
 
       <div className="flex gap-1.5">
         <button
-          onClick={() => handleControl("start")}
+          onClick={() => onControl(service.name, "start")}
           className="flex-1 text-[10px] bg-zion-ok/20 hover:bg-zion-ok/30 text-zion-ok border border-zion-ok/30 rounded px-2 py-1 transition-colors"
         >
           ▶
         </button>
         <button
-          onClick={() => handleControl("stop")}
+          onClick={() => onControl(service.name, "stop")}
           className="flex-1 text-[10px] bg-zion-critical/20 hover:bg-zion-critical/30 text-zion-critical border border-zion-critical/30 rounded px-2 py-1 transition-colors"
         >
           ⏹
         </button>
         <button
-          onClick={() => handleControl("restart")}
+          onClick={() => onControl(service.name, "restart")}
           className="flex-1 text-[10px] bg-zion-warn/20 hover:bg-zion-warn/30 text-zion-warn border border-zion-warn/30 rounded px-2 py-1 transition-colors"
         >
           ↻
