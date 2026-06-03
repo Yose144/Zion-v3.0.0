@@ -262,7 +262,7 @@ class WalletService {
       };
     }
 
-    if (wallet.walletType === 'trezor') {
+    if (wallet.walletType === 'trezor' || wallet.walletType === 'ledger') {
       return {
         address: wallet.address,
         publicKey: wallet.publicKey,
@@ -311,10 +311,10 @@ class WalletService {
       throw new Error('Cannot sign transactions with a watch-only payout profile');
     }
 
-    if (wallet.walletType === 'trezor') {
+    if (wallet.walletType === 'trezor' || wallet.walletType === 'ledger') {
       throw new Error(
-        'Trezor transaction signing is not supported for ZION. ' +
-        'Trezor firmware lacks generic Ed25519 signing for custom coins. '
+        'Hardware wallet transaction signing is not supported for ZION. ' +
+        'Trezor/Ledger firmware lacks generic Ed25519 signing for custom coins. '
       );
     }
 

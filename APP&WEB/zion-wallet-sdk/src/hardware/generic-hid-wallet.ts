@@ -14,7 +14,7 @@
  *   - signMessage(message, path)
  */
 
-import { publicKeyToAddress } from '../core/address.js';
+// Note: subclasses that implement getAddress will need to import publicKeyToAddress
 
 export interface HIDDeviceInfo {
   vendorId: number;
@@ -78,7 +78,7 @@ export abstract class GenericHIDWallet {
    * Sign a transaction hash. Subclasses may implement this.
    * Default throws — most generic HID devices will not support this initially.
    */
-  async signTransaction(txHash: Uint8Array, _path?: string): Promise<Uint8Array> {
+  async signTransaction(_txHash: Uint8Array, _path?: string): Promise<Uint8Array> {
     throw new Error(
       `Transaction signing not implemented for ${this.deviceInfo?.productName ?? 'this device'}. ` +
       'Override signTransaction() in your device subclass.'
