@@ -16,6 +16,7 @@ function Get-EnvOrDefault($name, $default) {
 [Environment]::SetEnvironmentVariable('ZION_MINER_THREADS',     (Get-EnvOrDefault 'ZION_MINER_THREADS'     '2'),                   'Process')
 [Environment]::SetEnvironmentVariable('ZION_WORKER_NAME',       (Get-EnvOrDefault 'ZION_WORKER_NAME'       'worker1'),             'Process')
 [Environment]::SetEnvironmentVariable('ZION_MINER_ID',          (Get-EnvOrDefault 'ZION_MINER_ID'          'w11-gpu-miner-01'),    'Process')
+[Environment]::SetEnvironmentVariable('ZION_PAYOUT_ADDRESS',      (Get-EnvOrDefault 'ZION_PAYOUT_ADDRESS'      'zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3'), 'Process')
 [Environment]::SetEnvironmentVariable('ZION_GPU_BACKEND',       (Get-EnvOrDefault 'ZION_GPU_BACKEND'       'opencl'),              'Process')
 [Environment]::SetEnvironmentVariable('ZION_GPU_WORK_SIZE',     (Get-EnvOrDefault 'ZION_GPU_WORK_SIZE'     '4096'),                'Process')
 
