@@ -38,13 +38,25 @@
   },
   "peerDependencies": {
     "@trezor/connect-web": "^9",
-    "@trezor/connect": "^9"
+    "@trezor/connect": "^9",
+    "@ledgerhq/hw-transport-webusb": "^6",
+    "@ledgerhq/hw-transport-webhid": "^6",
+    "@ledgerhq/hw-app-ada": "^6"
   },
   "peerDependenciesMeta": {
     "@trezor/connect-web": {
       "optional": true
     },
     "@trezor/connect": {
+      "optional": true
+    },
+    "@ledgerhq/hw-transport-webusb": {
+      "optional": true
+    },
+    "@ledgerhq/hw-transport-webhid": {
+      "optional": true
+    },
+    "@ledgerhq/hw-app-ada": {
       "optional": true
     }
   },

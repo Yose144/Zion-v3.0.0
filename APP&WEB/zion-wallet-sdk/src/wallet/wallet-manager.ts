@@ -17,6 +17,8 @@ import { buildUtxoTransaction, transactionToRpcPayload } from '../core/transacti
 import { ZionRPC } from '../rpc/zion-rpc.js';
 import type { RpcConfig } from '../rpc/zion-rpc.js';
 import { TrezorWallet } from '../hardware/trezor-wallet.js';
+import { LedgerWallet } from '../hardware/ledger-wallet.js';
+import { GenericHIDWallet } from '../hardware/generic-hid-wallet.js';
 
 const STORAGE_KEY_WALLETS = 'zion_wallet_index';
 const STORAGE_KEY_ACTIVE = 'zion_wallet_active';
@@ -211,6 +213,82 @@ export class WalletManager {
     }
   }
 
+  // ─── Hardware Wallet (Ledger) ───────────────────────────────────────
+
+  async importFromLedger(options: {
+    name?: string;
+    path?: string;
+    ledgerWallet?: LedgerWallet;
+  }): Promise<WalletPublicView> {
+    const ledger = options.ledgerWallet ?? new LedgerWallet();
+    await ledger.connect();
+
+    try {
+      const { address, publicKey, path } = await ledger.getAddress(
+        options.path,
+        true // verify on device
+      );
+
+      const wallet: Wallet = {
+        id: this.generateId(),
+        name: options.name ?? 'Ledger Wallet',
+        address,
+        publicKey,
+        privateKey: '', // hardware wallet — key never leaves device
+        mnemonic: null,
+        keyType: 'ledger',
+        path: path ?? options.path ?? null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      await this.saveWallet(wallet);
+      if (!this.activeWalletId) {
+        await this.setActiveWallet(wallet.id);
+      }
+
+      return toPublicView(wallet);
+    } finally {
+      ledger.disconnect();
+    }
+  }
+
+  // ─── Hardware Wallet (Generic HID) ──────────────────────────────────
+
+  async importFromGenericHID(options: {
+    name?: string;
+    device: GenericHIDWallet;
+  }): Promise<WalletPublicView> {
+    const hid = options.device;
+    await hid.connect();
+
+    try {
+      const { address, publicKey, path } = await hid.getAddress(undefined, true);
+
+      const wallet: Wallet = {
+        id: this.generateId(),
+        name: options.name ?? 'Hardware Wallet',
+        address,
+        publicKey,
+        privateKey: '',
+        mnemonic: null,
+        keyType: 'hid',
+        path: path ?? null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      await this.saveWallet(wallet);
+      if (!this.activeWalletId) {
+        await this.setActiveWallet(wallet.id);
+      }
+
+      return toPublicView(wallet);
+    } finally {
+      hid.disconnect();
+    }
+  }
+
   // ─── Wallet Retrieval ───────────────────────────────────────────────
 
   listWallets(): WalletPublicView[] {
@@ -262,7 +340,7 @@ export class WalletManager {
   async exportMnemonic(walletId: string, password: string): Promise<string> {
     const wallet = this.wallets.get(walletId);
     if (!wallet) throw new Error('Wallet not found');
-    if (wallet.keyType === 'trezor') throw new Error('Hardware wallet mnemonic never leaves the device');
+    if (['trezor', 'ledger', 'hid'].includes(wallet.keyType)) throw new Error('Hardware wallet mnemonic never leaves the device');
     if (!wallet.mnemonic) throw new Error('No mnemonic available for this wallet');
 
     const payload = JSON.parse(wallet.mnemonic);
@@ -272,7 +350,7 @@ export class WalletManager {
   async exportPrivateKey(walletId: string, password: string): Promise<string> {
     const wallet = this.wallets.get(walletId);
     if (!wallet) throw new Error('Wallet not found');
-    if (wallet.keyType === 'trezor') throw new Error('Hardware wallet private key never leaves the device');
+    if (['trezor', 'ledger', 'hid'].includes(wallet.keyType)) throw new Error('Hardware wallet private key never leaves the device');
 
     const payload = JSON.parse(wallet.privateKey);
     return decrypt(payload, password);
@@ -298,11 +376,11 @@ export class WalletManager {
     const wallet = this.wallets.get(options.walletId);
     if (!wallet) throw new Error('Wallet not found');
 
-    if (wallet.keyType === 'trezor') {
+    if (['trezor', 'ledger', 'hid'].includes(wallet.keyType)) {
       throw new Error(
-        'Transaction signing for Trezor hardware wallets is not yet supported. ' +
-        'Trezor firmware lacks generic Ed25519 signing for custom coins. ' +
-        'Please use a software wallet for spending, or connect a Ledger device.'
+        'Transaction signing for hardware wallets is not yet supported. ' +
+        'Trezor/Ledger firmware lacks generic Ed25519 signing for custom coins. ' +
+        'Please use a software wallet for spending, or wait for official firmware support.'
       );
     }
 
