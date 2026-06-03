@@ -1,6 +1,6 @@
 import type { Dispatch, SetStateAction } from "react";
 
-type Tab = "overview" | "services" | "topology" | "gpu" | "logs" | "settings";
+type Tab = "overview" | "services" | "topology" | "gpu" | "oasis" | "logs" | "settings";
 
 interface SidebarProps {
   activeTab: Tab;
@@ -12,6 +12,7 @@ const TABS: { id: Tab; label: string; icon: string }[] = [
   { id: "services", label: "Services", icon: "◉" },
   { id: "topology", label: "Topology", icon: "◊" },
   { id: "gpu", label: "GPU Metrics", icon: "◆" },
+  { id: "oasis", label: "OASIS", icon: "🌸" },
   { id: "logs", label: "Logs", icon: "▤" },
   { id: "settings", label: "Settings", icon: "⚙" },
 ];
