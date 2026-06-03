@@ -438,6 +438,62 @@ const BridgeScreen = ({ navigation }) => {
     );
   }
 
+  function renderReadiness() {
+    const items = [
+      { label: 'wZION contract', done: true },
+      { label: 'ZIONBridge contract', done: true },
+      { label: 'BaseScan verified', done: false },
+      { label: '3/5 Guardian multisig', done: false },
+      { label: 'Relay metrics', done: true },
+      { label: 'Burn widget (live)', done: true },
+      { label: 'L1 → Base (mint)', done: true },
+      { label: 'Base → L1 (unlock)', done: true },
+    ];
+    const doneCount = items.filter(i => i.done).length;
+    return (
+      <GlassCard style={styles.readinessCard}>
+        <Text style={styles.statsTitle}>Readiness {doneCount}/{items.length}</Text>
+        <View style={styles.readinessGrid}>
+          {items.map((item, idx) => (
+            <View key={idx} style={[styles.readinessItem, item.done ? styles.readinessDone : styles.readinessPending]}>
+              <Text style={[styles.readinessIcon, item.done ? styles.readinessIconDone : styles.readinessIconPending]}>
+                {item.done ? '✓' : '◐'}
+              </Text>
+              <Text style={[styles.readinessLabel, item.done ? styles.readinessLabelDone : styles.readinessLabelPending]} numberOfLines={1}>
+                {item.label}
+              </Text>
+            </View>
+          ))}
+        </View>
+      </GlassCard>
+    );
+  }
+
+  function renderContracts() {
+    const wzion = NET.WZION_ADDRESS;
+    const bridge = NET.BRIDGE_ADDRESS;
+    return (
+      <GlassCard style={styles.contractCard}>
+        <Text style={styles.statsTitle}>Contracts · {NET.NAME}</Text>
+        <View style={styles.contractRow}>
+          <Text style={styles.contractLabel}>wZION</Text>
+          <TouchableOpacity onPress={() => { Clipboard.setString(wzion); Alert.alert('Copied', 'wZION address copied'); }}>
+            <Text style={styles.contractAddr}>{wzion.slice(0, 14)}…{wzion.slice(-10)}</Text>
+          </TouchableOpacity>
+        </View>
+        <View style={styles.contractRow}>
+          <Text style={styles.contractLabel}>Bridge</Text>
+          <TouchableOpacity onPress={() => { Clipboard.setString(bridge); Alert.alert('Copied', 'Bridge address copied'); }}>
+            <Text style={styles.contractAddr}>{bridge.slice(0, 14)}…{bridge.slice(-10)}</Text>
+          </TouchableOpacity>
+        </View>
+        <TouchableOpacity onPress={() => Linking.openURL(`${NET.EXPLORER}/address/${wzion}`)}>
+          <Text style={styles.explorerLink}>View wZION on explorer ›</Text>
+        </TouchableOpacity>
+      </GlassCard>
+    );
+  }
+
   // ── Root render ─────────────────────────────────────────────────────────
   return (
     <ScrollView
@@ -450,11 +506,13 @@ const BridgeScreen = ({ navigation }) => {
       {renderBalances()}
       {direction === DIRECTION.TO_EVM ? renderL1toEVM() : renderEVMtoL1()}
       {renderStats()}
+      {renderReadiness()}
+      {renderContracts()}
 
       <View style={styles.footer}>
         <Icon name="shield-check" size={14} color={colors.textSecondary} />
         <Text style={styles.footerText}>
-          {' '}Min. {CONFIG.BRIDGE.MIN_BRIDGE_AMOUNT} ZION · 12-block finality
+          {' '}Min. {CONFIG.BRIDGE.MIN_BRIDGE_AMOUNT} ZION · 60-block L1 finality · 64-block EVM finality
         </Text>
       </View>
     </ScrollView>
@@ -679,6 +737,77 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.textSecondary,
     marginTop: 2,
+  },
+  readinessCard: {
+    marginBottom: spacing.sm,
+  },
+  readinessGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  readinessItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flex: 1,
+    minWidth: '45%',
+    borderRadius: borderRadius.md,
+    padding: spacing.sm,
+    borderWidth: 1,
+  },
+  readinessDone: {
+    backgroundColor: 'rgba(16,185,129,0.08)',
+    borderColor: 'rgba(16,185,129,0.35)',
+  },
+  readinessPending: {
+    backgroundColor: 'rgba(234,179,8,0.08)',
+    borderColor: 'rgba(234,179,8,0.35)',
+  },
+  readinessIcon: {
+    fontSize: 13,
+    width: 18,
+    textAlign: 'center',
+  },
+  readinessIconDone: {
+    color: '#6ee7b7',
+  },
+  readinessIconPending: {
+    color: '#fcd34d',
+  },
+  readinessLabel: {
+    ...typography.caption,
+    fontWeight: '500',
+    flex: 1,
+  },
+  readinessLabelDone: {
+    color: '#6ee7b7',
+  },
+  readinessLabelPending: {
+    color: '#fcd34d',
+  },
+  contractCard: {
+    marginBottom: spacing.sm,
+  },
+  contractRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.xs,
+    paddingVertical: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.06)',
+  },
+  contractLabel: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    width: 60,
+  },
+  contractAddr: {
+    ...typography.caption,
+    color: colors.text,
+    fontFamily: 'monospace',
+    textDecorationLine: 'underline',
   },
   footer: {
     flexDirection: 'row',
