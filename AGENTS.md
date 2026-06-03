@@ -9,13 +9,14 @@ This file provides operating guidance to Devin, WARP, Copilot, and future automa
 - For `V3` work, prefer changing only `V3/**` unless the task explicitly requires cross-tree sync.
 - Avoid incidental edits in `APP&WEB/**` when the task is unrelated to website, desktop, or mobile work.
 - If deployment behavior changes, update every source of operational truth together: compose files, Docker docs, runbooks, scripts, and status docs.
-- If docs disagree, use this order of truth: `StatusV3.md` → `V3/README.md` / `V3/ROADMAP.md` → `V3/docs/**` → older `STATUS.md`, root README, and archived docs.
+- If docs disagree, use this order of truth: `KeyforLaunch.md` (live operational state) → `StatusV3.md` → `V3/README.md` / `V3/ROADMAP.md` → `V3/docs/**` → older `STATUS.md`, root README, and archived docs.
 - Root README / older plans may still mention historical multi-server topology. Verify live topology against `StatusV3.md` before making operational claims.
 
 ## Existing guidance files to know
 
 - Root guidance baseline: `.github/copilot-instructions.md` (applies repo-wide).
 - Current status and launch blockers: [`StatusV3.md`](./StatusV3.md) + [`StatusV3-Part2.md`](./StatusV3-Part2.md) (independent audit + 2026-05-07 cleanup).
+- **Operational launch cheat-sheet (confidential — never commit):** `KeyforLaunch.md` — canonical single-source summary of live topology, wallet addresses, bridge contracts, ports, systemd configs, and P0/P1/P2 blockers. Generated from `StatusV3.md` + live state. Agents should read this first for any operational / mainnet task.
 - Current V3 planning/status references: `V3/README.md`, `V3/ROADMAP.md`, and `V3/docs/**`.
 - Hiran **v2.2** local inference setup (GGUF ready, llama-server.exe ready): [`HIRAN_LOCAL_SETUP.md`](./HIRAN_LOCAL_SETUP.md) — canonical guide for running inference locally. Use this, not v2.1 docs, for current runtime.
 - Hiranyagarbha / Hiran **v2.1** roadmap (historical): [`HiranV2.1/Hiran_v2.1.md`](./HiranV2.1/Hiran_v2.1.md); upgrade context: [`HIRANYAGARBHA_UPGRADE_PLAN.md`](./HIRANYAGARBHA_UPGRADE_PLAN.md).
