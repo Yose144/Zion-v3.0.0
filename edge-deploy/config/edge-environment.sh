@@ -17,9 +17,15 @@
 #   - AI services (Hiran + Hiranyagarbha) — local GPU required
 
 # ── Canonical Fee Split Addresses (89/5/5/0 burn model — no pool fee wallet) ──
-ZION_MINER_ADDRESS=zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3
+# NOTE: On Edge-Primary topology, ZION_MINER_ADDRESS MUST equal the pool
+# wallet so the node credits block rewards directly to the pool payout wallet.
+# Local miners should set their own ZION_MINER_ADDRESS in launch scripts.
+ZION_MINER_ADDRESS=zion1a6z5a4m830w6s6k7r508n300n6z30022q6qt0n7
 ZION_HUMANITARIAN_WALLET=zion1m4v5z8z850u480c5c208z274e334369275n5y20
 ZION_ISSOBELLA_WALLET=zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702
+# Burn model: 1% pool fee is burned (never minted). Set to 0 so the pool
+# does not double-deduct — the protocol burn happens in core coinbase.
+ZION_POOL_FEE_PCT=0
 
 # ── Pool Configuration (PRIMARY — accepts all miners) ──
 ZION_POOL_BIND=0.0.0.0:8444
