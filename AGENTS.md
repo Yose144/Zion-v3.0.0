@@ -315,6 +315,39 @@ systemctl stop zion-edge-pool zion-edge-node1 zion-edge-node2 zion-edge-bridge z
 
 **Important:** Edge uses `ZION_SEED_PEERS=none` because it is the greenfield genesis source. Never point Edge to a local PC as seed unless you are intentionally reversing the topology.
 
+### Bridge Configuration (Base Mainnet)
+
+The bridge connects ZION L1 to Base Mainnet (chain 8453). Canonical addresses and flow:
+
+| Component | Address | Role |
+|-----------|---------|------|
+| **wZION** | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` | ERC-20 wrapper, minted by bridge |
+| **ZIONBridge** | `0xa5a09b2C09A7182BBA9623A2D2cd46cD7D041721` | 3/5 validator multisig controller |
+| **Bridge Vault (L1)** | `zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0` | Keyless vault — **no private key exists** |
+| **Bridge Seed Fund** | `zion1f6m2j0h0l773j4074324q5r528y475w4j7m9685` | Genesis slot 13 (0.5B ZION), funds the vault |
+
+**Validator setup:**
+- Threshold: 3-of-5
+- Existing validators: `0xdde17506...`, `0x8cc6F931...`
+- New validators: `0x0279C8e3...`, `0x294942Cf...`, `0x8CA71cA7...`
+- Upgrade script: `V3/scripts/upgrade-bridge-mainnet.sh`
+
+**E2E bridge flow:**
+1. User sends ZION to keyless vault with memo `BRIDGE:base:0x<evm_recipient>`
+2. L1 watcher detects lock (60-block finality)
+3. Each validator calls `submitLockProof()` on Base
+4. At 3 confirmations, `wZION.bridgeMint()` executes automatically
+5. For EVM→L1: user calls `wZION.bridgeBurn()` → validators submit L1 unlock TX with multisig proofs
+
+**Bridge relay startup:**
+```bash
+ZION_BRIDGE_CONFIG=V3/config/bridge-mainnet.toml cargo run --release --manifest-path V3/Cargo.toml -p zion-bridge
+```
+
+**Metrics:** `curl http://localhost:9102/metrics | grep zion_bridge`
+
+---
+
 ### Dashboard Configuration
 
 The Python dashboard (`dashboard/app.py`) monitors Edge (primary) + Core (backup) services:
