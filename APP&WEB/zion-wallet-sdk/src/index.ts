@@ -59,6 +59,14 @@ export {
   type SendOptions,
 } from './wallet/wallet-manager.js';
 
+// Hardware wallets
+export {
+  TrezorWallet,
+  DEFAULT_TREZOR_PATH,
+  type TrezorAddressResult,
+  type TrezorManifest,
+} from './hardware/trezor-wallet.js';
+
 // Convenience class that wires everything together
 import { WalletManager } from './wallet/wallet-manager.js';
 import type { StorageInterface } from './storage/storage-interface.js';

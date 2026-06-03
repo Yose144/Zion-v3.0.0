@@ -5,6 +5,7 @@ import MultiChainCryptoService from './MultiChainCryptoService';
 import {CONFIG} from '../constants/config';
 import {CHAIN_IDS} from '../constants/chains';
 import {validateAddress} from '../utils/addressValidation';
+import {TrezorWallet} from 'zion-wallet-sdk';
 
 /**
  * Wallet Service v3.0.0
@@ -261,6 +262,15 @@ class WalletService {
       };
     }
 
+    if (wallet.walletType === 'trezor') {
+      return {
+        address: wallet.address,
+        publicKey: wallet.publicKey,
+        path: wallet.path,
+        walletType: wallet.walletType,
+      };
+    }
+
     try {
       const privateKey = MultiChainCryptoService.getPrivateKey(wallet.privateKey, password);
       const mnemonic = wallet.mnemonic
@@ -299,6 +309,13 @@ class WalletService {
 
     if (wallet.walletType === 'external') {
       throw new Error('Cannot sign transactions with a watch-only payout profile');
+    }
+
+    if (wallet.walletType === 'trezor') {
+      throw new Error(
+        'Trezor transaction signing is not supported for ZION. ' +
+        'Trezor firmware lacks generic Ed25519 signing for custom coins. '
+      );
     }
 
     try {
@@ -435,6 +452,49 @@ class WalletService {
 
     this.activeWallet = wallet;
     await AsyncStorage.setItem(ACTIVE_WALLET_KEY, walletId);
+  }
+
+  /**
+   * Import wallet from Trezor hardware device (Ed25519 public key export).
+   * @param {string} name - Wallet display name
+   * @param {string} path - BIP-32 path (default: "m/44'/0'/0'")
+   */
+  async importFromTrezor(name = 'Trezor Wallet', path = "m/44'/0'/0'") {
+    const trezor = new TrezorWallet();
+    await trezor.connect();
+    try {
+      const {address, publicKey} = await trezor.getAddress(path, true);
+
+      const wallet = {
+        id: `trezor_${Date.now()}`,
+        name,
+        chainId: CHAIN_IDS.ZION,
+        walletType: 'trezor',
+        address,
+        publicKey,
+        privateKey: null,
+        mnemonic: null,
+        path,
+        imported: true,
+        created: new Date().toISOString(),
+        balance: 0,
+        consciousness: {
+          level: 'PHYSICAL',
+          xp: 0,
+        },
+      };
+
+      this.wallets.push(wallet);
+      await this.saveWallets();
+
+      if (this.wallets.length === 1) {
+        await this.setActiveWallet(wallet.id);
+      }
+
+      return wallet;
+    } finally {
+      trezor.disconnect();
+    }
   }
 
   /**

@@ -3325,6 +3325,12 @@
       <circle cx="17" cy="14" r="1.2" fill="currentColor" />
     </symbol>
 
+    <symbol id="i-bridge" viewBox="0 0 24 24">
+      <path d="M4 10h16M4 14h16M7 6v12M17 6v12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="7" cy="6" r="2" fill="none" stroke="currentColor" stroke-width="2"/>
+      <circle cx="17" cy="18" r="2" fill="none" stroke="currentColor" stroke-width="2"/>
+    </symbol>
+
     <symbol id="i-settings" viewBox="0 0 24 24">
       <circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2" />
       <path d="M12 2.8v2.2M12 19v2.2M2.8 12h2.2M19 12h2.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
@@ -3643,6 +3649,69 @@
         </div>
       </div>
 
+
+      <!-- Bridge View (hidden by default) -->
+      <div id="bridge-view" class="view-shell d-none">
+        <div class="web29-page-header">
+          <div class="web29-title-stack">
+            <div class="web29-kicker"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-bridge"></use></svg>Cross-chain</div>
+            <div class="web29-title-row">
+              <h1 class="web29-title text-gradient">ZION Bridge</h1>
+              <div class="web29-chip" id="bridge-status-chip"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-star"></use></svg>Base Sepolia Testnet</div>
+            </div>
+          </div>
+          <button class="btn btn-ghost" onclick="window.electronAPI.openExternal('https://zionterranova.com/bridge')">Open in Browser <svg class="icon icon-inline" aria-hidden="true"><use href="#i-link"></use></svg></button>
+        </div>
+
+        <div class="web29-section">
+          <div class="web29-section-header">
+            <svg class="icon icon-inline" aria-hidden="true"><use href="#i-check"></use></svg>
+            <h3 class="web29-section-title">Readiness Checklist</h3>
+            <span class="web29-section-subtitle" id="bridge-readiness-count">0/8 done</span>
+          </div>
+          <div class="web29-grid cols-2" id="bridge-readiness-grid">
+            <!-- Populated by renderer -->
+          </div>
+        </div>
+
+        <div class="web29-section">
+          <div class="web29-section-header">
+            <svg class="icon icon-inline" aria-hidden="true"><use href="#i-link"></use></svg>
+            <h3 class="web29-section-title">Contract Addresses</h3>
+          </div>
+          <div class="web29-list" id="bridge-contracts-list">
+            <div class="web29-list-row">
+              <div class="web29-list-cell">
+                <span class="web29-label">wZION ERC-20</span>
+                <code class="web29-mono" id="bridge-wzion-addr">0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6</code>
+              </div>
+              <button class="btn btn-sm btn-ghost" onclick="copyToClipboard('0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6', 'bridge-wzion-copied')">Copy</button>
+              <span class="web29-badge hidden" id="bridge-wzion-copied">Copied!</span>
+            </div>
+            <div class="web29-list-row">
+              <div class="web29-list-cell">
+                <span class="web29-label">ZIONBridge</span>
+                <code class="web29-mono" id="bridge-addr">0xF4BF85443ad6c9b88f3a5314cC3Fb59C32Cedca1</code>
+              </div>
+              <button class="btn btn-sm btn-ghost" onclick="copyToClipboard('0xF4BF85443ad6c9b88f3a5314cC3Fb59C32Cedca1', 'bridge-copied')">Copy</button>
+              <span class="web29-badge hidden" id="bridge-copied">Copied!</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="web29-section">
+          <div class="web29-section-header">
+            <svg class="icon icon-inline" aria-hidden="true"><use href="#i-info"></use></svg>
+            <h3 class="web29-section-title">How to Bridge</h3>
+          </div>
+          <div class="web29-card" style="border-left: 3px solid rgba(16,185,129,0.6);">
+            <p class="web29-text"><strong>L1 → Base:</strong> Send ZION to the bridge address with memo <code>BRIDGE:base:0xYourEvmAddress</code>. Minimum 100 ZION. Wait ~10 min for 60-block finality, then wZION is minted.</p>
+          </div>
+          <div class="web29-card" style="border-left: 3px solid rgba(249,115,22,0.6); margin-top: 12px;">
+            <p class="web29-text"><strong>Base → L1:</strong> Use the website burn widget or call <code>burn(amount, l1Recipient)</code> on wZION. Wait ~2 min for 64 EVM block confirmations, then ZION is unlocked on L1.</p>
+          </div>
+        </div>
+      </div>
 
       <!-- Wallet View (hidden by default) -->
       <div id="wallet-view" class="view-shell view-hidden">
@@ -5501,6 +5570,10 @@
       <div class="nav-item" data-view="wallet">
         <svg class="icon" aria-hidden="true"><use href="#i-wallet"></use></svg>
         <span>Wallet</span>
+      </div>
+      <div class="nav-item" data-view="bridge">
+        <svg class="icon" aria-hidden="true"><use href="#i-bridge"></use></svg>
+        <span>Bridge</span>
       </div>
       <div class="nav-item" data-view="network">
         <svg class="icon" aria-hidden="true"><use href="#i-refresh"></use></svg>
