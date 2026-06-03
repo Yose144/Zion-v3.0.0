@@ -172,8 +172,8 @@ phase_edge_deploy() {
 
   # Restart Edge services (ignore inactive optional services)
   log "Restarting Edge services..."
-  ssh_run "systemctl daemon-reload && systemctl restart zion-edge-node zion-edge-pool || true"
-  ssh_run "systemctl restart zion-edge-dao zion-edge-atomic-swap zion-edge-warp zion-edge-node2 2>/dev/null || true"
+  ssh_run "systemctl daemon-reload && systemctl restart zion-edge-node1 zion-edge-pool || true"
+  ssh_run "systemctl restart zion-edge-node2 zion-edge-dao zion-edge-atomic-swap zion-edge-warp zion-edge-bridge 2>/dev/null || true"
 
   sleep 5
 

@@ -45,6 +45,20 @@
 - **Alertmanager:** Discord konfigurace má jasný 2-krokový postup aktivace (`.env` → restart). `scripts/test-alertmanager.sh` posílá test alert přes curl.
 - **Bridge:** CLI příkaz `zion bridge deploy` vypíše kompletní workflow (Foundry install → RPC → deploy). `scripts/deploy-bridge-base.sh` je připravený pro reálný deploy (nebo vypíše manual steps pokud `contracts/` neexistují).
 
+### Bridge Base Sepolia — Blockchain Verification (2026-06-03)
+
+> On-chain ověření kontraktů na Base Sepolia Testnet.
+
+| Komponent | Adresa | Status | Důkaz |
+|-----------|--------|--------|-------|
+| **wZION ERC-20** | `0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6` | ✅ LIVE | 11 tx, TokenTracker: "Wrapped ZION (wZION)" |
+| **ZIONBridge** | `0xF4BF85443ad6c9b88f3a5314cC3Fb59C32Cedca1` | ✅ LIVE | 3 tx, active method calls |
+| **Deployer** | `0xdde17506BC2D2dCE1d594bD1D85B0BAbb389D186` | ✅ EOA | 50 wZION + UNI-V3-POS (testováno na DEXu) |
+
+**Klíčové zjištění:** Deployer wallet drží UNI-V3-POS NFT — wZION byl skutečně testován na Uniswap V3. Kontrakty jsou funkční a aktivní.
+
+**Next:** Kompletní bridge readiness plán včetně UI tracku → [`V3/docs/BRIDGE_READINESS_100.md`](./V3/docs/BRIDGE_READINESS_100.md)
+
 ---
 
 ## Co je nového 2026-05-07 (security cleanup + agentická obsluha)
