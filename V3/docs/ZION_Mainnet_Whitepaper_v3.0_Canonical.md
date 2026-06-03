@@ -292,7 +292,8 @@ This distribution is enforced in `V3/L1/core/src/emission.rs` (`fee_split`) and 
 | 10 | Network Infrastructure | 1,000,000,000 | Seed nodes & infrastructure |
 | 11 | Genesis Creator | 590,000,000 | Lifetime project stewardship |
 | 12 | Humanitarian — Children Future Fund | 1,440,000,000 | Immediate humanitarian seed |
-|| 13 | Bridge Seed Fund | 500,000,000 | Bridge liquidity seed |
+|| 13 | Bridge Seed Fund | 400,000,000 | Bridge operational budget |
+| 14 | Bridge Vault UTXO Seed | 100,000,000 | UTXO liquidity for bridge unlocks |
 
 **DAO Treasury time-lock:** All 4,000,000,000 ZION in the DAO treasury (#6–8) is locked until block height **525,600** (~1 year after genesis). On-chain enforcement in `V3/L1/core/src/validation.rs` Step 11.
 
