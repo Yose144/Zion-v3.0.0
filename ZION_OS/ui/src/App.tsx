@@ -2,6 +2,7 @@ import { DashboardLayout } from "./components/layout/DashboardLayout";
 import { GpuMetricsPanel } from "./components/layout/GpuMetricsPanel";
 import { ServiceGrid } from "./components/ui/ServiceGrid";
 import { Sidebar } from "./components/ui/Sidebar";
+import { SettingsPanel } from "./components/ui/SettingsPanel";
 import { NetworkScene } from "./components/three/NetworkScene";
 import { LogTail } from "./components/ui/LogTail";
 import { useState } from "react";
@@ -43,12 +44,7 @@ function App() {
               <LogTail />
             </div>
           )}
-          {activeTab === "settings" && (
-            <div className="glass-panel p-6">
-              <h2 className="text-xl font-bold text-zion-dim mb-4">Settings</h2>
-              <p className="text-zion-dim">Configuration panel</p>
-            </div>
-          )}
+          {activeTab === "settings" && <SettingsPanel />}
         </main>
       </div>
     </DashboardLayout>
