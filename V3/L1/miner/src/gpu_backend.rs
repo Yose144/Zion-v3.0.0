@@ -702,8 +702,19 @@ pub mod opencl_deeksha {
             };
 
             // Startup self-test: run debug kernel and compare all 6 stages with CPU
-            if let Err(e) = miner.self_test() {
-                println!("GPU_SELF_TEST_ERROR: {e}");
+            // Skip if ZION_SKIP_GPU_SELF_TEST is set (for SMOS compatibility)
+            // Also skip if ZION_IGNORE_GPU_SELF_TEST_FAIL is set (for Vega 64 compatibility)
+            if std::env::var("ZION_SKIP_GPU_SELF_TEST").is_err() {
+                if let Err(e) = miner.self_test() {
+                    println!("GPU_SELF_TEST_ERROR: {e}");
+                    // If ZION_IGNORE_GPU_SELF_TEST_FAIL is set, continue despite failure
+                    if std::env::var("ZION_IGNORE_GPU_SELF_TEST_FAIL").is_err() {
+                        return Err(e);
+                    }
+                    println!("GPU SELF-TEST FAILED BUT CONTINUING (ZION_IGNORE_GPU_SELF_TEST_FAIL set)");
+                }
+            } else {
+                println!("GPU SELF-TEST SKIPPED (ZION_SKIP_GPU_SELF_TEST set)");
             }
 
             Ok(miner)
