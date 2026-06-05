@@ -92,10 +92,10 @@ export const POOL_FEE_ZION = BLOCK_REWARD_ZION * POOL_FEE_PERCENT / 100;
 
 /** Canonical fee-split addresses (mainnet) — matches V3/L1/core/src/genesis.rs */
 export const FEE_SPLIT_ADDRESSES = {
-  MINER: 'zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3',
-  HUMANITARIAN: 'zion1m4v5z8z850u480c5c208z274e334369275n5y20',
-  ISSOBELLA: 'zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702',
-  POOL_FEE: 'zion1p2a7a5q0t2z5z545y6m6j5e864n002v4z6w95w5',
+  MINER: 'zion1w523a76830x2t5m7f3j023w265e8g5c400a4790',
+  HUMANITARIAN: 'zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4',
+  ISSOBELLA: 'zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702',
+  POOL_FEE: 'zion196m4n8x764v7a0s406j40094a8z5j8m6z7nk342',
 };
 
 /** Frozen genesis block hash — all nodes must agree */
