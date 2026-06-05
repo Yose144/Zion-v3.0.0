@@ -102,9 +102,9 @@ Source: `edge-deploy/config/edge-environment.sh`
 
 ```bash
 # Fee Split (89/5/5/0 burn model)
-ZION_MINER_ADDRESS=zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3
-ZION_HUMANITARIAN_WALLET=zion1m4v5z8z850u480c5c208z274e334369275n5y20
-ZION_ISSOBELLA_WALLET=zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702
+ZION_MINER_ADDRESS=zion1w523a76830x2t5m7f3j023w265e8g5c400a4790
+ZION_HUMANITARIAN_WALLET=zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4
+ZION_ISSOBELLA_WALLET=zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702
 
 # Pool (PRIMARY)
 ZION_POOL_BIND=0.0.0.0:8444
@@ -115,7 +115,7 @@ ZION_PPLNS_WINDOW_SIZE=500000
 ZION_ROUTING_METRICS_BIND=0.0.0.0:8455
 
 # Pool wallet (handles payouts)
-ZION_POOL_WALLET=zion1a6z5a4m830w6s6k7r508n300n6z30022q6qt0n7
+ZION_POOL_WALLET=zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604
 ZION_POOL_PAYOUT_SK_HEX=<redacted>
 
 # Atomic Swap escrow key (testnet placeholder — rotate for mainnet)
@@ -617,9 +617,9 @@ systemctl --user start zion-dashboard.service
 
 | Recipient | Share | Address |
 |-----------|-------|---------|
-| Miner | 89% | `zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3` |
-| Humanitarian | 5% | `zion1m4v5z8z850u480c5c208z274e334369275n5y20` |
-| Issobella | 5% | `zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702` |
+| Miner | 89% | `zion1w523a76830x2t5m7f3j023w265e8g5c400a4790` |
+| Humanitarian | 5% | `zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4` |
+| Issobella | 5% | `zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702` |
 | Pool Fee | 1% | **Burned** (no wallet) |
 
 Block subsidy: 5.4 ZION  

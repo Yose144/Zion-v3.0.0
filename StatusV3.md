@@ -33,13 +33,13 @@
 
 || Parametr | Hodnota |
 ||----------|---------|
-|| **Nový Genesis Hash** | `3817e38aa63fe743cf71eb14e79efdc30f5dd5670075556d8c4dd457f6aa5ef3` |
-|| **Starý Genesis Hash** | `60b5ff78ec7797c79b79069b3bea5553441d201d23329b389828b869723998da` |
+|| **Nový Genesis Hash** | `1da0251076471744b783105a6723fbd2e899282d6582d59f0de7905cd69f07c7` |
+|| **Starý Genesis Hash** | `1da0251076471744b783105a6723fbd2e899282d6582d59f0de7905cd69f07c7` |
 || **Premine Outputs** | 14 (rotováno z původních 12) |
 || **Total Premine** | 16.28B ZION |
 || **Bridge Vault** | `zion106v7v0v0k3d500v0h7l636w0j4f5l4v044mh4a6` (100M ZION) |
-|| **Bridge Seed Fund** | `zion1q5c600q242z384625852z5x636j686l3v3948l6` (400M ZION) |
-|| **Pool Payout** | `zion100g7t4w0r73506n7y6x4z8x4c6n352t4m6nr733` |
+|| **Bridge Seed Fund** | `zion13794g7k3m0f84637l2x0t855h3l258k8p3xp5t3` (400M ZION) |
+|| **Pool Payout** | `zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604` |
 
 **Dokončené fáze:**
 1. ✅ **Phase 1:** Offline Key Generation — 14 nových premine wallets, pool payout wallet, canonical labels s `v2_2026-06-03-GENESIS-RESET` suffix
@@ -66,11 +66,11 @@
 |- `get-genesis-hash` — výpis aktuálního genesis hash
 
 **Nové kanonické adresy:**
-|- Humanitarian: `zion1m4v5z8z850u480c5c208z274e334369275n5y20` (1.44B ZION)
-|- ISSOBELLA: `zion158v5m6h4s6m4z3m0k5r284772794k4e0g344658`
-|- Pool Fee: `zion1r7x5a4h738h337v8y2y545z0688253y296h48h6`
-|- Default Miner: `zion1q2z3788522m0x5s0h6x6u6j6s5q6g6u5d6y20r5`
-|- Pool Payout: `zion100g7t4w0r73506n7y6x4z8x4c6n352t4m6nr733`
+|- Humanitarian: `zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4` (1.44B ZION)
+|- ISSOBELLA: `zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702`
+|- Pool Fee: `zion196m4n8x764v7a0s406j40094a8z5j8m6z7nk342`
+|- Default Miner: `zion1w523a76830x2t5m7f3j023w265e8g5c400a4790`
+|- Pool Payout: `zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604`
 
 **Verification Results:**
 - ✅ Edge server běží s novým genesis hashem
@@ -568,7 +568,7 @@ Desktop Agent (Hiran AI)   →  localhost:8002
 
 ### Mainnet Ready - Genesis a Fee Split Konfigurace
 
-> **⚠️ AKTUALIZACE 2026-06-03:** Genesis regeneration kompletně dokončena - viz sekce "Co je nového 2026-06-03 (Genesis Regeneration Complete)" nahoře. Nový genesis hash: `3817e38aa63fe743cf71eb14e79efdc30f5dd5670075556d8c4dd457f6aa5ef3`
+> **⚠️ AKTUALIZACE 2026-06-05:** Genesis regeneration FINAL reset — všechny klíče rotovány, `genesis_tx_id` fixován proti tichým chain splitům. Nový genesis hash: `1da0251076471744b783105a6723fbd2e899282d6582d59f0de7905cd69f07c7`
 
 || Komponenta | Stav |
 |---|---|
@@ -586,10 +586,10 @@ Desktop Agent (Hiran AI)   →  localhost:8002
 
 | Typ | Adresa | Status |
 |-----|--------|--------|
-| **Miner (89%)** | `zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3` | ✅ Kanonická |
-| **Humanitarian (5%)** | `zion1m4v5z8z850u480c5c208z274e334369275n5y20` | ✅ Kanonická |
-| **Issobella (5%)** | `zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702` | ✅ Kanonická |
-| **Pool Fee (1%)** | `zion1p2a7a5q0t2z5z545y6m6j5e864n002v4z6w95w5` | ✅ Kanonická |
+| **Miner (89%)** | `zion1w523a76830x2t5m7f3j023w265e8g5c400a4790` | ✅ Kanonická |
+| **Humanitarian (5%)** | `zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4` | ✅ Kanonická |
+| **Issobella (5%)** | `zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702` | ✅ Kanonická |
+| **Pool Fee (1%)** | `zion196m4n8x764v7a0s406j40094a8z5j8m6z7nk342` | ✅ Kanonická |
 
 ### Genesis Premine Distribuce (16.28B ZION)
 
@@ -1009,9 +1009,9 @@ $env:ZION_P2P_BIND="0.0.0.0:8333"
 $env:ZION_RPC_BIND="0.0.0.0:8443"
 $env:ZION_SEED_PEERS="77.42.71.94:8333"
 $env:ZION_NODE_STATE_PATH="V3/data/zion-node-state.db"
-$env:ZION_MINER_ADDRESS="zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3"
-$env:ZION_HUMANITARIAN_WALLET="zion1m4v5z8z850u480c5c208z274e334369275n5y20"
-$env:ZION_ISSOBELLA_WALLET="zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702"
+$env:ZION_MINER_ADDRESS="zion1w523a76830x2t5m7f3j023w265e8g5c400a4790"
+$env:ZION_HUMANITARIAN_WALLET="zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4"
+$env:ZION_ISSOBELLA_WALLET="zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702"
 .\V3\target\release\node.exe
 
 # Start miner (connects to Edge pool)
@@ -1650,7 +1650,7 @@ validator provisioning (G), rotace klíčů (P0).
 6. Verification (nový genesis hash ověřen, všechny adresy ověřeny)
 7. Backup & Secure Storage (šifrované keys na USB flash disk)
 
-**Nový Genesis Hash:** `3817e38aa63fe743cf71eb14e79efdc30f5dd5670075556d8c4dd457f6aa5ef3`
+**Nový Genesis Hash:** `1da0251076471744b783105a6723fbd2e899282d6582d59f0de7905cd69f07c7`
 
 **Klíčové změny:**
 - 14 nových premine wallets (rotováno z původních 12)
