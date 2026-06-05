@@ -126,7 +126,7 @@ pub const DAO_ADDRESS: &str = "zion1dao00000000000000000000000000000treasury";
 ///
 /// Derived deterministically from seed `"ZION Bridge Vault V3 Mainnet"`
 /// via SHA-256 → derive_address. See `crypto::bridge_vault_address()`.
-pub const BRIDGE_VAULT_ADDRESS: &str = "zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0";
+pub const BRIDGE_VAULT_ADDRESS: &str = "zion106v7v0v0k3d500v0h7l636w0j4f5l4v044mh4a6";
 
 // ── Tests ──────────────────────────────────────────────────────────────
 
