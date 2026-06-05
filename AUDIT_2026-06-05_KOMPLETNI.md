@@ -306,4 +306,23 @@ Všechny kritické komponenty jsou nyní konsistentní:
 ---
 
 **Audit dokončen:** 2026-06-05 23:15 UTC (aktualizováno po Edge rebuild)  
-**Další audit:** Po opravě testů a připojení minera
+**Další audit:** Po opravě testů a připojení minera## Aktualizace po lokálním resetu (2026-06-05 23:45 UTC)
+
+### Lokální node (Windows 11)
+- **State:** Smazán (V3/data/zion-node-state.db, peers.json)
+- **Build:** cargo build --release OK, genesis hash = 1da02510... (kanonický)
+- **Status:** Spuštěn, těží lokálně (56 bloků)
+- **P2P sync:** Selhává připojení k Edge (100.76.16.108:8333) — pravděpodobně Tailscale/firewall
+- **Tip hash:** 00086e53... (odlišný od Edge, protože lokální node těží sám)
+
+### Poznámka k P2P synchronizaci
+Lokální node a Edge server používají stejný genesis hash (1da02510...), ale lokální 
+node se nemůže připojit k Edge přes Tailscale P2P. RPC připojení (8443) funguje, 
+ale P2P port (8333) má problémy. Lokální node tedy těží lokálně a vytváří vlastní 
+chain. Pro plnou synchronizaci by bylo potřeba vyřešit P2P konektivitu (firewall, 
+Tailscale ACL, nebo použití veřejné IP).
+
+### Závěr
+- ✅ Lokální node resetnut a rebuildnut s kanonickým genesis
+- ✅ Edge server běží se stejným kanonickým genesis
+- ⚠️ P2P synchronizace mezi lokálním a Edge vyžaduje síťovou konfiguraci
