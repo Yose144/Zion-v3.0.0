@@ -27,14 +27,27 @@
 2.9.6-main/
 ├── AGENTS.md                          ← Agent operating rules (Devin, WARP, Copilot)
 ├── Cargo.toml                         ← Rust workspace manifest
-├── Genesis.md                         ← Genesis block art + hash
 ├── LICENSE                            ← MIT License
-├── MAINNET_LAUNCH_SEQUENCE.md         ← Current mainnet launch plan
-├── PREMINE_ADDRESSES_PUBLIC.txt       ← Genesis premine addresses
 ├── README.md                          ← Main project README
 ├── ROOT_INDEX.md                      ← You are here
+├── ROADMAP.md                         ← v3.0.0 canonical roadmap
 ├── StatusV3.md                        ← Current V3 status + blockers
-├── zion.toml                          ← ZION node configuration
+│
+├── config/                            ← Configuration templates
+│   ├── .env.*                         ← Environment templates
+│   ├── zion.toml                      ← ZION node configuration
+│   └── ssh/                           ← SSH keys (gitignored)
+│
+├── docs/                              ← Active project documentation
+│   ├── Genesis.md                     ← Genesis block art + hash
+│   ├── GENESIS_REGENERATION_RUNBOOK.md ← Genesis key rotation procedures
+│   ├── HIRAN_LOCAL_SETUP.md          ← AI inference setup
+│   ├── PREMINE_ADDRESSES_PUBLIC.txt   ← Genesis premine addresses
+│   ├── 3.0.0/                         ← Historical documentation (2026-06-05)
+│   │   ├── EdgePrimary.md             ← Edge deployment topology
+│   │   ├── MAINNET_LAUNCH_SEQUENCE.md ← Launch plan
+│   │   └── [historical reports...]
+│   └── ...
 │
 ├── V3/                                ← [ACTIVE] Clean-room mainnet code
 │   ├── L1/ core, pool, miner          ← Blockchain consensus, mining, PPLNS
