@@ -1,6 +1,6 @@
-import { invoke } from '@tauri-apps/api/core';
-
 const API_BASE = 'http://127.0.0.1:8766';
+const EDGE_HOST = '100.76.16.108';
+const LOCAL_HOST = '127.0.0.1';
 
 // ── Types ─────────────────────────────────────────────────
 
@@ -86,17 +86,6 @@ export interface ReadinessScore {
   checks: { id: string; ok: boolean }[];
 }
 
-export interface PayoutStatus {
-  pool_wallet?: string;
-  payout_enabled?: boolean;
-  blocks_found?: number;
-  last_payout_time?: string;
-  payouts?: Array<{
-    block_height: number;
-    fee_split: { miner: number; charity: number; dev: number; pool: number };
-  }>;
-}
-
 export interface MonitoringStatus {
   prometheus: {
     url: string;
@@ -114,60 +103,7 @@ export interface MonitoringStatus {
   timestamp: number;
 }
 
-// ── Native Tauri commands ─────────────────────────────────
-
-export async function probeTcp(host: string, port: number, timeoutMs = 2000): Promise<boolean> {
-  try {
-    return await invoke('probe_tcp', { host, port, timeoutMs });
-  } catch (e) {
-    console.error('probeTcp error', e);
-    return false;
-  }
-}
-
-export async function rpcCall(url: string, method: string, params?: unknown): Promise<unknown> {
-  return invoke('rpc_call', { url, method, params });
-}
-
-export async function tailLog(path: string, lines = 100): Promise<string[]> {
-  return invoke('tail_log', { path, lines });
-}
-
-export async function runCommand(cmd: string, args: string[]): Promise<string> {
-  return invoke('run_command', { cmd, args });
-}
-
-export async function startLocalBackup(repoRoot?: string): Promise<string> {
-  return invoke('start_local_backup', { repoRoot });
-}
-
-export async function stopLocalBackup(repoRoot?: string): Promise<string> {
-  return invoke('stop_local_backup', { repoRoot });
-}
-
-export async function getLocalBackupStatus(repoRoot?: string): Promise<{
-  node_running: boolean;
-  miner_running: boolean;
-}> {
-  return invoke('get_local_backup_status', { repoRoot });
-}
-
-export async function tailscalePing(target: string = '100.76.16.108'): Promise<{
-  ok: boolean;
-  latency_ms?: number;
-  error?: string;
-}> {
-  try {
-    const stdout = await runCommand('tailscale', ['ping', '-c', '1', '-timeout', '3s', target]);
-    const match = stdout.match(/(\d+)\.?\d*ms/);
-    const latency = match ? parseInt(match[1], 10) : undefined;
-    return { ok: true, latency_ms: latency };
-  } catch (e: any) {
-    return { ok: false, error: String(e) };
-  }
-}
-
-// ── HTTP Fallback (Python dashboard backend) ──────────────
+// ── HTTP Helpers ──────────────────────────────────────────
 
 export async function apiFetch<T>(path: string): Promise<T | null> {
   try {
@@ -182,16 +118,106 @@ export async function apiFetch<T>(path: string): Promise<T | null> {
   }
 }
 
-export async function controlAction(action: string): Promise<{ ok: boolean; error?: string }> {
+export async function apiPost<T>(path: string, body?: unknown): Promise<T | null> {
   try {
-    const r = await fetch(`${API_BASE}/api/control`, {
+    const r = await fetch(`${API_BASE}${path}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action }),
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: body ? JSON.stringify(body) : undefined,
     });
-    return (await r.json()) as { ok: boolean; error?: string };
+    if (!r.ok) throw new Error(`${r.status} ${r.statusText}`);
+    return (await r.json()) as T;
   } catch (e) {
-    console.error('controlAction error', e);
-    return { ok: false, error: String(e) };
+    console.error('API POST error', path, e);
+    return null;
   }
+}
+
+// ── TCP Probe (browser-compatible via fetch timeout) ────
+
+export async function probeTcp(host: string, port: number, timeoutMs = 2000): Promise<boolean> {
+  // Browser nemůže přímo TCP. Pro lokální služby použijeme fetch na HTTP endpoint.
+  // Pro RPC porty zkusíme HEAD request s krátkým timeoutem.
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    await fetch(`http://${host}:${port}/health`, {
+      method: 'HEAD',
+      signal: controller.signal,
+      mode: 'no-cors',
+    });
+    return true;
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// ── RPC Call (via Python dashboard proxy) ─────────────────
+
+export async function rpcCall(url: string, method: string, params?: unknown): Promise<unknown> {
+  const r = await fetch(`${API_BASE}/api/proxy/rpc`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url, method, params }),
+  });
+  return r.json();
+}
+
+// ── Tail Log (via Python dashboard) ───────────────────────
+
+export async function tailLog(path: string, lines = 100): Promise<string[]> {
+  const r = await apiFetch<{ lines: string[] }>(`/api/logs/tail?path=${encodeURIComponent(path)}&lines=${lines}`);
+  return r?.lines ?? [];
+}
+
+// ── Control Actions ───────────────────────────────────────
+
+export async function controlAction(action: string): Promise<{ ok: boolean; error?: string }> {
+  return apiPost<{ ok: boolean; error?: string }>('/api/control', { action }) ?? { ok: false, error: 'Network error' };
+}
+
+// ── Desktop Notifications (browser API) ───────────────────
+
+export async function requestNotificationPermission(): Promise<boolean> {
+  if (!('Notification' in window)) return false;
+  const result = await Notification.requestPermission();
+  return result === 'granted';
+}
+
+export function showNotification(title: string, body: string, icon?: string) {
+  if (!('Notification' in window)) return;
+  if (Notification.permission !== 'granted') return;
+  try {
+    new Notification(title, { body, icon: icon || '/zion_logo.png' });
+  } catch {
+    /* ignore */
+  }
+}
+
+// ── Service Status Aggregation ──────────────────────────
+
+export async function fetchFullStatus(): Promise<{
+  status: V3Status | null;
+  services: ServiceHealth[];
+  alerts: AlertItem[];
+  readiness: ReadinessScore | null;
+  monitoring: MonitoringStatus | null;
+}> {
+  const [st, sv, al, rd, mon] = await Promise.all([
+    apiFetch<V3Status>('/api/status'),
+    apiFetch<{ services: ServiceHealth[] }>('/api/services'),
+    apiFetch<{ alerts: AlertItem[] }>('/api/alerts'),
+    apiFetch<ReadinessScore>('/api/readiness'),
+    apiFetch<MonitoringStatus>('/api/monitoring/status'),
+  ]);
+
+  return {
+    status: st,
+    services: sv?.services ?? [],
+    alerts: al?.alerts ?? [],
+    readiness: rd,
+    monitoring: mon,
+  };
 }

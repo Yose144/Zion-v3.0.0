@@ -7035,6 +7035,24 @@ class DashboardHandler(BaseHTTPRequestHandler):
                         try: lines_param = int(part.split("=")[1])
                         except: pass
             self._json(self._get_service_log(svc_name, lines_param))
+        elif route.startswith("/api/logs/tail"):
+            # Generic log tail (used by Tauri desktop dashboard)
+            qs = urllib.parse.parse_qs(parsed.query)
+            log_path = qs.get("path", [""])[0]
+            lines = int(qs.get("lines", ["100"])[0])
+            try:
+                import collections
+                p = Path(log_path)
+                if not p.exists() and not p.is_absolute():
+                    p = REPO_ROOT / log_path
+                if not p.exists():
+                    self._json({"ok": False, "error": f"Log not found: {log_path}"})
+                    return
+                with open(p, "r", encoding="utf-8", errors="replace") as f:
+                    tail = collections.deque(f, maxlen=lines)
+                self._json({"ok": True, "lines": [l.rstrip() for l in tail]})
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)[:80]})
         elif route == "/api/launch/status":
             self._json(get_launch_state())
         elif route == "/api/genesis":
@@ -7850,6 +7868,27 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     self._json({"ok": False, "error": f"Failed to update config: {str(e)}"})
             except Exception as e:
                 self._json({"ok": False, "error": f"Invalid request: {str(e)}"})
+        elif route == "/api/proxy/rpc":
+            # Proxy RPC call (used by Tauri desktop dashboard)
+            url = payload.get("url", "")
+            method = payload.get("method", "")
+            params = payload.get("params")
+            try:
+                import urllib.request
+                body = json.dumps({
+                    "jsonrpc": "2.0",
+                    "id": 1,
+                    "method": method,
+                    "params": params if params else []
+                }).encode("utf-8")
+                req = urllib.request.Request(url, data=body,
+                    headers={"Content-Type": "application/json"},
+                    method="POST")
+                with urllib.request.urlopen(req, timeout=5) as r:
+                    self._json(json.loads(r.read()))
+            except Exception as e:
+                self._json({"error": str(e)[:80]})
+            return
         elif route == "/api/launch/stack":
             # Dependency-aware sequential stack launch
             with LAUNCH_STATE_LOCK:

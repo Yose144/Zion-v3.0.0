@@ -1,8 +1,10 @@
 export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
+import { coreUrl } from '@/lib/core-endpoints';
+import { getZionRpc } from '@/lib/zion-rpc';
 
-const DASHBOARD_URL = process.env.DASHBOARD_URL || 'http://127.0.0.1:8766';
+const DASHBOARD_URL = coreUrl('dashboard', process.env.DASHBOARD_URL);
 
 export async function GET() {
   try {
@@ -15,11 +17,11 @@ export async function GET() {
     return NextResponse.json(data, {
       headers: { 'Cache-Control': 'no-store, max-age=0' },
     });
-  } catch (err) {
-    console.error('dashboard-history proxy error:', err);
+  } catch {
+    // Fallback: return empty samples — downstream dashboards handle empty state
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : 'Dashboard unavailable' },
-      { status: 502 },
+      { samples: [], source: 'fallback', note: 'Core dashboard offline' },
+      { headers: { 'Cache-Control': 'no-store, max-age=0' } },
     );
   }
 }
