@@ -12,7 +12,7 @@ export ZION_POOL_LOOP_COUNT='1000000'
 export ZION_MAX_SESSIONS_PER_IP='10'
 # WARNING: ZION_POOL_WALLET and ZION_POOL_PAYOUT_SK_HEX must be a matched pair.
 # The SK_HEX below corresponds to the OLD pool wallet. Update both together.
-export ZION_POOL_WALLET='zion1a6z5a4m830w6s6k7r508n300n6z30022q6qt0n7'
+export ZION_POOL_WALLET='zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604'
 export ZION_POOL_PAYOUT_SK_HEX='[REDACTED — pool SK removed for security]'
 export ZION_NONCE_COUNT='4096'
 export ZION_VARDIFF_START_DIFF='1'

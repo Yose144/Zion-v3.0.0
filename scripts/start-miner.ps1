@@ -8,7 +8,7 @@ New-Item -ItemType Directory -Path $logDir -Force | Out-Null
 [Environment]::SetEnvironmentVariable('ZION_MINER_THREADS', '2', 'Process')
 [Environment]::SetEnvironmentVariable('ZION_WORKER_NAME', 'worker1', 'Process')
 [Environment]::SetEnvironmentVariable('ZION_MINER_ID', 'w11-gpu-miner-01', 'Process')
-[Environment]::SetEnvironmentVariable('ZION_PAYOUT_ADDRESS', 'zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3', 'Process')
+[Environment]::SetEnvironmentVariable('ZION_PAYOUT_ADDRESS', 'zion1w523a76830x2t5m7f3j023w265e8g5c400a4790', 'Process')
 [Environment]::SetEnvironmentVariable('ZION_GPU_BACKEND', 'opencl', 'Process')
 [Environment]::SetEnvironmentVariable('ZION_GPU_WORK_SIZE', '4096', 'Process')
 
