@@ -93,12 +93,9 @@
 │   └── rag/                           ← Hybrid RAG (ChromaDB + vector search)
 │
 ├── docs/legal/                        ← Legal documents (licence, disclaimers, premine)
-├── dashboard/                         ← Python monitoring dashboard (app.py)
 ├── edge-deploy/                       ← Edge server deployment package
-├── logs/                              ← Runtime log files (untracked)
 ├── opencl_sdk/                        ← GPU mining OpenCL SDK
 ├── ops/                               ← Operations runbooks
-├── run/                               ← Runtime state
 ├── scripts/                           ← Deployment + operations scripts
 │   ├── deploy-*.sh                    ← Deployment scripts
 │   ├── autopilot-2.9.8.sh            ← Validation + deploy pipeline
@@ -121,9 +118,9 @@
 | `README.md` | Main project introduction, architecture, emission schedule |
 | `AGENTS.md` | Operating guidance for Devin, WARP, Copilot, future AI agents |
 | `StatusV3.md` | Current V3 status, launch blockers, audit results |
-| `Genesis.md` | Genesis block art + hash |
+| `docs/Genesis.md` | Genesis block art + hash |
 | `Cargo.toml` | Root Rust workspace manifest |
-| `zion.toml` | ZION node configuration |
+| `config/zion.toml` | ZION node configuration |
 | `LICENSE` | MIT License |
 
 ### Launch & Mainnet
@@ -131,7 +128,7 @@
 | File | Purpose |
 |------|---------|
 | `MAINNET_LAUNCH_SEQUENCE.md` | Current mainnet launch plan |
-| `PREMINE_ADDRESSES_PUBLIC.txt` | Genesis premine addresses (public) |
+| `docs/PREMINE_ADDRESSES_PUBLIC.txt` | Genesis premine addresses (public) |
 
 ### Archived Files (v2.9.x era)
 

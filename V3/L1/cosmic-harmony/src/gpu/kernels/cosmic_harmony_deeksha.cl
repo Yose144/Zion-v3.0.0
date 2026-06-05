@@ -39,7 +39,9 @@
 #define WGS 64
 #endif
 
-#define ROL64(x, n) (((x) << (n)) | ((x) >> (64 - (n))))
+/* AMD Vega / GCN compiler bug: 64-bit rotate by 8 is miscompiled.
+ * Use OpenCL built-in rotate(long,long) which is handled correctly. */
+#define ROL64(x, n) rotate((long)(x), (long)(n))
 #define XTIME(a) ((uchar)(((a) << 1) ^ ((((a) >> 7) & 1) * 0x1b)))
 
 /* Chi macro: one 5-element row, no temp array (from optimized v3 kernel) */
@@ -172,19 +174,7 @@ void keccak_absorb(ulong *st, int *pos, int rate,
         int chunk = rate - *pos;
         if (chunk > inlen) chunk = inlen;
         int off = *pos;
-        int i = 0;
-        /* Fast path: ulong-width XOR when position is 8-byte aligned */
-        if ((off & 7) == 0) {
-            int ulongs = chunk >> 3;
-            for (int u = 0; u < ulongs; u++) {
-                ulong v = 0;
-                for (int b = 0; b < 8; b++)
-                    v |= (ulong)in[u * 8 + b] << (b * 8);
-                st[(off >> 3) + u] ^= v;
-            }
-            i = ulongs << 3;
-        }
-        for (; i < chunk; i++)
+        for (int i = 0; i < chunk; i++)
             ((uchar *)st)[off + i] ^= in[i];
         in    += chunk;
         inlen -= chunk;
@@ -206,18 +196,7 @@ void keccak_absorb_global(ulong *st, int *pos, int rate,
         int chunk = rate - *pos;
         if (chunk > inlen) chunk = inlen;
         int off = *pos;
-        int i = 0;
-        if ((off & 7) == 0) {
-            int ulongs = chunk >> 3;
-            for (int u = 0; u < ulongs; u++) {
-                ulong v = 0;
-                for (int b = 0; b < 8; b++)
-                    v |= (ulong)in[u * 8 + b] << (b * 8);
-                st[(off >> 3) + u] ^= v;
-            }
-            i = ulongs << 3;
-        }
-        for (; i < chunk; i++)
+        for (int i = 0; i < chunk; i++)
             ((uchar *)st)[off + i] ^= in[i];
         in    += chunk;
         inlen -= chunk;
@@ -500,13 +479,69 @@ void random_read_mix(const uchar seed[64], __global const uchar *pad,
     keccak_finalize(fst, fpos, 72, 0x06, out, 64);
 }
 
+/* SHA3-512 random-read mix (matches CPU random_read_mix exactly).
+ * Avoids keccak256_136_mix fast-path to eliminate compiler-specific
+ * divergence on GCN (gfx900) vs RDNA vs CUDA.
+ */
+void random_read_mix_sha3(const uchar seed[64], __global const uchar *pad,
+                            uchar out[64])
+{
+    uchar acc[64];
+    for (int i = 0; i < 64; i++) acc[i] = seed[i];
+
+    ulong pos_val = 0;
+    for (int b = 0; b < 8; b++) pos_val |= (ulong)seed[b] << (b * 8);
+    uint pos = (uint)(pos_val % BLOCK_COUNT);
+
+    for (int r = 0; r < RANDOM_READS; r++) {
+        uint off = pos * BLOCK_SIZE;
+
+        uchar chunk[BLOCK_SIZE];
+        for (int i = 0; i < BLOCK_SIZE; i++) chunk[i] = pad[off + i];
+
+        ulong st[25]; int p = 0;
+        for (int i = 0; i < 25; i++) st[i] = 0;
+        keccak_absorb(st, &p, 136, acc, 64);
+        keccak_absorb(st, &p, 136, chunk, BLOCK_SIZE);
+        uchar r_bytes[8];
+        for (int b = 0; b < 8; b++) r_bytes[b] = (uchar)((ulong)r >> (b * 8));
+        keccak_absorb(st, &p, 136, r_bytes, 8);
+        uchar d[32];
+        keccak_finalize(st, p, 136, 0x01, d, 32);
+
+        for (int i = 0; i < 32; i++) {
+            acc[i] ^= d[i];
+            acc[32 + i] = (uchar)((uint)acc[32 + i] + (uint)d[i]);
+        }
+
+        ulong new_pos = 0;
+        for (int b = 0; b < 8; b++) new_pos |= (ulong)d[b] << (b * 8);
+        pos = (uint)((new_pos ^ (ulong)pos ^ (ulong)r) % BLOCK_COUNT);
+    }
+
+    uchar first_blk[BLOCK_SIZE], last_blk[BLOCK_SIZE];
+    for (int i = 0; i < BLOCK_SIZE; i++) {
+        first_blk[i] = pad[i];
+        last_blk[i] = pad[SCRATCHPAD_SIZE - BLOCK_SIZE + i];
+    }
+
+    ulong fst[25]; int fpos = 0;
+    for (int i = 0; i < 25; i++) fst[i] = 0;
+    keccak_absorb(fst, &fpos, 72, acc,       64);
+    keccak_absorb(fst, &fpos, 72, first_blk, BLOCK_SIZE);
+    keccak_absorb(fst, &fpos, 72, last_blk,  BLOCK_SIZE);
+    keccak_finalize(fst, fpos, 72, 0x06, out, 64);
+}
+
 /* Full memory-hard transform: init → passes → random-read → 64 B output */
 void memory_hard_transform(const uchar input[64], __global uchar *pad,
                            uchar output[64])
 {
     init_scratchpad(input, pad);
+    barrier(CLK_GLOBAL_MEM_FENCE);
     sequential_passes(pad);
-    random_read_mix(input, pad, output);
+    barrier(CLK_GLOBAL_MEM_FENCE);
+    random_read_mix_sha3(input, pad, output);
 }
 
 /* ========================================================================== */
