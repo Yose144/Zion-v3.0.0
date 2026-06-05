@@ -78,7 +78,7 @@ Run from repository root unless noted.
 PowerShell equivalents for W11 development. Build first: `cargo build --release --manifest-path V3/Cargo.toml --workspace`.
 
 - Node (backup, edge-primary — uses public IP if Tailscale down):
-  - `$env:ZION_NODE_ID='local-backup-node'; $env:ZION_P2P_BIND='0.0.0.0:8333'; $env:ZION_RPC_BIND='0.0.0.0:8443'; $env:ZION_SEED_PEERS='77.42.71.94:8333'; $env:ZION_NODE_STATE_PATH='V3/data/zion-node-state.db'; $env:ZION_MINER_ADDRESS='zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3'; $env:ZION_HUMANITARIAN_WALLET='zion1m4v5z8z850u480c5c208z274e334369275n5y20'; $env:ZION_ISSOBELLA_WALLET='zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702'; cargo run --release --manifest-path V3/Cargo.toml -p zion-core --bin node`
+  - `$env:ZION_NODE_ID='local-backup-node'; $env:ZION_P2P_BIND='0.0.0.0:8333'; $env:ZION_RPC_BIND='0.0.0.0:8443'; $env:ZION_SEED_PEERS='100.76.16.108:8333'; $env:ZION_NODE_STATE_PATH='V3/data/zion-node-state.db'; $env:ZION_MINER_ADDRESS='zion1w523a76830x2t5m7f3j023w265e8g5c400a4790'; $env:ZION_HUMANITARIAN_WALLET='zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4'; $env:ZION_ISSOBELLA_WALLET='zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702'; cargo run --release --manifest-path V3/Cargo.toml -p zion-core --bin node`
 - Pool server (local-dev only):
   - `$env:ZION_POOL_BIND='0.0.0.0:8444'; $env:ZION_NODE_RPC_ADDR='127.0.0.1:8443'; cargo run --release --manifest-path V3/Cargo.toml -p zion-pool --bin server`
 - Miner (edge-primary — connects to public pool):
@@ -347,13 +347,13 @@ The Edge server runs as the canonical primary node + pool. It must survive reboo
 - Humanitarian (Slot 13): 1.44B
 
 **Canonical Addresses:**
-- Humanitarian: `zion1m4v5z8z850u480c5c208z274e334369275n5y20`
-- ISSOBELLA: `zion158v5m6h4s6m4z3m0k5r284772794k4e0g344658`
-- Pool Fee: `zion1r7x5a4h738h337v8y2y545z0688253y296h48h6`
-- Default Miner: `zion1q2z3788522m0x5s0h6x6u6j6s5q6g6u5d6y20r5`
-- Pool Payout: `zion100g7t4w0r73506n7y6x4z8x4c6n352t4m6nr733`
+- Humanitarian: `zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4`
+- ISSOBELLA: `zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702`
+- Pool Fee: `zion196m4n8x764v7a0s406j40094a8z5j8m6z7nk342`
+- Default Miner: `zion1w523a76830x2t5m7f3j023w265e8g5c400a4790`
+- Pool Payout: `zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604`
 - Bridge Vault: `zion106v7v0v0k3d500v0h7l636w0j4f5l4v044mh4a6` (100M ZION)
-- Bridge Seed Fund: `zion1q5c600q242z384625852z5x636j686l3v3948l6` (400M ZION)
+- Bridge Seed Fund: `zion13794g7k3m0f84637l2x0t855h3l258k8p3xp5t3` (400M ZION)
 
 **Fee Split Configuration:**
 - Miners: 89%
@@ -418,7 +418,7 @@ The Edge server runs as the canonical primary node + pool. It must survive reboo
 
 If genesis corruption is suspected:
 1. Use dashboard Genesis Backup/Restore to restore from encrypted backup
-2. Verify genesis hash matches expected value: `3817e38aa63fe743cf71eb14e79efdc30f5dd5670075556d8c4dd457f6aa5ef3`
+2. Verify genesis hash matches expected value: `1da0251076471744b783105a6723fbd2e899282d6582d59f0de7905cd69f07c7`
 3. Check all premine addresses and balances
 4. Restart nodes if necessary
 5. Verify network synchronization
@@ -442,33 +442,32 @@ If pool stops accepting connections:
 4. Restart pool service: `systemctl restart zion-pool.service`
 5. Verify miners can reconnect
 
-## Current Status (2026-06-03 19:00 UTC)
+## Current Status (2026-06-05 22:00 UTC)
 
 **System Status:**
-- ✅ Genesis Regeneration: Complete (all 7 phases)
-- ✅ Node: Running (height 110, synchronized)
-- ✅ Pool: Running (fee split 89/5/5/0, 3 blocks found)
-- ✅ Miner: Running (1.07 KH/s pool hashrate, 49 valid shares)
-- ✅ Backup/Restore: Implemented in dashboard
-- ✅ Edge Server: Operational (100.76.16.108)
+- ✅ Genesis Regeneration: Complete (2026-06-05 final reset)
+- ✅ Node: Running (height 46, synchronized)
+- ✅ Pool: Running (fee split 89/5/5/1, 46 blocks found)
+- ✅ Miner: Running (~523 H/s local, external vega-rig active)
+- ✅ Edge Server: Operational (100.76.16.108 / 77.42.71.94)
 - ✅ Pool Metrics: Running on port 8455
-- ✅ Dashboard: Payout section enhanced with error handling
-- ✅ Monitoring: Prometheus + Grafana active
-- 🟡 Alerting: Partially configured (webhook activation needed)
+- ✅ Local Node: Synchronized with Edge (height 46)
+- ✅ Genesis Hash: `1da0251076471744b783105a6723fbd2e899282d6582d59f0de7905cd69f07c7`
 
 **Known Issues:**
-- Delete backup functionality temporarily disabled (shutil scoping issue)
-- Pool has 0 active miner sessions (1 registered, expected for initial deployment)
+- Auto-backup script produces empty state (height=0) — use manual backup before any restart
+- Pool PPLNS payout not yet fully configured (pool payout key set, no automated payouts yet)
 
-**Recent Fixes (2026-06-03 18:00-19:00 UTC):**
-- ✅ Dashboard payout section error handling improved
-- ✅ Pool service restored on Edge server with metrics endpoint
-- ✅ Pool health monitoring enhanced with specific error messages
-- ✅ Fallback values added for pool stats when data unavailable
+**Recent Fixes (2026-06-05):**
+- ✅ Genesis keys regenerated (14 unique premine keypairs, no duplicates)
+- ✅ `genesis_tx_id` fixed to depend on address (prevents silent chain splits)
+- ✅ Fee split 89/5/5/1 verified on-chain in every block
+- ✅ Canonical subsidy addresses verified deterministic
+- ✅ Edge + local node fully synchronized
+- ✅ Code sync: local repo now matches Edge (`4b94181f`)
 
 **Next Steps:**
-- Complete alerting webhook configuration
-- Enable delete backup functionality after fixing shutil issue
-- Continue monitoring network stability
-- Consider activating additional miners for increased hashrate
+- Fix auto-backup script to capture live DB state
+- Complete bridge validator 3/5 setup
+- External audit of genesis configuration
 - **MAINNET LAUNCH READY** — All critical systems operational

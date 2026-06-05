@@ -1,40 +1,45 @@
 # ZION Mainnet Genesis Premine — Public Addresses
-# Generated: 2026-06-03
+# Generated: 2026-06-05 (final reset)
+# Genesis Hash: 1da0251076471744b783105a6723fbd2e899282d6582d59f0de7905cd69f07c7
 # Total: 16,780,000,000 ZION (11.65% of max supply)
 # Distribution matches MAINNET_CONSTITUTION.md
 #
-# SECURITY NOTE: Original 12 wallets from PREMINE_WALLETS_BACKUP.json have been
-# ROTATED and BURNED. These are the NEW canonical wallets post-scrub.
-# Old seed phrases must be treated as compromised and never reused.
+# SECURITY NOTE: All premine keys were regenerated on 2026-06-05.
+# Previous keys from 2026-06-03 are OBSOLETE and must never be reused.
 
 
 # 1–5: OASIS + Winners Golden Egg/Xp (5 slots × 1.65B = 8.25B ZION)
-1  zion1zz-ILOBeL9pBhE3fBw0RpIYu4Jo    OASIS_Winner_1       1,650,000,000
-2  zion1ZIJDSPzkhfmw3Lm1p6a-NWwRkY0    OASIS_Winner_2       1,650,000,000
-3  zion1rzvqWtxKBI2gnPPqKLSudgLVV9s    OASIS_Winner_3       1,650,000,000
-4  zion1C5VFW2Ztk-7nciQfclLCkHnVY7Y    OASIS_Winner_4       1,650,000,000
-5  zion1bTaAGdBfhjGyU5oXxCko2Qa32cM    OASIS_Winner_5       1,650,000,000
+1  zion153e378e4x0g6s380h2h8z4t506g5s323f5se8g5    OASIS_Winner_1       1,650,000,000
+2  zion1w548y2k3q802w885u7h0x2z8w7d675m0u3ya0l3    OASIS_Winner_2       1,650,000,000
+3  zion192v4c0k074u7c502q6x8e0t592s564s7l4pm607    OASIS_Winner_3       1,650,000,000
+4  zion1n690n062g668s8g0y4772830z8r450c0l06f295    OASIS_Winner_4       1,650,000,000
+5  zion17323k5e490t832f4d0m3w4x3s2e2z7a7600j3v7    OASIS_Winner_5       1,650,000,000
 
 # 6–8: DAO Treasury (main + grants + bootstrap = 4B ZION)
-6  zion1-0xPn2NxSraspMeaW_hhhVu9bFQ    DAO_Treasury_Main    2,500,000,000
-7  zion1GP3_T8G29jGnuCcfL__zqZcqg4c    DAO_Grants           1,000,000,000
-
-
-8  zion1zfcwR7ZUE3qP-amglp1mD77H700    DAO_Bootstrap        500,000,000
+6  zion1t4l2f5j737989828v295n7z4r3v5j8k895m56n4    DAO_Treasury_Main    2,500,000,000
+7  zion1r5j0j7y444a8j402n8t8u2n8y323u6x4r2aw7l6    DAO_Grants           1,000,000,000
+8  zion1932843t398t095g4h3x2f3a5l0q40490k4fm2w8    DAO_Bootstrap        500,000,000
 
 # 9–11: Infrastructure (core dev + seed nodes + creator = 2.59B ZION)
-9  zion1CyKi590pYWUPhxQDNX-nV2w2sPI    Core_Dev_Fund        1,000,000,000
-10 zion17l0YvSq3EJMdXbsiT4ispqbj7es    Seed_Nodes_Fund      1,000,000,000
-11 zion15XocoF3pp6P8KmvdRlXg7MfIlNQ    Creator_Fund         590,000,000
+9  zion1d3p5x622m327r060w5z0q5r203v837m6l8pa8x5    Core_Dev_Fund        1,000,000,000
+10 zion1r6r4s0u2e6u4t23767s05752d70660h2f29d2l7    Seed_Nodes_Fund      1,000,000,000
+11 zion16542q4l853a2z0u5r5w8y4m8k4558847h503736    Creator_Fund         590,000,000
 
 # 12: Humanitarian — Children Future Fund (1.44B ZION)
-12 zion1m4v5z8z850u480c5c208z274e334369275n5y20    Children_Future_Fund 1,440,000,000
+12 zion165a527w5d0n085t775x3w8n8q20742a6w7xr0z3    Children_Future_Fund 1,440,000,000
 
 # 13: Bridge Seed Fund — EVM Bridge Liquidity (0.4B ZION)
-13 zion1f6m2j0h0l773j4074324q5r528y475w4j7m9685    Bridge_Seed_Fund     400,000,000
+13 zion13794g7k3m0f84637l2x0t855h3l258k8p3xp5t3    Bridge_Seed_Fund     400,000,000
 
 # 14: Bridge Vault UTXO Seed — EVM Bridge Unlock Liquidity (0.1B ZION)
-14 zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0    Bridge_Vault_UTXO    100,000,000
+14 zion1r565v3k2u8p8t6n494p0n527c0m7a5s4s5ae0x7    Bridge_Vault_UTXO    100,000,000
 
 # Lock: DAO Treasury (wallets 6–8) cliff at ~525,600 blocks (~1 year).
 # All others: immediate unlock at Genesis #0.
+
+# Canonical Subsidy Addresses (deterministic, 89/5/5/1 fee split)
+# Miner (89%):  zion1w523a76830x2t5m7f3j023w265e8g5c400a4790
+# Humanitarian: zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4
+# Issobella:    zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702
+# Pool Fee:     zion196m4n8x764v7a0s406j40094a8z5j8m6z7nk342 (BURNED)
+# Pool Payout:  zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604
