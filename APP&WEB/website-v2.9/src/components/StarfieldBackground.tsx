@@ -17,9 +17,9 @@ const DEFAULT_GRADIENT = 'radial-gradient(ellipse at bottom, #1B2735 0%, #090A0F
 
 export default function StarfieldBackground({
   starColor = DEFAULT_COLOR,
-  density = 220,
+  density = 350,
   speed = 2,
-  trailOpacity = 0.1,
+  trailOpacity = 0.08,
   backgroundGradient = DEFAULT_GRADIENT,
 }: StarfieldBackgroundProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -74,13 +74,13 @@ export default function StarfieldBackground({
 
         const x = (star.x / star.z) * canvas.width + canvas.width / 2;
         const y = (star.y / star.z) * canvas.height + canvas.height / 2;
-        const size = (1 - star.z / canvas.width) * star.size * 2;
+        const size = (1 - star.z / canvas.width) * star.size * 3;
 
         const brightness = 1 - star.z / canvas.width;
-        const alpha = Math.min(1, 0.15 + brightness * 0.85);
+        const alpha = Math.min(1, 0.35 + brightness * 0.65);
         ctx.fillStyle = `rgba(${starColor[0]}, ${starColor[1]}, ${starColor[2]}, ${alpha})`;
         ctx.beginPath();
-        ctx.arc(x, y, Math.max(size, 0.4), 0, Math.PI * 2);
+        ctx.arc(x, y, Math.max(size, 0.6), 0, Math.PI * 2);
         ctx.fill();
       });
 
@@ -106,7 +106,7 @@ export default function StarfieldBackground({
     <canvas
       ref={canvasRef}
       className="fixed inset-0 w-full h-full z-[1]"
-      style={{ background: backgroundGradient }}
+      style={{ background: backgroundGradient, border: '4px solid red' }}
     />
   );
 }
