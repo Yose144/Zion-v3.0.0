@@ -9,6 +9,10 @@ authors.workspace = true
 name = "zion-miner"
 path = "src/main.rs"
 
+[[bin]]
+name = "b3_verify"
+path = "src/b3_verify.rs"
+
 [features]
 default = []
 
@@ -38,6 +42,7 @@ testnet_fork_rehearsal = ["zion-core/testnet_fork_rehearsal", "zion-pool/testnet
 
 [dependencies]
 anyhow.workspace = true
+bincode.workspace = true
 blake3.workspace = true
 num_cpus = "1"
 rayon = "1"
