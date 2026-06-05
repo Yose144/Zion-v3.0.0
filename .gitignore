@@ -23,7 +23,7 @@ Thumbs.db
 .env
 .env.local
 .env.production
-dashboard/.env
+dashboard/
 !.env.example
 !dashboard/.env.example
 
@@ -252,3 +252,29 @@ venv-hiran/
 
 # Operational launch cheat-sheet (contains IPs, wallet addresses, topology secrets)
 KeyforLaunch.md
+
+# Genesis regeneration encrypted backups (contain private keys)
+*ENCRYPTED_2026-06-03.txt
+PREMINE/
+POOL/
+BRIDGE/
+
+# Temporary directories and test files
+.pids/
+UsersyosefDesktopsmos-api-test/
+"C\357\200\272UsersyosefDesktopzion-miner-new"
+zion-miner
+
+# Bridge contract build artifacts
+V3/L2/bridge/contracts/cache/
+V3/L2/bridge/contracts/out/
+V3/L2/bridge/contracts/lib/
+
+# Deployment directories
+V3/deploy/
+
+# New project directories
+ZionOS/
+
+# Temporary scripts
+scan-ssh.ps1
