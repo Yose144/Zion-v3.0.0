@@ -63,9 +63,9 @@ if [[ ! -f "$ENV_FILE" ]]; then
 # ── Canonical Fee Split Addresses (89/5/5/0 burn model — no pool fee wallet) ──
 # NOTE: On Edge-Primary topology, ZION_MINER_ADDRESS MUST equal the pool
 # wallet so the node credits block rewards directly to the pool payout wallet.
-ZION_MINER_ADDRESS=zion1a6z5a4m830w6s6k7r508n300n6z30022q6qt0n7
-ZION_HUMANITARIAN_WALLET=zion1m4v5z8z850u480c5c208z274e334369275n5y20
-ZION_ISSOBELLA_WALLET=zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702
+ZION_MINER_ADDRESS=zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604
+ZION_HUMANITARIAN_WALLET=zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4
+ZION_ISSOBELLA_WALLET=zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702
 # Burn model: 1% pool fee is burned (never minted). Set to 0 so the pool
 # does not double-deduct — the protocol burn happens in core coinbase.
 ZION_POOL_FEE_PCT=0
@@ -82,7 +82,7 @@ ZION_PPLNS_WINDOW_SIZE=500000
 ZION_ROUTING_METRICS_BIND=0.0.0.0:8455
 
 # Pool wallet (Edge primary — handles all payouts)
-ZION_POOL_WALLET=zion1a6z5a4m830w6s6k7r508n300n6z30022q6qt0n7
+ZION_POOL_WALLET=zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604
 ZION_POOL_PAYOUT_SK_HEX=[REDACTED — pool SK removed for security]
 ENVEOF
     echo "[WARN] Review $ENV_FILE — especially ZION_POOL_PAYOUT_SK_HEX!"

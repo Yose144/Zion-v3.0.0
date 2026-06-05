@@ -13,6 +13,10 @@ path = "src/main.rs"
 name = "b3_verify"
 path = "src/b3_verify.rs"
 
+[[bin]]
+name = "sha3_debug"
+path = "src/sha3_debug.rs"
+
 [features]
 default = []
 
