@@ -50,6 +50,7 @@ bincode.workspace = true
 blake3.workspace = true
 num_cpus = "1"
 rayon = "1"
+hex = "0.4"
 ocl = { version = "0.19", optional = true }
 serde_json.workspace = true
 zion-core = { path = "../core" }

@@ -106,9 +106,10 @@ __constant uchar AES_RCON[10] = {
 /* Keccak-f1600                                                                */
 /* ========================================================================== */
 
-void keccak_f1600(ulong *st)
+__attribute__((noinline)) void keccak_f1600(ulong *st)
 {
     ulong bc0, bc1, bc2, bc3, bc4, t;
+    ulong r_bc0 = 0, r_bc1 = 0, r_bc2 = 0, r_bc3 = 0, r_bc4 = 0;
 
     #pragma unroll 4
     for (int rnd = 0; rnd < 24; rnd++) {
