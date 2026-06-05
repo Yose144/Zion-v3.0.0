@@ -4772,6 +4772,7 @@ dependencies = [
  "bincode",
  "blake3",
  "cudarc",
+ "hex",
  "metal",
  "num_cpus",
  "objc",
