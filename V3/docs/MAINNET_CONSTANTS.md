@@ -20,6 +20,7 @@
 | `DECAY_DENOMINATOR` | `5` | Decay factor denominator |
 | `MAX_DECAY_DECADES` | `10` | Decades before tail emission |
 | `BASE_REWARD` | `5_400_067_000_000_000` flowers | Initial block reward (5,400.067 ZION) |
+| `GENESIS_HASH` | `1da0251076471744b783105a6723fbd2e899282d6582d59f0de7905cd69f07c7` | Current canonical genesis |
 | `TAIL_REWARD` | `724_784_723_787_776` flowers | Perpetual tail emission (~724.7847 ZION) |
 | `COINBASE_MATURITY` | `100` | Blocks before coinbase spendable |
 | `MINER_PCT` | `89` | Miner share of block reward (%) |
@@ -60,13 +61,14 @@
 
 | Label | Address |
 |-------|---------|
-| `MAINNET_CANONICAL_HUMANITARIAN_SUBSIDY_WALLET` | Configured at runtime via env |
-| `MAINNET_CANONICAL_ISSOBELLA_SUBSIDY_WALLET` | Configured at runtime via env |
-| `MAINNET_CANONICAL_POOL_FEE_SUBSIDY_WALLET` | Configured at runtime via env |
-| `MAINNET_CANONICAL_DEFAULT_MINER_WALLET` | Configured at runtime via env |
-| `MAINNET_CANONICAL_POOL_PAYOUT_WALLET` | Configured at runtime via env |
+| `MAINNET_CANONICAL_HUMANITARIAN_SUBSIDY_WALLET` | `zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4` |
+| `MAINNET_CANONICAL_ISSOBELLA_SUBSIDY_WALLET` | `zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702` |
+| `MAINNET_CANONICAL_POOL_FEE_SUBSIDY_WALLET` | `zion196m4n8x764v7a0s406j40094a8z5j8m6z7nk342` |
+| `MAINNET_CANONICAL_DEFAULT_MINER_WALLET` | `zion1w523a76830x2t5m7f3j023w265e8g5c400a4790` |
+| `MAINNET_CANONICAL_POOL_PAYOUT_WALLET` | `zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604` |
 
-> Operational addresses are loaded from environment variables; public premine addresses are in `PREMINE_ADDRESSES_PUBLIC.txt`.
+> These addresses are hardcoded in `genesis.rs` and derived deterministically from canonical labels.
+> Premine addresses are in `PREMINE_ADDRESSES_PUBLIC.txt`.
 
 ---
 
@@ -80,7 +82,7 @@
 | `MAX_OUTPUT_AMOUNT` | `u64::MAX` | Single output cap |
 | `BURN_ADDRESS` | `zion1burn0000000000000000000000000000000dead` | Fee burn sink |
 | `DAO_ADDRESS` | `zion1dao00000000000000000000000000000treasury` | DAO treasury address |
-| `BRIDGE_VAULT_ADDRESS` | `zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0` | L1 bridge vault (keyless derivation) |
+| `BRIDGE_VAULT_ADDRESS` | `zion106v7v0v0k3d500v0h7l636w0j4f5l4v044mh4a6` | L1 bridge vault (keyless derivation) |
 
 ---
 
