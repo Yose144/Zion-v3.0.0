@@ -145,8 +145,8 @@ export async function POST(req: NextRequest) {
       ? 'Hiran inference server is unreachable. Verify HIRAN_API_URL and ensure the inference container is running.'
       : 'AI model is currently unavailable. Start Hiran Inference locally (llama-server on :8002, LM Studio on :1234, or Ollama on :11434), or set HIRAN_API_URL / NEXT_PUBLIC_HIRAN_API to a remote inference endpoint.';
     return NextResponse.json(
-      { error: message, backends_tried: errors },
-      { status: 502 },
+      { error: message, backends_tried: errors, source: 'fallback' },
+      { status: 503 },
     );
   } catch (err) {
     console.error('[ai-chat] Internal error:', err);

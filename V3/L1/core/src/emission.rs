@@ -248,7 +248,7 @@ mod tests {
         assert_eq!(MINING_EMISSION, TOTAL_SUPPLY - GENESIS_PREMINE);
         assert_eq!(TOTAL_SUPPLY, 144_000_000_000_000_000_000_000_u128);
         assert_eq!(GENESIS_PREMINE, 16_780_000_000_000_000_000_000_u128);
-        assert_eq!(MINING_EMISSION, 127_720_000_000_000_000_000_000_u128);
+        assert_eq!(MINING_EMISSION, 127_220_000_000_000_000_000_000_u128);
         assert_eq!(BLOCKS_PER_DECADE, 5_256_000);
         assert_eq!(BLOCKS_PER_YEAR, 525_600);
     }

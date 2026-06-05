@@ -1,8 +1,9 @@
 export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
+import { coreUrl } from '@/lib/core-endpoints';
 
-const HIRANYAGARBHA_URL = process.env.HIRANYAGARBHA_URL || 'http://127.0.0.1:8001';
+const HIRANYAGARBHA_URL = coreUrl('hiranyagarbha', process.env.HIRANYAGARBHA_URL);
 const TIMEOUT_MS = 10_000;
 
 const CORS_HEADERS = {
@@ -29,14 +30,10 @@ export async function GET() {
       status: res.status,
       headers: { 'Cache-Control': 'no-store', ...CORS_HEADERS },
     });
-  } catch (error: any) {
-    const message = error?.name === 'AbortError'
-      ? 'Backend request timed out'
-      : error?.message || 'Backend unreachable';
-
+  } catch {
     return NextResponse.json(
-      { error: message },
-      { status: 502, headers: { ...CORS_HEADERS } },
+      { jobs: [], source: 'fallback', note: 'Hiranyagarbha unreachable' },
+      { status: 503, headers: { 'Cache-Control': 'no-store', ...CORS_HEADERS } },
     );
   }
 }
@@ -64,14 +61,10 @@ export async function POST(request: Request) {
       status: res.status,
       headers: { 'Cache-Control': 'no-store', ...CORS_HEADERS },
     });
-  } catch (error: any) {
-    const message = error?.name === 'AbortError'
-      ? 'Backend request timed out'
-      : error?.message || 'Backend unreachable';
-
+  } catch {
     return NextResponse.json(
-      { error: message },
-      { status: 502, headers: { ...CORS_HEADERS } },
+      { error: 'Hiranyagarbha offline', source: 'fallback' },
+      { status: 503, headers: { 'Cache-Control': 'no-store', ...CORS_HEADERS } },
     );
   }
 }
