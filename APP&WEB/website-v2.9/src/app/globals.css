@@ -357,7 +357,6 @@
 /* ═══ GPU-accelerated fixed canvases ═══ */
 canvas.fixed {
   will-change: transform;
-  contain: strict;
 }
 
 /* ═══ Mobile scroll lock (for nav overlay) ═══ */
