@@ -1,7 +1,9 @@
 'use client';
 
-import dynamic from 'next/dynamic';
 import { usePathname } from 'next/navigation';
+import BackgroundOrchestrator from './BackgroundOrchestrator';
+import BackgroundToggle from './BackgroundToggle';
+import WarpSpeedBackground from './WarpSpeedBackground';
 
 const BACKGROUND_DISABLED_PREFIXES = [
   '/api-reference',
@@ -14,23 +16,8 @@ const BACKGROUND_DISABLED_PREFIXES = [
   '/network',
 ];
 
-const BackgroundOrchestrator = dynamic(
-  () => import('./BackgroundOrchestrator'),
-  { ssr: false }
-);
-
-const BackgroundToggle = dynamic(
-  () => import('./BackgroundToggle'),
-  { ssr: false }
-);
-
-const WarpSpeedBackground = dynamic(
-  () => import('./WarpSpeedBackground'),
-  { ssr: false }
-);
-
 export default function ClientBackgrounds() {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? '';
   const isHome = pathname === '/';
   const backgroundsDisabled = BACKGROUND_DISABLED_PREFIXES.some((prefix) => pathname.startsWith(prefix));
 
