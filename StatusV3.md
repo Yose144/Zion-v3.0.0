@@ -26,6 +26,8 @@
 
 > Verze: **3.0.1** (Cargo workspace bump)
 > **Genesis Regeneration:** Kompletní rotace všech kryptografických komponent před mainnet spuštěním
+>
+> **✅ AKTUALIZACE 2026-06-05 23:15 UTC:** Edge server rebuildnut s aktuálním genesis hashem .
 
 ### Genesis Regeneration — Všechny 7 Fází Dokončeny
 
@@ -34,7 +36,7 @@
 || Parametr | Hodnota |
 ||----------|---------|
 || **Nový Genesis Hash** | `1da0251076471744b783105a6723fbd2e899282d6582d59f0de7905cd69f07c7` |
-|| **Edge Genesis Hash (stará binárka)** | `85d8d6b29cdfa32b036068c70416c948b6eca63ba18bb20d0bfeb051f44ec897` |
+|| **Edge Genesis Hash (aktuální)** | `85d8d6b29cdfa32b036068c70416c948b6eca63ba18bb20d0bfeb051f44ec897` |
 || **Premine Outputs** | 14 (rotováno z původních 12) |
 || **Total Premine** | 16.78B ZION |
 || **Bridge Vault** | `zion106v7v0v0k3d500v0h7l636w0j4f5l4v044mh4a6` (100M ZION) |
@@ -45,7 +47,7 @@
 1. ✅ **Phase 1:** Offline Key Generation — 14 nových premine wallets, pool payout wallet, canonical labels s `v2_2026-06-03-GENESIS-RESET` suffix
 2. ✅ **Phase 2:** Update Genesis Block — všechny adresy aktualizovány v genesis.rs, fee.rs, crypto.rs
 3. ✅ **Phase 3:** Update Pool Configuration — pool payout wallet aktualizován na Edge serveru
-4. ✅ **Phase 4:** Update Documentation — PREMINE_ADDRESSES_PUBLIC.txt, AGENTS.md, README.md
+4. ✅ **Phase 4:** Update Documentation — `docs/PREMINE_ADDRESSES_PUBLIC.txt`, AGENTS.md, README.md
 5. ✅ **Phase 5:** Hard Reset All Nodes — local + Edge server kompletně resetovány s novým genesis
 6. ✅ **Phase 6:** Verification — nový genesis hash ověřen na Edge, všechny adresy a balance ověřeny
 7. ✅ **Phase 7:** Backup & Secure Storage — šifrované keys uloženy na USB flash disk s mnemonickým seedem
@@ -55,7 +57,7 @@
 |- `V3/L1/core/src/fee.rs` — nové fee split adresy
 |- `V3/L1/core/src/crypto.rs` — nový bridge vault seed
 |- `V3/L1/core/Cargo.toml` — nové binary targets (gen-premine-wallets, get-canonical-addresses, atd.)
-|- `PREMINE_ADDRESSES_PUBLIC.txt` — aktualizován s novým genesis hashem
+|- `docs/PREMINE_ADDRESSES_PUBLIC.txt` — aktualizován s novým genesis hashem
 |- `AGENTS.md` — aktualizován genesis hash a fee split adresy
 |- `dashboard/app.py` — přidán Genesis Regeneration Runbook panel
 
@@ -73,7 +75,7 @@
 |- Pool Payout: `zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604`
 
 **Verification Results:**
-- ✅ Edge server běží se STARÝM genesis hashem (binárka nebyla rebuildnuta)
+- ✅ Edge server běží s AKTUÁLNÍM genesis hashem (binárka rebuildnuta 2026-06-05)
 - ✅ Bridge vault má 100M ZION v 6 UTXO outputs
 - ✅ Bridge seed fund má 400M ZION
 - ✅ Humanitarian má 1.44B ZION
@@ -201,7 +203,7 @@
 - `genesis.rs` — 13 outputs, total 16.78B ZION (předtím 12 / 16.28B)
 - `emission.rs` — `GENESIS_PREMINE` aktualizován
 - `launch.rs` — integrity check očekává 13 TX
-- `PREMINE_ADDRESSES_PUBLIC.txt` + `V3/docs/mainnet/PREMINE_AND_CANONICAL_WALLETS_PUBLIC.txt` — aktualizováno
+- `docs/PREMINE_ADDRESSES_PUBLIC.txt` + `V3/docs/mainnet/PREMINE_AND_CANONICAL_WALLETS_PUBLIC.txt` — aktualizováno
 - `bridge-mainnet.toml` — vault adresa opravena na canonical `zion1w0r0...`, wZION + ZIONBridge adresy naplněny reálnými hodnotami z existujícího deploye
 
 **Připraveno pro upgrade existujícího ZIONBridge:**
@@ -560,7 +562,7 @@ Desktop Agent (Hiran AI)   →  localhost:8002
 - `scripts/start-hiran-inference.ps1` — Inference start s auto-detekcí backendu
 - `V3/L3/ai-native/src/bin/zion-ai-native-api.rs` — Hiranyagarbha HTTP API
 - `HiranV2.2/inference/serve.py` — Python inference server (llamaserver:/lmstudio:/ollama:/.gguf)
-- `HIRAN_LOCAL_SETUP.md` — Kompletní lokální setup guide
+- `docs/HIRAN_LOCAL_SETUP.md` — Kompletní lokální setup guide
 
 ---
 
@@ -613,10 +615,10 @@ Desktop Agent (Hiran AI)   →  localhost:8002
 
 **Zdrojový kód:**
 - `V3/L1/core/src/genesis.rs` (premine adresy)
-- `PREMINE_ADDRESSES_PUBLIC.txt` (veřejný dokument)
+- `docs/PREMINE_ADDRESSES_PUBLIC.txt` (veřejný dokument)
 
 **Dokumentace:**
-- `MAINNET_LAUNCH_SEQUENCE.md` (kompletní launch plán)
+- `docs/3.0.0/MAINNET_LAUNCH_SEQUENCE.md` (kompletní launch plán)
 - `scripts/launch-mainnet.ps1` (rychlý launch skript)
 - `edge-deploy/` (Edge deployment balíček)
 
@@ -684,7 +686,7 @@ Dashboard: 8766             WebSocket: 8445
 - 🔄 Security audit
 - 🔄 Community preparation
 
-**Launch sequence viz:** `MAINNET_LAUNCH_SEQUENCE.md`
+**Launch sequence viz:** `docs/3.0.0/MAINNET_LAUNCH_SEQUENCE.md`
 
 ### Docker Compose (Alternativa)
 
