@@ -386,6 +386,95 @@ pub fn memory_hard_transform_ekam_light_v2(input: &[u8; 64]) -> Hash64 {
     })
 }
 
+/// Ekam Deeksha v2 light SHA3-512 version — matches GPU kernel memory_hard_transform.
+/// Uses SHA3-512 chain for init and mixing (original Deeksha v1/v2 behavior).
+/// Note: GPU kernel has #define PASSES 4 but comment says "2 sequential passes".
+/// Using 4 passes to match #define (GPU actual behavior).
+pub fn memory_hard_transform_ekam_light_v2_sha3(input: &[u8; 64]) -> Hash64 {
+    with_huge_page_scratchpad(SCRATCHPAD_SIZE_V2, |pad| {
+        init_scratchpad_sha3(input, pad);
+        sequential_passes_sha3(pad, 4); // 4 passes per GPU kernel #define
+        random_read_mix(input, pad, RANDOM_READS_V2) // 256 random reads
+    })
+}
+
+/// SHA3-512 scratchpad init (matches GPU kernel init_scratchpad).
+fn init_scratchpad_sha3(seed: &[u8; 64], pad: &mut [u8]) {
+    let blocks = pad.len() / BLOCK_SIZE;
+    let mut state = *seed;
+
+    for blk in 0..blocks {
+        let mut input = [0u8; 72]; // state(64) + counter(8)
+        input[..64].copy_from_slice(&state);
+        input[64..72].copy_from_slice(&(blk as u64).to_le_bytes());
+
+        let out = sha3_fast::sha3_512_bytes(&input);
+        let off = blk * BLOCK_SIZE;
+        pad[off..off + BLOCK_SIZE].copy_from_slice(&out.data);
+        state = out.data;
+    }
+}
+
+/// SHA3-512 sequential passes (matches GPU kernel sequential_passes).
+fn sequential_passes_sha3(pad: &mut [u8], passes: usize) {
+    let blocks = pad.len() / BLOCK_SIZE;
+
+    for pass in 0..passes {
+        let forward = pass % 2 == 0;
+
+        if forward {
+            for i in 0..blocks {
+                mix_block_sha3(pad, i, pass as u64, true);
+            }
+        } else {
+            for i in (0..blocks).rev() {
+                mix_block_sha3(pad, i, pass as u64, false);
+            }
+        }
+    }
+}
+
+/// SHA3-512 mix block (matches GPU kernel mix_block).
+fn mix_block_sha3(pad: &mut [u8], index: usize, pass: u64, forward: bool) {
+    let blocks = pad.len() / BLOCK_SIZE;
+
+    let cur_off = index * BLOCK_SIZE;
+    let prev_index = if forward {
+        if index == 0 {
+            blocks - 1
+        } else {
+            index - 1
+        }
+    } else if index + 1 == blocks {
+        0
+    } else {
+        index + 1
+    };
+    let prev_off = prev_index * BLOCK_SIZE;
+
+    // Random block index (same computation as GPU kernel)
+    let mut idx_bytes = [0u8; 8];
+    idx_bytes.copy_from_slice(&pad[cur_off..cur_off + 8]);
+    let rand_index = ((u64::from_le_bytes(idx_bytes) ^ pass ^ (index as u64)) as usize) % blocks;
+    let rand_off = rand_index * BLOCK_SIZE;
+
+    // SHA3-512(current || prev || random || pass_le || index_le)
+    let mut cur_arr = [0u8; BLOCK_SIZE];
+    cur_arr.copy_from_slice(&pad[cur_off..cur_off + BLOCK_SIZE]);
+    let mut prev_arr = [0u8; BLOCK_SIZE];
+    prev_arr.copy_from_slice(&pad[prev_off..prev_off + BLOCK_SIZE]);
+    let mut rand_arr = [0u8; BLOCK_SIZE];
+    rand_arr.copy_from_slice(&pad[rand_off..rand_off + BLOCK_SIZE]);
+    let mixed = sha3_fast::sha3_512_64_64_64_8_8(
+        &cur_arr, &prev_arr, &rand_arr,
+        &pass.to_le_bytes(),
+        &(index as u64).to_le_bytes(),
+    );
+
+    // XOR result into current block
+    xor_block_in_place(&mut pad[cur_off..cur_off + BLOCK_SIZE], &mixed.data);
+}
+
 // ============================================================================
 // PUBLIC API — CHv4.2 Merkabah Dual-Spin Transform (Phase X fork-gated)
 // ============================================================================

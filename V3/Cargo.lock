@@ -4769,6 +4769,7 @@ name = "zion-miner"
 version = "3.0.1"
 dependencies = [
  "anyhow",
+ "bincode",
  "blake3",
  "cudarc",
  "metal",
