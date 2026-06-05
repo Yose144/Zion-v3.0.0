@@ -205,13 +205,6 @@ export default function TePikoOraPage() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      {/* Ambient background */}
-      <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 rounded-full blur-[120px] bg-cyan-500/6" />
-        <div className="absolute bottom-1/3 right-1/4 w-80 h-80 rounded-full blur-[100px] bg-teal-500/5" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full blur-[160px] bg-cyan-400/3" />
-      </div>
-
       <div className="relative z-10 mx-auto max-w-5xl px-4 py-12 md:px-8">
 
         {/* Back nav */}
@@ -231,7 +224,7 @@ export default function TePikoOraPage() {
           <span className="text-gray-700">|</span>
           <Link
             href="/terranova"
-            className="inline-flex items-center gap-2 text-sm text-gray-300 hover:text-cyan-400 transition-colors"
+            className="inline-flex items-center gap-2 text-sm text-gray-300 hover:text-white transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Terra Nova</span>
@@ -245,41 +238,37 @@ export default function TePikoOraPage() {
           transition={{ duration: 0.6 }}
           className="mb-16"
         >
-          <div className="relative rounded-3xl border border-cyan-500/20 bg-black/40 p-6 md:p-10 overflow-hidden backdrop-blur-sm">
-            <div className="absolute inset-0 bg-gradient-to-br from-cyan-900/25 via-teal-900/12 to-transparent" />
-            <div className="absolute -top-20 -right-20 w-56 h-56 rounded-full blur-[100px] bg-cyan-500/15" />
-            <div className="absolute -bottom-16 -left-16 w-48 h-48 rounded-full blur-[80px] bg-teal-500/10" />
-
+          <div className="relative zion-panel rounded-3xl md:rounded-[32px] p-6 md:p-10 overflow-hidden border border-white/10 bg-black/60 backdrop-blur-xl">
             <div className="relative z-10 flex flex-col md:flex-row gap-8 items-start">
               {/* Ocean symbol */}
-              <div className="shrink-0 w-20 h-20 rounded-3xl border border-cyan-400/25 bg-cyan-400/8 flex items-center justify-center text-4xl">
+              <div className="shrink-0 w-20 h-20 rounded-3xl border border-white/10 bg-gradient-to-br from-white/10 via-black/50 to-black flex items-center justify-center text-4xl">
                 🌊
               </div>
 
               {/* Text column */}
               <div className="space-y-3 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="inline-flex items-center gap-1 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-[10px] font-semibold tracking-[0.3em] text-cyan-400 uppercase">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-semibold tracking-[0.3em] text-gray-300 uppercase">
                     L5 · Terra Nova Pioneer
                   </span>
-                  <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-[10px] font-semibold tracking-[0.2em] text-amber-400 uppercase">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-zion-gold/30 bg-zion-gold/10 px-3 py-1 text-[10px] font-semibold tracking-[0.2em] text-zion-gold uppercase">
                     📋 {cs ? 'Plánováno 2027+' : 'Planned 2027+'}
                   </span>
                 </div>
 
-                <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white">
+                <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gradient">
                   Te Pīko Ora
                 </h1>
-                <p className="text-lg text-cyan-400 font-medium">
+                <p className="text-lg text-zion-cyan font-medium">
                   {cs ? 'Živý střed · Polynésie · Terra Nova ®' : 'Living Centre · Polynesia · Terra Nova ®'}
                 </p>
 
                 <div className="flex items-center gap-1.5 text-gray-400">
-                  <MapPin className="w-4 h-4 text-cyan-500 shrink-0" />
+                  <MapPin className="w-4 h-4 text-gray-300 shrink-0" />
                   <span className="text-sm">Raiatea · Francouzská Polynésie</span>
                 </div>
 
-                <blockquote className="mt-4 pl-4 border-l-2 border-cyan-500/40 text-sm text-gray-400 italic leading-relaxed max-w-lg">
+                <blockquote className="mt-4 pl-4 border-l-2 border-white/10 text-sm text-gray-400 italic leading-relaxed max-w-lg">
                   {cs
                     ? '"Iorana. Zde je písek, zde je moře, zde je skála. Zde končí mapa. A zde začíná pravda."'
                     : '"Iorana. Here is the sand, here is the sea, here is the rock. Here the map ends. And here truth begins."'}
@@ -289,8 +278,8 @@ export default function TePikoOraPage() {
                   {SIGNALS.map((signal) => {
                     const Icon = signal.icon;
                     return (
-                      <div key={signal.labelCs} className="rounded-2xl border border-cyan-400/12 bg-cyan-400/6 px-3 py-3 backdrop-blur-sm">
-                        <div className="flex items-center gap-2 text-cyan-200">
+                      <div key={signal.labelCs} className="rounded-2xl border border-white/10 bg-black/60 px-3 py-3 backdrop-blur-sm">
+                        <div className="flex items-center gap-2 text-zion-gold">
                           <Icon className="h-4 w-4" />
                           <span className="text-sm font-semibold">{signal.value}</span>
                         </div>
@@ -313,13 +302,10 @@ export default function TePikoOraPage() {
           transition={{ delay: 0.15, duration: 0.6 }}
           className="mb-16"
         >
-          <div className="zion-panel rounded-3xl p-6 md:p-8 border border-cyan-500/15 relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-cyan-900/20 via-teal-900/10 to-transparent" />
-            <div className="absolute -top-16 -right-16 w-40 h-40 rounded-full blur-[80px] bg-cyan-500/12" />
-
+          <div className="zion-panel rounded-3xl p-6 md:p-8 border border-white/10 relative overflow-hidden">
             <div className="relative z-10 grid md:grid-cols-3 gap-6">
               <div className="md:col-span-2 space-y-3">
-                <h3 className="text-lg font-bold text-cyan-400">
+                <h3 className="text-lg font-bold text-gray-300">
                   {cs ? 'Francouzská Polynésie — Koruna Pacifiku' : 'French Polynesia — Crown of the Pacific'}
                 </h3>
                 <p className="text-gray-400 text-sm leading-relaxed">
@@ -340,8 +326,8 @@ export default function TePikoOraPage() {
                   { label: cs ? 'Oceán' : 'Ocean', val: '4M km²' },
                   { label: cs ? 'Kultura' : 'Culture', val: cs ? 'Polynésie' : 'Polynesia' },
                 ].map((s) => (
-                  <div key={s.label} className="text-center p-3 rounded-xl bg-cyan-500/5 border border-cyan-500/10">
-                    <p className="text-cyan-400 font-bold text-xs">{s.val}</p>
+                  <div key={s.label} className="text-center p-3 rounded-xl bg-black/60 border border-white/10">
+                    <p className="text-gray-300 font-bold text-xs">{s.val}</p>
                     <p className="text-gray-600 text-[10px]">{s.label}</p>
                   </div>
                 ))}
@@ -369,8 +355,8 @@ export default function TePikoOraPage() {
           <div className="rounded-2xl border border-white/10 overflow-hidden">
             <div className="grid grid-cols-3 text-center text-[10px] uppercase tracking-[0.3em] font-semibold bg-white/5 border-b border-white/10">
               <div className="p-3 text-gray-500">{cs ? 'Polynésie' : 'Polynesia'}</div>
-              <div className="p-3 text-cyan-400 border-l border-white/10">{cs ? 'Princip' : 'Principle'}</div>
-              <div className="p-3 text-amber-400 border-l border-white/10">ZION</div>
+              <div className="p-3 text-gray-300 border-l border-white/10">{cs ? 'Princip' : 'Principle'}</div>
+              <div className="p-3 text-gray-300 border-l border-white/10">ZION</div>
             </div>
             {[
               {
@@ -395,9 +381,9 @@ export default function TePikoOraPage() {
               },
             ].map((row, i) => (
               <div key={i} className="grid grid-cols-3 text-sm border-b border-white/5 last:border-0">
-                <div className="p-3 text-cyan-300 text-xs">{cs ? row.poly.cs : row.poly.en}</div>
+                <div className="p-3 text-gray-300 text-xs">{cs ? row.poly.cs : row.poly.en}</div>
                 <div className="p-3 text-gray-400 text-xs border-l border-white/5">{cs ? row.principle.cs : row.principle.en}</div>
-                <div className="p-3 text-amber-300 text-xs border-l border-white/5">{cs ? row.zion.cs : row.zion.en}</div>
+                <div className="p-3 text-gray-300 text-xs border-l border-white/5">{cs ? row.zion.cs : row.zion.en}</div>
               </div>
             ))}
           </div>
@@ -429,16 +415,15 @@ export default function TePikoOraPage() {
                   initial={{ opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 + i * 0.07, duration: 0.5 }}
-                  className="relative rounded-2xl border p-5 space-y-3 overflow-hidden group hover:scale-[1.02] transition-transform duration-300"
-                  style={{ borderColor: `rgba(${f.rgb},0.2)`, backgroundColor: `rgba(${f.rgb},0.04)` }}
+                  className="relative rounded-[32px] border border-white/10 bg-black/60 backdrop-blur-xl p-5 space-y-3 overflow-hidden group hover:scale-[1.02] transition-transform duration-300"
                 >
                   <div
                     className="absolute -top-8 -right-8 w-24 h-24 rounded-full blur-[50px] opacity-20 group-hover:opacity-35 transition-opacity duration-500"
-                    style={{ backgroundColor: f.color }}
+                    
                   />
                   <div className="flex items-start justify-between relative z-10 gap-3">
                     <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-black/20">
-                      <Icon className="h-5 w-5" style={{ color: f.color }} />
+                      <Icon className="h-5 w-5 text-zion-gold" />
                     </span>
                     <span
                       className="rounded-full border px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.15em]"
@@ -447,7 +432,7 @@ export default function TePikoOraPage() {
                       {cs ? s.cs : s.en}
                     </span>
                   </div>
-                  <h3 className="font-bold relative z-10" style={{ color: f.color }}>
+                  <h3 className="font-bold text-zion-gold relative z-10">
                     {cs ? f.titleCs : f.titleEn}
                   </h3>
                   <p className="text-gray-400 text-sm leading-relaxed relative z-10">
@@ -486,7 +471,7 @@ export default function TePikoOraPage() {
               <ul className="space-y-2">
                 {RAPA_NUI_LESSONS.map((lesson, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm text-gray-300">
-                    <span className="text-amber-500 shrink-0 mt-0.5 font-bold">{i + 1}.</span>
+                    <span className="text-gray-300 shrink-0 mt-0.5 font-bold">{i + 1}.</span>
                     {cs ? lesson.cs : lesson.en}
                   </li>
                 ))}
@@ -517,7 +502,7 @@ export default function TePikoOraPage() {
           </div>
 
           <div className="relative">
-            <div className="absolute left-6 top-4 bottom-4 w-px bg-gradient-to-b from-cyan-500/40 via-cyan-500/20 to-transparent" />
+            <div className="absolute left-6 top-4 bottom-4 w-px bg-gradient-to-b from-zion-gold/40 via-white/10 to-transparent" />
             <div className="space-y-4 pl-16">
               {PHASES.map((p, i) => (
                 <motion.div
@@ -589,7 +574,7 @@ export default function TePikoOraPage() {
               {ZION_ITEMS.map((item) => (
                 <div
                   key={item.label}
-                  className="flex items-center gap-3 rounded-xl border border-white/5 bg-white/3 p-3"
+                  className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/60 p-3"
                 >
                   <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-cyan-400/12 bg-cyan-400/8">
                     <item.icon className="h-4 w-4 text-cyan-200" />
@@ -618,7 +603,7 @@ export default function TePikoOraPage() {
           className="mb-16"
         >
           <div className="zion-panel rounded-3xl p-6 md:p-8 border border-cyan-500/15 space-y-4">
-            <h3 className="text-lg font-bold text-cyan-400">
+            <h3 className="text-lg font-bold text-gray-300">
               {cs ? 'Otevřené otázky — hledáme Guardians' : 'Open Questions — looking for Guardians'}
             </h3>
             <ul className="space-y-2">
@@ -644,7 +629,7 @@ export default function TePikoOraPage() {
               href="https://discord.gg/eatGYDbd"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl border border-cyan-500/25 bg-cyan-500/10 hover:bg-cyan-500/20 px-4 py-2 text-sm text-cyan-300 transition-all duration-300"
+              className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 px-4 py-2 text-sm text-gray-300 transition-all duration-300"
             >
               <Users className="w-4 h-4" />
               {cs ? 'Připojit se na Discord' : 'Join Discord'}
@@ -677,7 +662,7 @@ export default function TePikoOraPage() {
             <span className="text-gray-700">|</span>
             <Link
               href="/terranova"
-              className="inline-flex items-center gap-2 text-sm text-gray-300 hover:text-cyan-400 transition-colors"
+              className="inline-flex items-center gap-2 text-sm text-gray-300 hover:text-white transition-colors"
             >
               <span>{cs ? 'Terra Nova' : 'Terra Nova'}</span>
               <ArrowRight className="w-4 h-4" />

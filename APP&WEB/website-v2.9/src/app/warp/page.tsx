@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import WarpSpeedBackground from '@/components/WarpSpeedBackground';
 import { useLang } from '@/contexts/LanguageContext';
 import {
   Activity,
@@ -91,8 +92,10 @@ export default function WarpPage() {
   const onboarding = getOnboarding(cs);
 
   return (
-    <div className="pt-28 pb-24 overflow-x-hidden">
-      <div className="zion-container max-w-6xl space-y-16">
+    <>
+      <WarpSpeedBackground starColor={[200, 160, 255]} speed={24} density={500} />
+      <div className="pt-28 pb-24 overflow-x-hidden">
+        <div className="zion-container max-w-6xl space-y-16">
 
         {/* ── Hero ── */}
         <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} className="rounded-3xl md:rounded-[32px] border border-white/10 bg-black/60 p-6 md:p-10 backdrop-blur-xl">
@@ -221,5 +224,5 @@ export default function WarpPage() {
         </motion.section>
       </div>
     </div>
-  );
+  </>);
 }
