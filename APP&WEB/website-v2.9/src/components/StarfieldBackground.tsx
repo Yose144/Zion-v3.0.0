@@ -31,9 +31,6 @@ export default function StarfieldBackground({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    /* Respect reduced-motion preference */
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
     const stars: { x: number; y: number; z: number; size: number }[] = [];
 
     const resize = () => {
@@ -61,7 +58,7 @@ export default function StarfieldBackground({
     const animate = () => {
       if (!ctx || !canvas) return;
 
-      ctx.fillStyle = `rgba(0, 0, 0, ${Math.min(Math.max(trailOpacity, 0.02), 0.3)})`;
+      ctx.fillStyle = `rgba(0, 0, 0, ${Math.min(Math.max(trailOpacity * 0.5, 0.01), 0.15)})`;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       stars.forEach((star) => {
@@ -74,13 +71,13 @@ export default function StarfieldBackground({
 
         const x = (star.x / star.z) * canvas.width + canvas.width / 2;
         const y = (star.y / star.z) * canvas.height + canvas.height / 2;
-        const size = (1 - star.z / canvas.width) * star.size * 3;
+        const size = (1 - star.z / canvas.width) * star.size * 4;
 
         const brightness = 1 - star.z / canvas.width;
-        const alpha = Math.min(1, 0.35 + brightness * 0.65);
+        const alpha = Math.min(1, 0.55 + brightness * 0.45);
         ctx.fillStyle = `rgba(${starColor[0]}, ${starColor[1]}, ${starColor[2]}, ${alpha})`;
         ctx.beginPath();
-        ctx.arc(x, y, Math.max(size, 0.6), 0, Math.PI * 2);
+        ctx.arc(x, y, Math.max(size, 1.0), 0, Math.PI * 2);
         ctx.fill();
       });
 
@@ -106,7 +103,7 @@ export default function StarfieldBackground({
     <canvas
       ref={canvasRef}
       className="fixed inset-0 w-full h-full z-[1]"
-      style={{ background: backgroundGradient, border: '4px solid red' }}
+      style={{ background: backgroundGradient }}
     />
   );
 }
