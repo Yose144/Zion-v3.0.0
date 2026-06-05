@@ -39,7 +39,7 @@
 | Feature | Status |
 |---------|--------|
 | LWMA difficulty adjustment (60-block window, ±25%) | ✅ Active |
-| Genesis premine (16.28B ZION, 12 wallets, on-chain verifiable) | ✅ Active |
+| Genesis premine (16.78B ZION, 14 wallets, on-chain verifiable) | ✅ Active |
 | F1 UTXO input validation | ✅ Active |
 | Security cleanup (git filter-repo, credential rotation) | ✅ Complete |
 
