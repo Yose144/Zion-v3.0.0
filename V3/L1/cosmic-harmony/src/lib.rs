@@ -27,6 +27,7 @@ pub use deeksha::{
     EKAM_FUSION_ROUNDS, EKAM_V2_CANONICAL_TEST_VECTOR_HEX, EKAM_V2_PASSES, EKAM_V2_RANDOM_READS,
     EKAM_V2_SCRATCHPAD_SIZE, TX_HASH_V2_ACTIVATION_HEIGHT,
 };
+pub use scratchpad_ekam::memory_hard_transform_ekam_light_v2_sha3;
 pub use gpu::opencl_kernel::{
     get_deeksha_kernel_source, has_ekam_deeksha_kernel, COSMIC_HARMONY_DEEKSHA_KERNEL,
     EKAM_DEEKSHA_KERNEL_NAME,
