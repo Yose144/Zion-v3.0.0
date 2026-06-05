@@ -34,9 +34,9 @@
 || Parametr | Hodnota |
 ||----------|---------|
 || **Nový Genesis Hash** | `1da0251076471744b783105a6723fbd2e899282d6582d59f0de7905cd69f07c7` |
-|| **Starý Genesis Hash** | `1da0251076471744b783105a6723fbd2e899282d6582d59f0de7905cd69f07c7` |
+|| **Edge Genesis Hash (stará binárka)** | `85d8d6b29cdfa32b036068c70416c948b6eca63ba18bb20d0bfeb051f44ec897` |
 || **Premine Outputs** | 14 (rotováno z původních 12) |
-|| **Total Premine** | 16.28B ZION |
+|| **Total Premine** | 16.78B ZION |
 || **Bridge Vault** | `zion106v7v0v0k3d500v0h7l636w0j4f5l4v044mh4a6` (100M ZION) |
 || **Bridge Seed Fund** | `zion13794g7k3m0f84637l2x0t855h3l258k8p3xp5t3` (400M ZION) |
 || **Pool Payout** | `zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604` |
@@ -73,7 +73,7 @@
 |- Pool Payout: `zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604`
 
 **Verification Results:**
-- ✅ Edge server běží s novým genesis hashem
+- ✅ Edge server běží se STARÝM genesis hashem (binárka nebyla rebuildnuta)
 - ✅ Bridge vault má 100M ZION v 6 UTXO outputs
 - ✅ Bridge seed fund má 400M ZION
 - ✅ Humanitarian má 1.44B ZION
@@ -573,7 +573,7 @@ Desktop Agent (Hiran AI)   →  localhost:8002
 || Komponenta | Stav |
 |---|---|
 | **Fee split adresy (89/5/5/1)** | ✅ **DOKONČENO** - všechny adresy aktualizovány na kanonické |
-| **Genesis premine adresy** | ✅ **DOKONČENO** - 12 výstupů aktualizováno (16.28B ZION) |
+| **Genesis premine adresy** | ✅ **DOKONČENO** - 12 výstupů aktualizováno (16.78B ZION) |
 | **Genesis hash** | ✅ **KONZISTENTNÍ** - `003529805e9b47babb9ac0f26b27b1aad0a1cf3c483181857daf3269f7088923` |
 | **Core server** | ✅ **BĚŽÍ** - Windows 11, height 26+, fee split aktivní |
 | **Edge server** | ✅ **BĚŽÍ** - Hetzner VPS, synchronizováno, fee split aktivní |
@@ -591,7 +591,7 @@ Desktop Agent (Hiran AI)   →  localhost:8002
 | **Issobella (5%)** | `zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702` | ✅ Kanonická |
 | **Pool Fee (1%)** | `zion196m4n8x764v7a0s406j40094a8z5j8m6z7nk342` | ✅ Kanonická |
 
-### Genesis Premine Distribuce (16.28B ZION)
+### Genesis Premine Distribuce (16.78B ZION)
 
 | Kategorie | Počet slotů | Celkem ZION | Lock |
 |-----------|-------------|------------|------|
