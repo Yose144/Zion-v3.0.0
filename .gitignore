@@ -124,6 +124,10 @@ nul
 .env.*
 run/
 
+# Exception: ZION_OS dashboard is part of the codebase, not runtime
+!ZION_OS/ZionOSsmos/dashboard/
+!ZION_OS/ZionOSsmos/dashboard/**
+
 # Python (tools)
 __pycache__/
 *.pyc
