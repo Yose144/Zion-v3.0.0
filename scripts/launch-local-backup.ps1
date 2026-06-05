@@ -58,9 +58,9 @@ Stop-ByPidFile "node1"
 # Connect to Edge primary via Tailscale VPN
 [Environment]::SetEnvironmentVariable('ZION_SEED_PEERS', '100.76.16.108:8333', 'Process')
 # Burn model: 89/5/5, no pool fee wallet
-[Environment]::SetEnvironmentVariable('ZION_MINER_ADDRESS', 'zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3', 'Process')
-[Environment]::SetEnvironmentVariable('ZION_HUMANITARIAN_WALLET', 'zion1m4v5z8z850u480c5c208z274e334369275n5y20', 'Process')
-[Environment]::SetEnvironmentVariable('ZION_ISSOBELLA_WALLET', 'zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702', 'Process')
+[Environment]::SetEnvironmentVariable('ZION_MINER_ADDRESS', 'zion1w523a76830x2t5m7f3j023w265e8g5c400a4790', 'Process')
+[Environment]::SetEnvironmentVariable('ZION_HUMANITARIAN_WALLET', 'zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4', 'Process')
+[Environment]::SetEnvironmentVariable('ZION_ISSOBELLA_WALLET', 'zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702', 'Process')
 
 $p = Start-Process -FilePath $NodeExe -WorkingDirectory $RepoRoot -RedirectStandardOutput "$LogDir\node1.log" -RedirectStandardError "$LogDir\node1.err" -WindowStyle Hidden -PassThru
 $p.Id | Out-File "$PidDir\node1.pid" -Encoding utf8
