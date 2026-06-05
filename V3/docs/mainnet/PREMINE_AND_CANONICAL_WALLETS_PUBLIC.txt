@@ -1,8 +1,8 @@
-ZION V3 — Public premine recipients (genesis height 0) + canonical subsidy / operator zion1
+ZION V3 — Public premine recipients (genesis height 0) + canonical subsidy / operator addresses
 ================================================================================
-Source code: `L1/core/src/genesis.rs`
+Source code: `V3/L1/core/src/genesis.rs`
 
-Genesis premine (14 outputs, 16,780,000,000 ZION total) — unchanged
+Genesis premine (14 outputs, 16,780,000,000 ZION total)
 --------------------------------------------------------------------------------
 Slots are listed in genesis `PREMINE_OUTPUTS`; public copy also in operator guides.
 
@@ -11,24 +11,24 @@ Canonical mainnet subsidy & Docker defaults (NOT extra genesis UTXOs)
 These fund from **block subsidy splits** (89/5/5/1 when enabled) + PPLNS payout signing:
 
   • Humanitarian 5%    = Children Future Fund (same zion1 as premine slot 12 below)
-                         zion1m4v5z8z850u480c5c208z274e334369275n5y20
+                         zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4
 
-  • Issobella 5%       = zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702
+  • Issobella 5%       = zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702
                          label: ZION_V3_MAINNET_CANONICAL_ISSOBELLA_SUBSIDY_RECIPIENT_v1
 
-  • Pool fee 1%        = zion1p2a7a5q0t2z5z545y6m6j5e864n002v4z6w95w5
+  • Pool fee 1%        = zion196m4n8x764v7a0s406j40094a8z5j8m6z7nk342
                          label: ZION_V3_MAINNET_CANONICAL_POOL_FEE_SUBSIDY_RECIPIENT_v1
 
-  • Default miner 89% (compose default) = zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3
+  • Default miner 89% (compose default) = zion1w523a76830x2t5m7f3j023w265e8g5c400a4790
                          label: ZION_V3_MAINNET_CANONICAL_DEFAULT_SOLO_MINER_COINBASE_v1
 
-  • Pool payout signer (PPLNS batch)     = zion1l56685k280p364g686j88644g3j4r375755e8p7
+  • Pool payout signer (PPLNS batch)     = zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604
                          label: ZION_V3_MAINNET_CANONICAL_POOL_PPLNS_PAYOUT_SIGNER_v1
 
-  • Bridge Seed Fund (premine slot 13)   = zion1f6m2j0h0l773j4074324q5r528y475w4j7m9685
+  • Bridge Seed Fund (premine slot 13)   = zion13794g7k3m0f84637l2x0t855h3l258k8p3xp5t3
                          purpose: EVM bridge liquidity / initial bridge seed (400M ZION)
 
-  • Bridge Vault UTXO Seed (premine slot 14) = zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0
+  • Bridge Vault UTXO Seed (premine slot 14) = zion1r565v3k2u8p8t6n494p0n527c0m7a5s4s5ae0x7
                          purpose: UTXO liquidity for bridge unlocks (100M ZION)
 
 Reproducible `ZION_POOL_PAYOUT_SK_HEX` and `.env` block:

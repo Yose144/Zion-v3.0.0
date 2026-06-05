@@ -12,12 +12,12 @@ interface WarpSpeedBackgroundProps {
 }
 
 const DEFAULT_COLOR: RGBColor = [255, 215, 0];
-const DEFAULT_GRADIENT = 'radial-gradient(ellipse at bottom, #0a0f1e 0%, #02030a 100%)';
+const DEFAULT_GRADIENT = 'radial-gradient(ellipse at bottom, #1a1f3e 0%, #050810 100%)';
 
 export default function WarpSpeedBackground({
   starColor = DEFAULT_COLOR,
-  density = 400,
-  speed = 18,
+  density = 500,
+  speed = 20,
   backgroundGradient = DEFAULT_GRADIENT,
 }: WarpSpeedBackgroundProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -85,8 +85,8 @@ export default function WarpSpeedBackground({
         const py = (star.y / star.prevZ) * h + cy;
 
         const depth = 1 - star.z / w;
-        const alpha = Math.min(1, 0.2 + depth * 0.8);
-        const lineWidth = Math.max(0.5, depth * 2.5);
+        const alpha = Math.min(1, 0.4 + depth * 0.6);
+        const lineWidth = Math.max(1, depth * 3.5);
 
         ctx.beginPath();
         ctx.moveTo(px, py);
