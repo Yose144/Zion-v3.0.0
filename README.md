@@ -6,9 +6,9 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**Status:** Mainnet Ready · Core+Edge topology operational · Launch: 31 December 2026
+**Status:** Mainnet Ready · Core+Edge topology operational · Genesis: 2026-06-05 · Launch: 31 December 2026
 
-[StatusV3.md](StatusV3.md) · [ROOT_INDEX.md](ROOT_INDEX.md) · [MAINNET_LAUNCH_SEQUENCE.md](MAINNET_LAUNCH_SEQUENCE.md) · [AGENTS.md](AGENTS.md)
+[StatusV3.md](StatusV3.md) · [ROOT_INDEX.md](ROOT_INDEX.md) · [AGENTS.md](AGENTS.md) · [docs/GENESIS_REGENERATION_RUNBOOK.md](docs/GENESIS_REGENERATION_RUNBOOK.md)
 
 ---
 
@@ -29,12 +29,22 @@ ZION is a decentralized **Layer 1 blockchain** built from scratch in **Rust**, r
 | **Block Time** | 60 seconds |
 | **Mining Horizon** | **100+ years** + perpetual tail emission |
 | **Consensus** | Proof of Work — Deeksha canonical (`cosmic_harmony`) |
-| **Transaction Model** | UTXO with Ed25519 signatures |
+| **Transaction Model** | Hybrid: UTXO + Account Model |
 | **Storage** | LMDB |
 | **DAA** | LWMA (60-block window, ±25% per block) |
 | **Fee Policy** | 100% burn (deflationary) |
 | **Architecture** | **6-Layer** |
+| **Genesis Hash** | `1da0251076471744b783105a6723fbd2e899282d6582d59f0de7905cd69f07c7` |
 | **Presale** | None — Fair Launch only |
+
+### Canonical Subsidy Addresses (Deterministic, 89/5/5/1)
+
+| Recipient | Address | Share |
+|-----------|---------|-------|
+| Miner | `zion1w523a76830x2t5m7f3j023w265e8g5c400a4790` | 89% |
+| Humanitarian | `zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4` | 5% |
+| Issobella | `zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702` | 5% |
+| Pool Fee | `zion196m4n8x764v7a0s406j40094a8z5j8m6z7nk342` | 1% (burned) |
 
 ### Block Reward Distribution
 
@@ -198,10 +208,10 @@ Public RPC: 8443
 | [MAINNET_LAUNCH_SEQUENCE.md](MAINNET_LAUNCH_SEQUENCE.md) | Launch plan |
 | [V3/README.md](V3/README.md) | V3 architecture details |
 | [V3/ROADMAP.md](V3/ROADMAP.md) | V3 roadmap |
+| [docs/GENESIS_REGENERATION_RUNBOOK.md](docs/GENESIS_REGENERATION_RUNBOOK.md) | Genesis key rotation procedures |
+| [docs/HIRAN_LOCAL_SETUP.md](docs/HIRAN_LOCAL_SETUP.md) | AI inference setup |
 | [V3/docker/DOCKER.md](V3/docker/DOCKER.md) | Docker deployment guide |
 | [V3/docker/HARDENING.md](V3/docker/HARDENING.md) | Production hardening |
-| [dashboard/README.md](dashboard/README.md) | Python web dashboard guide |
-| [APP&WEB/desktop-dashboard/README.md](APP&WEB/desktop-dashboard/README.md) | Tauri desktop dashboard guide |
 
 ---
 
@@ -211,5 +221,5 @@ MIT — see [LICENSE](LICENSE).
 
 ---
 
-*Last updated: 2026-06-03*
-*Repository: `Yose144/2.9.6` · Branch: `main` · Version: v3.0.0*
+*Last updated: 2026-06-05 · Genesis Hash: `1da02510...cd69f07c7`*
+*Repository: `Yose144/Zion-v3.0.0` · Branch: `main` · Version: v3.0.1*
