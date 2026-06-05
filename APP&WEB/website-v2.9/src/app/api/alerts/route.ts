@@ -1,8 +1,9 @@
 export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
+import { coreUrl } from '@/lib/core-endpoints';
 
-const DASHBOARD_URL = process.env.DASHBOARD_URL || 'http://127.0.0.1:8766';
+const DASHBOARD_URL = coreUrl('dashboard', process.env.DASHBOARD_URL);
 const TIMEOUT_MS = 8_000;
 
 const CORS_HEADERS = {
@@ -29,14 +30,11 @@ export async function GET() {
       status: res.status,
       headers: { 'Cache-Control': 'no-store', ...CORS_HEADERS },
     });
-  } catch (error: any) {
-    const message = error?.name === 'AbortError'
-      ? 'Dashboard request timed out'
-      : error?.message || 'Dashboard unreachable';
-
+  } catch {
+    // Fallback: empty alerts — downstream dashboards handle empty state
     return NextResponse.json(
-      { error: message },
-      { status: 502, headers: { ...CORS_HEADERS } },
+      { alerts: [], source: 'fallback', note: 'Core dashboard offline' },
+      { headers: { 'Cache-Control': 'no-store', ...CORS_HEADERS } },
     );
   }
 }
