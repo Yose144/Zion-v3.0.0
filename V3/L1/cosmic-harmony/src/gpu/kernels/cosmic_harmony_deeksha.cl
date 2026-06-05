@@ -238,11 +238,8 @@ void keccak_finalize(ulong *st, int pos, int rate,
     ((uchar *)st)[pos]      ^= pad_byte;
     ((uchar *)st)[rate - 1] ^= 0x80;
     keccak_f1600(st);
-    /* Word-level squeeze when output is ulong-aligned (32 or 64 bytes) */
-    int ulongs = outlen >> 3;
-    ulong *out64 = (ulong *)out;
-    for (int i = 0; i < ulongs; i++) out64[i] = st[i];
-    for (int i = (ulongs << 3); i < outlen; i++)
+    /* Byte-level squeeze (safe for any alignment) */
+    for (int i = 0; i < outlen; i++)
         out[i] = ((uchar *)st)[i];
 }
 
@@ -1237,7 +1234,7 @@ void ekam_deeksha_mine(
     golden_matrix(buf_b, buf_a);
 
     /* Step 4: Memory-Hard(buf_a) → buf_b  (buf_a preserved as seed) */
-    ekam_memory_hard_transform(buf_a, pad, buf_b);
+    memory_hard_transform(buf_a, pad, buf_b);
 
     /* Step 5: NPU Mix(buf_b) → buf_a */
     npu_mix_packed(buf_b, buf_a, npu_weights, npu_biases, npu_scales, npu_meta);
@@ -1360,7 +1357,7 @@ void ekam_deeksha_mine_s4(
     golden_matrix(buf_b, buf_a);
 
     /* Step 4: Memory-Hard(buf_a) → buf_b */
-    ekam_memory_hard_transform(buf_a, pad, buf_b);
+    memory_hard_transform(buf_a, pad, buf_b);
 
     /* Output s4 result for this work item */
     __global uchar *slot = s4_out + (ulong)tid * 64;

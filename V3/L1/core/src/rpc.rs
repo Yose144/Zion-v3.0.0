@@ -583,24 +583,21 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
                     .lock()
                     .map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
 
-                // Get balance using existing logic (similar to getBalance)
-                let balance_flowers: u128 = if looks_like_utxo_address(address) {
-                    rt.utxo_balance(address)
-                } else {
-                    // Account model balance
-                    let mut account_balance: i128 = 0;
-                    for block in rt.accepted_blocks() {
-                        for tx in &block.transactions {
-                            if tx.to == address {
-                                account_balance += tx.amount_zion as i128;
-                            }
-                            if tx.from == address {
-                                account_balance -= (tx.amount_zion + tx.fee_zion as u128) as i128;
-                            }
+                // Get balance: UTXO + account-model for all addresses
+                let utxo_balance = rt.utxo_balance(address);
+                let mut account_balance: i128 = 0;
+                for block in rt.accepted_blocks() {
+                    for tx in &block.transactions {
+                        if tx.to == address {
+                            account_balance += tx.amount_zion as i128;
+                        }
+                        if tx.from == address {
+                            account_balance -= (tx.amount_zion + tx.fee_zion as u128) as i128;
                         }
                     }
-                    account_balance.max(0) as u128
-                };
+                }
+                let account_balance = account_balance.max(0) as u128;
+                let balance_flowers = utxo_balance + account_balance;
 
                 // Count transactions and find first/last seen
                 let mut tx_count = 0;
