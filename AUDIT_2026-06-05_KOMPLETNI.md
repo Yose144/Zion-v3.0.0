@@ -311,18 +311,35 @@ Všechny kritické komponenty jsou nyní konsistentní:
 ### Lokální node (Windows 11)
 - **State:** Smazán (V3/data/zion-node-state.db, peers.json)
 - **Build:** cargo build --release OK, genesis hash = 1da02510... (kanonický)
-- **Status:** Spuštěn, těží lokálně (56 bloků)
-- **P2P sync:** Selhává připojení k Edge (100.76.16.108:8333) — pravděpodobně Tailscale/firewall
-- **Tip hash:** 00086e53... (odlišný od Edge, protože lokální node těží sám)
+- **Status:** Spuštěn, synchronizuje s Edge (75 bloků)
+- **P2P sync:** FUNKČNÍ — lokální node synchronizuje s Edge (100.76.16.108:8333)
+- **Tip hash:** 0000e9d1... (SHODA s Edge)
 
-### Poznámka k P2P synchronizaci
-Lokální node a Edge server používají stejný genesis hash (1da02510...), ale lokální 
-node se nemůže připojit k Edge přes Tailscale P2P. RPC připojení (8443) funguje, 
-ale P2P port (8333) má problémy. Lokální node tedy těží lokálně a vytváří vlastní 
-chain. Pro plnou synchronizaci by bylo potřeba vyřešit P2P konektivitu (firewall, 
-Tailscale ACL, nebo použití veřejné IP).
+### Poznámka k P2P synchronizaci — FUNKČNÍ
+**2026-06-05 23:50 UTC:** Po zabití všech visících node.exe procesů a cleanup portu 8333
+se lokální node úspěšně připojil k Edge serveru přes Tailscale P2P.
+
+**Ověření synchronizace:**
+| Parametr | Edge server | Lokální node | Shoda |
+|----------|-------------|--------------|-------|
+| Chain height | 75 | 75 | ✅ |
+| Tip hash | 0000e9d1... | 0000e9d1... | ✅ |
+| Accepted blocks | 76 | 76 | ✅ |
+| Consensus | cosmic_harmony_ekam_deeksha_v2 | cosmic_harmony_ekam_deeksha_v2 | ✅ |
+
+**Logy lokálního nodu potvrzují:**
+```
+outbound_sync peer=100.76.16.108:8333 remote_height=73 our_height=71
+discovery_connect_ok peer=100.76.16.108:8333
+relay_block height=74 ... targets=1
+relay_ok peer=100.76.16.108:8333
+```
+
+**Kořenový problém:** Předchozí node.exe proces držel port 8333 (Windows), což bránilo
+novému nodu se bindovat. Po zabití všech node procesů a smazání state DB
+synchronizace funguje.
 
 ### Závěr
 - ✅ Lokální node resetnut a rebuildnut s kanonickým genesis
 - ✅ Edge server běží se stejným kanonickým genesis
-- ⚠️ P2P synchronizace mezi lokálním a Edge vyžaduje síťovou konfiguraci
+- ✅ P2P synchronizace mezi lokálním a Edge funguje (Tip hash shoda)
