@@ -28,6 +28,7 @@ authors = ["Yose144"]
 
 [workspace.dependencies]
 anyhow = "1"
+bincode = "1"
 cc = "1.0"
 blake3 = "1"
 ed25519-dalek = { version = "2", features = ["rand_core"] }
