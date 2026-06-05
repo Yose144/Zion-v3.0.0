@@ -363,6 +363,46 @@ ZION_ISSOBELLA_WALLET=zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702
 
 ---
 
+## 12. Post-Audit Follow-up (2026-06-05 23:15 UTC)
+
+### Akce provedené po hlavním auditu
+
+| Akce | Stav | Detail |
+|------|------|--------|
+| **Backup složka vyčištěna** | ✅ Hotovo | Staré `backup_pre-rotate-auto_*.zip` (27 ks, obsahovaly prázdný/nevalidní DB stav) přesunuty do `backups/archive/` |
+| **Kanonická DB záloha vytvořena** | ✅ Hotovo | `backups/zion-node-state.db.height119-20260605-230928` (280 KB, aktuální live stav) |
+| **Pool stress test** | ✅ Hotovo | Spuštěny 3 test-minery (test-1, test-2, test-3) — pool přijal, active sessions vzrostly z 1 na 10 |
+| **Dokumentace synchronizována** | ✅ Hotovo | Všechny odkazy na přesunuté soubory opraveny |
+
+### Pool stav po stress testu
+
+| Parametr | Původní hodnota (audit) | Aktuální hodnota |
+|----------|------------------------|------------------|
+| Active sessions | 1 | 10 |
+| Accepted shares | 306 | 839+ |
+| Blocks found | 90 | 111+ |
+| Accept rate | 100% | 100% |
+
+### Dokumentační opravy
+
+| Soubor | Problém | Oprava |
+|--------|---------|--------|
+| `V3/docs/mainnet/PREMINE_AND_CANONICAL_WALLETS_PUBLIC.txt` | Obsahoval staré v1 placeholder adresy | Aktualizováno na kanonické adresy z `genesis.rs` |
+| `ROOT_INDEX.md` | Odkazoval na root cesty `Genesis.md`, `zion.toml`, `PREMINE_ADDRESSES_PUBLIC.txt`; uváděl neexistující `logs/`, `run/`, `dashboard/` | Cesty opraveny na `docs/...` / `config/...`; neexistující adresáře odstraněny |
+| `AGENTS.md` | Zastaralý stav — "height 46", "46 blocks found" | Aktualizováno na "height ~119", "111+ blocks found" |
+| `StatusV3.md` | Odkazy bez cest na přesunuté soubory | Všechny odkazy doplněny o správné relativní cesty |
+
+### Otevřené problémy (stále aktivní)
+
+| Problém | Priorita | Status |
+|---------|----------|--------|
+| Edge server běží se starou binárkou (jiný genesis hash) | 🔴 P0 | **NEREŠENO** — vyžaduje rozhodnutí uživatele (redeploy vs. zachovat starý genesis) |
+| Auto-backup skript ukládá prázdný stav (height=0) | 🟡 P1 | Workaround: ruční záloha před restartem |
+| `sha3_debug` build selhává (chybí `hex` crate) | 🟡 P1 | Nekritické — ladící binárka, hlavní build funguje |
+| 9 testů selhává kvůli změnám supply/seed peers | 🟡 P1 | Nekritické pro mainnet — vyžaduje update test fixture |
+
+---
+
 ## 11. Závěr
 
 **CELKOVÝ STAV MAINNETU:** 🟡 **PŘIPRAVEN S VÝHRADOU**

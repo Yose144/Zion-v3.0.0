@@ -446,12 +446,12 @@ If pool stops accepting connections:
 
 **System Status:**
 - ✅ Genesis Regeneration: Complete (2026-06-05 final reset)
-- ✅ Node: Running (height 46, synchronized)
-- ✅ Pool: Running (fee split 89/5/5/1, 46 blocks found)
+- ✅ Node: Running (height ~119, synchronized with Edge)
+- ✅ Pool: Running (fee split 89/5/5/1, 111+ blocks found)
 - ✅ Miner: Running (~523 H/s local, external vega-rig active)
 - ✅ Edge Server: Operational (100.76.16.108 / 77.42.71.94)
 - ✅ Pool Metrics: Running on port 8455
-- ✅ Local Node: Synchronized with Edge (height 46)
+- ✅ Local Node: Synchronized with Edge (height ~119)
 - ✅ Genesis Hash: `1da0251076471744b783105a6723fbd2e899282d6582d59f0de7905cd69f07c7`
 
 **Known Issues:**
