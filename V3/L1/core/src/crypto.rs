@@ -167,7 +167,7 @@ pub fn derive_keyless_address(seed: &str) -> String {
 }
 
 /// The canonical seed string used to derive the ZION bridge vault address.
-pub const BRIDGE_VAULT_SEED: &str = "ZION Bridge Vault V3 Mainnet";
+pub const BRIDGE_VAULT_SEED: &str = "ZION Bridge Vault V3 Mainnet v2_2026-06-03-GENESIS-RESET";
 
 /// Derive the canonical bridge vault address.
 pub fn bridge_vault_address() -> String {
