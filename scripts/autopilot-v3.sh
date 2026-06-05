@@ -110,9 +110,9 @@ phase_preflight() {
   fi
 
   # Check canonical env vars set
-  local canon_miner="zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3"
-  local canon_humanitarian="zion1m4v5z8z850u480c5c208z274e334369275n5y20"
-  local canon_issobella="zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702"
+  local canon_miner="zion1w523a76830x2t5m7f3j023w265e8g5c400a4790"
+  local canon_humanitarian="zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4"
+  local canon_issobella="zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702"
 
   if [[ "${ZION_MINER_ADDRESS:-}" != "$canon_miner" ]]; then
     warn "ZION_MINER_ADDRESS not set to canonical (${canon_miner})"

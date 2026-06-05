@@ -16,7 +16,7 @@ function Get-EnvOrDefault($name, $default) {
 [Environment]::SetEnvironmentVariable('ZION_MINER_THREADS',     (Get-EnvOrDefault 'ZION_MINER_THREADS'     '4'),                   'Process')
 [Environment]::SetEnvironmentVariable('ZION_WORKER_NAME',       (Get-EnvOrDefault 'ZION_WORKER_NAME'       'worker1'),             'Process')
 [Environment]::SetEnvironmentVariable('ZION_MINER_ID',          (Get-EnvOrDefault 'ZION_MINER_ID'          'w11-cpu-miner-01'),    'Process')
-[Environment]::SetEnvironmentVariable('ZION_PAYOUT_ADDRESS',      (Get-EnvOrDefault 'ZION_PAYOUT_ADDRESS'      'zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3'), 'Process')
+[Environment]::SetEnvironmentVariable('ZION_PAYOUT_ADDRESS',      (Get-EnvOrDefault 'ZION_PAYOUT_ADDRESS'      'zion1w523a76830x2t5m7f3j023w265e8g5c400a4790'), 'Process')
 [Environment]::SetEnvironmentVariable('ZION_GPU_BACKEND',       (Get-EnvOrDefault 'ZION_GPU_BACKEND'       'cpu'),                 'Process')
 # CPU only — GPU backend forced to 'cpu' so miner skips GPU init
 
