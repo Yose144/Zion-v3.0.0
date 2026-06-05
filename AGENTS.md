@@ -332,7 +332,7 @@ The Edge server runs as the canonical primary node + pool. It must survive reboo
 
 **Current Genesis Hash (post-regeneration 2026-06-03):**
 ```
-3817e38aa63fe743cf71eb14e79efdc30f5dd5670075556d8c4dd457f6aa5ef3
+1da0251076471744b783105a6723fbd2e899282d6582d59f0de7905cd69f07c7
 ```
 
 **Premine Distribution (16.28B total):**
