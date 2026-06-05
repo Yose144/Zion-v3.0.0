@@ -12,7 +12,6 @@ const BACKGROUND_DISABLED_PREFIXES = [
   '/explorer',
   '/monitoring',
   '/network',
-  '/warp',
 ];
 
 const BackgroundOrchestrator = dynamic(
@@ -25,10 +24,19 @@ const BackgroundToggle = dynamic(
   { ssr: false }
 );
 
+const WarpSpeedBackground = dynamic(
+  () => import('./WarpSpeedBackground'),
+  { ssr: false }
+);
+
 export default function ClientBackgrounds() {
   const pathname = usePathname();
   const isHome = pathname === '/';
   const backgroundsDisabled = BACKGROUND_DISABLED_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+
+  if (pathname === '/warp') {
+    return <WarpSpeedBackground starColor={[200, 160, 255]} speed={24} density={500} />;
+  }
 
   if (backgroundsDisabled) {
     return null;
