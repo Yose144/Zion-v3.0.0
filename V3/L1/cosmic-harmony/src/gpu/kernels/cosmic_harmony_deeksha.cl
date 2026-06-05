@@ -680,7 +680,7 @@ void b3_xof_fill_global(B3ChunkOut co, __global uchar *buf, uint buf_len) {
     uint ob = 0, written = 0;
     while (written < buf_len) {
         uint st[16];
-        b3_compress(co.input_cv, co.block_words, (ulong)ob,
+        b3_compress(co.input_cv, co.block_words, 0UL, // counter=0 for root compression
                     co.block_len, co.flags | BLAKE3_ROOT, st);
         uint to_write = min(64u, buf_len - written);
         /* Word-level write: 16 uint writes instead of 64 byte writes */
@@ -701,7 +701,7 @@ void b3_xof_fill_private(B3ChunkOut co, uchar *buf, uint buf_len) {
     uint ob = 0, written = 0;
     while (written < buf_len) {
         uint st[16];
-        b3_compress(co.input_cv, co.block_words, (ulong)ob,
+        b3_compress(co.input_cv, co.block_words, 0UL, // counter=0 for root compression
                     co.block_len, co.flags | BLAKE3_ROOT, st);
         uint to_write = min(64u, buf_len - written);
         /* Word-level copy */
@@ -1296,7 +1296,7 @@ __kernel void ekam_deeksha_debug(
     golden_matrix(s2, s3);
 
     uchar s4[64];
-    ekam_memory_hard_transform(s3, pad, s4);
+    memory_hard_transform(s3, pad, s4);
 
     uchar s5[64];
     npu_mix_packed(s4, s5, npu_weights, npu_biases, npu_scales, npu_meta);

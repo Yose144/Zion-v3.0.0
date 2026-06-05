@@ -303,6 +303,41 @@ fn test_full_pipeline_cpu() {
     println!("  epoch(0)    = {}", epoch0);
 }
 
+fn test_s4_memhard_exact() {
+    println!("=== Test: s4_memhard exact match (self_test input) ===\n");
+
+    // Exact same input as in gpu_backend.rs self_test
+    use zion_cosmic_harmony::algorithms_opt::{golden_matrix_opt, keccak256_opt, sha3_512_opt};
+    use zion_cosmic_harmony::algorithms_npu::epoch_from_height;
+    use zion_cosmic_harmony::scratchpad_ekam::memory_hard_transform_ekam_light_v2;
+
+    let header = zion_core::MiningHeader {
+        version: 3,
+        previous_hash: [0xAA; 32],
+        merkle_root: [0xBB; 32],
+        timestamp: 1_762_000_200,
+        difficulty_bits: 0x1f00ffff,
+    };
+
+    let header_bytes = bincode::serialize(&header).unwrap();
+    let test_nonce = 42u64;
+    let test_height = 0u64;
+
+    let mut input = [0u8; 88];
+    input[..80].copy_from_slice(&header_bytes);
+    input[80..88].copy_from_slice(&test_nonce.to_le_bytes());
+
+    let cpu_s1 = keccak256_opt(&input);
+    let cpu_s2 = sha3_512_opt(&cpu_s1.data);
+    let cpu_s3 = golden_matrix_opt(&cpu_s2.data);
+    let cpu_s4 = memory_hard_transform_ekam_light_v2(&cpu_s3.data);
+
+    println!("s1_keccak256: {:02x?}", &cpu_s1.data[..16]);
+    println!("s2_sha3_512:  {:02x?}", &cpu_s2.data[..16]);
+    println!("s3_golden:    {:02x?}", &cpu_s3.data[..16]);
+    println!("s4_memhard:   {:02x?}", &cpu_s4.data[..16]);
+}
+
 fn main() {
     println!("╔══════════════════════════════════════════════════╗");
     println!("║    Blake3 GPU ↔ CPU Verification Test            ║");
@@ -312,4 +347,5 @@ fn main() {
     test_mix_block_blake3();
     test_keccak256();
     test_full_pipeline_cpu();
+    test_s4_memhard_exact();
 }
