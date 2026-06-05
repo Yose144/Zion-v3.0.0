@@ -43,9 +43,9 @@ export ZION_NODE_STATE_PATH="$REPO_ROOT/V3/data/zion-node-state.db"
 # Connect to Edge primary via Tailscale VPN
 export ZION_SEED_PEERS='100.76.16.108:8333'
 # Burn model: 89/5/5/0 — canonical fee split addresses (must match Edge)
-export ZION_MINER_ADDRESS='zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3'
-export ZION_HUMANITARIAN_WALLET='zion1m4v5z8z850u480c5c208z274e334369275n5y20'
-export ZION_ISSOBELLA_WALLET='zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702'
+export ZION_MINER_ADDRESS='zion1w523a76830x2t5m7f3j023w265e8g5c400a4790'
+export ZION_HUMANITARIAN_WALLET='zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4'
+export ZION_ISSOBELLA_WALLET='zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702'
 
 mkdir -p "$REPO_ROOT/V3/data"
 
