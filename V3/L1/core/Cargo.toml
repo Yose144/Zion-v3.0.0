@@ -24,6 +24,22 @@ path = "src/bin/gen-keys.rs"
 name = "core-util"
 path = "src/bin/core-util.rs"
 
+[[bin]]
+name = "gen-premine-wallets"
+path = "src/bin/gen-premine-wallets.rs"
+
+[[bin]]
+name = "get-bridge-vault-address"
+path = "src/bin/get-bridge-vault-address.rs"
+
+[[bin]]
+name = "get-canonical-addresses"
+path = "src/bin/get-canonical-addresses.rs"
+
+[[bin]]
+name = "get-genesis-hash"
+path = "src/bin/get-genesis-hash.rs"
+
 [dependencies]
 anyhow.workspace = true
 blake3.workspace = true
