@@ -785,7 +785,7 @@ pub mod opencl_deeksha {
             use zion_cosmic_harmony::algorithms_opt::{
                 cosmic_fusion_opt_rounds, golden_matrix_opt, keccak256_opt, sha3_512_opt,
             };
-            use zion_cosmic_harmony::scratchpad_ekam::memory_hard_transform_ekam_light_v2;
+            use zion_cosmic_harmony::scratchpad_ekam::memory_hard_transform_ekam_light_v2_sha3;
 
             let mut input = [0u8; 88];
             input[..80].copy_from_slice(&header_bytes);
@@ -794,7 +794,7 @@ pub mod opencl_deeksha {
             let cpu_s1 = keccak256_opt(&input);
             let cpu_s2 = sha3_512_opt(&cpu_s1.data);
             let cpu_s3 = golden_matrix_opt(&cpu_s2.data);
-            let cpu_s4 = memory_hard_transform_ekam_light_v2(&cpu_s3.data);
+            let cpu_s4 = memory_hard_transform_ekam_light_v2_sha3(&cpu_s3.data);
             let epoch = epoch_from_height(test_height);
             let cpu_s5 = npu_mixing_step_epoch(&cpu_s4.data, epoch);
             let cpu_hash = cosmic_fusion_opt_rounds(&cpu_s5, 8);
@@ -856,7 +856,7 @@ pub mod opencl_deeksha {
             use zion_cosmic_harmony::algorithms_opt::{
                 cosmic_fusion_opt_rounds, golden_matrix_opt, keccak256_opt, sha3_512_opt,
             };
-            use zion_cosmic_harmony::scratchpad_ekam::memory_hard_transform_ekam_light_v2;
+            use zion_cosmic_harmony::scratchpad_ekam::memory_hard_transform_ekam_light_v2_sha3;
 
             println!("=== GPU EPOCH SELF-TEST epoch={} ===", epoch);
 
@@ -909,7 +909,7 @@ pub mod opencl_deeksha {
             let cpu_s1 = keccak256_opt(&input);
             let cpu_s2 = sha3_512_opt(&cpu_s1.data);
             let cpu_s3 = golden_matrix_opt(&cpu_s2.data);
-            let cpu_s4 = memory_hard_transform_ekam_light_v2(&cpu_s3.data);
+            let cpu_s4 = memory_hard_transform_ekam_light_v2_sha3(&cpu_s3.data);
             let cpu_s5 = npu_mixing_step_epoch(&cpu_s4.data, epoch);
             let cpu_hash = cosmic_fusion_opt_rounds(&cpu_s5, 8);
 

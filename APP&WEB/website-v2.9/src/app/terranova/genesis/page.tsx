@@ -136,13 +136,6 @@ export default function ZahradaGenesisPage() {
 
   return (
     <div className="pt-28 md:pt-28 pb-24 overflow-x-hidden">
-      {/* Ambient atmosphere */}
-      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-        <div className="absolute -left-40 top-1/4 h-[600px] w-[600px] rounded-full blur-[240px] bg-emerald-500/8" />
-        <div className="absolute -right-40 top-2/3 h-[500px] w-[500px] rounded-full blur-[200px] bg-teal-500/6" />
-        <div className="absolute bottom-0 left-1/3 h-[400px] w-[400px] rounded-full blur-[200px] bg-emerald-400/5" />
-      </div>
-
       <div className="relative z-10 zion-container max-w-5xl">
 
         {/* Back nav */}
@@ -168,47 +161,33 @@ export default function ZahradaGenesisPage() {
           transition={{ duration: 0.7 }}
           className="mb-20 relative"
         >
-          {/* Hero glow */}
-          <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-[400px] h-[300px] rounded-full blur-[120px] bg-emerald-500/12 pointer-events-none" />
-
-          <div className="relative zion-panel rounded-3xl md:rounded-4xl p-8 md:p-12 overflow-hidden border border-emerald-500/20">
-            {/* BG gradient */}
-            <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/30 via-teal-900/10 to-transparent" />
-            <motion.div
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-y-0 -left-1/3 w-1/2 bg-gradient-to-r from-transparent via-white/10 to-transparent"
-              animate={{ x: ['0%', '220%'] }}
-              transition={{ duration: 7, repeat: Infinity, repeatDelay: 2.5, ease: 'easeInOut' }}
-            />
-            <div className="absolute -top-24 -right-24 w-64 h-64 rounded-full blur-[100px] bg-emerald-500/15" />
-            <div className="absolute -bottom-16 -left-16 w-48 h-48 rounded-full blur-[80px] bg-teal-500/10" />
-
+          <div className="relative zion-panel rounded-3xl md:rounded-[32px] p-6 md:p-10 overflow-hidden border border-white/10 bg-black/60 backdrop-blur-xl">
             <div className="relative z-10 flex flex-col md:flex-row md:items-center gap-8">
               {/* Icon column */}
               <div className="shrink-0">
-                <div className="relative flex h-28 w-28 items-center justify-center rounded-[32px] border border-emerald-400/25 bg-gradient-to-br from-emerald-400/18 via-emerald-950/50 to-black shadow-[0_0_60px_rgba(16,185,129,0.16)]">
-                  <div className="absolute inset-3 rounded-[26px] border border-emerald-300/15" />
-                  <div className="absolute h-20 w-20 rounded-full bg-emerald-400/12 blur-2xl" />
-                  <Leaf className="relative z-10 h-10 w-10 text-emerald-300" />
-                  <Sprout className="absolute bottom-5 right-5 h-4 w-4 text-teal-300" />
+                <div className="relative flex h-28 w-28 items-center justify-center rounded-[32px] border border-white/10 bg-gradient-to-br from-white/10 via-black/50 to-black shadow-[0_0_60px_rgba(255,215,0,0.12)]">
+                  <div className="absolute inset-3 rounded-[26px] border border-white/5" />
+                  <div className="absolute h-20 w-20 rounded-full bg-zion-gold/10 blur-2xl" />
+                  <Leaf className="relative z-10 h-10 w-10 text-zion-gold" />
+                  <Sprout className="absolute bottom-5 right-5 h-4 w-4 text-zion-cyan" />
                 </div>
               </div>
 
               {/* Text column */}
               <div className="space-y-3 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[10px] font-semibold tracking-[0.3em] text-emerald-400 uppercase">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-semibold tracking-[0.3em] text-gray-300 uppercase">
                     L5 · Terra Nova Pioneer
                   </span>
-                  <span className="inline-flex items-center gap-1 rounded-full border border-yellow-500/30 bg-yellow-500/10 px-3 py-1 text-[10px] font-semibold tracking-[0.2em] text-yellow-400 uppercase">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-zion-gold/30 bg-zion-gold/10 px-3 py-1 text-[10px] font-semibold tracking-[0.2em] text-zion-gold uppercase">
                     🟡 {cs ? 'Aktivní rozvoj' : 'Active Development'}
                   </span>
                 </div>
 
-                <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white">
+                <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gradient">
                   Zahrada Genesis
                 </h1>
-                <p className="text-lg text-emerald-400 font-medium">Base Camp · Terra Nova ®</p>
+                <p className="text-lg text-zion-cyan font-medium">Base Camp · Terra Nova ®</p>
 
                 <div className="flex items-center gap-1.5 text-gray-400">
                   <MapPin className="w-4 h-4 text-emerald-500 shrink-0" />
@@ -225,8 +204,8 @@ export default function ZahradaGenesisPage() {
                   {SIGNALS.map((signal) => {
                     const Icon = signal.icon;
                     return (
-                      <div key={signal.labelCs} className="rounded-2xl border border-emerald-400/12 bg-emerald-400/6 px-3 py-3 backdrop-blur-sm">
-                        <div className="flex items-center gap-2 text-emerald-300">
+                      <div key={signal.labelCs} className="rounded-2xl border border-white/10 bg-black/60 px-3 py-3 backdrop-blur-sm">
+                        <div className="flex items-center gap-2 text-zion-gold">
                           <Icon className="h-4 w-4" />
                           <span className="text-sm font-semibold">{signal.value}</span>
                         </div>
@@ -268,11 +247,9 @@ export default function ZahradaGenesisPage() {
                   initial={{ opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 + i * 0.07, duration: 0.5 }}
-                  className="relative rounded-2xl border p-5 space-y-3 overflow-hidden group hover:scale-[1.02] transition-transform duration-300"
-                  style={{ borderColor: `rgba(${f.rgb},0.2)`, backgroundColor: `rgba(${f.rgb},0.04)` }}
+                  className="relative rounded-[32px] border border-white/10 bg-black/60 backdrop-blur-xl p-5 space-y-3 overflow-hidden group hover:scale-[1.02] transition-transform duration-300"
                 >
-                  <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full blur-[50px] opacity-20 group-hover:opacity-35 transition-opacity duration-500"
-                    style={{ backgroundColor: f.color }} />
+                  <div className="absolute -top-8 -right-8 w-24 h-24 rounded-full blur-[50px] bg-white/5 group-hover:bg-white/10 transition-colors duration-500" />
 
                   <div className="flex items-start justify-between relative z-10 gap-3">
                     <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-black/20">
@@ -285,7 +262,7 @@ export default function ZahradaGenesisPage() {
                       {cs ? s.cs : s.en}
                     </span>
                   </div>
-                  <h3 className="font-bold text-white relative z-10" style={{ color: f.color }}>
+                  <h3 className="font-bold text-zion-gold relative z-10">
                     {cs ? f.titleCs : f.titleEn}
                   </h3>
                   <p className="text-gray-400 text-sm leading-relaxed relative z-10">
@@ -315,7 +292,7 @@ export default function ZahradaGenesisPage() {
 
           <div className="relative">
             {/* Timeline line */}
-            <div className="absolute left-6 top-4 bottom-4 w-px bg-gradient-to-b from-emerald-500/40 via-emerald-500/20 to-transparent" />
+            <div className="absolute left-6 top-4 bottom-4 w-px bg-gradient-to-b from-zion-gold/40 via-white/10 to-transparent" />
 
             <div className="space-y-4 pl-16">
               {PHASES.map((p, i) => (
@@ -330,33 +307,27 @@ export default function ZahradaGenesisPage() {
                   <div
                     className="absolute -left-10 top-3 w-4 h-4 rounded-full border-2 flex items-center justify-center"
                     style={{
-                      borderColor: p.done ? '#34D399' : p.active ? '#F59E0B' : 'rgba(255,255,255,0.15)',
-                      backgroundColor: p.done ? 'rgba(52,211,153,0.2)' : p.active ? 'rgba(245,158,11,0.2)' : 'rgba(0,0,0,0.5)',
+                      borderColor: p.done ? 'rgb(255,215,0)' : p.active ? 'rgb(6,182,212)' : 'rgba(255,255,255,0.15)',
+                      backgroundColor: p.done ? 'rgba(255,215,0,0.2)' : p.active ? 'rgba(6,182,212,0.2)' : 'rgba(0,0,0,0.5)',
                     }}
                   >
-                    {p.done && <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />}
-                    {p.active && <div className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" />}
+                    {p.done && <div className="w-1.5 h-1.5 rounded-full bg-zion-gold" />}
+                    {p.active && <div className="w-1.5 h-1.5 rounded-full bg-zion-cyan animate-pulse" />}
                   </div>
 
-                  <div
-                    className="rounded-2xl border p-4 space-y-1"
-                    style={{
-                      borderColor: p.done ? 'rgba(52,211,153,0.2)' : p.active ? 'rgba(245,158,11,0.2)' : 'rgba(255,255,255,0.06)',
-                      backgroundColor: p.done ? 'rgba(52,211,153,0.04)' : p.active ? 'rgba(245,158,11,0.04)' : 'rgba(0,0,0,0.3)',
-                    }}
-                  >
+                  <div className="rounded-2xl border border-white/10 bg-black/60 backdrop-blur-sm p-4 space-y-1">
                     <div className="flex items-center gap-3">
                       <span
                         className="text-xs font-bold tracking-wider"
-                        style={{ color: p.done ? '#34D399' : p.active ? '#F59E0B' : 'rgba(255,255,255,0.3)' }}
+                        style={{ color: p.done ? 'rgb(255,215,0)' : p.active ? 'rgb(6,182,212)' : 'rgba(255,255,255,0.3)' }}
                       >
                         {cs ? `Fáze ${p.num}` : `Phase ${p.num}`}
                       </span>
                       <span className="text-sm font-semibold text-white/80">
                         {cs ? p.cs : p.en}
                       </span>
-                      {p.done && <span className="text-emerald-400 text-xs">✅</span>}
-                      {p.active && <span className="text-yellow-400 text-xs animate-pulse">⚡</span>}
+                      {p.done && <span className="text-zion-gold text-xs">✅</span>}
+                      {p.active && <span className="text-zion-cyan text-xs animate-pulse">⚡</span>}
                     </div>
                     <p className="text-gray-500 text-xs">{cs ? p.descCs : p.descEn}</p>
                   </div>
@@ -384,13 +355,13 @@ export default function ZahradaGenesisPage() {
 
           <div className="grid md:grid-cols-3 gap-4">
             {/* Energie */}
-            <div className="relative rounded-2xl border border-yellow-500/20 bg-yellow-500/4 p-5 space-y-3 overflow-hidden">
-              <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full blur-[40px] bg-yellow-500/20" />
+            <div className="relative rounded-2xl border border-white/10 bg-black/60 backdrop-blur-sm p-5 space-y-3 overflow-hidden">
+              <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full blur-[40px] bg-zion-gold/10" />
               <div className="flex items-center gap-2 relative z-10">
-                <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-yellow-400/20 bg-yellow-400/10">
-                  <Sun className="h-4 w-4 text-yellow-300" />
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5">
+                  <Sun className="h-4 w-4 text-zion-gold" />
                 </span>
-                <h3 className="font-bold text-yellow-300 text-sm">{cs ? 'Energie' : 'Energy'}</h3>
+                <h3 className="font-bold text-zion-gold text-sm">{cs ? 'Energie' : 'Energy'}</h3>
               </div>
               <div className="space-y-1.5 relative z-10">
                 {[
@@ -410,13 +381,13 @@ export default function ZahradaGenesisPage() {
             </div>
 
             {/* Voda */}
-            <div className="relative rounded-2xl border border-cyan-500/20 bg-cyan-500/4 p-5 space-y-3 overflow-hidden">
-              <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full blur-[40px] bg-cyan-500/20" />
+            <div className="relative rounded-2xl border border-white/10 bg-black/60 backdrop-blur-sm p-5 space-y-3 overflow-hidden">
+              <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full blur-[40px] bg-zion-cyan/10" />
               <div className="flex items-center gap-2 relative z-10">
-                <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-cyan-400/20 bg-cyan-400/10">
-                  <Droplets className="h-4 w-4 text-cyan-300" />
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5">
+                  <Droplets className="h-4 w-4 text-zion-cyan" />
                 </span>
-                <h3 className="font-bold text-cyan-300 text-sm">{cs ? 'Voda' : 'Water'}</h3>
+                <h3 className="font-bold text-zion-cyan text-sm">{cs ? 'Voda' : 'Water'}</h3>
               </div>
               <div className="space-y-1.5 relative z-10">
                 {[
@@ -436,13 +407,13 @@ export default function ZahradaGenesisPage() {
             </div>
 
             {/* Jídlo */}
-            <div className="relative rounded-2xl border border-emerald-500/20 bg-emerald-500/4 p-5 space-y-3 overflow-hidden">
-              <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full blur-[40px] bg-emerald-500/20" />
+            <div className="relative rounded-2xl border border-white/10 bg-black/60 backdrop-blur-sm p-5 space-y-3 overflow-hidden">
+              <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full blur-[40px] bg-emerald-500/10" />
               <div className="flex items-center gap-2 relative z-10">
-                <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-emerald-400/20 bg-emerald-400/10">
-                  <Sprout className="h-4 w-4 text-emerald-300" />
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5">
+                  <Sprout className="h-4 w-4 text-emerald-400" />
                 </span>
-                <h3 className="font-bold text-emerald-300 text-sm">{cs ? 'Zahrada & Jídlo' : 'Garden & Food'}</h3>
+                <h3 className="font-bold text-emerald-400 text-sm">{cs ? 'Zahrada & Jídlo' : 'Garden & Food'}</h3>
               </div>
               <div className="space-y-1.5 relative z-10">
                 {[
@@ -479,11 +450,10 @@ export default function ZahradaGenesisPage() {
             </h2>
           </div>
 
-          <div className="zion-panel rounded-3xl p-6 md:p-8 border border-emerald-500/15 relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/15 to-transparent" />
+          <div className="zion-panel rounded-3xl p-6 md:p-8 border border-white/10 relative overflow-hidden">
             <div className="relative z-10 grid md:grid-cols-2 gap-8">
               <div className="space-y-4">
-                <h3 className="text-emerald-400 font-bold text-sm uppercase tracking-widest">
+                <h3 className="text-zion-cyan font-bold text-sm uppercase tracking-widest">
                   {cs ? 'Model rozhodování' : 'Decision Model'}
                 </h3>
                 <div className="space-y-3">
@@ -501,11 +471,11 @@ export default function ZahradaGenesisPage() {
                 </div>
               </div>
               <div className="space-y-4">
-                <h3 className="text-emerald-400 font-bold text-sm uppercase tracking-widest">
+                <h3 className="text-zion-gold font-bold text-sm uppercase tracking-widest">
                   {cs ? 'Humanitární závazek' : 'Humanitarian Commitment'}
                 </h3>
-                <div className="relative rounded-2xl border border-emerald-400/15 bg-emerald-400/5 p-4">
-                  <div className="text-3xl font-black text-emerald-400 mb-1">10 %</div>
+                <div className="relative rounded-2xl border border-white/10 bg-black/60 p-4">
+                  <div className="text-3xl font-black text-zion-gold mb-1">10 %</div>
                   <p className="text-gray-400 text-sm">
                     {cs
                       ? 'z node odměn ZION sítě jde do humanitárního fondu komunity'
@@ -529,9 +499,7 @@ export default function ZahradaGenesisPage() {
           transition={{ delay: 0.39, duration: 0.6 }}
           className="mb-16"
         >
-          <div className="zion-panel rounded-3xl p-6 md:p-10 border border-white/8 relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/12 via-teal-900/8 to-transparent" />
-            <div className="absolute -bottom-20 -right-20 w-48 h-48 rounded-full blur-[100px] bg-emerald-500/8" />
+          <div className="zion-panel rounded-3xl p-6 md:p-10 border border-white/10 relative overflow-hidden">
             <div className="relative z-10 max-w-2xl space-y-4">
               <p className="text-[10px] uppercase tracking-[0.45em] text-gray-500">
                 {cs ? 'Charakter místa' : 'Character of Place'}
@@ -579,18 +547,15 @@ export default function ZahradaGenesisPage() {
             <h2 className="text-2xl font-bold text-white">ZION Network</h2>
           </div>
 
-          <div className="zion-panel rounded-3xl p-6 md:p-8 border border-emerald-500/15 relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-emerald-900/20 to-transparent" />
-            <div className="absolute -top-16 -right-16 w-40 h-40 rounded-full blur-[80px] bg-emerald-500/10" />
-
+          <div className="zion-panel rounded-3xl p-6 md:p-8 border border-white/10 relative overflow-hidden">
             <div className="relative z-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {ZION_ITEMS.map((item) => (
                 <div
                   key={item.label}
-                  className="flex items-center gap-3 rounded-xl border border-white/5 bg-white/3 p-3"
+                  className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/60 p-3"
                 >
-                  <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-emerald-400/12 bg-emerald-400/8">
-                    <item.icon className="h-4 w-4 text-emerald-300" />
+                  <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
+                    <item.icon className="h-4 w-4 text-zion-gold" />
                   </span>
                   <div>
                     <p className="text-sm font-semibold text-white/80">{item.label}</p>
@@ -615,8 +580,8 @@ export default function ZahradaGenesisPage() {
           transition={{ delay: 0.5, duration: 0.6 }}
           className="mb-16"
         >
-          <div className="zion-panel rounded-3xl p-6 md:p-8 border border-emerald-500/15 space-y-4">
-            <h3 className="text-lg font-bold text-emerald-400">
+          <div className="zion-panel rounded-3xl p-6 md:p-8 border border-white/10 space-y-4">
+            <h3 className="text-lg font-bold text-zion-gold">
               {cs ? 'Zdroje a kontakt' : 'Resources & Contact'}
             </h3>
             <div className="flex flex-wrap gap-3">
@@ -624,7 +589,7 @@ export default function ZahradaGenesisPage() {
                 href="https://www.newearth.cz/V2/camp.html"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-xl border border-emerald-500/25 bg-emerald-500/10 hover:bg-emerald-500/20 px-4 py-2 text-sm text-emerald-300 transition-all duration-300"
+                className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 px-4 py-2 text-sm text-gray-300 transition-all duration-300"
               >
                 <Globe className="w-4 h-4" /> newearth.cz/camp
               </a>
@@ -662,14 +627,14 @@ export default function ZahradaGenesisPage() {
         >
           <Link
             href="/terranova"
-            className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-emerald-400 transition-colors"
+            className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-zion-gold transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             {cs ? 'Zpět na Terra Nova' : 'Back to Terra Nova'}
           </Link>
           <Link
             href="/terranova/dharma-temple"
-            className="inline-flex items-center gap-3 rounded-xl border border-violet-500/25 bg-violet-500/10 hover:bg-violet-500/20 px-4 py-2 text-sm text-violet-300 transition-all duration-300"
+            className="inline-flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 px-4 py-2 text-sm text-gray-300 transition-all duration-300"
           >
             <span>{cs ? 'Dharma Temple' : 'Dharma Temple'}</span>
             <ArrowRight className="w-4 h-4" />

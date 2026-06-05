@@ -12,6 +12,7 @@ const BACKGROUND_DISABLED_PREFIXES = [
   '/explorer',
   '/monitoring',
   '/network',
+  '/warp',
 ];
 
 const BackgroundOrchestrator = dynamic(
