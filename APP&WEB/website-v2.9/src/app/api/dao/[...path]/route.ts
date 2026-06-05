@@ -48,14 +48,15 @@ async function proxyDao(request: Request, path: string[]) {
       status: upstream.status,
       headers: responseHeaders,
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'DAO upstream unavailable',
+        source: 'fallback',
+        note: 'DAO upstream offline',
         upstream: DAO_UPSTREAM_BASE,
       },
-      { status: 502 },
+      { status: 503 },
     );
   }
 }

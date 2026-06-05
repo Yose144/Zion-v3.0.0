@@ -11,25 +11,28 @@
  * the canonical fallback and allow env-var override for local development.
  */
 
-export const CORE_TAILSCALE_IP = '100.74.34.40';
+export const CORE_TAILSCALE_IP = '100.86.102.5';
 
 export const CORE = {
-  /** Hiranyagarbha AI orchestrator (Axum/Rust) */
+  /** Hiranyagarbha AI orchestrator (Axum/Rust) — on Core Tailscale */
   hiranyagarbha: `http://${CORE_TAILSCALE_IP}:8001`,
 
-  /** Hiran v2.2 LLM inference (OpenAI-compatible) */
+  /** Hiran v2.2 LLM inference (OpenAI-compatible) — on Core Tailscale */
   hiranInference: `http://${CORE_TAILSCALE_IP}:8002`,
 
-  /** DAO API (Axum/SQLite) */
+  /** DAO API (Axum/SQLite) — on Core Tailscale */
   dao: `http://${CORE_TAILSCALE_IP}:8081`,
 
-  /** Prometheus metrics scraper */
-  prometheus: `http://${CORE_TAILSCALE_IP}:9090`,
+  /** Prometheus metrics scraper — runs locally on Edge (port 9090) */
+  prometheus: `http://127.0.0.1:9090`,
 
-  /** Bridge relay Prometheus metrics */
+  /** Bridge relay Prometheus metrics — on Core Tailscale */
   bridgeMetrics: `http://${CORE_TAILSCALE_IP}:9102`,
 
-  /** ZION Node RPC (raw TCP JSON-RPC) */
+  /** Dashboard Python Flask — on Core Tailscale */
+  dashboard: `http://${CORE_TAILSCALE_IP}:8766`,
+
+  /** ZION Node RPC (raw TCP JSON-RPC) — on Core Tailscale */
   nodeRpc: `${CORE_TAILSCALE_IP}:8443`,
 
   /** Pool stratum */
