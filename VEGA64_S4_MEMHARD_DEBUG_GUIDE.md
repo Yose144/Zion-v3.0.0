@@ -1,9 +1,9 @@
 # ZION v3 Miner — Vega 64 / GCN s4_memhard GPU-CPU Mismatch
 
-> **Status:** ROOT CAUSE IDENTIFIED & FIXED — Blake3 scratchpad restored in GPU kernel, b3_xof counter bug fixed. All GPUs (GCN + RDNA) now produce correct mainnet hashes.
+> **Status:** Blake3 scratchpad fixed, but GCN compiler bugs in stages 5-6 (NPU/fusion pointer casts) prevent full GPU pipeline. s4_mode (GPU s1-s4 + CPU s5-s6) gives ~15-25% accepted shares.
 > **Date:** 2026-06-06
 > **Target:** SMOS Rig 518837 (ZionRig) — AMD RX Vega 64 (gfx900, GCN 5.0)
-> **Also applies to:** All AMD GCN (gfx6-9) and RDNA (gfx10) GPUs
+> **Also applies to:** All AMD GCN (gfx6-9); RDNA (gfx10) uses full pipeline OK
 > **Pool:** 77.42.71.94:8444 (Edge primary)
 
 ---
@@ -127,13 +127,15 @@ let cpu_s4 = memory_hard_transform_ekam_light_v2(&cpu_s3.data);
 | Build opts | Conservative | Fast-relaxed-math safe |
 
 ### Vega 64 (GCN, gfx900)
-| Metric | Before (gcn_s4_mode workaround) | After (Full GPU pipeline) |
-|--------|----------------------------------|---------------------------|
-| Mode | GPU s1-s4 + CPU NPU/fusion | Full GPU 6 stages |
-| Effective hashrate | ~200 H/s | **TBD — needs retest** |
-| Self-test | FAIL s4 (ignored) | **Expected MATCH** |
+| Metric | Before (Broken SHA3) | After (Blake3 + s4_mode) | After (Full GPU pipeline) |
+|--------|---------------------|-------------------------|---------------------------|
+| Mode | GPU s1-s4 + CPU NPU/fusion | GPU s1-s4 + CPU s5-s6 | Full GPU 6 stages |
+| Self-test | FAIL s4 (ignored) | **MATCH** | **FAIL** stages 5-6 |
+| Accepted shares | 0% | **15-25%** | 0% |
+| Effective hashrate | ~0 H/s | **~50 H/s** | ~0 H/s |
+| Build flags | `-cl-fast-relaxed-math` | `-cl-std=CL1.2` (conservative) | `-cl-std=CL1.2` |
 
-**Note:** Vega 64 still needs retesting with the fixed kernel. The `gcn_s4_mode` workaround may no longer be necessary.
+**Note:** Vega 64 **requires s4_mode** (`ZION_GCN_S4_MODE=1`) for correct mining. Full GPU pipeline (stages 1-6 on GPU) fails due to additional GCN compiler bugs in NPU/fusion stages (pointer casts + 64-bit arithmetic).
 
 ---
 
@@ -205,18 +207,25 @@ Even with the Blake3 fix, GCN cards may still have these issues:
    ZION_OCL_VRAM_PCT=35
    ```
 
+### Why Full GPU Pipeline Fails on GCN
+Even with Blake3 fixed, GCN compiler miscompiles stages 5-6:
+
+1. **Pointer casts** (`ulong *d = (ulong *)uchar_array`) — GCN generates wrong offsets/alignment
+2. **64-bit arithmetic in NPU LayerNorm** (`long sum`, `long var_sum`) — overflow handling differs from CPU
+3. **`fusion_round` pointer casts** — multiple `ulong*` casts in AES key/plaintext setup
+
+**Workaround:** s4_mode routes stages 5-6 to CPU (Rust), which handles 64-bit arithmetic and memory layouts correctly.
+
 ### If s4_memhard Still Fails on Vega 64
 If the fixed kernel still fails self-test on your specific Vega 64:
 
 1. Check driver version: `clinfo | grep "Driver Version"`
-2. Try conservative build flags:
+2. Ensure `ZION_GCN_S4_MODE=1` is set (mandatory for GCN)
+3. Try conservative build flags:
    ```bash
    ZION_OCL_BUILD_OPTS="-cl-std=CL1.2 -cl-mad-enable"
    ```
-3. If still failing, force s4_mode as last resort:
-   ```bash
-   ZION_GCN_S4_MODE=1
-   ```
+4. If still failing, the card may need a newer amdgpu-pro / ROCm driver
 
 ---
 
@@ -252,13 +261,28 @@ If the fixed kernel still fails self-test on your specific Vega 64:
 
 ---
 
-## 10. Timeline of Fixes
+## 10. SMOS Deployment Notes
+
+When deploying to SimpleMining OS rigs:
+
+1. **Binary name:** SMOS expects executable named `miner` inside ZIP root folder
+2. **glibc compatibility:** Build with `cargo zigbuild` for older glibc (2.28 instead of 2.32+)
+3. **GitHub CDN caching:** Use unique ZIP filenames per version (e.g., `zion-sm3031.zip`) to avoid stale cached binaries
+4. **API token:** SMOS API uses `X-AUTH-TOKEN` header, endpoint `api.simplemining.net`
+5. **Group config update:** `PUT /rig-groups/{id}` with `{"minerOptions": "<zip_url> <flags>"}`
+6. **Cache clear:** Execute command `rm -rf /root/miner/custom_* /root/miner/custom_miner.zip` then reload
+
+## 11. Timeline of Fixes
 
 | Date | Commit | Change | Impact |
 |------|--------|--------|--------|
 | 2026-04-11 | `0cb6efba` | Added `gcn_s4_mode` workaround | Vega 64 mines at ~200 H/s |
 | 2026-06-06 | `13922cbd` | RDNA lws=128, remove printf, revert fast-relaxed-math | RX 5600 XT: 3.2 KH/s |
-| 2026-06-06 | `ad19b26d` | **Restore Blake3 scratchpad, fix b3_xof counter** | **RX 5600 XT: 8.44 KH/s, self-test MATCH** |
+| 2026-06-06 | `ad19b26d` | **Restore Blake3 scratchpad, fix b3_xof counter** | RX 5600 XT: 8.44 KH/s |
+| 2026-06-06 | `04bfdbc8` | Route `mine_batch` through `s4_kernel.is_some()` instead of `is_gcn` | Fixes unconditional s4 routing |
+| 2026-06-06 | `1b8f5582` | Conservative OpenCL build flags for GCN (remove fast-relaxed-math) | Vega 64: 0% → 15-25% accepted |
+| 2026-06-06 | `50cec770` | GCN kernel workarounds: `ulong→uint` counter, noinline, remove pointer casts | Blake3 stability on GCN |
+| 2026-06-06 | `ebf87158` | Remove pointer casts in full GPU pipeline `ekam_deeksha_mine` + `cosmic_fusion_ekam` | Testing full pipeline again |
 
 ---
 
