@@ -294,6 +294,9 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         <button onclick="switchTab('charts')" id="tab-charts" class="sidebar-item">📈 Charts</button>
         <button onclick="switchTab('events')" id="tab-events" class="sidebar-item">🧱 Events</button>
         <button onclick="switchTab('metrics')" id="tab-metrics" class="sidebar-item">📊 Metrics</button>
+        <button onclick="switchTab('miner-live')" id="tab-miner-live" class="sidebar-item">⛏️ Miner Live</button>
+        <button onclick="switchTab('settings')" id="tab-settings" class="sidebar-item">⚙️ Settings</button>
+        <button onclick="switchTab('fleet')" id="tab-fleet" class="sidebar-item">🌐 Fleet</button>
         <button onclick="switchTab('logs')" id="tab-logs" class="sidebar-item">📜 Logs</button>
         <button onclick="switchTab('database')" id="tab-database" class="sidebar-item">🗄️ Database</button>
         <button onclick="switchTab('env')" id="tab-env" class="sidebar-item">⚙️ Environment</button>
@@ -2601,6 +2604,159 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
       <h2 class="text-xl font-bold mb-2 flex items-center gap-2"><span class="text-gradient">🧙 Mainnet Launch Wizard</span></h2>
       <p class="text-sm text-gray-400 mb-6">Step-by-step guided launch sequence. Each step shows current status &amp; quick actions.</p>
       <div id="wizard-steps" class="space-y-3"></div>
+    </div>
+  </div>
+
+  <!-- ═════════ TAB: Miner Live ═════════ -->
+  <div id="pane-miner-live" class="hidden space-y-4">
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+        <h2 class="text-xl font-bold flex items-center gap-2"><span class="text-gradient">⛏️ Miner Live Dashboard</span> <span class="text-xs text-gray-500 font-normal">Real-time GPU/CPU mining telemetry</span></h2>
+        <div class="flex gap-2">
+          <button onclick="refreshMinerLive()" class="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded">🔄 Refresh</button>
+          <span id="miner-live-badge" class="text-xs px-2 py-1 rounded bg-gray-700 text-gray-300">Checking…</span>
+        </div>
+      </div>
+      <!-- KPIs -->
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+        <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-[10px] text-gray-500 uppercase mb-1">Hashrate</div><div id="ml-hashrate" class="text-lg font-bold text-zion-gold">—</div><div class="text-[10px] text-gray-400">KH/s</div></div>
+        <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-[10px] text-gray-500 uppercase mb-1">Accepted</div><div id="ml-accepted" class="text-lg font-bold text-emerald-400">—</div><div class="text-[10px] text-gray-400">Shares</div></div>
+        <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-[10px] text-gray-500 uppercase mb-1">Rejected</div><div id="ml-rejected" class="text-lg font-bold text-red-400">—</div><div class="text-[10px] text-gray-400">Shares</div></div>
+        <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-[10px] text-gray-500 uppercase mb-1">Height</div><div id="ml-height" class="text-lg font-bold text-zion-cyan">—</div></div>
+        <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-[10px] text-gray-500 uppercase mb-1">Backend</div><div id="ml-backend" class="text-sm font-bold text-gray-300">—</div></div>
+      </div>
+      <!-- GPU cards -->
+      <div id="ml-gpu-cards" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-4"></div>
+      <!-- Hashrate mini chart -->
+      <div class="zion-panel-soft p-4 mb-4">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-sm font-bold">Hashrate Trend</h3>
+          <span class="text-xs text-gray-500">Last 60 points (5 min)</span>
+        </div>
+        <canvas id="ml-hashrate-chart" height="80"></canvas>
+      </div>
+      <!-- Pool connection -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="zion-panel-soft p-4">
+          <h3 class="text-sm font-bold mb-2">Pool Connection</h3>
+          <div id="ml-pool-info" class="space-y-1 text-xs text-gray-400">Loading…</div>
+        </div>
+        <div class="zion-panel-soft p-4">
+          <h3 class="text-sm font-bold mb-2">Miner Log (last 20 lines)</h3>
+          <div id="ml-log-tail" class="log-tail text-[10px] text-gray-400 bg-black/30 rounded p-2 h-32 overflow-y-auto font-mono">Loading…</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═════════ TAB: Settings ═════════ -->
+  <div id="pane-settings" class="hidden space-y-4">
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl font-bold flex items-center gap-2"><span class="text-gradient">⚙️ Settings</span> <span class="text-xs text-gray-500 font-normal">Change runtime config without editing files</span></h2>
+      </div>
+      <!-- Mining Settings -->
+      <div class="space-y-4">
+        <div class="zion-panel-soft p-4">
+          <h3 class="text-sm font-bold mb-3">Mining Configuration</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div><label class="text-xs text-gray-400 block mb-1">Pool Address</label><input id="st-pool-addr" type="text" class="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white" value="77.42.71.94:8444"></div>
+            <div><label class="text-xs text-gray-400 block mb-1">Worker Name</label><input id="st-worker" type="text" class="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white" value="worker1"></div>
+            <div><label class="text-xs text-gray-400 block mb-1">GPU Backend</label>
+              <select id="st-backend" class="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white">
+                <option value="cpu">CPU</option><option value="opencl">OpenCL (AMD/NVIDIA)</option><option value="cuda">CUDA (NVIDIA)</option><option value="metal">Metal (Apple Silicon)</option>
+              </select>
+            </div>
+            <div><label class="text-xs text-gray-400 block mb-1">Threads (CPU mode)</label><input id="st-threads" type="number" min="1" max="64" class="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white" value="2"></div>
+            <div><label class="text-xs text-gray-400 block mb-1">Loop Count</label><input id="st-loop-count" type="number" class="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white" value="1000000"></div>
+            <div><label class="text-xs text-gray-400 block mb-1">Work Size (GPU)</label><input id="st-work-size" type="number" class="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white" value="4096"></div>
+          </div>
+          <div class="flex gap-2 mt-3">
+            <button onclick="saveMiningSettings()" class="text-xs bg-emerald-700 hover:bg-emerald-600 text-white px-3 py-1.5 rounded transition">💾 Save Mining Settings</button>
+            <button onclick="applyMiningSettings()" class="text-xs bg-blue-700 hover:bg-blue-600 text-white px-3 py-1.5 rounded transition">🚀 Apply &amp; Restart Miner</button>
+          </div>
+          <div id="st-mining-msg" class="text-xs text-gray-400 mt-2 min-h-4"></div>
+        </div>
+        <!-- Node Settings -->
+        <div class="zion-panel-soft p-4">
+          <h3 class="text-sm font-bold mb-3">Node Configuration</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div><label class="text-xs text-gray-400 block mb-1">Seed Peers</label><input id="st-seed-peers" type="text" class="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white" value="77.42.71.94:8333"></div>
+            <div><label class="text-xs text-gray-400 block mb-1">RPC Bind</label><input id="st-rpc-bind" type="text" class="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white" value="0.0.0.0:8443"></div>
+            <div><label class="text-xs text-gray-400 block mb-1">P2P Bind</label><input id="st-p2p-bind" type="text" class="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white" value="0.0.0.0:8333"></div>
+            <div><label class="text-xs text-gray-400 block mb-1">Node ID</label><input id="st-node-id" type="text" class="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white" value="local-backup-node"></div>
+          </div>
+          <div class="flex gap-2 mt-3">
+            <button onclick="saveNodeSettings()" class="text-xs bg-emerald-700 hover:bg-emerald-600 text-white px-3 py-1.5 rounded transition">💾 Save Node Settings</button>
+            <button onclick="applyNodeSettings()" class="text-xs bg-blue-700 hover:bg-blue-600 text-white px-3 py-1.5 rounded transition">🚀 Apply &amp; Restart Node</button>
+          </div>
+          <div id="st-node-msg" class="text-xs text-gray-400 mt-2 min-h-4"></div>
+        </div>
+        <!-- Topology -->
+        <div class="zion-panel-soft p-4">
+          <h3 class="text-sm font-bold mb-3">Topology</h3>
+          <div class="flex items-center gap-3">
+            <select id="st-topology" class="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white">
+              <option value="edge-primary">Edge-Primary (backup node + miner)</option>
+              <option value="local-dev">Local-Dev (full local stack)</option>
+            </select>
+            <button onclick="saveTopology()" class="text-xs bg-amber-700 hover:bg-amber-600 text-white px-3 py-1.5 rounded transition">💾 Switch Topology</button>
+          </div>
+          <div id="st-topo-msg" class="text-xs text-gray-400 mt-2 min-h-4"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═════════ TAB: Fleet ═════════ -->
+  <div id="pane-fleet" class="hidden space-y-4">
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+        <h2 class="text-xl font-bold flex items-center gap-2"><span class="text-gradient">🌐 Fleet View</span> <span class="text-xs text-gray-500 font-normal">Multi-rig monitoring</span></h2>
+        <div class="flex gap-2">
+          <button onclick="refreshFleet()" class="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded">🔄 Refresh</button>
+          <button onclick="addFleetRig()" class="text-xs bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded">➕ Add Rig</button>
+        </div>
+      </div>
+      <!-- Fleet KPIs -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+        <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-[10px] text-gray-500 uppercase mb-1">Total Rigs</div><div id="fl-total" class="text-lg font-bold text-zion-cyan">—</div></div>
+        <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-[10px] text-gray-500 uppercase mb-1">Online</div><div id="fl-online" class="text-lg font-bold text-emerald-400">—</div></div>
+        <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-[10px] text-gray-500 uppercase mb-1">Total Hashrate</div><div id="fl-hashrate" class="text-lg font-bold text-zion-gold">—</div><div class="text-[10px] text-gray-400">KH/s</div></div>
+        <div class="bg-black/30 rounded-xl p-3 text-center"><div class="text-[10px] text-gray-500 uppercase mb-1">Total GPUs</div><div id="fl-gpus" class="text-lg font-bold text-zion-purple">—</div></div>
+      </div>
+      <!-- Rig table -->
+      <div class="overflow-x-auto">
+        <table class="w-full text-xs">
+          <thead>
+            <tr class="text-gray-400 border-b border-white/10">
+              <th class="text-left py-2 px-2">Rig ID</th>
+              <th class="text-left py-2 px-2">Status</th>
+              <th class="text-left py-2 px-2">Mode</th>
+              <th class="text-left py-2 px-2">Miner</th>
+              <th class="text-right py-2 px-2">Hashrate</th>
+              <th class="text-right py-2 px-2">GPUs</th>
+              <th class="text-right py-2 px-2">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="fleet-table-body">
+            <tr><td colspan="7" class="text-gray-500 text-center py-4">No rigs configured. Add your first rig above.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <!-- Add rig form (hidden by default) -->
+      <div id="fleet-add-form" class="hidden zion-panel-soft p-4 mt-4">
+        <h3 class="text-sm font-bold mb-2">Add New Rig</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <input id="fl-new-id" type="text" placeholder="Rig ID (e.g. rig-garage-01)" class="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white">
+          <input id="fl-new-addr" type="text" placeholder="Agent URL (e.g. http://192.168.1.50:8767)" class="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white">
+          <input id="fl-new-name" type="text" placeholder="Display Name" class="bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-xs text-white">
+        </div>
+        <div class="flex gap-2 mt-2">
+          <button onclick="saveFleetRig()" class="text-xs bg-emerald-700 hover:bg-emerald-600 text-white px-3 py-1.5 rounded transition">💾 Save</button>
+          <button onclick="document.getElementById('fleet-add-form').classList.add('hidden')" class="text-xs bg-gray-700 hover:bg-gray-600 text-white px-3 py-1.5 rounded transition">Cancel</button>
+        </div>
+      </div>
     </div>
   </div>
 
