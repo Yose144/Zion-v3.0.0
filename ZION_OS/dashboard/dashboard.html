@@ -886,6 +886,28 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         <div class="text-gray-400 text-sm">Loading nodes...</div>
       </div>
     </div>
+
+    <!-- Agent-discovered nodes (new nodes on LAN / VPN) -->
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-base font-bold flex items-center gap-2"><span class="text-gradient">🔎 Agent Discovery — New Nodes</span></h2>
+        <button onclick="refreshAgentNodes()" class="text-xs bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded">🔄 Refresh</button>
+      </div>
+      <div id="agent-nodes-container" class="space-y-4">
+        <div class="text-gray-400 text-sm">Run the Desktop Agent to auto-discover new nodes on your network and help them sync with Edge.</div>
+      </div>
+    </div>
+
+    <!-- Node-adoption rewards -->
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-base font-bold flex items-center gap-2"><span class="text-gradient">🏆 Node Adoption Rewards</span></h2>
+        <button onclick="refreshAgentRewards()" class="text-xs bg-amber-600 hover:bg-amber-700 text-white px-3 py-1 rounded">🔄 Refresh</button>
+      </div>
+      <div id="agent-rewards-container" class="space-y-4">
+        <div class="text-gray-400 text-sm">Every new node you help connect earns reward points.</div>
+      </div>
+    </div>
   </div>
 
   <!-- ═════════ TAB: Orchestrator ═════════ -->
