@@ -72,6 +72,28 @@ That’s it. You are now running Zion.
 
 ---
 
+## Step 4: Open the interactive control panel (Zion CLI)
+
+Zion also has a **command-line control panel** that works like a video-game menu — you move with your arrow keys.
+
+Double-click this file in the same root folder:
+
+```
+start-zion-cli.bat
+```
+
+It will:
+1. Build the `zion` CLI tool (first time only, ~2–5 minutes)
+2. Open the **interactive menu** where you can:
+   - Check network status
+   - Browse blocks
+   - Manage wallets
+   - Run diagnostics
+
+> **Tip:** If you prefer typing commands instead of arrow keys, close the menu and type `zion --help` inside the same window.
+
+---
+
 ## What should I see?
 
 After running the `.bat` file you will have two new command windows:
