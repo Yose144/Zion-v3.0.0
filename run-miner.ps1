@@ -1,0 +1,12 @@
+$env:ZION_POOL_ADDR='127.0.0.1:8444'
+$env:ZION_LOOP_COUNT='1000000'
+$env:ZION_MINER_THREADS='1'
+$env:ZION_WORKER_NAME='worker1'
+$env:ZION_MINER_ID='w11-amd-gpu-miner-01'
+$env:ZION_PAYOUT_ADDRESS='zion1w523a76830x2t5m7f3j023w265e8g5c400a4790'
+$env:ZION_GPU_BACKEND='opencl'
+$env:ZION_GPU_WORK_SIZE='16384'
+$env:ZION_OCL_WORK_CAP='16384'
+$env:ZION_OCL_VRAM_PCT='35'
+
+.\V3\target\release\zion-miner.exe
