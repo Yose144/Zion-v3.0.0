@@ -537,9 +537,9 @@ void memory_hard_transform(const uchar input[64], __global uchar *pad,
                            uchar output[64])
 {
     init_scratchpad(input, pad);
-    barrier(CLK_GLOBAL_MEM_FENCE);
+    // barrier(CLK_GLOBAL_MEM_FENCE);  // each thread has its own pad — no sync needed
     sequential_passes(pad);
-    barrier(CLK_GLOBAL_MEM_FENCE);
+    // barrier(CLK_GLOBAL_MEM_FENCE);  // each thread has its own pad — no sync needed
     random_read_mix_sha3(input, pad, output);
 
     if (get_global_id(0) == 0) {
