@@ -546,10 +546,10 @@ fn handle_client(
         other => return Err(anyhow!("expected hello from miner, got {other:?}")),
     };
 
-    if algorithm != zion_core::consensus_profile() {
+    if algorithm != config.algorithm {
         return Err(anyhow!(
             "unsupported miner algorithm: expected {}, got {}",
-            zion_core::consensus_profile(),
+            config.algorithm,
             algorithm
         ));
     }
@@ -690,7 +690,7 @@ fn handle_client(
         let share_difficulty = vardiff.current_difficulty;
         let job_message = PoolMessage::Job {
             job_id: job.job_id,
-            algorithm: zion_core::consensus_profile().to_string(),
+            algorithm: config.algorithm.clone(),
             start_nonce: job.start_nonce,
             nonce_count: job.nonce_count,
             target_hex: to_hex(&share_target.bytes),
@@ -742,22 +742,22 @@ fn handle_client(
                     nonce,
                     height: job.height,
                 };
-                let sealed = candidate.seal();
+                let computed_hash = candidate.hash_with_algorithm(&config.algorithm);
                 let submitted_hash = parse_hash_hex(&hash_hex)?;
 
                 // Log hash mismatch but use our own computed hash for validation
                 // (miner-submitted hash is cosmetic; we trust only our own seal).
-                if sealed.hash != submitted_hash {
+                if computed_hash != submitted_hash {
                     println!(
                         "hash_mismatch_info miner={} job={} computed={} submitted={}",
                         worker_name,
                         job_id,
-                        to_hex(&sealed.hash),
+                        to_hex(&computed_hash),
                         hash_hex
                     );
                 }
 
-                if !share_target.allows(&sealed.hash) {
+                if !share_target.allows(&computed_hash) {
                     // Hash does not meet even the (easier) share target → reject.
                     println!(
                         "share_below_target miner={} job={} diff={}",
@@ -830,7 +830,7 @@ fn handle_client(
                         .expect("revenue scheduler lock poisoned")
                         .next_lane_for_group(session_group);
 
-                    let decision = if network_target.allows(&sealed.hash) {
+                    let decision = if network_target.allows(&computed_hash) {
                         // Block found! Submit to the node.
                         println!(
                             "BLOCK_FOUND miner={} height={} nonce={} hash={}",
@@ -871,7 +871,7 @@ fn handle_client(
                             // Actual ZION canonical block revenue.
                             let subsidy = zion_core::emission::block_subsidy(job.height);
                             let pool_fee_pct = zion_core::emission::POOL_FEE_PCT;
-                            let block_hash_hex = hex::encode(sealed.hash);
+                            let block_hash_hex = hex::encode(computed_hash);
                             pool.lock()
                                 .expect("pool lock poisoned")
                                 .runtime()
@@ -892,7 +892,15 @@ fn handle_client(
 
                         ShareDecision {
                             status: node_status,
-                            sealed_block: if block_accepted { Some(sealed) } else { None },
+                            sealed_block: if block_accepted {
+                                Some(zion_core::SealedBlock {
+                                    header: job.header,
+                                    nonce,
+                                    hash: computed_hash,
+                                })
+                            } else {
+                                None
+                            },
                         }
                     } else {
                         // Valid share but not a block — accept for PPLNS only.
@@ -1376,6 +1384,9 @@ struct ServerConfig {
     /// When set, every accepted share is forwarded to the upstream pool
     /// via `ShareRelay` so the Core pool owns the unified PPLNS window.
     upstream_pool_addr: Option<String>,
+    /// Active mining algorithm signalled to miners and used for share validation.
+    /// Default matches the network consensus profile; override with ZION_POOL_ALGORITHM.
+    algorithm: String,
 }
 
 #[derive(Debug)]
@@ -2763,6 +2774,8 @@ impl ServerConfig {
             revenue_proxy_coin: std::env::var("ZION_REVENUE_PROXY_COIN")
                 .unwrap_or_else(|_| "KAS".to_string()),
             upstream_pool_addr: parse_optional_env_string("ZION_UPSTREAM_POOL_ADDR"),
+            algorithm: std::env::var("ZION_POOL_ALGORITHM")
+                .unwrap_or_else(|_| zion_core::consensus_profile().to_string()),
             // WARNING: Fallback values must stay in sync with `zion_core::emission`.
             // If the protocol-level split changes, update here, in pplns.rs,
             // cosmic-harmony/src/revenue.rs, and the whitepapers.
@@ -3101,6 +3114,7 @@ mod tests {
             revenue_proxy_coin: "KAS".to_string(),
             fee_config: FeeConfig::default(),
             upstream_pool_addr: None,
+            algorithm: "cosmic_harmony".to_string(),
         };
         let (pool_addr, pool_handle) = spawn_pool_server(config)?;
 
@@ -3327,6 +3341,7 @@ mod tests {
             revenue_proxy_coin: "KAS".to_string(),
             fee_config: FeeConfig::default(),
             upstream_pool_addr: None,
+            algorithm: "cosmic_harmony".to_string(),
         };
 
         let group = resolve_session_group("user-miner", "rig-01", &config);
@@ -3367,6 +3382,7 @@ mod tests {
             revenue_proxy_coin: "KAS".to_string(),
             fee_config: FeeConfig::default(),
             upstream_pool_addr: None,
+            algorithm: "cosmic_harmony".to_string(),
         };
 
         let group = resolve_session_group("backend-miner-1", "rig-01", &config);
@@ -3407,6 +3423,7 @@ mod tests {
             revenue_proxy_coin: "KAS".to_string(),
             fee_config: FeeConfig::default(),
             upstream_pool_addr: None,
+            algorithm: "cosmic_harmony".to_string(),
         };
 
         let group = resolve_session_group("miner-a", "backend-revenue-1", &config);
@@ -3611,6 +3628,7 @@ mod tests {
             revenue_proxy_coin: "KAS".to_string(),
             fee_config: FeeConfig::default(),
             upstream_pool_addr: None,
+            algorithm: "cosmic_harmony".to_string(),
         };
 
         // Even though miner_id is in backend list, explicit hint wins
