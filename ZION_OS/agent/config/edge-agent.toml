@@ -1,0 +1,31 @@
+# ZION Agent — Edge CPU-only Configuration
+# Place at /root/zion-2.9.6-main/ZION_OS/agent/config/agent.toml
+
+rig_id = "zion-edge-hetzner"
+api_bind = "0.0.0.0:8767"
+autonomous_mode = true
+auto_start_miner = false
+auto_update = "disabled"
+
+[telemetry]
+enabled = false
+endpoint = "https://fleet.zionterranova.com/api/telemetry"
+interval_sec = 30
+
+[miner]
+binary_path = "/root/zion-2.9.6-main/V3/target/release/zion-miner"
+default_pool = "127.0.0.1:8444"
+default_wallet = "zion1w523a76830x2t5m7f3j023w265e8g5c400a4790"
+default_worker = "edge-cpu"
+default_gpu_backend = "cpu"
+extra_args = ["--threads", "2"]
+
+[watchdog]
+enabled = true
+rules_file = "/root/zion-2.9.6-main/ZION_OS/agent/config/watchdog-edge.yaml"
+check_interval_sec = 60
+
+[fleet]
+enabled = false
+dashboard_url = "https://fleet.zionterranova.com"
+poll_interval_sec = 10
