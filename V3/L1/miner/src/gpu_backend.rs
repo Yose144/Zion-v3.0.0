@@ -363,23 +363,12 @@ pub mod opencl_deeksha {
         if !is_amd {
             return String::new();
         }
-        // GCN (gfx6/7/8/9, Vega, Polaris, Fiji): safe integer-only flags
-        let is_gcn = dev.contains("vega")
-            || dev.contains("polaris")
-            || dev.contains("fiji")
-            || dev.contains("ellesmere")
-            || dev.contains("gfx6")
-            || dev.contains("gfx7")
-            || dev.contains("gfx8")
-            || dev.contains("gfx9");
-        if is_gcn {
-            "-cl-std=CL1.2 -cl-mad-enable".to_string()
-        } else {
-            // RDNA (gfx10+, Navi, RX 5000/6000/7000): full optimization
-            "-cl-std=CL1.2 -cl-mad-enable -cl-fast-relaxed-math \
-             -cl-no-signed-zeros -cl-denorms-are-zero"
-                .to_string()
-        }
+        // All AMD GPUs (GCN + RDNA) use conservative integer-only flags.
+        // -cl-fast-relaxed-math causes the AMD compiler to enable aggressive
+        // optimizations that break integer code paths (NPU LayerNorm, GELU,
+        // keccak_f1600) when register pressure is high. This affects RDNA1
+        // (gfx10) as well as GCN (gfx6-9). See GPU_MISMATCH fix 2026-06-06.
+        "-cl-std=CL1.2 -cl-mad-enable".to_string()
     }
 
     /// NPU max intermediate dimension for current topology.
