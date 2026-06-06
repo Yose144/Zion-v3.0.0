@@ -4207,6 +4207,9 @@ fn execute_pool_payout(
 
         let pk_hex = hex::encode(signing_key.verifying_key().as_bytes());
         for (i, payout) in payouts.iter().enumerate() {
+            if payout.address == pool_wallet_addr {
+                continue; // skip self-send; node rejects account-model tx where from == to
+            }
             let nonce = base_nonce + i as u64;
             let net_amount = (payout.amount as u128).saturating_sub(min_tx_fee);
             if net_amount == 0 {
