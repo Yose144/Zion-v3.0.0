@@ -1,0 +1,9 @@
+[package]
+name = "deeksha-debug"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+zion-cosmic-harmony = { path = "../V3/L1/cosmic-harmony" }
+rand = "0.8"
+rayon = "1"
