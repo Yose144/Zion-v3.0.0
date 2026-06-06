@@ -360,8 +360,8 @@ pub mod opencl_deeksha {
     ///
     /// GCN (Vega, Polaris) gets conservative flags only — `-cl-fast-relaxed-math`
     /// causes the AMD compiler to enable aggressive optimizations that can break
-    /// integer code paths (NPU LayerNorm, GELU) when register spills occur.
-    /// RDNA can safely use the full flag set.
+    /// integer code paths (Blake3 scratchpad, NPU LayerNorm, GELU) when register
+    /// spills occur. RDNA can safely use the full flag set.
     fn amd_build_opts(device_name: &str) -> String {
         let dev = device_name.to_ascii_lowercase();
         let is_amd = dev.contains("gfx")
@@ -371,10 +371,18 @@ pub mod opencl_deeksha {
         if !is_amd {
             return String::new();
         }
-        // All AMD GPUs (GCN + RDNA) use aggressive flags.
-        // With non-volatile scratchpad + mem_fence, fast-relaxed-math is safe
-        // on RDNA (gfx10). On GCN it may still break; tested on gfx1010.
-        "-cl-std=CL1.2 -cl-mad-enable -cl-fast-relaxed-math -cl-no-signed-zeros -cl-denorms-are-zero".to_string()
+        // Detect GCN (gfx8, gfx9, Vega, Polaris) vs RDNA (gfx10+)
+        let is_gcn = dev.contains("gfx8") || dev.contains("gfx9")
+            || dev.contains("vega") || dev.contains("polaris")
+            || dev.contains("fiji") || dev.contains("tonga");
+        if is_gcn {
+            // GCN: conservative flags only — disable aggressive FP opts that
+            // miscompile integer code paths (Blake3 ulong arithmetic).
+            "-cl-std=CL1.2".to_string()
+        } else {
+            // RDNA (gfx10+): full aggressive flag set is safe.
+            "-cl-std=CL1.2 -cl-mad-enable -cl-fast-relaxed-math -cl-no-signed-zeros -cl-denorms-are-zero".to_string()
+        }
     }
 
     /// NPU max intermediate dimension for current topology.
