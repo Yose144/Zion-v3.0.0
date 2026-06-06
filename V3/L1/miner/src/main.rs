@@ -2093,7 +2093,7 @@ impl MinerConfig {
                 .and_then(|v| v.parse().ok())
                 .unwrap_or(1 << 18), // 256K default
             algorithm: std::env::var("ZION_MINER_ALGORITHM")
-                .unwrap_or_else(|_| zion_core::consensus_profile().to_string()),
+                .unwrap_or_else(|_| "deeksha_lite_v1".to_string()),
         })
     }
 }
