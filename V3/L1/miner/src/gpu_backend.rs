@@ -400,10 +400,8 @@ pub mod opencl_deeksha {
         }
         let device_name = device_name.to_ascii_lowercase();
 
-        // RDNA (gfx10) benchmarks better with 128 threads; Vega/GCN wave64 with 64.
-        if device_name.contains("gfx10") {
-            128
-        } else if device_name.contains("vega")
+        // Vega / GCN wave64 parts benchmark better with a 64-thread local size.
+        if device_name.contains("vega")
             || device_name.contains("gfx6")
             || device_name.contains("gfx7")
             || device_name.contains("gfx8")
