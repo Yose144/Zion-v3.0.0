@@ -102,8 +102,15 @@ __constant uchar AES_RCON[10] = {
     0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36
 };
 
-/* GCN-safe helpers: never cast __global uchar* to ulong* */
+/* Helper functions for byte-level operations (needed for both GCN and RDNA) */
 static inline ulong ulong_from_bytes(const uchar *p)
+{
+    return ((ulong)p[0])        | ((ulong)p[1] << 8)  |
+           ((ulong)p[2] << 16) | ((ulong)p[3] << 24) |
+           ((ulong)p[4] << 32) | ((ulong)p[5] << 40) |
+           ((ulong)p[6] << 48) | ((ulong)p[7] << 56);
+}
+static inline ulong ulong_from_bytes_global(__global const uchar *p)
 {
     return ((ulong)p[0])        | ((ulong)p[1] << 8)  |
            ((ulong)p[2] << 16) | ((ulong)p[3] << 24) |
@@ -121,6 +128,10 @@ static inline void ulong_to_bytes(ulong v, uchar *p)
 static inline void bytes_to_ulong8(const uchar *p, ulong out[8])
 {
     for (int i = 0; i < 8; i++) out[i] = ulong_from_bytes(p + i * 8);
+}
+static inline void bytes_to_ulong8_global(__global const uchar *p, ulong out[8])
+{
+    for (int i = 0; i < 8; i++) out[i] = ulong_from_bytes_global(p + i * 8);
 }
 
 static inline void ulong8_to_bytes(const ulong in[8], uchar *p)
@@ -382,17 +393,33 @@ void mix_block(__global uchar *pad, uint index, ulong pass, int forward)
     uint prev_off = prev_index * BLOCK_SIZE;
 
     /* Derive random block index from current block's first 8 bytes */
+#ifdef ZION_GCN_WORKAROUNDS
     ulong idx_val = ulong_from_bytes(pad + cur_off);
+#else
+    ulong idx_val = *((__global ulong *)(pad + cur_off));
+#endif
     uint rand_index = (uint)((idx_val ^ pass ^ (ulong)index) % BLOCK_COUNT);
     uint rand_off = rand_index * BLOCK_SIZE;
 
-    /* Snapshot all three blocks to private memory (byte-level, GCN-safe) */
+    /* Snapshot all three blocks to private memory */
+#ifdef ZION_GCN_WORKAROUNDS
+    /* Byte-level copy for GCN (slower but safe) */
     uchar current[64], prev[64], random_blk[64];
     for (int i = 0; i < 64; i++) {
         current[i]    = pad[cur_off  + i];
         prev[i]       = pad[prev_off + i];
         random_blk[i] = pad[rand_off + i];
     }
+#else
+    /* Fast ulong-width copy for RDNA */
+    ulong current64[8], prev64[8], random_blk64[8];
+    __global ulong *pad64 = (__global ulong *)pad;
+    for (int i = 0; i < 8; i++) {
+        current64[i]    = pad64[(cur_off  >> 3) + i];
+        prev64[i]       = pad64[(prev_off >> 3) + i];
+        random_blk64[i] = pad64[(rand_off >> 3) + i];
+    }
+#endif
 
     /* SHA3-512(current || prev || random || pass_le(8) || index_le(8)) */
     uchar pass_bytes[8], index_bytes[8];
@@ -401,18 +428,32 @@ void mix_block(__global uchar *pad, uint index, ulong pass, int forward)
 
     ulong st[25]; int pos = 0;
     for (int i = 0; i < 25; i++) st[i] = 0;
+#ifdef ZION_GCN_WORKAROUNDS
     keccak_absorb(st, &pos, 72, current,     BLOCK_SIZE);
     keccak_absorb(st, &pos, 72, prev,        BLOCK_SIZE);
     keccak_absorb(st, &pos, 72, random_blk,  BLOCK_SIZE);
+#else
+    keccak_absorb(st, &pos, 72, (uchar *)current64,     BLOCK_SIZE);
+    keccak_absorb(st, &pos, 72, (uchar *)prev64,        BLOCK_SIZE);
+    keccak_absorb(st, &pos, 72, (uchar *)random_blk64,  BLOCK_SIZE);
+#endif
     keccak_absorb(st, &pos, 72, pass_bytes,  8);
     keccak_absorb(st, &pos, 72, index_bytes, 8);
 
     uchar mixed[64];
     keccak_finalize(st, pos, 72, 0x06, mixed, 64);
 
-    /* XOR result into current block position (byte-level) */
+    /* XOR result into current block position */
+#ifdef ZION_GCN_WORKAROUNDS
+    /* Byte-level XOR for GCN */
     for (int i = 0; i < 64; i++)
         pad[cur_off + i] ^= mixed[i];
+#else
+    /* Fast ulong-width XOR for RDNA */
+    ulong *mix64 = (ulong *)mixed;
+    for (int i = 0; i < 8; i++)
+        pad64[(cur_off >> 3) + i] ^= mix64[i];
+#endif
 }
 
 /*
@@ -456,7 +497,7 @@ void random_read_mix(const uchar seed[64], __global const uchar *pad,
         uint off = pos * BLOCK_SIZE;
 
         ulong chunk64[8];
-        bytes_to_ulong8(pad + off, chunk64);
+        bytes_to_ulong8_global(pad + off, chunk64);
 
         ulong acc64[8];
         bytes_to_ulong8(acc, acc64);
@@ -516,7 +557,7 @@ void random_read_mix_sha3(const uchar seed[64], __global const uchar *pad,
         uint off = pos * BLOCK_SIZE;
 
         ulong chunk64[8];
-        bytes_to_ulong8(pad + off, chunk64);
+        bytes_to_ulong8_global(pad + off, chunk64);
 
         ulong acc64[8];
         bytes_to_ulong8(acc, acc64);
@@ -622,18 +663,30 @@ void b3_permute(uint msg[16]) {
     msg[12]=m9; msg[13]=m14; msg[14]=m15; msg[15]=m8;
 }
 
+#ifdef ZION_GCN_WORKAROUNDS
 /* GCN workaround: force noinline to prevent miscompilation during inlining */
 __attribute__((noinline))
+#endif
 void b3_compress(const uint cv[8], const uint bw[16],
-                 uint counter, uint block_len, uint flags,
+#ifdef ZION_GCN_WORKAROUNDS
+                 uint counter,
+#else
+                 ulong counter,
+#endif
+                 uint block_len, uint flags,
                  uint output[16])
 {
     uint st[16] = {
         cv[0], cv[1], cv[2], cv[3],
         cv[4], cv[5], cv[6], cv[7],
         BLAKE3_IV[0], BLAKE3_IV[1], BLAKE3_IV[2], BLAKE3_IV[3],
+#ifdef ZION_GCN_WORKAROUNDS
         counter,
         0u,
+#else
+        (uint)(counter & 0xFFFFFFFFu),
+        (uint)(counter >> 32),
+#endif
         block_len,
         flags
     };
@@ -659,9 +712,16 @@ void b3_compress(const uint cv[8], const uint bw[16],
     for (int i = 0; i < 16; i++) output[i] = st[i];
 }
 
+#ifdef ZION_GCN_WORKAROUNDS
 __attribute__((noinline))
+#endif
 void b3_compress_cv(const uint cv[8], const uint bw[16],
-                    uint counter, uint block_len, uint flags,
+#ifdef ZION_GCN_WORKAROUNDS
+                    uint counter,
+#else
+                    ulong counter,
+#endif
+                    uint block_len, uint flags,
                     uint out_cv[8])
 {
     uint full[16];
@@ -722,7 +782,11 @@ B3ChunkOut b3_hash_single_chunk(const uchar *input, uint input_len) {
         /* BLAKE3 counter is the chunk counter, not the block index.
          * These inputs fit into a single chunk, so the counter stays 0.
          */
+#ifdef ZION_GCN_WORKAROUNDS
         b3_compress_cv(cv, bw, 0u, this_len, fl, cv);
+#else
+        b3_compress_cv(cv, bw, 0UL, this_len, fl, cv);
+#endif
         offset += this_len;
     }
     for (int i = 0; i < 8; i++) out.input_cv[i] = BLAKE3_IV[i];
@@ -732,33 +796,70 @@ B3ChunkOut b3_hash_single_chunk(const uchar *input, uint input_len) {
     return out;
 }
 
+#ifdef ZION_GCN_WORKAROUNDS
 /* GCN workaround: avoid __global uint* pointer cast; use byte-level write */
 __attribute__((noinline))
+#endif
 void b3_xof_fill_global(B3ChunkOut co, __global uchar *buf, uint buf_len) {
     uint ob = 0, written = 0;
     while (written < buf_len) {
         uint st[16];
+#ifdef ZION_GCN_WORKAROUNDS
         b3_compress(co.input_cv, co.block_words, ob,
                     co.block_len, co.flags | BLAKE3_ROOT, st);
+#else
+        b3_compress(co.input_cv, co.block_words, (ulong)ob,
+                    co.block_len, co.flags | BLAKE3_ROOT, st);
+#endif
         uint to_write = min(64u, buf_len - written);
+#ifdef ZION_GCN_WORKAROUNDS
+        /* Byte-level write for GCN */
         for (uint i = 0; i < to_write; i++)
             buf[written + i] = (uchar)(st[i >> 2] >> ((i & 3u) * 8));
+#else
+        /* Fast word-level write for RDNA */
+        __global uint *buf32 = (__global uint *)(buf + written);
+        uint words = to_write >> 2;
+        for (uint i = 0; i < words; i++)
+            buf32[i] = st[i];
+        /* Handle trailing bytes */
+        uint done = words << 2;
+        for (uint i = done; i < to_write; i++)
+            buf[written + i] = (uchar)(st[i >> 2] >> ((i & 3u) * 8));
+#endif
         written += to_write;
         ob++;
     }
 }
 
+#ifdef ZION_GCN_WORKAROUNDS
 /* GCN workaround: avoid uint* pointer cast; use byte-level write */
 __attribute__((noinline))
+#endif
 void b3_xof_fill_private(B3ChunkOut co, uchar *buf, uint buf_len) {
     uint ob = 0, written = 0;
     while (written < buf_len) {
         uint st[16];
+#ifdef ZION_GCN_WORKAROUNDS
         b3_compress(co.input_cv, co.block_words, ob,
                     co.block_len, co.flags | BLAKE3_ROOT, st);
+#else
+        b3_compress(co.input_cv, co.block_words, (ulong)ob,
+                    co.block_len, co.flags | BLAKE3_ROOT, st);
+#endif
         uint to_write = min(64u, buf_len - written);
+#ifdef ZION_GCN_WORKAROUNDS
+        /* Byte-level write for GCN */
         for (uint i = 0; i < to_write; i++)
             buf[written + i] = (uchar)(st[i >> 2] >> ((i & 3u) * 8));
+#else
+        /* Fast word-level copy for RDNA */
+        uint full_words = to_write >> 2;
+        uint *dst32 = (uint *)(buf + written);
+        for (uint w = 0; w < full_words; w++) dst32[w] = st[w];
+        for (uint i = (full_words << 2); i < to_write; i++)
+            buf[written + i] = (uchar)(st[i >> 2] >> ((i & 3u) * 8));
+#endif
         written += to_write;
         ob++;
     }
@@ -783,7 +884,9 @@ void ekam_init_scratchpad(const uchar seed[64], __global uchar *pad)
 }
 
 /* Blake3 mix: cur(64)||prev(64)||rand(64)||pass(8)||idx(8) = 208B → 64B XOR */
+#ifdef ZION_GCN_WORKAROUNDS
 __attribute__((noinline))
+#endif
 void ekam_mix_block(__global uchar *pad, uint index, ulong pass, int forward)
 {
     uint prev_index;
@@ -796,7 +899,11 @@ void ekam_mix_block(__global uchar *pad, uint index, ulong pass, int forward)
     uint prev_off = prev_index * BLOCK_SIZE;
 
     /* Read first 8 bytes as ulong for random index derivation */
+#ifdef ZION_GCN_WORKAROUNDS
+    ulong idx_val = ulong_from_bytes(pad + cur_off);
+#else
     ulong idx_val = *((__global const ulong *)(pad + cur_off));
+#endif
     uint rand_index = (uint)((idx_val ^ pass ^ (ulong)index) % BLOCK_COUNT);
     uint rand_off = rand_index * BLOCK_SIZE;
 
@@ -807,15 +914,27 @@ void ekam_mix_block(__global uchar *pad, uint index, ulong pass, int forward)
 
     /* Block 0: cur[0..64], CHUNK_START */
     b3_load_words_global(pad + cur_off, 64, bw);
+#ifdef ZION_GCN_WORKAROUNDS
     b3_compress_cv(cv, bw, 0u, 64, BLAKE3_CHUNK_START, cv);
+#else
+    b3_compress_cv(cv, bw, 0UL, 64, BLAKE3_CHUNK_START, cv);
+#endif
 
     /* Block 1: prev[0..64] */
     b3_load_words_global(pad + prev_off, 64, bw);
+#ifdef ZION_GCN_WORKAROUNDS
     b3_compress_cv(cv, bw, 0u, 64, 0, cv);
+#else
+    b3_compress_cv(cv, bw, 0UL, 64, 0, cv);
+#endif
 
     /* Block 2: rand[0..64] */
     b3_load_words_global(pad + rand_off, 64, bw);
+#ifdef ZION_GCN_WORKAROUNDS
     b3_compress_cv(cv, bw, 0u, 64, 0, cv);
+#else
+    b3_compress_cv(cv, bw, 0UL, 64, 0, cv);
+#endif
 
     /* Block 3: pass(8) || idx(8) = 16 bytes, CHUNK_END */
     for (int i = 0; i < 16; i++) bw[i] = 0;
@@ -833,9 +952,18 @@ void ekam_mix_block(__global uchar *pad, uint index, ulong pass, int forward)
     uchar mixed[64];
     b3_xof_fill_private(co, mixed, 64u);
 
-    /* XOR result into current block — byte-level (GCN-safe) */
+    /* XOR result into current block */
+#ifdef ZION_GCN_WORKAROUNDS
+    /* Byte-level XOR for GCN */
     for (int i = 0; i < 64; i++)
         pad[cur_off + i] ^= mixed[i];
+#else
+    /* Fast ulong-width XOR for RDNA */
+    __global ulong *pad64 = (__global ulong *)pad;
+    ulong *mix64 = (ulong *)mixed;
+    for (int i = 0; i < 8; i++)
+        pad64[(cur_off >> 3) + i] ^= mix64[i];
+#endif
 }
 
 void ekam_sequential_passes(__global uchar *pad)
@@ -853,7 +981,9 @@ void ekam_sequential_passes(__global uchar *pad)
 }
 
 /* Ekam memory-hard transform (light): Blake3 init → passes → Keccak-256 reads */
+#ifdef ZION_GCN_WORKAROUNDS
 __attribute__((noinline))
+#endif
 void ekam_memory_hard_transform(const uchar input[64], __global uchar *pad,
                                 uchar output[64])
 {
@@ -866,7 +996,6 @@ void ekam_memory_hard_transform(const uchar input[64], __global uchar *pad,
 void fusion_round(uchar state[64], uchar round_num);
 
 /* Ekam Cosmic Fusion: 8 rounds (matches EKAM_FUSION_ROUNDS = 8) */
-/* GCN workaround: byte-level copy, no ulong pointer casts */
 void cosmic_fusion_ekam(const uchar in64[64], uchar hash32[32])
 {
     uchar state[64];
@@ -898,15 +1027,23 @@ int gelu_int8(int x)
 
 /* Deterministic integer floor-sqrt via binary search.
  * Matches Rust: ((x as f64).sqrt() as i32) for x in [0, 65536].
- * Not affected by -cl-fast-relaxed-math.
- * GCN workaround: use int instead of long to avoid 64-bit overflow bugs. */
+ * Not affected by -cl-fast-relaxed-math. */
+#ifdef ZION_GCN_WORKAROUNDS
+/* GCN workaround: use int instead of long to avoid 64-bit overflow bugs. */
 int isqrt_floor(int x)
+#else
+int isqrt_floor(long x)
+#endif
 {
     if (x <= 0) return 0;
     int lo = 0, hi = 256, r = 0;
     while (lo <= hi) {
         int mid = (lo + hi) >> 1;
+#ifdef ZION_GCN_WORKAROUNDS
         if (mid * mid <= x) { r = mid; lo = mid + 1; }
+#else
+        if ((long)mid * (long)mid <= x) { r = mid; lo = mid + 1; }
+#endif
         else                { hi = mid - 1; }
     }
     return r;
@@ -953,8 +1090,9 @@ void npu_mix_packed(const uchar in64[64], uchar out64[64],
             nxt[i] = clamp(acc >> 12, -128, 127);
         }
 
-        /* ── LayerNorm ──
-         * GCN workaround: use int instead of long for sum/var_sum.
+        /* ── LayerNorm ── */
+#ifdef ZION_GCN_WORKAROUNDS
+        /* GCN workaround: use int instead of long for sum/var_sum.
          * Max var_sum: (255)^2 * 256 ≈ 16.7M < 2^31. Safe in int. */
         {
             int sum = 0;
@@ -971,6 +1109,24 @@ void npu_mix_packed(const uchar in64[64], uchar out64[64],
                 nxt[i] = clamp((normalized * (int)npu_scales[s_off + i]) >> 8, -128, 127);
             }
         }
+#else
+        /* Fast long arithmetic for RDNA */
+        {
+            long sum = 0;
+            for (uint i = 0; i < out_dim; i++) sum += (long)nxt[i];
+            int mean = (int)(sum / (long)out_dim);
+            long var_sum = 0;
+            for (uint i = 0; i < out_dim; i++) {
+                long d = (long)(nxt[i] - mean);
+                var_sum += d * d;
+            }
+            int std_approx = isqrt_floor(var_sum / (long)out_dim) + 1;
+            for (uint i = 0; i < out_dim; i++) {
+                int normalized = ((nxt[i] - mean) * 128) / std_approx;
+                nxt[i] = clamp((normalized * (int)npu_scales[s_off + i]) >> 8, -128, 127);
+            }
+        }
+#endif
 
         /* ── GELU for all but last layer ── */
         if (L < num_layers - 1) {
@@ -1078,9 +1234,7 @@ void aes128_encrypt(const uchar key[16], uchar block[16])
  */
 void fusion_round(uchar state[64], uchar round_num)
 {
-    /* Keccak-256(state[0..32] || round_byte)
-     * GCN/RDNA: avoid all ulong pointer casts; use byte copies.
-     */
+    /* Keccak-256(state[0..32] || round_byte) */
     uchar hash_input[40];
     for (int i = 0; i < 32; i++) hash_input[i] = state[i];
     hash_input[32] = round_num;

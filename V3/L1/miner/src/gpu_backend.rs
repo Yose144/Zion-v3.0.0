@@ -353,7 +353,9 @@ pub mod opencl_deeksha {
             usize::MAX
         };
 
-        requested.min(max_by_mem).min(env_cap).min(gcn_cap).max(64)
+        // env_cap (ZION_OCL_WORK_CAP) overrides VRAM limit if set
+        let final_cap = if env_cap < usize::MAX { env_cap } else { max_by_mem };
+        requested.min(final_cap).min(gcn_cap).max(64)
     }
 
     /// AMD RDNA / GCN build options for better perf on Radeon GPUs.
@@ -371,18 +373,9 @@ pub mod opencl_deeksha {
         if !is_amd {
             return String::new();
         }
-        // Detect GCN (gfx8, gfx9, Vega, Polaris) vs RDNA (gfx10+)
-        let is_gcn = dev.contains("gfx8") || dev.contains("gfx9")
-            || dev.contains("vega") || dev.contains("polaris")
-            || dev.contains("fiji") || dev.contains("tonga");
-        if is_gcn {
-            // GCN: conservative flags only — disable aggressive FP opts that
-            // miscompile integer code paths (Blake3 ulong arithmetic).
-            "-cl-std=CL1.2".to_string()
-        } else {
-            // RDNA (gfx10+): full aggressive flag set is safe.
-            "-cl-std=CL1.2 -cl-mad-enable -cl-fast-relaxed-math -cl-no-signed-zeros -cl-denorms-are-zero".to_string()
-        }
+        // Use conservative flags for both GCN and RDNA to avoid fusion mismatch
+        // -cl-fast-relaxed-math causes GPU-CPU mismatch in fusion stage on RDNA
+        "-cl-std=CL1.2 -cl-mad-enable".to_string()
     }
 
     /// NPU max intermediate dimension for current topology.
@@ -428,6 +421,19 @@ pub mod opencl_deeksha {
         if !opts.is_empty() {
             opts.push(' ');
         }
+        
+        // Detect GCN for conditional workarounds in kernel
+        // RDNA (gfx10+) should NOT use GCN workarounds
+        let dev = device_name.to_ascii_lowercase();
+        let is_gcn = dev.contains("gfx6") || dev.contains("gfx7") || dev.contains("gfx8") || dev.contains("gfx9")
+            || dev.contains("vega") || dev.contains("polaris")
+            || dev.contains("fiji") || dev.contains("tonga")
+            || dev.contains("ellesmere");
+        
+        if is_gcn {
+            opts.push_str("-DZION_GCN_WORKAROUNDS ");
+        }
+        
         opts.push_str(&format!(
             "-DNPU_MAX_DIM={} -DWGS={}",
             npu_max_dim, local_wgs
@@ -653,15 +659,15 @@ pub mod opencl_deeksha {
                 || dev_lower.contains("gfx8")
                 || dev_lower.contains("gfx9");
 
-            // Canonical Ekam Deeksha: full GPU pipeline (stages 1–6) by default.
-            // ZION_GCN_S4_MODE=1 → GCN fallback: GPU s1–s4, CPU NPU+fusion+target.
-            // ZION_NO_GCN_S4_MODE=1 → always full pipeline (overrides GCN_S4).
+            // Canonical Ekam Deeksha: full GPU pipeline (stages 1–6) by default on non-GCN.
+            // GCN (gfx8/gfx9) default to s4_mode due to compiler bugs in stages 5–6.
+            // ZION_NO_GCN_S4_MODE=1 → force full pipeline on GCN (debug only).
             let env_on = |name: &str| {
                 std::env::var(name).map_or(false, |v| {
                     matches!(v.as_str(), "1" | "true" | "TRUE" | "yes" | "YES")
                 })
             };
-            let force_s4 = is_gcn && env_on("ZION_GCN_S4_MODE") && !env_on("ZION_NO_GCN_S4_MODE");
+            let force_s4 = is_gcn && !env_on("ZION_NO_GCN_S4_MODE");
             let (s4_kernel, s4_out_buf) = if force_s4 {
                 let s4_out = Buffer::<u8>::builder()
                     .queue(pro_que.queue().clone())
