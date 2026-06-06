@@ -1,0 +1,30 @@
+# ZION V3 Miner — SMOS-compatible build
+# Uses Ubuntu 20.04 for glibc 2.31 compatibility
+#
+# Build:  cd V3 && docker build -f docker/Dockerfile.miner-smos -t zion-miner-smos .
+# Extract: docker create --name extract zion-miner-smos && \
+#          docker cp extract:/usr/local/bin/zion-miner ./zion-miner-smos && \
+#          docker rm extract
+
+FROM rust:1.85 AS builder
+WORKDIR /build
+RUN apt-get update && apt-get install -y \
+        cmake g++ make pkg-config libssl-dev \
+        ocl-icd-opencl-dev \
+    && rm -rf /var/lib/apt/lists/*
+COPY . .
+RUN cargo build --release -p zion-miner --bin zion-miner --features gpu-opencl
+
+FROM ubuntu:20.04
+RUN apt-get update && apt-get install -y \
+        ca-certificates libssl1.1 ocl-icd-libopencl1 curl \
+    && rm -rf /var/lib/apt/lists/*
+RUN groupadd -r zion && useradd -r -g zion -d /home/zion -s /sbin/nologin -m zion
+COPY --from=builder /build/target/release/zion-miner /usr/local/bin/zion-miner
+
+ENV ZION_POOL_ADDR=127.0.0.1:8444
+ENV ZION_MINER_THREADS=1
+ENV ZION_GPU_BACKEND=opencl
+
+USER zion
+ENTRYPOINT ["zion-miner"]
