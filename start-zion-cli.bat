@@ -5,12 +5,6 @@ chcp 65001 >nul
 :: ============================================================================
 ::  ZION CLI Launcher — Windows 11
 :: ============================================================================
-::  Spustí interaktivní Zion CLI menu (TUI ovládání šipkami).
-::
-::  Pokud release binarka neexistuje, automaticky ji sestavi.
-::  Po buildu otevre interaktivni menu; pro standardni CLI pouzijte:
-::      V3\target\release\zion.exe --help
-:: ============================================================================
 
 title ZION CLI Launcher
 
@@ -51,15 +45,24 @@ if not exist "%ZION_BIN%" (
     echo [OK] Release binarka zion.exe existuje
 )
 
-:: ── 3. Spusteni interaktivniho menu ────────────────────────────────────
+:: ── 3. Vytvoreni helper bat ────────────────────────────────────────────
+(
+echo @echo off
+echo chcp 65001 ^>nul
+echo title ZION CLI
+echo cd /d "%REPO_ROOT%"
+echo echo [CLI] Spoustim interaktivni menu ...
+echo "%ZION_BIN%" menu
+echo echo.
+echo echo [CLI] Menu ukonceno.
+echo pause
+) > "%REPO_ROOT%\logs\_run_cli.bat"
+
+:: ── 4. Spusteni CLI ────────────────────────────────────────────────────
 echo [START] Spoustim ZION CLI (interaktivni menu)...
 echo         Pro standardni CLI prikazy pouzijte: V3\target\release\zion.exe --help
 echo.
 
-"%ZION_BIN%" menu
+cmd /k "%REPO_ROOT%\logs\_run_cli.bat"
 
-:: Pokud menu skonci, nechame okno otevrene aby uzivatel videl vystup
-echo.
-echo [INFO] ZION CLI byl ukoncen.
-pause
 endlocal
