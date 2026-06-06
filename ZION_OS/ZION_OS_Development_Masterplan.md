@@ -1,6 +1,7 @@
 # ZION OS — Vyvojovy Masterplan
 ## Kompletni orchestracni system pro ZION Mainnet & Mining Ekosystem
-### Verze: 1.0.0 | Datum: 2026-06-05 | Status: PLANOVACI FAZE
+### Verze: 1.0.0 | Datum: 2026-06-05 | Status: ACTIVE DEVELOPMENT
+### Dashboard konsolidace: ✅ HOTOVO | Zion Agent: ✅ BUILD READY | Fleet Dashboard: ✅ SKELETON
 
 ---
 
@@ -75,16 +76,53 @@ ZION OS neni "jen dalsi mining OS". Je to **kompletni operacni system** postaven
 | Komponenta | Cesta | Tech | Status |
 |-----------|-------|------|--------|
 | **Zion OS Base** | `ZION_OS/distro/` | Ubuntu remix + debootstrap | PLAN |
-| **Zion Agent** | `ZION_OS/agent/` | Rust (tokio + axum) | PLAN |
+| **Zion Agent** | `ZION_OS/agent/` | Rust (tokio + axum) | ✅ BUILD READY |
 | **Zion Miner** | `V3/L1/miner/` | Rust (OpenCL/CUDA/Metal) | EXISTUJE |
 | **Zion Node** | `V3/L1/core/` | Rust | EXISTUJE |
 | **Zion Pool** | `V3/L1/pool/` | Rust | EXISTUJE |
-| **Fleet Dashboard** | `ZION_OS/fleet-dashboard/` | React + Rust Axum | PLAN |
+| **Fleet Dashboard** | `ZION_OS/fleet-dashboard/` | React + Rust Axum | ✅ BACKEND + FRONTEND SKELETON |
 | **OC Manager** | `ZION_OS/oc-manager/` | Rust + sysfs/NVML | PLAN |
 | **OTA Service** | `ZION_OS/ota-service/` | Rust + GitHub releases | PLAN |
 | **Watchdog** | `ZION_OS/watchdog/` | Rust + rule engine | PLAN |
 | **Boot System** | `ZION_OS/boot/` | initramfs + overlayfs + flash detect | PLAN |
 | **SMOS Bridge** | `ZION_OS/smos-bridge/` | Python + SMOS API | EXISTUJE (polovina) |
+| **Desktop Dashboard** | `ZION_OS/desktop-dashboard/` | Tauri v2 + React | ✅ PURE FRONTEND REFACTOR |
+| **Python Dashboard** | `ZION_OS/dashboard/` | Flask + vanilla JS | ✅ KANONICKY BACKEND (8766) |
+
+---
+
+### 2.3 Dashboard Konsolidace (Dokonceno 2026-06-05)
+
+Puvodne existovaly 3 dashboardy s duplicitni logikou. Byly konsolidovany:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Tauri Desktop App (React shell)                             │
+│  - System tray, notifikace, hide-on-close                   │
+│  - VŠECHNA data přes HTTP fetch → localhost:8766          │
+│  - Žádný Rust business logic                                │
+│  - Cesta: ZION_OS/desktop-dashboard/                       │
+└────────────────────┬────────────────────────────────────────┘
+                     │ HTTP
+┌────────────────────▼────────────────────────────────────────┐
+│  Python Dashboard (app.py) — KANONICKÝ backend               │
+│  - 50+ endpointů, log scraping, service control              │
+│  - Explorer, mempool, alerts, payouts, genesis               │
+│  - Nyní + /api/proxy/rpc a /api/logs/tail pro Tauri        │
+│  - Port 8766                                                │
+│  - Cesta: ZION_OS/dashboard/                               │
+└────────────────────┬────────────────────────────────────────┘
+                     │
+┌────────────────────▼────────────────────────────────────────┐
+│  V3 Stack (node, pool, miner) + AI + L2/L3                │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Zmeny provedene:**
+- `desktop-dashboard/src/lib/api.ts` — odstraněn `tauri::invoke`, vše přes `fetch()`
+- `desktop-dashboard/src-tauri/src/main.rs` — z 219 řádků → 68 řádků (jen tray + okno)
+- `desktop-dashboard/src-tauri/Cargo.toml` — odstraněn `ureq`
+- `dashboard/app.py` — přidány endpointy `/api/proxy/rpc` a `/api/logs/tail`
 
 ---
 
@@ -600,7 +638,51 @@ ZION_OS/
 
 ---
 
-## 10. METRIKY USPECHU (Definition of Done)
+## 10. BUILD INSTRUKCE
+
+### Zion Agent (Rig OS)
+```bash
+cd ZION_OS/agent
+cargo build --release
+# Binary: target/release/zion-agent
+```
+
+### Tauri Desktop Dashboard
+```bash
+cd ZION_OS/desktop-dashboard
+# Frontend dev
+npm install
+npm run dev
+# Desktop build
+cd src-tauri
+cargo tauri build
+```
+
+### Fleet Dashboard Backend
+```bash
+cd ZION_OS/fleet-dashboard/backend
+cargo run
+# API nasloucha na 0.0.0.0:8080
+```
+
+### Fleet Dashboard Frontend
+```bash
+cd ZION_OS/fleet-dashboard/frontend
+npm install
+npm run dev
+# Build: npm run build
+```
+
+### Python Dashboard (Kanonicky Backend)
+```bash
+cd ZION_OS/dashboard
+python app.py
+# Nasloucha na 127.0.0.1:8766
+```
+
+---
+
+## 11. METRIKY USPECHU (Definition of Done)
 
 ### Technicke
 

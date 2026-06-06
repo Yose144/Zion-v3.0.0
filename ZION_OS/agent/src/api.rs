@@ -70,6 +70,12 @@ pub async fn restart_miner_handler(
     }
 }
 
+/// GET /api/gpu
+pub async fn gpu_handler(_state: State<Arc<AgentState>>) -> Json<Value> {
+    let gpus = crate::gpu_telemetry::collect_all().await;
+    Json(json!({"gpus": gpus}))
+}
+
 /// GET /api/telemetry
 pub async fn telemetry_handler(State(state): State<Arc<AgentState>>) -> Json<Value> {
     let config = state.config.read().await;
