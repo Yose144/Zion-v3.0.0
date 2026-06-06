@@ -1,7 +1,7 @@
 use crate::AgentState;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use uuid::Uuid;
+// use uuid::Uuid;
 
 /// Command queue pro komunikaci s fleet dashboard
 /// Flow:
