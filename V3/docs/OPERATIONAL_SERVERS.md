@@ -123,7 +123,7 @@ docker run -d \
   -e ZION_WEBSOCKET_BIND=0.0.0.0:8445 \
   -e ZION_NODE_STATE_PATH=/data/zion/state \
   -e ZION_SEED_PEERS="<peer1>:8333,<peer2>:8333" \
-  -e ZION_HUMANITARIAN_WALLET=zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4 \
+  -e ZION_HUMANITARIAN_WALLET=zion165a527w5d0n085t775x3w8n8q20742a6w7xr0z3 \
   -e ZION_ISSOBELLA_WALLET=zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702 \
   -e ZION_POOL_FEE_WALLET=zion196m4n8x764v7a0s406j40094a8z5j8m6z7nk342 \
   -e ZION_MINER_ADDRESS=zion1w523a76830x2t5m7f3j023w265e8g5c400a4790 \
@@ -498,7 +498,7 @@ Helsinki: ZION_SEED_PEERS="prague:8333,usa:8333,singapore:8333"
 | 9 | Core Dev Fund | `zion1q540v6y4f0s4v3n0f8t740t53494z56024u645c` | 1.00B | NE |
 | 10 | Seed Nodes | `zion1h4w39686t8w376g0x0y426e775q6p2q0v698v43` | 1.00B | NE |
 | 11 | Genesis Creator | `zion1x638z5x6d2d0y6u3f7y8g7j56054a4a2a2c7l8f` | 590M | NE |
-| 12 | Children Future Fund | `zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4` | 1.44B | NE |
+| 12 | Children Future Fund | `zion165a527w5d0n085t775x3w8n8q20742a6w7xr0z3` | 1.44B | NE |
 || 13 | Bridge Seed Fund | `zion1f6m2j0h0l773j4074324q5r528y475w4j7m9685` | 400M | NE |
 | 14 | Bridge Vault UTXO Seed | `zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0` | 100M | NE |
 
@@ -510,7 +510,7 @@ Každý `zion-core` kontejner MUSÍ mít tyto env vars (live env inside containe
 
 ```bash
 ZION_MINER_ADDRESS=zion1w523a76830x2t5m7f3j023w265e8g5c400a4790
-ZION_HUMANITARIAN_WALLET=zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4
+ZION_HUMANITARIAN_WALLET=zion165a527w5d0n085t775x3w8n8q20742a6w7xr0z3
 ZION_ISSOBELLA_WALLET=zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702
 ZION_POOL_FEE_WALLET=zion196m4n8x764v7a0s406j40094a8z5j8m6z7nk342
 ```
