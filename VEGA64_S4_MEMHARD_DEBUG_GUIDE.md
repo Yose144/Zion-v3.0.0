@@ -283,6 +283,80 @@ When deploying to SimpleMining OS rigs:
 | 2026-06-06 | `1b8f5582` | Conservative OpenCL build flags for GCN (remove fast-relaxed-math) | Vega 64: 0% → 15-25% accepted |
 | 2026-06-06 | `50cec770` | GCN kernel workarounds: `ulong→uint` counter, noinline, remove pointer casts | Blake3 stability on GCN |
 | 2026-06-06 | `ebf87158` | Remove pointer casts in full GPU pipeline `ekam_deeksha_mine` + `cosmic_fusion_ekam` | Testing full pipeline again |
+| 2026-06-06 | `9f1f3d9f` | **Conditional GCN/RDNA kernel compilation** | RX 5600 XT: **9.27 KH/s** (benchmark) |
+
+---
+
+## 12. Conditional GCN/RDNA Kernel Compilation (2026-06-06)
+
+### Problem
+Commit `50cec770` added GCN workarounds (byte-level operations, noinline, uint counter) that fixed GCN but **slowed down RDNA** unnecessarily. The workarounds were applied to all AMD GPUs, causing RDNA performance degradation.
+
+### Solution
+**File:** `V3/L1/miner/src/gpu_backend.rs`
+
+Added conditional compilation based on GPU architecture:
+
+```rust
+// Detect GCN for conditional workarounds in kernel
+// RDNA (gfx10+) should NOT use GCN workarounds
+let dev = device_name.to_ascii_lowercase();
+let is_gcn = dev.contains("gfx6") || dev.contains("gfx7") || dev.contains("gfx8") || dev.contains("gfx9")
+    || dev.contains("vega") || dev.contains("polaris")
+    || dev.contains("fiji") || dev.contains("tonga")
+    || dev.contains("ellesmere");
+
+if is_gcn {
+    opts.push_str("-DZION_GCN_WORKAROUNDS ");
+}
+```
+
+**File:** `V3/L1/cosmic-harmony/src/gpu/kernels/cosmic_harmony_deeksha.cl`
+
+Wrapped GCN-specific workarounds in `#ifdef ZION_GCN_WORKAROUNDS` blocks:
+
+```c
+#ifdef ZION_GCN_WORKAROUNDS
+// GCN-safe helper functions (byte-level operations)
+ulong ulong_from_bytes(const uchar *bytes) { ... }
+void ulong_to_bytes(ulong value, uchar *bytes) { ... }
+
+// Byte-level memory operations in mix_block, keccak_absorb, XOR operations
+uint counter instead of ulong in b3_compress
+__attribute__((noinline)) on critical functions
+int instead of long in LayerNorm and isqrt_floor
+#else
+// RDNA fast path: ulong-width operations, ulong counters, long arithmetic
+#endif
+```
+
+### Results
+
+| GPU | Architecture | Benchmark | Pool Mining | Build Options |
+|-----|--------------|-----------|-------------|---------------|
+| RX 5600 XT | RDNA (gfx1010:xnack-) | **9.27 KH/s** | 1.13 KH/s | `-cl-std=CL1.2 -cl-mad-enable` |
+| Vega 64 | GCN (gfx900) | ~50 H/s (s4_mode) | ~50 H/s | `-cl-std=CL1.2 -cl-mad-enable -DZION_GCN_WORKAROUNDS` |
+
+### Key Changes
+- **GCN devices** (gfx6-9, Vega, Polaris, Fiji, Tonga): Use conservative byte-level operations
+- **RDNA devices** (gfx10+): Use fast ulong-width operations without workarounds
+- **Build flags**: Both use `-cl-std=CL1.2 -cl-mad-enable` (fast-relaxed-math removed for stability)
+
+### Work Size Optimization
+Due to 256 KiB scratchpad per thread, VRAM limits work_size:
+
+| Work Size | Scratchpad | Benchmark | Notes |
+|-----------|------------|-----------|-------|
+| 6128 | 1532 MiB | 9.27 KH/s | **Optimal for 6 GB VRAM** |
+| 16384 | 4096 MiB | 3.05 KH/s | Higher VRAM usage, lower efficiency |
+| 20480 | 5120 MiB | 0.66 KH/s | Too large, causes thrashing |
+
+**Configuration for RX 5600 XT:**
+```bash
+ZION_GPU_WORK_SIZE=6128
+ZION_OCL_WORK_CAP=6128
+ZION_OCL_VRAM_PCT=50
+```
 
 ---
 
