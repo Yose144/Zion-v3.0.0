@@ -6072,15 +6072,297 @@ async function agentControl(action){
   }
 }
 
-// Auto-refresh agent data when Agent tab is opened
+// ═════════ Miner Live Panel ═════════
+
+let _mlHashrateHistory = [];
+let _mlHashrateChart = null;
+
+async function refreshMinerLive(){
+  const badge = document.getElementById('miner-live-badge');
+  if(badge) badge.textContent = 'Refreshing…';
+  try{
+    const [stats, logTail] = await Promise.all([
+      fetch('/api/miner/live').then(r => r.json()),
+      fetch('/api/miner/log-tail?lines=20').then(r => r.json()),
+    ]);
+    const set = (id, v) => { const el = document.getElementById(id); if(el) el.textContent = v ?? '—'; };
+    set('ml-hashrate', stats.hashrate ? stats.hashrate.toFixed(2) : '—');
+    set('ml-accepted', stats.shares_accepted ?? 0);
+    set('ml-rejected', stats.shares_rejected ?? 0);
+    set('ml-height', stats.current_height ?? '—');
+    set('ml-backend', stats.gpu_backend?.toUpperCase() ?? 'CPU');
+    if(badge){
+      badge.textContent = stats.running ? 'Running' : 'Stopped';
+      badge.className = 'text-xs px-2 py-1 rounded ' + (stats.running ? 'bg-emerald-700 text-white' : 'bg-red-700 text-white');
+    }
+    // GPU cards
+    const gpuContainer = document.getElementById('ml-gpu-cards');
+    if(gpuContainer){
+      if(!stats.gpus || stats.gpus.length === 0){
+        gpuContainer.innerHTML = '<div class="text-gray-500 text-xs col-span-full">No GPUs detected (CPU mode)</div>';
+      }else{
+        gpuContainer.innerHTML = stats.gpus.map((g, i) => `
+          <div class="bg-black/30 rounded-lg p-3 border border-white/5">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-xs font-bold text-gray-200">${escapeHtml(g.name || `GPU ${i}`)}</span>
+              <span class="text-[10px] px-2 py-0.5 rounded-full ${g.temperature && g.temperature > 80 ? 'bg-red-700/50 text-red-300' : 'bg-emerald-700/50 text-emerald-300'}">${g.temperature ? g.temperature + '°C' : 'N/A'}</span>
+            </div>
+            <div class="text-[10px] text-gray-400">${escapeHtml(g.vendor || '')} · ${escapeHtml(g.memory || '')}</div>
+            ${g.utilization ? `<div class="mt-1"><div class="h-1 bg-white/10 rounded-full"><div class="h-1 bg-zion-gold rounded-full" style="width:${g.utilization}%"></div></div><div class="text-[10px] text-gray-500 mt-0.5">Util: ${g.utilization}%</div></div>` : ''}
+          </div>
+        `).join('');
+      }
+    }
+    // Pool info
+    const poolEl = document.getElementById('ml-pool-info');
+    if(poolEl){
+      poolEl.innerHTML = `
+        <div class="flex justify-between"><span class="text-gray-400">Pool:</span><span class="text-white font-mono">${stats.pool_addr ?? '—'}</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">Worker:</span><span class="text-white">${stats.worker_name ?? '—'}</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">Device:</span><span class="text-white">${stats.gpu_device ?? 'CPU'}</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">Difficulty:</span><span class="text-white">${stats.current_diff ?? '—'}</span></div>
+      `;
+    }
+    // Log tail
+    const logEl = document.getElementById('ml-log-tail');
+    if(logEl && logTail.lines){
+      logEl.innerHTML = logTail.lines.map(l => `<div class="truncate">${escapeHtml(l)}</div>`).join('');
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+    // Hashrate chart history
+    if(stats.hashrate){
+      _mlHashrateHistory.push(stats.hashrate);
+      if(_mlHashrateHistory.length > 60) _mlHashrateHistory.shift();
+      renderMinerLiveChart();
+    }
+  }catch(e){
+    if(badge){ badge.textContent = 'Error'; badge.className = 'text-xs px-2 py-1 rounded bg-red-700 text-white'; }
+    console.error('Miner live refresh failed:', e);
+  }
+}
+
+function renderMinerLiveChart(){
+  const ctx = document.getElementById('ml-hashrate-chart');
+  if(!ctx) return;
+  if(_mlHashrateChart){ _mlHashrateChart.destroy(); }
+  _mlHashrateChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: _mlHashrateHistory.map((_, i) => i),
+      datasets: [{
+        label: 'KH/s',
+        data: _mlHashrateHistory,
+        borderColor: 'rgba(255, 215, 0, 0.8)',
+        backgroundColor: 'rgba(255, 215, 0, 0.1)',
+        fill: true,
+        tension: 0.4,
+        pointRadius: 0,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { display: false },
+        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9ca3af', font: { size: 9 } } }
+      }
+    }
+  });
+}
+
+// ═════════ Settings Panel ═════════
+
+async function loadSettingsIntoForm(){
+  try{
+    const s = await fetch('/api/settings/load').then(r => r.json());
+    const mining = s.mining || {};
+    const node = s.node || {};
+    const setVal = (id, v) => { const el = document.getElementById(id); if(el) el.value = v ?? ''; };
+    setVal('st-pool-addr', mining.pool_addr);
+    setVal('st-worker', mining.worker_name);
+    setVal('st-backend', mining.backend);
+    setVal('st-threads', mining.threads);
+    setVal('st-loop-count', mining.loop_count);
+    setVal('st-work-size', mining.work_size);
+    setVal('st-seed-peers', node.seed_peers);
+    setVal('st-rpc-bind', node.rpc_bind);
+    setVal('st-p2p-bind', node.p2p_bind);
+    setVal('st-node-id', node.node_id);
+    const topoSel = document.getElementById('st-topology');
+    if(topoSel) topoSel.value = s.topology || 'edge-primary';
+  }catch(e){ console.error('Load settings failed:', e); }
+}
+
+async function saveMiningSettings(){
+  const msg = document.getElementById('st-mining-msg');
+  if(msg) msg.textContent = 'Saving…';
+  try{
+    const payload = {
+      mining: {
+        pool_addr: document.getElementById('st-pool-addr')?.value,
+        worker_name: document.getElementById('st-worker')?.value,
+        backend: document.getElementById('st-backend')?.value,
+        threads: parseInt(document.getElementById('st-threads')?.value || '2'),
+        loop_count: parseInt(document.getElementById('st-loop-count')?.value || '1000000'),
+        work_size: parseInt(document.getElementById('st-work-size')?.value || '4096'),
+      },
+      node: {
+        seed_peers: document.getElementById('st-seed-peers')?.value,
+        rpc_bind: document.getElementById('st-rpc-bind')?.value,
+        p2p_bind: document.getElementById('st-p2p-bind')?.value,
+        node_id: document.getElementById('st-node-id')?.value,
+      },
+      topology: document.getElementById('st-topology')?.value || 'edge-primary',
+    };
+    const r = await fetch('/api/settings/save', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+    const d = await r.json();
+    if(msg) msg.textContent = d.ok ? 'Saved.' : 'Error: ' + (d.error || '');
+  }catch(e){ if(msg) msg.textContent = 'Error: ' + e.message; }
+}
+
+async function applyMiningSettings(){
+  await saveMiningSettings();
+  alert('Settings saved. Restart the miner via the Agent tab or Controls to apply changes.');
+}
+
+async function saveNodeSettings(){
+  await saveMiningSettings(); // same endpoint saves everything
+  const msg = document.getElementById('st-node-msg');
+  if(msg) msg.textContent = 'Saved.';
+}
+
+async function applyNodeSettings(){
+  await saveNodeSettings();
+  alert('Node settings saved. Restart the node to apply changes.');
+}
+
+async function saveTopology(){
+  const topo = document.getElementById('st-topology')?.value;
+  const msg = document.getElementById('st-topo-msg');
+  if(msg) msg.textContent = 'Switching…';
+  try{
+    const r = await fetch('/api/config', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({topology: topo})});
+    const d = await r.json();
+    if(msg) msg.textContent = d.ok ? d.message : 'Error: ' + (d.error || '');
+  }catch(e){ if(msg) msg.textContent = 'Error: ' + e.message; }
+}
+
+// ═════════ Fleet View ═════════
+
+async function refreshFleet(){
+  const tbody = document.getElementById('fleet-table-body');
+  if(!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="7" class="text-gray-500 text-center py-4">Loading rigs…</td></tr>';
+  try{
+    const data = await fetch('/api/fleet/rigs').then(r => r.json());
+    const rigs = data.rigs || [];
+    let totalHashrate = 0;
+    let onlineCount = 0;
+    let totalGpus = 0;
+    // Try to fetch live data for each rig
+    const rigRows = [];
+    for(const rig of rigs){
+      let status = 'checking';
+      let mode = '—';
+      let miner = '—';
+      let hashrate = '—';
+      let gpus = '—';
+      try{
+        const r = await fetch(rig.agent_url + '/api/status', {signal: AbortSignal.timeout(3000)}).then(r => r.json());
+        if(!r._error){
+          status = 'online';
+          mode = r.mode;
+          miner = r.miner_running ? 'Running' : 'Stopped';
+          onlineCount++;
+        }
+      }catch(_){ status = 'offline'; }
+      try{
+        const g = await fetch(rig.agent_url + '/api/gpu', {signal: AbortSignal.timeout(3000)}).then(r => r.json());
+        if(!g._error && g.gpus){
+          gpus = g.gpus.length;
+          totalGpus += g.gpus.length;
+        }
+      }catch(_){}
+      rigRows.push({rig, status, mode, miner, hashrate, gpus});
+    }
+    // Update KPIs
+    const set = (id, v) => { const el = document.getElementById(id); if(el) el.textContent = v; };
+    set('fl-total', rigs.length);
+    set('fl-online', onlineCount);
+    set('fl-hashrate', totalHashrate.toFixed(2));
+    set('fl-gpus', totalGpus);
+    // Render table
+    if(rigRows.length === 0){
+      tbody.innerHTML = '<tr><td colspan="7" class="text-gray-500 text-center py-4">No rigs configured. Click "Add Rig" to start.</td></tr>';
+    }else{
+      tbody.innerHTML = rigRows.map(({rig, status, mode, miner, hashrate, gpus}) => `
+        <tr class="border-b border-white/5 hover:bg-white/5 transition">
+          <td class="py-2 px-2">
+            <div class="text-xs font-bold text-gray-200">${escapeHtml(rig.name || rig.id)}</div>
+            <div class="text-[10px] text-gray-500 font-mono">${escapeHtml(rig.id)}</div>
+          </td>
+          <td class="py-2 px-2"><span class="text-[10px] px-2 py-0.5 rounded-full ${status==='online'?'bg-emerald-700/50 text-emerald-300':'bg-red-700/50 text-red-300'}">${status}</span></td>
+          <td class="py-2 px-2 text-gray-300">${mode}</td>
+          <td class="py-2 px-2 text-gray-300">${miner}</td>
+          <td class="py-2 px-2 text-right text-gray-300">${hashrate}</td>
+          <td class="py-2 px-2 text-right text-gray-300">${gpus}</td>
+          <td class="py-2 px-2 text-right">
+            <button onclick="removeFleetRig('${escapeHtml(rig.id)}')" class="text-[10px] text-red-400 hover:text-red-300">Remove</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+  }catch(e){
+    tbody.innerHTML = `<tr><td colspan="7" class="text-red-400 text-center py-4">Error: ${escapeHtml(e.message)}</td></tr>`;
+  }
+}
+
+function addFleetRig(){
+  const form = document.getElementById('fleet-add-form');
+  if(form) form.classList.remove('hidden');
+}
+
+async function saveFleetRig(){
+  const id = document.getElementById('fl-new-id')?.value?.trim();
+  const addr = document.getElementById('fl-new-addr')?.value?.trim();
+  const name = document.getElementById('fl-new-name')?.value?.trim();
+  if(!id || !addr){ alert('Rig ID and Agent URL are required'); return; }
+  try{
+    const r = await fetch('/api/fleet/add', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({id, agent_url: addr, name: name || id})});
+    const d = await r.json();
+    if(d.ok){
+      document.getElementById('fleet-add-form')?.classList.add('hidden');
+      document.getElementById('fl-new-id').value = '';
+      document.getElementById('fl-new-addr').value = '';
+      document.getElementById('fl-new-name').value = '';
+      refreshFleet();
+    }else{
+      alert('Error: ' + (d.error || ''));
+    }
+  }catch(e){ alert('Error: ' + e.message); }
+}
+
+async function removeFleetRig(rigId){
+  if(!confirm('Remove rig ' + rigId + '?')) return;
+  try{
+    const r = await fetch('/api/fleet/remove', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({rig_id: rigId})});
+    const d = await r.json();
+    if(d.ok) refreshFleet();
+    else alert('Error: ' + (d.error || ''));
+  }catch(e){ alert('Error: ' + e.message); }
+}
+
+// Auto-refresh new tabs when opened
 (function() {
   const _orig = window.switchTab;
   if (_orig) {
     window.switchTab = function(t) {
       _orig(t);
-      if (t === 'agent') {
-        refreshAgentPanel();
-      }
+      if (t === 'agent') { refreshAgentPanel(); refreshAgentRewards(); }
+      if (t === 'miner-live') { refreshMinerLive(); }
+      if (t === 'settings') { loadSettingsIntoForm(); }
+      if (t === 'fleet') { refreshFleet(); }
     };
   }
 })();
