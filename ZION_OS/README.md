@@ -91,6 +91,19 @@ Zion OS je komplexní interní systém pro správu celého ZION Mainnetu. Centra
   - Auto-tuning
   - Failover
 
+### 8. ZION Agent (Rig OS)
+- **Location:** `agent/`
+- **Tech:** Rust (Tokio + Axum)
+- **Features:**
+  - Autonomous mining rig control
+  - Real-time miner stdout parsing (hashrate, shares)
+  - GPU telemetry (AMD sysfs, NVIDIA NVML)
+  - Watchdog engine (expression-based rules + self-healing)
+  - OC manager (AMD power/fan/DPM sysfs writer)
+  - Fleet dashboard integration
+  - OTA auto-updates
+  - Systemd service deployment
+
 ## Platform Support
 
 ### macOS
@@ -132,6 +145,13 @@ ZION_OS/
 ├── mobile-app/             # React Native app
 │   ├── src/                # React Native source
 │   └── android/ios/        # Platform specific
+├── agent/                  # ZION Agent (Rig OS)
+│   ├── Cargo.toml          # Rust workspace
+│   ├── src/                # Core modules
+│   ├── systemd/            # systemd service units
+│   ├── build.sh            # Linux/macOS build script
+│   ├── build.ps1           # Windows build script
+│   └── README.md           # Agent documentation
 ├── mining-agent/           # Multi-GPU mining
 │   ├── Cargo.toml          # Rust project
 │   ├── src/main.rs         # Agent logic
@@ -161,7 +181,16 @@ npm install
 cargo tauri dev --manifest-path src-tauri/Cargo.toml
 ```
 
-### 3. Start Mining Agent
+### 3. Start ZION Agent (Rig OS)
+```bash
+cd ZION_OS/agent
+./build.sh --release
+sudo cp target/release/zion-agent /usr/local/bin/
+sudo systemctl enable --now zion-agent
+# API na http://localhost:8767
+```
+
+### 4. Start Mining Agent (legacy)
 ```bash
 cd ZION_OS/mining-agent
 cargo build --release --features gpu-metal
@@ -262,6 +291,8 @@ curl http://127.0.0.1:8766/api/nodes
 - ✅ Platform-specific setup
 - ✅ Mining agent with Metal support
 - ✅ Tailscale VPN integration
+- ✅ ZION Agent — core (API, miner control, telemetry, watchdog, OC)
+- ⏳ ZION Agent — fleet integration + rig OS image
 - ⏳ Desktop agent integration
 - ⏳ Mobile app basic features
 
