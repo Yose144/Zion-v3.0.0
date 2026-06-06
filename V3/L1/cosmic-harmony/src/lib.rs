@@ -1,6 +1,7 @@
 pub mod algorithms_npu;
 pub mod algorithms_opt;
 pub mod deeksha;
+pub mod deeksha_lite;
 pub mod gpu;
 pub mod hic;
 pub mod hugepages;
