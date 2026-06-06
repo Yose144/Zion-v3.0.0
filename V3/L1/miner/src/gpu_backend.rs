@@ -335,9 +335,9 @@ pub mod opencl_deeksha {
             .and_then(|v| v.trim().parse::<usize>().ok())
             .unwrap_or(usize::MAX);
 
-        // GCN devices (Vega, Polaris) cap at 4096 work items.
-        // With gcn_s4_mode (GPU stages 1-4, CPU does NPU+fusion), larger
-        // work_size amortises kernel launch overhead across more nonces.
+        // GCN/RDNA devices (Vega, Polaris, gfx10) cap at 4096 work items.
+        // Benchmarks show larger work_size hurts performance on RDNA due to
+        // increased scratchpad memory pressure and cache thrashing.
         let dev = device.name().unwrap_or_default().to_ascii_lowercase();
         let gcn_cap = if dev.contains("vega")
             || dev.contains("polaris")
@@ -347,6 +347,7 @@ pub mod opencl_deeksha {
             || dev.contains("gfx7")
             || dev.contains("gfx8")
             || dev.contains("gfx9")
+            || dev.contains("gfx10")
         {
             4096
         } else {
@@ -400,8 +401,10 @@ pub mod opencl_deeksha {
         }
         let device_name = device_name.to_ascii_lowercase();
 
-        // Vega / GCN wave64 parts benchmark better with a 64-thread local size.
-        if device_name.contains("vega")
+        // RDNA (gfx10) benchmarks better with 128 threads; Vega/GCN wave64 with 64.
+        if device_name.contains("gfx10") {
+            128
+        } else if device_name.contains("vega")
             || device_name.contains("gfx6")
             || device_name.contains("gfx7")
             || device_name.contains("gfx8")

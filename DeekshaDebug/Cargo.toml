@@ -19,7 +19,12 @@ path = "src/bench_double_buffer.rs"
 name = "bench_alloc_overhead"
 path = "src/bench_alloc_overhead.rs"
 
+[[bin]]
+name = "test_persistent_kernel"
+path = "src/test_persistent_kernel.rs"
+
 [dependencies]
 zion-cosmic-harmony = { path = "../V3/L1/cosmic-harmony" }
 rand = "0.8"
 rayon = "1"
+ocl = "0.19"

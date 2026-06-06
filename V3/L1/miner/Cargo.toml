@@ -17,6 +17,16 @@ path = "src/b3_verify.rs"
 name = "sha3_debug"
 path = "src/sha3_debug.rs"
 
+[[bin]]
+name = "test_persistent_kernel"
+path = "src/test_persistent_kernel.rs"
+required-features = ["gpu-opencl"]
+
+[[bin]]
+name = "test_s4_bench"
+path = "src/test_s4_bench.rs"
+required-features = ["gpu-opencl"]
+
 [features]
 default = []
 
