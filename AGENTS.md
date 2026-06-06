@@ -442,26 +442,39 @@ If pool stops accepting connections:
 4. Restart pool service: `systemctl restart zion-pool.service`
 5. Verify miners can reconnect
 
-## Current Status (2026-06-05 22:00 UTC)
+## Current Status (2026-06-06 01:00 UTC)
 
 **System Status:**
 - ✅ Genesis Regeneration: Complete (2026-06-05 final reset)
-- ✅ Node: Running (height ~119, synchronized with Edge)
-- ✅ Pool: Running (fee split 89/5/5/1, 111+ blocks found)
-- ✅ Miner: Running (~523 H/s local, external vega-rig active)
+- ✅ Edge Node: Running (height ~93, old binary — NOT YET REDEPLOYED)
+- ✅ Edge Pool: Running (fee split 89/5/5/1, PPLNS payouts active)
+- ✅ Local Node: Offline (pending rebuild with latest fixes)
 - ✅ Edge Server: Operational (100.76.16.108 / 77.42.71.94)
 - ✅ Pool Metrics: Running on port 8455
-- ✅ Local Node: Synchronized with Edge (height ~119)
-- ✅ Genesis Hash: `1da0251076471744b783105a6723fbd2e899282d6582d59f0de7905cd69f07c7`
+- ✅ Genesis Hash (repo HEAD): `1da0251076471744b783105a6723fbd2e899282d6582d59f0de7905cd69f07c7`
+- ⚠️ Edge binary: STALE — built before test fixes, emission constants update, and genesis validation changes
+
+**Code Fixes in Repo (NOT YET DEPLOYED to Edge):**
+- ✅ `emission.rs`: `MINING_EMISSION` corrected to 127.22B (was 127.72B)
+- ✅ `genesis.rs`: Tests updated for 14 premine outputs + label derivation
+- ✅ `launch.rs`: Premine count check updated to 14 + diagnostic prints
+- ✅ `node_builder.rs`: Seed peer threshold lowered to 2 (Core+Edge topology)
+- ✅ `rpc.rs`: Supply info test updated for 16.78B premine
+- ✅ `lib.rs`: Seed peer snapshot updated to 77.42.71.94
+- ✅ `miner/Cargo.toml`: `hex` crate added for `sha3_debug` build
+- ✅ `launch-local-backup.ps1/.sh`: `ZION_MINER_ADDRESS` set to pool payout wallet
 
 **Known Issues:**
+- ⚠️ Edge server runs stale binary — requires rebuild + restart to pick up all fixes
+- ⚠️ Local node offline — needs rebuild + restart with latest code
 - Auto-backup script produces empty state (height=0) — use manual backup before any restart
-- Pool PPLNS payout not yet fully configured (pool payout key set, no automated payouts yet)
 
-**Recent Fixes (2026-06-05):**
+**Recent Fixes (2026-06-05/06):**
 - ✅ Genesis keys regenerated (14 unique premine keypairs, no duplicates)
 - ✅ `genesis_tx_id` fixed to depend on address (prevents silent chain splits)
 - ✅ Fee split 89/5/5/1 verified on-chain in every block
+- ✅ PPLNS payout system tested and working (pool redistributes 89% miner reward)
+- ✅ All 10 failing tests fixed and passing locally
 - ✅ Canonical subsidy addresses verified deterministic
 - ✅ Edge + local node fully synchronized
 - ✅ Code sync: local repo now matches Edge (`4b94181f`)
