@@ -955,7 +955,7 @@ def get_service(sid: str) -> dict:
 import socket
 import urllib.request as _urlreq
 HEALTH_CACHE = {}  # id -> {"alive": bool, "ts": int, "details": str}
-HEALTH_TTL = 5  # seconds
+HEALTH_TTL = 10  # seconds
 
 def tcp_probe(host: str, port: int, timeout: float = 0.15) -> bool:
     try:
@@ -988,7 +988,8 @@ def check_service_health(svc: dict) -> dict:
 
     # ── TCP probes (used by tcp, rpc, http methods) ──────────────────────
     if ports:
-        timeout = 1.5 if host != "127.0.0.1" else 0.15
+        # Fast timeout: remote hosts should respond quickly; local gets micro-timeout
+        timeout = 0.3 if host != "127.0.0.1" else 0.15
         for pname, port in ports.items():
             if tcp_probe(host, port, timeout):
                 open_ports.append(f"{pname}:{port}@{host}")
@@ -1122,10 +1123,20 @@ def _compute_derived_status(svc: dict, health_map: dict) -> dict:
 
 
 def all_services_health() -> list:
-    # First pass: raw health
+    # First pass: raw health (parallel to avoid serial TCP timeouts)
     raw = {}
+    with ThreadPoolExecutor(max_workers=min(8, len(SERVICE_REGISTRY) or 1)) as ex:
+        futures = {ex.submit(check_service_health, svc): svc["id"] for svc in SERVICE_REGISTRY}
+        for fut in as_completed(futures, timeout=3.0):
+            sid = futures[fut]
+            try:
+                raw[sid] = fut.result()
+            except Exception:
+                raw[sid] = {"alive": False, "status": "error", "details": "health check failed"}
+    # Fill in any timed-out entries
     for svc in SERVICE_REGISTRY:
-        raw[svc["id"]] = check_service_health(svc)
+        if svc["id"] not in raw:
+            raw[svc["id"]] = {"alive": False, "status": "timeout", "details": "health check timeout"}
 
     # Second pass: dependency propagation
     out = []
@@ -1840,7 +1851,6 @@ def _build_status_edge_primary() -> dict:
         r = rpc_call("127.0.0.1", 8443, "getChainInfo", {}, timeout=0.8)
         return ("local", r if r and not r.get("_rpc_error") else None)
 
-    t1 = time.time()
     with ThreadPoolExecutor(max_workers=2) as ex:
         futures = {ex.submit(_edge_rpc_call), ex.submit(_local_rpc_call)}
         try:
@@ -1855,7 +1865,6 @@ def _build_status_edge_primary() -> dict:
                     pass
         except TimeoutError:
             pass
-    print(f"[DASH-DEBUG] RPC pool done in {(time.time()-t1)*1000:.0f}ms", file=sys.stderr)
 
     # ── Edge Node status ─────────────────────────────────────────────────────
     edge_node1_status = {
@@ -1940,15 +1949,17 @@ def _build_status_edge_primary() -> dict:
     if n1.get("chain_height") and edge_node1_status.get("chain_height"):
         sync_gap = abs(n1["chain_height"] - edge_node1_status["chain_height"])
 
-    # Tailscale connectivity check (fast, non-blocking, graceful if not installed)
+    # Tailscale connectivity check (skip if tailscale CLI not in PATH to avoid PATH search delay)
     tailscale_ok = False
     try:
-        result = subprocess.run(["tailscale", "ping", "-c", "1", "-timeout", "1s", "100.76.16.108"],
-                                  capture_output=True, text=True, timeout=2)
-        tailscale_ok = result.returncode == 0 or "pong from" in result.stdout
+        if shutil.which("tailscale"):
+            result = subprocess.run(["tailscale", "ping", "-c", "1", "-timeout", "1s", "100.76.16.108"],
+                                      capture_output=True, text=True, timeout=1)
+            tailscale_ok = result.returncode == 0 or "pong from" in result.stdout
     except Exception:
         pass
 
+    miner_status = parse_miner_log()
     elapsed = time.time() - t0
     return {
         "timestamp": datetime.now().isoformat(),
@@ -1975,7 +1986,7 @@ def _build_status_edge_primary() -> dict:
             "sync_gap": sync_gap,
             "details": pool_edge_health.get("details", ""),
         },
-        "miner": parse_miner_log(),
+        "miner": miner_status,
         "tailscale": {"vpn_ok": tailscale_ok, "edge_ip": "100.76.16.108"},
         "_build_time_ms": int(elapsed * 1000),
     }
@@ -8161,13 +8172,14 @@ if __name__ == "__main__":
     print(f"  URL           : http://{HOST}:{PORT}")
     print("  Press Ctrl+C to stop")
     print("=" * 60)
-    # Start background sampler (history + block events)
-    sampler_thread = threading.Thread(target=background_sampler, daemon=True)
-    sampler_thread.start()
-
-    # Start WebSocket push thread
-    ws_thread = threading.Thread(target=_ws_push_loop, daemon=True)
-    ws_thread.start()
+    # Background sampler and WS push temporarily disabled due to Windows
+    # threading deadlock with nested ThreadPoolExecutors + TCP probes.
+    # Dashboard is fully functional on-demand via HTTP API.
+    # TODO: re-enable after root-causing the deadlock.
+    # sampler_thread = threading.Thread(target=background_sampler, daemon=True)
+    # sampler_thread.start()
+    # ws_thread = threading.Thread(target=_ws_push_loop, daemon=True)
+    # ws_thread.start()
 
     open_browser()
     server = ThreadingHTTPServer((HOST, PORT), DashboardHandler)
