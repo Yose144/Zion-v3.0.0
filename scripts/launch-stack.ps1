@@ -63,7 +63,7 @@ $env:ZION_METRICS_BIND='0.0.0.0:9115'
 $env:ZION_NODE_STATE_PATH="$DataDir\zion-node-state.db"
 $env:ZION_SEED_PEERS=$seedPeers
 $env:ZION_MINER_ADDRESS='zion1w523a76830x2t5m7f3j023w265e8g5c400a4790'
-$env:ZION_HUMANITARIAN_WALLET='zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4'
+$env:ZION_HUMANITARIAN_WALLET='zion165a527w5d0n085t775x3w8n8q20742a6w7xr0z3'
 $env:ZION_ISSOBELLA_WALLET='zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702'
 # Note: 89/5/5/0 burn model — no pool fee wallet (1% is burned, never minted)
 $p1 = Start-Process -FilePath $nodeExe -RedirectStandardOutput "$logDir\node1.log" -RedirectStandardError "$logDir\node1.err" -WindowStyle Hidden -PassThru
@@ -79,7 +79,7 @@ $env:ZION_METRICS_BIND='0.0.0.0:9116'
 $env:ZION_NODE_STATE_PATH="$DataDir\zion-node2-state.db"
 $env:ZION_SEED_PEERS='127.0.0.1:8333'
 $env:ZION_MINER_ADDRESS='zion1w523a76830x2t5m7f3j023w265e8g5c400a4790'
-$env:ZION_HUMANITARIAN_WALLET='zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4'
+$env:ZION_HUMANITARIAN_WALLET='zion165a527w5d0n085t775x3w8n8q20742a6w7xr0z3'
 $env:ZION_ISSOBELLA_WALLET='zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702'
 # Note: 89/5/5/0 burn model — no pool fee wallet (1% is burned, never minted)
 $p2 = Start-Process -FilePath $nodeExe -RedirectStandardOutput "$logDir\node2.log" -RedirectStandardError "$logDir\node2.err" -WindowStyle Hidden -PassThru

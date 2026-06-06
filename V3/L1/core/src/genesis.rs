@@ -40,7 +40,7 @@ pub const MAINNET_CANONICAL_POOL_PAYOUT_LABEL: &str =
 
 /// Humanitarian 5% — must match premine output with `category == "humanitarian"`.
 pub const MAINNET_CANONICAL_HUMANITARIAN_SUBSIDY_WALLET: &str =
-    "zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4";
+    "zion165a527w5d0n085t775x3w8n8q20742a6w7xr0z3";
 
 pub const MAINNET_CANONICAL_ISSOBELLA_SUBSIDY_WALLET: &str =
     "zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702";

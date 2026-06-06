@@ -42,7 +42,7 @@ ZION is a decentralized **Layer 1 blockchain** built from scratch in **Rust**, r
 | Recipient | Address | Share |
 |-----------|---------|-------|
 | Miner | `zion1w523a76830x2t5m7f3j023w265e8g5c400a4790` | 89% |
-| Humanitarian | `zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4` | 5% |
+| Humanitarian | `zion165a527w5d0n085t775x3w8n8q20742a6w7xr0z3` | 5% |
 | Issobella | `zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702` | 5% |
 | Pool Fee | `zion196m4n8x764v7a0s406j40094a8z5j8m6z7nk342` | 1% (burned) |
 
