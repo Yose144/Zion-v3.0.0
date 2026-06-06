@@ -637,7 +637,7 @@ def auto_backup_if_needed():
 
 SERVICE_REGISTRY_EDGE_PRIMARY = [
     # ── L1: Consensus (Edge-primary topology) ────────────────────────────
-    {"id": "edge-node1", "name": "Edge Node 1 (Primary / Genesis)", "icon": "🌍", "level": "L1", "kind": "node",
+    {"id": "edge-node1", "name": "Edge Node (Primary / Genesis)", "icon": "🌍", "level": "L1", "kind": "node",
      "ports": {"p2p": 8333},
      "host": "100.76.16.108",
      "log": None, "start": None, "stop": None,
@@ -645,14 +645,6 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "purpose": "Primary / Genesis node on Edge (Hetzner) — source of chain truth, runs 24/7. P2P seed for all other nodes.",
      "child_says": "🌍 The king node lives on Edge!",
      "depends_on": []},
-    {"id": "edge-node2", "name": "Edge Node 2 (Follower / P2P Peer)", "icon": "🌎", "level": "L1", "kind": "node",
-     "ports": {"p2p": 8334},
-     "host": "100.76.16.108",
-     "log": None, "start": None, "stop": None,
-     "health_method": "tcp", "severity": "critical", "autoheal": False,
-     "purpose": "Follower node on Edge — P2P peer to primary, provides redundancy and faster sync within the Edge datacenter.",
-     "child_says": "🌎 A twin node on Edge that keeps the king company!",
-     "depends_on": ["edge-node1"]},
     {"id": "node1", "name": "Local Backup Node", "icon": "🔷", "level": "L1", "kind": "node",
      "ports": {"p2p": 8333, "rpc": 8443, "ws": 8445, "metrics": 9115},
      "log": "node1.log", "start": "start-node1", "stop": None,
