@@ -17,15 +17,7 @@ path = "src/b3_verify.rs"
 name = "sha3_debug"
 path = "src/sha3_debug.rs"
 
-[[bin]]
-name = "test_build_opts"
-path = "src/test_build_opts.rs"
-required-features = ["gpu-opencl"]
 
-[[bin]]
-name = "test_kernel_versions"
-path = "src/test_kernel_versions.rs"
-required-features = ["gpu-opencl"]
 
 [features]
 default = []
