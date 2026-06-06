@@ -42,11 +42,12 @@ pub async fn start_miner(
     cmd.arg("--worker").arg(&worker);
 
     match backend.as_str() {
-        "opencl" => cmd.arg("--gpu").arg("opencl"),
-        "cuda" => cmd.arg("--gpu").arg("cuda"),
-        "metal" => cmd.arg("--gpu").arg("metal"),
-        _ => &mut cmd,
-    };
+        "opencl" => { cmd.arg("--gpu").arg("opencl"); }
+        "cuda" => { cmd.arg("--gpu").arg("cuda"); }
+        "metal" => { cmd.arg("--gpu").arg("metal"); }
+        "cpu" => { cmd.arg("--cpu"); }
+        _ => {}
+    }
 
     for arg in &cfg.miner.extra_args {
         cmd.arg(arg);
