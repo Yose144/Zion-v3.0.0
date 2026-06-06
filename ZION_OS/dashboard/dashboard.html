@@ -278,6 +278,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         <div class="sidebar-title">Operations</div>
         <button onclick="switchTab('controls')" id="tab-controls" class="sidebar-item">🎛️ Controls</button>
         <button onclick="switchTab('ops')" id="tab-ops" class="sidebar-item">🔧 Ops (Backup / CLI)</button>
+        <button onclick="switchTab('agent')" id="tab-agent" class="sidebar-item">🤖 ZION Agent</button>
         <button onclick="switchTab('launch-day')" id="tab-launch-day" class="sidebar-item">🚀 Launch Day</button>
         <button onclick="switchTab('wizard')" id="tab-wizard" class="sidebar-item">🧙 Wizard</button>
         <button onclick="switchTab('hiran')" id="tab-hiran" class="sidebar-item">🤖 Hiran AI</button>
@@ -3357,6 +3358,78 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
           <div class="flex items-center gap-2"><span class="text-[10px] text-gray-500 w-24">Dashboard</span><div class="flex-1 h-2 rounded-full bg-black/40 overflow-hidden"><div id="lat-dash" class="h-full rounded-full bg-amber-500 transition-all" style="width:0%"></div></div><span id="lat-dash-ms" class="text-[10px] text-gray-400 w-12 text-right">—</span></div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- ═════════ TAB: ZION Agent ═════════ -->
+  <div id="pane-agent" class="hidden space-y-4">
+    <!-- Agent Status Header -->
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+        <h2 class="text-xl font-bold flex items-center gap-2"><span class="text-gradient">🤖 ZION Agent</span> <span class="text-xs text-gray-500 font-normal">Rig Lifecycle Manager · Telemetry · Watchdog</span></h2>
+        <div class="flex gap-2">
+          <button onclick="refreshAgentPanel()" class="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded">🔄 Refresh</button>
+          <span id="agent-status-badge" class="text-xs px-2 py-1 rounded bg-gray-700 text-gray-300">Checking…</span>
+        </div>
+      </div>
+      <!-- KPI row -->
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+        <div class="bg-black/30 rounded-xl p-3 text-center">
+          <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Mode</div>
+          <div id="agent-kpi-mode" class="text-lg font-bold text-zion-cyan">—</div>
+        </div>
+        <div class="bg-black/30 rounded-xl p-3 text-center">
+          <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Miner</div>
+          <div id="agent-kpi-miner" class="text-lg font-bold text-emerald-400">—</div>
+        </div>
+        <div class="bg-black/30 rounded-xl p-3 text-center">
+          <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">GPUs</div>
+          <div id="agent-kpi-gpus" class="text-lg font-bold text-zion-purple">—</div>
+        </div>
+        <div class="bg-black/30 rounded-xl p-3 text-center">
+          <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Rig ID</div>
+          <div id="agent-kpi-rig" class="text-sm font-bold text-gray-300 font-mono truncate">—</div>
+        </div>
+        <div class="bg-black/30 rounded-xl p-3 text-center">
+          <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Version</div>
+          <div id="agent-kpi-version" class="text-sm font-bold text-gray-300">—</div>
+        </div>
+      </div>
+      <!-- Agent Controls -->
+      <div class="flex flex-wrap gap-2 mb-4">
+        <button onclick="agentControl('miner/start')" class="text-xs px-3 py-1.5 bg-emerald-700 hover:bg-emerald-600 rounded text-white transition">▶ Start Miner</button>
+        <button onclick="agentControl('miner/stop')" class="text-xs px-3 py-1.5 bg-red-700 hover:bg-red-600 rounded text-white transition">⏹ Stop Miner</button>
+        <button onclick="agentControl('miner/restart')" class="text-xs px-3 py-1.5 bg-amber-700 hover:bg-amber-600 rounded text-white transition">⟳ Restart Miner</button>
+      </div>
+      <!-- Telemetry -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="zion-panel-soft p-4">
+          <h3 class="text-sm font-bold mb-3">Pool & Backend</h3>
+          <div id="agent-telemetry-pool" class="space-y-1 text-xs text-gray-400">Loading…</div>
+        </div>
+        <div class="zion-panel-soft p-4">
+          <h3 class="text-sm font-bold mb-3">GPU Telemetry</h3>
+          <div id="agent-gpu-list" class="space-y-2 text-xs">Loading…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Node Discovery (reuse existing agent discovery panels) -->
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-base font-bold flex items-center gap-2"><span class="text-gradient">🔎 Network Discovery</span></h2>
+        <button onclick="refreshAgentPanel()" class="text-xs bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1 rounded">🔄 Refresh</button>
+      </div>
+      <div id="agent-discovered-list" class="space-y-2 text-xs">Run the agent to scan for new nodes on your network.</div>
+    </div>
+
+    <!-- Adoption Rewards -->
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-base font-bold flex items-center gap-2"><span class="text-gradient">🏆 Adoption Rewards</span></h2>
+        <button onclick="refreshAgentRewards()" class="text-xs bg-amber-600 hover:bg-amber-700 text-white px-3 py-1 rounded">🔄 Refresh</button>
+      </div>
+      <div id="agent-rewards-list" class="space-y-2 text-xs">No rewards yet. Help new nodes sync to earn points!</div>
     </div>
   </div>
 
