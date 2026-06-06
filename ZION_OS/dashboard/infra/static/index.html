@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>ZionOS — Mining Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+<!-- ═══ Warp starfield ═══ -->
+<canvas id="warp-canvas"></canvas>
+
+<!-- ═══ Ambient background blobs ═══ -->
+<div class="ambient-bg">
+  <div class="blob blob-purple"></div>
+  <div class="blob blob-cyan"></div>
+  <div class="blob blob-gold"></div>
+</div>
+
+<!-- ═══ Sidebar ═══ -->
+<aside id="sidebar" class="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-icon">Z</div>
+    <div>
+      <div class="brand-title">ZionOS</div>
+      <div class="brand-sub">Mining Dashboard</div>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <a href="#" class="nav-item active" data-panel="overview">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Overview
+    </a>
+    <a href="#" class="nav-item" data-panel="infra">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      Infra
+    </a>
+    <a href="#" class="nav-item" data-panel="rigs">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><line x1="6" y1="10" x2="6" y2="14"/><line x1="10" y1="10" x2="10" y2="14"/><line x1="14" y1="10" x2="14" y2="14"/></svg>
+      Rigs
+    </a>
+    <a href="#" class="nav-item" data-panel="console">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+      Console
+    </a>
+    <a href="#" class="nav-item" data-panel="pool">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2c3 3.6 3 14.4 0 20"/><path d="M12 2c-3 3.6-3 14.4 0 20"/></svg>
+      Pool
+    </a>
+    <a href="#" class="nav-item" data-panel="wallet">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M16 12h.01"/></svg>
+      Wallet
+    </a>
+    <a href="#" class="nav-item" data-panel="settings">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      Settings
+    </a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="kicker">ZION Network — Deeksha v2</div>
+    <div class="version">v0.2.0</div>
+  </div>
+</aside>
+
+<!-- ═══ Main Content ═══ -->
+<main id="main-content" class="main">
+
+  <!-- ─── Header ─── -->
+  <header class="topbar">
+    <button id="sidebar-toggle" class="sidebar-toggle">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <h1 id="page-title" class="page-title">Overview</h1>
+    <div class="topbar-right">
+      <span id="clock" class="clock"></span>
+      <div class="alert-badge" id="alert-bell" onclick="toggleAlerts()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span id="alert-count" class="alert-count hidden">0</span>
+        <div id="alert-dropdown" class="alert-dropdown hidden">
+          <div id="alert-list" class="alert-empty">No alerts</div>
+        </div>
+      </div>
+      <span id="connection-status" class="conn-badge conn-offline">● Connecting…</span>
+    </div>
+  </header>
+
+  <!-- ╔═══════════════════════════════════════╗ -->
+  <!-- ║          INFRA PANEL                  ║ -->
+  <!-- ╚═══════════════════════════════════════╝ -->
+  <section id="panel-infra" class="panel">
+    <div class="kpi-grid">
+      <div class="kpi-card kpi-green" id="infra-node-card">
+        <div class="kpi-label">Node</div>
+        <div class="kpi-value" id="infra-node-status">—</div>
+        <div class="kpi-sub" id="infra-node-detail">RPC: —</div>
+      </div>
+      <div class="kpi-card kpi-gold" id="infra-pool-card">
+        <div class="kpi-label">Pool</div>
+        <div class="kpi-value" id="infra-pool-status">—</div>
+        <div class="kpi-sub" id="infra-pool-detail">Stratum: —</div>
+      </div>
+      <div class="kpi-card kpi-purple" id="infra-dao-card">
+        <div class="kpi-label">DAO</div>
+        <div class="kpi-value" id="infra-dao-status">—</div>
+        <div class="kpi-sub" id="infra-dao-detail">Port: —</div>
+      </div>
+      <div class="kpi-card kpi-cyan" id="infra-warp-card">
+        <div class="kpi-label">WARP</div>
+        <div class="kpi-value" id="infra-warp-status">—</div>
+        <div class="kpi-sub" id="infra-warp-detail">Port: —</div>
+      </div>
+      <div class="kpi-card kpi-green" id="infra-agent-card">
+        <div class="kpi-label">Agent</div>
+        <div class="kpi-value" id="infra-agent-status">—</div>
+        <div class="kpi-sub" id="infra-agent-detail">Mode: —</div>
+      </div>
+      <div class="kpi-card kpi-gold" id="infra-website-card">
+        <div class="kpi-label">Website</div>
+        <div class="kpi-value" id="infra-website-status">—</div>
+        <div class="kpi-sub" id="infra-website-detail">Next.js: —</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h3>Service Latency</h3></div>
+      <div id="infra-latency-table" class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th>Service</th><th>URL</th><th>Status</th><th>Latency</th><th>Action</th></tr></thead>
+          <tbody id="infra-latency-tbody"><tr><td colspan="5">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h3>Agent Control</h3></div>
+      <div class="panel-toolbar" style="margin:0;padding:12px 0;">
+        <button class="btn-primary btn-sm" onclick="agentMinerAction('start')">Start Miner</button>
+        <button class="btn-sm" onclick="agentMinerAction('stop')">Stop Miner</button>
+        <button class="btn-sm" onclick="agentMinerAction('restart')">Restart Miner</button>
+        <span id="agent-action-result" style="margin-left:12px;color:var(--text-muted);"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ╔═══════════════════════════════════════╗ -->
+  <!-- ║         OVERVIEW PANEL                ║ -->
+  <!-- ╚═══════════════════════════════════════╝ -->
+  <section id="panel-overview" class="panel active">
+    <!-- KPI Cards Row -->
+    <div class="kpi-grid">
+      <div class="kpi-card kpi-gold">
+        <div class="kpi-label">Total Hashrate</div>
+        <div class="kpi-value" id="kpi-hashrate">— H/s</div>
+        <div class="kpi-sub" id="kpi-hashrate-pool">Pool: —</div>
+      </div>
+      <div class="kpi-card kpi-green">
+        <div class="kpi-label">Accepted Shares</div>
+        <div class="kpi-value" id="kpi-accepted">—</div>
+        <div class="kpi-sub" id="kpi-accept-rate">Rate: —</div>
+      </div>
+      <div class="kpi-card kpi-purple">
+        <div class="kpi-label">Active Miners</div>
+        <div class="kpi-value" id="kpi-miners">—</div>
+        <div class="kpi-sub" id="kpi-miners-detail">Online: — | Mining: —</div>
+      </div>
+      <div class="kpi-card kpi-cyan">
+        <div class="kpi-label">Blocks Found</div>
+        <div class="kpi-value" id="kpi-blocks">—</div>
+        <div class="kpi-sub" id="kpi-uptime">Avg uptime: —</div>
+      </div>
+    </div>
+
+    <!-- Hashrate Chart -->
+    <div class="card">
+      <div class="card-header">
+        <h3>Hashrate History</h3>
+        <div class="card-actions">
+          <button class="btn-sm active" data-range="1h">1H</button>
+          <button class="btn-sm" data-range="24h">24H</button>
+          <button class="btn-sm" data-range="7d">7D</button>
+        </div>
+      </div>
+      <div class="chart-container">
+        <canvas id="hashrate-chart" height="200"></canvas>
+      </div>
+      <!-- Share Timeline -->
+      <div class="share-timeline" id="share-timeline">
+        <span class="share-timeline-label">Share Timeline</span>
+      </div>
+    </div>
+
+    <!-- Rig Summary Cards -->
+    <div class="card">
+      <div class="card-header">
+        <h3>Rig Fleet</h3>
+        <button class="btn-primary btn-sm" onclick="showPanel('rigs')">View All →</button>
+      </div>
+      <div id="rig-fleet-grid" class="rig-fleet-grid">
+        <!-- JS-populated -->
+      </div>
+    </div>
+  </section>
+
+  <!-- ╔═══════════════════════════════════════╗ -->
+  <!-- ║           RIGS PANEL                  ║ -->
+  <!-- ╚═══════════════════════════════════════╝ -->
+  <section id="panel-rigs" class="panel">
+    <div class="panel-toolbar">
+      <label class="toggle-label" style="margin-left:0">
+        <input type="checkbox" id="rig-select-all"/> Select all
+      </label>
+      <button class="btn-primary" id="btn-add-rig">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Rig
+      </button>
+      <button class="btn-sm" id="btn-batch-start">Start Selected</button>
+      <button class="btn-sm" id="btn-batch-stop">Stop Selected</button>
+      <button class="btn-sm" id="btn-batch-restart">Restart Selected</button>
+      <select id="batch-flightsheet-select" class="select" style="width:auto;min-width:180px">
+        <option value="">Apply Flight Sheet…</option>
+      </select>
+      <button class="btn-sm" id="btn-apply-flightsheet">Apply</button>
+      <div class="search-box">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="rig-search" placeholder="Search rigs…"/>
+      </div>
+    </div>
+    <div id="rigs-table-wrap" class="table-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th></th>
+            <th>Status</th>
+            <th>Name</th>
+            <th>GPU</th>
+            <th>Hashrate</th>
+            <th>Trend</th>
+            <th>Shares (A/R)</th>
+            <th>Temp</th>
+            <th>Power</th>
+            <th>Uptime</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="rigs-tbody">
+          <!-- JS-populated -->
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Rig Detail Modal -->
+    <div class="card">
+      <div class="card-header"><h3>GPU Monitoring</h3></div>
+      <div id="gpu-monitor-grid" class="gpu-grid">
+        <!-- JS-populated -->
+      </div>
+    </div>
+
+    <div id="rig-detail-modal" class="modal hidden">
+      <div class="modal-backdrop"></div>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 id="modal-rig-name">Rig Detail</h3>
+          <button class="btn-icon" onclick="closeModal()">✕</button>
+        </div>
+        <div class="modal-body" id="modal-rig-body">
+          <!-- JS-populated -->
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ╔═══════════════════════════════════════╗ -->
+  <!-- ║          WALLET PANEL                 ║ -->
+  <!-- ╚═══════════════════════════════════════╝ -->
+  <section id="panel-wallet" class="panel">
+    <div class="kpi-grid">
+      <div class="kpi-card kpi-gold">
+        <div class="kpi-label">Estimated Daily</div>
+        <div class="kpi-value" id="wallet-daily">— ZION</div>
+        <div class="kpi-sub">Based on current hashrate</div>
+      </div>
+      <div class="kpi-card kpi-green">
+        <div class="kpi-label">Estimated Weekly</div>
+        <div class="kpi-value" id="wallet-weekly">— ZION</div>
+        <div class="kpi-sub">7-day projection</div>
+      </div>
+      <div class="kpi-card kpi-purple">
+        <div class="kpi-label">Estimated Monthly</div>
+        <div class="kpi-value" id="wallet-monthly">— ZION</div>
+        <div class="kpi-sub">30-day projection</div>
+      </div>
+      <div class="kpi-card kpi-cyan">
+        <div class="kpi-label">Network Estimate</div>
+        <div class="kpi-value" id="wallet-net-hr">—</div>
+        <div class="kpi-sub">Estimated total network hashrate</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h3>Earnings Model</h3></div>
+      <div class="connection-info">
+        <div class="info-row"><span class="info-label">Your Hashrate:</span> <code id="wallet-your-hr">—</code></div>
+        <div class="info-row"><span class="info-label">Difficulty:</span> <code id="wallet-diff">—</code></div>
+        <div class="info-row"><span class="info-label">Block Reward:</span> <code id="wallet-reward">—</code></div>
+        <div class="info-row"><span class="info-label">Block Time:</span> <code id="wallet-blocktime">—</code></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ╔═══════════════════════════════════════╗ -->
+  <!-- ║         CONSOLE PANEL                 ║ -->
+  <!-- ╚═══════════════════════════════════════╝ -->
+  <section id="panel-console" class="panel">
+    <div class="panel-toolbar">
+      <label class="toolbar-label">Rig:</label>
+      <select id="console-rig-select" class="select">
+        <option value="all">All Rigs</option>
+      </select>
+      <label class="toolbar-label">Level:</label>
+      <select id="console-level-filter" class="select">
+        <option value="all">All</option>
+        <option value="info">Info</option>
+        <option value="warn">Warn</option>
+        <option value="error">Error</option>
+        <option value="cmd">Commands</option>
+      </select>
+      <button class="btn-sm" id="btn-clear-console">Clear</button>
+      <label class="toggle-label">
+        <input type="checkbox" id="console-autoscroll" checked/> Auto-scroll
+      </label>
+    </div>
+    <div id="console-output" class="console-output">
+      <div class="console-welcome">ZionOS Console — Waiting for log data…</div>
+    </div>
+    <div class="console-input-bar">
+      <span class="console-prompt">$</span>
+      <input type="text" id="console-input" class="console-input" placeholder="Type command… (e.g. start, stop, restart, reboot)"/>
+      <button class="btn-primary btn-sm" id="btn-send-cmd">Send</button>
+    </div>
+  </section>
+
+  <!-- ╔═══════════════════════════════════════╗ -->
+  <!-- ║          POOL PANEL                   ║ -->
+  <!-- ╚═══════════════════════════════════════╝ -->
+  <section id="panel-pool" class="panel">
+    <div class="kpi-grid">
+      <div class="kpi-card kpi-gold">
+        <div class="kpi-label">Pool Hashrate</div>
+        <div class="kpi-value" id="pool-hashrate">—</div>
+        <div class="kpi-sub" id="pool-hashrate-windows">1h: — | 24h: —</div>
+      </div>
+      <div class="kpi-card kpi-green">
+        <div class="kpi-label">Valid Shares</div>
+        <div class="kpi-value" id="pool-valid">—</div>
+        <div class="kpi-sub" id="pool-invalid">Invalid: —</div>
+      </div>
+      <div class="kpi-card kpi-purple">
+        <div class="kpi-label">Connected Miners</div>
+        <div class="kpi-value" id="pool-miners">—</div>
+        <div class="kpi-sub" id="pool-total-miners">Total: —</div>
+      </div>
+      <div class="kpi-card kpi-cyan">
+        <div class="kpi-label">Blocks Found</div>
+        <div class="kpi-value" id="pool-blocks">—</div>
+        <div class="kpi-sub">Ekam Deeksha v2</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>Fee Distribution</h3></div>
+      <div class="fee-grid">
+        <div class="fee-item">
+          <div class="fee-pct">89%</div>
+          <div class="fee-label">Miners</div>
+        </div>
+        <div class="fee-item">
+          <div class="fee-pct">5%</div>
+          <div class="fee-label">Humanitarian</div>
+        </div>
+        <div class="fee-item">
+          <div class="fee-pct">5%</div>
+          <div class="fee-label">Issobella Fund</div>
+        </div>
+        <div class="fee-item">
+          <div class="fee-pct">1%</div>
+          <div class="fee-label">Pool Fee</div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>Pool Connection</h3></div>
+      <div class="connection-info">
+        <div class="info-row"><span class="info-label">Stratum:</span> <code>stratum+tcp://91.98.122.165:3333</code></div>
+        <div class="info-row"><span class="info-label">Algorithm:</span> <code>Ekam Deeksha v2 (Cosmic Harmony)</code></div>
+        <div class="info-row"><span class="info-label">Protocol:</span> <code>zion-v3-stratum/0.2</code></div>
+        <div class="info-row"><span class="info-label">PPLNS Window:</span> <code>1,000 shares (difficulty-weighted)</code></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ╔═══════════════════════════════════════╗ -->
+  <!-- ║        SETTINGS PANEL                 ║ -->
+  <!-- ╚═══════════════════════════════════════╝ -->
+  <section id="panel-settings" class="panel">
+    <div class="card">
+      <div class="card-header"><h3>Dashboard Settings</h3></div>
+      <div class="settings-form">
+        <div class="form-group">
+          <label>Pool Metrics URL</label>
+          <input type="text" id="setting-pool-url" class="input" value="http://91.98.122.165:9090"/>
+        </div>
+        <div class="form-group">
+          <label>Dashboard API URL</label>
+          <input type="text" id="setting-api-url" class="input" value=""/>
+        </div>
+        <div class="form-group">
+          <label>API Control Token (optional)</label>
+          <input type="password" id="setting-api-token" class="input" value="" placeholder="Required when ZIONOS_CONTROL_TOKEN is set" autocomplete="off"/>
+        </div>
+        <div class="form-group">
+          <label>Default Wallet</label>
+          <input type="text" id="setting-wallet" class="input" value="zion1n7n5t28663h3f3d8s8y596h5f3z582z8638d073"/>
+        </div>
+        <div class="form-group">
+          <label>Refresh Interval (seconds)</label>
+          <input type="number" id="setting-refresh" class="input" value="5" min="1" max="60"/>
+        </div>
+        <div class="form-group">
+          <label>Theme</label>
+          <select id="setting-theme" class="select">
+            <option value="cosmic">Cosmic (Gold/Purple)</option>
+            <option value="matrix">Matrix (Green)</option>
+            <option value="cyberpunk">Cyberpunk (Yellow/Cyan)</option>
+          </select>
+        </div>
+        <button class="btn-primary" id="btn-save-settings">Save Settings</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>Add Rig</h3></div>
+      <div class="settings-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Rig Name</label>
+            <input type="text" id="new-rig-name" class="input" placeholder="my-rig"/>
+          </div>
+          <div class="form-group">
+            <label>Worker Name</label>
+            <input type="text" id="new-rig-worker" class="input" placeholder="worker1"/>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>GPU</label>
+            <input type="text" id="new-rig-gpu" class="input" placeholder="AMD RX 5600 XT"/>
+          </div>
+          <div class="form-group">
+            <label>GPU Mode</label>
+            <select id="new-rig-gpu-mode" class="select">
+              <option value="cpu">CPU</option>
+              <option value="opencl">OpenCL</option>
+              <option value="cuda">CUDA</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Pool Address</label>
+          <input type="text" id="new-rig-pool" class="input" value="91.98.122.165:3333"/>
+        </div>
+        <button class="btn-primary" id="btn-register-rig">Register Rig</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><h3>Flight Sheets</h3></div>
+      <div class="settings-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Profile Name</label>
+            <input type="text" id="fs-name" class="input" placeholder="ZION OpenCL"/>
+          </div>
+          <div class="form-group">
+            <label>GPU Mode</label>
+            <select id="fs-gpu-mode" class="select">
+              <option value="cpu">CPU</option>
+              <option value="opencl">OpenCL</option>
+              <option value="cuda">CUDA</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Threads</label>
+            <input type="number" id="fs-threads" class="input" value="4" min="0" max="64"/>
+          </div>
+          <div class="form-group">
+            <label>Miner Args</label>
+            <input type="text" id="fs-args" class="input" placeholder="--threads 4 --gpu-mode opencl"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Pool Address</label>
+          <input type="text" id="fs-pool" class="input" value="91.98.122.165:3333"/>
+        </div>
+        <button class="btn-primary" id="btn-create-fs">Create Flight Sheet</button>
+      </div>
+      <div id="flightsheet-list" class="table-wrap"></div>
+    </div>
+  </section>
+
+</main>
+
+<script src="warp.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
