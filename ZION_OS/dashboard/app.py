@@ -971,6 +971,25 @@ def http_probe(url: str, timeout: float = 0.5) -> tuple[bool, str]:
     except Exception as e:
         return (False, str(e)[:60])
 
+def rpc_probe(host: str, port: int, timeout: float = 1.0) -> tuple[bool, str]:
+    """Send a JSON-RPC getChainInfo probe to a node."""
+    try:
+        req = _urlreq.Request(
+            f"http://{host}:{port}/jsonrpc",
+            data=json.dumps({"jsonrpc": "2.0", "id": 1, "method": "getChainInfo", "params": {}}).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with _urlreq.urlopen(req, timeout=timeout) as r:
+            data = json.loads(r.read().decode("utf-8"))
+            if "result" in data:
+                height = data["result"].get("chain_height")
+                return True, f"height={height}" if height is not None else "ok"
+            return False, "no result"
+    except Exception as e:
+        return False, str(e)[:60]
+
+
 def check_service_health(svc: dict) -> dict:
     """Determine service health using its configured health_method.
     Priority: rpc > http > tcp > process > log.  Logs are fallback only."""
@@ -988,19 +1007,23 @@ def check_service_health(svc: dict) -> dict:
 
     # ── TCP probes (used by tcp, rpc, http methods) ──────────────────────
     if ports:
-        # Fast timeout: remote hosts should respond quickly; local gets micro-timeout
-        timeout = 0.3 if host != "127.0.0.1" else 0.15
+        # Fast timeout for local; longer for remote over VPN
+        timeout = 1.0 if host != "127.0.0.1" else 0.15
         for pname, port in ports.items():
             if tcp_probe(host, port, timeout):
                 open_ports.append(f"{pname}:{port}@{host}")
             else:
                 closed_ports.append(f"{pname}:{port}@{host}")
 
-    # ── RPC probe (JSONRPC health) ───────────────────────────────────────
+    # ── RPC probe (JSON-RPC via HTTP POST) ───────────────────────────────
     rpc_ok = False
     rpc_detail = ""
-    if method == "rpc" and svc.get("health_endpoint"):
-        rpc_ok, rpc_detail = http_probe(svc["health_endpoint"], timeout=1.0)
+    if method == "rpc":
+        rpc_port = ports.get("rpc")
+        if rpc_port:
+            rpc_ok, rpc_detail = rpc_probe(host, rpc_port, timeout=1.5)
+        else:
+            rpc_detail = "no rpc port"
 
     # ── HTTP probe ─────────────────────────────────────────────────────────
     http_ok = False
@@ -1842,19 +1865,19 @@ def _build_status_edge_primary() -> dict:
 
     def _edge_rpc_call():
         # Tailscale VPN only — public IP fallback removed to avoid 6+s Windows connect delays
-        r = rpc_call("100.76.16.108", 8443, "getChainInfo", {}, timeout=0.6)
+        r = rpc_call("100.76.16.108", 8443, "getChainInfo", {}, timeout=2.5)
         if r and not r.get("_rpc_error"):
             return ("edge", r)
         return ("edge", None)
 
     def _local_rpc_call():
-        r = rpc_call("127.0.0.1", 8443, "getChainInfo", {}, timeout=0.8)
+        r = rpc_call("127.0.0.1", 8443, "getChainInfo", {}, timeout=1.5)
         return ("local", r if r and not r.get("_rpc_error") else None)
 
     with ThreadPoolExecutor(max_workers=2) as ex:
         futures = {ex.submit(_edge_rpc_call), ex.submit(_local_rpc_call)}
         try:
-            for fut in as_completed(futures, timeout=1.5):
+            for fut in as_completed(futures, timeout=5.0):
                 try:
                     key, val = fut.result()
                     if key == "edge":
@@ -2443,39 +2466,21 @@ def load_env_file(name: str) -> dict:
 # ── Wallet discovery & RPC balance lookup ──────────────────────────────
 
 def rpc_call(host: str, port: int, method: str, params: dict, timeout: float = 2.0) -> dict:
-    """Simple TCP JSON-RPC call to ZION node. Returns result dict or None on failure."""
+    """HTTP JSON-RPC call to ZION node. Returns result dict or None on failure."""
     try:
-        payload = json.dumps({"jsonrpc": "2.0", "id": 1, "method": method, "params": params}) + "\n"
-        # Force IPv4 to avoid dual-stack delay on Windows
-        with socket.create_connection((host, port), timeout=timeout, family=socket.AF_INET) as sock:
-            sock.sendall(payload.encode("utf-8"))
-            sock.settimeout(timeout)
-            data = b""
-            while True:
-                try:
-                    chunk = sock.recv(4096)
-                    if not chunk:
-                        break
-                    data += chunk
-                    if b"\n" in data:
-                        break
-                except socket.timeout:
-                    break
-        for line in data.decode("utf-8", errors="ignore").splitlines():
-            line = line.strip()
-            if not line:
-                continue
-            try:
-                resp = json.loads(line)
-                if "result" in resp:
-                    return resp["result"]
-                if "error" in resp and resp["error"]:
-                    return {"_rpc_error": resp["error"]}
-            except json.JSONDecodeError:
-                continue
-        return None
-    except Exception:
-        return None
+        req = _urlreq.Request(
+            f"http://{host}:{port}/jsonrpc",
+            data=json.dumps({"jsonrpc": "2.0", "id": 1, "method": method, "params": params}).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with _urlreq.urlopen(req, timeout=timeout) as r:
+            resp = json.loads(r.read().decode("utf-8"))
+            if "error" in resp and resp["error"]:
+                return {"_rpc_error": resp["error"]}
+            return resp.get("result")
+    except Exception as e:
+        return {"_rpc_error": str(e)[:120]}
 
 def parse_premine_from_genesis(rpc_host: str = "127.0.0.1", rpc_port: int = 8443) -> list:
     """Extract premine addresses and amounts from the actual genesis block via RPC.
