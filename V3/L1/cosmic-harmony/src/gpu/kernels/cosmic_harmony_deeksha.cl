@@ -108,10 +108,8 @@ __constant uchar AES_RCON[10] = {
 
 __attribute__((noinline)) void keccak_f1600(ulong *st)
 {
-    ulong bc0, bc1, bc2, bc3, bc4, t;
-    ulong r_bc0 = 0, r_bc1 = 0, r_bc2 = 0, r_bc3 = 0, r_bc4 = 0;
+    volatile ulong bc0, bc1, bc2, bc3, bc4, t;
 
-    #pragma unroll 4
     for (int rnd = 0; rnd < 24; rnd++) {
         /* Theta — no arrays, direct column XOR */
         bc0 = st[0]^st[5]^st[10]^st[15]^st[20];
