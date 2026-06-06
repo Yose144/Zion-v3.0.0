@@ -1811,6 +1811,39 @@ validator provisioning (G), rotace klíčů (P0).
 - Sustained hashrate ~2.5 KH/s na RX 5600 XT (OpenCL).
 - `gpu_gcn_s4_mode enabled` zobrazeno v logu.
 
+---
+
+## ✅ AKTUALIZACE 2026-06-06 (2. část): GPU hashrate boost na AMD RDNA
+
+**Problém:** Po GPU_MISMATCH fixu byl hashrate na RX 5600 XT pouze ~0.9–1.0 KH/s v s4 mode.
+Historických ~5–10 KH/s nebylo dosažitelných kvůli pomalému `memory_hard_transform`
+v OpenCL kernelu.
+
+**Root cause:**
+- `volatile __global uchar *pad` v `init_scratchpad`, `mix_block` a `random_read_mix_sha3`
+  vynucoval byte-by-byte přístupy přímo do VRAM (bypass L1 cache).
+- `random_read_mix_sha3` používal 3× `keccak_absorb` loop místo hardcoded fast-path.
+- `local_work_size=256` na RDNA vytvářel pouze 16 work-groupů z 36 CU.
+- `work_size` pro `gfx10` byl capped na 4096, i když větší batch byl rychlejší.
+
+**Opravy:**
+- `init_scratchpad`, `mix_block`: přepsány na `volatile __global ulong *` reads/writes
+  (8× méně `volatile` operací).
+- `random_read_mix_sha3`: přepnut na `keccak256_136_mix` fast-path (1× `keccak_f1600`
+  místo 3× `keccak_absorb` + 1× `keccak_finalize`).
+- `gpu_backend.rs`: `local_work_size=128` pro `gfx10` (32 work-groupů, lepší CU využití).
+- `gpu_backend.rs`: `gfx10` vyřazen z `gcn_cap=4096` — RDNA nyní využívá plný VRAM
+  limit (default 25 % → `work_size=6128`).
+
+**Výsledek:**
+- Benchmark s4 mode: **3.11 KH/s** (`work_size=6128`, `local_ws=128`).
+- Benchmark full pipeline: **3.10 KH/s** (s4 není nutný na RDNA, full pipeline funguje
+  správně a je stejně rychlý).
+- S `ZION_OCL_VRAM_PCT=35`: **3.20 KH/s** (`work_size=8579`).
+- Live mining: 9/9 shares accepted, `gpu_hps=1360`, `best_batch_ms=1417`.
+- Self-test MATCH ověřen na `ekam_deeksha_mine`, `ekam_deeksha_mine_s4` a
+  `ekam_deeksha_debug`.
+
 **Soubory změněny:**
 - `V3/L1/cosmic-harmony/src/gpu/kernels/cosmic_harmony_deeksha.cl`
 - `V3/L1/miner/src/gpu_backend.rs`
