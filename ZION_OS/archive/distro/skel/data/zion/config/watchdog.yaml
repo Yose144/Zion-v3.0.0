@@ -1,0 +1,55 @@
+# Zion OS Watchdog Rules
+# Tyto pravidla definuji self-healing chovani rigu
+# Pravidla se vyhodnocuji kazdych 60 sekund
+
+rules:
+  - name: "miner_no_shares"
+    condition: "shares_5min == 0 AND hashrate_5min > 0"
+    severity: "warning"
+    action: "restart_miner"
+    cooldown_sec: 300
+    auto_resolve: "shares_5min > 0"
+    description: "Miner bezi ale neposila share — mozny zasek"
+
+  - name: "gpu_overheat"
+    condition: "gpu_temp_max > 85"
+    severity: "critical"
+    action: "stop_miner"
+    cooldown_sec: 60
+    auto_resolve: "gpu_temp_max < 75"
+    description: "GPU prehrati — okamzite zastavit mining"
+
+  - name: "gpu_hot_warning"
+    condition: "gpu_temp_max > 80"
+    severity: "warning"
+    action: "apply_conservative_oc"
+    cooldown_sec: 600
+    description: "GPU horka — snizit OC"
+
+  - name: "miner_crash_loop"
+    condition: "miner_restarts_1h > 5"
+    severity: "critical"
+    action: "reboot_rig"
+    cooldown_sec: 3600
+    description: "Miner se porad crashuje — reboot systemu"
+
+  - name: "pool_unreachable"
+    condition: "pool_connected == false AND internet_ok == true"
+    severity: "warning"
+    action: "switch_pool_to_failover"
+    cooldown_sec: 60
+    description: "Pool nedostupny — prepnout na zalozni"
+
+  - name: "low_hashrate"
+    condition: "hashrate < expected_hashrate * 0.7"
+    severity: "warning"
+    action: "apply_conservative_oc"
+    cooldown_sec: 600
+    description: "Hashrate pod 70% ocekavaneho — mozne OC problemy"
+
+  - name: "disk_full"
+    condition: "disk_used_percent > 90"
+    severity: "critical"
+    action: "stop_miner"
+    cooldown_sec: 3600
+    description: "Disk skoro plny — zastavit mining, aby se neposkodil log"
