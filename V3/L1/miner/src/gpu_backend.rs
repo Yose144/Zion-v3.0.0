@@ -642,9 +642,8 @@ pub mod opencl_deeksha {
 
             let scratch_mib = actual_work_size * SCRATCHPAD_BYTES / (1024 * 1024);
 
-            // Detect GCN devices for s4-only mode (CPU-side NPU+fusion)
+            // Detect GCN devices (gfx6–gfx9). RDNA (gfx10+) uses full GPU pipeline.
             let dev_lower = device_name.to_ascii_lowercase();
-            println!("DEBUG: device_name='{}' dev_lower='{}'", device_name, dev_lower);
             let is_gcn = dev_lower.contains("vega")
                 || dev_lower.contains("polaris")
                 || dev_lower.contains("fiji")
@@ -652,17 +651,17 @@ pub mod opencl_deeksha {
                 || dev_lower.contains("gfx6")
                 || dev_lower.contains("gfx7")
                 || dev_lower.contains("gfx8")
-                || dev_lower.contains("gfx9")
-                || dev_lower.contains("gfx10");
+                || dev_lower.contains("gfx9");
 
-            // gcn_s4_mode fallback for GCN devices.  The full GPU pipeline
-            // (stages 1-6 on GPU) still produces wrong hashes on GCN5 (gfx900)
-            // even with the Blake3 s4 fix, likely due to NPU/fusion compiler
-            // bugs under high register pressure.  RDNA (gfx10+) handles the
-            // full pipeline correctly.  For GCN we always force s4-only mode:
-            // GPU does stages 1-4, CPU does NPU+fusion+target.
-            // Temporarily force s4 for ALL devices to fix SMOS Vega 64.
-            let force_s4 = true;
+            // Canonical Ekam Deeksha: full GPU pipeline (stages 1–6) by default.
+            // ZION_GCN_S4_MODE=1 → GCN fallback: GPU s1–s4, CPU NPU+fusion+target.
+            // ZION_NO_GCN_S4_MODE=1 → always full pipeline (overrides GCN_S4).
+            let env_on = |name: &str| {
+                std::env::var(name).map_or(false, |v| {
+                    matches!(v.as_str(), "1" | "true" | "TRUE" | "yes" | "YES")
+                })
+            };
+            let force_s4 = is_gcn && env_on("ZION_GCN_S4_MODE") && !env_on("ZION_NO_GCN_S4_MODE");
             let (s4_kernel, s4_out_buf) = if force_s4 {
                 let s4_out = Buffer::<u8>::builder()
                     .queue(pro_que.queue().clone())
@@ -688,8 +687,8 @@ pub mod opencl_deeksha {
             };
 
             println!(
-                "gpu_opencl_init platform=\"{}\" device=\"{}\" work_size={} local_ws={} scratchpad_mib={} npu_max_dim={} gcn_s4={} build_opts=\"{}\"",
-                platform_name, device_name, actual_work_size, local_work_size, scratch_mib, npu_max_dim, is_gcn, build_opts,
+                "gpu_opencl_init platform=\"{}\" device=\"{}\" work_size={} local_ws={} scratchpad_mib={} npu_max_dim={} is_gcn={} gcn_s4_mode={} build_opts=\"{}\"",
+                platform_name, device_name, actual_work_size, local_work_size, scratch_mib, npu_max_dim, is_gcn, force_s4, build_opts,
             );
 
             let miner = Self {
@@ -719,8 +718,6 @@ pub mod opencl_deeksha {
             // Startup self-test: run debug kernel and compare all 6 stages with CPU
             // Skip if ZION_SKIP_GPU_SELF_TEST is set (for SMOS compatibility)
             // Also skip if ZION_IGNORE_GPU_SELF_TEST_FAIL is set (for Vega 64 compatibility)
-            // For GCN devices (gcn_s4=true), automatically ignore self-test failures due to
-            // known s4_memhard mismatch between GPU SHA3-512 and CPU Blake3 XOF implementations
             if std::env::var("ZION_SKIP_GPU_SELF_TEST").is_err() {
                 if let Err(e) = miner.self_test() {
                     println!("GPU_SELF_TEST_ERROR: {e}");
