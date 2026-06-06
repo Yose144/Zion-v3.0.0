@@ -636,6 +636,7 @@ pub mod opencl_deeksha {
 
             // Detect GCN devices for s4-only mode (CPU-side NPU+fusion)
             let dev_lower = device_name.to_ascii_lowercase();
+            println!("DEBUG: device_name='{}' dev_lower='{}'", device_name, dev_lower);
             let is_gcn = dev_lower.contains("vega")
                 || dev_lower.contains("polaris")
                 || dev_lower.contains("fiji")
@@ -646,13 +647,14 @@ pub mod opencl_deeksha {
                 || dev_lower.contains("gfx9")
                 || dev_lower.contains("gfx10");
 
-            // gcn_s4_mode fallback for GCN devices.  Historically the full GPU
-            // pipeline produced wrong hashes on GCN because of a miscompiled
-            // 64-bit rotate (ROL64).  With the rotate fix we now let the miner
-            // try the full pipeline first; s4-only is used only when the env var
-            // ZION_GCN_S4_MODE=1 is set or when the startup self-test fails.
-            let force_s4 = is_gcn
-                && std::env::var("ZION_GCN_S4_MODE").is_ok();
+            // gcn_s4_mode fallback for GCN devices.  The full GPU pipeline
+            // (stages 1-6 on GPU) still produces wrong hashes on GCN5 (gfx900)
+            // even with the Blake3 s4 fix, likely due to NPU/fusion compiler
+            // bugs under high register pressure.  RDNA (gfx10+) handles the
+            // full pipeline correctly.  For GCN we always force s4-only mode:
+            // GPU does stages 1-4, CPU does NPU+fusion+target.
+            // Temporarily force s4 for ALL devices to fix SMOS Vega 64.
+            let force_s4 = true;
             let (s4_kernel, s4_out_buf) = if force_s4 {
                 let s4_out = Buffer::<u8>::builder()
                     .queue(pro_que.queue().clone())
@@ -674,9 +676,6 @@ pub mod opencl_deeksha {
                 println!("gpu_gcn_s4_mode enabled — GPU stages 1-4, CPU does NPU+fusion+target",);
                 (Some(s4k), Some(s4_out))
             } else {
-                if is_gcn {
-                    println!("gpu_gcn_s4_mode disabled — trying full GPU pipeline (set ZION_GCN_S4_MODE=1 to force s4-only)");
-                }
                 (None, None)
             };
 
