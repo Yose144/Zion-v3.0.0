@@ -5940,6 +5940,151 @@ async function genesisBackupAction(action){
 console.log('[ZION Dashboard] Auto-refresh started');
 loadMinerConfig();
 
+// ═════════ ZION Agent Panel ═════════
+
+async function refreshAgentPanel(){
+  const statusBadge = document.getElementById('agent-status-badge');
+  if(statusBadge) statusBadge.textContent = 'Checking…';
+  try{
+    // Status
+    const status = await fetch('/api/agent/status').then(r => r.json());
+    if(!status._error){
+      if(statusBadge){
+        statusBadge.textContent = 'Online';
+        statusBadge.className = 'text-xs px-2 py-1 rounded bg-emerald-700 text-white';
+      }
+      const set = (id, v) => { const el = document.getElementById(id); if(el) el.textContent = v ?? '—'; };
+      set('agent-kpi-mode', status.mode);
+      set('agent-kpi-miner', status.miner_running ? 'Running' : 'Stopped');
+      set('agent-kpi-gpus', status.gpu_count ?? 0);
+      set('agent-kpi-rig', status.rig_id);
+      set('agent-kpi-version', status.version);
+    }else{
+      if(statusBadge){
+        statusBadge.textContent = 'Offline';
+        statusBadge.className = 'text-xs px-2 py-1 rounded bg-red-700 text-white';
+      }
+    }
+    // Telemetry
+    const telem = await fetch('/api/agent/telemetry').then(r => r.json());
+    const poolEl = document.getElementById('agent-telemetry-pool');
+    if(poolEl && !telem._error){
+      poolEl.innerHTML = `
+        <div class="flex justify-between"><span class="text-gray-400">Pool:</span><span class="text-white font-mono">${telem.miner?.pool ?? '—'}</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">Backend:</span><span class="text-white">${telem.miner?.backend ?? '—'}</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">Telemetry:</span><span class="text-white">${telem.telemetry_enabled ? 'Enabled' : 'Disabled'}</span></div>
+      `;
+    }else if(poolEl){
+      poolEl.innerHTML = '<div class="text-gray-500">Agent telemetry unavailable</div>';
+    }
+    // GPU
+    const gpu = await fetch('/api/agent/gpu').then(r => r.json());
+    const gpuEl = document.getElementById('agent-gpu-list');
+    if(gpuEl && !gpu._error && gpu.gpus){
+      if(gpu.gpus.length === 0){
+        gpuEl.innerHTML = '<div class="text-gray-500">No GPUs detected</div>';
+      }else{
+        gpuEl.innerHTML = gpu.gpus.map((g, i) => `
+          <div class="flex items-center justify-between bg-black/30 rounded-lg px-3 py-2">
+            <div>
+              <div class="text-xs font-semibold text-gray-200">${escapeHtml(g.name || `GPU ${i}`)}</div>
+              <div class="text-[10px] text-gray-500">${escapeHtml(g.vendor || '')} · ${escapeHtml(g.memory || '')}</div>
+            </div>
+            <span class="text-[10px] px-2 py-0.5 rounded-full ${g.temperature && g.temperature > 80 ? 'bg-red-700/50 text-red-300' : 'bg-emerald-700/50 text-emerald-300'}">${g.temperature ? g.temperature + '°C' : 'N/A'}</span>
+          </div>
+        `).join('');
+      }
+    }else if(gpuEl){
+      gpuEl.innerHTML = '<div class="text-gray-500">GPU telemetry unavailable</div>';
+    }
+    // Discovered nodes (reuse existing function but target this panel)
+    const disc = await fetch('/api/agent/nodes').then(r => r.json());
+    const discEl = document.getElementById('agent-discovered-list');
+    if(discEl){
+      if(disc._error || !disc.nodes || disc.nodes.length === 0){
+        discEl.innerHTML = '<div class="text-gray-500">No new nodes discovered yet. The agent scans every 60 seconds.</div>';
+      }else{
+        let html = `<div class="text-xs text-gray-500 mb-2">Discovered ${disc.nodes.length} node(s)</div>`;
+        html += `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">`;
+        for(const node of disc.nodes){
+          const statusColor = node.synced_with_edge ? 'text-emerald-400' : (node.needs_help ? 'text-amber-400' : 'text-gray-400');
+          const statusText = node.synced_with_edge ? 'Synced' : (node.needs_help ? 'Needs help' : 'Idle');
+          html += `
+            <div class="bg-black/30 rounded-lg p-3 border border-white/5">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-xs font-bold text-gray-200">${node.id}</span>
+                <span class="${statusColor} text-[10px]">${statusText}</span>
+              </div>
+              <div class="text-[10px] text-gray-400">${node.ip}:${node.rpc_port} · height ${node.chain_height} · peers ${node.peers}</div>
+            </div>
+          `;
+        }
+        html += `</div>`;
+        discEl.innerHTML = html;
+      }
+    }
+    // Rewards
+    const rewards = await fetch('/api/agent/rewards').then(r => r.json());
+    const rewEl = document.getElementById('agent-rewards-list');
+    if(rewEl){
+      if(rewards._error || !rewards.rewards || rewards.rewards.length === 0){
+        rewEl.innerHTML = '<div class="text-gray-500">No rewards yet. Help new nodes sync to earn points!</div>';
+      }else{
+        let html = `<div class="flex items-center gap-4 mb-2">`;
+        html += `<div class="bg-black/30 rounded-lg p-2 text-center flex-1"><div class="text-lg font-bold text-zion-gold">${rewards.total_points || 0}</div><div class="text-[10px] text-gray-400">Total Points</div></div>`;
+        html += `<div class="bg-black/30 rounded-lg p-2 text-center flex-1"><div class="text-lg font-bold text-zion-cyan">${rewards.adoptions || 0}</div><div class="text-[10px] text-gray-400">Adoptions</div></div>`;
+        html += `</div>`;
+        for(const r of rewards.rewards){
+          html += `
+            <div class="flex items-center justify-between bg-black/30 rounded-lg px-3 py-2 text-xs">
+              <div class="flex items-center gap-2">
+                <span class="text-zion-gold font-bold">+${r.reward_points}</span>
+                <span class="text-gray-300">${escapeHtml(r.description)}</span>
+              </div>
+              <span class="text-gray-500">${new Date(r.adopted_at * 1000).toLocaleString()}</span>
+            </div>
+          `;
+        }
+        rewEl.innerHTML = html;
+      }
+    }
+  }catch(e){
+    if(statusBadge){
+      statusBadge.textContent = 'Error';
+      statusBadge.className = 'text-xs px-2 py-1 rounded bg-red-700 text-white';
+    }
+    console.error('Agent panel refresh failed:', e);
+  }
+}
+
+async function agentControl(action){
+  try{
+    const r = await fetch('/api/agent/control', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({action})
+    });
+    const d = await r.json();
+    alert(d.status === 'ok' ? 'Command sent: ' + action : 'Error: ' + (d.message || d.error));
+    refreshAgentPanel();
+  }catch(e){
+    alert('Agent control failed: ' + e.message);
+  }
+}
+
+// Auto-refresh agent data when Agent tab is opened
+(function() {
+  const _orig = window.switchTab;
+  if (_orig) {
+    window.switchTab = function(t) {
+      _orig(t);
+      if (t === 'agent') {
+        refreshAgentPanel();
+      }
+    };
+  }
+})();
+
 // ═════════ Agent Node Discovery & Rewards ═════════
 
 async function refreshAgentNodes(){
