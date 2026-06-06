@@ -3,6 +3,22 @@ name = "deeksha-debug"
 version = "0.1.0"
 edition = "2021"
 
+[[bin]]
+name = "deeksha-debug"
+path = "src/main.rs"
+
+[[bin]]
+name = "bench_gpu_overhead"
+path = "src/bench_gpu_overhead.rs"
+
+[[bin]]
+name = "bench_double_buffer"
+path = "src/bench_double_buffer.rs"
+
+[[bin]]
+name = "bench_alloc_overhead"
+path = "src/bench_alloc_overhead.rs"
+
 [dependencies]
 zion-cosmic-harmony = { path = "../V3/L1/cosmic-harmony" }
 rand = "0.8"
