@@ -1059,14 +1059,18 @@ void aes128_encrypt(const uchar key[16], uchar block[16])
  */
 void fusion_round(uchar state[64], uchar round_num)
 {
-    /* Keccak-256(state[0..32] || round_byte) */
-    uchar hash_input[33];
+    /* Keccak-256(state[0..32] || round_byte)
+     * Use 40-byte buffer (padded to 8-byte alignment) to avoid
+     * undefined behaviour from unaligned ulong pointer casts on RDNA.
+     */
+    uchar hash_input[40];
     {
         ulong *hi64 = (ulong *)hash_input;
         ulong *st64 = (ulong *)state;
         for (int i = 0; i < 4; i++) hi64[i] = st64[i];
     }
     hash_input[32] = round_num;
+    for (int i = 33; i < 40; i++) hash_input[i] = 0;
 
     uchar intermediate[32];
     keccak256(hash_input, 33, intermediate);
@@ -1240,7 +1244,9 @@ void ekam_deeksha_mine(
     uint tid   = get_global_id(0);
     if (tid >= nonce_count) return;
     ulong nonce = nonce_base + (ulong)tid;
-    __global uchar *pad = scratchpad_pool + (ulong)tid * SCRATCHPAD_SIZE;
+    /* Explicit ulong multiplication to prevent 32-bit overflow on AMD
+     * compilers that may optimize (ulong)tid * int as uint multiplication. */
+    __global uchar *pad = scratchpad_pool + (ulong)tid * (ulong)SCRATCHPAD_SIZE;
 
     /* Build input: header (<=80 B) + nonce (8 B LE) = 88 B, zero-padded */
     uchar input[88];
