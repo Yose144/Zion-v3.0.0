@@ -102,43 +102,6 @@ __constant uchar AES_RCON[10] = {
     0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36
 };
 
-/* Helper functions for byte-level operations (needed for both GCN and RDNA) */
-static inline ulong ulong_from_bytes(const uchar *p)
-{
-    return ((ulong)p[0])        | ((ulong)p[1] << 8)  |
-           ((ulong)p[2] << 16) | ((ulong)p[3] << 24) |
-           ((ulong)p[4] << 32) | ((ulong)p[5] << 40) |
-           ((ulong)p[6] << 48) | ((ulong)p[7] << 56);
-}
-static inline ulong ulong_from_bytes_global(__global const uchar *p)
-{
-    return ((ulong)p[0])        | ((ulong)p[1] << 8)  |
-           ((ulong)p[2] << 16) | ((ulong)p[3] << 24) |
-           ((ulong)p[4] << 32) | ((ulong)p[5] << 40) |
-           ((ulong)p[6] << 48) | ((ulong)p[7] << 56);
-}
-static inline void ulong_to_bytes(ulong v, uchar *p)
-{
-    p[0] = (uchar)(v      ); p[1] = (uchar)(v >>  8);
-    p[2] = (uchar)(v >> 16); p[3] = (uchar)(v >> 24);
-    p[4] = (uchar)(v >> 32); p[5] = (uchar)(v >> 40);
-    p[6] = (uchar)(v >> 48); p[7] = (uchar)(v >> 56);
-}
-
-static inline void bytes_to_ulong8(const uchar *p, ulong out[8])
-{
-    for (int i = 0; i < 8; i++) out[i] = ulong_from_bytes(p + i * 8);
-}
-static inline void bytes_to_ulong8_global(__global const uchar *p, ulong out[8])
-{
-    for (int i = 0; i < 8; i++) out[i] = ulong_from_bytes_global(p + i * 8);
-}
-
-static inline void ulong8_to_bytes(const ulong in[8], uchar *p)
-{
-    for (int i = 0; i < 8; i++) ulong_to_bytes(in[i], p + i * 8);
-}
-
 /* ========================================================================== */
 /* Keccak-f1600                                                                */
 /* ========================================================================== */
@@ -367,9 +330,12 @@ void init_scratchpad(const uchar seed[64], __global uchar *pad)
         sha3_512(input, 72, out);
 
         uint off = blk * BLOCK_SIZE;
-        for (int i = 0; i < 64; i++) {
-            pad[off + i] = out[i];
-            state[i]      = out[i];
+        __global ulong *dst = (__global ulong *)(pad + off);
+        ulong *src = (ulong *)out;
+        ulong *st64 = (ulong *)state;
+        for (int i = 0; i < 8; i++) {
+            dst[i] = src[i];
+            st64[i] = src[i];
         }
     }
 }
@@ -393,33 +359,18 @@ void mix_block(__global uchar *pad, uint index, ulong pass, int forward)
     uint prev_off = prev_index * BLOCK_SIZE;
 
     /* Derive random block index from current block's first 8 bytes */
-#ifdef ZION_GCN_WORKAROUNDS
-    ulong idx_val = ulong_from_bytes(pad + cur_off);
-#else
-    ulong idx_val = *((__global ulong *)(pad + cur_off));
-#endif
+    __global ulong *pad64 = (__global ulong *)pad;
+    ulong idx_val = pad64[cur_off >> 3];
     uint rand_index = (uint)((idx_val ^ pass ^ (ulong)index) % BLOCK_COUNT);
     uint rand_off = rand_index * BLOCK_SIZE;
 
-    /* Snapshot all three blocks to private memory */
-#ifdef ZION_GCN_WORKAROUNDS
-    /* Byte-level copy for GCN (slower but safe) */
-    uchar current[64], prev[64], random_blk[64];
-    for (int i = 0; i < 64; i++) {
-        current[i]    = pad[cur_off  + i];
-        prev[i]       = pad[prev_off + i];
-        random_blk[i] = pad[rand_off + i];
-    }
-#else
-    /* Fast ulong-width copy for RDNA */
-    ulong current64[8], prev64[8], random_blk64[8];
-    __global ulong *pad64 = (__global ulong *)pad;
+    /* Snapshot all three blocks to private memory (ulong-width) */
+    ulong current[8], prev[8], random_blk[8];
     for (int i = 0; i < 8; i++) {
-        current64[i]    = pad64[(cur_off  >> 3) + i];
-        prev64[i]       = pad64[(prev_off >> 3) + i];
-        random_blk64[i] = pad64[(rand_off >> 3) + i];
+        current[i]    = pad64[(cur_off  >> 3) + i];
+        prev[i]       = pad64[(prev_off >> 3) + i];
+        random_blk[i] = pad64[(rand_off >> 3) + i];
     }
-#endif
 
     /* SHA3-512(current || prev || random || pass_le(8) || index_le(8)) */
     uchar pass_bytes[8], index_bytes[8];
@@ -428,32 +379,19 @@ void mix_block(__global uchar *pad, uint index, ulong pass, int forward)
 
     ulong st[25]; int pos = 0;
     for (int i = 0; i < 25; i++) st[i] = 0;
-#ifdef ZION_GCN_WORKAROUNDS
-    keccak_absorb(st, &pos, 72, current,     BLOCK_SIZE);
-    keccak_absorb(st, &pos, 72, prev,        BLOCK_SIZE);
-    keccak_absorb(st, &pos, 72, random_blk,  BLOCK_SIZE);
-#else
-    keccak_absorb(st, &pos, 72, (uchar *)current64,     BLOCK_SIZE);
-    keccak_absorb(st, &pos, 72, (uchar *)prev64,        BLOCK_SIZE);
-    keccak_absorb(st, &pos, 72, (uchar *)random_blk64,  BLOCK_SIZE);
-#endif
+    keccak_absorb(st, &pos, 72, (uchar *)current,     BLOCK_SIZE);
+    keccak_absorb(st, &pos, 72, (uchar *)prev,        BLOCK_SIZE);
+    keccak_absorb(st, &pos, 72, (uchar *)random_blk,  BLOCK_SIZE);
     keccak_absorb(st, &pos, 72, pass_bytes,  8);
     keccak_absorb(st, &pos, 72, index_bytes, 8);
 
     uchar mixed[64];
     keccak_finalize(st, pos, 72, 0x06, mixed, 64);
 
-    /* XOR result into current block position */
-#ifdef ZION_GCN_WORKAROUNDS
-    /* Byte-level XOR for GCN */
-    for (int i = 0; i < 64; i++)
-        pad[cur_off + i] ^= mixed[i];
-#else
-    /* Fast ulong-width XOR for RDNA */
+    /* XOR result into current block position (ulong-width) */
     ulong *mix64 = (ulong *)mixed;
     for (int i = 0; i < 8; i++)
         pad64[(cur_off >> 3) + i] ^= mix64[i];
-#endif
 }
 
 /*
@@ -487,48 +425,53 @@ void random_read_mix(const uchar seed[64], __global const uchar *pad,
                      uchar out[64])
 {
     uchar acc[64];
-    for (int i = 0; i < 64; i++) acc[i] = seed[i];
+    { ulong *d = (ulong *)acc; const ulong *s = (const ulong *)seed;
+      for (int i = 0; i < 8; i++) d[i] = s[i]; }
 
     /* Initial position from seed[0:8] */
-    ulong pos_val = ulong_from_bytes(seed);
+    ulong pos_val = *(const ulong *)seed;
     uint pos = (uint)(pos_val % BLOCK_COUNT);
 
     for (int r = 0; r < RANDOM_READS; r++) {
         uint off = pos * BLOCK_SIZE;
 
+        /* Copy chunk from global scratchpad — ulong-width (8× fewer loads) */
+        __global const ulong *gsrc = (__global const ulong *)(pad + off);
         ulong chunk64[8];
-        bytes_to_ulong8_global(pad + off, chunk64);
-
-        ulong acc64[8];
-        bytes_to_ulong8(acc, acc64);
+        #pragma unroll 8
+        for (int i = 0; i < 8; i++) chunk64[i] = gsrc[i];
 
         /* d = Keccak-256(acc || chunk || r_le) — specialized 136B fast path */
         ulong d64[4];
-        keccak256_136_mix(acc64, chunk64, (ulong)r, d64);
+        keccak256_136_mix((const ulong *)acc, chunk64, (ulong)r, d64);
 
         /* Update accumulator — ulong XOR for first 32 bytes */
         {
-            ulong a64[4];
-            bytes_to_ulong8(acc, a64);
+            ulong *a64 = (ulong *)acc;
             #pragma unroll 4
             for (int u = 0; u < 4; u++) a64[u] ^= d64[u];
-            for (int u = 0; u < 4; u++) ulong_to_bytes(a64[u], acc + u * 8);
         }
         {
-            uchar d8[32];
-            for (int u = 0; u < 4; u++) ulong_to_bytes(d64[u], d8 + u * 8);
+            const uchar *d8 = (const uchar *)d64;
             for (int i = 0; i < 32; i++)
                 acc[32 + i] = (uchar)((uint)acc[32 + i] + (uint)d8[i]);
         }
 
+        /* Next position — direct ulong read */
         pos = (uint)((d64[0] ^ (ulong)pos ^ (ulong)r) % BLOCK_COUNT);
     }
 
     /* Final hash: SHA3-512(acc || pad[0:64] || pad[last_64:]) */
     uchar first_blk[BLOCK_SIZE], last_blk[BLOCK_SIZE];
-    for (int i = 0; i < 64; i++) {
-        first_blk[i] = pad[i];
-        last_blk[i]  = pad[SCRATCHPAD_SIZE - BLOCK_SIZE + i];
+    {
+        __global const ulong *fp = (__global const ulong *)pad;
+        __global const ulong *lp = (__global const ulong *)(pad + SCRATCHPAD_SIZE - BLOCK_SIZE);
+        ulong *fd = (ulong *)first_blk;
+        ulong *ld = (ulong *)last_blk;
+        for (int i = 0; i < 8; i++) {
+            fd[i] = fp[i];
+            ld[i] = lp[i];
+        }
     }
 
     ulong fst[25]; int fpos = 0;
@@ -557,24 +500,22 @@ void random_read_mix_sha3(const uchar seed[64], __global const uchar *pad,
         uint off = pos * BLOCK_SIZE;
 
         ulong chunk64[8];
-        bytes_to_ulong8_global(pad + off, chunk64);
-
-        ulong acc64[8];
-        bytes_to_ulong8(acc, acc64);
+        {
+            __global const ulong *gsrc = (__global const ulong *)(pad + off);
+            #pragma unroll 8
+            for (int i = 0; i < 8; i++) chunk64[i] = gsrc[i];
+        }
 
         ulong d64[4];
-        keccak256_136_mix(acc64, chunk64, (ulong)r, d64);
+        keccak256_136_mix((const ulong *)acc, chunk64, (ulong)r, d64);
 
         {
-            ulong a64[4];
-            bytes_to_ulong8(acc, a64);
+            ulong *a64 = (ulong *)acc;
             #pragma unroll 4
             for (int u = 0; u < 4; u++) a64[u] ^= d64[u];
-            for (int u = 0; u < 4; u++) ulong_to_bytes(a64[u], acc + u * 8);
         }
         {
-            uchar d8[32];
-            for (int u = 0; u < 4; u++) ulong_to_bytes(d64[u], d8 + u * 8);
+            const uchar *d8 = (const uchar *)d64;
             for (int i = 0; i < 32; i++)
                 acc[32 + i] = (uchar)((uint)acc[32 + i] + (uint)d8[i]);
         }
@@ -583,9 +524,16 @@ void random_read_mix_sha3(const uchar seed[64], __global const uchar *pad,
     }
 
     uchar first_blk[BLOCK_SIZE], last_blk[BLOCK_SIZE];
-    for (int i = 0; i < 64; i++) {
-        first_blk[i] = pad[i];
-        last_blk[i]  = pad[SCRATCHPAD_SIZE - BLOCK_SIZE + i];
+    {
+        __global const ulong *fp = (__global const ulong *)pad;
+        __global const ulong *lp = (__global const ulong *)(pad + SCRATCHPAD_SIZE - BLOCK_SIZE);
+        ulong *fd = (ulong *)first_blk;
+        ulong *ld = (ulong *)last_blk;
+        #pragma unroll 8
+        for (int i = 0; i < 8; i++) {
+            fd[i] = fp[i];
+            ld[i] = lp[i];
+        }
     }
 
     ulong fst[25]; int fpos = 0;
@@ -663,30 +611,18 @@ void b3_permute(uint msg[16]) {
     msg[12]=m9; msg[13]=m14; msg[14]=m15; msg[15]=m8;
 }
 
-#ifdef ZION_GCN_WORKAROUNDS
 /* GCN workaround: force noinline to prevent miscompilation during inlining */
 __attribute__((noinline))
-#endif
 void b3_compress(const uint cv[8], const uint bw[16],
-#ifdef ZION_GCN_WORKAROUNDS
-                 uint counter,
-#else
-                 ulong counter,
-#endif
-                 uint block_len, uint flags,
+                 uint counter, uint block_len, uint flags,
                  uint output[16])
 {
     uint st[16] = {
         cv[0], cv[1], cv[2], cv[3],
         cv[4], cv[5], cv[6], cv[7],
         BLAKE3_IV[0], BLAKE3_IV[1], BLAKE3_IV[2], BLAKE3_IV[3],
-#ifdef ZION_GCN_WORKAROUNDS
         counter,
         0u,
-#else
-        (uint)(counter & 0xFFFFFFFFu),
-        (uint)(counter >> 32),
-#endif
         block_len,
         flags
     };
@@ -712,16 +648,9 @@ void b3_compress(const uint cv[8], const uint bw[16],
     for (int i = 0; i < 16; i++) output[i] = st[i];
 }
 
-#ifdef ZION_GCN_WORKAROUNDS
 __attribute__((noinline))
-#endif
 void b3_compress_cv(const uint cv[8], const uint bw[16],
-#ifdef ZION_GCN_WORKAROUNDS
-                    uint counter,
-#else
-                    ulong counter,
-#endif
-                    uint block_len, uint flags,
+                    uint counter, uint block_len, uint flags,
                     uint out_cv[8])
 {
     uint full[16];
@@ -782,11 +711,7 @@ B3ChunkOut b3_hash_single_chunk(const uchar *input, uint input_len) {
         /* BLAKE3 counter is the chunk counter, not the block index.
          * These inputs fit into a single chunk, so the counter stays 0.
          */
-#ifdef ZION_GCN_WORKAROUNDS
         b3_compress_cv(cv, bw, 0u, this_len, fl, cv);
-#else
-        b3_compress_cv(cv, bw, 0UL, this_len, fl, cv);
-#endif
         offset += this_len;
     }
     for (int i = 0; i < 8; i++) out.input_cv[i] = BLAKE3_IV[i];
@@ -796,70 +721,33 @@ B3ChunkOut b3_hash_single_chunk(const uchar *input, uint input_len) {
     return out;
 }
 
-#ifdef ZION_GCN_WORKAROUNDS
 /* GCN workaround: avoid __global uint* pointer cast; use byte-level write */
 __attribute__((noinline))
-#endif
 void b3_xof_fill_global(B3ChunkOut co, __global uchar *buf, uint buf_len) {
     uint ob = 0, written = 0;
     while (written < buf_len) {
         uint st[16];
-#ifdef ZION_GCN_WORKAROUNDS
         b3_compress(co.input_cv, co.block_words, ob,
                     co.block_len, co.flags | BLAKE3_ROOT, st);
-#else
-        b3_compress(co.input_cv, co.block_words, (ulong)ob,
-                    co.block_len, co.flags | BLAKE3_ROOT, st);
-#endif
         uint to_write = min(64u, buf_len - written);
-#ifdef ZION_GCN_WORKAROUNDS
-        /* Byte-level write for GCN */
         for (uint i = 0; i < to_write; i++)
             buf[written + i] = (uchar)(st[i >> 2] >> ((i & 3u) * 8));
-#else
-        /* Fast word-level write for RDNA */
-        __global uint *buf32 = (__global uint *)(buf + written);
-        uint words = to_write >> 2;
-        for (uint i = 0; i < words; i++)
-            buf32[i] = st[i];
-        /* Handle trailing bytes */
-        uint done = words << 2;
-        for (uint i = done; i < to_write; i++)
-            buf[written + i] = (uchar)(st[i >> 2] >> ((i & 3u) * 8));
-#endif
         written += to_write;
         ob++;
     }
 }
 
-#ifdef ZION_GCN_WORKAROUNDS
 /* GCN workaround: avoid uint* pointer cast; use byte-level write */
 __attribute__((noinline))
-#endif
 void b3_xof_fill_private(B3ChunkOut co, uchar *buf, uint buf_len) {
     uint ob = 0, written = 0;
     while (written < buf_len) {
         uint st[16];
-#ifdef ZION_GCN_WORKAROUNDS
         b3_compress(co.input_cv, co.block_words, ob,
                     co.block_len, co.flags | BLAKE3_ROOT, st);
-#else
-        b3_compress(co.input_cv, co.block_words, (ulong)ob,
-                    co.block_len, co.flags | BLAKE3_ROOT, st);
-#endif
         uint to_write = min(64u, buf_len - written);
-#ifdef ZION_GCN_WORKAROUNDS
-        /* Byte-level write for GCN */
         for (uint i = 0; i < to_write; i++)
             buf[written + i] = (uchar)(st[i >> 2] >> ((i & 3u) * 8));
-#else
-        /* Fast word-level copy for RDNA */
-        uint full_words = to_write >> 2;
-        uint *dst32 = (uint *)(buf + written);
-        for (uint w = 0; w < full_words; w++) dst32[w] = st[w];
-        for (uint i = (full_words << 2); i < to_write; i++)
-            buf[written + i] = (uchar)(st[i >> 2] >> ((i & 3u) * 8));
-#endif
         written += to_write;
         ob++;
     }
@@ -884,9 +772,7 @@ void ekam_init_scratchpad(const uchar seed[64], __global uchar *pad)
 }
 
 /* Blake3 mix: cur(64)||prev(64)||rand(64)||pass(8)||idx(8) = 208B → 64B XOR */
-#ifdef ZION_GCN_WORKAROUNDS
 __attribute__((noinline))
-#endif
 void ekam_mix_block(__global uchar *pad, uint index, ulong pass, int forward)
 {
     uint prev_index;
@@ -899,11 +785,7 @@ void ekam_mix_block(__global uchar *pad, uint index, ulong pass, int forward)
     uint prev_off = prev_index * BLOCK_SIZE;
 
     /* Read first 8 bytes as ulong for random index derivation */
-#ifdef ZION_GCN_WORKAROUNDS
-    ulong idx_val = ulong_from_bytes(pad + cur_off);
-#else
     ulong idx_val = *((__global const ulong *)(pad + cur_off));
-#endif
     uint rand_index = (uint)((idx_val ^ pass ^ (ulong)index) % BLOCK_COUNT);
     uint rand_off = rand_index * BLOCK_SIZE;
 
@@ -914,27 +796,15 @@ void ekam_mix_block(__global uchar *pad, uint index, ulong pass, int forward)
 
     /* Block 0: cur[0..64], CHUNK_START */
     b3_load_words_global(pad + cur_off, 64, bw);
-#ifdef ZION_GCN_WORKAROUNDS
     b3_compress_cv(cv, bw, 0u, 64, BLAKE3_CHUNK_START, cv);
-#else
-    b3_compress_cv(cv, bw, 0UL, 64, BLAKE3_CHUNK_START, cv);
-#endif
 
     /* Block 1: prev[0..64] */
     b3_load_words_global(pad + prev_off, 64, bw);
-#ifdef ZION_GCN_WORKAROUNDS
     b3_compress_cv(cv, bw, 0u, 64, 0, cv);
-#else
-    b3_compress_cv(cv, bw, 0UL, 64, 0, cv);
-#endif
 
     /* Block 2: rand[0..64] */
     b3_load_words_global(pad + rand_off, 64, bw);
-#ifdef ZION_GCN_WORKAROUNDS
     b3_compress_cv(cv, bw, 0u, 64, 0, cv);
-#else
-    b3_compress_cv(cv, bw, 0UL, 64, 0, cv);
-#endif
 
     /* Block 3: pass(8) || idx(8) = 16 bytes, CHUNK_END */
     for (int i = 0; i < 16; i++) bw[i] = 0;
@@ -952,18 +822,11 @@ void ekam_mix_block(__global uchar *pad, uint index, ulong pass, int forward)
     uchar mixed[64];
     b3_xof_fill_private(co, mixed, 64u);
 
-    /* XOR result into current block */
-#ifdef ZION_GCN_WORKAROUNDS
-    /* Byte-level XOR for GCN */
-    for (int i = 0; i < 64; i++)
-        pad[cur_off + i] ^= mixed[i];
-#else
-    /* Fast ulong-width XOR for RDNA */
-    __global ulong *pad64 = (__global ulong *)pad;
-    ulong *mix64 = (ulong *)mixed;
+    /* XOR result into current block — ulong-width (8× fewer ops) */
+    __global ulong *dst = (__global ulong *)(pad + cur_off);
+    ulong *src = (ulong *)mixed;
     for (int i = 0; i < 8; i++)
-        pad64[(cur_off >> 3) + i] ^= mix64[i];
-#endif
+        dst[i] ^= src[i];
 }
 
 void ekam_sequential_passes(__global uchar *pad)
@@ -981,9 +844,7 @@ void ekam_sequential_passes(__global uchar *pad)
 }
 
 /* Ekam memory-hard transform (light): Blake3 init → passes → Keccak-256 reads */
-#ifdef ZION_GCN_WORKAROUNDS
 __attribute__((noinline))
-#endif
 void ekam_memory_hard_transform(const uchar input[64], __global uchar *pad,
                                 uchar output[64])
 {
@@ -999,14 +860,16 @@ void fusion_round(uchar state[64], uchar round_num);
 void cosmic_fusion_ekam(const uchar in64[64], uchar hash32[32])
 {
     uchar state[64];
-    for (int i = 0; i < 64; i++) state[i] = in64[i];
+    { ulong *d = (ulong *)state; const ulong *s = (const ulong *)in64;
+      for (int i = 0; i < 8; i++) d[i] = s[i]; }
 
     for (uchar r = 0; r < 8; r++)
         fusion_round(state, r);
 
     uchar full[64];
     sha3_512(state, 32, full);
-    for (int i = 0; i < 32; i++) hash32[i] = full[i];
+    { ulong *d = (ulong *)hash32; ulong *s = (ulong *)full;
+      for (int i = 0; i < 4; i++) d[i] = s[i]; }
 }
 
 /* ========================================================================== */
@@ -1028,23 +891,14 @@ int gelu_int8(int x)
 /* Deterministic integer floor-sqrt via binary search.
  * Matches Rust: ((x as f64).sqrt() as i32) for x in [0, 65536].
  * Not affected by -cl-fast-relaxed-math. */
-#ifdef ZION_GCN_WORKAROUNDS
-/* GCN workaround: use int instead of long to avoid 64-bit overflow bugs. */
-int isqrt_floor(int x)
-#else
 int isqrt_floor(long x)
-#endif
 {
     if (x <= 0) return 0;
     int lo = 0, hi = 256, r = 0;
     while (lo <= hi) {
         int mid = (lo + hi) >> 1;
-#ifdef ZION_GCN_WORKAROUNDS
-        if (mid * mid <= x) { r = mid; lo = mid + 1; }
-#else
         if ((long)mid * (long)mid <= x) { r = mid; lo = mid + 1; }
-#endif
-        else                { hi = mid - 1; }
+        else                             { hi = mid - 1; }
     }
     return r;
 }
@@ -1091,26 +945,6 @@ void npu_mix_packed(const uchar in64[64], uchar out64[64],
         }
 
         /* ── LayerNorm ── */
-#ifdef ZION_GCN_WORKAROUNDS
-        /* GCN workaround: use int instead of long for sum/var_sum.
-         * Max var_sum: (255)^2 * 256 ≈ 16.7M < 2^31. Safe in int. */
-        {
-            int sum = 0;
-            for (uint i = 0; i < out_dim; i++) sum += nxt[i];
-            int mean = sum / (int)out_dim;
-            int var_sum = 0;
-            for (uint i = 0; i < out_dim; i++) {
-                int d = nxt[i] - mean;
-                var_sum += d * d;
-            }
-            int std_approx = isqrt_floor(var_sum / (int)out_dim) + 1;
-            for (uint i = 0; i < out_dim; i++) {
-                int normalized = ((nxt[i] - mean) * 128) / std_approx;
-                nxt[i] = clamp((normalized * (int)npu_scales[s_off + i]) >> 8, -128, 127);
-            }
-        }
-#else
-        /* Fast long arithmetic for RDNA */
         {
             long sum = 0;
             for (uint i = 0; i < out_dim; i++) sum += (long)nxt[i];
@@ -1126,7 +960,6 @@ void npu_mix_packed(const uchar in64[64], uchar out64[64],
                 nxt[i] = clamp((normalized * (int)npu_scales[s_off + i]) >> 8, -128, 127);
             }
         }
-#endif
 
         /* ── GELU for all but last layer ── */
         if (L < num_layers - 1) {
@@ -1234,9 +1067,16 @@ void aes128_encrypt(const uchar key[16], uchar block[16])
  */
 void fusion_round(uchar state[64], uchar round_num)
 {
-    /* Keccak-256(state[0..32] || round_byte) */
+    /* Keccak-256(state[0..32] || round_byte)
+     * Use 40-byte buffer (padded to 8-byte alignment) to avoid
+     * undefined behaviour from unaligned ulong pointer casts on RDNA.
+     */
     uchar hash_input[40];
-    for (int i = 0; i < 32; i++) hash_input[i] = state[i];
+    {
+        ulong *hi64 = (ulong *)hash_input;
+        ulong *st64 = (ulong *)state;
+        for (int i = 0; i < 4; i++) hi64[i] = st64[i];
+    }
     hash_input[32] = round_num;
     for (int i = 33; i < 40; i++) hash_input[i] = 0;
 
@@ -1245,33 +1085,65 @@ void fusion_round(uchar state[64], uchar round_num)
 
     /* AES block 0: key = intermediate[0:16], plaintext = state[32:48] */
     uchar aes_key[16], block0[16], block1[16];
-    for (int i = 0; i < 16; i++) aes_key[i] = intermediate[i];
-    for (int i = 0; i < 16; i++) block0[i]   = state[32 + i];
+    {
+        ulong *k64 = (ulong *)aes_key;
+        ulong *i64 = (ulong *)intermediate;
+        k64[0] = i64[0]; k64[1] = i64[1];
+    }
+    {
+        ulong *b64 = (ulong *)block0;
+        ulong *s64 = (ulong *)(state + 32);
+        b64[0] = s64[0]; b64[1] = s64[1];
+    }
     aes128_encrypt(aes_key, block0);
 
     /* AES block 1: tweak key, plaintext = state[48:64] */
     uchar key2[16];
-    for (int i = 0; i < 16; i++) key2[i] = aes_key[i];
+    {
+        ulong *k264 = (ulong *)key2;
+        ulong *k64  = (ulong *)aes_key;
+        k264[0] = k64[0]; k264[1] = k64[1];
+    }
     key2[0]  ^= round_num;
     key2[15] ^= 0xAB;
-    for (int i = 0; i < 16; i++) block1[i] = state[48 + i];
+    {
+        ulong *b64 = (ulong *)block1;
+        ulong *s64 = (ulong *)(state + 48);
+        b64[0] = s64[0]; b64[1] = s64[1];
+    }
     aes128_encrypt(key2, block1);
 
     /* mask = block0 || block1 */
     uchar mask[32];
-    for (int i = 0; i < 16; i++) { mask[     i] = block0[i]; mask[16 + i] = block1[i]; }
+    {
+        ulong *m64 = (ulong *)mask;
+        ulong *b064 = (ulong *)block0;
+        ulong *b164 = (ulong *)block1;
+        m64[0] = b064[0]; m64[1] = b064[1];
+        m64[2] = b164[0]; m64[3] = b164[1];
+    }
 
     /* state[32..64] ^= intermediate   (evolve upper half FIRST) */
-    for (int i = 0; i < 32; i++) state[32 + i] ^= intermediate[i];
+    {
+        ulong *s64 = (ulong *)(state + 32);
+        ulong *i64 = (ulong *)intermediate;
+        for (int i = 0; i < 4; i++) s64[i] ^= i64[i];
+    }
 
     /* state[0..32] = intermediate ^ mask   (overwrite lower half) */
-    for (int i = 0; i < 32; i++) state[i] = intermediate[i] ^ mask[i];
+    {
+        ulong *s64 = (ulong *)state;
+        ulong *i64 = (ulong *)intermediate;
+        ulong *m64 = (ulong *)mask;
+        for (int i = 0; i < 4; i++) s64[i] = i64[i] ^ m64[i];
+    }
 }
 
 void cosmic_fusion(const uchar in64[64], uchar hash32[32])
 {
     uchar state[64];
-    for (int i = 0; i < 64; i++) state[i] = in64[i];
+    { ulong *d = (ulong *)state; const ulong *s = (const ulong *)in64;
+      for (int i = 0; i < 8; i++) d[i] = s[i]; }
 
     /* 4 fusion rounds */
     fusion_round(state, 0);
@@ -1282,7 +1154,8 @@ void cosmic_fusion(const uchar in64[64], uchar hash32[32])
     /* Final: SHA3-512(state[0:32]) → truncate to 32 B */
     uchar full[64];
     sha3_512(state, 32, full);
-    for (int i = 0; i < 32; i++) hash32[i] = full[i];
+    { ulong *d = (ulong *)hash32; ulong *s = (ulong *)full;
+      for (int i = 0; i < 4; i++) d[i] = s[i]; }
 }
 
 /* ========================================================================== */
@@ -1383,13 +1256,17 @@ void ekam_deeksha_mine(
      * compilers that may optimize (ulong)tid * int as uint multiplication. */
     __global uchar *pad = scratchpad_pool + (ulong)tid * (ulong)SCRATCHPAD_SIZE;
 
-    /* Build input: header (<=80 B) + nonce (8 B LE) = 88 B, zero-padded
-     * GCN workaround: no pointer casts; byte-level ops only */
+    /* Build input: header (<=80 B) + nonce (8 B LE) = 88 B, zero-padded */
     uchar input[88];
-    for (int i = 0; i < 88; i++) input[i] = 0;
+    ulong *inp64 = (ulong *)input;
+    for (int i = 0; i < 11; i++) inp64[i] = 0;
     uint hlen = min(header_len, (uint)80);
-    for (uint i = 0; i < hlen; i++) input[i] = header[i];
-    for (int b = 0; b < 8; b++) input[80 + b] = (uchar)(nonce >> (b * 8));
+    __global const uint *hdr32 = (__global const uint *)header;
+    uint *inp32 = (uint *)input;
+    uint hwords = hlen >> 2;
+    for (uint i = 0; i < hwords; i++) inp32[i] = hdr32[i];
+    for (uint i = (hwords << 2); i < hlen; i++) input[i] = header[i];
+    inp64[10] = nonce;
 
     /* Reuse two 64-byte buffers across pipeline stages to cut private-memory
      * pressure from ~408 B to ~160 B (saves registers, reduces spills).     */
@@ -1445,10 +1322,15 @@ __kernel void ekam_deeksha_debug(
     __global uchar *pad = scratchpad_pool;
 
     uchar input[88];
-    for (int i = 0; i < 88; i++) input[i] = 0;
+    ulong *inp64 = (ulong *)input;
+    for (int i = 0; i < 11; i++) inp64[i] = 0;
     uint hlen = min(header_len, (uint)80);
-    for (uint i = 0; i < hlen; i++) input[i] = header[i];
-    ulong_to_bytes(nonce, input + 80);
+    __global const uint *hdr32 = (__global const uint *)header;
+    uint *inp32 = (uint *)input;
+    uint hwords = hlen >> 2;
+    for (uint i = 0; i < hwords; i++) inp32[i] = hdr32[i];
+    for (uint i = (hwords << 2); i < hlen; i++) input[i] = header[i];
+    inp64[10] = nonce;
 
     uchar s1[32];
     keccak256(input, 88, s1);
@@ -1500,11 +1382,16 @@ void ekam_deeksha_mine_s4(
 
     /* Build input: header (<=80 B) + nonce (8 B LE) = 88 B, zero-padded */
     uchar input[88];
-    for (int i = 0; i < 88; i++) input[i] = 0;
+    ulong *inp64 = (ulong *)input;
+    for (int i = 0; i < 11; i++) inp64[i] = 0;
     uint hlen = min(header_len, (uint)80);
-    for (uint i = 0; i < hlen; i++) input[i] = header[i];
+    __global const uint *hdr32 = (__global const uint *)header;
+    uint *inp32 = (uint *)input;
+    uint hwords = hlen >> 2;
+    for (uint i = 0; i < hwords; i++) inp32[i] = hdr32[i];
+    for (uint i = (hwords << 2); i < hlen; i++) input[i] = header[i];
     ulong nonce = nonce_base + (ulong)tid;
-    ulong_to_bytes(nonce, input + 80);
+    inp64[10] = nonce;
 
     uchar buf_a[64];
     uchar buf_b[64];
@@ -1521,7 +1408,9 @@ void ekam_deeksha_mine_s4(
     /* Step 4: Memory-Hard(buf_a) → buf_b */
     ekam_memory_hard_transform(buf_a, pad, buf_b);
 
-    /* Output s4 result for this work item — byte-level (GCN-safe) */
+    /* Output s4 result for this work item */
     __global uchar *slot = s4_out + (ulong)tid * 64;
-    for (int i = 0; i < 64; i++) slot[i] = buf_b[i];
+    __global ulong *dst64 = (__global ulong *)slot;
+    ulong *src64 = (ulong *)buf_b;
+    for (int i = 0; i < 8; i++) dst64[i] = src64[i];
 }
