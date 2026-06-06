@@ -75,6 +75,12 @@ pub trait GpuMiner: Send {
         Ok(())
     }
 
+    /// Whether to suppress GPU vs CPU mismatch warnings (e.g. s4-only mode
+    /// where GPU and CPU use different implementations for stage 4).
+    fn suppress_mismatch_warnings(&self) -> bool {
+        false
+    }
+
     /// Mine a batch of nonces starting from `nonce_start`.
     /// Returns any solutions found that meet the target.
     fn mine_batch(
@@ -186,7 +192,7 @@ pub fn gpu_scan_job(gpu: &mut dyn GpuMiner, job: MiningJob) -> GpuScanOutcome {
                 let is_mismatch = verified_hash != *hash;
                 let is_above_target = !job.target.allows(&verified_hash);
 
-                if is_mismatch {
+                if is_mismatch && !gpu.suppress_mismatch_warnings() {
                     // Compact per-mismatch line (always, not gated on VERBOSE)
                     use std::sync::atomic::{AtomicU64, Ordering};
                     static MISMATCH_COUNT: AtomicU64 = AtomicU64::new(0);
@@ -635,10 +641,12 @@ pub mod opencl_deeksha {
                 || dev_lower.contains("gfx6")
                 || dev_lower.contains("gfx7")
                 || dev_lower.contains("gfx8")
-                || dev_lower.contains("gfx9");
+                || dev_lower.contains("gfx9")
+                || dev_lower.contains("gfx10");
 
-            let no_gcn_s4 = std::env::var("ZION_NO_GCN_S4_MODE").is_ok();
-            let (s4_kernel, s4_out_buf) = if is_gcn && !no_gcn_s4 {
+            // gcn_s4_mode is MANDATORY for GCN devices due to known AMD compiler
+            // bugs that produce incorrect SHA3-512 hashes in the full GPU pipeline.
+            let (s4_kernel, s4_out_buf) = if is_gcn {
                 let s4_out = Buffer::<u8>::builder()
                     .queue(pro_que.queue().clone())
                     .len(actual_work_size * 64)
@@ -1104,6 +1112,12 @@ pub mod opencl_deeksha {
             GpuBackendKind::OpenCL
         }
 
+        fn suppress_mismatch_warnings(&self) -> bool {
+            // s4-only mode uses a different stage-4 implementation on GPU (SHA3-512)
+            // than CPU (Blake3 XOF), so GPU vs CPU hashes naturally differ.
+            self.s4_kernel.is_some()
+        }
+
         fn update_epoch(&mut self, height: u64) -> Result<()> {
             let epoch = zion_cosmic_harmony::algorithms_npu::epoch_from_height(height);
             if epoch == self.current_epoch {
@@ -1145,8 +1159,8 @@ pub mod opencl_deeksha {
                 self.result_nonce_buf = Buffer::<u64>::builder().queue(q.clone()).len(1).build()?;
                 self.result_hash_buf = Buffer::<u8>::builder().queue(q.clone()).len(32).build()?;
 
-                // Rebuild s4 kernel/buffer if GCN mode and ZION_NO_GCN_S4_MODE not set
-                if self.is_gcn && std::env::var("ZION_NO_GCN_S4_MODE").is_err() {
+                // Rebuild s4 kernel/buffer if GCN mode (mandatory for correct hashes)
+                if self.is_gcn {
                     let s4_out = Buffer::<u8>::builder()
                         .queue(q.clone())
                         .len(self.work_size * 64)
