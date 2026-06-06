@@ -90,7 +90,7 @@ ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "
     cd ${REMOTE_ROOT}/ZION_OS/agent
     cargo build --release 2>&1
     # Build dashboard
-    cd ${REMOTE_ROOT}/ZION_OS/ZionOSsmos/dashboard
+    cd ${REMOTE_ROOT}/ZION_OS/dashboard/infra
     cargo build --release 2>&1
 "
 
