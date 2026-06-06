@@ -283,6 +283,7 @@ code { font-family: var(--font-mono); color: var(--gold); background: rgba(255,2
 .kpi-green::before  { background: linear-gradient(90deg, var(--emerald), #059669); }
 .kpi-purple::before { background: linear-gradient(90deg, var(--purple), var(--purple-dim)); }
 .kpi-cyan::before   { background: linear-gradient(90deg, var(--cyan), var(--cyan-dim)); }
+.kpi-red::before    { background: linear-gradient(90deg, var(--red), #dc2626); }
 
 .kpi-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-dim); margin-bottom: 8px; }
 .kpi-value { font-size: 28px; font-weight: 800; color: var(--text-bright); line-height: 1.1; margin-bottom: 6px; }
@@ -292,6 +293,7 @@ code { font-family: var(--font-mono); color: var(--gold); background: rgba(255,2
 .kpi-green .kpi-value  { color: var(--emerald); }
 .kpi-purple .kpi-value { color: var(--purple); }
 .kpi-cyan .kpi-value   { color: var(--cyan); }
+.kpi-red .kpi-value    { color: var(--red); }
 
 /* ═══════════════════════════════════════════════════════════
    CARDS

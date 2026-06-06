@@ -25,7 +25,15 @@ struct AuthConfig {
 async fn main() -> anyhow::Result<()> {
     let bind_addr = std::env::var("ZIONOS_BIND").unwrap_or_else(|_| "0.0.0.0:8888".into());
     let pool_metrics = std::env::var("ZIONOS_POOL_METRICS")
-        .unwrap_or_else(|_| "http://77.42.71.94:8444".into());
+        .unwrap_or_else(|_| "http://127.0.0.1:8444".into());
+    let node_rpc = std::env::var("ZIONOS_NODE_RPC")
+        .unwrap_or_else(|_| "http://127.0.0.1:8443".into());
+    let dao_api = std::env::var("ZIONOS_DAO_API")
+        .unwrap_or_else(|_| "http://127.0.0.1:8450".into());
+    let warp_api = std::env::var("ZIONOS_WARP_API")
+        .unwrap_or_else(|_| "http://127.0.0.1:8453".into());
+    let agent_api = std::env::var("ZIONOS_AGENT_API")
+        .unwrap_or_else(|_| "http://127.0.0.1:8767".into());
     let data_dir = std::env::var("ZIONOS_DATA_DIR").unwrap_or_else(|_| "dashboard/data".into());
     let persist_path = std::env::var("ZIONOS_STATE_FILE")
         .map(std::path::PathBuf::from)
@@ -36,11 +44,15 @@ async fn main() -> anyhow::Result<()> {
         .filter(|v| !v.is_empty());
 
     eprintln!("┌──────────────────────────────────────────┐");
-    eprintln!("│        ZionOS Dashboard  v0.1.0          │");
+    eprintln!("│        ZionOS Dashboard  v0.2.0          │");
     eprintln!("├──────────────────────────────────────────┤");
-    eprintln!("│  Web UI   → http://{}      │", bind_addr);
-    eprintln!("│  Pool API → {}           │", pool_metrics);
-    eprintln!("│  State    → {} │", persist_path.display());
+    eprintln!("│  Web UI    → http://{}      │", bind_addr);
+    eprintln!("│  Pool      → {}      │", pool_metrics);
+    eprintln!("│  Node RPC  → {}      │", node_rpc);
+    eprintln!("│  DAO       → {}      │", dao_api);
+    eprintln!("│  WARP      → {}      │", warp_api);
+    eprintln!("│  Agent     → {}      │", agent_api);
+    eprintln!("│  State     → {} │", persist_path.display());
     eprintln!("└──────────────────────────────────────────┘");
 
     let (live_tx, _) = tokio::sync::broadcast::channel::<String>(256);
@@ -84,7 +96,11 @@ async fn main() -> anyhow::Result<()> {
         };
 
     let state = Arc::new(AppState {
-        pool_url: pool_metrics,
+        pool_url: pool_metrics.clone(),
+        node_rpc_url: node_rpc,
+        dao_url: dao_api,
+        warp_url: warp_api,
+        agent_url: agent_api,
         http: reqwest::Client::new(),
         rigs: Arc::new(tokio::sync::RwLock::new(rigs)),
         log_buffer: Arc::new(tokio::sync::RwLock::new(log_buffer)),
@@ -230,6 +246,12 @@ async fn main() -> anyhow::Result<()> {
 
     let api = Router::new()
         .route("/api/overview", get(handlers::overview))
+        .route("/api/infra", get(handlers::infra_status))
+        .route("/api/node", get(handlers::node_status))
+        .route("/api/dao", get(handlers::dao_status))
+        .route("/api/warp", get(handlers::warp_status))
+        .route("/api/agent", get(handlers::agent_status))
+        .route("/api/agent/miner/:action", post(handlers::agent_miner_control))
         .route("/api/rigs", get(handlers::list_rigs).post(handlers::register_rig))
         .route("/api/rigs/batch", post(handlers::batch_rig_action))
         .route("/api/rigs/:id", get(handlers::get_rig).delete(handlers::remove_rig))

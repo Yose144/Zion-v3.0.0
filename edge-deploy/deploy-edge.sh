@@ -89,6 +89,9 @@ ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "
     # Build agent
     cd ${REMOTE_ROOT}/ZION_OS/agent
     cargo build --release 2>&1
+    # Build dashboard
+    cd ${REMOTE_ROOT}/ZION_OS/ZionOSsmos/dashboard
+    cargo build --release 2>&1
 "
 
 # ── Step 6: Rebuild website on Edge ──
@@ -111,6 +114,7 @@ SERVICES=(
     zion-edge-watchdog
     zion-edge-miner
     zion-edge-agent
+    zion-edge-dashboard
 )
 for svc in "${SERVICES[@]}"; do
     if [[ "$svc" == "zion-edge-agent" ]]; then
@@ -147,6 +151,7 @@ ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-edge-dao zion-
 
 ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-edge-miner || true"
 ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-edge-agent || true"
+ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-edge-dashboard || true"
 
 # ── Step 9: Restart website (PM2) ──
 log "Restarting website (PM2)..."
@@ -158,7 +163,7 @@ sleep 10
 
 echo ""
 echo "=== Deployment Status ==="
-for svc in zion-edge-node1 zion-edge-node2 zion-edge-pool zion-edge-dao zion-edge-warp zion-edge-miner zion-edge-agent; do
+for svc in zion-edge-node1 zion-edge-node2 zion-edge-pool zion-edge-dao zion-edge-warp zion-edge-miner zion-edge-agent zion-edge-dashboard; do
     STATUS=$(ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl is-active ${svc}" 2>/dev/null || true)
     if [[ "$STATUS" == "active" ]]; then
         echo -e "${GREEN}  ${svc} : ACTIVE${NC}"
