@@ -1005,7 +1005,9 @@ pub mod opencl_deeksha {
                 s4_out_buf.read(&mut s4_data).enq()?;
 
                 // CPU: NPU mix + cosmic fusion + target check for each work item
-                for i in 0..chunk {
+                // Parallelise with rayon because each nonce is independent.
+                use rayon::prelude::*;
+                let found = (0..chunk).into_par_iter().find_map_any(|i| {
                     let s4_slice = &s4_data[i * 64..(i + 1) * 64];
                     let s4_arr: &[u8; 64] = s4_slice.try_into().unwrap();
                     let s5 = npu_mixing_step_epoch(s4_arr, epoch);
@@ -1013,9 +1015,14 @@ pub mod opencl_deeksha {
 
                     if target.allows(&hash.data) {
                         let nonce = current_nonce.wrapping_add(i as u64);
-                        all_solutions.push((nonce, hash.data));
-                        break; // Return first solution
+                        Some((nonce, hash.data))
+                    } else {
+                        None
                     }
+                });
+                if let Some((nonce, hash)) = found {
+                    all_solutions.push((nonce, hash));
+                    break; // Return first solution
                 }
 
                 total_tested += chunk as u64;
