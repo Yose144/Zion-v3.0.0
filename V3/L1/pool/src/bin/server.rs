@@ -3921,22 +3921,7 @@ fn parse_hex_bytes(hex_str: &str) -> Option<Vec<u8>> {
     Some(bytes)
 }
 
-/// Generate a deterministic 64-hex-char tx_id for an account payout transaction.
-fn generate_account_tx_id(from: &str, to: &str, amount: u64, nonce: u64) -> String {
-    let mut bytes = [0u8; 32];
-    let ts = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_nanos();
-    bytes[..16].copy_from_slice(&(ts as u128).to_le_bytes());
-    bytes[16..24].copy_from_slice(&(amount as u64).to_le_bytes());
-    bytes[24..32].copy_from_slice(&(nonce as u64).to_le_bytes());
-    // XOR-in sender and recipient for uniqueness
-    for (i, b) in from.bytes().chain(to.bytes()).enumerate() {
-        bytes[i % 32] ^= b;
-    }
-    hex::encode(bytes)
-}
+
 
 /// Fetch pool wallet's account balance (flowers) from the node via getBalance RPC.
 fn fetch_pool_account_balance(node_rpc_addr: &str, address: &str) -> Result<u128> {
@@ -4227,7 +4212,7 @@ fn execute_pool_payout(
             if net_amount == 0 {
                 continue;
             }
-            let tx_id = generate_account_tx_id(pool_wallet_addr, &payout.address, net_amount as u64, nonce);
+            let tx_id = zion_core::wallet::generate_account_tx_id(pool_wallet_addr, &payout.address, net_amount as u64, nonce);
             let sig = zion_core::crypto::sign(signing_key, tx_id.as_bytes());
             let tx = AccountTransaction {
                 tx_id: tx_id.clone(),
@@ -4549,7 +4534,7 @@ fn execute_fee_payout(
         let pk_hex = hex::encode(signing_key.verifying_key().as_bytes());
         for (i, recipient) in recipients.iter().enumerate() {
             let nonce = base_nonce + i as u64;
-            let tx_id = generate_account_tx_id(pool_wallet_addr, &recipient.address, recipient.amount, nonce);
+            let tx_id = zion_core::wallet::generate_account_tx_id(pool_wallet_addr, &recipient.address, recipient.amount, nonce);
             let sig = zion_core::crypto::sign(signing_key, tx_id.as_bytes());
             let tx = AccountTransaction {
                 tx_id: tx_id.clone(),
