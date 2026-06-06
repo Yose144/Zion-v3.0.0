@@ -1847,3 +1847,32 @@ v OpenCL kernelu.
 **Soubory změněny:**
 - `V3/L1/cosmic-harmony/src/gpu/kernels/cosmic_harmony_deeksha.cl`
 - `V3/L1/miner/src/gpu_backend.rs`
+
+---
+
+## ✅ AKTUALIZACE 2026-06-06 (3. část): Blake3 scratchpad restored — 8.44 KH/s
+
+**Problém:** Předchozí "optimalizace" SHA3-512 v GPU kernelu byly ve skutečnosti **regrese**. GPU kernel používal SHA3-512 pro scratchpad init/mix, zatímco CPU consensus (L1) používá Blake3 XOF. Výsledkem byly špatné GPU hashe, `GPU_MISMATCH` a velmi nízký hashrate (~3.2 KH/s i po optimalizacích).
+
+**Root cause (2 problémy):**
+1. GPU entrypointy (`deeksha_mine`, `ekam_deeksha_mine`, `ekam_deeksha_mine_s4`) volaly `memory_hard_transform()` (SHA3-512) místo `ekam_memory_hard_transform()` (Blake3 XOF).
+2. `b3_xof_fill_global()` / `b3_xof_fill_private()` měly hard-coded `counter=0UL` — každý 64B blok XOF výstupu byl identický, což korumpovalo celý scratchpad.
+
+**Opravy:**
+- Všechny kernel entrypointy přepnuty na `ekam_memory_hard_transform()` (Blake3 XOF).
+- `b3_xof_fill_*` counter opraven na `(ulong)ob` (inkrementuje se per 64B blok).
+- Self-test v `gpu_backend.rs` přepnut na `memory_hard_transform_ekam_light_v2` (Blake3 CPU reference) místo debug-only SHA3 varianty.
+- `-cl-fast-relaxed-math` je nyní bezpečný na RDNA (gfx10) — dává +2-4 % boost.
+
+**Výsledek:**
+- Benchmark RX 5600 XT (gfx1010): **8.44 KH/s** (`work_size=6128`, `local_ws=128`, fast-relaxed-math).
+- Self-test: **MATCH** na všech 6 stages.
+- GPU a CPU jsou nyní plně konsistentní — žádné `GPU_MISMATCH`.
+- Vega 64 (gfx900): `gcn_s4_mode` workaround pravděpodobně již není nutný (potřeba retest).
+
+**Soubory změněny:**
+- `V3/L1/cosmic-harmony/src/gpu/kernels/cosmic_harmony_deeksha.cl` (Blake3 fix + counter)
+- `V3/L1/miner/src/gpu_backend.rs` (self-test reference, build opts)
+- `VEGA64_S4_MEMHARD_DEBUG_GUIDE.md` (kompletně přepsán s novými root cause)
+
+**Historický kontext:** Commit `db55e983` (2026-03) dosahoval ~8.83 KH/s s Blake3 kernelem. Mezitím kernel přešel na SHA3, což způsobilo ~3× pokles hashrate a nesprávné hashe. Tento fix vrací kernel do stavu shodného s L1 consensusem.
