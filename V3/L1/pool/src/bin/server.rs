@@ -583,7 +583,11 @@ fn handle_client(
         .expect("pplns lock poisoned")
         .register_address(&miner_id, &payout_address);
 
-    let welcome_message = pool.lock().expect("pool lock poisoned").welcome_message();
+    let welcome_message = PoolMessage::Welcome {
+        protocol_version: zion_pool::protocol_version().to_string(),
+        algorithm: config.algorithm.clone(),
+        job_ttl_ms: config.job_ttl_ms,
+    };
     let welcome_line = write_wire_message(&mut writer, &welcome_message)?;
     println!("wire_welcome={welcome_line}");
 
