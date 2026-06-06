@@ -33,6 +33,10 @@ sha2 = "0.10"
 ed25519-dalek = { version = "2.1", features = ["rand_core"] }
 rand = "0.8"
 
+# Unix-only process signal handling
+[target.'cfg(unix)'.dependencies]
+nix = { version = "0.28", features = ["signal", "process"] }
+
 # Platform-specific GPU libraries
 # NVIDIA NVML (optional)
 nvml-wrapper = { version = "0.10", optional = true }
