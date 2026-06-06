@@ -125,8 +125,8 @@ nul
 run/
 
 # Exception: ZION_OS dashboard is part of the codebase, not runtime
-!ZION_OS/ZionOSsmos/dashboard/
-!ZION_OS/ZionOSsmos/dashboard/**
+!ZION_OS/dashboard/
+!ZION_OS/dashboard/**
 
 # Python (tools)
 __pycache__/
@@ -278,7 +278,9 @@ V3/L2/bridge/contracts/lib/
 V3/deploy/
 
 # New project directories
-ZionOS/
+# NOTE: keep the exact case so Windows case-insensitive FS does not ignore ZION_OS/
+/[Zz]ion[Oo][Ss]/
+!ZION_OS/
 
 # Temporary scripts
 scan-ssh.ps1
