@@ -964,3 +964,162 @@ pub async fn wallet_earnings(
         net_hashrate_est: net_hr,
     })
 }
+
+// ═══════════════════════════════════════════════════════════
+// INFRA STATUS — aggregated upstream health
+// ═══════════════════════════════════════════════════════════
+
+#[derive(serde::Serialize)]
+pub struct InfraStatus {
+    pub node: ServiceStatus,
+    pub pool: ServiceStatus,
+    pub dao: ServiceStatus,
+    pub warp: ServiceStatus,
+    pub agent: ServiceStatus,
+    pub website: ServiceStatus,
+}
+
+#[derive(serde::Serialize)]
+pub struct ServiceStatus {
+    pub name: String,
+    pub url: String,
+    pub reachable: bool,
+    pub latency_ms: u64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub data: Option<serde_json::Value>,
+}
+
+async fn check_service(
+    http: &reqwest::Client,
+    name: &str,
+    url: &str,
+) -> ServiceStatus {
+    let start = std::time::Instant::now();
+    let result = http
+        .get(url)
+        .timeout(std::time::Duration::from_secs(3))
+        .send()
+        .await;
+    let latency_ms = start.elapsed().as_millis() as u64;
+
+    match result {
+        Ok(resp) => {
+            let data = resp.json::<serde_json::Value>().await.ok();
+            ServiceStatus {
+                name: name.to_string(),
+                url: url.to_string(),
+                reachable: true,
+                latency_ms,
+                data,
+            }
+        }
+        Err(_) => ServiceStatus {
+            name: name.to_string(),
+            url: url.to_string(),
+            reachable: false,
+            latency_ms,
+            data: None,
+        },
+    }
+}
+
+pub async fn infra_status(State(state): State<Arc<AppState>>) -> Json<InfraStatus> {
+    let http = &state.http;
+    let node_url = format!("{}/health", state.node_rpc_url);
+    let pool_url = format!("{}/stats", state.pool_url);
+    let dao_url = format!("{}/health", state.dao_url);
+    let warp_url = format!("{}/health", state.warp_url);
+    let agent_url = format!("{}/health", state.agent_url);
+    let website_url = "http://127.0.0.1:3000/api/health".to_string();
+
+    let (node, pool, dao, warp, agent, website) = tokio::join!(
+        check_service(http, "node", &node_url),
+        check_service(http, "pool", &pool_url),
+        check_service(http, "dao", &dao_url),
+        check_service(http, "warp", &warp_url),
+        check_service(http, "agent", &agent_url),
+        check_service(http, "website", &website_url),
+    );
+
+    Json(InfraStatus {
+        node,
+        pool,
+        dao,
+        warp,
+        agent,
+        website,
+    })
+}
+
+// ═══════════════════════════════════════════════════════════
+// NODE / DAO / WARP / AGENT PROXY HANDLERS
+// ═══════════════════════════════════════════════════════════
+
+pub async fn node_status(State(state): State<Arc<AppState>>) -> Json<serde_json::Value> {
+    match state.http.get(format!("{}/health", state.node_rpc_url))
+        .timeout(std::time::Duration::from_secs(5))
+        .send().await
+    {
+        Ok(resp) => Json(resp.json().await.unwrap_or_else(|_| serde_json::json!({"ok": false, "error": "parse failed"}))),
+        Err(e) => Json(serde_json::json!({"ok": false, "error": e.to_string()})),
+    }
+}
+
+pub async fn dao_status(State(state): State<Arc<AppState>>) -> Json<serde_json::Value> {
+    match state.http.get(format!("{}/health", state.dao_url))
+        .timeout(std::time::Duration::from_secs(5))
+        .send().await
+    {
+        Ok(resp) => Json(resp.json().await.unwrap_or_else(|_| serde_json::json!({"ok": false, "error": "parse failed"}))),
+        Err(e) => Json(serde_json::json!({"ok": false, "error": e.to_string()})),
+    }
+}
+
+pub async fn warp_status(State(state): State<Arc<AppState>>) -> Json<serde_json::Value> {
+    match state.http.get(format!("{}/health", state.warp_url))
+        .timeout(std::time::Duration::from_secs(5))
+        .send().await
+    {
+        Ok(resp) => Json(resp.json().await.unwrap_or_else(|_| serde_json::json!({"ok": false, "error": "parse failed"}))),
+        Err(e) => Json(serde_json::json!({"ok": false, "error": e.to_string()})),
+    }
+}
+
+pub async fn agent_status(State(state): State<Arc<AppState>>) -> Json<serde_json::Value> {
+    match state.http.get(format!("{}/api/status", state.agent_url))
+        .timeout(std::time::Duration::from_secs(5))
+        .send().await
+    {
+        Ok(resp) => Json(resp.json().await.unwrap_or_else(|_| serde_json::json!({"ok": false, "error": "parse failed"}))),
+        Err(e) => Json(serde_json::json!({"ok": false, "error": e.to_string()})),
+    }
+}
+
+// ─── POST /api/agent/miner/:action ───
+// Proxy miner control commands to the agent.
+// action = "start" | "stop" | "restart"
+
+pub async fn agent_miner_control(
+    State(state): State<Arc<AppState>>,
+    Path(action): Path<String>,
+) -> Json<serde_json::Value> {
+    let method = match action.as_str() {
+        "start" => "start",
+        "stop" => "stop",
+        "restart" => "restart",
+        _ => return Json(serde_json::json!({"ok": false, "error": "unknown action"})),
+    };
+
+    let url = format!("{}/api/miner/{}", state.agent_url, method);
+    match state.http.post(&url)
+        .timeout(std::time::Duration::from_secs(10))
+        .json(&serde_json::json!({}))
+        .send().await
+    {
+        Ok(resp) => {
+            let body = resp.json::<serde_json::Value>().await.unwrap_or_else(|_| serde_json::json!({"ok": true}));
+            Json(body)
+        }
+        Err(e) => Json(serde_json::json!({"ok": false, "error": e.to_string()})),
+    }
+}

@@ -152,6 +152,13 @@ phase_build() {
     cargo build --release 2>&1
   "
 
+  log "Building dashboard on Edge..."
+  ssh_run "
+    . /root/.cargo/env 2>/dev/null || true
+    cd ${REMOTE_ROOT}/ZION_OS/ZionOSsmos/dashboard
+    cargo build --release 2>&1
+  "
+
   log "Building website on Edge..."
   ssh_run "
     cd ${REMOTE_WEB}
@@ -181,6 +188,7 @@ phase_deploy() {
   ssh_run "systemctl restart zion-edge-dao zion-edge-warp || true"
   ssh_run "systemctl restart zion-edge-miner || true"
   ssh_run "systemctl restart zion-edge-agent || true"
+  ssh_run "systemctl restart zion-edge-dashboard || true"
   ssh_run "pm2 restart zion-website 2>/dev/null || true"
 
   log "Waiting for services..."
@@ -196,7 +204,7 @@ phase_verify() {
 
   echo ""
   echo "=== Service Status ==="
-  for svc in zion-edge-node1 zion-edge-node2 zion-edge-pool zion-edge-dao zion-edge-warp zion-edge-miner zion-edge-agent; do
+  for svc in zion-edge-node1 zion-edge-node2 zion-edge-pool zion-edge-dao zion-edge-warp zion-edge-miner zion-edge-agent zion-edge-dashboard; do
     local status
     status=$(ssh_run "systemctl is-active ${svc} 2>/dev/null" || true)
     if [[ "$status" == "active" ]]; then
@@ -208,7 +216,7 @@ phase_verify() {
 
   echo ""
   echo "=== Port Checks ==="
-  for port in 8443 8444 8450 8453 8767 3000; do
+  for port in 8443 8444 8450 8453 8767 8888 3000; do
     if check_port "$EDGE_HOST" "$port"; then
       echo -e "${GREEN}  port ${port}: OPEN${NC}"; ((ok++))
     else
@@ -223,6 +231,15 @@ phase_verify() {
     echo -e "${GREEN}  zion-agent API: HEALTHY${NC}"; ((ok++))
   else
     echo -e "${RED}  zion-agent API: NO RESPONSE${NC}"; ((fail++))
+  fi
+
+  # Dashboard health check
+  local dash_health
+  dash_health=$(ssh_run "curl -s http://127.0.0.1:8888/api/infra 2>/dev/null" || true)
+  if [[ -n "$dash_health" ]]; then
+    echo -e "${GREEN}  zion-dashboard API: HEALTHY${NC}"; ((ok++))
+  else
+    echo -e "${RED}  zion-dashboard API: NO RESPONSE${NC}"; ((fail++))
   fi
 
   echo ""
