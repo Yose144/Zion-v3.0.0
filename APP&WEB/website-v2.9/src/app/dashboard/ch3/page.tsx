@@ -39,7 +39,7 @@ interface CH3Settings {
 }
 
 const STREAM_COLORS: Record<string, string> = {
-  zion: "from-yellow-500 to-amber-600",
+  zion: "from-zion-gold to-amber-500",
   etc: "from-green-500 to-emerald-600",
   nxs: "from-blue-500 to-cyan-600",
   dynamic_gpu: "from-purple-500 to-violet-600",
@@ -229,21 +229,26 @@ export default function CH3SettingsPage() {
   if (loading || !settings) {
     return (
       <div className="flex items-center justify-center">
-        <div className="text-yellow-400 text-2xl animate-pulse">Loading CH v3 Settings...</div>
+        <div className="text-zion-gold text-2xl animate-pulse">Loading CH v3 Settings...</div>
       </div>
     );
   }
 
   return (
-    <div className="text-white p-6">
+    <div className="text-white p-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-yellow-400 mb-2">
-          ⚡ CH v3 Revenue Streams
-        </h1>
-        <p className="text-gray-400">
-          Configure all 5 revenue streams for Cosmic Harmony v3
-        </p>
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-10 h-10 rounded-xl bg-zion-gold/15 flex items-center justify-center">
+            <span className="text-xl">⚡</span>
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold text-zion-gold">CH v3 Revenue Streams</h1>
+            <p className="text-sm text-gray-400">
+              Configure all 5 revenue streams for Cosmic Harmony v3
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Summary Cards */}
@@ -253,8 +258,8 @@ export default function CH3SettingsPage() {
             key={key}
             className={`relative overflow-hidden rounded-xl p-4 border ${
               stream.enabled
-                ? "border-gray-700 bg-gray-900"
-                : "border-gray-800 bg-gray-900/50 opacity-60"
+                ? "border-white/10 bg-white/5"
+                : "border-white/10 bg-black/40 opacity-60"
             }`}
           >
             {/* Gradient bar */}
@@ -266,7 +271,7 @@ export default function CH3SettingsPage() {
                 <button
                   onClick={() => toggleStream(key)}
                   className={`w-10 h-6 rounded-full transition-colors ${
-                    stream.enabled ? "bg-green-500" : "bg-gray-700"
+                    stream.enabled ? "bg-emerald-500" : "bg-white/10"
                   }`}
                 >
                   <div
@@ -291,15 +296,15 @@ export default function CH3SettingsPage() {
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex gap-2 mb-6 border-b border-gray-800 pb-4">
+      <div className="flex gap-2 mb-6 border-b border-white/10 pb-4">
         {["overview", "merged", "dynamic", "ncl"].map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
             className={`px-4 py-2 rounded-lg transition-colors ${
               activeTab === tab
-                ? "bg-yellow-500 text-black font-bold"
-                : "bg-gray-800 text-gray-400 hover:bg-gray-700"
+                ? "bg-zion-gold text-black font-bold"
+                : "bg-black/40 text-gray-400 hover:bg-white/10"
             }`}
           >
             {tab === "overview" && "📊 Overview"}
@@ -311,7 +316,7 @@ export default function CH3SettingsPage() {
       </div>
 
       {/* Tab Content */}
-      <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
+      <div className="bg-white/5 rounded-xl p-6 border border-white/10">
         {/* Overview Tab */}
         {activeTab === "overview" && (
           <div>
@@ -335,7 +340,7 @@ export default function CH3SettingsPage() {
             {/* Stream details */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {Object.entries(settings.streams).map(([key, stream]) => (
-                <div key={key} className="bg-gray-800 rounded-lg p-4">
+                <div key={key} className="bg-black/40 rounded-lg p-4">
                   <div className="flex items-center gap-3 mb-2">
                     <span className="text-2xl">{STREAM_ICONS[key]}</span>
                     <div>
@@ -344,7 +349,7 @@ export default function CH3SettingsPage() {
                     </div>
                   </div>
                   <div className="text-sm text-gray-500">{stream.description}</div>
-                  <div className={`mt-2 text-sm ${stream.enabled ? "text-green-400" : "text-red-400"}`}>
+                  <div className={`mt-2 text-sm ${stream.enabled ? "text-emerald-400" : "text-red-400"}`}>
                     {stream.enabled ? "✓ Active" : "✗ Disabled"}
                   </div>
                 </div>
@@ -364,7 +369,7 @@ export default function CH3SettingsPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* ETC */}
-              <div className="bg-gray-800 rounded-xl p-6">
+              <div className="bg-black/40 rounded-xl p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <span className="text-3xl">💎</span>
@@ -377,8 +382,8 @@ export default function CH3SettingsPage() {
                     onClick={() => toggleStream("etc")}
                     className={`px-4 py-2 rounded-lg font-bold ${
                       settings.streams.etc.enabled
-                        ? "bg-green-600 text-white"
-                        : "bg-gray-700 text-gray-400"
+                        ? "bg-emerald-600 text-white"
+                        : "bg-white/10 text-gray-400"
                     }`}
                   >
                     {settings.streams.etc.enabled ? "Enabled" : "Disabled"}
@@ -391,7 +396,7 @@ export default function CH3SettingsPage() {
                     <input
                       type="text"
                       defaultValue={settings.streams.etc.pool?.stratum}
-                      className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 mt-1"
+                      className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 mt-1"
                       placeholder="stratum+tcp://etc.2miners.com:1010"
                     />
                   </div>
@@ -400,7 +405,7 @@ export default function CH3SettingsPage() {
                     <input
                       type="text"
                       defaultValue={settings.streams.etc.pool?.wallet}
-                      className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 mt-1"
+                      className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 mt-1"
                       placeholder="0x..."
                     />
                   </div>
@@ -412,7 +417,7 @@ export default function CH3SettingsPage() {
               </div>
 
               {/* NXS */}
-              <div className="bg-gray-800 rounded-xl p-6">
+              <div className="bg-black/40 rounded-xl p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <span className="text-3xl">🔷</span>
@@ -425,8 +430,8 @@ export default function CH3SettingsPage() {
                     onClick={() => toggleStream("nxs")}
                     className={`px-4 py-2 rounded-lg font-bold ${
                       settings.streams.nxs.enabled
-                        ? "bg-green-600 text-white"
-                        : "bg-gray-700 text-gray-400"
+                        ? "bg-emerald-600 text-white"
+                        : "bg-white/10 text-gray-400"
                     }`}
                   >
                     {settings.streams.nxs.enabled ? "Enabled" : "Disabled"}
@@ -439,7 +444,7 @@ export default function CH3SettingsPage() {
                     <input
                       type="text"
                       defaultValue={settings.streams.nxs.pool?.stratum}
-                      className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 mt-1"
+                      className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 mt-1"
                       placeholder="stratum+tcp://pool.nexus.io:9549"
                     />
                   </div>
@@ -448,7 +453,7 @@ export default function CH3SettingsPage() {
                     <input
                       type="text"
                       defaultValue={settings.streams.nxs.pool?.wallet}
-                      className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 mt-1"
+                      className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 mt-1"
                       placeholder="NXS..."
                     />
                   </div>
@@ -482,7 +487,7 @@ export default function CH3SettingsPage() {
                     className={`px-6 py-3 rounded-lg font-bold capitalize ${
                       settings.streams.dynamic_gpu.mode === mode
                         ? "bg-purple-600 text-white"
-                        : "bg-gray-800 text-gray-400"
+                        : "bg-black/40 text-gray-400"
                     }`}
                   >
                     {mode === "auto" && "🤖 "}
@@ -522,17 +527,17 @@ export default function CH3SettingsPage() {
                       }}
                       className={`p-4 rounded-xl border-2 transition-all ${
                         isCurrent
-                          ? "border-yellow-500 bg-yellow-900/30"
+                          ? "border-zion-gold bg-zion-gold/10"
                           : isSelected
                           ? "border-purple-500 bg-purple-900/20"
-                          : "border-gray-700 bg-gray-800 hover:border-gray-600"
+                          : "border-white/10 bg-black/40 hover:border-white/20"
                       }`}
                     >
                       <div className={`font-bold text-xl ${coin.color}`}>{coin.id}</div>
                       <div className="text-gray-400 text-sm">{coin.name}</div>
                       <div className="text-gray-500 text-xs mt-1">{coin.algo}</div>
                       {isCurrent && (
-                        <div className="text-yellow-400 text-xs mt-2">⚡ Mining Now</div>
+                        <div className="text-zion-gold text-xs mt-2">⚡ Mining Now</div>
                       )}
                     </button>
                   );
@@ -549,7 +554,7 @@ export default function CH3SettingsPage() {
                     type="number"
                     defaultValue="0.10"
                     step="0.01"
-                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 mt-1"
+                    className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2 mt-1"
                   />
                 </div>
                 <div>
@@ -557,7 +562,7 @@ export default function CH3SettingsPage() {
                   <input
                     type="number"
                     defaultValue="15"
-                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 mt-1"
+                    className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2 mt-1"
                   />
                 </div>
                 <div>
@@ -565,7 +570,7 @@ export default function CH3SettingsPage() {
                   <input
                     type="number"
                     defaultValue="5"
-                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 mt-1"
+                    className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2 mt-1"
                   />
                 </div>
               </div>
@@ -616,7 +621,7 @@ export default function CH3SettingsPage() {
               {/* Visual split */}
               <div className="flex h-20 mt-4 rounded-lg overflow-hidden">
                 <div 
-                  className="bg-gradient-to-r from-yellow-600 to-yellow-500 flex items-center justify-center"
+                  className="bg-gradient-to-r from-amber-500 to-zion-gold flex items-center justify-center"
                   style={{ width: `${(settings.streams.ncl.mining_allocation || 0) * 100}%` }}
                 >
                   <span className="font-bold">⛏️ Mining</span>
@@ -640,7 +645,7 @@ export default function CH3SettingsPage() {
                   { id: "image_classification", name: "Image Classification", reward: "0.002" },
                   { id: "code_analysis", name: "Code Analysis", reward: "0.003" },
                 ].map((task) => (
-                  <div key={task.id} className="bg-gray-800 rounded-lg p-4">
+                  <div key={task.id} className="bg-black/40 rounded-lg p-4">
                     <div className="flex items-center gap-2 mb-2">
                       <input type="checkbox" defaultChecked className="w-4 h-4" />
                       <span className="font-medium">{task.name}</span>
@@ -670,8 +675,8 @@ export default function CH3SettingsPage() {
           disabled={saving || !settings}
           className={`px-8 py-3 rounded-xl font-bold text-lg ${
             saving || !settings
-              ? "bg-gray-700 text-gray-400 cursor-wait"
-              : "bg-yellow-500 text-black hover:bg-yellow-400"
+              ? "bg-white/10 text-gray-400 cursor-wait"
+              : "bg-zion-gold text-black hover:bg-yellow-400"
           }`}
         >
           {saving ? "Saving..." : "💾 Save Settings"}
