@@ -20,7 +20,7 @@ if "%REPO_ROOT:~-1%"=="\" set "REPO_ROOT=%REPO_ROOT:~0,-1%"
 where cargo >nul 2>nul
 if errorlevel 1 (
     echo [CHYBA] Rust / cargo nebyl nalezen.
-    echo         Nainstalujte Rust z https://rustup.rs a spustte tento skript znovu.
+    echo         Nainstalujte Rust z https://rustup.rs a spustte znovu.
     pause
     exit /b 1
 )
@@ -28,11 +28,11 @@ echo [OK] Cargo nalezen:
 cargo --version
 echo.
 
-:: ── 2. Kontrola / build release binarky ──────────────────────────────────
+:: ── 2. Build pokud chybi ───────────────────────────────────────────────
 set "ZION_BIN=%REPO_ROOT%\V3\target\release\zion.exe"
 
 if not exist "%ZION_BIN%" (
-    echo [BUILD] Sestavuji zion-cli (muze trvat 2-5 minut prvni spusteni)...
+    echo [BUILD] Sestavuji zion-cli (prvni spusteni muze trvat 2-5 min)...
     cd /d "%REPO_ROOT%\V3"
     cargo build --release --manifest-path Cargo.toml -p zion-cli
     if errorlevel 1 (
@@ -45,24 +45,12 @@ if not exist "%ZION_BIN%" (
     echo [OK] Release binarka zion.exe existuje
 )
 
-:: ── 3. Vytvoreni helper bat ────────────────────────────────────────────
-(
-echo @echo off
-echo chcp 65001 ^>nul
-echo title ZION CLI
-echo cd /d "%REPO_ROOT%"
-echo echo [CLI] Spoustim interaktivni menu ...
-echo "%ZION_BIN%" menu
-echo echo.
-echo echo [CLI] Menu ukonceno.
-echo pause
-) > "%REPO_ROOT%\logs\_run_cli.bat"
-
-:: ── 4. Spusteni CLI ────────────────────────────────────────────────────
+:: ── 3. Spusteni CLI ───────────────────────────────────────────────────
 echo [START] Spoustim ZION CLI (interaktivni menu)...
 echo         Pro standardni CLI prikazy pouzijte: V3\target\release\zion.exe --help
 echo.
 
-cmd /k "%REPO_ROOT%\logs\_run_cli.bat"
+cd /d "%REPO_ROOT%"
+cmd /k "V3\target\release\zion.exe menu"
 
 endlocal
