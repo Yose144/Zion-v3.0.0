@@ -189,7 +189,7 @@ pub fn launch_readiness() -> Vec<ReadinessCheck> {
 
     // 7. Premine address count
     let addr_count = genesis::PREMINE_OUTPUTS.len();
-    let addr_ok = addr_count == 12;
+    let addr_ok = addr_count == 14;
     checks.push(ReadinessCheck {
         name: "premine_address_count",
         passed: addr_ok,

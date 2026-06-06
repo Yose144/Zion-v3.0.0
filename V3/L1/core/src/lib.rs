@@ -119,6 +119,8 @@ impl NodeConfig {
                 PeerEndpoint::new("77.42.71.94", 8333),
                 // Tailscale fallback (private VPN between Core and Edge)
                 PeerEndpoint::new("100.76.16.108", 8333),
+                // Local fallback for same-machine or LAN bootstrap
+                PeerEndpoint::new("127.0.0.1", 8333),
             ],
         }
     }
@@ -3851,7 +3853,7 @@ mod tests {
         let config = NodeConfig::mainnet();
         assert_eq!(config.network, NetworkId::Mainnet);
         assert_eq!(config.p2p_bind.address(), "0.0.0.0:8333");
-        assert_eq!(config.seed_peers[0].address(), "204.168.245.175:8333");
+        assert_eq!(config.seed_peers[0].address(), "77.42.71.94:8333");
     }
 
     #[test]
