@@ -84,6 +84,46 @@
 - ✅ Pool service běží s fee split: miners=89%, humanitarian=5%, issobella=5%, pool_fee=1%
 - ✅ PPLNS payout systém aktivní — pool redistribuuje 89% miner reward mezi pool minery
 
+---
+
+## Co je nového 2026-06-06 (ZION OS v2.1.0 — Canonical Rebuild + Deploy)
+
+> **ZION OS** prošel kompletní kanonickou reorganizací. Legacy mishmash (duplicitní dashboarde, agenti, ZionOSsmos workspace) nahrazen čistou strukturou.
+
+### ZION OS Canonical Structure
+
+| Komponent | Cesta | Status | Port |
+|-----------|-------|--------|------|
+| **Primary Dashboard** | `ZION_OS/dashboard/app.py` | Active | 8766 |
+| **Infra Dashboard** | `ZION_OS/dashboard/infra/` | Active | 8888 |
+| **Agent** | `ZION_OS/agent/` | Active | 8767 |
+| **Orchestrator** | `ZION_OS/orchestrator/manifest.yaml` | Active | — |
+| **Desktop** | `ZION_OS/desktop/` | Planned | — |
+| **Systemd** | `ZION_OS/infra/systemd/` | Consolidated | — |
+
+**Klíčové změny:**
+- `dashboard/app.py` — PRIMARY zero-dependency Python stdlib dashboard (8195 řádků, 30+ endpointů, 13-service registry, CLI console, backup/restore, DB explorer)
+- `dashboard/infra/` — SECONDARY Rust/Axum infra health dashboard (upstream proxies k node/DAO/WARP/agent)
+- `agent/` — CPU-only mode, miner_ctl, telemetry, watchdog, OC manager (independent workspace)
+- `infra/systemd/` — všechny 21 .service files na jednom místě
+- Odstraněno: `ZionOSsmos/`, `desktop-dashboard/`, `mining-agent/`, `fleet-dashboard/`, `mobile-app/`, `oc-manager/`, `ui/`
+
+**Deploy skripty aktualizovány:**
+- `scripts/autopilot-v3.sh` — sync ZION_OS/, build agent z `ZION_OS/agent/`, build dashboard z `ZION_OS/dashboard/infra/`
+- `edge-deploy/deploy-edge.sh` — stejné cesty
+- `AGENTS.md` — cesty aktualizovány (`desktop-dashboard` → `desktop`, `mining-agent` → `agent`)
+
+**Edge deploy výsledek (2026-06-06):**
+- ✅ Agent rebuildnut a nasazen (`zion-agent` v1.0.0, port 8767, health=OK)
+- ✅ Infra dashboard rebuildnut a nasazen (`zionos-dashboard` v0.2.0, port 8888, /api/infra=zdravý)
+- ✅ Systemd services aktualizovány (`WorkingDirectory` → `ZION_OS/dashboard/infra`)
+- ✅ `.gitignore` opraven — `ZION_OS/dashboard/` je nyní tracked
+
+**Documentation:**
+- `ZION_OS/README.md` — v2.1.0 overview
+- `ZION_OS/docs/ARCHITECTURE.md` — system architecture
+- `ZION_OS/docs/ROADMAP.md` — development milestones
+
 **Backup & Recovery:**
 - ✅ Šifrované private keys uloženy na USB flash disk (F:\ZION_GENESIS_BACKUP_2026-06-03\)
 - ✅ Mnemonický seed pro emergency recovery vytvořen
