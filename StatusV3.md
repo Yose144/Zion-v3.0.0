@@ -1723,3 +1723,27 @@ validator provisioning (G), rotace klíčů (P0).
 - Všechny služby operační na Edge (100.76.16.108) a local (100.86.102.5)
 
 **Detaily viz sekce "Co je nového 2026-06-03 (Genesis Regeneration Complete)" nahoře.**
+
+---
+
+## ✅ AKTUALIZACE 2026-06-06: Dashboard Health Check Fix + Full Redeploy Verification
+
+**Problém:** Dashboard (`ZION_OS/dashboard/app.py`) hlásil všechny služby jako `down` přestože Edge node, local backup node i pool běžely správně.
+
+**Root cause (2 chyby):**
+1. **`rpc_call` používal raw TCP socket** místo HTTP POST. Node očekává HTTP JSON-RPC (`/jsonrpc`), takže všechna RPC volání v dashboardu timeoutovala a vracela `None` → `running=false`.
+2. **`check_service_health` pro `method="rpc"`** posílal HTTP GET na `health_endpoint` (např. `http://127.0.0.1:8443/health`), který node neposkytuje. Node má JSON-RPC, ne HTTP `/health` endpoint.
+
+**Opravy:**
+- `rpc_call` přepsán na HTTP POST pomocí `urllib.request` (`Content-Type: application/json`) s timeouty 2.5s (Edge) / 1.5s (local).
+- Přidána `rpc_probe()` funkce pro JSON-RPC `getChainInfo` POST; `check_service_health` pro `method="rpc"` nyní používá `rpc_probe` na `rpc` port místo HTTP GET na `/health`.
+- Timeouty pro remote TCP proby zvýšeny z 0.3s → 1.0s (Tailscale VPN občas potřebuje >0.5s).
+- Edge RPC timeout v `build_status` zvýšen z 0.6s → 2.5s, local z 0.8s → 1.5s, `as_completed` z 1.5s → 5.0s.
+
+**Výsledek:** Dashboard nyní správně detekuje:
+- `edge-node1`: `up` (height 143+)
+- `node1` (local backup): `up` (height 143+, sync OK)
+- `pool-edge`: `up` (2/2 ports open)
+- `pool` (local): `up`
+
+**Soubory změněny:** `ZION_OS/dashboard/app.py`

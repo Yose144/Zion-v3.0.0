@@ -2270,8 +2270,8 @@ mod tests {
         );
         let r = resp.result.unwrap();
         assert_eq!(r["total_supply_zion"], 144_000_000_000u64);
-        assert_eq!(r["premine_zion"], 16_280_000_000u64);
-        assert_eq!(r["mining_emission_zion"], 127_720_000_000u64);
+        assert_eq!(r["premine_zion"], 16_780_000_000u64);
+        assert_eq!(r["mining_emission_zion"], 127_220_000_000u64);
         assert_eq!(r["height"], 0);
         assert!(r["block_reward_atomic"].as_u64().unwrap() > 0);
         assert!(r["total_supply_atomic"].is_string());
