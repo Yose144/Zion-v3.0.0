@@ -1,0 +1,38 @@
+[Unit]
+Description=ZION Dashboard Web - Python Flask dashboard
+Documentation=https://github.com/Yose144/Zion-v3.0.0/blob/main/ZION_OS/README.md
+After=zion-node.service zion-pool.service
+Wants=zion-node.service zion-pool.service
+
+[Service]
+Type=simple
+User=zion
+Group=zion
+WorkingDirectory=/opt/zion/ZION_OS/dashboard
+
+Environment=PYTHONPATH=/opt/zion/ZION_OS/dashboard
+Environment=ZION_DASHBOARD_PORT=8766
+Environment=ZION_NODE_RPC=http://127.0.0.1:8443
+Environment=ZION_POOL_ADDR=127.0.0.1:8444
+
+ExecStart=/usr/bin/python3 /opt/zion/ZION_OS/dashboard/app.py
+ExecStop=/bin/kill -TERM $MAINPID
+
+Restart=on-failure
+RestartSec=5
+StartLimitInterval=60
+StartLimitBurst=3
+
+LimitNOFILE=65536
+
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/zion/ZION_OS/dashboard/data /opt/zion/logs
+
+StandardOutput=append:/opt/zion/logs/dashboard.log
+StandardError=append:/opt/zion/logs/dashboard.log
+SyslogIdentifier=zion-dashboard-web
+
+[Install]
+WantedBy=multi-user.target
