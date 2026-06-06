@@ -36,7 +36,7 @@ pub async fn check_loop(state: Arc<AgentState>) {
     }
 }
 
-async fn check_for_updates(channel: &str) -> anyhow::Result<Option<ReleaseInfo>> {
+async fn check_for_updates(_channel: &str) -> anyhow::Result<Option<ReleaseInfo>> {
     // TODO: GitHub releases API nebo vlastni update server
     let url = format!(
         "https://api.github.com/repos/Yose144/Zion-v3.0.0/releases/latest"

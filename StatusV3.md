@@ -75,13 +75,14 @@
 |- Pool Payout: `zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604`
 
 **Verification Results:**
-- ⚠️ Edge server běží se STAROU binárkou (není rebuildnutá s posledními fixy — kód v repu je aktuální, binárka ne)
+- ✅ Edge server běží s AKTUÁLNÍM kódem (rebuildnut 2026-06-06, genesis hash ověřen)
+- ✅ Lokální node běží s AKTUÁLNÍM kódem (rebuildnut 2026-06-06, synchronizován s Edge)
+- ✅ Genesis hash shoda na obou nodech: `1da0251076471744b783105a6723fbd2e899282d6582d59f0de7905cd69f07c7`
 - ✅ Bridge vault má 100M ZION v 6 UTXO outputs
 - ✅ Bridge seed fund má 400M ZION
 - ✅ Humanitarian má 1.44B ZION
 - ✅ Pool service běží s fee split: miners=89%, humanitarian=5%, issobella=5%, pool_fee=1%
 - ✅ PPLNS payout systém aktivní — pool redistribuuje 89% miner reward mezi pool minery
-- ⚠️ Lokální node je OFFLINE — potřebuje rebuild + restart s aktuálním kódem
 
 **Backup & Recovery:**
 - ✅ Šifrované private keys uloženy na USB flash disk (F:\ZION_GENESIS_BACKUP_2026-06-03\)
@@ -91,21 +92,28 @@
 
 ---
 
-## Co je nového 2026-06-06 (Code Fixes + PPLNS Deployment + Test Repair)
+## Co je nového 2026-06-06 (Code Fixes + PPLNS Deployment + Test Repair + Full Redeploy)
 
-> **Čas**: 2026-06-06 01:00 UTC
-> **Stav**: 🟡 **KÓDOVÉ OPRAVY HOTOVÉ, DEPLOYMENT PENDING** — Všechny testy procházejí, binárky na Edge/local ještě nejsou rebuildnuté
+> **Čas**: 2026-06-06 01:30 UTC
+> **Stav**: ✅ **KÓDOVÉ OPRAVY HOTOVÉ A NASAZENÉ** — Všechny testy procházejí, Edge i local node rebuildnuty a restartovány
 
-### Kritické: Edge server stále běží se starou binárkou
+### Deployment dokončen — oba nody běží s novým kódem
 
-| Komponenta | Stav v repu | Stav na Edge | Akce potřebná |
-|-----------|-------------|--------------|---------------|
-| `emission.rs` | ✅ Opraveno (MINING_EMISSION = 127.22B) | ❌ Stará hodnota (127.72B) | Rebuild + restart |
-| `genesis.rs` testy | ✅ Opraveno (14 outputs, label derivace) | ❌ Starý test fixture | Rebuild |
-| `launch.rs` | ✅ Opraveno (premine count = 14) | ❌ Starý check (12) | Rebuild |
-| `node_builder.rs` | ✅ Opraveno (2+ seed peers) | ❌ Starý threshold (3+) | Rebuild |
-| `rpc.rs` testy | ✅ Opraveno (16.78B premine) | ❌ Stará hodnota (16.28B) | Rebuild |
-| Pool PPLNS | ✅ Funkční (payouty se posílají) | ✅ Aktivní | Není potřeba |
+| Komponenta | Stav v repu | Stav na Edge | Stav Local | Nasazeno |
+|-----------|-------------|--------------|------------|----------|
+| `emission.rs` | ✅ Opraveno (MINING_EMISSION = 127.22B) | ✅ Aktivní | ✅ Aktivní | ✅ Ano |
+| `genesis.rs` testy | ✅ Opraveno (14 outputs, label derivace) | ✅ Aktivní | ✅ Aktivní | ✅ Ano |
+| `launch.rs` | ✅ Opraveno (premine count = 14) | ✅ Aktivní | ✅ Aktivní | ✅ Ano |
+| `node_builder.rs` | ✅ Opraveno (2+ seed peers) | ✅ Aktivní | ✅ Aktivní | ✅ Ano |
+| `rpc.rs` testy | ✅ Opraveno (16.78B premine) | ✅ Aktivní | ✅ Aktivní | ✅ Ano |
+| Pool PPLNS | ✅ Funkční (payouty se posílají) | ✅ Aktivní | — | ✅ Ano |
+
+### Ověření po nasazení
+
+| Uzel | Height | Genesis Hash | Stav |
+|------|--------|--------------|------|
+| **Edge** | 102 | `1da0251076471744b783105a6723fbd2e899282d6582d59f0de7905cd69f07c7` | ✅ Nový kód |
+| **Local** | 114 | `1da0251076471744b783105a6723fbd2e899282d6582d59f0de7905cd69f07c7` | ✅ Nový kód, sync |
 
 ### PPLNS Payout Systém — Ověřen a Aktivní
 
@@ -135,11 +143,11 @@ Pool nyní správně redistribuuje 89% miner reward mezi připojené minery:
 - `scripts/launch-local-backup.ps1`: `ZION_MINER_ADDRESS` = pool payout wallet
 - `scripts/launch-local-backup.sh`: `ZION_MINER_ADDRESS` = pool payout wallet
 
-### Nasazení (Deployment) — ZBÝVÁ UDĚLAT
+### Nasazení (Deployment) — HOTOVÉ
 
-1. **Edge server**: `cargo build --release` + zkopírovat binárky + restart služeb
-2. **Local node**: `cargo build --release` + restart s aktuálním kódem
-3. **Ověřit**: Genesis hash shoda, test payoutů, P2P sync
+1. ✅ **Edge server**: `cargo build --release` + binárky nasazeny + služby restartovány
+2. ✅ **Local node**: `cargo build --release` + restart s aktuálním kódem
+3. ✅ **Ověřeno**: Genesis hash shoda na obou nodech, P2P sync aktivní
 
 ---
 

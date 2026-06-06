@@ -1,7 +1,4 @@
 use axum::{
-    extract::{Path, State},
-    http::StatusCode,
-    response::Json,
     routing::{get, post},
     Router,
 };
@@ -15,6 +12,8 @@ mod command_queue;
 mod config;
 mod gpu_telemetry;
 mod miner_ctl;
+mod miner_parser;
+mod oc_manager;
 mod telemetry;
 mod updater;
 mod watchdog;
@@ -26,6 +25,7 @@ use config::AgentConfig;
 pub struct AgentState {
     pub config: RwLock<AgentConfig>,
     pub miner_pid: RwLock<Option<u32>>,
+    pub miner_stats: Arc<RwLock<miner_parser::MinerStats>>,
     pub rig_id: String,
     pub version: String,
 }
@@ -72,6 +72,7 @@ async fn main() -> anyhow::Result<()> {
     let state = Arc::new(AgentState {
         config: RwLock::new(config),
         miner_pid: RwLock::new(None),
+        miner_stats: Arc::new(RwLock::new(miner_parser::MinerStats::default())),
         rig_id,
         version: "1.0.0".to_string(),
     });
