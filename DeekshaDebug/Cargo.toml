@@ -23,7 +23,14 @@ path = "src/bench_alloc_overhead.rs"
 name = "bench_persistent_kernel"
 path = "src/bench_persistent_kernel.rs"
 
+[lib]
+name = "deeksha_debug"
+path = "src/lib.rs"
+
 [dependencies]
 zion-cosmic-harmony = { path = "../V3/L1/cosmic-harmony" }
 rand = "0.8"
 rayon = "1"
+hex = "0.4"
+blake3 = "1.5"
+sha3 = "0.10"
