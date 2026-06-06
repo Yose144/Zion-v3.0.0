@@ -7,6 +7,10 @@ use std::path::{Path, PathBuf};
 #[derive(Clone)]
 pub struct AppState {
     pub pool_url: String,
+    pub node_rpc_url: String,
+    pub dao_url: String,
+    pub warp_url: String,
+    pub agent_url: String,
     pub http: reqwest::Client,
     pub rigs: Arc<tokio::sync::RwLock<Vec<RigState>>>,
     pub log_buffer: Arc<tokio::sync::RwLock<Vec<LogEntry>>>,
