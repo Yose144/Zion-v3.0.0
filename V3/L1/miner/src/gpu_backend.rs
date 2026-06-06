@@ -646,9 +646,14 @@ pub mod opencl_deeksha {
                 || dev_lower.contains("gfx9")
                 || dev_lower.contains("gfx10");
 
-            // gcn_s4_mode is MANDATORY for GCN devices due to known AMD compiler
-            // bugs that produce incorrect SHA3-512 hashes in the full GPU pipeline.
-            let (s4_kernel, s4_out_buf) = if is_gcn {
+            // gcn_s4_mode fallback for GCN devices.  Historically the full GPU
+            // pipeline produced wrong hashes on GCN because of a miscompiled
+            // 64-bit rotate (ROL64).  With the rotate fix we now let the miner
+            // try the full pipeline first; s4-only is used only when the env var
+            // ZION_GCN_S4_MODE=1 is set or when the startup self-test fails.
+            let force_s4 = is_gcn
+                && std::env::var("ZION_GCN_S4_MODE").is_ok();
+            let (s4_kernel, s4_out_buf) = if force_s4 {
                 let s4_out = Buffer::<u8>::builder()
                     .queue(pro_que.queue().clone())
                     .len(actual_work_size * 64)
@@ -670,7 +675,7 @@ pub mod opencl_deeksha {
                 (Some(s4k), Some(s4_out))
             } else {
                 if is_gcn {
-                    println!("gpu_gcn_s4_mode disabled (ZION_NO_GCN_S4_MODE set) — using full GPU pipeline");
+                    println!("gpu_gcn_s4_mode disabled — trying full GPU pipeline (set ZION_GCN_S4_MODE=1 to force s4-only)");
                 }
                 (None, None)
             };
@@ -712,16 +717,11 @@ pub mod opencl_deeksha {
             if std::env::var("ZION_SKIP_GPU_SELF_TEST").is_err() {
                 if let Err(e) = miner.self_test() {
                     println!("GPU_SELF_TEST_ERROR: {e}");
-                    // If ZION_IGNORE_GPU_SELF_TEST_FAIL is set, continue despite failure
-                    // Also auto-ignore for GCN devices (known s4_memhard mismatch)
-                    if std::env::var("ZION_IGNORE_GPU_SELF_TEST_FAIL").is_err() && !is_gcn {
+                    // Only ignore failure if explicitly requested
+                    if std::env::var("ZION_IGNORE_GPU_SELF_TEST_FAIL").is_err() {
                         return Err(e);
                     }
-                    if is_gcn {
-                        println!("GPU SELF-TEST FAILED BUT CONTINUING (GCN device - known s4_memhard mismatch)");
-                    } else {
-                        println!("GPU SELF-TEST FAILED BUT CONTINUING (ZION_IGNORE_GPU_SELF_TEST_FAIL set)");
-                    }
+                    println!("GPU SELF-TEST FAILED BUT CONTINUING (ZION_IGNORE_GPU_SELF_TEST_FAIL set)");
                 }
             } else {
                 println!("GPU SELF-TEST SKIPPED (ZION_SKIP_GPU_SELF_TEST set)");
@@ -1173,8 +1173,8 @@ pub mod opencl_deeksha {
                 self.result_nonce_buf = Buffer::<u64>::builder().queue(q.clone()).len(1).build()?;
                 self.result_hash_buf = Buffer::<u8>::builder().queue(q.clone()).len(32).build()?;
 
-                // Rebuild s4 kernel/buffer if GCN mode (mandatory for correct hashes)
-                if self.is_gcn {
+                // Rebuild s4 kernel/buffer only if s4-only mode was requested
+                if self.s4_kernel.is_some() {
                     let s4_out = Buffer::<u8>::builder()
                         .queue(q.clone())
                         .len(self.work_size * 64)
@@ -1192,9 +1192,6 @@ pub mod opencl_deeksha {
                             .map_err(|e| anyhow::anyhow!("s4 kernel rebuild failed: {e}"))?,
                     );
                     self.s4_out_buf = Some(s4_out);
-                } else if self.is_gcn {
-                    self.s4_kernel = None;
-                    self.s4_out_buf = None;
                 }
             }
 
@@ -1270,7 +1267,7 @@ pub mod opencl_deeksha {
             nonce_start: u64,
             batch_size: u64,
         ) -> Result<GpuBatchResult> {
-            if self.is_gcn && self.s4_kernel.is_some() {
+            if self.s4_kernel.is_some() {
                 return self.mine_batch_s4(header, target, nonce_start, batch_size);
             }
             self.mine_batch_full(header, target, nonce_start, batch_size)
