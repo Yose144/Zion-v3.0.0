@@ -11,6 +11,7 @@
 #![allow(dead_code)]
 
 use anyhow::Result;
+use rayon::prelude::*;
 use zion_core::{DifficultyTarget, MiningHeader, MiningJob, MiningSolution};
 
 /// Which GPU backend to use.
@@ -334,8 +335,9 @@ pub mod opencl_deeksha {
             .and_then(|v| v.trim().parse::<usize>().ok())
             .unwrap_or(usize::MAX);
 
-        // GCN devices (Vega, Polaris) cap at 512 work items (increased from 128)
-        // to allow larger scratchpad for memory-hard transform.
+        // GCN devices (Vega, Polaris) cap at 4096 work items.
+        // With gcn_s4_mode (GPU stages 1-4, CPU does NPU+fusion), larger
+        // work_size amortises kernel launch overhead across more nonces.
         let dev = device.name().unwrap_or_default().to_ascii_lowercase();
         let gcn_cap = if dev.contains("vega")
             || dev.contains("polaris")
@@ -346,7 +348,7 @@ pub mod opencl_deeksha {
             || dev.contains("gfx8")
             || dev.contains("gfx9")
         {
-            512  // Increased from 128 to fix s4_memhard mismatch on Vega 64
+            4096
         } else {
             usize::MAX
         };
@@ -1005,8 +1007,7 @@ pub mod opencl_deeksha {
                 s4_out_buf.read(&mut s4_data).enq()?;
 
                 // CPU: NPU mix + cosmic fusion + target check for each work item
-                // Parallelise with rayon because each nonce is independent.
-                use rayon::prelude::*;
+                // Parallelised with Rayon — critical on low-core CPUs (e.g. Pentium G4560).
                 let found = (0..chunk).into_par_iter().find_map_any(|i| {
                     let s4_slice = &s4_data[i * 64..(i + 1) * 64];
                     let s4_arr: &[u8; 64] = s4_slice.try_into().unwrap();
@@ -1014,15 +1015,14 @@ pub mod opencl_deeksha {
                     let hash = cosmic_fusion_opt_rounds(&s5, 8);
 
                     if target.allows(&hash.data) {
-                        let nonce = current_nonce.wrapping_add(i as u64);
-                        Some((nonce, hash.data))
+                        Some((current_nonce.wrapping_add(i as u64), hash.data))
                     } else {
                         None
                     }
                 });
-                if let Some((nonce, hash)) = found {
-                    all_solutions.push((nonce, hash));
-                    break; // Return first solution
+
+                if let Some((nonce, hash_data)) = found {
+                    all_solutions.push((nonce, hash_data));
                 }
 
                 total_tested += chunk as u64;
