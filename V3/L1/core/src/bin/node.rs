@@ -506,7 +506,15 @@ fn handle_rpc_stream(
     // ── HTTP POST support for Electron/mobile clients ───────────────────
     // Desktop agent and mobile app send HTTP POST requests; detect and handle them.
     if line.starts_with("POST ") || line.starts_with("GET ") {
-        return handle_rpc_http(&line, &mut reader, &mut writer, jsonrpc_router);
+        return handle_rpc_http(
+            &line,
+            &mut reader,
+            &mut writer,
+            jsonrpc_router,
+            runtime,
+            seen_txs,
+            stats,
+        );
     }
 
     // Protocol detection: JSON-RPC 2.0 requests contain "jsonrpc" key
@@ -631,11 +639,15 @@ fn read_line_limited(reader: &mut impl BufRead, max_bytes: usize) -> Result<Stri
 /// Reads headers to find Content-Length, reads the JSON body, routes through
 /// the JSON-RPC router, and writes back a proper HTTP response.
 /// CORS headers are included so browser-based wallets can call directly.
+/// If a transaction is accepted via submitTransaction, it is relayed to peers.
 fn handle_rpc_http(
     first_line: &str,
     reader: &mut impl BufRead,
     writer: &mut impl Write,
     router: &Arc<RpcRouter>,
+    runtime: &Arc<Mutex<NodeRuntime>>,
+    seen_txs: &Arc<Mutex<SeenTransactions>>,
+    stats: &Arc<PropagationStats>,
 ) -> Result<()> {
     // Read HTTP headers
     let mut content_length: usize = 0;
@@ -694,10 +706,57 @@ fn handle_rpc_http(
     let body_str = String::from_utf8_lossy(&body_buf);
     println!("rpc_http_in={body_str}");
 
+    // Check if this is a submitTransaction request to extract the transaction for relay
+    let submit_tx = if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(&body_str) {
+        if let Some(method) = parsed.get("method").and_then(|m| m.as_str()) {
+            if method == "submitTransaction" || method == "sendRawTransaction" || method == "submitAccountTransaction" {
+                if let Some(params) = parsed.get("params") {
+                    let tx_value = params
+                        .get("transaction")
+                        .cloned()
+                        .unwrap_or_else(|| params.clone());
+                    println!("rpc_http_tx_relay: attempting to parse transaction for relay");
+                    match zion_core::SubmittedTransaction::parse_value(tx_value) {
+                        Ok(transaction) => {
+                            println!("rpc_http_tx_relay: transaction parsed successfully");
+                            Some(transaction)
+                        }
+                        Err(e) => {
+                            println!("rpc_http_tx_relay: failed to parse transaction: {}", e);
+                            None
+                        }
+                    }
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    } else {
+        None
+    };
+
     // Route through JSON-RPC router
     let response_bytes = router.handle_raw(&body_buf);
     let resp_str = String::from_utf8_lossy(&response_bytes);
     println!("rpc_http_out={resp_str}");
+
+    // Relay accepted transaction to peers (same logic as line-delimited RPC)
+    if let Some(submitted) = submit_tx {
+        if let Ok(response) = serde_json::from_str::<serde_json::Value>(&resp_str) {
+            if let Some(result) = response.get("result") {
+                if result.get("accepted").and_then(|a| a.as_bool()).unwrap_or(false) {
+                    if let Some(tx_id) = result.get("tx_id").and_then(|t| t.as_str()) {
+                        let peers = runtime.lock().expect("lock").known_peers().to_vec();
+                        relay_tx_to_peers(tx_id, submitted, &peers, None, seen_txs, stats);
+                    }
+                }
+            }
+        }
+    }
 
     let http_response = format!(
         "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nAccess-Control-Allow-Origin: *\r\nAccess-Control-Allow-Headers: Content-Type\r\nConnection: close\r\n\r\n",
