@@ -373,9 +373,8 @@ pub mod opencl_deeksha {
         }
         // All AMD GPUs (GCN + RDNA) use conservative integer-only flags.
         // -cl-fast-relaxed-math causes the AMD compiler to enable aggressive
-        // optimizations that break integer code paths (NPU LayerNorm, GELU,
-        // keccak_f1600) when register pressure is high. This affects RDNA1
-        // (gfx10) as well as GCN (gfx6-9). See GPU_MISMATCH fix 2026-06-06.
+        // optimizations that break integer code paths (keccak_f1600, NPU).
+        // This affects RDNA (gfx10) as well as GCN (gfx6-9).
         "-cl-std=CL1.2 -cl-mad-enable".to_string()
     }
 
@@ -400,8 +399,10 @@ pub mod opencl_deeksha {
         }
         let device_name = device_name.to_ascii_lowercase();
 
-        // Vega / GCN wave64 parts benchmark better with a 64-thread local size.
-        if device_name.contains("vega")
+        // RDNA (gfx10) benchmarks better with 128 threads; Vega/GCN wave64 with 64.
+        if device_name.contains("gfx10") {
+            128
+        } else if device_name.contains("vega")
             || device_name.contains("gfx6")
             || device_name.contains("gfx7")
             || device_name.contains("gfx8")

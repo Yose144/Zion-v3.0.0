@@ -106,10 +106,11 @@ __constant uchar AES_RCON[10] = {
 /* Keccak-f1600                                                                */
 /* ========================================================================== */
 
-__attribute__((noinline)) void keccak_f1600(ulong *st)
+void keccak_f1600(ulong *st)
 {
     ulong bc0, bc1, bc2, bc3, bc4, t;
 
+    #pragma unroll 4
     for (int rnd = 0; rnd < 24; rnd++) {
         /* Theta — no arrays, direct column XOR */
         bc0 = st[0]^st[5]^st[10]^st[15]^st[20];
@@ -548,12 +549,6 @@ void memory_hard_transform(const uchar input[64], volatile __global uchar *pad,
     sequential_passes(pad);
     // barrier(CLK_GLOBAL_MEM_FENCE);  // each thread has its own pad — no sync needed
     random_read_mix_sha3(input, pad, output);
-
-    if (get_global_id(0) == 0) {
-        printf("mht_out ");
-        for (int i = 0; i < 8; i++) printf("%02x", (uint)output[i]);
-        printf("\n");
-    }
 }
 
 /* ========================================================================== */
