@@ -314,7 +314,7 @@ void golden_matrix(const uchar *in64, uchar *out64)
  *     out = SHA3-512(state || counter_le)
  *     block = out;  state = out;  counter++
  */
-void init_scratchpad(const uchar seed[64], __global uchar *pad)
+void init_scratchpad(const uchar seed[64], volatile __global uchar *pad)
 {
     uchar state[64];
     for (int i = 0; i < 64; i++) state[i] = seed[i];
@@ -343,7 +343,7 @@ void init_scratchpad(const uchar seed[64], __global uchar *pad)
  * mixed = SHA3-512(current || prev || random || pass_le || index_le)
  * cur ^= mixed
  */
-void mix_block(__global uchar *pad, uint index, ulong pass, int forward)
+void mix_block(volatile __global uchar *pad, uint index, ulong pass, int forward)
 {
     uint prev_index;
     if (forward)
@@ -393,7 +393,7 @@ void mix_block(__global uchar *pad, uint index, ulong pass, int forward)
 /*
  * 2 sequential passes: pass 0 forward (0..1023), pass 1 backward (1023..0).
  */
-void sequential_passes(__global uchar *pad)
+void sequential_passes(volatile __global uchar *pad)
 {
     for (int pass = 0; pass < PASSES; pass++) {
         int forward = (pass % 2 == 0);
@@ -482,7 +482,7 @@ void random_read_mix(const uchar seed[64], __global const uchar *pad,
  * Avoids keccak256_136_mix fast-path to eliminate compiler-specific
  * divergence on GCN (gfx900) vs RDNA vs CUDA.
  */
-void random_read_mix_sha3(const uchar seed[64], __global const uchar *pad,
+void random_read_mix_sha3(const uchar seed[64], volatile __global const uchar *pad,
                             uchar out[64])
 {
     uchar acc[64];
@@ -533,7 +533,7 @@ void random_read_mix_sha3(const uchar seed[64], __global const uchar *pad,
 }
 
 /* Full memory-hard transform: init → passes → random-read → 64 B output */
-void memory_hard_transform(const uchar input[64], __global uchar *pad,
+void memory_hard_transform(const uchar input[64], volatile __global uchar *pad,
                            uchar output[64])
 {
     init_scratchpad(input, pad);
@@ -1171,7 +1171,7 @@ __kernel void deeksha_mine(
     ulong nonce = nonce_base + (ulong)tid;
 
     /* Per-thread scratchpad in global memory */
-    __global uchar *pad = scratchpad_pool + (ulong)tid * SCRATCHPAD_SIZE;
+    volatile __global uchar *pad = scratchpad_pool + (ulong)tid * SCRATCHPAD_SIZE;
 
     /* ── Build input: header (≤80 B, zero-padded) + nonce (8 B LE) = 88 B ── */
     uchar input[88];
@@ -1245,7 +1245,7 @@ void ekam_deeksha_mine(
     ulong nonce = nonce_base + (ulong)tid;
     /* Explicit ulong multiplication to prevent 32-bit overflow on AMD
      * compilers that may optimize (ulong)tid * int as uint multiplication. */
-    __global uchar *pad = scratchpad_pool + (ulong)tid * (ulong)SCRATCHPAD_SIZE;
+    volatile __global uchar *pad = scratchpad_pool + (ulong)tid * (ulong)SCRATCHPAD_SIZE;
 
     /* Build input: header (<=80 B) + nonce (8 B LE) = 88 B, zero-padded */
     uchar input[88];
@@ -1310,7 +1310,7 @@ __kernel void ekam_deeksha_debug(
 {
     if (get_global_id(0) != 0) return;
 
-    __global uchar *pad = scratchpad_pool;
+    volatile __global uchar *pad = scratchpad_pool;
 
     uchar input[88];
     ulong *inp64 = (ulong *)input;
@@ -1369,7 +1369,7 @@ void ekam_deeksha_mine_s4(
 {
     uint tid   = get_global_id(0);
     if (tid >= nonce_count) return;
-    __global uchar *pad = scratchpad_pool + (ulong)tid * SCRATCHPAD_SIZE;
+    volatile __global uchar *pad = scratchpad_pool + (ulong)tid * SCRATCHPAD_SIZE;
 
     /* Build input: header (<=80 B) + nonce (8 B LE) = 88 B, zero-padded */
     uchar input[88];

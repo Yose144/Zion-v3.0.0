@@ -335,9 +335,9 @@ pub mod opencl_deeksha {
             .and_then(|v| v.trim().parse::<usize>().ok())
             .unwrap_or(usize::MAX);
 
-        // GCN devices (Vega, Polaris) cap at 4096 work items.
-        // RDNA (gfx10+) performs better with larger work_size once volatile
-        // is removed from scratchpad pointers (L1 cache enabled).
+        // GCN/RDNA devices (Vega, Polaris, gfx10) cap at 4096 work items.
+        // Benchmarks show larger work_size hurts performance on RDNA due to
+        // increased scratchpad memory pressure and cache thrashing.
         let dev = device.name().unwrap_or_default().to_ascii_lowercase();
         let gcn_cap = if dev.contains("vega")
             || dev.contains("polaris")
@@ -347,6 +347,7 @@ pub mod opencl_deeksha {
             || dev.contains("gfx7")
             || dev.contains("gfx8")
             || dev.contains("gfx9")
+            || dev.contains("gfx10")
         {
             4096
         } else {
