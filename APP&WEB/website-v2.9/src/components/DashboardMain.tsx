@@ -871,6 +871,7 @@ export default function DashboardMain() {
   const { activeWallet, disconnect } = useZionWallet();
   const [activeTab, setActiveTab] = useState<'monitoring' | 'wallet' | 'treasury' | 'dao' | 'alerts'>('wallet');
   const [metrics, setMetrics] = useState<V3Metrics | null>(null);
+  const [metricsSource, setMetricsSource] = useState<'live' | 'fallback' | null>(null);
   const [authenticated, setAuthenticated] = useState(false);
 
   const fetchMetrics = useCallback(async () => {
@@ -879,6 +880,7 @@ export default function DashboardMain() {
       if (!r.ok) return;
       const d = await r.json();
       setMetrics(d);
+      setMetricsSource(d.source === 'fallback' ? 'fallback' : 'live');
     } catch { /* ignore */ }
   }, []);
 
@@ -915,6 +917,11 @@ export default function DashboardMain() {
               <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
                 <Globe className="h-3 w-3 text-zion-cyan" /> Core + Edge
               </span>
+              {metricsSource === 'fallback' && (
+                <span className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-amber-400">
+                  <AlertTriangle className="h-3 w-3" /> Core offline — showing cached/empty metrics
+                </span>
+              )}
             </div>
           </div>
 

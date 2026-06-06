@@ -19,6 +19,7 @@ import threading
 import time
 import urllib.parse
 from collections import deque
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from pathlib import Path
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -1794,56 +1795,85 @@ def parse_miner_log() -> dict:
             status["current_diff"] = int(m.group(1))
     return status
 
+# ── Status cache ──────────────────────────────────────────────────────────
+_STATUS_CACHE: dict = {}
+_STATUS_CACHE_TIME: float = 0.0
+_STATUS_CACHE_LOCK = threading.Lock()
+STATUS_CACHE_TTL_SEC: float = 3.0
+
 def build_status() -> dict:
+    global _STATUS_CACHE, _STATUS_CACHE_TIME
+    now = time.time()
+    with _STATUS_CACHE_LOCK:
+        if _STATUS_CACHE and (now - _STATUS_CACHE_TIME) < STATUS_CACHE_TTL_SEC:
+            # Refresh timestamp so consumers see recent data
+            cached = dict(_STATUS_CACHE)
+            cached["timestamp"] = datetime.now().isoformat()
+            cached["_cached"] = True
+            return cached
     # Topology-aware status building
     if TOPOLOGY == "edge-primary":
-        return _build_status_edge_primary()
+        result = _build_status_edge_primary()
     else:
-        return _build_status_local_dev()
+        result = _build_status_local_dev()
+    with _STATUS_CACHE_LOCK:
+        _STATUS_CACHE = result
+        _STATUS_CACHE_TIME = now
+    return result
 
 def _build_status_edge_primary() -> dict:
-    """Build status for edge-primary topology: edge-node1, edge-node2, pool-edge, local backup node1, miner"""
-    # Edge Node 1 health (primary — TCP probe on P2P port)
-    edge_node1_svc = get_service("edge-node1")
-    edge_node1_health = check_service_health(edge_node1_svc) if edge_node1_svc else {"alive": False}
+    """Build status for edge-primary topology: fast, parallel RPC with short timeouts."""
+    t0 = time.time()
+
+    # ── Parallel RPC probes ─────────────────────────────────────────────────
+    edge_rpc_info = None
+    local_rpc_info = None
+
+    def _edge_rpc_call():
+        # Tailscale VPN only — public IP fallback removed to avoid 6+s Windows connect delays
+        r = rpc_call("100.76.16.108", 8443, "getChainInfo", {}, timeout=0.6)
+        if r and not r.get("_rpc_error"):
+            return ("edge", r)
+        return ("edge", None)
+
+    def _local_rpc_call():
+        r = rpc_call("127.0.0.1", 8443, "getChainInfo", {}, timeout=0.8)
+        return ("local", r if r and not r.get("_rpc_error") else None)
+
+    t1 = time.time()
+    with ThreadPoolExecutor(max_workers=2) as ex:
+        futures = {ex.submit(_edge_rpc_call), ex.submit(_local_rpc_call)}
+        try:
+            for fut in as_completed(futures, timeout=1.5):
+                try:
+                    key, val = fut.result()
+                    if key == "edge":
+                        edge_rpc_info = val
+                    else:
+                        local_rpc_info = val
+                except Exception:
+                    pass
+        except TimeoutError:
+            pass
+    print(f"[DASH-DEBUG] RPC pool done in {(time.time()-t1)*1000:.0f}ms", file=sys.stderr)
+
+    # ── Edge Node status ─────────────────────────────────────────────────────
     edge_node1_status = {
-        "running": edge_node1_health.get("alive", False),
-        "chain_height": None,
-        "tip_hash": None,
-        "known_peers": 0,
-        "mempool_size": 0,
+        "running": bool(edge_rpc_info),
+        "chain_height": edge_rpc_info.get("chain_height") if edge_rpc_info else None,
+        "tip_hash": edge_rpc_info.get("tip_hash") if edge_rpc_info else None,
+        "known_peers": edge_rpc_info.get("known_peers", 0) if edge_rpc_info else 0,
+        "mempool_size": edge_rpc_info.get("mempool_transactions", 0) if edge_rpc_info else 0,
+        "network": edge_rpc_info.get("network") if edge_rpc_info else None,
+        "protocol_version": edge_rpc_info.get("protocol_version") if edge_rpc_info else None,
+        "consensus_profile": edge_rpc_info.get("consensus_profile") if edge_rpc_info else None,
+        "accepted_blocks": edge_rpc_info.get("accepted_blocks") if edge_rpc_info else None,
     }
+    edge_node2_status = {"running": False, "chain_height": None, "tip_hash": None, "known_peers": 0, "mempool_size": 0}
 
-    # Edge Node 2 health (follower — TCP probe on P2P port)
-    edge_node2_svc = get_service("edge-node2")
-    edge_node2_health = check_service_health(edge_node2_svc) if edge_node2_svc else {"alive": False}
-    edge_node2_status = {
-        "running": edge_node2_health.get("alive", False),
-        "chain_height": None,
-        "tip_hash": None,
-        "known_peers": 0,
-        "mempool_size": 0,
-    }
-
-    # ── Direct RPC to Edge Node for canonical mainnet metrics ──
-    # Try Tailscale VPN IP first, fallback to public IP if VPN is down
-    edge_rpc_info = rpc_call("100.76.16.108", 8443, "getChainInfo", {}, timeout=2.0)
-    if not edge_rpc_info or edge_rpc_info.get("_rpc_error"):
-        edge_rpc_info = rpc_call("77.42.71.94", 8443, "getChainInfo", {}, timeout=3.0)
-    if edge_rpc_info and not edge_rpc_info.get("_rpc_error"):
-        edge_node1_status["chain_height"] = edge_rpc_info.get("chain_height")
-        edge_node1_status["tip_hash"] = edge_rpc_info.get("tip_hash")
-        edge_node1_status["known_peers"] = edge_rpc_info.get("known_peers", 0)
-        edge_node1_status["mempool_size"] = edge_rpc_info.get("mempool_transactions", 0)
-        edge_node1_status["network"] = edge_rpc_info.get("network")
-        edge_node1_status["protocol_version"] = edge_rpc_info.get("protocol_version")
-        edge_node1_status["consensus_profile"] = edge_rpc_info.get("consensus_profile")
-        edge_node1_status["accepted_blocks"] = edge_rpc_info.get("accepted_blocks")
-
-    # ── Direct RPC to Local Backup Node ──
-    local_rpc_info = rpc_call("127.0.0.1", 8443, "getChainInfo", {}, timeout=2.0)
+    # ── Local Backup Node ───────────────────────────────────────────────────
     n1 = parse_node_log("node1")
-    if local_rpc_info and not local_rpc_info.get("_rpc_error"):
+    if local_rpc_info:
         n1["running"] = True
         if not n1.get("p2p_bind"):
             n1["p2p_bind"] = "0.0.0.0:8333"
@@ -1853,10 +1883,15 @@ def _build_status_edge_primary() -> dict:
         n1["protocol_version"] = local_rpc_info.get("protocol_version")
         n1["consensus_profile"] = local_rpc_info.get("consensus_profile")
 
-    # Edge pool health from cache (remote host probe)
+    # Proxy local height to Edge if Edge RPC failed entirely
+    if edge_node1_status["chain_height"] is None and n1.get("chain_height"):
+        edge_node1_status["chain_height"] = n1["chain_height"]
+        edge_node1_status["tip_hash"] = n1.get("tip_hash")
+        edge_node1_status["known_peers"] = n1.get("known_peers", 0)
+
+    # ── Edge Pool ────────────────────────────────────────────────────────────
     pool_edge_svc = get_service("pool-edge")
     pool_edge_health = check_service_health(pool_edge_svc) if pool_edge_svc else {"alive": False}
-    # Try to scrape Edge pool metrics if Prometheus has them
     edge_metrics = {"active_miners": None, "hashrate": None, "blocks_found": None, "total_hashes": None, "total_shares": None}
     try:
         metrics_port = pool_edge_svc.get("ports", {}).get("metrics") if pool_edge_svc else None
@@ -1878,17 +1913,8 @@ def _build_status_edge_primary() -> dict:
     except Exception:
         pass
 
-    # Edge pool wallet / fee split (canonical values, not queried since RPC is localhost-only)
     edge_pool_wallet = os.environ.get("ZION_POOL_WALLET", "")
     edge_fee_split = "89/5/5/0"
-
-    # Use local backup height as proxy for Edge height if RPC failed
-    if edge_node1_status["chain_height"] is None and n1.get("chain_height"):
-        edge_node1_status["chain_height"] = n1["chain_height"]
-        edge_node1_status["tip_hash"] = n1.get("tip_hash")
-        edge_node1_status["known_peers"] = n1.get("known_peers", 0)
-
-    # Pool status = Edge pool (primary). Local pool log is dev-only fallback.
     local_pool = parse_pool_log()
     pool_status = {
         "running": pool_edge_health["alive"],
@@ -1909,21 +1935,21 @@ def _build_status_edge_primary() -> dict:
         "hashrate_khs": edge_metrics["hashrate"],
     }
 
-    # Compute sync gap between local backup and Edge primary
+    # Sync gap
     sync_gap = None
     if n1.get("chain_height") and edge_node1_status.get("chain_height"):
         sync_gap = abs(n1["chain_height"] - edge_node1_status["chain_height"])
 
-    # Tailscale connectivity check
+    # Tailscale connectivity check (fast, non-blocking, graceful if not installed)
     tailscale_ok = False
     try:
-        result = subprocess.run(["tailscale", "ping", "-c", "1", "-timeout", "3s", "100.76.16.108"],
-                               capture_output=True, text=True, timeout=5)
-        # tailscale ping returns 1 for relay connections even when pong is received
+        result = subprocess.run(["tailscale", "ping", "-c", "1", "-timeout", "1s", "100.76.16.108"],
+                                  capture_output=True, text=True, timeout=2)
         tailscale_ok = result.returncode == 0 or "pong from" in result.stdout
     except Exception:
         pass
 
+    elapsed = time.time() - t0
     return {
         "timestamp": datetime.now().isoformat(),
         "topology": "edge-primary",
@@ -1951,6 +1977,7 @@ def _build_status_edge_primary() -> dict:
         },
         "miner": parse_miner_log(),
         "tailscale": {"vpn_ok": tailscale_ok, "edge_ip": "100.76.16.108"},
+        "_build_time_ms": int(elapsed * 1000),
     }
 
 def _build_status_local_dev() -> dict:
@@ -2408,7 +2435,8 @@ def rpc_call(host: str, port: int, method: str, params: dict, timeout: float = 2
     """Simple TCP JSON-RPC call to ZION node. Returns result dict or None on failure."""
     try:
         payload = json.dumps({"jsonrpc": "2.0", "id": 1, "method": method, "params": params}) + "\n"
-        with socket.create_connection((host, port), timeout=timeout) as sock:
+        # Force IPv4 to avoid dual-stack delay on Windows
+        with socket.create_connection((host, port), timeout=timeout, family=socket.AF_INET) as sock:
             sock.sendall(payload.encode("utf-8"))
             sock.settimeout(timeout)
             data = b""
