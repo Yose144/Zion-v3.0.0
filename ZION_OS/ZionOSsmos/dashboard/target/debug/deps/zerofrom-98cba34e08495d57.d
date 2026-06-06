@@ -1,0 +1,7 @@
+C:\Users\yosef\Desktop\Zion\2.9.6-main\ZION_OS\ZionOSsmos\dashboard\target\debug\deps\zerofrom-98cba34e08495d57.d: C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\zerofrom-0.1.8\src\lib.rs C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\zerofrom-0.1.8\src\macro_impls.rs C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\zerofrom-0.1.8\src\zero_from.rs
+
+C:\Users\yosef\Desktop\Zion\2.9.6-main\ZION_OS\ZionOSsmos\dashboard\target\debug\deps\libzerofrom-98cba34e08495d57.rmeta: C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\zerofrom-0.1.8\src\lib.rs C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\zerofrom-0.1.8\src\macro_impls.rs C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\zerofrom-0.1.8\src\zero_from.rs
+
+C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\zerofrom-0.1.8\src\lib.rs:
+C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\zerofrom-0.1.8\src\macro_impls.rs:
+C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\zerofrom-0.1.8\src\zero_from.rs:

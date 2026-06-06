@@ -53,6 +53,7 @@ function showPanel(name) {
 
   const titleMap = {
     overview: 'Overview',
+    infra: 'Infrastructure',
     rigs: 'Rig Management',
     console: 'Console',
     pool: 'Pool Statistics',
@@ -73,8 +74,9 @@ function startPolling() {
 
 async function fetchAll() {
   try {
-    const [overviewRes, rigsRes, logsRes, sharesRes, alertsRes, fsRes, earningsRes] = await Promise.all([
+    const [overviewRes, infraRes, rigsRes, logsRes, sharesRes, alertsRes, fsRes, earningsRes] = await Promise.all([
       fetch(API + '/api/overview').then(r => r.json()),
+      fetch(API + '/api/infra').then(r => r.json()).catch(() => null),
       fetch(API + '/api/rigs').then(r => r.json()),
       fetch(API + '/api/logs').then(r => r.json()),
       fetch(API + '/api/shares').then(r => r.json()).catch(() => []),
@@ -84,6 +86,7 @@ async function fetchAll() {
     ]);
 
     updateOverview(overviewRes);
+    if (infraRes) updateInfraPanel(infraRes);
     updateRigs(rigsRes);
     updateConsoleFromPolled(logsRes);
     updatePoolPanel(overviewRes.pool);
@@ -1090,6 +1093,70 @@ function esc(s) {
   return div.innerHTML;
 }
 
+// ═══════════════════════════════════════════════════════════
+// INFRA PANEL
+// ═══════════════════════════════════════════════════════════
+
+function updateInfraPanel(infra) {
+  const services = ['node', 'pool', 'dao', 'warp', 'agent', 'website'];
+  services.forEach(svc => {
+    const st = infra[svc];
+    if (!st) return;
+    const statusEl = document.getElementById('infra-' + svc + '-status');
+    const detailEl = document.getElementById('infra-' + svc + '-detail');
+    const cardEl = document.getElementById('infra-' + svc + '-card');
+    if (statusEl) statusEl.textContent = st.reachable ? 'ONLINE' : 'OFFLINE';
+    if (detailEl) {
+      if (svc === 'agent' && st.data) {
+        detailEl.textContent = 'Mode: ' + (st.data.mode || '—') + ' | GPUs: ' + (st.data.gpu_count ?? '—');
+      } else if (svc === 'pool' && st.data) {
+        const hr = st.data.hashrate?.pool || 0;
+        detailEl.textContent = 'Hash: ' + fmtHashrate(hr) + ' | Miners: ' + (st.data.miners?.active || 0);
+      } else {
+        detailEl.textContent = st.latency_ms ? st.latency_ms + ' ms' : '—';
+      }
+    }
+    if (cardEl) {
+      cardEl.classList.toggle('kpi-green', st.reachable);
+      cardEl.classList.toggle('kpi-red', !st.reachable);
+    }
+  });
+
+  // Latency table
+  const tbody = document.getElementById('infra-latency-tbody');
+  if (tbody) {
+    tbody.innerHTML = services.map(svc => {
+      const st = infra[svc];
+      if (!st) return '';
+      const statusClass = st.reachable ? 'status-online' : 'status-offline';
+      const statusText = st.reachable ? 'Online' : 'Offline';
+      return '<tr>' +
+        '<td>' + esc(st.name) + '</td>' +
+        '<td><code>' + esc(st.url) + '</code></td>' +
+        '<td><span class="' + statusClass + '">' + statusText + '</span></td>' +
+        '<td>' + (st.latency_ms || '—') + ' ms</td>' +
+        '<td><button class="btn-sm" onclick="location.href=\'' + esc(st.url) + '\'">Open</button></td>' +
+      '</tr>';
+    }).join('');
+  }
+}
+
+async function agentMinerAction(action) {
+  const resultEl = document.getElementById('agent-action-result');
+  if (resultEl) resultEl.textContent = 'Sending ' + action + '…';
+  try {
+    const resp = await fetch(API + '/api/agent/miner/' + action, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    const data = await resp.json();
+    if (resultEl) resultEl.textContent = data.ok ? 'OK: ' + action + ' sent' : 'Error: ' + (data.error || 'unknown');
+    queueFetch();
+  } catch (e) {
+    if (resultEl) resultEl.textContent = 'Error: ' + e.message;
+  }
+}
+
 window.showPanel = showPanel;
 window.openRigDetail = openRigDetail;
 window.closeModal = closeModal;
@@ -1098,3 +1165,4 @@ window.removeRig = removeRig;
 window.toggleAlerts = toggleAlerts;
 window.dismissAlert = dismissAlert;
 window.deleteFlightSheet = deleteFlightSheet;
+window.agentMinerAction = agentMinerAction;
