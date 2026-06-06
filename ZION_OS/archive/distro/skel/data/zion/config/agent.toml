@@ -1,0 +1,33 @@
+# ZION Agent Configuration
+# Tento soubor se nacte pri bootu rigu
+# Lze prepisovat pomoci fleet dashboard API
+
+rig_id = ""
+api_bind = "0.0.0.0:8767"
+autonomous_mode = true
+auto_start_miner = false
+auto_update = "stable"
+
+[telemetry]
+enabled = false
+endpoint = "https://fleet.zionterranova.com/api/telemetry"
+interval_sec = 30
+
+[miner]
+binary_path = "/usr/bin/zion-miner"
+default_pool = "77.42.71.94:8444"
+default_wallet = ""
+default_worker = "zion-rig"
+default_gpu_backend = "auto"
+extra_args = []
+
+[watchdog]
+enabled = true
+rules_file = "/data/zion/config/watchdog.yaml"
+check_interval_sec = 60
+
+[fleet]
+enabled = false
+dashboard_url = "https://fleet.zionterranova.com"
+api_key = ""
+poll_interval_sec = 10
