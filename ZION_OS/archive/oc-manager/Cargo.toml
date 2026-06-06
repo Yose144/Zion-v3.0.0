@@ -1,0 +1,28 @@
+[package]
+name = "zion-oc-manager"
+version = "1.0.0"
+edition = "2021"
+description = "ZION OC Manager — GPU overclocking and power management"
+authors = ["ZION Team <dev@zionterranova.com>"]
+license = "MIT"
+
+[dependencies]
+tokio = { version = "1.35", features = ["full", "process"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
+anyhow = "1.0"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# NVIDIA NVML (optional)
+nvml-wrapper = { version = "0.10", optional = true }
+
+[features]
+default = []
+nvidia = ["nvml-wrapper"]
+
+[profile.release]
+opt-level = 3
+lto = true
+strip = true
