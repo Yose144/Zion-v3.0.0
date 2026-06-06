@@ -102,6 +102,32 @@ __constant uchar AES_RCON[10] = {
     0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36
 };
 
+/* GCN-safe helpers: never cast __global uchar* to ulong* */
+static inline ulong ulong_from_bytes(const uchar *p)
+{
+    return ((ulong)p[0])        | ((ulong)p[1] << 8)  |
+           ((ulong)p[2] << 16) | ((ulong)p[3] << 24) |
+           ((ulong)p[4] << 32) | ((ulong)p[5] << 40) |
+           ((ulong)p[6] << 48) | ((ulong)p[7] << 56);
+}
+static inline void ulong_to_bytes(ulong v, uchar *p)
+{
+    p[0] = (uchar)(v      ); p[1] = (uchar)(v >>  8);
+    p[2] = (uchar)(v >> 16); p[3] = (uchar)(v >> 24);
+    p[4] = (uchar)(v >> 32); p[5] = (uchar)(v >> 40);
+    p[6] = (uchar)(v >> 48); p[7] = (uchar)(v >> 56);
+}
+
+static inline void bytes_to_ulong8(const uchar *p, ulong out[8])
+{
+    for (int i = 0; i < 8; i++) out[i] = ulong_from_bytes(p + i * 8);
+}
+
+static inline void ulong8_to_bytes(const ulong in[8], uchar *p)
+{
+    for (int i = 0; i < 8; i++) ulong_to_bytes(in[i], p + i * 8);
+}
+
 /* ========================================================================== */
 /* Keccak-f1600                                                                */
 /* ========================================================================== */
@@ -330,12 +356,9 @@ void init_scratchpad(const uchar seed[64], __global uchar *pad)
         sha3_512(input, 72, out);
 
         uint off = blk * BLOCK_SIZE;
-        __global ulong *dst = (__global ulong *)(pad + off);
-        ulong *src = (ulong *)out;
-        ulong *st64 = (ulong *)state;
-        for (int i = 0; i < 8; i++) {
-            dst[i] = src[i];
-            st64[i] = src[i];
+        for (int i = 0; i < 64; i++) {
+            pad[off + i] = out[i];
+            state[i]      = out[i];
         }
     }
 }
@@ -359,17 +382,16 @@ void mix_block(__global uchar *pad, uint index, ulong pass, int forward)
     uint prev_off = prev_index * BLOCK_SIZE;
 
     /* Derive random block index from current block's first 8 bytes */
-    __global ulong *pad64 = (__global ulong *)pad;
-    ulong idx_val = pad64[cur_off >> 3];
+    ulong idx_val = ulong_from_bytes(pad + cur_off);
     uint rand_index = (uint)((idx_val ^ pass ^ (ulong)index) % BLOCK_COUNT);
     uint rand_off = rand_index * BLOCK_SIZE;
 
-    /* Snapshot all three blocks to private memory (ulong-width) */
-    ulong current[8], prev[8], random_blk[8];
-    for (int i = 0; i < 8; i++) {
-        current[i]    = pad64[(cur_off  >> 3) + i];
-        prev[i]       = pad64[(prev_off >> 3) + i];
-        random_blk[i] = pad64[(rand_off >> 3) + i];
+    /* Snapshot all three blocks to private memory (byte-level, GCN-safe) */
+    uchar current[64], prev[64], random_blk[64];
+    for (int i = 0; i < 64; i++) {
+        current[i]    = pad[cur_off  + i];
+        prev[i]       = pad[prev_off + i];
+        random_blk[i] = pad[rand_off + i];
     }
 
     /* SHA3-512(current || prev || random || pass_le(8) || index_le(8)) */
@@ -379,19 +401,18 @@ void mix_block(__global uchar *pad, uint index, ulong pass, int forward)
 
     ulong st[25]; int pos = 0;
     for (int i = 0; i < 25; i++) st[i] = 0;
-    keccak_absorb(st, &pos, 72, (uchar *)current,     BLOCK_SIZE);
-    keccak_absorb(st, &pos, 72, (uchar *)prev,        BLOCK_SIZE);
-    keccak_absorb(st, &pos, 72, (uchar *)random_blk,  BLOCK_SIZE);
+    keccak_absorb(st, &pos, 72, current,     BLOCK_SIZE);
+    keccak_absorb(st, &pos, 72, prev,        BLOCK_SIZE);
+    keccak_absorb(st, &pos, 72, random_blk,  BLOCK_SIZE);
     keccak_absorb(st, &pos, 72, pass_bytes,  8);
     keccak_absorb(st, &pos, 72, index_bytes, 8);
 
     uchar mixed[64];
     keccak_finalize(st, pos, 72, 0x06, mixed, 64);
 
-    /* XOR result into current block position (ulong-width) */
-    ulong *mix64 = (ulong *)mixed;
-    for (int i = 0; i < 8; i++)
-        pad64[(cur_off >> 3) + i] ^= mix64[i];
+    /* XOR result into current block position (byte-level) */
+    for (int i = 0; i < 64; i++)
+        pad[cur_off + i] ^= mixed[i];
 }
 
 /*
@@ -500,22 +521,24 @@ void random_read_mix_sha3(const uchar seed[64], __global const uchar *pad,
         uint off = pos * BLOCK_SIZE;
 
         ulong chunk64[8];
-        {
-            __global const ulong *gsrc = (__global const ulong *)(pad + off);
-            #pragma unroll 8
-            for (int i = 0; i < 8; i++) chunk64[i] = gsrc[i];
-        }
+        bytes_to_ulong8(pad + off, chunk64);
+
+        ulong acc64[8];
+        bytes_to_ulong8(acc, acc64);
 
         ulong d64[4];
-        keccak256_136_mix((const ulong *)acc, chunk64, (ulong)r, d64);
+        keccak256_136_mix(acc64, chunk64, (ulong)r, d64);
 
         {
-            ulong *a64 = (ulong *)acc;
+            ulong a64[4];
+            bytes_to_ulong8(acc, a64);
             #pragma unroll 4
             for (int u = 0; u < 4; u++) a64[u] ^= d64[u];
+            for (int u = 0; u < 4; u++) ulong_to_bytes(a64[u], acc + u * 8);
         }
         {
-            const uchar *d8 = (const uchar *)d64;
+            uchar d8[32];
+            for (int u = 0; u < 4; u++) ulong_to_bytes(d64[u], d8 + u * 8);
             for (int i = 0; i < 32; i++)
                 acc[32 + i] = (uchar)((uint)acc[32 + i] + (uint)d8[i]);
         }
@@ -524,16 +547,9 @@ void random_read_mix_sha3(const uchar seed[64], __global const uchar *pad,
     }
 
     uchar first_blk[BLOCK_SIZE], last_blk[BLOCK_SIZE];
-    {
-        __global const ulong *fp = (__global const ulong *)pad;
-        __global const ulong *lp = (__global const ulong *)(pad + SCRATCHPAD_SIZE - BLOCK_SIZE);
-        ulong *fd = (ulong *)first_blk;
-        ulong *ld = (ulong *)last_blk;
-        #pragma unroll 8
-        for (int i = 0; i < 8; i++) {
-            fd[i] = fp[i];
-            ld[i] = lp[i];
-        }
+    for (int i = 0; i < 64; i++) {
+        first_blk[i] = pad[i];
+        last_blk[i]  = pad[SCRATCHPAD_SIZE - BLOCK_SIZE + i];
     }
 
     ulong fst[25]; int fpos = 0;
@@ -889,15 +905,16 @@ int gelu_int8(int x)
 
 /* Deterministic integer floor-sqrt via binary search.
  * Matches Rust: ((x as f64).sqrt() as i32) for x in [0, 65536].
- * Not affected by -cl-fast-relaxed-math. */
-int isqrt_floor(long x)
+ * Not affected by -cl-fast-relaxed-math.
+ * GCN workaround: use int instead of long to avoid 64-bit overflow bugs. */
+int isqrt_floor(int x)
 {
     if (x <= 0) return 0;
     int lo = 0, hi = 256, r = 0;
     while (lo <= hi) {
         int mid = (lo + hi) >> 1;
-        if ((long)mid * (long)mid <= x) { r = mid; lo = mid + 1; }
-        else                             { hi = mid - 1; }
+        if (mid * mid <= x) { r = mid; lo = mid + 1; }
+        else                { hi = mid - 1; }
     }
     return r;
 }
@@ -943,17 +960,19 @@ void npu_mix_packed(const uchar in64[64], uchar out64[64],
             nxt[i] = clamp(acc >> 12, -128, 127);
         }
 
-        /* ── LayerNorm ── */
+        /* ── LayerNorm ──
+         * GCN workaround: use int instead of long for sum/var_sum.
+         * Max var_sum: (255)^2 * 256 ≈ 16.7M < 2^31. Safe in int. */
         {
-            long sum = 0;
-            for (uint i = 0; i < out_dim; i++) sum += (long)nxt[i];
-            int mean = (int)(sum / (long)out_dim);
-            long var_sum = 0;
+            int sum = 0;
+            for (uint i = 0; i < out_dim; i++) sum += nxt[i];
+            int mean = sum / (int)out_dim;
+            int var_sum = 0;
             for (uint i = 0; i < out_dim; i++) {
-                long d = (long)(nxt[i] - mean);
+                int d = nxt[i] - mean;
                 var_sum += d * d;
             }
-            int std_approx = isqrt_floor(var_sum / (long)out_dim) + 1;
+            int std_approx = isqrt_floor(var_sum / (int)out_dim) + 1;
             for (uint i = 0; i < out_dim; i++) {
                 int normalized = ((nxt[i] - mean) * 128) / std_approx;
                 nxt[i] = clamp((normalized * (int)npu_scales[s_off + i]) >> 8, -128, 127);
@@ -1067,15 +1086,10 @@ void aes128_encrypt(const uchar key[16], uchar block[16])
 void fusion_round(uchar state[64], uchar round_num)
 {
     /* Keccak-256(state[0..32] || round_byte)
-     * Use 40-byte buffer (padded to 8-byte alignment) to avoid
-     * undefined behaviour from unaligned ulong pointer casts on RDNA.
+     * GCN/RDNA: avoid all ulong pointer casts; use byte copies.
      */
     uchar hash_input[40];
-    {
-        ulong *hi64 = (ulong *)hash_input;
-        ulong *st64 = (ulong *)state;
-        for (int i = 0; i < 4; i++) hi64[i] = st64[i];
-    }
+    for (int i = 0; i < 32; i++) hash_input[i] = state[i];
     hash_input[32] = round_num;
     for (int i = 33; i < 40; i++) hash_input[i] = 0;
 
@@ -1084,58 +1098,27 @@ void fusion_round(uchar state[64], uchar round_num)
 
     /* AES block 0: key = intermediate[0:16], plaintext = state[32:48] */
     uchar aes_key[16], block0[16], block1[16];
-    {
-        ulong *k64 = (ulong *)aes_key;
-        ulong *i64 = (ulong *)intermediate;
-        k64[0] = i64[0]; k64[1] = i64[1];
-    }
-    {
-        ulong *b64 = (ulong *)block0;
-        ulong *s64 = (ulong *)(state + 32);
-        b64[0] = s64[0]; b64[1] = s64[1];
-    }
+    for (int i = 0; i < 16; i++) aes_key[i] = intermediate[i];
+    for (int i = 0; i < 16; i++) block0[i]   = state[32 + i];
     aes128_encrypt(aes_key, block0);
 
     /* AES block 1: tweak key, plaintext = state[48:64] */
     uchar key2[16];
-    {
-        ulong *k264 = (ulong *)key2;
-        ulong *k64  = (ulong *)aes_key;
-        k264[0] = k64[0]; k264[1] = k64[1];
-    }
+    for (int i = 0; i < 16; i++) key2[i] = aes_key[i];
     key2[0]  ^= round_num;
     key2[15] ^= 0xAB;
-    {
-        ulong *b64 = (ulong *)block1;
-        ulong *s64 = (ulong *)(state + 48);
-        b64[0] = s64[0]; b64[1] = s64[1];
-    }
+    for (int i = 0; i < 16; i++) block1[i] = state[48 + i];
     aes128_encrypt(key2, block1);
 
     /* mask = block0 || block1 */
     uchar mask[32];
-    {
-        ulong *m64 = (ulong *)mask;
-        ulong *b064 = (ulong *)block0;
-        ulong *b164 = (ulong *)block1;
-        m64[0] = b064[0]; m64[1] = b064[1];
-        m64[2] = b164[0]; m64[3] = b164[1];
-    }
+    for (int i = 0; i < 16; i++) { mask[     i] = block0[i]; mask[16 + i] = block1[i]; }
 
     /* state[32..64] ^= intermediate   (evolve upper half FIRST) */
-    {
-        ulong *s64 = (ulong *)(state + 32);
-        ulong *i64 = (ulong *)intermediate;
-        for (int i = 0; i < 4; i++) s64[i] ^= i64[i];
-    }
+    for (int i = 0; i < 32; i++) state[32 + i] ^= intermediate[i];
 
     /* state[0..32] = intermediate ^ mask   (overwrite lower half) */
-    {
-        ulong *s64 = (ulong *)state;
-        ulong *i64 = (ulong *)intermediate;
-        ulong *m64 = (ulong *)mask;
-        for (int i = 0; i < 4; i++) s64[i] = i64[i] ^ m64[i];
-    }
+    for (int i = 0; i < 32; i++) state[i] = intermediate[i] ^ mask[i];
 }
 
 void cosmic_fusion(const uchar in64[64], uchar hash32[32])
