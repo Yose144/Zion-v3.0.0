@@ -145,6 +145,13 @@ phase_build() {
     cargo build --release --bin node --bin server --bin zion-dao --bin zion-warp-server 2>&1
   "
 
+  log "Building agent on Edge..."
+  ssh_run "
+    . /root/.cargo/env 2>/dev/null || true
+    cd ${REMOTE_ROOT}/ZION_OS/agent
+    cargo build --release 2>&1
+  "
+
   log "Building website on Edge..."
   ssh_run "
     cd ${REMOTE_WEB}
@@ -173,6 +180,7 @@ phase_deploy() {
   sleep 3
   ssh_run "systemctl restart zion-edge-dao zion-edge-warp || true"
   ssh_run "systemctl restart zion-edge-miner || true"
+  ssh_run "systemctl restart zion-edge-agent || true"
   ssh_run "pm2 restart zion-website 2>/dev/null || true"
 
   log "Waiting for services..."
@@ -188,7 +196,7 @@ phase_verify() {
 
   echo ""
   echo "=== Service Status ==="
-  for svc in zion-edge-node1 zion-edge-node2 zion-edge-pool zion-edge-dao zion-edge-warp zion-edge-miner; do
+  for svc in zion-edge-node1 zion-edge-node2 zion-edge-pool zion-edge-dao zion-edge-warp zion-edge-miner zion-edge-agent; do
     local status
     status=$(ssh_run "systemctl is-active ${svc} 2>/dev/null" || true)
     if [[ "$status" == "active" ]]; then
@@ -200,13 +208,22 @@ phase_verify() {
 
   echo ""
   echo "=== Port Checks ==="
-  for port in 8443 8444 8450 8453 3000; do
+  for port in 8443 8444 8450 8453 8767 3000; do
     if check_port "$EDGE_HOST" "$port"; then
       echo -e "${GREEN}  port ${port}: OPEN${NC}"; ((ok++))
     else
       echo -e "${RED}  port ${port}: CLOSED${NC}"; ((fail++))
     fi
   done
+
+  # Agent health check
+  local agent_health
+  agent_health=$(ssh_run "curl -s http://127.0.0.1:8767/health 2>/dev/null" || true)
+  if [[ "$agent_health" == "OK" ]]; then
+    echo -e "${GREEN}  zion-agent API: HEALTHY${NC}"; ((ok++))
+  else
+    echo -e "${RED}  zion-agent API: NO RESPONSE${NC}"; ((fail++))
+  fi
 
   echo ""
   if [[ "$fail" -eq 0 ]]; then
