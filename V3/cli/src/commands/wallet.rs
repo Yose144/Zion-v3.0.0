@@ -408,7 +408,7 @@ pub async fn run(cfg: &Config, cmd: WalletCmd) -> Result<()> {
 
             let mut spendable_utxos: Vec<zion_core::wallet::SpendableUtxo> = Vec::new();
             if let Ok(ref v) = utxos_resp {
-                if let Some(utxo_array) = v.get("result").and_then(|r| r.get("utxos")).and_then(|u| u.as_array()) {
+                if let Some(utxo_array) = v.get("utxos").and_then(|u| u.as_array()) {
                     for item in utxo_array {
                         let tx_hash_hex = item.get("tx_hash").and_then(|v| v.as_str()).unwrap_or("");
                         let output_index = item.get("output_index").and_then(|v| v.as_u64()).unwrap_or(0) as u32;
@@ -462,8 +462,7 @@ pub async fn run(cfg: &Config, cmd: WalletCmd) -> Result<()> {
                 )
                 .await;
                 let total_balance = if let Ok(ref v) = balance_resp {
-                    v.get("result")
-                        .and_then(|r| r.get("balance_flowers"))
+                    v.get("balance_flowers")
                         .and_then(|b| b.as_str())
                         .and_then(|s| s.parse::<u128>().ok())
                         .unwrap_or(0)
@@ -502,10 +501,8 @@ pub async fn run(cfg: &Config, cmd: WalletCmd) -> Result<()> {
 
             match result {
                 Ok(v) => {
-                    let txid = v.get("result")
-                        .and_then(|r| r.get("tx_id"))
+                    let txid = v.get("tx_id")
                         .and_then(|t| t.as_str())
-                        .or_else(|| v.get("txid").and_then(|t| t.as_str()))
                         .unwrap_or("?");
                     ui::print_ok(&format!("Submitted! txid: {}", txid));
                 }
