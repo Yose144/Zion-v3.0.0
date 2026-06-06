@@ -1,5 +1,6 @@
-use crate::AgentState;
+use crate::{AgentState, miner_parser};
 use std::sync::Arc;
+use tokio::io::{AsyncBufReadExt, AsyncWriteExt};
 use tokio::process::Command;
 use tracing::{error, info, warn};
 
@@ -44,10 +45,9 @@ pub async fn start_miner(
         "opencl" => cmd.arg("--gpu").arg("opencl"),
         "cuda" => cmd.arg("--gpu").arg("cuda"),
         "metal" => cmd.arg("--gpu").arg("metal"),
-        _ => &mut cmd, // auto nebo cpu
+        _ => &mut cmd,
     };
 
-    // Extra args
     for arg in &cfg.miner.extra_args {
         cmd.arg(arg);
     }
@@ -55,6 +55,10 @@ pub async fn start_miner(
     // Env vars pro loop count (dulezite pro pool)
     cmd.env("ZION_LOOP_COUNT", "1000000");
     cmd.env("ZION_NONCE_COUNT", "4096");
+
+    // Capture stdout/stderr pro parsing
+    cmd.stdout(std::process::Stdio::piped());
+    cmd.stderr(std::process::Stdio::piped());
 
     info!("Spoustim miner: {:?}", cmd);
 
@@ -65,7 +69,30 @@ pub async fn start_miner(
 
     *state.miner_pid.write().await = Some(pid);
 
-    // Spawn monitor task
+    // Spawn stdout parser
+    if let Some(stdout) = child.stdout.take() {
+        crate::miner_parser::spawn_stdout_parser(stdout, state.miner_stats.clone());
+    }
+
+    // Spawn stderr logger (forward to agent log)
+    if let Some(stderr) = child.stderr.take() {
+        let stats_clone = state.miner_stats.clone();
+        tokio::spawn(async move {
+            let reader = tokio::io::BufReader::new(stderr);
+            let mut lines = reader.lines();
+            while let Ok(Some(line)) = lines.next_line().await {
+                if line.contains("error") || line.contains("ERROR") || line.contains("panic") {
+                    error!("miner stderr: {}", line);
+                } else {
+                    info!("miner stderr: {}", line);
+                }
+                // Parsovat i stderr pro share status
+                crate::miner_parser::parse_line(&line, &stats_clone).await;
+            }
+        });
+    }
+
+    // Spawn process monitor
     let state_clone = state.clone();
     tokio::spawn(async move {
         let status = child.wait().await;
@@ -98,10 +125,16 @@ pub async fn stop_miner(state: Arc<AgentState>) -> anyhow::Result<()> {
         }
         #[cfg(windows)]
         {
-            // Windows fallback
-            let _ = Command::new("taskkill").arg("/PID").arg(pid.to_string()).arg("/F").output().await;
+            let _ = Command::new("taskkill")
+                .arg("/PID")
+                .arg(pid.to_string())
+                .arg("/F")
+                .output()
+                .await;
         }
         *state.miner_pid.write().await = None;
+        // Reset stats
+        *state.miner_stats.write().await = miner_parser::MinerStats::default();
     } else {
         warn!("Miner nebezi, neni co zastavit");
     }

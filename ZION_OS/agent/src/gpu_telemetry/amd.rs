@@ -1,6 +1,6 @@
 use super::types::GpuTelemetry;
 use std::path::{Path, PathBuf};
-use tracing::{debug, trace, warn};
+use tracing::{debug, trace};
 
 const SYSFS_DRM_PATH: &str = "/sys/class/drm";
 
