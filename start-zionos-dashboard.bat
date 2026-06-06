@@ -11,9 +11,9 @@ chcp 65001 >nul
 
 title ZION Node + Miner (Edge-Primary) Launcher
 
-echo ╔═══════════════════════════════════════════════════════════════════════╗
-echo ║  ZION Node + Miner — Edge-Primary Windows 11 Launcher                ║
-echo ╚═══════════════════════════════════════════════════════════════════════╝
+echo ===========================================================
+echo  ZION Node + Miner - Edge-Primary Windows 11 Launcher
+echo ===========================================================
 echo.
 
 set "REPO_ROOT=%~dp0"
@@ -93,13 +93,13 @@ start /d "%REPO_ROOT%" "ZION CPU Miner  ::  77.42.71.94:8444" cmd /k "V3\target\
 
 :: ── 7. Shrnuti ──────────────────────────────────────────────────────────
 echo.
-echo ╔═══════════════════════════════════════════════════════════════════════╗
-echo ║  Stack spusten v samostatnych oknech:                                ║
-echo ╠═══════════════════════════════════════════════════════════════════════╣
-echo ║  Node  : P2P 0.0.0.0:8333  ^|^>  Seed 77.42.71.94:8333 (Edge)       ║
-echo ║          RPC http://127.0.0.1:8443                                   ║
-echo ║  Miner : Pool 77.42.71.94:8444  (CPU)                               ║
-echo ╚═══════════════════════════════════════════════════════════════════════╝
+echo ===========================================================
+echo  Stack spusten v samostatnych oknech:
+echo ===========================================================
+echo  Node  : P2P 0.0.0.0:8333  |>  Seed 77.42.71.94:8333 (Edge)
+echo          RPC http://127.0.0.1:8443
+echo  Miner : Pool 77.42.71.94:8444  (CPU)
+echo ===========================================================
 echo.
 echo Pro ukonceni zavrete jednotliva okna nebo Ctrl+C uvnitr.
 echo.
