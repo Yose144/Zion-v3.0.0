@@ -135,9 +135,9 @@ docker compose -f V3/docker/docker-compose.v3-mainnet.yml up -d
   - `npm --prefix "APP&WEB/desktop-agent" run start`
   - `npm --prefix "APP&WEB/desktop-agent" run test`
 - Desktop dashboard (Tauri v2 + React — new):
-  - `npm --prefix "ZION_OS/desktop-dashboard" install`
-  - `cargo tauri dev --manifest-path "ZION_OS/desktop-dashboard/src-tauri/Cargo.toml"`
-  - `cargo tauri build --manifest-path "ZION_OS/desktop-dashboard/src-tauri/Cargo.toml"`
+  - `npm --prefix "ZION_OS/desktop" install`
+  - `cargo tauri dev --manifest-path "ZION_OS/desktop/src-tauri/Cargo.toml"`
+  - `cargo tauri build --manifest-path "ZION_OS/desktop/src-tauri/Cargo.toml"`
   - Features: system tray, native Rust IPC, hybrid refresh (native probes + HTTP fallback), L1-L6 service grid, chain/pool/miner panels, log viewer, alerts
 - Web dashboard (Python):
   - `python ZION_OS/dashboard/app.py` → `http://127.0.0.1:8766`
@@ -168,19 +168,21 @@ cd ZION_OS/dashboard
 python3 app.py
 
 # Desktop Dashboard
-cd ZION_OS/desktop-dashboard
+cd ZION_OS/desktop
 npm install
 cargo tauri dev --manifest-path src-tauri/Cargo.toml
 
-# Mining Agent
-cd ZION_OS/mining-agent
-cargo build --release --features gpu-metal
-./target/release/mining-agent --pool 77.42.71.94:8444 --backend auto
+# ZION Agent (rig lifecycle manager — miner control, telemetry, watchdog)
+cd ZION_OS/agent
+cargo build --release
+sudo cp target/release/zion-agent /usr/local/bin/
+sudo systemctl enable --now zion-edge-agent
 ```
 
 **Documentation:**
 - `ZION_OS/README.md` - Complete system documentation
-- `ZION_OS/IMPLEMENTATION_PLAN.md` - 4-phase implementation plan
+- `ZION_OS/docs/ARCHITECTURE.md` - System architecture & design decisions
+- `ZION_OS/docs/ROADMAP.md` - Development roadmap & milestones
 
 ## 1) Repository shape
 
