@@ -5939,3 +5939,102 @@ async function genesisBackupAction(action){
 
 console.log('[ZION Dashboard] Auto-refresh started');
 loadMinerConfig();
+
+// ═════════ Agent Node Discovery & Rewards ═════════
+
+async function refreshAgentNodes(){
+  const container = document.getElementById('agent-nodes-container');
+  if(!container) return;
+  container.innerHTML = '<div class="text-gray-400 text-sm">Scanning agent...</div>';
+  try{
+    const data = await fetch('/api/agent/nodes').then(r => r.json());
+    if(data._error){
+      container.innerHTML = `<div class="text-amber-400 text-sm">Agent offline — ${escapeHtml(data._error)}</div>`;
+      return;
+    }
+    const nodes = data.nodes || [];
+    if(nodes.length === 0){
+      container.innerHTML = '<div class="text-gray-400 text-sm">No new nodes discovered yet. The agent scans every 60 seconds.</div>';
+      return;
+    }
+    let html = `<div class="text-xs text-gray-500 mb-2">Discovered ${nodes.length} node(s)</div>`;
+    html += `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">`;
+    for(const node of nodes){
+      const statusColor = node.synced_with_edge ? 'text-emerald-400' : (node.needs_help ? 'text-amber-400' : 'text-gray-400');
+      const statusText = node.synced_with_edge ? '✅ Synced' : (node.needs_help ? '⚠️ Needs help' : '⏳ Idle');
+      html += `
+        <div class="bg-gray-800/50 border border-white/10 rounded-lg p-3">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-sm font-bold text-gray-200">${node.id}</span>
+            <span class="${statusColor} text-xs">${statusText}</span>
+          </div>
+          <div class="space-y-1 text-xs">
+            <div class="flex justify-between"><span class="text-gray-400">IP:</span><span class="text-gray-300 font-mono">${node.ip}:${node.rpc_port}</span></div>
+            <div class="flex justify-between"><span class="text-gray-400">Height:</span><span class="text-gray-300">${node.chain_height}</span></div>
+            <div class="flex justify-between"><span class="text-gray-400">Peers:</span><span class="text-gray-300">${node.peers}</span></div>
+            <div class="flex justify-between"><span class="text-gray-400">First seen:</span><span class="text-gray-300">${new Date(node.discovered_at * 1000).toLocaleString()}</span></div>
+            ${node.reward_claimed ? '<div class="mt-1 text-[10px] text-emerald-400">🏆 Reward claimed</div>' : ''}
+          </div>
+        </div>
+      `;
+    }
+    html += `</div>`;
+    container.innerHTML = html;
+  }catch(e){
+    container.innerHTML = `<div class="text-red-400 text-sm">Error loading agent nodes: ${escapeHtml(e.message)}</div>`;
+  }
+}
+
+async function refreshAgentRewards(){
+  const container = document.getElementById('agent-rewards-container');
+  if(!container) return;
+  container.innerHTML = '<div class="text-gray-400 text-sm">Loading rewards...</div>';
+  try{
+    const data = await fetch('/api/agent/rewards').then(r => r.json());
+    if(data._error){
+      container.innerHTML = `<div class="text-amber-400 text-sm">Agent offline — ${escapeHtml(data._error)}</div>`;
+      return;
+    }
+    const rewards = data.rewards || [];
+    const total = data.total_points || 0;
+    const adoptions = data.adoptions || 0;
+    let html = `<div class="flex items-center gap-4 mb-3">`;
+    html += `<div class="zion-panel-soft p-3 text-center flex-1"><div class="text-2xl font-bold text-zion-gold">${total}</div><div class="text-[10px] text-gray-400">Total Points</div></div>`;
+    html += `<div class="zion-panel-soft p-3 text-center flex-1"><div class="text-2xl font-bold text-zion-cyan">${adoptions}</div><div class="text-[10px] text-gray-400">Adoptions</div></div>`;
+    html += `</div>`;
+    if(rewards.length === 0){
+      html += '<div class="text-gray-400 text-sm">No rewards yet. Run the agent and help new nodes sync!</div>';
+    }else{
+      html += `<div class="space-y-2">`;
+      for(const r of rewards){
+        html += `
+          <div class="flex items-center justify-between bg-black/30 rounded-lg px-3 py-2 text-xs">
+            <div class="flex items-center gap-2">
+              <span class="text-zion-gold font-bold">+${r.reward_points}</span>
+              <span class="text-gray-300">${escapeHtml(r.description)}</span>
+            </div>
+            <span class="text-gray-500">${new Date(r.adopted_at * 1000).toLocaleString()}</span>
+          </div>
+        `;
+      }
+      html += `</div>`;
+    }
+    container.innerHTML = html;
+  }catch(e){
+    container.innerHTML = `<div class="text-red-400 text-sm">Error loading rewards: ${escapeHtml(e.message)}</div>`;
+  }
+}
+
+// Auto-refresh agent data when Nodes tab is opened
+(function() {
+  const _orig = window.switchTab;
+  if (_orig) {
+    window.switchTab = function(t) {
+      _orig(t);
+      if (t === 'nodes') {
+        refreshAgentNodes();
+        refreshAgentRewards();
+      }
+    };
+  }
+})();

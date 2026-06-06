@@ -13,6 +13,7 @@ mod config;
 mod gpu_telemetry;
 mod miner_ctl;
 mod miner_parser;
+mod node_discovery;
 mod oc_manager;
 mod telemetry;
 mod updater;
@@ -28,6 +29,7 @@ pub struct AgentState {
     pub miner_stats: Arc<RwLock<miner_parser::MinerStats>>,
     pub rig_id: String,
     pub version: String,
+    pub discovery: Arc<node_discovery::DiscoveryState>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -75,12 +77,14 @@ async fn main() -> anyhow::Result<()> {
         miner_stats: Arc::new(RwLock::new(miner_parser::MinerStats::default())),
         rig_id,
         version: "1.0.0".to_string(),
+        discovery: node_discovery::DiscoveryState::new(),
     });
 
     // Spust pozadi tasky
     let telemetry_handle = tokio::spawn(telemetry::collector_loop(state.clone()));
     let watchdog_handle = tokio::spawn(watchdog::engine_loop(state.clone()));
     let updater_handle = tokio::spawn(updater::check_loop(state.clone()));
+    let discovery_handle = tokio::spawn(node_discovery::discovery_loop(state.discovery.clone()));
 
     // Vytvor HTTP API
     let app = Router::new()
@@ -94,6 +98,8 @@ async fn main() -> anyhow::Result<()> {
         .route("/api/commands/pending", get(api::pending_commands_handler))
         .route("/api/commands/:id/ack", post(api::ack_command_handler))
         .route("/api/commands/:id/result", post(api::command_result_handler))
+        .route("/api/nodes/discovered", get(api::discovered_nodes_handler))
+        .route("/api/nodes/rewards", get(api::node_rewards_handler))
         .route("/health", get(|| async { "OK" }))
         .with_state(state.clone());
 
@@ -132,6 +138,7 @@ async fn main() -> anyhow::Result<()> {
     telemetry_handle.abort();
     watchdog_handle.abort();
     updater_handle.abort();
+    discovery_handle.abort();
     info!("ZION Agent ukoncen");
     Ok(())
 }
