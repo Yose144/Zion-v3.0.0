@@ -1870,23 +1870,51 @@ def _build_status_edge_primary() -> dict:
             return ("edge", r)
         return ("edge", None)
 
+    def _edge_rpc_call_node2():
+        # Edge Node 2 follower — try Tailscale IP (works if dashboard runs on Edge)
+        r = rpc_call("100.76.16.108", 8446, "getChainInfo", {}, timeout=2.5)
+        if r and not r.get("_rpc_error"):
+            return ("edge2", r)
+        return ("edge2", None)
+
     def _local_rpc_call():
         r = rpc_call("127.0.0.1", 8443, "getChainInfo", {}, timeout=1.5)
         return ("local", r if r and not r.get("_rpc_error") else None)
 
-    with ThreadPoolExecutor(max_workers=2) as ex:
-        futures = {ex.submit(_edge_rpc_call), ex.submit(_local_rpc_call)}
+    edge_rpc_info_node2 = None
+    with ThreadPoolExecutor(max_workers=3) as ex:
+        futures = {ex.submit(_edge_rpc_call), ex.submit(_edge_rpc_call_node2), ex.submit(_local_rpc_call)}
         try:
             for fut in as_completed(futures, timeout=5.0):
                 try:
                     key, val = fut.result()
                     if key == "edge":
                         edge_rpc_info = val
+                    elif key == "edge2":
+                        edge_rpc_info_node2 = val
                     else:
                         local_rpc_info = val
                 except Exception:
                     pass
         except TimeoutError:
+            pass
+
+    # SSH fallback for node2 (runs outside thread pool to avoid Windows GIL issues)
+    if edge_rpc_info_node2 is None:
+        try:
+            ssh_key = REPO_ROOT / "ssh-key-zion-edge"
+            if ssh_key.exists():
+                result = subprocess.run(
+                    ["ssh", "-i", str(ssh_key), "-o", "StrictHostKeyChecking=accept-new",
+                     "-o", "ConnectTimeout=3", "root@77.42.71.94",
+                     "curl -s -X POST http://127.0.0.1:8446/ -H 'Content-Type: application/json' -d '{\"jsonrpc\":\"2.0\",\"method\":\"getChainInfo\",\"params\":[],\"id\":1}'"],
+                    capture_output=True, text=True, timeout=5
+                )
+                if result.returncode == 0 and result.stdout:
+                    resp = json.loads(result.stdout)
+                    if resp.get("result"):
+                        edge_rpc_info_node2 = resp["result"]
+        except Exception:
             pass
 
     # ── Edge Node status ─────────────────────────────────────────────────────
@@ -1901,7 +1929,17 @@ def _build_status_edge_primary() -> dict:
         "consensus_profile": edge_rpc_info.get("consensus_profile") if edge_rpc_info else None,
         "accepted_blocks": edge_rpc_info.get("accepted_blocks") if edge_rpc_info else None,
     }
-    edge_node2_status = {"running": False, "chain_height": None, "tip_hash": None, "known_peers": 0, "mempool_size": 0}
+    edge_node2_status = {
+        "running": bool(edge_rpc_info_node2),
+        "chain_height": edge_rpc_info_node2.get("chain_height") if edge_rpc_info_node2 else None,
+        "tip_hash": edge_rpc_info_node2.get("tip_hash") if edge_rpc_info_node2 else None,
+        "known_peers": edge_rpc_info_node2.get("known_peers", 0) if edge_rpc_info_node2 else 0,
+        "mempool_size": edge_rpc_info_node2.get("mempool_transactions", 0) if edge_rpc_info_node2 else 0,
+        "network": edge_rpc_info_node2.get("network") if edge_rpc_info_node2 else None,
+        "protocol_version": edge_rpc_info_node2.get("protocol_version") if edge_rpc_info_node2 else None,
+        "consensus_profile": edge_rpc_info_node2.get("consensus_profile") if edge_rpc_info_node2 else None,
+        "accepted_blocks": edge_rpc_info_node2.get("accepted_blocks") if edge_rpc_info_node2 else None,
+    }
 
     # ── Local Backup Node ───────────────────────────────────────────────────
     n1 = parse_node_log("node1")
