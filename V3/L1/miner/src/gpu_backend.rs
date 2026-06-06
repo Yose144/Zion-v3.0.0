@@ -1007,21 +1007,28 @@ pub mod opencl_deeksha {
                 s4_out_buf.read(&mut s4_data).enq()?;
 
                 // CPU: NPU mix + cosmic fusion + target check for each work item
-                // Parallelised with Rayon — critical on low-core CPUs (e.g. Pentium G4560).
-                let found = (0..chunk).into_par_iter().find_map_any(|i| {
-                    let s4_slice = &s4_data[i * 64..(i + 1) * 64];
-                    let s4_arr: &[u8; 64] = s4_slice.try_into().unwrap();
-                    let s5 = npu_mixing_step_epoch(s4_arr, epoch);
-                    let hash = cosmic_fusion_opt_rounds(&s5, 8);
+                // Parallel scan with Rayon, but always pick the FIRST nonce (lowest
+                // index) that satisfies the target — matches the sequential loop and
+                // avoids the non-determinism of find_map_any which caused
+                // RejectedLowDifficulty when GPU and CPU hashes differ.
+                let candidates: Vec<(usize, [u8; 32])> = (0..chunk)
+                    .into_par_iter()
+                    .filter_map(|i| {
+                        let s4_slice = &s4_data[i * 64..(i + 1) * 64];
+                        let s4_arr: &[u8; 64] = s4_slice.try_into().unwrap();
+                        let s5 = npu_mixing_step_epoch(s4_arr, epoch);
+                        let hash = cosmic_fusion_opt_rounds(&s5, 8);
 
-                    if target.allows(&hash.data) {
-                        Some((current_nonce.wrapping_add(i as u64), hash.data))
-                    } else {
-                        None
-                    }
-                });
+                        if target.allows(&hash.data) {
+                            Some((i, hash.data))
+                        } else {
+                            None
+                        }
+                    })
+                    .collect();
 
-                if let Some((nonce, hash_data)) = found {
+                if let Some((i, hash_data)) = candidates.into_iter().min_by_key(|(i, _)| *i) {
+                    let nonce = current_nonce.wrapping_add(i as u64);
                     all_solutions.push((nonce, hash_data));
                 }
 
