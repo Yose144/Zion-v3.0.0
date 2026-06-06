@@ -116,6 +116,17 @@ phase_sync() {
       ssh_run "cd ${REMOTE_ROOT} && tar xzf -"
   fi
 
+  log "Syncing ZION_OS code..."
+  if command -v rsync &>/dev/null; then
+    rsync -avz --exclude='target' --exclude='.git' --exclude='data' --exclude='logs' --exclude='*.pyc' --exclude='__pycache__' \
+      -e "ssh -i ${EDGE_SSH_KEY} -o StrictHostKeyChecking=accept-new" \
+      "${ROOT_DIR}/ZION_OS/" "${EDGE_USER}@${EDGE_HOST}:${REMOTE_ROOT}/ZION_OS/"
+  else
+    tar czf - --exclude='target' --exclude='.git' --exclude='data' --exclude='logs' --exclude='*.pyc' --exclude='__pycache__' \
+      -C "$ROOT_DIR" ZION_OS/ 2>/dev/null | \
+      ssh_run "cd ${REMOTE_ROOT} && tar xzf -"
+  fi
+
   log "Syncing website code..."
   tar czf - --exclude='node_modules' --exclude='.next' --exclude='out' \
     -C "${ROOT_DIR}/APP\&WEB" website-v2.9/ 2>/dev/null | \

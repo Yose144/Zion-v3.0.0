@@ -1,0 +1,747 @@
+# Zion OS Orchestrator Manifest
+# Definuje vsechny sluzby, zavislosti, porty a health checky pro cely Zion ekosystem
+
+apiVersion: zion.os/v1
+kind: OrchestratorManifest
+metadata:
+  name: zion-mainnet-orchestrator
+  version: 3.0.0
+  description: "Kompletni orchestrace celeho Zion Mainnet ekosystemu"
+
+# ============================================================================
+# L1 - Core Layer (Blockchain, Pool, Miner)
+# ============================================================================
+services:
+  # --------------------------------------------------------------------------
+  # L1 - Zion Node
+  # --------------------------------------------------------------------------
+  zion-node:
+    layer: L1
+    description: "Zion Core Node - P2P sync, consensus, mempool, RPC"
+    binary: V3/target/release/node
+    source: V3/L1/core
+    ports:
+      p2p: 8333
+      rpc: 8443
+      websocket: 8445
+      metrics: 9115
+    env:
+      ZION_NODE_ID: "local-node"
+      ZION_P2P_BIND: "0.0.0.0:8333"
+      ZION_RPC_BIND: "0.0.0.0:8443"
+      ZION_NODE_STATE_PATH: "V3/data/zion-node-state.db"
+      ZION_MINER_ADDRESS: "zion1w523a76830x2t5m7f3j023w265e8g5c400a4790"
+      ZION_HUMANITARIAN_WALLET: "zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4"
+      ZION_ISSOBELLA_WALLET: "zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702"
+    seed_peers:
+      - "77.42.71.94:8333"      # Edge public
+      - "100.76.16.108:8333"    # Edge VPN
+    health_check:
+      type: rpc
+      endpoint: "http://127.0.0.1:8443/jsonrpc"
+      method: "getblockchaininfo"
+      interval: 10s
+      timeout: 5s
+    depends_on: []
+    replicas: 1
+    auto_restart: true
+    log_file: "logs/node.log"
+
+  # --------------------------------------------------------------------------
+  # L1 - Zion Pool
+  # --------------------------------------------------------------------------
+  zion-pool:
+    layer: L1
+    description: "Zion Pool Server - stratum mining, share validation, PPLNS"
+    binary: V3/target/release/zion-pool-server
+    source: V3/L1/pool
+    ports:
+      stratum: 8444
+      metrics: 8455
+      rest_proxy: 8080
+    env:
+      ZION_POOL_BIND: "0.0.0.0:8444"
+      ZION_NODE_RPC_ADDR: "127.0.0.1:8443"
+      ZION_POOL_LOOP_COUNT: "1000000"
+      ZION_NONCE_COUNT: "4096"
+    health_check:
+      type: tcp
+      port: 8444
+      interval: 10s
+      timeout: 5s
+    depends_on:
+      - zion-node
+    replicas: 1
+    auto_restart: true
+    log_file: "logs/pool.log"
+
+  # --------------------------------------------------------------------------
+  # L1 - Zion Miner
+  # --------------------------------------------------------------------------
+  zion-miner:
+    layer: L1
+    description: "Zion Miner - CPU/GPU mining with multi-backend support"
+    binary: V3/target/release/zion-miner
+    source: V3/L1/miner
+    env:
+      ZION_POOL_ADDR: "127.0.0.1:8444"
+      ZION_WORKER_NAME: "zion-miner"
+      ZION_LOOP_COUNT: "1000000"
+      ZION_GPU_BACKEND: "auto"
+    gpu_backends:
+      - metal     # macOS Apple Silicon
+      - cuda      # NVIDIA
+      - opencl    # AMD / cross-platform
+      - cpu       # fallback
+    health_check:
+      type: log
+      pattern: "accepted"
+      file: "logs/miner.log"
+      interval: 30s
+    depends_on:
+      - zion-pool
+    replicas: 1
+    auto_restart: true
+    log_file: "logs/miner.log"
+
+# ============================================================================
+# L2 - Service Layer (Bridge, DAO, Atomic Swap)
+# ============================================================================
+
+  # --------------------------------------------------------------------------
+  # L2 - Bridge
+  # --------------------------------------------------------------------------
+  zion-bridge:
+    layer: L2
+    description: "Cross-chain bridge daemon - L1 watcher + EVM watcher + relayer"
+    binary: V3/target/release/bridge
+    source: V3/L2/bridge
+    ports:
+      metrics: 9102
+    env:
+      ZION_BRIDGE_CONFIG: "V3/L2/bridge/config.toml"
+    health_check:
+      type: http
+      endpoint: "http://127.0.0.1:9102/metrics"
+      interval: 30s
+      timeout: 5s
+    depends_on:
+      - zion-node
+    replicas: 1
+    auto_restart: true
+    log_file: "logs/bridge.log"
+
+  # --------------------------------------------------------------------------
+  # L2 - DAO
+  # --------------------------------------------------------------------------
+  zion-dao:
+    layer: L2
+    description: "DAO daemon - L1 scanner + Axum HTTP API + treasury"
+    binary: V3/target/release/dao
+    source: V3/L2/dao
+    ports:
+      api: 8450
+    env:
+      ZION_DAO_CONFIG: "V3/L2/dao/config.toml"
+    health_check:
+      type: http
+      endpoint: "http://127.0.0.1:8450/health"
+      interval: 30s
+      timeout: 5s
+    depends_on:
+      - zion-node
+    replicas: 1
+    auto_restart: true
+    log_file: "logs/dao.log"
+
+  # --------------------------------------------------------------------------
+  # L2 - Atomic Swap
+  # --------------------------------------------------------------------------
+  zion-atomic-swap:
+    layer: L2
+    description: "HTLC swap daemon - L1 watcher + refund loop + Axum API"
+    binary: V3/target/release/atomic-swap
+    source: V3/L2/atomic-swap
+    ports:
+      api: 8452
+    env:
+      ZION_ATOMIC_SWAP_CONFIG: "V3/L2/atomic-swap/config.toml"
+    health_check:
+      type: http
+      endpoint: "http://127.0.0.1:8452/health"
+      interval: 30s
+      timeout: 5s
+    depends_on:
+      - zion-node
+    replicas: 1
+    auto_restart: true
+    log_file: "logs/atomic-swap.log"
+
+# ============================================================================
+# L3 - WARP Layer (Cross-chain Relay)
+# ============================================================================
+
+  # --------------------------------------------------------------------------
+  # L3 - WARP
+  # --------------------------------------------------------------------------
+  zion-warp:
+    layer: L3
+    description: "Cross-chain relay daemon - Axum API + background watcher"
+    binary: V3/target/release/warp
+    source: V3/L3/warp
+    ports:
+      api: 8453
+    env:
+      ZION_WARP_CONFIG: "V3/L3/warp/config.toml"
+    health_check:
+      type: http
+      endpoint: "http://127.0.0.1:8453/health"
+      interval: 30s
+      timeout: 5s
+    depends_on:
+      - zion-node
+      - zion-bridge
+    replicas: 1
+    auto_restart: true
+    log_file: "logs/warp.log"
+
+# ============================================================================
+# L4 - AI / Consciousness Layer (Hiranyagarbha)
+# ============================================================================
+
+  # --------------------------------------------------------------------------
+  # L4 - Hiranyagarbha
+  # --------------------------------------------------------------------------
+  zion-hiranyagarbha:
+    layer: L4
+    description: "Orchestrator, RAG, Consciousness, NCL - Axum API"
+    binary: V3/target/release/hiranyagarbha
+    source: V3/L4/hiranyagarbha
+    ports:
+      api: 8001
+    env:
+      ZION_HIRANYAGARBHA_CONFIG: "V3/L4/hiranyagarbha/config.toml"
+    health_check:
+      type: http
+      endpoint: "http://127.0.0.1:8001/health"
+      interval: 30s
+      timeout: 5s
+    depends_on:
+      - zion-node
+    replicas: 1
+    auto_restart: true
+    log_file: "logs/hiranyagarbha.log"
+
+  # --------------------------------------------------------------------------
+  # L4 - Hiran Inference
+  # --------------------------------------------------------------------------
+  zion-hiran-inference:
+    layer: L4
+    description: "OpenAI-compatible LLM inference API (llama-server.exe / serve.py)"
+    binary: scripts/start-hiran-inference.ps1
+    source: HiranV2.2/models/hiran-v2.2-merged/
+    ports:
+      api: 8002
+    env:
+      ZION_HIRAN_MODEL_PATH: "HiranV2.2/models/hiran-v2.2-merged/"
+    health_check:
+      type: http
+      endpoint: "http://127.0.0.1:8002/v1/models"
+      interval: 30s
+      timeout: 10s
+    depends_on:
+      - zion-hiranyagarbha
+    replicas: 1
+    auto_restart: true
+    log_file: "logs/hiran-inference.log"
+
+# ============================================================================
+# L5 - Operator / Control Layer
+# ============================================================================
+
+  # --------------------------------------------------------------------------
+  # L5 - Zion CLI
+  # --------------------------------------------------------------------------
+  zion-cli:
+    layer: L5
+    description: "Unified operator CLI - lifecycle + subcommands"
+    binary: V3/target/release/zion
+    source: V3/cli
+    type: cli_tool
+    commands:
+      - start
+      - stop
+      - restart
+      - logs
+      - status
+      - doctor
+    depends_on: []
+
+  # --------------------------------------------------------------------------
+  # L5 - Mining Agent
+  # --------------------------------------------------------------------------
+  zion-mining-agent:
+    layer: L5
+    description: "Multi-GPU mining agent - CUDA, AMD, Metal support"
+    binary: ZION_OS/mining-agent/target/release/mining-agent
+    source: ZION_OS/mining-agent
+    env:
+      ZION_POOL_ADDR: "100.76.16.108:8444"
+      ZION_WORKER_NAME: "mining-agent"
+      ZION_GPU_BACKEND: "auto"
+    health_check:
+      type: log
+      pattern: "accepted"
+      file: "logs/mining-agent.log"
+      interval: 30s
+    depends_on:
+      - zion-pool
+    replicas: 1
+    auto_restart: true
+    log_file: "logs/mining-agent.log"
+
+# ============================================================================
+# L6 - Application Layer
+# ============================================================================
+
+  # --------------------------------------------------------------------------
+  # L6 - Central Dashboard (Web)
+  # --------------------------------------------------------------------------
+  zion-dashboard-web:
+    layer: L6
+    description: "Python Flask dashboard - multi-node detection, monitoring, alerts"
+    binary: python3
+    args: ["ZION_OS/dashboard/app.py"]
+    source: ZION_OS/dashboard
+    ports:
+      http: 8766
+    health_check:
+      type: http
+      endpoint: "http://127.0.0.1:8766/api/status"
+      interval: 10s
+      timeout: 5s
+    depends_on:
+      - zion-node
+      - zion-pool
+    replicas: 1
+    auto_restart: true
+    log_file: "logs/dashboard.log"
+
+  # --------------------------------------------------------------------------
+  # L6 - Desktop Dashboard (Tauri)
+  # --------------------------------------------------------------------------
+  zion-desktop-dashboard:
+    layer: L6
+    description: "Tauri v2 desktop app - native system tray, IPC, service grid"
+    binary: cargo
+    args: ["tauri", "dev", "--manifest-path", "ZION_OS/desktop-dashboard/src-tauri/Cargo.toml"]
+    source: ZION_OS/desktop-dashboard
+    type: desktop_app
+    health_check:
+      type: process
+      pattern: "desktop-dashboard"
+      interval: 30s
+    depends_on:
+      - zion-dashboard-web
+    replicas: 1
+    auto_restart: false
+    log_file: "logs/desktop-dashboard.log"
+
+  # --------------------------------------------------------------------------
+  # L6 - Mobile App
+  # --------------------------------------------------------------------------
+  zion-mobile-app:
+    layer: L6
+    description: "React Native mobile app - monitoring, push notifications"
+    binary: npx
+    args: ["react-native", "start"]
+    source: ZION_OS/mobile-app
+    type: mobile_app
+    health_check:
+      type: process
+      pattern: "react-native"
+      interval: 30s
+    depends_on:
+      - zion-dashboard-web
+    replicas: 1
+    auto_restart: false
+    log_file: "logs/mobile-app.log"
+
+  # --------------------------------------------------------------------------
+  # L6 - Website
+  # --------------------------------------------------------------------------
+  zion-website:
+    layer: L6
+    description: "Next.js website - production build"
+    binary: npm
+    args: ["--prefix", "APP&WEB/website-v2.9", "run", "dev"]
+    source: APP&WEB/website-v2.9
+    ports:
+      http: 3000
+    health_check:
+      type: http
+      endpoint: "http://127.0.0.1:3000"
+      interval: 30s
+      timeout: 5s
+    depends_on: []
+    replicas: 1
+    auto_restart: true
+    log_file: "logs/website.log"
+
+# ============================================================================
+# SDK & Libraries
+# ============================================================================
+
+  # --------------------------------------------------------------------------
+  # SDK - Wallet SDK
+  # --------------------------------------------------------------------------
+  zion-wallet-sdk:
+    layer: SDK
+    description: "Wallet SDK for integration"
+    source: APP&WEB/zion-wallet-sdk
+    type: library
+    language: TypeScript
+    health_check:
+      type: build
+      command: "npm --prefix APP&WEB/zion-wallet-sdk run build"
+      interval: 300s
+
+# ============================================================================
+# Monitoring Stack
+# ============================================================================
+
+  # --------------------------------------------------------------------------
+  # Monitoring - Prometheus
+  # --------------------------------------------------------------------------
+  zion-prometheus:
+    layer: monitoring
+    description: "Metrics collection and storage"
+    binary: prometheus
+    ports:
+      http: 9090
+    config: "ZION_OS/monitoring/prometheus/prometheus.yml"
+    scrape_targets:
+      - "127.0.0.1:9115"    # node metrics
+      - "127.0.0.1:8455"    # pool metrics
+      - "127.0.0.1:9102"    # bridge metrics
+      - "127.0.0.1:9116"    # node2 metrics
+      - "127.0.0.1:9100"    # node-exporter
+    health_check:
+      type: http
+      endpoint: "http://127.0.0.1:9090/-/healthy"
+      interval: 30s
+      timeout: 5s
+    depends_on: []
+    replicas: 1
+    auto_restart: true
+    log_file: "logs/prometheus.log"
+
+  # --------------------------------------------------------------------------
+  # Monitoring - Grafana
+  # --------------------------------------------------------------------------
+  zion-grafana:
+    layer: monitoring
+    description: "Visualization and alerting dashboards"
+    binary: grafana-server
+    ports:
+      http: 3100
+    config: "ZION_OS/monitoring/grafana/grafana.ini"
+    dashboards: "ZION_OS/monitoring/grafana/dashboards/"
+    health_check:
+      type: http
+      endpoint: "http://127.0.0.1:3100/api/health"
+      interval: 30s
+      timeout: 5s
+    depends_on:
+      - zion-prometheus
+    replicas: 1
+    auto_restart: true
+    log_file: "logs/grafana.log"
+
+  # --------------------------------------------------------------------------
+  # Monitoring - Alertmanager
+  # --------------------------------------------------------------------------
+  zion-alertmanager:
+    layer: monitoring
+    description: "Alert routing and notification"
+    binary: alertmanager
+    ports:
+      http: 9093
+    config: "ZION_OS/monitoring/alertmanager/alertmanager.yml"
+    health_check:
+      type: http
+      endpoint: "http://127.0.0.1:9093/-/healthy"
+      interval: 30s
+      timeout: 5s
+    depends_on:
+      - zion-prometheus
+    replicas: 1
+    auto_restart: true
+    log_file: "logs/alertmanager.log"
+
+  # --------------------------------------------------------------------------
+  # Monitoring - Node Exporter
+  # --------------------------------------------------------------------------
+  zion-node-exporter:
+    layer: monitoring
+    description: "Host system metrics"
+    binary: node_exporter
+    ports:
+      http: 9100
+    health_check:
+      type: http
+      endpoint: "http://127.0.0.1:9100/metrics"
+      interval: 30s
+      timeout: 5s
+    depends_on: []
+    replicas: 1
+    auto_restart: true
+    log_file: "logs/node-exporter.log"
+
+# ============================================================================
+# Auto-Update System
+# ============================================================================
+
+  # --------------------------------------------------------------------------
+  # Auto-Update Agent
+  # --------------------------------------------------------------------------
+  zion-auto-update:
+    layer: auto-update
+    description: "Automatic updates with semantic versioning and rollback"
+    binary: ZION_OS/auto-update/target/release/auto-update
+    source: ZION_OS/auto-update
+    env:
+      ZION_UPDATE_CHANNEL: "stable"
+      ZION_UPDATE_CHECK_INTERVAL: "3600"
+      ZION_GITHUB_REPO: "Yose144/Zion-v3.0.0"
+    health_check:
+      type: http
+      endpoint: "http://127.0.0.1:8767/health"
+      interval: 60s
+      timeout: 5s
+    depends_on: []
+    replicas: 1
+    auto_restart: true
+    log_file: "logs/auto-update.log"
+
+# ============================================================================
+# Service Profiles
+# ============================================================================
+profiles:
+  # Minimal - jen L1 (node + pool + miner)
+  minimal:
+    services:
+      - zion-node
+      - zion-pool
+      - zion-miner
+      - zion-dashboard-web
+
+  # Development - L1 + L2 + dashboard
+  dev:
+    services:
+      - zion-node
+      - zion-pool
+      - zion-miner
+      - zion-bridge
+      - zion-dao
+      - zion-atomic-swap
+      - zion-dashboard-web
+      - zion-desktop-dashboard
+
+  # Mainnet - vse krome AI a monitoring
+  mainnet:
+    services:
+      - zion-node
+      - zion-pool
+      - zion-miner
+      - zion-bridge
+      - zion-dao
+      - zion-atomic-swap
+      - zion-warp
+      - zion-dashboard-web
+      - zion-desktop-dashboard
+      - zion-mining-agent
+      - zion-website
+
+  # Full - vse vcetne AI a monitoring
+  full:
+    services:
+      - zion-node
+      - zion-pool
+      - zion-miner
+      - zion-bridge
+      - zion-dao
+      - zion-atomic-swap
+      - zion-warp
+      - zion-hiranyagarbha
+      - zion-hiran-inference
+      - zion-dashboard-web
+      - zion-desktop-dashboard
+      - zion-mobile-app
+      - zion-mining-agent
+      - zion-website
+      - zion-prometheus
+      - zion-grafana
+      - zion-alertmanager
+      - zion-node-exporter
+      - zion-auto-update
+
+# ============================================================================
+# Network Topology
+# ============================================================================
+network:
+  topology:
+    edge:
+      host: "MainnetEdge"
+      vpn_ip: "100.76.16.108"
+      public_ip: "77.42.71.94"
+      role: "primary"
+      services:
+        - zion-node
+        - zion-pool
+        - zion-bridge
+        - zion-dao
+        - zion-atomic-swap
+        - zion-warp
+        - zion-hiranyagarbha
+        - zion-website
+        - zion-prometheus
+        - zion-grafana
+        - zion-alertmanager
+        - zion-node-exporter
+
+    core:
+      host: "local-pc"
+      vpn_ip: "100.86.102.5"
+      role: "backup"
+      services:
+        - zion-node
+        - zion-miner
+        - zion-mining-agent
+        - zion-dashboard-web
+        - zion-desktop-dashboard
+
+    macos:
+      host: "macos-local"
+      vpn_ip: "100.100.46.39"
+      role: "miner"
+      services:
+        - zion-node
+        - zion-miner
+        - zion-mining-agent
+        - zion-dashboard-web
+
+# ============================================================================
+# Health Check Configuration
+# ============================================================================
+health_checks:
+  global:
+    interval: 10s
+    timeout: 5s
+    retries: 3
+    grace_period: 30s
+
+  thresholds:
+    critical:
+      - zion-node
+      - zion-pool
+    warning:
+      - zion-miner
+      - zion-bridge
+      - zion-dao
+    info:
+      - zion-dashboard-web
+      - zion-desktop-dashboard
+
+# ============================================================================
+# Alerting Rules
+# ============================================================================
+alerts:
+  rules:
+    - name: node_down
+      severity: critical
+      condition: "zion-node.health == down"
+      duration: 30s
+      action: restart
+      notify: ["push", "email"]
+
+    - name: pool_down
+      severity: critical
+      condition: "zion-pool.health == down"
+      duration: 30s
+      action: restart
+      notify: ["push", "email"]
+
+    - name: miner_stalled
+      severity: warning
+      condition: "zion-miner.hashrate < 100"
+      duration: 5m
+      action: restart
+      notify: ["push"]
+
+    - name: high_memory
+      severity: warning
+      condition: "system.memory > 90%"
+      duration: 2m
+      action: notify
+      notify: ["push", "email"]
+
+    - name: disk_full
+      severity: critical
+      condition: "system.disk > 95%"
+      duration: 1m
+      action: notify
+      notify: ["push", "email"]
+
+# ============================================================================
+# Logging Configuration
+# ============================================================================
+logging:
+  global:
+    level: info
+    format: json
+    rotation: daily
+    retention: 30d
+    max_size: 100MB
+
+  services:
+    zion-node:
+      level: debug
+      file: "logs/node.log"
+    zion-pool:
+      level: debug
+      file: "logs/pool.log"
+    zion-miner:
+      level: info
+      file: "logs/miner.log"
+
+# ============================================================================
+# Backup & Recovery
+# ============================================================================
+backup:
+  enabled: true
+  schedule: "0 0 * * *"  # Daily at midnight
+  retention: 7d
+  targets:
+    - path: "V3/data/"
+      type: node_state
+    - path: "logs/"
+      type: logs
+    - path: "ZION_OS/dashboard/data/"
+      type: dashboard_data
+
+# ============================================================================
+# Security
+# ============================================================================
+security:
+  ssh:
+    edge_key: "ssh-key-zion-edge"
+    tailscale: true
+
+  api:
+    auth: jwt
+    rate_limit: 100r/m
+
+  wallet:
+    encryption: aes-256-gcm
+    storage: keyring

@@ -1,0 +1,52 @@
+# iOS CocoaPods
+ios/Pods/
+ios/Podfile.lock
+ios/build/
+*.xcworkspace
+*.xcuserdata
+
+# Android
+android/build/
+android/app/build/
+android/.gradle/
+*.apk
+*.aab
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# React Native
+.expo/
+.expo-shared/
+
+# Buck
+buck-out/
+\.buckd/
+*.keystore
+
+# fastlane
+ios/fastlane/report.xml
+ios/fastlane/Preview.html
+ios/fastlane/screenshots
+android/fastlane/report.xml
+android/fastlane/Preview.html
+android/fastlane/screenshots
+
+# Bundle artifacts
+*.jsbundle
+
+# Metro
+.metro-health-check*
+
+# Testing
+coverage/
+.jest/
+
+# Misc
+.DS_Store
+*.pem
+.env
+.env.local
