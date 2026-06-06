@@ -857,19 +857,18 @@ void ekam_memory_hard_transform(const uchar input[64], __global uchar *pad,
 void fusion_round(uchar state[64], uchar round_num);
 
 /* Ekam Cosmic Fusion: 8 rounds (matches EKAM_FUSION_ROUNDS = 8) */
+/* GCN workaround: byte-level copy, no ulong pointer casts */
 void cosmic_fusion_ekam(const uchar in64[64], uchar hash32[32])
 {
     uchar state[64];
-    { ulong *d = (ulong *)state; const ulong *s = (const ulong *)in64;
-      for (int i = 0; i < 8; i++) d[i] = s[i]; }
+    for (int i = 0; i < 64; i++) state[i] = in64[i];
 
     for (uchar r = 0; r < 8; r++)
         fusion_round(state, r);
 
     uchar full[64];
     sha3_512(state, 32, full);
-    { ulong *d = (ulong *)hash32; ulong *s = (ulong *)full;
-      for (int i = 0; i < 4; i++) d[i] = s[i]; }
+    for (int i = 0; i < 32; i++) hash32[i] = full[i];
 }
 
 /* ========================================================================== */
@@ -1256,17 +1255,13 @@ void ekam_deeksha_mine(
      * compilers that may optimize (ulong)tid * int as uint multiplication. */
     __global uchar *pad = scratchpad_pool + (ulong)tid * (ulong)SCRATCHPAD_SIZE;
 
-    /* Build input: header (<=80 B) + nonce (8 B LE) = 88 B, zero-padded */
+    /* Build input: header (<=80 B) + nonce (8 B LE) = 88 B, zero-padded
+     * GCN workaround: no pointer casts; byte-level ops only */
     uchar input[88];
-    ulong *inp64 = (ulong *)input;
-    for (int i = 0; i < 11; i++) inp64[i] = 0;
+    for (int i = 0; i < 88; i++) input[i] = 0;
     uint hlen = min(header_len, (uint)80);
-    __global const uint *hdr32 = (__global const uint *)header;
-    uint *inp32 = (uint *)input;
-    uint hwords = hlen >> 2;
-    for (uint i = 0; i < hwords; i++) inp32[i] = hdr32[i];
-    for (uint i = (hwords << 2); i < hlen; i++) input[i] = header[i];
-    inp64[10] = nonce;
+    for (uint i = 0; i < hlen; i++) input[i] = header[i];
+    for (int b = 0; b < 8; b++) input[80 + b] = (uchar)(nonce >> (b * 8));
 
     /* Reuse two 64-byte buffers across pipeline stages to cut private-memory
      * pressure from ~408 B to ~160 B (saves registers, reduces spills).     */
