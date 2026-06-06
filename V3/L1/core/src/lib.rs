@@ -178,6 +178,20 @@ impl BlockCandidate {
             hash: self.hash(),
         }
     }
+
+    /// Dual-algo hash — select algorithm by name.
+    /// "deeksha_lite_v1" uses the simplified GCN-friendly algorithm.
+    pub fn hash_with_algorithm(&self, algorithm: &str) -> [u8; 32] {
+        match algorithm {
+            "deeksha_lite_v1" => {
+                zion_cosmic_harmony::deeksha_lite::deeksha_lite(
+                    &self.header.to_bytes(),
+                    self.nonce,
+                )
+            }
+            _ => cosmic_harmony_with_height(&self.header.to_bytes(), self.nonce, self.height).data,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

@@ -179,7 +179,19 @@ pub struct GpuScanOutcome {
 
 /// Scan a job using a GPU backend, returning the first solution.
 /// Tracks candidate-filter statistics for performance diagnostics.
-pub fn gpu_scan_job(gpu: &mut dyn GpuMiner, job: MiningJob) -> GpuScanOutcome {
+/// For dual-algo: deeksha_lite_v1 currently falls back to CPU.
+pub fn gpu_scan_job(gpu: &mut dyn GpuMiner, job: MiningJob, algorithm: &str) -> GpuScanOutcome {
+    if algorithm == "deeksha_lite_v1" {
+        // DeekshaLite GPU kernel not yet integrated — force CPU fallback
+        return GpuScanOutcome {
+            solution: None,
+            nonces_tested: 0,
+            candidates_found: 0,
+            candidates_verified: 0,
+            candidates_hash_mismatch: 0,
+            candidates_above_target: 0,
+        };
+    }
     match gpu.mine_batch(job.header, job.target, job.start_nonce, job.nonce_count) {
         Ok(result) => {
             let nonces_tested = result.nonces_tested;
