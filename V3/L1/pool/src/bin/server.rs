@@ -2723,7 +2723,7 @@ impl ServerConfig {
             loop_count: parse_env_u32("ZION_POOL_LOOP_COUNT", 1_000_000)?,
             job_ttl_ms: parse_env_u64("ZION_JOB_TTL_MS", 15_000)?,
             start_nonce: parse_env_u64("ZION_START_NONCE", 42)?,
-            nonce_count: parse_env_u64("ZION_NONCE_COUNT", 1024)?,
+            nonce_count: parse_env_u64("ZION_NONCE_COUNT", 4096)?,
             nonce_stride: parse_env_u64("ZION_NONCE_STRIDE", 1_024)?,
             timestamp: parse_env_u64("ZION_TIMESTAMP", 1_762_000_200)?,
             target: parse_target_env("ZION_TARGET")?,
