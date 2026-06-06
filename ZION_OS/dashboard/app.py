@@ -1716,6 +1716,57 @@ def detect_nodes() -> dict:
         "timestamp": datetime.now().isoformat()
     }
 
+# ── Agent Node Discovery (Desktop Agent integration) ───────────────────────
+AGENT_API_BASE = "http://127.0.0.1:8767"  # default agent port
+
+_discovered_nodes_cache: dict = {}
+_discovered_nodes_ts: float = 0.0
+
+_cached_rewards: dict = {}
+_cached_rewards_ts: float = 0.0
+
+AGENT_CACHE_TTL_SEC: float = 10.0
+
+def fetch_agent_discovered_nodes() -> dict:
+    """Poll desktop agent for newly discovered nodes on the local network."""
+    global _discovered_nodes_cache, _discovered_nodes_ts
+    now = time.time()
+    if _discovered_nodes_cache and (now - _discovered_nodes_ts) < AGENT_CACHE_TTL_SEC:
+        return _discovered_nodes_cache
+    try:
+        req = urllib.request.Request(
+            f"{AGENT_API_BASE}/api/nodes/discovered",
+            headers={"Accept": "application/json"},
+            method="GET"
+        )
+        with urllib.request.urlopen(req, timeout=2.0) as r:
+            data = json.loads(r.read().decode("utf-8"))
+            _discovered_nodes_cache = data
+            _discovered_nodes_ts = now
+            return data
+    except Exception as e:
+        return {"count": 0, "nodes": [], "_error": str(e)}
+
+def fetch_agent_rewards() -> dict:
+    """Poll desktop agent for node-adoption rewards."""
+    global _cached_rewards, _cached_rewards_ts
+    now = time.time()
+    if _cached_rewards and (now - _cached_rewards_ts) < AGENT_CACHE_TTL_SEC:
+        return _cached_rewards
+    try:
+        req = urllib.request.Request(
+            f"{AGENT_API_BASE}/api/nodes/rewards",
+            headers={"Accept": "application/json"},
+            method="GET"
+        )
+        with urllib.request.urlopen(req, timeout=2.0) as r:
+            data = json.loads(r.read().decode("utf-8"))
+            _cached_rewards = data
+            _cached_rewards_ts = now
+            return data
+    except Exception as e:
+        return {"total_points": 0, "adoptions": 0, "rewards": [], "_error": str(e)}
+
 def parse_miner_log_specific(log_file: str) -> dict:
     """Parse specific miner log file"""
     recent = tail_log(log_file, 200)
@@ -6713,6 +6764,10 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json(build_status())
         elif route == "/api/nodes":
             self._json(detect_nodes())
+        elif route == "/api/agent/nodes":
+            self._json(fetch_agent_discovered_nodes())
+        elif route == "/api/agent/rewards":
+            self._json(fetch_agent_rewards())
         elif route == "/api/orchestrator/status":
             self._json(get_orchestrator_status())
         elif route == "/api/orchestrator/services":
