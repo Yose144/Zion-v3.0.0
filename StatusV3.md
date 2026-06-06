@@ -1,6 +1,6 @@
 # ZION V3 — Status Report (Mainnet Polish)
 
-> **Datum:** 2026-05-22 (Genesis + fee split KONFIGURACE DOKONČENA, ready for mainnet launch 31.12.2026); **2026-05-21** (Edge pool + L5/L6 + DAO governance + root docs sync); **2026-05-12** (Hiran v2.2 CLI integration); **2026-05-07** (security cleanup + agentická obsluha).
+> **Datum:** 2026-06-06 (HTTP JSON-RPC Transaction Relay Bug Fix); 2026-05-22 (Genesis + fee split KONFIGURACE DOKONČENA, ready for mainnet launch 31.12.2026); **2026-05-21** (Edge pool + L5/L6 + DAO governance + root docs sync); **2026-05-12** (Hiran v2.2 CLI integration); **2026-05-07** (security cleanup + agentická obsluha).
 > (sjednocení `StatusV3.md` ↔ `StatusV3-Part2.md` — TL;DR, roadmap §6, §8, §5
 > pyramida, odkazy).
 > **Předchozí update:** 2026-05-03 (genesis konsensus — merged na `main`)
@@ -129,6 +129,65 @@
 - ✅ Mnemonický seed pro emergency recovery vytvořen
 - ✅ Kompletní recovery procedury zdokumentovány
 - ✅ SHA256 checksumy pro integritu zálohy
+
+---
+
+## Co je nového 2026-06-06 (HTTP JSON-RPC Transaction Relay Bug Fix)
+
+> **Oprava kritické chyby:** Transakce odeslané přes HTTP JSON-RPC se nepřenášely na peery, což způsobovalo, že lokálně odeslané transakce se nikdy nedostaly do Edge poolu pro těžení.
+
+### Příznak
+- Transakce odeslané přes HTTP POST na `/jsonrpc` endpoint byly přijaty do lokálního mempoolu
+- Transakce se nikdy nepřenášely na připojené peery přes P2P flood-fill
+- Edge pool (který těží bloky) nikdy tyto transakce neviděl, takže se nikdy nezahrnuly do blockchainu
+
+### Root Cause
+- Line-delimited RPC handler (`handle_rpc_stream`) měl logiku přenosu transakcí (`relay_tx_to_peers`)
+- HTTP JSON-RPC handler (`handle_rpc_http`) pouze routoval požadavky a vracel odpovědi bez jakékoliv logiky přenosu
+- CLI wallet a desktop agent používají HTTP JSON-RPC, takže jejich transakce se nikdy nepřenášely
+
+### Oprava
+**Soubor:** `V3/L1/core/src/bin/node.rs`
+
+**Změny:**
+1. Přidány parametry `runtime`, `seen_txs`, `stats` do funkce `handle_rpc_http`
+2. Přidána logika detekce transakčních metod (`submitTransaction`, `sendRawTransaction`, `submitAccountTransaction`)
+3. Při přijetí transakce se parsování transakce z params
+4. Pokud je transakce přijata (`accepted: true`), automaticky se přenáší na všechny peery přes `relay_tx_to_peers`
+5. Přidány debug logy pro sledování přenosu transakcí
+
+**Code diff:**
+```rust
+// Před opravou
+fn handle_rpc_http(
+    first_line: &str,
+    reader: &mut impl BufRead,
+    writer: &mut impl Write,
+    router: &Arc<RpcRouter>,
+) -> Result<()>
+
+// Po opravě
+fn handle_rpc_http(
+    first_line: &str,
+    reader: &mut impl BufRead,
+    writer: &mut impl Write,
+    router: &Arc<RpcRouter>,
+    runtime: &Arc<Mutex<NodeRuntime>>,
+    seen_txs: &Arc<Mutex<SeenTransactions>>,
+    stats: &Arc<PropagationStats>,
+) -> Result<()>
+```
+
+### Testování
+- ✅ Vytvořeny nové testovací peněženky (`test-sender.json`, `test-receiver.json`)
+- ✅ Spuštěn CPU miner, získáno 76.8B ZION z poolu
+- ✅ Odeslána testovací transakce (0.01 ZION) přes HTTP JSON-RPC
+- ✅ Transakce zahrnuta do bloku 227 (potvrzena na Edge uzlu)
+- ✅ `.gitignore` aktualizován — `**/test-*.json` přidán pro ignorování testovacích peněženek
+
+### Deployment
+- ✅ Lokální uzel rebuildnut s opravou
+- ✅ Oprava připravena pro nasazení na Edge server
 
 ---
 

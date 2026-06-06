@@ -47,6 +47,7 @@ logs/
 # above the V3/.gitignore wallet rules)
 **/zion-wallet*.json
 **/*.wallet.json
+**/test-*.json
 **/*.mnemonic
 **/*.keystore
 **/seed.json

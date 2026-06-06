@@ -74,6 +74,33 @@
 - `ZION_OS/dashboard/app.py`: komplexní performance fix
 - `APP&WEB/website-v2.9/src/app/dashboard/ch3/page.tsx`: ch3 color updates
 
+### 5. HTTP JSON-RPC Transaction Relay Bug Fix
+
+**Problém:** Transakce odeslané přes HTTP JSON-RPC se nepřenášely na peers, což způsobovalo, že lokálně odeslané transakce se nikdy nedostaly do Edge poolu pro těžení.
+
+**Root cause:**
+- Line-delimited RPC handler (`handle_rpc_stream`) měl logiku přenosu transakcí (`relay_tx_to_peers`)
+- HTTP JSON-RPC handler (`handle_rpc_http`) pouze routoval požadavky bez logiky přenosu
+- CLI wallet a desktop agent používají HTTP JSON-RPC, takže jejich transakce se nikdy nepřenášely
+
+**Oprava:**
+- Soubor: `V3/L1/core/src/bin/node.rs`
+- Přidány parametry `runtime`, `seen_txs`, `stats` do funkce `handle_rpc_http`
+- Přidána logika detekce transakčních metod (`submitTransaction`, `sendRawTransaction`, `submitAccountTransaction`)
+- Při přijetí transakce se automaticky přenáší na všechny peery přes `relay_tx_to_peers`
+- Přidány debug logy pro sledování přenosu transakcí
+
+**Testování:**
+- ✅ Vytvořeny nové testovací peněženky (`test-sender.json`, `test-receiver.json`)
+- ✅ Spuštěn CPU miner, získáno 76.8B ZION z poolu
+- ✅ Odeslána testovací transakce (0.01 ZION) přes HTTP JSON-RPC
+- ✅ Transakce zahrnuta do bloku 227 (potvrzena na Edge uzlu)
+- ✅ `.gitignore` aktualizován — `**/test-*.json` přidán pro ignorování testovacích peněženek
+
+**Deployment:**
+- ✅ Lokální uzel rebuildnut s opravou
+- ✅ Oprava připravena pro nasazení na Edge server
+
 ---
 
 ## Živá topologie (aktuální stav)
@@ -156,3 +183,12 @@ Public Metrics: 8455
 
 *Report vygenerován: 2026-06-06 04:15 UTC*  
 *Generated with [Devin](https://cli.devin.ai/docs)*
+
+## Update 2026-06-06 11:00 UTC
+
+### HTTP JSON-RPC Transaction Relay Bug Fix
+
+- **Problém:** Transakce odeslané přes HTTP JSON-RPC se nepřenášely na peers
+- **Oprava:** Přidána logika přenosu transakcí do HTTP handleru
+- **Testování:** Testovací transakce úspěšně zahrnuta do bloku 227
+- **Deployment:** Lokální uzel rebuildnut, oprava připravena pro Edge
