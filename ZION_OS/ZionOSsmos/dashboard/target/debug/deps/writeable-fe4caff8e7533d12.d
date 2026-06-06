@@ -1,0 +1,11 @@
+C:\Users\yosef\Desktop\Zion\2.9.6-main\ZION_OS\ZionOSsmos\dashboard\target\debug\deps\writeable-fe4caff8e7533d12.d: C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\writeable-0.6.3\src\lib.rs C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\writeable-0.6.3\src\cmp.rs C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\writeable-0.6.3\src\concat.rs C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\writeable-0.6.3\src\impls.rs C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\writeable-0.6.3\src\ops.rs C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\writeable-0.6.3\src\parts_write_adapter.rs C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\writeable-0.6.3\src\try_writeable.rs
+
+C:\Users\yosef\Desktop\Zion\2.9.6-main\ZION_OS\ZionOSsmos\dashboard\target\debug\deps\libwriteable-fe4caff8e7533d12.rmeta: C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\writeable-0.6.3\src\lib.rs C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\writeable-0.6.3\src\cmp.rs C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\writeable-0.6.3\src\concat.rs C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\writeable-0.6.3\src\impls.rs C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\writeable-0.6.3\src\ops.rs C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\writeable-0.6.3\src\parts_write_adapter.rs C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\writeable-0.6.3\src\try_writeable.rs
+
+C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\writeable-0.6.3\src\lib.rs:
+C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\writeable-0.6.3\src\cmp.rs:
+C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\writeable-0.6.3\src\concat.rs:
+C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\writeable-0.6.3\src\impls.rs:
+C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\writeable-0.6.3\src\ops.rs:
+C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\writeable-0.6.3\src\parts_write_adapter.rs:
+C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\writeable-0.6.3\src\try_writeable.rs:
