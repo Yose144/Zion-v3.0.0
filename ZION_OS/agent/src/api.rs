@@ -9,6 +9,27 @@ use serde_json::{json, Value};
 use std::sync::Arc;
 use tracing::info;
 
+/// GET /api/nodes/discovered
+pub async fn discovered_nodes_handler(State(state): State<Arc<AgentState>>) -> Json<Value> {
+    let nodes = state.discovery.nodes.read().await;
+    let list: Vec<_> = nodes.values().cloned().collect();
+    Json(json!({
+        "count": list.len(),
+        "nodes": list,
+    }))
+}
+
+/// GET /api/nodes/rewards
+pub async fn node_rewards_handler(State(state): State<Arc<AgentState>>) -> Json<Value> {
+    let rewards = state.discovery.rewards.read().await;
+    let total_points: u64 = rewards.iter().map(|r| r.reward_points).sum();
+    Json(json!({
+        "total_points": total_points,
+        "adoptions": rewards.len(),
+        "rewards": rewards.clone(),
+    }))
+}
+
 /// GET /api/status
 pub async fn status_handler(State(state): State<Arc<AgentState>>) -> Json<StatusResponse> {
     let miner_running = state.miner_pid.read().await.is_some();
