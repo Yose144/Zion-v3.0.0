@@ -1,0 +1,27 @@
+[package]
+name = "zion-dashboard-tauri"
+version = "3.0.0"
+description = "ZION V3 Dashboard — Desktop Shell (pure frontend, HTTP API only)"
+authors = ["ZION Team"]
+edition = "2021"
+
+[workspace]
+# Explicit standalone workspace — do NOT inherit from parent Zion monorepo
+members = ["."]
+resolver = "2"
+
+[build-dependencies]
+tauri-build = { version = "2.0.0", features = [] }
+
+[dependencies]
+# Core Tauri — pouze pro okno, tray, notifikace
+tauri = { version = "2.0.0", features = ["tray-icon"] }
+tauri-plugin-shell = "2.0.0"
+
+# Serialization (pro notification payload)
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[features]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]
