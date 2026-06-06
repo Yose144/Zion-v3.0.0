@@ -1767,6 +1767,47 @@ def fetch_agent_rewards() -> dict:
     except Exception as e:
         return {"total_points": 0, "adoptions": 0, "rewards": [], "_error": str(e)}
 
+# ── Agent proxy helpers ──────────────────────────────────────────────────
+
+def fetch_agent_status() -> dict:
+    """Poll desktop agent for basic status."""
+    try:
+        req = urllib.request.Request(
+            f"{AGENT_API_BASE}/api/status",
+            headers={"Accept": "application/json"},
+            method="GET"
+        )
+        with urllib.request.urlopen(req, timeout=2.0) as r:
+            return json.loads(r.read().decode("utf-8"))
+    except Exception as e:
+        return {"_error": str(e)}
+
+def fetch_agent_telemetry() -> dict:
+    """Poll desktop agent for telemetry."""
+    try:
+        req = urllib.request.Request(
+            f"{AGENT_API_BASE}/api/telemetry",
+            headers={"Accept": "application/json"},
+            method="GET"
+        )
+        with urllib.request.urlopen(req, timeout=2.0) as r:
+            return json.loads(r.read().decode("utf-8"))
+    except Exception as e:
+        return {"_error": str(e)}
+
+def fetch_agent_gpu() -> dict:
+    """Poll desktop agent for GPU telemetry."""
+    try:
+        req = urllib.request.Request(
+            f"{AGENT_API_BASE}/api/gpu",
+            headers={"Accept": "application/json"},
+            method="GET"
+        )
+        with urllib.request.urlopen(req, timeout=2.0) as r:
+            return json.loads(r.read().decode("utf-8"))
+    except Exception as e:
+        return {"_error": str(e)}
+
 def parse_miner_log_specific(log_file: str) -> dict:
     """Parse specific miner log file"""
     recent = tail_log(log_file, 200)
@@ -6768,6 +6809,12 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json(fetch_agent_discovered_nodes())
         elif route == "/api/agent/rewards":
             self._json(fetch_agent_rewards())
+        elif route == "/api/agent/status":
+            self._json(fetch_agent_status())
+        elif route == "/api/agent/telemetry":
+            self._json(fetch_agent_telemetry())
+        elif route == "/api/agent/gpu":
+            self._json(fetch_agent_gpu())
         elif route == "/api/orchestrator/status":
             self._json(get_orchestrator_status())
         elif route == "/api/orchestrator/services":
@@ -8026,6 +8073,39 @@ class DashboardHandler(BaseHTTPRequestHandler):
             action = payload.get("action", "")
             env_overrides = payload.get("env")
             self._json(run_control(action, env_overrides))
+        elif route == "/api/agent/control":
+            # Proxy control commands to the Desktop Agent (miner start/stop/restart)
+            action = payload.get("action", "")
+            try:
+                agent_url = f"{AGENT_API_BASE}/api/miner/"
+                if action == "miner/start":
+                    req = urllib.request.Request(
+                        f"{agent_url}start",
+                        data=json.dumps({}).encode("utf-8"),
+                        headers={"Content-Type": "application/json"},
+                        method="POST"
+                    )
+                elif action == "miner/stop":
+                    req = urllib.request.Request(
+                        f"{agent_url}stop",
+                        data=json.dumps({}).encode("utf-8"),
+                        headers={"Content-Type": "application/json"},
+                        method="POST"
+                    )
+                elif action == "miner/restart":
+                    req = urllib.request.Request(
+                        f"{agent_url}restart",
+                        data=json.dumps({}).encode("utf-8"),
+                        headers={"Content-Type": "application/json"},
+                        method="POST"
+                    )
+                else:
+                    self._json({"ok": False, "error": f"Unknown agent action: {action}"})
+                    return
+                with urllib.request.urlopen(req, timeout=5.0) as r:
+                    self._json(json.loads(r.read().decode("utf-8")))
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)})
         elif route == "/api/config":
             # POST: allow topology switching (requires restart)
             try:
