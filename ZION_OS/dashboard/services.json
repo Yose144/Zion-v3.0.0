@@ -1,0 +1,102 @@
+{
+  "_comment": "ZION dashboard service manifest — LOCAL PC services only.\nEdge server (100.76.16.108) runs: 2 nodes + pool + bridge + DAO + atomic-swap + WARP.\nLocal PC runs: backup node + miners + AI services (Hiran + Hiranyagarbha).",
+
+  "node1": {
+    "bin": "node",
+    "log": "node1",
+    "service_id": "node1",
+    "mkdirs": ["V3/data"],
+    "env": {
+      "ZION_NODE_ID": "local-backup-node",
+      "ZION_P2P_BIND": "0.0.0.0:8333",
+      "ZION_RPC_BIND": "0.0.0.0:8443",
+      "ZION_NODE_STATE_PATH": "V3/data/zion-node-state.db",
+      "ZION_SEED_PEERS": "100.76.16.108:8333",
+      "ZION_MINER_ADDRESS": "zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3",
+      "ZION_HUMANITARIAN_WALLET": "zion1m4v5z8z850u480c5c208z274e334369275n5y20",
+      "ZION_ISSOBELLA_WALLET": "zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702"
+    }
+  },
+
+  "miner": {
+    "bin": "zion-miner",
+    "log": "miner",
+    "service_id": "miner",
+    "env": {
+      "ZION_POOL_ADDR": "100.76.16.108:8444",
+      "ZION_LOOP_COUNT": "1000000",
+      "ZION_MINER_THREADS": "2",
+      "ZION_WORKER_NAME": "worker1",
+      "ZION_MINER_ID": "native-gpu-miner-01",
+      "ZION_GPU_BACKEND": "opencl",
+      "ZION_GPU_WORK_SIZE": "4096"
+    }
+  },
+
+  "miner-cpu": {
+    "bin": "zion-miner",
+    "log": "miner",
+    "service_id": "miner",
+    "env": {
+      "ZION_POOL_ADDR": "100.76.16.108:8444",
+      "ZION_LOOP_COUNT": "1000000",
+      "ZION_MINER_THREADS": "4",
+      "ZION_WORKER_NAME": "worker1",
+      "ZION_MINER_ID": "native-cpu-miner-01",
+      "ZION_GPU_BACKEND": "cpu"
+    }
+  },
+
+  "miner-gpu": {
+    "bin": "zion-miner",
+    "log": "miner",
+    "service_id": "miner",
+    "env": {
+      "ZION_POOL_ADDR": "100.76.16.108:8444",
+      "ZION_LOOP_COUNT": "1000000",
+      "ZION_MINER_THREADS": "2",
+      "ZION_WORKER_NAME": "worker1",
+      "ZION_MINER_ID": "native-gpu-miner-01",
+      "ZION_GPU_BACKEND": "opencl",
+      "ZION_GPU_WORK_SIZE": "4096"
+    }
+  },
+
+  "hiranyagarbha": {
+    "bin": "zion-ai-native-api",
+    "log": "hiranyagarbha",
+    "service_id": "hiranyagarbha",
+    "env": {
+      "HIRANYAGARBHA_BIND": "0.0.0.0:8001",
+      "HIRANYAGARBHA_BACKEND": "auto",
+      "HIRANYAGARBHA_MAX_AGENTS": "100",
+      "ZION_NODE_RPC_ADDR": "127.0.0.1:8443",
+      "ZION_POOL_API_URL": "http://127.0.0.1:8080",
+      "LLM_BASE_URL": "http://127.0.0.1:8002/v1",
+      "LLM_MODEL": "hiran-v2.2",
+      "ZION_WORKSPACE_ROOT": ".",
+      "ZION_RAG_CHUNK_DOCS": "1"
+    }
+  },
+
+  "oasis": {
+    "bin": "zion-oasis",
+    "log": "oasis",
+    "service_id": "oasis",
+    "env": {}
+  },
+
+  "humanitarian": {
+    "bin": "zion-free-world",
+    "log": "humanitarian",
+    "service_id": "free-world",
+    "env": {}
+  },
+
+  "space": {
+    "bin": "zion-issobella",
+    "log": "space",
+    "service_id": "issobella",
+    "env": {}
+  }
+}
