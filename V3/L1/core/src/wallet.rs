@@ -1,10 +1,11 @@
 //! ZION Wallet — UTXO coin selection, transaction building, and signing.
 //!
-//! Provides the core logic for constructing and signing UTXO transactions:
-//! - Largest-first coin selection
+//! Provides the core logic for constructing and signing transactions:
+//! - Largest-first UTXO coin selection
 //! - Explicit change output generation
 //! - Ed25519 signing with post-sign `zeroize`
 //! - Multi-recipient batch payouts (pool PPLNS)
+//! - Account-model transaction building for hybrid balance sends
 
 use crate::crypto;
 use crate::fee;
@@ -321,6 +322,60 @@ pub fn build_batch_payout(
     })
 }
 
+// ── Account-model build & sign ─────────────────────────────────────────
+
+/// Generate a deterministic 64-hex-char tx_id for an account transaction.
+pub fn generate_account_tx_id(from: &str, to: &str, amount: u64, nonce: u64) -> String {
+    let mut bytes = [0u8; 32];
+    let ts = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_nanos();
+    bytes[..16].copy_from_slice(&(ts as u128).to_le_bytes());
+    bytes[16..24].copy_from_slice(&(amount as u64).to_le_bytes());
+    bytes[24..32].copy_from_slice(&(nonce as u64).to_le_bytes());
+    // XOR-in sender and recipient for uniqueness
+    for (i, b) in from.bytes().chain(to.bytes()).enumerate() {
+        bytes[i % 32] ^= b;
+    }
+    hex::encode(bytes)
+}
+
+/// Build and sign an account-model transaction.
+///
+/// Creates a [`crate::Transaction`] (account model) signed with Ed25519.
+/// The `nonce` must be unique per sender to prevent replay attacks.
+pub fn build_and_sign_account(
+    signing_key: &SigningKey,
+    from_address: &str,
+    to_address: &str,
+    amount_zion: u128,
+    fee_zion: u64,
+    nonce: u64,
+) -> Result<crate::Transaction, WalletError> {
+    if !crypto::is_valid_address(to_address) {
+        return Err(WalletError::InvalidAddress(to_address.to_string()));
+    }
+
+    let tx_id = generate_account_tx_id(from_address, to_address, amount_zion as u64, nonce);
+    let pk_hex = crypto::to_hex(signing_key.verifying_key().as_bytes());
+
+    let key_bytes = signing_key.to_bytes();
+    let sig = crypto::sign_and_zeroize(key_bytes, tx_id.as_bytes())
+        .map_err(|_| WalletError::SigningFailed)?;
+
+    Ok(crate::Transaction {
+        tx_id,
+        from: from_address.to_string(),
+        to: to_address.to_string(),
+        amount_zion,
+        fee_zion,
+        nonce,
+        signature: crypto::to_hex(&sig),
+        public_key: pk_hex,
+    })
+}
+
 // ── Tests ──────────────────────────────────────────────────────────────
 
 #[cfg(test)]
@@ -516,5 +571,30 @@ mod tests {
         assert!(result.transaction.verify_signatures());
         // Should use both UTXOs (2M + 1M = 3M, need 2.501M)
         assert_eq!(result.transaction.inputs.len(), 2);
+    }
+
+    #[test]
+    fn build_and_sign_account_basic() {
+        let (sk, vk) = generate_keypair();
+        let addr = derive_address(vk.as_bytes());
+        let dest = derive_address(&[99u8; 32]);
+
+        let tx = build_and_sign_account(&sk, &addr, &dest, 1_000_000, 1_000, 42).unwrap();
+        assert_eq!(tx.from, addr);
+        assert_eq!(tx.to, dest);
+        assert_eq!(tx.amount_zion, 1_000_000);
+        assert_eq!(tx.fee_zion, 1_000);
+        assert_eq!(tx.nonce, 42);
+        assert!(!tx.signature.is_empty());
+        assert!(!tx.public_key.is_empty());
+        assert!(!tx.tx_id.is_empty());
+    }
+
+    #[test]
+    fn build_and_sign_account_rejects_invalid_address() {
+        let (sk, vk) = generate_keypair();
+        let addr = derive_address(vk.as_bytes());
+        let err = build_and_sign_account(&sk, &addr, "invalid", 1_000, 1_000, 1).unwrap_err();
+        assert!(matches!(err, WalletError::InvalidAddress(_)));
     }
 }

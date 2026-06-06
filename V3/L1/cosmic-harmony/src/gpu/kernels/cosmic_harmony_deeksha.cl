@@ -39,9 +39,10 @@
 #define WGS 64
 #endif
 
-/* AMD Vega / GCN compiler bug: 64-bit rotate by 8 is miscompiled.
- * Use OpenCL built-in rotate(long,long) which is handled correctly. */
-#define ROL64(x, n) rotate((long)(x), (long)(n))
+/* AMD compiler bug workaround: 64-bit rotate by 8 is miscompiled
+ * for some GCN/RDNA driver combos. Use OpenCL built-in rotate
+ * with ulong (unsigned) which is handled correctly on all targets. */
+#define ROL64(x, n) rotate((ulong)(x), (ulong)(n))
 #define XTIME(a) ((uchar)(((a) << 1) ^ ((((a) >> 7) & 1) * 0x1b)))
 
 /* Chi macro: one 5-element row, no temp array (from optimized v3 kernel) */
@@ -108,7 +109,7 @@ __constant uchar AES_RCON[10] = {
 
 __attribute__((noinline)) void keccak_f1600(ulong *st)
 {
-    volatile ulong bc0, bc1, bc2, bc3, bc4, t;
+    ulong bc0, bc1, bc2, bc3, bc4, t;
 
     for (int rnd = 0; rnd < 24; rnd++) {
         /* Theta — no arrays, direct column XOR */
