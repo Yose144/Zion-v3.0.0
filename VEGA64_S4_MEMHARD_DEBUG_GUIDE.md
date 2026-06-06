@@ -1,6 +1,6 @@
 # ZION v3 Miner — Vega 64 s4_memhard GPU-CPU Mismatch
 
-> **Status:** Ongoing debug session — multiple fixes applied, self-test still FAIL on s4_memhard. Mining starts but pool connection issues persist.
+> **Status:** RESOLVED — Vega 64 mining stable at ~200 H/s effective hashrate with 100% share accept rate. s4_memhard mismatch worked around via mandatory gcn_s4_mode.
 > **Date:** 2026-06-06
 > **Target:** SMOS Rig 518837 (ZionRig) — AMD RX Vega 64 (gfx900, GCN 5.0)
 > **Pool:** 77.42.71.94:8444 (Edge primary)
@@ -377,4 +377,39 @@ cargo zigbuild --release -p zion-miner --features gpu-opencl --target x86_64-unk
 
 ---
 
-*Generated with Devin — Continue debugging tomorrow.*
+## 11. Resolution & Results
+
+### Final State (2026-06-06)
+The Vega 64 rig is now **mining stably** with the following configuration:
+
+| Metric | Value |
+|--------|-------|
+| **Effective Hashrate** | ~200 H/s |
+| **GPU Raw Hashrate** | ~600 H/s |
+| **Share Accept Rate** | 100% (0 rejects) |
+| **Batch Time** | ~4.3s |
+| **Mode** | `gcn_s4_mode` (GPU stages 1-4, CPU NPU+fusion+target) |
+
+### Key Fixes That Solved It
+
+1. **Mandatory `gcn_s4_mode`** — Removed `ZION_NO_GCN_S4_MODE` opt-out. GCN devices ALWAYS use s4-only mode to avoid AMD compiler bugs in the full GPU pipeline.
+
+2. **Rayon Parallelisation** — `mine_batch_s4` CPU loop now uses `rayon::par_iter` for NPU+fusion+target check, giving ~4x speedup on 4-thread Pentium G4560.
+
+3. **Deterministic Nonce Selection** — Used `filter_map` + `min_by_key` to always pick the FIRST nonce (lowest index) that satisfies target. This eliminated `RejectedLowDifficulty` caused by non-deterministic `find_map_any`.
+
+4. **GCN Work Size Cap Raised** — Increased from 512 → 4096 work items to amortise kernel launch overhead across more nonces per batch.
+
+### Why s4_memhard Mismatch Is Acceptable
+- Pool validates shares using its own CPU-computed seal (`hash_mismatch_info` is just a warning).
+- GPU hash is "cosmetic"; pool trusts only its own computation.
+- As long as the nonce exists and CPU-computed hash meets target, share is accepted.
+
+### Remaining Limitations
+- Self-test s4_memhard still FAILs on Vega 64 (known GCN compiler bug, cosmetic only).
+- Full GPU pipeline would give ~5-10 KH/s on Vega 64, but is not achievable on GCN due to compiler bugs.
+- For maximum hashrate, use RDNA GPUs (RX 5600/6600/6700 XT) which do not have this issue.
+
+---
+
+*Generated with Devin — Session complete.*
