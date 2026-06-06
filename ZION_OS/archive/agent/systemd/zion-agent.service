@@ -1,0 +1,33 @@
+[Unit]
+Description=ZION OS Agent
+After=network-online.target docker.service tailscaled.service
+Wants=network-online.target
+
+[Service]
+Type=notify
+ExecStart=/usr/bin/zion-agent
+Restart=always
+RestartSec=5
+User=zion
+Group=zion
+
+# Bezpecnostni omezeni
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/data/zion
+ReadWritePaths=/tmp
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+
+# Env
+Environment="RUST_LOG=info"
+Environment="ZION_CONFIG_DIR=/data/zion/config"
+
+[Install]
+WantedBy=multi-user.target
