@@ -1963,6 +1963,9 @@ def _build_status_edge_primary() -> dict:
     pool_edge_svc = get_service("pool-edge")
     pool_edge_health = check_service_health(pool_edge_svc) if pool_edge_svc else {"alive": False}
     edge_metrics = {"active_miners": None, "hashrate": None, "blocks_found": None, "total_hashes": None, "total_shares": None}
+    edge_payout = {"pplns_rounds": 0, "pplns_total_paid": 0, "pplns_window_size": 0, "pplns_window_used": 0, "pplns_registered_miners": 0,
+                   "fee_humanitarian": 0, "fee_issobella": 0, "fee_pool": 0, "fee_miner_pct": 89,
+                   "miner_balances": []}
     try:
         metrics_port = pool_edge_svc.get("ports", {}).get("metrics") if pool_edge_svc else None
         if metrics_port and pool_edge_health.get("alive"):
@@ -1980,6 +1983,33 @@ def _build_status_edge_primary() -> dict:
                         edge_metrics["blocks_found"] = int(float(line.split()[-1]))
                     elif line.startswith("zion_pool_hashrate_khs "):
                         edge_metrics["hashrate"] = float(line.split()[-1])
+                    elif line.startswith("zion_pplns_payout_rounds "):
+                        edge_payout["pplns_rounds"] = int(float(line.split()[-1]))
+                    elif line.startswith("zion_pplns_total_paid_flowers "):
+                        edge_payout["pplns_total_paid"] = int(float(line.split()[-1]))
+                    elif line.startswith("zion_pplns_window_size "):
+                        edge_payout["pplns_window_size"] = int(float(line.split()[-1]))
+                    elif line.startswith("zion_pplns_window_used "):
+                        edge_payout["pplns_window_used"] = int(float(line.split()[-1]))
+                    elif line.startswith("zion_pplns_registered_miners "):
+                        edge_payout["pplns_registered_miners"] = int(float(line.split()[-1]))
+                    elif line.startswith("zion_fee_humanitarian_flowers "):
+                        edge_payout["fee_humanitarian"] = int(float(line.split()[-1]))
+                    elif line.startswith("zion_fee_issobella_flowers "):
+                        edge_payout["fee_issobella"] = int(float(line.split()[-1]))
+                    elif line.startswith("zion_fee_pool_flowers "):
+                        edge_payout["fee_pool"] = int(float(line.split()[-1]))
+                    elif line.startswith("zion_fee_miner_pct "):
+                        edge_payout["fee_miner_pct"] = int(float(line.split()[-1]))
+                    elif line.startswith("zion_pool_miner_pending_balance_atomic{"):
+                        # Parse miner pending balance: zion_pool_miner_pending_balance_atomic{miner_id="...",worker_name="..."} value
+                        if m := re.search(r'miner_id="([^"]+)",worker_name="([^"]+)"\} (\d+)', line):
+                            edge_payout["miner_balances"].append({
+                                "miner_id": m.group(1),
+                                "worker_name": m.group(2),
+                                "balance_atomic": int(m.group(3)),
+                                "balance_zion": int(m.group(3)) / 1_000_000_000_000,
+                            })
     except Exception:
         pass
 
@@ -2003,6 +2033,16 @@ def _build_status_edge_primary() -> dict:
         "total_hashes": edge_metrics["total_hashes"],
         "total_shares": edge_metrics["total_shares"],
         "hashrate_khs": edge_metrics["hashrate"],
+        "pplns_rounds": edge_payout["pplns_rounds"],
+        "pplns_total_paid": edge_payout["pplns_total_paid"],
+        "pplns_window_size": edge_payout["pplns_window_size"],
+        "pplns_window_used": edge_payout["pplns_window_used"],
+        "pplns_registered_miners": edge_payout["pplns_registered_miners"],
+        "fee_humanitarian": edge_payout["fee_humanitarian"],
+        "fee_issobella": edge_payout["fee_issobella"],
+        "fee_pool": edge_payout["fee_pool"],
+        "fee_miner_pct": edge_payout["fee_miner_pct"],
+        "miner_balances": edge_payout["miner_balances"],
     }
 
     # Sync gap
