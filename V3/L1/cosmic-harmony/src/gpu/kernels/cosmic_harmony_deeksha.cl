@@ -611,16 +611,18 @@ void b3_permute(uint msg[16]) {
     msg[12]=m9; msg[13]=m14; msg[14]=m15; msg[15]=m8;
 }
 
+/* GCN workaround: force noinline to prevent miscompilation during inlining */
+__attribute__((noinline))
 void b3_compress(const uint cv[8], const uint bw[16],
-                 ulong counter, uint block_len, uint flags,
+                 uint counter, uint block_len, uint flags,
                  uint output[16])
 {
     uint st[16] = {
         cv[0], cv[1], cv[2], cv[3],
         cv[4], cv[5], cv[6], cv[7],
         BLAKE3_IV[0], BLAKE3_IV[1], BLAKE3_IV[2], BLAKE3_IV[3],
-        (uint)(counter & 0xFFFFFFFFu),
-        (uint)(counter >> 32),
+        counter,
+        0u,
         block_len,
         flags
     };
@@ -646,8 +648,9 @@ void b3_compress(const uint cv[8], const uint bw[16],
     for (int i = 0; i < 16; i++) output[i] = st[i];
 }
 
+__attribute__((noinline))
 void b3_compress_cv(const uint cv[8], const uint bw[16],
-                    ulong counter, uint block_len, uint flags,
+                    uint counter, uint block_len, uint flags,
                     uint out_cv[8])
 {
     uint full[16];
@@ -708,7 +711,7 @@ B3ChunkOut b3_hash_single_chunk(const uchar *input, uint input_len) {
         /* BLAKE3 counter is the chunk counter, not the block index.
          * These inputs fit into a single chunk, so the counter stays 0.
          */
-        b3_compress_cv(cv, bw, 0UL, this_len, fl, cv);
+        b3_compress_cv(cv, bw, 0u, this_len, fl, cv);
         offset += this_len;
     }
     for (int i = 0; i < 8; i++) out.input_cv[i] = BLAKE3_IV[i];
@@ -718,41 +721,33 @@ B3ChunkOut b3_hash_single_chunk(const uchar *input, uint input_len) {
     return out;
 }
 
+/* GCN workaround: avoid __global uint* pointer cast; use byte-level write */
+__attribute__((noinline))
 void b3_xof_fill_global(B3ChunkOut co, __global uchar *buf, uint buf_len) {
-    __global uint *buf32 = (__global uint *)buf;
     uint ob = 0, written = 0;
     while (written < buf_len) {
         uint st[16];
-        b3_compress(co.input_cv, co.block_words, (ulong)ob,
+        b3_compress(co.input_cv, co.block_words, ob,
                     co.block_len, co.flags | BLAKE3_ROOT, st);
         uint to_write = min(64u, buf_len - written);
-        /* Word-level write: 16 uint writes instead of 64 byte writes */
-        uint words = to_write >> 2;
-        uint base = written >> 2;
-        for (uint i = 0; i < words; i++)
-            buf32[base + i] = st[i];
-        /* Handle trailing bytes (only at very end if buf_len % 4 != 0) */
-        uint done = words << 2;
-        for (uint i = done; i < to_write; i++)
-            buf[written + i] = (uchar)(st[i / 4] >> ((i % 4) * 8));
+        for (uint i = 0; i < to_write; i++)
+            buf[written + i] = (uchar)(st[i >> 2] >> ((i & 3u) * 8));
         written += to_write;
         ob++;
     }
 }
 
+/* GCN workaround: avoid uint* pointer cast; use byte-level write */
+__attribute__((noinline))
 void b3_xof_fill_private(B3ChunkOut co, uchar *buf, uint buf_len) {
     uint ob = 0, written = 0;
     while (written < buf_len) {
         uint st[16];
-        b3_compress(co.input_cv, co.block_words, (ulong)ob,
+        b3_compress(co.input_cv, co.block_words, ob,
                     co.block_len, co.flags | BLAKE3_ROOT, st);
         uint to_write = min(64u, buf_len - written);
-        /* Word-level copy */
-        uint full_words = to_write >> 2;
-        uint *dst32 = (uint *)(buf + written);
-        for (uint w = 0; w < full_words; w++) dst32[w] = st[w];
-        for (uint i = (full_words << 2); i < to_write; i++)
-            buf[written + i] = (uchar)(st[i / 4] >> ((i % 4) * 8));
+        for (uint i = 0; i < to_write; i++)
+            buf[written + i] = (uchar)(st[i >> 2] >> ((i & 3u) * 8));
         written += to_write;
         ob++;
     }
@@ -777,6 +772,7 @@ void ekam_init_scratchpad(const uchar seed[64], __global uchar *pad)
 }
 
 /* Blake3 mix: cur(64)||prev(64)||rand(64)||pass(8)||idx(8) = 208B → 64B XOR */
+__attribute__((noinline))
 void ekam_mix_block(__global uchar *pad, uint index, ulong pass, int forward)
 {
     uint prev_index;
@@ -800,15 +796,15 @@ void ekam_mix_block(__global uchar *pad, uint index, ulong pass, int forward)
 
     /* Block 0: cur[0..64], CHUNK_START */
     b3_load_words_global(pad + cur_off, 64, bw);
-    b3_compress_cv(cv, bw, 0UL, 64, BLAKE3_CHUNK_START, cv);
+    b3_compress_cv(cv, bw, 0u, 64, BLAKE3_CHUNK_START, cv);
 
     /* Block 1: prev[0..64] */
     b3_load_words_global(pad + prev_off, 64, bw);
-    b3_compress_cv(cv, bw, 0UL, 64, 0, cv);
+    b3_compress_cv(cv, bw, 0u, 64, 0, cv);
 
     /* Block 2: rand[0..64] */
     b3_load_words_global(pad + rand_off, 64, bw);
-    b3_compress_cv(cv, bw, 0UL, 64, 0, cv);
+    b3_compress_cv(cv, bw, 0u, 64, 0, cv);
 
     /* Block 3: pass(8) || idx(8) = 16 bytes, CHUNK_END */
     for (int i = 0; i < 16; i++) bw[i] = 0;
@@ -848,6 +844,7 @@ void ekam_sequential_passes(__global uchar *pad)
 }
 
 /* Ekam memory-hard transform (light): Blake3 init → passes → Keccak-256 reads */
+__attribute__((noinline))
 void ekam_memory_hard_transform(const uchar input[64], __global uchar *pad,
                                 uchar output[64])
 {
