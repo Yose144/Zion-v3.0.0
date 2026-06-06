@@ -429,9 +429,9 @@ If genesis corruption is suspected:
 ### Edge Server Recovery
 
 If Edge server becomes unresponsive:
-1. Try Tailscale SSH first: `ssh root@100.76.16.108`
-2. If unavailable, use Hetzner console
-3. Check systemd services: `systemctl status zion-node.service zion-pool.service`
+1. SSH directly: `ssh -i ssh-key-zion-edge root@77.42.71.94`
+2. If SSH fails, use Hetzner console
+3. Check systemd services: `systemctl status zion-edge-node1 zion-edge-pool zion-edge-dao zion-edge-warp`
 4. Restart services if needed: `systemctl restart zion-node.service`
 5. Verify network connectivity and VPN status
 6. Check Hetzner snapshot if complete recovery needed
@@ -449,23 +449,25 @@ If pool stops accepting connections:
 
 **System Status:**
 - ✅ Genesis Regeneration: Complete (2026-06-05 final reset)
-- ✅ Edge Node: Running (height ~102, **NEW binary deployed**)
+- ✅ Edge Node 1: Running (primary)
+- ✅ Edge Node 2: Running (follower)
 - ✅ Edge Pool: Running (fee split 89/5/5/1, PPLNS payouts active)
-- ✅ Local Node: Running (height ~114, **NEW binary deployed**, sync with Edge)
-- ✅ Edge Server: Operational (100.76.16.108 / 77.42.71.94)
+- ✅ Edge DAO: Running (port 8450)
+- ✅ Edge WARP: Running (port 8453)
+- ✅ Edge Server: Operational (77.42.71.94)
+- ✅ Website: Running (PM2, port 3000)
 - ✅ Pool Metrics: Running on port 8455
-- ✅ Genesis Hash (both nodes): `1da0251076471744b783105a6723fbd2e899282d6582d59f0de7905cd69f07c7`
-- ✅ P2P Sync: Active between Edge and Local
+- ✅ Genesis Hash: `1da0251076471744b783105a6723fbd2e899282d6582d59f0de7905cd69f07c7`
+- ⚠️  P2P Sync: Core (Local) offline — Edge runs solo
 
-**Code Fixes DEPLOYED to Edge + Local:**
+**Code Fixes DEPLOYED to Edge:**
 - ✅ `emission.rs`: `MINING_EMISSION` corrected to 127.22B (was 127.72B)
 - ✅ `genesis.rs`: Tests updated for 14 premine outputs + label derivation
 - ✅ `launch.rs`: Premine count check updated to 14 + diagnostic prints
-- ✅ `node_builder.rs`: Seed peer threshold lowered to 2 (Core+Edge topology)
+- ✅ `node_builder.rs`: Seed peer threshold for Edge-only topology
 - ✅ `rpc.rs`: Supply info test updated for 16.78B premine
 - ✅ `lib.rs`: Seed peer snapshot updated to 77.42.71.94
 - ✅ `miner/Cargo.toml`: `hex` crate added for `sha3_debug` build
-- ✅ `launch-local-backup.ps1/.sh`: `ZION_MINER_ADDRESS` set to pool payout wallet
 
 **Known Issues:**
 - Auto-backup script produces empty state (height=0) — use manual backup before any restart
@@ -477,8 +479,8 @@ If pool stops accepting connections:
 - ✅ PPLNS payout system tested and working (pool redistributes 89% miner reward)
 - ✅ All 10 failing tests fixed and passing locally
 - ✅ Canonical subsidy addresses verified deterministic
-- ✅ Edge + local node fully synchronized
-- ✅ **Both Edge and Local nodes rebuilt and redeployed with latest code**
+- ✅ Edge node fully operational
+- ✅ **Edge node rebuilt and redeployed with latest code**
 
 **Next Steps:**
 - Fix auto-backup script to capture live DB state
