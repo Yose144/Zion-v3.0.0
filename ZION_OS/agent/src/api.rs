@@ -12,6 +12,7 @@ use tracing::info;
 /// GET /api/status
 pub async fn status_handler(State(state): State<Arc<AgentState>>) -> Json<StatusResponse> {
     let miner_running = state.miner_pid.read().await.is_some();
+    let gpu_count = crate::gpu_telemetry::collect_all().await.len();
     Json(StatusResponse {
         rig_id: state.rig_id.clone(),
         version: state.version.clone(),
@@ -22,7 +23,7 @@ pub async fn status_handler(State(state): State<Arc<AgentState>>) -> Json<Status
             "manual".to_string()
         },
         miner_running,
-        gpu_count: 0, // TODO: GPU detection
+        gpu_count,
     })
 }
 

@@ -86,6 +86,9 @@ ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "
         sed -i '/\"L1\/native-ffi\",/d' Cargo.toml 2>/dev/null || true
     fi
     cargo build --release --bin node --bin server --bin zion-dao --bin zion-warp-server 2>&1
+    # Build agent
+    cd ${REMOTE_ROOT}/ZION_OS/agent
+    cargo build --release 2>&1
 "
 
 # ── Step 6: Rebuild website on Edge ──
@@ -107,10 +110,16 @@ SERVICES=(
     zion-edge-warp
     zion-edge-watchdog
     zion-edge-miner
+    zion-edge-agent
 )
 for svc in "${SERVICES[@]}"; do
-    ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} \
-        "cp ${REMOTE_ROOT}/edge-deploy/systemd/${svc}.service /etc/systemd/system/ 2>/dev/null || true"
+    if [[ "$svc" == "zion-edge-agent" ]]; then
+        ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} \
+            "cp ${REMOTE_ROOT}/ZION_OS/agent/systemd/${svc}.service /etc/systemd/system/ 2>/dev/null || true"
+    else
+        ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} \
+            "cp ${REMOTE_ROOT}/edge-deploy/systemd/${svc}.service /etc/systemd/system/ 2>/dev/null || true"
+    fi
 done
 
 # Cleanup old/duplicate service
@@ -137,6 +146,7 @@ sleep 3
 ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-edge-dao zion-edge-warp || true"
 
 ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-edge-miner || true"
+ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl restart zion-edge-agent || true"
 
 # ── Step 9: Restart website (PM2) ──
 log "Restarting website (PM2)..."
@@ -148,7 +158,7 @@ sleep 10
 
 echo ""
 echo "=== Deployment Status ==="
-for svc in zion-edge-node1 zion-edge-node2 zion-edge-pool zion-edge-dao zion-edge-warp zion-edge-miner; do
+for svc in zion-edge-node1 zion-edge-node2 zion-edge-pool zion-edge-dao zion-edge-warp zion-edge-miner zion-edge-agent; do
     STATUS=$(ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "systemctl is-active ${svc}" 2>/dev/null || true)
     if [[ "$STATUS" == "active" ]]; then
         echo -e "${GREEN}  ${svc} : ACTIVE${NC}"
@@ -162,6 +172,14 @@ if echo "$WEB_STATUS" | grep -q "online"; then
     echo -e "${GREEN}  zion-website : ONLINE (PM2)${NC}"
 else
     echo -e "${RED}  zion-website : OFFLINE${NC}"
+fi
+
+# Agent health check
+AGENT_HEALTH=$(ssh ${SSH_OPTS} ${EDGE_USER}@${EDGE_HOST} "curl -s http://127.0.0.1:8767/health" 2>/dev/null || true)
+if [[ "$AGENT_HEALTH" == "OK" ]]; then
+    echo -e "${GREEN}  zion-agent : HEALTHY (port 8767)${NC}"
+else
+    echo -e "${RED}  zion-agent : NO RESPONSE${NC}"
 fi
 
 echo ""
