@@ -678,7 +678,7 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
                     return Ok(json!({
                         "address": account_id,
                         "balance_flowers": total.to_string(),
-                        "utxo_balance_flowers": utxo_balance,
+                        "utxo_balance_flowers": utxo_balance.to_string(),
                         "account_balance_flowers": account_balance.to_string(),
                         "utxo_count": utxo_count,
                         "chain_height": rt.chain_height(),
@@ -757,7 +757,7 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
                         "address": account_id,
                         "height": effective_height,
                         "balance_flowers": total.to_string(),
-                        "utxo_balance_flowers": utxo_balance,
+                        "utxo_balance_flowers": utxo_balance.to_string(),
                         "account_balance_flowers": account_balance.to_string(),
                         "balance_zion": format_flowers_as_zion(total),
                         "transaction_model": ACTIVE_TRANSACTION_MODEL,
@@ -929,7 +929,7 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
                 let balance = rt.utxo_balance(fee::BRIDGE_VAULT_ADDRESS);
                 Ok(json!({
                     "address": fee::BRIDGE_VAULT_ADDRESS,
-                    "balance_flowers": balance,
+                    "balance_flowers": balance.to_string(),
                     "balance_zion": format_flowers_as_zion(balance),
                     "chain_height": rt.chain_height(),
                 }))
@@ -2370,7 +2370,7 @@ mod tests {
         );
         let result = resp.result.unwrap();
         assert_eq!(result["address"], fee::BRIDGE_VAULT_ADDRESS);
-        assert_eq!(result["balance_flowers"], 0);
+        assert_eq!(result["balance_flowers"], "0");
     }
 
     #[test]
