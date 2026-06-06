@@ -6,7 +6,7 @@ Wants=network-online.target
 [Service]
 Type=simple
 User=root
-WorkingDirectory=/root/zion-2.9.6-main/ZION_OS/ZionOSsmos/dashboard
+WorkingDirectory=/root/zion-2.9.6-main/ZION_OS/dashboard/infra
 Environment="RUST_LOG=info"
 Environment="ZIONOS_BIND=0.0.0.0:8888"
 Environment="ZIONOS_NODE_RPC=http://127.0.0.1:8443"
