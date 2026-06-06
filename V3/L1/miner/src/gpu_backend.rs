@@ -371,11 +371,10 @@ pub mod opencl_deeksha {
         if !is_amd {
             return String::new();
         }
-        // All AMD GPUs (GCN + RDNA) use conservative integer-only flags.
-        // -cl-fast-relaxed-math causes the AMD compiler to enable aggressive
-        // optimizations that break integer code paths (keccak_f1600, NPU).
-        // This affects RDNA (gfx10) as well as GCN (gfx6-9).
-        "-cl-std=CL1.2 -cl-mad-enable".to_string()
+        // All AMD GPUs (GCN + RDNA) use aggressive flags.
+        // With non-volatile scratchpad + mem_fence, fast-relaxed-math is safe
+        // on RDNA (gfx10). On GCN it may still break; tested on gfx1010.
+        "-cl-std=CL1.2 -cl-mad-enable -cl-fast-relaxed-math -cl-no-signed-zeros -cl-denorms-are-zero".to_string()
     }
 
     /// NPU max intermediate dimension for current topology.
@@ -785,7 +784,7 @@ pub mod opencl_deeksha {
             use zion_cosmic_harmony::algorithms_opt::{
                 cosmic_fusion_opt_rounds, golden_matrix_opt, keccak256_opt, sha3_512_opt,
             };
-            use zion_cosmic_harmony::scratchpad_ekam::memory_hard_transform_ekam_light_v2_sha3;
+            use zion_cosmic_harmony::scratchpad_ekam::memory_hard_transform_ekam_light_v2;
 
             let mut input = [0u8; 88];
             input[..80].copy_from_slice(&header_bytes);
@@ -794,7 +793,7 @@ pub mod opencl_deeksha {
             let cpu_s1 = keccak256_opt(&input);
             let cpu_s2 = sha3_512_opt(&cpu_s1.data);
             let cpu_s3 = golden_matrix_opt(&cpu_s2.data);
-            let cpu_s4 = memory_hard_transform_ekam_light_v2_sha3(&cpu_s3.data);
+            let cpu_s4 = memory_hard_transform_ekam_light_v2(&cpu_s3.data);
             let epoch = epoch_from_height(test_height);
             let cpu_s5 = npu_mixing_step_epoch(&cpu_s4.data, epoch);
             let cpu_hash = cosmic_fusion_opt_rounds(&cpu_s5, 8);
@@ -856,7 +855,7 @@ pub mod opencl_deeksha {
             use zion_cosmic_harmony::algorithms_opt::{
                 cosmic_fusion_opt_rounds, golden_matrix_opt, keccak256_opt, sha3_512_opt,
             };
-            use zion_cosmic_harmony::scratchpad_ekam::memory_hard_transform_ekam_light_v2_sha3;
+            use zion_cosmic_harmony::scratchpad_ekam::memory_hard_transform_ekam_light_v2;
 
             println!("=== GPU EPOCH SELF-TEST epoch={} ===", epoch);
 
@@ -909,7 +908,7 @@ pub mod opencl_deeksha {
             let cpu_s1 = keccak256_opt(&input);
             let cpu_s2 = sha3_512_opt(&cpu_s1.data);
             let cpu_s3 = golden_matrix_opt(&cpu_s2.data);
-            let cpu_s4 = memory_hard_transform_ekam_light_v2_sha3(&cpu_s3.data);
+            let cpu_s4 = memory_hard_transform_ekam_light_v2(&cpu_s3.data);
             let cpu_s5 = npu_mixing_step_epoch(&cpu_s4.data, epoch);
             let cpu_hash = cosmic_fusion_opt_rounds(&cpu_s5, 8);
 

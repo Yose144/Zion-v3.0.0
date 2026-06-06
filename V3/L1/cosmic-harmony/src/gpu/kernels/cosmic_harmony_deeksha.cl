@@ -315,7 +315,7 @@ void golden_matrix(const uchar *in64, uchar *out64)
  *     out = SHA3-512(state || counter_le)
  *     block = out;  state = out;  counter++
  */
-void init_scratchpad(const uchar seed[64], volatile __global uchar *pad)
+void init_scratchpad(const uchar seed[64], __global uchar *pad)
 {
     uchar state[64];
     for (int i = 0; i < 64; i++) state[i] = seed[i];
@@ -330,10 +330,9 @@ void init_scratchpad(const uchar seed[64], volatile __global uchar *pad)
         sha3_512(input, 72, out);
 
         uint off = blk * BLOCK_SIZE;
-        volatile __global ulong *dst = (volatile __global ulong *)(pad + off);
+        __global ulong *dst = (__global ulong *)(pad + off);
         ulong *src = (ulong *)out;
         ulong *st64 = (ulong *)state;
-        #pragma unroll 8
         for (int i = 0; i < 8; i++) {
             dst[i] = src[i];
             st64[i] = src[i];
@@ -348,7 +347,7 @@ void init_scratchpad(const uchar seed[64], volatile __global uchar *pad)
  * mixed = SHA3-512(current || prev || random || pass_le || index_le)
  * cur ^= mixed
  */
-void mix_block(volatile __global uchar *pad, uint index, ulong pass, int forward)
+void mix_block(__global uchar *pad, uint index, ulong pass, int forward)
 {
     uint prev_index;
     if (forward)
@@ -360,14 +359,13 @@ void mix_block(volatile __global uchar *pad, uint index, ulong pass, int forward
     uint prev_off = prev_index * BLOCK_SIZE;
 
     /* Derive random block index from current block's first 8 bytes */
-    volatile __global ulong *pad64 = (volatile __global ulong *)pad;
+    __global ulong *pad64 = (__global ulong *)pad;
     ulong idx_val = pad64[cur_off >> 3];
     uint rand_index = (uint)((idx_val ^ pass ^ (ulong)index) % BLOCK_COUNT);
     uint rand_off = rand_index * BLOCK_SIZE;
 
     /* Snapshot all three blocks to private memory (ulong-width) */
     ulong current[8], prev[8], random_blk[8];
-    #pragma unroll 8
     for (int i = 0; i < 8; i++) {
         current[i]    = pad64[(cur_off  >> 3) + i];
         prev[i]       = pad64[(prev_off >> 3) + i];
@@ -392,7 +390,6 @@ void mix_block(volatile __global uchar *pad, uint index, ulong pass, int forward
 
     /* XOR result into current block position (ulong-width) */
     ulong *mix64 = (ulong *)mixed;
-    #pragma unroll 8
     for (int i = 0; i < 8; i++)
         pad64[(cur_off >> 3) + i] ^= mix64[i];
 }
@@ -400,7 +397,7 @@ void mix_block(volatile __global uchar *pad, uint index, ulong pass, int forward
 /*
  * 2 sequential passes: pass 0 forward (0..1023), pass 1 backward (1023..0).
  */
-void sequential_passes(volatile __global uchar *pad)
+void sequential_passes(__global uchar *pad)
 {
     for (int pass = 0; pass < PASSES; pass++) {
         int forward = (pass % 2 == 0);
@@ -489,7 +486,7 @@ void random_read_mix(const uchar seed[64], __global const uchar *pad,
  * Avoids keccak256_136_mix fast-path to eliminate compiler-specific
  * divergence on GCN (gfx900) vs RDNA vs CUDA.
  */
-void random_read_mix_sha3(const uchar seed[64], volatile __global const uchar *pad,
+void random_read_mix_sha3(const uchar seed[64], __global const uchar *pad,
                             uchar out[64])
 {
     uchar acc[64];
@@ -527,9 +524,16 @@ void random_read_mix_sha3(const uchar seed[64], volatile __global const uchar *p
     }
 
     uchar first_blk[BLOCK_SIZE], last_blk[BLOCK_SIZE];
-    for (int i = 0; i < BLOCK_SIZE; i++) {
-        first_blk[i] = pad[i];
-        last_blk[i] = pad[SCRATCHPAD_SIZE - BLOCK_SIZE + i];
+    {
+        __global const ulong *fp = (__global const ulong *)pad;
+        __global const ulong *lp = (__global const ulong *)(pad + SCRATCHPAD_SIZE - BLOCK_SIZE);
+        ulong *fd = (ulong *)first_blk;
+        ulong *ld = (ulong *)last_blk;
+        #pragma unroll 8
+        for (int i = 0; i < 8; i++) {
+            fd[i] = fp[i];
+            ld[i] = lp[i];
+        }
     }
 
     ulong fst[25]; int fpos = 0;
@@ -541,13 +545,13 @@ void random_read_mix_sha3(const uchar seed[64], volatile __global const uchar *p
 }
 
 /* Full memory-hard transform: init → passes → random-read → 64 B output */
-void memory_hard_transform(const uchar input[64], volatile __global uchar *pad,
+void memory_hard_transform(const uchar input[64], __global uchar *pad,
                            uchar output[64])
 {
     init_scratchpad(input, pad);
-    // barrier(CLK_GLOBAL_MEM_FENCE);  // each thread has its own pad — no sync needed
+    mem_fence(CLK_GLOBAL_MEM_FENCE);
     sequential_passes(pad);
-    // barrier(CLK_GLOBAL_MEM_FENCE);  // each thread has its own pad — no sync needed
+    mem_fence(CLK_GLOBAL_MEM_FENCE);
     random_read_mix_sha3(input, pad, output);
 }
 
@@ -719,7 +723,7 @@ void b3_xof_fill_global(B3ChunkOut co, __global uchar *buf, uint buf_len) {
     uint ob = 0, written = 0;
     while (written < buf_len) {
         uint st[16];
-        b3_compress(co.input_cv, co.block_words, 0UL, // counter=0 for root compression
+        b3_compress(co.input_cv, co.block_words, (ulong)ob,
                     co.block_len, co.flags | BLAKE3_ROOT, st);
         uint to_write = min(64u, buf_len - written);
         /* Word-level write: 16 uint writes instead of 64 byte writes */
@@ -740,7 +744,7 @@ void b3_xof_fill_private(B3ChunkOut co, uchar *buf, uint buf_len) {
     uint ob = 0, written = 0;
     while (written < buf_len) {
         uint st[16];
-        b3_compress(co.input_cv, co.block_words, 0UL, // counter=0 for root compression
+        b3_compress(co.input_cv, co.block_words, (ulong)ob,
                     co.block_len, co.flags | BLAKE3_ROOT, st);
         uint to_write = min(64u, buf_len - written);
         /* Word-level copy */
@@ -1179,7 +1183,7 @@ __kernel void deeksha_mine(
     ulong nonce = nonce_base + (ulong)tid;
 
     /* Per-thread scratchpad in global memory */
-    volatile __global uchar *pad = scratchpad_pool + (ulong)tid * SCRATCHPAD_SIZE;
+    __global uchar *pad = scratchpad_pool + (ulong)tid * SCRATCHPAD_SIZE;
 
     /* ── Build input: header (≤80 B, zero-padded) + nonce (8 B LE) = 88 B ── */
     uchar input[88];
@@ -1202,7 +1206,7 @@ __kernel void deeksha_mine(
 
     /* ── Step 4: Memory-Hard (64 B → 64 B, 64 KiB scratchpad) ── */
     uchar s4[64];
-    memory_hard_transform(s3, pad, s4);
+    ekam_memory_hard_transform(s3, pad, s4);
 
     /* ── Step 5: NPU Mix (64 B → 64 B) ── */
     uchar s5[64];
@@ -1253,7 +1257,7 @@ void ekam_deeksha_mine(
     ulong nonce = nonce_base + (ulong)tid;
     /* Explicit ulong multiplication to prevent 32-bit overflow on AMD
      * compilers that may optimize (ulong)tid * int as uint multiplication. */
-    volatile __global uchar *pad = scratchpad_pool + (ulong)tid * (ulong)SCRATCHPAD_SIZE;
+    __global uchar *pad = scratchpad_pool + (ulong)tid * (ulong)SCRATCHPAD_SIZE;
 
     /* Build input: header (<=80 B) + nonce (8 B LE) = 88 B, zero-padded */
     uchar input[88];
@@ -1282,7 +1286,7 @@ void ekam_deeksha_mine(
     golden_matrix(buf_b, buf_a);
 
     /* Step 4: Memory-Hard(buf_a) → buf_b  (buf_a preserved as seed) */
-    memory_hard_transform(buf_a, pad, buf_b);
+    ekam_memory_hard_transform(buf_a, pad, buf_b);
 
     /* Step 5: NPU Mix(buf_b) → buf_a */
     npu_mix_packed(buf_b, buf_a, npu_weights, npu_biases, npu_scales, npu_meta);
@@ -1318,7 +1322,7 @@ __kernel void ekam_deeksha_debug(
 {
     if (get_global_id(0) != 0) return;
 
-    volatile __global uchar *pad = scratchpad_pool;
+    __global uchar *pad = scratchpad_pool;
 
     uchar input[88];
     ulong *inp64 = (ulong *)input;
@@ -1341,7 +1345,7 @@ __kernel void ekam_deeksha_debug(
     golden_matrix(s2, s3);
 
     uchar s4[64];
-    memory_hard_transform(s3, pad, s4);
+    ekam_memory_hard_transform(s3, pad, s4);
 
     uchar s5[64];
     npu_mix_packed(s4, s5, npu_weights, npu_biases, npu_scales, npu_meta);
@@ -1377,7 +1381,7 @@ void ekam_deeksha_mine_s4(
 {
     uint tid   = get_global_id(0);
     if (tid >= nonce_count) return;
-    volatile __global uchar *pad = scratchpad_pool + (ulong)tid * SCRATCHPAD_SIZE;
+    __global uchar *pad = scratchpad_pool + (ulong)tid * SCRATCHPAD_SIZE;
 
     /* Build input: header (<=80 B) + nonce (8 B LE) = 88 B, zero-padded */
     uchar input[88];
@@ -1405,7 +1409,7 @@ void ekam_deeksha_mine_s4(
     golden_matrix(buf_b, buf_a);
 
     /* Step 4: Memory-Hard(buf_a) → buf_b */
-    memory_hard_transform(buf_a, pad, buf_b);
+    ekam_memory_hard_transform(buf_a, pad, buf_b);
 
     /* Output s4 result for this work item */
     __global uchar *slot = s4_out + (ulong)tid * 64;
