@@ -931,9 +931,9 @@ fn run_local_session(
         last_job_id = job.job_id;
         // GPU-first, CPU-fallback nonce scan
         let scan_result = if let Some(ref mut g) = gpu {
-            gpu_backend::gpu_scan_job(g.as_mut(), job).solution
+            gpu_backend::gpu_scan_job(g.as_mut(), job, &config.algorithm).solution
         } else {
-            parallel::parallel_scan_nonce_range(job, threads)
+            parallel::parallel_scan_nonce_range(job, threads, &config.algorithm)
         };
         let Some(solution) = scan_result else {
             attempted_hashes = attempted_hashes.saturating_add(job.nonce_count);
@@ -1198,7 +1198,7 @@ fn run_remote_session(
     let hello_message = PoolMessage::Hello {
         miner_id: config.miner_id.clone(),
         worker_name: config.worker_name.clone(),
-        algorithm: zion_core::consensus_profile().to_string(),
+        algorithm: config.algorithm.clone(),
         payout_address: config.payout_address.clone(),
     };
     let hello_line = write_wire_message(&mut writer, &hello_message)?;
@@ -1228,8 +1228,11 @@ fn run_remote_session(
         .saturating_mul(config.remote_ttl_guard_percent)
         .saturating_div(100);
 
+    let mut current_algorithm = String::new();
+
     for iteration in 0..config.loop_count {
-        let (job_line, job) = read_next_job(&mut reader)?;
+        let (job_line, job, algorithm) = read_next_job(&mut reader)?;
+        current_algorithm = algorithm.clone();
         remote_nonce_window = job.nonce_count;
         let job_started_at = Instant::now();
         last_job_id = job.job_id;
@@ -1257,9 +1260,9 @@ fn run_remote_session(
             None => false,
         };
         let scan_result = if can_gpu {
-            gpu_backend::gpu_scan_job(gpu.as_deref_mut().unwrap(), job).solution
+            gpu_backend::gpu_scan_job(gpu.as_deref_mut().unwrap(), job, &current_algorithm).solution
         } else {
-            parallel::parallel_scan_nonce_range(job, threads)
+            parallel::parallel_scan_nonce_range(job, threads, &current_algorithm)
         };
         let batch_ms = job_started_at.elapsed().as_millis() as u64;
         if can_gpu {
@@ -1779,18 +1782,18 @@ impl SessionTelemetry {
     }
 }
 
-fn read_next_job(reader: &mut impl BufRead) -> Result<(String, MiningJob)> {
+fn read_next_job(reader: &mut impl BufRead) -> Result<(String, MiningJob, String)> {
     loop {
         let (line, message) = read_wire_message(reader)?;
         match message {
             PoolMessage::Job {
                 job_id,
+                algorithm,
                 start_nonce,
                 nonce_count,
                 target_hex,
                 header_hex,
                 height,
-                ..
             } => {
                 return Ok((
                     line,
@@ -1804,6 +1807,7 @@ fn read_next_job(reader: &mut impl BufRead) -> Result<(String, MiningJob)> {
                         nonce_count,
                         height,
                     },
+                    algorithm,
                 ))
             }
             PoolMessage::Stale { .. } => println!("wire_stale={line}"),
@@ -1971,6 +1975,8 @@ struct MinerConfig {
     threads: usize,
     gpu_backend: gpu_backend::GpuBackendKind,
     gpu_work_size: usize,
+    /// Algorithm advertised in hello and used if pool matches.
+    algorithm: String,
 }
 
 impl MinerConfig {
@@ -2086,6 +2092,8 @@ impl MinerConfig {
                 .ok()
                 .and_then(|v| v.parse().ok())
                 .unwrap_or(1 << 18), // 256K default
+            algorithm: std::env::var("ZION_MINER_ALGORITHM")
+                .unwrap_or_else(|_| zion_core::consensus_profile().to_string()),
         })
     }
 }
