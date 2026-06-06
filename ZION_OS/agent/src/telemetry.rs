@@ -93,15 +93,18 @@ async fn collect_telemetry(state: Arc<AgentState>) -> anyhow::Result<TelemetryPa
             load_avg_1m: load_avg.one as f32,
         },
         gpu,
-        miner: MinerMetrics {
-            running: miner_pid.is_some(),
-            pid: miner_pid,
-            uptime_sec: 0, // TODO: track miner start time
-            hashrate: 0.0, // TODO: parse z miner logu
-            shares_accepted: 0,
-            shares_rejected: 0,
-            pool_connected: miner_pid.is_some(),
-            current_algorithm: "Deeksha".to_string(),
+        miner: {
+            let mstats = state.miner_stats.read().await;
+            MinerMetrics {
+                running: miner_pid.is_some(),
+                pid: miner_pid,
+                uptime_sec: mstats.elapsed_seconds as u64,
+                hashrate: mstats.hashrate_60s,
+                shares_accepted: mstats.accepted_shares,
+                shares_rejected: mstats.rejected_shares,
+                pool_connected: miner_pid.is_some(),
+                current_algorithm: "Deeksha".to_string(),
+            }
         },
     })
 }
