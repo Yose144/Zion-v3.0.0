@@ -1,6 +1,6 @@
 // ZION Desktop Dashboard — Pure Frontend Shell
 // Všechna business logika je v React frontendu (src/App.tsx).
-// Tento Rust kód pouze: spravuje okno, system tray, a desktop notifikace.
+// Tento Rust kód pouze: spravuje okno, system tray.
 
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
@@ -8,27 +8,9 @@ use tauri::menu::{Menu, MenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
 use tauri::Manager;
 
-// ── Desktop Notification Command (native) ─────────────────
-
-#[tauri::command]
-fn show_desktop_notification(title: String, body: String) {
-    #[cfg(any(target_os = "macos", target_os = "windows", target_os = "linux"))]
-    {
-        if let Err(e) = tauri::api::notification::Notification::new(&title)
-            .body(&body)
-            .show()
-        {
-            eprintln!("Notification error: {}", e);
-        }
-    }
-}
-
-// ── Main ──────────────────────────────────────────────────
-
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
-        .invoke_handler(tauri::generate_handler![show_desktop_notification])
         .setup(|app| {
             // Tray menu
             let quit_i = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;

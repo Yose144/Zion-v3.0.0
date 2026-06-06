@@ -1,4 +1,5 @@
 use crate::AgentState;
+use crate::gpu_telemetry::types::GpuTelemetry;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tracing::{debug, error, info};
@@ -8,7 +9,7 @@ pub struct TelemetryPayload {
     pub rig_id: String,
     pub timestamp: String,
     pub system: SystemMetrics,
-    pub gpu: Vec<GpuMetrics>,
+    pub gpu: Vec<GpuTelemetry>,
     pub miner: MinerMetrics,
 }
 
@@ -19,19 +20,6 @@ pub struct SystemMetrics {
     pub memory_used_mb: u64,
     pub memory_total_mb: u64,
     pub load_avg_1m: f32,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct GpuMetrics {
-    pub index: u32,
-    pub name: String,
-    pub temperature: f32,
-    pub fan_percent: u32,
-    pub power_watts: f32,
-    pub memory_used_mb: u64,
-    pub memory_total_mb: u64,
-    pub utilization_percent: u32,
-    pub hashrate: Option<f64>, // H/s
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -56,7 +44,12 @@ pub async fn collector_loop(state: Arc<AgentState>) {
 
         match collect_telemetry(state.clone()).await {
             Ok(payload) => {
-                debug!("Telemetry: {} GPU(s), hashrate={:.2} H/s", payload.gpu.len(), payload.miner.hashrate);
+                let total_hash: f64 = payload.gpu.iter().map(|g| g.hashrate.unwrap_or(0.0)).sum();
+                let total_power: f32 = payload.gpu.iter().map(|g| g.power_watts.unwrap_or(0.0)).sum();
+                debug!(
+                    "Telemetry: {} GPU(s), hash={:.1} H/s, power={:.0} W",
+                    payload.gpu.len(), total_hash, total_power
+                );
 
                 // Odesli na fleet dashboard
                 let cfg = state.config.read().await;
@@ -79,15 +72,15 @@ async fn collect_telemetry(state: Arc<AgentState>) -> anyhow::Result<TelemetryPa
     let mut sys = sysinfo::System::new_all();
     sys.refresh_all();
 
-    let cpu_percent = sys.global_cpu_usage();
+    let cpu_percent = sys.cpus().first().map(|c| c.cpu_usage()).unwrap_or(0.0);
     let memory_used_mb = sys.used_memory() / 1024;
     let memory_total_mb = sys.total_memory() / 1024;
     let load_avg = sysinfo::System::load_average();
 
     let miner_pid = *state.miner_pid.read().await;
 
-    // GPU metrics (stub — rozsirit dle platformy)
-    let gpu = vec![]; // TODO: nvidia-smi, rocm-smi, sysfs parsing
+    // GPU metrics (AMD sysfs / NVIDIA NVML)
+    let gpu = crate::gpu_telemetry::collect_all().await;
 
     Ok(TelemetryPayload {
         rig_id: state.rig_id.clone(),
