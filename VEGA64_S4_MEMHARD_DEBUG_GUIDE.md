@@ -1,10 +1,11 @@
 # ZION v3 Miner — Vega 64 / GCN s4_memhard GPU-CPU Mismatch
 
-> **Status:** Blake3 scratchpad fixed, but GCN compiler bugs in stages 5-6 (NPU/fusion pointer casts) prevent full GPU pipeline. s4_mode (GPU s1-s4 + CPU s5-s6) gives ~15-25% accepted shares.
+> **Status:** s4_mode is now the **default** for GCN. Full GPU pipeline (stages 1-6 on GPU) remains broken on GCN due to compiler bugs.
 > **Date:** 2026-06-06
 > **Target:** SMOS Rig 518837 (ZionRig) — AMD RX Vega 64 (gfx900, GCN 5.0)
 > **Also applies to:** All AMD GCN (gfx6-9); RDNA (gfx10) uses full pipeline OK
 > **Pool:** 77.42.71.94:8444 (Edge primary)
+> **Latest stable release:** `v3.0.33-sm-fix`
 
 ---
 
@@ -44,7 +45,7 @@ The issue was previously attributed to:
 3. `volatile` local variables
 4. `__global` scratchpad alignment
 
-**Workaround deployed:** Force `gcn_s4_mode` (GPU does stages 1-4, CPU does NPU+fusion+target). This masked the real bug but capped hashrate at ~200 H/s effective.
+**Current default:** GCN devices automatically use `s4_mode` (GPU stages 1-4, CPU stages 5-6). No env var needed. Full GPU pipeline can be forced with `ZION_NO_GCN_S4_MODE=1` (not recommended).
 
 ### Actual Root Cause (2026-06-06)
 The GPU kernel had been silently switched from **Blake3** to **SHA3-512** in the scratchpad init/mix functions. The CPU consensus code never changed — it always used Blake3.
@@ -208,24 +209,31 @@ Even with the Blake3 fix, GCN cards may still have these issues:
    ```
 
 ### Why Full GPU Pipeline Fails on GCN
-Even with Blake3 fixed, GCN compiler miscompiles stages 5-6:
+Even with Blake3 fixed and extensive pointer-cast / `long->int` fixes (v3.0.32-33), the full GPU pipeline (stages 1-6 on GPU) still produces **0% accepted shares** on GCN. The compiler bugs are deeper than initially suspected:
 
 1. **Pointer casts** (`ulong *d = (ulong *)uchar_array`) — GCN generates wrong offsets/alignment
 2. **64-bit arithmetic in NPU LayerNorm** (`long sum`, `long var_sum`) — overflow handling differs from CPU
 3. **`fusion_round` pointer casts** — multiple `ulong*` casts in AES key/plaintext setup
+4. **Additional suspected issues** — `npu_mix_packed` GELU, `ekam_memory_hard_transform` block indexing, or other subtle compiler optimizations
 
-**Workaround:** s4_mode routes stages 5-6 to CPU (Rust), which handles 64-bit arithmetic and memory layouts correctly.
+**Resolution:** After multiple attempted fixes, `s4_mode` (GPU stages 1-4, CPU stages 5-6) is now the **default and only supported path** for GCN. The full GPU pipeline is not viable on GCN at this time.
+
+**Workaround:** s4_mode routes stages 5-6 to CPU (Rust), which handles 64-bit arithmetic and memory layouts correctly. Acceptance: **~10-15%** on Vega 64.
 
 ### If s4_memhard Still Fails on Vega 64
-If the fixed kernel still fails self-test on your specific Vega 64:
+If s4_mode still fails self-test on your specific Vega 64:
 
 1. Check driver version: `clinfo | grep "Driver Version"`
-2. Ensure `ZION_GCN_S4_MODE=1` is set (mandatory for GCN)
+2. Verify s4_mode is active in logs: `gpu_opencl_init ... gcn_s4_mode=true`
 3. Try conservative build flags:
    ```bash
    ZION_OCL_BUILD_OPTS="-cl-std=CL1.2 -cl-mad-enable"
    ```
-4. If still failing, the card may need a newer amdgpu-pro / ROCm driver
+4. Force full pipeline (debug only, not recommended):
+   ```bash
+   ZION_NO_GCN_S4_MODE=1
+   ```
+5. If still failing, the card may need a newer amdgpu-pro / ROCm driver
 
 ---
 
@@ -252,8 +260,9 @@ If the fixed kernel still fails self-test on your specific Vega 64:
 # Live mine
  ZION_POOL_ADDR=77.42.71.94:8444 ZION_WORKER_NAME=vega ZION_MINER_ID=rig1 ZION_LOOP_COUNT=1000000 ZION_GPU_BACKEND=opencl ./V3/target/release/zion-miner
 
-# Force s4-only (GCN fallback)
- ZION_GCN_S4_MODE=1 ZION_GPU_BACKEND=opencl ./V3/target/release/zion-miner
+# s4_mode is now default for GCN — no env var needed
+# To force full pipeline (GCN debug only, NOT recommended):
+ ZION_NO_GCN_S4_MODE=1 ZION_GPU_BACKEND=opencl ./V3/target/release/zion-miner
 
 # Check clinfo
  clinfo | grep -E "Device Name|Driver Version|Max compute units"
@@ -284,6 +293,8 @@ When deploying to SimpleMining OS rigs:
 | 2026-06-06 | `50cec770` | GCN kernel workarounds: `ulong→uint` counter, noinline, remove pointer casts | Blake3 stability on GCN |
 | 2026-06-06 | `ebf87158` | Remove pointer casts in full GPU pipeline `ekam_deeksha_mine` + `cosmic_fusion_ekam` | Testing full pipeline again |
 | 2026-06-06 | `9f1f3d9f` | **Conditional GCN/RDNA kernel compilation** | RX 5600 XT: **9.27 KH/s** (benchmark) |
+| 2026-06-06 | `9f1f3d9f` | GCN full pipeline pointer-cast + LayerNorm `long->int` fixes | Full pipeline still 0% acceptance on GCN |
+| 2026-06-06 | `9c4b0a1f` | **Revert kernel to v3.0.31; make s4_mode default for GCN** | Vega 64: ~10-15% acceptance (stable) |
 
 ---
 
