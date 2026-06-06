@@ -155,7 +155,7 @@ phase_build() {
   log "Building dashboard on Edge..."
   ssh_run "
     . /root/.cargo/env 2>/dev/null || true
-    cd ${REMOTE_ROOT}/ZION_OS/ZionOSsmos/dashboard
+    cd ${REMOTE_ROOT}/ZION_OS/dashboard/infra
     cargo build --release 2>&1
   "
 
