@@ -64,7 +64,7 @@ interface NclEntry {
 
 const TREASURY: TreasuryItem[] = [
   { label: 'Miner',      address: 'zion1w523a76830x2t5m7f3j023w265e8g5c400a4790', share: '89%', role: 'Mining rewards' },
-  { label: 'Humanitarian', address: 'zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4', share: '5%', role: 'Charity tithe' },
+  { label: 'Humanitarian', address: 'zion165a527w5d0n085t775x3w8n8q20742a6w7xr0z3', share: '5%', role: 'Charity tithe' },
   { label: 'Issobella',  address: 'zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702', share: '5%', role: 'Issobella fund' },
   { label: 'Pool Fee',   address: 'zion196m4n8x764v7a0s406j40094a8z5j8m6z7nk342', share: '1%', role: 'Pool operator' },
 ];

@@ -59,7 +59,7 @@ Stop-ByPidFile "node1"
 [Environment]::SetEnvironmentVariable('ZION_SEED_PEERS', '100.76.16.108:8333', 'Process')
 # Burn model: 89/5/5, no pool fee wallet
 [Environment]::SetEnvironmentVariable('ZION_MINER_ADDRESS', 'zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604', 'Process')
-[Environment]::SetEnvironmentVariable('ZION_HUMANITARIAN_WALLET', 'zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4', 'Process')
+[Environment]::SetEnvironmentVariable('ZION_HUMANITARIAN_WALLET', 'zion165a527w5d0n085t775x3w8n8q20742a6w7xr0z3', 'Process')
 [Environment]::SetEnvironmentVariable('ZION_ISSOBELLA_WALLET', 'zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702', 'Process')
 
 $p = Start-Process -FilePath $NodeExe -WorkingDirectory $RepoRoot -RedirectStandardOutput "$LogDir\node1.log" -RedirectStandardError "$LogDir\node1.err" -WindowStyle Hidden -PassThru
