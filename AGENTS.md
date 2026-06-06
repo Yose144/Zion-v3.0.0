@@ -77,8 +77,8 @@ Run from repository root unless noted.
 
 PowerShell equivalents for W11 development. Build first: `cargo build --release --manifest-path V3/Cargo.toml --workspace`.
 
-- Node (backup, edge-primary — uses public IP if Tailscale down):
-  - `$env:ZION_NODE_ID='local-backup-node'; $env:ZION_P2P_BIND='0.0.0.0:8333'; $env:ZION_RPC_BIND='0.0.0.0:8443'; $env:ZION_SEED_PEERS='100.76.16.108:8333'; $env:ZION_NODE_STATE_PATH='V3/data/zion-node-state.db'; $env:ZION_MINER_ADDRESS='zion1w523a76830x2t5m7f3j023w265e8g5c400a4790'; $env:ZION_HUMANITARIAN_WALLET='zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4'; $env:ZION_ISSOBELLA_WALLET='zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702'; cargo run --release --manifest-path V3/Cargo.toml -p zion-core --bin node`
+- Node (edge-primary — local dev only, connects to Edge seed):
+  - `$env:ZION_NODE_ID='local-dev-node'; $env:ZION_P2P_BIND='0.0.0.0:8333'; $env:ZION_RPC_BIND='0.0.0.0:8443'; $env:ZION_SEED_PEERS='77.42.71.94:8333'; $env:ZION_NODE_STATE_PATH='V3/data/zion-node-state.db'; $env:ZION_MINER_ADDRESS='zion1w523a76830x2t5m7f3j023w265e8g5c400a4790'; $env:ZION_HUMANITARIAN_WALLET='zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4'; $env:ZION_ISSOBELLA_WALLET='zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702'; cargo run --release --manifest-path V3/Cargo.toml -p zion-core --bin node`
 - Pool server (local-dev only):
   - `$env:ZION_POOL_BIND='0.0.0.0:8444'; $env:ZION_NODE_RPC_ADDR='127.0.0.1:8443'; cargo run --release --manifest-path V3/Cargo.toml -p zion-pool --bin server`
 - Miner (edge-primary — connects to public pool):
@@ -175,7 +175,7 @@ cargo tauri dev --manifest-path src-tauri/Cargo.toml
 # Mining Agent
 cd ZION_OS/mining-agent
 cargo build --release --features gpu-metal
-./target/release/mining-agent --pool 100.76.16.108:8444 --backend auto
+./target/release/mining-agent --pool 77.42.71.94:8444 --backend auto
 ```
 
 **Documentation:**
@@ -239,45 +239,45 @@ In practice: **node is source of chain truth**, pool is coordination layer, mine
 
 ### Network Topology
 
-Current live topology is **Edge-as-Primary (Hetzner) + Core-as-Backup (Local PC) over Tailscale VPN**. Edge runs the canonical 24/7 node and pool. Core (local) acts as a backup node and GPU miner host. Do not reference old multi-server topologies (Praha, SG, Helsinki, US) — those are deprecated.
+Current live topology is **Edge-only (Hetzner VPS)**. The Core (local Windows PC) is currently unreachable due to Tailscale VPN failure and ISP issues. All canonical services run on Edge. Do not reference old multi-server topologies (Praha, SG, Helsinki, US, or Core-as-Backup) — those are deprecated.
 
 ```
-Edge (Hetzner VPS)          Core (Windows 11)
-100.76.16.108               100.86.102.5
-    | Tailscale VPN               |
-Node + Pool (PRIMARY)    Node (backup sync)
-Public P2P: 8333         GPU Miner -> Edge pool
+Edge (Hetzner VPS)
+77.42.71.94
+    |
+Node + Pool (PRIMARY)
+DAO + WARP + Website
+Public P2P: 8333/8334
 Public Pool: 8444
 ```
 
-| Role | Host | VPN IP | Public IP | Ports |
-|------|------|--------|-----------|-------|
-| Edge | Hetzner VPS | 100.76.16.108 | 77.42.71.94 | P2P: 8333/8334, RPC: 8443/8446, Pool: 8444, Metrics: 8455/9090/9100/9102/9115/9116 |
-| Core | Local PC | 100.86.102.5 | (dynamic) | P2P: 8333, RPC: 8443, Metrics: 9115 |
+| Role | Host | Public IP | Ports |
+|------|------|-----------|-------|
+| Edge | Hetzner VPS | 77.42.71.94 | P2P: 8333/8334, RPC: 8443/8446, Pool: 8444, DAO: 8450, WARP: 8453, Web: 3000, Metrics: 8455/9090/9100/9102/9115/9116 |
 
 ### Canonical Ports & Services
 
 | Service | Port | Protocol | Notes |
 |---------|------|----------|-------|
-| Node P2P | 8333 | TCP | Peer-to-peer sync (both Edge + Local) |
-| Node 2 P2P | 8334 | TCP | Edge follower node only |
-| Node RPC | 8443 | TCP | JSON-RPC 2.0, wallet queries |
-| Node 1 WebSocket | 8445 | TCP | Node event stream (Edge public, Local 127.0.0.1) |
+| Node P2P | 8333 | TCP | Peer-to-peer sync (Edge primary) |
+| Node 2 P2P | 8334 | TCP | Edge follower node |
+| Node RPC | 8443 | TCP | JSON-RPC 2.0, wallet queries (Edge) |
+| Node 1 WebSocket | 8445 | TCP | Node event stream (Edge) |
 | Node 2 RPC | 8446 | TCP | Edge follower node JSON-RPC |
 | Node 2 WebSocket | 8447 | TCP | Edge follower node event stream |
 | Pool Stratum | 8444 | TCP | Miner connections (Edge public-facing) |
 | DAO API | 8450 | HTTP | Edge DAO daemon Axum API |
-| Atomic Swap API | 8452 | HTTP | Edge HTLC swap daemon API |
+| Atomic Swap API | 8452 | HTTP | Edge HTLC swap daemon API (optional) |
 | WARP Relay API | 8453 | HTTP | Edge cross-chain relay Axum API |
-| Pool metrics | 8455 | HTTP | Prometheus metrics (pool, Edge public) |
-| Node metrics | 9115 | HTTP | Prometheus metrics (node, local) |
+| Pool metrics | 8455 | HTTP | Prometheus metrics (pool, Edge) |
+| Node metrics | 9115 | HTTP | Prometheus metrics (Edge node) |
 | Node 2 metrics | 9116 | HTTP | Prometheus metrics (Edge follower node) |
-| Bridge metrics | 9102 | HTTP | Prometheus metrics (Edge bridge) |
+| Bridge metrics | 9102 | HTTP | Prometheus metrics (Edge bridge, optional) |
 | Prometheus | 9090 | HTTP | Edge monitoring stack (Docker host network) |
 | Grafana | 3100 | HTTP | Edge monitoring dashboards (Docker host network) |
 | Node Exporter | 9100 | HTTP | Edge host system metrics (Docker host network) |
-| Dashboard | 8766 | HTTP | Python stdlib dashboard (Local only, 127.0.0.1) |
-| Website | 3000 | HTTP | Next.js dev server (Edge) |
+| Dashboard | 8766 | HTTP | Python stdlib dashboard (currently offline) |
+| Website | 3000 | HTTP | Next.js website (PM2, Edge) |
 | Pool API Proxy | 8080 | HTTP | Edge pool REST proxy |
 | **Hiranyagarbha API** | **8001** | HTTP | Orchestrator · RAG · Consciousness · NCL · Axum (Rust) |
 | **NCL (via Hiranyagarbha)** | **8001** | HTTP | Neural Compute Layer at `/ncl/*` (jobs, workers, leaderboard) |
@@ -289,35 +289,38 @@ Public Pool: 8444
 |---------|-----|
 | **Edge Pool (public mining)** | `77.42.71.94:8444` |
 | **Edge RPC (public)** | `http://77.42.71.94:8443/jsonrpc` |
-| **Edge RPC (VPN fallback)** | `http://100.76.16.108:8443/jsonrpc` |
-| **Local RPC (default)** | `http://127.0.0.1:8443/jsonrpc` |
-| **Desktop agent default RPC** | `http://127.0.0.1:8443/jsonrpc` (auto-fallback to Edge VPN) |
+| **DAO API** | `http://77.42.71.94:8450` |
+| **WARP API** | `http://77.42.71.94:8453` |
 | **Website production** | `https://zionterranova.com` |
-| **Dashboard** | `http://127.0.0.1:8766` |
-| **Edge Grafana** | `http://100.76.16.108:3100` |
-| **Edge Prometheus** | `http://100.76.16.108:9090` |
+| **Dashboard** | (offline — Core unreachable) |
+| **Edge Grafana** | `http://77.42.71.94:3100` |
+| **Edge Prometheus** | `http://77.42.71.94:9090` |
 
 ### SSH Access
 
-- **Edge server SSH key:** `ssh-key-zion-edge` (private), `ssh-key-zion-edge.pub` (public) — kept in root for operational access.
-- **Never commit private keys.** The existing keys in root are grandfathered; rotate if compromised.
-- **SSH endpoint:** Use Tailscale SSH (`100.76.16.108`) or direct Hetzner console for Edge server management.
+- **Edge server SSH key:** `ssh-key-zion-edge` (private), `ssh-key-zion-edge.pub` (public) — kept in root for operational access. Copy also exists at `~/.ssh/ssh-key-zion-edge` (non-empty).
+- **Never commit private keys.**
+- **SSH endpoint:** Direct public IP only — `ssh -i ssh-key-zion-edge root@77.42.71.94`. Tailscale is currently down.
 
 ### Edge Server Deployment (Autonomous 24/7)
 
 The Edge server runs as the canonical primary node + pool. It must survive reboots without local PC intervention.
 
-**Systemd services** (installed via `scripts/install-edge-services.sh`):
-- `zion-node.service` — Core node (P2P:8333, RPC:8443)
-- `zion-pool.service` — Mining pool (Stratum:8444)
-- `zion-dao.service` — DAO daemon (API:8450)
-- `zion-bridge.service` — Bridge relay (API:8453)
-- `zion-atomic-swap.service` — HTLC swap daemon (API:8452)
-- `zion-warp.service` — Cross-chain relay (API:8453)
-- `hiran-inference.service` — LLM inference (API:8002)
-- `hiranyagarbha.service` — Orchestrator (API:8001)
+**Systemd services** (installed via `edge-deploy/deploy-edge.sh`):
+- `zion-edge-node1.service` — Core node (P2P:8333, RPC:8443)
+- `zion-edge-node2.service` — Follower node (P2P:8334, RPC:8446)
+- `zion-edge-pool.service` — Mining pool (Stratum:8444)
+- `zion-edge-dao.service` — DAO daemon (API:8450)
+- `zion-edge-warp.service` — Cross-chain relay (API:8453)
+- `zion-edge-miner.service` — CPU miner (connects to localhost:8444)
+- `zion-edge-watchdog.service` — Health monitor (2-minute timer)
+- `hiran-inference.service` — LLM inference (API:8002, optional)
+- `hiranyagarbha.service` — Orchestrator (API:8001, optional)
 
-**Docker stack** (Edge-only):
+**PM2 process:**
+- `zion-website` — Next.js website on port 3000
+
+**Docker stack** (Edge-only, optional):
 - Prometheus (9090), Grafana (3100), Node Exporter (9100)
 - Alertmanager (configurable Discord/Slack/Email webhooks)
 

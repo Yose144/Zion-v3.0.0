@@ -146,6 +146,12 @@ pub enum WalletCmd {
         /// Optional memo / note
         #[arg(long)]
         memo: Option<String>,
+        /// Wallet file path (source of signing key).
+        #[arg(short, long, default_value = "zion-wallet.json")]
+        wallet: PathBuf,
+        /// Environment variable holding the wallet decryption password.
+        #[arg(long)]
+        password_env: Option<String>,
     },
     /// Show config wallet address + tithe distribution
     Tithe,
@@ -358,7 +364,13 @@ pub async fn run(cfg: &Config, cmd: WalletCmd) -> Result<()> {
             println!();
             Ok(())
         }
-        WalletCmd::Send { to, amount, memo } => {
+        WalletCmd::Send {
+            to,
+            amount,
+            memo,
+            wallet,
+            password_env,
+        } => {
             if cfg.miner.wallet.is_empty() {
                 ui::print_warn("No wallet configured. Set miner.wallet in config first.");
                 return Ok(());
@@ -371,25 +383,130 @@ pub async fn run(cfg: &Config, cmd: WalletCmd) -> Result<()> {
                 ui::print_row("Memo", m);
             }
 
-            let mut params = serde_json::json!({
-                "from": cfg.miner.wallet,
-                "to": to,
-                "amount": amount,
-            });
-            if let Some(m) = memo {
-                params["memo"] = serde_json::Value::String(m);
-            }
+            // ── Load wallet & signing key ────────────────────────────────
+            let wallet_file = read_wallet_file(&wallet)?;
+            let secrets = resolve_wallet_secrets(&wallet_file, password_env.as_deref())?;
+            let sk_bytes = zion_core::crypto::from_hex(&secrets.secret_key_hex)
+                .ok_or_else(|| anyhow!("invalid secret key hex in wallet"))?;
+            let sk_bytes: [u8; 32] = sk_bytes
+                .try_into()
+                .map_err(|_| anyhow!("secret key must be 32 bytes"))?;
+            let signing_key = SigningKey::from_bytes(&sk_bytes);
 
-            let result = crate::rpc::node_rpc::call(
+            // Convert ZION → flowers
+            let amount_flowers = (amount * 1_000_000.0) as u64;
+            let fee = zion_core::fee::MIN_TX_FEE;
+
+            // ── Check UTXOs ────────────────────────────────────────────────
+            let utxos_resp = crate::rpc::node_rpc::call(
                 &cfg.node.rpc_host,
                 cfg.node.rpc_port,
-                "submitTransaction",
-                params,
+                "getUtxos",
+                serde_json::json!({ "address": &cfg.miner.wallet }),
             )
             .await;
+
+            let mut spendable_utxos: Vec<zion_core::wallet::SpendableUtxo> = Vec::new();
+            if let Ok(ref v) = utxos_resp {
+                if let Some(utxo_array) = v.get("result").and_then(|r| r.get("utxos")).and_then(|u| u.as_array()) {
+                    for item in utxo_array {
+                        let tx_hash_hex = item.get("tx_hash").and_then(|v| v.as_str()).unwrap_or("");
+                        let output_index = item.get("output_index").and_then(|v| v.as_u64()).unwrap_or(0) as u32;
+                        let amt = item.get("amount").and_then(|v| v.as_u64()).unwrap_or(0);
+                        if let Some(hash_bytes) = zion_core::crypto::from_hex(tx_hash_hex) {
+                            if hash_bytes.len() == 32 {
+                                let mut tx_hash = [0u8; 32];
+                                tx_hash.copy_from_slice(&hash_bytes);
+                                spendable_utxos.push(zion_core::wallet::SpendableUtxo {
+                                    tx_hash,
+                                    output_index,
+                                    amount: amt,
+                                    address: cfg.miner.wallet.clone(),
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+
+            let result = if !spendable_utxos.is_empty() {
+                // ── UTXO send ──────────────────────────────────────────────
+                let params = zion_core::wallet::SendParams {
+                    to_address: to.clone(),
+                    amount: amount_flowers,
+                    fee,
+                };
+                let built = zion_core::wallet::build_and_sign(
+                    &signing_key,
+                    &cfg.miner.wallet,
+                    &params,
+                    &spendable_utxos,
+                    0, // chain_tip_height not needed for fee here
+                )
+                .map_err(|e| anyhow!("{e}"))?;
+                crate::rpc::node_rpc::call(
+                    &cfg.node.rpc_host,
+                    cfg.node.rpc_port,
+                    "submitTransaction",
+                    serde_json::json!({ "transaction": built.transaction }),
+                )
+                .await
+            } else {
+                // ── Account-model fallback ───────────────────────────────
+                ui::print_info("No spendable UTXOs; falling back to account-model send.");
+                let balance_resp = crate::rpc::node_rpc::call(
+                    &cfg.node.rpc_host,
+                    cfg.node.rpc_port,
+                    "getBalance",
+                    serde_json::json!({ "address": &cfg.miner.wallet }),
+                )
+                .await;
+                let total_balance = if let Ok(ref v) = balance_resp {
+                    v.get("result")
+                        .and_then(|r| r.get("balance_flowers"))
+                        .and_then(|b| b.as_str())
+                        .and_then(|s| s.parse::<u128>().ok())
+                        .unwrap_or(0)
+                } else {
+                    0
+                };
+                let total_needed = (amount_flowers as u128).saturating_add(fee as u128);
+                if total_balance < total_needed {
+                    return Err(anyhow!(
+                        "insufficient funds: balance {} flowers, need {} flowers",
+                        total_balance,
+                        total_needed
+                    ));
+                }
+                let nonce = std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap_or_default()
+                    .as_millis() as u64;
+                let tx = zion_core::wallet::build_and_sign_account(
+                    &signing_key,
+                    &cfg.miner.wallet,
+                    &to,
+                    amount_flowers as u128,
+                    fee,
+                    nonce,
+                )
+                .map_err(|e| anyhow!("{e}"))?;
+                crate::rpc::node_rpc::call(
+                    &cfg.node.rpc_host,
+                    cfg.node.rpc_port,
+                    "submitAccountTransaction",
+                    serde_json::json!({ "transaction": tx }),
+                )
+                .await
+            };
+
             match result {
                 Ok(v) => {
-                    let txid = v["txid"].as_str().unwrap_or("?");
+                    let txid = v.get("result")
+                        .and_then(|r| r.get("tx_id"))
+                        .and_then(|t| t.as_str())
+                        .or_else(|| v.get("txid").and_then(|t| t.as_str()))
+                        .unwrap_or("?");
                     ui::print_ok(&format!("Submitted! txid: {}", txid));
                 }
                 Err(e) => ui::print_err(&format!("TX failed: {}", e)),
