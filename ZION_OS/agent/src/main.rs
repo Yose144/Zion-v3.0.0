@@ -13,6 +13,7 @@ use tracing::{info, warn};
 mod api;
 mod command_queue;
 mod config;
+mod gpu_telemetry;
 mod miner_ctl;
 mod telemetry;
 mod updater;
@@ -87,6 +88,7 @@ async fn main() -> anyhow::Result<()> {
         .route("/api/miner/stop", post(api::stop_miner_handler))
         .route("/api/miner/restart", post(api::restart_miner_handler))
         .route("/api/telemetry", get(api::telemetry_handler))
+        .route("/api/gpu", get(api::gpu_handler))
         .route("/api/config", get(api::get_config_handler).post(api::post_config_handler))
         .route("/api/commands/pending", get(api::pending_commands_handler))
         .route("/api/commands/:id/ack", post(api::ack_command_handler))

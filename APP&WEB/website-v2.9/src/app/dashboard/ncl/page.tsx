@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { usePolling } from "@/hooks/usePolling";
+import { Brain, Activity, Layers, AlertTriangle } from "lucide-react";
 
 interface NCLStatus {
   enabled: boolean;
@@ -56,6 +57,14 @@ const CONSCIOUSNESS_COLORS: Record<number, string> = {
   6: "text-amber-300",
 };
 
+function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div className={`rounded-3xl border border-white/10 bg-black/60 backdrop-blur-xl p-6 shadow-[0_30px_120px_rgba(0,0,0,0.45)] ${className}`}>
+      {children}
+    </div>
+  );
+}
+
 export default function NCLDashboard() {
   const [status, setStatus] = useState<NCLStatus | null>(null);
   const [workers, setWorkers] = useState<NCLWorker[]>([]);
@@ -63,10 +72,10 @@ export default function NCLDashboard() {
   const [loading, setLoading] = useState(true);
   const [selectedWorker, setSelectedWorker] = useState<string | null>(null);
   const [allocation, setAllocation] = useState(30);
+  const [source, setSource] = useState<'live' | 'fallback'>('live');
 
   usePolling(async () => {
     try {
-      // Fetch overview stats (tries live Hiranyagarbha backend, falls back to JSON)
       const statusRes = await fetch('/api/ncl/status', { cache: 'no-store' });
       if (statusRes.ok) {
         const data = await statusRes.json();
@@ -77,13 +86,12 @@ export default function NCLDashboard() {
             tasks: data.tasks ?? { pending: 0, active: 0, completed: 0 },
             rewards: data.rewards ?? { total_paid: 0, avg_per_task: 0 },
           });
-          // Use embedded lists as initial fallback
           if (Array.isArray(data.worker_list)) setWorkers(data.worker_list);
           if (Array.isArray(data.leaderboard)) setLeaderboard(data.leaderboard);
+          setSource(data.source === 'fallback' ? 'fallback' : 'live');
         }
       }
 
-      // Fetch live workers from dedicated proxy route
       const workersRes = await fetch('/api/ncl/workers', { cache: 'no-store' });
       if (workersRes.ok) {
         const wd = await workersRes.json();
@@ -91,9 +99,9 @@ export default function NCLDashboard() {
           const list = Array.isArray(wd) ? wd : Array.isArray(wd.workers) ? wd.workers : null;
           if (list) setWorkers(list);
         }
+        if (wd.source === 'fallback') setSource('fallback');
       }
 
-      // Fetch live leaderboard from dedicated proxy route
       const lbRes = await fetch('/api/ncl/leaderboard', { cache: 'no-store' });
       if (lbRes.ok) {
         const lb = await lbRes.json();
@@ -101,6 +109,7 @@ export default function NCLDashboard() {
           const list = Array.isArray(lb) ? lb : Array.isArray(lb.leaderboard) ? lb.leaderboard : null;
           if (list) setLeaderboard(list);
         }
+        if (lb.source === 'fallback') setSource('fallback');
       }
 
       setLoading(false);
@@ -111,11 +120,9 @@ export default function NCLDashboard() {
   }, 10000);
 
   const handleAllocationChange = async (workerId: string, newAllocation: number) => {
-    // In production, POST to API
     console.log(`Setting ${workerId} allocation to ${newAllocation}%`);
-    // Update local state
-    setWorkers(workers.map(w => 
-      w.worker_id === workerId 
+    setWorkers(workers.map(w =>
+      w.worker_id === workerId
         ? { ...w, npu_allocation: newAllocation / 100 }
         : w
     ));
@@ -123,201 +130,232 @@ export default function NCLDashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center">
-        <div className="text-yellow-400 text-2xl animate-pulse">Loading NCL Dashboard...</div>
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="text-zion-gold text-xl animate-pulse flex items-center gap-3">
+          <Brain className="h-6 w-6" /> Loading NCL Dashboard...
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="text-white p-6">
+    <div className="text-white p-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-yellow-400 mb-2">
-          🧠 NCL Dashboard
-        </h1>
-        <p className="text-gray-400">
-          Neural Compute Layer - AI Bonus Management (5th Revenue Stream)
-        </p>
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-10 h-10 rounded-xl bg-zion-gold/15 flex items-center justify-center">
+            <Brain className="h-5 w-5 text-zion-gold" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold text-white">NCL Dashboard</h1>
+            <p className="text-sm text-gray-400">
+              Neural Compute Layer — AI Bonus Management (5th Revenue Stream)
+            </p>
+          </div>
+        </div>
+        {source === 'fallback' && (
+          <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-4 py-1.5 text-xs text-amber-400">
+            <AlertTriangle className="h-3 w-3" /> Hiranyagarbha offline — showing cached/empty data
+          </div>
+        )}
       </div>
 
       {/* Status Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {/* Workers Card */}
-        <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
-          <div className="text-gray-400 text-sm mb-2">Active Workers</div>
-          <div className="text-4xl font-bold text-green-400">
-            {status?.workers.active}
-            <span className="text-lg text-gray-500">/{status?.workers.total}</span>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <Card>
+          <div className="flex items-center gap-2 mb-3">
+            <Activity size={14} className="text-emerald-400" />
+            <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">Active Workers</span>
           </div>
-          <div className="text-gray-500 text-sm mt-2">
+          <div className="text-3xl font-bold font-mono text-white">
+            {status?.workers.active ?? 0}
+            <span className="text-lg text-gray-500 font-normal">/{status?.workers.total ?? 0}</span>
+          </div>
+          <div className="text-xs text-gray-500 mt-2">
             {((status?.workers.active || 0) / (status?.workers.total || 1) * 100).toFixed(0)}% online
           </div>
-        </div>
+        </Card>
 
-        {/* Tasks Card */}
-        <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
-          <div className="text-gray-400 text-sm mb-2">Tasks Completed</div>
-          <div className="text-4xl font-bold text-blue-400">
-            {status?.tasks.completed.toLocaleString()}
+        <Card>
+          <div className="flex items-center gap-2 mb-3">
+            <Layers size={14} className="text-zion-cyan" />
+            <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">Tasks Completed</span>
           </div>
-          <div className="text-gray-500 text-sm mt-2">
-            {status?.tasks.pending} pending • {status?.tasks.active} active
+          <div className="text-3xl font-bold font-mono text-white">
+            {(status?.tasks.completed ?? 0).toLocaleString()}
           </div>
-        </div>
+          <div className="text-xs text-gray-500 mt-2">
+            {status?.tasks.pending ?? 0} pending &bull; {status?.tasks.active ?? 0} active
+          </div>
+        </Card>
 
-        {/* Rewards Card */}
-        <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
-          <div className="text-gray-400 text-sm mb-2">Total NCL Rewards</div>
-          <div className="text-4xl font-bold text-yellow-400">
-            {status?.rewards.total_paid.toFixed(2)} <span className="text-lg">ZION</span>
+        <Card>
+          <div className="flex items-center gap-2 mb-3">
+            <Brain size={14} className="text-zion-gold" />
+            <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">Total NCL Rewards</span>
           </div>
-          <div className="text-gray-500 text-sm mt-2">
+          <div className="text-3xl font-bold font-mono text-zion-gold">
+            {(status?.rewards.total_paid ?? 0).toFixed(2)} <span className="text-lg text-gray-500 font-normal">ZION</span>
+          </div>
+          <div className="text-xs text-gray-500 mt-2">
             Avg: {(status?.rewards.avg_per_task || 0).toFixed(4)} ZION/task
           </div>
-        </div>
+        </Card>
 
-        {/* Revenue Stream Card */}
-        <div className="bg-linear-to-br from-purple-900/50 to-blue-900/50 rounded-xl p-6 border border-purple-500/30">
-          <div className="text-purple-300 text-sm mb-2">Revenue Stream #5</div>
-          <div className="text-3xl font-bold text-white">NCL AI Bonus</div>
-          <div className="text-purple-300 text-sm mt-2">
+        <Card className="relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-zion-gold/5 rounded-full blur-3xl pointer-events-none" />
+          <div className="text-xs text-zion-cyan font-medium uppercase tracking-wider mb-2">Revenue Stream #5</div>
+          <div className="text-2xl font-bold text-white">NCL AI Bonus</div>
+          <div className="text-sm text-zion-cyan mt-2">
             ~5% of total miner revenue
           </div>
-        </div>
+        </Card>
       </div>
 
       {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Workers List */}
-        <div className="lg:col-span-2 bg-gray-900 rounded-xl p-6 border border-gray-800">
-          <h2 className="text-xl font-bold text-white mb-4">🔧 Your Workers</h2>
-          
-          {workers.length === 0 ? (
-            <div className="text-gray-500 text-center py-8">
-              No NCL workers registered. Connect a miner to get started.
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {workers.map((worker) => (
-                <div 
-                  key={worker.worker_id}
-                  className="bg-gray-800 rounded-lg p-4 border border-gray-700"
-                >
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <div className="font-mono text-sm text-gray-300">
-                        {worker.worker_id}
-                      </div>
-                      <div className={`text-sm ${CONSCIOUSNESS_COLORS[worker.consciousness_level]}`}>
-                        ✨ {CONSCIOUSNESS_NAMES[worker.consciousness_level]} ({worker.consciousness_multiplier}x)
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-lg font-bold text-yellow-400">
-                        {worker.total_earnings.toFixed(4)} ZION
-                      </div>
-                      <div className="text-gray-500 text-sm">
-                        {worker.tasks_completed} tasks
-                      </div>
-                    </div>
-                  </div>
+        <div className="lg:col-span-2 space-y-4">
+          <Card>
+            <h2 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+              <Layers size={14} className="text-zion-cyan" /> Your Workers
+            </h2>
 
-                  {/* NPU Allocation Slider */}
-                  <div className="mt-4">
-                    <div className="flex justify-between text-sm text-gray-400 mb-2">
-                      <span>NPU Allocation</span>
-                      <span>{(worker.npu_allocation * 100).toFixed(0)}% AI / {((1 - worker.npu_allocation) * 100).toFixed(0)}% Mining</span>
+            {workers.length === 0 ? (
+              <div className="text-gray-500 text-center py-8 text-sm">
+                No NCL workers registered. Connect a miner to get started.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {workers.map((worker) => (
+                  <div
+                    key={worker.worker_id}
+                    className="rounded-2xl border border-white/10 bg-white/5 p-4"
+                  >
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <div className="font-mono text-sm text-gray-300">
+                          {worker.worker_id}
+                        </div>
+                        <div className={`text-sm ${CONSCIOUSNESS_COLORS[worker.consciousness_level]}`}>
+                          {CONSCIOUSNESS_NAMES[worker.consciousness_level]} ({worker.consciousness_multiplier}x)
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-lg font-bold font-mono text-zion-gold">
+                          {worker.total_earnings.toFixed(4)} ZION
+                        </div>
+                        <div className="text-gray-500 text-sm">
+                          {worker.tasks_completed} tasks
+                        </div>
+                      </div>
                     </div>
-                    <input
-                      type="range"
-                      min="0"
-                      max="50"
-                      value={worker.npu_allocation * 100}
-                      onChange={(e) => handleAllocationChange(worker.worker_id, parseInt(e.target.value))}
-                      className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-yellow-400"
-                    />
-                    <div className="flex justify-between text-xs text-gray-500 mt-1">
-                      <span>0% (Mining only)</span>
-                      <span>50% (Max AI)</span>
+
+                    {/* NPU Allocation Slider */}
+                    <div className="mt-4">
+                      <div className="flex justify-between text-sm text-gray-400 mb-2">
+                        <span>NPU Allocation</span>
+                        <span>{(worker.npu_allocation * 100).toFixed(0)}% AI / {((1 - worker.npu_allocation) * 100).toFixed(0)}% Mining</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max="50"
+                        value={worker.npu_allocation * 100}
+                        onChange={(e) => handleAllocationChange(worker.worker_id, parseInt(e.target.value))}
+                        className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-zion-gold"
+                      />
+                      <div className="flex justify-between text-xs text-gray-500 mt-1">
+                        <span>0% (Mining only)</span>
+                        <span>50% (Max AI)</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
+          </Card>
         </div>
 
         {/* Leaderboard */}
-        <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
-          <h2 className="text-xl font-bold text-white mb-4">🏆 NCL Leaderboard</h2>
-          
-          <div className="space-y-3">
-            {leaderboard.map((entry) => (
-              <div 
-                key={entry.rank}
-                className={`flex items-center justify-between p-3 rounded-lg ${
-                  entry.rank <= 3 ? 'bg-yellow-900/20 border border-yellow-500/30' : 'bg-gray-800'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`text-2xl font-bold ${
-                    entry.rank === 1 ? 'text-yellow-400' :
-                    entry.rank === 2 ? 'text-gray-400' :
-                    entry.rank === 3 ? 'text-amber-600' :
-                    'text-gray-600'
-                  }`}>
-                    #{entry.rank}
+        <Card>
+          <h2 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+            <Brain size={14} className="text-zion-gold" /> NCL Leaderboard
+          </h2>
+
+          <div className="space-y-2">
+            {leaderboard.length === 0 ? (
+              <div className="text-gray-500 text-center py-8 text-sm">No leaderboard data.</div>
+            ) : (
+              leaderboard.map((entry) => (
+                <div
+                  key={entry.rank}
+                  className={`flex items-center justify-between p-3 rounded-xl ${
+                    entry.rank <= 3 ? 'bg-zion-gold/10 border border-zion-gold/30' : 'bg-white/5'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`text-lg font-bold font-mono ${
+                      entry.rank === 1 ? 'text-zion-gold' :
+                      entry.rank === 2 ? 'text-gray-300' :
+                      entry.rank === 3 ? 'text-amber-600' :
+                      'text-gray-600'
+                    }`}>
+                      #{entry.rank}
+                    </div>
+                    <div>
+                      <div className="font-mono text-sm text-gray-300">
+                        {entry.miner_address}
+                      </div>
+                      <div className={`text-xs ${CONSCIOUSNESS_COLORS[entry.consciousness_level]}`}>
+                        {CONSCIOUSNESS_NAMES[entry.consciousness_level]}
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <div className="font-mono text-sm text-gray-300">
-                      {entry.miner_address}
+                  <div className="text-right">
+                    <div className="font-bold font-mono text-zion-gold">
+                      {entry.total_earnings.toFixed(2)}
                     </div>
-                    <div className={`text-xs ${CONSCIOUSNESS_COLORS[entry.consciousness_level]}`}>
-                      {CONSCIOUSNESS_NAMES[entry.consciousness_level]}
-                    </div>
+                    <div className="text-gray-500 text-xs">ZION</div>
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="font-bold text-yellow-400">
-                    {entry.total_earnings.toFixed(2)}
-                  </div>
-                  <div className="text-gray-500 text-xs">ZION</div>
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
-        </div>
+        </Card>
       </div>
 
       {/* Revenue Streams Overview */}
-      <div className="mt-8 bg-linear-to-r from-gray-900 to-gray-800 rounded-xl p-6 border border-gray-700">
-        <h2 className="text-xl font-bold text-white mb-4">📊 CH v3 Revenue Streams</h2>
-        
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      <Card className="mt-4 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-40 h-40 bg-zion-gold/5 rounded-full blur-3xl pointer-events-none" />
+        <h2 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+          <Activity size={14} className="text-zion-cyan" /> CH v3 Revenue Streams
+        </h2>
+
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
           {[
-            { name: "ZION", desc: "Cosmic Fusion", percent: 50, color: "yellow" },
-            { name: "ETC", desc: "Keccak merged", percent: 20, color: "green" },
-            { name: "NXS", desc: "SHA3 merged", percent: 5, color: "blue" },
-            { name: "Dynamic", desc: "ERG/RVN/KAS", percent: 20, color: "purple" },
-            { name: "NCL", desc: "AI Bonus", percent: 5, color: "pink", highlight: true },
+            { name: "ZION", desc: "Cosmic Fusion", percent: 50, color: "zion-gold" },
+            { name: "ETC", desc: "Keccak merged", percent: 20, color: "emerald-400" },
+            { name: "NXS", desc: "SHA3 merged", percent: 5, color: "zion-cyan" },
+            { name: "Dynamic", desc: "ERG/RVN/KAS", percent: 20, color: "purple-400" },
+            { name: "NCL", desc: "AI Bonus", percent: 5, color: "pink-400", highlight: true },
           ].map((stream, i) => (
-            <div 
+            <div
               key={i}
-              className={`p-4 rounded-lg ${
-                stream.highlight 
-                  ? 'bg-pink-900/30 border-2 border-pink-500/50' 
-                  : 'bg-gray-800 border border-gray-700'
+              className={`p-4 rounded-2xl ${
+                stream.highlight
+                  ? 'bg-zion-gold/10 border border-zion-gold/30'
+                  : 'bg-white/5 border border-white/10'
               }`}
             >
-              <div className={`text-2xl font-bold text-${stream.color}-400`}>
+              <div className={`text-xl font-bold text-${stream.color}`}>
                 {stream.name}
               </div>
               <div className="text-gray-400 text-sm">{stream.desc}</div>
               <div className="mt-2">
-                <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
-                  <div 
-                    className={`h-full bg-${stream.color}-400 rounded-full`}
+                <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full bg-${stream.color} rounded-full`}
                     style={{ width: `${stream.percent}%` }}
                   />
                 </div>
@@ -326,30 +364,32 @@ export default function NCLDashboard() {
             </div>
           ))}
         </div>
-      </div>
+      </Card>
 
       {/* Setup Instructions */}
-      <div className="mt-8 bg-gray-900 rounded-xl p-6 border border-gray-800">
-        <h2 className="text-xl font-bold text-white mb-4">🚀 Enable NCL on Your Miner</h2>
-        
+      <Card className="mt-4">
+        <h2 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+          <Brain size={14} className="text-zion-gold" /> Enable NCL on Your Miner
+        </h2>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <h3 className="font-bold text-yellow-400 mb-2">Option 1: Miner Flag</h3>
-            <pre className="bg-black p-4 rounded-lg text-sm overflow-x-auto">
-              <code className="text-green-400">
+            <h3 className="text-xs text-zion-gold font-medium uppercase tracking-wider mb-2">Option 1: Miner Flag</h3>
+            <pre className="bg-black/60 border border-white/10 rounded-xl p-4 text-sm overflow-x-auto">
+              <code className="text-emerald-400">
 {`./zion_miner \
   --pool 77.42.71.94:8444 \
-  --wallet ZION_YOUR_ADDRESS \\
-  --ncl-enabled \\
+  --wallet ZION_YOUR_ADDRESS \
+  --ncl-enabled \
   --ncl-allocation 30`}
               </code>
             </pre>
           </div>
-          
+
           <div>
-            <h3 className="font-bold text-yellow-400 mb-2">Option 2: Config File</h3>
-            <pre className="bg-black p-4 rounded-lg text-sm overflow-x-auto">
-              <code className="text-green-400">
+            <h3 className="text-xs text-zion-cyan font-medium uppercase tracking-wider mb-2">Option 2: Config File</h3>
+            <pre className="bg-black/60 border border-white/10 rounded-xl p-4 text-sm overflow-x-auto">
+              <code className="text-emerald-400">
 {`# miner_config.json
 {
   "ncl": {
@@ -362,12 +402,12 @@ export default function NCLDashboard() {
             </pre>
           </div>
         </div>
-        
+
         <div className="mt-4 text-gray-400 text-sm">
-          💡 <strong>Tip:</strong> Higher consciousness levels earn more NCL rewards. 
+          <span className="text-zion-gold">Tip:</span> Higher consciousness levels earn more NCL rewards.
           Level up by consistent mining and community participation!
         </div>
-      </div>
+      </Card>
     </div>
   );
 }
