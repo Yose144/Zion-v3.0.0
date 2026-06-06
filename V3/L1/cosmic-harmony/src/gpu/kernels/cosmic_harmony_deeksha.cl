@@ -548,6 +548,12 @@ void memory_hard_transform(const uchar input[64], volatile __global uchar *pad,
     sequential_passes(pad);
     // barrier(CLK_GLOBAL_MEM_FENCE);  // each thread has its own pad — no sync needed
     random_read_mix_sha3(input, pad, output);
+
+    if (get_global_id(0) == 0) {
+        printf("mht_out ");
+        for (int i = 0; i < 8; i++) printf("%02x", (uint)output[i]);
+        printf("\n");
+    }
 }
 
 /* ========================================================================== */
