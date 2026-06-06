@@ -329,9 +329,13 @@ void init_scratchpad(const uchar seed[64], volatile __global uchar *pad)
         sha3_512(input, 72, out);
 
         uint off = blk * BLOCK_SIZE;
-        for (int i = 0; i < BLOCK_SIZE; i++) {
-            pad[off + i] = out[i];
-            state[i]     = out[i];
+        volatile __global ulong *dst = (volatile __global ulong *)(pad + off);
+        ulong *src = (ulong *)out;
+        ulong *st64 = (ulong *)state;
+        #pragma unroll 8
+        for (int i = 0; i < 8; i++) {
+            dst[i] = src[i];
+            st64[i] = src[i];
         }
     }
 }
@@ -355,18 +359,18 @@ void mix_block(volatile __global uchar *pad, uint index, ulong pass, int forward
     uint prev_off = prev_index * BLOCK_SIZE;
 
     /* Derive random block index from current block's first 8 bytes */
-    ulong idx_val = 0;
-    for (int b = 0; b < 8; b++)
-        idx_val |= (ulong)pad[cur_off + b] << (b * 8);
+    volatile __global ulong *pad64 = (volatile __global ulong *)pad;
+    ulong idx_val = pad64[cur_off >> 3];
     uint rand_index = (uint)((idx_val ^ pass ^ (ulong)index) % BLOCK_COUNT);
     uint rand_off = rand_index * BLOCK_SIZE;
 
-    /* Snapshot all three blocks to private memory */
-    uchar current[BLOCK_SIZE], prev[BLOCK_SIZE], random_blk[BLOCK_SIZE];
-    for (int i = 0; i < BLOCK_SIZE; i++) {
-        current[i]    = pad[cur_off  + i];
-        prev[i]       = pad[prev_off + i];
-        random_blk[i] = pad[rand_off + i];
+    /* Snapshot all three blocks to private memory (ulong-width) */
+    ulong current[8], prev[8], random_blk[8];
+    #pragma unroll 8
+    for (int i = 0; i < 8; i++) {
+        current[i]    = pad64[(cur_off  >> 3) + i];
+        prev[i]       = pad64[(prev_off >> 3) + i];
+        random_blk[i] = pad64[(rand_off >> 3) + i];
     }
 
     /* SHA3-512(current || prev || random || pass_le(8) || index_le(8)) */
@@ -376,18 +380,20 @@ void mix_block(volatile __global uchar *pad, uint index, ulong pass, int forward
 
     ulong st[25]; int pos = 0;
     for (int i = 0; i < 25; i++) st[i] = 0;
-    keccak_absorb(st, &pos, 72, current,     BLOCK_SIZE);
-    keccak_absorb(st, &pos, 72, prev,        BLOCK_SIZE);
-    keccak_absorb(st, &pos, 72, random_blk,  BLOCK_SIZE);
+    keccak_absorb(st, &pos, 72, (uchar *)current,     BLOCK_SIZE);
+    keccak_absorb(st, &pos, 72, (uchar *)prev,        BLOCK_SIZE);
+    keccak_absorb(st, &pos, 72, (uchar *)random_blk,  BLOCK_SIZE);
     keccak_absorb(st, &pos, 72, pass_bytes,  8);
     keccak_absorb(st, &pos, 72, index_bytes, 8);
 
     uchar mixed[64];
     keccak_finalize(st, pos, 72, 0x06, mixed, 64);
 
-    /* XOR result into current block position */
-    for (int i = 0; i < BLOCK_SIZE; i++)
-        pad[cur_off + i] ^= mixed[i];
+    /* XOR result into current block position (ulong-width) */
+    ulong *mix64 = (ulong *)mixed;
+    #pragma unroll 8
+    for (int i = 0; i < 8; i++)
+        pad64[(cur_off >> 3) + i] ^= mix64[i];
 }
 
 /*
@@ -495,27 +501,28 @@ void random_read_mix_sha3(const uchar seed[64], volatile __global const uchar *p
     for (int r = 0; r < RANDOM_READS; r++) {
         uint off = pos * BLOCK_SIZE;
 
-        uchar chunk[BLOCK_SIZE];
-        for (int i = 0; i < BLOCK_SIZE; i++) chunk[i] = pad[off + i];
-
-        ulong st[25]; int p = 0;
-        for (int i = 0; i < 25; i++) st[i] = 0;
-        keccak_absorb(st, &p, 136, acc, 64);
-        keccak_absorb(st, &p, 136, chunk, BLOCK_SIZE);
-        uchar r_bytes[8];
-        for (int b = 0; b < 8; b++) r_bytes[b] = (uchar)((ulong)r >> (b * 8));
-        keccak_absorb(st, &p, 136, r_bytes, 8);
-        uchar d[32];
-        keccak_finalize(st, p, 136, 0x01, d, 32);
-
-        for (int i = 0; i < 32; i++) {
-            acc[i] ^= d[i];
-            acc[32 + i] = (uchar)((uint)acc[32 + i] + (uint)d[i]);
+        ulong chunk64[8];
+        {
+            __global const ulong *gsrc = (__global const ulong *)(pad + off);
+            #pragma unroll 8
+            for (int i = 0; i < 8; i++) chunk64[i] = gsrc[i];
         }
 
-        ulong new_pos = 0;
-        for (int b = 0; b < 8; b++) new_pos |= (ulong)d[b] << (b * 8);
-        pos = (uint)((new_pos ^ (ulong)pos ^ (ulong)r) % BLOCK_COUNT);
+        ulong d64[4];
+        keccak256_136_mix((const ulong *)acc, chunk64, (ulong)r, d64);
+
+        {
+            ulong *a64 = (ulong *)acc;
+            #pragma unroll 4
+            for (int u = 0; u < 4; u++) a64[u] ^= d64[u];
+        }
+        {
+            const uchar *d8 = (const uchar *)d64;
+            for (int i = 0; i < 32; i++)
+                acc[32 + i] = (uchar)((uint)acc[32 + i] + (uint)d8[i]);
+        }
+
+        pos = (uint)((d64[0] ^ (ulong)pos ^ (ulong)r) % BLOCK_COUNT);
     }
 
     uchar first_blk[BLOCK_SIZE], last_blk[BLOCK_SIZE];
