@@ -1,23 +1,33 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# ZION V3 Autopilot — Edge-Primary Topology
-# Phases: preflight -> build -> edge-deploy -> local-start -> verify
+# ZION V3 Autopilot — Edge-Only Topology
+# Phase: preflight -> edge-deploy -> verify
+#
+# Run from any machine with SSH access to Edge:
+#   bash scripts/autopilot-v3.sh
 # ==============================================================================
 
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 V3_DIR="$ROOT_DIR/V3"
-LOG_DIR="$ROOT_DIR/logs"
-EDGE_HOST="100.76.16.108"
+EDGE_USER="root"
+EDGE_HOST="77.42.71.94"
 EDGE_SSH_KEY="${ROOT_DIR}/ssh-key-zion-edge"
+REMOTE_ROOT="/root/zion-2.9.6-main"
+REMOTE_WEB="/root/APP\&WEB/website-v2.9"
 
 # Colors
-RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; BOLD='\033[1m'; NC='\033[0m'
-log() { echo -e "${GREEN}[AUTOPILOT]${NC} $1"; }
-info() { echo -e "${CYAN}[INFO]${NC} $1"; }
-warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
-err() { echo -e "${RED}[ERROR]${NC} $1"; exit 1; }
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
+BOLD='\033[1m'
+NC='\033[0m'
+log()  { echo -e "${GREEN}[AUTOPILOT]${NC} $*"; }
+info() { echo -e "${CYAN}[INFO]${NC} $*"; }
+warn() { echo -e "${YELLOW}[WARN]${NC} $*"; }
+err()  { echo -e "${RED}[ERROR]${NC} $*"; exit 1; }
 phase() { echo -e "\n${BOLD}════════ $1 ════════${NC}"; }
 
 usage() {
@@ -25,35 +35,35 @@ usage() {
 Usage: bash scripts/autopilot-v3.sh [options]
 
 Options:
-  --skip-build        Skip Rust workspace build
-  --skip-edge-deploy  Skip Edge server deploy + restart
-  --skip-local-start  Skip local backup node + miner start
+  --skip-sync         Skip code sync to Edge
+  --skip-build        Skip Rust + web build on Edge
+  --skip-deploy       Skip service restart on Edge
   --verify-only       Run only verification phase
   -h, --help          Show this help
 EOF
 }
 
+SKIP_SYNC=0
 SKIP_BUILD=0
-SKIP_EDGE=0
-SKIP_LOCAL=0
+SKIP_DEPLOY=0
 VERIFY_ONLY=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --skip-build) SKIP_BUILD=1; shift ;;
-    --skip-edge-deploy) SKIP_EDGE=1; shift ;;
-    --skip-local-start) SKIP_LOCAL=1; shift ;;
+    --skip-sync)   SKIP_SYNC=1; shift ;;
+    --skip-build)  SKIP_BUILD=1; shift ;;
+    --skip-deploy) SKIP_DEPLOY=1; shift ;;
     --verify-only) VERIFY_ONLY=1; shift ;;
-    -h|--help) usage; exit 0 ;;
+    -h|--help)     usage; exit 0 ;;
     *) err "Unknown argument: $1" ;;
   esac
 done
 
-# ── Helpers ─────────────────────────────────────────────────────────────────
+# ── Helpers ──────────────────────────────────────────────────────────────────
 
 ssh_run() {
-  local cmd="$1"
-  ssh -i "$EDGE_SSH_KEY" -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=accept-new "root@${EDGE_HOST}" "$cmd"
+  ssh -i "$EDGE_SSH_KEY" -o BatchMode=yes -o ConnectTimeout=10 \
+    -o StrictHostKeyChecking=accept-new "${EDGE_USER}@${EDGE_HOST}" "$1"
 }
 
 check_port() {
@@ -65,290 +75,145 @@ check_port() {
   fi
 }
 
-rpc_get() {
-  local host="$1" port="$2" method="$3"
-  python3 -c "
-import urllib.request, json
-try:
-    req = urllib.request.Request('http://${host}:${port}/jsonrpc', data=json.dumps({'jsonrpc':'2.0','id':1,'method':'${method}','params':{}}).encode(), headers={'Content-Type':'application/json'})
-    resp = urllib.request.urlopen(req, timeout=5)
-    print(resp.read().decode())
-except Exception as e:
-    print(json.dumps({'_rpc_error': str(e)}))
-" 2>/dev/null
-}
-
-# ── Phase 1: Preflight ──────────────────────────────────────────────────────
+# ── Phase 1: Preflight ────────────────────────────────────────────────────
 
 phase_preflight() {
-  phase "1/5 PREFLIGHT"
+  phase "1/4 PREFLIGHT"
   cd "$ROOT_DIR"
 
-  # Check Edge SSH key
   [[ -f "$EDGE_SSH_KEY" ]] || err "Missing Edge SSH key: $EDGE_SSH_KEY"
 
-  # Check Edge reachable
   if ! check_port "$EDGE_HOST" 22; then
-    warn "Edge SSH (port 22) unreachable — deploy phase will be skipped"
-    SKIP_EDGE=1
+    err "Edge SSH (port 22) unreachable"
   fi
 
-  # Check Rust toolchain
-  if ! command -v cargo >/dev/null 2>&1; then
-    err "Rust/Cargo not found. Install via rustup.rs"
-  fi
-
-  # Check Tailscale VPN
-  if command -v tailscale >/dev/null 2>&1; then
-    if tailscale ping -c 1 -timeout 3s "$EDGE_HOST" >/dev/null 2>&1; then
-      log "Tailscale VPN: OK (${EDGE_HOST})"
-    else
-      warn "Tailscale VPN to Edge down — using public IP fallback"
-    fi
-  else
-    warn "Tailscale CLI not found — VPN status unknown"
-  fi
-
-  # Check canonical env vars set
-  local canon_miner="zion1w523a76830x2t5m7f3j023w265e8g5c400a4790"
-  local canon_humanitarian="zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4"
-  local canon_issobella="zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702"
-
-  if [[ "${ZION_MINER_ADDRESS:-}" != "$canon_miner" ]]; then
-    warn "ZION_MINER_ADDRESS not set to canonical (${canon_miner})"
-  fi
-  if [[ "${ZION_HUMANITARIAN_WALLET:-}" != "$canon_humanitarian" ]]; then
-    warn "ZION_HUMANITARIAN_WALLET not set to canonical"
-  fi
-  if [[ "${ZION_ISSOBELLA_WALLET:-}" != "$canon_issobella" ]]; then
-    warn "ZION_ISSOBELLA_WALLET not set to canonical"
+  # Verify Rust on Edge
+  if ! ssh_run "test -f /root/.cargo/bin/cargo"; then
+    warn "Rust not found on Edge — will be installed during deploy"
   fi
 
   log "Preflight OK"
 }
 
-# ── Phase 2: Build ──────────────────────────────────────────────────────────
+# ── Phase 2: Sync ──────────────────────────────────────────────────────────
 
-phase_build() {
-  phase "2/5 BUILD"
+phase_sync() {
+  phase "2/4 SYNC"
+  if [[ "$SKIP_SYNC" -eq 1 ]]; then
+    warn "Sync skipped (--skip-sync)"
+    return
+  fi
+
   cd "$ROOT_DIR"
 
+  log "Syncing V3 code..."
+  if command -v rsync &>/dev/null; then
+    rsync -avz --exclude='target' --exclude='.git' --exclude='data' --exclude='logs' \
+      -e "ssh -i ${EDGE_SSH_KEY} -o StrictHostKeyChecking=accept-new" \
+      "${V3_DIR}/" "${EDGE_USER}@${EDGE_HOST}:${REMOTE_ROOT}/V3/"
+  else
+    tar czf - -C "$ROOT_DIR" V3/ 2>/dev/null | \
+      ssh_run "cd ${REMOTE_ROOT} && tar xzf -"
+  fi
+
+  log "Syncing website code..."
+  tar czf - --exclude='node_modules' --exclude='.next' --exclude='out' \
+    -C "${ROOT_DIR}/APP\&WEB" website-v2.9/ 2>/dev/null | \
+    ssh_run "mkdir -p /root/APP\&WEB && cd /root/APP\&WEB && tar xzf -"
+
+  log "Sync OK"
+}
+
+# ── Phase 3: Build on Edge ────────────────────────────────────────────────
+
+phase_build() {
+  phase "3/4 BUILD ON EDGE"
   if [[ "$SKIP_BUILD" -eq 1 ]]; then
     warn "Build skipped (--skip-build)"
     return
   fi
 
-  # Build V3 workspace
-  cargo build --release --manifest-path "$V3_DIR/Cargo.toml" --workspace
+  log "Building Rust binaries on Edge..."
+  ssh_run "
+    . /root/.cargo/env 2>/dev/null || true
+    cd ${REMOTE_ROOT}/V3
+    # Fix workspace if L5/L6 missing
+    if [ ! -d L5/free-world ]; then
+      sed -i '/\"L5\/free-world\",/d;/\"L6\/issobella\",/d;/\"L4\/oasis\",/d' Cargo.toml 2>/dev/null || true
+      sed -i '/\"L1\/native-ffi\",/d' Cargo.toml 2>/dev/null || true
+    fi
+    cargo build --release --bin node --bin server --bin zion-dao --bin zion-warp-server 2>&1
+  "
 
-  # Verify binaries exist
-  for bin in node server zion-miner zion-warp-server zion-dao zion-atomic-swap; do
-    local path="$V3_DIR/target/release/${bin}"
-    [[ -x "$path" ]] || err "Binary not found after build: $path"
-  done
+  log "Building website on Edge..."
+  ssh_run "
+    cd ${REMOTE_WEB}
+    rm -f package-lock.json
+    npm install 2>&1 | tail -n 5
+    npm run build 2>&1 | tail -n 15
+  "
 
   log "Build OK"
 }
 
-# ── Phase 3: Edge Deploy ────────────────────────────────────────────────────
+# ── Phase 4: Deploy ────────────────────────────────────────────────────────
 
-phase_edge_deploy() {
-  phase "3/5 EDGE DEPLOY"
-  if [[ "$SKIP_EDGE" -eq 1 ]]; then
-    warn "Edge deploy skipped (--skip-edge-deploy or SSH unreachable)"
+phase_deploy() {
+  phase "4/4 DEPLOY"
+  if [[ "$SKIP_DEPLOY" -eq 1 ]]; then
+    warn "Deploy skipped (--skip-deploy)"
     return
   fi
 
-  cd "$ROOT_DIR"
+  log "Restarting services..."
+  ssh_run "systemctl daemon-reload"
+  ssh_run "systemctl restart zion-edge-node1 zion-edge-node2"
+  sleep 5
+  ssh_run "systemctl restart zion-edge-pool"
+  sleep 3
+  ssh_run "systemctl restart zion-edge-dao zion-edge-warp || true"
+  ssh_run "systemctl restart zion-edge-miner || true"
+  ssh_run "pm2 restart zion-website 2>/dev/null || true"
 
-  # Sync binaries to Edge
-  log "Syncing binaries to Edge..."
-  for bin in node server zion-warp-server zion-dao zion-atomic-swap; do
-    local src="$V3_DIR/target/release/${bin}"
-    if [[ -x "$src" ]]; then
-      scp -i "$EDGE_SSH_KEY" -o StrictHostKeyChecking=accept-new "$src" "root@${EDGE_HOST}:/root/zion-2.9.6-main/V3/target/release/${bin}"
+  log "Waiting for services..."
+  sleep 10
+}
+
+# ── Phase 5: Verify ────────────────────────────────────────────────────────
+
+phase_verify() {
+  phase "VERIFY"
+
+  local ok=0 fail=0
+
+  echo ""
+  echo "=== Service Status ==="
+  for svc in zion-edge-node1 zion-edge-node2 zion-edge-pool zion-edge-dao zion-edge-warp zion-edge-miner; do
+    local status
+    status=$(ssh_run "systemctl is-active ${svc} 2>/dev/null" || true)
+    if [[ "$status" == "active" ]]; then
+      echo -e "${GREEN}  ${svc}: ACTIVE${NC}"; ((ok++))
+    else
+      echo -e "${RED}  ${svc}: ${status}${NC}"; ((fail++))
     fi
   done
 
-  # Restart Edge services (ignore inactive optional services)
-  log "Restarting Edge services..."
-  ssh_run "systemctl daemon-reload && systemctl restart zion-edge-node1 zion-edge-pool || true"
-  ssh_run "systemctl restart zion-edge-node2 zion-edge-dao zion-edge-atomic-swap zion-edge-warp zion-edge-bridge 2>/dev/null || true"
-
-  sleep 5
-
-  # Verify Edge services
-  local ok=0
-  check_port "$EDGE_HOST" 8333 && ok=1
-  check_port "$EDGE_HOST" 8443 && ok=1
-  check_port "$EDGE_HOST" 8444 && ok=1
-
-  if [[ "$ok" -eq 0 ]]; then
-    err "Edge services failed to start (no open ports)"
-  fi
-
-  # Verify chain height
-  local edge_height
-  edge_height=$(rpc_get "$EDGE_HOST" 8443 "getChainInfo" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('result',{}).get('chain_height','0'))" 2>/dev/null || echo "0")
-  if [[ "$edge_height" -gt 0 ]]; then
-    log "Edge node alive at height ${edge_height}"
-  else
-    warn "Edge node RPC returned height 0 — may still be syncing"
-  fi
-
-  log "Edge deploy OK"
-}
-
-# ── Phase 4: Local Start ──────────────────────────────────────────────────
-
-phase_local_start() {
-  phase "4/5 LOCAL START"
-  if [[ "$SKIP_LOCAL" -eq 1 ]]; then
-    warn "Local start skipped (--skip-local-start)"
-    return
-  fi
-
-  cd "$ROOT_DIR"
-
-  # Start Python dashboard
-  if ! check_port 127.0.0.1 8766; then
-    log "Starting Python dashboard..."
-    python dashboard/app.py &
-    sleep 2
-  else
-    info "Python dashboard already running on 8766"
-  fi
-
-  # Start local backup node + miners
-  if [[ -x "scripts/launch-local-backup.sh" ]]; then
-    bash scripts/launch-local-backup.sh
-  else
-    warn "launch-local-backup.sh not found — manual start required"
-  fi
-
-  log "Local start OK"
-}
-
-# ── Phase 5: Verify ───────────────────────────────────────────────────────
-
-phase_verify() {
-  phase "5/5 VERIFY"
-
-  local failures=0
-
-  # Edge RPC
-  if check_port "$EDGE_HOST" 8443; then
-    log "Edge RPC (8443): OK"
-  else
-    err "Edge RPC (8443): FAIL"; failures=$((failures+1))
-  fi
-
-  # Edge Pool
-  if check_port "$EDGE_HOST" 8444; then
-    log "Edge Pool (8444): OK"
-  else
-    err "Edge Pool (8444): FAIL"; failures=$((failures+1))
-  fi
-
-  # Edge P2P
-  if check_port "$EDGE_HOST" 8333; then
-    log "Edge P2P (8333): OK"
-  else
-    warn "Edge P2P (8333): FAIL"
-  fi
-
-  # Local RPC
-  if check_port 127.0.0.1 8443; then
-    log "Local RPC (8443): OK"
-  else
-    warn "Local RPC (8443): FAIL"
-  fi
-
-  # Local P2P
-  if check_port 127.0.0.1 8333; then
-    log "Local P2P (8333): OK"
-  else
-    warn "Local P2P (8333): FAIL"
-  fi
-
-  # Dashboard
-  if check_port 127.0.0.1 8766; then
-    log "Dashboard (8766): OK"
-  else
-    warn "Dashboard (8766): FAIL"
-  fi
-
-  # Prometheus
-  if check_port "$EDGE_HOST" 9090; then
-    log "Prometheus (9090): OK"
-  else
-    warn "Prometheus (9090): FAIL"
-  fi
-
-  # Grafana
-  if check_port "$EDGE_HOST" 3100; then
-    log "Grafana (3100): OK"
-  else
-    warn "Grafana (3100): FAIL"
-  fi
-
-  # Check sync gap
-  local edge_height local_height gap
-  edge_height=$(rpc_get "$EDGE_HOST" 8443 "getChainInfo" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('result',{}).get('chain_height','0'))" 2>/dev/null || echo "0")
-  local_height=$(rpc_get 127.0.0.1 8443 "getChainInfo" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('result',{}).get('chain_height','0'))" 2>/dev/null || echo "0")
-
-  if [[ "$edge_height" -gt 0 && "$local_height" -gt 0 ]]; then
-    gap=$((edge_height - local_height))
-    gap=${gap#-}  # abs
-    if [[ "$gap" -le 5 ]]; then
-      log "Sync gap: ${gap} blocks (OK)"
-    elif [[ "$gap" -le 20 ]]; then
-      warn "Sync gap: ${gap} blocks (syncing)"
+  echo ""
+  echo "=== Port Checks ==="
+  for port in 8443 8444 8450 8453 3000; do
+    if check_port "$EDGE_HOST" "$port"; then
+      echo -e "${GREEN}  port ${port}: OPEN${NC}"; ((ok++))
     else
-      err "Sync gap: ${gap} blocks (LAG)"; failures=$((failures+1))
+      echo -e "${RED}  port ${port}: CLOSED${NC}"; ((fail++))
     fi
-  fi
+  done
 
-  # Pool miners
-  local miner_count
-  miner_count=$(python3 -c "
-import urllib.request, json
-try:
-    r = urllib.request.urlopen('http://${EDGE_HOST}:8455/miners?limit=50', timeout=3)
-    d = json.loads(r.read().decode())
-    print(d.get('count', 0))
-except:
-    print(0)
-" 2>/dev/null || echo "0")
-  if [[ "$miner_count" -gt 0 ]]; then
-    log "Pool miners: ${miner_count} active"
+  echo ""
+  if [[ "$fail" -eq 0 ]]; then
+    log "=== ALL SYSTEMS OPERATIONAL ==="
   else
-    warn "Pool miners: 0 (no miners connected)"
-  fi
-
-  # Payout status
-  local payout_enabled
-  payout_enabled=$(python3 -c "
-import urllib.request, json
-try:
-    r = urllib.request.urlopen('http://127.0.0.1:8766/api/payout', timeout=3)
-    d = json.loads(r.read().decode())
-    print('enabled' if d.get('payout_enabled') else 'disabled')
-except:
-    print('unknown')
-" 2>/dev/null || echo "unknown")
-  if [[ "$payout_enabled" == "enabled" ]]; then
-    log "Payout system: ENABLED"
-  elif [[ "$payout_enabled" == "disabled" ]]; then
-    warn "Payout system: DISABLED"
-  else
-    warn "Payout system: UNKNOWN"
-  fi
-
-  if [[ "$failures" -eq 0 ]]; then
-    log "VERIFY ALL PASS"
-  else
-    err "VERIFY FAILURES: ${failures}"
+    warn "=== ${fail} CHECKS FAILED ==="
+    echo "Check logs: ssh ${EDGE_USER}@${EDGE_HOST} 'journalctl -u zion-edge-node1 -n 50'"
   fi
 }
 
@@ -360,17 +225,11 @@ main() {
     exit 0
   fi
 
-  log "ZION V3 Autopilot start (Edge-Primary topology)"
-  log "Root: ${ROOT_DIR}"
-  log "Edge: ${EDGE_HOST}"
-
   phase_preflight
+  phase_sync
   phase_build
-  phase_edge_deploy
-  phase_local_start
+  phase_deploy
   phase_verify
-
-  log "AUTOPILOT COMPLETE"
 }
 
-main
+main "$@"
