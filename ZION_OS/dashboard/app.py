@@ -1808,6 +1808,75 @@ def fetch_agent_gpu() -> dict:
     except Exception as e:
         return {"_error": str(e)}
 
+def get_miner_live_stats() -> dict:
+    """Aggregate miner stats from log parsing + agent if available."""
+    stats = parse_miner_log()
+    agent_gpu = fetch_agent_gpu()
+    return {
+        "hashrate": stats.get("hashrate"),
+        "shares_accepted": stats.get("shares_accepted", 0),
+        "shares_rejected": stats.get("shares_rejected", 0),
+        "current_height": stats.get("current_height"),
+        "current_diff": stats.get("current_diff"),
+        "gpu_backend": stats.get("gpu_backend", "cpu"),
+        "gpu_device": stats.get("gpu_device"),
+        "worker_name": stats.get("worker_name"),
+        "pool_addr": stats.get("pool_addr"),
+        "running": stats.get("running", False),
+        "gpus": agent_gpu.get("gpus", []) if not agent_gpu.get("_error") else [],
+        "timestamp": datetime.now().isoformat(),
+    }
+
+# ── Settings persistence ─────────────────────────────────────────────────
+SETTINGS_FILE = DATA_DIR / "dashboard-settings.json"
+
+def load_dashboard_settings() -> dict:
+    defaults = {
+        "mining": {
+            "pool_addr": "77.42.71.94:8444",
+            "worker_name": "worker1",
+            "backend": "cpu",
+            "threads": 2,
+            "loop_count": 1000000,
+            "work_size": 4096,
+        },
+        "node": {
+            "seed_peers": "77.42.71.94:8333",
+            "rpc_bind": "0.0.0.0:8443",
+            "p2p_bind": "0.0.0.0:8333",
+            "node_id": "local-backup-node",
+        },
+        "topology": TOPOLOGY,
+    }
+    try:
+        if SETTINGS_FILE.exists():
+            with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
+                loaded = json.load(f)
+                defaults.update(loaded)
+    except Exception:
+        pass
+    return defaults
+
+# ── Fleet persistence ────────────────────────────────────────────────────
+FLEET_FILE = DATA_DIR / "fleet-rigs.json"
+
+def load_fleet_rigs() -> dict:
+    defaults = {"rigs": []}
+    try:
+        if FLEET_FILE.exists():
+            with open(FLEET_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+    except Exception:
+        pass
+    return defaults
+
+def save_fleet_rigs(rigs: list):
+    try:
+        with open(FLEET_FILE, "w", encoding="utf-8") as f:
+            json.dump({"rigs": rigs}, f, indent=2)
+    except Exception:
+        pass
+
 def parse_miner_log_specific(log_file: str) -> dict:
     """Parse specific miner log file"""
     recent = tail_log(log_file, 200)
@@ -6815,6 +6884,15 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json(fetch_agent_telemetry())
         elif route == "/api/agent/gpu":
             self._json(fetch_agent_gpu())
+        elif route == "/api/miner/live":
+            self._json(get_miner_live_stats())
+        elif route == "/api/miner/log-tail":
+            lines = int(params.get("lines", ["30"])[0])
+            self._json({"lines": tail_log("miner.log", lines), "file": str(LOG_DIR / "miner.log")})
+        elif route == "/api/settings/load":
+            self._json(load_dashboard_settings())
+        elif route == "/api/fleet/rigs":
+            self._json(load_fleet_rigs())
         elif route == "/api/orchestrator/status":
             self._json(get_orchestrator_status())
         elif route == "/api/orchestrator/services":
@@ -8125,6 +8203,34 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     self._json({"ok": False, "error": f"Failed to update config: {str(e)}"})
             except Exception as e:
                 self._json({"ok": False, "error": f"Invalid request: {str(e)}"})
+        elif route == "/api/settings/save":
+            # Save mining/node settings to a JSON file
+            try:
+                settings = payload
+                settings_file = DATA_DIR / "dashboard-settings.json"
+                with open(settings_file, "w", encoding="utf-8") as f:
+                    json.dump(settings, f, indent=2)
+                self._json({"ok": True, "message": "Settings saved"})
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)})
+        elif route == "/api/fleet/add":
+            try:
+                rig = payload
+                rigs = load_fleet_rigs().get("rigs", [])
+                rigs.append(rig)
+                save_fleet_rigs(rigs)
+                self._json({"ok": True, "message": "Rig added", "rig": rig})
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)})
+        elif route == "/api/fleet/remove":
+            try:
+                rig_id = payload.get("rig_id", "")
+                rigs = load_fleet_rigs().get("rigs", [])
+                rigs = [r for r in rigs if r.get("id") != rig_id]
+                save_fleet_rigs(rigs)
+                self._json({"ok": True, "message": f"Rig {rig_id} removed"})
+            except Exception as e:
+                self._json({"ok": False, "error": str(e)})
         elif route == "/api/proxy/rpc":
             # Proxy RPC call (used by Tauri desktop dashboard)
             url = payload.get("url", "")
