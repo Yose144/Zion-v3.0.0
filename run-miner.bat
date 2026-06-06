@@ -13,6 +13,9 @@ set ZION_WORKER_NAME=worker1
 set ZION_MINER_ID=w11-amd-gpu-miner-01
 set ZION_PAYOUT_ADDRESS=zion1w523a76830x2t5m7f3j023w265e8g5c400a4790
 set ZION_GPU_BACKEND=opencl
+set ZION_GPU_WORK_SIZE=6128
+set ZION_OCL_WORK_CAP=6128
+set ZION_OCL_VRAM_PCT=50
 
 echo Starting ZION GPU Miner (OpenCL - AMD)...
 V3\target\release\zion-miner.exe
