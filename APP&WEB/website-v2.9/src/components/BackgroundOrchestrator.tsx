@@ -58,18 +58,18 @@ export default function BackgroundOrchestrator({ variant = 'default' }: { varian
   const starfieldConfig = isHomeVariant
     ? {
         ...observatory.starfield,
-        starColor: [255, 196, 88] as [number, number, number],
+        starColor: [80, 230, 210] as [number, number, number],
         density: Math.max(220, Math.floor(observatory.starfield.density * 0.84)),
         speed: Math.max(2.4, observatory.starfield.speed * 0.92),
         trailOpacity: Math.min(0.08, Math.max(0.05, observatory.starfield.trailOpacity)),
         backgroundGradient:
-          'radial-gradient(circle at 50% 12%, rgba(255,205,118,0.24), rgba(120,66,18,0.18) 18%, rgba(24,18,38,0.78) 40%, rgba(7,10,24,0.95) 68%, rgba(0,0,0,0.995) 100%)',
+          'radial-gradient(circle at 50% 12%, rgba(80,230,210,0.24), rgba(10,80,70,0.18) 18%, rgba(8,22,30,0.78) 40%, rgba(2,8,10,0.95) 68%, rgba(0,0,0,0.995) 100%)',
       }
     : observatory.starfield;
 
   const bubbleDensity = isHomeVariant ? 'medium' : observatory.bubbleDensity;
   const overlayClass = isHomeVariant
-    ? 'pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(circle_at_50%_12%,rgba(255,214,120,0.16),rgba(255,168,76,0.08)_18%,rgba(19,14,34,0.34)_34%,rgba(6,10,24,0.76)_58%,rgba(0,0,0,0.95)_100%)]'
+    ? 'pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(circle_at_50%_12%,rgba(80,230,210,0.16),rgba(45,212,191,0.08)_18%,rgba(10,20,30,0.34)_34%,rgba(4,10,14,0.76)_58%,rgba(0,0,0,0.95)_100%)]'
     : 'pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(circle_at_50%_20%,rgba(10,12,28,0.65),rgba(0,0,0,0.95))]';
 
   return (

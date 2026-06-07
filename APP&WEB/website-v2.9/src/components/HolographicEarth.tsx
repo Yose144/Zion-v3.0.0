@@ -40,11 +40,11 @@ void main() {
   float latBands = pow(abs(sin(vWorldPosition.z * 22.0)), 8.0) * 0.35;
   float noise = sin(uTime * 0.55 + vWorldPosition.z * 10.0) * 0.025;
 
-  vec3 core = uCore * (0.2 + scan * 0.14 + meridians * 0.28 + latBands * 0.08);
-  vec3 rimCyan = uRim * fresnel * (1.28 + noise);
-  vec3 rimGold = uAccent * fresnel * fresnel * 0.85;
+  vec3 core = uCore * (0.35 + scan * 0.18 + meridians * 0.35 + latBands * 0.12);
+  vec3 rimCyan = uRim * fresnel * (1.6 + noise);
+  vec3 rimGold = uAccent * fresnel * fresnel * 1.0;
 
-  float alpha = 0.05 + fresnel * 0.28 + meridians * 0.06;
+  float alpha = 0.08 + fresnel * 0.32 + meridians * 0.08;
   gl_FragColor = vec4(core + rimCyan + rimGold, alpha);
 }
 `;
@@ -78,34 +78,34 @@ function EarthGlobe() {
         <meshStandardMaterial
           map={maps.color}
           bumpMap={maps.bump}
-          bumpScale={0.055}
-          roughness={0.22}
-          metalness={0.15}
-          color={new THREE.Color('#a8d8ea')}
+          bumpScale={0.04}
+          roughness={0.35}
+          metalness={0}
+          color={new THREE.Color('#e0f7fa')}
           emissiveMap={maps.night ?? undefined}
-          emissive={maps.night ? new THREE.Color('#ffeedd') : undefined}
-          emissiveIntensity={maps.night ? 1.8 : 0}
+          emissive={maps.night ? new THREE.Color('#fff5e6') : new THREE.Color('#1a3a5c')}
+          emissiveIntensity={maps.night ? 2.2 : 0.35}
         />
       </mesh>
       {/* Atmosphere glow — day side */}
-      <mesh scale={1.012}>
+      <mesh scale={1.018}>
         <sphereGeometry args={[1, 32, 32]} />
         <meshBasicMaterial
-          color="#4fc3f7"
+          color="#4dd0e1"
           transparent
-          opacity={0.04}
+          opacity={0.08}
           depthWrite={false}
           side={THREE.BackSide}
           blending={THREE.AdditiveBlending}
         />
       </mesh>
       {/* Atmosphere rim — fresnel-like bright ring */}
-      <mesh scale={1.035}>
+      <mesh scale={1.045}>
         <sphereGeometry args={[1, 32, 32]} />
         <meshBasicMaterial
-          color="#81d4fa"
+          color="#b3e5fc"
           transparent
-          opacity={0.025}
+          opacity={0.06}
           depthWrite={false}
           side={THREE.BackSide}
           blending={THREE.AdditiveBlending}
@@ -176,6 +176,96 @@ function Sun() {
   );
 }
 
+type PlanetData = {
+  name: string;
+  color: string;
+  emissive: string;
+  radius: number;
+  orbitRadius: number;
+  orbitSpeed: number;
+  orbitTilt: number;
+  startAngle: number;
+  hasRing?: boolean;
+  ringColor?: string;
+};
+
+const PLANETS: PlanetData[] = [
+  { name: 'Mercury', color: '#9ca3af', emissive: '#6b7280', radius: 0.035, orbitRadius: 6.5, orbitSpeed: 0.55, orbitTilt: 0.1, startAngle: 0.0 },
+  { name: 'Venus',   color: '#fde68a', emissive: '#d4a373', radius: 0.06,  orbitRadius: 8.0, orbitSpeed: 0.40, orbitTilt: 0.15, startAngle: 1.2 },
+  { name: 'Mars',    color: '#fca5a5', emissive: '#dc2626', radius: 0.045, orbitRadius: 10.0, orbitSpeed: 0.28, orbitTilt: 0.08, startAngle: 2.5 },
+  { name: 'Jupiter', color: '#d4a574', emissive: '#b87333', radius: 0.14,  orbitRadius: 14.0, orbitSpeed: 0.12, orbitTilt: 0.2,  startAngle: 0.8 },
+  { name: 'Saturn',  color: '#fde047', emissive: '#eab308', radius: 0.11,  orbitRadius: 17.0, orbitSpeed: 0.09, orbitTilt: 0.25, startAngle: 3.1, hasRing: true, ringColor: '#fef08a' },
+  { name: 'Uranus',  color: '#67e8f9', emissive: '#06b6d4', radius: 0.07,  orbitRadius: 20.0, orbitSpeed: 0.06, orbitTilt: 0.35, startAngle: 4.4 },
+  { name: 'Neptune', color: '#3b82f6', emissive: '#1d4ed8', radius: 0.065, orbitRadius: 23.0, orbitSpeed: 0.05, orbitTilt: 0.18, startAngle: 5.7 },
+];
+
+function Planet({ data }: { data: PlanetData }) {
+  const groupRef = useRef<THREE.Group>(null);
+  const angleRef = useRef(data.startAngle);
+
+  useFrame((_state, delta) => {
+    if (!groupRef.current) return;
+    angleRef.current += delta * data.orbitSpeed;
+    const r = data.orbitRadius;
+    const tilt = data.orbitTilt;
+    groupRef.current.position.set(
+      Math.cos(angleRef.current) * r,
+      Math.sin(angleRef.current * 0.7 + tilt) * r * 0.15,
+      Math.sin(angleRef.current) * r,
+    );
+    groupRef.current.rotation.y += delta * 0.3;
+  });
+
+  return (
+    <group ref={groupRef}>
+      <mesh>
+        <sphereGeometry args={[data.radius, 16, 16]} />
+        <meshStandardMaterial
+          color={data.color}
+          emissive={data.emissive}
+          emissiveIntensity={0.6}
+          roughness={0.7}
+          metalness={0.1}
+        />
+      </mesh>
+      {/* faint glow */}
+      <mesh scale={1.6}>
+        <sphereGeometry args={[data.radius, 12, 12]} />
+        <meshBasicMaterial
+          color={data.emissive}
+          transparent
+          opacity={0.04}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+        />
+      </mesh>
+      {data.hasRing && (
+        <mesh rotation={[Math.PI / 2.5, 0, 0]}>
+          <ringGeometry args={[data.radius * 1.6, data.radius * 2.4, 32]} />
+          <meshBasicMaterial
+            color={data.ringColor}
+            transparent
+            opacity={0.25}
+            side={THREE.DoubleSide}
+            depthWrite={false}
+            blending={THREE.AdditiveBlending}
+          />
+        </mesh>
+      )}
+    </group>
+  );
+}
+
+function Planets() {
+  return (
+    <>
+      {PLANETS.map((p) => (
+        <Planet key={p.name} data={p} />
+      ))}
+    </>
+  );
+}
+
 function IssobellaStation() {
   const groupRef = useRef<THREE.Group>(null);
   const angleRef = useRef(Math.PI * 0.85);
@@ -198,26 +288,26 @@ function IssobellaStation() {
       {/* Main torus — ring habitat */}
       <mesh rotation={[Math.PI / 2, 0, 0]}>
         <torusGeometry args={[0.14, 0.035, 12, 24]} />
-        <meshStandardMaterial color="#d946ef" emissive="#a855f7" emissiveIntensity={0.8} roughness={0.3} metalness={0.7} />
+        <meshStandardMaterial color="#2dd4bf" emissive="#0d9488" emissiveIntensity={0.8} roughness={0.3} metalness={0.7} />
       </mesh>
       {/* Central core */}
       <mesh>
         <sphereGeometry args={[0.06, 16, 16]} />
-        <meshStandardMaterial color="#f0abfc" emissive="#e879f9" emissiveIntensity={1.2} roughness={0.2} metalness={0.5} />
+        <meshStandardMaterial color="#5eead4" emissive="#14b8a6" emissiveIntensity={1.2} roughness={0.2} metalness={0.5} />
       </mesh>
       {/* Solar panels */}
       <mesh position={[0.22, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
         <boxGeometry args={[0.28, 0.01, 0.14]} />
-        <meshStandardMaterial color="#1e1b4b" emissive="#8b5cf6" emissiveIntensity={0.4} roughness={0.4} metalness={0.6} />
+        <meshStandardMaterial color="#0f172a" emissive="#2dd4bf" emissiveIntensity={0.4} roughness={0.4} metalness={0.6} />
       </mesh>
       <mesh position={[-0.22, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
         <boxGeometry args={[0.28, 0.01, 0.14]} />
-        <meshStandardMaterial color="#1e1b4b" emissive="#8b5cf6" emissiveIntensity={0.4} roughness={0.4} metalness={0.6} />
+        <meshStandardMaterial color="#0f172a" emissive="#2dd4bf" emissiveIntensity={0.4} roughness={0.4} metalness={0.6} />
       </mesh>
       {/* Issobella glow */}
       <mesh scale={2.5}>
         <sphereGeometry args={[0.14, 16, 16]} />
-        <meshBasicMaterial color="#c084fc" transparent opacity={0.08} depthWrite={false} blending={THREE.AdditiveBlending} />
+        <meshBasicMaterial color="#2dd4bf" transparent opacity={0.08} depthWrite={false} blending={THREE.AdditiveBlending} />
       </mesh>
     </group>
   );
@@ -271,6 +361,278 @@ function HologramShell() {
         />
       </mesh>
     </group>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════
+   BRIGHT STARS — Sirius, Rigel, Arcturus, Vega, Betelgeuse...
+   ═══════════════════════════════════════════════════════════ */
+type BrightStar = {
+  name: string;
+  color: string;
+  emissive: string;
+  radius: number;
+  distance: number;
+  theta: number;
+  phi: number;
+  pulseSpeed: number;
+};
+
+const BRIGHT_STARS: BrightStar[] = [
+  { name: 'Sirius',     color: '#dbeafe', emissive: '#60a5fa', radius: 0.055, distance: 42, theta: 0.9,  phi: 1.35, pulseSpeed: 2.1 },
+  { name: 'Rigel',      color: '#e0f2fe', emissive: '#38bdf8', radius: 0.065, distance: 48, theta: 2.4,  phi: 1.15, pulseSpeed: 1.7 },
+  { name: 'Arcturus',   color: '#ffedd5', emissive: '#fb923c', radius: 0.075, distance: 38, theta: 4.2,  phi: 1.05, pulseSpeed: 1.3 },
+  { name: 'Vega',       color: '#f0f9ff', emissive: '#a5f3fc', radius: 0.06,  distance: 44, theta: 5.8,  phi: 0.95, pulseSpeed: 1.9 },
+  { name: 'Betelgeuse', color: '#fee2e2', emissive: '#f87171', radius: 0.09,  distance: 36, theta: 1.6,  phi: 0.85, pulseSpeed: 0.8 },
+  { name: 'Antares',    color: '#ffe4e6', emissive: '#f43f5e', radius: 0.07,  distance: 50, theta: 3.3,  phi: 1.45, pulseSpeed: 1.1 },
+  { name: 'Altair',     color: '#ecfeff', emissive: '#67e8f9', radius: 0.05,  distance: 40, theta: 0.3,  phi: 1.2,  pulseSpeed: 2.4 },
+  { name: 'Spica',      color: '#eef2ff', emissive: '#818cf8', radius: 0.058, distance: 46, theta: 4.9,  phi: 0.75, pulseSpeed: 1.5 },
+  { name: 'Deneb',      color: '#f5f3ff', emissive: '#c4b5fd', radius: 0.062, distance: 52, theta: 5.1,  phi: 0.65, pulseSpeed: 1.2 },
+  { name: 'Pollux',     color: '#fffbeb', emissive: '#fcd34d', radius: 0.068, distance: 35, theta: 2.9,  phi: 1.55, pulseSpeed: 1.0 },
+];
+
+function BrightStars() {
+  const groupRef = useRef<THREE.Group>(null);
+
+  useFrame((state) => {
+    if (!groupRef.current) return;
+    const t = state.clock.elapsedTime;
+    groupRef.current.children.forEach((child, i) => {
+      const star = BRIGHT_STARS[i];
+      if (!star) return;
+      const pulse = Math.sin(t * star.pulseSpeed) * 0.3 + 0.7;
+      const mesh = child as THREE.Mesh;
+      mesh.scale.setScalar(pulse);
+      const mat = mesh.material as THREE.MeshStandardMaterial;
+      if (mat && mat.emissiveIntensity !== undefined) {
+        mat.emissiveIntensity = 1.2 + pulse * 1.5;
+      }
+    });
+  });
+
+  return (
+    <group ref={groupRef}>
+      {BRIGHT_STARS.map((s) => {
+        const x = s.distance * Math.sin(s.phi) * Math.cos(s.theta);
+        const y = s.distance * Math.cos(s.phi);
+        const z = s.distance * Math.sin(s.phi) * Math.sin(s.theta);
+        return (
+          <group key={s.name} position={[x, y, z]}>
+            <mesh>
+              <sphereGeometry args={[s.radius, 16, 16]} />
+              <meshStandardMaterial
+                color={s.color}
+                emissive={s.emissive}
+                emissiveIntensity={2.5}
+                roughness={1}
+                metalness={0}
+              />
+            </mesh>
+            {/* star glow */}
+            <mesh scale={3}>
+              <sphereGeometry args={[s.radius, 12, 12]} />
+              <meshBasicMaterial
+                color={s.emissive}
+                transparent
+                opacity={0.08}
+                depthWrite={false}
+                blending={THREE.AdditiveBlending}
+              />
+            </mesh>
+            {/* distant halo */}
+            <mesh scale={6}>
+              <sphereGeometry args={[s.radius, 8, 8]} />
+              <meshBasicMaterial
+                color={s.color}
+                transparent
+                opacity={0.025}
+                depthWrite={false}
+                blending={THREE.AdditiveBlending}
+              />
+            </mesh>
+          </group>
+        );
+      })}
+    </group>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MILKY WAY — galactic disk in the background
+   ═══════════════════════════════════════════════════════════ */
+function MilkyWay() {
+  const geometry = useMemo(() => {
+    const count = 4000;
+    const positions = new Float32Array(count * 3);
+    const colors = new Float32Array(count * 3);
+
+    for (let i = 0; i < count; i++) {
+      // Flattened disk shape with spiral arms hint
+      const armOffset = (i % 3) * 2.1; // 3 spiral arms
+      const angle = Math.random() * Math.PI * 2 + armOffset;
+      const radius = 28 + Math.random() * 35;
+      const thickness = (Math.random() - 0.5) * 3.5;
+
+      // Tilt the disk (Milky Way angle)
+      const tiltX = 0.45;
+      const tiltZ = 0.25;
+
+      let px = Math.cos(angle) * radius;
+      let py = thickness;
+      let pz = Math.sin(angle) * radius;
+
+      // Apply tilt
+      const cy = Math.cos(tiltX);
+      const sy = Math.sin(tiltX);
+      const cz = Math.cos(tiltZ);
+      const sz = Math.sin(tiltZ);
+
+      const nx = px * cz - py * sz;
+      const ny = px * sz + py * cz;
+      const ny2 = ny * cy - pz * sy;
+      const nz = ny * sy + pz * cy;
+
+      positions[i * 3] = nx;
+      positions[i * 3 + 1] = ny2;
+      positions[i * 3 + 2] = nz;
+
+      // Color: core is warmer, edges cooler
+      const distFromCore = radius / 60;
+      const r = 0.75 + Math.random() * 0.25;
+      const g = 0.8 + Math.random() * 0.2 - distFromCore * 0.15;
+      const b = 0.9 + Math.random() * 0.1;
+      colors[i * 3] = r;
+      colors[i * 3 + 1] = Math.max(0.6, g);
+      colors[i * 3 + 2] = Math.max(0.7, b);
+    }
+
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    return geo;
+  }, []);
+
+  return (
+    <points geometry={geometry}>
+      <pointsMaterial
+        size={0.055}
+        transparent
+        opacity={0.65}
+        sizeAttenuation
+        depthWrite={false}
+        vertexColors
+        blending={THREE.AdditiveBlending}
+      />
+    </points>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ORION NEBULA — diffuse pink/violet gas clouds
+   ═══════════════════════════════════════════════════════════ */
+function OrionNebula() {
+  const groupRef = useRef<THREE.Group>(null);
+
+  const clouds = useMemo(() => [
+    { pos: [18, 6, 22] as [number, number, number], scale: [5.5, 3.2, 4.0] as [number, number, number], color: '#f9a8d4', opacity: 0.035 },
+    { pos: [16, 5, 20] as [number, number, number], scale: [4.0, 2.5, 3.5] as [number, number, number], color: '#c4b5fd', opacity: 0.028 },
+    { pos: [20, 7, 24] as [number, number, number], scale: [3.5, 2.0, 3.0] as [number, number, number], color: '#fca5a5', opacity: 0.022 },
+    { pos: [14, 4, 21] as [number, number, number], scale: [3.0, 1.8, 2.5] as [number, number, number], color: '#86efac', opacity: 0.018 },
+  ], []);
+
+  useFrame((_state, delta) => {
+    if (!groupRef.current) return;
+    groupRef.current.children.forEach((child, i) => {
+      const dir = i % 2 === 0 ? 1 : -1;
+      child.rotation.y += delta * 0.008 * dir;
+      child.rotation.x += delta * 0.004 * dir;
+    });
+  });
+
+  return (
+    <group ref={groupRef}>
+      {clouds.map((c, i) => (
+        <mesh key={i} position={c.pos} scale={c.scale}>
+          <sphereGeometry args={[1, 16, 16]} />
+          <meshBasicMaterial
+            color={c.color}
+            transparent
+            opacity={c.opacity}
+            depthWrite={false}
+            blending={THREE.AdditiveBlending}
+            side={THREE.BackSide}
+          />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════
+   AURORA BOREALIS — lite particle curtain above north pole
+   ═══════════════════════════════════════════════════════════ */
+function AuroraBorealis() {
+  const ref = useRef<THREE.Points>(null);
+
+  const { positions, colors } = useMemo(() => {
+    const count = 300;
+    const pos = new Float32Array(count * 3);
+    const col = new Float32Array(count * 3);
+
+    for (let i = 0; i < count; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const r = Math.random() * 0.55;
+      const height = 0.04 + Math.random() * 0.18;
+
+      pos[i * 3] = Math.cos(angle) * r;
+      pos[i * 3 + 1] = height;
+      pos[i * 3 + 2] = Math.sin(angle) * r;
+
+      // Green and cyan mix
+      const isGreen = Math.random() > 0.5;
+      col[i * 3] = isGreen ? 0.3 + Math.random() * 0.3 : 0.2 + Math.random() * 0.2;
+      col[i * 3 + 1] = 0.8 + Math.random() * 0.2;
+      col[i * 3 + 2] = isGreen ? 0.3 + Math.random() * 0.2 : 0.7 + Math.random() * 0.3;
+    }
+
+    return { positions: pos, colors: col };
+  }, []);
+
+  useFrame((state) => {
+    if (!ref.current) return;
+    const t = state.clock.elapsedTime;
+    const posAttr = ref.current.geometry.attributes.position as THREE.BufferAttribute;
+    const arr = posAttr.array as Float32Array;
+
+    for (let i = 0; i < arr.length / 3; i++) {
+      const baseX = arr[i * 3];
+      const baseZ = arr[i * 3 + 2];
+      // gentle wave motion
+      const wave = Math.sin(t * 0.6 + baseX * 4 + baseZ * 3) * 0.012;
+      arr[i * 3 + 1] = 0.06 + wave + Math.abs(Math.sin(i * 0.7 + t * 0.3)) * 0.15;
+    }
+    posAttr.needsUpdate = true;
+  });
+
+  const geometry = useMemo(() => {
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    return geo;
+  }, [positions, colors]);
+
+  return (
+    <points ref={ref} position={[0, 1.02, 0]} geometry={geometry}>
+      <pointsMaterial
+        size={0.028}
+        transparent
+        opacity={0.65}
+        sizeAttenuation
+        depthWrite={false}
+        vertexColors
+        blending={THREE.AdditiveBlending}
+      />
+    </points>
   );
 }
 
@@ -385,13 +747,18 @@ function StarField() {
 function Scene() {
   return (
     <>
-      <ambientLight intensity={0.85} />
-      <directionalLight position={[10, 5, 10]} intensity={2.2} color="#fff8e7" />
-      <pointLight position={[-8, -2, 5]} intensity={0.8} color="#a8d8ff" />
-      <pointLight position={[0, 6, 2]} intensity={0.5} color="#ffe8b0" />
-      <hemisphereLight color="#87ceeb" groundColor="#1a2f4a" intensity={0.6} />
+      <ambientLight intensity={1.4} />
+      <directionalLight position={[8, 4, 8]} intensity={3.5} color="#fffdf5" />
+      <pointLight position={[-6, -2, 4]} intensity={1.2} color="#a8d8ff" />
+      <pointLight position={[0, 6, 2]} intensity={0.8} color="#ffe8b0" />
+      <pointLight position={[0, -4, 0]} intensity={0.6} color="#4fc3f7" />
+      <hemisphereLight color="#e1f5fe" groundColor="#0d2b4a" intensity={1.0} />
+      <MilkyWay />
+      <OrionNebula />
       <StarField />
+      <BrightStars />
       <Sun />
+      <Planets />
       <group rotation={[0, -Math.PI / 2, 0]}>
         <EarthGlobe />
         <TerraNovaMarkers />
@@ -424,18 +791,18 @@ export default function HolographicEarth({ className }: HolographicEarthProps) {
     <div
       className={clsx(
         'relative aspect-[5/4] w-full max-h-[300px] overflow-hidden rounded-[22px] sm:max-h-[340px]',
-        'border border-cyan-300/30 bg-gradient-to-b from-[#0a1a2e]/90 via-[#0d1f33]/88 to-[#081422]/92',
+        'border border-cyan-200/30 bg-gradient-to-b from-[#0f2b4d]/85 via-[#133049]/82 to-[#0c1e33]/86',
         'shadow-[0_12px_48px_rgba(0,0,0,0.45),0_0_0_1px_rgba(103,243,223,0.06)_inset,0_0_64px_rgba(103,243,223,0.12)]',
         'ring-1 ring-amber-200/10',
         className,
       )}
     >
-      <div className="pointer-events-none absolute inset-0 rounded-[22px] bg-[radial-gradient(ellipse_at_50%_42%,rgba(103,243,223,0.28),transparent_58%)]" />
-      <div className="pointer-events-none absolute inset-0 rounded-[22px] bg-[radial-gradient(circle_at_50%_88%,rgba(245,215,142,0.10),transparent_45%)]" />
+      <div className="pointer-events-none absolute inset-0 rounded-[22px] bg-[radial-gradient(ellipse_at_50%_42%,rgba(103,243,223,0.38),transparent_58%)]" />
+      <div className="pointer-events-none absolute inset-0 rounded-[22px] bg-[radial-gradient(circle_at_50%_88%,rgba(245,215,142,0.14),transparent_45%)]" />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[35%] bg-gradient-to-t from-black/25 to-transparent" />
       <div className="pointer-events-none absolute inset-3 rounded-[16px] border border-white/[0.06]" />
       <p className="pointer-events-none absolute inset-x-0 top-2.5 z-10 text-center text-[9px] font-medium uppercase tracking-[0.42em] text-cyan-100/50">
-        Holographic Earth · L6 Issobella Station · Terra Nova Nodes · drag orbit
+        Holographic Earth · Solar System · Milky Way · Orion · Bright Stars · Terra Nova · drag orbit
       </p>
       <div className="absolute inset-x-0 bottom-0 top-9 sm:top-10">
         <Canvas

@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { Newspaper, ArrowRight, Calendar } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Newspaper, ArrowRight, Calendar, Sparkles } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 
 // ─── Article type ─────────────────────────────────────────────────────────────
@@ -232,6 +233,25 @@ export const NEWS_ARTICLES: NewsArticle[] = [
   },
 ];
 
+// ─── Card accent gradients ────────────────────────────────────────────────────
+const CARD_ACCENT: Record<string, { from: string; to: string; glow: string }> = {
+  Mainnet:   { from: 'from-amber-500/20', to: 'to-orange-500/5', glow: 'shadow-amber-500/10' },
+  AI:        { from: 'from-purple-500/20', to: 'to-pink-500/5', glow: 'shadow-purple-500/10' },
+  Wiki:      { from: 'from-emerald-500/20', to: 'to-teal-500/5', glow: 'shadow-emerald-500/10' },
+  Layers:    { from: 'from-orange-500/20', to: 'to-amber-500/5', glow: 'shadow-orange-500/10' },
+  Audit:     { from: 'from-emerald-500/20', to: 'to-green-500/5', glow: 'shadow-emerald-500/10' },
+  CLI:       { from: 'from-cyan-500/20', to: 'to-blue-500/5', glow: 'shadow-cyan-500/10' },
+  Kniha:     { from: 'from-yellow-500/20', to: 'to-amber-500/5', glow: 'shadow-yellow-500/10' },
+  Book:      { from: 'from-yellow-500/20', to: 'to-amber-500/5', glow: 'shadow-yellow-500/10' },
+  Mining:    { from: 'from-cyan-500/20', to: 'to-sky-500/5', glow: 'shadow-cyan-500/10' },
+  DeFi:      { from: 'from-gold-500/20', to: 'to-yellow-500/5', glow: 'shadow-yellow-500/10' },
+  Listing:   { from: 'from-green-500/20', to: 'to-emerald-500/5', glow: 'shadow-green-500/10' },
+};
+
+function getAccent(tag: string) {
+  return CARD_ACCENT[tag] || { from: 'from-white/10', to: 'to-white/5', glow: 'shadow-white/10' };
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 const HOMEPAGE_LIMIT = 4;
@@ -246,14 +266,40 @@ export default function NewsFeed() {
     <section className="relative py-20 px-4 overflow-hidden">
       {/* Subtle background gradient */}
       <div className="absolute inset-0 bg-linear-to-b from-transparent via-zion-gold/[0.02] to-transparent pointer-events-none" />
+      {/* Floating particles */}
+      <div className="absolute inset-0 pointer-events-none">
+        {Array.from({ length: 12 }).map((_, i) => (
+          <div
+            key={i}
+            className="absolute rounded-full bg-white/5 animate-pulse"
+            style={{
+              width: `${2 + (i % 4)}px`,
+              height: `${2 + (i % 4)}px`,
+              top: `${(i * 17.3) % 100}%`,
+              left: `${(i * 29.7) % 100}%`,
+              animationDelay: `${i * 0.4}s`,
+              animationDuration: `${3 + (i % 4)}s`,
+            }}
+          />
+        ))}
+      </div>
 
       <div className="zion-container relative">
         {/* Header */}
-        <div className="mb-12">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="mb-12"
+        >
           <div className="flex items-center gap-3 mb-3">
             <Newspaper className="w-5 h-5 text-zion-gold" />
             <span className="text-sm uppercase tracking-[0.4em] text-gray-400">
               {cs ? 'Novinky a aktualizace' : 'News & Updates'}
+            </span>
+            <span className="ml-auto text-[10px] uppercase tracking-wider text-zion-gold/60 bg-zion-gold/10 border border-zion-gold/20 px-2 py-0.5 rounded-full">
+              {cs ? `${NEWS_ARTICLES.length} článků` : `${NEWS_ARTICLES.length} articles`}
             </span>
           </div>
           <h2 className="text-4xl md:text-5xl font-bold text-white">
@@ -266,57 +312,74 @@ export default function NewsFeed() {
               ? 'Poslední zprávy z vývoje ZION ekosystému, DeFi, listingu a sítě.'
               : 'Latest updates from the ZION ecosystem development, DeFi, listings, and network.'}
           </p>
-        </div>
+        </motion.div>
 
         {/* Articles grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {visibleArticles.map((article) => (
-            <div key={article.slug}>
-              <Link
-                href={article.href}
-                target={article.external ? '_blank' : undefined}
-                rel={article.external ? 'noopener noreferrer' : undefined}
-                className="group relative block h-full rounded-3xl border border-white/10 bg-white/3 hover:bg-white/6 transition-all duration-300 overflow-hidden"
+          {visibleArticles.map((article, i) => {
+            const accent = getAccent(cs ? article.tag.cs : article.tag.en);
+            return (
+              <motion.div
+                key={article.slug}
+                initial={{ opacity: 0, y: 24 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: i * 0.1 }}
               >
-                {/* Gradient accent top */}
-                <div className="absolute top-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-zion-gold/30 to-transparent" />
+                <Link
+                  href={article.href}
+                  target={article.external ? '_blank' : undefined}
+                  rel={article.external ? 'noopener noreferrer' : undefined}
+                  className={`group relative block h-full rounded-3xl border border-white/10 bg-white/3 hover:bg-white/6 transition-all duration-300 overflow-hidden hover:shadow-lg hover:${accent.glow}`}
+                >
+                  {/* Gradient accent top */}
+                  <div className={`absolute top-0 left-0 right-0 h-1.5 bg-linear-to-r ${accent.from} ${accent.to}`} />
+                  {/* Background glow on hover */}
+                  <div className={`absolute -inset-px rounded-3xl bg-linear-to-br ${accent.from} ${accent.to} opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl pointer-events-none`} />
 
-                <div className="p-6">
-                  {/* Meta row */}
-                  <div className="flex items-center gap-3 mb-3">
-                    <span className={`text-[10px] tracking-wider uppercase px-2 py-0.5 rounded-full border border-white/10 bg-white/5 ${article.tagColor}`}>
-                      {cs ? article.tag.cs : article.tag.en}
-                    </span>
-                    <span className="text-[11px] text-white/30 flex items-center gap-1">
-                      <Calendar className="w-3 h-3" />
-                      {article.date}
-                    </span>
+                  <div className="relative p-6">
+                    {/* Meta row */}
+                    <div className="flex items-center gap-3 mb-3">
+                      <span className={`text-[10px] tracking-wider uppercase px-2 py-0.5 rounded-full border border-white/10 bg-white/5 ${article.tagColor}`}>
+                        {cs ? article.tag.cs : article.tag.en}
+                      </span>
+                      <span className="text-[11px] text-white/30 flex items-center gap-1">
+                        <Calendar className="w-3 h-3" />
+                        {article.date}
+                      </span>
+                    </div>
+
+                    {/* Title */}
+                    <h3 className="text-lg font-semibold text-white group-hover:text-zion-gold transition-colors mb-3 leading-snug">
+                      {cs ? article.title.cs : article.title.en}
+                    </h3>
+
+                    {/* Summary */}
+                    <p className="text-sm text-white/45 leading-relaxed mb-4">
+                      {cs ? article.summary.cs : article.summary.en}
+                    </p>
+
+                    {/* Read more */}
+                    <div className="flex items-center gap-1.5 text-xs text-zion-gold/60 group-hover:text-zion-gold transition-colors">
+                      <span>{cs ? 'Číst více' : 'Read more'}</span>
+                      <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                    </div>
                   </div>
-
-                  {/* Title */}
-                  <h3 className="text-lg font-semibold text-white group-hover:text-zion-gold transition-colors mb-3 leading-snug">
-                    {cs ? article.title.cs : article.title.en}
-                  </h3>
-
-                  {/* Summary */}
-                  <p className="text-sm text-white/45 leading-relaxed mb-4">
-                    {cs ? article.summary.cs : article.summary.en}
-                  </p>
-
-                  {/* Read more */}
-                  <div className="flex items-center gap-1.5 text-xs text-zion-gold/60 group-hover:text-zion-gold transition-colors">
-                    <span>{cs ? 'Číst více' : 'Read more'}</span>
-                    <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-                  </div>
-                </div>
-              </Link>
-            </div>
-          ))}
+                </Link>
+              </motion.div>
+            );
+          })}
         </div>
 
         {/* View all link */}
         {hasMore && (
-          <div className="mt-8 text-center">
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            className="mt-8 text-center"
+          >
             <Link
               href="/news"
               className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] text-white/60 hover:text-white transition-all text-sm"
@@ -324,7 +387,7 @@ export default function NewsFeed() {
               {cs ? `Všechny novinky (${NEWS_ARTICLES.length})` : `All news (${NEWS_ARTICLES.length})`}
               <ArrowRight className="w-4 h-4" />
             </Link>
-          </div>
+          </motion.div>
         )}
       </div>
     </section>

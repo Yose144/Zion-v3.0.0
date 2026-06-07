@@ -22,7 +22,14 @@ export default function ClientBackgrounds() {
   const backgroundsDisabled = BACKGROUND_DISABLED_PREFIXES.some((prefix) => pathname.startsWith(prefix));
 
   if (pathname === '/warp') {
-    return <WarpSpeedBackground starColor={[200, 160, 255]} speed={24} density={500} />;
+    return (
+      <WarpSpeedBackground
+        starColor={[80, 230, 210]}
+        speed={24}
+        density={500}
+        backgroundGradient="radial-gradient(ellipse at center, #0a2e2a 0%, #020a0a 100%)"
+      />
+    );
   }
 
   if (backgroundsDisabled) {

@@ -82,8 +82,10 @@ PowerShell equivalents for W11 development. Build first: `cargo build --release 
 - Pool server (local-dev only):
   - `$env:ZION_POOL_BIND='0.0.0.0:8444'; $env:ZION_NODE_RPC_ADDR='127.0.0.1:8443'; cargo run --release --manifest-path V3/Cargo.toml -p zion-pool --bin server`
 - Miner (edge-primary — connects to public pool):
-  - `$env:ZION_POOL_ADDR='77.42.71.94:8444'; $env:ZION_WORKER_NAME='<name>'; $env:ZION_MINER_ID='<id>'; $env:ZION_LOOP_COUNT='1000000'; $env:ZION_GPU_BACKEND='opencl'; cargo run --release --manifest-path V3/Cargo.toml -p zion-miner`
+  - `$env:ZION_POOL_ADDR='77.42.71.94:8444'; $env:ZION_WORKER_NAME='<name>'; $env:ZION_MINER_ID='<id>'; $env:ZION_LOOP_COUNT='1000000'; $env:ZION_GPU_BACKEND='opencl'; $env:ZION_PAYOUT_ADDRESS='<zion1...address>'; cargo run --release --manifest-path V3/Cargo.toml -p zion-miner`
+  - **REQUIRED:** `ZION_PAYOUT_ADDRESS` must be a valid 44-char `zion1...` address — pool validates and rejects with "pool closed the connection" if missing or invalid (fallback to miner_id is not allowed).
   - **GPU compile:** `cargo build --release --manifest-path V3/Cargo.toml -p zion-miner --features gpu-opencl` (or `gpu-cuda`, `gpu-metal`)
+  - **GPU hashrate (RX 5700 XT / gfx1010, AMD OpenCL):** Deeksha Full = ~1.1 KH/s benchmark. Live stratum hashrate is limited by nonce batch size (see ZION_NONCE_COUNT below).
 - Unified operator CLI:
   - `cargo run --manifest-path V3/Cargo.toml -p zion-cli -- --help`
 
