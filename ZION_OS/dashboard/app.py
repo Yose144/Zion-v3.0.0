@@ -3431,23 +3431,37 @@ def build_explorer() -> dict:
 # ── Backup status ────────────────────────────────────────────────────────
 
 def get_backup_status() -> dict:
-    """List backups + datadir sizes + last backup time."""
-    backups = []
-    backup_dir = REPO_ROOT / "backups"
+    r"""List backups + datadir sizes + last backup time.
+    Reads both manual backups (repo/backups) and auto-backups (C:\ZION-AutoBackups)."""
+    manual_backups = []
+    manual_dir = REPO_ROOT / "backups"
     total_backup_mb = 0
-    if backup_dir.exists():
-        for f in sorted(backup_dir.glob("backup_*.zip"), key=lambda p: p.stat().st_mtime, reverse=True):
+    if manual_dir.exists():
+        for f in sorted(manual_dir.glob("backup_*.zip"), key=lambda p: p.stat().st_mtime, reverse=True):
             s = f.stat()
             size_mb = round(s.st_size / (1024*1024), 2)
             total_backup_mb += size_mb
-            backups.append({
+            manual_backups.append({
+                "name": f.name,
+                "size_mb": size_mb,
+                "created": datetime.fromtimestamp(s.st_mtime).isoformat(),
+            })
+    # Auto-backups
+    auto_backups = []
+    auto_dir = Path("C:/ZION-AutoBackups")
+    if auto_dir.exists():
+        for f in sorted(auto_dir.glob("zion-auto-*.zip"), key=lambda p: p.stat().st_mtime, reverse=True):
+            s = f.stat()
+            size_mb = round(s.st_size / (1024*1024), 2)
+            total_backup_mb += size_mb
+            auto_backups.append({
                 "name": f.name,
                 "size_mb": size_mb,
                 "created": datetime.fromtimestamp(s.st_mtime).isoformat(),
             })
     # Datadir sizes
     datadirs = {}
-    for name, path in [("node1", REPO_ROOT / "data" / "node1"), ("node2", REPO_ROOT / "data" / "node2"), ("pool", REPO_ROOT / "data" / "pool")]:
+    for name, path in [("node1", REPO_ROOT / "V3" / "data"), ("node2", REPO_ROOT / "V3" / "data"), ("pool", REPO_ROOT / "V3" / "data"), ("dashboard", REPO_ROOT / "ZION_OS" / "dashboard")]:
         if path.exists():
             try:
                 total = sum(f.stat().st_size for f in path.rglob("*") if f.is_file())
@@ -3456,13 +3470,18 @@ def get_backup_status() -> dict:
                 datadirs[name] = None
         else:
             datadirs[name] = None
-    last_backup = backups[0]["created"] if backups else None
+    all_backups = sorted(manual_backups + auto_backups, key=lambda x: x["created"], reverse=True)
+    last_backup = all_backups[0]["created"] if all_backups else None
     return {
-        "backups": backups[:10],
+        "backups": all_backups[:10],
+        "manual_backups": manual_backups[:5],
+        "auto_backups": auto_backups[:5],
         "total_backup_mb": round(total_backup_mb, 2),
         "datadir_mb": datadirs,
         "last_backup": last_backup,
-        "backup_dir": str(backup_dir),
+        "backup_dir": str(manual_dir),
+        "auto_backup_dir": str(auto_dir),
+        "auto_backup_enabled": auto_dir.exists(),
     }
 
 # ── Emission helpers (mirror V3/L1/core/src/emission.rs) ───────────────
