@@ -13,5 +13,8 @@ New-Item -ItemType Directory -Path $logDir -Force | Out-Null
 [Environment]::SetEnvironmentVariable('ZION_GPU_WORK_SIZE', '4096', 'Process')
 
 $minerExe = 'C:\Users\yosef\Desktop\Zion\2.9.6-main\V3\target\release\zion-miner.exe'
-$p = Start-Process -FilePath $minerExe -RedirectStandardOutput "$logDir\miner.log" -RedirectStandardError "$logDir\miner.err" -WindowStyle Hidden -PassThru
-Write-Host "Started Miner  PID=$($p.Id)"
+$ts = [int][double]::Parse((Get-Date -UFormat %s))
+$logFile = "$logDir\miner_${ts}.log"
+$errFile = "$logDir\miner_${ts}.err"
+$p = Start-Process -FilePath $minerExe -WorkingDirectory 'C:\Users\yosef\Desktop\Zion\2.9.6-main' -RedirectStandardOutput $logFile -RedirectStandardError $errFile -WindowStyle Hidden -PassThru
+Write-Host "Started Miner  PID=$($p.Id)  log=$logFile"

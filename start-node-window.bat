@@ -22,4 +22,4 @@ echo  Seed: 77.42.71.94:8333 (Edge)
 echo ===========================================================
 echo.
 
-V3\target\release\node.exe >> logs\node1.log 2>&1
+V3\target\release\node.exe
