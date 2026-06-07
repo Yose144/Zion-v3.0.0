@@ -1112,6 +1112,7 @@ pub mod opencl_deeksha {
                 // Read back all s4 results (chunk * 64 bytes)
                 let mut s4_data = vec![0u8; chunk * 64];
                 s4_out_buf.read(&mut s4_data).enq()?;
+                self.pro_que.queue().finish()?;
 
                 // CPU: NPU mix + cosmic fusion + target check for each work item
                 // Parallel scan with Rayon, but always pick the FIRST nonce (lowest
@@ -1201,10 +1202,12 @@ pub mod opencl_deeksha {
 
                 let mut nonce_out = vec![SENTINEL];
                 self.result_nonce_buf.read(&mut nonce_out).enq()?;
+                self.pro_que.queue().finish()?;
 
                 if nonce_out[0] != SENTINEL {
                     let mut hash_out = vec![0u8; 32];
                     self.result_hash_buf.read(&mut hash_out).enq()?;
+                    self.pro_que.queue().finish()?;
                     let mut hash = [0u8; 32];
                     hash.copy_from_slice(&hash_out);
                     all_solutions.push((nonce_out[0], hash));
@@ -1691,6 +1694,7 @@ pub mod opencl_deeksha_lite {
                 {
                     let guard = GpuGuard::new();
                     self.output_hashes_buf.read(&mut hashes).enq()?;
+                    self.pro_que.queue().finish()?;
                     if guard.was_caught() {
                         self.recovery_attempts += 1;
                         anyhow::bail!(
@@ -2020,6 +2024,7 @@ pub mod opencl_deeksha_lite_fire {
                 {
                     let guard = GpuGuard::new();
                     self.output_hashes_buf.read(&mut hashes).enq()?;
+                    self.pro_que.queue().finish()?;
                     if guard.was_caught() {
                         self.recovery_attempts += 1;
                         anyhow::bail!(
