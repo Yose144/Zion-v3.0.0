@@ -523,12 +523,13 @@ fn handle_client(
         return Ok(());
     }
 
-    let (miner_id, worker_name, algorithm, payout_address) = match hello_message {
+    let (miner_id, worker_name, algorithm, payout_address, backend) = match hello_message {
         PoolMessage::Hello {
             miner_id,
             worker_name,
             algorithm,
             payout_address,
+            backend,
             ..
         } => {
             let payout = if payout_address.trim().is_empty() {
@@ -543,18 +544,14 @@ fn handle_client(
                     "invalid payout_address {payout}: must be a valid zion1 address"
                 ));
             }
-            (miner_id, worker_name, algorithm, payout)
+            (miner_id, worker_name, algorithm, payout, backend)
         }
         other => return Err(anyhow!("expected hello from miner, got {other:?}")),
     };
 
-    if algorithm != config.algorithm {
-        return Err(anyhow!(
-            "unsupported miner algorithm: expected {}, got {}",
-            config.algorithm,
-            algorithm
-        ));
-    }
+    // Dual-algo support: accept any algorithm the miner advertises.
+    // The pool validates shares with the session's algorithm.
+    let session_algorithm = algorithm.clone();
 
     let requested_group = resolve_session_group(&miner_id, &worker_name, config);
     let session_group = if requested_group == SessionGroup::Auto {
@@ -576,7 +573,7 @@ fn handle_client(
         let mut telemetry = miner_telemetry
             .lock()
             .expect("miner telemetry lock poisoned");
-        telemetry.touch_session(&miner_id, &worker_name);
+        telemetry.touch_session(&miner_id, &worker_name, &session_algorithm, &backend);
     }
 
     // Register miner payout address for PPLNS distribution.
@@ -587,7 +584,7 @@ fn handle_client(
 
     let welcome_message = PoolMessage::Welcome {
         protocol_version: zion_pool::protocol_version().to_string(),
-        algorithm: config.algorithm.clone(),
+        algorithm: session_algorithm.clone(),
         job_ttl_ms: config.job_ttl_ms,
     };
     let welcome_line = write_wire_message(&mut writer, &welcome_message)?;
@@ -694,11 +691,16 @@ fn handle_client(
         let network_target = job.target;
         let share_target = vardiff.share_target();
         let share_difficulty = vardiff.current_difficulty;
+        let job_nonce_count = if backend == "opencl" || backend == "cuda" || backend == "metal" {
+            config.nonce_count_gpu
+        } else {
+            config.nonce_count
+        };
         let job_message = PoolMessage::Job {
             job_id: job.job_id,
-            algorithm: config.algorithm.clone(),
+            algorithm: session_algorithm.clone(),
             start_nonce: job.start_nonce,
-            nonce_count: job.nonce_count,
+            nonce_count: job_nonce_count,
             target_hex: to_hex(&share_target.bytes),
             header_hex: to_hex(&job.header.to_bytes()),
             height: job.height,
@@ -711,7 +713,7 @@ fn handle_client(
             worker_name,
             job.height,
             start_nonce,
-            start_nonce + config.nonce_count
+            start_nonce + job_nonce_count
         );
         println!("issued_job_id={}", job.job_id);
         println!("wire_job={job_line}");
@@ -748,7 +750,7 @@ fn handle_client(
                     nonce,
                     height: job.height,
                 };
-                let computed_hash = candidate.hash_with_algorithm(&config.algorithm);
+                let computed_hash = candidate.hash_with_algorithm(&session_algorithm);
                 let submitted_hash = parse_hash_hex(&hash_hex)?;
 
                 // Log hash mismatch but use our own computed hash for validation
@@ -1348,6 +1350,7 @@ struct ServerConfig {
     job_ttl_ms: u64,
     start_nonce: u64,
     nonce_count: u64,
+    nonce_count_gpu: u64,
     nonce_stride: u64,
     timestamp: u64,
     target: DifficultyTarget,
@@ -1390,9 +1393,6 @@ struct ServerConfig {
     /// When set, every accepted share is forwarded to the upstream pool
     /// via `ShareRelay` so the Core pool owns the unified PPLNS window.
     upstream_pool_addr: Option<String>,
-    /// Active mining algorithm signalled to miners and used for share validation.
-    /// Default matches the network consensus profile; override with ZION_POOL_ALGORITHM.
-    algorithm: String,
 }
 
 #[derive(Debug)]
@@ -1440,6 +1440,8 @@ struct MinerPayoutRecord {
 #[derive(Debug, Clone)]
 struct MinerTelemetry {
     worker_name: String,
+    algorithm: String,
+    backend: String,
     first_seen_s: u64,
     last_seen_s: u64,
     last_share_time_s: u64,
@@ -1466,9 +1468,11 @@ const HASHRATE_WINDOW_LIVE_S: u64 = 10 * 60;
 const PAYOUT_HISTORY_LIMIT: usize = 50;
 
 impl MinerTelemetry {
-    fn new(worker_name: &str, now_s: u64) -> Self {
+    fn new(worker_name: &str, algorithm: &str, backend: &str, now_s: u64) -> Self {
         Self {
             worker_name: worker_name.to_string(),
+            algorithm: algorithm.to_string(),
+            backend: backend.to_string(),
             first_seen_s: now_s,
             last_seen_s: now_s,
             last_share_time_s: 0,
@@ -1485,8 +1489,10 @@ impl MinerTelemetry {
         }
     }
 
-    fn touch(&mut self, worker_name: &str, now_s: u64) {
+    fn touch(&mut self, worker_name: &str, algorithm: &str, backend: &str, now_s: u64) {
         self.worker_name = worker_name.to_string();
+        self.algorithm = algorithm.to_string();
+        self.backend = backend.to_string();
         if self.first_seen_s == 0 {
             self.first_seen_s = now_s;
         }
@@ -1539,12 +1545,12 @@ impl MinerTelemetry {
 }
 
 impl MinerTelemetryRegistry {
-    fn touch_session(&mut self, miner_id: &str, worker_name: &str) {
+    fn touch_session(&mut self, miner_id: &str, worker_name: &str, algorithm: &str, backend: &str) {
         let now_s = now_unix_seconds();
         self.miners
             .entry(miner_id.to_string())
-            .and_modify(|miner| miner.touch(worker_name, now_s))
-            .or_insert_with(|| MinerTelemetry::new(worker_name, now_s));
+            .and_modify(|miner| miner.touch(worker_name, algorithm, backend, now_s))
+            .or_insert_with(|| MinerTelemetry::new(worker_name, algorithm, backend, now_s));
     }
 
     fn record_job_result(
@@ -1559,8 +1565,8 @@ impl MinerTelemetryRegistry {
         let miner = self
             .miners
             .entry(miner_id.to_string())
-            .or_insert_with(|| MinerTelemetry::new(worker_name, now_s));
-        miner.touch(worker_name, now_s);
+            .or_insert_with(|| MinerTelemetry::new(worker_name, "", "", now_s));
+        miner.touch(worker_name, "", "", now_s);
         miner.completed_jobs = miner.completed_jobs.saturating_add(1);
         miner.push_sample(attempted_hashes, elapsed_ms, now_s);
         if accepted {
@@ -1576,8 +1582,8 @@ impl MinerTelemetryRegistry {
         let miner = self
             .miners
             .entry(miner_id.to_string())
-            .or_insert_with(|| MinerTelemetry::new(worker_name, now_s));
-        miner.touch(worker_name, now_s);
+            .or_insert_with(|| MinerTelemetry::new(worker_name, "", "", now_s));
+        miner.touch(worker_name, "", "", now_s);
         miner.blocks_found = miner.blocks_found.saturating_add(1);
     }
 
@@ -1592,8 +1598,8 @@ impl MinerTelemetryRegistry {
         let miner = self
             .miners
             .entry(miner_id.to_string())
-            .or_insert_with(|| MinerTelemetry::new(worker_name, now_s));
-        miner.touch(worker_name, now_s);
+            .or_insert_with(|| MinerTelemetry::new(worker_name, "", "", now_s));
+        miner.touch(worker_name, "", "", now_s);
         miner.completed_jobs = miner.completed_jobs.saturating_add(1);
         miner.no_solution_jobs = miner.no_solution_jobs.saturating_add(1);
         miner.push_sample(attempted_hashes, elapsed_ms, now_s);
@@ -1605,7 +1611,7 @@ impl MinerTelemetryRegistry {
             let miner = self
                 .miners
                 .entry(payout.miner_id.clone())
-                .or_insert_with(|| MinerTelemetry::new("", now_s));
+                .or_insert_with(|| MinerTelemetry::new("", "", "", now_s));
             miner.last_seen_s = now_s;
             miner.payouts.push_front(MinerPayoutRecord {
                 amount_atomic: payout.amount,
@@ -1676,7 +1682,7 @@ impl MinerTelemetryRegistry {
         let miner = self
             .miners
             .entry("__pool__".to_string())
-            .or_insert_with(|| MinerTelemetry::new("__pool__", now_s));
+            .or_insert_with(|| MinerTelemetry::new("__pool__", "", "", now_s));
         miner.payouts.push_front(MinerPayoutRecord {
             amount_atomic: humanitarian.saturating_add(issobella).saturating_add(pool),
             share_count: 0,
@@ -1708,7 +1714,7 @@ impl MinerTelemetryRegistry {
         let miner = self
             .miners
             .entry("__pool__".to_string())
-            .or_insert_with(|| MinerTelemetry::new("__pool__", now_s));
+            .or_insert_with(|| MinerTelemetry::new("__pool__", "", "", now_s));
         miner.payouts.push_front(MinerPayoutRecord {
             amount_atomic: humanitarian.saturating_add(issobella).saturating_add(pool),
             share_count: 0,
@@ -2569,6 +2575,8 @@ fn build_miners_payload(
             serde_json::json!({
                 "address": miner_id,
                 "worker_name": miner.worker_name,
+                "algorithm": miner.algorithm,
+                "backend": miner.backend,
                 "payout_address": pplns_engine.address_for(miner_id).unwrap_or(""),
                 "last_share": miner.last_share_time_s,
                 "last_seen": miner.last_seen_s,
@@ -2741,6 +2749,7 @@ impl ServerConfig {
             job_ttl_ms: parse_env_u64("ZION_JOB_TTL_MS", 15_000)?,
             start_nonce: parse_env_u64("ZION_START_NONCE", 42)?,
             nonce_count: parse_env_u64("ZION_NONCE_COUNT", 4096)?,
+            nonce_count_gpu: parse_env_u64("ZION_NONCE_COUNT_GPU", 262_144)?,
             nonce_stride: parse_env_u64("ZION_NONCE_STRIDE", 1_024)?,
             timestamp: parse_env_u64("ZION_TIMESTAMP", 1_762_000_200)?,
             target: parse_target_env("ZION_TARGET")?,
@@ -2780,8 +2789,6 @@ impl ServerConfig {
             revenue_proxy_coin: std::env::var("ZION_REVENUE_PROXY_COIN")
                 .unwrap_or_else(|_| "KAS".to_string()),
             upstream_pool_addr: parse_optional_env_string("ZION_UPSTREAM_POOL_ADDR"),
-            algorithm: std::env::var("ZION_POOL_ALGORITHM")
-                .unwrap_or_else(|_| zion_core::consensus_profile().to_string()),
             // WARNING: Fallback values must stay in sync with `zion_core::emission`.
             // If the protocol-level split changes, update here, in pplns.rs,
             // cosmic-harmony/src/revenue.rs, and the whitepapers.
@@ -3096,6 +3103,7 @@ mod tests {
             job_ttl_ms: 15_000,
             start_nonce: 42,
             nonce_count: 64,
+            nonce_count_gpu: 64,
             nonce_stride: 64,
             timestamp: 1_762_100_200,
             target: DifficultyTarget::MAX,
@@ -3120,7 +3128,6 @@ mod tests {
             revenue_proxy_coin: "KAS".to_string(),
             fee_config: FeeConfig::default(),
             upstream_pool_addr: None,
-            algorithm: "cosmic_harmony".to_string(),
         };
         let (pool_addr, pool_handle) = spawn_pool_server(config)?;
 
@@ -3135,6 +3142,7 @@ mod tests {
                 worker_name: "rig-test".to_string(),
                 algorithm: zion_core::consensus_profile().to_string(),
                 payout_address: "zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3".to_string(),
+                backend: "cpu".to_string(),
             },
         )?;
 
@@ -3323,6 +3331,7 @@ mod tests {
             job_ttl_ms: 15_000,
             start_nonce: 1,
             nonce_count: 64,
+            nonce_count_gpu: 64,
             nonce_stride: 64,
             timestamp: 1,
             target: DifficultyTarget::MAX,
@@ -3347,7 +3356,6 @@ mod tests {
             revenue_proxy_coin: "KAS".to_string(),
             fee_config: FeeConfig::default(),
             upstream_pool_addr: None,
-            algorithm: "cosmic_harmony".to_string(),
         };
 
         let group = resolve_session_group("user-miner", "rig-01", &config);
@@ -3364,6 +3372,7 @@ mod tests {
             job_ttl_ms: 15_000,
             start_nonce: 1,
             nonce_count: 64,
+            nonce_count_gpu: 64,
             nonce_stride: 64,
             timestamp: 1,
             target: DifficultyTarget::MAX,
@@ -3388,7 +3397,6 @@ mod tests {
             revenue_proxy_coin: "KAS".to_string(),
             fee_config: FeeConfig::default(),
             upstream_pool_addr: None,
-            algorithm: "cosmic_harmony".to_string(),
         };
 
         let group = resolve_session_group("backend-miner-1", "rig-01", &config);
@@ -3405,6 +3413,7 @@ mod tests {
             job_ttl_ms: 15_000,
             start_nonce: 1,
             nonce_count: 64,
+            nonce_count_gpu: 64,
             nonce_stride: 64,
             timestamp: 1,
             target: DifficultyTarget::MAX,
@@ -3429,7 +3438,6 @@ mod tests {
             revenue_proxy_coin: "KAS".to_string(),
             fee_config: FeeConfig::default(),
             upstream_pool_addr: None,
-            algorithm: "cosmic_harmony".to_string(),
         };
 
         let group = resolve_session_group("miner-a", "backend-revenue-1", &config);
@@ -3610,6 +3618,7 @@ mod tests {
             job_ttl_ms: 15_000,
             start_nonce: 1,
             nonce_count: 64,
+            nonce_count_gpu: 64,
             nonce_stride: 64,
             timestamp: 1,
             target: DifficultyTarget::MAX,
@@ -3634,7 +3643,6 @@ mod tests {
             revenue_proxy_coin: "KAS".to_string(),
             fee_config: FeeConfig::default(),
             upstream_pool_addr: None,
-            algorithm: "cosmic_harmony".to_string(),
         };
 
         // Even though miner_id is in backend list, explicit hint wins
