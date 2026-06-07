@@ -1,21 +1,14 @@
-//! DeekshaLite Fire — Thermal-Intensive CPU reference implementation
+//! DeekshaLite Fire — CPU reference implementation
 //!
-//! Based on DeekshaLite v1 but intensified for maximum GPU thermal output:
-//!   - Scratchpad: 512 KiB (16384 blocks × 32B)     [was 256 KiB]
-//!   - Sequential passes: 8                         [was 2]
-//!   - Random reads: 256                             [was 64]
-//!   - AES rounds: 10 full                           [was 3+1]
-//!   - Thermal loop: 1024 heavy int ops per hash
+//! Fire = DeekshaLite v1 (identical, verified working) + thermal_loop step.
+//! The thermal loop burns ALU cycles after the AES mix to maximize GPU heat.
 //!
-//! Pipeline (must match deeksha_lite_fire.cl):
-//!   1. Keccak256(header[0..80] || nonce_le)       → s1[32]
-//!   2. Memory-hard scratchpad (512 KiB)
-//!        Phase A: SHA3-512 chain fill (16384 blocks)
-//!        Phase B: 8 sequential XOR passes (forward/backward pairs)
-//!        Phase C: 256 random reads, idx from u64
-//!   3. AES-128 CTR mix (10 full rounds + final)
-//!   4. Thermal loop: heavy ulong mul/rotate/XOR burn
-//!   5. Keccak256(s3)  → final hash[32]
+//! Pipeline (must match deeksha_lite_fire.cl exactly):
+//!   1. Keccak256(header[0..80] || nonce_le)  → s1[32]  — same as v1
+//!   2. Memory-hard scratchpad (256 KiB, 8192 × 32B, 2 passes, 64 reads)  — same as v1
+//!   3. AES-128 CTR mix (3 full rounds + 1 final)  — same as v1
+//!   4. Thermal loop (65536 iters, 8 ulong integer chains)  — extra vs v1
+//!   5. Keccak256(s3_after_thermal)  → final hash[32]  — same as v1
 
 use sha3::{Digest, Keccak256, Sha3_512};
 use crate::algorithms_opt::Hash32;
@@ -27,16 +20,17 @@ fn meets_target(hash: &[u8; 32], target: &[u8; 32]) -> bool {
 
 pub const DEEKSHA_LITE_FIRE_PROFILE: &str = "deeksha_lite_fire";
 
-pub const SCRATCHPAD_SIZE: usize = 128 * 1024; // 128 KiB
+// Constants — identical to deeksha_lite_v1 for memory management
+pub const SCRATCHPAD_SIZE: usize = 256 * 1024; // 256 KiB — same as v1
 pub const BLOCK_SIZE:      usize = 32;
-pub const BLOCK_COUNT:     usize = SCRATCHPAD_SIZE / BLOCK_SIZE; // 4096
-pub const PASSES:          usize = 16;
-pub const RANDOM_READS:    usize = 512;
-pub const AES_FULL_ROUNDS: usize = 10;
+pub const BLOCK_COUNT:     usize = SCRATCHPAD_SIZE / BLOCK_SIZE; // 8192
+pub const PASSES:          usize = 2;    // same as v1
+pub const RANDOM_READS:    usize = 64;   // same as v1
+pub const AES_ROUNDS:      usize = 4;    // same as v1 (3 full + 1 final)
 pub const THERMAL_ITERS:   usize = 65536;
 
 // ============================================================
-// AES-128 helpers (FIPS-197)
+// AES-128 helpers — identical to deeksha_lite.rs
 // ============================================================
 
 const AES_SBOX: [u8; 256] = [
@@ -95,7 +89,7 @@ fn sha3_512(input: &[u8]) -> [u8; 64] {
 }
 
 // ============================================================
-// Step 1: Keccak256
+// Step 1: Keccak256 — identical to v1
 // ============================================================
 fn step1_keccak(header: &[u8], nonce: u64) -> [u8; 32] {
     let mut input = [0u8; 88];
@@ -106,7 +100,7 @@ fn step1_keccak(header: &[u8], nonce: u64) -> [u8; 32] {
 }
 
 // ============================================================
-// Step 2: FIRE memory-hard scratchpad (512 KiB, 8 passes, 256 reads)
+// Step 2: Memory-hard scratchpad — identical to v1
 // ============================================================
 fn step2_memory_hard(seed: &[u8; 32]) -> [u8; 32] {
     let mut scratchpad = vec![0u8; SCRATCHPAD_SIZE];
@@ -124,21 +118,15 @@ fn step2_memory_hard(seed: &[u8; 32]) -> [u8; 32] {
         state[..32].copy_from_slice(&out[..32]);
     }
 
-    for _ in 0..PASSES {
-        for i in 0..BLOCK_COUNT {
-            let prev = if i == 0 { BLOCK_COUNT - 1 } else { i - 1 };
-            let (cur, prv) = (i * BLOCK_SIZE, prev * BLOCK_SIZE);
-            for j in 0..BLOCK_SIZE {
-                scratchpad[cur + j] ^= scratchpad[prv + j];
-            }
-        }
-        for i in (0..BLOCK_COUNT).rev() {
-            let next = if i + 1 == BLOCK_COUNT { 0 } else { i + 1 };
-            let (cur, nxt) = (i * BLOCK_SIZE, next * BLOCK_SIZE);
-            for j in 0..BLOCK_SIZE {
-                scratchpad[cur + j] ^= scratchpad[nxt + j];
-            }
-        }
+    for i in 0..BLOCK_COUNT {
+        let prev = if i == 0 { BLOCK_COUNT - 1 } else { i - 1 };
+        let (cur, prv) = (i * BLOCK_SIZE, prev * BLOCK_SIZE);
+        for j in 0..BLOCK_SIZE { let pv = scratchpad[prv + j]; scratchpad[cur + j] ^= pv; }
+    }
+    for i in (0..BLOCK_COUNT).rev() {
+        let next = if i + 1 == BLOCK_COUNT { 0 } else { i + 1 };
+        let (cur, nxt) = (i * BLOCK_SIZE, next * BLOCK_SIZE);
+        for j in 0..BLOCK_SIZE { let nv = scratchpad[nxt + j]; scratchpad[cur + j] ^= nv; }
     }
 
     let mut acc = [0u8; 32];
@@ -157,7 +145,7 @@ fn step2_memory_hard(seed: &[u8; 32]) -> [u8; 32] {
 }
 
 // ============================================================
-// Step 3: FIRE AES-128 CTR mix (10 full rounds)
+// Step 3: AES-128 CTR mix — identical to v1
 // ============================================================
 fn step3_aes_mix(seed: &[u8; 32], nonce: u64) -> [u8; 32] {
     let mut key = [0u8; 16];
@@ -178,7 +166,7 @@ fn step3_aes_mix(seed: &[u8; 32], nonce: u64) -> [u8; 32] {
         if carry == 0 { break; }
     }
 
-    for _ in 0..AES_FULL_ROUNDS {
+    for _ in 0..3 {
         aes_round(&mut block0, &key);
         aes_round(&mut block1, &key);
     }
@@ -193,7 +181,11 @@ fn step3_aes_mix(seed: &[u8; 32], nonce: u64) -> [u8; 32] {
 }
 
 // ============================================================
-// Step 4: FIRE Thermal Loop
+// Step 4: Thermal loop — only addition over v1
+//
+// 8 independent ulong chains, 65536 iterations.
+// Integer-only (no float) = deterministic on all GPU drivers.
+// Identical logic in deeksha_lite_fire.cl thermal_loop().
 // ============================================================
 #[inline(never)]
 fn step4_thermal_loop(data: &mut [u8; 32], nonce: u64) {
@@ -205,6 +197,7 @@ fn step4_thermal_loop(data: &mut [u8; 32], nonce: u64) {
     let mut f = nonce ^ 0xDEADBEEFCAFEBABEu64;
     let mut g = nonce ^ 0xBADC0FFEE0DDF00Du64;
     let mut h = nonce ^ 0xFEEDFACECAFEBEEFu64;
+
     for i in 0..THERMAL_ITERS {
         a = a.rotate_left(17).wrapping_add(b);
         b = b.rotate_left(31) ^ a;
@@ -223,44 +216,32 @@ fn step4_thermal_loop(data: &mut [u8; 32], nonce: u64) {
         g = g.wrapping_mul(0xBADC0FFEE0DDF00Du64);
         h = h.wrapping_add(0xFEEDFACECAFEBEEFu64);
         a ^= data[i & 0x1F] as u64;
-        b ^= data[(i + 8) & 0x1F] as u64;
+        b ^= data[(i +  8) & 0x1F] as u64;
         c ^= data[(i + 16) & 0x1F] as u64;
         d ^= data[(i + 24) & 0x1F] as u64;
-        e ^= data[(i + 4) & 0x1F] as u64;
+        e ^= data[(i +  4) & 0x1F] as u64;
         f ^= data[(i + 12) & 0x1F] as u64;
-        g ^= data[(i + 2) & 0x1F] as u64;
-        h ^= data[(i + 6) & 0x1F] as u64;
+        g ^= data[(i +  2) & 0x1F] as u64;
+        h ^= data[(i +  6) & 0x1F] as u64;
     }
-    data[0]  ^= a as u8;
-    data[1]  ^= (a >> 8) as u8;
-    data[2]  ^= b as u8;
-    data[3]  ^= (b >> 8) as u8;
-    data[4]  ^= c as u8;
-    data[5]  ^= (c >> 8) as u8;
-    data[6]  ^= d as u8;
-    data[7]  ^= (d >> 8) as u8;
-    data[8]  ^= e as u8;
-    data[9]  ^= (e >> 8) as u8;
-    data[10] ^= f as u8;
-    data[11] ^= (f >> 8) as u8;
-    data[12] ^= g as u8;
-    data[13] ^= (g >> 8) as u8;
-    data[14] ^= h as u8;
-    data[15] ^= (h >> 8) as u8;
-    data[16] ^= (a >> 16) as u8;
-    data[17] ^= (b >> 16) as u8;
-    data[18] ^= (c >> 16) as u8;
-    data[19] ^= (d >> 16) as u8;
-    data[20] ^= (e >> 16) as u8;
-    data[21] ^= (f >> 16) as u8;
-    data[22] ^= (g >> 16) as u8;
-    data[23] ^= (h >> 16) as u8;
-    data[24] ^= (a >> 24) as u8;
-    data[25] ^= (b >> 24) as u8;
+    // Fold back — prevents dead-code elimination
+    data[ 0] ^= a as u8;         data[ 1] ^= (a >> 8) as u8;
+    data[ 2] ^= b as u8;         data[ 3] ^= (b >> 8) as u8;
+    data[ 4] ^= c as u8;         data[ 5] ^= (c >> 8) as u8;
+    data[ 6] ^= d as u8;         data[ 7] ^= (d >> 8) as u8;
+    data[ 8] ^= e as u8;         data[ 9] ^= (e >> 8) as u8;
+    data[10] ^= f as u8;         data[11] ^= (f >> 8) as u8;
+    data[12] ^= g as u8;         data[13] ^= (g >> 8) as u8;
+    data[14] ^= h as u8;         data[15] ^= (h >> 8) as u8;
+    data[16] ^= (a >> 16) as u8; data[17] ^= (b >> 16) as u8;
+    data[18] ^= (c >> 16) as u8; data[19] ^= (d >> 16) as u8;
+    data[20] ^= (e >> 16) as u8; data[21] ^= (f >> 16) as u8;
+    data[22] ^= (g >> 16) as u8; data[23] ^= (h >> 16) as u8;
+    data[24] ^= (a >> 24) as u8; data[25] ^= (b >> 24) as u8;
 }
 
 // ============================================================
-// Step 5: Keccak256 final
+// Step 5: Keccak256 final — identical to v1
 // ============================================================
 fn step5_keccak(input: &[u8; 32]) -> [u8; 32] {
     Keccak256::digest(input).into()
@@ -270,7 +251,7 @@ fn step5_keccak(input: &[u8; 32]) -> [u8; 32] {
 // Public API
 // ============================================================
 
-/// Full DeekshaLite Fire hash
+/// Full DeekshaLite Fire hash (matches deeksha_lite_fire.cl exactly)
 pub fn deeksha_lite_fire(header: &[u8], nonce: u64) -> [u8; 32] {
     let s1 = step1_keccak(header, nonce);
     let s2 = step2_memory_hard(&s1);
@@ -322,6 +303,17 @@ mod tests {
         let h2 = deeksha_lite_fire(header, nonce);
         assert_eq!(h1, h2, "Fire must be deterministic");
         assert_ne!(h1, [0u8; 32], "Hash must not be all zeros");
+    }
+
+    #[test]
+    fn test_fire_different_from_v1() {
+        // Fire must produce a DIFFERENT hash than v1 for the same input
+        use crate::deeksha_lite::deeksha_lite;
+        let header = b"test_header_fire";
+        let nonce = 42u64;
+        let fire_hash = deeksha_lite_fire(header, nonce);
+        let v1_hash = deeksha_lite(header, nonce);
+        assert_ne!(fire_hash, v1_hash, "Fire hash must differ from v1 (thermal loop changes output)");
     }
 
     #[test]
