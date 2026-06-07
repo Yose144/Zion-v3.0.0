@@ -22,7 +22,7 @@
 #define PASSES           8
 #define RANDOM_READS     256
 #define AES_FULL_ROUNDS  10
-#define THERMAL_ITERS    8192
+#define THERMAL_ITERS    4096
 
 /* ========================================================================== */
 /* Keccak — canonical impl                                                    */
@@ -345,7 +345,7 @@ void thermal_loop(__private uchar data[32], ulong nonce)
     ulong d = nonce ^ 0x5851F42D4C957F2DUL;
     ulong e = nonce ^ 0xC0FFEE123456789AUL;
 
-    #pragma unroll 8
+    #pragma unroll 2
     for (int i = 0; i < THERMAL_ITERS; i++) {
         a = ROL64(a, 17) + b;
         b = ROL64(b, 31) ^ a;
