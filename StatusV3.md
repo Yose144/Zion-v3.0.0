@@ -22,6 +22,39 @@
 
 ---
 
+## Co je nového 2026-06-07 večer (Full Stack Services Green + OASIS/FreeWorld/Issobella Deploy)
+
+> Verze: **3.0.1** (beze změny Cargo verze)
+
+### TL;DR — Všechny služby nyní green
+
+| Služba | Port | Status | Poznámka |
+|--------|------|--------|----------|
+| Node 1 (Primary) | 8333 / 8443 | ✅ Online | Edge genesis node |
+| Node 2 (Follower) | — | ✅ Online | Edge follower |
+| Pool | 8444 / 8455 | ✅ Online | 4 active sessions, ~4.6 KH/s |
+| DAO | 8450 | ✅ Online | Governance API |
+| WARP | 8453 | ✅ Online | Multi-chain relay |
+| Bridge | 9102 | ✅ Online | Cross-chain metrics |
+| Agent | 8767 | ✅ Online | Rig lifecycle manager |
+| Website | 3000 | ✅ Online | Next.js produkce |
+| **OASIS** | **8094** | ✅ **Nově** | Consciousness mining game L4 |
+| **Free World** | **8095** | ✅ **Nově** | Humanitarian fund scanner L5 |
+| **Issobella** | **8096** | ✅ **Nově** | Space fund scanner L6 |
+| Infra Dashboard | 8888 | ✅ Online | 9 service telemetry cards |
+| Python Dashboard | 8766 | ✅ Online | Live Edge polling |
+
+### Co bylo uděláno
+
+1. **OASIS, Free World, Issobella** — zkompilováno z `V3/L4/oasis`, `V3/L5/free-world`, `V3/L6/issobella`, nasazeno jako systemd services na Edge.
+2. **Infra dashboard** (`zionos-dashboard` port 8888) — rozšířen o 3 nové služby v `handlers.rs`, rebuildnuto a restartnuto.
+3. **Python dashboard** (`app.py`) — `SERVICE_REGISTRY_EDGE_PRIMARY` aktualizován s `host: 100.76.16.108` pro L4/L5/L6 služby; `_build_status_edge_primary()` nyní vrací `oasis`, `free_world`, `issobella` status.
+4. **Payout fixes** — `blocks_found` nyní parsuje i `zion_pool_blocks_found_total` z Edge Prometheus; `pool_wallet` má kanonický fallback na Edge adresu.
+5. **Website health check** — fixnut z neexistujícího `/api/health` na `/`.
+6. **Root report** — vytvořen `STATUS_REPORT_2026-06-07.md` s kompletním přehledem.
+
+---
+
 ## Co je nového 2026-06-07 (Chain Reset, Genesis Slot 12, Mining Tests, Pool Fix)
 
 > Verze: **3.0.1** (beze změny Cargo verze)
