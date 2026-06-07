@@ -64,6 +64,10 @@
 │   ├── desktop-agent/                 ← Electron desktop agent + mining fallback
 │   ├── mobile-app/                    ← React Native mobile app
 │   └── website-v2.9/                  ← Next.js marketing + explorer website
+│       └── src/components/
+│           ├── DeekshaLiteNews.tsx    ← Live ZION news feed (deeksha_lite_v1 theme, added 2026-06-07)
+│           ├── HolographicEarth.tsx   ← 3D holographic earth animation
+│           └── NewsFeed.tsx           ← Dynamic news feed component
 │
 ├── archive/                           ← Legacy archive (v2.9.x era)
 │   └── 2.9.9/
@@ -320,6 +324,7 @@ When docs disagree, use this order of truth:
 
 ---
 
-*Last updated: 2026-05-23*
-*Major updates: Root directory cleanup — legacy L1-L6, docs, monitoring, tests moved to `archive/2.9.9/`; Genesis.md moved to root; v3.0.0 Mainnet Ready structure*
-*Repository: `Yose144/2.9.6` · Branch: `main`*
+*Last updated: 2026-06-07*
+*2026-06-07: Chain reset → genesis `7543004c`, consensus `deeksha_lite_v1`, Edge disk cleanup, DeekshaLiteNews.tsx added*
+*2026-05-23: Root directory cleanup — legacy L1-L6, docs, monitoring, tests moved to `archive/2.9.9/`; Genesis.md moved to root; v3.0.0 Mainnet Ready structure*
+*Repository: `Yose144/Zion-v3.0.0` · Branch: `main` · Version: v3.0.1*
