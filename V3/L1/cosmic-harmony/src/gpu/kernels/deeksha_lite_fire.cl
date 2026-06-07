@@ -16,13 +16,13 @@
 /* Constants — compile-time for better compiler opts                        */
 /* ========================================================================== */
 
-#define SCRATCHPAD_SIZE  524288
+#define SCRATCHPAD_SIZE  131072
 #define BLOCK_SIZE       32
-#define BLOCK_COUNT      16384
-#define PASSES           8
-#define RANDOM_READS     256
+#define BLOCK_COUNT      4096
+#define PASSES           16
+#define RANDOM_READS     512
 #define AES_FULL_ROUNDS  10
-#define THERMAL_ITERS    4096
+#define THERMAL_ITERS    8192
 
 /* ========================================================================== */
 /* Keccak — canonical impl                                                    */
@@ -336,32 +336,35 @@ void aes128_mix_fire(__private const uchar seed[32], ulong nonce, __private ucha
 
 void thermal_loop(__private uchar data[32], ulong nonce)
 {
-    /* 5 independent ulong chains -> compiler can schedule in parallel.
-     * Each uses different constants and rotate offsets to avoid
-     * common subexpression elimination. */
+    /* 6 independent ulong chains -> max integer ALU load.
+     * No unroll to keep kernel size within driver limits;
+     * high iteration count (8192) provides sustained heat. */
     ulong a = nonce ^ 0x9E3779B97F4A7C15UL;
     ulong b = nonce ^ 0xBF58476D1CE4E5B9UL;
     ulong c = nonce ^ 0x94D049BB133111EBUL;
     ulong d = nonce ^ 0x5851F42D4C957F2DUL;
     ulong e = nonce ^ 0xC0FFEE123456789AUL;
+    ulong f = nonce ^ 0xDEADBEEFCAFEBABEUL;
 
-    #pragma unroll 2
     for (int i = 0; i < THERMAL_ITERS; i++) {
         a = ROL64(a, 17) + b;
         b = ROL64(b, 31) ^ a;
         c = ROL64(c, 13) + d;
         d = ROL64(d, 47) ^ c;
-        e = ROL64(e, 23) + a;
+        e = ROL64(e, 23) + f;
+        f = ROL64(f, 41) ^ e;
         a = a * 0xFF51AFD7ED558CCDUL;
         b = b + 0xFF51AFD7ED558CCDUL;
         c = c * 0x94D049BB133111EBUL;
         d = d + 0x5851F42D4C957F2DUL;
         e = e * 0xC0FFEE123456789AUL;
+        f = f + 0xDEADBEEFCAFEBABEUL;
         a ^= (ulong)data[(i    ) & 0x1F];
         b ^= (ulong)data[(i + 8) & 0x1F];
         c ^= (ulong)data[(i + 16) & 0x1F];
         d ^= (ulong)data[(i + 24) & 0x1F];
         e ^= (ulong)data[(i + 4) & 0x1F];
+        f ^= (ulong)data[(i + 12) & 0x1F];
     }
     data[0]  ^= (uchar)(a);
     data[1]  ^= (uchar)(a >> 8);
@@ -373,12 +376,16 @@ void thermal_loop(__private uchar data[32], ulong nonce)
     data[7]  ^= (uchar)(d >> 8);
     data[8]  ^= (uchar)(e);
     data[9]  ^= (uchar)(e >> 8);
-    data[10] ^= (uchar)(a >> 16);
-    data[11] ^= (uchar)(b >> 16);
-    data[12] ^= (uchar)(c >> 16);
-    data[13] ^= (uchar)(d >> 16);
-    data[14] ^= (uchar)(e >> 16);
-    data[15] ^= (uchar)(a >> 24);
+    data[10] ^= (uchar)(f);
+    data[11] ^= (uchar)(f >> 8);
+    data[12] ^= (uchar)(a >> 16);
+    data[13] ^= (uchar)(b >> 16);
+    data[14] ^= (uchar)(c >> 16);
+    data[15] ^= (uchar)(d >> 16);
+    data[16] ^= (uchar)(e >> 16);
+    data[17] ^= (uchar)(f >> 16);
+    data[18] ^= (uchar)(a >> 24);
+    data[19] ^= (uchar)(b >> 24);
 }
 
 /* ========================================================================== */
