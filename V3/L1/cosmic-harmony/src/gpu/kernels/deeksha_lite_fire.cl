@@ -95,21 +95,27 @@ void keccak_f1600(__private ulong *st)
 
 typedef union { ulong u[25]; uchar b[200]; } keccak_st_t;
 
-void keccak256_from_state(
-    __global const ulong *pre_state,
+/* Compute Keccak256(header[0..80] || nonce_le[0..8]).
+ * Input is the raw 80-byte header passed from host + 8-byte nonce.
+ * Rate = 136 bytes. Total input = 88 bytes < rate, so single block. */
+void keccak256_from_header(
+    __global const uchar *header80,
     ulong nonce,
     __private uchar out[32])
 {
     keccak_st_t s;
-    
-    for (int i = 0; i < 25; i++) s.u[i] = pre_state[i];
-    
+    for (int i = 0; i < 25; i++) s.u[i] = 0;
+
+    /* Absorb 80 header bytes */
+    for (int i = 0; i < 80; i++) s.b[i] ^= header80[i];
+    /* Absorb 8 nonce bytes (little-endian) */
     for (int i = 0; i < 8; i++)
         s.b[80 + i] ^= (uchar)(nonce >> (i * 8));
+    /* Keccak padding: rate=136 */
     s.b[88]  ^= 0x01;
     s.b[135] ^= 0x80;
     keccak_f1600(s.u);
-    
+
     for (int i = 0; i < 32; i++) out[i] = s.b[i];
 }
 
@@ -227,9 +233,8 @@ void fill_scratchpad(__private const uchar seed[32], __global uchar *pad)
         uchar out64[64];
         sha3_512(inp, 65, out64);
         uint off = blk * BLOCK_SIZE;
-        ulong4 v = vload4(0, (__private ulong*)out64);
-        vstore4(v, 0, (__global ulong*)(pad + off));
-        vstore4(v, 0, (__private ulong*)state);
+        for (int i = 0; i < 32; i++) pad[off + i] = out64[i];
+        for (int i = 0; i < 32; i++) state[i] = out64[i];
     }
 }
 
@@ -241,10 +246,8 @@ void sequential_passes(__global uchar *pad)
             uint prev = (i == 0) ? (BLOCK_COUNT - 1) : (i - 1);
             uint cur  = i * BLOCK_SIZE;
             uint prv  = prev * BLOCK_SIZE;
-            ulong4 cur_v = vload4(0, (__global ulong*)(pad + cur));
-            ulong4 prv_v = vload4(0, (__global ulong*)(pad + prv));
-            cur_v ^= prv_v;
-            vstore4(cur_v, 0, (__global ulong*)(pad + cur));
+            for (int j = 0; j < BLOCK_SIZE; j++)
+                pad[cur + j] ^= pad[prv + j];
         }
         /* Backward */
         for (uint i = BLOCK_COUNT; i > 0; i--) {
@@ -252,10 +255,8 @@ void sequential_passes(__global uchar *pad)
             uint next = (idx + 1 == BLOCK_COUNT) ? 0 : (idx + 1);
             uint cur  = idx  * BLOCK_SIZE;
             uint nxt  = next * BLOCK_SIZE;
-            ulong4 cur_v = vload4(0, (__global ulong*)(pad + cur));
-            ulong4 nxt_v = vload4(0, (__global ulong*)(pad + nxt));
-            cur_v ^= nxt_v;
-            vstore4(cur_v, 0, (__global ulong*)(pad + cur));
+            for (int j = 0; j < BLOCK_SIZE; j++)
+                pad[cur + j] ^= pad[nxt + j];
         }
     }
 }
@@ -263,22 +264,17 @@ void sequential_passes(__global uchar *pad)
 void random_read_mix(__private const uchar seed[32], __global const uchar *pad, __private uchar out[32])
 {
     uchar acc[32];
-    
     for (int i = 0; i < 32; i++) acc[i] = seed[i];
     ulong pos = 0;
     for (ulong r = 0; r < RANDOM_READS; r++) {
         uint off = (uint)(pos * BLOCK_SIZE);
-        ulong4 acc_v = vload4(0, (__private ulong*)acc);
-        ulong4 pad_v = vload4(0, (__global const ulong*)(pad + off));
-        acc_v ^= pad_v;
-        vstore4(acc_v, 0, (__private ulong*)acc);
+        for (int i = 0; i < 32; i++) acc[i] ^= pad[off + i];
         /* Read 8 bytes for idx — matches u64 in CPU */
         ulong idx_val = 0;
         for (int i = 0; i < 8; i++)
             idx_val |= ((ulong)acc[i]) << (i * 8);
         pos = (idx_val ^ pos ^ r) % BLOCK_COUNT;
     }
-    
     for (int i = 0; i < 32; i++) out[i] = acc[i];
 }
 
@@ -404,17 +400,11 @@ void thermal_loop(__private uchar data[32], ulong nonce)
 void keccak256_final(__private const uchar in[32], __private uchar out[32])
 {
     keccak_st_t s;
-    
     for (int i = 0; i < 25; i++) s.u[i] = 0;
-    /* Vectorized XOR: 4 × ulong instead of 32 × byte */
-    ulong4 v = vload4(0, (__private ulong*)in);
-    ulong4 state_v = vload4(0, (__private ulong*)&s.u[0]);
-    state_v ^= v;
-    vstore4(state_v, 0, (__private ulong*)&s.u[0]);
+    for (int i = 0; i < 32; i++) s.b[i] ^= in[i];
     s.b[32] ^= 0x01;
     s.b[135] ^= 0x80;
     keccak_f1600(s.u);
-    
     for (int i = 0; i < 32; i++) out[i] = s.b[i];
 }
 
@@ -423,7 +413,7 @@ void keccak256_final(__private const uchar in[32], __private uchar out[32])
 /* ========================================================================== */
 
 __kernel void deeksha_lite_fire_mine(
-    __global const ulong *header_keccak_state,
+    __global const uchar *header80,
     ulong  nonce_base,
     uint   nonce_count,
     __global uchar *output_hashes,
@@ -435,9 +425,9 @@ __kernel void deeksha_lite_fire_mine(
     __global uchar *pad = scratchpad_pool + (ulong)tid * SCRATCHPAD_SIZE;
     ulong nonce = nonce_base + (ulong)tid;
 
-    /* Step 1 */
+    /* Step 1: Keccak256(header[0..80] || nonce_le) */
     uchar s1[32];
-    keccak256_from_state(header_keccak_state, nonce, s1);
+    keccak256_from_header(header80, nonce, s1);
 
     /* Step 2 */
     fill_scratchpad(s1, pad);
@@ -456,8 +446,7 @@ __kernel void deeksha_lite_fire_mine(
     uchar hash[32];
     keccak256_final(s3, hash);
 
-    /* Vectorized output write */
+    /* Output write */
     __global uchar *slot = output_hashes + (ulong)tid * 32;
-    ulong4 h = vload4(0, (__private ulong*)hash);
-    vstore4(h, 0, (__global ulong*)slot);
+    for (int i = 0; i < 32; i++) slot[i] = hash[i];
 }
