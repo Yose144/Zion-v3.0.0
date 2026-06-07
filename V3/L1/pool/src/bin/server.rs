@@ -846,7 +846,7 @@ fn handle_client(
                         );
                         let node_rpc_addr = config.node_rpc_addr.clone();
                         let node_status = match node_rpc_addr.as_deref() {
-                            Some(addr) => match submit_candidate_to_node(addr, job, nonce) {
+                            Some(addr) => match submit_candidate_to_node(addr, job, nonce, &session_algorithm) {
                                 Ok(RpcResponse::SubmitResult { accepted: true, .. }) => {
                                     ShareStatus::Accepted
                                 }
@@ -1225,6 +1225,7 @@ fn submit_candidate_to_node(
     node_rpc_addr: &str,
     job: zion_core::MiningJob,
     nonce: u64,
+    algorithm: &str,
 ) -> Result<RpcResponse> {
     rpc_roundtrip(
         node_rpc_addr,
@@ -1233,6 +1234,7 @@ fn submit_candidate_to_node(
             header_hex: to_hex(&job.header.to_bytes()),
             nonce,
             target_hex: to_hex(&job.target.bytes),
+            algorithm: algorithm.to_string(),
         },
     )
 }
