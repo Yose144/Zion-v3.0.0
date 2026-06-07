@@ -1,13 +1,8 @@
 # ZION Mainnet Genesis Premine — Public Addresses
-# Generated: 2026-06-05 (final reset) | Humanitarian slot updated: 2026-06-07
-# Genesis Hash: (recalculated after 2026-06-07 humanitarian slot update)
+# Generated: 2026-06-05 (final reset) | Slot 12 re-keyed with BIP39: 2026-06-07
+# Genesis Hash: 7543004c76b11416ef32e2f1f5a4c72f0178f841d4559bf476e29e15a9602728
 # Total: 16,780,000,000 ZION (11.65% of max supply)
 # Distribution matches MAINNET_CONSTITUTION.md
-#
-# SECURITY NOTE: All premine keys were regenerated on 2026-06-05.
-# Humanitarian premine slot (12) key regenerated 2026-06-07 (old key had no mnemonic backup).
-# Previous humanitarian key zion165a527w5d0n085t775x3w8n8q20742a6w7xr0z3 is OBSOLETE.
-
 
 # 1–5: OASIS + Winners Golden Egg/Xp (5 slots × 1.65B = 8.25B ZION)
 1  zion153e378e4x0g6s380h2h8z4t506g5s323f5se8g5    OASIS_Winner_1       1,650,000,000
@@ -16,7 +11,7 @@
 4  zion1n690n062g668s8g0y4772830z8r450c0l06f295    OASIS_Winner_4       1,650,000,000
 5  zion17323k5e490t832f4d0m3w4x3s2e2z7a7600j3v7    OASIS_Winner_5       1,650,000,000
 
-# 6–8: DAO Treasury (main + grants + bootstrap = 4B ZION)
+# 6–8: DAO Treasury (main + grants + bootstrap = 4B ZION) [LOCKED height 525,600]
 6  zion1t4l2f5j737989828v295n7z4r3v5j8k895m56n4    DAO_Treasury_Main    2,500,000,000
 7  zion1r5j0j7y444a8j402n8t8u2n8y323u6x4r2aw7l6    DAO_Grants           1,000,000,000
 8  zion1932843t398t095g4h3x2f3a5l0q40490k4fm2w8    DAO_Bootstrap        500,000,000
@@ -27,7 +22,8 @@
 11 zion16542q4l853a2z0u5r5w8y4m8k4558847h503736    Creator_Fund         590,000,000
 
 # 12: Humanitarian — Children Future Fund (1.44B ZION)
-12 zion1c245e7f5d8h427r4p4s2s607d7v4c255z7x96t3    Children_Future_Fund 1,440,000,000
+# Key regenerated 2026-06-07 with full BIP39 mnemonic backup
+12 zion1z7g4u3s2w3c5z5u4a60864m2y7q8e5j304g46r7    Children_Future_Fund 1,440,000,000
 
 # 13: Bridge Seed Fund — EVM Bridge Liquidity (0.4B ZION)
 13 zion13794g7k3m0f84637l2x0t855h3l258k8p3xp5t3    Bridge_Seed_Fund     400,000,000
@@ -38,10 +34,10 @@
 # Lock: DAO Treasury (wallets 6–8) cliff at ~525,600 blocks (~1 year).
 # All others: immediate unlock at Genesis #0.
 
-# Canonical Subsidy Addresses (deterministic, 89/5/5/1 fee split)
+# Canonical Subsidy Addresses (89/5/5/1 fee split — NOT genesis outputs)
 # Miner (89%):       zion1w523a76830x2t5m7f3j023w265e8g5c400a4790
 # Humanitarian (5%): zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4  (ongoing subsidy; distinct from premine slot 12)
-# Premine slot 12:   zion1c245e7f5d8h427r4p4s2s607d7v4c255z7x96t3  (genesis 1.44B one-time)
+# Premine slot 12:   zion1z7g4u3s2w3c5z5u4a60864m2y7q8e5j304g46r7  (genesis 1.44B one-time)
 # Issobella (5%):    zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702
-# Pool Fee (1%):     zion196m4n8x764v7a0s406j40094a8z5j8m6z7nk342 (BURNED)
+# Pool Fee (1%):     zion196m4n8x764v7a0s406j40094a8z5j8m6z7nk342  (BURNED)
 # Pool Payout:       zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604
