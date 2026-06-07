@@ -1166,6 +1166,7 @@ pub mod opencl_deeksha {
         ) -> Result<GpuBatchResult> {
             let header_bytes = header.to_bytes();
             self.header_buf.write(&header_bytes[..]).enq()?;
+            self.pro_que.queue().finish()?;
 
             let target_u32 = u32::from_be_bytes([
                 target.bytes[0],
@@ -1186,6 +1187,7 @@ pub mod opencl_deeksha {
 
                 let sentinel_slice: [u64; 1] = [SENTINEL];
                 self.result_nonce_buf.write(&sentinel_slice[..]).enq()?;
+                self.pro_que.queue().finish()?;
 
                 self.kernel.set_arg(1, header_bytes.len() as u32)?;
                 self.kernel.set_arg(2, current_nonce)?;
@@ -1199,6 +1201,7 @@ pub mod opencl_deeksha {
                         .local_work_size(local_size)
                         .enq()?;
                 }
+                self.pro_que.queue().finish()?;
 
                 let mut nonce_out = vec![SENTINEL];
                 self.result_nonce_buf.read(&mut nonce_out).enq()?;
