@@ -1,0 +1,9 @@
+# Exclude build artifacts from Docker context — prevents stale GLIBC-bound
+# build scripts from being copied into the container (causes GLIBC_2.32 errors).
+target/
+target-*/
+*.tar.gz
+data/
+*.lmdb
+*.lmdb-lock
+.git/
