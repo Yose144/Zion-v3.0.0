@@ -357,9 +357,11 @@ fn main() -> Result<()> {
     }
 
     for handle in handles {
-        handle
-            .join()
-            .map_err(|_| anyhow!("pool client thread panicked"))??;
+        match handle.join() {
+            Ok(Ok(())) => {}
+            Ok(Err(e)) => println!("session_ended_with_error err={e:#}"),
+            Err(_) => println!("session_ended_with_panic"),
+        }
     }
     {
         let snapshot = routing_stats
