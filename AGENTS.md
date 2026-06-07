@@ -640,6 +640,21 @@ curl -s -X PATCH -H "X-AUTH-TOKEN: $API" \
 - GCN work_size cap: 512 (do not set higher)
 - Algorithm for GCN: `deeksha_lite_v1` (not `cosmic_harmony` — too heavy for GCN sustained mining)
 
+### Fire Algorithm (deeksha_lite_fire) - Thermal-Intensive Mining
+
+- **Purpose:** Thermal-intensive variant for sustained high-power mining
+- **Scratchpad:** 512 KiB per thread (vs 256 KiB for v1)
+- **GPU Backend Fix (2026-06-07):**
+  - Fire GPU backend now uses precomputed Keccak state (25 u64s) like v1, not raw header bytes
+  - Fixed hash mismatch between GPU and CPU implementations
+  - Binary: `zion-miner-v3.0.37-fire.zip` deployed to Edge
+  - See `FIRE_GPU_FIX_REPORT.md` for full details
+- **Configuration:**
+  - Algorithm: `deeksha_lite_fire`
+  - GPU backend: `opencl` (AMD GCN)
+  - Scratchpad: 512 MiB total (256 KiB per thread × 2048 work_size)
+  - Work size: 2048 (global), 256 (local)
+
 ### Web serving (Caddy on Edge)
 
 - Caddy serves `/zion-miner/*` → `/var/www/zion-miner/`
