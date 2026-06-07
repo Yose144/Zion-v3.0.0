@@ -308,8 +308,10 @@ impl GpuTuning {
             }
             (GpuAlgorithm::DeekshaLiteFire, GpuDeviceFamily::AmdRdna) => {
                 // RDNA: 8192 threads = 128 wavefronts, 1 GiB scratchpad (128 KiB/thread)
+                // v3.1: removed -cl-fast-relaxed-math so half_sin/half_cos are not
+                // aggressively simplified by the compiler (more ALU work = more heat).
                 let ws = (max_by_vram.min(8192).max(512)).next_power_of_two();
-                let opts = "-cl-std=CL1.2 -cl-mad-enable -cl-fast-relaxed-math -cl-single-precision-constant".to_string();
+                let opts = "-cl-std=CL1.2 -cl-mad-enable -cl-single-precision-constant".to_string();
                 (ws, 128, opts, 90, false)
             }
             (GpuAlgorithm::DeekshaLiteFire, GpuDeviceFamily::Nvidia) => {
