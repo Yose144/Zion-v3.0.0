@@ -26,13 +26,15 @@ No changes needed - `hash_with_algorithm()` already had `deeksha_lite_fire` case
 - **v3.0.37-fire.zip** - Windows .exe (cannot run on Linux) - DEPLOYED BUT BROKEN
 - **v3.0.38-fire.zip** - Linux binary without OpenCL (no GPU mining) - DEPLOYED BUT BROKEN
 - **v3.0.39-fire.zip** - Linux binary with OpenCL (GLIBC incompatibility) - DEPLOYED BUT BROKEN
-- **v3.0.40-fire.zip** - Linux binary with OpenCL + patchelf fix (WORKING) - DEPLOYED
+- **v3.0.40-fire.zip** - Linux binary with OpenCL + patchelf (still GLIBC issue) - DEPLOYED BUT BROKEN
+- **v3.0.41-fire.zip** - Linux binary built in Debian Bullseye Docker (GLIBC 2.30 max) - WORKING - DEPLOYED
 
 ### URLs
 - `https://zionterranova.com/zion-miner/zion-miner-v3.0.37-fire.zip` (Windows - broken)
 - `https://zionterranova.com/zion-miner/zion-miner-v3.0.38-fire.zip` (Linux no GPU - broken)
 - `https://zionterranova.com/zion-miner/zion-miner-v3.0.39-fire.zip` (Linux GLIBC incompatibility - broken)
-- `https://zionterranova.com/zion-miner/zion-miner-v3.0.40-fire.zip` (Linux with OpenCL + patchelf - WORKING)
+- `https://zionterranova.com/zion-miner/zion-miner-v3.0.40-fire.zip` (Linux GLIBC incompatibility - broken)
+- `https://zionterranova.com/zion-miner/zion-miner-v3.0.41-fire.zip` (Linux with OpenCL, GLIBC 2.30 - WORKING)
 
 ### Pool Server
 - Rebuilt on Edge (77.42.71.94) with Docker container
@@ -45,14 +47,21 @@ No changes needed - `hash_with_algorithm()` already had `deeksha_lite_fire` case
 - OpenCL dev libraries already present (ocl-icd-opencl-dev, opencl-headers)
 - Built natively on Edge: `cargo build --release --features gpu-opencl`
 - Binary size: 764 KB (compressed)
-- **Issue:** GLIBC incompatibility - Edge has GLIBC 2.43, rig needs GLIBC 2.32/2.33/2.34
+- **Issue:** GLIBC incompatibility - Edge has GLIBC 2.43, rig needs GLIBC 2.31
 
 ### Linux Binary Build (v3.0.40-fire - patchelf fix)
 - Used patchelf to fix GLIBC incompatibility
 - `patchelf --set-interpreter /lib64/ld-linux-x86-64.so.2`
 - `patchelf --set-rpath /lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu`
 - Binary size: 764 KB (compressed)
-- **Fix:** patchelf allows binary to run on older GLIBC systems
+- **Issue:** patchelf doesn't resolve GLIBC symbol version dependencies - still requires GLIBC 2.32-2.34
+
+### Linux Binary Build (v3.0.41-fire - Debian Bullseye Docker)
+- Built inside `debian:bullseye` Docker container on Edge
+- Container has GLIBC 2.31
+- Binary max GLIBC requirement: 2.30
+- Binary size: 764 KB (compressed)
+- **Fix:** Building in older Docker container with compatible GLIBC
 
 ### Verification
 - **Test GPU miner (fire-gpu-test):** Running on Edge, accepting shares successfully
@@ -72,13 +81,13 @@ No changes needed - `hash_with_algorithm()` already had `deeksha_lite_fire` case
 
 ### Pending
 - ⏳ SMOS group config update (manual action required via web panel)
-- ⏳ Rig (vega-smos) to download and run v3.0.40-fire.zip
+- ⏳ Rig (vega-smos) to download and run v3.0.41-fire.zip
 
 ## Next Steps
 
 1. **Update SMOS group config via web panel to:**
    ```
-   https://zionterranova.com/zion-miner/zion-miner-v3.0.40-fire.zip
+   https://zionterranova.com/zion-miner/zion-miner-v3.0.41-fire.zip
    ```
 
 2. **Monitor pool logs:**
