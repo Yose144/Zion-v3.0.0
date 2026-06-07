@@ -215,6 +215,8 @@ pub enum GpuAlgorithm {
     CosmicHarmony,
     /// Simplified deeksha_lite_v1 — GCN-friendly, SHA3-512 scratchpad, no Blake3
     DeekshaLiteV1,
+    /// Thermal-intensive deeksha_lite_fire — 512 KiB scratchpad, 8 passes, 256 reads
+    DeekshaLiteFire,
 }
 
 impl GpuAlgorithm {
@@ -223,6 +225,7 @@ impl GpuAlgorithm {
             "deeksha_lite_v1" | "deeksha_lite" | "lite" | "dl" | "dlv1" => {
                 Self::DeekshaLiteV1
             }
+            "deeksha_lite_fire" | "fire" | "dlfire" => Self::DeekshaLiteFire,
             _ => Self::CosmicHarmony,
         }
     }
@@ -231,6 +234,7 @@ impl GpuAlgorithm {
         match self {
             Self::CosmicHarmony => "cosmic_harmony",
             Self::DeekshaLiteV1 => "deeksha_lite_v1",
+            Self::DeekshaLiteFire => "deeksha_lite_fire",
         }
     }
 }
@@ -262,6 +266,7 @@ impl GpuTuning {
         let scratchpad_bytes = match algo {
             GpuAlgorithm::CosmicHarmony => 256 * 1024, // 256 KiB per thread
             GpuAlgorithm::DeekshaLiteV1 => 256 * 1024, // 256 KiB per thread
+            GpuAlgorithm::DeekshaLiteFire => 512 * 1024, // 512 KiB per thread
         };
 
         let reserve = 512 * 1024 * 1024; // 512 MiB for driver + desktop
@@ -292,6 +297,30 @@ impl GpuTuning {
                 let ws = (max_by_vram.min(4096).max(256)).next_power_of_two();
                 let opts = "-cl-std=CL1.2 -cl-mad-enable".to_string();
                 (ws, 128, opts, 70, false)
+            }
+
+            // ── DeekshaLite Fire (thermal-intensive) ────────────────────
+            (GpuAlgorithm::DeekshaLiteFire, GpuDeviceFamily::AmdGcn) => {
+                // GCN: very conservative work size due to 512 KiB scratchpad
+                let ws = (max_by_vram.min(2048).max(128)).next_power_of_two();
+                let opts = "-cl-std=CL1.2 -cl-mad-enable -DZION_GCN_WORKAROUNDS".to_string();
+                (ws, 256, opts, 60, true)
+            }
+            (GpuAlgorithm::DeekshaLiteFire, GpuDeviceFamily::AmdRdna) => {
+                // RDNA: can handle larger work size but keep local small for occupancy
+                let ws = (max_by_vram.min(4096).max(256)).next_power_of_two();
+                let opts = "-cl-std=CL1.2 -cl-mad-enable -cl-fast-relaxed-math".to_string();
+                (ws, 128, opts, 75, false)
+            }
+            (GpuAlgorithm::DeekshaLiteFire, GpuDeviceFamily::Nvidia) => {
+                let ws = (max_by_vram.min(4096).max(256)).next_power_of_two();
+                let opts = "-cl-std=CL1.2 -cl-mad-enable -cl-fast-relaxed-math".to_string();
+                (ws, 128, opts, 75, false)
+            }
+            (GpuAlgorithm::DeekshaLiteFire, GpuDeviceFamily::Other) => {
+                let ws = (max_by_vram.min(2048).max(128)).next_power_of_two();
+                let opts = "-cl-std=CL1.2 -cl-mad-enable".to_string();
+                (ws, 128, opts, 60, false)
             }
 
             // ── Cosmic Harmony ──────────────────────────────────────────
