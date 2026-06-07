@@ -1767,14 +1767,15 @@ pub mod opencl_deeksha_lite_fire {
     use std::time::Instant;
     use zion_cosmic_harmony::gpu::opencl_kernel;
 
-    const DLF_SCRATCHPAD_BYTES: usize = 128 * 1024; // 128 KiB per thread (ASIC-resistant, small footprint)
+    const DLF_SCRATCHPAD_BYTES: usize = 256 * 1024; // 256 KiB per thread — same as v1
     const SENTINEL: u64 = 0xFFFF_FFFF_FFFF_FFFF;
 
     pub struct OpenClDeekshaLiteFireMiner {
         pro_que: ProQue,
         kernel: Kernel,
-        /// Raw 80-byte header buffer — kernel computes Keccak256(header||nonce) internally.
-        header80_buf: Buffer<u8>,
+        /// Host-precomputed partial Keccak256 state (25 × u64) after absorbing
+        /// the 80-byte header (nonce bytes left as 0). Identical to v1 approach.
+        header_state_buf: Buffer<u64>,
         scratchpad_buf: Buffer<u8>,
         output_hashes_buf: Buffer<u8>,
         work_size: usize,
@@ -1787,6 +1788,20 @@ pub mod opencl_deeksha_lite_fire {
     }
 
     impl OpenClDeekshaLiteFireMiner {
+        /// Precompute Keccak256 state after absorbing the 80-byte header.
+        /// The state is 25 u64s (200 bytes). Each thread will then only
+        /// XOR the nonce bytes (80..88), apply padding, and run f1600.
+        /// Identical to v1's implementation — guarantees CPU/GPU hash agreement.
+        fn precompute_header_keccak_state(header_80: &[u8]) -> [u64; 25] {
+            let mut state = [0u64; 25];
+            for (i, &b) in header_80.iter().enumerate() {
+                let word_idx = i / 8;
+                let shift = (i % 8) * 8;
+                state[word_idx] ^= (b as u64) << shift;
+            }
+            state
+        }
+
         fn vram_aware_work_size(device: &Device, requested: usize) -> usize {
             let global_mem = device
                 .info(ocl::enums::DeviceInfo::GlobalMemSize)
@@ -1893,8 +1908,7 @@ pub mod opencl_deeksha_lite_fire {
                     .map_err(|e| anyhow::anyhow!("OpenCL build failed: {e}"))?
             };
             let q = pro_que.queue().clone();
-            // Raw 80-byte header buffer — kernel absorbs it directly into Keccak state
-            let header80_buf = Buffer::<u8>::builder().queue(q.clone()).len(80).build()?;
+            let header_state_buf = Buffer::<u64>::builder().queue(q.clone()).len(25).build()?;
             let scratchpad_buf = Buffer::<u8>::builder()
                 .queue(q.clone())
                 .len(actual_work_size * DLF_SCRATCHPAD_BYTES)
@@ -1911,7 +1925,7 @@ pub mod opencl_deeksha_lite_fire {
                 .build()?;
             let kernel = pro_que
                 .kernel_builder(opencl_kernel::DEEKSHA_LITE_FIRE_KERNEL_NAME)
-                .arg(&header80_buf)
+                .arg(&header_state_buf)
                 .arg(0u64)
                 .arg(0u32)
                 .arg(&output_hashes_buf)
@@ -1928,7 +1942,7 @@ pub mod opencl_deeksha_lite_fire {
             Ok(Self {
                 pro_que,
                 kernel,
-                header80_buf,
+                header_state_buf,
                 scratchpad_buf,
                 output_hashes_buf,
                 work_size: actual_work_size,
@@ -1967,18 +1981,16 @@ pub mod opencl_deeksha_lite_fire {
             batch_size: u64,
         ) -> Result<GpuBatchResult> {
             let header_bytes = header.to_bytes();
-            // Pass raw 80-byte header — kernel computes Keccak256(header||nonce) internally
-            let mut header_80 = [0u8; 80];
-            let copy_len = 80.min(header_bytes.len());
-            header_80[..copy_len].copy_from_slice(&header_bytes[..copy_len]);
+            let header_80 = &header_bytes[..80.min(header_bytes.len())];
+            let precomputed_state = Self::precompute_header_keccak_state(header_80);
 
             {
                 let guard = GpuGuard::new();
-                self.header80_buf.write(&header_80[..]).enq()?;
+                self.header_state_buf.write(&precomputed_state[..]).enq()?;
                 if guard.was_caught() {
                     self.recovery_attempts += 1;
                     anyhow::bail!(
-                        "GPU access violation during header buffer write (attempt {}/{}). AMD driver crash detected — try reducing ZION_GPU_WORK_SIZE or ZION_OCL_VRAM_PCT.",
+                        "GPU access violation during header state buffer write (attempt {}/{}). AMD driver crash detected — try reducing ZION_GPU_WORK_SIZE or ZION_OCL_VRAM_PCT.",
                         self.recovery_attempts,
                         self.max_recovery_attempts
                     );
