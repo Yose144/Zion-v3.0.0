@@ -25,17 +25,24 @@ No changes needed - `hash_with_algorithm()` already had `deeksha_lite_fire` case
 ### Binary Versions
 - **v3.0.37-fire.zip** - Windows .exe (cannot run on Linux) - DEPLOYED BUT BROKEN
 - **v3.0.38-fire.zip** - Linux binary without OpenCL (no GPU mining) - DEPLOYED BUT BROKEN
-- **v3.0.39-fire.zip** - Linux binary with OpenCL (PENDING - needs to be built)
+- **v3.0.39-fire.zip** - Linux binary with OpenCL (WORKING) - DEPLOYED
 
 ### URLs
 - `https://zionterranova.com/zion-miner/zion-miner-v3.0.37-fire.zip` (Windows - broken)
 - `https://zionterranova.com/zion-miner/zion-miner-v3.0.38-fire.zip` (Linux no GPU - broken)
+- `https://zionterranova.com/zion-miner/zion-miner-v3.0.39-fire.zip` (Linux with OpenCL - WORKING)
 
 ### Pool Server
 - Rebuilt on Edge (77.42.71.94) with Docker container
 - Binary synced from Windows build
 - Service restarted successfully
 - Now correctly validates `deeksha_lite_fire` shares
+
+### Linux Binary Build (v3.0.39-fire)
+- Installed Rust on Edge host via rustup
+- OpenCL dev libraries already present (ocl-icd-opencl-dev, opencl-headers)
+- Built natively on Edge: `cargo build --release --features gpu-opencl`
+- Binary size: 764 KB (compressed)
 
 ### Verification
 - **Test GPU miner (fire-gpu-test):** Running on Edge, accepting shares successfully
@@ -52,25 +59,19 @@ No changes needed - `hash_with_algorithm()` already had `deeksha_lite_fire` case
 ### Issues
 - ❌ v3.0.37-fire.zip contains Windows .exe (cannot run on Linux)
 - ❌ v3.0.38-fire.zip contains Linux binary without OpenCL support (no GPU mining)
-- ❌ Docker container on Edge lacks OpenCL libraries for cross-compilation
 
 ### Pending
-- ⏳ Linux binary with OpenCL support needs to be built (requires OpenCL dev libraries)
 - ⏳ SMOS group config update (manual action required via web panel)
-- ⏳ Rig (vega-smos) to download and run correct Linux binary
+- ⏳ Rig (vega-smos) to download and run v3.0.39-fire.zip
 
 ## Next Steps
 
-1. **Build Linux binary with OpenCL support:**
-   - Option A: Install OpenCL dev libraries on Edge host and build natively
-   - Option B: Use rig (vega-smos) to build binary locally with OpenCL
-   - Option C: Set up cross-compilation environment with OpenCL headers/libs
+1. **Update SMOS group config via web panel to:**
+   ```
+   https://zionterranova.com/zion-miner/zion-miner-v3.0.39-fire.zip
+   ```
 
-2. **Deploy correct Linux binary:**
-   - Upload v3.0.39-fire.zip with Linux OpenCL binary
-   - Update SMOS group config via web panel to new URL
-
-3. **Monitor pool logs:**
+2. **Monitor pool logs:**
    - Check for `vega-smos` Accepted shares
    - Verify no `hash_mismatch_info` for rig shares
 
