@@ -1402,8 +1402,8 @@ struct RoutingStats {
     total_accepted: u64,
     group_submits: [u64; 4],
     group_accepted: [u64; 4],
-    source_submits: [u64; 12],
-    source_accepted: [u64; 12],
+    source_submits: [u64; 14],
+    source_accepted: [u64; 14],
 }
 
 enum JobCompletion {
@@ -2026,8 +2026,8 @@ impl RoutingStats {
             total_accepted: 0,
             group_submits: [0; 4],
             group_accepted: [0; 4],
-            source_submits: [0; 12],
-            source_accepted: [0; 12],
+            source_submits: [0; 14],
+            source_accepted: [0; 14],
         }
     }
 
@@ -2091,6 +2091,8 @@ impl RoutingStats {
             RevenueSource::RandomXExternal,
             RevenueSource::ZelHashExternal,
             RevenueSource::NclAi,
+            RevenueSource::DeekshaLite,
+            RevenueSource::ThermalBonus,
         ] {
             let idx = source_index(source);
             let submits = self.source_submits[idx];
@@ -2698,6 +2700,8 @@ fn source_index(source: RevenueSource) -> usize {
         RevenueSource::AutolykosExternal => 9,
         RevenueSource::RandomXExternal => 10,
         RevenueSource::ZelHashExternal => 11,
+        RevenueSource::DeekshaLite => 12,
+        RevenueSource::ThermalBonus => 13,
     }
 }
 
@@ -2715,6 +2719,8 @@ fn revenue_source_name(source: RevenueSource) -> &'static str {
         RevenueSource::AutolykosExternal => "autolykos",
         RevenueSource::RandomXExternal => "randomx",
         RevenueSource::ZelHashExternal => "zelhash",
+        RevenueSource::DeekshaLite => "deeksha_lite",
+        RevenueSource::ThermalBonus => "thermal_bonus",
     }
 }
 
@@ -2948,6 +2954,8 @@ fn parse_revenue_source(value: &str) -> Result<RevenueSource> {
         "randomx" | "xmr" | "monero" => Ok(RevenueSource::RandomXExternal),
         "zelhash" | "flux" => Ok(RevenueSource::ZelHashExternal),
         "ncl" | "ncl_ai" => Ok(RevenueSource::NclAi),
+        "deeksha_lite" | "dl" => Ok(RevenueSource::DeekshaLite),
+        "thermal_bonus" | "fire" | "thermal" => Ok(RevenueSource::ThermalBonus),
         other => Err(anyhow!("unsupported revenue source: {other}")),
     }
 }
