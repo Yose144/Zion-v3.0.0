@@ -1,25 +1,35 @@
 /*
- * DeekshaLite Fire — Thermal-Intensive OpenCL Kernel (GCN/RDNA compatible)
- * Deterministic integer-only thermal loop (no float — avoids driver-dependent rounding).
- * CPU/OpenCL parity: 8-chain ulong, 65536 iterations, fold into 26 bytes.
+ * DeekshaLite Fire — OpenCL Kernel (GCN/RDNA compatible)
+ *
+ * Fire = DeekshaLite v1 (identical, verified working) + thermal_loop step.
+ * The thermal loop burns ALU cycles after the AES mix to maximize GPU heat.
+ * All hashing / memory logic is 100% identical to deeksha_lite.cl (v1).
+ *
+ * Pipeline:
+ *   1. Keccak256(header || nonce)  — host precomputed state (same as v1)
+ *   2. Memory-hard scratchpad (256 KiB, 8192 blocks, 2 passes, 64 reads)
+ *   3. AES-128 CTR mix (3 full rounds + 1 final)
+ *   4. Thermal loop (65536 iters, 8 ulong chains) — extra heat, no float
+ *   5. Keccak256(s3_after_thermal) → final hash
+ *
+ * Compatible with: AMD GCN (Vega, Polaris), AMD RDNA, NVIDIA, Intel.
  */
 
 #pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable
 
 /* ========================================================================== */
-/* Constants — compile-time for better compiler opts                        */
+/* Constants — identical to v1 for memory management                          */
 /* ========================================================================== */
 
-#define SCRATCHPAD_SIZE  131072
+#define SCRATCHPAD_SIZE  262144   /* 256 KiB = 8192 * 32 — same as v1 */
 #define BLOCK_SIZE       32
-#define BLOCK_COUNT      4096
-#define PASSES           16
-#define RANDOM_READS     512
-#define AES_FULL_ROUNDS  10
+#define BLOCK_COUNT      8192
+#define PASSES           2
+#define RANDOM_READS     64
 #define THERMAL_ITERS    65536
 
 /* ========================================================================== */
-/* Keccak — canonical impl                                                    */
+/* Keccak — identical to deeksha_lite.cl                                      */
 /* ========================================================================== */
 
 #define ROL64(x, n) rotate((long)((ulong)(x)), (long)((ulong)(n)))
@@ -61,7 +71,6 @@ void keccak_f1600(__private ulong *st)
         t=bc1^ROL64(bc3,1); st[2]^=t;st[7]^=t;st[12]^=t;st[17]^=t;st[22]^=t;
         t=bc2^ROL64(bc4,1); st[3]^=t;st[8]^=t;st[13]^=t;st[18]^=t;st[23]^=t;
         t=bc3^ROL64(bc0,1); st[4]^=t;st[9]^=t;st[14]^=t;st[19]^=t;st[24]^=t;
-
         t=st[1];
         bc0=st[10];st[10]=ROL64(t, 1);t=bc0;
         bc0=st[ 7];st[ 7]=ROL64(t, 3);t=bc0;
@@ -87,7 +96,6 @@ void keccak_f1600(__private ulong *st)
         bc0=st[ 9];st[ 9]=ROL64(t,61);t=bc0;
         bc0=st[ 6];st[ 6]=ROL64(t,20);t=bc0;
                    st[ 1]=ROL64(t,44);
-
         CHI_ROW(0) CHI_ROW(5) CHI_ROW(10) CHI_ROW(15) CHI_ROW(20)
         st[0] ^= KC_RC[rnd];
     }
@@ -95,34 +103,25 @@ void keccak_f1600(__private ulong *st)
 
 typedef union { ulong u[25]; uchar b[200]; } keccak_st_t;
 
-/* Compute Keccak256(header[0..80] || nonce_le[0..8]).
- * Input is the raw 80-byte header passed from host + 8-byte nonce.
- * Rate = 136 bytes. Total input = 88 bytes < rate, so single block. */
-void keccak256_from_header(
-    __global const uchar *header80,
+/* Same as v1: host precomputes keccak state after absorbing header[0..80] */
+void keccak256_from_state(
+    __global const ulong *pre_state,
     ulong nonce,
     __private uchar out[32])
 {
     keccak_st_t s;
-    for (int i = 0; i < 25; i++) s.u[i] = 0;
-
-    /* Absorb 80 header bytes */
-    for (int i = 0; i < 80; i++) s.b[i] ^= header80[i];
-    /* Absorb 8 nonce bytes (little-endian) */
+    for (int i = 0; i < 25; i++) s.u[i] = pre_state[i];
     for (int i = 0; i < 8; i++)
         s.b[80 + i] ^= (uchar)(nonce >> (i * 8));
-    /* Keccak padding: rate=136 */
     s.b[88]  ^= 0x01;
     s.b[135] ^= 0x80;
     keccak_f1600(s.u);
-
     for (int i = 0; i < 32; i++) out[i] = s.b[i];
 }
 
 void sha3_512(__private const uchar *in, uint inlen, __private uchar out[64])
 {
     keccak_st_t s;
-    
     for (int i = 0; i < 25; i++) s.u[i] = 0;
     uint pos = 0;
     for (uint i = 0; i < inlen; i++) {
@@ -132,12 +131,11 @@ void sha3_512(__private const uchar *in, uint inlen, __private uchar out[64])
     s.b[pos] ^= 0x06;
     s.b[71]  ^= 0x80;
     keccak_f1600(s.u);
-    
     for (int i = 0; i < 64; i++) out[i] = s.b[i];
 }
 
 /* ========================================================================== */
-/* AES-128 helpers (FIPS-197)                                                  */
+/* AES-128 helpers — identical to v1                                          */
 /* ========================================================================== */
 
 __constant uchar AES_SBOX[256] = {
@@ -159,174 +157,129 @@ __constant uchar AES_SBOX[256] = {
     0x8c,0xa1,0x89,0x0d,0xbf,0xe6,0x42,0x68,0x41,0x99,0x2d,0x0f,0xb0,0x54,0xbb,0x16,
 };
 
-void aes_sub_bytes(__private uchar s[16])
-{
-    
-    for (int i = 0; i < 16; i++) s[i] = AES_SBOX[s[i]];
-}
+void aes_sub_bytes(__private uchar s[16])   { for (int i=0;i<16;i++) s[i]=AES_SBOX[s[i]]; }
 
 void aes_shift_rows(__private uchar s[16])
 {
     uchar t;
-    t = s[1];  s[1]  = s[5];  s[5]  = s[9];  s[9]  = s[13]; s[13] = t;
-    t = s[2];  s[2]  = s[10]; s[10] = t;
-    t = s[6];  s[6]  = s[14]; s[14] = t;
-    t = s[15]; s[15] = s[11]; s[11] = s[7];   s[7]  = s[3];  s[3]  = t;
+    t=s[1];  s[1] =s[5];  s[5] =s[9];  s[9] =s[13]; s[13]=t;
+    t=s[2];  s[2] =s[10]; s[10]=t;
+    t=s[6];  s[6] =s[14]; s[14]=t;
+    t=s[15]; s[15]=s[11]; s[11]=s[7];  s[7] =s[3];  s[3] =t;
 }
 
-uchar aes_xtime(uchar a)
-{
-    return (uchar)((a << 1) ^ (((a >> 7) & 1) * 0x1b));
-}
+uchar aes_xtime(uchar a) { return (uchar)((a<<1)^(((a>>7)&1)*0x1b)); }
 
 void aes_mix_columns(__private uchar s[16])
 {
-    
-    for (int i = 0; i < 4; i++) {
-        uchar a = s[i*4], b = s[i*4+1], c = s[i*4+2], d = s[i*4+3];
-        uchar e = a ^ b ^ c ^ d;
-        s[i*4]   ^= e ^ aes_xtime(a ^ b);
-        s[i*4+1] ^= e ^ aes_xtime(b ^ c);
-        s[i*4+2] ^= e ^ aes_xtime(c ^ d);
-        s[i*4+3] ^= e ^ aes_xtime(d ^ a);
+    for (int i=0;i<4;i++) {
+        uchar a=s[i*4],b=s[i*4+1],c=s[i*4+2],d=s[i*4+3];
+        uchar e=a^b^c^d;
+        s[i*4]  ^=e^aes_xtime(a^b); s[i*4+1]^=e^aes_xtime(b^c);
+        s[i*4+2]^=e^aes_xtime(c^d); s[i*4+3]^=e^aes_xtime(d^a);
     }
 }
 
 void aes_add_round_key(__private uchar s[16], __private const uchar k[16])
-{
-    
-    for (int i = 0; i < 16; i++) s[i] ^= k[i];
-}
+{ for (int i=0;i<16;i++) s[i]^=k[i]; }
 
 void aes_round(__private uchar s[16], __private const uchar k[16])
-{
-    aes_sub_bytes(s);
-    aes_shift_rows(s);
-    aes_mix_columns(s);
-    aes_add_round_key(s, k);
-}
+{ aes_sub_bytes(s); aes_shift_rows(s); aes_mix_columns(s); aes_add_round_key(s,k); }
 
 void aes_final_round(__private uchar s[16], __private const uchar k[16])
-{
-    aes_sub_bytes(s);
-    aes_shift_rows(s);
-    aes_add_round_key(s, k);
-}
+{ aes_sub_bytes(s); aes_shift_rows(s); aes_add_round_key(s,k); }
 
 /* ========================================================================== */
-/* Step 2: FIRE scratchpad                                                     */
+/* Steps 2A/2B/2C: scratchpad — identical to v1                               */
 /* ========================================================================== */
 
 void fill_scratchpad(__private const uchar seed[32], __global uchar *pad)
 {
     uchar state[64];
-    
-    for (int i = 0; i < 32; i++) state[i] = seed[i];
-    
-    for (int i = 32; i < 64; i++) state[i] = 0;
-
-    for (uint blk = 0; blk < BLOCK_COUNT; blk++) {
+    for (int i=0;i<32;i++) state[i]=seed[i];
+    for (int i=32;i<64;i++) state[i]=0;
+    for (uint blk=0;blk<BLOCK_COUNT;blk++) {
         uchar inp[65];
-        
-        for (int i = 0; i < 64; i++) inp[i] = state[i];
-        inp[64] = (uchar)(blk & 0xFF);
+        for (int i=0;i<64;i++) inp[i]=state[i];
+        inp[64]=(uchar)(blk&0xFF);
         uchar out64[64];
         sha3_512(inp, 65, out64);
-        uint off = blk * BLOCK_SIZE;
-        for (int i = 0; i < 32; i++) pad[off + i] = out64[i];
-        for (int i = 0; i < 32; i++) state[i] = out64[i];
+        uint off=blk*BLOCK_SIZE;
+        ulong4 v=vload4(0,(__private ulong*)out64);
+        vstore4(v,0,(__global ulong*)(pad+off));
+        vstore4(v,0,(__private ulong*)state);
     }
 }
 
 void sequential_passes(__global uchar *pad)
 {
-    for (int pass = 0; pass < PASSES; pass++) {
-        /* Forward */
-        for (uint i = 0; i < BLOCK_COUNT; i++) {
-            uint prev = (i == 0) ? (BLOCK_COUNT - 1) : (i - 1);
-            uint cur  = i * BLOCK_SIZE;
-            uint prv  = prev * BLOCK_SIZE;
-            for (int j = 0; j < BLOCK_SIZE; j++)
-                pad[cur + j] ^= pad[prv + j];
-        }
-        /* Backward */
-        for (uint i = BLOCK_COUNT; i > 0; i--) {
-            uint idx  = i - 1;
-            uint next = (idx + 1 == BLOCK_COUNT) ? 0 : (idx + 1);
-            uint cur  = idx  * BLOCK_SIZE;
-            uint nxt  = next * BLOCK_SIZE;
-            for (int j = 0; j < BLOCK_SIZE; j++)
-                pad[cur + j] ^= pad[nxt + j];
-        }
+    for (uint i=0;i<BLOCK_COUNT;i++) {
+        uint prev=(i==0)?(BLOCK_COUNT-1):(i-1);
+        ulong4 cv=vload4(0,(__global ulong*)(pad+i*BLOCK_SIZE));
+        ulong4 pv=vload4(0,(__global ulong*)(pad+prev*BLOCK_SIZE));
+        cv^=pv; vstore4(cv,0,(__global ulong*)(pad+i*BLOCK_SIZE));
+    }
+    for (uint i=BLOCK_COUNT;i>0;i--) {
+        uint idx=i-1;
+        uint next=(idx+1==BLOCK_COUNT)?0:(idx+1);
+        ulong4 cv=vload4(0,(__global ulong*)(pad+idx*BLOCK_SIZE));
+        ulong4 nv=vload4(0,(__global ulong*)(pad+next*BLOCK_SIZE));
+        cv^=nv; vstore4(cv,0,(__global ulong*)(pad+idx*BLOCK_SIZE));
     }
 }
 
 void random_read_mix(__private const uchar seed[32], __global const uchar *pad, __private uchar out[32])
 {
     uchar acc[32];
-    for (int i = 0; i < 32; i++) acc[i] = seed[i];
-    ulong pos = 0;
-    for (ulong r = 0; r < RANDOM_READS; r++) {
-        uint off = (uint)(pos * BLOCK_SIZE);
-        for (int i = 0; i < 32; i++) acc[i] ^= pad[off + i];
-        /* Read 8 bytes for idx — matches u64 in CPU */
-        ulong idx_val = 0;
-        for (int i = 0; i < 8; i++)
-            idx_val |= ((ulong)acc[i]) << (i * 8);
-        pos = (idx_val ^ pos ^ r) % BLOCK_COUNT;
+    for (int i=0;i<32;i++) acc[i]=seed[i];
+    ulong pos=0;
+    for (ulong r=0;r<RANDOM_READS;r++) {
+        uint off=(uint)(pos*BLOCK_SIZE);
+        ulong4 av=vload4(0,(__private ulong*)acc);
+        ulong4 pv=vload4(0,(__global const ulong*)(pad+off));
+        av^=pv; vstore4(av,0,(__private ulong*)acc);
+        ulong idx_val=0;
+        for (int i=0;i<8;i++) idx_val|=((ulong)acc[i])<<(i*8);
+        pos=(idx_val^pos^r)%BLOCK_COUNT;
     }
-    for (int i = 0; i < 32; i++) out[i] = acc[i];
+    for (int i=0;i<32;i++) out[i]=acc[i];
 }
 
 /* ========================================================================== */
-/* Step 3: FIRE AES-128 CTR — 10 full rounds                                  */
+/* Step 3: AES-128 CTR mix — identical to v1                                  */
 /* ========================================================================== */
 
-void aes128_mix_fire(__private const uchar seed[32], ulong nonce, __private uchar out[32])
+void aes128_mix(__private const uchar seed[32], ulong nonce, __private uchar out[32])
 {
     uchar key[16];
-    
-    for (int i = 0; i < 16; i++) key[i] = seed[i];
+    for (int i=0;i<16;i++) key[i]=seed[i];
     uchar counter[16];
-    
-    for (int i = 0; i < 8; i++) counter[i]     = (uchar)(nonce >> (i * 8));
-    
-    for (int i = 0; i < 8; i++) counter[8 + i] = seed[16 + i];
-
+    for (int i=0;i<8;i++) counter[i]    =(uchar)(nonce>>(i*8));
+    for (int i=0;i<8;i++) counter[8+i]  =seed[16+i];
     uchar block0[16], block1[16];
-    
-    for (int i = 0; i < 16; i++) { block0[i] = counter[i]; block1[i] = counter[i]; }
-
-    uint carry = 1;
-    for (int i = 0; i < 16; i++) {
-        uint s = (uint)block1[i] + carry;
-        block1[i] = (uchar)(s & 0xFF);
-        carry = s >> 8;
-        if (carry == 0) break;
+    for (int i=0;i<16;i++) { block0[i]=counter[i]; block1[i]=counter[i]; }
+    uint carry=1;
+    for (int i=0;i<16;i++) {
+        uint s=(uint)block1[i]+carry;
+        block1[i]=(uchar)(s&0xFF);
+        carry=s>>8;
+        if (carry==0) break;
     }
-
-    for (int r = 0; r < AES_FULL_ROUNDS; r++) {
-        aes_round(block0, key);
-        aes_round(block1, key);
-    }
-    aes_final_round(block0, key);
-    aes_final_round(block1, key);
-
-    
-    for (int i = 0; i < 16; i++) {
-        out[i]      = block0[i] ^ seed[i];
-        out[16 + i] = block1[i] ^ seed[16 + i];
-    }
+    for (int r=0;r<3;r++) { aes_round(block0,key); aes_round(block1,key); }
+    aes_final_round(block0,key);
+    aes_final_round(block1,key);
+    for (int i=0;i<16;i++) { out[i]=block0[i]^seed[i]; out[16+i]=block1[i]^seed[16+i]; }
 }
 
 /* ========================================================================== */
-/* Step 4: FIRE Thermal Loop — 4-chain ILP for maximum ALU load               */
+/* Step 4: Thermal loop — the only addition over v1                           */
+/*                                                                             */
+/* 8 independent ulong chains, 65536 iters.                                   */
+/* Integer-only (no float) = deterministic on all GPU drivers.                */
+/* Results XORed back into data[0..16] to prevent dead-code elimination.      */
+/* Identical logic in deeksha_lite_fire.rs (CPU reference).                   */
 /* ========================================================================== */
 
-/* 8-chain integer thermal loop.
- * Deterministic on all platforms — no float (avoids driver-dependent fma rounding).
- * Winter mode (Fire): 65k iterations, high ALU util, minimal memory.
- * Summer mode: use deeksha_lite.cl (normal mining algorithm). */
 void thermal_loop(__private uchar data[32], ulong nonce)
 {
     ulong a = nonce ^ 0x9E3779B97F4A7C15UL;
@@ -339,81 +292,45 @@ void thermal_loop(__private uchar data[32], ulong nonce)
     ulong h = nonce ^ 0xFEEDFACECAFEBEEFUL;
 
     for (int i = 0; i < THERMAL_ITERS; i++) {
-        a = ROL64(a, 17) + b;
-        b = ROL64(b, 31) ^ a;
-        c = ROL64(c, 13) + d;
-        d = ROL64(d, 47) ^ c;
-        e = ROL64(e, 23) + f;
-        f = ROL64(f, 41) ^ e;
-        g = ROL64(g, 11) + h;
-        h = ROL64(h, 53) ^ g;
-        a = a * 0xFF51AFD7ED558CCDUL;
-        b = b + 0xFF51AFD7ED558CCDUL;
-        c = c * 0x94D049BB133111EBUL;
-        d = d + 0x5851F42D4C957F2DUL;
-        e = e * 0xC0FFEE123456789AUL;
-        f = f + 0xDEADBEEFCAFEBABEUL;
-        g = g * 0xBADC0FFEE0DDF00DUL;
-        h = h + 0xFEEDFACECAFEBEEFUL;
+        a = ROL64(a,17) + b;  b = ROL64(b,31) ^ a;
+        c = ROL64(c,13) + d;  d = ROL64(d,47) ^ c;
+        e = ROL64(e,23) + f;  f = ROL64(f,41) ^ e;
+        g = ROL64(g,11) + h;  h = ROL64(h,53) ^ g;
+        a = a * 0xFF51AFD7ED558CCDUL;  b = b + 0xFF51AFD7ED558CCDUL;
+        c = c * 0x94D049BB133111EBUL;  d = d + 0x5851F42D4C957F2DUL;
+        e = e * 0xC0FFEE123456789AUL;  f = f + 0xDEADBEEFCAFEBABEUL;
+        g = g * 0xBADC0FFEE0DDF00DUL;  h = h + 0xFEEDFACECAFEBEEFUL;
         a ^= (ulong)data[(i    ) & 0x1F];
         b ^= (ulong)data[(i + 8) & 0x1F];
-        c ^= (ulong)data[(i + 16) & 0x1F];
-        d ^= (ulong)data[(i + 24) & 0x1F];
+        c ^= (ulong)data[(i +16) & 0x1F];
+        d ^= (ulong)data[(i +24) & 0x1F];
         e ^= (ulong)data[(i + 4) & 0x1F];
-        f ^= (ulong)data[(i + 12) & 0x1F];
+        f ^= (ulong)data[(i +12) & 0x1F];
         g ^= (ulong)data[(i + 2) & 0x1F];
         h ^= (ulong)data[(i + 6) & 0x1F];
     }
-
-    data[0]  ^= (uchar)(a);
-    data[1]  ^= (uchar)(a >> 8);
-    data[2]  ^= (uchar)(b);
-    data[3]  ^= (uchar)(b >> 8);
-    data[4]  ^= (uchar)(c);
-    data[5]  ^= (uchar)(c >> 8);
-    data[6]  ^= (uchar)(d);
-    data[7]  ^= (uchar)(d >> 8);
-    data[8]  ^= (uchar)(e);
-    data[9]  ^= (uchar)(e >> 8);
-    data[10] ^= (uchar)(f);
-    data[11] ^= (uchar)(f >> 8);
-    data[12] ^= (uchar)(g);
-    data[13] ^= (uchar)(g >> 8);
-    data[14] ^= (uchar)(h);
-    data[15] ^= (uchar)(h >> 8);
-    data[16] ^= (uchar)(a >> 16);
-    data[17] ^= (uchar)(b >> 16);
-    data[18] ^= (uchar)(c >> 16);
-    data[19] ^= (uchar)(d >> 16);
-    data[20] ^= (uchar)(e >> 16);
-    data[21] ^= (uchar)(f >> 16);
-    data[22] ^= (uchar)(g >> 16);
-    data[23] ^= (uchar)(h >> 16);
-    data[24] ^= (uchar)(a >> 24);
-    data[25] ^= (uchar)(b >> 24);
+    /* Fold back — prevents compiler from eliminating the loop */
+    data[ 0] ^= (uchar)(a);       data[ 1] ^= (uchar)(a>>8);
+    data[ 2] ^= (uchar)(b);       data[ 3] ^= (uchar)(b>>8);
+    data[ 4] ^= (uchar)(c);       data[ 5] ^= (uchar)(c>>8);
+    data[ 6] ^= (uchar)(d);       data[ 7] ^= (uchar)(d>>8);
+    data[ 8] ^= (uchar)(e);       data[ 9] ^= (uchar)(e>>8);
+    data[10] ^= (uchar)(f);       data[11] ^= (uchar)(f>>8);
+    data[12] ^= (uchar)(g);       data[13] ^= (uchar)(g>>8);
+    data[14] ^= (uchar)(h);       data[15] ^= (uchar)(h>>8);
+    data[16] ^= (uchar)(a>>16);   data[17] ^= (uchar)(b>>16);
+    data[18] ^= (uchar)(c>>16);   data[19] ^= (uchar)(d>>16);
+    data[20] ^= (uchar)(e>>16);   data[21] ^= (uchar)(f>>16);
+    data[22] ^= (uchar)(g>>16);   data[23] ^= (uchar)(h>>16);
+    data[24] ^= (uchar)(a>>24);   data[25] ^= (uchar)(b>>24);
 }
 
 /* ========================================================================== */
-/* Step 5: Keccak256 final — vectorized state absorb                          */
-/* ========================================================================== */
-
-void keccak256_final(__private const uchar in[32], __private uchar out[32])
-{
-    keccak_st_t s;
-    for (int i = 0; i < 25; i++) s.u[i] = 0;
-    for (int i = 0; i < 32; i++) s.b[i] ^= in[i];
-    s.b[32] ^= 0x01;
-    s.b[135] ^= 0x80;
-    keccak_f1600(s.u);
-    for (int i = 0; i < 32; i++) out[i] = s.b[i];
-}
-
-/* ========================================================================== */
-/* Main kernel                                                                */
+/* Main kernel                                                                  */
 /* ========================================================================== */
 
 __kernel void deeksha_lite_fire_mine(
-    __global const uchar *header80,
+    __global const ulong *header_keccak_state,  /* same as v1: host precomputed */
     ulong  nonce_base,
     uint   nonce_count,
     __global uchar *output_hashes,
@@ -425,28 +342,34 @@ __kernel void deeksha_lite_fire_mine(
     __global uchar *pad = scratchpad_pool + (ulong)tid * SCRATCHPAD_SIZE;
     ulong nonce = nonce_base + (ulong)tid;
 
-    /* Step 1: Keccak256(header[0..80] || nonce_le) */
+    /* Step 1: Keccak256(header || nonce) — same as v1 */
     uchar s1[32];
-    keccak256_from_header(header80, nonce, s1);
+    keccak256_from_state(header_keccak_state, nonce, s1);
 
-    /* Step 2 */
+    /* Step 2: Memory-hard scratchpad — same as v1 */
     fill_scratchpad(s1, pad);
     sequential_passes(pad);
     uchar s2[32];
     random_read_mix(s1, pad, s2);
 
-    /* Step 3 */
+    /* Step 3: AES-128 CTR mix — same as v1 */
     uchar s3[32];
-    aes128_mix_fire(s2, nonce, s3);
+    aes128_mix(s2, nonce, s3);
 
-    /* Step 4 */
+    /* Step 4: Thermal loop — extra heat, not in v1 */
     thermal_loop(s3, nonce);
 
-    /* Step 5 */
+    /* Step 5: Keccak256 final — same as v1 */
     uchar hash[32];
-    keccak256_final(s3, hash);
+    keccak_st_t s;
+    for (int i=0;i<25;i++) s.u[i]=0;
+    for (int i=0;i<32;i++) s.b[i]^=s3[i];
+    s.b[32] ^= 0x01;
+    s.b[135] ^= 0x80;
+    keccak_f1600(s.u);
+    for (int i=0;i<32;i++) hash[i]=s.b[i];
 
-    /* Output write */
     __global uchar *slot = output_hashes + (ulong)tid * 32;
-    for (int i = 0; i < 32; i++) slot[i] = hash[i];
+    ulong4 hv = vload4(0, (__private ulong*)hash);
+    vstore4(hv, 0, (__global ulong*)slot);
 }
