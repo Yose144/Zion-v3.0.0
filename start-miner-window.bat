@@ -17,9 +17,9 @@ set ZION_GPU_WORK_SIZE=16384
 set ZION_OCL_WORK_CAP=16384
 set ZION_OCL_VRAM_PCT=35
 
-echo Starting ZION GPU Miner (OpenCL - AMD)...
-echo Pool: %ZION_POOL_ADDR%
-echo GPU Work Size: %ZION_GPU_WORK_SIZE%
-echo GPU Backend: %ZION_GPU_BACKEND%
+echo ===========================================================
+echo  ZION GPU Miner :: Pool 77.42.71.94:8444
+echo ===========================================================
 echo.
-.\V3\target\release\zion-miner.exe >> logs\miner.log 2>&1
+
+V3\target\release\zion-miner.exe
