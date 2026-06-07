@@ -14,6 +14,8 @@ use anyhow::Result;
 use rayon::prelude::*;
 use zion_core::{DifficultyTarget, MiningHeader, MiningJob, MiningSolution};
 
+use crate::gpu_guard::{GpuAlgorithm, GpuDeviceFamily, GpuGuard, GpuTuning};
+
 /// Which GPU backend to use.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GpuBackendKind {
@@ -1353,6 +1355,10 @@ pub mod opencl_deeksha_lite {
         work_size: usize,
         local_work_size: usize,
         device_name_cached: String,
+        device_family: GpuDeviceFamily,
+        tuning: GpuTuning,
+        recovery_attempts: u32,
+        max_recovery_attempts: u32,
     }
 
     impl OpenClDeekshaLiteMiner {
@@ -1417,21 +1423,41 @@ pub mod opencl_deeksha_lite {
             Ok((platform, device, platform_name, device_name))
         }
 
-        pub fn new(work_size: usize) -> Result<Self> {
+        pub fn new(requested_work_size: usize) -> Result<Self> {
             let kernel_src = opencl_kernel::get_deeksha_lite_kernel_source().to_string();
             let (platform, device, platform_name, device_name) = Self::pick_device()?;
-            let actual_work_size = Self::vram_aware_work_size(&device, work_size);
-            let local_work_size = if device_name.to_ascii_lowercase().contains("vega") {
-                256
-            } else {
-                128
-            };
-            let build_opts = "-cl-std=CL1.2 -cl-mad-enable".to_string();
+
+            let family = GpuDeviceFamily::from_name(&device_name);
+            let vram = device
+                .info(ocl::enums::DeviceInfo::GlobalMemSize)
+                .ok()
+                .and_then(|v| match v {
+                    ocl::enums::DeviceInfoResult::GlobalMemSize(n) => Some(n as usize),
+                    _ => None,
+                })
+                .unwrap_or(2_000_000_000);
+
+            let tuning = GpuTuning::auto_tune(GpuAlgorithm::DeekshaLiteV1, family, vram);
+            let actual_work_size = requested_work_size
+                .min(tuning.work_size)
+                .max(64)
+                .next_power_of_two();
+
+            println!(
+                "gpu_opencl_lite_init family={:?} device=\"{}\" vram={}MiB tuned_ws={} local_ws={} build_opts=\"{}\"",
+                family,
+                device_name,
+                vram / (1024 * 1024),
+                actual_work_size,
+                tuning.local_ws,
+                tuning.build_opts,
+            );
+
             let pro_que = {
                 let mut prog = ProgramBuilder::new();
                 prog.src(kernel_src);
-                if !build_opts.is_empty() {
-                    prog.cmplr_opt(build_opts);
+                if !tuning.build_opts.is_empty() {
+                    prog.cmplr_opt(&tuning.build_opts);
                 }
                 ProQue::builder()
                     .platform(platform)
@@ -1471,7 +1497,7 @@ pub mod opencl_deeksha_lite {
                 "gpu_opencl_lite_init device=\"{}\" work_size={} local_ws={} scratchpad_mib={}",
                 device_name,
                 actual_work_size,
-                local_work_size,
+                tuning.local_ws,
                 actual_work_size * DL_SCRATCHPAD_BYTES / (1024 * 1024)
             );
             Ok(Self {
@@ -1481,8 +1507,12 @@ pub mod opencl_deeksha_lite {
                 scratchpad_buf,
                 output_hashes_buf,
                 work_size: actual_work_size,
-                local_work_size,
+                local_work_size: tuning.local_ws,
                 device_name_cached: device_name,
+                device_family: family,
+                tuning,
+                recovery_attempts: 0,
+                max_recovery_attempts: 3,
             })
         }
     }
@@ -1508,7 +1538,21 @@ pub mod opencl_deeksha_lite {
             batch_size: u64,
         ) -> Result<GpuBatchResult> {
             let header_bytes = header.to_bytes();
-            self.header_buf.write(&header_bytes[..]).enq()?;
+
+            // ── SEH guard for OpenCL buffer write ───────────────────────
+            {
+                let guard = GpuGuard::new();
+                self.header_buf.write(&header_bytes[..]).enq()?;
+                if guard.was_caught() {
+                    self.recovery_attempts += 1;
+                    anyhow::bail!(
+                        "GPU access violation during header buffer write (attempt {}/{}). AMD driver crash detected — try reducing ZION_GPU_WORK_SIZE or ZION_OCL_VRAM_PCT.",
+                        self.recovery_attempts,
+                        self.max_recovery_attempts
+                    );
+                }
+            }
+
             let mut all_solutions = Vec::new();
             let mut total_tested = 0u64;
             let mut current_nonce = nonce_start;
@@ -1520,15 +1564,42 @@ pub mod opencl_deeksha_lite {
                 self.kernel.set_arg(1, header_bytes.len() as u32)?;
                 self.kernel.set_arg(2, current_nonce)?;
                 self.kernel.set_arg(3, chunk as u32)?;
-                unsafe {
-                    self.kernel
-                        .cmd()
-                        .global_work_size(global_size)
-                        .local_work_size(local_size)
-                        .enq()?;
+
+                // ── SEH guard for kernel enqueue ──────────────────────────
+                {
+                    let guard = GpuGuard::new();
+                    unsafe {
+                        self.kernel
+                            .cmd()
+                            .global_work_size(global_size)
+                            .local_work_size(local_size)
+                            .enq()?;
+                    }
+                    if guard.was_caught() {
+                        self.recovery_attempts += 1;
+                        anyhow::bail!(
+                            "GPU access violation during kernel enqueue (attempt {}/{}). AMD driver crash detected — try reducing ZION_GPU_WORK_SIZE or switching to CPU backend.",
+                            self.recovery_attempts,
+                            self.max_recovery_attempts
+                        );
+                    }
                 }
+
+                // ── SEH guard for buffer read ─────────────────────────────
                 let mut hashes = vec![0u8; chunk * 32];
-                self.output_hashes_buf.read(&mut hashes).enq()?;
+                {
+                    let guard = GpuGuard::new();
+                    self.output_hashes_buf.read(&mut hashes).enq()?;
+                    if guard.was_caught() {
+                        self.recovery_attempts += 1;
+                        anyhow::bail!(
+                            "GPU access violation during hash buffer read (attempt {}/{}). AMD driver crash detected.",
+                            self.recovery_attempts,
+                            self.max_recovery_attempts
+                        );
+                    }
+                }
+
                 for i in 0..chunk {
                     let hash: [u8; 32] = hashes[i * 32..(i + 1) * 32].try_into().unwrap();
                     if target.allows(&hash) {
