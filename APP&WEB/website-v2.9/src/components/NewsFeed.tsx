@@ -27,12 +27,12 @@ export const NEWS_ARTICLES: NewsArticle[] = [
     tag: { cs: 'Oznámení', en: 'Announcement' },
     tagColor: 'text-rose-400',
     title: {
-      cs: 'Deeksha Fire — spuštění vědomého těžebního ohně ZION',
-      en: 'Deeksha Fire — launch of ZION conscious mining fire',
+      cs: 'Deeksha Fire & Lite — sezónní těžební módy ZION',
+      en: 'Deeksha Fire & Lite — seasonal mining modes for ZION',
     },
     summary: {
-      cs: 'Aktivace Deeksha Fire protokolu jako nové úrovně vědomé těžby. Oheň deeksha hlubší propojení těžaře se sítí a posílení energetického toku v ZION ekosystému.',
-      en: 'Activation of the Deeksha Fire protocol as a new level of conscious mining. The deeksha fire deepens the miner\'s connection to the network and strengthens the energy flow within the ZION ecosystem.',
+      cs: 'Deeksha Lite = malá spotřeba energie bez topení, ideální na léto. Deeksha Fire = plný výkon i s teplem, topení pro zimu. Dva režimy, jeden protokol.',
+      en: 'Deeksha Lite = low energy consumption without heating, ideal for summer. Deeksha Fire = full power with heat output, winter heating mode. Two modes, one protocol.',
     },
     href: '/network',
   },
