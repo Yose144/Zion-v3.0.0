@@ -103,7 +103,7 @@ Source: `edge-deploy/config/edge-environment.sh`
 ```bash
 # Fee Split (89/5/5/0 burn model)
 ZION_MINER_ADDRESS=zion1w523a76830x2t5m7f3j023w265e8g5c400a4790
-ZION_HUMANITARIAN_WALLET=zion165a527w5d0n085t775x3w8n8q20742a6w7xr0z3
+ZION_HUMANITARIAN_WALLET=zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4
 ZION_ISSOBELLA_WALLET=zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702
 
 # Pool (PRIMARY)
@@ -618,7 +618,7 @@ systemctl --user start zion-dashboard.service
 | Recipient | Share | Address |
 |-----------|-------|---------|
 | Miner | 89% | `zion1w523a76830x2t5m7f3j023w265e8g5c400a4790` |
-| Humanitarian | 5% | `zion165a527w5d0n085t775x3w8n8q20742a6w7xr0z3` |
+| Humanitarian | 5% | `zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4` |
 | Issobella | 5% | `zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702` |
 | Pool Fee | 1% | **Burned** (no wallet) |
 

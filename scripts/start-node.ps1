@@ -14,7 +14,7 @@ New-Item -ItemType Directory -Path $DataDir -Force | Out-Null
 # Edge-primary topology: sync from Edge primary via Tailscale VPN
 [Environment]::SetEnvironmentVariable('ZION_SEED_PEERS', '100.76.16.108:8333', 'Process')
 [Environment]::SetEnvironmentVariable('ZION_MINER_ADDRESS', 'zion1w523a76830x2t5m7f3j023w265e8g5c400a4790', 'Process')
-[Environment]::SetEnvironmentVariable('ZION_HUMANITARIAN_WALLET', 'zion165a527w5d0n085t775x3w8n8q20742a6w7xr0z3', 'Process')
+[Environment]::SetEnvironmentVariable('ZION_HUMANITARIAN_WALLET', 'zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4', 'Process')
 [Environment]::SetEnvironmentVariable('ZION_ISSOBELLA_WALLET', 'zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702', 'Process')
 
 # Clean old Temp files if they exist (migration from previous runs)

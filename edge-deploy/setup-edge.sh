@@ -64,7 +64,7 @@ if [[ ! -f "$ENV_FILE" ]]; then
 # NOTE: On Edge-Primary topology, ZION_MINER_ADDRESS MUST equal the pool
 # wallet so the node credits block rewards directly to the pool payout wallet.
 ZION_MINER_ADDRESS=zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604
-ZION_HUMANITARIAN_WALLET=zion165a527w5d0n085t775x3w8n8q20742a6w7xr0z3
+ZION_HUMANITARIAN_WALLET=zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4
 ZION_ISSOBELLA_WALLET=zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702
 # Burn model: 1% pool fee is burned (never minted). Set to 0 so the pool
 # does not double-deduct — the protocol burn happens in core coinbase.
