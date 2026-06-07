@@ -31,6 +31,9 @@ pub enum PoolMessage {
         /// Optional payout address. When empty the pool falls back to miner_id.
         #[serde(default)]
         payout_address: String,
+        /// Backend type for telemetry: "cpu", "opencl", "cuda", "metal".
+        #[serde(default)]
+        backend: String,
     },
     Welcome {
         protocol_version: String,
@@ -283,6 +286,7 @@ impl MiningPool {
             worker_name: worker_name.to_string(),
             algorithm: advertised_algorithm().to_string(),
             payout_address: payout_address.to_string(),
+            backend: "cpu".to_string(),
         }
     }
 
@@ -561,7 +565,7 @@ mod tests {
 
     #[test]
     fn pool_advertises_canonical_profile() {
-        assert_eq!(advertised_algorithm(), "cosmic_harmony_ekam_deeksha_v2");
+        assert_eq!(advertised_algorithm(), "deeksha_lite_v1");
     }
 
     #[test]
@@ -881,6 +885,7 @@ mod tests {
                 worker_name: "w".to_string(),
                 algorithm: "algo".to_string(),
                 payout_address: "zion1mw".to_string(),
+                backend: "cpu".to_string(),
             },
             PoolMessage::Welcome {
                 protocol_version: "v1".to_string(),
@@ -943,6 +948,7 @@ mod tests {
             worker_name: "w".to_string(),
             algorithm: "a".to_string(),
             payout_address: "zion1mw".to_string(),
+            backend: "cpu".to_string(),
         };
         let encoded = encode_message(&msg).unwrap();
         assert_eq!(
