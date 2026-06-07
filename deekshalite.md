@@ -3,6 +3,7 @@
 > Datum: 2026-06-07
 > Verze: v3.0.0-dev
 > Autor: Devin
+> Update: v3.0.24+ (kernel selection + GCN fixes)
 
 ---
 
@@ -55,9 +56,9 @@ Error: unsupported miner algorithm: expected deeksha_lite_v1, got cosmic_harmony
 | GPU | RX Vega 64 (gfx900) |
 | OS | SimpleMining OS (Ubuntu 20.04, kernel 5.15.80) |
 | Group Config | `Zion-` (ID 1773590) |
-| URL | `https://zionterranova.com/zion-miner/zion-sm3033d.zip` |
+| URL | `https://zionterranova.com/zion-miner/zion-sm3037.zip` |
 
-**Status**: ❌ **BLOKOVÁNO** — rig stále používá starou binárku
+**Status**: ⏳ **ČEKÁ NA SMOS DASHBOARD UPDATE** — nová binárka připravena, čeká na změnu URL v Group Config
 
 ---
 
@@ -77,19 +78,25 @@ SMOS používá Ubuntu 20.04 (GLIBC 2.31) → staré minery crashovaly.
 **Řešení**: Build přes Docker s `rust:1.85-bullseye` (Debian 11) + `ubuntu:20.04` runtime.
 Výsledná binárka vyžaduje pouze GLIBC_2.2.5.
 
-### 3.3 Problém #3: Vega 64 OpenCL kernel chyba (známé)
+### 3.3 Problém #3: GPU backend vždy volil cosmic_harmony_deeksha.cl (vyřešeno)
 
-Na Vega 64 (gfx900, ROCm 5.16.16) kernel `deeksha_lite.cl` neprojde kompilací:
+`create_gpu_backend()` vždy inicializoval `OpenClDeekshaMiner`, který načítá `cosmic_harmony_deeksha.cl`.
+Při `algorithm="deeksha_lite_v1"` se tedy používal špatný kernel.
 
-```
-error: passing 'const __global uchar *' to parameter of type
-        'const __private uchar *' changes address space of pointer
-bytes_to_ulong8(pad + off, chunk64);
-```
+**Řešení** (commit `8e4c7cad`):
+- `create_gpu_backend()` nyní přijímá parametr `algorithm`
+- Pro `deeksha_lite_v1` vytvoří `OpenClDeekshaLiteMiner` s `deeksha_lite.cl` kernelem
+- Pro ostatní algoritmy použije původní `OpenClDeekshaMiner`
 
-**Důvod**: Funkce `bytes_to_ulong8` a `ulong_from_bytes` mají parametry v `__private` adresovém prostoru, ale předává se jim `__global` pointer z OpenCL bufferu.
+### 3.4 Problém #4: Vega 64 OpenCL address space chyby (vyřešeno)
 
-**Následek**: Miner padne na CPU fallback (`gpu_init_fallback using=cpu`).
+Kernel `deeksha_lite.cl` obsahoval pointer casty `((uchar *)st)` uvnitř keccak funkcí,
+ které GCN kompilátor (gfx900) odmítá.
+
+**Řešení** (commit `8e4c7cad`):
+- Odstraněny všechny `((uchar *)st)` casty
+- Nahrazeno pomocnými funkcemi `dl_xor_byte_into_state` a `dl_get_byte_from_state`
+- Přidány explicitní `__private` address space kvalifikátory pro všechny lokální parametry
 
 ---
 
@@ -107,10 +114,11 @@ bytes_to_ulong8(pad + off, chunk64);
 
 | Soubor | URL | Obsah |
 |--------|-----|-------|
+| `zion-sm3037.zip` | `https://zionterranova.com/zion-miner/zion-sm3037.zip` | **NOVÝ** — SMOS binárka + DeekshaLite kernel + GCN address space fixes |
+| `zion-sm3036.zip` | `https://zionterranova.com/zion-miner/zion-sm3036.zip` | Starý — SMOS binárka + DeekshaLite kernel (bez GCN fixů) |
 | `zion-sm3033d.zip` | `https://zionterranova.com/zion-miner/zion-sm3033d.zip` | **STARÝ** — obsahuje starou binárku |
-| `zion-sm3036.zip` | `https://zionterranova.com/zion-miner/zion-sm3036.zip` | **NOVÝ** — SMOS binárka + DeekshaLite kernel |
 
-⚠️ **Důležité**: Aktuální SMOS Group Config (`Zion-`) má URL `zion-sm3033d.zip`, který SMOS cachuje. Musí se změnit na `zion-sm3036.zip`.
+⚠️ **Důležité**: Aktuální SMOS Group Config (`Zion-`) má URL `zion-sm3033d.zip`, který SMOS cachuje. Musí se změnit na `zion-sm3037.zip`.
 
 ### 4.3 Docker build
 
@@ -139,7 +147,7 @@ Dockerfile používá:
 2. Najít config **Zion-** (ID 1773590)
 3. Změnit **Miner URL / Options**:
    - Ze: `https://zionterranova.com/zion-miner/zion-sm3033d.zip --pool 77.42.71.94:8444 --wallet zion1w2z3l0q2x5e3q752d3v8k5k3u366j5j3t79n5w3 --worker vega-smos`
-   - Na: `https://zionterranova.com/zion-miner/zion-sm3036.zip --pool 77.42.71.94:8444 --wallet zion1w2z3l0q2x5e3q752d3v8k5k3u366j5j3t79n5w3 --worker vega-smos`
+   - Na: `https://zionterranova.com/zion-miner/zion-sm3037.zip --pool 77.42.71.94:8444 --wallet zion1w2z3l0q2x5e3q752d3v8k5k3u366j5j3t79n5w3 --worker vega-smos`
 4. Uložit config
 
 ### Krok 3: Reload rigu
@@ -169,16 +177,11 @@ accepted 1/0 (+1) diff 178 [Xms] (100.0%)
 
 ### 6.1 Vega 64 OpenCL kernel
 
-**Priorita**: HIGH
+**Priorita**: ✅ **VYŘEŠENO** (commit `8e4c7cad`)
 
-Kernel `deeksha_lite.cl` nefunguje na Vega 64 (gfx900) kvůli address space chybě.
-
-**Možná řešení**:
-1. Odstranit `const` qualifier z parametrů `bytes_to_ulong8` a `ulong_from_bytes`
-2. Použít `__constant` místo `__private` pro lookup tabulky
-3. Přidat `__global` overload pro bufferové operace
-
-**Soubor**: `V3/L1/cosmic-harmony/src/gpu/kernels/deeksha_lite.cl`
+- GPU backend správně vybírá `deeksha_lite.cl` pro `algorithm="deeksha_lite_v1"`
+- Address space pointer casty odstraněny pomocí `dl_xor_byte_into_state` / `dl_get_byte_from_state`
+- Explicitní `__private` kvalifikátory pro GCN kompatibilitu
 
 ### 6.2 Automatický SMOS deploy
 
@@ -200,6 +203,7 @@ Doba odmítnutí: ~15–60 sekund mezi reconnecty.
 
 | Commit | Popis |
 |--------|-------|
+| `8e4c7cad` | fix(gpu): DeekshaLite kernel selection + GCN address space fixes |
 | `3f72021d` | dual-algo: pool + miner + core dual-algo support for DeekshaLite v1 |
 | `869a35fd` | pool: welcome message uses config.algorithm instead of consensus_profile |
 | `58acd104` | miner: default algorithm to deeksha_lite_v1 for SMOS rigs |
@@ -270,4 +274,5 @@ readelf -V /tmp/zion-miner-smos | grep GLIBC
 ---
 
 *Dokument vytvořen: 2026-06-07 01:05 UTC*
-*Další pokračování: oprava Vega 64 OpenCL kernel + dokončení SMOS deploy*
+*Aktualizován: 2026-06-07 07:40 UTC*
+*Stav: Opraveny GPU kernel selection + GCN address space chyby. Čeká na manuální SMOS dashboard update.*
