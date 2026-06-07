@@ -285,3 +285,9 @@ V3/deploy/
 
 # Temporary scripts
 scan-ssh.ps1
+V3/target4/
+V3/target5/
+V3/target6/
+V3/target7/
+V3/target8/
+V3/test_results.txt
