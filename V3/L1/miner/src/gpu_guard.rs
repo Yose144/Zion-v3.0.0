@@ -266,7 +266,7 @@ impl GpuTuning {
         let scratchpad_bytes = match algo {
             GpuAlgorithm::CosmicHarmony => 256 * 1024, // 256 KiB per thread
             GpuAlgorithm::DeekshaLiteV1 => 256 * 1024, // 256 KiB per thread
-            GpuAlgorithm::DeekshaLiteFire => 512 * 1024, // 512 KiB per thread
+            GpuAlgorithm::DeekshaLiteFire => 128 * 1024, // 128 KiB per thread (small, ASIC-resistant)
         };
 
         let reserve = 512 * 1024 * 1024; // 512 MiB for driver + desktop
@@ -307,10 +307,10 @@ impl GpuTuning {
                 (ws, 256, opts, 60, true)
             }
             (GpuAlgorithm::DeekshaLiteFire, GpuDeviceFamily::AmdRdna) => {
-                // RDNA: 4096 threads = 64 wavefronts, 2 GiB scratchpad — safe for 6 GB VRAM
-                let ws = (max_by_vram.min(4096).max(256)).next_power_of_two();
-                let opts = "-cl-std=CL1.2 -cl-mad-enable -cl-fast-relaxed-math".to_string();
-                (ws, 128, opts, 75, false)
+                // RDNA: 8192 threads = 128 wavefronts, 1 GiB scratchpad (128 KiB/thread)
+                let ws = (max_by_vram.min(8192).max(512)).next_power_of_two();
+                let opts = "-cl-std=CL1.2 -cl-mad-enable -cl-fast-relaxed-math -cl-single-precision-constant".to_string();
+                (ws, 128, opts, 90, false)
             }
             (GpuAlgorithm::DeekshaLiteFire, GpuDeviceFamily::Nvidia) => {
                 let ws = (max_by_vram.min(4096).max(256)).next_power_of_two();

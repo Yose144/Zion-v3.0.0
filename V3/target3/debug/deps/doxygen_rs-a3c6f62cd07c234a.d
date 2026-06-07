@@ -1,0 +1,11 @@
+C:\Users\yosef\Desktop\Zion\2.9.6-main\V3/target3\debug\deps\doxygen_rs-a3c6f62cd07c234a.d: C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\doxygen-rs-0.4.2\src\lib.rs C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\doxygen-rs-0.4.2\src\emojis.rs C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\doxygen-rs-0.4.2\src\generator.rs C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\doxygen-rs-0.4.2\src\lexer.rs C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\doxygen-rs-0.4.2\src\parser.rs
+
+C:\Users\yosef\Desktop\Zion\2.9.6-main\V3/target3\debug\deps\libdoxygen_rs-a3c6f62cd07c234a.rlib: C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\doxygen-rs-0.4.2\src\lib.rs C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\doxygen-rs-0.4.2\src\emojis.rs C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\doxygen-rs-0.4.2\src\generator.rs C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\doxygen-rs-0.4.2\src\lexer.rs C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\doxygen-rs-0.4.2\src\parser.rs
+
+C:\Users\yosef\Desktop\Zion\2.9.6-main\V3/target3\debug\deps\libdoxygen_rs-a3c6f62cd07c234a.rmeta: C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\doxygen-rs-0.4.2\src\lib.rs C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\doxygen-rs-0.4.2\src\emojis.rs C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\doxygen-rs-0.4.2\src\generator.rs C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\doxygen-rs-0.4.2\src\lexer.rs C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\doxygen-rs-0.4.2\src\parser.rs
+
+C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\doxygen-rs-0.4.2\src\lib.rs:
+C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\doxygen-rs-0.4.2\src\emojis.rs:
+C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\doxygen-rs-0.4.2\src\generator.rs:
+C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\doxygen-rs-0.4.2\src\lexer.rs:
+C:\Users\yosef\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\doxygen-rs-0.4.2\src\parser.rs:
