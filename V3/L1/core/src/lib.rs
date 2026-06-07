@@ -189,6 +189,12 @@ impl BlockCandidate {
                     self.nonce,
                 )
             }
+            "deeksha_lite_fire" => {
+                zion_cosmic_harmony::deeksha_lite_fire::deeksha_lite_fire(
+                    &self.header.to_bytes(),
+                    self.nonce,
+                )
+            }
             _ => cosmic_harmony_with_height(&self.header.to_bytes(), self.nonce, self.height).data,
         }
     }
@@ -3811,6 +3817,33 @@ mod tests {
             candidate.nonce,
         );
         assert_eq!(runtime.hash_candidate(candidate), direct);
+    }
+
+    #[test]
+    fn hash_with_algorithm_fire_matches_direct() {
+        let candidate = BlockCandidate {
+            header: sample_header(),
+            nonce: 42,
+            height: 0,
+        };
+        let direct = zion_cosmic_harmony::deeksha_lite_fire::deeksha_lite_fire(
+            &candidate.header.to_bytes(),
+            candidate.nonce,
+        );
+        assert_eq!(candidate.hash_with_algorithm("deeksha_lite_fire"), direct);
+    }
+
+    #[test]
+    fn hash_with_algorithm_fire_is_deterministic() {
+        let candidate = BlockCandidate {
+            header: sample_header(),
+            nonce: 99,
+            height: 0,
+        };
+        let h1 = candidate.hash_with_algorithm("deeksha_lite_fire");
+        let h2 = candidate.hash_with_algorithm("deeksha_lite_fire");
+        assert_eq!(h1, h2);
+        assert_ne!(h1, [0u8; 32]);
     }
 
     #[test]
