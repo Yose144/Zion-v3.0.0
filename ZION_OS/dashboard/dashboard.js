@@ -182,7 +182,7 @@ async function refreshAll(){
       : '⏳ Pre-Launch · ' + blockersData.open_critical + ' critical blockers';
 
     updateServiceCards(statusData);
-    updateServiceTelemetryDetails(statusData);
+    await updateServiceTelemetryDetails(statusData);
     updateAlerts(alertsData.alerts);
     updateChecklist(checklistData.checks);
     updatePayouts(statusData.pool, statusData.topology);
@@ -354,82 +354,154 @@ function updateServiceCards(s){
 }
 
 // ── Service Telemetry Detail Cards (Overview panel) ──
-function updateServiceTelemetryDetails(s){
+async function updateServiceTelemetryDetails(s){
   const container = document.getElementById('overview-telemetry-details');
   if(!container) return;
+
+  // Fetch live infra telemetry from Edge directly (CORS permissive on Edge infra dashboard)
+  let infra = null;
+  let overview = null;
+  try {
+    const [infraRes, ovRes] = await Promise.all([
+      fetch('http://100.76.16.108:8888/api/infra').then(r => r.json()).catch(() => null),
+      fetch('http://100.76.16.108:8888/api/overview').then(r => r.json()).catch(() => null),
+    ]);
+    infra = infraRes;
+    overview = ovRes;
+  } catch(e) {
+    console.warn('Edge infra fetch failed:', e);
+  }
 
   const isEdge = s.topology === 'edge-primary';
   const en = s.edge_node, n1 = s.node1, p = s.pool, m = s.miner;
   const pe = s.pool_edge ?? {};
 
-  const services = [
-    {
-      key:'node', label:'Node', cls:'tdc-node',
-      running: isEdge ? (en && en.running) : (n1 && n1.running),
-      data: isEdge ? en : n1,
-      fields: (d)=>[
-        ['Height', d?.chain_height ?? '—'],
-        ['Peers', d?.known_peers ?? '—'],
-        ['Chain', d?.network ?? d?.chain ?? 'ZION Mainnet'],
-        ['Version', d?.version ?? '—'],
-      ],
-    },
-    {
-      key:'pool', label:'Pool', cls:'tdc-pool',
-      running: p && p.running,
-      data: p,
-      fields: (d)=>[
-        ['Sessions', d?.active_sessions ?? '—'],
-        ['Blocks', d?.blocks_found ?? '—'],
-        ['Shares', (d?.shares_accepted ?? 0) + ' / ' + (d?.shares_rejected ?? 0)],
-        ['Fee', d?.fee_split ?? '—'],
-      ],
-    },
-    {
-      key:'pool-edge', label:'Edge Pool', cls:'tdc-pool',
-      running: pe && pe.running,
-      data: pe,
-      fields: (d)=>[
-        ['Hashrate', d?.hashrate ? d.hashrate.toFixed(2) + ' KH/s' : '—'],
-        ['Miners', d?.active_miners ?? '—'],
-        ['Blocks', d?.blocks_found ?? '—'],
-        ['Port', d?.ports_open?.[0]?.split(':')[1] ?? '8444'],
-      ],
-    },
-    {
-      key:'miner', label:'Miner', cls:'tdc-agent',
-      running: m && m.running,
-      data: m,
-      fields: (d)=>[
-        ['Hashrate', d?.hashrate ? d.hashrate.toFixed(2) + ' H/s' : '—'],
-        ['Backend', d?.gpu_backend ?? 'cpu'],
-        ['Device', d?.gpu_device ?? '—'],
-        ['Pool', d?.pool_addr ?? '—'],
-      ],
-    },
-  ];
+  // Build service list — prefer Edge infra data when available
+  const services = [];
 
-  // L2–L6 services from current status if available
-  const l2l6 = [
-    {key:'bridge', label:'Bridge', cls:'tdc-warp'},
-    {key:'dao', label:'DAO', cls:'tdc-dao'},
-    {key:'warp', label:'WARP', cls:'tdc-warp'},
-  ];
-  l2l6.forEach(item=>{
-    const svc = s[item.key];
-    if(svc){
-      services.push({
-        key:item.key, label:item.label, cls:item.cls,
-        running: svc.running,
-        data: svc,
-        fields: (d)=>[
-          ['Status', d?.status ?? '—'],
-          ['Ports', (d?.ports_open?.length ?? 0) + ' / ' + ((d?.ports_open?.length ?? 0)+(d?.ports_closed?.length ?? 0))],
-          ['Details', d?.details ?? '—'],
-          ['PID Alive', d?.pid_alive ? 'Yes (' + (d?.pid ?? '—') + ')' : 'No'],
-        ],
-      });
-    }
+  // Node
+  const nodeInfra = infra?.node;
+  services.push({
+    key:'node', label:'Node', cls:'tdc-node',
+    running: isEdge ? (en && en.running) : (n1 && n1.running),
+    data: isEdge ? en : n1,
+    infra: nodeInfra,
+    fields: (d, i)=>[
+      ['Height', d?.chain_height ?? '—'],
+      ['Peers', d?.known_peers ?? '—'],
+      ['Chain', d?.network ?? d?.chain ?? 'ZION Mainnet'],
+      ['Version', d?.version ?? '—'],
+      ...(i ? [['Latency', i.latency_ms != null ? i.latency_ms + ' ms' : '—'], ['Endpoint', i.url ?? '—']] : []),
+    ],
+  });
+
+  // Edge Pool
+  const poolInfra = infra?.pool;
+  services.push({
+    key:'pool-edge', label:'Edge Pool', cls:'tdc-pool',
+    running: pe && pe.running,
+    data: pe,
+    infra: poolInfra,
+    fields: (d, i)=>[
+      ['Hashrate', d?.hashrate ? d.hashrate.toFixed(2) + ' KH/s' : '—'],
+      ['Miners', d?.active_miners ?? '—'],
+      ['Blocks', d?.blocks_found ?? '—'],
+      ['Port', d?.ports_open?.[0]?.split(':')[1] ?? '8444'],
+      ...(i ? [['Latency', i.latency_ms != null ? i.latency_ms + ' ms' : '—']] : []),
+    ],
+  });
+
+  // DAO
+  const daoInfra = infra?.dao;
+  if(s.dao || daoInfra){
+    services.push({
+      key:'dao', label:'DAO', cls:'tdc-dao',
+      running: s.dao ? s.dao.running : (daoInfra?.reachable ?? false),
+      data: s.dao || {},
+      infra: daoInfra,
+      fields: (d, i)=>[
+        ['Status', d?.status ?? '—'],
+        ['Ports', (d?.ports_open?.length ?? 0) + ' / ' + ((d?.ports_open?.length ?? 0)+(d?.ports_closed?.length ?? 0))],
+        ...(i?.data ? [['Version', i.data.data?.version ?? '—'], ['Service', i.data.data?.data?.service ?? '—']] : []),
+        ...(i ? [['Latency', i.latency_ms != null ? i.latency_ms + ' ms' : '—']] : []),
+      ],
+    });
+  }
+
+  // WARP
+  const warpInfra = infra?.warp;
+  if(s.warp || warpInfra){
+    services.push({
+      key:'warp', label:'WARP', cls:'tdc-warp',
+      running: s.warp ? s.warp.running : (warpInfra?.reachable ?? false),
+      data: s.warp || {},
+      infra: warpInfra,
+      fields: (d, i)=>[
+        ['Status', d?.status ?? '—'],
+        ['Ports', (d?.ports_open?.length ?? 0) + ' / ' + ((d?.ports_open?.length ?? 0)+(d?.ports_closed?.length ?? 0))],
+        ...(i?.data ? [['Transfers', i.data.transfers_total ?? '—'], ['Pending', i.data.transfers_pending ?? '—'], ['Version', i.data.version ?? '—']] : []),
+        ...(i ? [['Latency', i.latency_ms != null ? i.latency_ms + ' ms' : '—']] : []),
+      ],
+    });
+  }
+
+  // Bridge
+  const bridgeInfra = infra?.bridge;
+  if(bridgeInfra){
+    services.push({
+      key:'bridge', label:'Bridge', cls:'tdc-warp',
+      running: bridgeInfra?.reachable ?? false,
+      data: {},
+      infra: bridgeInfra,
+      fields: (d, i)=>[
+        ['Status', i?.reachable ? 'Reachable' : 'Unreachable'],
+        ...(i ? [['Latency', i.latency_ms != null ? i.latency_ms + ' ms' : '—'], ['Endpoint', i.url ?? '—']] : []),
+      ],
+    });
+  }
+
+  // Agent
+  const agentInfra = infra?.agent;
+  if(agentInfra){
+    services.push({
+      key:'agent', label:'Agent', cls:'tdc-agent',
+      running: agentInfra?.reachable ?? false,
+      data: {},
+      infra: agentInfra,
+      fields: (d, i)=>[
+        ['Status', i?.reachable ? 'Reachable' : 'Unreachable'],
+        ...(i?.data ? [['Mode', i.data.mode ?? '—'], ['GPUs', i.data.gpu_count ?? '—']] : []),
+        ...(i ? [['Latency', i.latency_ms != null ? i.latency_ms + ' ms' : '—']] : []),
+      ],
+    });
+  }
+
+  // Website
+  const webInfra = infra?.website;
+  if(webInfra){
+    services.push({
+      key:'website', label:'Website', cls:'tdc-website',
+      running: webInfra?.reachable ?? false,
+      data: {},
+      infra: webInfra,
+      fields: (d, i)=>[
+        ['Status', i?.reachable ? 'Reachable' : 'Unreachable'],
+        ...(i ? [['Latency', i.latency_ms != null ? i.latency_ms + ' ms' : '—'], ['Endpoint', i.url ?? '—']] : []),
+      ],
+    });
+  }
+
+  // Miner (local)
+  services.push({
+    key:'miner', label:'Miner', cls:'tdc-agent',
+    running: m && m.running,
+    data: m,
+    fields: (d)=>[
+      ['Hashrate', d?.hashrate ? d.hashrate.toFixed(2) + ' H/s' : '—'],
+      ['Backend', d?.gpu_backend ?? 'cpu'],
+      ['Device', d?.gpu_device ?? '—'],
+      ['Pool', d?.pool_addr ?? '—'],
+    ],
   });
 
   container.innerHTML = services.map(svc=>{
@@ -437,7 +509,8 @@ function updateServiceTelemetryDetails(s){
     const statusClass = online ? 'tdc-online' : 'tdc-offline';
     const statusText = online ? 'Online' : 'Offline';
     const d = svc.data || {};
-    const rows = svc.fields(d).map(([label,value])=>`
+    const i = svc.infra || null;
+    const rows = svc.fields(d, i).map(([label,value])=>`
       <div class="tdc-row">
         <div class="tdc-label">${escapeHtml(label)}</div>
         <div class="tdc-value${String(value).length > 20 ? ' small' : ''}">${escapeHtml(value)}</div>
@@ -1616,19 +1689,35 @@ async function measureServiceLatency(){
 
 async function loadWalletStatus(){
   try {
-    const w = await fetch('/api/wallet/status').then(r => r.json());
+    // Edge-primary: prefer /api/payout (live Edge pool data) over /api/wallet/status (local pool.log)
+    const isEdge = window.currentStatus?.topology === 'edge-primary';
+    const w = isEdge
+      ? await fetch('/api/payout').then(r => r.json()).catch(() => null)
+      : await fetch('/api/wallet/status').then(r => r.json());
+    if(!w) return;
     const container = document.getElementById('wallet-pool-status');
     if(!container) return;
+
+    const poolWallet = w.pool_wallet || '—';
+    const bal = w.pool_wallet_balance != null ? formatFlowers(w.pool_wallet_balance) : (w.balance_zion != null ? w.balance_zion.toFixed(4) + ' Z' : '—');
+    const blocks = w.blocks_found ?? '—';
+    const enabled = w.payout_enabled === true ? 'Yes' : (w.payout_enabled === false ? 'No' : '—');
+    const enabledClass = w.payout_enabled === true ? 'text-emerald-400' : (w.payout_enabled === false ? 'text-red-400' : 'text-gray-400');
+    const split = w.fee_split ?? '—';
+    const sharesA = w.shares_accepted ?? 0;
+    const sharesR = w.shares_rejected ?? 0;
+    const lastErr = w.last_payout_error || (w.errors && w.errors[0]) || '';
+
     container.innerHTML = `
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div class="bg-black/30 rounded-lg p-3"><div class="text-xs text-gray-400">Pool Wallet</div><div class="text-sm font-bold text-white truncate" title="${escapeHtml(w.pool_wallet||'—')}">${escapeHtml(w.pool_wallet ? w.pool_wallet.slice(0,14)+'…' : '—')}</div></div>
-        <div class="bg-black/30 rounded-lg p-3"><div class="text-xs text-gray-400">Balance</div><div class="text-sm font-bold text-emerald-400">${w.balance_zion != null ? w.balance_zion.toFixed(4) + ' Z' : '—'}</div></div>
-        <div class="bg-black/30 rounded-lg p-3"><div class="text-xs text-gray-400">UTXOs</div><div class="text-sm font-bold text-white">${w.utxo_count ?? '—'}</div></div>
-        <div class="bg-black/30 rounded-lg p-3"><div class="text-xs text-gray-400">Blocks Found</div><div class="text-sm font-bold text-amber-400">${w.blocks_found ?? '—'}</div></div>
-        <div class="bg-black/30 rounded-lg p-3"><div class="text-xs text-gray-400">Payouts Enabled</div><div class="text-sm font-bold ${w.payout_enabled?'text-emerald-400':'text-red-400'}">${w.payout_enabled?'Yes':'No'}</div></div>
-        <div class="bg-black/30 rounded-lg p-3"><div class="text-xs text-gray-400">Fee Split</div><div class="text-sm font-bold text-white">${w.fee_split ?? '—'}</div></div>
-        <div class="bg-black/30 rounded-lg p-3"><div class="text-xs text-gray-400">Shares A/R</div><div class="text-sm font-bold text-white">${w.shares_accepted}/${w.shares_rejected}</div></div>
-        <div class="bg-black/30 rounded-lg p-3"><div class="text-xs text-gray-400">Last Error</div><div class="text-sm font-bold text-red-400 truncate" title="${escapeHtml(w.last_payout_error||'')}">${w.last_payout_error ? 'Error' : 'None'}</div></div>
+        <div class="bg-black/30 rounded-lg p-3"><div class="text-xs text-gray-400">Pool Wallet</div><div class="text-sm font-bold text-white truncate" title="${escapeHtml(poolWallet)}">${escapeHtml(poolWallet.length > 14 ? poolWallet.slice(0,14)+'…' : poolWallet)}</div></div>
+        <div class="bg-black/30 rounded-lg p-3"><div class="text-xs text-gray-400">Balance</div><div class="text-sm font-bold text-emerald-400">${bal}</div></div>
+        <div class="bg-black/30 rounded-lg p-3"><div class="text-xs text-gray-400">Blocks Found</div><div class="text-sm font-bold text-amber-400">${blocks}</div></div>
+        <div class="bg-black/30 rounded-lg p-3"><div class="text-xs text-gray-400">Payouts Enabled</div><div class="text-sm font-bold ${enabledClass}">${enabled}</div></div>
+        <div class="bg-black/30 rounded-lg p-3"><div class="text-xs text-gray-400">Fee Split</div><div class="text-sm font-bold text-white">${split}</div></div>
+        <div class="bg-black/30 rounded-lg p-3"><div class="text-xs text-gray-400">Shares A/R</div><div class="text-sm font-bold text-white">${sharesA}/${sharesR}</div></div>
+        <div class="bg-black/30 rounded-lg p-3"><div class="text-xs text-gray-400">Miners</div><div class="text-sm font-bold text-white">${(w.miners && w.miners.length) || (w.pool_stats && w.pool_stats.miners && w.pool_stats.miners.active) || '—'}</div></div>
+        <div class="bg-black/30 rounded-lg p-3"><div class="text-xs text-gray-400">Last Error</div><div class="text-sm font-bold text-red-400 truncate" title="${escapeHtml(lastErr)}">${lastErr ? 'Error' : 'None'}</div></div>
       </div>
     `;
   } catch(e) { console.error('loadWalletStatus error:', e); }
