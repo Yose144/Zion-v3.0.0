@@ -22,7 +22,7 @@
 #define PASSES           16
 #define RANDOM_READS     512
 #define AES_FULL_ROUNDS  10
-#define THERMAL_ITERS    8192
+#define THERMAL_ITERS    16384
 
 /* ========================================================================== */
 /* Keccak — canonical impl                                                    */
@@ -334,11 +334,11 @@ void aes128_mix_fire(__private const uchar seed[32], ulong nonce, __private ucha
 /* Step 4: FIRE Thermal Loop — 4-chain ILP for maximum ALU load               */
 /* ========================================================================== */
 
+/* Fixed 6-chain thermal loop — deterministic, compiler-friendly, maximum ILP.
+ * Each chain uses different constants and rotate offsets to avoid
+ * common subexpression elimination. No branching, no divergence. */
 void thermal_loop(__private uchar data[32], ulong nonce)
 {
-    /* 6 independent ulong chains -> max integer ALU load.
-     * No unroll to keep kernel size within driver limits;
-     * high iteration count (8192) provides sustained heat. */
     ulong a = nonce ^ 0x9E3779B97F4A7C15UL;
     ulong b = nonce ^ 0xBF58476D1CE4E5B9UL;
     ulong c = nonce ^ 0x94D049BB133111EBUL;
