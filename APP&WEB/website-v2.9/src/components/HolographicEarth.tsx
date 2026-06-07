@@ -78,12 +78,37 @@ function EarthGlobe() {
         <meshStandardMaterial
           map={maps.color}
           bumpMap={maps.bump}
-          bumpScale={0.045}
-          roughness={0.45}
-          metalness={0.1}
+          bumpScale={0.055}
+          roughness={0.22}
+          metalness={0.15}
+          color={new THREE.Color('#a8d8ea')}
           emissiveMap={maps.night ?? undefined}
           emissive={maps.night ? new THREE.Color('#ffeedd') : undefined}
-          emissiveIntensity={maps.night ? 1.4 : 0}
+          emissiveIntensity={maps.night ? 1.8 : 0}
+        />
+      </mesh>
+      {/* Atmosphere glow — day side */}
+      <mesh scale={1.012}>
+        <sphereGeometry args={[1, 32, 32]} />
+        <meshBasicMaterial
+          color="#4fc3f7"
+          transparent
+          opacity={0.04}
+          depthWrite={false}
+          side={THREE.BackSide}
+          blending={THREE.AdditiveBlending}
+        />
+      </mesh>
+      {/* Atmosphere rim — fresnel-like bright ring */}
+      <mesh scale={1.035}>
+        <sphereGeometry args={[1, 32, 32]} />
+        <meshBasicMaterial
+          color="#81d4fa"
+          transparent
+          opacity={0.025}
+          depthWrite={false}
+          side={THREE.BackSide}
+          blending={THREE.AdditiveBlending}
         />
       </mesh>
     </group>
@@ -204,9 +229,9 @@ function HologramShell() {
   const uniforms = useMemo(
     () => ({
       uTime: { value: 0 },
-      uCore: { value: new THREE.Color('#040d1c') },
-      uRim: { value: new THREE.Color('#6ffff0') },
-      uAccent: { value: new THREE.Color('#f5d78e') },
+      uCore: { value: new THREE.Color('#0c3d5c') },
+      uRim: { value: new THREE.Color('#4dd0e1') },
+      uAccent: { value: new THREE.Color('#ffe082') },
     }),
     [],
   );
@@ -223,10 +248,10 @@ function HologramShell() {
       <mesh scale={1.028}>
         <sphereGeometry args={[1, 24, 24]} />
         <meshBasicMaterial
-          color="#a8fff8"
+          color="#81d4fa"
           wireframe
           transparent
-          opacity={0.055}
+          opacity={0.08}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
         />
@@ -360,10 +385,11 @@ function StarField() {
 function Scene() {
   return (
     <>
-      <ambientLight intensity={0.6} />
-      <pointLight position={[10, 5, 10]} intensity={1.5} color="#ffffff" />
-      <pointLight position={[-8, -2, 5]} intensity={0.5} color="#8c9cff" />
-      <pointLight position={[0, 6, 2]} intensity={0.3} color="#ffe8a6" />
+      <ambientLight intensity={0.85} />
+      <directionalLight position={[10, 5, 10]} intensity={2.2} color="#fff8e7" />
+      <pointLight position={[-8, -2, 5]} intensity={0.8} color="#a8d8ff" />
+      <pointLight position={[0, 6, 2]} intensity={0.5} color="#ffe8b0" />
+      <hemisphereLight color="#87ceeb" groundColor="#1a2f4a" intensity={0.6} />
       <StarField />
       <Sun />
       <group rotation={[0, -Math.PI / 2, 0]}>
@@ -398,15 +424,15 @@ export default function HolographicEarth({ className }: HolographicEarthProps) {
     <div
       className={clsx(
         'relative aspect-[5/4] w-full max-h-[300px] overflow-hidden rounded-[22px] sm:max-h-[340px]',
-        'border border-cyan-400/25 bg-gradient-to-b from-[#050a14]/95 via-[#070f1c]/92 to-[#05080f]/95',
+        'border border-cyan-300/30 bg-gradient-to-b from-[#0a1a2e]/90 via-[#0d1f33]/88 to-[#081422]/92',
         'shadow-[0_12px_48px_rgba(0,0,0,0.45),0_0_0_1px_rgba(103,243,223,0.06)_inset,0_0_64px_rgba(103,243,223,0.12)]',
         'ring-1 ring-amber-200/10',
         className,
       )}
     >
-      <div className="pointer-events-none absolute inset-0 rounded-[22px] bg-[radial-gradient(ellipse_at_50%_42%,rgba(103,243,223,0.18),transparent_58%)]" />
-      <div className="pointer-events-none absolute inset-0 rounded-[22px] bg-[radial-gradient(circle_at_50%_88%,rgba(245,215,142,0.06),transparent_45%)]" />
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[45%] bg-gradient-to-t from-black/40 to-transparent" />
+      <div className="pointer-events-none absolute inset-0 rounded-[22px] bg-[radial-gradient(ellipse_at_50%_42%,rgba(103,243,223,0.28),transparent_58%)]" />
+      <div className="pointer-events-none absolute inset-0 rounded-[22px] bg-[radial-gradient(circle_at_50%_88%,rgba(245,215,142,0.10),transparent_45%)]" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[35%] bg-gradient-to-t from-black/25 to-transparent" />
       <div className="pointer-events-none absolute inset-3 rounded-[16px] border border-white/[0.06]" />
       <p className="pointer-events-none absolute inset-x-0 top-2.5 z-10 text-center text-[9px] font-medium uppercase tracking-[0.42em] text-cyan-100/50">
         Holographic Earth · L6 Issobella Station · Terra Nova Nodes · drag orbit
