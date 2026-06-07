@@ -33,7 +33,7 @@ pub const BLOCK_COUNT:     usize = SCRATCHPAD_SIZE / BLOCK_SIZE; // 4096
 pub const PASSES:          usize = 16;
 pub const RANDOM_READS:    usize = 512;
 pub const AES_FULL_ROUNDS: usize = 10;
-pub const THERMAL_ITERS:   usize = 8192;
+pub const THERMAL_ITERS:   usize = 65536;
 
 // ============================================================
 // AES-128 helpers (FIPS-197)
@@ -203,6 +203,8 @@ fn step4_thermal_loop(data: &mut [u8; 32], nonce: u64) {
     let mut d = nonce ^ 0x5851F42D4C957F2Du64;
     let mut e = nonce ^ 0xC0FFEE123456789Au64;
     let mut f = nonce ^ 0xDEADBEEFCAFEBABEu64;
+    let mut g = nonce ^ 0xBADC0FFEE0DDF00Du64;
+    let mut h = nonce ^ 0xFEEDFACECAFEBEEFu64;
     for i in 0..THERMAL_ITERS {
         a = a.rotate_left(17).wrapping_add(b);
         b = b.rotate_left(31) ^ a;
@@ -210,18 +212,24 @@ fn step4_thermal_loop(data: &mut [u8; 32], nonce: u64) {
         d = d.rotate_left(47) ^ c;
         e = e.rotate_left(23).wrapping_add(f);
         f = f.rotate_left(41) ^ e;
+        g = g.rotate_left(11).wrapping_add(h);
+        h = h.rotate_left(53) ^ g;
         a = a.wrapping_mul(0xFF51AFD7ED558CCDu64);
         b = b.wrapping_add(0xFF51AFD7ED558CCDu64);
         c = c.wrapping_mul(0x94D049BB133111EBu64);
         d = d.wrapping_add(0x5851F42D4C957F2Du64);
         e = e.wrapping_mul(0xC0FFEE123456789Au64);
         f = f.wrapping_add(0xDEADBEEFCAFEBABEu64);
+        g = g.wrapping_mul(0xBADC0FFEE0DDF00Du64);
+        h = h.wrapping_add(0xFEEDFACECAFEBEEFu64);
         a ^= data[i & 0x1F] as u64;
         b ^= data[(i + 8) & 0x1F] as u64;
         c ^= data[(i + 16) & 0x1F] as u64;
         d ^= data[(i + 24) & 0x1F] as u64;
         e ^= data[(i + 4) & 0x1F] as u64;
         f ^= data[(i + 12) & 0x1F] as u64;
+        g ^= data[(i + 2) & 0x1F] as u64;
+        h ^= data[(i + 6) & 0x1F] as u64;
     }
     data[0]  ^= a as u8;
     data[1]  ^= (a >> 8) as u8;
@@ -235,14 +243,20 @@ fn step4_thermal_loop(data: &mut [u8; 32], nonce: u64) {
     data[9]  ^= (e >> 8) as u8;
     data[10] ^= f as u8;
     data[11] ^= (f >> 8) as u8;
-    data[12] ^= (a >> 16) as u8;
-    data[13] ^= (b >> 16) as u8;
-    data[14] ^= (c >> 16) as u8;
-    data[15] ^= (d >> 16) as u8;
-    data[16] ^= (e >> 16) as u8;
-    data[17] ^= (f >> 16) as u8;
-    data[18] ^= (a >> 24) as u8;
-    data[19] ^= (b >> 24) as u8;
+    data[12] ^= g as u8;
+    data[13] ^= (g >> 8) as u8;
+    data[14] ^= h as u8;
+    data[15] ^= (h >> 8) as u8;
+    data[16] ^= (a >> 16) as u8;
+    data[17] ^= (b >> 16) as u8;
+    data[18] ^= (c >> 16) as u8;
+    data[19] ^= (d >> 16) as u8;
+    data[20] ^= (e >> 16) as u8;
+    data[21] ^= (f >> 16) as u8;
+    data[22] ^= (g >> 16) as u8;
+    data[23] ^= (h >> 16) as u8;
+    data[24] ^= (a >> 24) as u8;
+    data[25] ^= (b >> 24) as u8;
 }
 
 // ============================================================
