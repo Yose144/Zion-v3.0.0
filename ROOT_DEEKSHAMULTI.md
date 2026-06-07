@@ -10,9 +10,9 @@ DeekshaMulti is the Zion L1 multi-algorithm GPU mining backend. It provides thre
 
 | Algorithm | Profile name | Purpose | Typical hashrate* |
 |---|---|---|---|
-| **Deeksha Lite v1** | `deeksha_lite_v1` | Fast, balanced GPU/CPU hybrid | ~12–13 KH/s |
-| **Cosmic Harmony Ekam Deeksha v2** | `cosmic_harmony_ekam_deeksha_v2` | Full 6-layer memory-hard ASIC resistance | ~2.4 KH/s |
-| **Deeksha Lite Fire** | `deeksha_lite_fire` | Maximum thermal / ALU stress (heat generation) | ~7.2 KH/s |
+| **Deeksha Lite v1** | `deeksha_lite_v1` | Fast, balanced GPU/CPU hybrid | ~5.5 KH/s |
+| **Cosmic Harmony Ekam Deeksha v2** | `cosmic_harmony_ekam_deeksha_v2` | Full 6-layer memory-hard ASIC resistance | ~1.8 KH/s |
+| **Deeksha Lite Fire** | `deeksha_lite_fire` | Maximum thermal / ALU stress (heat generation) | ~4.9 KH/s |
 
 \* *Measured on AMD RX 5700 XT (gfx1010) with `--gpu-work-size 256 --gpu-local-size 256` and 10-second benchmark window. Real-world stratum hashrate depends on `ZION_NONCE_COUNT` pool setting.*
 
@@ -66,7 +66,7 @@ cargo build --release --manifest-path V3/Cargo.toml -p zion-miner --features gpu
 
 - **Purpose:** Deliberately maximize GPU core temperature and ALU utilisation for thermal testing, stability burn-in, or pool-side algorithm rotation.
 - **Memory footprint:** Small — **128 KiB scratchpad per thread** (intentionally reduced so the bottleneck is ALU/FP32/INT64, not memory bandwidth).
-- **Thermal loop:** 6 independent `ulong` integer chains with rotate-xor-mul-add mixing, executed **16 384 iterations** per hash.
+- **Thermal loop:** 8 independent `ulong` integer chains + 2 float `fma` chains with rotate-xor-mul-add mixing, executed **65 536 iterations** per hash.
 - **AES rounds:** Full 10-round AES-128 with `__constant` S-box (no local-memory T-tables).
 - **Random reads:** 512 scattered 32-byte reads from scratchpad to keep cache pressure low but prevent pure register optimisation.
 - **Kernel file:** `deeksha_lite_fire.cl`
@@ -80,50 +80,59 @@ cargo build --release --manifest-path V3/Cargo.toml -p zion-miner --features gpu
 #define PASSES           16
 #define RANDOM_READS     512
 #define AES_FULL_ROUNDS  10
-#define THERMAL_ITERS    16384     // main heat source
+#define THERMAL_ITERS    65536     // main heat source (v3.0)
 ```
 
 #### Thermal loop design
 
-The `thermal_loop()` function is the primary heat generator. It uses **6 parallel ulong chains** to saturate integer ALU ports and prevent common-subexpression elimination:
+The `thermal_loop()` function is the primary heat generator. It uses **8 parallel ulong chains** + **2 float `fma` chains** to saturate both INT and FP ALU pipelines simultaneously:
 
 ```c
 void thermal_loop(__private uchar data[32], ulong nonce)
 {
+    /* 8 independent ulong integer chains */
     ulong a = nonce ^ 0x9E3779B97F4A7C15UL;
     ulong b = nonce ^ 0xBF58476D1CE4E5B9UL;
     ulong c = nonce ^ 0x94D049BB133111EBUL;
     ulong d = nonce ^ 0x5851F42D4C957F2DUL;
     ulong e = nonce ^ 0xC0FFEE123456789AUL;
     ulong f = nonce ^ 0xDEADBEEFCAFEBABEUL;
+    ulong g = nonce ^ 0xBADC0FFEE0DDF00DUL;
+    ulong h = nonce ^ 0xFEEDFACECAFEBEEFUL;
+
+    /* 2 independent float fma chains */
+    float f1 = (float)(nonce & 0xFFFFu) * 0.0001f;
+    float f2 = (float)((nonce >> 16) & 0xFFFFu) * 0.0001f;
 
     for (int i = 0; i < THERMAL_ITERS; i++) {
-        a = ROL64(a, 17) + b;
-        b = ROL64(b, 31) ^ a;
-        c = ROL64(c, 13) + d;
-        d = ROL64(d, 47) ^ c;
-        e = ROL64(e, 23) + f;
-        f = ROL64(f, 41) ^ e;
-        a = a * 0xFF51AFD7ED558CCDUL;
-        b = b + 0xFF51AFD7ED558CCDUL;
-        c = c * 0x94D049BB133111EBUL;
-        d = d + 0x5851F42D4C957F2DUL;
-        e = e * 0xC0FFEE123456789AUL;
-        f = f + 0xDEADBEEFCAFEBABEUL;
-        a ^= (ulong)data[(i    ) & 0x1F];
-        b ^= (ulong)data[(i + 8) & 0x1F];
-        c ^= (ulong)data[(i + 16) & 0x1F];
-        d ^= (ulong)data[(i + 24) & 0x1F];
-        e ^= (ulong)data[(i + 4) & 0x1F];
-        f ^= (ulong)data[(i + 12) & 0x1F];
+        /* Integer ALU stress (8 chains) */
+        a = ROL64(a, 17) + b;  b = ROL64(b, 31) ^ a;
+        c = ROL64(c, 13) + d;  d = ROL64(d, 47) ^ c;
+        e = ROL64(e, 23) + f;  f = ROL64(f, 41) ^ e;
+        g = ROL64(g, 11) + h;  h = ROL64(h, 53) ^ g;
+        a = a * 0xFF51AFD7ED558CCDUL;  b = b + 0xFF51AFD7ED558CCDUL;
+        c = c * 0x94D049BB133111EBUL;  d = d + 0x5851F42D4C957F2DUL;
+        e = e * 0xC0FFEE123456789AUL;  f = f + 0xDEADBEEFCAFEBABEUL;
+        g = g * 0xBADC0FFEE0DDF00DUL;  h = h + 0xFEEDFACECAFEBEEFUL;
+        a ^= (ulong)data[(i    ) & 0x1F];  b ^= (ulong)data[(i + 8) & 0x1F];
+        c ^= (ulong)data[(i + 16) & 0x1F]; d ^= (ulong)data[(i + 24) & 0x1F];
+        e ^= (ulong)data[(i + 4) & 0x1F];  f ^= (ulong)data[(i + 12) & 0x1F];
+        g ^= (ulong)data[(i + 2) & 0x1F];  h ^= (ulong)data[(i + 6) & 0x1F];
+
+        /* Float ALU stress (2 fma chains) */
+        f1 = fma(f1, 1.618033988f, f2);
+        f2 = fma(f2, 2.718281828f, f1);
+        f1 = fma(f1, 3.141592653f, f2);
+        f2 = fma(f2, 1.414213562f, f1);
     }
-    // ... results folded back into data[32]
+    /* ... results folded back into data[32] */
 }
 ```
 
 - **No branching** — fully divergent-free.
-- **No `float` ops** in the current revision (pure 64-bit integer stress keeps kernel size small and compile times fast; `-cl-fast-relaxed-math` is still passed for potential future FP expansion).
-- Build flags for RDNA: `-cl-std=CL1.2 -cl-mad-enable -cl-fast-relaxed-math -cl-single-precision-constant`
+- **`fma()` only** — no `sin`, `cos`, `half`, `double`, or `native_*`. `fma` is a single instruction on GCN, RDNA, CUDA, and Metal.
+- **Results folded back into output** via `as_uint()` — prevents dead-code elimination.
+- Build flags for RDNA (v3.0): `-cl-std=CL1.2 -cl-mad-enable -cl-single-precision-constant` (no `-cl-fast-relaxed-math` for better precision and driver compatibility).
 
 ---
 
@@ -137,23 +146,24 @@ cargo run --release --manifest-path V3/L1/miner/Cargo.toml --bin zion-miner \
   --features gpu-opencl -- --gpu-benchmark-all --gpu-device 1
 ```
 
-### Latest results (2026-06-07 — Fire v3.0 Winter Mode)
+### Latest results (2026-06-07 — Fire v3.0 Winter Mode, 65536 iters)
 
 AMD RX 5700 XT — `gfx1010:xnack-` — 10 s benchmark window:
 
-| Algorithm | Throughput | Batch size | Local WS |
-|---|---|---|---|
-| `deeksha_lite_v1` | **2.67 KH/s** | 262 144 | 256 |
-| `cosmic_harmony_ekam_deeksha_v2` | **0.99 KH/s** | 262 144 | 256 |
-| `deeksha_lite_fire` | **2.40 KH/s** | 8 192 | 128 |
+| Algorithm | Throughput | Batch size | Local WS | Build opts |
+|---|---|---|---|---|
+| `deeksha_lite_v1` | **5.48 KH/s** | 262 144 | 128 | `-cl-fast-relaxed-math` |
+| `cosmic_harmony_ekam_deeksha_v2` | **1.79 KH/s** | 6 128 | 128 | `-cl-fast-relaxed-math` |
+| `deeksha_lite_fire` | **4.92 KH/s** | 8 192 | 128 | `-cl-mad-enable -cl-single-precision-constant` |
 
 ### Key observations
 
 - **Fire v3.0** now stresses **both INT and FP ALU pipelines** simultaneously (`fma` float chains + 8 integer chains). This gives more heat per watt than pure integer stress because the GPU runs both pipelines at once without increasing memory traffic.
-- **Live stratum hashrate** can be higher than benchmark (~4.6 KH/s peak observed) because the benchmark includes init overhead per batch.
+- **Live stratum hashrate** can be higher than benchmark because the benchmark includes init overhead per batch. Peak observed: ~4.6 KH/s with 32768 iters; ~4.9 KH/s with 65536 iters.
 - **Full v2** is the slowest because of heavy Blake3/SHA3 scratchpad I/O and 6-layer validation.
 - Set pool `ZION_NONCE_COUNT=4096` (or higher) for better GPU utilisation in live stratum.
-- **Compatibility:** Fire uses only `fma()`, `rotate()`, `+`, `^`, `*` — no `sin`, `cos`, `half`, or `double`. Works on AMD GCN, AMD RDNA, NVIDIA CUDA, and Apple Metal.
+- **Compatibility:** Fire uses only `fma()`, `rotate()`, `+`, `^`, `*` — no `sin`, `cos`, `half`, `double`, or `native_*`. Works on AMD GCN, AMD RDNA, NVIDIA CUDA, and Apple Metal.
+- **Build opts:** Fire v3.0 intentionally avoids `-cl-fast-relaxed-math` to prevent the OpenCL compiler from aggressively simplifying the thermal loop. This improves cross-driver consistency.
 
 ---
 
@@ -210,6 +220,32 @@ The Fire kernel was redesigned for **maximum heat per watt** while staying compa
 Switch at runtime:  
 `zion mine start --algorithm deeksha_lite_fire` (winter)  
 `zion mine start --algorithm deeksha_lite_v1` (summer)
+
+---
+
+### 2026-06-07 — Fire v3.0 Final Deploy (E2E verified)
+
+Full end-to-end deployment across all infrastructure:
+
+| Component | Host | Status | Binary version |
+|---|---|---|---|
+| **Edge Node 1** | `77.42.71.94` | active | `965d30c5` |
+| **Edge Node 2** | `77.42.71.94` | active | `965d30c5` |
+| **Edge Pool** | `77.42.71.94:8444` | active | `965d30c5` |
+| **Local Miner** | Windows dev | tested | `965d30c5` |
+| **Local Node** | Windows dev | build OK | `965d30c5` |
+| **Local Pool** | Windows dev | build OK | `965d30c5` |
+| **CLI** | Windows dev | build OK | `965d30c5` |
+
+**Tests passed:**
+- `cargo test -p zion-cosmic-harmony` — **132/132 passed**
+- `cargo test -p zion-core` — passed
+- Local Fire benchmark (`--ekam-bench`) — **4.92 KH/s** on RX 5700 XT
+- Live stratum mining to Edge pool — **100 % share acceptance** (2 shares, 0 rejected)
+- Algorithm-aware block validation (`BlockCandidate::hash()` reads algorithm from RPC)
+- Pool forwards algorithm to node via `submit_candidate_to_node()`
+
+**Commit:** `965d30c5` on `main`
 
 ---
 
