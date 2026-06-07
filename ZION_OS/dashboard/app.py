@@ -825,6 +825,15 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "purpose": "Operational control plane — this UI (Local PC only).",
      "child_says": "📋 The control room where we watch everything!",
      "depends_on": ["node1"]},
+    {"id": "edge-agent", "name": "Edge Agent", "icon": "🤖", "level": "Infra", "kind": "agent",
+     "ports": {"api": 8767},
+     "host": "100.76.16.108",
+     "log": None, "start": None, "stop": None,
+     "health_method": "http", "severity": "info", "autoheal": False,
+     "health_endpoint": "http://100.76.16.108:8767/api/status",
+     "purpose": "ZION Agent on Edge — watchdog, telemetry, rig lifecycle manager.",
+     "child_says": "🤖 The guardian robot watching over the Edge server!",
+     "depends_on": ["edge-node1"]},
 ]
 
 SERVICE_REGISTRY_LOCAL_DEV = [
@@ -1780,7 +1789,8 @@ def detect_nodes() -> dict:
     }
 
 # ── Agent Node Discovery (Desktop Agent integration) ───────────────────────
-AGENT_API_BASE = "http://127.0.0.1:8767"  # default agent port
+AGENT_API_BASE = "http://127.0.0.1:8767"  # local agent (Windows desktop)
+EDGE_AGENT_API_BASE = "http://100.76.16.108:8767"  # Edge server agent
 
 _discovered_nodes_cache: dict = {}
 _discovered_nodes_ts: float = 0.0
@@ -2279,7 +2289,9 @@ def _build_status_edge_primary() -> dict:
     # ── Edge Pool ────────────────────────────────────────────────────────────
     pool_edge_svc = get_service("pool-edge")
     pool_edge_health = check_service_health(pool_edge_svc) if pool_edge_svc else {"alive": False}
-    edge_metrics = {"active_miners": None, "hashrate": None, "blocks_found": None, "total_hashes": None, "total_shares": None}
+    edge_metrics = {"active_miners": None, "hashrate": None, "hashrate_1h": None, "accept_rate_pct": None,
+                    "shares_accepted": None, "shares_rejected": None, "miners_tracked": None,
+                    "blocks_found": None, "total_hashes": None, "total_shares": None}
     edge_payout = {"pplns_rounds": 0, "pplns_total_paid": 0, "pplns_window_size": 0, "pplns_window_used": 0, "pplns_registered_miners": 0,
                    "fee_humanitarian": 0, "fee_issobella": 0, "fee_pool": 0, "fee_miner_pct": 89,
                    "miner_balances": []}
@@ -2300,6 +2312,19 @@ def _build_status_edge_primary() -> dict:
                         edge_metrics["blocks_found"] = int(float(line.split()[-1]))
                     elif line.startswith("zion_pool_hashrate_khs "):
                         edge_metrics["hashrate"] = float(line.split()[-1])
+                    elif line.startswith("zion_pool_hashrate_hps "):
+                        # Pool exports H/s — convert to KH/s
+                        edge_metrics["hashrate"] = float(line.split()[-1]) / 1000.0
+                    elif line.startswith("zion_pool_hashrate_1h_hps "):
+                        edge_metrics["hashrate_1h"] = float(line.split()[-1]) / 1000.0
+                    elif line.startswith("zion_pool_accept_rate_pct "):
+                        edge_metrics["accept_rate_pct"] = float(line.split()[-1])
+                    elif line.startswith("zion_pool_accepted_total "):
+                        edge_metrics["shares_accepted"] = int(float(line.split()[-1]))
+                    elif line.startswith("zion_pool_rejected_total "):
+                        edge_metrics["shares_rejected"] = int(float(line.split()[-1]))
+                    elif line.startswith("zion_pool_miners_tracked "):
+                        edge_metrics["miners_tracked"] = int(float(line.split()[-1]))
                     elif line.startswith("zion_pplns_payout_rounds "):
                         edge_payout["pplns_rounds"] = int(float(line.split()[-1]))
                     elif line.startswith("zion_pplns_total_paid_flowers "):
@@ -2398,6 +2423,11 @@ def _build_status_edge_primary() -> dict:
             "pid": pool_edge_health.get("pid"),
             "active_miners": edge_metrics["active_miners"],
             "hashrate": edge_metrics["hashrate"],
+            "hashrate_1h_khs": edge_metrics.get("hashrate_1h"),
+            "accept_rate_pct": edge_metrics.get("accept_rate_pct"),
+            "shares_accepted": edge_metrics.get("shares_accepted"),
+            "shares_rejected": edge_metrics.get("shares_rejected"),
+            "miners_tracked": edge_metrics.get("miners_tracked"),
             "blocks_found": edge_metrics["blocks_found"],
             "total_hashes": edge_metrics["total_hashes"],
             "total_shares": edge_metrics["total_shares"],
@@ -7047,6 +7077,20 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json(fetch_agent_telemetry())
         elif route == "/api/agent/gpu":
             self._json(fetch_agent_gpu())
+        elif route == "/api/edge-agent/status":
+            try:
+                import urllib.request as _ur
+                with _ur.urlopen(f"{EDGE_AGENT_API_BASE}/api/status", timeout=3.0) as r:
+                    self._json(json.loads(r.read()))
+            except Exception as ex:
+                self._json({"error": str(ex), "reachable": False})
+        elif route == "/api/edge-agent/telemetry":
+            try:
+                import urllib.request as _ur
+                with _ur.urlopen(f"{EDGE_AGENT_API_BASE}/api/telemetry", timeout=3.0) as r:
+                    self._json(json.loads(r.read()))
+            except Exception as ex:
+                self._json({"error": str(ex), "reachable": False})
         elif route == "/api/miner/live":
             self._json(get_miner_live_stats())
         elif route == "/api/miner/log-tail":
