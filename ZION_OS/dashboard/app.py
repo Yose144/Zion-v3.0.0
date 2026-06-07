@@ -1370,21 +1370,21 @@ def head_log(filename: str, n: int = 50) -> list[str]:
 def latest_log_path(name: str) -> Path | None:
     """Find the most recent log file for a service.
     Supports both dotted (name.YYYYMMDD_HHMMSS.log) and underscore (name_TIMESTAMP.log) formats.
-    Falls back to name.log if no timestamped version exists.
+    Always picks the newest by mtime, including the plain name.log fallback.
     Accepts name with or without .log suffix."""
     base = name.removesuffix(".log")
-    # Collect both dotted and underscore timestamped variants, pick newest by mtime
+    # Collect timestamped variants AND plain name.log, pick newest by mtime
     candidates = (
         list(LOG_DIR.glob(f"{base}.*.log")) +
         list(LOG_DIR.glob(f"{base}_*.log"))
     )
-    if candidates:
-        candidates.sort(key=lambda p: p.stat().st_mtime, reverse=True)
-        return candidates[0]
     fallback = LOG_DIR / f"{base}.log"
     if fallback.exists():
-        return fallback
-    return None
+        candidates.append(fallback)
+    if not candidates:
+        return None
+    candidates.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+    return candidates[0]
 
 def parse_node_log(name: str) -> dict:
     log_path = latest_log_path(name)
@@ -1999,6 +1999,7 @@ def parse_miner_log_specific(log_file: str) -> dict:
         if m := re.search(r'device="([^"]+)"', line):
             status["gpu_device"] = m.group(1)
 
+    nonce_samples = []  # collect (nonce_count, elapsed_ms) for throughput hashrate
     for line in recent:
         if m := re.search(r'gpu_backend=(\S+)', line):
             status["gpu_backend"] = m.group(1)
@@ -2009,13 +2010,34 @@ def parse_miner_log_specific(log_file: str) -> dict:
                 status["hashrate"] = float(m.group(1)) / 1000.0
             elif m := re.search(r'gpu_hps=(\d+\.\d+)', line):
                 status["hashrate"] = float(m.group(1)) / 1000.0
+        # Throughput from: "no_solution  iteration=N  height=H  nonces=START..END  elapsed_ms=T"
+        # or: "found_nonce=X  height=H  depth=D/...  elapsed_ms=T" (uses nonces from preceding mining line)
+        if m := re.search(r'nonces=(\d+)\.\.(\d+)\s+elapsed_ms=(\d+)', line):
+            n_start, n_end, ms = int(m.group(1)), int(m.group(2)), int(m.group(3))
+            if ms > 0 and n_end > n_start:
+                nonce_samples.append((n_end - n_start, ms))
+        elif m := re.search(r'elapsed_ms=(\d+)', line):
+            # found_nonce lines — use previous nonce window if available
+            pass
         if m := re.search(r'accepted\s+(\d+)/(\d+)', line):
+            status["shares_accepted"] = int(m.group(1))
+            status["shares_rejected"] = int(m.group(2))
+        # "[timestamp] accepted N/M (+1) diff D [ms]" format
+        if m := re.search(r'accepted\s+(\d+)/(\d+)\s+\(\+\d+\)', line):
             status["shares_accepted"] = int(m.group(1))
             status["shares_rejected"] = int(m.group(2))
         if m := re.search(r'height=(\d+)', line):
             status["current_height"] = int(m.group(1))
         if m := re.search(r'diff\s+(\d+)', line):
             status["current_diff"] = int(m.group(1))
+
+    # Compute hashrate from last 10 nonce samples if not already set
+    if status["hashrate"] is None and nonce_samples:
+        last = nonce_samples[-10:]
+        total_nonces = sum(n for n, _ in last)
+        total_ms = sum(ms for _, ms in last)
+        if total_ms > 0:
+            status["hashrate"] = round(total_nonces / total_ms / 1000.0 * 1000.0, 2)  # KH/s
 
     return status
 
@@ -2071,12 +2093,13 @@ def parse_miner_log() -> dict:
             status["gpu_backend"] = m.group(1)
         if m := re.search(r'device="([^"]+)"', line):
             status["gpu_device"] = m.group(1)
+    nonce_samples2 = []  # (nonce_count, elapsed_ms) for throughput hashrate
     for line in recent:
         if m := re.search(r'gpu_backend=(\S+)', line):
             status["gpu_backend"] = m.group(1)
-        # Primary: "speed 10s/60s/15m  709.72  880.80  729.58 H/s" — values are H/s, convert to KH/s
+        # Primary: "speed 10s/60s/15m  2.92  3.34  3.41 KH/s" — values are already KH/s
         if m := re.search(r'speed\s+\d+s/\d+s/\d+m\s+(\d+\.\d+)', line):
-            status["hashrate"] = float(m.group(1)) / 1000.0
+            status["hashrate"] = float(m.group(1))
         # Fallback: session_status hps_10s / gpu_hps (H/s → KH/s)
         if status["hashrate"] is None:
             if m := re.search(r'hps_10s=(\d+\.\d+)', line):
@@ -2109,6 +2132,18 @@ def parse_miner_log() -> dict:
             status["miner_id"] = m.group(1)
         if m := re.search(r'worker_name=(\S+)', line):
             status["worker_name"] = m.group(1)
+        # Throughput: "no_solution  iteration=N  height=H  nonces=START..END  elapsed_ms=T"
+        if m := re.search(r'nonces=(\d+)\.\.(\d+)\s+elapsed_ms=(\d+)', line):
+            n_start, n_end, ms = int(m.group(1)), int(m.group(2)), int(m.group(3))
+            if ms > 0 and n_end > n_start:
+                nonce_samples2.append((n_end - n_start, ms))
+    # Compute hashrate from last 10 nonce throughput samples if not already set
+    if status["hashrate"] is None and nonce_samples2:
+        last = nonce_samples2[-10:]
+        total_nonces = sum(n for n, _ in last)
+        total_ms = sum(ms for _, ms in last)
+        if total_ms > 0:
+            status["hashrate"] = round(total_nonces / total_ms / 1000.0 * 1000.0, 2)  # KH/s
     return status
 
 # ── Status cache ──────────────────────────────────────────────────────────
