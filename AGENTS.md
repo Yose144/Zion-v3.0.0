@@ -489,6 +489,20 @@ If pool stops accepting connections:
 - ✅ Edge node fully operational
 - ✅ **Edge node rebuilt and redeployed with latest code**
 
+**Windows 11 GPU Miner Build Workaround (2026-06-07):**
+- `cargo build --release` fails on Windows 11 because `zion-miner.exe` in `V3/target/release/` is locked (Defender/antivirus).
+- **Use absolute `CARGO_TARGET_DIR` to a fresh directory:**
+  ```bash
+  CARGO_TARGET_DIR="/c/Users/yosef/Desktop/Zion/2.9.6-main/V3/target3" cargo build --release --manifest-path V3/Cargo.toml -p zion-miner --features gpu-opencl
+  ```
+- Canonical launch script: `start-miner-target3.bat` (reads from `V3/target3/release/`).
+- Do NOT commit `target2/` or `target3/` to git.
+
+**GPU Benchmark Results (RX 5700 XT, gfx1010:xnack-, work_size=8192, 2026-06-07):**
+- DeekshaLite v1: **7.24 KH/s** (was ~3.89 KH/s before kernel optimization — +86%)
+- Cosmic Harmony v2: **3.08 KH/s** (was ~1.1 KH/s before — +180%)
+- Optimizations: host-precomputed Keccak256 header state + vectorized `ulong4` scratchpad ops.
+
 **Next Steps:**
 - Fix auto-backup script to capture live DB state
 - Complete bridge validator 3/5 setup
