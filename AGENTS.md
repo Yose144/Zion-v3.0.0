@@ -284,9 +284,13 @@ Public Pool: 8444
 | Prometheus | 9090 | HTTP | Edge monitoring stack (Docker host network) |
 | Grafana | 3100 | HTTP | Edge monitoring dashboards (Docker host network) |
 | Node Exporter | 9100 | HTTP | Edge host system metrics (Docker host network) |
-| Dashboard | 8766 | HTTP | Python stdlib dashboard (currently offline) |
+| Dashboard | 8766 | HTTP | Python Mainnet Launch dashboard (local PC) |
+| Infra Dashboard | 8888 | HTTP | Rust unified infrastructure dashboard (Edge) |
 | Website | 3000 | HTTP | Next.js website (PM2, Edge) |
 | Pool API Proxy | 8080 | HTTP | Edge pool REST proxy |
+| **OASIS** | **8094** | HTTP | L4 Consciousness Mining Game API (Edge) |
+| **Free World** | **8095** | HTTP | L5 Humanitarian Fund Scanner API (Edge) |
+| **Issobella** | **8096** | HTTP | L6 Space Fund Scanner API (Edge) |
 | **Hiranyagarbha API** | **8001** | HTTP | Orchestrator · RAG · Consciousness · NCL · Axum (Rust) |
 | **NCL (via Hiranyagarbha)** | **8001** | HTTP | Neural Compute Layer at `/ncl/*` (jobs, workers, leaderboard) |
 | **Hiran Inference** | **8002** | HTTP | OpenAI-compatible LLM API (llama-server.exe / serve.py) |
