@@ -60,7 +60,22 @@ __constant ulong DL_RC[24] = {
     0x0000000080000001UL, 0x8000000080008008UL,
 };
 
-void dl_keccak_f1600(ulong *st)
+/* GCN-safe helpers: no pointer casts between ulong* and uchar* */
+static void dl_xor_byte_into_state(__private ulong *st, uint pos, uchar b)
+{
+    uint idx = pos >> 3;
+    uint shift = (pos & 7) * 8;
+    st[idx] ^= (ulong)b << shift;
+}
+
+static uchar dl_get_byte_from_state(__private ulong *st, uint pos)
+{
+    uint idx = pos >> 3;
+    uint shift = (pos & 7) * 8;
+    return (uchar)(st[idx] >> shift);
+}
+
+void dl_keccak_f1600(__private ulong *st)
 {
     ulong bc0, bc1, bc2, bc3, bc4, t;
     for (int r = 0; r < 24; r++) {
@@ -100,14 +115,14 @@ void dl_keccak_f1600(ulong *st)
     }
 }
 
-void dl_keccak256(const uchar *in, uint inlen, uchar out[32])
+void dl_keccak256(__private const uchar *in, uint inlen, __private uchar out[32])
 {
-    ulong st[25];
+    __private ulong st[25];
     for (int i = 0; i < 25; i++) st[i] = 0;
 
     uint pos = 0;
     for (uint i = 0; i < inlen; i++) {
-        ((uchar *)st)[pos] ^= in[i];
+        dl_xor_byte_into_state(st, pos, in[i]);
         pos++;
         if (pos == 136) {
             dl_keccak_f1600(st);
@@ -115,21 +130,21 @@ void dl_keccak256(const uchar *in, uint inlen, uchar out[32])
         }
     }
 
-    ((uchar *)st)[pos] ^= 0x01;
-    ((uchar *)st)[135] ^= 0x80;
+    dl_xor_byte_into_state(st, pos, 0x01);
+    dl_xor_byte_into_state(st, 135, 0x80);
     dl_keccak_f1600(st);
 
-    for (int i = 0; i < 32; i++) out[i] = ((uchar *)st)[i];
+    for (int i = 0; i < 32; i++) out[i] = dl_get_byte_from_state(st, i);
 }
 
-void dl_sha3_512(const uchar *in, uint inlen, uchar out[64])
+void dl_sha3_512(__private const uchar *in, uint inlen, __private uchar out[64])
 {
-    ulong st[25];
+    __private ulong st[25];
     for (int i = 0; i < 25; i++) st[i] = 0;
 
     uint pos = 0;
     for (uint i = 0; i < inlen; i++) {
-        ((uchar *)st)[pos] ^= in[i];
+        dl_xor_byte_into_state(st, pos, in[i]);
         pos++;
         if (pos == 72) {
             dl_keccak_f1600(st);
@@ -137,11 +152,11 @@ void dl_sha3_512(const uchar *in, uint inlen, uchar out[64])
         }
     }
 
-    ((uchar *)st)[pos] ^= 0x06;
-    ((uchar *)st)[71] ^= 0x80;
+    dl_xor_byte_into_state(st, pos, 0x06);
+    dl_xor_byte_into_state(st, 71, 0x80);
     dl_keccak_f1600(st);
 
-    for (int i = 0; i < 64; i++) out[i] = ((uchar *)st)[i];
+    for (int i = 0; i < 64; i++) out[i] = dl_get_byte_from_state(st, i);
 }
 
 #endif /* KECCAK_F1600_DEFINED */
