@@ -171,6 +171,20 @@ AMD RX 5700 XT — `gfx1010:xnack-` — 10 s benchmark window:
 3. **Consensus profile switch**  
    `core_uses_canonical_profile` test updated to expect `"deeksha_lite_v1"` as the canonical L1 profile.
 
+### 2026-06-07 — Full Fire end-to-end integration
+
+Fire is now a **first-class algorithm** across the entire V3 stack:
+
+| Layer | Change |
+|---|---|
+| **Core** (`zion-core`) | `RpcRequest::SubmitCandidate` carries `algorithm`. `validate_candidate_with_algorithm()` computes the hash with the correct algorithm instead of hard-coding `deeksha_lite_v1`. |
+| **Node** (`node` bin) | `submit_candidate_rpc` reads `algorithm` from the RPC request and validates the PoW with `hash_candidate_with_algorithm`. |
+| **Pool** (`server` bin) | `submit_candidate_to_node` forwards the session algorithm to the node. Share validation already used `hash_with_algorithm`. |
+| **Miner** (`zion-miner`) | Already read `algorithm` from `PoolMessage::Job` and switched GPU backend at runtime. |
+| **CLI** (`zion mine start`) | New `--algorithm` flag sets `ZION_MINER_ALGORITHM` env var, passed to the miner binary. |
+
+This means a Fire miner can now discover a valid block, the pool will submit it to the node, and the node will accept it using the Fire hash function.
+
 ---
 
 ## Build & Test

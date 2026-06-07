@@ -587,6 +587,7 @@ pub enum RpcRequest {
         header_hex: String,
         nonce: u64,
         target_hex: String,
+        algorithm: String,
     },
 }
 
@@ -739,6 +740,14 @@ impl CoreRuntime {
         candidate.hash()
     }
 
+    pub fn hash_candidate_with_algorithm(
+        &self,
+        candidate: BlockCandidate,
+        algorithm: &str,
+    ) -> [u8; 32] {
+        candidate.hash_with_algorithm(algorithm)
+    }
+
     pub fn validate_candidate(
         &self,
         candidate: BlockCandidate,
@@ -747,6 +756,24 @@ impl CoreRuntime {
         let sealed = candidate.seal();
         if target.allows(&sealed.hash) {
             Some(sealed)
+        } else {
+            None
+        }
+    }
+
+    pub fn validate_candidate_with_algorithm(
+        &self,
+        candidate: BlockCandidate,
+        target: DifficultyTarget,
+        algorithm: &str,
+    ) -> Option<SealedBlock> {
+        let hash = candidate.hash_with_algorithm(algorithm);
+        if target.allows(&hash) {
+            Some(SealedBlock {
+                header: candidate.header,
+                nonce: candidate.nonce,
+                hash,
+            })
         } else {
             None
         }
@@ -1467,7 +1494,8 @@ impl NodeRuntime {
                 header_hex,
                 nonce,
                 target_hex,
-            } => self.submit_candidate_rpc(template_id, &header_hex, nonce, &target_hex),
+                algorithm,
+            } => self.submit_candidate_rpc(template_id, &header_hex, nonce, &target_hex, &algorithm),
         }
     }
 
@@ -1556,6 +1584,7 @@ impl NodeRuntime {
         header_hex: &str,
         nonce: u64,
         target_hex: &str,
+        algorithm: &str,
     ) -> RpcResponse {
         let header = match parse_fixed_hex::<HEADER_SIZE>(header_hex, "rpc header") {
             Ok(bytes) => MiningHeader::from_bytes(bytes),
@@ -1622,8 +1651,8 @@ impl NodeRuntime {
             nonce,
             height: active_template.height,
         };
-        let hash = self.core.hash_candidate(candidate);
-        let sealed = self.core.validate_candidate(candidate, target);
+        let hash = self.core.hash_candidate_with_algorithm(candidate, algorithm);
+        let sealed = self.core.validate_candidate_with_algorithm(candidate, target, algorithm);
         let accepted = sealed.is_some();
 
         if let Some(sealed_block) = sealed {
@@ -3995,6 +4024,7 @@ mod tests {
             header_hex: template.header_hex.clone(),
             nonce,
             target_hex: template.target_hex.clone(),
+        algorithm: "deeksha_lite_v1".to_string(),
         });
 
         match response {
@@ -4190,6 +4220,7 @@ mod tests {
             header_hex: first_template.header_hex.clone(),
             nonce,
             target_hex: first_template.target_hex.clone(),
+        algorithm: "deeksha_lite_v1".to_string(),
         });
 
         assert!(matches!(
@@ -4228,6 +4259,7 @@ mod tests {
             header_hex: template.header_hex.clone(),
             nonce,
             target_hex: template.target_hex.clone(),
+        algorithm: "deeksha_lite_v1".to_string(),
         });
 
         let stale_response = runtime.handle_rpc_request(RpcRequest::SubmitCandidate {
@@ -4235,6 +4267,7 @@ mod tests {
             header_hex: template.header_hex,
             nonce: 19,
             target_hex: template.target_hex,
+        algorithm: "deeksha_lite_v1".to_string(),
         });
 
         match stale_response {
@@ -4301,6 +4334,7 @@ mod tests {
             header_hex: first_template.header_hex,
             nonce: nonce1,
             target_hex: first_template.target_hex,
+        algorithm: "deeksha_lite_v1".to_string(),
         });
 
         let second_template = runtime.active_template();
@@ -4310,6 +4344,7 @@ mod tests {
             header_hex: second_template.header_hex,
             nonce: nonce2,
             target_hex: second_template.target_hex,
+        algorithm: "deeksha_lite_v1".to_string(),
         });
 
         let response = runtime
@@ -4344,6 +4379,7 @@ mod tests {
             header_hex: template.header_hex,
             nonce,
             target_hex: template.target_hex,
+        algorithm: "deeksha_lite_v1".to_string(),
         });
 
         let block = source.accepted_blocks()[1].clone(); // skip genesis
@@ -4375,6 +4411,7 @@ mod tests {
             header_hex: left_template.header_hex,
             nonce: left_nonce,
             target_hex: left_template.target_hex,
+        algorithm: "deeksha_lite_v1".to_string(),
         });
 
         let mut right = NodeRuntime::new("node-right", NodeConfig::mainnet());
@@ -4385,6 +4422,7 @@ mod tests {
             header_hex: right_template.header_hex,
             nonce: right_nonce,
             target_hex: right_template.target_hex,
+        algorithm: "deeksha_lite_v1".to_string(),
         });
 
         let error = right
@@ -4413,6 +4451,7 @@ mod tests {
             header_hex: first_template.header_hex,
             nonce: nonce1,
             target_hex: first_template.target_hex,
+        algorithm: "deeksha_lite_v1".to_string(),
         });
         let _ = source.handle_rpc_request(RpcRequest::SubmitTransaction {
             transaction: second_tx.clone(),
@@ -4424,6 +4463,7 @@ mod tests {
             header_hex: second_template.header_hex,
             nonce: nonce2,
             target_hex: second_template.target_hex,
+        algorithm: "deeksha_lite_v1".to_string(),
         });
 
         let mut target = NodeRuntime::new("node-batch-target", NodeConfig::mainnet());
@@ -4458,6 +4498,7 @@ mod tests {
             header_hex: first_template.header_hex,
             nonce: nonce1,
             target_hex: first_template.target_hex,
+        algorithm: "deeksha_lite_v1".to_string(),
         });
         let second_template = source.active_template();
         let nonce2 = find_valid_nonce(&second_template);
@@ -4466,6 +4507,7 @@ mod tests {
             header_hex: second_template.header_hex,
             nonce: nonce2,
             target_hex: second_template.target_hex,
+        algorithm: "deeksha_lite_v1".to_string(),
         });
 
         let mut target = NodeRuntime::new("node-gap-target", NodeConfig::mainnet());
@@ -4492,6 +4534,7 @@ mod tests {
             header_hex: template.header_hex,
             nonce,
             target_hex: template.target_hex,
+        algorithm: "deeksha_lite_v1".to_string(),
         });
 
         assert!(matches!(
@@ -4531,6 +4574,7 @@ mod tests {
             header_hex: template.header_hex,
             nonce,
             target_hex: template.target_hex,
+        algorithm: "deeksha_lite_v1".to_string(),
         });
         assert!(matches!(
             response,
@@ -4813,6 +4857,7 @@ mod tests {
             header_hex: template.header_hex.clone(),
             nonce,
             target_hex: template.target_hex.clone(),
+        algorithm: "deeksha_lite_v1".to_string(),
         });
         assert!(
             matches!(response, RpcResponse::SubmitResult { accepted: true, .. }),
@@ -5356,6 +5401,7 @@ mod tests {
             header_hex: template.header_hex,
             nonce,
             target_hex: template.target_hex,
+        algorithm: "deeksha_lite_v1".to_string(),
         });
 
         assert!(
@@ -5825,6 +5871,7 @@ mod tests {
             header_hex: template.header_hex.clone(),
             nonce,
             target_hex: template.target_hex.clone(),
+        algorithm: "deeksha_lite_v1".to_string(),
         });
         match response {
             RpcResponse::SubmitResult {
