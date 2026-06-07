@@ -509,3 +509,154 @@ If pool stops accepting connections:
 - Complete bridge validator 3/5 setup
 - External audit of genesis configuration
 - **MAINNET LAUNCH READY** — All critical systems operational
+
+---
+
+## SMOS Rig + Edge Deployment (PERMANENT REFERENCE — read every session)
+
+### Access credentials
+
+| Resource | Value |
+|---|---|
+| Edge SSH | `ssh -i ~/.ssh/ssh-key-zion-edge root@77.42.71.94` |
+| Edge source | `/root/zion-2.9.6-main/` |
+| Edge Cargo | `source ~/.cargo/env` (must prefix every cargo command) |
+| SMOS API key | `api-4c47dab57e0890d3a36527fdd6a487b306f37e813aa254cfae1013588ece513f` |
+| SMOS API base | `https://api.simplemining.net` (header: `X-AUTH-TOKEN: <key>`) |
+| SMOS rig ID | `518837` (name: ZionRig / vega-smos) |
+| SMOS group ID | `1765707` (ZION-Deeksha-AMD) |
+| Rig GPU | AMD Vega 64 (gfx900:xnack-), GCN architecture |
+| Rig OS | SimpleMining OS, kernel 5.15.80-sm, **GLIBC 2.31** |
+| Rig SSH | `miner@<current_ip>` password: `omnity.company@gmail.com` (IP changes, behind NAT — use SMOS API to get it) |
+| Rig local IP | typically 192.168.0.x (DHCP), check via SMOS API `/rigs/518837` |
+| Pool payout wallet | `zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604` |
+| Mining wallet (rig) | `zion1w2z3l0q2x5e3q752d3v8k5k3u366j5j3t79n5w3` |
+
+### CRITICAL: GLIBC incompatibility — ALWAYS build on rig, NOT on Edge
+
+**Edge runs Ubuntu 26.04 → produces binaries requiring GLIBC 2.32+.**
+**SMOS rig has GLIBC 2.31 → Edge-built binaries WILL NOT RUN on rig.**
+
+To verify: `strings <binary> | grep 'GLIBC_' | sort -u` — if you see `GLIBC_2.32` or higher, the binary is incompatible.
+
+**Only valid solutions:**
+1. **Build natively on the rig** (preferred) — Rust is installed on rig, build takes ~1 min
+2. Cross-compile with `cargo-zigbuild` targeting `x86_64-unknown-linux-gnu.2.31` — requires zig installed on Edge
+
+**How to build on rig:**
+```bash
+# Get rig IP from SMOS API first
+RIG_IP=$(curl -s -H "X-AUTH-TOKEN: api-4c47dab57e0890d3a36527fdd6a487b306f37e813aa254cfae1013588ece513f" \
+  https://api.simplemining.net/rigs/518837 | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('ip',''))")
+echo "Rig IP: $RIG_IP"
+
+# SSH onto rig and build
+ssh miner@$RIG_IP  # password: omnity.company@gmail.com
+
+# On rig:
+source ~/.cargo/env
+cd /tmp/zion-build   # or wherever source was synced
+cargo build --release --manifest-path V3/Cargo.toml -p zion-miner --features gpu-opencl
+```
+
+### SMOS custom miner package format (EXACT — do not deviate)
+
+SMOS expects packages in `/root/miner_org/` on the rig as `custom_<NAME>.tar.gz`.
+If the tar.gz MD5 doesn't match or is missing, SMOS re-downloads the ZIP from the URL in `config.json` and repacks it.
+
+**ZIP structure required (what you serve at the URL):**
+```
+zion-miner-v3.0.XX-gpu.zip
+└── zion-miner-v3.0.XX-gpu/       ← folder name = zip name without .zip
+    ├── miner                      ← bash wrapper script (executable)
+    └── miner.real                 ← actual ELF binary (executable)
+```
+
+**`miner` wrapper script content:**
+```bash
+#!/bin/bash
+export ZION_MINER_ALGORITHM=deeksha_lite_v1
+export ZION_GPU_BACKEND=opencl
+export ZION_NO_GCN_S4_MODE=1
+export ZION_LOOP_COUNT=1000000
+export ZION_POOL_ADDR=77.42.71.94:8444
+export ZION_WORKER_NAME=vega-smos
+export ZION_PAYOUT_ADDRESS=zion1w2z3l0q2x5e3q752d3v8k5k3u366j5j3t79n5w3
+cd "$(dirname "$0")"
+exec ./miner.real "$@"
+```
+
+**Create zip on Edge (after binary is built on rig and copied to Edge):**
+```bash
+NAME="zion-miner-v3.0.XX-gpu"
+mkdir -p /tmp/$NAME
+cp <binary> /tmp/$NAME/miner.real
+# write wrapper as /tmp/$NAME/miner
+chmod +x /tmp/$NAME/miner /tmp/$NAME/miner.real
+cd /tmp && zip -r ${NAME}.zip ${NAME}/
+cp /tmp/${NAME}.zip /var/www/zion-miner/
+```
+
+**SMOS config.json `miner` field format:**
+```
+https://zionterranova.com/zion-miner/zion-miner-v3.0.XX-gpu.zip <extra_args>
+```
+The part before the first space is the URL; SMOS derives `MINER_PKG_NAME` from the filename without `.zip`.
+
+### SMOS API — useful calls
+
+```bash
+API="api-4c47dab57e0890d3a36527fdd6a487b306f37e813aa254cfae1013588ece513f"
+BASE="https://api.simplemining.net"
+
+# Get rig details (incl. current IP)
+curl -s -H "X-AUTH-TOKEN: $API" $BASE/rigs/518837 | python3 -m json.tool
+
+# Get rig list
+curl -s -H "X-AUTH-TOKEN: $API" "$BASE/rigs?itemsPerPage=50" | python3 -m json.tool
+
+# Reboot rig
+curl -s -X PATCH -H "X-AUTH-TOKEN: $API" $BASE/rigs/518837/reboot
+
+# Reload miner (re-download + restart without full reboot)
+curl -s -X PATCH -H "X-AUTH-TOKEN: $API" $BASE/rigs/518837/reload
+
+# Change group config (set new miner URL etc.)
+curl -s -X PATCH -H "X-AUTH-TOKEN: $API" \
+  -H "Content-Type: application/json" \
+  -d '{"minerUrl":"https://zionterranova.com/zion-miner/zion-miner-vX.X.X-gpu.zip"}' \
+  $BASE/rigs/518837/group-config
+```
+
+### Known Vega 64 / GCN mining issues
+
+- `SELF_TEST s4_memhard=FAIL` — known GCN Blake3 mismatch, miner continues anyway (`ZION_NO_GCN_S4_MODE=1` bypasses s4-only path)
+- **ALWAYS** set `ZION_NO_GCN_S4_MODE=1` for Vega 64 / GCN rigs
+- **ALWAYS** set `ZION_LOOP_COUNT=1000000` (default=1 causes reconnect every iteration → ~30 H/s instead of ~3 KH/s)
+- GCN work_size cap: 512 (do not set higher)
+- Algorithm for GCN: `deeksha_lite_v1` (not `cosmic_harmony` — too heavy for GCN sustained mining)
+
+### Web serving (Caddy on Edge)
+
+- Caddy serves `/zion-miner/*` → `/var/www/zion-miner/`
+- Base URL: `https://zionterranova.com/zion-miner/`
+- Caddyfile: `/etc/caddy/Caddyfile` (or `/root/Caddyfile` — check `systemctl status caddy`)
+- After adding new zip: verify with `curl -sI https://zionterranova.com/zion-miner/<filename>.zip`
+
+### Edge systemd services
+
+```bash
+# Pool
+systemctl status zion-edge-pool.service
+journalctl -u zion-edge-pool.service -f
+
+# Node
+systemctl status zion-edge-node.service
+journalctl -u zion-edge-node.service -f
+
+# Pool binary location
+/root/zion-2.9.6-main/V3/target/release/zion-pool-server
+
+# After rebuild, restart pool:
+systemctl restart zion-edge-pool.service
+```

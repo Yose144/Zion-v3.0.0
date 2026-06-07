@@ -2314,7 +2314,7 @@ def _build_status_edge_primary() -> dict:
                         edge_metrics["total_hashes"] = int(float(line.split()[-1]))
                     elif line.startswith("zion_pool_total_shares "):
                         edge_metrics["total_shares"] = int(float(line.split()[-1]))
-                    elif line.startswith("zion_pool_blocks_found "):
+                    elif line.startswith("zion_pool_blocks_found ") or line.startswith("zion_pool_blocks_found_total "):
                         edge_metrics["blocks_found"] = int(float(line.split()[-1]))
                     elif line.startswith("zion_pool_hashrate_khs "):
                         edge_metrics["hashrate"] = float(line.split()[-1])
@@ -2361,7 +2361,7 @@ def _build_status_edge_primary() -> dict:
     except Exception:
         pass
 
-    edge_pool_wallet = os.environ.get("ZION_POOL_WALLET", "")
+    edge_pool_wallet = os.environ.get("ZION_POOL_WALLET", "") or "zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604"
     edge_fee_split = "89/5/5/0"
     local_pool = parse_pool_log()
     pool_status = {
@@ -2506,7 +2506,7 @@ def _build_status_local_dev() -> dict:
                         pool_metrics["active_miners"] = int(float(line.split()[-1]))
                     elif line.startswith("zion_pool_total_hashes "):
                         pass
-                    elif line.startswith("zion_pool_blocks_found "):
+                    elif line.startswith("zion_pool_blocks_found ") or line.startswith("zion_pool_blocks_found_total "):
                         pool_metrics["blocks_found"] = int(float(line.split()[-1]))
     except Exception:
         pass
@@ -3578,13 +3578,14 @@ def build_payout_status() -> dict:
     }
 
     if is_edge:
-        status["pool_wallet"] = os.environ.get("ZION_POOL_WALLET") or "zion1a6z5a4m830w6s6k7r508n300n6z30022q6qt0n7"
+        # Canonical Edge pool wallets (AGENTS.md 2026-06-07)
+        status["pool_wallet"] = os.environ.get("ZION_POOL_WALLET") or "zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604"
         status["payout_enabled"] = True
         status["fee_split"] = "89/5/5/0"
-        status["humanitarian_wallet"] = os.environ.get("ZION_HUMANITARIAN_WALLET") or "zion1m4v5z8z850u480c5c208z274e334369275n5y20"
-        status["issobella_wallet"] = os.environ.get("ZION_ISSOBELLA_WALLET") or "zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702"
+        status["humanitarian_wallet"] = os.environ.get("ZION_HUMANITARIAN_WALLET") or "zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4"
+        status["issobella_wallet"] = os.environ.get("ZION_ISSOBELLA_WALLET") or "zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702"
         status["pool_fee_wallet"] = ""
-        status["miner_wallet"] = os.environ.get("ZION_MINER_ADDRESS") or "zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3"
+        status["miner_wallet"] = os.environ.get("ZION_MINER_ADDRESS") or "zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604"
     else:
         startup = head_log("pool.log", 50)
         for line in startup:
@@ -3791,6 +3792,12 @@ def build_payout_status() -> dict:
     miners = fetch_pool_miners()
     status["pool_stats"] = pool_stats
     status["miners"] = miners
+
+    # Edge-primary: if local logs have no blocks, use Edge pool stats
+    if is_edge and pool_stats:
+        edge_blocks = pool_stats.get("blocks", {}).get("found") if isinstance(pool_stats.get("blocks"), dict) else None
+        if edge_blocks is not None and status["blocks_found"] == 0:
+            status["blocks_found"] = edge_blocks
 
     # Session stats
     active_sessions = pool_stats.get("miners", {}).get("active", len(miners)) if isinstance(pool_stats.get("miners"), dict) else len(miners)
@@ -7153,6 +7160,20 @@ class DashboardHandler(BaseHTTPRequestHandler):
             try:
                 import urllib.request as _ur
                 with _ur.urlopen(f"{EDGE_AGENT_API_BASE}/api/telemetry", timeout=3.0) as r:
+                    self._json(json.loads(r.read()))
+            except Exception as ex:
+                self._json({"error": str(ex), "reachable": False})
+        elif route == "/api/edge/infra":
+            try:
+                import urllib.request as _ur
+                with _ur.urlopen("http://100.76.16.108:8888/api/infra", timeout=3.0) as r:
+                    self._json(json.loads(r.read()))
+            except Exception as ex:
+                self._json({"error": str(ex), "reachable": False})
+        elif route == "/api/edge/overview":
+            try:
+                import urllib.request as _ur
+                with _ur.urlopen("http://100.76.16.108:8888/api/overview", timeout=3.0) as r:
                     self._json(json.loads(r.read()))
             except Exception as ex:
                 self._json({"error": str(ex), "reachable": False})
