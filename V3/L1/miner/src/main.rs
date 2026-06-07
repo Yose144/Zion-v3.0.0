@@ -595,6 +595,7 @@ fn main() -> Result<()> {
                 backend
             },
             work_size,
+            "cosmic_harmony_ekam_deeksha_v2", // Default algorithm for benchmark
         )?;
         println!("device={}", gpu.device_name());
         println!("backend={}", gpu.backend_kind().as_str());
@@ -871,13 +872,14 @@ fn run_local_session(
     // ── GPU backend init (best-effort — falls back to CPU) ──
     let mut gpu: Option<Box<dyn gpu_backend::GpuMiner>> =
         if config.gpu_backend != gpu_backend::GpuBackendKind::Cpu {
-            match gpu_backend::create_gpu_backend(config.gpu_backend, config.gpu_work_size) {
+            match gpu_backend::create_gpu_backend(config.gpu_backend, config.gpu_work_size, &config.algorithm) {
                 Ok(g) => {
                     println!(
-                        "gpu_init backend={} device=\"{}\" work_size={}",
+                        "gpu_init backend={} device=\"{}\" work_size={} algorithm={}",
                         g.backend_kind().as_str(),
                         g.device_name(),
-                        config.gpu_work_size
+                        config.gpu_work_size,
+                        config.algorithm
                     );
                     telemetry.gpu_backend_name = g.backend_kind().as_str().to_string();
                     Some(g)
@@ -1149,13 +1151,14 @@ fn run_remote_session(
     // ── GPU backend init (best-effort — falls back to CPU) ──
     let mut gpu: Option<Box<dyn gpu_backend::GpuMiner>> =
         if config.gpu_backend != gpu_backend::GpuBackendKind::Cpu {
-            match gpu_backend::create_gpu_backend(config.gpu_backend, config.gpu_work_size) {
+            match gpu_backend::create_gpu_backend(config.gpu_backend, config.gpu_work_size, &config.algorithm) {
                 Ok(g) => {
                     println!(
-                        "gpu_init backend={} device=\"{}\" work_size={}",
+                        "gpu_init backend={} device=\"{}\" work_size={} algorithm={}",
                         g.backend_kind().as_str(),
                         g.device_name(),
-                        config.gpu_work_size
+                        config.gpu_work_size,
+                        config.algorithm
                     );
                     telemetry.gpu_backend_name = g.backend_kind().as_str().to_string();
                     Some(g)
