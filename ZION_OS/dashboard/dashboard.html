@@ -130,6 +130,30 @@ button{display:inline-flex;align-items:center;justify-content:center;cursor:poin
 .ncl-score-fill{height:100%;border-radius:9999px;background:linear-gradient(90deg,#9333ea,#06b6d4);transition:width 400ms ease;}
 input[type=range].ncl-slider{-webkit-appearance:none;height:6px;border-radius:9999px;background:linear-gradient(90deg,#3b82f6,#9333ea,#ef4444);outline:none;}
 input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 0 8px rgba(147,51,234,0.5);cursor:pointer;}
+
+/* ── Service Telemetry Detail Cards (Overview) ── */
+.telemetry-detail-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem;}
+.telemetry-detail-card{background:rgba(15,20,35,0.95);border:1px solid rgba(255,255,255,0.12);border-radius:1.2rem;padding:1rem;position:relative;overflow:hidden;transition:border-color .2s,box-shadow .2s;}
+.telemetry-detail-card:hover{border-color:rgba(255,255,255,0.22);box-shadow:0 24px 90px rgba(0,0,0,0.42),0 0 42px rgba(147,51,234,0.1);}
+.telemetry-detail-card::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;}
+.tdc-node::before{background:linear-gradient(90deg,#10b981,#059669);}
+.tdc-pool::before{background:linear-gradient(90deg,#ffd700,#b8981a);}
+.tdc-dao::before{background:linear-gradient(90deg,#9333ea,#6b21a8);}
+.tdc-warp::before{background:linear-gradient(90deg,#06b6d4,#0891b2);}
+.tdc-agent::before{background:linear-gradient(90deg,#10b981,#059669);}
+.tdc-website::before{background:linear-gradient(90deg,#ffd700,#b8981a);}
+.tdc-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;}
+.tdc-name{font-weight:700;font-size:.9rem;color:#fff;display:flex;align-items:center;gap:.5rem;}
+.tdc-status{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:.15rem .5rem;border-radius:9999px;}
+.tdc-online{color:#10b981;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.25);}
+.tdc-offline{color:#ef4444;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);}
+.tdc-body{display:grid;grid-template-columns:1fr 1fr;gap:.5rem .75rem;}
+.tdc-row{display:flex;flex-direction:column;gap:.1rem;}
+.tdc-label{font-size:.6rem;text-transform:uppercase;letter-spacing:.08em;color:#888;}
+.tdc-value{font-size:.8rem;font-weight:600;color:#e0e0e0;font-family:'JetBrains Mono',monospace;word-break:break-word;}
+.tdc-value.small{font-size:.65rem;}
+@media(max-width:1024px){.telemetry-detail-grid{grid-template-columns:repeat(2,1fr);}}
+@media(max-width:640px){.telemetry-detail-grid{grid-template-columns:1fr;}}
 </style>
 </head>
 <body class="zion-shell">
@@ -875,6 +899,17 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
           <text x="400" y="160" text-anchor="middle" fill="#6b7280" font-size="12">Loading topology…</text>
         </svg>
         <div id="topology-tooltip" class="absolute hidden bg-gray-900 border border-white/10 rounded-lg px-2 py-1 text-[10px] text-gray-200 shadow-lg pointer-events-none z-50" style="transform:translate(-50%,-120%);"></div>
+      </div>
+    </div>
+
+    <!-- ═══════ Service Telemetry Details ═══════ -->
+    <div class="zion-panel p-5">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-base font-bold flex items-center gap-2"><span class="text-gradient">📡 Service Telemetry Details</span></h2>
+        <span class="text-xs text-gray-400">Live infra telemetry — all endpoints</span>
+      </div>
+      <div id="overview-telemetry-details" class="telemetry-detail-grid">
+        <!-- JS-populated -->
       </div>
     </div>
   </div>
