@@ -13,6 +13,7 @@ use zion_pool::{decode_message, encode_message, MiningPool, PoolMessage, ShareSt
 mod banner;
 mod dcr_hash;
 mod dcr_stratum;
+mod ui;
 mod dcr_worker;
 mod gpu_backend;
 mod gpu_guard;
@@ -962,6 +963,8 @@ fn run_local_session(
                     config.algorithm
                 );
                 telemetry.gpu_backend_name = g.backend_kind().as_str().to_string();
+                telemetry.gpu_infos = gpu_backend::query_gpu_details();
+                telemetry.algorithm = config.algorithm.clone();
             }
             Err(e) => {
                 println!("gpu_init_fallback reason=\"{e}\" using=cpu");
@@ -1266,6 +1269,8 @@ fn run_remote_session(
                     config.algorithm
                 );
                 telemetry.gpu_backend_name = g.backend_kind().as_str().to_string();
+                telemetry.gpu_infos = gpu_backend::query_gpu_details();
+                telemetry.algorithm = config.algorithm.clone();
             }
             Err(e) => {
                 println!("gpu_init_fallback reason=\"{e}\" using=cpu");
@@ -1349,12 +1354,11 @@ fn run_remote_session(
         last_job_id = job.job_id;
         telemetry.pool_height = job.height;
         telemetry.current_epoch = job.height / 100;
-        println!(
-            "mining job_id={} height={} nonces={}..{}",
+        ui::log_new_job(
             job.job_id,
             job.height,
-            job.start_nonce,
-            job.start_nonce + job.nonce_count
+            &current_algorithm,
+            CURRENT_POOL_DIFFICULTY.load(Ordering::Relaxed),
         );
         // Ensure GPU backend matches current algorithm (lazy create / switch)
         let mut gpu_ref: Option<&mut dyn gpu_backend::GpuMiner> = None;
@@ -1509,32 +1513,10 @@ fn run_remote_session(
                 let latency_ms = submit_started_at.elapsed().as_millis();
                 if accepted {
                     accepted_iterations += 1;
-                    let total = accepted_iterations + rejected_iterations;
-                    let pct = if total > 0 {
-                        (accepted_iterations as f64 / total as f64) * 100.0
-                    } else {
-                        100.0
-                    };
-                    println!(
-                        "[{}] accepted {}/{} (+1) diff {} [{}ms] ({:.1}%)",
-                        log_timestamp(),
-                        accepted_iterations,
-                        rejected_iterations,
-                        job.height,
-                        latency_ms,
-                        pct,
-                    );
+                    ui::log_accepted(job.job_id, job.height, solution.candidate.nonce, latency_ms as u64);
                 } else {
                     rejected_iterations += 1;
-                    let total = accepted_iterations + rejected_iterations;
-                    println!(
-                        "[{}] rejected {}/{} — {} ({} ms)",
-                        log_timestamp(),
-                        rejected_iterations,
-                        total,
-                        &status,
-                        latency_ms,
-                    );
+                    ui::log_rejected(job.job_id, job.height, solution.candidate.nonce, latency_ms as u64, &status);
                 }
                 status
             }
@@ -1698,6 +1680,10 @@ struct SessionTelemetry {
     /// Peak hashrate (H/s) seen this session — used for XMRig-style speed line.
     hashrate_max: f64,
     last_stats_write: Instant,
+    /// GPU device info snapshots for the stats table.
+    gpu_infos: Vec<gpu_backend::GpuInfo>,
+    /// Current algorithm name (for UI display).
+    algorithm: String,
 }
 
 impl SessionTelemetry {
@@ -1722,6 +1708,8 @@ impl SessionTelemetry {
             best_batch_ms: 0,
             hashrate_max: 0.0,
             last_stats_write: now,
+            gpu_infos: Vec::new(),
+            algorithm: String::new(),
         }
     }
 
@@ -1845,9 +1833,9 @@ impl SessionTelemetry {
             self.no_solution_iterations,
             self.local_skip_likely_stale,
             overall_hps,
-            self.hashrate_10s_hps(),
-            self.hashrate_60s_hps(),
-            self.hashrate_15m_hps(),
+            hr_10s,
+            hr_60s,
+            hr_15m,
             attempted_hashes,
             submit_avg,
             self.submit_max_latency_ms,
@@ -1859,35 +1847,38 @@ impl SessionTelemetry {
             self.best_batch_ms,
         );
 
-        // ── XMRig-style human-readable speed line ──
+        // ── Professional colored UI table ──
         let uptime_secs = uptime as u64;
-        let uptime_h = uptime_secs / 3600;
-        let uptime_m = (uptime_secs % 3600) / 60;
-        let uptime_s = uptime_secs % 60;
-        // Use a single unit for all 3 rates (XMRig convention)
-        let (unit_label, divisor) = if self.hashrate_max >= 1e9 {
-            ("GH/s", 1e9)
-        } else if self.hashrate_max >= 1e6 {
-            ("MH/s", 1e6)
-        } else if self.hashrate_max >= 1e3 {
-            ("KH/s", 1e3)
-        } else {
-            ("H/s", 1.0)
-        };
-        println!(
-            "[{ts}] speed 10s/60s/15m  {:.2}  {:.2}  {:.2} {unit_label}  max {:.2} {unit_label}",
-            hr_10s / divisor,
-            hr_60s / divisor,
-            hr_15m / divisor,
-            self.hashrate_max / divisor,
+        let gpu_ui: Vec<(String, u32, u64, u32, Option<u32>, Option<u32>)> = self
+            .gpu_infos
+            .iter()
+            .map(|g| {
+                (
+                    g.name.clone(),
+                    g.compute_units,
+                    g.global_mem_bytes,
+                    g.max_clock_mhz,
+                    g.temp_c,
+                    g.power_w,
+                )
+            })
+            .collect();
+        ui::print_speed_table(
+            uptime_secs,
+            hr_10s,
+            hr_60s,
+            hr_15m,
+            self.hashrate_max,
+            accepted,
+            rejected,
+            attempted_hashes,
+            submit_avg,
+            self.submit_max_latency_ms,
+            self.pool_height,
+            self.current_epoch,
+            &self.algorithm,
+            &gpu_ui,
         );
-        println!(
-            "[{ts}] shares A:{accepted} R:{rejected} ({accept_pct:.1}%) | hashes {attempted_hashes} | pool latency {submit_avg:.0}ms | uptime {uptime_h}h {uptime_m}m {uptime_s}s",
-        );
-        {
-            use std::io::Write;
-            let _ = std::io::stdout().flush();
-        }
 
         // ── Stats file (atomic write for desktop agent polling) ──
         if let Some(path) = stats_file {
@@ -2006,7 +1997,14 @@ fn log_solution<T: std::fmt::Debug>(
     );
     println!("found_nonce={found_nonce}");
     println!("hash={}", hex(hash));
-    println!("share_status={status:?}");
+    let status_str = format!("{status:?}");
+    if status_str.contains("Accepted") {
+        ui::log_accepted(job.job_id, job.height, found_nonce, 0);
+    } else if status_str.contains("Rejected") {
+        ui::log_rejected(job.job_id, job.height, found_nonce, 0, &status_str);
+    } else {
+        println!("share_status={status_str}");
+    }
 }
 
 fn hex(bytes: &[u8]) -> String {
