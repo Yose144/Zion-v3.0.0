@@ -1,17 +1,23 @@
 # ZION V3 Miner — SMOS-compatible build
-# Uses Ubuntu 20.04 for glibc 2.31 compatibility
+# Builder: ubuntu:20.04 + rustup → GLIBC 2.31, fully compatible with SMOS rigs
 #
 # Build:  cd V3 && docker build -f docker/Dockerfile.miner-smos -t zion-miner-smos .
 # Extract: docker create --name extract zion-miner-smos && \
 #          docker cp extract:/usr/local/bin/zion-miner ./zion-miner-smos && \
 #          docker rm extract
 
-FROM rust:1.85-bullseye AS builder
-WORKDIR /build
+FROM ubuntu:20.04 AS builder
+ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y \
-        cmake g++ make pkg-config libssl-dev \
+        curl cmake g++ make pkg-config libssl-dev \
         ocl-icd-opencl-dev \
     && rm -rf /var/lib/apt/lists/*
+# Install Rust via rustup on Ubuntu 20.04 (GLIBC 2.31) so build scripts
+# are compiled against GLIBC 2.31 and the final binary requires only GLIBC_2.2.5
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | \
+    sh -s -- -y --default-toolchain 1.85.0 --profile minimal
+ENV PATH="/root/.cargo/bin:${PATH}"
+WORKDIR /build
 COPY . .
 RUN cargo build --release -p zion-miner --bin zion-miner --features gpu-opencl
 
