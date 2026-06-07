@@ -66,6 +66,7 @@ struct MinerMetricsSnapshot {
     best_batch_ms: u64,
     remote_ttl_ms: u64,
     hashrate_max: f64,
+    algorithm: String,
 }
 
 impl MinerMetricsSnapshot {
@@ -111,6 +112,7 @@ impl MinerMetricsSnapshot {
             best_batch_ms: 0,
             remote_ttl_ms: 0,
             hashrate_max: 0.0,
+            algorithm: config.algorithm.clone(),
         }
     }
 
@@ -509,7 +511,7 @@ fn write_stats_file(path: &str, snapshot: &MinerMetricsSnapshot) {
         "backend": snapshot.backend,
         "gpu_name": if snapshot.backend == "cpu" { "none" } else { &snapshot.backend },
         "worker": snapshot.worker_name,
-        "algorithm": "cosmic_harmony_ekam_deeksha_v2",
+        "algorithm": snapshot.algorithm,
         "cpu_threads": snapshot.threads,
         // Uptime
         "uptime_sec": snapshot.uptime_seconds(),
@@ -588,8 +590,10 @@ fn main() -> Result<()> {
             .and_then(|v| v.parse().ok())
             .unwrap_or(10.0);
         let backend = gpu_backend::GpuBackendKind::from_env();
+        let bench_algorithm = std::env::var("ZION_MINER_ALGORITHM")
+            .unwrap_or_else(|_| "deeksha_lite_v1".to_string());
 
-        println!("--- Ekam Deeksha GPU benchmark ---");
+        println!("--- {} GPU benchmark ---", bench_algorithm);
         let mut gpu = gpu_backend::create_gpu_backend(
             if backend == gpu_backend::GpuBackendKind::Cpu {
                 gpu_backend::GpuBackendKind::Auto
@@ -597,7 +601,7 @@ fn main() -> Result<()> {
                 backend
             },
             work_size,
-            "cosmic_harmony_ekam_deeksha_v2", // Default algorithm for benchmark
+            &bench_algorithm,
         )?;
         println!("device={}", gpu.device_name());
         println!("backend={}", gpu.backend_kind().as_str());
@@ -1200,11 +1204,16 @@ fn run_remote_session(
     let mut reader = BufReader::new(reader_stream);
     let mut writer = stream;
 
+    let backend_str = gpu
+        .as_ref()
+        .map(|g| g.backend_kind().as_str())
+        .unwrap_or("cpu");
     let hello_message = PoolMessage::Hello {
         miner_id: config.miner_id.clone(),
         worker_name: config.worker_name.clone(),
         algorithm: config.algorithm.clone(),
         payout_address: config.payout_address.clone(),
+        backend: backend_str.to_string(),
     };
     let hello_line = write_wire_message(&mut writer, &hello_message)?;
     println!("wire_hello={hello_line}");
@@ -2023,6 +2032,10 @@ impl MinerConfig {
                     std::env::set_var("ZION_PROFILE", &args[i + 1]);
                     i += 2;
                 }
+                "--algorithm" if i + 1 < args.len() => {
+                    std::env::set_var("ZION_MINER_ALGORITHM", &args[i + 1]);
+                    i += 2;
+                }
                 "--help" | "-h" => {
                     println!("Usage: zion-miner [OPTIONS]");
                     println!();
@@ -2034,6 +2047,7 @@ impl MinerConfig {
                     println!("  --gpu BACKEND       GPU backend: auto, metal, opencl, cpu (default: auto)");
                     println!("  --loops N           Iteration count (default: 1)");
                     println!("  --profile NAME      Profile: pool, solo, benchmark, dual");
+                    println!("  --algorithm ALGO    Mining algorithm: deeksha_lite_v1, cosmic_harmony_ekam_deeksha_v2");
                     println!();
                     println!("Benchmarks:");
                     println!("  --ekam-bench        Ekam Deeksha GPU benchmark");
