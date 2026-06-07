@@ -190,7 +190,7 @@ pub const PREMINE_OUTPUTS: &[PremineOutput] = &[
     },
     // --- Humanitarian (1 slot = 1.44B) ---
     PremineOutput {
-        address: "zion1c245e7f5d8h427r4p4s2s607d7v4c255z7x96t3",
+        address: "zion1z7g4u3s2w3c5z5u4a60864m2y7q8e5j304g46r7",
         purpose: "Children Future Fund — Humanitarian DAO",
         amount_zion: 1_440_000_000,
         amount_flowers: 1_440_000_000_000_000_000_000,
