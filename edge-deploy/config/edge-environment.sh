@@ -32,10 +32,11 @@ ZION_POOL_BIND=0.0.0.0:8444
 ZION_NODE_RPC_ADDR=127.0.0.1:8443
 ZION_POOL_LOOP_COUNT=1000000
 ZION_MAX_SESSIONS_PER_IP=10
-# GPU optimization: larger nonce batches reduce idle time between jobs.
-# RX 5700 XT @ ~1.1 KH/s: 4096 nonces = 3.7s work / 15s TTL = 25% GPU util.
-# 65536 nonces = ~60s work with 60s TTL = near 100% GPU util.
-ZION_NONCE_COUNT=65536
+# GPU optimization: nonce_count tuned for RX 5700 XT @ ~19.25 KH/s (deeksha_lite_v1).
+# Benchmark 2026-06-07: deeksha_lite_v1=19.25 KH/s, cosmic_harmony=3.29 KH/s, fire=10.15 KH/s.
+# 524288 nonces = ~27s work @ 19.25 KH/s = 45% GPU util with 60s TTL.
+# 1048576 nonces = ~54s work @ 19.25 KH/s = 91% GPU util with 60s TTL.
+ZION_NONCE_COUNT=1048576
 ZION_JOB_TTL_MS=60000
 ZION_VARDIFF_START_DIFF=1
 ZION_VARDIFF_MIN_DIFF=1
