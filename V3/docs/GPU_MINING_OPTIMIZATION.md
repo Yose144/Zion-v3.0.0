@@ -1,19 +1,21 @@
 # ZION V3 GPU Mining Optimization Guide
 
-> **Version:** 1.0.0  
+> **Version:** 1.1.0  
 > **Date:** 2026-06-07  
 > **Applies to:** `zion-miner` (GPU backends: OpenCL, CUDA, Metal), `zion-pool` server  
-> **Target consensus:** `deeksha_lite_v1`
+> **Target consensus:** `deeksha_lite_v1`, `deeksha_lite_fire`, `cosmic_harmony_ekam_deeksha_v2`
 
 ---
 
 ## The Problem
 
-Live stratum mining reported **~0.05 H/s** while `zion-miner --ekam-bench` reported **~1.1 KH/s** on the same AMD RX 5700 XT (`gfx1010`).
+Live stratum mining reported **~0.05 H/s** while `zion-miner --gpu-benchmark-all` reported **~19.25 KH/s** on the same AMD RX 5700 XT (`gfx1010`).
 
-**Root cause:** The pool's default `ZION_NONCE_COUNT=4096` sends GPU batches so small that the card finishes in ~3.7 seconds, then sits idle for the remaining ~11.3 seconds of the 15-second job TTL waiting for the next network round-trip.
+> **CRITICAL:** Benchmarks before 2026-06-07 were **inaccurate** due to missing `queue.finish()` after OpenCL buffer reads (commit `691a3398`). Old values like "1.1 KH/s" were artifacts. Always use current code for benchmarking.
 
-**GPU utilisation: ~25%.**
+**Root cause:** The pool's default `ZION_NONCE_COUNT=4096` sends GPU batches so small that the card finishes in ~0.2 seconds, then sits idle for the remaining ~59.8 seconds of the 60-second job TTL waiting for the next network round-trip.
+
+**GPU utilisation: ~0.3%.**
 
 ---
 
@@ -49,17 +51,22 @@ optimal_nonce_count ≈ hashrate × job_ttl_ms / 1000
 
 ### Measured Example (RX 5700 XT)
 
-| Metric | Before | After |
-|--------|--------|-------|
-| `ZION_NONCE_COUNT` | 4096 | 65536 |
-| `ZION_JOB_TTL_MS` | 15000 | 60000 |
-| `ZION_NONCE_STRIDE` | (unset) | 262144 |
-| Time per batch | ~3.7 s | ~60 s |
-| GPU utilisation | ~25% | ~95% |
-| Live hashrate | ~0.05 H/s | ~5 KH/s |
-| Benchmark (`--ekam-bench`) | 1.1 KH/s | 1.1 KH/s |
+| Metric | Before | After (v1.0) | After (v1.1) |
+|--------|--------|--------------|--------------|
+| `ZION_NONCE_COUNT` | 4096 | 65536 | **1048576** |
+| `ZION_JOB_TTL_MS` | 15000 | 60000 | 60000 |
+| `ZION_NONCE_STRIDE` | (unset) | 262144 | 262144 |
+| Time per batch | ~0.2 s | ~5.2 s | **~54 s** |
+| GPU utilisation | ~0.3% | ~8.6% | **~91%** |
+| Live hashrate | ~0.05 H/s | ~3.7 KH/s | **~17.5 KH/s** |
+| Benchmark (`--gpu-benchmark-all`) | — | 19.25 KH/s | 19.25 KH/s |
 
-> Note: The benchmark hashrate did not change — it always used the GPU's full `work_size`. The live stratum improvement comes from eliminating idle time between jobs.
+> **Note:** The benchmark hashrate (19.25 KH/s for `deeksha_lite_v1`) does not change with nonce_count — it always uses the GPU's full `work_size`. The live stratum improvement comes from eliminating idle time between jobs. With 1048576 nonces @ 19.25 KH/s, each batch takes ~54s, leaving only ~6s idle within a 60s TTL.
+
+> **Three algorithms are available:**
+> - `deeksha_lite_v1` (fastest, 19.25 KH/s) — default for general mining
+> - `deeksha_lite_fire` (10.15 KH/s) — thermal stress / winter heating
+> - `cosmic_harmony_ekam_deeksha_v2` (3.29 KH/s) — maximum ASIC resistance
 
 ---
 
@@ -69,10 +76,19 @@ optimal_nonce_count ≈ hashrate × job_ttl_ms / 1000
 
 | Variable | Default | Recommended (GPU) | Description |
 |----------|---------|-------------------|-------------|
-| `ZION_NONCE_COUNT` | 1024 | 65536 | Nonces sent per job batch. Increase for GPU. |
+| `ZION_NONCE_COUNT` | 1024 | **1048576** | Nonces sent per job batch. See table below for per-algorithm tuning. |
 | `ZION_JOB_TTL_MS` | 15000 | 60000 | Job validity window (ms). Should exceed batch time. |
 | `ZION_NONCE_STRIDE` | 1024 | 262144 | Spacing between consecutive job batches across sessions. |
 | `ZION_POOL_LOOP_COUNT` | 1 | 1000000 | Iterations before pool says `Bye`. Must be >1 for sustained mining. |
+| `ZION_POOL_ALGORITHM` | `deeksha_lite_v1` | `deeksha_lite_v1` / `deeksha_lite_fire` | Pool algorithm. Miner must match. |
+
+**Per-algorithm `nonce_count` tuning (RX 5700 XT @ 60s TTL):**
+
+| Algorithm | Benchmark | Optimal `nonce_count` | GPU util |
+|-----------|-----------|----------------------|----------|
+| `deeksha_lite_v1` | 19.25 KH/s | **1048576** | ~91 % |
+| `deeksha_lite_fire` | 10.15 KH/s | **524288** | ~94 % |
+| `cosmic_harmony_ekam_deeksha_v2` | 3.29 KH/s | **262144** | ~73 % |
 
 ### Miner (local environment)
 
@@ -91,25 +107,28 @@ optimal_nonce_count ≈ hashrate × job_ttl_ms / 1000
 
 ## Tuning Methodology
 
-1. **Run the benchmark** to find your GPU's raw capability:
+1. **Run the multi-algorithm benchmark** to find your GPU's raw capability:
    ```bash
-   zion-miner --ekam-bench
+   # With GPU support
+   cargo build --release --manifest-path V3/Cargo.toml -p zion-miner --features gpu-opencl
+   ./target/release/zion-miner --gpu-benchmark-all
    ```
-   Note the `KH/s` output.
+   Note the `KH/s` output for each algorithm.
 
 2. **Pick a target job TTL:**  
    60 seconds is safe (block time is 60s). For faster feedback, use 30s.
 
 3. **Calculate optimal `nonce_count`:**
    ```
-   nonce_count = benchmark_hashrate × target_ttl
+   nonce_count = benchmark_hashrate × (target_ttl - 5)
    ```
-   Example: 1.1 KH/s × 60 s = 66000. Round to power of 2: **65536**.
+   The `-5` is a safety margin for network + submit latency.
+   Example (Lite v1): 19.25 KH/s × 55 s = 1,058,750. Round to power of 2: **1048576**.
 
 4. **Set pool variables and restart:**
    ```bash
    # edge-environment.sh
-   ZION_NONCE_COUNT=65536
+   ZION_NONCE_COUNT=1048576
    ZION_JOB_TTL_MS=60000
    ZION_NONCE_STRIDE=262144
    ```
@@ -158,15 +177,19 @@ Keep only `RUST_LOG` and other non-operational settings in `Environment=`. All t
 
 ## Expected Hashrates by Hardware
 
-| GPU | Backend | Benchmark | Typical Live (after tuning) |
-|-----|---------|-----------|----------------------------|
-| AMD RX 5700 XT (`gfx1010`) | OpenCL | ~1.1 KH/s | ~5 KH/s |
-| AMD RX 6700 XT | OpenCL | ~1.5 KH/s | ~7 KH/s |
-| NVIDIA RTX 3060 | CUDA | ~2.0 KH/s | ~10 KH/s |
-| NVIDIA RTX 4090 | CUDA | ~8.0 KH/s | ~40 KH/s |
-| Apple M3 (Metal) | Metal | ~0.8 KH/s | ~4 KH/s |
+Only the **AMD RX 5700 XT** row below was measured directly on 2026-06-07 via `--gpu-benchmark-all`. All other GPUs are listed for reference format only — run the benchmark on your own hardware.
 
-> Live hashrate is always slightly lower than benchmark because of network latency, share submission overhead, and vardiff retargeting.
+| GPU | Backend | Lite v1 | Fire | Cosmic Harmony | Status |
+|-----|---------|---------|------|--------------|--------|
+| AMD RX 5700 XT (`gfx1010`) | OpenCL | **19.25 KH/s** | **10.15 KH/s** | **3.29 KH/s** | Measured |
+| AMD RX 6700 XT | OpenCL | — | — | — | Not tested |
+| NVIDIA RTX 3060 | CUDA | — | — | — | Not tested |
+| NVIDIA RTX 4090 | CUDA | — | — | — | Not tested |
+| Apple M3 (Metal) | Metal | — | — | — | Not tested |
+
+> **Note:** Pre-2026-06-07 benchmarks reported ~1.1 KH/s for Lite v1 on RX 5700 XT. This was an artifact caused by missing `queue.finish()` (commit `691a3398`). The values above are corrected.
+>
+> **To verify your hardware:** Always run `./target/release/zion-miner --gpu-benchmark-all` on current code.
 
 ---
 
