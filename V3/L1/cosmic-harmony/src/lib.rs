@@ -54,7 +54,7 @@ pub use stream_layers::{
     DeekshaStep, DeekshaStreamTelemetry,
 };
 
-pub const POW_PROFILE: &str = "cosmic_harmony_ekam_deeksha_v2";
+pub const POW_PROFILE: &str = "deeksha_lite_v1";
 
 pub fn profile_name() -> &'static str {
     POW_PROFILE
@@ -66,6 +66,6 @@ mod tests {
 
     #[test]
     fn profile_is_set() {
-        assert_eq!(profile_name(), "cosmic_harmony_ekam_deeksha_v2");
+        assert_eq!(profile_name(), "deeksha_lite_v1");
     }
 }

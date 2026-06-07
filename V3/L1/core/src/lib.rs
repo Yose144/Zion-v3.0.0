@@ -168,7 +168,7 @@ pub struct BlockCandidate {
 
 impl BlockCandidate {
     pub fn hash(self) -> [u8; 32] {
-        cosmic_harmony_with_height(&self.header.to_bytes(), self.nonce, self.height).data
+        zion_cosmic_harmony::deeksha_lite::deeksha_lite(&self.header.to_bytes(), self.nonce)
     }
 
     pub fn seal(self) -> SealedBlock {
@@ -3806,8 +3806,11 @@ mod tests {
             height: 0,
         };
 
-        let direct = cosmic_harmony_with_height(&candidate.header.to_bytes(), candidate.nonce, 0);
-        assert_eq!(runtime.hash_candidate(candidate), direct.data);
+        let direct = zion_cosmic_harmony::deeksha_lite::deeksha_lite(
+            &candidate.header.to_bytes(),
+            candidate.nonce,
+        );
+        assert_eq!(runtime.hash_candidate(candidate), direct);
     }
 
     #[test]
