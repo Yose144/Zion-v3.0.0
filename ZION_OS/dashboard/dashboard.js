@@ -182,6 +182,7 @@ async function refreshAll(){
       : '⏳ Pre-Launch · ' + blockersData.open_critical + ' critical blockers';
 
     updateServiceCards(statusData);
+    updateServiceTelemetryDetails(statusData);
     updateAlerts(alertsData.alerts);
     updateChecklist(checklistData.checks);
     updatePayouts(statusData.pool, statusData.topology);
@@ -350,6 +351,119 @@ function updateServiceCards(s){
       msgEl.classList.add('hidden');
     }
   }
+}
+
+// ── Service Telemetry Detail Cards (Overview panel) ──
+function updateServiceTelemetryDetails(s){
+  const container = document.getElementById('overview-telemetry-details');
+  if(!container) return;
+
+  const isEdge = s.topology === 'edge-primary';
+  const en = s.edge_node, n1 = s.node1, p = s.pool, m = s.miner;
+  const pe = s.pool_edge ?? {};
+
+  const services = [
+    {
+      key:'node', label:'Node', cls:'tdc-node',
+      running: isEdge ? (en && en.running) : (n1 && n1.running),
+      data: isEdge ? en : n1,
+      fields: (d)=>[
+        ['Height', d?.chain_height ?? '—'],
+        ['Peers', d?.known_peers ?? '—'],
+        ['Chain', d?.network ?? d?.chain ?? 'ZION Mainnet'],
+        ['Version', d?.version ?? '—'],
+      ],
+    },
+    {
+      key:'pool', label:'Pool', cls:'tdc-pool',
+      running: p && p.running,
+      data: p,
+      fields: (d)=>[
+        ['Sessions', d?.active_sessions ?? '—'],
+        ['Blocks', d?.blocks_found ?? '—'],
+        ['Shares', (d?.shares_accepted ?? 0) + ' / ' + (d?.shares_rejected ?? 0)],
+        ['Fee', d?.fee_split ?? '—'],
+      ],
+    },
+    {
+      key:'pool-edge', label:'Edge Pool', cls:'tdc-pool',
+      running: pe && pe.running,
+      data: pe,
+      fields: (d)=>[
+        ['Hashrate', d?.hashrate ? d.hashrate.toFixed(2) + ' KH/s' : '—'],
+        ['Miners', d?.active_miners ?? '—'],
+        ['Blocks', d?.blocks_found ?? '—'],
+        ['Port', d?.ports_open?.[0]?.split(':')[1] ?? '8444'],
+      ],
+    },
+    {
+      key:'miner', label:'Miner', cls:'tdc-agent',
+      running: m && m.running,
+      data: m,
+      fields: (d)=>[
+        ['Hashrate', d?.hashrate ? d.hashrate.toFixed(2) + ' H/s' : '—'],
+        ['Backend', d?.gpu_backend ?? 'cpu'],
+        ['Device', d?.gpu_device ?? '—'],
+        ['Pool', d?.pool_addr ?? '—'],
+      ],
+    },
+  ];
+
+  // L2–L6 services from current status if available
+  const l2l6 = [
+    {key:'bridge', label:'Bridge', cls:'tdc-warp'},
+    {key:'dao', label:'DAO', cls:'tdc-dao'},
+    {key:'warp', label:'WARP', cls:'tdc-warp'},
+  ];
+  l2l6.forEach(item=>{
+    const svc = s[item.key];
+    if(svc){
+      services.push({
+        key:item.key, label:item.label, cls:item.cls,
+        running: svc.running,
+        data: svc,
+        fields: (d)=>[
+          ['Status', d?.status ?? '—'],
+          ['Ports', (d?.ports_open?.length ?? 0) + ' / ' + ((d?.ports_open?.length ?? 0)+(d?.ports_closed?.length ?? 0))],
+          ['Details', d?.details ?? '—'],
+          ['PID Alive', d?.pid_alive ? 'Yes (' + (d?.pid ?? '—') + ')' : 'No'],
+        ],
+      });
+    }
+  });
+
+  container.innerHTML = services.map(svc=>{
+    const online = svc.running;
+    const statusClass = online ? 'tdc-online' : 'tdc-offline';
+    const statusText = online ? 'Online' : 'Offline';
+    const d = svc.data || {};
+    const rows = svc.fields(d).map(([label,value])=>`
+      <div class="tdc-row">
+        <div class="tdc-label">${escapeHtml(label)}</div>
+        <div class="tdc-value${String(value).length > 20 ? ' small' : ''}">${escapeHtml(value)}</div>
+      </div>
+    `).join('');
+
+    return `
+      <div class="telemetry-detail-card ${escapeHtml(svc.cls)}">
+        <div class="tdc-header">
+          <div class="tdc-name">${escapeHtml(svc.label)}</div>
+          <span class="tdc-status ${statusClass}">${statusText}</span>
+        </div>
+        <div class="tdc-body">
+          <div class="tdc-row">
+            <div class="tdc-label">Uptime</div>
+            <div class="tdc-value">${formatUptime(d?.uptime_seconds)}</div>
+          </div>
+          <div class="tdc-row">
+            <div class="tdc-label">PID</div>
+            <div class="tdc-value">${d?.pid ?? '—'}</div>
+          </div>
+          ${rows}
+        </div>
+      </div>
+    `;
+  }).join('');
 }
 
 // ── Layer Services (L2–L6) mini-cards ──

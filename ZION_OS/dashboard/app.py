@@ -2410,6 +2410,15 @@ def _build_status_edge_primary() -> dict:
         pass
 
     miner_status = parse_miner_log()
+
+    # ── L2/L3 Edge services health ───────────────────────────────────────────
+    bridge_svc = get_service("bridge")
+    dao_svc = get_service("dao")
+    warp_svc = get_service("warp")
+    bridge_health = check_service_health(bridge_svc) if bridge_svc else {"alive": False, "status": "unknown", "details": "", "ports_open": [], "ports_closed": [], "pid_alive": False, "pid": None}
+    dao_health = check_service_health(dao_svc) if dao_svc else {"alive": False, "status": "unknown", "details": "", "ports_open": [], "ports_closed": [], "pid_alive": False, "pid": None}
+    warp_health = check_service_health(warp_svc) if warp_svc else {"alive": False, "status": "unknown", "details": "", "ports_open": [], "ports_closed": [], "pid_alive": False, "pid": None}
+
     elapsed = time.time() - t0
     return {
         "timestamp": datetime.now().isoformat(),
@@ -2442,6 +2451,33 @@ def _build_status_edge_primary() -> dict:
             "details": pool_edge_health.get("details", ""),
         },
         "miner": miner_status,
+        "bridge": {
+            "running": bridge_health["alive"],
+            "status": bridge_health.get("status", "unknown"),
+            "details": bridge_health.get("details", ""),
+            "ports_open": bridge_health.get("ports_open", []),
+            "ports_closed": bridge_health.get("ports_closed", []),
+            "pid_alive": bridge_health.get("pid_alive", False),
+            "pid": bridge_health.get("pid"),
+        },
+        "dao": {
+            "running": dao_health["alive"],
+            "status": dao_health.get("status", "unknown"),
+            "details": dao_health.get("details", ""),
+            "ports_open": dao_health.get("ports_open", []),
+            "ports_closed": dao_health.get("ports_closed", []),
+            "pid_alive": dao_health.get("pid_alive", False),
+            "pid": dao_health.get("pid"),
+        },
+        "warp": {
+            "running": warp_health["alive"],
+            "status": warp_health.get("status", "unknown"),
+            "details": warp_health.get("details", ""),
+            "ports_open": warp_health.get("ports_open", []),
+            "ports_closed": warp_health.get("ports_closed", []),
+            "pid_alive": warp_health.get("pid_alive", False),
+            "pid": warp_health.get("pid"),
+        },
         "tailscale": {"vpn_ok": tailscale_ok, "edge_ip": "100.76.16.108"},
         "_build_time_ms": int(elapsed * 1000),
     }
