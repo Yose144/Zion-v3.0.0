@@ -91,6 +91,10 @@ HOST = CONFIG["host"]
 PORT = CONFIG["port"]
 TOPOLOGY = CONFIG["topology"]
 
+# Edge server addresses (Hetzner VPS — always-on)
+EDGE_HOST = "100.76.16.108"   # Tailscale IP (preferred — low latency)
+EDGE_PUBLIC_IP = "77.42.71.94"  # Public IP (fallback if Tailscale down)
+
 # ── Metrics history (in-memory ring buffer) ─────────────────────────────
 
 class MetricsHistory:
@@ -1079,6 +1083,12 @@ def check_service_health(svc: dict) -> dict:
             if mtime_age < 120:
                 log_alive = True
                 break
+    # Miner process scan (even if no log file — miner started externally)
+    if sid == "miner" and not proc_info["alive"]:
+        miner_pid = find_process_by_name("zion-miner")
+        if miner_pid and is_process_alive(miner_pid):
+            proc_info = {"has_pid": True, "alive": True, "pid": miner_pid}
+            register_process("miner", miner_pid, image="zion-miner")
 
     # ── Determine status based on health_method ────────────────────────────
     alive = False
@@ -1087,7 +1097,11 @@ def check_service_health(svc: dict) -> dict:
 
     if method == "rpc":
         alive = rpc_ok and bool(open_ports)
-        status = "running" if alive else ("degraded" if rpc_ok or open_ports else "stopped")
+        # Log-alive or process-alive → at least degraded (not fully stopped)
+        if not alive and (log_alive or proc_info["alive"]):
+            status = "degraded"
+        else:
+            status = "running" if alive else ("degraded" if rpc_ok or open_ports else "stopped")
         if rpc_ok:
             details_parts.append("RPC OK")
         else:
@@ -1096,6 +1110,10 @@ def check_service_health(svc: dict) -> dict:
             details_parts.append(f"{len(open_ports)}/{len(ports)} ports open")
         elif ports:
             details_parts.append("ports closed")
+        if log_alive:
+            details_parts.append(f"log {log_age}s ago")
+        elif proc_info["alive"]:
+            details_parts.append(f"PID {proc_info.get('pid')} alive")
 
     elif method == "http":
         alive = http_ok
@@ -1372,9 +1390,21 @@ def parse_node_log(name: str) -> dict:
     log_path = latest_log_path(name)
     recent = tail_log(log_path.name, 200) if log_path else []
     startup = head_log(log_path.name, 50) if log_path else []
+    # Log-based running: log must exist AND be recent (< 5 min) AND not end with ^C
+    log_alive = False
+    if log_path and log_path.exists() and recent:
+        age_s = time.time() - log_path.stat().st_mtime
+        last_line = recent[-1].strip() if recent else ""
+        log_alive = age_s < 300 and last_line not in ("^C", "^Z")
+    # Process-based running: check by exe name
+    proc_alive = False
+    exe_names = {"node1": "node.exe", "node2": "node.exe"}.get(name, "node.exe")
+    node_pid = find_process_by_name(exe_names)
+    if node_pid and is_process_alive(node_pid):
+        proc_alive = True
     status = {
         "name": name,
-        "running": bool(recent),
+        "running": log_alive or proc_alive,
         "node_id": None,
         "version": None,
         "p2p_bind": None,
@@ -2819,7 +2849,10 @@ def parse_premine_from_genesis(rpc_host: str = "127.0.0.1", rpc_port: int = 8443
     wallets = []
     genesis = rpc_call(rpc_host, rpc_port, "getBlockByHeight", {"height": 0})
     if not genesis or not genesis.get("transactions"):
-        # Fallback to file if RPC unavailable
+        # Fallback to Edge RPC
+        genesis = rpc_call(EDGE_HOST, 8443, "getBlockByHeight", {"height": 0})
+    if not genesis or not genesis.get("transactions"):
+        # Final fallback to file if RPC unavailable
         return parse_premine_from_file()
     labels = [
         "OASIS + Winners Golden Egg/Xp (Slot 1)",
@@ -2984,7 +3017,7 @@ def build_wallets() -> dict:
         except Exception:
             pass
 
-    # 4. Try to enrich with live balances from Node 1 RPC
+    # 4. Try to enrich with live balances — prefer local RPC, fallback to Edge
     rpc_host = "127.0.0.1"
     rpc_port = 8443
     rpc_addr = os.environ.get("ZION_NODE_RPC_ADDR", "")
@@ -2996,6 +3029,10 @@ def build_wallets() -> dict:
             pass
     elif rpc_addr:
         rpc_host = rpc_addr
+    # Test connectivity; fall back to Edge if local unavailable
+    _ping = rpc_call(rpc_host, rpc_port, "getChainInfo", {}, timeout=1.5)
+    if not _ping or _ping.get("_rpc_error"):
+        rpc_host, rpc_port = EDGE_HOST, 8443
 
     for w in wallets:
         addr = w.get("address", "")
@@ -3056,7 +3093,7 @@ def build_wallets() -> dict:
             "total_operational_zion": round(op_total, 6),
         },
         "category_summary": category_summary,
-        "rpc": {"host": rpc_host, "port": rpc_port, "reachable": len(with_balance) > 0 and with_balance[0].get("rpc_ok")},
+        "rpc": {"host": rpc_host, "port": rpc_port, "reachable": len(with_balance) > 0},
     }
 
 # ── Block detail ────────────────────────────────────────────────────────
@@ -3170,14 +3207,7 @@ def get_dependency_graph() -> dict:
 
 def build_explorer() -> dict:
     """Fetch blockchain overview for the Explorer tab."""
-    # Topology-aware RPC selection
-    if TOPOLOGY == "edge-primary":
-        # Query local backup node (syncs from Edge)
-        rpc_host, rpc_port = "127.0.0.1", 8443
-    else:
-        # Local dev: query local genesis node
-        rpc_host, rpc_port = "127.0.0.1", 8443
-    
+    rpc_host, rpc_port = "127.0.0.1", 8443
     rpc_addr = os.environ.get("ZION_NODE_RPC_ADDR", "")
     if rpc_addr and ":" in rpc_addr:
         try:
@@ -3189,6 +3219,13 @@ def build_explorer() -> dict:
         rpc_host = rpc_addr
 
     info = rpc_call(rpc_host, rpc_port, "getChainInfo", {})
+    # Fallback to Edge RPC if local is unavailable
+    if not info or info.get("_rpc_error"):
+        info = rpc_call(EDGE_HOST, 8443, "getChainInfo", {})
+        if info and not info.get("_rpc_error"):
+            rpc_host, rpc_port = EDGE_HOST, 8443
+        else:
+            info = None
     genesis = rpc_call(rpc_host, rpc_port, "getBlockByHeight", {"height": 0})
 
     # Recent blocks: grab last 10 from events / history
