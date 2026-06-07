@@ -10,7 +10,12 @@ User=root
 WorkingDirectory=/root/zion-2.9.6-main
 EnvironmentFile=/root/zion-2.9.6-main/edge-deploy/config/edge-environment.sh
 Environment="RUST_LOG=info,zion_pool=debug"
-ExecStart=/root/zion-2.9.6-main/V3/target/release/server
+Environment="ZION_POOL_BIND=0.0.0.0:8444"
+Environment="ZION_NODE_RPC_ADDR=127.0.0.1:8443"
+Environment="ZION_POOL_LOOP_COUNT=1000000"
+Environment="ZION_NONCE_COUNT=4096"
+Environment="ZION_POOL_ALGORITHM=deeksha_lite_v1"
+ExecStart=/usr/local/bin/zion-pool-server
 Restart=always
 RestartSec=10
 KillMode=process
