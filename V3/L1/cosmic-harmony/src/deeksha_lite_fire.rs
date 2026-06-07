@@ -21,12 +21,12 @@ fn meets_target(hash: &[u8; 32], target: &[u8; 32]) -> bool {
 pub const DEEKSHA_LITE_FIRE_PROFILE: &str = "deeksha_lite_fire";
 
 // Constants — identical to deeksha_lite_v1 for memory management
-pub const SCRATCHPAD_SIZE: usize = 131072; // 128 KiB — matches GPU kernel
+pub const SCRATCHPAD_SIZE: usize = 256 * 1024; // 256 KiB — same as v1
 pub const BLOCK_SIZE:      usize = 32;
-pub const BLOCK_COUNT:     usize = 4096; // 131072 / 32
-pub const PASSES:          usize = 16;   // matches GPU kernel
-pub const RANDOM_READS:    usize = 512; // matches GPU kernel
-pub const AES_ROUNDS:      usize = 10;   // 10 full rounds (GPU: AES_FULL_ROUNDS=10)
+pub const BLOCK_COUNT:     usize = SCRATCHPAD_SIZE / BLOCK_SIZE; // 8192
+pub const PASSES:          usize = 2;    // same as v1
+pub const RANDOM_READS:    usize = 64;   // same as v1
+pub const AES_ROUNDS:      usize = 4;    // same as v1 (3 full + 1 final)
 pub const THERMAL_ITERS:   usize = 65536;
 
 // ============================================================
@@ -118,17 +118,15 @@ fn step2_memory_hard(seed: &[u8; 32]) -> [u8; 32] {
         state[..32].copy_from_slice(&out[..32]);
     }
 
-    for _pass in 0..PASSES {
-        for i in 0..BLOCK_COUNT {
-            let prev = if i == 0 { BLOCK_COUNT - 1 } else { i - 1 };
-            let (cur, prv) = (i * BLOCK_SIZE, prev * BLOCK_SIZE);
-            for j in 0..BLOCK_SIZE { let pv = scratchpad[prv + j]; scratchpad[cur + j] ^= pv; }
-        }
-        for i in (0..BLOCK_COUNT).rev() {
-            let next = if i + 1 == BLOCK_COUNT { 0 } else { i + 1 };
-            let (cur, nxt) = (i * BLOCK_SIZE, next * BLOCK_SIZE);
-            for j in 0..BLOCK_SIZE { let nv = scratchpad[nxt + j]; scratchpad[cur + j] ^= nv; }
-        }
+    for i in 0..BLOCK_COUNT {
+        let prev = if i == 0 { BLOCK_COUNT - 1 } else { i - 1 };
+        let (cur, prv) = (i * BLOCK_SIZE, prev * BLOCK_SIZE);
+        for j in 0..BLOCK_SIZE { let pv = scratchpad[prv + j]; scratchpad[cur + j] ^= pv; }
+    }
+    for i in (0..BLOCK_COUNT).rev() {
+        let next = if i + 1 == BLOCK_COUNT { 0 } else { i + 1 };
+        let (cur, nxt) = (i * BLOCK_SIZE, next * BLOCK_SIZE);
+        for j in 0..BLOCK_SIZE { let nv = scratchpad[nxt + j]; scratchpad[cur + j] ^= nv; }
     }
 
     let mut acc = [0u8; 32];
@@ -168,7 +166,7 @@ fn step3_aes_mix(seed: &[u8; 32], nonce: u64) -> [u8; 32] {
         if carry == 0 { break; }
     }
 
-    for _ in 0..AES_ROUNDS {
+    for _ in 0..3 {
         aes_round(&mut block0, &key);
         aes_round(&mut block1, &key);
     }
@@ -200,10 +198,6 @@ fn step4_thermal_loop(data: &mut [u8; 32], nonce: u64) {
     let mut g = nonce ^ 0xBADC0FFEE0DDF00Du64;
     let mut h = nonce ^ 0xFEEDFACECAFEBEEFu64;
 
-    // 2 float fma chains — must match GPU kernel exactly
-    let mut f1 = ((nonce & 0xFFFF) as f32) * 0.0001f32;
-    let mut f2 = (((nonce >> 16) & 0xFFFF) as f32) * 0.0001f32;
-
     for i in 0..THERMAL_ITERS {
         a = a.rotate_left(17).wrapping_add(b);
         b = b.rotate_left(31) ^ a;
@@ -229,14 +223,8 @@ fn step4_thermal_loop(data: &mut [u8; 32], nonce: u64) {
         f ^= data[(i + 12) & 0x1F] as u64;
         g ^= data[(i +  2) & 0x1F] as u64;
         h ^= data[(i +  6) & 0x1F] as u64;
-
-        // Float ALU stress (2 fma chains) — matches GPU
-        f1 = f1.mul_add(1.618033988f32, f2);
-        f2 = f2.mul_add(2.718281828f32, f1);
-        f1 = f1.mul_add(3.141592653f32, f2);
-        f2 = f2.mul_add(1.414213562f32, f1);
     }
-    // Fold integer results back — prevents dead-code elimination
+    // Fold back — prevents dead-code elimination
     data[ 0] ^= a as u8;         data[ 1] ^= (a >> 8) as u8;
     data[ 2] ^= b as u8;         data[ 3] ^= (b >> 8) as u8;
     data[ 4] ^= c as u8;         data[ 5] ^= (c >> 8) as u8;
@@ -250,14 +238,6 @@ fn step4_thermal_loop(data: &mut [u8; 32], nonce: u64) {
     data[20] ^= (e >> 16) as u8; data[21] ^= (f >> 16) as u8;
     data[22] ^= (g >> 16) as u8; data[23] ^= (h >> 16) as u8;
     data[24] ^= (a >> 24) as u8; data[25] ^= (b >> 24) as u8;
-
-    // Fold float results back — prevents dead-code elimination
-    let f1u = f1.to_bits();
-    let f2u = f2.to_bits();
-    data[26] ^= f1u as u8;         data[27] ^= ((f1u >> 8) & 0xFF) as u8;
-    data[28] ^= f2u as u8;         data[29] ^= ((f2u >> 8) & 0xFF) as u8;
-    data[30] ^= ((f1u >> 16) & 0xFF) as u8;
-    data[31] ^= ((f2u >> 16) & 0xFF) as u8;
 }
 
 // ============================================================
