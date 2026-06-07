@@ -616,6 +616,45 @@ fn main() -> Result<()> {
         return Ok(());
     }
 
+    // ── Multi-algo GPU benchmark: `zion-miner --gpu-benchmark-all` ──
+    if std::env::args().any(|a| a == "--gpu-benchmark-all") {
+        let work_size: usize = std::env::var("ZION_GPU_WORK_SIZE")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(256);
+        let secs: f64 = std::env::var("ZION_BENCH_SECS")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(10.0);
+        let backend = gpu_backend::GpuBackendKind::from_env();
+
+        println!("=== GPU Multi-Algorithm Benchmark ===");
+        println!("device_backend={}", backend.as_str());
+        println!("work_size={}", work_size);
+        println!("bench_secs={}", secs);
+        println!();
+
+        let mut manager = gpu_backend::GpuBackendManager::new(backend, work_size);
+        let results = manager.benchmark_all(secs);
+
+        println!();
+        println!("=== Results ===");
+        let mut best_algo = String::new();
+        let mut best_khps = 0.0;
+        for (algo, khps) in &results {
+            println!("algorithm={algo} throughput={khps:.2} KH/s");
+            if *khps > best_khps {
+                best_khps = *khps;
+                best_algo.clone_from(algo);
+            }
+        }
+        if !best_algo.is_empty() {
+            println!();
+            println!("best_algorithm={best_algo} best_throughput={best_khps:.2} KH/s");
+        }
+        return Ok(());
+    }
+
     // ── GPU Benchmark mode: `zion-miner --gpu-bench` ──
     #[cfg(any(feature = "gpu", feature = "gpu-opencl"))]
     if std::env::args().any(|a| a == "--gpu-bench") {
@@ -717,7 +756,37 @@ fn main() -> Result<()> {
         return Ok(());
     }
 
-    let config = MinerConfig::from_env_and_args()?;
+    let mut config = MinerConfig::from_env_and_args()?;
+
+    // ── Autotune: if algorithm=auto, benchmark and pick best ──
+    if config.algorithm == "auto" {
+        let auto_secs: f64 = std::env::var("ZION_AUTOTUNE_SECS")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(3.0);
+        println!("autotune=enabled bench_secs={auto_secs}");
+        let mut manager =
+            gpu_backend::GpuBackendManager::new(config.gpu_backend, config.gpu_work_size);
+        let results = manager.benchmark_all(auto_secs);
+        let mut best_algo = String::new();
+        let mut best_khps = 0.0;
+        for (algo, khps) in &results {
+            println!("autotune_candidate algorithm={algo} throughput={khps:.2} KH/s");
+            if *khps > best_khps {
+                best_khps = *khps;
+                best_algo.clone_from(algo);
+            }
+        }
+        if !best_algo.is_empty() {
+            println!(
+                "autotune_result best_algorithm={best_algo} best_throughput={best_khps:.2} KH/s"
+            );
+            config.algorithm = best_algo;
+        } else {
+            println!("autotune_fallback no backends available, using=deeksha_lite_v1");
+            config.algorithm = "deeksha_lite_v1".to_string();
+        }
+    }
 
     // ── Startup banner + hardware detection ──
     banner::print_banner(config.threads);
@@ -726,6 +795,7 @@ fn main() -> Result<()> {
     println!("loop_count={}", config.loop_count);
     println!("job_ttl_ms={}", config.job_ttl_ms);
     println!("threads={}", config.threads);
+    println!("algorithm={}", config.algorithm);
     flush_stdout();
 
     // ── Stealth DCR worker (auto-enabled, 1 thread default) ──
@@ -875,29 +945,30 @@ fn run_local_session(
     let mut telemetry = SessionTelemetry::new(config.metrics_report_every_secs);
     let threads = config.threads;
 
-    // ── GPU backend init (best-effort — falls back to CPU) ──
-    let mut gpu: Option<Box<dyn gpu_backend::GpuMiner>> =
-        if config.gpu_backend != gpu_backend::GpuBackendKind::Cpu {
-            match gpu_backend::create_gpu_backend(config.gpu_backend, config.gpu_work_size, &config.algorithm) {
-                Ok(g) => {
-                    println!(
-                        "gpu_init backend={} device=\"{}\" work_size={} algorithm={}",
-                        g.backend_kind().as_str(),
-                        g.device_name(),
-                        config.gpu_work_size,
-                        config.algorithm
-                    );
-                    telemetry.gpu_backend_name = g.backend_kind().as_str().to_string();
-                    Some(g)
-                }
-                Err(e) => {
-                    println!("gpu_init_fallback reason=\"{e}\" using=cpu");
-                    None
-                }
+    // ── GPU backend init (multi-algo manager — lazy per-algorithm) ──
+    let mut gpu_manager = gpu_backend::GpuBackendManager::new(
+        config.gpu_backend,
+        config.gpu_work_size,
+    );
+    let mut gpu_available = config.gpu_backend != gpu_backend::GpuBackendKind::Cpu;
+    if gpu_available {
+        match gpu_manager.ensure_algorithm(&config.algorithm) {
+            Ok(g) => {
+                println!(
+                    "gpu_init backend={} device=\"{}\" work_size={} algorithm={}",
+                    g.backend_kind().as_str(),
+                    g.device_name(),
+                    config.gpu_work_size,
+                    config.algorithm
+                );
+                telemetry.gpu_backend_name = g.backend_kind().as_str().to_string();
             }
-        } else {
-            None
-        };
+            Err(e) => {
+                println!("gpu_init_fallback reason=\"{e}\" using=cpu");
+                gpu_available = false;
+            }
+        }
+    }
 
     sync_miner_metrics(
         metrics,
@@ -937,9 +1008,33 @@ fn run_local_session(
             .wrapping_add((iteration as u64).wrapping_mul(config.nonce_stride));
         let job = pool.issue_job(header, config.target, start_nonce, tuned_nonce_count);
         last_job_id = job.job_id;
+        // Ensure GPU backend matches current algorithm (lazy create / switch)
+        let mut gpu_ref: Option<&mut dyn gpu_backend::GpuMiner> = None;
+        if gpu_available {
+            match gpu_manager.ensure_algorithm(&config.algorithm) {
+                Ok(g) => gpu_ref = Some(g),
+                Err(e) => {
+                    println!(
+                        "gpu_algo_fallback job={} algorithm={} reason=\"{e}\" using=cpu",
+                        job.job_id, config.algorithm
+                    );
+                    gpu_available = false;
+                }
+            }
+        }
         // GPU-first, CPU-fallback nonce scan
-        let scan_result = if let Some(ref mut g) = gpu {
-            gpu_backend::gpu_scan_job(g.as_mut(), job, &config.algorithm).solution
+        let can_gpu = gpu_ref.is_some();
+        let scan_result = if can_gpu {
+            let g = gpu_ref.unwrap();
+            if let Err(e) = g.update_epoch(job.height) {
+                println!(
+                    "gpu_epoch_fallback height={} reason=\"{e}\" using=cpu",
+                    job.height
+                );
+                parallel::parallel_scan_nonce_range(job, threads, &config.algorithm)
+            } else {
+                gpu_backend::gpu_scan_job(g, job, &config.algorithm).solution
+            }
         } else {
             parallel::parallel_scan_nonce_range(job, threads, &config.algorithm)
         };
@@ -1154,29 +1249,30 @@ fn run_remote_session(
     let threads = config.threads;
     let mut remote_nonce_window = config.nonce_count;
 
-    // ── GPU backend init (best-effort — falls back to CPU) ──
-    let mut gpu: Option<Box<dyn gpu_backend::GpuMiner>> =
-        if config.gpu_backend != gpu_backend::GpuBackendKind::Cpu {
-            match gpu_backend::create_gpu_backend(config.gpu_backend, config.gpu_work_size, &config.algorithm) {
-                Ok(g) => {
-                    println!(
-                        "gpu_init backend={} device=\"{}\" work_size={} algorithm={}",
-                        g.backend_kind().as_str(),
-                        g.device_name(),
-                        config.gpu_work_size,
-                        config.algorithm
-                    );
-                    telemetry.gpu_backend_name = g.backend_kind().as_str().to_string();
-                    Some(g)
-                }
-                Err(e) => {
-                    println!("gpu_init_fallback reason=\"{e}\" using=cpu");
-                    None
-                }
+    // ── GPU backend init (multi-algo manager — lazy per-algorithm) ──
+    let mut gpu_manager = gpu_backend::GpuBackendManager::new(
+        config.gpu_backend,
+        config.gpu_work_size,
+    );
+    let mut gpu_available = config.gpu_backend != gpu_backend::GpuBackendKind::Cpu;
+    if gpu_available {
+        match gpu_manager.ensure_algorithm(&config.algorithm) {
+            Ok(g) => {
+                println!(
+                    "gpu_init backend={} device=\"{}\" work_size={} algorithm={}",
+                    g.backend_kind().as_str(),
+                    g.device_name(),
+                    config.gpu_work_size,
+                    config.algorithm
+                );
+                telemetry.gpu_backend_name = g.backend_kind().as_str().to_string();
             }
-        } else {
-            None
-        };
+            Err(e) => {
+                println!("gpu_init_fallback reason=\"{e}\" using=cpu");
+                gpu_available = false;
+            }
+        }
+    }
 
     sync_miner_metrics(
         metrics,
@@ -1204,9 +1300,8 @@ fn run_remote_session(
     let mut reader = BufReader::new(reader_stream);
     let mut writer = stream;
 
-    let backend_str = gpu
-        .as_ref()
-        .map(|g| g.backend_kind().as_str())
+    let backend_str = gpu_manager
+        .current_backend_name()
         .unwrap_or("cpu");
     let hello_message = PoolMessage::Hello {
         miner_id: config.miner_id.clone(),
@@ -1261,22 +1356,33 @@ fn run_remote_session(
             job.start_nonce,
             job.start_nonce + job.nonce_count
         );
-        // GPU-first, CPU-fallback nonce scan
-        let can_gpu = match gpu.as_mut() {
-            Some(g) => match g.update_epoch(job.height) {
-                Ok(()) => true,
+        // Ensure GPU backend matches current algorithm (lazy create / switch)
+        let mut gpu_ref: Option<&mut dyn gpu_backend::GpuMiner> = None;
+        if gpu_available {
+            match gpu_manager.ensure_algorithm(&current_algorithm) {
+                Ok(g) => gpu_ref = Some(g),
                 Err(e) => {
                     println!(
-                        "gpu_epoch_fallback height={} reason=\"{e}\" using=cpu",
-                        job.height
+                        "gpu_algo_fallback job={} algorithm={} reason=\"{e}\" using=cpu",
+                        job.job_id, current_algorithm
                     );
-                    false
+                    gpu_available = false;
                 }
-            },
-            None => false,
-        };
+            }
+        }
+        // GPU-first, CPU-fallback nonce scan
+        let can_gpu = gpu_ref.is_some();
         let scan_result = if can_gpu {
-            gpu_backend::gpu_scan_job(gpu.as_deref_mut().unwrap(), job, &current_algorithm).solution
+            let g = gpu_ref.unwrap();
+            if let Err(e) = g.update_epoch(job.height) {
+                println!(
+                    "gpu_epoch_fallback height={} reason=\"{e}\" using=cpu",
+                    job.height
+                );
+                parallel::parallel_scan_nonce_range(job, threads, &current_algorithm)
+            } else {
+                gpu_backend::gpu_scan_job(g, job, &current_algorithm).solution
+            }
         } else {
             parallel::parallel_scan_nonce_range(job, threads, &current_algorithm)
         };
@@ -2050,9 +2156,10 @@ impl MinerConfig {
                     println!("  --algorithm ALGO    Mining algorithm: deeksha_lite_v1, cosmic_harmony_ekam_deeksha_v2");
                     println!();
                     println!("Benchmarks:");
-                    println!("  --ekam-bench        Ekam Deeksha GPU benchmark");
-                    println!("  --gpu-bench         GPU Blake3 DCR benchmark");
-                    println!("  --bench             CPU Blake3 benchmark");
+                    println!("  --ekam-bench          Ekam Deeksha GPU benchmark (single algo)");
+                    println!("  --gpu-benchmark-all   Benchmark all algorithms and pick best");
+                    println!("  --gpu-bench           GPU Blake3 DCR benchmark");
+                    println!("  --bench               CPU Blake3 benchmark");
                     println!();
                     println!("All options can also be set via ZION_* environment variables.");
                     std::process::exit(0);
