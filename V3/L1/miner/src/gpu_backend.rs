@@ -2428,6 +2428,22 @@ pub mod metal_deeksha {
     }
 }
 
+/// Rich GPU info for UI stats table.
+#[derive(Debug, Clone)]
+pub struct GpuInfo {
+    pub name: String,
+    pub platform: String,
+    pub compute_units: u32,
+    pub max_clock_mhz: u32,
+    pub global_mem_bytes: u64,
+    pub local_mem_bytes: u64,
+    pub max_work_group_size: usize,
+    /// Temperature in °C if available (OpenCL vendor extension)
+    pub temp_c: Option<u32>,
+    /// Power draw in Watts if available
+    pub power_w: Option<u32>,
+}
+
 /// Detect available GPU devices and print a summary.
 pub fn detect_gpus() -> Vec<String> {
     #[allow(unused_mut)]
@@ -2466,4 +2482,78 @@ pub fn detect_gpus() -> Vec<String> {
     }
 
     devices
+}
+
+/// Query rich GPU details from OpenCL (best-effort; temp/power often unavailable).
+#[cfg(feature = "gpu-opencl")]
+pub fn query_gpu_details() -> Vec<GpuInfo> {
+    let mut out = Vec::new();
+    let platforms = ocl::Platform::list();
+    for platform in platforms {
+        let platform_name = platform.name().unwrap_or_else(|_| "unknown".to_string());
+        if let Ok(devs) = ocl::Device::list_all(platform) {
+            for dev in devs {
+                let name = dev.name().unwrap_or_else(|_| "unknown".to_string());
+                let compute_units = dev
+                    .info(ocl::enums::DeviceInfo::MaxComputeUnits)
+                    .ok()
+                    .and_then(|v| match v {
+                        ocl::enums::DeviceInfoResult::MaxComputeUnits(n) => Some(n as u32),
+                        _ => None,
+                    })
+                    .unwrap_or(0);
+                let max_clock_mhz = dev
+                    .info(ocl::enums::DeviceInfo::MaxClockFrequency)
+                    .ok()
+                    .and_then(|v| match v {
+                        ocl::enums::DeviceInfoResult::MaxClockFrequency(n) => Some(n as u32),
+                        _ => None,
+                    })
+                    .unwrap_or(0);
+                let global_mem_bytes = dev
+                    .info(ocl::enums::DeviceInfo::GlobalMemSize)
+                    .ok()
+                    .and_then(|v| match v {
+                        ocl::enums::DeviceInfoResult::GlobalMemSize(n) => Some(n),
+                        _ => None,
+                    })
+                    .unwrap_or(0);
+                let local_mem_bytes = dev
+                    .info(ocl::enums::DeviceInfo::LocalMemSize)
+                    .ok()
+                    .and_then(|v| match v {
+                        ocl::enums::DeviceInfoResult::LocalMemSize(n) => Some(n),
+                        _ => None,
+                    })
+                    .unwrap_or(0);
+                let max_work_group_size = dev
+                    .info(ocl::enums::DeviceInfo::MaxWorkGroupSize)
+                    .ok()
+                    .and_then(|v| match v {
+                        ocl::enums::DeviceInfoResult::MaxWorkGroupSize(n) => Some(n),
+                        _ => None,
+                    })
+                    .unwrap_or(0);
+                // Temperature is vendor-specific; try AMD/NVIDIA extensions
+                let temp_c: Option<u32> = None; // OpenCL does not expose temp via standard query
+                out.push(GpuInfo {
+                    name,
+                    platform: platform_name.clone(),
+                    compute_units,
+                    max_clock_mhz,
+                    global_mem_bytes,
+                    local_mem_bytes,
+                    max_work_group_size,
+                    temp_c: None,
+                    power_w: None,
+                });
+            }
+        }
+    }
+    out
+}
+
+#[cfg(not(feature = "gpu-opencl"))]
+pub fn query_gpu_details() -> Vec<GpuInfo> {
+    Vec::new()
 }
