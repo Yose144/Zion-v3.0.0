@@ -2814,7 +2814,7 @@ def build_alerts(status: dict) -> list:
 
     if pool["running"] and pool["shares_rejected"] > 0 and pool["shares_accepted"]:
         ratio = pool["shares_rejected"] / max(1, pool["shares_accepted"])
-        if ratio > 0.05:
+        if ratio > 0.15:
             alerts.append({"severity": _sev("pool", "warning"), "title": "High share rejection rate",
                            "detail": f"{pool['shares_rejected']} rejected vs {pool['shares_accepted']} accepted ({ratio*100:.1f}%)",
                            "action": None})
