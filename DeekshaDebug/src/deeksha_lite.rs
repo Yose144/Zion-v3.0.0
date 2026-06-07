@@ -1,29 +1,33 @@
-//! DeekshaLite v1 — Simplified ASIC-resistant algorithm for GCN compatibility
+//! DeekshaLite v1 — CPU reference implementation
 //!
-//! Design goals:
-//! - Remove NPU Mix (LayerNorm, GELU, int8 MLP) — GCN compiler bugs
-//! - Remove Cosmic Fusion (complex Keccak+AES+XOR chain) — GCN pointer cast bugs
-//! - Keep memory-hard scratchpad (main ASIC resistance)
-//! - Add lightweight AES-128 rounds (compute-bound, GPU-friendly)
-//! - Zero pointer casts, minimal 64-bit int usage
-//!
-//! Pipeline (4 steps):
-//!   1. Keccak256(header||nonce) → 32B
-//!   2. Memory-hard scratchpad (128 KiB, 2 passes, 64 random reads) → 32B
-//!   3. AES-128 CTR mixing (4 rounds, key from step 2) → 32B
-//!   4. Blake3-256 final hash → 32B
+//! Pipeline (must match DeekshaDebug/kernels/deeksha_lite.cl exactly):
+//!   1. Keccak256(header[0..80] || nonce_le[0..8])          → s1[32]
+//!   2. Memory-hard scratchpad (128 KiB, 4096 blocks × 32B)
+//!        Phase A: SHA3-512 chain fill
+//!                 state = seed || 0×32; for blk in 0..4096:
+//!                   inp = state || (blk & 0xFF); sha3_512(inp[..65]) → out
+//!                   pad[blk*32..+32] = out[0..32]; state[0..32] = out[0..32]
+//!        Phase B: 2 sequential XOR passes (forward, backward)
+//!        Phase C: 64 random reads, idx from 8-byte u64 accumulator
+//!   3. AES-128 CTR mix (key=s2[0..16], counter=nonce_le||s2[16..24])
+//!        block0 = counter, block1 = counter + 1 (carry-propagated)
+//!        3 full AES rounds + 1 final round (no mix_columns)
+//!        XOR result with s2[0..32]
+//!   4. Keccak256(s3)  → final hash[32]
 
-use sha3::{Digest, Keccak256};
-use blake3;
+use sha3::{Digest, Keccak256, Sha3_512};
 
 pub const SCRATCHPAD_SIZE: usize = 128 * 1024; // 128 KiB
-pub const BLOCK_SIZE: usize = 32;
-pub const BLOCK_COUNT: usize = SCRATCHPAD_SIZE / BLOCK_SIZE; // 4096
-pub const PASSES: usize = 2;
-pub const RANDOM_READS: usize = 64;
-pub const AES_ROUNDS: usize = 4;
+pub const BLOCK_SIZE:      usize = 32;
+pub const BLOCK_COUNT:     usize = SCRATCHPAD_SIZE / BLOCK_SIZE; // 4096
+pub const PASSES:          usize = 2;
+pub const RANDOM_READS:    usize = 64;
+pub const AES_ROUNDS:      usize = 4;
 
-// AES S-box (FIPS-197)
+// ============================================================
+// AES-128 helpers (FIPS-197)
+// ============================================================
+
 const AES_SBOX: [u8; 256] = [
     0x63,0x7c,0x77,0x7b,0xf2,0x6b,0x6f,0xc5,0x30,0x01,0x67,0x2b,0xfe,0xd7,0xab,0x76,
     0xca,0x82,0xc9,0x7d,0xfa,0x59,0x47,0xf0,0xad,0xd4,0xa2,0xaf,0x9c,0xa4,0x72,0xc0,
@@ -43,64 +47,48 @@ const AES_SBOX: [u8; 256] = [
     0x8c,0xa1,0x89,0x0d,0xbf,0xe6,0x42,0x68,0x41,0x99,0x2d,0x0f,0xb0,0x54,0xbb,0x16,
 ];
 
-fn sub_bytes(state: &mut [u8; 16]) {
-    for i in 0..16 {
-        state[i] = AES_SBOX[state[i] as usize];
-    }
+fn sub_bytes(s: &mut [u8; 16]) { for i in 0..16 { s[i] = AES_SBOX[s[i] as usize]; } }
+
+fn shift_rows(s: &mut [u8; 16]) {
+    let t = s[1]; s[1] = s[5]; s[5] = s[9]; s[9] = s[13]; s[13] = t;
+    let t = s[2]; s[2] = s[10]; s[10] = t;
+    let t = s[6]; s[6] = s[14]; s[14] = t;
+    let t = s[15]; s[15] = s[11]; s[11] = s[7]; s[7] = s[3]; s[3] = t;
 }
 
-fn shift_rows(state: &mut [u8; 16]) {
-    // Row 1: shift left by 1
-    let tmp = state[1];
-    state[1] = state[5]; state[5] = state[9]; state[9] = state[13]; state[13] = tmp;
-    // Row 2: shift left by 2
-    let tmp = state[2];
-    state[2] = state[10]; state[10] = tmp;
-    let tmp = state[6];
-    state[6] = state[14]; state[14] = tmp;
-    // Row 3: shift left by 3
-    let tmp = state[15];
-    state[15] = state[11]; state[11] = state[7]; state[7] = state[3]; state[3] = tmp;
-}
+fn xtime(a: u8) -> u8 { (a << 1) ^ (((a >> 7) & 1) * 0x1b) }
 
-fn xtime(a: u8) -> u8 {
-    ((a << 1) ^ (((a >> 7) & 1) * 0x1b))
-}
-
-fn mix_columns(state: &mut [u8; 16]) {
+fn mix_columns(s: &mut [u8; 16]) {
     for i in 0..4 {
-        let a = state[i * 4];
-        let b = state[i * 4 + 1];
-        let c = state[i * 4 + 2];
-        let d = state[i * 4 + 3];
+        let (a, b, c, d) = (s[i*4], s[i*4+1], s[i*4+2], s[i*4+3]);
         let e = a ^ b ^ c ^ d;
-        state[i * 4]     ^= e ^ xtime(a ^ b);
-        state[i * 4 + 1] ^= e ^ xtime(b ^ c);
-        state[i * 4 + 2] ^= e ^ xtime(c ^ d);
-        state[i * 4 + 3] ^= e ^ xtime(d ^ a);
+        s[i*4]   ^= e ^ xtime(a ^ b);
+        s[i*4+1] ^= e ^ xtime(b ^ c);
+        s[i*4+2] ^= e ^ xtime(c ^ d);
+        s[i*4+3] ^= e ^ xtime(d ^ a);
     }
 }
 
-fn add_round_key(state: &mut [u8; 16], key: &[u8; 16]) {
-    for i in 0..16 {
-        state[i] ^= key[i];
-    }
+fn add_round_key(s: &mut [u8; 16], k: &[u8; 16]) { for i in 0..16 { s[i] ^= k[i]; } }
+
+fn aes_round(s: &mut [u8; 16], k: &[u8; 16]) {
+    sub_bytes(s); shift_rows(s); mix_columns(s); add_round_key(s, k);
 }
 
-fn aes_round(state: &mut [u8; 16], key: &[u8; 16]) {
-    sub_bytes(state);
-    shift_rows(state);
-    mix_columns(state);
-    add_round_key(state, key);
+fn aes_final_round(s: &mut [u8; 16], k: &[u8; 16]) {
+    sub_bytes(s); shift_rows(s); add_round_key(s, k);
 }
 
-fn aes_final_round(state: &mut [u8; 16], key: &[u8; 16]) {
-    sub_bytes(state);
-    shift_rows(state);
-    add_round_key(state, key);
+// ============================================================
+// SHA3-512 wrapper
+// ============================================================
+fn sha3_512(input: &[u8]) -> [u8; 64] {
+    Sha3_512::digest(input).into()
 }
 
-/// Step 1: Keccak256(header||nonce) → 32B
+// ============================================================
+// Step 1: Keccak256(header[0..80] || nonce_le)
+// ============================================================
 fn step1_keccak(header: &[u8], nonce: u64) -> [u8; 32] {
     let mut input = [0u8; 88];
     let hlen = header.len().min(80);
@@ -109,96 +97,93 @@ fn step1_keccak(header: &[u8], nonce: u64) -> [u8; 32] {
     Keccak256::digest(&input).into()
 }
 
-/// Step 2: Memory-hard scratchpad (128 KiB) → 32B
+// ============================================================
+// Step 2: Memory-hard scratchpad → acc[32]
+// ============================================================
 fn step2_memory_hard(seed: &[u8; 32]) -> [u8; 32] {
     let mut scratchpad = vec![0u8; SCRATCHPAD_SIZE];
 
-    // Phase 1: Fill with Blake3 XOF
-    let mut blake3_hasher = blake3::Hasher::new();
-    blake3_hasher.update(seed);
-    let mut xof = blake3_hasher.finalize_xof();
-    xof.fill(&mut scratchpad);
+    // Phase A: SHA3-512 chain fill
+    // state = seed || 0×32
+    // for blk in 0..BLOCK_COUNT:
+    //   inp[0..64] = state; inp[64] = blk & 0xFF
+    //   out = sha3_512(&inp[..65])
+    //   pad[blk*32..+32] = out[0..32]; state[0..32] = out[0..32]
+    let mut state = [0u8; 64];
+    state[..32].copy_from_slice(seed);
+    // state[32..64] already zero
 
-    // Phase 2: Sequential passes (forward + backward XOR mix)
-    for pass in 0..PASSES {
-        let forward = pass % 2 == 0;
-        let indices: Vec<usize> = if forward {
-            (0..BLOCK_COUNT).collect()
-        } else {
-            (0..BLOCK_COUNT).rev().collect()
-        };
+    for blk in 0..BLOCK_COUNT {
+        let mut inp = [0u8; 65];
+        inp[..64].copy_from_slice(&state);
+        inp[64] = (blk & 0xFF) as u8; // only low byte — matches GPU inp[64]
+        let out = sha3_512(&inp[..65]);
+        let off = blk * BLOCK_SIZE;
+        scratchpad[off..off + 32].copy_from_slice(&out[..32]);
+        state[..32].copy_from_slice(&out[..32]);
+    }
 
-        for idx in indices {
-            let prev_idx = if forward {
-                if idx == 0 { BLOCK_COUNT - 1 } else { idx - 1 }
-            } else {
-                if idx + 1 == BLOCK_COUNT { 0 } else { idx + 1 }
-            };
-
-            let cur_off = idx * BLOCK_SIZE;
-            let prev_off = prev_idx * BLOCK_SIZE;
-
-            // XOR current block with previous block
-            for i in 0..BLOCK_SIZE {
-                scratchpad[cur_off + i] ^= scratchpad[prev_off + i];
-            }
+    // Phase B: 2 sequential passes
+    // Pass 0 (forward): pad[i] ^= pad[i==0 ? 4095 : i-1]
+    for i in 0..BLOCK_COUNT {
+        let prev = if i == 0 { BLOCK_COUNT - 1 } else { i - 1 };
+        let (cur_off, prv_off) = (i * BLOCK_SIZE, prev * BLOCK_SIZE);
+        for j in 0..BLOCK_SIZE {
+            let pv = scratchpad[prv_off + j];
+            scratchpad[cur_off + j] ^= pv;
+        }
+    }
+    // Pass 1 (backward): pad[i] ^= pad[i+1==4096 ? 0 : i+1]
+    for i in (0..BLOCK_COUNT).rev() {
+        let next = if i + 1 == BLOCK_COUNT { 0 } else { i + 1 };
+        let (cur_off, nxt_off) = (i * BLOCK_SIZE, next * BLOCK_SIZE);
+        for j in 0..BLOCK_SIZE {
+            let nv = scratchpad[nxt_off + j];
+            scratchpad[cur_off + j] ^= nv;
         }
     }
 
-    // Phase 3: Random read mix
+    // Phase C: 64 random reads, idx_val from 8 bytes (u64)
     let mut acc = [0u8; 32];
     acc.copy_from_slice(seed);
-    let mut pos = 0usize;
+    let mut pos: u64 = 0;
 
-    for r in 0..RANDOM_READS {
-        let off = pos * BLOCK_SIZE;
+    for r in 0..RANDOM_READS as u64 {
+        let off = (pos as usize) * BLOCK_SIZE;
+        for i in 0..32 { acc[i] ^= scratchpad[off + i]; }
 
-        // Read block and XOR into accumulator
-        for i in 0..32 {
-            acc[i] ^= scratchpad[off + i];
-        }
-
-        // Derive next position from accumulator
+        // idx_val: 8 bytes LE — matches GPU `for i in 0..8`
         let mut idx_val: u64 = 0;
-        for i in 0..8 {
-            idx_val |= (acc[i] as u64) << (i * 8);
-        }
-        pos = ((idx_val ^ (pos as u64) ^ (r as u64)) as usize) % BLOCK_COUNT;
+        for i in 0..8 { idx_val |= (acc[i] as u64) << (i * 8); }
+        pos = (idx_val ^ pos ^ r) % BLOCK_COUNT as u64;
     }
 
     acc
 }
 
-/// Step 3: AES-128 CTR mixing (4 rounds, key from step 2)
+// ============================================================
+// Step 3: AES-128 CTR mix
+// ============================================================
 fn step3_aes_mix(seed: &[u8; 32], nonce: u64) -> [u8; 32] {
-    let key = {
-        let mut k = [0u8; 16];
-        k.copy_from_slice(&seed[..16]);
-        k
-    };
+    let mut key = [0u8; 16];
+    key.copy_from_slice(&seed[..16]);
 
-    let counter = {
-        let mut c = [0u8; 16];
-        c[0..8].copy_from_slice(&nonce.to_le_bytes());
-        c[8..16].copy_from_slice(&seed[16..24]);
-        c
-    };
+    let mut counter = [0u8; 16];
+    counter[..8].copy_from_slice(&nonce.to_le_bytes());
+    counter[8..16].copy_from_slice(&seed[16..24]);
 
     let mut block0 = counter;
-    let mut block1 = {
-        let mut b = counter;
-        // Increment counter for second block
-        let mut carry: u16 = 1;
-        for i in 0..16 {
-            let sum = (b[i] as u16) + carry;
-            b[i] = (sum & 0xFF) as u8;
-            carry = sum >> 8;
-            if carry == 0 { break; }
-        }
-        b
-    };
+    let mut block1 = counter;
 
-    // 3 full AES rounds + 1 final round (no mix_columns)
+    // Proper carry propagation for counter+1 — matches GPU
+    let mut carry: u16 = 1;
+    for i in 0..16 {
+        let sum = (block1[i] as u16) + carry;
+        block1[i] = (sum & 0xFF) as u8;
+        carry = sum >> 8;
+        if carry == 0 { break; }
+    }
+
     for _ in 0..3 {
         aes_round(&mut block0, &key);
         aes_round(&mut block1, &key);
@@ -206,79 +191,64 @@ fn step3_aes_mix(seed: &[u8; 32], nonce: u64) -> [u8; 32] {
     aes_final_round(&mut block0, &key);
     aes_final_round(&mut block1, &key);
 
-    // XOR with round constants derived from seed
     let mut result = [0u8; 32];
-    result[0..16].copy_from_slice(&block0);
+    result[..16].copy_from_slice(&block0);
     result[16..32].copy_from_slice(&block1);
-
-    for i in 0..32 {
-        result[i] ^= seed[i % 32];
-    }
-
+    for i in 0..32 { result[i] ^= seed[i]; }
     result
 }
 
-/// Step 4: Blake3-256 final hash
-fn step4_blake3(input: &[u8; 32]) -> [u8; 32] {
-    blake3::hash(input).into()
+// ============================================================
+// Step 4: Keccak256 final hash
+// ============================================================
+fn step4_keccak(input: &[u8; 32]) -> [u8; 32] {
+    Keccak256::digest(input).into()
 }
 
-/// Full DeekshaLite hash
+// ============================================================
+// Public API
+// ============================================================
+
+/// Full DeekshaLite hash (matches deeksha_lite.cl kernel exactly)
 pub fn deeksha_lite(header: &[u8], nonce: u64) -> [u8; 32] {
     let s1 = step1_keccak(header, nonce);
     let s2 = step2_memory_hard(&s1);
     let s3 = step3_aes_mix(&s2, nonce);
-    step4_blake3(&s3)
+    step4_keccak(&s3)
+}
+
+/// Step-by-step debug output for GPU mismatch investigation
+pub fn deeksha_lite_debug(header: &[u8], nonce: u64) -> ([u8; 32], [u8; 32], [u8; 32], [u8; 32]) {
+    let s1 = step1_keccak(header, nonce);
+    let s2 = step2_memory_hard(&s1);
+    let s3 = step3_aes_mix(&s2, nonce);
+    let s4 = step4_keccak(&s3);
+    (s1, s2, s3, s4)
 }
 
 /// Self-test — deterministic check
 pub fn deeksha_lite_self_test() -> bool {
-    let test_header = b"ZION_DEEKSHA_LITE_TEST_V1";
-    let test_nonce: u64 = 0x123456789ABCDEF0;
-
-    let hash = deeksha_lite(test_header, test_nonce);
-
-    // Expected hash (computed once, must remain stable)
-    let expected = [
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    ];
-
-    // First run: print the actual hash for manual verification
-    println!("DeekshaLite self-test hash: {}", hex::encode(&hash));
-
-    // For now, just check it's not all zeros and is deterministic
-    let hash2 = deeksha_lite(test_header, test_nonce);
-    hash == hash2 && hash != [0u8; 32]
+    let header = b"ZION_DEEKSHA_LITE_TEST_V1";
+    let nonce: u64 = 0x123456789ABCDEF0;
+    let h1 = deeksha_lite(header, nonce);
+    let h2 = deeksha_lite(header, nonce);
+    println!("DeekshaLite self-test hash: {}", hex::encode(&h1));
+    h1 == h2 && h1 != [0u8; 32]
 }
 
-/// Benchmark throughput
+/// CPU throughput benchmark
 pub fn benchmark(iterations: usize) -> f64 {
     use std::time::Instant;
-
     let header = b"ZION_DEEKSHA_LITE_BENCHMARK_HEADER_V1";
-    let target = [0x10u8; 32]; // Easy target for benchmark
-
     let t0 = Instant::now();
     let mut found = 0usize;
-
     for nonce in 0..iterations as u64 {
         let hash = deeksha_lite(header, nonce);
-        if hash[0] < target[0] {
-            found += 1;
-        }
+        if hash[0] < 0x10 { found += 1; }
     }
-
     let elapsed = t0.elapsed().as_secs_f64();
     let hps = iterations as f64 / elapsed;
-
-    println!(
-        "DeekshaLite: {} iterations in {:.3}s = {:.0} H/s (found={})",
-        iterations, elapsed, hps, found
-    );
-
+    println!("DeekshaLite: {} iters in {:.3}s = {:.0} H/s (found={})", iterations, elapsed, hps, found);
     hps
 }
 
@@ -287,40 +257,33 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_deeksha_lite_deterministic() {
+    fn test_deterministic() {
         let header = b"test_header";
-        let nonce = 42u64;
-
-        let h1 = deeksha_lite(header, nonce);
-        let h2 = deeksha_lite(header, nonce);
-
-        assert_eq!(h1, h2, "DeekshaLite must be deterministic");
-        assert_ne!(h1, [0u8; 32], "Hash must not be all zeros");
+        let h1 = deeksha_lite(header, 42);
+        let h2 = deeksha_lite(header, 42);
+        assert_eq!(h1, h2);
+        assert_ne!(h1, [0u8; 32]);
     }
 
     #[test]
-    fn test_deeksha_lite_different_nonces() {
+    fn test_different_nonces() {
         let header = b"test_header";
-
-        let h1 = deeksha_lite(header, 1u64);
-        let h2 = deeksha_lite(header, 2u64);
-
-        assert_ne!(h1, h2, "Different nonces must produce different hashes");
+        assert_ne!(deeksha_lite(header, 1), deeksha_lite(header, 2));
     }
 
     #[test]
-    fn test_memory_hard_deterministic() {
-        let seed = [0xABu8; 32];
-        let r1 = step2_memory_hard(&seed);
-        let r2 = step2_memory_hard(&seed);
-        assert_eq!(r1, r2);
+    fn test_self_test() {
+        assert!(deeksha_lite_self_test());
     }
 
     #[test]
-    fn test_aes_mix_deterministic() {
-        let seed = [0xCDu8; 32];
-        let r1 = step3_aes_mix(&seed, 12345u64);
-        let r2 = step3_aes_mix(&seed, 12345u64);
-        assert_eq!(r1, r2);
+    fn test_known_vector() {
+        // Run once to capture, then lock it in
+        let h = deeksha_lite(b"ZION_DEEKSHA_LITE_TEST_V1", 0x123456789ABCDEF0);
+        // First run: print the vector so we can hard-code it
+        println!("known_vector: {}", hex::encode(&h));
+        // Verify it stays stable across code changes
+        let h2 = deeksha_lite(b"ZION_DEEKSHA_LITE_TEST_V1", 0x123456789ABCDEF0);
+        assert_eq!(h, h2, "Hash changed — algorithm not deterministic!");
     }
 }

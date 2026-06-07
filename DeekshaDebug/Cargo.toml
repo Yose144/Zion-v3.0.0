@@ -23,6 +23,10 @@ path = "src/bench_alloc_overhead.rs"
 name = "bench_persistent_kernel"
 path = "src/bench_persistent_kernel.rs"
 
+[[bin]]
+name = "debug_stages"
+path = "src/bin/debug_stages.rs"
+
 [lib]
 name = "deeksha_debug"
 path = "src/lib.rs"

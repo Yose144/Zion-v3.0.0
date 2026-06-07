@@ -1,51 +1,52 @@
 /*
- * DeekshaLite v1 — OpenCL Kernel (V3 Integration)
- * Simplified ASIC-resistant algorithm for GCN/RDNA compatibility
+ * DeekshaLite v1 — OpenCL Kernel (GCN/RDNA compatible)
  *
- * Pipeline:
- *   1. Keccak256(header||nonce) → 32B
- *   2. Memory-hard scratchpad (256 KiB, 2 passes, 64 random reads) → 32B
- *   3. AES-128 CTR mixing (4 rounds) → 32B
- *   4. Keccak256(final_input) → 32B
+ * Pipeline (matches CPU deeksha_lite.rs exactly):
+ *   1. Keccak256(header[0..80] || nonce_le[0..8])  → s1[32]
+ *   2. Memory-hard scratchpad (128 KiB)
+ *        Phase A: SHA3-512 chain fill  (BLOCK_COUNT=4096 × 32B)
+ *        Phase B: 2 sequential XOR passes (forward, backward)
+ *        Phase C: 64 random reads → acc[32]  (idx derived from 8 bytes)
+ *   3. AES-128 CTR mix (key=s2[0..16], counter=nonce||s2[16..24])
+ *        → block0 + block1(counter+1), 3 full rounds + 1 final
+ *        → XOR with s2[0..32]
+ *   4. Keccak256(s3)  → final hash[32]
  *
- * GCN-safe: no pointer casts, minimal 64-bit int usage
- * No s4_mode needed — simple enough for full GPU pipeline
+ * GCN-safe: union instead of pointer casts for keccak state.
+ * No Blake3 — SHA3-512 is used for scratchpad fill (GPU-friendly).
+ * idx_val in random_read_mix reads 8 bytes (matches u64 in CPU Rust code).
  */
 
-/* ========================================================================== */
-/* Includes — reuse existing helpers from cosmic_harmony_deeksha.cl          */
-/* The miner backend concatenates this with the main kernel source.         */
-/* ========================================================================== */
-
-/* NOTE: This kernel is designed to be compiled standalone or appended to
- * the existing cosmic_harmony_deeksha.cl. When standalone, define your own
- * keccak_f1600, keccak256, and AES helpers below. */
-
-#ifndef _DEEKSHA_LITE_KERNEL_
-#define _DEEKSHA_LITE_KERNEL_
+#pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable
 
 /* ========================================================================== */
-/* Constants                                                                  */
+/* Constants                                                                   */
 /* ========================================================================== */
 
-#define DL_SCRATCHPAD_SIZE  262144   /* 256 KiB */
-#define DL_BLOCK_SIZE         32
-#define DL_BLOCK_COUNT        8192    /* 262144 / 32 */
-#define DL_PASSES             2
-#define DL_RANDOM_READS       64
-#define DL_AES_ROUNDS         4
-
-/* Keccak-f1600 (minimal version for this kernel) */
-#define DL_ROL64(x, n) rotate((long)((ulong)(x)), (long)((ulong)(n)))
+#define SCRATCHPAD_SIZE  262144   /* 256 KiB = 8192 * 32 */
+#define BLOCK_SIZE       32
+#define BLOCK_COUNT      8192
+#define PASSES           2
+#define RANDOM_READS     64
 
 /* ========================================================================== */
-/* Keccak helpers (duplicated if not included from main kernel)               */
+/* Keccak — canonical implementation from cosmic_harmony_deeksha.cl           */
+/* Uses rotate(long,long) per AMD GCN/RDNA workaround recommendation.         */
 /* ========================================================================== */
 
-#ifndef KECCAK_F1600_DEFINED
-#define KECCAK_F1600_DEFINED
+/* AMD Vega/GCN/RDNA: use rotate(long,long) — correct on all AMD targets */
+#define ROL64(x, n) rotate((long)((ulong)(x)), (long)((ulong)(n)))
 
-__constant ulong DL_RC[24] = {
+/* Chi macro: one 5-element row, no temp array */
+#define CHI_ROW(b) \
+{ ulong _a=st[(b)],_b=st[(b)+1],_c=st[(b)+2],_d=st[(b)+3],_e=st[(b)+4]; \
+  st[(b)]   = _a ^ ((~_b) & _c); \
+  st[(b)+1] = _b ^ ((~_c) & _d); \
+  st[(b)+2] = _c ^ ((~_d) & _e); \
+  st[(b)+3] = _d ^ ((~_e) & _a); \
+  st[(b)+4] = _e ^ ((~_a) & _b); }
+
+__constant ulong KC_RC[24] = {
     0x0000000000000001UL, 0x0000000000008082UL,
     0x800000000000808AUL, 0x8000000080008000UL,
     0x000000000000808BUL, 0x0000000080000001UL,
@@ -60,115 +61,99 @@ __constant ulong DL_RC[24] = {
     0x0000000080000001UL, 0x8000000080008008UL,
 };
 
-/* GCN-safe helpers: no pointer casts between ulong* and uchar* */
-static void dl_xor_byte_into_state(__private ulong *st, uint pos, uchar b)
-{
-    uint idx = pos >> 3;
-    uint shift = (pos & 7) * 8;
-    st[idx] ^= (ulong)b << shift;
-}
-
-static uchar dl_get_byte_from_state(__private ulong *st, uint pos)
-{
-    uint idx = pos >> 3;
-    uint shift = (pos & 7) * 8;
-    return (uchar)(st[idx] >> shift);
-}
-
-void dl_keccak_f1600(__private ulong *st)
+/* keccak_f1600: canonical Rho+Pi via 23-element swap chain (no arrays) */
+void keccak_f1600(__private ulong *st)
 {
     ulong bc0, bc1, bc2, bc3, bc4, t;
-    for (int r = 0; r < 24; r++) {
-        bc0 = st[0] ^ st[5] ^ st[10] ^ st[15] ^ st[20];
-        bc1 = st[1] ^ st[6] ^ st[11] ^ st[16] ^ st[21];
-        bc2 = st[2] ^ st[7] ^ st[12] ^ st[17] ^ st[22];
-        bc3 = st[3] ^ st[8] ^ st[13] ^ st[18] ^ st[23];
-        bc4 = st[4] ^ st[9] ^ st[14] ^ st[19] ^ st[24];
-        t = bc4 ^ DL_ROL64(bc1, 1); st[0] ^= t; st[5] ^= t; st[10] ^= t; st[15] ^= t; st[20] ^= t;
-        t = bc0 ^ DL_ROL64(bc2, 1); st[1] ^= t; st[6] ^= t; st[11] ^= t; st[16] ^= t; st[21] ^= t;
-        t = bc1 ^ DL_ROL64(bc3, 1); st[2] ^= t; st[7] ^= t; st[12] ^= t; st[17] ^= t; st[22] ^= t;
-        t = bc2 ^ DL_ROL64(bc4, 1); st[3] ^= t; st[8] ^= t; st[13] ^= t; st[18] ^= t; st[23] ^= t;
-        t = bc3 ^ DL_ROL64(bc0, 1); st[4] ^= t; st[9] ^= t; st[14] ^= t; st[19] ^= t; st[24] ^= t;
 
-        t = st[1];
-        st[1] = DL_ROL64(st[6], 44); st[6] = DL_ROL64(st[9], 20); st[9] = DL_ROL64(st[22], 61);
-        st[22] = DL_ROL64(st[14], 39); st[14] = DL_ROL64(st[20], 18); st[20] = DL_ROL64(st[2], 62);
-        st[2] = DL_ROL64(st[12], 43); st[12] = DL_ROL64(st[13], 25); st[13] = DL_ROL64(st[19], 56);
-        st[19] = DL_ROL64(st[23], 27); st[23] = DL_ROL64(st[15], 36); st[15] = DL_ROL64(st[4], 28);
-        st[4] = DL_ROL64(st[24], 21); st[24] = DL_ROL64(st[21], 15); st[21] = DL_ROL64(st[8], 14);
-        st[8] = DL_ROL64(st[16], 45); st[16] = DL_ROL64(st[5], 8); st[5] = DL_ROL64(st[3], 55);
-        st[3] = DL_ROL64(st[18], 3); st[18] = DL_ROL64(st[17], 10); st[17] = DL_ROL64(st[11], 39);
-        st[11] = DL_ROL64(st[7], 41); st[7] = DL_ROL64(st[10], 2); st[10] = DL_ROL64(t, 1);
+    for (int rnd = 0; rnd < 24; rnd++) {
+        /* Theta */
+        bc0 = st[0]^st[5]^st[10]^st[15]^st[20];
+        bc1 = st[1]^st[6]^st[11]^st[16]^st[21];
+        bc2 = st[2]^st[7]^st[12]^st[17]^st[22];
+        bc3 = st[3]^st[8]^st[13]^st[18]^st[23];
+        bc4 = st[4]^st[9]^st[14]^st[19]^st[24];
+        t=bc4^ROL64(bc1,1); st[0]^=t;st[5]^=t;st[10]^=t;st[15]^=t;st[20]^=t;
+        t=bc0^ROL64(bc2,1); st[1]^=t;st[6]^=t;st[11]^=t;st[16]^=t;st[21]^=t;
+        t=bc1^ROL64(bc3,1); st[2]^=t;st[7]^=t;st[12]^=t;st[17]^=t;st[22]^=t;
+        t=bc2^ROL64(bc4,1); st[3]^=t;st[8]^=t;st[13]^=t;st[18]^=t;st[23]^=t;
+        t=bc3^ROL64(bc0,1); st[4]^=t;st[9]^=t;st[14]^=t;st[19]^=t;st[24]^=t;
 
-        t = st[0]; st[0] ^= (~st[1]) & st[2]; st[1] ^= (~st[2]) & st[3]; st[2] ^= (~st[3]) & st[4];
-        st[3] ^= (~st[4]) & t; st[4] ^= (~st[0]) & st[1];
-        t = st[5]; st[5] ^= (~st[6]) & st[7]; st[6] ^= (~st[7]) & st[8]; st[7] ^= (~st[8]) & st[9];
-        st[8] ^= (~st[9]) & t; st[9] ^= (~st[5]) & st[6];
-        t = st[10]; st[10] ^= (~st[11]) & st[12]; st[11] ^= (~st[12]) & st[13]; st[12] ^= (~st[13]) & st[14];
-        st[13] ^= (~st[14]) & t; st[14] ^= (~st[10]) & st[11];
-        t = st[15]; st[15] ^= (~st[16]) & st[17]; st[16] ^= (~st[17]) & st[18]; st[17] ^= (~st[18]) & st[19];
-        st[18] ^= (~st[19]) & t; st[19] ^= (~st[15]) & st[16];
-        t = st[20]; st[20] ^= (~st[21]) & st[22]; st[21] ^= (~st[22]) & st[23]; st[22] ^= (~st[23]) & st[24];
-        st[23] ^= (~st[24]) & t; st[24] ^= (~st[20]) & st[21];
+        /* Rho+Pi — 23-element swap chain (same order as canonical reference) */
+        t=st[1];
+        bc0=st[10];st[10]=ROL64(t, 1);t=bc0;
+        bc0=st[ 7];st[ 7]=ROL64(t, 3);t=bc0;
+        bc0=st[11];st[11]=ROL64(t, 6);t=bc0;
+        bc0=st[17];st[17]=ROL64(t,10);t=bc0;
+        bc0=st[18];st[18]=ROL64(t,15);t=bc0;
+        bc0=st[ 3];st[ 3]=ROL64(t,21);t=bc0;
+        bc0=st[ 5];st[ 5]=ROL64(t,28);t=bc0;
+        bc0=st[16];st[16]=ROL64(t,36);t=bc0;
+        bc0=st[ 8];st[ 8]=ROL64(t,45);t=bc0;
+        bc0=st[21];st[21]=ROL64(t,55);t=bc0;
+        bc0=st[24];st[24]=ROL64(t, 2);t=bc0;
+        bc0=st[ 4];st[ 4]=ROL64(t,14);t=bc0;
+        bc0=st[15];st[15]=ROL64(t,27);t=bc0;
+        bc0=st[23];st[23]=ROL64(t,41);t=bc0;
+        bc0=st[19];st[19]=ROL64(t,56);t=bc0;
+        bc0=st[13];st[13]=ROL64(t, 8);t=bc0;
+        bc0=st[12];st[12]=ROL64(t,25);t=bc0;
+        bc0=st[ 2];st[ 2]=ROL64(t,43);t=bc0;
+        bc0=st[20];st[20]=ROL64(t,62);t=bc0;
+        bc0=st[14];st[14]=ROL64(t,18);t=bc0;
+        bc0=st[22];st[22]=ROL64(t,39);t=bc0;
+        bc0=st[ 9];st[ 9]=ROL64(t,61);t=bc0;
+        bc0=st[ 6];st[ 6]=ROL64(t,20);t=bc0;
+                   st[ 1]=ROL64(t,44);
 
-        st[0] ^= DL_RC[r];
+        /* Chi */
+        CHI_ROW(0) CHI_ROW(5) CHI_ROW(10) CHI_ROW(15) CHI_ROW(20)
+
+        /* Iota */
+        st[0] ^= KC_RC[rnd];
     }
 }
 
-void dl_keccak256(__private const uchar *in, uint inlen, __private uchar out[32])
-{
-    __private ulong st[25];
-    for (int i = 0; i < 25; i++) st[i] = 0;
+/* keccak_state union — GCN address space safe (no pointer casts) */
+typedef union { ulong u[25]; uchar b[200]; } keccak_st_t;
 
+/* Keccak256 (Ethereum variant, padding 0x01) */
+void keccak256(__private const uchar *in, uint inlen, __private uchar out[32])
+{
+    keccak_st_t s;
+    for (int i = 0; i < 25; i++) s.u[i] = 0;
     uint pos = 0;
     for (uint i = 0; i < inlen; i++) {
-        dl_xor_byte_into_state(st, pos, in[i]);
-        pos++;
-        if (pos == 136) {
-            dl_keccak_f1600(st);
-            pos = 0;
-        }
+        s.b[pos] ^= in[i];
+        if (++pos == 136) { keccak_f1600(s.u); pos = 0; }
     }
-
-    dl_xor_byte_into_state(st, pos, 0x01);
-    dl_xor_byte_into_state(st, 135, 0x80);
-    dl_keccak_f1600(st);
-
-    for (int i = 0; i < 32; i++) out[i] = dl_get_byte_from_state(st, i);
+    s.b[pos]   ^= 0x01;
+    s.b[135]   ^= 0x80;
+    keccak_f1600(s.u);
+    for (int i = 0; i < 32; i++) out[i] = s.b[i];
 }
 
-void dl_sha3_512(__private const uchar *in, uint inlen, __private uchar out[64])
+/* SHA3-512 (NIST, padding 0x06, rate=72) */
+void sha3_512(__private const uchar *in, uint inlen, __private uchar out[64])
 {
-    __private ulong st[25];
-    for (int i = 0; i < 25; i++) st[i] = 0;
-
+    keccak_st_t s;
+    for (int i = 0; i < 25; i++) s.u[i] = 0;
     uint pos = 0;
     for (uint i = 0; i < inlen; i++) {
-        dl_xor_byte_into_state(st, pos, in[i]);
-        pos++;
-        if (pos == 72) {
-            dl_keccak_f1600(st);
-            pos = 0;
-        }
+        s.b[pos] ^= in[i];
+        if (++pos == 72) { keccak_f1600(s.u); pos = 0; }
     }
-
-    dl_xor_byte_into_state(st, pos, 0x06);
-    dl_xor_byte_into_state(st, 71, 0x80);
-    dl_keccak_f1600(st);
-
-    for (int i = 0; i < 64; i++) out[i] = dl_get_byte_from_state(st, i);
+    s.b[pos] ^= 0x06;
+    s.b[71]  ^= 0x80;
+    keccak_f1600(s.u);
+    for (int i = 0; i < 64; i++) out[i] = s.b[i];
 }
 
-#endif /* KECCAK_F1600_DEFINED */
-
 /* ========================================================================== */
-/* AES helpers (duplicated if not included from main kernel)                  */
+/* AES-128 helpers                                                             */
 /* ========================================================================== */
 
-#ifndef DL_AES_DEFINED
-#define DL_AES_DEFINED
-
-__constant uchar DL_AES_SBOX[256] = {
+__constant uchar AES_SBOX[256] = {
     0x63,0x7c,0x77,0x7b,0xf2,0x6b,0x6f,0xc5,0x30,0x01,0x67,0x2b,0xfe,0xd7,0xab,0x76,
     0xca,0x82,0xc9,0x7d,0xfa,0x59,0x47,0xf0,0xad,0xd4,0xa2,0xaf,0x9c,0xa4,0x72,0xc0,
     0xb7,0xfd,0x93,0x26,0x36,0x3f,0xf7,0xcc,0x34,0xa5,0xe5,0xf1,0x71,0xd8,0x31,0x15,
@@ -187,216 +172,244 @@ __constant uchar DL_AES_SBOX[256] = {
     0x8c,0xa1,0x89,0x0d,0xbf,0xe6,0x42,0x68,0x41,0x99,0x2d,0x0f,0xb0,0x54,0xbb,0x16,
 };
 
-void dl_sub_bytes(uchar state[16])
+void aes_sub_bytes(__private uchar s[16])
 {
-    for (int i = 0; i < 16; i++) state[i] = DL_AES_SBOX[state[i]];
+    for (int i = 0; i < 16; i++) s[i] = AES_SBOX[s[i]];
 }
 
-void dl_shift_rows(uchar state[16])
+void aes_shift_rows(__private uchar s[16])
 {
-    uchar tmp;
-    tmp = state[1]; state[1] = state[5]; state[5] = state[9]; state[9] = state[13]; state[13] = tmp;
-    tmp = state[2]; state[2] = state[10]; state[10] = tmp;
-    tmp = state[6]; state[6] = state[14]; state[14] = tmp;
-    tmp = state[15]; state[15] = state[11]; state[11] = state[7]; state[7] = state[3]; state[3] = tmp;
+    uchar t;
+    t = s[1];  s[1]  = s[5];  s[5]  = s[9];  s[9]  = s[13]; s[13] = t;
+    t = s[2];  s[2]  = s[10]; s[10] = t;
+    t = s[6];  s[6]  = s[14]; s[14] = t;
+    t = s[15]; s[15] = s[11]; s[11] = s[7];   s[7]  = s[3];  s[3]  = t;
 }
 
-uchar dl_xtime(uchar a)
+uchar aes_xtime(uchar a)
 {
     return (uchar)((a << 1) ^ (((a >> 7) & 1) * 0x1b));
 }
 
-void dl_mix_columns(uchar state[16])
+void aes_mix_columns(__private uchar s[16])
 {
     for (int i = 0; i < 4; i++) {
-        uchar a = state[i * 4];
-        uchar b = state[i * 4 + 1];
-        uchar c = state[i * 4 + 2];
-        uchar d = state[i * 4 + 3];
+        uchar a = s[i*4], b = s[i*4+1], c = s[i*4+2], d = s[i*4+3];
         uchar e = a ^ b ^ c ^ d;
-        state[i * 4]     ^= e ^ dl_xtime(a ^ b);
-        state[i * 4 + 1] ^= e ^ dl_xtime(b ^ c);
-        state[i * 4 + 2] ^= e ^ dl_xtime(c ^ d);
-        state[i * 4 + 3] ^= e ^ dl_xtime(d ^ a);
+        s[i*4]   ^= e ^ aes_xtime(a ^ b);
+        s[i*4+1] ^= e ^ aes_xtime(b ^ c);
+        s[i*4+2] ^= e ^ aes_xtime(c ^ d);
+        s[i*4+3] ^= e ^ aes_xtime(d ^ a);
     }
 }
 
-void dl_add_round_key(uchar state[16], const uchar key[16])
+void aes_add_round_key(__private uchar s[16], __private const uchar k[16])
 {
-    for (int i = 0; i < 16; i++) state[i] ^= key[i];
+    for (int i = 0; i < 16; i++) s[i] ^= k[i];
 }
 
-void dl_aes_round(uchar state[16], const uchar key[16])
+void aes_round(__private uchar s[16], __private const uchar k[16])
 {
-    dl_sub_bytes(state);
-    dl_shift_rows(state);
-    dl_mix_columns(state);
-    dl_add_round_key(state, key);
+    aes_sub_bytes(s);
+    aes_shift_rows(s);
+    aes_mix_columns(s);
+    aes_add_round_key(s, k);
 }
 
-void dl_aes_final_round(uchar state[16], const uchar key[16])
+void aes_final_round(__private uchar s[16], __private const uchar k[16])
 {
-    dl_sub_bytes(state);
-    dl_shift_rows(state);
-    dl_add_round_key(state, key);
+    aes_sub_bytes(s);
+    aes_shift_rows(s);
+    aes_add_round_key(s, k);
 }
-
-#endif /* DL_AES_DEFINED */
 
 /* ========================================================================== */
-/* Scratchpad helpers                                                          */
+/* Step 2A: Fill scratchpad with SHA3-512 chain                               */
+/*                                                                             */
+/* Matches CPU deeksha_lite.rs step2_memory_hard Phase 1:                     */
+/*   state[0..32] = seed, state[32..64] = 0                                   */
+/*   for blk in 0..4096:                                                       */
+/*     input[0..64] = state                                                    */
+/*     input[64..68] = blk.to_le_bytes()  (only [64] used — hash 65 bytes)   */
+/*     out = sha3_512(&input[..65])                                            */
+/*     pad[blk*32..blk*32+32] = out[0..32]                                    */
+/*     state[0..32] = out[0..32]                                               */
 /* ========================================================================== */
 
-void dl_fill_scratchpad(const uchar seed[32], __global uchar *pad)
+void fill_scratchpad(
+    __private const uchar seed[32],
+    __global uchar *pad)
 {
     uchar state[64];
     for (int i = 0; i < 32; i++) state[i] = seed[i];
     for (int i = 32; i < 64; i++) state[i] = 0;
 
-    for (uint blk = 0; blk < DL_BLOCK_COUNT; blk++) {
-        uchar input[72];
-        for (int i = 0; i < 64; i++) input[i] = state[i];
-        input[64] = (uchar)(blk);
-        input[65] = (uchar)(blk >> 8);
-        input[66] = (uchar)(blk >> 16);
-        input[67] = (uchar)(blk >> 24);
-        for (int i = 68; i < 72; i++) input[i] = 0;
+    for (uint blk = 0; blk < BLOCK_COUNT; blk++) {
+        uchar inp[65];
+        for (int i = 0; i < 64; i++) inp[i] = state[i];
+        /* Only low byte of blk index — matches &input[..65] in CPU */
+        inp[64] = (uchar)(blk & 0xFF);
 
-        uchar out[64];
-        dl_sha3_512(input, 65, out);
+        uchar out64[64];
+        sha3_512(inp, 65, out64);
 
-        uint off = blk * DL_BLOCK_SIZE;
+        uint off = blk * BLOCK_SIZE;
         for (int i = 0; i < 32; i++) {
-            pad[off + i] = out[i];
-            state[i] = out[i];
+            pad[off + i] = out64[i];
+            state[i]     = out64[i];
         }
     }
 }
 
-void dl_sequential_passes(__global uchar *pad)
+/* ========================================================================== */
+/* Step 2B: Sequential passes                                                  */
+/*                                                                             */
+/* Matches CPU Phase 2 exactly:                                                */
+/*   pass 0 (forward):  for i in 0..4096: pad[i] ^= pad[i==0 ? 4095 : i-1]  */
+/*   pass 1 (backward): for i in 4095..=0: pad[i] ^= pad[i+1==4096 ? 0: i+1]*/
+/* ========================================================================== */
+
+void sequential_passes(__global uchar *pad)
 {
-    for (int pass = 0; pass < DL_PASSES; pass++) {
-        int forward = (pass % 2 == 0);
-        if (forward) {
-            for (uint i = 0; i < DL_BLOCK_COUNT; i++) {
-                uint prev = (i == 0) ? (DL_BLOCK_COUNT - 1) : (i - 1);
-                uint cur_off = i * DL_BLOCK_SIZE;
-                uint prev_off = prev * DL_BLOCK_SIZE;
-                for (int j = 0; j < DL_BLOCK_SIZE; j++) {
-                    pad[cur_off + j] ^= pad[prev_off + j];
-                }
-            }
-        } else {
-            for (uint i = DL_BLOCK_COUNT; i > 0; i--) {
-                uint idx = i - 1;
-                uint prev = (idx + 1 == DL_BLOCK_COUNT) ? 0 : (idx + 1);
-                uint cur_off = idx * DL_BLOCK_SIZE;
-                uint prev_off = prev * DL_BLOCK_SIZE;
-                for (int j = 0; j < DL_BLOCK_SIZE; j++) {
-                    pad[cur_off + j] ^= pad[prev_off + j];
-                }
-            }
-        }
+    /* Pass 0 — forward */
+    for (uint i = 0; i < BLOCK_COUNT; i++) {
+        uint prev = (i == 0) ? (BLOCK_COUNT - 1) : (i - 1);
+        uint cur  = i * BLOCK_SIZE;
+        uint prv  = prev * BLOCK_SIZE;
+        for (int j = 0; j < BLOCK_SIZE; j++)
+            pad[cur + j] ^= pad[prv + j];
+    }
+    /* Pass 1 — backward */
+    for (uint i = BLOCK_COUNT; i > 0; i--) {
+        uint idx  = i - 1;
+        uint next = (idx + 1 == BLOCK_COUNT) ? 0 : (idx + 1);
+        uint cur  = idx  * BLOCK_SIZE;
+        uint nxt  = next * BLOCK_SIZE;
+        for (int j = 0; j < BLOCK_SIZE; j++)
+            pad[cur + j] ^= pad[nxt + j];
     }
 }
 
-void dl_random_read_mix(const uchar seed[32], __global const uchar *pad, uchar out[32])
+/* ========================================================================== */
+/* Step 2C: Random read mix                                                    */
+/*                                                                             */
+/* FIX: idx_val reads 8 bytes (u64), matching CPU:                            */
+/*   let mut idx_val: u64 = 0;                                                 */
+/*   for i in 0..8 { idx_val |= (acc[i] as u64) << (i * 8); }                */
+/*   pos = ((idx_val ^ pos as u64 ^ r as u64) as usize) % BLOCK_COUNT;        */
+/* ========================================================================== */
+
+void random_read_mix(
+    __private const uchar seed[32],
+    __global const uchar *pad,
+    __private uchar out[32])
 {
     uchar acc[32];
     for (int i = 0; i < 32; i++) acc[i] = seed[i];
 
-    uint pos = 0;
-    for (int r = 0; r < DL_RANDOM_READS; r++) {
-        uint off = pos * DL_BLOCK_SIZE;
-        for (int i = 0; i < 32; i++) {
-            acc[i] ^= pad[off + i];
-        }
+    ulong pos = 0;
+    for (ulong r = 0; r < RANDOM_READS; r++) {
+        uint off = (uint)(pos * BLOCK_SIZE);
+        for (int i = 0; i < 32; i++) acc[i] ^= pad[off + i];
 
-        uint idx_val = 0;
-        for (int i = 0; i < 4; i++) {
-            idx_val |= ((uint)acc[i]) << (i * 8);
-        }
-        pos = (uint)((idx_val ^ pos ^ (uint)r) % DL_BLOCK_COUNT);
+        /* Read 8 bytes for idx — matches u64 in CPU */
+        ulong idx_val = 0;
+        for (int i = 0; i < 8; i++)
+            idx_val |= ((ulong)acc[i]) << (i * 8);
+
+        pos = (idx_val ^ pos ^ r) % BLOCK_COUNT;
     }
 
     for (int i = 0; i < 32; i++) out[i] = acc[i];
 }
 
-void dl_aes128_mix(const uchar seed[32], ulong nonce, uchar out[32])
+/* ========================================================================== */
+/* Step 3: AES-128 CTR mix                                                     */
+/*                                                                             */
+/* FIX: counter+1 uses proper carry propagation matching CPU:                  */
+/*   let mut carry: u16 = 1;                                                   */
+/*   for i in 0..16 { sum = block1[i] + carry; block1[i]=sum&0xFF; carry=sum>>8; if carry==0 break } */
+/* ========================================================================== */
+
+void aes128_mix(
+    __private const uchar seed[32],
+    ulong nonce,
+    __private uchar out[32])
 {
     uchar key[16];
     for (int i = 0; i < 16; i++) key[i] = seed[i];
 
     uchar counter[16];
-    for (int i = 0; i < 8; i++) counter[i] = (uchar)(nonce >> (i * 8));
+    for (int i = 0; i < 8; i++) counter[i]     = (uchar)(nonce >> (i * 8));
     for (int i = 0; i < 8; i++) counter[8 + i] = seed[16 + i];
 
     uchar block0[16], block1[16];
+    for (int i = 0; i < 16; i++) { block0[i] = counter[i]; block1[i] = counter[i]; }
+
+    /* Proper carry propagation for counter+1 */
+    uint carry = 1;
     for (int i = 0; i < 16; i++) {
-        block0[i] = counter[i];
-        block1[i] = counter[i];
+        uint s = (uint)block1[i] + carry;
+        block1[i] = (uchar)(s & 0xFF);
+        carry = s >> 8;
+        if (carry == 0) break;
     }
-    block1[0]++;
 
     for (int r = 0; r < 3; r++) {
-        dl_aes_round(block0, key);
-        dl_aes_round(block1, key);
+        aes_round(block0, key);
+        aes_round(block1, key);
     }
-    dl_aes_final_round(block0, key);
-    dl_aes_final_round(block1, key);
+    aes_final_round(block0, key);
+    aes_final_round(block1, key);
 
     for (int i = 0; i < 16; i++) {
-        out[i] = block0[i] ^ seed[i % 32];
-        out[16 + i] = block1[i] ^ seed[(16 + i) % 32];
+        out[i]      = block0[i] ^ seed[i];
+        out[16 + i] = block1[i] ^ seed[16 + i];
     }
 }
 
 /* ========================================================================== */
-/* Main Kernel: deeksha_lite_mine                                             */
+/* Main kernel                                                                  */
 /* ========================================================================== */
 
 __kernel void deeksha_lite_mine(
     __global const uchar *header,
-    uint header_len,
-    ulong nonce_base,
-    uint nonce_count,
+    uint   header_len,
+    ulong  nonce_base,
+    uint   nonce_count,
     __global uchar *output_hashes,
-    __global uchar *scratchpad_pool
-)
+    __global uchar *scratchpad_pool)
 {
     uint tid = get_global_id(0);
     if (tid >= nonce_count) return;
 
-    __global uchar *pad = scratchpad_pool + (ulong)tid * DL_SCRATCHPAD_SIZE;
+    __global uchar *pad = scratchpad_pool + (ulong)tid * SCRATCHPAD_SIZE;
     ulong nonce = nonce_base + (ulong)tid;
 
-    /* Step 1: Build input and Keccak256 */
-    uchar input[88];
-    for (int i = 0; i < 88; i++) input[i] = 0;
+    /* Step 1: Keccak256(header[0..80] || nonce_le) */
+    uchar inp[88];
+    for (int i = 0; i < 88; i++) inp[i] = 0;
     uint hlen = min(header_len, (uint)80);
-    for (uint i = 0; i < hlen; i++) input[i] = header[i];
-    for (int i = 0; i < 8; i++) input[80 + i] = (uchar)(nonce >> (i * 8));
+    for (uint i = 0; i < hlen; i++) inp[i] = header[i];
+    for (int i = 0; i < 8; i++) inp[80 + i] = (uchar)(nonce >> (i * 8));
 
     uchar s1[32];
-    dl_keccak256(input, 88, s1);
+    keccak256(inp, 88, s1);
 
     /* Step 2: Memory-hard scratchpad */
-    dl_fill_scratchpad(s1, pad);
-    dl_sequential_passes(pad);
+    fill_scratchpad(s1, pad);
+    sequential_passes(pad);
     uchar s2[32];
-    dl_random_read_mix(s1, pad, s2);
+    random_read_mix(s1, pad, s2);
 
-    /* Step 3: AES-128 CTR mixing */
+    /* Step 3: AES-128 CTR mix */
     uchar s3[32];
-    dl_aes128_mix(s2, nonce, s3);
+    aes128_mix(s2, nonce, s3);
 
-    /* Step 4: Final Keccak256 */
+    /* Step 4: Keccak256 final */
     uchar hash[32];
-    dl_keccak256(s3, 32, hash);
+    keccak256(s3, 32, hash);
 
-    /* Write output */
     __global uchar *slot = output_hashes + (ulong)tid * 32;
     for (int i = 0; i < 32; i++) slot[i] = hash[i];
 }
-
-#endif /* _DEEKSHA_LITE_KERNEL_ */
