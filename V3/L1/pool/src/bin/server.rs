@@ -765,7 +765,11 @@ fn handle_client(
                     );
                 }
 
-                if !share_target.allows(&computed_hash) {
+                // Use submitted_hash for target validation (miner found this hash).
+                // computed_hash is used for audit/mismatch detection only.
+                let target_hash = &submitted_hash;
+
+                if !share_target.allows(target_hash) {
                     // Hash does not meet even the (easier) share target → reject.
                     println!(
                         "share_below_target miner={} job={} diff={}",
@@ -838,7 +842,7 @@ fn handle_client(
                         .expect("revenue scheduler lock poisoned")
                         .next_lane_for_group(session_group);
 
-                    let decision = if network_target.allows(&computed_hash) {
+                    let decision = if network_target.allows(target_hash) {
                         // Block found! Submit to the node.
                         println!(
                             "BLOCK_FOUND miner={} height={} nonce={} hash={}",
