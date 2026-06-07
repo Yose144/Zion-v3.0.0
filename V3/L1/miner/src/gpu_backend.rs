@@ -195,7 +195,7 @@ pub struct GpuScanOutcome {
 /// Scan a job using a GPU backend, returning the first solution.
 /// Tracks candidate-filter statistics for performance diagnostics.
 /// The GPU backend is already selected based on algorithm in create_gpu_backend.
-pub fn gpu_scan_job(gpu: &mut dyn GpuMiner, job: MiningJob, _algorithm: &str) -> GpuScanOutcome {
+pub fn gpu_scan_job(gpu: &mut dyn GpuMiner, job: MiningJob, algorithm: &str) -> GpuScanOutcome {
     match gpu.mine_batch(job.header, job.target, job.start_nonce, job.nonce_count) {
         Ok(result) => {
             let nonces_tested = result.nonces_tested;
@@ -205,7 +205,7 @@ pub fn gpu_scan_job(gpu: &mut dyn GpuMiner, job: MiningJob, _algorithm: &str) ->
                     nonce: *nonce,
                     height: job.height,
                 };
-                let verified_hash = candidate.hash();
+                let verified_hash = candidate.hash_with_algorithm(algorithm);
                 let is_mismatch = verified_hash != *hash;
                 let is_above_target = !job.target.allows(&verified_hash);
 
