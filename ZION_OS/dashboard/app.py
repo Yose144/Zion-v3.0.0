@@ -2819,9 +2819,13 @@ def build_alerts(status: dict) -> list:
                            "detail": f"{pool['shares_rejected']} rejected vs {pool['shares_accepted']} accepted ({ratio*100:.1f}%)",
                            "action": None})
 
-    if n1.get("last_error"):
-        alerts.append({"severity": "info", "title": "Node1 error in logs",
-                       "detail": n1["last_error"], "action": None})
+    # Only surface recent, non-benign node errors
+    last_err = n1.get("last_error")
+    if last_err:
+        benign_patterns = ["Handshake not finished", "WebSocket protocol error", "Connection reset by peer", "broken pipe"]
+        if not any(p.lower() in last_err.lower() for p in benign_patterns):
+            alerts.append({"severity": "info", "title": "Node1 error in logs",
+                           "detail": last_err, "action": None})
 
     if not alerts:
         alerts.append({"severity": "success", "title": "All systems nominal",
