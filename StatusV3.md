@@ -1,6 +1,6 @@
 # ZION V3 — Status Report (Mainnet Polish)
 
-> **Datum:** 2026-06-06 (HTTP JSON-RPC Transaction Relay Bug Fix); 2026-05-22 (Genesis + fee split KONFIGURACE DOKONČENA, ready for mainnet launch 31.12.2026); **2026-05-21** (Edge pool + L5/L6 + DAO governance + root docs sync); **2026-05-12** (Hiran v2.2 CLI integration); **2026-05-07** (security cleanup + agentická obsluha).
+> **Datum:** **2026-06-07** (Chain reset + full stack cleanup — viz sekce níže); 2026-06-06 (HTTP JSON-RPC Transaction Relay Bug Fix); 2026-05-22 (Genesis + fee split KONFIGURACE DOKONČENA, ready for mainnet launch 31.12.2026); **2026-05-21** (Edge pool + L5/L6 + DAO governance + root docs sync); **2026-05-12** (Hiran v2.2 CLI integration); **2026-05-07** (security cleanup + agentická obsluha).
 > (sjednocení `StatusV3.md` ↔ `StatusV3-Part2.md` — TL;DR, roadmap §6, §8, §5
 > pyramida, odkazy).
 > **Předchozí update:** 2026-05-03 (genesis konsensus — merged na `main`)
@@ -19,6 +19,77 @@
 > starý Praha server (`91.98.122.165`) nebo historickou multi-server topologii
 > (Prague, SG, Helsinki, US) jsou **archivní / historické**, pokud není explicitně
 > uvedeno jinak. Aktuální živá topologie je **Core + Edge** (viz sekce Infrastruktura).
+
+---
+
+## Co je nového 2026-06-07 (Chain Reset, Full Stack Cleanup, Dashboard Fixes)
+
+> Verze: **3.0.1** (beze změny Cargo verze)
+> Klíčový commit: `fecdc169` (dashboard), `77de895c` (deeksha_lite_v1 PoW)
+
+### TL;DR — Co bylo opraveno 7. června 2026
+
+| Oblast | Problém | Stav |
+|--------|---------|------|
+| **Edge disk** | 100% plný disk (Docker build zaplnil zbytek) | ✅ 20% využito, 58 GB volno |
+| **Genesis hash mismatch** | Local node `0000a1dd`, Edge node `7543004c` — p2p odmítáno | ✅ Oba na `7543004c`, výška 54+ |
+| **Pool accept rate** | 12% (difficulty mismatch po chain resetu) | ✅ 100%, 2 aktivní minery |
+| **Dashboard shares** | Vždy četlo z lokálního pool logu (zastaralé) | ✅ Primárně Edge Prometheus, fallback local |
+| **Edge miner (VPS)** | Způsoboval load + panic (`GetPlatformIdsPlatformListUnavailable`) | ✅ Disabled (VPS nemá GPU) |
+
+### Edge Server Disk Cleanup — Detail
+
+**Před:** 100% (žádné volné místo — Docker build `nifty_heyrovsky` zaplnil zbytek)
+**Po:** ~20% (58 GB volno)
+
+Smazáno:
+- `/root/zion-2.9.6-main/V3/target` — 13 GB (Rust build artifacts)
+- Docker build cache — 8.7 GB
+- Docker images (`rust:1.85`, `cross-rs`, `ubuntu:20.04`, `zion-v3-node`, `zion-v3-pool`, `zion-miner-smos`) — 4.6 GB
+- `/root/2.9.6-main/` (staré repo) — 3.8 GB
+- `/root/zion-build/` (starý build dir) — 1.2 GB
+- npm cache — 1.8 GB, cargo registry — 392 MB
+- Staré logy — 1.6 GB, staré backup binaries + tar archivy
+
+### Chain Reset — Genesis Hash Sjednocení
+
+**Problém:** Local Windows `node.exe` byl zkompilován 6. června 22:41 (před resetem), Edge node byl na `7543004c` genesis, local byl na `0000a1dd` genesis → p2p odmítalo spojení.
+
+**Postup opravy:**
+1. Zastaveny všechny nody
+2. Smazány ALL state DBs (local: `V3/data/zion-node-state.db`, `V3/data/test-node-state.db`; Edge: `edge-state.db`, `edge2-state.db`, `edge-state.db.bak-*`)
+3. Překompilován `node.exe` (Windows) i `node` binary (Linux/Edge) ze stejného source
+4. Edge node spuštěn první (zakotvení genesis), local node jako follower
+
+**Výsledek:** Oba nody na genesis `7543004c`, consensus profile `deeksha_lite_v1`, výška 54+.
+
+### Dashboard Opravy — Commit `fecdc169`
+
+1. **Pool shares (řádky 2369–2372):** `pool_status["shares_accepted/rejected/active_sessions"]` nyní preferuje živé Edge Prometheus metriky (`edge_metrics`) s fallback na lokální pool log (dříve vždy zastaralý lokální log).
+2. **Height monotonicity validation:** Zamezení rollback height na dashboardu.
+3. **Schema consistency:** `local-dev` schema opraveno pro konzistenci s Edge.
+
+### Aktuální Stav Infrastruktury (2026-06-07 ~12:00)
+
+```
+Uzel               Genesis    Výška   Status
+─────────────────────────────────────────────────────
+Edge (77.42.71.94) 7543004c   54+     systemd active
+Local (Windows)    7543004c   54+     mining active
+─────────────────────────────────────────────────────
+Pool               100%       2 sesh  ~5.7 KH/s
+Accepted/Rejected  212/6
+```
+
+### Aktuální Binaries na Edge
+
+| Binary | Datum kompilace |
+|--------|----------------|
+| `/usr/local/bin/zion-node` | Jun 7 10:22 (čerstvý build) |
+| `/usr/local/bin/zion-pool-server` | Jun 7 09:41 |
+| `/usr/local/bin/zion-agent` | Jun 6 10:47 |
+
+Staré backup binaries (`*.bak.*`, `*.old`) — smazány.
 
 ---
 
