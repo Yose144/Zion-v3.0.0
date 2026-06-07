@@ -86,7 +86,10 @@ async function fetchAll() {
     ]);
 
     updateOverview(overviewRes);
-    if (infraRes) updateInfraPanel(infraRes);
+    if (infraRes) {
+      updateInfraPanel(infraRes);
+      updateOverviewServiceDetails(infraRes);
+    }
     updateRigs(rigsRes);
     updateConsoleFromPolled(logsRes);
     updatePoolPanel(overviewRes.pool);
@@ -1139,6 +1142,121 @@ function updateInfraPanel(infra) {
       '</tr>';
     }).join('');
   }
+}
+
+function updateOverviewServiceDetails(infra) {
+  const container = document.getElementById('overview-service-details');
+  if (!container) return;
+
+  const services = [
+    {
+      key: 'node',
+      label: 'Node',
+      icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>',
+      cls: 'svc-node',
+      fields: (d) => [
+        ['Height', d?.height ?? d?.block_height ?? d?.best_height ?? '—'],
+        ['Peers', d?.peers ?? d?.peer_count ?? '—'],
+        ['Chain', d?.chain ?? d?.network ?? '—'],
+        ['Version', d?.version ?? '—'],
+      ],
+    },
+    {
+      key: 'pool',
+      label: 'Pool',
+      icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2c3 3.6 3 14.4 0 20"/><path d="M12 2c-3 3.6-3 14.4 0 20"/></svg>',
+      cls: 'svc-pool',
+      fields: (d) => [
+        ['Hashrate', d?.hashrate ? fmtHashrate(d.hashrate) : (d?.hashrate_khs ? fmtHashrate(d.hashrate_khs * 1000) : '—')],
+        ['Miners', d?.miners?.active ?? d?.active_miners ?? '—'],
+        ['Algorithm', d?.algorithm ?? d?.algo ?? 'Ekam Deeksha v2'],
+        ['Port', d?.port ?? '8444'],
+      ],
+    },
+    {
+      key: 'dao',
+      label: 'DAO',
+      icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>',
+      cls: 'svc-dao',
+      fields: (d) => [
+        ['Proposals', d?.proposals ?? d?.active_proposals ?? '—'],
+        ['Treasury', d?.treasury ?? d?.treasury_zion ?? '—'],
+        ['Members', d?.members ?? d?.member_count ?? '—'],
+        ['Quorum', d?.quorum ?? '—'],
+      ],
+    },
+    {
+      key: 'warp',
+      label: 'WARP',
+      icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>',
+      cls: 'svc-warp',
+      fields: (d) => [
+        ['Transfers', d?.transfers ?? d?.pending_transfers ?? '—'],
+        ['Bridges', d?.bridges ?? d?.active_bridges ?? '—'],
+        ['Status', d?.status ?? '—'],
+        ['Version', d?.version ?? '—'],
+      ],
+    },
+    {
+      key: 'agent',
+      label: 'Agent',
+      icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><line x1="6" y1="10" x2="6" y2="14"/><line x1="10" y1="10" x2="10" y2="14"/><line x1="14" y1="10" x2="14" y2="14"/></svg>',
+      cls: 'svc-agent',
+      fields: (d) => [
+        ['Mode', d?.mode ?? '—'],
+        ['GPUs', d?.gpu_count ?? '—'],
+        ['Miner', d?.miner_running != null ? (d.miner_running ? 'Running' : 'Stopped') : '—'],
+        ['Version', d?.version ?? '—'],
+      ],
+    },
+    {
+      key: 'website',
+      label: 'Website',
+      icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>',
+      cls: 'svc-website',
+      fields: (d) => [
+        ['Build', d?.build ?? d?.build_id ?? '—'],
+        ['Uptime', d?.uptime ? fmtDuration(d.uptime) : '—'],
+        ['Version', d?.version ?? '—'],
+        ['Framework', d?.framework ?? 'Next.js'],
+      ],
+    },
+  ];
+
+  container.innerHTML = services.map(svc => {
+    const st = infra[svc.key];
+    if (!st) return '';
+    const online = st.reachable;
+    const statusClass = online ? 'status-online' : 'status-offline';
+    const statusText = online ? 'Online' : 'Offline';
+    const data = st.data || {};
+    const rows = svc.fields(data).map(([label, value]) => `
+      <div class="service-detail-row">
+        <div class="service-detail-label">${esc(label)}</div>
+        <div class="service-detail-value${String(value).length > 20 ? ' small' : ''}">${esc(value)}</div>
+      </div>
+    `).join('');
+
+    return `
+      <div class="service-detail-card ${esc(svc.cls)}">
+        <div class="service-detail-header">
+          <div class="service-detail-name">${svc.icon} ${esc(svc.label)}</div>
+          <span class="service-detail-status ${statusClass}">${statusText}</span>
+        </div>
+        <div class="service-detail-body">
+          <div class="service-detail-row">
+            <div class="service-detail-label">Latency</div>
+            <div class="service-detail-value">${st.latency_ms != null ? esc(String(st.latency_ms)) + ' ms' : '—'}</div>
+          </div>
+          <div class="service-detail-row">
+            <div class="service-detail-label">Endpoint</div>
+            <div class="service-detail-value small">${esc(st.url || '—')}</div>
+          </div>
+          ${rows}
+        </div>
+      </div>
+    `;
+  }).join('');
 }
 
 async function agentMinerAction(action) {
