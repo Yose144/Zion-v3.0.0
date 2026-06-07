@@ -3,7 +3,7 @@ use std::collections::VecDeque;
 use std::fmt::Write as _;
 use std::io::{BufRead, BufReader, Write};
 use std::net::{TcpListener, TcpStream};
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
@@ -24,6 +24,7 @@ fn flush_stdout() {
 
 /// Gate verbose wire_* / iteration= debug output (--verbose or ZION_MINER_VERBOSE=1).
 static VERBOSE: AtomicBool = AtomicBool::new(false);
+static CURRENT_POOL_DIFFICULTY: AtomicU64 = AtomicU64::new(1);
 #[cfg(any(feature = "gpu", feature = "gpu-opencl"))]
 mod dcr_gpu;
 mod reconnect;
@@ -1234,7 +1235,9 @@ fn run_remote_session(
     let mut current_algorithm = String::new();
 
     for iteration in 0..config.loop_count {
-        let (job_line, job, algorithm) = read_next_job(&mut reader)?;
+        let (job_line, mut job, algorithm) = read_next_job(&mut reader)?;
+        let current_diff = CURRENT_POOL_DIFFICULTY.load(Ordering::Relaxed);
+        job.target = zion_core::difficulty::difficulty_to_target(current_diff);
         current_algorithm = algorithm.clone();
         remote_nonce_window = job.nonce_count;
         let job_started_at = Instant::now();
@@ -1817,6 +1820,7 @@ fn read_next_job(reader: &mut impl BufRead) -> Result<(String, MiningJob, String
             PoolMessage::Cancel { .. } => println!("wire_cancel={line}"),
             PoolMessage::SetDifficulty { difficulty, .. } => {
                 println!("pool_set_difficulty={difficulty}");
+                CURRENT_POOL_DIFFICULTY.store(difficulty, Ordering::Relaxed);
             }
             other => return Err(anyhow!("expected job from pool, got {other:?}")),
         }
@@ -1832,6 +1836,7 @@ fn read_next_result(reader: &mut impl BufRead) -> Result<(String, PoolMessage)> 
             PoolMessage::Cancel { .. } => println!("wire_cancel={line}"),
             PoolMessage::SetDifficulty { difficulty, .. } => {
                 println!("pool_set_difficulty={difficulty}");
+                CURRENT_POOL_DIFFICULTY.store(difficulty, Ordering::Relaxed);
             }
             other => return Err(anyhow!("expected result from pool, got {other:?}")),
         }
