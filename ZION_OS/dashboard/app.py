@@ -770,6 +770,7 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
     # ── L4: Apps ─────────────────────────────────────────────────────────
     {"id": "oasis", "name": "OASIS Avatar Hub", "icon": "🪷", "level": "L4", "kind": "app",
      "ports": {"api": 8094},
+     "host": "100.76.16.108",
      "log": "oasis.log", "start": "start-oasis", "stop": "stop-oasis",
      "health_method": "tcp", "severity": "info", "autoheal": False,
      "purpose": "Avatar registry, guilds, territories, consciousness XP. API on 8094.",
@@ -779,6 +780,7 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
     # ── L5: Free World Humanitarian ──────────────────────────────────────
     {"id": "free-world", "name": "Free World Humanitarian", "icon": "🕊️", "level": "L5", "kind": "humanitarian",
      "ports": {"api": 8095},
+     "host": "100.76.16.108",
      "log": "free-world.log", "start": "start-humanitarian", "stop": "stop-humanitarian",
      "health_method": "tcp", "severity": "info", "autoheal": False,
      "purpose": "Humanitarian aid coordination — mesh networks, medical tables, community DAOs.",
@@ -788,6 +790,7 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
     # ── L6: Issobella Space ──────────────────────────────────────────────
     {"id": "issobella", "name": "Issobella Space Layer", "icon": "🚀", "level": "L6", "kind": "space",
      "ports": {"api": 8096},
+     "host": "100.76.16.108",
      "log": "issobella.log", "start": "start-space", "stop": "stop-space",
      "health_method": "tcp", "severity": "info", "autoheal": False,
      "purpose": "Space infrastructure coordination — satellite relay, off-world settlements, orbital DAOs.",
@@ -2418,6 +2421,12 @@ def _build_status_edge_primary() -> dict:
     bridge_health = check_service_health(bridge_svc) if bridge_svc else {"alive": False, "status": "unknown", "details": "", "ports_open": [], "ports_closed": [], "pid_alive": False, "pid": None}
     dao_health = check_service_health(dao_svc) if dao_svc else {"alive": False, "status": "unknown", "details": "", "ports_open": [], "ports_closed": [], "pid_alive": False, "pid": None}
     warp_health = check_service_health(warp_svc) if warp_svc else {"alive": False, "status": "unknown", "details": "", "ports_open": [], "ports_closed": [], "pid_alive": False, "pid": None}
+    oasis_svc = get_service("oasis")
+    free_world_svc = get_service("free-world")
+    issobella_svc = get_service("issobella")
+    oasis_health = check_service_health(oasis_svc) if oasis_svc else {"alive": False, "status": "unknown", "details": "", "ports_open": [], "ports_closed": [], "pid_alive": False, "pid": None}
+    free_world_health = check_service_health(free_world_svc) if free_world_svc else {"alive": False, "status": "unknown", "details": "", "ports_open": [], "ports_closed": [], "pid_alive": False, "pid": None}
+    issobella_health = check_service_health(issobella_svc) if issobella_svc else {"alive": False, "status": "unknown", "details": "", "ports_open": [], "ports_closed": [], "pid_alive": False, "pid": None}
 
     elapsed = time.time() - t0
     return {
@@ -2477,6 +2486,33 @@ def _build_status_edge_primary() -> dict:
             "ports_closed": warp_health.get("ports_closed", []),
             "pid_alive": warp_health.get("pid_alive", False),
             "pid": warp_health.get("pid"),
+        },
+        "oasis": {
+            "running": oasis_health["alive"],
+            "status": oasis_health.get("status", "unknown"),
+            "details": oasis_health.get("details", ""),
+            "ports_open": oasis_health.get("ports_open", []),
+            "ports_closed": oasis_health.get("ports_closed", []),
+            "pid_alive": oasis_health.get("pid_alive", False),
+            "pid": oasis_health.get("pid"),
+        },
+        "free_world": {
+            "running": free_world_health["alive"],
+            "status": free_world_health.get("status", "unknown"),
+            "details": free_world_health.get("details", ""),
+            "ports_open": free_world_health.get("ports_open", []),
+            "ports_closed": free_world_health.get("ports_closed", []),
+            "pid_alive": free_world_health.get("pid_alive", False),
+            "pid": free_world_health.get("pid"),
+        },
+        "issobella": {
+            "running": issobella_health["alive"],
+            "status": issobella_health.get("status", "unknown"),
+            "details": issobella_health.get("details", ""),
+            "ports_open": issobella_health.get("ports_open", []),
+            "ports_closed": issobella_health.get("ports_closed", []),
+            "pid_alive": issobella_health.get("pid_alive", False),
+            "pid": issobella_health.get("pid"),
         },
         "tailscale": {"vpn_ok": tailscale_ok, "edge_ip": "100.76.16.108"},
         "_build_time_ms": int(elapsed * 1000),
