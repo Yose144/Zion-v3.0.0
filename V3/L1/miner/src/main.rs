@@ -15,6 +15,7 @@ mod dcr_hash;
 mod dcr_stratum;
 mod dcr_worker;
 mod gpu_backend;
+mod gpu_guard;
 mod parallel;
 
 fn flush_stdout() {
