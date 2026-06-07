@@ -72,6 +72,9 @@ pub trait GpuMiner: Send {
     /// Backend kind.
     fn backend_kind(&self) -> GpuBackendKind;
 
+    /// Algorithm this backend mines (e.g. "deeksha_lite_v1", "cosmic_harmony_ekam_deeksha_v2").
+    fn algorithm(&self) -> String;
+
     /// Update NPU weights for the given block height's epoch.
     /// No-op if the epoch hasn't changed since the last call.
     fn update_epoch(&mut self, _height: u64) -> Result<()> {
@@ -97,6 +100,72 @@ pub trait GpuMiner: Send {
     /// Run a benchmark for the given duration.
     fn benchmark(&mut self, secs: f64) -> Result<(u64, f64, f64)>;
 }
+
+/// Multi-algo GPU backend manager.
+/// Holds per-algorithm GPU backends and switches lazily.
+pub struct GpuBackendManager {
+    kind: GpuBackendKind,
+    work_size: usize,
+    current: Option<Box<dyn GpuMiner>>,
+    current_algo: String,
+}
+
+impl GpuBackendManager {
+    pub fn new(kind: GpuBackendKind, work_size: usize) -> Self {
+        Self {
+            kind,
+            work_size,
+            current: None,
+            current_algo: String::new(),
+        }
+    }
+
+    /// Return the current backend name if any backend is loaded.
+    pub fn current_backend_name(&self) -> Option<&str> {
+        self.current.as_ref().map(|g| g.backend_kind().as_str())
+    }
+
+    /// Ensure a backend for the requested algorithm is loaded.
+    pub fn ensure_algorithm(&mut self, algorithm: &str) -> Result<&mut dyn GpuMiner> {
+        if self.current_algo == algorithm {
+            return Ok(self.current.as_mut().unwrap().as_mut());
+        }
+        println!(
+            "gpu_switch_algorithm from={} to={}",
+            self.current_algo, algorithm
+        );
+        let backend = create_gpu_backend(self.kind, self.work_size, algorithm)?;
+        self.current_algo = algorithm.to_string();
+        self.current = Some(backend);
+        Ok(self.current.as_mut().unwrap().as_mut())
+    }
+
+    /// Run a benchmark across all supported algorithms.
+    pub fn benchmark_all(&mut self, secs: f64) -> Vec<(String, f64)> {
+        let algos = vec!["deeksha_lite_v1", "cosmic_harmony_ekam_deeksha_v2"];
+        let mut results = Vec::new();
+        for algo in algos {
+            match self.ensure_algorithm(algo) {
+                Ok(gpu) => match gpu.benchmark(secs) {
+                    Ok((hashes, elapsed, khps)) => {
+                        println!("benchmark_algo={algo} hashes={hashes} elapsed={elapsed:.2}s khps={khps:.2}");
+                        results.push((algo.to_string(), khps));
+                    }
+                    Err(e) => {
+                        println!("benchmark_algo={algo} error={e}");
+                    }
+                },
+                Err(e) => {
+                    println!("benchmark_algo={algo} init_error={e}");
+                }
+            }
+        }
+        results
+    }
+}
+
+/// Alias for backward compatibility.
+pub type GpuBackend = GpuBackendManager;
 
 /// Try to create the best available GPU backend.
 /// Selects the appropriate OpenCL miner based on the algorithm.
@@ -1154,6 +1223,10 @@ pub mod opencl_deeksha {
             GpuBackendKind::OpenCL
         }
 
+        fn algorithm(&self) -> String {
+            "cosmic_harmony_ekam_deeksha_v2".to_string()
+        }
+
         fn suppress_mismatch_warnings(&self) -> bool {
             // s4-only mode uses a different stage-4 implementation on GPU (SHA3-512)
             // than CPU (Blake3 XOF), so GPU vs CPU hashes naturally differ.
@@ -1349,7 +1422,7 @@ pub mod opencl_deeksha_lite {
     pub struct OpenClDeekshaLiteMiner {
         pro_que: ProQue,
         kernel: Kernel,
-        header_buf: Buffer<u8>,
+        header_state_buf: Buffer<u64>,
         scratchpad_buf: Buffer<u8>,
         output_hashes_buf: Buffer<u8>,
         work_size: usize,
@@ -1362,6 +1435,20 @@ pub mod opencl_deeksha_lite {
     }
 
     impl OpenClDeekshaLiteMiner {
+        /// Precompute Keccak256 state after absorbing the 80-byte header.
+        /// The state is 25 u64s (200 bytes). Each thread will then only
+        /// XOR the nonce bytes (80..88), apply padding, and run f1600.
+        fn precompute_header_keccak_state(header_80: &[u8]) -> [u64; 25] {
+            let mut state = [0u64; 25];
+            for (i, &b) in header_80.iter().enumerate() {
+                let byte_idx = i;
+                let word_idx = byte_idx / 8;
+                let shift = (byte_idx % 8) * 8;
+                state[word_idx] ^= (b as u64) << shift;
+            }
+            state
+        }
+
         fn vram_aware_work_size(device: &Device, requested: usize) -> usize {
             let global_mem = device
                 .info(ocl::enums::DeviceInfo::GlobalMemSize)
@@ -1468,7 +1555,7 @@ pub mod opencl_deeksha_lite {
                     .map_err(|e| anyhow::anyhow!("OpenCL build failed: {e}"))?
             };
             let q = pro_que.queue().clone();
-            let header_buf = Buffer::<u8>::builder().queue(q.clone()).len(128).build()?;
+            let header_state_buf = Buffer::<u64>::builder().queue(q.clone()).len(25).build()?;
             let scratchpad_buf = Buffer::<u8>::builder()
                 .queue(q.clone())
                 .len(actual_work_size * DL_SCRATCHPAD_BYTES)
@@ -1485,8 +1572,7 @@ pub mod opencl_deeksha_lite {
                 .build()?;
             let kernel = pro_que
                 .kernel_builder(opencl_kernel::DEEKSHA_LITE_KERNEL_NAME)
-                .arg(&header_buf)
-                .arg(80u32)
+                .arg(&header_state_buf)
                 .arg(0u64)
                 .arg(0u32)
                 .arg(&output_hashes_buf)
@@ -1503,7 +1589,7 @@ pub mod opencl_deeksha_lite {
             Ok(Self {
                 pro_que,
                 kernel,
-                header_buf,
+                header_state_buf,
                 scratchpad_buf,
                 output_hashes_buf,
                 work_size: actual_work_size,
@@ -1526,6 +1612,10 @@ pub mod opencl_deeksha_lite {
             GpuBackendKind::OpenCL
         }
 
+        fn algorithm(&self) -> String {
+            "deeksha_lite_v1".to_string()
+        }
+
         fn suppress_mismatch_warnings(&self) -> bool {
             false
         }
@@ -1538,15 +1628,17 @@ pub mod opencl_deeksha_lite {
             batch_size: u64,
         ) -> Result<GpuBatchResult> {
             let header_bytes = header.to_bytes();
+            let header_80 = &header_bytes[..80.min(header_bytes.len())];
+            let precomputed_state = Self::precompute_header_keccak_state(header_80);
 
             // ── SEH guard for OpenCL buffer write ───────────────────────
             {
                 let guard = GpuGuard::new();
-                self.header_buf.write(&header_bytes[..]).enq()?;
+                self.header_state_buf.write(&precomputed_state[..]).enq()?;
                 if guard.was_caught() {
                     self.recovery_attempts += 1;
                     anyhow::bail!(
-                        "GPU access violation during header buffer write (attempt {}/{}). AMD driver crash detected — try reducing ZION_GPU_WORK_SIZE or ZION_OCL_VRAM_PCT.",
+                        "GPU access violation during header state buffer write (attempt {}/{}). AMD driver crash detected — try reducing ZION_GPU_WORK_SIZE or ZION_OCL_VRAM_PCT.",
                         self.recovery_attempts,
                         self.max_recovery_attempts
                     );
@@ -1561,9 +1653,8 @@ pub mod opencl_deeksha_lite {
                 let chunk = (left as usize).min(self.work_size);
                 let local_size = self.local_work_size.min(chunk);
                 let global_size = ((chunk + local_size - 1) / local_size) * local_size;
-                self.kernel.set_arg(1, header_bytes.len() as u32)?;
-                self.kernel.set_arg(2, current_nonce)?;
-                self.kernel.set_arg(3, chunk as u32)?;
+                self.kernel.set_arg(1, current_nonce)?;
+                self.kernel.set_arg(2, chunk as u32)?;
 
                 // ── SEH guard for kernel enqueue ──────────────────────────
                 {
