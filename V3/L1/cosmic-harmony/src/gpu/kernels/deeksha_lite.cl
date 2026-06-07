@@ -1,12 +1,15 @@
 /*
- * DeekshaLite v1 — OpenCL Kernel (GCN/RDNA compatible)
+ * DeekshaLite v1 — OpenCL Kernel (GCN/RDNA compatible) OPTIMIZED
  *
  * Pipeline (matches CPU deeksha_lite.rs exactly):
  *   1. Keccak256(header[0..80] || nonce_le[0..8])  → s1[32]
- *   2. Memory-hard scratchpad (128 KiB)
- *        Phase A: SHA3-512 chain fill  (BLOCK_COUNT=4096 × 32B)
+ *      OPTIMIZATION: Host precomputes Keccak state after absorbing header.
+ *      Each thread only XORs nonce, applies padding, and runs f1600.
+ *   2. Memory-hard scratchpad (256 KiB)
+ *        Phase A: SHA3-512 chain fill  (BLOCK_COUNT=8192 × 32B)
  *        Phase B: 2 sequential XOR passes (forward, backward)
  *        Phase C: 64 random reads → acc[32]  (idx derived from 8 bytes)
+ *      OPTIMIZATION: Vectorized 32-byte reads/writes via ulong4 vload4/vstore4.
  *   3. AES-128 CTR mix (key=s2[0..16], counter=nonce||s2[16..24])
  *        → block0 + block1(counter+1), 3 full rounds + 1 final
  *        → XOR with s2[0..32]
@@ -14,7 +17,6 @@
  *
  * GCN-safe: union instead of pointer casts for keccak state.
  * No Blake3 — SHA3-512 is used for scratchpad fill (GPU-friendly).
- * idx_val in random_read_mix reads 8 bytes (matches u64 in CPU Rust code).
  */
 
 #pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable
@@ -117,18 +119,20 @@ void keccak_f1600(__private ulong *st)
 /* keccak_state union — GCN address space safe (no pointer casts) */
 typedef union { ulong u[25]; uchar b[200]; } keccak_st_t;
 
-/* Keccak256 (Ethereum variant, padding 0x01) */
-void keccak256(__private const uchar *in, uint inlen, __private uchar out[32])
+/* Keccak256 (Ethereum variant, padding 0x01) — precomputed state variant */
+void keccak256_from_state(
+    __global const ulong *pre_state,
+    ulong nonce,
+    __private uchar out[32])
 {
     keccak_st_t s;
-    for (int i = 0; i < 25; i++) s.u[i] = 0;
-    uint pos = 0;
-    for (uint i = 0; i < inlen; i++) {
-        s.b[pos] ^= in[i];
-        if (++pos == 136) { keccak_f1600(s.u); pos = 0; }
-    }
-    s.b[pos]   ^= 0x01;
-    s.b[135]   ^= 0x80;
+    for (int i = 0; i < 25; i++) s.u[i] = pre_state[i];
+    /* XOR nonce into bytes 80..87 */
+    for (int i = 0; i < 8; i++)
+        s.b[80 + i] ^= (uchar)(nonce >> (i * 8));
+    /* Apply padding */
+    s.b[88]  ^= 0x01;
+    s.b[135] ^= 0x80;
     keccak_f1600(s.u);
     for (int i = 0; i < 32; i++) out[i] = s.b[i];
 }
@@ -254,10 +258,10 @@ void fill_scratchpad(
         sha3_512(inp, 65, out64);
 
         uint off = blk * BLOCK_SIZE;
-        for (int i = 0; i < 32; i++) {
-            pad[off + i] = out64[i];
-            state[i]     = out64[i];
-        }
+        /* Vectorized 32-byte write */
+        ulong4 v = vload4(0, (__private ulong*)out64);
+        vstore4(v, 0, (__global ulong*)(pad + off));
+        vstore4(v, 0, (__private ulong*)state);
     }
 }
 
@@ -276,8 +280,10 @@ void sequential_passes(__global uchar *pad)
         uint prev = (i == 0) ? (BLOCK_COUNT - 1) : (i - 1);
         uint cur  = i * BLOCK_SIZE;
         uint prv  = prev * BLOCK_SIZE;
-        for (int j = 0; j < BLOCK_SIZE; j++)
-            pad[cur + j] ^= pad[prv + j];
+        ulong4 cur_v = vload4(0, (__global ulong*)(pad + cur));
+        ulong4 prv_v = vload4(0, (__global ulong*)(pad + prv));
+        cur_v ^= prv_v;
+        vstore4(cur_v, 0, (__global ulong*)(pad + cur));
     }
     /* Pass 1 — backward */
     for (uint i = BLOCK_COUNT; i > 0; i--) {
@@ -285,8 +291,10 @@ void sequential_passes(__global uchar *pad)
         uint next = (idx + 1 == BLOCK_COUNT) ? 0 : (idx + 1);
         uint cur  = idx  * BLOCK_SIZE;
         uint nxt  = next * BLOCK_SIZE;
-        for (int j = 0; j < BLOCK_SIZE; j++)
-            pad[cur + j] ^= pad[nxt + j];
+        ulong4 cur_v = vload4(0, (__global ulong*)(pad + cur));
+        ulong4 nxt_v = vload4(0, (__global ulong*)(pad + nxt));
+        cur_v ^= nxt_v;
+        vstore4(cur_v, 0, (__global ulong*)(pad + cur));
     }
 }
 
@@ -310,7 +318,11 @@ void random_read_mix(
     ulong pos = 0;
     for (ulong r = 0; r < RANDOM_READS; r++) {
         uint off = (uint)(pos * BLOCK_SIZE);
-        for (int i = 0; i < 32; i++) acc[i] ^= pad[off + i];
+        /* Vectorized 32-byte XOR */
+        ulong4 acc_v = vload4(0, (__private ulong*)acc);
+        ulong4 pad_v = vload4(0, (__global const ulong*)(pad + off));
+        acc_v ^= pad_v;
+        vstore4(acc_v, 0, (__private ulong*)acc);
 
         /* Read 8 bytes for idx — matches u64 in CPU */
         ulong idx_val = 0;
@@ -373,8 +385,7 @@ void aes128_mix(
 /* ========================================================================== */
 
 __kernel void deeksha_lite_mine(
-    __global const uchar *header,
-    uint   header_len,
+    __global const ulong *header_keccak_state,
     ulong  nonce_base,
     uint   nonce_count,
     __global uchar *output_hashes,
@@ -386,15 +397,9 @@ __kernel void deeksha_lite_mine(
     __global uchar *pad = scratchpad_pool + (ulong)tid * SCRATCHPAD_SIZE;
     ulong nonce = nonce_base + (ulong)tid;
 
-    /* Step 1: Keccak256(header[0..80] || nonce_le) */
-    uchar inp[88];
-    for (int i = 0; i < 88; i++) inp[i] = 0;
-    uint hlen = min(header_len, (uint)80);
-    for (uint i = 0; i < hlen; i++) inp[i] = header[i];
-    for (int i = 0; i < 8; i++) inp[80 + i] = (uchar)(nonce >> (i * 8));
-
+    /* Step 1: Keccak256(header || nonce) using host-precomputed state */
     uchar s1[32];
-    keccak256(inp, 88, s1);
+    keccak256_from_state(header_keccak_state, nonce, s1);
 
     /* Step 2: Memory-hard scratchpad */
     fill_scratchpad(s1, pad);
@@ -408,8 +413,17 @@ __kernel void deeksha_lite_mine(
 
     /* Step 4: Keccak256 final */
     uchar hash[32];
-    keccak256(s3, 32, hash);
+    /* Reuse sha3_512 path: 32B fits in single rate block, padding at byte 32 */
+    keccak_st_t s;
+    for (int i = 0; i < 25; i++) s.u[i] = 0;
+    for (int i = 0; i < 32; i++) s.b[i] ^= s3[i];
+    s.b[32] ^= 0x01;
+    s.b[135] ^= 0x80;
+    keccak_f1600(s.u);
+    for (int i = 0; i < 32; i++) hash[i] = s.b[i];
 
     __global uchar *slot = output_hashes + (ulong)tid * 32;
-    for (int i = 0; i < 32; i++) slot[i] = hash[i];
+    /* Vectorized 32-byte write */
+    ulong4 h = vload4(0, (__private ulong*)hash);
+    vstore4(h, 0, (__global ulong*)slot);
 }
