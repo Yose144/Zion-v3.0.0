@@ -40,6 +40,7 @@
 | **Edge miner (VPS)** | Způsoboval load + panic (`GetPlatformIdsPlatformListUnavailable`) | ✅ Disabled (VPS nemá GPU) |
 | **Pool server binary compat** | Stará `server.exe` odmítala miners (protokol mismatch) | ✅ Recompilováno, `ZION_PAYOUT_ADDRESS` required |
 | **Local mining test** | Ověření celého stack node→pool→miner lokálně | ✅ GPU mining funkční, ~1.1 KH/s (RX 5700 XT) |
+| **DeekshaLite Fire** | Nový thermal-intensive algoritmus pro zimní topení | ✅ GPU + CPU backend, OpenCL kernel, pool/core validace |
 
 ### Edge Server Disk Cleanup — Detail
 
@@ -66,6 +67,23 @@ Smazáno:
 4. Edge node spuštěn první (zakotvení genesis), local node jako follower
 
 **Výsledek:** Oba nody na genesis `7543004c`, consensus profile `deeksha_lite_v1`, výška 54+.
+
+### DeekshaLite Fire — Thermal-Intensive Mining Algorithm
+
+**Commit:** `32ed3561`
+
+Nový PoW algoritmus `deeksha_lite_fire` pro maximalizaci GPU tepelného výstupu (zimní topení):
+
+- **Paměťová stopa:** 512 KiB scratchpad / vlákno (2× větší než v1)
+- **Průchody:** 8 sekvenčních passů + 256 random reads (v1: 2 + 64)
+- **AES-128:** 10 plných roundů (v1: 3)
+- **Thermal loop:** 1024 iterací heavy `ulong` mul/rotate/XOR burn
+- **GPU:** Nový OpenCL kernel `deeksha_lite_fire_mine` s precomputed Keccak state, vectorized `ulong4` load/store
+- **CPU reference:** `zion-cosmic-harmony::deeksha_lite_fire` — deterministický, unit testovaný
+- **Miner:** `--algorithm deeksha_lite_fire` nebo `ZION_MINER_ALGORITHM=deeksha_lite_fire`
+- **Pool:** Akceptuje Fire v Hello zprávě, validuje share přes `hash_with_algorithm`
+- **Core/Node:** `BlockCandidate::hash_with_algorithm("deeksha_lite_fire")` funguje, bloky validovatelné
+- **Autotune:** `algorithm=auto` benchmarkuje v1, v2 i Fire a vybere nejrychlejší
 
 ### Dashboard Opravy — Commit `fecdc169`
 
