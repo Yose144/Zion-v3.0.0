@@ -3,7 +3,7 @@
 > Datum: 2026-06-07
 > Verze: v3.0.0-dev
 > Autor: Devin
-> Update: v3.0.24+ (kernel selection + GCN fixes)
+> Update: v3.0.25+ (keccak_f1600 Rho+Pi fix + CPU/GPU unification)
 
 ---
 
