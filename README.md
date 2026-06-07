@@ -28,7 +28,7 @@ ZION is a decentralized **Layer 1 blockchain** built from scratch in **Rust**, r
 | **Block Reward** | 5,400.067 ZION → Decade Decay (-20%/10y), tail 725 ZION |
 | **Block Time** | 60 seconds |
 | **Mining Horizon** | **100+ years** + perpetual tail emission |
-| **Consensus** | Proof of Work — `deeksha_lite_v1` (optimized, GPU-accelerated) |
+| **Consensus** | Proof of Work — `deeksha_lite_v1` (canonical) + `deeksha_lite_fire` (thermal, GPU-accelerated) |
 | **Transaction Model** | Hybrid: UTXO + Account Model |
 | **Storage** | LMDB |
 | **DAA** | LWMA (60-block window, ±25% per block) |
@@ -240,5 +240,5 @@ MIT — see [LICENSE](LICENSE).
 
 ---
 
-*Last updated: 2026-06-07 · Genesis Hash: `7543004c76b11416ef32e2f1f5a4c72f0178f841d4559bf476e29e15a9602728` · Consensus: `deeksha_lite_v1`*
+*Last updated: 2026-06-07 · Genesis Hash: `7543004c76b11416ef32e2f1f5a4c72f0178f841d4559bf476e29e15a9602728` · Consensus: `deeksha_lite_v1` + `deeksha_lite_fire`*
 *Repository: `Yose144/Zion-v3.0.0` · Branch: `main` · Version: v3.0.1*
