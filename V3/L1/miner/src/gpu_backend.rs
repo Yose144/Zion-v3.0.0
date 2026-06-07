@@ -142,7 +142,7 @@ impl GpuBackendManager {
 
     /// Run a benchmark across all supported algorithms.
     pub fn benchmark_all(&mut self, secs: f64) -> Vec<(String, f64)> {
-        let algos = vec!["deeksha_lite_v1", "cosmic_harmony_ekam_deeksha_v2"];
+        let algos = vec!["deeksha_lite_v1", "cosmic_harmony_ekam_deeksha_v2", "deeksha_lite_fire"];
         let mut results = Vec::new();
         for algo in algos {
             match self.ensure_algorithm(algo) {
@@ -186,6 +186,16 @@ pub fn create_gpu_backend(kind: GpuBackendKind, work_size: usize, algorithm: &st
                                 anyhow::bail!("DeekshaLite OpenCL init failed: {e}");
                             }
                             println!("deeksha_lite_opencl_unavailable reason=\"{e}\"");
+                        }
+                    }
+                } else if algorithm == "deeksha_lite_fire" {
+                    match opencl_deeksha_lite_fire::OpenClDeekshaLiteFireMiner::new(work_size) {
+                        Ok(miner) => return Ok(Box::new(miner)),
+                        Err(e) => {
+                            if kind == GpuBackendKind::OpenCL {
+                                anyhow::bail!("DeekshaLite Fire OpenCL init failed: {e}");
+                            }
+                            println!("deeksha_lite_fire_opencl_unavailable reason=\"{e}\"");
                         }
                     }
                 } else {
@@ -1697,6 +1707,335 @@ pub mod opencl_deeksha_lite {
                         let nonce = current_nonce.wrapping_add(i as u64);
                         all_solutions.push((nonce, hash));
                         break; // first match wins
+                    }
+                }
+                total_tested += chunk as u64;
+                if !all_solutions.is_empty() {
+                    break;
+                }
+                current_nonce = current_nonce.wrapping_add(chunk as u64);
+                left -= chunk as u64;
+            }
+            Ok(GpuBatchResult {
+                nonces_tested: total_tested,
+                solutions: all_solutions,
+            })
+        }
+
+        fn benchmark(&mut self, secs: f64) -> Result<(u64, f64, f64)> {
+            let header = MiningHeader {
+                version: 3,
+                previous_hash: [0xAA; 32],
+                merkle_root: [0xBB; 32],
+                timestamp: 1_762_000_200,
+                difficulty_bits: 0x1f00ffff,
+            };
+            let target = DifficultyTarget { bytes: [0; 32] };
+            let start = Instant::now();
+            let mut total_hashes = 0u64;
+            let mut nonce_start = 0u64;
+            while start.elapsed().as_secs_f64() < secs {
+                let result = self.mine_batch(header, target, nonce_start, self.work_size as u64)?;
+                total_hashes += result.nonces_tested;
+                nonce_start = nonce_start.wrapping_add(self.work_size as u64);
+            }
+            let elapsed = start.elapsed().as_secs_f64();
+            let khps = if elapsed > 0.0 {
+                total_hashes as f64 / elapsed / 1_000.0
+            } else {
+                0.0
+            };
+            Ok((total_hashes, elapsed, khps))
+        }
+    }
+}
+
+// ─── OpenCL DeekshaLite Fire Backend (thermal-intensive) ───────────────────
+
+#[cfg(feature = "gpu-opencl")]
+pub mod opencl_deeksha_lite_fire {
+    use super::*;
+    use ocl::builders::ProgramBuilder;
+    use ocl::{Buffer, Device, Kernel, Platform, ProQue};
+    use std::time::Instant;
+    use zion_cosmic_harmony::gpu::opencl_kernel;
+
+    const DLF_SCRATCHPAD_BYTES: usize = 512 * 1024; // 512 KiB per thread
+    const SENTINEL: u64 = 0xFFFF_FFFF_FFFF_FFFF;
+
+    pub struct OpenClDeekshaLiteFireMiner {
+        pro_que: ProQue,
+        kernel: Kernel,
+        header_state_buf: Buffer<u64>,
+        scratchpad_buf: Buffer<u8>,
+        output_hashes_buf: Buffer<u8>,
+        work_size: usize,
+        local_work_size: usize,
+        device_name_cached: String,
+        device_family: GpuDeviceFamily,
+        tuning: GpuTuning,
+        recovery_attempts: u32,
+        max_recovery_attempts: u32,
+    }
+
+    impl OpenClDeekshaLiteFireMiner {
+        /// Precompute Keccak256 state after absorbing the 80-byte header.
+        fn precompute_header_keccak_state(header_80: &[u8]) -> [u64; 25] {
+            let mut state = [0u64; 25];
+            for (i, &b) in header_80.iter().enumerate() {
+                let byte_idx = i;
+                let word_idx = byte_idx / 8;
+                let shift = (byte_idx % 8) * 8;
+                state[word_idx] ^= (b as u64) << shift;
+            }
+            state
+        }
+
+        fn vram_aware_work_size(device: &Device, requested: usize) -> usize {
+            let global_mem = device
+                .info(ocl::enums::DeviceInfo::GlobalMemSize)
+                .ok()
+                .and_then(|v| match v {
+                    ocl::enums::DeviceInfoResult::GlobalMemSize(n) => Some(n as usize),
+                    _ => None,
+                })
+                .unwrap_or(2_000_000_000);
+            let reserve = 384 * 1024 * 1024; // driver + other buffers
+            let available = global_mem.saturating_sub(reserve);
+            let per_thread = DLF_SCRATCHPAD_BYTES + 64; // scratchpad + output hash
+            let max_by_vram = available / per_thread;
+            let size = requested.min(max_by_vram).max(64);
+            size
+        }
+
+        fn pick_device() -> Result<(Platform, Device, String, String)> {
+            let platforms = Platform::list();
+            if platforms.is_empty() {
+                anyhow::bail!("no OpenCL platforms found");
+            }
+            let mut candidates = Vec::new();
+            for (pidx, platform) in platforms.iter().enumerate() {
+                let platform_name = platform
+                    .name()
+                    .unwrap_or_else(|_| "unknown-platform".to_string());
+                let gpus = Device::list(platform, Some(ocl::flags::DeviceType::GPU))
+                    .map_err(|e| {
+                        anyhow::anyhow!("OpenCL device list on {platform_name}: {e}")
+                    })?;
+                for (didx, device) in gpus.into_iter().enumerate() {
+                    let device_name = device
+                        .name()
+                        .unwrap_or_else(|_| "unknown-device".to_string());
+                    let platform_l = platform_name.to_ascii_lowercase();
+                    let device_l = device_name.to_ascii_lowercase();
+                    let mut score: i64 = 0;
+                    if platform_l.contains("amd")
+                        || device_l.contains("amd")
+                        || device_l.contains("radeon")
+                    {
+                        score += 1000;
+                    }
+                    if device_l.contains("vega") || device_l.contains("rx 5") {
+                        score += 500;
+                    }
+                    candidates.push((score, pidx, didx, *platform, device, platform_name.clone(), device_name));
+                }
+            }
+            if candidates.is_empty() {
+                anyhow::bail!("no OpenCL GPU devices found");
+            }
+            candidates.sort_by_key(|(s, _, _, _, _, _, _)| -*s);
+            let (_, pidx, didx, platform, device, platform_name, device_name) = candidates.swap_remove(0);
+            println!(
+                "gpu_opencl_fire_pick platform_idx={pidx} device_idx={didx} platform=\"{platform_name}\" device=\"{device_name}\""
+            );
+            Ok((platform, device, platform_name, device_name))
+        }
+
+        pub fn new(requested_work_size: usize) -> Result<Self> {
+            let kernel_src = opencl_kernel::get_deeksha_lite_fire_kernel_source().to_string();
+            let (platform, device, platform_name, device_name) = Self::pick_device()?;
+
+            let family = GpuDeviceFamily::from_name(&device_name);
+            let vram = device
+                .info(ocl::enums::DeviceInfo::GlobalMemSize)
+                .ok()
+                .and_then(|v| match v {
+                    ocl::enums::DeviceInfoResult::GlobalMemSize(n) => Some(n as usize),
+                    _ => None,
+                })
+                .unwrap_or(2_000_000_000);
+
+            let tuning = GpuTuning::auto_tune(GpuAlgorithm::DeekshaLiteFire, family, vram);
+            let actual_work_size = requested_work_size
+                .min(tuning.work_size)
+                .max(64)
+                .next_power_of_two();
+
+            println!(
+                "gpu_opencl_fire_init family={:?} device=\"{}\" vram={}MiB tuned_ws={} local_ws={} build_opts=\"{}\"",
+                family,
+                device_name,
+                vram / (1024 * 1024),
+                actual_work_size,
+                tuning.local_ws,
+                tuning.build_opts,
+            );
+
+            let pro_que = {
+                let mut prog = ProgramBuilder::new();
+                prog.src(kernel_src);
+                if !tuning.build_opts.is_empty() {
+                    prog.cmplr_opt(&tuning.build_opts);
+                }
+                ProQue::builder()
+                    .platform(platform)
+                    .device(device)
+                    .prog_bldr(prog)
+                    .dims(actual_work_size)
+                    .build()
+                    .map_err(|e| anyhow::anyhow!("OpenCL build failed: {e}"))?
+            };
+            let q = pro_que.queue().clone();
+            let header_state_buf = Buffer::<u64>::builder().queue(q.clone()).len(25).build()?;
+            let scratchpad_buf = Buffer::<u8>::builder()
+                .queue(q.clone())
+                .len(actual_work_size * DLF_SCRATCHPAD_BYTES)
+                .build()
+                .map_err(|e| {
+                    anyhow::anyhow!(
+                        "scratchpad alloc failed ({} MiB): {e}",
+                        actual_work_size * DLF_SCRATCHPAD_BYTES / (1024 * 1024)
+                    )
+                })?;
+            let output_hashes_buf = Buffer::<u8>::builder()
+                .queue(q.clone())
+                .len(actual_work_size * 32)
+                .build()?;
+            let kernel = pro_que
+                .kernel_builder(opencl_kernel::DEEKSHA_LITE_FIRE_KERNEL_NAME)
+                .arg(&header_state_buf)
+                .arg(0u64)
+                .arg(0u32)
+                .arg(&output_hashes_buf)
+                .arg(&scratchpad_buf)
+                .build()
+                .map_err(|e| anyhow::anyhow!("kernel build failed: {e}"))?;
+            println!(
+                "gpu_opencl_fire_init device=\"{}\" work_size={} local_ws={} scratchpad_mib={}",
+                device_name,
+                actual_work_size,
+                tuning.local_ws,
+                actual_work_size * DLF_SCRATCHPAD_BYTES / (1024 * 1024)
+            );
+            Ok(Self {
+                pro_que,
+                kernel,
+                header_state_buf,
+                scratchpad_buf,
+                output_hashes_buf,
+                work_size: actual_work_size,
+                local_work_size: tuning.local_ws,
+                device_name_cached: device_name,
+                device_family: family,
+                tuning,
+                recovery_attempts: 0,
+                max_recovery_attempts: 3,
+            })
+        }
+    }
+
+    impl GpuMiner for OpenClDeekshaLiteFireMiner {
+        fn device_name(&self) -> String {
+            self.device_name_cached.clone()
+        }
+
+        fn backend_kind(&self) -> GpuBackendKind {
+            GpuBackendKind::OpenCL
+        }
+
+        fn algorithm(&self) -> String {
+            "deeksha_lite_fire".to_string()
+        }
+
+        fn suppress_mismatch_warnings(&self) -> bool {
+            false
+        }
+
+        fn mine_batch(
+            &mut self,
+            header: MiningHeader,
+            target: DifficultyTarget,
+            nonce_start: u64,
+            batch_size: u64,
+        ) -> Result<GpuBatchResult> {
+            let header_bytes = header.to_bytes();
+            let header_80 = &header_bytes[..80.min(header_bytes.len())];
+            let precomputed_state = Self::precompute_header_keccak_state(header_80);
+
+            {
+                let guard = GpuGuard::new();
+                self.header_state_buf.write(&precomputed_state[..]).enq()?;
+                if guard.was_caught() {
+                    self.recovery_attempts += 1;
+                    anyhow::bail!(
+                        "GPU access violation during header state buffer write (attempt {}/{}). AMD driver crash detected — try reducing ZION_GPU_WORK_SIZE or ZION_OCL_VRAM_PCT.",
+                        self.recovery_attempts,
+                        self.max_recovery_attempts
+                    );
+                }
+            }
+
+            let mut all_solutions = Vec::new();
+            let mut total_tested = 0u64;
+            let mut current_nonce = nonce_start;
+            let mut left = batch_size;
+            while left > 0 {
+                let chunk = (left as usize).min(self.work_size);
+                let local_size = self.local_work_size.min(chunk);
+                let global_size = ((chunk + local_size - 1) / local_size) * local_size;
+                self.kernel.set_arg(1, current_nonce)?;
+                self.kernel.set_arg(2, chunk as u32)?;
+
+                {
+                    let guard = GpuGuard::new();
+                    unsafe {
+                        self.kernel
+                            .cmd()
+                            .global_work_size(global_size)
+                            .local_work_size(local_size)
+                            .enq()?;
+                    }
+                    if guard.was_caught() {
+                        self.recovery_attempts += 1;
+                        anyhow::bail!(
+                            "GPU access violation during kernel enqueue (attempt {}/{}). AMD driver crash detected — try reducing ZION_GPU_WORK_SIZE or switching to CPU backend.",
+                            self.recovery_attempts,
+                            self.max_recovery_attempts
+                        );
+                    }
+                }
+
+                let mut hashes = vec![0u8; chunk * 32];
+                {
+                    let guard = GpuGuard::new();
+                    self.output_hashes_buf.read(&mut hashes).enq()?;
+                    if guard.was_caught() {
+                        self.recovery_attempts += 1;
+                        anyhow::bail!(
+                            "GPU access violation during hash buffer read (attempt {}/{}). AMD driver crash detected.",
+                            self.recovery_attempts,
+                            self.max_recovery_attempts
+                        );
+                    }
+                }
+
+                for i in 0..chunk {
+                    let hash: [u8; 32] = hashes[i * 32..(i + 1) * 32].try_into().unwrap();
+                    if target.allows(&hash) {
+                        let nonce = current_nonce.wrapping_add(i as u64);
+                        all_solutions.push((nonce, hash));
+                        break;
                     }
                 }
                 total_tested += chunk as u64;
