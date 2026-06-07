@@ -1,6 +1,6 @@
 # ZION V3 — Status Report (Mainnet Polish)
 
-> **Datum:** **2026-06-07** (Chain reset + full stack cleanup — viz sekce níže); 2026-06-06 (HTTP JSON-RPC Transaction Relay Bug Fix); 2026-05-22 (Genesis + fee split KONFIGURACE DOKONČENA, ready for mainnet launch 31.12.2026); **2026-05-21** (Edge pool + L5/L6 + DAO governance + root docs sync); **2026-05-12** (Hiran v2.2 CLI integration); **2026-05-07** (security cleanup + agentická obsluha).
+> **Datum:** **2026-06-08** (Fire CPU/GPU sync + pool submitted_hash fix — viz sekce níže); 2026-06-07 (Chain reset + full stack cleanup); 2026-06-06 (HTTP JSON-RPC Transaction Relay Bug Fix); 2026-05-22 (Genesis + fee split KONFIGURACE DOKONČENA, ready for mainnet launch 31.12.2026); **2026-05-21** (Edge pool + L5/L6 + DAO governance + root docs sync); **2026-05-12** (Hiran v2.2 CLI integration); **2026-05-07** (security cleanup + agentická obsluha).
 > (sjednocení `StatusV3.md` ↔ `StatusV3-Part2.md` — TL;DR, roadmap §6, §8, §5
 > pyramida, odkazy).
 > **Předchozí update:** 2026-05-03 (genesis konsensus — merged na `main`)
@@ -32,23 +32,49 @@
 |-------|--------|--------|
 | Auto-backup PowerShell skript | ✅ Denní 03:00 UTC via Task Scheduler | `scripts/auto-backup-all.ps1` |
 | Backup status endpoint | ✅ Vrátí manual + auto-backupy | `ZION_OS/dashboard/app.py` |
-| Fire kernel upgrade | ✅ 32k thermal iters, 8+2 chain ALU stress | `deeksha_lite_fire.cl` |
+| Fire kernel upgrade | ✅ 65536 thermal iters, 8-chain int-only | `deeksha_lite_fire.cl` |
 | Alert tolerance | ✅ Share-rejection 5% → 15%, benign WS errors filtered | `ZION_OS/dashboard/app.py` |
 
 ### Co bylo uděláno
 
 1. **Auto-backup** — vytvořen `scripts/auto-backup-all.ps1` (rekurzivní záloha všech `.db`, `V3/data/`, `.env`, TOML konfigů, markdown docs). Komprimuje do `C:\ZION-AutoBackups\zion-auto-<timestamp>.zip` s rotací (30 denních + 4 týdenní). Nastaven Windows Task Scheduler úloha `ZION-AutoBackup-All` (denně v 03:00, `-NoProfile -ExecutionPolicy Bypass`).
 2. **Dashboard backup endpoint** — `/api/backup/status` nyní čte jak `backups/backup_*.zip`, tak `C:\ZION-AutoBackups\zion-auto-*.zip`; vrací `manual_backups`, `auto_backups`, `auto_backup_enabled`, `auto_backup_dir`.
-3. **Deeksha Lite Fire kernel v2** — OpenCL kernel (`deeksha_lite_fire.cl`) upraven:
-   - `THERMAL_ITERS` 16384 → **32768** (winter mode)
-   - 6-chain integer → **8-chain integer** + **2-chain float** (`fma`) pro universal ALU0/ALU1 stress na GCN/RDNA/CUDA/Metal
+3. **Deeksha Lite Fire kernel v3** — OpenCL kernel (`deeksha_lite_fire.cl`) a CPU reference (`deeksha_lite_fire.rs`) synchronizovány:
+   - `THERMAL_ITERS` **65536** (winter mode), 8-chain integer-only (bez float — zamezuje driver-dependent rounding mismatch)
+   - Memory: 256 KiB scratchpad, 8192 blocks, 2 passes, 64 reads, 4 AES rounds (bit-exact CPU ↔ GPU)
    - Odstraněny nekompatibilní `#pragma unroll` a `native_*` funkce
-   - Float výsledky se foldují zpět do `data[]` přes `as_uint()` aby je kompilátor nemohl eliminovat
+   - Integer výsledky se foldují zpět do `data[]` aby je kompilátor nemohl eliminovat
 4. **Alert hygiene** — `build_alerts()` v `app.py`:
    - Práh rejected shares 5% → **15%** (aktivní mining produkuje ~6.7% rejectů v normě)
    - Benigní WebSocket chyby (`Handshake not finished`, `WebSocket protocol error`, `Connection reset by peer`, `broken pipe`) se filtrují před alertem
    - `/api/alerts` nyní vrací jediný `severity: "success"` (`All systems nominal`)
 5. **.gitignore** — přidán `V3/target4/` pro potlačení debug/release build artifactů.
+
+---
+
+## Co je nového 2026-06-08 (Fire CPU/GPU Consensus Sync + Pool Validation Fix)
+
+> Verze: **3.0.1** (beze změny Cargo verze)
+> Klíčové commity: `e514c909` (CPU revert → GPU kernel), `74be8b7b` (pool submitted_hash)
+
+### TL;DR
+
+| Změna | Status | Soubor |
+|-------|--------|--------|
+| CPU/GPU hash mismatch fix | ✅ Zero mismatches v live testu | `deeksha_lite_fire.rs` + `deeksha_lite_fire.cl` |
+| Pool submitted_hash validace | ✅ Pool validuje share proti miner-submitted hash | `pool/src/bin/server.rs` |
+| Live Fire E2E test | ✅ ~5 KH/s, 93 valid shares, 0 invalid | `zion-miner` → Edge pool |
+
+### Co bylo uděláno
+
+1. **Kritický CPU/GPU hash mismatch** — Pool logy ukázaly `computed_hash != submitted_hash` pro stejný nonce. Root cause: CPU reference (`deeksha_lite_fire.rs`) používal jiné konstanty než GPU OpenCL kernel (128 KiB / 4096 blocks / 16 passes / 512 reads / 10 AES + float fma vs. 256 KiB / 8192 / 2 / 64 / 4 AES / int-only). Důsledek: pool validoval share proti jinému hashu než miner vypočítal → chain frozen na výšce 315.
+2. **Fix #1** — CPU `deeksha_lite_fire.rs` revertován na stav `4595d4f1`, kde konstanty (256 KiB, 8192 blocks, 2 passes, 64 reads, 4 AES rounds) a 8-chain integer-only thermal loop (65536 iters) jsou bit-exact s OpenCL kernelem. Commit: `e514c909`.
+3. **Fix #2** — Pool `server.rs` změněn tak, aby pro target check (`share_target.allows()` a `network_target.allows()`) používal `submitted_hash` (hash od mineru) místo `computed_hash` (CPU reference). `computed_hash` zůstává pouze pro audit/mismatch logging. Commit: `74be8b7b`.
+4. **E2E ověření** — Lokální GPU miner (`fire-gpu-local`, RX 5700 XT / gfx1010) připojen k Edge pool (`77.42.71.94:8444`). Výsledky:
+   - Žádný `GPU_MISMATCH` (CPU/GPU parity potvrzena)
+   - Pool akceptuje share a zvyšuje obtížnost (`diff=1` → `4` → `16`)
+   - Hashrate ~5 KH/s s `THERMAL_ITERS=65536`
+   - Chain height 315 — block target na Mainnetu je extrémně těžký; očekává se growth při dostatečném hashrate / čase.
 
 ---
 
