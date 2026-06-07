@@ -626,11 +626,17 @@ curl -s -X PATCH -H "X-AUTH-TOKEN: $API" $BASE/rigs/518837/reboot
 curl -s -X PATCH -H "X-AUTH-TOKEN: $API" $BASE/rigs/518837/reload
 
 # Change group config (set new miner URL etc.)
+# NOTE: This endpoint may not work - use web panel instead
 curl -s -X PATCH -H "X-AUTH-TOKEN: $API" \
   -H "Content-Type: application/json" \
   -d '{"minerUrl":"https://zionterranova.com/zion-miner/zion-miner-vX.X.X-gpu.zip"}' \
   $BASE/rigs/518837/group-config
 ```
+
+**IMPORTANT:** SMOS API tokens expire frequently. Use web panel for group config updates:
+- URL: https://simplemining.net
+- Navigate to rig group settings
+- Update miner URL to new version
 
 ### Known Vega 64 / GCN mining issues
 
