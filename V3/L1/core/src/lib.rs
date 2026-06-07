@@ -3787,7 +3787,7 @@ mod tests {
 
     #[test]
     fn core_uses_canonical_profile() {
-        assert_eq!(consensus_profile(), "cosmic_harmony_ekam_deeksha_v2");
+        assert_eq!(consensus_profile(), "deeksha_lite_v1");
     }
 
     #[test]
