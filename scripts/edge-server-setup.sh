@@ -9,7 +9,7 @@
 
 set -euo pipefail
 
-ZION_PUB_KEY="${ZION_PUB_KEY:-ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOBW4wUXIVo7dUJ9lkFzfSYyV3JxCOmFNf+ezJMlMpNE zion-edge-20260521}"
+ZION_PUB_KEY="${ZION_PUB_KEY:-}"  # Set via env var; do NOT hardcode keys in repo
 CORE_TS_IP="${CORE_TS_IP:-}"
 
 # ── 1. System packages ──
