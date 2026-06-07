@@ -22,7 +22,7 @@
 #define PASSES           16
 #define RANDOM_READS     512
 #define AES_FULL_ROUNDS  10
-#define THERMAL_ITERS    16384
+#define THERMAL_ITERS    32768
 
 /* ========================================================================== */
 /* Keccak — canonical impl                                                    */
@@ -241,7 +241,6 @@ void fill_scratchpad(__private const uchar seed[32], __global uchar *pad)
 
 void sequential_passes(__global uchar *pad)
 {
-    #pragma unroll
     for (int pass = 0; pass < PASSES; pass++) {
         /* Forward */
         for (uint i = 0; i < BLOCK_COUNT; i++) {
@@ -279,8 +278,10 @@ void random_read_mix(__private const uchar seed[32], __global const uchar *pad, 
         ulong4 pad_v = vload4(0, (__global const ulong*)(pad + off));
         acc_v ^= pad_v;
         vstore4(acc_v, 0, (__private ulong*)acc);
-        /* Fast ulong extraction via cast instead of byte loop */
-        ulong idx_val = *((__private ulong*)acc);
+        /* Read 8 bytes for idx — matches u64 in CPU */
+        ulong idx_val = 0;
+        for (int i = 0; i < 8; i++)
+            idx_val |= ((ulong)acc[i]) << (i * 8);
         pos = (idx_val ^ pos ^ r) % BLOCK_COUNT;
     }
     #pragma unroll
@@ -307,7 +308,6 @@ void aes128_mix_fire(__private const uchar seed[32], ulong nonce, __private ucha
     for (int i = 0; i < 16; i++) { block0[i] = counter[i]; block1[i] = counter[i]; }
 
     uint carry = 1;
-    #pragma unroll
     for (int i = 0; i < 16; i++) {
         uint s = (uint)block1[i] + carry;
         block1[i] = (uchar)(s & 0xFF);
@@ -315,7 +315,6 @@ void aes128_mix_fire(__private const uchar seed[32], ulong nonce, __private ucha
         if (carry == 0) break;
     }
 
-    #pragma unroll
     for (int r = 0; r < AES_FULL_ROUNDS; r++) {
         aes_round(block0, key);
         aes_round(block1, key);
@@ -334,38 +333,64 @@ void aes128_mix_fire(__private const uchar seed[32], ulong nonce, __private ucha
 /* Step 4: FIRE Thermal Loop — 4-chain ILP for maximum ALU load               */
 /* ========================================================================== */
 
-/* Fixed 6-chain thermal loop — deterministic, compiler-friendly, maximum ILP.
- * Each chain uses different constants and rotate offsets to avoid
- * common subexpression elimination. No branching, no divergence. */
+/* 8-chain integer + 2-chain float thermal loop.
+ * Universal: GCN, RDNA, CUDA, Metal.  No half, no double, no native_*, no sin/cos.
+ * INT chains stress ALU0; float fma chains stress ALU1/FP units.
+ * Winter mode (Fire): 32k iterations, high ALU util, minimal memory.
+ * Summer mode: use deeksha_lite.cl (normal mining algorithm). */
 void thermal_loop(__private uchar data[32], ulong nonce)
 {
+    /* ── 8 independent ulong integer chains ─────────────────────────── */
     ulong a = nonce ^ 0x9E3779B97F4A7C15UL;
     ulong b = nonce ^ 0xBF58476D1CE4E5B9UL;
     ulong c = nonce ^ 0x94D049BB133111EBUL;
     ulong d = nonce ^ 0x5851F42D4C957F2DUL;
     ulong e = nonce ^ 0xC0FFEE123456789AUL;
     ulong f = nonce ^ 0xDEADBEEFCAFEBABEUL;
+    ulong g = nonce ^ 0xBADC0FFEE0DDF00DUL;
+    ulong h = nonce ^ 0xFEEDFACECAFEBEEFUL;
+
+    /* ── 2 independent float chains (FP-ALU heat, no memory) ─────────
+     * fma(a,b,c)=a*b+c is a single instruction on GCN/RDNA/CUDA/Metal.
+     * We avoid sin/cos/half/double for universal compatibility.        */
+    float f1 = (float)(nonce & 0xFFFFu) * 0.0001f;
+    float f2 = (float)((nonce >> 16) & 0xFFFFu) * 0.0001f;
 
     for (int i = 0; i < THERMAL_ITERS; i++) {
+        /* --- Integer ALU stress (8 chains) --- */
         a = ROL64(a, 17) + b;
         b = ROL64(b, 31) ^ a;
         c = ROL64(c, 13) + d;
         d = ROL64(d, 47) ^ c;
         e = ROL64(e, 23) + f;
         f = ROL64(f, 41) ^ e;
+        g = ROL64(g, 11) + h;
+        h = ROL64(h, 53) ^ g;
         a = a * 0xFF51AFD7ED558CCDUL;
         b = b + 0xFF51AFD7ED558CCDUL;
         c = c * 0x94D049BB133111EBUL;
         d = d + 0x5851F42D4C957F2DUL;
         e = e * 0xC0FFEE123456789AUL;
         f = f + 0xDEADBEEFCAFEBABEUL;
+        g = g * 0xBADC0FFEE0DDF00DUL;
+        h = h + 0xFEEDFACECAFEBEEFUL;
         a ^= (ulong)data[(i    ) & 0x1F];
         b ^= (ulong)data[(i + 8) & 0x1F];
         c ^= (ulong)data[(i + 16) & 0x1F];
         d ^= (ulong)data[(i + 24) & 0x1F];
         e ^= (ulong)data[(i + 4) & 0x1F];
         f ^= (ulong)data[(i + 12) & 0x1F];
+        g ^= (ulong)data[(i + 2) & 0x1F];
+        h ^= (ulong)data[(i + 6) & 0x1F];
+
+        /* --- Float ALU stress (2 chains, fma only) --- */
+        f1 = fma(f1, 1.618033988f, f2);
+        f2 = fma(f2, 2.718281828f, f1);
+        f1 = fma(f1, 3.141592653f, f2);
+        f2 = fma(f2, 1.414213562f, f1);
     }
+
+    /* ── Fold integer results back into data ───────────────────────── */
     data[0]  ^= (uchar)(a);
     data[1]  ^= (uchar)(a >> 8);
     data[2]  ^= (uchar)(b);
@@ -378,14 +403,30 @@ void thermal_loop(__private uchar data[32], ulong nonce)
     data[9]  ^= (uchar)(e >> 8);
     data[10] ^= (uchar)(f);
     data[11] ^= (uchar)(f >> 8);
-    data[12] ^= (uchar)(a >> 16);
-    data[13] ^= (uchar)(b >> 16);
-    data[14] ^= (uchar)(c >> 16);
-    data[15] ^= (uchar)(d >> 16);
-    data[16] ^= (uchar)(e >> 16);
-    data[17] ^= (uchar)(f >> 16);
-    data[18] ^= (uchar)(a >> 24);
-    data[19] ^= (uchar)(b >> 24);
+    data[12] ^= (uchar)(g);
+    data[13] ^= (uchar)(g >> 8);
+    data[14] ^= (uchar)(h);
+    data[15] ^= (uchar)(h >> 8);
+    data[16] ^= (uchar)(a >> 16);
+    data[17] ^= (uchar)(b >> 16);
+    data[18] ^= (uchar)(c >> 16);
+    data[19] ^= (uchar)(d >> 16);
+    data[20] ^= (uchar)(e >> 16);
+    data[21] ^= (uchar)(f >> 16);
+    data[22] ^= (uchar)(g >> 16);
+    data[23] ^= (uchar)(h >> 16);
+    data[24] ^= (uchar)(a >> 24);
+    data[25] ^= (uchar)(b >> 24);
+
+    /* ── Mix float results so compiler cannot eliminate them ───────── */
+    uint f1u = as_uint(f1);
+    uint f2u = as_uint(f2);
+    data[26] ^= (uchar)(f1u);
+    data[27] ^= (uchar)(f1u >> 8);
+    data[28] ^= (uchar)(f2u);
+    data[29] ^= (uchar)(f2u >> 8);
+    data[30] ^= (uchar)(f1u >> 16);
+    data[31] ^= (uchar)(f2u >> 16);
 }
 
 /* ========================================================================== */
