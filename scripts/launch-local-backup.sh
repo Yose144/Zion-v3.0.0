@@ -44,7 +44,7 @@ export ZION_NODE_STATE_PATH="$REPO_ROOT/V3/data/zion-node-state.db"
 export ZION_SEED_PEERS='100.76.16.108:8333'
 # Burn model: 89/5/5/0 — canonical fee split addresses (must match Edge)
 export ZION_MINER_ADDRESS='zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604'
-export ZION_HUMANITARIAN_WALLET='zion165a527w5d0n085t775x3w8n8q20742a6w7xr0z3'
+export ZION_HUMANITARIAN_WALLET='zion1c245e7f5d8h427r4p4s2s607d7v4c255z7x96t3'
 export ZION_ISSOBELLA_WALLET='zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702'
 
 mkdir -p "$REPO_ROOT/V3/data"

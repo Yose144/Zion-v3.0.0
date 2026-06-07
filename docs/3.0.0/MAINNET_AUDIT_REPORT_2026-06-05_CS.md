@@ -17,7 +17,7 @@ Byla provedena rotace genesis (změna adres v `genesis.rs` working directory), a
 **Klíčové zjištění:**
 - **Edge genesis hash (běžící):** `85d8d6b29cdfa32b036068c70416c948b6eca63ba18bb20d0bfeb051f44ec897` (starý, z 24.5.)
 - **Git HEAD genesis hash:** `60b5ff78ec7797c79b79069b3bea5553441d201d23329b389828b869723998da` (commit `4291c384`)
-- **Working directory genesis hash:** `1da0251076471744b783105a6723fbd2e899282d6582d59f0de7905cd69f07c7` (**aktuální nový po rotaci**)
+- **Working directory genesis hash:** `d28dc404abfd4e22b313d3a7e8b680453328a77ace68b47466a14d18aff6df5d` (**aktuální nový po rotaci**)
 - **Dokumentace StatusV3.md:** `3817e38aa63fe743cf71eb14e79efdc30f5dd5670075556d8c4dd457f6aa5ef3` (tento hash se v gitu vůbec nevyskytuje — chyba v dokumentaci)
 
 ---
@@ -52,7 +52,7 @@ Byla provedena rotace genesis (změna adres v `genesis.rs` working directory), a
 |--------|---------------|--------|---------|
 | **Edge server (běžící)** | `85d8d6b29cdfa32b036068c70416c948b6eca63ba18bb20d0bfeb051f44ec897` | 🟡 **Starý** | Z 24.5.2026, commit `a4fa7a06` |
 | **Git HEAD (commit 4291c384)** | `60b5ff78ec7797c79b79069b3bea5553441d201d23329b389828b869723998da` | 🟡 **Starší** | Poslední commit, staré adresy s pomlčkami |
-| **Working directory (nový)** | `1da0251076471744b783105a6723fbd2e899282d6582d59f0de7905cd69f07c7` | 🟢 **Aktuální** | Nové adresy bez pomlček, **toto je správný nový hash** |
+| **Working directory (nový)** | `d28dc404abfd4e22b313d3a7e8b680453328a77ace68b47466a14d18aff6df5d` | 🟢 **Aktuální** | Nové adresy bez pomlček, **toto je správný nový hash** |
 | **StatusV3.md (dokumentace)** | `3817e38aa63fe743cf71eb14e79efdc30f5dd5670075556d8c4dd457f6aa5ef3` | 🔴 **Neexistuje** | Tento hash se v git historii **nikdy nevyskytoval** |
 
 ### 2.2 Analýza změn adres
@@ -245,7 +245,7 @@ Edge server má na disku aktualizovaný soubor `genesis.rs` s novými adresami, 
 **Problém:**
 Hash `3817e38aa63fe743cf71eb14e79efdc30f5dd5670075556d8c4dd457f6aa5ef3` uvedený v StatusV3.md jako "Nový Genesis Hash" není generován žádnou verzí kódu v git historii. Pravděpodobně byl zkopírován z nějakého mezistavu nebo je chybný.
 
-**Řešení:** Aktualizovat StatusV3.md na skutečný hash z working directory: `1da0251076471744b783105a6723fbd2e899282d6582d59f0de7905cd69f07c7`
+**Řešení:** Aktualizovat StatusV3.md na skutečný hash z working directory: `d28dc404abfd4e22b313d3a7e8b680453328a77ace68b47466a14d18aff6df5d`
 
 ### 7.3 🟡 VYSOKÁ: Pool humanitarian adresa nesedí s dokumentací
 

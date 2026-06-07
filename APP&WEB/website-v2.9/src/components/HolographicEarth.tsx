@@ -3,6 +3,7 @@
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import * as THREE from 'three';
 import clsx from 'clsx';
 
@@ -72,7 +73,7 @@ function EarthGlobe() {
 
   return (
     <group>
-      <mesh castShadow={false} receiveShadow={false} rotation={[0, -Math.PI / 2, 0]}>
+      <mesh castShadow={false} receiveShadow={false}>
         <sphereGeometry args={[1, 64, 64]} />
         <meshStandardMaterial
           map={maps.color}
@@ -150,6 +151,53 @@ function Sun() {
   );
 }
 
+function IssobellaStation() {
+  const groupRef = useRef<THREE.Group>(null);
+  const angleRef = useRef(Math.PI * 0.85);
+
+  useFrame((_state, delta) => {
+    if (!groupRef.current) return;
+    angleRef.current += delta * 0.35;
+    const r = 2.6;
+    groupRef.current.position.set(
+      Math.cos(angleRef.current) * r,
+      Math.sin(angleRef.current * 0.25) * 0.25,
+      Math.sin(angleRef.current) * r,
+    );
+    groupRef.current.rotation.y += delta * 0.6;
+    groupRef.current.rotation.z += delta * 0.2;
+  });
+
+  return (
+    <group ref={groupRef}>
+      {/* Main torus — ring habitat */}
+      <mesh rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[0.14, 0.035, 12, 24]} />
+        <meshStandardMaterial color="#d946ef" emissive="#a855f7" emissiveIntensity={0.8} roughness={0.3} metalness={0.7} />
+      </mesh>
+      {/* Central core */}
+      <mesh>
+        <sphereGeometry args={[0.06, 16, 16]} />
+        <meshStandardMaterial color="#f0abfc" emissive="#e879f9" emissiveIntensity={1.2} roughness={0.2} metalness={0.5} />
+      </mesh>
+      {/* Solar panels */}
+      <mesh position={[0.22, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
+        <boxGeometry args={[0.28, 0.01, 0.14]} />
+        <meshStandardMaterial color="#1e1b4b" emissive="#8b5cf6" emissiveIntensity={0.4} roughness={0.4} metalness={0.6} />
+      </mesh>
+      <mesh position={[-0.22, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
+        <boxGeometry args={[0.28, 0.01, 0.14]} />
+        <meshStandardMaterial color="#1e1b4b" emissive="#8b5cf6" emissiveIntensity={0.4} roughness={0.4} metalness={0.6} />
+      </mesh>
+      {/* Issobella glow */}
+      <mesh scale={2.5}>
+        <sphereGeometry args={[0.14, 16, 16]} />
+        <meshBasicMaterial color="#c084fc" transparent opacity={0.08} depthWrite={false} blending={THREE.AdditiveBlending} />
+      </mesh>
+    </group>
+  );
+}
+
 function HologramShell() {
   const matRef = useRef<THREE.ShaderMaterial | null>(null);
 
@@ -201,6 +249,83 @@ function HologramShell() {
   );
 }
 
+function latLonToVector3(lat: number, lon: number, radius: number): [number, number, number] {
+  const phi = (90 - lat) * (Math.PI / 180);
+  const theta = (lon + 180) * (Math.PI / 180);
+  const x = -(radius * Math.sin(phi) * Math.cos(theta));
+  const z = radius * Math.sin(phi) * Math.sin(theta);
+  const y = radius * Math.cos(phi);
+  return [x, y, z];
+}
+
+const TERRA_NOVA_MARKERS = [
+  { lat: 37.0, lon: -8.0, color: '#34D399', glow: '#10B981', nameCs: 'Zahrada Genesis', nameEn: 'Garden of Genesis', href: '/terranova/genesis' },
+  { lat: 28.7, lon: -17.9, color: '#F97316', glow: '#F59E0B', nameCs: 'Dharma Temple', nameEn: 'Dharma Temple', href: '/terranova/dharma-temple' },
+  { lat: -17.0, lon: -150.0, color: '#22D3EE', glow: '#06B6D4', nameCs: 'Te Piko Ora', nameEn: 'Te Piko Ora', href: '/terranova/te-piko-ora' },
+];
+
+function TerraNovaMarkers() {
+  const router = useRouter();
+  const [hovered, setHovered] = useState<string | null>(null);
+
+  return (
+    <>
+      {TERRA_NOVA_MARKERS.map((m) => {
+        const pos = latLonToVector3(m.lat, m.lon, 1.022);
+        const isHovered = hovered === m.href;
+        return (
+          <group key={m.href} position={pos}>
+            {/* Pulse ring */}
+            <mesh rotation={[Math.PI / 2, 0, 0]}>
+              <ringGeometry args={[0.022, 0.038, 32]} />
+              <meshBasicMaterial
+                color={m.glow}
+                transparent
+                opacity={isHovered ? 0.95 : 0.65}
+                side={THREE.DoubleSide}
+                depthWrite={false}
+              />
+            </mesh>
+            {/* Core dot */}
+            <mesh scale={isHovered ? 1.5 : 1}>
+              <sphereGeometry args={[0.016, 16, 16]} />
+              <meshStandardMaterial
+                color={m.color}
+                emissive={m.color}
+                emissiveIntensity={isHovered ? 2.5 : 1.5}
+              />
+            </mesh>
+            {/* Invisible click/hover target */}
+            <mesh
+              onClick={(e) => {
+                e.stopPropagation();
+                router.push(m.href);
+              }}
+              onPointerOver={(e) => {
+                e.stopPropagation();
+                setHovered(m.href);
+                if (typeof document !== 'undefined') {
+                  document.body.style.cursor = 'pointer';
+                }
+              }}
+              onPointerOut={(e) => {
+                e.stopPropagation();
+                setHovered(null);
+                if (typeof document !== 'undefined') {
+                  document.body.style.cursor = 'default';
+                }
+              }}
+            >
+              <sphereGeometry args={[0.05, 16, 16]} />
+              <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+            </mesh>
+          </group>
+        );
+      })}
+    </>
+  );
+}
+
 function StarField() {
   const geometry = useMemo(() => {
     const count = 1200;
@@ -241,8 +366,12 @@ function Scene() {
       <pointLight position={[0, 6, 2]} intensity={0.3} color="#ffe8a6" />
       <StarField />
       <Sun />
-      <EarthGlobe />
+      <group rotation={[0, -Math.PI / 2, 0]}>
+        <EarthGlobe />
+        <TerraNovaMarkers />
+      </group>
       <Moon />
+      <IssobellaStation />
       <HologramShell />
       <OrbitControls
         makeDefault
@@ -280,7 +409,7 @@ export default function HolographicEarth({ className }: HolographicEarthProps) {
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[45%] bg-gradient-to-t from-black/40 to-transparent" />
       <div className="pointer-events-none absolute inset-3 rounded-[16px] border border-white/[0.06]" />
       <p className="pointer-events-none absolute inset-x-0 top-2.5 z-10 text-center text-[9px] font-medium uppercase tracking-[0.42em] text-cyan-100/50">
-        Holographic Earth · drag orbit
+        Holographic Earth · L6 Issobella Station · Terra Nova Nodes · drag orbit
       </p>
       <div className="absolute inset-x-0 bottom-0 top-9 sm:top-10">
         <Canvas

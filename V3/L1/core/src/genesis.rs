@@ -38,9 +38,11 @@ pub const MAINNET_CANONICAL_DEFAULT_MINER_LABEL: &str =
 pub const MAINNET_CANONICAL_POOL_PAYOUT_LABEL: &str =
     "ZION_V3_MAINNET_CANONICAL_POOL_PPLNS_PAYOUT_SIGNER_v1";
 
-/// Humanitarian 5% — must match premine output with `category == "humanitarian"`.
+/// Humanitarian 5% coinbase fee recipient (ongoing block subsidy).
+/// Distinct from the premine humanitarian slot (slot 12 in PREMINE_OUTPUTS).
+/// Mnemonic backup stored on flash disk (F:\ZION_V3_MAINNET_WALLETS.txt).
 pub const MAINNET_CANONICAL_HUMANITARIAN_SUBSIDY_WALLET: &str =
-    "zion165a527w5d0n085t775x3w8n8q20742a6w7xr0z3";
+    "zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4";
 
 pub const MAINNET_CANONICAL_ISSOBELLA_SUBSIDY_WALLET: &str =
     "zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702";
@@ -188,7 +190,7 @@ pub const PREMINE_OUTPUTS: &[PremineOutput] = &[
     },
     // --- Humanitarian (1 slot = 1.44B) ---
     PremineOutput {
-        address: "zion165a527w5d0n085t775x3w8n8q20742a6w7xr0z3",
+        address: "zion1c245e7f5d8h427r4p4s2s607d7v4c255z7x96t3",
         purpose: "Children Future Fund — Humanitarian DAO",
         amount_zion: 1_440_000_000,
         amount_flowers: 1_440_000_000_000_000_000_000,
