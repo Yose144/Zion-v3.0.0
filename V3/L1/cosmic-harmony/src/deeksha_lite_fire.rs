@@ -27,13 +27,13 @@ fn meets_target(hash: &[u8; 32], target: &[u8; 32]) -> bool {
 
 pub const DEEKSHA_LITE_FIRE_PROFILE: &str = "deeksha_lite_fire";
 
-pub const SCRATCHPAD_SIZE: usize = 512 * 1024; // 512 KiB
+pub const SCRATCHPAD_SIZE: usize = 128 * 1024; // 128 KiB
 pub const BLOCK_SIZE:      usize = 32;
-pub const BLOCK_COUNT:     usize = SCRATCHPAD_SIZE / BLOCK_SIZE; // 16384
-pub const PASSES:          usize = 8;
-pub const RANDOM_READS:    usize = 256;
+pub const BLOCK_COUNT:     usize = SCRATCHPAD_SIZE / BLOCK_SIZE; // 4096
+pub const PASSES:          usize = 16;
+pub const RANDOM_READS:    usize = 512;
 pub const AES_FULL_ROUNDS: usize = 10;
-pub const THERMAL_ITERS:   usize = 1024;
+pub const THERMAL_ITERS:   usize = 8192;
 
 // ============================================================
 // AES-128 helpers (FIPS-197)
@@ -199,17 +199,50 @@ fn step3_aes_mix(seed: &[u8; 32], nonce: u64) -> [u8; 32] {
 fn step4_thermal_loop(data: &mut [u8; 32], nonce: u64) {
     let mut a = nonce ^ 0x9E3779B97F4A7C15u64;
     let mut b = nonce ^ 0xBF58476D1CE4E5B9u64;
+    let mut c = nonce ^ 0x94D049BB133111EBu64;
+    let mut d = nonce ^ 0x5851F42D4C957F2Du64;
+    let mut e = nonce ^ 0xC0FFEE123456789Au64;
+    let mut f = nonce ^ 0xDEADBEEFCAFEBABEu64;
     for i in 0..THERMAL_ITERS {
         a = a.rotate_left(17).wrapping_add(b);
         b = b.rotate_left(31) ^ a;
+        c = c.rotate_left(13).wrapping_add(d);
+        d = d.rotate_left(47) ^ c;
+        e = e.rotate_left(23).wrapping_add(f);
+        f = f.rotate_left(41) ^ e;
         a = a.wrapping_mul(0xFF51AFD7ED558CCDu64);
         b = b.wrapping_add(0xFF51AFD7ED558CCDu64);
+        c = c.wrapping_mul(0x94D049BB133111EBu64);
+        d = d.wrapping_add(0x5851F42D4C957F2Du64);
+        e = e.wrapping_mul(0xC0FFEE123456789Au64);
+        f = f.wrapping_add(0xDEADBEEFCAFEBABEu64);
         a ^= data[i & 0x1F] as u64;
+        b ^= data[(i + 8) & 0x1F] as u64;
+        c ^= data[(i + 16) & 0x1F] as u64;
+        d ^= data[(i + 24) & 0x1F] as u64;
+        e ^= data[(i + 4) & 0x1F] as u64;
+        f ^= data[(i + 12) & 0x1F] as u64;
     }
-    data[0] ^= a as u8;
-    data[1] ^= (a >> 8) as u8;
-    data[2] ^= b as u8;
-    data[3] ^= (b >> 8) as u8;
+    data[0]  ^= a as u8;
+    data[1]  ^= (a >> 8) as u8;
+    data[2]  ^= b as u8;
+    data[3]  ^= (b >> 8) as u8;
+    data[4]  ^= c as u8;
+    data[5]  ^= (c >> 8) as u8;
+    data[6]  ^= d as u8;
+    data[7]  ^= (d >> 8) as u8;
+    data[8]  ^= e as u8;
+    data[9]  ^= (e >> 8) as u8;
+    data[10] ^= f as u8;
+    data[11] ^= (f >> 8) as u8;
+    data[12] ^= (a >> 16) as u8;
+    data[13] ^= (b >> 16) as u8;
+    data[14] ^= (c >> 16) as u8;
+    data[15] ^= (d >> 16) as u8;
+    data[16] ^= (e >> 16) as u8;
+    data[17] ^= (f >> 16) as u8;
+    data[18] ^= (a >> 24) as u8;
+    data[19] ^= (b >> 24) as u8;
 }
 
 // ============================================================
