@@ -12,9 +12,9 @@ These fund from **block subsidy splits** (89/5/5/1 when enabled) + PPLNS payout 
 
   • Humanitarian 5%    = Children Future Fund — ongoing block subsidy fee recipient
                          zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4
-                         (Regenerated 2026-06-07; distinct from premine slot 12)
-                         Premine slot 12 (genesis 1.44B one-time):
-                         zion1c245e7f5d8h427r4p4s2s607d7v4c255z7x96t3
+                         (BIP39 mnemonic backup on flash disk; distinct from premine slot 12)
+                         Premine slot 12 (genesis 1.44B one-time, BIP39 mnemonic backup):
+                         zion1z7g4u3s2w3c5z5u4a60864m2y7q8e5j304g46r7
 
   • Issobella 5%       = zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702
                          label: ZION_V3_MAINNET_CANONICAL_ISSOBELLA_SUBSIDY_RECIPIENT_v1
