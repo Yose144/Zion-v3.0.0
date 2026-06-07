@@ -605,6 +605,94 @@ code { font-family: var(--font-mono); color: var(--gold); background: rgba(255,2
 #hashrate-chart { width: 100% !important; }
 
 /* ═══════════════════════════════════════════════════════════
+   SERVICE TELEMETRY DETAIL CARDS (Overview panel)
+   ═══════════════════════════════════════════════════════════ */
+
+.service-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  padding: 16px 20px;
+}
+
+.service-detail-card {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+.service-detail-card:hover {
+  border-color: var(--border-hover);
+  background: rgba(255,255,255,0.04);
+  box-shadow: var(--shadow-card);
+}
+.service-detail-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 3px;
+}
+
+.svc-node::before    { background: linear-gradient(90deg, var(--emerald), #059669); }
+.svc-pool::before    { background: linear-gradient(90deg, var(--gold), var(--gold-dim)); }
+.svc-dao::before     { background: linear-gradient(90deg, var(--purple), var(--purple-dim)); }
+.svc-warp::before    { background: linear-gradient(90deg, var(--cyan), var(--cyan-dim)); }
+.svc-agent::before   { background: linear-gradient(90deg, var(--emerald), #059669); }
+.svc-website::before  { background: linear-gradient(90deg, var(--gold), var(--gold-dim)); }
+
+.service-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.service-detail-name {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text-bright);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.service-detail-status {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+.status-online  { color: var(--emerald); background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.25); }
+.status-offline { color: var(--red);    background: rgba(239,68,68,0.1);  border: 1px solid rgba(239,68,68,0.25); }
+
+.service-detail-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 12px;
+}
+.service-detail-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.service-detail-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+}
+.service-detail-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-bright);
+  font-family: var(--font-mono);
+  word-break: break-word;
+}
+.service-detail-value.small { font-size: 11px; }
+
+/* ═══════════════════════════════════════════════════════════
    RESPONSIVE
    ═══════════════════════════════════════════════════════════ */
 
@@ -616,6 +704,7 @@ code { font-family: var(--font-mono); color: var(--gold); background: rgba(255,2
   .fee-grid { grid-template-columns: repeat(2, 1fr); }
   .detail-grid { grid-template-columns: 1fr; }
   .form-row { grid-template-columns: 1fr; }
+  .service-detail-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (max-width: 600px) {

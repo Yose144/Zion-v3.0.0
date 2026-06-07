@@ -13,7 +13,7 @@ export default function DeekshaLiteNews() {
   const articles = NEWS_ARTICLES.slice(0, LITE_LIMIT);
 
   return (
-    <section className="py-12 px-4">
+    <section className="py-12 px-4 border-y-2 border-dashed border-rose-500/50 bg-black/30">
       <div className="zion-container">
         {/* Header */}
         <div className="mb-8">
