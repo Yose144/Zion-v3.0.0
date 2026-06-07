@@ -97,7 +97,8 @@ pub trait GpuMiner: Send {
 }
 
 /// Try to create the best available GPU backend.
-pub fn create_gpu_backend(kind: GpuBackendKind, work_size: usize) -> Result<Box<dyn GpuMiner>> {
+/// Selects the appropriate OpenCL miner based on the algorithm.
+pub fn create_gpu_backend(kind: GpuBackendKind, work_size: usize, algorithm: &str) -> Result<Box<dyn GpuMiner>> {
     match kind {
         GpuBackendKind::Cpu => {
             anyhow::bail!("GPU backend requested but kind=cpu — use CPU mining path instead");
@@ -105,13 +106,27 @@ pub fn create_gpu_backend(kind: GpuBackendKind, work_size: usize) -> Result<Box<
         GpuBackendKind::OpenCL | GpuBackendKind::Auto => {
             #[cfg(feature = "gpu-opencl")]
             {
-                match opencl_deeksha::OpenClDeekshaMiner::new(work_size) {
-                    Ok(miner) => return Ok(Box::new(miner)),
-                    Err(e) => {
-                        if kind == GpuBackendKind::OpenCL {
-                            anyhow::bail!("OpenCL init failed: {e}");
+                // Select miner based on algorithm
+                if algorithm == "deeksha_lite_v1" {
+                    match opencl_deeksha_lite::OpenClDeekshaLiteMiner::new(work_size) {
+                        Ok(miner) => return Ok(Box::new(miner)),
+                        Err(e) => {
+                            if kind == GpuBackendKind::OpenCL {
+                                anyhow::bail!("DeekshaLite OpenCL init failed: {e}");
+                            }
+                            println!("deeksha_lite_opencl_unavailable reason=\"{e}\"");
                         }
-                        println!("gpu_opencl_unavailable reason=\"{e}\"");
+                    }
+                } else {
+                    // Default to cosmic_harmony_deeksha for other algorithms
+                    match opencl_deeksha::OpenClDeekshaMiner::new(work_size) {
+                        Ok(miner) => return Ok(Box::new(miner)),
+                        Err(e) => {
+                            if kind == GpuBackendKind::OpenCL {
+                                anyhow::bail!("OpenCL init failed: {e}");
+                            }
+                            println!("gpu_opencl_unavailable reason=\"{e}\"");
+                        }
                     }
                 }
             }
@@ -179,105 +194,8 @@ pub struct GpuScanOutcome {
 
 /// Scan a job using a GPU backend, returning the first solution.
 /// Tracks candidate-filter statistics for performance diagnostics.
-/// Lazy-initialized DeekshaLite OpenCL miner behind a mutex.
-#[cfg(feature = "gpu-opencl")]
-fn with_deeksha_lite_miner<F, R>(f: F) -> R
-where
-    F: FnOnce(&mut opencl_deeksha_lite::OpenClDeekshaLiteMiner) -> R,
-{
-    use std::sync::OnceLock;
-    static MINER: OnceLock<std::sync::Mutex<opencl_deeksha_lite::OpenClDeekshaLiteMiner>> =
-        OnceLock::new();
-    let mutex = MINER.get_or_init(|| {
-        let work_size = std::env::var("ZION_GPU_WORK_SIZE")
-            .ok()
-            .and_then(|v| v.parse().ok())
-            .unwrap_or(1 << 18);
-        let miner = opencl_deeksha_lite::OpenClDeekshaLiteMiner::new(work_size)
-            .expect("DeekshaLite OpenCL init failed");
-        std::sync::Mutex::new(miner)
-    });
-    let mut guard = mutex.lock().expect("deeksha lite miner lock poisoned");
-    f(&mut *guard)
-}
-
-fn gpu_scan_job_deeksha_lite(job: MiningJob) -> GpuScanOutcome {
-    #[cfg(feature = "gpu-opencl")]
-    {
-        let outcome = with_deeksha_lite_miner(|miner| {
-            match miner.mine_batch(job.header, job.target, job.start_nonce, job.nonce_count) {
-                Ok(result) => {
-                    let nonces_tested = result.nonces_tested;
-                    if let Some((nonce, hash)) = result.solutions.first() {
-                        return GpuScanOutcome {
-                            solution: Some(MiningSolution {
-                                job_id: job.job_id,
-                                candidate: zion_core::BlockCandidate {
-                                    header: job.header,
-                                    nonce: *nonce,
-                                    height: job.height,
-                                },
-                                hash: *hash,
-                            }),
-                            nonces_tested,
-                            candidates_found: 1,
-                            candidates_verified: 1,
-                            candidates_hash_mismatch: 0,
-                            candidates_above_target: 0,
-                        };
-                    }
-                    GpuScanOutcome {
-                        solution: None,
-                        nonces_tested,
-                        candidates_found: 0,
-                        candidates_verified: 0,
-                        candidates_hash_mismatch: 0,
-                        candidates_above_target: 0,
-                    }
-                }
-                Err(e) => {
-                    println!("deeksha_lite_gpu_err={e:#}");
-                    GpuScanOutcome {
-                        solution: None,
-                        nonces_tested: 0,
-                        candidates_found: 0,
-                        candidates_verified: 0,
-                        candidates_hash_mismatch: 0,
-                        candidates_above_target: 0,
-                    }
-                }
-            }
-        });
-        if outcome.solution.is_some() || outcome.nonces_tested > 0 {
-            return outcome;
-        }
-    }
-    // Fallback to CPU if GPU fails or feature not compiled
-    let threads = crate::parallel::detect_threads();
-    crate::parallel::parallel_scan_nonce_range(job, threads, "deeksha_lite_v1")
-        .map(|sol| GpuScanOutcome {
-            solution: Some(sol),
-            nonces_tested: job.nonce_count,
-            candidates_found: 1,
-            candidates_verified: 1,
-            candidates_hash_mismatch: 0,
-            candidates_above_target: 0,
-        })
-        .unwrap_or_else(|| GpuScanOutcome {
-            solution: None,
-            nonces_tested: job.nonce_count,
-            candidates_found: 0,
-            candidates_verified: 0,
-            candidates_hash_mismatch: 0,
-            candidates_above_target: 0,
-        })
-}
-
-/// For dual-algo: route to the correct GPU kernel by algorithm.
-pub fn gpu_scan_job(gpu: &mut dyn GpuMiner, job: MiningJob, algorithm: &str) -> GpuScanOutcome {
-    if algorithm == "deeksha_lite_v1" {
-        return gpu_scan_job_deeksha_lite(job);
-    }
+/// The GPU backend is already selected based on algorithm in create_gpu_backend.
+pub fn gpu_scan_job(gpu: &mut dyn GpuMiner, job: MiningJob, _algorithm: &str) -> GpuScanOutcome {
     match gpu.mine_batch(job.header, job.target, job.start_nonce, job.nonce_count) {
         Ok(result) => {
             let nonces_tested = result.nonces_tested;
