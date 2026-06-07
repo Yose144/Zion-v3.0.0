@@ -42,16 +42,20 @@ if (Test-Path $pidFile) {
     }
 }
 
-$p = Start-Process -FilePath $nodeExe -WorkingDirectory $RepoRoot -RedirectStandardOutput "$logDir\node1.log" -RedirectStandardError "$logDir\node1.err" -WindowStyle Hidden -PassThru
+$ts = [int][double]::Parse((Get-Date -UFormat %s))
+$logFile = "$logDir\node1_${ts}.log"
+$errFile = "$logDir\node1_${ts}.err"
+$p = Start-Process -FilePath $nodeExe -WorkingDirectory $RepoRoot -RedirectStandardOutput $logFile -RedirectStandardError $errFile -WindowStyle Hidden -PassThru
 $p.Id | Out-File $pidFile -Encoding utf8
-Write-Host "Started Node1  PID=$($p.Id)  log=$logDir\node1.log"
+# Keep node1.log pointing at the latest log (copy on first write doesn't work on Windows, use symlink attempt or just write path)
+Write-Host "Started Node1  PID=$($p.Id)  log=$logFile"
 
 # Quick health check: wait up to 10s for log to show activity
 $started = $false
 for ($i = 0; $i -lt 10; $i++) {
     Start-Sleep -Seconds 1
-    if (Test-Path "$logDir\node1.log") {
-        $log = Get-Content "$logDir\node1.log" -Raw -ErrorAction SilentlyContinue
+    if (Test-Path $logFile) {
+        $log = Get-Content $logFile -Raw -ErrorAction SilentlyContinue
         if ($log -and ($log -match 'node_id|chain_height|listening')) {
             $started = $true
             break
@@ -59,7 +63,7 @@ for ($i = 0; $i -lt 10; $i++) {
     }
 }
 if (-not $started) {
-    Write-Warning "[warn] Node1 may have failed to start. Check $logDir\node1.err"
+    Write-Warning "[warn] Node1 may have failed to start. Check $errFile"
 } else {
     Write-Host "[ok] Node1 appears healthy."
 }

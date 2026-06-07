@@ -15,5 +15,10 @@ set ZION_JOB_TTL_MS=15000
 set ZION_VARDIFF_START_DIFF=1
 set ZION_VARDIFF_TARGET_SECS=10
 
-echo Starting ZION Local Pool...
+echo ===========================================================
+echo  ZION Local Pool :: 127.0.0.1:8444
+echo  Node RPC: 127.0.0.1:8443
+echo ===========================================================
+echo.
+
 V3\target\release\server.exe
