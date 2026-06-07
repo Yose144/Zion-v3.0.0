@@ -254,6 +254,41 @@ def check_process_for_service(sid: str) -> dict:
     return {"has_pid": True, "alive": is_process_alive(rec["pid"]), "pid": rec["pid"],
             "age_min": int((time.time() - rec["ts"]) / 60)}
 
+def find_process_by_name(name: str) -> int | None:
+    """Find a running process PID by executable name (Windows + POSIX, no psutil)."""
+    try:
+        if os.name == "nt":
+            import ctypes, ctypes.wintypes
+            TH32CS_SNAPPROCESS = 0x00000002
+            class PROCESSENTRY32(ctypes.Structure):
+                _fields_ = [("dwSize", ctypes.c_uint32), ("cntUsage", ctypes.c_uint32),
+                             ("th32ProcessID", ctypes.c_uint32), ("th32DefaultHeapID", ctypes.c_size_t),
+                             ("th32ModuleID", ctypes.c_uint32), ("cntThreads", ctypes.c_uint32),
+                             ("th32ParentProcessID", ctypes.c_uint32), ("pcPriClassBase", ctypes.c_long),
+                             ("dwFlags", ctypes.c_uint32), ("szExeFile", ctypes.c_char * 260)]
+            snap = ctypes.windll.kernel32.CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0)
+            if snap == ctypes.c_void_p(-1).value:
+                return None
+            entry = PROCESSENTRY32()
+            entry.dwSize = ctypes.sizeof(PROCESSENTRY32)
+            name_lower = name.lower().encode()
+            try:
+                ok = ctypes.windll.kernel32.Process32First(snap, ctypes.byref(entry))
+                while ok:
+                    exe = entry.szExeFile.lower()
+                    if name_lower in exe:
+                        return entry.th32ProcessID
+                    ok = ctypes.windll.kernel32.Process32Next(snap, ctypes.byref(entry))
+            finally:
+                ctypes.windll.kernel32.CloseHandle(snap)
+        else:
+            out = subprocess.run(["pgrep", "-f", name], capture_output=True, text=True, timeout=2)
+            pids = [int(p) for p in out.stdout.split() if p.strip().isdigit()]
+            return pids[0] if pids else None
+    except Exception:
+        pass
+    return None
+
 # ── Resource monitoring ─────────────────────────────────────────────────
 RESOURCE_CACHE = {"ts": 0, "data": {}}
 RESOURCE_LOCK = threading.Lock()
@@ -1316,11 +1351,17 @@ def head_log(filename: str, n: int = 50) -> list[str]:
 
 def latest_log_path(name: str) -> Path | None:
     """Find the most recent log file for a service.
-    Prefers timestamped logs (name.YYYYMMDD_HHMMSS.log) then falls back to name.log.
+    Supports both dotted (name.YYYYMMDD_HHMMSS.log) and underscore (name_TIMESTAMP.log) formats.
+    Falls back to name.log if no timestamped version exists.
     Accepts name with or without .log suffix."""
     base = name.removesuffix(".log")
-    candidates = sorted(LOG_DIR.glob(f"{base}.*.log"), key=lambda p: p.stat().st_mtime, reverse=True)
+    # Collect both dotted and underscore timestamped variants, pick newest by mtime
+    candidates = (
+        list(LOG_DIR.glob(f"{base}.*.log")) +
+        list(LOG_DIR.glob(f"{base}_*.log"))
+    )
     if candidates:
+        candidates.sort(key=lambda p: p.stat().st_mtime, reverse=True)
         return candidates[0]
     fallback = LOG_DIR / f"{base}.log"
     if fallback.exists():
@@ -1949,22 +1990,34 @@ def parse_miner_log_specific(log_file: str) -> dict:
     return status
 
 def parse_miner_log() -> dict:
-    # Use the most recently modified miner log file
-    recent = tail_log("miner.log", 200)
-    startup = head_log("miner.log", 50)
-    low_recent = tail_log("miner-low.log", 200)
-    # Prefer miner-low.log if it is newer (based on mtime)
-    miner_path = LOG_DIR / "miner.log"
-    low_path = LOG_DIR / "miner-low.log"
-    if low_path.exists() and miner_path.exists():
-        if low_path.stat().st_mtime > miner_path.stat().st_mtime:
-            recent = low_recent
-            startup = head_log("miner-low.log", 50)
-    elif low_path.exists() and not miner_path.exists():
-        recent = low_recent
-        startup = head_log("miner-low.log", 50)
+    # Use the most recently modified miner log file (supports timestamped logs like miner_XXXXXXXXXX.log)
+    candidates = ["miner", "miner-low", "miner-gpu", "miner-cpu"]
+    best_path = None
+    best_mtime = 0
+    for cand in candidates:
+        p = latest_log_path(cand)
+        if p and p.exists():
+            mt = p.stat().st_mtime
+            if mt > best_mtime:
+                best_mtime = mt
+                best_path = p
+    if best_path:
+        recent = tail_log(best_path.name, 200)
+        startup = head_log(best_path.name, 50)
+    else:
+        recent = []
+        startup = []
+    # Process-based liveness: check PROCESS_REGISTRY first, then scan by exe name
+    proc_check = check_process_for_service("miner")
+    proc_alive = proc_check["alive"]
+    if not proc_alive:
+        miner_pid = find_process_by_name("zion-miner")
+        if miner_pid and is_process_alive(miner_pid):
+            proc_alive = True
+            register_process("miner", miner_pid, image="zion-miner")
+    # running = log has content OR process is alive
     status = {
-        "running": bool(recent),
+        "running": bool(recent) or proc_alive,
         "miner_id": None,
         "worker_name": None,
         "pool_addr": None,
@@ -1991,22 +2044,41 @@ def parse_miner_log() -> dict:
     for line in recent:
         if m := re.search(r'gpu_backend=(\S+)', line):
             status["gpu_backend"] = m.group(1)
-        # Primary: xmrig-style speed summary
+        # Primary: "speed 10s/60s/15m  709.72  880.80  729.58 H/s" — values are H/s, convert to KH/s
         if m := re.search(r'speed\s+\d+s/\d+s/\d+m\s+(\d+\.\d+)', line):
-            status["hashrate"] = float(m.group(1))
-        # Fallback: session_status hps_10s (hashes per second → KH/s)
+            status["hashrate"] = float(m.group(1)) / 1000.0
+        # Fallback: session_status hps_10s / gpu_hps (H/s → KH/s)
         if status["hashrate"] is None:
             if m := re.search(r'hps_10s=(\d+\.\d+)', line):
                 status["hashrate"] = float(m.group(1)) / 1000.0
             elif m := re.search(r'gpu_hps=(\d+\.\d+)', line):
                 status["hashrate"] = float(m.group(1)) / 1000.0
-        if m := re.search(r'accepted\s+(\d+)/(\d+)', line):
+        # shares A:45 R:2 format
+        if m := re.search(r'shares\s+A:(\d+)\s+R:(\d+)', line):
             status["shares_accepted"] = int(m.group(1))
             status["shares_rejected"] = int(m.group(2))
-        if m := re.search(r'height=(\d+)', line):
+        # fallback: accepted N/M format
+        elif m := re.search(r'accepted\s+(\d+)/(\d+)', line):
+            status["shares_accepted"] = int(m.group(1))
+            status["shares_rejected"] = int(m.group(2))
+        # accept_pct line: accepted=45 rejected=2
+        if m := re.search(r'\baccepted=(\d+)\b', line):
+            status["shares_accepted"] = int(m.group(1))
+        if m := re.search(r'\brejected=(\d+)\b', line):
+            status["shares_rejected"] = int(m.group(1))
+        if m := re.search(r'pool_height=(\d+)', line):
+            status["current_height"] = int(m.group(1))
+        elif m := re.search(r'\bheight=(\d+)', line):
             status["current_height"] = int(m.group(1))
         if m := re.search(r'diff\s+(\d+)', line):
             status["current_diff"] = int(m.group(1))
+        # pool_addr from session log
+        if m := re.search(r'pool_addr=(\S+)', line):
+            status["pool_addr"] = m.group(1)
+        if m := re.search(r'miner_id=(\S+)', line):
+            status["miner_id"] = m.group(1)
+        if m := re.search(r'worker_name=(\S+)', line):
+            status["worker_name"] = m.group(1)
     return status
 
 # ── Status cache ──────────────────────────────────────────────────────────
@@ -6976,7 +7048,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json({"buckets": SERVICE_HISTORY.snapshot()})
         elif route == "/api/resources":
             self._json(get_resource_usage())
-        elif route == "/api/monitoring/status":
+        elif route in ("/api/monitoring", "/api/monitoring/status"):
             self._json(get_monitoring_status())
         elif route == "/api/alerts/history":
             self._json({"alerts": load_alert_history()})
@@ -7390,7 +7462,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 self._json({"ok": True, "lines": [l.rstrip() for l in tail]})
             except Exception as e:
                 self._json({"ok": False, "error": str(e)[:80]})
-        elif route == "/api/launch/status":
+        elif route in ("/api/launch/status", "/api/launch-state"):
             self._json(get_launch_state())
         elif route == "/api/genesis":
             total_premine = sum(p["amount_zion"] for p in PREMINE_OUTPUTS)
@@ -7764,6 +7836,19 @@ class DashboardHandler(BaseHTTPRequestHandler):
         elif route == "/api/cli/run":
             cmd = params.get("cmd", [""])[0].strip()
             self._json(run_zion_cli(cmd))
+        elif route == "/api/cli/node-status":
+            # Return node status from RPC (no CLI script needed)
+            st = build_status()
+            n1 = st.get("node1", {})
+            if n1.get("running"):
+                output = (f"Height    {n1.get('chain_height', '?')}\n"
+                          f"Peers     {n1.get('known_peers', 0)}\n"
+                          f"Mempool   {n1.get('mempool_size', 0)}\n"
+                          f"Tip       {(n1.get('tip_hash') or '')[:64]}\n"
+                          f"NodeID    {n1.get('node_id', '?')}\n")
+                self._json({"ok": True, "output": output, "cli_connected": True})
+            else:
+                self._json({"ok": False, "error": "Node not running", "cli_connected": False})
         elif route == "/api/alerts/config":
             self._json(load_alert_config())
         elif route == "/api/settings":
@@ -7798,8 +7883,14 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json(inspect_database(path))
         elif route.startswith("/api/logs/"):
             service = route.split("/")[-1]
+            n_lines = int(params.get("n", ["200"])[0])
             filename = SERVICE_LOG_MAP.get(service, f"{service}.log")
-            self._json({"lines": tail_log(filename, 200)})
+            # Try latest_log_path first (finds timestamped variants)
+            log_p = latest_log_path(filename.removesuffix(".log"))
+            if log_p and log_p.exists():
+                self._json({"lines": tail_log(log_p.name, n_lines)})
+            else:
+                self._json({"lines": tail_log(filename, n_lines)})
         elif route == "/api/install/log":
             install_log = LOG_DIR / "install-deps.log"
             lines = []
