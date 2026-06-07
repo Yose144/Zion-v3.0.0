@@ -1,7 +1,8 @@
 # Zion — Quick Start Guide & FAQ (for Everyone)
 
-> **Last updated:** 2026-06-06  
+> **Last updated:** 2026-06-07  
 > **What you need:** Windows 11, internet connection, and about 10 minutes of patience.
+> **Active chain:** Genesis `7543004c` · Consensus `deeksha_lite_v1` · Pool: `77.42.71.94:8444`
 
 ---
 
@@ -257,6 +258,8 @@ set ZION_MINER_ID=w11-gpu-miner-01
 ### Q: Where are my earnings / wallet?
 **A:** This guide is about **running the software**. Wallet setup, receiving addresses, and reward payouts are handled by the pool operator and the Zion CLI. For wallet commands see the `V3/cli` directory or ask in the community channel.
 
+> **Important:** When connecting to the pool, you **must** set `ZION_PAYOUT_ADDRESS` to a valid 44-char `zion1...` address. The pool will close the connection if this is missing or invalid — this is a security requirement, not a bug.
+
 ### Q: The first build takes forever. Is it broken?
 **A:** No. Rust compiles everything from source. The first build can take **2–10 minutes** depending on your CPU. After that, the `.bat` finds the already-built files and starts instantly.
 
@@ -296,7 +299,9 @@ Then open `http://127.0.0.1:8766` in your browser.
 | Miner says `Bye` every second | `ZION_LOOP_COUNT` is too low (default was 1 in old versions) | Our `.bat` already sets it to `1000000` |
 | Very low hashrate (30 H/s) | Same as above — constant reconnects | Check the `.bat` has `ZION_LOOP_COUNT=1000000` |
 | `OpenCL` errors | Missing/broken GPU drivers | Switch to `ZION_GPU_BACKEND=cpu` |
-| Dashboard shows no data | Node not running or RPC blocked | Make sure the node window is open and firewall allows port 8443 |
+| Dashboard shows no data | Node not running or RPC blocked | Make sure the node window is open and firewall allows port 8443 |
+| Pool closes connection |  missing or invalid | Set valid 44-char  address in  |
+| Node stuck at height 0 / wrong genesis | State DB from old chain | Delete  and restart |
 
 ---
 
