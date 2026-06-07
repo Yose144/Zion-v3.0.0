@@ -2037,7 +2037,9 @@ def parse_miner_log_specific(log_file: str) -> dict:
             status["shares_accepted"] = int(m.group(1))
             status["shares_rejected"] = int(m.group(2))
         if m := re.search(r'height=(\d+)', line):
-            status["current_height"] = int(m.group(1))
+            h = int(m.group(1))
+            if status["current_height"] is None or h > status["current_height"]:
+                status["current_height"] = h
         if m := re.search(r'diff\s+(\d+)', line):
             status["current_diff"] = int(m.group(1))
 
@@ -2130,9 +2132,13 @@ def parse_miner_log() -> dict:
         if m := re.search(r'\brejected=(\d+)\b', line):
             status["shares_rejected"] = int(m.group(1))
         if m := re.search(r'pool_height=(\d+)', line):
-            status["current_height"] = int(m.group(1))
+            h = int(m.group(1))
+            if status["current_height"] is None or h > status["current_height"]:
+                status["current_height"] = h
         elif m := re.search(r'\bheight=(\d+)', line):
-            status["current_height"] = int(m.group(1))
+            h = int(m.group(1))
+            if status["current_height"] is None or h > status["current_height"]:
+                status["current_height"] = h
         if m := re.search(r'diff\s+(\d+)', line):
             status["current_diff"] = int(m.group(1))
         # pool_addr from session log
@@ -2365,10 +2371,11 @@ def _build_status_edge_primary() -> dict:
         "nonce_count": 4096,
         "pool_wallet": edge_pool_wallet,
         "payout_enabled": pool_edge_health["alive"] and edge_fee_split == "89/5/5/0",
-        "blocks_found": edge_metrics["blocks_found"] or local_pool["blocks_found"],
-        "shares_accepted": local_pool["shares_accepted"],
-        "shares_rejected": local_pool["shares_rejected"],
-        "active_sessions": edge_metrics["active_miners"] or local_pool["active_sessions"],
+        "blocks_found": edge_metrics["blocks_found"] if edge_metrics["blocks_found"] is not None else local_pool["blocks_found"],
+        # Prefer live Edge Prometheus metrics over stale local pool log
+        "shares_accepted": edge_metrics["shares_accepted"] if edge_metrics["shares_accepted"] is not None else local_pool["shares_accepted"],
+        "shares_rejected": edge_metrics["shares_rejected"] if edge_metrics["shares_rejected"] is not None else local_pool["shares_rejected"],
+        "active_sessions": edge_metrics["active_miners"] if edge_metrics["active_miners"] is not None else local_pool["active_sessions"],
         "fee_split": edge_fee_split or local_pool.get("fee_split"),
         "recent_payouts": local_pool["recent_payouts"],
         "recent_lines": local_pool["recent_lines"],
@@ -2513,7 +2520,14 @@ def _build_status_local_dev() -> dict:
             "pid": None,
             "active_miners": None,
             "hashrate": None,
+            "hashrate_1h_khs": None,
+            "accept_rate_pct": None,
+            "shares_accepted": None,
+            "shares_rejected": None,
+            "miners_tracked": None,
             "blocks_found": None,
+            "total_hashes": None,
+            "total_shares": None,
             "sync_gap": None,
             "details": "Not applicable in local-dev topology",
         },
@@ -3744,11 +3758,24 @@ def build_payout_status() -> dict:
 
     # Session stats
     active_sessions = pool_stats.get("miners", {}).get("active", len(miners)) if isinstance(pool_stats.get("miners"), dict) else len(miners)
+    # accept_rate_pct: prefer live Prometheus metrics (port 8455) over pool /stats endpoint
+    _routing_accept = pool_stats.get("routing", {}).get("accept_rate_pct") if isinstance(pool_stats.get("routing"), dict) else None
+    _metrics_accept = None
+    try:
+        import urllib.request as _ur2
+        _mhost = "100.76.16.108" if TOPOLOGY == "edge-primary" else "127.0.0.1"
+        with _ur2.urlopen(f"http://{_mhost}:8455/metrics", timeout=1.5) as _r:
+            for _ln in _r.read().decode("utf-8", errors="ignore").splitlines():
+                if _ln.startswith("zion_pool_accept_rate_pct "):
+                    _metrics_accept = float(_ln.split()[-1])
+                    break
+    except Exception:
+        pass
     status["session_stats"] = {
         "active_sessions": active_sessions,
         "total_shares_1h": sum(m.get("valid_shares", 0) for m in miners),
         "blocks_24h": total_blocks,
-        "accept_rate_pct": pool_stats.get("routing", {}).get("accept_rate_pct") if isinstance(pool_stats.get("routing"), dict) else None,
+        "accept_rate_pct": _metrics_accept if _metrics_accept is not None else _routing_accept,
     }
 
     # JS miner_stats compatibility
