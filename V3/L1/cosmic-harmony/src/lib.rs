@@ -59,6 +59,7 @@ pub use revenue_journal::{
 };
 pub use stream_layers::{
     cosmic_harmony_ekam_deeksha_v2_with_streams, cosmic_harmony_ekam_deeksha_with_streams,
+    deeksha_lite_fire_with_streams, deeksha_lite_v1_with_streams,
     DeekshaStep, DeekshaStreamTelemetry,
 };
 
