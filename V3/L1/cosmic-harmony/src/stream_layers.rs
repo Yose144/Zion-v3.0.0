@@ -35,12 +35,20 @@ use crate::scratchpad_ekam::memory_hard_transform_ekam_light_v2;
 /// A single computational step in the Deeksha pipeline.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum DeekshaStep {
+    /* ── Cosmic Harmony v2 steps ── */
     Keccak256,
     Sha3_512,
     GoldenMatrix,
     MemoryHard,
     NpuMix,
     CosmicFusion,
+    /* ── DeekshaLite v1 steps ── */
+    AesMix,
+    ThermalLoop,
+    KeccakFinal,
+    /* ── DeekshaLite Fire steps ── */
+    AesMixFire,
+    ThermalLoopFire,
 }
 
 impl DeekshaStep {
@@ -53,6 +61,11 @@ impl DeekshaStep {
             Self::MemoryHard => "memory_hard",
             Self::NpuMix => "npu_mix",
             Self::CosmicFusion => "cosmic_fusion",
+            Self::AesMix => "aes_mix",
+            Self::ThermalLoop => "thermal_loop",
+            Self::KeccakFinal => "keccak_final",
+            Self::AesMixFire => "aes_mix_fire",
+            Self::ThermalLoopFire => "thermal_loop_fire",
         }
     }
 
@@ -61,8 +74,12 @@ impl DeekshaStep {
         match self {
             Self::Keccak256 => RevenueSource::KeccakBonus,
             Self::Sha3_512 => RevenueSource::Sha3Bonus,
-            Self::GoldenMatrix | Self::MemoryHard | Self::CosmicFusion => RevenueSource::Zion,
+            Self::GoldenMatrix | Self::MemoryHard | Self::CosmicFusion | Self::KeccakFinal => RevenueSource::Zion,
             Self::NpuMix => RevenueSource::NclAi,
+            Self::AesMix => RevenueSource::DeekshaLite,
+            Self::ThermalLoop => RevenueSource::DeekshaLite,
+            Self::AesMixFire => RevenueSource::ThermalBonus,
+            Self::ThermalLoopFire => RevenueSource::ThermalBonus,
         }
     }
 
@@ -83,6 +100,13 @@ impl DeekshaStep {
             Self::NpuMix => 15,
             // Final fusion rounds
             Self::CosmicFusion => 10,
+            // Lite v1: AES (3 rounds) + thermal (light)
+            Self::AesMix => 5,
+            Self::ThermalLoop => 3,
+            Self::KeccakFinal => 2,
+            // Fire: AES (10 rounds) + heavy thermal
+            Self::AesMixFire => 10,
+            Self::ThermalLoopFire => 15,
         }
     }
 }
@@ -219,6 +243,43 @@ pub fn cosmic_harmony_ekam_deeksha_with_streams(
     (hash, telemetry)
 }
 
+/// DeekshaLite v1 with stream telemetry.
+#[inline]
+pub fn deeksha_lite_v1_with_streams(
+    block_header: &[u8],
+    nonce: u64,
+) -> (Hash32, DeekshaStreamTelemetry) {
+    let mut telemetry = DeekshaStreamTelemetry::new();
+
+    // Step 1: Keccak-256 (header||nonce)
+    let hash = crate::deeksha_lite::deeksha_lite_with_height(block_header, nonce, 0);
+    telemetry.record(DeekshaStep::Keccak256);
+    telemetry.record(DeekshaStep::MemoryHard);
+    telemetry.record(DeekshaStep::AesMix);
+    telemetry.record(DeekshaStep::KeccakFinal);
+
+    (hash, telemetry)
+}
+
+/// DeekshaLite Fire with stream telemetry.
+#[inline]
+pub fn deeksha_lite_fire_with_streams(
+    block_header: &[u8],
+    nonce: u64,
+) -> (Hash32, DeekshaStreamTelemetry) {
+    let mut telemetry = DeekshaStreamTelemetry::new();
+
+    // Fire pipeline: Keccak -> MemoryHard(512K) -> AES-128x10 -> ThermalLoop -> Keccak
+    let hash = crate::deeksha_lite_fire::deeksha_lite_fire_with_height(block_header, nonce, 0);
+    telemetry.record(DeekshaStep::Keccak256);
+    telemetry.record(DeekshaStep::MemoryHard);
+    telemetry.record(DeekshaStep::AesMixFire);
+    telemetry.record(DeekshaStep::ThermalLoopFire);
+    telemetry.record(DeekshaStep::KeccakFinal);
+
+    (hash, telemetry)
+}
+
 // ============================================================================
 // BYPRODUCT EXTRACTORS (for external pool submission)
 // ============================================================================
@@ -348,5 +409,41 @@ mod tests {
 
         assert_eq!(extract_keccak_byproduct(&s1).len(), 32);
         assert_eq!(extract_sha3_byproduct(&s2).len(), 64);
+    }
+
+    #[test]
+    fn deeksha_lite_v1_with_streams_parity() {
+        let header = b"lite v1 stream test";
+        let nonce = 42u64;
+
+        let hash_plain = crate::deeksha_lite::deeksha_lite_with_height(header, nonce, 0);
+        let (hash_streams, telemetry) = deeksha_lite_v1_with_streams(header, nonce);
+
+        assert_eq!(hash_plain.data, hash_streams.data);
+        assert_eq!(telemetry.steps.len(), 4);
+        assert!(telemetry.total_work > 0);
+    }
+
+    #[test]
+    fn deeksha_lite_fire_with_streams_parity() {
+        let header = b"fire stream test";
+        let nonce = 99u64;
+
+        let hash_plain = crate::deeksha_lite_fire::deeksha_lite_fire_with_height(header, nonce, 0);
+        let (hash_streams, telemetry) = deeksha_lite_fire_with_streams(header, nonce);
+
+        assert_eq!(hash_plain.data, hash_streams.data);
+        assert_eq!(telemetry.steps.len(), 5);
+        assert!(telemetry.total_work > 0);
+
+        let thermal_pct = telemetry.pct_for(RevenueSource::ThermalBonus);
+        assert!(thermal_pct > 0.0, "Fire must attribute some work to ThermalBonus");
+    }
+
+    #[test]
+    fn deeksha_lite_v1_revenue_is_deeksha_lite_stream() {
+        let (_hash, telemetry) = deeksha_lite_v1_with_streams(b"lite revenue", 1);
+        let lite_pct = telemetry.pct_for(RevenueSource::DeekshaLite);
+        assert!(lite_pct > 0.0, "Lite v1 must have DeekshaLite revenue stream");
     }
 }
