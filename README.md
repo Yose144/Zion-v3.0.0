@@ -34,7 +34,7 @@ ZION is a decentralized **Layer 1 blockchain** built from scratch in **Rust**, r
 | **DAA** | LWMA (60-block window, ±25% per block) |
 | **Fee Policy** | 100% burn (deflationary) |
 | **Architecture** | **6-Layer** |
-| **Genesis Hash** | `1da0251076471744b783105a6723fbd2e899282d6582d59f0de7905cd69f07c7` |
+| **Genesis Hash** | `d28dc404abfd4e22b313d3a7e8b680453328a77ace68b47466a14d18aff6df5d` |
 | **Presale** | None — Fair Launch only |
 
 ### Canonical Subsidy Addresses (Deterministic, 89/5/5/1)
@@ -42,7 +42,7 @@ ZION is a decentralized **Layer 1 blockchain** built from scratch in **Rust**, r
 | Recipient | Address | Share |
 |-----------|---------|-------|
 | Miner | `zion1w523a76830x2t5m7f3j023w265e8g5c400a4790` | 89% |
-| Humanitarian | `zion165a527w5d0n085t775x3w8n8q20742a6w7xr0z3` | 5% |
+| Humanitarian | `zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4` | 5% |
 | Issobella | `zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702` | 5% |
 | Pool Fee | `zion196m4n8x764v7a0s406j40094a8z5j8m6z7nk342` | 1% (burned) |
 
