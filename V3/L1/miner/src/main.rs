@@ -2151,7 +2151,7 @@ impl MinerConfig {
                     println!("  --gpu BACKEND       GPU backend: auto, metal, opencl, cpu (default: auto)");
                     println!("  --loops N           Iteration count (default: 1)");
                     println!("  --profile NAME      Profile: pool, solo, benchmark, dual");
-                    println!("  --algorithm ALGO    Mining algorithm: deeksha_lite_v1, cosmic_harmony_ekam_deeksha_v2");
+                    println!("  --algorithm ALGO    Mining algorithm: deeksha_lite_v1, cosmic_harmony_ekam_deeksha_v2, deeksha_lite_fire");
                     println!();
                     println!("Benchmarks:");
                     println!("  --ekam-bench          Ekam Deeksha GPU benchmark (single algo)");
