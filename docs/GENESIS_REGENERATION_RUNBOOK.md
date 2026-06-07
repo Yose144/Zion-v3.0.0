@@ -755,4 +755,53 @@ For issues during genesis regeneration:
 
 ---
 
+## Incident Log — Humanitarian Wallet Fix (2026-06-07)
+
+### Root Cause
+
+During genesis regeneration on **2026-06-03**, `MAINNET_CANONICAL_HUMANITARIAN_SUBSIDY_WALLET`
+was mistakenly set to the same address as premine slot 12 (`zion165a527w5d0n085t775x3w8n8q20742a6w7xr0z3`).
+This address had **no mnemonic seed backup** in any accessible location — only the secret key was
+referenced in genesis.rs, but that address was absent from both `PREMINE_KEYS_ENCRYPTED_2026-06-03.txt`
+and the flash disk wallet backup (`F:\ZION_V3_MAINNET_WALLETS.txt`).
+
+### Discovery
+
+Noticed on 2026-06-07 that flash disk contained a correct humanitarian subsidy wallet
+(`zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4`) with mnemonic, but the genesis.rs constant
+pointed to an unrecoverable address.
+
+### Fix Applied (2026-06-07)
+
+| Component | Old Value | New Value |
+|-----------|-----------|-----------|
+| `MAINNET_CANONICAL_HUMANITARIAN_SUBSIDY_WALLET` | `zion165a527w5d0n085t775x3w8n8q20742a6w7xr0z3` (no backup) | `zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4` (mnemonic on flash disk) |
+| Premine slot 12 address | `zion165a527w5d0n085t775x3w8n8q20742a6w7xr0z3` (no backup) | `zion1c245e7f5d8h427r4p4s2s607d7v4c255z7x96t3` (SK backup in secrets/) |
+| Genesis hash | `1da0251076471744b783105a6723fbd2e899282d6582d59f0de7905cd69f07c7` | `d28dc404abfd4e22b313d3a7e8b680453328a77ace68b47466a14d18aff6df5d` |
+
+**Key architectural clarification discovered:**
+- `MAINNET_CANONICAL_HUMANITARIAN_SUBSIDY_WALLET` = ongoing 5% block subsidy fee recipient (per-block)
+- Premine slot 12 = one-time genesis 1.44B ZION allocation
+
+These MUST be **different addresses** (enforced by `canonical_subsidy_wallets_are_distinct_and_not_duplicate_premine_slots` test).
+
+### Steps Executed
+
+1. Generated new Ed25519 keypair for premine slot 12 (SK stored in `secrets/PREMINE_KEYS_ENCRYPTED_2026-06-03.txt`)
+2. Restored correct subsidy wallet from flash disk backup
+3. Updated `V3/L1/core/src/genesis.rs` — both premine slot 12 and CANONICAL constant
+4. Updated all 38 files referencing old humanitarian address (scripts, configs, docs)
+5. Updated genesis hash in all documentation (38 → 0 occurrences of old address)
+6. Updated flash disk backup (`F:\ZION_V3_MAINNET_WALLETS.json/txt/zip`)
+7. Verified: 485 tests passed, 0 failed
+8. New genesis hash: `d28dc404abfd4e22b313d3a7e8b680453328a77ace68b47466a14d18aff6df5d`
+
+### Prevention
+
+- Always verify that premine slot addresses and canonical subsidy wallets are **distinct** keypairs
+- The test `canonical_subsidy_wallets_are_distinct_and_not_duplicate_premine_slots` enforces this at compile time
+- Flash disk backup must be updated **immediately** after any genesis change
+
+---
+
 **END OF RUNBOOK**

@@ -13,7 +13,7 @@ export ZION_NODE_STATE_PATH="$REPO_ROOT/V3/data/zion-node-state.db"
 export ZION_SEED_PEERS='none'
 # Pool payout wallet receives the 89% miner share so PPLNS can redistribute
 export ZION_MINER_ADDRESS='zion1w523a76830x2t5m7f3j023w265e8g5c400a4790'
-export ZION_HUMANITARIAN_WALLET='zion165a527w5d0n085t775x3w8n8q20742a6w7xr0z3'
+export ZION_HUMANITARIAN_WALLET='zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4'
 export ZION_ISSOBELLA_WALLET='zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702'
 # Note: 89/5/5/0 burn model — no pool fee wallet (1% is burned, never minted)
 

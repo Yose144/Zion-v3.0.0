@@ -20,7 +20,7 @@
 | `DECAY_DENOMINATOR` | `5` | Decay factor denominator |
 | `MAX_DECAY_DECADES` | `10` | Decades before tail emission |
 | `BASE_REWARD` | `5_400_067_000_000_000` flowers | Initial block reward (5,400.067 ZION) |
-| `GENESIS_HASH` | `1da0251076471744b783105a6723fbd2e899282d6582d59f0de7905cd69f07c7` | Current canonical genesis |
+| `GENESIS_HASH` | `d28dc404abfd4e22b313d3a7e8b680453328a77ace68b47466a14d18aff6df5d` | Current canonical genesis |
 | `TAIL_REWARD` | `724_784_723_787_776` flowers | Perpetual tail emission (~724.7847 ZION) |
 | `COINBASE_MATURITY` | `100` | Blocks before coinbase spendable |
 | `MINER_PCT` | `89` | Miner share of block reward (%) |
@@ -61,7 +61,7 @@
 
 | Label | Address |
 |-------|---------|
-| `MAINNET_CANONICAL_HUMANITARIAN_SUBSIDY_WALLET` | `zion165a527w5d0n085t775x3w8n8q20742a6w7xr0z3` |
+| `MAINNET_CANONICAL_HUMANITARIAN_SUBSIDY_WALLET` | `zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4` |
 | `MAINNET_CANONICAL_ISSOBELLA_SUBSIDY_WALLET` | `zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702` |
 | `MAINNET_CANONICAL_POOL_FEE_SUBSIDY_WALLET` | `zion196m4n8x764v7a0s406j40094a8z5j8m6z7nk342` |
 | `MAINNET_CANONICAL_DEFAULT_MINER_WALLET` | `zion1w523a76830x2t5m7f3j023w265e8g5c400a4790` |

@@ -97,7 +97,7 @@ export const POOL_FEE_PCT = 1;
 // ─── Tithe Wallet Addresses ─────────────────────────────────────────────────
 
 /** Humanitarian fund wallet (genesis premine [12]) */
-export const HUMANITARIAN_WALLET = 'zion165a527w5d0n085t775x3w8n8q20742a6w7xr0z3';
+export const HUMANITARIAN_WALLET = 'zion1c245e7f5d8h427r4p4s2s607d7v4c255z7x96t3';
 
 /** L5/L6 Issobella fund wallet */
 export const ISSOBELLA_WALLET = 'zion170a374s6h390k7w244m5c4f354v8n4678844655';

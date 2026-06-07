@@ -12,8 +12,8 @@
 
 ### ✅ Hlavní zjištění: Edge server rebuildnut s kanonickým genesis hashem
 
-- **Aktuální genesis hash (HEAD):** `1da0251076471744b783105a6723fbd2e899282d6582d59f0de7905cd69f07c7`
-- **Edge server genesis hash (běžící):** `1da0251076471744b783105a6723fbd2e899282d6582d59f0de7905cd69f07c7` ✅ SHODA
+- **Aktuální genesis hash (HEAD):** `d28dc404abfd4e22b313d3a7e8b680453328a77ace68b47466a14d18aff6df5d`
+- **Edge server genesis hash (běžící):** `d28dc404abfd4e22b313d3a7e8b680453328a77ace68b47466a14d18aff6df5d` ✅ SHODA
 - **Edge chain výška:** 0 (resetováno, nový genesis)
 - **Flash disk root adresy:** 100% shoda s genesis.rs HEAD
 - **Dokumentace:** Aktualizována a pushnuta na git
@@ -91,8 +91,8 @@
   "chain_height": 0,
   "accepted_blocks": 1,
   "consensus_profile": "cosmic_harmony_ekam_deeksha_v2",
-  "tip_hash": "1da0251076471744b783105a6723fbd2e899282d6582d59f0de7905cd69f07c7",
-  "genesis_hash": "1da0251076471744b783105a6723fbd2e899282d6582d59f0de7905cd69f07c7",
+  "tip_hash": "d28dc404abfd4e22b313d3a7e8b680453328a77ace68b47466a14d18aff6df5d",
+  "genesis_hash": "d28dc404abfd4e22b313d3a7e8b680453328a77ace68b47466a14d18aff6df5d",
   "mempool_transactions": 0,
   "active_template_height": 1
 }
@@ -117,11 +117,11 @@
 
 | Zdroj | Genesis Hash | Poznámka |
 |--------|---------------|---------|
-| **Git HEAD (aktuální kód)** | `1da0251076471744b783105a6723fbd2e899282d6582d59f0de7905cd69f07c7` | ✅ Kanonický |
-| **Edge server (běžící node)** | `1da0251076471744b783105a6723fbd2e899282d6582d59f0de7905cd69f07c7` | ✅ **SHODA** |
-| **docs/PREMINE_ADDRESSES_PUBLIC.txt** | `1da0251076471744b783105a6723fbd2e899282d6582d59f0de7905cd69f07c7` | ✅ Shoda |
+| **Git HEAD (aktuální kód)** | `d28dc404abfd4e22b313d3a7e8b680453328a77ace68b47466a14d18aff6df5d` | ✅ Kanonický |
+| **Edge server (běžící node)** | `d28dc404abfd4e22b313d3a7e8b680453328a77ace68b47466a14d18aff6df5d` | ✅ **SHODA** |
+| **docs/PREMINE_ADDRESSES_PUBLIC.txt** | `d28dc404abfd4e22b313d3a7e8b680453328a77ace68b47466a14d18aff6df5d` | ✅ Shoda |
 | **Flash disk root (ZION_V3_MAINNET_WALLETS.txt)** | — | ✅ Adresy 100% shoda |
-| **StatusV3.md (dokumentace)** | `1da0251076471744b783105a6723fbd2e899282d6582d59f0de7905cd69f07c7` | ✅ Aktuální |
+| **StatusV3.md (dokumentace)** | `d28dc404abfd4e22b313d3a7e8b680453328a77ace68b47466a14d18aff6df5d` | ✅ Aktuální |
 | **V3/docs/mainnet/PREMINE_AND_CANONICAL_WALLETS_PUBLIC.txt** | neuvedeno | ❌ Zastaralé adresy (s pomlčkami) |
 
 ### 4.2 Srovnání všech adres — Flash disk root ↔ genesis.rs HEAD
@@ -139,7 +139,7 @@
 | Slot 9 Core Dev | `zion1d3p5x622m327r060w5z0q5r203v837m6l8pa8x5` | `zion1d3p5x622m327r060w5z0q5r203v837m6l8pa8x5` | ✅ |
 | Slot 10 Network | `zion1r6r4s0u2e6u4t23767s05752d70660h2f29d2l7` | `zion1r6r4s0u2e6u4t23767s05752d70660h2f29d2l7` | ✅ |
 | Slot 11 Creator | `zion16542q4l853a2z0u5r5w8y4m8k4558847h503736` | `zion16542q4l853a2z0u5r5w8y4m8k4558847h503736` | ✅ |
-| Slot 12 Humanitarian | `zion165a527w5d0n085t775x3w8n8q20742a6w7xr0z3` | `zion165a527w5d0n085t775x3w8n8q20742a6w7xr0z3` | ✅ |
+| Slot 12 Humanitarian | `zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4` | `zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4` | ✅ |
 | Slot 13 Bridge Seed | `zion13794g7k3m0f84637l2x0t855h3l258k8p3xp5t3` | `zion13794g7k3m0f84637l2x0t855h3l258k8p3xp5t3` | ✅ |
 | Slot 14 Bridge Vault | `zion1r565v3k2u8p8t6n494p0n527c0m7a5s4s5ae0x7` | `zion1r565v3k2u8p8t6n494p0n527c0m7a5s4s5ae0x7` | ✅ |
 | **Miner 89%** | `zion1w523a76830x2t5m7f3j023w265e8g5c400a4790` | `zion1w523a76830x2t5m7f3j023w265e8g5c400a4790` | ✅ |
@@ -293,7 +293,7 @@ Všechny kritické komponenty jsou nyní konsistentní:
 - ✅ `docs/PREMINE_ADDRESSES_PUBLIC.txt`
 - ✅ StatusV3.md dokumentace
 
-**Genesis hash napříč všemi zdroji:** `1da0251076471744b783105a6723fbd2e899282d6582d59f0de7905cd69f07c7`
+**Genesis hash napříč všemi zdroji:** `d28dc404abfd4e22b313d3a7e8b680453328a77ace68b47466a14d18aff6df5d`
 
 **Zbývající úkoly (neblokující):**
 1. Opravit 9 selhávajících testů
