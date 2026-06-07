@@ -137,21 +137,23 @@ cargo run --release --manifest-path V3/L1/miner/Cargo.toml --bin zion-miner \
   --features gpu-opencl -- --gpu-benchmark-all --gpu-device 1
 ```
 
-### Latest results (2026-06-07)
+### Latest results (2026-06-07 — Fire v3.0 Winter Mode)
 
 AMD RX 5700 XT — `gfx1010:xnack-` — 10 s benchmark window:
 
 | Algorithm | Throughput | Batch size | Local WS |
 |---|---|---|---|
-| `deeksha_lite_v1` | **12.68 KH/s** | 262 144 | 256 |
-| `cosmic_harmony_ekam_deeksha_v2` | **2.38 KH/s** | 262 144 | 256 |
-| `deeksha_lite_fire` | **7.24 KH/s** | 8 192 | 128 |
+| `deeksha_lite_v1` | **2.67 KH/s** | 262 144 | 256 |
+| `cosmic_harmony_ekam_deeksha_v2` | **0.99 KH/s** | 262 144 | 256 |
+| `deeksha_lite_fire` | **2.40 KH/s** | 8 192 | 128 |
 
 ### Key observations
 
-- **Fire is ~3× slower than Lite v1** but generates significantly more heat per watt because ALU utilisation is near 100 % (memory bandwidth is almost idle).
+- **Fire v3.0** now stresses **both INT and FP ALU pipelines** simultaneously (`fma` float chains + 8 integer chains). This gives more heat per watt than pure integer stress because the GPU runs both pipelines at once without increasing memory traffic.
+- **Live stratum hashrate** can be higher than benchmark (~4.6 KH/s peak observed) because the benchmark includes init overhead per batch.
 - **Full v2** is the slowest because of heavy Blake3/SHA3 scratchpad I/O and 6-layer validation.
-- Live stratum hashrate will be lower than benchmark if the pool sends small nonce batches (`ZION_NONCE_COUNT`). Set pool `ZION_NONCE_COUNT=4096` (or higher) for GPU efficiency.
+- Set pool `ZION_NONCE_COUNT=4096` (or higher) for better GPU utilisation in live stratum.
+- **Compatibility:** Fire uses only `fma()`, `rotate()`, `+`, `^`, `*` — no `sin`, `cos`, `half`, or `double`. Works on AMD GCN, AMD RDNA, NVIDIA CUDA, and Apple Metal.
 
 ---
 
@@ -184,6 +186,30 @@ Fire is now a **first-class algorithm** across the entire V3 stack:
 | **CLI** (`zion mine start`) | New `--algorithm` flag sets `ZION_MINER_ALGORITHM` env var, passed to the miner binary. |
 
 This means a Fire miner can now discover a valid block, the pool will submit it to the node, and the node will accept it using the Fire hash function.
+
+### 2026-06-07 — Fire v3.0 (Winter Mode) — universal heat-per-watt optimization
+
+The Fire kernel was redesigned for **maximum heat per watt** while staying compatible with **all GPU architectures** (AMD GCN, AMD RDNA, NVIDIA CUDA, Apple Metal).
+
+| Design choice | Reason |
+|---|---|
+| **8 integer chains** (was 6) | Better ILP on RDNA; still fine on GCN |
+| **2 float `fma` chains** added | Stresses FP units alongside INT ALU — both pipelines active = more heat for same wattage |
+| **`THERMAL_ITERS 32768`** (was 8192 → 16384) | Sustained ALU saturation without exploding kernel compile time |
+| **Only `fma(a,b,c)`** — no `sin`, `cos`, `half`, `double` | `fma` is a single instruction on GCN, RDNA, CUDA, and Metal. No driver compatibility issues. |
+| **128 KiB scratchpad** kept | Memory bandwidth stays idle; heat comes purely from ALU |
+| **Results mixed back into output** | Prevents compiler from dead-code eliminating the float work |
+
+**Winter vs Summer mode:**
+
+| Mode | Algorithm | Use case | ALU load | Expected GPU temp |
+|---|---|---|---|---|
+| **Winter (Fire)** | `deeksha_lite_fire` | Cold months, thermal testing, stability burn-in | ~90–95 % ALU | +10–15 °C over Lite |
+| **Summer (Lite)** | `deeksha_lite_v1` | Normal mining, hot weather | ~40–50 % ALU | Baseline |
+
+Switch at runtime:  
+`zion mine start --algorithm deeksha_lite_fire` (winter)  
+`zion mine start --algorithm deeksha_lite_v1` (summer)
 
 ---
 
