@@ -622,7 +622,7 @@ fn main() -> Result<()> {
         let work_size: usize = std::env::var("ZION_GPU_WORK_SIZE")
             .ok()
             .and_then(|v| v.parse().ok())
-            .unwrap_or(256);
+            .unwrap_or(1 << 18);
         let secs: f64 = std::env::var("ZION_BENCH_SECS")
             .ok()
             .and_then(|v| v.parse().ok())

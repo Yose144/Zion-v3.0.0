@@ -22,6 +22,21 @@ export interface NewsArticle {
 
 export const NEWS_ARTICLES: NewsArticle[] = [
   {
+    slug: 'deeksha-fire-announcement',
+    date: '2026-06-07',
+    tag: { cs: 'Oznámení', en: 'Announcement' },
+    tagColor: 'text-rose-400',
+    title: {
+      cs: 'Deeksha Fire — spuštění vědomého těžebního ohně ZION',
+      en: 'Deeksha Fire — launch of ZION conscious mining fire',
+    },
+    summary: {
+      cs: 'Aktivace Deeksha Fire protokolu jako nové úrovně vědomé těžby. Oheň deeksha hlubší propojení těžaře se sítí a posílení energetického toku v ZION ekosystému.',
+      en: 'Activation of the Deeksha Fire protocol as a new level of conscious mining. The deeksha fire deepens the miner\'s connection to the network and strengthens the energy flow within the ZION ecosystem.',
+    },
+    href: '/network',
+  },
+  {
     slug: 'v3-mainnet-ready-countdown',
     date: '2026-05-23',
     tag: { cs: 'Mainnet', en: 'Mainnet' },

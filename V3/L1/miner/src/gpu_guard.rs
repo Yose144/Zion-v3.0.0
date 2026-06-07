@@ -307,7 +307,7 @@ impl GpuTuning {
                 (ws, 256, opts, 60, true)
             }
             (GpuAlgorithm::DeekshaLiteFire, GpuDeviceFamily::AmdRdna) => {
-                // RDNA: can handle larger work size but keep local small for occupancy
+                // RDNA: 4096 threads = 64 wavefronts, 2 GiB scratchpad — safe for 6 GB VRAM
                 let ws = (max_by_vram.min(4096).max(256)).next_power_of_two();
                 let opts = "-cl-std=CL1.2 -cl-mad-enable -cl-fast-relaxed-math".to_string();
                 (ws, 128, opts, 75, false)

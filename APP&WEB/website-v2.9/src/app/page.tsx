@@ -1,21 +1,20 @@
-import dynamic from 'next/dynamic';
+import dynamicImport from 'next/dynamic';
 import Hero from '@/components/Hero';
 import MainnetCountdown from '@/components/MainnetCountdown';
 import GenesisPreview from '@/components/GenesisPreview';
 import QuantumRevolution from '@/components/QuantumRevolution';
-import DeekshaLiteNews from '@/components/DeekshaLiteNews';
 
-const NewsFeed = dynamic(() => import('@/components/NewsFeed'));
-const LiveDashboard = dynamic(() => import('@/components/LiveDashboard'));
-const TerraNovaHomeMilestones = dynamic(() => import('@/components/TerraNovaHomeMilestones'));
-const GoldenEggHaraniagharba = dynamic(() => import('@/components/GoldenEggHaraniagharba'));
-const Features = dynamic(() => import('@/components/Features'));
-const RoadmapPulse = dynamic(() => import('@/components/RoadmapPulse'));
-const DocsRail = dynamic(() => import('@/components/DocsRail'));
-const HomeTreePortal = dynamic(() => import('@/components/HomeTreePortal'));
+const NewsFeed = dynamicImport(() => import('@/components/NewsFeed'));
+const LiveDashboard = dynamicImport(() => import('@/components/LiveDashboard'));
+const TerraNovaHomeMilestones = dynamicImport(() => import('@/components/TerraNovaHomeMilestones'));
+const GoldenEggHaraniagharba = dynamicImport(() => import('@/components/GoldenEggHaraniagharba'));
+const Features = dynamicImport(() => import('@/components/Features'));
+const RoadmapPulse = dynamicImport(() => import('@/components/RoadmapPulse'));
+const DocsRail = dynamicImport(() => import('@/components/DocsRail'));
+const HomeTreePortal = dynamicImport(() => import('@/components/HomeTreePortal'));
 
-// Disable Full Route Cache so deploy changes appear immediately
-export const revalidate = 0;
+// Force dynamic rendering so deploy changes appear immediately
+export const dynamic = 'force-dynamic';
 
 export default function Home() {
   return (
@@ -23,7 +22,6 @@ export default function Home() {
       <Hero />
       <MainnetCountdown />
       <NewsFeed />
-      <DeekshaLiteNews />
       <LiveDashboard />
       <TerraNovaHomeMilestones />
       <GoldenEggHaraniagharba />
