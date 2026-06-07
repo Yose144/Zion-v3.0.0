@@ -78,7 +78,7 @@ Run from repository root unless noted.
 PowerShell equivalents for W11 development. Build first: `cargo build --release --manifest-path V3/Cargo.toml --workspace`.
 
 - Node (edge-primary — local dev only, connects to Edge seed):
-  - `$env:ZION_NODE_ID='local-dev-node'; $env:ZION_P2P_BIND='0.0.0.0:8333'; $env:ZION_RPC_BIND='0.0.0.0:8443'; $env:ZION_SEED_PEERS='77.42.71.94:8333'; $env:ZION_NODE_STATE_PATH='V3/data/zion-node-state.db'; $env:ZION_MINER_ADDRESS='zion1w523a76830x2t5m7f3j023w265e8g5c400a4790'; $env:ZION_HUMANITARIAN_WALLET='zion165a527w5d0n085t775x3w8n8q20742a6w7xr0z3'; $env:ZION_ISSOBELLA_WALLET='zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702'; cargo run --release --manifest-path V3/Cargo.toml -p zion-core --bin node`
+  - `$env:ZION_NODE_ID='local-dev-node'; $env:ZION_P2P_BIND='0.0.0.0:8333'; $env:ZION_RPC_BIND='0.0.0.0:8443'; $env:ZION_SEED_PEERS='77.42.71.94:8333'; $env:ZION_NODE_STATE_PATH='V3/data/zion-node-state.db'; $env:ZION_MINER_ADDRESS='zion1w523a76830x2t5m7f3j023w265e8g5c400a4790'; $env:ZION_HUMANITARIAN_WALLET='zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4'; $env:ZION_ISSOBELLA_WALLET='zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702'; cargo run --release --manifest-path V3/Cargo.toml -p zion-core --bin node`
 - Pool server (local-dev only):
   - `$env:ZION_POOL_BIND='0.0.0.0:8444'; $env:ZION_NODE_RPC_ADDR='127.0.0.1:8443'; cargo run --release --manifest-path V3/Cargo.toml -p zion-pool --bin server`
 - Miner (edge-primary — connects to public pool):
@@ -337,7 +337,7 @@ The Edge server runs as the canonical primary node + pool. It must survive reboo
 
 **Current Genesis Hash (post-regeneration 2026-06-03):**
 ```
-1da0251076471744b783105a6723fbd2e899282d6582d59f0de7905cd69f07c7
+d28dc404abfd4e22b313d3a7e8b680453328a77ace68b47466a14d18aff6df5d
 ```
 
 **Premine Distribution (16.28B total):**
@@ -352,7 +352,7 @@ The Edge server runs as the canonical primary node + pool. It must survive reboo
 - Humanitarian (Slot 13): 1.44B
 
 **Canonical Addresses:**
-- Humanitarian: `zion165a527w5d0n085t775x3w8n8q20742a6w7xr0z3`
+- Humanitarian: `zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4`
 - ISSOBELLA: `zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702`
 - Pool Fee: `zion196m4n8x764v7a0s406j40094a8z5j8m6z7nk342`
 - Default Miner: `zion1w523a76830x2t5m7f3j023w265e8g5c400a4790`
@@ -423,7 +423,7 @@ The Edge server runs as the canonical primary node + pool. It must survive reboo
 
 If genesis corruption is suspected:
 1. Use dashboard Genesis Backup/Restore to restore from encrypted backup
-2. Verify genesis hash matches expected value: `1da0251076471744b783105a6723fbd2e899282d6582d59f0de7905cd69f07c7`
+2. Verify genesis hash matches expected value: `d28dc404abfd4e22b313d3a7e8b680453328a77ace68b47466a14d18aff6df5d`
 3. Check all premine addresses and balances
 4. Restart nodes if necessary
 5. Verify network synchronization
@@ -459,7 +459,7 @@ If pool stops accepting connections:
 - ✅ Edge Server: Operational (77.42.71.94)
 - ✅ Website: Running (PM2, port 3000)
 - ✅ Pool Metrics: Running on port 8455
-- ✅ Genesis Hash: `1da0251076471744b783105a6723fbd2e899282d6582d59f0de7905cd69f07c7`
+- ✅ Genesis Hash: `d28dc404abfd4e22b313d3a7e8b680453328a77ace68b47466a14d18aff6df5d`
 - ⚠️  P2P Sync: Core (Local) offline — Edge runs solo
 
 **Code Fixes DEPLOYED to Edge:**
