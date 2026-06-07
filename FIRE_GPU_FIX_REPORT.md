@@ -22,9 +22,14 @@ No changes needed - `hash_with_algorithm()` already had `deeksha_lite_fire` case
 
 ## Deployment
 
-### Binary Version
-- **v3.0.37-fire.zip** - Contains GPU backend fix
-- **URL:** `https://zionterranova.com/zion-miner/zion-miner-v3.0.37-fire.zip`
+### Binary Versions
+- **v3.0.37-fire.zip** - Windows .exe (cannot run on Linux) - DEPLOYED BUT BROKEN
+- **v3.0.38-fire.zip** - Linux binary without OpenCL (no GPU mining) - DEPLOYED BUT BROKEN
+- **v3.0.39-fire.zip** - Linux binary with OpenCL (PENDING - needs to be built)
+
+### URLs
+- `https://zionterranova.com/zion-miner/zion-miner-v3.0.37-fire.zip` (Windows - broken)
+- `https://zionterranova.com/zion-miner/zion-miner-v3.0.38-fire.zip` (Linux no GPU - broken)
 
 ### Pool Server
 - Rebuilt on Edge (77.42.71.94) with Docker container
@@ -44,19 +49,30 @@ No changes needed - `hash_with_algorithm()` already had `deeksha_lite_fire` case
 - ✅ Test GPU miner (fire-gpu-test) accepting shares
 - ✅ Binary deployed to Edge web server
 
+### Issues
+- ❌ v3.0.37-fire.zip contains Windows .exe (cannot run on Linux)
+- ❌ v3.0.38-fire.zip contains Linux binary without OpenCL support (no GPU mining)
+- ❌ Docker container on Edge lacks OpenCL libraries for cross-compilation
+
 ### Pending
+- ⏳ Linux binary with OpenCL support needs to be built (requires OpenCL dev libraries)
 - ⏳ SMOS group config update (manual action required via web panel)
-- ⏳ Rig (vega-smos) to download and run v3.0.37-fire.zip
+- ⏳ Rig (vega-smos) to download and run correct Linux binary
 
 ## Next Steps
 
-1. User must update SMOS group config via web panel to:
-   ```
-   https://zionterranova.com/zion-miner/zion-miner-v3.0.37-fire.zip
-   ```
-2. Rig will automatically download and restart with new binary
-3. Monitor pool logs for `vega-smos` Accepted shares
-4. Verify no `hash_mismatch_info` for rig shares
+1. **Build Linux binary with OpenCL support:**
+   - Option A: Install OpenCL dev libraries on Edge host and build natively
+   - Option B: Use rig (vega-smos) to build binary locally with OpenCL
+   - Option C: Set up cross-compilation environment with OpenCL headers/libs
+
+2. **Deploy correct Linux binary:**
+   - Upload v3.0.39-fire.zip with Linux OpenCL binary
+   - Update SMOS group config via web panel to new URL
+
+3. **Monitor pool logs:**
+   - Check for `vega-smos` Accepted shares
+   - Verify no `hash_mismatch_info` for rig shares
 
 ## Technical Details
 
