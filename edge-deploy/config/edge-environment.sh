@@ -1,5 +1,5 @@
 # ZION Edge Server — Common Environment
-# Updated: 2026-06-02 - Multi-node Edge topology (2 nodes + pool + all non-AI services)
+# Updated: 2026-06-07 - Vardiff tuning + pool binary compat notes added
 #
 # This file contains SHARED environment variables for ALL Edge services.
 # Service-specific overrides (node ID, bind ports, state paths) are set
@@ -34,7 +34,10 @@ ZION_POOL_LOOP_COUNT=1000000
 ZION_MAX_SESSIONS_PER_IP=10
 ZION_NONCE_COUNT=4096
 ZION_VARDIFF_START_DIFF=1
+ZION_VARDIFF_MIN_DIFF=1
 ZION_VARDIFF_MAX_DIFF=10000
+ZION_VARDIFF_TARGET_SECS=15
+ZION_VARDIFF_RETARGET_SHARES=6
 ZION_PPLNS_WINDOW_SIZE=500000
 ZION_ROUTING_METRICS_BIND=0.0.0.0:8455
 

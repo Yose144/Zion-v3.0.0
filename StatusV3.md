@@ -22,20 +22,24 @@
 
 ---
 
-## Co je nového 2026-06-07 (Chain Reset, Full Stack Cleanup, Dashboard Fixes)
+## Co je nového 2026-06-07 (Chain Reset, Genesis Slot 12, Mining Tests, Pool Fix)
 
 > Verze: **3.0.1** (beze změny Cargo verze)
-> Klíčový commit: `fecdc169` (dashboard), `77de895c` (deeksha_lite_v1 PoW)
+> Klíčové commity: `fecdc169` (dashboard), `77de895c` (deeksha_lite_v1 PoW), `993237bb` (slot 12 humanitarian fix), `926e73f1` (web polish + reset docs)
 
-### TL;DR — Co bylo opraveno 7. června 2026
+### TL;DR — Co bylo opraveno/otestováno 7. června 2026
 
 | Oblast | Problém | Stav |
 |--------|---------|------|
 | **Edge disk** | 100% plný disk (Docker build zaplnil zbytek) | ✅ 20% využito, 58 GB volno |
 | **Genesis hash mismatch** | Local node `0000a1dd`, Edge node `7543004c` — p2p odmítáno | ✅ Oba na `7543004c`, výška 54+ |
-| **Pool accept rate** | 12% (difficulty mismatch po chain resetu) | ✅ 100%, 2 aktivní minery |
+| **Genesis slot 12** | Premine slot 12 měl jen SK, chyběl BIP39 mnemonic | ✅ Nová adresa `zion1z7g4u3...`, 24-word BIP39, flash disk backup |
+| **Pool accept rate** | 12% (difficulty mismatch po chain resetu) | ✅ 97.7%+, 2 aktivní minery |
 | **Dashboard shares** | Vždy četlo z lokálního pool logu (zastaralé) | ✅ Primárně Edge Prometheus, fallback local |
+| **Python dashboard** | Nespouštěl se automaticky po restartu | ✅ Systemd service `zion-python-dashboard.service` |
 | **Edge miner (VPS)** | Způsoboval load + panic (`GetPlatformIdsPlatformListUnavailable`) | ✅ Disabled (VPS nemá GPU) |
+| **Pool server binary compat** | Stará `server.exe` odmítala miners (protokol mismatch) | ✅ Recompilováno, `ZION_PAYOUT_ADDRESS` required |
+| **Local mining test** | Ověření celého stack node→pool→miner lokálně | ✅ GPU mining funkční, ~1.1 KH/s (RX 5700 XT) |
 
 ### Edge Server Disk Cleanup — Detail
 
@@ -69,27 +73,54 @@ Smazáno:
 2. **Height monotonicity validation:** Zamezení rollback height na dashboardu.
 3. **Schema consistency:** `local-dev` schema opraveno pro konzistenci s Edge.
 
-### Aktuální Stav Infrastruktury (2026-06-07 ~12:00)
+### Aktuální Stav Infrastruktury (2026-06-07 ~12:30 UTC)
 
 ```
-Uzel               Genesis    Výška   Status
-─────────────────────────────────────────────────────
-Edge (77.42.71.94) 7543004c   54+     systemd active
-Local (Windows)    7543004c   54+     mining active
-─────────────────────────────────────────────────────
-Pool               100%       2 sesh  ~5.7 KH/s
-Accepted/Rejected  212/6
+Uzel               Genesis                                            Výška   Status
+──────────────────────────────────────────────────────────────────────────────────────
+Edge (77.42.71.94) 7543004c76b11416ef32e2f1f5a4c72f0178f841d...     56+     systemd active
+Local (Windows)    7543004c76b11416ef32e2f1f5a4c72f0178f841d...     325+    mining (local pool)
+──────────────────────────────────────────────────────────────────────────────────────
+Edge Pool          97.7% accept   2 sesh   ~5.9 KH/s   57 blocks found
 ```
+
+**Kanonické adresy (potvrzeno v genesis.rs + ověřeno na Edge):**
+
+| Role | Adresa |
+|------|--------|
+| Pool Payout / Miner (89%) | `zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604` |
+| Humanitarian subsidy (5%) | `zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4` |
+| Issobella (5%) | `zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702` |
+| Pool Fee / burn (1%) | `zion196m4n8x764v7a0s406j40094a8z5j8m6z7nk342` |
+| Premine slot 12 — Children Future Fund (1.44B ZION, one-time) | `zion1z7g4u3s2w3c5z5u4a60864m2y7q8e5j304g46r7` |
 
 ### Aktuální Binaries na Edge
 
 | Binary | Datum kompilace |
 |--------|----------------|
-| `/usr/local/bin/zion-node` | Jun 7 10:22 (čerstvý build) |
+| `/usr/local/bin/zion-node` | Jun 7 10:22 (čerstvý build, genesis `7543004c`) |
 | `/usr/local/bin/zion-pool-server` | Jun 7 09:41 |
 | `/usr/local/bin/zion-agent` | Jun 6 10:47 |
 
 Staré backup binaries (`*.bak.*`, `*.old`) — smazány.
+
+### Mining Test — Výsledky (2026-06-07)
+
+**Lokální test (Windows, AMD RX 5700 XT / gfx1010):**
+- Algoritmus: `deeksha_lite_v1`
+- GPU benchmark (`--ekam-bench`): **~1.1 KH/s** (Deeksha Full)
+- Stratum mining: node→pool→miner pipeline plně funkční, shares accepted 100%
+- Klíčový poznatek: `ZION_PAYOUT_ADDRESS` je **povinné** — pool validuje `zion1...` adresu a odmítne spojení bez ní
+
+**Pool vardiff konfigurace (edge-environment.sh):**
+```
+ZION_VARDIFF_START_DIFF=1
+ZION_VARDIFF_MIN_DIFF=1
+ZION_VARDIFF_MAX_DIFF=10000
+ZION_VARDIFF_TARGET_SECS=15
+ZION_VARDIFF_RETARGET_SHARES=6
+ZION_NONCE_COUNT=4096
+```
 
 ---
 
