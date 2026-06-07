@@ -1567,6 +1567,11 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
                     .and_then(|v| v.as_str())
                     .ok_or_else(|| (INVALID_PARAMS, "missing 'target_hex'".into()))?
                     .to_string();
+                let algorithm = params
+                    .get("algorithm")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("deeksha_lite_v1")
+                    .to_string();
                 let mut rt = rt
                     .lock()
                     .map_err(|_| (INTERNAL_ERROR, "runtime lock poisoned".into()))?;
@@ -1575,6 +1580,7 @@ pub fn build_node_router(runtime: Arc<Mutex<NodeRuntime>>) -> RpcRouter {
                     header_hex,
                     nonce,
                     target_hex,
+                    algorithm,
                 });
                 match resp {
                     crate::RpcResponse::SubmitResult {

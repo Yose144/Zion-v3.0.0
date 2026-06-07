@@ -24,6 +24,9 @@ pub enum MineCmd {
         /// Profile: pool | solo | benchmark | dual
         #[arg(long)]
         profile: Option<String>,
+        /// Algorithm: deeksha_lite_v1 | cosmic_harmony_ekam_deeksha_v2 | deeksha_lite_fire
+        #[arg(long)]
+        algorithm: Option<String>,
     },
     /// Stop the mining process
     Stop,
@@ -71,8 +74,9 @@ pub async fn run(cfg: &Config, cmd: MineCmd) -> Result<()> {
             threads,
             backend,
             profile,
+            algorithm,
         } => {
-            let start = resolve_start_options(cfg, pool, wallet, threads, backend, profile)?;
+            let start = resolve_start_options(cfg, pool, wallet, threads, backend, profile, algorithm)?;
 
             ui::print_header("Starting Miner");
             ui::print_row("Pool", &start.pool_addr);
@@ -106,6 +110,9 @@ pub async fn run(cfg: &Config, cmd: MineCmd) -> Result<()> {
             }
             if let Some(env_backend) = &start.backend_env {
                 env_args.push(("ZION_BACKEND", env_backend.clone()));
+            }
+            if let Some(env_algorithm) = &start.algorithm {
+                env_args.push(("ZION_MINER_ALGORITHM", env_algorithm.clone()));
             }
             if start.normalized_profile == "dual" {
                 if !cfg.miner.btc_wallet.trim().is_empty() {
@@ -352,6 +359,7 @@ struct ResolvedStartOptions {
     backend_env: Option<String>,
     backend_cli_gpu_arg: Option<String>,
     normalized_profile: String,
+    algorithm: Option<String>,
 }
 
 fn resolve_start_options(
@@ -361,6 +369,7 @@ fn resolve_start_options(
     threads: Option<String>,
     backend: Option<String>,
     profile: Option<String>,
+    algorithm: Option<String>,
 ) -> Result<ResolvedStartOptions> {
     let requested_profile = profile.as_deref().unwrap_or(cfg.miner.profile.as_str());
     let normalized_profile = normalize_profile(requested_profile)?;
@@ -387,6 +396,7 @@ fn resolve_start_options(
         backend_env: normalized_backend.env_backend.map(ToString::to_string),
         backend_cli_gpu_arg: normalized_backend.cli_gpu_arg.map(ToString::to_string),
         normalized_profile: normalized_profile.to_string(),
+        algorithm,
     })
 }
 
@@ -541,7 +551,7 @@ mod tests {
             ..Config::default()
         };
 
-        let resolved = resolve_start_options(&cfg, None, None, None, None, None)
+        let resolved = resolve_start_options(&cfg, None, None, None, None, None, None)
             .expect("start options should resolve from config");
 
         assert_eq!(resolved.normalized_profile, "dual");
@@ -557,7 +567,7 @@ mod tests {
             ..Config::default()
         };
 
-        let error = resolve_start_options(&cfg, None, None, None, None, None)
+        let error = resolve_start_options(&cfg, None, None, None, None, None, None)
             .expect_err("invalid wallet should fail preflight");
 
         assert!(error.to_string().contains("Invalid mining wallet"));
