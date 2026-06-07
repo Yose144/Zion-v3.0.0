@@ -1,0 +1,26 @@
+[build]
+# Pouzij vsechna 12 jader, ale nech 2 pro system
+jobs = 10
+# sccache = cache kompilovanych .rlib souboru (rychlejsi rebuildy)
+rustc-wrapper = ["sccache"]
+
+[profile.dev]
+# Incremental compilation pro rychlejsi rebuildy pri vyvoji
+incremental = true
+# Odstranit debug info pro rychlejsi linkovani (volitelne)
+# debug = 1
+
+[profile.release]
+# Thin LTO je rychlejsi nez full LTO, stale dobre optimalizovane
+lto = "thin"
+# Codegen units = paralelni kompilace release modulu
+codegen-units = 8
+
+# Nastaveni pro rychlejsi linkovani na Windows
+[target.x86_64-pc-windows-msvc]
+# Pokud je nainstalovan lld-link, pouzij ho (mnohem rychlejsi nez link.exe)
+# linker = "lld-link.exe"
+# rustflags = ["-C", "link-arg=-fuse-ld=lld"]
+
+# Alternativa: Pouzit native CPU instrukce pro runtime vykon
+rustflags = ["-C", "target-cpu=native"]
