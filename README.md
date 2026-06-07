@@ -6,7 +6,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**Status:** Mainnet Ready · Core+Edge topology operational · Genesis: 2026-06-05 · Launch: 31 December 2026
+**Status:** Mainnet Ready · Edge primary + Core miner · Chain live · Launch: 31 December 2026
 
 [StatusV3.md](StatusV3.md) · [ROOT_INDEX.md](ROOT_INDEX.md) · [AGENTS.md](AGENTS.md) · [docs/GENESIS_REGENERATION_RUNBOOK.md](docs/GENESIS_REGENERATION_RUNBOOK.md)
 
@@ -28,23 +28,27 @@ ZION is a decentralized **Layer 1 blockchain** built from scratch in **Rust**, r
 | **Block Reward** | 5,400.067 ZION → Decade Decay (-20%/10y), tail 725 ZION |
 | **Block Time** | 60 seconds |
 | **Mining Horizon** | **100+ years** + perpetual tail emission |
-| **Consensus** | Proof of Work — Deeksha canonical (`cosmic_harmony`) |
+| **Consensus** | Proof of Work — `deeksha_lite_v1` (optimized, GPU-accelerated) |
 | **Transaction Model** | Hybrid: UTXO + Account Model |
 | **Storage** | LMDB |
 | **DAA** | LWMA (60-block window, ±25% per block) |
 | **Fee Policy** | 100% burn (deflationary) |
 | **Architecture** | **6-Layer** |
-| **Genesis Hash** | `d28dc404abfd4e22b313d3a7e8b680453328a77ace68b47466a14d18aff6df5d` |
+| **Genesis Hash** | `7543004c76b11416ef32e2f1f5a4c72f0178f841d4559bf476e29e15a9602728` |
 | **Presale** | None — Fair Launch only |
 
 ### Canonical Subsidy Addresses (Deterministic, 89/5/5/1)
 
 | Recipient | Address | Share |
 |-----------|---------|-------|
-| Miner | `zion1w523a76830x2t5m7f3j023w265e8g5c400a4790` | 89% |
-| Humanitarian | `zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4` | 5% |
+| Miner / Pool Payout | `zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604` | 89% |
+| Humanitarian (ongoing block subsidy) | `zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4` | 5% |
 | Issobella | `zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702` | 5% |
 | Pool Fee | `zion196m4n8x764v7a0s406j40094a8z5j8m6z7nk342` | 1% (burned) |
+
+> **Premine slot 12 — Children Future Fund (genesis one-time 1.44B ZION):**
+> `zion1z7g4u3s2w3c5z5u4a60864m2y7q8e5j304g46r7`
+> (distinct from ongoing 5% block subsidy above; BIP39 mnemonic backup on flash disk)
 
 ### Block Reward Distribution
 
@@ -152,6 +156,19 @@ cargo run --manifest-path V3/Cargo.toml -p zion-cli -- --help
 **Pool:** `77.42.71.94:8444` (Edge — public)
 **RPC:** `77.42.71.94:8443`
 
+```powershell
+# Windows (PowerShell) — GPU miner connecting to Edge pool
+$env:ZION_POOL_ADDR='77.42.71.94:8444'
+$env:ZION_WORKER_NAME='my-rig-01'
+$env:ZION_MINER_ID='my-rig-01'
+$env:ZION_PAYOUT_ADDRESS='zion1<your-44-char-address>'   # REQUIRED
+$env:ZION_LOOP_COUNT='1000000'
+$env:ZION_GPU_BACKEND='opencl'
+cargo run --release --manifest-path V3/Cargo.toml -p zion-miner
+```
+
+> **Note:** `ZION_PAYOUT_ADDRESS` is required — pool rejects connections with missing or invalid address. Must be a valid 44-char `zion1...` address.
+
 Desktop agent with one-click miner:
 ```bash
 cd APP&WEB/desktop-agent
@@ -177,10 +194,11 @@ cargo tauri build      # production build
 
 ```
 Edge (Hetzner VPS)          Core (Windows 11)
-77.42.71.94                 100.86.102.5 (Tailscale)
+77.42.71.94                 Tailscale: 100.86.102.5
     |                           |
-Node 1 (Primary)           Node (Backup — syncs from Edge)
-Pool (Primary)             Miner (GPU/CPU → Edge pool)
+Node (PRIMARY)             Node (syncs from Edge, same genesis)
+Pool (PRIMARY)             GPU Miner → Edge pool
+DAO + WARP + Website       Dashboard + AI services
 Public P2P: 8333
 Public Pool: 8444
 Public RPC: 8443
@@ -188,13 +206,14 @@ Public RPC: 8443
 
 | Role | Host | Public IP | VPN IP | Ports |
 |------|------|-----------|--------|-------|
-| **Edge** | Hetzner VPS | `77.42.71.94` | `100.76.16.108` | P2P: 8333, Pool: 8444, RPC: 8443, Metrics: 8455 |
+| **Edge** | Hetzner VPS | `77.42.71.94` | `100.76.16.108` | P2P: 8333, Pool: 8444, RPC: 8443, Metrics: 8455/9115 |
 | **Core** | Windows 11 | — | `100.86.102.5` | P2P: 8333, RPC: 8443 |
 
-- **Edge**: Primary 24/7 node + pool. Source of truth for chain. Accepts public miner connections.
-- **Core**: Local backup node (syncs from Edge) + GPU/CPU miner (connects to Edge pool). Runs dashboard + AI services.
+- **Edge**: Primary 24/7 node + pool. Source of chain truth. Accepts public miner connections. DAO + WARP + Website.
+- **Core**: Local node (syncs from Edge, same `7543004c` genesis) + RX 5700 XT GPU miner → Edge pool. Dashboard + Hiran AI.
+- **Genesis:** Both nodes on `7543004c` · Consensus: `deeksha_lite_v1` · Chain live since 2026-06-07.
 
-> **Archive notice:** Any document or script referencing the old Prague server (`91.98.122.165`) or multi-server topology (Prague, SG, Helsinki, US) is historical. Current live topology is **Edge-as-Primary + Core-as-Backup only**.
+> **Archive notice:** Any document referencing the old Prague server (`91.98.122.165`) or multi-server topology (Prague, SG, Helsinki, US) is historical.
 
 ---
 
@@ -221,5 +240,5 @@ MIT — see [LICENSE](LICENSE).
 
 ---
 
-*Last updated: 2026-06-05 · Genesis Hash: `1da02510...cd69f07c7`*
+*Last updated: 2026-06-07 · Genesis Hash: `7543004c76b11416ef32e2f1f5a4c72f0178f841d4559bf476e29e15a9602728` · Consensus: `deeksha_lite_v1`*
 *Repository: `Yose144/Zion-v3.0.0` · Branch: `main` · Version: v3.0.1*
