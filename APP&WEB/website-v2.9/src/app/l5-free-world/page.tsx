@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 
-const HUMANITARIAN_WALLET = 'zion165a527w5d0n085t775x3w8n8q20742a6w7xr0z3';
+const HUMANITARIAN_WALLET = 'zion1c245e7f5d8h427r4p4s2s607d7v4c255z7x96t3';
 
 const getCommunities = (cs: boolean) => [
   {

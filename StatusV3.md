@@ -35,7 +35,7 @@
 
 || Parametr | Hodnota |
 ||----------|---------|
-|| **Nový Genesis Hash** | `1da0251076471744b783105a6723fbd2e899282d6582d59f0de7905cd69f07c7` |
+|| **Nový Genesis Hash** | `d28dc404abfd4e22b313d3a7e8b680453328a77ace68b47466a14d18aff6df5d` |
 || **Edge Genesis Hash (aktuální)** | `85d8d6b29cdfa32b036068c70416c948b6eca63ba18bb20d0bfeb051f44ec897` |
 || **Premine Outputs** | 14 (rotováno z původních 12) |
 || **Total Premine** | 16.78B ZION |
@@ -68,7 +68,7 @@
 |- `get-genesis-hash` — výpis aktuálního genesis hash
 
 **Nové kanonické adresy:**
-|- Humanitarian: `zion165a527w5d0n085t775x3w8n8q20742a6w7xr0z3` (1.44B ZION)
+|- Humanitarian: `zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4` (1.44B ZION)
 |- ISSOBELLA: `zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702`
 |- Pool Fee: `zion196m4n8x764v7a0s406j40094a8z5j8m6z7nk342`
 |- Default Miner: `zion1w523a76830x2t5m7f3j023w265e8g5c400a4790`
@@ -77,7 +77,7 @@
 **Verification Results:**
 - ✅ Edge server běží s AKTUÁLNÍM kódem (rebuildnut 2026-06-06, genesis hash ověřen)
 - ✅ Lokální node běží s AKTUÁLNÍM kódem (rebuildnut 2026-06-06, synchronizován s Edge)
-- ✅ Genesis hash shoda na obou nodech: `1da0251076471744b783105a6723fbd2e899282d6582d59f0de7905cd69f07c7`
+- ✅ Genesis hash shoda na obou nodech: `d28dc404abfd4e22b313d3a7e8b680453328a77ace68b47466a14d18aff6df5d`
 - ✅ Bridge vault má 100M ZION v 6 UTXO outputs
 - ✅ Bridge seed fund má 400M ZION
 - ✅ Humanitarian má 1.44B ZION
@@ -211,8 +211,8 @@ fn handle_rpc_http(
 
 | Uzel | Height | Genesis Hash | Stav |
 |------|--------|--------------|------|
-| **Edge** | 102 | `1da0251076471744b783105a6723fbd2e899282d6582d59f0de7905cd69f07c7` | ✅ Nový kód |
-| **Local** | 114 | `1da0251076471744b783105a6723fbd2e899282d6582d59f0de7905cd69f07c7` | ✅ Nový kód, sync |
+| **Edge** | 102 | `d28dc404abfd4e22b313d3a7e8b680453328a77ace68b47466a14d18aff6df5d` | ✅ Nový kód |
+| **Local** | 114 | `d28dc404abfd4e22b313d3a7e8b680453328a77ace68b47466a14d18aff6df5d` | ✅ Nový kód, sync |
 
 ### PPLNS Payout Systém — Ověřen a Aktivní
 
@@ -730,7 +730,7 @@ Desktop Agent (Hiran AI)   →  localhost:8002
 
 ### Mainnet Ready - Genesis a Fee Split Konfigurace
 
-> **⚠️ AKTUALIZACE 2026-06-05:** Genesis regeneration FINAL reset — všechny klíče rotovány, `genesis_tx_id` fixován proti tichým chain splitům. Nový genesis hash: `1da0251076471744b783105a6723fbd2e899282d6582d59f0de7905cd69f07c7`
+> **⚠️ AKTUALIZACE 2026-06-05:** Genesis regeneration FINAL reset — všechny klíče rotovány, `genesis_tx_id` fixován proti tichým chain splitům. Nový genesis hash: `d28dc404abfd4e22b313d3a7e8b680453328a77ace68b47466a14d18aff6df5d`
 
 || Komponenta | Stav |
 |---|---|
@@ -749,7 +749,7 @@ Desktop Agent (Hiran AI)   →  localhost:8002
 | Typ | Adresa | Status |
 |-----|--------|--------|
 | **Miner (89%)** | `zion1w523a76830x2t5m7f3j023w265e8g5c400a4790` | ✅ Kanonická |
-| **Humanitarian (5%)** | `zion165a527w5d0n085t775x3w8n8q20742a6w7xr0z3` | ✅ Kanonická |
+| **Humanitarian (5%)** | `zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4` | ✅ Kanonická |
 | **Issobella (5%)** | `zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702` | ✅ Kanonická |
 | **Pool Fee (1%)** | `zion196m4n8x764v7a0s406j40094a8z5j8m6z7nk342` | ✅ Kanonická |
 
@@ -1172,7 +1172,7 @@ $env:ZION_RPC_BIND="0.0.0.0:8443"
 $env:ZION_SEED_PEERS="77.42.71.94:8333"
 $env:ZION_NODE_STATE_PATH="V3/data/zion-node-state.db"
 $env:ZION_MINER_ADDRESS="zion1w523a76830x2t5m7f3j023w265e8g5c400a4790"
-$env:ZION_HUMANITARIAN_WALLET="zion165a527w5d0n085t775x3w8n8q20742a6w7xr0z3"
+$env:ZION_HUMANITARIAN_WALLET="zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4"
 $env:ZION_ISSOBELLA_WALLET="zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702"
 .\V3\target\release\node.exe
 
@@ -1812,7 +1812,7 @@ validator provisioning (G), rotace klíčů (P0).
 6. Verification (nový genesis hash ověřen, všechny adresy ověřeny)
 7. Backup & Secure Storage (šifrované keys na USB flash disk)
 
-**Nový Genesis Hash:** `1da0251076471744b783105a6723fbd2e899282d6582d59f0de7905cd69f07c7`
+**Nový Genesis Hash:** `d28dc404abfd4e22b313d3a7e8b680453328a77ace68b47466a14d18aff6df5d`
 
 **Klíčové změny:**
 - 14 nových premine wallets (rotováno z původních 12)
