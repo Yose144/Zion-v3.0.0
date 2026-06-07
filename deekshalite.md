@@ -98,6 +98,32 @@ Kernel `deeksha_lite.cl` obsahoval pointer casty `((uchar *)st)` uvnitř keccak 
 - Nahrazeno pomocnými funkcemi `dl_xor_byte_into_state` a `dl_get_byte_from_state`
 - Přidány explicitní `__private` address space kvalifikátory pro všechny lokální parametry
 
+### 3.5 Problém #5: keccak_f1600 špatná Rho+Pi implementace → GPU vs CPU hash mismatch (vyřešeno)
+
+**Root cause**: Kernel `deeksha_lite.cl` měl špatnou Rho+Pi část v `keccak_f1600` — používal loop s pomocnými poli `bc0..bc4`, která produkovala nesprávné výsledky na AMD GFX1010/RDNA (RX 5600 XT).
+
+Navíc CPU reference v `deeksha_lite.rs` se lišila od GPU v:
+1. **Scratchpad fill**: CPU používal Blake3 XOF, GPU SHA3-512 chain → neshoda v každém bloku
+2. **random_read_mix idx**: CPU použil `u32` ze 4 bytů, GPU `u32` z 8 bytů → neshoda od první iterace
+3. **Finální hash step 4**: CPU používal Blake3-256, GPU Keccak256 → jiný výstup
+
+**Řešení** (commit `217f6ac7`):
+- `keccak_f1600` přepsán s kanonickým 23-prvkovým lineárním swap chainem z `cosmic_harmony_deeksha.cl`
+- `ROL64` používá `rotate(long, long)` formu — oprava AMD GCN/RDNA hardware bugu s unsigned rotate
+- CPU `deeksha_lite.rs` (V3 produkce) přepsán: SHA3-512 fill, u64 idx ze 8 bytů, Keccak256 finál
+- Ověřeno: 16/16 nonces MATCH na GPU (RX 5600 XT, gfx1010:xnack-) vs CPU
+- 125/125 Rust testů prochází (`cargo test -p zion-cosmic-harmony`)
+
+**Parametry V3 produkce** (musí souhlasit CPU ↔ GPU):
+
+| Parametr | Hodnota |
+|---|---|
+| SCRATCHPAD_SIZE | 262 144 B (256 KiB) |
+| BLOCK_COUNT | 8 192 |
+| BLOCK_SIZE | 32 B |
+| PASSES | 2 |
+| RANDOM_READS | 64 |
+
 ---
 
 ## 4. Připravené artefakty na serveru
@@ -114,11 +140,14 @@ Kernel `deeksha_lite.cl` obsahoval pointer casty `((uchar *)st)` uvnitř keccak 
 
 | Soubor | URL | Obsah |
 |--------|-----|-------|
-| `zion-sm3037.zip` | `https://zionterranova.com/zion-miner/zion-sm3037.zip` | **NOVÝ** — SMOS binárka + DeekshaLite kernel + GCN address space fixes |
-| `zion-sm3036.zip` | `https://zionterranova.com/zion-miner/zion-sm3036.zip` | Starý — SMOS binárka + DeekshaLite kernel (bez GCN fixů) |
-| `zion-sm3033d.zip` | `https://zionterranova.com/zion-miner/zion-sm3033d.zip` | **STARÝ** — obsahuje starou binárku |
+| `zion-sm3038.zip` | `https://zionterranova.com/zion-miner/zion-sm3038.zip` | **NEJNOVěJŠÍ** ⏳ sestavit — keccak_f1600 Rho+Pi fix + CPU/GPU hash unification (commit `217f6ac7`) |
+| `zion-sm3037.zip` | `https://zionterranova.com/zion-miner/zion-sm3037.zip` | Předchozí — GCN address space fixes, ale hash stále nesprávný (commit `8e4c7cad`) |
+| `zion-sm3036.zip` | `https://zionterranova.com/zion-miner/zion-sm3036.zip` | Starý — bez GCN fixů |
+| `zion-sm3033d.zip` | `https://zionterranova.com/zion-miner/zion-sm3033d.zip` | **ZASTARALÝ** — stará binárka |
 
-⚠️ **Důležité**: Aktuální SMOS Group Config (`Zion-`) má URL `zion-sm3033d.zip`, který SMOS cachuje. Musí se změnit na `zion-sm3037.zip`.
+⚠️ **Důležité**: Aktuální SMOS Group Config (`Zion-`) má URL `zion-sm3033d.zip`, který SMOS cachuje. Po sestavení `zion-sm3038.zip` musí se změnit na tuto URL.
+
+> **Poznámka**: `zion-sm3038.zip` je třeba teprve sestavit (Docker build na Edge) a nahrát na server.
 
 ### 4.3 Docker build
 
@@ -177,11 +206,25 @@ accepted 1/0 (+1) diff 178 [Xms] (100.0%)
 
 ### 6.1 Vega 64 OpenCL kernel
 
-**Priorita**: ✅ **VYŘEŠENO** (commit `8e4c7cad`)
+**Priorita**: ✅ **VYŘEŠENO** (commity `8e4c7cad` + `217f6ac7`)
 
 - GPU backend správně vybírá `deeksha_lite.cl` pro `algorithm="deeksha_lite_v1"`
 - Address space pointer casty odstraněny pomocí `dl_xor_byte_into_state` / `dl_get_byte_from_state`
 - Explicitní `__private` kvalifikátory pro GCN kompatibilitu
+- `keccak_f1600` Rho+Pi kanonická implementace (23-prvkový swap chain), `ROL64` jako `rotate(long,long)`
+- CPU a GPU pipeline plně sjednoceny: SHA3-512 fill, u64 idx, Keccak256 finál, 256 KiB / 8192 bloků
+
+### 6.4 SMOS zion-sm3038.zip — čeká na Docker build
+
+**Priorita**: HIGH
+
+Po commitu `217f6ac7` je třeba:
+1. SSH na Edge: `ssh root@77.42.71.94`
+2. Pull nejnovější kód: `cd /root/2.9.6-main && git pull`
+3. Docker build SMOS binárky: `docker build --no-cache -f V3/docker/Dockerfile.miner-smos -t zion-miner-smos .`
+4. Extrahovat binárku a zabalit do `zion-sm3038.zip` (viz sekce 4.3 níže)
+5. Nahrát na server: `cp /tmp/zion-sm3038.zip /var/www/zion-miner/`
+6. Aktualizovat SMOS Group Config URL na `zion-sm3038.zip`
 
 ### 6.2 Automatický SMOS deploy
 
@@ -203,6 +246,7 @@ Doba odmítnutí: ~15–60 sekund mezi reconnecty.
 
 | Commit | Popis |
 |--------|-------|
+| `217f6ac7` | **fix(deeksha_lite): keccak_f1600 Rho+Pi fix + CPU/GPU pipeline unification** |
 | `8e4c7cad` | fix(gpu): DeekshaLite kernel selection + GCN address space fixes |
 | `3f72021d` | dual-algo: pool + miner + core dual-algo support for DeekshaLite v1 |
 | `869a35fd` | pool: welcome message uses config.algorithm instead of consensus_profile |
@@ -274,5 +318,5 @@ readelf -V /tmp/zion-miner-smos | grep GLIBC
 ---
 
 *Dokument vytvořen: 2026-06-07 01:05 UTC*
-*Aktualizován: 2026-06-07 07:40 UTC*
-*Stav: Opraveny GPU kernel selection + GCN address space chyby. Čeká na manuální SMOS dashboard update.*
+*Aktualizován: 2026-06-07 09:30 UTC*
+*Stav: keccak_f1600 Rho+Pi opraven, CPU a GPU pipeline plně sjednoceny, 125/125 testů prochází. Čeká na Docker build `zion-sm3038.zip` a manuální SMOS dashboard update.*
