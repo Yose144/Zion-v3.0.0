@@ -663,9 +663,13 @@ async function refreshPayout(){
           const pending = m.pending_balance != null ? _zionFmt(m.pending_balance / 1e12) : '—';
           const addr = escapeHtml(m.address || '—');
           const worker = escapeHtml(m.worker_name || '—');
+          const algo = escapeHtml(m.algorithm || '—');
+          const be = escapeHtml(m.backend || 'cpu');
           return `<tr class="border-b border-white/5 hover:bg-white/5 transition">
             <td class="py-2 px-2 text-white truncate max-w-[180px]" title="${addr}">${addr}</td>
             <td class="py-2 px-2 text-gray-300">${worker}</td>
+            <td class="py-2 px-2 text-blue-300">${algo}</td>
+            <td class="py-2 px-2 text-gray-400">${be}</td>
             <td class="py-2 px-2 text-right text-gray-300">${m.valid_shares != null ? m.valid_shares : '—'}</td>
             <td class="py-2 px-2 text-right text-amber-400">${hr} H/s</td>
             <td class="py-2 px-2 text-right text-emerald-400">${paid} Z</td>
@@ -675,7 +679,7 @@ async function refreshPayout(){
           </tr>`;
         }).join('');
       } else {
-        minersTable.innerHTML = '<tr><td colspan="8" class="py-2 px-2 text-gray-500 italic">No miners connected</td></tr>';
+        minersTable.innerHTML = '<tr><td colspan="10" class="py-2 px-2 text-gray-500 italic">No miners connected</td></tr>';
       }
     }
 

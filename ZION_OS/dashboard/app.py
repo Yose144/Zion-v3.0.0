@@ -3784,6 +3784,8 @@ def build_payout_status() -> dict:
         miner_stats.append({
             "address": m.get("payout_address") or m.get("address") or "—",
             "worker_name": m.get("worker_name") or m.get("id") or "—",
+            "algorithm": m.get("algorithm") or "—",
+            "backend": m.get("backend") or "cpu",
             "valid_shares": m.get("valid_shares", 0),
             "hashrate": m.get("hashrate", 0),
             "hashrate_1h": m.get("hashrate_1h", 0),
