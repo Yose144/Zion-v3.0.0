@@ -1,13 +1,7 @@
 /*
  * DeekshaLite Fire — Thermal-Intensive OpenCL Kernel (GCN/RDNA compatible)
- * Optimized for maximum GPU thermal output.
- *
- * Optimizations applied:
- *   1. Thermal loop: 4 independent ulong chains (ILP) instead of 2
- *   2. Keccak final: ulong4 vectorized XOR into state (no byte-wise loops)
- *   3. Random-read index: as_ulong() cast instead of byte loop
- *   4. #pragma unroll on AES rounds and pass loops
- *   5. Keccak f1600: kept canonical (already optimal)
+ * Deterministic integer-only thermal loop (no float — avoids driver-dependent rounding).
+ * CPU/OpenCL parity: 8-chain ulong, 65536 iterations, fold into 26 bytes.
  */
 
 #pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable
@@ -107,22 +101,22 @@ void keccak256_from_state(
     __private uchar out[32])
 {
     keccak_st_t s;
-    #pragma unroll
+    
     for (int i = 0; i < 25; i++) s.u[i] = pre_state[i];
-    #pragma unroll
+    
     for (int i = 0; i < 8; i++)
         s.b[80 + i] ^= (uchar)(nonce >> (i * 8));
     s.b[88]  ^= 0x01;
     s.b[135] ^= 0x80;
     keccak_f1600(s.u);
-    #pragma unroll
+    
     for (int i = 0; i < 32; i++) out[i] = s.b[i];
 }
 
 void sha3_512(__private const uchar *in, uint inlen, __private uchar out[64])
 {
     keccak_st_t s;
-    #pragma unroll
+    
     for (int i = 0; i < 25; i++) s.u[i] = 0;
     uint pos = 0;
     for (uint i = 0; i < inlen; i++) {
@@ -132,7 +126,7 @@ void sha3_512(__private const uchar *in, uint inlen, __private uchar out[64])
     s.b[pos] ^= 0x06;
     s.b[71]  ^= 0x80;
     keccak_f1600(s.u);
-    #pragma unroll
+    
     for (int i = 0; i < 64; i++) out[i] = s.b[i];
 }
 
@@ -161,7 +155,7 @@ __constant uchar AES_SBOX[256] = {
 
 void aes_sub_bytes(__private uchar s[16])
 {
-    #pragma unroll
+    
     for (int i = 0; i < 16; i++) s[i] = AES_SBOX[s[i]];
 }
 
@@ -181,7 +175,7 @@ uchar aes_xtime(uchar a)
 
 void aes_mix_columns(__private uchar s[16])
 {
-    #pragma unroll
+    
     for (int i = 0; i < 4; i++) {
         uchar a = s[i*4], b = s[i*4+1], c = s[i*4+2], d = s[i*4+3];
         uchar e = a ^ b ^ c ^ d;
@@ -194,7 +188,7 @@ void aes_mix_columns(__private uchar s[16])
 
 void aes_add_round_key(__private uchar s[16], __private const uchar k[16])
 {
-    #pragma unroll
+    
     for (int i = 0; i < 16; i++) s[i] ^= k[i];
 }
 
@@ -220,14 +214,14 @@ void aes_final_round(__private uchar s[16], __private const uchar k[16])
 void fill_scratchpad(__private const uchar seed[32], __global uchar *pad)
 {
     uchar state[64];
-    #pragma unroll
+    
     for (int i = 0; i < 32; i++) state[i] = seed[i];
-    #pragma unroll
+    
     for (int i = 32; i < 64; i++) state[i] = 0;
 
     for (uint blk = 0; blk < BLOCK_COUNT; blk++) {
         uchar inp[65];
-        #pragma unroll
+        
         for (int i = 0; i < 64; i++) inp[i] = state[i];
         inp[64] = (uchar)(blk & 0xFF);
         uchar out64[64];
@@ -269,7 +263,7 @@ void sequential_passes(__global uchar *pad)
 void random_read_mix(__private const uchar seed[32], __global const uchar *pad, __private uchar out[32])
 {
     uchar acc[32];
-    #pragma unroll
+    
     for (int i = 0; i < 32; i++) acc[i] = seed[i];
     ulong pos = 0;
     for (ulong r = 0; r < RANDOM_READS; r++) {
@@ -284,7 +278,7 @@ void random_read_mix(__private const uchar seed[32], __global const uchar *pad, 
             idx_val |= ((ulong)acc[i]) << (i * 8);
         pos = (idx_val ^ pos ^ r) % BLOCK_COUNT;
     }
-    #pragma unroll
+    
     for (int i = 0; i < 32; i++) out[i] = acc[i];
 }
 
@@ -295,16 +289,16 @@ void random_read_mix(__private const uchar seed[32], __global const uchar *pad, 
 void aes128_mix_fire(__private const uchar seed[32], ulong nonce, __private uchar out[32])
 {
     uchar key[16];
-    #pragma unroll
+    
     for (int i = 0; i < 16; i++) key[i] = seed[i];
     uchar counter[16];
-    #pragma unroll
+    
     for (int i = 0; i < 8; i++) counter[i]     = (uchar)(nonce >> (i * 8));
-    #pragma unroll
+    
     for (int i = 0; i < 8; i++) counter[8 + i] = seed[16 + i];
 
     uchar block0[16], block1[16];
-    #pragma unroll
+    
     for (int i = 0; i < 16; i++) { block0[i] = counter[i]; block1[i] = counter[i]; }
 
     uint carry = 1;
@@ -322,7 +316,7 @@ void aes128_mix_fire(__private const uchar seed[32], ulong nonce, __private ucha
     aes_final_round(block0, key);
     aes_final_round(block1, key);
 
-    #pragma unroll
+    
     for (int i = 0; i < 16; i++) {
         out[i]      = block0[i] ^ seed[i];
         out[16 + i] = block1[i] ^ seed[16 + i];
@@ -333,14 +327,12 @@ void aes128_mix_fire(__private const uchar seed[32], ulong nonce, __private ucha
 /* Step 4: FIRE Thermal Loop — 4-chain ILP for maximum ALU load               */
 /* ========================================================================== */
 
-/* 8-chain integer + 2-chain float thermal loop.
- * Universal: GCN, RDNA, CUDA, Metal.  No half, no double, no native_*, no sin/cos.
- * INT chains stress ALU0; float fma chains stress ALU1/FP units.
- * Winter mode (Fire): 32k iterations, high ALU util, minimal memory.
+/* 8-chain integer thermal loop.
+ * Deterministic on all platforms — no float (avoids driver-dependent fma rounding).
+ * Winter mode (Fire): 65k iterations, high ALU util, minimal memory.
  * Summer mode: use deeksha_lite.cl (normal mining algorithm). */
 void thermal_loop(__private uchar data[32], ulong nonce)
 {
-    /* ── 8 independent ulong integer chains ─────────────────────────── */
     ulong a = nonce ^ 0x9E3779B97F4A7C15UL;
     ulong b = nonce ^ 0xBF58476D1CE4E5B9UL;
     ulong c = nonce ^ 0x94D049BB133111EBUL;
@@ -350,14 +342,7 @@ void thermal_loop(__private uchar data[32], ulong nonce)
     ulong g = nonce ^ 0xBADC0FFEE0DDF00DUL;
     ulong h = nonce ^ 0xFEEDFACECAFEBEEFUL;
 
-    /* ── 2 independent float chains (FP-ALU heat, no memory) ─────────
-     * fma(a,b,c)=a*b+c is a single instruction on GCN/RDNA/CUDA/Metal.
-     * We avoid sin/cos/half/double for universal compatibility.        */
-    float f1 = (float)(nonce & 0xFFFFu) * 0.0001f;
-    float f2 = (float)((nonce >> 16) & 0xFFFFu) * 0.0001f;
-
     for (int i = 0; i < THERMAL_ITERS; i++) {
-        /* --- Integer ALU stress (8 chains) --- */
         a = ROL64(a, 17) + b;
         b = ROL64(b, 31) ^ a;
         c = ROL64(c, 13) + d;
@@ -382,15 +367,8 @@ void thermal_loop(__private uchar data[32], ulong nonce)
         f ^= (ulong)data[(i + 12) & 0x1F];
         g ^= (ulong)data[(i + 2) & 0x1F];
         h ^= (ulong)data[(i + 6) & 0x1F];
-
-        /* --- Float ALU stress (2 chains, fma only) --- */
-        f1 = fma(f1, 1.618033988f, f2);
-        f2 = fma(f2, 2.718281828f, f1);
-        f1 = fma(f1, 3.141592653f, f2);
-        f2 = fma(f2, 1.414213562f, f1);
     }
 
-    /* ── Fold integer results back into data ───────────────────────── */
     data[0]  ^= (uchar)(a);
     data[1]  ^= (uchar)(a >> 8);
     data[2]  ^= (uchar)(b);
@@ -417,16 +395,6 @@ void thermal_loop(__private uchar data[32], ulong nonce)
     data[23] ^= (uchar)(h >> 16);
     data[24] ^= (uchar)(a >> 24);
     data[25] ^= (uchar)(b >> 24);
-
-    /* ── Mix float results so compiler cannot eliminate them ───────── */
-    uint f1u = as_uint(f1);
-    uint f2u = as_uint(f2);
-    data[26] ^= (uchar)(f1u);
-    data[27] ^= (uchar)(f1u >> 8);
-    data[28] ^= (uchar)(f2u);
-    data[29] ^= (uchar)(f2u >> 8);
-    data[30] ^= (uchar)(f1u >> 16);
-    data[31] ^= (uchar)(f2u >> 16);
 }
 
 /* ========================================================================== */
@@ -436,7 +404,7 @@ void thermal_loop(__private uchar data[32], ulong nonce)
 void keccak256_final(__private const uchar in[32], __private uchar out[32])
 {
     keccak_st_t s;
-    #pragma unroll
+    
     for (int i = 0; i < 25; i++) s.u[i] = 0;
     /* Vectorized XOR: 4 × ulong instead of 32 × byte */
     ulong4 v = vload4(0, (__private ulong*)in);
@@ -446,7 +414,7 @@ void keccak256_final(__private const uchar in[32], __private uchar out[32])
     s.b[32] ^= 0x01;
     s.b[135] ^= 0x80;
     keccak_f1600(s.u);
-    #pragma unroll
+    
     for (int i = 0; i < 32; i++) out[i] = s.b[i];
 }
 
