@@ -1,0 +1,2916 @@
+{
+  "rigs": [
+    {
+      "id": "rig-518837",
+      "name": "ZionRig-Vega64",
+      "wallet": "zion1n7n5t28663h3f3d8s8y596h5f3z582z8638d073",
+      "worker": "vega64-smos",
+      "pool_addr": "77.42.71.94:8444",
+      "status": "offline",
+      "gpu": {
+        "name": "AMD RX Vega 64",
+        "vendor": "AMD",
+        "vram_mb": 8192,
+        "driver": "amd21.50.2 / ROCm 5.x",
+        "temp_c": null,
+        "power_w": null,
+        "fan_pct": null,
+        "core_mhz": 1200,
+        "mem_mhz": 950
+      },
+      "stats": {
+        "hashrate": 0.0,
+        "hashrate_1h": 0.0,
+        "hashrate_24h": 0.0,
+        "accepted": 0,
+        "rejected": 0,
+        "stale": 0,
+        "uptime_s": 0,
+        "difficulty": 0,
+        "last_share_time": null,
+        "total_hashes": 0
+      },
+      "config": {
+        "threads": 0,
+        "gpu_mode": "opencl",
+        "intensity": null
+      },
+      "last_seen": 0
+    },
+    {
+      "id": "rig-local-rx5600",
+      "name": "DevRig-RX5600",
+      "wallet": "zion1n7n5t28663h3f3d8s8y596h5f3z582z8638d073",
+      "worker": "rx5600-local",
+      "pool_addr": "77.42.71.94:8444",
+      "status": "stopped",
+      "gpu": {
+        "name": "AMD RX 5600 XT",
+        "vendor": "AMD",
+        "vram_mb": 6144,
+        "driver": "RDNA 1",
+        "temp_c": null,
+        "power_w": null,
+        "fan_pct": null,
+        "core_mhz": null,
+        "mem_mhz": null
+      },
+      "stats": {
+        "hashrate": 0.0,
+        "hashrate_1h": 0.0,
+        "hashrate_24h": 0.0,
+        "accepted": 0,
+        "rejected": 0,
+        "stale": 0,
+        "uptime_s": 0,
+        "difficulty": 0,
+        "last_share_time": null,
+        "total_hashes": 0
+      },
+      "config": {
+        "threads": 4,
+        "gpu_mode": "cpu",
+        "intensity": null
+      },
+      "last_seen": 0
+    }
+  ],
+  "log_buffer": [],
+  "hashrate_history": [
+    {
+      "timestamp": 1780835675,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780835705,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780835735,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780835765,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780835795,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780835825,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780835855,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780835885,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780835915,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780835945,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780835975,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780836005,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780836035,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780836065,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780836095,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780836125,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780836155,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780836185,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780836215,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780836245,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780836275,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780836305,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780836335,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780836365,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780836395,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780836425,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780836455,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780836485,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780836515,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780836545,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780836575,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780836605,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780836635,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780836665,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780836696,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780836726,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780836756,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780836786,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780836816,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780836846,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780836876,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780836906,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780836936,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780836966,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780836996,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780837026,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780837056,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780837086,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780837116,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780837146,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780837176,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780837206,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780837236,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780837266,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780837296,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780837326,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780837356,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780837386,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780837416,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780837446,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780837476,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780837506,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780837536,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780837566,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780837596,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780837626,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780837656,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780837686,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780837716,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780837746,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780837776,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780837806,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780837836,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780837866,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780837896,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780837926,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780837956,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780837986,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780838016,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780838046,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780838076,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780838106,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780838136,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780838166,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780838196,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780838226,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780838256,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780838286,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780838316,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780838346,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780838376,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780838406,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780838436,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780838466,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780838496,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780838526,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780838556,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780838586,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780838616,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780838646,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780838676,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780838706,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780838736,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780838766,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780838796,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780838826,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780838856,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780838886,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780838916,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780838946,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780838976,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780839006,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780839036,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780839066,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780839096,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780839126,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780839156,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780839186,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780839216,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780839246,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780839276,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780839306,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780839336,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780839366,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780839396,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780839426,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780839456,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780839486,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780839516,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780839546,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780839577,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780839607,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780839637,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780839667,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780839697,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780839727,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780839757,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780839787,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780839817,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780839847,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780839877,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780839907,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780839937,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780839967,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780839997,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780840027,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780840057,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780840087,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780840117,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780840147,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780840177,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780840207,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780840237,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780840267,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780840297,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780840327,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780840357,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780840387,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780840417,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780840447,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780840477,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780840507,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780840537,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780840567,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780840597,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780840627,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780840658,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780840688,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780840718,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780840748,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780840778,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780840808,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780840838,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780840868,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780840898,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780840928,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780840958,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780840988,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780841018,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780841048,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780841078,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780841108,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780841138,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780841168,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780841198,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780841228,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780841258,
+      "hashrate": 0.0,
+      "rig_id": null
+    },
+    {
+      "timestamp": 1780841288,
+      "hashrate": 0.0,
+      "rig_id": null
+    }
+  ],
+  "rig_histories": {
+    "rig-518837": [
+      {
+        "timestamp": 1780835675,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780835705,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780835735,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780835765,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780835795,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780835825,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780835855,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780835885,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780835915,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780835945,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780835975,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780836005,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780836035,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780836065,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780836095,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780836125,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780836155,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780836185,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780836215,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780836245,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780836275,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780836305,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780836335,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780836365,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780836395,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780836425,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780836455,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780836485,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780836515,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780836545,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780836575,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780836605,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780836635,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780836665,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780836696,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780836726,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780836756,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780836786,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780836816,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780836846,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780836876,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780836906,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780836936,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780836966,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780836996,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780837026,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780837056,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780837086,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780837116,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780837146,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780837176,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780837206,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780837236,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780837266,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780837296,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780837326,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780837356,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780837386,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780837416,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780837446,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780837476,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780837506,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780837536,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780837566,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780837596,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780837626,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780837656,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780837686,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780837716,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780837746,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780837776,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780837806,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780837836,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780837866,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780837896,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780837926,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780837956,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780837986,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780838016,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780838046,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780838076,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780838106,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780838136,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780838166,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780838196,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780838226,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780838256,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780838286,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780838316,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780838346,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780838376,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780838406,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780838436,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780838466,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780838496,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780838526,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780838556,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780838586,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780838616,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780838646,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780838676,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780838706,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780838736,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780838766,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780838796,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780838826,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780838856,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780838886,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780838916,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780838946,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780838976,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780839006,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780839036,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780839066,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780839096,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780839126,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780839156,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780839186,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780839216,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780839246,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780839276,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780839306,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780839336,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780839366,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780839396,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780839426,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780839456,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780839486,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780839516,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780839546,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780839577,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780839607,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780839637,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780839667,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780839697,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780839727,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780839757,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780839787,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780839817,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780839847,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780839877,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780839907,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780839937,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780839967,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780839997,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780840027,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780840057,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780840087,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780840117,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780840147,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780840177,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780840207,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780840237,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780840267,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780840297,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780840327,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780840357,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780840387,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780840417,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780840447,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780840477,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780840507,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780840537,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780840567,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780840597,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780840627,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780840658,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780840688,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780840718,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780840748,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780840778,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780840808,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780840838,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780840868,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780840898,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780840928,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780840958,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780840988,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780841018,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780841048,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780841078,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780841108,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780841138,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780841168,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780841198,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780841228,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780841258,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      },
+      {
+        "timestamp": 1780841288,
+        "hashrate": 0.0,
+        "rig_id": "rig-518837"
+      }
+    ],
+    "rig-local-rx5600": [
+      {
+        "timestamp": 1780835675,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780835705,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780835735,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780835765,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780835795,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780835825,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780835855,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780835885,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780835915,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780835945,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780835975,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780836005,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780836035,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780836065,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780836095,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780836125,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780836155,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780836185,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780836215,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780836245,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780836275,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780836305,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780836335,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780836365,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780836395,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780836425,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780836455,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780836485,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780836515,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780836545,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780836575,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780836605,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780836635,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780836665,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780836696,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780836726,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780836756,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780836786,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780836816,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780836846,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780836876,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780836906,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780836936,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780836966,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780836996,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780837026,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780837056,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780837086,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780837116,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780837146,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780837176,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780837206,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780837236,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780837266,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780837296,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780837326,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780837356,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780837386,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780837416,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780837446,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780837476,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780837506,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780837536,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780837566,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780837596,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780837626,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780837656,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780837686,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780837716,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780837746,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780837776,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780837806,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780837836,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780837866,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780837896,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780837926,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780837956,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780837986,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780838016,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780838046,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780838076,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780838106,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780838136,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780838166,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780838196,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780838226,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780838256,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780838286,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780838316,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780838346,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780838376,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780838406,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780838436,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780838466,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780838496,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780838526,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780838556,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780838586,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780838616,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780838646,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780838676,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780838706,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780838736,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780838766,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780838796,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780838826,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780838856,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780838886,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780838916,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780838946,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780838976,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780839006,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780839036,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780839066,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780839096,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780839126,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780839156,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780839186,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780839216,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780839246,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780839276,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780839306,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780839336,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780839366,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780839396,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780839426,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780839456,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780839486,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780839516,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780839546,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780839577,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780839607,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780839637,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780839667,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780839697,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780839727,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780839757,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780839787,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780839817,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780839847,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780839877,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780839907,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780839937,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780839967,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780839997,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780840027,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780840057,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780840087,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780840117,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780840147,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780840177,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780840207,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780840237,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780840267,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780840297,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780840327,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780840357,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780840387,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780840417,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780840447,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780840477,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780840507,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780840537,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780840567,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780840597,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780840627,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780840658,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780840688,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780840718,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780840748,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780840778,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780840808,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780840838,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780840868,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780840898,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780840928,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780840958,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780840988,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780841018,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780841048,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780841078,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780841108,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780841138,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780841168,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780841198,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780841228,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780841258,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      },
+      {
+        "timestamp": 1780841288,
+        "hashrate": 0.0,
+        "rig_id": "rig-local-rx5600"
+      }
+    ]
+  },
+  "share_events": [],
+  "alerts": [],
+  "flight_sheets": [
+    {
+      "id": "fs-zion-default",
+      "name": "ZION — Default CPU",
+      "coin": "ZION",
+      "algo": "Ekam Deeksha v2",
+      "pool_addr": "77.42.71.94:8444",
+      "wallet":

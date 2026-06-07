@@ -1767,7 +1767,7 @@ pub mod opencl_deeksha_lite_fire {
     use std::time::Instant;
     use zion_cosmic_harmony::gpu::opencl_kernel;
 
-    const DLF_SCRATCHPAD_BYTES: usize = 512 * 1024; // 512 KiB per thread
+    const DLF_SCRATCHPAD_BYTES: usize = 128 * 1024; // 128 KiB per thread (ASIC-resistant, small footprint)
     const SENTINEL: u64 = 0xFFFF_FFFF_FFFF_FFFF;
 
     pub struct OpenClDeekshaLiteFireMiner {
