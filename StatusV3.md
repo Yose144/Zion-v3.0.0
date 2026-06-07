@@ -22,6 +22,36 @@
 
 ---
 
+## Co je nového 2026-06-07 pozdě večer (Auto-Backup + Fire Kernel v2 + Alert Hygiene)
+
+> Verze: **3.0.1** (beze změny Cargo verze)
+
+### TL;DR
+
+| Změna | Status | Soubor |
+|-------|--------|--------|
+| Auto-backup PowerShell skript | ✅ Denní 03:00 UTC via Task Scheduler | `scripts/auto-backup-all.ps1` |
+| Backup status endpoint | ✅ Vrátí manual + auto-backupy | `ZION_OS/dashboard/app.py` |
+| Fire kernel upgrade | ✅ 32k thermal iters, 8+2 chain ALU stress | `deeksha_lite_fire.cl` |
+| Alert tolerance | ✅ Share-rejection 5% → 15%, benign WS errors filtered | `ZION_OS/dashboard/app.py` |
+
+### Co bylo uděláno
+
+1. **Auto-backup** — vytvořen `scripts/auto-backup-all.ps1` (rekurzivní záloha všech `.db`, `V3/data/`, `.env`, TOML konfigů, markdown docs). Komprimuje do `C:\ZION-AutoBackups\zion-auto-<timestamp>.zip` s rotací (30 denních + 4 týdenní). Nastaven Windows Task Scheduler úloha `ZION-AutoBackup-All` (denně v 03:00, `-NoProfile -ExecutionPolicy Bypass`).
+2. **Dashboard backup endpoint** — `/api/backup/status` nyní čte jak `backups/backup_*.zip`, tak `C:\ZION-AutoBackups\zion-auto-*.zip`; vrací `manual_backups`, `auto_backups`, `auto_backup_enabled`, `auto_backup_dir`.
+3. **Deeksha Lite Fire kernel v2** — OpenCL kernel (`deeksha_lite_fire.cl`) upraven:
+   - `THERMAL_ITERS` 16384 → **32768** (winter mode)
+   - 6-chain integer → **8-chain integer** + **2-chain float** (`fma`) pro universal ALU0/ALU1 stress na GCN/RDNA/CUDA/Metal
+   - Odstraněny nekompatibilní `#pragma unroll` a `native_*` funkce
+   - Float výsledky se foldují zpět do `data[]` přes `as_uint()` aby je kompilátor nemohl eliminovat
+4. **Alert hygiene** — `build_alerts()` v `app.py`:
+   - Práh rejected shares 5% → **15%** (aktivní mining produkuje ~6.7% rejectů v normě)
+   - Benigní WebSocket chyby (`Handshake not finished`, `WebSocket protocol error`, `Connection reset by peer`, `broken pipe`) se filtrují před alertem
+   - `/api/alerts` nyní vrací jediný `severity: "success"` (`All systems nominal`)
+5. **.gitignore** — přidán `V3/target4/` pro potlačení debug/release build artifactů.
+
+---
+
 ## Co je nového 2026-06-07 večer (Full Stack Services Green + OASIS/FreeWorld/Issobella Deploy)
 
 > Verze: **3.0.1** (beze změny Cargo verze)
