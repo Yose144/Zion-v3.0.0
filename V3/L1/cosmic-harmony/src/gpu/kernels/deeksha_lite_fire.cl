@@ -22,7 +22,7 @@
 #define PASSES           16
 #define RANDOM_READS     512
 #define AES_FULL_ROUNDS  10
-#define THERMAL_ITERS    32768
+#define THERMAL_ITERS    65536
 
 /* ========================================================================== */
 /* Keccak — canonical impl                                                    */
