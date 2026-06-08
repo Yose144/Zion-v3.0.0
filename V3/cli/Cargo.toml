@@ -29,7 +29,7 @@ tokio = { version = "1", features = ["full"] }
 clap = { version = "4", features = ["derive", "color"] }
 toml = "0.8"
 colored = "2"
-dialoguer = "0.11"
+dialoguer = "0.12"
 indicatif = "0.17"
 chrono = { version = "0.4", features = ["serde"] }
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
