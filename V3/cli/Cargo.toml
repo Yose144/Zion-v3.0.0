@@ -39,6 +39,6 @@ clap_complete = "4"
 sha2 = "0.10"
 bip39 = { version = "2", features = ["rand"] }
 aes-gcm = "0.10"
-pbkdf2 = "0.12"
+pbkdf2 = "0.13"
 zion-core = { path = "../L1/core" }
 zion-sdk = { path = "../sdk" }
