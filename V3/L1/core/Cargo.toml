@@ -55,7 +55,7 @@ hex.workspace = true
 zeroize.workspace = true
 zion-cosmic-harmony = { path = "../cosmic-harmony" }
 tokio = { version = "1", features = ["full"] }
-tokio-tungstenite = "0.20"
+tokio-tungstenite = "0.29"
 futures-util = "0.3"
 chrono = "0.4"
 clap = { version = "4", features = ["derive", "color"] }
