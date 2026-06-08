@@ -15,7 +15,7 @@ thiserror = "2"
 uuid = { version = "1", features = ["v4", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
 rusqlite = { version = "0.31", features = ["bundled"] }
-axum = "0.7"
+axum = "0.8"
 
 # Optional ONNX Runtime backend (heavy — not enabled by default)
 # Using pre-release RC because stable 2.0 is not yet published.

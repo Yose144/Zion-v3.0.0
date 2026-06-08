@@ -36,7 +36,7 @@ anyhow = "1"
 chrono = { version = "0.4", features = ["serde"] }
 
 # HTTP server
-axum = { version = "0.7", features = ["macros"] }
+axum = { version = "0.8", features = ["macros"] }
 tower = "0.4"
 
 # Shared types
