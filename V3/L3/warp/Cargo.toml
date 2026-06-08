@@ -36,7 +36,7 @@ rlp = "0.5"
 bitcoin = { version = "0.31", default-features = false, features = ["std"] }
 
 # Stellar transaction signing (StrKey parsing, XDR encoding, ed25519)
-stellar-strkey = "0.0.8"
+stellar-strkey = "0.0.16"
 base64 = "0.22"
 
 [dev-dependencies]
