@@ -31,7 +31,7 @@ rusqlite = { version = "0.31", features = ["bundled"] }
 # HTTP API
 axum = { version = "0.7", features = ["macros"] }
 tower = "0.4"
-tower-http = { version = "0.5", features = ["cors", "trace"] }
+tower-http = { version = "0.6", features = ["cors", "trace"] }
 
 # Utils
 thiserror = "2"
