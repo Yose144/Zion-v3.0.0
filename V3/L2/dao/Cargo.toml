@@ -21,7 +21,7 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 # Crypto
-sha2 = "0.10"
+sha2 = "0.11"
 ripemd = "0.1"
 ed25519-dalek = { version = "2", features = ["serde"] }
 

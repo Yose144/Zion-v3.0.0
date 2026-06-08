@@ -24,7 +24,7 @@ reqwest = { version = "0.12", features = ["json", "rustls-tls"] }
 
 # Crypto — keccak256 for EVM event topic hash
 sha3 = "0.10"
-sha2 = "0.10"
+sha2 = "0.11"
 ripemd = "0.1"
 hex = "0.4"
 # secp256k1 signing for EVM transactions (submitLockProof)
