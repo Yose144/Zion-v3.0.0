@@ -4,8 +4,8 @@ import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLang } from '@/contexts/LanguageContext';
 import { usePolling } from '@/hooks/usePolling';
-import { 
 import { tr } from '@/lib/translations';
+import { 
   type LucideIcon,
   Globe, 
   Server, 
