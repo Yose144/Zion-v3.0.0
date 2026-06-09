@@ -141,7 +141,7 @@ export default function DefiPage() {
                     onClick={switchToBase}
                     className="text-[10px] text-orange-400 hover:text-orange-300 underline"
                   >
-                    {cs ? 'Přepnout na Base' : 'Switch to Base'}
+                    {tr('defiPage', 'switch_to_base', lang)}
                   </button>
                 )}
               </div>
@@ -151,7 +151,7 @@ export default function DefiPage() {
                 className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-4 py-1.5 text-sm text-white hover:bg-white/10 transition-colors"
               >
                 <Wallet className="h-3.5 w-3.5" />
-                {cs ? 'Připojit peněženku' : 'Connect Wallet'}
+                {tr('defiPage', 'connect_wallet', lang)}
               </button>
             )}
 
@@ -180,7 +180,7 @@ export default function DefiPage() {
             {wZIONPrice && wZIONPrice.usd_per_wzion > 0 && (
               <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5">
                 <BarChart3 className="h-3.5 w-3.5 text-emerald-400" />
-                <span className="text-gray-300">{cs ? 'Cena' : 'Price'}:</span>
+                <span className="text-gray-300">{tr('defiPage', 'price', lang)}:</span>
                 <span className="font-mono text-white">
                   ${wZIONPrice.usd_per_wzion.toFixed(6)}
                 </span>
@@ -251,17 +251,17 @@ export default function DefiPage() {
                 <div className="flex items-center gap-2 mb-2">
                   <Flame className="h-5 w-5 text-cyan-400" />
                   <h3 className="font-semibold text-white text-sm">
-                    {cs ? 'Jak Bridge funguje' : 'How Bridge Works'}
+                    {tr('defiPage', 'how_bridge_works', lang)}
                   </h3>
                 </div>
                 <div className="space-y-3 text-xs text-gray-300 leading-relaxed">
                   <div className="flex gap-3">
                     <span className="shrink-0 rounded-lg bg-cyan-500/10 border border-cyan-500/20 px-2 py-1 text-cyan-400 font-mono text-[10px]">L1→L2</span>
-                    <p>{cs ? 'Zamkni ZION na L1 → relay mintne wZION na Base (1:1 peg)' : 'Lock ZION on L1 → relay mints wZION on Base (1:1 peg)'}</p>
+                    <p>{tr('defiPage', 'lock_zion_on_l1_relay_mints_wzion_on_base_1_1', lang)}</p>
                   </div>
                   <div className="flex gap-3">
                     <span className="shrink-0 rounded-lg bg-orange-500/10 border border-orange-500/20 px-2 py-1 text-orange-400 font-mono text-[10px]">L2→L1</span>
-                    <p>{cs ? 'Spal wZION na Base → relay odemkne ZION na L1 (do ~5 min)' : 'Burn wZION on Base → relay unlocks ZION on L1 (within ~5 min)'}</p>
+                    <p>{tr('defiPage', 'burn_wzion_on_base_relay_unlocks_zion_on_l1_w', lang)}</p>
                   </div>
                 </div>
                 <div className="pt-2 flex flex-wrap gap-2">
@@ -302,15 +302,15 @@ export default function DefiPage() {
           transition={{ delay: 0.3 }}
         >
           <h2 className="mb-6 text-2xl font-bold">
-            {cs ? 'Kontrakty na Base Mainnet' : 'Base Mainnet Contracts'}
+            {tr('defiPage', 'base_mainnet_contracts', lang)}
           </h2>
           <div className="overflow-hidden rounded-3xl border border-white/10 bg-black/45 backdrop-blur-xl">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-white/10 bg-white/2">
-                    <th className="p-4 text-left font-medium text-gray-400">{cs ? 'Kontrakt' : 'Contract'}</th>
-                    <th className="p-4 text-left font-medium text-gray-400">{cs ? 'Adresa' : 'Address'}</th>
+                    <th className="p-4 text-left font-medium text-gray-400">{tr('defiPage', 'contract', lang)}</th>
+                    <th className="p-4 text-left font-medium text-gray-400">{tr('defiPage', 'address', lang)}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -346,7 +346,7 @@ export default function DefiPage() {
           className="rounded-2xl border border-zion-gold/25 bg-linear-to-br from-zion-gold/10 via-zion-purple/10 to-zion-cyan/10 p-8"
         >
           <h2 className="text-2xl font-bold mb-3">
-            {cs ? 'Obchoduj wZION' : 'Trade wZION'}
+            {tr('defiPage', 'trade_wzion', lang)}
           </h2>
           <p className="mx-auto mb-6 max-w-lg text-gray-300">
             {cs
@@ -360,7 +360,7 @@ export default function DefiPage() {
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-zion-gold via-zion-purple to-zion-cyan px-6 py-3 font-semibold text-white shadow-[0_12px_35px_rgba(147,51,234,0.35)] transition-shadow hover:shadow-[0_18px_45px_rgba(147,51,234,0.45)]"
             >
-              {cs ? 'Otevřít Uniswap' : 'Open Uniswap'}
+              {tr('defiPage', 'open_uniswap', lang)}
               <ExternalLink className="h-4 w-4" />
             </a>
             <a

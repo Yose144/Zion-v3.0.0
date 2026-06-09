@@ -150,7 +150,7 @@ export default function ZahradaGenesisPage() {
             className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-emerald-400 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            {cs ? 'Zpět na Terra Nova' : 'Back to Terra Nova'}
+            {tr('terranovaGenesis', 'back_to_terra_nova', lang)}
           </Link>
         </motion.div>
 
@@ -180,7 +180,7 @@ export default function ZahradaGenesisPage() {
                     L5 · Terra Nova Pioneer
                   </span>
                   <span className="inline-flex items-center gap-1 rounded-full border border-zion-gold/30 bg-zion-gold/10 px-3 py-1 text-[10px] font-semibold tracking-[0.2em] text-zion-gold uppercase">
-                    🟡 {cs ? 'Aktivní rozvoj' : 'Active Development'}
+                    🟡 {tr('terranovaGenesis', 'active_development', lang)}
                   </span>
                 </div>
 
@@ -230,10 +230,10 @@ export default function ZahradaGenesisPage() {
         >
           <div className="text-center mb-8">
             <p className="text-[10px] uppercase tracking-[0.45em] text-gray-500 mb-2">
-              {cs ? 'Co projekt nabízí' : 'What the project offers'}
+              {tr('terranovaGenesis', 'what_the_project_offers', lang)}
             </p>
             <h2 className="text-2xl font-bold text-white">
-              {cs ? 'Aktivity & Infrastruktura' : 'Activities & Infrastructure'}
+              {tr('terranovaGenesis', 'activities_infrastructure', lang)}
             </h2>
           </div>
 
@@ -283,10 +283,10 @@ export default function ZahradaGenesisPage() {
         >
           <div className="text-center mb-8">
             <p className="text-[10px] uppercase tracking-[0.45em] text-gray-500 mb-2">
-              {cs ? 'Fáze rozvoje' : 'Development Phases'}
+              {tr('terranovaGenesis', 'development_phases', lang)}
             </p>
             <h2 className="text-2xl font-bold text-white">
-              {cs ? 'Cesta od zárodku k výzařování' : 'From Seed to Radiance'}
+              {tr('terranovaGenesis', 'from_seed_to_radiance', lang)}
             </h2>
           </div>
 
@@ -346,10 +346,10 @@ export default function ZahradaGenesisPage() {
         >
           <div className="text-center mb-8">
             <p className="text-[10px] uppercase tracking-[0.45em] text-gray-500 mb-2">
-              {cs ? 'Fyzická základna' : 'Physical Foundation'}
+              {tr('terranovaGenesis', 'physical_foundation', lang)}
             </p>
             <h2 className="text-2xl font-bold text-white">
-              {cs ? 'Infrastruktura & Off-grid' : 'Infrastructure & Off-grid'}
+              {tr('terranovaGenesis', 'infrastructure_off_grid', lang)}
             </h2>
           </div>
 
@@ -361,13 +361,13 @@ export default function ZahradaGenesisPage() {
                 <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5">
                   <Sun className="h-4 w-4 text-zion-gold" />
                 </span>
-                <h3 className="font-bold text-zion-gold text-sm">{cs ? 'Energie' : 'Energy'}</h3>
+                <h3 className="font-bold text-zion-gold text-sm">{tr('terranovaGenesis', 'energy', lang)}</h3>
               </div>
               <div className="space-y-1.5 relative z-10">
                 {[
-                  { label: cs ? 'Zdroj' : 'Source', val: 'Solar FV systém' },
-                  { label: cs ? 'Záloha' : 'Backup', val: cs ? 'V rozvoji' : 'In development' },
-                  { label: cs ? 'Status' : 'Status', val: cs ? '🟡 Instalace' : '🟡 Installing' },
+                  { label: tr('terranovaGenesis', 'source', lang), val: 'Solar FV systém' },
+                  { label: tr('terranovaGenesis', 'backup', lang), val: tr('terranovaGenesis', 'in_development', lang) },
+                  { label: tr('terranovaGenesis', 'status', lang), val: tr('terranovaGenesis', 'installing', lang) },
                 ].map((r) => (
                   <div key={r.label} className="flex justify-between text-xs gap-2">
                     <span className="text-gray-500">{r.label}</span>
@@ -376,7 +376,7 @@ export default function ZahradaGenesisPage() {
                 ))}
               </div>
               <p className="text-[11px] text-gray-600 relative z-10">
-                {cs ? 'Cíl: energetická soběstačnost areálu' : 'Goal: full energy self-sufficiency'}
+                {tr('terranovaGenesis', 'goal_full_energy_self_sufficiency', lang)}
               </p>
             </div>
 
@@ -387,13 +387,13 @@ export default function ZahradaGenesisPage() {
                 <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5">
                   <Droplets className="h-4 w-4 text-zion-cyan" />
                 </span>
-                <h3 className="font-bold text-zion-cyan text-sm">{cs ? 'Voda' : 'Water'}</h3>
+                <h3 className="font-bold text-zion-cyan text-sm">{tr('terranovaGenesis', 'water', lang)}</h3>
               </div>
               <div className="space-y-1.5 relative z-10">
                 {[
-                  { label: cs ? 'Zdroj' : 'Source', val: cs ? 'Studna + déšť' : 'Well + rainwater' },
-                  { label: cs ? 'Čištění' : 'Filter', val: 'Gravitace + UV' },
-                  { label: cs ? 'Status' : 'Status', val: cs ? '🟡 Funkční základ' : '🟡 Basic system' },
+                  { label: tr('terranovaGenesis', 'source', lang), val: tr('terranovaGenesis', 'well_rainwater', lang) },
+                  { label: tr('terranovaGenesis', 'filter', lang), val: 'Gravitace + UV' },
+                  { label: tr('terranovaGenesis', 'status', lang), val: tr('terranovaGenesis', 'basic_system', lang) },
                 ].map((r) => (
                   <div key={r.label} className="flex justify-between text-xs gap-2">
                     <span className="text-gray-500">{r.label}</span>
@@ -402,7 +402,7 @@ export default function ZahradaGenesisPage() {
                 ))}
               </div>
               <p className="text-[11px] text-gray-600 relative z-10">
-                {cs ? 'Plánovaný sběr dešťové vody — plná retence' : 'Planned rainwater harvesting — full retention'}
+                {tr('terranovaGenesis', 'planned_rainwater_harvesting_full_retention', lang)}
               </p>
             </div>
 
@@ -413,13 +413,13 @@ export default function ZahradaGenesisPage() {
                 <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5">
                   <Sprout className="h-4 w-4 text-emerald-400" />
                 </span>
-                <h3 className="font-bold text-emerald-400 text-sm">{cs ? 'Zahrada & Jídlo' : 'Garden & Food'}</h3>
+                <h3 className="font-bold text-emerald-400 text-sm">{tr('terranovaGenesis', 'garden_food', lang)}</h3>
               </div>
               <div className="space-y-1.5 relative z-10">
                 {[
-                  { label: cs ? 'Metoda' : 'Method', val: cs ? 'Organická farma' : 'Organic farming' },
-                  { label: cs ? 'Cíl' : 'Goal', val: '40–60 % kalorií' },
-                  { label: cs ? 'Status' : 'Status', val: cs ? '🟢 Roste' : '🟢 Growing' },
+                  { label: tr('terranovaGenesis', 'method', lang), val: tr('terranovaGenesis', 'organic_farming', lang) },
+                  { label: tr('terranovaGenesis', 'goal', lang), val: '40–60 % kalorií' },
+                  { label: tr('terranovaGenesis', 'status', lang), val: tr('terranovaGenesis', 'growing', lang) },
                 ].map((r) => (
                   <div key={r.label} className="flex justify-between text-xs gap-2">
                     <span className="text-gray-500">{r.label}</span>
@@ -428,7 +428,7 @@ export default function ZahradaGenesisPage() {
                 ))}
               </div>
               <p className="text-[11px] text-gray-600 relative z-10">
-                {cs ? 'Sázení stromů, obnova biodiverzity, sezónní sklizeň' : 'Tree planting, biodiversity restoration, seasonal harvest'}
+                {tr('terranovaGenesis', 'tree_planting_biodiversity_restoration_season', lang)}
               </p>
             </div>
           </div>
@@ -443,10 +443,10 @@ export default function ZahradaGenesisPage() {
         >
           <div className="text-center mb-8">
             <p className="text-[10px] uppercase tracking-[0.45em] text-gray-500 mb-2">
-              {cs ? 'Komunitní správa' : 'Community Governance'}
+              {tr('terranovaGenesis', 'community_governance', lang)}
             </p>
             <h2 className="text-2xl font-bold text-white">
-              {cs ? 'Governance & DAO' : 'Governance & DAO'}
+              {tr('terranovaGenesis', 'governance_dao', lang)}
             </h2>
           </div>
 
@@ -454,14 +454,14 @@ export default function ZahradaGenesisPage() {
             <div className="relative z-10 grid md:grid-cols-2 gap-8">
               <div className="space-y-4">
                 <h3 className="text-zion-cyan font-bold text-sm uppercase tracking-widest">
-                  {cs ? 'Model rozhodování' : 'Decision Model'}
+                  {tr('terranovaGenesis', 'decision_model', lang)}
                 </h3>
                 <div className="space-y-3">
                   {[
-                    { label: cs ? 'Model' : 'Model', val: cs ? 'Komunitní správa + Terra Nova ® framework' : 'Community governance + Terra Nova ® framework' },
-                    { label: cs ? 'Rozhodování' : 'Decisions', val: cs ? 'Konsensuální pro klíčová rozhodnutí' : 'Consensus for key decisions' },
-                    { label: cs ? 'ZION DAO' : 'ZION DAO', val: cs ? 'Plánováno — Proof-of-Care governance' : 'Planned — Proof-of-Care governance' },
-                    { label: cs ? 'Min. buňka' : 'Min. cell', val: cs ? '3–5 stálých Guardians + sezónní' : '3–5 permanent Guardians + seasonal' },
+                    { label: tr('terranovaGenesis', 'model', lang), val: tr('terranovaGenesis', 'community_governance_terra_nova_framework', lang) },
+                    { label: tr('terranovaGenesis', 'decisions', lang), val: tr('terranovaGenesis', 'consensus_for_key_decisions', lang) },
+                    { label: tr('terranovaGenesis', 'zion_dao', lang), val: tr('terranovaGenesis', 'planned_proof_of_care_governance', lang) },
+                    { label: tr('terranovaGenesis', 'min_cell', lang), val: tr('terranovaGenesis', '3_5_permanent_guardians_seasonal', lang) },
                   ].map((row) => (
                     <div key={row.label} className="flex gap-3">
                       <span className="text-gray-500 text-xs w-28 shrink-0 pt-0.5">{row.label}</span>
@@ -472,7 +472,7 @@ export default function ZahradaGenesisPage() {
               </div>
               <div className="space-y-4">
                 <h3 className="text-zion-gold font-bold text-sm uppercase tracking-widest">
-                  {cs ? 'Humanitární závazek' : 'Humanitarian Commitment'}
+                  {tr('terranovaGenesis', 'humanitarian_commitment', lang)}
                 </h3>
                 <div className="relative rounded-2xl border border-white/10 bg-black/60 p-4">
                   <div className="text-3xl font-black text-zion-gold mb-1">10 %</div>
@@ -502,10 +502,10 @@ export default function ZahradaGenesisPage() {
           <div className="zion-panel rounded-3xl p-6 md:p-10 border border-white/10 relative overflow-hidden">
             <div className="relative z-10 max-w-2xl space-y-4">
               <p className="text-[10px] uppercase tracking-[0.45em] text-gray-500">
-                {cs ? 'Charakter místa' : 'Character of Place'}
+                {tr('terranovaGenesis', 'character_of_place', lang)}
               </p>
               <h2 className="text-xl font-bold text-white">
-                {cs ? 'Farma na hranici dvou světů' : 'A Farm on the Edge of Two Worlds'}
+                {tr('terranovaGenesis', 'a_farm_on_the_edge_of_two_worlds', lang)}
               </h2>
               <p className="text-gray-400 text-sm leading-relaxed">
                 {cs
@@ -519,10 +519,10 @@ export default function ZahradaGenesisPage() {
               </p>
               <div className="pt-2 flex flex-wrap gap-2">
                 {[
-                  cs ? '🌊 Oceán & pohyb' : '🌊 Ocean & movement',
-                  cs ? '🌱 Půda & ticho' : '🌱 Soil & silence',
-                  cs ? '🌳 Biologický čas' : '🌳 Biological time',
-                  cs ? '🔥 Autentický záměr' : '🔥 Authentic intention',
+                  tr('terranovaGenesis', 'ocean_movement', lang),
+                  tr('terranovaGenesis', 'soil_silence', lang),
+                  tr('terranovaGenesis', 'biological_time', lang),
+                  tr('terranovaGenesis', 'authentic_intention', lang),
                 ].map((tag) => (
                   <span key={tag} className="rounded-full border border-white/8 bg-white/4 px-3 py-1 text-xs text-gray-400">
                     {tag}
@@ -542,7 +542,7 @@ export default function ZahradaGenesisPage() {
         >
           <div className="text-center mb-8">
             <p className="text-[10px] uppercase tracking-[0.45em] text-gray-500 mb-2">
-              {cs ? 'Blockchain integrace' : 'Blockchain Integration'}
+              {tr('terranovaGenesis', 'blockchain_integration', lang)}
             </p>
             <h2 className="text-2xl font-bold text-white">ZION Network</h2>
           </div>
@@ -561,9 +561,9 @@ export default function ZahradaGenesisPage() {
                     <p className="text-sm font-semibold text-white/80">{item.label}</p>
                     <p className="text-[10px] text-gray-600 capitalize">
                       {item.status === 'active'
-                        ? (cs ? 'Aktivní' : 'Active')
+                        ? (tr('terranovaGenesis', 'active', lang))
                         : item.status === 'planned'
-                        ? (cs ? 'Plánováno' : 'Planned')
+                        ? (tr('terranovaGenesis', 'planned', lang))
                         : 'TBD'}
                     </p>
                   </div>
@@ -582,7 +582,7 @@ export default function ZahradaGenesisPage() {
         >
           <div className="zion-panel rounded-3xl p-6 md:p-8 border border-white/10 space-y-4">
             <h3 className="text-lg font-bold text-zion-gold">
-              {cs ? 'Zdroje a kontakt' : 'Resources & Contact'}
+              {tr('terranovaGenesis', 'resources_contact', lang)}
             </h3>
             <div className="flex flex-wrap gap-3">
               <a
@@ -630,13 +630,13 @@ export default function ZahradaGenesisPage() {
             className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-zion-gold transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            {cs ? 'Zpět na Terra Nova' : 'Back to Terra Nova'}
+            {tr('terranovaGenesis', 'back_to_terra_nova', lang)}
           </Link>
           <Link
             href="/terranova/dharma-temple"
             className="inline-flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 px-4 py-2 text-sm text-gray-300 transition-all duration-300"
           >
-            <span>{cs ? 'Dharma Temple' : 'Dharma Temple'}</span>
+            <span>{tr('terranovaGenesis', 'dharma_temple', lang)}</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
         </motion.div>

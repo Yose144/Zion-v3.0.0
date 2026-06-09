@@ -156,7 +156,7 @@ export default function DharmaTemplePage() {
             className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-zion-gold transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            {cs ? 'Zpět na Terra Nova' : 'Back to Terra Nova'}
+            {tr('terranovaDharma', 'back_to_terra_nova', lang)}
           </Link>
         </motion.div>
 
@@ -184,7 +184,7 @@ export default function DharmaTemplePage() {
                     L5 · Terra Nova Pioneer
                   </span>
                   <span className="inline-flex items-center gap-1 rounded-full border border-zion-gold/30 bg-zion-gold/10 px-3 py-1 text-[10px] font-semibold tracking-[0.2em] text-zion-gold uppercase">
-                    🔵 {cs ? 'V přípravě' : 'Planning'}
+                    🔵 {tr('terranovaDharma', 'planning', lang)}
                   </span>
                 </div>
 
@@ -236,7 +236,7 @@ export default function DharmaTemplePage() {
             <div className="relative z-10 grid md:grid-cols-3 gap-6">
               <div className="md:col-span-2 space-y-3">
                 <h3 className="text-lg font-bold text-zion-gold">
-                  {cs ? 'La Palma — La Isla Bonita' : 'La Palma — La Isla Bonita'}
+                  {tr('terranovaDharma', 'la_palma_la_isla_bonita', lang)}
                 </h3>
                 <p className="text-gray-400 text-sm leading-relaxed">
                   {cs
@@ -251,10 +251,10 @@ export default function DharmaTemplePage() {
               </div>
               <div className="grid grid-cols-2 gap-3 content-start">
                 {[
-                  { label: 'UNESCO', val: cs ? 'Bioreservace' : 'Biosphere' },
-                  { label: cs ? 'Srážky' : 'Rainfall', val: '700–1500mm' },
-                  { label: cs ? 'Půda' : 'Soil', val: cs ? 'Vulkanická' : 'Volcanic' },
-                  { label: cs ? 'Observatoř' : 'Observatory', val: 'ORM' },
+                  { label: 'UNESCO', val: tr('terranovaDharma', 'biosphere', lang) },
+                  { label: tr('terranovaDharma', 'rainfall', lang), val: '700–1500mm' },
+                  { label: tr('terranovaDharma', 'soil', lang), val: tr('terranovaDharma', 'volcanic', lang) },
+                  { label: tr('terranovaDharma', 'observatory', lang), val: 'ORM' },
                 ].map((s) => (
                   <div key={s.label} className="text-center p-3 rounded-xl bg-black/60 border border-white/10">
                     <p className="text-gray-300 font-bold text-sm">{s.val}</p>
@@ -275,10 +275,10 @@ export default function DharmaTemplePage() {
         >
           <div className="text-center mb-8">
             <p className="text-[10px] uppercase tracking-[0.45em] text-gray-500 mb-2">
-              {cs ? 'Koncept projektu' : 'Project Concept'}
+              {tr('terranovaDharma', 'project_concept', lang)}
             </p>
             <h2 className="text-2xl font-bold text-white">
-              {cs ? 'Aktivity & Vize' : 'Activities & Vision'}
+              {tr('terranovaDharma', 'activities_vision', lang)}
             </h2>
           </div>
 
@@ -328,10 +328,10 @@ export default function DharmaTemplePage() {
         >
           <div className="text-center mb-8">
             <p className="text-[10px] uppercase tracking-[0.45em] text-gray-500 mb-2">
-              {cs ? 'Fáze rozvoje' : 'Development Phases'}
+              {tr('terranovaDharma', 'development_phases', lang)}
             </p>
             <h2 className="text-2xl font-bold text-white">
-              {cs ? 'Od vize k realitě' : 'From Vision to Reality'}
+              {tr('terranovaDharma', 'from_vision_to_reality', lang)}
             </h2>
           </div>
 
@@ -369,7 +369,7 @@ export default function DharmaTemplePage() {
                       <span className="text-sm font-semibold text-white/80">
                         {cs ? p.cs : p.en}
                       </span>
-                      {p.active && <span className="text-zion-cyan text-xs animate-pulse">⚡ {cs ? 'Nyní' : 'Now'}</span>}
+                      {p.active && <span className="text-zion-cyan text-xs animate-pulse">⚡ {tr('terranovaDharma', 'now', lang)}</span>}
                     </div>
                     <p className="text-gray-500 text-xs">{cs ? p.descCs : p.descEn}</p>
                   </div>
@@ -388,17 +388,17 @@ export default function DharmaTemplePage() {
         >
           <div className="text-center mb-8">
             <p className="text-[10px] uppercase tracking-[0.45em] text-gray-500 mb-2">
-              {cs ? 'Sít Terra Nova' : 'Terra Nova Network'}
+              {tr('terranovaDharma', 'terra_nova_network', lang)}
             </p>
             <h2 className="text-2xl font-bold text-white">
-              {cs ? 'Propojení se Zahradou Genesis' : 'Connection with Zahrada Genesis'}
+              {tr('terranovaDharma', 'connection_with_zahrada_genesis', lang)}
             </h2>
           </div>
 
           <div className="rounded-2xl border border-white/10 overflow-hidden">
             {/* Header row */}
             <div className="grid grid-cols-3 text-center text-[10px] uppercase tracking-[0.3em] font-semibold bg-white/5 border-b border-white/10">
-              <div className="p-3 text-gray-500">{cs ? 'Dimenze' : 'Dimension'}</div>
+              <div className="p-3 text-gray-500">{tr('terranovaDharma', 'dimension', lang)}</div>
               <div className="p-3 text-gray-300 border-l border-white/10">🌿 Zahrada Genesis</div>
               <div className="p-3 text-zion-gold border-l border-white/10">🕌 Dharma Temple</div>
             </div>
@@ -430,7 +430,7 @@ export default function DharmaTemplePage() {
         >
           <div className="text-center mb-8">
             <p className="text-[10px] uppercase tracking-[0.45em] text-gray-500 mb-2">
-              {cs ? 'Blockchain integrace' : 'Blockchain Integration'}
+              {tr('terranovaDharma', 'blockchain_integration', lang)}
             </p>
             <h2 className="text-2xl font-bold text-white">ZION Network</h2>
           </div>
@@ -452,9 +452,9 @@ export default function DharmaTemplePage() {
                     <p className="text-sm font-semibold text-white/80">{item.label}</p>
                     <p className="text-[10px] text-gray-600 capitalize">
                       {item.status === 'active'
-                        ? (cs ? 'Aktivní' : 'Active')
+                        ? (tr('terranovaDharma', 'active', lang))
                         : item.status === 'planned'
-                        ? (cs ? 'Plánováno' : 'Planned')
+                        ? (tr('terranovaDharma', 'planned', lang))
                         : 'TBD'}
                     </p>
                   </div>
@@ -473,15 +473,15 @@ export default function DharmaTemplePage() {
         >
           <div className="zion-panel rounded-3xl p-6 md:p-8 border border-violet-500/15 space-y-4">
             <h3 className="text-lg font-bold text-zion-gold">
-              {cs ? 'Otevřené otázky — hledáme Guardians' : 'Open Questions — looking for Guardians'}
+              {tr('terranovaDharma', 'open_questions_looking_for_guardians', lang)}
             </h3>
             <ul className="space-y-2">
               {[
-                cs ? 'Konkrétní lokace na La Palmě (sever / jih / nadmořská výška?)' : 'Specific location on La Palma (north / south / altitude?)',
-                cs ? 'Zakládající Guardians — kdo je core team?' : 'Founding Guardians — who is the core team?',
-                cs ? 'Právní forma (španělská asociación / SL / komunitní nadace?)' : 'Legal form (Spanish asociación / SL / community foundation?)',
-                cs ? 'Financování fáze 0–1 (ZION fond? crowdfunding? vlastní zdroje?)' : 'Phase 0–1 financing (ZION fund? crowdfunding? own resources?)',
-                cs ? 'Koordinace seed library se Zahradou Genesis' : 'Seed library coordination with Zahrada Genesis',
+                tr('terranovaDharma', 'specific_location_on_la_palma_north_south_alt', lang),
+                tr('terranovaDharma', 'founding_guardians_who_is_the_core_team', lang),
+                tr('terranovaDharma', 'legal_form_spanish_asociaci_n_sl_community_fo', lang),
+                tr('terranovaDharma', 'phase_0_1_financing_zion_fund_crowdfunding_ow', lang),
+                tr('terranovaDharma', 'seed_library_coordination_with_zahrada_genesi', lang),
               ].map((q, i) => (
                 <li key={i} className="flex items-start gap-2 text-sm text-gray-400">
                   <span className="text-violet-500 shrink-0 mt-0.5">◇</span>
@@ -501,7 +501,7 @@ export default function DharmaTemplePage() {
               className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 px-4 py-2 text-sm text-gray-300 transition-all duration-300"
             >
               <Users className="w-4 h-4" />
-              {cs ? 'Připojit se na Discord' : 'Join Discord'}
+              {tr('terranovaDharma', 'join_discord', lang)}
             </a>
           </div>
         </motion.section>
@@ -518,7 +518,7 @@ export default function DharmaTemplePage() {
             className="inline-flex items-center gap-2 rounded-xl border border-emerald-500/25 bg-emerald-500/10 hover:bg-emerald-500/20 px-4 py-2 text-sm text-emerald-300 transition-all duration-300"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>{cs ? 'Zahrada Genesis' : 'Zahrada Genesis'}</span>
+            <span>{tr('terranovaDharma', 'zahrada_genesis', lang)}</span>
           </Link>
           <Link
             href="/terranova/te-piko-ora"
