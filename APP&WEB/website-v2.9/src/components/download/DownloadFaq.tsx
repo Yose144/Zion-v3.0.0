@@ -40,7 +40,6 @@ function getFaqItems(cs: boolean): FaqItem[] {
 
 export default function DownloadFaq({ cs }: { cs: boolean }) {
   const { lang } = useLang();
-  const cs = lang === 'cs';
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
   const faqItems = getFaqItems(cs);
 
