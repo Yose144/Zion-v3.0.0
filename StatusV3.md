@@ -22,6 +22,57 @@
 
 ---
 
+## Co je nového 2026-06-09 pozdě večer (Edge Deployment + Chain Reset + P2P Sync)
+
+> Verze: **3.0.1** (beze změny Cargo verze)
+> Klíčové commity: `0880de11` (sccache disable), `790e8a6a` (KAT + GPU + AMD fix)
+
+### TL;DR
+
+| Změna | Status | Soubor |
+|-------|--------|--------|
+| Edge rebuild + deploy node + pool | ✅ Hotovo | `/usr/local/bin/zion-node`, `zion-pool-server` |
+| Edge chain reset (910 bloků → genesis) | ✅ Hotovo | smazáno `edge-state.db` |
+| Lokální rebuild bez sccache | ✅ Hotovo | `V3/.cargo/config.toml` |
+| P2P sync Local ↔ Edge | ✅ Funkční | `seed_peers=77.42.71.94:8333` |
+| Genesis determinismus | ✅ Ověřeno | `7543004c...` shoda obě strany |
+
+### Problém: Divergentní genesis hash
+
+Při pokusu o P2P synchronizaci mezi lokální Windows nodou a Edge Linux nodou byl odmítnut první blok:
+
+```
+peer_sync_failed peer=77.42.71.94:8333
+  reason=peer batch block at height 1 does not link to expected parent
+  7543004c76b11416ef32e2f1f5a4c72f0178f841d4559bf476e29e15a9602728
+```
+
+Edge RPC vracel genesis `0454c8ba...`, zatímco aktuální kód (commit `790e8a6a`) produkoval `7543004c...`. Příčina: Edge binárka byla rebuildnuta z aktuálního kódu, ale **state databáze** (`/root/zion-2.9.6-main/data/edge-state.db`) obsahovala chain z předchozího genesis (vygenerovaného před změnou `genesis.rs` mezi commity `cf1b2d2f` a `993237bb`).
+
+### Řešení
+
+1. **Edge chain reset** — zastaveny služby `zion-edge-node1` + `zion-edge-pool`, smazána `edge-state.db`, restartováno
+2. **Lokální rebuild bez sccache** — `rustc-wrapper = "sccache"` zakomentováno v `V3/.cargo/config.toml` (`0880de11`)
+   - Edge build neobsahuje sccache; rozdílný wrapper mohl ovlivnit determinismus kompilace
+   - `cargo clean` + plný rebuild zajišťuje shodu objektového kódu
+3. **Lokální state reset** — smazána `V3/data/zion-node-state.db`, spuštěno se `seed_peers=77.42.71.94:8333`
+
+### Výsledek
+
+| Metrika | Edge (Hetzner) | Lokální (Windows) |
+|---------|---------------|-------------------|
+| Genesis hash | `7543004c...` | `7543004c...` |
+| Height | 33+ | 33+ |
+| Peers | 1 | 1 |
+| Algoritmus | `deeksha_lite_v1` | `deeksha_lite_v1` |
+| Služby | ✅ active/active | ✅ PID 33808 |
+
+### Post-mortem: sccache
+
+`sccache` je nyní zakomentováno v `.cargo/config.toml`. Pro opětovné zapnutí (rychlejší lokální rebuildy) je potřeba nejprve ověřit, že Edge build používá stejný toolchain a wrapper. Do té doby preferujeme pomalejší, ale deterministický build.
+
+---
+
 ## Co je nového 2026-06-09 večer (KAT Vektory + GPU Pipeline + AMD Driver Fix)
 
 > Verze: **3.0.1** (beze změny Cargo verze)
