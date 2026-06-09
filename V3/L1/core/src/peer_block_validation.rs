@@ -61,13 +61,14 @@ pub(crate) fn validate_accepted_peer_block(
             }
         }
 
-        // Verify PoW: recompute hash from header + nonce
+        // Verify PoW: recompute hash from header + nonce using the block's algorithm
         let candidate = BlockCandidate {
             header,
             nonce: block.nonce,
             height: block.height,
         };
-        let computed_hash = candidate.hash();
+        let algorithm = if block.algorithm.is_empty() { "deeksha_lite_v1" } else { &block.algorithm };
+        let computed_hash = candidate.hash_with_algorithm(algorithm);
         if computed_hash != block_hash {
             return Err(
                 "peer block hash does not match PoW computation from header and nonce".to_string(),
