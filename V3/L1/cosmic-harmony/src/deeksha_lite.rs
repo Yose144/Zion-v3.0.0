@@ -249,9 +249,24 @@ pub fn deeksha_lite_find_nonce(
     None
 }
 
+/// Known-answer test vectors for DeekshaLite v1.
+/// Generated from this CPU implementation on 2026-06-09 and locked.
+/// If any of these change, the CPU↔GPU pipeline is broken — do NOT update
+/// these constants without regenerating and re-verifying the GPU kernel too.
+pub const LITE_KAT_HEADER: &[u8] = b"ZION_LITE_KAT_V1";
+pub const LITE_KAT: &[(&str, u64)] = &[
+    ("40606d0279783883a5ad06e500253da68a2e6207cc57a056514b0b5d1e5d87ee", 0),
+    ("5cdbb8af7575211b61fd7385589ce901115bac7e3312401224c05c8bd64eb1d1", 1),
+    ("93fd2ba5ad43bd17a0bce90bb540e78adbe8d137f1e0850de7685668e60f323e", 42),
+    ("00422fe854eab743ad2b0230126393fdc1691496b6f4539fe5e4e1afa37747f7", 0xDEADBEEF),
+    ("69ed86c31cf312c395d39781e44fa3a0d25da73eb3776a59786d78c11209c358", u64::MAX),
+];
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // ── Determinism ──────────────────────────────────────────────────────────
 
     #[test]
     fn test_deeksha_lite_deterministic() {
@@ -272,11 +287,34 @@ mod tests {
     }
 
     #[test]
+    fn test_deeksha_lite_different_headers() {
+        let h1 = deeksha_lite(b"header_a", 0u64);
+        let h2 = deeksha_lite(b"header_b", 0u64);
+        assert_ne!(h1, h2, "Different headers must produce different hashes");
+    }
+
+    // ── Sub-step determinism ─────────────────────────────────────────────────
+
+    #[test]
     fn test_memory_hard_deterministic() {
         let seed = [0xABu8; 32];
         let r1 = step2_memory_hard(&seed);
         let r2 = step2_memory_hard(&seed);
         assert_eq!(r1, r2);
+    }
+
+    #[test]
+    fn test_memory_hard_nonzero() {
+        let seed = [0x00u8; 32];
+        let r = step2_memory_hard(&seed);
+        assert_ne!(r, [0u8; 32], "Memory-hard step must not return all-zero for zero seed");
+    }
+
+    #[test]
+    fn test_memory_hard_different_seeds() {
+        let r1 = step2_memory_hard(&[0x11u8; 32]);
+        let r2 = step2_memory_hard(&[0x22u8; 32]);
+        assert_ne!(r1, r2, "Different seeds must produce different scratchpad results");
     }
 
     #[test]
@@ -288,15 +326,118 @@ mod tests {
     }
 
     #[test]
-    fn test_self_test_passes() {
-        assert!(deeksha_lite_self_test(), "Self-test must pass");
+    fn test_aes_mix_nonce_sensitivity() {
+        let seed = [0xCDu8; 32];
+        let r1 = step3_aes_mix(&seed, 0u64);
+        let r2 = step3_aes_mix(&seed, 1u64);
+        assert_ne!(r1, r2, "AES mix must be sensitive to nonce");
+    }
+
+    // ── Edge-case nonces ─────────────────────────────────────────────────────
+
+    #[test]
+    fn test_nonce_zero() {
+        let h = deeksha_lite(b"edge_nonce", 0u64);
+        assert_ne!(h, [0u8; 32], "nonce=0 must not produce all-zero hash");
     }
 
     #[test]
-    fn test_find_nonce() {
+    fn test_nonce_max() {
+        let h = deeksha_lite(b"edge_nonce", u64::MAX);
+        assert_ne!(h, [0u8; 32], "nonce=MAX must not produce all-zero hash");
+    }
+
+    #[test]
+    fn test_nonce_zero_vs_one() {
+        let h0 = deeksha_lite(b"edge_nonce", 0u64);
+        let h1 = deeksha_lite(b"edge_nonce", 1u64);
+        assert_ne!(h0, h1, "nonce=0 and nonce=1 must produce different hashes");
+    }
+
+    // ── Known-answer tests (KAT) — locks the exact output ───────────────────
+    // These vectors were generated from this CPU implementation on 2026-06-09.
+    // Changing any constant in the pipeline MUST cause these to fail.
+
+    #[test]
+    fn test_lite_kat_vectors() {
+        for &(expected_hex, nonce) in LITE_KAT {
+            let hash = deeksha_lite(LITE_KAT_HEADER, nonce);
+            let got: String = hash.iter().map(|b| format!("{:02x}", b)).collect();
+            assert_eq!(
+                got, expected_hex,
+                "KAT MISMATCH: nonce={} — CPU pipeline changed or GPU kernel will diverge!",
+                nonce
+            );
+        }
+    }
+
+    // ── Target comparison (meets_target) ────────────────────────────────────
+
+    #[test]
+    fn test_target_all_ff_always_passes() {
+        // Any hash must be <= 0xFFFF...FF
+        let target = [0xFFu8; 32];
+        for nonce in 0u64..10 {
+            let h = deeksha_lite(b"target_test", nonce);
+            assert!(meets_target(&h, &target), "Hash must always meet all-FF target");
+        }
+    }
+
+    #[test]
+    fn test_target_all_zero_never_passes() {
+        // No hash must be <= 0x0000...00 (impossible unless hash is all zeros)
+        let target = [0x00u8; 32];
+        for nonce in 0u64..20 {
+            let h = deeksha_lite(b"target_test", nonce);
+            if h != [0u8; 32] {
+                assert!(!meets_target(&h, &target), "Non-zero hash must not meet all-zero target");
+            }
+        }
+    }
+
+    #[test]
+    fn test_find_nonce_returns_valid_hash() {
         let header = b"find_nonce_test";
         let target = [0xFFu8; 32];
         let result = deeksha_lite_find_nonce(header, 0u64, 1000, &target);
         assert!(result.is_some(), "Should find a nonce with easy target");
+        let (nonce, hash) = result.unwrap();
+        // Verify returned hash is correct
+        let expected = deeksha_lite(header, nonce);
+        assert_eq!(hash, expected, "find_nonce must return correct hash for found nonce");
+        assert!(meets_target(&hash, &target), "Found hash must meet the target");
+    }
+
+    #[test]
+    fn test_find_nonce_impossible_target_returns_none() {
+        let header = b"impossible_target";
+        let target = [0x00u8; 32]; // impossible
+        let result = deeksha_lite_find_nonce(header, 0u64, 100, &target);
+        assert!(result.is_none(), "Should NOT find nonce with impossible all-zero target");
+    }
+
+    // ── Self-test ────────────────────────────────────────────────────────────
+
+    #[test]
+    fn test_self_test_passes() {
+        assert!(deeksha_lite_self_test(), "Self-test must pass");
+    }
+
+    // ── Profile constant ─────────────────────────────────────────────────────
+
+    #[test]
+    fn test_profile_string() {
+        assert_eq!(DEEKSHA_LITE_PROFILE, "deeksha_lite_v1");
+    }
+
+    // ── Avalanche — single bit flip in header changes ≥ 50% of hash bytes ───
+
+    #[test]
+    fn test_avalanche_header_bit_flip() {
+        let h1 = deeksha_lite(b"avalanche_test\x00", 0u64);
+        let h2 = deeksha_lite(b"avalanche_test\x01", 0u64); // last byte flipped by 1 bit
+        let differing = h1.iter().zip(h2.iter()).filter(|(a, b)| a != b).count();
+        assert!(differing >= 8, "Avalanche: single-bit input change must affect >= 8 bytes of hash (got {})", differing);
     }
 }
+

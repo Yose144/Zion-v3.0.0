@@ -291,9 +291,24 @@ pub fn deeksha_lite_fire_find_nonce(
     None
 }
 
+/// Known-answer test vectors for DeekshaLite Fire.
+/// Generated from this CPU implementation on 2026-06-09 and locked.
+/// If any of these change, the CPU↔GPU pipeline is broken — do NOT update
+/// these constants without regenerating and re-verifying deeksha_lite_fire.cl too.
+pub const FIRE_KAT_HEADER: &[u8] = b"ZION_FIRE_KAT_V1";
+pub const FIRE_KAT: &[(&str, u64)] = &[
+    ("4e52987a770e281570791ada44a1d797c312c31ded1389738c1bca46625e3a7f", 0),
+    ("7fafc9dd9870da82e0bb2f5f79cac580464ac1fd8838b4a619e4f9513f0a70a4", 1),
+    ("0c4427d4315055c04c1097fd923314e44602db789d15393955a79f2449b0467d", 42),
+    ("dc0200ecd39daaf491d49f06676de5982fb28493826f8ee8658236c9f94ddae3", 0xDEADBEEF),
+    ("632a7c01cee5e682da2b0007c5772fa1885f5a4a6f5ba11d494b3b9b63abbf40", u64::MAX),
+];
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // ── Determinism ──────────────────────────────────────────────────────────
 
     #[test]
     fn test_fire_deterministic() {
@@ -306,17 +321,6 @@ mod tests {
     }
 
     #[test]
-    fn test_fire_different_from_v1() {
-        // Fire must produce a DIFFERENT hash than v1 for the same input
-        use crate::deeksha_lite::deeksha_lite;
-        let header = b"test_header_fire";
-        let nonce = 42u64;
-        let fire_hash = deeksha_lite_fire(header, nonce);
-        let v1_hash = deeksha_lite(header, nonce);
-        assert_ne!(fire_hash, v1_hash, "Fire hash must differ from v1 (thermal loop changes output)");
-    }
-
-    #[test]
     fn test_fire_different_nonces() {
         let header = b"test_header_fire";
         let h1 = deeksha_lite_fire(header, 1u64);
@@ -325,8 +329,135 @@ mod tests {
     }
 
     #[test]
-    fn test_fire_self_test_passes() {
-        assert!(deeksha_lite_fire_self_test(), "Fire self-test must pass");
+    fn test_fire_different_headers() {
+        let h1 = deeksha_lite_fire(b"header_a", 0u64);
+        let h2 = deeksha_lite_fire(b"header_b", 0u64);
+        assert_ne!(h1, h2, "Different headers must produce different Fire hashes");
+    }
+
+    // ── Cross-validation: Fire ≠ Lite v1 ────────────────────────────────────
+    // Critical: ensures thermal loop actually changes the output.
+    // If this fails, the thermal loop was dead-code-eliminated or has no effect.
+
+    #[test]
+    fn test_fire_different_from_v1() {
+        use crate::deeksha_lite::deeksha_lite;
+        let header = b"test_header_fire";
+        let nonce = 42u64;
+        let fire_hash = deeksha_lite_fire(header, nonce);
+        let v1_hash = deeksha_lite(header, nonce);
+        assert_ne!(fire_hash, v1_hash, "Fire hash must differ from Lite v1 — thermal loop must change output");
+    }
+
+    #[test]
+    fn test_fire_differs_from_v1_at_multiple_nonces() {
+        use crate::deeksha_lite::deeksha_lite;
+        let header = b"cross_validate";
+        for nonce in [0u64, 1, 42, 100, 9999] {
+            let fire = deeksha_lite_fire(header, nonce);
+            let lite = deeksha_lite(header, nonce);
+            assert_ne!(fire, lite, "Fire must differ from Lite v1 at nonce={}", nonce);
+        }
+    }
+
+    // ── Thermal loop isolation ────────────────────────────────────────────────
+    // step4_thermal_loop must actually modify the data, not be a no-op.
+
+    #[test]
+    fn test_thermal_loop_modifies_data() {
+        let original = [0xABu8; 32];
+        let mut data = original;
+        step4_thermal_loop(&mut data, 42u64);
+        assert_ne!(data, original, "Thermal loop must modify the input data");
+    }
+
+    #[test]
+    fn test_thermal_loop_deterministic() {
+        let mut d1 = [0x55u8; 32];
+        let mut d2 = [0x55u8; 32];
+        step4_thermal_loop(&mut d1, 12345u64);
+        step4_thermal_loop(&mut d2, 12345u64);
+        assert_eq!(d1, d2, "Thermal loop must be deterministic");
+    }
+
+    #[test]
+    fn test_thermal_loop_nonce_sensitivity() {
+        let mut d1 = [0x55u8; 32];
+        let mut d2 = [0x55u8; 32];
+        step4_thermal_loop(&mut d1, 0u64);
+        step4_thermal_loop(&mut d2, 1u64);
+        assert_ne!(d1, d2, "Thermal loop must be sensitive to nonce");
+    }
+
+    #[test]
+    fn test_thermal_loop_nonzero_output() {
+        let mut data = [0x00u8; 32];
+        step4_thermal_loop(&mut data, 0u64);
+        assert_ne!(data, [0x00u8; 32], "Thermal loop on zero input must not return all zeros");
+    }
+
+    // ── Sub-step determinism ─────────────────────────────────────────────────
+
+    #[test]
+    fn test_memory_hard_deterministic() {
+        let seed = [0xABu8; 32];
+        let r1 = step2_memory_hard(&seed);
+        let r2 = step2_memory_hard(&seed);
+        assert_eq!(r1, r2);
+    }
+
+    // ── Edge-case nonces ─────────────────────────────────────────────────────
+
+    #[test]
+    fn test_fire_nonce_zero() {
+        let h = deeksha_lite_fire(b"edge_nonce", 0u64);
+        assert_ne!(h, [0u8; 32], "nonce=0 must not produce all-zero Fire hash");
+    }
+
+    #[test]
+    fn test_fire_nonce_max() {
+        let h = deeksha_lite_fire(b"edge_nonce", u64::MAX);
+        assert_ne!(h, [0u8; 32], "nonce=MAX must not produce all-zero Fire hash");
+    }
+
+    // ── Known-answer tests (KAT) — locks the exact output ───────────────────
+    // These vectors were generated from this CPU implementation on 2026-06-09.
+    // If these change: (1) GPU kernel deeksha_lite_fire.cl diverges, (2) chain freezes.
+
+    #[test]
+    fn test_fire_kat_vectors() {
+        for &(expected_hex, nonce) in FIRE_KAT {
+            let hash = deeksha_lite_fire(FIRE_KAT_HEADER, nonce);
+            let got: String = hash.iter().map(|b| format!("{:02x}", b)).collect();
+            assert_eq!(
+                got, expected_hex,
+                "FIRE KAT MISMATCH: nonce={} — CPU pipeline changed or GPU kernel will diverge!",
+                nonce
+            );
+        }
+    }
+
+    // ── Target comparison ────────────────────────────────────────────────────
+
+    #[test]
+    fn test_fire_target_all_ff_passes() {
+        let target = [0xFFu8; 32];
+        for nonce in 0u64..10 {
+            let h = deeksha_lite_fire(b"fire_target", nonce);
+            assert!(meets_target(&h, &target), "Fire hash must always meet all-FF target");
+        }
+    }
+
+    #[test]
+    fn test_fire_find_nonce_returns_valid_hash() {
+        let header = b"find_nonce_fire";
+        let target = [0xFFu8; 32];
+        let result = deeksha_lite_fire_find_nonce(header, 0u64, 500, &target);
+        assert!(result.is_some(), "Should find a nonce with easy target");
+        let (nonce, hash) = result.unwrap();
+        let expected = deeksha_lite_fire(header, nonce);
+        assert_eq!(hash, expected, "find_nonce must return correct hash for found nonce");
+        assert!(meets_target(&hash, &target), "Found hash must meet the target");
     }
 
     #[test]
@@ -336,4 +467,46 @@ mod tests {
         let result = deeksha_lite_fire_find_nonce(header, 0u64, 500, &target);
         assert!(result.is_some(), "Should find a nonce with easy target");
     }
+
+    // ── Self-test ────────────────────────────────────────────────────────────
+
+    #[test]
+    fn test_fire_self_test_passes() {
+        assert!(deeksha_lite_fire_self_test(), "Fire self-test must pass");
+    }
+
+    // ── Profile constant ─────────────────────────────────────────────────────
+
+    #[test]
+    fn test_fire_profile_string() {
+        assert_eq!(DEEKSHA_LITE_FIRE_PROFILE, "deeksha_lite_fire");
+    }
+
+    // ── Avalanche ────────────────────────────────────────────────────────────
+
+    #[test]
+    fn test_fire_avalanche_header_bit_flip() {
+        let h1 = deeksha_lite_fire(b"fire_avalanche\x00", 0u64);
+        let h2 = deeksha_lite_fire(b"fire_avalanche\x01", 0u64);
+        let differing = h1.iter().zip(h2.iter()).filter(|(a, b)| a != b).count();
+        assert!(differing >= 8, "Fire avalanche: single-bit flip must affect >= 8 hash bytes (got {})", differing);
+    }
+
+    // ── Constants sanity ─────────────────────────────────────────────────────
+
+    #[test]
+    fn test_fire_scratchpad_equals_lite_v1() {
+        // Fire scratchpad must be 256 KiB — same as Lite v1, NOT 128 KiB
+        assert_eq!(SCRATCHPAD_SIZE, 256 * 1024,
+            "Fire scratchpad must be 256 KiB (same as Lite v1), got {} KiB",
+            SCRATCHPAD_SIZE / 1024);
+    }
+
+    #[test]
+    fn test_fire_thermal_iters_constant() {
+        // 65536 is the canonical value matching deeksha_lite_fire.cl
+        assert_eq!(THERMAL_ITERS, 65536,
+            "THERMAL_ITERS must be 65536 to match GPU kernel");
+    }
 }
+
