@@ -3,8 +3,8 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useLang } from '@/contexts/LanguageContext';
-import {
 import { tr } from '@/lib/translations';
+import {
   Activity,
   ArrowRight,
   CheckCircle2,
