@@ -345,9 +345,9 @@ The Edge server runs as the canonical primary node + pool. It must survive reboo
 
 ### Genesis Configuration (v3.0.0 Mainnet)
 
-**Current Genesis Hash (post-regeneration 2026-06-03):**
+**Current Genesis Hash (post-regeneration 2026-06-07):**
 ```
-d28dc404abfd4e22b313d3a7e8b680453328a77ace68b47466a14d18aff6df5d
+7543004c76b11416ef32e2f1f5a4c72f0178f841d4559bf476e29e15a9602728
 ```
 
 **Premine Distribution (16.28B total):**
@@ -433,7 +433,7 @@ d28dc404abfd4e22b313d3a7e8b680453328a77ace68b47466a14d18aff6df5d
 
 If genesis corruption is suspected:
 1. Use dashboard Genesis Backup/Restore to restore from encrypted backup
-2. Verify genesis hash matches expected value: `d28dc404abfd4e22b313d3a7e8b680453328a77ace68b47466a14d18aff6df5d`
+2. Verify genesis hash matches expected value: `7543004c76b11416ef32e2f1f5a4c72f0178f841d4559bf476e29e15a9602728` (frozen since 2026-06-07 reset)
 3. Check all premine addresses and balances
 4. Restart nodes if necessary
 5. Verify network synchronization
@@ -469,8 +469,8 @@ If pool stops accepting connections:
 - ✅ Edge Server: Operational (77.42.71.94)
 - ✅ Website: Running (PM2, port 3000)
 - ✅ Pool Metrics: Running on port 8455
-- ✅ Genesis Hash: `d28dc404abfd4e22b313d3a7e8b680453328a77ace68b47466a14d18aff6df5d`
-- ⚠️  P2P Sync: Core (Local) offline — Edge runs solo
+- ✅ Genesis Hash: `7543004c76b11416ef32e2f1f5a4c72f0178f841d4559bf476e29e15a9602728`
+- ✅ P2P Sync: Local ↔ Edge synced (height 33+), both active
 
 **Code Fixes DEPLOYED to Edge:**
 - ✅ `emission.rs`: `MINING_EMISSION` corrected to 127.22B (was 127.72B)
