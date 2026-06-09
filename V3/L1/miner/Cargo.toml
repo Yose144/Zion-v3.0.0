@@ -17,7 +17,10 @@ path = "src/b3_verify.rs"
 name = "sha3_debug"
 path = "src/sha3_debug.rs"
 
-
+[[bin]]
+name = "gpu_kat_bench"
+path = "src/bin/gpu_kat_bench.rs"
+required-features = ["gpu-opencl"]
 
 [features]
 default = []
