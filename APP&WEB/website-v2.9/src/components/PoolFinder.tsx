@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { MapPin, Zap, Copy, Check, Navigation2 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tr } from '@/lib/translations';
 
 interface Pool {
   id: string;
@@ -92,11 +93,11 @@ export default function PoolFinder() {
     <div className="rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6">
       <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
         <Zap className="w-5 h-5 text-zion-gold" />
-        {cs ? 'Najít nejlepší těžební pool' : 'Find Best Mining Pool'}
+        {tr('APP_WEB_website_v2_9_src_components_Pool', 'find_best_mining_pool', lang)}
       </h3>
 
       <p className="text-gray-400 text-sm mb-6">
-        {cs ? 'Získejte optimální těžební pool podle své polohy pro co nejnižší latenci.' : 'Get the optimal mining pool based on your location for lowest latency.'}
+        {tr('APP_WEB_website_v2_9_src_components_Pool', 'get_the_optimal_mining_pool_based_on_your_location', lang)}
       </p>
 
       {/* Location Detection */}
@@ -107,7 +108,7 @@ export default function PoolFinder() {
           className="flex items-center gap-2 px-5 py-2 rounded-2xl bg-linear-to-r from-zion-gold via-zion-purple to-zion-cyan text-black font-semibold shadow-[0_10px_30px_rgba(147,51,234,0.35)] transition disabled:opacity-60"
         >
           <Navigation2 className="w-4 h-4" />
-          {loading ? (cs ? 'Zjišťuji polohu...' : 'Detecting...') : (cs ? 'Použít moji polohu' : 'Use My Location')}
+          {loading ? (tr('APP_WEB_website_v2_9_src_components_Pool', 'detecting', lang)) : (tr('APP_WEB_website_v2_9_src_components_Pool', 'use_my_location', lang))}
         </button>
 
         <button
@@ -115,7 +116,7 @@ export default function PoolFinder() {
           className="flex items-center gap-2 px-4 py-2 rounded-2xl border border-white/10 text-white hover:border-zion-gold/50 transition"
         >
           <MapPin className="w-4 h-4" />
-          {cs ? 'Zadat ručně' : 'Enter Manually'}
+          {tr('APP_WEB_website_v2_9_src_components_Pool', 'enter_manually', lang)}
         </button>
       </div>
 
@@ -124,14 +125,14 @@ export default function PoolFinder() {
         <div className="flex flex-wrap gap-3 mb-6">
           <input
             type="text"
-            placeholder={cs ? 'Zeměpisná šířka (např. 50.08)' : 'Latitude (e.g. 50.08)'}
+            placeholder={tr('APP_WEB_website_v2_9_src_components_Pool', 'latitude_e_g_50_08', lang)}
             value={manualLocation.lat}
             onChange={(e) => setManualLocation(prev => ({ ...prev, lat: e.target.value }))}
             className="px-3 py-2 bg-black/40 border border-white/10 rounded-xl text-white text-sm focus:border-zion-gold outline-none"
           />
           <input
             type="text"
-            placeholder={cs ? 'Zeměpisná délka (např. 14.42)' : 'Longitude (e.g. 14.42)'}
+            placeholder={tr('APP_WEB_website_v2_9_src_components_Pool', 'longitude_e_g_14_42', lang)}
             value={manualLocation.lon}
             onChange={(e) => setManualLocation(prev => ({ ...prev, lon: e.target.value }))}
             className="px-3 py-2 bg-black/40 border border-white/10 rounded-xl text-white text-sm focus:border-zion-gold outline-none"
@@ -140,7 +141,7 @@ export default function PoolFinder() {
             onClick={handleManualSearch}
             className="px-4 py-2 rounded-xl bg-zion-cyan text-black font-semibold hover:opacity-90 transition-colors"
           >
-            {cs ? 'Hledat' : 'Search'}
+            {tr('APP_WEB_website_v2_9_src_components_Pool', 'search', lang)}
           </button>
         </div>
       )}
@@ -160,7 +161,7 @@ export default function PoolFinder() {
                 <span className="text-lg">⭐</span>
                 <span className="font-semibold text-white">{result.recommended.name}</span>
                 <span className="text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded">
-                  {cs ? 'Doporučeno' : 'Recommended'}
+                  {tr('APP_WEB_website_v2_9_src_components_Pool', 'recommended', lang)}
                 </span>
               </div>
               {result.recommended.estimatedLatency && (
@@ -188,20 +189,20 @@ export default function PoolFinder() {
 
             {result.recommended.distance && (
               <div className="mt-2 text-sm text-gray-400">
-                {cs ? 'Vzdálenost' : 'Distance'}: {Math.round(result.recommended.distance)} km
+                {tr('APP_WEB_website_v2_9_src_components_Pool', 'distance', lang)}: {Math.round(result.recommended.distance)} km
               </div>
             )}
           </div>
           ) : (
           <div className="p-4 bg-white/5 border border-white/10 rounded-2xl text-center">
-            <p className="text-gray-400 text-sm">{cs ? 'Není k dispozici žádný doporučený pool. Zkuste zjistit svoji polohu.' : 'No recommended pool available. Try detecting your location.'}</p>
+            <p className="text-gray-400 text-sm">{tr('APP_WEB_website_v2_9_src_components_Pool', 'no_recommended_pool_available_try_detecting_your_l', lang)}</p>
           </div>
           )}
 
           {/* All Pools */}
           {result.pools && result.pools.length > 0 && (
           <div>
-            <h4 className="text-sm font-semibold text-gray-400 mb-2">{cs ? 'Všechny pooly' : 'All Pools'}</h4>
+            <h4 className="text-sm font-semibold text-gray-400 mb-2">{tr('APP_WEB_website_v2_9_src_components_Pool', 'all_pools', lang)}</h4>
             <div className="space-y-2">
               {result.pools.map((pool, index) => (
                 <div

@@ -23,7 +23,7 @@ interface Block {
 
 const fmtAge = (ts: number, cs: boolean): string => {
   const s = Math.floor(Date.now() / 1000) - ts;
-  if (s < 5) return cs ? 'prave ted' : 'just now';
+  if (s < 5) return tr('APP_WEB_website_v2_9_src_components_expl', 'just_now', lang);
   if (s < 60) return cs ? `pred ${s}s` : `${s}s ago`;
   if (s < 3600) return cs ? `pred ${Math.floor(s / 60)}m ${s % 60}s` : `${Math.floor(s / 60)}m ${s % 60}s ago`;
   if (s < 86400) return cs ? `pred ${Math.floor(s / 3600)}h ${Math.floor((s % 3600) / 60)}m` : `${Math.floor(s / 3600)}h ${Math.floor((s % 3600) / 60)}m ago`;
@@ -208,7 +208,7 @@ export default function ProRecentBlocks() {
             href="/explorer/blocks"
             className="text-[11px] text-zion-cyan hover:text-white transition font-medium"
           >
-            {cs ? 'Kompletni archiv bloku' : 'Full Block Archive'} →
+            {tr('APP_WEB_website_v2_9_src_components_expl', 'full_block_archive', lang)} →
           </Link>
         </div>
       )}
