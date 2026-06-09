@@ -43,71 +43,71 @@ const RichListClient = dynamic(() => import("./richlist/RichListClient"));
 
 const getQuickLinks = (cs: boolean) => [
   {
-    title: cs ? 'Archiv bloku' : 'Block Archive',
-    description: cs ? 'Kompletni ledger vsech validovanych bloku' : 'Complete ledger of all validated blocks',
+    title: tr('explorerPage', 'block_archive', lang),
+    description: tr('explorerPage', 'complete_ledger_of_all_validated_blocks', lang),
     href: '/explorer/blocks',
     accent: 'from-zion-gold/80 to-amber-600/80',
     icon: Layers,
   },
   {
-    title: cs ? 'Tok transakci' : 'Transaction Feed',
-    description: cs ? 'Tok fondu a fee v realnem case' : 'Real-time flow of funds and fees',
+    title: tr('explorerPage', 'transaction_feed', lang),
+    description: tr('explorerPage', 'real_time_flow_of_funds_and_fees', lang),
     href: '/explorer/transactions',
     accent: 'from-zion-cyan/80 to-blue-600/80',
     icon: Activity,
   },
   {
-    title: cs ? 'Mempool' : 'Mempool',
-    description: cs ? 'Cekajici transakce, fee histogram, double-spend' : 'Pending transactions, fee histogram, double-spend',
+    title: tr('explorerPage', 'mempool', lang),
+    description: tr('explorerPage', 'pending_transactions_fee_histogram_double_spe', lang),
     href: '/explorer/mempool',
     accent: 'from-amber-500/80 to-orange-600/80',
     icon: Flame,
   },
   {
-    title: cs ? 'Bridge Tracker' : 'Bridge Tracker',
-    description: cs ? 'Live stav L1↔Base mostu, lock/mint/burn/unlock' : 'Live L1↔Base bridge status, lock/mint/burn/unlock',
+    title: tr('explorerPage', 'bridge_tracker', lang),
+    description: tr('explorerPage', 'live_l1_base_bridge_status_lock_mint_burn_unl', lang),
     href: '/explorer/bridge',
     accent: 'from-blue-500/80 to-cyan-600/80',
     icon: ArrowLeftRight,
   },
   {
-    title: cs ? 'Sitovi peeri' : 'Network Peers',
-    description: cs ? 'Globalni mapa konektivity nodu' : 'Global node connectivity map',
+    title: tr('explorerPage', 'network_peers', lang),
+    description: tr('explorerPage', 'global_node_connectivity_map', lang),
     href: '#peers',
     accent: 'from-purple-500/80 to-indigo-600/80',
     icon: Globe,
   },
   {
-    title: cs ? 'Supply Dashboard' : 'Supply Dashboard',
-    description: cs ? 'Circulating, vytezeno, premine, Decade Decay' : 'Circulating, mined, premine, Decade Decay',
+    title: tr('explorerPage', 'supply_dashboard', lang),
+    description: tr('explorerPage', 'circulating_mined_premine_decade_decay', lang),
     href: '/explorer/supply',
     accent: 'from-emerald-500/80 to-teal-600/80',
     icon: BarChart3,
   },
   {
-    title: cs ? 'Grafy a analytika' : 'Charts & Analytics',
-    description: cs ? 'Historicka obtiznost, hashrate a emise' : 'Historical difficulty, hashrate & emission',
+    title: tr('explorerPage', 'charts_analytics', lang),
+    description: tr('explorerPage', 'historical_difficulty_hashrate_emission', lang),
     href: '#charts',
     accent: 'from-rose-500/80 to-pink-600/80',
     icon: TrendingUp,
   },
   {
-    title: cs ? 'Network Stats' : 'Network Stats',
-    description: cs ? 'Hashrate, obtiznost, cas bloku, TX trendy' : 'Hashrate, difficulty, block time, TX trends',
+    title: tr('explorerPage', 'network_stats', lang),
+    description: tr('explorerPage', 'hashrate_difficulty_block_time_tx_trends', lang),
     href: '/explorer/network-stats',
     accent: 'from-violet-500/80 to-purple-600/80',
     icon: Network,
   },
   {
-    title: cs ? 'Hledat' : 'Search',
-    description: cs ? 'Jednotne hledani bloku, tx a adres' : 'Unified search for blocks, transactions and addresses',
+    title: tr('explorerPage', 'search', lang),
+    description: tr('explorerPage', 'unified_search_for_blocks_transactions_and_ad', lang),
     href: '/explorer/search',
     accent: 'from-zion-cyan/80 to-blue-600/80',
     icon: Search,
   },
   {
-    title: cs ? 'API explorera' : 'Explorer API',
-    description: cs ? 'Priame JSON endpointy pro integraci a monitoring' : 'Direct JSON endpoints for integration and monitoring',
+    title: tr('explorerPage', 'explorer_api', lang),
+    description: tr('explorerPage', 'direct_json_endpoints_for_integration_and_mon', lang),
     href: '/api-reference',
     accent: 'from-fuchsia-500/80 to-violet-600/80',
     icon: ExternalLink,
@@ -145,12 +145,12 @@ export default function ExplorerPage() {
             <div className="space-y-5">
               <div className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/40 bg-zion-cyan/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-cyan uppercase">
                 <SearchCode className="h-4 w-4" />
-                {SITE_RELEASE_LABEL} · {cs ? 'Pruzkumnik Pro' : 'Explorer Pro'}
+                {SITE_RELEASE_LABEL} · {tr('explorerPage', 'explorer_pro', lang)}
               </div>
               <div>
-                <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{cs ? 'Zive' : 'Real-Time'}</p>
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{tr('explorerPage', 'real_time', lang)}</p>
                 <h1 className="text-3xl sm:text-5xl md:text-6xl font-semibold text-gradient leading-tight">
-                  {cs ? 'Průzkumník blockchainu' : 'Blockchain Explorer'}
+                  {tr('explorerPage', 'blockchain_explorer', lang)}
                 </h1>
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
@@ -160,10 +160,10 @@ export default function ExplorerPage() {
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Sparkles className="h-3 w-3 text-zion-gold" /> {cs ? 'Zive mainnet data' : 'Live Mainnet Data'}
+                  <Sparkles className="h-3 w-3 text-zion-gold" /> {tr('explorerPage', 'live_mainnet_data', lang)}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Activity className="h-3 w-3 text-emerald-400" /> {cs ? 'Auto-refresh 15 s' : 'Auto-Refresh 15s'}
+                  <Activity className="h-3 w-3 text-emerald-400" /> {tr('explorerPage', 'auto_refresh_15s', lang)}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
                   <Globe className="h-3 w-3 text-zion-cyan" /> Core + Edge
@@ -183,12 +183,12 @@ export default function ExplorerPage() {
           transition={{ delay: 0.06 }}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Telemetrie' : 'Telemetry'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tr('explorerPage', 'telemetry', lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Activity className="h-7 w-7 text-emerald-400" />
-              {cs ? 'Sitove statistiky' : 'Network Statistics'}
+              {tr('explorerPage', 'network_statistics', lang)}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Metriky v realnem case z blockchain daemonu ZION.' : 'Real-time metrics from the ZION blockchain daemon.'}</p>
+            <p className="text-sm text-gray-400">{tr('explorerPage', 'real_time_metrics_from_the_zion_blockchain_da', lang)}</p>
           </div>
           <Suspense
             fallback={
@@ -214,12 +214,12 @@ export default function ExplorerPage() {
           transition={{ delay: 0.1 }}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Ledger' : 'Ledger'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tr('explorerPage', 'ledger', lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Layers className="h-7 w-7 text-zion-gold" />
-              {cs ? 'Bloky a transakce' : 'Blocks & Transactions'}
+              {tr('explorerPage', 'blocks_transactions', lang)}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Nejnovejsi potvrzene bloky a tok transakci ze chainu ZION.' : 'Latest confirmed blocks and transaction feed from the ZION chain.'}</p>
+            <p className="text-sm text-gray-400">{tr('explorerPage', 'latest_confirmed_blocks_and_transaction_feed_', lang)}</p>
           </div>
 
           <div className="grid gap-6 xl:grid-cols-3">
@@ -247,8 +247,8 @@ export default function ExplorerPage() {
                     <Compass className="h-4.5 w-4.5 text-zion-gold" />
                   </div>
                   <div>
-                    <h3 className="text-base font-semibold text-white">{cs ? 'Rychla navigace' : 'Quick Navigation'}</h3>
-                    <p className="text-[11px] text-gray-500">{cs ? 'Skok do sekce' : 'Jump to section'}</p>
+                    <h3 className="text-base font-semibold text-white">{tr('explorerPage', 'quick_navigation', lang)}</h3>
+                    <p className="text-[11px] text-gray-500">{tr('explorerPage', 'jump_to_section', lang)}</p>
                   </div>
                 </div>
                 <div className="space-y-2.5">
@@ -282,12 +282,12 @@ export default function ExplorerPage() {
           id="charts"
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Analytika' : 'Analytics'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tr('explorerPage', 'analytics', lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <BarChart3 className="h-7 w-7 text-purple-400" />
-              {cs ? 'Sitove grafy' : 'Network Charts'}
+              {tr('explorerPage', 'network_charts', lang)}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Historicke trendy obtiznosti, hashrate, emise a velikosti bloku.' : 'Historical difficulty, hashrate, emission, and block size trends.'}</p>
+            <p className="text-sm text-gray-400">{tr('explorerPage', 'historical_difficulty_hashrate_emission_and_b', lang)}</p>
           </div>
           <Suspense fallback={<div className="rounded-4xl border border-white/8 bg-black/60 animate-pulse h-[400px]" />}>
             <ExplorerCharts />
@@ -301,12 +301,12 @@ export default function ExplorerPage() {
           transition={{ delay: 0.18 }}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Zasoba' : 'Supply'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tr('explorerPage', 'supply', lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Rocket className="h-7 w-7 text-zion-gold" />
-              {cs ? 'Monitoring emise' : 'Emission Monitor'}
+              {tr('explorerPage', 'emission_monitor', lang)}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Sledujte postup tezby - Decade Decay: 5,400 -> 724 ZION/blok, 100+ let + tail ∞.' : 'Track mining progress - Decade Decay: 5,400 -> 724 ZION/block, 100+ years + tail ∞.'}</p>
+            <p className="text-sm text-gray-400">{tr('explorerPage', 'track_mining_progress_decade_decay_5_400_724_', lang)}</p>
           </div>
           <Suspense fallback={<div className="rounded-4xl border border-white/8 bg-black/60 animate-pulse h-[280px]" />}>
             <EmissionMonitor />
@@ -321,12 +321,12 @@ export default function ExplorerPage() {
           id="peers"
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'P2P sit' : 'P2P Network'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tr('explorerPage', 'p2p_network', lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Globe className="h-7 w-7 text-zion-cyan" />
-              {cs ? 'Sitovi peeri' : 'Network Peers'}
+              {tr('explorerPage', 'network_peers', lang)}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Konektivita aktualniho verejneho hostu s archivovanou historii multi-host validace.' : 'Current public host connectivity with archived multi-host validation history.'}</p>
+            <p className="text-sm text-gray-400">{tr('explorerPage', 'current_public_host_connectivity_with_archive', lang)}</p>
           </div>
           <Suspense fallback={<div className="rounded-4xl border border-white/8 bg-black/60 animate-pulse h-[280px]" />}>
             <NetworkPeers />
@@ -342,12 +342,12 @@ export default function ExplorerPage() {
           className="scroll-mt-28"
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Distribuce' : 'Distribution'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tr('explorerPage', 'distribution', lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <TrendingUp className="h-7 w-7 text-zion-gold" />
-              {cs ? 'Rich list' : 'Rich List'}
+              {tr('explorerPage', 'rich_list', lang)}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Top drzitele ZION podle zustatku - premine alokace, tezebni odmeny a ekonomika site.' : 'Top ZION holders by balance - premine allocations, mining rewards, and network economics.'}</p>
+            <p className="text-sm text-gray-400">{tr('explorerPage', 'top_zion_holders_by_balance_premine_allocatio', lang)}</p>
           </div>
           <Suspense fallback={<div className="rounded-4xl border border-white/8 bg-black/60 animate-pulse h-[400px]" />}>
             <RichListClient embedded />
@@ -364,17 +364,17 @@ export default function ExplorerPage() {
           <SearchCode className="mx-auto h-12 w-12 text-zion-cyan" />
           <h2 className="mt-6 text-3xl font-semibold text-white">ZION TerraNova Explorer</h2>
           <p className="mt-4 text-gray-100 max-w-3xl mx-auto">
-            {cs ? 'Blockchain data v realnem case z nativnich Rust nodu. Kazdy blok, transakce a adresa - plne transparentni, plne otevrene.' : 'Real-time blockchain data from native Rust nodes. Every block, transaction, and address - fully transparent, fully open.'}
+            {tr('explorerPage', 'real_time_blockchain_data_from_native_rust_no', lang)}
           </p>
           <p className="mt-2 text-sm text-gray-300 max-w-2xl mx-auto">
             Decade Decay emise: 5,400 → 724 ZION/block · 100+ let + tail ∞ · All fees burned · 89/5/5/1 distribuce · Public launch target 31.12.2026
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <Link href="/network" className="inline-flex items-center gap-2 rounded-2xl bg-black/70 px-6 py-3 text-sm font-semibold text-white border border-white/20">
-              <Globe className="h-4 w-4" /> {cs ? 'Stav site' : 'Network Status'}
+              <Globe className="h-4 w-4" /> {tr('explorerPage', 'network_status', lang)}
             </Link>
             <Link href="/roadmap" className="inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-zion-cyan to-zion-purple px-6 py-3 text-sm font-semibold text-black">
-              <Activity className="h-4 w-4" /> {cs ? 'Roadmapa' : 'Roadmap'}
+              <Activity className="h-4 w-4" /> {tr('explorerPage', 'roadmap', lang)}
             </Link>
             <a
               href="https://github.com/Zion-TerraNova"

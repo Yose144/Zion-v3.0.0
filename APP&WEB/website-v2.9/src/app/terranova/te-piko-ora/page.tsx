@@ -219,7 +219,7 @@ export default function TePikoOraPage() {
             className="inline-flex items-center gap-2 text-sm text-gray-300 hover:text-white transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>{cs ? 'Domů' : 'Home'}</span>
+            <span>{tr('terranovaTePiko', 'home', lang)}</span>
           </Link>
           <span className="text-gray-700">|</span>
           <Link
@@ -252,7 +252,7 @@ export default function TePikoOraPage() {
                     L5 · Terra Nova Pioneer
                   </span>
                   <span className="inline-flex items-center gap-1 rounded-full border border-zion-gold/30 bg-zion-gold/10 px-3 py-1 text-[10px] font-semibold tracking-[0.2em] text-zion-gold uppercase">
-                    📋 {cs ? 'Plánováno 2027+' : 'Planned 2027+'}
+                    📋 {tr('terranovaTePiko', 'planned_2027', lang)}
                   </span>
                 </div>
 
@@ -260,7 +260,7 @@ export default function TePikoOraPage() {
                   Te Pīko Ora
                 </h1>
                 <p className="text-lg text-zion-cyan font-medium">
-                  {cs ? 'Živý střed · Polynésie · Terra Nova ®' : 'Living Centre · Polynesia · Terra Nova ®'}
+                  {tr('terranovaTePiko', 'living_centre_polynesia_terra_nova', lang)}
                 </p>
 
                 <div className="flex items-center gap-1.5 text-gray-400">
@@ -306,7 +306,7 @@ export default function TePikoOraPage() {
             <div className="relative z-10 grid md:grid-cols-3 gap-6">
               <div className="md:col-span-2 space-y-3">
                 <h3 className="text-lg font-bold text-gray-300">
-                  {cs ? 'Francouzská Polynésie — Koruna Pacifiku' : 'French Polynesia — Crown of the Pacific'}
+                  {tr('terranovaTePiko', 'french_polynesia_crown_of_the_pacific', lang)}
                 </h3>
                 <p className="text-gray-400 text-sm leading-relaxed">
                   {cs
@@ -322,9 +322,9 @@ export default function TePikoOraPage() {
               <div className="grid grid-cols-2 gap-3 content-start">
                 {[
                   { label: 'UNESCO', val: 'Marae Taputapuātea' },
-                  { label: cs ? 'Ostrovů' : 'Islands', val: '118' },
-                  { label: cs ? 'Oceán' : 'Ocean', val: '4M km²' },
-                  { label: cs ? 'Kultura' : 'Culture', val: cs ? 'Polynésie' : 'Polynesia' },
+                  { label: tr('terranovaTePiko', 'islands', lang), val: '118' },
+                  { label: tr('terranovaTePiko', 'ocean', lang), val: '4M km²' },
+                  { label: tr('terranovaTePiko', 'culture', lang), val: tr('terranovaTePiko', 'polynesia', lang) },
                 ].map((s) => (
                   <div key={s.label} className="text-center p-3 rounded-xl bg-black/60 border border-white/10">
                     <p className="text-gray-300 font-bold text-xs">{s.val}</p>
@@ -345,17 +345,17 @@ export default function TePikoOraPage() {
         >
           <div className="text-center mb-8">
             <p className="text-[10px] uppercase tracking-[0.45em] text-gray-500 mb-2">
-              {cs ? 'Inspirace' : 'Inspiration'}
+              {tr('terranovaTePiko', 'inspiration', lang)}
             </p>
             <h2 className="text-2xl font-bold text-white">
-              {cs ? 'Polynéský model & ZION' : 'Polynesian Model & ZION'}
+              {tr('terranovaTePiko', 'polynesian_model_zion', lang)}
             </h2>
           </div>
 
           <div className="rounded-2xl border border-white/10 overflow-hidden">
             <div className="grid grid-cols-3 text-center text-[10px] uppercase tracking-[0.3em] font-semibold bg-white/5 border-b border-white/10">
-              <div className="p-3 text-gray-500">{cs ? 'Polynésie' : 'Polynesia'}</div>
-              <div className="p-3 text-gray-300 border-l border-white/10">{cs ? 'Princip' : 'Principle'}</div>
+              <div className="p-3 text-gray-500">{tr('terranovaTePiko', 'polynesia', lang)}</div>
+              <div className="p-3 text-gray-300 border-l border-white/10">{tr('terranovaTePiko', 'principle', lang)}</div>
               <div className="p-3 text-gray-300 border-l border-white/10">ZION</div>
             </div>
             {[
@@ -398,10 +398,10 @@ export default function TePikoOraPage() {
         >
           <div className="text-center mb-8">
             <p className="text-[10px] uppercase tracking-[0.45em] text-gray-500 mb-2">
-              {cs ? 'Koncept projektu' : 'Project Concept'}
+              {tr('terranovaTePiko', 'project_concept', lang)}
             </p>
             <h2 className="text-2xl font-bold text-white">
-              {cs ? 'Aktivity & Vize' : 'Activities & Vision'}
+              {tr('terranovaTePiko', 'activities_vision', lang)}
             </h2>
           </div>
 
@@ -459,7 +459,7 @@ export default function TePikoOraPage() {
                 <span className="text-2xl">🗿</span>
                 <div>
                   <h3 className="text-lg font-bold text-amber-400">
-                    {cs ? 'Rapa Nui lekce — wayfinding škola' : 'Rapa Nui Lessons — wayfinding school'}
+                    {tr('terranovaTePiko', 'rapa_nui_lessons_wayfinding_school', lang)}
                   </h3>
                   <p className="text-gray-500 text-xs">
                     {cs
@@ -494,10 +494,10 @@ export default function TePikoOraPage() {
         >
           <div className="text-center mb-8">
             <p className="text-[10px] uppercase tracking-[0.45em] text-gray-500 mb-2">
-              {cs ? 'Fáze rozvoje' : 'Development Phases'}
+              {tr('terranovaTePiko', 'development_phases', lang)}
             </p>
             <h2 className="text-2xl font-bold text-white">
-              {cs ? 'Od vize k realitě' : 'From Vision to Reality'}
+              {tr('terranovaTePiko', 'from_vision_to_reality', lang)}
             </h2>
           </div>
 
@@ -541,7 +541,7 @@ export default function TePikoOraPage() {
                       </span>
                       {p.active && (
                         <span className="text-cyan-400 text-xs animate-pulse">
-                          ⚡ {cs ? 'Právě hledáme' : 'Exploring now'}
+                          ⚡ {tr('terranovaTePiko', 'exploring_now', lang)}
                         </span>
                       )}
                     </div>
@@ -562,7 +562,7 @@ export default function TePikoOraPage() {
         >
           <div className="text-center mb-8">
             <p className="text-[10px] uppercase tracking-[0.45em] text-gray-500 mb-2">
-              {cs ? 'Blockchain integrace' : 'Blockchain Integration'}
+              {tr('terranovaTePiko', 'blockchain_integration', lang)}
             </p>
             <h2 className="text-2xl font-bold text-white">ZION Network</h2>
           </div>
@@ -583,9 +583,9 @@ export default function TePikoOraPage() {
                     <p className="text-sm font-semibold text-white/80">{item.label}</p>
                     <p className="text-[10px] text-gray-600 capitalize">
                       {item.status === 'active'
-                        ? cs ? 'Aktivní' : 'Active'
+                        ? tr('terranovaTePiko', 'active', lang)
                         : item.status === 'planned'
-                        ? cs ? 'Plánováno' : 'Planned'
+                        ? tr('terranovaTePiko', 'planned', lang)
                         : 'TBD'}
                     </p>
                   </div>
@@ -604,15 +604,15 @@ export default function TePikoOraPage() {
         >
           <div className="zion-panel rounded-3xl p-6 md:p-8 border border-cyan-500/15 space-y-4">
             <h3 className="text-lg font-bold text-gray-300">
-              {cs ? 'Otevřené otázky — hledáme Guardians' : 'Open Questions — looking for Guardians'}
+              {tr('terranovaTePiko', 'open_questions_looking_for_guardians', lang)}
             </h3>
             <ul className="space-y-2">
               {[
-                cs ? 'Konkrétní lokace (Raiatea / Tahiti / jiný ostrov?)' : 'Specific location (Raiatea / Tahiti / another island?)',
-                cs ? 'Polynézští partneři — místní komunity, marae správci, navigátoři' : 'Polynesian partners — local communities, marae stewards, navigators',
-                cs ? 'Zakládající Guardians se znalostí oceánské kultury a zemědělství' : 'Founding Guardians with knowledge of ocean culture and farming',
-                cs ? 'Právní forma ve Francouzské Polynésii (asociace / SAS / komunitní nadace?)' : 'Legal form in French Polynesia (association / SAS / community foundation?)',
-                cs ? 'Financování fáze 0 (ZION fond? Humanitární grant? Vlastní zdroje?)' : 'Phase 0 financing (ZION fund? Humanitarian grant? Own resources?)',
+                tr('terranovaTePiko', 'specific_location_raiatea_tahiti_another_isla', lang),
+                tr('terranovaTePiko', 'polynesian_partners_local_communities_marae_s', lang),
+                tr('terranovaTePiko', 'founding_guardians_with_knowledge_of_ocean_cu', lang),
+                tr('terranovaTePiko', 'legal_form_in_french_polynesia_association_sa', lang),
+                tr('terranovaTePiko', 'phase_0_financing_zion_fund_humanitarian_gran', lang),
               ].map((q, i) => (
                 <li key={i} className="flex items-start gap-2 text-sm text-gray-400">
                   <span className="text-cyan-500 shrink-0 mt-0.5">◇</span>
@@ -632,7 +632,7 @@ export default function TePikoOraPage() {
               className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 px-4 py-2 text-sm text-gray-300 transition-all duration-300"
             >
               <Users className="w-4 h-4" />
-              {cs ? 'Připojit se na Discord' : 'Join Discord'}
+              {tr('terranovaTePiko', 'join_discord', lang)}
             </a>
           </div>
         </motion.section>
@@ -657,14 +657,14 @@ export default function TePikoOraPage() {
               className="inline-flex items-center gap-2 text-sm text-gray-300 hover:text-white transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span>{cs ? 'Domů' : 'Home'}</span>
+              <span>{tr('terranovaTePiko', 'home', lang)}</span>
             </Link>
             <span className="text-gray-700">|</span>
             <Link
               href="/terranova"
               className="inline-flex items-center gap-2 text-sm text-gray-300 hover:text-white transition-colors"
             >
-              <span>{cs ? 'Terra Nova' : 'Terra Nova'}</span>
+              <span>{tr('terranovaTePiko', 'terra_nova', lang)}</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
