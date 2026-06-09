@@ -20,11 +20,11 @@ export default function DeekshaLiteNews() {
           <div className="flex items-center gap-3 mb-2">
             <Newspaper className="w-4 h-4 text-zion-gold" />
             <span className="text-xs uppercase tracking-[0.4em] text-gray-400">
-              {cs ? 'Deeksha Lite — Novinky' : 'Deeksha Lite — News'}
+              {tr('deekshaNews', 'deeksha_lite_news', lang)}
             </span>
           </div>
           <h2 className="text-2xl font-bold text-white">
-            {cs ? 'Novinky (Lite)' : 'News (Lite)'}
+            {tr('deekshaNews', 'news_lite', lang)}
           </h2>
           <p className="text-sm text-gray-400 mt-1">
             {cs

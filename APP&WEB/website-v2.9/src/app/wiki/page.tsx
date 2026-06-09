@@ -11,7 +11,7 @@ const getSections = (cs: boolean) => [
   {
     href: '/terranova',
     icon: BookMarked,
-    title: cs ? 'TerraNova' : 'TerraNova',
+    title: tr('wikiPage', 'terranova', lang),
     desc: cs
       ? 'Kniha nové Země — 7 kapitol od Genesis po Zlatý Kompas. Kompletní filosofie a vize projektu ZION.'
       : 'The Book of the New Earth — 7 chapters from Genesis to Golden Compass. The complete philosophy and vision of the ZION project.',
@@ -19,7 +19,7 @@ const getSections = (cs: boolean) => [
   {
     href: '/genesis',
     icon: Sprout,
-    title: cs ? 'Genesis' : 'Genesis',
+    title: tr('wikiPage', 'genesis', lang),
     desc: cs
       ? 'Specifikace genesis bloku, konfigurace fee split, premine adresy a parametry sítě.'
       : 'Genesis block specification, fee split configuration, premine addresses and network parameters.',
@@ -27,7 +27,7 @@ const getSections = (cs: boolean) => [
   {
     href: '/docs',
     icon: FileText,
-    title: cs ? 'Dokumentace' : 'Documentation',
+    title: tr('wikiPage', 'documentation', lang),
     desc: cs
       ? 'Technická dokumentace, whitepaper, API reference, návody a FAQ.'
       : 'Technical documentation, whitepaper, API reference, guides and FAQ.',
@@ -60,7 +60,7 @@ export default function WikiPage() {
           >
             <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-zion-cyan">
               <Globe className="h-3.5 w-3.5" />
-              {cs ? 'Znalostní báze' : 'Knowledge Base'}
+              {tr('wikiPage', 'knowledge_base', lang)}
             </div>
             <h1 className="text-gradient text-4xl font-bold tracking-tight sm:text-5xl">
               ZION Wiki
@@ -95,7 +95,7 @@ export default function WikiPage() {
                 <h3 className="mt-4 text-xl font-bold text-white">{s.title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-gray-400">{s.desc}</p>
                 <span className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-zion-cyan opacity-70 group-hover:opacity-100 transition-opacity">
-                  {cs ? 'Otevřít →' : 'Open →'}
+                  {tr('wikiPage', 'open', lang)}
                 </span>
               </Link>
             </motion.div>
@@ -111,7 +111,7 @@ export default function WikiPage() {
               href="/terranova"
               className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-gray-400 hover:bg-white/10 hover:text-white transition-colors"
             >
-              {cs ? 'TerraNova kniha' : 'TerraNova Book'}
+              {tr('wikiPage', 'terranova_book', lang)}
             </Link>
             <Link
               href="/genesis"
@@ -123,7 +123,7 @@ export default function WikiPage() {
               href="/docs"
               className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-gray-400 hover:bg-white/10 hover:text-white transition-colors"
             >
-              {cs ? 'Dokumentace' : 'Documentation'}
+              {tr('wikiPage', 'documentation', lang)}
             </Link>
             <Link
               href="/terranova/te-piko-ora"
