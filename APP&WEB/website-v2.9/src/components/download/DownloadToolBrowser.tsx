@@ -107,7 +107,6 @@ function getPlatformShortLabel(platform: Platform): string {
 
 export default function DownloadToolBrowser({ cs }: { cs: boolean }) {
   const { lang } = useLang();
-  const cs = lang === 'cs';
   const platforms = getPlatforms(cs);
   const subcommands = getSubcommands(cs);
   const filename = `zion-cli-windows-x86_64.exe`;

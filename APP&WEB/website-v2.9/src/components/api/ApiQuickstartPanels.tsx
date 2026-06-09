@@ -57,7 +57,6 @@ function getOnboardingSteps(cs: boolean): OnboardingStep[] {
 
 export default function ApiQuickstartPanels({ cs }: { cs: boolean }) {
   const { lang } = useLang();
-  const cs = lang === 'cs';
   const [copied, setCopied] = useState<string | null>(null);
   const codeSamples = getCodeSamples(cs);
   const onboardingSteps = getOnboardingSteps(cs);
