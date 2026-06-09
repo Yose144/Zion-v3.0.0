@@ -2,7 +2,7 @@
 # Pouzij vsechna 12 jader, ale nech 2 pro system
 jobs = 10
 # sccache = cache kompilovanych .rlib souboru (rychlejsi rebuildy)
-rustc-wrapper = "sccache"
+#rustc-wrapper = "sccache"
 
 [profile.dev]
 # Incremental compilation pro rychlejsi rebuildy pri vyvoji
