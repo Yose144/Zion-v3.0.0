@@ -142,7 +142,11 @@ impl GpuBackendManager {
 
     /// Run a benchmark across all supported algorithms.
     pub fn benchmark_all(&mut self, secs: f64) -> Vec<(String, f64)> {
-        let algos = vec!["deeksha_lite_v1", "cosmic_harmony_ekam_deeksha_v2", "deeksha_lite_fire"];
+        let algos = vec![
+            "deeksha_lite_v1",
+            "cosmic_harmony_ekam_deeksha_v2",
+            "deeksha_lite_fire",
+        ];
         let mut results = Vec::new();
         for algo in algos {
             match self.ensure_algorithm(algo) {
