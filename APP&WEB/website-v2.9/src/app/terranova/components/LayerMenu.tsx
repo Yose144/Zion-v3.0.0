@@ -1,9 +1,9 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import {
 import { useLang } from '@/contexts/LanguageContext';
 import { tr } from '@/lib/translations';
+import {
   Globe2,
   Rocket,
   Sparkles,

@@ -350,7 +350,7 @@ const getPhases = (cs: boolean): PhaseData[] => [
   {
     id: '5',
     title: tr('roadmapPage', 'public_launch_decision_genesis', lang),
-    period: tr('roadmapPage', 'target_31_december_2026_new_year', lang)s Eve)',
+    period: tr('roadmapPage', 'target_31_december_2026_new_year', lang),
     priority: '🚀 P0 Blocker → Ready for launch',
     progress: 80,
     status: 'active',

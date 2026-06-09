@@ -173,7 +173,7 @@ const t = {
     pool_statistics: { cs: 'Statistiky poolu', en: 'Pool Statistics' },
     real_time_metrics_aggregated_from_the_pu: { cs: 'Metriky v reálném čase agregované z veřejného pool API na Zion2.', en: 'Real-time metrics aggregated from the public pool API on Zion2.' },
     pool_hashrate: { cs: 'Hashrate poolu', en: 'Pool Hashrate' },
-    24h_avg: { cs: '24h průměr', en: '24h avg' },
+    '24h_avg': { cs: '24h průměr', en: '24h avg' },
     live_backend_is_not_exporting_hashrate_y: { cs: 'Živý backend zatím hashrate neexportuje', en: 'Live backend is not exporting hashrate yet' },
     active_miners: { cs: 'Aktivní mineři', en: 'Active Miners' },
     blocks_found: { cs: 'Nalezené bloky', en: 'Blocks Found' },
@@ -191,7 +191,7 @@ const t = {
     pool_performance: { cs: 'Výkon poolu', en: 'Pool Performance' },
     live_hashrate_chart_network_share_and_po: { cs: 'Živý graf hashrate, podíl na síti a statistika štěstí poolu.', en: 'Live hashrate chart, network share, and pool luck statistics.' },
     pool_hashrate_last_hour: { cs: 'Hashrate poolu (poslední hodina)', en: 'Pool Hashrate (last hour)' },
-    24h_average: { cs: '24h průměr', en: '24h average' },
+    '24h_average': { cs: '24h průměr', en: '24h average' },
     network_share: { cs: 'Podíl na síti', en: 'Network Share' },
     network: { cs: 'Síť', en: 'Network' },
     pool_luck: { cs: 'Štěstí poolu', en: 'Pool Luck' },
@@ -249,17 +249,17 @@ const t = {
     getting_started: { cs: 'Začínáme', en: 'Getting Started' },
     start_mining_zion: { cs: 'Začněte těžit ZION', en: 'Start Mining ZION' },
     follow_these_steps_to_begin_mining_in_mi: { cs: 'Postupujte podle těchto kroků a začněte těžit během několika minut.', en: 'Follow these steps to begin mining in minutes.' },
-    1_get_a_zion_wallet: { cs: '1. Získejte ZION peněženku', en: '1. Get a ZION Wallet' },
+    '1_get_a_zion_wallet': { cs: '1. Získejte ZION peněženku', en: '1. Get a ZION Wallet' },
     generate_your_mining_address: { cs: 'Vygenerujte svou těžební adresu', en: 'Generate your mining address' },
     download_the_zion_desktop_wallet_or_use_: { cs: 'Stáhněte desktop peněženku ZION nebo použijte webovou peněženku pro vytvoření těžební adresy.', en: 'Download the ZION desktop wallet or use the web wallet to generate your mining address.' },
     download_wallet: { cs: 'Stáhnout peněženku', en: 'Download Wallet' },
-    2_choose_mining_software: { cs: '2. Vyberte těžební software', en: '2. Choose Mining Software' },
+    '2_choose_mining_software': { cs: '2. Vyberte těžební software', en: '2. Choose Mining Software' },
     zion_native_miner_or_xmrig: { cs: 'ZION Native Miner nebo XMRig', en: 'ZION Native Miner or XMRig' },
     official_cosmic_harmony_algorithm_python: { cs: 'Oficiální — algoritmus Cosmic Harmony · Python/Rust', en: 'Official — Cosmic Harmony algorithm · Python/Rust' },
     industry_standard_cpu_optimized: { cs: 'Průmyslový standard · optimalizovaný pro CPU', en: 'Industry-standard · CPU optimized' },
-    3_configure_connect: { cs: '3. Nakonfigurujte a připojte', en: '3. Configure & Connect' },
+    '3_configure_connect': { cs: '3. Nakonfigurujte a připojte', en: '3. Configure & Connect' },
     start_mining_with_one_command: { cs: 'Spusťte těžbu jedním příkazem', en: 'Start mining with one command' },
-    4_monitor_earn: { cs: '4. Sledujte a vydělávejte', en: '4. Monitor & Earn' },
+    '4_monitor_earn': { cs: '4. Sledujte a vydělávejte', en: '4. Monitor & Earn' },
     track_your_rewards_in_real_time: { cs: 'Sledujte své odměny v reálném čase', en: 'Track your rewards in real-time' },
     once_connected_monitor_your_mining_stats: { cs: 'Po připojení sledujte své těžební statistiky přímo zde. Výplaty probíhají automaticky po dosažení minimálního prahu.', en: 'Once connected, monitor your mining stats right here. Payouts are automatic when you reach the minimum threshold.' },
     min_payout: { cs: 'Min. payout', en: 'Min Payout' },
@@ -270,7 +270,7 @@ const t = {
     cosmic_harmony_algorithm: { cs: 'Algoritmus Cosmic Harmony', en: 'Cosmic Harmony Algorithm' },
     native_zion_pow_algorithm_cpu_friendly_a: { cs: 'Nativní ZION PoW algoritmus, přívětivý k CPU a odolný vůči ASIC pro férovější distribuci.', en: 'Native ZION PoW algorithm, CPU-friendly, ASIC-resistant design for fair distribution.' },
     humanitarian_mission: { cs: 'Humanitární mise', en: 'Humanitarian Mission' },
-    5_humanitarian_5_issobella_fund_mining_f: { cs: '5 % humanitární tithe + 5 % fond Issobella. Těžba pro vědomí.', en: '5% humanitarian + 5% Issobella fund. Mining for consciousness.' },
+    '5_humanitarian_5_issobella_fund_mining_f': { cs: '5 % humanitární tithe + 5 % fond Issobella. Těžba pro vědomí.', en: '5% humanitarian + 5% Issobella fund. Mining for consciousness.' },
     primary_host_pool: { cs: 'Primární host poolu', en: 'Primary Host Pool' },
     public_stratum_access_runs_on_zion2_whil: { cs: 'Veřejný stratum běží na Zion2, zatímco interní seed kontejnery zůstávají za stejným hostem.', en: 'Public stratum access runs on Zion2 while internal seed containers stay behind the same host.' },
     pplns_rewards: { cs: 'PPLNS odměny', en: 'PPLNS Rewards' },
@@ -831,15 +831,15 @@ const t = {
     security_audit: { cs: 'Security audit', en: 'Security audit' }
     external_firm_booked: { cs: 'Externí firma rezervována', en: 'External firm booked' }
     bridge_validator_key_provisioning: { cs: 'Bridge validator provisioning', en: 'Bridge validator key provisioning' }
-    3_5_threshold_production: { cs: '3/5 threshold produkce', en: '3/5 threshold production' }
+    '3_5_threshold_production': { cs: '3/5 threshold produkce', en: '3/5 threshold production' }
     ci_billing_resolution: { cs: 'CI billing', en: 'CI billing resolution' }
     github_actions_infrastructure_pending: { cs: 'GitHub Actions infrastruktura', en: 'GitHub Actions infrastructure pending' }
     genesis_premine: { cs: 'Genesis premine', en: 'Genesis premine' }
-    16_28b_zion_12_wallets: { cs: '16.28B ZION, 12 peněženek', en: '16.28B ZION, 12 wallets' }
+    '16_28b_zion_12_wallets': { cs: '16.28B ZION, 12 peněženek', en: '16.28B ZION, 12 wallets' }
     wzion_erc_20: { cs: 'wZION ERC-20', en: 'wZION ERC-20' }
     deployed_on_base_mainnet: { cs: 'Deployed na Base Mainnet', en: 'Deployed on Base Mainnet' }
     zionstaking: { cs: 'ZIONStaking', en: 'ZIONStaking' }
-    12_apr_7_day_cooldown: { cs: '12% APR, 7-denní cooldown', en: '12% APR, 7-day cooldown' }
+    '12_apr_7_day_cooldown': { cs: '12% APR, 7-denní cooldown', en: '12% APR, 7-day cooldown' }
     pplns_fee_split_final_verification: { cs: 'PPLNS fee split finální ověření', en: 'PPLNS fee split final verification' }
     confirm_89_5_5_1_wiring: { cs: 'Potvrdit 89/5/5/1 wiring', en: 'Confirm 89/5/5/1 wiring' }
     launch_checklist_dashboard_integration: { cs: 'Launch checklist dashboard integrace', en: 'Launch checklist dashboard integration' }
@@ -898,9 +898,9 @@ const t = {
     cpu_load: { cs: 'CPU zatez', en: 'CPU Load' }
     server_uptime: { cs: 'Uptime serveru', en: 'Server Uptime' }
     since: { cs: 'od', en: 'since' }
-    30_live_prometheus_metrics: { cs: '30+ zivych Prometheus metrik', en: '30+ live Prometheus metrics' }
+    '30_live_prometheus_metrics': { cs: '30+ zivych Prometheus metrik', en: '30+ live Prometheus metrics' }
     instant_range_queries: { cs: 'Instantni + range dotazy', en: 'Instant + Range queries' }
-    15s_auto_refresh: { cs: 'Auto-refresh 15 s', en: '15s auto-refresh' }
+    '15s_auto_refresh': { cs: 'Auto-refresh 15 s', en: '15s auto-refresh' }
     svg_sparklines_1h: { cs: 'SVG sparkliny (1 h)', en: 'SVG sparklines (1h)' }
     full_monitoring_page: { cs: 'Cela monitoring stranka →', en: 'Full monitoring page →' }
     open_grafana: { cs: 'Otevrit Grafanu →', en: 'Open Grafana →' }
@@ -963,29 +963,29 @@ const t = {
     emission_model: { cs: 'Emisni model', en: 'Emission Model' }
     tail_emission: { cs: 'Tail emise', en: 'Tail Emission' }
     block_time: { cs: 'Cas bloku', en: 'Block Time' }
-    60_seconds: { cs: '60 sekund', en: '60 seconds' }
+    '60_seconds': { cs: '60 sekund', en: '60 seconds' }
     max_reorg: { cs: 'Max reorg', en: 'Max Reorg' }
-    10_blocks: { cs: '10 bloku', en: '10 blocks' }
+    '10_blocks': { cs: '10 bloku', en: '10 blocks' }
     soft_finality: { cs: 'Soft finalita', en: 'Soft Finality' }
-    60_blocks: { cs: '60 bloku', en: '60 blocks' }
+    '60_blocks': { cs: '60 bloku', en: '60 blocks' }
     coinbase_maturity: { cs: 'Coinbase maturity', en: 'Coinbase Maturity' }
-    100_blocks: { cs: '100 bloku', en: '100 blocks' }
+    '100_blocks': { cs: '100 bloku', en: '100 blocks' }
     distribution: { cs: 'Distribuce', en: 'Distribution' }
-    89_miner_5_humanitarian_5_issobella_1_pool: { cs: '89 % miner · 5 % humanit. · 5 % Issobella · 1 % pool', en: '89% miner · 5% humanitarian · 5% Issobella · 1% pool' }
+    '89_miner_5_humanitarian_5_issobella_1_pool': { cs: '89 % miner · 5 % humanit. · 5 % Issobella · 1 % pool', en: '89% miner · 5% humanitarian · 5% Issobella · 1% pool' }
     atomic_units: { cs: 'Atomic units', en: 'Atomic Units' }
-    1m_per_zion: { cs: '1M na ZION', en: '1M per ZION' }
+    '1m_per_zion': { cs: '1M na ZION', en: '1M per ZION' }
     mining_horizon: { cs: 'Horizont tezby', en: 'Mining Horizon' }
-    100_years_tail: { cs: '100+ let + tail ∞', en: '100+ years + tail ∞' }
+    '100_years_tail': { cs: '100+ let + tail ∞', en: '100+ years + tail ∞' }
     immediately_available: { cs: 'Okamzite dostupne', en: 'Immediately available' }
     infrastructure_dev: { cs: 'Infrastruktura a vyvoj', en: 'Infrastructure & Dev' }
     humanitarian_fund: { cs: 'Humanitarni fond', en: 'Humanitarian Fund' }
     zion_block_from_2126: { cs: 'ZION/block ∞ (od 2126)', en: 'ZION/block ∞ (from 2126)' }
     miner_humanitarian_issobella_pool: { cs: 'miner / humanit. / Issobella / pool', en: 'miner / humanitarian / Issobella / pool' }
-    100_years: { cs: '100+ let', en: '100+ years' }
+    '100_years': { cs: '100+ let', en: '100+ years' }
     perpetual_tail: { cs: '+ perpetualni tail ∞', en: '+ perpetual tail ∞' }
     l5_l6_treasury: { cs: 'L5 / L6 Pokladna', en: 'L5 / L6 Treasury' }
     humanitarian_fund_space_station: { cs: 'Humanitární fond & Vesmírná stanice', en: 'Humanitarian Fund & Space Station' }
-    5_of_every_block_reward_goes_to_the_l5_humani: { cs: '5 % každého blokového odměny putuje na L5 humanitární fond a 5 % na L6 Issobella vesmírný fond.', en: '5% of every block reward goes to the L5 humanitarian fund and 5% to the L6 Issobella space fund.' }
+    '5_of_every_block_reward_goes_to_the_l5_humani': { cs: '5 % každého blokového odměny putuje na L5 humanitární fond a 5 % na L6 Issobella vesmírný fond.', en: '5% of every block reward goes to the L5 humanitarian fund and 5% to the L6 Issobella space fund.' }
     physical_communities_humanitarian_projects_fr: { cs: 'Fyzické komunity, humanitární projekty, Free Energy, terénní governance. Fond odemčen ve výšce bloku ~525,600.', en: 'Physical communities, humanitarian projects, Free Energy, on-ground governance. Fund unlocked at block ~525,600.' }
     orbital_station_space_research_seti_overview_: { cs: 'Orbitální stanice, vesmírný výzkum, SETI, Overview Effect protokoly. Fond odemčen ve výšce bloku ~525,600.', en: 'Orbital station, space research, SETI, Overview Effect protocols. Fund unlocked at block ~525,600.' }
     all_l1_transaction_fees: { cs: 'VSECHNY L1 TRANSAKCNI POPLATKY → ', en: 'ALL L1 TRANSACTION FEES → ' }
@@ -1006,7 +1006,7 @@ const t = {
     ed25519: { cs: 'Ed25519', en: 'Ed25519' }
     state_of_the_art_curve_cryptography_fast_and_: { cs: 'Nejmodernější křivková kryptografie — rychlé a bezpečné podpisy.', en: 'State-of-the-art curve cryptography — fast and secure signatures.' }
     bip39_mnemonic: { cs: 'BIP39 Mnemonic', en: 'BIP39 Mnemonic' }
-    12_24_word_seed_for_easy_backup_and_recovery: { cs: '12–24 slovní seed pro snadné zálohování a obnovení.', en: '12–24 word seed for easy backup and recovery.' }
+    '12_24_word_seed_for_easy_backup_and_recovery': { cs: '12–24 slovní seed pro snadné zálohování a obnovení.', en: '12–24 word seed for easy backup and recovery.' }
     utxo_model: { cs: 'UTXO Model', en: 'UTXO Model' }
     native_zion_l1_utxo_model_transparent_and_aud: { cs: 'Nativní UTXO model ZION L1 — transparentní a auditovatelný.', en: 'Native ZION L1 UTXO model — transparent and auditable.' }
     on_chain: { cs: 'On-Chain', en: 'On-Chain' }
@@ -1041,7 +1041,7 @@ const t = {
     importing: { cs: 'Importování...', en: 'Importing...' }
     import_from_mnemonic: { cs: 'Importovat z Mnemonic', en: 'Import from Mnemonic' }
     from_private_key_hex: { cs: 'Z Private Key (hex)', en: 'From Private Key (hex)' }
-    64_char_hex_private_key: { cs: '64-znakový hex private key', en: '64-char hex private key' }
+    '64_char_hex_private_key': { cs: '64-znakový hex private key', en: '64-char hex private key' }
     import_from_private_key: { cs: 'Importovat z Private Key', en: 'Import from Private Key' }
     hardware_wallet_watch_only_1: { cs: 'Hardware peněženka (Watch-only)', en: 'Hardware Wallet (Watch-only)' }
     import_public_key_from_trezor_or_ledger: { cs: 'Importujte veřejný klíč z Trezoru nebo Ledgeru.', en: 'Import public key from Trezor or Ledger.' }
@@ -1123,16 +1123,16 @@ const t = {
     contract_addresses: { cs: 'Adresy kontraktů', en: 'Contract addresses' }
     copied_1: { cs: 'Zkopírováno!', en: 'Copied!' }
     security_model: { cs: 'Bezpečnostní model', en: 'Security model' }
-    60_block_l1_finality: { cs: '60-block L1 finalita', en: '60-block L1 finality' }
+    '60_block_l1_finality': { cs: '60-block L1 finalita', en: '60-block L1 finality' }
     prevents_re_org_exploits: { cs: 'Prevence re-org exploitů.', en: 'Prevents re-org exploits.' }
-    2_guardian_confirmations_for_treasury_operati: { cs: '≥2 Guardian potvrzení pro treasury operace.', en: '≥2 Guardian confirmations for treasury operations.' }
+    '2_guardian_confirmations_for_treasury_operati': { cs: '≥2 Guardian potvrzení pro treasury operace.', en: '≥2 Guardian confirmations for treasury operations.' }
     duplicate_tx_cannot_be_replayed: { cs: 'Duplikátní TX nelze replayovat.', en: 'Duplicate TX cannot be replayed.' }
     faq: { cs: 'Časté dotazy', en: 'FAQ' }
     readiness_checklist: { cs: 'Readiness kontrola', en: 'Readiness checklist' }
     wzion_contract: { cs: 'wZION kontrakt', en: 'wZION contract' }
     zionbridge_contract: { cs: 'ZIONBridge kontrakt', en: 'ZIONBridge contract' }
     basescan_verified: { cs: 'BaseScan verifikace', en: 'BaseScan verified' }
-    3_5_guardian_multisig: { cs: '3/5 Guardian multisig', en: '3/5 Guardian multisig' }
+    '3_5_guardian_multisig': { cs: '3/5 Guardian multisig', en: '3/5 Guardian multisig' }
     relay_metrics: { cs: 'Relay metrics', en: 'Relay metrics' }
     burn_widget_live: { cs: 'Burn widget (live)', en: 'Burn widget (live)' }
     l1_base_mint: { cs: 'L1 → Base (mint)', en: 'L1 → Base (mint)' }
@@ -1315,7 +1315,7 @@ const t = {
     live_status: { cs: 'Zivy stav', en: 'Live Status' }
     p2p_network: { cs: 'P2P Sit', en: 'P2P Network' }
     native_rust: { cs: 'Nativni Rust', en: 'Native Rust' }
-    1_public_host_2_internal_seeds: { cs: '1 verejny host · 2 interni seedy', en: '1 Public Host · 2 Internal Seeds' }
+    '1_public_host_2_internal_seeds': { cs: '1 verejny host · 2 interni seedy', en: '1 Public Host · 2 Internal Seeds' }
     runtime_snapshot: { cs: 'Runtime prehled', en: 'Runtime Snapshot' }
     public_network_surface: { cs: 'Verejny povrch site', en: 'Public Network Surface' }
     the_current_live_footprint_distilled_to_the_e: { cs: 'Aktualni zivy footprint zredukovany na endpointy a role, ktere operatori potrebuji jako prvni.', en: 'The current live footprint distilled to the endpoints and roles operators actually need first.' }
@@ -1396,7 +1396,7 @@ const t = {
     what_consensus_does_zion_use: { cs: 'Jaký konsenzus ZION používá?', en: 'What consensus does ZION use?' }
     cosmic_harmony_proof_of_work_a_custom_crypton: { cs: 'Cosmic Harmony Proof-of-Work – vlastní CryptoNight varianta optimalizovaná pro CPU/GPU mining s 60s block time a Decade Decay emisí.', en: 'Cosmic Harmony Proof-of-Work – a custom CryptoNight variant optimized for CPU/GPU mining with 60s block time and Decade Decay emission.' }
     what_is_the_target_block_time: { cs: 'Jaký je cílový block time?', en: 'What is the target block time?' }
-    60_seconds_difficulty_adjusts_dynamically_eve: { cs: '60 sekund. Obtížnost se dynamicky přizpůsobuje každý blok, aby udržela stabilní tempo.', en: '60 seconds. Difficulty adjusts dynamically every block to maintain a stable pace.' }
+    '60_seconds_difficulty_adjusts_dynamically_eve': { cs: '60 sekund. Obtížnost se dynamicky přizpůsobuje každý blok, aby udržela stabilní tempo.', en: '60 seconds. Difficulty adjusts dynamically every block to maintain a stable pace.' }
     how_many_zion_are_mined_per_block: { cs: 'Kolik ZION se vytěží za blok?', en: 'How many ZION are mined per block?' }
     what_is_the_maximum_supply: { cs: 'Jaká je maximální zásoba?', en: 'What is the maximum supply?' }
     how_to_connect_as_a_miner: { cs: 'Jak se připojit jako miner?', en: 'How to connect as a miner?' }
@@ -1404,9 +1404,9 @@ const t = {
     how_to_run_your_own_full_node: { cs: 'Jak spustit vlastní full node?', en: 'How to run your own full node?' }
     clone_the_repo_cargo_build_release_from_l1_co: { cs: 'Klonujte repo, spusťte cargo build --release v L1/core a pak ./target/release/ziond --p2p-bind-ip 0.0.0.0 --add-exclusive-node 77.42.71.94:21000. Docker compose je k dispozici v docker/docker-compose.mainnet.yml.', en: 'Clone the repo, cargo build --release from L1/core and then ./target/release/ziond --p2p-bind-ip 0.0.0.0 --add-exclusive-node 77.42.71.94:21000. Docker compose is available in docker/docker-compose.mainnet.yml.' }
     what_pool_fee_does_zion_charge: { cs: 'Jaký pool fee si ZION účtuje?', en: 'What pool fee does ZION charge?' }
-    89_goes_to_the_miner_5_to_the_humanitarian_fu: { cs: '89 % putuje minerovi, 5 % do humanitarian fondu, 5 % do fondu Issobella a 1 % pool provozní poplatek.', en: '89% goes to the miner, 5% to the humanitarian fund, 5% to the Issobella fund, and 1% pool operational fee.' }
+    '89_goes_to_the_miner_5_to_the_humanitarian_fu': { cs: '89 % putuje minerovi, 5 % do humanitarian fondu, 5 % do fondu Issobella a 1 % pool provozní poplatek.', en: '89% goes to the miner, 5% to the humanitarian fund, 5% to the Issobella fund, and 1% pool operational fee.' }
     is_the_network_publicly_launched: { cs: 'Je síť veřejně spuštěna?', en: 'Is the network publicly launched?' }
-    v3_mainnet_is_in_preparation_target_launch_31: { cs: 'V3 Mainnet je v přípravě — target launch 31. prosince 2026 (Silvestr). Core + Edge topology je v testování, mining test aktivní, bridge v přípravě na Base Mainnet.', en: 'V3 Mainnet is in preparation — target launch 31 December 2026 (New Year\' }
+    v3_mainnet_is_in_preparation_target_launch_31: { cs: 'V3 Mainnet je v přípravě — target launch 31. prosince 2026 (Silvestr). Core + Edge topology je v testování, mining test aktivní, bridge v přípravě na Base Mainnet.', en: "V3 Mainnet is in preparation — target launch 31 December 2026 (New Year's Eve). Core + Edge topology is in testing, mining test active, bridge in preparation on Base Mainnet." }
   },
   l3Hiran: {
     deployment: { cs: 'Deployment', en: 'Deployment' }
@@ -1417,7 +1417,7 @@ const t = {
     stage_2_zion_core: { cs: 'Stage 2: Zion Core', en: 'Stage 2: Zion Core' }
     stage_3_cross_domain: { cs: 'Stage 3: Cross-domain', en: 'Stage 3: Cross-domain' }
     stage_4_rag_synthesis: { cs: 'Stage 4: RAG Synthesis', en: 'Stage 4: RAG Synthesis' }
-    33_knowledge_docs: { cs: '33 Knowledge Docs', en: '33 Knowledge Docs' }
+    '33_knowledge_docs': { cs: '33 Knowledge Docs', en: '33 Knowledge Docs' }
     religion_history_science_philosophy_art_medic: { cs: 'Religion, history, science, philosophy, art, medicine, literature, mythology, languages.', en: 'Religion, history, science, philosophy, art, medicine, literature, mythology, languages.' }
     vector_db_with_all_minilm_l6_v2_embeddings_mu: { cs: 'Vector DB s all-MiniLM-L6-v2 embeddings. Multi-collection cosine-similarity retrieval.', en: 'Vector DB with all-MiniLM-L6-v2 embeddings. Multi-collection cosine-similarity retrieval.' }
     query_router: { cs: 'Query Router', en: 'Query Router' }
@@ -1454,11 +1454,11 @@ const t = {
     on_chain_inventory: { cs: 'On-Chain Inventory', en: 'On-Chain Inventory' }
     guild_dao: { cs: 'Guild DAO', en: 'Guild DAO' }
     core_avatars: { cs: 'Základní avataři', en: 'Core Avatars' }
-    51_unique_core_avatars_with_full_animation_an: { cs: '51 unikátních základních avatarů s plnou animací a skillem.', en: '51 unique core avatars with full animation and skill tree.' }
+    '51_unique_core_avatars_with_full_animation_an': { cs: '51 unikátních základních avatarů s plnou animací a skillem.', en: '51 unique core avatars with full animation and skill tree.' }
     extended_avatars: { cs: 'Rozšíření avataři', en: 'Extended Avatars' }
-    151_extended_avatars_with_unique_traits_and_b: { cs: '151 rozšířených avatarů s unikátními vlastnostmi a příběhem.', en: '151 extended avatars with unique traits and backstory.' }
+    '151_extended_avatars_with_unique_traits_and_b': { cs: '151 rozšířených avatarů s unikátními vlastnostmi a příběhem.', en: '151 extended avatars with unique traits and backstory.' }
     quest_engine: { cs: 'Quest systém', en: 'Quest Engine' }
-    5_quests_per_avatar_pve_exploration_crafting_: { cs: '5 questů na každého avatara — PvE, exploration, crafting, social.', en: '5 quests per avatar — PvE, exploration, crafting, social.' }
+    '5_quests_per_avatar_pve_exploration_crafting_': { cs: '5 questů na každého avatara — PvE, exploration, crafting, social.', en: '5 quests per avatar — PvE, exploration, crafting, social.' }
     total_prize_pool: { cs: 'Celkový prize pool', en: 'Total Prize Pool' }
     clues: { cs: 'Stop / Clues', en: 'Clues' }
     estimated_start: { cs: 'Odhadovaný start', en: 'Estimated Start' }
@@ -1470,7 +1470,7 @@ const t = {
     avatar_minting: { cs: 'Avatar Minting', en: 'Avatar Minting' }
     every_avatar_is_an_nft_on_zion_l1_erc_721_com: { cs: 'Každý avatar je NFT na ZION L1 — ERC-721 kompatibilní, metadata on-chain.', en: 'Every avatar is an NFT on ZION L1 — ERC-721 compatible, metadata on-chain.' }
     quest_engine_1: { cs: 'Quest Engine', en: 'Quest Engine' }
-    5_quests_per_avatar_generative_content_scorin: { cs: '5 questů na avatara — generativní obsah, skóre, odměny v ZION.', en: '5 quests per avatar — generative content, scoring, ZION rewards.' }
+    '5_quests_per_avatar_generative_content_scorin': { cs: '5 questů na avatara — generativní obsah, skóre, odměny v ZION.', en: '5 quests per avatar — generative content, scoring, ZION rewards.' }
     nft_inventory: { cs: 'NFT Inventory', en: 'NFT Inventory' }
     items_weapons_armor_all_as_nfts_with_utxo_bac: { cs: 'Itemy, zbraně, brnění — vše jako NFT s UTXO-backed ownership.', en: 'Items, weapons, armor — all as NFTs with UTXO-backed ownership.' }
     guild_treasury: { cs: 'Guild Treasury', en: 'Guild Treasury' }
@@ -1484,7 +1484,7 @@ const t = {
     ue5_integration_2028_2029: { cs: 'UE5 integrace 2028–2029', en: 'UE5 integration 2028–2029' }
     live_system: { cs: 'Živý systém', en: 'Live System' }
     avatar_system_active: { cs: 'Avatar systém — Active', en: 'Avatar System — Active' }
-    51_core_151_extended_avatars_each_has_5_quest: { cs: '51 core + 151 extended avatarů. Každý má 5 questů. REST API endpointy /avatars a /quests jsou aktivní.', en: '51 core + 151 extended avatars. Each has 5 quests. REST API endpoints /avatars and /quests are active.' }
+    '51_core_151_extended_avatars_each_has_5_quest': { cs: '51 core + 151 extended avatarů. Každý má 5 questů. REST API endpointy /avatars a /quests jsou aktivní.', en: '51 core + 151 extended avatars. Each has 5 quests. REST API endpoints /avatars and /quests are active.' }
     treasure: { cs: 'Poklad', en: 'Treasure' }
     golden_egg_108_clues_8_25b_zion: { cs: 'Golden Egg — 108 stop, 8.25B ZION', en: 'Golden Egg — 108 Clues, 8.25B ZION' }
     baseline_protocols: { cs: 'Baseline protokoly', en: 'Baseline Protocols' }
@@ -1506,15 +1506,15 @@ const t = {
     free_energy: { cs: 'Free Energy', en: 'Free Energy' }
     solar_wind_and_local_energy_autonomy_shared_a: { cs: 'Solární, větrná a lokální energetická autonomie — sdílená přes L5 síť.', en: 'Solar, wind, and local energy autonomy — shared across the L5 network.' }
     community_treasury: { cs: 'Komunitní pokladna', en: 'Community Treasury' }
-    10_of_guardian_node_rewards_local_projects_ma: { cs: '10 % z guardian node odměn → místní projekty, údržba, zásoby.', en: '10% of guardian node rewards → local projects, maintenance, reserves.' }
+    '10_of_guardian_node_rewards_local_projects_ma': { cs: '10 % z guardian node odměn → místní projekty, údržba, zásoby.', en: '10% of guardian node rewards → local projects, maintenance, reserves.' }
     resonance_protocol: { cs: 'Rezonance protokol', en: 'Resonance Protocol' }
     sound_attunement_before_governance_fibonacci_: { cs: 'Zvukové ladění před governance, Fibonacci Time Capsules, Youth–Elder Bridge.', en: 'Sound attunement before governance, Fibonacci Time Capsules, Youth–Elder Bridge.' }
     cartographic_records: { cs: 'Kartografické záznamy', en: 'Cartographic Records' }
     local_ecological_and_community_maps_stored_on: { cs: 'Lokální ekologické a komunitní mapy uložené on-chain jako UTXO metadata.', en: 'Local ecological and community maps stored on-chain as UTXO metadata.' }
     physical_layer_of_the_zion_ecosystem: { cs: 'Fyzická vrstva ZION ekosystému', en: 'Physical layer of the ZION ecosystem' }
     free_world_l5: { cs: 'Svobodný svět — L5', en: 'Free World — L5' }
-    5_of_every_block_l5_fund: { cs: '5 % z každého bloku → L5 fond', en: '5% of every block → L5 fund' }
-    11_7m_zion_month: { cs: '~11,7 M ZION / měsíc', en: '~11.7M ZION / month' }
+    '5_of_every_block_l5_fund': { cs: '5 % z každého bloku → L5 fond', en: '5% of every block → L5 fund' }
+    '11_7m_zion_month': { cs: '~11,7 M ZION / měsíc', en: '~11.7M ZION / month' }
     unlocked_block_525_600: { cs: 'Odemčeno blok ~525 600', en: 'Unlocked block ~525,600' }
     humanitarian_fund: { cs: 'Humanitární fond', en: 'Humanitarian Fund' }
     l5_fund_5_block_reward: { cs: 'L5 Fond — 5 % block reward', en: 'L5 Fund — 5% block reward' }
@@ -1534,8 +1534,8 @@ const t = {
     l5_economic_model: { cs: 'Ekonomický model L5', en: 'L5 Economic Model' }
     block_reward_network: { cs: 'Block reward (síť)', en: 'Block reward (network)' }
     guardian_node_local: { cs: 'Guardian Node (místní)', en: 'Guardian Node (local)' }
-    90_community_miner_10_community_treasury: { cs: '90% komunitní těžař · 10% → komunitní pokladna', en: '90% community miner · 10% → community treasury' }
-    60_projects_30_reserves_10_humanitarian_tithe: { cs: '60% projekty · 30% rezervy · 10% humanitární příspěvek (L5 global)', en: '60% projects · 30% reserves · 10% humanitarian tithe (L5 global)' }
+    '90_community_miner_10_community_treasury': { cs: '90% komunitní těžař · 10% → komunitní pokladna', en: '90% community miner · 10% → community treasury' }
+    '60_projects_30_reserves_10_humanitarian_tithe': { cs: '60% projekty · 30% rezervy · 10% humanitární příspěvek (L5 global)', en: '60% projects · 30% reserves · 10% humanitarian tithe (L5 global)' }
     learn_more_about_l5: { cs: 'Více o L5', en: 'Learn more about L5' }
     network: { cs: 'Síť', en: 'Network' }
   },
@@ -1544,7 +1544,7 @@ const t = {
     orbital_mining: { cs: 'Orbital Mining', en: 'Orbital Mining' }
     overview_effect: { cs: 'Overview Effect', en: 'Overview Effect' }
     orbital_experience_shifts_consciousness_no_bo: { cs: 'Zkušenost z oběžné dráhy mění vědomí — planety bez hranic, humanity jako celek.', en: 'Orbital experience shifts consciousness — no borders, humanity as a whole.' }
-    5_block_fund: { cs: '5% Block Fund', en: '5% Block Fund' }
+    '5_block_fund': { cs: '5% Block Fund', en: '5% Block Fund' }
     every_mined_block_contributes_5_to_the_l6_iss: { cs: 'Každý vytěžený blok přispívá 5 % do L6 Issobella fondu — trvalé financování vesmírného výzkumu.', en: 'Every mined block contributes 5% to the L6 Issobella fund — perpetual space research funding.' }
     dao_governance: { cs: 'DAO Governance', en: 'DAO Governance' }
     l6_council_governed_grants_and_projects_commu: { cs: 'L6 Radou řízené granty a projekty — komunita rozhoduje o alokaci fondu.', en: 'L6 Council-governed grants and projects — community decides fund allocation.' }
@@ -1555,8 +1555,8 @@ const t = {
     cosmic_harmony_pow: { cs: 'Cosmic Harmony PoW', en: 'Cosmic Harmony PoW' }
     zion_consensus_algorithm_is_designed_with_cos: { cs: 'ZION consensus algoritmus je navržen s kosmickým vědomím — L6 je jeho duchovní destinace.', en: 'ZION consensus algorithm is designed with cosmic consciousness — L6 is its spiritual destination.' }
     space_layer_of_the_zion_ecosystem: { cs: 'Vesmírná vrstva ZION ekosystému', en: 'Space layer of the ZION ecosystem' }
-    5_of_every_block_l6_fund: { cs: '5 % z každého bloku → L6 fond', en: '5% of every block → L6 fund' }
-    11_7m_zion_month: { cs: '~11,7 M ZION / měsíc', en: '~11.7M ZION / month' }
+    '5_of_every_block_l6_fund': { cs: '5 % z každého bloku → L6 fond', en: '5% of every block → L6 fund' }
+    '11_7m_zion_month': { cs: '~11,7 M ZION / měsíc', en: '~11.7M ZION / month' }
     unlocked_block_525_600: { cs: 'Odemčeno blok ~525 600', en: 'Unlocked block ~525,600' }
     space_fund: { cs: 'Vesmírný fond', en: 'Space Fund' }
     l6_issobella_fund_5_block_reward: { cs: 'L6 Issobella fond — 5 % block reward', en: 'L6 Issobella Fund — 5% block reward' }
@@ -1578,7 +1578,7 @@ const t = {
     scratchpad_ekam_256_kib_4_passes_256_reads_ti: { cs: 'Scratchpad Ekam: 256 KiB, 4 průchody, 256 čtení (Tier 1)', en: 'Scratchpad Ekam: 256 KiB, 4 passes, 256 reads (Tier 1)' }
     epoch_rotating_npu_weights_2016_100_blocks_ti: { cs: 'Epoch-rotující NPU váhy — 2016/100 bloků (Tier 2)', en: 'Epoch-rotating NPU weights — 2016/100 blocks (Tier 2)' }
     decade_decay_emission_5_400_724_zion_block_10: { cs: 'Decade Decay emise: 5 400 → 724 ZION/blok (100+ let + tail ∞)', en: 'Decade Decay emission: 5,400 → 724 ZION/block (100+ years + tail ∞)' }
-    16_28b_genesis_reserve_public_summary: { cs: '16,28B genesis reserve (veřejný souhrn)', en: '16.28B genesis reserve (public summary)' }
+    '16_28b_genesis_reserve_public_summary': { cs: '16,28B genesis reserve (veřejný souhrn)', en: '16.28B genesis reserve (public summary)' }
     fee_burning_all_fees_destroyed: { cs: 'Spalování poplatků — VŠECHNY poplatky zničeny', en: 'Fee burning — ALL fees destroyed' }
     distribution_89_miner_5_humanit_5_issobella_1: { cs: 'Distribuce: 89% miner · 5% humanit. · 5% Issobella · 1% pool', en: 'Distribution: 89% miner · 5% humanit. · 5% Issobella · 1% pool' }
     dual_mining_zion_chv3_vrsc_verushash: { cs: 'Dual-mining: ZION (CHv3) + VRSC (VerusHash)', en: 'Dual-mining: ZION (CHv3) + VRSC (VerusHash)' }
@@ -1587,7 +1587,7 @@ const t = {
     defi_ui_swap_bridge_portfolio_on_zionterranov: { cs: 'DeFi UI — swap, bridge, portfolio na zionterranova.com/defi ✅', en: 'DeFi UI — swap, bridge, portfolio on zionterranova.com/defi ✅' }
     defi_pages_bridge_dao_warp_bilingual_mainnet: { cs: 'DeFi stránky — bridge/dao/warp bilingvální + mainnet ✅', en: 'DeFi pages — bridge/dao/warp bilingual + mainnet ✅' }
     liquidity_seeded_50_wzion_0_0005_weth: { cs: 'Likvidita nasazena: 50 wZION + 0.0005 WETH ✅', en: 'Liquidity seeded: 50 wZION + 0.0005 WETH ✅' }
-    2026_implementation_2027_gated_production: { cs: '2026 implementace · 2027 gated produkce', en: '2026 implementation · 2027 gated production' }
+    '2026_implementation_2027_gated_production': { cs: '2026 implementace · 2027 gated produkce', en: '2026 implementation · 2027 gated production' }
     ncl_ai_task_marketplace: { cs: 'NCL — AI task marketplace', en: 'NCL — AI task marketplace' }
     ethereum_corridor_live_on_base_mainnet: { cs: 'Ethereum corridor živě na Base Mainnet ✅', en: 'Ethereum corridor live on Base Mainnet ✅' }
     golden_egg_treasure_hunt_108_clues_8_25b_zion: { cs: 'Golden Egg poklad (108 stop, 8,25B ZION) — plánováno 2027', en: 'Golden Egg treasure hunt (108 clues, 8.25B ZION) — Planned 2027' }
@@ -1621,9 +1621,9 @@ const t = {
     p2p_rate_limiting_200_msgs_peer_60s_escalatin: { cs: 'P2P Rate-Limiting — 200 zpráv/peer/60s, eskalující bany', en: 'P2P Rate-Limiting — 200 msgs/peer/60s, escalating bans' }
     health_check_metrics_gethealthcheck_getmetric: { cs: 'Health Check & Metriky — getHealthCheck, getMetrics', en: 'Health Check & Metrics — getHealthCheck, getMetrics' }
     stress_test_suite_high_tx_rapid_blocks_partit: { cs: 'Stress Test Suite — vysoký TX, rychlé bloky, partition', en: 'Stress Test Suite — high TX, rapid blocks, partition' }
-    168h_stability_run_archived_multi_host_valida: { cs: '168h stabilita — archivovaný multi-host run, žádný kritický incident', en: '168h Stability Run — archived multi-host validation, no critical incident' }
+    '168h_stability_run_archived_multi_host_valida': { cs: '168h stabilita — archivovaný multi-host run, žádný kritický incident', en: '168h Stability Run — archived multi-host validation, no critical incident' }
     live_partition_test_node_isolation_30_min_rec: { cs: 'Live Partition Test — izolace nodu 30 min, reconnect', en: 'Live Partition Test — node isolation 30 min, reconnect' }
-    100_miners_stress_simulate_100_stratum_client: { cs: '100 minerů stres — simulace 100 Stratum klientů', en: '100 Miners Stress — simulate 100 Stratum clients' }
+    '100_miners_stress_simulate_100_stratum_client': { cs: '100 minerů stres — simulace 100 Stratum klientů', en: '100 Miners Stress — simulate 100 Stratum clients' }
     core_edge_topology_tailscale_vpn_sharerelay_p: { cs: 'Core + Edge Topology — Tailscale VPN, ShareRelay pool', en: 'Core + Edge Topology — Tailscale VPN, ShareRelay pool' }
     fee_split_89_5_5_1_canonical_addresses_genesi: { cs: 'Fee Split 89/5/5/1 — kanonické adresy, Genesis premine', en: 'Fee Split 89/5/5/1 — canonical addresses, Genesis premine' }
     node_ux_mining: { cs: 'Node UX & Těžba', en: 'Node UX & Mining' }
@@ -1649,13 +1649,13 @@ const t = {
     dress_rehearsal_staging_chain_1000_miners_dis: { cs: 'Dress Rehearsal — staging chain, 1000 minerů, disaster recovery', en: 'Dress Rehearsal — staging chain, 1000 miners, disaster recovery' }
     security_audit_rfp_kickoff_mid_review_final_b: { cs: 'Bezpečnostní audit — RFP, kickoff, mid-review, final, bug bounty', en: 'Security Audit — RFP, kickoff, mid-review, final, bug bounty' }
     code_freeze_feature_freeze_tag_v2_9_6_mainnet: { cs: 'Code Freeze — feature freeze, tag v2.9.6-mainnet, SHA-256', en: 'Code Freeze — feature freeze, tag v2.9.6-mainnet, SHA-256' }
-    7_day_stability_run_without_crash: { cs: '7denní stabilita bez havárie', en: '7-day stability run without crash' }
+    '7_day_stability_run_without_crash': { cs: '7denní stabilita bez havárie', en: '7-day stability run without crash' }
     security_audit_no_critical_high_findings: { cs: 'Bezpečnostní audit — žádné critical/high nálezy', en: 'Security audit — no critical/high findings' }
     code_freeze_tag_created: { cs: 'Code freeze — tag vytvořen', en: 'Code freeze — tag created' }
     binary_releases_with_sha_256: { cs: 'Binární release s SHA-256', en: 'Binary releases with SHA-256' }
     bug_bounty_program_active: { cs: 'Bug bounty program aktivní', en: 'Bug bounty program active' }
     public_launch_decision_genesis: { cs: 'Rozhodnutí o veřejném launchi & Genesis', en: 'Public Launch Decision & Genesis' }
-    target_31_december_2026_new_year: { cs: 'Target: 31. prosinec 2026 (Silvestr)', en: 'Target: 31 December 2026 (New Year\' }
+    target_31_december_2026_new_year: { cs: 'Target: 31. prosinec 2026 (Silvestr)', en: "Target: 31 December 2026 (New Year's Eve)" }
     final_payout_verification_pplns_window_valida: { cs: 'Finální payout verifikace — PPLNS window validace', en: 'Final payout verification — PPLNS window validation' }
     security_audit_external_firm_booked: { cs: 'Bezpečnostní audit — externí firma booked', en: 'Security audit — external firm booked' }
     bridge_validator_key_provisioning_3_5_thresho: { cs: 'Bridge validator provisioning — 3/5 threshold produkce', en: 'Bridge validator key provisioning — 3/5 threshold production' }
@@ -1673,9 +1673,9 @@ const t = {
     pool_solo_mining_open: { cs: 'Pool + solo mining otevřen', en: 'Pool + solo mining open' }
     block_explorer_live: { cs: 'Block explorer živě', en: 'Block explorer live' }
     supply_api_live: { cs: 'Supply API živě', en: 'Supply API live' }
-    6a_silent_mainnet: { cs: '6A: Tichý Mainnet', en: '6A: Silent Mainnet' }
+    '6a_silent_mainnet': { cs: '6A: Tichý Mainnet', en: '6A: Silent Mainnet' }
     days_1_30: { cs: 'Dny 1–30', en: 'Days 1–30' }
-    6b_dex_listings: { cs: '6B: DEX & Listingy', en: '6B: DEX & Listings' }
+    '6b_dex_listings': { cs: '6B: DEX & Listingy', en: '6B: DEX & Listings' }
     days_14_45: { cs: 'Dny 14–45', en: 'Days 14–45' }
     defi_ui_on_zionterranova_com_defi: { cs: 'DeFi UI na zionterranova.com/defi ✅', en: 'DeFi UI on zionterranova.com/defi ✅' }
     deepen_liquidity_price_discovery: { cs: 'Prohloubit likviditu + price discovery', en: 'Deepen liquidity + price discovery' }
@@ -1695,12 +1695,12 @@ const t = {
     phase_0_1_168h_pass_2_4_launch_gate: { cs: 'Fáze 0 ✅ → 1 🔄 (168h PASS) → 2–4 → launch gate', en: 'Phase 0 ✅ → 1 🔄 (168h PASS) → 2–4 → launch gate' }
     l2_defi_dex: { cs: 'L2 DeFi & DEX', en: 'L2 DeFi & DEX' }
     wzion_bridge_uni_v3_defi_ui_staking_planned: { cs: 'wZION Bridge ✅ · Uni V3 ✅ · DeFi UI ✅ · Staking plánován', en: 'wZION Bridge ✅ · Uni V3 ✅ · DeFi UI ✅ · Staking planned' }
-    2026_2027: { cs: '2026–2027', en: '2026–2027' }
+    '2026_2027': { cs: '2026–2027', en: '2026–2027' }
     warp_7_7_eth_corridor_ai_native: { cs: 'WARP 7/7 ✅ · ETH corridor ✅ · AI-native', en: 'WARP 7/7 ✅ · ETH corridor ✅ · AI-native' }
     ue5_xp_economy_beta: { cs: 'UE5 · XP ekonomie · Beta', en: 'UE5 · XP economy · Beta' }
     humanitarian_missions_free_energy: { cs: 'Humanitární mise · Volná energie', en: 'Humanitarian missions · Free energy' }
     orbital_station_fund: { cs: 'Orbitální stanice · Fond', en: 'Orbital Station · Fund' }
-    1_501_tests_passing: { cs: '1 501 testů prochází', en: '1,501 tests passing' }
+    '1_501_tests_passing': { cs: '1 501 testů prochází', en: '1,501 tests passing' }
     architecture: { cs: 'Architektura', en: 'Architecture' }
     each_layer_is_independent_l1_is_never_comprom: { cs: 'Každý layer je nezávislý. L1 nikdy nekompromitujeme kvůli vyšším vrstvám.', en: 'Each layer is independent. L1 is never compromised for higher layers.' }
     active: { cs: 'Aktivní', en: 'Active' }
@@ -1723,12 +1723,12 @@ const t = {
     tier_2_cex_after_volume: { cs: 'Tier-2 CEX (po volume)', en: 'Tier-2 CEX (after volume)' }
     launch_constitution_draft: { cs: 'Návrh Launch Constitution', en: 'Launch Constitution Draft' }
     frozen_parameters_for_potential_public_genesi: { cs: 'Zmrazené parametry pro případný veřejný genesis, ne potvrzení launche', en: 'Frozen parameters for potential public genesis, not a launch confirmation' }
-    16_280_000_000_zion_public_summary_for_launch: { cs: '16 280 000 000 ZION — veřejný souhrn pro launch ekonomiku', en: '16,280,000,000 ZION — public summary for launch economics' }
+    '16_280_000_000_zion_public_summary_for_launch': { cs: '16 280 000 000 ZION — veřejný souhrn pro launch ekonomiku', en: '16,280,000,000 ZION — public summary for launch economics' }
     security: { cs: 'Bezpečnost', en: 'Security' }
     launch_readiness_security_checklist: { cs: 'Security Checklist pro launch', en: 'Launch-Readiness Security Checklist' }
     completed: { cs: 'dokončeno', en: 'completed' }
     public_launch_gate_ready_for_launch: { cs: 'Public launch gate · Ready for launch', en: 'Public launch gate · Ready for launch' }
-    100_yrs_mining: { cs: '100+ let mining', en: '100+ yrs mining' }
+    '100_yrs_mining': { cs: '100+ let mining', en: '100+ yrs mining' }
     documentation: { cs: 'Dokumentace', en: 'Documentation' }
     live_dashboard: { cs: 'Živý dashboard', en: 'Live Dashboard' }
     last_updated: { cs: 'Poslední aktualizace', en: 'Last updated' }
@@ -1765,15 +1765,15 @@ const t = {
     auto_updates_system_tray_integration: { cs: 'Auto-updaty a integrace do system tray', en: 'Auto-updates & system tray integration' }
     remote_monitoring_gaming_mode: { cs: 'Vzdalene monitorovani a Gaming mode', en: 'Remote monitoring & Gaming mode' }
     available_for_windows_macos_linux: { cs: 'Dostupne pro Windows, macOS a Linux', en: 'Available for Windows, macOS & Linux' }
-    1_create_wallet: { cs: '1. Vytvoř peněženku', en: '1. Create Wallet' }
+    '1_create_wallet': { cs: '1. Vytvoř peněženku', en: '1. Create Wallet' }
     download_zion_cli_for_windows_below: { cs: 'Stáhni ZION CLI pro Windows níže', en: 'Download ZION CLI for Windows below' }
     write_down_24_words_on_paper_this_is_your_bac: { cs: 'Zapiš si 24 slov na papír — to je tvá záloha!', en: 'Write down 24 words on paper — this is your backup!' }
-    2_start_mining: { cs: '2. Spusť těžbu', en: '2. Start Mining' }
+    '2_start_mining': { cs: '2. Spusť těžbu', en: '2. Start Mining' }
     set_address_zion_config_set_miner_wallet_your: { cs: 'Nastav adresu: zion config set miner.wallet YOUR_ADDRESS', en: 'Set address: zion config set miner.wallet YOUR_ADDRESS' }
     watch_hashrate_accepted_shares_in_console: { cs: 'Sleduj hashrate a přijaté shares v konzoli', en: 'Watch hashrate & accepted shares in console' }
-    3_check_balance: { cs: '3. Zkontroluj zůstatek', en: '3. Check Balance' }
+    '3_check_balance': { cs: '3. Zkontroluj zůstatek', en: '3. Check Balance' }
     or_visit_the_explorer_at_zionterranova_com_ex: { cs: 'Nebo navštiv Explorer na zionterranova.com/explorer', en: 'Or visit the Explorer at zionterranova.com/explorer' }
-    1_unified_binary_4_platforms_windows_ready: { cs: '1 unifikovaná binárka · 4 platformy · Windows dostupný', en: '1 unified binary · 4 platforms · Windows ready' }
+    '1_unified_binary_4_platforms_windows_ready': { cs: '1 unifikovaná binárka · 4 platformy · Windows dostupný', en: '1 unified binary · 4 platforms · Windows ready' }
     download_mine_earn: { cs: 'Stahni. Tez. Vydelavej.', en: 'Download. Mine. Earn.' }
     and_more_download_the_windows_build_directly_: { cs: ' a další. Stáhněte si Windows build přímo níže, další platformy brzy.', en: ' and more. Download the Windows build directly below, more platforms coming soon.' }
     public_downloads: { cs: 'Verejne downloady', en: 'Public Downloads' }
@@ -1795,14 +1795,14 @@ const t = {
     as_a_premium_download_with_priority_support_a: { cs: 'jako premium download s prioritni podporou a auto-updaty. Pripojte se na ', en: 'as a premium download with priority support and auto-updates. Join ' }
     to_be_notified_when_it_launches: { cs: 'a dostanete upozorneni pri launchi.', en: 'to be notified when it launches.' }
     quick_start: { cs: 'Rychly start', en: 'Quick Start' }
-    3_steps_to_mining: { cs: '3 kroky k tezbe', en: '3 steps to mining' }
+    '3_steps_to_mining': { cs: '3 kroky k tezbe', en: '3 steps to mining' }
     step: { cs: 'Krok', en: 'Step' }
     hardware: { cs: 'Hardware', en: 'Hardware' }
     system_requirements: { cs: 'Systemove pozadavky', en: 'System Requirements' }
     minimum: { cs: 'Minimum', en: 'Minimum' }
-    2_core_cpu_2_gb_ram_100_mb_disk: { cs: '2jadrovy CPU, 2 GB RAM, 100 MB disk', en: '2-core CPU, 2 GB RAM, 100 MB disk' }
+    '2_core_cpu_2_gb_ram_100_mb_disk': { cs: '2jadrovy CPU, 2 GB RAM, 100 MB disk', en: '2-core CPU, 2 GB RAM, 100 MB disk' }
     recommended: { cs: 'Doporucene', en: 'Recommended' }
-    4_core_cpu_4_gb_ram_500_mb_ssd: { cs: '4+ jadrovy CPU, 4 GB RAM, 500 MB SSD', en: '4+ core CPU, 4 GB RAM, 500 MB SSD' }
+    '4_core_cpu_4_gb_ram_500_mb_ssd': { cs: '4+ jadrovy CPU, 4 GB RAM, 500 MB SSD', en: '4+ core CPU, 4 GB RAM, 500 MB SSD' }
     supported_os: { cs: 'Podporovane OS', en: 'Supported OS' }
     windows_10_11_linux_x86_64_arm64_macos_apple_: { cs: 'Windows 10/11, Linux (x86_64/ARM64), macOS (Apple Silicon)', en: 'Windows 10/11, Linux (x86_64/ARM64), macOS (Apple Silicon)' }
     network: { cs: 'Sit', en: 'Network' }
@@ -1896,7 +1896,7 @@ const t = {
     zion_dao: { cs: 'ZION DAO', en: 'ZION DAO' }
     planned_proof_of_care_governance: { cs: 'Plánováno — Proof-of-Care governance', en: 'Planned — Proof-of-Care governance' }
     min_cell: { cs: 'Min. buňka', en: 'Min. cell' }
-    3_5_permanent_guardians_seasonal: { cs: '3–5 stálých Guardians + sezónní', en: '3–5 permanent Guardians + seasonal' }
+    '3_5_permanent_guardians_seasonal': { cs: '3–5 stálých Guardians + sezónní', en: '3–5 permanent Guardians + seasonal' }
     humanitarian_commitment: { cs: 'Humanitární závazek', en: 'Humanitarian Commitment' }
     character_of_place: { cs: 'Charakter místa', en: 'Character of Place' }
     a_farm_on_the_edge_of_two_worlds: { cs: 'Farma na hranici dvou světů', en: 'A Farm on the Edge of Two Worlds' }
@@ -1977,7 +1977,7 @@ const t = {
     back_to_defi_hub: { cs: 'Zpět do DeFi Hub', en: 'Back to DeFi Hub' }
     governance: { cs: 'Governance', en: 'Governance' }
     zion_dao: { cs: 'ZION DAO', en: 'ZION DAO' }
-    1_token_1_vote: { cs: '1 token = 1 hlas', en: '1 token = 1 vote' }
+    '1_token_1_vote': { cs: '1 token = 1 hlas', en: '1 token = 1 vote' }
     quorum_based: { cs: 'Quorum-based', en: 'Quorum-based' }
     timelock_execution: { cs: 'Timelock exekuce', en: 'Timelock execution' }
     total_proposals: { cs: 'Návrhy celkem', en: 'Total Proposals' }
@@ -1993,7 +1993,7 @@ const t = {
     back_to_defi_hub: { cs: 'Zpět do DeFi Hub', en: 'Back to DeFi Hub' }
     defi: { cs: 'DeFi', en: 'DeFi' }
     yield_farming: { cs: 'Yield Farming', en: 'Yield Farming' }
-    90_day_halving: { cs: 'Halving každých 90 dní', en: '90-day halving' }
+    '90_day_halving': { cs: 'Halving každých 90 dní', en: '90-day halving' }
     reward_s: { cs: 'Odměna / s', en: 'Reward / s' }
     pools: { cs: 'Počet poolů', en: 'Pools' }
     total_alloc: { cs: 'Celkem alloc', en: 'Total Alloc' }
@@ -2196,13 +2196,13 @@ const t = {
     pool_groups: { cs: 'Skupiny poolu', en: 'Pool Groups' }
     pplns_reward_engine: { cs: 'PPLNS vyplatni engine', en: 'PPLNS Reward Engine' }
     cpu_load: { cs: 'CPU zatez', en: 'CPU Load' }
-    1m_5m_15m_average: { cs: 'prumer 1m / 5m / 15m', en: '1m / 5m / 15m average' }
+    '1m_5m_15m_average': { cs: 'prumer 1m / 5m / 15m', en: '1m / 5m / 15m average' }
     memory: { cs: 'Pamet', en: 'Memory' }
     server_uptime: { cs: 'Uptime serveru', en: 'Server Uptime' }
     since: { cs: 'od', en: 'since' }
     monitoring_stack: { cs: 'Monitoring stack', en: 'Monitoring Stack' }
     metrics_collection_alerting: { cs: 'Sber metrik a alerting', en: 'Metrics collection & alerting' }
-    22_panel_v3_dashboard: { cs: '22panelovy dashboard V3', en: '22-panel V3 dashboard' }
+    '22_panel_v3_dashboard': { cs: '22panelovy dashboard V3', en: '22-panel V3 dashboard' }
     host_cpu_ram_disk_network: { cs: 'Host CPU, RAM, disk, sit', en: 'Host CPU, RAM, disk, network' }
     redis_persistence_metrics: { cs: 'Metriky persistence Redisu', en: 'Redis persistence metrics' }
     alert_routing_notifications: { cs: 'Routing alertu a notifikace', en: 'Alert routing & notifications' }
@@ -2212,10 +2212,10 @@ const t = {
     mining_pool_metrics_20_counters_gauges: { cs: 'Mining pool /metrics (20+ counteru/gaugu)', en: 'Mining pool /metrics (20+ counters/gauges)' }
     secure_allowlisted_query_proxy: { cs: 'Bezpecny allowlist query proxy', en: 'Secure allowlisted query proxy' }
     website: { cs: 'Web', en: 'Website' }
-    30_live_prometheus_metrics: { cs: '30+ zivych Prometheus metrik', en: '30+ live Prometheus metrics' }
+    '30_live_prometheus_metrics': { cs: '30+ zivych Prometheus metrik', en: '30+ live Prometheus metrics' }
     instant_range_queries: { cs: 'Instantni + range dotazy', en: 'Instant + Range queries' }
     allowlisted_proxy_zion__node: { cs: 'Allowlist proxy (zion_*, node_*)', en: 'Allowlisted proxy (zion_*, node_*)' }
-    15s_auto_refresh: { cs: 'Auto-refresh 15 s', en: '15s auto-refresh' }
+    '15s_auto_refresh': { cs: 'Auto-refresh 15 s', en: '15s auto-refresh' }
     svg_sparklines_1h_history: { cs: 'SVG sparkliny (historie 1 h)', en: 'SVG sparklines (1h history)' }
   }},
   APP_WEB_website_v2_9_src_app_news_v3_int: {
@@ -2333,15 +2333,15 @@ const t = {
     research_phase_after_btc_bridge: { cs: 'Výzkumná fáze — po BTC mostu', en: 'Research phase — after BTC bridge' }
     utility: { cs: 'Využití', en: 'Utility' }
     game_assets_liquidity_routing_warp_swaps: { cs: 'Game assety, routing likvidity, warp swapy', en: 'Game assets, liquidity routing, warp swaps' }
-    1_provision_access: { cs: '1 · Zřízení přístupu', en: '1 · Provision access' }
+    '1_provision_access': { cs: '1 · Zřízení přístupu', en: '1 · Provision access' }
     whitelist_validators_or_fetch_public_endpoints: { cs: 'Whitelist validátorů nebo převzetí veřejných endpointů', en: 'Whitelist validators or fetch public endpoints' }
     generate_api_tokens_read_transfer_scopes: { cs: 'Vygenerujte API tokeny (read/transfer scopes)', en: 'Generate API tokens (read/transfer scopes)' }
     download_sdk_from_official_github: { cs: 'Stáhněte SDK z oficiálního GitHubu', en: 'Download SDK from official GitHub' }
-    2_wire_liquidity: { cs: '2 · Zapojení likvidity', en: '2 · Wire liquidity' }
+    '2_wire_liquidity': { cs: '2 · Zapojení likvidity', en: '2 · Wire liquidity' }
     lock_assets_into_chosen_corridor_pool: { cs: 'Uzamkněte aktiva do vybraného corridor poolu', en: 'Lock assets into chosen corridor pool' }
     set_validator_quorum_alert_webhooks: { cs: 'Nastavte validator quorum + alert webhooky', en: 'Set validator quorum + alert webhooks' }
     run_smoke_test_using_sandbox_chain_pairs: { cs: 'Spusťte smoke test na sandbox chain páru', en: 'Run smoke test using sandbox chain pairs' }
-    3_monitor_optimize: { cs: '3 · Monitorovat + optimalizovat', en: '3 · Monitor + optimize' }
+    '3_monitor_optimize': { cs: '3 · Monitorovat + optimalizovat', en: '3 · Monitor + optimize' }
     subscribe_to_validator_dashboard_streams: { cs: 'Odebírat streamy validator dashboardu', en: 'Subscribe to validator dashboard streams' }
     enable_compact_block_relay_metrics: { cs: 'Zapnout compact block relay metriky', en: 'Enable compact block relay metrics' }
     schedule_weekly_failover_incident_drills: { cs: 'Naplánovat týdenní failover + incident drills', en: 'Schedule weekly failover + incident drills' }
@@ -2433,7 +2433,7 @@ const t = {
     recent_blocks: { cs: 'Posledni bloky', en: 'Recent blocks' }
     txs: { cs: 'Tx', en: 'Txs' }
     no_block_feed_detected_from_api: { cs: 'Z API nebyl detekovan zadny block feed.', en: 'No block feed detected from API.' }
-    what: { cs: 'Co dal', en: 'What\' }
+    what: { cs: "Co dalsiho", en: "What's next" }
     operational_roadmap: { cs: 'Operacni roadmapa', en: 'Operational roadmap' }
     pulled_from_the_current_public_launch_path_and_reh: { cs: 'Prevzato z aktualni verejne launch cesty a rehearsal readiness materialu.', en: 'Pulled from the current public launch path and rehearsal-readiness material.' }
     open_roadmap: { cs: 'Otevrit roadmapu', en: 'Open roadmap' }
@@ -2489,7 +2489,7 @@ const t = {
     hashrate_timeline: { cs: 'Vyvoj hashratu', en: 'Hashrate Timeline' }
     live_hashrate_samples_collected_every_15_seconds: { cs: 'Zive vzorky hashratu sbirane kazdych 15 sekund.', en: 'Live hashrate samples collected every 15 seconds.' }
     current: { cs: 'Aktualne:', en: 'Current:' }
-    24h_avg: { cs: '24h prumer:', en: '24h avg:' }
+    '24h_avg': { cs: '24h prumer:', en: '24h avg:' }
     not_enough_data_for_chart: { cs: 'Pro graf zatim neni dost dat', en: 'Not enough data for chart' }
     mining: { cs: 'Tezba', en: 'Mining' }
     blocks_found_by_this_miner_on_the_pool: { cs: 'Bloky nalezene timto minerem v poolu.', en: 'Blocks found by this miner on the pool.' }
@@ -2629,7 +2629,7 @@ const t = {
     success_criteria: { cs: 'Kriteria uspechu', en: 'Success criteria' }
     block_height_matches: { cs: 'Vyska bloku odpovida ', en: 'Block height matches ' }
     explorer: { cs: 'Exploreru', en: 'Explorer' }
-    2_peers_connected: { cs: '2+ pripojene peery', en: '2+ peers connected' }
+    '2_peers_connected': { cs: '2+ pripojene peery', en: '2+ peers connected' }
     new_blocks_every_60_seconds: { cs: 'Nove bloky kazdych asi 60 sekund', en: 'New blocks every ~60 seconds' }
     rpc_responds_to_queries: { cs: 'RPC odpovida na dotazy', en: 'RPC responds to queries' }
     faq_troubleshooting: { cs: 'FAQ a troubleshooting', en: 'FAQ & Troubleshooting' }
@@ -2696,8 +2696,8 @@ const t = {
     roadmap: { cs: 'Roadmapa', en: 'Roadmap' }
     full_roadmap: { cs: 'Cela roadmapa', en: 'Full Roadmap' }
     block_explorer: { cs: 'Pruzkumnik blockchainu', en: 'Block Explorer' }
-    6_layer_vision: { cs: '6vrstva vize', en: '6-Layer Vision' }
-    6_layer_vision_after_the_pure_code_baseline: { cs: '6vrstva vize po Pure Code baseline', en: '6-layer vision — after the Pure Code baseline' }
+    '6_layer_vision': { cs: '6vrstva vize', en: '6-Layer Vision' }
+    '6_layer_vision_after_the_pure_code_baseline': { cs: '6vrstva vize po Pure Code baseline', en: '6-layer vision — after the Pure Code baseline' }
   }},
   APP_WEB_website_v2_9_src_components_Swap: {
     swap: { cs: 'Swap', en: 'Swap' }
@@ -2740,11 +2740,11 @@ const t = {
   }},
   APP_WEB_website_v2_9_src_components_api_: {
     curl_quick_ping: { cs: 'cURL rychly ping', en: 'cURL quick ping' }
-    1_authenticate: { cs: '1 · Autentizace', en: '1 · Authenticate' }
+    '1_authenticate': { cs: '1 · Autentizace', en: '1 · Authenticate' }
     get_routes_are_open_for_post_put_include_x_zion_ke: { cs: 'GET routy jsou otevrene. Pro POST/PUT pridejte do hlavicek x-zion-key; klice rotujte kazdych 30 dni.', en: 'GET routes are open. For POST/PUT include x-zion-key in headers; rotate keys every 30 days.' }
-    2_choose_transport: { cs: '2 · Zvolte transport', en: '2 · Choose transport' }
+    '2_choose_transport': { cs: '2 · Zvolte transport', en: '2 · Choose transport' }
     https_for_rpc_rest_websockets_for_stratum_metrics_: { cs: 'HTTPS pro RPC/REST, WebSockets pro stratum a metriky. Vsechny servery podporuji HTTP/2.', en: 'HTTPS for RPC/REST, WebSockets for stratum + metrics. All servers support HTTP/2.' }
-    3_pin_environment: { cs: '3 · Pripnete prostredi', en: '3 · Pin environment' }
+    '3_pin_environment': { cs: '3 · Pripnete prostredi', en: '3 · Pin environment' }
     sandbox_mirrors_production_at_https_api_sandbox_zi: { cs: 'Sandbox zrcadli produkci na https://api-sandbox.zionterranova.com s testnet daty.', en: 'Sandbox mirrors production at https://api-sandbox.zionterranova.com with testnet data.' }
     quickstart_snippets: { cs: 'Quickstart ukazky', en: 'Quickstart snippets' }
     copied: { cs: 'Zkopirovano', en: 'Copied' }
