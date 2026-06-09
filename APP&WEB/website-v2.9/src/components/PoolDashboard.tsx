@@ -332,12 +332,12 @@ export default function PoolDashboard() {
             <div className="space-y-5">
               <div className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/40 bg-zion-cyan/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-cyan uppercase">
                 <Pickaxe className="h-4 w-4" />
-                {SITE_RELEASE_LABEL} · {tr('poolDashboard', 'mining_pool', lang)}
+                {SITE_RELEASE_LABEL} · {cs ? 'Těžební pool' : 'Mining Pool'}
               </div>
               <div>
                 <p className="text-sm uppercase tracking-[0.4em] text-gray-400">Cosmic Harmony</p>
                 <h1 className="text-3xl sm:text-5xl md:text-6xl font-semibold text-gradient leading-tight">
-                  {tr('poolDashboard', 'mine_zion', lang)}
+                  {cs ? 'Těžte ZION' : 'Mine ZION'}
                 </h1>
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
@@ -347,20 +347,20 @@ export default function PoolDashboard() {
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Sparkles className="h-3 w-3 text-zion-gold" /> {tr('poolDashboard', 'live_data', lang)}
+                  <Sparkles className="h-3 w-3 text-zion-gold" /> {cs ? 'Živá data' : 'Live Data'}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Activity className="h-3 w-3 text-emerald-400" /> {tr('poolDashboard', 'auto_refresh_15s', lang)}
+                  <Activity className="h-3 w-3 text-emerald-400" /> {cs ? 'Auto-refresh 15 s' : 'Auto-Refresh 15s'}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Globe className="h-3 w-3 text-zion-cyan" /> {data?.servers.length ?? 1} {tr('poolDashboard', 'public_pool_host', lang)}
+                  <Globe className="h-3 w-3 text-zion-cyan" /> {data?.servers.length ?? 1} {cs ? 'veřejný pool host' : 'Public Pool Host'}
                 </span>
               </div>
             </div>
             {/* Stratum quick connect */}
             <div className="w-full lg:max-w-md space-y-3">
               <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur p-5">
-                <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{tr('poolDashboard', 'quick_connect', lang)}</p>
+                <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{cs ? 'Rychlé připojení' : 'Quick Connect'}</p>
                 <div className="space-y-2">
                   {(data?.servers ?? []).filter(s => s.online).map(s => (
                     <div key={s.id} className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
@@ -373,7 +373,7 @@ export default function PoolDashboard() {
                   ))}
                 </div>
                 <a href="#start-mining" className="mt-3 inline-flex items-center gap-2 text-sm text-zion-cyan hover:text-white transition-colors">
-                  {tr('poolDashboard', 'getting_started_guide', lang)} <ArrowRight className="h-3.5 w-3.5" />
+                  {cs ? 'Průvodce začátkem' : 'Getting started guide'} <ArrowRight className="h-3.5 w-3.5" />
                 </a>
               </div>
             </div>
@@ -392,7 +392,7 @@ export default function PoolDashboard() {
               const addr = minerSearch.trim().toLowerCase();
               if (!addr) return;
               if (!addr.startsWith("zion1") || addr.length < 20) {
-                setSearchError(tr('poolDashboard', 'invalid_zion_address_must_start_with_zio', lang));
+                setSearchError(cs ? 'Neplatná ZION adresa — musí začínat na zion1' : 'Invalid ZION address — must start with zion1');
                 return;
               }
               setSearchError("");
@@ -407,7 +407,7 @@ export default function PoolDashboard() {
                   type="text"
                   value={minerSearch}
                   onChange={(e) => { setMinerSearch(e.target.value); setSearchError(""); }}
-                  placeholder={tr('poolDashboard', 'enter_your_zion_address_to_view_miner_st', lang)}
+                  placeholder={cs ? 'Zadejte svou ZION adresu pro zobrazení statistik minera...' : 'Enter your ZION address to view miner stats...'}
                   className={`w-full rounded-xl border ${searchError ? 'border-red-500/60' : 'border-white/10'} bg-white/5 pl-12 pr-4 py-3 text-sm text-white placeholder:text-gray-500 outline-none focus:border-zion-cyan/50 focus:ring-1 focus:ring-zion-cyan/30 transition-colors font-mono`}
                 />
                 {searchError && (
@@ -418,7 +418,7 @@ export default function PoolDashboard() {
                 type="submit"
                 className="rounded-xl bg-linear-to-r from-zion-purple to-zion-cyan px-6 py-3 text-sm font-semibold text-white hover:opacity-90 transition-opacity whitespace-nowrap"
               >
-                {tr('poolDashboard', 'search_miner', lang)}
+                {cs ? 'Najít minera' : 'Search Miner'}
               </button>
             </div>
           </form>
@@ -431,12 +431,12 @@ export default function PoolDashboard() {
           transition={{ delay: 0.06 }}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tr('poolDashboard', 'telemetry', lang)}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Telemetrie' : 'Telemetry'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Activity className="h-7 w-7 text-emerald-400" />
-              {tr('poolDashboard', 'pool_statistics', lang)}
+              {cs ? 'Statistiky poolu' : 'Pool Statistics'}
             </h2>
-            <p className="text-sm text-gray-400">{tr('poolDashboard', 'real_time_metrics_aggregated_from_the_pu', lang)}</p>
+            <p className="text-sm text-gray-400">{cs ? 'Metriky v reálném čase agregované z veřejného pool API na Zion2.' : 'Real-time metrics aggregated from the public pool API on Zion2.'}</p>
           </div>
 
           {loading ? (
@@ -451,18 +451,18 @@ export default function PoolDashboard() {
             </div>
           ) : data ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
-              <StatCard icon={<Activity className="h-5 w-5" />} color="text-emerald-400" bg="bg-emerald-400/10" label={tr('poolDashboard', 'pool_hashrate', lang)} value={fmtHashOrPending(data.aggregate.hashrate)} sub={data.aggregate.hashrate > 0 ? `${tr('poolDashboard', '24h_avg', lang)}: ${fmtHash(data.aggregate.hashrate_24h)}` : (tr('poolDashboard', 'live_backend_is_not_exporting_hashrate_y', lang))} />
-              <StatCard icon={<Users className="h-5 w-5" />} color="text-purple-400" bg="bg-purple-400/10" label={tr('poolDashboard', 'active_miners', lang)} value={String(data.aggregate.active_miners)} sub={cs ? `${data.aggregate.total_miners} celkem registrovaných` : `${data.aggregate.total_miners} total registered`} />
-              <StatCard icon={<Layers className="h-5 w-5" />} color="text-zion-gold" bg="bg-zion-gold/10" label={tr('poolDashboard', 'blocks_found', lang)} value={fmtNum(data.aggregate.blocks_found)} />
-              <StatCard icon={<Shield className="h-5 w-5" />} color="text-emerald-400" bg="bg-emerald-400/10" label={tr('poolDashboard', 'share_efficiency', lang)} value={`${data.aggregate.share_efficiency}%`} sub={cs ? `${fmtNum(data.aggregate.valid_shares)} validních` : `${fmtNum(data.aggregate.valid_shares)} valid`} />
-              <StatCard icon={<Check className="h-5 w-5" />} color="text-teal-400" bg="bg-teal-400/10" label={tr('poolDashboard', 'accept_rate', lang)} value={fmtPct(data.aggregate.accept_rate_pct)} sub={cs ? `${fmtNum(data.aggregate.accepted_total)} přijatých` : `${fmtNum(data.aggregate.accepted_total)} accepted`} />
-              <StatCard icon={<XCircle className="h-5 w-5" />} color="text-orange-400" bg="bg-orange-400/10" label={tr('poolDashboard', 'rejected_shares', lang)} value={fmtNum(data.aggregate.rejected_total)} sub={cs ? `${fmtNum(data.aggregate.submits_total)} submitů celkem` : `${fmtNum(data.aggregate.submits_total)} total submits`} />
-              <StatCard icon={<Globe className="h-5 w-5" />} color="text-blue-400" bg="bg-blue-400/10" label={tr('poolDashboard', 'servers_online', lang)} value={`${data.servers.filter(s => s.online).length} / ${data.servers.length}`} />
-              <StatCard icon={<Heart className="h-5 w-5" />} color="text-pink-400" bg="bg-pink-400/10" label={tr('poolDashboard', 'miner_share', lang)} value={`${data.fee.miner_share}%`} sub={cs ? `${data.fee.pool_fee}% fee` : `${data.fee.pool_fee}% fee`} />
+              <StatCard icon={<Activity className="h-5 w-5" />} color="text-emerald-400" bg="bg-emerald-400/10" label={cs ? 'Hashrate poolu' : 'Pool Hashrate'} value={fmtHashOrPending(data.aggregate.hashrate)} sub={data.aggregate.hashrate > 0 ? `${cs ? '24h průměr' : '24h avg'}: ${fmtHash(data.aggregate.hashrate_24h)}` : (cs ? 'Živý backend zatím hashrate neexportuje' : 'Live backend is not exporting hashrate yet')} />
+              <StatCard icon={<Users className="h-5 w-5" />} color="text-purple-400" bg="bg-purple-400/10" label={cs ? 'Aktivní mineři' : 'Active Miners'} value={String(data.aggregate.active_miners)} sub={cs ? `${data.aggregate.total_miners} celkem registrovaných` : `${data.aggregate.total_miners} total registered`} />
+              <StatCard icon={<Layers className="h-5 w-5" />} color="text-zion-gold" bg="bg-zion-gold/10" label={cs ? 'Nalezené bloky' : 'Blocks Found'} value={fmtNum(data.aggregate.blocks_found)} />
+              <StatCard icon={<Shield className="h-5 w-5" />} color="text-emerald-400" bg="bg-emerald-400/10" label={cs ? 'Efektivita share' : 'Share Efficiency'} value={`${data.aggregate.share_efficiency}%`} sub={cs ? `${fmtNum(data.aggregate.valid_shares)} validních` : `${fmtNum(data.aggregate.valid_shares)} valid`} />
+              <StatCard icon={<Check className="h-5 w-5" />} color="text-teal-400" bg="bg-teal-400/10" label={cs ? 'Míra přijetí' : 'Accept Rate'} value={fmtPct(data.aggregate.accept_rate_pct)} sub={cs ? `${fmtNum(data.aggregate.accepted_total)} přijatých` : `${fmtNum(data.aggregate.accepted_total)} accepted`} />
+              <StatCard icon={<XCircle className="h-5 w-5" />} color="text-orange-400" bg="bg-orange-400/10" label={cs ? 'Odmítnuté shares' : 'Rejected Shares'} value={fmtNum(data.aggregate.rejected_total)} sub={cs ? `${fmtNum(data.aggregate.submits_total)} submitů celkem` : `${fmtNum(data.aggregate.submits_total)} total submits`} />
+              <StatCard icon={<Globe className="h-5 w-5" />} color="text-blue-400" bg="bg-blue-400/10" label={cs ? 'Servery online' : 'Servers Online'} value={`${data.servers.filter(s => s.online).length} / ${data.servers.length}`} />
+              <StatCard icon={<Heart className="h-5 w-5" />} color="text-pink-400" bg="bg-pink-400/10" label={cs ? 'Podíl minera' : 'Miner Share'} value={`${data.fee.miner_share}%`} sub={cs ? `${data.fee.pool_fee}% fee` : `${data.fee.pool_fee}% fee`} />
               <StatCard icon={<HardHat className="h-5 w-5" />} color="text-purple-400" bg="bg-purple-400/10" label="PPLNS Fill" value={fmtPct(data.pplns.window_pct)} sub={cs ? `${fmtNum(data.pplns.window_used)} / ${fmtNum(data.pplns.window_size)} share` : `${fmtNum(data.pplns.window_used)} / ${fmtNum(data.pplns.window_size)} shares`} />
-              <StatCard icon={<Wallet className="h-5 w-5" />} color="text-zion-gold" bg="bg-zion-gold/10" label={tr('poolDashboard', 'total_paid', lang)} value={`${data.pplns.total_paid_zion.toFixed(2)} ZION`} sub={cs ? `${fmtNum(data.pplns.payout_rounds)} payout kol` : `${fmtNum(data.pplns.payout_rounds)} payout rounds`} />
-              <StatCard icon={<Cpu className="h-5 w-5" />} color="text-zion-cyan" bg="bg-zion-cyan/10" label={tr('poolDashboard', 'network_hashrate', lang)} value={fmtHashOrPending(data.runtime.network_hashrate, tr('poolDashboard', 'offline', lang))} sub={cs ? `Výška ${fmtNum(data.runtime.chain_height)}` : `Height ${fmtNum(data.runtime.chain_height)}`} />
-              <StatCard icon={<Bell className="h-5 w-5" />} color="text-blue-400" bg="bg-blue-400/10" label={tr('poolDashboard', 'template_fees', lang)} value={`${data.runtime.template_fees_zion.toFixed(4)} ZION`} sub={cs ? `Obtížnost ${fmtDifficulty(data.runtime.difficulty)}` : `Difficulty ${fmtDifficulty(data.runtime.difficulty)}`} />
+              <StatCard icon={<Wallet className="h-5 w-5" />} color="text-zion-gold" bg="bg-zion-gold/10" label={cs ? 'Celkem vyplaceno' : 'Total Paid'} value={`${data.pplns.total_paid_zion.toFixed(2)} ZION`} sub={cs ? `${fmtNum(data.pplns.payout_rounds)} payout kol` : `${fmtNum(data.pplns.payout_rounds)} payout rounds`} />
+              <StatCard icon={<Cpu className="h-5 w-5" />} color="text-zion-cyan" bg="bg-zion-cyan/10" label={cs ? 'Síťový hashrate' : 'Network Hashrate'} value={fmtHashOrPending(data.runtime.network_hashrate, cs ? 'Offline' : 'Offline')} sub={cs ? `Výška ${fmtNum(data.runtime.chain_height)}` : `Height ${fmtNum(data.runtime.chain_height)}`} />
+              <StatCard icon={<Bell className="h-5 w-5" />} color="text-blue-400" bg="bg-blue-400/10" label={cs ? 'Template fees' : 'Template Fees'} value={`${data.runtime.template_fees_zion.toFixed(4)} ZION`} sub={cs ? `Obtížnost ${fmtDifficulty(data.runtime.difficulty)}` : `Difficulty ${fmtDifficulty(data.runtime.difficulty)}`} />
               {data.servers.filter(s => s.stats?.blockchain?.connected).map(srv => (
                 <StatCard
                   key={srv.id}
@@ -488,7 +488,7 @@ export default function PoolDashboard() {
           ) : (
             <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-6 text-center">
               <XCircle className="h-8 w-8 text-red-400 mx-auto mb-3" />
-              <p className="text-gray-400">{tr('poolDashboard', 'pool_data_unavailable_servers_may_be_off', lang)}</p>
+              <p className="text-gray-400">{cs ? 'Data poolu nejsou dostupná. Servery mohou být offline.' : 'Pool data unavailable. Servers may be offline.'}</p>
             </div>
           )}
         </motion.section>
@@ -501,12 +501,12 @@ export default function PoolDashboard() {
           transition={{ delay: 0.07 }}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tr('poolDashboard', 'performance', lang)}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Výkon' : 'Performance'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <TrendingUp className="h-7 w-7 text-emerald-400" />
-              {tr('poolDashboard', 'pool_performance', lang)}
+              {cs ? 'Výkon poolu' : 'Pool Performance'}
             </h2>
-            <p className="text-sm text-gray-400">{tr('poolDashboard', 'live_hashrate_chart_network_share_and_po', lang)}</p>
+            <p className="text-sm text-gray-400">{cs ? 'Živý graf hashrate, podíl na síti a statistika štěstí poolu.' : 'Live hashrate chart, network share, and pool luck statistics.'}</p>
           </div>
 
           <div className="grid gap-5 lg:grid-cols-[2fr_1fr]">
@@ -514,11 +514,11 @@ export default function PoolDashboard() {
             <div className="rounded-3xl border border-white/10 bg-black/60 backdrop-blur-xl p-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <p className="text-xs text-gray-500 uppercase tracking-wider">{tr('poolDashboard', 'pool_hashrate_last_hour', lang)}</p>
+                  <p className="text-xs text-gray-500 uppercase tracking-wider">{cs ? 'Hashrate poolu (poslední hodina)' : 'Pool Hashrate (last hour)'}</p>
                   <p className="text-2xl font-bold text-emerald-400 font-mono mt-1">{fmtHash(data.aggregate.hashrate)}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs text-gray-500">{tr('poolDashboard', '24h_average', lang)}</p>
+                  <p className="text-xs text-gray-500">{cs ? '24h průměr' : '24h average'}</p>
                   <p className="text-sm font-mono text-gray-300">{fmtHash(data.aggregate.hashrate_24h)}</p>
                 </div>
               </div>
@@ -529,7 +529,7 @@ export default function PoolDashboard() {
             <div className="space-y-4">
               {/* Network Share */}
               <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5">
-                <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{tr('poolDashboard', 'network_share', lang)}</p>
+                <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{cs ? 'Podíl na síti' : 'Network Share'}</p>
                 {(() => {
                   const netHash = data.runtime.network_hashrate ?? 0;
                   const poolHash = data.aggregate.hashrate ?? 0;
@@ -542,7 +542,7 @@ export default function PoolDashboard() {
                       </div>
                       <div className="mt-2 flex justify-between text-[10px] text-gray-500">
                         <span>Pool: {fmtHash(poolHash)}</span>
-                        <span>{tr('poolDashboard', 'network', lang)}: {fmtHash(netHash)}</span>
+                        <span>{cs ? 'Síť' : 'Network'}: {fmtHash(netHash)}</span>
                       </div>
                     </>
                   );
@@ -551,7 +551,7 @@ export default function PoolDashboard() {
 
               {/* Pool Luck */}
               <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5">
-                <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">{tr('poolDashboard', 'pool_luck', lang)}</p>
+                <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">{cs ? 'Štěstí poolu' : 'Pool Luck'}</p>
                 {(() => {
                   const netHash = data.runtime.network_hashrate ?? 0;
                   const poolHash = data.aggregate.hashrate ?? 0;
@@ -564,7 +564,7 @@ export default function PoolDashboard() {
                     <>
                       <p className={`text-2xl font-bold font-mono ${luckColor}`}>{luck > 0 ? `${luck.toFixed(0)}%` : '—'}</p>
                       <p className="text-[11px] text-gray-500 mt-1">
-                        {blocksFound} {tr('poolDashboard', 'found', lang)} / {expectedBlocks.toFixed(1)} {tr('poolDashboard', 'expected', lang)}
+                        {blocksFound} {cs ? 'nalezeno' : 'found'} / {expectedBlocks.toFixed(1)} {cs ? 'očekáváno' : 'expected'}
                       </p>
                     </>
                   );
@@ -573,7 +573,7 @@ export default function PoolDashboard() {
 
               {/* Pending Payouts */}
               <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5">
-                <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">{tr('poolDashboard', 'pending_payouts', lang)}</p>
+                <p className="text-xs text-gray-500 uppercase tracking-wider mb-2">{cs ? 'Čekající výplaty' : 'Pending Payouts'}</p>
                 {(() => {
                   const srv = data.servers.find(s => s.stats?.payouts);
                   const pending = srv?.stats?.payouts;
@@ -582,7 +582,7 @@ export default function PoolDashboard() {
                   return (
                     <>
                       <p className="text-2xl font-bold text-amber-400 font-mono">{pendingZion} ZION</p>
-                      <p className="text-[11px] text-gray-500 mt-1">{pendingMiners} {tr('poolDashboard', 'miners_queued', lang)}</p>
+                      <p className="text-[11px] text-gray-500 mt-1">{pendingMiners} {cs ? 'minerů čeká' : 'miners queued'}</p>
                     </>
                   );
                 })()}
@@ -599,12 +599,12 @@ export default function PoolDashboard() {
           transition={{ delay: 0.08 }}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tr('poolDashboard', 'operations', lang)}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Provoz' : 'Operations'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <TrendingUp className="h-7 w-7 text-zion-cyan" />
-              {tr('poolDashboard', 'pool_runtime_overview', lang)}
+              {cs ? 'Přehled runtime poolu' : 'Pool Runtime Overview'}
             </h2>
-            <p className="text-sm text-gray-400">{tr('poolDashboard', 'submission_flow_pplns_engine_fill_and_pa', lang)}</p>
+            <p className="text-sm text-gray-400">{cs ? 'Tok submitů, naplnění PPLNS enginu a payout throughput čerpané z živé telemetrie poolu.' : 'Submission flow, PPLNS engine fill, and payout throughput sourced from live pool telemetry.'}</p>
           </div>
 
           <div className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
@@ -626,10 +626,10 @@ export default function PoolDashboard() {
                     <div key={name} className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4">
                       <p className="text-[11px] uppercase tracking-[0.3em] text-gray-500">{name}</p>
                       <p className="mt-2 text-2xl font-semibold text-white font-mono">{fmtNum(group.accepted)}</p>
-                      <p className="text-xs text-gray-500">{tr('poolDashboard', 'accepted_shares', lang)}</p>
+                      <p className="text-xs text-gray-500">{cs ? 'přijaté shares' : 'accepted shares'}</p>
                       <div className="mt-3 space-y-1 text-xs">
-                        <div className="flex items-center justify-between text-gray-400"><span>{tr('poolDashboard', 'submits', lang)}</span><span className="font-mono text-gray-200">{fmtNum(group.submits)}</span></div>
-                        <div className="flex items-center justify-between text-gray-400"><span>{tr('poolDashboard', 'accept_rate_1', lang)}</span><span className="font-mono text-zion-cyan">{fmtPct(groupRate)}</span></div>
+                        <div className="flex items-center justify-between text-gray-400"><span>{cs ? 'Submity' : 'Submits'}</span><span className="font-mono text-gray-200">{fmtNum(group.submits)}</span></div>
+                        <div className="flex items-center justify-between text-gray-400"><span>{cs ? 'Míra přijetí' : 'Accept rate'}</span><span className="font-mono text-zion-cyan">{fmtPct(groupRate)}</span></div>
                       </div>
                     </div>
                   );
@@ -642,7 +642,7 @@ export default function PoolDashboard() {
               <div className="space-y-4">
                 <div>
                   <div className="flex items-center justify-between text-sm mb-2">
-                    <span className="text-gray-400">{tr('poolDashboard', 'window_utilization', lang)}</span>
+                    <span className="text-gray-400">{cs ? 'Využití okna' : 'Window utilization'}</span>
                     <span className="text-white font-mono">{fmtPct(data?.pplns?.window_pct)}</span>
                   </div>
                   <div className="h-3 rounded-full bg-white/5 overflow-hidden">
@@ -655,34 +655,34 @@ export default function PoolDashboard() {
 
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4">
-                    <p className="text-xs text-gray-500">{tr('poolDashboard', 'registered_miners', lang)}</p>
+                    <p className="text-xs text-gray-500">{cs ? 'Registrovaní mineři' : 'Registered miners'}</p>
                     <p className="mt-1 text-xl font-semibold text-white font-mono">{fmtNum(data?.pplns?.registered_miners)}</p>
                   </div>
                   <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4">
-                    <p className="text-xs text-gray-500">{tr('poolDashboard', 'payout_rounds', lang)}</p>
+                    <p className="text-xs text-gray-500">{cs ? 'Payout kola' : 'Payout rounds'}</p>
                     <p className="mt-1 text-xl font-semibold text-white font-mono">{fmtNum(data?.pplns?.payout_rounds)}</p>
                   </div>
                   <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4">
-                    <p className="text-xs text-gray-500">{tr('poolDashboard', 'total_paid_1', lang)}</p>
+                    <p className="text-xs text-gray-500">{cs ? 'Celkem vyplaceno' : 'Total paid'}</p>
                     <p className="mt-1 text-xl font-semibold text-white font-mono">{(data?.pplns?.total_paid_zion ?? 0).toFixed(4)}</p>
                     <p className="text-xs text-gray-500">ZION</p>
                   </div>
                   <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4">
-                    <p className="text-xs text-gray-500">{tr('poolDashboard', 'pool_uptime', lang)}</p>
+                    <p className="text-xs text-gray-500">{cs ? 'Uptime poolu' : 'Pool uptime'}</p>
                     <p className="mt-1 text-xl font-semibold text-white font-mono">{fmtUptime(data?.runtime?.pool_uptime_seconds)}</p>
                   </div>
                 </div>
 
                 <div className="rounded-2xl border border-zion-cyan/20 bg-zion-cyan/10 p-4 text-sm text-zion-cyan">
                   <div className="flex items-center justify-between gap-3">
-                    <span>{tr('poolDashboard', 'telemetry_status', lang)}</span>
+                    <span>{cs ? 'Stav telemetrie' : 'Telemetry status'}</span>
                     <span className="font-mono text-xs text-white">
                       pool {data?.runtime?.data_sources?.pool_tcp ? 'on' : 'off'} · rpc {data?.runtime?.data_sources?.core_rpc ? 'on' : 'off'} · prom {data?.runtime?.data_sources?.prometheus ? 'on' : 'off'}
                     </span>
                   </div>
                   {data?.aggregate?.hashrate !== undefined && data.aggregate.hashrate <= 0 && (
                     <p className="mt-2 text-xs text-zion-cyan/80">
-                      {tr('poolDashboard', 'pool_hashrate_is_still_unavailable_on_th', lang)}
+                      {cs ? 'Hashrate poolu zatím není v živém backend exporteru dostupný, proto stránka upřednostňuje routing, PPLNS a zdraví chain runtime.' : 'Pool hashrate is still unavailable on the live backend exporter, so the page prioritizes routing, PPLNS, and chain runtime health.'}
                     </p>
                   )}
                 </div>
@@ -698,12 +698,12 @@ export default function PoolDashboard() {
           transition={{ delay: 0.1 }}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tr('poolDashboard', 'infrastructure', lang)}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Infrastruktura' : 'Infrastructure'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Server className="h-7 w-7 text-zion-gold" />
-              {tr('poolDashboard', 'pool_servers', lang)}
+              {cs ? 'Pool servery' : 'Pool Servers'}
             </h2>
-            <p className="text-sm text-gray-400">{tr('poolDashboard', 'current_public_pool_host_and_stratum_end', lang)}</p>
+            <p className="text-sm text-gray-400">{cs ? 'Aktuální veřejný pool host a stratum endpoint vystavený na primárním serveru.' : 'Current public pool host and stratum endpoint exposed on the primary server.'}</p>
           </div>
 
           <div className="grid gap-6 md:grid-cols-2">
@@ -732,29 +732,29 @@ export default function PoolDashboard() {
                       }`}
                     >
                       {!srv.online ? (
-                        <><XCircle className="h-3 w-3" /> {tr('poolDashboard', 'offline', lang)}</>
+                        <><XCircle className="h-3 w-3" /> {cs ? 'Offline' : 'Offline'}</>
                       ) : connected && active ? (
-                        <><CircleDot className="h-3 w-3" /> {tr('poolDashboard', 'mining', lang)}</>
+                        <><CircleDot className="h-3 w-3" /> {cs ? 'Těží' : 'Mining'}</>
                       ) : connected ? (
-                        <><CircleDot className="h-3 w-3" /> {tr('poolDashboard', 'idle', lang)}</>
+                        <><CircleDot className="h-3 w-3" /> {cs ? 'Nečinný' : 'Idle'}</>
                       ) : (
-                        <><XCircle className="h-3 w-3" /> {tr('poolDashboard', 'disconnected', lang)}</>
+                        <><XCircle className="h-3 w-3" /> {cs ? 'Odpojen' : 'Disconnected'}</>
                       )}
                     </span>
                   </div>
                   {srv.stats ? (
                     <div className="grid grid-cols-2 gap-x-6 gap-y-3">
                       <MiniStat label="Hashrate" value={fmtHash(srv.stats.hashrate?.pool)} highlight />
-                      <MiniStat label={tr('poolDashboard', 'active_total', lang)} value={`${srv.stats.miners?.active ?? 0} / ${srv.stats.miners?.total ?? 0}`} />
-                      <MiniStat label={tr('poolDashboard', 'valid_shares', lang)} value={fmtNum(srv.stats.shares?.valid)} />
-                      <MiniStat label={tr('poolDashboard', 'invalid', lang)} value={String(srv.stats.shares?.invalid ?? 0)} />
-                      <MiniStat label={tr('poolDashboard', 'blocks_found', lang)} value={fmtNum(srv.stats.blocks?.found)} />
+                      <MiniStat label={cs ? 'Aktivní / Celkem' : 'Active / Total'} value={`${srv.stats.miners?.active ?? 0} / ${srv.stats.miners?.total ?? 0}`} />
+                      <MiniStat label={cs ? 'Validní shares' : 'Valid Shares'} value={fmtNum(srv.stats.shares?.valid)} />
+                      <MiniStat label={cs ? 'Neplatné' : 'Invalid'} value={String(srv.stats.shares?.invalid ?? 0)} />
+                      <MiniStat label={cs ? 'Nalezené bloky' : 'Blocks Found'} value={fmtNum(srv.stats.blocks?.found)} />
                       <MiniStat label="PPLNS Window" value={fmtNum(srv.stats.pplns_window_size)} />
-                      <MiniStat label={tr('poolDashboard', 'height', lang)} value={fmtNum(srv.stats.blockchain?.height)} />
+                      <MiniStat label={cs ? 'Výška' : 'Height'} value={fmtNum(srv.stats.blockchain?.height)} />
                       <MiniStat label="Uptime" value={fmtUptime(srv.stats.pool?.uptime_secs)} />
                     </div>
                   ) : (
-                    <p className="text-sm text-gray-500">{tr('poolDashboard', 'no_data_available', lang)}</p>
+                    <p className="text-sm text-gray-500">{cs ? 'Data nejsou dostupná' : 'No data available'}</p>
                   )}
                   <div className="mt-4 pt-4 border-t border-white/[0.06] flex items-center gap-2">
                     <Terminal className="h-3.5 w-3.5 text-gray-500" />
@@ -774,12 +774,12 @@ export default function PoolDashboard() {
           transition={{ delay: 0.14 }}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tr('poolDashboard', 'economics', lang)}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Ekonomika' : 'Economics'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Wallet className="h-7 w-7 text-purple-400" />
-              {tr('poolDashboard', 'reward_distribution', lang)}
+              {cs ? 'Distribuce odměn' : 'Reward Distribution'}
             </h2>
-            <p className="text-sm text-gray-400">{tr('poolDashboard', 'pplns_pay_per_last_n_shares_fair_and_tra', lang)}</p>
+            <p className="text-sm text-gray-400">{cs ? 'PPLNS — Pay Per Last N Shares. Férový a transparentní mechanismus odměn.' : 'PPLNS — Pay Per Last N Shares. Fair and transparent reward mechanism.'}</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -788,8 +788,8 @@ export default function PoolDashboard() {
                 <HardHat className="h-7 w-7 text-purple-400" />
               </div>
               <p className="text-4xl font-bold text-purple-400 font-mono">{data?.fee.miner_share ?? 89}%</p>
-              <h3 className="mt-2 text-base font-semibold text-white">{tr('poolDashboard', 'miner_reward', lang)}</h3>
-              <p className="mt-1 text-xs text-gray-500">{tr('poolDashboard', 'direct_to_your_wallet_every_payout_cycle', lang)}</p>
+              <h3 className="mt-2 text-base font-semibold text-white">{cs ? 'Odměna minera' : 'Miner Reward'}</h3>
+              <p className="mt-1 text-xs text-gray-500">{cs ? 'Přímo do vaší peněženky v každém payout cyklu' : 'Direct to your wallet every payout cycle'}</p>
             </div>
             <div className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6 text-center">
               <div className="flex items-center justify-center h-14 w-14 rounded-2xl bg-pink-400/10 mx-auto mb-4">
@@ -829,24 +829,24 @@ export default function PoolDashboard() {
           id="miners"
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tr('poolDashboard', 'directory', lang)}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Adresář' : 'Directory'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Users className="h-7 w-7 text-zion-cyan" />
-              {tr('poolDashboard', 'active_miners', lang)} ({visibleMiners.length})
+              {cs ? 'Aktivní mineři' : 'Active Miners'} ({visibleMiners.length})
             </h2>
-            <p className="text-sm text-gray-400">{tr('poolDashboard', 'recent_miner_directory_from_the_live_poo', lang)}</p>
+            <p className="text-sm text-gray-400">{cs ? 'Aktuální adresář minerů z živého pool backendu. Pro detail konkrétní adresy použijte vyhledávání výše.' : 'Recent miner directory from the live pool backend. Use miner search for full address-level detail.'}</p>
             <div className="mt-1 inline-flex rounded-xl border border-white/10 bg-white/5 p-1">
               <button
                 onClick={() => setActiveOnly(true)}
                 className={`px-3 py-1.5 text-xs rounded-lg transition ${activeOnly ? 'bg-zion-cyan/20 text-zion-cyan' : 'text-gray-400 hover:text-white'}`}
               >
-                {tr('poolDashboard', 'active_only', lang)}
+                {cs ? 'Jen aktivní' : 'Active only'}
               </button>
               <button
                 onClick={() => setActiveOnly(false)}
                 className={`px-3 py-1.5 text-xs rounded-lg transition ${!activeOnly ? 'bg-zion-cyan/20 text-zion-cyan' : 'text-gray-400 hover:text-white'}`}
               >
-                {tr('poolDashboard', 'all_miners', lang)}
+                {cs ? 'Všichni mineři' : 'All miners'}
               </button>
             </div>
           </div>
@@ -857,10 +857,10 @@ export default function PoolDashboard() {
                 <thead>
                   <tr className="border-b border-white/[0.08]">
                     <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">#</th>
-                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{tr('poolDashboard', 'address', lang)}</th>
-                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{tr('poolDashboard', 'server', lang)}</th>
-                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{tr('poolDashboard', 'last_share', lang)}</th>
-                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{tr('poolDashboard', 'status', lang)}</th>
+                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{cs ? 'Adresa' : 'Address'}</th>
+                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{cs ? 'Server' : 'Server'}</th>
+                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{cs ? 'Poslední share' : 'Last Share'}</th>
+                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{cs ? 'Stav' : 'Status'}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -885,14 +885,14 @@ export default function PoolDashboard() {
                               : "text-gray-500 bg-white/5 border border-white/[0.06]"
                           }`}>
                             <CircleDot className="h-3 w-3" />
-                            {isActive ? (tr('poolDashboard', 'active', lang)) : (tr('poolDashboard', 'inactive', lang))}
+                            {isActive ? (cs ? 'Aktivní' : 'Active') : (cs ? 'Neaktivní' : 'Inactive')}
                           </span>
                         </td>
                       </tr>
                     );
                   })}
                   {visibleMiners.length === 0 && (
-                    <tr><td colSpan={5} className="px-5 py-10 text-center text-gray-500">{tr('poolDashboard', 'live_backend_is_not_exposing_recent_mine', lang)}</td></tr>
+                    <tr><td colSpan={5} className="px-5 py-10 text-center text-gray-500">{cs ? 'Živý backend zatím nezveřejňuje poslední řádky minerů. Pro individuální statistiky vyhledejte adresu výše.' : 'Live backend is not exposing recent miner rows yet. Search by address above for individual stats.'}</td></tr>
                   )}
                 </tbody>
               </table>
@@ -908,12 +908,12 @@ export default function PoolDashboard() {
           id="blocks"
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tr('poolDashboard', 'ledger', lang)}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Ledger' : 'Ledger'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Box className="h-7 w-7 text-zion-gold" />
-              {tr('poolDashboard', 'recent_network_blocks', lang)} ({data?.recent_blocks.length ?? 0})
+              {cs ? 'Poslední síťové bloky' : 'Recent Network Blocks'} ({data?.recent_blocks.length ?? 0})
             </h2>
-            <p className="text-sm text-gray-400">{tr('poolDashboard', 'latest_confirmed_chain_blocks_from_the_c', lang)}</p>
+            <p className="text-sm text-gray-400">{cs ? 'Nejnovější potvrzené chain bloky z aktuálního runtime. Veřejná atribuce vítěze poolu zatím není vystavena samostatně.' : 'Latest confirmed chain blocks from the current runtime. Public pool winner attribution is not exposed separately yet.'}</p>
           </div>
 
           <div className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl overflow-hidden">
@@ -921,12 +921,12 @@ export default function PoolDashboard() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-white/[0.08]">
-                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{tr('poolDashboard', 'height', lang)}</th>
+                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{cs ? 'Výška' : 'Height'}</th>
                     <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">Hash</th>
-                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{tr('poolDashboard', 'difficulty', lang)}</th>
-                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{tr('poolDashboard', 'reward', lang)}</th>
+                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{cs ? 'Obtížnost' : 'Difficulty'}</th>
+                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{cs ? 'Odměna' : 'Reward'}</th>
                     <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">Miner</th>
-                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{tr('poolDashboard', 'time', lang)}</th>
+                    <th className="text-left px-5 py-4 text-xs text-gray-500 uppercase tracking-wider font-medium">{cs ? 'Čas' : 'Time'}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -949,7 +949,7 @@ export default function PoolDashboard() {
                     </tr>
                   ))}
                   {(!data?.recent_blocks || data.recent_blocks.length === 0) && (
-                    <tr><td colSpan={6} className="px-5 py-10 text-center text-gray-500">{tr('poolDashboard', 'no_recent_chain_blocks_available', lang)}</td></tr>
+                    <tr><td colSpan={6} className="px-5 py-10 text-center text-gray-500">{cs ? 'Nejsou dostupné žádné poslední chain bloky' : 'No recent chain blocks available'}</td></tr>
                   )}
                 </tbody>
               </table>
@@ -965,12 +965,12 @@ export default function PoolDashboard() {
           id="start-mining"
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tr('poolDashboard', 'getting_started', lang)}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Začínáme' : 'Getting Started'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Rocket className="h-7 w-7 text-zion-gold" />
-              {tr('poolDashboard', 'start_mining_zion', lang)}
+              {cs ? 'Začněte těžit ZION' : 'Start Mining ZION'}
             </h2>
-            <p className="text-sm text-gray-400">{tr('poolDashboard', 'follow_these_steps_to_begin_mining_in_mi', lang)}</p>
+            <p className="text-sm text-gray-400">{cs ? 'Postupujte podle těchto kroků a začněte těžit během několika minut.' : 'Follow these steps to begin mining in minutes.'}</p>
           </div>
 
           <div className="grid gap-5 md:grid-cols-2">
@@ -981,13 +981,13 @@ export default function PoolDashboard() {
                   <Wallet className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-base font-semibold text-white">{tr('poolDashboard', '1_get_a_zion_wallet', lang)}</h3>
-                  <p className="text-[11px] text-gray-500">{tr('poolDashboard', 'generate_your_mining_address', lang)}</p>
+                  <h3 className="text-base font-semibold text-white">{cs ? '1. Získejte ZION peněženku' : '1. Get a ZION Wallet'}</h3>
+                  <p className="text-[11px] text-gray-500">{cs ? 'Vygenerujte svou těžební adresu' : 'Generate your mining address'}</p>
                 </div>
               </div>
-              <p className="text-sm text-gray-300 mb-3">{tr('poolDashboard', 'download_the_zion_desktop_wallet_or_use_', lang)}</p>
+              <p className="text-sm text-gray-300 mb-3">{cs ? 'Stáhněte desktop peněženku ZION nebo použijte webovou peněženku pro vytvoření těžební adresy.' : 'Download the ZION desktop wallet or use the web wallet to generate your mining address.'}</p>
               <Link href="/download" className="inline-flex items-center gap-2 text-sm text-zion-cyan hover:text-white transition-colors">
-                {tr('poolDashboard', 'download_wallet', lang)} <ExternalLink className="h-3.5 w-3.5" />
+                {cs ? 'Stáhnout peněženku' : 'Download Wallet'} <ExternalLink className="h-3.5 w-3.5" />
               </Link>
             </div>
 
@@ -998,18 +998,18 @@ export default function PoolDashboard() {
                   <Cpu className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-base font-semibold text-white">{tr('poolDashboard', '2_choose_mining_software', lang)}</h3>
-                  <p className="text-[11px] text-gray-500">{tr('poolDashboard', 'zion_native_miner_or_xmrig', lang)}</p>
+                  <h3 className="text-base font-semibold text-white">{cs ? '2. Vyberte těžební software' : '2. Choose Mining Software'}</h3>
+                  <p className="text-[11px] text-gray-500">{cs ? 'ZION Native Miner nebo XMRig' : 'ZION Native Miner or XMRig'}</p>
                 </div>
               </div>
               <div className="space-y-2">
                 <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
                   <p className="text-sm font-medium text-white flex items-center gap-2"><Sparkles className="h-3.5 w-3.5 text-purple-400" /> ZION Native Miner</p>
-                  <p className="text-xs text-gray-400 mt-1">{tr('poolDashboard', 'official_cosmic_harmony_algorithm_python', lang)}</p>
+                  <p className="text-xs text-gray-400 mt-1">{cs ? 'Oficiální — algoritmus Cosmic Harmony · Python/Rust' : 'Official — Cosmic Harmony algorithm · Python/Rust'}</p>
                 </div>
                 <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
                   <p className="text-sm font-medium text-white flex items-center gap-2"><Zap className="h-3.5 w-3.5 text-orange-400" /> XMRig</p>
-                  <p className="text-xs text-gray-400 mt-1">{tr('poolDashboard', 'industry_standard_cpu_optimized', lang)}</p>
+                  <p className="text-xs text-gray-400 mt-1">{cs ? 'Průmyslový standard · optimalizovaný pro CPU' : 'Industry-standard · CPU optimized'}</p>
                 </div>
               </div>
             </div>
@@ -1021,8 +1021,8 @@ export default function PoolDashboard() {
                   <Terminal className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-base font-semibold text-white">{tr('poolDashboard', '3_configure_connect', lang)}</h3>
-                  <p className="text-[11px] text-gray-500">{tr('poolDashboard', 'start_mining_with_one_command', lang)}</p>
+                  <h3 className="text-base font-semibold text-white">{cs ? '3. Nakonfigurujte a připojte' : '3. Configure & Connect'}</h3>
+                  <p className="text-[11px] text-gray-500">{cs ? 'Spusťte těžbu jedním příkazem' : 'Start mining with one command'}</p>
                 </div>
               </div>
               <div className="space-y-3">
@@ -1051,18 +1051,18 @@ export default function PoolDashboard() {
                   <TrendingUp className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-base font-semibold text-white">{tr('poolDashboard', '4_monitor_earn', lang)}</h3>
-                  <p className="text-[11px] text-gray-500">{tr('poolDashboard', 'track_your_rewards_in_real_time', lang)}</p>
+                  <h3 className="text-base font-semibold text-white">{cs ? '4. Sledujte a vydělávejte' : '4. Monitor & Earn'}</h3>
+                  <p className="text-[11px] text-gray-500">{cs ? 'Sledujte své odměny v reálném čase' : 'Track your rewards in real-time'}</p>
                 </div>
               </div>
-              <p className="text-sm text-gray-300 mb-3">{tr('poolDashboard', 'once_connected_monitor_your_mining_stats', lang)}</p>
+              <p className="text-sm text-gray-300 mb-3">{cs ? 'Po připojení sledujte své těžební statistiky přímo zde. Výplaty probíhají automaticky po dosažení minimálního prahu.' : 'Once connected, monitor your mining stats right here. Payouts are automatic when you reach the minimum threshold.'}</p>
               <div className="grid grid-cols-2 gap-3">
                 <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
-                  <p className="text-[11px] text-gray-500">{tr('poolDashboard', 'min_payout', lang)}</p>
+                  <p className="text-[11px] text-gray-500">{cs ? 'Min. payout' : 'Min Payout'}</p>
                   <p className="text-lg font-bold text-white font-mono">0.1 ZION</p>
                 </div>
                 <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
-                  <p className="text-[11px] text-gray-500">{tr('poolDashboard', 'reward_method', lang)}</p>
+                  <p className="text-[11px] text-gray-500">{cs ? 'Metoda odměn' : 'Reward Method'}</p>
                   <p className="text-lg font-bold text-white">PPLNS</p>
                 </div>
               </div>
@@ -1077,22 +1077,22 @@ export default function PoolDashboard() {
           transition={{ delay: 0.30 }}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tr('poolDashboard', 'features', lang)}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Funkce' : 'Features'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Sparkles className="h-7 w-7 text-purple-400" />
-              {tr('poolDashboard', 'why_mine_with_us', lang)}
+              {cs ? 'Proč těžit s námi' : 'Why Mine With Us'}
             </h2>
-            <p className="text-sm text-gray-400">{tr('poolDashboard', 'fair_transparent_and_humanitarian_focuse', lang)}</p>
+            <p className="text-sm text-gray-400">{cs ? 'Férový, transparentní a humanitárně zaměřený těžební pool.' : 'Fair, transparent, and humanitarian-focused mining pool.'}</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {[
-              { icon: <Zap className="h-5 w-5 text-white" />, color: "from-purple-500/80 to-indigo-600/80", title: tr('poolDashboard', 'cosmic_harmony_algorithm', lang), desc: tr('poolDashboard', 'native_zion_pow_algorithm_cpu_friendly_a', lang) },
-              { icon: <Heart className="h-5 w-5 text-white" />, color: "from-pink-500/80 to-rose-600/80", title: tr('poolDashboard', 'humanitarian_mission', lang), desc: tr('poolDashboard', '5_humanitarian_5_issobella_fund_mining_f', lang) },
-              { icon: <Globe className="h-5 w-5 text-white" />, color: "from-blue-500/80 to-cyan-600/80", title: tr('poolDashboard', 'primary_host_pool', lang), desc: tr('poolDashboard', 'public_stratum_access_runs_on_zion2_whil', lang) },
-              { icon: <Shield className="h-5 w-5 text-white" />, color: "from-emerald-500/80 to-teal-600/80", title: tr('poolDashboard', 'pplns_rewards', lang), desc: tr('poolDashboard', 'fair_reward_distribution_based_on_your_c', lang) },
-              { icon: <Signal className="h-5 w-5 text-white" />, color: "from-orange-500/80 to-amber-600/80", title: tr('poolDashboard', 'real_time_monitoring', lang), desc: tr('poolDashboard', 'live_hashrate_shares_and_earnings_tracki', lang) },
-              { icon: <Cpu className="h-5 w-5 text-white" />, color: "from-zion-cyan/80 to-blue-600/80", title: tr('poolDashboard', 'xmrig_compatible', lang), desc: tr('poolDashboard', 'use_standard_mining_software_no_special_', lang) },
+              { icon: <Zap className="h-5 w-5 text-white" />, color: "from-purple-500/80 to-indigo-600/80", title: cs ? 'Algoritmus Cosmic Harmony' : 'Cosmic Harmony Algorithm', desc: cs ? 'Nativní ZION PoW algoritmus, přívětivý k CPU a odolný vůči ASIC pro férovější distribuci.' : 'Native ZION PoW algorithm, CPU-friendly, ASIC-resistant design for fair distribution.' },
+              { icon: <Heart className="h-5 w-5 text-white" />, color: "from-pink-500/80 to-rose-600/80", title: cs ? 'Humanitární mise' : 'Humanitarian Mission', desc: cs ? '5 % humanitární tithe + 5 % fond Issobella. Těžba pro vědomí.' : '5% humanitarian + 5% Issobella fund. Mining for consciousness.' },
+              { icon: <Globe className="h-5 w-5 text-white" />, color: "from-blue-500/80 to-cyan-600/80", title: cs ? 'Primární host poolu' : 'Primary Host Pool', desc: cs ? 'Veřejný stratum běží na Zion2, zatímco interní seed kontejnery zůstávají za stejným hostem.' : 'Public stratum access runs on Zion2 while internal seed containers stay behind the same host.' },
+              { icon: <Shield className="h-5 w-5 text-white" />, color: "from-emerald-500/80 to-teal-600/80", title: cs ? 'PPLNS odměny' : 'PPLNS Rewards', desc: cs ? 'Férová distribuce odměn podle vašich odevzdaných shares. Bez luck variance.' : 'Fair reward distribution based on your contributed shares. No luck variance.' },
+              { icon: <Signal className="h-5 w-5 text-white" />, color: "from-orange-500/80 to-amber-600/80", title: cs ? 'Monitoring v reálném čase' : 'Real-Time Monitoring', desc: cs ? 'Živý přehled hashratu, shares a výdělků přes webový dashboard.' : 'Live hashrate, shares, and earnings tracking via web dashboard.' },
+              { icon: <Cpu className="h-5 w-5 text-white" />, color: "from-zion-cyan/80 to-blue-600/80", title: cs ? 'Kompatibilní s XMRig' : 'XMRig Compatible', desc: cs ? 'Použijte standardní těžební software. Není potřeba nic speciálního.' : 'Use standard mining software. No special tools required.' },
             ].map((f) => (
               <div key={f.title} className="group rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-5 hover:border-white/15 transition-all duration-200">
                 <div className={`flex items-center justify-center h-10 w-10 rounded-xl bg-linear-to-br ${f.color} opacity-80 group-hover:opacity-100 transition mb-4`}>
@@ -1112,41 +1112,41 @@ export default function PoolDashboard() {
           transition={{ delay: 0.32 }}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tr('poolDashboard', 'pro_tools', lang)}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Pro nástroje' : 'Pro Tools'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <TrendingUp className="h-7 w-7 text-zion-cyan" />
-              {tr('poolDashboard', 'operator_toolkit', lang)}
+              {cs ? 'Nástroje operátora' : 'Operator Toolkit'}
             </h2>
-            <p className="text-sm text-gray-400">{tr('poolDashboard', 'failover_templates_profit_estimate_and_a', lang)}</p>
+            <p className="text-sm text-gray-400">{cs ? 'Failover šablony, odhad výnosu a automatizační endpointy pro řízený provoz těžby.' : 'Failover templates, profit estimate, and automation endpoints for managed mining operations.'}</p>
           </div>
 
           <div className="grid gap-5 lg:grid-cols-3">
             <div className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6">
-              <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{tr('poolDashboard', 'profit_estimator', lang)}</p>
-              <label className="text-xs text-gray-400">{tr('poolDashboard', 'your_hashrate_supports_k_m_g_t', lang)}</label>
+              <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{cs ? 'Odhad výnosu' : 'Profit Estimator'}</p>
+              <label className="text-xs text-gray-400">{cs ? 'Váš hashrate (podporuje K/M/G/T)' : 'Your hashrate (supports K/M/G/T)'}</label>
               <input
                 value={myHashrateInput}
                 onChange={(e) => setMyHashrateInput(e.target.value)}
-                placeholder={tr('poolDashboard', 'e_g_250m', lang)}
+                placeholder={cs ? 'např. 250M' : 'e.g. 250M'}
                 className="mt-2 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white placeholder:text-gray-500 font-mono outline-none focus:border-zion-cyan/50"
               />
               <div className="mt-4 space-y-2 text-sm">
-                <div className="flex items-center justify-between"><span className="text-gray-500">{tr('poolDashboard', 'parsed_hashrate', lang)}</span><span className="text-white font-mono">{fmtHash(myHashrate)}</span></div>
-                <div className="flex items-center justify-between"><span className="text-gray-500">{tr('poolDashboard', 'pool_share', lang)}</span><span className="text-zion-cyan font-mono">{mySharePct.toFixed(6)}%</span></div>
-                <div className="flex items-center justify-between"><span className="text-gray-500">{tr('poolDashboard', 'observed_blocks_day', lang)}</span><span className="text-gray-200 font-mono">{blocksPerDay.toFixed(2)}</span></div>
-                <div className="flex items-center justify-between"><span className="text-gray-500">{tr('poolDashboard', 'reward_block', lang)}</span><span className="text-gray-200 font-mono">{rewardPerBlock.toFixed(4)} ZION</span></div>
+                <div className="flex items-center justify-between"><span className="text-gray-500">{cs ? 'Parsovaný hashrate' : 'Parsed hashrate'}</span><span className="text-white font-mono">{fmtHash(myHashrate)}</span></div>
+                <div className="flex items-center justify-between"><span className="text-gray-500">{cs ? 'Podíl v poolu' : 'Pool share'}</span><span className="text-zion-cyan font-mono">{mySharePct.toFixed(6)}%</span></div>
+                <div className="flex items-center justify-between"><span className="text-gray-500">{cs ? 'Pozorované bloky/den' : 'Observed blocks/day'}</span><span className="text-gray-200 font-mono">{blocksPerDay.toFixed(2)}</span></div>
+                <div className="flex items-center justify-between"><span className="text-gray-500">{cs ? 'Odměna / blok' : 'Reward / block'}</span><span className="text-gray-200 font-mono">{rewardPerBlock.toFixed(4)} ZION</span></div>
                 <div className="mt-3 rounded-xl border border-emerald-400/20 bg-emerald-400/10 px-3 py-2.5 flex items-center justify-between">
-                  <span className="text-emerald-200 text-xs uppercase tracking-wider">{tr('poolDashboard', 'estimated_daily_reward', lang)}</span>
+                  <span className="text-emerald-200 text-xs uppercase tracking-wider">{cs ? 'Odhad denní odměny' : 'Estimated daily reward'}</span>
                   <span className="text-emerald-300 font-bold font-mono">{myDailyZion.toFixed(4)} ZION</span>
                 </div>
               </div>
             </div>
 
             <div className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6">
-              <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{tr('poolDashboard', 'failover_config', lang)}</p>
+              <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{cs ? 'Failover konfigurace' : 'Failover Config'}</p>
               <div className="space-y-3">
                 <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
-                  <p className="text-[11px] text-gray-500 uppercase tracking-wider mb-1.5">{tr('poolDashboard', 'xmrig_primary_backup', lang)}</p>
+                  <p className="text-[11px] text-gray-500 uppercase tracking-wider mb-1.5">{cs ? 'XMRig (primární + záložní)' : 'XMRig (primary + backup)'}</p>
                   <code className="block text-xs text-zion-cyan break-all">{xmrigFailoverCmd}</code>
                   <div className="mt-2"><CopyButton text={xmrigFailoverCmd} /></div>
                 </div>
@@ -1159,7 +1159,7 @@ export default function PoolDashboard() {
             </div>
 
             <div className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6">
-              <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{tr('poolDashboard', 'automation_export', lang)}</p>
+              <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">{cs ? 'Automatizace a export' : 'Automation & Export'}</p>
               <div className="space-y-2.5 text-sm">
                 <a href="/api/pool/stats" target="_blank" rel="noreferrer" className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2 hover:bg-white/[0.05] transition">
                   <span className="text-gray-200 font-mono text-xs">/api/pool/stats</span>
@@ -1175,7 +1175,7 @@ export default function PoolDashboard() {
                 </a>
                 <div className="rounded-xl border border-amber-400/20 bg-amber-400/10 px-3 py-2.5 text-xs text-amber-200 flex items-start gap-2">
                   <Bell className="h-3.5 w-3.5 mt-0.5" />
-                  <span>{tr('poolDashboard', 'set_alert_if_last_share_exceeds_10_minut', lang)}</span>
+                  <span>{cs ? 'Nastavte alert: pokud poslední share přesáhne 10 minut nebo míra přijetí klesne pod 95 %, přepněte na záložní endpoint.' : 'Set alert: if last share exceeds 10 minutes or accept rate drops below 95%, rotate to the backup endpoint.'}</span>
                 </div>
               </div>
             </div>
@@ -1192,21 +1192,21 @@ export default function PoolDashboard() {
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">FAQ</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <span className="flex items-center justify-center h-7 w-7 rounded-full border border-blue-400/30 bg-blue-400/10 text-blue-400 text-sm font-bold">?</span>
-              {tr('poolDashboard', 'frequently_asked_questions', lang)}
+              {cs ? 'Časté dotazy' : 'Frequently Asked Questions'}
             </h2>
-            <p className="text-sm text-gray-400">{tr('poolDashboard', 'answers_to_the_most_common_miner_questio', lang)}</p>
+            <p className="text-sm text-gray-400">{cs ? 'Odpovědi na nejčastější otázky minerů.' : 'Answers to the most common miner questions.'}</p>
           </div>
 
           <div className="space-y-3">
             {[
-              { q: tr('poolDashboard', 'what_algorithm_does_zion_use', lang), a: tr('poolDashboard', 'zion_uses_cosmic_harmony_a_custom_cpu_fr', lang) },
-              { q: tr('poolDashboard', 'how_does_pplns_work', lang), a: tr('poolDashboard', 'pplns_pay_per_last_n_shares_rewards_mine', lang) },
-              { q: tr('poolDashboard', 'what_is_the_minimum_payout', lang), a: tr('poolDashboard', 'the_minimum_payout_is_0_1_zion_payouts_h', lang) },
-              { q: tr('poolDashboard', 'where_do_tithe_and_funds_go', lang), a: tr('poolDashboard', 'coinbase_distribution_89_miner_5_humanit', lang) },
-              { q: tr('poolDashboard', 'can_i_use_xmrig_or_only_the_native_miner', lang), a: tr('poolDashboard', 'both_are_supported_xmrig_is_industry_sta', lang) },
-              { q: tr('poolDashboard', 'what_does_pool_luck_mean', lang), a: tr('poolDashboard', 'pool_luck_shows_the_ratio_of_blocks_foun', lang) },
-              { q: tr('poolDashboard', 'how_do_i_set_up_failover', lang), a: tr('poolDashboard', 'use_the_backup_pool_endpoint_in_your_xmr', lang) },
-              { q: tr('poolDashboard', 'how_often_are_payouts_processed', lang), a: tr('poolDashboard', 'payouts_are_processed_after_every_block_', lang) },
+              { q: cs ? 'Jaký algoritmus ZION používá?' : 'What algorithm does ZION use?', a: cs ? 'ZION používá Cosmic Harmony — vlastní proof-of-work algoritmus přívětivý k CPU a odolný vůči ASIC. Podporuje CPU i GPU těžbu.' : 'ZION uses Cosmic Harmony — a custom CPU-friendly, ASIC-resistant proof-of-work algorithm. It supports both CPU and GPU mining.' },
+              { q: cs ? 'Jak funguje PPLNS?' : 'How does PPLNS work?', a: cs ? 'PPLNS (Pay Per Last N Shares) odměňuje minery podle jejich příspěvku v posledních N share. Je férovější než proporcionální odměny a penalizuje pool-hopping.' : 'PPLNS (Pay Per Last N Shares) rewards miners based on their contribution in the last N shares. It is fairer than proportional rewards and penalizes pool-hopping.' },
+              { q: cs ? 'Jaký je minimální payout?' : 'What is the minimum payout?', a: cs ? 'Minimální výplata je 0.1 ZION. Výplaty probíhají automaticky po nalezení bloku, jakmile váš zůstatek dosáhne prahu.' : 'The minimum payout is 0.1 ZION. Payouts happen automatically after a block is found once your balance reaches the threshold.' },
+              { q: cs ? 'Kam jdou tithe a fondy?' : 'Where do tithe and funds go?', a: cs ? 'Distribuce coinbase: 89 % miner, 5 % humanitární tithe, 5 % fond Issobella, 1 % pool fee. Tithe a fondy jsou kódovány přímo v coinbase transakci na chain úrovni.' : 'Coinbase distribution: 89% miner, 5% humanitarian tithe, 5% Issobella fund, 1% pool fee. Tithe and funds are encoded directly in the coinbase transaction at the chain level.' },
+              { q: cs ? 'Mohu používat XMRig nebo jen nativní miner?' : 'Can I use XMRig or only the native miner?', a: cs ? 'Oba jsou podporovány. XMRig je průmyslový standard s optimalizacemi pro CPU. Nativní ZION miner nabízí dedikovanou podporu Cosmic Harmony a GPU akceleraci.' : 'Both are supported. XMRig is industry-standard with CPU optimizations. The native ZION miner offers dedicated Cosmic Harmony support and GPU acceleration.' },
+              { q: cs ? 'Co znamená Pool Luck?' : 'What does Pool Luck mean?', a: cs ? 'Pool Luck ukazuje poměr nalezených bloků vs. statisticky očekávaných na základě hashrate poolu a obtížnosti sítě. 100 % = přesně dle očekávání, nad 100 % = lepší než průměr.' : 'Pool Luck shows the ratio of blocks found vs. statistically expected based on pool hashrate and network difficulty. 100% = exactly as expected, above 100% = better than average.' },
+              { q: cs ? 'Jak nastavím failover?' : 'How do I set up failover?', a: cs ? 'Použijte záložní pool endpoint v konfiguraci XMRig (--url-backup) nebo v nativním mineru (--pool-backup). Automaticky přepne při výpadku primárního serveru.' : 'Use the backup pool endpoint in your XMRig config (--url-backup) or native miner (--pool-backup). It auto-switches on primary server failure.' },
+              { q: cs ? 'Jak často probíhají výplaty?' : 'How often are payouts processed?', a: cs ? 'Výplaty se zpracovávají po každém nalezeném bloku. Pool spočítá PPLNS podíly, vytvoří transakci a odešle ji do sítě. Potvrzení trvá obvykle 10 bloků.' : 'Payouts are processed after every block found. The pool calculates PPLNS shares, creates a transaction, and broadcasts it. Confirmation takes around 10 blocks.' },
             ].map((item) => (
               <FAQItem key={item.q} question={item.q} answer={item.a} />
             ))}
@@ -1221,16 +1221,16 @@ export default function PoolDashboard() {
           className="rounded-4xl border border-zion-cyan/30 bg-linear-to-r from-zion-cyan/20 via-zion-purple/10 to-zion-cyan/20 p-10 text-center"
         >
           <Pickaxe className="mx-auto h-12 w-12 text-zion-cyan" />
-          <h2 className="mt-6 text-3xl font-semibold text-white">{tr('poolDashboard', 'zion_mining_pool', lang)}</h2>
+          <h2 className="mt-6 text-3xl font-semibold text-white">{cs ? 'ZION těžební pool' : 'ZION Mining Pool'}</h2>
           <p className="mt-4 text-gray-100 max-w-3xl mx-auto">
-            {tr('poolDashboard', 'mine_zion_with_cosmic_harmony_a_fair_tra', lang)}
+            {cs ? 'Těžte ZION s Cosmic Harmony — férový a transparentní PoW pool s humanitárním přesahem zabudovaným do každého bloku.' : 'Mine ZION with Cosmic Harmony — a fair, transparent PoW pool with humanitarian impact built into every block.'}
           </p>
           <p className="mt-2 text-sm text-gray-300 max-w-2xl mx-auto">
             89% miner · 5% humanitarian · 5% Issobella fund · 1% pool fee · PPLNS · Launch Countdown to 31 December 2026
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <a href="#start-mining" className="inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-zion-cyan to-zion-purple px-6 py-3 text-sm font-semibold text-black">
-              <Zap className="h-4 w-4" /> {tr('poolDashboard', 'start_mining', lang)}
+              <Zap className="h-4 w-4" /> {cs ? 'Začít těžit' : 'Start Mining'}
             </a>
             <Link href="/explorer" className="inline-flex items-center gap-2 rounded-2xl bg-black/70 px-6 py-3 text-sm font-semibold text-white border border-white/20">
               <Layers className="h-4 w-4" /> Explorer
@@ -1248,7 +1248,7 @@ export default function PoolDashboard() {
 
         <p className="text-center text-xs text-gray-600">
           {cs ? `ZION TerraNova ${SITE_RELEASE_LABEL} — Mining Pool Pro · Data v reálném čase z primárního stratum endpointu · primární host Zion2` : `ZION TerraNova ${SITE_RELEASE_LABEL} — Mining Pool Pro · Real-time data from the primary stratum endpoint · Zion2 primary host`}
-          {lastUpdate && <> · {tr('poolDashboard', 'last_update', lang)}: {lastUpdate.toLocaleTimeString(tr('poolDashboard', 'en_us', lang))}</>}
+          {lastUpdate && <> · {cs ? 'Poslední aktualizace' : 'Last update'}: {lastUpdate.toLocaleTimeString(cs ? 'cs-CZ' : 'en-US')}</>}
         </p>
       </div>
     </div>

@@ -4,7 +4,6 @@ import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { ArrowRight, Leaf, LoaderCircle, Sparkles } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
-import { tr } from '@/lib/translations';
 
 const TreeOfLifeSwitch = dynamic(() => import('@/components/TreeOfLifeSwitch'), {
   ssr: false,
@@ -25,8 +24,8 @@ export default function HomeTreePortal() {
       <div className="zion-container space-y-6">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tr('APP_WEB_website_v2_9_src_components_Home', 'interactive_layer', lang)}</p>
-            <h2 className="mt-2 text-3xl font-semibold text-white md:text-5xl">{tr('APP_WEB_website_v2_9_src_components_Home', 'tree_of_life', lang)}</h2>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Interaktivní vrstva' : 'Interactive layer'}</p>
+            <h2 className="mt-2 text-3xl font-semibold text-white md:text-5xl">{cs ? 'Strom života' : 'Tree of Life'}</h2>
             <p className="mt-3 max-w-2xl text-base text-gray-300 md:text-lg">
               {cs
                 ? 'Interaktivní strom se načítá na vyžádání. Domovská stránka tak zůstává rychlá pro každého návštěvníka, zatímco hlubší symbolická vrstva je vzdálená jen jedno kliknutí.'
@@ -40,7 +39,7 @@ export default function HomeTreePortal() {
               className="inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-zion-gold via-zion-purple to-zion-cyan px-6 py-3 text-sm font-semibold text-white shadow-[0_0_40px_rgba(147,51,234,0.25)]"
             >
               <Leaf className="h-4 w-4" />
-              {tr('APP_WEB_website_v2_9_src_components_Home', 'load_interactive_scene', lang)}
+              {cs ? 'Načíst interaktivní scénu' : 'Load interactive scene'}
               <ArrowRight className="h-4 w-4" />
             </button>
           )}
@@ -53,7 +52,7 @@ export default function HomeTreePortal() {
               <div className="space-y-4">
                 <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs uppercase tracking-[0.3em] text-gray-300">
                   <Sparkles className="h-4 w-4 text-zion-gold" />
-                  {tr('APP_WEB_website_v2_9_src_components_Home', 'performance_safe_preview', lang)}
+                  {cs ? 'Rychlý náhled' : 'Performance-safe preview'}
                 </div>
                 <p className="text-lg leading-relaxed text-gray-300">
                   {cs
@@ -62,16 +61,16 @@ export default function HomeTreePortal() {
                 </p>
                 <div className="grid gap-3 sm:grid-cols-3">
                   <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                    <p className="text-xs uppercase tracking-[0.3em] text-gray-500">{tr('APP_WEB_website_v2_9_src_components_Home', 'mode', lang)}</p>
-                    <p className="mt-2 text-lg font-semibold text-white">{tr('APP_WEB_website_v2_9_src_components_Home', 'on_demand', lang)}</p>
+                    <p className="text-xs uppercase tracking-[0.3em] text-gray-500">{cs ? 'Režim' : 'Mode'}</p>
+                    <p className="mt-2 text-lg font-semibold text-white">{cs ? 'Na vyžádání' : 'On demand'}</p>
                   </div>
                   <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                    <p className="text-xs uppercase tracking-[0.3em] text-gray-500">{tr('APP_WEB_website_v2_9_src_components_Home', 'goal', lang)}</p>
-                    <p className="mt-2 text-lg font-semibold text-white">{tr('APP_WEB_website_v2_9_src_components_Home', 'fast_first_paint', lang)}</p>
+                    <p className="text-xs uppercase tracking-[0.3em] text-gray-500">{cs ? 'Cíl' : 'Goal'}</p>
+                    <p className="mt-2 text-lg font-semibold text-white">{cs ? 'Rychlé první vykreslení' : 'Fast first paint'}</p>
                   </div>
                   <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                    <p className="text-xs uppercase tracking-[0.3em] text-gray-500">{tr('APP_WEB_website_v2_9_src_components_Home', 'fallback', lang)}</p>
-                    <p className="mt-2 text-lg font-semibold text-white">{tr('APP_WEB_website_v2_9_src_components_Home', 'classic_query_ready', lang)}</p>
+                    <p className="text-xs uppercase tracking-[0.3em] text-gray-500">{cs ? 'Fallback' : 'Fallback'}</p>
+                    <p className="mt-2 text-lg font-semibold text-white">{cs ? 'Klasický dotaz připraven' : 'Classic query ready'}</p>
                   </div>
                 </div>
               </div>

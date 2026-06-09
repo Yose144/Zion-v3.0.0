@@ -210,18 +210,18 @@ export default function MiningUnifiedClient() {
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
 
   const guideTabLabels: Record<GuideTab, string> = {
-    cpu: tr('APP_WEB_website_v2_9_src_components_Mini', 'cpu_mining', lang),
-    gpu: tr('APP_WEB_website_v2_9_src_components_Mini', 'gpu_mining', lang),
-    pool: tr('APP_WEB_website_v2_9_src_components_Mini', 'pool_mining', lang),
-    solo: tr('APP_WEB_website_v2_9_src_components_Mini', 'solo_mining', lang),
+    cpu: cs ? 'CPU tezba' : 'CPU Mining',
+    gpu: cs ? 'GPU tezba' : 'GPU Mining',
+    pool: cs ? 'Pool tezba' : 'Pool Mining',
+    solo: cs ? 'Solo tezba' : 'Solo Mining',
   };
 
   const sectionLabels: Record<string, string> = {
-    'quick-start': tr('APP_WEB_website_v2_9_src_components_Mini', 'quick_start', lang),
-    algorithms: tr('APP_WEB_website_v2_9_src_components_Mini', 'algorithms', lang),
-    guides: tr('APP_WEB_website_v2_9_src_components_Mini', 'mining_guides', lang),
-    hardware: tr('APP_WEB_website_v2_9_src_components_Mini', 'hardware', lang),
-    'node-setup': tr('APP_WEB_website_v2_9_src_components_Mini', 'node_setup', lang),
+    'quick-start': cs ? 'Rychly start' : 'Quick Start',
+    algorithms: cs ? 'Algoritmy' : 'Algorithms',
+    guides: cs ? 'Tezebni navody' : 'Mining Guides',
+    hardware: cs ? 'Hardware' : 'Hardware',
+    'node-setup': cs ? 'Nastaveni nodu' : 'Node Setup',
     faq: 'FAQ',
   };
 
@@ -248,7 +248,7 @@ export default function MiningUnifiedClient() {
   const quickStartSteps = [
     {
       step: '1',
-      title: tr('APP_WEB_website_v2_9_src_components_Mini', 'create_wallet', lang),
+      title: cs ? 'Vytvorte penezenku' : 'Create Wallet',
       color: 'text-zion-cyan border-zion-cyan/20 bg-zion-cyan/10',
       items: cs
         ? [
@@ -264,7 +264,7 @@ export default function MiningUnifiedClient() {
     },
     {
       step: '2',
-      title: tr('APP_WEB_website_v2_9_src_components_Mini', 'start_mining', lang),
+      title: cs ? 'Spustte tezbu' : 'Start Mining',
       color: 'text-zion-gold border-zion-gold/20 bg-zion-gold/10',
       items: cs
         ? [
@@ -280,7 +280,7 @@ export default function MiningUnifiedClient() {
     },
     {
       step: '3',
-      title: tr('APP_WEB_website_v2_9_src_components_Mini', 'check_balance', lang),
+      title: cs ? 'Zkontrolujte zustatek' : 'Check Balance',
       color: 'text-zion-purple border-zion-purple/20 bg-zion-purple/10',
       items: cs
         ? [
@@ -299,8 +299,8 @@ export default function MiningUnifiedClient() {
   const nodeRequirementsView = [
     { ...nodeRequirements[0], value: cs ? '2+ jadra (ARM64 nebo x86_64)' : nodeRequirements[0].value },
     { ...nodeRequirements[1], label: 'RAM', value: cs ? '4 GB minimum (8 GB doporuceno)' : nodeRequirements[1].value },
-    { ...nodeRequirements[2], label: tr('APP_WEB_website_v2_9_src_components_Mini', 'disk', lang), value: cs ? '20 GB SSD (roste asi 2 GB/rok)' : nodeRequirements[2].value },
-    { ...nodeRequirements[3], label: tr('APP_WEB_website_v2_9_src_components_Mini', 'network', lang), value: cs ? 'Stabilni broadband, 10 Mbps+' : nodeRequirements[3].value },
+    { ...nodeRequirements[2], label: cs ? 'Disk' : 'Disk', value: cs ? '20 GB SSD (roste asi 2 GB/rok)' : nodeRequirements[2].value },
+    { ...nodeRequirements[3], label: cs ? 'Sit' : 'Network', value: cs ? 'Stabilni broadband, 10 Mbps+' : nodeRequirements[3].value },
     { ...nodeRequirements[4], label: 'OS', value: cs ? 'Linux, macOS, Windows (WSL2)' : nodeRequirements[4].value },
   ];
 
@@ -372,10 +372,10 @@ export default function MiningUnifiedClient() {
               </div>
               <div>
                 <h1 className="text-3xl md:text-5xl font-bold text-gradient">
-                  {tr('APP_WEB_website_v2_9_src_components_Mini', 'mining_node_guide', lang)}
+                  {cs ? 'Pruvodce tezbou a nodem' : 'Mining & Node Guide'}
                 </h1>
                 <p className="text-white/40 text-sm mt-0.5">
-                  {SITE_RELEASE_LABEL} · Cosmic Harmony v3 · {tr('APP_WEB_website_v2_9_src_components_Mini', 'cpu_gpu_pool_solo', lang)}
+                  {SITE_RELEASE_LABEL} · Cosmic Harmony v3 · {cs ? 'CPU / GPU / Pool / Solo tezba' : 'CPU / GPU / Pool / Solo'}
                 </p>
               </div>
             </div>
@@ -405,7 +405,7 @@ export default function MiningUnifiedClient() {
                 className="inline-flex items-center gap-2 rounded-2xl bg-zion-gold/20 border border-zion-gold/30 px-5 py-2.5 text-sm font-semibold text-white hover:bg-zion-gold/30 transition-colors"
               >
                 <ArrowDownToLine className="h-4 w-4" />
-                {tr('APP_WEB_website_v2_9_src_components_Mini', 'download_binaries', lang)}
+                {cs ? 'Stahnout binarky' : 'Download Binaries'}
               </Link>
               <Link
                 href={GH_GUIDE}
@@ -414,7 +414,7 @@ export default function MiningUnifiedClient() {
                 className="inline-flex items-center gap-2 rounded-2xl bg-white/5 border border-white/10 px-5 py-2.5 text-sm font-semibold text-gray-300 hover:bg-white/10 transition-colors"
               >
                 <Github className="h-4 w-4" />
-                {tr('APP_WEB_website_v2_9_src_components_Mini', 'full_guide_on_github', lang)}
+                {cs ? 'Plny navod na GitHubu' : 'Full Guide on GitHub'}
                 <ExternalLink className="h-3 w-3" />
               </Link>
               <Link
@@ -422,7 +422,7 @@ export default function MiningUnifiedClient() {
                 className="inline-flex items-center gap-2 rounded-2xl bg-white/5 border border-white/10 px-5 py-2.5 text-sm font-semibold text-gray-300 hover:bg-white/10 transition-colors"
               >
                 <Globe className="h-4 w-4" />
-                {tr('APP_WEB_website_v2_9_src_components_Mini', 'pool_dashboard', lang)}
+                {cs ? 'Pool dashboard' : 'Pool Dashboard'}
               </Link>
             </div>
           </div>
@@ -438,9 +438,9 @@ export default function MiningUnifiedClient() {
         >
           <h2 className="text-2xl font-bold text-white mb-2 flex items-center gap-2">
             <Rocket className="w-6 h-6 text-zion-gold" />
-            {tr('APP_WEB_website_v2_9_src_components_Mini', 'quick_start_3_steps', lang)}
+            {cs ? 'Rychly start - 3 kroky' : 'Quick Start — 3 Steps'}
           </h2>
-          <p className="text-white/40 text-sm mb-6">{tr('APP_WEB_website_v2_9_src_components_Mini', 'from_zero_to_mining_in_under_5_minutes', lang)}</p>
+          <p className="text-white/40 text-sm mb-6">{cs ? 'Od nuly ke spustene tezbe za mene nez 5 minut.' : 'From zero to mining in under 5 minutes.'}</p>
 
           <div className="grid gap-6 md:grid-cols-3">
             {quickStartSteps.map((s) => (
@@ -464,14 +464,14 @@ export default function MiningUnifiedClient() {
           {/* One-line install */}
           <div className="mt-6 rounded-2xl border border-white/10 bg-black/40 p-5">
             <p className="text-xs uppercase tracking-[0.3em] text-gray-500 mb-2">
-              {tr('APP_WEB_website_v2_9_src_components_Mini', 'one_line_install_linux_macos', lang)}
+              {cs ? 'Jednoradkova instalace (Linux / macOS)' : 'One-line install (Linux / macOS)'}
             </p>
             <div className="rounded-xl bg-black/60 p-3 font-mono text-xs text-gray-300 overflow-x-auto">
               <span className="text-gray-500">$</span>{" "}
               curl -fsSL https://zionterranova.com/downloads/zion-cli-linux-x86_64 -o zion && chmod +x zion
             </div>
             <p className="text-xs text-gray-500 mt-2">
-              {tr('APP_WEB_website_v2_9_src_components_Mini', 'note_zion_cli_is_a_unified_binary_miner_node_walle', lang)}
+              {cs ? 'Poznámka: ZION CLI je unifikovaná binárka — miner, node, wallet i pool jsou subpříkazy.' : 'Note: ZION CLI is a unified binary — miner, node, wallet and pool are subcommands.'}
             </p>
           </div>
         </motion.section>
@@ -485,7 +485,7 @@ export default function MiningUnifiedClient() {
         >
           <h2 className="text-2xl font-bold text-white mb-2 flex items-center gap-2">
             <Layers className="w-6 h-6 text-zion-purple" />
-            {tr('APP_WEB_website_v2_9_src_components_Mini', 'supported_algorithms', lang)}
+            {cs ? 'Podporovane algoritmy' : 'Supported Algorithms'}
           </h2>
           <p className="text-white/40 text-sm mb-5">
             {cs
@@ -495,10 +495,10 @@ export default function MiningUnifiedClient() {
 
           <div className="rounded-2xl border border-white/10 bg-black/40 backdrop-blur-sm overflow-hidden">
             <div className="grid grid-cols-[1fr_80px_80px_1fr] gap-2 px-6 py-3 border-b border-white/10 bg-white/[0.02] hidden md:grid">
-              <span className="text-[11px] text-white/30 uppercase tracking-wider">{tr('APP_WEB_website_v2_9_src_components_Mini', 'algorithm', lang)}</span>
-              <span className="text-[11px] text-white/30 uppercase tracking-wider">{tr('APP_WEB_website_v2_9_src_components_Mini', 'type', lang)}</span>
-              <span className="text-[11px] text-white/30 uppercase tracking-wider">{tr('APP_WEB_website_v2_9_src_components_Mini', 'memory', lang)}</span>
-              <span className="text-[11px] text-white/30 uppercase tracking-wider">{tr('APP_WEB_website_v2_9_src_components_Mini', 'best_for', lang)}</span>
+              <span className="text-[11px] text-white/30 uppercase tracking-wider">{cs ? 'Algoritmus' : 'Algorithm'}</span>
+              <span className="text-[11px] text-white/30 uppercase tracking-wider">{cs ? 'Typ' : 'Type'}</span>
+              <span className="text-[11px] text-white/30 uppercase tracking-wider">{cs ? 'Pamet' : 'Memory'}</span>
+              <span className="text-[11px] text-white/30 uppercase tracking-wider">{cs ? 'Vhodne pro' : 'Best For'}</span>
             </div>
             {algorithmsView.map((algo, i) => (
               <div
@@ -528,10 +528,10 @@ export default function MiningUnifiedClient() {
         >
           <h2 className="text-2xl font-bold text-white mb-2 flex items-center gap-2">
             <BookOpen className="w-6 h-6 text-zion-gold" />
-            {tr('APP_WEB_website_v2_9_src_components_Mini', 'mining_guides', lang)}
+            {cs ? 'Tezebni navody' : 'Mining Guides'}
           </h2>
           <p className="text-white/40 text-sm mb-5">
-            {tr('APP_WEB_website_v2_9_src_components_Mini', 'step_by_step_for_any_hardware_from_raspberry_pi_to', lang)}
+            {cs ? 'Krok za krokem pro jakykoli hardware - od Raspberry Pi po GPU rig.' : 'Step-by-step for any hardware — from Raspberry Pi to a GPU rig.'}
           </p>
 
           {/* Tab selector */}
@@ -560,17 +560,17 @@ export default function MiningUnifiedClient() {
               <div className="rounded-2xl border border-white/10 bg-black/40 backdrop-blur-sm p-6">
                 <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
                   <Cpu className="w-5 h-5 text-zion-cyan" />
-                  {tr('APP_WEB_website_v2_9_src_components_Mini', 'cpu_mining_with_zion_native_miner', lang)}
+                  {cs ? 'CPU tezba se ZION Native Minerem' : 'CPU Mining with ZION Native Miner'}
                 </h3>
                 <p className="text-white/40 text-sm mb-5">
-                  {tr('APP_WEB_website_v2_9_src_components_Mini', 'works_on_any_x86_64_or_arm64_cpu_best_algos', lang)}{" "}
+                  {cs ? 'Funguje na libovolnem x86_64 nebo ARM64 CPU. Nejvhodnejsi algoritmy:' : 'Works on any x86_64 or ARM64 CPU. Best algos:'}{" "}
                   <strong className="text-white/60">Cosmic Harmony v3</strong>,{" "}
                   <strong className="text-white/60">RandomX</strong>,{" "}
-                  <strong className="text-white/60">Yescrypt</strong> {tr('APP_WEB_website_v2_9_src_components_Mini', 'low_memory', lang)}
+                  <strong className="text-white/60">Yescrypt</strong> {cs ? '(nizka pamet).' : '(low-memory).'}
                 </p>
                 <div className="space-y-4">
                   <CodeBlock
-                    title={tr('APP_WEB_website_v2_9_src_components_Mini', 'option_a_pre_compiled_binary_recommended', lang)}
+                    title={cs ? 'Moznost A - predkompilovana binarka (doporuceno)' : 'Option A — Pre-compiled binary (recommended)'}
                     code={`# Download ZION CLI (unified binary)
 # → https://zionterranova.com/downloads
 
@@ -580,14 +580,14 @@ chmod +x zion
 ./zion mine --version`}
                   />
                   <CodeBlock
-                    title={tr('APP_WEB_website_v2_9_src_components_Mini', 'option_b_build_from_source', lang)}
+                    title={cs ? 'Moznost B - build ze zdroje' : 'Option B — Build from source'}
                     code={`git clone https://github.com/Zion-TerraNova/2.9.6.git
 cd 2.9.6
 cargo build --release -p zion-miner
 ls -la target/release/zion-miner`}
                   />
                   <CodeBlock
-                    title={tr('APP_WEB_website_v2_9_src_components_Mini', 'start_mining_pool', lang)}
+                    title={cs ? 'Spusteni tezby (pool)' : 'Start mining (pool)'}
                     code={`zion-miner \\
   --algo cosmic_harmony \\
   --pool stratum+tcp://${POOL}:8444 \\
@@ -595,7 +595,7 @@ ls -la target/release/zion-miner`}
   --threads $(nproc)`}
                   />
                   <CodeBlock
-                    title={tr('APP_WEB_website_v2_9_src_components_Mini', 'alternative_xmrig_for_randomx', lang)}
+                    title={cs ? 'Alternativa: XMRig pro RandomX' : 'Alternative: XMRig for RandomX'}
                     code={`./xmrig \\
   -o stratum+tcp://${POOL}:3334 \\
   -u YOUR_ZION_ADDRESS \\
@@ -606,10 +606,10 @@ ls -la target/release/zion-miner`}
                   <div className="rounded-xl bg-zion-cyan/5 border border-zion-cyan/10 p-4">
                     <h4 className="text-sm font-medium text-zion-cyan mb-2">💡 CPU Tips</h4>
                     <ul className="text-sm text-white/40 space-y-1">
-                      <li>• {tr('APP_WEB_website_v2_9_src_components_Mini', 'enable_huge_pages_for_randomx', lang)} <code className="text-zion-cyan/60 text-xs">sudo sysctl -w vm.nr_hugepages=1280</code></li>
-                      <li>• {tr('APP_WEB_website_v2_9_src_components_Mini', 'leave_1_2_cores_free_for_system_if_mining_24_7', lang)}</li>
-                      <li>• {tr('APP_WEB_website_v2_9_src_components_Mini', 'monitor_temperature_keep_below_85_c', lang)}</li>
-                      <li>• {tr('APP_WEB_website_v2_9_src_components_Mini', 'arm64_raspberry_pi_4_5_use_yescrypt_for_best_perf_', lang)}</li>
+                      <li>• {cs ? 'Zapnete huge pages pro RandomX:' : 'Enable huge pages for RandomX:'} <code className="text-zion-cyan/60 text-xs">sudo sysctl -w vm.nr_hugepages=1280</code></li>
+                      <li>• {cs ? 'Nechte 1-2 jadra volna pro system pri tezbe 24/7' : 'Leave 1–2 cores free for system if mining 24/7'}</li>
+                      <li>• {cs ? 'Sledujte teplotu: drzte pod 85°C' : 'Monitor temperature: keep below 85°C'}</li>
+                      <li>• {cs ? 'ARM64 (Raspberry Pi 4/5): pro nejlepsi vykon/watt pouzijte Yescrypt' : 'ARM64 (Raspberry Pi 4/5): use Yescrypt for best perf/watt'}</li>
                     </ul>
                   </div>
                 </div>
@@ -623,10 +623,10 @@ ls -la target/release/zion-miner`}
               <div className="rounded-2xl border border-white/10 bg-black/40 backdrop-blur-sm p-6">
                 <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
                   <Monitor className="w-5 h-5 text-zion-gold" />
-                  {tr('APP_WEB_website_v2_9_src_components_Mini', 'gpu_mining_metal_cuda_opencl', lang)}
+                  {cs ? 'GPU tezba - Metal, CUDA a OpenCL' : 'GPU Mining — Metal, CUDA & OpenCL'}
                 </h3>
                 <p className="text-white/40 text-sm mb-5">
-                  {tr('APP_WEB_website_v2_9_src_components_Mini', 'apple_metal_m1_m4_nvidia_cuda_gtx_rtx_amd_opencl_r', lang)}
+                  {cs ? 'Apple Metal (M1-M4), NVIDIA CUDA (GTX/RTX), AMD OpenCL (RX/Vega).' : 'Apple Metal (M1–M4), NVIDIA CUDA (GTX/RTX), AMD OpenCL (RX/Vega).'}
                 </p>
 
                 <div className="mb-6">
@@ -682,11 +682,11 @@ cargo build --release -p zion-miner --features opencl
                 <div className="rounded-xl bg-zion-gold/5 border border-zion-gold/10 p-4">
                   <h4 className="text-sm font-medium text-zion-gold mb-2">⚡ GPU Tips</h4>
                   <ul className="text-sm text-white/40 space-y-1">
-                    <li>• {tr('APP_WEB_website_v2_9_src_components_Mini', 'autolykos_v2_is_best_for_gpu_memory_hard_asic_resi', lang)}</li>
-                    <li>• {tr('APP_WEB_website_v2_9_src_components_Mini', 'cosmic_harmony_v3_works_on_cpu_gpu_simultaneously', lang)}</li>
-                    <li>• {tr('APP_WEB_website_v2_9_src_components_Mini', 'undervolt_for_20_30_power_saving', lang)}</li>
-                    <li>• {tr('APP_WEB_website_v2_9_src_components_Mini', 'keep_gpu_80_c_vram_95_c', lang)}</li>
-                    <li>• <code className="text-zion-gold/60 text-xs">--gpu-intensity 60-80</code> {tr('APP_WEB_website_v2_9_src_components_Mini', 'for_desktop_use_while_mining', lang)}</li>
+                    <li>• {cs ? 'Autolykos v2 je pro GPU nejvhodnejsi - memory-hard a ASIC resistant' : 'Autolykos v2 is best for GPU — memory-hard, ASIC-resistant'}</li>
+                    <li>• {cs ? 'Cosmic Harmony v3 umi zaroven CPU i GPU tezbu' : 'Cosmic Harmony v3 works on CPU + GPU simultaneously'}</li>
+                    <li>• {cs ? 'Undervolt pro 20-30 % uspory energie' : 'Undervolt for 20–30% power saving'}</li>
+                    <li>• {cs ? 'Drzte GPU pod 80°C a VRAM pod 95°C' : 'Keep GPU < 80°C, VRAM < 95°C'}</li>
+                    <li>• <code className="text-zion-gold/60 text-xs">--gpu-intensity 60-80</code> {cs ? 'pro soubezne pouziti desktopu pri tezbe' : 'for desktop use while mining'}</li>
                   </ul>
                 </div>
               </div>
@@ -699,14 +699,14 @@ cargo build --release -p zion-miner --features opencl
               <div className="rounded-2xl border border-white/10 bg-black/40 backdrop-blur-sm p-6">
                 <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
                   <Users className="w-5 h-5 text-zion-purple" />
-                  {tr('APP_WEB_website_v2_9_src_components_Mini', 'pool_mining_steady_rewards', lang)}
+                  {cs ? 'Pool tezba - stabilni odmeny' : 'Pool Mining — Steady Rewards'}
                 </h3>
                 <p className="text-white/40 text-sm mb-5">
-                  {tr('APP_WEB_website_v2_9_src_components_Mini', 'combines_hashrate_from_many_miners_for_frequent_pr', lang)}
+                  {cs ? 'Spojuje hashrate vice mineru pro caste a predvidatelne payouty. Nejlepsi volba pro vetsinu mineru.' : 'Combines hashrate from many miners for frequent, predictable payouts. Best for most miners.'}
                 </p>
 
                 <div className="rounded-xl bg-white/[0.02] border border-white/10 p-5 mb-5">
-                  <h4 className="text-sm font-medium text-white/60 mb-3">{tr('APP_WEB_website_v2_9_src_components_Mini', 'zion_official_pool_endpoints', lang)}</h4>
+                  <h4 className="text-sm font-medium text-white/60 mb-3">{cs ? 'Oficialni ZION pool endpointy' : 'ZION Official Pool Endpoints'}</h4>
                   <div className="space-y-2">
                     {algorithmsView.map((algo, i) => (
                       <div key={i} className="flex flex-col md:flex-row md:items-center justify-between gap-1 py-2 border-b border-white/[0.04] last:border-0">
@@ -718,7 +718,7 @@ cargo build --release -p zion-miner --features opencl
                 </div>
 
                 <CodeBlock
-                  title={tr('APP_WEB_website_v2_9_src_components_Mini', 'quick_start_pool_mining', lang)}
+                  title={cs ? 'Rychly start - pool tezba' : 'Quick start — Pool mining'}
                   code={`zion-miner \\
   --algo cosmic_harmony \\
   --pool stratum+tcp://${POOL}:8444 \\
@@ -729,10 +729,10 @@ cargo build --release -p zion-miner --features opencl
 
                 <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {[
-                    { label: tr('APP_WEB_website_v2_9_src_components_Mini', 'fee', lang), value: '1%', desc: tr('APP_WEB_website_v2_9_src_components_Mini', 'lowest_in_class', lang) },
-                    { label: tr('APP_WEB_website_v2_9_src_components_Mini', 'payout', lang), value: 'PPLNS', desc: tr('APP_WEB_website_v2_9_src_components_Mini', 'pay_per_last_n_shares', lang) },
-                    { label: tr('APP_WEB_website_v2_9_src_components_Mini', 'min_payout', lang), value: '10 ZION', desc: tr('APP_WEB_website_v2_9_src_components_Mini', 'automatic_transfer', lang) },
-                    { label: tr('APP_WEB_website_v2_9_src_components_Mini', 'interval', lang), value: tr('APP_WEB_website_v2_9_src_components_Mini', 'every_2h', lang), desc: tr('APP_WEB_website_v2_9_src_components_Mini', 'when_threshold_met', lang) },
+                    { label: cs ? 'Fee' : 'Fee', value: '1%', desc: cs ? 'Jedna z nejnižších v třídě' : 'Lowest in class' },
+                    { label: cs ? 'Payout' : 'Payout', value: 'PPLNS', desc: cs ? 'Pay-per-last-N-shares' : 'Pay-per-last-N-shares' },
+                    { label: cs ? 'Min. payout' : 'Min Payout', value: '10 ZION', desc: cs ? 'Automaticky' : 'Automatic transfer' },
+                    { label: cs ? 'Interval' : 'Interval', value: cs ? 'Kazde 2 h' : 'Every 2h', desc: cs ? 'Po dosazeni prahu' : 'When threshold met' },
                   ].map((feat, i) => (
                     <div key={i} className="rounded-xl bg-white/[0.02] border border-white/[0.06] p-3">
                       <div className="flex items-center justify-between mb-1">
@@ -745,10 +745,10 @@ cargo build --release -p zion-miner --features opencl
                 </div>
 
                 <div className="mt-5 rounded-xl bg-zion-purple/5 border border-zion-purple/10 p-4">
-                  <h4 className="text-sm font-medium text-zion-purple mb-2">📊 {tr('APP_WEB_website_v2_9_src_components_Mini', 'monitor_your_miner', lang)}</h4>
+                  <h4 className="text-sm font-medium text-zion-purple mb-2">📊 {cs ? 'Sledujte sveho minera' : 'Monitor Your Miner'}</h4>
                   <p className="text-sm text-white/40">
-                    {tr('APP_WEB_website_v2_9_src_components_Mini', 'track_hashrate_shares_and_payouts_on_the', lang)}
-                    <Link href="/pool" className="text-zion-purple underline hover:text-white transition-colors">{tr('APP_WEB_website_v2_9_src_components_Mini', 'pool_dashboard_1', lang)}</Link>.
+                    {cs ? 'Sledujte hashrate, shares a payouty v ' : 'Track hashrate, shares, and payouts on the '}
+                    <Link href="/pool" className="text-zion-purple underline hover:text-white transition-colors">{cs ? 'pool dashboardu' : 'Pool Dashboard'}</Link>.
                   </p>
                 </div>
               </div>
@@ -761,16 +761,16 @@ cargo build --release -p zion-miner --features opencl
               <div className="rounded-2xl border border-white/10 bg-black/40 backdrop-blur-sm p-6">
                 <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
                   <Sparkles className="w-5 h-5 text-emerald-400" />
-                  {tr('APP_WEB_website_v2_9_src_components_Mini', 'solo_mining_full_block_rewards', lang)}
+                  {cs ? 'Solo tezba - plne blokove odmeny' : 'Solo Mining — Full Block Rewards'}
                 </h3>
                 <p className="text-white/40 text-sm mb-5">
-                  {tr('APP_WEB_website_v2_9_src_components_Mini', 'mine_directly_against_the_blockchain_you_get_the_f', lang)}
+                  {cs ? 'Tezte primo proti blockchainu. Ziskavate celou aktualni blokovou odmenu a fees za nalezeny blok, ale payouty jsou mene pravidelne nez u poolu.' : 'Mine directly against the blockchain. You get the full current block reward and fees when you find a block, but payouts are less frequent than with pool mining.'}
                 </p>
 
                 <div className="rounded-xl bg-amber-500/5 border border-amber-500/10 p-4 mb-5">
-                  <h4 className="text-sm font-medium text-amber-400 mb-1">⚠️ {tr('APP_WEB_website_v2_9_src_components_Mini', 'who_should_solo_mine', lang)}</h4>
+                  <h4 className="text-sm font-medium text-amber-400 mb-1">⚠️ {cs ? 'Kdo by mel tezit solo?' : 'Who should solo mine?'}</h4>
                   <p className="text-sm text-white/40">
-                    {tr('APP_WEB_website_v2_9_src_components_Mini', 'recommended_if_you_have_significant_hashrate_10_of', lang)}
+                    {cs ? 'Doporuceno, pokud mate vyznamny hashrate (>10 % site). Jinak dava pool tezba stabilnejsi payouty.' : 'Recommended if you have significant hashrate (>10% of network). Otherwise, pool mining gives more consistent payouts.'}
                   </p>
                 </div>
 
@@ -780,7 +780,7 @@ cargo build --release -p zion-miner --features opencl
                 />
                 <div className="mt-4">
                   <CodeBlock
-                    title={tr('APP_WEB_website_v2_9_src_components_Mini', 'step_2_mine_against_your_node', lang)}
+                    title={cs ? 'Krok 2 - tezba proti vlastnimu nodu' : 'Step 2 — Mine against your node'}
                     code={`zion-miner \\
   --algo cosmic_harmony \\
   --node http://127.0.0.1:8443 \\
@@ -792,21 +792,21 @@ cargo build --release -p zion-miner --features opencl
 
                 <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="rounded-xl bg-emerald-500/5 border border-emerald-500/10 p-4">
-                    <h4 className="text-sm font-medium text-emerald-400 mb-2">✅ {tr('APP_WEB_website_v2_9_src_components_Mini', 'pros', lang)}</h4>
+                    <h4 className="text-sm font-medium text-emerald-400 mb-2">✅ {cs ? 'Vyhody' : 'Pros'}</h4>
                     <ul className="text-sm text-white/40 space-y-1">
-                      <li>• {tr('APP_WEB_website_v2_9_src_components_Mini', 'full_current_block_reward_fees', lang)}</li>
-                      <li>• {tr('APP_WEB_website_v2_9_src_components_Mini', 'no_pool_fees', lang)}</li>
-                      <li>• {tr('APP_WEB_website_v2_9_src_components_Mini', 'maximum_decentralization', lang)}</li>
-                      <li>• {tr('APP_WEB_website_v2_9_src_components_Mini', 'privacy_no_pool_knows_your_address', lang)}</li>
+                      <li>• {cs ? 'Plna aktualni blokova odmena + fees' : 'Full current block reward + fees'}</li>
+                      <li>• {cs ? 'Bez pool fee' : 'No pool fees'}</li>
+                      <li>• {cs ? 'Maximalni decentralizace' : 'Maximum decentralization'}</li>
+                      <li>• {cs ? 'Soukromi - zadny pool nezna vasu adresu' : 'Privacy — no pool knows your address'}</li>
                     </ul>
                   </div>
                   <div className="rounded-xl bg-red-500/5 border border-red-500/10 p-4">
-                    <h4 className="text-sm font-medium text-red-400 mb-2">❌ {tr('APP_WEB_website_v2_9_src_components_Mini', 'cons', lang)}</h4>
+                    <h4 className="text-sm font-medium text-red-400 mb-2">❌ {cs ? 'Nevyhody' : 'Cons'}</h4>
                     <ul className="text-sm text-white/40 space-y-1">
-                      <li>• {tr('APP_WEB_website_v2_9_src_components_Mini', 'irregular_payouts_luck_based', lang)}</li>
-                      <li>• {tr('APP_WEB_website_v2_9_src_components_Mini', 'need_to_run_a_full_node', lang)}</li>
-                      <li>• {tr('APP_WEB_website_v2_9_src_components_Mini', 'high_variance_with_low_hashrate', lang)}</li>
-                      <li>• {tr('APP_WEB_website_v2_9_src_components_Mini', 'no_partial_share_rewards', lang)}</li>
+                      <li>• {cs ? 'Nepravidelne payouty (zalozene na stesti)' : 'Irregular payouts (luck-based)'}</li>
+                      <li>• {cs ? 'Nutnost provozovat full node' : 'Need to run a full node'}</li>
+                      <li>• {cs ? 'Vysoka variance pri nizkem hashratu' : 'High variance with low hashrate'}</li>
+                      <li>• {cs ? 'Zadne dilci share odmeny' : 'No partial share rewards'}</li>
                     </ul>
                   </div>
                 </div>
@@ -824,16 +824,16 @@ cargo build --release -p zion-miner --features opencl
         >
           <h2 className="text-2xl font-bold text-white mb-2 flex items-center gap-2">
             <Zap className="w-6 h-6 text-zion-gold" />
-            {tr('APP_WEB_website_v2_9_src_components_Mini', 'hardware_comparison', lang)}
+            {cs ? 'Srovnani hardwaru' : 'Hardware Comparison'}
           </h2>
-          <p className="text-white/40 text-sm mb-5">{tr('APP_WEB_website_v2_9_src_components_Mini', 'approximate_values_for_cosmic_harmony_v3_randomx_a', lang)}</p>
+          <p className="text-white/40 text-sm mb-5">{cs ? 'Priblizne hodnoty pro Cosmic Harmony v3 / RandomX / Autolykos v2.' : 'Approximate values for Cosmic Harmony v3 / RandomX / Autolykos v2.'}</p>
 
           <div className="rounded-2xl border border-white/10 bg-black/40 backdrop-blur-sm overflow-hidden">
             <div className="grid grid-cols-[1fr_100px_80px_100px] gap-2 px-6 py-3 border-b border-white/10 bg-white/[0.02] hidden md:grid">
-              <span className="text-[11px] text-white/30 uppercase tracking-wider">{tr('APP_WEB_website_v2_9_src_components_Mini', 'hardware', lang)}</span>
+              <span className="text-[11px] text-white/30 uppercase tracking-wider">{cs ? 'Hardware' : 'Hardware'}</span>
               <span className="text-[11px] text-white/30 uppercase tracking-wider">Hashrate</span>
-              <span className="text-[11px] text-white/30 uppercase tracking-wider">{tr('APP_WEB_website_v2_9_src_components_Mini', 'power', lang)}</span>
-              <span className="text-[11px] text-white/30 uppercase tracking-wider">{tr('APP_WEB_website_v2_9_src_components_Mini', 'efficiency', lang)}</span>
+              <span className="text-[11px] text-white/30 uppercase tracking-wider">{cs ? 'Spotreba' : 'Power'}</span>
+              <span className="text-[11px] text-white/30 uppercase tracking-wider">{cs ? 'Efektivita' : 'Efficiency'}</span>
             </div>
             {hardware.map((row, i) => (
               <div
@@ -863,10 +863,10 @@ cargo build --release -p zion-miner --features opencl
           <div>
             <h2 className="text-2xl font-bold text-white mb-2 flex items-center gap-2">
               <Server className="w-6 h-6 text-zion-cyan" />
-              {tr('APP_WEB_website_v2_9_src_components_Mini', 'run_a_full_node', lang)}
+              {cs ? 'Spustte full node' : 'Run a Full Node'}
             </h2>
             <p className="text-white/50 text-sm">
-              {tr('APP_WEB_website_v2_9_src_components_Mini', 'strengthen_the_network_by_validating_transactions_', lang)}
+              {cs ? 'Posilte sit validaci transakci a relayem bloku. Z nuly do synchronizace asi za 10 minut - bez specialniho hardwaru.' : 'Strengthen the network by validating transactions and relaying blocks. 10 minutes from zero to synced — no special hardware required.'}
             </p>
           </div>
 
@@ -874,7 +874,7 @@ cargo build --release -p zion-miner --features opencl
           <div>
             <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
               <Cog className="w-5 h-5 text-zion-gold" />
-              {tr('APP_WEB_website_v2_9_src_components_Mini', 'system_requirements', lang)}
+              {cs ? 'Systemove pozadavky' : 'System Requirements'}
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {nodeRequirementsView.map((req, i) => (
@@ -893,13 +893,13 @@ cargo build --release -p zion-miner --features opencl
           <div className="space-y-4">
             <h3 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
               <Download className="w-5 h-5 text-zion-cyan" />
-              {tr('APP_WEB_website_v2_9_src_components_Mini', 'installation', lang)}
+              {cs ? 'Instalace' : 'Installation'}
             </h3>
 
             <div className="rounded-2xl border border-white/10 bg-black/40 backdrop-blur-sm p-6">
               <div className="flex items-center gap-3 mb-4">
                 <span className="flex items-center justify-center w-7 h-7 rounded-full bg-zion-gold/10 border border-zion-gold/20 text-zion-gold text-xs font-bold">1</span>
-                <h4 className="text-white font-medium">{tr('APP_WEB_website_v2_9_src_components_Mini', 'pre_compiled_binary_recommended', lang)}</h4>
+                <h4 className="text-white font-medium">{cs ? 'Predkompilovana binarka (doporuceno)' : 'Pre-compiled Binary (recommended)'}</h4>
               </div>
               <CodeBlock
                 code={`# Download ZION CLI (unified binary)
@@ -915,7 +915,7 @@ chmod +x zion
             <div className="rounded-2xl border border-white/10 bg-black/40 backdrop-blur-sm p-6">
               <div className="flex items-center gap-3 mb-4">
                 <span className="flex items-center justify-center w-7 h-7 rounded-full bg-zion-cyan/10 border border-zion-cyan/20 text-zion-cyan text-xs font-bold">2</span>
-                <h4 className="text-white font-medium">{tr('APP_WEB_website_v2_9_src_components_Mini', 'build_from_source', lang)}</h4>
+                <h4 className="text-white font-medium">{cs ? 'Build ze zdrojoveho kodu' : 'Build from Source'}</h4>
               </div>
               <CodeBlock
                 code={`git clone https://github.com/Zion-TerraNova/2.9.6.git
@@ -947,7 +947,7 @@ docker run -d \\
           <div>
             <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
               <Network className="w-5 h-5 text-zion-purple" />
-              {tr('APP_WEB_website_v2_9_src_components_Mini', 'network_configuration', lang)}
+              {cs ? 'Sitova konfigurace' : 'Network Configuration'}
             </h3>
 
             <div className="flex items-center gap-2 mb-4">
@@ -968,7 +968,7 @@ docker run -d \\
 
             <div className="rounded-2xl border border-white/10 bg-black/40 backdrop-blur-sm p-6">
               <p className="text-white/50 text-sm mb-4">
-                {networkConfigsView[activeNetwork].description} - {tr('APP_WEB_website_v2_9_src_components_Mini', 'config', lang)}:{" "}
+                {networkConfigsView[activeNetwork].description} - {cs ? 'config' : 'config'}:{" "}
                 <code className="text-zion-cyan/80 bg-zion-cyan/5 px-2 py-0.5 rounded text-xs">
                   config/{networkConfigsView[activeNetwork].file}
                 </code>
@@ -1005,15 +1005,15 @@ bootstrap = [
           <div>
             <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
               <Shield className="w-5 h-5 text-emerald-400" />
-              {tr('APP_WEB_website_v2_9_src_components_Mini', 'ports_firewall', lang)}
+              {cs ? 'Porty a firewall' : 'Ports & Firewall'}
             </h3>
 
             <div className="rounded-2xl border border-white/10 bg-black/40 backdrop-blur-sm overflow-hidden">
               <div className="grid grid-cols-4 gap-2 px-6 py-3 border-b border-white/10 bg-white/[0.02]">
                 <span className="text-[11px] text-white/30 uppercase tracking-wider">Port</span>
-                <span className="text-[11px] text-white/30 uppercase tracking-wider">{tr('APP_WEB_website_v2_9_src_components_Mini', 'protocol', lang)}</span>
-                <span className="text-[11px] text-white/30 uppercase tracking-wider">{tr('APP_WEB_website_v2_9_src_components_Mini', 'purpose', lang)}</span>
-                <span className="text-[11px] text-white/30 uppercase tracking-wider text-right">{tr('APP_WEB_website_v2_9_src_components_Mini', 'required', lang)}</span>
+                <span className="text-[11px] text-white/30 uppercase tracking-wider">{cs ? 'Protokol' : 'Protocol'}</span>
+                <span className="text-[11px] text-white/30 uppercase tracking-wider">{cs ? 'Ucel' : 'Purpose'}</span>
+                <span className="text-[11px] text-white/30 uppercase tracking-wider text-right">{cs ? 'Povinne' : 'Required'}</span>
               </div>
               {portsView.map((p, i) => (
                 <div key={i} className="grid grid-cols-4 gap-2 px-6 py-3 border-b border-white/[0.04] last:border-0">
@@ -1022,9 +1022,9 @@ bootstrap = [
                   <span className="text-sm text-white/70">{p.purpose}</span>
                   <span className="text-right">
                     {p.required ? (
-                      <span className="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full">{tr('APP_WEB_website_v2_9_src_components_Mini', 'required', lang)}</span>
+                      <span className="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full">{cs ? 'Povinne' : 'Required'}</span>
                     ) : (
-                      <span className="text-[10px] bg-white/5 text-white/30 border border-white/10 px-2 py-0.5 rounded-full">{tr('APP_WEB_website_v2_9_src_components_Mini', 'optional', lang)}</span>
+                      <span className="text-[10px] bg-white/5 text-white/30 border border-white/10 px-2 py-0.5 rounded-full">{cs ? 'Volitelne' : 'Optional'}</span>
                     )}
                   </span>
                 </div>
@@ -1045,7 +1045,7 @@ sudo ufw status`}
           <div>
             <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
               <Terminal className="w-5 h-5 text-zion-gold" />
-              {tr('APP_WEB_website_v2_9_src_components_Mini', 'node_cli_reference', lang)}
+              {cs ? 'Reference pro Node CLI' : 'Node CLI Reference'}
             </h3>
 
             <div className="rounded-2xl border border-white/10 bg-black/40 backdrop-blur-sm overflow-hidden">
@@ -1062,7 +1062,7 @@ sudo ufw status`}
           <div className="rounded-2xl border border-white/10 bg-black/40 backdrop-blur-sm p-6 space-y-5">
             <h3 className="text-lg font-bold text-white flex items-center gap-2">
               <Rocket className="w-5 h-5 text-emerald-400" />
-              {tr('APP_WEB_website_v2_9_src_components_Mini', 'verify_your_node', lang)}
+              {cs ? 'Overte svuj node' : 'Verify Your Node'}
             </h3>
             <CodeBlock
               title="Check sync status"
@@ -1080,12 +1080,12 @@ sudo ufw status`}
               <div className="flex items-start gap-3">
                 <Check className="w-5 h-5 text-emerald-400 mt-0.5 shrink-0" />
                 <div className="text-sm text-white/60">
-                  <p className="font-medium text-emerald-400 mb-1">{tr('APP_WEB_website_v2_9_src_components_Mini', 'success_criteria', lang)}</p>
+                  <p className="font-medium text-emerald-400 mb-1">{cs ? 'Kriteria uspechu' : 'Success criteria'}</p>
                   <ul className="space-y-1 text-white/40">
-                    <li>• {tr('APP_WEB_website_v2_9_src_components_Mini', 'block_height_matches', lang)}<Link href="/explorer" className="text-zion-cyan/60 hover:text-zion-cyan underline">{tr('APP_WEB_website_v2_9_src_components_Mini', 'explorer', lang)}</Link></li>
-                    <li>• {tr('APP_WEB_website_v2_9_src_components_Mini', '2_peers_connected', lang)}</li>
-                    <li>• {tr('APP_WEB_website_v2_9_src_components_Mini', 'new_blocks_every_60_seconds', lang)}</li>
-                    <li>• {tr('APP_WEB_website_v2_9_src_components_Mini', 'rpc_responds_to_queries', lang)}</li>
+                    <li>• {cs ? 'Vyska bloku odpovida ' : 'Block height matches '}<Link href="/explorer" className="text-zion-cyan/60 hover:text-zion-cyan underline">{cs ? 'Exploreru' : 'Explorer'}</Link></li>
+                    <li>• {cs ? '2+ pripojene peery' : '2+ peers connected'}</li>
+                    <li>• {cs ? 'Nove bloky kazdych asi 60 sekund' : 'New blocks every ~60 seconds'}</li>
+                    <li>• {cs ? 'RPC odpovida na dotazy' : 'RPC responds to queries'}</li>
                   </ul>
                 </div>
               </div>
@@ -1102,7 +1102,7 @@ sudo ufw status`}
         >
           <h2 className="text-2xl font-bold text-white mb-5 flex items-center gap-2">
             <Settings className="w-6 h-6 text-amber-400" />
-            {tr('APP_WEB_website_v2_9_src_components_Mini', 'faq_troubleshooting', lang)}
+            {cs ? 'FAQ a troubleshooting' : 'FAQ & Troubleshooting'}
           </h2>
 
           <div className="space-y-3">
@@ -1137,9 +1137,9 @@ sudo ufw status`}
           className="rounded-[32px] border border-zion-gold/30 bg-gradient-to-r from-zion-purple/30 via-zion-gold/15 to-zion-purple/30 p-10 text-center"
         >
           <Pickaxe className="mx-auto h-12 w-12 text-zion-gold" />
-          <h2 className="mt-6 text-3xl font-semibold text-white">{tr('APP_WEB_website_v2_9_src_components_Mini', 'ready_to_mine_zion', lang)}</h2>
+          <h2 className="mt-6 text-3xl font-semibold text-white">{cs ? 'Pripraveni tezit ZION?' : 'Ready to mine ZION?'}</h2>
           <p className="mt-4 text-gray-100 max-w-2xl mx-auto">
-            {tr('APP_WEB_website_v2_9_src_components_Mini', 'join_the_community_every_hash_strengthens_the_netw', lang)}
+            {cs ? 'Pripojte se ke komunite. Kazdy hash posiluje sit.' : 'Join the community. Every hash strengthens the network.'}
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <Link
@@ -1147,14 +1147,14 @@ sudo ufw status`}
               className="inline-flex items-center gap-2 rounded-2xl bg-zion-gold/80 px-6 py-3 text-sm font-semibold text-black border border-zion-gold hover:brightness-110 transition-all"
             >
               <ArrowDownToLine className="h-4 w-4" />
-              {tr('APP_WEB_website_v2_9_src_components_Mini', 'download_binaries', lang)}
+              {cs ? 'Stahnout binarky' : 'Download Binaries'}
             </Link>
             <Link
               href="/pool"
               className="inline-flex items-center gap-2 rounded-2xl bg-zion-purple/70 px-6 py-3 text-sm font-semibold text-white border border-zion-purple"
             >
               <Globe className="h-4 w-4" />
-              {tr('APP_WEB_website_v2_9_src_components_Mini', 'pool_dashboard', lang)}
+              {cs ? 'Pool dashboard' : 'Pool Dashboard'}
             </Link>
             <Link
               href={GH_GUIDE}
@@ -1163,13 +1163,13 @@ sudo ufw status`}
               className="inline-flex items-center gap-2 rounded-2xl bg-white/10 border border-white/20 px-6 py-3 text-sm font-semibold text-white"
             >
               <Github className="h-4 w-4" />
-              {tr('APP_WEB_website_v2_9_src_components_Mini', 'full_guide_on_github', lang)}
+              {cs ? 'Plny navod na GitHubu' : 'Full Guide on GitHub'}
             </Link>
             <Link
               href="/explorer"
               className="inline-flex items-center gap-2 rounded-2xl bg-white/5 border border-white/10 px-6 py-3 text-sm font-semibold text-gray-300"
             >
-              {tr('APP_WEB_website_v2_9_src_components_Mini', 'explorer_1', lang)}
+              {cs ? 'Explorer' : 'Explorer'}
             </Link>
           </div>
         </motion.section>

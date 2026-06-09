@@ -44,13 +44,13 @@ export default function MainnetCountdown() {
   }, []);
 
   const units = [
-    { value: time.days, label: tr('countdown', 'unit_days', lang) },
-    { value: time.hours, label: tr('countdown', 'unit_hours', lang) },
-    { value: time.minutes, label: tr('countdown', 'unit_minutes', lang) },
-    { value: time.seconds, label: tr('countdown', 'unit_seconds', lang) },
+    { value: time.days, label: cs ? 'Dnů' : 'Days' },
+    { value: time.hours, label: cs ? 'Hodin' : 'Hours' },
+    { value: time.minutes, label: cs ? 'Minut' : 'Minutes' },
+    { value: time.seconds, label: cs ? 'Sekund' : 'Seconds' },
   ];
 
-  const tMinus = time.total > 0 ? `T-${time.days}` : tr('countdown', 'live_badge', lang);
+  const tMinus = time.total > 0 ? `T-${time.days}` : 'LIVE';
   const isLive = time.total <= 0;
 
   if (!mounted) {
@@ -85,12 +85,12 @@ export default function MainnetCountdown() {
                 </div>
                 <div>
                   <h2 className="text-xl md:text-2xl font-bold text-white">
-                    {tr('countdown', 'live_title', lang)}
+                    Mainnet LIVE
                   </h2>
                   <div className="flex items-center gap-2 mt-1 text-sm text-gray-400">
                     <Calendar className="w-4 h-4 text-zion-cyan" />
-                    <span>{tr('countdown', 'live_target_date', lang)}</span>
-                    <span className="text-emerald-400 font-semibold">{tr('countdown', 'live_badge', lang)}</span>
+                    <span>Target: 31 December 2026 (New Year's Eve)</span>
+                    <span className="text-emerald-400 font-semibold">GO</span>
                   </div>
                 </div>
               </div>
@@ -105,11 +105,11 @@ export default function MainnetCountdown() {
                 >
                   <div className="w-20 h-20 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 backdrop-blur-md flex items-center justify-center">
                     <span className="text-2xl md:text-3xl font-bold text-emerald-300 tabular-nums">
-                      {tr('countdown', 'live_badge', lang)}
+                      LIVE
                     </span>
                   </div>
                   <span className="text-[10px] md:text-xs uppercase tracking-wider text-emerald-400 mt-2">
-                    {tr('countdown', 'status_label', lang)}
+                    Status
                   </span>
                 </motion.div>
               </div>
@@ -126,7 +126,7 @@ export default function MainnetCountdown() {
                 />
               </div>
               <p className="text-[11px] text-gray-500 mt-2 text-center">
-                {tr('countdown', 'live_caption', lang)}
+                V3 Mainnet is operational · Core + Edge topology · Mining active · Bridge deployed
               </p>
             </div>
           </motion.div>
