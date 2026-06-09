@@ -22,14 +22,14 @@ export default function Navigation() {
     pathname === href || (href === '/terranova' && pathname.startsWith('/terranova')) || (href === '/wiki' && pathname === '/wiki');
   const navGroups: NavGroup[] = [
     {
-      title: 'Info',
+      title: tr('nav', 'info_group', lang),
       items: [
         { href: '/', label: tr('nav', 'home', lang) },
         { href: '/news', label: tr('nav', 'news', lang) },
         { href: '/network', label: tr('nav', 'network', lang) },
         { href: '/explorer', label: tr('nav', 'explorer', lang) },
         { href: '/dashboard', label: tr('nav', 'dashboard', lang) },
-        { href: '/dashboard/mission-control', label: 'Mission Control' },
+        { href: '/dashboard/mission-control', label: tr('nav', 'mission_control', lang) },
         { href: '/dashboard/guardian', label: tr('nav', 'guardian', lang) },
         { href: '/pool', label: tr('nav', 'pool', lang) },
         { href: '/mining', label: tr('nav', 'mining', lang) },
@@ -41,21 +41,21 @@ export default function Navigation() {
       ],
     },
     {
-      title: 'Vrstvy',
+      title: tr('nav', 'layers_group', lang),
       items: [
         {
           href: '/defi',
-          label: 'L2',
+          label: tr('nav', 'l2', lang),
           children: [
             { href: '/defi', label: tr('nav', 'defi', lang) },
-            { href: '/wallet', label: 'Wallet' },
+            { href: '/wallet', label: tr('nav', 'wallet', lang) },
             { href: '/dao', label: tr('nav', 'dao', lang) },
             { href: '/bridge', label: tr('nav', 'bridge', lang) },
           ],
         },
         {
           href: '/l3-hiran',
-          label: 'L3',
+          label: tr('nav', 'l3', lang),
           children: [
             { href: '/l3-hiran', label: tr('nav', 'l3_hiran', lang) },
             { href: '/warp', label: tr('nav', 'warp', lang) },
@@ -68,16 +68,16 @@ export default function Navigation() {
       ],
     },
     {
-      title: 'Wiki',
+      title: tr('nav', 'wiki_group', lang),
       items: [
-        { href: '/wiki', label: 'Wiki' },
+        { href: '/wiki', label: tr('nav', 'wiki_group', lang) },
         {
           href: '/terranova',
           label: tr('nav', 'terranova', lang),
           children: [
             { href: '/terranova/genesis', label: tr('nav', 'terra_garden_genesis', lang) },
-            { href: '/terranova/dharma-temple', label: 'Dharma Temple' },
-            { href: '/terranova/te-piko-ora', label: 'Te Pīko Ora' },
+            { href: '/terranova/dharma-temple', label: tr('nav', 'dharma_temple', lang) },
+            { href: '/terranova/te-piko-ora', label: tr('nav', 'te_piko_ora', lang) },
           ],
         },
         { href: '/genesis', label: tr('nav', 'genesis', lang) },
