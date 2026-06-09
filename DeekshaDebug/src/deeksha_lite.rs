@@ -2,9 +2,9 @@
 //!
 //! Pipeline (must match DeekshaDebug/kernels/deeksha_lite.cl exactly):
 //!   1. Keccak256(header[0..80] || nonce_le[0..8])          → s1[32]
-//!   2. Memory-hard scratchpad (128 KiB, 4096 blocks × 32B)
+//!   2. Memory-hard scratchpad (256 KiB, 8192 blocks × 32B)
 //!        Phase A: SHA3-512 chain fill
-//!                 state = seed || 0×32; for blk in 0..4096:
+//!                 state = seed || 0×32; for blk in 0..8192:
 //!                   inp = state || (blk & 0xFF); sha3_512(inp[..65]) → out
 //!                   pad[blk*32..+32] = out[0..32]; state[0..32] = out[0..32]
 //!        Phase B: 2 sequential XOR passes (forward, backward)
@@ -17,9 +17,9 @@
 
 use sha3::{Digest, Keccak256, Sha3_512};
 
-pub const SCRATCHPAD_SIZE: usize = 128 * 1024; // 128 KiB
+pub const SCRATCHPAD_SIZE: usize = 256 * 1024; // 256 KiB (matches V3)
 pub const BLOCK_SIZE:      usize = 32;
-pub const BLOCK_COUNT:     usize = SCRATCHPAD_SIZE / BLOCK_SIZE; // 4096
+pub const BLOCK_COUNT:     usize = SCRATCHPAD_SIZE / BLOCK_SIZE; // 8192
 pub const PASSES:          usize = 2;
 pub const RANDOM_READS:    usize = 64;
 pub const AES_ROUNDS:      usize = 4;

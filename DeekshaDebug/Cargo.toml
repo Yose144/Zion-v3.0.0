@@ -31,6 +31,22 @@ path = "src/bin/debug_stages.rs"
 name = "bench_lite_fire"
 path = "src/bin/bench_lite_fire.rs"
 
+[[bin]]
+name = "deeksha_lite_benchmark"
+path = "src/bin/deeksha_lite_benchmark.rs"
+
+[[bin]]
+name = "deeksha_lite_optimized_benchmark"
+path = "src/bin/deeksha_lite_optimized_benchmark.rs"
+
+[[bin]]
+name = "deeksha_lite_fire_optimized_benchmark"
+path = "src/bin/deeksha_lite_fire_optimized_benchmark.rs"
+
+[[bin]]
+name = "compare_all_algorithms"
+path = "src/bin/compare_all_algorithms.rs"
+
 [lib]
 name = "deeksha_debug"
 path = "src/lib.rs"

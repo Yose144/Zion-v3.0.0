@@ -1,6 +1,6 @@
 # ZION V3 — Status Report (Mainnet Polish)
 
-> **Datum:** **2026-06-08** (Fire CPU/GPU sync + pool submitted_hash fix — viz sekce níže); 2026-06-07 (Chain reset + full stack cleanup); 2026-06-06 (HTTP JSON-RPC Transaction Relay Bug Fix); 2026-05-22 (Genesis + fee split KONFIGURACE DOKONČENA, ready for mainnet launch 31.12.2026); **2026-05-21** (Edge pool + L5/L6 + DAO governance + root docs sync); **2026-05-12** (Hiran v2.2 CLI integration); **2026-05-07** (security cleanup + agentická obsluha).
+> **Datum:** **2026-06-09**; **2026-06-08** (Fire CPU/GPU sync + pool submitted_hash fix — viz sekce níže); 2026-06-07 (Chain reset + full stack cleanup); 2026-06-06 (HTTP JSON-RPC Transaction Relay Bug Fix); 2026-05-22 (Genesis + fee split KONFIGURACE DOKONČENA, ready for mainnet launch 31.12.2026); **2026-05-21** (Edge pool + L5/L6 + DAO governance + root docs sync); **2026-05-12** (Hiran v2.2 CLI integration); **2026-05-07** (security cleanup + agentická obsluha).
 > (sjednocení `StatusV3.md` ↔ `StatusV3-Part2.md` — TL;DR, roadmap §6, §8, §5
 > pyramida, odkazy).
 > **Předchozí update:** 2026-05-03 (genesis konsensus — merged na `main`)
@@ -19,6 +19,51 @@
 > starý Praha server (`91.98.122.165`) nebo historickou multi-server topologii
 > (Prague, SG, Helsinki, US) jsou **archivní / historické**, pokud není explicitně
 > uvedeno jinak. Aktuální živá topologie je **Core + Edge** (viz sekce Infrastruktura).
+
+---
+
+## Co je nového 2026-06-09 (V3 Cleanup — 3 kanonické algoritmy + algorithm-aware validace)
+
+> Verze: **3.0.1** (beze změny Cargo verze)
+> Klíčové commity: `cf1b2d2f` (algorithm-aware PoW validace), `91429a97` (V3 cleanup — optimized varianty odstraněny)
+
+### TL;DR
+
+| Změna | Status | Soubor |
+|-------|--------|--------|
+| Algorithm-aware block validace | ✅ Opraveno | `peer_block_validation.rs`, `lib.rs` |
+| Odebrání nekanonických GPU variant z V3 | ✅ Odstraněno | `opencl_kernel.rs`, `gpu_backend.rs`, `gpu_guard.rs` |
+| Opraven Fire scratchpad 128 KiB → 256 KiB | ✅ Opraveno | `gpu_guard.rs` |
+| Dead-code soubor odstraněn z V3 | ✅ Smazán | `gpu_backend_optimized.rs` |
+| DeekshaDebug Cargo.toml kompletní | ✅ Opraveno | `DeekshaDebug/Cargo.toml` |
+| Chain height po nasazení | ✅ 525+ a roste | Edge mainnet |
+
+### Kanonická sada algoritmů V3 (3 algoritmy, žádné duplikace)
+
+| Algoritmus | Scratchpad | Zvláštní vlastnost | Sezóna |
+|------------|-----------|-------------------|--------|
+| `cosmic_harmony_ekam_deeksha_v2` | ~256 KiB + NPU | Plný Ekam pipeline | — |
+| `deeksha_lite_v1` | 256 KiB | SHA3-512, 64 čtení, 4 AES kola | — |
+| `deeksha_lite_fire` | 256 KiB | Stejné jako Lite + 65536 termálních iterací | Zima |
+
+Experimentální varianty (`deeksha_lite_optimized`, `deeksha_lite_fire_optimized`) zůstávají **výhradně** v `DeekshaDebug/` sandbox pro GPU testování před případnou budoucí produkcí.
+
+### Co bylo uděláno
+
+1. **Algorithm-aware PoW validace** (`cf1b2d2f`) — `validate_accepted_peer_block` v `peer_block_validation.rs` volal `candidate.hash()` který vždy používal `deeksha_lite_v1`, což způsobovalo odmítání Fire bloků. Fix: přidáno `algorithm: String` pole do `AcceptedBlock` (s `#[serde(default)]`), přidána metoda `hash_with_algorithm()`, validace nyní používá `block.algorithm`. Opraveny inicializátory v `genesis.rs` a `rpc.rs`.
+
+2. **V3 production cleanup** (`91429a97`) — Odstraněny všechny experimentální "optimized" varianty z V3:
+   - `opencl_kernel.rs`: odstraněny `DEEKSHA_LITE_OPTIMIZED_KERNEL` + `DEEKSHA_LITE_FIRE_OPTIMIZED_KERNEL` konstanty a funkce
+   - `lib.rs` (cosmic-harmony): re-exports zúženy na 3 kanonické kernely
+   - `gpu_backend.rs`: odstraněny optimized větve z `create_gpu_backend()` a `benchmark_all()`
+   - `gpu_guard.rs`: odstraněny `DeekshaLiteOptimized` / `DeekshaLiteFireOptimized` enum varianty + `auto_tune` match větve; **opraven Fire scratchpad 128 KiB → 256 KiB**
+   - `gpu_backend_optimized.rs`: smazán (dead code, nikdy nebyl importován, odkazoval na neexistující enum varianty)
+
+3. **DeekshaDebug Cargo.toml** — Přidány 3 chybějící `[[bin]]` sekce: `deeksha_lite_benchmark`, `deeksha_lite_optimized_benchmark`, `deeksha_lite_fire_optimized_benchmark`, `compare_all_algorithms`. Všechny benchmarky nyní spustitelné.
+
+4. **Edge deploy** — `git pull` → release build (1m 12s) → restart `zion-edge-node1` + `zion-edge-pool` → miner připojen, první block nalezen za 6 sekund → chain height 525+ a roste.
+
+5. **Verifikace** — 487/487 testů v `zion-core` prošlo; `zion-miner` a `deeksha-debug` se kompilují bez chyb.
 
 ---
 
