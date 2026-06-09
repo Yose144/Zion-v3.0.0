@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useLang } from '@/contexts/LanguageContext';
 import {
+import { tr } from '@/lib/translations';
   Activity,
   ArrowRight,
   CheckCircle2,
@@ -17,68 +18,68 @@ import {
 } from 'lucide-react';
 
 const getWarpStats = (cs: boolean) => [
-  { label: cs ? 'Plánované koridory' : 'Corridors Planned', value: '11', detail: 'BTC · ETH · SOL · L2 + Lightning', icon: CloudLightning },
-  { label: cs ? 'Živé koridory' : 'Live Corridors', value: '1', detail: cs ? 'Ethereum Lock/Mint — Base Mainnet' : 'Ethereum Lock/Mint — Base Mainnet', icon: CheckCircle2 },
-  { label: cs ? 'Guardian runtime' : 'Guardian Runtime', value: '1 + quorum', detail: cs ? 'Veřejný host Zion2 · interní validator linky' : 'Zion2 public host · internal validator lanes', icon: ShieldCheck },
-  { label: cs ? 'Fáze vývoje' : 'Development Phase', value: cs ? 'Fáze 2' : 'Phase 2', detail: cs ? 'ETH live · BTC + SOL v návrhu' : 'ETH live · BTC + SOL in design', icon: Globe2 },
+  { label: tr('APP_WEB_website_v2_9_src_app_warp_page', 'corridors_planned', lang), value: '11', detail: 'BTC · ETH · SOL · L2 + Lightning', icon: CloudLightning },
+  { label: tr('APP_WEB_website_v2_9_src_app_warp_page', 'live_corridors', lang), value: '1', detail: tr('APP_WEB_website_v2_9_src_app_warp_page', 'ethereum_lock_mint_base_mainnet', lang), icon: CheckCircle2 },
+  { label: tr('APP_WEB_website_v2_9_src_app_warp_page', 'guardian_runtime', lang), value: '1 + quorum', detail: tr('APP_WEB_website_v2_9_src_app_warp_page', 'zion2_public_host_internal_validator_lanes', lang), icon: ShieldCheck },
+  { label: tr('APP_WEB_website_v2_9_src_app_warp_page', 'development_phase', lang), value: tr('APP_WEB_website_v2_9_src_app_warp_page', 'phase_2', lang), detail: tr('APP_WEB_website_v2_9_src_app_warp_page', 'eth_live_btc_sol_in_design', lang), icon: Globe2 },
 ];
 
 const getCorridorRows = (cs: boolean): { title: string; subtitle: string; live: boolean; entries: { label: string; value: string }[] }[] => [
   {
-    title: cs ? 'Ethereum Lock/Mint' : 'Ethereum Lock/Mint',
+    title: tr('APP_WEB_website_v2_9_src_app_warp_page', 'ethereum_lock_mint', lang),
     subtitle: 'wZION ERC-20 · Base Mainnet',
     live: true,
     entries: [
-      { label: cs ? 'Validátoři' : 'Validators', value: cs ? 'Relay daemon + multi-sig quorum · deployment auditován' : 'Relay daemon + multi-sig quorum · deployment audited' },
-      { label: cs ? 'Stav' : 'Status', value: cs ? 'Živě na Base Mainnet (chain 8453) · wZION/WETH Uniswap V3 pool aktivní' : 'Live on Base Mainnet (chain 8453) · wZION/WETH Uniswap V3 pool active' },
-      { label: cs ? 'Integrace' : 'Integration', value: cs ? 'EVM peněženky, DeFi swap, DAO treasury, LP stakes' : 'EVM wallets, DeFi swap, DAO treasury, LP stakes' },
+      { label: tr('APP_WEB_website_v2_9_src_app_warp_page', 'validators', lang), value: tr('APP_WEB_website_v2_9_src_app_warp_page', 'relay_daemon_multi_sig_quorum_deployment_audited', lang) },
+      { label: tr('APP_WEB_website_v2_9_src_app_warp_page', 'status', lang), value: tr('APP_WEB_website_v2_9_src_app_warp_page', 'live_on_base_mainnet_chain_8453_wzion_weth_uniswap', lang) },
+      { label: tr('APP_WEB_website_v2_9_src_app_warp_page', 'integration', lang), value: tr('APP_WEB_website_v2_9_src_app_warp_page', 'evm_wallets_defi_swap_dao_treasury_lp_stakes', lang) },
     ],
   },
   {
-    title: cs ? 'Bitcoin HTLC most' : 'Bitcoin HTLC Bridge',
+    title: tr('APP_WEB_website_v2_9_src_app_warp_page', 'bitcoin_htlc_bridge', lang),
     subtitle: 'SegWit + Taproot',
     live: false,
     entries: [
-      { label: cs ? 'Bezpečnostní model' : 'Security Model', value: 'HTLC · 2-of-3 multi-sig · 24h timelock' },
-      { label: cs ? 'Stav' : 'Status', value: cs ? 'Návrh architektury — gated corridor, ne live launch slib' : 'Architecture design — gated corridor, not a live launch promise' },
-      { label: cs ? 'Use case' : 'Use cases', value: cs ? 'Trustless swapy, Lightning exity, OTC bridging' : 'Trustless swaps, Lightning exits, OTC bridging' },
+      { label: tr('APP_WEB_website_v2_9_src_app_warp_page', 'security_model', lang), value: 'HTLC · 2-of-3 multi-sig · 24h timelock' },
+      { label: tr('APP_WEB_website_v2_9_src_app_warp_page', 'status', lang), value: tr('APP_WEB_website_v2_9_src_app_warp_page', 'architecture_design_gated_corridor_not_a_live_laun', lang) },
+      { label: tr('APP_WEB_website_v2_9_src_app_warp_page', 'use_cases', lang), value: tr('APP_WEB_website_v2_9_src_app_warp_page', 'trustless_swaps_lightning_exits_otc_bridging', lang) },
     ],
   },
   {
-    title: cs ? 'Solana SPL program' : 'Solana SPL Program',
+    title: tr('APP_WEB_website_v2_9_src_app_warp_page', 'solana_spl_program', lang),
     subtitle: 'PDA-secured',
     live: false,
     entries: [
-      { label: cs ? 'Finalita' : 'Finality', value: cs ? 'Plánovaná integrace Tower BFT' : 'Tower BFT integration planned' },
-      { label: cs ? 'Stav' : 'Status', value: cs ? 'Výzkumná fáze — po BTC mostu' : 'Research phase — after BTC bridge' },
-      { label: cs ? 'Využití' : 'Utility', value: cs ? 'Game assety, routing likvidity, warp swapy' : 'Game assets, liquidity routing, warp swaps' },
+      { label: tr('APP_WEB_website_v2_9_src_app_warp_page', 'finality', lang), value: tr('APP_WEB_website_v2_9_src_app_warp_page', 'tower_bft_integration_planned', lang) },
+      { label: tr('APP_WEB_website_v2_9_src_app_warp_page', 'status', lang), value: tr('APP_WEB_website_v2_9_src_app_warp_page', 'research_phase_after_btc_bridge', lang) },
+      { label: tr('APP_WEB_website_v2_9_src_app_warp_page', 'utility', lang), value: tr('APP_WEB_website_v2_9_src_app_warp_page', 'game_assets_liquidity_routing_warp_swaps', lang) },
     ],
   },
 ];
 
 const getOnboarding = (cs: boolean) => [
   {
-    title: cs ? '1 · Zřízení přístupu' : '1 · Provision access',
+    title: tr('APP_WEB_website_v2_9_src_app_warp_page', '1_provision_access', lang),
     items: [
-      cs ? 'Whitelist validátorů nebo převzetí veřejných endpointů' : 'Whitelist validators or fetch public endpoints',
-      cs ? 'Vygenerujte API tokeny (read/transfer scopes)' : 'Generate API tokens (read/transfer scopes)',
-      cs ? 'Stáhněte SDK z oficiálního GitHubu' : 'Download SDK from official GitHub',
+      tr('APP_WEB_website_v2_9_src_app_warp_page', 'whitelist_validators_or_fetch_public_endpoints', lang),
+      tr('APP_WEB_website_v2_9_src_app_warp_page', 'generate_api_tokens_read_transfer_scopes', lang),
+      tr('APP_WEB_website_v2_9_src_app_warp_page', 'download_sdk_from_official_github', lang),
     ],
   },
   {
-    title: cs ? '2 · Zapojení likvidity' : '2 · Wire liquidity',
+    title: tr('APP_WEB_website_v2_9_src_app_warp_page', '2_wire_liquidity', lang),
     items: [
-      cs ? 'Uzamkněte aktiva do vybraného corridor poolu' : 'Lock assets into chosen corridor pool',
-      cs ? 'Nastavte validator quorum + alert webhooky' : 'Set validator quorum + alert webhooks',
-      cs ? 'Spusťte smoke test na sandbox chain páru' : 'Run smoke test using sandbox chain pairs',
+      tr('APP_WEB_website_v2_9_src_app_warp_page', 'lock_assets_into_chosen_corridor_pool', lang),
+      tr('APP_WEB_website_v2_9_src_app_warp_page', 'set_validator_quorum_alert_webhooks', lang),
+      tr('APP_WEB_website_v2_9_src_app_warp_page', 'run_smoke_test_using_sandbox_chain_pairs', lang),
     ],
   },
   {
-    title: cs ? '3 · Monitorovat + optimalizovat' : '3 · Monitor + optimize',
+    title: tr('APP_WEB_website_v2_9_src_app_warp_page', '3_monitor_optimize', lang),
     items: [
-      cs ? 'Odebírat streamy validator dashboardu' : 'Subscribe to validator dashboard streams',
-      cs ? 'Zapnout compact block relay metriky' : 'Enable compact block relay metrics',
-      cs ? 'Naplánovat týdenní failover + incident drills' : 'Schedule weekly failover + incident drills',
+      tr('APP_WEB_website_v2_9_src_app_warp_page', 'subscribe_to_validator_dashboard_streams', lang),
+      tr('APP_WEB_website_v2_9_src_app_warp_page', 'enable_compact_block_relay_metrics', lang),
+      tr('APP_WEB_website_v2_9_src_app_warp_page', 'schedule_weekly_failover_incident_drills', lang),
     ],
   },
 ];
@@ -103,9 +104,9 @@ export default function WarpPage() {
                 Warp 2.0 · Corridor Ops
               </div>
               <div>
-                <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{cs ? 'Cross-chain řídicí panel' : 'Cross-chain flight deck'}</p>
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{tr('APP_WEB_website_v2_9_src_app_warp_page', 'cross_chain_flight_deck', lang)}</p>
                 <h1 className="text-3xl sm:text-5xl md:text-6xl font-semibold text-gradient leading-tight">
-                  {cs ? 'Likvidita bez hranic' : 'Liquidity without borders'}
+                  {tr('APP_WEB_website_v2_9_src_app_warp_page', 'liquidity_without_borders', lang)}
                 </h1>
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
@@ -115,11 +116,11 @@ export default function WarpPage() {
               </p>
               <div className="flex flex-wrap gap-4">
                 <Link href="/defi" className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-zion-gold via-zion-purple to-zion-cyan px-6 py-3 text-sm font-semibold text-black">
-                  {cs ? 'Otevřít DeFi Hub' : 'Open DeFi Hub'}
+                  {tr('APP_WEB_website_v2_9_src_app_warp_page', 'open_defi_hub', lang)}
                   <ArrowRight className="h-4 w-4" />
                 </Link>
                 <Link href="/bridge" className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white">
-                  {cs ? 'Bridge operace' : 'Bridge operations'}
+                  {tr('APP_WEB_website_v2_9_src_app_warp_page', 'bridge_operations', lang)}
                 </Link>
               </div>
             </div>
@@ -139,8 +140,8 @@ export default function WarpPage() {
         {/* ── Corridor grid ── */}
         <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="space-y-6">
           <div className="flex flex-col gap-2">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Síť koridorů' : 'Corridor grid'}</p>
-            <h2 className="text-3xl font-semibold text-white">{cs ? 'Mosty kryté validátory' : 'Validator-backed bridges'}</h2>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tr('APP_WEB_website_v2_9_src_app_warp_page', 'corridor_grid', lang)}</p>
+            <h2 className="text-3xl font-semibold text-white">{tr('APP_WEB_website_v2_9_src_app_warp_page', 'validator_backed_bridges', lang)}</h2>
           </div>
           <div className="space-y-6">
             {corridorRows.map((row) => (
@@ -153,11 +154,11 @@ export default function WarpPage() {
                   {row.live ? (
                     <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-300">
                       <CheckCircle2 className="h-3.5 w-3.5" />
-                      {cs ? 'Živě' : 'Live'}
+                      {tr('APP_WEB_website_v2_9_src_app_warp_page', 'live', lang)}
                     </span>
                   ) : (
                     <span className="rounded-full border border-white/20 bg-white/5 px-3 py-1 text-xs text-gray-300">
-                      {cs ? 'Ve vývoji' : 'In development'}
+                      {tr('APP_WEB_website_v2_9_src_app_warp_page', 'in_development', lang)}
                     </span>
                   )}
                 </div>
@@ -177,15 +178,15 @@ export default function WarpPage() {
         {/* ── Onboarding runbook ── */}
         <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[32px] border border-white/10 bg-white/5 p-8">
           <div className="flex flex-col gap-2">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Operační runbook' : 'Operations runbook'}</p>
-            <h2 className="text-3xl font-semibold text-white">{cs ? 'Připojit nový koridór online' : 'Bring a new corridor online'}</h2>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tr('APP_WEB_website_v2_9_src_app_warp_page', 'operations_runbook', lang)}</p>
+            <h2 className="text-3xl font-semibold text-white">{tr('APP_WEB_website_v2_9_src_app_warp_page', 'bring_a_new_corridor_online', lang)}</h2>
           </div>
           <div className="mt-6 grid gap-6 md:grid-cols-3">
             {onboarding.map((block, idx) => (
               <div key={block.title} className="rounded-3xl border border-white/10 bg-black/30 p-6">
                 <div className="flex items-center gap-3">
                   <CircuitBoard className="h-5 w-5 text-zion-cyan" />
-                  <p className="text-xs uppercase tracking-[0.35em] text-gray-400">{cs ? 'Fáze' : 'Stage'} {idx + 1}</p>
+                  <p className="text-xs uppercase tracking-[0.35em] text-gray-400">{tr('APP_WEB_website_v2_9_src_app_warp_page', 'stage', lang)} {idx + 1}</p>
                 </div>
                 <h3 className="mt-3 text-xl font-semibold text-white">{block.title}</h3>
                 <ul className="mt-4 space-y-2 text-sm text-gray-300">
@@ -204,7 +205,7 @@ export default function WarpPage() {
         {/* ── Institutional CTA ── */}
         <motion.section initial={{ opacity: 0, scale: 0.98 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} className="rounded-[32px] border border-zion-gold/30 bg-gradient-to-r from-zion-purple/30 via-zion-gold/10 to-zion-purple/30 p-10 text-center">
           <Activity className="mx-auto h-12 w-12 text-zion-gold" />
-          <h2 className="mt-6 text-3xl font-semibold text-white">{cs ? 'Potřebujete vlastní routing nebo institucionální onboarding?' : 'Need custom routing or institutional onboarding?'}</h2>
+          <h2 className="mt-6 text-3xl font-semibold text-white">{tr('APP_WEB_website_v2_9_src_app_warp_page', 'need_custom_routing_or_institutional_onboarding', lang)}</h2>
           <p className="mt-4 text-gray-100 max-w-3xl mx-auto">
             {cs
               ? 'Core tým provozuje managed validátory a může pomoci s bootstrapem vašeho koridoru, připojením OTC likvidity nebo přidáním nových chainů. Ozvěte se přes oficiální kanály nebo založte issue na veřejném GitHubu.'
@@ -212,10 +213,10 @@ export default function WarpPage() {
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <Link href="https://github.com/Zion-TerraNova" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-2xl bg-black/70 px-6 py-3 text-sm font-semibold text-white border border-white/20">
-              {cs ? 'Otevřít GitHub diskuse' : 'Open GitHub discussions'}
+              {tr('APP_WEB_website_v2_9_src_app_warp_page', 'open_github_discussions', lang)}
             </Link>
             <Link href="/docs" className="inline-flex items-center gap-2 rounded-2xl bg-white/90 px-6 py-3 text-sm font-semibold text-gray-900">
-              {cs ? 'Projít integrační docs' : 'Review integration docs'}
+              {tr('APP_WEB_website_v2_9_src_app_warp_page', 'review_integration_docs', lang)}
             </Link>
           </div>
         </motion.section>

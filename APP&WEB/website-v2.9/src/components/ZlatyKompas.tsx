@@ -157,7 +157,7 @@ export default function ZlatyKompas({ selected, onSelect }: ZlatyKompasProps) {
       viewBox="0 0 700 700"
       className="w-full h-auto select-none"
       role="img"
-      aria-label={cs ? 'Zlatý Kompas — sedm směrů TerraNova' : 'Golden Compass — seven directions of TerraNova'}
+      aria-label={tr('APP_WEB_website_v2_9_src_components_Zlat', 'golden_compass_seven_directions_of_terranova', lang)}
     >
       <defs>
         {/* Central radial glow */}

@@ -12,6 +12,7 @@ import {
 import { SITE_RELEASE_LABEL, SITE_RUNTIME_VERSION, SITE_VERSION } from '@/lib/site';
 import { useLang } from '@/contexts/LanguageContext';
 import { usePolling } from '@/hooks/usePolling';
+import { tr } from '@/lib/translations';
 
 /* ═══════════════════════ TYPES ═══════════════════════ */
 interface PrometheusResult {
@@ -327,7 +328,7 @@ function GroupRow({ name, submits, accepted, color }: {
 export default function MonitoringClient() {
   const { lang } = useLang();
   const cs = lang === 'cs';
-  const locale = cs ? 'cs-CZ' : 'en-US';
+  const locale = tr('APP_WEB_website_v2_9_src_app_monitoring_', 'en_us', lang);
   const [data, setData] = useState<MonitoringData | null>(null);
   const [sparklines, setSparklines] = useState<SparklineData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -379,10 +380,10 @@ export default function MonitoringClient() {
             <div className="space-y-4">
               <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-emerald-400 uppercase">
                 <Monitor className="h-4 w-4" />
-                {SITE_RELEASE_LABEL} · {cs ? 'Monitoring' : 'Monitoring'}
+                {SITE_RELEASE_LABEL} · {tr('APP_WEB_website_v2_9_src_app_monitoring_', 'monitoring', lang)}
               </div>
               <h1 className="text-3xl md:text-4xl font-bold bg-linear-to-r from-white via-emerald-200 to-emerald-400 bg-clip-text text-transparent">
-                {cs ? 'Sitovy monitoring' : 'Network Monitoring'}
+                {tr('APP_WEB_website_v2_9_src_app_monitoring_', 'network_monitoring', lang)}
               </h1>
               <p className="text-gray-400 max-w-2xl text-sm md:text-base">
                 {cs
@@ -398,7 +399,7 @@ export default function MonitoringClient() {
                 className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 px-6 py-3 text-sm font-semibold text-white transition-colors"
               >
                 <BarChart3 className="h-4 w-4" />
-                {cs ? 'Otevrit Grafana dashboard' : 'Open Grafana Dashboard'}
+                {tr('APP_WEB_website_v2_9_src_app_monitoring_', 'open_grafana_dashboard', lang)}
                 <ExternalLink className="h-3.5 w-3.5 opacity-60" />
               </a>
               <button
@@ -407,13 +408,13 @@ export default function MonitoringClient() {
                 className="inline-flex items-center gap-2 rounded-xl border border-white/20 hover:border-white/40 px-5 py-3 text-sm font-medium text-gray-300 transition-colors"
               >
                 <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                {cs ? 'Obnovit' : 'Refresh'}
+                {tr('APP_WEB_website_v2_9_src_app_monitoring_', 'refresh', lang)}
               </button>
             </div>
           </div>
           {lastUpdate && (
             <div className="mt-4 text-xs text-gray-500">
-              {cs ? 'Posledni aktualizace' : 'Last update'}: {lastUpdate.toLocaleTimeString(locale)} · {cs ? 'dalsi za 15 s' : 'Next in 15s'}
+              {tr('APP_WEB_website_v2_9_src_app_monitoring_', 'last_update', lang)}: {lastUpdate.toLocaleTimeString(locale)} · {tr('APP_WEB_website_v2_9_src_app_monitoring_', 'next_in_15s', lang)}
             </div>
           )}
         </motion.section>
@@ -427,18 +428,18 @@ export default function MonitoringClient() {
         >
           <div className="flex items-center gap-2 text-sm">
             <StatusDot up={data?.coreUp ?? null} />
-            <span className="text-gray-300">{cs ? 'Core node' : 'Core Node'}</span>
+            <span className="text-gray-300">{tr('APP_WEB_website_v2_9_src_app_monitoring_', 'core_node', lang)}</span>
           </div>
           <div className="flex items-center gap-2 text-sm">
             <StatusDot up={data?.poolUp ?? null} />
-            <span className="text-gray-300">{cs ? 'Mining pool' : 'Mining Pool'}</span>
+            <span className="text-gray-300">{tr('APP_WEB_website_v2_9_src_app_monitoring_', 'mining_pool', lang)}</span>
           </div>
           <div className="flex items-center gap-2 text-sm">
             <StatusDot up={data?.serverLoad1 != null ? 1 : null} />
             <span className="text-gray-300">Node Exporter</span>
           </div>
           <div className="ml-auto text-xs text-gray-500 font-mono">
-            {data?.chainHeight != null ? `${cs ? 'Blok' : 'Block'} #${data.chainHeight.toLocaleString(locale)}` : ''}
+            {data?.chainHeight != null ? `${tr('APP_WEB_website_v2_9_src_app_monitoring_', 'block', lang)} #${data.chainHeight.toLocaleString(locale)}` : ''}
           </div>
         </motion.section>
 
@@ -450,7 +451,7 @@ export default function MonitoringClient() {
         >
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <Server className="h-5 w-5 text-zion-cyan" />
-            {cs ? 'Core node' : 'Core Node'}
+            {tr('APP_WEB_website_v2_9_src_app_monitoring_', 'core_node', lang)}
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
             <StatCard icon={Layers}   label="Chain Height"    value={fmt(data?.chainHeight)} accent="text-zion-gold" />
@@ -464,7 +465,7 @@ export default function MonitoringClient() {
           {/* Sparkline */}
           {sparklines && sparklines.chainHeight.length > 1 && (
             <div className="mt-3 zion-panel rounded-xl bg-black/40 border border-white/10 p-4">
-              <div className="text-xs text-gray-400 mb-2">{cs ? 'Vyska chainu — posledni 1 hodina' : 'Chain Height — last 1 hour'}</div>
+              <div className="text-xs text-gray-400 mb-2">{tr('APP_WEB_website_v2_9_src_app_monitoring_', 'chain_height_last_1_hour', lang)}</div>
               <Sparkline data={sparklines.chainHeight} color="#FFD700" height={40} />
             </div>
           )}
@@ -478,7 +479,7 @@ export default function MonitoringClient() {
         >
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <Cpu className="h-5 w-5 text-zion-gold" />
-            {cs ? 'Mining pool' : 'Mining Pool'}
+            {tr('APP_WEB_website_v2_9_src_app_monitoring_', 'mining_pool', lang)}
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
             <StatCard icon={Users}    label="Active Miners"    value={fmt(data?.poolActiveSessions)} accent="text-zion-gold" />
@@ -494,13 +495,13 @@ export default function MonitoringClient() {
             <div className="mt-3 grid md:grid-cols-2 gap-3">
               {sparklines.poolSessions.length > 1 && (
                 <div className="zion-panel rounded-xl bg-black/40 border border-white/10 p-4">
-                  <div className="text-xs text-gray-400 mb-2">{cs ? 'Aktivni mineri — posledni 1 hodina' : 'Active Miners — last 1 hour'}</div>
+                  <div className="text-xs text-gray-400 mb-2">{tr('APP_WEB_website_v2_9_src_app_monitoring_', 'active_miners_last_1_hour', lang)}</div>
                   <Sparkline data={sparklines.poolSessions} color="#FFD700" height={36} />
                 </div>
               )}
               {sparklines.shares.length > 1 && (
                 <div className="zion-panel rounded-xl bg-black/40 border border-white/10 p-4">
-                  <div className="text-xs text-gray-400 mb-2">{cs ? 'Prijate shares — posledni 1 hodina' : 'Accepted Shares — last 1 hour'}</div>
+                  <div className="text-xs text-gray-400 mb-2">{tr('APP_WEB_website_v2_9_src_app_monitoring_', 'accepted_shares_last_1_hour', lang)}</div>
                   <Sparkline data={sparklines.shares} color="#10b981" height={36} />
                 </div>
               )}
@@ -517,7 +518,7 @@ export default function MonitoringClient() {
         >
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <Network className="h-5 w-5 text-sky-400" />
-            {cs ? 'Skupiny poolu' : 'Pool Groups'}
+            {tr('APP_WEB_website_v2_9_src_app_monitoring_', 'pool_groups', lang)}
           </h2>
           <div className="grid md:grid-cols-2 gap-3">
             <GroupRow name="zion (Main)" submits={data?.groupZionSubmits} accepted={data?.groupZionAccepted} color="bg-emerald-400" />
@@ -536,7 +537,7 @@ export default function MonitoringClient() {
         >
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <CircleDollarSign className="h-5 w-5 text-pink-400" />
-            {cs ? 'PPLNS vyplatni engine' : 'PPLNS Reward Engine'}
+            {tr('APP_WEB_website_v2_9_src_app_monitoring_', 'pplns_reward_engine', lang)}
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
             <div className="space-y-2 min-w-0">
@@ -583,19 +584,19 @@ export default function MonitoringClient() {
             {/* CPU Load */}
             <div className="space-y-2">
               <div className="text-xs text-gray-400 uppercase tracking-wider flex items-center gap-1">
-                <Flame className="h-3 w-3" /> {cs ? 'CPU zatez' : 'CPU Load'}
+                <Flame className="h-3 w-3" /> {tr('APP_WEB_website_v2_9_src_app_monitoring_', 'cpu_load', lang)}
               </div>
               <div className="flex items-baseline gap-2">
                 <span className="text-xl font-mono font-bold text-zion-cyan">{fmtDec(data?.serverLoad1)}</span>
                 <span className="text-xs text-gray-500">{fmtDec(data?.serverLoad5)} / {fmtDec(data?.serverLoad15)}</span>
               </div>
-              <div className="text-xs text-gray-500">{cs ? 'prumer 1m / 5m / 15m' : '1m / 5m / 15m average'}</div>
+              <div className="text-xs text-gray-500">{tr('APP_WEB_website_v2_9_src_app_monitoring_', '1m_5m_15m_average', lang)}</div>
             </div>
 
             {/* Memory */}
             <div className="space-y-2">
               <div className="text-xs text-gray-400 uppercase tracking-wider flex items-center gap-1">
-                <Cpu className="h-3 w-3" /> {cs ? 'Pamet' : 'Memory'}
+                <Cpu className="h-3 w-3" /> {tr('APP_WEB_website_v2_9_src_app_monitoring_', 'memory', lang)}
               </div>
               <div className="text-xl font-mono font-bold text-purple-400">
                 {memUsedPct != null ? `${memUsedPct.toFixed(1)}%` : '—'}
@@ -635,13 +636,13 @@ export default function MonitoringClient() {
             {/* Server Uptime */}
             <div className="space-y-2">
               <div className="text-xs text-gray-400 uppercase tracking-wider flex items-center gap-1">
-                <Clock className="h-3 w-3" /> {cs ? 'Uptime serveru' : 'Server Uptime'}
+                <Clock className="h-3 w-3" /> {tr('APP_WEB_website_v2_9_src_app_monitoring_', 'server_uptime', lang)}
               </div>
               <div className="text-xl font-mono font-bold text-emerald-400">
                 {fmtUptime(serverUptime)}
               </div>
               <div className="text-xs text-gray-500">
-                {cs ? 'od' : 'since'} {data?.bootTime ? new Date(data.bootTime * 1000).toLocaleDateString(locale) : '—'}
+                {tr('APP_WEB_website_v2_9_src_app_monitoring_', 'since', lang)} {data?.bootTime ? new Date(data.bootTime * 1000).toLocaleDateString(locale) : '—'}
               </div>
             </div>
           </div>
@@ -656,19 +657,19 @@ export default function MonitoringClient() {
         >
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <Shield className="h-5 w-5 text-emerald-400" />
-            {cs ? 'Monitoring stack' : 'Monitoring Stack'}
+            {tr('APP_WEB_website_v2_9_src_app_monitoring_', 'monitoring_stack', lang)}
           </h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
             {[
-              { name: 'Prometheus', ver: 'v2.53.0', desc: cs ? 'Sber metrik a alerting' : 'Metrics collection & alerting', color: 'text-orange-400' },
-              { name: 'Grafana', ver: 'v11.1.0', desc: cs ? '22panelovy dashboard V3' : '22-panel V3 dashboard', color: 'text-zion-gold' },
-              { name: 'Node Exporter', ver: 'v1.8.1', desc: cs ? 'Host CPU, RAM, disk, sit' : 'Host CPU, RAM, disk, network', color: 'text-zion-cyan' },
-              { name: 'Redis Exporter', ver: 'v1.61.0', desc: cs ? 'Metriky persistence Redisu' : 'Redis persistence metrics', color: 'text-red-400' },
-              { name: 'Alertmanager', ver: 'v0.27.0', desc: cs ? 'Routing alertu a notifikace' : 'Alert routing & notifications', color: 'text-purple-400' },
-              { name: cs ? 'Core metriky' : 'Core Metrics', ver: ':9115', desc: cs ? 'Prometheus endpoint V3 nodu (7 gaugu)' : 'V3 node Prometheus endpoint (7 gauges)', color: 'text-emerald-400' },
-              { name: cs ? 'Pool metriky' : 'Pool Metrics', ver: ':8080', desc: cs ? 'Mining pool /metrics (20+ counteru/gaugu)' : 'Mining pool /metrics (20+ counters/gauges)', color: 'text-zion-gold' },
-              { name: 'API Proxy', ver: '/api/metrics', desc: cs ? 'Bezpecny allowlist query proxy' : 'Secure allowlisted query proxy', color: 'text-sky-400' },
-              { name: cs ? 'Web' : 'Website', ver: SITE_VERSION, desc: `Next.js 16 + Tailwind CSS 4 · runtime ${SITE_RUNTIME_VERSION}`, color: 'text-pink-400' },
+              { name: 'Prometheus', ver: 'v2.53.0', desc: tr('APP_WEB_website_v2_9_src_app_monitoring_', 'metrics_collection_alerting', lang), color: 'text-orange-400' },
+              { name: 'Grafana', ver: 'v11.1.0', desc: tr('APP_WEB_website_v2_9_src_app_monitoring_', '22_panel_v3_dashboard', lang), color: 'text-zion-gold' },
+              { name: 'Node Exporter', ver: 'v1.8.1', desc: tr('APP_WEB_website_v2_9_src_app_monitoring_', 'host_cpu_ram_disk_network', lang), color: 'text-zion-cyan' },
+              { name: 'Redis Exporter', ver: 'v1.61.0', desc: tr('APP_WEB_website_v2_9_src_app_monitoring_', 'redis_persistence_metrics', lang), color: 'text-red-400' },
+              { name: 'Alertmanager', ver: 'v0.27.0', desc: tr('APP_WEB_website_v2_9_src_app_monitoring_', 'alert_routing_notifications', lang), color: 'text-purple-400' },
+              { name: tr('APP_WEB_website_v2_9_src_app_monitoring_', 'core_metrics', lang), ver: ':9115', desc: tr('APP_WEB_website_v2_9_src_app_monitoring_', 'v3_node_prometheus_endpoint_7_gauges', lang), color: 'text-emerald-400' },
+              { name: tr('APP_WEB_website_v2_9_src_app_monitoring_', 'pool_metrics', lang), ver: ':8080', desc: tr('APP_WEB_website_v2_9_src_app_monitoring_', 'mining_pool_metrics_20_counters_gauges', lang), color: 'text-zion-gold' },
+              { name: 'API Proxy', ver: '/api/metrics', desc: tr('APP_WEB_website_v2_9_src_app_monitoring_', 'secure_allowlisted_query_proxy', lang), color: 'text-sky-400' },
+              { name: tr('APP_WEB_website_v2_9_src_app_monitoring_', 'website', lang), ver: SITE_VERSION, desc: `Next.js 16 + Tailwind CSS 4 · runtime ${SITE_RUNTIME_VERSION}`, color: 'text-pink-400' },
             ].map((s) => (
               <div key={s.name} className="flex items-start gap-3 p-3 rounded-lg bg-white/5">
                 <div className={`mt-0.5 h-2 w-2 rounded-full ${s.color.replace('text-', 'bg-')}`} />
@@ -684,11 +685,11 @@ export default function MonitoringClient() {
 
           {/* Legend */}
           <div className="mt-6 pt-4 border-t border-white/10 text-xs text-gray-500 flex flex-wrap gap-x-6 gap-y-2">
-            <span>{cs ? '30+ zivych Prometheus metrik' : '30+ live Prometheus metrics'}</span>
-            <span>{cs ? 'Instantni + range dotazy' : 'Instant + Range queries'}</span>
-            <span>{cs ? 'Allowlist proxy (zion_*, node_*)' : 'Allowlisted proxy (zion_*, node_*)'}</span>
-            <span>{cs ? 'Auto-refresh 15 s' : '15s auto-refresh'}</span>
-            <span>{cs ? 'SVG sparkliny (historie 1 h)' : 'SVG sparklines (1h history)'}</span>
+            <span>{tr('APP_WEB_website_v2_9_src_app_monitoring_', '30_live_prometheus_metrics', lang)}</span>
+            <span>{tr('APP_WEB_website_v2_9_src_app_monitoring_', 'instant_range_queries', lang)}</span>
+            <span>{tr('APP_WEB_website_v2_9_src_app_monitoring_', 'allowlisted_proxy_zion__node', lang)}</span>
+            <span>{tr('APP_WEB_website_v2_9_src_app_monitoring_', '15s_auto_refresh', lang)}</span>
+            <span>{tr('APP_WEB_website_v2_9_src_app_monitoring_', 'svg_sparklines_1h_history', lang)}</span>
           </div>
         </motion.section>
 
