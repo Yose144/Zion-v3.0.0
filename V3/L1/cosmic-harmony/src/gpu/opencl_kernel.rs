@@ -1,3 +1,6 @@
+// Canonical PoW kernels for V3 mainnet.
+// Three algorithms only: Deeksha (full Ekam), Lite v1, Fire.
+// Experimental variants (optimized/fire_optimized) live in DeekshaDebug/ sandbox only.
 pub const COSMIC_HARMONY_DEEKSHA_KERNEL: &str = include_str!("kernels/cosmic_harmony_deeksha.cl");
 pub const DEEKSHA_LITE_KERNEL: &str = include_str!("kernels/deeksha_lite.cl");
 pub const DEEKSHA_LITE_FIRE_KERNEL: &str = include_str!("kernels/deeksha_lite_fire.cl");

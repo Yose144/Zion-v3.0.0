@@ -208,23 +208,23 @@ impl GpuDeviceFamily {
     }
 }
 
-/// Supported mining algorithms on GPU.
+/// Canonical mining algorithms on GPU.
+/// Three algorithms only: Deeksha (full Ekam), Lite v1, Fire.
+/// Experimental variants live in DeekshaDebug/ sandbox.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GpuAlgorithm {
     /// Original cosmic_harmony Deeksha (full pipeline with NPU, Blake3, etc.)
     CosmicHarmony,
-    /// Simplified deeksha_lite_v1 — GCN-friendly, SHA3-512 scratchpad, no Blake3
+    /// Canonical deeksha_lite_v1 — 256 KiB scratchpad, SHA3-512, 64 reads, 4 AES rounds
     DeekshaLiteV1,
-    /// Thermal-intensive deeksha_lite_fire — 512 KiB scratchpad, 8 passes, 256 reads
+    /// Canonical deeksha_lite_fire — 256 KiB scratchpad + 65536-iter thermal loop
     DeekshaLiteFire,
 }
 
 impl GpuAlgorithm {
     pub fn from_str(s: &str) -> Self {
         match s.trim().to_ascii_lowercase().as_str() {
-            "deeksha_lite_v1" | "deeksha_lite" | "lite" | "dl" | "dlv1" => {
-                Self::DeekshaLiteV1
-            }
+            "deeksha_lite_v1" | "deeksha_lite" | "lite" | "dl" | "dlv1" => Self::DeekshaLiteV1,
             "deeksha_lite_fire" | "fire" | "dlfire" => Self::DeekshaLiteFire,
             _ => Self::CosmicHarmony,
         }
@@ -266,7 +266,7 @@ impl GpuTuning {
         let scratchpad_bytes = match algo {
             GpuAlgorithm::CosmicHarmony => 256 * 1024, // 256 KiB per thread
             GpuAlgorithm::DeekshaLiteV1 => 256 * 1024, // 256 KiB per thread
-            GpuAlgorithm::DeekshaLiteFire => 128 * 1024, // 128 KiB per thread (small, ASIC-resistant)
+            GpuAlgorithm::DeekshaLiteFire => 256 * 1024, // 256 KiB per thread (same as v1 + thermal loop)
         };
 
         let reserve = 512 * 1024 * 1024; // 512 MiB for driver + desktop
@@ -300,28 +300,26 @@ impl GpuTuning {
             }
 
             // ── DeekshaLite Fire (thermal-intensive) ────────────────────
+            // 256 KiB scratchpad (same as v1) + 65536-iter integer thermal loop.
             (GpuAlgorithm::DeekshaLiteFire, GpuDeviceFamily::AmdGcn) => {
-                // GCN: very conservative work size due to 512 KiB scratchpad
                 let ws = (max_by_vram.min(2048).max(128)).next_power_of_two();
                 let opts = "-cl-std=CL1.2 -cl-mad-enable -DZION_GCN_WORKAROUNDS".to_string();
-                (ws, 256, opts, 60, true)
+                (ws, 256, opts, 65, true)
             }
             (GpuAlgorithm::DeekshaLiteFire, GpuDeviceFamily::AmdRdna) => {
-                // RDNA: 8192 threads = 128 wavefronts, 1 GiB scratchpad (128 KiB/thread)
-                // Int-only thermal loop: no float, so -cl-fast-relaxed-math not needed.
                 let ws = (max_by_vram.min(8192).max(512)).next_power_of_two();
                 let opts = "-cl-std=CL1.2 -cl-mad-enable".to_string();
-                (ws, 128, opts, 90, false)
+                (ws, 128, opts, 85, false)
             }
             (GpuAlgorithm::DeekshaLiteFire, GpuDeviceFamily::Nvidia) => {
                 let ws = (max_by_vram.min(4096).max(256)).next_power_of_two();
-                let opts = "-cl-std=CL1.2 -cl-mad-enable -cl-fast-relaxed-math".to_string();
+                let opts = "-cl-std=CL1.2 -cl-mad-enable".to_string();
                 (ws, 128, opts, 75, false)
             }
             (GpuAlgorithm::DeekshaLiteFire, GpuDeviceFamily::Other) => {
                 let ws = (max_by_vram.min(2048).max(128)).next_power_of_two();
                 let opts = "-cl-std=CL1.2 -cl-mad-enable".to_string();
-                (ws, 128, opts, 60, false)
+                (ws, 128, opts, 65, false)
             }
 
             // ── Cosmic Harmony ──────────────────────────────────────────
