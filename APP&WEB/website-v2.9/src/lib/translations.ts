@@ -1986,7 +1986,7 @@ const t = {
     proposer: { cs: 'Navrhovatel', en: 'Proposer' },
     ends: { cs: 'Konec', en: 'Ends' },
     contract: { cs: 'Kontrakt', en: 'Contract' },
-  }},
+  },
   APP_WEB_website_v2_9_src_app_defi_farmin: {
     back_to_defi_hub: { cs: 'Zpět do DeFi Hub', en: 'Back to DeFi Hub' },
     defi: { cs: 'DeFi', en: 'DeFi' },
@@ -2003,7 +2003,7 @@ const t = {
     lp_token_amount: { cs: 'Částka LP tokenů', en: 'LP Token Amount' },
     lp: { cs: 'LP', en: 'LP' },
     deposit_lp_tokens: { cs: 'Vložit LP tokeny', en: 'Deposit LP Tokens' },
-  }},
+  },
   APP_WEB_website_v2_9_src_app_defi_stakin: {
     back_to_defi_hub: { cs: 'Zpět do DeFi Hub', en: 'Back to DeFi Hub' },
     defi: { cs: 'DeFi', en: 'DeFi' },
@@ -2027,7 +2027,7 @@ const t = {
     auto_compounding_rewards_at_a_fixed_12_apr: { cs: 'Automaticky narůstající odměny s fixním 12% APR.', en: 'Auto-compounding rewards at a fixed 12% APR.' },
     request_unstake_wait_7_days_withdraw_principal_rew: { cs: 'Požádej o unstake, počkej 7 dní a vybírej původní částku + odměny.', en: 'Request unstake, wait 7 days, withdraw principal + rewards.' },
     contract: { cs: 'Kontrakt', en: 'Contract' },
-  }},
+  },
   APP_WEB_website_v2_9_src_app_explorer_ad: {
     en_us: { cs: 'cs-CZ', en: 'en-US' },
     address: { cs: 'Adresa', en: 'Address' },
@@ -2061,7 +2061,7 @@ const t = {
     index: { cs: 'Index', en: 'Index' },
     height: { cs: 'Vyska', en: 'Height' },
     no_utxos_found: { cs: 'Zadne UTXO nenalezeny', en: 'No UTXOs found' },
-  }},
+  },
   APP_WEB_website_v2_9_src_app_explorer_bl: {
     en_us: { cs: 'cs-CZ', en: 'en-US' },
     block_not_found: { cs: 'Blok nenalezen', en: 'Block Not Found' },
@@ -2092,7 +2092,7 @@ const t = {
     coinbase: { cs: 'Coinbase', en: 'Coinbase' },
     transfer: { cs: 'Prevod', en: 'Transfer' },
     all_blocks: { cs: 'Vsechny bloky', en: 'All Blocks' },
-  }},
+  },
   APP_WEB_website_v2_9_src_app_explorer_bl: {
     en_us: { cs: 'cs-CZ', en: 'en-US' },
     blocks: { cs: 'Bloky', en: 'Blocks' },
@@ -2104,7 +2104,7 @@ const t = {
     difficulty: { cs: 'Obtiznost', en: 'Difficulty' },
     reward: { cs: 'Odmena', en: 'Reward' },
     load_more: { cs: 'Nacist dalsi', en: 'Load More' },
-  }},
+  },
   APP_WEB_website_v2_9_src_app_explorer_ri: {
     en_us: { cs: 'cs-CZ', en: 'en-US' },
     supply_distribution: { cs: 'Distribuce zasoby', en: 'Supply Distribution' },
@@ -2123,7 +2123,7 @@ const t = {
     addresses: { cs: 'adres', en: 'addresses' },
     premine_allocation_as_defined_in: { cs: 'Premine alokace podle', en: 'Premine allocation as defined in' },
     miner_balances_from_pool_reward_history: { cs: '. Zustatky mineru vychazi z historie odmen poolu.', en: '. Miner balances from pool reward history.' },
-  }},
+  },
   APP_WEB_website_v2_9_src_app_explorer_tr: {
     payout: { cs: 'vyplata', en: 'payout' },
     transfer: { cs: 'prevod', en: 'transfer' },
@@ -2139,7 +2139,7 @@ const t = {
     pending: { cs: 'ceka', en: 'pending' },
     loading: { cs: 'Nacitam…', en: 'Loading…' },
     load_more_transactions: { cs: 'Nacist dalsi transakce', en: 'Load More Transactions' },
-  }},
+  },
   APP_WEB_website_v2_9_src_app_explorer_tx: {
     en_us: { cs: 'cs-CZ', en: 'en-US' },
     transaction_not_found: { cs: 'Transakce nenalezena', en: 'Transaction Not Found' },
@@ -2167,7 +2167,7 @@ const t = {
     total_out: { cs: 'Celkem vystup:', en: 'Total Out:' },
     bytes: { cs: 'bajtu', en: 'bytes' },
     view_block: { cs: 'Zobrazit blok', en: 'View Block' },
-  }},
+  },
   APP_WEB_website_v2_9_src_app_kompas_Komp: {
     click_a_direction_for_detail: { cs: 'Klikni na směr pro detail', en: 'Click a direction for detail' },
     close: { cs: 'Zavřít', en: 'Close' },
@@ -2176,7 +2176,7 @@ const t = {
     all_seven_directions: { cs: 'Všech sedm směrů', en: 'All seven directions' },
     inner: { cs: 'Vnitřní', en: 'Inner' },
     outer: { cs: 'Vnější', en: 'Outer' },
-  }},
+  },
   APP_WEB_website_v2_9_src_app_monitoring_: {
     en_us: { cs: 'cs-CZ', en: 'en-US' },
     monitoring: { cs: 'Monitoring', en: 'Monitoring' },
@@ -2215,7 +2215,7 @@ const t = {
     allowlisted_proxy_zion__node: { cs: 'Allowlist proxy (zion_*, node_*)', en: 'Allowlisted proxy (zion_*, node_*)' },
     '15s_auto_refresh': { cs: 'Auto-refresh 15 s', en: '15s auto-refresh' },
     svg_sparklines_1h_history: { cs: 'SVG sparkliny (historie 1 h)', en: 'SVG sparklines (1h history)' },
-  }},
+  },
   APP_WEB_website_v2_9_src_app_news_v3_int: {
     back_to_news: { cs: 'Zpět na novinky', en: 'Back to news' },
     audit_2026_05_04: { cs: 'Audit · 2026-05-04', en: 'Audit · 2026-05-04' },
@@ -2225,7 +2225,7 @@ const t = {
     network_snapshot: { cs: 'Síťový snapshot', en: 'Network snapshot' },
     docs: { cs: 'Dokumentace', en: 'Docs' },
     repo_audit_files: { cs: 'Repo / audit soubory', en: 'Repo / audit files' },
-  }},
+  },
   APP_WEB_website_v2_9_src_app_terranova_T: {
     prologue: { cs: 'Prolog', en: 'Prologue' },
     conclusion: { cs: 'Závěr', en: 'Conclusion' },
@@ -2286,24 +2286,24 @@ const t = {
     open_terra_nova_contents: { cs: 'Přejít do obsahu Terra Novy', en: 'Open Terra Nova Contents' },
     real_zion_cli_docs: { cs: 'Real ZION CLI dokumentace', en: 'Real ZION CLI Docs' },
     top: { cs: 'Nahoru', en: 'Top' },
-  }},
+  },
   APP_WEB_website_v2_9_src_app_terranova_c: {
     cultural_inserts_by_geography: { cs: 'Kulturní vložky podle geografie', en: 'Cultural inserts by geography' },
-  }},
+  },
   APP_WEB_website_v2_9_src_app_terranova_c: {
     ecosystem_layers: { cs: 'Ekosystémové vrstvy', en: 'Ecosystem Layers' },
-  }},
+  },
   APP_WEB_website_v2_9_src_app_terranova_c: {
     l5_pioneer_projects: { cs: 'Pioneer Projekty L5', en: 'L5 Pioneer Projects' },
     live_terra_nova_nodes_around_the_world: { cs: 'Živé uzly Terra Nova po celém světě', en: 'Live Terra Nova nodes around the world' },
     open_project_detail: { cs: 'Otevřít detail projektu', en: 'Open project detail' },
-  }},
+  },
   APP_WEB_website_v2_9_src_app_terranova_g: {
     back_to_terra_nova: { cs: 'Zpět na Terra Nova', en: 'Back to Terra Nova' },
     cultural_inserts: { cs: 'Kulturní vložky', en: 'Cultural inserts' },
     available_inserts: { cs: 'Dostupné vložky', en: 'Available inserts' },
     regional_collection: { cs: 'Regionální sbírka', en: 'Regional collection' },
-  }},
+  },
   APP_WEB_website_v2_9_src_app_warp_page: {
     corridors_planned: { cs: 'Plánované koridory', en: 'Corridors Planned' },
     live_corridors: { cs: 'Živé koridory', en: 'Live Corridors' },
@@ -2357,7 +2357,7 @@ const t = {
     need_custom_routing_or_institutional_onboarding: { cs: 'Potřebujete vlastní routing nebo institucionální onboarding?', en: 'Need custom routing or institutional onboarding?' },
     open_github_discussions: { cs: 'Otevřít GitHub diskuse', en: 'Open GitHub discussions' },
     review_integration_docs: { cs: 'Projít integrační docs', en: 'Review integration docs' },
-  }},
+  },
   APP_WEB_website_v2_9_src_components_Benc: {
     results_sorted_by_performance: { cs: 'Výsledky — seřazeno dle výkonu', en: 'Results — sorted by performance' },
     architecture: { cs: 'Architektura', en: 'Architecture' },
@@ -2369,7 +2369,7 @@ const t = {
     notes: { cs: 'Poznámka', en: 'Notes' },
     bandwidth_efficiency: { cs: 'Efektivita šířky pásma', en: 'Bandwidth Efficiency' },
     mining_guide: { cs: 'Průvodce těžbou', en: 'Mining Guide' },
-  }},
+  },
   APP_WEB_website_v2_9_src_components_Dash: {
     pool_health: { cs: 'Zdravi poolu', en: 'Pool Health' },
     version: { cs: 'Verze', en: 'Version' },
@@ -2435,13 +2435,13 @@ const t = {
     operational_roadmap: { cs: 'Operacni roadmapa', en: 'Operational roadmap' },
     pulled_from_the_current_public_launch_path_and_reh: { cs: 'Prevzato z aktualni verejne launch cesty a rehearsal readiness materialu.', en: 'Pulled from the current public launch path and rehearsal-readiness material.' },
     open_roadmap: { cs: 'Otevrit roadmapu', en: 'Open roadmap' },
-  }},
+  },
   APP_WEB_website_v2_9_src_components_Defi: {
     portfolio: { cs: 'Portfolio', en: 'Portfolio' },
     current_wzion_price: { cs: 'Aktuální cena wZION', en: 'Current wZION price' },
     connect_wallet_to_view_balances: { cs: 'Připoj peněženku pro zobrazení zůstatků', en: 'Connect wallet to view balances' },
     connect_metamask: { cs: 'Připojit MetaMask', en: 'Connect MetaMask' },
-  }},
+  },
   APP_WEB_website_v2_9_src_components_Home: {
     interactive_layer: { cs: 'Interaktivní vrstva', en: 'Interactive layer' },
     tree_of_life: { cs: 'Strom života', en: 'Tree of Life' },
@@ -2453,7 +2453,7 @@ const t = {
     fast_first_paint: { cs: 'Rychlé první vykreslení', en: 'Fast first paint' },
     fallback: { cs: 'Fallback', en: 'Fallback' },
     classic_query_ready: { cs: 'Klasický dotaz připraven', en: 'Classic query ready' },
-  }},
+  },
   APP_WEB_website_v2_9_src_components_Mine: {
     miner_not_found: { cs: 'Miner nebyl nalezen', en: 'Miner not found' },
     failed_to_fetch_miner_data: { cs: 'Nepodarilo se nacist data minera', en: 'Failed to fetch miner data' },
@@ -2525,7 +2525,7 @@ const t = {
     view_all_pool_statistics_server_status_and_join_th: { cs: 'Zobrazte vsechny statistiky poolu, stav serveru a pripojte se k tezebni komunite.', en: 'View all pool statistics, server status, and join the mining community.' },
     pool_dashboard: { cs: 'Prehled poolu', en: 'Pool Dashboard' },
     explorer: { cs: 'Explorer', en: 'Explorer' },
-  }},
+  },
   APP_WEB_website_v2_9_src_components_Mini: {
     cpu_mining: { cs: 'CPU tezba', en: 'CPU Mining' },
     gpu_mining: { cs: 'GPU tezba', en: 'GPU Mining' },
@@ -2634,7 +2634,7 @@ const t = {
     ready_to_mine_zion: { cs: 'Pripraveni tezit ZION?', en: 'Ready to mine ZION?' },
     join_the_community_every_hash_strengthens_the_netw: { cs: 'Pripojte se ke komunite. Kazdy hash posiluje sit.', en: 'Join the community. Every hash strengthens the network.' },
     explorer_1: { cs: 'Explorer', en: 'Explorer' },
-  }},
+  },
   APP_WEB_website_v2_9_src_components_Netw: {
     primary_host: { cs: 'Primarni host', en: 'Primary host' },
     internal_quorum: { cs: 'Interni quorum', en: 'Internal quorum' },
@@ -2652,13 +2652,13 @@ const t = {
     height: { cs: 'Vyska', en: 'Height' },
     lag: { cs: 'Zpozdeni', en: 'Lag' },
     error: { cs: 'Chyba', en: 'Error' },
-  }},
+  },
   APP_WEB_website_v2_9_src_components_News: {
     back_to_homepage: { cs: 'Zpět na hlavní stránku', en: 'Back to homepage' },
     news_archive: { cs: 'Archív novinek', en: 'News Archive' },
     news: { cs: 'Novinky', en: 'News' },
     read_more: { cs: 'Číst více', en: 'Read more' },
-  }},
+  },
   APP_WEB_website_v2_9_src_components_Pool: {
     find_best_mining_pool: { cs: 'Najít nejlepší těžební pool', en: 'Find Best Mining Pool' },
     get_the_optimal_mining_pool_based_on_your_location: { cs: 'Získejte optimální těžební pool podle své polohy pro co nejnižší latenci.', en: 'Get the optimal mining pool based on your location for lowest latency.' },
@@ -2672,7 +2672,7 @@ const t = {
     distance: { cs: 'Vzdálenost', en: 'Distance' },
     no_recommended_pool_available_try_detecting_your_l: { cs: 'Není k dispozici žádný doporučený pool. Zkuste zjistit svoji polohu.', en: 'No recommended pool available. Try detecting your location.' },
     all_pools: { cs: 'Všechny pooly', en: 'All Pools' },
-  }},
+  },
   APP_WEB_website_v2_9_src_components_Rece: {
     just_now: { cs: 'právě teď', en: 'just now' },
     en_us: { cs: 'cs-CZ', en: 'en-US' },
@@ -2683,7 +2683,7 @@ const t = {
     time: { cs: 'Čas', en: 'Time' },
     transactions: { cs: 'Transakce', en: 'Transactions' },
     consciousness: { cs: 'Vědomí: ', en: 'Consciousness: ' },
-  }},
+  },
   APP_WEB_website_v2_9_src_components_Road: {
     mainnet_genesis_cosmic_harmony_v3_v4_utxo_144b_zio: { cs: 'Mainnet genesis, Cosmic Harmony v3/v4, UTXO, zasoba 144B ZION', en: 'MainNet Genesis, Cosmic Harmony v3/v4, UTXO, 144B ZION supply' },
     wzion_dex_on_base_mainnet_bridge_relay_treasury_ra: { cs: 'wZION DEX na Base Mainnet, bridge relay, treasury rails a DAO governance vrstva', en: 'wZION DEX on Base Mainnet, bridge relay, treasury rails, and the DAO governance layer' },
@@ -2696,7 +2696,7 @@ const t = {
     block_explorer: { cs: 'Pruzkumnik blockchainu', en: 'Block Explorer' },
     '6_layer_vision': { cs: '6vrstva vize', en: '6-Layer Vision' },
     '6_layer_vision_after_the_pure_code_baseline': { cs: '6vrstva vize po Pure Code baseline', en: '6-layer vision — after the Pure Code baseline' },
-  }},
+  },
   APP_WEB_website_v2_9_src_components_Swap: {
     swap: { cs: 'Swap', en: 'Swap' },
     connect_metamask_to_swap: { cs: 'Připoj MetaMask pro swapování', en: 'Connect MetaMask to swap' },
@@ -2710,7 +2710,7 @@ const t = {
     swap_successful: { cs: 'Swap úspěšný!', en: 'Swap successful!' },
     approving: { cs: 'Schvalování…', en: 'Approving…' },
     swapping: { cs: 'Swapuji…', en: 'Swapping…' },
-  }},
+  },
   APP_WEB_website_v2_9_src_components_Syst: {
     healthy: { cs: 'zdravý', en: 'healthy' },
     degraded: { cs: 'omezený', en: 'degraded' },
@@ -2723,7 +2723,7 @@ const t = {
     dependencies: { cs: 'Závislosti', en: 'Dependencies' },
     rpc_node: { cs: 'RPC uzel', en: 'RPC Node' },
     mining_pool: { cs: 'Těžební pool', en: 'Mining Pool' },
-  }},
+  },
   APP_WEB_website_v2_9_src_components_Terr: {
     terra_nova_golden_compass_of_the_new_earth: { cs: 'Terra Nova · Zlatý Kompas Nové Země', en: 'Terra Nova · Golden Compass of the New Earth' },
     zion_is_yours: { cs: 'ZION je váš.', en: 'ZION is yours.' },
@@ -2732,10 +2732,10 @@ const t = {
     public_windows_linux_and_macos_binaries_are_live: { cs: 'Veřejné binárky pro Windows, Linux a macOS jsou živé.', en: 'Public Windows, Linux, and macOS binaries are live.' },
     open_the_terra_nova_section: { cs: 'Otevřít sekci Terra Nova', en: 'Open the Terra Nova section' },
     go_to_download: { cs: 'Přejít na Download', en: 'Go to Download' },
-  }},
+  },
   APP_WEB_website_v2_9_src_components_Zlat: {
     golden_compass_seven_directions_of_terranova: { cs: 'Zlatý Kompas — sedm směrů TerraNova', en: 'Golden Compass — seven directions of TerraNova' },
-  }},
+  },
   APP_WEB_website_v2_9_src_components_api_: {
     curl_quick_ping: { cs: 'cURL rychly ping', en: 'cURL quick ping' },
     '1_authenticate': { cs: '1 · Autentizace', en: '1 · Authenticate' },
@@ -2748,7 +2748,7 @@ const t = {
     copied: { cs: 'Zkopirovano', en: 'Copied' },
     copy: { cs: 'Kopirovat', en: 'Copy' },
     onboarding_checklist: { cs: 'Checklist nasazeni', en: 'Onboarding checklist' },
-  }},
+  },
   APP_WEB_website_v2_9_src_components_down: {
     do_i_need_a_node_to_mine: { cs: 'Potrebuji pro tezbu Node?', en: 'Do I need a Node to mine?' },
     no_connect_to_the_public_pool_zionterranova_com_po: { cs: 'Ne. Pripojte se k verejnemu poolu (zionterranova.com/pool). Pool resi komunikaci s blockchainem. Node potrebujete jen pokud chcete sami overovat transakce nebo provozovat vlastni pool.', en: 'No. Connect to the public pool (zionterranova.com/pool). The pool handles blockchain communication. A node is only needed if you want to verify transactions yourself or run your own pool.' },
@@ -2763,7 +2763,7 @@ const t = {
     can_i_mine_on_raspberry_pi: { cs: 'Mohu tezit na Raspberry Pi?', en: 'Can I mine on Raspberry Pi?' },
     the_linux_arm64_build_is_in_progress_rpi_4_5_will_: { cs: 'Linux ARM64 build je ve vyvoji. RPi 4/5 bude podporovano — sledujte releases na zionterranova.com/download.', en: 'The Linux ARM64 build is in progress. RPi 4/5 will be supported — watch releases at zionterranova.com/download.' },
     support: { cs: 'Podpora', en: 'Support' },
-  }},
+  },
   APP_WEB_website_v2_9_src_components_down: {
     node: { cs: 'Node', en: 'Node' },
     status_blocks_transactions_mempool_websocket: { cs: 'Status, bloky, transakce, mempool a WebSocket', en: 'Status, blocks, transactions, mempool & WebSocket' },
@@ -2781,15 +2781,15 @@ const t = {
     verification: { cs: 'Verifikace:', en: 'Verification:' },
     windows_or: { cs: '(Windows) nebo ', en: '(Windows) or ' },
     linux_macos: { cs: '(Linux/macOS).', en: '(Linux/macOS).' },
-  }},
+  },
   APP_WEB_website_v2_9_src_components_expl: {
     just_now: { cs: 'prave ted', en: 'just now' },
     full_block_archive: { cs: 'Kompletni archiv bloku', en: 'Full Block Archive' },
-  }},
+  },
   APP_WEB_website_v2_9_src_components_expl: {
     just_now: { cs: 'prave ted', en: 'just now' },
     full_transaction_feed: { cs: 'Kompletni tok transakci', en: 'Full Transaction Feed' },
-  }},
+  },
   APP_WEB_website_v2_9_src_components_netw: {
     observability: { cs: 'Observabilita', en: 'Observability' },
     monitoring_snapshot: { cs: 'Monitoring prehled', en: 'Monitoring Snapshot' },
@@ -2816,7 +2816,7 @@ const t = {
     updated: { cs: 'Aktualizovano', en: 'Updated' },
     loading_live_data: { cs: 'Nacitam ziva data', en: 'Loading live data' },
     full_monitoring: { cs: 'Plny monitoring', en: 'Full monitoring' },
-  }},
+  },
   APP_WEB_website_v2_9_src_components_netw: {
     operator_toolkit: { cs: 'Operator toolkit', en: 'Operator Toolkit' },
     network_ops_pro: { cs: 'Sitove operace Pro', en: 'Network Ops Pro' },
