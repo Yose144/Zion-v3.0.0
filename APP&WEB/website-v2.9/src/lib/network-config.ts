@@ -27,9 +27,8 @@ export type MiningPoolConfig = {
   lon: number;
 };
 
-// Core + Edge topology (Hetzner VPS Edge relay + local Core via Tailscale VPN)
-// NOTE: Original Windows Core (100.86.102.5) offline since 2026-05-30.
-// Current active Core is zionserver-144 (Linux) at 100.74.34.40.
+// Edge-only topology (Hetzner VPS).
+// Core PC is unreachable via Tailscale since 2026-05-30.
 const DEFAULT_SEED_NODES: SeedNodeConfig[] = [
   {
     id: 'edge-vps',
@@ -38,17 +37,8 @@ const DEFAULT_SEED_NODES: SeedNodeConfig[] = [
     region: 'EU',
     lat: 50.08,
     lon: 14.44,
-    ports: { p2p: 8333, rpc: 8443, stratum: 8444, pool_api: 8080 },
+    ports: { p2p: 8333, rpc: 8443, stratum: 8444, pool_api: 8455 },
     poolApiUrl: SITE_PRIMARY_POOL_API_URL,
-  },
-  {
-    id: 'core-pc',
-    name: 'Core PC (Tailscale VPN)',
-    host: '100.74.34.40',
-    region: 'CORE',
-    lat: 50.08,
-    lon: 14.44,
-    ports: { p2p: 8333, rpc: 8443, stratum: 8444, pool_api: 8080 },
   },
 ];
 
@@ -59,15 +49,6 @@ const DEFAULT_MINING_POOLS: MiningPoolConfig[] = [
     host: SITE_PRIMARY_HOST,
     port: 8444,
     region: 'EDGE',
-    lat: 50.08,
-    lon: 14.44,
-  },
-  {
-    id: 'pool-core',
-    name: 'Core Pool (Tailscale)',
-    host: '100.74.34.40',
-    port: 8444,
-    region: 'CORE',
     lat: 50.08,
     lon: 14.44,
   },
