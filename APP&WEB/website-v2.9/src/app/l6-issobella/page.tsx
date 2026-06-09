@@ -12,7 +12,7 @@ const ISSOBELLA_WALLET = 'zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702';
 
 const getMissions = (cs: boolean) => [
   {
-    name: cs ? 'Orbitální stanice' : 'Orbital Station',
+    name: tr('l6Issobella', 'orbital_station', lang),
     phase: 'Vision 2040+',
     desc: cs
       ? 'ZION Issobella — decentralizovaná orbitální stanice financovaná block reward fondem. Výzkum, věda a Overview Effect.'
@@ -32,7 +32,7 @@ const getMissions = (cs: boolean) => [
     badgeColor: 'border-purple-500/30 bg-purple-500/10 text-purple-300',
   },
   {
-    name: cs ? 'Orbital Mining' : 'Orbital Mining',
+    name: tr('l6Issobella', 'orbital_mining', lang),
     phase: 'Vision 2045+',
     desc: cs
       ? 'Vesmírná těžba zdrojů — asteroidy, regolit. ZION jako ekonomická vrstva pro off-world operace.'
@@ -45,38 +45,38 @@ const getMissions = (cs: boolean) => [
 
 const getPrinciples = (cs: boolean) => [
   {
-    title: cs ? 'Overview Effect' : 'Overview Effect',
-    desc: cs ? 'Zkušenost z oběžné dráhy mění vědomí — planety bez hranic, humanity jako celek.' : 'Orbital experience shifts consciousness — no borders, humanity as a whole.',
+    title: tr('l6Issobella', 'overview_effect', lang),
+    desc: tr('l6Issobella', 'orbital_experience_shifts_consciousness_no_bo', lang),
     icon: Globe2,
     color: 'text-blue-400',
   },
   {
-    title: cs ? '5% Block Fund' : '5% Block Fund',
-    desc: cs ? 'Každý vytěžený blok přispívá 5 % do L6 Issobella fondu — trvalé financování vesmírného výzkumu.' : 'Every mined block contributes 5% to the L6 Issobella fund — perpetual space research funding.',
+    title: tr('l6Issobella', '5_block_fund', lang),
+    desc: tr('l6Issobella', 'every_mined_block_contributes_5_to_the_l6_iss', lang),
     icon: Wallet,
     color: 'text-rose-400',
   },
   {
-    title: cs ? 'DAO Governance' : 'DAO Governance',
-    desc: cs ? 'L6 Radou řízené granty a projekty — komunita rozhoduje o alokaci fondu.' : 'L6 Council-governed grants and projects — community decides fund allocation.',
+    title: tr('l6Issobella', 'dao_governance', lang),
+    desc: tr('l6Issobella', 'l6_council_governed_grants_and_projects_commu', lang),
     icon: Crown,
     color: 'text-zion-gold',
   },
   {
-    title: cs ? 'Decentralizovaný výzkum' : 'Decentralized Research',
-    desc: cs ? 'Vesmírný výzkum bez centrální autority — otevřená věda, otevřená data.' : 'Space research without central authority — open science, open data.',
+    title: tr('l6Issobella', 'decentralized_research', lang),
+    desc: tr('l6Issobella', 'space_research_without_central_authority_open', lang),
     icon: Shield,
     color: 'text-cyan-400',
   },
   {
-    title: cs ? 'Kosmické vědomí' : 'Cosmic Consciousness',
-    desc: cs ? 'L6 jako vrstva pro přesah hranic planety — Hiranyagarbha, Zlatý zárodek, kosmická vize.' : 'L6 as the layer for transcending planetary boundaries — Hiranyagarbha, Golden Egg, cosmic vision.',
+    title: tr('l6Issobella', 'cosmic_consciousness', lang),
+    desc: tr('l6Issobella', 'l6_as_the_layer_for_transcending_planetary_bo', lang),
     icon: Sparkles,
     color: 'text-purple-400',
   },
   {
-    title: cs ? 'Cosmic Harmony PoW' : 'Cosmic Harmony PoW',
-    desc: cs ? 'ZION consensus algoritmus je navržen s kosmickým vědomím — L6 je jeho duchovní destinace.' : 'ZION consensus algorithm is designed with cosmic consciousness — L6 is its spiritual destination.',
+    title: tr('l6Issobella', 'cosmic_harmony_pow', lang),
+    desc: tr('l6Issobella', 'zion_consensus_algorithm_is_designed_with_cos', lang),
     icon: Zap,
     color: 'text-emerald-400',
   },
@@ -101,7 +101,7 @@ export default function L6IssobellaPage() {
             </div>
             <div>
               <p className="text-sm uppercase tracking-[0.4em] text-gray-400">
-                {cs ? 'Vesmírná vrstva ZION ekosystému' : 'Space layer of the ZION ecosystem'}
+                {tr('l6Issobella', 'space_layer_of_the_zion_ecosystem', lang)}
               </p>
               <h1 className="text-3xl sm:text-5xl font-semibold leading-tight">
                 <span className="text-gradient">Issobella</span>
@@ -115,13 +115,13 @@ export default function L6IssobellaPage() {
             </p>
             <div className="flex flex-wrap gap-3 text-xs">
               <span className="inline-flex items-center gap-2 rounded-full border border-rose-500/30 bg-rose-500/10 px-4 py-2 text-rose-200">
-                <Star className="h-3 w-3" /> {cs ? '5 % z každého bloku → L6 fond' : '5% of every block → L6 fund'}
+                <Star className="h-3 w-3" /> {tr('l6Issobella', '5_of_every_block_l6_fund', lang)}
               </span>
               <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-emerald-200">
-                <CheckCircle2 className="h-3 w-3" /> {cs ? '~11,7 M ZION / měsíc' : '~11.7M ZION / month'}
+                <CheckCircle2 className="h-3 w-3" /> {tr('l6Issobella', '11_7m_zion_month', lang)}
               </span>
               <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                <Clock className="h-3 w-3" /> {cs ? 'Odemčeno blok ~525 600' : 'Unlocked block ~525,600'}
+                <Clock className="h-3 w-3" /> {tr('l6Issobella', 'unlocked_block_525_600', lang)}
               </span>
             </div>
           </div>
@@ -130,31 +130,31 @@ export default function L6IssobellaPage() {
         {/* ── Fund Info ── */}
         <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[32px] border border-white/10 bg-black/40 p-8">
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Vesmírný fond' : 'Space Fund'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tr('l6Issobella', 'space_fund', lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Rocket className="h-7 w-7 text-rose-400" />
-              {cs ? 'L6 Issobella fond — 5 % block reward' : 'L6 Issobella Fund — 5% block reward'}
+              {tr('l6Issobella', 'l6_issobella_fund_5_block_reward', lang)}
             </h2>
           </div>
           <div className="grid md:grid-cols-3 gap-4 mb-6">
             <div className="rounded-2xl border border-rose-500/30 bg-rose-500/5 p-4 text-center">
-              <p className="text-xs uppercase tracking-wider text-gray-400 mb-1">{cs ? 'Podíl z bloku' : 'Block share'}</p>
+              <p className="text-xs uppercase tracking-wider text-gray-400 mb-1">{tr('l6Issobella', 'block_share', lang)}</p>
               <p className="text-3xl font-bold text-rose-400">5%</p>
-              <p className="text-xs text-gray-500 mt-1">{cs ? 'každý blok, navždy' : 'every block, forever'}</p>
+              <p className="text-xs text-gray-500 mt-1">{tr('l6Issobella', 'every_block_forever', lang)}</p>
             </div>
             <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-4 text-center">
-              <p className="text-xs uppercase tracking-wider text-gray-400 mb-1">{cs ? 'Přibližně / měsíc' : 'Approx / month'}</p>
+              <p className="text-xs uppercase tracking-wider text-gray-400 mb-1">{tr('l6Issobella', 'approx_month', lang)}</p>
               <p className="text-3xl font-bold text-emerald-400">~11,7M</p>
               <p className="text-xs text-gray-500 mt-1">ZION</p>
             </div>
             <div className="rounded-2xl border border-purple-500/30 bg-purple-500/5 p-4 text-center">
-              <p className="text-xs uppercase tracking-wider text-gray-400 mb-1">{cs ? 'Správa' : 'Governed by'}</p>
+              <p className="text-xs uppercase tracking-wider text-gray-400 mb-1">{tr('l6Issobella', 'governed_by', lang)}</p>
               <p className="text-2xl font-bold text-purple-400">DAO</p>
-              <p className="text-xs text-gray-500 mt-1">{cs ? 'L6 Radou' : 'L6 Council'}</p>
+              <p className="text-xs text-gray-500 mt-1">{tr('l6Issobella', 'l6_council', lang)}</p>
             </div>
           </div>
           <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-gray-400 font-mono break-all">
-            <p className="text-xs uppercase tracking-wider text-gray-500 mb-1">{cs ? 'Adresa fondu' : 'Fund wallet'}</p>
+            <p className="text-xs uppercase tracking-wider text-gray-500 mb-1">{tr('l6Issobella', 'fund_wallet', lang)}</p>
             {ISSOBELLA_WALLET}
           </div>
         </motion.section>
@@ -162,10 +162,10 @@ export default function L6IssobellaPage() {
         {/* ── Missions / Vision ── */}
         <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[32px] border border-white/10 bg-white/5 p-8">
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Mise & Vize' : 'Missions & Vision'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tr('l6Issobella', 'missions_vision', lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Star className="h-7 w-7 text-rose-400" />
-              {cs ? 'Kosmické mise' : 'Cosmic Missions'}
+              {tr('l6Issobella', 'cosmic_missions', lang)}
             </h2>
           </div>
           <div className="grid md:grid-cols-3 gap-5">
@@ -191,10 +191,10 @@ export default function L6IssobellaPage() {
         {/* ── Principles ── */}
         <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[32px] border border-white/10 bg-black/40 p-8">
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Principy' : 'Principles'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tr('l6Issobella', 'principles', lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Sparkles className="h-7 w-7 text-purple-400" />
-              {cs ? 'Základy L6 vrstvy' : 'L6 Layer Foundations'}
+              {tr('l6Issobella', 'l6_layer_foundations', lang)}
             </h2>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -213,7 +213,7 @@ export default function L6IssobellaPage() {
         {/* ── Hiranyagarbha connection ── */}
         <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[32px] border border-purple-500/30 bg-gradient-to-r from-purple-500/10 via-black/40 to-rose-500/10 p-10 text-center">
           <Sparkles className="h-12 w-12 text-purple-400 mx-auto mb-4" />
-          <h2 className="text-3xl font-semibold text-white mb-4">Hiranyagarbha · {cs ? 'Zlatý zárodek' : 'Golden Egg'}</h2>
+          <h2 className="text-3xl font-semibold text-white mb-4">Hiranyagarbha · {tr('l6Issobella', 'golden_egg', lang)}</h2>
           <p className="text-gray-300 max-w-2xl mx-auto text-lg">
             {cs
               ? 'L6 Issobella je fyzickým ztělesněním Hiranyagarbhy — zlatého zárodku kosmického vědomí. ZION AI (Hiran) a L6 fond společně financují přesah hranic planety.'
@@ -226,13 +226,13 @@ export default function L6IssobellaPage() {
 
         {/* ── Links ── */}
         <motion.section initial={{ opacity: 0, scale: 0.98 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} className="rounded-[32px] border border-rose-500/30 bg-gradient-to-r from-rose-500/10 via-transparent to-purple-500/10 p-10">
-          <h2 className="text-2xl font-semibold text-white text-center mb-6">{cs ? 'Více o L6 a ekosystému' : 'Learn more about L6 and the ecosystem'}</h2>
+          <h2 className="text-2xl font-semibold text-white text-center mb-6">{tr('l6Issobella', 'learn_more_about_l6_and_the_ecosystem', lang)}</h2>
           <div className="flex flex-wrap justify-center gap-4">
             <Link href="/dao" className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors">
               <Crown className="h-4 w-4 text-zion-gold" /> DAO Governance
             </Link>
             <Link href="/network" className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors">
-              <Globe2 className="h-4 w-4 text-cyan-400" /> {cs ? 'Síť' : 'Network'}
+              <Globe2 className="h-4 w-4 text-cyan-400" /> {tr('l6Issobella', 'network', lang)}
             </Link>
             <Link href="/l5-free-world" className="inline-flex items-center gap-2 rounded-2xl border border-amber-500/30 bg-amber-500/5 px-6 py-3 text-sm font-semibold text-amber-200 hover:bg-amber-500/10 transition-colors">
               L5 Free World <ArrowRight className="h-4 w-4" />

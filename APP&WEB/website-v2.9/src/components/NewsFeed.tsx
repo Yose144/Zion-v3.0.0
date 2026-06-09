@@ -311,7 +311,7 @@ export default function NewsFeed() {
           <div className="flex items-center gap-3 mb-3">
             <Newspaper className="w-5 h-5 text-zion-gold" />
             <span className="text-sm uppercase tracking-[0.4em] text-gray-400">
-              {cs ? 'Novinky a aktualizace' : 'News & Updates'}
+              {tr('newsFeed', 'news_updates', lang)}
             </span>
             <span className="ml-auto text-[10px] uppercase tracking-wider text-zion-gold/60 bg-zion-gold/10 border border-zion-gold/20 px-2 py-0.5 rounded-full">
               {cs ? `${NEWS_ARTICLES.length} článků` : `${NEWS_ARTICLES.length} articles`}
@@ -319,7 +319,7 @@ export default function NewsFeed() {
           </div>
           <h2 className="text-4xl md:text-5xl font-bold text-white">
             <span className="text-gradient">
-              {cs ? 'Novinky' : 'News'}
+              {tr('newsFeed', 'news', lang)}
             </span>
           </h2>
           <p className="text-lg text-gray-300 mt-3 max-w-2xl">
@@ -376,7 +376,7 @@ export default function NewsFeed() {
 
                     {/* Read more */}
                     <div className="flex items-center gap-1.5 text-xs text-zion-gold/60 group-hover:text-zion-gold transition-colors">
-                      <span>{cs ? 'Číst více' : 'Read more'}</span>
+                      <span>{tr('newsFeed', 'read_more', lang)}</span>
                       <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                     </div>
                   </div>
