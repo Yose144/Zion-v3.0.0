@@ -46,7 +46,7 @@ const placeholderStats: BlockchainStats = {
 export default function LiveDashboard() {
   const { lang } = useLang();
   const cs = lang === 'cs';
-  const locale = cs ? 'cs-CZ' : 'en-US';
+  const locale = 'cs-CZ';
   const [stats, setStats] = useState<BlockchainStats>(placeholderStats);
   const [loadedAtLeastOnce, setLoadedAtLeastOnce] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -88,19 +88,19 @@ export default function LiveDashboard() {
 
   const highlightCards = [
     {
-      label: cs ? 'Bloky celkem' : 'Total Blocks',
+      label: tr('liveDashboard', 'total_blocks', lang),
       value: (stats.total_blocks ?? 0).toLocaleString(locale),
       icon: Database,
       accent: 'from-zion-gold/25 to-zion-purple/10',
     },
     {
-      label: cs ? 'Zasoba celkem' : 'Total Supply',
+      label: tr('liveDashboard', 'total_supply', lang),
       value: formattedSupply,
       icon: Gauge,
       accent: 'from-zion-purple/25 to-zion-cyan/10',
     },
     {
-      label: cs ? 'Transakce' : 'Transactions',
+      label: tr('liveDashboard', 'transactions', lang),
       value: (stats.total_transactions ?? 0).toLocaleString(locale),
       icon: Atom,
       accent: 'from-zion-cyan/25 to-zion-gold/10',
@@ -108,8 +108,8 @@ export default function LiveDashboard() {
   ];
 
   const auxCards = [
-    { label: cs ? 'Obtiznost' : 'Difficulty', value: (stats.difficulty ?? 0).toLocaleString(locale), icon: Shield },
-    { label: cs ? 'Velikost mempoolu' : 'Mempool Size', value: mempoolSize.toLocaleString(locale), icon: Braces },
+    { label: tr('liveDashboard', 'difficulty', lang), value: (stats.difficulty ?? 0).toLocaleString(locale), icon: Shield },
+    { label: tr('liveDashboard', 'mempool_size', lang), value: mempoolSize.toLocaleString(locale), icon: Braces },
   ];
 
   return (
@@ -118,7 +118,7 @@ export default function LiveDashboard() {
         <div className="flex flex-wrap items-center gap-4">
           <div className="inline-flex items-center gap-3 rounded-full border border-white/10 px-4 py-2">
             <Activity className="w-5 h-5 text-zion-gold animate-pulse" />
-            <span className="text-sm tracking-wide uppercase text-gray-300">{cs ? 'Mise console' : 'Mission Console'}</span>
+            <span className="text-sm tracking-wide uppercase text-gray-300">{tr('liveDashboard', 'mission_console', lang)}</span>
           </div>
           <div className="text-3xl font-semibold text-gradient">{SITE_RELEASE_LABEL} · runtime {SITE_RUNTIME_LABEL} · Mainnet Launch Countdown Telemetry</div>
           {error && (
@@ -138,12 +138,12 @@ export default function LiveDashboard() {
           >
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
-                <p className="text-sm uppercase text-gray-400 tracking-[0.4em]">{cs ? 'Stav kontinuua' : 'Continuum status'}</p>
-                <h3 className="text-2xl font-semibold text-white">{cs ? 'Synchronizace galakticke site' : 'Galactic network sync'}</h3>
+                <p className="text-sm uppercase text-gray-400 tracking-[0.4em]">{tr('liveDashboard', 'continuum_status', lang)}</p>
+                <h3 className="text-2xl font-semibold text-white">{tr('liveDashboard', 'galactic_sync', lang)}</h3>
               </div>
               <div className="flex items-center gap-2 text-xs text-gray-400">
                 <span className="inline-flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                {cs ? 'Aktualizace' : 'Updated'} {loadedAtLeastOnce ? (cs ? 'zive' : 'live') : (cs ? 'spousteni' : 'initializing')}
+                {tr('liveDashboard', 'updated', lang)} {loadedAtLeastOnce ? (tr('liveDashboard', 'status_live', lang)) : (tr('liveDashboard', 'status_initializing', lang))}
               </div>
             </div>
 
@@ -184,7 +184,7 @@ export default function LiveDashboard() {
             className="rounded-[28px] border border-white/10 bg-black/60 backdrop-blur-xl p-6 flex flex-col gap-6"
           >
             <div>
-              <p className="text-xs uppercase text-gray-500 tracking-[0.3em]">{cs ? 'Posledni blok' : 'Latest block'}</p>
+              <p className="text-xs uppercase text-gray-500 tracking-[0.3em]">{tr('liveDashboard', 'latest_block', lang)}</p>
               <h3 className="text-3xl font-semibold text-white">
                 #{latestBlock?.height ?? stats.block_height ?? '—'}
               </h3>
@@ -194,7 +194,7 @@ export default function LiveDashboard() {
             <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
               <p className="text-xs text-gray-400 mb-2">Hash</p>
               <p className="font-mono text-xs text-zion-cyan break-all">
-                {latestBlock?.hash ?? (cs ? 'Cekani na signal' : 'Waiting for signal')}
+                {latestBlock?.hash ?? (tr('liveDashboard', 'waiting_for_signal', lang))}
               </p>
             </div>
 
@@ -204,7 +204,7 @@ export default function LiveDashboard() {
                 <p className="text-xl font-semibold text-white">{(stats.mempool_size ?? 0).toLocaleString(locale)}</p>
               </div>
               <div>
-                <p className="text-gray-400">{cs ? 'Obtiznost' : 'Difficulty'}</p>
+                <p className="text-gray-400">{tr('liveDashboard', 'difficulty', lang)}</p>
                 <p className="text-xl font-semibold text-white">{(stats.difficulty ?? 0).toLocaleString(locale)}</p>
               </div>
             </div>
