@@ -284,8 +284,10 @@ impl GpuTuning {
             }
             (GpuAlgorithm::DeekshaLiteV1, GpuDeviceFamily::AmdRdna) => {
                 // RDNA: fast ulong-width path, smaller local size for better occupancy
+                // NO -cl-fast-relaxed-math: causes AMD driver crashes on integer
+                // code paths (Keccak scratchpad, AES) on some RDNA driver versions.
                 let ws = (max_by_vram.min(8192).max(512)).next_power_of_two();
-                let opts = "-cl-std=CL1.2 -cl-mad-enable -cl-fast-relaxed-math".to_string();
+                let opts = "-cl-std=CL1.2 -cl-mad-enable".to_string();
                 (ws, 128, opts, 85, false)
             }
             (GpuAlgorithm::DeekshaLiteV1, GpuDeviceFamily::Nvidia) => {
