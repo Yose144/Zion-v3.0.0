@@ -4,7 +4,6 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { ArrowLeft, FolderOpen } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
-import { tr } from '@/lib/translations';
 
 type Insert = {
   id: string;
@@ -45,7 +44,7 @@ export default function GeographyRegionPage({ data }: { data: RegionData }) {
             className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-violet-400 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            {tr('APP_WEB_website_v2_9_src_app_terranova_g', 'back_to_terra_nova', lang)}
+            {cs ? 'Zpět na Terra Nova' : 'Back to Terra Nova'}
           </Link>
         </motion.div>
 
@@ -61,7 +60,7 @@ export default function GeographyRegionPage({ data }: { data: RegionData }) {
             <div className="absolute -bottom-16 -right-16 w-48 h-48 rounded-full blur-[80px] bg-purple-500/10" />
             <div className="relative z-10 space-y-3">
               <span className="inline-flex items-center gap-1 rounded-full border border-violet-500/30 bg-violet-500/10 px-3 py-1 text-[10px] font-semibold tracking-[0.3em] text-violet-400 uppercase">
-                {tr('APP_WEB_website_v2_9_src_app_terranova_g', 'cultural_inserts', lang)}
+                {cs ? 'Kulturní vložky' : 'Cultural inserts'}
               </span>
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white">
                 {cs ? data.titleCs : data.titleEn}
@@ -81,10 +80,10 @@ export default function GeographyRegionPage({ data }: { data: RegionData }) {
         >
           <div className="text-center mb-8">
             <p className="text-[10px] uppercase tracking-[0.45em] text-gray-500 mb-2">
-              {tr('APP_WEB_website_v2_9_src_app_terranova_g', 'available_inserts', lang)}
+              {cs ? 'Dostupné vložky' : 'Available inserts'}
             </p>
             <h2 className="text-2xl font-bold text-white">
-              {tr('APP_WEB_website_v2_9_src_app_terranova_g', 'regional_collection', lang)}
+              {cs ? 'Regionální sbírka' : 'Regional collection'}
             </h2>
           </div>
 

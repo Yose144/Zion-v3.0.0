@@ -18,7 +18,7 @@ const HIRANYAGARBHA_API = process.env.NEXT_PUBLIC_HIRANYAGARBHA_API ?? 'http://1
 
 const getOrchestration = (cs: boolean) => [
   {
-    title: tr('l3Hiran', 'deployment', lang),
+    title: cs ? 'Deployment' : 'Deployment',
     desc: cs
       ? 'Automatický provisioning GPU instance na Vast.ai — RTX 4090, A100. Docker kontejnery s inference endpointem.'
       : 'Automated GPU instance provisioning on Vast.ai — RTX 4090, A100. Docker containers with inference endpoint.',
@@ -26,7 +26,7 @@ const getOrchestration = (cs: boolean) => [
     color: 'text-cyan-400',
   },
   {
-    title: tr('l3Hiran', 'monitoring', lang),
+    title: cs ? 'Monitoring' : 'Monitoring',
     desc: cs
       ? 'Prometheus + Grafana telemetrie — inference latence, VRAM využití, token throughput, error rate.'
       : 'Prometheus + Grafana telemetry — inference latency, VRAM usage, token throughput, error rate.',
@@ -34,7 +34,7 @@ const getOrchestration = (cs: boolean) => [
     color: 'text-emerald-400',
   },
   {
-    title: tr('l3Hiran', 'rag_pipeline', lang),
+    title: cs ? 'RAG Pipeline' : 'RAG Pipeline',
     desc: cs
       ? 'ChromaDB + all-MiniLM-L6-v2 embeddings. 33 knowledge documents. Query router pro hybridní retrieval.'
       : 'ChromaDB + all-MiniLM-L6-v2 embeddings. 33 knowledge documents. Query router for hybrid retrieval.',
@@ -42,7 +42,7 @@ const getOrchestration = (cs: boolean) => [
     color: 'text-purple-400',
   },
   {
-    title: tr('l3Hiran', 'fine_tuning', lang),
+    title: cs ? 'Fine-tuning' : 'Fine-tuning',
     desc: cs
       ? 'QLoRA curriculum 5 stages. Rank 16-64. 22 181 instruction pairs. Unsloth/Meta-Llama-3.1-8B base.'
       : 'QLoRA curriculum 5 stages. Rank 16-64. 22,181 instruction pairs. Unsloth/Meta-Llama-3.1-8B base.',
@@ -82,7 +82,7 @@ const getModelCards = (cs: boolean) => [
 
 const getPhases = (cs: boolean) => [
   {
-    phase: tr('l3Hiran', 'stage_1_foundation', lang),
+    phase: cs ? 'Stage 1: Foundation' : 'Stage 1: Foundation',
     period: 'Rank 16 · 2 epochs',
     status: 'done',
     loss: '~1.297',
@@ -91,7 +91,7 @@ const getPhases = (cs: boolean) => [
       : ['3,869 pairs', 'Fee split, L1-L6', 'Issobella basics'],
   },
   {
-    phase: tr('l3Hiran', 'stage_2_zion_core', lang),
+    phase: cs ? 'Stage 2: Zion Core' : 'Stage 2: Zion Core',
     period: 'Rank 32 · 3 epochs',
     status: 'done',
     loss: '~1.040',
@@ -100,7 +100,7 @@ const getPhases = (cs: boolean) => [
       : ['2,368 pairs', 'Mining, DAO, bridge', 'Consensus details'],
   },
   {
-    phase: tr('l3Hiran', 'stage_3_cross_domain', lang),
+    phase: cs ? 'Stage 3: Cross-domain' : 'Stage 3: Cross-domain',
     period: 'Rank 64 · 2 epochs',
     status: 'done',
     loss: '~1.246',
@@ -109,7 +109,7 @@ const getPhases = (cs: boolean) => [
       : ['11,434 pairs', 'Religion, science, history', 'Comparative analysis'],
   },
   {
-    phase: tr('l3Hiran', 'stage_4_rag_synthesis', lang),
+    phase: cs ? 'Stage 4: RAG Synthesis' : 'Stage 4: RAG Synthesis',
     period: 'Rank 64 · 1 epoch',
     status: 'done',
     loss: '~2.469',
@@ -121,26 +121,26 @@ const getPhases = (cs: boolean) => [
 
 const getRagArch = (cs: boolean) => [
   {
-    title: tr('l3Hiran', '33_knowledge_docs', lang),
-    desc: tr('l3Hiran', 'religion_history_science_philosophy_art_medic', lang),
+    title: cs ? '33 Knowledge Docs' : '33 Knowledge Docs',
+    desc: cs ? 'Religion, history, science, philosophy, art, medicine, literature, mythology, languages.' : 'Religion, history, science, philosophy, art, medicine, literature, mythology, languages.',
     icon: Database,
     color: 'text-emerald-400',
   },
   {
     title: 'ChromaDB',
-    desc: tr('l3Hiran', 'vector_db_with_all_minilm_l6_v2_embeddings_mu', lang),
+    desc: cs ? 'Vector DB s all-MiniLM-L6-v2 embeddings. Multi-collection cosine-similarity retrieval.' : 'Vector DB with all-MiniLM-L6-v2 embeddings. Multi-collection cosine-similarity retrieval.',
     icon: Microchip,
     color: 'text-cyan-400',
   },
   {
-    title: tr('l3Hiran', 'query_router', lang),
-    desc: tr('l3Hiran', 'classifies_queries_zion_only_knowledge_rag_hy', lang),
+    title: cs ? 'Query Router' : 'Query Router',
+    desc: cs ? 'Klasifikuje dotazy: zion_only, knowledge_rag, hybrid. Dynamický routing.' : 'Classifies queries: zion_only, knowledge_rag, hybrid. Dynamic routing.',
     icon: Cable,
     color: 'text-purple-400',
   },
   {
-    title: tr('l3Hiran', 'hybrid_inference', lang),
-    desc: tr('l3Hiran', 'combines_fine_tuned_model_retrieved_context_i', lang),
+    title: cs ? 'Hybrid Inference' : 'Hybrid Inference',
+    desc: cs ? 'Kombinace fine-tuned modelu + retrieved context v jednom inference kroku.' : 'Combines fine-tuned model + retrieved context in a single inference step.',
     icon: Bot,
     color: 'text-amber-400',
   },
@@ -245,10 +245,10 @@ export default function L3HiranPage() {
             </div>
             <div>
               <p className="text-sm uppercase tracking-[0.4em] text-gray-400">
-                {tr('l3Hiran', 'ai_layer_of_the_zion_ecosystem', lang)}
+                {cs ? 'AI vrstva ZION ekosystému' : 'AI layer of the ZION ecosystem'}
               </p>
               <h1 className="text-3xl sm:text-5xl font-semibold text-gradient leading-tight">
-                {tr('l3Hiran', 'hiran_v2_2_l3', lang)}
+                {cs ? 'Hiran v2.2 — L3' : 'Hiran v2.2 — L3'}
               </h1>
             </div>
             <p className="text-lg text-gray-300">
@@ -278,10 +278,10 @@ export default function L3HiranPage() {
           className="rounded-[32px] border border-white/10 bg-black/40 p-8"
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tr('l3Hiran', 'models', lang)}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Modely' : 'Models'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Microchip className="h-7 w-7 text-cyan-400" />
-              {tr('l3Hiran', 'hiran_model_cards', lang)}
+              {cs ? 'Hiran Model Cards' : 'Hiran Model Cards'}
             </h2>
           </div>
           <div className="grid md:grid-cols-2 gap-5">
@@ -301,12 +301,12 @@ export default function L3HiranPage() {
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-3 text-sm mb-4">
-                  <div><p className="text-xs text-gray-500">{tr('l3Hiran', 'method', lang)}</p><p className="text-gray-300 font-mono">{model.method}</p></div>
-                  <div><p className="text-xs text-gray-500">{tr('l3Hiran', 'size', lang)}</p><p className="text-gray-300 font-mono">{model.size}</p></div>
-                  <div><p className="text-xs text-gray-500">{tr('l3Hiran', 'speed', lang)}</p><p className="text-gray-300 font-mono">{model.speed}</p></div>
+                  <div><p className="text-xs text-gray-500">{cs ? 'Metoda' : 'Method'}</p><p className="text-gray-300 font-mono">{model.method}</p></div>
+                  <div><p className="text-xs text-gray-500">{cs ? 'Velikost' : 'Size'}</p><p className="text-gray-300 font-mono">{model.size}</p></div>
+                  <div><p className="text-xs text-gray-500">{cs ? 'Rychlost' : 'Speed'}</p><p className="text-gray-300 font-mono">{model.speed}</p></div>
                   <div><p className="text-xs text-gray-500">VRAM</p><p className="text-gray-300 font-mono">{model.vram}</p></div>
-                  <div><p className="text-xs text-gray-500">{tr('l3Hiran', 'hardware', lang)}</p><p className="text-gray-300 font-mono">{model.hardware}</p></div>
-                  <div><p className="text-xs text-gray-500">{tr('l3Hiran', 'dataset', lang)}</p><p className="text-gray-300 font-mono">{model.dataset}</p></div>
+                  <div><p className="text-xs text-gray-500">{cs ? 'Hardware' : 'Hardware'}</p><p className="text-gray-300 font-mono">{model.hardware}</p></div>
+                  <div><p className="text-xs text-gray-500">{cs ? 'Dataset' : 'Dataset'}</p><p className="text-gray-300 font-mono">{model.dataset}</p></div>
                 </div>
                 <div className="flex flex-wrap gap-1.5 mt-3">
                   {model.tags.map((tag) => (
@@ -326,10 +326,10 @@ export default function L3HiranPage() {
           className="rounded-[32px] border border-white/10 bg-white/5 p-8"
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tr('l3Hiran', 'training', lang)}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Trénink' : 'Training'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <FlaskConical className="h-7 w-7 text-amber-400" />
-              {tr('l3Hiran', 'training_phases_v2_2', lang)}
+              {cs ? 'Tréninkové fáze v2.2' : 'Training Phases v2.2'}
             </h2>
           </div>
           <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
@@ -338,7 +338,7 @@ export default function L3HiranPage() {
                 <div className="mb-3 flex items-center justify-between">
                   <span className="text-sm font-bold text-white">{phase.phase}</span>
                   <span className="rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-300 border border-emerald-500/20">
-                    {phase.status === 'done' ? (tr('l3Hiran', 'done', lang)) : phase.status}
+                    {phase.status === 'done' ? (cs ? 'Hotovo' : 'Done') : phase.status}
                   </span>
                 </div>
                 <p className="text-xs text-gray-500 mb-1">{phase.period}</p>
@@ -364,13 +364,13 @@ export default function L3HiranPage() {
           className="rounded-[32px] border border-white/10 bg-black/40 p-8"
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tr('l3Hiran', 'architecture', lang)}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Architektura' : 'Architecture'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Database className="h-7 w-7 text-purple-400" />
-              {tr('l3Hiran', 'hybrid_rag_v2_3', lang)}
+              {cs ? 'Hybrid RAG — v2.3' : 'Hybrid RAG — v2.3'}
             </h2>
             <p className="text-sm text-gray-400">
-              {tr('l3Hiran', 'because_general_knowledge_is_too_large_for_32', lang)}
+              {cs ? 'Protože obecné znalosti jsou příliš rozsáhlé pro 32B parametrů, v2.3 používá RAG vedle FT.' : 'Because general knowledge is too large for 32B parameters, v2.3 uses RAG alongside FT.'}
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -394,10 +394,10 @@ export default function L3HiranPage() {
           <div className="mx-auto max-w-3xl text-center mb-8">
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-wider text-cyan-300">
               <MessageCircle className="h-3.5 w-3.5" />
-              {tr('l3Hiran', 'live_chat', lang)}
+              {cs ? 'Živý chat' : 'Live Chat'}
             </div>
             <h2 className="text-2xl font-bold sm:text-3xl text-gradient">
-              {tr('l3Hiran', 'ask_hiranyagarbha', lang)}
+              {cs ? 'Zeptej se Hiranyagarbhy' : 'Ask Hiranyagarbha'}
             </h2>
             <p className="mt-3 text-gray-400">
               {cs
@@ -418,10 +418,10 @@ export default function L3HiranPage() {
           className="rounded-[32px] border border-white/10 bg-black/40 p-8"
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tr('l3Hiran', 'marketplace', lang)}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Marketplace' : 'Marketplace'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <ShoppingCart className="h-7 w-7 text-emerald-400" />
-              {tr('l3Hiran', 'ai_marketplace', lang)}
+              {cs ? 'AI Marketplace' : 'AI Marketplace'}
             </h2>
           </div>
           <div className="grid gap-5 md:grid-cols-3">
@@ -434,7 +434,7 @@ export default function L3HiranPage() {
                       ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20'
                       : 'bg-purple-500/10 text-purple-300 border-purple-500/20'
                   }`}>
-                    {item.status === 'live' ? 'Live' : (tr('l3Hiran', 'planned', lang))}
+                    {item.status === 'live' ? 'Live' : (cs ? 'Plánováno' : 'Planned')}
                   </span>
                 </div>
                 <p className="text-xs text-gray-500 mb-2">{item.version}</p>
@@ -457,10 +457,10 @@ export default function L3HiranPage() {
           className="rounded-[32px] border border-white/10 bg-white/5 p-8"
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tr('l3Hiran', 'operations', lang)}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Operace' : 'Operations'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Server className="h-7 w-7 text-cyan-400" />
-              {tr('l3Hiran', 'orchestration_deployment', lang)}
+              {cs ? 'Orchestrace & Deployment' : 'Orchestration & Deployment'}
             </h2>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -482,7 +482,7 @@ export default function L3HiranPage() {
           className="rounded-[32px] border border-purple-500/30 bg-gradient-to-r from-purple-500/10 via-transparent to-cyan-500/10 p-10"
         >
           <h2 className="text-2xl font-semibold text-white text-center mb-6">
-            {tr('l3Hiran', 'learn_more_about_l3_and_the_ecosystem', lang)}
+            {cs ? 'Více o L3 a ekosystému' : 'Learn more about L3 and the ecosystem'}
           </h2>
           <div className="flex flex-wrap justify-center gap-4">
             <Link href="/ai-native" className="inline-flex items-center gap-2 rounded-2xl border border-cyan-500/30 bg-cyan-500/5 px-6 py-3 text-sm font-semibold text-cyan-200 hover:bg-cyan-500/10 transition-colors">

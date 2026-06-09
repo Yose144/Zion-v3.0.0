@@ -47,18 +47,18 @@ const getLayerStack = (cs: boolean) => [
     border: 'border-emerald-500/40',
     items: [
       'PoW Cosmic Harmony v3 — Ekam Deeksha ASIC-resistant',
-      tr('roadmapPage', 'scratchpad_ekam_256_kib_4_passes_256_reads_ti', lang),
-      tr('roadmapPage', 'epoch_rotating_npu_weights_2016_100_blocks_ti', lang),
+      cs ? 'Scratchpad Ekam: 256 KiB, 4 průchody, 256 čtení (Tier 1)' : 'Scratchpad Ekam: 256 KiB, 4 passes, 256 reads (Tier 1)',
+      cs ? 'Epoch-rotující NPU váhy — 2016/100 bloků (Tier 2)' : 'Epoch-rotating NPU weights — 2016/100 blocks (Tier 2)',
       'UTXO model + Ed25519 signatures',
-      tr('roadmapPage', 'decade_decay_emission_5_400_724_zion_block_10', lang),
-      tr('roadmapPage', '16_28b_genesis_reserve_public_summary', lang),
+      cs ? 'Decade Decay emise: 5 400 → 724 ZION/blok (100+ let + tail ∞)' : 'Decade Decay emission: 5,400 → 724 ZION/block (100+ years + tail ∞)',
+      cs ? '16,28B genesis reserve (veřejný souhrn)' : '16.28B genesis reserve (public summary)',
       'LWMA DAA (60-block, ±25%)',
       'TX hash v2 + BLAKE3 body root (BODY_ROOT_V2)',
-      tr('roadmapPage', 'fee_burning_all_fees_destroyed', lang),
-      tr('roadmapPage', 'distribution_89_miner_5_humanit_5_issobella_1', lang),
-      tr('roadmapPage', 'dual_mining_zion_chv3_vrsc_verushash', lang),
-      tr('roadmapPage', 'mining_pool_stratum_v2_pplns', lang),
-      tr('roadmapPage', 'p2p_network_ibd_sync_bootstrap_peers', lang),
+      cs ? 'Spalování poplatků — VŠECHNY poplatky zničeny' : 'Fee burning — ALL fees destroyed',
+      cs ? 'Distribuce: 89% miner · 5% humanit. · 5% Issobella · 1% pool' : 'Distribution: 89% miner · 5% humanit. · 5% Issobella · 1% pool',
+      cs ? 'Dual-mining: ZION (CHv3) + VRSC (VerusHash)' : 'Dual-mining: ZION (CHv3) + VRSC (VerusHash)',
+      cs ? 'Mining pool (Stratum v2, PPLNS)' : 'Mining pool (Stratum v2, PPLNS)',
+      cs ? 'P2P síť, IBD sync, bootstrap peers' : 'P2P network, IBD sync, bootstrap peers',
     ],
     active: true,
   },
@@ -72,9 +72,9 @@ const getLayerStack = (cs: boolean) => [
     items: [
       'wZION Bridge — Base Mainnet live ✅',
       'Uniswap V3 pool wZION/WETH (0.3%) — Base Mainnet live ✅',
-      tr('roadmapPage', 'defi_ui_swap_bridge_portfolio_on_zionterranov', lang),
-      tr('roadmapPage', 'defi_pages_bridge_dao_warp_bilingual_mainnet', lang),
-      tr('roadmapPage', 'liquidity_seeded_50_wzion_0_0005_weth', lang),
+      cs ? 'DeFi UI — swap, bridge, portfolio na zionterranova.com/defi ✅' : 'DeFi UI — swap, bridge, portfolio on zionterranova.com/defi ✅',
+      cs ? 'DeFi stránky — bridge/dao/warp bilingvální + mainnet ✅' : 'DeFi pages — bridge/dao/warp bilingual + mainnet ✅',
+      cs ? 'Likvidita nasazena: 50 wZION + 0.0005 WETH ✅' : 'Liquidity seeded: 50 wZION + 0.0005 WETH ✅',
       'ZIONStaking (12% APR, 7-day cooldown) — Base Mainnet ✅',
       'ZIONGovernance (stake-weighted voting) — Base Mainnet ✅',
       'ZIONFarm (MasterChef yield farming) — Base Mainnet ✅',
@@ -87,14 +87,14 @@ const getLayerStack = (cs: boolean) => [
     layer: 'L3',
     emoji: '🧠',
     title: 'NCL, WARP & AI-native',
-    period: tr('roadmapPage', '2026_implementation_2027_gated_production', lang),
+    period: cs ? '2026 implementace · 2027 gated produkce' : '2026 implementation · 2027 gated production',
     color: 'from-purple-500 to-pink-500',
     border: 'border-purple-500/40',
     items: [
-      tr('roadmapPage', 'ncl_ai_task_marketplace', lang),
+      cs ? 'NCL — AI task marketplace' : 'NCL — AI task marketplace',
       'AI Orchestrator — agent routing',
       'WARP adapters 7/7 implemented ✅ (2026-03-02)',
-      tr('roadmapPage', 'ethereum_corridor_live_on_base_mainnet', lang),
+      cs ? 'Ethereum corridor živě na Base Mainnet ✅' : 'Ethereum corridor live on Base Mainnet ✅',
       'AI Native SDK',
     ],
     active: false,
@@ -110,9 +110,9 @@ const getLayerStack = (cs: boolean) => [
       'Avatar system (51 core + 151 extended) — Active ✅',
       'Quest engine (5 quests per avatar) — Active ✅',
       'REST API (`/avatars`, `/quests`) — Active ✅',
-      tr('roadmapPage', 'golden_egg_treasure_hunt_108_clues_8_25b_zion', lang),
-      tr('roadmapPage', 'guild_system_territories_planned_2028', lang),
-      tr('roadmapPage', 'ue5_integration_planned_2028_2029', lang),
+      cs ? 'Golden Egg poklad (108 stop, 8,25B ZION) — plánováno 2027' : 'Golden Egg treasure hunt (108 clues, 8.25B ZION) — Planned 2027',
+      cs ? 'Guildy a teritoria — plánováno 2028' : 'Guild system & territories — Planned 2028',
+      cs ? 'UE5 integrace — plánováno 2028–2029' : 'UE5 integration — Planned 2028–2029',
     ],
     active: false,
   },
@@ -129,7 +129,7 @@ const getLayerStack = (cs: boolean) => [
       'Te Piko Ora (French Polynesia) — Planned 2028–2029',
       'Community blueprint template — Planned 2027',
       'LoRa/Meshtastic off-grid mesh — Planned 2028',
-      tr('roadmapPage', 'free_energy_quantum_engine_r_d', lang),
+      cs ? 'Free energy quantum engine R&D' : 'Free energy quantum engine R&D',
     ],
     active: false,
   },
@@ -143,8 +143,8 @@ const getLayerStack = (cs: boolean) => [
     items: [
       'Research proposal system — Active ✅',
       'Funding allocation (5% fee split) — Active ✅',
-      tr('roadmapPage', 'zion_issobella_station_concept_roadmap_planne', lang),
-      tr('roadmapPage', 'orbital_mining_deep_space_research_planned_20', lang),
+      cs ? 'Stanice ZION Issobella — koncept & roadmap plánováno 2030+' : 'ZION Issobella Station — concept & roadmap Planned 2030+',
+      cs ? 'Orbitální těžba & výzkum hlubokého vesmíru — plánováno 2030+' : 'Orbital mining & deep-space research — Planned 2030+',
     ],
     active: false,
   },
@@ -187,7 +187,7 @@ const getComponentStatus = (cs: boolean) => [
   { name: 'ncl + ai-native/ (L3 AI)', loc: '~6.6k', tests: 119, status: '✅', readiness: 75 },
   { name: 'oasis/ (L4 game)', loc: '~3.5k', tests: 49, status: '✅', readiness: 70 },
   { name: 'desktop-agent/', loc: '~3k', tests: 0, status: '✅', readiness: 80 },
-  { name: tr('roadmapPage', 'website_v2_9_defi_live', lang), loc: '~6k', tests: 0, status: '✅', readiness: 85 },
+  { name: cs ? 'website-v2.9/ (DeFi live)' : 'website-v2.9/ (DeFi live)', loc: '~6k', tests: 0, status: '✅', readiness: 85 },
 ];
 
 /* ─── PHASES ─── */
@@ -207,8 +207,8 @@ interface PhaseData {
 const getPhases = (cs: boolean): PhaseData[] => [
   {
     id: '0',
-    title: tr('roadmapPage', 'spec_freeze_core_rewrite', lang),
-    period: tr('roadmapPage', 'feb_2026_completed_9_feb', lang),
+    title: cs ? 'Zmrazení specifikace & přepis jádra' : 'Spec Freeze & Core Rewrite',
+    period: cs ? 'Únor 2026 (dokončeno 9. úno)' : 'Feb 2026 (completed 9 Feb)',
     priority: 'P0 Blocker → ✅ DONE',
     progress: 100,
     status: 'done',
@@ -216,20 +216,20 @@ const getPhases = (cs: boolean): PhaseData[] => [
       ? '155 testů, 8 commitů. Emise, DAA, fee market, wallet, consensus hardening — vše zmrazeno.'
       : '155 tests, 8 commits. Emission, DAA, fee market, wallet, consensus hardening — all frozen.',
     sprints: [
-      { id: '0.0', title: tr('roadmapPage', 'repo_migration_clean_repo_workspace_docker_ci', lang), done: true },
-      { id: '0.1', title: tr('roadmapPage', 'emission_genesis_5_400_zion_block_16_28b_rese', lang), done: true },
-      { id: '0.2', title: tr('roadmapPage', 'daa_consensus_lwma_60_block_25_fork_choice', lang), done: true },
-      { id: '0.3', title: tr('roadmapPage', 'fee_market_mempool_fee_burning_double_spend_e', lang), done: true },
-      { id: '0.4', title: tr('roadmapPage', 'wallet_tx_utxo_select_ed25519_broadcast_e2e', lang), done: true },
-      { id: '0.5', title: tr('roadmapPage', 'consensus_hardening_maturity_100_reorg_10_fin', lang), done: true },
+      { id: '0.0', title: cs ? 'Migrace repozitáře — čistý repo, workspace, Docker, CI/CD' : 'Repo Migration — clean repo, workspace, Docker, CI/CD', done: true },
+      { id: '0.1', title: cs ? 'Emise & Genesis — 5 400 ZION/blok, 16,28B reserve' : 'Emission & Genesis — 5,400 ZION/block, 16.28B reserve', done: true },
+      { id: '0.2', title: cs ? 'DAA & Konsensus — LWMA 60-blok, ±25%, fork-choice' : 'DAA & Consensus — LWMA 60-block, ±25%, fork-choice', done: true },
+      { id: '0.3', title: cs ? 'Fee Market & Mempool — spalování, double-spend, eviction' : 'Fee Market & Mempool — fee burning, double-spend, eviction', done: true },
+      { id: '0.4', title: cs ? 'Peněženka & TX — UTXO select, Ed25519, broadcast, E2E' : 'Wallet & TX — UTXO select, Ed25519, broadcast, E2E', done: true },
+      { id: '0.5', title: cs ? 'Hardening konsensu — maturity=100, reorg=10, finalita=60' : 'Consensus Hardening — maturity=100, reorg=10, finality=60', done: true },
     ],
     exitCriteria: [
-      { text: tr('roadmapPage', 'unit_tests_for_new_reward_model', lang), done: true },
-      { text: tr('roadmapPage', 'genesis_produces_16_28b_reserve', lang), done: true },
-      { text: tr('roadmapPage', 'lwma_daa_deterministic', lang), done: true },
-      { text: tr('roadmapPage', 'max_reorg_depth_10_enforced', lang), done: true },
-      { text: tr('roadmapPage', 'coinbase_maturity_100_enforced', lang), done: true },
-      { text: tr('roadmapPage', 'wallet_send_e2e_working', lang), done: true },
+      { text: cs ? 'Unit testy pro nový model odměn' : 'Unit tests for new reward model', done: true },
+      { text: cs ? 'Genesis produkuje 16,28B reserve' : 'Genesis produces 16.28B reserve', done: true },
+      { text: cs ? 'LWMA DAA deterministické' : 'LWMA DAA deterministic', done: true },
+      { text: cs ? 'Max reorg hloubka = 10 vynucena' : 'Max reorg depth = 10 enforced', done: true },
+      { text: cs ? 'Coinbase maturity = 100 vynucena' : 'Coinbase maturity = 100 enforced', done: true },
+      { text: cs ? 'Wallet send E2E funkční' : 'Wallet send E2E working', done: true },
     ],
   },
   {
@@ -241,25 +241,25 @@ const getPhases = (cs: boolean): PhaseData[] => [
     status: 'done',
     description: '168h stability PASS (2026-03-03). Ekam Deeksha Tier 1+2 deployed (2026-03-17): 256 KiB scratchpad, epoch NPU weights, 10/10 pool accepted, 0 rejected. Controlled rehearsal completed. Core + Edge topology operational via Tailscale VPN. Closure evidence collected for public launch.',
     sprints: [
-      { id: '1.0', title: tr('roadmapPage', 'network_identity_deploy_chain_reset_docker_3_', lang), done: true },
-      { id: '1.1', title: tr('roadmapPage', 'config_validation_toml_parsing_boundary_check', lang), tests: 70, done: true },
-      { id: '1.2', title: tr('roadmapPage', 'security_edge_case_reorg_double_spend_fork_ch', lang), tests: 29, done: true },
-      { id: '1.3', title: tr('roadmapPage', 'ibd_hardening_timeouts_stall_detection_peer_s', lang), tests: 42, done: true },
-      { id: '1.4', title: tr('roadmapPage', 'pool_payout_integration_batch_tx_poolwallet_j', lang), tests: 23, done: true },
-      { id: '1.5', title: tr('roadmapPage', 'buyback_dao_treasury_100_dao_revenue_burn_add', lang), tests: 28, done: true },
-      { id: '1.6', title: tr('roadmapPage', 'supply_buyback_api_getsupplyinfo_getnetworkin', lang), tests: 15, done: true },
-      { id: '1.7', title: tr('roadmapPage', 'p2p_rate_limiting_200_msgs_peer_60s_escalatin', lang), tests: 13, done: true },
-      { id: '1.8', title: tr('roadmapPage', 'health_check_metrics_gethealthcheck_getmetric', lang), tests: 8, done: true },
-      { id: '1.9', title: tr('roadmapPage', 'stress_test_suite_high_tx_rapid_blocks_partit', lang), tests: 21, done: true },
-      { id: '1.10', title: tr('roadmapPage', '168h_stability_run_archived_multi_host_valida', lang), done: true },
-      { id: '1.11', title: tr('roadmapPage', 'live_partition_test_node_isolation_30_min_rec', lang), done: false },
-      { id: '1.12', title: tr('roadmapPage', '100_miners_stress_simulate_100_stratum_client', lang), done: false },
+      { id: '1.0', title: cs ? 'Identita sítě & Deploy — chain reset, Docker, 3 servery' : 'Network Identity & Deploy — chain reset, Docker, 3-server', done: true },
+      { id: '1.1', title: cs ? 'Validace konfigurace — TOML parsing, hraniční kontroly' : 'Config Validation — TOML parsing, boundary checks', tests: 70, done: true },
+      { id: '1.2', title: cs ? 'Bezpečnost & Edge-Case — reorg, double-spend, fork-choice' : 'Security & Edge-Case — reorg, double-spend, fork-choice', tests: 29, done: true },
+      { id: '1.3', title: cs ? 'IBD Hardening — timeouty, detekce stall, peer scoring' : 'IBD Hardening — timeouts, stall detection, peer scoring', tests: 42, done: true },
+      { id: '1.4', title: cs ? 'Pool Payout — batch TX, PoolWallet, JSON-RPC' : 'Pool Payout Integration — batch TX, PoolWallet, JSON-RPC', tests: 23, done: true },
+      { id: '1.5', title: cs ? 'Buyback + DAO Treasury — 100% DAO revenue, burn adresa' : 'Buyback + DAO Treasury — 100% DAO revenue, burn address', tests: 28, done: true },
+      { id: '1.6', title: cs ? 'Supply + Buyback API — getSupplyInfo, getNetworkInfo' : 'Supply + Buyback API — getSupplyInfo, getNetworkInfo', tests: 15, done: true },
+      { id: '1.7', title: cs ? 'P2P Rate-Limiting — 200 zpráv/peer/60s, eskalující bany' : 'P2P Rate-Limiting — 200 msgs/peer/60s, escalating bans', tests: 13, done: true },
+      { id: '1.8', title: cs ? 'Health Check & Metriky — getHealthCheck, getMetrics' : 'Health Check & Metrics — getHealthCheck, getMetrics', tests: 8, done: true },
+      { id: '1.9', title: cs ? 'Stress Test Suite — vysoký TX, rychlé bloky, partition' : 'Stress Test Suite — high TX, rapid blocks, partition', tests: 21, done: true },
+      { id: '1.10', title: cs ? '168h stabilita — archivovaný multi-host run, žádný kritický incident' : '168h Stability Run — archived multi-host validation, no critical incident', done: true },
+      { id: '1.11', title: cs ? 'Live Partition Test — izolace nodu 30 min, reconnect' : 'Live Partition Test — node isolation 30 min, reconnect', done: false },
+      { id: '1.12', title: cs ? '100 minerů stres — simulace 100 Stratum klientů' : '100 Miners Stress — simulate 100 Stratum clients', done: false },
       { id: '1.13', title: 'Ekam Deeksha Tier 1 — Scratchpad 256 KiB, 4 passes, 256 reads', tests: 108, done: true },
       { id: '1.14', title: 'Ekam Deeksha Tier 2 — Epoch NPU weights, rotate per 2016/100 blocks', tests: 14, done: true },
       { id: '1.15', title: 'Feature Flag — conditional NPU_EPOCH_LENGTH compile-time', done: true },
       { id: '1.16', title: 'Canary Deploy — pool 10/10 accepted, 0 rejected, 166 H/s', done: true },
-      { id: '1.17', title: tr('roadmapPage', 'core_edge_topology_tailscale_vpn_sharerelay_p', lang), done: true },
-      { id: '1.18', title: tr('roadmapPage', 'fee_split_89_5_5_1_canonical_addresses_genesi', lang), done: true }
+      { id: '1.17', title: cs ? 'Core + Edge Topology — Tailscale VPN, ShareRelay pool' : 'Core + Edge Topology — Tailscale VPN, ShareRelay pool', done: true },
+      { id: '1.18', title: cs ? 'Fee Split 89/5/5/1 — kanonické adresy, Genesis premine' : 'Fee Split 89/5/5/1 — canonical addresses, Genesis premine', done: true }
     ],
     exitCriteria: [
       { text: 'Controlled V3 Core + Edge mainnet deployed on 2 nodes (Edge VPS + Core PC)', done: true },
@@ -278,8 +278,8 @@ const getPhases = (cs: boolean): PhaseData[] => [
   },
   {
     id: '2',
-    title: tr('roadmapPage', 'node_ux_mining', lang),
-    period: tr('roadmapPage', 'jun_jul_2026', lang),
+    title: cs ? 'Node UX & Těžba' : 'Node UX & Mining',
+    period: cs ? 'Červen — Červenec 2026' : 'Jun — Jul 2026',
     priority: 'P1 Important',
     progress: 0,
     status: 'upcoming',
@@ -287,33 +287,33 @@ const getPhases = (cs: boolean): PhaseData[] => [
       ? 'Node spustitelný za 10 min, block explorer, mining guides, RPC dokumentace.'
       : 'Node bootable in 10 min, block explorer, mining guides, RPC documentation.',
     sprints: [
-      { id: '2.1', title: tr('roadmapPage', 'node_ux_readme_config_toml_structured_logging', lang), done: false },
-      { id: '2.2', title: tr('roadmapPage', 'mining_polish_cpu_baseline_gpu_production_poo', lang), done: false },
-      { id: '2.3', title: tr('roadmapPage', 'block_explorer_indexer_web_ui_supply_api_rich', lang), done: false },
+      { id: '2.1', title: cs ? 'Node UX — README, config.toml, strukturované logy, CLI' : 'Node UX — README, config.toml, structured logging, CLI', done: false },
+      { id: '2.2', title: cs ? 'Mining Polish — CPU baseline, GPU produkce, pool failover' : 'Mining Polish — CPU baseline, GPU production, pool failover', done: false },
+      { id: '2.3', title: cs ? 'Block Explorer — indexer, web UI, supply API, rich list' : 'Block Explorer — indexer, web UI, supply API, rich list', done: false },
     ],
     exitCriteria: [
-      { text: tr('roadmapPage', 'node_bootable_in_10_min_per_readme', lang), done: false },
-      { text: tr('roadmapPage', 'block_explorer_running_and_indexing', lang), done: false },
-      { text: tr('roadmapPage', 'mining_guides_complete', lang), done: false },
-      { text: tr('roadmapPage', 'rpc_api_documented', lang), done: false },
+      { text: cs ? 'Node spustitelný za 10 min dle README' : 'Node bootable in 10 min per README', done: false },
+      { text: cs ? 'Block explorer běží a indexuje' : 'Block explorer running and indexing', done: false },
+      { text: cs ? 'Mining guides kompletní' : 'Mining guides complete', done: false },
+      { text: cs ? 'RPC API zdokumentováno' : 'RPC API documented', done: false },
     ],
   },
   {
     id: '3',
-    title: tr('roadmapPage', 'infrastructure_defi_legal', lang),
-    period: tr('roadmapPage', 'mar_may_2026', lang),
+    title: cs ? 'Infrastruktura, DeFi & Legal' : 'Infrastructure, DeFi & Legal',
+    period: cs ? 'Březen — Květen 2026' : 'Mar — May 2026',
     priority: 'P1 Important → ✅ DONE',
     progress: 100,
     status: 'done',
     description: 'Single public host + internal validator lanes active, monitoring running, legal/docs complete. wZION bridge live on Base Mainnet. L2 contracts deployed: Staking, Governance, Farm, AtomicSwap.',
     sprints: [
-      { id: '3.1', title: tr('roadmapPage', 'public_host_monitoring_zion2_live_prometheus_', lang), done: true },
-      { id: '3.2', title: tr('roadmapPage', 'docker_deploy_runbook_compose_live_web_deploy', lang), done: true },
-      { id: '3.3', title: tr('roadmapPage', 'legal_compliance_disclaimers_token_not_securi', lang), done: true },
-      { id: '3.4', title: tr('roadmapPage', 'wzion_bridge_deployed_on_base_mainnet', lang), done: true },
-      { id: '3.5', title: tr('roadmapPage', 'uniswap_v3_pool_wzion_weth_0_3_seeded_on_base', lang), done: true },
-      { id: '3.6', title: tr('roadmapPage', 'defi_ui_functional_swap_bridge_portfolio_on_w', lang), done: true },
-      { id: '3.7', title: tr('roadmapPage', 'defi_l2_pages_cleanup_bridge_dao_warp_bilingu', lang), done: true },
+      { id: '3.1', title: cs ? 'Veřejný host & Monitoring — Zion2 live, Prometheus + Grafana' : 'Public Host & Monitoring — Zion2 live, Prometheus + Grafana', done: true },
+      { id: '3.2', title: cs ? 'Docker & Deploy — runbook + compose + live web deploy flow' : 'Docker & Deploy — runbook + compose + live web deploy flow', done: true },
+      { id: '3.3', title: cs ? 'Legal & Compliance — disclaimery, token-not-security, rizika' : 'Legal & Compliance — disclaimers, token-not-security, risk', done: true },
+      { id: '3.4', title: cs ? 'wZION + Bridge nasazeny na Base Mainnet' : 'wZION + Bridge deployed on Base Mainnet', done: true },
+      { id: '3.5', title: cs ? 'Uniswap V3 pool wZION/WETH (0.3%) nasazen na Base Mainnet' : 'Uniswap V3 pool wZION/WETH (0.3%) seeded on Base Mainnet', done: true },
+      { id: '3.6', title: cs ? 'DeFi UI — funkční swap/bridge/portfolio na webu' : 'DeFi UI — functional swap/bridge/portfolio on website', done: true },
+      { id: '3.7', title: cs ? 'DeFi L2 stránky — bridge/dao/warp bilingvální mainnet' : 'DeFi L2 pages cleanup — bridge/dao/warp bilingual mainnet', done: true },
     ],
     exitCriteria: [
       { text: '1 public host + internal validator lanes stable online', done: true },
@@ -326,8 +326,8 @@ const getPhases = (cs: boolean): PhaseData[] => [
   },
   {
     id: '4',
-    title: tr('roadmapPage', 'dress_rehearsal', lang),
-    period: tr('roadmapPage', 'oct_nov_2026', lang),
+    title: cs ? 'Generální zkouška' : 'Dress Rehearsal',
+    period: cs ? 'Říjen — Listopad 2026' : 'Oct — Nov 2026',
     priority: 'P0 Blocker',
     progress: 0,
     status: 'upcoming',
@@ -335,22 +335,22 @@ const getPhases = (cs: boolean): PhaseData[] => [
       ? 'Summer Solstice rehearsal (20. června 2026) dokončena interně. Následuje 168h (7denní) stabilita, bezpečnostní audit (Trail of Bits / OtterSec / Halborn), code freeze, bug bounty program.'
       : 'Summer Solstice rehearsal (20 June 2026) completed internally. Next: 168h (7-day) stability run, security audit (Trail of Bits / OtterSec / Halborn), code freeze, bug bounty program.',
     sprints: [
-      { id: '4.1', title: tr('roadmapPage', 'dress_rehearsal_staging_chain_1000_miners_dis', lang), done: false },
-      { id: '4.2', title: tr('roadmapPage', 'security_audit_rfp_kickoff_mid_review_final_b', lang), done: false },
-      { id: '4.3', title: tr('roadmapPage', 'code_freeze_feature_freeze_tag_v2_9_6_mainnet', lang), done: false },
+      { id: '4.1', title: cs ? 'Dress Rehearsal — staging chain, 1000 minerů, disaster recovery' : 'Dress Rehearsal — staging chain, 1000 miners, disaster recovery', done: false },
+      { id: '4.2', title: cs ? 'Bezpečnostní audit — RFP, kickoff, mid-review, final, bug bounty' : 'Security Audit — RFP, kickoff, mid-review, final, bug bounty', done: false },
+      { id: '4.3', title: cs ? 'Code Freeze — feature freeze, tag v2.9.6-mainnet, SHA-256' : 'Code Freeze — feature freeze, tag v2.9.6-mainnet, SHA-256', done: false },
     ],
     exitCriteria: [
-      { text: tr('roadmapPage', '7_day_stability_run_without_crash', lang), done: false },
-      { text: tr('roadmapPage', 'security_audit_no_critical_high_findings', lang), done: false },
-      { text: tr('roadmapPage', 'code_freeze_tag_created', lang), done: false },
-      { text: tr('roadmapPage', 'binary_releases_with_sha_256', lang), done: false },
-      { text: tr('roadmapPage', 'bug_bounty_program_active', lang), done: false },
+      { text: cs ? '7denní stabilita bez havárie' : '7-day stability run without crash', done: false },
+      { text: cs ? 'Bezpečnostní audit — žádné critical/high nálezy' : 'Security audit — no critical/high findings', done: false },
+      { text: cs ? 'Code freeze — tag vytvořen' : 'Code freeze — tag created', done: false },
+      { text: cs ? 'Binární release s SHA-256' : 'Binary releases with SHA-256', done: false },
+      { text: cs ? 'Bug bounty program aktivní' : 'Bug bounty program active', done: false },
     ],
   },
   {
     id: '5',
-    title: tr('roadmapPage', 'public_launch_decision_genesis', lang),
-    period: tr('roadmapPage', 'target_31_december_2026_new_year', lang),
+    title: cs ? 'Rozhodnutí o veřejném launchi & Genesis' : 'Public Launch Decision & Genesis',
+    period: cs ? 'Target: 31. prosinec 2026 (Silvestr)' : 'Target: 31 December 2026 (New Year\'s Eve)',
     priority: '🚀 P0 Blocker → Ready for launch',
     progress: 80,
     status: 'active',
@@ -358,57 +358,57 @@ const getPhases = (cs: boolean): PhaseData[] => [
       ? 'V3 je mainnet-ready. Phase 1 Foundation kompletní. Zbývající blockery: finální payout verifikace, bezpečnostní audit, bridge validator provisioning a komunitní příprava. Veřejný genesis target 31. prosince 2026.'
       : 'V3 is mainnet-ready. Phase 1 Foundation complete. Remaining blockers: final payout verification, security audit, bridge validator provisioning, and community preparation. Public genesis target 31 December 2026.',
     sprints: [
-      { id: 'B-1', title: tr('roadmapPage', 'final_payout_verification_pplns_window_valida', lang), done: false },
-      { id: 'B-2', title: tr('roadmapPage', 'security_audit_external_firm_booked', lang), done: false },
-      { id: 'B-3', title: tr('roadmapPage', 'bridge_validator_key_provisioning_3_5_thresho', lang), done: false },
-      { id: 'B-4', title: tr('roadmapPage', 'community_preparation_documentation_tutorials', lang), done: false },
-      { id: 'B-5', title: tr('roadmapPage', 'ci_billing_resolution', lang), done: false },
-      { id: 'T-14', title: tr('roadmapPage', 'genesis_freeze_all_parameters_frozen', lang), done: false },
-      { id: 'T-7', title: tr('roadmapPage', 'community_announcement_wallets_available', lang), done: false },
-      { id: 'T-2', title: tr('roadmapPage', 'final_node_software_release', lang), done: false },
-      { id: 'T-0', title: tr('roadmapPage', 'public_genesis_go_decision', lang), done: false },
+      { id: 'B-1', title: cs ? 'Finální payout verifikace — PPLNS window validace' : 'Final payout verification — PPLNS window validation', done: false },
+      { id: 'B-2', title: cs ? 'Bezpečnostní audit — externí firma booked' : 'Security audit — external firm booked', done: false },
+      { id: 'B-3', title: cs ? 'Bridge validator provisioning — 3/5 threshold produkce' : 'Bridge validator key provisioning — 3/5 threshold production', done: false },
+      { id: 'B-4', title: cs ? 'Komunitní příprava — dokumentace, tutoriály' : 'Community preparation — documentation, tutorials', done: false },
+      { id: 'B-5', title: cs ? 'CI billing resolution' : 'CI billing resolution', done: false },
+      { id: 'T-14', title: cs ? 'Genesis freeze — všechny parametry zmrazeny' : 'Genesis freeze — all parameters frozen', done: false },
+      { id: 'T-7', title: cs ? 'Community oznámení + wallety ke stažení' : 'Community announcement + wallets available', done: false },
+      { id: 'T-2', title: cs ? 'Finální release node software' : 'Final node software release', done: false },
+      { id: 'T-0', title: cs ? '🚀 Veřejný genesis — GO rozhodnutí' : '🚀 Public genesis — GO decision', done: false },
     ],
     exitCriteria: [
-      { text: tr('roadmapPage', 'phase_1_foundation_complete', lang), done: true },
-      { text: tr('roadmapPage', 'final_payout_verification', lang), done: false },
-      { text: tr('roadmapPage', 'security_audit_no_critical_high_findings', lang), done: false },
-      { text: tr('roadmapPage', 'bridge_validator_provisioning_3_5_threshold', lang), done: false },
-      { text: tr('roadmapPage', 'genesis_block_hash_published', lang), done: false },
-      { text: tr('roadmapPage', 'bootstrap_hosts_online_public_internal_quorum', lang), done: false },
-      { text: tr('roadmapPage', 'pool_solo_mining_open', lang), done: false },
-      { text: tr('roadmapPage', 'block_explorer_live', lang), done: false },
-      { text: tr('roadmapPage', 'supply_api_live', lang), done: false },
+      { text: cs ? 'Phase 1 Foundation kompletní' : 'Phase 1 Foundation complete', done: true },
+      { text: cs ? 'Finální payout verifikace' : 'Final payout verification', done: false },
+      { text: cs ? 'Bezpečnostní audit — žádné critical/high nálezy' : 'Security audit — no critical/high findings', done: false },
+      { text: cs ? 'Bridge validator provisioning — 3/5 threshold' : 'Bridge validator provisioning — 3/5 threshold', done: false },
+      { text: cs ? 'Genesis block hash publikován' : 'Genesis block hash published', done: false },
+      { text: cs ? 'Bootstrap hosty online (veřejný + interní quorum)' : 'Bootstrap hosts online (public + internal quorum)', done: false },
+      { text: cs ? 'Pool + solo mining otevřen' : 'Pool + solo mining open', done: false },
+      { text: cs ? 'Block explorer živě' : 'Block explorer live', done: false },
+      { text: cs ? 'Supply API živě' : 'Supply API live', done: false },
     ],
   },
 ];
 
 const getPostLaunch = (cs: boolean) => [
   {
-    title: tr('roadmapPage', '6a_silent_mainnet', lang),
-    sub: tr('roadmapPage', 'days_1_30', lang),
+    title: cs ? '6A: Tichý Mainnet' : '6A: Silent Mainnet',
+    sub: cs ? 'Dny 1–30' : 'Days 1–30',
     items: cs
       ? ['Monitor orphan rate < 2%', 'Difficulty stabilita 60s ± 10%', 'Explorer + Supply API veřejný', 'Hotfix releases pokud potřeba']
       : ['Monitor orphan rate < 2%', 'Difficulty stability 60s ± 10%', 'Explorer + Supply API public', 'Hotfix releases if needed'],
   },
   {
-    title: tr('roadmapPage', '6b_dex_listings', lang),
-    sub: tr('roadmapPage', 'days_14_45', lang),
+    title: cs ? '6B: DEX & Listingy' : '6B: DEX & Listings',
+    sub: cs ? 'Dny 14–45' : 'Days 14–45',
     items: [
       'wZION ERC-20 deployed on Base Mainnet ✅',
       'Uniswap V3 pool wZION/WETH live ✅',
-      tr('roadmapPage', 'defi_ui_on_zionterranova_com_defi', lang),
-      tr('roadmapPage', 'deepen_liquidity_price_discovery', lang),
+      cs ? 'DeFi UI na zionterranova.com/defi ✅' : 'DeFi UI on zionterranova.com/defi ✅',
+      cs ? 'Prohloubit likviditu + price discovery' : 'Deepen liquidity + price discovery',
       'CoinGecko / DexScreener listing',
     ],
   },
   {
     title: '6C: CMC & CoinGecko',
-    sub: tr('roadmapPage', 'days_30_60', lang),
+    sub: cs ? 'Dny 30–60' : 'Days 30–60',
     items: ['CoinGecko application', 'CoinMarketCap application', 'Supply data feed'],
   },
   {
     title: '6D: CEX Outreach',
-    sub: tr('roadmapPage', 'days_45_120', lang),
+    sub: cs ? 'Dny 45–120' : 'Days 45–120',
     items: cs
       ? ['Tier-3: MEXC, XT, CoinEx', 'Tier-2: Gate.io, KuCoin (po volume)', 'Binance / Coinbase — NE jako první krok']
       : ['Tier-3: MEXC, XT, CoinEx', 'Tier-2: Gate.io, KuCoin (after volume)', 'Binance / Coinbase — NOT a first step'],
@@ -416,27 +416,27 @@ const getPostLaunch = (cs: boolean) => [
 ];
 
 const getSecurityChecklist = (cs: boolean) => [
-  { text: tr('roadmapPage', 'ed25519_signature_verification', lang), done: true },
-  { text: tr('roadmapPage', 'double_spend_protection_mempool_utxo', lang), done: true },
-  { text: tr('roadmapPage', 'overflow_protection_checked_add', lang), done: true },
+  { text: cs ? 'Ed25519 ověření podpisů' : 'Ed25519 signature verification', done: true },
+  { text: cs ? 'Double-spend ochrana (mempool + UTXO)' : 'Double-spend protection (mempool + UTXO)', done: true },
+  { text: cs ? 'Overflow ochrana (checked_add)' : 'Overflow protection (checked_add)', done: true },
   { text: 'P2P rate limiting', done: true },
-  { text: tr('roadmapPage', 'coinbase_maturity_100_blocks', lang), done: true },
-  { text: tr('roadmapPage', 'reorg_limit_10_blocks', lang), done: true },
-  { text: tr('roadmapPage', 'timestamp_validation_120s', lang), done: true },
-  { text: tr('roadmapPage', 'mempool_limits_50k_tx_min_fee', lang), done: true },
-  { text: tr('roadmapPage', 'rpc_authentication_api_key', lang), done: false },
-  { text: tr('roadmapPage', 'block_size_limit_max_1_mb', lang), done: false },
-  { text: tr('roadmapPage', 'tx_size_limit_max_100_kb', lang), done: false },
-  { text: tr('roadmapPage', 'external_audit', lang), done: false },
+  { text: cs ? 'Coinbase maturity 100 bloků' : 'Coinbase maturity 100 blocks', done: true },
+  { text: cs ? 'Reorg limit 10 bloků' : 'Reorg limit 10 blocks', done: true },
+  { text: cs ? 'Timestamp validace ±120s' : 'Timestamp validation ±120s', done: true },
+  { text: cs ? 'Mempool limity (50k TX, min fee)' : 'Mempool limits (50k TX, min fee)', done: true },
+  { text: cs ? 'RPC autentizace (API key)' : 'RPC authentication (API key)', done: false },
+  { text: cs ? 'Block size limit (max 1 MB)' : 'Block size limit (max 1 MB)', done: false },
+  { text: cs ? 'TX size limit (max 100 KB)' : 'TX size limit (max 100 KB)', done: false },
+  { text: cs ? 'Externí audit' : 'External audit', done: false },
 ];
 
 const getTimeline = (cs: boolean) => [
-  { layer: 'L1 Blockchain', period: '2026', phases: tr('roadmapPage', 'phase_0_1_168h_pass_2_4_launch_gate', lang), color: 'from-emerald-400 to-lime-400', width: '42%', offset: '0%' },
-  { layer: tr('roadmapPage', 'l2_defi_dex', lang), period: '2026', phases: tr('roadmapPage', 'wzion_bridge_uni_v3_defi_ui_staking_planned', lang), color: 'from-blue-400 to-cyan-400', width: '30%', offset: '30%' },
-  { layer: 'L3 NCL & WARP', period: tr('roadmapPage', '2026_2027', lang), phases: tr('roadmapPage', 'warp_7_7_eth_corridor_ai_native', lang), color: 'from-purple-400 to-pink-400', width: '25%', offset: '44%' },
-  { layer: 'L4 Oasis', period: '2028+', phases: tr('roadmapPage', 'ue5_xp_economy_beta', lang), color: 'from-yellow-400 to-orange-400', width: '18%', offset: '68%' },
-  { layer: 'L5 Free World', period: '2030+', phases: tr('roadmapPage', 'humanitarian_missions_free_energy', lang), color: 'from-amber-400 to-yellow-400', width: '18%', offset: '72%' },
-  { layer: 'L6 Issobella', period: '2040+', phases: tr('roadmapPage', 'orbital_station_fund', lang), color: 'from-rose-400 to-red-400', width: '12%', offset: '88%' },
+  { layer: 'L1 Blockchain', period: '2026', phases: cs ? 'Fáze 0 ✅ → 1 🔄 (168h PASS) → 2–4 → launch gate' : 'Phase 0 ✅ → 1 🔄 (168h PASS) → 2–4 → launch gate', color: 'from-emerald-400 to-lime-400', width: '42%', offset: '0%' },
+  { layer: cs ? 'L2 DeFi & DEX' : 'L2 DeFi & DEX', period: '2026', phases: cs ? 'wZION Bridge ✅ · Uni V3 ✅ · DeFi UI ✅ · Staking plánován' : 'wZION Bridge ✅ · Uni V3 ✅ · DeFi UI ✅ · Staking planned', color: 'from-blue-400 to-cyan-400', width: '30%', offset: '30%' },
+  { layer: 'L3 NCL & WARP', period: cs ? '2026–2027' : '2026–2027', phases: cs ? 'WARP 7/7 ✅ · ETH corridor ✅ · AI-native' : 'WARP 7/7 ✅ · ETH corridor ✅ · AI-native', color: 'from-purple-400 to-pink-400', width: '25%', offset: '44%' },
+  { layer: 'L4 Oasis', period: '2028+', phases: cs ? 'UE5 · XP ekonomie · Beta' : 'UE5 · XP economy · Beta', color: 'from-yellow-400 to-orange-400', width: '18%', offset: '68%' },
+  { layer: 'L5 Free World', period: '2030+', phases: cs ? 'Humanitární mise · Volná energie' : 'Humanitarian missions · Free energy', color: 'from-amber-400 to-yellow-400', width: '18%', offset: '72%' },
+  { layer: 'L6 Issobella', period: '2040+', phases: cs ? 'Orbitální stanice · Fond' : 'Orbital Station · Fund', color: 'from-rose-400 to-red-400', width: '12%', offset: '88%' },
 ];
 
 /* ═══════════════════════════════════
@@ -492,7 +492,7 @@ export default function RoadmapPage() {
                   <Orbit className="h-3 w-3 text-zion-cyan" /> Public launch target · 31.12.2026
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <ShieldCheck className="h-3 w-3 text-emerald-400" /> {tr('roadmapPage', '1_501_tests_passing', lang)}
+                  <ShieldCheck className="h-3 w-3 text-emerald-400" /> {cs ? '1 501 testů prochází' : '1,501 tests passing'}
                 </span>
               </div>
             </div>
@@ -516,12 +516,12 @@ export default function RoadmapPage() {
           className="rounded-[32px] border border-white/10 bg-black/40 p-8"
         >
           <div className="flex flex-col gap-2 mb-8">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tr('roadmapPage', 'architecture', lang)}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Architektura' : 'Architecture'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Layers className="h-7 w-7 text-zion-gold" />
               Layer Stack
             </h2>
-            <p className="text-sm text-gray-400">{tr('roadmapPage', 'each_layer_is_independent_l1_is_never_comprom', lang)}</p>
+            <p className="text-sm text-gray-400">{cs ? 'Každý layer je nezávislý. L1 nikdy nekompromitujeme kvůli vyšším vrstvám.' : 'Each layer is independent. L1 is never compromised for higher layers.'}</p>
           </div>
           <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
             {layerStack.map((layer, idx) => (
@@ -541,7 +541,7 @@ export default function RoadmapPage() {
                     <span className="text-2xl">{layer.emoji}</span>
                     {layer.active && (
                       <span className="text-[10px] rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-emerald-200 uppercase tracking-widest">
-                        {tr('roadmapPage', 'active', lang)}
+                        {cs ? 'Aktivní' : 'Active'}
                       </span>
                     )}
                   </div>
@@ -569,21 +569,21 @@ export default function RoadmapPage() {
           className="rounded-[32px] border border-white/10 bg-black/40 p-8"
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tr('roadmapPage', 'telemetry', lang)}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Telemetrie' : 'Telemetry'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Code2 className="h-7 w-7 text-zion-cyan" />
-              {tr('roadmapPage', 'component_status', lang)}
+              {cs ? 'Stav komponent' : 'Component Status'}
             </h2>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/10 text-left">
-                  <th className="py-3 px-4 text-xs uppercase tracking-[0.3em] text-gray-400 font-medium">{tr('roadmapPage', 'component', lang)}</th>
+                  <th className="py-3 px-4 text-xs uppercase tracking-[0.3em] text-gray-400 font-medium">{cs ? 'Komponenta' : 'Component'}</th>
                   <th className="py-3 px-4 text-xs uppercase tracking-[0.3em] text-gray-400 font-medium">LOC</th>
-                  <th className="py-3 px-4 text-xs uppercase tracking-[0.3em] text-gray-400 font-medium">{tr('roadmapPage', 'tests', lang)}</th>
-                  <th className="py-3 px-4 text-xs uppercase tracking-[0.3em] text-gray-400 font-medium">{tr('roadmapPage', 'status', lang)}</th>
-                  <th className="py-3 px-4 text-xs uppercase tracking-[0.3em] text-gray-400 font-medium">{tr('roadmapPage', 'readiness', lang)}</th>
+                  <th className="py-3 px-4 text-xs uppercase tracking-[0.3em] text-gray-400 font-medium">{cs ? 'Testy' : 'Tests'}</th>
+                  <th className="py-3 px-4 text-xs uppercase tracking-[0.3em] text-gray-400 font-medium">{cs ? 'Stav' : 'Status'}</th>
+                  <th className="py-3 px-4 text-xs uppercase tracking-[0.3em] text-gray-400 font-medium">{cs ? 'Připravenost' : 'Readiness'}</th>
                 </tr>
               </thead>
               <tbody>
@@ -619,12 +619,12 @@ export default function RoadmapPage() {
           className="space-y-6"
         >
           <div className="flex flex-col gap-2">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tr('roadmapPage', 'execution', lang)}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Exekuce' : 'Execution'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Activity className="h-7 w-7 text-zion-purple" />
               Fáze 0 – 5 · Core + Edge mainnet → Full MainNet
             </h2>
-            <p className="text-sm text-gray-400">{tr('roadmapPage', 'every_phase_has_clear_exit_criteria_no_shortc', lang)}</p>
+            <p className="text-sm text-gray-400">{cs ? 'Každá fáze má jasné exit criteria. Žádné zkratky.' : 'Every phase has clear exit criteria. No shortcuts.'}</p>
           </div>
 
           <div className="relative">
@@ -639,10 +639,10 @@ export default function RoadmapPage() {
                     : 'border-white/10 bg-black/30';
                 const statusBadge =
                   phase.status === 'done'
-                    ? { text: tr('roadmapPage', 'done', lang), cls: 'border-emerald-400/30 bg-emerald-400/10 text-emerald-200' }
+                    ? { text: cs ? 'Dokončeno' : 'Done', cls: 'border-emerald-400/30 bg-emerald-400/10 text-emerald-200' }
                     : phase.status === 'active'
-                    ? { text: tr('roadmapPage', 'active_1', lang), cls: 'border-zion-cyan/30 bg-zion-cyan/10 text-zion-cyan' }
-                    : { text: tr('roadmapPage', 'upcoming', lang), cls: 'border-white/20 bg-white/5 text-gray-300' };
+                    ? { text: cs ? 'Probíhá' : 'Active', cls: 'border-zion-cyan/30 bg-zion-cyan/10 text-zion-cyan' }
+                    : { text: cs ? 'Plánováno' : 'Upcoming', cls: 'border-white/20 bg-white/5 text-gray-300' };
 
                 return (
                   <motion.div
@@ -660,7 +660,7 @@ export default function RoadmapPage() {
                     <div className={`flex-1 rounded-3xl border ${statusColor} p-6 backdrop-blur-sm`}>
                       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                         <div>
-                          <h3 className="text-xl font-semibold text-white">{tr('roadmapPage', 'phase', lang)} {phase.id} — {phase.title}</h3>
+                          <h3 className="text-xl font-semibold text-white">{cs ? 'Fáze' : 'Phase'} {phase.id} — {phase.title}</h3>
                           <p className="text-sm text-gray-400 mt-1">{phase.period} · {phase.priority}</p>
                           <p className="text-sm text-gray-300 mt-2">{phase.description}</p>
                         </div>
@@ -693,7 +693,7 @@ export default function RoadmapPage() {
                             <span className={sprint.done ? 'text-gray-300' : 'text-gray-500'}>
                               <span className="font-mono text-xs text-gray-500 mr-1">{sprint.id}</span>
                               {sprint.title}
-                              {sprint.tests ? <span className="text-gray-600 ml-1">({sprint.tests} {tr('roadmapPage', 'tests_1', lang)})</span> : null}
+                              {sprint.tests ? <span className="text-gray-600 ml-1">({sprint.tests} {cs ? 'testů' : 'tests'})</span> : null}
                             </span>
                           </div>
                         ))}
@@ -732,12 +732,12 @@ export default function RoadmapPage() {
           className="rounded-[32px] border border-white/10 bg-black/40 p-8"
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tr('roadmapPage', 'after_launch', lang)}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Po launchi' : 'After Launch'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Globe2 className="h-7 w-7 text-zion-gold" />
-              {tr('roadmapPage', 'phase_6_post_launch_exchange', lang)}
+              {cs ? 'Fáze 6 · Post-Launch & Exchange' : 'Phase 6 · Post-Launch & Exchange'}
             </h2>
-            <p className="text-sm text-gray-400">{tr('roadmapPage', 'only_after_go_decision_stability_dex_cex_cmc_', lang)}</p>
+            <p className="text-sm text-gray-400">{cs ? 'Pouze po GO rozhodnutí: stabilita → DEX → CEX → CMC/CG. Žádný hype první den.' : 'Only after GO decision: stability → DEX → CEX → CMC/CG. No hype on day one.'}</p>
           </div>
           <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
             {postLaunch.map((block, idx) => (
@@ -770,7 +770,7 @@ export default function RoadmapPage() {
                 { n: '2️⃣', label: 'BNB Chain (PancakeSwap)', cls: 'text-yellow-300' },
                 { n: '3️⃣', label: 'CoinGecko + CMC', cls: 'text-blue-300' },
                 { n: '4️⃣', label: 'Tier-3 CEX (MEXC, XT)', cls: 'text-purple-300' },
-                { n: '5️⃣', label: tr('roadmapPage', 'tier_2_cex_after_volume', lang), cls: 'text-gray-400' },
+                { n: '5️⃣', label: cs ? 'Tier-2 CEX (po volume)' : 'Tier-2 CEX (after volume)', cls: 'text-gray-400' },
               ].map((step) => (
                 <span key={step.n} className={`inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 ${step.cls}`}>
                   {step.n} {step.label}
@@ -791,8 +791,8 @@ export default function RoadmapPage() {
             <div className="flex items-center gap-3 mb-5">
               <Lock className="h-6 w-6 text-zion-gold" />
               <div>
-                <h2 className="text-2xl font-semibold text-white">{tr('roadmapPage', 'launch_constitution_draft', lang)}</h2>
-                <p className="text-sm text-gray-400">{tr('roadmapPage', 'frozen_parameters_for_potential_public_genesi', lang)}</p>
+                <h2 className="text-2xl font-semibold text-white">{cs ? 'Návrh Launch Constitution' : 'Launch Constitution Draft'}</h2>
+                <p className="text-sm text-gray-400">{cs ? 'Zmrazené parametry pro případný veřejný genesis, ne potvrzení launche' : 'Frozen parameters for potential public genesis, not a launch confirmation'}</p>
               </div>
             </div>
             <div className="space-y-0">
@@ -813,7 +813,7 @@ export default function RoadmapPage() {
               <Scale className="h-6 w-6 text-zion-purple" />
               <div>
                 <h2 className="text-2xl font-semibold text-white">Genesis Reserve</h2>
-                <p className="text-sm text-gray-400">{tr('roadmapPage', '16_280_000_000_zion_public_summary_for_launch', lang)}</p>
+                <p className="text-sm text-gray-400">{cs ? '16 280 000 000 ZION — veřejný souhrn pro launch ekonomiku' : '16,280,000,000 ZION — public summary for launch economics'}</p>
               </div>
             </div>
             <div className="space-y-4">
@@ -847,10 +847,10 @@ export default function RoadmapPage() {
           className="rounded-[32px] border border-white/10 bg-black/40 p-8"
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tr('roadmapPage', 'security', lang)}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Bezpečnost' : 'Security'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Shield className="h-7 w-7 text-emerald-400" />
-              {tr('roadmapPage', 'launch_readiness_security_checklist', lang)}
+              {cs ? 'Security Checklist pro launch' : 'Launch-Readiness Security Checklist'}
             </h2>
           </div>
           <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
@@ -869,7 +869,7 @@ export default function RoadmapPage() {
             <span className="font-mono text-emerald-400">{secDone}</span>
             <span>/</span>
             <span className="font-mono">{secTotal}</span>
-            <span>{tr('roadmapPage', 'completed', lang)}</span>
+            <span>{cs ? 'dokončeno' : 'completed'}</span>
             <div className="h-2 flex-1 max-w-xs rounded-full bg-white/10">
               <div className="h-2 rounded-full bg-emerald-400" style={{ width: `${(secDone / secTotal) * 100}%` }} />
             </div>
@@ -927,7 +927,7 @@ export default function RoadmapPage() {
         >
           <Rocket className="mx-auto h-12 w-12 text-zion-gold" />
           <h2 className="mt-6 text-3xl font-semibold text-white">
-            {tr('roadmapPage', 'public_launch_gate_ready_for_launch', lang)}
+            {cs ? 'Public launch gate · Ready for launch' : 'Public launch gate · Ready for launch'}
           </h2>
           <p className="mt-4 text-gray-100 max-w-3xl mx-auto">
             {cs
@@ -941,7 +941,7 @@ export default function RoadmapPage() {
             <strong className="text-white">mined, not sold</strong>.
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3 text-xs">
-            {['144B total supply', '5,400 ZION/block (D1)', 'Decade Decay -20%/10y', 'Fee burning', tr('roadmapPage', '100_yrs_mining', lang), '5% Issobella Fund'].map((item) => (
+            {['144B total supply', '5,400 ZION/block (D1)', 'Decade Decay -20%/10y', 'Fee burning', cs ? '100+ let mining' : '100+ yrs mining', '5% Issobella Fund'].map((item) => (
               <span key={item} className="rounded-full bg-white/80 px-4 py-2 font-semibold text-gray-900">
                 {item}
               </span>
@@ -952,10 +952,10 @@ export default function RoadmapPage() {
               <Activity className="h-4 w-4" /> DeFi Hub
             </Link>
             <Link href="/docs" className="inline-flex items-center gap-2 rounded-2xl bg-black/70 px-6 py-3 text-sm font-semibold text-white border border-white/20">
-              <BookOpen className="h-4 w-4" /> {tr('roadmapPage', 'documentation', lang)}
+              <BookOpen className="h-4 w-4" /> {cs ? 'Dokumentace' : 'Documentation'}
             </Link>
             <Link href="/dashboard" className="inline-flex items-center gap-2 rounded-2xl bg-white/10 px-6 py-3 text-sm font-semibold text-white border border-white/10">
-              <Activity className="h-4 w-4" /> {tr('roadmapPage', 'live_dashboard', lang)}
+              <Activity className="h-4 w-4" /> {cs ? 'Živý dashboard' : 'Live Dashboard'}
             </Link>
             <a
               href="https://github.com/Zion-TerraNova"
@@ -969,7 +969,7 @@ export default function RoadmapPage() {
         </motion.section>
 
         <p className="text-center text-xs text-gray-600">
-          ZION TerraNova {SITE_RELEASE_LABEL} — L1 Blockchain · L2 Bridge/DAO/DeFi · L3 AI Native/WARP/NCL · L4 Oasis · L5 Free World · L6 Issobella · 6-layer architecture · {tr('roadmapPage', 'last_updated', lang)}: 2026-05-23
+          ZION TerraNova {SITE_RELEASE_LABEL} — L1 Blockchain · L2 Bridge/DAO/DeFi · L3 AI Native/WARP/NCL · L4 Oasis · L5 Free World · L6 Issobella · 6-layer architecture · {cs ? 'Poslední aktualizace' : 'Last updated'}: 2026-05-23
         </p>
       </div>
     </div>
