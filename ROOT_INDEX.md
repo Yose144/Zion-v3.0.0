@@ -60,6 +60,14 @@
 │   ├── docker/                        ← Docker Compose (mainnet + monitoring)
 │   └── Cargo.toml                     ← V3 workspace manifest
 │
+├── DeekshaDebug/                      ← [SANDBOX] Algorithm R&D (CPU + GPU benchmarks)
+│   ├── src/deeksha_lite.rs            ← Reference: 256 KiB, 64 reads, 4 AES (= V3 Lite v1)
+│   ├── src/deeksha_lite_optimized.rs  ← Experimental: 128 KiB, 32 reads, 3 AES (Summer mode)
+│   ├── src/deeksha_lite_fire_optimized.rs ← Experimental: 128 KiB, 131072 thermal iters (Winter+)
+│   ├── kernels/                       ← OpenCL GPU kernels matching CPU implementations
+│   ├── src/bin/                       ← Benchmarks: lite, optimized, fire_optimized, compare_all
+│   └── Cargo.toml                     ← Standalone crate (depends on zion-cosmic-harmony)
+│
 ├── APP&WEB/                           ← Frontend applications
 │   ├── desktop-agent/                 ← Electron desktop agent + mining fallback
 │   ├── mobile-app/                    ← React Native mobile app
@@ -157,9 +165,18 @@ Historical docs, roadmaps, and analysis moved to [`archive/2.9.9/docs/`](archive
 |------|--------|-------------|
 | `V3/L1/core/` | 🟢 Active | Node, consensus, mempool, P2P, RPC, UTXO, Ed25519 |
 | `V3/L1/pool/` | 🟢 Active | Stratum pool server, PPLNS, share validation |
-| `V3/L1/miner/` | 🟢 Active | CPU/GPU miner, OpenCL/CUDA backends |
-| `V3/L1/cosmic-harmony/` | 🟢 Active | Revenue distribution (89/5/5/1 split) |
+| `V3/L1/miner/` | 🟢 Active | CPU/GPU miner, OpenCL/CUDA backends — **3 kanonické algoritmy** |
+| `V3/L1/cosmic-harmony/` | 🟢 Active | Revenue distribution (89/5/5/1 split); OpenCL kernely pro 3 algoritmy |
+| `DeekshaDebug/` | 🔵 Sandbox | Algorithm R&D — experimentální varianty (optimized/fire_optimized) před GPU validací |
 | `archive/2.9.9/legacy-code/L1/` | 🟡 Legacy | Pre-V3 reference code |
+
+**Kanonické algoritmy V3** (žádné jiné nesmí být v produkčním kódu):
+
+| Algoritmus | Scratchpad | Použití |
+|------------|-----------|---------|
+| `cosmic_harmony_ekam_deeksha_v2` | ~256 KiB + NPU | Plný Ekam pipeline |
+| `deeksha_lite_v1` | 256 KiB | Standardní těžba, reference |
+| `deeksha_lite_fire` | 256 KiB | Zimní režim, termální loop |
 
 ### L2 — Governance & Bridge
 
@@ -324,7 +341,8 @@ When docs disagree, use this order of truth:
 
 ---
 
-*Last updated: 2026-06-07*
+*Last updated: 2026-06-09*
+*2026-06-09: V3 cleanup — 3 kanonické algoritmy, algorithm-aware validace, gpu_backend_optimized.rs smazán, DeekshaDebug Cargo.toml kompletní, chain height 525+*
 *2026-06-07: Chain reset → genesis `7543004c`, consensus `deeksha_lite_v1`, Edge disk cleanup, DeekshaLiteNews.tsx added*
 *2026-05-23: Root directory cleanup — legacy L1-L6, docs, monitoring, tests moved to `archive/2.9.9/`; Genesis.md moved to root; v3.0.0 Mainnet Ready structure*
 *Repository: `Yose144/Zion-v3.0.0` · Branch: `main` · Version: v3.0.1*
