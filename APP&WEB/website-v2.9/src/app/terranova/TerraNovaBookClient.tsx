@@ -155,11 +155,11 @@ function formatChapterLabel(chapter: BookChapter, cs: boolean) {
   const title = cs ? chapter.titleCs : chapter.titleEn;
 
   if (chapter.number === 'Prolog') {
-    return `${tr('APP_WEB_website_v2_9_src_app_terranova_T', 'prologue', lang)} — ${title}`;
+    return `${cs ? 'Prolog' : 'Prologue'} — ${title}`;
   }
 
   if (chapter.number === 'Závěr') {
-    return `${tr('APP_WEB_website_v2_9_src_app_terranova_T', 'conclusion', lang)} — ${title}`;
+    return `${cs ? 'Závěr' : 'Conclusion'} — ${title}`;
   }
 
   if (APPENDIX_NUMBERS.has(chapter.number)) {
@@ -805,12 +805,12 @@ export default function TerraNovaBookClient() {
         ? 'Prolog'
         : 'Prologue'
       : APPENDIX_NUMBERS.has(chapter.number)
-      ? `${tr('APP_WEB_website_v2_9_src_app_terranova_T', 'appendix', lang)} ${chapter.number}`
+      ? `${cs ? 'Příloha' : 'Appendix'} ${chapter.number}`
       : chapter.number === 'Závěr'
       ? cs
         ? 'Závěr'
         : 'Conclusion'
-      : `${tr('APP_WEB_website_v2_9_src_app_terranova_T', 'part', lang)} ${chapter.number}`;
+      : `${cs ? 'Část' : 'Part'} ${chapter.number}`;
   const selectedDirection = compassDir !== null ? ACCELERATION_DIRECTIONS[compassDir] : null;
   const selectedDharmaSpoke = DHARMA_WHEEL_SPOKES[dharmaSpoke];
   const flowersPerZionLabel = cs
@@ -1002,7 +1002,7 @@ export default function TerraNovaBookClient() {
                       className="rounded-2xl border border-white/8 bg-white/4 p-4"
                     >
                       <p className="mb-2 text-[10px] uppercase tracking-[0.28em] text-gray-500">
-                        {`${tr('APP_WEB_website_v2_9_src_app_terranova_T', 'layer', lang)} ${index + 1}`}
+                        {`${cs ? 'Vrstva' : 'Layer'} ${index + 1}`}
                       </p>
                       <p className="text-sm leading-relaxed text-gray-300">{note}</p>
                     </div>
@@ -1018,7 +1018,7 @@ export default function TerraNovaBookClient() {
                       className="inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-zion-gold/90 to-amber-500/80 px-5 py-3 text-sm font-semibold text-black shadow-[0_0_40px_rgba(251,191,36,0.2)] transition-all hover:-translate-y-0.5 hover:shadow-[0_0_60px_rgba(251,191,36,0.35)]"
                   >
                     <BookOpen className="h-4 w-4" />
-                    {tr('APP_WEB_website_v2_9_src_app_terranova_T', 'open_genesis', lang)}
+                    {cs ? 'Otevřít Genesis' : 'Open Genesis'}
                     <ArrowRight className="h-4 w-4" />
                   </button>
                   <button
@@ -1029,14 +1029,14 @@ export default function TerraNovaBookClient() {
                     className="inline-flex items-center gap-2 rounded-2xl border border-zion-cyan/20 bg-zion-cyan/8 px-5 py-3 text-sm font-semibold text-zion-cyan transition-all hover:-translate-y-0.5 hover:bg-zion-cyan/12"
                   >
                     <Terminal className="h-4 w-4" />
-                    {tr('APP_WEB_website_v2_9_src_app_terranova_T', 'visual_zion_cli_panel', lang)}
+                    {cs ? 'Visual Zion CLI panel' : 'Visual ZION CLI Panel'}
                   </button>
                   <button
                     onClick={() => setTocOpen(true)}
                     className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-white/10"
                   >
                     <List className="h-4 w-4" />
-                    {tr('APP_WEB_website_v2_9_src_app_terranova_T', 'terra_nova_contents', lang)}
+                    {cs ? 'Obsah Terra Novy' : 'Terra Nova Contents'}
                   </button>
                 </div>
               </div>
@@ -1051,14 +1051,14 @@ export default function TerraNovaBookClient() {
                     </div>
                     <div className="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-gray-500">
                       <Terminal className="h-3.5 w-3.5 text-zion-cyan" />
-                      {tr('APP_WEB_website_v2_9_src_app_terranova_T', 'visual_zion_cli', lang)}
+                      {cs ? 'Visual Zion CLI' : 'Visual ZION CLI'}
                     </div>
                   </div>
 
                   <div className="space-y-4 px-4 py-4">
                     <div className="rounded-2xl border border-zion-cyan/15 bg-zion-cyan/6 p-4">
                       <p className="mb-2 text-[10px] uppercase tracking-[0.28em] text-zion-cyan/70">
-                        {tr('APP_WEB_website_v2_9_src_app_terranova_T', 'mainnet_launch_pulse', lang)}
+                        {cs ? 'Mainnet launch pulse' : 'Mainnet launch pulse'}
                       </p>
                       <pre className="overflow-x-auto whitespace-pre font-mono text-[11px] leading-relaxed text-zion-cyan/90" style={{ fontFamily: '"Courier New", Courier, monospace' }}>
 {GENESIS_BANNER}
@@ -1067,7 +1067,7 @@ export default function TerraNovaBookClient() {
 
                     <div className="rounded-2xl border border-white/8 bg-black/40 p-4">
                       <p className="mb-3 text-[10px] uppercase tracking-[0.28em] text-gray-500">
-                        {tr('APP_WEB_website_v2_9_src_app_terranova_T', 'live_terminal_zion_cli', lang)}
+                        {cs ? 'Živý terminál — ZION CLI' : 'Live Terminal — ZION CLI'}
                       </p>
                       <div className="min-h-22 space-y-2 font-mono text-[12px] text-gray-300">
                         <div className="rounded-xl bg-white/3 px-3 py-2.5">
@@ -1086,7 +1086,7 @@ export default function TerraNovaBookClient() {
                         </div>
                         <div className="flex items-center gap-2 px-1 text-[11px] uppercase tracking-[0.24em] text-gray-500">
                           <span className="inline-block h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                          {tr('APP_WEB_website_v2_9_src_app_terranova_T', 'orbital_reader_online', lang)}
+                          {cs ? 'orbitální reader online' : 'orbital reader online'}
                         </div>
                       </div>
                       <div className="mt-4 flex flex-wrap gap-2">
@@ -1095,7 +1095,7 @@ export default function TerraNovaBookClient() {
                           className="inline-flex items-center gap-2 rounded-full border border-zion-cyan/18 bg-zion-cyan/8 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-zion-cyan transition-colors hover:bg-zion-cyan/12"
                         >
                           <Terminal className="h-3.5 w-3.5" />
-                          {tr('APP_WEB_website_v2_9_src_app_terranova_T', 'expand_cli_overlay', lang)}
+                          {cs ? 'Rozbalit CLI overlay' : 'Expand CLI Overlay'}
                         </button>
                         <Link
                           href="/docs"
@@ -1139,10 +1139,10 @@ export default function TerraNovaBookClient() {
         >
           <div className="mb-6 text-center">
             <p className="text-[10px] uppercase tracking-[0.36em] text-zion-gold/70">
-              {tr('APP_WEB_website_v2_9_src_app_terranova_T', 'issobella_vision_deck', lang)}
+              {cs ? 'Issobella Vision Deck' : 'Issobella Vision Deck'}
             </p>
             <h2 className="mt-2 text-2xl font-semibold text-white sm:text-3xl">
-              {tr('APP_WEB_website_v2_9_src_app_terranova_T', 'golden_compass_on_the_orbital_station', lang)}
+              {cs ? 'Zlatý Kompas v orbitální stanici' : 'Golden Compass on the Orbital Station'}
             </h2>
             <p className="mt-2 text-sm text-gray-400 sm:text-base">
               {cs
@@ -1155,7 +1155,7 @@ export default function TerraNovaBookClient() {
           <div className="mb-6 overflow-hidden rounded-4xl border border-white/10 bg-black/40 shadow-[0_20px_70px_rgba(0,0,0,0.32)]">
             <div className="px-5 py-3 flex items-center justify-between gap-3">
               <p className="text-[10px] uppercase tracking-[0.4em] text-zion-gold/60">
-                {tr('APP_WEB_website_v2_9_src_app_terranova_T', 'canonical_terra_nova_branch', lang)}
+                {cs ? 'Kanonická větev Terra Novy' : 'Canonical Terra Nova Branch'}
               </p>
               <button
                 onClick={() => setLang(lang === 'cs' ? 'en' : 'cs')}
@@ -1205,7 +1205,7 @@ export default function TerraNovaBookClient() {
 
               <div className="relative z-10 space-y-3">
                 <p className="text-[10px] uppercase tracking-[0.3em] font-mono text-cyan-300/80">
-                  {tr('APP_WEB_website_v2_9_src_app_terranova_T', 'issobella_observation_deck', lang)}
+                  {cs ? 'ISSOBELLA // MODUL VÝHLEDU' : 'ISSOBELLA // OBSERVATION DECK'}
                 </p>
                 <p className="max-w-[85%] text-sm leading-relaxed text-gray-200 drop-shadow-md">
                   {cs
@@ -1247,22 +1247,22 @@ export default function TerraNovaBookClient() {
               <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
                 <div>
                   <p className="text-[10px] uppercase tracking-[0.3em] text-zion-gold/70">
-                    {tr('APP_WEB_website_v2_9_src_app_terranova_T', 'main_panel_issobella_station', lang)}
+                    {cs ? 'Main Panel · Issobella Station' : 'Main Panel · Issobella Station'}
                   </p>
                   <p className="mt-1 text-sm text-gray-300">
-                    {tr('APP_WEB_website_v2_9_src_app_terranova_T', 'interactive_golden_compass', lang)}
+                    {cs ? 'Interaktivní Zlatý Kompas' : 'Interactive Golden Compass'}
                   </p>
                 </div>
                 <div className="inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1.5 text-[10px] uppercase tracking-[0.24em] text-emerald-200">
                   <span className="h-2 w-2 rounded-full bg-emerald-300 animate-pulse" />
-                  {tr('APP_WEB_website_v2_9_src_app_terranova_T', 'navigation_online', lang)}
+                  {cs ? 'Navigace online' : 'Navigation online'}
                 </div>
               </div>
 
               <div className="mb-4 rounded-3xl border border-white/10 bg-black/25 p-3 md:p-4">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">
-                    {tr('APP_WEB_website_v2_9_src_app_terranova_T', 'l1_to_l6_compass_nodes', lang)}
+                    {cs ? 'Body kompasu L1 až L6' : 'L1 to L6 Compass Nodes'}
                   </p>
                   <p className="text-[10px] uppercase tracking-[0.24em]" style={{ color: selectedDirection?.color ?? '#FFD700' }}>
                     {selectedDirection ? `${selectedDirection.symbol} · ${cs ? selectedDirection.titleCs : selectedDirection.titleEn}` : ''}
@@ -1316,7 +1316,7 @@ export default function TerraNovaBookClient() {
                     {selectedDirection ? (
                       <>
                         <p className="text-[10px] uppercase tracking-[0.28em]" style={{ color: selectedDirection.color }}>
-                          {tr('APP_WEB_website_v2_9_src_app_terranova_T', 'selected_direction', lang)}
+                          {cs ? 'Zvolený směr' : 'Selected Direction'}
                         </p>
                         <h3 className="mt-2 text-lg font-semibold" style={{ color: selectedDirection.color }}>
                           {cs ? selectedDirection.titleCs : selectedDirection.titleEn}
@@ -1326,7 +1326,7 @@ export default function TerraNovaBookClient() {
                         </p>
                         <div className="mt-3 rounded-2xl border border-white/8 bg-white/4 px-3 py-2">
                           <p className="text-[10px] uppercase tracking-[0.24em] text-gray-500">
-                            {tr('APP_WEB_website_v2_9_src_app_terranova_T', 'technical_point', lang)}
+                            {cs ? 'Technický bod' : 'Technical Point'}
                           </p>
                           <p className="mt-1 text-sm leading-relaxed text-gray-300">
                             {cs ? selectedDirection.techCs : selectedDirection.techEn}
@@ -1334,7 +1334,7 @@ export default function TerraNovaBookClient() {
                         </div>
                         <div className="mt-3 rounded-2xl border border-white/8 bg-white/4 px-3 py-2.5">
                           <p className="text-[10px] uppercase tracking-[0.24em] text-gray-500">
-                            {tr('APP_WEB_website_v2_9_src_app_terranova_T', 'phase_checklist', lang)}
+                            {cs ? 'Checklist fáze' : 'Phase Checklist'}
                           </p>
                           <ul className="mt-2 space-y-1.5">
                             {(cs ? selectedDirection.checklistCs : selectedDirection.checklistEn).map((item) => (
@@ -1348,7 +1348,7 @@ export default function TerraNovaBookClient() {
                       </>
                     ) : (
                       <div className="h-full min-h-[136px] flex items-center justify-center text-center text-sm text-gray-500">
-                        {tr('APP_WEB_website_v2_9_src_app_terranova_T', 'click_a_compass_direction_to_open_detail', lang)}
+                        {cs ? 'Klikni na směr v kompasu a otevři detail.' : 'Click a compass direction to open detail.'}
                       </div>
                     )}
                   </div>
@@ -1356,10 +1356,10 @@ export default function TerraNovaBookClient() {
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
                         <p className="text-[10px] uppercase tracking-[0.28em] text-emerald-300/80">
-                          {tr('APP_WEB_website_v2_9_src_app_terranova_T', 'dharmachakra', lang)}
+                          {cs ? 'Dharmachakra' : 'Dharmachakra'}
                         </p>
                         <h3 className="mt-2 text-lg font-semibold text-emerald-200">
-                          {tr('APP_WEB_website_v2_9_src_app_terranova_T', 'the_noble_eightfold_path', lang)}
+                          {cs ? 'Ušlechtilá osmidílná stezka' : 'The Noble Eightfold Path'}
                         </h3>
                       </div>
                       <p className="max-w-xs text-xs leading-relaxed text-emerald-100/70">
@@ -1374,7 +1374,7 @@ export default function TerraNovaBookClient() {
                           viewBox="0 0 220 220"
                           className="h-auto w-full"
                           role="img"
-                          aria-label={tr('APP_WEB_website_v2_9_src_app_terranova_T', 'dharmachakra_with_eight_spokes', lang)}
+                          aria-label={cs ? 'Dharmachakra s osmi paprsky' : 'Dharmachakra with eight spokes'}
                           initial={{ opacity: 0, scale: 0.97 }}
                           animate={{ opacity: 1, scale: 1 }}
                           transition={{ duration: 0.35, ease: 'easeOut' }}
@@ -1493,7 +1493,7 @@ export default function TerraNovaBookClient() {
                           />
                           <circle cx="110" cy="110" r="10" fill="rgba(254,240,138,0.92)" stroke="rgba(255,255,255,0.45)" strokeWidth="1" />
                           <text x="110" y="106" textAnchor="middle" className="fill-emerald-100 text-[10px] uppercase tracking-[0.28em]">
-                            {tr('APP_WEB_website_v2_9_src_app_terranova_T', 'dharma', lang)}
+                            {cs ? 'Dharma' : 'Dharma'}
                           </text>
                           <text x="110" y="121" textAnchor="middle" className="fill-emerald-300 text-[8px] uppercase tracking-[0.22em]">
                             {dharmaSpoke + 1}/8
@@ -1511,7 +1511,7 @@ export default function TerraNovaBookClient() {
                             className="rounded-2xl border border-emerald-300/15 bg-[linear-gradient(180deg,rgba(253,224,71,0.06),rgba(0,0,0,0.22))] px-4 py-3"
                           >
                             <p className="text-[10px] uppercase tracking-[0.24em] text-emerald-300/70">
-                              {tr('APP_WEB_website_v2_9_src_app_terranova_T', 'active_spoke', lang)}
+                              {cs ? 'Aktivní paprsek' : 'Active spoke'}
                             </p>
                             <h4 className="mt-1 text-base font-semibold text-emerald-100">
                               {cs ? selectedDharmaSpoke.titleCs : selectedDharmaSpoke.titleEn}
@@ -1521,7 +1521,7 @@ export default function TerraNovaBookClient() {
                             </p>
                             <div className="mt-3 rounded-2xl border border-white/8 bg-white/4 px-3 py-2">
                               <p className="text-[10px] uppercase tracking-[0.22em] text-gray-500">
-                                {tr('APP_WEB_website_v2_9_src_app_terranova_T', 'zion_map', lang)}
+                                {cs ? 'ZION mapa' : 'ZION map'}
                               </p>
                               <p className="mt-1 text-sm text-emerald-100">
                                 {cs ? selectedDharmaSpoke.mapCs : selectedDharmaSpoke.mapEn}
@@ -1589,7 +1589,7 @@ export default function TerraNovaBookClient() {
         >
           <div className="inline-flex items-center gap-2 rounded-full border border-zion-gold/30 bg-zion-gold/10 px-4 py-1.5 text-xs font-semibold tracking-[0.3em] text-zion-gold uppercase">
             <BookOpen className="h-4 w-4" />
-            {tr('APP_WEB_website_v2_9_src_app_terranova_T', 'fourth_book_of_zion', lang)}
+            {cs ? 'Čtvrtá kniha ZION' : 'Fourth Book of ZION'}
           </div>
 
           <h1 className="zion-page-heading text-gradient">
@@ -1622,7 +1622,7 @@ export default function TerraNovaBookClient() {
 
             <div className="border-t border-white/5 pt-5">
               <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500 mb-3">
-                {tr('APP_WEB_website_v2_9_src_app_terranova_T', 'compositional_map', lang)}
+                {cs ? 'Kompoziční mapa' : 'Compositional Map'}
               </p>
               <ol className="space-y-1.5 list-none pl-0">
                 {compositionLines.map((line, i) => (
@@ -1644,7 +1644,7 @@ export default function TerraNovaBookClient() {
           className="mb-16"
         >
           <p className="text-[10px] uppercase tracking-[0.4em] text-gray-500 mb-5 text-center">
-            {tr('APP_WEB_website_v2_9_src_app_terranova_T', 'contents', lang)}
+            {cs ? 'Obsah' : 'Contents'}
           </p>
           <div className="grid gap-2 sm:grid-cols-2">
             {currentChapters.map((ch, i) => {
@@ -1696,7 +1696,7 @@ export default function TerraNovaBookClient() {
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-[10px] uppercase tracking-[0.28em] text-gray-500">
-                    {tr('APP_WEB_website_v2_9_src_app_terranova_T', 'reading_mode', lang)}
+                    {cs ? 'Čtecí režim' : 'Reading Mode'}
                   </p>
                   <p className="truncate text-sm font-semibold text-white">
                     {cs ? chapter.titleCs : chapter.titleEn}
@@ -1730,7 +1730,7 @@ export default function TerraNovaBookClient() {
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <p className="text-[10px] uppercase tracking-[0.35em] text-gray-500">
-                    {tr('APP_WEB_website_v2_9_src_app_terranova_T', 'reading_mode', lang)}
+                    {cs ? 'Čtecí režim' : 'Reading Mode'}
                   </p>
                   <button
                     onClick={() => setLang(lang === 'cs' ? 'en' : 'cs')}
@@ -1760,7 +1760,7 @@ export default function TerraNovaBookClient() {
 
               <div className="rounded-2xl border border-white/8 bg-white/3 p-4">
                 <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500 mb-2">
-                  {tr('APP_WEB_website_v2_9_src_app_terranova_T', 'current_chapter', lang)}
+                  {cs ? 'Aktivní kapitola' : 'Current Chapter'}
                 </p>
                 <p className="text-sm font-semibold" style={{ color: chapter.color }}>
                   {cs ? chapter.titleCs : chapter.titleEn}
@@ -1773,8 +1773,8 @@ export default function TerraNovaBookClient() {
               </div>
 
               <div className="text-[11px] leading-relaxed text-gray-500 space-y-1">
-                <p>{tr('APP_WEB_website_v2_9_src_app_terranova_T', 'left_right_arrows_next_chapters', lang)}</p>
-                <p>{tr('APP_WEB_website_v2_9_src_app_terranova_T', 'esc_close_contents', lang)}</p>
+                <p>{cs ? 'Sipky vlevo/vpravo: další kapitoly' : 'Left/right arrows: next chapters'}</p>
+                <p>{cs ? 'Esc: zavřít obsah' : 'Esc: close contents'}</p>
               </div>
             </div>
           </aside>
@@ -1887,7 +1887,7 @@ export default function TerraNovaBookClient() {
                   className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-gray-500 hover:text-white transition-colors"
                 >
                   <List className="w-4 h-4" />
-                  {tr('APP_WEB_website_v2_9_src_app_terranova_T', 'contents', lang)}
+                  {cs ? 'Obsah' : 'Contents'}
                 </button>
 
                 <button
@@ -1926,7 +1926,7 @@ export default function TerraNovaBookClient() {
               className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-5 py-2.5 text-sm font-semibold text-white hover:bg-white/10 transition-colors"
             >
               <BookOpen className="w-4 h-4" />
-              {tr('APP_WEB_website_v2_9_src_app_terranova_T', 'documentation', lang)}
+              {cs ? 'Dokumentace' : 'Documentation'}
             </Link>
           </div>
         </motion.footer>
@@ -1997,7 +1997,7 @@ export default function TerraNovaBookClient() {
             >
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-sm font-semibold text-white uppercase tracking-[0.2em]">
-                  {tr('APP_WEB_website_v2_9_src_app_terranova_T', 'contents', lang)}
+                  {cs ? 'Obsah' : 'Contents'}
                 </h3>
                 <button
                   onClick={() => setTocOpen(false)}
@@ -2064,7 +2064,7 @@ export default function TerraNovaBookClient() {
               <div className="flex flex-wrap items-start justify-between gap-3 border-b border-white/8 px-4 py-4 sm:px-6">
                 <div>
                   <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">
-                    {tr('APP_WEB_website_v2_9_src_app_terranova_T', 'terra_nova_overlay', lang)}
+                    {cs ? 'Terra Nova overlay' : 'Terra Nova Overlay'}
                   </p>
                   <h3 className="mt-1 text-lg font-semibold text-white">
                     {overlayMode === 'genesis'
@@ -2137,18 +2137,18 @@ export default function TerraNovaBookClient() {
                       {/* ── Premine Genesis ── */}
                       <div className="mt-5 rounded-2xl border border-zion-gold/15 bg-black/30 px-4 py-4">
                         <p className="mb-3 text-[10px] uppercase tracking-[0.32em] text-zion-gold/70">
-                          {tr('APP_WEB_website_v2_9_src_app_terranova_T', 'genesis_premine_16_280_000_000_zion', lang)}
+                          {cs ? 'Genesis premine · 16 280 000 000 ZION' : 'Genesis Premine · 16,280,000,000 ZION'}
                         </p>
                         <div className="space-y-1.5 font-mono text-[10px] text-gray-400">
                           <div className="flex justify-between gap-2"><span className="text-gray-500">OASIS Golden Egg ×5</span><span className="text-zion-gold/80">8.25B ZION</span></div>
-                          <div className="flex justify-between gap-2"><span className="text-gray-500">{tr('APP_WEB_website_v2_9_src_app_terranova_T', 'dao_treasury', lang)} ×3</span><span className="text-zion-gold/80">4.00B ZION</span></div>
-                          <div className="flex justify-between gap-2"><span className="text-gray-500">{tr('APP_WEB_website_v2_9_src_app_terranova_T', 'infrastructure_dev', lang)} ×2</span><span className="text-zion-gold/80">2.00B ZION</span></div>
-                          <div className="flex justify-between gap-2"><span className="text-gray-500">{tr('APP_WEB_website_v2_9_src_app_terranova_T', 'genesis_creator_rent', lang)}</span><span className="text-zion-gold/80">0.59B ZION</span></div>
-                          <div className="flex justify-between gap-2"><span className="text-gray-500">{tr('APP_WEB_website_v2_9_src_app_terranova_T', 'humanitarian_dao', lang)}</span><span className="text-zion-gold/80">1.44B ZION</span></div>
-                          <div className="border-t border-white/8 pt-1.5 flex justify-between gap-2"><span className="text-gray-400 font-semibold">{tr('APP_WEB_website_v2_9_src_app_terranova_T', 'total_genesis', lang)}</span><span className="text-zion-gold font-bold">16.28B ZION</span></div>
+                          <div className="flex justify-between gap-2"><span className="text-gray-500">{cs ? 'DAO Pokladna' : 'DAO Treasury'} ×3</span><span className="text-zion-gold/80">4.00B ZION</span></div>
+                          <div className="flex justify-between gap-2"><span className="text-gray-500">{cs ? 'Infrastruktura + Vývoj' : 'Infrastructure + Dev'} ×2</span><span className="text-zion-gold/80">2.00B ZION</span></div>
+                          <div className="flex justify-between gap-2"><span className="text-gray-500">{cs ? 'Genesis Creator (nájem)' : 'Genesis Creator (rent)'}</span><span className="text-zion-gold/80">0.59B ZION</span></div>
+                          <div className="flex justify-between gap-2"><span className="text-gray-500">{cs ? 'Humanitární DAO' : 'Humanitarian DAO'}</span><span className="text-zion-gold/80">1.44B ZION</span></div>
+                          <div className="border-t border-white/8 pt-1.5 flex justify-between gap-2"><span className="text-gray-400 font-semibold">{cs ? 'Celkem genesis' : 'Total genesis'}</span><span className="text-zion-gold font-bold">16.28B ZION</span></div>
                         </div>
                         <p className="mt-3 text-[9px] uppercase tracking-[0.24em] text-gray-600">
-                          {tr('APP_WEB_website_v2_9_src_app_terranova_T', 'block_split_89_miner_5_humanitarian_5_issobella_1_', lang)}
+                          {cs ? 'Split bloků: 89% miner · 5% humanitární · 5% Issobella · 1% pool' : 'Block split: 89% miner · 5% humanitarian · 5% Issobella · 1% pool'}
                         </p>
                       </div>
                     </div>
@@ -2156,7 +2156,7 @@ export default function TerraNovaBookClient() {
                     <div className="space-y-4">
                       <div className="rounded-3xl border border-white/10 bg-white/3 p-5">
                         <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">
-                          {tr('APP_WEB_website_v2_9_src_app_terranova_T', 'why_it_lives_here', lang)}
+                          {cs ? 'Proč je to tady' : 'Why It Lives Here'}
                         </p>
                         <div className="mt-4 space-y-3 text-sm leading-relaxed text-gray-300">
                           {genesisOverlayLines.map((line) => (
@@ -2171,7 +2171,7 @@ export default function TerraNovaBookClient() {
                         onClick={() => setOverlayMode(null)}
                       >
                         <BookOpen className="h-4 w-4" />
-                        {tr('APP_WEB_website_v2_9_src_app_terranova_T', 'open_full_genesis_page', lang)}
+                        {cs ? 'Přejít na plnou Genesis stránku' : 'Open Full Genesis Page'}
                         <ArrowRight className="h-4 w-4" />
                       </Link>
                     </div>
@@ -2187,7 +2187,7 @@ export default function TerraNovaBookClient() {
                         </div>
                         <div className="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-zion-cyan/70">
                           <Terminal className="h-3.5 w-3.5" />
-                          {tr('APP_WEB_website_v2_9_src_app_terranova_T', 'visual_zion_cli', lang)}
+                          {cs ? 'Visual Zion CLI' : 'Visual ZION CLI'}
                         </div>
                       </div>
                       <div className="space-y-3 p-4 font-mono text-[12px] text-gray-200">
@@ -2205,7 +2205,7 @@ export default function TerraNovaBookClient() {
 
                         <div className="rounded-2xl border border-zion-cyan/15 bg-zion-cyan/7 p-4">
                           <p className="text-[10px] uppercase tracking-[0.3em] text-zion-cyan/75">
-                            {tr('APP_WEB_website_v2_9_src_app_terranova_T', 'manual_commands', lang)}
+                            {cs ? 'Ruční příkazy' : 'Manual Commands'}
                           </p>
                           <div className="mt-3 space-y-2 text-gray-300">
                             {CLI_PRESET.map((line) => (
@@ -2222,7 +2222,7 @@ export default function TerraNovaBookClient() {
                     <div className="space-y-4">
                       <div className="rounded-3xl border border-white/10 bg-white/3 p-5">
                         <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">
-                          {tr('APP_WEB_website_v2_9_src_app_terranova_T', 'why_it_lives_here', lang)}
+                          {cs ? 'Proč je to tady' : 'Why It Lives Here'}
                         </p>
                         <div className="mt-4 space-y-3 text-sm leading-relaxed text-gray-300">
                           {cliOverlayLines.map((line) => (
@@ -2234,15 +2234,15 @@ export default function TerraNovaBookClient() {
                       {/* ── Premine tabulka ── */}
                       <div className="rounded-3xl border border-zion-cyan/15 bg-[#050a10] p-5">
                         <p className="text-[10px] uppercase tracking-[0.3em] text-zion-cyan/70">
-                          {tr('APP_WEB_website_v2_9_src_app_terranova_T', 'genesis_premine_16_28b_zion', lang)}
+                          {cs ? 'Genesis Premine · 16.28B ZION' : 'Genesis Premine · 16.28B ZION'}
                         </p>
                         <div className="mt-3 space-y-1.5 font-mono text-[10px]">
                           {[
-                            { label: tr('APP_WEB_website_v2_9_src_app_terranova_T', 'oasis_golden_egg_5', lang), amount: '8.25B' },
-                            { label: tr('APP_WEB_website_v2_9_src_app_terranova_T', 'dao_treasury_3', lang), amount: '4.00B' },
-                            { label: tr('APP_WEB_website_v2_9_src_app_terranova_T', 'infrastructure_dev_2', lang), amount: '2.00B' },
-                            { label: tr('APP_WEB_website_v2_9_src_app_terranova_T', 'humanitarian_dao', lang), amount: '1.44B' },
-                            { label: tr('APP_WEB_website_v2_9_src_app_terranova_T', 'genesis_creator_rent', lang), amount: '0.59B' },
+                            { label: cs ? 'OASIS Golden Egg ×5' : 'OASIS Golden Egg ×5', amount: '8.25B' },
+                            { label: cs ? 'DAO Pokladna ×3' : 'DAO Treasury ×3', amount: '4.00B' },
+                            { label: cs ? 'Infrastruktura + Vývoj ×2' : 'Infrastructure + Dev ×2', amount: '2.00B' },
+                            { label: cs ? 'Humanitární DAO' : 'Humanitarian DAO', amount: '1.44B' },
+                            { label: cs ? 'Genesis Creator (nájem)' : 'Genesis Creator (rent)', amount: '0.59B' },
                           ].map(({ label, amount }) => (
                             <div key={label} className="flex items-center justify-between gap-2">
                               <span className="flex items-center gap-1.5 text-gray-500">
@@ -2253,13 +2253,13 @@ export default function TerraNovaBookClient() {
                             </div>
                           ))}
                           <div className="border-t border-white/8 pt-1.5 flex justify-between gap-2">
-                            <span className="text-gray-400 font-semibold">{tr('APP_WEB_website_v2_9_src_app_terranova_T', 'total', lang)}</span>
+                            <span className="text-gray-400 font-semibold">{cs ? 'Celkem' : 'Total'}</span>
                             <span className="text-zion-cyan font-bold tabular-nums">16.28B ZION</span>
                           </div>
                         </div>
                         <div className="mt-3 rounded-xl border border-white/6 bg-white/3 px-3 py-2">
                           <p className="font-mono text-[9px] uppercase tracking-[0.22em] text-gray-600">
-                            {tr('APP_WEB_website_v2_9_src_app_terranova_T', 'per_block_split_89_miner_5_humanitarian_5_issobell', lang)}
+                            {cs ? 'split/blok: 89% miner · 5% humanitární · 5% issobella · 1% pool' : 'per-block split: 89% miner · 5% humanitarian · 5% issobella · 1% pool'}
                           </p>
                         </div>
                       </div>
@@ -2272,7 +2272,7 @@ export default function TerraNovaBookClient() {
                         className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10"
                       >
                         <List className="h-4 w-4" />
-                        {tr('APP_WEB_website_v2_9_src_app_terranova_T', 'open_terra_nova_contents', lang)}
+                        {cs ? 'Přejít do obsahu Terra Novy' : 'Open Terra Nova Contents'}
                       </button>
 
                       <Link
@@ -2281,7 +2281,7 @@ export default function TerraNovaBookClient() {
                         onClick={() => setOverlayMode(null)}
                       >
                         <Terminal className="h-4 w-4" />
-                        {tr('APP_WEB_website_v2_9_src_app_terranova_T', 'real_zion_cli_docs', lang)}
+                        {cs ? 'Real ZION CLI dokumentace' : 'Real ZION CLI Docs'}
                         <ArrowRight className="h-4 w-4" />
                       </Link>
                     </div>
@@ -2304,7 +2304,7 @@ export default function TerraNovaBookClient() {
             className="fixed bottom-5 right-5 z-30 inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/70 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-gray-200 shadow-[0_10px_35px_rgba(0,0,0,0.35)] backdrop-blur-lg transition-colors hover:bg-black/80"
           >
             <ChevronLeft className="h-3.5 w-3.5 rotate-90" />
-            {tr('APP_WEB_website_v2_9_src_app_terranova_T', 'top', lang)}
+            {cs ? 'Nahoru' : 'Top'}
           </motion.button>
         )}
       </AnimatePresence>

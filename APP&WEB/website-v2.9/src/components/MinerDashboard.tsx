@@ -242,10 +242,10 @@ export default function MinerDashboard({ address }: { address: string }) {
           }
         }
       } else {
-        setError(json.error || (tr('APP_WEB_website_v2_9_src_components_Mine', 'miner_not_found', lang)));
+        setError(json.error || (cs ? 'Miner nebyl nalezen' : 'Miner not found'));
       }
     } catch {
-      setError(tr('APP_WEB_website_v2_9_src_components_Mine', 'failed_to_fetch_miner_data', lang));
+      setError(cs ? 'Nepodarilo se nacist data minera' : 'Failed to fetch miner data');
     } finally {
       setLoading(false);
     }
@@ -259,7 +259,7 @@ export default function MinerDashboard({ address }: { address: string }) {
       <div className="zion-shell min-h-screen pt-28 md:pt-32 pb-24 flex items-center justify-center">
         <div className="flex items-center gap-3 text-gray-400">
           <RefreshCw className="h-5 w-5 animate-spin" />
-          <span>{tr('APP_WEB_website_v2_9_src_components_Mine', 'loading_miner_data', lang)}</span>
+          <span>{cs ? 'Nacitam data minera...' : 'Loading miner data...'}</span>
         </div>
       </div>
     );
@@ -278,14 +278,14 @@ export default function MinerDashboard({ address }: { address: string }) {
             <div className="mx-auto h-16 w-16 rounded-2xl bg-red-500/10 flex items-center justify-center">
               <XCircle className="h-8 w-8 text-red-400" />
             </div>
-            <h1 className="text-2xl font-semibold text-white">{tr('APP_WEB_website_v2_9_src_components_Mine', 'miner_not_found_1', lang)}</h1>
+            <h1 className="text-2xl font-semibold text-white">{cs ? 'Miner nebyl nalezen' : 'Miner Not Found'}</h1>
             <p className="text-gray-400 max-w-md mx-auto">
               {error || (cs ? `Pro adresu ${shortAddr(address)} nebyla nalezena zadna tezebni data.` : `No mining data found for address ${shortAddr(address)}.`)}
-              <br />{tr('APP_WEB_website_v2_9_src_components_Mine', 'make_sure_the_address_is_correct_and_has_submitted', lang)}
+              <br />{cs ? 'Zkontrolujte, ze je adresa spravna a ze odeslala shares do poolu.' : 'Make sure the address is correct and has submitted shares to the pool.'}
             </p>
             <code className="block text-sm text-gray-500 font-mono break-all">{address}</code>
             <Link href="/pool" className="inline-flex items-center gap-2 text-zion-cyan hover:text-white transition-colors text-sm">
-              <ArrowLeft className="h-4 w-4" /> {tr('APP_WEB_website_v2_9_src_components_Mine', 'back_to_pool', lang)}
+              <ArrowLeft className="h-4 w-4" /> {cs ? 'Zpet do poolu' : 'Back to Pool'}
             </Link>
           </motion.div>
         </div>
@@ -309,10 +309,10 @@ export default function MinerDashboard({ address }: { address: string }) {
           {/* Breadcrumb */}
           <div className="flex items-center gap-2 text-sm text-gray-500 mb-6">
             <Link href="/pool" className="hover:text-white transition-colors inline-flex items-center gap-1">
-              <Pickaxe className="h-3.5 w-3.5" /> {tr('APP_WEB_website_v2_9_src_components_Mine', 'pool', lang)}
+              <Pickaxe className="h-3.5 w-3.5" /> {cs ? 'Pool' : 'Pool'}
             </Link>
             <ArrowRight className="h-3 w-3" />
-            <span className="text-gray-400">{tr('APP_WEB_website_v2_9_src_components_Mine', 'miner', lang)}</span>
+            <span className="text-gray-400">{cs ? 'Miner' : 'Miner'}</span>
           </div>
 
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
@@ -320,15 +320,15 @@ export default function MinerDashboard({ address }: { address: string }) {
               <div className="flex items-center gap-3">
                 <div className={`h-3 w-3 rounded-full ${data.active ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]' : 'bg-red-400'}`} />
                 <span className={`text-xs font-semibold uppercase tracking-wider ${data.active ? 'text-emerald-400' : 'text-red-400'}`}>
-                  {data.active ? (tr('APP_WEB_website_v2_9_src_components_Mine', 'active', lang)) : (tr('APP_WEB_website_v2_9_src_components_Mine', 'inactive', lang))}
+                  {data.active ? (cs ? 'Aktivni' : 'Active') : (cs ? 'Neaktivni' : 'Inactive')}
                 </span>
                 {s.last_share_time > 0 && (
-                  <span className="text-xs text-gray-500">· {tr('APP_WEB_website_v2_9_src_components_Mine', 'last_share', lang)} {timeAgo(s.last_share_time, cs)}</span>
+                  <span className="text-xs text-gray-500">· {cs ? 'posledni share' : 'last share'} {timeAgo(s.last_share_time, cs)}</span>
                 )}
               </div>
               <h1 className="text-xl md:text-2xl font-mono text-white break-all leading-relaxed flex items-center gap-2">
                 {shortAddr(address)}
-                <CopyBtn text={address} titleLabel={tr('APP_WEB_website_v2_9_src_components_Mine', 'copy_address', lang)} />
+                <CopyBtn text={address} titleLabel={cs ? 'Kopirovat adresu' : 'Copy address'} />
               </h1>
               <div className="flex flex-wrap gap-2">
                 {data.servers.filter((sv) => sv.connected).map((sv) => (
@@ -346,7 +346,7 @@ export default function MinerDashboard({ address }: { address: string }) {
                 <p className="text-2xl font-semibold text-zion-cyan">{fmtHash(s.hashrate_1h)}</p>
               </div>
               <div className="text-right">
-                <p className="text-xs text-gray-500 uppercase tracking-wider">{tr('APP_WEB_website_v2_9_src_components_Mine', 'blocks', lang)}</p>
+                <p className="text-xs text-gray-500 uppercase tracking-wider">{cs ? 'Bloky' : 'Blocks'}</p>
                 <p className="text-2xl font-semibold text-zion-gold">{fmtNum(s.blocks_found)}</p>
               </div>
             </div>
@@ -360,27 +360,27 @@ export default function MinerDashboard({ address }: { address: string }) {
           transition={{ delay: 0.06 }}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tr('APP_WEB_website_v2_9_src_components_Mine', 'telemetry', lang)}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Telemetrie' : 'Telemetry'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Activity className="h-7 w-7 text-emerald-400" />
-              {tr('APP_WEB_website_v2_9_src_components_Mine', 'miner_statistics', lang)}
+              {cs ? 'Statistiky minera' : 'Miner Statistics'}
             </h2>
-            <p className="text-sm text-gray-400">{tr('APP_WEB_website_v2_9_src_components_Mine', 'real_time_metrics_for_this_miner_across_all_pool_s', lang)}</p>
+            <p className="text-sm text-gray-400">{cs ? 'Metriky tohoto minera v realnem case napric vsemi pool servery.' : 'Real-time metrics for this miner across all pool servers.'}</p>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
-            <StatCard icon={<Zap />} label={tr('APP_WEB_website_v2_9_src_components_Mine', 'hashrate_1h', lang)} value={fmtHash(s.hashrate_1h)} accent="text-zion-cyan" />
-            <StatCard icon={<TrendingUp />} label={tr('APP_WEB_website_v2_9_src_components_Mine', 'hashrate_24h', lang)} value={fmtHash(s.hashrate_24h)} accent="text-zion-purple" />
-            <StatCard icon={<Layers />} label={tr('APP_WEB_website_v2_9_src_components_Mine', 'valid_shares', lang)} value={fmtNum(s.valid_shares)} accent="text-emerald-400" />
-            <StatCard icon={<XCircle />} label={tr('APP_WEB_website_v2_9_src_components_Mine', 'invalid_shares', lang)} value={fmtNum(s.invalid_shares)} accent="text-red-400" />
-            <StatCard icon={<Shield />} label={tr('APP_WEB_website_v2_9_src_components_Mine', 'efficiency', lang)} value={`${s.efficiency}%`} accent="text-zion-gold" />
-            <StatCard icon={<Box />} label={tr('APP_WEB_website_v2_9_src_components_Mine', 'blocks_found', lang)} value={fmtNum(s.blocks_found)} accent="text-amber-400" />
-            <StatCard icon={<Wallet />} label={tr('APP_WEB_website_v2_9_src_components_Mine', 'pending', lang)} value={`${fmtZion(s.pending_balance)} ZION`} accent="text-zion-cyan" />
-            <StatCard icon={<Sparkles />} label={tr('APP_WEB_website_v2_9_src_components_Mine', 'total_paid', lang)} value={`${fmtZion(s.total_paid)} ZION`} accent="text-emerald-400" />
-            <StatCard icon={<Hash />} label={tr('APP_WEB_website_v2_9_src_components_Mine', 'total_shares', lang)} value={fmtNum(s.total_shares)} accent="text-gray-300" />
-            <StatCard icon={<Clock />} label={tr('APP_WEB_website_v2_9_src_components_Mine', 'last_share_1', lang)} value={s.last_share_time > 0 ? timeAgo(s.last_share_time, cs) : '—'} accent="text-gray-300" />
-            <StatCard icon={<Server />} label={tr('APP_WEB_website_v2_9_src_components_Mine', 'servers', lang)} value={`${data.servers.filter(sv => sv.connected).length} / ${data.servers.length}`} accent="text-zion-purple" />
-            <StatCard icon={<Cpu />} label={tr('APP_WEB_website_v2_9_src_components_Mine', 'algorithm', lang)} value="Cosmic Harmony" sub="v3 Multi-Algo" accent="text-zion-gold" />
+            <StatCard icon={<Zap />} label={cs ? 'Hashrate 1h' : 'Hashrate 1h'} value={fmtHash(s.hashrate_1h)} accent="text-zion-cyan" />
+            <StatCard icon={<TrendingUp />} label={cs ? 'Hashrate 24h' : 'Hashrate 24h'} value={fmtHash(s.hashrate_24h)} accent="text-zion-purple" />
+            <StatCard icon={<Layers />} label={cs ? 'Validni shares' : 'Valid Shares'} value={fmtNum(s.valid_shares)} accent="text-emerald-400" />
+            <StatCard icon={<XCircle />} label={cs ? 'Neplatne shares' : 'Invalid Shares'} value={fmtNum(s.invalid_shares)} accent="text-red-400" />
+            <StatCard icon={<Shield />} label={cs ? 'Efektivita' : 'Efficiency'} value={`${s.efficiency}%`} accent="text-zion-gold" />
+            <StatCard icon={<Box />} label={cs ? 'Nalezene bloky' : 'Blocks Found'} value={fmtNum(s.blocks_found)} accent="text-amber-400" />
+            <StatCard icon={<Wallet />} label={cs ? 'Ceka na payout' : 'Pending'} value={`${fmtZion(s.pending_balance)} ZION`} accent="text-zion-cyan" />
+            <StatCard icon={<Sparkles />} label={cs ? 'Celkem vyplaceno' : 'Total Paid'} value={`${fmtZion(s.total_paid)} ZION`} accent="text-emerald-400" />
+            <StatCard icon={<Hash />} label={cs ? 'Shares celkem' : 'Total Shares'} value={fmtNum(s.total_shares)} accent="text-gray-300" />
+            <StatCard icon={<Clock />} label={cs ? 'Posledni share' : 'Last Share'} value={s.last_share_time > 0 ? timeAgo(s.last_share_time, cs) : '—'} accent="text-gray-300" />
+            <StatCard icon={<Server />} label={cs ? 'Servery' : 'Servers'} value={`${data.servers.filter(sv => sv.connected).length} / ${data.servers.length}`} accent="text-zion-purple" />
+            <StatCard icon={<Cpu />} label={cs ? 'Algoritmus' : 'Algorithm'} value="Cosmic Harmony" sub="v3 Multi-Algo" accent="text-zion-gold" />
           </div>
         </motion.section>
 
@@ -391,25 +391,25 @@ export default function MinerDashboard({ address }: { address: string }) {
           transition={{ delay: 0.10 }}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tr('APP_WEB_website_v2_9_src_components_Mine', 'performance', lang)}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Vykon' : 'Performance'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <TrendingUp className="h-7 w-7 text-zion-purple" />
-              {tr('APP_WEB_website_v2_9_src_components_Mine', 'hashrate_timeline', lang)}
+              {cs ? 'Vyvoj hashratu' : 'Hashrate Timeline'}
             </h2>
-            <p className="text-sm text-gray-400">{tr('APP_WEB_website_v2_9_src_components_Mine', 'live_hashrate_samples_collected_every_15_seconds', lang)}</p>
+            <p className="text-sm text-gray-400">{cs ? 'Zive vzorky hashratu sbirane kazdych 15 sekund.' : 'Live hashrate samples collected every 15 seconds.'}</p>
           </div>
           <div className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6 md:p-8">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <span className="text-sm text-gray-400">{tr('APP_WEB_website_v2_9_src_components_Mine', 'current', lang)}</span>
+                <span className="text-sm text-gray-400">{cs ? 'Aktualne:' : 'Current:'}</span>
                 <span className="text-lg font-semibold text-zion-cyan">{fmtHash(s.hashrate_1h)}</span>
               </div>
               <div className="flex items-center gap-3">
-                <span className="text-sm text-gray-400">{tr('APP_WEB_website_v2_9_src_components_Mine', '24h_avg', lang)}</span>
+                <span className="text-sm text-gray-400">{cs ? '24h prumer:' : '24h avg:'}</span>
                 <span className="text-lg font-semibold text-zion-purple">{fmtHash(s.hashrate_24h)}</span>
               </div>
             </div>
-            <HashrateSpark data={hashHistory} emptyLabel={tr('APP_WEB_website_v2_9_src_components_Mine', 'not_enough_data_for_chart', lang)} />
+            <HashrateSpark data={hashHistory} emptyLabel={cs ? 'Pro graf zatim neni dost dat' : 'Not enough data for chart'} />
           </div>
         </motion.section>
 
@@ -421,23 +421,23 @@ export default function MinerDashboard({ address }: { address: string }) {
             transition={{ delay: 0.14 }}
           >
             <div className="flex flex-col gap-2 mb-6">
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tr('APP_WEB_website_v2_9_src_components_Mine', 'mining', lang)}</p>
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Tezba' : 'Mining'}</p>
               <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
                 <Box className="h-7 w-7 text-amber-400" />
-                {tr('APP_WEB_website_v2_9_src_components_Mine', 'blocks_found', lang)}
+                {cs ? 'Nalezene bloky' : 'Blocks Found'}
               </h2>
-              <p className="text-sm text-gray-400">{tr('APP_WEB_website_v2_9_src_components_Mine', 'blocks_found_by_this_miner_on_the_pool', lang)}</p>
+              <p className="text-sm text-gray-400">{cs ? 'Bloky nalezene timto minerem v poolu.' : 'Blocks found by this miner on the pool.'}</p>
             </div>
             <div className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-white/10 text-left text-xs uppercase tracking-wider text-gray-500">
-                      <th className="px-4 md:px-6 py-4">{tr('APP_WEB_website_v2_9_src_components_Mine', 'height', lang)}</th>
+                      <th className="px-4 md:px-6 py-4">{cs ? 'Vyska' : 'Height'}</th>
                       <th className="px-4 md:px-6 py-4">Hash</th>
-                      <th className="px-4 md:px-6 py-4">{tr('APP_WEB_website_v2_9_src_components_Mine', 'reward', lang)}</th>
-                      <th className="px-4 md:px-6 py-4">{tr('APP_WEB_website_v2_9_src_components_Mine', 'time', lang)}</th>
-                      <th className="px-4 md:px-6 py-4">{tr('APP_WEB_website_v2_9_src_components_Mine', 'server', lang)}</th>
+                      <th className="px-4 md:px-6 py-4">{cs ? 'Odmena' : 'Reward'}</th>
+                      <th className="px-4 md:px-6 py-4">{cs ? 'Cas' : 'Time'}</th>
+                      <th className="px-4 md:px-6 py-4">{cs ? 'Server' : 'Server'}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -468,29 +468,29 @@ export default function MinerDashboard({ address }: { address: string }) {
           transition={{ delay: 0.18 }}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tr('APP_WEB_website_v2_9_src_components_Mine', 'earnings', lang)}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Vydelky' : 'Earnings'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Wallet className="h-7 w-7 text-emerald-400" />
-              {tr('APP_WEB_website_v2_9_src_components_Mine', 'payouts', lang)}
+              {cs ? 'Payouty' : 'Payouts'}
             </h2>
-            <p className="text-sm text-gray-400">{tr('APP_WEB_website_v2_9_src_components_Mine', 'history_of_pool_payouts_to_this_miner', lang)}</p>
+            <p className="text-sm text-gray-400">{cs ? 'Historie pool payoutu tomuto minerovi.' : 'History of pool payouts to this miner.'}</p>
           </div>
           <div className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6 md:p-8">
             {data.payouts.length === 0 ? (
               <div className="text-center py-10 text-gray-500">
                 <Wallet className="h-10 w-10 mx-auto mb-3 opacity-30" />
-                <p>{tr('APP_WEB_website_v2_9_src_components_Mine', 'no_payouts_yet_minimum_payout_0_1_zion', lang)}</p>
-                <p className="text-xs mt-1">{tr('APP_WEB_website_v2_9_src_components_Mine', 'pending_balance', lang)}: {fmtZion(s.pending_balance)} ZION</p>
+                <p>{cs ? 'Zatim zadne payouty. Minimalni payout: 0.1 ZION' : 'No payouts yet. Minimum payout: 0.1 ZION'}</p>
+                <p className="text-xs mt-1">{cs ? 'Cekajici zustatek' : 'Pending balance'}: {fmtZion(s.pending_balance)} ZION</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-white/10 text-left text-xs uppercase tracking-wider text-gray-500">
-                      <th className="px-4 py-3">{tr('APP_WEB_website_v2_9_src_components_Mine', 'amount', lang)}</th>
+                      <th className="px-4 py-3">{cs ? 'Castka' : 'Amount'}</th>
                       <th className="px-4 py-3">TX ID</th>
-                      <th className="px-4 py-3">{tr('APP_WEB_website_v2_9_src_components_Mine', 'time', lang)}</th>
-                      <th className="px-4 py-3">{tr('APP_WEB_website_v2_9_src_components_Mine', 'status', lang)}</th>
+                      <th className="px-4 py-3">{cs ? 'Cas' : 'Time'}</th>
+                      <th className="px-4 py-3">{cs ? 'Stav' : 'Status'}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -509,7 +509,7 @@ export default function MinerDashboard({ address }: { address: string }) {
                           <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs ${
                             p.status === 'confirmed' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'
                           }`}>
-                            {p.status ? (p.status === 'confirmed' ? (tr('APP_WEB_website_v2_9_src_components_Mine', 'confirmed', lang)) : p.status) : (tr('APP_WEB_website_v2_9_src_components_Mine', 'pending_1', lang))}
+                            {p.status ? (p.status === 'confirmed' ? (cs ? 'potvrzeno' : 'confirmed') : p.status) : (cs ? 'ceka' : 'pending')}
                           </span>
                         </td>
                       </tr>
@@ -528,60 +528,60 @@ export default function MinerDashboard({ address }: { address: string }) {
           transition={{ delay: 0.22 }}
         >
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tr('APP_WEB_website_v2_9_src_components_Mine', 'advanced', lang)}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Rozsirene' : 'Advanced'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Signal className="h-7 w-7 text-zion-cyan" />
-              {tr('APP_WEB_website_v2_9_src_components_Mine', 'advanced_metrics', lang)}
+              {cs ? 'Rozsirene metriky' : 'Advanced Metrics'}
             </h2>
-            <p className="text-sm text-gray-400">{tr('APP_WEB_website_v2_9_src_components_Mine', 'best_available_miner_telemetry_from_pool_accountin', lang)}</p>
+            <p className="text-sm text-gray-400">{cs ? 'Nejlepsi dostupna telemetrie minera z pool accounting a zivych runtime dat.' : 'Best available miner telemetry from pool accounting and live runtime data.'}</p>
           </div>
           <div className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6 md:p-8">
             {!promMetrics ? (
-              <p className="text-sm text-gray-400">{tr('APP_WEB_website_v2_9_src_components_Mine', 'loading_advanced_miner_metrics', lang)}</p>
+              <p className="text-sm text-gray-400">{cs ? 'Nacitam rozsirene metriky minera...' : 'Loading advanced miner metrics...'}</p>
             ) : (
               <>
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                   <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 space-y-1">
                     <p className="text-xs text-zion-cyan font-mono break-all">miner_hashrate{`{address="..."}`}</p>
                     <p className="text-lg font-semibold text-white">{fmtHash(promMetrics.metrics.hashrate)}</p>
-                    <p className="text-xs text-gray-400">{tr('APP_WEB_website_v2_9_src_components_Mine', 'current_hashrate_gauge', lang)}</p>
+                    <p className="text-xs text-gray-400">{cs ? 'Aktualni hashrate (Gauge)' : 'Current hashrate (Gauge)'}</p>
                   </div>
                   <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 space-y-1">
                     <p className="text-xs text-zion-cyan font-mono break-all">miner_shares_total{`{status="valid|invalid"}`}</p>
                     <p className="text-lg font-semibold text-white">{fmtNum(promMetrics.metrics.shares_valid)} / {fmtNum(promMetrics.metrics.shares_invalid)}</p>
-                    <p className="text-xs text-gray-400">{tr('APP_WEB_website_v2_9_src_components_Mine', 'valid_invalid_shares_counter', lang)}</p>
+                    <p className="text-xs text-gray-400">{cs ? 'Validni / neplatne shares (Counter)' : 'Valid / invalid shares (Counter)'}</p>
                   </div>
                   <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 space-y-1">
                     <p className="text-xs text-zion-cyan font-mono break-all">miner_blocks_found_total{`{address="..."}`}</p>
                     <p className="text-lg font-semibold text-white">{fmtNum(promMetrics.metrics.blocks_found)}</p>
-                    <p className="text-xs text-gray-400">{tr('APP_WEB_website_v2_9_src_components_Mine', 'blocks_found_counter', lang)}</p>
+                    <p className="text-xs text-gray-400">{cs ? 'Nalezene bloky (Counter)' : 'Blocks found (Counter)'}</p>
                   </div>
                   <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 space-y-1">
                     <p className="text-xs text-zion-cyan font-mono break-all">miner_pending_balance_atomic{`{address="..."}`}</p>
                     <p className="text-lg font-semibold text-white">{fmtZion(promMetrics.metrics.pending_balance_atomic)} ZION</p>
-                    <p className="text-xs text-gray-400">{tr('APP_WEB_website_v2_9_src_components_Mine', 'pending_balance_gauge', lang)}</p>
+                    <p className="text-xs text-gray-400">{cs ? 'Cekajici zustatek (Gauge)' : 'Pending balance (Gauge)'}</p>
                   </div>
                   <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 space-y-1">
                     <p className="text-xs text-zion-cyan font-mono break-all">miner_paid_total_atomic{`{address="..."}`}</p>
                     <p className="text-lg font-semibold text-white">{fmtZion(promMetrics.metrics.paid_total_atomic)} ZION</p>
-                    <p className="text-xs text-gray-400">{tr('APP_WEB_website_v2_9_src_components_Mine', 'total_paid_gauge', lang)}</p>
+                    <p className="text-xs text-gray-400">{cs ? 'Celkem vyplaceno (Gauge)' : 'Total paid (Gauge)'}</p>
                   </div>
                   <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 space-y-1">
                     <p className="text-xs text-zion-cyan font-mono break-all">miner_connections_active{`{address="..."}`}</p>
                     <p className="text-lg font-semibold text-white">{fmtNum(promMetrics.metrics.connections_active)}</p>
-                    <p className="text-xs text-gray-400">{tr('APP_WEB_website_v2_9_src_components_Mine', 'active_connections_gauge', lang)}</p>
+                    <p className="text-xs text-gray-400">{cs ? 'Aktivni spojeni (Gauge)' : 'Active connections (Gauge)'}</p>
                   </div>
                 </div>
 
                 <div className="mt-4 text-xs text-gray-500 space-y-1">
                   <p>
-                    {tr('APP_WEB_website_v2_9_src_components_Mine', 'last_scrape', lang)}: {promMetrics.scrape_ts > 0 ? timeAgo(promMetrics.scrape_ts, cs) : '—'} · {tr('APP_WEB_website_v2_9_src_components_Mine', 'updated_every_15s', lang)}
+                    {cs ? 'Posledni scrape' : 'Last scrape'}: {promMetrics.scrape_ts > 0 ? timeAgo(promMetrics.scrape_ts, cs) : '—'} · {cs ? 'aktualizace kazdych 15 s' : 'Updated every 15s'}
                   </p>
                   <p>
-                    {tr('APP_WEB_website_v2_9_src_components_Mine', 'source', lang)}: {promMetrics.source ?? (tr('APP_WEB_website_v2_9_src_components_Mine', 'runtime_fallback', lang))}
+                    {cs ? 'Zdroj' : 'Source'}: {promMetrics.source ?? (cs ? 'runtime fallback' : 'runtime fallback')}
                   </p>
                   <p>
-                    {tr('APP_WEB_website_v2_9_src_components_Mine', 'endpoints', lang)}: {promMetrics.servers.map((sv) => `${sv.server}:${sv.connected ? (tr('APP_WEB_website_v2_9_src_components_Mine', 'ok', lang)) : (tr('APP_WEB_website_v2_9_src_components_Mine', 'down', lang))}`).join(' · ')}
+                    {cs ? 'Endpointy' : 'Endpoints'}: {promMetrics.servers.map((sv) => `${sv.server}:${sv.connected ? (cs ? 'ok' : 'ok') : (cs ? 'down' : 'down')}`).join(' · ')}
                   </p>
                 </div>
               </>
@@ -597,22 +597,22 @@ export default function MinerDashboard({ address }: { address: string }) {
         >
           <div className="relative rounded-3xl md:rounded-4xl p-px bg-linear-to-r from-zion-purple/60 via-white/10 to-zion-cyan/60">
             <div className="rounded-3xl md:rounded-4xl bg-black/90 backdrop-blur-xl p-8 md:p-12 text-center space-y-6">
-              <h3 className="text-2xl md:text-3xl font-semibold text-gradient">{tr('APP_WEB_website_v2_9_src_components_Mine', 'back_to_pool_overview', lang)}</h3>
+              <h3 className="text-2xl md:text-3xl font-semibold text-gradient">{cs ? 'Zpet na prehled poolu' : 'Back to Pool Overview'}</h3>
               <p className="text-gray-300 max-w-lg mx-auto">
-                {tr('APP_WEB_website_v2_9_src_components_Mine', 'view_all_pool_statistics_server_status_and_join_th', lang)}
+                {cs ? 'Zobrazte vsechny statistiky poolu, stav serveru a pripojte se k tezebni komunite.' : 'View all pool statistics, server status, and join the mining community.'}
               </p>
               <div className="flex flex-wrap justify-center gap-4">
                 <Link
                   href="/pool"
                   className="inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-zion-purple to-zion-cyan px-8 py-3 text-sm font-semibold text-white hover:opacity-90 transition-opacity"
                 >
-                  <Pickaxe className="h-4 w-4" /> {tr('APP_WEB_website_v2_9_src_components_Mine', 'pool_dashboard', lang)}
+                  <Pickaxe className="h-4 w-4" /> {cs ? 'Prehled poolu' : 'Pool Dashboard'}
                 </Link>
                 <Link
                   href="/explorer"
                   className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-8 py-3 text-sm font-semibold text-gray-200 hover:bg-white/10 transition-colors"
                 >
-                  <ExternalLink className="h-4 w-4" /> {tr('APP_WEB_website_v2_9_src_components_Mine', 'explorer', lang)}
+                  <ExternalLink className="h-4 w-4" /> {cs ? 'Explorer' : 'Explorer'}
                 </Link>
               </div>
             </div>

@@ -20,19 +20,19 @@ import {
 
 const getPhases = (cs: boolean) => [
   {
-    title: tr('daoPage', 'phase_1_stewardship_2025', lang),
+    title: cs ? 'Fáze 1 · Stewardship (2025)' : 'Phase 1 · Stewardship (2025)',
     bullets: cs
       ? ['Maitreya Buddha + Round Table guardians zajišťují uptime', 'Emergency intervence + schválení rozpočtu roadmapy', '90denní reporting publikovaný v docs']
       : ['Maitreya Buddha + Round Table guardians ensure uptime', 'Emergency intervention + roadmap budget approvals', '90-day reporting cadence published in docs'],
   },
   {
-    title: tr('daoPage', 'phase_2_hybrid_dao_2026', lang),
+    title: cs ? 'Fáze 2 · Hybridní DAO (2026)' : 'Phase 2 · Hybrid DAO (2026)',
     bullets: cs
       ? ['Validator council + guardians · 5-of-7 treasury', 'On-chain proposal lifecycle (create → vote → execute)', 'Golden Egg incentivy + community matching pooly']
       : ['Validator council joins guardians · 5-of-7 treasury', 'On-chain proposal lifecycle (create → vote → execute)', 'Golden Egg incentives + community matching pools'],
   },
   {
-    title: tr('daoPage', 'phase_3_full_dao_2026', lang),
+    title: cs ? 'Fáze 3 · Plné DAO (2026+)' : 'Phase 3 · Full DAO (2026+)',
     bullets: cs
       ? ['Treasury + roadmapa plně řízeny stakery', 'Kvadratické nebo consciousness-weighted hlasování', 'Transparentní granty + investiční komise ekosystému']
       : ['Treasury + roadmap fully controlled by stakers', 'Quadratic or consciousness-weighted voting experiments', 'Transparent grants + ecosystem investment committee'],
@@ -40,9 +40,9 @@ const getPhases = (cs: boolean) => [
 ];
 
 const getQuickLinks = (cs: boolean) => [
-  { label: tr('daoPage', 'governance_docs', lang), href: '/docs', description: tr('daoPage', 'proposal_flow_voting_power_emergency_clauses', lang) },
-  { label: tr('daoPage', 'treasury_dashboard', lang), href: '/dashboard', description: tr('daoPage', 'real_time_balances_allocation_overview_tithe', lang) },
-  { label: tr('daoPage', 'defi_hub', lang), href: '/defi', description: tr('daoPage', 'swap_bridge_and_portfolio_on_base_mainnet', lang) },
+  { label: cs ? 'Governance dokumentace' : 'Governance docs', href: '/docs', description: cs ? 'Proposal flow, hlasovací síla, nouzové klauzule.' : 'Proposal flow, voting power, emergency clauses.' },
+  { label: cs ? 'Treasury dashboard' : 'Treasury dashboard', href: '/dashboard', description: cs ? 'Real-time zůstatky, přehled alokací, tithe.' : 'Real-time balances, allocation overview, tithe.' },
+  { label: cs ? 'DeFi Hub' : 'DeFi Hub', href: '/defi', description: cs ? 'Swap, bridge a portfolio na Base Mainnet.' : 'Swap, bridge and portfolio on Base Mainnet.' },
 ];
 
 export default function DaoPage() {
@@ -98,10 +98,10 @@ export default function DaoPage() {
           <div className="space-y-5">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-gold uppercase">
               <Crown className="h-4 w-4" />
-              DAO 2.0 · {tr('daoPage', 'governance', lang)}
+              DAO 2.0 · {cs ? 'Správa' : 'Governance'}
             </div>
             <div>
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{tr('daoPage', 'treasury_proposals_voting', lang)}</p>
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{cs ? 'Treasury · návrhy · hlasování' : 'Treasury · proposals · voting'}</p>
               <h1 className="text-3xl sm:text-5xl md:text-6xl font-semibold text-gradient leading-tight">
                 {cs ? 'Formuj budoucnost ZION společně' : "Shape ZION's future together"}
               </h1>
@@ -113,11 +113,11 @@ export default function DaoPage() {
             </p>
             <div className="flex flex-wrap gap-4">
               <button onClick={loadDAOData} disabled={loading} className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-zion-gold via-zion-purple to-zion-cyan px-6 py-3 text-sm font-semibold text-black disabled:opacity-50">
-                {loading ? (tr('daoPage', 'loading', lang)) : (tr('daoPage', 'refresh_data', lang))}
+                {loading ? (cs ? 'Načítám…' : 'Loading…') : (cs ? 'Obnovit data' : 'Refresh Data')}
                 <ArrowRight className="h-4 w-4" />
               </button>
               <Link href="/docs" className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white">
-                {tr('daoPage', 'governance_docs_1', lang)}
+                {cs ? 'Dokumentace governance' : 'Governance docs'}
               </Link>
             </div>
           </div>
@@ -129,7 +129,7 @@ export default function DaoPage() {
             <div className="flex items-start gap-3">
               <Info className="h-6 w-6 text-blue-400 mt-0.5 shrink-0" />
               <div>
-                <p className="font-semibold text-blue-300">{tr('daoPage', 'dao_daemon_phase_2_hybrid_dao', lang)}</p>
+                <p className="font-semibold text-blue-300">{cs ? 'DAO Daemon — Fáze 2 (Hybridní DAO)' : 'DAO Daemon — Phase 2 (Hybrid DAO)'}</p>
                 <p className="text-sm text-blue-200/80 mt-1">
                   {cs
                     ? 'On-chain DAO governance daemon bude nasazen s fází Hybrid DAO (Q2 2026). Treasury zůstatky a pravidla jsou aktivní; tvorba návrhů přes UI bude spuštěna s daemonem.'
@@ -152,7 +152,7 @@ export default function DaoPage() {
           <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[32px] border border-white/10 bg-black/40 p-8">
             <div className="mb-6">
               <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Treasury</p>
-              <h2 className="text-3xl font-semibold text-white">{tr('daoPage', 'treasury_overview', lang)}</h2>
+              <h2 className="text-3xl font-semibold text-white">{cs ? 'Přehled treasury' : 'Treasury overview'}</h2>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
@@ -160,15 +160,15 @@ export default function DaoPage() {
                 <p className="text-lg font-semibold text-white mt-1">{treasury.multisig}</p>
               </div>
               <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                <p className="text-xs uppercase tracking-wider text-gray-400">{tr('daoPage', 'available', lang)}</p>
+                <p className="text-xs uppercase tracking-wider text-gray-400">{cs ? 'K dispozici' : 'Available'}</p>
                 <p className="text-lg font-semibold text-white mt-1">{treasury.available_zion.toLocaleString()} ZION</p>
               </div>
               <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                <p className="text-xs uppercase tracking-wider text-gray-400">{tr('daoPage', 'pending_ops', lang)}</p>
+                <p className="text-xs uppercase tracking-wider text-gray-400">{cs ? 'Čekající operace' : 'Pending Ops'}</p>
                 <p className="text-lg font-semibold text-white mt-1">{treasury.pending_operations}</p>
               </div>
               <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                <p className="text-xs uppercase tracking-wider text-gray-400">{tr('daoPage', 'daily_limit', lang)}</p>
+                <p className="text-xs uppercase tracking-wider text-gray-400">{cs ? 'Denní limit' : 'Daily Limit'}</p>
                 <p className="text-lg font-semibold text-white mt-1">{treasury.daily_spend_limit_zion.toLocaleString()} ZION</p>
               </div>
             </div>
@@ -178,8 +178,8 @@ export default function DaoPage() {
         {/* ── Governance phases ── */}
         <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[32px] border border-white/10 bg-white/5 p-8">
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tr('daoPage', 'governance_phases', lang)}</p>
-            <h2 className="text-3xl font-semibold text-white">{tr('daoPage', 'road_to_full_decentralization', lang)}</h2>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Fáze governance' : 'Governance phases'}</p>
+            <h2 className="text-3xl font-semibold text-white">{cs ? 'Cesta k plné decentralizaci' : 'Road to full decentralization'}</h2>
           </div>
           <div className="grid gap-6 md:grid-cols-3">
             {phases.map((phase) => (
@@ -202,24 +202,24 @@ export default function DaoPage() {
         <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
           <div className="flex items-center justify-between mb-6">
             <div>
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tr('daoPage', 'governance_proposals', lang)}</p>
-              <h2 className="text-3xl font-semibold text-white">{tr('daoPage', 'vote_on_protocol_decisions', lang)}</h2>
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Governance návrhy' : 'Governance proposals'}</p>
+              <h2 className="text-3xl font-semibold text-white">{cs ? 'Hlasuj o rozhodnutích' : 'Vote on protocol decisions'}</h2>
             </div>
             <button className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/5 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10 transition-colors">
               <Plus className="h-4 w-4" />
-              {tr('daoPage', 'create_proposal', lang)}
+              {cs ? 'Vytvořit návrh' : 'Create Proposal'}
             </button>
           </div>
           {loading ? (
             <div className="text-center py-12">
               <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-zion-gold border-r-transparent" />
-              <p className="mt-4 text-gray-400">{tr('daoPage', 'loading_proposals', lang)}</p>
+              <p className="mt-4 text-gray-400">{cs ? 'Načítám návrhy…' : 'Loading proposals…'}</p>
             </div>
           ) : proposals.length === 0 ? (
             <div className="rounded-3xl border border-white/10 bg-black/40 p-12 text-center backdrop-blur-xl">
               <Crown className="h-12 w-12 text-gray-500 mx-auto mb-4" />
-              <p className="text-lg font-semibold text-white mb-2">{tr('daoPage', 'no_proposals_yet', lang)}</p>
-              <p className="text-gray-400">{tr('daoPage', 'be_the_first_to_create_a_governance_proposal', lang)}</p>
+              <p className="text-lg font-semibold text-white mb-2">{cs ? 'Zatím žádné návrhy' : 'No proposals yet'}</p>
+              <p className="text-gray-400">{cs ? 'Buď první, kdo vytvoří governance návrh!' : 'Be the first to create a governance proposal!'}</p>
             </div>
           ) : (
             <div className="space-y-6">
@@ -234,7 +234,7 @@ export default function DaoPage() {
         <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[32px] border border-pink-500/30 bg-gradient-to-r from-pink-500/20 via-purple-500/20 to-pink-500/20 p-10">
           <div className="flex items-center gap-3 mb-4">
             <Heart className="h-8 w-8 text-pink-400" />
-            <h2 className="text-3xl font-semibold text-white">{tr('daoPage', 'humanitarian_tithe', lang)}</h2>
+            <h2 className="text-3xl font-semibold text-white">{cs ? 'Humanitární desátek' : 'Humanitarian Tithe'}</h2>
           </div>
           <p className="text-lg text-gray-300 mb-6">
             {cs
@@ -244,10 +244,10 @@ export default function DaoPage() {
           {stats && (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {[
-                { label: tr('daoPage', 'total_projects', lang), value: stats.humanitarian.total_proposals },
-                { label: tr('daoPage', 'active_funding', lang), value: stats.humanitarian.active_proposals },
-                { label: tr('daoPage', 'beneficiaries', lang), value: stats.humanitarian.total_beneficiaries.toLocaleString() },
-                { label: tr('daoPage', 'funded_amount', lang), value: stats.humanitarian.total_funded.toLocaleString() },
+                { label: cs ? 'Celkem projektů' : 'Total Projects', value: stats.humanitarian.total_proposals },
+                { label: cs ? 'Aktivní financování' : 'Active Funding', value: stats.humanitarian.active_proposals },
+                { label: cs ? 'Příjemci' : 'Beneficiaries', value: stats.humanitarian.total_beneficiaries.toLocaleString() },
+                { label: cs ? 'Financováno' : 'Funded Amount', value: stats.humanitarian.total_funded.toLocaleString() },
               ].map((s) => (
                 <div key={s.label} className="rounded-2xl border border-pink-500/20 bg-black/40 p-4">
                   <p className="text-xs uppercase tracking-wider text-gray-400">{s.label}</p>
@@ -261,10 +261,10 @@ export default function DaoPage() {
         {/* ── Co-Admin Governance + Sacred Trinity ── */}
         <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[32px] border border-zion-gold/30 bg-gradient-to-br from-zion-gold/10 via-zion-purple/10 to-transparent p-8">
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tr('daoPage', 'multi_layer_governance', lang)}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Vícevrstvá správa' : 'Multi-Layer Governance'}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Crown className="h-7 w-7 text-zion-gold" />
-              {tr('daoPage', 'co_admin_sacred_trinity', lang)}
+              {cs ? 'Co-Admin & Posvátná trojice' : 'Co-Admin & Sacred Trinity'}
             </h2>
             <p className="text-sm text-gray-400 max-w-3xl">
               {cs
@@ -277,7 +277,7 @@ export default function DaoPage() {
             <div className="rounded-2xl border border-white/10 bg-black/40 p-5">
               <div className="flex items-center gap-2 mb-3">
                 <ShieldCheck className="h-5 w-5 text-cyan-400" />
-                <h3 className="font-semibold text-white">{tr('daoPage', 'co_admin_system', lang)}</h3>
+                <h3 className="font-semibold text-white">{cs ? 'Co-Admin systém' : 'Co-Admin System'}</h3>
               </div>
               <p className="text-sm text-gray-400 mb-3">
                 {cs
@@ -288,7 +288,7 @@ export default function DaoPage() {
                 {(['L1 Consensus', 'L2 DAO/Bridge', 'L3 WARP', 'L4 Oasis', 'L5 Free World', 'L6 Issobella'] as const).map((layer) => (
                   <div key={layer} className="flex items-center justify-between rounded-lg border border-white/5 bg-white/5 px-3 py-1.5">
                     <span className="text-gray-300 font-mono">{layer}</span>
-                    <span className="text-gray-500">{tr('daoPage', 'co_admin', lang)} · {tr('daoPage', 'dao_authority', lang)}</span>
+                    <span className="text-gray-500">{cs ? 'Co-Admin' : 'Co-Admin'} · {cs ? 'DAO autorita' : 'DAO authority'}</span>
                   </div>
                 ))}
               </div>
@@ -297,7 +297,7 @@ export default function DaoPage() {
             <div className="rounded-2xl border border-zion-gold/20 bg-zion-gold/5 p-5">
               <div className="flex items-center gap-2 mb-3">
                 <Star className="h-5 w-5 text-zion-gold" />
-                <h3 className="font-semibold text-white">{tr('daoPage', 'sacred_trinity', lang)}</h3>
+                <h3 className="font-semibold text-white">{cs ? 'Posvátná trojice' : 'Sacred Trinity'}</h3>
               </div>
               <p className="text-sm text-gray-400 mb-4">
                 {cs
@@ -306,9 +306,9 @@ export default function DaoPage() {
               </p>
               <div className="space-y-3">
                 {[
-                  { name: 'Rama', role: tr('daoPage', 'steward_consensus_l1', lang), color: 'text-cyan-300', desc: tr('daoPage', 'chain_dharma_fair_mining_protocol_integrity', lang) },
-                  { name: 'Síta', role: tr('daoPage', 'heart_community_l5', lang), color: 'text-rose-300', desc: tr('daoPage', 'humanitarian_fund_physical_communities_care', lang) },
-                  { name: 'Hanuman', role: tr('daoPage', 'guardian_bridge_l2', lang), color: 'text-amber-300', desc: tr('daoPage', 'bridging_worlds_protection_faithful_service', lang) },
+                  { name: 'Rama', role: cs ? 'Správce · Konsenzus · L1' : 'Steward · Consensus · L1', color: 'text-cyan-300', desc: cs ? 'Dharma chainu, fair mining, protokolová integrita' : 'Chain dharma, fair mining, protocol integrity' },
+                  { name: 'Síta', role: cs ? 'Srdce · Komunita · L5' : 'Heart · Community · L5', color: 'text-rose-300', desc: cs ? 'Humanitární fond, fyzické komunity, péče' : 'Humanitarian fund, physical communities, care' },
+                  { name: 'Hanuman', role: cs ? 'Ochránce · Bridge · L2' : 'Guardian · Bridge · L2', color: 'text-amber-300', desc: cs ? 'Přemostění světů, ochrana, věrná služba' : 'Bridging worlds, protection, faithful service' },
                 ].map((archetype) => (
                   <div key={archetype.name} className="rounded-xl border border-white/10 bg-black/20 p-3">
                     <div className="flex items-center gap-2 mb-1">
@@ -325,7 +325,7 @@ export default function DaoPage() {
           <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/5 p-5">
             <div className="flex items-center gap-3 mb-3">
               <Sparkles className="h-5 w-5 text-cyan-400" />
-              <h3 className="font-semibold text-white">{tr('daoPage', 'consent_engine', lang)}</h3>
+              <h3 className="font-semibold text-white">{cs ? 'Consent Engine' : 'Consent Engine'}</h3>
               <span className="text-[10px] uppercase tracking-widest border border-cyan-500/30 bg-cyan-500/10 text-cyan-400 px-2 py-0.5 rounded-full font-semibold">L2 DAO</span>
             </div>
             <p className="text-sm text-gray-400 max-w-3xl">
@@ -335,10 +335,10 @@ export default function DaoPage() {
             </p>
             <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-2 text-[10px]">
               {[
-                { label: tr('daoPage', 'propose', lang), detail: tr('daoPage', 'any_co_admin', lang) },
-                { label: tr('daoPage', 'consent', lang), detail: tr('daoPage', 'affected_layers', lang) },
-                { label: tr('daoPage', 'veto_window', lang), detail: '72h' },
-                { label: tr('daoPage', 'execute', lang), detail: tr('daoPage', 'after_consent', lang) },
+                { label: cs ? 'Návrh' : 'Propose', detail: cs ? 'Jakýkoliv Co-Admin' : 'Any Co-Admin' },
+                { label: cs ? 'Souhlas' : 'Consent', detail: cs ? 'Dotčené vrstvy' : 'Affected layers' },
+                { label: cs ? 'Veto okno' : 'Veto window', detail: '72h' },
+                { label: cs ? 'Provedení' : 'Execute', detail: cs ? 'Po souhlasu' : 'After consent' },
               ].map((step) => (
                 <div key={step.label} className="rounded-lg border border-white/10 bg-white/5 p-2.5 text-center">
                   <p className="font-semibold text-cyan-300 text-xs">{step.label}</p>
@@ -354,7 +354,7 @@ export default function DaoPage() {
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-8">
             <div>
               <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Tree of Life</p>
-              <h2 className="text-3xl font-semibold text-white">{tr('daoPage', 'dao_circles_governance_topology', lang)}</h2>
+              <h2 className="text-3xl font-semibold text-white">{cs ? 'DAO kruhy & topologie' : 'DAO Circles & Governance Topology'}</h2>
               <p className="text-gray-300 max-w-2xl mt-2">
                 {cs
                   ? 'Tree of Life slouží jako živý DAO ledger. Kořeny reprezentují komunitní guildy, srdce vývojové kruhy a koruna správní guardians.'
@@ -363,31 +363,31 @@ export default function DaoPage() {
             </div>
             <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-black/60 px-4 py-2 text-sm">
               <TreeDeciduous className="h-5 w-5 text-emerald-300" />
-              <span className="text-gray-300">{tr('daoPage', 'live_topology', lang)}</span>
+              <span className="text-gray-300">{cs ? 'Živá topologie' : 'Live topology'}</span>
             </div>
           </div>
           <div className="grid gap-6 md:grid-cols-3">
             {[
               {
-                level: tr('daoPage', 'crown', lang),
-                title: tr('daoPage', 'guardians_council', lang),
-                description: tr('daoPage', 'top_dao_governance_layer_treasury_oversight_s', lang),
+                level: cs ? 'Koruna' : 'Crown',
+                title: cs ? 'Rada guardianů' : 'Guardians Council',
+                description: cs ? 'Vrchní vrstva správy DAO — dohled nad treasury, bezpečnostní revize a dlouhodobá vize.' : 'Top DAO governance layer — treasury oversight, security reviews, and long-term vision.',
                 color: 'from-indigo-500/70 to-fuchsia-500/40',
                 Icon: Crown,
                 iconColor: 'text-yellow-200',
               },
               {
-                level: tr('daoPage', 'heart', lang),
-                title: tr('daoPage', 'builders_circle', lang),
-                description: tr('daoPage', 'ecosystem_heart_protocol_development_core_pro', lang),
+                level: cs ? 'Srdce' : 'Heart',
+                title: cs ? 'Kruh stavitelů' : 'Builders Circle',
+                description: cs ? 'Srdce ekosystému — vývoj protokolu, core návrhy a koordinace technických misí.' : 'Ecosystem heart — protocol development, core proposals, and technical mission coordination.',
                 color: 'from-emerald-500/60 to-cyan-500/30',
                 Icon: Sparkles,
                 iconColor: 'text-teal-200',
               },
               {
-                level: tr('daoPage', 'roots', lang),
-                title: tr('daoPage', 'community_guild', lang),
-                description: tr('daoPage', 'dao_roots_open_community_contribution_streams', lang),
+                level: cs ? 'Kořeny' : 'Roots',
+                title: cs ? 'Komunitní guilda' : 'Community Guild',
+                description: cs ? 'Kořeny DAO — otevřená komunita, contribution streamy, komunitní hlasování a růst sítě.' : 'DAO roots — open community, contribution streams, community votes, and network growth.',
                 color: 'from-amber-500/60 to-orange-500/30',
                 Icon: Users,
                 iconColor: 'text-amber-200',
@@ -421,7 +421,7 @@ export default function DaoPage() {
             </div>
             <div className="flex items-center gap-3 rounded-2xl border border-zion-gold/30 bg-zion-gold/10 px-4 py-2 text-sm">
               <Star className="h-5 w-5 text-zion-gold" />
-              <span className="text-white">{tr('daoPage', 'real_time_dao_tracking', lang)}</span>
+              <span className="text-white">{cs ? 'Real-time DAO tracking' : 'Real-time DAO tracking'}</span>
             </div>
           </div>
           <GuardiansTreeClient />
@@ -429,14 +429,14 @@ export default function DaoPage() {
 
         {/* ── Quick links ── */}
         <motion.section initial={{ opacity: 0, scale: 0.98 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} className="rounded-[32px] border border-zion-gold/30 bg-gradient-to-r from-zion-purple/30 via-zion-gold/15 to-zion-purple/30 p-10">
-          <h2 className="text-3xl font-semibold text-white text-center mb-8">{tr('daoPage', 'helpful_links', lang)}</h2>
+          <h2 className="text-3xl font-semibold text-white text-center mb-8">{cs ? 'Užitečné odkazy' : 'Helpful links'}</h2>
           <div className="grid gap-4 md:grid-cols-3">
             {quickLinks.map((link) => (
               <div key={link.label} className="rounded-2xl border border-white/10 bg-black/40 p-5 hover:bg-black/60 transition-colors">
                 <p className="text-sm font-semibold text-white">{link.label}</p>
                 <p className="mt-2 text-sm text-gray-300">{link.description}</p>
                 <Link href={link.href} target={link.href.startsWith('http') ? '_blank' : undefined} rel={link.href.startsWith('http') ? 'noreferrer' : undefined} className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-zion-gold hover:text-zion-gold/80 transition-colors">
-                  {tr('daoPage', 'open', lang)}
+                  {cs ? 'Otevřít' : 'Open'}
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </div>

@@ -155,13 +155,14 @@ export default function Hero() {
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-sm font-bold text-white">{tr('hero', 'teaser_title_countdown', lang)}</span>
+                      <span className="text-sm font-bold text-white">Launch Countdown — 31 December 2026</span>
                     <span className="text-xs bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full font-semibold">
-                      {tr('hero', 'countdown_badge', lang).replace('{days}', String(Math.ceil((new Date('2026-12-31').getTime() - Date.now()) / (1000*60*60*24))))}
+                        T-{Math.ceil((new Date('2026-12-31').getTime() - Date.now()) / (1000*60*60*24))}d
                     </span>
                   </div>
                   <p className="text-sm text-gray-400 leading-relaxed">
-                    {tr('hero', 'teaser_description', lang).replace('{date}', SITE_LAUNCH_DATE_DISPLAY)}
+                    Network status, explorer, pool, downloads, and documentation — preparing for mainnet launch on {SITE_LAUNCH_DATE_DISPLAY}.
+                      Core + Edge topology in testing, mining test active, bridge in preparation.
                   </p>
                 </div>
                 <a
@@ -217,7 +218,7 @@ export default function Hero() {
                 className="group inline-flex items-center gap-2 text-xs font-medium text-purple-300 hover:text-purple-200 transition-colors"
               >
                 <Sparkles className="h-3.5 w-3.5" />
-                <span>{tr('hero', 'l3_link_label', lang)}</span>
+                <span>Full AI Layer — L3 Hiran v2.2</span>
                 <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-1" />
               </a>
             </div>
@@ -301,7 +302,7 @@ export default function Hero() {
               <div className="flex items-center gap-2 pt-1">
                 <Rocket className="w-4 h-4 text-zion-gold" />
                 <span className="text-xs text-gray-400">
-                  {SITE_ENVIRONMENT_LABEL} · {SITE_RELEASE_LABEL} · runtime {SITE_RUNTIME_LABEL} · {tr('hero', 'version_pill_rehearsal', lang)}
+                  {SITE_ENVIRONMENT_LABEL} · {SITE_RELEASE_LABEL} · runtime {SITE_RUNTIME_LABEL} · Core + Edge topology
                 </span>
               </div>
             </div>

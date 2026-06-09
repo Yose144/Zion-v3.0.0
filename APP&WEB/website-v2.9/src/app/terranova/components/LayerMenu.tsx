@@ -1,8 +1,6 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useLang } from '@/contexts/LanguageContext';
-import { tr } from '@/lib/translations';
 import {
   Globe2,
   Rocket,
@@ -42,7 +40,6 @@ const LAYERS: Layer[] = [
 ];
 
 export default function LayerMenu({ cs }: { cs: boolean }) {
-  const { lang } = useLang();
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -52,7 +49,7 @@ export default function LayerMenu({ cs }: { cs: boolean }) {
     >
       <div className="mb-4 flex items-center justify-between gap-3">
         <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">
-          {tr('APP_WEB_website_v2_9_src_app_terranova_c', 'ecosystem_layers', lang)}
+          {cs ? 'Ekosystémové vrstvy' : 'Ecosystem Layers'}
         </p>
       </div>
       <div className="grid grid-cols-2 gap-3">

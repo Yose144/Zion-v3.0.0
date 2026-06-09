@@ -1,8 +1,6 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { useLang } from '@/contexts/LanguageContext';
-import { tr } from '@/lib/translations';
 import {
   Globe,
   Mountain,
@@ -71,7 +69,6 @@ const REGIONS: Region[] = [
 ];
 
 export default function GeographyMenu({ cs }: { cs: boolean }) {
-  const { lang } = useLang();
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -81,7 +78,7 @@ export default function GeographyMenu({ cs }: { cs: boolean }) {
     >
       <div className="mb-4 flex items-center justify-between gap-3">
         <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500">
-          {tr('APP_WEB_website_v2_9_src_app_terranova_c', 'cultural_inserts_by_geography', lang)}
+          {cs ? 'Kulturní vložky podle geografie' : 'Cultural inserts by geography'}
         </p>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
