@@ -38,8 +38,9 @@ pub use deeksha_lite_fire::{
 };
 pub use scratchpad_ekam::memory_hard_transform_ekam_light_v2_sha3;
 pub use gpu::opencl_kernel::{
-    get_deeksha_kernel_source, has_ekam_deeksha_kernel, COSMIC_HARMONY_DEEKSHA_KERNEL,
-    EKAM_DEEKSHA_KERNEL_NAME,
+    get_deeksha_kernel_source, get_deeksha_lite_kernel_source, get_deeksha_lite_fire_kernel_source,
+    has_ekam_deeksha_kernel, COSMIC_HARMONY_DEEKSHA_KERNEL, DEEKSHA_LITE_KERNEL,
+    DEEKSHA_LITE_FIRE_KERNEL, EKAM_DEEKSHA_KERNEL_NAME,
 };
 pub use ncl_integration::{
     AITaskType, CH3RevenueModel, ConsciousnessLevel, NCLBonusCalculator, NCLIntegration,
