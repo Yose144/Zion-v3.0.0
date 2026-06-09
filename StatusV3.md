@@ -22,6 +22,61 @@
 
 ---
 
+## Co je nového 2026-06-09 večer (KAT Vektory + GPU Pipeline + AMD Driver Fix)
+
+> Verze: **3.0.1** (beze změny Cargo verze)
+> Klíčové commity: `a45bd551` (KAT testy), `e27dd45f` (GPU KAT benchmark), `1b13bce8` (ProQue fix), `3438fa9f` (AMD driver crash fix)
+
+### TL;DR
+
+| Změna | Status | Soubor |
+|-------|--------|--------|
+| KAT vektory Lite v1 (5 nonce, zamčeno) | ✅ Přidáno | `deeksha_lite.rs` |
+| KAT vektory Fire (5 nonce, zamčeno) | ✅ Přidáno | `deeksha_lite_fire.rs` |
+| GPU KAT benchmark bin (nezávislý na CPU) | ✅ Nový | `miner/src/bin/gpu_kat_bench.rs` |
+| AMD driver crash fix (Lite v1 RDNA) | ✅ Opraveno | `gpu_guard.rs` |
+| `.cargo/config.toml` string/array fix | ✅ Opraveno | `V3/.cargo/config.toml` |
+
+### KAT Vektory (Known-Answer Tests)
+
+CPU reference implementace nyní obsahuje **zamčené KAT vektory** — hex hashe pro 5 klíčových noncí (0, 1, 42, 0xDEADBEEF, u64::MAX). Jakákoliv změna konstant v pipeline (scratchpad, AES rounds, thermal loop) tyto testy rozbije.
+
+| Algoritmus | nonce=0 | nonce=1 | nonce=42 | nonce=0xDEADBEEF | nonce=MAX |
+|-----------|---------|---------|----------|------------------|-----------|
+| Lite v1 | `40606d02...` | `5cdbb8af...` | `93fd2ba5...` | `00422fe8...` | `69ed86c3...` |
+| Fire | `4e52987a...` | `7fafc9dd...` | `0c4427d4...` | `dc0200ec...` | `632a7c01...` |
+
+### GPU KAT Benchmark (`gpu_kat_bench`)
+
+Nový binární soubor v `zion-miner` který **přímo volá V3 OpenCL kernely** a ověřuje je proti zamčeným KAT vektorům **bez jakéhokoli CPU porovnání v runtime**:
+
+- Načte `.cl` kernel z `cosmic-harmony`
+- Sestaví 80B mining header z KAT prefix textu
+- Předpočítá Keccak-256 stav (host-side)
+- Spustí kernel pro každý KAT nonce zvlášť
+- Porovná GPU výstup přímo s konstantami
+- Spustí throughput benchmark (4096 noncí)
+
+**Exit 0** = všechny KAT vektory prošly → GPU pipeline je kanonická.  
+**Exit 1** = GPU kernel diverguje od CPU výstupu → mainnet zamrzne.
+
+### AMD Driver Crash Fix
+
+**Problém:** `-cl-fast-relaxed-math` v OpenCL build options pro Lite v1 na AMD RDNA způsoboval driver crash/TDR na některých verzích ovladačů (agresivní optimalizace rozbíjí integer kód — Keccak, AES).
+
+**Fix:** Odstraněn flag z Lite v1 RDNA tuning (nyní konzistentní s Fire a full Deeksha).  
+**Ověřeno na RX 5600 XT (gfx1010):** před = crash, po = stabilní 11.98 KH/s.
+
+### GPU Benchmarky (RX 5600 XT, gfx1010)
+
+| Algoritmus | Hasrate | KAT |
+|-----------|---------|-----|
+| DeekshaLite v1 | **11.98 KH/s** | ✅ 5/5 |
+| DeekshaLite Fire | **10.12 KH/s** | ✅ 5/5 |
+| Ekam Deeksha v2 | **1.10 KH/s** | ✅ 6/6 stages |
+
+---
+
 ## Co je nového 2026-06-09 (V3 Cleanup — 3 kanonické algoritmy + algorithm-aware validace)
 
 > Verze: **3.0.1** (beze změny Cargo verze)
