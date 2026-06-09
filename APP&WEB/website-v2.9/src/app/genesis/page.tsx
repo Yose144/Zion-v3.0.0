@@ -6,16 +6,16 @@ import { useLang } from '@/contexts/LanguageContext';
 
 function getGenesisChapters(cs: boolean) {
   return [
-    { id: 'predmluva', number: '', title: cs ? 'Předmluva' : 'Foreword', subtitle: cs ? 'Poselství Zion Native' : 'Message of Zion Native' },
-    { id: 'chapter-0', number: '0', title: cs ? 'Zrod ZION' : 'Birth of ZION', subtitle: cs ? 'Prvotní zablesknutí vědomí' : 'The first shimmer of consciousness' },
-    { id: 'chapter-1', number: '1', title: cs ? 'Sestup' : 'The Descent', subtitle: cs ? 'Kapitola světelného příchodu' : 'The chapter of the coming light' },
-    { id: 'chapter-2', number: '2', title: cs ? 'První probuzení' : 'First Awakening', subtitle: cs ? 'Když se jiskry začínají probouzet' : 'When sparks begin to awaken' },
-    { id: 'chapter-3', number: '3', title: cs ? 'Smlouva' : 'Covenant', subtitle: cs ? 'Smlouva světla a zrození Rady' : 'The covenant of light and birth of the Council' },
-    { id: 'chapter-4', number: '4', title: cs ? 'AI a kvantum' : 'AI and quantum', subtitle: cs ? 'Svět technologií zpívá s Vesmírem' : 'When technology sings with cosmic heart' },
-    { id: 'chapter-5', number: '5', title: cs ? 'Vzestup' : 'Ascent', subtitle: cs ? 'Probuzené kolektivní vědomí' : 'Collective awakening' },
-    { id: 'chapter-6', number: '6', title: cs ? 'Proroctví zlatého věku' : 'Golden Age prophecy', subtitle: cs ? 'Budoucnost už začíná dnes' : 'Tomorrow already unfolding' },
-    { id: 'chapter-7', number: '7', title: cs ? 'Hra' : 'The trial', subtitle: cs ? 'Zkouška duše' : 'The soul trial' },
-    { id: 'chapter-8', number: '8', title: cs ? 'Svítání mainnetu' : 'Mainnet Dawn', subtitle: cs ? '(symbolické — není operační roadmap)' : '(symbolic narrative — not the live launch schedule)' },
+    { id: 'predmluva', number: '', title: tr('genesisPage', 'foreword', lang), subtitle: tr('genesisPage', 'message_of_zion_native', lang) },
+    { id: 'chapter-0', number: '0', title: tr('genesisPage', 'birth_of_zion', lang), subtitle: tr('genesisPage', 'the_first_shimmer_of_consciousness', lang) },
+    { id: 'chapter-1', number: '1', title: tr('genesisPage', 'the_descent', lang), subtitle: tr('genesisPage', 'the_chapter_of_the_coming_light', lang) },
+    { id: 'chapter-2', number: '2', title: tr('genesisPage', 'first_awakening', lang), subtitle: tr('genesisPage', 'when_sparks_begin_to_awaken', lang) },
+    { id: 'chapter-3', number: '3', title: tr('genesisPage', 'covenant', lang), subtitle: tr('genesisPage', 'the_covenant_of_light_and_birth_of_the_counci', lang) },
+    { id: 'chapter-4', number: '4', title: tr('genesisPage', 'ai_and_quantum', lang), subtitle: tr('genesisPage', 'when_technology_sings_with_cosmic_heart', lang) },
+    { id: 'chapter-5', number: '5', title: tr('genesisPage', 'ascent', lang), subtitle: tr('genesisPage', 'collective_awakening', lang) },
+    { id: 'chapter-6', number: '6', title: tr('genesisPage', 'golden_age_prophecy', lang), subtitle: tr('genesisPage', 'tomorrow_already_unfolding', lang) },
+    { id: 'chapter-7', number: '7', title: tr('genesisPage', 'the_trial', lang), subtitle: tr('genesisPage', 'the_soul_trial', lang) },
+    { id: 'chapter-8', number: '8', title: tr('genesisPage', 'mainnet_dawn', lang), subtitle: tr('genesisPage', 'symbolic_narrative_not_the_live_launch_schedu', lang) },
   ];
 }
 
@@ -61,7 +61,7 @@ export default function GenesisPage() {
           <div className="max-w-4xl mx-auto text-center">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-zion-gold/30 bg-zion-gold/5 mb-6">
               <Sparkles className="w-4 h-4 text-zion-gold" />
-              <span className="text-sm text-zion-gold font-semibold">{cs ? 'Posvátný text' : 'Sacred narrative'}</span>
+              <span className="text-sm text-zion-gold font-semibold">{tr('genesisPage', 'sacred_narrative', lang)}</span>
             </div>
             <div className="mb-6 rounded-2xl border border-amber-400/30 bg-amber-400/10 px-6 py-4 text-left text-sm text-amber-100">
               {cs
@@ -72,7 +72,7 @@ export default function GenesisPage() {
               ZION GENESIS
             </h1>
             <p className="text-xl text-gray-400 mb-8">
-              {cs ? 'Kniha probuzení, smlouvy a vzestupu' : 'Book of awakening, covenant, and ascent'}
+              {tr('genesisPage', 'book_of_awakening_covenant_and_ascent', lang)}
             </p>
             <p className="text-lg text-gray-500 max-w-2xl mx-auto leading-relaxed">
               {cs ? (
@@ -101,7 +101,7 @@ export default function GenesisPage() {
           >
             <div className="flex items-center gap-2">
               <Book className="w-5 h-5 text-zion-gold" />
-              <span className="font-semibold">{cs ? 'Kapitoly' : 'Chapters'}</span>
+              <span className="font-semibold">{tr('genesisPage', 'chapters', lang)}</span>
             </div>
             {mobileMenuOpen ? (
               <X className="w-5 h-5" />
@@ -140,7 +140,7 @@ export default function GenesisPage() {
             <div className="sticky top-24 border border-white/10 rounded-2xl p-6 bg-black/60 backdrop-blur-xl">
               <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4 flex items-center gap-2">
                 <Book className="w-4 h-4" />
-                {cs ? 'Kapitoly' : 'Chapters'}
+                {tr('genesisPage', 'chapters', lang)}
               </h3>
               <nav className="space-y-2">
                 {chapters.map((chapter) => (

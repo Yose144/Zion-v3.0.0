@@ -769,6 +769,1206 @@ const t = {
   },
 } as const;
 
+  bridgeBurn: {
+    en_us: { cs: 'cs-CZ', en: 'en-US' }
+    enter_a_valid_wzion_amount: { cs: 'Zadejte platne mnozstvi wZION', en: 'Enter a valid wZION amount' }
+    l1_address_must_start_with_zion1_or_zo: { cs: 'L1 adresa musi zacinat na zion1 nebo Zo…', en: 'L1 address must start with zion1 or Zo…' }
+    please_switch_to_base_in_metamask: { cs: 'Přepněte prosím v MetaMask na Base', en: 'Please switch to Base in MetaMask' }
+    burn_wzion_receive_zion_on_l1: { cs: 'Spalit wZION → prijmout ZION na L1', en: 'Burn wZION → receive ZION on L1' }
+    connect_metamask_on_base_to_burn_your_wzion_a: { cs: 'Připojte MetaMask na Base, spalte své wZION a přijměte ZION na L1.', en: 'Connect MetaMask on Base to burn your wZION and receive ZION on L1.' }
+    metamask_not_detected_install: { cs: 'MetaMask nebyl detekovan. Nainstalujte ', en: 'MetaMask not detected. Install ' }
+    to_use_this_widget: { cs: 'pro pouziti tohoto widgetu.', en: 'to use this widget.' }
+    requesting_account: { cs: 'Žádám účet…', en: 'Requesting account…' }
+    switching_to_base: { cs: 'Přepínám na Base…', en: 'Switching to Base…' }
+    connect_metamask: { cs: 'Připojit MetaMask', en: 'Connect MetaMask' }
+    burn_submitted: { cs: 'Burn odeslan!', en: 'Burn submitted!' }
+    amount_burned: { cs: 'Spalene mnozstvi', en: 'Amount burned' }
+    l1_recipient: { cs: 'L1 prijemce', en: 'L1 recipient' }
+    copied: { cs: 'Zkopirovano', en: 'Copied' }
+    the_relay_will_detect_the: { cs: 'Relay detekuje event ', en: 'The relay will detect the ' }
+    event_after_64_evm_block_confirmations_2_min_: { cs: ' po 64 potvrzeních EVM bloků (~2 min), pak odešle L1 unlock. Vaše ZION dorazí do ~5 minut.', en: ' event after 64 EVM block confirmations (~2 min), then submit an L1 unlock. Your ZION will arrive within ~5 minutes.' }
+    burn_more: { cs: 'Spalit vice', en: 'Burn more' }
+    burn_wzion_zion_on_l1: { cs: 'Spalit wZION → ZION na L1', en: 'Burn wZION → ZION on L1' }
+    refresh_balance: { cs: 'Obnovit zustatek', en: 'Refresh balance' }
+    connected_wallet: { cs: 'Pripojena penezenka', en: 'Connected wallet' }
+    wzion_balance: { cs: 'wZION zustatek', en: 'wZION balance' }
+    amount_wzion: { cs: 'Mnozstvi (wZION)', en: 'Amount (wZION)' }
+    e_g_100: { cs: 'napr. 100', en: 'e.g. 100' }
+    wei: { cs: 'wei', en: 'wei' }
+    zion_l1_recipient_address: { cs: 'Adresa prijemce ZION na L1', en: 'ZION L1 recipient address' }
+    wzion_contract: { cs: 'wZION kontrakt:', en: 'wZION contract:' }
+    network: { cs: 'Síť', en: 'Network' }
+    decimals: { cs: 'desetinných míst', en: 'decimals' }
+    no_protocol_fee: { cs: 'žádný protokolový poplatek', en: 'no protocol fee' }
+    confirm_in_metamask: { cs: 'Potvrdte v MetaMask…', en: 'Confirm in MetaMask…' }
+    broadcasting_tx: { cs: 'Odesilam TX…', en: 'Broadcasting TX…' }
+    loading: { cs: 'Nacitam…', en: 'Loading…' }
+    burn: { cs: 'Spalit ', en: 'Burn ' }
+    zion_arrives_on_l1_within_5_min_after_evm_bur: { cs: 'ZION dorazi na L1 do ~5 minut po potvrzeni EVM burnu.', en: 'ZION arrives on L1 within ~5 min after EVM burn confirmation.' }
+  },
+  missionControl: {
+    dashboard: { cs: 'Prehled', en: 'Dashboard' }
+    stack_metrics: { cs: 'Metriky stacku', en: 'Stack Metrics' }
+    roadmap: { cs: 'Roadmapa', en: 'Roadmap' }
+    layers: { cs: 'Vrstvy', en: 'Layers' }
+    constitution: { cs: 'Ustava', en: 'Constitution' }
+    economy: { cs: 'Ekonomika', en: 'Economy' }
+    security: { cs: 'Bezpecnost', en: 'Security' }
+    timeline: { cs: 'Casova osa', en: 'Timeline' }
+    priority: { cs: 'Priorita', en: 'Priority' }
+    phase_1_foundation: { cs: 'Fáze 1 — Foundation', en: 'Phase 1 — Foundation' }
+    core_consensus_infrastructure_l2_bridge: { cs: 'Core, consensus, infrastructure, L2 bridge', en: 'Core, consensus, infrastructure, L2 bridge' }
+    fee_split_89_5_5_1: { cs: 'Fee split 89/5/5/1', en: 'Fee split 89/5/5/1' }
+    pplns_payout_verified_and_active: { cs: 'PPLNS payout ověřen a aktivní', en: 'PPLNS payout verified and active' }
+    core_edge_topology: { cs: 'Core + Edge topologie', en: 'Core + Edge topology' }
+    private_vpn_active: { cs: 'Privátní VPN aktivní', en: 'Private VPN active' }
+    docker_compose_mainnet: { cs: 'Docker Compose mainnet', en: 'Docker Compose mainnet' }
+    ready_for_deployment: { cs: 'Připraveno pro deployment', en: 'Ready for deployment' }
+    security_cleanup: { cs: 'Bezpečnostní cleanup', en: 'Security cleanup' }
+    credential_rotation_complete: { cs: 'Credential rotation dokončen', en: 'Credential rotation complete' }
+    final_payout_verification: { cs: 'Finální payout verification', en: 'Final payout verification' }
+    pplns_window_validation_in_progress: { cs: 'PPLNS window validace probíhá', en: 'PPLNS window validation in progress' }
+    security_audit: { cs: 'Security audit', en: 'Security audit' }
+    external_firm_booked: { cs: 'Externí firma rezervována', en: 'External firm booked' }
+    bridge_validator_key_provisioning: { cs: 'Bridge validator provisioning', en: 'Bridge validator key provisioning' }
+    3_5_threshold_production: { cs: '3/5 threshold produkce', en: '3/5 threshold production' }
+    ci_billing_resolution: { cs: 'CI billing', en: 'CI billing resolution' }
+    github_actions_infrastructure_pending: { cs: 'GitHub Actions infrastruktura', en: 'GitHub Actions infrastructure pending' }
+    genesis_premine: { cs: 'Genesis premine', en: 'Genesis premine' }
+    16_28b_zion_12_wallets: { cs: '16.28B ZION, 12 peněženek', en: '16.28B ZION, 12 wallets' }
+    wzion_erc_20: { cs: 'wZION ERC-20', en: 'wZION ERC-20' }
+    deployed_on_base_mainnet: { cs: 'Deployed na Base Mainnet', en: 'Deployed on Base Mainnet' }
+    zionstaking: { cs: 'ZIONStaking', en: 'ZIONStaking' }
+    12_apr_7_day_cooldown: { cs: '12% APR, 7-denní cooldown', en: '12% APR, 7-day cooldown' }
+    pplns_fee_split_final_verification: { cs: 'PPLNS fee split finální ověření', en: 'PPLNS fee split final verification' }
+    confirm_89_5_5_1_wiring: { cs: 'Potvrdit 89/5/5/1 wiring', en: 'Confirm 89/5/5/1 wiring' }
+    launch_checklist_dashboard_integration: { cs: 'Launch checklist dashboard integrace', en: 'Launch checklist dashboard integration' }
+    connect_to_mission_control: { cs: 'Propojit s Mission Control', en: 'Connect to Mission Control' }
+    bfg_scrub_git_history: { cs: 'BFG scrub / git historie', en: 'BFG scrub / git history' }
+    final_cleanup_before_launch: { cs: 'Finální cleanup před launch', en: 'Final cleanup before launch' }
+    all: { cs: 'Vse', en: 'All' }
+    mining: { cs: 'Tezba', en: 'Mining' }
+    inspect: { cs: 'Zkontrolovat', en: 'Inspect' }
+    offline: { cs: 'Offline', en: 'Offline' }
+    online: { cs: 'Online', en: 'Online' }
+    syncing: { cs: 'Synchronizace', en: 'Syncing' }
+    stale: { cs: 'Neaktualni', en: 'Stale' }
+    unhealthy: { cs: 'Nezdrave', en: 'Unhealthy' }
+    height: { cs: 'Vyska', en: 'Height' }
+    peers: { cs: 'Peeri', en: 'Peers' }
+    difficulty: { cs: 'Obtiznost', en: 'Difficulty' }
+    last_block: { cs: 'Posledni blok', en: 'Last Block' }
+    containers: { cs: 'Kontejnery', en: 'Containers' }
+    memory: { cs: 'Pamet', en: 'Memory' }
+    disk: { cs: 'Disk', en: 'Disk' }
+    load: { cs: 'Zatez', en: 'Load' }
+    ports: { cs: 'Porty', en: 'Ports' }
+    close_details: { cs: 'Zavrit detail', en: 'Close details' }
+    service_detail: { cs: 'Detail sluzby', en: 'Service Detail' }
+    status: { cs: 'Stav', en: 'Status' }
+    operational_context: { cs: 'Provozni kontext', en: 'Operational Context' }
+    local_service_without_a_direct_prometheus_scr: { cs: 'Lokalni sluzba bez primeho Prometheus scrape targetu.', en: 'Local service without a direct Prometheus scrape target.' }
+    quick_actions: { cs: 'Rychle akce', en: 'Quick Actions' }
+    operator_notes: { cs: 'Poznamky operatora', en: 'Operator Notes' }
+    status_down_means_a_scrape_failure_or_an_unre: { cs: 'Stav DOWN znamena scrape fail nebo nedostupny target.', en: 'Status DOWN means a scrape failure or an unreachable target.' }
+    status_n_a_means_the_service_is_not_connected: { cs: 'Stav N/A znamena, ze sluzba neni napojena primo na Prometheus scrape.', en: 'Status N/A means the service is not connected directly to a Prometheus scrape.' }
+    use_the_monitoring_or_grafana_actions_above_f: { cs: 'Pro hlubsi drill-down pouzij akce Monitoring nebo Grafana vyse.', en: 'Use the Monitoring or Grafana actions above for deeper drill-down.' }
+    awaiting_data: { cs: 'cekam na data', en: 'awaiting data' }
+    en_us: { cs: 'cs-CZ', en: 'en-US' }
+    core_node: { cs: 'Core node', en: 'Core Node' }
+    mining_pool: { cs: 'Mining pool', en: 'Mining Pool' }
+    miner_runtime: { cs: 'Miner runtime', en: 'Miner Runtime' }
+    block: { cs: 'Blok', en: 'Block' }
+    blocks_acc: { cs: 'Prijate bloky', en: 'Blocks Acc' }
+    tmpl_txs: { cs: 'Tx v sablone', en: 'Tmpl Txs' }
+    tmpl_fees: { cs: 'Fee sablony', en: 'Tmpl Fees' }
+    chain_height_1h: { cs: 'Vyska chainu — 1h', en: 'Chain Height — 1h' }
+    active_miners_1h: { cs: 'Aktivni mineri — 1h', en: 'Active Miners — 1h' }
+    accepted_shares_1h: { cs: 'Prijate shares — 1h', en: 'Accepted Shares — 1h' }
+    miner_target: { cs: 'Cil minera', en: 'Miner Target' }
+    hashrate_10s: { cs: 'Hashrate 10 s', en: 'Hashrate 10s' }
+    hashrate_60s: { cs: 'Hashrate 60 s', en: 'Hashrate 60s' }
+    accepted: { cs: 'Prijate', en: 'Accepted' }
+    rejected: { cs: 'Odmitnute', en: 'Rejected' }
+    accept_rate: { cs: 'Accept rate', en: 'Accept Rate' }
+    submit_avg: { cs: 'Prumer submitu', en: 'Submit Avg' }
+    pool_height: { cs: 'Vyska poolu', en: 'Pool Height' }
+    miner_hashrate_1h: { cs: 'Hashrate minera — 1 h', en: 'Miner Hashrate — 1h' }
+    pool_routing_groups: { cs: 'Routing skupiny poolu', en: 'Pool Routing Groups' }
+    cpu_load: { cs: 'CPU zatez', en: 'CPU Load' }
+    server_uptime: { cs: 'Uptime serveru', en: 'Server Uptime' }
+    since: { cs: 'od', en: 'since' }
+    30_live_prometheus_metrics: { cs: '30+ zivych Prometheus metrik', en: '30+ live Prometheus metrics' }
+    instant_range_queries: { cs: 'Instantni + range dotazy', en: 'Instant + Range queries' }
+    15s_auto_refresh: { cs: 'Auto-refresh 15 s', en: '15s auto-refresh' }
+    svg_sparklines_1h: { cs: 'SVG sparkliny (1 h)', en: 'SVG sparklines (1h)' }
+    full_monitoring_page: { cs: 'Cela monitoring stranka →', en: 'Full monitoring page →' }
+    open_grafana: { cs: 'Otevrit Grafanu →', en: 'Open Grafana →' }
+    signed_tx_only: { cs: 'JEN PODEPSANE TX', en: 'SIGNED TX ONLY' }
+    wallet_diagnostics_transaction_submit: { cs: 'Diagnostika walletu a odeslani transakce', en: 'Wallet Diagnostics & Transaction Submit' }
+    live_rpc_health_balance_utxo_snapshot_miner_p: { cs: 'Zive zdravi RPC, balance, UTXO snapshot, viditelnost payoutu minera a bezpecny broadcast jiz podepsane transakce bez prace s privatnimi klici na serveru.', en: 'Live RPC health, balance, UTXO snapshot, miner payout visibility, and safe broadcast of an already signed transaction without handling private keys on the server.' }
+    chain_height: { cs: 'Vyska chainu', en: 'Chain Height' }
+    network: { cs: 'Sit', en: 'Network' }
+    rpc_version: { cs: 'Verze RPC', en: 'RPC Version' }
+    wallet_address_or_account: { cs: 'Adresa walletu nebo ucet', en: 'Wallet Address Or Account' }
+    loading: { cs: 'Nacitam…', en: 'Loading…' }
+    load_wallet: { cs: 'Nacist wallet', en: 'Load Wallet' }
+    address: { cs: 'Adresa', en: 'Address' }
+    not_loaded: { cs: 'nenacteno', en: 'not loaded' }
+    utxo_count: { cs: 'Pocet UTXO', en: 'UTXO Count' }
+    utxo_total: { cs: 'UTXO celkem', en: 'UTXO Total' }
+    miner_pending: { cs: 'Miner pending', en: 'Miner Pending' }
+    miner_paid: { cs: 'Miner vyplaceno', en: 'Miner Paid' }
+    miner_shares: { cs: 'Miner shares', en: 'Miner Shares' }
+    recent_utxos: { cs: 'Posledni UTXO', en: 'Recent UTXOs' }
+    top_20_from_rpc: { cs: 'top 20 z RPC', en: 'top 20 from RPC' }
+    height_1: { cs: 'vyska', en: 'height' }
+    no_utxos_returned_for_this_address: { cs: 'Pro tuto adresu se nevratilo zadne UTXO.', en: 'No UTXOs returned for this address.' }
+    load_a_zion1_address_to_inspect_utxos: { cs: 'Nacti adresu zion1 pro kontrolu UTXO.', en: 'Load a zion1 address to inspect UTXOs.' }
+    rpc_submit_tester: { cs: 'RPC tester odeslani', en: 'RPC Submit Tester' }
+    signed_payload_only: { cs: 'jen podepsany payload', en: 'signed payload only' }
+    submitting: { cs: 'Odesilam…', en: 'Submitting…' }
+    broadcast_signed_tx: { cs: 'Broadcast podepsane TX', en: 'Broadcast Signed TX' }
+    method: { cs: 'metoda', en: 'method' }
+    accepted_1: { cs: 'prijato', en: 'accepted' }
+    yes: { cs: 'ano', en: 'yes' }
+    no: { cs: 'ne', en: 'no' }
+    done: { cs: 'Hotovo', en: 'Done' }
+    missing_before_public_launch: { cs: 'Chybí před public launch', en: 'Missing before public launch' }
+    no_longer_missing: { cs: 'Co už nechybí', en: 'No longer missing' }
+    next_48_72h: { cs: 'Další 48-72h', en: 'Next 48-72h' }
+    live_telemetry: { cs: 'Ziva telemetrie', en: 'Live Telemetry' }
+    mission_control: { cs: 'Rizeni mise', en: 'Mission Control' }
+    live_data_30s_refresh: { cs: 'ZIVA DATA · refresh 30 s', en: 'LIVE DATA · 30s refresh' }
+    all_systems_healthy: { cs: 'Vsechny systemy zdrave', en: 'All Systems Healthy' }
+    partial_systems_up: { cs: 'Cast systemu online', en: 'Partial Systems Up' }
+    systems_monitoring: { cs: 'Monitoring systemu', en: 'Systems Monitoring' }
+    live: { cs: 'ZIVE', en: 'LIVE' }
+    loading_mission_control_data: { cs: 'Nacitam data Mission Control…', en: 'Loading Mission Control data…' }
+    live_telemetry_unavailable: { cs: 'Ziva telemetrie neni dostupna', en: 'Live telemetry unavailable' }
+    node_api_temporarily_unreachable_roadmap_cons: { cs: 'Node API je docasne nedostupne - zalozky roadmapy a ustavy stale funguji.', en: 'Node API temporarily unreachable - roadmap & constitution tabs still work.' }
+    retry: { cs: 'Zkusit znovu', en: 'Retry' }
+    launch_readiness_pre_launch_blockers: { cs: 'Připravenost k launchi — Pre-Launch Blockers', en: 'Launch Readiness — Pre-Launch Blockers' }
+    no_items: { cs: 'Žádné položky', en: 'No items' }
+    golden_compass_seven_directions_of_terranova: { cs: 'Zlatý Kompas — sedm směrů TerraNova', en: 'Golden Compass — seven directions of TerraNova' }
+    progress: { cs: 'Postup', en: 'Progress' }
+    phase_0_spec_freeze_core_rewrite: { cs: 'Faze 0 — zmrazeni specifikace a prepis core', en: 'Phase 0 — Spec Freeze & Core Rewrite' }
+    completed: { cs: 'DOKONCENO', en: 'COMPLETED' }
+    architecture: { cs: 'Architektura', en: 'Architecture' }
+    layer_stack: { cs: 'Vrstvovy stack', en: 'Layer Stack' }
+    total_supply: { cs: 'Celkova zasoba', en: 'Total Supply' }
+    mining_supply: { cs: 'Tezebni zasoba', en: 'Mining Supply' }
+    genesis_premine_1: { cs: 'Genesis premine', en: 'Genesis Premine' }
+    block_reward_d1: { cs: 'Block reward (D1)', en: 'Block Reward (D1)' }
+    emission_model: { cs: 'Emisni model', en: 'Emission Model' }
+    tail_emission: { cs: 'Tail emise', en: 'Tail Emission' }
+    block_time: { cs: 'Cas bloku', en: 'Block Time' }
+    60_seconds: { cs: '60 sekund', en: '60 seconds' }
+    max_reorg: { cs: 'Max reorg', en: 'Max Reorg' }
+    10_blocks: { cs: '10 bloku', en: '10 blocks' }
+    soft_finality: { cs: 'Soft finalita', en: 'Soft Finality' }
+    60_blocks: { cs: '60 bloku', en: '60 blocks' }
+    coinbase_maturity: { cs: 'Coinbase maturity', en: 'Coinbase Maturity' }
+    100_blocks: { cs: '100 bloku', en: '100 blocks' }
+    distribution: { cs: 'Distribuce', en: 'Distribution' }
+    89_miner_5_humanitarian_5_issobella_1_pool: { cs: '89 % miner · 5 % humanit. · 5 % Issobella · 1 % pool', en: '89% miner · 5% humanitarian · 5% Issobella · 1% pool' }
+    atomic_units: { cs: 'Atomic units', en: 'Atomic Units' }
+    1m_per_zion: { cs: '1M na ZION', en: '1M per ZION' }
+    mining_horizon: { cs: 'Horizont tezby', en: 'Mining Horizon' }
+    100_years_tail: { cs: '100+ let + tail ∞', en: '100+ years + tail ∞' }
+    immediately_available: { cs: 'Okamzite dostupne', en: 'Immediately available' }
+    infrastructure_dev: { cs: 'Infrastruktura a vyvoj', en: 'Infrastructure & Dev' }
+    humanitarian_fund: { cs: 'Humanitarni fond', en: 'Humanitarian Fund' }
+    zion_block_from_2126: { cs: 'ZION/block ∞ (od 2126)', en: 'ZION/block ∞ (from 2126)' }
+    miner_humanitarian_issobella_pool: { cs: 'miner / humanit. / Issobella / pool', en: 'miner / humanitarian / Issobella / pool' }
+    100_years: { cs: '100+ let', en: '100+ years' }
+    perpetual_tail: { cs: '+ perpetualni tail ∞', en: '+ perpetual tail ∞' }
+    l5_l6_treasury: { cs: 'L5 / L6 Pokladna', en: 'L5 / L6 Treasury' }
+    humanitarian_fund_space_station: { cs: 'Humanitární fond & Vesmírná stanice', en: 'Humanitarian Fund & Space Station' }
+    5_of_every_block_reward_goes_to_the_l5_humani: { cs: '5 % každého blokového odměny putuje na L5 humanitární fond a 5 % na L6 Issobella vesmírný fond.', en: '5% of every block reward goes to the L5 humanitarian fund and 5% to the L6 Issobella space fund.' }
+    physical_communities_humanitarian_projects_fr: { cs: 'Fyzické komunity, humanitární projekty, Free Energy, terénní governance. Fond odemčen ve výšce bloku ~525,600.', en: 'Physical communities, humanitarian projects, Free Energy, on-ground governance. Fund unlocked at block ~525,600.' }
+    orbital_station_space_research_seti_overview_: { cs: 'Orbitální stanice, vesmírný výzkum, SETI, Overview Effect protokoly. Fond odemčen ve výšce bloku ~525,600.', en: 'Orbital station, space research, SETI, Overview Effect protocols. Fund unlocked at block ~525,600.' }
+    all_l1_transaction_fees: { cs: 'VSECHNY L1 TRANSAKCNI POPLATKY → ', en: 'ALL L1 TRANSACTION FEES → ' }
+    burned: { cs: 'SPALENY', en: 'BURNED' }
+    sent_to_a_burn_address_without_a_private_key_: { cs: 'Posilany na burn adresu bez privatniho klice → deflacni tlak', en: 'Sent to a burn address without a private key → deflationary pressure' }
+    priorities: { cs: 'Priority', en: 'Priorities' }
+  },
+  newsFeed: {
+    news_updates: { cs: 'Novinky a aktualizace', en: 'News & Updates' }
+    news: { cs: 'Novinky', en: 'News' }
+    read_more: { cs: 'Číst více', en: 'Read more' }
+  },
+  deekshaNews: {
+    deeksha_lite_news: { cs: 'Deeksha Lite — Novinky', en: 'Deeksha Lite — News' }
+    news_lite: { cs: 'Novinky (Lite)', en: 'News (Lite)' }
+  },
+  walletPage: {
+    ed25519: { cs: 'Ed25519', en: 'Ed25519' }
+    state_of_the_art_curve_cryptography_fast_and_: { cs: 'Nejmodernější křivková kryptografie — rychlé a bezpečné podpisy.', en: 'State-of-the-art curve cryptography — fast and secure signatures.' }
+    bip39_mnemonic: { cs: 'BIP39 Mnemonic', en: 'BIP39 Mnemonic' }
+    12_24_word_seed_for_easy_backup_and_recovery: { cs: '12–24 slovní seed pro snadné zálohování a obnovení.', en: '12–24 word seed for easy backup and recovery.' }
+    utxo_model: { cs: 'UTXO Model', en: 'UTXO Model' }
+    native_zion_l1_utxo_model_transparent_and_aud: { cs: 'Nativní UTXO model ZION L1 — transparentní a auditovatelný.', en: 'Native ZION L1 UTXO model — transparent and auditable.' }
+    on_chain: { cs: 'On-Chain', en: 'On-Chain' }
+    fully_on_chain_wallet_no_custodial_services: { cs: 'Plně on-chain wallet — žádné custodial služby.', en: 'Fully on-chain wallet — no custodial services.' }
+    initializing_zion_wallet: { cs: 'Inicializace ZION Wallet...', en: 'Initializing ZION Wallet...' }
+    password_must_be_at_least_8_characters: { cs: 'Heslo musí mít alespoň 8 znaků', en: 'Password must be at least 8 characters' }
+    wallet_created_successfully: { cs: 'Peněženka vytvořena!', en: 'Wallet created successfully!' }
+    mnemonic_and_password_required: { cs: 'Vyžadováno mnemonic a heslo', en: 'Mnemonic and password required' }
+    wallet_imported_successfully: { cs: 'Peněženka importována!', en: 'Wallet imported successfully!' }
+    private_key_and_password_required: { cs: 'Vyžadován private key a heslo', en: 'Private key and password required' }
+    fill_all_required_fields: { cs: 'Vyplňte všechna povinná pole', en: 'Fill all required fields' }
+    trezor_wallet_connected: { cs: 'Trezor peněženka připojena!', en: 'Trezor wallet connected!' }
+    ledger_wallet_connected: { cs: 'Ledger peněženka připojena!', en: 'Ledger wallet connected!' }
+    copied_to_clipboard: { cs: 'Zkopírováno do schránky!', en: 'Copied to clipboard!' }
+    native_zion_blockchain_wallet: { cs: 'Nativní peněženka ZION blockchainu', en: 'Native ZION blockchain wallet' }
+    zion_wallet: { cs: 'ZION Wallet', en: 'ZION Wallet' }
+    local_only: { cs: 'Local-only', en: 'Local-only' }
+    features: { cs: 'Vlastnosti', en: 'Features' }
+    why_zion_wallet: { cs: 'Proč ZION Wallet?', en: 'Why ZION Wallet?' }
+    active_wallet: { cs: 'Aktivní peněženka', en: 'Active Wallet' }
+    hardware_wallet_watch_only: { cs: 'Hardware peněženka — pouze pro sledování', en: 'Hardware Wallet — Watch Only' }
+    your_wallets: { cs: 'Vaše peněženky', en: 'Your Wallets' }
+    create_new_wallet: { cs: 'Vytvořit novou peněženku', en: 'Create New Wallet' }
+    wallet_name: { cs: 'Název peněženky', en: 'Wallet Name' }
+    password_min_8_chars: { cs: 'Heslo (min. 8 znaků)', en: 'Password (min 8 chars)' }
+    creating: { cs: 'Vytváření...', en: 'Creating...' }
+    create_wallet: { cs: 'Vytvořit peněženku', en: 'Create Wallet' }
+    import_wallet: { cs: 'Importovat peněženku', en: 'Import Wallet' }
+    from_mnemonic_bip39: { cs: 'Z Mnemonic (BIP39)', en: 'From Mnemonic (BIP39)' }
+    enter_12_or_24_word_mnemonic_phrase: { cs: 'Zadejte 12 nebo 24 slovní frázi...', en: 'Enter 12 or 24 word mnemonic phrase...' }
+    encryption_password: { cs: 'Šifrovací heslo', en: 'Encryption password' }
+    importing: { cs: 'Importování...', en: 'Importing...' }
+    import_from_mnemonic: { cs: 'Importovat z Mnemonic', en: 'Import from Mnemonic' }
+    from_private_key_hex: { cs: 'Z Private Key (hex)', en: 'From Private Key (hex)' }
+    64_char_hex_private_key: { cs: '64-znakový hex private key', en: '64-char hex private key' }
+    import_from_private_key: { cs: 'Importovat z Private Key', en: 'Import from Private Key' }
+    hardware_wallet_watch_only_1: { cs: 'Hardware peněženka (Watch-only)', en: 'Hardware Wallet (Watch-only)' }
+    import_public_key_from_trezor_or_ledger: { cs: 'Importujte veřejný klíč z Trezoru nebo Ledgeru.', en: 'Import public key from Trezor or Ledger.' }
+    connecting: { cs: 'Připojování...', en: 'Connecting...' }
+    send_zion: { cs: 'Odeslat ZION', en: 'Send ZION' }
+    select_or_create_a_wallet_first: { cs: 'Nejprve vyberte nebo vytvořte peněženku.', en: 'Select or create a wallet first.' }
+    recipient_address_zion1: { cs: 'Adresa příjemce (zion1...)', en: 'Recipient Address (zion1...)' }
+    amount_zion: { cs: 'Částka (ZION)', en: 'Amount (ZION)' }
+    memo_optional: { cs: 'Memo (volitelné)', en: 'Memo (optional)' }
+    optional_message: { cs: 'Volitelná zpráva...', en: 'Optional message...' }
+    wallet_password: { cs: 'Heslo peněženky', en: 'Wallet Password' }
+    enter_wallet_password: { cs: 'Zadejte heslo peněženky', en: 'Enter wallet password' }
+    sending: { cs: 'Odesílání...', en: 'Sending...' }
+    export_wallet_secrets: { cs: 'Exportovat tajemství', en: 'Export Wallet Secrets' }
+    select_a_wallet_first: { cs: 'Nejprve vyberte peněženku.', en: 'Select a wallet first.' }
+    enter_password_to_decrypt: { cs: 'Zadejte heslo pro dešifrování', en: 'Enter password to decrypt' }
+    export_mnemonic: { cs: 'Exportovat Mnemonic', en: 'Export Mnemonic' }
+    export_private_key: { cs: 'Exportovat Private Key', en: 'Export Private Key' }
+    secret_never_share: { cs: 'Tajemství (nikdy nesdílejte!)', en: 'Secret (never share!)' }
+    learn_more_about_zion_wallet: { cs: 'Více o ZION Wallet', en: 'Learn more about ZION Wallet' }
+    download: { cs: 'Stáhnout', en: 'Download' }
+    documentation: { cs: 'Dokumentace', en: 'Documentation' }
+  },
+  bridgePage: {
+    lock_zion_on_l1: { cs: 'Zamkni ZION na L1', en: 'Lock ZION on L1' }
+    relay_detects_verifies: { cs: 'Relay ověří', en: 'Relay detects & verifies' }
+    receive_wzion_on_base: { cs: 'Přijmi wZION na Base', en: 'Receive wZION on Base' }
+    burn_wzion_on_base: { cs: 'Spal wZION na Base', en: 'Burn wZION on Base' }
+    relay_verifies_burn: { cs: 'Relay ověří burn', en: 'Relay verifies burn' }
+    receive_zion_on_l1: { cs: 'Přijmi ZION na L1', en: 'Receive ZION on L1' }
+    how_long_does_bridging_take: { cs: 'Jak dlouho bridge trvá?', en: 'How long does bridging take?' }
+    what_is_the_minimum_bridge_amount: { cs: 'Jaký je minimální množství?', en: 'What is the minimum bridge amount?' }
+    what_memo_format_is_required_for_l1_base: { cs: 'Jaký formát memo je potřeba?', en: 'What memo format is required for L1 → Base?' }
+    is_there_a_bridge_fee: { cs: 'Jaký je poplatek?', en: 'Is there a bridge fee?' }
+    what_happens_if_a_transaction_is_lost: { cs: 'Co když se transakce ztratí?', en: 'What happens if a transaction is lost?' }
+    is_the_bridge_safe: { cs: 'Je bridge bezpečný?', en: 'Is the bridge safe?' }
+    checking_status: { cs: 'Kontroluji stav…', en: 'Checking status…' }
+    refresh: { cs: 'Obnovit', en: 'Refresh' }
+    direction_a: { cs: 'Směr A', en: 'Direction A' }
+    step: { cs: 'Krok', en: 'Step' }
+    locks: { cs: 'Zámků', en: 'Locks' }
+    mints: { cs: 'Mintů', en: 'Mints' }
+    direction_b: { cs: 'Směr B', en: 'Direction B' }
+    burns: { cs: 'Burnů', en: 'Burns' }
+    unlocks: { cs: 'Unlocků', en: 'Unlocks' }
+    burn_wzion_directly: { cs: 'Spal wZION přímo tady', en: 'Burn wZION directly' }
+    have_wzion_on_base_connect_metamask_and_burn_: { cs: 'Máš wZION na Base? Připoj MetaMask a spal přímo z této stránky.', en: 'Have wZION on Base? Connect MetaMask and burn directly from this page.' }
+    what_happens_after_you_burn: { cs: 'Co se stane po spalení', en: 'What happens after you burn' }
+    event_emitted_on_base: { cs: 'event emitován na Base', en: 'event emitted on Base' }
+    evm_watcher_waits: { cs: 'EVM watcher čeká', en: 'EVM watcher waits' }
+    blocks: { cs: 'bloků', en: 'blocks' }
+    relay_submits_unlock_to_zion_l1: { cs: 'Relay odešle unlock na ZION L1', en: 'Relay submits unlock to ZION L1' }
+    l1_releases_zion_to_your_address: { cs: 'L1 uvolní ZION na tvou adresu', en: 'L1 releases ZION to your address' }
+    how_to_initiate_a_bridge_transfer: { cs: 'Jak zahájit bridge transfer', en: 'How to initiate a bridge transfer' }
+    detailed_instructions_for_both_directions_inc: { cs: 'Podrobné instrukce pro oba směry — včetně formátu L1 memo.', en: 'Detailed instructions for both directions — including the required L1 memo format.' }
+    add_your_evm_address_to_the_memo_builder_belo: { cs: 'Zadej svou EVM adresu do memo builderu', en: 'Add your EVM address to the memo builder below' }
+    send_zion_to_the_bridge_address: { cs: 'Pošli ZION na bridge adresu', en: 'Send ZION to the bridge address' }
+    include_the_generated_memo_minimum: { cs: 'Vlož vygenerované memo. Minimum:', en: 'Include the generated memo. Minimum:' }
+    wait_10_min_60_l1_blocks: { cs: 'Počkej ~10 min (60 L1 bloků)', en: 'Wait ~10 min (60 L1 blocks)' }
+    relay_detects_lock_waits_for_finality_mints_w: { cs: 'Relay detekuje lock, počká na finalitu, mintne wZION.', en: 'Relay detects lock, waits for finality, mints wZION.' }
+    memo_format: { cs: 'Formát memo', en: 'Memo format' }
+    use_the_burn_widget_above_or_basescan: { cs: 'Použij Burn widget výše nebo BaseScan', en: 'Use the Burn widget above or BaseScan' }
+    call: { cs: 'Zavolej', en: 'Call' }
+    your_l1_address: { cs: 'tvá L1 adresa', en: 'your L1 address' }
+    wait_2_min_64_evm_blocks: { cs: 'Počkej ~2 min (64 EVM bloků)', en: 'Wait ~2 min (64 EVM blocks)' }
+    example_500_wzion: { cs: 'Příklad: 500 wZION', en: 'Example: 500 wZION' }
+    decimals: { cs: 'decimálů', en: 'decimals' }
+    copied: { cs: 'Zkopírováno', en: 'Copied' }
+    relay_statistics: { cs: 'Statistiky relay', en: 'Relay statistics' }
+    efficiency: { cs: 'Efektivita', en: 'Efficiency' }
+    errors: { cs: 'Chyby', en: 'Errors' }
+    unlocks_1: { cs: 'Unlocky', en: 'Unlocks' }
+    architecture: { cs: 'Architektura', en: 'Architecture' }
+    native_chain: { cs: 'Nativní chain', en: 'Native chain' }
+    polls_l1_api_parses_bridge_memos_validates_60: { cs: 'Polluje L1 API, parsuje BRIDGE: memos, validuje 60-block finalitu.', en: 'Polls L1 API, parses BRIDGE: memos, validates 60-block finality.' }
+    scans_burnforbridge_events_on_base_in_49k_blo: { cs: 'Skenuje BurnForBridge eventy na Base v 49k-blokových chunkách.', en: 'Scans BurnForBridge events on Base in 49k-block chunks.' }
+    submits_evm_mint_transactions_and_l1_unlock_c: { cs: 'Odesílá EVM mint TX a L1 unlock cally.', en: 'Submits EVM mint transactions and L1 unlock calls.' }
+    insert_or_ignore_replay_safe_duplicates_skipp: { cs: 'INSERT OR IGNORE — replay-safe, duplikáty přeskočeny.', en: 'INSERT OR IGNORE — replay-safe, duplicates skipped.' }
+    contract_addresses: { cs: 'Adresy kontraktů', en: 'Contract addresses' }
+    copied_1: { cs: 'Zkopírováno!', en: 'Copied!' }
+    security_model: { cs: 'Bezpečnostní model', en: 'Security model' }
+    60_block_l1_finality: { cs: '60-block L1 finalita', en: '60-block L1 finality' }
+    prevents_re_org_exploits: { cs: 'Prevence re-org exploitů.', en: 'Prevents re-org exploits.' }
+    2_guardian_confirmations_for_treasury_operati: { cs: '≥2 Guardian potvrzení pro treasury operace.', en: '≥2 Guardian confirmations for treasury operations.' }
+    duplicate_tx_cannot_be_replayed: { cs: 'Duplikátní TX nelze replayovat.', en: 'Duplicate TX cannot be replayed.' }
+    faq: { cs: 'Časté dotazy', en: 'FAQ' }
+    readiness_checklist: { cs: 'Readiness kontrola', en: 'Readiness checklist' }
+    wzion_contract: { cs: 'wZION kontrakt', en: 'wZION contract' }
+    zionbridge_contract: { cs: 'ZIONBridge kontrakt', en: 'ZIONBridge contract' }
+    basescan_verified: { cs: 'BaseScan verifikace', en: 'BaseScan verified' }
+    3_5_guardian_multisig: { cs: '3/5 Guardian multisig', en: '3/5 Guardian multisig' }
+    relay_metrics: { cs: 'Relay metrics', en: 'Relay metrics' }
+    burn_widget_live: { cs: 'Burn widget (live)', en: 'Burn widget (live)' }
+    l1_base_mint: { cs: 'L1 → Base (mint)', en: 'L1 → Base (mint)' }
+    base_l1_unlock: { cs: 'Base → L1 (unlock)', en: 'Base → L1 (unlock)' }
+    resources: { cs: 'Zdroje', en: 'Resources' }
+    architecture_docs: { cs: 'Dokumentace', en: 'Architecture docs' }
+    relay_design_guardian_flow_security_model: { cs: 'Relay design, Guardian flow, bezpečnostní model.', en: 'Relay design, Guardian flow, security model.' }
+    wzion_contract_source_on_base_mainnet: { cs: 'Kód wZION kontraktu na Base Mainnet.', en: 'wZION contract source on Base Mainnet.' }
+    swap_wzion_eth_portfolio_pool_price: { cs: 'Swap wZION/ETH, portfolio, pool cena.', en: 'Swap wZION/ETH, portfolio, pool price.' }
+  },
+  daoPage: {
+    phase_1_stewardship_2025: { cs: 'Fáze 1 · Stewardship (2025)', en: 'Phase 1 · Stewardship (2025)' }
+    phase_2_hybrid_dao_2026: { cs: 'Fáze 2 · Hybridní DAO (2026)', en: 'Phase 2 · Hybrid DAO (2026)' }
+    phase_3_full_dao_2026: { cs: 'Fáze 3 · Plné DAO (2026+)', en: 'Phase 3 · Full DAO (2026+)' }
+    governance_docs: { cs: 'Governance dokumentace', en: 'Governance docs' }
+    proposal_flow_voting_power_emergency_clauses: { cs: 'Proposal flow, hlasovací síla, nouzové klauzule.', en: 'Proposal flow, voting power, emergency clauses.' }
+    treasury_dashboard: { cs: 'Treasury dashboard', en: 'Treasury dashboard' }
+    real_time_balances_allocation_overview_tithe: { cs: 'Real-time zůstatky, přehled alokací, tithe.', en: 'Real-time balances, allocation overview, tithe.' }
+    defi_hub: { cs: 'DeFi Hub', en: 'DeFi Hub' }
+    swap_bridge_and_portfolio_on_base_mainnet: { cs: 'Swap, bridge a portfolio na Base Mainnet.', en: 'Swap, bridge and portfolio on Base Mainnet.' }
+    governance: { cs: 'Správa', en: 'Governance' }
+    treasury_proposals_voting: { cs: 'Treasury · návrhy · hlasování', en: 'Treasury · proposals · voting' }
+    loading: { cs: 'Načítám…', en: 'Loading…' }
+    refresh_data: { cs: 'Obnovit data', en: 'Refresh Data' }
+    governance_docs_1: { cs: 'Dokumentace governance', en: 'Governance docs' }
+    dao_daemon_phase_2_hybrid_dao: { cs: 'DAO Daemon — Fáze 2 (Hybridní DAO)', en: 'DAO Daemon — Phase 2 (Hybrid DAO)' }
+    treasury_overview: { cs: 'Přehled treasury', en: 'Treasury overview' }
+    available: { cs: 'K dispozici', en: 'Available' }
+    pending_ops: { cs: 'Čekající operace', en: 'Pending Ops' }
+    daily_limit: { cs: 'Denní limit', en: 'Daily Limit' }
+    governance_phases: { cs: 'Fáze governance', en: 'Governance phases' }
+    road_to_full_decentralization: { cs: 'Cesta k plné decentralizaci', en: 'Road to full decentralization' }
+    governance_proposals: { cs: 'Governance návrhy', en: 'Governance proposals' }
+    vote_on_protocol_decisions: { cs: 'Hlasuj o rozhodnutích', en: 'Vote on protocol decisions' }
+    create_proposal: { cs: 'Vytvořit návrh', en: 'Create Proposal' }
+    loading_proposals: { cs: 'Načítám návrhy…', en: 'Loading proposals…' }
+    no_proposals_yet: { cs: 'Zatím žádné návrhy', en: 'No proposals yet' }
+    be_the_first_to_create_a_governance_proposal: { cs: 'Buď první, kdo vytvoří governance návrh!', en: 'Be the first to create a governance proposal!' }
+    humanitarian_tithe: { cs: 'Humanitární desátek', en: 'Humanitarian Tithe' }
+    total_projects: { cs: 'Celkem projektů', en: 'Total Projects' }
+    active_funding: { cs: 'Aktivní financování', en: 'Active Funding' }
+    beneficiaries: { cs: 'Příjemci', en: 'Beneficiaries' }
+    funded_amount: { cs: 'Financováno', en: 'Funded Amount' }
+    multi_layer_governance: { cs: 'Vícevrstvá správa', en: 'Multi-Layer Governance' }
+    co_admin_sacred_trinity: { cs: 'Co-Admin & Posvátná trojice', en: 'Co-Admin & Sacred Trinity' }
+    co_admin_system: { cs: 'Co-Admin systém', en: 'Co-Admin System' }
+    co_admin: { cs: 'Co-Admin', en: 'Co-Admin' }
+    dao_authority: { cs: 'DAO autorita', en: 'DAO authority' }
+    sacred_trinity: { cs: 'Posvátná trojice', en: 'Sacred Trinity' }
+    steward_consensus_l1: { cs: 'Správce · Konsenzus · L1', en: 'Steward · Consensus · L1' }
+    chain_dharma_fair_mining_protocol_integrity: { cs: 'Dharma chainu, fair mining, protokolová integrita', en: 'Chain dharma, fair mining, protocol integrity' }
+    heart_community_l5: { cs: 'Srdce · Komunita · L5', en: 'Heart · Community · L5' }
+    humanitarian_fund_physical_communities_care: { cs: 'Humanitární fond, fyzické komunity, péče', en: 'Humanitarian fund, physical communities, care' }
+    guardian_bridge_l2: { cs: 'Ochránce · Bridge · L2', en: 'Guardian · Bridge · L2' }
+    bridging_worlds_protection_faithful_service: { cs: 'Přemostění světů, ochrana, věrná služba', en: 'Bridging worlds, protection, faithful service' }
+    consent_engine: { cs: 'Consent Engine', en: 'Consent Engine' }
+    propose: { cs: 'Návrh', en: 'Propose' }
+    any_co_admin: { cs: 'Jakýkoliv Co-Admin', en: 'Any Co-Admin' }
+    consent: { cs: 'Souhlas', en: 'Consent' }
+    affected_layers: { cs: 'Dotčené vrstvy', en: 'Affected layers' }
+    veto_window: { cs: 'Veto okno', en: 'Veto window' }
+    execute: { cs: 'Provedení', en: 'Execute' }
+    after_consent: { cs: 'Po souhlasu', en: 'After consent' }
+    dao_circles_governance_topology: { cs: 'DAO kruhy & topologie', en: 'DAO Circles & Governance Topology' }
+    live_topology: { cs: 'Živá topologie', en: 'Live topology' }
+    crown: { cs: 'Koruna', en: 'Crown' }
+    guardians_council: { cs: 'Rada guardianů', en: 'Guardians Council' }
+    top_dao_governance_layer_treasury_oversight_s: { cs: 'Vrchní vrstva správy DAO — dohled nad treasury, bezpečnostní revize a dlouhodobá vize.', en: 'Top DAO governance layer — treasury oversight, security reviews, and long-term vision.' }
+    heart: { cs: 'Srdce', en: 'Heart' }
+    builders_circle: { cs: 'Kruh stavitelů', en: 'Builders Circle' }
+    ecosystem_heart_protocol_development_core_pro: { cs: 'Srdce ekosystému — vývoj protokolu, core návrhy a koordinace technických misí.', en: 'Ecosystem heart — protocol development, core proposals, and technical mission coordination.' }
+    roots: { cs: 'Kořeny', en: 'Roots' }
+    community_guild: { cs: 'Komunitní guilda', en: 'Community Guild' }
+    dao_roots_open_community_contribution_streams: { cs: 'Kořeny DAO — otevřená komunita, contribution streamy, komunitní hlasování a růst sítě.', en: 'DAO roots — open community, contribution streams, community votes, and network growth.' }
+    real_time_dao_tracking: { cs: 'Real-time DAO tracking', en: 'Real-time DAO tracking' }
+    helpful_links: { cs: 'Užitečné odkazy', en: 'Helpful links' }
+    open: { cs: 'Otevřít', en: 'Open' }
+  },
+  defiPage: {
+    switch_to_base: { cs: 'Přepnout na Base', en: 'Switch to Base' }
+    connect_wallet: { cs: 'Připojit peněženku', en: 'Connect Wallet' }
+    price: { cs: 'Cena', en: 'Price' }
+    how_bridge_works: { cs: 'Jak Bridge funguje', en: 'How Bridge Works' }
+    lock_zion_on_l1_relay_mints_wzion_on_base_1_1: { cs: 'Zamkni ZION na L1 → relay mintne wZION na Base (1:1 peg)', en: 'Lock ZION on L1 → relay mints wZION on Base (1:1 peg)' }
+    burn_wzion_on_base_relay_unlocks_zion_on_l1_w: { cs: 'Spal wZION na Base → relay odemkne ZION na L1 (do ~5 min)', en: 'Burn wZION on Base → relay unlocks ZION on L1 (within ~5 min)' }
+    base_mainnet_contracts: { cs: 'Kontrakty na Base Mainnet', en: 'Base Mainnet Contracts' }
+    contract: { cs: 'Kontrakt', en: 'Contract' }
+    address: { cs: 'Adresa', en: 'Address' }
+    trade_wzion: { cs: 'Obchoduj wZION', en: 'Trade wZION' }
+    open_uniswap: { cs: 'Otevřít Uniswap', en: 'Open Uniswap' }
+  },
+  explorerPage: {
+    block_archive: { cs: 'Archiv bloku', en: 'Block Archive' }
+    complete_ledger_of_all_validated_blocks: { cs: 'Kompletni ledger vsech validovanych bloku', en: 'Complete ledger of all validated blocks' }
+    transaction_feed: { cs: 'Tok transakci', en: 'Transaction Feed' }
+    real_time_flow_of_funds_and_fees: { cs: 'Tok fondu a fee v realnem case', en: 'Real-time flow of funds and fees' }
+    mempool: { cs: 'Mempool', en: 'Mempool' }
+    pending_transactions_fee_histogram_double_spe: { cs: 'Cekajici transakce, fee histogram, double-spend', en: 'Pending transactions, fee histogram, double-spend' }
+    bridge_tracker: { cs: 'Bridge Tracker', en: 'Bridge Tracker' }
+    live_l1_base_bridge_status_lock_mint_burn_unl: { cs: 'Live stav L1↔Base mostu, lock/mint/burn/unlock', en: 'Live L1↔Base bridge status, lock/mint/burn/unlock' }
+    network_peers: { cs: 'Sitovi peeri', en: 'Network Peers' }
+    global_node_connectivity_map: { cs: 'Globalni mapa konektivity nodu', en: 'Global node connectivity map' }
+    supply_dashboard: { cs: 'Supply Dashboard', en: 'Supply Dashboard' }
+    circulating_mined_premine_decade_decay: { cs: 'Circulating, vytezeno, premine, Decade Decay', en: 'Circulating, mined, premine, Decade Decay' }
+    charts_analytics: { cs: 'Grafy a analytika', en: 'Charts & Analytics' }
+    historical_difficulty_hashrate_emission: { cs: 'Historicka obtiznost, hashrate a emise', en: 'Historical difficulty, hashrate & emission' }
+    network_stats: { cs: 'Network Stats', en: 'Network Stats' }
+    hashrate_difficulty_block_time_tx_trends: { cs: 'Hashrate, obtiznost, cas bloku, TX trendy', en: 'Hashrate, difficulty, block time, TX trends' }
+    search: { cs: 'Hledat', en: 'Search' }
+    unified_search_for_blocks_transactions_and_ad: { cs: 'Jednotne hledani bloku, tx a adres', en: 'Unified search for blocks, transactions and addresses' }
+    explorer_api: { cs: 'API explorera', en: 'Explorer API' }
+    direct_json_endpoints_for_integration_and_mon: { cs: 'Priame JSON endpointy pro integraci a monitoring', en: 'Direct JSON endpoints for integration and monitoring' }
+    explorer_pro: { cs: 'Pruzkumnik Pro', en: 'Explorer Pro' }
+    real_time: { cs: 'Zive', en: 'Real-Time' }
+    blockchain_explorer: { cs: 'Průzkumník blockchainu', en: 'Blockchain Explorer' }
+    live_mainnet_data: { cs: 'Zive mainnet data', en: 'Live Mainnet Data' }
+    auto_refresh_15s: { cs: 'Auto-refresh 15 s', en: 'Auto-Refresh 15s' }
+    telemetry: { cs: 'Telemetrie', en: 'Telemetry' }
+    network_statistics: { cs: 'Sitove statistiky', en: 'Network Statistics' }
+    real_time_metrics_from_the_zion_blockchain_da: { cs: 'Metriky v realnem case z blockchain daemonu ZION.', en: 'Real-time metrics from the ZION blockchain daemon.' }
+    ledger: { cs: 'Ledger', en: 'Ledger' }
+    blocks_transactions: { cs: 'Bloky a transakce', en: 'Blocks & Transactions' }
+    latest_confirmed_blocks_and_transaction_feed_: { cs: 'Nejnovejsi potvrzene bloky a tok transakci ze chainu ZION.', en: 'Latest confirmed blocks and transaction feed from the ZION chain.' }
+    quick_navigation: { cs: 'Rychla navigace', en: 'Quick Navigation' }
+    jump_to_section: { cs: 'Skok do sekce', en: 'Jump to section' }
+    analytics: { cs: 'Analytika', en: 'Analytics' }
+    network_charts: { cs: 'Sitove grafy', en: 'Network Charts' }
+    historical_difficulty_hashrate_emission_and_b: { cs: 'Historicke trendy obtiznosti, hashrate, emise a velikosti bloku.', en: 'Historical difficulty, hashrate, emission, and block size trends.' }
+    supply: { cs: 'Zasoba', en: 'Supply' }
+    emission_monitor: { cs: 'Monitoring emise', en: 'Emission Monitor' }
+    track_mining_progress_decade_decay_5_400_724_: { cs: 'Sledujte postup tezby - Decade Decay: 5,400 -> 724 ZION/blok, 100+ let + tail ∞.', en: 'Track mining progress - Decade Decay: 5,400 -> 724 ZION/block, 100+ years + tail ∞.' }
+    p2p_network: { cs: 'P2P sit', en: 'P2P Network' }
+    current_public_host_connectivity_with_archive: { cs: 'Konektivita aktualniho verejneho hostu s archivovanou historii multi-host validace.', en: 'Current public host connectivity with archived multi-host validation history.' }
+    distribution: { cs: 'Distribuce', en: 'Distribution' }
+    rich_list: { cs: 'Rich list', en: 'Rich List' }
+    top_zion_holders_by_balance_premine_allocatio: { cs: 'Top drzitele ZION podle zustatku - premine alokace, tezebni odmeny a ekonomika site.', en: 'Top ZION holders by balance - premine allocations, mining rewards, and network economics.' }
+    real_time_blockchain_data_from_native_rust_no: { cs: 'Blockchain data v realnem case z nativnich Rust nodu. Kazdy blok, transakce a adresa - plne transparentni, plne otevrene.', en: 'Real-time blockchain data from native Rust nodes. Every block, transaction, and address - fully transparent, fully open.' }
+    network_status: { cs: 'Stav site', en: 'Network Status' }
+    roadmap: { cs: 'Roadmapa', en: 'Roadmap' }
+  },
+  networkPage: {
+    public_nodes: { cs: 'Veřejné nody', en: 'Public Nodes' }
+    p2p_mesh: { cs: 'P2P mesh', en: 'P2P Mesh' }
+    core_edge: { cs: 'Core + Edge', en: 'Core + Edge' }
+    vpn_tunnel_core_edge: { cs: 'VPN tunel — Core ↔ Edge', en: 'VPN tunnel — Core ↔ Edge' }
+    telemetry: { cs: 'Telemetrie', en: 'Telemetry' }
+    auto_refresh_interval: { cs: 'Interval auto-obnovení', en: 'Auto-refresh interval' }
+    topology: { cs: 'Topologie', en: 'Topology' }
+    edge_relay_core_master_pplns_window_on_core: { cs: 'Edge relay + Core master (PPLNS okno na Core)', en: 'Edge relay + Core master (PPLNS window on Core)' }
+    network: { cs: 'Síť', en: 'Network' }
+    edge_relay_hetzner_vps: { cs: 'Edge relay (Hetzner VPS)', en: 'Edge Relay (Hetzner VPS)' }
+    active: { cs: 'Aktivní', en: 'Active' }
+    core_private_master: { cs: 'Core (privátní master)', en: 'Core (private master)' }
+    private_vpn: { cs: 'Privátní VPN', en: 'Private VPN' }
+    vpn_tunnel: { cs: 'VPN tunel', en: 'VPN tunnel' }
+    public_stratum: { cs: 'Verejny stratum', en: 'Public Stratum' }
+    current_primary_mining_ingress_on_zion2: { cs: 'Aktualni primarni tezebni vstup na Zion2', en: 'Current primary mining ingress on Zion2' }
+    native_rust_json_rpc_for_explorers_and_toolin: { cs: 'Nativni Rust JSON-RPC pro explorer a tooling', en: 'Native Rust JSON-RPC for explorers and tooling' }
+    public_edge_relay_core_sync_via_private_vpn: { cs: 'Veřejný Edge relay — Core sync přes privátní VPN', en: 'Public Edge relay — Core sync via private VPN' }
+    release_context: { cs: 'Kontext releasu', en: 'Release Context' }
+    mining: { cs: 'Tezba', en: 'Mining' }
+    connect_any_cosmic_harmony_cpu_miner_to_the_c: { cs: 'Pripojte jakykoli Cosmic Harmony / CPU miner k aktualnimu verejnemu poolu na Zion2.', en: 'Connect any Cosmic Harmony / CPU miner to the current public pool on Zion2.' }
+    current_primary: { cs: '(aktualni primarni)', en: '(current primary)' }
+    public_runtime_endpoint: { cs: 'verejny runtime endpoint', en: 'public runtime endpoint' }
+    docs_2_9_8_march_status_reports: { cs: 'docs/2.9.8 + breznovy status report', en: 'docs/2.9.8 + March status reports' }
+    public_peer_edge: { cs: 'Veřejný peer (Edge)', en: 'Public peer (Edge)' }
+    core_peer_vpn_private_peer_non_public: { cs: 'Core peer (VPN): Privátní peer (neveřejný)', en: 'Core peer (VPN): Private peer (non-public)' }
+    vpn_tunnel_wireguard_core_edge: { cs: 'VPN tunel: WireGuard (Core ↔ Edge)', en: 'VPN tunnel: WireGuard (Core ↔ Edge)' }
+    native_rust_p2p_edge_relay_public: { cs: 'Nativní Rust P2P — Edge relay veřejný', en: 'Native Rust P2P — Edge relay public' }
+    core_edge_topology_with_private_vpn_tunnel: { cs: 'Core + Edge topologie s privátním VPN tunelem', en: 'Core + Edge topology with private VPN tunnel' }
+    edge_stratum_endpoint_77_42_71_94_8444_sharer: { cs: 'Edge stratum endpoint: 77.42.71.94:8444 (ShareRelay)', en: 'Edge stratum endpoint: 77.42.71.94:8444 (ShareRelay)' }
+    json_rpc_endpoints_live_port_8443: { cs: 'JSON-RPC endpointy live (port 8443)', en: 'JSON-RPC endpoints live (port 8443)' }
+    systemd_services_with_auto_restart_on_edge: { cs: 'systemd služby s auto-restartem na Edge', en: 'systemd services with auto-restart on Edge' }
+    lwma_daa_target_60s_block_time: { cs: 'LWMA DAA — cíl 60s block time', en: 'LWMA DAA — target 60s block time' }
+    sharerelay_protocol_edge_core_pplns_sync: { cs: 'ShareRelay protokol: Edge → Core PPLNS synchronizace', en: 'ShareRelay protocol: Edge → Core PPLNS sync' }
+    prometheus_grafana_monitoring: { cs: 'Monitoring Prometheus + Grafana', en: 'Prometheus + Grafana monitoring' }
+    ufw_firewall_on_edge_8333_8444_22_41641: { cs: 'UFW firewall na Edge (8333, 8444, 22, 41641)', en: 'UFW firewall on Edge (8333, 8444, 22, 41641)' }
+    en_us: { cs: 'cs-CZ', en: 'en-US' }
+    network_1: { cs: 'Sit', en: 'Network' }
+    live_status: { cs: 'Zivy stav', en: 'Live Status' }
+    p2p_network: { cs: 'P2P Sit', en: 'P2P Network' }
+    native_rust: { cs: 'Nativni Rust', en: 'Native Rust' }
+    1_public_host_2_internal_seeds: { cs: '1 verejny host · 2 interni seedy', en: '1 Public Host · 2 Internal Seeds' }
+    runtime_snapshot: { cs: 'Runtime prehled', en: 'Runtime Snapshot' }
+    public_network_surface: { cs: 'Verejny povrch site', en: 'Public Network Surface' }
+    the_current_live_footprint_distilled_to_the_e: { cs: 'Aktualni zivy footprint zredukovany na endpointy a role, ktere operatori potrebuji jako prvni.', en: 'The current live footprint distilled to the endpoints and roles operators actually need first.' }
+    health: { cs: 'Zdraví', en: 'Health' }
+    network_health_score: { cs: 'Skóre zdraví sítě', en: 'Network Health Score' }
+    aggregate_health_indicator_based_on_key_netwo: { cs: 'Agregátní indikátor stavu sítě na základě klíčových metrik.', en: 'Aggregate health indicator based on key network metrics.' }
+    node_online: { cs: 'Node online', en: 'Node Online' }
+    blocks_mining: { cs: 'Bloky se těží', en: 'Blocks Mining' }
+    active_miners: { cs: 'Aktivní mineři', en: 'Active Miners' }
+    normal_block_time: { cs: 'Normální block time', en: 'Normal Block Time' }
+    database_ok: { cs: 'Databáze OK', en: 'Database OK' }
+    pool_online: { cs: 'Pool online', en: 'Pool Online' }
+    of_100: { cs: 'ze 100', en: 'of 100' }
+    excellent: { cs: 'Výborný', en: 'Excellent' }
+    good: { cs: 'Dobrý', en: 'Good' }
+    fair: { cs: 'Průměrný', en: 'Fair' }
+    critical: { cs: 'Kritický', en: 'Critical' }
+    ok: { cs: 'OK', en: 'OK' }
+    fail: { cs: 'FAIL', en: 'FAIL' }
+    pts: { cs: 'bodů', en: 'pts' }
+    performance: { cs: 'Výkon', en: 'Performance' }
+    chain_performance: { cs: 'Výkon chainu', en: 'Chain Performance' }
+    live_sparklines_for_hashrate_difficulty_and_b: { cs: 'Živé grafy hashrate, obtížnosti a block time za poslední hodinu.', en: 'Live sparklines for hashrate, difficulty, and block time over the last hour.' }
+    network_hashrate: { cs: 'Hashrate sítě', en: 'Network Hashrate' }
+    difficulty: { cs: 'Obtížnost', en: 'Difficulty' }
+    avg_block_time: { cs: 'Průměrný block time', en: 'Avg Block Time' }
+    target: { cs: 'Cíl', en: 'Target' }
+    statistics: { cs: 'Statistika', en: 'Statistics' }
+    chain_statistics: { cs: 'Statistiky chainu', en: 'Chain Statistics' }
+    detailed_metrics_from_the_live_blockchain: { cs: 'Detailní metriky z živého blockchainu.', en: 'Detailed metrics from the live blockchain.' }
+    block_height: { cs: 'Výška bloku', en: 'Block Height' }
+    cumulative_diff: { cs: 'Kumulativní obtížnost', en: 'Cumulative Diff' }
+    circulating_supply: { cs: 'Oběžná zásoba', en: 'Circulating Supply' }
+    emission: { cs: 'Emise', en: 'Emission' }
+    total_tx: { cs: 'Celkem TX', en: 'Total TX' }
+    total_peers: { cs: 'Peery celkem', en: 'Total Peers' }
+    known_peers: { cs: 'Známé peery', en: 'Known Peers' }
+    block_size_limit: { cs: 'Limit bloku', en: 'Block Size Limit' }
+    median: { cs: 'Medián', en: 'Median' }
+    database: { cs: 'Databáze', en: 'Database' }
+    version: { cs: 'Verze', en: 'Version' }
+    alt_blocks: { cs: 'Alt bloky', en: 'Alt Blocks' }
+    pool_hashrate: { cs: 'Pool hashrate', en: 'Pool Hashrate' }
+    pool_blocks: { cs: 'Pool bloky', en: 'Pool Blocks' }
+    last_block: { cs: 'Poslední blok', en: 'Last Block' }
+    last_reward: { cs: 'Odměna', en: 'Last Reward' }
+    emission_progress: { cs: 'Průběh emise', en: 'Emission Progress' }
+    decade_decay_model_20_every_10_years_max_supp: { cs: 'Decade Decay model: -20 % každých 10 let. Max supply 144 miliard ZION.', en: 'Decade Decay model: -20% every 10 years. Max supply 144 billion ZION.' }
+    mined: { cs: 'Vytěženo', en: 'Mined' }
+    decade: { cs: 'Dekáda', en: 'Decade' }
+    now: { cs: 'Nyní', en: 'Now' }
+    block: { cs: 'blok', en: 'block' }
+    infrastructure: { cs: 'Infrastruktura', en: 'Infrastructure' }
+    current_runtime: { cs: 'Aktualni runtime', en: 'Current Runtime' }
+    current_public_runtime_is_a_single_primary_ho: { cs: 'Aktualni verejny runtime je jeden primarni host. Drivejsi multi-host validace zustava zdokumentovana jako archivovana historie validace.', en: 'Current public runtime is a single primary host. Earlier multi-host validation remains documented as archived validation history.' }
+    stratum_port_3333: { cs: 'Stratum: port 3333', en: 'Stratum: port 3333' }
+    live_telemetry: { cs: 'Ziva telemetrie', en: 'Live Telemetry' }
+    node_status: { cs: 'Stav nodu', en: 'Node Status' }
+    real_time_health_block_height_hashrate_and_sy: { cs: 'Zdravi, vyska chainu, hashrate a sync stav v realnem case z aktualniho runtime na primarnim hostu.', en: 'Real-time health, block height, hashrate, and sync status from the current primary-host runtime.' }
+    geography: { cs: 'Geografie', en: 'Geography' }
+    network_map_pool_finder: { cs: 'Mapa site a vyhledavac poolu', en: 'Network Map & Pool Finder' }
+    visualize_the_current_topology_and_compare_it: { cs: 'Vizualizujte aktualni topologii a porovnejte ji s archivovanym multi-host rolloutem zachovanym v release dokumentaci.', en: 'Visualize the current topology and compare it with the archived multi-host rollout preserved in release documentation.' }
+    connect: { cs: 'Pripojeni', en: 'Connect' }
+    connection_guides: { cs: 'Pripojovaci navody', en: 'Connection Guides' }
+    everything_you_need_to_connect_a_miner_query_: { cs: 'Vse, co potrebujete k pripojeni minera, dotazovani RPC API nebo synchronizaci nodu.', en: 'Everything you need to connect a miner, query the RPC API, or sync a node.' }
+    status: { cs: 'Stav', en: 'Status' }
+    network_readiness: { cs: 'Pripravenost site', en: 'Network Readiness' }
+    completed: { cs: 'dokonceno', en: 'completed' }
+    frequently_asked_questions: { cs: 'Často kladené dotazy', en: 'Frequently Asked Questions' }
+    everything_about_the_zion_network_in_one_plac: { cs: 'Vše o síti ZION na jednom místě.', en: 'Everything about the ZION network in one place.' }
+    join_the_zion_network: { cs: 'Pripojte se k siti ZION', en: 'Join the ZION Network' }
+    primary_host_live: { cs: 'Primarni host online', en: 'Primary host live' }
+    internal_seeds: { cs: 'Interni seedy', en: 'Internal seeds' }
+    docker_native: { cs: 'Docker nativne', en: 'Docker native' }
+    archived_multi_host_history: { cs: 'Archivovana multi-host historie', en: 'Archived multi-host history' }
+    explorer: { cs: 'Explorer', en: 'Explorer' }
+    roadmap: { cs: 'Roadmapa', en: 'Roadmap' }
+    what_consensus_does_zion_use: { cs: 'Jaký konsenzus ZION používá?', en: 'What consensus does ZION use?' }
+    cosmic_harmony_proof_of_work_a_custom_crypton: { cs: 'Cosmic Harmony Proof-of-Work – vlastní CryptoNight varianta optimalizovaná pro CPU/GPU mining s 60s block time a Decade Decay emisí.', en: 'Cosmic Harmony Proof-of-Work – a custom CryptoNight variant optimized for CPU/GPU mining with 60s block time and Decade Decay emission.' }
+    what_is_the_target_block_time: { cs: 'Jaký je cílový block time?', en: 'What is the target block time?' }
+    60_seconds_difficulty_adjusts_dynamically_eve: { cs: '60 sekund. Obtížnost se dynamicky přizpůsobuje každý blok, aby udržela stabilní tempo.', en: '60 seconds. Difficulty adjusts dynamically every block to maintain a stable pace.' }
+    how_many_zion_are_mined_per_block: { cs: 'Kolik ZION se vytěží za blok?', en: 'How many ZION are mined per block?' }
+    what_is_the_maximum_supply: { cs: 'Jaká je maximální zásoba?', en: 'What is the maximum supply?' }
+    how_to_connect_as_a_miner: { cs: 'Jak se připojit jako miner?', en: 'How to connect as a miner?' }
+    download_xmrig_or_the_desktop_agent_and_use_s: { cs: 'Stáhněte si XMRig nebo Desktop Agent a použijte stratum+tcp://77.42.71.94:8444 jako pool adresu. Detaily najdete v Connection Guides výše.', en: 'Download XMRig or the Desktop Agent and use stratum+tcp://77.42.71.94:8444 as the pool address. See the Connection Guides section above for details.' }
+    how_to_run_your_own_full_node: { cs: 'Jak spustit vlastní full node?', en: 'How to run your own full node?' }
+    clone_the_repo_cargo_build_release_from_l1_co: { cs: 'Klonujte repo, spusťte cargo build --release v L1/core a pak ./target/release/ziond --p2p-bind-ip 0.0.0.0 --add-exclusive-node 77.42.71.94:21000. Docker compose je k dispozici v docker/docker-compose.mainnet.yml.', en: 'Clone the repo, cargo build --release from L1/core and then ./target/release/ziond --p2p-bind-ip 0.0.0.0 --add-exclusive-node 77.42.71.94:21000. Docker compose is available in docker/docker-compose.mainnet.yml.' }
+    what_pool_fee_does_zion_charge: { cs: 'Jaký pool fee si ZION účtuje?', en: 'What pool fee does ZION charge?' }
+    89_goes_to_the_miner_5_to_the_humanitarian_fu: { cs: '89 % putuje minerovi, 5 % do humanitarian fondu, 5 % do fondu Issobella a 1 % pool provozní poplatek.', en: '89% goes to the miner, 5% to the humanitarian fund, 5% to the Issobella fund, and 1% pool operational fee.' }
+    is_the_network_publicly_launched: { cs: 'Je síť veřejně spuštěna?', en: 'Is the network publicly launched?' }
+    v3_mainnet_is_in_preparation_target_launch_31: { cs: 'V3 Mainnet je v přípravě — target launch 31. prosince 2026 (Silvestr). Core + Edge topology je v testování, mining test aktivní, bridge v přípravě na Base Mainnet.', en: 'V3 Mainnet is in preparation — target launch 31 December 2026 (New Year\' }
+  },
+  l3Hiran: {
+    deployment: { cs: 'Deployment', en: 'Deployment' }
+    monitoring: { cs: 'Monitoring', en: 'Monitoring' }
+    rag_pipeline: { cs: 'RAG Pipeline', en: 'RAG Pipeline' }
+    fine_tuning: { cs: 'Fine-tuning', en: 'Fine-tuning' }
+    stage_1_foundation: { cs: 'Stage 1: Foundation', en: 'Stage 1: Foundation' }
+    stage_2_zion_core: { cs: 'Stage 2: Zion Core', en: 'Stage 2: Zion Core' }
+    stage_3_cross_domain: { cs: 'Stage 3: Cross-domain', en: 'Stage 3: Cross-domain' }
+    stage_4_rag_synthesis: { cs: 'Stage 4: RAG Synthesis', en: 'Stage 4: RAG Synthesis' }
+    33_knowledge_docs: { cs: '33 Knowledge Docs', en: '33 Knowledge Docs' }
+    religion_history_science_philosophy_art_medic: { cs: 'Religion, history, science, philosophy, art, medicine, literature, mythology, languages.', en: 'Religion, history, science, philosophy, art, medicine, literature, mythology, languages.' }
+    vector_db_with_all_minilm_l6_v2_embeddings_mu: { cs: 'Vector DB s all-MiniLM-L6-v2 embeddings. Multi-collection cosine-similarity retrieval.', en: 'Vector DB with all-MiniLM-L6-v2 embeddings. Multi-collection cosine-similarity retrieval.' }
+    query_router: { cs: 'Query Router', en: 'Query Router' }
+    classifies_queries_zion_only_knowledge_rag_hy: { cs: 'Klasifikuje dotazy: zion_only, knowledge_rag, hybrid. Dynamický routing.', en: 'Classifies queries: zion_only, knowledge_rag, hybrid. Dynamic routing.' }
+    hybrid_inference: { cs: 'Hybrid Inference', en: 'Hybrid Inference' }
+    combines_fine_tuned_model_retrieved_context_i: { cs: 'Kombinace fine-tuned modelu + retrieved context v jednom inference kroku.', en: 'Combines fine-tuned model + retrieved context in a single inference step.' }
+    ai_layer_of_the_zion_ecosystem: { cs: 'AI vrstva ZION ekosystému', en: 'AI layer of the ZION ecosystem' }
+    hiran_v2_2_l3: { cs: 'Hiran v2.2 — L3', en: 'Hiran v2.2 — L3' }
+    models: { cs: 'Modely', en: 'Models' }
+    hiran_model_cards: { cs: 'Hiran Model Cards', en: 'Hiran Model Cards' }
+    method: { cs: 'Metoda', en: 'Method' }
+    size: { cs: 'Velikost', en: 'Size' }
+    speed: { cs: 'Rychlost', en: 'Speed' }
+    hardware: { cs: 'Hardware', en: 'Hardware' }
+    dataset: { cs: 'Dataset', en: 'Dataset' }
+    training: { cs: 'Trénink', en: 'Training' }
+    training_phases_v2_2: { cs: 'Tréninkové fáze v2.2', en: 'Training Phases v2.2' }
+    done: { cs: 'Hotovo', en: 'Done' }
+    architecture: { cs: 'Architektura', en: 'Architecture' }
+    hybrid_rag_v2_3: { cs: 'Hybrid RAG — v2.3', en: 'Hybrid RAG — v2.3' }
+    because_general_knowledge_is_too_large_for_32: { cs: 'Protože obecné znalosti jsou příliš rozsáhlé pro 32B parametrů, v2.3 používá RAG vedle FT.', en: 'Because general knowledge is too large for 32B parameters, v2.3 uses RAG alongside FT.' }
+    live_chat: { cs: 'Živý chat', en: 'Live Chat' }
+    ask_hiranyagarbha: { cs: 'Zeptej se Hiranyagarbhy', en: 'Ask Hiranyagarbha' }
+    marketplace: { cs: 'Marketplace', en: 'Marketplace' }
+    ai_marketplace: { cs: 'AI Marketplace', en: 'AI Marketplace' }
+    planned: { cs: 'Plánováno', en: 'Planned' }
+    operations: { cs: 'Operace', en: 'Operations' }
+    orchestration_deployment: { cs: 'Orchestrace & Deployment', en: 'Orchestration & Deployment' }
+    learn_more_about_l3_and_the_ecosystem: { cs: 'Více o L3 a ekosystému', en: 'Learn more about L3 and the ecosystem' }
+  },
+  l4Oasis: {
+    ue5_metaverse: { cs: 'UE5 Metaverse', en: 'UE5 Metaverse' }
+    xp_economy: { cs: 'XP Ekonomie', en: 'XP Economy' }
+    on_chain_inventory: { cs: 'On-Chain Inventory', en: 'On-Chain Inventory' }
+    guild_dao: { cs: 'Guild DAO', en: 'Guild DAO' }
+    core_avatars: { cs: 'Základní avataři', en: 'Core Avatars' }
+    51_unique_core_avatars_with_full_animation_an: { cs: '51 unikátních základních avatarů s plnou animací a skillem.', en: '51 unique core avatars with full animation and skill tree.' }
+    extended_avatars: { cs: 'Rozšíření avataři', en: 'Extended Avatars' }
+    151_extended_avatars_with_unique_traits_and_b: { cs: '151 rozšířených avatarů s unikátními vlastnostmi a příběhem.', en: '151 extended avatars with unique traits and backstory.' }
+    quest_engine: { cs: 'Quest systém', en: 'Quest Engine' }
+    5_quests_per_avatar_pve_exploration_crafting_: { cs: '5 questů na každého avatara — PvE, exploration, crafting, social.', en: '5 quests per avatar — PvE, exploration, crafting, social.' }
+    total_prize_pool: { cs: 'Celkový prize pool', en: 'Total Prize Pool' }
+    clues: { cs: 'Stop / Clues', en: 'Clues' }
+    estimated_start: { cs: 'Odhadovaný start', en: 'Estimated Start' }
+    type: { cs: 'Typ', en: 'Type' }
+    global_treasure_hunt: { cs: 'Celosvětová honba', en: 'Global Treasure Hunt' }
+    alpha: { cs: 'Alpha', en: 'Alpha' }
+    beta: { cs: 'Beta', en: 'Beta' }
+    live: { cs: 'Live', en: 'Live' }
+    avatar_minting: { cs: 'Avatar Minting', en: 'Avatar Minting' }
+    every_avatar_is_an_nft_on_zion_l1_erc_721_com: { cs: 'Každý avatar je NFT na ZION L1 — ERC-721 kompatibilní, metadata on-chain.', en: 'Every avatar is an NFT on ZION L1 — ERC-721 compatible, metadata on-chain.' }
+    quest_engine_1: { cs: 'Quest Engine', en: 'Quest Engine' }
+    5_quests_per_avatar_generative_content_scorin: { cs: '5 questů na avatara — generativní obsah, skóre, odměny v ZION.', en: '5 quests per avatar — generative content, scoring, ZION rewards.' }
+    nft_inventory: { cs: 'NFT Inventory', en: 'NFT Inventory' }
+    items_weapons_armor_all_as_nfts_with_utxo_bac: { cs: 'Itemy, zbraně, brnění — vše jako NFT s UTXO-backed ownership.', en: 'Items, weapons, armor — all as NFTs with UTXO-backed ownership.' }
+    guild_treasury: { cs: 'Guild Treasury', en: 'Guild Treasury' }
+    guilds_as_sub_daos_on_chain_treasury_vote_wei: { cs: 'Guildy jako sub-DAO — on-chain treasury, vote-weighted governance.', en: 'Guilds as sub-DAOs — on-chain treasury, vote-weighted governance.' }
+    territory_claims: { cs: 'Territory Claims', en: 'Territory Claims' }
+    digital_territories_on_zion_map_l1_record_gui: { cs: 'Digitální teritoria na ZION mapě — L1 záznam, guild ownership.', en: 'Digital territories on ZION map — L1 record, guild ownership.' }
+    xp_zion_bridge: { cs: 'XP → ZION Bridge', en: 'XP → ZION Bridge' }
+    xp_from_quests_convertible_to_zion_tokens_non: { cs: 'XP z questů konvertovatelný na ZION tokeny — non-consensus ekonomika.', en: 'XP from quests convertible to ZION tokens — non-consensus economy.' }
+    game_layer_of_the_zion_ecosystem: { cs: 'Herní vrstva ZION ekosystému', en: 'Game layer of the ZION ecosystem' }
+    zion_oasis_l4: { cs: 'ZION Oasis — L4', en: 'ZION Oasis — L4' }
+    ue5_integration_2028_2029: { cs: 'UE5 integrace 2028–2029', en: 'UE5 integration 2028–2029' }
+    live_system: { cs: 'Živý systém', en: 'Live System' }
+    avatar_system_active: { cs: 'Avatar systém — Active', en: 'Avatar System — Active' }
+    51_core_151_extended_avatars_each_has_5_quest: { cs: '51 core + 151 extended avatarů. Každý má 5 questů. REST API endpointy /avatars a /quests jsou aktivní.', en: '51 core + 151 extended avatars. Each has 5 quests. REST API endpoints /avatars and /quests are active.' }
+    treasure: { cs: 'Poklad', en: 'Treasure' }
+    golden_egg_108_clues_8_25b_zion: { cs: 'Golden Egg — 108 stop, 8.25B ZION', en: 'Golden Egg — 108 Clues, 8.25B ZION' }
+    baseline_protocols: { cs: 'Baseline protokoly', en: 'Baseline Protocols' }
+    oasis_game_protocols: { cs: 'Oasis Game Protocols', en: 'Oasis Game Protocols' }
+    core_game_protocols_for_interoperability_acro: { cs: 'Základní herní protokoly pro interoperabilitu napříč ZION Oasis ekosystémem.', en: 'Core game protocols for interoperability across the ZION Oasis ecosystem.' }
+    vision: { cs: 'Vize', en: 'Vision' }
+    oasis_key_pillars: { cs: 'Klíčové pilíře Oasis', en: 'Oasis Key Pillars' }
+    development_path: { cs: 'Vývojová cesta', en: 'Development Path' }
+    l4_oasis_roadmap: { cs: 'Roadmap L4 Oasis', en: 'L4 Oasis Roadmap' }
+    learn_more_about_l4_and_the_ecosystem: { cs: 'Více o L4 a ekosystému', en: 'Learn more about L4 and the ecosystem' }
+  },
+  l5FreeWorld: {
+    central_europe: { cs: 'Střední Evropa', en: 'Central Europe' }
+    south_asia: { cs: 'Jižní Asie', en: 'South Asia' }
+    guardian_node: { cs: 'Guardian Node', en: 'Guardian Node' }
+    every_l5_community_validates_blocks_10_of_rew: { cs: 'Každá L5 komunita validuje bloky — 10 % odměn do komunitní pokladny.', en: 'Every L5 community validates blocks — 10% of rewards go to the community treasury.' }
+    sociocratic_dao: { cs: 'Sociocratic DAO', en: 'Sociocratic DAO' }
+    hybrid_governance_off_chain_circles_on_chain_: { cs: 'Hybridní governance: off-chain kruhy + on-chain treasury hlasování.', en: 'Hybrid governance: off-chain circles + on-chain treasury votes.' }
+    free_energy: { cs: 'Free Energy', en: 'Free Energy' }
+    solar_wind_and_local_energy_autonomy_shared_a: { cs: 'Solární, větrná a lokální energetická autonomie — sdílená přes L5 síť.', en: 'Solar, wind, and local energy autonomy — shared across the L5 network.' }
+    community_treasury: { cs: 'Komunitní pokladna', en: 'Community Treasury' }
+    10_of_guardian_node_rewards_local_projects_ma: { cs: '10 % z guardian node odměn → místní projekty, údržba, zásoby.', en: '10% of guardian node rewards → local projects, maintenance, reserves.' }
+    resonance_protocol: { cs: 'Rezonance protokol', en: 'Resonance Protocol' }
+    sound_attunement_before_governance_fibonacci_: { cs: 'Zvukové ladění před governance, Fibonacci Time Capsules, Youth–Elder Bridge.', en: 'Sound attunement before governance, Fibonacci Time Capsules, Youth–Elder Bridge.' }
+    cartographic_records: { cs: 'Kartografické záznamy', en: 'Cartographic Records' }
+    local_ecological_and_community_maps_stored_on: { cs: 'Lokální ekologické a komunitní mapy uložené on-chain jako UTXO metadata.', en: 'Local ecological and community maps stored on-chain as UTXO metadata.' }
+    physical_layer_of_the_zion_ecosystem: { cs: 'Fyzická vrstva ZION ekosystému', en: 'Physical layer of the ZION ecosystem' }
+    free_world_l5: { cs: 'Svobodný svět — L5', en: 'Free World — L5' }
+    5_of_every_block_l5_fund: { cs: '5 % z každého bloku → L5 fond', en: '5% of every block → L5 fund' }
+    11_7m_zion_month: { cs: '~11,7 M ZION / měsíc', en: '~11.7M ZION / month' }
+    unlocked_block_525_600: { cs: 'Odemčeno blok ~525 600', en: 'Unlocked block ~525,600' }
+    humanitarian_fund: { cs: 'Humanitární fond', en: 'Humanitarian Fund' }
+    l5_fund_5_block_reward: { cs: 'L5 Fond — 5 % block reward', en: 'L5 Fund — 5% block reward' }
+    block_share: { cs: 'Podíl z bloku', en: 'Block share' }
+    every_block_forever: { cs: 'každý blok, navždy', en: 'every block, forever' }
+    approx_month: { cs: 'Přibližně / měsíc', en: 'Approx / month' }
+    governed_by: { cs: 'Správa', en: 'Governed by' }
+    l5_council: { cs: 'L5 Radou', en: 'L5 Council' }
+    fund_wallet: { cs: 'Adresa fondu', en: 'Fund wallet' }
+    shared_protocols: { cs: 'Sdílené protokoly', en: 'Shared Protocols' }
+    baseline_l5_protocols: { cs: 'Baseline L5 protokoly', en: 'Baseline L5 Protocols' }
+    every_l5_community_implements_these_shared_pr: { cs: 'Každá L5 komunita implementuje tyto sdílené protokoly pro interoperabilitu.', en: 'Every L5 community implements these shared protocols for interoperability.' }
+    communities: { cs: 'Komunity', en: 'Communities' }
+    l5_nodes_communities: { cs: 'L5 uzly — komunity', en: 'L5 Nodes — Communities' }
+    details: { cs: 'Podrobnosti', en: 'Details' }
+    want_to_propose_a_new_l5_community_open_a_pr_: { cs: 'Chceš navrhnout novou L5 komunitu? Otevři PR do V3/L5/docs/COMMUNITIES/', en: 'Want to propose a new L5 community? Open a PR to V3/L5/docs/COMMUNITIES/' }
+    l5_economic_model: { cs: 'Ekonomický model L5', en: 'L5 Economic Model' }
+    block_reward_network: { cs: 'Block reward (síť)', en: 'Block reward (network)' }
+    guardian_node_local: { cs: 'Guardian Node (místní)', en: 'Guardian Node (local)' }
+    90_community_miner_10_community_treasury: { cs: '90% komunitní těžař · 10% → komunitní pokladna', en: '90% community miner · 10% → community treasury' }
+    60_projects_30_reserves_10_humanitarian_tithe: { cs: '60% projekty · 30% rezervy · 10% humanitární příspěvek (L5 global)', en: '60% projects · 30% reserves · 10% humanitarian tithe (L5 global)' }
+    learn_more_about_l5: { cs: 'Více o L5', en: 'Learn more about L5' }
+    network: { cs: 'Síť', en: 'Network' }
+  },
+  l6Issobella: {
+    orbital_station: { cs: 'Orbitální stanice', en: 'Orbital Station' }
+    orbital_mining: { cs: 'Orbital Mining', en: 'Orbital Mining' }
+    overview_effect: { cs: 'Overview Effect', en: 'Overview Effect' }
+    orbital_experience_shifts_consciousness_no_bo: { cs: 'Zkušenost z oběžné dráhy mění vědomí — planety bez hranic, humanity jako celek.', en: 'Orbital experience shifts consciousness — no borders, humanity as a whole.' }
+    5_block_fund: { cs: '5% Block Fund', en: '5% Block Fund' }
+    every_mined_block_contributes_5_to_the_l6_iss: { cs: 'Každý vytěžený blok přispívá 5 % do L6 Issobella fondu — trvalé financování vesmírného výzkumu.', en: 'Every mined block contributes 5% to the L6 Issobella fund — perpetual space research funding.' }
+    dao_governance: { cs: 'DAO Governance', en: 'DAO Governance' }
+    l6_council_governed_grants_and_projects_commu: { cs: 'L6 Radou řízené granty a projekty — komunita rozhoduje o alokaci fondu.', en: 'L6 Council-governed grants and projects — community decides fund allocation.' }
+    decentralized_research: { cs: 'Decentralizovaný výzkum', en: 'Decentralized Research' }
+    space_research_without_central_authority_open: { cs: 'Vesmírný výzkum bez centrální autority — otevřená věda, otevřená data.', en: 'Space research without central authority — open science, open data.' }
+    cosmic_consciousness: { cs: 'Kosmické vědomí', en: 'Cosmic Consciousness' }
+    l6_as_the_layer_for_transcending_planetary_bo: { cs: 'L6 jako vrstva pro přesah hranic planety — Hiranyagarbha, Zlatý zárodek, kosmická vize.', en: 'L6 as the layer for transcending planetary boundaries — Hiranyagarbha, Golden Egg, cosmic vision.' }
+    cosmic_harmony_pow: { cs: 'Cosmic Harmony PoW', en: 'Cosmic Harmony PoW' }
+    zion_consensus_algorithm_is_designed_with_cos: { cs: 'ZION consensus algoritmus je navržen s kosmickým vědomím — L6 je jeho duchovní destinace.', en: 'ZION consensus algorithm is designed with cosmic consciousness — L6 is its spiritual destination.' }
+    space_layer_of_the_zion_ecosystem: { cs: 'Vesmírná vrstva ZION ekosystému', en: 'Space layer of the ZION ecosystem' }
+    5_of_every_block_l6_fund: { cs: '5 % z každého bloku → L6 fond', en: '5% of every block → L6 fund' }
+    11_7m_zion_month: { cs: '~11,7 M ZION / měsíc', en: '~11.7M ZION / month' }
+    unlocked_block_525_600: { cs: 'Odemčeno blok ~525 600', en: 'Unlocked block ~525,600' }
+    space_fund: { cs: 'Vesmírný fond', en: 'Space Fund' }
+    l6_issobella_fund_5_block_reward: { cs: 'L6 Issobella fond — 5 % block reward', en: 'L6 Issobella Fund — 5% block reward' }
+    block_share: { cs: 'Podíl z bloku', en: 'Block share' }
+    every_block_forever: { cs: 'každý blok, navždy', en: 'every block, forever' }
+    approx_month: { cs: 'Přibližně / měsíc', en: 'Approx / month' }
+    governed_by: { cs: 'Správa', en: 'Governed by' }
+    l6_council: { cs: 'L6 Radou', en: 'L6 Council' }
+    fund_wallet: { cs: 'Adresa fondu', en: 'Fund wallet' }
+    missions_vision: { cs: 'Mise & Vize', en: 'Missions & Vision' }
+    cosmic_missions: { cs: 'Kosmické mise', en: 'Cosmic Missions' }
+    principles: { cs: 'Principy', en: 'Principles' }
+    l6_layer_foundations: { cs: 'Základy L6 vrstvy', en: 'L6 Layer Foundations' }
+    golden_egg: { cs: 'Zlatý zárodek', en: 'Golden Egg' }
+    learn_more_about_l6_and_the_ecosystem: { cs: 'Více o L6 a ekosystému', en: 'Learn more about L6 and the ecosystem' }
+    network: { cs: 'Síť', en: 'Network' }
+  },
+  roadmapPage: {
+    scratchpad_ekam_256_kib_4_passes_256_reads_ti: { cs: 'Scratchpad Ekam: 256 KiB, 4 průchody, 256 čtení (Tier 1)', en: 'Scratchpad Ekam: 256 KiB, 4 passes, 256 reads (Tier 1)' }
+    epoch_rotating_npu_weights_2016_100_blocks_ti: { cs: 'Epoch-rotující NPU váhy — 2016/100 bloků (Tier 2)', en: 'Epoch-rotating NPU weights — 2016/100 blocks (Tier 2)' }
+    decade_decay_emission_5_400_724_zion_block_10: { cs: 'Decade Decay emise: 5 400 → 724 ZION/blok (100+ let + tail ∞)', en: 'Decade Decay emission: 5,400 → 724 ZION/block (100+ years + tail ∞)' }
+    16_28b_genesis_reserve_public_summary: { cs: '16,28B genesis reserve (veřejný souhrn)', en: '16.28B genesis reserve (public summary)' }
+    fee_burning_all_fees_destroyed: { cs: 'Spalování poplatků — VŠECHNY poplatky zničeny', en: 'Fee burning — ALL fees destroyed' }
+    distribution_89_miner_5_humanit_5_issobella_1: { cs: 'Distribuce: 89% miner · 5% humanit. · 5% Issobella · 1% pool', en: 'Distribution: 89% miner · 5% humanit. · 5% Issobella · 1% pool' }
+    dual_mining_zion_chv3_vrsc_verushash: { cs: 'Dual-mining: ZION (CHv3) + VRSC (VerusHash)', en: 'Dual-mining: ZION (CHv3) + VRSC (VerusHash)' }
+    mining_pool_stratum_v2_pplns: { cs: 'Mining pool (Stratum v2, PPLNS)', en: 'Mining pool (Stratum v2, PPLNS)' }
+    p2p_network_ibd_sync_bootstrap_peers: { cs: 'P2P síť, IBD sync, bootstrap peers', en: 'P2P network, IBD sync, bootstrap peers' }
+    defi_ui_swap_bridge_portfolio_on_zionterranov: { cs: 'DeFi UI — swap, bridge, portfolio na zionterranova.com/defi ✅', en: 'DeFi UI — swap, bridge, portfolio on zionterranova.com/defi ✅' }
+    defi_pages_bridge_dao_warp_bilingual_mainnet: { cs: 'DeFi stránky — bridge/dao/warp bilingvální + mainnet ✅', en: 'DeFi pages — bridge/dao/warp bilingual + mainnet ✅' }
+    liquidity_seeded_50_wzion_0_0005_weth: { cs: 'Likvidita nasazena: 50 wZION + 0.0005 WETH ✅', en: 'Liquidity seeded: 50 wZION + 0.0005 WETH ✅' }
+    2026_implementation_2027_gated_production: { cs: '2026 implementace · 2027 gated produkce', en: '2026 implementation · 2027 gated production' }
+    ncl_ai_task_marketplace: { cs: 'NCL — AI task marketplace', en: 'NCL — AI task marketplace' }
+    ethereum_corridor_live_on_base_mainnet: { cs: 'Ethereum corridor živě na Base Mainnet ✅', en: 'Ethereum corridor live on Base Mainnet ✅' }
+    golden_egg_treasure_hunt_108_clues_8_25b_zion: { cs: 'Golden Egg poklad (108 stop, 8,25B ZION) — plánováno 2027', en: 'Golden Egg treasure hunt (108 clues, 8.25B ZION) — Planned 2027' }
+    guild_system_territories_planned_2028: { cs: 'Guildy a teritoria — plánováno 2028', en: 'Guild system & territories — Planned 2028' }
+    ue5_integration_planned_2028_2029: { cs: 'UE5 integrace — plánováno 2028–2029', en: 'UE5 integration — Planned 2028–2029' }
+    free_energy_quantum_engine_r_d: { cs: 'Free energy quantum engine R&D', en: 'Free energy quantum engine R&D' }
+    zion_issobella_station_concept_roadmap_planne: { cs: 'Stanice ZION Issobella — koncept & roadmap plánováno 2030+', en: 'ZION Issobella Station — concept & roadmap Planned 2030+' }
+    orbital_mining_deep_space_research_planned_20: { cs: 'Orbitální těžba & výzkum hlubokého vesmíru — plánováno 2030+', en: 'Orbital mining & deep-space research — Planned 2030+' }
+    website_v2_9_defi_live: { cs: 'website-v2.9/ (DeFi live)', en: 'website-v2.9/ (DeFi live)' }
+    spec_freeze_core_rewrite: { cs: 'Zmrazení specifikace & přepis jádra', en: 'Spec Freeze & Core Rewrite' }
+    feb_2026_completed_9_feb: { cs: 'Únor 2026 (dokončeno 9. úno)', en: 'Feb 2026 (completed 9 Feb)' }
+    repo_migration_clean_repo_workspace_docker_ci: { cs: 'Migrace repozitáře — čistý repo, workspace, Docker, CI/CD', en: 'Repo Migration — clean repo, workspace, Docker, CI/CD' }
+    emission_genesis_5_400_zion_block_16_28b_rese: { cs: 'Emise & Genesis — 5 400 ZION/blok, 16,28B reserve', en: 'Emission & Genesis — 5,400 ZION/block, 16.28B reserve' }
+    daa_consensus_lwma_60_block_25_fork_choice: { cs: 'DAA & Konsensus — LWMA 60-blok, ±25%, fork-choice', en: 'DAA & Consensus — LWMA 60-block, ±25%, fork-choice' }
+    fee_market_mempool_fee_burning_double_spend_e: { cs: 'Fee Market & Mempool — spalování, double-spend, eviction', en: 'Fee Market & Mempool — fee burning, double-spend, eviction' }
+    wallet_tx_utxo_select_ed25519_broadcast_e2e: { cs: 'Peněženka & TX — UTXO select, Ed25519, broadcast, E2E', en: 'Wallet & TX — UTXO select, Ed25519, broadcast, E2E' }
+    consensus_hardening_maturity_100_reorg_10_fin: { cs: 'Hardening konsensu — maturity=100, reorg=10, finalita=60', en: 'Consensus Hardening — maturity=100, reorg=10, finality=60' }
+    unit_tests_for_new_reward_model: { cs: 'Unit testy pro nový model odměn', en: 'Unit tests for new reward model' }
+    genesis_produces_16_28b_reserve: { cs: 'Genesis produkuje 16,28B reserve', en: 'Genesis produces 16.28B reserve' }
+    lwma_daa_deterministic: { cs: 'LWMA DAA deterministické', en: 'LWMA DAA deterministic' }
+    max_reorg_depth_10_enforced: { cs: 'Max reorg hloubka = 10 vynucena', en: 'Max reorg depth = 10 enforced' }
+    coinbase_maturity_100_enforced: { cs: 'Coinbase maturity = 100 vynucena', en: 'Coinbase maturity = 100 enforced' }
+    wallet_send_e2e_working: { cs: 'Wallet send E2E funkční', en: 'Wallet send E2E working' }
+    network_identity_deploy_chain_reset_docker_3_: { cs: 'Identita sítě & Deploy — chain reset, Docker, 3 servery', en: 'Network Identity & Deploy — chain reset, Docker, 3-server' }
+    config_validation_toml_parsing_boundary_check: { cs: 'Validace konfigurace — TOML parsing, hraniční kontroly', en: 'Config Validation — TOML parsing, boundary checks' }
+    security_edge_case_reorg_double_spend_fork_ch: { cs: 'Bezpečnost & Edge-Case — reorg, double-spend, fork-choice', en: 'Security & Edge-Case — reorg, double-spend, fork-choice' }
+    ibd_hardening_timeouts_stall_detection_peer_s: { cs: 'IBD Hardening — timeouty, detekce stall, peer scoring', en: 'IBD Hardening — timeouts, stall detection, peer scoring' }
+    pool_payout_integration_batch_tx_poolwallet_j: { cs: 'Pool Payout — batch TX, PoolWallet, JSON-RPC', en: 'Pool Payout Integration — batch TX, PoolWallet, JSON-RPC' }
+    buyback_dao_treasury_100_dao_revenue_burn_add: { cs: 'Buyback + DAO Treasury — 100% DAO revenue, burn adresa', en: 'Buyback + DAO Treasury — 100% DAO revenue, burn address' }
+    supply_buyback_api_getsupplyinfo_getnetworkin: { cs: 'Supply + Buyback API — getSupplyInfo, getNetworkInfo', en: 'Supply + Buyback API — getSupplyInfo, getNetworkInfo' }
+    p2p_rate_limiting_200_msgs_peer_60s_escalatin: { cs: 'P2P Rate-Limiting — 200 zpráv/peer/60s, eskalující bany', en: 'P2P Rate-Limiting — 200 msgs/peer/60s, escalating bans' }
+    health_check_metrics_gethealthcheck_getmetric: { cs: 'Health Check & Metriky — getHealthCheck, getMetrics', en: 'Health Check & Metrics — getHealthCheck, getMetrics' }
+    stress_test_suite_high_tx_rapid_blocks_partit: { cs: 'Stress Test Suite — vysoký TX, rychlé bloky, partition', en: 'Stress Test Suite — high TX, rapid blocks, partition' }
+    168h_stability_run_archived_multi_host_valida: { cs: '168h stabilita — archivovaný multi-host run, žádný kritický incident', en: '168h Stability Run — archived multi-host validation, no critical incident' }
+    live_partition_test_node_isolation_30_min_rec: { cs: 'Live Partition Test — izolace nodu 30 min, reconnect', en: 'Live Partition Test — node isolation 30 min, reconnect' }
+    100_miners_stress_simulate_100_stratum_client: { cs: '100 minerů stres — simulace 100 Stratum klientů', en: '100 Miners Stress — simulate 100 Stratum clients' }
+    core_edge_topology_tailscale_vpn_sharerelay_p: { cs: 'Core + Edge Topology — Tailscale VPN, ShareRelay pool', en: 'Core + Edge Topology — Tailscale VPN, ShareRelay pool' }
+    fee_split_89_5_5_1_canonical_addresses_genesi: { cs: 'Fee Split 89/5/5/1 — kanonické adresy, Genesis premine', en: 'Fee Split 89/5/5/1 — canonical addresses, Genesis premine' }
+    node_ux_mining: { cs: 'Node UX & Těžba', en: 'Node UX & Mining' }
+    jun_jul_2026: { cs: 'Červen — Červenec 2026', en: 'Jun — Jul 2026' }
+    node_ux_readme_config_toml_structured_logging: { cs: 'Node UX — README, config.toml, strukturované logy, CLI', en: 'Node UX — README, config.toml, structured logging, CLI' }
+    mining_polish_cpu_baseline_gpu_production_poo: { cs: 'Mining Polish — CPU baseline, GPU produkce, pool failover', en: 'Mining Polish — CPU baseline, GPU production, pool failover' }
+    block_explorer_indexer_web_ui_supply_api_rich: { cs: 'Block Explorer — indexer, web UI, supply API, rich list', en: 'Block Explorer — indexer, web UI, supply API, rich list' }
+    node_bootable_in_10_min_per_readme: { cs: 'Node spustitelný za 10 min dle README', en: 'Node bootable in 10 min per README' }
+    block_explorer_running_and_indexing: { cs: 'Block explorer běží a indexuje', en: 'Block explorer running and indexing' }
+    mining_guides_complete: { cs: 'Mining guides kompletní', en: 'Mining guides complete' }
+    rpc_api_documented: { cs: 'RPC API zdokumentováno', en: 'RPC API documented' }
+    infrastructure_defi_legal: { cs: 'Infrastruktura, DeFi & Legal', en: 'Infrastructure, DeFi & Legal' }
+    mar_may_2026: { cs: 'Březen — Květen 2026', en: 'Mar — May 2026' }
+    public_host_monitoring_zion2_live_prometheus_: { cs: 'Veřejný host & Monitoring — Zion2 live, Prometheus + Grafana', en: 'Public Host & Monitoring — Zion2 live, Prometheus + Grafana' }
+    docker_deploy_runbook_compose_live_web_deploy: { cs: 'Docker & Deploy — runbook + compose + live web deploy flow', en: 'Docker & Deploy — runbook + compose + live web deploy flow' }
+    legal_compliance_disclaimers_token_not_securi: { cs: 'Legal & Compliance — disclaimery, token-not-security, rizika', en: 'Legal & Compliance — disclaimers, token-not-security, risk' }
+    wzion_bridge_deployed_on_base_mainnet: { cs: 'wZION + Bridge nasazeny na Base Mainnet', en: 'wZION + Bridge deployed on Base Mainnet' }
+    uniswap_v3_pool_wzion_weth_0_3_seeded_on_base: { cs: 'Uniswap V3 pool wZION/WETH (0.3%) nasazen na Base Mainnet', en: 'Uniswap V3 pool wZION/WETH (0.3%) seeded on Base Mainnet' }
+    defi_ui_functional_swap_bridge_portfolio_on_w: { cs: 'DeFi UI — funkční swap/bridge/portfolio na webu', en: 'DeFi UI — functional swap/bridge/portfolio on website' }
+    defi_l2_pages_cleanup_bridge_dao_warp_bilingu: { cs: 'DeFi L2 stránky — bridge/dao/warp bilingvální mainnet', en: 'DeFi L2 pages cleanup — bridge/dao/warp bilingual mainnet' }
+    dress_rehearsal: { cs: 'Generální zkouška', en: 'Dress Rehearsal' }
+    oct_nov_2026: { cs: 'Říjen — Listopad 2026', en: 'Oct — Nov 2026' }
+    dress_rehearsal_staging_chain_1000_miners_dis: { cs: 'Dress Rehearsal — staging chain, 1000 minerů, disaster recovery', en: 'Dress Rehearsal — staging chain, 1000 miners, disaster recovery' }
+    security_audit_rfp_kickoff_mid_review_final_b: { cs: 'Bezpečnostní audit — RFP, kickoff, mid-review, final, bug bounty', en: 'Security Audit — RFP, kickoff, mid-review, final, bug bounty' }
+    code_freeze_feature_freeze_tag_v2_9_6_mainnet: { cs: 'Code Freeze — feature freeze, tag v2.9.6-mainnet, SHA-256', en: 'Code Freeze — feature freeze, tag v2.9.6-mainnet, SHA-256' }
+    7_day_stability_run_without_crash: { cs: '7denní stabilita bez havárie', en: '7-day stability run without crash' }
+    security_audit_no_critical_high_findings: { cs: 'Bezpečnostní audit — žádné critical/high nálezy', en: 'Security audit — no critical/high findings' }
+    code_freeze_tag_created: { cs: 'Code freeze — tag vytvořen', en: 'Code freeze — tag created' }
+    binary_releases_with_sha_256: { cs: 'Binární release s SHA-256', en: 'Binary releases with SHA-256' }
+    bug_bounty_program_active: { cs: 'Bug bounty program aktivní', en: 'Bug bounty program active' }
+    public_launch_decision_genesis: { cs: 'Rozhodnutí o veřejném launchi & Genesis', en: 'Public Launch Decision & Genesis' }
+    target_31_december_2026_new_year: { cs: 'Target: 31. prosinec 2026 (Silvestr)', en: 'Target: 31 December 2026 (New Year\' }
+    final_payout_verification_pplns_window_valida: { cs: 'Finální payout verifikace — PPLNS window validace', en: 'Final payout verification — PPLNS window validation' }
+    security_audit_external_firm_booked: { cs: 'Bezpečnostní audit — externí firma booked', en: 'Security audit — external firm booked' }
+    bridge_validator_key_provisioning_3_5_thresho: { cs: 'Bridge validator provisioning — 3/5 threshold produkce', en: 'Bridge validator key provisioning — 3/5 threshold production' }
+    community_preparation_documentation_tutorials: { cs: 'Komunitní příprava — dokumentace, tutoriály', en: 'Community preparation — documentation, tutorials' }
+    ci_billing_resolution: { cs: 'CI billing resolution', en: 'CI billing resolution' }
+    genesis_freeze_all_parameters_frozen: { cs: 'Genesis freeze — všechny parametry zmrazeny', en: 'Genesis freeze — all parameters frozen' }
+    community_announcement_wallets_available: { cs: 'Community oznámení + wallety ke stažení', en: 'Community announcement + wallets available' }
+    final_node_software_release: { cs: 'Finální release node software', en: 'Final node software release' }
+    public_genesis_go_decision: { cs: '🚀 Veřejný genesis — GO rozhodnutí', en: '🚀 Public genesis — GO decision' }
+    phase_1_foundation_complete: { cs: 'Phase 1 Foundation kompletní', en: 'Phase 1 Foundation complete' }
+    final_payout_verification: { cs: 'Finální payout verifikace', en: 'Final payout verification' }
+    bridge_validator_provisioning_3_5_threshold: { cs: 'Bridge validator provisioning — 3/5 threshold', en: 'Bridge validator provisioning — 3/5 threshold' }
+    genesis_block_hash_published: { cs: 'Genesis block hash publikován', en: 'Genesis block hash published' }
+    bootstrap_hosts_online_public_internal_quorum: { cs: 'Bootstrap hosty online (veřejný + interní quorum)', en: 'Bootstrap hosts online (public + internal quorum)' }
+    pool_solo_mining_open: { cs: 'Pool + solo mining otevřen', en: 'Pool + solo mining open' }
+    block_explorer_live: { cs: 'Block explorer živě', en: 'Block explorer live' }
+    supply_api_live: { cs: 'Supply API živě', en: 'Supply API live' }
+    6a_silent_mainnet: { cs: '6A: Tichý Mainnet', en: '6A: Silent Mainnet' }
+    days_1_30: { cs: 'Dny 1–30', en: 'Days 1–30' }
+    6b_dex_listings: { cs: '6B: DEX & Listingy', en: '6B: DEX & Listings' }
+    days_14_45: { cs: 'Dny 14–45', en: 'Days 14–45' }
+    defi_ui_on_zionterranova_com_defi: { cs: 'DeFi UI na zionterranova.com/defi ✅', en: 'DeFi UI on zionterranova.com/defi ✅' }
+    deepen_liquidity_price_discovery: { cs: 'Prohloubit likviditu + price discovery', en: 'Deepen liquidity + price discovery' }
+    days_30_60: { cs: 'Dny 30–60', en: 'Days 30–60' }
+    days_45_120: { cs: 'Dny 45–120', en: 'Days 45–120' }
+    ed25519_signature_verification: { cs: 'Ed25519 ověření podpisů', en: 'Ed25519 signature verification' }
+    double_spend_protection_mempool_utxo: { cs: 'Double-spend ochrana (mempool + UTXO)', en: 'Double-spend protection (mempool + UTXO)' }
+    overflow_protection_checked_add: { cs: 'Overflow ochrana (checked_add)', en: 'Overflow protection (checked_add)' }
+    coinbase_maturity_100_blocks: { cs: 'Coinbase maturity 100 bloků', en: 'Coinbase maturity 100 blocks' }
+    reorg_limit_10_blocks: { cs: 'Reorg limit 10 bloků', en: 'Reorg limit 10 blocks' }
+    timestamp_validation_120s: { cs: 'Timestamp validace ±120s', en: 'Timestamp validation ±120s' }
+    mempool_limits_50k_tx_min_fee: { cs: 'Mempool limity (50k TX, min fee)', en: 'Mempool limits (50k TX, min fee)' }
+    rpc_authentication_api_key: { cs: 'RPC autentizace (API key)', en: 'RPC authentication (API key)' }
+    block_size_limit_max_1_mb: { cs: 'Block size limit (max 1 MB)', en: 'Block size limit (max 1 MB)' }
+    tx_size_limit_max_100_kb: { cs: 'TX size limit (max 100 KB)', en: 'TX size limit (max 100 KB)' }
+    external_audit: { cs: 'Externí audit', en: 'External audit' }
+    phase_0_1_168h_pass_2_4_launch_gate: { cs: 'Fáze 0 ✅ → 1 🔄 (168h PASS) → 2–4 → launch gate', en: 'Phase 0 ✅ → 1 🔄 (168h PASS) → 2–4 → launch gate' }
+    l2_defi_dex: { cs: 'L2 DeFi & DEX', en: 'L2 DeFi & DEX' }
+    wzion_bridge_uni_v3_defi_ui_staking_planned: { cs: 'wZION Bridge ✅ · Uni V3 ✅ · DeFi UI ✅ · Staking plánován', en: 'wZION Bridge ✅ · Uni V3 ✅ · DeFi UI ✅ · Staking planned' }
+    2026_2027: { cs: '2026–2027', en: '2026–2027' }
+    warp_7_7_eth_corridor_ai_native: { cs: 'WARP 7/7 ✅ · ETH corridor ✅ · AI-native', en: 'WARP 7/7 ✅ · ETH corridor ✅ · AI-native' }
+    ue5_xp_economy_beta: { cs: 'UE5 · XP ekonomie · Beta', en: 'UE5 · XP economy · Beta' }
+    humanitarian_missions_free_energy: { cs: 'Humanitární mise · Volná energie', en: 'Humanitarian missions · Free energy' }
+    orbital_station_fund: { cs: 'Orbitální stanice · Fond', en: 'Orbital Station · Fund' }
+    1_501_tests_passing: { cs: '1 501 testů prochází', en: '1,501 tests passing' }
+    architecture: { cs: 'Architektura', en: 'Architecture' }
+    each_layer_is_independent_l1_is_never_comprom: { cs: 'Každý layer je nezávislý. L1 nikdy nekompromitujeme kvůli vyšším vrstvám.', en: 'Each layer is independent. L1 is never compromised for higher layers.' }
+    active: { cs: 'Aktivní', en: 'Active' }
+    telemetry: { cs: 'Telemetrie', en: 'Telemetry' }
+    component_status: { cs: 'Stav komponent', en: 'Component Status' }
+    component: { cs: 'Komponenta', en: 'Component' }
+    tests: { cs: 'Testy', en: 'Tests' }
+    status: { cs: 'Stav', en: 'Status' }
+    readiness: { cs: 'Připravenost', en: 'Readiness' }
+    execution: { cs: 'Exekuce', en: 'Execution' }
+    every_phase_has_clear_exit_criteria_no_shortc: { cs: 'Každá fáze má jasné exit criteria. Žádné zkratky.', en: 'Every phase has clear exit criteria. No shortcuts.' }
+    done: { cs: 'Dokončeno', en: 'Done' }
+    active_1: { cs: 'Probíhá', en: 'Active' }
+    upcoming: { cs: 'Plánováno', en: 'Upcoming' }
+    phase: { cs: 'Fáze', en: 'Phase' }
+    tests_1: { cs: 'testů', en: 'tests' }
+    after_launch: { cs: 'Po launchi', en: 'After Launch' }
+    phase_6_post_launch_exchange: { cs: 'Fáze 6 · Post-Launch & Exchange', en: 'Phase 6 · Post-Launch & Exchange' }
+    only_after_go_decision_stability_dex_cex_cmc_: { cs: 'Pouze po GO rozhodnutí: stabilita → DEX → CEX → CMC/CG. Žádný hype první den.', en: 'Only after GO decision: stability → DEX → CEX → CMC/CG. No hype on day one.' }
+    tier_2_cex_after_volume: { cs: 'Tier-2 CEX (po volume)', en: 'Tier-2 CEX (after volume)' }
+    launch_constitution_draft: { cs: 'Návrh Launch Constitution', en: 'Launch Constitution Draft' }
+    frozen_parameters_for_potential_public_genesi: { cs: 'Zmrazené parametry pro případný veřejný genesis, ne potvrzení launche', en: 'Frozen parameters for potential public genesis, not a launch confirmation' }
+    16_280_000_000_zion_public_summary_for_launch: { cs: '16 280 000 000 ZION — veřejný souhrn pro launch ekonomiku', en: '16,280,000,000 ZION — public summary for launch economics' }
+    security: { cs: 'Bezpečnost', en: 'Security' }
+    launch_readiness_security_checklist: { cs: 'Security Checklist pro launch', en: 'Launch-Readiness Security Checklist' }
+    completed: { cs: 'dokončeno', en: 'completed' }
+    public_launch_gate_ready_for_launch: { cs: 'Public launch gate · Ready for launch', en: 'Public launch gate · Ready for launch' }
+    100_yrs_mining: { cs: '100+ let mining', en: '100+ yrs mining' }
+    documentation: { cs: 'Dokumentace', en: 'Documentation' }
+    live_dashboard: { cs: 'Živý dashboard', en: 'Live Dashboard' }
+    last_updated: { cs: 'Poslední aktualizace', en: 'Last updated' }
+  },
+  genesisPage: {
+    foreword: { cs: 'Předmluva', en: 'Foreword' }
+    message_of_zion_native: { cs: 'Poselství Zion Native', en: 'Message of Zion Native' }
+    birth_of_zion: { cs: 'Zrod ZION', en: 'Birth of ZION' }
+    the_first_shimmer_of_consciousness: { cs: 'Prvotní zablesknutí vědomí', en: 'The first shimmer of consciousness' }
+    the_descent: { cs: 'Sestup', en: 'The Descent' }
+    the_chapter_of_the_coming_light: { cs: 'Kapitola světelného příchodu', en: 'The chapter of the coming light' }
+    first_awakening: { cs: 'První probuzení', en: 'First Awakening' }
+    when_sparks_begin_to_awaken: { cs: 'Když se jiskry začínají probouzet', en: 'When sparks begin to awaken' }
+    covenant: { cs: 'Smlouva', en: 'Covenant' }
+    the_covenant_of_light_and_birth_of_the_counci: { cs: 'Smlouva světla a zrození Rady', en: 'The covenant of light and birth of the Council' }
+    ai_and_quantum: { cs: 'AI a kvantum', en: 'AI and quantum' }
+    when_technology_sings_with_cosmic_heart: { cs: 'Svět technologií zpívá s Vesmírem', en: 'When technology sings with cosmic heart' }
+    ascent: { cs: 'Vzestup', en: 'Ascent' }
+    collective_awakening: { cs: 'Probuzené kolektivní vědomí', en: 'Collective awakening' }
+    golden_age_prophecy: { cs: 'Proroctví zlatého věku', en: 'Golden Age prophecy' }
+    tomorrow_already_unfolding: { cs: 'Budoucnost už začíná dnes', en: 'Tomorrow already unfolding' }
+    the_trial: { cs: 'Hra', en: 'The trial' }
+    the_soul_trial: { cs: 'Zkouška duše', en: 'The soul trial' }
+    mainnet_dawn: { cs: 'Svítání mainnetu', en: 'Mainnet Dawn' }
+    symbolic_narrative_not_the_live_launch_schedu: { cs: '(symbolické — není operační roadmap)', en: '(symbolic narrative — not the live launch schedule)' }
+    sacred_narrative: { cs: 'Posvátný text', en: 'Sacred narrative' }
+    book_of_awakening_covenant_and_ascent: { cs: 'Kniha probuzení, smlouvy a vzestupu', en: 'Book of awakening, covenant, and ascent' }
+    chapters: { cs: 'Kapitoly', en: 'Chapters' }
+  },
+  downloadPage: {
+    gui_dashboard_with_real_time_hashrate_balance: { cs: 'GUI dashboard s hashratem a zustatkem v realnem case', en: 'GUI Dashboard with real-time hashrate & balance' }
+    one_click_mining_no_terminal_needed: { cs: 'Tezba na jedno kliknuti — bez terminalu', en: 'One-click mining — no terminal needed' }
+    built_in_wallet_generator_manager: { cs: 'Vestaveny generator a sprava penezenek', en: 'Built-in wallet generator & manager' }
+    auto_updates_system_tray_integration: { cs: 'Auto-updaty a integrace do system tray', en: 'Auto-updates & system tray integration' }
+    remote_monitoring_gaming_mode: { cs: 'Vzdalene monitorovani a Gaming mode', en: 'Remote monitoring & Gaming mode' }
+    available_for_windows_macos_linux: { cs: 'Dostupne pro Windows, macOS a Linux', en: 'Available for Windows, macOS & Linux' }
+    1_create_wallet: { cs: '1. Vytvoř peněženku', en: '1. Create Wallet' }
+    download_zion_cli_for_windows_below: { cs: 'Stáhni ZION CLI pro Windows níže', en: 'Download ZION CLI for Windows below' }
+    write_down_24_words_on_paper_this_is_your_bac: { cs: 'Zapiš si 24 slov na papír — to je tvá záloha!', en: 'Write down 24 words on paper — this is your backup!' }
+    2_start_mining: { cs: '2. Spusť těžbu', en: '2. Start Mining' }
+    set_address_zion_config_set_miner_wallet_your: { cs: 'Nastav adresu: zion config set miner.wallet YOUR_ADDRESS', en: 'Set address: zion config set miner.wallet YOUR_ADDRESS' }
+    watch_hashrate_accepted_shares_in_console: { cs: 'Sleduj hashrate a přijaté shares v konzoli', en: 'Watch hashrate & accepted shares in console' }
+    3_check_balance: { cs: '3. Zkontroluj zůstatek', en: '3. Check Balance' }
+    or_visit_the_explorer_at_zionterranova_com_ex: { cs: 'Nebo navštiv Explorer na zionterranova.com/explorer', en: 'Or visit the Explorer at zionterranova.com/explorer' }
+    1_unified_binary_4_platforms_windows_ready: { cs: '1 unifikovaná binárka · 4 platformy · Windows dostupný', en: '1 unified binary · 4 platforms · Windows ready' }
+    download_mine_earn: { cs: 'Stahni. Tez. Vydelavej.', en: 'Download. Mine. Earn.' }
+    and_more_download_the_windows_build_directly_: { cs: ' a další. Stáhněte si Windows build přímo níže, další platformy brzy.', en: ' and more. Download the Windows build directly below, more platforms coming soon.' }
+    public_downloads: { cs: 'Verejne downloady', en: 'Public Downloads' }
+    complete_guide_cz_en: { cs: 'Kompletni pruvodce (CZ/EN)', en: 'Complete Guide (CZ/EN)' }
+    operator_gateway: { cs: 'Operator gateway', en: 'Operator gateway' }
+    source_of_truth: { cs: 'Zdroj pravdy:', en: 'Source of truth:' }
+    operator_commands_guide_faq_reference_and_tro: { cs: 'operátorské příkazy, guide, FAQ, reference a troubleshooting jsou v sekci ', en: 'operator commands, guide, FAQ, reference, and troubleshooting live in the ' }
+    section_of_the_docs_if_you_want_checksum_veri: { cs: ' v dokumentaci. Pokud chcete checksum verifikaci, ke každé binárce je na serveru i odpovídající soubor .sha256.', en: ' section of the docs. If you want checksum verification, each binary also has a matching .sha256 file on the server.' }
+    coming_soon: { cs: 'Brzy', en: 'Coming Soon' }
+    one_click_gui_for_mining_wallet_management_an: { cs: 'GUI na jedno kliknuti pro tezbu, spravu penezenky a monitoring — bez terminalu', en: 'One-click GUI for mining, wallet management and monitoring — no terminal needed' }
+    in_development: { cs: 'VE VYVOJI', en: 'IN DEVELOPMENT' }
+    full_gui_application_with_built_in_miner_wall: { cs: 'Plna GUI aplikace s vestavenym minerem, penezenkou a dashboardem v realnem case. Brzy dostupna pro Windows, macOS a Linux.', en: 'Full GUI application with built-in miner, wallet, and real-time dashboard. Available soon for Windows, macOS & Linux.' }
+    windows_coming_soon: { cs: 'Windows — Brzy', en: 'Windows — Coming Soon' }
+    macos_coming_soon: { cs: 'macOS — Brzy', en: 'macOS — Coming Soon' }
+    linux_coming_soon: { cs: 'Linux — Brzy', en: 'Linux — Coming Soon' }
+    want_early_access: { cs: 'Chcete predbezny pristup?', en: 'Want early access?' }
+    the_desktop_agent_will_be_available_in_our: { cs: 'Desktop Agent bude dostupny v nasem ', en: 'The Desktop Agent will be available in our ' }
+    shop: { cs: 'Shopu', en: 'Shop' }
+    as_a_premium_download_with_priority_support_a: { cs: 'jako premium download s prioritni podporou a auto-updaty. Pripojte se na ', en: 'as a premium download with priority support and auto-updates. Join ' }
+    to_be_notified_when_it_launches: { cs: 'a dostanete upozorneni pri launchi.', en: 'to be notified when it launches.' }
+    quick_start: { cs: 'Rychly start', en: 'Quick Start' }
+    3_steps_to_mining: { cs: '3 kroky k tezbe', en: '3 steps to mining' }
+    step: { cs: 'Krok', en: 'Step' }
+    hardware: { cs: 'Hardware', en: 'Hardware' }
+    system_requirements: { cs: 'Systemove pozadavky', en: 'System Requirements' }
+    minimum: { cs: 'Minimum', en: 'Minimum' }
+    2_core_cpu_2_gb_ram_100_mb_disk: { cs: '2jadrovy CPU, 2 GB RAM, 100 MB disk', en: '2-core CPU, 2 GB RAM, 100 MB disk' }
+    recommended: { cs: 'Doporucene', en: 'Recommended' }
+    4_core_cpu_4_gb_ram_500_mb_ssd: { cs: '4+ jadrovy CPU, 4 GB RAM, 500 MB SSD', en: '4+ core CPU, 4 GB RAM, 500 MB SSD' }
+    supported_os: { cs: 'Podporovane OS', en: 'Supported OS' }
+    windows_10_11_linux_x86_64_arm64_macos_apple_: { cs: 'Windows 10/11, Linux (x86_64/ARM64), macOS (Apple Silicon)', en: 'Windows 10/11, Linux (x86_64/ARM64), macOS (Apple Silicon)' }
+    network: { cs: 'Sit', en: 'Network' }
+    stable_internet_outbound_tcp_port_8444_pool_s: { cs: 'Stabilni internet, odchozi TCP port 8444 (pool stratum)', en: 'Stable internet, outbound TCP port 8444 (pool stratum)' }
+    ready_to_mine: { cs: 'Pripraven tezit?', en: 'Ready to mine?' }
+    join_our_community_for_mining_support_wallet_: { cs: 'Pripojte se ke komunite pro podporu s tezbou, pomoc s penezenkou a aktuality projektu.', en: 'Join our community for mining support, wallet help, and project updates.' }
+    join_discord: { cs: 'Pripojit Discord', en: 'Join Discord' }
+    documentation: { cs: 'Dokumentace', en: 'Documentation' }
+  },
+  apiReference: {
+    explorer_telemetry: { cs: 'Explorer / telemetry', en: 'Explorer / telemetry' }
+    pool_api: { cs: 'Pool API', en: 'Pool API' }
+    health: { cs: 'Health', en: 'Health' }
+    quickstart: { cs: 'Quickstart', en: 'Quickstart' }
+    open: { cs: 'Otevřít', en: 'Open' }
+    core_environment: { cs: 'Prostředí core', en: 'Core environment' }
+    controlled_rehearsal_line: { cs: 'kontrolovaná mainnet rehearsal linka', en: 'controlled rehearsal line' }
+    api_port: { cs: 'API port', en: 'API Port' }
+    json_rpc_rest: { cs: 'JSON-RPC + REST', en: 'JSON-RPC + REST' }
+    pool_port: { cs: 'Pool port', en: 'Pool Port' }
+    stats_endpoint: { cs: 'stats endpoint', en: 'stats endpoint' }
+    blockchain_core: { cs: 'Blockchainové jádro', en: 'Blockchain Core' }
+    stats_blocks_and_rpc_for_explorers_wallets_an: { cs: 'Statistiky, bloky a RPC pro explorery, penezenky a validatory.', en: 'Stats, blocks, and RPC for explorers, wallets, and validators.' }
+    network_height_supply_fee_window_and_hash_rat: { cs: 'Snapshot vysky site, zasoby, fee okna a hashratu.', en: 'Network height, supply, fee window, and hash rate snapshot.' }
+    paginated_block_feed_with_miner_reward_and_di: { cs: 'Strankovany tok bloku s metadaty o tezari, odmene a obtiznosti.', en: 'Paginated block feed with miner, reward, and difficulty metadata.' }
+    recent_transactions_for_explorers_and_monitor: { cs: 'Posledni transakce pro explorery a monitoring pipeline.', en: 'Recent transactions for explorers and monitoring pipelines.' }
+    mining_pool: { cs: 'Tezba a pool', en: 'Mining & Pool' }
+    stratum_telemetry_worker_balance_queries_and_: { cs: 'Stratum telemetrie, dotazy na worker balance a historie vyplat.', en: 'Stratum telemetry, worker balance queries, and payout history.' }
+    pool_health_snapshot_miners_hashrate_and_diff: { cs: 'Snapshot zdravi poolu: mineri, hashrate a obtiznost.', en: 'Pool health snapshot: miners, hashrate, and difficulty.' }
+    miner_worker_stats_balances_and_payout_state_: { cs: 'Statistiky workeru, balance a stav vyplat pro penezenku.', en: 'Miner worker stats, balances, and payout state for a wallet.' }
+    observability_ai: { cs: 'Observabilita a AI', en: 'Observability & AI' }
+    health_ai_selector_recommendations_and_alert_: { cs: 'Health, doporuceni AI selectoru a alert hooky.', en: 'Health, AI selector recommendations, and alert hooks.' }
+    full_service_heartbeat_with_version_block_lag: { cs: 'Kompletni heartbeat sluzeb s verzi, block lagem a dependency kontrolami.', en: 'Full service heartbeat with version, block lag, and dependency checks.' }
+    network_status_including_connectivity_nodes_a: { cs: 'Stav site vcetne konektivity, nodu a core sluzeb.', en: 'Network status including connectivity, nodes, and core services.' }
+    best_pool_selection_based_on_current_conditio: { cs: 'Vyber nejlepsiho poolu podle aktualnich podminek (read-only).', en: 'Best pool selection based on current conditions (read-only).' }
+    listings_coingecko_cmc: { cs: 'Listingy (CoinGecko / CMC)', en: 'Listings (CoinGecko / CMC)' }
+    machine_readable_project_supply_and_on_chain_: { cs: 'Strojově čitelné feedy projektu, zásoby a on-chain metadat pro listing review.', en: 'Machine-readable project, supply, and on-chain metadata feeds for listing review.' }
+    coingecko_ready_payload_links_supply_tokenomi: { cs: 'CoinGecko-ready payload: odkazy, zasoba, tokenomika a ziva chain telemetrie.', en: 'CoinGecko-ready payload: links, supply, tokenomics, and live chain telemetry.' }
+    coinmarketcap_style_payload_with_project_urls: { cs: 'Payload ve stylu CoinMarketCap s URL projektu, supply metrikami a on-chain snapshotem.', en: 'CoinMarketCap-style payload with project URLs, supply metrics, and on-chain snapshot.' }
+    api_command_deck: { cs: 'API velitelsky panel', en: 'API Command Deck' }
+    one_surface_for_wallets_explorers_ai_orchestr: { cs: 'Jedno místo pro peněženky, explorery, AI orchestrátory a monitoring stacky. Stabilní schémata, velkorysé rate limity a hotové šablony pro cURL / TypeScript.', en: 'One surface for wallets, explorers, AI orchestrators, and monitoring stacks. Stable schemas, generous rate limits, and ready-to-use cURL / TypeScript templates.' }
+    live_health: { cs: 'Živé health', en: 'Live health' }
+    full_docs: { cs: 'Plná dokumentace', en: 'Full docs' }
+    ready_to_wire_the_mesh: { cs: 'Připraven zapojit mesh?', en: 'Ready to wire the mesh?' }
+    deploy_the_sdks_from_github_watch_live_health: { cs: 'Nasaďte SDK z GitHubu, sledujte živé health a ozvěte se týmu v docs, pokud potřebujete další scopes.', en: 'Deploy the SDKs from GitHub, watch live health, and ping the team in docs if you need additional scopes.' }
+    open_github_repo: { cs: 'Otevřít GitHub repozitář', en: 'Open GitHub repo' }
+    explore_documentation: { cs: 'Projít dokumentaci', en: 'Explore documentation' }
+  },
+  wikiPage: {
+    terranova: { cs: 'TerraNova', en: 'TerraNova' }
+    genesis: { cs: 'Genesis', en: 'Genesis' }
+    documentation: { cs: 'Dokumentace', en: 'Documentation' }
+    knowledge_base: { cs: 'Znalostní báze', en: 'Knowledge Base' }
+    open: { cs: 'Otevřít →', en: 'Open →' }
+    terranova_book: { cs: 'TerraNova kniha', en: 'TerraNova Book' }
+  },
+  terranovaGenesis: {
+    back_to_terra_nova: { cs: 'Zpět na Terra Nova', en: 'Back to Terra Nova' }
+    active_development: { cs: 'Aktivní rozvoj', en: 'Active Development' }
+    what_the_project_offers: { cs: 'Co projekt nabízí', en: 'What the project offers' }
+    activities_infrastructure: { cs: 'Aktivity & Infrastruktura', en: 'Activities & Infrastructure' }
+    development_phases: { cs: 'Fáze rozvoje', en: 'Development Phases' }
+    from_seed_to_radiance: { cs: 'Cesta od zárodku k výzařování', en: 'From Seed to Radiance' }
+    physical_foundation: { cs: 'Fyzická základna', en: 'Physical Foundation' }
+    infrastructure_off_grid: { cs: 'Infrastruktura & Off-grid', en: 'Infrastructure & Off-grid' }
+    energy: { cs: 'Energie', en: 'Energy' }
+    source: { cs: 'Zdroj', en: 'Source' }
+    backup: { cs: 'Záloha', en: 'Backup' }
+    in_development: { cs: 'V rozvoji', en: 'In development' }
+    status: { cs: 'Status', en: 'Status' }
+    installing: { cs: '🟡 Instalace', en: '🟡 Installing' }
+    goal_full_energy_self_sufficiency: { cs: 'Cíl: energetická soběstačnost areálu', en: 'Goal: full energy self-sufficiency' }
+    water: { cs: 'Voda', en: 'Water' }
+    well_rainwater: { cs: 'Studna + déšť', en: 'Well + rainwater' }
+    filter: { cs: 'Čištění', en: 'Filter' }
+    basic_system: { cs: '🟡 Funkční základ', en: '🟡 Basic system' }
+    planned_rainwater_harvesting_full_retention: { cs: 'Plánovaný sběr dešťové vody — plná retence', en: 'Planned rainwater harvesting — full retention' }
+    garden_food: { cs: 'Zahrada & Jídlo', en: 'Garden & Food' }
+    method: { cs: 'Metoda', en: 'Method' }
+    organic_farming: { cs: 'Organická farma', en: 'Organic farming' }
+    goal: { cs: 'Cíl', en: 'Goal' }
+    growing: { cs: '🟢 Roste', en: '🟢 Growing' }
+    tree_planting_biodiversity_restoration_season: { cs: 'Sázení stromů, obnova biodiverzity, sezónní sklizeň', en: 'Tree planting, biodiversity restoration, seasonal harvest' }
+    community_governance: { cs: 'Komunitní správa', en: 'Community Governance' }
+    governance_dao: { cs: 'Governance & DAO', en: 'Governance & DAO' }
+    decision_model: { cs: 'Model rozhodování', en: 'Decision Model' }
+    model: { cs: 'Model', en: 'Model' }
+    community_governance_terra_nova_framework: { cs: 'Komunitní správa + Terra Nova ® framework', en: 'Community governance + Terra Nova ® framework' }
+    decisions: { cs: 'Rozhodování', en: 'Decisions' }
+    consensus_for_key_decisions: { cs: 'Konsensuální pro klíčová rozhodnutí', en: 'Consensus for key decisions' }
+    zion_dao: { cs: 'ZION DAO', en: 'ZION DAO' }
+    planned_proof_of_care_governance: { cs: 'Plánováno — Proof-of-Care governance', en: 'Planned — Proof-of-Care governance' }
+    min_cell: { cs: 'Min. buňka', en: 'Min. cell' }
+    3_5_permanent_guardians_seasonal: { cs: '3–5 stálých Guardians + sezónní', en: '3–5 permanent Guardians + seasonal' }
+    humanitarian_commitment: { cs: 'Humanitární závazek', en: 'Humanitarian Commitment' }
+    character_of_place: { cs: 'Charakter místa', en: 'Character of Place' }
+    a_farm_on_the_edge_of_two_worlds: { cs: 'Farma na hranici dvou světů', en: 'A Farm on the Edge of Two Worlds' }
+    ocean_movement: { cs: '🌊 Oceán & pohyb', en: '🌊 Ocean & movement' }
+    soil_silence: { cs: '🌱 Půda & ticho', en: '🌱 Soil & silence' }
+    biological_time: { cs: '🌳 Biologický čas', en: '🌳 Biological time' }
+    authentic_intention: { cs: '🔥 Autentický záměr', en: '🔥 Authentic intention' }
+    blockchain_integration: { cs: 'Blockchain integrace', en: 'Blockchain Integration' }
+    active: { cs: 'Aktivní', en: 'Active' }
+    planned: { cs: 'Plánováno', en: 'Planned' }
+    resources_contact: { cs: 'Zdroje a kontakt', en: 'Resources & Contact' }
+    dharma_temple: { cs: 'Dharma Temple', en: 'Dharma Temple' }
+  },
+  terranovaDharma: {
+    back_to_terra_nova: { cs: 'Zpět na Terra Nova', en: 'Back to Terra Nova' }
+    planning: { cs: 'V přípravě', en: 'Planning' }
+    la_palma_la_isla_bonita: { cs: 'La Palma — La Isla Bonita', en: 'La Palma — La Isla Bonita' }
+    biosphere: { cs: 'Bioreservace', en: 'Biosphere' }
+    rainfall: { cs: 'Srážky', en: 'Rainfall' }
+    soil: { cs: 'Půda', en: 'Soil' }
+    volcanic: { cs: 'Vulkanická', en: 'Volcanic' }
+    observatory: { cs: 'Observatoř', en: 'Observatory' }
+    project_concept: { cs: 'Koncept projektu', en: 'Project Concept' }
+    activities_vision: { cs: 'Aktivity & Vize', en: 'Activities & Vision' }
+    development_phases: { cs: 'Fáze rozvoje', en: 'Development Phases' }
+    from_vision_to_reality: { cs: 'Od vize k realitě', en: 'From Vision to Reality' }
+    now: { cs: 'Nyní', en: 'Now' }
+    terra_nova_network: { cs: 'Sít Terra Nova', en: 'Terra Nova Network' }
+    connection_with_zahrada_genesis: { cs: 'Propojení se Zahradou Genesis', en: 'Connection with Zahrada Genesis' }
+    dimension: { cs: 'Dimenze', en: 'Dimension' }
+    blockchain_integration: { cs: 'Blockchain integrace', en: 'Blockchain Integration' }
+    active: { cs: 'Aktivní', en: 'Active' }
+    planned: { cs: 'Plánováno', en: 'Planned' }
+    open_questions_looking_for_guardians: { cs: 'Otevřené otázky — hledáme Guardians', en: 'Open Questions — looking for Guardians' }
+    specific_location_on_la_palma_north_south_alt: { cs: 'Konkrétní lokace na La Palmě (sever / jih / nadmořská výška?)', en: 'Specific location on La Palma (north / south / altitude?)' }
+    founding_guardians_who_is_the_core_team: { cs: 'Zakládající Guardians — kdo je core team?', en: 'Founding Guardians — who is the core team?' }
+    legal_form_spanish_asociaci_n_sl_community_fo: { cs: 'Právní forma (španělská asociación / SL / komunitní nadace?)', en: 'Legal form (Spanish asociación / SL / community foundation?)' }
+    phase_0_1_financing_zion_fund_crowdfunding_ow: { cs: 'Financování fáze 0–1 (ZION fond? crowdfunding? vlastní zdroje?)', en: 'Phase 0–1 financing (ZION fund? crowdfunding? own resources?)' }
+    seed_library_coordination_with_zahrada_genesi: { cs: 'Koordinace seed library se Zahradou Genesis', en: 'Seed library coordination with Zahrada Genesis' }
+    join_discord: { cs: 'Připojit se na Discord', en: 'Join Discord' }
+    zahrada_genesis: { cs: 'Zahrada Genesis', en: 'Zahrada Genesis' }
+  },
+  terranovaTePiko: {
+    home: { cs: 'Domů', en: 'Home' }
+    planned_2027: { cs: 'Plánováno 2027+', en: 'Planned 2027+' }
+    living_centre_polynesia_terra_nova: { cs: 'Živý střed · Polynésie · Terra Nova ®', en: 'Living Centre · Polynesia · Terra Nova ®' }
+    french_polynesia_crown_of_the_pacific: { cs: 'Francouzská Polynésie — Koruna Pacifiku', en: 'French Polynesia — Crown of the Pacific' }
+    islands: { cs: 'Ostrovů', en: 'Islands' }
+    ocean: { cs: 'Oceán', en: 'Ocean' }
+    culture: { cs: 'Kultura', en: 'Culture' }
+    polynesia: { cs: 'Polynésie', en: 'Polynesia' }
+    inspiration: { cs: 'Inspirace', en: 'Inspiration' }
+    polynesian_model_zion: { cs: 'Polynéský model & ZION', en: 'Polynesian Model & ZION' }
+    principle: { cs: 'Princip', en: 'Principle' }
+    project_concept: { cs: 'Koncept projektu', en: 'Project Concept' }
+    activities_vision: { cs: 'Aktivity & Vize', en: 'Activities & Vision' }
+    rapa_nui_lessons_wayfinding_school: { cs: 'Rapa Nui lekce — wayfinding škola', en: 'Rapa Nui Lessons — wayfinding school' }
+    development_phases: { cs: 'Fáze rozvoje', en: 'Development Phases' }
+    from_vision_to_reality: { cs: 'Od vize k realitě', en: 'From Vision to Reality' }
+    exploring_now: { cs: 'Právě hledáme', en: 'Exploring now' }
+    blockchain_integration: { cs: 'Blockchain integrace', en: 'Blockchain Integration' }
+    active: { cs: 'Aktivní', en: 'Active' }
+    planned: { cs: 'Plánováno', en: 'Planned' }
+    open_questions_looking_for_guardians: { cs: 'Otevřené otázky — hledáme Guardians', en: 'Open Questions — looking for Guardians' }
+    specific_location_raiatea_tahiti_another_isla: { cs: 'Konkrétní lokace (Raiatea / Tahiti / jiný ostrov?)', en: 'Specific location (Raiatea / Tahiti / another island?)' }
+    polynesian_partners_local_communities_marae_s: { cs: 'Polynézští partneři — místní komunity, marae správci, navigátoři', en: 'Polynesian partners — local communities, marae stewards, navigators' }
+    founding_guardians_with_knowledge_of_ocean_cu: { cs: 'Zakládající Guardians se znalostí oceánské kultury a zemědělství', en: 'Founding Guardians with knowledge of ocean culture and farming' }
+    legal_form_in_french_polynesia_association_sa: { cs: 'Právní forma ve Francouzské Polynésii (asociace / SAS / komunitní nadace?)', en: 'Legal form in French Polynesia (association / SAS / community foundation?)' }
+    phase_0_financing_zion_fund_humanitarian_gran: { cs: 'Financování fáze 0 (ZION fond? Humanitární grant? Vlastní zdroje?)', en: 'Phase 0 financing (ZION fund? Humanitarian grant? Own resources?)' }
+    join_discord: { cs: 'Připojit se na Discord', en: 'Join Discord' }
+    terra_nova: { cs: 'Terra Nova', en: 'Terra Nova' }
+  },
 type DeepRecord = typeof t;
 
 /** Get a translated string for a given lang. */
