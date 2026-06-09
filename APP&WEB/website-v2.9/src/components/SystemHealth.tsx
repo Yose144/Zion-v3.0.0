@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { CheckCircle, XCircle, Activity } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { usePolling } from '@/hooks/usePolling';
+import { tr } from '@/lib/translations';
 
 interface HealthData {
   status: string;
@@ -56,11 +57,11 @@ export default function SystemHealth() {
     switch (status) {
       case 'ok':
       case 'healthy':
-        return cs ? 'zdravý' : 'healthy';
+        return tr('APP_WEB_website_v2_9_src_components_Syst', 'healthy', lang);
       case 'degraded':
-        return cs ? 'omezený' : 'degraded';
+        return tr('APP_WEB_website_v2_9_src_components_Syst', 'degraded', lang);
       case 'unknown':
-        return cs ? 'neznámý' : 'unknown';
+        return tr('APP_WEB_website_v2_9_src_components_Syst', 'unknown', lang);
       default:
         return status;
     }
@@ -69,7 +70,7 @@ export default function SystemHealth() {
   if (loading) {
     return (
       <section className="mt-12">
-        <div className="animate-pulse text-gray-400">{cs ? 'Načítám stav systému...' : 'Loading system health...'}</div>
+        <div className="animate-pulse text-gray-400">{tr('APP_WEB_website_v2_9_src_components_Syst', 'loading_system_health', lang)}</div>
       </section>
     );
   }
@@ -86,12 +87,12 @@ export default function SystemHealth() {
       >
         <div className="flex items-center gap-2 mb-6">
           <Activity className="w-6 h-6 text-green-400" />
-          <h2 className="text-3xl font-bold">{cs ? 'Stav systému' : 'System Health'}</h2>
+          <h2 className="text-3xl font-bold">{tr('APP_WEB_website_v2_9_src_components_Syst', 'system_health', lang)}</h2>
         </div>
 
         <div className="grid md:grid-cols-3 gap-6">
           <div className="bg-black/30 rounded-lg p-4">
-            <div className="text-sm text-gray-400 mb-1">{cs ? 'Stav' : 'Status'}</div>
+            <div className="text-sm text-gray-400 mb-1">{tr('APP_WEB_website_v2_9_src_components_Syst', 'status', lang)}</div>
             <div className="flex items-center gap-2">
               {health.status === 'ok' || health.status === 'healthy' ? (
                 <CheckCircle className="w-5 h-5 text-green-400" />
@@ -105,12 +106,12 @@ export default function SystemHealth() {
           </div>
 
           <div className="bg-black/30 rounded-lg p-4">
-            <div className="text-sm text-gray-400 mb-1">{cs ? 'Verze' : 'Version'}</div>
+            <div className="text-sm text-gray-400 mb-1">{tr('APP_WEB_website_v2_9_src_components_Syst', 'version', lang)}</div>
             <div className="text-lg font-semibold text-zion-purple">{health.version}</div>
           </div>
 
           <div className="bg-black/30 rounded-lg p-4">
-            <div className="text-sm text-gray-400 mb-1">{cs ? 'Doba běhu' : 'Uptime'}</div>
+            <div className="text-sm text-gray-400 mb-1">{tr('APP_WEB_website_v2_9_src_components_Syst', 'uptime', lang)}</div>
             <div className="text-lg font-semibold text-zion-cyan">
               {formatUptime(health.uptime_seconds)}
             </div>
@@ -119,12 +120,12 @@ export default function SystemHealth() {
 
         {health.dependencies && (
           <div className="mt-6">
-            <h3 className="text-xl font-semibold mb-4">{cs ? 'Závislosti' : 'Dependencies'}</h3>
+            <h3 className="text-xl font-semibold mb-4">{tr('APP_WEB_website_v2_9_src_components_Syst', 'dependencies', lang)}</h3>
             <div className="grid md:grid-cols-2 gap-4">
               {health.dependencies.rpc && (
                 <div className="bg-black/30 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="font-semibold">{cs ? 'RPC uzel' : 'RPC Node'}</span>
+                    <span className="font-semibold">{tr('APP_WEB_website_v2_9_src_components_Syst', 'rpc_node', lang)}</span>
                     {health.dependencies.rpc.healthy ? (
                       <CheckCircle className="w-5 h-5 text-green-400" />
                     ) : (
@@ -140,7 +141,7 @@ export default function SystemHealth() {
               {health.dependencies.mining_pool && (
                 <div className="bg-black/30 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="font-semibold">{cs ? 'Těžební pool' : 'Mining Pool'}</span>
+                    <span className="font-semibold">{tr('APP_WEB_website_v2_9_src_components_Syst', 'mining_pool', lang)}</span>
                     {health.dependencies.mining_pool.healthy ? (
                       <CheckCircle className="w-5 h-5 text-green-400" />
                     ) : (

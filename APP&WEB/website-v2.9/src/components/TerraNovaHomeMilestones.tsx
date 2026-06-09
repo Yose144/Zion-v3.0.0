@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { ArrowDownToLine, ArrowRight } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tr } from '@/lib/translations';
 
 const BRAILLE_TREE = `⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡀⣀⢂⣁⣧⣖⡖⠠⢠⠀⠀⢤⡀⢀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
@@ -50,7 +51,7 @@ export default function TerraNovaHomeMilestones() {
         {/* Header */}
         <div className="mb-10 flex flex-col items-start gap-3 max-w-3xl">
           <p className="text-sm uppercase tracking-[0.4em] text-gray-400">
-            {cs ? 'Terra Nova · Zlatý Kompas Nové Země' : 'Terra Nova · Golden Compass of the New Earth'}
+            {tr('APP_WEB_website_v2_9_src_components_Terr', 'terra_nova_golden_compass_of_the_new_earth', lang)}
           </p>
           <h2 className="text-4xl md:text-5xl font-bold">
             <span className="text-gradient">Terra Nova</span>
@@ -87,8 +88,8 @@ export default function TerraNovaHomeMilestones() {
               <pre className="text-zion-gold leading-tight select-none mt-2 whitespace-pre">{ZION_ASCII}</pre>
               <div className="mt-3 space-y-1">
                 <p><span className="text-gray-500">[genesis]</span> <span className="text-green-400">Mainnet Launch v3</span> <span className="text-gray-600">✓ block #1</span></p>
-                <p><span className="text-white font-bold">&gt;</span> <span className="text-white">{cs ? 'ZION je váš.' : 'ZION is yours.'}</span></p>
-                <p><span className="text-white font-bold">&gt;</span> <span className="text-zion-gold">{cs ? 'Zlatý věk začíná.' : 'The Golden Age begins.'}</span></p>
+                <p><span className="text-white font-bold">&gt;</span> <span className="text-white">{tr('APP_WEB_website_v2_9_src_components_Terr', 'zion_is_yours', lang)}</span></p>
+                <p><span className="text-white font-bold">&gt;</span> <span className="text-zion-gold">{tr('APP_WEB_website_v2_9_src_components_Terr', 'the_golden_age_begins', lang)}</span></p>
                 <p className="text-gray-600 italic text-[10px]">Gate, Gate, Paragate, Parasamgate, Bodhi Swaha</p>
                 <p className="text-gray-700 text-[10px]">— Yeshuae Ben Yose / Zion Creator · Om Namo Hiranyagarbha!</p>
               </div>
@@ -107,10 +108,10 @@ export default function TerraNovaHomeMilestones() {
               className="inline-flex items-center gap-2 rounded-2xl border border-zion-cyan/30 bg-zion-cyan/10 px-5 py-3 text-sm font-semibold text-zion-cyan hover:bg-zion-cyan/20 transition-all duration-300"
             >
               <ArrowDownToLine className="w-4 h-4" />
-              {cs ? 'Download ZION CLI' : 'Download ZION CLI'}
+              {tr('APP_WEB_website_v2_9_src_components_Terr', 'download_zion_cli', lang)}
             </Link>
             <p className="text-sm text-gray-400">
-              {cs ? 'Veřejné binárky pro Windows, Linux a macOS jsou živé.' : 'Public Windows, Linux, and macOS binaries are live.'}
+              {tr('APP_WEB_website_v2_9_src_components_Terr', 'public_windows_linux_and_macos_binaries_are_live', lang)}
             </p>
           </div>
         </div>
@@ -121,14 +122,14 @@ export default function TerraNovaHomeMilestones() {
             href="/terranova"
             className="inline-flex items-center gap-2.5 rounded-2xl border border-zion-gold/30 bg-zion-gold/10 px-8 py-3.5 text-sm font-semibold text-zion-gold hover:bg-zion-gold/20 transition-all duration-300"
           >
-            {cs ? 'Otevřít sekci Terra Nova' : 'Open the Terra Nova section'}
+            {tr('APP_WEB_website_v2_9_src_components_Terr', 'open_the_terra_nova_section', lang)}
             <ArrowRight className="w-4 h-4" />
           </Link>
           <Link
             href="/download"
             className="inline-flex items-center gap-2.5 rounded-2xl border border-white/15 bg-white/5 px-8 py-3.5 text-sm font-semibold text-white hover:bg-white/10 transition-all duration-300"
           >
-            {cs ? 'Přejít na Download' : 'Go to Download'}
+            {tr('APP_WEB_website_v2_9_src_components_Terr', 'go_to_download', lang)}
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
