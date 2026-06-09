@@ -196,7 +196,6 @@ function MetricPanel({
 
 export default function NetworkMonitoringSnapshot({ cs, locale }: { cs: boolean; locale: string }) {
   const { lang } = useLang();
-  const cs = lang === 'cs';
   const [monitoring, setMonitoring] = useState<MonitoringSnapshot | null>(null);
   const [monitoringUpdatedAt, setMonitoringUpdatedAt] = useState<Date | null>(null);
 
