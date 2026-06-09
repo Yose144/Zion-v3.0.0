@@ -121,7 +121,6 @@ const PROJECTS: ProjectCardData[] = [
 
 export default function PioneerProjectCards({ cs }: { cs: boolean }) {
   const { lang } = useLang();
-  const cs = lang === 'cs';
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
