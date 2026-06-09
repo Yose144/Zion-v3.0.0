@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { CONTRACTS_SEPOLIA, FARM_ABI } from '@/lib/defi-contracts';
+import { tr } from '@/lib/translations';
 
 interface FarmPool {
   id: number;
@@ -76,17 +77,17 @@ export default function FarmingPage() {
         {/* Back */}
         <Link href="/defi" className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors">
           <ArrowLeft className="h-4 w-4" />
-          {cs ? 'Zpět do DeFi Hub' : 'Back to DeFi Hub'}
+          {tr('APP_WEB_website_v2_9_src_app_defi_farmin', 'back_to_defi_hub', lang)}
         </Link>
 
         {/* HERO */}
         <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} className="zion-panel rounded-3xl md:rounded-4xl bg-black/60 p-6 md:p-10">
           <div className="inline-flex items-center gap-2 rounded-full border border-green-500/40 bg-green-500/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-green-300 uppercase mb-4">
             <Sprout className="h-4 w-4" />
-            {cs ? 'DeFi' : 'DeFi'} · Farming
+            {tr('APP_WEB_website_v2_9_src_app_defi_farmin', 'defi', lang)} · Farming
           </div>
           <h1 className="text-3xl sm:text-5xl font-semibold text-gradient leading-tight">
-            {cs ? 'Yield Farming' : 'Yield Farming'}
+            {tr('APP_WEB_website_v2_9_src_app_defi_farmin', 'yield_farming', lang)}
           </h1>
           <p className="mt-4 text-lg text-gray-300 max-w-2xl">
             {cs
@@ -102,7 +103,7 @@ export default function FarmingPage() {
               <Flame className="h-3 w-3 text-zion-gold" /> MasterChef v2
             </span>
             <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-              <TrendingUp className="h-3 w-3 text-zion-cyan" /> {cs ? 'Halving každých 90 dní' : '90-day halving'}
+              <TrendingUp className="h-3 w-3 text-zion-cyan" /> {tr('APP_WEB_website_v2_9_src_app_defi_farmin', '90_day_halving', lang)}
             </span>
           </div>
         </motion.section>
@@ -111,10 +112,10 @@ export default function FarmingPage() {
         <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 }}>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { label: cs ? 'Odměna / s' : 'Reward / s', value: `${rewardPerSecond} wZION`, icon: Zap, color: 'text-green-400' },
-              { label: cs ? 'Počet poolů' : 'Pools', value: MOCK_POOLS.length.toString(), icon: Layers, color: 'text-zion-cyan' },
-              { label: cs ? 'Celkem alloc' : 'Total Alloc', value: '1500', icon: TrendingUp, color: 'text-zion-gold' },
-              { label: cs ? 'Kontrakt' : 'Contract', value: 'ZIONFarm', icon: Wallet, color: 'text-purple-400' },
+              { label: tr('APP_WEB_website_v2_9_src_app_defi_farmin', 'reward_s', lang), value: `${rewardPerSecond} wZION`, icon: Zap, color: 'text-green-400' },
+              { label: tr('APP_WEB_website_v2_9_src_app_defi_farmin', 'pools', lang), value: MOCK_POOLS.length.toString(), icon: Layers, color: 'text-zion-cyan' },
+              { label: tr('APP_WEB_website_v2_9_src_app_defi_farmin', 'total_alloc', lang), value: '1500', icon: TrendingUp, color: 'text-zion-gold' },
+              { label: tr('APP_WEB_website_v2_9_src_app_defi_farmin', 'contract', lang), value: 'ZIONFarm', icon: Wallet, color: 'text-purple-400' },
             ].map((card) => (
               <div key={card.label} className="rounded-3xl border border-white/8 bg-black/60 backdrop-blur-xl p-5">
                 <div className="flex items-center gap-2 mb-2">
@@ -131,7 +132,7 @@ export default function FarmingPage() {
         <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
           <h2 className="text-2xl font-semibold text-white mb-6 flex items-center gap-2">
             <Layers className="h-6 w-6 text-zion-cyan" />
-            {cs ? 'Farm pooly' : 'Farm Pools'}
+            {tr('APP_WEB_website_v2_9_src_app_defi_farmin', 'farm_pools', lang)}
           </h2>
           <div className="space-y-3">
             {MOCK_POOLS.map((p) => (
@@ -151,11 +152,11 @@ export default function FarmingPage() {
                       <h3 className="text-sm font-medium text-white">{cs ? p.nameCs : p.name}</h3>
                       {p.status === 'active' ? (
                         <span className="rounded-full bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 text-[10px] text-emerald-400 uppercase tracking-wider">
-                          {cs ? 'Aktivní' : 'Active'}
+                          {tr('APP_WEB_website_v2_9_src_app_defi_farmin', 'active', lang)}
                         </span>
                       ) : (
                         <span className="rounded-full bg-gray-500/10 border border-gray-500/30 px-2 py-0.5 text-[10px] text-gray-400 uppercase tracking-wider">
-                          {cs ? 'Připravuje se' : 'Upcoming'}
+                          {tr('APP_WEB_website_v2_9_src_app_defi_farmin', 'upcoming', lang)}
                         </span>
                       )}
                     </div>
@@ -185,12 +186,12 @@ export default function FarmingPage() {
         <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14 }} className="rounded-4xl border border-white/8 bg-black/60 backdrop-blur-xl p-6 md:p-8">
           <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <Lock className="h-5 w-5 text-green-400" />
-            {cs ? 'Vložit do farmy' : 'Deposit to Farm'}
+            {tr('APP_WEB_website_v2_9_src_app_defi_farmin', 'deposit_to_farm', lang)}
           </h3>
           <div className="space-y-4 max-w-md">
             <div>
               <label className="text-xs text-gray-500 uppercase tracking-wider mb-2 block">
-                {cs ? 'Částka LP tokenů' : 'LP Token Amount'}
+                {tr('APP_WEB_website_v2_9_src_app_defi_farmin', 'lp_token_amount', lang)}
               </label>
               <div className="relative">
                 <input
@@ -201,7 +202,7 @@ export default function FarmingPage() {
                   className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder:text-gray-600 focus:outline-none focus:border-green-500/40 font-mono"
                 />
                 <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-gray-500">
-                  {cs ? 'LP' : 'LP'} {pool.id}
+                  {tr('APP_WEB_website_v2_9_src_app_defi_farmin', 'lp', lang)} {pool.id}
                 </span>
               </div>
             </div>
@@ -209,7 +210,7 @@ export default function FarmingPage() {
               disabled
               className="w-full rounded-2xl bg-green-500/20 border border-green-500/30 px-6 py-3 text-sm font-semibold text-green-300 cursor-not-allowed opacity-60"
             >
-              {cs ? 'Vložit LP tokeny' : 'Deposit LP Tokens'}
+              {tr('APP_WEB_website_v2_9_src_app_defi_farmin', 'deposit_lp_tokens', lang)}
             </button>
             <p className="text-[11px] text-gray-500 text-center">
               {cs
@@ -223,7 +224,7 @@ export default function FarmingPage() {
         <motion.section initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }} className="rounded-2xl border border-white/8 bg-black/60 p-5">
           <div className="flex items-center gap-2 mb-2">
             <Wallet className="h-4 w-4 text-gray-400" />
-            <span className="text-xs text-gray-400 uppercase tracking-wider">{cs ? 'Kontrakt' : 'Contract'}</span>
+            <span className="text-xs text-gray-400 uppercase tracking-wider">{tr('APP_WEB_website_v2_9_src_app_defi_farmin', 'contract', lang)}</span>
           </div>
           <p className="font-mono text-sm text-gray-300 break-all">{CONTRACTS_SEPOLIA.ZIONFarm}</p>
           <p className="text-[10px] text-gray-500 mt-1">Base Sepolia · ZIONFarm.sol · MasterChef v2</p>

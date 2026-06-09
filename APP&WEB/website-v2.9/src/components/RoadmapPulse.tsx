@@ -3,6 +3,7 @@
 import { ArrowRight, CalendarDays, CheckCircle2, Rocket } from 'lucide-react';
 import Link from 'next/link';
 import { useLang } from '@/contexts/LanguageContext';
+import { tr } from '@/lib/translations';
 
 const getPhaseCards = (cs: boolean) => [
   {
@@ -40,27 +41,27 @@ const getPhaseCards = (cs: boolean) => [
 const getTimeline = (cs: boolean) => [
   {
     title: '⛏️ L1 TerraNova · 2026',
-    focus: cs ? 'Mainnet genesis, Cosmic Harmony v3/v4, UTXO, zasoba 144B ZION' : 'MainNet Genesis, Cosmic Harmony v3/v4, UTXO, 144B ZION supply',
+    focus: tr('APP_WEB_website_v2_9_src_components_Road', 'mainnet_genesis_cosmic_harmony_v3_v4_utxo_144b_zio', lang),
   },
   {
     title: '🌉 L2 Bridge, DAO & DeFi · 2026–2027',
-    focus: cs ? 'wZION DEX na Base Mainnet, bridge relay, treasury rails a DAO governance vrstva' : 'wZION DEX on Base Mainnet, bridge relay, treasury rails, and the DAO governance layer',
+    focus: tr('APP_WEB_website_v2_9_src_components_Road', 'wzion_dex_on_base_mainnet_bridge_relay_treasury_ra', lang),
   },
   {
     title: '🧠 L3 AI Native, WARP & NCL · 2027–2028',
-    focus: cs ? 'Hiranyagarbha runtime, NCL compute lane, WARP relaye a agenticka orchestrace nad L1/L2' : 'Hiranyagarbha runtime, the NCL compute lane, WARP relays, and agentic orchestration above L1/L2',
+    focus: tr('APP_WEB_website_v2_9_src_components_Road', 'hiranyagarbha_runtime_the_ncl_compute_lane_warp_re', lang),
   },
   {
     title: '🎮 L4 Oasis · 2029',
-    focus: cs ? 'Golden Egg, XP ekonomika, Winners program, herni vrstva' : 'Golden Egg, XP economy, Winners program, game layer',
+    focus: tr('APP_WEB_website_v2_9_src_components_Road', 'golden_egg_xp_economy_winners_program_game_layer', lang),
   },
   {
     title: '🌍 L5 Free World · 2030',
-    focus: cs ? 'Humanitarni mise, free-energy R&D, off-grid komunity' : 'Humanitarian missions, free energy R&D, off-grid communities',
+    focus: tr('APP_WEB_website_v2_9_src_components_Road', 'humanitarian_missions_free_energy_r_d_off_grid_com', lang),
   },
   {
     title: '🔭 L6 Issobella · 2040+',
-    focus: cs ? 'Orbitalni observator, LEO vyzkumna stanice, dlouhy mission layer' : 'Orbital observatory, LEO research station, long-range mission layer',
+    focus: tr('APP_WEB_website_v2_9_src_components_Road', 'orbital_observatory_leo_research_station_long_rang', lang),
   },
 ];
 
@@ -75,7 +76,7 @@ export default function RoadmapPulse() {
       <div className="zion-container space-y-12">
         <div className="flex flex-col lg:flex-row lg:items-center gap-6">
           <div className="flex-1 space-y-3">
-            <p className="text-sm uppercase tracking-[0.4em] text-zion-gold">{cs ? 'Roadmapa' : 'Roadmap'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-zion-gold">{tr('APP_WEB_website_v2_9_src_components_Road', 'roadmap', lang)}</p>
             <h2 className="text-4xl md:text-5xl font-bold text-white">
               v3.0.0 <span className="text-gradient">Mainnet Ready</span>
             </h2>
@@ -89,7 +90,7 @@ export default function RoadmapPulse() {
               href="/roadmap"
               className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-linear-to-r from-zion-gold via-zion-purple to-zion-cyan text-sm font-semibold"
             >
-              {cs ? 'Cela roadmapa' : 'Full Roadmap'}
+              {tr('APP_WEB_website_v2_9_src_components_Road', 'full_roadmap', lang)}
               <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
@@ -97,7 +98,7 @@ export default function RoadmapPulse() {
               className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl border border-white/10 bg-white/5 text-sm font-semibold"
             >
               <CalendarDays className="w-4 h-4 text-zion-cyan" />
-              {cs ? 'Pruzkumnik blockchainu' : 'Block Explorer'}
+              {tr('APP_WEB_website_v2_9_src_components_Road', 'block_explorer', lang)}
             </Link>
           </div>
         </div>
@@ -139,8 +140,8 @@ export default function RoadmapPulse() {
           <div className="flex items-center gap-3 mb-6">
             <Rocket className="w-6 h-6 text-zion-cyan" />
             <div>
-              <p className="text-xs uppercase tracking-[0.4em] text-gray-400">{cs ? '6vrstva vize' : '6-Layer Vision'}</p>
-              <h3 className="text-2xl font-semibold text-white">{cs ? '6vrstva vize po Pure Code baseline' : '6-layer vision — after the Pure Code baseline'}</h3>
+              <p className="text-xs uppercase tracking-[0.4em] text-gray-400">{tr('APP_WEB_website_v2_9_src_components_Road', '6_layer_vision', lang)}</p>
+              <h3 className="text-2xl font-semibold text-white">{tr('APP_WEB_website_v2_9_src_components_Road', '6_layer_vision_after_the_pure_code_baseline', lang)}</h3>
             </div>
           </div>
 
