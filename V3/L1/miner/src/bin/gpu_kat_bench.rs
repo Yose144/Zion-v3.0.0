@@ -74,7 +74,7 @@ fn run_gpu_kat(
     println!("========================================");
 
     // ── Build OpenCL program ──
-    let pro_que = match ProQue::builder().src(kernel_src).build() {
+    let pro_que = match ProQue::builder().src(kernel_src).dims(1).build() {
         Ok(pq) => pq,
         Err(e) => {
             println!("  OpenCL build FAILED: {}", e);
