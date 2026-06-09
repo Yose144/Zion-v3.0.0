@@ -3,8 +3,6 @@
 import Link from 'next/link';
 import { ArrowDownToLine, CheckCircle2, Clock, TerminalSquare, Zap, Wallet, Server, Copy } from 'lucide-react';
 import { SITE_POOL_PRIMARY } from '@/lib/site';
-import { useLang } from '@/contexts/LanguageContext';
-import { tr } from '@/lib/translations';
 
 const DL = '/downloads';
 
@@ -61,31 +59,31 @@ function getSubcommands(cs: boolean): Subcommand[] {
   return [
     {
       id: 'node',
-      name: tr('APP_WEB_website_v2_9_src_components_down', 'node', lang),
+      name: cs ? 'Node' : 'Node',
       icon: <Server className="h-5 w-5" />,
       cmd: 'zion node status',
-      desc: tr('APP_WEB_website_v2_9_src_components_down', 'status_blocks_transactions_mempool_websocket', lang),
+      desc: cs ? 'Status, bloky, transakce, mempool a WebSocket' : 'Status, blocks, transactions, mempool & WebSocket',
     },
     {
       id: 'mine',
-      name: tr('APP_WEB_website_v2_9_src_components_down', 'miner', lang),
+      name: cs ? 'Miner' : 'Miner',
       icon: <Zap className="h-5 w-5" />,
       cmd: `zion mine start --pool stratum+tcp://${SITE_POOL_PRIMARY} --wallet YOUR_ADDRESS`,
-      desc: tr('APP_WEB_website_v2_9_src_components_down', 'cpu_gpu_mining_with_cosmic_harmony_v3', lang),
+      desc: cs ? 'CPU/GPU tezba s Cosmic Harmony v3' : 'CPU/GPU mining with Cosmic Harmony v3',
     },
     {
       id: 'wallet',
-      name: tr('APP_WEB_website_v2_9_src_components_down', 'wallet', lang),
+      name: cs ? 'Wallet' : 'Wallet',
       icon: <Wallet className="h-5 w-5" />,
       cmd: 'zion wallet new --mnemonic --out my-wallet.json --print',
-      desc: tr('APP_WEB_website_v2_9_src_components_down', 'ed25519_bip39_mnemonic_balance_send', lang),
+      desc: cs ? 'Ed25519 + BIP39 mnemotechnika, zustatek, odesilani' : 'Ed25519 + BIP39 mnemonic, balance, send',
     },
     {
       id: 'pool',
-      name: tr('APP_WEB_website_v2_9_src_components_down', 'pool', lang),
+      name: cs ? 'Pool' : 'Pool',
       icon: <TerminalSquare className="h-5 w-5" />,
       cmd: 'zion pool status',
-      desc: tr('APP_WEB_website_v2_9_src_components_down', 'stratum_pool_monitoring_stats', lang),
+      desc: cs ? 'Stratum pool monitoring a statistiky' : 'Stratum pool monitoring & stats',
     },
   ];
 }
@@ -106,7 +104,6 @@ function getPlatformShortLabel(platform: Platform): string {
 }
 
 export default function DownloadToolBrowser({ cs }: { cs: boolean }) {
-  const { lang } = useLang();
   const platforms = getPlatforms(cs);
   const subcommands = getSubcommands(cs);
   const filename = `zion-cli-windows-x86_64.exe`;
@@ -116,7 +113,7 @@ export default function DownloadToolBrowser({ cs }: { cs: boolean }) {
     <section className="space-y-6">
       <div className="flex flex-col gap-2">
         <p className="text-sm uppercase tracking-[0.4em] text-gray-500">
-          {tr('APP_WEB_website_v2_9_src_components_down', 'native_rust_cli', lang)}
+          {cs ? 'Nativni Rust CLI' : 'Native Rust CLI'}
         </p>
         <h2 className="text-3xl font-semibold text-white">ZION CLI · v3.0.0</h2>
         <p className="text-gray-400 max-w-3xl">
@@ -171,12 +168,12 @@ export default function DownloadToolBrowser({ cs }: { cs: boolean }) {
                       {pf.available ? (
                         <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-400">
                           <CheckCircle2 className="h-3 w-3" />
-                          {tr('APP_WEB_website_v2_9_src_components_down', 'available', lang)}
+                          {cs ? 'Dostupné' : 'Available'}
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 rounded-full border border-gray-500/30 bg-gray-500/10 px-2 py-0.5 text-[10px] font-semibold text-gray-400">
                           <Clock className="h-3 w-3" />
-                          {tr('APP_WEB_website_v2_9_src_components_down', 'coming_soon', lang)}
+                          {cs ? 'Brzy' : 'Coming Soon'}
                         </span>
                       )}
                     </h3>
@@ -190,7 +187,7 @@ export default function DownloadToolBrowser({ cs }: { cs: boolean }) {
                       className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/5 hover:bg-white/15 px-5 py-2.5 text-sm font-semibold text-white transition-colors"
                     >
                       <ArrowDownToLine className="h-4 w-4" />
-                      {tr('APP_WEB_website_v2_9_src_components_down', 'download', lang)}
+                      {cs ? 'Stáhnout' : 'Download'}
                     </Link>
                     <Link
                       href={shaUrl}
@@ -206,7 +203,7 @@ export default function DownloadToolBrowser({ cs }: { cs: boolean }) {
                     className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-5 py-2.5 text-sm font-semibold text-gray-500 cursor-not-allowed"
                   >
                     <Clock className="h-4 w-4" />
-                    {tr('APP_WEB_website_v2_9_src_components_down', 'in_progress', lang)}
+                    {cs ? 'Ve vývoji' : 'In Progress'}
                   </button>
                 )}
               </div>
@@ -225,18 +222,18 @@ export default function DownloadToolBrowser({ cs }: { cs: boolean }) {
       {/* Verification note */}
       <div className="rounded-2xl border border-zion-cyan/20 bg-zion-cyan/5 p-5">
         <p className="text-sm text-gray-300">
-          <span className="text-zion-cyan font-semibold">{tr('APP_WEB_website_v2_9_src_components_down', 'verification', lang)}</span>{' '}
+          <span className="text-zion-cyan font-semibold">{cs ? 'Verifikace:' : 'Verification:'}</span>{' '}
           {cs
             ? 'Ke každé dostupné binárce je na serveru i odpovídající soubor .sha256. Po stažení spusť: '
             : 'Each available binary has a matching .sha256 file on the server. After download, run: '}
           <code className="rounded bg-black/40 px-1.5 py-0.5 font-mono text-xs text-gray-200">
             certutil -hashfile zion-cli-windows-x86_64.exe SHA256
           </code>{' '}
-          {tr('APP_WEB_website_v2_9_src_components_down', 'windows_or', lang)}
+          {cs ? '(Windows) nebo ' : '(Windows) or '}
           <code className="rounded bg-black/40 px-1.5 py-0.5 font-mono text-xs text-gray-200">
             sha256sum zion-cli-windows-x86_64.exe
           </code>{' '}
-          {tr('APP_WEB_website_v2_9_src_components_down', 'linux_macos', lang)}
+          {cs ? '(Linux/macOS).' : '(Linux/macOS).'}
         </p>
       </div>
     </section>

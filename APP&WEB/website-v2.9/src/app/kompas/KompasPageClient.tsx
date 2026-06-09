@@ -6,7 +6,6 @@ import { Compass, BookOpen, Shield, Sparkles, X } from 'lucide-react';
 import Link from 'next/link';
 import { useLang } from '@/contexts/LanguageContext';
 import ZlatyKompas, { DIRECTIONS } from '@/components/ZlatyKompas';
-import { tr } from '@/lib/translations';
 
 /* ═══════════════════════════════════════════════════════════
    /kompas — Zlatý Kompas TerraNova
@@ -111,7 +110,7 @@ export default function KompasPageClient() {
               </div>
               <div className="relative">
                 <p className="text-center text-xs uppercase tracking-[0.4em] text-gray-500 mb-4">
-                  {tr('APP_WEB_website_v2_9_src_app_kompas_Komp', 'click_a_direction_for_detail', lang)}
+                  {cs ? 'Klikni na směr pro detail' : 'Click a direction for detail'}
                 </p>
                 <ZlatyKompas selected={selected} onSelect={handleSelect} />
               </div>
@@ -133,7 +132,7 @@ export default function KompasPageClient() {
                     <button
                       onClick={() => setSelected(null)}
                       className="absolute top-4 right-4 p-1.5 rounded-lg border border-white/10 bg-white/5 text-gray-400 hover:text-white transition-colors"
-                      aria-label={tr('APP_WEB_website_v2_9_src_app_kompas_Komp', 'close', lang)}
+                      aria-label={cs ? 'Zavřít' : 'Close'}
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -165,7 +164,7 @@ export default function KompasPageClient() {
 
                     <div className="rounded-2xl border border-white/5 bg-white/[0.03] p-4">
                       <p className="text-[10px] uppercase tracking-[0.3em] text-gray-500 mb-1">
-                        {tr('APP_WEB_website_v2_9_src_app_kompas_Komp', 'question', lang)}
+                        {cs ? 'Otázka' : 'Question'}
                       </p>
                       <p className="text-sm text-gray-400 italic">
                         {cs
@@ -183,7 +182,7 @@ export default function KompasPageClient() {
                     className="flex items-center justify-center h-full min-h-[400px] rounded-3xl border border-dashed border-white/10 bg-black/30"
                   >
                     <p className="text-gray-600 text-sm text-center px-6">
-                      {tr('APP_WEB_website_v2_9_src_app_kompas_Komp', 'select_a_direction_on_the_compass', lang)}
+                      {cs ? 'Vyber směr na kompasu →' : 'Select a direction on the compass →'}
                     </p>
                   </motion.div>
                 )}
@@ -233,7 +232,7 @@ export default function KompasPageClient() {
           transition={{ duration: 0.5 }}
         >
           <p className="text-xs uppercase tracking-[0.4em] text-gray-500 mb-5 text-center">
-            {tr('APP_WEB_website_v2_9_src_app_kompas_Komp', 'all_seven_directions', lang)}
+            {cs ? 'Všech sedm směrů' : 'All seven directions'}
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             {DIRECTIONS.map((d, i) => {
@@ -345,7 +344,7 @@ export default function KompasPageClient() {
           <div className="grid md:grid-cols-2 gap-6">
             <div className="rounded-2xl border border-zion-gold/20 bg-zion-gold/5 p-5">
               <p className="text-xs uppercase tracking-[0.3em] text-zion-gold mb-2 font-semibold">
-                {tr('APP_WEB_website_v2_9_src_app_kompas_Komp', 'inner', lang)}
+                {cs ? 'Vnitřní' : 'Inner'}
               </p>
               <p className="text-gray-300 leading-relaxed">
                 {t('movement_inner', lang)}
@@ -353,7 +352,7 @@ export default function KompasPageClient() {
             </div>
             <div className="rounded-2xl border border-zion-cyan/20 bg-zion-cyan/5 p-5">
               <p className="text-xs uppercase tracking-[0.3em] text-zion-cyan mb-2 font-semibold">
-                {tr('APP_WEB_website_v2_9_src_app_kompas_Komp', 'outer', lang)}
+                {cs ? 'Vnější' : 'Outer'}
               </p>
               <p className="text-gray-300 leading-relaxed">
                 {t('movement_outer', lang)}
