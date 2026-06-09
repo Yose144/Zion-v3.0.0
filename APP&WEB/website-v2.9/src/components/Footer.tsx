@@ -34,8 +34,8 @@ export default function Footer() {
     {
       title: tr('footer', 'group_layers', lang),
       links: [
-        { href: '/defi', label: 'L2 DeFi', Icon: Wallet },
-        { href: '/wallet', label: 'Wallet', Icon: Wallet },
+        { href: '/defi', label: `L2 ${tr('nav', 'defi', lang)}`, Icon: Wallet },
+        { href: '/wallet', label: tr('nav', 'wallet', lang), Icon: Wallet },
         { href: '/dao', label: tr('nav', 'dao', lang), Icon: Globe },
         { href: '/bridge', label: tr('nav', 'bridge', lang), Icon: ArrowLeftRight },
         { href: '/l3-hiran', label: tr('nav', 'l3_hiran', lang), Icon: Brain },
@@ -49,7 +49,7 @@ export default function Footer() {
     {
       title: tr('footer', 'group_wiki', lang),
       links: [
-        { href: '/wiki', label: 'Wiki', Icon: BookOpen },
+        { href: '/wiki', label: tr('nav', 'wiki_group', lang), Icon: BookOpen },
         { href: '/terranova', label: tr('nav', 'terranova', lang), Icon: BookMarked },
         { href: '/genesis', label: tr('nav', 'genesis', lang), Icon: Sprout },
         { href: '/docs', label: tr('nav', 'docs', lang), Icon: FileText },
