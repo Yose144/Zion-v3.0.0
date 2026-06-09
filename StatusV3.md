@@ -22,6 +22,70 @@
 
 ---
 
+## Co je nového 2026-06-09 noc (Flash Audit — Genesis + Adresy ověřeny)
+
+> Verze: **3.0.1**
+> Klíčový commit: `fa4652c0` (AGENTS.md genesis fix)
+
+### TL;DR
+
+| Kontrola | Status | Zdroj |
+|----------|--------|-------|
+| Genesis hash vs flash `F:\ZION_V3_MAINNET_WALLETS.txt` | ✅ Shoda | `7543004c...` |
+| 14 premine adres vs flash | ✅ Shoda (14/14) | `genesis.rs`, `PREMINE_ADDRESSES_PUBLIC.txt` |
+| 5 canonical subsidy adres vs flash | ✅ Shoda (5/5) | `genesis.rs` |
+| `AGENTS.md` genesis hash | ✅ Opraveno | 3× `d28dc404...` → `7543004c...` |
+| `AGENTS.md` P2P status | ✅ Opraveno | Core offline → synced |
+
+### Postup ověření
+
+1. **Načtení flash** (`F:\ZION_V3_MAINNET_WALLETS.txt`) — BIP39 mnemoniky + adresy + SK pro všechny 14 premine slotů a 5 canonical subsidy walletů.
+2. **Porovnání s kódem** — každá adresa z flash byla zkontrolována proti:
+   - `V3/L1/core/src/genesis.rs` (`PREMINE_OUTPUTS` + `MAINNET_CANONICAL_*` konstanty)
+   - `docs/PREMINE_ADDRESSES_PUBLIC.txt`
+3. **Výsledek**: Všechny 19 adres (14 premine + 5 subsidy) jsou identické. Žádná divergence.
+
+### Přehled adres
+
+| # | Účel | Adresa (flash = kód) | Status |
+|---|------|----------------------|--------|
+| 1 | OASIS Winner 1 | `zion153e378e4x0g6s380h2h8z4t506g5s323f5se8g5` | ✅ |
+| 2 | OASIS Winner 2 | `zion1w548y2k3q802w885u7h0x2z8w7d675m0u3ya0l3` | ✅ |
+| 3 | OASIS Winner 3 | `zion192v4c0k074u7c502q6x8e0t592s564s7l4pm607` | ✅ |
+| 4 | OASIS Winner 4 | `zion1n690n062g668s8g0y4772830z8r450c0l06f295` | ✅ |
+| 5 | OASIS Winner 5 | `zion17323k5e490t832f4d0m3w4x3s2e2z7a7600j3v7` | ✅ |
+| 6 | DAO Treasury Main | `zion1t4l2f5j737989828v295n7z4r3v5j8k895m56n4` | ✅ |
+| 7 | DAO Grants | `zion1r5j0j7y444a8j402n8t8u2n8y323u6x4r2aw7l6` | ✅ |
+| 8 | DAO Bootstrap | `zion1932843t398t095g4h3x2f3a5l0q40490k4fm2w8` | ✅ |
+| 9 | Core Dev Fund | `zion1d3p5x622m327r060w5z0q5r203v837m6l8pa8x5` | ✅ |
+| 10 | Seed Nodes | `zion1r6r4s0u2e6u4t23767s05752d70660h2f29d2l7` | ✅ |
+| 11 | Creator Fund | `zion16542q4l853a2z0u5r5w8y4m8k4558847h503736` | ✅ |
+| 12 | Children Future | `zion1z7g4u3s2w3c5z5u4a60864m2y7q8e5j304g46r7` | ✅ |
+| 13 | Bridge Seed | `zion13794g7k3m0f84637l2x0t855h3l258k8p3xp5t3` | ✅ |
+| 14 | Bridge Vault UTXO | `zion1r565v3k2u8p8t6n494p0n527c0m7a5s4s5ae0x7` | ✅ |
+| — | Miner (89%) | `zion1w523a76830x2t5m7f3j023w265e8g5c400a4790` | ✅ |
+| — | Humanitarian (5%) | `zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4` | ✅ |
+| — | Issobella (5%) | `zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702` | ✅ |
+| — | Pool Fee (1%) | `zion196m4n8x764v7a0s406j40094a8z5j8m6z7nk342` | ✅ |
+| — | Pool Payout | `zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604` | ✅ |
+
+### Nalezená chyba v `AGENTS.md`
+
+`AGENTS.md` obsahoval **starý genesis hash** `d28dc404...` (z předchozí generace před 2026-06-07 resetem) na 3 místech:
+- Emergency Procedures / Genesis Recovery
+- Genesis Configuration blok
+- Checklist / Genesis Hash
+
+Opraveno na `7543004c...` v commitu `fa4652c0`.
+
+### Důležité upozornění
+
+- **Slot 12** (Children Future Fund) byl regenerován 2026-06-07 s **plnou BIP39 mnemonic** — předchozí záloha měla pouze SK. Flash obsahuje novou mnemonic.
+- **Humanitarian subsidy address** (`zion1s29403...`) je **odlišná** od premine slot 12 (`zion1z7g4u3...`). Subsidy jdou na ongoing fee recipient, premine je jednorázový genesis output.
+- **Bridge Vault** (`zion1r565v3...`) je keyless deterministic — odvozeno ze seed stringu, ne z BIP39.
+
+---
+
 ## Co je nového 2026-06-09 pozdě večer (Edge Deployment + Chain Reset + P2P Sync)
 
 > Verze: **3.0.1** (beze změny Cargo verze)
