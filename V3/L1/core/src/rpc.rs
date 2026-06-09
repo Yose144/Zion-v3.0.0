@@ -1904,6 +1904,7 @@ mod tests {
             hash_hex: crate::hex(&[0x11; 32]),
             header_hex: String::new(),
             previous_hash_hex: runtime.accepted_blocks()[0].hash_hex.clone(),
+            algorithm: "deeksha_lite_v1".to_string(),
             transaction_ids: vec![],
             transactions: vec![],
             total_fees_zion: 0,
