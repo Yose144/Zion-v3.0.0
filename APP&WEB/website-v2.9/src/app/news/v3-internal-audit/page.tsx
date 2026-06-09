@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { ArrowLeft, ExternalLink, ShieldCheck, ListChecks, AlertTriangle } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
+import { tr } from '@/lib/translations';
 
 export default function V3InternalAuditNewsPage() {
   const { lang } = useLang();
@@ -16,7 +17,7 @@ export default function V3InternalAuditNewsPage() {
           className="inline-flex items-center gap-2 text-sm text-white/50 hover:text-white/80 transition-colors mb-8"
         >
           <ArrowLeft className="h-4 w-4" />
-          {cs ? 'Zpět na novinky' : 'Back to news'}
+          {tr('APP_WEB_website_v2_9_src_app_news_v3_int', 'back_to_news', lang)}
         </Link>
 
         <div className="rounded-4xl border border-emerald-400/20 bg-emerald-400/5 p-7 sm:p-10 backdrop-blur">
@@ -26,7 +27,7 @@ export default function V3InternalAuditNewsPage() {
             </div>
             <div className="min-w-0">
               <p className="text-xs uppercase tracking-[0.35em] text-emerald-200/70">
-                {cs ? 'Audit · 2026-05-04' : 'Audit · 2026-05-04'}
+                {tr('APP_WEB_website_v2_9_src_app_news_v3_int', 'audit_2026_05_04', lang)}
               </p>
               <h1 className="mt-2 text-3xl sm:text-4xl font-semibold text-white leading-tight">
                 {cs
@@ -45,7 +46,7 @@ export default function V3InternalAuditNewsPage() {
             <div className="rounded-3xl border border-white/10 bg-black/30 p-5">
               <div className="flex items-center gap-2 text-sm font-semibold text-white">
                 <ListChecks className="h-4 w-4 text-emerald-400" />
-                {cs ? 'Uzavřené nálezy' : 'Closed findings'}
+                {tr('APP_WEB_website_v2_9_src_app_news_v3_int', 'closed_findings', lang)}
               </div>
               <p className="mt-2 text-sm text-white/60 leading-relaxed">
                 {cs
@@ -56,7 +57,7 @@ export default function V3InternalAuditNewsPage() {
             <div className="rounded-3xl border border-white/10 bg-black/30 p-5">
               <div className="flex items-center gap-2 text-sm font-semibold text-white">
                 <AlertTriangle className="h-4 w-4 text-zion-gold" />
-                {cs ? 'Co ještě blokuje' : 'What still blocks'}
+                {tr('APP_WEB_website_v2_9_src_app_news_v3_int', 'what_still_blocks', lang)}
               </div>
               <p className="mt-2 text-sm text-white/60 leading-relaxed">
                 {cs
@@ -67,7 +68,7 @@ export default function V3InternalAuditNewsPage() {
             <div className="rounded-3xl border border-white/10 bg-black/30 p-5">
               <div className="flex items-center gap-2 text-sm font-semibold text-white">
                 <ShieldCheck className="h-4 w-4 text-zion-cyan" />
-                {cs ? 'Aktivační plán' : 'Activation plan'}
+                {tr('APP_WEB_website_v2_9_src_app_news_v3_int', 'activation_plan', lang)}
               </div>
               <p className="mt-2 text-sm text-white/60 leading-relaxed">
                 {cs
@@ -82,13 +83,13 @@ export default function V3InternalAuditNewsPage() {
               href="/network"
               className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/5 px-5 py-2.5 text-sm font-semibold text-white hover:bg-white/10 transition-colors"
             >
-              {cs ? 'Síťový snapshot' : 'Network snapshot'}
+              {tr('APP_WEB_website_v2_9_src_app_news_v3_int', 'network_snapshot', lang)}
             </Link>
             <Link
               href="/docs"
               className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/5 px-5 py-2.5 text-sm font-semibold text-white hover:bg-white/10 transition-colors"
             >
-              {cs ? 'Dokumentace' : 'Docs'}
+              {tr('APP_WEB_website_v2_9_src_app_news_v3_int', 'docs', lang)}
             </Link>
             <a
               href="https://github.com/Yose144/2.9.6"
@@ -96,7 +97,7 @@ export default function V3InternalAuditNewsPage() {
               rel="noreferrer"
               className="inline-flex items-center gap-2 rounded-2xl border border-emerald-400/25 bg-emerald-400/10 px-5 py-2.5 text-sm font-semibold text-emerald-200 hover:bg-emerald-400/15 transition-colors"
             >
-              {cs ? 'Repo / audit soubory' : 'Repo / audit files'}
+              {tr('APP_WEB_website_v2_9_src_app_news_v3_int', 'repo_audit_files', lang)}
               <ExternalLink className="h-4 w-4" />
             </a>
           </div>

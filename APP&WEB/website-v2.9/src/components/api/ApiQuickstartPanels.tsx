@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { Check, Copy, Server, Terminal } from 'lucide-react';
+import { useLang } from '@/contexts/LanguageContext';
+import { tr } from '@/lib/translations';
 
 type CodeSample = {
   id: string;
@@ -18,7 +20,7 @@ function getCodeSamples(cs: boolean): CodeSample[] {
   return [
     {
       id: 'curl',
-      label: cs ? 'cURL rychly ping' : 'cURL quick ping',
+      label: tr('APP_WEB_website_v2_9_src_components_api_', 'curl_quick_ping', lang),
       snippet: `curl -X GET \\
   https://zionterranova.com/api/blockchain/stats \\
   -H 'Accept: application/json'`,
@@ -39,21 +41,23 @@ const data = await res.json();`,
 function getOnboardingSteps(cs: boolean): OnboardingStep[] {
   return [
     {
-      title: cs ? '1 · Autentizace' : '1 · Authenticate',
-      detail: cs ? 'GET routy jsou otevrene. Pro POST/PUT pridejte do hlavicek x-zion-key; klice rotujte kazdych 30 dni.' : 'GET routes are open. For POST/PUT include x-zion-key in headers; rotate keys every 30 days.',
+      title: tr('APP_WEB_website_v2_9_src_components_api_', '1_authenticate', lang),
+      detail: tr('APP_WEB_website_v2_9_src_components_api_', 'get_routes_are_open_for_post_put_include_x_zion_ke', lang),
     },
     {
-      title: cs ? '2 · Zvolte transport' : '2 · Choose transport',
-      detail: cs ? 'HTTPS pro RPC/REST, WebSockets pro stratum a metriky. Vsechny servery podporuji HTTP/2.' : 'HTTPS for RPC/REST, WebSockets for stratum + metrics. All servers support HTTP/2.',
+      title: tr('APP_WEB_website_v2_9_src_components_api_', '2_choose_transport', lang),
+      detail: tr('APP_WEB_website_v2_9_src_components_api_', 'https_for_rpc_rest_websockets_for_stratum_metrics_', lang),
     },
     {
-      title: cs ? '3 · Pripnete prostredi' : '3 · Pin environment',
-      detail: cs ? 'Sandbox zrcadli produkci na https://api-sandbox.zionterranova.com s testnet daty.' : 'Sandbox mirrors production at https://api-sandbox.zionterranova.com with testnet data.',
+      title: tr('APP_WEB_website_v2_9_src_components_api_', '3_pin_environment', lang),
+      detail: tr('APP_WEB_website_v2_9_src_components_api_', 'sandbox_mirrors_production_at_https_api_sandbox_zi', lang),
     },
   ];
 }
 
 export default function ApiQuickstartPanels({ cs }: { cs: boolean }) {
+  const { lang } = useLang();
+  const cs = lang === 'cs';
   const [copied, setCopied] = useState<string | null>(null);
   const codeSamples = getCodeSamples(cs);
   const onboardingSteps = getOnboardingSteps(cs);
@@ -68,7 +72,7 @@ export default function ApiQuickstartPanels({ cs }: { cs: boolean }) {
     <section className="grid gap-6 lg:grid-cols-2">
       <div className="rounded-4xl border border-white/10 bg-black/50 p-6 backdrop-blur">
         <h3 className="text-2xl font-semibold text-white flex items-center gap-3">
-          <Terminal className="h-6 w-6 text-zion-gold" /> {cs ? 'Quickstart ukazky' : 'Quickstart snippets'}
+          <Terminal className="h-6 w-6 text-zion-gold" /> {tr('APP_WEB_website_v2_9_src_components_api_', 'quickstart_snippets', lang)}
         </h3>
         <div className="mt-4 space-y-4">
           {codeSamples.map((sample) => (
@@ -81,11 +85,11 @@ export default function ApiQuickstartPanels({ cs }: { cs: boolean }) {
                 >
                   {copied === sample.id ? (
                     <>
-                      <Check className="h-3 w-3" /> {cs ? 'Zkopirovano' : 'Copied'}
+                      <Check className="h-3 w-3" /> {tr('APP_WEB_website_v2_9_src_components_api_', 'copied', lang)}
                     </>
                   ) : (
                     <>
-                      <Copy className="h-3 w-3" /> {cs ? 'Kopirovat' : 'Copy'}
+                      <Copy className="h-3 w-3" /> {tr('APP_WEB_website_v2_9_src_components_api_', 'copy', lang)}
                     </>
                   )}
                 </button>
@@ -100,7 +104,7 @@ export default function ApiQuickstartPanels({ cs }: { cs: boolean }) {
 
       <div className="rounded-4xl border border-white/10 bg-black/50 p-6 backdrop-blur">
         <h3 className="text-2xl font-semibold text-white flex items-center gap-3">
-          <Server className="h-6 w-6 text-zion-gold" /> {cs ? 'Checklist nasazeni' : 'Onboarding checklist'}
+          <Server className="h-6 w-6 text-zion-gold" /> {tr('APP_WEB_website_v2_9_src_components_api_', 'onboarding_checklist', lang)}
         </h3>
         <div className="mt-4 space-y-4">
           {onboardingSteps.map((step) => (

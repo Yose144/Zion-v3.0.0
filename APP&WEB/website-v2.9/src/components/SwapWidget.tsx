@@ -11,6 +11,7 @@ import { ArrowDownUp, Loader2, ExternalLink, AlertCircle, CheckCircle2 } from 'l
 import { useLang } from '@/contexts/LanguageContext';
 import { useWallet } from '@/contexts/WalletContext';
 import { CONTRACTS, WZION_ABI, SWAP_ROUTER_ABI, QUOTER_V2_ABI } from '@/lib/defi-contracts';
+import { tr } from '@/lib/translations';
 
 const POOL_FEE = 3000; // 0.3%
 const SLIPPAGE_BPS = 100; // 1% slippage tolerance
@@ -187,20 +188,20 @@ export default function SwapWidget() {
   return (
     <div className="rounded-2xl border border-white/10 bg-black/60 backdrop-blur-xl p-6 space-y-4">
       <h3 className="text-lg font-semibold text-white">
-        {cs ? 'Swap' : 'Swap'}
+        {tr('APP_WEB_website_v2_9_src_components_Swap', 'swap', lang)}
       </h3>
 
       {/* Not connected */}
       {!connected && (
         <div className="text-center py-6">
           <p className="text-sm text-gray-400 mb-4">
-            {cs ? 'Připoj MetaMask pro swapování' : 'Connect MetaMask to swap'}
+            {tr('APP_WEB_website_v2_9_src_components_Swap', 'connect_metamask_to_swap', lang)}
           </p>
           <button
             onClick={connect}
             className="inline-flex items-center gap-2 rounded-xl bg-zion-gold/20 border border-zion-gold/30 px-5 py-2.5 text-sm font-semibold text-zion-gold hover:bg-zion-gold/30 transition-colors"
           >
-            {cs ? 'Připojit peněženku' : 'Connect Wallet'}
+            {tr('APP_WEB_website_v2_9_src_components_Swap', 'connect_wallet', lang)}
           </button>
         </div>
       )}
@@ -209,13 +210,13 @@ export default function SwapWidget() {
       {connected && !isBaseMainnet && (
         <div className="text-center py-6">
           <p className="text-sm text-red-300 mb-4">
-            {cs ? 'Přepni na Base Mainnet' : 'Switch to Base Mainnet'}
+            {tr('APP_WEB_website_v2_9_src_components_Swap', 'switch_to_base_mainnet', lang)}
           </p>
           <button
             onClick={switchToBase}
             className="inline-flex items-center gap-2 rounded-xl bg-orange-500/20 border border-orange-500/30 px-5 py-2.5 text-sm font-semibold text-orange-300 hover:bg-orange-500/30 transition-colors"
           >
-            {cs ? 'Přepnout síť' : 'Switch Network'}
+            {tr('APP_WEB_website_v2_9_src_components_Swap', 'switch_network', lang)}
           </button>
         </div>
       )}
@@ -226,13 +227,13 @@ export default function SwapWidget() {
           {/* Input */}
           <div className="rounded-xl border border-white/10 bg-white/5 p-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-gray-400">{cs ? 'Prodáváš' : 'You sell'}</span>
+              <span className="text-xs text-gray-400">{tr('APP_WEB_website_v2_9_src_components_Swap', 'you_sell', lang)}</span>
               {inputBal && (
                 <button
                   onClick={() => setInputAmount(inputBal)}
                   className="text-xs text-gray-500 hover:text-white transition-colors"
                 >
-                  {cs ? 'Max' : 'Max'}: {inputBal}
+                  {tr('APP_WEB_website_v2_9_src_components_Swap', 'max', lang)}: {inputBal}
                 </button>
               )}
             </div>
@@ -265,7 +266,7 @@ export default function SwapWidget() {
           {/* Output */}
           <div className="rounded-xl border border-white/10 bg-white/5 p-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-gray-400">{cs ? 'Dostaneš' : 'You get'}</span>
+              <span className="text-xs text-gray-400">{tr('APP_WEB_website_v2_9_src_components_Swap', 'you_get', lang)}</span>
             </div>
             <div className="flex items-center gap-3">
               <div className="flex-1 text-2xl font-mono text-white">
@@ -289,7 +290,7 @@ export default function SwapWidget() {
               1 wZION ≈ {direction === 'eth-to-wzion'
                 ? (parseFloat(inputAmount) / parseFloat(quote)).toFixed(8)
                 : (parseFloat(quote) / parseFloat(inputAmount)).toFixed(8)
-              } ETH · {cs ? 'poplatek' : 'fee'} 0.3% · slippage 1%
+              } ETH · {tr('APP_WEB_website_v2_9_src_components_Swap', 'fee', lang)} 0.3% · slippage 1%
             </div>
           )}
 
@@ -306,7 +307,7 @@ export default function SwapWidget() {
             <div className="flex items-start gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3">
               <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
               <div className="text-xs text-emerald-300">
-                <p className="font-semibold mb-1">{cs ? 'Swap úspěšný!' : 'Swap successful!'}</p>
+                <p className="font-semibold mb-1">{tr('APP_WEB_website_v2_9_src_components_Swap', 'swap_successful', lang)}</p>
                 <a
                   href={`https://basescan.org/tx/${txHash}`}
                   target="_blank"
@@ -326,9 +327,9 @@ export default function SwapWidget() {
             className="w-full rounded-xl bg-gradient-to-r from-zion-gold via-zion-purple to-zion-cyan px-5 py-3.5 text-sm font-semibold text-white shadow-lg hover:shadow-xl disabled:opacity-40 transition-all"
           >
             {phase === 'approving' ? (
-              <span className="inline-flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> {cs ? 'Schvalování…' : 'Approving…'}</span>
+              <span className="inline-flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> {tr('APP_WEB_website_v2_9_src_components_Swap', 'approving', lang)}</span>
             ) : phase === 'swapping' ? (
-              <span className="inline-flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> {cs ? 'Swapuji…' : 'Swapping…'}</span>
+              <span className="inline-flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> {tr('APP_WEB_website_v2_9_src_components_Swap', 'swapping', lang)}</span>
             ) : (
               cs ? `Swapovat ${inputToken} → ${outputToken}` : `Swap ${inputToken} → ${outputToken}`
             )}

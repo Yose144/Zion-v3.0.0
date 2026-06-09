@@ -4,6 +4,8 @@ import { useCallback, useState } from 'react';
 import Link from 'next/link';
 import { Activity, Cpu, Database, ExternalLink, HardDrive, Radio, RefreshCw, Server, Sparkles } from 'lucide-react';
 import { usePolling } from '@/hooks/usePolling';
+import { useLang } from '@/contexts/LanguageContext';
+import { tr } from '@/lib/translations';
 
 interface MonitoringSnapshot {
   chainHeight: number | null;
@@ -193,6 +195,8 @@ function MetricPanel({
 }
 
 export default function NetworkMonitoringSnapshot({ cs, locale }: { cs: boolean; locale: string }) {
+  const { lang } = useLang();
+  const cs = lang === 'cs';
   const [monitoring, setMonitoring] = useState<MonitoringSnapshot | null>(null);
   const [monitoringUpdatedAt, setMonitoringUpdatedAt] = useState<Date | null>(null);
 
@@ -207,73 +211,73 @@ export default function NetworkMonitoringSnapshot({ cs, locale }: { cs: boolean;
   return (
     <section className="rounded-4xl border border-white/10 bg-black/40 p-8">
       <div className="flex flex-col gap-2 mb-8">
-        <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Observabilita' : 'Observability'}</p>
+        <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tr('APP_WEB_website_v2_9_src_components_netw', 'observability', lang)}</p>
         <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
           <Database className="h-7 w-7 text-zion-gold" />
-          {cs ? 'Monitoring prehled' : 'Monitoring Snapshot'}
+          {tr('APP_WEB_website_v2_9_src_components_netw', 'monitoring_snapshot', lang)}
         </h2>
-        <p className="text-sm text-gray-400">{cs ? 'Rychle operacni signaly zrcadlene z monitoring stacku, aby verejna sitova stranka nesla jednim pohledem topologii i zdravi stroje.' : 'Fast operational signals mirrored from the monitoring stack so the public network page carries both topology and machine health at a glance.'}</p>
+        <p className="text-sm text-gray-400">{tr('APP_WEB_website_v2_9_src_components_netw', 'fast_operational_signals_mirrored_from_the_monitor', lang)}</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetricPanel
-          label={cs ? 'Core target' : 'Core Target'}
-          value={monitoring?.coreUp === 1 ? (cs ? 'ONLINE' : 'UP') : monitoring?.coreUp === 0 ? (cs ? 'OFFLINE' : 'DOWN') : '—'}
-          detail={`${cs ? 'Vyska' : 'Height'} ${fmtMetric(monitoring?.chainHeight, 0, locale)}`}
+          label={tr('APP_WEB_website_v2_9_src_components_netw', 'core_target', lang)}
+          value={monitoring?.coreUp === 1 ? (tr('APP_WEB_website_v2_9_src_components_netw', 'up', lang)) : monitoring?.coreUp === 0 ? (tr('APP_WEB_website_v2_9_src_components_netw', 'down', lang)) : '—'}
+          detail={`${tr('APP_WEB_website_v2_9_src_components_netw', 'height', lang)} ${fmtMetric(monitoring?.chainHeight, 0, locale)}`}
           accent={monitoring?.coreUp === 1 ? 'text-emerald-400' : 'text-red-400'}
           icon={<Server className="h-5 w-5" />}
         />
         <MetricPanel
-          label={cs ? 'Pool target' : 'Pool Target'}
-          value={monitoring?.poolUp === 1 ? (cs ? 'ONLINE' : 'UP') : monitoring?.poolUp === 0 ? (cs ? 'OFFLINE' : 'DOWN') : '—'}
-          detail={`${fmtMetric(monitoring?.poolSessions, 0, locale)} ${cs ? 'aktivnich relaci' : 'active sessions'}`}
+          label={tr('APP_WEB_website_v2_9_src_components_netw', 'pool_target', lang)}
+          value={monitoring?.poolUp === 1 ? (tr('APP_WEB_website_v2_9_src_components_netw', 'up', lang)) : monitoring?.poolUp === 0 ? (tr('APP_WEB_website_v2_9_src_components_netw', 'down', lang)) : '—'}
+          detail={`${fmtMetric(monitoring?.poolSessions, 0, locale)} ${tr('APP_WEB_website_v2_9_src_components_netw', 'active_sessions', lang)}`}
           accent={monitoring?.poolUp === 1 ? 'text-emerald-400' : 'text-red-400'}
           icon={<Radio className="h-5 w-5" />}
         />
         <MetricPanel
-          label={cs ? 'Accept rate' : 'Accept Rate'}
+          label={tr('APP_WEB_website_v2_9_src_components_netw', 'accept_rate', lang)}
           value={fmtPct(monitoring?.poolAcceptRate)}
-          detail={`${cs ? 'Uptime' : 'Uptime'} ${fmtUptime(monitoring?.poolUptime)}`}
+          detail={`${tr('APP_WEB_website_v2_9_src_components_netw', 'uptime', lang)} ${fmtUptime(monitoring?.poolUptime)}`}
           accent="text-zion-cyan"
           icon={<Activity className="h-5 w-5" />}
         />
         <MetricPanel
-          label={cs ? 'Template fee' : 'Template Fees'}
+          label={tr('APP_WEB_website_v2_9_src_components_netw', 'template_fees', lang)}
           value={monitoring?.templateFees != null ? `${monitoring.templateFees.toFixed(4)} ZION` : '—'}
-          detail={cs ? 'Aktualni fee envelope z aktivniho block template' : 'Current fee envelope from the active block template'}
+          detail={tr('APP_WEB_website_v2_9_src_components_netw', 'current_fee_envelope_from_the_active_block_templat', lang)}
           accent="text-zion-gold"
           icon={<Sparkles className="h-5 w-5" />}
         />
         <MetricPanel
-          label={cs ? 'Load avg 1m' : 'Load Avg 1m'}
+          label={tr('APP_WEB_website_v2_9_src_components_netw', 'load_avg_1m', lang)}
           value={fmtMetric(monitoring?.load1, 2, locale)}
-          detail={cs ? 'Zatez primarniho hostu' : 'Primary host pressure'}
+          detail={tr('APP_WEB_website_v2_9_src_components_netw', 'primary_host_pressure', lang)}
           accent="text-zion-purple"
           icon={<Cpu className="h-5 w-5" />}
         />
         <MetricPanel
-          label={cs ? 'Volna pamet' : 'Memory Free'}
+          label={tr('APP_WEB_website_v2_9_src_components_netw', 'memory_free', lang)}
           value={fmtBytes(monitoring?.memAvailable)}
-          detail={monitoring?.memTotal != null ? `${fmtBytes(monitoring?.memTotal)} ${cs ? 'celkem' : 'total'}` : cs ? 'Pamet z node exporteru' : 'Node exporter memory'}
+          detail={monitoring?.memTotal != null ? `${fmtBytes(monitoring?.memTotal)} ${tr('APP_WEB_website_v2_9_src_components_netw', 'total', lang)}` : tr('APP_WEB_website_v2_9_src_components_netw', 'node_exporter_memory', lang)}
           accent="text-emerald-400"
           icon={<Database className="h-5 w-5" />}
         />
         <MetricPanel
-          label={cs ? 'Volny disk' : 'Disk Free'}
+          label={tr('APP_WEB_website_v2_9_src_components_netw', 'disk_free', lang)}
           value={fmtBytes(monitoring?.diskAvailable)}
-          detail={monitoring?.diskTotal != null ? `${fmtBytes(monitoring?.diskTotal)} ${cs ? 'celkem' : 'total'}` : cs ? 'Root filesystem' : 'Root filesystem'}
+          detail={monitoring?.diskTotal != null ? `${fmtBytes(monitoring?.diskTotal)} ${tr('APP_WEB_website_v2_9_src_components_netw', 'total', lang)}` : tr('APP_WEB_website_v2_9_src_components_netw', 'root_filesystem', lang)}
           accent="text-blue-400"
           icon={<HardDrive className="h-5 w-5" />}
         />
         <div className="rounded-3xl border border-white/10 bg-white/5 p-6 flex flex-col justify-between">
           <div>
-            <p className="text-xs uppercase tracking-[0.3em] text-gray-500 mb-2">{cs ? 'Hlubsi drilldown' : 'Deep Drilldown'}</p>
-            <p className="text-sm text-gray-300">{cs ? 'Pro sparkline grafy, syrove Prometheus metriky a inventar stacku pokracujte do plneho monitoringu.' : 'For sparklines, raw Prometheus-backed counters, and stack inventory, continue to the full monitoring dashboard.'}</p>
+            <p className="text-xs uppercase tracking-[0.3em] text-gray-500 mb-2">{tr('APP_WEB_website_v2_9_src_components_netw', 'deep_drilldown', lang)}</p>
+            <p className="text-sm text-gray-300">{tr('APP_WEB_website_v2_9_src_components_netw', 'for_sparklines_raw_prometheus_backed_counters_and_', lang)}</p>
           </div>
           <div className="mt-5 flex items-center justify-between text-xs text-gray-500 gap-3">
-            <span className="inline-flex items-center gap-2"><RefreshCw className="h-3.5 w-3.5 text-zion-cyan" /> {monitoringUpdatedAt ? `${cs ? 'Aktualizovano' : 'Updated'} ${monitoringUpdatedAt.toLocaleTimeString(locale)}` : cs ? 'Nacitam ziva data' : 'Loading live data'}</span>
+            <span className="inline-flex items-center gap-2"><RefreshCw className="h-3.5 w-3.5 text-zion-cyan" /> {monitoringUpdatedAt ? `${tr('APP_WEB_website_v2_9_src_components_netw', 'updated', lang)} ${monitoringUpdatedAt.toLocaleTimeString(locale)}` : tr('APP_WEB_website_v2_9_src_components_netw', 'loading_live_data', lang)}</span>
             <Link href="/monitoring" className="text-zion-cyan hover:text-white transition-colors inline-flex items-center gap-1.5 shrink-0">
-              {cs ? 'Plny monitoring' : 'Full monitoring'} <ExternalLink className="h-3.5 w-3.5" />
+              {tr('APP_WEB_website_v2_9_src_components_netw', 'full_monitoring', lang)} <ExternalLink className="h-3.5 w-3.5" />
             </Link>
           </div>
         </div>

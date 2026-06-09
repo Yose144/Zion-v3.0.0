@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import {
+import { useLang } from '@/contexts/LanguageContext';
+import { tr } from '@/lib/translations';
   ArrowRight,
   Leaf,
   MapPin,
@@ -118,6 +120,8 @@ const PROJECTS: ProjectCardData[] = [
 ];
 
 export default function PioneerProjectCards({ cs }: { cs: boolean }) {
+  const { lang } = useLang();
+  const cs = lang === 'cs';
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
@@ -126,10 +130,10 @@ export default function PioneerProjectCards({ cs }: { cs: boolean }) {
         </div>
         <div>
           <h2 className="text-lg font-semibold text-white">
-            {cs ? 'Pioneer Projekty L5' : 'L5 Pioneer Projects'}
+            {tr('APP_WEB_website_v2_9_src_app_terranova_c', 'l5_pioneer_projects', lang)}
           </h2>
           <p className="text-xs text-gray-500">
-            {cs ? 'Živé uzly Terra Nova po celém světě' : 'Live Terra Nova nodes around the world'}
+            {tr('APP_WEB_website_v2_9_src_app_terranova_c', 'live_terra_nova_nodes_around_the_world', lang)}
           </p>
         </div>
       </div>
@@ -191,7 +195,7 @@ export default function PioneerProjectCards({ cs }: { cs: boolean }) {
               </div>
 
               <div className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-medium text-gray-300 transition-colors hover:bg-white/10">
-                <span>{cs ? 'Otevřít detail projektu' : 'Open project detail'}</span>
+                <span>{tr('APP_WEB_website_v2_9_src_app_terranova_c', 'open_project_detail', lang)}</span>
                 <ArrowRight className="h-4 w-4" />
               </div>
             </div>
