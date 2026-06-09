@@ -31,7 +31,7 @@ fn main() {
     println!();
     println!("Algorithm steps:");
     println!("  1. Keccak256(header||nonce)");
-    println!("  2. Memory-hard scratchpad (128 KiB, {} passes, {} random reads)",
+    println!("  2. Memory-hard scratchpad (256 KiB, {} passes, {} random reads)",
              PASSES, RANDOM_READS);
     println!("  3. AES-128 CTR mixing ({} rounds)", AES_ROUNDS);
     println!("  4. Keccak256 final hash");
