@@ -66,7 +66,7 @@ export default function BridgeBurnWidget() {
       const contract = new ethers.Contract(BRIDGE_CONTRACTS.wzion_address, WZION_ABI, provider);
       const raw: ethers.BigNumber = await contract.balanceOf(addr);
       const formatted = ethers.utils.formatUnits(raw, WZION_DECIMALS);
-      setBalance(parseFloat(formatted).toLocaleString(tr('bridgeBurn', 'en_us', lang), { maximumFractionDigits: 8 }));
+      setBalance(parseFloat(formatted).toLocaleString(cs ? 'cs-CZ' : 'en-US', { maximumFractionDigits: 8 }));
       setPhase('ready');
     } catch (e) {
       setBalance('—');
@@ -140,11 +140,11 @@ export default function BridgeBurnWidget() {
 
     const amountFloat = parseFloat(amount);
     if (isNaN(amountFloat) || amountFloat <= 0) {
-      setError(tr('bridgeBurn', 'enter_a_valid_wzion_amount', lang));
+      setError(cs ? 'Zadejte platne mnozstvi wZION' : 'Enter a valid wZION amount');
       return;
     }
     if (!l1Address.trim().startsWith('zion1') && !l1Address.trim().startsWith('Zo')) {
-      setError(tr('bridgeBurn', 'l1_address_must_start_with_zion1_or_zo', lang));
+      setError(cs ? 'L1 adresa musi zacinat na zion1 nebo Zo…' : 'L1 address must start with zion1 or Zo…');
       return;
     }
 
@@ -157,7 +157,7 @@ export default function BridgeBurnWidget() {
       // ensure still on right network
       const network = await provider.getNetwork();
       if (network.chainId !== BASE_MAINNET_CHAIN_ID) {
-        throw new Error(tr('bridgeBurn', 'please_switch_to_base_in_metamask', lang));
+        throw new Error(cs ? 'Přepněte prosím v MetaMask na Base' : 'Please switch to Base in MetaMask');
       }
 
       const contract = new ethers.Contract(BRIDGE_CONTRACTS.wzion_address, WZION_ABI, signer);
@@ -193,22 +193,22 @@ export default function BridgeBurnWidget() {
       <div className="rounded-2xl border border-orange-500/30 bg-linear-to-b from-orange-500/10 to-black/60 p-6 space-y-4">
         <div className="flex items-center gap-2">
           <Flame className="h-5 w-5 text-orange-400" />
-          <h3 className="font-semibold text-white text-sm">{tr('bridgeBurn', 'burn_wzion_receive_zion_on_l1', lang)}</h3>
+          <h3 className="font-semibold text-white text-sm">{cs ? 'Spalit wZION → prijmout ZION na L1' : 'Burn wZION → receive ZION on L1'}</h3>
         </div>
 
         <p className="text-xs text-gray-400 leading-relaxed">
-          {tr('bridgeBurn', 'connect_metamask_on_base_to_burn_your_wzion_a', lang)}
+          {cs ? 'Připojte MetaMask na Base, spalte své wZION a přijměte ZION na L1.' : 'Connect MetaMask on Base to burn your wZION and receive ZION on L1.'}
         </p>
 
         {!hasMetaMask && (
           <div className="flex items-start gap-2 rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-3">
             <AlertCircle className="h-4 w-4 text-yellow-400 shrink-0 mt-0.5" />
             <p className="text-xs text-yellow-300">
-              {tr('bridgeBurn', 'metamask_not_detected_install', lang)}
+              {cs ? 'MetaMask nebyl detekovan. Nainstalujte ' : 'MetaMask not detected. Install '}
               <a href="https://metamask.io" target="_blank" rel="noreferrer" className="underline">
                 metamask.io
               </a>{' '}
-              {tr('bridgeBurn', 'to_use_this_widget', lang)}
+              {cs ? 'pro pouziti tohoto widgetu.' : 'to use this widget.'}
             </p>
           </div>
         )}
@@ -228,7 +228,7 @@ export default function BridgeBurnWidget() {
           {phase === 'connecting' && <RefreshCw className="h-4 w-4 animate-spin" />}
           {phase === 'switching-chain' && <RefreshCw className="h-4 w-4 animate-spin" />}
           {phase === 'idle' && <Wallet className="h-4 w-4" />}
-          {phase === 'connecting' ? (tr('bridgeBurn', 'requesting_account', lang)) : phase === 'switching-chain' ? (tr('bridgeBurn', 'switching_to_base', lang)) : (tr('bridgeBurn', 'connect_metamask', lang))}
+          {phase === 'connecting' ? (cs ? 'Žádám účet…' : 'Requesting account…') : phase === 'switching-chain' ? (cs ? 'Přepínám na Base…' : 'Switching to Base…') : (cs ? 'Připojit MetaMask' : 'Connect MetaMask')}
         </button>
       </div>
     );
@@ -240,16 +240,16 @@ export default function BridgeBurnWidget() {
       <div className="rounded-2xl border border-emerald-500/30 bg-linear-to-b from-emerald-500/10 to-black/60 p-6 space-y-4">
         <div className="flex items-center gap-2">
           <CheckCircle2 className="h-5 w-5 text-emerald-400" />
-          <h3 className="font-semibold text-white text-sm">{tr('bridgeBurn', 'burn_submitted', lang)}</h3>
+          <h3 className="font-semibold text-white text-sm">{cs ? 'Burn odeslan!' : 'Burn submitted!'}</h3>
         </div>
 
         <div className="space-y-2 text-xs text-gray-300">
           <div className="flex justify-between">
-            <span className="text-gray-500">{tr('bridgeBurn', 'amount_burned', lang)}</span>
+            <span className="text-gray-500">{cs ? 'Spalene mnozstvi' : 'Amount burned'}</span>
             <span className="font-semibold text-white">{txInfo.amount} wZION</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-gray-500">{tr('bridgeBurn', 'l1_recipient', lang)}</span>
+            <span className="text-gray-500">{cs ? 'L1 prijemce' : 'L1 recipient'}</span>
             <span className="font-mono text-white break-all">{txInfo.l1Recipient}</span>
           </div>
           <div>
@@ -268,12 +268,12 @@ export default function BridgeBurnWidget() {
                 <ExternalLink className="h-3 w-3 text-gray-400" />
               </a>
             </div>
-            {copied && <p className="text-xs text-emerald-400 mt-1">✓ {tr('bridgeBurn', 'copied', lang)}</p>}
+            {copied && <p className="text-xs text-emerald-400 mt-1">✓ {cs ? 'Zkopirovano' : 'Copied'}</p>}
           </div>
         </div>
 
         <p className="text-xs text-gray-400 leading-relaxed">
-          {tr('bridgeBurn', 'the_relay_will_detect_the', lang)}<code className="text-orange-300">BurnForBridge</code>{tr('bridgeBurn', 'event_after_64_evm_block_confirmations_2_min_', lang)}
+          {cs ? 'Relay detekuje event ' : 'The relay will detect the '}<code className="text-orange-300">BurnForBridge</code>{cs ? ' po 64 potvrzeních EVM bloků (~2 min), pak odešle L1 unlock. Vaše ZION dorazí do ~5 minut.' : ' event after 64 EVM block confirmations (~2 min), then submit an L1 unlock. Your ZION will arrive within ~5 minutes.'}
         </p>
 
         <button
@@ -287,7 +287,7 @@ export default function BridgeBurnWidget() {
           className="w-full inline-flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-5 py-2.5 text-sm font-semibold text-white hover:bg-white/10 transition-colors"
         >
           <RefreshCw className="h-4 w-4" />
-          {tr('bridgeBurn', 'burn_more', lang)}
+          {cs ? 'Spalit vice' : 'Burn more'}
         </button>
       </div>
     );
@@ -303,13 +303,13 @@ export default function BridgeBurnWidget() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Flame className="h-5 w-5 text-orange-400" />
-          <h3 className="font-semibold text-white text-sm">{tr('bridgeBurn', 'burn_wzion_zion_on_l1', lang)}</h3>
+          <h3 className="font-semibold text-white text-sm">{cs ? 'Spalit wZION → ZION na L1' : 'Burn wZION → ZION on L1'}</h3>
         </div>
         <button
           onClick={() => account && refreshBalance(account)}
           disabled={isBusy}
           className="rounded-xl border border-white/10 bg-white/5 p-1.5 hover:bg-white/10 disabled:opacity-50 transition-colors"
-          title={tr('bridgeBurn', 'refresh_balance', lang)}
+          title={cs ? 'Obnovit zustatek' : 'Refresh balance'}
         >
           <RefreshCw className={`h-3 w-3 text-gray-400 ${phase === 'loading-balance' ? 'animate-spin' : ''}`} />
         </button>
@@ -318,13 +318,13 @@ export default function BridgeBurnWidget() {
       {/* Wallet info */}
       <div className="flex items-center justify-between rounded-xl border border-white/10 bg-black/30 px-3 py-2">
         <div>
-          <p className="text-xs text-gray-500">{tr('bridgeBurn', 'connected_wallet', lang)}</p>
+          <p className="text-xs text-gray-500">{cs ? 'Pripojena penezenka' : 'Connected wallet'}</p>
           <p className="font-mono text-xs text-white">
             {account ? `${account.slice(0, 6)}…${account.slice(-4)}` : '—'}
           </p>
         </div>
         <div className="text-right">
-          <p className="text-xs text-gray-500">{tr('bridgeBurn', 'wzion_balance', lang)}</p>
+          <p className="text-xs text-gray-500">{cs ? 'wZION zustatek' : 'wZION balance'}</p>
           <p className="font-mono text-sm font-semibold text-orange-300">
             {phase === 'loading-balance' ? '…' : balance}
           </p>
@@ -334,19 +334,19 @@ export default function BridgeBurnWidget() {
       {/* Amount input */}
       <div className="space-y-1.5">
         <label className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-          {tr('bridgeBurn', 'amount_wzion', lang)}
+          {cs ? 'Mnozstvi (wZION)' : 'Amount (wZION)'}
         </label>
         <input
           type="number"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
-          placeholder={tr('bridgeBurn', 'e_g_100', lang)}
+          placeholder={cs ? 'napr. 100' : 'e.g. 100'}
           disabled={isBusy}
           className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 font-mono text-sm text-white placeholder:text-gray-600 disabled:opacity-50"
         />
         {amountFloat > 0 && (
           <p className="text-xs text-gray-500">
-            = <span className="text-white font-mono">{amountAtomicDisplay}</span> {tr('bridgeBurn', 'wei', lang)} (×10<sup>18</sup>)
+            = <span className="text-white font-mono">{amountAtomicDisplay}</span> {cs ? 'wei' : 'wei'} (×10<sup>18</sup>)
           </p>
         )}
       </div>
@@ -354,7 +354,7 @@ export default function BridgeBurnWidget() {
       {/* L1 recipient */}
       <div className="space-y-1.5">
         <label className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-          {tr('bridgeBurn', 'zion_l1_recipient_address', lang)}
+          {cs ? 'Adresa prijemce ZION na L1' : 'ZION L1 recipient address'}
         </label>
         <input
           type="text"
@@ -376,7 +376,7 @@ export default function BridgeBurnWidget() {
       {/* Contract details */}
       <div className="rounded-xl border border-white/10 bg-black/20 px-3 py-2 space-y-1">
         <p className="text-xs text-gray-500">
-          {tr('bridgeBurn', 'wzion_contract', lang)}{' '}
+          {cs ? 'wZION kontrakt:' : 'wZION contract:'}{' '}
           <code className="text-gray-300 font-mono text-[11px]">
             {BRIDGE_CONTRACTS.wzion_address.slice(0, 10)}…{BRIDGE_CONTRACTS.wzion_address.slice(-6)}
           </code>
@@ -390,7 +390,7 @@ export default function BridgeBurnWidget() {
             BaseScan <ExternalLink className="h-3 w-3" />
           </a>
         </p>
-        <p className="text-xs text-gray-500">{tr('bridgeBurn', 'network', lang)}: Base Mainnet (chain 8453) · 18 {tr('bridgeBurn', 'decimals', lang)} · {tr('bridgeBurn', 'no_protocol_fee', lang)}</p>
+        <p className="text-xs text-gray-500">{cs ? 'Síť' : 'Network'}: Base Mainnet (chain 8453) · 18 {cs ? 'desetinných míst' : 'decimals'} · {cs ? 'žádný protokolový poplatek' : 'no protocol fee'}</p>
       </div>
 
       <button
@@ -401,18 +401,18 @@ export default function BridgeBurnWidget() {
         {isBusy ? (
           <>
             <RefreshCw className="h-4 w-4 animate-spin" />
-            {phase === 'confirming' ? (tr('bridgeBurn', 'confirm_in_metamask', lang)) : phase === 'pending' ? (tr('bridgeBurn', 'broadcasting_tx', lang)) : (tr('bridgeBurn', 'loading', lang))}
+            {phase === 'confirming' ? (cs ? 'Potvrdte v MetaMask…' : 'Confirm in MetaMask…') : phase === 'pending' ? (cs ? 'Odesilam TX…' : 'Broadcasting TX…') : (cs ? 'Nacitam…' : 'Loading…')}
           </>
         ) : (
           <>
             <Flame className="h-4 w-4" />
-            {tr('bridgeBurn', 'burn', lang)}{amountFloat > 0 ? `${amountFloat} ` : ''}wZION → ZION on L1
+            {cs ? 'Spalit ' : 'Burn '}{amountFloat > 0 ? `${amountFloat} ` : ''}wZION → ZION on L1
           </>
         )}
       </button>
 
       <p className="text-xs text-gray-500 text-center">
-        {tr('bridgeBurn', 'zion_arrives_on_l1_within_5_min_after_evm_bur', lang)}
+        {cs ? 'ZION dorazi na L1 do ~5 minut po potvrzeni EVM burnu.' : 'ZION arrives on L1 within ~5 min after EVM burn confirmation.'}
       </p>
     </div>
   );

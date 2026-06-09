@@ -113,7 +113,7 @@ export default function BenchmarkMatrix() {
           <div className="p-4 border-b border-white/10">
             <h2 className="text-lg font-semibold text-white flex items-center gap-2">
               <Cpu className="w-5 h-5 text-zion-gold" />
-              {tr('APP_WEB_website_v2_9_src_components_Benc', 'results_sorted_by_performance', lang)}
+              {cs ? 'Výsledky — seřazeno dle výkonu' : 'Results — sorted by performance'}
             </h2>
           </div>
           <div className="overflow-x-auto">
@@ -121,12 +121,12 @@ export default function BenchmarkMatrix() {
               <thead>
                 <tr className="border-b border-white/10 text-left text-white/50 text-xs uppercase tracking-wider">
                   <th className="px-4 py-3">GPU</th>
-                  <th className="px-4 py-3">{tr('APP_WEB_website_v2_9_src_components_Benc', 'architecture', lang)}</th>
+                  <th className="px-4 py-3">{cs ? 'Architektura' : 'Architecture'}</th>
                   <th className="px-4 py-3">VRAM</th>
                   <th className="px-4 py-3">BW (GB/s)</th>
                   <th className="px-4 py-3 text-right font-bold text-zion-gold/80">KH/s</th>
-                  <th className="px-4 py-3">{tr('APP_WEB_website_v2_9_src_components_Benc', 'opt_tpb', lang)}</th>
-                  <th className="px-4 py-3">{tr('APP_WEB_website_v2_9_src_components_Benc', 'opt_wc', lang)}</th>
+                  <th className="px-4 py-3">{cs ? 'Opt. TPB' : 'Opt TPB'}</th>
+                  <th className="px-4 py-3">{cs ? 'Opt. wc' : 'Opt wc'}</th>
                   <th className="px-4 py-3">$/hr</th>
                   <th className="px-4 py-3 text-right">KH/$</th>
                 </tr>
@@ -163,7 +163,7 @@ export default function BenchmarkMatrix() {
         {/* ── Key findings cards ─────────────────────────────── */}
         <div className="mb-16">
           <h2 className="text-2xl font-bold text-white mb-8">
-            {tr('APP_WEB_website_v2_9_src_components_Benc', 'key_findings', lang)}
+            {cs ? 'Klíčové závěry' : 'Key Findings'}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {FINDINGS.map((f, i) => {
@@ -191,17 +191,17 @@ export default function BenchmarkMatrix() {
           <div className="p-4 border-b border-white/10">
             <h2 className="text-lg font-semibold text-white flex items-center gap-2">
               <Zap className="w-5 h-5 text-zion-gold" />
-              {tr('APP_WEB_website_v2_9_src_components_Benc', 'recommended_tuning_defaults', lang)}
+              {cs ? 'Doporučené nastavení' : 'Recommended Tuning Defaults'}
             </h2>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/10 text-left text-white/50 text-xs uppercase tracking-wider">
-                  <th className="px-4 py-3">{tr('APP_WEB_website_v2_9_src_components_Benc', 'gpu_class', lang)}</th>
+                  <th className="px-4 py-3">{cs ? 'Třída GPU' : 'GPU Class'}</th>
                   <th className="px-4 py-3">ZION_CUDA_TPB</th>
                   <th className="px-4 py-3">ZION_GPU_WORK_SIZE</th>
-                  <th className="px-4 py-3">{tr('APP_WEB_website_v2_9_src_components_Benc', 'notes', lang)}</th>
+                  <th className="px-4 py-3">{cs ? 'Poznámka' : 'Notes'}</th>
                 </tr>
               </thead>
               <tbody>
@@ -222,7 +222,7 @@ export default function BenchmarkMatrix() {
         <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-6 mb-16">
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <BarChart3 className="w-5 h-5 text-zion-gold" />
-            {tr('APP_WEB_website_v2_9_src_components_Benc', 'bandwidth_efficiency', lang)}
+            {cs ? 'Efektivita šířky pásma' : 'Bandwidth Efficiency'}
           </h2>
           <div className="space-y-3">
             {[
@@ -268,7 +268,7 @@ export default function BenchmarkMatrix() {
             href="/mining"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-zion-gold/30 bg-zion-gold/5 text-zion-gold hover:bg-zion-gold/10 transition-colors"
           >
-            {tr('APP_WEB_website_v2_9_src_components_Benc', 'mining_guide', lang)}
+            {cs ? 'Průvodce těžbou' : 'Mining Guide'}
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>

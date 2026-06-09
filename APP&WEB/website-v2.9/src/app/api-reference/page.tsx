@@ -2,8 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { useLang, type Lang } from '@/contexts/LanguageContext';
-import { tr } from '@/lib/translations';
+import { useLang } from '@/contexts/LanguageContext';
 import {
   Activity,
   ArrowUpRight,
@@ -15,10 +14,10 @@ import {
   Sparkles,
 } from 'lucide-react';
 
-function ApiQuickstartPanels({ cs, lang }: { cs: boolean; lang: Lang }) {
+function ApiQuickstartPanels({ cs }: { cs: boolean }) {
   const panels = [
     {
-      title: tr('apiReference', 'explorer_telemetry', lang),
+      title: cs ? 'Explorer / telemetry' : 'Explorer / telemetry',
       body: cs
         ? 'Začni na /network a /explorer — z živých endpointů uvidíš výšku chainu, peers a hashrate.'
         : 'Start with /network and /explorer — live endpoints expose chain height, peers, and hashrate.',
@@ -26,7 +25,7 @@ function ApiQuickstartPanels({ cs, lang }: { cs: boolean; lang: Lang }) {
       icon: Activity,
     },
     {
-      title: tr('apiReference', 'pool_api', lang),
+      title: cs ? 'Pool API' : 'Pool API',
       body: cs
         ? 'Pool statistiky (hashrate, sessions, PPLNS) jsou dostupné přes /api/pool/stats.'
         : 'Pool stats (hashrate, sessions, PPLNS) are available via /api/pool/stats.',
@@ -34,7 +33,7 @@ function ApiQuickstartPanels({ cs, lang }: { cs: boolean; lang: Lang }) {
       icon: Server,
     },
     {
-      title: tr('apiReference', 'health', lang),
+      title: cs ? 'Health' : 'Health',
       body: cs
         ? 'Jeden endpoint pro rychlé ověření závislostí webu: /api/health.'
         : 'One endpoint for dependency checks: /api/health.',
@@ -46,7 +45,7 @@ function ApiQuickstartPanels({ cs, lang }: { cs: boolean; lang: Lang }) {
   return (
     <section className="rounded-4xl border border-white/10 bg-black/40 p-8">
       <h3 className="text-2xl font-semibold text-white">
-        {tr('apiReference', 'quickstart', lang)}
+        {cs ? 'Quickstart' : 'Quickstart'}
       </h3>
       <p className="mt-2 text-sm text-gray-400">
         {cs
@@ -68,7 +67,7 @@ function ApiQuickstartPanels({ cs, lang }: { cs: boolean; lang: Lang }) {
               {p.body}
             </p>
             <div className="mt-4 inline-flex items-center gap-1.5 text-xs text-zion-gold/70 group-hover:text-zion-gold">
-              <span>{tr('apiReference', 'open', lang)}</span>
+              <span>{cs ? 'Otevřít' : 'Open'}</span>
               <ArrowUpRight className="h-3.5 w-3.5" />
             </div>
           </Link>
@@ -80,114 +79,114 @@ function ApiQuickstartPanels({ cs, lang }: { cs: boolean; lang: Lang }) {
 
 const getApiStats = (cs: boolean) => [
   {
-    label: tr('apiReference', 'core_environment', lang),
+    label: cs ? 'Prostředí core' : 'Core environment',
     value: 'V3 Test Mainnet',
-    detail: tr('apiReference', 'controlled_rehearsal_line', lang),
+    detail: cs ? 'kontrolovaná mainnet rehearsal linka' : 'controlled rehearsal line',
     icon: Shield,
   },
   {
-    label: tr('apiReference', 'api_port', lang),
+    label: cs ? 'API port' : 'API Port',
     value: '8443',
-    detail: tr('apiReference', 'json_rpc_rest', lang),
+    detail: cs ? 'JSON-RPC + REST' : 'JSON-RPC + REST',
     icon: Activity,
   },
   {
-    label: tr('apiReference', 'pool_port', lang),
+    label: cs ? 'Pool port' : 'Pool Port',
     value: '8080',
-    detail: tr('apiReference', 'stats_endpoint', lang),
+    detail: cs ? 'stats endpoint' : 'stats endpoint',
     icon: Server,
   },
 ];
 
 const getEndpointGroups = (cs: boolean) => [
   {
-    title: tr('apiReference', 'blockchain_core', lang),
-    description: tr('apiReference', 'stats_blocks_and_rpc_for_explorers_wallets_an', lang),
+    title: cs ? 'Blockchainové jádro' : 'Blockchain Core',
+    description: cs ? 'Statistiky, bloky a RPC pro explorery, penezenky a validatory.' : 'Stats, blocks, and RPC for explorers, wallets, and validators.',
     icon: Database,
     port: '443',
     endpoints: [
       {
         method: 'GET',
         path: '/api/blockchain/stats',
-        description: tr('apiReference', 'network_height_supply_fee_window_and_hash_rat', lang),
+        description: cs ? 'Snapshot vysky site, zasoby, fee okna a hashratu.' : 'Network height, supply, fee window, and hash rate snapshot.',
         latency: '45 ms avg'
       },
       {
         method: 'GET',
         path: '/api/blockchain/blocks?limit=50',
-        description: tr('apiReference', 'paginated_block_feed_with_miner_reward_and_di', lang),
+        description: cs ? 'Strankovany tok bloku s metadaty o tezari, odmene a obtiznosti.' : 'Paginated block feed with miner, reward, and difficulty metadata.',
         latency: '65 ms avg'
       },
       {
         method: 'GET',
         path: '/api/blockchain/transactions?limit=50',
-        description: tr('apiReference', 'recent_transactions_for_explorers_and_monitor', lang),
+        description: cs ? 'Posledni transakce pro explorery a monitoring pipeline.' : 'Recent transactions for explorers and monitoring pipelines.',
         latency: '70 ms avg'
       }
     ]
   },
   {
-    title: tr('apiReference', 'mining_pool', lang),
-    description: tr('apiReference', 'stratum_telemetry_worker_balance_queries_and_', lang),
+    title: cs ? 'Tezba a pool' : 'Mining & Pool',
+    description: cs ? 'Stratum telemetrie, dotazy na worker balance a historie vyplat.' : 'Stratum telemetry, worker balance queries, and payout history.',
     icon: PlugZap,
     port: '443',
     endpoints: [
       {
         method: 'GET',
         path: '/pool/stats',
-        description: tr('apiReference', 'pool_health_snapshot_miners_hashrate_and_diff', lang),
+        description: cs ? 'Snapshot zdravi poolu: mineri, hashrate a obtiznost.' : 'Pool health snapshot: miners, hashrate, and difficulty.',
         latency: '58 ms avg'
       },
       {
         method: 'GET',
         path: '/pool/miner/{wallet}',
-        description: tr('apiReference', 'miner_worker_stats_balances_and_payout_state_', lang),
+        description: cs ? 'Statistiky workeru, balance a stav vyplat pro penezenku.' : 'Miner worker stats, balances, and payout state for a wallet.',
         latency: '62 ms avg'
       }
     ]
   },
   {
-    title: tr('apiReference', 'observability_ai', lang),
-    description: tr('apiReference', 'health_ai_selector_recommendations_and_alert_', lang),
+    title: cs ? 'Observabilita a AI' : 'Observability & AI',
+    description: cs ? 'Health, doporuceni AI selectoru a alert hooky.' : 'Health, AI selector recommendations, and alert hooks.',
     icon: SatelliteDish,
     port: '443',
     endpoints: [
       {
         method: 'GET',
         path: '/health',
-        description: tr('apiReference', 'full_service_heartbeat_with_version_block_lag', lang),
+        description: cs ? 'Kompletni heartbeat sluzeb s verzi, block lagem a dependency kontrolami.' : 'Full service heartbeat with version, block lag, and dependency checks.',
         latency: '30 ms avg'
       },
       {
         method: 'GET',
         path: '/api/network',
-        description: tr('apiReference', 'network_status_including_connectivity_nodes_a', lang),
+        description: cs ? 'Stav site vcetne konektivity, nodu a core sluzeb.' : 'Network status including connectivity, nodes, and core services.',
         latency: '48 ms avg'
       },
       {
         method: 'GET',
         path: '/api/network/best-pool',
-        description: tr('apiReference', 'best_pool_selection_based_on_current_conditio', lang),
+        description: cs ? 'Vyber nejlepsiho poolu podle aktualnich podminek (read-only).' : 'Best pool selection based on current conditions (read-only).',
         latency: '90 ms avg'
       }
     ]
   },
   {
-    title: tr('apiReference', 'listings_coingecko_cmc', lang),
-    description: tr('apiReference', 'machine_readable_project_supply_and_on_chain_', lang),
+    title: cs ? 'Listingy (CoinGecko / CMC)' : 'Listings (CoinGecko / CMC)',
+    description: cs ? 'Strojově čitelné feedy projektu, zásoby a on-chain metadat pro listing review.' : 'Machine-readable project, supply, and on-chain metadata feeds for listing review.',
     icon: Sparkles,
     port: '443',
     endpoints: [
       {
         method: 'GET',
         path: '/api/listing/coingecko',
-        description: tr('apiReference', 'coingecko_ready_payload_links_supply_tokenomi', lang),
+        description: cs ? 'CoinGecko-ready payload: odkazy, zasoba, tokenomika a ziva chain telemetrie.' : 'CoinGecko-ready payload: links, supply, tokenomics, and live chain telemetry.',
         latency: '55 ms avg'
       },
       {
         method: 'GET',
         path: '/api/listing/coinmarketcap',
-        description: tr('apiReference', 'coinmarketcap_style_payload_with_project_urls', lang),
+        description: cs ? 'Payload ve stylu CoinMarketCap s URL projektu, supply metrikami a on-chain snapshotem.' : 'CoinMarketCap-style payload with project URLs, supply metrics, and on-chain snapshot.',
         latency: '55 ms avg'
       }
     ]
@@ -207,9 +206,9 @@ export default function ApiReferencePage() {
           <div className="inline-flex items-center gap-2 rounded-full border border-zion-purple/40 bg-zion-purple/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-zion-gold">
             <Sparkles className="h-4 w-4" /> API v2.9 · Orion Mesh
           </div>
-          <h1 className="mt-4 text-4xl md:text-5xl font-bold text-gradient">{tr('apiReference', 'api_command_deck', lang)}</h1>
+          <h1 className="mt-4 text-4xl md:text-5xl font-bold text-gradient">{cs ? 'API velitelsky panel' : 'API Command Deck'}</h1>
           <p className="mt-4 text-gray-300 max-w-3xl">
-            {tr('apiReference', 'one_surface_for_wallets_explorers_ai_orchestr', lang)}
+            {cs ? 'Jedno místo pro peněženky, explorery, AI orchestrátory a monitoring stacky. Stabilní schémata, velkorysé rate limity a hotové šablony pro cURL / TypeScript.' : 'One surface for wallets, explorers, AI orchestrators, and monitoring stacks. Stable schemas, generous rate limits, and ready-to-use cURL / TypeScript templates.'}
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
               <a
@@ -218,13 +217,13 @@ export default function ApiReferencePage() {
               rel="noreferrer"
               className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-gray-100 hover:border-zion-gold/60"
             >
-              <Server className="h-4 w-4 text-zion-gold" /> {tr('apiReference', 'live_health', lang)}
+              <Server className="h-4 w-4 text-zion-gold" /> {cs ? 'Živé health' : 'Live health'}
             </a>
             <Link
               href="/docs"
               className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-gray-100 hover:border-zion-gold/60"
             >
-              <ArrowUpRight className="h-4 w-4 text-zion-gold" /> {tr('apiReference', 'full_docs', lang)}
+              <ArrowUpRight className="h-4 w-4 text-zion-gold" /> {cs ? 'Plná dokumentace' : 'Full docs'}
             </Link>
           </div>
         </section>
@@ -281,12 +280,12 @@ export default function ApiReferencePage() {
           })}
         </section>
 
-        <ApiQuickstartPanels cs={cs} lang={lang} />
+        <ApiQuickstartPanels cs={cs} />
 
         <section className="rounded-[36px] border border-zion-gold/30 bg-linear-to-r from-zion-purple/30 via-zion-gold/15 to-zion-purple/30 p-8 text-center">
-          <h3 className="text-3xl font-semibold text-white">{tr('apiReference', 'ready_to_wire_the_mesh', lang)}</h3>
+          <h3 className="text-3xl font-semibold text-white">{cs ? 'Připraven zapojit mesh?' : 'Ready to wire the mesh?'}</h3>
           <p className="mt-3 text-gray-50">
-            {tr('apiReference', 'deploy_the_sdks_from_github_watch_live_health', lang)}
+            {cs ? 'Nasaďte SDK z GitHubu, sledujte živé health a ozvěte se týmu v docs, pokud potřebujete další scopes.' : 'Deploy the SDKs from GitHub, watch live health, and ping the team in docs if you need additional scopes.'}
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
             <a
@@ -295,13 +294,13 @@ export default function ApiReferencePage() {
               rel="noreferrer"
               className="inline-flex items-center gap-2 rounded-2xl bg-black/70 px-6 py-3 text-sm font-semibold text-white border border-white/20"
             >
-              {tr('apiReference', 'open_github_repo', lang)}
+              {cs ? 'Otevřít GitHub repozitář' : 'Open GitHub repo'}
             </a>
             <Link
               href="/docs"
               className="inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-zion-gold to-zion-purple px-6 py-3 text-sm font-semibold text-black"
             >
-              {tr('apiReference', 'explore_documentation', lang)}
+              {cs ? 'Projít dokumentaci' : 'Explore documentation'}
             </Link>
           </div>
         </section>
