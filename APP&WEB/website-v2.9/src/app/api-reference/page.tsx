@@ -2,7 +2,8 @@
 
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { useLang } from '@/contexts/LanguageContext';
+import { useLang, type Lang } from '@/contexts/LanguageContext';
+import { tr } from '@/lib/translations';
 import {
   Activity,
   ArrowUpRight,
@@ -14,7 +15,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 
-function ApiQuickstartPanels({ cs }: { cs: boolean }) {
+function ApiQuickstartPanels({ cs, lang }: { cs: boolean; lang: Lang }) {
   const panels = [
     {
       title: tr('apiReference', 'explorer_telemetry', lang),
@@ -280,7 +281,7 @@ export default function ApiReferencePage() {
           })}
         </section>
 
-        <ApiQuickstartPanels cs={cs} />
+        <ApiQuickstartPanels cs={cs} lang={lang} />
 
         <section className="rounded-[36px] border border-zion-gold/30 bg-linear-to-r from-zion-purple/30 via-zion-gold/15 to-zion-purple/30 p-8 text-center">
           <h3 className="text-3xl font-semibold text-white">{tr('apiReference', 'ready_to_wire_the_mesh', lang)}</h3>
