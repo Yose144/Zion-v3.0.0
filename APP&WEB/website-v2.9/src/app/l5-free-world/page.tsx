@@ -13,7 +13,7 @@ const HUMANITARIAN_WALLET = 'zion1c245e7f5d8h427r4p4s2s607d7v4c255z7x96t3';
 const getCommunities = (cs: boolean) => [
   {
     name: 'Genesis Garden',
-    location: cs ? 'Střední Evropa' : 'Central Europe',
+    location: tr('l5FreeWorld', 'central_europe', lang),
     status: 'planned',
     desc: cs
       ? 'Pionýrská L5 komunita — permakultivní zahrada, lokální governance a ZION guardian node.'
@@ -22,7 +22,7 @@ const getCommunities = (cs: boolean) => [
   },
   {
     name: 'Dharma Temple',
-    location: cs ? 'Jižní Asie' : 'South Asia',
+    location: tr('l5FreeWorld', 'south_asia', lang),
     status: 'planned',
     desc: cs
       ? 'Vzdělávací a meditační centrum s decentralizovanou správou a free energy projekty.'
@@ -44,38 +44,38 @@ const getCommunities = (cs: boolean) => [
 
 const getProtocols = (cs: boolean) => [
   {
-    title: cs ? 'Guardian Node' : 'Guardian Node',
-    desc: cs ? 'Každá L5 komunita validuje bloky — 10 % odměn do komunitní pokladny.' : 'Every L5 community validates blocks — 10% of rewards go to the community treasury.',
+    title: tr('l5FreeWorld', 'guardian_node', lang),
+    desc: tr('l5FreeWorld', 'every_l5_community_validates_blocks_10_of_rew', lang),
     icon: Shield,
     color: 'text-cyan-400',
   },
   {
-    title: cs ? 'Sociocratic DAO' : 'Sociocratic DAO',
-    desc: cs ? 'Hybridní governance: off-chain kruhy + on-chain treasury hlasování.' : 'Hybrid governance: off-chain circles + on-chain treasury votes.',
+    title: tr('l5FreeWorld', 'sociocratic_dao', lang),
+    desc: tr('l5FreeWorld', 'hybrid_governance_off_chain_circles_on_chain_', lang),
     icon: Users,
     color: 'text-purple-400',
   },
   {
-    title: cs ? 'Free Energy' : 'Free Energy',
-    desc: cs ? 'Solární, větrná a lokální energetická autonomie — sdílená přes L5 síť.' : 'Solar, wind, and local energy autonomy — shared across the L5 network.',
+    title: tr('l5FreeWorld', 'free_energy', lang),
+    desc: tr('l5FreeWorld', 'solar_wind_and_local_energy_autonomy_shared_a', lang),
     icon: Sparkles,
     color: 'text-amber-400',
   },
   {
-    title: cs ? 'Komunitní pokladna' : 'Community Treasury',
-    desc: cs ? '10 % z guardian node odměn → místní projekty, údržba, zásoby.' : '10% of guardian node rewards → local projects, maintenance, reserves.',
+    title: tr('l5FreeWorld', 'community_treasury', lang),
+    desc: tr('l5FreeWorld', '10_of_guardian_node_rewards_local_projects_ma', lang),
     icon: Wallet,
     color: 'text-emerald-400',
   },
   {
-    title: cs ? 'Rezonance protokol' : 'Resonance Protocol',
-    desc: cs ? 'Zvukové ladění před governance, Fibonacci Time Capsules, Youth–Elder Bridge.' : 'Sound attunement before governance, Fibonacci Time Capsules, Youth–Elder Bridge.',
+    title: tr('l5FreeWorld', 'resonance_protocol', lang),
+    desc: tr('l5FreeWorld', 'sound_attunement_before_governance_fibonacci_', lang),
     icon: Leaf,
     color: 'text-rose-400',
   },
   {
-    title: cs ? 'Kartografické záznamy' : 'Cartographic Records',
-    desc: cs ? 'Lokální ekologické a komunitní mapy uložené on-chain jako UTXO metadata.' : 'Local ecological and community maps stored on-chain as UTXO metadata.',
+    title: tr('l5FreeWorld', 'cartographic_records', lang),
+    desc: tr('l5FreeWorld', 'local_ecological_and_community_maps_stored_on', lang),
     icon: Map,
     color: 'text-blue-400',
   },
@@ -100,10 +100,10 @@ export default function L5FreeWorldPage() {
             </div>
             <div>
               <p className="text-sm uppercase tracking-[0.4em] text-gray-400">
-                {cs ? 'Fyzická vrstva ZION ekosystému' : 'Physical layer of the ZION ecosystem'}
+                {tr('l5FreeWorld', 'physical_layer_of_the_zion_ecosystem', lang)}
               </p>
               <h1 className="text-3xl sm:text-5xl font-semibold text-gradient leading-tight">
-                {cs ? 'Svobodný svět — L5' : 'Free World — L5'}
+                {tr('l5FreeWorld', 'free_world_l5', lang)}
               </h1>
             </div>
             <p className="text-lg text-gray-300">
@@ -113,13 +113,13 @@ export default function L5FreeWorldPage() {
             </p>
             <div className="flex flex-wrap gap-3 text-xs">
               <span className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-amber-200">
-                <Heart className="h-3 w-3" /> {cs ? '5 % z každého bloku → L5 fond' : '5% of every block → L5 fund'}
+                <Heart className="h-3 w-3" /> {tr('l5FreeWorld', '5_of_every_block_l5_fund', lang)}
               </span>
               <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-emerald-200">
-                <CheckCircle2 className="h-3 w-3" /> {cs ? '~11,7 M ZION / měsíc' : '~11.7M ZION / month'}
+                <CheckCircle2 className="h-3 w-3" /> {tr('l5FreeWorld', '11_7m_zion_month', lang)}
               </span>
               <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                <Clock className="h-3 w-3" /> {cs ? 'Odemčeno blok ~525 600' : 'Unlocked block ~525,600'}
+                <Clock className="h-3 w-3" /> {tr('l5FreeWorld', 'unlocked_block_525_600', lang)}
               </span>
             </div>
           </div>
@@ -128,31 +128,31 @@ export default function L5FreeWorldPage() {
         {/* ── Fund Info ── */}
         <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[32px] border border-white/10 bg-black/40 p-8">
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Humanitární fond' : 'Humanitarian Fund'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tr('l5FreeWorld', 'humanitarian_fund', lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Heart className="h-7 w-7 text-amber-400" />
-              {cs ? 'L5 Fond — 5 % block reward' : 'L5 Fund — 5% block reward'}
+              {tr('l5FreeWorld', 'l5_fund_5_block_reward', lang)}
             </h2>
           </div>
           <div className="grid md:grid-cols-3 gap-4 mb-6">
             <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-4 text-center">
-              <p className="text-xs uppercase tracking-wider text-gray-400 mb-1">{cs ? 'Podíl z bloku' : 'Block share'}</p>
+              <p className="text-xs uppercase tracking-wider text-gray-400 mb-1">{tr('l5FreeWorld', 'block_share', lang)}</p>
               <p className="text-3xl font-bold text-amber-400">5%</p>
-              <p className="text-xs text-gray-500 mt-1">{cs ? 'každý blok, navždy' : 'every block, forever'}</p>
+              <p className="text-xs text-gray-500 mt-1">{tr('l5FreeWorld', 'every_block_forever', lang)}</p>
             </div>
             <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-4 text-center">
-              <p className="text-xs uppercase tracking-wider text-gray-400 mb-1">{cs ? 'Přibližně / měsíc' : 'Approx / month'}</p>
+              <p className="text-xs uppercase tracking-wider text-gray-400 mb-1">{tr('l5FreeWorld', 'approx_month', lang)}</p>
               <p className="text-3xl font-bold text-emerald-400">~11,7M</p>
               <p className="text-xs text-gray-500 mt-1">ZION</p>
             </div>
             <div className="rounded-2xl border border-cyan-500/30 bg-cyan-500/5 p-4 text-center">
-              <p className="text-xs uppercase tracking-wider text-gray-400 mb-1">{cs ? 'Správa' : 'Governed by'}</p>
+              <p className="text-xs uppercase tracking-wider text-gray-400 mb-1">{tr('l5FreeWorld', 'governed_by', lang)}</p>
               <p className="text-2xl font-bold text-cyan-400">DAO</p>
-              <p className="text-xs text-gray-500 mt-1">{cs ? 'L5 Radou' : 'L5 Council'}</p>
+              <p className="text-xs text-gray-500 mt-1">{tr('l5FreeWorld', 'l5_council', lang)}</p>
             </div>
           </div>
           <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-gray-400 font-mono break-all">
-            <p className="text-xs uppercase tracking-wider text-gray-500 mb-1">{cs ? 'Adresa fondu' : 'Fund wallet'}</p>
+            <p className="text-xs uppercase tracking-wider text-gray-500 mb-1">{tr('l5FreeWorld', 'fund_wallet', lang)}</p>
             {HUMANITARIAN_WALLET}
           </div>
         </motion.section>
@@ -160,12 +160,12 @@ export default function L5FreeWorldPage() {
         {/* ── L5 Protocol suite ── */}
         <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[32px] border border-white/10 bg-white/5 p-8">
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Sdílené protokoly' : 'Shared Protocols'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tr('l5FreeWorld', 'shared_protocols', lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Shield className="h-7 w-7 text-cyan-400" />
-              {cs ? 'Baseline L5 protokoly' : 'Baseline L5 Protocols'}
+              {tr('l5FreeWorld', 'baseline_l5_protocols', lang)}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Každá L5 komunita implementuje tyto sdílené protokoly pro interoperabilitu.' : 'Every L5 community implements these shared protocols for interoperability.'}</p>
+            <p className="text-sm text-gray-400">{tr('l5FreeWorld', 'every_l5_community_implements_these_shared_pr', lang)}</p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {protocols.map((p) => (
@@ -183,10 +183,10 @@ export default function L5FreeWorldPage() {
         {/* ── Communities ── */}
         <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[32px] border border-white/10 bg-black/40 p-8">
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Komunity' : 'Communities'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tr('l5FreeWorld', 'communities', lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <TreeDeciduous className="h-7 w-7 text-emerald-400" />
-              {cs ? 'L5 uzly — komunity' : 'L5 Nodes — Communities'}
+              {tr('l5FreeWorld', 'l5_nodes_communities', lang)}
             </h2>
           </div>
           <div className="grid md:grid-cols-3 gap-5">
@@ -211,7 +211,7 @@ export default function L5FreeWorldPage() {
                   {community.href && (
                     <div className="mt-3 flex items-center gap-1 text-xs text-amber-300/70 group-hover:text-amber-300 transition-colors">
                       <ArrowRight className="h-3 w-3" />
-                      {cs ? 'Podrobnosti' : 'Details'}
+                      {tr('l5FreeWorld', 'details', lang)}
                     </div>
                   )}
                 </div>
@@ -226,7 +226,7 @@ export default function L5FreeWorldPage() {
             })}
           </div>
           <p className="text-xs text-gray-500 mt-4 text-center">
-            {cs ? 'Chceš navrhnout novou L5 komunitu? Otevři PR do V3/L5/docs/COMMUNITIES/' : 'Want to propose a new L5 community? Open a PR to V3/L5/docs/COMMUNITIES/'}
+            {tr('l5FreeWorld', 'want_to_propose_a_new_l5_community_open_a_pr_', lang)}
           </p>
         </motion.section>
 
@@ -234,13 +234,13 @@ export default function L5FreeWorldPage() {
         <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[32px] border border-emerald-500/20 bg-emerald-500/5 p-8">
           <div className="flex items-center gap-3 mb-6">
             <Wallet className="h-7 w-7 text-emerald-400" />
-            <h2 className="text-3xl font-semibold text-white">{cs ? 'Ekonomický model L5' : 'L5 Economic Model'}</h2>
+            <h2 className="text-3xl font-semibold text-white">{tr('l5FreeWorld', 'l5_economic_model', lang)}</h2>
           </div>
           <div className="space-y-3 text-sm font-mono">
             {[
-              { label: cs ? 'Block reward (síť)' : 'Block reward (network)', split: '89% miner · 5% L5 humanitarian · 5% L6 Issobella · 1% pool fee', color: 'text-cyan-400' },
-              { label: cs ? 'Guardian Node (místní)' : 'Guardian Node (local)', split: cs ? '90% komunitní těžař · 10% → komunitní pokladna' : '90% community miner · 10% → community treasury', color: 'text-emerald-400' },
-              { label: cs ? 'Komunitní pokladna' : 'Community Treasury', split: cs ? '60% projekty · 30% rezervy · 10% humanitární příspěvek (L5 global)' : '60% projects · 30% reserves · 10% humanitarian tithe (L5 global)', color: 'text-amber-400' },
+              { label: tr('l5FreeWorld', 'block_reward_network', lang), split: '89% miner · 5% L5 humanitarian · 5% L6 Issobella · 1% pool fee', color: 'text-cyan-400' },
+              { label: tr('l5FreeWorld', 'guardian_node_local', lang), split: tr('l5FreeWorld', '90_community_miner_10_community_treasury', lang), color: 'text-emerald-400' },
+              { label: tr('l5FreeWorld', 'community_treasury', lang), split: tr('l5FreeWorld', '60_projects_30_reserves_10_humanitarian_tithe', lang), color: 'text-amber-400' },
             ].map((row) => (
               <div key={row.label} className="rounded-xl border border-white/10 bg-black/30 p-4">
                 <p className={`text-xs uppercase tracking-wider mb-1 ${row.color}`}>{row.label}</p>
@@ -252,13 +252,13 @@ export default function L5FreeWorldPage() {
 
         {/* ── Links ── */}
         <motion.section initial={{ opacity: 0, scale: 0.98 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} className="rounded-[32px] border border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-transparent to-emerald-500/10 p-10">
-          <h2 className="text-2xl font-semibold text-white text-center mb-6">{cs ? 'Více o L5' : 'Learn more about L5'}</h2>
+          <h2 className="text-2xl font-semibold text-white text-center mb-6">{tr('l5FreeWorld', 'learn_more_about_l5', lang)}</h2>
           <div className="flex flex-wrap justify-center gap-4">
             <Link href="/dao" className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors">
               <Crown className="h-4 w-4 text-zion-gold" /> DAO Governance
             </Link>
             <Link href="/network" className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors">
-              <Globe2 className="h-4 w-4 text-cyan-400" /> {cs ? 'Síť' : 'Network'}
+              <Globe2 className="h-4 w-4 text-cyan-400" /> {tr('l5FreeWorld', 'network', lang)}
             </Link>
             <Link href="/l6-issobella" className="inline-flex items-center gap-2 rounded-2xl border border-rose-500/30 bg-rose-500/5 px-6 py-3 text-sm font-semibold text-rose-200 hover:bg-rose-500/10 transition-colors">
               L6 Issobella <ArrowRight className="h-4 w-4" />

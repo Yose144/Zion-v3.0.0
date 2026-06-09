@@ -70,29 +70,29 @@ const NetworkOperatorToolkit = dynamic(() => import('@/components/network/Networ
 
 const getHeroStats = (cs: boolean) => [
   {
-    label: cs ? 'Veřejné nody' : 'Public Nodes',
+    label: tr('networkPage', 'public_nodes', lang),
     value: '2',
     descriptor: cs
       ? 'Edge relay (Hetzner VPS) + Core (privátní master)'
       : 'Edge relay (Hetzner VPS) + Core (private master)',
   },
   {
-    label: cs ? 'P2P mesh' : 'P2P Mesh',
-    value: cs ? 'Core + Edge' : 'Core + Edge',
-    descriptor: cs ? 'VPN tunel — Core ↔ Edge' : 'VPN tunnel — Core ↔ Edge',
+    label: tr('networkPage', 'p2p_mesh', lang),
+    value: tr('networkPage', 'core_edge', lang),
+    descriptor: tr('networkPage', 'vpn_tunnel_core_edge', lang),
   },
   {
-    label: cs ? 'Telemetrie' : 'Telemetry',
+    label: tr('networkPage', 'telemetry', lang),
     value: '30s',
-    descriptor: cs ? 'Interval auto-obnovení' : 'Auto-refresh interval',
+    descriptor: tr('networkPage', 'auto_refresh_interval', lang),
   },
   {
-    label: cs ? 'Topologie' : 'Topology',
-    value: cs ? 'Core + Edge' : 'Core + Edge',
-    descriptor: cs ? 'Edge relay + Core master (PPLNS okno na Core)' : 'Edge relay + Core master (PPLNS window on Core)',
+    label: tr('networkPage', 'topology', lang),
+    value: tr('networkPage', 'core_edge', lang),
+    descriptor: tr('networkPage', 'edge_relay_core_master_pplns_window_on_core', lang),
   },
   {
-    label: cs ? 'Síť' : 'Network',
+    label: tr('networkPage', 'network', lang),
     value: 'V3 Mainnet',
     descriptor: cs
       ? 'Mainnet launch countdown v2.9.9 · runtime v2.9.8'
@@ -103,24 +103,24 @@ const getHeroStats = (cs: boolean) => [
 const getInfraFeatures = (cs: boolean) => [
   {
     icon: Server,
-    title: cs ? 'Edge relay (Hetzner VPS)' : 'Edge Relay (Hetzner VPS)',
+    title: tr('networkPage', 'edge_relay_hetzner_vps', lang),
     detail: cs
       ? 'Veřejný P2P + stratum relay — P2P 8333, Pool 8444, Node RPC 8443'
       : 'Public P2P + stratum relay — P2P 8333, Pool 8444, Node RPC 8443',
     ip: '77.42.71.94',
-    status: cs ? 'Aktivní' : 'Active',
+    status: tr('networkPage', 'active', lang),
     color: 'text-emerald-400',
     border: 'border-emerald-500/30',
     bg: 'bg-emerald-500/5',
   },
   {
     icon: Server,
-    title: cs ? 'Core (privátní master)' : 'Core (private master)',
+    title: tr('networkPage', 'core_private_master', lang),
     detail: cs
       ? 'Zdroj pravdy — Node 1 (Genesis), Node 2, Master PPLNS pool, GPU miner'
       : 'Source of truth — Node 1 (Genesis), Node 2, Master PPLNS pool, GPU miner',
-    ip: cs ? 'Privátní VPN' : 'Private VPN',
-    status: cs ? 'VPN tunel' : 'VPN tunnel',
+    ip: tr('networkPage', 'private_vpn', lang),
+    status: tr('networkPage', 'vpn_tunnel', lang),
     color: 'text-zion-cyan',
     border: 'border-cyan-500/30',
     bg: 'bg-cyan-500/5',
@@ -130,28 +130,28 @@ const getInfraFeatures = (cs: boolean) => [
 const getRuntimePanels = (cs: boolean) => [
   {
     icon: Radio,
-    label: cs ? 'Verejny stratum' : 'Public Stratum',
+    label: tr('networkPage', 'public_stratum', lang),
     value: SITE_POOL_PRIMARY,
-    detail: cs ? 'Aktualni primarni tezebni vstup na Zion2' : 'Current primary mining ingress on Zion2',
+    detail: tr('networkPage', 'current_primary_mining_ingress_on_zion2', lang),
     accent: 'text-zion-gold',
   },
   {
     icon: Terminal,
     label: 'RPC Endpoint',
     value: SITE_PRIMARY_RPC_URL,
-    detail: cs ? 'Nativni Rust JSON-RPC pro explorer a tooling' : 'Native Rust JSON-RPC for explorers and tooling',
+    detail: tr('networkPage', 'native_rust_json_rpc_for_explorers_and_toolin', lang),
     accent: 'text-zion-cyan',
   },
   {
     icon: Globe,
     label: 'P2P Peer',
     value: `${SITE_PRIMARY_HOST}:8333`,
-    detail: cs ? 'Veřejný Edge relay — Core sync přes privátní VPN' : 'Public Edge relay — Core sync via private VPN',
+    detail: tr('networkPage', 'public_edge_relay_core_sync_via_private_vpn', lang),
     accent: 'text-emerald-400',
   },
   {
     icon: BookOpen,
-    label: cs ? 'Kontext releasu' : 'Release Context',
+    label: tr('networkPage', 'release_context', lang),
     value: SITE_RELEASE_LABEL,
     detail: cs
       ? `Verejna linka nad ${SITE_RUNTIME_LABEL}; archivovane nasazeni 2.9.8 zustava v dokumentaci`
@@ -163,10 +163,10 @@ const getRuntimePanels = (cs: boolean) => [
 const getGuideBlocks = (cs: boolean) => [
   {
     icon: Zap,
-    title: cs ? 'Tezba' : 'Mining',
-    description: cs ? 'Pripojte jakykoli Cosmic Harmony / CPU miner k aktualnimu verejnemu poolu na Zion2.' : 'Connect any Cosmic Harmony / CPU miner to the current public pool on Zion2.',
+    title: tr('networkPage', 'mining', lang),
+    description: tr('networkPage', 'connect_any_cosmic_harmony_cpu_miner_to_the_c', lang),
     items: [
-      `Pool: ${SITE_POOL_PRIMARY} ${cs ? '(aktualni primarni)' : '(current primary)'}`,
+      `Pool: ${SITE_POOL_PRIMARY} ${tr('networkPage', 'current_primary', lang)}`,
       'Wallet: YOUR_ZION_ADDRESS',
       'Password: x',
     ],
@@ -179,8 +179,8 @@ const getGuideBlocks = (cs: boolean) => [
       : 'Native Rust JSON-RPC endpoint for explorers and tooling. Historical 3-host mesh is archived in release reports.',
     items: [
       `Primary: ${SITE_PRIMARY_RPC_URL}`,
-      `Scope: ${cs ? 'verejny runtime endpoint' : 'public runtime endpoint'}`,
-      `Archive: ${cs ? 'docs/2.9.8 + breznovy status report' : 'docs/2.9.8 + March status reports'}`,
+      `Scope: ${tr('networkPage', 'public_runtime_endpoint', lang)}`,
+      `Archive: ${tr('networkPage', 'docs_2_9_8_march_status_reports', lang)}`,
       'Method: POST',
     ],
   },
@@ -191,33 +191,33 @@ const getGuideBlocks = (cs: boolean) => [
       ? 'Nativní Rust P2P síť — Edge relay přijímá inbound z internetu, Core zůstává za privátní VPN.'
       : 'Native Rust P2P network — Edge relay accepts inbound from the internet, Core stays behind private VPN.',
     items: [
-      `${cs ? 'Veřejný peer (Edge)' : 'Public peer (Edge)'}: ${SITE_PRIMARY_HOST}:8333`,
-      cs ? 'Core peer (VPN): Privátní peer (neveřejný)' : 'Core peer (VPN): Private peer (non-public)',
-      cs ? 'VPN tunel: WireGuard (Core ↔ Edge)' : 'VPN tunnel: WireGuard (Core ↔ Edge)',
+      `${tr('networkPage', 'public_peer_edge', lang)}: ${SITE_PRIMARY_HOST}:8333`,
+      tr('networkPage', 'core_peer_vpn_private_peer_non_public', lang),
+      tr('networkPage', 'vpn_tunnel_wireguard_core_edge', lang),
     ],
   },
 ];
 
 const getNetworkFacts = (cs: boolean) => [
-  { text: cs ? 'Nativní Rust P2P — Edge relay veřejný' : 'Native Rust P2P — Edge relay public', done: true },
+  { text: tr('networkPage', 'native_rust_p2p_edge_relay_public', lang), done: true },
   {
-    text: cs ? 'Core + Edge topologie s privátním VPN tunelem' : 'Core + Edge topology with private VPN tunnel',
+    text: tr('networkPage', 'core_edge_topology_with_private_vpn_tunnel', lang),
     done: true,
   },
   {
-    text: cs ? 'Edge stratum endpoint: 77.42.71.94:8444 (ShareRelay)' : 'Edge stratum endpoint: 77.42.71.94:8444 (ShareRelay)',
+    text: tr('networkPage', 'edge_stratum_endpoint_77_42_71_94_8444_sharer', lang),
     done: true,
   },
-  { text: cs ? 'JSON-RPC endpointy live (port 8443)' : 'JSON-RPC endpoints live (port 8443)', done: true },
-  { text: cs ? 'systemd služby s auto-restartem na Edge' : 'systemd services with auto-restart on Edge', done: true },
-  { text: cs ? 'LWMA DAA — cíl 60s block time' : 'LWMA DAA — target 60s block time', done: true },
+  { text: tr('networkPage', 'json_rpc_endpoints_live_port_8443', lang), done: true },
+  { text: tr('networkPage', 'systemd_services_with_auto_restart_on_edge', lang), done: true },
+  { text: tr('networkPage', 'lwma_daa_target_60s_block_time', lang), done: true },
   {
-    text: cs ? 'ShareRelay protokol: Edge → Core PPLNS synchronizace' : 'ShareRelay protocol: Edge → Core PPLNS sync',
+    text: tr('networkPage', 'sharerelay_protocol_edge_core_pplns_sync', lang),
     done: true,
   },
-  { text: cs ? 'Monitoring Prometheus + Grafana' : 'Prometheus + Grafana monitoring', done: true },
+  { text: tr('networkPage', 'prometheus_grafana_monitoring', lang), done: true },
   {
-    text: cs ? 'UFW firewall na Edge (8333, 8444, 22, 41641)' : 'UFW firewall on Edge (8333, 8444, 22, 41641)',
+    text: tr('networkPage', 'ufw_firewall_on_edge_8333_8444_22_41641', lang),
     done: true,
   },
 ];
@@ -315,7 +315,7 @@ async function fetchMonitoringSnapshot(): Promise<MonitoringSnapshot> {
 export default function NetworkPage() {
   const { lang } = useLang();
   const cs = lang === 'cs';
-  const locale = cs ? 'cs-CZ' : 'en-US';
+  const locale = tr('networkPage', 'en_us', lang);
   const heroStats = getHeroStats(cs);
   const infraFeatures = getInfraFeatures(cs);
   const runtimePanels = getRuntimePanels(cs);
@@ -400,12 +400,12 @@ export default function NetworkPage() {
             <div className="space-y-5">
               <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/40 bg-emerald-400/10 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-emerald-300 uppercase">
                 <Radio className="h-4 w-4" />
-                {SITE_RELEASE_LABEL} · {cs ? 'Sit' : 'Network'}
+                {SITE_RELEASE_LABEL} · {tr('networkPage', 'network_1', lang)}
               </div>
               <div>
-                <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{cs ? 'Zivy stav' : 'Live Status'}</p>
+                <p className="text-sm uppercase tracking-[0.4em] text-gray-400">{tr('networkPage', 'live_status', lang)}</p>
                 <h1 className="text-3xl sm:text-5xl md:text-6xl font-semibold text-gradient leading-tight">
-                  {cs ? 'P2P Sit' : 'P2P Network'}
+                  {tr('networkPage', 'p2p_network', lang)}
                 </h1>
               </div>
               <p className="text-lg text-gray-300 max-w-2xl">
@@ -415,13 +415,13 @@ export default function NetworkPage() {
               </p>
               <div className="flex flex-wrap gap-3 text-xs">
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <Sparkles className="h-3 w-3 text-zion-gold" /> {cs ? 'Nativni Rust' : 'Native Rust'}
+                  <Sparkles className="h-3 w-3 text-zion-gold" /> {tr('networkPage', 'native_rust', lang)}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
                   <Orbit className="h-3 w-3 text-zion-cyan" /> Runtime: {SITE_RUNTIME_LABEL}
                 </span>
                 <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
-                  <ShieldCheck className="h-3 w-3 text-emerald-400" /> {cs ? '1 verejny host · 2 interni seedy' : '1 Public Host · 2 Internal Seeds'}
+                  <ShieldCheck className="h-3 w-3 text-emerald-400" /> {tr('networkPage', '1_public_host_2_internal_seeds', lang)}
                 </span>
               </div>
             </div>
@@ -440,12 +440,12 @@ export default function NetworkPage() {
         {/* ═══════ RUNTIME SNAPSHOT ═══════ */}
         <section className="rounded-4xl border border-white/10 bg-black/40 p-8">
           <div className="flex flex-col gap-2 mb-8">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Runtime prehled' : 'Runtime Snapshot'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tr('networkPage', 'runtime_snapshot', lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Orbit className="h-7 w-7 text-zion-cyan" />
-              {cs ? 'Verejny povrch site' : 'Public Network Surface'}
+              {tr('networkPage', 'public_network_surface', lang)}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Aktualni zivy footprint zredukovany na endpointy a role, ktere operatori potrebuji jako prvni.' : 'The current live footprint distilled to the endpoints and roles operators actually need first.'}</p>
+            <p className="text-sm text-gray-400">{tr('networkPage', 'the_current_live_footprint_distilled_to_the_e', lang)}</p>
           </div>
 
           <div className="grid gap-5 lg:grid-cols-2 2xl:grid-cols-4">
@@ -469,24 +469,24 @@ export default function NetworkPage() {
         {chainStats && (
         <section className="rounded-4xl border border-white/10 bg-black/40 p-8">
           <div className="flex flex-col gap-2 mb-8">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Zdraví' : 'Health'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tr('networkPage', 'health', lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <ShieldCheck className="h-7 w-7 text-emerald-400" />
-              {cs ? 'Skóre zdraví sítě' : 'Network Health Score'}
+              {tr('networkPage', 'network_health_score', lang)}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Agregátní indikátor stavu sítě na základě klíčových metrik.' : 'Aggregate health indicator based on key network metrics.'}</p>
+            <p className="text-sm text-gray-400">{tr('networkPage', 'aggregate_health_indicator_based_on_key_netwo', lang)}</p>
           </div>
 
           {(() => {
             const checks = [
-              { label: cs ? 'Node online' : 'Node Online', ok: chainStats.connected, weight: 25 },
-              { label: cs ? 'Bloky se těží' : 'Blocks Mining', ok: chainStats.block_height > 0, weight: 20 },
-              { label: cs ? 'Aktivní mineři' : 'Active Miners', ok: chainStats.active_miners > 0, weight: 15 },
-              { label: cs ? 'Normální block time' : 'Normal Block Time', ok: chainStats.avg_block_time > 0 && chainStats.avg_block_time < 180, weight: 15 },
+              { label: tr('networkPage', 'node_online', lang), ok: chainStats.connected, weight: 25 },
+              { label: tr('networkPage', 'blocks_mining', lang), ok: chainStats.block_height > 0, weight: 20 },
+              { label: tr('networkPage', 'active_miners', lang), ok: chainStats.active_miners > 0, weight: 15 },
+              { label: tr('networkPage', 'normal_block_time', lang), ok: chainStats.avg_block_time > 0 && chainStats.avg_block_time < 180, weight: 15 },
               { label: 'P2P Peers', ok: chainStats.total_connections >= 1, weight: 10 },
               { label: 'Mempool', ok: true, weight: 5 },
-              { label: cs ? 'Databáze OK' : 'Database OK', ok: chainStats.database_size > 0, weight: 5 },
-              { label: cs ? 'Pool online' : 'Pool Online', ok: chainStats.pool_hashrate > 0 || chainStats.active_miners > 0, weight: 5 },
+              { label: tr('networkPage', 'database_ok', lang), ok: chainStats.database_size > 0, weight: 5 },
+              { label: tr('networkPage', 'pool_online', lang), ok: chainStats.pool_hashrate > 0 || chainStats.active_miners > 0, weight: 5 },
             ];
             const score = checks.reduce((acc, c) => acc + (c.ok ? c.weight : 0), 0);
             const scoreColor = score >= 90 ? 'text-emerald-400' : score >= 70 ? 'text-zion-gold' : score >= 50 ? 'text-amber-400' : 'text-red-400';
@@ -500,7 +500,7 @@ export default function NetworkPage() {
                   <div className={`relative w-40 h-40 rounded-full border-4 ${scoreBorder} flex items-center justify-center shadow-lg ${scoreGlow}`}>
                     <div className="text-center">
                       <p className={`text-5xl font-bold tabular-nums ${scoreColor}`}>{score}</p>
-                      <p className="text-xs text-gray-500 mt-1">{cs ? 'ze 100' : 'of 100'}</p>
+                      <p className="text-xs text-gray-500 mt-1">{tr('networkPage', 'of_100', lang)}</p>
                     </div>
                     <svg className="absolute inset-0" viewBox="0 0 160 160">
                       <circle cx="80" cy="80" r="74" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="4" />
@@ -512,7 +512,7 @@ export default function NetworkPage() {
                     </svg>
                   </div>
                   <p className={`mt-4 text-sm font-semibold ${scoreColor}`}>
-                    {score >= 90 ? (cs ? 'Výborný' : 'Excellent') : score >= 70 ? (cs ? 'Dobrý' : 'Good') : score >= 50 ? (cs ? 'Průměrný' : 'Fair') : (cs ? 'Kritický' : 'Critical')}
+                    {score >= 90 ? (tr('networkPage', 'excellent', lang)) : score >= 70 ? (tr('networkPage', 'good', lang)) : score >= 50 ? (tr('networkPage', 'fair', lang)) : (tr('networkPage', 'critical', lang))}
                   </p>
                 </div>
 
@@ -524,8 +524,8 @@ export default function NetworkPage() {
                         <div className={`w-2 h-2 rounded-full ${c.ok ? 'bg-emerald-400' : 'bg-red-400'}`} />
                         <span className="text-[11px] text-gray-400 uppercase tracking-wider">{c.label}</span>
                       </div>
-                      <p className={`text-lg font-bold ${c.ok ? 'text-emerald-400' : 'text-red-400'}`}>{c.ok ? (cs ? 'OK' : 'OK') : (cs ? 'FAIL' : 'FAIL')}</p>
-                      <p className="text-[10px] text-gray-500 mt-0.5">{c.weight} {cs ? 'bodů' : 'pts'}</p>
+                      <p className={`text-lg font-bold ${c.ok ? 'text-emerald-400' : 'text-red-400'}`}>{c.ok ? (tr('networkPage', 'ok', lang)) : (tr('networkPage', 'fail', lang))}</p>
+                      <p className="text-[10px] text-gray-500 mt-0.5">{c.weight} {tr('networkPage', 'pts', lang)}</p>
                     </div>
                   ))}
                 </div>
@@ -539,12 +539,12 @@ export default function NetworkPage() {
         {chainStats && (
         <section className="rounded-4xl border border-white/10 bg-black/40 p-8">
           <div className="flex flex-col gap-2 mb-8">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Výkon' : 'Performance'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tr('networkPage', 'performance', lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <TrendingUp className="h-7 w-7 text-zion-cyan" />
-              {cs ? 'Výkon chainu' : 'Chain Performance'}
+              {tr('networkPage', 'chain_performance', lang)}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Živé grafy hashrate, obtížnosti a block time za poslední hodinu.' : 'Live sparklines for hashrate, difficulty, and block time over the last hour.'}</p>
+            <p className="text-sm text-gray-400">{tr('networkPage', 'live_sparklines_for_hashrate_difficulty_and_b', lang)}</p>
           </div>
 
           <div className="grid gap-5 lg:grid-cols-3">
@@ -552,7 +552,7 @@ export default function NetworkPage() {
             <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <p className="text-xs text-gray-500 uppercase tracking-wider">{cs ? 'Hashrate sítě' : 'Network Hashrate'}</p>
+                  <p className="text-xs text-gray-500 uppercase tracking-wider">{tr('networkPage', 'network_hashrate', lang)}</p>
                   <p className="text-2xl font-bold text-emerald-400 font-mono mt-1">{chainStats.network_hashrate_formatted}</p>
                 </div>
               </div>
@@ -563,7 +563,7 @@ export default function NetworkPage() {
             <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <p className="text-xs text-gray-500 uppercase tracking-wider">{cs ? 'Obtížnost' : 'Difficulty'}</p>
+                  <p className="text-xs text-gray-500 uppercase tracking-wider">{tr('networkPage', 'difficulty', lang)}</p>
                   <p className="text-2xl font-bold text-zion-cyan font-mono mt-1">{fmtLargeNum(chainStats.difficulty)}</p>
                 </div>
               </div>
@@ -574,10 +574,10 @@ export default function NetworkPage() {
             <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <p className="text-xs text-gray-500 uppercase tracking-wider">{cs ? 'Průměrný block time' : 'Avg Block Time'}</p>
+                  <p className="text-xs text-gray-500 uppercase tracking-wider">{tr('networkPage', 'avg_block_time', lang)}</p>
                   <p className="text-2xl font-bold text-blue-400 font-mono mt-1">{chainStats.avg_block_time}s</p>
                 </div>
-                <span className="text-xs text-gray-500">{cs ? 'Cíl' : 'Target'}: {chainStats.target_block_time ?? BLOCK_TIME_SECONDS}s</span>
+                <span className="text-xs text-gray-500">{tr('networkPage', 'target', lang)}: {chainStats.target_block_time ?? BLOCK_TIME_SECONDS}s</span>
               </div>
               <NetSparkline data={blockTimeHistory.map(p => p.value)} color="rgb(96, 165, 250)" height={80} />
             </div>
@@ -589,35 +589,35 @@ export default function NetworkPage() {
         {chainStats && (
         <section className="rounded-4xl border border-white/10 bg-black/40 p-8">
           <div className="flex flex-col gap-2 mb-8">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Statistika' : 'Statistics'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tr('networkPage', 'statistics', lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <BarChart3 className="h-7 w-7 text-zion-gold" />
-              {cs ? 'Statistiky chainu' : 'Chain Statistics'}
+              {tr('networkPage', 'chain_statistics', lang)}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Detailní metriky z živého blockchainu.' : 'Detailed metrics from the live blockchain.'}</p>
+            <p className="text-sm text-gray-400">{tr('networkPage', 'detailed_metrics_from_the_live_blockchain', lang)}</p>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
-            <ChainStatCard label={cs ? 'Výška bloku' : 'Block Height'} value={chainStats.block_height.toLocaleString(locale)} color="text-zion-gold" />
-            <ChainStatCard label={cs ? 'Obtížnost' : 'Difficulty'} value={fmtLargeNum(chainStats.difficulty)} color="text-zion-cyan" />
-            <ChainStatCard label={cs ? 'Kumulativní obtížnost' : 'Cumulative Diff'} value={fmtLargeNum(chainStats.cumulative_difficulty)} color="text-zion-cyan" />
-            <ChainStatCard label={cs ? 'Oběžná zásoba' : 'Circulating Supply'} value={`${fmtLargeNum(chainStats.circulating_supply)} ZION`} color="text-zion-gold" />
-            <ChainStatCard label={cs ? 'Emise' : 'Emission'} value={`${chainStats.emission_pct}%`} color="text-pink-400" />
-            <ChainStatCard label={cs ? 'Celkem TX' : 'Total TX'} value={chainStats.tx_count.toLocaleString(locale)} color="text-purple-400" />
+            <ChainStatCard label={tr('networkPage', 'block_height', lang)} value={chainStats.block_height.toLocaleString(locale)} color="text-zion-gold" />
+            <ChainStatCard label={tr('networkPage', 'difficulty', lang)} value={fmtLargeNum(chainStats.difficulty)} color="text-zion-cyan" />
+            <ChainStatCard label={tr('networkPage', 'cumulative_diff', lang)} value={fmtLargeNum(chainStats.cumulative_difficulty)} color="text-zion-cyan" />
+            <ChainStatCard label={tr('networkPage', 'circulating_supply', lang)} value={`${fmtLargeNum(chainStats.circulating_supply)} ZION`} color="text-zion-gold" />
+            <ChainStatCard label={tr('networkPage', 'emission', lang)} value={`${chainStats.emission_pct}%`} color="text-pink-400" />
+            <ChainStatCard label={tr('networkPage', 'total_tx', lang)} value={chainStats.tx_count.toLocaleString(locale)} color="text-purple-400" />
             <ChainStatCard label="Mempool" value={`${chainStats.tx_pool_size} tx`} color={chainStats.tx_pool_size > 0 ? 'text-amber-400' : 'text-gray-400'} />
-            <ChainStatCard label={cs ? 'Peery celkem' : 'Total Peers'} value={`${chainStats.total_connections}`} sub={`↓${chainStats.incoming_connections} ↑${chainStats.outgoing_connections}`} color="text-purple-400" />
-            <ChainStatCard label={cs ? 'Známé peery' : 'Known Peers'} value={`${chainStats.white_peerlist_size}`} sub={`${chainStats.grey_peerlist_size} grey`} color="text-indigo-400" />
-            <ChainStatCard label={cs ? 'Limit bloku' : 'Block Size Limit'} value={fmtBytes(chainStats.block_size_limit)} sub={`${cs ? 'Medián' : 'Median'}: ${fmtBytes(chainStats.block_size_median)}`} color="text-cyan-400" />
-            <ChainStatCard label={cs ? 'Databáze' : 'Database'} value={fmtBytes(chainStats.database_size)} color="text-pink-400" />
-            <ChainStatCard label={cs ? 'Verze' : 'Version'} value={chainStats.version ? `v${chainStats.version}` : '—'} color="text-gray-300" />
-            <ChainStatCard label={cs ? 'Alt bloky' : 'Alt Blocks'} value={`${chainStats.alt_blocks_count ?? 0}`} color="text-amber-400" />
-            <ChainStatCard label={cs ? 'Aktivní mineři' : 'Active Miners'} value={`${chainStats.active_miners}`} color="text-emerald-400" />
-            <ChainStatCard label={cs ? 'Pool hashrate' : 'Pool Hashrate'} value={chainStats.pool_hashrate_formatted || '—'} color="text-emerald-400" />
-            <ChainStatCard label={cs ? 'Pool bloky' : 'Pool Blocks'} value={`${chainStats.pool_blocks_found ?? 0}`} color="text-zion-gold" />
+            <ChainStatCard label={tr('networkPage', 'total_peers', lang)} value={`${chainStats.total_connections}`} sub={`↓${chainStats.incoming_connections} ↑${chainStats.outgoing_connections}`} color="text-purple-400" />
+            <ChainStatCard label={tr('networkPage', 'known_peers', lang)} value={`${chainStats.white_peerlist_size}`} sub={`${chainStats.grey_peerlist_size} grey`} color="text-indigo-400" />
+            <ChainStatCard label={tr('networkPage', 'block_size_limit', lang)} value={fmtBytes(chainStats.block_size_limit)} sub={`${tr('networkPage', 'median', lang)}: ${fmtBytes(chainStats.block_size_median)}`} color="text-cyan-400" />
+            <ChainStatCard label={tr('networkPage', 'database', lang)} value={fmtBytes(chainStats.database_size)} color="text-pink-400" />
+            <ChainStatCard label={tr('networkPage', 'version', lang)} value={chainStats.version ? `v${chainStats.version}` : '—'} color="text-gray-300" />
+            <ChainStatCard label={tr('networkPage', 'alt_blocks', lang)} value={`${chainStats.alt_blocks_count ?? 0}`} color="text-amber-400" />
+            <ChainStatCard label={tr('networkPage', 'active_miners', lang)} value={`${chainStats.active_miners}`} color="text-emerald-400" />
+            <ChainStatCard label={tr('networkPage', 'pool_hashrate', lang)} value={chainStats.pool_hashrate_formatted || '—'} color="text-emerald-400" />
+            <ChainStatCard label={tr('networkPage', 'pool_blocks', lang)} value={`${chainStats.pool_blocks_found ?? 0}`} color="text-zion-gold" />
             {chainStats.last_block && (
               <>
-                <ChainStatCard label={cs ? 'Poslední blok' : 'Last Block'} value={`#${chainStats.last_block.height.toLocaleString(locale)}`} sub={new Date(chainStats.last_block.timestamp * 1000).toLocaleTimeString(locale)} color="text-zion-gold" />
-                <ChainStatCard label={cs ? 'Odměna' : 'Last Reward'} value={`${(chainStats.last_block.reward / 1e12).toFixed(2)} ZION`} color="text-emerald-400" />
+                <ChainStatCard label={tr('networkPage', 'last_block', lang)} value={`#${chainStats.last_block.height.toLocaleString(locale)}`} sub={new Date(chainStats.last_block.timestamp * 1000).toLocaleTimeString(locale)} color="text-zion-gold" />
+                <ChainStatCard label={tr('networkPage', 'last_reward', lang)} value={`${(chainStats.last_block.reward / 1e12).toFixed(2)} ZION`} color="text-emerald-400" />
               </>
             )}
           </div>
@@ -628,18 +628,18 @@ export default function NetworkPage() {
         {chainStats && (
         <section className="rounded-4xl border border-white/10 bg-black/40 p-8">
           <div className="flex flex-col gap-2 mb-8">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Emise' : 'Emission'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tr('networkPage', 'emission', lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Coins className="h-7 w-7 text-zion-gold" />
-              {cs ? 'Průběh emise' : 'Emission Progress'}
+              {tr('networkPage', 'emission_progress', lang)}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Decade Decay model: -20 % každých 10 let. Max supply 144 miliard ZION.' : 'Decade Decay model: -20% every 10 years. Max supply 144 billion ZION.'}</p>
+            <p className="text-sm text-gray-400">{tr('networkPage', 'decade_decay_model_20_every_10_years_max_supp', lang)}</p>
           </div>
 
           {/* Overall progress bar */}
           <div className="mb-8">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-400">{cs ? 'Vytěženo' : 'Mined'}: {chainStats.emission_pct}%</span>
+              <span className="text-sm text-gray-400">{tr('networkPage', 'mined', lang)}: {chainStats.emission_pct}%</span>
               <span className="text-sm text-gray-400">{fmtLargeNum(chainStats.circulating_supply)} / {fmtLargeNum(TOTAL_SUPPLY_ZION)} ZION</span>
             </div>
             <div className="h-4 rounded-full bg-white/5 overflow-hidden">
@@ -659,12 +659,12 @@ export default function NetworkPage() {
               return (
                 <div key={i} className={`rounded-2xl border p-4 ${isCurrent ? 'border-zion-gold/40 bg-zion-gold/10' : isPast ? 'border-emerald-400/20 bg-emerald-400/5' : 'border-white/[0.08] bg-white/[0.03]'}`}>
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-[11px] uppercase tracking-wider text-gray-500">{cs ? 'Dekáda' : 'Decade'} {i + 1}</span>
-                    {isCurrent && <span className="text-[9px] font-bold uppercase tracking-widest text-zion-gold bg-zion-gold/20 px-2 py-0.5 rounded-full">{cs ? 'Nyní' : 'Now'}</span>}
+                    <span className="text-[11px] uppercase tracking-wider text-gray-500">{tr('networkPage', 'decade', lang)} {i + 1}</span>
+                    {isCurrent && <span className="text-[9px] font-bold uppercase tracking-widest text-zion-gold bg-zion-gold/20 px-2 py-0.5 rounded-full">{tr('networkPage', 'now', lang)}</span>}
                     {isPast && <span className="text-[9px] text-emerald-400">✓</span>}
                   </div>
                   <p className={`text-lg font-bold font-mono ${isCurrent ? 'text-zion-gold' : isPast ? 'text-emerald-400' : 'text-gray-400'}`}>{reward.toFixed(2)}</p>
-                  <p className="text-[10px] text-gray-500">ZION/{cs ? 'blok' : 'block'}</p>
+                  <p className="text-[10px] text-gray-500">ZION/{tr('networkPage', 'block', lang)}</p>
                   <p className="text-[10px] text-gray-500 mt-1 font-mono">{fmtLargeNum(decadeStart)}–{fmtLargeNum(decadeEnd)}</p>
                 </div>
               );
@@ -676,12 +676,12 @@ export default function NetworkPage() {
         {/* ═══════ INFRASTRUCTURE ═══════ */}
         <section className="rounded-4xl border border-white/10 bg-black/40 p-8">
           <div className="flex flex-col gap-2 mb-8">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Infrastruktura' : 'Infrastructure'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tr('networkPage', 'infrastructure', lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Shield className="h-7 w-7 text-zion-gold" />
-              {cs ? 'Aktualni runtime' : 'Current Runtime'}
+              {tr('networkPage', 'current_runtime', lang)}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Aktualni verejny runtime je jeden primarni host. Drivejsi multi-host validace zustava zdokumentovana jako archivovana historie validace.' : 'Current public runtime is a single primary host. Earlier multi-host validation remains documented as archived validation history.'}</p>
+            <p className="text-sm text-gray-400">{tr('networkPage', 'current_public_runtime_is_a_single_primary_ho', lang)}</p>
           </div>
           <div className="grid gap-5 md:grid-cols-1 lg:max-w-2xl">
             {infraFeatures.map((node) => (
@@ -708,7 +708,7 @@ export default function NetworkPage() {
                   </div>
                   <div className="flex items-center gap-2 text-gray-300">
                     <Zap className="w-3.5 h-3.5 text-gray-500" />
-                    <span>{cs ? 'Stratum: port 3333' : 'Stratum: port 3333'}</span>
+                    <span>{tr('networkPage', 'stratum_port_3333', lang)}</span>
                   </div>
                   <div className="flex items-center gap-2 text-gray-300">
                     <Terminal className="w-3.5 h-3.5 text-gray-500" />
@@ -727,12 +727,12 @@ export default function NetworkPage() {
         {/* ═══════ LIVE TELEMETRY ═══════ */}
         <section className="rounded-4xl border border-white/10 bg-black/40 p-8">
           <div className="flex flex-col gap-2 mb-8">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Ziva telemetrie' : 'Live Telemetry'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tr('networkPage', 'live_telemetry', lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Activity className="h-7 w-7 text-emerald-400" />
-              {cs ? 'Stav nodu' : 'Node Status'}
+              {tr('networkPage', 'node_status', lang)}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Zdravi, vyska chainu, hashrate a sync stav v realnem case z aktualniho runtime na primarnim hostu.' : 'Real-time health, block height, hashrate, and sync status from the current primary-host runtime.'}</p>
+            <p className="text-sm text-gray-400">{tr('networkPage', 'real_time_health_block_height_hashrate_and_sy', lang)}</p>
           </div>
           <NetworkStatus className="max-w-none" />
         </section>
@@ -743,12 +743,12 @@ export default function NetworkPage() {
         {/* ═══════ NETWORK MAP + POOL FINDER ═══════ */}
         <section>
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Geografie' : 'Geography'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tr('networkPage', 'geography', lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Globe2 className="h-7 w-7 text-zion-cyan" />
-              {cs ? 'Mapa site a vyhledavac poolu' : 'Network Map & Pool Finder'}
+              {tr('networkPage', 'network_map_pool_finder', lang)}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Vizualizujte aktualni topologii a porovnejte ji s archivovanym multi-host rolloutem zachovanym v release dokumentaci.' : 'Visualize the current topology and compare it with the archived multi-host rollout preserved in release documentation.'}</p>
+            <p className="text-sm text-gray-400">{tr('networkPage', 'visualize_the_current_topology_and_compare_it', lang)}</p>
           </div>
           <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
             <div className="rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6">
@@ -761,12 +761,12 @@ export default function NetworkPage() {
         {/* ═══════ CONNECTION GUIDES ═══════ */}
         <section className="rounded-4xl border border-white/10 bg-black/40 p-8">
           <div className="flex flex-col gap-2 mb-8">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Pripojeni' : 'Connect'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tr('networkPage', 'connect', lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Layers className="h-7 w-7 text-zion-purple" />
-              {cs ? 'Pripojovaci navody' : 'Connection Guides'}
+              {tr('networkPage', 'connection_guides', lang)}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Vse, co potrebujete k pripojeni minera, dotazovani RPC API nebo synchronizaci nodu.' : 'Everything you need to connect a miner, query the RPC API, or sync a node.'}</p>
+            <p className="text-sm text-gray-400">{tr('networkPage', 'everything_you_need_to_connect_a_miner_query_', lang)}</p>
           </div>
           <div className="grid gap-5 lg:grid-cols-3">
             {guideBlocks.map((block) => (
@@ -792,10 +792,10 @@ export default function NetworkPage() {
         {/* ═══════ NETWORK CHECKLIST ═══════ */}
         <section className="rounded-4xl border border-white/10 bg-black/40 p-8">
           <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Stav' : 'Status'}</p>
+            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{tr('networkPage', 'status', lang)}</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <ShieldCheck className="h-7 w-7 text-emerald-400" />
-              {cs ? 'Pripravenost site' : 'Network Readiness'}
+              {tr('networkPage', 'network_readiness', lang)}
             </h2>
           </div>
           <div className="grid gap-2 md:grid-cols-3">
@@ -810,7 +810,7 @@ export default function NetworkPage() {
             <span className="font-mono text-emerald-400">{factsDone}</span>
             <span>/</span>
             <span className="font-mono">{factsTotal}</span>
-            <span>{cs ? 'dokonceno' : 'completed'}</span>
+            <span>{tr('networkPage', 'completed', lang)}</span>
             <div className="h-2 flex-1 max-w-xs rounded-full bg-white/10">
               <div className="h-2 rounded-full bg-emerald-400" style={{ width: `${(factsDone / factsTotal) * 100}%` }} />
             </div>
@@ -826,9 +826,9 @@ export default function NetworkPage() {
             <p className="text-sm uppercase tracking-[0.4em] text-gray-500">FAQ</p>
             <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
               <Hash className="h-7 w-7 text-purple-400" />
-              {cs ? 'Často kladené dotazy' : 'Frequently Asked Questions'}
+              {tr('networkPage', 'frequently_asked_questions', lang)}
             </h2>
-            <p className="text-sm text-gray-400">{cs ? 'Vše o síti ZION na jednom místě.' : 'Everything about the ZION network in one place.'}</p>
+            <p className="text-sm text-gray-400">{tr('networkPage', 'everything_about_the_zion_network_in_one_plac', lang)}</p>
           </div>
           <NetFAQSection cs={cs} />
         </section>
@@ -836,7 +836,7 @@ export default function NetworkPage() {
         {/* ═══════ CTA ═══════ */}
         <section className="rounded-4xl border border-emerald-400/30 bg-linear-to-r from-emerald-500/20 via-zion-cyan/10 to-emerald-500/20 p-10 text-center">
           <Radio className="mx-auto h-12 w-12 text-emerald-400" />
-          <h2 className="mt-6 text-3xl font-semibold text-white">{cs ? 'Pripojte se k siti ZION' : 'Join the ZION Network'}</h2>
+          <h2 className="mt-6 text-3xl font-semibold text-white">{tr('networkPage', 'join_the_zion_network', lang)}</h2>
           <p className="mt-4 text-gray-100 max-w-3xl mx-auto">
             {cs
               ? 'Nativni Rust infrastruktura bezi 24/7 z aktualniho primarniho hostu s podporou interniho kvora. Pripojte svuj miner, spustte vlastni node nebo prozkoumejte blockchain, zatimco historicky kontext rollouta zustava zachovany v dokumentaci.'
@@ -848,10 +848,10 @@ export default function NetworkPage() {
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3 text-xs">
             {[
               'Cosmic Harmony PoW',
-              cs ? 'Primarni host online' : 'Primary host live',
-              cs ? 'Interni seedy' : 'Internal seeds',
-              cs ? 'Docker nativne' : 'Docker native',
-              cs ? 'Archivovana multi-host historie' : 'Archived multi-host history',
+              tr('networkPage', 'primary_host_live', lang),
+              tr('networkPage', 'internal_seeds', lang),
+              tr('networkPage', 'docker_native', lang),
+              tr('networkPage', 'archived_multi_host_history', lang),
             ].map((item) => (
               <span key={item} className="rounded-full bg-white/80 px-4 py-2 font-semibold text-gray-900">
                 {item}
@@ -860,10 +860,10 @@ export default function NetworkPage() {
           </div>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <Link href="/explorer" className="inline-flex items-center gap-2 rounded-2xl bg-black/70 px-6 py-3 text-sm font-semibold text-white border border-white/20">
-              <Activity className="h-4 w-4" /> {cs ? 'Explorer' : 'Explorer'}
+              <Activity className="h-4 w-4" /> {tr('networkPage', 'explorer', lang)}
             </Link>
             <Link href="/roadmap" className="inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-emerald-400 to-zion-cyan px-6 py-3 text-sm font-semibold text-black">
-              <Rocket className="h-4 w-4" /> {cs ? 'Roadmapa' : 'Roadmap'}
+              <Rocket className="h-4 w-4" /> {tr('networkPage', 'roadmap', lang)}
             </Link>
             <a
               href="https://github.com/Zion-TerraNova"
@@ -934,14 +934,14 @@ function ChainStatCard({ label, value, sub, color }: { label: string; value: str
 function NetFAQSection({ cs }: { cs: boolean }) {
   const [open, setOpen] = useState<number | null>(null);
   const faqs = [
-    { q: cs ? 'Jaký konsenzus ZION používá?' : 'What consensus does ZION use?', a: cs ? 'Cosmic Harmony Proof-of-Work – vlastní CryptoNight varianta optimalizovaná pro CPU/GPU mining s 60s block time a Decade Decay emisí.' : 'Cosmic Harmony Proof-of-Work – a custom CryptoNight variant optimized for CPU/GPU mining with 60s block time and Decade Decay emission.' },
-    { q: cs ? 'Jaký je cílový block time?' : 'What is the target block time?', a: cs ? '60 sekund. Obtížnost se dynamicky přizpůsobuje každý blok, aby udržela stabilní tempo.' : '60 seconds. Difficulty adjusts dynamically every block to maintain a stable pace.' },
-    { q: cs ? 'Kolik ZION se vytěží za blok?' : 'How many ZION are mined per block?', a: cs ? `V první dekádě je odměna ${BLOCK_REWARD_ZION.toFixed(3)} ZION/blok. Každých 10 let (${BLOCKS_PER_DECADE.toLocaleString()} bloků) se odměna sníží o 20 % (Decade Decay).` : `In the first decade the reward is ${BLOCK_REWARD_ZION.toFixed(3)} ZION/block. Every 10 years (${BLOCKS_PER_DECADE.toLocaleString()} blocks) the reward decreases by 20% (Decade Decay).` },
-    { q: cs ? 'Jaká je maximální zásoba?' : 'What is the maximum supply?', a: cs ? `Maximální supply je ${(TOTAL_SUPPLY_ZION / 1e9).toFixed(0)} miliard ZION včetně genesis premine ${(GENESIS_PREMINE_ZION / 1e9).toFixed(2)} mld ZION.` : `Maximum supply is ${(TOTAL_SUPPLY_ZION / 1e9).toFixed(0)} billion ZION including genesis premine of ${(GENESIS_PREMINE_ZION / 1e9).toFixed(2)}B ZION.` },
-    { q: cs ? 'Jak se připojit jako miner?' : 'How to connect as a miner?', a: cs ? 'Stáhněte si XMRig nebo Desktop Agent a použijte stratum+tcp://77.42.71.94:8444 jako pool adresu. Detaily najdete v Connection Guides výše.' : 'Download XMRig or the Desktop Agent and use stratum+tcp://77.42.71.94:8444 as the pool address. See the Connection Guides section above for details.' },
-    { q: cs ? 'Jak spustit vlastní full node?' : 'How to run your own full node?', a: cs ? 'Klonujte repo, spusťte cargo build --release v L1/core a pak ./target/release/ziond --p2p-bind-ip 0.0.0.0 --add-exclusive-node 77.42.71.94:21000. Docker compose je k dispozici v docker/docker-compose.mainnet.yml.' : 'Clone the repo, cargo build --release from L1/core and then ./target/release/ziond --p2p-bind-ip 0.0.0.0 --add-exclusive-node 77.42.71.94:21000. Docker compose is available in docker/docker-compose.mainnet.yml.' },
-    { q: cs ? 'Jaký pool fee si ZION účtuje?' : 'What pool fee does ZION charge?', a: cs ? '89 % putuje minerovi, 5 % do humanitarian fondu, 5 % do fondu Issobella a 1 % pool provozní poplatek.' : '89% goes to the miner, 5% to the humanitarian fund, 5% to the Issobella fund, and 1% pool operational fee.' },
-    { q: cs ? 'Je síť veřejně spuštěna?' : 'Is the network publicly launched?', a: cs ? 'V3 Mainnet je v přípravě — target launch 31. prosince 2026 (Silvestr). Core + Edge topology je v testování, mining test aktivní, bridge v přípravě na Base Mainnet.' : 'V3 Mainnet is in preparation — target launch 31 December 2026 (New Year\'s Eve). Core + Edge topology is in testing, mining test active, bridge in preparation on Base Mainnet.' },
+    { q: tr('networkPage', 'what_consensus_does_zion_use', lang), a: tr('networkPage', 'cosmic_harmony_proof_of_work_a_custom_crypton', lang) },
+    { q: tr('networkPage', 'what_is_the_target_block_time', lang), a: tr('networkPage', '60_seconds_difficulty_adjusts_dynamically_eve', lang) },
+    { q: tr('networkPage', 'how_many_zion_are_mined_per_block', lang), a: cs ? `V první dekádě je odměna ${BLOCK_REWARD_ZION.toFixed(3)} ZION/blok. Každých 10 let (${BLOCKS_PER_DECADE.toLocaleString()} bloků) se odměna sníží o 20 % (Decade Decay).` : `In the first decade the reward is ${BLOCK_REWARD_ZION.toFixed(3)} ZION/block. Every 10 years (${BLOCKS_PER_DECADE.toLocaleString()} blocks) the reward decreases by 20% (Decade Decay).` },
+    { q: tr('networkPage', 'what_is_the_maximum_supply', lang), a: cs ? `Maximální supply je ${(TOTAL_SUPPLY_ZION / 1e9).toFixed(0)} miliard ZION včetně genesis premine ${(GENESIS_PREMINE_ZION / 1e9).toFixed(2)} mld ZION.` : `Maximum supply is ${(TOTAL_SUPPLY_ZION / 1e9).toFixed(0)} billion ZION including genesis premine of ${(GENESIS_PREMINE_ZION / 1e9).toFixed(2)}B ZION.` },
+    { q: tr('networkPage', 'how_to_connect_as_a_miner', lang), a: tr('networkPage', 'download_xmrig_or_the_desktop_agent_and_use_s', lang) },
+    { q: tr('networkPage', 'how_to_run_your_own_full_node', lang), a: tr('networkPage', 'clone_the_repo_cargo_build_release_from_l1_co', lang) },
+    { q: tr('networkPage', 'what_pool_fee_does_zion_charge', lang), a: tr('networkPage', '89_goes_to_the_miner_5_to_the_humanitarian_fu', lang) },
+    { q: tr('networkPage', 'is_the_network_publicly_launched', lang), a: tr('networkPage', 'v3_mainnet_is_in_preparation_target_launch_31', lang)s Eve). Core + Edge topology is in testing, mining test active, bridge in preparation on Base Mainnet.' },
   ];
   return (
     <div className="divide-y divide-white/[0.06]">
