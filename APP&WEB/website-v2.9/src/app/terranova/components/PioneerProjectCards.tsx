@@ -1,9 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import {
 import { useLang } from '@/contexts/LanguageContext';
 import { tr } from '@/lib/translations';
+import {
   ArrowRight,
   Leaf,
   MapPin,

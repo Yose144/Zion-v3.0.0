@@ -941,7 +941,7 @@ function NetFAQSection({ cs }: { cs: boolean }) {
     { q: tr('networkPage', 'how_to_connect_as_a_miner', lang), a: tr('networkPage', 'download_xmrig_or_the_desktop_agent_and_use_s', lang) },
     { q: tr('networkPage', 'how_to_run_your_own_full_node', lang), a: tr('networkPage', 'clone_the_repo_cargo_build_release_from_l1_co', lang) },
     { q: tr('networkPage', 'what_pool_fee_does_zion_charge', lang), a: tr('networkPage', '89_goes_to_the_miner_5_to_the_humanitarian_fu', lang) },
-    { q: tr('networkPage', 'is_the_network_publicly_launched', lang), a: tr('networkPage', 'v3_mainnet_is_in_preparation_target_launch_31', lang)s Eve). Core + Edge topology is in testing, mining test active, bridge in preparation on Base Mainnet.' },
+    { q: tr('networkPage', 'is_the_network_publicly_launched', lang), a: tr('networkPage', 'v3_mainnet_is_in_preparation_target_launch_31', lang) },
   ];
   return (
     <div className="divide-y divide-white/[0.06]">
