@@ -109,7 +109,7 @@ function InfoRow({ label, value, copyable, mono, color, link, badge }: {
 export default function BlockDetailClient() {
   const { lang } = useLang();
   const cs = lang === 'cs';
-  const locale = tr('APP_WEB_website_v2_9_src_app_explorer_bl', 'en_us', lang);
+  const locale = cs ? 'cs-CZ' : 'en-US';
   const router = useRouter();
   const searchParams = useSearchParams();
   const id = useMemo(() => {
@@ -161,11 +161,11 @@ export default function BlockDetailClient() {
       <div className="zion-shell min-h-screen flex items-center justify-center">
         <div className="text-center max-w-md px-4">
           <Box className="h-16 w-16 text-red-400/50 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-white mb-2">{tr('APP_WEB_website_v2_9_src_app_explorer_bl', 'block_not_found', lang)}</h1>
-          <p className="text-gray-500 text-sm mb-6">{error || (tr('APP_WEB_website_v2_9_src_app_explorer_bl', 'this_block_does_not_exist_on_the_zion_network', lang))}</p>
+          <h1 className="text-2xl font-bold text-white mb-2">{cs ? 'Blok nenalezen' : 'Block Not Found'}</h1>
+          <p className="text-gray-500 text-sm mb-6">{error || (cs ? 'Tento blok v siti ZION neexistuje.' : 'This block does not exist on the ZION network.')}</p>
           <Link href="/explorer" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 
             text-sm text-white hover:bg-white/10 transition">
-            <ArrowLeft className="h-4 w-4" /> {tr('APP_WEB_website_v2_9_src_app_explorer_bl', 'back_to_explorer', lang)}
+            <ArrowLeft className="h-4 w-4" /> {cs ? 'Zpet do exploreru' : 'Back to Explorer'}
           </Link>
         </div>
       </div>
@@ -181,7 +181,7 @@ export default function BlockDetailClient() {
         <nav className="flex items-center gap-2 text-sm">
           <Link href="/explorer" className="text-gray-500 hover:text-white transition">Explorer</Link>
           <span className="text-gray-700">/</span>
-          <Link href="/explorer/blocks" className="text-gray-500 hover:text-white transition">{tr('APP_WEB_website_v2_9_src_app_explorer_bl', 'blocks', lang)}</Link>
+          <Link href="/explorer/blocks" className="text-gray-500 hover:text-white transition">{cs ? 'Bloky' : 'Blocks'}</Link>
           <span className="text-gray-700">/</span>
           <span className="text-white font-medium">#{block.height.toLocaleString(locale)}</span>
         </nav>
@@ -193,7 +193,7 @@ export default function BlockDetailClient() {
           </div>
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-white">
-              {tr('APP_WEB_website_v2_9_src_app_explorer_bl', 'block', lang)} <span className="text-zion-gold">#{block.height.toLocaleString(locale)}</span>
+              {cs ? 'Blok' : 'Block'} <span className="text-zion-gold">#{block.height.toLocaleString(locale)}</span>
             </h1>
             <p className="text-sm text-gray-500 mt-0.5">{fmtDate(block.timestamp, locale)} · {fmtAge(block.timestamp, cs)}</p>
           </div>
@@ -204,7 +204,7 @@ export default function BlockDetailClient() {
                 : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
             }`}>
               <Shield className="h-3 w-3" />
-              {block.orphan_status ? (tr('APP_WEB_website_v2_9_src_app_explorer_bl', 'orphaned', lang)) : `${block.confirmations.toLocaleString(locale)} ${tr('APP_WEB_website_v2_9_src_app_explorer_bl', 'confirmations', lang)}`}
+              {block.orphan_status ? (cs ? 'Osiroteny' : 'Orphaned') : `${block.confirmations.toLocaleString(locale)} ${cs ? 'potvrzeni' : 'Confirmations'}`}
             </span>
           </div>
         </motion.div>
@@ -218,15 +218,15 @@ export default function BlockDetailClient() {
               <div className="h-8 w-8 rounded-xl bg-zion-cyan/10 flex items-center justify-center">
                 <Layers className="h-4 w-4 text-zion-cyan" />
               </div>
-              <h2 className="text-lg font-semibold text-white">{tr('APP_WEB_website_v2_9_src_app_explorer_bl', 'block_details', lang)}</h2>
+              <h2 className="text-lg font-semibold text-white">{cs ? 'Detaily bloku' : 'Block Details'}</h2>
             </div>
-            <InfoRow label={tr('APP_WEB_website_v2_9_src_app_explorer_bl', 'height', lang)} value={block.height.toLocaleString(locale)} />
-            <InfoRow label={tr('APP_WEB_website_v2_9_src_app_explorer_bl', 'timestamp', lang)} value={`${fmtDate(block.timestamp, locale)} (${fmtAge(block.timestamp, cs)})`} />
+            <InfoRow label={cs ? 'Vyska' : 'Height'} value={block.height.toLocaleString(locale)} />
+            <InfoRow label={cs ? 'Cas' : 'Timestamp'} value={`${fmtDate(block.timestamp, locale)} (${fmtAge(block.timestamp, cs)})`} />
             <InfoRow label="Hash" value={block.hash} mono copyable />
-            <InfoRow label={tr('APP_WEB_website_v2_9_src_app_explorer_bl', 'previous_hash', lang)} value={truncHash(block.prev_hash, 16)} mono copyable
+            <InfoRow label={cs ? 'Predchozi hash' : 'Previous Hash'} value={truncHash(block.prev_hash, 16)} mono copyable
               link={block.prev_hash ? `/explorer/block?id=${block.height - 1}` : undefined} />
-            <InfoRow label={tr('APP_WEB_website_v2_9_src_app_explorer_bl', 'block_size', lang)} value={`${fmtSize(block.block_size)} (${block.block_size.toLocaleString(locale)} ${tr('APP_WEB_website_v2_9_src_app_explorer_bl', 'bytes', lang)})`} />
-            <InfoRow label={tr('APP_WEB_website_v2_9_src_app_explorer_bl', 'version', lang)} value={`${block.major_version}.${block.minor_version}`} />
+            <InfoRow label={cs ? 'Velikost bloku' : 'Block Size'} value={`${fmtSize(block.block_size)} (${block.block_size.toLocaleString(locale)} ${cs ? 'bajtu' : 'bytes'})`} />
+            <InfoRow label={cs ? 'Verze' : 'Version'} value={`${block.major_version}.${block.minor_version}`} />
           </motion.div>
 
           {/* Mining Details */}
@@ -236,16 +236,16 @@ export default function BlockDetailClient() {
               <div className="h-8 w-8 rounded-xl bg-zion-gold/10 flex items-center justify-center">
                 <Cpu className="h-4 w-4 text-zion-gold" />
               </div>
-              <h2 className="text-lg font-semibold text-white">{tr('APP_WEB_website_v2_9_src_app_explorer_bl', 'mining_details', lang)}</h2>
+              <h2 className="text-lg font-semibold text-white">{cs ? 'Detaily tezby' : 'Mining Details'}</h2>
             </div>
-            <InfoRow label={tr('APP_WEB_website_v2_9_src_app_explorer_bl', 'difficulty', lang)} value={block.difficulty.toLocaleString(locale)} />
+            <InfoRow label={cs ? 'Obtiznost' : 'Difficulty'} value={block.difficulty.toLocaleString(locale)} />
             <InfoRow label="Nonce" value={block.nonce.toLocaleString()} />
-            <InfoRow label={tr('APP_WEB_website_v2_9_src_app_explorer_bl', 'block_reward', lang)} value={`${block.reward.toFixed(6)} ZION`} color="text-zion-gold" />
-            <InfoRow label={tr('APP_WEB_website_v2_9_src_app_explorer_bl', 'total_fees', lang)} value={`${block.total_fees.toFixed(6)} ZION`} color="text-amber-400" />
-            <InfoRow label={tr('APP_WEB_website_v2_9_src_app_explorer_bl', 'transactions', lang)} value={`${block.tx_count} (${block.num_txes} ${tr('APP_WEB_website_v2_9_src_app_explorer_bl', 'user', lang)} + 1 coinbase)`} />
+            <InfoRow label={cs ? 'Odmena za blok' : 'Block Reward'} value={`${block.reward.toFixed(6)} ZION`} color="text-zion-gold" />
+            <InfoRow label={cs ? 'Celkove fee' : 'Total Fees'} value={`${block.total_fees.toFixed(6)} ZION`} color="text-amber-400" />
+            <InfoRow label={cs ? 'Transakce' : 'Transactions'} value={`${block.tx_count} (${block.num_txes} ${cs ? 'uzivatel' : 'user'} + 1 coinbase)`} />
             {block.miner && (
               <InfoRow
-                label={tr('APP_WEB_website_v2_9_src_app_explorer_bl', 'coinbase_recipient', lang)}
+                label={cs ? 'Coinbase příjemce' : 'Coinbase Recipient'}
                 value={block.miner_label || truncHash(block.miner)}
                 mono={!block.miner_label}
                 copyable
@@ -284,7 +284,7 @@ export default function BlockDetailClient() {
             <div className="h-8 w-8 rounded-xl bg-emerald-500/10 flex items-center justify-center">
               <Hash className="h-4 w-4 text-emerald-400" />
             </div>
-            <h2 className="text-lg font-semibold text-white">{tr('APP_WEB_website_v2_9_src_app_explorer_bl', 'transactions', lang)} ({block.txs?.length || 0})</h2>
+            <h2 className="text-lg font-semibold text-white">{cs ? 'Transakce' : 'Transactions'} ({block.txs?.length || 0})</h2>
           </div>
 
           {/* TX Table */}
@@ -292,12 +292,12 @@ export default function BlockDetailClient() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/[0.04]">
-                  <th className="text-left text-[10px] uppercase tracking-[0.12em] text-gray-500 font-medium px-6 py-3">{tr('APP_WEB_website_v2_9_src_app_explorer_bl', 'type', lang)}</th>
+                  <th className="text-left text-[10px] uppercase tracking-[0.12em] text-gray-500 font-medium px-6 py-3">{cs ? 'Typ' : 'Type'}</th>
                   <th className="text-left text-[10px] uppercase tracking-[0.12em] text-gray-500 font-medium px-3 py-3">Hash</th>
-                  <th className="text-right text-[10px] uppercase tracking-[0.12em] text-gray-500 font-medium px-3 py-3 hidden sm:table-cell">{tr('APP_WEB_website_v2_9_src_app_explorer_bl', 'inputs', lang)}</th>
-                  <th className="text-right text-[10px] uppercase tracking-[0.12em] text-gray-500 font-medium px-3 py-3 hidden sm:table-cell">{tr('APP_WEB_website_v2_9_src_app_explorer_bl', 'outputs', lang)}</th>
+                  <th className="text-right text-[10px] uppercase tracking-[0.12em] text-gray-500 font-medium px-3 py-3 hidden sm:table-cell">{cs ? 'Vstupy' : 'Inputs'}</th>
+                  <th className="text-right text-[10px] uppercase tracking-[0.12em] text-gray-500 font-medium px-3 py-3 hidden sm:table-cell">{cs ? 'Vystupy' : 'Outputs'}</th>
                   <th className="text-right text-[10px] uppercase tracking-[0.12em] text-gray-500 font-medium px-3 py-3 hidden md:table-cell">Fee</th>
-                  <th className="text-right text-[10px] uppercase tracking-[0.12em] text-gray-500 font-medium px-6 py-3">{tr('APP_WEB_website_v2_9_src_app_explorer_bl', 'amount', lang)}</th>
+                  <th className="text-right text-[10px] uppercase tracking-[0.12em] text-gray-500 font-medium px-6 py-3">{cs ? 'Castka' : 'Amount'}</th>
                 </tr>
               </thead>
               <tbody>
@@ -309,7 +309,7 @@ export default function BlockDetailClient() {
                           ? "bg-zion-gold/10 text-zion-gold border-zion-gold/20"
                           : "bg-zion-cyan/10 text-zion-cyan border-zion-cyan/20"
                       }`}>
-                        {tx.type === "coinbase" ? `⛏ ${tr('APP_WEB_website_v2_9_src_app_explorer_bl', 'coinbase', lang)}` : `↔ ${tr('APP_WEB_website_v2_9_src_app_explorer_bl', 'transfer', lang)}`}
+                        {tx.type === "coinbase" ? `⛏ ${cs ? 'Coinbase' : 'Coinbase'}` : `↔ ${cs ? 'Prevod' : 'Transfer'}`}
                       </span>
                     </td>
                     <td className="px-3 py-3">
@@ -350,18 +350,18 @@ export default function BlockDetailClient() {
               hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition"
           >
             <ArrowLeft className="h-4 w-4" />
-            <span className="hidden sm:inline">{tr('APP_WEB_website_v2_9_src_app_explorer_bl', 'block', lang)}</span> #{(block.height - 1).toLocaleString(locale)}
+            <span className="hidden sm:inline">{cs ? 'Blok' : 'Block'}</span> #{(block.height - 1).toLocaleString(locale)}
           </button>
           <Link href="/explorer/blocks"
             className="text-xs text-gray-500 hover:text-white transition font-medium">
-            {tr('APP_WEB_website_v2_9_src_app_explorer_bl', 'all_blocks', lang)}
+            {cs ? 'Vsechny bloky' : 'All Blocks'}
           </Link>
           <button
             onClick={() => router.push(`/explorer/block?id=${block.height + 1}`)}
             className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm text-white 
               hover:bg-white/10 transition"
           >
-            <span className="hidden sm:inline">{tr('APP_WEB_website_v2_9_src_app_explorer_bl', 'block', lang)}</span> #{(block.height + 1).toLocaleString(locale)}
+            <span className="hidden sm:inline">{cs ? 'Blok' : 'Block'}</span> #{(block.height + 1).toLocaleString(locale)}
             <ArrowRight className="h-4 w-4" />
           </button>
         </div>
