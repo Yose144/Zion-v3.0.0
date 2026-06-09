@@ -4,8 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useLang } from '@/contexts/LanguageContext';
-import {
 import { tr } from '@/lib/translations';
+import {
   Award,
   BarChart3,
   ChevronLeft,

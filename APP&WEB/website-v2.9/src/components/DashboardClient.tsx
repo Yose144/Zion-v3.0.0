@@ -533,7 +533,7 @@ export default function DashboardClient({ stats, health, blocks, poolStats }: Da
         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="zion-panel rounded-4xl border-zion-gold/30 bg-linear-to-r from-zion-purple/20 via-zion-gold/10 to-zion-cyan/20 p-8">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
-              <p className="text-xs uppercase tracking-[0.4em] text-gray-200">{tr('APP_WEB_website_v2_9_src_components_Dash', 'what', lang)s next'}</p>
+              <p className="text-xs uppercase tracking-[0.4em] text-gray-200">{tr('APP_WEB_website_v2_9_src_components_Dash', 'what', lang)}</p>
               <h2 className="text-3xl font-semibold text-white">{tr('APP_WEB_website_v2_9_src_components_Dash', 'operational_roadmap', lang)}</h2>
               <p className="text-sm text-gray-100 max-w-xl mt-2">{tr('APP_WEB_website_v2_9_src_components_Dash', 'pulled_from_the_current_public_launch_path_and_reh', lang)}</p>
             </div>
