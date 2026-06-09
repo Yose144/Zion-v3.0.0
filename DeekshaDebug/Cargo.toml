@@ -27,6 +27,10 @@ path = "src/bench_persistent_kernel.rs"
 name = "debug_stages"
 path = "src/bin/debug_stages.rs"
 
+[[bin]]
+name = "bench_lite_fire"
+path = "src/bin/bench_lite_fire.rs"
+
 [lib]
 name = "deeksha_debug"
 path = "src/lib.rs"

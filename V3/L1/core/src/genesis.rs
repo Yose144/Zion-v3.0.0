@@ -318,6 +318,7 @@ pub fn genesis_block() -> AcceptedBlock {
         hash_hex,
         header_hex,
         previous_hash_hex: crate::hex(&[0u8; 32]),
+        algorithm: "deeksha_lite_v1".to_string(),
         transaction_ids,
         transactions,
         total_fees_zion: 0,
