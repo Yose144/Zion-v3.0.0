@@ -482,6 +482,8 @@ impl From<tx::Transaction> for RuntimeTransaction {
     }
 }
 
+fn default_deeksha_lite_v1() -> String { "deeksha_lite_v1".to_string() }
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AcceptedBlock {
     pub template_id: u64,
@@ -498,6 +500,9 @@ pub struct AcceptedBlock {
     /// Empty for legacy persisted blocks (pre-Phase 13). All-zeros hex for genesis.
     #[serde(default)]
     pub previous_hash_hex: String,
+    /// Mining algorithm used for this block (e.g. "deeksha_lite_v1", "deeksha_lite_fire").
+    #[serde(default = "default_deeksha_lite_v1")]
+    pub algorithm: String,
     pub transaction_ids: Vec<String>,
     pub transactions: Vec<Transaction>,
     pub total_fees_zion: u64,
@@ -1673,6 +1678,7 @@ impl NodeRuntime {
                 hash_hex: hex(&sealed_block.hash),
                 header_hex: hex(&active_template.header.to_bytes()),
                 previous_hash_hex: hex(&active_template.header.previous_hash),
+                algorithm: algorithm.to_string(),
                 transaction_ids: active_template
                     .account_transactions()
                     .iter()
@@ -4640,6 +4646,7 @@ mod tests {
                 hash_hex: hex(&[0x55; 32]),
                 header_hex: String::new(),
                 previous_hash_hex: String::new(),
+                algorithm: "deeksha_lite_v1".to_string(),
                 transaction_ids: vec![tx_mined.tx_id.clone()],
                 transactions: vec![tx_mined.clone()],
                 total_fees_zion: 2,
@@ -4698,6 +4705,7 @@ mod tests {
             hash_hex: hex(&[0x66; 32]),
             header_hex: String::new(),
             previous_hash_hex: String::new(),
+            algorithm: "deeksha_lite_v1".to_string(),
             transaction_ids: vec![tx.tx_id.clone()],
             transactions: vec![tx.clone()],
             total_fees_zion: 6,
@@ -4881,6 +4889,7 @@ mod tests {
             hash_hex: hex(&[0x11; 32]),
             header_hex: hex(&header.to_bytes()),
             previous_hash_hex: hex(&runtime.chain_state.tip_hash),
+            algorithm: "deeksha_lite_v1".to_string(),
             transaction_ids: transactions
                 .iter()
                 .map(|transaction| transaction.tx_id.clone())
@@ -5328,6 +5337,7 @@ mod tests {
             hash_hex: hex(&[0x11; 32]),
             header_hex: String::new(),
             previous_hash_hex: hex(&source.chain_state.tip_hash),
+            algorithm: "deeksha_lite_v1".to_string(),
             transaction_ids: transactions
                 .iter()
                 .map(|transaction| transaction.tx_id.clone())
