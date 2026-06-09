@@ -43,7 +43,6 @@ const LAYERS: Layer[] = [
 
 export default function LayerMenu({ cs }: { cs: boolean }) {
   const { lang } = useLang();
-  const cs = lang === 'cs';
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
