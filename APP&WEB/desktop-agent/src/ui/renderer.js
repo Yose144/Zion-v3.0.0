@@ -760,6 +760,42 @@ function setupControls() {
     if (settingsDisplay) settingsDisplay.textContent = label;
   };
 
+  const VALID_ALGO_KEYS = Object.keys(ALGO_LABELS);
+  const normalizeRendererAlgo = (raw) => {
+    const r = String(raw || '').trim().toLowerCase().replace(/-/g, '_');
+    if (['deeksha_lite_v1','lite','deeksha_lite','dlv1'].includes(r)) return 'deeksha_lite_v1';
+    if (['deeksha_lite_fire','fire','dlfire','thermal'].includes(r)) return 'deeksha_lite_fire';
+    if (['cosmic_harmony_ekam_deeksha_v2','ekam_v2','ch_ekam_v2','ekam_deeksha_v2','ch_ed_v2'].includes(r)) return 'cosmic_harmony_ekam_deeksha_v2';
+    // legacy aliases → default
+    if (['cosmic_harmony_v3','cosmic_harmony_v4','cosmic_harmony_v4_2','chv3','ch3','chv4','ch4','deeksha','cosmic_harmony_deeksha','ekam','ekam_deeksha','cosmic_harmony_ekam','cosmic_harmony','ch'].includes(r)) return 'deeksha_lite_v1';
+    return VALID_ALGO_KEYS.includes(r) ? r : 'deeksha_lite_v1';
+  };
+
+  // Sync ALL algorithm-related UI elements from a canonical value
+  const syncAlgoUiAll = (algo) => {
+    const canonical = normalizeRendererAlgo(algo || config.algorithm);
+    // Ensure config stays canonical
+    config.algorithm = canonical;
+    const label = ALGO_LABELS[canonical] || canonical;
+    // algo-select
+    if (algoSelect) {
+      if (algoSelect.querySelector(`option[value="${canonical}"]`)) {
+        algoSelect.value = canonical;
+      } else {
+        algoSelect.value = 'deeksha_lite_v1';
+      }
+    }
+    // settings display
+    const settingsDisplay = document.getElementById('settings-algo-display');
+    if (settingsDisplay) settingsDisplay.textContent = label;
+    // about-project algo card
+    const aboutAlgoValue = document.getElementById('about-algo-value');
+    if (aboutAlgoValue) aboutAlgoValue.textContent = label;
+    // dashboard active-algo (if not mining)
+    const activeAlgo = document.getElementById('active-algo');
+    if (activeAlgo && (!isRunning && !isStarting)) activeAlgo.textContent = shortAlgoName(canonical);
+  };
+
   const algoSupportsGpu = (algo) => {
     // Mainnet Phase 1: CH v3 always supports GPU
     return true;
@@ -779,12 +815,10 @@ function setupControls() {
   if (algoSelect) {
     algoSelect.addEventListener('change', () => {
       config.algorithm = algoSelect.value;
-      syncAlgoUi();
+      syncAlgoUiAll(algoSelect.value);
     });
-    // init from persisted config
-    if (config.algorithm && algoSelect.querySelector(`option[value="${config.algorithm}"]`)) {
-      algoSelect.value = config.algorithm;
-    }
+    // init from persisted config (canonicalize everything)
+    syncAlgoUiAll(config.algorithm);
   }
 
   startBtn.addEventListener('click', async () => {
@@ -902,7 +936,7 @@ function setupControls() {
         port: poolPort
       },
       rpcUrl: document.getElementById('rpc-url')?.value || config.rpcUrl || DEFAULT_RPC_URL,
-      algorithm: config.algorithm || 'cosmic_harmony',
+      algorithm: config.algorithm || 'deeksha_lite_v1',
       wallet: document.getElementById('wallet-input').value,
       worker: document.getElementById('worker-input').value,
       threads: Math.min(
@@ -928,6 +962,7 @@ function setupControls() {
     
     const result = await window.electronAPI.saveConfig(config);
     if (result) {
+      syncAlgoUiAll();
       alert('Settings saved successfully!');
     } else {
       alert('Failed to save settings.');
@@ -1065,17 +1100,6 @@ function updateSettingsUI() {
   renderBackendUi();
 
   // AI Afterburner toggle removed in V3 cleanup
-
-  // Dashboard quick controls — algorithm select init
-  const algoSelectInit = document.getElementById('algo-select');
-  if (algoSelectInit) {
-    const persistedAlgo = config.algorithm;
-    if (persistedAlgo && algoSelectInit.querySelector(`option[value="${persistedAlgo}"]`)) {
-      algoSelectInit.value = persistedAlgo;
-    } else {
-      algoSelectInit.value = 'deeksha_lite_v1';
-    }
-  }
 }
 
 function escapeHtml(s) {
