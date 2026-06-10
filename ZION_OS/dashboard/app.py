@@ -2198,6 +2198,23 @@ def parse_miner_log() -> dict:
         total_ms = sum(ms for _, ms in last)
         if total_ms > 0:
             status["hashrate"] = round(total_nonces / total_ms / 1000.0 * 1000.0, 2)  # KH/s
+    # Fallback: read cmdline from alive process to get wallet/worker/pool/algo
+    try:
+        pid = check_process_for_service("miner").get("pid") or find_process_by_name("zion-miner")
+        if pid and is_process_alive(pid):
+            cmdline_path = Path(f"/proc/{pid}/cmdline")
+            if cmdline_path.exists():
+                cmd = cmdline_path.read_text().replace('\x00', ' ')
+                if m := re.search(r'--wallet\s+(zion1\S+)', cmd):
+                    status["payout_address"] = m.group(1)
+                if m := re.search(r'--worker\s+(\S+)', cmd):
+                    status["worker_name"] = m.group(1)
+                if m := re.search(r'--pool\s+(\S+)', cmd):
+                    status["pool_addr"] = m.group(1)
+                if m := re.search(r'--algorithm\s+(\S+)', cmd):
+                    status["algorithm"] = m.group(1)
+    except Exception:
+        pass
     return status
 
 # ── Status cache ──────────────────────────────────────────────────────────
@@ -4870,12 +4887,14 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
       </div>
 
       <div id="card-miner" class="bg-zion-800 rounded-xl p-4 border border-zion-700 transition">
-        <div class="flex items-center justify-between mb-3"><span class="text-xs font-semibold uppercase tracking-wider text-gray-400">⛏️ GPU Miner</span><span id="badge-miner" class="px-2 py-0.5 rounded text-xs font-bold bg-zion-700 text-gray-300">?</span></div>
+        <div class="flex items-center justify-between mb-3"><span class="text-xs font-semibold uppercase tracking-wider text-gray-400" id="lbl-miner-title">⛏️ GPU Miner</span><span id="badge-miner" class="px-2 py-0.5 rounded text-xs font-bold bg-zion-700 text-gray-300">?</span></div>
         <div class="text-3xl font-bold mb-1 text-amber-400" id="val-miner-hashrate">—</div><div class="text-xs text-gray-400 mb-2">KH/s (10s avg)</div>
-        <div class="text-xs text-gray-400 mb-1">Device: <span id="val-miner-gpu" class="text-white text-[10px]">—</span></div>
+        <div class="text-xs text-gray-400 mb-1">Backend: <span id="val-miner-gpu" class="text-white text-[10px]">—</span></div>
+        <div class="text-xs text-gray-400 mb-1">Worker: <span id="val-miner-worker" class="text-white">—</span></div>
+        <div class="text-xs text-gray-400 mb-1">Wallet: <span id="val-miner-wallet" class="text-white text-[10px] font-mono">—</span></div>
         <div class="text-xs text-gray-400 mb-1">Height: <span id="val-miner-height" class="text-white">—</span></div>
         <div class="text-xs text-gray-400 mb-2">Diff: <span id="val-miner-diff">—</span></div>
-        <div class="flex gap-1 mt-2">
+        <div class="flex gap-1 mt-2" id="miner-buttons">
           <button onclick="controlAction('start-miner-gpu')" class="flex-1 text-xs px-2 py-1 bg-purple-700 hover:bg-purple-600 rounded transition">🎮 GPU</button>
           <button onclick="controlAction('start-miner-cpu')" class="flex-1 text-xs px-2 py-1 bg-blue-700 hover:bg-blue-600 rounded transition">💻 CPU</button>
           <button onclick="controlAction('stop-miner')" class="flex-1 text-xs px-2 py-1 bg-red-700 hover:bg-red-600 rounded transition">⏹ Stop</button>
@@ -6307,8 +6326,20 @@ function updateServiceCards(s){
   setBadge('badge-miner',m.running&&m.hashrate);setCardLive('miner',m.running&&m.hashrate);
   document.getElementById('val-miner-hashrate').textContent=m.hashrate?m.hashrate.toFixed(2):'—';
   document.getElementById('val-miner-gpu').textContent=(m.gpu_backend?m.gpu_backend+': ':'')+(m.gpu_device??'—');
+  document.getElementById('val-miner-worker').textContent=(m.miner_id?m.miner_id+' / ':'')+(m.worker_name??'—');
+  document.getElementById('val-miner-wallet').textContent=m.payout_address??m.wallet??'—';
   document.getElementById('val-miner-height').textContent=m.current_height??'—';
   document.getElementById('val-miner-diff').textContent=m.current_diff??'—';
+  // Topology-aware title + buttons
+  const minerTitle = document.getElementById('lbl-miner-title');
+  const minerBtns = document.getElementById('miner-buttons');
+  if(isEdgePrimary){
+    minerTitle.textContent='⛏️ Edge Miner';
+    minerBtns.innerHTML='<button onclick="controlAction(\'restart-miner\')" class="flex-1 text-xs px-2 py-1 bg-blue-700 hover:bg-blue-600 rounded transition">🔄 Restart</button><button onclick="controlAction(\'stop-miner\')" class="flex-1 text-xs px-2 py-1 bg-red-700 hover:bg-red-600 rounded transition">⏹ Stop</button>';
+  } else {
+    minerTitle.textContent='⛏️ GPU Miner';
+    minerBtns.innerHTML='<button onclick="controlAction(\'start-miner-gpu\')" class="flex-1 text-xs px-2 py-1 bg-purple-700 hover:bg-purple-600 rounded transition">🎮 GPU</button><button onclick="controlAction(\'start-miner-cpu\')" class="flex-1 text-xs px-2 py-1 bg-blue-700 hover:bg-blue-600 rounded transition">💻 CPU</button><button onclick="controlAction(\'stop-miner\')" class="flex-1 text-xs px-2 py-1 bg-red-700 hover:bg-red-600 rounded transition">⏹ Stop</button>';
+  }
 }
 
 function updatePayouts(p){
