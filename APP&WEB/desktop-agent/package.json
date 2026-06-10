@@ -8,7 +8,7 @@
     "prestart": "node scripts/prepare-rust-miner.js --no-build --require || node scripts/prepare-rust-miner.js --auto",
     "start": "node scripts/launch-electron.js",
     "dev": "node scripts/launch-electron.js",
-    "test": "node test/test_mining_modes.js && python test_deeksha_revenue.py",
+    "test": "node test/test_mining_modes.js && node test/test_wallet_send_flow.js && python test_deeksha_revenue.py",
     "test:e2e": "node scripts/test_e2e_mining_flow.js",
     "test:revenue": "node scripts/test_revenue_system_e2e.js",
     "prepare:rust-miner": "node scripts/prepare-rust-miner.js --auto",
