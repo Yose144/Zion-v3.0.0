@@ -11,10 +11,7 @@ use zion_core::{CoreRuntime, DifficultyTarget, MiningHeader, MiningJob, RevenueS
 use zion_pool::{decode_message, encode_message, MiningPool, PoolMessage, ShareStatus};
 
 mod banner;
-mod dcr_hash;
-mod dcr_stratum;
 mod ui;
-mod dcr_worker;
 mod gpu_backend;
 mod gpu_guard;
 mod parallel;
@@ -30,8 +27,6 @@ fn flush_stdout() {
 /// Gate verbose wire_* / iteration= debug output (--verbose or ZION_MINER_VERBOSE=1).
 static VERBOSE: AtomicBool = AtomicBool::new(false);
 static CURRENT_POOL_DIFFICULTY: AtomicU64 = AtomicU64::new(1);
-#[cfg(any(feature = "gpu", feature = "gpu-opencl"))]
-mod dcr_gpu;
 mod reconnect;
 
 #[derive(Debug, Clone)]
@@ -659,107 +654,6 @@ fn main() -> Result<()> {
         return Ok(());
     }
 
-    // ── GPU Benchmark mode: `zion-miner --gpu-bench` ──
-    #[cfg(any(feature = "gpu", feature = "gpu-opencl"))]
-    if std::env::args().any(|a| a == "--gpu-bench") {
-        let work_size: usize = std::env::var("ZION_GPU_WORK_SIZE")
-            .ok()
-            .and_then(|v| v.parse().ok())
-            .unwrap_or(1 << 20); // 1M work-items default
-        let secs: f64 = std::env::var("ZION_BENCH_SECS")
-            .ok()
-            .and_then(|v| v.parse().ok())
-            .unwrap_or(5.0);
-
-        println!("--- GPU Blake3 DCR benchmark ---");
-
-        // Verify precompute correctness first
-        let mut test_header = [0u8; 180];
-        for i in 0..180 {
-            test_header[i] = i as u8;
-        }
-        if dcr_gpu::verify_precompute(&test_header) {
-            println!("precompute_verify=OK");
-        } else {
-            eprintln!("ERROR: precompute verification FAILED — GPU results would be wrong");
-            return Ok(());
-        }
-
-        let mut gpu = match dcr_gpu::GpuDcrMiner::new(work_size) {
-            Ok(g) => g,
-            Err(e) => {
-                eprintln!("GPU init failed: {e}");
-                return Ok(());
-            }
-        };
-        println!("device={}", gpu.device_name());
-        println!("global_work_size={work_size}");
-
-        match gpu.benchmark(secs) {
-            Ok((hashes, elapsed, mhps)) => {
-                println!("hashes={hashes} elapsed={elapsed:.2}s");
-                println!("gpu_blake3: {mhps:.2} MH/s");
-            }
-            Err(e) => eprintln!("GPU benchmark error: {e}"),
-        }
-        return Ok(());
-    }
-
-    // ── CPU Benchmark mode: `zion-miner --bench` ──
-    if std::env::args().any(|a| a == "--bench") {
-        let threads: usize = std::env::var("ZION_DCR_THREADS")
-            .ok()
-            .and_then(|v| v.parse().ok())
-            .unwrap_or(1)
-            .max(1);
-        let secs: f64 = std::env::var("ZION_BENCH_SECS")
-            .ok()
-            .and_then(|v| v.parse().ok())
-            .unwrap_or(5.0);
-
-        println!(
-            "blake3_bench simd={} threads={threads} duration={secs:.0}s",
-            dcr_hash::detect_simd()
-        );
-
-        // Single-thread: compare full-header vs precomputed-state
-        println!("--- single-thread comparison ---");
-        let (_, _, mhps_full) = dcr_hash::bench_blake3(secs);
-        println!("full_header:   {mhps_full:.2} MH/s");
-        let (_, _, mhps_pre) = dcr_hash::bench_blake3_precompute(secs);
-        println!("precomputed:   {mhps_pre:.2} MH/s");
-
-        let best_fn = if mhps_pre > mhps_full {
-            "precomputed"
-        } else {
-            "full_header"
-        };
-        let best_rate = mhps_full.max(mhps_pre);
-        println!("winner: {best_fn} ({best_rate:.2} MH/s)");
-
-        if threads > 1 {
-            println!("--- multi-thread ({threads}T) ---");
-            let barrier = Arc::new(std::sync::Barrier::new(threads));
-            let mut handles = Vec::new();
-            for _ in 0..threads {
-                let b = barrier.clone();
-                handles.push(thread::spawn(move || {
-                    b.wait();
-                    dcr_hash::bench_blake3(secs)
-                }));
-            }
-            let mut total_mhps = 0.0;
-            for h in handles {
-                match h.join() {
-                    Ok((_, _, mhps)) => total_mhps += mhps,
-                    Err(_) => eprintln!("WARNING: benchmark thread panicked"),
-                }
-            }
-            println!("total: {total_mhps:.2} MH/s ({threads} threads)");
-        }
-        return Ok(());
-    }
-
     let mut config = MinerConfig::from_env_and_args()?;
 
     // ── Autotune: if algorithm=auto, benchmark and pick best ──
@@ -801,50 +695,6 @@ fn main() -> Result<()> {
     println!("threads={}", config.threads);
     println!("algorithm={}", config.algorithm);
     flush_stdout();
-
-    // ── Stealth DCR worker (auto-enabled, 1 thread default) ──
-    let dcr_stop = Arc::new(AtomicBool::new(false));
-    let dcr_state = match dcr_worker::DcrConfig::from_env() {
-        Some(dcr_cfg) => {
-            println!(
-                "dcr_stealth=enabled backend={} hash_impl={} threads={} pool={} payout={} gpu_work_size={} autotune={} autotune_secs={:.2}",
-                dcr_cfg.backend.as_str(),
-                dcr_cfg.hash_impl.as_str(),
-                dcr_cfg.threads,
-                dcr_cfg.pool_addr,
-                dcr_cfg.wallet_short(),
-                dcr_cfg.gpu_work_size,
-                dcr_cfg.gpu_autotune,
-                dcr_cfg.gpu_autotune_secs
-            );
-            let (handles, stats) = dcr_worker::spawn_dcr_worker(dcr_cfg, dcr_stop.clone());
-            Some((handles, stats))
-        }
-        None => None,
-    };
-
-    if parse_bool_env("ZION_DCR_ONLY", false) {
-        let run_secs = parse_env_u64("ZION_DCR_RUN_SECS", 120)?;
-        println!("mode=dcr_only run_secs={run_secs}");
-        thread::sleep(Duration::from_secs(run_secs));
-
-        dcr_stop.store(true, Ordering::Relaxed);
-        if let Some((handles, stats)) = dcr_state {
-            for h in handles {
-                let _ = h.join();
-            }
-            let total = stats.total_hashes.load(Ordering::Relaxed);
-            let acc = stats.accepted_shares.load(Ordering::Relaxed);
-            let rej = stats.rejected_shares.load(Ordering::Relaxed);
-            let mhps = total as f64 / run_secs.max(1) as f64 / 1_000_000.0;
-            let acc_min = acc as f64 * 60.0 / run_secs.max(1) as f64;
-            println!(
-                "dcr_only_summary total_hashes={} effective_mhps={:.2} accepted={} rejected={} accepted_per_min={:.2}",
-                total, mhps, acc, rej, acc_min
-            );
-        }
-        return Ok(());
-    }
 
     let metrics = Arc::new(Mutex::new(MinerMetricsSnapshot::from_config(&config)));
 
@@ -975,23 +825,6 @@ fn main() -> Result<()> {
     if let Some(line) = outcome.bye_line.as_deref() {
         let parsed = decode_message(line)?;
         println!("wire_bye_parsed={parsed:?}");
-    }
-
-    // ── Shutdown DCR worker ──
-    dcr_stop.store(true, Ordering::Relaxed);
-    if let Some((handles, stats)) = dcr_state {
-        for h in handles {
-            let _ = h.join();
-        }
-        let total = stats.total_hashes.load(Ordering::Relaxed);
-        let acc = stats.accepted_shares.load(Ordering::Relaxed);
-        let rej = stats.rejected_shares.load(Ordering::Relaxed);
-        let dcr_revenue = stats.revenue_usd();
-        if total > 0 {
-            println!(
-                "dcr_total_hashes={total} dcr_accepted={acc} dcr_rejected={rej} dcr_revenue_usd={dcr_revenue:.4}"
-            );
-        }
     }
 
     Ok(())
