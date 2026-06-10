@@ -1,7 +1,7 @@
 # ZION V3 GPU Mining Optimization Guide
 
-> **Version:** 1.1.0  
-> **Date:** 2026-06-07  
+> **Version:** 1.2.0  
+> **Date:** 2026-06-10  
 > **Applies to:** `zion-miner` (GPU backends: OpenCL, CUDA, Metal), `zion-pool` server  
 > **Target consensus:** `deeksha_lite_v1`, `deeksha_lite_fire`, `cosmic_harmony_ekam_deeksha_v2`
 
@@ -64,9 +64,9 @@ optimal_nonce_count ≈ hashrate × job_ttl_ms / 1000
 > **Note:** The benchmark hashrate (19.25 KH/s for `deeksha_lite_v1`) does not change with nonce_count — it always uses the GPU's full `work_size`. The live stratum improvement comes from eliminating idle time between jobs. With 1048576 nonces @ 19.25 KH/s, each batch takes ~54s, leaving only ~6s idle within a 60s TTL.
 
 > **Three algorithms are available:**
-> - `deeksha_lite_v1` (fastest, 19.25 KH/s) — default for general mining
-> - `deeksha_lite_fire` (10.15 KH/s) — thermal stress / winter heating
-> - `cosmic_harmony_ekam_deeksha_v2` (3.29 KH/s) — maximum ASIC resistance
+> - `deeksha_lite_v1` (fastest, ~19 KH/s) — default for general mining
+> - `deeksha_lite_fire` (~4 KH/s) — thermal stress / winter heating (ALU-intensive, 524288 thermal iters + extra cross-chain mul/rotate)
+> - `cosmic_harmony_ekam_deeksha_v2` (~3.3 KH/s) — maximum ASIC resistance
 
 ---
 
@@ -87,7 +87,7 @@ optimal_nonce_count ≈ hashrate × job_ttl_ms / 1000
 | Algorithm | Benchmark | Optimal `nonce_count` | GPU util |
 |-----------|-----------|----------------------|----------|
 | `deeksha_lite_v1` | 19.25 KH/s | **1048576** | ~91 % |
-| `deeksha_lite_fire` | 10.15 KH/s | **524288** | ~94 % |
+| `deeksha_lite_fire` | ~4 KH/s | **1048576** | ~91 % |
 | `cosmic_harmony_ekam_deeksha_v2` | 3.29 KH/s | **262144** | ~73 % |
 
 ### Miner (local environment)
@@ -181,7 +181,7 @@ Only the **AMD RX 5700 XT** row below was measured directly on 2026-06-07 via `-
 
 | GPU | Backend | Lite v1 | Fire | Cosmic Harmony | Status |
 |-----|---------|---------|------|--------------|--------|
-| AMD RX 5700 XT (`gfx1010`) | OpenCL | **19.25 KH/s** | **10.15 KH/s** | **3.29 KH/s** | Measured |
+| AMD RX 5700 XT (`gfx1010`) | OpenCL | **~19 KH/s** | **~4 KH/s** | **~3.3 KH/s** | Measured |
 | AMD RX 6700 XT | OpenCL | — | — | — | Not tested |
 | NVIDIA RTX 3060 | CUDA | — | — | — | Not tested |
 | NVIDIA RTX 4090 | CUDA | — | — | — | Not tested |
@@ -224,4 +224,4 @@ Only the **AMD RX 5700 XT** row below was measured directly on 2026-06-07 via `-
 
 ---
 
-*Last updated: 2026-06-07 · Verified on Edge (77.42.71.94) with AMD RX 5700 XT miner `vega-smos` · Genesis: `7543004c76b11416ef32e2f1f5a4c72f0178f841d4559bf476e29e15a9602728`*
+*Last updated: 2026-06-10 · Fire profile upgraded: THERMAL_ITERS=524288 + extra ALU mul/rotate, dynamic work_size up to 24576 · Verified on AMD RX 5700 XT (`gfx1010`)*
