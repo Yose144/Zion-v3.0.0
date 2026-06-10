@@ -46,7 +46,7 @@ pub async fn run(cfg: &Config, cmd: PoolCmd) -> Result<()> {
             ui::print_header("Pool Config");
             ui::print_row("Host", host);
             ui::print_row("Port", &port.to_string());
-            ui::print_row("Algorithm", "cosmic_harmony_ekam_deeksha_v2");
+            ui::print_row("Algorithm", "multi-algo (deeksha_lite_v1, deeksha_lite_fire, cosmic_harmony_ekam_deeksha_v2)");
             println!();
             Ok(())
         }
@@ -85,7 +85,7 @@ async fn pool_stats(cfg: &Config, target: &str) -> Result<()> {
     let alive = tcp_probe(host, port, std::time::Duration::from_secs(3));
 
     ui::print_row("Pool host", &format!("{}:{}", host, port));
-    ui::print_row("Algorithm", "cosmic_harmony_ekam_deeksha_v2 (EkamDeeksha)");
+    ui::print_row("Algorithm", "multi-algo (session-based: deeksha_lite_v1, deeksha_lite_fire, cosmic_harmony_ekam_deeksha_v2)");
     ui::print_row("Protocol", "ZION stratum v3 (TCP)");
 
     if alive {
