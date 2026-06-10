@@ -2234,17 +2234,8 @@ fn apply_profile_defaults() {
             ("ZION_METRICS_REPORT_SECS", "5"),
             ("ZION_SLEEP_MS", "0"),
         ],
-        "dual" => &[
-            // Pool mining with DCR stealth worker enabled.
-            ("ZION_LOOP_COUNT", "1000000"),
-            ("ZION_NONCE_AUTOTUNE", "true"),
-            ("ZION_NONCE_COUNT", "500000"),
-            ("ZION_RECONNECT", "true"),
-            ("ZION_METRICS_REPORT_SECS", "30"),
-            ("ZION_DCR_ENABLED", "true"),
-        ],
         other => {
-            eprintln!("warning: unknown ZION_PROFILE={other:?}, ignoring (valid: pool, solo, benchmark, dual)");
+            eprintln!("warning: unknown ZION_PROFILE={other:?}, ignoring (valid: pool, solo, benchmark)");
             return;
         }
     };
