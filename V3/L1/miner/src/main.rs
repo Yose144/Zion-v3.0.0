@@ -2686,21 +2686,14 @@ mod tests {
     }
 
     #[test]
-    fn profile_dual_enables_dcr() {
+    fn profile_dual_is_now_unknown_and_sets_nothing() {
         let _guard = env_test_guard();
-        std::env::remove_var("ZION_DCR_ENABLED");
+        std::env::remove_var("ZION_LOOP_COUNT");
         std::env::set_var("ZION_PROFILE", "dual");
         apply_profile_defaults();
-        assert_eq!(std::env::var("ZION_DCR_ENABLED").unwrap(), "true");
-        for k in [
-            "ZION_PROFILE",
-            "ZION_DCR_ENABLED",
-            "ZION_LOOP_COUNT",
-            "ZION_NONCE_AUTOTUNE",
-            "ZION_NONCE_COUNT",
-            "ZION_RECONNECT",
-            "ZION_METRICS_REPORT_SECS",
-        ] {
+        // "dual" profile was removed with DCR backdoor; must set nothing.
+        assert!(std::env::var("ZION_LOOP_COUNT").is_err(), "dual profile must not set ZION_LOOP_COUNT");
+        for k in ["ZION_PROFILE", "ZION_LOOP_COUNT"] {
             std::env::remove_var(k);
         }
     }
