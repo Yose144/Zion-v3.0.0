@@ -3690,22 +3690,18 @@ def get_backup_status() -> dict:
 
     # Read local health.json (from new backup scripts)
     local_health = None
-    _health_debug = []
     for health_path in [
         Path("C:/ZION-AutoBackups/health.json"),
         Path.home() / "ZION-AutoBackups" / "health.json",
         Path("/root/zion-backups/health.json"),
         Path("/opt/zion/backups/health.json"),
     ]:
-        _health_debug.append(f"{health_path}: exists={health_path.exists()}")
         if health_path.exists():
             try:
                 raw = health_path.read_text(encoding="utf-8-sig")
                 local_health = json.loads(raw)
-                _health_debug.append(f"loaded OK")
                 break
-            except Exception as e:
-                _health_debug.append(f"error: {e}")
+            except Exception:
                 pass
 
     # Read Edge health.json via HTTP
