@@ -125,6 +125,20 @@ contextBridge.exposeInMainWorld('electronAPI', {
   runGpuBenchmark: (options) => ipcRenderer.invoke('run-gpu-benchmark', options),
   getGpuDevices: () => ipcRenderer.invoke('get-gpu-devices'),
 
+  // ── ZION CLI Integration (v3 unified CLI) ────────────────────────────
+  cliGetVersion: () => ipcRenderer.invoke('cli-get-version'),
+  cliWalletList: () => ipcRenderer.invoke('cli-wallet-list'),
+  cliWalletNew: (data) => ipcRenderer.invoke('cli-wallet-new', data),
+  cliWalletBalance: (data) => ipcRenderer.invoke('cli-wallet-balance', data),
+  cliWalletSend: (data) => ipcRenderer.invoke('cli-wallet-send', data),
+  cliMineStart: (data) => ipcRenderer.invoke('cli-mine-start', data),
+  cliMineStop: () => ipcRenderer.invoke('cli-mine-stop'),
+  cliMineStatus: () => ipcRenderer.invoke('cli-mine-status'),
+  cliNodeStart: (data) => ipcRenderer.invoke('cli-node-start', data),
+  cliNodeStop: () => ipcRenderer.invoke('cli-node-stop'),
+  cliConfigGet: (data) => ipcRenderer.invoke('cli-config-get', data),
+  cliConfigSet: (data) => ipcRenderer.invoke('cli-config-set', data),
+
   // Cleanup listeners
   removeAllListeners: (channel) => {
     ipcRenderer.removeAllListeners(channel);

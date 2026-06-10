@@ -1,7 +1,7 @@
 {
   "name": "zion-desktop-agent",
   "version": "3.0.0",
-  "description": "ZION V3 Mainnet v3.0.0 Desktop Mining Agent - Core+Edge monitoring, Hiran AI chat, wallet payouts, GPU + CPU mining",
+  "description": "ZION V3 Mainnet v3.0.0 Desktop Agent - Plug-and-play miner + full node + unified CLI. One-click install with all binaries bundled.",
   "homepage": "https://zionterranova.com",
   "main": "src/main.js",
   "scripts": {

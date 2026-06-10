@@ -5546,6 +5546,76 @@
 
       </div><!-- /#node-view -->
 
+      <!-- ═══════════════════════════════════════════════════ -->
+      <!-- CLI — ZION Unified Command Line Interface             -->
+      <!-- ═══════════════════════════════════════════════════ -->
+      <div id="cli-view" class="view-shell d-none">
+        <div class="web29-page-header">
+          <div class="web29-title-stack">
+            <div class="web29-kicker"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-terminal"></use></svg>v3 Unified CLI</div>
+            <div class="web29-title-row">
+              <h1 class="web29-title text-gradient">ZION CLI</h1>
+              <div class="web29-chip"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-star"></use></svg>Node + Miner + Wallet</div>
+            </div>
+            <div class="web29-subtitle">Direct access to the <code>zion</code> unified command line — wallet, mining, node, and config.</div>
+          </div>
+        </div>
+
+        <div class="control-panel" style="margin-bottom:12px">
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+            <button class="btn btn-primary" id="cli-btn-version">Version</button>
+            <button class="btn btn-primary" id="cli-btn-mine-status">Mine Status</button>
+            <button class="btn btn-primary" id="cli-btn-wallet-list">Wallets</button>
+            <button class="btn btn-primary" id="cli-btn-wallet-balance">Balance</button>
+            <button class="btn btn-primary" id="cli-btn-config-get">Config</button>
+            <button class="btn btn-ghost btn-sm" id="cli-btn-clear">Clear</button>
+          </div>
+        </div>
+
+        <div class="control-panel">
+          <h2 class="panel-header-row">
+            <span class="panel-header-title">
+              <svg class="icon" aria-hidden="true"><use href="#i-terminal"></use></svg>
+              <span>CLI Output</span>
+            </span>
+            <span id="cli-status-badge" style="font-size:11px;color:rgba(255,255,255,0.3)">Ready</span>
+          </h2>
+          <div id="cli-console"
+            style="margin-top:14px;background:rgba(0,0,0,0.5);border-radius:10px;padding:14px 16px;
+                   font-family:'JetBrains Mono',Menlo,'Courier New',monospace;font-size:12px;
+                   color:rgba(255,255,255,0.7);height:400px;overflow-y:auto;
+                   white-space:pre-wrap;word-break:break-all;
+                   border:1px solid rgba(255,255,255,0.05);line-height:1.6;letter-spacing:0.01em">
+— ZION CLI Terminal —
+Click a button above to run a command.
+          </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-top:14px">
+          <div class="control-panel">
+            <h2 class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-wallet"></use></svg> Send ZION</h2>
+            <div class="stack-col" style="margin-top:12px;gap:10px">
+              <input id="cli-send-wallet" type="text" placeholder="wallet file path (e.g. wallet.json)" style="width:100%">
+              <input id="cli-send-to" type="text" placeholder="To address (zion1...)" style="width:100%">
+              <input id="cli-send-amount" type="text" placeholder="Amount (e.g. 0.01)" style="width:100%">
+              <button class="btn btn-accent" id="cli-btn-send">Send Transaction</button>
+            </div>
+          </div>
+          <div class="control-panel">
+            <h2 class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg> Mining</h2>
+            <div class="stack-col" style="margin-top:12px;gap:10px">
+              <input id="cli-mine-wallet" type="text" placeholder="Wallet address (zion1...)" style="width:100%">
+              <input id="cli-mine-pool" type="text" placeholder="Pool (default: 77.42.71.94:8444)" style="width:100%">
+              <div style="display:flex;gap:10px">
+                <button class="btn btn-accent" id="cli-btn-mine-start">Start Mining</button>
+                <button class="btn btn-ghost" id="cli-btn-mine-stop">Stop</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div><!-- /#cli-view -->
+
       <!-- ══════════════════════════════════════════════════════ -->
       <!-- FREE WORLD — Sovereignty & Humanitarian Layer (L5) -->
       <!-- ══════════════════════════════════════════════════════ -->
@@ -5589,6 +5659,10 @@
 
       <div class="dock-sep"></div>
 
+      <div class="nav-item" data-view="cli">
+        <svg class="icon" aria-hidden="true"><use href="#i-terminal"></use></svg>
+        <span>CLI</span>
+      </div>
       <div class="nav-item" data-view="settings">
         <svg class="icon" aria-hidden="true"><use href="#i-settings"></use></svg>
         <span>Settings</span>
