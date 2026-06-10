@@ -65,4 +65,4 @@ zion-native-ffi = { path = "../native-ffi", optional = true }
 cudarc = { version = "0.12", optional = true, features = ["cuda-12040"] }
 metal = { version = "0.29", optional = true }
 objc = { version = "0.2", optional = true }
-crossterm = "0.28"
+crossterm = "0.29"
