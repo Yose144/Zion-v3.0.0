@@ -1900,9 +1900,10 @@ pub mod opencl_deeksha_lite_fire {
                 .unwrap_or(2_000_000_000);
 
             let tuning = GpuTuning::auto_tune(GpuAlgorithm::DeekshaLiteFire, family, vram);
-            let actual_work_size = Self::vram_aware_work_size(&device, requested_work_size)
+            let actual_work_size = requested_work_size
                 .min(tuning.work_size)
-                .max(64);
+                .max(64)
+                .next_power_of_two();
 
             println!(
                 "gpu_opencl_fire_init family={:?} device=\"{}\" vram={}MiB tuned_ws={} local_ws={} build_opts=\"{}\"",
