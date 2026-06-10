@@ -12,10 +12,16 @@ import { useZionWallet } from '@/contexts/ZionWalletContext';
 import { usePolling } from '@/hooks/usePolling';
 
 interface V3Metrics {
-  chain?: { height?: number; peers?: number; mempool?: number; tps?: number };
-  pool?: { sessions?: number; hashrate_hps?: number; accept_rate_pct?: number; uptime_secs?: number };
+  chain?: {
+    height?: number; peers?: number; mempool?: number; tps?: number;
+    difficulty?: number; total_blocks?: number; total_transactions?: number; network_hashrate?: number;
+  };
+  pool?: {
+    sessions?: number; hashrate_hps?: number; accept_rate_pct?: number; uptime_secs?: number; blocks_found?: number;
+  };
   miner?: { hashrate_hps?: number; accepted?: number; rejected?: number; accept_rate_pct?: number };
   system?: { load1?: number; mem_used_gb?: number; mem_total_gb?: number; disk_used_pct?: number };
+  source?: 'live' | 'fallback';
 }
 
 interface TreasuryItem { label: string; address: string; share: string; role: string; }
@@ -260,9 +266,9 @@ function MissionControlLite({ metrics }: { metrics: V3Metrics | null }) {
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <MiniStat label="Block Height" value={metrics?.chain?.height?.toLocaleString() ?? '—'} icon={Server} color="#FFD700" />
-        <MiniStat label="Pool Sessions" value={metrics?.pool?.sessions ?? '—'} icon={Layers} color="#9333EA" />
-        <MiniStat label="Accept Rate" value={metrics?.pool?.accept_rate_pct != null ? metrics.pool.accept_rate_pct.toFixed(1) + '%' : '—'} icon={CheckCircle2} color="#22C55E" />
-        <MiniStat label="Alerts" value={alertCount} icon={AlertTriangle} color={alertColor} />
+        <MiniStat label="Difficulty"   value={metrics?.chain?.difficulty ? metrics.chain.difficulty.toLocaleString() : '—'} icon={Database} color="#F59E0B" />
+        <MiniStat label="Pool HR"      value={fmtHashrate(metrics?.pool?.hashrate_hps)} icon={Pickaxe} color="#22C55E" />
+        <MiniStat label="Alerts"       value={alertCount} icon={AlertTriangle} color={alertColor} />
       </div>
     </Card>
   );
@@ -273,16 +279,16 @@ function MonitoringTab({ metrics }: { metrics: V3Metrics | null }) {
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Stat label="Block Height" value={m?.chain?.height?.toLocaleString() ?? '—'} icon={Server} color="#FFD700" />
-        <Stat label="Peers"        value={m?.chain?.peers ?? '—'}                        icon={Globe}  color="#06B6D4" />
+        <Stat label="Difficulty"   value={m?.chain?.difficulty ? m.chain.difficulty.toLocaleString() : '—'} icon={Database} color="#F59E0B" />
         <Stat label="Pool Sessions"value={m?.pool?.sessions ?? '—'}                    icon={Layers} color="#9333EA" />
         <Stat label="Pool Hashrate"value={fmtHashrate(m?.pool?.hashrate_hps)}         icon={Pickaxe} color="#22C55E" />
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Stat label="Accept Rate"   value={m?.pool?.accept_rate_pct?.toFixed(1) ?? '—'} unit="%" icon={CheckCircle2} color="#22C55E" />
-        <Stat label="Miner Hashrate"value={fmtHashrate(m?.miner?.hashrate_hps)}            icon={Pickaxe}         color="#3B82F6" />
+        <Stat label="Network HR"    value={fmtHashrate(m?.chain?.network_hashrate)}       icon={Globe}          color="#06B6D4" />
         <Stat label="Mempool"       value={m?.chain?.mempool ?? '—'}                       unit="txs" icon={Database} color="#F59E0B" />
-        <Stat label="Uptime"        value={fmtDuration(m?.pool?.uptime_secs)}               icon={Activity}        color="#10B981" />
+        <Stat label="Blocks Found"  value={m?.pool?.blocks_found?.toLocaleString() ?? '—'} icon={Server}         color="#FFD700" />
       </div>
 
       <Card>
@@ -292,26 +298,26 @@ function MonitoringTab({ metrics }: { metrics: V3Metrics | null }) {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <p className="text-xs text-gray-400 mb-1">Load Average</p>
-            <p className="text-lg font-mono text-white">{m?.system?.load1?.toFixed(2) ?? '—'}</p>
+            <p className="text-lg font-mono text-white">{m?.system?.load1 ? m.system.load1.toFixed(2) : '—'}</p>
           </div>
           <div>
             <p className="text-xs text-gray-400 mb-1">Memory</p>
             <p className="text-lg font-mono text-white">
-              {m?.system?.mem_used_gb != null ? m.system.mem_used_gb.toFixed(1) + ' / ' + (m.system.mem_total_gb ?? 0).toFixed(1) + ' GB' : '—'}
+              {m?.system?.mem_used_gb ? m.system.mem_used_gb.toFixed(1) + ' / ' + (m.system.mem_total_gb ?? 0).toFixed(1) + ' GB' : '—'}
             </p>
             <div className="mt-1 h-1.5 rounded-full bg-white/10 overflow-hidden">
-              {m?.system?.mem_used_gb != null && m?.system?.mem_total_gb != null && (
-                <div className="h-full bg-zion-cyan rounded-full transition-all" style={{ width: (m.system.mem_used_gb / m.system.mem_total_gb * 100) + '%' }} />
-              )}
+              {m?.system?.mem_used_gb && m?.system?.mem_total_gb ? (
+                <div className="h-full bg-zion-cyan rounded-full transition-all" style={{ width: Math.min((m.system.mem_used_gb / m.system.mem_total_gb * 100), 100) + '%' }} />
+              ) : null}
             </div>
           </div>
           <div>
             <p className="text-xs text-gray-400 mb-1">Disk Used</p>
-            <p className="text-lg font-mono text-white">{m?.system?.disk_used_pct != null ? m.system.disk_used_pct.toFixed(1) + '%' : '—'}</p>
+            <p className="text-lg font-mono text-white">{m?.system?.disk_used_pct ? m.system.disk_used_pct.toFixed(1) + '%' : '—'}</p>
             <div className="mt-1 h-1.5 rounded-full bg-white/10 overflow-hidden">
-              {m?.system?.disk_used_pct != null && (
-                <div className="h-full bg-zion-gold rounded-full transition-all" style={{ width: m.system.disk_used_pct + '%' }} />
-              )}
+              {m?.system?.disk_used_pct ? (
+                <div className="h-full bg-zion-gold rounded-full transition-all" style={{ width: Math.min(m.system.disk_used_pct, 100) + '%' }} />
+              ) : null}
             </div>
           </div>
         </div>
