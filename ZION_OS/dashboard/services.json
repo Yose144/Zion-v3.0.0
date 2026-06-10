@@ -23,13 +23,15 @@
     "log": "miner",
     "service_id": "miner",
     "env": {
-      "ZION_POOL_ADDR": "100.76.16.108:8444",
+      "ZION_POOL_ADDR": "77.42.71.94:8444",
       "ZION_LOOP_COUNT": "1000000",
       "ZION_MINER_THREADS": "2",
       "ZION_WORKER_NAME": "worker1",
-      "ZION_MINER_ID": "native-gpu-miner-01",
+      "ZION_MINER_ID": "w11-amd-gpu-miner-01",
+      "ZION_PAYOUT_ADDRESS": "zion1w523a76830x2t5m7f3j023w265e8g5c400a4790",
+      "ZION_MINER_ALGORITHM": "deeksha_lite_fire",
       "ZION_GPU_BACKEND": "opencl",
-      "ZION_GPU_WORK_SIZE": "4096"
+      "ZION_NONCE_COUNT_GPU": "262144"
     }
   },
 
@@ -38,11 +40,13 @@
     "log": "miner",
     "service_id": "miner",
     "env": {
-      "ZION_POOL_ADDR": "100.76.16.108:8444",
+      "ZION_POOL_ADDR": "77.42.71.94:8444",
       "ZION_LOOP_COUNT": "1000000",
       "ZION_MINER_THREADS": "4",
       "ZION_WORKER_NAME": "worker1",
-      "ZION_MINER_ID": "native-cpu-miner-01",
+      "ZION_MINER_ID": "w11-cpu-miner-01",
+      "ZION_PAYOUT_ADDRESS": "zion1w523a76830x2t5m7f3j023w265e8g5c400a4790",
+      "ZION_MINER_ALGORITHM": "deeksha_lite_fire",
       "ZION_GPU_BACKEND": "cpu"
     }
   },
@@ -52,13 +56,15 @@
     "log": "miner",
     "service_id": "miner",
     "env": {
-      "ZION_POOL_ADDR": "100.76.16.108:8444",
+      "ZION_POOL_ADDR": "77.42.71.94:8444",
       "ZION_LOOP_COUNT": "1000000",
       "ZION_MINER_THREADS": "2",
       "ZION_WORKER_NAME": "worker1",
-      "ZION_MINER_ID": "native-gpu-miner-01",
+      "ZION_MINER_ID": "w11-amd-gpu-miner-01",
+      "ZION_PAYOUT_ADDRESS": "zion1w523a76830x2t5m7f3j023w265e8g5c400a4790",
+      "ZION_MINER_ALGORITHM": "deeksha_lite_fire",
       "ZION_GPU_BACKEND": "opencl",
-      "ZION_GPU_WORK_SIZE": "4096"
+      "ZION_NONCE_COUNT_GPU": "262144"
     }
   },
 
