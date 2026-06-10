@@ -246,6 +246,10 @@ pub struct ComputedHashrates {
 /* Dashboard renderer                                                        */
 /* ========================================================================= */
 
+/// Fixed-height dashboard (no flicker).  Callers must MoveTo(0,0) beforehand.
+/// Always prints exactly DASHBOARD_ROWS lines so old output is fully overwritten.
+const DASHBOARD_ROWS: usize = 22;
+
 pub fn draw_dashboard(
     control: &MinerControl,
     rates: &ComputedHashrates,
@@ -254,24 +258,36 @@ pub fn draw_dashboard(
     gpu_info: &[GpuInfoLine],
 ) -> io::Result<()> {
     let mut stdout = stdout();
+    let mut lines_printed: usize = 0;
 
-    // Clear and move to top-left
-    queue!(
-        stdout,
-        cursor::MoveTo(0, 0),
-        terminal::Clear(ClearType::All),
-    )?;
+    macro_rules! q {
+        ($($tok:tt)*) => {
+            { queue!(stdout, $($tok)*)?; }
+        };
+    }
+    macro_rules! line {
+        ($($tok:tt)*) => {
+            { q!($($tok)*); lines_printed += 1; }
+        };
+    }
 
-    // Title bar
-    queue!(
-        stdout,
+    // Title bar (3 lines)
+    line!(
         SetBackgroundColor(Color::Rgb { r: 30, g: 30, b: 50 }),
         SetForegroundColor(Color::Cyan),
         Print(" ╔══════════════════════════════════════════════════════════════════════════════╗ \n"),
+    );
+    line!(
+        SetBackgroundColor(Color::Rgb { r: 30, g: 30, b: 50 }),
+        SetForegroundColor(Color::Cyan),
         Print(" ║  ZION v3.0.1  INTERACTIVE MINER                                              ║ \n"),
+    );
+    line!(
+        SetBackgroundColor(Color::Rgb { r: 30, g: 30, b: 50 }),
+        SetForegroundColor(Color::Cyan),
         Print(" ╚══════════════════════════════════════════════════════════════════════════════╝ \n"),
         ResetColor,
-    )?;
+    );
 
     // Status line
     let status_color = if control.pause { Color::Yellow } else { Color::Green };
@@ -281,64 +297,59 @@ pub fn draw_dashboard(
         MiningMode::GpuOnly => "GPU",
         MiningMode::Dual => "DUAL",
     };
-
-    queue!(
-        stdout,
+    line!(
         SetForegroundColor(status_color),
         Print(format!("  Status: {:<8}  ", status_text)),
         ResetColor,
         Print(format!("Algorithm: {:<30}  Mode: {:<6}  Threads: {}\n",
             control.algorithm, mode_str, control.threads)),
-    )?;
+    );
 
-    // Hashrate section
+    // Hashrate section (5 lines)
     let (hr_val, hr_unit) = ui::fmt_hashrate(rates.total_hps);
     let (hr10_val, hr10_unit) = ui::fmt_hashrate(rates.total_10s_hps);
     let (hr60_val, hr60_unit) = ui::fmt_hashrate(rates.total_60s_hps);
     let (cpu_val, cpu_unit) = ui::fmt_hashrate(rates.cpu_total as f64);
     let (gpu_val, gpu_unit) = ui::fmt_hashrate(rates.gpu_total as f64);
 
-    queue!(
-        stdout,
-        SetForegroundColor(Color::Blue),
-        Print("  ┌─ Hashrate ─────────────────────────────────────────────────────────────────┐\n"),
-        ResetColor,
-        Print(format!("  │  Current: {:>8} {:<4}  10s avg: {:>8} {:<4}  60s avg: {:>8} {:<4}    │\n",
-            hr_val, hr_unit, hr10_val, hr10_unit, hr60_val, hr60_unit)),
-        Print(format!("  │  CPU:     {:>8} {:<4}  GPU:      {:>8} {:<4}  Accepted: {}/{}          │\n",
-            cpu_val, cpu_unit, gpu_val, gpu_unit, rates.accepted, rates.rejected)),
-        SetForegroundColor(Color::Blue),
-        Print("  └────────────────────────────────────────────────────────────────────────────┘\n"),
-        ResetColor,
-    )?;
+    line!(SetForegroundColor(Color::Blue), Print("  ┌─ Hashrate ─────────────────────────────────────────────────────────────────┐\n"), ResetColor);
+    line!(Print(format!("  │  Current: {:>8} {:<4}  10s avg: {:>8} {:<4}  60s avg: {:>8} {:<4}    │\n",
+            hr_val, hr_unit, hr10_val, hr10_unit, hr60_val, hr60_unit)));
+    line!(Print(format!("  │  CPU:     {:>8} {:<4}  GPU:      {:>8} {:<4}  Accepted: {}/{}          │\n",
+            cpu_val, cpu_unit, gpu_val, gpu_unit, rates.accepted, rates.rejected)));
+    line!(SetForegroundColor(Color::Blue), Print("  └────────────────────────────────────────────────────────────────────────────┘\n"), ResetColor);
+    line!(Print("\n"));
 
-    // GPU info
+    // GPU info (up to 4 lines: header + up to 2 devices + footer)
     if !gpu_info.is_empty() {
-        queue!(stdout, SetForegroundColor(Color::Magenta), Print("  ┌─ GPU Devices ────────────────────────────────────────────────────────────────┐\n"), ResetColor)?;
-        for line in gpu_info {
-            queue!(stdout, Print(format!("  │  {} {:<60} │\n", line.index, line.info)))?;
+        line!(SetForegroundColor(Color::Magenta), Print("  ┌─ GPU Devices ────────────────────────────────────────────────────────────────┐\n"), ResetColor);
+        for line in gpu_info.iter().take(2) {
+            line!(Print(format!("  │  {} {:<60} │\n", line.index, line.info)));
         }
-        queue!(stdout, SetForegroundColor(Color::Magenta), Print("  └────────────────────────────────────────────────────────────────────────────┘\n"), ResetColor)?;
+        line!(SetForegroundColor(Color::Magenta), Print("  └────────────────────────────────────────────────────────────────────────────┘\n"), ResetColor);
+    } else {
+        for _ in 0..4 {
+            line!(Print("\n"));
+        }
     }
 
     // Pool / Chain info
-    queue!(
-        stdout,
+    line!(
         SetForegroundColor(Color::Yellow),
         Print(format!("  Uptime: {}  Pool Height: {}\n", ui::fmt_uptime(uptime_secs), pool_height)),
         ResetColor,
-    )?;
+    );
+    line!(Print("\n"));
 
-    // Hotkey legend
-    queue!(
-        stdout,
-        SetForegroundColor(Color::DarkGrey),
-        Print("\n"),
-        Print("  [h] dashboard  [a] algorithm  [c] CPU toggle  [g] GPU toggle  [d] dual mode\n"),
-        Print("  [i] HW info    [p] pause      [r] reconnect   [v] verbose     [1-9] threads\n"),
-        Print("  [q/Esc] quit\n"),
-        ResetColor,
-    )?;
+    // Hotkey legend (3 lines)
+    line!(SetForegroundColor(Color::DarkGrey), Print("  [h] dashboard  [a] algorithm  [c] CPU toggle  [g] GPU toggle  [d] dual mode\n"), ResetColor);
+    line!(SetForegroundColor(Color::DarkGrey), Print("  [i] HW info    [p] pause      [r] reconnect   [v] verbose     [1-9] threads\n"), ResetColor);
+    line!(SetForegroundColor(Color::DarkGrey), Print("  [q/Esc] quit\n"), ResetColor);
+
+    // Pad to fixed height so old rows are overwritten
+    while lines_printed < DASHBOARD_ROWS {
+        line!(Print("\n"));
+    }
 
     stdout.flush()?;
     Ok(())
@@ -378,6 +389,8 @@ pub fn spawn_input_thread(control: Arc<Mutex<MinerControl>>) -> thread::JoinHand
                         }
                         KeyCode::Char('a') => {
                             c.cycle_algorithm();
+                            // Signal reconnect so remote pool gets the new algorithm in Hello
+                            c.requested_reconnect = true;
                         }
                         KeyCode::Char('c') => {
                             c.toggle_cpu();
@@ -439,8 +452,15 @@ pub fn run_interactive(
         let mut last_gpu_query = Instant::now() - Duration::from_secs(60);
         let mut cached_gpu_info: Vec<GpuInfoLine> = Vec::new();
 
+        // One-time clear of the alternate screen
+        let _ = execute!(
+            io::stdout(),
+            cursor::MoveTo(0, 0),
+            terminal::Clear(ClearType::All),
+        );
+
         loop {
-            thread::sleep(Duration::from_millis(500));
+            thread::sleep(Duration::from_millis(1000));
 
             let c = dashboard_control.lock().unwrap();
             if c.requested_quit {
@@ -456,17 +476,19 @@ pub fn run_interactive(
                     .into_iter()
                     .enumerate()
                     .map(|(i, info)| GpuInfoLine {
-                index: i,
-                info: format!("{} | {} CUs | {} MHz | {} MiB VRAM",
-                    info.name, info.compute_units, info.max_clock_mhz,
-                    info.global_mem_bytes / (1024 * 1024)),
-            })
+                        index: i,
+                        info: format!("{} | {} CUs | {} MHz | {} MiB VRAM",
+                            info.name, info.compute_units, info.max_clock_mhz,
+                            info.global_mem_bytes / (1024 * 1024)),
+                    })
                     .collect();
                 last_gpu_query = Instant::now();
             }
 
             let rates = dashboard_hashrate.compute_rates();
             let uptime = started_at.elapsed().as_secs();
+            // Move cursor to top-left without clear — draw_dashboard overwrites fixed rows
+            let _ = execute!(io::stdout(), cursor::MoveTo(0, 0));
             let _ = draw_dashboard(&c, &rates, uptime, 0, &cached_gpu_info);
         }
     });
