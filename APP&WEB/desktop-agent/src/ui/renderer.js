@@ -4122,4 +4122,34 @@ function initCliView() {
     await runCli('cliMineStart', 'mine start', { pool, wallet });
   });
   document.getElementById('cli-btn-mine-stop')?.addEventListener('click', () => runCli('cliMineStop', 'mine stop'));
+
+  // ── Bridge ────────────────────────────────────────────────────────
+  document.getElementById('cli-btn-bridge-status')?.addEventListener('click', () => runCli('cliBridgeStatus', 'bridge status'));
+  document.getElementById('cli-btn-bridge-pending')?.addEventListener('click', () => runCli('cliBridgePending', 'bridge pending'));
+  document.getElementById('cli-btn-bridge-chains')?.addEventListener('click', () => runCli('cliBridgeChains', 'bridge chains'));
+  document.getElementById('cli-btn-bridge-history')?.addEventListener('click', async () => {
+    const n = prompt('Number of entries (default 10):') || '10';
+    await runCli('cliBridgeHistory', `bridge history ${n}`, { n: parseInt(n) || 10 });
+  });
+
+  // ── DAO ───────────────────────────────────────────────────────────
+  document.getElementById('cli-btn-dao-status')?.addEventListener('click', () => runCli('cliDaoStatus', 'dao status'));
+  document.getElementById('cli-btn-dao-proposals')?.addEventListener('click', () => runCli('cliDaoProposals', 'dao proposals'));
+  document.getElementById('cli-btn-dao-treasury')?.addEventListener('click', () => runCli('cliDaoTreasury', 'dao treasury'));
+  document.getElementById('cli-btn-dao-params')?.addEventListener('click', () => runCli('cliDaoParams', 'dao params'));
+
+  // ── Pool ──────────────────────────────────────────────────────────
+  document.getElementById('cli-btn-pool-stats')?.addEventListener('click', () => runCli('cliPoolStats', 'pool stats edge', { target: 'edge' }));
+  document.getElementById('cli-btn-pool-miners')?.addEventListener('click', () => runCli('cliPoolMiners', 'pool miners edge', { target: 'edge' }));
+  document.getElementById('cli-btn-pool-config')?.addEventListener('click', () => runCli('cliPoolConfig', 'pool config edge', { target: 'edge' }));
+  document.getElementById('cli-btn-pool-earnings')?.addEventListener('click', async () => {
+    const address = prompt('Your ZION address (or empty for config wallet):');
+    await runCli('cliPoolEarnings', 'pool earnings', { address: address || undefined, target: 'edge' });
+  });
+
+  // ── Warp ──────────────────────────────────────────────────────────
+  document.getElementById('cli-btn-warp-status')?.addEventListener('click', () => runCli('cliWarpStatus', 'warp status'));
+  document.getElementById('cli-btn-warp-chains')?.addEventListener('click', () => runCli('cliWarpChains', 'warp chains'));
+  document.getElementById('cli-btn-warp-pending')?.addEventListener('click', () => runCli('cliWarpPending', 'warp pending'));
+  document.getElementById('cli-btn-warp-stats')?.addEventListener('click', () => runCli('cliWarpStats', 'warp stats'));
 }
