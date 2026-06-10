@@ -2,11 +2,10 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import Link from 'next/link';
 import {
   LayoutDashboard, Wallet, Scale, Vote, Activity,
   ChevronRight, Lock, RefreshCw, AlertTriangle, CheckCircle2,
-  Server, Pickaxe, Layers, Globe, Database, XCircle, ArrowUpRight,
+  Server, Pickaxe, Layers, Globe, Database, XCircle,
   Plus, Import, Send, Download, Copy, Eye, EyeOff, Trash2, Key,
 } from 'lucide-react';
 import { useZionWallet } from '@/contexts/ZionWalletContext';
@@ -253,28 +252,17 @@ function MissionControlLite({ metrics }: { metrics: V3Metrics | null }) {
   return (
     <Card className="relative overflow-hidden">
       <div className="absolute top-0 right-0 w-32 h-32 bg-zion-gold/5 rounded-full blur-3xl pointer-events-none" />
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-zion-gold/15 flex items-center justify-center">
-            <LayoutDashboard size={18} className="text-zion-gold" />
-          </div>
-          <div>
-            <h3 className="text-sm font-semibold text-white">Mission Control Lite</h3>
-            <p className="text-xs text-gray-400">Quick system status overview</p>
-          </div>
-          <span className={'text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border ' + statusStyle}>
-            {status}
-          </span>
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-9 h-9 rounded-xl bg-zion-gold/15 flex items-center justify-center">
+          <LayoutDashboard size={18} className="text-zion-gold" />
         </div>
-        <Link href="/dashboard/mission-control" className="inline-flex items-center gap-1.5 text-xs font-medium text-zion-gold hover:text-yellow-300 transition-colors">
-          Open Full Mission Control <ArrowUpRight size={14} />
-        </Link>
+        <h3 className="text-sm font-semibold text-white">Mission Control</h3>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <MiniStat label="Block Height" value={metrics?.chain?.height?.toLocaleString() ?? '—'} icon={Server} color="#FFD700" />
         <MiniStat label="Pool Sessions" value={metrics?.pool?.sessions ?? '—'} icon={Layers} color="#9333EA" />
         <MiniStat label="Accept Rate" value={metrics?.pool?.accept_rate_pct != null ? metrics.pool.accept_rate_pct.toFixed(1) + '%' : '—'} icon={CheckCircle2} color="#22C55E" />
-        <MiniStat label="Active Alerts" value={alertCount} icon={AlertTriangle} color={alertColor} />
+        <MiniStat label="Alerts" value={alertCount} icon={AlertTriangle} color={alertColor} />
       </div>
     </Card>
   );
