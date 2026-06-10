@@ -26,6 +26,11 @@
 - Atomic Swap: `swap-testnet.toml` → `swap-mainnet.toml` (opraveno)
 - WARP: `warp-testnet.toml` → `warp-mainnet.toml` (novy soubor vytvoren)
 
+**Backup problem (opraveno):** Edge nemel zadny auto-backup mechanismus. Dashboard kontroloval `zion-edge-backup.timer` ktery neexistoval.
+- Novy `edge-deploy/scripts/backup-edge.sh` — zalohuje vsechny DB + config + systemd
+- Novy `zion-edge-backup.service` + `.timer` (denni 03:00)
+- Pridano do `setup-edge.sh`
+
 ---
 
 ## Pred-startovni kontrola = OK
@@ -40,6 +45,39 @@
 | Default miner | zion1w523a76830x2t5m7f3j023w265e8g5c400a4790 | OK |
 | Pool payout SK | v edge-environment.sh | OK (flash backup) |
 | Genesis timestamp | 1_767_225_600 (2026-01-01) — frozen | OK |
+
+---
+
+## Krok 0: Zalohovat vse PRED resetem (Edge + Local)
+
+**PRED kazdym mazanim DB udej plnou zalohu!**
+
+### Edge:
+```bash
+ssh root@100.76.16.108
+
+# Manualni plna zaloha (pokud timer jeste nebezi)
+/root/zion-2.9.6-main/edge-deploy/scripts/backup-edge.sh
+
+# Nebo pokud je timer aktivni:
+systemctl start zion-edge-backup.service
+
+# Overit zalohu:
+ls -la /root/zion-backups/daily/
+```
+
+### Local PC:
+```powershell
+# Auto-backup (kopiruje DB + config do C:\ZION-AutoBackups)
+cd "C:\Users\yosef\Desktop\Zion\2.9.6-main"
+powershell -ExecutionPolicy Bypass -File scripts\auto-backup-all.ps1
+
+# Nebo jen chain data:
+powershell -ExecutionPolicy Bypass -File scripts\backup-chain.ps1 -IncludeLogs -IncludeEnv
+
+# Overit zalohy:
+ls C:\ZION-AutoBackups\zion-auto-*.zip | sort LastWriteTime
+```
 
 ---
 
@@ -243,7 +281,15 @@ zion-edge-agent       (Rig lifecycle)
 zion-edge-dashboard   (Infra dashboard 8888)
 zion-edge-miner       (Edge miner, pokud existuje)
 zion-edge-watchdog    (Health monitor)
+zion-edge-backup      (Daily DB+config backup 03:00)
 ```
+
+> **POZOR:** Pokud `zion-edge-backup` jeste neni nainstalovany na Edge, udej to:
+> ```bash
+> cd /root/zion-2.9.6-main
+> ./edge-deploy/setup-edge.sh   # nainstaluje vse vcetne backup timeru
+> systemctl enable --now zion-edge-backup.timer
+> ```
 
 ---
 
