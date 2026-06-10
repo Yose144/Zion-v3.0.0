@@ -1177,6 +1177,7 @@ fn run_local_session(
             solution,
             config.revenue_source,
             config.revenue_value_usd,
+            &config.algorithm,
         );
         if matches!(decision.status, ShareStatus::Accepted) {
             accepted_iterations += 1;
@@ -1186,7 +1187,7 @@ fn run_local_session(
 
         let submit_started_at = Instant::now();
 
-        let job_line = encode_message(&pool.job_message(job))?;
+        let job_line = encode_message(&pool.job_message(job, &config.algorithm))?;
         let submit_line = encode_message(&pool.solution_message(
             &config.miner_id,
             &config.worker_name,
