@@ -63,10 +63,10 @@ const t = {
 
   /* ─── Hero ─── */
   hero: {
-    badge_version:  { cs: 'V3 Mainnet · v3.0.0 Mainnet Ready', en: 'V3 Mainnet · v3.0.0 Mainnet Ready' },
+    badge_version:  { cs: 'V3 Mainnet · 3.0.1 Genesis Launch', en: 'V3 Mainnet · 3.0.1 Genesis Launch' },
     badge_chv4:     { cs: 'Core + Edge topologie', en: 'Core + Edge topology' },
     tagline:        { cs: 'Nativní Rust blockchain s Proof-of-Work konsensem', en: 'Native Rust blockchain with Proof-of-Work consensus' },
-    title_sub:      { cs: 'Launch Countdown · Core + Edge · canonical runtime v3.0.0 Ekam Deeksha', en: 'Launch Countdown · Core + Edge · canonical runtime v3.0.0 Ekam Deeksha' },
+    title_sub:      { cs: 'Genesis Live · Core + Edge · canonical runtime v3.0.1 Ekam Deeksha', en: 'Genesis Live · Core + Edge · canonical runtime v3.0.1 Ekam Deeksha' },
     description:    {
       cs: 'ZION TerraNova mainnet launch countdown — 31. prosinec 2026 (Silvestr). Příprava V3 mainnet v Core + Edge topologii (Core PC + Hetzner Edge VPS), s veřejným poolem, mining binárkami a provozní telemetrií.',
       en: 'ZION TerraNova mainnet launch countdown — 31 December 2026 (New Year\'s Eve). Preparing V3 mainnet in Core + Edge topology (Core PC + Hetzner Edge VPS), with public pool, mining binaries, and operational telemetry.',
@@ -79,7 +79,7 @@ const t = {
     signal_mainnet: { cs: 'Launch Countdown', en: 'Launch Countdown' },
     signal_loc:     { cs: 'Core PC + Edge VPS · ShareRelay', en: 'Core PC + Edge VPS · ShareRelay' },
     signal_target:  { cs: '31. prosince 2026', en: '31 December 2026' },
-    signal_status_l1: { cs: 'Mainnet Ready active · runtime v3.0.0', en: 'Mainnet Ready active · runtime v3.0.0' },
+    signal_status_l1: { cs: 'Genesis Launch active · runtime v3.0.1', en: 'Genesis Launch active · runtime v3.0.1' },
     signal_status_nodes: { cs: 'Core + Edge online', en: 'Core + Edge online' },
     signal_status_mainnet: { cs: 'Launch Countdown · 31. prosince 2026', en: 'Launch Countdown · 31 December 2026' },
     metric_loc:     { cs: 'Řádků kódu (Rust)', en: 'Rust LOC' },
@@ -367,7 +367,7 @@ const t = {
           cs: 'Rust kompilované těžaře pro Linux (x86_64), Windows a macOS (ARM64) se stratum-v2 pool protokolem.',
           en: 'Rust-compiled miners for Linux (x86_64), Windows, and macOS (ARM64) with stratum-v2 pool protocol.',
         },
-        badge: { cs: 'Test Mainnet', en: 'Test Mainnet' },
+        badge: { cs: 'MainNet · Živý', en: 'MainNet · Live' },
       },
       dao: {
         title: { cs: 'DAO Správa', en: 'DAO Governance' },
@@ -426,10 +426,10 @@ const t = {
         },
       },
       ph3: {
-        phase: { cs: 'Fáze 4–5 · Q4 2026', en: 'Phase 4–5 · Q4 2026' },
+        phase: { cs: 'Veřejný launch · 31. 12. 2026', en: 'Public launch · 31 Dec 2026' },
         detail: {
-          cs: 'Dress rehearsal, genesis konfigurace, uzavření public launch gate.',
-          en: 'Dress rehearsal, genesis configuration, public launch gate closure.',
+          cs: 'MainNet Genesis 11. 6. 2026 dokončen. Veřejný launch pro všechny 31. 12. 2026.',
+          en: 'MainNet Genesis 11 Jun 2026 complete. Public launch for everyone 31 Dec 2026.',
         },
       },
     },

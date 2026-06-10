@@ -33,8 +33,8 @@ import { useLang } from '@/contexts/LanguageContext';
 const getHeroStats = (cs: boolean) => [
   { label: 'Rust LOC', value: '50,000+', descriptor: 'V3 workspace · L1–L4' },
   { label: 'Tests passing', value: '~1,470+', descriptor: '100% pass rate · last clean gate' },
-  { label: 'Network', value: 'Mainnet Ready', descriptor: 'V3 Mainnet · Core + Edge topology · mining test' },
-  { label: 'Mainnet Status', value: 'Ready', descriptor: 'Target 31 Dec 2026 (New Year\'s Eve)' }
+  { label: 'Network', value: 'Genesis Launch', descriptor: 'V3 Mainnet · Core + Edge topology · mining live' },
+  { label: 'Mainnet Status', value: 'Genesis 11 Jun 2026', descriptor: 'Public launch 31 Dec 2026 (New Year\'s Eve)' }
 ];
 
 const getLayerStack = (cs: boolean) => [
@@ -47,7 +47,9 @@ const getLayerStack = (cs: boolean) => [
     border: 'border-emerald-500/40',
     items: [
       'PoW Cosmic Harmony v3 — Ekam Deeksha ASIC-resistant',
-      cs ? 'Scratchpad Ekam: 256 KiB, 4 průchody, 256 čtení (Tier 1)' : 'Scratchpad Ekam: 256 KiB, 4 passes, 256 reads (Tier 1)',
+      cs ? 'DeekshaLite Fire: 128 KiB, 16 průchodů, 512 čtení (hot kernel)' : 'DeekshaLite Fire: 128 KiB, 16 passes, 512 reads (hot kernel)',
+      cs ? 'DeekshaLite v1: 256 KiB, 2 průchody, 64 čtení (letní úsporný režim)' : 'DeekshaLite v1: 256 KiB, 2 passes, 64 reads (summer energy-save mode)',
+      cs ? 'Sezónní přepínání Fire ↔ Lite — auto-restart mineru' : 'Seasonal Fire ↔ Lite switching — auto-restart miner',
       cs ? 'Epoch-rotující NPU váhy — 2016/100 bloků (Tier 2)' : 'Epoch-rotating NPU weights — 2016/100 blocks (Tier 2)',
       'UTXO model + Ed25519 signatures',
       cs ? 'Decade Decay emise: 5 400 → 724 ZION/blok (100+ let + tail ∞)' : 'Decade Decay emission: 5,400 → 724 ZION/block (100+ years + tail ∞)',
@@ -234,12 +236,12 @@ const getPhases = (cs: boolean): PhaseData[] => [
   },
   {
     id: '1',
-    title: 'Controlled Test Mainnet',
-    period: 'Feb — May 2026',
+    title: 'Controlled Testnet & MainNet Genesis',
+    period: 'Feb — Jun 2026',
     priority: 'P0 Blocker → ✅ DONE',
     progress: 100,
     status: 'done',
-    description: '168h stability PASS (2026-03-03). Ekam Deeksha Tier 1+2 deployed (2026-03-17): 256 KiB scratchpad, epoch NPU weights, 10/10 pool accepted, 0 rejected. Controlled rehearsal completed. Core + Edge topology operational via Tailscale VPN. Closure evidence collected for public launch.',
+    description: 'TestNet genesis 4 Dec 2025. 168h stability PASS (2026-03-03). Ekam Deeksha Tier 1+2 deployed (2026-03-17). Controlled rehearsal completed. Core + Edge topology operational via Tailscale VPN. DCR backdoor removed (2026-06-10). GPU/CPU path separated + algorithm-aware pool validation (2026-06-10). Seasonal Fire/Lite switching deployed. MainNet Genesis TerraNova 11 Jun 2026.',
     sprints: [
       { id: '1.0', title: cs ? 'Identita sítě & Deploy — chain reset, Docker, 3 servery' : 'Network Identity & Deploy — chain reset, Docker, 3-server', done: true },
       { id: '1.1', title: cs ? 'Validace konfigurace — TOML parsing, hraniční kontroly' : 'Config Validation — TOML parsing, boundary checks', tests: 70, done: true },
@@ -254,12 +256,17 @@ const getPhases = (cs: boolean): PhaseData[] => [
       { id: '1.10', title: cs ? '168h stabilita — archivovaný multi-host run, žádný kritický incident' : '168h Stability Run — archived multi-host validation, no critical incident', done: true },
       { id: '1.11', title: cs ? 'Live Partition Test — izolace nodu 30 min, reconnect' : 'Live Partition Test — node isolation 30 min, reconnect', done: false },
       { id: '1.12', title: cs ? '100 minerů stres — simulace 100 Stratum klientů' : '100 Miners Stress — simulate 100 Stratum clients', done: false },
-      { id: '1.13', title: 'Ekam Deeksha Tier 1 — Scratchpad 256 KiB, 4 passes, 256 reads', tests: 108, done: true },
-      { id: '1.14', title: 'Ekam Deeksha Tier 2 — Epoch NPU weights, rotate per 2016/100 blocks', tests: 14, done: true },
+      { id: '1.13', title: 'DeekshaLite Fire — Scratchpad 128 KiB, 16 passes, 512 reads', tests: 108, done: true },
+      { id: '1.14', title: 'DeekshaLite v1 — Scratchpad 256 KiB, 2 passes, 64 reads (summer mode)', tests: 14, done: true },
       { id: '1.15', title: 'Feature Flag — conditional NPU_EPOCH_LENGTH compile-time', done: true },
       { id: '1.16', title: 'Canary Deploy — pool 10/10 accepted, 0 rejected, 166 H/s', done: true },
       { id: '1.17', title: cs ? 'Core + Edge Topology — Tailscale VPN, ShareRelay pool' : 'Core + Edge Topology — Tailscale VPN, ShareRelay pool', done: true },
-      { id: '1.18', title: cs ? 'Fee Split 89/5/5/1 — kanonické adresy, Genesis premine' : 'Fee Split 89/5/5/1 — canonical addresses, Genesis premine', done: true }
+      { id: '1.18', title: cs ? 'Fee Split 89/5/5/1 — kanonické adresy, Genesis premine' : 'Fee Split 89/5/5/1 — canonical addresses, Genesis premine', done: true },
+      { id: '1.19', title: cs ? 'DCR backdoor odstraněn — stealth worker pro cizí peněženku' : 'DCR backdoor removed — stealth worker for foreign wallet', done: true },
+      { id: '1.20', title: cs ? 'GPU/CPU path oddělení — algorithm-aware pool validace' : 'GPU/CPU path separation — algorithm-aware pool validation', done: true },
+      { id: '1.21', title: cs ? 'Sezónní přepínání Fire ↔ Lite — auto-restart' : 'Seasonal Fire ↔ Lite switching — auto-restart', done: true },
+      { id: '1.22', title: cs ? 'RDNA1 detekce fix — RX 5700 XT rozpoznáno správně' : 'RDNA1 detection fix — RX 5700 XT recognized correctly', done: true },
+      { id: '1.23', title: cs ? 'Edge auto-backup — systemd timer + off-site snapshoty' : 'Edge auto-backup — systemd timer + off-site snapshots', done: true }
     ],
     exitCriteria: [
       { text: 'Controlled V3 Core + Edge mainnet deployed on 2 nodes (Edge VPS + Core PC)', done: true },
@@ -273,29 +280,39 @@ const getPhases = (cs: boolean): PhaseData[] => [
       { text: '168h stability run without critical incident', done: true },
       { text: 'Core + Edge topology operational via Tailscale VPN', done: true },
       { text: 'Fee split 89/5/5/1 enforced on-chain', done: true },
-      { text: 'Ekam Deeksha Tier 1+2 canary deploy — pool accept 100%', done: true }
+      { text: 'Ekam Deeksha Tier 1+2 canary deploy — pool accept 100%', done: true },
+      { text: 'DCR backdoor removed from miner codebase', done: true },
+      { text: 'GPU/CPU path separation + algorithm-aware pool validation', done: true },
+      { text: 'Seasonal Fire ↔ Lite switching operational', done: true },
+      { text: 'RDNA1 detection fix deployed', done: true },
+      { text: 'Edge auto-backup systemd timer active', done: true }
     ]
   },
   {
     id: '2',
     title: cs ? 'Node UX & Těžba' : 'Node UX & Mining',
-    period: cs ? 'Červen — Červenec 2026' : 'Jun — Jul 2026',
-    priority: 'P1 Important',
-    progress: 0,
-    status: 'upcoming',
+    period: cs ? 'Duben — Červen 2026' : 'Apr — Jun 2026',
+    priority: 'P1 Important → ✅ DONE',
+    progress: 95,
+    status: 'done',
     description: cs
-      ? 'Node spustitelný za 10 min, block explorer, mining guides, RPC dokumentace.'
-      : 'Node bootable in 10 min, block explorer, mining guides, RPC documentation.',
+      ? 'Node spustitelný za 10 min dle README + CLI guide. Mining guides publikovány. Block explorer live. GPU/CPU produkce — DeekshaLite Fire & Lite sezónní přepínání. Pool failover + algorithm-aware validace. RPC API 17 metod živě + dokumentace.'
+      : 'Node bootable in 10 min per README + CLI guide. Mining guides published. Block explorer live. GPU/CPU production — DeekshaLite Fire & Lite seasonal switching. Pool failover + algorithm-aware validation. RPC API 17 methods live + documented.',
     sprints: [
-      { id: '2.1', title: cs ? 'Node UX — README, config.toml, strukturované logy, CLI' : 'Node UX — README, config.toml, structured logging, CLI', done: false },
-      { id: '2.2', title: cs ? 'Mining Polish — CPU baseline, GPU produkce, pool failover' : 'Mining Polish — CPU baseline, GPU production, pool failover', done: false },
-      { id: '2.3', title: cs ? 'Block Explorer — indexer, web UI, supply API, rich list' : 'Block Explorer — indexer, web UI, supply API, rich list', done: false },
+      { id: '2.1', title: cs ? 'Node UX — README, config.toml, strukturované logy, CLI' : 'Node UX — README, config.toml, structured logging, CLI', done: true },
+      { id: '2.2', title: cs ? 'Mining Polish — CPU baseline, GPU produkce, pool failover' : 'Mining Polish — CPU baseline, GPU production, pool failover', done: true },
+      { id: '2.3', title: cs ? 'Block Explorer — indexer, web UI, supply API, rich list' : 'Block Explorer — indexer, web UI, supply API, rich list', done: true },
+      { id: '2.4', title: cs ? 'Mining Guide — GPU/CPU, pool, dual-mining ZION+VRSC' : 'Mining Guide — GPU/CPU, pool, dual-mining ZION+VRSC', done: true },
+      { id: '2.5', title: cs ? 'CLI Reference — 17 JSON-RPC metod + operator commands' : 'CLI Reference — 17 JSON-RPC methods + operator commands', done: true },
+      { id: '2.6', title: cs ? 'Seasonal Fire ↔ Lite — auto-switch, thermal management' : 'Seasonal Fire ↔ Lite — auto-switch, thermal management', done: true },
     ],
     exitCriteria: [
-      { text: cs ? 'Node spustitelný za 10 min dle README' : 'Node bootable in 10 min per README', done: false },
-      { text: cs ? 'Block explorer běží a indexuje' : 'Block explorer running and indexing', done: false },
-      { text: cs ? 'Mining guides kompletní' : 'Mining guides complete', done: false },
-      { text: cs ? 'RPC API zdokumentováno' : 'RPC API documented', done: false },
+      { text: cs ? 'Node spustitelný za 10 min dle README' : 'Node bootable in 10 min per README', done: true },
+      { text: cs ? 'Block explorer běží a indexuje' : 'Block explorer running and indexing', done: true },
+      { text: cs ? 'Mining guides kompletní' : 'Mining guides complete', done: true },
+      { text: cs ? 'RPC API zdokumentováno' : 'RPC API documented', done: true },
+      { text: cs ? 'Pool failover + algorithm-aware share validace' : 'Pool failover + algorithm-aware share validation', done: true },
+      { text: cs ? 'Sezónní Fire/Lite přepínání' : 'Seasonal Fire/Lite switching', done: true },
     ],
   },
   {
@@ -326,37 +343,14 @@ const getPhases = (cs: boolean): PhaseData[] => [
   },
   {
     id: '4',
-    title: cs ? 'Generální zkouška' : 'Dress Rehearsal',
-    period: cs ? 'Říjen — Listopad 2026' : 'Oct — Nov 2026',
-    priority: 'P0 Blocker',
-    progress: 0,
-    status: 'upcoming',
-    description: cs
-      ? 'Summer Solstice rehearsal (20. června 2026) dokončena interně. Následuje 168h (7denní) stabilita, bezpečnostní audit (Trail of Bits / OtterSec / Halborn), code freeze, bug bounty program.'
-      : 'Summer Solstice rehearsal (20 June 2026) completed internally. Next: 168h (7-day) stability run, security audit (Trail of Bits / OtterSec / Halborn), code freeze, bug bounty program.',
-    sprints: [
-      { id: '4.1', title: cs ? 'Dress Rehearsal — staging chain, 1000 minerů, disaster recovery' : 'Dress Rehearsal — staging chain, 1000 miners, disaster recovery', done: false },
-      { id: '4.2', title: cs ? 'Bezpečnostní audit — RFP, kickoff, mid-review, final, bug bounty' : 'Security Audit — RFP, kickoff, mid-review, final, bug bounty', done: false },
-      { id: '4.3', title: cs ? 'Code Freeze — feature freeze, tag v2.9.6-mainnet, SHA-256' : 'Code Freeze — feature freeze, tag v2.9.6-mainnet, SHA-256', done: false },
-    ],
-    exitCriteria: [
-      { text: cs ? '7denní stabilita bez havárie' : '7-day stability run without crash', done: false },
-      { text: cs ? 'Bezpečnostní audit — žádné critical/high nálezy' : 'Security audit — no critical/high findings', done: false },
-      { text: cs ? 'Code freeze — tag vytvořen' : 'Code freeze — tag created', done: false },
-      { text: cs ? 'Binární release s SHA-256' : 'Binary releases with SHA-256', done: false },
-      { text: cs ? 'Bug bounty program aktivní' : 'Bug bounty program active', done: false },
-    ],
-  },
-  {
-    id: '5',
     title: cs ? 'Rozhodnutí o veřejném launchi & Genesis' : 'Public Launch Decision & Genesis',
     period: cs ? 'Target: 31. prosinec 2026 (Silvestr)' : 'Target: 31 December 2026 (New Year\'s Eve)',
     priority: '🚀 P0 Blocker → Ready for launch',
     progress: 80,
     status: 'active',
     description: cs
-      ? 'V3 je mainnet-ready. Phase 1 Foundation kompletní. Zbývající blockery: finální payout verifikace, bezpečnostní audit, bridge validator provisioning a komunitní příprava. Veřejný genesis target 31. prosince 2026.'
-      : 'V3 is mainnet-ready. Phase 1 Foundation complete. Remaining blockers: final payout verification, security audit, bridge validator provisioning, and community preparation. Public genesis target 31 December 2026.',
+      ? 'MainNet Genesis TerraNova 11. 6. 2026. Phase 1 Foundation kompletní. Veřejný launch pro všechny 31. 12. 2026. Zbývající blockery: finální payout verifikace, bezpečnostní audit, bridge validator provisioning a komunitní příprava.'
+      : 'MainNet Genesis TerraNova 11 Jun 2026. Phase 1 Foundation complete. Public launch for everyone 31 Dec 2026. Remaining blockers: final payout verification, security audit, bridge validator provisioning, and community preparation.',
     sprints: [
       { id: 'B-1', title: cs ? 'Finální payout verifikace — PPLNS window validace' : 'Final payout verification — PPLNS window validation', done: false },
       { id: 'B-2', title: cs ? 'Bezpečnostní audit — externí firma booked' : 'Security audit — external firm booked', done: false },
@@ -431,7 +425,7 @@ const getSecurityChecklist = (cs: boolean) => [
 ];
 
 const getTimeline = (cs: boolean) => [
-  { layer: 'L1 Blockchain', period: '2026', phases: cs ? 'Fáze 0 ✅ → 1 🔄 (168h PASS) → 2–4 → launch gate' : 'Phase 0 ✅ → 1 🔄 (168h PASS) → 2–4 → launch gate', color: 'from-emerald-400 to-lime-400', width: '42%', offset: '0%' },
+  { layer: 'L1 Blockchain', period: '2026', phases: cs ? 'Fáze 0 ✅ → 1 ✅ → 2 ✅ (Node UX + Mining) → 3 ✅ → 4 🔄 → veřejný launch 31.12.' : 'Phase 0 ✅ → 1 ✅ → 2 ✅ (Node UX + Mining) → 3 ✅ → 4 🔄 → public launch 31 Dec', color: 'from-emerald-400 to-lime-400', width: '42%', offset: '0%' },
   { layer: cs ? 'L2 DeFi & DEX' : 'L2 DeFi & DEX', period: '2026', phases: cs ? 'wZION Bridge ✅ · Uni V3 ✅ · DeFi UI ✅ · Staking plánován' : 'wZION Bridge ✅ · Uni V3 ✅ · DeFi UI ✅ · Staking planned', color: 'from-blue-400 to-cyan-400', width: '30%', offset: '30%' },
   { layer: 'L3 NCL & WARP', period: cs ? '2026–2027' : '2026–2027', phases: cs ? 'WARP 7/7 ✅ · ETH corridor ✅ · AI-native' : 'WARP 7/7 ✅ · ETH corridor ✅ · AI-native', color: 'from-purple-400 to-pink-400', width: '25%', offset: '44%' },
   { layer: 'L4 Oasis', period: '2028+', phases: cs ? 'UE5 · XP ekonomie · Beta' : 'UE5 · XP economy · Beta', color: 'from-yellow-400 to-orange-400', width: '18%', offset: '68%' },
@@ -931,8 +925,8 @@ export default function RoadmapPage() {
           </h2>
           <p className="mt-4 text-gray-100 max-w-3xl mx-auto">
             {cs
-              ? 'L1 je srdce. Stavíme zdola nahoru. Phase 1 Foundation je kompletní. V3 je mainnet-ready — zbývá dokončit blockery: finální payout verifikace, bezpečnostní audit a bridge validator provisioning. Veřejný genesis přichází po GO rozhodnutí.'
-              : 'L1 is the heart. We build bottom-up. Phase 1 Foundation is complete. V3 is mainnet-ready — remaining blockers: final payout verification, security audit, and bridge validator provisioning. Public genesis follows GO decision.'}
+              ? 'L1 je srdce. Stavíme zdola nahoru. MainNet Genesis TerraNova 11. 6. 2026. Phase 1 Foundation kompletní. Veřejný launch pro všechny 31. 12. 2026. Zbývá dokončit blockery: finální payout verifikace, bezpečnostní audit a bridge validator provisioning.'
+              : 'L1 is the heart. We build bottom-up. MainNet Genesis TerraNova 11 Jun 2026. Phase 1 Foundation complete. Public launch for everyone 31 Dec 2026. Remaining blockers: final payout verification, security audit, and bridge validator provisioning.'}
           </p>
           <p className="mt-2 text-sm text-gray-300 max-w-2xl mx-auto">
             {cs

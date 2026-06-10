@@ -84,7 +84,7 @@ export default function DownloadPage() {
               </h1>
             </div>
             <p className="text-lg text-gray-300">
-              {cs ? `ZION CLI v3.0.0 — oficiální release s Core+Edge topologií. Jedna unifikovaná binárka obsahuje celý stack:` : `ZION CLI v3.0.0 — official release with Core+Edge topology. One unified binary contains the whole stack:`}{' '}
+              {cs ? `ZION CLI v3.0.1 — oficiální release s Core+Edge topologií. Jedna unifikovaná binárka obsahuje celý stack:` : `ZION CLI v3.0.1 — official release with Core+Edge topology. One unified binary contains the whole stack:`}{' '}
               <span className="text-white font-semibold">node</span>,{' '}
               <span className="text-zion-gold font-semibold">miner</span>,{' '}
               <span className="text-zion-cyan font-semibold">wallet</span>,{' '}
