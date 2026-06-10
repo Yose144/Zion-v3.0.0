@@ -29,7 +29,7 @@ echo  Algo: %ZION_MINER_ALGORITHM%  Backend: %ZION_GPU_BACKEND%  (RDNA1 auto-tun
 echo ===========================================================
 echo.
 
-V3\target\release\zion-miner-rdna.exe
+V3\target\release\zion-miner.exe
 echo [EXIT] Miner skoncil s kodem %ERRORLEVEL% v %TIME%
 pause
 endlocal
