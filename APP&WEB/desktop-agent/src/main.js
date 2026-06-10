@@ -3382,14 +3382,22 @@ function parseMinerOutput(output) {
     minerStats.last_job_height = v3MiningMatch[2];
   }
 
-  // ─── V3 version banner: "version=3.0.0-dev" ───
-  const v3VersionMatch = output.match(/^version=([\d.]+(?:-\w+)?)/m);
+  // ─── V3 algorithm: "algorithm=deeksha_lite_v1" ───
+  const v3AlgorithmMatch = output.match(/^algorithm=(\S+)/m);
+  if (v3AlgorithmMatch) {
+    minerStats.stream_algorithm = v3AlgorithmMatch[1];
+  }
+
+  // ─── V3 version banner: "version=3.0.0-dev" or "  version  3.0.1" ───
+  const v3VersionMatch = output.match(/^version=([\d.]+(?:-\w+)?)/m)
+    || output.match(/^\s*version\s+([\d.]+(?:-\w+)?)/m);
   if (v3VersionMatch) {
     minerStats.miner_version = v3VersionMatch[1];
   }
 
-  // ─── V3 consensus: "consensus=cosmic_harmony_ekam_deeksha_v2" ───
-  const v3ConsensusMatch = output.match(/^consensus=(\S+)/m);
+  // ─── V3 consensus: "consensus=cosmic_harmony_ekam_deeksha_v2" or "  consensus  cosmic_harmony_ekam_deeksha_v2" ───
+  const v3ConsensusMatch = output.match(/^consensus=(\S+)/m)
+    || output.match(/^\s*consensus\s+(\S+)/m);
   if (v3ConsensusMatch) {
     minerStats.stream_algorithm = v3ConsensusMatch[1];
   }
@@ -3408,7 +3416,7 @@ function parseMinerOutput(output) {
     minerStats.reconnect_attempts = parseInt(v3ReconnectMatch[1]);
   }
 
-  // ─── V3 GPU device: "gpu[0]=metal:Apple M1" ───
+  // ─── V3 GPU device: "gpu[0]=metal:Apple M1" or "  gpu[0]  AMD RX 5700 XT | 40 CUs | ..." ───
   const v3GpuMatch = output.match(/^gpu\[\d+\]=(\w+):(.+)/m);
   if (v3GpuMatch) {
     minerStats.gpu_detected = true;
@@ -3417,9 +3425,17 @@ function parseMinerOutput(output) {
     minerStats.gpu_info = `${v3GpuMatch[1]}: ${v3GpuMatch[2].trim()}`;
     minerStats.cpu_only_mode = false;
   }
+  const v3GpuTableMatch = output.match(/^\s*gpu\[\d+\]\s+(.+)/m);
+  if (v3GpuTableMatch && !v3GpuMatch) {
+    minerStats.gpu_detected = true;
+    minerStats.gpu_name = v3GpuTableMatch[1].trim();
+    minerStats.gpu_info = v3GpuTableMatch[1].trim();
+    minerStats.cpu_only_mode = false;
+  }
 
-  // ─── V3 backend: "backend=metal" / "backend=cpu" ───
-  const v3BackendMatch = output.match(/^backend=(\w+)/m);
+  // ─── V3 backend: "backend=metal" / "backend=cpu" or "  backend  opencl" ───
+  const v3BackendMatch = output.match(/^backend=(\w+)/m)
+    || output.match(/^\s*backend\s+(\w+)/m);
   if (v3BackendMatch) {
     const be = v3BackendMatch[1].toLowerCase();
     minerStats.runtime_backend = be;
