@@ -196,9 +196,15 @@ export ZION_DCR_WORKER=myDcrWorker
 ## FAQ
 
 **Q: What algorithm does ZION use?**  
-A: Cosmic Harmony Ekam Deeksha v2 — a multi-phase hash combining SHA-256,
-SHA3-256, Keccak-256, and BLAKE3, designed for CPU-friendly mining with
-ASIC resistance.
+A: ZION supports three algorithms, chosen per-miner session:
+- `deeksha_lite_v1` (default) — lightweight memory-hard PoW with SHA3-512 + AES-256,
+  256 KiB scratchpad, best for general CPU/GPU mining.
+- `deeksha_lite_fire` (thermal-intensive) — same core but 512 KiB scratchpad,
+  higher power draw, for dedicated rigs.
+- `cosmic_harmony_ekam_deeksha_v2` ("full") — multi-phase hash combining SHA-256,
+  SHA3-256, Keccak-256, and BLAKE3, the original CPU-friendly algorithm.
+Set your algorithm via `zion config set miner.algorithm <algo>` or pass
+`--algorithm <algo>` to `zion mine start`.
 
 **Q: Can I mine with a GPU?**  
 A: GPU support is available via OpenCL. Use `--gpu-bench` to verify your GPU
