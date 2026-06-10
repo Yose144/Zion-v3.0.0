@@ -33,6 +33,10 @@ pub async fn start_miner(
         .as_ref()
         .and_then(|r| r.gpu_backend.clone())
         .unwrap_or_else(|| cfg.miner.default_gpu_backend.clone());
+    let algorithm = req
+        .as_ref()
+        .and_then(|r| r.algorithm.clone())
+        .unwrap_or_else(|| cfg.miner.default_algorithm.clone());
 
     let mut cmd = Command::new(&cfg.miner.binary_path);
     cmd.arg("--pool").arg(&pool);
@@ -40,6 +44,7 @@ pub async fn start_miner(
         cmd.arg("--wallet").arg(&wallet);
     }
     cmd.arg("--worker").arg(&worker);
+    cmd.arg("--algorithm").arg(&algorithm);
 
     match backend.as_str() {
         "opencl" => { cmd.arg("--gpu").arg("opencl"); }
@@ -56,6 +61,7 @@ pub async fn start_miner(
     // Env vars pro loop count (dulezite pro pool)
     cmd.env("ZION_LOOP_COUNT", "1000000");
     cmd.env("ZION_NONCE_COUNT", "4096");
+    cmd.env("ZION_MINER_ALGORITHM", &algorithm);
 
     // Capture stdout/stderr pro parsing
     cmd.stdout(std::process::Stdio::piped());
