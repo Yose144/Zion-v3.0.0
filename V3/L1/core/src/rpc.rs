@@ -337,6 +337,7 @@ pub fn build_stub_router() -> RpcRouter {
         "getBridgeLocks",
         "getBridgeVaultBalance",
         "submitBridgeUnlock",
+        "getTransactionHistory",
     ] {
         router.register(method, stub(method));
     }
@@ -1795,6 +1796,7 @@ mod tests {
             "getBridgeLocks",
             "getBridgeVaultBalance",
             "submitBridgeUnlock",
+            "getTransactionHistory",
         ] {
             router.register(method, stub(method));
         }
@@ -1825,7 +1827,8 @@ mod tests {
         assert!(router.has_method("getBridgeLocks"));
         assert!(router.has_method("getBridgeVaultBalance"));
         assert!(router.has_method("submitBridgeUnlock"));
-        assert_eq!(router.method_count(), 21);
+        assert!(router.has_method("getTransactionHistory"));
+        assert_eq!(router.method_count(), 22);
     }
 
     #[test]
