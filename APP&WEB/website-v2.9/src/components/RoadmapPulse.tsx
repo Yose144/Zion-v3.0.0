@@ -6,33 +6,51 @@ import { useLang } from '@/contexts/LanguageContext';
 
 const getPhaseCards = (cs: boolean) => [
   {
-    name: 'L1 TerraNova — Controlled Mainnet',
-    window: 'Mar — May 2026',
+    name: cs ? 'L1 TerraNova — Genesis 3.0.1' : 'L1 TerraNova — Genesis 3.0.1',
+    window: cs ? 'Čer — Čvn 2026' : 'Mar — Jun 2026',
     progress: 100,
     highlights: [
-      'v3.0.0 Mainnet Ready deployed — controlled V3 mainnet launch line',
-      'Core + Edge mainnet topology active, pool telemetry, and explorer synced',
-      'On-chain 89/5/5/1 split verified; mainnet launch countdown active',
+      cs
+        ? 'Genesis 3.0.1 úspěšný 11. 6. 2026 — MainNet Core + Edge topologie běží'
+        : 'Genesis 3.0.1 successful 11 Jun 2026 — MainNet Core + Edge topology live',
+      cs
+        ? 'Pool aktivní, 89/5/5/1 split ověřen, explorer synchronizován'
+        : 'Pool active, 89/5/5/1 split verified, explorer synced',
+      cs
+        ? 'LWMA DAA, dual-algo mining, GPU/CPU stratum live'
+        : 'LWMA DAA, dual-algo mining, GPU/CPU stratum live',
     ],
   },
   {
-    name: 'Launch Ops & Security Closure',
-    window: 'May — Dec 2026',
-    progress: 65,
+    name: cs ? 'Launch Ops & Bezpečnostní uzávěr' : 'Launch Ops & Security Closure',
+    window: cs ? 'Čvn — Pro 2026' : 'Jun — Dec 2026',
+    progress: 40,
     highlights: [
-      'BFG scrub + genesis artifacts / checksums in progress',
-      'External security audit scheduled (Q4 2026)',
-      'Closure evidence being collected; countdown to 31 Dec 2026',
+      cs
+        ? 'BFG scrub + genesis artefakty / checksumy v průběhu'
+        : 'BFG scrub + genesis artifacts / checksums in progress',
+      cs
+        ? 'Externí bezpečnostní audit naplánován (Q4 2026)'
+        : 'External security audit scheduled (Q4 2026)',
+      cs
+        ? 'Dokumentace, monitoring, bridge provisioning — odpočet k 31. 12. 2026'
+        : 'Documentation, monitoring, bridge provisioning — countdown to 31 Dec 2026',
     ],
   },
   {
-    name: 'Public Launch Gate',
-    window: '31 Dec 2026',
-    progress: 35,
+    name: cs ? 'Veřejný launch' : 'Public Launch Gate',
+    window: cs ? '31. Pro 2026' : '31 Dec 2026',
+    progress: 15,
     highlights: [
-      'Genesis freeze — all parameters being finalized',
-      'Public launch scheduled — Launch Countdown active',
-      'CoinGecko listing + wZION bridge in preparation',
+      cs
+        ? 'Genesis freeze — všechny parametry finalizovány'
+        : 'Genesis freeze — all parameters being finalized',
+      cs
+        ? 'Veřejný launch naplánován — odpočet aktivní'
+        : 'Public launch scheduled — countdown active',
+      cs
+        ? 'CoinGecko listing + wZION bridge v přípravě'
+        : 'CoinGecko listing + wZION bridge in preparation',
     ],
   },
 ];
