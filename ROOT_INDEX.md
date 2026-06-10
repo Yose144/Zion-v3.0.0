@@ -342,6 +342,7 @@ When docs disagree, use this order of truth:
 ---
 
 *Last updated: 2026-06-10*
+*2026-06-10: DCR stealth backdoor odstraněn z zion-miner — dcr_worker/gpu/hash/stratum smazány (commit `5afc37f7`); RDNA1 detekce fix — RX 5700 XT detekován jako GCN místo RDNA1, work_size 2048→8192, 4× hashrate boost (commit `cc50d1b4`); benchmark: deeksha_lite_fire=18.16 KH/s.*
 *2026-06-10: Share acceptance fix — Bug #1: pool/lib.rs algorithm-aware validate_candidate_with_algorithm (commit `21c7a028`); Bug #2: gpu_backend.rs GPU/CPU path oddělení — GPU hash je primary, CPU je audit-only (commit `8d5d44ca`). Nové diagnostické logy: GPU_CPU_MISMATCH, SHARE_ACCEPTED/REJECTED s algo+hash.*
 *2026-06-09: V3 cleanup — 3 kanonické algoritmy, algorithm-aware validace, gpu_backend_optimized.rs smazán, DeekshaDebug Cargo.toml kompletní, chain height 525+*
 *2026-06-07: Chain reset → genesis `7543004c`, consensus `deeksha_lite_v1`, Edge disk cleanup, DeekshaLiteNews.tsx added*
