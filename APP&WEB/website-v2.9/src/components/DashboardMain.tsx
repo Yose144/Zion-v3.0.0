@@ -26,7 +26,6 @@ interface V3Metrics {
 
 interface TreasuryItem { label: string; address: string; share: string; role: string; }
 interface DaoProposal { id: string; title: string; status: 'active' | 'passed' | 'failed' | 'pending'; yes_votes: number; no_votes: number; deadline: string; }
-interface AlertItem { id: string; severity: 'critical' | 'warning' | 'info'; title: string; detail: string; ts: number; dismissed: boolean; }
 
 const TREASURY: TreasuryItem[] = [
   { label: 'Miner',       address: 'zion1w523a76830x2t5m7f3j023w265e8g5c400a4790', share: '89%', role: 'Mining rewards' },
@@ -40,7 +39,6 @@ const TABS = [
   { id: 'monitoring', label: 'Monitoring', icon: Activity },
   { id: 'treasury',   label: 'Treasury',   icon: Scale },
   { id: 'dao',        label: 'DAO',        icon: Vote },
-  { id: 'alerts',     label: 'Alerts',     icon: AlertTriangle },
 ] as const;
 
 function fmtHashrate(hps?: number) {
@@ -229,32 +227,6 @@ function WalletGate({ onEnter }: { onEnter: () => void }) {
 }
 
 function MissionControlLite({ metrics }: { metrics: V3Metrics | null }) {
-  const [alertCount, setAlertCount] = useState(0);
-  const [status, setStatus] = useState<'online' | 'warning' | 'critical'>('online');
-
-  useEffect(() => {
-    fetch('/api/alerts', { signal: AbortSignal.timeout(5000) })
-      .then(r => r.json())
-      .then(d => {
-        const list = d.alerts ?? [];
-        const critical = list.filter((a: any) => a.severity === 'critical').length;
-        const warning = list.filter((a: any) => a.severity === 'warning').length;
-        setAlertCount(list.length);
-        if (critical > 0) setStatus('critical');
-        else if (warning > 0) setStatus('warning');
-        else setStatus('online');
-      })
-      .catch(() => { setAlertCount(0); setStatus('online'); });
-  }, []);
-
-  const statusStyle = status === 'online'
-    ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
-    : status === 'warning'
-    ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
-    : 'bg-red-500/15 text-red-400 border-red-500/30';
-
-  const alertColor = status === 'critical' ? '#EF4444' : status === 'warning' ? '#F59E0B' : '#10B981';
-
   return (
     <Card className="relative overflow-hidden">
       <div className="absolute top-0 right-0 w-32 h-32 bg-zion-gold/5 rounded-full blur-3xl pointer-events-none" />
@@ -268,7 +240,7 @@ function MissionControlLite({ metrics }: { metrics: V3Metrics | null }) {
         <MiniStat label="Block Height" value={metrics?.chain?.height?.toLocaleString() ?? '—'} icon={Server} color="#FFD700" />
         <MiniStat label="Difficulty"   value={metrics?.chain?.difficulty ? metrics.chain.difficulty.toLocaleString() : '—'} icon={Database} color="#F59E0B" />
         <MiniStat label="Pool HR"      value={fmtHashrate(metrics?.pool?.hashrate_hps)} icon={Pickaxe} color="#22C55E" />
-        <MiniStat label="Alerts"       value={alertCount} icon={AlertTriangle} color={alertColor} />
+        <MiniStat label="Blocks Found" value={metrics?.pool?.blocks_found?.toLocaleString() ?? '—'} icon={CheckCircle2} color="#10B981" />
       </div>
     </Card>
   );
@@ -465,89 +437,6 @@ function DaoTab() {
               </Card>
             );
           })}
-        </div>
-      )}
-    </motion.div>
-  );
-}
-function AlertsTab() {
-  const [alerts, setAlerts] = useState<AlertItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState('');
-
-  const fetchAlerts = useCallback(async () => {
-    setLoading(true); setErr('');
-    try {
-      const r = await fetch('/api/alerts', { signal: AbortSignal.timeout(8000) });
-      const d = await r.json();
-      const list = d.alerts ?? [];
-      setAlerts(list.map((a: any, i: number) => ({
-        id: a.id ?? String(i),
-        severity: a.severity ?? 'info',
-        title: a.title ?? a.message ?? 'Alert',
-        detail: a.detail ?? a.recommendation ?? '',
-        ts: a.ts ?? Date.now(),
-        dismissed: a.dismissed ?? false,
-      })));
-    } catch (e: any) {
-      setErr('Dashboard alerts unreachable');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { fetchAlerts(); }, [fetchAlerts]);
-
-  const dismiss = (id: string) => setAlerts((prev) => prev.filter((a) => a.id !== id));
-
-  const severityIcon = (s: string) => {
-    if (s === 'critical') return <XCircle size={16} className="text-red-400 shrink-0" />;
-    if (s === 'warning')  return <AlertTriangle size={16} className="text-amber-400 shrink-0" />;
-    return <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />;
-  };
-
-  const severityBorder = (s: string) => {
-    if (s === 'critical') return 'border-red-500/20 bg-red-500/5';
-    if (s === 'warning')  return 'border-amber-500/20 bg-amber-500/5';
-    return 'border-emerald-500/20 bg-emerald-500/5';
-  };
-
-  return (
-    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-white">Live Alerts</h3>
-        <button onClick={fetchAlerts} disabled={loading} className="p-2 rounded-xl border border-white/10 hover:border-white/20 transition-colors">
-          <RefreshCw size={14} className={'text-gray-400 ' + (loading ? 'animate-spin' : '')} />
-        </button>
-      </div>
-
-      {err && (
-        <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-400 flex items-center gap-2">
-          <AlertTriangle size={16} /> {err}
-        </div>
-      )}
-
-      {alerts.length === 0 && !err && !loading ? (
-        <Card>
-          <p className="text-sm text-gray-400 text-center py-8 flex items-center justify-center gap-2">
-            <CheckCircle2 size={16} className="text-emerald-400" /> No active alerts.
-          </p>
-        </Card>
-      ) : (
-        <div className="space-y-3">
-          {alerts.map((a) => (
-            <Card key={a.id} className={'flex items-start gap-3 ' + severityBorder(a.severity)}>
-              {severityIcon(a.severity)}
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-white">{a.title}</p>
-                <p className="text-xs text-gray-400 mt-0.5">{a.detail}</p>
-                <p className="text-[10px] text-gray-500 mt-1">{new Date(a.ts).toLocaleString()}</p>
-              </div>
-              <button onClick={() => dismiss(a.id)} className="p-1.5 rounded-lg hover:bg-white/10 transition-colors shrink-0" title="Dismiss">
-                <XCircle size={14} className="text-gray-500" />
-              </button>
-            </Card>
-          ))}
         </div>
       )}
     </motion.div>
@@ -863,7 +752,7 @@ function WalletTab() {
 }
 export default function DashboardMain() {
   const { activeWallet, disconnect } = useZionWallet();
-  const [activeTab, setActiveTab] = useState<'monitoring' | 'wallet' | 'treasury' | 'dao' | 'alerts'>('wallet');
+  const [activeTab, setActiveTab] = useState<'monitoring' | 'wallet' | 'treasury' | 'dao'>('wallet');
   const [metrics, setMetrics] = useState<V3Metrics | null>(null);
   const [metricsSource, setMetricsSource] = useState<'live' | 'fallback' | null>(null);
   const [authenticated, setAuthenticated] = useState(false);
@@ -902,7 +791,7 @@ export default function DashboardMain() {
               <h1 className="text-3xl sm:text-5xl font-semibold text-gradient leading-tight">Dashboard</h1>
             </div>
             <p className="text-lg text-gray-300 max-w-2xl">
-              Chain telemetry, wallet operations, treasury overview, DAO proposals, and live alerts. Read-only monitoring for Guardians and operators.
+              Chain telemetry, wallet operations, treasury overview, and DAO proposals. Read-only monitoring for Guardians and operators.
             </p>
             <div className="flex flex-wrap gap-3 text-xs">
               <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-gray-200">
@@ -963,7 +852,6 @@ export default function DashboardMain() {
               {activeTab === 'monitoring' && <MonitoringTab metrics={metrics} />}
               {activeTab === 'treasury'   && <TreasuryTab />}
               {activeTab === 'dao'        && <DaoTab />}
-              {activeTab === 'alerts'     && <AlertsTab />}
             </>
           )}
         </div>
