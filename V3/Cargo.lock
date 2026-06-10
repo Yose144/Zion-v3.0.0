@@ -4771,6 +4771,7 @@ dependencies = [
  "anyhow",
  "bincode",
  "blake3",
+ "crossterm",
  "cudarc",
  "hex",
  "metal",
