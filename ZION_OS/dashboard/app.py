@@ -2169,6 +2169,12 @@ def parse_miner_log() -> dict:
             n_start, n_end, ms = int(m.group(1)), int(m.group(2)), int(m.group(3))
             if ms > 0 and n_end > n_start:
                 nonce_samples2.append((n_end - n_start, ms))
+        # Journal fallback: depth=N/M elapsed_ms=X from found_nonce lines (e.g. depth=691/1048576 elapsed_ms=13128)
+        if m := re.search(r'depth=(\d+)/\d+\s+elapsed_ms=(\d+)', line):
+            depth = int(m.group(1))
+            elapsed_ms = int(m.group(2))
+            if elapsed_ms > 0:
+                nonce_samples2.append((depth, elapsed_ms))
     # Compute hashrate from last 10 nonce throughput samples if not already set
     if status["hashrate"] is None and nonce_samples2:
         last = nonce_samples2[-10:]
