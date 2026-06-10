@@ -95,11 +95,12 @@ export default function RoadmapPulse() {
           <div className="flex-1 space-y-3">
             <p className="text-sm uppercase tracking-[0.4em] text-zion-gold">{cs ? 'Roadmapa' : 'Roadmap'}</p>
             <h2 className="text-4xl md:text-5xl font-bold text-white">
-              v3.0.0 <span className="text-gradient">Mainnet Ready</span>
+              3.0.1 <span className="text-gradient">Genesis Launch</span>
             </h2>
             <p className="text-lg text-gray-300 max-w-2xl">
-              The current public line is a controlled V3 mainnet launch countdown on the v3.0.0 Mainnet Ready public line over the v2.9.9 Pure Code / Deeksha/Ekam canonical runtime.
-              Public mainnet launch is scheduled for 31 December 2026 (New Year's Eve). Priority is final telemetry validation, documentation polish, security audit, and operational readiness.
+              {cs
+                ? 'MainNet Genesis 11. 6. 2026 úspěšný — public line 3.0.1 Genesis Launch nad kanonickou runtime v3.0.1 Deeksha/Ekam. Core + Edge topologie běží, pool aktivní, mining live. Veřejný launch zůstává naplánován na 31. prosinec 2026 (Silvestr). Prioritou je finální validace telemetrie, doladění dokumentace, bezpečnostní audit a provozní připravenost.'
+                : 'MainNet Genesis 11 Jun 2026 successful — public line 3.0.1 Genesis Launch over the canonical v3.0.1 Deeksha/Ekam runtime. Core + Edge topology running, pool active, mining live. Public launch remains scheduled for 31 December 2026 (New Year\'s Eve). Priority is final telemetry validation, documentation polish, security audit, and operational readiness.'}
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-4">
