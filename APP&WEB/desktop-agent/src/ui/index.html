@@ -4990,6 +4990,10 @@
             </svg>
             <span>Pong</span>
           </div>
+          <div class="section-tab" data-section="oasis-breakout">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-cube"></use></svg>
+            <span>Breakout</span>
+          </div>
         </div>
 
         <!-- ═══ SECTION: Overview ═══ -->
@@ -5265,6 +5269,36 @@
             <div class="actions-row panel-mt-20">
               <button class="btn btn-primary" id="oasis-pong-pause">Pause</button>
               <button class="btn btn-ghost" id="oasis-pong-reset">Reset</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ SECTION: Breakout ═══ -->
+        <div id="oasis-breakout" class="section-panel">
+          <div class="control-panel">
+            <h2 class="inline-heading">
+              <svg class="icon" aria-hidden="true"><use href="#i-cube"></use></svg>
+              <span>Cosmic Breakout</span>
+            </h2>
+            <p class="about-lead panel-mt-20">
+              <strong>Brick by brick, ascension.</strong> Use your plasma paddle to shatter the crystalline wall. Catch power-ups, rack up combos, and clear the grid. Arrow keys or A/D to move. Space to launch / pause.
+            </p>
+            <div class="arcade-wrap panel-mt-20">
+              <canvas id="oasis-breakout-canvas" width="500" height="400" class="arcade-canvas"></canvas>
+              <div class="arcade-overlay" id="oasis-breakout-overlay">
+                <div class="arcade-title">COSMIC BREAKOUT</div>
+                <div class="arcade-sub">A / D or Arrows to move  |  Space to launch</div>
+                <button class="btn btn-accent arcade-start-btn" id="oasis-breakout-start">Launch Photon</button>
+              </div>
+            </div>
+            <div class="arcade-hud">
+              <div class="arcade-score">Score: <span id="oasis-breakout-score">0</span></div>
+              <div class="arcade-high">High: <span id="oasis-breakout-high">0</span></div>
+              <div class="arcade-level">Lives: <span id="oasis-breakout-lives">3</span></div>
+            </div>
+            <div class="actions-row panel-mt-20">
+              <button class="btn btn-primary" id="oasis-breakout-pause">Pause</button>
+              <button class="btn btn-ghost" id="oasis-breakout-reset">Reset</button>
             </div>
           </div>
         </div>
