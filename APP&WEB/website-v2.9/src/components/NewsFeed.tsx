@@ -57,8 +57,8 @@ export const NEWS_ARTICLES: NewsArticle[] = [
     tag: { cs: 'Mainnet', en: 'Mainnet' },
     tagColor: 'text-amber-400',
     title: {
-      cs: 'ZION V3.0.0 "Mainnet Ready" — Launch Countdown do 31. 12. 2026',
-      en: 'ZION V3.0.0 "Mainnet Ready" — Launch Countdown to 31 Dec 2026',
+      cs: 'ZION 3.0.1 Genesis Launch — MainNet Genesis 11. 6. 2026',
+      en: 'ZION 3.0.1 Genesis Launch — MainNet Genesis 11 Jun 2026',
     },
     summary: {
       cs: 'Website přešel na countdown mód — mainnet launch se přesunul na Silvestr 2026. Core + Edge topologie je stabilní, pool a miner běží. Dokumentace a roadmapa synchronizována.',

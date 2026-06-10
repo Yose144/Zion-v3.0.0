@@ -1,7 +1,7 @@
-export const SITE_VERSION = 'v3.0.0';
-export const SITE_RELEASE_NAME = 'Mainnet Ready';
+export const SITE_VERSION = 'v3.0.1';
+export const SITE_RELEASE_NAME = 'Genesis Launch';
 export const SITE_RELEASE_LABEL = `${SITE_VERSION} \"${SITE_RELEASE_NAME}\"`;
-export const SITE_RUNTIME_VERSION = 'v3.0.0';
+export const SITE_RUNTIME_VERSION = 'v3.0.1';
 export const SITE_RUNTIME_NAME = 'Deeksha/Ekam canonical';
 export const SITE_RUNTIME_LABEL = `${SITE_RUNTIME_VERSION} ${SITE_RUNTIME_NAME}`;
 export const SITE_ENVIRONMENT_LABEL = 'V3 Mainnet';
