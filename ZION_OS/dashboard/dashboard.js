@@ -114,7 +114,6 @@ function switchTab(name){
   if(['l1','l2','l3','l4','l5','l6'].includes(name)) loadLayerFull(name);
   if(name === 'launch-day'){ loadLaunchDayStatus(); startLaunchCountdown(); loadGenesisBackupList(); }
   if(name === 'hiran'){ loadAgentList(); checkAiStatus(); }
-  if(name === 'payout') refreshPayout();
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -185,7 +184,6 @@ async function refreshAll(){
     await updateServiceTelemetryDetails(statusData);
     updateAlerts(alertsData.alerts);
     updateChecklist(checklistData.checks);
-    updatePayouts(statusData.pool, statusData.topology);
     updateLayerServices();
     updateMiniHashrate();
     loadCliNodeStatus();
@@ -197,7 +195,6 @@ async function refreshAll(){
     }
 
     if(currentTab === 'charts') renderCharts();
-    if(currentTab === 'payout') refreshPayout();
     if(currentTab === 'events') loadEvents();
     if(currentTab === 'wizard') renderWizard();
     if(currentTab === 'ops') loadOps();
