@@ -27,6 +27,46 @@ This file provides operating guidance to Devin, WARP, Copilot, and future automa
 - Start by checking branch/worktree state, then read the smallest relevant status docs before editing.
 - Default to minimal, focused changes. Do not refactor or normalize old folders unless explicitly asked.
 - Never run destructive operations without explicit user approval: history rewrites (`git filter-repo`, BFG), force pushes to shared branches, deleting datadirs, or production deploys.
+
+## L1 / Consensus Security Protocol (CRITICAL)
+
+> **L1 = Layer 1 = core blockchain logic. Any change here can break mainnet consensus.**
+
+### What is L1 (protected)
+
+The following paths and concepts are **L1 consensus-critical** and require **explicit human approval** before any modification:
+
+| Category | Paths | Why Protected |
+|----------|-------|---------------|
+| **Consensus engine** | `V3/L1/core/src/consensus.rs`, `lib.rs` block validation, `peer_block_validation.rs` | Fork rules, block acceptance, reorg handling |
+| **Genesis block** | `V3/L1/core/src/genesis.rs`, `GENESIS_MESSAGE.txt` | Premine outputs, genesis hash, immutable timestamp |
+| **Emission schedule** | `V3/L1/core/src/emission.rs` | Fee split (89/5/5/1), block rewards, decay schedule |
+| **Transaction model** | `V3/L1/core/src/tx.rs`, fee.rs | UTXO validation, fee burn model, tx format |
+| **Cryptographic primitives** | `V3/L1/core/src/crypto.rs` | Address derivation, canonical wallet labels, hash functions |
+| **P2P protocol** | `V3/L1/core/src/p2p.rs`, `peer.rs` | Wire format, handshake, propagation rules |
+| **Mining / PoW** | `V3/L1/cosmic-harmony/src/` (all algorithms) | Hash functions, scratchpad sizes, algorithm parameters |
+| **Canonical addresses** | `MAINNET_CANONICAL_*` constants anywhere | Humanitarian, Issobella, pool-fee, default-miner wallets |
+
+### Agent rules for L1
+
+1. **NO automated edits to L1 code.** If a task touches any file under `V3/L1/core/src/` or `V3/L1/cosmic-harmony/src/`, **STOP and ask the user for explicit written approval** before making any change.
+2. **NO genesis.rs edits without runbook.** Changes to `genesis.rs` require following `GENESIS_REGENERATION_RUNBOOK.md` and key regeneration on an air-gapped machine.
+3. **NO emission/fee split changes.** `emission.rs` (89/5/5/1) is constitutional — never change percentages, constants, or `DAO_TREASURY_LOCK_HEIGHT` without a governance proposal.
+4. **NO canonical address rotation without backup verification.** If wallet addresses change, confirm the mnemonic backup exists on the flash drive (`F:\ZION_V3_MAINNET_WALLETS.txt`) before proceeding.
+5. **L2/L3 are safer but still sensitive.** Bridge contracts, DAO config, WARP config may be edited for operational fixes, but always verify against `V3/docs/**` and `StatusV3.md`.
+6. **Always test consensus changes with `cargo test -p zion-core` before any commit.** If tests fail, stop immediately.
+
+### Quick check before editing
+
+If your task involves any of these, **ask the user first**:
+- Modifying `genesis.rs`, `emission.rs`, `fee.rs`, `crypto.rs`
+- Changing `DAO_TREASURY_LOCK_HEIGHT` or `GENESIS_TIMESTAMP`
+- Updating `MAINNET_CANONICAL_*` wallet addresses
+- Touching `cosmic-harmony` algorithm constants (scratchpad size, AES rounds, thermal loop)
+- Editing `peer_block_validation.rs` or consensus validation rules
+- Changing block time target, total supply, or coinbase maturity
+
+**When in doubt: ask. L1 changes are irreversible on mainnet.**
 - Do not open, copy, print, or reintroduce leaked private keys or credential values. Refer to documented secret-bearing paths by filename only, and recommend rotation/scrub.
 - Keep launch/security blockers visible: credential rotation, history scrub, clean Genesis #0 rollout, bridge 3/5 validator provisioning, CI billing, external audit, and bug bounty.
 - Prefer `V3/cli` and documented runbooks over ad-hoc scripts for operations.
