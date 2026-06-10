@@ -17,6 +17,7 @@ import {
   Globe,
   Globe2,
   Hash,
+  HelpCircle,
   Layers,
   MapPin,
   Orbit,
@@ -63,6 +64,22 @@ const NetworkMonitoringSnapshot = dynamic(() => import('@/components/network/Net
 const NetworkOperatorToolkit = dynamic(() => import('@/components/network/NetworkOperatorToolkit'), {
   loading: () => <SurfaceSkeleton lines={4} />,
 });
+const NetworkAlgorithmPanel = dynamic(() => import('@/components/network/NetworkAlgorithmPanel'), {
+  loading: () => <SurfaceSkeleton lines={3} />,
+});
+const NetworkRewardDistribution = dynamic(() => import('@/components/network/NetworkRewardDistribution'), {
+  loading: () => <SurfaceSkeleton lines={3} />,
+});
+const NetworkEventsFeed = dynamic(() => import('@/components/network/NetworkEventsFeed'), {
+  loading: () => <SurfaceSkeleton lines={4} />,
+});
+const Network24hCharts = dynamic(() => import('@/components/network/Network24hCharts'), {
+  loading: () => <SurfaceSkeleton lines={3} />,
+});
+const NetworkLatencyPanel = dynamic(() => import('@/components/network/NetworkLatencyPanel'), {
+  loading: () => <SurfaceSkeleton lines={3} />,
+});
+const LiveToast = dynamic(() => import('@/components/explorer/LiveToast'));
 
 /* ═══════════════════════════════════════════════════════════
    NETWORK PAGE — Redesigned to match Roadmap visual language
@@ -364,6 +381,7 @@ export default function NetworkPage() {
   const [hashrateHistory, setHashrateHistory] = useState<HistoryPoint[]>([]);
   const [difficultyHistory, setDifficultyHistory] = useState<HistoryPoint[]>([]);
   const [blockTimeHistory, setBlockTimeHistory] = useState<HistoryPoint[]>([]);
+  const [blockHeight, setBlockHeight] = useState(0);
 
   const fetchChainStats = useCallback(async () => {
     try {
@@ -378,6 +396,7 @@ export default function NetworkPage() {
       setHashrateHistory((prev) => appendPoint(prev, json.network_hashrate ?? 0));
       setDifficultyHistory((prev) => appendPoint(prev, json.difficulty ?? 0));
       setBlockTimeHistory((prev) => appendPoint(prev, json.avg_block_time ?? 0));
+      if (json.block_height) setBlockHeight(json.block_height);
     } catch { /* silent */ }
   }, []);
 
@@ -585,6 +604,14 @@ export default function NetworkPage() {
         </section>
         )}
 
+        {/* ═══════ 24-HOUR TRENDS ═══════ */}
+        <Network24hCharts
+          cs={cs}
+          hashrateData={hashrateHistory.map((p) => p.value)}
+          difficultyData={difficultyHistory.map((p) => p.value)}
+          blockTimeData={blockTimeHistory.map((p) => p.value)}
+        />
+
         {/* ═══════ CHAIN STATISTICS ═══════ */}
         {chainStats && (
         <section className="rounded-4xl border border-white/10 bg-black/40 p-8">
@@ -598,26 +625,26 @@ export default function NetworkPage() {
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
-            <ChainStatCard label={cs ? 'Výška bloku' : 'Block Height'} value={chainStats.block_height.toLocaleString(locale)} color="text-zion-gold" />
-            <ChainStatCard label={cs ? 'Obtížnost' : 'Difficulty'} value={fmtLargeNum(chainStats.difficulty)} color="text-zion-cyan" />
-            <ChainStatCard label={cs ? 'Kumulativní obtížnost' : 'Cumulative Diff'} value={fmtLargeNum(chainStats.cumulative_difficulty)} color="text-zion-cyan" />
-            <ChainStatCard label={cs ? 'Oběžná zásoba' : 'Circulating Supply'} value={`${fmtLargeNum(chainStats.circulating_supply)} ZION`} color="text-zion-gold" />
-            <ChainStatCard label={cs ? 'Emise' : 'Emission'} value={`${chainStats.emission_pct}%`} color="text-pink-400" />
-            <ChainStatCard label={cs ? 'Celkem TX' : 'Total TX'} value={chainStats.tx_count.toLocaleString(locale)} color="text-purple-400" />
-            <ChainStatCard label="Mempool" value={`${chainStats.tx_pool_size} tx`} color={chainStats.tx_pool_size > 0 ? 'text-amber-400' : 'text-gray-400'} />
-            <ChainStatCard label={cs ? 'Peery celkem' : 'Total Peers'} value={`${chainStats.total_connections}`} sub={`↓${chainStats.incoming_connections} ↑${chainStats.outgoing_connections}`} color="text-purple-400" />
-            <ChainStatCard label={cs ? 'Známé peery' : 'Known Peers'} value={`${chainStats.white_peerlist_size}`} sub={`${chainStats.grey_peerlist_size} grey`} color="text-indigo-400" />
-            <ChainStatCard label={cs ? 'Limit bloku' : 'Block Size Limit'} value={fmtBytes(chainStats.block_size_limit)} sub={`${cs ? 'Medián' : 'Median'}: ${fmtBytes(chainStats.block_size_median)}`} color="text-cyan-400" />
-            <ChainStatCard label={cs ? 'Databáze' : 'Database'} value={fmtBytes(chainStats.database_size)} color="text-pink-400" />
-            <ChainStatCard label={cs ? 'Verze' : 'Version'} value={chainStats.version ? `v${chainStats.version}` : '—'} color="text-gray-300" />
-            <ChainStatCard label={cs ? 'Alt bloky' : 'Alt Blocks'} value={`${chainStats.alt_blocks_count ?? 0}`} color="text-amber-400" />
-            <ChainStatCard label={cs ? 'Aktivní mineři' : 'Active Miners'} value={`${chainStats.active_miners}`} color="text-emerald-400" />
-            <ChainStatCard label={cs ? 'Pool hashrate' : 'Pool Hashrate'} value={chainStats.pool_hashrate_formatted || '—'} color="text-emerald-400" />
-            <ChainStatCard label={cs ? 'Pool bloky' : 'Pool Blocks'} value={`${chainStats.pool_blocks_found ?? 0}`} color="text-zion-gold" />
+            <ChainStatCard label={cs ? 'Výška bloku' : 'Block Height'} value={chainStats.block_height.toLocaleString(locale)} color="text-zion-gold" tip={cs ? 'Celkový počet vytěžených bloků od genesis.' : 'Total number of mined blocks since genesis.'} />
+            <ChainStatCard label={cs ? 'Obtížnost' : 'Difficulty'} value={fmtLargeNum(chainStats.difficulty)} color="text-zion-cyan" tip={cs ? 'Aktuální těžební obtížnost nastavená LWMA DAA.' : 'Current mining difficulty set by LWMA DAA.'} />
+            <ChainStatCard label={cs ? 'Kumulativní obtížnost' : 'Cumulative Diff'} value={fmtLargeNum(chainStats.cumulative_difficulty)} color="text-zion-cyan" tip={cs ? 'Součet obtížnosti všech bloků — měří celkovou práci v síti.' : 'Sum of difficulty across all blocks — measures total network work.'} />
+            <ChainStatCard label={cs ? 'Oběžná zásoba' : 'Circulating Supply'} value={`${fmtLargeNum(chainStats.circulating_supply)} ZION`} color="text-zion-gold" tip={cs ? 'Celkové množství ZION v oběhu včetně genesis premine.' : 'Total ZION in circulation including genesis premine.'} />
+            <ChainStatCard label={cs ? 'Emise' : 'Emission'} value={`${chainStats.emission_pct}%`} color="text-pink-400" tip={cs ? 'Procento vytěžené celkové zásoby podle Decade Decay plánu.' : 'Percentage of total supply mined according to the Decade Decay schedule.'} />
+            <ChainStatCard label={cs ? 'Celkem TX' : 'Total TX'} value={chainStats.tx_count.toLocaleString(locale)} color="text-purple-400" tip={cs ? 'Celkový počet transakcí zapsaných na blockchainu.' : 'Total number of transactions recorded on the blockchain.'} />
+            <ChainStatCard label="Mempool" value={`${chainStats.tx_pool_size} tx`} color={chainStats.tx_pool_size > 0 ? 'text-amber-400' : 'text-gray-400'} tip={cs ? 'Transakce čekající na potvrzení v mempoolu.' : 'Transactions waiting for confirmation in the mempool.'} />
+            <ChainStatCard label={cs ? 'Peery celkem' : 'Total Peers'} value={`${chainStats.total_connections}`} sub={`↓${chainStats.incoming_connections} ↑${chainStats.outgoing_connections}`} color="text-purple-400" tip={cs ? 'Aktivní P2P spojení — příchozí a odchozí.' : 'Active P2P connections — incoming and outgoing.'} />
+            <ChainStatCard label={cs ? 'Známé peery' : 'Known Peers'} value={`${chainStats.white_peerlist_size}`} sub={`${chainStats.grey_peerlist_size} grey`} color="text-indigo-400" tip={cs ? 'Známy (white) a neznámý (grey) peer seznam.' : 'Known (white) and unknown (grey) peer lists.'} />
+            <ChainStatCard label={cs ? 'Limit bloku' : 'Block Size Limit'} value={fmtBytes(chainStats.block_size_limit)} sub={`${cs ? 'Medián' : 'Median'}: ${fmtBytes(chainStats.block_size_median)}`} color="text-cyan-400" tip={cs ? 'Maximální a mediánová velikost bloku v bytech.' : 'Maximum and median block size in bytes.'} />
+            <ChainStatCard label={cs ? 'Databáze' : 'Database'} value={fmtBytes(chainStats.database_size)} color="text-pink-400" tip={cs ? 'Velikost lokálního blockchain databázového souboru.' : 'Size of the local blockchain database file.'} />
+            <ChainStatCard label={cs ? 'Verze' : 'Version'} value={chainStats.version ? `v${chainStats.version}` : '—'} color="text-gray-300" tip={cs ? 'Verze softwaru uzlu.' : 'Node software version.'} />
+            <ChainStatCard label={cs ? 'Alt bloky' : 'Alt Blocks'} value={`${chainStats.alt_blocks_count ?? 0}`} color="text-amber-400" tip={cs ? 'Počet alternativních větví (orphan chain tipy).' : 'Number of alternative branches (orphan chain tips).'} />
+            <ChainStatCard label={cs ? 'Aktivní mineři' : 'Active Miners'} value={`${chainStats.active_miners}`} color="text-emerald-400" tip={cs ? 'Počet aktivních minerů připojených k poolu.' : 'Number of active miners connected to the pool.'} />
+            <ChainStatCard label={cs ? 'Pool hashrate' : 'Pool Hashrate'} value={chainStats.pool_hashrate_formatted || '—'} color="text-emerald-400" tip={cs ? 'Celkový výpočetní výkon všech minerů v poolu.' : 'Total computational power of all miners in the pool.'} />
+            <ChainStatCard label={cs ? 'Pool bloky' : 'Pool Blocks'} value={`${chainStats.pool_blocks_found ?? 0}`} color="text-zion-gold" tip={cs ? 'Počet bloků nalezených tímto poolem.' : 'Number of blocks found by this pool.'} />
             {chainStats.last_block && (
               <>
-                <ChainStatCard label={cs ? 'Poslední blok' : 'Last Block'} value={`#${chainStats.last_block.height.toLocaleString(locale)}`} sub={new Date(chainStats.last_block.timestamp * 1000).toLocaleTimeString(locale)} color="text-zion-gold" />
-                <ChainStatCard label={cs ? 'Odměna' : 'Last Reward'} value={`${(chainStats.last_block.reward / 1e12).toFixed(2)} ZION`} color="text-emerald-400" />
+                <ChainStatCard label={cs ? 'Poslední blok' : 'Last Block'} value={`#${chainStats.last_block.height.toLocaleString(locale)}`} sub={new Date(chainStats.last_block.timestamp * 1000).toLocaleTimeString(locale)} color="text-zion-gold" tip={cs ? 'Nejnovější potvrzený blok a čas jeho vytěžení.' : 'Latest confirmed block and its mining time.'} />
+                <ChainStatCard label={cs ? 'Odměna' : 'Last Reward'} value={`${(chainStats.last_block.reward / 1e12).toFixed(2)} ZION`} color="text-emerald-400" tip={cs ? 'Odměna za poslední blok dle Decade Decay.' : 'Reward for the latest block per Decade Decay.'} />
               </>
             )}
           </div>
@@ -724,6 +751,12 @@ export default function NetworkPage() {
           </div>
         </section>
 
+        {/* ═══════ ACTIVE ALGORITHM ═══════ */}
+        <NetworkAlgorithmPanel cs={cs} />
+
+        {/* ═══════ BLOCK REWARD DISTRIBUTION ═══════ */}
+        <NetworkRewardDistribution cs={cs} />
+
         {/* ═══════ LIVE TELEMETRY ═══════ */}
         <section className="rounded-4xl border border-white/10 bg-black/40 p-8">
           <div className="flex flex-col gap-2 mb-8">
@@ -739,6 +772,9 @@ export default function NetworkPage() {
 
         {/* ═══════ MONITORING SNAPSHOT ═══════ */}
         <NetworkMonitoringSnapshot cs={cs} locale={locale} />
+
+        {/* ═══════ LIVE NETWORK FEED ═══════ */}
+        <NetworkEventsFeed cs={cs} />
 
         {/* ═══════ NETWORK MAP + POOL FINDER ═══════ */}
         <section>
@@ -882,6 +918,8 @@ export default function NetworkPage() {
             : `ZION TerraNova ${SITE_RELEASE_LABEL} - P2P Network Pro · ${SITE_NETWORK_TOPOLOGY} · Archived multi-host rollout preserved in docs`}
         </p>
       </div>
+
+      <LiveToast currentHeight={blockHeight} />
     </div>
   );
 }
@@ -920,10 +958,20 @@ function NetSparkline({ data, color, height = 60 }: { data: number[]; color: str
 }
 
 /* ─── ChainStatCard ─── */
-function ChainStatCard({ label, value, sub, color }: { label: string; value: string; sub?: string; color: string }) {
+function ChainStatCard({ label, value, sub, color, tip }: { label: string; value: string; sub?: string; color: string; tip?: string }) {
   return (
-    <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4">
-      <p className="text-[11px] text-gray-500 uppercase tracking-wider mb-1">{label}</p>
+    <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 hover:border-white/[0.12] transition-colors">
+      <div className="flex items-center gap-1.5 mb-1">
+        <p className="text-[11px] text-gray-500 uppercase tracking-wider">{label}</p>
+        {tip && (
+          <div className="relative group/tooltip">
+            <HelpCircle className="h-3 w-3 text-gray-600 cursor-help" />
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover/tooltip:block w-44 rounded-lg border border-white/10 bg-black/90 backdrop-blur-xl px-2 py-1.5 text-[10px] text-gray-300 shadow-xl z-20">
+              {tip}
+            </div>
+          </div>
+        )}
+      </div>
       <p className={`text-lg font-bold font-mono ${color} truncate`}>{value}</p>
       {sub && <p className="text-[10px] text-gray-500 mt-0.5 font-mono">{sub}</p>}
     </div>
@@ -941,7 +989,7 @@ function NetFAQSection({ cs }: { cs: boolean }) {
     { q: cs ? 'Jak se připojit jako miner?' : 'How to connect as a miner?', a: cs ? 'Stáhněte si XMRig nebo Desktop Agent a použijte stratum+tcp://77.42.71.94:8444 jako pool adresu. Detaily najdete v Connection Guides výše.' : 'Download XMRig or the Desktop Agent and use stratum+tcp://77.42.71.94:8444 as the pool address. See the Connection Guides section above for details.' },
     { q: cs ? 'Jak spustit vlastní full node?' : 'How to run your own full node?', a: cs ? 'Klonujte repo, spusťte cargo build --release v L1/core a pak ./target/release/ziond --p2p-bind-ip 0.0.0.0 --add-exclusive-node 77.42.71.94:21000. Docker compose je k dispozici v docker/docker-compose.mainnet.yml.' : 'Clone the repo, cargo build --release from L1/core and then ./target/release/ziond --p2p-bind-ip 0.0.0.0 --add-exclusive-node 77.42.71.94:21000. Docker compose is available in docker/docker-compose.mainnet.yml.' },
     { q: cs ? 'Jaký pool fee si ZION účtuje?' : 'What pool fee does ZION charge?', a: cs ? '89 % putuje minerovi, 5 % do humanitarian fondu, 5 % do fondu Issobella a 1 % pool provozní poplatek.' : '89% goes to the miner, 5% to the humanitarian fund, 5% to the Issobella fund, and 1% pool operational fee.' },
-    { q: cs ? 'Je síť veřejně spuštěna?' : 'Is the network publicly launched?', a: cs ? 'V3 Mainnet je v přípravě — target launch 31. prosince 2026 (Silvestr). Core + Edge topology je v testování, mining test aktivní, bridge v přípravě na Base Mainnet.' : 'V3 Mainnet is in preparation — target launch 31 December 2026 (New Year\'s Eve). Core + Edge topology is in testing, mining test active, bridge in preparation on Base Mainnet.' },
+    { q: cs ? 'Je síť veřejně spuštěna?' : 'Is the network publicly launched?', a: cs ? 'MainNet Genesis proběhl 11. června 2026. Veřejný plný launch je naplánován na 31. prosince 2026 (Silvestr). Core + Edge topologie běží, mining je aktivní, bridge se připravuje na Base Mainnet.' : 'MainNet Genesis took place on 11 June 2026. The public full launch is scheduled for 31 December 2026 (New Year\'s Eve). Core + Edge topology is live, mining is active, and the bridge is being prepared for Base Mainnet.' },
   ];
   return (
     <div className="divide-y divide-white/[0.06]">
