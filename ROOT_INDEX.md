@@ -341,7 +341,8 @@ When docs disagree, use this order of truth:
 
 ---
 
-*Last updated: 2026-06-09*
+*Last updated: 2026-06-10*
+*2026-06-10: Share acceptance fix — Bug #1: pool/lib.rs algorithm-aware validate_candidate_with_algorithm (commit `21c7a028`); Bug #2: gpu_backend.rs GPU/CPU path oddělení — GPU hash je primary, CPU je audit-only (commit `8d5d44ca`). Nové diagnostické logy: GPU_CPU_MISMATCH, SHARE_ACCEPTED/REJECTED s algo+hash.*
 *2026-06-09: V3 cleanup — 3 kanonické algoritmy, algorithm-aware validace, gpu_backend_optimized.rs smazán, DeekshaDebug Cargo.toml kompletní, chain height 525+*
 *2026-06-07: Chain reset → genesis `7543004c`, consensus `deeksha_lite_v1`, Edge disk cleanup, DeekshaLiteNews.tsx added*
 *2026-05-23: Root directory cleanup — legacy L1-L6, docs, monitoring, tests moved to `archive/2.9.9/`; Genesis.md moved to root; v3.0.0 Mainnet Ready structure*
