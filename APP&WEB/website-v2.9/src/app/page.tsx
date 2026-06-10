@@ -3,6 +3,7 @@ import Hero from '@/components/Hero';
 import MainnetCountdown from '@/components/MainnetCountdown';
 import GenesisPreview from '@/components/GenesisPreview';
 import QuantumRevolution from '@/components/QuantumRevolution';
+import HomeQuickLinks from '@/components/HomeQuickLinks';
 
 const NewsFeed = dynamicImport(() => import('@/components/NewsFeed'));
 const LiveDashboard = dynamicImport(() => import('@/components/LiveDashboard'));
@@ -21,6 +22,7 @@ export default function Home() {
     <>
       <Hero />
       <MainnetCountdown />
+      <HomeQuickLinks />
       <NewsFeed />
       <LiveDashboard />
       <TerraNovaHomeMilestones />
