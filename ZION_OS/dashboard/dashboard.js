@@ -209,6 +209,7 @@ async function refreshAll(){
     if(currentTab === 'controls') { loadMinerPerformance(); loadDepGraphControls(); }
     updateMainnetMetrics(statusData);
     updateConnectionStatus(true);
+    loadEdgeBackupStatus();
   } catch(e){
     console.error('Refresh error:', e);
     updateConnectionStatus(false);
@@ -6656,6 +6657,76 @@ async function refreshAgentRewards(){
     container.innerHTML = html;
   }catch(e){
     container.innerHTML = `<div class="text-red-400 text-sm">Error loading rewards: ${escapeHtml(e.message)}</div>`;
+  }
+}
+
+// ── Edge Backup Widget ───────────────────────────────────────────────
+
+async function loadEdgeBackupStatus() {
+  try {
+    // Query Edge server directly for backup status
+    const res = await fetch('http://100.76.16.108:8766/api/backup/status', { mode: 'cors', cache: 'no-store' });
+    const data = await res.json();
+    const hasBackups = data.backups && data.backups.length > 0;
+    const lastBackup = data.last_backup ? new Date(data.last_backup).toLocaleString() : 'None';
+    const totalSize = data.total_backup_mb || 0;
+
+    // Update UI
+    const badge = document.getElementById('edge-backup-badge');
+    const timerDot = document.getElementById('edge-backup-timer-dot');
+    const timerStatus = document.getElementById('edge-backup-timer-status');
+    const latest = document.getElementById('edge-backup-latest');
+    const count = document.getElementById('edge-backup-count');
+    const totalSizeEl = document.getElementById('edge-backup-total-size');
+
+    if (badge) {
+      if (hasBackups) {
+        badge.textContent = 'Active';
+        badge.className = 'text-[10px] px-2 py-0.5 rounded-full bg-emerald-600/20 text-emerald-300';
+      } else {
+        badge.textContent = 'No Backups';
+        badge.className = 'text-[10px] px-2 py-0.5 rounded-full bg-amber-600/20 text-amber-300';
+      }
+    }
+    if (timerDot) timerDot.className = 'w-2 h-2 rounded-full ' + (hasBackups ? 'bg-emerald-400' : 'bg-amber-400');
+    if (timerStatus) timerStatus.textContent = hasBackups ? 'Timer active' : 'Timer active, no backups yet';
+    if (latest) latest.textContent = lastBackup;
+    if (count) count.textContent = (data.backups ? data.backups.length : 0) + ' files';
+    if (totalSizeEl) totalSizeEl.textContent = totalSize.toFixed(1) + ' MB';
+  } catch (e) {
+    console.log('Edge backup status unavailable:', e);
+    const badge = document.getElementById('edge-backup-badge');
+    const timerStatus = document.getElementById('edge-backup-timer-status');
+    if (badge) { badge.textContent = 'Unavailable'; badge.className = 'text-[10px] px-2 py-0.5 rounded-full bg-red-600/20 text-red-300'; }
+    if (timerStatus) timerStatus.textContent = 'Dashboard not reachable';
+  }
+}
+
+async function triggerEdgeBackup() {
+  const btn = document.getElementById('btn-trigger-edge-backup');
+  const log = document.getElementById('edge-backup-log');
+  if (!btn) return;
+  btn.disabled = true;
+  btn.textContent = '⏳ Running…';
+  if (log) { log.classList.remove('hidden'); log.textContent = 'Triggering Edge backup…\n'; }
+  try {
+    const res = await fetch('http://100.76.16.108:8766/api/backup/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'manual-dashboard-' + new Date().toISOString().slice(0,19).replace(/:/g,'-') }),
+      mode: 'cors'
+    });
+    const data = await res.json();
+    if (log) {
+      log.textContent += (data.ok ? '✅ Backup created successfully.\n' : '❌ Backup failed: ' + (data.error || data.output || 'Unknown') + '\n');
+    }
+    // Refresh status after a short delay
+    setTimeout(loadEdgeBackupStatus, 2000);
+  } catch (e) {
+    if (log) log.textContent += '❌ Error: ' + e.message + '\n';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🔄 Trigger Backup Now';
   }
 }
 
