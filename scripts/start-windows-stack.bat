@@ -40,7 +40,8 @@ set ZION_MINER_THREADS=2
 set ZION_WORKER_NAME=worker1
 set ZION_MINER_ID=w11-gpu-miner-01
 set ZION_GPU_BACKEND=opencl
-set ZION_GPU_WORK_SIZE=4096
+:: RDNA1 auto-tune -- NEZADAVAT ZION_GPU_WORK_SIZE rucne (4096 = CPU hodnota, bylo spatne)
+set ZION_NONCE_COUNT_GPU=262144
 
 mkdir logs 2>nul
 
