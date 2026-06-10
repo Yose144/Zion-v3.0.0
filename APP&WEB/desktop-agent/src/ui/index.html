@@ -3307,6 +3307,36 @@
       }
     }
 
+    /* ═══ CLI Unified Design ═══ */
+    .cli-terminal {
+      margin-top: 14px;
+      background: rgba(0,0,0,0.5);
+      border-radius: 10px;
+      padding: 14px 16px;
+      font-family: 'JetBrains Mono', Menlo, 'Courier New', monospace;
+      font-size: 12px;
+      color: rgba(255,255,255,0.7);
+      height: 400px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+      border: 1px solid rgba(255,255,255,0.05);
+      line-height: 1.6;
+      letter-spacing: 0.01em;
+    }
+    .cli-badge {
+      font-size: 11px;
+      font-weight: 400;
+    }
+    .cli-badge.ready { color: rgba(255,255,255,0.3); }
+    .cli-badge.busy  { color: var(--zion-gold); }
+    .cli-badge.error { color: #f87171; }
+    .cli-line {
+      color: rgba(255,255,255,0.7);
+      margin: 2px 0;
+    }
+    .cli-line.error { color: #f87171; }
+
   </style>
 </head>
 <body>
@@ -5561,8 +5591,8 @@
           </div>
         </div>
 
-        <div class="control-panel" style="margin-bottom:12px">
-          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <div class="control-panel panel-tight">
+          <div class="actions-row">
             <button class="btn btn-primary" id="cli-btn-version">Version</button>
             <button class="btn btn-primary" id="cli-btn-mine-status">Mine Status</button>
             <button class="btn btn-primary" id="cli-btn-wallet-list">Wallets</button>
@@ -5578,36 +5608,35 @@
               <svg class="icon" aria-hidden="true"><use href="#i-terminal"></use></svg>
               <span>CLI Output</span>
             </span>
-            <span id="cli-status-badge" style="font-size:11px;color:rgba(255,255,255,0.3)">Ready</span>
+            <span id="cli-status-badge" class="cli-badge ready">Ready</span>
           </h2>
-          <div id="cli-console"
-            style="margin-top:14px;background:rgba(0,0,0,0.5);border-radius:10px;padding:14px 16px;
-                   font-family:'JetBrains Mono',Menlo,'Courier New',monospace;font-size:12px;
-                   color:rgba(255,255,255,0.7);height:400px;overflow-y:auto;
-                   white-space:pre-wrap;word-break:break-all;
-                   border:1px solid rgba(255,255,255,0.05);line-height:1.6;letter-spacing:0.01em">
+          <div id="cli-console" class="cli-terminal">
 — ZION CLI Terminal —
 Click a button above to run a command.
           </div>
         </div>
 
         <!-- Quick Actions -->
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-top:14px">
+        <div class="wallet-grid panel-mt-20">
           <div class="control-panel">
-            <h2 class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-wallet"></use></svg> Send ZION</h2>
-            <div class="stack-col" style="margin-top:12px;gap:10px">
-              <input id="cli-send-wallet" type="text" placeholder="wallet file path (e.g. wallet.json)" style="width:100%">
-              <input id="cli-send-to" type="text" placeholder="To address (zion1...)" style="width:100%">
-              <input id="cli-send-amount" type="text" placeholder="Amount (e.g. 0.01)" style="width:100%">
+            <h2 class="panel-header-row">
+              <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-wallet"></use></svg> Send ZION</span>
+            </h2>
+            <div class="stack-col panel-mt-20">
+              <input id="cli-send-wallet" class="wizard-input" type="text" placeholder="wallet file path (e.g. wallet.json)">
+              <input id="cli-send-to" class="wizard-input" type="text" placeholder="To address (zion1...)">
+              <input id="cli-send-amount" class="wizard-input" type="text" placeholder="Amount (e.g. 0.01)">
               <button class="btn btn-accent" id="cli-btn-send">Send Transaction</button>
             </div>
           </div>
           <div class="control-panel">
-            <h2 class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg> Mining</h2>
-            <div class="stack-col" style="margin-top:12px;gap:10px">
-              <input id="cli-mine-wallet" type="text" placeholder="Wallet address (zion1...)" style="width:100%">
-              <input id="cli-mine-pool" type="text" placeholder="Pool (default: 77.42.71.94:8444)" style="width:100%">
-              <div style="display:flex;gap:10px">
+            <h2 class="panel-header-row">
+              <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg> Mining</span>
+            </h2>
+            <div class="stack-col panel-mt-20">
+              <input id="cli-mine-wallet" class="wizard-input" type="text" placeholder="Wallet address (zion1...)">
+              <input id="cli-mine-pool" class="wizard-input" type="text" placeholder="Pool (default: 77.42.71.94:8444)">
+              <div class="actions-row">
                 <button class="btn btn-accent" id="cli-btn-mine-start">Start Mining</button>
                 <button class="btn btn-ghost" id="cli-btn-mine-stop">Stop</button>
               </div>
@@ -5616,11 +5645,13 @@ Click a button above to run a command.
         </div>
 
         <!-- L2 / L3 Commands -->
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-top:14px">
+        <div class="pool-grid panel-mt-20">
           <!-- Bridge -->
           <div class="control-panel">
-            <h2 class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-bridge"></use></svg> Bridge (L2)</h2>
-            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">
+            <h2 class="panel-header-row">
+              <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-bridge"></use></svg> Bridge (L2)</span>
+            </h2>
+            <div class="actions-row panel-mt-20">
               <button class="btn btn-primary btn-sm" id="cli-btn-bridge-status">Status</button>
               <button class="btn btn-primary btn-sm" id="cli-btn-bridge-pending">Pending</button>
               <button class="btn btn-primary btn-sm" id="cli-btn-bridge-chains">Chains</button>
@@ -5629,8 +5660,10 @@ Click a button above to run a command.
           </div>
           <!-- DAO -->
           <div class="control-panel">
-            <h2 class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-star"></use></svg> DAO (L2)</h2>
-            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">
+            <h2 class="panel-header-row">
+              <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-star"></use></svg> DAO (L2)</span>
+            </h2>
+            <div class="actions-row panel-mt-20">
               <button class="btn btn-primary btn-sm" id="cli-btn-dao-status">Status</button>
               <button class="btn btn-primary btn-sm" id="cli-btn-dao-proposals">Proposals</button>
               <button class="btn btn-primary btn-sm" id="cli-btn-dao-treasury">Treasury</button>
@@ -5639,8 +5672,10 @@ Click a button above to run a command.
           </div>
           <!-- Pool -->
           <div class="control-panel">
-            <h2 class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-refresh"></use></svg> Pool (L1)</h2>
-            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">
+            <h2 class="panel-header-row">
+              <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-refresh"></use></svg> Pool (L1)</span>
+            </h2>
+            <div class="actions-row panel-mt-20">
               <button class="btn btn-primary btn-sm" id="cli-btn-pool-stats">Stats</button>
               <button class="btn btn-primary btn-sm" id="cli-btn-pool-miners">Miners</button>
               <button class="btn btn-primary btn-sm" id="cli-btn-pool-config">Config</button>
@@ -5649,8 +5684,10 @@ Click a button above to run a command.
           </div>
           <!-- Warp -->
           <div class="control-panel">
-            <h2 class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-terminal"></use></svg> Warp (L3)</h2>
-            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">
+            <h2 class="panel-header-row">
+              <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-terminal"></use></svg> Warp (L3)</span>
+            </h2>
+            <div class="actions-row panel-mt-20">
               <button class="btn btn-primary btn-sm" id="cli-btn-warp-status">Status</button>
               <button class="btn btn-primary btn-sm" id="cli-btn-warp-chains">Chains</button>
               <button class="btn btn-primary btn-sm" id="cli-btn-warp-pending">Pending</button>
