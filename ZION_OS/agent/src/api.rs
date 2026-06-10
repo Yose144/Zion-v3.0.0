@@ -101,12 +101,19 @@ pub async fn gpu_handler(_state: State<Arc<AgentState>>) -> Json<Value> {
 /// GET /api/telemetry
 pub async fn telemetry_handler(State(state): State<Arc<AgentState>>) -> Json<Value> {
     let config = state.config.read().await;
+    let mstats = state.miner_stats.read().await;
+    let algo = if mstats.current_algorithm.is_empty() {
+        config.miner.default_algorithm.clone()
+    } else {
+        mstats.current_algorithm.clone()
+    };
     Json(json!({
         "rig_id": state.rig_id,
         "telemetry_enabled": config.telemetry.enabled,
         "miner": {
             "pool": config.miner.default_pool,
             "backend": config.miner.default_gpu_backend,
+            "algorithm": algo,
         }
     }))
 }

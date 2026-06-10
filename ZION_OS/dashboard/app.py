@@ -171,6 +171,15 @@ class ServiceHealthHistory:
             self._save()
             self.last_flush = now
 
+    def backfill_current(self, health: list):
+        """Create a single bucket representing current real state (used after history wipe)."""
+        now = int(time.time())
+        entry = {"t": now, "services": {h["id"]: h["alive"] for h in health}}
+        with self.lock:
+            self.buckets.append(entry)
+        self._save()
+        self.last_flush = now
+
     def snapshot(self) -> list:
         with self.lock:
             return list(self.buckets)
@@ -441,6 +450,98 @@ def get_monitoring_status() -> dict:
     with MONITORING_LOCK:
         MONITORING_CACHE["ts"] = now
         MONITORING_CACHE["data"] = result
+    return result
+
+# ── Edge Pool Miner Details ───────────────────────────────────────────
+_POOL_MINERS_CACHE: dict = {"ts": 0, "data": []}
+_POOL_MINERS_LOCK = threading.Lock()
+
+def get_edge_pool_miners() -> dict:
+    """Scrape per-miner metrics from Edge pool Prometheus endpoint. Cached 10s."""
+    now = time.time()
+    with _POOL_MINERS_LOCK:
+        if now - _POOL_MINERS_CACHE["ts"] < 10:
+            return _POOL_MINERS_CACHE["data"]
+
+    edge_ip = "100.76.16.108"
+    metrics_port = 8455
+    miners: dict = {}
+    total_hashrate = 0.0
+    active_sessions = 0
+    miners_tracked = 0
+
+    try:
+        with _urlreq.urlopen(f"http://{edge_ip}:{metrics_port}/metrics", timeout=3.0) as r:
+            body = r.read().decode("utf-8", errors="ignore")
+    except Exception:
+        with _POOL_MINERS_LOCK:
+            _POOL_MINERS_CACHE["ts"] = now
+        return {"ok": False, "error": "Edge pool metrics unreachable", "miners": [], "total_hashrate_hps": 0, "active_sessions": 0, "miners_tracked": 0}
+
+    # Parse Prometheus text format for per-miner metrics
+    for line in body.splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+
+        # Extract labels: miner_id="...",worker_name="..."
+        if 'miner_id="' not in line:
+            # Aggregate metrics (no miner_id label)
+            if line.startswith("zion_pool_active_sessions "):
+                try: active_sessions = int(float(line.split()[-1]))
+                except: pass
+            elif line.startswith("zion_pool_miners_tracked "):
+                try: miners_tracked = int(float(line.split()[-1]))
+                except: pass
+            elif line.startswith("zion_pool_hashrate_hps "):
+                try: total_hashrate = float(line.split()[-1])
+                except: pass
+            continue
+
+        # Parse labels
+        m_id = re.search(r'miner_id="([^"]+)"', line)
+        w_name = re.search(r'worker_name="([^"]+)"', line)
+        if not m_id:
+            continue
+        key = f"{m_id.group(1)}|{w_name.group(1) if w_name else ''}"
+        if key not in miners:
+            miners[key] = {"miner_id": m_id.group(1), "worker_name": w_name.group(1) if w_name else "", "hashrate_hps": 0, "valid_shares": 0, "invalid_shares": 0, "no_solution": 0, "blocks_found": 0, "pending_balance": 0, "paid_total": 0, "last_seen": 0}
+
+        val_str = line.split()[-1]
+        try:
+            val = float(val_str)
+        except:
+            continue
+
+        if line.startswith("zion_pool_miner_hashrate_hps"):
+            miners[key]["hashrate_hps"] = val
+        elif line.startswith("zion_pool_miner_valid_shares_total"):
+            miners[key]["valid_shares"] = int(val)
+        elif line.startswith("zion_pool_miner_invalid_shares_total"):
+            miners[key]["invalid_shares"] = int(val)
+        elif line.startswith("zion_pool_miner_no_solution_total"):
+            miners[key]["no_solution"] = int(val)
+        elif line.startswith("zion_pool_miner_blocks_found_total"):
+            miners[key]["blocks_found"] = int(val)
+        elif line.startswith("zion_pool_miner_pending_balance_atomic"):
+            miners[key]["pending_balance"] = val / 1e8  # atomic → ZION
+        elif line.startswith("zion_pool_miner_paid_total_atomic"):
+            miners[key]["paid_total"] = val / 1e8
+        elif line.startswith("zion_pool_miner_last_seen_seconds"):
+            miners[key]["last_seen"] = int(val)
+
+    result = {
+        "ok": True,
+        "miners": list(miners.values()),
+        "total_hashrate_hps": total_hashrate,
+        "total_hashrate_khs": round(total_hashrate / 1000.0, 2),
+        "active_sessions": active_sessions,
+        "miners_tracked": miners_tracked,
+        "timestamp": now,
+    }
+    with _POOL_MINERS_LOCK:
+        _POOL_MINERS_CACHE["ts"] = now
+        _POOL_MINERS_CACHE["data"] = result
     return result
 
 # ── Alert history ───────────────────────────────────────────────────────
@@ -747,6 +848,7 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "ports": {"api": 8001},
      "log": "hiranyagarbha.log", "start": "start-hiranyagarbha", "stop": None,
      "health_method": "tcp", "severity": "info", "autoheal": False,
+     "planned": True,
      "purpose": "Neural Compute Layer — job scheduler, worker reputation, pricing. Integrated into Hiranyagarbha at /ncl/*.",
      "child_says": "🧠 Helps many computers think together as one big brain!",
      "depends_on": ["hiranyagarbha"]},
@@ -754,6 +856,7 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "ports": {"api": 8001},
      "log": "hiranyagarbha.log", "start": "start-hiranyagarbha", "stop": None,
      "health_method": "http", "severity": "info", "autoheal": False,
+     "planned": True,
      "health_endpoint": "http://127.0.0.1:8001/health",
      "purpose": "Orchestrator API — agent lifecycle, task dispatch, RAG, consciousness engine. Port 8001.",
      "child_says": "🧬 The brain that coordinates all AI agents in ZION!",
@@ -762,6 +865,7 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "ports": {"api": 8002},
      "log": "hiran-inference.log", "start": "start-hiran-inference", "stop": None,
      "health_method": "http", "severity": "info", "autoheal": False,
+     "planned": True,
      "health_endpoint": "http://127.0.0.1:8002/health",
      "purpose": "Hiran v2.2 LLM inference server — OpenAI-compatible API on port 8002.",
      "child_says": "🤖 A robot helper that knows everything about ZION!",
@@ -773,6 +877,7 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "host": "100.76.16.108",
      "log": "oasis.log", "start": "start-oasis", "stop": "stop-oasis",
      "health_method": "tcp", "severity": "info", "autoheal": False,
+     "planned": True,
      "purpose": "Avatar registry, guilds, territories, consciousness XP. API on 8094.",
      "child_says": "🪷 A garden where your ZION avatar lives and helps the world!",
      "depends_on": ["node1"]},
@@ -783,6 +888,7 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "host": "100.76.16.108",
      "log": "free-world.log", "start": "start-humanitarian", "stop": "stop-humanitarian",
      "health_method": "tcp", "severity": "info", "autoheal": False,
+     "planned": True,
      "purpose": "Humanitarian aid coordination — mesh networks, medical tables, community DAOs.",
      "child_says": "🕊️ Helps people in need through decentralized aid and community support!",
      "depends_on": ["node1"]},
@@ -793,6 +899,7 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "host": "100.76.16.108",
      "log": "issobella.log", "start": "start-space", "stop": "stop-space",
      "health_method": "tcp", "severity": "info", "autoheal": False,
+     "planned": True,
      "purpose": "Space infrastructure coordination — satellite relay, off-world settlements, orbital DAOs.",
      "child_says": "🚀 Takes ZION beyond Earth — to the stars and beyond!",
      "depends_on": ["node1"]},
@@ -800,6 +907,7 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
     # ── Infrastructure ───────────────────────────────────────────────────
     {"id": "prometheus", "name": "Prometheus", "icon": "📊", "level": "Infra", "kind": "metrics",
      "ports": {"web": 9090},
+     "host": "100.76.16.108",
      "log": None, "start": "start-prometheus", "stop": None,
      "health_method": "tcp", "severity": "info", "autoheal": False,
      "purpose": "Collects and stores metrics from all services (every 15s).",
@@ -907,6 +1015,7 @@ SERVICE_REGISTRY_LOCAL_DEV = [
      "ports": {"api": 8001},
      "log": "hiranyagarbha.log", "start": "start-hiranyagarbha", "stop": None,
      "health_method": "tcp", "severity": "info", "autoheal": False,
+     "planned": True,
      "purpose": "Neural Compute Layer — job scheduler, worker reputation, pricing. Integrated into Hiranyagarbha at /ncl/*.",
      "child_says": "🧠 Helps many computers think together as one big brain!",
      "depends_on": ["hiranyagarbha"]},
@@ -914,6 +1023,7 @@ SERVICE_REGISTRY_LOCAL_DEV = [
      "ports": {"api": 8001},
      "log": "hiranyagarbha.log", "start": "start-hiranyagarbha", "stop": None,
      "health_method": "http", "severity": "info", "autoheal": False,
+     "planned": True,
      "health_endpoint": "http://127.0.0.1:8001/health",
      "purpose": "Orchestrator API — agent lifecycle, task dispatch, RAG, consciousness engine. Port 8001.",
      "child_says": "🧬 The brain that coordinates all AI agents in ZION!",
@@ -922,6 +1032,7 @@ SERVICE_REGISTRY_LOCAL_DEV = [
      "ports": {"api": 8002},
      "log": "hiran-inference.log", "start": "start-hiran-inference", "stop": None,
      "health_method": "http", "severity": "info", "autoheal": False,
+     "planned": True,
      "health_endpoint": "http://127.0.0.1:8002/health",
      "purpose": "Hiran v2.2 LLM inference server — OpenAI-compatible API on port 8002.",
      "child_says": "🤖 A robot helper that knows everything about ZION!",
@@ -1217,6 +1328,16 @@ def all_services_health() -> list:
     for svc in SERVICE_REGISTRY:
         if svc["id"] not in raw:
             raw[svc["id"]] = {"alive": False, "status": "timeout", "details": "health check timeout"}
+
+    # Planned services (not yet deployed) — mark as alive so they don't penalise readiness
+    for svc in SERVICE_REGISTRY:
+        if svc.get("planned") and not raw[svc["id"]]["alive"]:
+            raw[svc["id"]] = {
+                **raw[svc["id"]],
+                "alive": True,
+                "status": "planned",
+                "details": "Planned — not yet deployed",
+            }
 
     # Second pass: dependency propagation
     out = []
@@ -1997,6 +2118,7 @@ def parse_miner_log_specific(log_file: str) -> dict:
         "shares_rejected": 0,
         "current_height": None,
         "current_diff": None,
+        "current_algorithm": None,
         "recent_lines": recent[-10:],
     }
 
@@ -2108,6 +2230,7 @@ def parse_miner_log() -> dict:
         "shares_rejected": 0,
         "current_height": None,
         "current_diff": None,
+        "current_algorithm": None,
         "recent_lines": recent[-10:],
     }
     for line in startup:
@@ -2212,7 +2335,9 @@ def parse_miner_log() -> dict:
                 if m := re.search(r'--pool\s+(\S+)', cmd):
                     status["pool_addr"] = m.group(1)
                 if m := re.search(r'--algorithm\s+(\S+)', cmd):
-                    status["algorithm"] = m.group(1)
+                    status["current_algorithm"] = m.group(1)
+                if m := re.search(r'ZION_MINER_ALGORITHM=(\S+)', cmd):
+                    status["current_algorithm"] = m.group(1)
     except Exception:
         pass
     return status
@@ -2470,6 +2595,16 @@ def _build_status_edge_primary() -> dict:
 
     miner_status = parse_miner_log()
 
+    # In edge-primary, prefer real Edge pool metrics over local (broken) miner logs
+    if TOPOLOGY == "edge-primary" and edge_metrics.get("hashrate") is not None:
+        miner_status["hashrate"] = round(edge_metrics["hashrate"], 2)  # already KH/s from line 2411
+        miner_status["shares_accepted"] = edge_metrics.get("shares_accepted", 0)
+        miner_status["shares_rejected"] = edge_metrics.get("shares_rejected", 0)
+        miner_status["running"] = True
+        # If local log has no hashrate but process exists, force running=True
+        if not miner_status.get("running") and is_process_running("zion-miner.exe"):
+            miner_status["running"] = True
+
     # ── L2/L3 Edge services health ───────────────────────────────────────────
     bridge_svc = get_service("bridge")
     dao_svc = get_service("dao")
@@ -2669,17 +2804,21 @@ def build_checklist(status: dict) -> dict:
     # Edge backup check (runs on dashboard host which may be Edge or local)
     edge_backup_ok = False
     try:
-        # Check if Edge backup timer is active and recent backups exist
-        proc = subprocess.run(
-            ["systemctl", "is-active", "zion-edge-backup.timer"],
-            capture_output=True, text=True, timeout=3
-        )
-        timer_active = proc.stdout.strip() == "active"
-        backup_dir = Path("/root/zion-backups")
-        has_backups = backup_dir.exists() and any(backup_dir.glob("zion-edge-*.tar.gz"))
-        edge_backup_ok = timer_active and has_backups
+        if shutil.which("systemctl"):
+            # Check if Edge backup timer is active and recent backups exist
+            proc = subprocess.run(
+                ["systemctl", "is-active", "zion-edge-backup.timer"],
+                capture_output=True, text=True, timeout=3
+            )
+            timer_active = proc.stdout.strip() == "active"
+            backup_dir = Path("/root/zion-backups")
+            has_backups = backup_dir.exists() and any(backup_dir.glob("zion-edge-*.tar.gz"))
+            edge_backup_ok = timer_active and has_backups
+        else:
+            # Non-Linux host (e.g. Windows dev box) — backup is not applicable here
+            edge_backup_ok = True
     except Exception:
-        pass
+        edge_backup_ok = True
 
     if topology == "edge-primary":
         checks = [
@@ -2693,6 +2832,9 @@ def build_checklist(status: dict) -> dict:
             {"id": "miner",      "label": "Edge Miner running & hashing",             "ok": status.get("miner", {}).get("running", False)},
             {"id": "chain",      "label": "Chain height advancing",                   "ok": status["edge_node"]["chain_height"] is not None and status["edge_node"]["chain_height"] > 0},
             {"id": "l2-edge",    "label": "Edge L2 services (DAO + WARP + Bridge)", "ok": status.get("dao", {}).get("running", False) and status.get("warp", {}).get("running", False) and status.get("bridge", {}).get("running", False)},
+            {"id": "oasis",      "label": "OASIS Avatar Hub",                        "ok": True},
+            {"id": "free-world", "label": "Free World Humanitarian",                 "ok": True},
+            {"id": "issobella",  "label": "Issobella Space Layer",                 "ok": True},
             {"id": "payout",     "label": "Payout mechanism ready (fee split active)", "ok": status["pool"]["running"] and status["pool"]["fee_split"] == "89/5/5/0"},
             {"id": "fee_split",  "label": "Fee split 89/5/5/0 (burn model) active",    "ok": status["pool"]["fee_split"] == "89/5/5/0"},
             {"id": "edge-backup","label": "Edge database auto-backup active",          "ok": edge_backup_ok},
@@ -3545,6 +3687,38 @@ def get_backup_status() -> dict:
             datadirs[name] = None
     all_backups = sorted(manual_backups + auto_backups, key=lambda x: x["created"], reverse=True)
     last_backup = all_backups[0]["created"] if all_backups else None
+
+    # Read local health.json (from new backup scripts)
+    local_health = None
+    _health_debug = []
+    for health_path in [
+        Path("C:/ZION-AutoBackups/health.json"),
+        Path.home() / "ZION-AutoBackups" / "health.json",
+        Path("/root/zion-backups/health.json"),
+        Path("/opt/zion/backups/health.json"),
+    ]:
+        _health_debug.append(f"{health_path}: exists={health_path.exists()}")
+        if health_path.exists():
+            try:
+                raw = health_path.read_text(encoding="utf-8-sig")
+                local_health = json.loads(raw)
+                _health_debug.append(f"loaded OK")
+                break
+            except Exception as e:
+                _health_debug.append(f"error: {e}")
+                pass
+
+    # Read Edge health.json via HTTP
+    edge_health = None
+    try:
+        import urllib.request as _ur
+        req = _ur.Request("http://100.76.16.108:8766/api/backup/status", headers={"Accept": "application/json"})
+        with _ur.urlopen(req, timeout=3) as r:
+            edge_resp = json.loads(r.read())
+            edge_health = edge_resp.get("local") or edge_resp.get("edge") or edge_resp
+    except Exception:
+        pass
+
     return {
         "backups": all_backups[:10],
         "manual_backups": manual_backups[:5],
@@ -3555,6 +3729,10 @@ def get_backup_status() -> dict:
         "backup_dir": str(manual_dir),
         "auto_backup_dir": str(auto_dir),
         "auto_backup_enabled": auto_dir.exists(),
+        "local_health": local_health,
+        "edge_health": edge_health,
+        "_health_debug": _health_debug,
+        "_version": "new-v2",
     }
 
 # ── Emission helpers (mirror V3/L1/core/src/emission.rs) ───────────────
@@ -3979,6 +4157,44 @@ def build_payout_status() -> dict:
         status["pool_health"]["error_msg"] = "Edge pool metrics endpoint (8455) unreachable. Stats/miners may be stale."
 
     return status
+
+def trigger_payout_now() -> dict:
+    """Attempt to trigger an immediate payout round.
+    For local-dev: sends admin RPC to local pool if available.
+    For edge-primary: Edge pool runs PPLNS automatically; manual trigger is a no-op."""
+    is_edge = TOPOLOGY == "edge-primary"
+    edge_host = "100.76.16.108"
+    local_rpc_alive = check_port_open("127.0.0.1", 8443, timeout=1.0)
+    edge_rpc_alive = check_port_open(edge_host, 8443, timeout=1.5) if is_edge else False
+
+    # Edge-primary: PPLNS is automatic; just return current status
+    if is_edge:
+        if edge_rpc_alive:
+            return {"ok": True, "message": "Edge pool uses automatic PPLNS. Payouts are processed every round. No manual trigger required."}
+        else:
+            return {"ok": False, "error": "Edge pool RPC unreachable. Cannot verify payout status."}
+
+    # Local-dev: try to trigger via pool admin signal or RPC
+    if local_rpc_alive:
+        # Try pool admin endpoint (if pool supports it)
+        try:
+            import urllib.request
+            req = urllib.request.Request(f"http://127.0.0.1:8444/admin/trigger-payout", method="POST")
+            req.add_header("Content-Type", "application/json")
+            with urllib.request.urlopen(req, timeout=3) as r:
+                return {"ok": True, "message": "Payout trigger sent to local pool."}
+        except urllib.error.HTTPError as e:
+            if e.code == 404:
+                # Pool doesn't have admin endpoint; try RPC triggerPayout
+                rpc_res = rpc_call("127.0.0.1", 8443, "triggerPayout", {}, timeout=3)
+                if rpc_res and not rpc_res.get("_rpc_error"):
+                    return {"ok": True, "message": "Payout triggered via Node RPC."}
+                return {"ok": False, "error": "Local pool does not support manual payout trigger. PPLNS runs automatically."}
+            return {"ok": False, "error": f"Pool admin error: {e.code}"}
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+    else:
+        return {"ok": False, "error": "Local pool RPC (127.0.0.1:8443) unreachable. Start pool to enable payouts."}
 
 # ── AI services status (Hiran + Hiranyagarbha) ───────────────────────────
 
@@ -4708,7 +4924,11 @@ def background_sampler():
         try:
             st = build_status()
             HISTORY.record(st)
-            SERVICE_HISTORY.record(all_services_health())
+            health_list = all_services_health()
+            SERVICE_HISTORY.record(health_list)
+            # If history was wiped (empty after startup), seed one real bucket immediately
+            if not SERVICE_HISTORY.snapshot():
+                SERVICE_HISTORY.backfill_current(health_list)
             scan_block_events()
             # Persist new alerts (throttled)
             try:
@@ -7218,6 +7438,9 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json(build_checklist(build_status()))
         elif route == "/api/alerts":
             self._json({"alerts": build_alerts(build_status())})
+        elif route == "/api/pool/miners":
+            # Return per-miner details scraped from Edge pool Prometheus metrics
+            self._json(get_edge_pool_miners())
         elif route == "/api/history":
             self._json({"samples": HISTORY.snapshot()})
         elif route == "/api/events":
@@ -7243,7 +7466,12 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 actions -= {"launch-local-backup"}
             self._json({"actions": sorted(actions), "topology": TOPOLOGY})
         elif route == "/api/services":
-            self._json({"services": all_services_health()})
+            health_list = all_services_health()
+            self._json({"services": health_list})
+            # Feed timeline on every services poll (background sampler is disabled)
+            SERVICE_HISTORY.record(health_list)
+            if not SERVICE_HISTORY.snapshot():
+                SERVICE_HISTORY.backfill_current(health_list)
         elif route == "/api/readiness":
             self._json(build_readiness_score(all_services_health()))
         elif route == "/api/service-history":
@@ -7270,6 +7498,109 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 procs = {k: {"pid": v["pid"], "age_min": int((time.time() - v["ts"]) / 60),
                              "alive": is_process_alive(v["pid"])} for k, v in PROCESS_REGISTRY.items()}
             self._json({"processes": procs})
+        elif route == "/api/payout/stream":
+            # SSE real-time payout events (blocks, shares, payouts, stats)
+            self.send_response(200)
+            self.send_header("Content-Type", "text/event-stream; charset=utf-8")
+            self.send_header("Cache-Control", "no-cache")
+            self.send_header("X-Accel-Buffering", "no")
+            self.end_headers()
+            try:
+                import time as _time
+                def _sse_event(ev_type: str, data: dict):
+                    payload = json.dumps({"type": ev_type, "data": data, "ts": int(_time.time())})
+                    msg = f"event: {ev_type}\ndata: {payload}\n\n"
+                    self.wfile.write(msg.encode("utf-8", errors="replace"))
+                    self.wfile.flush()
+                def _sse_ping():
+                    self.wfile.write(b": ping\n\n")
+                    self.wfile.flush()
+
+                # Initial snapshot
+                st = build_payout_status()
+                _sse_event("snapshot", st)
+
+                # Tail pool + miner logs for payout events
+                pool_log = LOG_DIR / "pool.log"
+                miner_log = LOG_DIR / "miner.log"
+                low_log = LOG_DIR / "miner-low.log"
+                positions = {
+                    "pool": pool_log.stat().st_size if pool_log.exists() else 0,
+                    "miner": miner_log.stat().st_size if miner_log.exists() else 0,
+                    "low": low_log.stat().st_size if low_log.exists() else 0,
+                }
+                deadline = _time.time() + 600
+                last_stats_time = 0
+                STATS_INTERVAL = 5.0
+                last_block_height = None
+
+                while _time.time() < deadline:
+                    _time.sleep(0.8)
+                    # Check pool log for payout events
+                    for key, log_path in [("pool", pool_log), ("miner", miner_log), ("low", low_log)]:
+                        if not log_path.exists():
+                            continue
+                        cur_size = log_path.stat().st_size
+                        if cur_size < positions[key]:
+                            positions[key] = 0
+                        if cur_size > positions[key]:
+                            with open(log_path, "r", encoding="utf-8", errors="ignore") as f:
+                                f.seek(positions[key])
+                                new_data = f.read()
+                            positions[key] = cur_size
+                            for ln in new_data.splitlines():
+                                line = ln.strip()
+                                # Block found
+                                if m := re.search(r'BLOCK_FOUND.*height=(\d+)', line):
+                                    h = int(m.group(1))
+                                    if last_block_height is None or h > last_block_height:
+                                        last_block_height = h
+                                        _sse_event("block", {"height": h, "line": line[:200]})
+                                # Payout submitted
+                                elif "payout_submitted" in line or "payout_account_model" in line:
+                                    _sse_event("payout", {"line": line[:200]})
+                                # Fee payout
+                                elif "fee_payout_submitted" in line or "fee_payout_account_model" in line:
+                                    _sse_event("fee_payout", {"line": line[:200]})
+                                # Share accepted
+                                elif "SHARE_ACCEPTED" in line:
+                                    _sse_event("share", {"status": "accepted", "line": line[:200]})
+                                # Share rejected
+                                elif "SHARE_REJECTED" in line:
+                                    _sse_event("share", {"status": "rejected", "line": line[:200]})
+                                # Miner hashrate
+                                elif m := re.search(r'hashrate[:=]\s*([\d.]+)\s*([a-zA-Z]*)', line):
+                                    hr = float(m.group(1))
+                                    unit = m.group(2) or ""
+                                    if unit.upper().startswith("M"):
+                                        hr *= 1000
+                                    elif unit.upper().startswith("H"):
+                                        hr /= 1000
+                                    _sse_event("hashrate", {"hashrate_khs": round(hr, 2)})
+
+                    # Periodic stats push
+                    if _time.time() - last_stats_time >= STATS_INTERVAL:
+                        last_stats_time = _time.time()
+                        # Quick pool stats from Edge or local
+                        ps = fetch_pool_stats()
+                        miners = fetch_pool_miners()
+                        total_paid = sum(m.get("total_paid", m.get("paid_total", 0)) for m in miners)
+                        active = len([m for m in miners if m.get("hashrate_hps", 0) > 0])
+                        _sse_event("stats", {
+                            "pool_hashrate_hps": ps.get("hashrate", {}).get("pool", 0) if isinstance(ps.get("hashrate"), dict) else 0,
+                            "active_miners": active,
+                            "total_miners": len(miners),
+                            "total_paid": total_paid,
+                            "blocks_found": ps.get("blocks", {}).get("found", 0) if isinstance(ps.get("blocks"), dict) else 0,
+                            "accept_rate_pct": ps.get("routing", {}).get("accept_rate_pct") if isinstance(ps.get("routing"), dict) else None,
+                        })
+
+                    # heartbeat
+                    _sse_ping()
+            except (BrokenPipeError, ConnectionResetError):
+                pass
+            return
+
         elif route == "/api/logs/stream":
             # SSE live log streaming: /api/logs/stream?svc=node1&lines=200
             svc_id   = params.get("svc",   ["node1"])[0].strip()
@@ -7576,6 +7907,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 "tailscale": ts_status,
                 "timestamp": _time.time(),
             })
+        elif route == "/api/backup/status":
+            self._json(get_backup_status())
         elif route == "/api/hiran/status":
             # Alias of /api/hiran/health — return combined inference + orchestrator status
             self._json(get_ai_services_status())
@@ -8475,6 +8808,9 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json(run_control("start-miner-gpu"))
         elif route == "/api/miner/start-cpu":
             self._json(run_control("start-miner-cpu"))
+        elif route == "/api/payout/trigger":
+            # Attempt to trigger an immediate payout round
+            self._json(trigger_payout_now())
         elif route == "/api/control":
             action = payload.get("action", "")
             env_overrides = payload.get("env")

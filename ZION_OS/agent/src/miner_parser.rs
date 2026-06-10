@@ -36,6 +36,7 @@ pub struct MinerStats {
     pub gpu_temps: Vec<f32>,
     pub gpu_power: Vec<f32>,
     pub gpu_hashrate: Vec<f64>,
+    pub current_algorithm: String,
 }
 
 impl MinerStats {
@@ -163,6 +164,9 @@ pub async fn parse_line(line: &str, stats: &Arc<RwLock<MinerStats>>) {
                     s.gpu_hashrate[0] = v;
                 }
             }
+        }
+        "algorithm" => {
+            s.current_algorithm = value.trim_matches('"').to_string();
         }
         _ => {}
     }

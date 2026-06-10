@@ -28,6 +28,7 @@ pub struct MinerConfig {
     pub default_wallet: String,
     pub default_worker: String,
     pub default_gpu_backend: String, // "auto" | "opencl" | "cuda" | "metal" | "cpu"
+    pub default_algorithm: String,   // "deeksha_lite_v1" | "deeksha_lite_fire" | "cosmic_harmony_ekam_deeksha_v2"
     pub extra_args: Vec<String>,
 }
 
@@ -65,6 +66,7 @@ impl Default for AgentConfig {
                 default_wallet: "".to_string(),
                 default_worker: "zion-rig".to_string(),
                 default_gpu_backend: "auto".to_string(),
+                default_algorithm: "deeksha_lite_fire".to_string(),
                 extra_args: vec![],
             },
             watchdog: WatchdogConfig {
