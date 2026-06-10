@@ -27,7 +27,7 @@ echo [START] Miner spousten v %TIME%
 echo [ENV]   POOL=%ZION_POOL_ADDR%  ALGO=%ZION_MINER_ALGORITHM%  BACKEND=%ZION_GPU_BACKEND%  (RDNA1 auto-tune)
 echo.
 
-V3\target\release\zion-miner-rdna.exe
+V3\target\release\zion-miner.exe
 echo [EXIT] Miner skoncil s kodem %ERRORLEVEL% v %TIME%
 pause
 endlocal
