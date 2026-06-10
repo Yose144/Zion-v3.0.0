@@ -134,6 +134,11 @@ pub struct ShareSubmission {
     pub target: DifficultyTarget,
     pub revenue_source: RevenueSource,
     pub revenue_value_usd: f64,
+    /// Algorithm used to compute the candidate hash. Empty string falls back to
+    /// deeksha_lite_v1 for backward-compatibility with callers that predate
+    /// multi-algo support.
+    #[allow(dead_code)]
+    pub algorithm: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -298,10 +303,10 @@ impl MiningPool {
         }
     }
 
-    pub fn job_message(&self, job: MiningJob) -> PoolMessage {
+    pub fn job_message(&self, job: MiningJob, algorithm: &str) -> PoolMessage {
         PoolMessage::Job {
             job_id: job.job_id,
-            algorithm: advertised_algorithm().to_string(),
+            algorithm: algorithm.to_string(),
             start_nonce: job.start_nonce,
             nonce_count: job.nonce_count,
             target_hex: to_hex(&job.target.bytes),
@@ -311,9 +316,14 @@ impl MiningPool {
     }
 
     pub fn submit_share(&mut self, submission: ShareSubmission) -> ShareDecision {
+        let algo = if submission.algorithm.is_empty() {
+            advertised_algorithm()
+        } else {
+            submission.algorithm.as_str()
+        };
         match self
             .runtime
-            .validate_candidate(submission.candidate, submission.target)
+            .validate_candidate_with_algorithm(submission.candidate, submission.target, algo)
         {
             Some(sealed_block) => {
                 self.accepted_shares += 1;
@@ -344,6 +354,7 @@ impl MiningPool {
         solution: MiningSolution,
         revenue_source: RevenueSource,
         revenue_value_usd: f64,
+        algorithm: &str,
     ) -> ShareDecision {
         self.submit_solution_with(
             miner_id,
@@ -351,6 +362,7 @@ impl MiningPool {
             solution,
             revenue_source,
             revenue_value_usd,
+            algorithm,
             |_job, _solution, _sealed_block| ShareStatus::Accepted,
         )
     }
@@ -362,6 +374,7 @@ impl MiningPool {
         solution: MiningSolution,
         revenue_source: RevenueSource,
         revenue_value_usd: f64,
+        algorithm: &str,
         finalize: F,
     ) -> ShareDecision
     where
@@ -401,11 +414,12 @@ impl MiningPool {
             target: job.target,
             revenue_source,
             revenue_value_usd,
+            algorithm: algorithm.to_string(),
         };
 
         let Some(sealed_block) = self
             .runtime
-            .validate_candidate(submission.candidate, submission.target)
+            .validate_candidate_with_algorithm(submission.candidate, submission.target, algorithm)
         else {
             self.rejected_shares += 1;
             return ShareDecision {
@@ -578,6 +592,7 @@ mod tests {
             target: DifficultyTarget::MAX,
             revenue_source: RevenueSource::Zion,
             revenue_value_usd: 12.0,
+            algorithm: String::new(),
         });
 
         assert_eq!(decision.status, ShareStatus::Accepted);
@@ -600,6 +615,7 @@ mod tests {
             target: DifficultyTarget { bytes: [0u8; 32] },
             revenue_source: RevenueSource::ProfitSwitch,
             revenue_value_usd: 5.0,
+            algorithm: String::new(),
         });
 
         assert_eq!(decision.status, ShareStatus::RejectedLowDifficulty);
@@ -634,6 +650,7 @@ mod tests {
             solution,
             RevenueSource::NclAi,
             3.5,
+            "deeksha_lite_v1",
         );
 
         assert_eq!(decision.status, ShareStatus::Accepted);
@@ -694,6 +711,7 @@ mod tests {
             solution,
             RevenueSource::Zion,
             1.0,
+            "deeksha_lite_v1",
         );
 
         assert_eq!(decision.status, ShareStatus::InvalidJob);
@@ -721,6 +739,7 @@ mod tests {
             solution,
             RevenueSource::Zion,
             1.0,
+            "deeksha_lite_v1",
             |_job, _solution, _sealed_block| ShareStatus::UpstreamRejected,
         );
 
@@ -771,6 +790,7 @@ mod tests {
             solution,
             RevenueSource::Zion,
             1.0,
+            "deeksha_lite_v1",
         );
         assert_eq!(decision.status, ShareStatus::StaleJob);
     }
@@ -836,6 +856,7 @@ mod tests {
             target: DifficultyTarget::MAX,
             revenue_source: RevenueSource::Zion,
             revenue_value_usd: 2.5,
+            algorithm: String::new(),
         });
 
         let bye = pool.bye_message();
@@ -972,6 +993,7 @@ mod tests {
             target: DifficultyTarget::MAX,
             revenue_source: RevenueSource::Zion,
             revenue_value_usd: 1.0,
+            algorithm: String::new(),
         });
         // Reject one (zero target = impossible)
         pool.submit_share(ShareSubmission {
@@ -981,6 +1003,7 @@ mod tests {
             target: DifficultyTarget { bytes: [0u8; 32] },
             revenue_source: RevenueSource::Zion,
             revenue_value_usd: 0.5,
+            algorithm: String::new(),
         });
         // Accept another
         pool.submit_share(ShareSubmission {
@@ -990,6 +1013,7 @@ mod tests {
             target: DifficultyTarget::MAX,
             revenue_source: RevenueSource::Blake3External,
             revenue_value_usd: 2.0,
+            algorithm: String::new(),
         });
 
         let stats = pool.stats();
@@ -1071,6 +1095,7 @@ mod tests {
             solution,
             RevenueSource::Zion,
             1.0,
+            "deeksha_lite_v1",
         );
         assert_eq!(decision.status, ShareStatus::JobMismatch);
         assert_eq!(pool.stats().rejected_shares, 1);
@@ -1114,7 +1139,7 @@ mod tests {
             difficulty_bits: 0x1f00ffff,
         };
         let job = pool.issue_job(header, DifficultyTarget::MAX, 0, 64);
-        let msg = pool.job_message(job);
+        let msg = pool.job_message(job, "deeksha_lite_v1");
         if let PoolMessage::Job {
             header_hex,
             target_hex,
