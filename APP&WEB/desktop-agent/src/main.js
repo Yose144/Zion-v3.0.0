@@ -4890,7 +4890,7 @@ async function _checkGitHubRelease() {
   try {
     const https = require('https');
     const data = await new Promise((resolve, reject) => {
-      const req = https.get('https://api.github.com/repos/Yose144/2.9.6/releases/latest', {
+      const req = https.get('https://api.github.com/repos/Yose144/Zion-v3.0.0/releases/latest', {
         headers: { 'User-Agent': 'ZION-Desktop-Agent/' + app.getVersion() }
       }, (res) => {
         let body = '';
@@ -4920,6 +4920,131 @@ async function _checkGitHubRelease() {
   } catch (err) {
     return { success: false, error: err?.message || String(err), currentVersion: app.getVersion() };
   }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// MINER BINARY AUTO-UPDATER — downloads platform-specific zion-miner
+// from GitHub release assets and hot-swaps it atomically.
+// ═══════════════════════════════════════════════════════════════════
+
+function _getMinerAssetName() {
+  const platform = process.platform;
+  const arch = process.arch;
+  const ext = platform === 'win32' ? '.exe' : '';
+  // Asset naming convention: zion-miner-v{VERSION}-{platform}-{arch}{ext}
+  if (platform === 'win32') return `zion-miner-windows-x64${ext}`;
+  if (platform === 'darwin' && arch === 'arm64') return `zion-miner-macos-arm64${ext}`;
+  if (platform === 'darwin') return `zion-miner-macos-x64${ext}`;
+  if (platform === 'linux') return `zion-miner-linux-x64${ext}`;
+  return `zion-miner${ext}`;
+}
+
+async function _downloadFile(url, destPath, onProgress) {
+  const fs = require('fs');
+  const https = require('https');
+  const http = require('http');
+  return new Promise((resolve, reject) => {
+    const client = url.startsWith('https:') ? https : http;
+    const req = client.get(url, { headers: { 'User-Agent': 'ZION-Agent/' + app.getVersion() } }, (res) => {
+      if (res.statusCode === 302 || res.statusCode === 301) {
+        return _downloadFile(res.headers.location, destPath, onProgress).then(resolve).catch(reject);
+      }
+      if (res.statusCode !== 200) {
+        return reject(new Error(`HTTP ${res.statusCode}`));
+      }
+      const total = parseInt(res.headers['content-length'] || '0', 10);
+      let downloaded = 0;
+      const out = fs.createWriteStream(destPath);
+      res.on('data', (chunk) => {
+        downloaded += chunk.length;
+        if (total && onProgress) onProgress(downloaded, total);
+      });
+      res.pipe(out);
+      out.on('finish', () => { out.close(); resolve({ total, downloaded }); });
+      out.on('error', (err) => { fs.unlink(destPath, () => {}); reject(err); });
+    });
+    req.on('error', reject);
+    req.setTimeout(60000, () => { req.destroy(); reject(new Error('Timeout')); });
+  });
+}
+
+ipcMain.handle('check-miner-update', async () => {
+  try {
+    const release = await _checkGitHubRelease();
+    if (!release.success) return { success: false, error: release.error };
+    const assetName = _getMinerAssetName();
+    const asset = release.assets.find(a => a.name === assetName);
+    if (!asset) return { success: false, error: `No asset ${assetName} in latest release` };
+    const minerPath = findRustMiner();
+    const currentSize = minerPath && fs.existsSync(minerPath) ? fs.statSync(minerPath).size : 0;
+    const needsUpdate = currentSize !== asset.size;
+    return {
+      success: true,
+      updateAvailable: needsUpdate,
+      currentVersion: release.currentVersion,
+      latestVersion: release.latestVersion,
+      assetName,
+      assetSize: asset.size,
+      releaseNotes: release.releaseNotes,
+    };
+  } catch (err) {
+    return { success: false, error: err?.message || String(err) };
+  }
+});
+
+ipcMain.handle('download-miner-update', async (_event, { url, size }) => {
+  try {
+    const tmpPath = path.join(app.getPath('temp'), `zion-miner-update-${Date.now()}.tmp`);
+    const progress = { percent: 0, transferred: 0, total: size || 0 };
+    const progressTimer = setInterval(() => {
+      _sendMinerUpdateProgress(progress);
+    }, 500);
+    await _downloadFile(url, tmpPath, (downloaded, total) => {
+      progress.transferred = downloaded;
+      progress.total = total;
+      progress.percent = total ? Math.round((downloaded / total) * 100) : 0;
+    });
+    clearInterval(progressTimer);
+    _sendMinerUpdateProgress({ ...progress, percent: 100 });
+    // Verify size
+    const actualSize = fs.statSync(tmpPath).size;
+    if (size && actualSize !== size) {
+      fs.unlinkSync(tmpPath);
+      return { success: false, error: `Size mismatch: expected ${size}, got ${actualSize}` };
+    }
+    // Atomic swap
+    const targetPath = findRustMiner() || path.join(process.resourcesPath, 'zion-miner.exe');
+    const backupPath = targetPath + '.backup';
+    // Stop miner if running
+    if (minerProcess) {
+      minerUserStopRequested = true;
+      minerStopping = true;
+      try { minerProcess.kill(); } catch {}
+      minerProcess = null;
+    }
+    // Backup old binary
+    if (fs.existsSync(targetPath)) {
+      if (fs.existsSync(backupPath)) fs.unlinkSync(backupPath);
+      fs.renameSync(targetPath, backupPath);
+    }
+    // Move new binary into place
+    fs.renameSync(tmpPath, targetPath);
+    // Set execute bit on Unix
+    if (process.platform !== 'win32') {
+      try { fs.chmodSync(targetPath, 0o755); } catch {}
+    }
+    return { success: true, path: targetPath };
+  } catch (err) {
+    return { success: false, error: err?.message || String(err) };
+  }
+});
+
+function _sendMinerUpdateProgress(progress) {
+  try {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('miner-update-progress', progress);
+    }
+  } catch { /* ignore */ }
 }
 
 // ── Hiran AI Inference IPC ─────────────────────────────────────────────────

@@ -512,6 +512,15 @@
       background: rgba(16,185,129,0.15);
       color: #6ee7b7;
     }
+    .update-actions .btn-gold {
+      background: rgba(234,179,8,0.15);
+      color: #fcd34d;
+      border-color: rgba(234,179,8,0.35);
+    }
+    .update-actions .btn-gold:hover {
+      background: rgba(234,179,8,0.25);
+      border-color: rgba(234,179,8,0.5);
+    }
     .update-actions .btn-success:hover {
       background: rgba(16,185,129,0.25);
       border-color: rgba(16,185,129,0.4);
@@ -4947,15 +4956,53 @@
               <div class="update-progress-detail" id="update-progress-detail"></div>
             </div>
 
+            <!-- Miner update cards -->
+            <div class="info-cards-grid" style="grid-template-columns: repeat(2, 1fr); margin-top:18px;">
+              <div class="info-card version">
+                <div class="info-card-kicker">
+                  <svg class="icon icon-inline icon-12" aria-hidden="true"><use href="#i-spark"></use></svg> MINER VERSION
+                </div>
+                <div class="info-card-value version" id="miner-update-status-label">Ready</div>
+                <div class="info-card-sub" id="miner-update-status-sub">Click to check for miner updates</div>
+              </div>
+              <div class="info-card network">
+                <div class="info-card-kicker">
+                  <svg class="icon icon-inline icon-12" aria-hidden="true"><use href="#i-refresh"></use></svg> MINER UPDATE STATUS
+                </div>
+                <div class="info-card-value network" id="miner-update-version">Unknown</div>
+                <div class="info-card-sub" id="miner-update-detail">Binary auto-updater</div>
+              </div>
+            </div>
+
+            <!-- Miner progress bar (hidden by default) -->
+            <div class="update-progress-wrap" id="miner-update-progress-wrap" style="display:none;">
+              <div class="update-progress-header">
+                <span id="miner-update-progress-title">Downloading miner...</span>
+                <span id="miner-update-progress-pct">0%</span>
+              </div>
+              <div class="update-progress-bar">
+                <div class="update-progress-fill" id="miner-update-progress-fill" style="width:0%"></div>
+              </div>
+              <div class="update-progress-detail" id="miner-update-progress-detail"></div>
+            </div>
+
             <!-- Action buttons -->
             <div class="update-actions">
               <button class="btn btn-primary" id="update-check-btn">
                 <svg class="icon" aria-hidden="true"><use href="#i-refresh"></use></svg>
                 Check for Updates
               </button>
+              <button class="btn btn-primary" id="miner-update-check-btn" style="margin-left:8px;">
+                <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>
+                Check Miner Update
+              </button>
               <button class="btn btn-success" id="update-install-btn" style="display:none;">
                 <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>
                 Install &amp; Restart
+              </button>
+              <button class="btn btn-gold" id="update-all-btn" style="display:none;margin-left:8px;">
+                <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>
+                Update All
               </button>
             </div>
 
