@@ -1592,14 +1592,17 @@ fn run_remote_session(
 
         // Always log found nonce for operational visibility
         let search_depth = solution.candidate.nonce.saturating_sub(job.start_nonce) + 1;
+        let hash_prefix: String = solution.hash[..6].iter().map(|x| format!("{:02x}", x)).collect();
         println!(
-            "[{}] found_nonce={}  height={}  depth={}/{}  elapsed_ms={}",
+            "[{}] found_nonce={}  height={}  depth={}/{}  elapsed_ms={}  algo={}  hash_prefix={}",
             log_timestamp(),
             solution.candidate.nonce,
             job.height,
             search_depth,
             job.nonce_count,
             batch_ms,
+            current_algorithm,
+            hash_prefix,
         );
 
         if config.sleep_ms > 0 {
@@ -1636,9 +1639,20 @@ fn run_remote_session(
                 if accepted {
                     accepted_iterations += 1;
                     ui::log_accepted(job.job_id, job.height, solution.candidate.nonce, latency_ms as u64);
+                    println!(
+                        "[{}] SHARE_ACCEPTED  job={}  height={}  nonce={}  algo={}  latency_ms={}",
+                        log_timestamp(), job.job_id, job.height,
+                        solution.candidate.nonce, current_algorithm, latency_ms,
+                    );
                 } else {
                     rejected_iterations += 1;
                     ui::log_rejected(job.job_id, job.height, solution.candidate.nonce, latency_ms as u64, &status);
+                    println!(
+                        "[{}] SHARE_REJECTED  job={}  height={}  nonce={}  algo={}  reason=\"{}\"  hash={}",
+                        log_timestamp(), job.job_id, job.height,
+                        solution.candidate.nonce, current_algorithm, status,
+                        hex(&solution.hash),
+                    );
                 }
                 status
             }
