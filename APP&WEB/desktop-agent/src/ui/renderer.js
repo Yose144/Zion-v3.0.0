@@ -748,9 +748,9 @@ function setupControls() {
   }
 
   const ALGO_LABELS = {
-    deeksha_lite_v1: 'Deeksha Lite v1 — Standard 4 KiB scratchpad',
+    deeksha_lite_v1: 'Lite v1 — Summer / Cooling (4 KiB)',
     cosmic_harmony_ekam_deeksha_v2: 'Cosmic Harmony Ekam Deeksha v2',
-    deeksha_lite_fire: 'Deeksha Lite Fire — 512 KiB thermal mode'
+    deeksha_lite_fire: 'Fire — Winter / Heating (512 KiB thermal)'
   };
 
   const syncAlgoUi = () => {
@@ -795,6 +795,21 @@ function setupControls() {
     // dashboard active-algo (if not mining)
     const activeAlgo = document.getElementById('active-algo');
     if (activeAlgo && (!isRunning && !isStarting)) activeAlgo.textContent = shortAlgoName(canonical);
+    // seasonal badge next to algo-select
+    const seasonBadge = document.getElementById('algo-season-badge');
+    if (seasonBadge) {
+      if (canonical === 'deeksha_lite_v1') {
+        seasonBadge.textContent = 'Summer';
+        seasonBadge.className = 'algo-season-badge summer';
+        seasonBadge.style.display = '';
+      } else if (canonical === 'deeksha_lite_fire') {
+        seasonBadge.textContent = 'Winter';
+        seasonBadge.className = 'algo-season-badge winter';
+        seasonBadge.style.display = '';
+      } else {
+        seasonBadge.style.display = 'none';
+      }
+    }
   };
 
   const algoSupportsGpu = (algo) => {
@@ -814,9 +829,33 @@ function setupControls() {
 
   // Sync config.algorithm from the select whenever user changes it
   if (algoSelect) {
-    algoSelect.addEventListener('change', () => {
-      config.algorithm = algoSelect.value;
-      syncAlgoUiAll(algoSelect.value);
+    algoSelect.addEventListener('change', async () => {
+      const newAlgo = algoSelect.value;
+      const oldAlgo = config.algorithm;
+      config.algorithm = newAlgo;
+      syncAlgoUiAll(newAlgo);
+
+      // If mining is running and algorithm actually changed, restart miner
+      if (isRunning && newAlgo !== oldAlgo) {
+        addLogEntry(`Algorithm switched: ${shortAlgoName(oldAlgo)} -> ${shortAlgoName(newAlgo)}. Restarting miner...`, 'info');
+        try {
+          await window.electronAPI.stopMining();
+          isRunning = false;
+          updateControlButtons();
+          // Small delay to let process fully exit
+          await new Promise(r => setTimeout(r, 800));
+          const result = await window.electronAPI.startMining(config);
+          if (result?.success) {
+            isRunning = true;
+            updateControlButtons();
+            addLogEntry(`Miner restarted with ${shortAlgoName(newAlgo)}`, 'success');
+          } else {
+            addLogEntry(`Restart failed: ${result?.error || 'unknown'}`, 'error');
+          }
+        } catch (err) {
+          addLogEntry(`Restart error: ${err?.message || err}`, 'error');
+        }
+      }
     });
     // init from persisted config (canonicalize everything)
     syncAlgoUiAll(config.algorithm);

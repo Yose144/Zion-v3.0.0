@@ -3655,6 +3655,28 @@
       box-shadow: 0 0 0 3px rgba(255,215,0,0.1);
     }
 
+    /* ═══ Seasonal Algorithm Badge ═══ */
+    .algo-season-badge {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 3px 8px;
+      border-radius: 6px;
+      margin-left: 8px;
+      white-space: nowrap;
+    }
+    .algo-season-badge.summer {
+      color: #6ee7b7;
+      background: rgba(16,185,129,0.12);
+      border: 1px solid rgba(16,185,129,0.25);
+    }
+    .algo-season-badge.winter {
+      color: #f87171;
+      background: rgba(239,68,68,0.12);
+      border: 1px solid rgba(239,68,68,0.25);
+    }
+
   </style>
 </head>
 <body>
@@ -3895,11 +3917,12 @@
                 <svg class="icon icon-inline icon-xs" aria-hidden="true"><use href="#i-spark"></use></svg>
                 <span id="gpu-badge-text">Detecting GPU...</span>
               </div>
-              <select id="algo-select" class="algo-select" style="width:auto;min-width:220px;font-size:13px;padding:8px 36px 8px 12px">
-                <option value="deeksha_lite_v1" selected>Deeksha Lite v1</option>
+              <select id="algo-select" class="algo-select" style="width:auto;min-width:260px;font-size:13px;padding:8px 36px 8px 12px">
+                <option value="deeksha_lite_v1" selected>Lite v1 — Summer / Cooling</option>
+                <option value="deeksha_lite_fire">Fire — Winter / Heating</option>
                 <option value="cosmic_harmony_ekam_deeksha_v2">Cosmic Harmony v2</option>
-                <option value="deeksha_lite_fire">Deeksha Fire</option>
               </select>
+              <span id="algo-season-badge" class="algo-season-badge" style="display:none;"></span>
             </div>
             <!-- Right: action buttons -->
             <div class="actions-row">
@@ -4638,7 +4661,7 @@
                   <h3>Algorithm</h3>
                 </div>
               </div>
-              <div class="slider-hint" id="settings-algo-display">Deeksha Lite v1 — Standard 4 KiB scratchpad</div>
+              <div class="slider-hint" id="settings-algo-display">Lite v1 — Summer / Cooling mode (4 KiB scratchpad)</div>
 
               <div class="section-divider">Compute</div>
 
