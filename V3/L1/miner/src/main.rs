@@ -792,7 +792,7 @@ fn main() -> Result<()> {
         }
         None => {
             println!("mode=local");
-            run_local_session(&config, &metrics)?
+            run_local_session(&config, &metrics, &control, &hashrate)?
         }
     };
 
@@ -833,6 +833,8 @@ fn main() -> Result<()> {
 fn run_local_session(
     config: &MinerConfig,
     metrics: &Arc<Mutex<MinerMetricsSnapshot>>,
+    control: &Arc<Mutex<interactive::MinerControl>>,
+    hashrate: &Arc<interactive::HashrateTracker>,
 ) -> Result<SessionOutcome> {
     let mut pool = MiningPool::with_job_ttl(CoreRuntime::default(), config.job_ttl_ms);
     let started_at = Instant::now();
@@ -845,6 +847,12 @@ fn run_local_session(
     let mut telemetry = SessionTelemetry::new(config.metrics_report_every_secs);
     let threads = config.threads;
 
+    // ── Read current algorithm from interactive control ──
+    let initial_algorithm = {
+        let c = control.lock().unwrap();
+        c.algorithm.clone()
+    };
+
     // ── GPU backend init (multi-algo manager — lazy per-algorithm) ──
     let mut gpu_manager = gpu_backend::GpuBackendManager::new(
         config.gpu_backend,
@@ -852,18 +860,18 @@ fn run_local_session(
     );
     let mut gpu_available = config.gpu_backend != gpu_backend::GpuBackendKind::Cpu;
     if gpu_available {
-        match gpu_manager.ensure_algorithm(&config.algorithm) {
+        match gpu_manager.ensure_algorithm(&initial_algorithm) {
             Ok(g) => {
                 println!(
                     "gpu_init backend={} device=\"{}\" work_size={} algorithm={}",
                     g.backend_kind().as_str(),
                     g.device_name(),
                     config.gpu_work_size,
-                    config.algorithm
+                    initial_algorithm
                 );
                 telemetry.gpu_backend_name = g.backend_kind().as_str().to_string();
                 telemetry.gpu_infos = gpu_backend::query_gpu_details();
-                telemetry.algorithm = config.algorithm.clone();
+                telemetry.algorithm = initial_algorithm.clone();
             }
             Err(e) => {
                 println!("gpu_init_fallback reason=\"{e}\" using=cpu");
@@ -894,6 +902,15 @@ fn run_local_session(
     }
 
     for iteration in 0..config.loop_count {
+        // Read interactive control state at top of iteration
+        let current_algorithm = {
+            let c = control.lock().unwrap();
+            if c.requested_quit {
+                break;
+            }
+            c.algorithm.clone()
+        };
+
         for stale_job_id in pool.expire_stale_jobs() {
             let stale_line = encode_message(&pool.stale_message(stale_job_id))?;
             let cancel_line =
@@ -913,12 +930,12 @@ fn run_local_session(
         // Ensure GPU backend matches current algorithm (lazy create / switch)
         let mut gpu_ref: Option<&mut dyn gpu_backend::GpuMiner> = None;
         if gpu_available {
-            match gpu_manager.ensure_algorithm(&config.algorithm) {
+            match gpu_manager.ensure_algorithm(&current_algorithm) {
                 Ok(g) => gpu_ref = Some(g),
                 Err(e) => {
                     println!(
                         "gpu_algo_fallback job={} algorithm={} reason=\"{e}\" using=cpu",
-                        job.job_id, config.algorithm
+                        job.job_id, current_algorithm
                     );
                     gpu_available = false;
                 }
@@ -933,12 +950,12 @@ fn run_local_session(
                     "gpu_epoch_fallback height={} reason=\"{e}\" using=cpu",
                     job.height
                 );
-                parallel::parallel_scan_nonce_range(job, threads, &config.algorithm)
+                parallel::parallel_scan_nonce_range(job, threads, &current_algorithm)
             } else {
-                gpu_backend::gpu_scan_job(g, job, &config.algorithm).solution
+                gpu_backend::gpu_scan_job(g, job, &current_algorithm).solution
             }
         } else {
-            parallel::parallel_scan_nonce_range(job, threads, &config.algorithm)
+            parallel::parallel_scan_nonce_range(job, threads, &current_algorithm)
         };
         let Some(solution) = scan_result else {
             attempted_hashes = attempted_hashes.saturating_add(job.nonce_count);
@@ -1010,17 +1027,19 @@ fn run_local_session(
             solution,
             config.revenue_source,
             config.revenue_value_usd,
-            &config.algorithm,
+            &current_algorithm,
         );
         if matches!(decision.status, ShareStatus::Accepted) {
             accepted_iterations += 1;
+            hashrate.record_share(true);
         } else {
             rejected_iterations += 1;
+            hashrate.record_share(false);
         }
 
         let submit_started_at = Instant::now();
 
-        let job_line = encode_message(&pool.job_message(job, &config.algorithm))?;
+        let job_line = encode_message(&pool.job_message(job, &current_algorithm))?;
         let submit_line = encode_message(&pool.solution_message(
             &config.miner_id,
             &config.worker_name,
@@ -1471,6 +1490,7 @@ fn run_remote_session(
                 let latency_ms = submit_started_at.elapsed().as_millis();
                 if accepted {
                     accepted_iterations += 1;
+                    hashrate.record_share(true);
                     ui::log_accepted(job.job_id, job.height, solution.candidate.nonce, latency_ms as u64);
                     println!(
                         "[{}] SHARE_ACCEPTED  job={}  height={}  nonce={}  algo={}  latency_ms={}",
@@ -1479,6 +1499,7 @@ fn run_remote_session(
                     );
                 } else {
                     rejected_iterations += 1;
+                    hashrate.record_share(false);
                     ui::log_rejected(job.job_id, job.height, solution.candidate.nonce, latency_ms as u64, &status);
                     println!(
                         "[{}] SHARE_REJECTED  job={}  height={}  nonce={}  algo={}  reason=\"{}\"  hash={}",
