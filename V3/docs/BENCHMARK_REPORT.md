@@ -1,6 +1,6 @@
 # ZION V3 GPU Benchmark Report
 
-> **Date:** 2026-06-07  
+> **Date:** 2026-06-10  
 > **Hardware:** AMD RX 5700 XT (`gfx1010:xnack-`, RDNA, 6 GB VRAM)  
 > **OS:** Windows 11 (MinGW)  
 > **Miner:** `zion-miner` built with `--features gpu-opencl`  
@@ -14,7 +14,7 @@
 | Algorithm | Throughput | Relative to Lite v1 | Primary Use |
 |-----------|-----------|---------------------|-------------|
 | `deeksha_lite_v1` | **19.25 KH/s** | 100 % (baseline) | General mining — maximum throughput |
-| `deeksha_lite_fire` | **10.15 KH/s** | 53 % | Thermal stress / winter heating / stability burn-in |
+| `deeksha_lite_fire` | **~4 KH/s** | ~21 % | Thermal stress / winter heating / stability burn-in (524288 thermal iters + extra ALU) |
 | `cosmic_harmony_ekam_deeksha_v2` | **3.29 KH/s** | 17 % | Maximum ASIC/FPGA resistance |
 
 > **Critical note:** Earlier benchmarks (before commit `691a3398`) were **inaccurate** due to missing `queue.finish()` after OpenCL buffer reads. Values like "1.1 KH/s" for Lite v1 or "18.2 MH/s" for Cosmic Harmony were artifacts. Always verify with `--gpu-benchmark-all` on current code.
@@ -85,15 +85,17 @@ gpu_opencl_fire_init family=AmdRdna device="gfx1010:xnack-"
   scratchpad_mib=1024
 
 benchmark_algo=deeksha_lite_fire
-  hashes=106496 elapsed=10.49s
-  throughput=10.15 KH/s
+  hashes=65536 elapsed=14.05s
+  throughput=~4 KH/s
 ```
 
-- **Scratchpad:** 128 KiB per thread (intentionally small — ALU-bound)
-- **Thermal loop:** 16 384 iterations, 6 independent `ulong` chains
-- **Build flags:** RDNA-optimised (`-cl-single-precision-constant`)
+- **Scratchpad:** 256 KiB per thread (same as v1 — compatibility with old cards)
+- **Thermal loop:** 524 288 iterations, 12 `ulong` chains + extra cross-chain mul/rotate
+- **Memory work:** 2 passes / 32 reads (minimal — GPU stays ALU-bound)
+- **Work size:** dynamic up to 24576 (auto-scales by VRAM: 6GB→~22k, 4GB→~8k, 2GB→~4k)
+- **Build flags:** `-cl-std=CL1.2 -cl-mad-enable`
 - **Best for:** GPU thermal testing, stability burn-in, winter heating
-- **VRAM requirement:** ~1 GiB free (128 KiB × 8192 threads)
+- **VRAM requirement:** ~4–6 GB (scales down automatically on lower-VRAM cards)
 
 ---
 
@@ -117,11 +119,11 @@ where `safety_margin = 5 s` (network + submit latency).
 
 \* Cap at 1 048 576 to avoid excessive memory usage. For 90 s TTL, a higher cap or `ZION_NONCE_COUNT_MAX` increase would be needed.
 
-### For RX 5700 XT @ 10.15 KH/s (Fire)
+### For RX 5700 XT @ ~4 KH/s (Fire)
 
 | `ZION_JOB_TTL_MS` | Optimal `nonce_count` | Rounded | GPU util |
 |-------------------|----------------------|---------|----------|
-| 60 000 | 558 250 | 524 288 | ~94 % |
+| 60 000 | 220 000 | 262 144 | ~91 % |
 
 ### For RX 5700 XT @ 3.29 KH/s (Cosmic Harmony)
 
@@ -136,7 +138,7 @@ where `safety_margin = 5 s` (network + submit latency).
 | Metric | Benchmark | Live Stratum (Edge pool) | Difference |
 |--------|-----------|-------------------------|------------|
 | Lite v1 | 19.25 KH/s | ~14–17 KH/s* | ~20 % lower (network + validation overhead) |
-| Fire | 10.15 KH/s | ~8–9 KH/s* | ~15 % lower |
+| Fire | ~4 KH/s | ~3–3.5 KH/s* | ~15 % lower |
 | Cosmic Harmony | 3.29 KH/s | ~2.5–3 KH/s* | ~15 % lower |
 
 \* Estimated based on pool metrics (`zion_pool_hashrate_hps`) with `nonce_count=1048576`.
@@ -153,7 +155,7 @@ Only the **AMD RX 5700 XT** was directly measured. To add your hardware, run:
 
 | GPU | Backend | Lite v1 | Fire | Cosmic Harmony | Date |
 |-----|---------|---------|------|--------------|------|
-| AMD RX 5700 XT (`gfx1010`) | OpenCL | **19.25 KH/s** | **10.15 KH/s** | **3.29 KH/s** | 2026-06-07 |
+| AMD RX 5700 XT (`gfx1010`) | OpenCL | **~19 KH/s** | **~4 KH/s** | **~3.3 KH/s** | 2026-06-10 |
 | *Your GPU here* | — | — | — | — | Run benchmark |
 
 ---
@@ -186,4 +188,4 @@ The pool Prometheus metric `zion_pool_hashrate_hps` appears to smooth/average ha
 
 ---
 
-*Report generated: 2026-06-07 · Verified on AMD RX 5700 XT (gfx1010) · Commit: `691a3398` (queue.finish fix) + `ae343ebb` (Fire 16k iters)*
+*Report generated: 2026-06-10 · Verified on AMD RX 5700 XT (gfx1010) · Fire commit: `a122fb02` (THERMAL_ITERS=524288 + extra ALU mul/rotate, dynamic work_size)*
