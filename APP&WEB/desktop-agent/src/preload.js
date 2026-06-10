@@ -40,6 +40,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   walletGetBalance: (data) => ipcRenderer.invoke('wallet-get-balance', data),
   walletSendTransaction: (data) => ipcRenderer.invoke('wallet-send-transaction', data),
   walletGetTransaction: (data) => ipcRenderer.invoke('wallet-get-transaction', data),
+  walletGetTransactions: (data) => ipcRenderer.invoke('wallet-get-transactions', data),
   walletGenerateQr: (data) => ipcRenderer.invoke('wallet-generate-qr', data),
 
   // CH3 Architecture / Network Monitoring
