@@ -5264,6 +5264,73 @@ ipcMain.handle('cli-config-set', async (_event, { key, value }) => {
   return runZionCli(['config', 'set', key, value]);
 });
 
+// ── Bridge CLI ─────────────────────────────────────────────────────
+ipcMain.handle('cli-bridge-status', async () => {
+  return runZionCli(['bridge', 'status']);
+});
+ipcMain.handle('cli-bridge-pending', async () => {
+  return runZionCli(['bridge', 'pending']);
+});
+ipcMain.handle('cli-bridge-history', async (_event, { n }) => {
+  const args = ['bridge', 'history'];
+  if (n) args.push(String(n));
+  return runZionCli(args);
+});
+ipcMain.handle('cli-bridge-chains', async () => {
+  return runZionCli(['bridge', 'chains']);
+});
+
+// ── DAO CLI ────────────────────────────────────────────────────────
+ipcMain.handle('cli-dao-status', async () => {
+  return runZionCli(['dao', 'status']);
+});
+ipcMain.handle('cli-dao-proposals', async () => {
+  return runZionCli(['dao', 'proposals']);
+});
+ipcMain.handle('cli-dao-treasury', async () => {
+  return runZionCli(['dao', 'treasury']);
+});
+ipcMain.handle('cli-dao-params', async () => {
+  return runZionCli(['dao', 'params']);
+});
+
+// ── Pool CLI ───────────────────────────────────────────────────────
+ipcMain.handle('cli-pool-stats', async (_event, { target }) => {
+  const args = ['pool', 'stats'];
+  if (target) args.push(target);
+  return runZionCli(args);
+});
+ipcMain.handle('cli-pool-miners', async (_event, { target }) => {
+  const args = ['pool', 'miners'];
+  if (target) args.push(target);
+  return runZionCli(args);
+});
+ipcMain.handle('cli-pool-config', async (_event, { target }) => {
+  const args = ['pool', 'config'];
+  if (target) args.push(target);
+  return runZionCli(args);
+});
+ipcMain.handle('cli-pool-earnings', async (_event, { address, target }) => {
+  const args = ['pool', 'earnings'];
+  if (address) args.push('--address', address);
+  if (target) args.push(target);
+  return runZionCli(args);
+});
+
+// ── Warp CLI ───────────────────────────────────────────────────────
+ipcMain.handle('cli-warp-status', async () => {
+  return runZionCli(['warp', 'status']);
+});
+ipcMain.handle('cli-warp-chains', async () => {
+  return runZionCli(['warp', 'chains']);
+});
+ipcMain.handle('cli-warp-pending', async () => {
+  return runZionCli(['warp', 'pending']);
+});
+ipcMain.handle('cli-warp-stats', async () => {
+  return runZionCli(['warp', 'stats']);
+});
+
 function _isNewerVersion(latest, current) {
   const a = latest.split('.').map(Number);
   const b = current.split('.').map(Number);
