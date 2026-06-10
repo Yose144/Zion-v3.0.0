@@ -613,6 +613,7 @@ const _viewInitFns = {
   node:      () => initNodeView(),
   about:     () => { initUpdateUI(); initSecurityUI(); },
   bridge:    () => initBridgeView(),
+  cli:       () => initCliView(),
 };
 
 function switchView(view) {
@@ -4044,4 +4045,81 @@ function initNclView() {
   // Auto-refresh every 10s
   let nclInterval = setInterval(refreshNclStatus, 10000);
   refreshNclStatus();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// CLI View — ZION Unified Command Line Interface
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function initCliView() {
+  const consoleEl = document.getElementById('cli-console');
+  const statusBadge = document.getElementById('cli-status-badge');
+
+  function appendCliOutput(text, isError = false) {
+    const line = document.createElement('div');
+    line.style.cssText = isError
+      ? 'color:#f87171;margin:2px 0'
+      : 'color:rgba(255,255,255,0.7);margin:2px 0';
+    line.textContent = text;
+    consoleEl.appendChild(line);
+    consoleEl.scrollTop = consoleEl.scrollHeight;
+  }
+
+  function clearConsole() {
+    consoleEl.innerHTML = '';
+  }
+
+  async function runCli(handlerName, label, args = {}) {
+    statusBadge.textContent = `${label}…`;
+    statusBadge.style.color = 'var(--zion-gold)';
+    try {
+      const result = await window.electronAPI[handlerName](args);
+      if (result?.success) {
+        appendCliOutput(`$ zion ${label}\n${result.output || 'OK'}`);
+      } else {
+        appendCliOutput(`$ zion ${label}\nError: ${result?.error || 'Unknown error'}`, true);
+      }
+    } catch (err) {
+      appendCliOutput(`$ zion ${label}\nException: ${err.message}`, true);
+    }
+    statusBadge.textContent = 'Ready';
+    statusBadge.style.color = 'rgba(255,255,255,0.3)';
+  }
+
+  document.getElementById('cli-btn-version')?.addEventListener('click', () => runCli('cliGetVersion', '--version'));
+  document.getElementById('cli-btn-mine-status')?.addEventListener('click', () => runCli('cliMineStatus', 'mine status'));
+  document.getElementById('cli-btn-wallet-list')?.addEventListener('click', () => runCli('cliWalletList', 'wallet list'));
+  document.getElementById('cli-btn-wallet-balance')?.addEventListener('click', async () => {
+    const address = prompt('Enter ZION address (or leave empty for config wallet):');
+    await runCli('cliWalletBalance', 'wallet balance', { address: address || undefined });
+  });
+  document.getElementById('cli-btn-config-get')?.addEventListener('click', async () => {
+    const key = prompt('Enter config key (or leave empty for all):');
+    await runCli('cliConfigGet', 'config get', { key: key || undefined });
+  });
+  document.getElementById('cli-btn-clear')?.addEventListener('click', clearConsole);
+
+  // Send transaction
+  document.getElementById('cli-btn-send')?.addEventListener('click', async () => {
+    const wallet = document.getElementById('cli-send-wallet').value.trim();
+    const to = document.getElementById('cli-send-to').value.trim();
+    const amount = document.getElementById('cli-send-amount').value.trim();
+    if (!wallet || !to || !amount) {
+      appendCliOutput('Error: wallet, to, and amount are required', true);
+      return;
+    }
+    await runCli('cliWalletSend', `wallet send -w ${wallet} --to ${to} --amount ${amount}`, { wallet, to, amount });
+  });
+
+  // Mining controls
+  document.getElementById('cli-btn-mine-start')?.addEventListener('click', async () => {
+    const wallet = document.getElementById('cli-mine-wallet').value.trim();
+    const pool = document.getElementById('cli-mine-pool').value.trim() || '77.42.71.94:8444';
+    if (!wallet) {
+      appendCliOutput('Error: wallet address is required', true);
+      return;
+    }
+    await runCli('cliMineStart', 'mine start', { pool, wallet });
+  });
+  document.getElementById('cli-btn-mine-stop')?.addEventListener('click', () => runCli('cliMineStop', 'mine stop'));
 }

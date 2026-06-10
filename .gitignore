@@ -270,6 +270,9 @@ UsersyosefDesktopsmos-api-test/
 "C\357\200\272UsersyosefDesktopzion-miner-new"
 zion-miner
 
+# Desktop agent legacy backup
+**/legacy_backup/
+
 # Bridge contract build artifacts
 V3/L2/bridge/contracts/cache/
 V3/L2/bridge/contracts/out/
