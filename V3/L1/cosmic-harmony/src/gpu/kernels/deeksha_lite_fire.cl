@@ -1,16 +1,20 @@
 /*
  * DeekshaLite Fire — OpenCL Kernel (GCN/RDNA compatible)
  *
- * Fire = DeekshaLite v1 (identical, verified working) + thermal_loop step.
+ * Fire = DeekshaLite v1 + intensified memory-hard passes + thermal_loop step.
  * The thermal loop burns ALU cycles after the AES mix to maximize GPU heat.
- * All hashing / memory logic is 100% identical to deeksha_lite.cl (v1).
  *
  * Pipeline:
- *   1. Keccak256(header || nonce)  — host precomputed state (same as v1)
- *   2. Memory-hard scratchpad (256 KiB, 8192 blocks, 2 passes, 64 reads)
+ *   1. Keccak256(header || nonce)  — host precomputed state
+ *   2. Memory-hard scratchpad (128 KiB, 4096 blocks, 16 passes, 512 reads)
  *   3. AES-128 CTR mix (3 full rounds + 1 final)
- *   4. Thermal loop (65536 iters, 8 ulong chains) — extra heat, no float
+ *   4. Thermal loop (65536 iters, 8 ulong chains) — max ALU heat, no float
  *   5. Keccak256(s3_after_thermal) → final hash
+ *
+ * Heat tuning (vs v1):
+ *   - PASSES 2→16, RANDOM_READS 64→512: 8x more memory bandwidth → VRAM heat
+ *   - SCRATCHPAD 256 KiB→128 KiB: 2x more wavefronts in flight → ALU heat
+ *   - THERMAL_ITERS 65536: maximum ALU burn after memory passes
  *
  * Compatible with: AMD GCN (Vega, Polaris), AMD RDNA, NVIDIA, Intel.
  */
@@ -18,14 +22,14 @@
 #pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable
 
 /* ========================================================================== */
-/* Constants — identical to v1 for memory management                          */
+/* Constants                                                                  */
 /* ========================================================================== */
 
-#define SCRATCHPAD_SIZE  262144   /* 256 KiB = 8192 * 32 — same as v1 */
+#define SCRATCHPAD_SIZE  131072   /* 128 KiB = 4096 * 32 — half of v1, doubles wavefronts */
 #define BLOCK_SIZE       32
-#define BLOCK_COUNT      8192
-#define PASSES           2
-#define RANDOM_READS     64
+#define BLOCK_COUNT      4096
+#define PASSES           16       /* 8x more passes than v1 — max memory bandwidth */
+#define RANDOM_READS     512      /* 8x more random reads than v1 */
 #define THERMAL_ITERS    65536
 
 /* ========================================================================== */
@@ -213,18 +217,22 @@ void fill_scratchpad(__private const uchar seed[32], __global uchar *pad)
 
 void sequential_passes(__global uchar *pad)
 {
-    for (uint i=0;i<BLOCK_COUNT;i++) {
-        uint prev=(i==0)?(BLOCK_COUNT-1):(i-1);
-        ulong4 cv=vload4(0,(__global ulong*)(pad+i*BLOCK_SIZE));
-        ulong4 pv=vload4(0,(__global ulong*)(pad+prev*BLOCK_SIZE));
-        cv^=pv; vstore4(cv,0,(__global ulong*)(pad+i*BLOCK_SIZE));
-    }
-    for (uint i=BLOCK_COUNT;i>0;i--) {
-        uint idx=i-1;
-        uint next=(idx+1==BLOCK_COUNT)?0:(idx+1);
-        ulong4 cv=vload4(0,(__global ulong*)(pad+idx*BLOCK_SIZE));
-        ulong4 nv=vload4(0,(__global ulong*)(pad+next*BLOCK_SIZE));
-        cv^=nv; vstore4(cv,0,(__global ulong*)(pad+idx*BLOCK_SIZE));
+    for (int pass = 0; pass < PASSES; pass++) {
+        /* Forward */
+        for (uint i=0;i<BLOCK_COUNT;i++) {
+            uint prev=(i==0)?(BLOCK_COUNT-1):(i-1);
+            ulong4 cv=vload4(0,(__global ulong*)(pad+i*BLOCK_SIZE));
+            ulong4 pv=vload4(0,(__global ulong*)(pad+prev*BLOCK_SIZE));
+            cv^=pv; vstore4(cv,0,(__global ulong*)(pad+i*BLOCK_SIZE));
+        }
+        /* Backward */
+        for (uint i=BLOCK_COUNT;i>0;i--) {
+            uint idx=i-1;
+            uint next=(idx+1==BLOCK_COUNT)?0:(idx+1);
+            ulong4 cv=vload4(0,(__global ulong*)(pad+idx*BLOCK_SIZE));
+            ulong4 nv=vload4(0,(__global ulong*)(pad+next*BLOCK_SIZE));
+            cv^=nv; vstore4(cv,0,(__global ulong*)(pad+idx*BLOCK_SIZE));
+        }
     }
 }
 

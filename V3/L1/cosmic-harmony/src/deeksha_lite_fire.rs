@@ -1,14 +1,14 @@
 //! DeekshaLite Fire — CPU reference implementation
 //!
-//! Fire = DeekshaLite v1 (identical, verified working) + thermal_loop step.
+//! Fire = DeekshaLite v1 + intensified memory-hard passes + thermal_loop step.
 //! The thermal loop burns ALU cycles after the AES mix to maximize GPU heat.
 //!
 //! Pipeline (must match deeksha_lite_fire.cl exactly):
-//!   1. Keccak256(header[0..80] || nonce_le)  → s1[32]  — same as v1
-//!   2. Memory-hard scratchpad (256 KiB, 8192 × 32B, 2 passes, 64 reads)  — same as v1
-//!   3. AES-128 CTR mix (3 full rounds + 1 final)  — same as v1
+//!   1. Keccak256(header[0..80] || nonce_le)  → s1[32]
+//!   2. Memory-hard scratchpad (128 KiB, 4096 × 32B, 16 passes, 512 reads)
+//!   3. AES-128 CTR mix (3 full rounds + 1 final)
 //!   4. Thermal loop (65536 iters, 8 ulong integer chains)  — extra vs v1
-//!   5. Keccak256(s3_after_thermal)  → final hash[32]  — same as v1
+//!   5. Keccak256(s3_after_thermal)  → final hash[32]
 
 use sha3::{Digest, Keccak256, Sha3_512};
 use crate::algorithms_opt::Hash32;
@@ -20,12 +20,12 @@ fn meets_target(hash: &[u8; 32], target: &[u8; 32]) -> bool {
 
 pub const DEEKSHA_LITE_FIRE_PROFILE: &str = "deeksha_lite_fire";
 
-// Constants — identical to deeksha_lite_v1 for memory management
-pub const SCRATCHPAD_SIZE: usize = 256 * 1024; // 256 KiB — same as v1
+// Constants — must match deeksha_lite_fire.cl exactly
+pub const SCRATCHPAD_SIZE: usize = 128 * 1024; // 128 KiB — half of v1, doubles wavefronts
 pub const BLOCK_SIZE:      usize = 32;
-pub const BLOCK_COUNT:     usize = SCRATCHPAD_SIZE / BLOCK_SIZE; // 8192
-pub const PASSES:          usize = 2;    // same as v1
-pub const RANDOM_READS:    usize = 64;   // same as v1
+pub const BLOCK_COUNT:     usize = SCRATCHPAD_SIZE / BLOCK_SIZE; // 4096
+pub const PASSES:          usize = 16;   // 8x more than v1 — max memory bandwidth
+pub const RANDOM_READS:    usize = 512;  // 8x more than v1
 pub const AES_ROUNDS:      usize = 4;    // same as v1 (3 full + 1 final)
 pub const THERMAL_ITERS:   usize = 65536;
 
@@ -118,15 +118,17 @@ fn step2_memory_hard(seed: &[u8; 32]) -> [u8; 32] {
         state[..32].copy_from_slice(&out[..32]);
     }
 
-    for i in 0..BLOCK_COUNT {
-        let prev = if i == 0 { BLOCK_COUNT - 1 } else { i - 1 };
-        let (cur, prv) = (i * BLOCK_SIZE, prev * BLOCK_SIZE);
-        for j in 0..BLOCK_SIZE { let pv = scratchpad[prv + j]; scratchpad[cur + j] ^= pv; }
-    }
-    for i in (0..BLOCK_COUNT).rev() {
-        let next = if i + 1 == BLOCK_COUNT { 0 } else { i + 1 };
-        let (cur, nxt) = (i * BLOCK_SIZE, next * BLOCK_SIZE);
-        for j in 0..BLOCK_SIZE { let nv = scratchpad[nxt + j]; scratchpad[cur + j] ^= nv; }
+    for _pass in 0..PASSES {
+        for i in 0..BLOCK_COUNT {
+            let prev = if i == 0 { BLOCK_COUNT - 1 } else { i - 1 };
+            let (cur, prv) = (i * BLOCK_SIZE, prev * BLOCK_SIZE);
+            for j in 0..BLOCK_SIZE { let pv = scratchpad[prv + j]; scratchpad[cur + j] ^= pv; }
+        }
+        for i in (0..BLOCK_COUNT).rev() {
+            let next = if i + 1 == BLOCK_COUNT { 0 } else { i + 1 };
+            let (cur, nxt) = (i * BLOCK_SIZE, next * BLOCK_SIZE);
+            for j in 0..BLOCK_SIZE { let nv = scratchpad[nxt + j]; scratchpad[cur + j] ^= nv; }
+        }
     }
 
     let mut acc = [0u8; 32];
@@ -295,13 +297,14 @@ pub fn deeksha_lite_fire_find_nonce(
 /// Generated from this CPU implementation on 2026-06-09 and locked.
 /// If any of these change, the CPU↔GPU pipeline is broken — do NOT update
 /// these constants without regenerating and re-verifying deeksha_lite_fire.cl too.
+/// Generated 2026-06-10 with SCRATCHPAD=128KiB, PASSES=16, RANDOM_READS=512, THERMAL_ITERS=65536.
 pub const FIRE_KAT_HEADER: &[u8] = b"ZION_FIRE_KAT_V1";
 pub const FIRE_KAT: &[(&str, u64)] = &[
-    ("4e52987a770e281570791ada44a1d797c312c31ded1389738c1bca46625e3a7f", 0),
-    ("7fafc9dd9870da82e0bb2f5f79cac580464ac1fd8838b4a619e4f9513f0a70a4", 1),
-    ("0c4427d4315055c04c1097fd923314e44602db789d15393955a79f2449b0467d", 42),
-    ("dc0200ecd39daaf491d49f06676de5982fb28493826f8ee8658236c9f94ddae3", 0xDEADBEEF),
-    ("632a7c01cee5e682da2b0007c5772fa1885f5a4a6f5ba11d494b3b9b63abbf40", u64::MAX),
+    ("b8d97753deea32f1bdadfa632aed68006fac21ff33c68f8e14cf1c77e438399e", 0),
+    ("4cc287877848cecf5735a622981fe5d1ec423ac7779898e9a1cc06ddbf9bb60c", 1),
+    ("e8ff31f3eeb9049c19c62bcea6672cdbfad03961eb4ffcfafc48b7f83edf39f4", 42),
+    ("d3912579934b63cf7448d2d9877bd74ae9758a5d822d62669bf051ba2c170f9f", 0xDEADBEEF),
+    ("0695190b2927f8151b874daaaacffbc5723408cd3ecaba4109d3b780280b47d1", u64::MAX),
 ];
 
 #[cfg(test)]
@@ -421,8 +424,20 @@ mod tests {
     }
 
     // ── Known-answer tests (KAT) — locks the exact output ───────────────────
-    // These vectors were generated from this CPU implementation on 2026-06-09.
+    // These vectors were generated from this CPU implementation on 2026-06-10.
+    // Constants: SCRATCHPAD=128KiB, BLOCK_COUNT=4096, PASSES=16, RANDOM_READS=512, THERMAL_ITERS=65536
     // If these change: (1) GPU kernel deeksha_lite_fire.cl diverges, (2) chain freezes.
+
+    #[test]
+    #[ignore]
+    fn print_new_kat_vectors() {
+        // Helper: run with `cargo test print_new_kat -- --ignored --nocapture` to regenerate KAT
+        for &(_, nonce) in FIRE_KAT {
+            let hash = deeksha_lite_fire(FIRE_KAT_HEADER, nonce);
+            let got: String = hash.iter().map(|b| format!("{:02x}", b)).collect();
+            println!("    (\"{}\", {}),", got, nonce);
+        }
+    }
 
     #[test]
     fn test_fire_kat_vectors() {
@@ -495,11 +510,17 @@ mod tests {
     // ── Constants sanity ─────────────────────────────────────────────────────
 
     #[test]
-    fn test_fire_scratchpad_equals_lite_v1() {
-        // Fire scratchpad must be 256 KiB — same as Lite v1, NOT 128 KiB
-        assert_eq!(SCRATCHPAD_SIZE, 256 * 1024,
-            "Fire scratchpad must be 256 KiB (same as Lite v1), got {} KiB",
+    fn test_fire_scratchpad_size() {
+        // Fire uses 128 KiB (half of v1) to allow 2x more wavefronts in flight
+        assert_eq!(SCRATCHPAD_SIZE, 128 * 1024,
+            "Fire scratchpad must be 128 KiB for maximum wavefront occupancy, got {} KiB",
             SCRATCHPAD_SIZE / 1024);
+    }
+
+    #[test]
+    fn test_fire_passes_and_reads() {
+        assert_eq!(PASSES, 16, "Fire PASSES must be 16 (8x more than v1) for max memory bandwidth");
+        assert_eq!(RANDOM_READS, 512, "Fire RANDOM_READS must be 512 (8x more than v1)");
     }
 
     #[test]
