@@ -41,7 +41,7 @@ echo  Payout     : %ZION_PAYOUT_ADDRESS%
 echo ===========================================================
 echo.
 
-V3\target\release\zion-miner-rdna.exe >> logs\miner.log 2>&1
+V3\target\release\zion-miner.exe >> logs\miner.log 2>&1
 echo [EXIT] Miner skoncil s kodem %ERRORLEVEL% v %TIME%
 pause
 endlocal
