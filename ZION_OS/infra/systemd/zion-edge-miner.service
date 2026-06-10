@@ -1,18 +1,18 @@
 [Unit]
-Description=ZION CPU Miner (Edge)
+Description=ZION Edge Miner (CPU 2-core continuous)
 After=network.target zion-edge-pool.service
+Requires=zion-edge-pool.service
 
 [Service]
 Type=simple
 User=root
-Environment=ZION_POOL_ADDR=127.0.0.1:8444
-Environment=ZION_WORKER_NAME=edge-cpu-miner
-Environment=ZION_MINER_ID=edge-cpu-1
-Environment=ZION_LOOP_COUNT=1000000
-Environment=ZION_THREADS=2
-ExecStart=/root/zion-2.9.6-main/V3/target/release/zion-miner --pool 127.0.0.1:8444 --worker edge-cpu-miner --threads 2 --loops 1000000 --cpu
+Environment="ZION_INTERACTIVE=false"
+Environment="ZION_MINER_ID=edge-primary"
+ExecStart=/usr/local/bin/zion-miner --pool 127.0.0.1:8444 --threads 2 --worker edge-miner-1 --wallet zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604 --algorithm deeksha_lite_v1 --loops 1000000 --gpu cpu
 Restart=always
-RestartSec=30
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
 
 [Install]
 WantedBy=multi-user.target
