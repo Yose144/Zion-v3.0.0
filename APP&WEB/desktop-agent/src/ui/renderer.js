@@ -4715,6 +4715,8 @@ function initOasisView() {
   initConsciousnessSnake();
   // ── Arcade: Cosmic Pong ────────────────────────────────────────
   initCosmicPong();
+  // ── Arcade: Cosmic Breakout ────────────────────────────────────
+  initCosmicBreakout();
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -5126,5 +5128,264 @@ function initCosmicPong() {
   });
 
   // initial draw
+  draw();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Cosmic Breakout — Retro Canvas Arcade
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function initCosmicBreakout() {
+  const canvas = document.getElementById('oasis-breakout-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const overlay = document.getElementById('oasis-breakout-overlay');
+  const scoreEl = document.getElementById('oasis-breakout-score');
+  const highEl  = document.getElementById('oasis-breakout-high');
+  const livesEl = document.getElementById('oasis-breakout-lives');
+
+  const W = canvas.width;
+  const H = canvas.height;
+  const paddleW = 80;
+  const paddleH = 10;
+  const ballR = 6;
+  const brickRows = 5;
+  const brickCols = 8;
+  const brickPad = 6;
+  const brickOffsetTop = 50;
+  const brickOffsetLeft = 30;
+  const brickW = (W - (brickOffsetLeft * 2) - (brickCols - 1) * brickPad) / brickCols;
+  const brickH = 18;
+
+  let score = 0;
+  let high  = parseInt(localStorage.getItem('zion_breakout_high') || '0', 10);
+  let lives = 3;
+  let running = false;
+  let paused = false;
+  let loopId = null;
+  let ballLaunched = false;
+
+  let paddle = { x: W / 2 - paddleW / 2, y: H - 30 };
+  let ball = { x: W / 2, y: H - 40, vx: 0, vy: 0 };
+  let bricks = [];
+  let keys = {};
+
+  const colors = ['#f87171','#fbbf24','#34d399','#60a5fa','#a78bfa'];
+
+  function buildBricks() {
+    bricks = [];
+    for (let r = 0; r < brickRows; r++) {
+      for (let c = 0; c < brickCols; c++) {
+        bricks.push({
+          x: brickOffsetLeft + c * (brickW + brickPad),
+          y: brickOffsetTop + r * (brickH + brickPad),
+          w: brickW,
+          h: brickH,
+          color: colors[r % colors.length],
+          active: true
+        });
+      }
+    }
+  }
+
+  function resetBall(onPaddle) {
+    ballLaunched = !onPaddle;
+    ball.x = paddle.x + paddleW / 2;
+    ball.y = paddle.y - ballR - 2;
+    if (onPaddle) {
+      ball.vx = 0; ball.vy = 0;
+    } else {
+      const speed = 4 + Math.min(score / 500, 3);
+      ball.vx = (Math.random() > 0.5 ? 1 : -1) * speed * 0.7;
+      ball.vy = -speed;
+    }
+  }
+
+  function resetGame() {
+    score = 0;
+    lives = 3;
+    paddle.x = W / 2 - paddleW / 2;
+    buildBricks();
+    resetBall(true);
+    scoreEl.textContent = '0';
+    livesEl.textContent = '3';
+    highEl.textContent = String(high);
+  }
+
+  function draw() {
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+    ctx.fillRect(0, 0, W, H);
+
+    // bricks
+    bricks.forEach(b => {
+      if (!b.active) return;
+      ctx.fillStyle = b.color;
+      ctx.shadowColor = b.color;
+      ctx.shadowBlur = 8;
+      ctx.fillRect(b.x, b.y, b.w, b.h);
+    });
+    ctx.shadowBlur = 0;
+
+    // paddle
+    ctx.fillStyle = 'rgba(110,231,183,0.9)';
+    ctx.shadowColor = '#6ee7b7';
+    ctx.shadowBlur = 10;
+    ctx.fillRect(paddle.x, paddle.y, paddleW, paddleH);
+
+    // ball
+    ctx.fillStyle = '#fbbf24';
+    ctx.shadowColor = '#fbbf24';
+    ctx.shadowBlur = 12;
+    ctx.beginPath();
+    ctx.arc(ball.x, ball.y, ballR, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.shadowBlur = 0;
+  }
+
+  function update() {
+    // paddle movement
+    const speed = 6;
+    if (keys['a'] || keys['arrowleft']) paddle.x -= speed;
+    if (keys['d'] || keys['arrowright']) paddle.x += speed;
+    paddle.x = Math.max(0, Math.min(W - paddleW, paddle.x));
+
+    // ball stuck on paddle before launch
+    if (!ballLaunched) {
+      ball.x = paddle.x + paddleW / 2;
+      return;
+    }
+
+    ball.x += ball.vx;
+    ball.y += ball.vy;
+
+    // wall bounce
+    if (ball.x - ballR < 0) { ball.x = ballR; ball.vx = Math.abs(ball.vx); }
+    if (ball.x + ballR > W) { ball.x = W - ballR; ball.vx = -Math.abs(ball.vx); }
+    if (ball.y - ballR < 0) { ball.y = ballR; ball.vy = Math.abs(ball.vy); }
+
+    // paddle collision
+    if (ball.vy > 0 &&
+        ball.x > paddle.x && ball.x < paddle.x + paddleW &&
+        ball.y + ballR >= paddle.y && ball.y - ballR <= paddle.y + paddleH) {
+      ball.y = paddle.y - ballR;
+      ball.vy = -Math.abs(ball.vy);
+      // add english based on hit position
+      const hitPos = (ball.x - (paddle.x + paddleW / 2)) / (paddleW / 2);
+      ball.vx += hitPos * 2.5;
+    }
+
+    // brick collision
+    bricks.forEach(b => {
+      if (!b.active) return;
+      if (ball.x > b.x && ball.x < b.x + b.w && ball.y > b.y && ball.y < b.y + b.h) {
+        b.active = false;
+        ball.vy = -ball.vy;
+        score += 10;
+        scoreEl.textContent = String(score);
+      }
+    });
+
+    // all bricks cleared
+    if (bricks.every(b => !b.active)) {
+      gameOver(true);
+      return;
+    }
+
+    // floor miss
+    if (ball.y - ballR > H) {
+      lives--;
+      livesEl.textContent = String(lives);
+      if (lives <= 0) {
+        gameOver(false);
+        return;
+      }
+      resetBall(true);
+    }
+  }
+
+  function gameOver(won) {
+    running = false;
+    if (loopId) cancelAnimationFrame(loopId);
+    if (score > high) {
+      high = score;
+      localStorage.setItem('zion_breakout_high', String(high));
+      highEl.textContent = String(high);
+    }
+    overlay.style.display = 'flex';
+    const title = overlay.querySelector('.arcade-title');
+    if (title) title.textContent = won ? 'GRID CLEARED!' : 'PHOTON LOST';
+    const sub = overlay.querySelector('.arcade-sub');
+    if (sub) sub.textContent = `Score: ${score}  |  Lives: ${lives}`;
+    const btn = overlay.querySelector('.arcade-start-btn');
+    if (btn) btn.textContent = won ? 'Next Sector' : 'Try Again';
+  }
+
+  function step() {
+    if (!running || paused) return;
+    update();
+    draw();
+    loopId = requestAnimationFrame(step);
+  }
+
+  function start() {
+    if (running) return;
+    running = true;
+    paused = false;
+    overlay.style.display = 'none';
+    if (!bricks.length || bricks.every(b => !b.active) || lives <= 0) {
+      resetGame();
+    }
+    if (!ballLaunched) {
+      ball.vx = 4 * (Math.random() > 0.5 ? 1 : -1);
+      ball.vy = -4;
+      ballLaunched = true;
+    }
+    step();
+  }
+
+  function togglePause() {
+    if (!running) return;
+    paused = !paused;
+    document.getElementById('oasis-breakout-pause').textContent = paused ? 'Resume' : 'Pause';
+    if (!paused) step();
+  }
+
+  window.addEventListener('keydown', (e) => {
+    const key = e.key.toLowerCase();
+    keys[key] = true;
+    if (key === 'a' || key === 'd' || key.startsWith('arrow')) e.preventDefault();
+    if (key === ' ') {
+      e.preventDefault();
+      if (!running) { start(); return; }
+      if (!ballLaunched) {
+        ball.vx = 4 * (Math.random() > 0.5 ? 1 : -1);
+        ball.vy = -4;
+        ballLaunched = true;
+      } else {
+        togglePause();
+      }
+    }
+  });
+  window.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
+
+  document.getElementById('oasis-breakout-start')?.addEventListener('click', start);
+  document.getElementById('oasis-breakout-pause')?.addEventListener('click', togglePause);
+  document.getElementById('oasis-breakout-reset')?.addEventListener('click', () => {
+    running = false;
+    if (loopId) cancelAnimationFrame(loopId);
+    resetGame();
+    draw();
+    overlay.style.display = 'flex';
+    const title = overlay.querySelector('.arcade-title');
+    if (title) title.textContent = 'COSMIC BREAKOUT';
+    const sub = overlay.querySelector('.arcade-sub');
+    if (sub) sub.textContent = 'A / D or Arrows to move  |  Space to launch';
+    const btn = overlay.querySelector('.arcade-start-btn');
+    if (btn) btn.textContent = 'Launch Photon';
+  });
+
+  // initial state
+  resetGame();
   draw();
 }
