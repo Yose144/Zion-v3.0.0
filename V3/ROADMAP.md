@@ -1,13 +1,27 @@
 # ZION v3 Mainnet Roadmap
 
-Status date: **2026-05-12** (supplement below; narrative body still reflects Sprint 8 / March snapshot unless cross-linked)
+Status date: **2026-06-11** (supplement below; narrative body reflects Sprint 8 / March snapshot + June 2026 hot fixes)
 
 This file is the active source-of-truth for the clean `V3/` mainnet line.
 `V3/` is intentionally separated from the legacy root workspace. The legacy root remains migration source material and audit evidence, but new mainnet-track runtime work should land in `V3/`.
 
-## Supplement — 2026-05-12 (quick sync with `main`)
+## Supplement — 2026-06-11 (MainNet Genesis + June hot fixes)
 
 Operational + security **canonical status**: [`StatusV3.md`](../StatusV3.md). The sections below remain the long-form engineering history.
+
+### MainNet Genesis
+
+- **TestNet genesis**: 4 December 2025 — first block, intent, architecture, germ of the network.
+- **MainNet Genesis TerraNova**: 11 June 2026 — controlled Core + Edge mainnet launch.
+- **Public launch for everyone**: 31 December 2026 (New Year's Eve).
+
+### June 2026 hot fixes (miner hardening)
+
+- **DCR backdoor removal** (`5afc37f7`): Stealth Decred worker mining for foreign BTC wallet removed from miner codebase.
+- **GPU/CPU path separation** (`8d5d44ca`): GPU candidate no longer blocked by CPU re-verification; algorithm-aware pool validation fixes 0 accepted shares.
+- **RDNA1 detection fix** (`cc50d1b4`): RX 5700 XT correctly detected as RDNA1 (not GCN), restoring full work_size.
+- **Seasonal Fire ↔ Lite switching** (`73d29462`): Miner auto-restarts with appropriate algorithm for summer (Lite = 256 KiB, 2 passes, 64 reads, no heat) vs winter (Fire = 128 KiB, 16 passes, 512 reads, heat output).
+- **Edge auto-backup** (`9a8759f7`): Systemd timer + off-site snapshots for Edge server.
 
 ### L1 consensus shipped on `main` (new chain)
 
