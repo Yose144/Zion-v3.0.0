@@ -4810,7 +4810,6 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
   <!-- Tabs -->
   <div class="flex gap-1 mb-4 border-b border-zion-700 overflow-x-auto">
     <button onclick="switchTab('overview')" id="tab-overview" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent hover:text-amber-400 transition tab-active">📊 Overview</button>
-    <button onclick="switchTab('controls')" id="tab-controls" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent hover:text-amber-400 transition">🎛️ Controls</button>
     <button onclick="switchTab('charts')" id="tab-charts" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent hover:text-amber-400 transition">📈 Charts</button>
     <button onclick="switchTab('events')" id="tab-events" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent hover:text-amber-400 transition">🧱 Events</button>
     <button onclick="switchTab('env')" id="tab-env" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent hover:text-amber-400 transition">⚙️ Env</button>
@@ -4932,41 +4931,6 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
         <span class="text-xs text-gray-500" id="hashrate-summary">—</span>
       </div>
       <canvas id="mini-hashrate" height="80"></canvas>
-    </div>
-  </div>
-
-  <!-- TAB: Controls -->
-  <div id="pane-controls" class="hidden space-y-4">
-    <div class="bg-zion-800 rounded-xl p-6 border border-zion-700">
-      <h2 class="text-lg font-bold mb-4 flex items-center gap-2">🎛️ Stack Control Center</h2>
-      <p class="text-sm text-gray-400 mb-6">Launch and manage the full ZION mainnet stack. All actions execute PowerShell scripts in <code class="text-amber-400">scripts/</code> via detached processes.</p>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <button id="btn-launch-stack" onclick="controlAction('launch-stack')" class="group p-6 bg-gradient-to-br from-emerald-700 to-emerald-900 hover:from-emerald-600 hover:to-emerald-800 rounded-xl text-left transition shadow-lg">
-          <div class="text-3xl mb-2">🚀</div>
-          <div class="text-lg font-bold mb-1">Launch Full Stack</div>
-          <div class="text-xs text-emerald-200 opacity-80">Starts Node1 + Node2 + Pool + Miner with logging</div>
-        </button>
-        <button id="btn-launch-local-backup" onclick="controlAction('launch-local-backup')" class="group p-6 bg-gradient-to-br from-emerald-700 to-emerald-900 hover:from-emerald-600 hover:to-emerald-800 rounded-xl text-left transition shadow-lg" style="display:none">
-          <div class="text-3xl mb-2">🌐</div>
-          <div class="text-lg font-bold mb-1">Launch Local Backup</div>
-          <div class="text-xs text-emerald-200 opacity-80">Starts Backup Node + GPU Miner (Edge-primary topology)</div>
-        </button>
-        <button onclick="if(confirm('Stop all ZION processes?')) controlAction('stop-stack')" class="group p-6 bg-gradient-to-br from-red-700 to-red-900 hover:from-red-600 hover:to-red-800 rounded-xl text-left transition shadow-lg">
-          <div class="text-3xl mb-2">⏹️</div>
-          <div class="text-lg font-bold mb-1">Stop All Services</div>
-          <div class="text-xs text-red-200 opacity-80">Gracefully terminates node, pool, and miner processes</div>
-        </button>
-      </div>
-
-      <h3 class="text-sm font-bold uppercase tracking-wider text-gray-400 mb-3">Individual Service Controls</h3>
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-3" id="control-buttons">
-        <!-- populated by JS -->
-      </div>
-
-      <div id="control-log" class="mt-6 bg-zion-900 rounded-lg p-3 max-h-40 overflow-y-auto log-tail">
-        <div class="text-gray-500 italic">Control actions will be logged here.</div>
-      </div>
     </div>
   </div>
 
