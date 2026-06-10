@@ -1,0 +1,12 @@
+# ZION WARP Bridge — Mainnet Configuration
+# L3 Cross-chain relay daemon
+
+node_id = "zion-edge-warp"
+listen_addr = "0.0.0.0"
+listen_port = 8453
+database_path = "data/warp-mainnet.db"
+quorum = 3
+daily_limit_zion = 10000000
+timelock_threshold_zion = 1000000
+l1_rpc_url = "http://127.0.0.1:8443"
+l1_vault_address = "zion1w0r0a560l3j2y6f3v2f457n2u4d0n5v2g79w0t0"
