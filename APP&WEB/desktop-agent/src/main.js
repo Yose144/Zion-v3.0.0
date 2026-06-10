@@ -2175,6 +2175,8 @@ function startMiningV3(config, v3Path) {
     // ── GPU detection & backend auto-select ──
     env.ZION_BACKEND = selectedGpuBackend;
     env.ZION_HAS_GPU = '1';
+    // GPU needs large nonce window so each batch takes >0.5s and hashrate windows work
+    env.ZION_NONCE_COUNT = '262144';
 
     // ── VRAM-aware batch/work-cap sizing ──
     const batchSize = chooseGpuBatchSize(gpuInfo, config?.gpuBatchSize);
@@ -2449,10 +2451,12 @@ function tryUpdateStatsFromFile() {
     const hr = toNum(payload.hashrate);
     const hrCpu = toNum(payload.hashrate_cpu);
     const hrGpu = toNum(payload.hashrate_gpu);
-    if (hr10 != null) minerStats.hashrate = hr10;
-    else if (hrWindow != null) minerStats.hashrate = hrWindow;
-    else if (hr != null) minerStats.hashrate = hr;
-    else if (hrCpu != null || hrGpu != null) minerStats.hashrate = (hrCpu || 0) + (hrGpu || 0);
+    if (hr10 != null && hr10 > 0) minerStats.hashrate = hr10;
+    else if (hrWindow != null && hrWindow > 0) minerStats.hashrate = hrWindow;
+    else if (hr != null && hr > 0) minerStats.hashrate = hr;
+    else if (hrGpu != null && hrGpu > 0) minerStats.hashrate = hrGpu;
+    else if (hrCpu != null && hrCpu > 0) minerStats.hashrate = hrCpu;
+    else minerStats.hashrate = 0;
 
     // XMRig-style rolling window hashrates (v2.9.5+)
     const hr60 = toNum(payload.hashrate_60s);
