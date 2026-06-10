@@ -22,6 +22,57 @@
 
 ---
 
+## Co je nového 2026-06-10 (Interactive Miner TUI — klávesové ovládání)
+
+> Verze: **3.0.1**
+> Klíčový commit: `89c8b8c5` (interactive TUI)
+
+### TL;DR
+
+| Funkce | Klávesa | Status |
+|--------|---------|--------|
+| Hashrate dashboard | `h` | ✅ Aktivní (500ms refresh) |
+| Přepínání algoritmu | `a` | ✅ Lite v1 → Fire → Ekam v2 |
+| CPU mining toggle | `c` | ✅ Za běhu |
+| GPU mining toggle | `g` | ✅ Za běhu |
+| Dual mode | `d` | ✅ CPU+GPU současně |
+| Pauza / resume | `p` | ✅ Pool zůstává připojený |
+| Thread count 1-9 | `1-9` | ✅ Za běhu |
+| Reconnect | `r` | ✅ Signalizace do mining threadu |
+| Verbose | `v` | ✅ Toggle wire logging |
+| Quit | `q` / Esc | ✅ Graceful (pošle Bye) |
+
+### Architektura
+
+- **`MinerControl`** (`Arc<Mutex<>>`) — thread-safe sdílený stav mezi mining loop, keyboard thread a dashboard thread.
+- **`HashrateTracker`** — rolling windows (10s / 60s / 15m) pro CPU + GPU hashrate, AtomicU64 pro lock-free counting.
+- **Mining loop** běží v **background threadu**, TUI blokuje hlavní thread.
+- **Dashboard** renderuje do alternate screen (crossterm) — neznečišťuje scrollback.
+
+### Test
+
+Non-interactive test (`ZION_INTERACTIVE=false`) na Edge pool:
+```
+mode=remote pool_addr=77.42.71.94:8444
+wire_hello={"type":"hello","algorithm":"deeksha_lite_v1",...}
+wire_welcome={"type":"welcome","protocol_version":"zion-v3-stratum/0.2"}
+job=#205 height=205 algo=deeksha_lite_v1
+found_nonce=1127000000042 height=205 depth=1/1048576
++ job=205 height=205 nonce=1127000000042 latency=78ms
+```
+
+### Jak zapnout / vypnout
+
+```bash
+# Interactive (default)
+ZION_INTERACTIVE=true cargo run --release -p zion-miner --features gpu-opencl
+
+# Non-interactive (legacy)
+ZION_INTERACTIVE=false cargo run --release -p zion-miner --features gpu-opencl
+```
+
+---
+
 ## Co je nového 2026-06-09 noc (Flash Audit — Genesis + Adresy ověřeny)
 
 > Verze: **3.0.1**
