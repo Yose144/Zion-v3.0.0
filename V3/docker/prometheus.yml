@@ -37,19 +37,21 @@ scrape_configs:
     metrics_path: /metrics
     static_configs:
       - targets:
-          - host.docker.internal:9550
+          - host.docker.internal:8455
         labels:
           instance: core-pool
           role: pool
 
-  - job_name: zion-hiran-inference
-    metrics_path: /metrics
-    static_configs:
-      - targets:
-          - hiran-inference:8002
-        labels:
-          instance: zion-hiran-v2.2
-    scrape_interval: 30s
+  # Hiran inference runs on LOCAL PC (Windows), not Edge server.
+  # Uncomment and update IP if you want Edge Prometheus to scrape it.
+  # - job_name: zion-hiran-inference
+  #   metrics_path: /metrics
+  #   static_configs:
+  #     - targets:
+  #         - 127.0.0.1:8002
+  #       labels:
+  #         instance: zion-hiran-v2.2
+  #   scrape_interval: 30s
 
   - job_name: zion-node-exporter
     static_configs:
