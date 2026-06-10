@@ -1,6 +1,6 @@
 # ZION V3 — Status Report (Mainnet Polish)
 
-> **Datum:** **2026-06-09**; **2026-06-08** (Fire CPU/GPU sync + pool submitted_hash fix — viz sekce níže); 2026-06-07 (Chain reset + full stack cleanup); 2026-06-06 (HTTP JSON-RPC Transaction Relay Bug Fix); 2026-05-22 (Genesis + fee split KONFIGURACE DOKONČENA, ready for mainnet launch 31.12.2026); **2026-05-21** (Edge pool + L5/L6 + DAO governance + root docs sync); **2026-05-12** (Hiran v2.2 CLI integration); **2026-05-07** (security cleanup + agentická obsluha).
+> **Datum:** **2026-06-10** (GPU/CPU path oddělení + algorithm-aware share validace — viz sekce níže); **2026-06-09**; **2026-06-08** (Fire CPU/GPU sync + pool submitted_hash fix — viz sekce níže); 2026-06-07 (Chain reset + full stack cleanup); 2026-06-06 (HTTP JSON-RPC Transaction Relay Bug Fix); 2026-05-22 (Genesis + fee split KONFIGURACE DOKONČENA, ready for mainnet launch 31.12.2026); **2026-05-21** (Edge pool + L5/L6 + DAO governance + root docs sync); **2026-05-12** (Hiran v2.2 CLI integration); **2026-05-07** (security cleanup + agentická obsluha).
 > (sjednocení `StatusV3.md` ↔ `StatusV3-Part2.md` — TL;DR, roadmap §6, §8, §5
 > pyramida, odkazy).
 > **Předchozí update:** 2026-05-03 (genesis konsensus — merged na `main`)
@@ -19,6 +19,116 @@
 > starý Praha server (`91.98.122.165`) nebo historickou multi-server topologii
 > (Prague, SG, Helsinki, US) jsou **archivní / historické**, pokud není explicitně
 > uvedeno jinak. Aktuální živá topologie je **Core + Edge** (viz sekce Infrastruktura).
+
+---
+
+## Co je nového 2026-06-10 noc (Share Acceptance Fix — GPU/CPU oddělení + multi-algo pool)
+
+> Verze: **3.0.1**
+> Klíčové commity: `21c7a028` (algorithm-aware pool validace), `8d5d44ca` (GPU/CPU path oddělení)
+
+### TL;DR — Proč miner nedostával accepted shares
+
+Byly nalezeny a opraveny **dvě nezávislé příčiny** nulových accepted shares:
+
+| # | Příčina | Soubory | Commit |
+|---|---------|---------|--------|
+| 1 | Pool v local modu vždy validoval hash přes `deeksha_lite_v1` bez ohledu na algoritmus minera | `pool/src/lib.rs` | `21c7a028` |
+| 2 | GPU kandidát byl blokován CPU re-verifikací — pokud CPU hash ≠ GPU hash a CPU hash nesplnil target → `solution = None` | `miner/src/gpu_backend.rs` | `8d5d44ca` |
+
+---
+
+### Bug #1 — Algorithm-aware share validace v pool/lib.rs
+
+**Root cause:**
+
+```rust
+// PŘED (broken):
+self.runtime.validate_candidate(candidate, target)
+// → candidate.seal() → VŽDY deeksha_lite_v1
+// Miner hashuje fire, pool ověřuje v1 → jiný hash → rejected
+```
+
+**Oprava:**
+
+```rust
+// PO (správně):
+self.runtime.validate_candidate_with_algorithm(candidate, target, algorithm)
+```
+
+Změny v `V3/L1/pool/src/lib.rs`:
+- `submit_solution()` / `submit_solution_with()` dostaly `algorithm: &str` parametr
+- `submit_share()` + `ShareSubmission` struct dostaly `algorithm` field; fallback na `deeksha_lite_v1` když prázdné
+- `job_message()` dostala `algorithm: &str` místo hardcoded `advertised_algorithm()` (který byl vždy v1)
+- `miner/src/main.rs` local mode: předává `&config.algorithm` do obou volání
+
+**Poznámka:** Remote stratum path (`server.rs`) byl již správný — používal `session_algorithm` z Hello message.
+
+---
+
+### Bug #2 — GPU/CPU path oddělení v gpu_scan_job()
+
+**Root cause:**
+
+```
+GPU kernel → (nonce, gpu_hash) splňuje target
+CPU re-verify: cpu_hash = hash_with_algorithm(algo)
+IF cpu_hash ≠ gpu_hash AND cpu_hash nesplňuje target:
+    → solution = None  ← BLOKÁTOR! 0 accepted shares
+```
+
+GPU a CPU kernely mohou vracet mírně odlišné výsledky (jiné zaokrouhlení, zarovnání). CPU re-verify jako podmínka přijetí způsobovala, že validní GPU výsledky byly zahazovány.
+
+**Oprava — GPU hash je primární:**
+
+```
+GPU kernel → (nonce, gpu_hash) splňuje target?
+  ANO → gpu_hash je canonical → posílá se na pool
+  NE  → gpu_false_positive (loguje se, candidate se zahodí)
+
+CPU audit:
+  cpu_hash = hash_with_algorithm(algo)   ← POUZE diagnostika
+  GPU_CPU_MISMATCH log pokud cpu ≠ gpu   ← viditelné v logách
+```
+
+Pool na Edge přepočítá hash server-side nezávisle a validuje `submitted_hash`.
+
+Změny v `V3/L1/miner/src/gpu_backend.rs`:
+- `gpu_scan_job()`: GPU hash je primary — CPU re-verify je jen audit
+- Nové log řádky: `GPU_CPU_MISMATCH #N` (s oběma hashi, algo, zda splňují target)
+- Nové log řádky: `gpu_false_positive #N` (kernel vrátil hash nad target)
+
+---
+
+### Nové logy pro diagnostiku
+
+Miner nyní loguje:
+
+```
+[HH:MM:SS] found_nonce=123456  height=300  depth=5/262144  elapsed_ms=42  algo=deeksha_lite_fire  hash_prefix=0a3f7c
+
+[HH:MM:SS] SHARE_ACCEPTED  job=42  height=300  nonce=123456  algo=deeksha_lite_fire  latency_ms=78
+
+[HH:MM:SS] SHARE_REJECTED  job=42  height=300  nonce=123456  algo=deeksha_lite_fire  reason="RejectedLowDifficulty"  hash=0a3f7c...
+
+GPU_CPU_MISMATCH #1 nonce=123456 h=300 algo=deeksha_lite_fire gpu_hash=0a3f7c... cpu_hash=ff1209... gpu_meets_target=true cpu_meets_target=false
+```
+
+---
+
+### Deployment
+
+Fix je v `main`. Vyžaduje rebuild všech binárků kde běží miner nebo pool:
+
+```bash
+# Local (Windows, GPU build):
+cargo build --release --manifest-path V3/Cargo.toml -p zion-miner --features gpu-opencl
+cargo build --release --manifest-path V3/Cargo.toml -p zion-pool
+
+# Edge server:
+git pull && cargo build --release --manifest-path V3/Cargo.toml -p zion-pool -p zion-miner
+systemctl restart zion-edge-pool
+```
 
 ---
 
