@@ -7,8 +7,8 @@ interface Props {
 }
 
 export default function PoolPanel({ pool, poolEdge }: Props) {
-  const p = pool || {};
-  const pe = poolEdge || {};
+  const p = pool || { running: false, active_sessions: undefined, blocks_found: undefined, fee_split: undefined, pool_wallet: undefined };
+  const pe = poolEdge || { running: false, active_miners: undefined, blocks_found: undefined };
   const running = p.running || pe.running || false;
 
   return (
