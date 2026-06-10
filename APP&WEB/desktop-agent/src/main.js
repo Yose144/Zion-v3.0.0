@@ -3729,8 +3729,11 @@ let nodeProcess = null;
 /** Resolve path to the compiled zion-core binary */
 function findCoreBinary() {
   const isWin = process.platform === 'win32';
-  const bin   = isWin ? 'zion-core.exe' : 'zion-core';
+  const bin   = isWin ? 'node.exe' : 'node';
   const candidates = [
+    path.join(APP_ROOT, 'resources', bin),
+    path.join(process.resourcesPath, bin),
+    path.join(APP_ROOT, '..', '..', 'V3', 'target', 'release', bin),
     path.join(APP_ROOT, '..', '..', 'target', 'release', bin),
     path.join(APP_ROOT, '..', '..', 'L1', 'core', 'target', 'release', bin),
     path.join(APP_ROOT, '..', 'target', 'release', bin),
@@ -3739,6 +3742,46 @@ function findCoreBinary() {
     if (fs.existsSync(p2)) return p2;
   }
   return null;
+}
+
+/** Resolve path to the compiled zion CLI binary */
+function findZionCli() {
+  const isWin = process.platform === 'win32';
+  const bin   = isWin ? 'zion.exe' : 'zion';
+  const candidates = [
+    path.join(APP_ROOT, 'resources', bin),
+    path.join(process.resourcesPath, bin),
+    path.join(APP_ROOT, '..', '..', 'V3', 'target', 'release', bin),
+    path.join(APP_ROOT, '..', '..', 'target', 'release', bin),
+    path.join(APP_ROOT, '..', 'target', 'release', bin),
+  ];
+  for (const p2 of candidates) {
+    if (fs.existsSync(p2)) return p2;
+  }
+  return null;
+}
+
+/** Run a zion CLI command and return stdout */
+function runZionCli(args) {
+  const cliPath = findZionCli();
+  if (!cliPath) {
+    return { success: false, error: 'zion CLI binary not found. Run npm run prepare:rust-miner first.' };
+  }
+  const result = spawnSync(cliPath, args, {
+    encoding: 'utf-8',
+    timeout: 30000,
+    windowsHide: true,
+    cwd: path.dirname(cliPath),
+  });
+  if (result.error) {
+    return { success: false, error: result.error.message };
+  }
+  if (result.status !== 0) {
+    const stderr = result.stderr || '';
+    const stdout = result.stdout || '';
+    return { success: false, error: stderr || stdout || `exit code ${result.status}` };
+  }
+  return { success: true, output: result.stdout || '' };
 }
 
 /** Call the local node JSON-RPC and return the result object */
@@ -5147,6 +5190,78 @@ ipcMain.handle('open-defender-settings', async () => {
   } catch (err) {
     return { success: false, error: err?.message || String(err) };
   }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ZION CLI Integration (v3 unified CLI) — wallet, mine, node, balance, send, etc.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+ipcMain.handle('cli-get-version', async () => {
+  return runZionCli(['--version']);
+});
+
+ipcMain.handle('cli-wallet-list', async () => {
+  return runZionCli(['wallet', 'list']);
+});
+
+ipcMain.handle('cli-wallet-new', async (_event, { name, outPath }) => {
+  const args = ['wallet', 'new'];
+  if (outPath) { args.push('-o', outPath); }
+  if (name) { args.push('--name', name); }
+  return runZionCli(args);
+});
+
+ipcMain.handle('cli-wallet-balance', async (_event, { address }) => {
+  const args = ['wallet', 'balance'];
+  if (address) { args.push('--address', address); }
+  return runZionCli(args);
+});
+
+ipcMain.handle('cli-wallet-send', async (_event, { wallet, to, amount, memo }) => {
+  const args = ['wallet', 'send', '-w', wallet, '--to', to, '--amount', amount];
+  if (memo) { args.push('--memo', memo); }
+  return runZionCli(args);
+});
+
+ipcMain.handle('cli-mine-start', async (_event, { pool, worker, wallet, threads, gpuBackend }) => {
+  const args = ['mine', 'start'];
+  if (pool) { process.env.ZION_POOL_ADDR = pool; }
+  if (worker) { process.env.ZION_WORKER_NAME = worker; }
+  if (wallet) { process.env.ZION_MINER_ID = wallet; }
+  if (threads) { process.env.ZION_THREADS = String(threads); }
+  if (gpuBackend) { process.env.ZION_GPU_BACKEND = gpuBackend; }
+  return runZionCli(args);
+});
+
+ipcMain.handle('cli-mine-stop', async () => {
+  return runZionCli(['mine', 'stop']);
+});
+
+ipcMain.handle('cli-mine-status', async () => {
+  return runZionCli(['mine', 'status']);
+});
+
+ipcMain.handle('cli-node-start', async (_event, { nodeId, p2pPort, rpcPort, seedPeers }) => {
+  const args = ['node', 'start'];
+  if (nodeId) { process.env.ZION_NODE_ID = nodeId; }
+  if (p2pPort) { process.env.ZION_P2P_BIND = `0.0.0.0:${p2pPort}`; }
+  if (rpcPort) { process.env.ZION_RPC_BIND = `0.0.0.0:${rpcPort}`; }
+  if (seedPeers) { process.env.ZION_SEED_PEERS = seedPeers; }
+  return runZionCli(args);
+});
+
+ipcMain.handle('cli-node-stop', async () => {
+  return runZionCli(['node', 'stop']);
+});
+
+ipcMain.handle('cli-config-get', async (_event, { key }) => {
+  const args = ['config', 'get'];
+  if (key) { args.push(key); }
+  return runZionCli(args);
+});
+
+ipcMain.handle('cli-config-set', async (_event, { key, value }) => {
+  return runZionCli(['config', 'set', key, value]);
 });
 
 function _isNewerVersion(latest, current) {
