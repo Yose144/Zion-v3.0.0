@@ -4177,6 +4177,61 @@
         </div>
       </div>
 
+      <!-- ═══════════════════════════════════════════════════ -->
+      <!-- WARP — L3 Cross-Chain Corridors                    -->
+      <!-- ═══════════════════════════════════════════════════ -->
+      <div id="warp-view" class="view-shell d-none">
+        <div class="web29-page-header">
+          <div class="web29-title-stack">
+            <div class="web29-kicker">
+              <svg class="icon icon-inline" aria-hidden="true"><use href="#i-link"></use></svg>
+              L3 Cross-Chain
+            </div>
+            <div class="web29-title-row">
+              <h1 class="web29-title text-gradient">WARP</h1>
+              <div class="web29-chip" id="warp-view-status-chip">Loading…</div>
+            </div>
+            <div class="web29-subtitle">Multi-chain relay corridors — Bitcoin, Ethereum, Solana, Cardano, Cosmos, Stellar, Tron.</div>
+          </div>
+        </div>
+
+        <div class="control-panel">
+          <h2 class="panel-header-title">
+            <svg class="icon" aria-hidden="true"><use href="#i-link"></use></svg>
+            <span>Live Dashboard</span>
+            <span class="muted-time" id="warp-view-updated">—</span>
+          </h2>
+
+          <div class="metric-grid panel-mt-20">
+            <div class="metric-card green">
+              <div class="metric-kicker">CONNECTED CHAINS</div>
+              <div class="metric-value green" id="warp-view-chains">—</div>
+            </div>
+            <div class="metric-card blue">
+              <div class="metric-kicker">TRANSFERS</div>
+              <div class="metric-value blue" id="warp-view-transfers">—</div>
+            </div>
+            <div class="metric-card purple">
+              <div class="metric-kicker">PENDING</div>
+              <div class="metric-value purple" id="warp-view-pending">—</div>
+            </div>
+            <div class="metric-card gold">
+              <div class="metric-kicker">DAILY VOLUME</div>
+              <div class="metric-value gold" id="warp-view-volume">—</div>
+            </div>
+          </div>
+
+          <div class="actions-row panel-mt-20">
+            <button class="btn btn-primary" id="warp-view-refresh">Refresh Data</button>
+            <button class="btn btn-primary btn-sm" id="warp-view-chains-btn">View Chains</button>
+            <button class="btn btn-primary btn-sm" id="warp-view-transfers-btn">View Transfers</button>
+            <button class="btn btn-primary btn-sm" id="warp-view-pending-btn">View Pending</button>
+          </div>
+
+          <div id="warp-view-detail" class="tx-lookup-result" style="margin-top:14px;display:none;max-height:320px;"></div>
+        </div>
+      </div><!-- /#warp-view -->
+
       <!-- Wallet View (hidden by default) -->
       <div id="wallet-view" class="view-shell view-hidden">
         <div class="web29-page-header">
@@ -6615,6 +6670,10 @@ Click a button in any tab to run a command. Output appears here.
       <div class="nav-item" data-view="bridge">
         <svg class="icon" aria-hidden="true"><use href="#i-bridge"></use></svg>
         <span>Bridge</span>
+      </div>
+      <div class="nav-item" data-view="warp">
+        <svg class="icon" aria-hidden="true"><use href="#i-link"></use></svg>
+        <span>Warp</span>
       </div>
       <div class="nav-item" data-view="oasis">
         <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>

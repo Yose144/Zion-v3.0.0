@@ -170,6 +170,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
   cliWarpPending: () => ipcRenderer.invoke('cli-warp-pending'),
   cliWarpStats: () => ipcRenderer.invoke('cli-warp-stats'),
 
+  // ── L3 WARP ────────────────────────────────────────────────────────
+  warpStatus: () => ipcRenderer.invoke('warp-status'),
+  warpMetrics: () => ipcRenderer.invoke('warp-metrics'),
+  warpChains: () => ipcRenderer.invoke('warp-chains'),
+  warpTransfers: () => ipcRenderer.invoke('warp-transfers'),
+  warpPending: () => ipcRenderer.invoke('warp-pending'),
+
   // ── L5 Free World ──────────────────────────────────────────────────
   l5Status: () => ipcRenderer.invoke('l5-status'),
   l5FundBalance: () => ipcRenderer.invoke('l5-fund-balance'),
