@@ -18,6 +18,9 @@ mod dcr_worker;
 mod gpu_backend;
 mod gpu_guard;
 mod parallel;
+mod interactive;
+
+use interactive::{HashrateTracker, MinerControl};
 
 fn flush_stdout() {
     use std::io::Write;
@@ -845,13 +848,76 @@ fn main() -> Result<()> {
 
     let metrics = Arc::new(Mutex::new(MinerMetricsSnapshot::from_config(&config)));
 
+    // ── Interactive control + hashrate tracker ──
+    let interactive = parse_bool_env("ZION_INTERACTIVE", true);
+    let control = Arc::new(Mutex::new(MinerControl::new(
+        &config.algorithm,
+        config.threads,
+        config.gpu_backend != gpu_backend::GpuBackendKind::Cpu,
+    )));
+    let hashrate = HashrateTracker::new();
+
     let outcome = match config.pool_addr.as_deref() {
         Some(pool_addr) => {
             println!("mode=remote");
             println!("pool_addr={pool_addr}");
             let reconnect_enabled = parse_bool_env("ZION_RECONNECT", true);
             let max_reconnect = parse_env_u32("ZION_MAX_RECONNECT", 0)?; // 0 = infinite
-            if reconnect_enabled {
+
+            if interactive {
+                // Spawn mining loop in a background thread
+                let pool_addr_owned = pool_addr.to_string();
+                let mining_control = Arc::clone(&control);
+                let mining_hashrate = Arc::clone(&hashrate);
+                let mining_metrics = Arc::clone(&metrics);
+                let mining_config = config.clone();
+                let mining_handle = thread::spawn(move || {
+                    let _ = reconnect::with_reconnect(
+                        max_reconnect,
+                        reconnect::Backoff::default_reconnect(),
+                        |attempt| {
+                            if attempt > 1 {
+                                println!("reconnect_attempt={attempt}");
+                            }
+                            run_remote_session(
+                                &mining_config, &pool_addr_owned, &mining_metrics,
+                                &mining_control, &mining_hashrate,
+                            )
+                        },
+                    );
+                });
+
+                // Run interactive TUI in main thread
+                let _ = interactive::run_interactive(
+                    Arc::clone(&control),
+                    Arc::clone(&hashrate),
+                );
+
+                // Signal quit and wait for mining thread
+                control.lock().unwrap().requested_quit = true;
+                let _ = mining_handle.join();
+
+                SessionOutcome {
+                    last_job_id: 0,
+                    accepted_shares: hashrate.accepted_shares.load(Ordering::Relaxed),
+                    rejected_shares: hashrate.rejected_shares.load(Ordering::Relaxed),
+                    active_jobs: 0,
+                    accepted_iterations: 0,
+                    attempted_hashes: hashrate.total_hashes.load(Ordering::Relaxed),
+                    elapsed_seconds: 0.0,
+                    hashrate_hps: 0.0,
+                    hashrate_10s_hps: 0.0,
+                    hashrate_60s_hps: 0.0,
+                    hashrate_15m_hps: 0.0,
+                    revenue_total_usd: 0.0,
+                    no_solution_iterations: 0,
+                    local_skip_likely_stale: 0,
+                    submit_avg_latency_ms: 0.0,
+                    submit_max_latency_ms: 0,
+                    last_result_line: None,
+                    bye_line: None,
+                }
+            } else if reconnect_enabled {
                 println!(
                     "reconnect=enabled max_attempts={}",
                     if max_reconnect == 0 {
@@ -867,11 +933,11 @@ fn main() -> Result<()> {
                         if attempt > 1 {
                             println!("reconnect_attempt={attempt}");
                         }
-                        run_remote_session(&config, pool_addr, &metrics)
+                        run_remote_session(&config, pool_addr, &metrics, &control, &hashrate)
                     },
                 )?
             } else {
-                run_remote_session(&config, pool_addr, &metrics)?
+                run_remote_session(&config, pool_addr, &metrics, &control, &hashrate)?
             }
         }
         None => {
@@ -1241,6 +1307,8 @@ fn run_remote_session(
     config: &MinerConfig,
     pool_addr: &str,
     metrics: &Arc<Mutex<MinerMetricsSnapshot>>,
+    control: &Arc<Mutex<MinerControl>>,
+    hashrate: &Arc<HashrateTracker>,
 ) -> Result<SessionOutcome> {
     let started_at = Instant::now();
     let mut attempted_hashes = 0u64;
@@ -1249,8 +1317,14 @@ fn run_remote_session(
     let mut last_result_line = None;
     let mut last_job_id = 0u64;
     let mut telemetry = SessionTelemetry::new(config.metrics_report_every_secs);
-    let threads = config.threads;
+    let mut threads = config.threads;
     let mut remote_nonce_window = config.nonce_count;
+
+    // ── Read initial algorithm from interactive control ──
+    let initial_algorithm = {
+        let c = control.lock().unwrap();
+        c.algorithm.clone()
+    };
 
     // ── GPU backend init (multi-algo manager — lazy per-algorithm) ──
     let mut gpu_manager = gpu_backend::GpuBackendManager::new(
@@ -1259,18 +1333,18 @@ fn run_remote_session(
     );
     let mut gpu_available = config.gpu_backend != gpu_backend::GpuBackendKind::Cpu;
     if gpu_available {
-        match gpu_manager.ensure_algorithm(&config.algorithm) {
+        match gpu_manager.ensure_algorithm(&initial_algorithm) {
             Ok(g) => {
                 println!(
                     "gpu_init backend={} device=\"{}\" work_size={} algorithm={}",
                     g.backend_kind().as_str(),
                     g.device_name(),
                     config.gpu_work_size,
-                    config.algorithm
+                    initial_algorithm
                 );
                 telemetry.gpu_backend_name = g.backend_kind().as_str().to_string();
                 telemetry.gpu_infos = gpu_backend::query_gpu_details();
-                telemetry.algorithm = config.algorithm.clone();
+                telemetry.algorithm = initial_algorithm.clone();
             }
             Err(e) => {
                 println!("gpu_init_fallback reason=\"{e}\" using=cpu");
@@ -1345,6 +1419,21 @@ fn run_remote_session(
     let mut current_algorithm = String::new();
 
     for iteration in 0..config.loop_count {
+        // ── Check interactive control state at top of iteration ──
+        {
+            let c = control.lock().unwrap();
+            if c.requested_quit {
+                break;
+            }
+            if c.requested_reconnect {
+                break;
+            }
+            if let Some(t) = c.thread_override {
+                threads = t;
+            }
+            VERBOSE.store(c.verbose, Ordering::Relaxed);
+        }
+
         let (job_line, mut job, algorithm) = read_next_job(&mut reader)?;
         let current_diff = CURRENT_POOL_DIFFICULTY.load(Ordering::Relaxed);
         job.target = zion_core::difficulty::difficulty_to_target(current_diff);
@@ -1360,9 +1449,33 @@ fn run_remote_session(
             &current_algorithm,
             CURRENT_POOL_DIFFICULTY.load(Ordering::Relaxed),
         );
+
+        // ── Check pause after reading job ──
+        let is_paused = control.lock().unwrap().pause;
+        if is_paused {
+            // Skip scan while paused; send no-solution so pool doesn't block
+            let no_solution_message = PoolMessage::NoSolution {
+                job_id: job.job_id,
+                miner_id: config.miner_id.clone(),
+                worker_name: config.worker_name.clone(),
+                attempted_hashes: Some(0),
+                elapsed_ms: Some(0),
+            };
+            let _ = write_wire_message(&mut writer, &no_solution_message);
+            let _ = read_next_result(&mut reader);
+            thread::sleep(Duration::from_millis(100));
+            continue;
+        }
+
+        // ── Check interactive CPU/GPU/dual mode ──
+        let (cpu_on, gpu_on, _dual_on) = {
+            let c = control.lock().unwrap();
+            (c.cpu_enabled, c.gpu_enabled, c.dual_mode)
+        };
+
         // Ensure GPU backend matches current algorithm (lazy create / switch)
         let mut gpu_ref: Option<&mut dyn gpu_backend::GpuMiner> = None;
-        if gpu_available {
+        if gpu_available && gpu_on {
             match gpu_manager.ensure_algorithm(&current_algorithm) {
                 Ok(g) => gpu_ref = Some(g),
                 Err(e) => {
@@ -1374,8 +1487,8 @@ fn run_remote_session(
                 }
             }
         }
-        // GPU-first, CPU-fallback nonce scan
-        let can_gpu = gpu_ref.is_some();
+        // GPU-first, CPU-fallback nonce scan (respect interactive overrides)
+        let can_gpu = gpu_ref.is_some() && gpu_on;
         let scan_result = if can_gpu {
             let g = gpu_ref.unwrap();
             if let Err(e) = g.update_epoch(job.height) {
@@ -1383,12 +1496,20 @@ fn run_remote_session(
                     "gpu_epoch_fallback height={} reason=\"{e}\" using=cpu",
                     job.height
                 );
+                hashrate.record_cpu_hashes(job.nonce_count);
                 parallel::parallel_scan_nonce_range(job, threads, &current_algorithm)
             } else {
-                gpu_backend::gpu_scan_job(g, job, &current_algorithm).solution
+                let result = gpu_backend::gpu_scan_job(g, job, &current_algorithm);
+                hashrate.record_gpu_hashes(job.nonce_count);
+                result.solution
             }
-        } else {
+        } else if cpu_on {
+            hashrate.record_cpu_hashes(job.nonce_count);
             parallel::parallel_scan_nonce_range(job, threads, &current_algorithm)
+        } else {
+            // Both CPU and GPU disabled — skip
+            hashrate.record_cpu_hashes(0);
+            None
         };
         let batch_ms = job_started_at.elapsed().as_millis() as u64;
         if can_gpu {
