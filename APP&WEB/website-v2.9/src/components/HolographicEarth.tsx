@@ -295,15 +295,7 @@ function IssobellaStation() {
         <sphereGeometry args={[0.06, 16, 16]} />
         <meshStandardMaterial color="#5eead4" emissive="#14b8a6" emissiveIntensity={1.2} roughness={0.2} metalness={0.5} />
       </mesh>
-      {/* Solar panels */}
-      <mesh position={[0.22, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
-        <boxGeometry args={[0.28, 0.01, 0.14]} />
-        <meshStandardMaterial color="#0f172a" emissive="#2dd4bf" emissiveIntensity={0.4} roughness={0.4} metalness={0.6} />
-      </mesh>
-      <mesh position={[-0.22, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
-        <boxGeometry args={[0.28, 0.01, 0.14]} />
-        <meshStandardMaterial color="#0f172a" emissive="#2dd4bf" emissiveIntensity={0.4} roughness={0.4} metalness={0.6} />
-      </mesh>
+
       {/* Issobella glow */}
       <mesh scale={2.5}>
         <sphereGeometry args={[0.14, 16, 16]} />
