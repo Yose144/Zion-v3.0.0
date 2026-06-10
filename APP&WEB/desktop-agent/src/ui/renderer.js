@@ -1087,6 +1087,15 @@ function escapeHtml(s) {
     .replace(/'/g, '&#039;');
 }
 
+// Shorten long algorithm names for clean log display
+function shortAlgoName(full) {
+  const raw = String(full || '').trim().toLowerCase();
+  if (raw === 'deeksha_lite_v1') return 'lite';
+  if (raw === 'deeksha_lite_fire') return 'fire';
+  if (raw === 'cosmic_harmony_ekam_deeksha_v2') return 'ekam';
+  return full;
+}
+
 let _streamLogWindowStart = 0;
 let _streamLogCount = 0;
 let _streamLogSuppressed = 0;
@@ -1208,7 +1217,7 @@ function colorizeConsoleLine(raw) {
   // ── new job: "new job  height 1523  diff 256  algo cosmic_harmony" ──
   m = raw.match(/new job\s+height\s+(\d+)\s+diff\s+([\d.]+[TGMK]?)\s+algo\s+(\S+)/i);
   if (m) {
-    return { html: `${tsHtml}<span class="mc-job">new job</span> height <span class="mc-hr">${m[1]}</span> diff <span class="mc-diff">${m[2]}</span> algo <span class="mc-algo">${esc(m[3])}</span>` };
+    return { html: `${tsHtml}<span class="mc-job">new job</span> height <span class="mc-hr">${m[1]}</span> diff <span class="mc-diff">${m[2]}</span> algo <span class="mc-algo">${shortAlgoName(esc(m[3]))}</span>` };
   }
 
   // ── V3 shares summary: "shares A:5 R:0 (100.0%) | hashes 42000 | pool latency 38ms | uptime 0h 5m 12s" ──
@@ -1258,7 +1267,7 @@ function colorizeConsoleLine(raw) {
   // ── Stream switch ──
   m = raw.match(/Stream switch:\s*(\S+)\s*→\s*(\S+)/i);
   if (m) {
-    return { html: `${tsHtml}<span class="mc-warn">~&gt; Stream switch</span> <span class="mc-algo">${esc(m[1])}</span> → <span class="mc-algo">${esc(m[2])}</span>` };
+    return { html: `${tsHtml}<span class="mc-warn">~&gt; Stream switch</span> <span class="mc-algo">${shortAlgoName(esc(m[1]))}</span> → <span class="mc-algo">${shortAlgoName(esc(m[2]))}</span>` };
   }
 
   // ── [METRICS] compact GPU mining status ──
@@ -1357,8 +1366,8 @@ function updateStaticPanel(panelLines) {
     line = line.replace(/blocks:\s*(\d+)/g, 'blocks: <span class="sp-value">$1</span>');
     // Highlight height
     line = line.replace(/height:\s*(\d+)/g, 'height: <span class="sp-value">$1</span>');
-    // Highlight algo
-    line = line.replace(/algo:\s*(\S+)/g, 'algo: <span class="sp-value">$1</span>');
+    // Highlight algo (shortened name)
+    line = line.replace(/algo:\s*(\S+)/g, (match, p1) => `algo: <span class="sp-value">${shortAlgoName(p1)}</span>`);
     // Dim the │ border
     line = line.replace(/│/g, '<span class="sp-dim">│</span>');
     // Event text — green
@@ -1715,7 +1724,7 @@ function updateStats(stats) {
   // ═══ Difficulty ═══
   setText('difficulty-value', fmtDiff(stats.difficulty));
   setText('pool-height', stats.last_job_height || '—');
-  setText('active-algo', stats.stream_algorithm || stats.algorithm || '—');
+  setText('active-algo', shortAlgoName(stats.stream_algorithm || stats.algorithm || '—'));
 
   // ═══ Blocks Found ═══
   const blocks = Number(stats.blocks_found) || 0;
