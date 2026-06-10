@@ -324,6 +324,10 @@ function updateServiceCards(s){
   if(mg) mg.textContent = (m.gpu_backend ? m.gpu_backend + ': ' : '') + (m.gpu_device ?? '—');
   const mb = document.getElementById('val-miner-backend');
   if(mb) mb.textContent = m.gpu_backend ?? 'cpu';
+  const mw = document.getElementById('val-miner-worker');
+  if(mw) mw.textContent = (m.miner_id ? m.miner_id + ' / ' : '') + (m.worker_name ?? '—');
+  const mwl = document.getElementById('val-miner-wallet');
+  if(mwl) mwl.textContent = m.payout_address ?? m.wallet ?? '—';
   const mnh = document.getElementById('val-miner-height');
   if(mnh) mnh.textContent = m.current_height ?? '—';
   const md = document.getElementById('val-miner-diff');
@@ -338,7 +342,7 @@ function updateServiceCards(s){
   const msgEl = document.getElementById('miner-status-msg');
   if(msgEl){
     if(!m.running){
-      msgEl.textContent = '⚠️ Miner not running. Configure pool address and start miner.';
+      msgEl.textContent = '⚠️ Miner not running.';
       msgEl.className = 'text-xs p-2 rounded-lg bg-red-500/20 text-red-300 border border-red-500/30';
       msgEl.classList.remove('hidden');
     } else if(m.running && !m.hashrate){
