@@ -17,7 +17,7 @@ mod gpu_guard;
 mod parallel;
 mod interactive;
 
-use interactive::{HashrateTracker, MinerControl};
+use interactive::{HashrateTracker, MinerControl, TUI_ACTIVE};
 
 fn flush_stdout() {
     use std::io::Write;
@@ -1235,10 +1235,15 @@ fn run_remote_session(
     let backend_str = gpu_manager
         .current_backend_name()
         .unwrap_or("cpu");
+    // BUG #2 fix: use current control.algorithm (user may have pressed 'a' to switch)
+    let hello_algorithm = {
+        let c = control.lock().unwrap();
+        c.algorithm.clone()
+    };
     let hello_message = PoolMessage::Hello {
         miner_id: config.miner_id.clone(),
         worker_name: config.worker_name.clone(),
-        algorithm: config.algorithm.clone(),
+        algorithm: hello_algorithm,
         payout_address: config.payout_address.clone(),
         backend: backend_str.to_string(),
     };
@@ -1296,6 +1301,8 @@ fn run_remote_session(
         last_job_id = job.job_id;
         telemetry.pool_height = job.height;
         telemetry.current_epoch = job.height / 100;
+        // BUG #1 fix: propagate pool_height to HashrateTracker so dashboard can display it
+        hashrate.set_pool_height(job.height);
         ui::log_new_job(
             job.job_id,
             job.height,
@@ -1811,64 +1818,67 @@ impl SessionTelemetry {
             &self.gpu_backend_name
         };
 
-        // ── Machine-parseable status line (for desktop agent stdout parser) ──
-        println!(
-            "session_status iter={}/{} uptime_s={:.1} accepted={} rejected={} accept_pct={:.2} no_solution={} local_skip={} hps_overall={:.2} hps_10s={:.2} hps_60s={:.2} hps_15m={:.2} attempted_hashes={} submit_avg_ms={:.2} submit_max_ms={} remote_ttl_ms={} gpu_backend={} gpu_hps={:.2} epoch={} pool_height={} best_batch_ms={}",
-            iteration_done,
-            loop_count,
-            uptime,
-            accepted,
-            rejected,
-            accept_pct,
-            self.no_solution_iterations,
-            self.local_skip_likely_stale,
-            overall_hps,
-            hr_10s,
-            hr_60s,
-            hr_15m,
-            attempted_hashes,
-            submit_avg,
-            self.submit_max_latency_ms,
-            ttl_text,
-            if self.gpu_backend_name.is_empty() { "cpu" } else { &self.gpu_backend_name },
-            self.gpu_hashrate_hps(),
-            self.current_epoch,
-            self.pool_height,
-            self.best_batch_ms,
-        );
+        // BUG #6 fix: suppress stdout status when interactive TUI is active (alternate screen)
+        if !TUI_ACTIVE.load(Ordering::Relaxed) {
+            // ── Machine-parseable status line (for desktop agent stdout parser) ──
+            println!(
+                "session_status iter={}/{} uptime_s={:.1} accepted={} rejected={} accept_pct={:.2} no_solution={} local_skip={} hps_overall={:.2} hps_10s={:.2} hps_60s={:.2} hps_15m={:.2} attempted_hashes={} submit_avg_ms={:.2} submit_max_ms={} remote_ttl_ms={} gpu_backend={} gpu_hps={:.2} epoch={} pool_height={} best_batch_ms={}",
+                iteration_done,
+                loop_count,
+                uptime,
+                accepted,
+                rejected,
+                accept_pct,
+                self.no_solution_iterations,
+                self.local_skip_likely_stale,
+                overall_hps,
+                hr_10s,
+                hr_60s,
+                hr_15m,
+                attempted_hashes,
+                submit_avg,
+                self.submit_max_latency_ms,
+                ttl_text,
+                if self.gpu_backend_name.is_empty() { "cpu" } else { &self.gpu_backend_name },
+                self.gpu_hashrate_hps(),
+                self.current_epoch,
+                self.pool_height,
+                self.best_batch_ms,
+            );
 
-        // ── Professional colored UI table ──
-        let uptime_secs = uptime as u64;
-        let gpu_ui: Vec<(String, u32, u64, u32, Option<u32>, Option<u32>)> = self
-            .gpu_infos
-            .iter()
-            .map(|g| {
-                (
-                    g.name.clone(),
-                    g.compute_units,
-                    g.global_mem_bytes,
-                    g.max_clock_mhz,
-                    g.temp_c,
-                    g.power_w,
-                )
-            })
-            .collect();
-        ui::print_speed_table(
-            uptime_secs,
-            hr_10s,
-            hr_60s,
-            hr_15m,
-            self.hashrate_max,
-            accepted,
-            rejected,
-            attempted_hashes,
-            submit_avg,
-            self.submit_max_latency_ms,
-            self.pool_height,
-            self.current_epoch,
-            &self.algorithm,
-            &gpu_ui,
-        );
+            // ── Professional colored UI table ──
+            let uptime_secs = uptime as u64;
+            let gpu_ui: Vec<(String, u32, u64, u32, Option<u32>, Option<u32>)> = self
+                .gpu_infos
+                .iter()
+                .map(|g| {
+                    (
+                        g.name.clone(),
+                        g.compute_units,
+                        g.global_mem_bytes,
+                        g.max_clock_mhz,
+                        g.temp_c,
+                        g.power_w,
+                    )
+                })
+                .collect();
+            ui::print_speed_table(
+                uptime_secs,
+                hr_10s,
+                hr_60s,
+                hr_15m,
+                self.hashrate_max,
+                accepted,
+                rejected,
+                attempted_hashes,
+                submit_avg,
+                self.submit_max_latency_ms,
+                self.pool_height,
+                self.current_epoch,
+                &self.algorithm,
+                &gpu_ui,
+            );
+        }
 
         // ── Stats file (atomic write for desktop agent polling) ──
         if let Some(path) = stats_file {
