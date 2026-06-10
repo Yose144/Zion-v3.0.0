@@ -14,7 +14,8 @@ import {
   CheckCircle,
   XCircle,
   RefreshCw,
-  MapPin
+  MapPin,
+  Zap,
 } from 'lucide-react';
 
 interface NodeStatus {
@@ -187,6 +188,40 @@ export default function NetworkStatus({ className }: { className?: string }) {
           </AnimatePresence>
         </div>
       </div>
+
+      {/* Latency Panel */}
+      {status.nodes.some((n) => n.online && (n.rpcLatencyMs != null || n.poolLatencyMs != null)) && (
+        <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
+          <h3 className="text-sm font-semibold text-white flex items-center gap-2 mb-4">
+            <Zap className="w-4 h-4 text-yellow-400" />
+            {cs ? 'Latence uzlů' : 'Node Latency'}
+          </h3>
+          <div className="grid gap-3">
+            {status.nodes.filter((n) => n.online).map((node) => (
+              <div key={node.id} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6">
+                <div className="flex items-center gap-2 min-w-[140px]">
+                  <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-sm text-white">{node.name}</span>
+                </div>
+                <div className="flex-1 grid grid-cols-3 gap-4 text-xs">
+                  <div>
+                    <span className="text-gray-500 block mb-0.5">RPC</span>
+                    <span className="text-white font-mono">{node.rpcLatencyMs != null ? `${node.rpcLatencyMs}ms` : '—'}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 block mb-0.5">Pool</span>
+                    <span className="text-white font-mono">{node.poolLatencyMs != null ? `${node.poolLatencyMs}ms` : '—'}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 block mb-0.5">{cs ? 'Lag' : 'Lag'}</span>
+                    <span className="text-white font-mono">{node.blockLag != null ? `${node.blockLag}` : '—'}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Last Update */}
       {lastUpdate && (
