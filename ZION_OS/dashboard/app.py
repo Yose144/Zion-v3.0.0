@@ -2126,14 +2126,30 @@ def parse_miner_log() -> dict:
         if m := re.search(r'gpu_backend=(\S+)', line):
             status["gpu_backend"] = m.group(1)
         # Primary: "speed 10s/60s/15m  2.92  3.34  3.41 KH/s" — values are already KH/s
-        if m := re.search(r'speed\s+\d+s/\d+s/\d+m\s+(\d+\.\d+)', line):
+        # Also matches "speed      0.00 H/s     26.36 KH/s      7.56 KH/s  max     7.56 KH/s"
+        if m := re.search(r'speed\s+[\d\.]+\s+\S+\s+(\d+\.\d+)\s+\S+', line):
             status["hashrate"] = float(m.group(1))
-        # Fallback: session_status hps_10s / gpu_hps (H/s → KH/s)
+        # Fallback: session_status hps_10s / hps_60s / hps_15m / gpu_hps (H/s → KH/s)
         if status["hashrate"] is None:
             if m := re.search(r'hps_10s=(\d+\.\d+)', line):
-                status["hashrate"] = float(m.group(1)) / 1000.0
-            elif m := re.search(r'gpu_hps=(\d+\.\d+)', line):
-                status["hashrate"] = float(m.group(1)) / 1000.0
+                v = float(m.group(1))
+                if v > 0:
+                    status["hashrate"] = v / 1000.0
+            if status["hashrate"] is None:
+                if m := re.search(r'hps_60s=(\d+\.\d+)', line):
+                    v = float(m.group(1))
+                    if v > 0:
+                        status["hashrate"] = v / 1000.0
+            if status["hashrate"] is None:
+                if m := re.search(r'hps_15m=(\d+\.\d+)', line):
+                    v = float(m.group(1))
+                    if v > 0:
+                        status["hashrate"] = v / 1000.0
+            if status["hashrate"] is None:
+                if m := re.search(r'gpu_hps=(\d+\.\d+)', line):
+                    v = float(m.group(1))
+                    if v > 0:
+                        status["hashrate"] = v / 1000.0
         # shares A:45 R:2 format
         if m := re.search(r'shares\s+A:(\d+)\s+R:(\d+)', line):
             status["shares_accepted"] = int(m.group(1))
