@@ -3366,6 +3366,177 @@
     .bridge-readiness-row.status-done .bridge-readiness-label { color: #6ee7b7; }
     .bridge-readiness-row.status-pending .bridge-readiness-label { color: #fcd34d; }
 
+    /* ═══ Node View ═══ */
+    .node-status-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 20px;
+      transition: border-color .3s;
+    }
+    .node-status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.18);
+      transition: background .4s, box-shadow .4s;
+      flex-shrink: 0;
+    }
+    .node-status-dot.online {
+      background: #22c55e;
+      box-shadow: 0 0 8px #22c55e, 0 0 16px rgba(34,197,94,0.4);
+    }
+    .node-status-text {
+      font-size: 12px; font-weight: 500;
+      color: rgba(255,255,255,0.4);
+      white-space: nowrap;
+      transition: color .3s;
+    }
+    .node-status-text.online { color: #6ee7b7; }
+
+    .node-console {
+      margin-top: 14px;
+      background: rgba(0,0,0,0.5);
+      border-radius: 10px;
+      padding: 14px 16px;
+      font-family: 'JetBrains Mono', Menlo, 'Courier New', monospace;
+      font-size: 11px;
+      color: rgba(255,255,255,0.5);
+      height: 360px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+      border: 1px solid rgba(255,255,255,0.05);
+      line-height: 1.65;
+      letter-spacing: 0.01em;
+    }
+
+    .ibd-bar-wrap { display: none; margin-top: 18px; }
+    .ibd-bar-meta {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 8px;
+    }
+    .ibd-bar-label {
+      font-size: 12px; color: rgba(255,255,255,0.45);
+      display: flex; align-items: center; gap: 6px;
+    }
+    .ibd-bar-pct {
+      font-size: 12px; font-weight: 600; color: var(--zion-cyan);
+    }
+    .ibd-bar-track {
+      background: rgba(255,255,255,0.06);
+      border-radius: 6px; height: 8px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .ibd-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--zion-cyan), #a78bfa);
+      width: 0%;
+      transition: width .6s ease;
+      border-radius: 6px;
+    }
+    .ibd-bar-eta {
+      margin-top: 6px;
+      font-size: 11px; color: rgba(255,255,255,0.28);
+    }
+
+    .sync-bar {
+      margin-top: 16px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.06);
+      background: rgba(0,0,0,0.15);
+      display: flex; align-items: center; gap: 10px;
+      font-size: 13px; color: rgba(255,255,255,0.6);
+    }
+    .sync-bar.ibd {
+      background: rgba(6,182,212,0.07);
+      border-color: rgba(6,182,212,0.2);
+    }
+    .sync-bar.synced {
+      background: rgba(16,185,129,0.06);
+      border-color: rgba(16,185,129,0.18);
+    }
+
+    .peer-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 14px; border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.06);
+      transition: border-color .3s;
+      margin-bottom: 6px;
+      background: rgba(0,0,0,0.25);
+    }
+    .peer-row.connected {
+      background: rgba(16,185,129,0.04);
+      border-color: rgba(16,185,129,0.18);
+    }
+    .peer-dot {
+      display: inline-block; width: 8px; height: 8px;
+      border-radius: 50%; background: #6b7280;
+      flex-shrink: 0;
+    }
+    .peer-row.connected .peer-dot {
+      background: #22c55e;
+      box-shadow: 0 0 6px #22c55e;
+    }
+    .peer-addr {
+      font-weight: 600; font-family: monospace; font-size: 13px;
+    }
+    .peer-status {
+      font-size: 10px; text-transform: uppercase; letter-spacing: .08em;
+    }
+    .peer-row.connected .peer-status { color: #6ee7b7; }
+    .peer-row .peer-status { color: #6b7280; }
+    .peer-agent { color: rgba(255,255,255,0.25); font-size: 10px; }
+    .peer-meta { display: flex; align-items: center; gap: 14px; font-size: 12px; color: rgba(255,255,255,0.5); }
+    .peer-meta .height { color: #93c5fd; }
+    .peer-meta .idle { color: rgba(255,255,255,0.28); }
+
+    .checkpoint-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 14px; border-radius: 10px;
+      border: 1px solid rgba(255,215,0,0.1);
+      margin-bottom: 6px;
+      background: rgba(255,215,0,0.03);
+    }
+    .checkpoint-row .height { font-size: 13px; font-weight: 600; color: #fcd34d; }
+    .checkpoint-row .label { font-weight: 400; color: rgba(255,255,255,0.4); font-size: 11px; margin-left: 6px; }
+    .checkpoint-row .hash { font-family: monospace; font-size: 10px; color: rgba(255,255,255,0.3); margin-top: 2px; word-break: break-all; }
+    .checkpoint-row .badge { font-size: 10px; color: rgba(255,215,0,0.5); text-transform: uppercase; letter-spacing: .08em; flex-shrink: 0; margin-left: 12px; }
+
+    .node-settings-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .node-settings-label {
+      font-size: 11px;
+      color: rgba(255,255,255,0.5);
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      font-weight: 600;
+    }
+    .node-settings-label .wizard-input,
+    .node-settings-label select { display: block; width: 100%; margin-top: 6px; }
+    .node-binary-status {
+      margin-top: 16px;
+      padding: 10px 14px;
+      background: rgba(0,0,0,0.25);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 10px;
+      font-size: 11px;
+      color: rgba(255,255,255,0.28);
+      font-family: monospace;
+      line-height: 1.6;
+    }
+    .node-binary-status.error { color: #f87171; }
+    .metric-value.warn { color: #fbbf24; }
+    .metric-value.error { color: #f87171; }
+
     /* ═══ Algorithm Select ═══ */
     .algo-select {
       width: 100%;
@@ -5342,20 +5513,17 @@
         </div>
 
         <!-- ── Node Action Bar ─────────────────────────────────── -->
-        <div class="control-panel" style="margin-bottom:12px;padding:12px 16px">
-          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-            <!-- Status pill -->
-            <div style="display:flex;align-items:center;gap:8px;padding:6px 14px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:20px;transition:border-color .3s">
-              <div id="node-status-dot" style="width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.18);transition:background .4s,box-shadow .4s;flex-shrink:0"></div>
-              <span id="node-status-text" style="font-size:12px;font-weight:500;color:rgba(255,255,255,0.4);white-space:nowrap;transition:color .3s">Offline</span>
+        <div class="control-panel panel-tight">
+          <div class="actions-row">
+            <div class="node-status-pill">
+              <div id="node-status-dot" class="node-status-dot"></div>
+              <span id="node-status-text" class="node-status-text">Offline</span>
             </div>
             <div style="flex:1"></div>
-            <!-- Start / Stop button -->
-            <button id="node-toggle-btn" class="btn btn-primary" style="min-width:148px">
+            <button id="node-toggle-btn" class="btn btn-primary">
               <svg class="icon icon-inline" aria-hidden="true"><use href="#i-spark"></use></svg>
               <span id="node-btn-label">Spustit Node</span>
             </button>
-            <!-- Refresh button -->
             <button id="node-refresh-btn" class="btn btn-ghost btn-sm" title="Obnovit stav">
               <svg class="icon icon-inline icon-12" aria-hidden="true"><use href="#i-refresh"></use></svg>
             </button>
@@ -5385,12 +5553,11 @@
         <!-- ═══ SECTION: Přehled ═══ -->
         <div id="node-overview" class="section-panel active">
           <div class="control-panel">
-            <h2 class="panel-header-title">
-              <svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg>
-              <span>Stav Node</span>
+            <h2 class="panel-header-row">
+              <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg> Stav Node</span>
               <span class="muted-time" id="node-updated">—</span>
             </h2>
-            <div class="metric-grid">
+            <div class="metric-grid panel-mt-20">
               <div class="metric-card blue">
                 <div class="metric-kicker">VÝŠKA BLOKU</div>
                 <div class="metric-value blue" id="node-stat-height">—</div>
@@ -5408,7 +5575,7 @@
                 <div class="metric-value purple" id="node-stat-bps">—</div>
               </div>
             </div>
-            <div class="metric-grid" style="margin-top:12px">
+            <div class="metric-grid panel-mt-20">
               <div class="metric-card blue">
                 <div class="metric-kicker">POOL HASHRATE</div>
                 <div class="metric-value blue" id="node-pool-hashrate">—</div>
@@ -5426,19 +5593,19 @@
                 <div class="metric-value purple" id="node-pool-blocks">—</div>
               </div>
             </div>
-            <!-- IBD progress (hidden until syncing) -->
-            <div id="node-ibd-bar-wrap" style="display:none;margin-top:18px">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-                <span style="font-size:12px;color:rgba(255,255,255,0.45);display:flex;align-items:center;gap:6px">
+            <!-- IBD progress -->
+            <div id="node-ibd-bar-wrap" class="ibd-bar-wrap">
+              <div class="ibd-bar-meta">
+                <span class="ibd-bar-label">
                   <svg class="icon icon-inline icon-12" aria-hidden="true"><use href="#i-refresh"></use></svg>
                   Initial Block Download
                 </span>
-                <span id="node-ibd-pct" style="font-size:12px;font-weight:600;color:var(--zion-cyan)">0%</span>
+                <span id="node-ibd-pct" class="ibd-bar-pct">0%</span>
               </div>
-              <div style="background:rgba(255,255,255,0.06);border-radius:6px;height:8px;overflow:hidden;border:1px solid rgba(255,255,255,0.06)">
-                <div id="node-ibd-bar" style="height:100%;background:linear-gradient(90deg,var(--zion-cyan),#a78bfa);width:0%;transition:width .6s ease;border-radius:6px"></div>
+              <div class="ibd-bar-track">
+                <div id="node-ibd-bar" class="ibd-bar-fill"></div>
               </div>
-              <div style="margin-top:6px;font-size:11px;color:rgba(255,255,255,0.28)" id="node-ibd-eta"></div>
+              <div id="node-ibd-eta" class="ibd-bar-eta"></div>
             </div>
           </div>
           <!-- Status message bar -->
@@ -5452,10 +5619,7 @@
         <div id="node-peers-tab" class="section-panel">
           <div class="control-panel">
             <h2 class="panel-header-row">
-              <span class="panel-header-title">
-                <svg class="icon" aria-hidden="true"><use href="#i-refresh"></use></svg>
-                <span>P2P Peery</span>
-              </span>
+              <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-refresh"></use></svg> P2P Peery</span>
               <span class="panel-header-title">
                 <span class="muted-time" id="node-peers-updated">—</span>
                 <button class="btn btn-ghost btn-sm" id="node-refresh-peers-btn">
@@ -5464,7 +5628,7 @@
                 </button>
               </span>
             </h2>
-            <div class="metric-grid" style="margin-bottom:16px">
+            <div class="metric-grid panel-mt-20">
               <div class="metric-card green">
                 <div class="metric-kicker">PŘIPOJENO</div>
                 <div class="metric-value green" id="node-peers-active">—</div>
@@ -5478,7 +5642,7 @@
                 <div class="metric-value purple">3</div>
               </div>
             </div>
-            <div id="node-peers-list" class="stack-col scroll">
+            <div id="node-peers-list" class="stack-col scroll panel-mt-20">
               <div class="placeholder-row">— žádné peery —</div>
             </div>
           </div>
@@ -5487,41 +5651,39 @@
         <!-- ═══ SECTION: Nastavení ═══ -->
         <div id="node-settings-tab" class="section-panel">
           <div class="control-panel">
-            <h2 class="panel-header-title">
-              <svg class="icon" aria-hidden="true"><use href="#i-settings"></use></svg>
-              <span>Konfigurace Node</span>
+            <h2 class="panel-header-row">
+              <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-settings"></use></svg> Konfigurace Node</span>
             </h2>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px">
-              <label style="font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:.07em;font-weight:600">
+            <div class="node-settings-grid">
+              <label class="node-settings-label">
                 P2P Port
-                <input id="node-cfg-p2p" type="number" value="8334" min="1024" max="65535" style="display:block;width:100%;margin-top:6px">
+                <input id="node-cfg-p2p" class="wizard-input" type="number" value="8334" min="1024" max="65535">
               </label>
-              <label style="font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:.07em;font-weight:600">
+              <label class="node-settings-label">
                 RPC Port
-                <input id="node-cfg-rpc" type="number" value="8545" min="1024" max="65535" style="display:block;width:100%;margin-top:6px">
+                <input id="node-cfg-rpc" class="wizard-input" type="number" value="8545" min="1024" max="65535">
               </label>
             </div>
-            <div style="margin-top:12px">
-              <label style="font-size:11px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:.07em;font-weight:600">
+            <div class="node-settings-grid" style="margin-top:12px;grid-template-columns:1fr">
+              <label class="node-settings-label">
                 Network
-                <select id="node-cfg-network" style="display:block;width:100%;margin-top:6px">
+                <select id="node-cfg-network" class="algo-select">
                   <option value="mainnet">mainnet</option>
                   <option value="testnet">testnet</option>
                   <option value="devnet">devnet</option>
                 </select>
               </label>
             </div>
-            <div id="node-binary-status" style="margin-top:16px;padding:10px 14px;background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.06);border-radius:10px;font-size:11px;color:rgba(255,255,255,0.28);font-family:monospace;line-height:1.6">
+            <div id="node-binary-status" class="node-binary-status">
               Binary: hledám…
             </div>
           </div>
           <!-- Checkpoints card -->
-          <div class="control-panel">
-            <h2 class="panel-header-title">
-              <svg class="icon" aria-hidden="true"><use href="#i-star"></use></svg>
-              <span>Checkpointy sítě</span>
+          <div class="control-panel panel-mt-20">
+            <h2 class="panel-header-row">
+              <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-star"></use></svg> Checkpointy sítě</span>
             </h2>
-            <div id="node-checkpoint-list" class="stack-col" style="margin-top:12px">
+            <div id="node-checkpoint-list" class="stack-col panel-mt-20">
               <div class="placeholder-row">Načítám checkpointy…</div>
             </div>
           </div>
@@ -5531,18 +5693,10 @@
         <div id="node-log-tab" class="section-panel">
           <div class="control-panel">
             <h2 class="panel-header-row">
-              <span class="panel-header-title">
-                <svg class="icon" aria-hidden="true"><use href="#i-logs"></use></svg>
-                <span>Node Log</span>
-              </span>
+              <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-logs"></use></svg> Node Log</span>
               <button class="btn btn-ghost btn-sm" id="node-clear-log-btn">Vymazat</button>
             </h2>
-            <div id="node-console"
-              style="margin-top:14px;background:rgba(0,0,0,0.5);border-radius:10px;padding:14px 16px;
-                     font-family:'JetBrains Mono',Menlo,'Courier New',monospace;font-size:11px;
-                     color:rgba(255,255,255,0.5);height:360px;overflow-y:auto;
-                     white-space:pre-wrap;word-break:break-all;
-                     border:1px solid rgba(255,255,255,0.05);line-height:1.65;letter-spacing:0.01em">— čekám na spuštění —</div>
+            <div id="node-console" class="node-console">— čekám na spuštění —</div>
           </div>
         </div>
 
