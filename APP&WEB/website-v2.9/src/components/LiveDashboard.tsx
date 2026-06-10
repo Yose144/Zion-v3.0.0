@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Activity, Atom, Braces, Database, Gauge, Shield } from 'lucide-react';
+import { Activity, Atom, Braces, Database, Gauge, HelpCircle, Shield } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { apiClient } from '@/lib/api';
 import { usePolling } from '@/hooks/usePolling';
@@ -92,24 +92,27 @@ export default function LiveDashboard() {
       value: (stats.total_blocks ?? 0).toLocaleString(locale),
       icon: Database,
       accent: 'from-zion-gold/25 to-zion-purple/10',
+      tip: cs ? 'Celkový počet vytěžených bloků od MainNet Genesis.' : 'Total number of mined blocks since MainNet Genesis.',
     },
     {
-      label: cs ? 'Zasoba celkem' : 'Total Supply',
+      label: cs ? 'Zásoba celkem' : 'Total Supply',
       value: formattedSupply,
       icon: Gauge,
       accent: 'from-zion-purple/25 to-zion-cyan/10',
+      tip: cs ? 'Maximální zásoba ZION je 144 miliard včetně genesis premine.' : 'Maximum ZION supply is 144 billion including genesis premine.',
     },
     {
       label: cs ? 'Transakce' : 'Transactions',
       value: (stats.total_transactions ?? 0).toLocaleString(locale),
       icon: Atom,
       accent: 'from-zion-cyan/25 to-zion-gold/10',
+      tip: cs ? 'Celkový počet transakcí zapsaných na blockchainu.' : 'Total number of transactions recorded on the blockchain.',
     },
   ];
 
   const auxCards = [
-    { label: cs ? 'Obtiznost' : 'Difficulty', value: (stats.difficulty ?? 0).toLocaleString(locale), icon: Shield },
-    { label: cs ? 'Velikost mempoolu' : 'Mempool Size', value: mempoolSize.toLocaleString(locale), icon: Braces },
+    { label: cs ? 'Obtížnost' : 'Difficulty', value: (stats.difficulty ?? 0).toLocaleString(locale), icon: Shield, tip: cs ? 'Aktuální těžební obtížnost nastavená LWMA DAA.' : 'Current mining difficulty set by LWMA DAA.' },
+    { label: cs ? 'Velikost mempoolu' : 'Mempool Size', value: mempoolSize.toLocaleString(locale), icon: Braces, tip: cs ? 'Transakce čekající na potvrzení v mempoolu.' : 'Transactions waiting for confirmation in the mempool.' },
   ];
 
   return (
@@ -151,18 +154,26 @@ export default function LiveDashboard() {
               {highlightCards.map((card) => (
                 <div
                   key={card.label}
-                  className={`rounded-2xl border border-white/10 bg-linear-to-br ${card.accent} p-4`}
+                  className={`group relative rounded-2xl border border-white/10 bg-linear-to-br ${card.accent} p-4`}
                 >
                   <card.icon className="w-5 h-5 text-white/70 mb-3" />
                   <div className="text-2xl font-bold text-white">{card.value}</div>
                   <div className="text-xs uppercase tracking-wide text-gray-300">{card.label}</div>
+                  <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="group/tooltip relative">
+                      <HelpCircle className="w-3.5 h-3.5 text-white/50" />
+                      <div className="absolute right-0 top-5 w-48 p-2 rounded-lg bg-black/90 border border-white/10 text-[10px] text-gray-300 opacity-0 group-hover/tooltip:opacity-100 transition-opacity z-20 pointer-events-none">
+                        {card.tip}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
 
             <div className="grid md:grid-cols-2 gap-4">
               {auxCards.map((card) => (
-                <div key={card.label} className="rounded-2xl border border-white/10 bg-black/40 p-4">
+                <div key={card.label} className="group relative rounded-2xl border border-white/10 bg-black/40 p-4">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-gray-400">{card.label}</p>
@@ -171,6 +182,14 @@ export default function LiveDashboard() {
                     <card.icon className="w-5 h-5 text-zion-gold" />
                   </div>
                   <div className="mt-2 h-1 rounded-full bg-linear-to-r from-zion-gold via-zion-purple to-transparent" />
+                  <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="group/tooltip relative">
+                      <HelpCircle className="w-3.5 h-3.5 text-white/50" />
+                      <div className="absolute right-0 top-5 w-48 p-2 rounded-lg bg-black/90 border border-white/10 text-[10px] text-gray-300 opacity-0 group-hover/tooltip:opacity-100 transition-opacity z-20 pointer-events-none">
+                        {card.tip}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>

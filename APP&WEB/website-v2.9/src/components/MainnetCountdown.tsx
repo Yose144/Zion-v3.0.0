@@ -7,6 +7,7 @@ import { useLang } from '@/contexts/LanguageContext';
 import { tr } from '@/lib/translations';
 
 const LAUNCH_DATE = new Date('2026-12-31T00:00:00Z');
+const GENESIS_DATE = new Date('2026-06-11T00:00:00Z');
 
 interface TimeLeft {
   days: number;
@@ -148,44 +149,62 @@ export default function MainnetCountdown() {
           <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-zion-gold/10 blur-3xl pointer-events-none" />
           <div className="absolute -bottom-20 -left-20 w-64 h-64 rounded-full bg-zion-purple/10 blur-3xl pointer-events-none" />
 
-          <div className="relative flex flex-col lg:flex-row items-center justify-between gap-6">
-            {/* left: title + date */}
-            <div className="flex items-center gap-4">
-              <div className="flex-none w-12 h-12 rounded-2xl bg-zion-gold/15 flex items-center justify-center">
-                <Rocket className="w-6 h-6 text-zion-gold animate-pulse" />
-              </div>
-              <div>
-                <h2 className="text-xl md:text-2xl font-bold text-white">
-                  {tr('countdown', 'title', lang)}
-                </h2>
-                <div className="flex items-center gap-2 mt-1 text-sm text-gray-400">
-                  <Calendar className="w-4 h-4 text-zion-cyan" />
-                  <span>{tr('countdown', 'target_date', lang)}</span>
-                  <span className="text-zion-gold font-semibold">{tMinus}</span>
+          <div className="relative flex flex-col gap-6">
+            {/* Top: Genesis banner */}
+            <div className="flex flex-col sm:flex-row items-center gap-4 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 px-5 py-3">
+              <div className="flex items-center gap-3">
+                <div className="flex-none w-10 h-10 rounded-xl bg-emerald-500/15 flex items-center justify-center">
+                  <Rocket className="w-5 h-5 text-emerald-300" />
                 </div>
+                <div>
+                  <h2 className="text-lg font-bold text-white">{cs ? 'Genesis 3.0.1 úspěšný' : 'Genesis 3.0.1 Successful'}</h2>
+                  <p className="text-xs text-gray-400">{cs ? 'MainNet Genesis blok 11. 6. 2026' : 'MainNet Genesis block 11 Jun 2026'}</p>
+                </div>
+              </div>
+              <div className="sm:ml-auto flex items-center gap-2 text-xs text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-3 py-1">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                {cs ? 'Síť běží · Pool aktivní · Topologie stabilní' : 'Network running · Pool active · Topology stable'}
               </div>
             </div>
 
-            {/* right: countdown grid */}
-            <div className="flex items-center gap-3 md:gap-4">
-              {units.map((unit, i) => (
-                <motion.div
-                  key={unit.label}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.4, delay: i * 0.08 }}
-                  className="flex flex-col items-center"
-                >
-                  <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md flex items-center justify-center">
-                    <span className="text-2xl md:text-3xl font-bold text-gradient tabular-nums">
-                      {pad(unit.value)}
-                    </span>
+            {/* Bottom: countdown to public launch */}
+            <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
+              <div className="flex items-center gap-4">
+                <div className="flex-none w-12 h-12 rounded-2xl bg-zion-gold/15 flex items-center justify-center">
+                  <Rocket className="w-6 h-6 text-zion-gold animate-pulse" />
+                </div>
+                <div>
+                  <h2 className="text-xl md:text-2xl font-bold text-white">
+                    {cs ? 'Odpočet veřejného launchu' : 'Public Launch Countdown'}
+                  </h2>
+                  <div className="flex items-center gap-2 mt-1 text-sm text-gray-400">
+                    <Calendar className="w-4 h-4 text-zion-cyan" />
+                    <span>{tr('countdown', 'target_date', lang)}</span>
+                    <span className="text-zion-gold font-semibold">{tMinus}</span>
                   </div>
-                  <span className="text-[10px] md:text-xs uppercase tracking-wider text-gray-500 mt-2">
-                    {unit.label}
-                  </span>
-                </motion.div>
-              ))}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 md:gap-4">
+                {units.map((unit, i) => (
+                  <motion.div
+                    key={unit.label}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.4, delay: i * 0.08 }}
+                    className="flex flex-col items-center"
+                  >
+                    <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md flex items-center justify-center">
+                      <span className="text-2xl md:text-3xl font-bold text-gradient tabular-nums">
+                        {pad(unit.value)}
+                      </span>
+                    </div>
+                    <span className="text-[10px] md:text-xs uppercase tracking-wider text-gray-500 mt-2">
+                      {unit.label}
+                    </span>
+                  </motion.div>
+                ))}
+              </div>
             </div>
           </div>
 

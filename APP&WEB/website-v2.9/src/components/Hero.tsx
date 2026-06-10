@@ -155,15 +155,18 @@ export default function Hero() {
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                      <span className="text-sm font-bold text-white">Launch Countdown — 31 December 2026</span>
-                    <span className="text-xs bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full font-semibold">
-                        T-{Math.ceil((new Date('2026-12-31').getTime() - Date.now()) / (1000*60*60*24))}d
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-400 leading-relaxed">
-                    Network status, explorer, pool, downloads, and documentation — preparing for mainnet launch on {SITE_LAUNCH_DATE_DISPLAY}.
-                      Core + Edge topology in testing, mining test active, bridge in preparation.
-                  </p>
+                <span className="text-sm font-bold text-white">Genesis 3.0.1 — 11 June 2026</span>
+                <span className="text-xs bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full font-semibold flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> LIVE
+                </span>
+                <span className="text-xs bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full font-semibold">
+                  T-{Math.ceil((new Date('2026-12-31').getTime() - Date.now()) / (1000*60*60*24))}d public
+                </span>
+              </div>
+              <p className="text-sm text-gray-400 leading-relaxed">
+                MainNet Genesis achieved on 11 June 2026. Public full launch countdown active for {SITE_LAUNCH_DATE_DISPLAY}.
+                Core + Edge topology live, mining active, bridge in preparation.
+              </p>
                 </div>
                 <a
                   href="#tree-of-life"
