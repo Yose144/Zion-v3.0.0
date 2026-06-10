@@ -872,6 +872,18 @@ fn run_local_session(
                 telemetry.gpu_backend_name = g.backend_kind().as_str().to_string();
                 telemetry.gpu_infos = gpu_backend::query_gpu_details();
                 telemetry.algorithm = initial_algorithm.clone();
+                // Push GPU info to HashrateTracker for TUI dashboard
+                let gpu_lines: Vec<interactive::GpuInfoLine> = telemetry.gpu_infos
+                    .iter()
+                    .enumerate()
+                    .map(|(i, info)| interactive::GpuInfoLine {
+                        index: i,
+                        info: format!("{} | {} CUs | {} MHz | {} MiB VRAM",
+                            info.name, info.compute_units, info.max_clock_mhz,
+                            info.global_mem_bytes / (1024 * 1024)),
+                    })
+                    .collect();
+                hashrate.set_gpu_info(gpu_lines);
             }
             Err(e) => {
                 println!("gpu_init_fallback reason=\"{e}\" using=cpu");
@@ -1198,6 +1210,18 @@ fn run_remote_session(
                 telemetry.gpu_backend_name = g.backend_kind().as_str().to_string();
                 telemetry.gpu_infos = gpu_backend::query_gpu_details();
                 telemetry.algorithm = initial_algorithm.clone();
+                // Push GPU info to HashrateTracker for TUI dashboard
+                let gpu_lines: Vec<interactive::GpuInfoLine> = telemetry.gpu_infos
+                    .iter()
+                    .enumerate()
+                    .map(|(i, info)| interactive::GpuInfoLine {
+                        index: i,
+                        info: format!("{} | {} CUs | {} MHz | {} MiB VRAM",
+                            info.name, info.compute_units, info.max_clock_mhz,
+                            info.global_mem_bytes / (1024 * 1024)),
+                    })
+                    .collect();
+                hashrate.set_gpu_info(gpu_lines);
             }
             Err(e) => {
                 println!("gpu_init_fallback reason=\"{e}\" using=cpu");

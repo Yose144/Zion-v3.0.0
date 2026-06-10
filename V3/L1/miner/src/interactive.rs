@@ -29,7 +29,6 @@ use crossterm::{
 };
 
 use crate::ui;
-use crate::gpu_backend;
 
 /* ========================================================================= */
 /* Shared control state                                                      */
@@ -186,6 +185,8 @@ pub struct HashrateTracker {
     pub rejected_shares: AtomicU64,
     /// Pool height — updated by mining loop via set_pool_height()
     pub pool_height: AtomicU64,
+    /// GPU device info set by mining loop after gpu_init (via set_gpu_info)
+    pub gpu_info: Mutex<Vec<GpuInfoLine>>,
     /// Windows protected by a single mutex
     windows: Mutex<(Window, Window, Window)>, // 10s, 60s, 15m
 }
@@ -199,8 +200,20 @@ impl HashrateTracker {
             accepted_shares: AtomicU64::new(0),
             rejected_shares: AtomicU64::new(0),
             pool_height: AtomicU64::new(0),
+            gpu_info: Mutex::new(Vec::new()),
             windows: Mutex::new((Window::new(10), Window::new(60), Window::new(900))),
         })
+    }
+
+    /// Called once by mining loop after successful GPU init.
+    pub fn set_gpu_info(&self, info: Vec<GpuInfoLine>) {
+        if let Ok(mut g) = self.gpu_info.lock() {
+            *g = info;
+        }
+    }
+
+    pub fn get_gpu_info(&self) -> Vec<GpuInfoLine> {
+        self.gpu_info.lock().map(|g| g.clone()).unwrap_or_default()
     }
 
     pub fn record_cpu_hashes(&self, n: u64) {
@@ -502,9 +515,6 @@ pub fn run_interactive(
     let started_at = Instant::now();
 
     let dashboard_handle = thread::spawn(move || {
-        let mut last_gpu_query = Instant::now() - Duration::from_secs(120);
-        let mut cached_gpu_info: Vec<GpuInfoLine> = Vec::new();
-
         // Initial full clear
         let _ = execute!(io::stdout(),
             cursor::MoveTo(0, 0),
@@ -520,26 +530,16 @@ pub fn run_interactive(
             }
             let show = c.show_dashboard;
             let control_snapshot = c.clone();
-            drop(c); // release lock before GPU query
+            drop(c);
 
             if !show {
                 continue;
             }
 
-            // Refresh GPU info every 30s
-            if last_gpu_query.elapsed().as_secs() >= 30 {
-                cached_gpu_info = gpu_backend::query_gpu_details()
-                    .into_iter()
-                    .enumerate()
-                    .map(|(i, info)| GpuInfoLine {
-                        index: i,
-                        info: format!("{} | {} CUs | {} MHz | {} MiB VRAM",
-                            info.name, info.compute_units, info.max_clock_mhz,
-                            info.global_mem_bytes / (1024 * 1024)),
-                    })
-                    .collect();
-                last_gpu_query = Instant::now();
-            }
+            // GPU info comes from HashrateTracker (set by mining loop after gpu_init)
+            // We never call query_gpu_details() from TUI thread — that requires OpenCL
+            // context which lives in the mining thread.
+            let cached_gpu_info = dashboard_hashrate.get_gpu_info();
 
             let rates = dashboard_hashrate.compute_rates();
             let pool_height = dashboard_hashrate.pool_height.load(Ordering::Relaxed);
