@@ -698,30 +698,7 @@ function setupControls() {
   const algoSaveBtn = document.getElementById('algo-save-btn');
   const algoStatusEl = document.getElementById('algo-status');
   const gpuCheckbox = document.getElementById('gpu-checkbox');
-  const modeStatusEl = document.getElementById('mode-status');
   const backendStatusEl = document.getElementById('backend-status');
-
-  const setModeStatus = (mode) => {
-    const labels = {
-      'cpu': 'CPU mining only — efficient for laptops and low-power rigs',
-      'gpu': 'GPU mining only — maximum hashrate via OpenCL/CUDA/Metal',
-      'dual': 'Dual mining uses both CPU and GPU simultaneously for maximum ZION hashrate'
-    };
-    if (modeStatusEl) modeStatusEl.textContent = labels[mode] || '';
-  };
-
-  // Mining mode radio button listeners
-  document.querySelectorAll('input[name="mining-mode"]').forEach(radio => {
-    radio.addEventListener('change', () => {
-      const mode = normalizeMiningMode(radio.value);
-      if (mode !== radio.value) {
-        const fallbackRadio = document.querySelector(`input[name="mining-mode"][value="${mode}"]`);
-        if (fallbackRadio) fallbackRadio.checked = true;
-      }
-      setModeStatus(mode);
-      // Sync hidden gpu checkbox for backwards compat
-    });
-  });
 
   const updateBackendStatus = (value) => {
     const labels = {
@@ -772,16 +749,18 @@ function setupControls() {
   }
 
   const ALGO_LABELS = {
-    cosmic_harmony: 'Cosmic Harmony Ekam Deeksha — canonical 2.9.8+ CPU/GPU path'
+    deeksha_lite_v1: 'Deeksha Lite v1 — Standard 4 KiB scratchpad',
+    cosmic_harmony_ekam_deeksha_v2: 'Cosmic Harmony Ekam Deeksha v2',
+    deeksha_lite_fire: 'Deeksha Lite Fire — 512 KiB thermal mode'
   };
 
   const syncAlgoUi = () => {
-    const algo = algoSelect?.value || config.algorithm || 'cosmic_harmony';
+    const algo = algoSelect?.value || config.algorithm || 'deeksha_lite_v1';
     const label = ALGO_LABELS[algo] || algo;
     if (algoStatusEl) algoStatusEl.textContent = label;
     // update the display chip in the control panel
     const algoDisplayChip = document.querySelector('#algo-display .font-semibold');
-    if (algoDisplayChip) algoDisplayChip.textContent = 'Cosmic Harmony Ekam Deeksha';
+    if (algoDisplayChip) algoDisplayChip.textContent = label;
   };
 
   const algoSupportsGpu = (algo) => {
@@ -883,8 +862,7 @@ function setupControls() {
     
     const pureZionMode = isPureZionDesktopMode(config);
     const selectedMode = normalizeMiningMode(
-      document.querySelector('input[name="mining-mode"]:checked')?.value || 'dual',
-      pureZionMode,
+      document.getElementById('gpu-checkbox')?.checked ? 'dual' : 'cpu',
     );
     const revenueCpuCoin = (document.getElementById('revenue-cpu-coin')?.value || 'auto').toLowerCase();
     const revenueGpuCoinsRaw = document.getElementById('revenue-gpu-coins')?.value || '';
@@ -1035,21 +1013,6 @@ function updateSettingsUI() {
   const threadsMaxEl = document.getElementById('threads-max');
   if (threadsMaxEl) threadsMaxEl.textContent = String(cpuThreadMax);
 
-  // Mining Mode radio buttons (new UI)
-  const miningMode = normalizeMiningMode(config.miningMode || (config.gpu ? 'dual' : 'cpu'));
-  const modeRadio = document.querySelector(`input[name="mining-mode"][value="${miningMode}"]`);
-  if (modeRadio) modeRadio.checked = true;
-  const modeStatusEl = document.getElementById('mode-status');
-  if (modeStatusEl) {
-    const pureZionMode = isPureZionDesktopMode(config);
-    const modeLabels = {
-      'cpu': 'CPU mining only (~600 kH/s)',
-      'gpu': 'GPU mining only (~8.5 GH/s)',
-      'dual': 'Dual mining uses both CPU and GPU simultaneously (MAX POWER!)'
-    };
-    modeStatusEl.textContent = modeLabels[miningMode] || '';
-  }
-
   const revenue = currentPureZionDefault(config)
     ? toPureZionRevenueProfile(config?.revenue || {})
     : normalizeRevenueProfile(config?.revenue || {});
@@ -1106,9 +1069,16 @@ function updateSettingsUI() {
 
   // AI Afterburner toggle removed in V3 cleanup
 
-  // Dashboard quick controls — algorithm fixed to canonical Deeksha path
-  const algoSelect = document.getElementById('algo-select');
-  if (algoSelect) algoSelect.value = 'cosmic_harmony';
+  // Dashboard quick controls — algorithm select init
+  const algoSelectInit = document.getElementById('algo-select');
+  if (algoSelectInit) {
+    const persistedAlgo = config.algorithm;
+    if (persistedAlgo && algoSelectInit.querySelector(`option[value="${persistedAlgo}"]`)) {
+      algoSelectInit.value = persistedAlgo;
+    } else {
+      algoSelectInit.value = 'deeksha_lite_v1';
+    }
+  }
 }
 
 function escapeHtml(s) {
