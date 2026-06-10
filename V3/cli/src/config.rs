@@ -76,6 +76,12 @@ pub struct MinerConfig {
     pub threads: String,
     pub backend: String,
     pub profile: String,
+    #[serde(default = "default_algorithm")]
+    pub algorithm: String,
+}
+
+fn default_algorithm() -> String {
+    "deeksha_lite_v1".into()
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -196,6 +202,7 @@ impl Default for MinerConfig {
             threads: "auto".into(),
             backend: "auto".into(),
             profile: "pool".into(),
+            algorithm: default_algorithm(),
         }
     }
 }
@@ -368,6 +375,7 @@ pub fn set_value(key: &str, value: &str) -> Result<()> {
         ["miner", "threads"] => cfg.miner.threads = value.into(),
         ["miner", "backend"] => cfg.miner.backend = value.into(),
         ["miner", "profile"] => cfg.miner.profile = value.into(),
+        ["miner", "algorithm"] => cfg.miner.algorithm = value.into(),
         ["agent", "url"] => cfg.agent.url = value.into(),
         ["agent", "model"] => cfg.agent.model = value.into(),
         ["hiran", "model_path"] => {
@@ -432,7 +440,7 @@ pub fn set_value(key: &str, value: &str) -> Result<()> {
         ["topology.edge", "pool_host"] => cfg.topology.edge.pool_host = value.into(),
         ["topology.edge", "pool_port"] => cfg.topology.edge.pool_port = value.parse()?,
         ["topology.edge", "vpn_ip"] => cfg.topology.edge.vpn_ip = Some(value.into()),
-        _ => anyhow::bail!("Unknown config key: {}. Valid keys: node.rpc_host, node.rpc_port, node.p2p_port, node.websocket_port, pool.host, pool.port, miner.wallet, miner.btc_wallet, miner.threads, miner.backend, miner.profile, agent.url, agent.model, hiran.model_path, hiran.backend, hiran.device, hiran.port, hiran.max_context, hiran.temperature, hiran.top_p, deploy.ssh_key, deploy.ssh_user, deploy.default_server, bridge.port, dao.port, cli.auto_update_check, topology.core.rpc_host, topology.core.rpc_port, topology.core.p2p_port, topology.core.pool_host, topology.core.pool_port, topology.core.vpn_ip, topology.edge.rpc_host, topology.edge.rpc_port, topology.edge.p2p_port, topology.edge.pool_host, topology.edge.pool_port, topology.edge.vpn_ip", key),
+        _ => anyhow::bail!("Unknown config key: {}. Valid keys: node.rpc_host, node.rpc_port, node.p2p_port, node.websocket_port, pool.host, pool.port, miner.wallet, miner.btc_wallet, miner.threads, miner.backend, miner.profile, miner.algorithm, agent.url, agent.model, hiran.model_path, hiran.backend, hiran.device, hiran.port, hiran.max_context, hiran.temperature, hiran.top_p, deploy.ssh_key, deploy.ssh_user, deploy.default_server, bridge.port, dao.port, cli.auto_update_check, topology.core.rpc_host, topology.core.rpc_port, topology.core.p2p_port, topology.core.pool_host, topology.core.pool_port, topology.core.vpn_ip, topology.edge.rpc_host, topology.edge.rpc_port, topology.edge.p2p_port, topology.edge.pool_host, topology.edge.pool_port, topology.edge.vpn_ip", key),
     }
     save(&cfg)?;
     println!("✓ {} = {}", key, value);
@@ -510,6 +518,16 @@ pub fn validate(cfg: &Config) -> ValidationReport {
         "pool" | "solo" | "benchmark" | "bench" | "dual" => {}
         other => errors.push(format!(
             "miner.profile has unsupported value '{}'. Supported: pool, solo, benchmark, dual",
+            other
+        )),
+    }
+
+    match cfg.miner.algorithm.trim().to_ascii_lowercase().as_str() {
+        "deeksha_lite_v1" | "lite" | "dl" | "dlv1"
+        | "deeksha_lite_fire" | "fire" | "dlfire"
+        | "cosmic_harmony_ekam_deeksha_v2" | "ekam" | "ekam_v2" | "full" => {}
+        other => errors.push(format!(
+            "miner.algorithm has unsupported value '{}'. Supported: deeksha_lite_v1, deeksha_lite_fire, cosmic_harmony_ekam_deeksha_v2",
             other
         )),
     }

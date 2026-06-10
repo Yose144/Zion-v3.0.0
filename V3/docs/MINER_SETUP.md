@@ -65,7 +65,7 @@ https://zionterranova.com/zion-miner/zion-miner-v3.0.18-gpu.zip
 | Variable | Value |
 |----------|-------|
 | Pool Address | `77.42.71.94:8444` |
-| Algorithm | `deeksha_lite_v1` |
+| Algorithm | multi-algo (session-based: `deeksha_lite_v1`, `deeksha_lite_fire`, `cosmic_harmony_ekam_deeksha_v2`) |
 | NONCE_COUNT | `262144` |
 | NONCE_STRIDE | `262144` |
 | LOOP_COUNT | `1000000` |

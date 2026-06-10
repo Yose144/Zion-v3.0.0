@@ -116,6 +116,7 @@ completions  Print shell completion script
 Mining notes:
 
 - `zion mine start --backend opencl|metal|cuda` now forwards the selected backend explicitly to `zion-miner`,
+- `zion mine start --algorithm deeksha_lite_v1|deeksha_lite_fire|cosmic_harmony_ekam_deeksha_v2` selects the PoW algorithm (defaults to config `miner.algorithm`),
 - `zion mine bench --ekam` now invokes the miner's real Ekam benchmark mode,
 - `zion mine start` now uses `miner.profile` from config unless you explicitly pass `--profile`,
 - `zion mine start` now fails fast when `miner.wallet` is not a valid `zion1...` address,
