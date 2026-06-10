@@ -70,6 +70,7 @@ export interface V3Status {
     shares_rejected: number;
     pool_addr: string | null;
     current_height: number | null;
+    current_algorithm: string | null;
   };
 }
 
@@ -174,8 +175,23 @@ export async function tailLog(path: string, lines = 100): Promise<string[]> {
 
 // ── Control Actions ───────────────────────────────────────
 
-export async function controlAction(action: string): Promise<{ ok: boolean; error?: string }> {
-  return apiPost<{ ok: boolean; error?: string }>('/api/control', { action }) ?? { ok: false, error: 'Network error' };
+export async function controlAction(action: string, env?: Record<string, string>): Promise<{ ok: boolean; error?: string }> {
+  const res = await apiPost<{ ok: boolean; error?: string }>('/api/control', { action, env });
+  return res ?? { ok: false, error: 'Network error' };
+}
+
+// Stubs for legacy components (TODO: wire to real endpoints)
+export async function startLocalBackup(): Promise<string> {
+  return 'not implemented';
+}
+export async function stopLocalBackup(): Promise<string> {
+  return 'not implemented';
+}
+export async function getLocalBackupStatus(): Promise<{ node_running: boolean; miner_running: boolean }> {
+  return { node_running: false, miner_running: false };
+}
+export async function tailscalePing(): Promise<{ ok: boolean; latency_ms?: number }> {
+  return { ok: false };
 }
 
 // ── Desktop Notifications (browser API) ───────────────────
