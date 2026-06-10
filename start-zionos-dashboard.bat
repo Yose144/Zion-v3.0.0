@@ -35,8 +35,8 @@ if not exist "%NODE_BIN%" (
     echo.
 )
 if not exist "%MINER_BIN%" (
-    echo [BUILD] Sestavuji zion-miner.exe...
-    cargo build --release --manifest-path "%REPO_ROOT%\V3\Cargo.toml" -p zion-miner
+    echo [BUILD] Sestavuji zion-miner.exe (s GPU OpenCL)...
+    cargo build --release --manifest-path "%REPO_ROOT%\V3\Cargo.toml" -p zion-miner --features gpu-opencl
     if errorlevel 1 ( echo [CHYBA] Build miner selhal. & pause & exit /b 1 )
     echo.
 )
