@@ -22,6 +22,21 @@ export interface NewsArticle {
 
 export const NEWS_ARTICLES: NewsArticle[] = [
   {
+    slug: 'terranova-mainnet-genesis',
+    date: '2026-06-11',
+    tag: { cs: 'TerraNova', en: 'TerraNova' },
+    tagColor: 'text-sky-400',
+    title: {
+      cs: 'TerraNova — MainNet Genesis blok 11. 6. 2026 · veřejný launch 31. 12. 2026',
+      en: 'TerraNova — MainNet Genesis block 11 Jun 2026 · public launch 31 Dec 2026',
+    },
+    summary: {
+      cs: 'Blok Genesis z 4. 12. 2025 byl TestNet. Hlavní síť TerraNova MainNet se spouští zítra 11. 6. 2026. Veřejný přístup pro všechny zůstává na Silvestra 31. 12. 2026.',
+      en: 'The December 4 2025 genesis block was TestNet. TerraNova MainNet launches tomorrow 11 Jun 2026. Public access remains on New Year\'s Eve 31 Dec 2026.',
+    },
+    href: '/terranova',
+  },
+  {
     slug: 'deeksha-fire-announcement',
     date: '2026-06-07',
     tag: { cs: 'Oznámení', en: 'Announcement' },

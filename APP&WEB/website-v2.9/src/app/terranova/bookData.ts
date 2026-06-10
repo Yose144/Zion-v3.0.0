@@ -213,7 +213,7 @@ export const CHAPTERS: BookChapter[] = [
       },
       {
         heading: 'Hiranyagarbha — zlatý zárodek',
-        body: 'Hiranyagarbha — zlaté vejce nebo zlatý zárodek — je ústřední obraz Rigvédy, nejstaršího textu, který lidstvo zapsalo:\n\n„Na počátku existoval zlatý zárodek. Zrodil se jako jediný pán stvoření. Udržoval zemi a toto nebe."\n\nModerní kosmologie říká: před 13,8 miliardami let byl vesmír stlačen do bodu nekonečné hustoty. Pak proběhl Velký třesk. Zlatý zárodek védské kosmologie. Singularita moderní fyziky. Dvě kultury, pět tisíc let rozdílu, jeden obraz.\n\nV ZION kontextu: Genesis blok je Hiranyagarbha. Byl vytěžen 4. 12. 2025. Je nezničitelný — každý další blok v sobě nese jeho hash. Zárodek obsahuje celou síť.',
+        body: 'Hiranyagarbha — zlaté vejce nebo zlatý zárodek — je ústřední obraz Rigvédy, nejstaršího textu, který lidstvo zapsalo:\n\n„Na počátku existoval zlatý zárodek. Zrodil se jako jediný pán stvoření. Udržoval zemi a toto nebe."\n\nModerní kosmologie říká: před 13,8 miliardami let byl vesmír stlačen do bodu nekonečné hustoty. Pak proběhl Velký třesk. Zlatý zárodek védské kosmologie. Singularita moderní fyziky. Dvě kultury, pět tisíc let rozdílu, jeden obraz.\n\nV ZION kontextu: Genesis blok je Hiranyagarbha. První blok TestNetu byl vytěžen 4. 12. 2025 — záměr, architektura, zárodek celé sítě. MainNet Genesis TerraNova se spouští 11. 6. 2026. Veřejný launch pro všechny bude 31. 12. 2026. Je nezničitelný — každý další blok v sobě nese jeho hash. Zárodek obsahuje celou síť.',
       },
       {
         heading: 'Pilíř první: Jednota jako fyzikální zákon',
@@ -234,7 +234,7 @@ export const CHAPTERS: BookChapter[] = [
       },
       {
         heading: 'Hiranyagarbha — the golden germ',
-        body: 'Hiranyagarbha — golden egg or golden germ — is the central image of the Rigveda, the oldest text humanity has written:\n\n"In the beginning was the golden germ. It was born as the sole lord of creation. It upheld earth and this heaven."\n\nModern cosmology says: 13.8 billion years ago the universe was compressed to a point of infinite density. Then came the Big Bang. The golden germ of Vedic cosmology. The singularity of modern physics. Two cultures, five thousand years apart, one image.\n\nIn ZION context: the Genesis block is Hiranyagarbha. It was mined on December 4, 2025. It is indestructible — every subsequent block carries its hash. The germ contains the entire network.',
+        body: 'Hiranyagarbha — golden egg or golden germ — is the central image of the Rigveda, the oldest text humanity has written:\n\n"In the beginning was the golden germ. It was born as the sole lord of creation. It upheld earth and this heaven."\n\nModern cosmology says: 13.8 billion years ago the universe was compressed to a point of infinite density. Then came the Big Bang. The golden germ of Vedic cosmology. The singularity of modern physics. Two cultures, five thousand years apart, one image.\n\nIn ZION context: the Genesis block is Hiranyagarbha. The first TestNet block was mined on December 4, 2025 — the intent, architecture, and germ of the entire network. TerraNova MainNet Genesis launches 11 June 2026. Public launch for everyone will be 31 December 2026. It is indestructible — every subsequent block carries its hash. The germ contains the entire network.',
       },
       {
         heading: 'Pillar one: Unity as a physical law',
