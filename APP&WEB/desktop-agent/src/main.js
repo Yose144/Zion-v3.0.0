@@ -1199,7 +1199,7 @@ const DEFAULT_CONFIG = {
   },
   desktopPureZionDefault: DESKTOP_PURE_ZION_DEFAULT,
   rpcUrl: DEFAULT_RPC_URL,
-  algorithm: 'cosmic_harmony',
+  algorithm: 'deeksha_lite_v1',
   wallet: '',
   worker: 'desktop-agent',
   threads: Math.max(1, (Array.isArray(os.cpus?.()) ? os.cpus().length : 4) - 1),
@@ -1215,12 +1215,23 @@ const DEFAULT_CONFIG = {
 
 function normalizeAlgorithmName(algo) {
   const raw = String(algo || '').trim().toLowerCase().replace(/-/g, '_');
+  // Modern Zion v3 algorithms
+  if (['deeksha_lite_v1','lite','deeksha_lite','dlv1'].includes(raw)) {
+    return 'deeksha_lite_v1';
+  }
+  if (['deeksha_lite_fire','fire','dlfire','thermal'].includes(raw)) {
+    return 'deeksha_lite_fire';
+  }
+  if (['cosmic_harmony_ekam_deeksha_v2','ekam_v2','ch_ekam_v2','ekam_deeksha_v2','ch_ed_v2'].includes(raw)) {
+    return 'cosmic_harmony_ekam_deeksha_v2';
+  }
+  // Legacy aliases → map to current default (lite)
   if (['cosmic_harmony_v3','cosmic_harmony_v4','cosmic_harmony_v4_2','chv3','ch3',
        'chv4','ch4','deeksha','cosmic_harmony_deeksha','ekam','ekam_deeksha',
-       'cosmic_harmony_ekam'].includes(raw)) {
-    return 'cosmic_harmony';
+       'cosmic_harmony_ekam','cosmic_harmony','ch'].includes(raw)) {
+    return 'deeksha_lite_v1';
   }
-  return raw || 'cosmic_harmony';
+  return raw || 'deeksha_lite_v1';
 }
 
 function sanitizeWorkerName(raw) {
@@ -2171,6 +2182,10 @@ function startMiningV3(config, v3Path) {
     ZION_ENABLE_STREAM_SWITCH: '0',
     ZION_INTERACTIVE: 'false',
   };
+  const normalizedAlgo = normalizeAlgorithmName(config?.algorithm);
+  if (normalizedAlgo) {
+    env.ZION_MINER_ALGORITHM = normalizedAlgo;
+  }
   if (wantsGpu) {
     // ── GPU detection & backend auto-select ──
     env.ZION_BACKEND = selectedGpuBackend;
@@ -2329,7 +2344,7 @@ function startMiningV3(config, v3Path) {
   minerStats.pool = pool;
   minerStats.worker = worker || 'desktop';
   minerStats.threads = String(effectiveThreads);
-  minerStats.algorithm = 'cosmic_harmony_deeksha';
+  minerStats.algorithm = normalizeAlgorithmName(config?.algorithm) || 'deeksha_lite_v1';
   updateTrayMenu(minerStats);
 
   // ── 18. Clear guard ────────────────────────────────────────────────────────
