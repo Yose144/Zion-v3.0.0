@@ -5614,6 +5614,50 @@ Click a button above to run a command.
             </div>
           </div>
         </div>
+
+        <!-- L2 / L3 Commands -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-top:14px">
+          <!-- Bridge -->
+          <div class="control-panel">
+            <h2 class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-bridge"></use></svg> Bridge (L2)</h2>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">
+              <button class="btn btn-primary btn-sm" id="cli-btn-bridge-status">Status</button>
+              <button class="btn btn-primary btn-sm" id="cli-btn-bridge-pending">Pending</button>
+              <button class="btn btn-primary btn-sm" id="cli-btn-bridge-chains">Chains</button>
+              <button class="btn btn-ghost btn-sm" id="cli-btn-bridge-history">History</button>
+            </div>
+          </div>
+          <!-- DAO -->
+          <div class="control-panel">
+            <h2 class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-star"></use></svg> DAO (L2)</h2>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">
+              <button class="btn btn-primary btn-sm" id="cli-btn-dao-status">Status</button>
+              <button class="btn btn-primary btn-sm" id="cli-btn-dao-proposals">Proposals</button>
+              <button class="btn btn-primary btn-sm" id="cli-btn-dao-treasury">Treasury</button>
+              <button class="btn btn-ghost btn-sm" id="cli-btn-dao-params">Params</button>
+            </div>
+          </div>
+          <!-- Pool -->
+          <div class="control-panel">
+            <h2 class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-refresh"></use></svg> Pool (L1)</h2>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">
+              <button class="btn btn-primary btn-sm" id="cli-btn-pool-stats">Stats</button>
+              <button class="btn btn-primary btn-sm" id="cli-btn-pool-miners">Miners</button>
+              <button class="btn btn-primary btn-sm" id="cli-btn-pool-config">Config</button>
+              <button class="btn btn-ghost btn-sm" id="cli-btn-pool-earnings">Earnings</button>
+            </div>
+          </div>
+          <!-- Warp -->
+          <div class="control-panel">
+            <h2 class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-terminal"></use></svg> Warp (L3)</h2>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px">
+              <button class="btn btn-primary btn-sm" id="cli-btn-warp-status">Status</button>
+              <button class="btn btn-primary btn-sm" id="cli-btn-warp-chains">Chains</button>
+              <button class="btn btn-primary btn-sm" id="cli-btn-warp-pending">Pending</button>
+              <button class="btn btn-ghost btn-sm" id="cli-btn-warp-stats">Stats</button>
+            </div>
+          </div>
+        </div>
       </div><!-- /#cli-view -->
 
       <!-- ══════════════════════════════════════════════════════ -->

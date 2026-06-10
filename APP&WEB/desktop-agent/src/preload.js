@@ -139,6 +139,30 @@ contextBridge.exposeInMainWorld('electronAPI', {
   cliConfigGet: (data) => ipcRenderer.invoke('cli-config-get', data),
   cliConfigSet: (data) => ipcRenderer.invoke('cli-config-set', data),
 
+  // ── Bridge CLI ───────────────────────────────────────────────────
+  cliBridgeStatus: () => ipcRenderer.invoke('cli-bridge-status'),
+  cliBridgePending: () => ipcRenderer.invoke('cli-bridge-pending'),
+  cliBridgeHistory: (data) => ipcRenderer.invoke('cli-bridge-history', data),
+  cliBridgeChains: () => ipcRenderer.invoke('cli-bridge-chains'),
+
+  // ── DAO CLI ────────────────────────────────────────────────────────
+  cliDaoStatus: () => ipcRenderer.invoke('cli-dao-status'),
+  cliDaoProposals: () => ipcRenderer.invoke('cli-dao-proposals'),
+  cliDaoTreasury: () => ipcRenderer.invoke('cli-dao-treasury'),
+  cliDaoParams: () => ipcRenderer.invoke('cli-dao-params'),
+
+  // ── Pool CLI ─────────────────────────────────────────────────────
+  cliPoolStats: (data) => ipcRenderer.invoke('cli-pool-stats', data),
+  cliPoolMiners: (data) => ipcRenderer.invoke('cli-pool-miners', data),
+  cliPoolConfig: (data) => ipcRenderer.invoke('cli-pool-config', data),
+  cliPoolEarnings: (data) => ipcRenderer.invoke('cli-pool-earnings', data),
+
+  // ── Warp CLI ───────────────────────────────────────────────────────
+  cliWarpStatus: () => ipcRenderer.invoke('cli-warp-status'),
+  cliWarpChains: () => ipcRenderer.invoke('cli-warp-chains'),
+  cliWarpPending: () => ipcRenderer.invoke('cli-warp-pending'),
+  cliWarpStats: () => ipcRenderer.invoke('cli-warp-stats'),
+
   // Cleanup listeners
   removeAllListeners: (channel) => {
     ipcRenderer.removeAllListeners(channel);
