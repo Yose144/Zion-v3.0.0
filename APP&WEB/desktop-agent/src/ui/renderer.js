@@ -4057,9 +4057,7 @@ function initCliView() {
 
   function appendCliOutput(text, isError = false) {
     const line = document.createElement('div');
-    line.style.cssText = isError
-      ? 'color:#f87171;margin:2px 0'
-      : 'color:rgba(255,255,255,0.7);margin:2px 0';
+    line.className = isError ? 'cli-line error' : 'cli-line';
     line.textContent = text;
     consoleEl.appendChild(line);
     consoleEl.scrollTop = consoleEl.scrollHeight;
@@ -4071,7 +4069,7 @@ function initCliView() {
 
   async function runCli(handlerName, label, args = {}) {
     statusBadge.textContent = `${label}…`;
-    statusBadge.style.color = 'var(--zion-gold)';
+    statusBadge.className = 'cli-badge busy';
     try {
       const result = await window.electronAPI[handlerName](args);
       if (result?.success) {
@@ -4083,7 +4081,7 @@ function initCliView() {
       appendCliOutput(`$ zion ${label}\nException: ${err.message}`, true);
     }
     statusBadge.textContent = 'Ready';
-    statusBadge.style.color = 'rgba(255,255,255,0.3)';
+    statusBadge.className = 'cli-badge ready';
   }
 
   document.getElementById('cli-btn-version')?.addEventListener('click', () => runCli('cliGetVersion', '--version'));
