@@ -1,0 +1,11 @@
+[Unit]
+Description=ZION Edge Server Database & Config Backup
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=/root/zion-2.9.6-main/edge-deploy/scripts/backup-edge.sh
+StandardOutput=journal
+StandardError=journal
