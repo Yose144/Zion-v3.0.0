@@ -757,7 +757,7 @@ function setupControls() {
   };
 
   const syncAlgoUi = () => {
-    const algo = algoSelect?.value || config.algorithm || 'deeksha_lite_v1';
+    const algo = algoSelect?.value || config.algorithm || 'deeksha_lite_fire';
     const label = ALGO_LABELS[algo] || algo;
     // update settings read-only display
     const settingsDisplay = document.getElementById('settings-algo-display');
@@ -772,7 +772,7 @@ function setupControls() {
     if (['cosmic_harmony_ekam_deeksha_v2','ekam_v2','ch_ekam_v2','ekam_deeksha_v2','ch_ed_v2'].includes(r)) return 'cosmic_harmony_ekam_deeksha_v2';
     // legacy aliases → default
     if (['cosmic_harmony_v3','cosmic_harmony_v4','cosmic_harmony_v4_2','chv3','ch3','chv4','ch4','deeksha','cosmic_harmony_deeksha','ekam','ekam_deeksha','cosmic_harmony_ekam','cosmic_harmony','ch'].includes(r)) return 'deeksha_lite_v1';
-    return VALID_ALGO_KEYS.includes(r) ? r : 'deeksha_lite_v1';
+    return VALID_ALGO_KEYS.includes(r) ? r : 'deeksha_lite_fire';
   };
 
   // Sync ALL algorithm-related UI elements from a canonical value
@@ -786,7 +786,7 @@ function setupControls() {
       if (algoSelect.querySelector(`option[value="${canonical}"]`)) {
         algoSelect.value = canonical;
       } else {
-        algoSelect.value = 'deeksha_lite_v1';
+        algoSelect.value = 'deeksha_lite_fire';
       }
     }
     // settings display
@@ -979,7 +979,7 @@ function setupControls() {
         port: poolPort
       },
       rpcUrl: document.getElementById('rpc-url')?.value || config.rpcUrl || DEFAULT_RPC_URL,
-      algorithm: config.algorithm || 'deeksha_lite_v1',
+      algorithm: config.algorithm || 'deeksha_lite_fire',
       wallet: document.getElementById('wallet-input').value,
       worker: document.getElementById('worker-input').value,
       threads: Math.min(

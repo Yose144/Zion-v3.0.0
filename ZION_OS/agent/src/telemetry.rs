@@ -95,6 +95,12 @@ async fn collect_telemetry(state: Arc<AgentState>) -> anyhow::Result<TelemetryPa
         gpu,
         miner: {
             let mstats = state.miner_stats.read().await;
+            let cfg = state.config.read().await;
+            let algo = if mstats.current_algorithm.is_empty() {
+                cfg.miner.default_algorithm.clone()
+            } else {
+                mstats.current_algorithm.clone()
+            };
             MinerMetrics {
                 running: miner_pid.is_some(),
                 pid: miner_pid,
@@ -103,7 +109,7 @@ async fn collect_telemetry(state: Arc<AgentState>) -> anyhow::Result<TelemetryPa
                 shares_accepted: mstats.accepted_shares,
                 shares_rejected: mstats.rejected_shares,
                 pool_connected: miner_pid.is_some(),
-                current_algorithm: "Deeksha".to_string(),
+                current_algorithm: algo,
             }
         },
     })
