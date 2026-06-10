@@ -90,6 +90,9 @@ PowerShell equivalents for W11 development. Build first: `cargo build --release 
   - **REQUIRED:** `ZION_PAYOUT_ADDRESS` must be a valid 44-char `zion1...` address — pool validates and rejects with "pool closed the connection" if missing or invalid (fallback to miner_id is not allowed).
   - **GPU compile:** `cargo build --release --manifest-path V3/Cargo.toml -p zion-miner --features gpu-opencl` (or `gpu-cuda`, `gpu-metal`)
   - **GPU hashrate (RX 5700 XT / gfx1010, AMD OpenCL):** Deeksha Full = ~1.1 KH/s benchmark. Live stratum hashrate is limited by nonce batch size (see ZION_NONCE_COUNT below).
+  - **GPU/CPU hash paths are independent (2026-06-10):** `gpu_scan_job()` uses GPU hash as primary — the GPU kernel's output hash is submitted directly to pool. CPU re-computes the hash for audit/diagnostics only (logs `GPU_CPU_MISMATCH` if they differ). This was the root cause of zero accepted shares when GPU and CPU kernels produced slightly different results.
+  - **Share validation is algorithm-aware (2026-06-10):** `pool.submit_solution()` and `pool.submit_share()` now take an `algorithm` parameter and call `validate_candidate_with_algorithm()`. Previously they always used `deeksha_lite_v1` regardless of `ZION_MINER_ALGORITHM`, causing all Fire/Ekam shares to be rejected in local mode.
+  - **Diagnostic log lines:** Look for `SHARE_ACCEPTED`, `SHARE_REJECTED reason="..."`, `GPU_CPU_MISMATCH #N`, `gpu_false_positive #N` in miner output.
 - Unified operator CLI:
   - `cargo run --manifest-path V3/Cargo.toml -p zion-cli -- --help`
 
