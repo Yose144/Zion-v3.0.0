@@ -153,6 +153,7 @@ Operational notes:
 
 - use `bench` before assuming a host is suitable for mining,
 - `--ekam` now invokes the miner's real `--ekam-bench` path instead of only setting a benchmark profile,
+- `--algorithm deeksha_lite_v1|deeksha_lite_fire|cosmic_harmony_ekam_deeksha_v2` is passed through to the miner (defaults to config `miner.algorithm`),
 - `--backend opencl|cuda|metal` is now wired through to the miner instead of being reduced to a generic GPU flag,
 - `mine start` now falls back to `miner.profile` from config when `--profile` is omitted,
 - `mine start` now rejects malformed mining wallet addresses before launching the miner,

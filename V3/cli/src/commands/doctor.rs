@@ -70,6 +70,11 @@ pub async fn run(cfg: &Config) -> Result<()> {
         BackendDoctorNote::Warn(message) => ui::print_warn(&format!("Miner backend  {}", message)),
     }
 
+    match validate_algorithm_setting(&cfg.miner.algorithm) {
+        Ok(message) => ui::print_ok(&format!("Miner algorithm {}", message)),
+        Err(message) => ui::print_warn(&format!("Miner algorithm {}", message)),
+    }
+
     if cfg.miner.profile.trim().eq_ignore_ascii_case("dual") {
         if cfg.miner.btc_wallet.trim().is_empty() {
             ui::print_warn("Dual profile   miner.btc_wallet is empty; DCR sidecar payout is not fully configured");
@@ -279,6 +284,19 @@ pub async fn run(cfg: &Config) -> Result<()> {
 enum BackendDoctorNote {
     Ok(String),
     Warn(String),
+}
+
+fn validate_algorithm_setting(algorithm: &str) -> Result<String, String> {
+    let trimmed = algorithm.trim();
+    if trimmed.is_empty() {
+        return Ok("deeksha_lite_v1 (default)".to_string());
+    }
+    match trimmed.to_ascii_lowercase().as_str() {
+        "deeksha_lite_v1" | "lite" | "dl" | "dlv1" => Ok("deeksha_lite_v1".to_string()),
+        "deeksha_lite_fire" | "fire" | "dlfire" => Ok("deeksha_lite_fire (thermal-intensive)".to_string()),
+        "cosmic_harmony_ekam_deeksha_v2" | "ekam" | "ekam_v2" | "full" => Ok("cosmic_harmony_ekam_deeksha_v2".to_string()),
+        other => Err(format!("has unsupported value '{}'; use: deeksha_lite_v1, deeksha_lite_fire, cosmic_harmony_ekam_deeksha_v2", other)),
+    }
 }
 
 fn validate_threads_setting(threads: &str) -> Result<String, String> {

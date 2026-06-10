@@ -23,6 +23,7 @@ COPY --from=builder /build/target/release/zion-miner /usr/local/bin/zion-miner
 
 ENV ZION_POOL_ADDR=127.0.0.1:8444
 ENV ZION_MINER_THREADS=1
+ENV ZION_MINER_ALGORITHM=deeksha_lite_v1
 
 USER zion
 ENTRYPOINT ["zion-miner"]
