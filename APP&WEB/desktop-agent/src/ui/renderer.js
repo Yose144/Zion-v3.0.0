@@ -4328,4 +4328,211 @@ function initOasisView() {
   }
 
   document.getElementById('oasis-btn-check')?.addEventListener('click', checkOasisBackend);
+
+  // ── Arcade: Consciousness Snake ───────────────────────────────────
+  initConsciousnessSnake();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Consciousness Snake — Retro Canvas Arcade
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function initConsciousnessSnake() {
+  const canvas = document.getElementById('oasis-arcade-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const overlay = document.getElementById('oasis-arcade-overlay');
+  const scoreEl = document.getElementById('oasis-arcade-score');
+  const highEl  = document.getElementById('oasis-arcade-high');
+  const levelEl = document.getElementById('oasis-arcade-level');
+
+  const GS = 20;               // grid size
+  const TC = canvas.width / GS;  // tile count
+  let snake = [{ x: 10, y: 10 }];
+  let food  = { x: 15, y: 15 };
+  let egg   = null;            // golden egg (bonus)
+  let dir   = { x: 0, y: 0 };
+  let nextDir = { x: 0, y: 0 };
+  let score = 0;
+  let high  = parseInt(localStorage.getItem('zion_snake_high') || '0', 10);
+  let level = 1;
+  let running = false;
+  let paused = false;
+  let loopId = null;
+  let tick = 0;
+
+  highEl.textContent = String(high);
+
+  function randCell() {
+    let pos;
+    do {
+      pos = { x: Math.floor(Math.random() * TC), y: Math.floor(Math.random() * TC) };
+    } while (snake.some(s => s.x === pos.x && s.y === pos.y));
+    return pos;
+  }
+
+  function spawnEgg() {
+    if (!egg && Math.random() < 0.08) egg = randCell();
+  }
+
+  function draw() {
+    ctx.fillStyle = '#0a0a12';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // subtle grid
+    ctx.strokeStyle = 'rgba(147,51,234,0.06)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= TC; i++) {
+      ctx.beginPath(); ctx.moveTo(i * GS, 0); ctx.lineTo(i * GS, canvas.height); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, i * GS); ctx.lineTo(canvas.width, i * GS); ctx.stroke();
+    }
+
+    // snake
+    snake.forEach((seg, i) => {
+      const isHead = i === 0;
+      ctx.fillStyle = isHead ? 'rgba(110,231,183,0.95)' : 'rgba(110,231,183,0.55)';
+      ctx.shadowColor = '#6ee7b7';
+      ctx.shadowBlur = isHead ? 12 : 4;
+      ctx.fillRect(seg.x * GS + 1, seg.y * GS + 1, GS - 2, GS - 2);
+      ctx.shadowBlur = 0;
+    });
+
+    // food (consciousness orb)
+    ctx.fillStyle = 'rgba(255,215,0,0.9)';
+    ctx.shadowColor = '#fcd34d';
+    ctx.shadowBlur = 14;
+    ctx.beginPath();
+    ctx.arc(food.x * GS + GS/2, food.y * GS + GS/2, GS/2 - 3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // golden egg
+    if (egg) {
+      ctx.fillStyle = 'rgba(255,100,100,0.95)';
+      ctx.shadowColor = '#ff6464';
+      ctx.shadowBlur = 16;
+      ctx.beginPath();
+      ctx.arc(egg.x * GS + GS/2, egg.y * GS + GS/2, GS/2 - 2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+  }
+
+  function update() {
+    if (!running || paused) return;
+    dir = nextDir;
+    if (dir.x === 0 && dir.y === 0) return;
+
+    const head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
+
+    // wall collision
+    if (head.x < 0 || head.x >= TC || head.y < 0 || head.y >= TC) {
+      gameOver(); return;
+    }
+    // self collision
+    if (snake.some(s => s.x === head.x && s.y === head.y)) {
+      gameOver(); return;
+    }
+
+    snake.unshift(head);
+
+    // food
+    if (head.x === food.x && head.y === food.y) {
+      score += 10;
+      food = randCell();
+      spawnEgg();
+    } else if (egg && head.x === egg.x && head.y === egg.y) {
+      score += 50;
+      egg = null;
+    } else {
+      snake.pop();
+    }
+
+    // level up every 50 XP
+    level = 1 + Math.floor(score / 50);
+    scoreEl.textContent = String(score);
+    levelEl.textContent = String(level);
+
+    // speed increases with level
+    tick = Math.max(40, 140 - level * 12);
+  }
+
+  function gameOver() {
+    running = false;
+    if (score > high) {
+      high = score;
+      localStorage.setItem('zion_snake_high', String(high));
+      highEl.textContent = String(high);
+    }
+    overlay.style.display = 'flex';
+    const title = overlay.querySelector('.arcade-title');
+    if (title) title.textContent = 'CONSCIOUSNESS LOST';
+    const sub = overlay.querySelector('.arcade-sub');
+    if (sub) sub.textContent = `Final XP: ${score}  |  Sefirot: ${level}`;
+    const btn = overlay.querySelector('.arcade-start-btn');
+    if (btn) btn.textContent = 'Try Again';
+  }
+
+  function reset() {
+    snake = [{ x: 10, y: 10 }];
+    dir = { x: 0, y: 0 };
+    nextDir = { x: 0, y: 0 };
+    score = 0; level = 1; egg = null;
+    food = randCell();
+    scoreEl.textContent = '0';
+    levelEl.textContent = '1';
+    draw();
+  }
+
+  function start() {
+    reset();
+    running = true;
+    paused = false;
+    overlay.style.display = 'none';
+    tick = 140;
+    gameLoop();
+  }
+
+  function gameLoop() {
+    if (!running) return;
+    update();
+    draw();
+    loopId = setTimeout(() => requestAnimationFrame(gameLoop), tick);
+  }
+
+  function togglePause() {
+    if (!running) return;
+    paused = !paused;
+    document.getElementById('oasis-arcade-pause').textContent = paused ? 'Resume' : 'Pause';
+    if (!paused) gameLoop();
+  }
+
+  // Controls
+  document.addEventListener('keydown', (e) => {
+    if (!running) return;
+    const key = e.key.toLowerCase();
+    if (['arrowup','w'].includes(key) && dir.y !== 1)  nextDir = { x: 0, y: -1 };
+    if (['arrowdown','s'].includes(key) && dir.y !== -1) nextDir = { x: 0, y: 1 };
+    if (['arrowleft','a'].includes(key) && dir.x !== 1)  nextDir = { x: -1, y: 0 };
+    if (['arrowright','d'].includes(key) && dir.x !== -1) nextDir = { x: 1, y: 0 };
+    if (key === ' ') { e.preventDefault(); togglePause(); }
+  });
+
+  document.getElementById('oasis-arcade-start')?.addEventListener('click', start);
+  document.getElementById('oasis-arcade-pause')?.addEventListener('click', togglePause);
+  document.getElementById('oasis-arcade-reset')?.addEventListener('click', () => {
+    running = false;
+    if (loopId) clearTimeout(loopId);
+    reset();
+    overlay.style.display = 'flex';
+    const title = overlay.querySelector('.arcade-title');
+    if (title) title.textContent = 'CONSCIOUSNESS SNAKE';
+    const sub = overlay.querySelector('.arcade-sub');
+    if (sub) sub.textContent = 'WASD or Arrows to move';
+    const btn = overlay.querySelector('.arcade-start-btn');
+    if (btn) btn.textContent = 'Insert Coin';
+  });
+
+  // initial draw
+  draw();
 }
