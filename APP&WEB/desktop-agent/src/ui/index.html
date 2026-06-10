@@ -3372,6 +3372,65 @@
       border-top: 1px solid rgba(255,255,255,0.06);
     }
 
+    /* ═══ Oasis Arcade ═══ */
+    .arcade-wrap {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .arcade-canvas {
+      background: #0a0a12;
+      border: 2px solid rgba(147,51,234,0.35);
+      border-radius: 10px;
+      box-shadow: 0 0 30px rgba(147,51,234,0.15), inset 0 0 60px rgba(0,0,0,0.5);
+      image-rendering: pixelated;
+    }
+    .arcade-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      background: rgba(10,10,18,0.88);
+      border-radius: 10px;
+      pointer-events: auto;
+    }
+    .arcade-overlay.hidden { display: none; }
+    .arcade-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--zion-gold);
+      text-shadow: 0 0 12px rgba(255,215,0,0.35);
+      letter-spacing: 2px;
+    }
+    .arcade-sub {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: rgba(255,255,255,0.45);
+    }
+    .arcade-start-btn {
+      margin-top: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      letter-spacing: 1px;
+    }
+    .arcade-hud {
+      display: flex;
+      justify-content: center;
+      gap: 32px;
+      margin-top: 14px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: rgba(255,255,255,0.6);
+    }
+    .arcade-score { color: #6ee7b7; }
+    .arcade-high { color: #fcd34d; }
+    .arcade-level { color: #93c5fd; }
+
     /* ═══ Bridge Readiness ═══ */
     .bridge-readiness-row {
       display: flex;
@@ -4736,6 +4795,10 @@
             <svg class="tab-icon icon" aria-hidden="true"><use href="#i-info"></use></svg>
             <span>Golden Egg</span>
           </div>
+          <div class="section-tab" data-section="oasis-arcade">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-terminal"></use></svg>
+            <span>Arcade</span>
+          </div>
         </div>
 
         <!-- ═══ SECTION: Overview ═══ -->
@@ -4947,6 +5010,36 @@
                 <div class="info-card-value network">1</div>
                 <div class="info-card-sub">First to find the Egg</div>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ SECTION: Arcade ═══ -->
+        <div id="oasis-arcade" class="section-panel">
+          <div class="control-panel">
+            <h2 class="inline-heading">
+              <svg class="icon" aria-hidden="true"><use href="#i-terminal"></use></svg>
+              <span>Consciousness Snake</span>
+            </h2>
+            <p class="about-lead panel-mt-20">
+              <strong>Old-school arcade.</strong> Guide the Spirit Snake through the astral grid. Collect consciousness orbs, avoid shadow blocks. Reach the Golden Egg for a cosmic bonus.
+            </p>
+            <div class="arcade-wrap panel-mt-20">
+              <canvas id="oasis-arcade-canvas" width="400" height="400" class="arcade-canvas"></canvas>
+              <div class="arcade-overlay" id="oasis-arcade-overlay">
+                <div class="arcade-title">CONSCIOUSNESS SNAKE</div>
+                <div class="arcade-sub">WASD or Arrows to move</div>
+                <button class="btn btn-accent arcade-start-btn" id="oasis-arcade-start">Insert Coin</button>
+              </div>
+            </div>
+            <div class="arcade-hud">
+              <div class="arcade-score">XP: <span id="oasis-arcade-score">0</span></div>
+              <div class="arcade-high">Best: <span id="oasis-arcade-high">0</span></div>
+              <div class="arcade-level">Sefirot: <span id="oasis-arcade-level">1</span></div>
+            </div>
+            <div class="actions-row panel-mt-20">
+              <button class="btn btn-primary" id="oasis-arcade-pause">Pause</button>
+              <button class="btn btn-ghost" id="oasis-arcade-reset">Reset</button>
             </div>
           </div>
         </div>
