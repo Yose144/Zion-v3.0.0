@@ -1,6 +1,4 @@
 @echo off
-setlocal EnableDelayedExpansion
-chcp 65001 >nul
 
 cd /d "C:\Users\yosef\Desktop\Zion\2.9.6-main"
 

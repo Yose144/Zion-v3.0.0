@@ -1,9 +1,7 @@
 @echo off
-setlocal EnableDelayedExpansion
-chcp 65001 >nul
 
 :: ============================================================================
-::  ZION OS — Node + Miner + Dashboard (Edge-Primary Windows 11 Launcher)
+::  ZION OS - Node + Miner + Dashboard (Edge-Primary Windows 11 Launcher)
 ::
 ::  Algoritmus: deeksha_lite_fire (512 KiB scratchpad, vyssi teplo/vykon)
 ::  Pro zmenu: uprav ZION_MINER_ALGORITHM nize.
@@ -22,14 +20,14 @@ echo  ZION OS - Edge-Primary Windows 11 Launcher
 echo ===========================================================
 echo.
 
-:: ── Priprava adresaru ─────────────────────────────────────────────────────────
+:: -- Priprava adresaru ---------------------------------------------------------
 if not exist "%REPO_ROOT%\logs"    mkdir "%REPO_ROOT%\logs"
 if not exist "%REPO_ROOT%\V3\data" mkdir "%REPO_ROOT%\V3\data"
 
 set "NODE_BIN=%REPO_ROOT%\V3\target\release\node.exe"
 set "MINER_BIN=%REPO_ROOT%\V3\target\release\zion-miner.exe"
 
-:: ── Auto-build pokud binarka chybi ───────────────────────────────────────────
+:: -- Auto-build pokud binarka chybi -------------------------------------------
 if not exist "%NODE_BIN%" (
     echo [BUILD] Sestavuji node.exe...
     cargo build --release --manifest-path "%REPO_ROOT%\V3\Cargo.toml" -p zion-core --bin node
@@ -43,7 +41,7 @@ if not exist "%MINER_BIN%" (
     echo.
 )
 
-:: ── Promenne — NODE ───────────────────────────────────────────────────────────
+:: -- Promenne - NODE -----------------------------------------------------------
 set ZION_NODE_ID=local-backup-node
 set ZION_P2P_BIND=0.0.0.0:8333
 set ZION_RPC_BIND=0.0.0.0:8443
@@ -54,17 +52,17 @@ set ZION_MINER_ADDRESS=zion1w523a76830x2t5m7f3j023w265e8g5c400a4790
 set ZION_HUMANITARIAN_WALLET=zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4
 set ZION_ISSOBELLA_WALLET=zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702
 
-:: ── Promenne — MINER ──────────────────────────────────────────────────────────
+:: -- Promenne - MINER ----------------------------------------------------------
 set ZION_POOL_ADDR=77.42.71.94:8444
 set ZION_LOOP_COUNT=1000000
 set ZION_WORKER_NAME=worker1
 set ZION_MINER_ID=w11-amd-gpu-miner-01
 set ZION_PAYOUT_ADDRESS=zion1w523a76830x2t5m7f3j023w265e8g5c400a4790
 
-:: ── Algoritmus ────────────────────────────────────────────────────────────────
+:: -- Algoritmus ----------------------------------------------------------------
 set ZION_MINER_ALGORITHM=deeksha_lite_fire
 
-:: ── GPU (OpenCL AMD RX 5700 XT) ──────────────────────────────────────────────
+:: -- GPU (OpenCL AMD RX 5700 XT) ----------------------------------------------
 set ZION_GPU_BACKEND=opencl
 set ZION_MINER_THREADS=1
 set ZION_GPU_WORK_SIZE=16384
@@ -74,21 +72,21 @@ set ZION_NONCE_COUNT_GPU=262144
 
 cd /d "%REPO_ROOT%"
 
-:: ── Dashboard ─────────────────────────────────────────────────────────────────
+:: -- Dashboard -----------------------------------------------------------------
 echo [1/3] Spoustim ZION Dashboard...
 start "ZION Dashboard :: http://127.0.0.1:8766" cmd /k "cd /d %REPO_ROOT% && python ZION_OS\dashboard\app.py"
 timeout /t 3 /nobreak >nul
 
-:: ── Node (env se dedi z tohoto procesu pres set) ──────────────────────────────
+:: -- Node (env se dedi z tohoto procesu pres set) ------------------------------
 echo [2/3] Spoustim ZION Node...
 start "ZION Node :: RPC 0.0.0.0:8443 P2P 0.0.0.0:8333" cmd /k "cd /d %REPO_ROOT% && V3\target\release\node.exe"
 timeout /t 5 /nobreak >nul
 
-:: ── Miner (env se dedi z tohoto procesu pres set) ────────────────────────────
+:: -- Miner (env se dedi z tohoto procesu pres set) ----------------------------
 echo [3/3] Spoustim ZION GPU Miner...
 start "ZION GPU Miner :: %ZION_POOL_ADDR% [%ZION_MINER_ALGORITHM%]" cmd /k "cd /d %REPO_ROOT% && V3\target\release\zion-miner.exe"
 
-:: ── Shrnuti ───────────────────────────────────────────────────────────────────
+:: -- Shrnuti -------------------------------------------------------------------
 echo.
 echo ===========================================================
 echo  Stack spusten v samostatnych oknech:
@@ -99,4 +97,3 @@ echo  Miner     : Pool %ZION_POOL_ADDR%  Algo: %ZION_MINER_ALGORITHM%  Backend: 
 echo ===========================================================
 echo.
 pause
-endlocal

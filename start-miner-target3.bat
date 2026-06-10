@@ -1,9 +1,7 @@
 @echo off
-setlocal EnableDelayedExpansion
-chcp 65001 >nul
 
 :: ============================================================================
-::  ZION GPU Miner — alternativni build (target3)
+::  ZION GPU Miner - alternativni build (target3)
 ::  Pouzij kdyz V3\target\release neni dostupny nebo testuje novy build.
 :: ============================================================================
 
@@ -16,10 +14,10 @@ set ZION_WORKER_NAME=worker1
 set ZION_MINER_ID=w11-amd-gpu-miner-01
 set ZION_PAYOUT_ADDRESS=zion1w523a76830x2t5m7f3j023w265e8g5c400a4790
 
-:: ── Algoritmus ────────────────────────────────────────────────────────────────
+:: -- Algoritmus ----------------------------------------------------------------
 set ZION_MINER_ALGORITHM=deeksha_lite_fire
 
-:: RDNA1 auto-tune — neprepisovat work_size ani vram_pct
+:: RDNA1 auto-tune - neprepisovat work_size ani vram_pct
 set ZION_GPU_BACKEND=opencl
 set ZION_NONCE_COUNT_GPU=262144
 
@@ -32,4 +30,3 @@ echo.
 V3\target\release\zion-miner.exe
 echo [EXIT] Miner skoncil s kodem %ERRORLEVEL% v %TIME%
 pause
-endlocal
