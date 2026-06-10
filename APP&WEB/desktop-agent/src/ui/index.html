@@ -3337,6 +3337,30 @@
     }
     .cli-line.error { color: #f87171; }
 
+    /* ═══ Algorithm Select ═══ */
+    .algo-select {
+      width: 100%;
+      padding: 12px 40px 12px 16px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(0,0,0,0.30);
+      color: #fff;
+      font-size: 14px;
+      outline: none;
+      appearance: none;
+      -webkit-appearance: none;
+      cursor: pointer;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.5)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      background-size: 16px;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .algo-select:focus {
+      border-color: rgba(255,215,0,0.4);
+      box-shadow: 0 0 0 3px rgba(255,215,0,0.1);
+    }
+
   </style>
 </head>
 <body>
@@ -3577,19 +3601,10 @@
                 <svg class="icon icon-inline icon-xs" aria-hidden="true"><use href="#i-spark"></use></svg>
                 <span id="gpu-badge-text">Detecting GPU...</span>
               </div>
-              <div class="stream-indicator stream-indicator-compact" id="stream-indicator">
-                <div class="stream-dot stream-dot-xs offline" id="stream-dot"></div>
-                <span id="stream-mode">Stream: —</span>
-                <span id="stream-algo" class="text-muted-xs"></span>
-              </div>
-              <!-- CH3 Multi-stream allocation bar (shown when dual/triple mining active) -->
               <div id="algo-display" class="algo-display-chip">
                 <svg class="icon icon-inline icon-gold-xs" aria-hidden="true"><use href="#i-star"></use></svg>
                 <span class="font-semibold">Cosmic Harmony Deeksha</span>
               </div>
-              <select id="algo-select" class="pill pill-compact" style="cursor:pointer;background:rgba(30,30,40,0.7);border:1px solid rgba(99,102,241,0.4);color:#e2e8f0;padding:2px 6px;border-radius:6px;font-size:12px">
-                <option value="cosmic_harmony" selected>Deeksha (CPU/GPU)</option>
-              </select>
               <span id="algo-status" class="view-hidden"></span>
               <span id="backend-pill" class="pill pill-compact">Backend: Auto</span>
             </div>
@@ -4306,130 +4321,34 @@
             <section class="settings-card">
               <div class="card-heading">
                 <div class="card-icon gradient-gold">
-                  <svg class="icon" aria-hidden="true"><use href="#i-play"></use></svg>
+                  <svg class="icon" aria-hidden="true"><use href="#i-star"></use></svg>
                 </div>
                 <div>
-                  <p class="card-kicker">Profile</p>
-                  <h3>Mining Mode</h3>
+                  <p class="card-kicker">Hashing</p>
+                  <h3>Algorithm</h3>
                 </div>
               </div>
-              <div class="mode-list">
-                <label class="mode-pill">
-                  <input type="radio" name="mining-mode" value="cpu" id="mode-cpu" />
+              <label class="wizard-label-sm">Algorithm</label>
+              <select id="algo-select" class="algo-select">
+                <option value="deeksha_lite_v1" selected>Deeksha Lite v1 — Standard</option>
+                <option value="cosmic_harmony_ekam_deeksha_v2">Cosmic Harmony Ekam Deeksha v2</option>
+                <option value="deeksha_lite_fire">Deeksha Lite Fire — Thermal</option>
+              </select>
+              <div class="slider-hint">Standard 4 KiB scratchpad. Fire uses 512 KiB with higher power draw.</div>
+
+              <div class="section-divider">Compute</div>
+
+              <label class="wizard-label-sm">GPU</label>
+              <div class="actions-row">
+                <label class="mode-pill" style="flex:1;cursor:pointer">
+                  <input type="checkbox" id="gpu-checkbox" style="width:18px;height:18px" checked />
                   <div>
-                    <div class="mode-title">CPU Only</div>
-                    <p>Best efficiency • ~600 kH/s</p>
-                  </div>
-                </label>
-                <label class="mode-pill">
-                  <input type="radio" name="mining-mode" value="gpu" id="mode-gpu" />
-                  <div>
-                    <div class="mode-title">GPU Only</div>
-                    <p>High throughput • ~8.5 GH/s</p>
-                  </div>
-                </label>
-                <label class="mode-pill">
-                  <input type="radio" name="mining-mode" value="dual" id="mode-dual" checked />
-                  <div>
-                    <div class="mode-title">Dual (CPU + GPU)</div>
-                    <p class="text-success">MAX POWER • balanced latency</p>
+                    <div class="mode-title">Use GPU</div>
+                    <p>OpenCL / CUDA / Metal</p>
                   </div>
                 </label>
               </div>
-              <div id="mode-status" class="mode-status">Dual mining uses both CPU and GPU simultaneously for maximum ZION hashrate. All compute targets the canonical Cosmic Harmony Deeksha algorithm.</div>
-
-              <div id="pure-zion-note" class="mode-status" style="display:none">Pure ZION desktop mode is active. CPU and GPU both target the canonical ZION pool.</div>
-
-              <div class="section-divider">Revenue Routing</div>
-
-              <div class="form-grid two-col">
-                <label class="floating-field">
-                  <span>CPU Revenue Coin</span>
-                  <select id="revenue-cpu-coin">
-                    <option value="auto">Auto</option>
-                    <option value="xmr">XMR</option>
-                    <option value="btc">BTC</option>
-                  </select>
-                </label>
-                <label class="floating-field">
-                  <span>GPU Revenue Coins</span>
-                  <input type="text" id="revenue-gpu-coins" placeholder="KAS,ETC,ALPH,ERG,RVN,CFX,ZANO,EVR,MEWC" />
-                </label>
-                <label class="floating-field">
-                  <span>Pool Provider</span>
-                  <select id="pool-preference">
-                    <option value="herominers">HeroMiners (recommended)</option>
-                    <option value="nicehash">NiceHash (BTC direct)</option>
-                    <option value="zpool">ZPool (BTC auto-exchange)</option>
-                    <option value="default">Default / 2miners</option>
-                  </select>
-                </label>
-                <label class="floating-field">
-                  <span>Pool Region</span>
-                  <select id="pool-region">
-                    <option value="eu">Europe (default)</option>
-                    <option value="na">North America</option>
-                    <option value="hk">Asia / HK</option>
-                  </select>
-                </label>
-                <label class="floating-field">
-                  <span>NiceHash BTC Address</span>
-                  <input type="text" id="nicehash-btc-addr" placeholder="bc1q... (required for NiceHash)" />
-                </label>
-                <label class="floating-field">
-                  <span>Revenue Payout Wallet</span>
-                  <input type="text" id="revenue-wallet" placeholder="bc1q... BTC payout address" />
-                </label>
-                <label class="floating-field">
-                  <span>ZION %</span>
-                  <input type="number" id="revenue-zion-pct" min="0" max="100" step="1" value="50" />
-                </label>
-                <label class="floating-field">
-                  <span>Multi-Alg %</span>
-                  <input type="number" id="revenue-multi-pct" min="0" max="100" step="1" value="25" />
-                </label>
-                <label class="floating-field">
-                  <span>NCL %</span>
-                  <input type="number" id="revenue-ncl-pct" min="0" max="100" step="1" value="25" />
-                </label>
-              </div>
-
-              <div class="toggle-field toggle-mt-12">
-                <div>
-                  <p>Enable multi-algo revenue routing</p>
-                  <small>When disabled, all CPU threads mine ZION only</small>
-                </div>
-              </div>
-              <div class="toggle-field">
-                <input type="checkbox" id="revenue-gpu-enabled" />
-                <div>
-                  <p>Enable GPU revenue switcher</p>
-                  <small>Use dedicated GPU revenue stream in GPU Revenue mode</small>
-                </div>
-              </div>
-              <div class="toggle-field">
-                <input type="checkbox" id="revenue-ncl-enabled" checked />
-                <div>
-                  <p>Enable NCL gateway stream</p>
-                  <small>Reserve NCL allocation for compute marketplace channel</small>
-                </div>
-              </div>
-
-              <div class="form-grid two-col form-grid-mt-10">
-                <label class="toggle-field toggle-no-margin">
-                  <input type="checkbox" id="revenue-mysterium-enabled" checked />
-                  <div><p>Mysterium stream</p></div>
-                </label>
-                <label class="toggle-field toggle-no-margin">
-                  <input type="checkbox" id="revenue-nkn-enabled" checked />
-                  <div><p>NKN stream</p></div>
-                </label>
-                <label class="toggle-field toggle-no-margin">
-                  <input type="checkbox" id="revenue-ai-enabled" checked />
-                  <div><p>AI Gateway stream</p></div>
-                </label>
-              </div>
-              <input type="checkbox" id="gpu-checkbox" class="input-hidden" />
+              <div class="slider-hint">Enable GPU mining if a compatible device is detected</div>
             </section>
           </div>
         </div>
