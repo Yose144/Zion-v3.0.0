@@ -13,7 +13,7 @@ Environment="ZION_NODE_RPC_ADDR=127.0.0.1:8443"
 Environment="BRIDGE_API_BIND=0.0.0.0:8451"
 Environment="BRIDGE_METRICS_BIND=0.0.0.0:9102"
 Environment="RUST_LOG=info,zion_bridge=debug"
-ExecStart=/root/zion-2.9.6-main/V3/target/release/zion-bridge --config /root/zion-2.9.6-main/V3/L2/bridge/config/bridge-testnet.toml
+ExecStart=/root/zion-2.9.6-main/V3/target/release/zion-bridge --config /root/zion-2.9.6-main/V3/L2/bridge/config/bridge-mainnet.toml
 Restart=always
 RestartSec=10
 KillMode=process

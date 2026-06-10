@@ -13,7 +13,7 @@ Environment="WARP_API_BIND=0.0.0.0:8453"
 Environment="WARP_METRICS_BIND=0.0.0.0:9104"
 Environment="RUST_LOG=info,zion_warp=debug"
 ExecStart=/root/zion-2.9.6-main/V3/target/release/zion-warp-server
-Environment="WARP_CONFIG=/root/zion-2.9.6-main/V3/L3/warp/config/warp-testnet.toml"
+Environment="WARP_CONFIG=/root/zion-2.9.6-main/V3/L3/warp/config/warp-mainnet.toml"
 Restart=always
 RestartSec=10
 KillMode=process

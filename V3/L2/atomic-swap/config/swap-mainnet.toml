@@ -13,7 +13,7 @@ release_fee_atomic = 10_000                # flat fee per release
 # ── ZION L1 ──────────────────────────────────────────────────────────────────
 
 [l1]
-rpc_url            = "77.42.71.94:8443"      # Primary L1 node — Edge (Hetzner VPS)
+rpc_url            = "http://127.0.0.1:8443"  # Primary L1 node — Edge localhost
 # rpc_token        = ""                    # set ZION_RPC_TOKEN env var
 # escrow_key_hex   = ""                    # set ZION_SWAP_ESCROW_KEY env var
 scan_batch_size    = 10
