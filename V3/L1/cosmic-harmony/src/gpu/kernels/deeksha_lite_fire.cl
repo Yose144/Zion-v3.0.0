@@ -1,20 +1,15 @@
 /*
- * DeekshaLite Fire — OpenCL Kernel (GCN/RDNA compatible)
+ * DeekshaLite Fire — OpenCL Kernel (GCN/RDNA compatible, Winter Heater)
  *
- * Fire = DeekshaLite v1 + intensified memory-hard passes + thermal_loop step.
+ * Fire = DeekshaLite v1 + intensified thermal_loop step.
  * The thermal loop burns ALU cycles after the AES mix to maximize GPU heat.
  *
  * Pipeline:
  *   1. Keccak256(header || nonce)  — host precomputed state
- *   2. Memory-hard scratchpad (128 KiB, 4096 blocks, 16 passes, 512 reads)
- *   3. AES-128 CTR mix (3 full rounds + 1 final)
- *   4. Thermal loop (65536 iters, 8 ulong chains) — max ALU heat, no float
- *   5. Keccak256(s3_after_thermal) → final hash
- *
- * Heat tuning (vs v1):
- *   - PASSES 2→16, RANDOM_READS 64→512: 8x more memory bandwidth → VRAM heat
- *   - SCRATCHPAD 256 KiB→128 KiB: 2x more wavefronts in flight → ALU heat
- *   - THERMAL_ITERS 65536: maximum ALU burn after memory passes
+ *   2. Memory-hard scratchpad (256 KiB, 8192 blocks, 2 passes, 32 reads)
+ *   3. AES-128 CTR mix (2 full rounds + 1 final)
+ *   4. Thermal loop (131072 iters, 12 ulong chains) — max ALU heat, no float
+ *   5. Keccak256(s3_after_thermal) -> final hash
  *
  * Compatible with: AMD GCN (Vega, Polaris), AMD RDNA, NVIDIA, Intel.
  */
@@ -25,12 +20,12 @@
 /* Constants                                                                  */
 /* ========================================================================== */
 
-#define SCRATCHPAD_SIZE  131072   /* 128 KiB = 4096 * 32 — half of v1, doubles wavefronts */
+#define SCRATCHPAD_SIZE  262144   /* 256 KiB = 8192 * 32 */
 #define BLOCK_SIZE       32
-#define BLOCK_COUNT      4096
-#define PASSES           16       /* 8x more passes than v1 — max memory bandwidth */
-#define RANDOM_READS     512      /* 8x more random reads than v1 */
-#define THERMAL_ITERS    65536
+#define BLOCK_COUNT      8192
+#define PASSES           2
+#define RANDOM_READS     32
+#define THERMAL_ITERS    524288
 
 /* ========================================================================== */
 /* Keccak — identical to deeksha_lite.cl                                      */
@@ -194,7 +189,7 @@ void aes_final_round(__private uchar s[16], __private const uchar k[16])
 { aes_sub_bytes(s); aes_shift_rows(s); aes_add_round_key(s,k); }
 
 /* ========================================================================== */
-/* Steps 2A/2B/2C: scratchpad — identical to v1                               */
+/* Steps 2A/2B/2C: scratchpad — 2 passes, 32 reads                           */
 /* ========================================================================== */
 
 void fill_scratchpad(__private const uchar seed[32], __global uchar *pad)
@@ -254,7 +249,7 @@ void random_read_mix(__private const uchar seed[32], __global const uchar *pad, 
 }
 
 /* ========================================================================== */
-/* Step 3: AES-128 CTR mix — identical to v1                                  */
+/* Step 3: AES-128 CTR mix — 2 full rounds + 1 final                        */
 /* ========================================================================== */
 
 void aes128_mix(__private const uchar seed[32], ulong nonce, __private uchar out[32])
@@ -273,19 +268,17 @@ void aes128_mix(__private const uchar seed[32], ulong nonce, __private uchar out
         carry=s>>8;
         if (carry==0) break;
     }
-    for (int r=0;r<3;r++) { aes_round(block0,key); aes_round(block1,key); }
+    for (int r=0;r<2;r++) { aes_round(block0,key); aes_round(block1,key); }
     aes_final_round(block0,key);
     aes_final_round(block1,key);
     for (int i=0;i<16;i++) { out[i]=block0[i]^seed[i]; out[16+i]=block1[i]^seed[16+i]; }
 }
 
 /* ========================================================================== */
-/* Step 4: Thermal loop — the only addition over v1                           */
-/*                                                                             */
-/* 8 independent ulong chains, 65536 iters.                                   */
-/* Integer-only (no float) = deterministic on all GPU drivers.                */
-/* Results XORed back into data[0..16] to prevent dead-code elimination.      */
-/* Identical logic in deeksha_lite_fire.rs (CPU reference).                   */
+/* Step 4: Thermal loop — 12 ulong chains, 131072 iters                     */
+/*                                                                           */
+/* Matches CPU deeksha_lite_fire.rs step4_thermal_loop() exactly.            */
+/* Memory-dependent XOR each iter to prevent dead-code elimination.         */
 /* ========================================================================== */
 
 void thermal_loop(__private uchar data[32], ulong nonce)
@@ -298,45 +291,90 @@ void thermal_loop(__private uchar data[32], ulong nonce)
     ulong f = nonce ^ 0xDEADBEEFCAFEBABEUL;
     ulong g = nonce ^ 0xBADC0FFEE0DDF00DUL;
     ulong h = nonce ^ 0xFEEDFACECAFEBEEFUL;
+    ulong ii= nonce ^ 0x123456789ABCDEF0UL;
+    ulong j = nonce ^ 0xFEDCBA9876543210UL;
+    ulong k = nonce ^ 0x0F1E2D3C4B5A6978UL;
+    ulong l = nonce ^ 0x876543210FEDCBA9UL;
 
-    for (int i = 0; i < THERMAL_ITERS; i++) {
-        a = ROL64(a,17) + b;  b = ROL64(b,31) ^ a;
-        c = ROL64(c,13) + d;  d = ROL64(d,47) ^ c;
-        e = ROL64(e,23) + f;  f = ROL64(f,41) ^ e;
-        g = ROL64(g,11) + h;  h = ROL64(h,53) ^ g;
-        a = a * 0xFF51AFD7ED558CCDUL;  b = b + 0xFF51AFD7ED558CCDUL;
-        c = c * 0x94D049BB133111EBUL;  d = d + 0x5851F42D4C957F2DUL;
-        e = e * 0xC0FFEE123456789AUL;  f = f + 0xDEADBEEFCAFEBABEUL;
-        g = g * 0xBADC0FFEE0DDF00DUL;  h = h + 0xFEEDFACECAFEBEEFUL;
-        a ^= (ulong)data[(i    ) & 0x1F];
-        b ^= (ulong)data[(i + 8) & 0x1F];
-        c ^= (ulong)data[(i +16) & 0x1F];
-        d ^= (ulong)data[(i +24) & 0x1F];
-        e ^= (ulong)data[(i + 4) & 0x1F];
-        f ^= (ulong)data[(i +12) & 0x1F];
-        g ^= (ulong)data[(i + 2) & 0x1F];
-        h ^= (ulong)data[(i + 6) & 0x1F];
+    for (uint iter=0; iter<THERMAL_ITERS; iter++) {
+        a = rotate(a,17UL) + b; a *= 0xFF51AFD7ED558CCDUL;
+        b = rotate(b,31UL) ^ (a + c);
+        c = rotate(c,13UL) + d; c *= 0x94D049BB133111EBUL;
+        d = rotate(d,47UL) ^ (c + e);
+        e = rotate(e,23UL) + f; e *= 0xC0FFEE123456789AUL;
+        f = rotate(f,41UL) ^ (e + g);
+        g = rotate(g,11UL) + h; g *= 0xBADC0FFEE0DDF00DUL;
+        h = rotate(h,53UL) ^ (g + ii);
+        ii= rotate(ii,29UL)+ j; ii*= 0x123456789ABCDEF0UL;
+        j = rotate(j,37UL) ^ (ii+ k);
+        k = rotate(k,19UL) + l; k *= 0x0F1E2D3C4B5A6978UL;
+        l = rotate(l,43UL) ^ (k + a);
+
+        /* Extra ALU heat — cross-chain mixing (cannot be eliminated by compiler) */
+        a = rotate(a*b,7UL);
+        b = rotate(b*c,11UL);
+        c = rotate(c*d,13UL);
+        d = rotate(d*e,17UL);
+        e = rotate(e*f,19UL);
+        f = rotate(f*g,23UL);
+        g = rotate(g*h,29UL);
+        h = rotate(h*ii,31UL);
+        ii= rotate(ii*j,37UL);
+        j = rotate(j*k,41UL);
+        k = rotate(k*l,43UL);
+        l = rotate(l*a,47UL);
+
+        uint di = iter & 0x1Fu;
+        a ^= (ulong)data[di];
+        b ^= (ulong)data[(di+ 3)&0x1Fu];
+        c ^= (ulong)data[(di+ 7)&0x1Fu];
+        d ^= (ulong)data[(di+11)&0x1Fu];
+        e ^= (ulong)data[(di+15)&0x1Fu];
+        f ^= (ulong)data[(di+19)&0x1Fu];
+        g ^= (ulong)data[(di+23)&0x1Fu];
+        h ^= (ulong)data[(di+27)&0x1Fu];
+        ii^= (ulong)data[(di+ 1)&0x1Fu];
+        j ^= (ulong)data[(di+ 5)&0x1Fu];
+        k ^= (ulong)data[(di+ 9)&0x1Fu];
+        l ^= (ulong)data[(di+13)&0x1Fu];
+
+        a = (a<<13)|(a>>51);
+        b = (b<<23)|(b>>41);
+        c = (c<<31)|(c>>33);
+        d = (d<< 7)|(d>>57);
+        e = (e<<17)|(e>>47);
+        f = (f<<29)|(f>>35);
+        g = (g<<37)|(g>>27);
+        h = (h<<19)|(h>>45);
     }
-    /* Fold back — prevents compiler from eliminating the loop */
-    data[ 0] ^= (uchar)(a);       data[ 1] ^= (uchar)(a>>8);
-    data[ 2] ^= (uchar)(b);       data[ 3] ^= (uchar)(b>>8);
-    data[ 4] ^= (uchar)(c);       data[ 5] ^= (uchar)(c>>8);
-    data[ 6] ^= (uchar)(d);       data[ 7] ^= (uchar)(d>>8);
-    data[ 8] ^= (uchar)(e);       data[ 9] ^= (uchar)(e>>8);
-    data[10] ^= (uchar)(f);       data[11] ^= (uchar)(f>>8);
-    data[12] ^= (uchar)(g);       data[13] ^= (uchar)(g>>8);
-    data[14] ^= (uchar)(h);       data[15] ^= (uchar)(h>>8);
-    data[16] ^= (uchar)(a>>16);   data[17] ^= (uchar)(b>>16);
-    data[18] ^= (uchar)(c>>16);   data[19] ^= (uchar)(d>>16);
-    data[20] ^= (uchar)(e>>16);   data[21] ^= (uchar)(f>>16);
-    data[22] ^= (uchar)(g>>16);   data[23] ^= (uchar)(h>>16);
-    data[24] ^= (uchar)(a>>24);   data[25] ^= (uchar)(b>>24);
+
+    for (int i=0;i<16;i++) {
+        data[i*2]  ^= (uchar)a;
+        data[i*2+1]^= (uchar)(a>>8);
+        a = rotate(a,(ulong)47);  /* right 17 */
+    }
+    for (int i=0;i<16;i++) {
+        data[i]    ^= (uchar)b;
+        data[16+i] ^= (uchar)(b>>8);
+        b = rotate(b,(ulong)33);  /* right 31 */
+    }
+    for (int i=0;i<8;i++) {
+        data[i]    ^= (uchar)c;
+        data[8+i]  ^= (uchar)d;
+        data[16+i] ^= (uchar)e;
+        data[24+i] ^= (uchar)f;
+        c = rotate(c,(ulong)51);  /* right 13 */
+        d = rotate(d,(ulong)17);  /* right 47 */
+        e = rotate(e,(ulong)41);  /* right 23 */
+        f = rotate(f,(ulong)23);  /* right 41 */
+    }
 }
 
 /* ========================================================================== */
-/* Main kernel                                                                  */
+/* Main kernel                                                                 */
 /* ========================================================================== */
 
+__attribute__((reqd_work_group_size(128,1,1)))
 __kernel void deeksha_lite_fire_mine(
     __global const ulong *header_keccak_state,  /* same as v1: host precomputed */
     ulong  nonce_base,
