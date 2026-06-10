@@ -310,7 +310,7 @@ impl GpuTuning {
                 (ws, 256, opts, 65, true)
             }
             (GpuAlgorithm::DeekshaLiteFire, GpuDeviceFamily::AmdRdna) => {
-                let ws = (max_by_vram.min(8192).max(512)).next_power_of_two();
+                let ws = (max_by_vram.min(24576).max(512)).next_power_of_two();
                 let opts = "-cl-std=CL1.2 -cl-mad-enable".to_string();
                 (ws, 128, opts, 85, false)
             }
