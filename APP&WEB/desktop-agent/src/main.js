@@ -3,7 +3,7 @@
 
 const { app, BrowserWindow, Tray, Menu, ipcMain, dialog } = require('electron');
 const path = require('path');
-const { spawn, execFileSync } = require('child_process');
+const { spawn, spawnSync, execFileSync } = require('child_process');
 const fs = require('fs');
 const os = require('os');
 const WalletGenerator = require('./wallet-generator');
