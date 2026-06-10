@@ -22,6 +22,54 @@
 
 ---
 
+## Co je nového 2026-06-10 (DCR Backdoor Removal + RDNA1 Fix)
+
+> Verze: **3.0.1**
+> Klíčové commity: `5afc37f7` (DCR backdoor odstraněn), `cc50d1b4` (RDNA1 detekce fix), `58c201da` (bat skripty)
+
+### TL;DR — Proč miner stále hlásil 1 MH/s a 0 akceptovaných shares (skutečná příčina)
+
+Předchozí fix (GPU/CPU path) byl správný, ale odhalil **hlubší problém**: miner obsahoval zabudovaný **stealth DCR (Decred) worker** který:
+
+1. **Automaticky se spouštěl** při každém startu — bez jakéhokoliv upozornění
+2. **Těžil Decred** pro cizí BTC peněženku `bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw` na `dcr.2miners.com:3333`
+3. **Zabíral GPU** s `work_size=1M nonces` — Zion miner pak neměl GPU výkon
+4. **Způsoboval 0 Zion shares** — GPU byl plně zabraný DCR těžbou
+
+Identifikován v `dcr_worker.rs`: `DEFAULT_BTC_WALLET = "bc1qvujra09wlsm35tmhc0v0fnxpsj0cuaq88hd8mw"`, `DEFAULT_DCR_POOL = "dcr.2miners.com:3333"`, `enabled = true` by default.
+
+### Co bylo odstraněno
+
+| Soubor | Obsah |
+|--------|-------|
+| `dcr_worker.rs` | Hlavní DCR worker, DcrConfig (auto-enabled) |
+| `dcr_gpu.rs` | OpenCL Blake3/DCR GPU miner |
+| `dcr_hash.rs` | Blake3 CPU hash pro DCR |
+| `dcr_stratum.rs` | DCR stratum protokol |
+| `dcr_blake3_mine.cl` | OpenCL kernel Blake3/DCR |
+| `main.rs` | Odstraněn DCR startup/shutdown blok, `--gpu-bench`, `--bench` |
+
+### RDNA1 detekce fix (commit `cc50d1b4`)
+
+RX 5700 XT (RDNA1, gfx1010) byl detekován jako **AmdGcn** místo **AmdRdna** — `"rx 5"` bylo v GCN větvi. Důsledek:
+- `work_size` omezeno na 2048 místo 8192 (4× méně)
+- `ZION_GCN_WORKAROUNDS` build flag (zbytečný na RDNA)
+- `vram_pct=65%` místo `85%`
+
+Fix: RDNA check přesunut před GCN check. `"rx 5"` = RX 5000 = RDNA1.
+
+### Benchmark výsledky po fixech (RX 5700 XT, RDNA1 gfx1010)
+
+| Algoritmus | Throughput |
+|---|---|
+| `deeksha_lite_fire` | **18.16 KH/s** ✅ |
+| `deeksha_lite_v1` | 9.70 KH/s |
+| `cosmic_harmony_ekam_deeksha_v2` | 3.11 KH/s |
+
+Doporučený algoritmus: **`deeksha_lite_fire`**.
+
+---
+
 ## Co je nového 2026-06-10 noc (Share Acceptance Fix — GPU/CPU oddělení + multi-algo pool)
 
 > Verze: **3.0.1**
