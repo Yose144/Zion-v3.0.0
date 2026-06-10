@@ -89,6 +89,7 @@ pub async fn run(cfg: &Config, cmd: MineCmd) -> Result<()> {
                 },
             );
             ui::print_row("Backend", &start.backend_display_name);
+            ui::print_row("Algorithm", start.algorithm.as_deref().unwrap_or("deeksha_lite_v1"));
             ui::print_row("Threads", &start.thread_count);
             ui::print_row("Profile", &start.normalized_profile);
             println!();
@@ -388,6 +389,11 @@ fn resolve_start_options(
     let requested_backend = backend.unwrap_or_else(|| cfg.miner.backend.clone());
     let normalized_backend = normalize_backend(&requested_backend, true)?;
 
+    let algorithm = algorithm.or_else(|| {
+        let cfg_algo = cfg.miner.algorithm.clone();
+        if cfg_algo.is_empty() { None } else { Some(cfg_algo) }
+    });
+
     Ok(ResolvedStartOptions {
         pool_addr,
         wallet_addr,
@@ -547,6 +553,7 @@ mod tests {
                 threads: "auto".into(),
                 backend: "auto".into(),
                 profile: "dual".into(),
+                algorithm: "deeksha_lite_v1".into(),
             },
             ..Config::default()
         };
