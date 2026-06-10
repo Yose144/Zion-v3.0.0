@@ -615,6 +615,8 @@ const _viewInitFns = {
   bridge:    () => initBridgeView(),
   cli:       () => initCliView(),
   oasis:     () => initOasisView(),
+  l5:        () => initL5View(),
+  l6:        () => initL6View(),
 };
 
 function switchView(view) {
@@ -4461,6 +4463,130 @@ function initCliView() {
   document.getElementById('cli-btn-l6-balance')?.addEventListener('click', () => showL6Data('fund balance', window.electronAPI.l6FundBalance));
   document.getElementById('cli-btn-l6-missions')?.addEventListener('click', () => showL6Data('missions', window.electronAPI.l6Missions));
   document.getElementById('cli-btn-l6-proposals')?.addEventListener('click', () => showL6Data('proposals', window.electronAPI.l6Proposals));
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// L5 Free World View — Humanitarian Layer
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function initL5View() {
+  const chip = document.getElementById('l5-view-status-chip');
+  const balanceEl = document.getElementById('l5-view-balance');
+  const grantsEl = document.getElementById('l5-view-grants');
+  const projectsEl = document.getElementById('l5-view-projects');
+  const healthEl = document.getElementById('l5-view-health');
+  const updatedEl = document.getElementById('l5-view-updated');
+  const detailEl = document.getElementById('l5-view-detail');
+
+  async function refresh() {
+    const [statusRes, balanceRes, grantsRes, projectsRes] = await Promise.all([
+      window.electronAPI.l5Status(),
+      window.electronAPI.l5FundBalance(),
+      window.electronAPI.l5Grants(),
+      window.electronAPI.l5Projects(),
+    ]);
+
+    const ok = statusRes?.success;
+    if (chip) {
+      chip.textContent = ok ? (statusRes?.data?.status === 'ok' ? 'Online' : 'Degraded') : 'Offline';
+      chip.style.background = ok ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)';
+      chip.style.color = ok ? '#4ade80' : '#f87171';
+    }
+    if (healthEl) healthEl.textContent = ok ? (statusRes?.data?.status === 'ok' ? 'Healthy' : 'Degraded') : 'Offline';
+    if (balanceEl) {
+      const bal = balanceRes?.data?.balance_zion ?? balanceRes?.data?.balance ?? '—';
+      balanceEl.textContent = typeof bal === 'number' ? `${bal.toLocaleString()} ZION` : String(bal);
+    }
+    if (grantsEl) {
+      const count = Array.isArray(grantsRes?.data?.grants) ? grantsRes.data.grants.length
+        : Array.isArray(grantsRes?.data) ? grantsRes.data.length : '—';
+      grantsEl.textContent = count;
+    }
+    if (projectsEl) {
+      const count = Array.isArray(projectsRes?.data?.projects) ? projectsRes.data.projects.length
+        : Array.isArray(projectsRes?.data) ? projectsRes.data.length : '—';
+      projectsEl.textContent = count;
+    }
+    if (updatedEl) updatedEl.textContent = new Date().toLocaleTimeString();
+  }
+
+  async function showDetail(label, fetcher) {
+    if (detailEl) { detailEl.style.display = 'block'; detailEl.textContent = `Loading ${label}…`; }
+    try {
+      const res = await fetcher();
+      if (detailEl) detailEl.textContent = JSON.stringify(res, null, 2);
+    } catch (err) {
+      if (detailEl) detailEl.textContent = `Error: ${err?.message || err}`;
+    }
+  }
+
+  document.getElementById('l5-view-refresh')?.addEventListener('click', refresh);
+  document.getElementById('l5-view-grants-btn')?.addEventListener('click', () => showDetail('grants', window.electronAPI.l5Grants));
+  document.getElementById('l5-view-projects-btn')?.addEventListener('click', () => showDetail('projects', window.electronAPI.l5Projects));
+
+  refresh();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// L6 Issobela View — Space Station Layer
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function initL6View() {
+  const chip = document.getElementById('l6-view-status-chip');
+  const balanceEl = document.getElementById('l6-view-balance');
+  const missionsEl = document.getElementById('l6-view-missions');
+  const proposalsEl = document.getElementById('l6-view-proposals');
+  const healthEl = document.getElementById('l6-view-health');
+  const updatedEl = document.getElementById('l6-view-updated');
+  const detailEl = document.getElementById('l6-view-detail');
+
+  async function refresh() {
+    const [statusRes, balanceRes, missionsRes, proposalsRes] = await Promise.all([
+      window.electronAPI.l6Status(),
+      window.electronAPI.l6FundBalance(),
+      window.electronAPI.l6Missions(),
+      window.electronAPI.l6Proposals(),
+    ]);
+
+    const ok = statusRes?.success;
+    if (chip) {
+      chip.textContent = ok ? (statusRes?.data?.status === 'ok' ? 'Online' : 'Degraded') : 'Offline';
+      chip.style.background = ok ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)';
+      chip.style.color = ok ? '#4ade80' : '#f87171';
+    }
+    if (healthEl) healthEl.textContent = ok ? (statusRes?.data?.status === 'ok' ? 'Healthy' : 'Degraded') : 'Offline';
+    if (balanceEl) {
+      const bal = balanceRes?.data?.balance_zion ?? balanceRes?.data?.balance ?? '—';
+      balanceEl.textContent = typeof bal === 'number' ? `${bal.toLocaleString()} ZION` : String(bal);
+    }
+    if (missionsEl) {
+      const count = Array.isArray(missionsRes?.data?.missions) ? missionsRes.data.missions.length
+        : Array.isArray(missionsRes?.data) ? missionsRes.data.length : '—';
+      missionsEl.textContent = count;
+    }
+    if (proposalsEl) {
+      const count = Array.isArray(proposalsRes?.data?.proposals) ? proposalsRes.data.proposals.length
+        : Array.isArray(proposalsRes?.data) ? proposalsRes.data.length : '—';
+      proposalsEl.textContent = count;
+    }
+    if (updatedEl) updatedEl.textContent = new Date().toLocaleTimeString();
+  }
+
+  async function showDetail(label, fetcher) {
+    if (detailEl) { detailEl.style.display = 'block'; detailEl.textContent = `Loading ${label}…`; }
+    try {
+      const res = await fetcher();
+      if (detailEl) detailEl.textContent = JSON.stringify(res, null, 2);
+    } catch (err) {
+      if (detailEl) detailEl.textContent = `Error: ${err?.message || err}`;
+    }
+  }
+
+  document.getElementById('l6-view-refresh')?.addEventListener('click', refresh);
+  document.getElementById('l6-view-missions-btn')?.addEventListener('click', () => showDetail('missions', window.electronAPI.l6Missions));
+  document.getElementById('l6-view-proposals-btn')?.addEventListener('click', () => showDetail('proposals', window.electronAPI.l6Proposals));
+
+  refresh();
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
