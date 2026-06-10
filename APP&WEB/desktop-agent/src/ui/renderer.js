@@ -614,6 +614,7 @@ const _viewInitFns = {
   about:     () => { initUpdateUI(); initMinerUpdateUI(); initSecurityUI(); },
   bridge:    () => initBridgeView(),
   cli:       () => initCliView(),
+  oasis:     () => initOasisView(),
 };
 
 function switchView(view) {
@@ -4273,4 +4274,58 @@ function initCliView() {
   document.getElementById('cli-btn-warp-chains')?.addEventListener('click', () => runCli('cliWarpChains', 'warp chains'));
   document.getElementById('cli-btn-warp-pending')?.addEventListener('click', () => runCli('cliWarpPending', 'warp pending'));
   document.getElementById('cli-btn-warp-stats')?.addEventListener('click', () => runCli('cliWarpStats', 'warp stats'));
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Oasis View — L4 Consciousness Mining Game
+// ═══════════════════════════════════════════════════════════════════════════════
+
+let _oasisInitialized = false;
+
+function initOasisView() {
+  if (_oasisInitialized) return;
+  _oasisInitialized = true;
+  dbg('[OASIS] Initializing Oasis view');
+
+  const setStatus = (id, status) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = status;
+    el.style.color =
+      status === 'Online' ? '#6ee7b7' :
+      status === 'Offline' ? '#f87171' :
+      status === 'Checking...' ? '#93c5fd' : '';
+  };
+
+  async function checkOasisBackend() {
+    setStatus('oasis-rest-status', 'Checking...');
+    setStatus('oasis-ws-status', 'Checking...');
+    setStatus('oasis-metrics-status', 'Checking...');
+
+    // Check REST API
+    try {
+      const resp = await fetch('http://localhost:8094/health', { method: 'GET', mode: 'no-cors', signal: AbortSignal.timeout(3000) });
+      setStatus('oasis-rest-status', resp.ok || resp.status === 0 ? 'Online' : 'Offline');
+    } catch {
+      setStatus('oasis-rest-status', 'Offline');
+    }
+
+    // Check Metrics
+    try {
+      const resp = await fetch('http://localhost:9101/metrics', { method: 'GET', mode: 'no-cors', signal: AbortSignal.timeout(3000) });
+      setStatus('oasis-metrics-status', resp.ok || resp.status === 0 ? 'Online' : 'Offline');
+    } catch {
+      setStatus('oasis-metrics-status', 'Offline');
+    }
+
+    // WebSocket: we can't easily test WS from fetch, mark based on REST
+    const restEl = document.getElementById('oasis-rest-status');
+    if (restEl && restEl.textContent === 'Online') {
+      setStatus('oasis-ws-status', 'Online');
+    } else {
+      setStatus('oasis-ws-status', 'Offline');
+    }
+  }
+
+  document.getElementById('oasis-btn-check')?.addEventListener('click', checkOasisBackend);
 }
