@@ -202,14 +202,11 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
           Edge (Hetzner) runs the primary 24/7 node + pool.
         </p>
         <div class="flex flex-wrap gap-3">
-          <button onclick="controlAction('launch-full')" class="zion-button-primary">
-            🚀 Launch Full Stack
+          <button onclick="switchTab('services')" class="zion-button-primary">
+            🧩 Services
           </button>
-          <button onclick="controlAction('launch-stack')" class="zion-button-secondary">
-            ⚡ Core Only
-          </button>
-          <button onclick="if(confirm('Stop ALL services?')) controlAction('stop-all')" class="zion-button-secondary" style="color:#fca5a5;">
-            ⏹ Stop All
+          <button onclick="switchTab('wizard')" class="zion-button-secondary">
+            🧙 Launch Wizard
           </button>
         </div>
       </div>
@@ -300,7 +297,6 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
       </div>
       <div class="sidebar-group">
         <div class="sidebar-title">Operations</div>
-        <button onclick="switchTab('controls')" id="tab-controls" class="sidebar-item">🎛️ Controls</button>
         <button onclick="switchTab('ops')" id="tab-ops" class="sidebar-item">🔧 Ops (Backup / CLI)</button>
         <button onclick="switchTab('agent')" id="tab-agent" class="sidebar-item">🤖 ZION Agent</button>
         <button onclick="switchTab('launch-day')" id="tab-launch-day" class="sidebar-item">🚀 Launch Day</button>
@@ -438,7 +434,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
     <!-- Miner Control Panel (full width) -->
     <div id="card-miner" class="zion-panel zion-panel-hover svc-card p-5 mt-4">
       <div class="flex items-center justify-between mb-4">
-        <span class="zion-kicker">⛏️ Edge Miner</span>
+        <span class="zion-kicker" id="lbl-miner-title">⛏️ Edge Miner</span>
         <span id="badge-miner" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-white/5 text-gray-400">?</span>
       </div>
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -456,6 +452,14 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
             <div class="p-2 bg-white/5 rounded-lg">
               <div class="text-gray-400 mb-0.5">Backend</div>
               <div class="text-white font-mono truncate" id="val-miner-backend">—</div>
+            </div>
+            <div class="p-2 bg-white/5 rounded-lg">
+              <div class="text-gray-400 mb-0.5">Worker</div>
+              <div class="text-white font-mono truncate" id="val-miner-worker">—</div>
+            </div>
+            <div class="p-2 bg-white/5 rounded-lg">
+              <div class="text-gray-400 mb-0.5">Wallet</div>
+              <div class="text-white font-mono truncate text-[10px]" id="val-miner-wallet">—</div>
             </div>
             <div class="p-2 bg-white/5 rounded-lg">
               <div class="text-gray-400 mb-0.5">Height</div>
@@ -481,82 +485,18 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
           <div id="miner-status-msg" class="text-xs p-2 rounded-lg hidden"></div>
         </div>
 
-        <!-- Config Column -->
+        <!-- Info / Actions Column -->
         <div class="lg:col-span-2 space-y-3">
-          <h3 class="text-sm font-semibold text-gray-300 mb-2">⚙️ Configuration</h3>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
-              <label class="text-[10px] text-gray-400 uppercase tracking-wider">Pool Address</label>
-              <input type="text" id="miner-cfg-pool" value="127.0.0.1:8444" class="w-full mt-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:border-purple-500 focus:outline-none transition">
-            </div>
-            <div>
-              <label class="text-[10px] text-gray-400 uppercase tracking-wider">Worker Name</label>
-              <input type="text" id="miner-cfg-worker" value="worker1" class="w-full mt-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:border-purple-500 focus:outline-none transition">
-            </div>
-            <div>
-              <label class="text-[10px] text-gray-400 uppercase tracking-wider">Backend</label>
-              <select id="miner-cfg-backend" class="w-full mt-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:border-purple-500 focus:outline-none transition">
-                <option value="gpu-opencl">🎮 GPU (OpenCL)</option>
-                <option value="gpu-cuda">🎮 GPU (CUDA)</option>
-                <option value="cpu">💻 CPU Only</option>
-                <option value="dual">🔀 Dual (CPU+GPU)</option>
-              </select>
-            </div>
-            <div>
-              <label class="text-[10px] text-gray-400 uppercase tracking-wider">CPU Threads</label>
-              <div class="flex items-center gap-2 mt-1">
-                <input type="range" id="miner-cfg-threads-range" min="1" max="16" value="4" class="flex-1 accent-purple-500" oninput="document.getElementById('miner-cfg-threads').value=this.value">
-                <input type="number" id="miner-cfg-threads" value="4" min="1" max="16" class="w-14 px-2 py-1 bg-white/5 border border-white/10 rounded-lg text-sm text-white text-center focus:border-purple-500 focus:outline-none transition" oninput="document.getElementById('miner-cfg-threads-range').value=this.value">
-              </div>
-            </div>
-            <div>
-              <label class="text-[10px] text-gray-400 uppercase tracking-wider">GPU Work Size</label>
-              <select id="miner-cfg-worksize" class="w-full mt-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:border-purple-500 focus:outline-none transition">
-                <option value="1024">1024 (Low VRAM)</option>
-                <option value="2048">2048</option>
-                <option value="4096" selected>4096 (Recommended)</option>
-                <option value="8192">8192 (High Perf)</option>
-                <option value="16384">16384 (Max)</option>
-              </select>
-            </div>
-            <div>
-              <label class="text-[10px] text-gray-400 uppercase tracking-wider">Loop Count</label>
-              <select id="miner-cfg-loops" class="w-full mt-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white focus:border-purple-500 focus:outline-none transition">
-                <option value="10000">10K (Test)</option>
-                <option value="100000">100K</option>
-                <option value="1000000" selected>1M (Sustained)</option>
-                <option value="10000000">10M (Max)</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- GPU Layers (for Hiran inference when miner is idle) -->
-          <div class="pt-2 border-t border-white/10">
-            <div class="flex items-center justify-between mb-2">
-              <span class="text-xs text-gray-400">Hiran GPU Layers (when idle)</span>
-              <span class="text-xs text-purple-300 font-mono" id="hiran-gpu-layers-val">33</span>
-            </div>
-            <input type="range" id="miner-cfg-hiran-layers" min="0" max="50" value="33" class="w-full accent-purple-500" oninput="document.getElementById('hiran-gpu-layers-val').textContent=this.value">
-          </div>
-
-          <!-- Action Buttons -->
-          <div class="flex gap-2 pt-2 flex-wrap">
-            <button onclick="startMiner('gpu')" class="flex-1 min-w-[120px] px-4 py-2.5 bg-gradient-to-r from-purple-700 to-purple-900 hover:from-purple-600 hover:to-purple-800 rounded-lg text-sm font-semibold transition shadow-lg">
-              🎮 Start GPU
-            </button>
-            <button onclick="startMiner('cpu')" class="flex-1 min-w-[120px] px-4 py-2.5 bg-gradient-to-r from-blue-700 to-blue-900 hover:from-blue-600 hover:to-blue-800 rounded-lg text-sm font-semibold transition shadow-lg">
-              💻 Start CPU
-            </button>
-            <button onclick="startMiner('dual')" class="flex-1 min-w-[120px] px-4 py-2.5 bg-gradient-to-r from-cyan-700 to-cyan-900 hover:from-cyan-600 hover:to-cyan-800 rounded-lg text-sm font-semibold transition shadow-lg">
-              🔀 Dual Mode
-            </button>
+          <h3 class="text-sm font-semibold text-gray-300 mb-2">⚙️ Actions</h3>
+          <div class="flex gap-2 flex-wrap" id="miner-buttons">
             <button onclick="controlAction('restart-miner')" class="px-4 py-2.5 bg-gradient-to-r from-amber-700 to-amber-900 hover:from-amber-600 hover:to-amber-800 rounded-lg text-sm font-semibold transition shadow-lg">
-              ⟳ Restart
+              🔄 Restart
             </button>
             <button onclick="controlAction('stop-miner')" class="px-4 py-2.5 bg-gradient-to-r from-red-700 to-red-900 hover:from-red-600 hover:to-red-800 rounded-lg text-sm font-semibold transition shadow-lg">
               ⏹ Stop
             </button>
           </div>
+          <p class="text-xs text-gray-500 mt-2">Miner is managed by the Edge node systemd service. Use Restart if it hangs, Stop to pause.</p>
         </div>
       </div>
     </div>
@@ -1324,171 +1264,6 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         <div id="blockers-summary" class="text-xs"></div>
       </div>
       <div id="blockers-list" class="space-y-3"></div>
-    </div>
-  </div>
-
-  <!-- ═════════ TAB: Controls ═════════ -->
-  <div id="pane-controls" class="hidden space-y-4">
-    <div class="zion-panel p-6">
-      <h2 class="text-xl font-bold mb-2 flex items-center gap-2"><span class="text-gradient">🎛️ Stack Control Center</span></h2>
-      <p class="text-sm text-gray-400 mb-6">All actions execute whitelisted PowerShell scripts via detached subprocess. Logs appear below.</p>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <button onclick="startDependencyLaunch('stack')" class="zion-panel zion-panel-hover p-6 text-left relative overflow-hidden"
-                style="background:linear-gradient(135deg,rgba(16,185,129,0.35),rgba(16,185,129,0.12));border-color:rgba(16,185,129,0.65);">
-          <div class="text-4xl mb-3">🚀</div>
-          <div class="text-lg font-bold mb-1">Launch Core Stack</div>
-          <div class="text-xs text-emerald-300/80">Sequential: node1 → node2 → pool → miner</div>
-        </button>
-        <button onclick="startDependencyLaunch('full')" class="zion-panel zion-panel-hover p-6 text-left relative overflow-hidden"
-                style="background:linear-gradient(135deg,rgba(6,182,212,0.35),rgba(6,182,212,0.12));border-color:rgba(6,182,212,0.65);">
-          <div class="text-4xl mb-3">🔀</div>
-          <div class="text-lg font-bold mb-1">Launch Full Stack</div>
-          <div class="text-xs text-cyan-300/80">All services with deps resolved</div>
-        </button>
-        <button onclick="if(confirm('Run dependency check and build? This may take several minutes.')) controlAction('install-deps')" class="zion-panel zion-panel-hover p-6 text-left relative overflow-hidden"
-                style="background:linear-gradient(135deg,rgba(245,158,11,0.35),rgba(245,158,11,0.12));border-color:rgba(245,158,11,0.65);">
-          <div class="text-4xl mb-3">📦</div>
-          <div class="text-lg font-bold mb-1">Install / Build</div>
-          <div class="text-xs text-amber-300/80">Check Rust, build V3, npm, Docker</div>
-        </button>
-        <button onclick="if(confirm('Stop ALL services?')) controlAction('stop-all')" class="zion-panel zion-panel-hover p-6 text-left relative overflow-hidden"
-                style="background:linear-gradient(135deg,rgba(239,68,68,0.35),rgba(239,68,68,0.12));border-color:rgba(239,68,68,0.65);">
-          <div class="text-4xl mb-3">⏹️</div>
-          <div class="text-lg font-bold mb-1">Stop All Services</div>
-          <div class="text-xs text-red-300/80">Terminates everything</div>
-        </button>
-      </div>
-
-      <!-- Dependency Launch Progress -->
-      <div id="launch-progress-panel" class="zion-panel p-4 mb-6 hidden">
-        <div class="flex items-center justify-between mb-2">
-          <span class="text-sm font-semibold" id="launch-progress-title">Stack Launch</span>
-          <span class="text-xs font-mono text-gray-400" id="launch-progress-pct">0%</span>
-        </div>
-        <div class="w-full h-2 bg-white/5 rounded-full overflow-hidden mb-2">
-          <div id="launch-progress-bar" class="h-full rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 transition-all" style="width:0%"></div>
-        </div>
-        <div class="text-xs text-gray-400" id="launch-progress-step">Waiting…</div>
-        <div class="mt-2 space-y-1" id="launch-progress-results"></div>
-      </div>
-
-      <h3 class="zion-kicker mb-3">Individual Services</h3>
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6" id="control-buttons"></div>
-
-      <h3 class="zion-kicker mb-3 flex items-center gap-2">💾 Backup & Recovery <button onclick="loadBackupList()" class="text-[10px] px-2 py-0.5 bg-white/10 hover:bg-white/20 rounded transition">🔄 Refresh</button></h3>
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-        <div class="lg:col-span-1">
-          <div class="zion-panel p-4 mb-3">
-            <div class="text-sm font-bold mb-2">Create Backup</div>
-            <div class="text-xs text-gray-400 mb-3">Zips V3/data (chain state + LMDB). Optionally include logs and env files.</div>
-            <div class="flex gap-2 mb-3">
-              <label class="flex items-center gap-1 text-xs text-gray-300"><input type="checkbox" id="backup-logs" class="accent-zion-gold"> Logs</label>
-              <label class="flex items-center gap-1 text-xs text-gray-300"><input type="checkbox" id="backup-env" class="accent-zion-gold"> Env</label>
-            </div>
-            <button onclick="createBackup()" class="zion-button-primary text-sm w-full">💾 Create Backup</button>
-          </div>
-          <div class="zion-panel p-4 mb-3">
-            <div class="text-sm font-bold mb-2">Verify Integrity</div>
-            <div class="text-xs text-gray-400 mb-3">Check snapshot JSON, journal, and LMDB files for corruption.</div>
-            <button onclick="verifyBackup()" class="zion-button-secondary text-sm w-full">🔍 Verify Chain State</button>
-          </div>
-          <div class="zion-panel p-4">
-            <div class="text-sm font-bold mb-2">Core Utility (Offline LMDB)</div>
-            <div class="text-xs text-gray-400 mb-3">Deep verify, export state, and dump blocks directly from LMDB without running a node.</div>
-            <div class="flex flex-col gap-2">
-              <button onclick="runCoreUtil('verify-db')" class="text-[10px] px-2 py-1 bg-white/5 hover:bg-white/10 rounded transition text-left">🔍 Deep Verify (LMDB)</button>
-              <button onclick="runCoreUtil('export-state')" class="text-[10px] px-2 py-1 bg-white/5 hover:bg-white/10 rounded transition text-left">📤 Export State (JSON)</button>
-              <button onclick="runCoreUtil('dump-blocks')" class="text-[10px] px-2 py-1 bg-white/5 hover:bg-white/10 rounded transition text-left">🧱 Dump Blocks</button>
-              <button onclick="runCoreUtil('tip-height')" class="text-[10px] px-2 py-1 bg-white/5 hover:bg-white/10 rounded transition text-left">📏 Tip Height</button>
-            </div>
-          </div>
-        </div>
-        <div class="lg:col-span-2">
-          <div id="backup-list" class="space-y-2 max-h-64 overflow-y-auto">
-            <div class="text-gray-500 italic text-sm">Click refresh to load backups.</div>
-          </div>
-          <div id="backup-log" class="bg-black/40 rounded-xl p-3 max-h-32 overflow-y-auto log-tail text-gray-300 mt-3">
-            <div class="text-gray-500 italic text-sm">Backup operations will be logged here.</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-        <div>
-          <h3 class="zion-kicker mb-3">Action Log</h3>
-          <div id="control-log" class="bg-black/40 rounded-xl p-3 max-h-48 overflow-y-auto log-tail">
-            <div class="text-gray-500 italic">Control actions will be logged here.</div>
-          </div>
-        </div>
-        <div>
-          <h3 class="zion-kicker mb-3 flex items-center gap-2">📦 Install Log <button onclick="loadInstallLog()" class="text-[10px] px-2 py-0.5 bg-white/10 hover:bg-white/20 rounded transition">🔄 Refresh</button></h3>
-          <div id="install-log" class="bg-black/40 rounded-xl p-3 max-h-48 overflow-y-auto log-tail text-gray-300">
-            <div class="text-gray-500 italic">Run Install / Build to see progress.</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- CLI Console -->
-      <h3 class="zion-kicker mb-3">🖥️ CLI Console (zion-cli)</h3>
-      <div class="zion-panel p-4 mb-6">
-        <div class="flex gap-2 mb-3">
-          <input id="cli-input" type="text" placeholder="node status" class="flex-1 bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-zion-gold/50">
-          <button onclick="runCliCommand()" class="zion-button-primary text-sm px-4">▶ Run</button>
-        </div>
-        <div class="flex flex-wrap gap-1.5 mb-3">
-          <button onclick="runCliQuick('node status')" class="text-[10px] px-2 py-1 bg-white/5 hover:bg-white/10 rounded transition">node status</button>
-          <button onclick="runCliQuick('node blocks 10')" class="text-[10px] px-2 py-1 bg-white/5 hover:bg-white/10 rounded transition">node blocks 10</button>
-          <button onclick="runCliQuick('node mempool')" class="text-[10px] px-2 py-1 bg-white/5 hover:bg-white/10 rounded transition">node mempool</button>
-          <button onclick="runCliQuick('wallet balance')" class="text-[10px] px-2 py-1 bg-white/5 hover:bg-white/10 rounded transition">wallet balance</button>
-          <button onclick="runCliQuick('pool status')" class="text-[10px] px-2 py-1 bg-white/5 hover:bg-white/10 rounded transition">pool status</button>
-          <button onclick="runCliQuick('doctor')" class="text-[10px] px-2 py-1 bg-white/5 hover:bg-white/10 rounded transition">doctor</button>
-          <button onclick="runCliQuick('status')" class="text-[10px] px-2 py-1 bg-white/5 hover:bg-white/10 rounded transition">status</button>
-        </div>
-        <div id="cli-output" class="bg-black/40 rounded-xl p-3 max-h-64 overflow-y-auto log-tail text-gray-300 font-mono text-xs">
-          <div class="text-gray-500 italic">Type a command and press Run, or click a quick command.</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Miner Performance -->
-    <div class="zion-panel p-6 mb-4">
-      <h2 class="text-lg font-bold mb-3 flex items-center gap-2">⛏️ Miner Performance</h2>
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div>
-          <div class="text-xs text-gray-400 mb-2">Shares Accepted / Rejected Trend (last 50)</div>
-          <canvas id="miner-shares-chart" height="120"></canvas>
-        </div>
-        <div>
-          <div class="text-xs text-gray-400 mb-2">Session Stats</div>
-          <div class="grid grid-cols-2 md:grid-cols-3 gap-2" id="miner-session-stats">
-            <div class="bg-black/30 rounded-lg p-2 text-center"><div class="text-[10px] text-gray-400">Iterations</div><div id="perf-iterations" class="text-sm font-bold text-white">—</div></div>
-            <div class="bg-black/30 rounded-lg p-2 text-center"><div class="text-[10px] text-gray-400">Accepted</div><div id="perf-accepted" class="text-sm font-bold text-emerald-400">—</div></div>
-            <div class="bg-black/30 rounded-lg p-2 text-center"><div class="text-[10px] text-gray-400">Rejected</div><div id="perf-rejected" class="text-sm font-bold text-red-400">—</div></div>
-            <div class="bg-black/30 rounded-lg p-2 text-center"><div class="text-[10px] text-gray-400">Best Batch</div><div id="perf-best-batch" class="text-sm font-bold text-white">—</div></div>
-            <div class="bg-black/30 rounded-lg p-2 text-center"><div class="text-[10px] text-gray-400">GPU HPS</div><div id="perf-gpu-hps" class="text-sm font-bold text-amber-400">—</div></div>
-            <div class="bg-black/30 rounded-lg p-2 text-center"><div class="text-[10px] text-gray-400">Epoch</div><div id="perf-epoch" class="text-sm font-bold text-white">—</div></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Dependency Graph -->
-    <div class="zion-panel p-6 mb-4">
-      <h2 class="text-lg font-bold mb-3 flex items-center gap-2">🕸️ Service Dependency Graph</h2>
-      <div id="dep-graph-container" class="bg-black/30 rounded-xl p-4 min-h-[200px] overflow-auto">
-        <div class="text-sm text-gray-400 mb-2">Green = alive, Red = dead, arrows = depends_on</div>
-        <div id="dep-graph-viz" class="flex flex-wrap gap-3"></div>
-      </div>
-    </div>
-
-    <!-- Process Registry -->
-    <div class="zion-panel p-6 mb-4">
-      <div class="flex items-center justify-between mb-3">
-        <h2 class="text-lg font-bold flex items-center gap-2">🖥️ Process Registry</h2>
-        <button onclick="loadProcessRegistry()" class="text-[10px] px-2 py-1 bg-white/10 hover:bg-white/20 rounded transition">🔄 Refresh</button>
-      </div>
-      <div id="process-registry" class="text-xs"></div>
     </div>
   </div>
 
