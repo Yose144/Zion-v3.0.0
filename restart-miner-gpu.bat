@@ -19,18 +19,15 @@ set ZION_PAYOUT_ADDRESS=zion1w523a76830x2t5m7f3j023w265e8g5c400a4790
 :: ── Algoritmus ────────────────────────────────────────────────────────────────
 set ZION_MINER_ALGORITHM=deeksha_lite_fire
 
+:: RDNA1 auto-tune — neprepisovat work_size ani vram_pct
 set ZION_GPU_BACKEND=opencl
-set ZION_MINER_THREADS=1
-set ZION_GPU_WORK_SIZE=16384
-set ZION_OCL_WORK_CAP=16384
-set ZION_OCL_VRAM_PCT=35
 set ZION_NONCE_COUNT_GPU=262144
 
 echo [START] Miner spousten v %TIME%
-echo [ENV]   POOL=%ZION_POOL_ADDR%  ALGO=%ZION_MINER_ALGORITHM%  BACKEND=%ZION_GPU_BACKEND%  WORK_SIZE=%ZION_GPU_WORK_SIZE%
+echo [ENV]   POOL=%ZION_POOL_ADDR%  ALGO=%ZION_MINER_ALGORITHM%  BACKEND=%ZION_GPU_BACKEND%  (RDNA1 auto-tune)
 echo.
 
-V3\target\release\zion-miner.exe
+V3\target\release\zion-miner-rdna.exe
 echo [EXIT] Miner skoncil s kodem %ERRORLEVEL% v %TIME%
 pause
 endlocal
