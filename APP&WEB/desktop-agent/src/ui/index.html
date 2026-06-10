@@ -3346,6 +3346,32 @@
     }
     .cli-line.error { color: #f87171; }
 
+    /* ═══ CLI ASCII Logo ═══ */
+    .cli-ascii-banner {
+      display: flex;
+      justify-content: center;
+      margin: 16px 0 8px;
+      padding: 18px 0;
+      background: rgba(0,0,0,0.35);
+      border: 1px solid rgba(255,215,0,0.08);
+      border-radius: 16px;
+      backdrop-filter: blur(20px);
+    }
+    .cli-ascii-logo {
+      font-family: 'JetBrains Mono', Menlo, 'Courier New', monospace;
+      font-size: 11px;
+      line-height: 1.35;
+      color: var(--zion-gold);
+      text-shadow: 0 0 12px rgba(255,215,0,0.2);
+      text-align: center;
+      margin: 0;
+      opacity: 0.85;
+      white-space: pre;
+    }
+    .cli-terminal-wrap {
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+
     /* ═══ Bridge Readiness ═══ */
     .bridge-readiness-row {
       display: flex;
@@ -5750,6 +5776,17 @@
           </div>
         </div>
 
+        <!-- ═══ ASCII Logo Banner ═══ -->
+        <div class="cli-ascii-banner">
+          <pre class="cli-ascii-logo">  ███████╗██╗  ██╗ ██████╗ ███╗   ██╗
+  ╚══███╔╝██║  ██║██╔═══██╗████╗  ██║
+    ███╔╝ ███████║██║   ██║██╔██╗ ██║
+   ███╔╝  ██╔══██║██║   ██║██║╚██╗██║
+  ███████╗██║  ██║╚██████╔╝██║ ╚████║
+  ╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝
+       TerraNova  ·  v3.0.0 Mainnet</pre>
+        </div>
+
         <!-- ── CLI Section Tabs ─────────────────────────────── -->
         <div class="section-tabs" data-group="cli">
           <div class="section-tab active" data-section="cli-terminal">
@@ -5782,7 +5819,7 @@
           </div>
         </div>
 
-        <!-- ═══ SECTION: Terminal ═══ -->
+        <!-- ═══ Tab Panels (shared terminal below) ═══ -->
         <div id="cli-terminal" class="section-panel active">
           <div class="control-panel panel-tight">
             <div class="actions-row">
@@ -5794,22 +5831,8 @@
               <button class="btn btn-ghost btn-sm" id="cli-btn-clear">Clear</button>
             </div>
           </div>
-          <div class="control-panel">
-            <h2 class="panel-header-row">
-              <span class="panel-header-title">
-                <svg class="icon" aria-hidden="true"><use href="#i-terminal"></use></svg>
-                <span>CLI Output</span>
-              </span>
-              <span id="cli-status-badge" class="cli-badge ready">Ready</span>
-            </h2>
-            <div id="cli-console" class="cli-terminal">
-— ZION CLI Terminal —
-Click a button above to run a command.
-            </div>
-          </div>
         </div>
 
-        <!-- ═══ SECTION: Wallet ═══ -->
         <div id="cli-wallet" class="section-panel">
           <div class="wallet-grid panel-mt-20">
             <div class="control-panel">
@@ -5826,7 +5849,6 @@ Click a button above to run a command.
           </div>
         </div>
 
-        <!-- ═══ SECTION: Mining ═══ -->
         <div id="cli-mining" class="section-panel">
           <div class="wallet-grid panel-mt-20">
             <div class="control-panel">
@@ -5845,7 +5867,6 @@ Click a button above to run a command.
           </div>
         </div>
 
-        <!-- ═══ SECTION: Bridge ═══ -->
         <div id="cli-bridge" class="section-panel">
           <div class="pool-grid panel-mt-20">
             <div class="control-panel">
@@ -5862,7 +5883,6 @@ Click a button above to run a command.
           </div>
         </div>
 
-        <!-- ═══ SECTION: DAO ═══ -->
         <div id="cli-dao" class="section-panel">
           <div class="pool-grid panel-mt-20">
             <div class="control-panel">
@@ -5879,7 +5899,6 @@ Click a button above to run a command.
           </div>
         </div>
 
-        <!-- ═══ SECTION: Pool ═══ -->
         <div id="cli-pool" class="section-panel">
           <div class="pool-grid panel-mt-20">
             <div class="control-panel">
@@ -5896,7 +5915,6 @@ Click a button above to run a command.
           </div>
         </div>
 
-        <!-- ═══ SECTION: Warp ═══ -->
         <div id="cli-warp" class="section-panel">
           <div class="pool-grid panel-mt-20">
             <div class="control-panel">
@@ -5910,6 +5928,21 @@ Click a button above to run a command.
                 <button class="btn btn-ghost btn-sm" id="cli-btn-warp-stats">Stats</button>
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- ═══ Shared CLI Terminal (always visible below tabs) ═══ -->
+        <div class="control-panel panel-mt-20 cli-terminal-wrap">
+          <h2 class="panel-header-row">
+            <span class="panel-header-title">
+              <svg class="icon" aria-hidden="true"><use href="#i-terminal"></use></svg>
+              <span>CLI Output</span>
+            </span>
+            <span id="cli-status-badge" class="cli-badge ready">Ready</span>
+          </h2>
+          <div id="cli-console" class="cli-terminal">
+— ZION CLI Terminal —
+Click a button in any tab to run a command. Output appears here.
           </div>
         </div>
       </div><!-- /#cli-view -->
