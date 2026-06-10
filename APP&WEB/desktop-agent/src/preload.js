@@ -63,6 +63,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onUpdateProgress: (callback) => {
     ipcRenderer.on('update-progress', (event, data) => callback(data));
   },
+  // Miner binary auto-update
+  checkMinerUpdate: () => ipcRenderer.invoke('check-miner-update'),
+  downloadMinerUpdate: (opts) => ipcRenderer.invoke('download-miner-update', opts),
+  onMinerUpdateProgress: (callback) => {
+    ipcRenderer.on('miner-update-progress', (event, data) => callback(data));
+  },
 
   // Event listeners
   onMinerStarted: (callback) => {
