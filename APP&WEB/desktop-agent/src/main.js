@@ -5287,6 +5287,36 @@ ipcMain.handle('ncl-get-price', async () => {
   }
 });
 
+// ── L5 Free World & L6 Issobela IPC ───────────────────────────────────────
+const FREE_WORLD_URL = process.env.FREE_WORLD_URL || 'http://localhost:8095';
+const ISSOBELLA_URL = process.env.ISSOBELLA_URL || 'http://localhost:8096';
+
+async function _httpGetJson(urlPath, baseUrl, timeoutMs = 5000) {
+  return new Promise((resolve) => {
+    const client = baseUrl.startsWith('https:') ? require('https') : require('http');
+    const req = client.get(`${baseUrl}${urlPath}`, { timeout: timeoutMs }, (res) => {
+      let data = '';
+      res.on('data', (chunk) => data += chunk);
+      res.on('end', () => {
+        try { resolve({ success: true, data: JSON.parse(data), statusCode: res.statusCode }); }
+        catch { resolve({ success: true, raw: data, statusCode: res.statusCode }); }
+      });
+    });
+    req.on('error', (err) => resolve({ success: false, error: err.message }));
+    req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Timeout' }); });
+  });
+}
+
+ipcMain.handle('l5-status', async () => _httpGetJson('/health', FREE_WORLD_URL));
+ipcMain.handle('l5-fund-balance', async () => _httpGetJson('/api/v1/fund/balance', FREE_WORLD_URL));
+ipcMain.handle('l5-grants', async () => _httpGetJson('/api/v1/grants', FREE_WORLD_URL));
+ipcMain.handle('l5-projects', async () => _httpGetJson('/api/v1/projects', FREE_WORLD_URL));
+
+ipcMain.handle('l6-status', async () => _httpGetJson('/health', ISSOBELLA_URL));
+ipcMain.handle('l6-fund-balance', async () => _httpGetJson('/api/v1/fund/balance', ISSOBELLA_URL));
+ipcMain.handle('l6-missions', async () => _httpGetJson('/api/v1/missions', ISSOBELLA_URL));
+ipcMain.handle('l6-proposals', async () => _httpGetJson('/api/v1/proposals', ISSOBELLA_URL));
+
 // ── Security / AV Troubleshooting IPC ───────────────────────────────────────
 ipcMain.handle('get-security-status', () => {
   try {
