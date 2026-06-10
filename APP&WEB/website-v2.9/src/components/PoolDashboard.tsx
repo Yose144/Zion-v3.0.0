@@ -19,6 +19,7 @@ import {
   Globe,
   HardHat,
   Heart,
+  HelpCircle,
   Layers,
   Pickaxe,
   RefreshCw,
@@ -35,6 +36,11 @@ import {
   XCircle,
   Zap,
 } from "lucide-react";
+import dynamic from "next/dynamic";
+const LiveToast = dynamic(() => import('@/components/explorer/LiveToast'));
+const Pool24hCharts = dynamic(() => import('@/components/pool/Pool24hCharts'));
+const PoolEventsFeed = dynamic(() => import('@/components/pool/PoolEventsFeed'));
+const PoolRewardDonut = dynamic(() => import('@/components/pool/PoolRewardDonut'));
 import { useLang } from '@/contexts/LanguageContext';
 import { usePolling } from '@/hooks/usePolling';
 import { SITE_POOL_PRIMARY, SITE_RELEASE_LABEL } from '@/lib/site';
@@ -262,6 +268,9 @@ export default function PoolDashboard() {
   const [myHashrateInput, setMyHashrateInput] = useState('100M');
   const [activeOnly, setActiveOnly] = useState(true);
   const hashrateHistoryRef = useRef<{ts: number; value: number}[]>([]);
+  const acceptRateHistoryRef = useRef<{ts: number; value: number}[]>([]);
+  const activeMinersHistoryRef = useRef<{ts: number; value: number}[]>([]);
+  const [blockHeight, setBlockHeight] = useState(0);
   const router = useRouter();
 
   const onlineServers = (data?.servers ?? []).filter((s) => s.online);
@@ -293,11 +302,24 @@ export default function PoolDashboard() {
         setData(json);
         setLastUpdate(new Date());
         const hr = json.aggregate?.hashrate ?? 0;
+        const ar = json.aggregate?.accept_rate_pct ?? 0;
+        const am = json.aggregate?.active_miners ?? 0;
         const snapTs = Math.floor(Date.now() / 1000);
         hashrateHistoryRef.current = [
           ...hashrateHistoryRef.current.filter((p: {ts: number}) => snapTs - p.ts < 3600),
           { ts: snapTs, value: hr }
         ].slice(-60);
+        acceptRateHistoryRef.current = [
+          ...acceptRateHistoryRef.current.filter((p: {ts: number}) => snapTs - p.ts < 3600),
+          { ts: snapTs, value: ar }
+        ].slice(-60);
+        activeMinersHistoryRef.current = [
+          ...activeMinersHistoryRef.current.filter((p: {ts: number}) => snapTs - p.ts < 3600),
+          { ts: snapTs, value: am }
+        ].slice(-60);
+        if (json.runtime?.chain_height && json.runtime.chain_height > blockHeight) {
+          setBlockHeight(json.runtime.chain_height);
+        }
       }
     } catch {
       /* silent */
@@ -451,18 +473,18 @@ export default function PoolDashboard() {
             </div>
           ) : data ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
-              <StatCard icon={<Activity className="h-5 w-5" />} color="text-emerald-400" bg="bg-emerald-400/10" label={cs ? 'Hashrate poolu' : 'Pool Hashrate'} value={fmtHashOrPending(data.aggregate.hashrate)} sub={data.aggregate.hashrate > 0 ? `${cs ? '24h průměr' : '24h avg'}: ${fmtHash(data.aggregate.hashrate_24h)}` : (cs ? 'Živý backend zatím hashrate neexportuje' : 'Live backend is not exporting hashrate yet')} />
-              <StatCard icon={<Users className="h-5 w-5" />} color="text-purple-400" bg="bg-purple-400/10" label={cs ? 'Aktivní mineři' : 'Active Miners'} value={String(data.aggregate.active_miners)} sub={cs ? `${data.aggregate.total_miners} celkem registrovaných` : `${data.aggregate.total_miners} total registered`} />
-              <StatCard icon={<Layers className="h-5 w-5" />} color="text-zion-gold" bg="bg-zion-gold/10" label={cs ? 'Nalezené bloky' : 'Blocks Found'} value={fmtNum(data.aggregate.blocks_found)} />
-              <StatCard icon={<Shield className="h-5 w-5" />} color="text-emerald-400" bg="bg-emerald-400/10" label={cs ? 'Efektivita share' : 'Share Efficiency'} value={`${data.aggregate.share_efficiency}%`} sub={cs ? `${fmtNum(data.aggregate.valid_shares)} validních` : `${fmtNum(data.aggregate.valid_shares)} valid`} />
-              <StatCard icon={<Check className="h-5 w-5" />} color="text-teal-400" bg="bg-teal-400/10" label={cs ? 'Míra přijetí' : 'Accept Rate'} value={fmtPct(data.aggregate.accept_rate_pct)} sub={cs ? `${fmtNum(data.aggregate.accepted_total)} přijatých` : `${fmtNum(data.aggregate.accepted_total)} accepted`} />
-              <StatCard icon={<XCircle className="h-5 w-5" />} color="text-orange-400" bg="bg-orange-400/10" label={cs ? 'Odmítnuté shares' : 'Rejected Shares'} value={fmtNum(data.aggregate.rejected_total)} sub={cs ? `${fmtNum(data.aggregate.submits_total)} submitů celkem` : `${fmtNum(data.aggregate.submits_total)} total submits`} />
-              <StatCard icon={<Globe className="h-5 w-5" />} color="text-blue-400" bg="bg-blue-400/10" label={cs ? 'Servery online' : 'Servers Online'} value={`${data.servers.filter(s => s.online).length} / ${data.servers.length}`} />
-              <StatCard icon={<Heart className="h-5 w-5" />} color="text-pink-400" bg="bg-pink-400/10" label={cs ? 'Podíl minera' : 'Miner Share'} value={`${data.fee.miner_share}%`} sub={cs ? `${data.fee.pool_fee}% fee` : `${data.fee.pool_fee}% fee`} />
-              <StatCard icon={<HardHat className="h-5 w-5" />} color="text-purple-400" bg="bg-purple-400/10" label="PPLNS Fill" value={fmtPct(data.pplns.window_pct)} sub={cs ? `${fmtNum(data.pplns.window_used)} / ${fmtNum(data.pplns.window_size)} share` : `${fmtNum(data.pplns.window_used)} / ${fmtNum(data.pplns.window_size)} shares`} />
-              <StatCard icon={<Wallet className="h-5 w-5" />} color="text-zion-gold" bg="bg-zion-gold/10" label={cs ? 'Celkem vyplaceno' : 'Total Paid'} value={`${data.pplns.total_paid_zion.toFixed(2)} ZION`} sub={cs ? `${fmtNum(data.pplns.payout_rounds)} payout kol` : `${fmtNum(data.pplns.payout_rounds)} payout rounds`} />
-              <StatCard icon={<Cpu className="h-5 w-5" />} color="text-zion-cyan" bg="bg-zion-cyan/10" label={cs ? 'Síťový hashrate' : 'Network Hashrate'} value={fmtHashOrPending(data.runtime.network_hashrate, cs ? 'Offline' : 'Offline')} sub={cs ? `Výška ${fmtNum(data.runtime.chain_height)}` : `Height ${fmtNum(data.runtime.chain_height)}`} />
-              <StatCard icon={<Bell className="h-5 w-5" />} color="text-blue-400" bg="bg-blue-400/10" label={cs ? 'Template fees' : 'Template Fees'} value={`${data.runtime.template_fees_zion.toFixed(4)} ZION`} sub={cs ? `Obtížnost ${fmtDifficulty(data.runtime.difficulty)}` : `Difficulty ${fmtDifficulty(data.runtime.difficulty)}`} />
+              <StatCard icon={<Activity className="h-5 w-5" />} color="text-emerald-400" bg="bg-emerald-400/10" label={cs ? 'Hashrate poolu' : 'Pool Hashrate'} value={fmtHashOrPending(data.aggregate.hashrate)} sub={data.aggregate.hashrate > 0 ? `${cs ? '24h průměr' : '24h avg'}: ${fmtHash(data.aggregate.hashrate_24h)}` : (cs ? 'Živý backend zatím hashrate neexportuje' : 'Live backend is not exporting hashrate yet')} tip={cs ? 'Celkový výpočetní výkon všech minerů v poolu.' : 'Total computational power of all miners in the pool.'} />
+              <StatCard icon={<Users className="h-5 w-5" />} color="text-purple-400" bg="bg-purple-400/10" label={cs ? 'Aktivní mineři' : 'Active Miners'} value={String(data.aggregate.active_miners)} sub={cs ? `${data.aggregate.total_miners} celkem registrovaných` : `${data.aggregate.total_miners} total registered`} tip={cs ? 'Počet minerů, kteří odeslali share za posledních 10 minut.' : 'Number of miners who submitted a share in the last 10 minutes.'} />
+              <StatCard icon={<Layers className="h-5 w-5" />} color="text-zion-gold" bg="bg-zion-gold/10" label={cs ? 'Nalezené bloky' : 'Blocks Found'} value={fmtNum(data.aggregate.blocks_found)} tip={cs ? 'Celkový počet bloků nalezených tímto poolem.' : 'Total number of blocks found by this pool.'} />
+              <StatCard icon={<Shield className="h-5 w-5" />} color="text-emerald-400" bg="bg-emerald-400/10" label={cs ? 'Efektivita share' : 'Share Efficiency'} value={`${data.aggregate.share_efficiency}%`} sub={cs ? `${fmtNum(data.aggregate.valid_shares)} validních` : `${fmtNum(data.aggregate.valid_shares)} valid`} tip={cs ? 'Poměr validních shares k celkovým odevzdaným.' : 'Ratio of valid shares to total submitted shares.'} />
+              <StatCard icon={<Check className="h-5 w-5" />} color="text-teal-400" bg="bg-teal-400/10" label={cs ? 'Míra přijetí' : 'Accept Rate'} value={fmtPct(data.aggregate.accept_rate_pct)} sub={cs ? `${fmtNum(data.aggregate.accepted_total)} přijatých` : `${fmtNum(data.aggregate.accepted_total)} accepted`} tip={cs ? 'Procento share přijatých poolem (validních řešení).' : 'Percentage of shares accepted by the pool (valid solutions).'} />
+              <StatCard icon={<XCircle className="h-5 w-5" />} color="text-orange-400" bg="bg-orange-400/10" label={cs ? 'Odmítnuté shares' : 'Rejected Shares'} value={fmtNum(data.aggregate.rejected_total)} sub={cs ? `${fmtNum(data.aggregate.submits_total)} submitů celkem` : `${fmtNum(data.aggregate.submits_total)} total submits`} tip={cs ? 'Počet odmítnutých share — často způsobený duplicitním řešením nebo špatnou obtížností.' : 'Number of rejected shares — often caused by duplicate solutions or stale difficulty.'} />
+              <StatCard icon={<Globe className="h-5 w-5" />} color="text-blue-400" bg="bg-blue-400/10" label={cs ? 'Servery online' : 'Servers Online'} value={`${data.servers.filter(s => s.online).length} / ${data.servers.length}`} tip={cs ? 'Počet dostupných pool serverů.' : 'Number of available pool servers.'} />
+              <StatCard icon={<Heart className="h-5 w-5" />} color="text-pink-400" bg="bg-pink-400/10" label={cs ? 'Podíl minera' : 'Miner Share'} value={`${data.fee.miner_share}%`} sub={cs ? `${data.fee.pool_fee}% fee` : `${data.fee.pool_fee}% fee`} tip={cs ? 'Procento odměny, které získá miner (zbytek jde na fondy a fee).' : 'Percentage of reward going to the miner (rest goes to funds and fee).'} />
+              <StatCard icon={<HardHat className="h-5 w-5" />} color="text-purple-400" bg="bg-purple-400/10" label="PPLNS Fill" value={fmtPct(data.pplns.window_pct)} sub={cs ? `${fmtNum(data.pplns.window_used)} / ${fmtNum(data.pplns.window_size)} share` : `${fmtNum(data.pplns.window_used)} / ${fmtNum(data.pplns.window_size)} shares`} tip={cs ? 'Naplnění PPLNS okna — určuje, kolik posledních share se započítává do odměn.' : 'PPLNS window fill — determines how many recent shares count towards rewards.'} />
+              <StatCard icon={<Wallet className="h-5 w-5" />} color="text-zion-gold" bg="bg-zion-gold/10" label={cs ? 'Celkem vyplaceno' : 'Total Paid'} value={`${data.pplns.total_paid_zion.toFixed(2)} ZION`} sub={cs ? `${fmtNum(data.pplns.payout_rounds)} payout kol` : `${fmtNum(data.pplns.payout_rounds)} payout rounds`} tip={cs ? 'Celkové množství ZION vyplacené minerům v historii poolu.' : 'Total ZION paid out to miners in pool history.'} />
+              <StatCard icon={<Cpu className="h-5 w-5" />} color="text-zion-cyan" bg="bg-zion-cyan/10" label={cs ? 'Síťový hashrate' : 'Network Hashrate'} value={fmtHashOrPending(data.runtime.network_hashrate, cs ? 'Offline' : 'Offline')} sub={cs ? `Výška ${fmtNum(data.runtime.chain_height)}` : `Height ${fmtNum(data.runtime.chain_height)}`} tip={cs ? 'Celkový výpočetní výkon celé ZION sítě.' : 'Total computational power of the entire ZION network.'} />
+              <StatCard icon={<Bell className="h-5 w-5" />} color="text-blue-400" bg="bg-blue-400/10" label={cs ? 'Template fees' : 'Template Fees'} value={`${data.runtime.template_fees_zion.toFixed(4)} ZION`} sub={cs ? `Obtížnost ${fmtDifficulty(data.runtime.difficulty)}` : `Difficulty ${fmtDifficulty(data.runtime.difficulty)}`} tip={cs ? 'Součet fee z transakcí v aktuálním block template.' : 'Sum of fees from transactions in the current block template.'} />
               {data.servers.filter(s => s.stats?.blockchain?.connected).map(srv => (
                 <StatCard
                   key={srv.id}
@@ -591,6 +613,14 @@ export default function PoolDashboard() {
           </div>
         </motion.section>
         )}
+
+        {/* ═══════ 24-HOUR POOL TRENDS ═══════ */}
+        <Pool24hCharts
+          cs={cs}
+          hashrateData={hashrateHistoryRef.current.map((p) => p.value)}
+          acceptRateData={acceptRateHistoryRef.current.map((p) => p.value)}
+          activeMinersData={activeMinersHistoryRef.current.map((p) => p.value)}
+        />
 
         {/* ═══════ POOL OPERATIONS ═══════ */}
         <motion.section
@@ -768,58 +798,13 @@ export default function PoolDashboard() {
         </motion.section>
 
         {/* ═══════ REWARD DISTRIBUTION ═══════ */}
-        <motion.section
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.14 }}
-        >
-          <div className="flex flex-col gap-2 mb-6">
-            <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Ekonomika' : 'Economics'}</p>
-            <h2 className="text-3xl font-semibold text-white flex items-center gap-3">
-              <Wallet className="h-7 w-7 text-purple-400" />
-              {cs ? 'Distribuce odměn' : 'Reward Distribution'}
-            </h2>
-            <p className="text-sm text-gray-400">{cs ? 'PPLNS — Pay Per Last N Shares. Férový a transparentní mechanismus odměn.' : 'PPLNS — Pay Per Last N Shares. Fair and transparent reward mechanism.'}</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            <div className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6 text-center">
-              <div className="flex items-center justify-center h-14 w-14 rounded-2xl bg-purple-400/10 mx-auto mb-4">
-                <HardHat className="h-7 w-7 text-purple-400" />
-              </div>
-              <p className="text-4xl font-bold text-purple-400 font-mono">{data?.fee.miner_share ?? 89}%</p>
-              <h3 className="mt-2 text-base font-semibold text-white">{cs ? 'Odměna minera' : 'Miner Reward'}</h3>
-              <p className="mt-1 text-xs text-gray-500">{cs ? 'Přímo do vaší peněženky v každém payout cyklu' : 'Direct to your wallet every payout cycle'}</p>
-            </div>
-            <div className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6 text-center">
-              <div className="flex items-center justify-center h-14 w-14 rounded-2xl bg-pink-400/10 mx-auto mb-4">
-                <Heart className="h-7 w-7 text-pink-400" />
-              </div>
-              <p className="text-4xl font-bold text-pink-400 font-mono">{data?.fee.humanitarian_tithe ?? 5}%</p>
-              <h3 className="mt-2 text-base font-semibold text-white">Humanitarian Tithe</h3>
-              <p className="mt-1 text-xs text-gray-500">Funding global humanitarian causes</p>
-              {data?.fee.humanitarian_wallet && <p className="mt-2 text-[10px] font-mono text-gray-600 break-all">{data.fee.humanitarian_wallet}</p>}
-            </div>
-            <div className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6 text-center">
-              <div className="flex items-center justify-center h-14 w-14 rounded-2xl bg-zion-gold/10 mx-auto mb-4">
-                <Heart className="h-7 w-7 text-zion-gold" />
-              </div>
-              <p className="text-4xl font-bold text-zion-gold font-mono">{data?.fee.issobella_fund ?? 5}%</p>
-              <h3 className="mt-2 text-base font-semibold text-white">Issobella Fund</h3>
-              <p className="mt-1 text-xs text-gray-500">Reserved humanitarian and stewardship treasury allocation</p>
-              {data?.fee.issobella_wallet && <p className="mt-2 text-[10px] font-mono text-gray-600 break-all">{data.fee.issobella_wallet}</p>}
-            </div>
-            <div className="rounded-3xl md:rounded-4xl border border-white/10 bg-black/60 backdrop-blur-xl p-6 text-center">
-              <div className="flex items-center justify-center h-14 w-14 rounded-2xl bg-zion-cyan/10 mx-auto mb-4">
-                <Shield className="h-7 w-7 text-zion-cyan" />
-              </div>
-              <p className="text-4xl font-bold text-zion-cyan font-mono">{data?.fee.pool_fee ?? 1}%</p>
-              <h3 className="mt-2 text-base font-semibold text-white">Pool Fee</h3>
-              <p className="mt-1 text-xs text-gray-500">Infrastructure maintenance &amp; development</p>
-              {data?.fee.pool_fee_wallet && <p className="mt-2 text-[10px] font-mono text-gray-600 break-all">{data.fee.pool_fee_wallet}</p>}
-            </div>
-          </div>
-        </motion.section>
+        <PoolRewardDonut
+          cs={cs}
+          minerShare={data?.fee.miner_share ?? 89}
+          humanitarianTithe={data?.fee.humanitarian_tithe ?? 5}
+          issobellaFund={data?.fee.issobella_fund ?? 5}
+          poolFee={data?.fee.pool_fee ?? 1}
+        />
 
         {/* ═══════ MINERS TABLE ═══════ */}
         <motion.section
@@ -956,6 +941,9 @@ export default function PoolDashboard() {
             </div>
           </div>
         </motion.section>
+
+        {/* ═══════ LIVE POOL FEED ═══════ */}
+        <PoolEventsFeed cs={cs} />
 
         {/* ═══════ START MINING GUIDE ═══════ */}
         <motion.section
@@ -1251,18 +1239,30 @@ export default function PoolDashboard() {
           {lastUpdate && <> · {cs ? 'Poslední aktualizace' : 'Last update'}: {lastUpdate.toLocaleTimeString(cs ? 'cs-CZ' : 'en-US')}</>}
         </p>
       </div>
+
+      <LiveToast currentHeight={blockHeight} />
     </div>
   );
 }
 
 /* ═══════════════════════ STAT CARD ═══════════════════════ */
-function StatCard({ icon, color, bg, label, value, sub }: { icon: React.ReactNode; color: string; bg: string; label: string; value: string; sub?: string }) {
+function StatCard({ icon, color, bg, label, value, sub, tip }: { icon: React.ReactNode; color: string; bg: string; label: string; value: string; sub?: string; tip?: string }) {
   return (
-    <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4">
+    <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-4 hover:border-white/[0.12] transition-colors">
       <div className={`flex items-center justify-center h-8 w-8 rounded-xl ${bg} mb-3 [&>svg]:h-4 [&>svg]:w-4 ${color}`}>
         {icon}
       </div>
-      <p className="text-[11px] text-gray-500 uppercase tracking-wider">{label}</p>
+      <div className="flex items-center gap-1 mb-0.5">
+        <p className="text-[11px] text-gray-500 uppercase tracking-wider">{label}</p>
+        {tip && (
+          <div className="relative group/tooltip">
+            <HelpCircle className="h-3 w-3 text-gray-600 cursor-help" />
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover/tooltip:block w-44 rounded-lg border border-white/10 bg-black/90 backdrop-blur-xl px-2 py-1.5 text-[10px] text-gray-300 shadow-xl z-20">
+              {tip}
+            </div>
+          </div>
+        )}
+      </div>
       <p className="text-lg font-bold text-white font-mono mt-0.5">{value}</p>
       {sub && <p className="text-[11px] text-gray-500 mt-0.5">{sub}</p>}
     </div>
