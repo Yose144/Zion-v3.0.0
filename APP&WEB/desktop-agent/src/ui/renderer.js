@@ -611,7 +611,7 @@ function _getViewEls() {
 // Lazy-init dispatch table — avoids long if-else chain
 const _viewInitFns = {
   node:      () => initNodeView(),
-  about:     () => { initUpdateUI(); initSecurityUI(); },
+  about:     () => { initUpdateUI(); initMinerUpdateUI(); initSecurityUI(); },
   bridge:    () => initBridgeView(),
   cli:       () => initCliView(),
 };
@@ -3136,6 +3136,135 @@ function _showInstallBtn() {
   if (progressWrap) progressWrap.style.display = 'none';
 }
 
+// ── Miner Update UI ────────────────────────────────────────────────────────
+let _minerUpdateState = { checking: false, available: false, downloaded: false, asset: null };
+
+function initMinerUpdateUI() {
+  const checkBtn = document.getElementById('miner-update-check-btn');
+  const allBtn   = document.getElementById('update-all-btn');
+
+  if (checkBtn && !checkBtn._bound) {
+    checkBtn._bound = true;
+    checkBtn.addEventListener('click', async () => {
+      if (_minerUpdateState.checking) return;
+      _minerUpdateState.checking = true;
+      _setMinerUpdateStatus('Checking...', 'Contacting GitHub...', '#93c5fd');
+      checkBtn.disabled = true;
+      checkBtn.textContent = 'Checking...';
+      try {
+        const result = await window.electronAPI.checkMinerUpdate();
+        if (!result?.success) {
+          _setMinerUpdateStatus('Error', result?.error || 'Check failed', '#f87171');
+        } else if (result.updateAvailable) {
+          _minerUpdateState.available = true;
+          _minerUpdateState.asset = result;
+          _setMinerUpdateStatus('Update Available!', `${result.assetName} ready`, '#6ee7b7');
+          document.getElementById('miner-update-version').textContent = result.latestVersion;
+          document.getElementById('miner-update-detail').textContent = `${(result.assetSize/1024/1024).toFixed(1)} MB`;
+          checkBtn.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-refresh"></use></svg> Download Miner';
+          checkBtn.onclick = async () => { await _downloadMinerUpdate(result); };
+          checkBtn.disabled = false;
+          // Also reveal "Update All" if app update is also available
+          if (_updateState.available) {
+            const allBtn = document.getElementById('update-all-btn');
+            if (allBtn) { allBtn.style.display = ''; allBtn.onclick = () => _updateAll(); }
+          }
+        } else {
+          _setMinerUpdateStatus('Up to Date', `v${result.latestVersion} is latest`, '#6ee7b7');
+          document.getElementById('miner-update-version').textContent = result.latestVersion;
+        }
+      } catch (err) {
+        _setMinerUpdateStatus('Error', err?.message || 'Check failed', '#f87171');
+      } finally {
+        _minerUpdateState.checking = false;
+        if (!checkBtn.onclick) {
+          checkBtn.disabled = false;
+          checkBtn.innerHTML = '<svg class="icon" aria-hidden="true"><use href="#i-spark"></use></svg> Check Miner Update';
+        }
+      }
+    });
+  }
+
+  // Listen for miner download progress from main
+  if (!window._minerUpdateListenersBound) {
+    window._minerUpdateListenersBound = true;
+    window.electronAPI.onMinerUpdateProgress?.((progress) => {
+      _showMinerProgress(progress);
+    });
+  }
+}
+
+async function _downloadMinerUpdate(result) {
+  const checkBtn = document.getElementById('miner-update-check-btn');
+  if (checkBtn) { checkBtn.disabled = true; checkBtn.textContent = 'Downloading...'; }
+  _setMinerUpdateStatus('Downloading...', result.assetName, '#93c5fd');
+  try {
+    // Need release assets list to get URL
+    const release = await window.electronAPI.checkForUpdates(); // re-uses _checkGitHubRelease via fallback
+    if (!release?.success) {
+      _setMinerUpdateStatus('Error', 'Could not get release assets', '#f87171');
+      return;
+    }
+    const asset = release.assets?.find(a => a.name === result.assetName);
+    if (!asset) {
+      _setMinerUpdateStatus('Error', 'Asset not found in release', '#f87171');
+      return;
+    }
+    const dl = await window.electronAPI.downloadMinerUpdate({ url: asset.url, size: asset.size });
+    if (dl?.success) {
+      _minerUpdateState.downloaded = true;
+      _setMinerUpdateStatus('Ready', `Updated to ${result.latestVersion}`, '#6ee7b7');
+      if (checkBtn) checkBtn.textContent = 'Updated';
+    } else {
+      _setMinerUpdateStatus('Download Failed', dl?.error || 'Unknown error', '#f87171');
+      if (checkBtn) { checkBtn.disabled = false; checkBtn.textContent = 'Retry'; }
+    }
+  } catch (err) {
+    _setMinerUpdateStatus('Download Failed', err?.message || 'Unknown error', '#f87171');
+    if (checkBtn) { checkBtn.disabled = false; checkBtn.textContent = 'Retry'; }
+  }
+}
+
+async function _updateAll() {
+  const allBtn = document.getElementById('update-all-btn');
+  if (allBtn) { allBtn.disabled = true; allBtn.textContent = 'Updating...'; }
+  // Download miner first
+  if (_minerUpdateState.available && !_minerUpdateState.downloaded) {
+    await _downloadMinerUpdate(_minerUpdateState.asset);
+  }
+  // Then install app update
+  if (_updateState.available && _updateState.downloaded) {
+    await window.electronAPI.installUpdate();
+  } else if (_updateState.available) {
+    await window.electronAPI.downloadUpdate();
+    await window.electronAPI.installUpdate();
+  }
+}
+
+function _setMinerUpdateStatus(label, sub, color) {
+  const el = document.getElementById('miner-update-status-label');
+  const subEl = document.getElementById('miner-update-status-sub');
+  if (el) { el.textContent = label; el.style.color = color || ''; }
+  if (subEl) subEl.textContent = sub || '';
+}
+
+function _showMinerProgress(progress) {
+  const wrap = document.getElementById('miner-update-progress-wrap');
+  const fill = document.getElementById('miner-update-progress-fill');
+  const pct = document.getElementById('miner-update-progress-pct');
+  const detail = document.getElementById('miner-update-progress-detail');
+  const title = document.getElementById('miner-update-progress-title');
+  if (wrap) wrap.style.display = '';
+  if (fill) fill.style.width = progress.percent + '%';
+  if (pct) pct.textContent = progress.percent + '%';
+  if (title) title.textContent = 'Downloading miner binary...';
+  if (detail) {
+    const mb = (n) => (n / 1024 / 1024).toFixed(1);
+    detail.textContent = `${mb(progress.transferred)} / ${mb(progress.total)} MB`;
+  }
+}
+
+// ── App changelog ──────────────────────────────────────────────────────────
 function _showChangelog(notes, version) {
   const wrap = document.getElementById('update-changelog');
   const body = document.getElementById('update-changelog-body');
