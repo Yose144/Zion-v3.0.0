@@ -2169,6 +2169,7 @@ function startMiningV3(config, v3Path) {
     ZION_MINER_METRICS_BIND: '127.0.0.1:9116',
     ZION_NONCE_BASE: String((Date.now() >>> 0) & 0x1fffffff),
     ZION_ENABLE_STREAM_SWITCH: '0',
+    ZION_INTERACTIVE: 'false',
   };
   if (wantsGpu) {
     // ── GPU detection & backend auto-select ──
@@ -5230,6 +5231,7 @@ ipcMain.handle('cli-mine-start', async (_event, { pool, worker, wallet, threads,
   if (wallet) { process.env.ZION_MINER_ID = wallet; }
   if (threads) { process.env.ZION_THREADS = String(threads); }
   if (gpuBackend) { process.env.ZION_GPU_BACKEND = gpuBackend; }
+  process.env.ZION_INTERACTIVE = 'false';
   return runZionCli(args);
 });
 
