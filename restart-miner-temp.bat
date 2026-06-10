@@ -18,9 +18,8 @@ set ZION_MINER_ALGORITHM=deeksha_lite_fire
 
 set ZION_GPU_BACKEND=opencl
 set ZION_MINER_THREADS=1
-set ZION_GPU_WORK_SIZE=16384
-set ZION_OCL_WORK_CAP=16384
-set ZION_OCL_VRAM_PCT=35
+:: RDNA1 auto-tune (gfx1010): work_size=8192, vram_pct=85 -- NEPREPISOVAT
+:: Stare hodnoty (16384/35%) snizovaly hashrate 3x, odstranovano 2026-06-10
 set ZION_NONCE_COUNT_GPU=262144
 
 V3\target\release\zion-miner.exe > logs\miner-restart.log 2>&1
