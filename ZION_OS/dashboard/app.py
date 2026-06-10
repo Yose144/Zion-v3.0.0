@@ -2610,6 +2610,21 @@ def build_checklist(status: dict) -> dict:
     # Topology-aware checklist
     topology = status.get("topology", TOPOLOGY)
     
+    # Edge backup check (runs on dashboard host which may be Edge or local)
+    edge_backup_ok = False
+    try:
+        # Check if Edge backup timer is active and recent backups exist
+        proc = subprocess.run(
+            ["systemctl", "is-active", "zion-edge-backup.timer"],
+            capture_output=True, text=True, timeout=3
+        )
+        timer_active = proc.stdout.strip() == "active"
+        backup_dir = Path("/root/zion-backups")
+        has_backups = backup_dir.exists() and any(backup_dir.glob("zion-edge-*.tar.gz"))
+        edge_backup_ok = timer_active and has_backups
+    except Exception:
+        pass
+
     if topology == "edge-primary":
         checks = [
             {"id": "keys",       "label": "Offline key generation complete",          "ok": True},
@@ -2623,6 +2638,7 @@ def build_checklist(status: dict) -> dict:
             {"id": "chain",      "label": "Chain height advancing",                   "ok": status["edge_node"]["chain_height"] is not None and status["edge_node"]["chain_height"] > 0},
             {"id": "payout",     "label": "Payout mechanism ready (fee split active)", "ok": status["pool"]["running"] and status["pool"]["fee_split"] == "89/5/5/0"},
             {"id": "fee_split",  "label": "Fee split 89/5/5/0 (burn model) active",    "ok": status["pool"]["fee_split"] == "89/5/5/0"},
+            {"id": "edge-backup","label": "Edge database auto-backup active",          "ok": edge_backup_ok},
             {"id": "logs",       "label": "Log directory writable",                   "ok": LOG_DIR.exists()},
         ]
     else:  # local-dev

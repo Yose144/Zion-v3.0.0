@@ -687,6 +687,41 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
       </div>
     </div>
 
+    <!-- Edge Database Backup -->
+    <div class="zion-panel p-5 mb-4">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-base font-bold flex items-center gap-2">💾 Edge Database Backup</h2>
+        <span id="edge-backup-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400">Checking…</span>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-black/30 border border-white/5 rounded-lg p-3">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-sm font-bold text-emerald-400">Auto-Backup Timer</span>
+            <span id="edge-backup-timer-dot" class="w-2 h-2 rounded-full bg-gray-600"></span>
+          </div>
+          <div class="text-xs text-gray-400 mb-1">Schedule: <span id="edge-backup-schedule" class="text-white font-mono">Every 15 min</span></div>
+          <div class="text-xs text-gray-400 mb-1">Status: <span id="edge-backup-timer-status" class="text-white font-mono">—</span></div>
+          <div class="text-xs text-gray-400">Latest: <span id="edge-backup-latest" class="text-emerald-300 font-mono">—</span></div>
+        </div>
+        <div class="bg-black/30 border border-white/5 rounded-lg p-3">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-sm font-bold text-amber-400">Backup Files</span>
+          </div>
+          <div class="text-xs text-gray-400 mb-1">Count: <span id="edge-backup-count" class="text-white font-mono">—</span></div>
+          <div class="text-xs text-gray-400 mb-1">Total size: <span id="edge-backup-total-size" class="text-white font-mono">—</span></div>
+          <div class="text-xs text-gray-400">Retention: <span class="text-white font-mono">7 days</span></div>
+        </div>
+        <div class="bg-black/30 border border-white/5 rounded-lg p-3 flex flex-col justify-between">
+          <div>
+            <div class="text-sm font-bold text-zion-gold mb-2">Manual Trigger</div>
+            <div class="text-xs text-gray-400 mb-2">Create an on-demand backup of all Edge databases & state now.</div>
+          </div>
+          <button onclick="triggerEdgeBackup()" id="btn-trigger-edge-backup" class="zion-button-primary text-xs w-full py-2">🔄 Trigger Backup Now</button>
+        </div>
+      </div>
+      <div id="edge-backup-log" class="mt-3 text-xs font-mono text-gray-300 max-h-24 overflow-y-auto hidden bg-black/40 rounded-lg p-2"></div>
+    </div>
+
     <!-- NCL + AI Status Widget -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <div class="zion-panel p-5">
