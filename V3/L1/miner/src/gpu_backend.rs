@@ -278,48 +278,64 @@ pub struct GpuScanOutcome {
 }
 
 /// Scan a job using a GPU backend, returning the first solution.
-/// Tracks candidate-filter statistics for performance diagnostics.
-/// The GPU backend is already selected based on algorithm in create_gpu_backend.
+///
+/// GPU and CPU paths are independent:
+/// - GPU kernel finds a nonce where gpu_hash meets target → gpu_hash is primary.
+/// - CPU computes cpu_hash for audit/diagnostics only; it does NOT gate submission.
+/// - The solution always carries gpu_hash so the pool receives the same hash the
+///   GPU kernel produced.  Pool re-computes the hash server-side (cpu path) and
+///   compares — if GPU and CPU kernels are in sync this will agree.
 pub fn gpu_scan_job(gpu: &mut dyn GpuMiner, job: MiningJob, algorithm: &str) -> GpuScanOutcome {
     match gpu.mine_batch(job.header, job.target, job.start_nonce, job.nonce_count) {
         Ok(result) => {
             let nonces_tested = result.nonces_tested;
-            if let Some((nonce, hash)) = result.solutions.first() {
+            if let Some((nonce, gpu_hash)) = result.solutions.first() {
                 let candidate = zion_core::BlockCandidate {
                     header: job.header,
                     nonce: *nonce,
                     height: job.height,
                 };
-                let verified_hash = candidate.hash_with_algorithm(algorithm);
-                let is_mismatch = verified_hash != *hash;
-                let is_above_target = !job.target.allows(&verified_hash);
+
+                // ── CPU audit hash (independent path, diagnostic only) ────
+                let cpu_hash = candidate.hash_with_algorithm(algorithm);
+                let is_mismatch = cpu_hash != *gpu_hash;
+                let cpu_above_target = !job.target.allows(&cpu_hash);
+                let gpu_above_target = !job.target.allows(gpu_hash);
+
+                use std::sync::atomic::{AtomicU64, Ordering};
 
                 if is_mismatch && !gpu.suppress_mismatch_warnings() {
-                    // Compact per-mismatch line (always, not gated on VERBOSE)
-                    use std::sync::atomic::{AtomicU64, Ordering};
                     static MISMATCH_COUNT: AtomicU64 = AtomicU64::new(0);
                     let count = MISMATCH_COUNT.fetch_add(1, Ordering::Relaxed) + 1;
-                    // Print first 5 mismatches and then every 50th
                     if count <= 5 || count % 50 == 0 {
-                        let hex = |b: &[u8]| -> String {
+                        let fmthex = |b: &[u8]| -> String {
                             b.iter().map(|x| format!("{:02x}", x)).collect()
                         };
                         println!(
-                            "GPU_MISMATCH #{} nonce={} h={} gpu={} cpu={}",
+                            "GPU_CPU_MISMATCH #{} nonce={} h={} algo={} \
+                             gpu_hash={} cpu_hash={} \
+                             gpu_meets_target={} cpu_meets_target={}",
                             count,
                             nonce,
                             job.height,
-                            hex(&hash[..8]),
-                            hex(&verified_hash[..8]),
+                            algorithm,
+                            fmthex(&gpu_hash[..8]),
+                            fmthex(&cpu_hash[..8]),
+                            !gpu_above_target,
+                            !cpu_above_target,
                         );
                     }
                 }
 
-                if is_above_target {
-                    if crate::VERBOSE.load(std::sync::atomic::Ordering::Relaxed) {
-                        eprintln!(
-                            "gpu_candidate_rejected_locally nonce={} reason=cpu_hash_above_target",
-                            nonce,
+                if gpu_above_target {
+                    // GPU hash itself does not meet target — kernel false-positive.
+                    // Log it and skip; this should not normally happen.
+                    static FALSE_POS: AtomicU64 = AtomicU64::new(0);
+                    let count = FALSE_POS.fetch_add(1, Ordering::Relaxed) + 1;
+                    if count <= 5 || count % 50 == 0 {
+                        println!(
+                            "gpu_false_positive #{} nonce={} h={} algo={} gpu_above_target=true",
+                            count, nonce, job.height, algorithm,
                         );
                     }
                     return GpuScanOutcome {
@@ -332,11 +348,13 @@ pub fn gpu_scan_job(gpu: &mut dyn GpuMiner, job: MiningJob, algorithm: &str) -> 
                     };
                 }
 
+                // GPU hash meets target → submit gpu_hash as the canonical hash.
+                // CPU path is independent: pool will re-verify on its own side.
                 GpuScanOutcome {
                     solution: Some(MiningSolution {
                         job_id: job.job_id,
                         candidate,
-                        hash: verified_hash,
+                        hash: *gpu_hash,
                     }),
                     nonces_tested,
                     candidates_found: 1,
