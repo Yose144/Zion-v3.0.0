@@ -4821,7 +4821,6 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
     <button onclick="switchTab('metrics')" id="tab-metrics" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent hover:text-amber-400 transition">📊 Metrics</button>
     <button onclick="switchTab('logs')" id="tab-logs" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent hover:text-amber-400 transition">📜 Logs</button>
     <button onclick="switchTab('hiran')" id="tab-hiran" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent hover:text-amber-400 transition">🤖 Hiran AI</button>
-    <button onclick="switchTab('payout')" id="tab-payout" class="px-4 py-2 text-sm font-medium border-b-2 border-transparent hover:text-amber-400 transition">💰 Payout</button>
   </div>
 
   <!-- Progress -->
@@ -4926,26 +4925,13 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
       </div>
     </div>
 
-    <!-- Mini Hashrate Sparkline + Payouts -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
-        <div class="flex items-center justify-between mb-2">
-          <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300">📈 Hashrate Trend</h2>
-          <span class="text-xs text-gray-500" id="hashrate-summary">—</span>
-        </div>
-        <canvas id="mini-hashrate" height="80"></canvas>
+    <!-- Mini Hashrate Sparkline -->
+    <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
+      <div class="flex items-center justify-between mb-2">
+        <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300">📈 Hashrate Trend</h2>
+        <span class="text-xs text-gray-500" id="hashrate-summary">—</span>
       </div>
-      <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
-        <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300 mb-3">💰 Payouts &amp; Distribution</h2>
-        <div class="space-y-1.5">
-          <div class="flex justify-between text-xs"><span class="text-gray-400">Pool Wallet</span><span id="payout-wallet" class="font-mono text-white truncate max-w-[260px]">—</span></div>
-          <div class="flex justify-between text-xs"><span class="text-gray-400">Payout Enabled</span><span id="payout-enabled" class="font-bold">—</span></div>
-          <div class="flex justify-between text-xs"><span class="text-gray-400">Fee Split</span><span id="payout-split" class="text-amber-400 font-mono">—</span></div>
-          <div class="flex justify-between text-xs"><span class="text-gray-400">Blocks Found</span><span id="payout-blocks" class="text-emerald-400 font-bold">—</span></div>
-          <div class="flex justify-between text-xs"><span class="text-gray-400">Nonce Window</span><span id="payout-nonce" class="text-white">—</span></div>
-        </div>
-        <div id="payout-recent" class="mt-3 space-y-1 max-h-24 overflow-y-auto log-tail text-gray-400 border-t border-zion-700 pt-2"></div>
-      </div>
+      <canvas id="mini-hashrate" height="80"></canvas>
     </div>
   </div>
 
@@ -5553,89 +5539,7 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
 
   </div>
 
-  <!-- TAB: Payout -->
-  <div id="pane-payout" class="hidden space-y-4">
-    <!-- Payout Overview Header -->
-    <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
-      <div class="flex items-center justify-between mb-3">
-        <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300 flex items-center gap-2">💰 Pool Payout System</h2>
-        <button onclick="refreshPayout()" class="text-xs px-2 py-1 bg-zion-700 hover:bg-zion-600 rounded transition">🔄 Refresh</button>
-      </div>
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-3" id="payout-summary">
-        <div class="bg-zion-900 rounded-lg p-3 border border-zion-700">
-          <div class="text-xs text-gray-400 mb-1">Pool Wallet</div>
-          <div class="text-sm font-mono text-amber-400 truncate" id="payout-wallet">—</div>
-          <div class="text-xs text-gray-500 mt-1" id="payout-wallet-balance">Balance: —</div>
-        </div>
-        <div class="bg-zion-900 rounded-lg p-3 border border-zion-700">
-          <div class="text-xs text-gray-400 mb-1">Payout Status</div>
-          <div class="text-sm font-bold text-emerald-400" id="payout-status">—</div>
-          <div class="text-xs text-gray-500 mt-1" id="payout-fee-split">Fee split: —</div>
-        </div>
-        <div class="bg-zion-900 rounded-lg p-3 border border-zion-700">
-          <div class="text-xs text-gray-400 mb-1">Blocks Found</div>
-          <div class="text-2xl font-bold text-amber-400" id="payout-blocks">—</div>
-          <div class="text-xs text-gray-500 mt-1" id="payout-last-block">Last: —</div>
-        </div>
-        <div class="bg-zion-900 rounded-lg p-3 border border-zion-700">
-          <div class="text-xs text-gray-400 mb-1">Last Payout</div>
-          <div class="text-sm font-bold text-emerald-400" id="payout-last">—</div>
-          <div class="text-xs text-gray-500 mt-1" id="payout-last-tx">TX: —</div>
-        </div>
-      </div>
-    </div>
 
-    <!-- Fee Split Recipients -->
-    <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
-      <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300 mb-3">📋 Fee Split Recipients (89/5/5/0 burn model)</h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3" id="payout-recipients">
-        <div class="bg-zion-900 rounded-lg p-3 border border-zion-700">
-          <div class="text-xs text-gray-400 mb-1">⛏️ Miner Share (89%)</div>
-          <div class="text-sm font-mono text-amber-400 truncate" id="payout-miner-wallet">—</div>
-          <div class="text-xs text-gray-500 mt-1">PPLNS redistribution</div>
-        </div>
-        <div class="bg-zion-900 rounded-lg p-3 border border-zion-700">
-          <div class="text-xs text-gray-400 mb-1">🌍 Humanitarian (5%)</div>
-          <div class="text-sm font-mono text-emerald-400 truncate" id="payout-humanitarian-wallet">—</div>
-          <div class="text-xs text-gray-500 mt-1">Children Future Fund</div>
-        </div>
-        <div class="bg-zion-900 rounded-lg p-3 border border-zion-700">
-          <div class="text-xs text-gray-400 mb-1">🚀 Issobella (5%)</div>
-          <div class="text-sm font-mono text-purple-400 truncate" id="payout-issobella-wallet">—</div>
-          <div class="text-xs text-gray-500 mt-1">L5/L6 Space Layer</div>
-        </div>
-        <div class="bg-zion-900 rounded-lg p-3 border border-zion-700">
-          <div class="text-xs text-gray-400 mb-1">⚡ Pool Fee (1%)</div>
-          <div class="text-sm font-mono text-blue-400 truncate" id="payout-pool-fee-wallet">—</div>
-          <div class="text-xs text-gray-500 mt-1">Operator fee</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Recent Payout Log -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
-        <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300 mb-2">📝 Recent Miner Payouts</h2>
-        <div id="payout-miner-log" class="space-y-2 text-xs text-gray-300 max-h-64 overflow-y-auto">
-          <div class="text-gray-500 italic">Loading...</div>
-        </div>
-      </div>
-      <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
-        <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300 mb-2">📝 Recent Fee Payouts</h2>
-        <div id="payout-fee-log" class="space-y-2 text-xs text-gray-300 max-h-64 overflow-y-auto">
-          <div class="text-gray-500 italic">Loading...</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Payout Error Log -->
-    <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
-      <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300 mb-2">⚠️ Payout Errors (if any)</h2>
-      <div id="payout-error-log" class="space-y-2 text-xs text-gray-300 max-h-48 overflow-y-auto">
-        <div class="text-gray-500 italic">No errors detected</div>
-      </div>
-    </div>
-  </div>
 
   <footer class="text-center text-xs text-gray-600 pt-6 pb-4 border-t border-zion-700 mt-6">
     ZION V3 Dashboard 2.0 — Zero-dependency Python stdlib server — Auto-refresh 3s
@@ -5649,7 +5553,7 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
 <script>
 let autoRefresh=true,refreshTimer=null,currentTab='overview';
 let charts={};
-const TABS=['overview','controls','charts','events','env','launch-day','wizard','services','database','metrics','logs','hiran','payout'];
+const TABS=['overview','controls','charts','events','env','launch-day','wizard','services','database','metrics','logs','hiran'];
 
 // ── Tab switching ──
 function switchTab(name){
@@ -5670,7 +5574,6 @@ function switchTab(name){
   if(name==='metrics')renderMetricsButtons();
   if(name==='overview')loadMainnetStatus();
   if(name==='hiran'){loadHiranHealth();loadAgentList();loadOrchestratorStats();loadNclStatus();}
-  if(name==='payout')refreshPayout();
 }
 
 // ── Payout System ──
@@ -6275,7 +6178,6 @@ async function refreshAll(){
     updateServiceCards(s);
     updateAlerts(al.alerts);
     updateChecklist(cl.checks);
-    updatePayouts(s.pool);
     updateMiniHashrate();
     loadMainnetStatus();
     if(currentTab==='charts')renderCharts();
@@ -6342,19 +6244,7 @@ function updateServiceCards(s){
   }
 }
 
-function updatePayouts(p){
-  document.getElementById('payout-wallet').textContent=p.pool_wallet??'—';
-  const en=document.getElementById('payout-enabled');
-  en.textContent=p.payout_enabled===true?'YES':(p.payout_enabled===false?'NO':'—');
-  en.className=p.payout_enabled?'font-bold text-emerald-400':'font-bold text-red-400';
-  document.getElementById('payout-blocks').textContent=p.blocks_found??'0';
-  document.getElementById('payout-nonce').textContent=p.nonce_count??'—';
-  document.getElementById('payout-split').textContent=p.fee_split??'—';
-  const pr=document.getElementById('payout-recent');
-  pr.innerHTML=(p.recent_payouts&&p.recent_payouts.length)
-    ?p.recent_payouts.map(l=>'<div class="truncate text-[10px]">'+escapeHtml(l)+'</div>').join('')
-    :'<div class="text-gray-600 italic text-[10px]">No payout events yet</div>';
-}
+
 
 function updateAlerts(alerts){
   const cont=document.getElementById('alerts');
