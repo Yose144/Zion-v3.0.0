@@ -25,6 +25,7 @@ SERVICES=(
   zion-edge-atomic-swap
   zion-edge-warp
   zion-edge-watchdog
+  zion-edge-backup
 )
 
 echo "=== ZION Edge Multi-Node Setup ==="
@@ -91,7 +92,7 @@ fi
 # ── Create data directories ──
 mkdir -p "$REPO_ROOT/data"
 
-# ── Install systemd services ──
+# ── Install systemd services + timers ──
 echo "[INFO] Installing systemd services..."
 for svc in "${SERVICES[@]}"; do
     src="$REPO_ROOT/edge-deploy/systemd/${svc}.service"
@@ -100,6 +101,12 @@ for svc in "${SERVICES[@]}"; do
         echo "  + ${svc}.service"
     else
         echo "  - ${svc}.service (missing, skipped)"
+    fi
+    # Also copy timer if it exists (for backup, watchdog, etc.)
+    timer_src="$REPO_ROOT/edge-deploy/systemd/${svc}.timer"
+    if [[ -f "$timer_src" ]]; then
+        cp "$timer_src" "$SERVICE_DIR/"
+        echo "  + ${svc}.timer"
     fi
 done
 
@@ -111,6 +118,10 @@ systemctl daemon-reload
 echo "[INFO] Enabling auto-start on boot..."
 for svc in "${SERVICES[@]}"; do
     systemctl enable "${svc}.service" 2>/dev/null || echo "  ! ${svc}.service (not found)"
+    # Enable timer if it exists
+    if [[ -f "$SERVICE_DIR/${svc}.timer" ]]; then
+        systemctl enable "${svc}.timer" 2>/dev/null || echo "  ! ${svc}.timer (not found)"
+    fi
 done
 
 # ── (Optional) Logrotate for journal ──
