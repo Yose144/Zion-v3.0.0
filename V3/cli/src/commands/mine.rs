@@ -137,7 +137,16 @@ pub async fn run(cfg: &Config, cmd: MineCmd) -> Result<()> {
             if let Some(cli_backend) = &start.backend_cli_gpu_arg {
                 cmd_proc.args(["--gpu", cli_backend]);
             }
-            cmd_proc.status()?;
+
+            let interactive = std::env::var("ZION_INTERACTIVE")
+                .map(|v| v == "true" || v == "1")
+                .unwrap_or(true);
+            if interactive {
+                cmd_proc.status()?;
+            } else {
+                let child = cmd_proc.spawn()?;
+                ui::print_info(&format!("Miner started in background (PID {})", child.id()));
+            }
             Ok(())
         }
 
