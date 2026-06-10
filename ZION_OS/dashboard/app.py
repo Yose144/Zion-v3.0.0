@@ -2207,8 +2207,12 @@ def _build_status_edge_primary() -> dict:
         return ("edge", None)
 
     def _edge_rpc_call_node2():
-        # Edge Node 2 follower — try Tailscale IP (works if dashboard runs on Edge)
-        r = rpc_call("100.76.16.108", 8446, "getChainInfo", {}, timeout=2.5)
+        # Edge Node 2 follower — local bind 127.0.0.1:8446 (same host as dashboard on Edge)
+        r = rpc_call("127.0.0.1", 8446, "getChainInfo", {}, timeout=2.5)
+        if r and not r.get("_rpc_error"):
+            return ("edge2", r)
+        # Fallback via Tailscale (if somehow bound to 0.0.0.0)
+        r = rpc_call("100.76.16.108", 8446, "getChainInfo", {}, timeout=1.5)
         if r and not r.get("_rpc_error"):
             return ("edge2", r)
         return ("edge2", None)
@@ -2634,8 +2638,8 @@ def build_checklist(status: dict) -> dict:
             {"id": "node1",      "label": "Local Backup Node running & synced",       "ok": status["node1"]["running"] and status["node1"]["p2p_bind"] is not None},
             {"id": "pool",       "label": "Edge Pool running & accepting miners",     "ok": status["pool"]["running"] and status["pool"]["active_sessions"] is not None},
             {"id": "pool-edge",  "label": "Edge Pool TCP reachable",                  "ok": status.get("pool_edge", {}).get("running", False)},
-            {"id": "miner",      "label": "GPU miner connected & hashing",            "ok": status["miner"]["running"] and status["miner"]["hashrate"] is not None},
             {"id": "chain",      "label": "Chain height advancing",                   "ok": status["edge_node"]["chain_height"] is not None and status["edge_node"]["chain_height"] > 0},
+            {"id": "l2-edge",    "label": "Edge L2 services (DAO + WARP + Bridge)", "ok": status.get("dao", {}).get("running", False) and status.get("warp", {}).get("running", False) and status.get("bridge", {}).get("running", False)},
             {"id": "payout",     "label": "Payout mechanism ready (fee split active)", "ok": status["pool"]["running"] and status["pool"]["fee_split"] == "89/5/5/0"},
             {"id": "fee_split",  "label": "Fee split 89/5/5/0 (burn model) active",    "ok": status["pool"]["fee_split"] == "89/5/5/0"},
             {"id": "edge-backup","label": "Edge database auto-backup active",          "ok": edge_backup_ok},
