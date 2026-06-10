@@ -4982,6 +4982,14 @@
             <svg class="tab-icon icon" aria-hidden="true"><use href="#i-terminal"></use></svg>
             <span>Arcade</span>
           </div>
+          <div class="section-tab" data-section="oasis-pong">
+            <svg class="tab-icon icon" aria-hidden="true">
+              <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" fill="none" stroke="currentColor" stroke-width="2"/>
+              <path d="M2 12h20" stroke="currentColor" stroke-width="1"/>
+            </svg>
+            <span>Pong</span>
+          </div>
         </div>
 
         <!-- ═══ SECTION: Overview ═══ -->
@@ -5223,6 +5231,40 @@
             <div class="actions-row panel-mt-20">
               <button class="btn btn-primary" id="oasis-arcade-pause">Pause</button>
               <button class="btn btn-ghost" id="oasis-arcade-reset">Reset</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ SECTION: Pong ═══ -->
+        <div id="oasis-pong" class="section-panel">
+          <div class="control-panel">
+            <h2 class="inline-heading">
+              <svg class="icon" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/>
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" fill="none" stroke="currentColor" stroke-width="2"/>
+                <path d="M2 12h20" stroke="currentColor" stroke-width="1"/>
+              </svg>
+              <span>Cosmic Pong</span>
+            </h2>
+            <p class="about-lead panel-mt-20">
+              <strong>Classic arcade reborn.</strong> Deflect the photon ball with your plasma paddle. First to 7 wins the cosmic rally. WASD / Arrow keys for left player; AI opponent adapts to your skill.
+            </p>
+            <div class="arcade-wrap panel-mt-20">
+              <canvas id="oasis-pong-canvas" width="500" height="300" class="arcade-canvas"></canvas>
+              <div class="arcade-overlay" id="oasis-pong-overlay">
+                <div class="arcade-title">COSMIC PONG</div>
+                <div class="arcade-sub">W / S or &uarr; / &darr; to move</div>
+                <button class="btn btn-accent arcade-start-btn" id="oasis-pong-start">Start Rally</button>
+              </div>
+            </div>
+            <div class="arcade-hud">
+              <div class="arcade-score">Player: <span id="oasis-pong-player">0</span></div>
+              <div class="arcade-high">AI: <span id="oasis-pong-ai">0</span></div>
+              <div class="arcade-level">Rallies: <span id="oasis-pong-rallies">0</span></div>
+            </div>
+            <div class="actions-row panel-mt-20">
+              <button class="btn btn-primary" id="oasis-pong-pause">Pause</button>
+              <button class="btn btn-ghost" id="oasis-pong-reset">Reset</button>
             </div>
           </div>
         </div>

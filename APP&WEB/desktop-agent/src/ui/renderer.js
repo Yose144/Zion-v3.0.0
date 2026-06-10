@@ -4713,6 +4713,8 @@ function initOasisView() {
 
   // ── Arcade: Consciousness Snake ───────────────────────────────────
   initConsciousnessSnake();
+  // ── Arcade: Cosmic Pong ────────────────────────────────────────
+  initCosmicPong();
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -4913,6 +4915,214 @@ function initConsciousnessSnake() {
     if (sub) sub.textContent = 'WASD or Arrows to move';
     const btn = overlay.querySelector('.arcade-start-btn');
     if (btn) btn.textContent = 'Insert Coin';
+  });
+
+  // initial draw
+  draw();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Cosmic Pong — Retro Canvas Arcade
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function initCosmicPong() {
+  const canvas = document.getElementById('oasis-pong-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const overlay = document.getElementById('oasis-pong-overlay');
+  const playerEl = document.getElementById('oasis-pong-player');
+  const aiEl = document.getElementById('oasis-pong-ai');
+  const ralliesEl = document.getElementById('oasis-pong-rallies');
+
+  const WIN_SCORE = 7;
+  const W = canvas.width;
+  const H = canvas.height;
+
+  let playerScore = 0;
+  let aiScore = 0;
+  let rallyCount = 0;
+  let running = false;
+  let paused = false;
+  let loopId = null;
+
+  const paddleW = 10;
+  const paddleH = 60;
+  const ballR = 6;
+
+  let p = { x: 20, y: H / 2 - paddleH / 2, vy: 0 };
+  let ai = { x: W - 20 - paddleW, y: H / 2 - paddleH / 2, vy: 0 };
+  let b = { x: W / 2, y: H / 2, vx: 4, vy: 3 };
+
+  let keys = {};
+
+  function resetBall(side) {
+    b.x = W / 2;
+    b.y = H / 2;
+    const speed = 4 + Math.min(rallyCount * 0.15, 3);
+    const angle = (Math.random() * Math.PI / 3) - Math.PI / 6; // -30 to 30 deg
+    const dir = side === 'player' ? -1 : 1;
+    b.vx = dir * speed * Math.cos(angle);
+    b.vy = speed * Math.sin(angle);
+  }
+
+  function resetGame() {
+    playerScore = 0;
+    aiScore = 0;
+    rallyCount = 0;
+    p.y = H / 2 - paddleH / 2;
+    ai.y = H / 2 - paddleH / 2;
+    resetBall('player');
+    playerEl.textContent = '0';
+    aiEl.textContent = '0';
+    ralliesEl.textContent = '0';
+  }
+
+  function draw() {
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+    ctx.fillRect(0, 0, W, H);
+
+    // center line
+    ctx.strokeStyle = 'rgba(148,163,184,0.25)';
+    ctx.setLineDash([8, 8]);
+    ctx.beginPath(); ctx.moveTo(W / 2, 0); ctx.lineTo(W / 2, H); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // paddles
+    ctx.fillStyle = 'rgba(110,231,183,0.9)';
+    ctx.shadowColor = '#6ee7b7';
+    ctx.shadowBlur = 10;
+    ctx.fillRect(p.x, p.y, paddleW, paddleH);
+    ctx.fillRect(ai.x, ai.y, paddleW, paddleH);
+
+    // ball
+    ctx.fillStyle = '#fbbf24';
+    ctx.shadowColor = '#fbbf24';
+    ctx.shadowBlur = 12;
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, ballR, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.shadowBlur = 0;
+  }
+
+  function update() {
+    // player input
+    const speed = 5;
+    if (keys['w'] || keys['arrowup']) p.y -= speed;
+    if (keys['s'] || keys['arrowdown']) p.y += speed;
+    p.y = Math.max(0, Math.min(H - paddleH, p.y));
+
+    // AI follows ball with slight delay and imperfection
+    const aiCenter = ai.y + paddleH / 2;
+    const diff = b.y - aiCenter;
+    const aiSpeed = 3.2 + (rallyCount * 0.05);
+    if (Math.abs(diff) > 6) {
+      ai.y += Math.sign(diff) * aiSpeed;
+    }
+    ai.y = Math.max(0, Math.min(H - paddleH, ai.y));
+
+    // move ball
+    b.x += b.vx;
+    b.y += b.vy;
+
+    // wall bounce
+    if (b.y - ballR < 0) { b.y = ballR; b.vy = Math.abs(b.vy); }
+    if (b.y + ballR > H) { b.y = H - ballR; b.vy = -Math.abs(b.vy); }
+
+    // paddle collision
+    // player
+    if (b.vx < 0 && b.x - ballR < p.x + paddleW && b.x + ballR > p.x && b.y > p.y && b.y < p.y + paddleH) {
+      b.x = p.x + paddleW + ballR;
+      b.vx = Math.abs(b.vx) * 1.05;
+      const hitPos = (b.y - (p.y + paddleH / 2)) / (paddleH / 2);
+      b.vy += hitPos * 3;
+      rallyCount++;
+      ralliesEl.textContent = String(rallyCount);
+    }
+    // ai
+    if (b.vx > 0 && b.x + ballR > ai.x && b.x - ballR < ai.x + paddleW && b.y > ai.y && b.y < ai.y + paddleH) {
+      b.x = ai.x - ballR;
+      b.vx = -Math.abs(b.vx) * 1.05;
+      const hitPos = (b.y - (ai.y + paddleH / 2)) / (paddleH / 2);
+      b.vy += hitPos * 3;
+      rallyCount++;
+      ralliesEl.textContent = String(rallyCount);
+    }
+
+    // scoring
+    if (b.x + ballR < 0) {
+      aiScore++;
+      aiEl.textContent = String(aiScore);
+      if (aiScore >= WIN_SCORE) { gameOver(false); return; }
+      resetBall('player');
+    }
+    if (b.x - ballR > W) {
+      playerScore++;
+      playerEl.textContent = String(playerScore);
+      if (playerScore >= WIN_SCORE) { gameOver(true); return; }
+      resetBall('ai');
+    }
+  }
+
+  function gameOver(playerWon) {
+    running = false;
+    if (loopId) clearTimeout(loopId);
+    overlay.style.display = 'flex';
+    const title = overlay.querySelector('.arcade-title');
+    if (title) title.textContent = playerWon ? 'VICTORY!' : 'DEFEATED';
+    const sub = overlay.querySelector('.arcade-sub');
+    if (sub) sub.textContent = `Final: ${playerScore} — ${aiScore}  |  Rallies: ${rallyCount}`;
+    const btn = overlay.querySelector('.arcade-start-btn');
+    if (btn) btn.textContent = 'Play Again';
+  }
+
+  function step() {
+    if (!running || paused) return;
+    update();
+    draw();
+    loopId = requestAnimationFrame(step);
+  }
+
+  function start() {
+    if (running) return;
+    running = true;
+    paused = false;
+    overlay.style.display = 'none';
+    if (playerScore >= WIN_SCORE || aiScore >= WIN_SCORE) {
+      resetGame();
+    }
+    step();
+  }
+
+  function togglePause() {
+    if (!running) return;
+    paused = !paused;
+    document.getElementById('oasis-pong-pause').textContent = paused ? 'Resume' : 'Pause';
+    if (!paused) step();
+  }
+
+  window.addEventListener('keydown', (e) => {
+    const key = e.key.toLowerCase();
+    keys[key] = true;
+    if (key === 'w' || key === 's' || key.startsWith('arrow')) e.preventDefault();
+    if (key === ' ') { e.preventDefault(); togglePause(); }
+  });
+  window.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
+
+  document.getElementById('oasis-pong-start')?.addEventListener('click', start);
+  document.getElementById('oasis-pong-pause')?.addEventListener('click', togglePause);
+  document.getElementById('oasis-pong-reset')?.addEventListener('click', () => {
+    running = false;
+    if (loopId) cancelAnimationFrame(loopId);
+    resetGame();
+    draw();
+    overlay.style.display = 'flex';
+    const title = overlay.querySelector('.arcade-title');
+    if (title) title.textContent = 'COSMIC PONG';
+    const sub = overlay.querySelector('.arcade-sub');
+    if (sub) sub.textContent = 'W / S or / to move';
+    const btn = overlay.querySelector('.arcade-start-btn');
+    if (btn) btn.textContent = 'Start Rally';
   });
 
   // initial draw
