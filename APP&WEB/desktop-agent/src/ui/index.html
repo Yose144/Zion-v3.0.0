@@ -3337,6 +3337,35 @@
     }
     .cli-line.error { color: #f87171; }
 
+    /* ═══ Bridge Readiness ═══ */
+    .bridge-readiness-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: 12px;
+      border: 1px solid;
+    }
+    .bridge-readiness-row.status-done {
+      border-color: rgba(16,185,129,.6);
+      background: rgba(16,185,129,.08);
+    }
+    .bridge-readiness-row.status-pending {
+      border-color: rgba(234,179,8,.6);
+      background: rgba(234,179,8,.08);
+    }
+    .bridge-readiness-icon {
+      font-size: 14px;
+      width: 20px;
+      text-align: center;
+    }
+    .bridge-readiness-label {
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .bridge-readiness-row.status-done .bridge-readiness-label { color: #6ee7b7; }
+    .bridge-readiness-row.status-pending .bridge-readiness-label { color: #fcd34d; }
+
     /* ═══ Algorithm Select ═══ */
     .algo-select {
       width: 100%;
@@ -3695,7 +3724,7 @@
       </div>
 
 
-      <!-- Bridge View (hidden by default) -->
+      <!-- Bridge View -->
       <div id="bridge-view" class="view-shell d-none">
         <div class="web29-page-header">
           <div class="web29-title-stack">
@@ -3705,55 +3734,79 @@
               <div class="web29-chip" id="bridge-status-chip"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-star"></use></svg>Base Mainnet</div>
             </div>
           </div>
-          <button class="btn btn-ghost" onclick="window.electronAPI.openExternal('https://zionterranova.com/bridge')">Open in Browser <svg class="icon icon-inline" aria-hidden="true"><use href="#i-link"></use></svg></button>
         </div>
 
-        <div class="web29-section">
-          <div class="web29-section-header">
-            <svg class="icon icon-inline" aria-hidden="true"><use href="#i-check"></use></svg>
-            <h3 class="web29-section-title">Readiness Checklist</h3>
-            <span class="web29-section-subtitle" id="bridge-readiness-count">0/8 done</span>
+        <div class="section-tabs" data-group="bridge">
+          <div class="section-tab active" data-section="bridge-status">
+            <span class="tab-dot"></span>
+            <span>Status</span>
           </div>
-          <div class="web29-grid cols-2" id="bridge-readiness-grid">
-            <!-- Populated by renderer -->
+          <div class="section-tab" data-section="bridge-contracts">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-link"></use></svg>
+            <span>Contracts</span>
+          </div>
+          <div class="section-tab" data-section="bridge-guide">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-info"></use></svg>
+            <span>Guide</span>
           </div>
         </div>
 
-        <div class="web29-section">
-          <div class="web29-section-header">
-            <svg class="icon icon-inline" aria-hidden="true"><use href="#i-link"></use></svg>
-            <h3 class="web29-section-title">Contract Addresses</h3>
-          </div>
-          <div class="web29-list" id="bridge-contracts-list">
-            <div class="web29-list-row">
-              <div class="web29-list-cell">
-                <span class="web29-label">wZION ERC-20</span>
-                <code class="web29-mono" id="bridge-wzion-addr">0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6</code>
-              </div>
-              <button class="btn btn-sm btn-ghost" onclick="copyToClipboard('0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6', 'bridge-wzion-copied')">Copy</button>
-              <span class="web29-badge hidden" id="bridge-wzion-copied">Copied!</span>
-            </div>
-            <div class="web29-list-row">
-              <div class="web29-list-cell">
-                <span class="web29-label">ZIONBridge</span>
-                <code class="web29-mono" id="bridge-addr">0xF4BF85443ad6c9b88f3a5314cC3Fb59C32Cedca1</code>
-              </div>
-              <button class="btn btn-sm btn-ghost" onclick="copyToClipboard('0xF4BF85443ad6c9b88f3a5314cC3Fb59C32Cedca1', 'bridge-copied')">Copy</button>
-              <span class="web29-badge hidden" id="bridge-copied">Copied!</span>
+        <div id="bridge-status" class="section-panel active">
+          <div class="control-panel">
+            <h2 class="panel-header-row">
+              <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-check"></use></svg> Readiness <span id="bridge-readiness-count" style="font-size:11px;color:rgba(255,255,255,0.35);margin-left:6px">0/8</span></span>
+            </h2>
+            <div class="stack-col panel-mt-20" id="bridge-readiness-grid">
+              <!-- Populated by renderer -->
             </div>
           </div>
         </div>
 
-        <div class="web29-section">
-          <div class="web29-section-header">
-            <svg class="icon icon-inline" aria-hidden="true"><use href="#i-info"></use></svg>
-            <h3 class="web29-section-title">How to Bridge</h3>
+        <div id="bridge-contracts" class="section-panel">
+          <div class="control-panel">
+            <h2 class="panel-header-row">
+              <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-link"></use></svg> Contracts</span>
+            </h2>
+            <div class="stack-col panel-mt-20">
+              <div class="form-group form-group-no-margin">
+                <label>wZION ERC-20</label>
+                <div class="inline-row">
+                  <input type="text" id="bridge-wzion-addr" value="0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6" readonly class="input-flex-mono" />
+                  <button class="btn btn-primary btn-sm" onclick="copyToClipboard('0x0c493763d107ab0ABb0aee1Ca3999292d8202bb6', 'bridge-wzion-copied')">Copy</button>
+                </div>
+                <span class="status-note hidden" id="bridge-wzion-copied">Copied!</span>
+              </div>
+              <div class="form-group">
+                <label>ZIONBridge</label>
+                <div class="inline-row">
+                  <input type="text" id="bridge-addr" value="0xF4BF85443ad6c9b88f3a5314cC3Fb59C32Cedca1" readonly class="input-flex-mono" />
+                  <button class="btn btn-primary btn-sm" onclick="copyToClipboard('0xF4BF85443ad6c9b88f3a5314cC3Fb59C32Cedca1', 'bridge-copied')">Copy</button>
+                </div>
+                <span class="status-note hidden" id="bridge-copied">Copied!</span>
+              </div>
+            </div>
           </div>
-          <div class="web29-card" style="border-left: 3px solid rgba(16,185,129,0.6);">
-            <p class="web29-text"><strong>L1 → Base:</strong> Send ZION to the bridge address with memo <code>BRIDGE:base:0xYourEvmAddress</code>. Minimum 100 ZION. Wait ~10 min for 60-block finality, then wZION is minted.</p>
-          </div>
-          <div class="web29-card" style="border-left: 3px solid rgba(249,115,22,0.6); margin-top: 12px;">
-            <p class="web29-text"><strong>Base → L1:</strong> Use the website burn widget or call <code>burn(amount, l1Recipient)</code> on wZION. Wait ~2 min for 64 EVM block confirmations, then ZION is unlocked on L1.</p>
+        </div>
+
+        <div id="bridge-guide" class="section-panel">
+          <div class="control-panel">
+            <h2 class="panel-header-row">
+              <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-info"></use></svg> How to Bridge</span>
+            </h2>
+            <div class="stack-col panel-mt-20">
+              <div class="control-panel panel-tight" style="border-left:3px solid rgba(16,185,129,0.6)">
+                <div class="stack-col" style="gap:4px">
+                  <span style="font-size:12px;color:rgba(255,255,255,0.5)">L1 &rarr; Base</span>
+                  <span style="font-size:13px;color:rgba(255,255,255,0.8)">Send ZION to the bridge address with memo <code style="background:rgba(0,0,0,0.3);padding:2px 6px;border-radius:6px;font-size:12px">BRIDGE:base:0xYourEvmAddress</code>. Minimum 100 ZION. Wait ~10 min for 60-block finality, then wZION is minted.</span>
+                </div>
+              </div>
+              <div class="control-panel panel-tight" style="border-left:3px solid rgba(249,115,22,0.6)">
+                <div class="stack-col" style="gap:4px">
+                  <span style="font-size:12px;color:rgba(255,255,255,0.5)">Base &rarr; L1</span>
+                  <span style="font-size:13px;color:rgba(255,255,255,0.8)">Use the website burn widget or call <code style="background:rgba(0,0,0,0.3);padding:2px 6px;border-radius:6px;font-size:12px">burn(amount, l1Recipient)</code> on wZION. Wait ~2 min for 64 EVM block confirmations, then ZION is unlocked on L1.</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

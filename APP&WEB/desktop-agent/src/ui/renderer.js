@@ -3294,16 +3294,14 @@ function initBridgeView() {
   ];
 
   const doneCount = items.filter(i => i.done).length;
-  if (countEl) countEl.textContent = `${doneCount}/${items.length} done`;
+  if (countEl) countEl.textContent = `${doneCount}/${items.length}`;
 
   grid.innerHTML = items.map(item => {
-    const color = item.done ? 'rgba(16,185,129,.6)' : 'rgba(234,179,8,.6)';
-    const bg = item.done ? 'rgba(16,185,129,.08)' : 'rgba(234,179,8,.08)';
-    const text = item.done ? '#6ee7b7' : '#fcd34d';
+    const cls = item.done ? 'status-done' : 'status-pending';
     const icon = item.done ? '✓' : '◐';
-    return `<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;border:1px solid ${color};background:${bg};">
-      <span style="font-size:14px;width:20px;text-align:center;">${icon}</span>
-      <span style="font-size:13px;color:${text};font-weight:500;">${escapeHtml(item.label)}</span>
+    return `<div class="bridge-readiness-row ${cls}">
+      <span class="bridge-readiness-icon">${icon}</span>
+      <span class="bridge-readiness-label">${escapeHtml(item.label)}</span>
     </div>`;
   }).join('');
 
