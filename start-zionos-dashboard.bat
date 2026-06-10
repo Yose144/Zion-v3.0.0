@@ -62,12 +62,11 @@ set ZION_PAYOUT_ADDRESS=zion1w523a76830x2t5m7f3j023w265e8g5c400a4790
 :: -- Algoritmus ----------------------------------------------------------------
 set ZION_MINER_ALGORITHM=deeksha_lite_fire
 
-:: -- GPU (OpenCL AMD RX 5700 XT) ----------------------------------------------
+:: -- GPU (OpenCL AMD RX 5700 XT = RDNA1 gfx1010) ------------------------------
+:: RDNA1 auto-tune: work_size=8192, local_ws=128, vram_pct=85
+:: NEPREPISOVAT ZION_OCL_WORK_CAP / ZION_OCL_VRAM_PCT -- stare hodnoty (16384/35%) zabijely hashrate
 set ZION_GPU_BACKEND=opencl
 set ZION_MINER_THREADS=1
-set ZION_GPU_WORK_SIZE=16384
-set ZION_OCL_WORK_CAP=16384
-set ZION_OCL_VRAM_PCT=35
 set ZION_NONCE_COUNT_GPU=262144
 
 cd /d "%REPO_ROOT%"
