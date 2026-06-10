@@ -1593,7 +1593,7 @@ impl HashrateWindow {
         self.samples.push_back((now, total_hashes));
         let cutoff = now.checked_sub(Duration::from_secs(self.window_secs.saturating_add(2)));
         if let Some(cutoff) = cutoff {
-            while self.samples.front().is_some_and(|(t, _)| *t < cutoff) {
+            while self.samples.len() > 2 && self.samples.front().is_some_and(|(t, _)| *t < cutoff) {
                 self.samples.pop_front();
             }
         }
