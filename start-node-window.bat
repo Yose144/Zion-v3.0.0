@@ -1,9 +1,7 @@
 @echo off
-setlocal EnableDelayedExpansion
-chcp 65001 >nul
 
 :: ============================================================================
-::  ZION Node — okno pro start-all / start-all-visible
+::  ZION Node - okno pro start-all / start-all-visible
 :: ============================================================================
 
 cd /d "C:\Users\yosef\Desktop\Zion\2.9.6-main"
@@ -29,4 +27,3 @@ echo.
 V3\target\release\node.exe
 echo [EXIT] Node skoncil s kodem %ERRORLEVEL% v %TIME%
 pause
-endlocal

@@ -1,9 +1,7 @@
 @echo off
-setlocal EnableDelayedExpansion
-chcp 65001 >nul
 
 :: ============================================================================
-::  ZION OS — Kompletni stack (Dashboard + Node + GPU Miner)
+::  ZION OS - Kompletni stack (Dashboard + Node + GPU Miner)
 ::  Kazda sluzba se spusti ve vlastnim okne.
 ::
 ::  Algoritmus: start-miner-window.bat (deeksha_lite_fire)
@@ -44,4 +42,3 @@ echo  Zavri jednotliva okna pro zastaveni sluzeb.
 echo ===========================================================
 echo.
 pause
-endlocal
