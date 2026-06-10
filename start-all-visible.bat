@@ -1,10 +1,8 @@
 @echo off
-setlocal EnableDelayedExpansion
-chcp 65001 >nul
 
 :: ============================================================================
-::  ZION OS — Kompletni stack (viditelna okna, zadny /min)
-::  Pouzij pro ladeni — vsechna okna zustanou na popredi.
+::  ZION OS - Kompletni stack (viditelna okna, zadny /min)
+::  Pouzij pro ladeni - vsechna okna zustanou na popredi.
 :: ============================================================================
 
 cd /d "C:\Users\yosef\Desktop\Zion\2.9.6-main"
@@ -36,4 +34,3 @@ echo  Dashboard: http://127.0.0.1:8766
 echo ===========================================================
 echo.
 pause
-endlocal

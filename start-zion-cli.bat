@@ -1,9 +1,7 @@
 @echo off
-setlocal EnableDelayedExpansion
-chcp 65001 >nul
 
 :: ============================================================================
-::  ZION CLI Launcher — Windows 11
+::  ZION CLI Launcher - Windows 11
 ::  Spousti interaktivni menu. Okno zustane otevrene i po ukonceni menu.
 :: ============================================================================
 
@@ -19,7 +17,7 @@ echo  ZION CLI Launcher
 echo ===========================================================
 echo.
 
-:: ── 1. Zkontroluj existenci binarky ──────────────────────────────────────────
+:: -- 1. Zkontroluj existenci binarky ------------------------------------------
 if not exist "%ZION_BIN%" (
     echo [BUILD] Binarka zion.exe nenalezena, sestavuji...
     echo         (prvni build muze trvat 2-5 minut)
@@ -28,7 +26,7 @@ if not exist "%ZION_BIN%" (
     :: Zkus najit cargo
     where cargo >nul 2>nul
     if errorlevel 1 (
-        :: cargo neni v PATH — zkus Rustup standardni umisteni
+        :: cargo neni v PATH - zkus Rustup standardni umisteni
         if exist "%USERPROFILE%\.cargo\bin\cargo.exe" (
             set "PATH=%USERPROFILE%\.cargo\bin;%PATH%"
         ) else (
@@ -54,7 +52,7 @@ if not exist "%ZION_BIN%" (
     echo.
 )
 
-:: ── 2. Spusteni CLI v interaktivnim rezimu ────────────────────────────────────
+:: -- 2. Spusteni CLI v interaktivnim rezimu ------------------------------------
 echo  Prikazy:
 echo    %ZION_BIN% --help
 echo    %ZION_BIN% mine start
