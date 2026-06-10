@@ -322,8 +322,10 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
       </div>
       <div class="sidebar-group">
         <div class="sidebar-title">Tools</div>
+        <button onclick="switchTab('payout')" id="tab-payout" class="sidebar-item">💰 Payouts</button>
         <button onclick="switchTab('wallets')" id="tab-wallets" class="sidebar-item">💼 Wallets</button>
         <button onclick="switchTab('explorer')" id="tab-explorer" class="sidebar-item">🔍 Explorer</button>
+        <button onclick="switchTab('backups')" id="tab-backups" class="sidebar-item">💾 Backups</button>
         <button onclick="openSettingsModal()" class="sidebar-item">⚙️ Settings</button>
       </div>
     </aside>
@@ -498,6 +500,40 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
           </div>
           <p class="text-xs text-gray-500 mt-2">Miner is managed by the Edge node systemd service. Use Restart if it hangs, Stop to pause.</p>
         </div>
+      </div>
+    </div>
+
+    <!-- Connected Miners (Edge Pool) -->
+    <div id="card-connected-miners" class="zion-panel p-5 mb-4">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-base font-bold flex items-center gap-2">
+          ⛏️ Connected Miners
+          <span id="connected-miners-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-600/20 text-emerald-300">—</span>
+        </h2>
+        <div class="flex gap-3 text-xs text-gray-400">
+          <span>Hashrate: <strong id="cm-total-hashrate" class="text-amber-400">—</strong></span>
+          <span>Active: <strong id="cm-active-count" class="text-emerald-400">—</strong></span>
+          <span>Tracked: <strong id="cm-tracked-count" class="text-gray-300">—</strong></span>
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-xs text-left">
+          <thead>
+            <tr class="text-gray-500 border-b border-white/10">
+              <th class="py-2 px-2">Miner ID</th>
+              <th class="py-2 px-2">Worker</th>
+              <th class="py-2 px-2 text-right">Hashrate</th>
+              <th class="py-2 px-2 text-right">Valid</th>
+              <th class="py-2 px-2 text-right">Invalid</th>
+              <th class="py-2 px-2 text-right">Blocks</th>
+              <th class="py-2 px-2 text-right">Paid (ZION)</th>
+              <th class="py-2 px-2 text-right">Status</th>
+            </tr>
+          </thead>
+          <tbody id="connected-miners-tbody">
+            <tr><td colspan="8" class="text-gray-500 text-center py-4">Loading miners from Edge pool…</td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
@@ -935,6 +971,225 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
     </div>
   </div>
 
+  <!-- ═════════ TAB: Payouts ═════════ -->
+  <div id="pane-payout" class="hidden space-y-4">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gradient">💰 Payout System</h1>
+        <p class="text-xs text-gray-400 mt-1">Fee split · PPLNS · Payout history · Miner balances</p>
+      </div>
+      <button onclick="loadPayoutTab()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
+    </div>
+
+    <!-- KPI Row -->
+    <div class="flex items-center justify-end gap-2">
+      <div id="payout-sse-indicator" class="hidden items-center gap-1.5 text-[10px] text-emerald-400 mr-2">
+        <span class="relative flex h-2 w-2">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+        </span>
+        LIVE
+      </div>
+      <button onclick="triggerPayoutNow()" class="text-xs px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-500/50 rounded-lg transition font-semibold">💸 Trigger Payout Now</button>
+      <button onclick="loadPayoutTab()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
+    </div>
+    <div id="payout-kpi" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+      <div class="zion-panel p-4 text-center">
+        <div class="text-xl font-bold text-emerald-400" id="payout-kpi-status">—</div>
+        <div class="text-[10px] text-gray-400 mt-1">Status</div>
+      </div>
+      <div class="zion-panel p-4 text-center">
+        <div class="text-xl font-bold text-zion-gold" id="payout-kpi-blocks">—</div>
+        <div class="text-[10px] text-gray-400 mt-1">Blocks Found</div>
+      </div>
+      <div class="zion-panel p-4 text-center">
+        <div class="text-xl font-bold text-amber-400" id="payout-kpi-hashrate">—</div>
+        <div class="text-[10px] text-gray-400 mt-1">Pool Hashrate</div>
+      </div>
+      <div class="zion-panel p-4 text-center">
+        <div class="text-xl font-bold text-cyan-400" id="payout-kpi-miners">—</div>
+        <div class="text-[10px] text-gray-400 mt-1">Active Miners</div>
+      </div>
+      <div class="zion-panel p-4 text-center">
+        <div class="text-xl font-bold text-purple-400" id="payout-kpi-total-paid">—</div>
+        <div class="text-[10px] text-gray-400 mt-1">Total Paid (ZION)</div>
+      </div>
+      <div class="zion-panel p-4 text-center">
+        <div class="text-xl font-bold text-emerald-400" id="payout-kpi-accept-rate">—</div>
+        <div class="text-[10px] text-gray-400 mt-1">Accept Rate</div>
+      </div>
+    </div>
+
+    <!-- Fee Split Vizualization -->
+    <div class="zion-panel p-5">
+      <h3 class="text-sm font-bold mb-4">Fee Split Distribution (89/5/5/1)</h3>
+      <div class="space-y-3">
+        <!-- Miner -->
+        <div>
+          <div class="flex justify-between text-xs mb-1">
+            <span class="text-emerald-400 font-semibold">⛏️ Miner (89%)</span>
+            <span class="text-gray-400" id="payout-fee-miner-pct">89%</span>
+          </div>
+          <div class="h-3 bg-black/40 rounded-full overflow-hidden">
+            <div class="h-full bg-emerald-500 rounded-full" style="width:89%"></div>
+          </div>
+          <div class="text-[10px] text-gray-500 mt-0.5" id="payout-fee-miner-addr">—</div>
+        </div>
+        <!-- Humanitarian -->
+        <div>
+          <div class="flex justify-between text-xs mb-1">
+            <span class="text-pink-400 font-semibold">💝 Humanitarian (5%)</span>
+            <span class="text-gray-400" id="payout-fee-human-pct">5%</span>
+          </div>
+          <div class="h-3 bg-black/40 rounded-full overflow-hidden">
+            <div class="h-full bg-pink-500 rounded-full" style="width:5%"></div>
+          </div>
+          <div class="text-[10px] text-gray-500 mt-0.5" id="payout-fee-human-addr">—</div>
+        </div>
+        <!-- Issobella -->
+        <div>
+          <div class="flex justify-between text-xs mb-1">
+            <span class="text-purple-400 font-semibold">🚀 Issobella Space (5%)</span>
+            <span class="text-gray-400" id="payout-fee-isso-pct">5%</span>
+          </div>
+          <div class="h-3 bg-black/40 rounded-full overflow-hidden">
+            <div class="h-full bg-purple-500 rounded-full" style="width:5%"></div>
+          </div>
+          <div class="text-[10px] text-gray-500 mt-0.5" id="payout-fee-isso-addr">—</div>
+        </div>
+        <!-- Pool Fee (burn) -->
+        <div>
+          <div class="flex justify-between text-xs mb-1">
+            <span class="text-amber-400 font-semibold">🔥 Pool Fee / Burn (1%)</span>
+            <span class="text-gray-400" id="payout-fee-pool-pct">1%</span>
+          </div>
+          <div class="h-3 bg-black/40 rounded-full overflow-hidden">
+            <div class="h-full bg-amber-500 rounded-full" style="width:1%"></div>
+          </div>
+          <div class="text-[10px] text-gray-500 mt-0.5" id="payout-fee-pool-addr">—</div>
+        </div>
+      </div>
+      <!-- Fee split formula -->
+      <div class="mt-4 p-3 bg-black/30 rounded-lg text-xs font-mono text-gray-400">
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="text-emerald-400">Miner: 89%</span><span>+</span>
+          <span class="text-pink-400">Humanitarian: 5%</span><span>+</span>
+          <span class="text-purple-400">Issobella: 5%</span><span>+</span>
+          <span class="text-amber-400">Pool Fee: 1%</span><span>=</span>
+          <span class="text-white font-bold">100%</span>
+        </div>
+        <div class="text-[10px] text-gray-500 mt-1">Every block subsidy is split using this ratio. Pool fee is burned.</div>
+      </div>
+    </div>
+
+    <!-- PPLNS Status + Miner Balances -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <!-- PPLNS Status -->
+      <div class="zion-panel p-5">
+        <h3 class="text-sm font-bold mb-3">PPLNS Round Status</h3>
+        <div class="space-y-2 text-xs">
+          <div class="flex justify-between">
+            <span class="text-gray-400">Window Size</span>
+            <span class="text-white font-mono" id="payout-pplns-window">—</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-400">Window Used</span>
+            <span class="text-white font-mono" id="payout-pplns-used">—</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-400">Registered Miners</span>
+            <span class="text-white font-mono" id="payout-pplns-registered">—</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-400">Rounds Completed</span>
+            <span class="text-emerald-400 font-mono" id="payout-pplns-rounds">—</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-400">Total Paid</span>
+            <span class="text-zion-gold font-mono" id="payout-pplns-total">—</span>
+          </div>
+        </div>
+        <hr class="border-white/10 my-3">
+        <h4 class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Last Payout</h4>
+        <div class="space-y-1 text-xs">
+          <div class="flex justify-between">
+            <span class="text-gray-400">Time</span>
+            <span class="text-white font-mono" id="payout-last-time">—</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-400">TX Hash</span>
+            <span class="text-cyan-400 font-mono text-[10px] truncate max-w-[200px]" id="payout-last-tx">—</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-gray-400">Miners Paid</span>
+            <span class="text-emerald-400 font-mono" id="payout-last-miners">—</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Miner Pending Balances -->
+      <div class="zion-panel p-5">
+        <h3 class="text-sm font-bold mb-3">Miner Pending Balances</h3>
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs text-left">
+            <thead>
+              <tr class="text-gray-500 border-b border-white/10">
+                <th class="py-2 px-2">Miner</th>
+                <th class="py-2 px-2 text-right">Valid</th>
+                <th class="py-2 px-2 text-right">Invalid</th>
+                <th class="py-2 px-2 text-right">Pending ZION</th>
+                <th class="py-2 px-2 text-right">Paid ZION</th>
+              </tr>
+            </thead>
+            <tbody id="payout-miner-balances">
+              <tr><td colspan="5" class="text-gray-500 text-center py-4">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="zion-panel p-5">
+        <h3 class="text-sm font-bold mb-3">Pool Hashrate Trend (10 min)</h3>
+        <div class="h-48"><canvas id="payout-chart-hashrate"></canvas></div>
+      </div>
+      <div class="zion-panel p-5">
+        <h3 class="text-sm font-bold mb-3">Blocks & Shares Trend</h3>
+        <div class="h-48"><canvas id="payout-chart-blocks"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Payout History Timeline -->
+    <div class="zion-panel p-5">
+      <h3 class="text-sm font-bold mb-3">Payout History</h3>
+      <div id="payout-history-container" class="space-y-2 max-h-80 overflow-y-auto">
+        <div class="text-gray-500 italic text-xs">Loading payout history…</div>
+      </div>
+    </div>
+
+    <!-- Pool Health -->
+    <div class="zion-panel p-5">
+      <h3 class="text-sm font-bold mb-3">Pool Health & Validation</h3>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+        <div class="p-3 bg-black/30 rounded-lg">
+          <div class="text-gray-400 mb-1">Valid Addresses</div>
+          <div class="text-emerald-400 font-bold text-lg" id="payout-val-valid">—</div>
+        </div>
+        <div class="p-3 bg-black/30 rounded-lg">
+          <div class="text-gray-400 mb-1">Invalid Addresses</div>
+          <div class="text-red-400 font-bold text-lg" id="payout-val-invalid">—</div>
+        </div>
+        <div class="p-3 bg-black/30 rounded-lg">
+          <div class="text-gray-400 mb-1">Safe to Payout</div>
+          <div class="text-emerald-400 font-bold text-lg" id="payout-val-safe">—</div>
+        </div>
+      </div>
+      <div class="mt-3 text-[10px] text-gray-500" id="payout-val-error">—</div>
+    </div>
+  </div>
+
   <!-- ═════════ TAB: Wallets ═════════ -->
   <div id="pane-wallets" class="hidden space-y-4">
     <!-- Wallets header -->
@@ -991,14 +1246,25 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         <!-- JS populates progress bars here -->
       </div>
     </div>
-    <!-- Known Addresses (static) -->
+    <!-- Fee-Split & Pool Wallets (dynamic from API) -->
     <div class="zion-panel p-5">
-      <h3 class="text-sm font-bold mb-3">Known Addresses</h3>
-      <div class="space-y-2 text-xs">
-        <div class="flex justify-between items-center bg-black/30 rounded-lg px-3 py-2"><span class="text-gray-400">Miner (89%)</span><span class="font-mono text-white text-[10px]">zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3</span><button onclick="copyToClipboard('zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3')" class="text-[10px] text-gray-500 hover:text-white ml-2">Copy</button></div>
-        <div class="flex justify-between items-center bg-black/30 rounded-lg px-3 py-2"><span class="text-gray-400">Humanitarian (5%)</span><span class="font-mono text-white text-[10px]">zion1m4v5z8z850u480c5c208z274e334369275n5y20</span><button onclick="copyToClipboard('zion1m4v5z8z850u480c5c208z274e334369275n5y20')" class="text-[10px] text-gray-500 hover:text-white ml-2">Copy</button></div>
-        <div class="flex justify-between items-center bg-black/30 rounded-lg px-3 py-2"><span class="text-gray-400">Issobella (5%)</span><span class="font-mono text-white text-[10px]">zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702</span><button onclick="copyToClipboard('zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702')" class="text-[10px] text-gray-500 hover:text-white ml-2">Copy</button></div>
-        <div class="flex justify-between items-center bg-black/30 rounded-lg px-3 py-2"><span class="text-gray-400">Pool Fee (1%)</span><span class="font-mono text-white text-[10px]">zion1p2a7a5q0t2z5z545y6m6j5e864n002v4z6w95w5</span><button onclick="copyToClipboard('zion1p2a7a5q0t2z5z545y6m6j5e864n002v4z6w95w5')" class="text-[10px] text-gray-500 hover:text-white ml-2">Copy</button></div>
+      <h3 class="text-sm font-bold mb-3">Fee-Split & Pool Wallets</h3>
+      <div id="wallets-fee-split" class="space-y-2 text-xs">
+        <div class="text-gray-500 italic">Loading fee-split configuration…</div>
+      </div>
+      <hr class="border-white/10 my-3">
+      <h4 class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Pool Wallet Status</h4>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+        <div class="p-3 bg-black/30 rounded-lg">
+          <div class="text-gray-400 mb-1">Pool Wallet Address</div>
+          <div class="font-mono text-white text-[10px] break-all" id="wallet-pool-address">—</div>
+          <div class="mt-1 text-[10px] text-gray-500" id="wallet-pool-balance">Balance: —</div>
+        </div>
+        <div class="p-3 bg-black/30 rounded-lg">
+          <div class="text-gray-400 mb-1">Payout Execution</div>
+          <div class="font-bold text-lg" id="wallet-pool-enabled">—</div>
+          <div class="mt-1 text-[10px] text-gray-500" id="wallet-pool-fee-split">Fee split: —</div>
+        </div>
       </div>
     </div>
   </div>
@@ -1120,6 +1386,14 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 
   <!-- ═════════ TAB: Alerts ═════════ -->
   <div id="pane-alerts" class="hidden space-y-4">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gradient">🚨 Alert History</h1>
+        <p class="text-xs text-gray-400 mt-1">Auto-detected issues across all layers</p>
+      </div>
+      <button onclick="loadAlertHistory()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
+    </div>
+
     <!-- Alert summary cards -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
       <div class="zion-panel p-4 text-center" style="border-color:rgba(239,68,68,0.3)">
@@ -1142,7 +1416,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
     <!-- Alert history with filters -->
     <div class="zion-panel p-6">
       <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
-        <h2 class="text-xl font-bold flex items-center gap-2">🚨 Alert History</h2>
+        <h2 class="text-lg font-bold">Alert Feed</h2>
         <div class="flex items-center gap-2">
           <div class="flex gap-1">
             <button onclick="filterAlerts('all')" class="alert-filter-btn text-[10px] px-2.5 py-1 rounded bg-emerald-900/30 text-emerald-300 border border-emerald-500/30" data-filter="all">All</button>
@@ -1150,7 +1424,6 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
             <button onclick="filterAlerts('warning')" class="alert-filter-btn text-[10px] px-2.5 py-1 rounded bg-black/30 text-gray-400 hover:text-amber-300" data-filter="warning">Warning</button>
             <button onclick="filterAlerts('info')" class="alert-filter-btn text-[10px] px-2.5 py-1 rounded bg-black/30 text-gray-400 hover:text-blue-300" data-filter="info">Info</button>
           </div>
-          <button onclick="loadAlertHistory()" class="text-[10px] px-2.5 py-1 bg-zion-700 hover:bg-zion-600 rounded transition">Refresh</button>
         </div>
       </div>
       <div id="alert-history-list" class="space-y-2 max-h-[500px] overflow-y-auto">
@@ -1161,11 +1434,19 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 
   <!-- ═════════ TAB: Services ═════════ -->
   <div id="pane-services" class="hidden space-y-4">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gradient">🧩 All Mainnet Services</h1>
+        <p class="text-xs text-gray-400 mt-1">L1 Consensus · L2 Bridge/DAO · L3 Advanced · L4 Apps · Infrastructure</p>
+      </div>
+      <button onclick="loadServices()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
+    </div>
+
     <div class="zion-panel p-6">
       <div class="flex items-center justify-between mb-5 flex-wrap gap-3">
         <div>
-          <h2 class="text-xl font-bold flex items-center gap-2"><span class="text-gradient">🧩 All Mainnet Services</span></h2>
-          <p class="text-xs text-gray-400 mt-1">L1 Consensus · L2 Bridge/DAO · L3 Advanced · L4 Apps · Infrastructure — 21 services</p>
+          <h2 class="text-lg font-bold flex items-center gap-2">Service Grid</h2>
+          <p class="text-xs text-gray-400 mt-1">Click Start / Stop / Restart on any service. Filter by layer below.</p>
         </div>
         <div class="flex gap-2">
           <button onclick="controlAction('launch-full')" class="zion-button-primary text-sm">🚀 Launch ALL</button>
@@ -1200,8 +1481,113 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
     </div>
   </div>
 
+  <!-- ═════════ TAB: Backups ═════════ -->
+  <div id="pane-backups" class="hidden space-y-4">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gradient">💾 Backup Status</h1>
+        <p class="text-xs text-gray-400 mt-1">Local core & Edge database backups · health monitoring</p>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="triggerBackupNow()" class="text-xs px-3 py-1.5 bg-emerald-700/50 hover:bg-emerald-600 rounded-lg transition">▶ Backup Now</button>
+        <button onclick="loadBackups()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
+      </div>
+    </div>
+
+    <!-- Local Backup Card -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="zion-panel p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-base font-bold flex items-center gap-2">🖥️ Local Core</h2>
+          <span id="local-backup-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400">Checking…</span>
+        </div>
+        <div class="grid grid-cols-2 gap-3 mb-4">
+          <div class="zion-panel-soft p-3 text-center">
+            <div class="text-lg font-bold text-gradient" id="local-last-backup">—</div>
+            <div class="text-[10px] text-gray-400">Last Backup</div>
+          </div>
+          <div class="zion-panel-soft p-3 text-center">
+            <div class="text-lg font-bold text-emerald-400" id="local-backup-size">—</div>
+            <div class="text-[10px] text-gray-400">Size</div>
+          </div>
+          <div class="zion-panel-soft p-3 text-center">
+            <div class="text-lg font-bold text-amber-400" id="local-files-backed">—</div>
+            <div class="text-[10px] text-gray-400">Files</div>
+          </div>
+          <div class="zion-panel-soft p-3 text-center">
+            <div class="text-lg font-bold text-zion-cyan" id="local-disk-usage">—</div>
+            <div class="text-[10px] text-gray-400">Disk Usage</div>
+          </div>
+        </div>
+        <div class="text-[10px] text-gray-500 font-mono" id="local-backup-file">—</div>
+      </div>
+
+      <!-- Edge Backup Card -->
+      <div class="zion-panel p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-base font-bold flex items-center gap-2">🌐 Edge Server</h2>
+          <span id="edge-backup-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400">Checking…</span>
+        </div>
+        <div class="grid grid-cols-2 gap-3 mb-4">
+          <div class="zion-panel-soft p-3 text-center">
+            <div class="text-lg font-bold text-gradient" id="edge-last-backup">—</div>
+            <div class="text-[10px] text-gray-400">Last Backup</div>
+          </div>
+          <div class="zion-panel-soft p-3 text-center">
+            <div class="text-lg font-bold text-emerald-400" id="edge-backup-size">—</div>
+            <div class="text-[10px] text-gray-400">Size</div>
+          </div>
+          <div class="zion-panel-soft p-3 text-center">
+            <div class="text-lg font-bold text-amber-400" id="edge-files-backed">—</div>
+            <div class="text-[10px] text-gray-400">Files</div>
+          </div>
+          <div class="zion-panel-soft p-3 text-center">
+            <div class="text-lg font-bold text-zion-cyan" id="edge-disk-usage">—</div>
+            <div class="text-[10px] text-gray-400">Disk Usage</div>
+          </div>
+        </div>
+        <div class="text-[10px] text-gray-500 font-mono" id="edge-backup-file">—</div>
+      </div>
+    </div>
+
+    <!-- Backup Detail Tables -->
+    <div class="zion-panel p-5">
+      <h3 class="text-sm font-bold mb-3 zion-kicker">What's Backed Up</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-[11px] text-gray-400">
+        <div>
+          <h4 class="text-xs font-semibold text-gray-300 mb-2">Local Core</h4>
+          <ul class="space-y-1 list-disc list-inside">
+            <li>Node state DBs (edge-state.db, edge2-state.db)</li>
+            <li>Dashboard metrics DB</li>
+            <li>peers.json & revenue journal</li>
+            <li>Bridge / DAO / WARP configs</li>
+            <li>Git reference & environment files</li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="text-xs font-semibold text-gray-300 mb-2">Edge Server</h4>
+          <ul class="space-y-1 list-disc list-inside">
+            <li>Node state DBs (edge-state.db, edge2-state.db)</li>
+            <li>DAO DB with WAL (dao.db + shm + wal)</li>
+            <li>Service DBs (free_world, issobella, oasis)</li>
+            <li>Pool logs & systemd unit files</li>
+            <li>Environment config & git reference</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ═════════ TAB: Genesis & Premine ═════════ -->
   <div id="pane-genesis" class="hidden space-y-4">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gradient">⚡ Genesis & Premine</h1>
+        <p class="text-xs text-gray-400 mt-1">Block #0 · 144B supply cap · Decade Decay</p>
+      </div>
+      <button onclick="loadGenesis()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
+    </div>
+
     <!-- Hero -->
     <div class="zion-panel p-6 md:p-8 relative overflow-hidden">
       <div class="zion-kicker mb-3 relative z-10">⚡ Genesis · Block #0 · Eternal</div>
@@ -1255,11 +1641,18 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 
   <!-- ═════════ TAB: P0 Blockers ═════════ -->
   <div id="pane-blockers" class="hidden space-y-4">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gradient">🚧 P0 Launch Blockers</h1>
+        <p class="text-xs text-gray-400 mt-1">Critical issues that MUST be resolved before T-0</p>
+      </div>
+      <button onclick="loadBlockers()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
+    </div>
     <div class="zion-panel p-6">
       <div class="flex items-center justify-between mb-5 flex-wrap gap-3">
         <div>
-          <h2 class="text-xl font-bold flex items-center gap-2"><span class="text-gradient">🚧 P0 Launch Blockers</span></h2>
-          <p class="text-xs text-gray-400 mt-1">Critical issues that MUST be resolved before T-0 (genesis ceremony)</p>
+          <h2 class="text-lg font-bold">Current Blockers</h2>
+          <p class="text-xs text-gray-400 mt-1">Status overview and action items</p>
         </div>
         <div id="blockers-summary" class="text-xs"></div>
       </div>
@@ -2221,6 +2614,13 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 
   <!-- ═════════ TAB: Charts ═════════ -->
   <div id="pane-charts" class="hidden space-y-4">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gradient">📈 Charts</h1>
+        <p class="text-xs text-gray-400 mt-1">Live metrics history · Hashrate · Blocks · Shares</p>
+      </div>
+      <button onclick="renderCharts()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
+    </div>
     <!-- Timeframe selector & controls -->
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-2">
@@ -2279,6 +2679,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
       <p class="text-xs text-gray-400 mt-1">Block found · Peer connected · TX confirmed · Alerts</p>
     </div>
     <div class="flex gap-2">
+      <button onclick="loadEvents()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
       <select id="event-type-filter" class="text-xs px-2 py-1.5 bg-black/40 border border-white/10 rounded-lg text-white" onchange="loadEvents()">
         <option value="">All events</option>
         <option value="block">Block</option>
@@ -2329,6 +2730,13 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 
   <!-- ═════════ TAB: Metrics ═════════ -->
   <div id="pane-metrics" class="hidden">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gradient">📊 Metrics</h1>
+        <p class="text-xs text-gray-400 mt-1">Prometheus · Grafana · Service endpoints</p>
+      </div>
+      <button onclick="renderMetricsButtons()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
+    </div>
     <div class="zion-panel p-6">
       <h2 class="text-lg font-bold mb-2 flex items-center gap-2">📊 Prometheus Metrics &amp; Grafana</h2>
       <p class="text-xs text-gray-400 mb-5">Live scraped metrics from each service. Open Grafana for full dashboards.</p>
@@ -2356,11 +2764,18 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 
   <!-- ═════════ TAB: Launch Day ═════════ -->
   <div id="pane-launch-day" class="hidden space-y-4">
-    <div class="zion-panel p-5">
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="text-lg font-bold flex items-center gap-2"><span class="text-gradient">🚀 Launch Day Automation</span> <span class="text-xs font-normal text-gray-500">(31.12.2026 12:00 UTC)</span></h2>
-        <span id="launch-day-badge" class="px-3 py-1 rounded-full text-xs font-bold bg-white/10 text-gray-300">Checking...</span>
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gradient">🚀 Launch Day Automation</h1>
+        <p class="text-xs text-gray-400 mt-1">31.12.2026 12:00 UTC · Genesis backup · Premine rotation</p>
       </div>
+      <div class="flex items-center gap-2">
+        <span id="launch-day-badge" class="px-3 py-1 rounded-full text-xs font-bold bg-white/10 text-gray-300">Checking...</span>
+        <button onclick="loadLaunchDayStatus()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
+      </div>
+    </div>
+
+    <div class="zion-panel p-5">
       <p class="text-xs text-gray-400 mb-5">Automatická záloha genesis, premine rotace a uložení vše na lokální PC. Po PC restartu stačí znovu spustit dashboard.</p>
 
       <!-- Status karty -->
@@ -2433,6 +2848,13 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 
   <!-- ═════════ TAB: Wizard ═════════ -->
   <div id="pane-wizard" class="hidden">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gradient">🧙 Launch Wizard</h1>
+        <p class="text-xs text-gray-400 mt-1">Step-by-step mainnet launch sequence</p>
+      </div>
+      <button onclick="renderWizard()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
+    </div>
     <div class="zion-panel p-6">
       <h2 class="text-xl font-bold mb-2 flex items-center gap-2"><span class="text-gradient">🧙 Mainnet Launch Wizard</span></h2>
       <p class="text-sm text-gray-400 mb-6">Step-by-step guided launch sequence. Each step shows current status &amp; quick actions.</p>
@@ -2442,12 +2864,23 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 
   <!-- ═════════ TAB: Miner Live ═════════ -->
   <div id="pane-miner-live" class="hidden space-y-4">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gradient">⛏️ Miner Live Dashboard</h1>
+        <p class="text-xs text-gray-400 mt-1">Real-time GPU/CPU mining telemetry</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <span id="miner-live-badge" class="text-xs px-2 py-1 rounded bg-gray-700 text-gray-300">Checking…</span>
+        <button onclick="refreshMinerLive()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
+      </div>
+    </div>
+
     <div class="zion-panel p-5">
       <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
-        <h2 class="text-xl font-bold flex items-center gap-2"><span class="text-gradient">⛏️ Miner Live Dashboard</span> <span class="text-xs text-gray-500 font-normal">Real-time GPU/CPU mining telemetry</span></h2>
+        <h2 class="text-lg font-bold">Performance Metrics</h2>
         <div class="flex gap-2">
-          <button onclick="refreshMinerLive()" class="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded">🔄 Refresh</button>
-          <span id="miner-live-badge" class="text-xs px-2 py-1 rounded bg-gray-700 text-gray-300">Checking…</span>
+          <button onclick="controlAction('start-miner')" class="text-xs px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded transition">▶ Start</button>
+          <button onclick="controlAction('stop-miner')" class="text-xs px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded transition">⏹ Stop</button>
         </div>
       </div>
       <!-- KPIs -->
@@ -2695,8 +3128,9 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         <h1 class="text-2xl font-bold text-gradient">🌉 ZION Bridge</h1>
         <p class="text-xs text-gray-400 mt-1">Cross-chain relay — L1 ↔ Base Sepolia Testnet (mainnet soon)</p>
       </div>
-      <div class="flex gap-2">
+      <div class="flex items-center gap-2">
         <div id="bridge-status-badge" class="px-3 py-1 rounded-full text-xs font-semibold bg-gray-700/50 text-gray-300 border border-white/10">● Checking…</div>
+        <button onclick="loadBridgeStatus()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
       </div>
     </div>
 
@@ -2830,9 +3264,16 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 
   <!-- ═════════ TAB: Hiran AI ═════════ -->
   <div id="pane-hiran" class="hidden space-y-4">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gradient">🤖 Hiran AI</h1>
+        <p class="text-xs text-gray-400 mt-1">v2.2 inference + Hiranyagarbha orchestrator (port 8001)</p>
+      </div>
+      <button onclick="loadAgentList(); checkAiStatus();" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
+    </div>
+
     <div class="zion-panel p-6">
-      <h2 class="text-xl font-bold mb-2 flex items-center gap-2"><span class="text-gradient">🤖 Hiran AI — Agent Management</span></h2>
-      <p class="text-sm text-gray-400 mb-4">Hiran v2.2 inference + Hiranyagarbha orchestrator (port 8001).</p>
+      <!-- Status row -->
 
       <!-- Status row -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
@@ -3148,6 +3589,13 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 
   <!-- ═════════ TAB: Ops (Backup / CLI / Alerts) ═════════ -->
   <div id="pane-ops" class="hidden space-y-4">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gradient">🔧 Ops</h1>
+        <p class="text-xs text-gray-400 mt-1">Backup · Chain verification · CLI</p>
+      </div>
+      <button onclick="loadOps()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
+    </div>
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <!-- Backup Panel -->
       <div class="zion-panel p-5">
@@ -3214,6 +3662,13 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 
   <!-- ═════════ TAB: Topology ═════════ -->
   <div id="pane-topology" class="hidden space-y-4">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gradient">🌐 Topology</h1>
+        <p class="text-xs text-gray-400 mt-1">Core vs Edge · Latency · Service mesh</p>
+      </div>
+      <button onclick="loadTopology()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
+    </div>
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <!-- Core vs Edge -->
       <div class="zion-panel p-5">
@@ -3352,6 +3807,14 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 
   <!-- ═════════ TAB: ZION Agent ═════════ -->
   <div id="pane-agent" class="hidden space-y-4">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gradient">🤖 ZION Agent</h1>
+        <p class="text-xs text-gray-400 mt-1">Rig Lifecycle Manager · Telemetry · Watchdog</p>
+      </div>
+      <button onclick="refreshAgentPanel()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
+    </div>
+
     <!-- Agent Status Header -->
     <div class="zion-panel p-5">
       <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
@@ -3424,6 +3887,13 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
 
   <!-- ═════════ TAB: DAO Governance (inside main) ═════════ -->
 <div id="pane-dao" class="hidden space-y-5">
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-bold text-gradient">🏛️ DAO Governance</h1>
+      <p class="text-xs text-gray-400 mt-1">Proposals · Treasury · Co-admins · Voting</p>
+    </div>
+    <button onclick="loadDaoAll()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
+  </div>
 
   <!-- Header -->
   <div class="flex items-center justify-between">

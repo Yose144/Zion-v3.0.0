@@ -1199,7 +1199,7 @@ const DEFAULT_CONFIG = {
   },
   desktopPureZionDefault: DESKTOP_PURE_ZION_DEFAULT,
   rpcUrl: DEFAULT_RPC_URL,
-  algorithm: 'deeksha_lite_v1',
+  algorithm: 'deeksha_lite_fire',
   wallet: '',
   worker: 'desktop-agent',
   threads: Math.max(1, (Array.isArray(os.cpus?.()) ? os.cpus().length : 4) - 1),
@@ -1231,7 +1231,7 @@ function normalizeAlgorithmName(algo) {
        'cosmic_harmony_ekam','cosmic_harmony','ch'].includes(raw)) {
     return 'deeksha_lite_v1';
   }
-  return raw || 'deeksha_lite_v1';
+  return raw || 'deeksha_lite_fire';
 }
 
 function sanitizeWorkerName(raw) {
@@ -2344,7 +2344,7 @@ function startMiningV3(config, v3Path) {
   minerStats.pool = pool;
   minerStats.worker = worker || 'desktop';
   minerStats.threads = String(effectiveThreads);
-  minerStats.algorithm = normalizeAlgorithmName(config?.algorithm) || 'deeksha_lite_v1';
+  minerStats.algorithm = normalizeAlgorithmName(config?.algorithm) || 'deeksha_lite_fire';
   updateTrayMenu(minerStats);
 
   // ── 18. Clear guard ────────────────────────────────────────────────────────

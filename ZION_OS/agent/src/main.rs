@@ -49,6 +49,7 @@ pub struct StartMinerRequest {
     pub wallet: Option<String>,
     pub worker: Option<String>,
     pub gpu_backend: Option<String>,
+    pub algorithm: Option<String>,
 }
 
 #[tokio::main]
