@@ -5287,6 +5287,9 @@ ipcMain.handle('ncl-get-price', async () => {
   }
 });
 
+// ── L3 WARP ───────────────────────────────────────────────────────────────
+const WARP_URL = process.env.WARP_URL || 'http://localhost:9333';
+
 // ── L5 Free World & L6 Issobela IPC ───────────────────────────────────────
 const FREE_WORLD_URL = process.env.FREE_WORLD_URL || 'http://localhost:8095';
 const ISSOBELLA_URL = process.env.ISSOBELLA_URL || 'http://localhost:8096';
@@ -5306,6 +5309,12 @@ async function _httpGetJson(urlPath, baseUrl, timeoutMs = 5000) {
     req.on('timeout', () => { req.destroy(); resolve({ success: false, error: 'Timeout' }); });
   });
 }
+
+ipcMain.handle('warp-status', async () => _httpGetJson('/health', WARP_URL));
+ipcMain.handle('warp-metrics', async () => _httpGetJson('/metrics', WARP_URL));
+ipcMain.handle('warp-chains', async () => _httpGetJson('/chains', WARP_URL));
+ipcMain.handle('warp-transfers', async () => _httpGetJson('/transfers', WARP_URL));
+ipcMain.handle('warp-pending', async () => _httpGetJson('/transfers/pending', WARP_URL));
 
 ipcMain.handle('l5-status', async () => _httpGetJson('/health', FREE_WORLD_URL));
 ipcMain.handle('l5-fund-balance', async () => _httpGetJson('/api/v1/fund/balance', FREE_WORLD_URL));

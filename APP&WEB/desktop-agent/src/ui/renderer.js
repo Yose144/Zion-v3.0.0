@@ -615,6 +615,7 @@ const _viewInitFns = {
   bridge:    () => initBridgeView(),
   cli:       () => initCliView(),
   oasis:     () => initOasisView(),
+  warp:      () => initWarpView(),
   l5:        () => initL5View(),
   l6:        () => initL6View(),
 };
@@ -4463,6 +4464,74 @@ function initCliView() {
   document.getElementById('cli-btn-l6-balance')?.addEventListener('click', () => showL6Data('fund balance', window.electronAPI.l6FundBalance));
   document.getElementById('cli-btn-l6-missions')?.addEventListener('click', () => showL6Data('missions', window.electronAPI.l6Missions));
   document.getElementById('cli-btn-l6-proposals')?.addEventListener('click', () => showL6Data('proposals', window.electronAPI.l6Proposals));
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// WARP View — L3 Cross-Chain Corridors
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function initWarpView() {
+  const chip = document.getElementById('warp-view-status-chip');
+  const chainsEl = document.getElementById('warp-view-chains');
+  const transfersEl = document.getElementById('warp-view-transfers');
+  const pendingEl = document.getElementById('warp-view-pending');
+  const volumeEl = document.getElementById('warp-view-volume');
+  const updatedEl = document.getElementById('warp-view-updated');
+  const detailEl = document.getElementById('warp-view-detail');
+
+  async function refresh() {
+    const [statusRes, metricsRes, chainsRes, transfersRes, pendingRes] = await Promise.all([
+      window.electronAPI.warpStatus(),
+      window.electronAPI.warpMetrics(),
+      window.electronAPI.warpChains(),
+      window.electronAPI.warpTransfers(),
+      window.electronAPI.warpPending(),
+    ]);
+
+    const ok = statusRes?.success;
+    if (chip) {
+      chip.textContent = ok ? (statusRes?.data?.status === 'ok' ? 'Online' : 'Degraded') : 'Offline';
+      chip.style.background = ok ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)';
+      chip.style.color = ok ? '#4ade80' : '#f87171';
+    }
+    if (chainsEl) {
+      const chains = Array.isArray(chainsRes?.data?.chains) ? chainsRes.data.chains
+        : Array.isArray(chainsRes?.data) ? chainsRes.data : [];
+      chainsEl.textContent = chains.length;
+    }
+    if (transfersEl) {
+      const items = Array.isArray(transfersRes?.data?.transfers) ? transfersRes.data.transfers
+        : Array.isArray(transfersRes?.data) ? transfersRes.data : [];
+      transfersEl.textContent = items.length;
+    }
+    if (pendingEl) {
+      const items = Array.isArray(pendingRes?.data?.transfers) ? pendingRes.data.transfers
+        : Array.isArray(pendingRes?.data) ? pendingRes.data : [];
+      pendingEl.textContent = items.length;
+    }
+    if (volumeEl) {
+      const vol = metricsRes?.data?.daily_volume_zion ?? metricsRes?.data?.volume ?? '—';
+      volumeEl.textContent = typeof vol === 'number' ? `${vol.toLocaleString()} ZION` : String(vol);
+    }
+    if (updatedEl) updatedEl.textContent = new Date().toLocaleTimeString();
+  }
+
+  async function showDetail(label, fetcher) {
+    if (detailEl) { detailEl.style.display = 'block'; detailEl.textContent = `Loading ${label}…`; }
+    try {
+      const res = await fetcher();
+      if (detailEl) detailEl.textContent = JSON.stringify(res, null, 2);
+    } catch (err) {
+      if (detailEl) detailEl.textContent = `Error: ${err?.message || err}`;
+    }
+  }
+
+  document.getElementById('warp-view-refresh')?.addEventListener('click', refresh);
+  document.getElementById('warp-view-chains-btn')?.addEventListener('click', () => showDetail('chains', window.electronAPI.warpChains));
+  document.getElementById('warp-view-transfers-btn')?.addEventListener('click', () => showDetail('transfers', window.electronAPI.warpTransfers));
+  document.getElementById('warp-view-pending-btn')?.addEventListener('click', () => showDetail('pending', window.electronAPI.warpPending));
+
+  refresh();
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
