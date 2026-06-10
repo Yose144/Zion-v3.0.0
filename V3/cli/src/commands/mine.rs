@@ -279,11 +279,19 @@ pub(crate) fn discover_miner_binary() -> Option<PathBuf> {
 
 fn miner_binary_candidates() -> Vec<PathBuf> {
     let mut candidates = Vec::new();
+
+    // Same-directory as the running zion CLI (for bundled desktop-agent installs)
+    if let Ok(exe) = std::env::current_exe() {
+        if let Some(dir) = exe.parent() {
+            push_unique_path(&mut candidates, dir.join(bin_name("zion-miner")));
+        }
+    }
+
     for relative in [
-        PathBuf::from("target/release/zion-miner"),
-        PathBuf::from("target/debug/zion-miner"),
-        PathBuf::from("V3/target/release/zion-miner"),
-        PathBuf::from("V3/target/debug/zion-miner"),
+        PathBuf::from(format!("target/release/{}", bin_name("zion-miner"))),
+        PathBuf::from(format!("target/debug/{}", bin_name("zion-miner"))),
+        PathBuf::from(format!("V3/target/release/{}", bin_name("zion-miner"))),
+        PathBuf::from(format!("V3/target/debug/{}", bin_name("zion-miner"))),
     ] {
         push_unique_path(&mut candidates, relative);
     }
@@ -292,15 +300,23 @@ fn miner_binary_candidates() -> Vec<PathBuf> {
     if let Some(workspace_root) = manifest_dir.parent() {
         push_unique_path(
             &mut candidates,
-            workspace_root.join("target/release/zion-miner"),
+            workspace_root.join(format!("target/release/{}", bin_name("zion-miner"))),
         );
         push_unique_path(
             &mut candidates,
-            workspace_root.join("target/debug/zion-miner"),
+            workspace_root.join(format!("target/debug/{}", bin_name("zion-miner"))),
         );
     }
 
     candidates
+}
+
+fn bin_name(base: &str) -> String {
+    if cfg!(windows) {
+        format!("{}.exe", base)
+    } else {
+        base.to_string()
+    }
 }
 
 fn push_unique_path(paths: &mut Vec<PathBuf>, candidate: PathBuf) {
@@ -310,7 +326,12 @@ fn push_unique_path(paths: &mut Vec<PathBuf>, candidate: PathBuf) {
 }
 
 fn which_bin(name: &str) -> Result<String> {
-    let out = std::process::Command::new("which").arg(name).output()?;
+    let (cmd, arg) = if cfg!(windows) {
+        ("where", name)
+    } else {
+        ("which", name)
+    };
+    let out = std::process::Command::new(cmd).arg(arg).output()?;
     if out.status.success() {
         Ok(String::from_utf8_lossy(&out.stdout).trim().to_string())
     } else {
