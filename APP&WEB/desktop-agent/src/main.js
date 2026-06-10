@@ -4714,6 +4714,23 @@ ipcMain.handle('wallet-get-transaction', async (event, { rpcUrl, txId }) => {
   }
 });
 
+ipcMain.handle('wallet-get-transactions', async (event, { rpcUrl, address, offset, limit }) => {
+  try {
+    const addr = (address || '').toString().trim();
+    if (!addr) return { success: false, error: 'Address is required' };
+
+    const result = await zionRpcCall(rpcUrl, 'getTransactionHistory', {
+      address: addr,
+      offset: offset || 0,
+      limit: limit || 20
+    });
+    if (result?.error) return { success: false, error: result.error };
+    return { success: true, data: result };
+  } catch (error) {
+    return { success: false, error: error?.message || String(error) };
+  }
+});
+
 ipcMain.handle('wallet-generate-qr', async (event, { text }) => {
   try {
     const value = (text || '').toString();

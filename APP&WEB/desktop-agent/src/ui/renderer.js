@@ -1985,6 +1985,23 @@ function addLogEntry(message, type = 'info') {
   });
 }
 
+// Toast notification — lightweight ephemeral popup
+function showToast(message, type = 'info', duration = 3000) {
+  const container = document.getElementById('toast-container');
+  if (!container) return;
+  const el = document.createElement('div');
+  el.className = `toast toast-${type}`;
+  el.textContent = message;
+  container.appendChild(el);
+  // trigger animation
+  requestAnimationFrame(() => el.classList.add('toast-in'));
+  setTimeout(() => {
+    el.classList.remove('toast-in');
+    el.classList.add('toast-out');
+    setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 300);
+  }, duration);
+}
+
 // Wallet management
 let generatedWallet = null;
 let lastPoolPaidAtomic = null;
@@ -2097,37 +2114,34 @@ function setupWalletControls() {
     const passwordConfirm = document.getElementById('new-wallet-password-confirm').value;
 
     if (!name) {
-      alert('Please enter a wallet name');
+      showToast('Please enter a wallet name', 'warn');
       return;
     }
 
     if (!password || password.length < 8) {
-      alert('Password must be at least 8 characters');
+      showToast('Password must be at least 8 characters', 'warn');
       return;
     }
 
     if (password !== passwordConfirm) {
-      alert('Passwords do not match');
+      showToast('Passwords do not match', 'warn');
       return;
     }
 
-    // Generate wallet
+    if (generateBtn) { generateBtn.disabled = true; generateBtn.textContent = 'Generating…'; }
     const result = await window.electronAPI.generateWallet();
-    
+    if (generateBtn) { generateBtn.disabled = false; generateBtn.textContent = 'Generate'; }
+
     if (result.success) {
       generatedWallet = result.wallet;
-      
-      // Show wallet display
       document.getElementById('wallet-generator').style.display = 'none';
       document.getElementById('wallet-display').style.display = 'block';
-      
-      // Fill in generated data
       document.getElementById('generated-address').value = generatedWallet.address;
       document.getElementById('generated-mnemonic').value = generatedWallet.mnemonic;
-      
+      showToast('Wallet generated — write down your recovery phrase!', 'success', 5000);
       addLogEntry(`New wallet generated: ${generatedWallet.address}`, 'info');
     } else {
-      alert(`Wallet generation failed: ${result.error}`);
+      showToast(`Wallet generation failed: ${result.error}`, 'error');
     }
   });
 
@@ -2152,28 +2166,22 @@ function setupWalletControls() {
     const name = document.getElementById('new-wallet-name').value;
     const password = document.getElementById('new-wallet-password').value;
 
-    const result = await window.electronAPI.saveWallet({
-      wallet: generatedWallet,
-      password,
-      name
-    });
+    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Saving…'; }
+    const result = await window.electronAPI.saveWallet({ wallet: generatedWallet, password, name });
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save'; }
 
     if (result.success) {
-      alert('Wallet saved successfully!\n\nMake sure you have written down your recovery phrase!');
-      
-      // Reset form
+      showToast('Wallet saved — recovery phrase written down?', 'success', 4000);
       document.getElementById('wallet-generator').style.display = 'block';
       document.getElementById('wallet-display').style.display = 'none';
       document.getElementById('new-wallet-name').value = 'My Wallet';
       document.getElementById('new-wallet-password').value = '';
       document.getElementById('new-wallet-password-confirm').value = '';
       generatedWallet = null;
-      
-      // Reload wallets list
       loadWalletsList();
       addLogEntry('Wallet saved successfully', 'info');
     } else {
-      alert(`Failed to save wallet: ${result.error}`);
+      showToast(`Save failed: ${result.error}`, 'error');
     }
   });
 
@@ -2198,20 +2206,22 @@ function setupWalletControls() {
     const password = document.getElementById('import-wallet-password').value;
 
     if (!mnemonic || !name || !password) {
-      alert('Please fill in all fields');
+      showToast('Please fill in all fields', 'warn');
       return;
     }
 
+    if (importBtn) { importBtn.disabled = true; importBtn.textContent = 'Importing…'; }
     const result = await window.electronAPI.importWallet({ mnemonic, name, password });
-    
+    if (importBtn) { importBtn.disabled = false; importBtn.textContent = 'Import'; }
+
     if (result.success) {
-      alert('Wallet imported successfully!');
+      showToast('Wallet imported successfully', 'success');
       document.getElementById('import-mnemonic').value = '';
       document.getElementById('import-wallet-name').value = '';
       document.getElementById('import-wallet-password').value = '';
       loadWalletsList();
     } else {
-      alert(`Import failed: ${result.error}`);
+      showToast(`Import failed: ${result.error}`, 'error');
     }
   });
 
@@ -2436,9 +2446,6 @@ function setupWalletControls() {
   sendTxBtn?.addEventListener('click', async () => {
     if (sendStatusEl) sendStatusEl.textContent = '';
 
-    // Refresh config + from-address display before sending
-    await refreshSendFrom();
-
     const from = getActiveAddress();
     const to = (sendToEl && 'value' in sendToEl ? sendToEl.value : '').toString().trim();
     const amountRaw = (sendAmountEl && 'value' in sendAmountEl ? sendAmountEl.value : '').toString().trim();
@@ -2446,56 +2453,44 @@ function setupWalletControls() {
     const memo = (sendMemoEl && 'value' in sendMemoEl ? sendMemoEl.value : '').toString().trim();
     const password = (sendPasswordEl && 'value' in sendPasswordEl ? sendPasswordEl.value : '').toString();
 
-    // Validate from
     if (!from || !from.startsWith('zion1')) {
-      if (sendStatusEl) sendStatusEl.textContent = '⚠ No active wallet. Go to Overview tab → set your wallet address.';
+      showToast('No active wallet. Set wallet in Overview tab.', 'warn');
       if (sendNoWalletWarn) sendNoWalletWarn.style.display = 'block';
       return;
     }
-
-    // Validate to
     if (!to || !to.startsWith('zion1')) {
-      if (sendStatusEl) sendStatusEl.textContent = '⚠ Recipient address must be a valid zion1... address.';
+      showToast('Recipient must be a valid zion1... address.', 'warn');
       return;
     }
-
-    // Validate amount
     const parsedAmount = parseFloat(amountRaw.replace(',', '.'));
     if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
-      if (sendStatusEl) sendStatusEl.textContent = '⚠ Enter a valid amount greater than 0.';
+      showToast('Enter a valid amount greater than 0.', 'warn');
       return;
     }
-
     if (from === to) {
-      if (sendStatusEl) sendStatusEl.textContent = '⚠ Cannot send to yourself.';
+      showToast('Cannot send to yourself.', 'warn');
       return;
     }
-
-    // Require password for UTXO signing
     if (!password) {
-      if (sendStatusEl) sendStatusEl.textContent = '⚠ Wallet password is required to sign the transaction.';
+      showToast('Wallet password is required to sign.', 'warn');
       return;
     }
 
-    if (sendStatusEl) sendStatusEl.textContent = '⏳ Confirming…';
-
+    if (sendTxBtn) { sendTxBtn.disabled = true; sendTxBtn.textContent = 'Sending…'; }
     const result = await window.electronAPI.walletSendTransaction({
-      rpcUrl: getRpcUrl(),
-      from,
-      to,
-      amount: parsedAmount,
-      purpose,
-      memo: memo || undefined,
-      password
+      rpcUrl: getRpcUrl(), from, to, amount: parsedAmount, purpose, memo: memo || undefined, password
     });
+    if (sendTxBtn) { sendTxBtn.disabled = false; sendTxBtn.textContent = 'Send Transaction'; }
 
     if (!result?.success) {
       const err = result?.error || 'send failed';
-      const hint = err.includes('Insufficient') ? ' (check your balance)' : err.includes('RPC') ? ' (node unreachable — try again)' : '';
+      const hint = err.includes('Insufficient') ? ' (check balance)' : err.includes('RPC') ? ' (node unreachable)' : '';
+      showToast(`${err}${hint}`, 'error', 5000);
       if (sendStatusEl) sendStatusEl.textContent = `❌ ${err}${hint}`;
       return;
     }
 
+    showToast(`Sent ${parsedAmount} ZION · TX: ${(result.txId || 'n/a').slice(0, 16)}…`, 'success', 5000);
     if (sendStatusEl) sendStatusEl.textContent = `✅ Sent! Status: ${result.status || 'submitted'} · TX: ${result.txId || 'n/a'}`;
     if (sendToEl) sendToEl.value = '';
     if (sendAmountEl) sendAmountEl.value = '';
@@ -2503,7 +2498,7 @@ function setupWalletControls() {
     if (sendMemoEl) sendMemoEl.value = '';
     if (sendPasswordEl) sendPasswordEl.value = '';
     // Refresh balance after successful send
-    setTimeout(refreshSendFrom, 1500);
+    setTimeout(refreshSendFrom, 1200);
   });
 
   // Transaction lookup
@@ -2533,6 +2528,94 @@ function setupWalletControls() {
     const tx = result.transaction || result;
     if (txLookupResultEl) txLookupResultEl.textContent = JSON.stringify(tx, null, 2);
   });
+
+  // Transaction History
+  const txHistoryRefreshBtn = document.getElementById('tx-history-refresh-btn');
+  const txHistoryList = document.getElementById('tx-history-list');
+  const txHistoryEmpty = document.getElementById('tx-history-empty');
+  const txHistoryLoading = document.getElementById('tx-history-loading');
+
+  async function loadTransactionHistory() {
+    const address = getActiveAddress();
+    if (!address || !address.startsWith('zion1')) {
+      if (txHistoryEmpty) txHistoryEmpty.textContent = 'Set an active wallet to view history.';
+      if (txHistoryEmpty) txHistoryEmpty.style.display = 'block';
+      if (txHistoryList) txHistoryList.style.display = 'none';
+      return;
+    }
+    if (txHistoryLoading) txHistoryLoading.style.display = 'block';
+    if (txHistoryEmpty) txHistoryEmpty.style.display = 'none';
+    if (txHistoryList) txHistoryList.style.display = 'none';
+
+    const result = await window.electronAPI.walletGetTransactions({
+      rpcUrl: getRpcUrl(),
+      address,
+      offset: 0,
+      limit: 50
+    });
+
+    if (txHistoryLoading) txHistoryLoading.style.display = 'none';
+
+    if (!result?.success) {
+      if (txHistoryEmpty) txHistoryEmpty.textContent = `Failed to load history: ${result?.error || 'unknown error'}`;
+      if (txHistoryEmpty) txHistoryEmpty.style.display = 'block';
+      return;
+    }
+
+    const txs = result.data?.transactions || [];
+    if (txs.length === 0) {
+      if (txHistoryEmpty) txHistoryEmpty.textContent = 'No transactions yet.';
+      if (txHistoryEmpty) txHistoryEmpty.style.display = 'block';
+      return;
+    }
+
+    if (txHistoryEmpty) txHistoryEmpty.style.display = 'none';
+    if (txHistoryList) txHistoryList.style.display = 'flex';
+
+    const html = txs.map(item => {
+      const tx = item.transaction || item;
+      const from = tx.from || '';
+      const to = tx.to || '';
+      const amount = tx.amount || 0;
+      const purpose = tx.purpose || '';
+      const memo = tx.memo || '';
+      const blockHeight = item.block_height || item.blockHeight || 0;
+      const timestamp = item.timestamp || 0;
+      const txId = tx.id || tx.hash || '';
+      const isIncoming = to === address;
+      const isMined = purpose === 'mining_reward' || purpose === 'block_reward';
+      const amountClass = isMined ? 'mined' : isIncoming ? 'income' : 'outgoing';
+      const sign = isIncoming ? '+' : '-';
+      const timeStr = timestamp ? new Date(timestamp * 1000).toLocaleString() : `Block ${blockHeight}`;
+      const purposeLabel = purpose ? String(purpose).replace(/_/g, ' ') : (isIncoming ? 'Receive' : 'Send');
+      return `
+        <div class="tx-history-item">
+          <div class="tx-history-meta">
+            <div class="tx-history-id" title="${escapeHtml(txId)}">${escapeHtml(txId.slice(0, 24))}…</div>
+            <div class="tx-history-time">${escapeHtml(timeStr)} · ${escapeHtml(purposeLabel)}${memo ? ' · ' + escapeHtml(String(memo).slice(0, 24)) : ''}</div>
+          </div>
+          <div class="tx-history-amount ${amountClass}">${sign}${Number(amount).toFixed(4)} ZION</div>
+          <div class="tx-history-status">${blockHeight ? 'Confirmed' : 'Pending'}</div>
+        </div>
+      `;
+    }).join('');
+
+    if (txHistoryList) txHistoryList.innerHTML = html;
+  }
+
+  txHistoryRefreshBtn?.addEventListener('click', () => {
+    loadTransactionHistory();
+  });
+
+  // Auto-load history when History tab becomes visible
+  const walletHistoryTab = document.querySelector('.section-tab[data-section="wallet-history"]');
+  walletHistoryTab?.addEventListener('click', () => {
+    loadTransactionHistory();
+  });
+  // Also load once on init if History is somehow already active
+  if (document.getElementById('wallet-history')?.classList.contains('active')) {
+    loadTransactionHistory();
+  }
 }
 
 async function loadWalletsList() {

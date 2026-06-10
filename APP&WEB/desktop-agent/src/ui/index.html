@@ -1546,6 +1546,57 @@
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
     }
+    .tx-history-list {
+      margin-top: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 360px;
+      overflow-y: auto;
+    }
+    .tx-history-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      background: rgba(0,0,0,0.18);
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.06);
+      font-size: 12px;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .tx-history-meta { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+    .tx-history-id {
+      font-family: monospace;
+      color: rgba(255,255,255,0.7);
+      font-size: 11px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .tx-history-time {
+      color: rgba(255,255,255,0.35);
+      font-size: 10px;
+    }
+    .tx-history-amount {
+      font-weight: 700;
+      font-family: monospace;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    .tx-history-amount.income { color: #4ade80; }
+    .tx-history-amount.outgoing { color: #f87171; }
+    .tx-history-amount.mined { color: #60a5fa; }
+    .tx-history-status {
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 99px;
+      background: rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.55);
+      white-space: nowrap;
+    }
     .muted-note {
       margin-bottom: 18px;
       color: rgba(255,255,255,0.40);
@@ -3431,6 +3482,41 @@
     .arcade-high { color: #fcd34d; }
     .arcade-level { color: #93c5fd; }
 
+    /* ═══ Toast Notifications ═══ */
+    .toast-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: none;
+    }
+    .toast {
+      padding: 10px 16px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 500;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+      color: #fff;
+      opacity: 0;
+      transform: translateX(40px);
+      transition: all 0.35s cubic-bezier(0.4,0,0.2,1);
+      max-width: 320px;
+      word-break: break-word;
+      pointer-events: auto;
+    }
+    .toast-in { opacity: 1; transform: translateX(0); }
+    .toast-out { opacity: 0; transform: translateX(40px); }
+    .toast-success { background: rgba(16,185,129,0.18); border-color: rgba(16,185,129,0.35); color: #6ee7b7; }
+    .toast-error { background: rgba(239,68,68,0.18); border-color: rgba(239,68,68,0.35); color: #f87171; }
+    .toast-info { background: rgba(59,130,246,0.18); border-color: rgba(59,130,246,0.35); color: #93c5fd; }
+    .toast-warn { background: rgba(234,179,8,0.18); border-color: rgba(234,179,8,0.35); color: #fcd34d; }
+
     /* ═══ Bridge Readiness ═══ */
     .bridge-readiness-row {
       display: flex;
@@ -4336,7 +4422,26 @@
 
         <!-- ═══ SECTION: History ═══ -->
         <div id="wallet-history" class="section-panel">
+          <!-- Transaction History -->
           <div class="control-panel">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+              <h2 class="panel-title-row" style="margin:0">
+                <svg class="icon" aria-hidden="true"><use href="#i-list"></use></svg>
+                <span>Transaction History</span>
+              </h2>
+              <button class="btn btn-ghost btn-sm" id="tx-history-refresh-btn">
+                <svg class="icon icon-inline icon-xs" aria-hidden="true"><use href="#i-refresh"></use></svg> Refresh
+              </button>
+            </div>
+            <div id="tx-history-list" class="tx-history-list" style="display:none">
+              <!-- items injected by renderer -->
+            </div>
+            <div id="tx-history-empty" class="muted-note" style="text-align:center;padding:24px 0">No transactions yet.</div>
+            <div id="tx-history-loading" class="muted-note" style="text-align:center;padding:24px 0;display:none">Loading…</div>
+          </div>
+
+          <!-- Transaction Lookup -->
+          <div class="control-panel" style="margin-top:16px">
             <h2 class="panel-title-row">
               <svg class="icon" aria-hidden="true"><use href="#i-search"></use></svg>
               <span>Transaction Lookup</span>
@@ -6387,6 +6492,9 @@ Click a button in any tab to run a command. Output appears here.
       </div>
     </nav>
   </div>
+
+  <!-- Toast container -->
+  <div id="toast-container" class="toast-container"></div>
 
   <script src="renderer.js"></script>
 </body>
