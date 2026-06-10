@@ -2074,6 +2074,19 @@ def parse_miner_log() -> dict:
     else:
         recent = []
         startup = []
+        # Fallback: read from systemd journal for zion-edge-miner service
+        try:
+            if shutil.which("journalctl"):
+                proc = subprocess.run(
+                    ["journalctl", "-u", "zion-edge-miner", "--no-pager", "-n", "60"],
+                    capture_output=True, text=True, timeout=5
+                )
+                if proc.returncode == 0:
+                    lines = proc.stdout.splitlines()
+                    recent = lines[-60:] if len(lines) >= 60 else lines
+                    startup = lines[:20] if len(lines) >= 20 else lines
+        except Exception:
+            pass
     # Process-based liveness: check PROCESS_REGISTRY first, then scan by exe name
     proc_check = check_process_for_service("miner")
     proc_alive = proc_check["alive"]
@@ -2638,6 +2651,7 @@ def build_checklist(status: dict) -> dict:
             {"id": "node1",      "label": "Local Backup Node running & synced",       "ok": status["node1"]["running"] and status["node1"]["p2p_bind"] is not None},
             {"id": "pool",       "label": "Edge Pool running & accepting miners",     "ok": status["pool"]["running"] and status["pool"]["active_sessions"] is not None},
             {"id": "pool-edge",  "label": "Edge Pool TCP reachable",                  "ok": status.get("pool_edge", {}).get("running", False)},
+            {"id": "miner",      "label": "Edge Miner running & hashing",             "ok": status.get("miner", {}).get("running", False)},
             {"id": "chain",      "label": "Chain height advancing",                   "ok": status["edge_node"]["chain_height"] is not None and status["edge_node"]["chain_height"] > 0},
             {"id": "l2-edge",    "label": "Edge L2 services (DAO + WARP + Bridge)", "ok": status.get("dao", {}).get("running", False) and status.get("warp", {}).get("running", False) and status.get("bridge", {}).get("running", False)},
             {"id": "payout",     "label": "Payout mechanism ready (fee split active)", "ok": status["pool"]["running"] and status["pool"]["fee_split"] == "89/5/5/0"},
