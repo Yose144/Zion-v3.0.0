@@ -695,8 +695,6 @@ function setupControls() {
   const openLogsBtn = document.getElementById('open-logs-btn');
   const hashrateUnitEl = document.getElementById('hashrate-unit');
   const algoSelect = document.getElementById('algo-select');
-  const algoSaveBtn = document.getElementById('algo-save-btn');
-  const algoStatusEl = document.getElementById('algo-status');
   const gpuCheckbox = document.getElementById('gpu-checkbox');
   const backendStatusEl = document.getElementById('backend-status');
 
@@ -757,10 +755,9 @@ function setupControls() {
   const syncAlgoUi = () => {
     const algo = algoSelect?.value || config.algorithm || 'deeksha_lite_v1';
     const label = ALGO_LABELS[algo] || algo;
-    if (algoStatusEl) algoStatusEl.textContent = label;
-    // update the display chip in the control panel
-    const algoDisplayChip = document.querySelector('#algo-display .font-semibold');
-    if (algoDisplayChip) algoDisplayChip.textContent = label;
+    // update settings read-only display
+    const settingsDisplay = document.getElementById('settings-algo-display');
+    if (settingsDisplay) settingsDisplay.textContent = label;
   };
 
   const algoSupportsGpu = (algo) => {
