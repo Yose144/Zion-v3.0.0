@@ -151,7 +151,22 @@ impl GpuDeviceFamily {
     /// Auto-detect from OpenCL device name string.
     pub fn from_name(name: &str) -> Self {
         let lower = name.to_ascii_lowercase();
-        // GCN detection — must be BEFORE RDNA because "gfx10" also contains "gfx"
+        // RDNA MUST be checked first: "rx 5" (RX 5000 = RDNA1, gfx1010) would
+        // otherwise fall into the GCN branch below ("rx 5" was listed there).
+        // RX 5500/5600/5700 = RDNA1 (gfx1010/1011/1012), not GCN.
+        if lower.contains("gfx10")
+            || lower.contains("gfx11")
+            || lower.contains("gfx12")
+            || lower.contains("rdna")
+            || lower.contains("rx 5")  // RX 5500/5600/5700 = RDNA1
+            || lower.contains("rx 6")
+            || lower.contains("rx 7")
+            || lower.contains("rx 9")
+            || lower.contains("rx 79")
+            || lower.contains("rx 89")
+        {
+            return Self::AmdRdna;
+        }
         if lower.contains("gfx6")
             || lower.contains("gfx7")
             || lower.contains("gfx8")
@@ -162,7 +177,6 @@ impl GpuDeviceFamily {
             || lower.contains("tonga")
             || lower.contains("hawaii")
             || lower.contains("rx 4")
-            || lower.contains("rx 5")
             || lower.contains("r9 ")
             || lower.contains("r7 ")
             || lower.contains("r5 ")
@@ -170,19 +184,6 @@ impl GpuDeviceFamily {
             || lower.contains("hd 8")
         {
             return Self::AmdGcn;
-        }
-        // RDNA detection
-        if lower.contains("gfx10")
-            || lower.contains("gfx11")
-            || lower.contains("gfx12")
-            || lower.contains("rdna")
-            || lower.contains("rx 6")
-            || lower.contains("rx 7")
-            || lower.contains("rx 9")
-            || lower.contains("rx 79")
-            || lower.contains("rx 89")
-        {
-            return Self::AmdRdna;
         }
         // NVIDIA
         if lower.contains("nvidia") || lower.contains("geforce") || lower.contains("rtx") || lower.contains("gtx") || lower.contains("quadro")
