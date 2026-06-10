@@ -170,6 +170,18 @@ contextBridge.exposeInMainWorld('electronAPI', {
   cliWarpPending: () => ipcRenderer.invoke('cli-warp-pending'),
   cliWarpStats: () => ipcRenderer.invoke('cli-warp-stats'),
 
+  // ── L5 Free World ──────────────────────────────────────────────────
+  l5Status: () => ipcRenderer.invoke('l5-status'),
+  l5FundBalance: () => ipcRenderer.invoke('l5-fund-balance'),
+  l5Grants: () => ipcRenderer.invoke('l5-grants'),
+  l5Projects: () => ipcRenderer.invoke('l5-projects'),
+
+  // ── L6 Issobela ────────────────────────────────────────────────────
+  l6Status: () => ipcRenderer.invoke('l6-status'),
+  l6FundBalance: () => ipcRenderer.invoke('l6-fund-balance'),
+  l6Missions: () => ipcRenderer.invoke('l6-missions'),
+  l6Proposals: () => ipcRenderer.invoke('l6-proposals'),
+
   // Cleanup listeners
   removeAllListeners: (channel) => {
     ipcRenderer.removeAllListeners(channel);

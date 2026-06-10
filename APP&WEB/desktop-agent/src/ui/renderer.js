@@ -4396,6 +4396,71 @@ function initCliView() {
   document.getElementById('cli-btn-warp-chains')?.addEventListener('click', () => runCli('cliWarpChains', 'warp chains'));
   document.getElementById('cli-btn-warp-pending')?.addEventListener('click', () => runCli('cliWarpPending', 'warp pending'));
   document.getElementById('cli-btn-warp-stats')?.addEventListener('click', () => runCli('cliWarpStats', 'warp stats'));
+
+  // ── L5 Free World ─────────────────────────────────────────────────
+  const l5Display = document.getElementById('l5-data-display');
+  const l5Chip = document.getElementById('l5-status-chip');
+
+  async function refreshL5Status() {
+    const res = await window.electronAPI.l5Status();
+    if (l5Chip) {
+      l5Chip.textContent = res?.success ? (res?.data?.status === 'ok' ? 'Online' : 'Degraded') : 'Offline';
+      l5Chip.style.background = res?.success ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)';
+      l5Chip.style.color = res?.success ? '#4ade80' : '#f87171';
+    }
+  }
+  // Auto-check on tab open
+  document.querySelector('.section-tab[data-section="cli-l5"]')?.addEventListener('click', refreshL5Status);
+  refreshL5Status();
+
+  async function showL5Data(label, fetcher) {
+    if (l5Display) { l5Display.style.display = 'block'; l5Display.textContent = `Loading ${label}…`; }
+    try {
+      const res = await fetcher();
+      if (l5Display) l5Display.textContent = JSON.stringify(res, null, 2);
+      addLogEntry(`L5 ${label}: ${res?.success ? 'ok' : res?.error || 'failed'}`, res?.success ? 'info' : 'error');
+    } catch (err) {
+      if (l5Display) l5Display.textContent = `Error: ${err?.message || err}`;
+      addLogEntry(`L5 ${label} error: ${err?.message || err}`, 'error');
+    }
+  }
+
+  document.getElementById('cli-btn-l5-status')?.addEventListener('click', () => showL5Data('status', window.electronAPI.l5Status));
+  document.getElementById('cli-btn-l5-balance')?.addEventListener('click', () => showL5Data('fund balance', window.electronAPI.l5FundBalance));
+  document.getElementById('cli-btn-l5-grants')?.addEventListener('click', () => showL5Data('grants', window.electronAPI.l5Grants));
+  document.getElementById('cli-btn-l5-projects')?.addEventListener('click', () => showL5Data('projects', window.electronAPI.l5Projects));
+
+  // ── L6 Issobela ───────────────────────────────────────────────────
+  const l6Display = document.getElementById('l6-data-display');
+  const l6Chip = document.getElementById('l6-status-chip');
+
+  async function refreshL6Status() {
+    const res = await window.electronAPI.l6Status();
+    if (l6Chip) {
+      l6Chip.textContent = res?.success ? (res?.data?.status === 'ok' ? 'Online' : 'Degraded') : 'Offline';
+      l6Chip.style.background = res?.success ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)';
+      l6Chip.style.color = res?.success ? '#4ade80' : '#f87171';
+    }
+  }
+  document.querySelector('.section-tab[data-section="cli-l6"]')?.addEventListener('click', refreshL6Status);
+  refreshL6Status();
+
+  async function showL6Data(label, fetcher) {
+    if (l6Display) { l6Display.style.display = 'block'; l6Display.textContent = `Loading ${label}…`; }
+    try {
+      const res = await fetcher();
+      if (l6Display) l6Display.textContent = JSON.stringify(res, null, 2);
+      addLogEntry(`L6 ${label}: ${res?.success ? 'ok' : res?.error || 'failed'}`, res?.success ? 'info' : 'error');
+    } catch (err) {
+      if (l6Display) l6Display.textContent = `Error: ${err?.message || err}`;
+      addLogEntry(`L6 ${label} error: ${err?.message || err}`, 'error');
+    }
+  }
+
+  document.getElementById('cli-btn-l6-status')?.addEventListener('click', () => showL6Data('status', window.electronAPI.l6Status));
+  document.getElementById('cli-btn-l6-balance')?.addEventListener('click', () => showL6Data('fund balance', window.electronAPI.l6FundBalance));
+  document.getElementById('cli-btn-l6-missions')?.addEventListener('click', () => showL6Data('missions', window.electronAPI.l6Missions));
+  document.getElementById('cli-btn-l6-proposals')?.addEventListener('click', () => showL6Data('proposals', window.electronAPI.l6Proposals));
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
