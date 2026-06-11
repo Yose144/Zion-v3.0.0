@@ -176,7 +176,19 @@ export async function tailLog(path: string, lines = 100): Promise<string[]> {
 // ── Control Actions ───────────────────────────────────────
 
 export async function controlAction(action: string, env?: Record<string, string>): Promise<{ ok: boolean; error?: string }> {
-  const res = await apiPost<{ ok: boolean; error?: string }>('/api/control', { action, env });
+  let path = '/api/control';
+  let body: unknown = { action, env };
+  if (action === 'start-miner') {
+    path = '/api/miner/start';
+    body = {};
+  } else if (action === 'stop-miner') {
+    path = '/api/miner/stop';
+    body = {};
+  } else if (action === 'restart-miner') {
+    path = '/api/miner/restart';
+    body = env?.ZION_MINER_ALGORITHM ? { algorithm: env.ZION_MINER_ALGORITHM } : {};
+  }
+  const res = await apiPost<{ ok: boolean; error?: string }>(path, body);
   return res ?? { ok: false, error: 'Network error' };
 }
 
