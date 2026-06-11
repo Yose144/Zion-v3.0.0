@@ -2061,28 +2061,35 @@ def get_miner_live_stats() -> dict:
     agent_gpu = fetch_agent_gpu()
 
     # Prefer desktop-agent miner_stats.json (live OpenCL/CPU miner) over stale logs
+    # Check both dev and packaged agent paths, use most recent valid file
     try:
-        agent_stats_path = Path.home() / "AppData" / "Roaming" / "zion-desktop-agent-dev" / "miner_stats.json"
-        if agent_stats_path.exists():
-            mtime = agent_stats_path.stat().st_mtime
-            if time.time() - mtime < 120:
-                with open(agent_stats_path, "r", encoding="utf-8") as f:
-                    js = json.load(f)
-                if js.get("status") == "running":
-                    stats = {
-                        "running": True,
-                        "miner_id": js.get("miner_id"),
-                        "worker_name": js.get("worker"),
-                        "pool_addr": js.get("pool_addr"),
-                        "hashrate": (js.get("hashrate_gpu") or 0) / 1000.0,  # H/s -> KH/s
-                        "gpu_backend": js.get("backend", "cpu"),
-                        "gpu_device": js.get("gpu_name"),
-                        "shares_accepted": js.get("shares_accepted", 0),
-                        "shares_rejected": js.get("shares_rejected", 0),
-                        "current_height": js.get("pool_height"),
-                        "current_diff": None,
-                        "current_algorithm": js.get("algorithm"),
-                    }
+        best_js = None
+        best_mtime = 0
+        for subdir in ("zion-desktop-agent-dev", "zion-desktop-agent"):
+            p = Path.home() / "AppData" / "Roaming" / subdir / "miner_stats.json"
+            if p.exists():
+                mtime = p.stat().st_mtime
+                if mtime > best_mtime and time.time() - mtime < 1800:  # up to 30 min stale
+                    with open(p, "r", encoding="utf-8") as f:
+                        candidate = json.load(f)
+                    if candidate.get("status") == "running":
+                        best_js = candidate
+                        best_mtime = mtime
+        if best_js:
+            stats = {
+                "running": True,
+                "miner_id": best_js.get("miner_id"),
+                "worker_name": best_js.get("worker"),
+                "pool_addr": best_js.get("pool_addr"),
+                "hashrate": (best_js.get("hashrate_gpu") or 0) / 1000.0,  # H/s -> KH/s
+                "gpu_backend": best_js.get("backend", "cpu"),
+                "gpu_device": best_js.get("gpu_name"),
+                "shares_accepted": best_js.get("shares_accepted", 0),
+                "shares_rejected": best_js.get("shares_rejected", 0),
+                "current_height": best_js.get("pool_height"),
+                "current_diff": None,
+                "current_algorithm": best_js.get("algorithm"),
+            }
     except Exception:
         pass
 
@@ -2669,15 +2676,9 @@ def _build_status_edge_primary() -> dict:
 
     miner_status = get_miner_live_stats()
 
-    # In edge-primary, prefer real Edge pool metrics over local (broken) miner logs
-    if TOPOLOGY == "edge-primary" and edge_metrics.get("hashrate") is not None:
-        miner_status["hashrate"] = round(edge_metrics["hashrate"], 2)  # already KH/s from line 2411
-        miner_status["shares_accepted"] = edge_metrics.get("shares_accepted", 0)
-        miner_status["shares_rejected"] = edge_metrics.get("shares_rejected", 0)
+    # If local log has no hashrate but process exists, force running=True
+    if not miner_status.get("running") and is_process_running("zion-miner.exe"):
         miner_status["running"] = True
-        # If local log has no hashrate but process exists, force running=True
-        if not miner_status.get("running") and is_process_running("zion-miner.exe"):
-            miner_status["running"] = True
 
     # ── L2/L3 Edge services health ───────────────────────────────────────────
     bridge_svc = get_service("bridge")
@@ -7289,6 +7290,9 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self.send_header("Access-Control-Allow-Origin", cors_origin)
             self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
             self.send_header("Access-Control-Allow-Headers", "Content-Type")
+            self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
+            self.send_header("Pragma", "no-cache")
+            self.send_header("Expires", "0")
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()
             self.wfile.write(body)
@@ -7415,6 +7419,9 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 body = js_path.read_bytes()
                 self.send_response(200)
                 self.send_header("Content-Type", "application/javascript; charset=utf-8")
+                self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
+                self.send_header("Pragma", "no-cache")
+                self.send_header("Expires", "0")
                 self.send_header("Content-Length", str(len(body)))
                 self.end_headers()
                 self.wfile.write(body)
