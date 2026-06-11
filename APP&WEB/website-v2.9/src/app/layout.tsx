@@ -10,6 +10,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { WalletProvider } from "@/contexts/WalletContext";
 import { ZionWalletProvider } from "@/contexts/ZionWalletContext";
 import ClientBackgrounds from "@/components/ClientBackgrounds";
+import HeroSection from "@/components/HeroSection";
 import { SITE_NETWORK_TOPOLOGY, SITE_RELEASE_LABEL, SITE_RUNTIME_LABEL, SITE_VERSION } from '@/lib/site';
 
 const inter = Inter({ 
@@ -59,6 +60,7 @@ export default function RootLayout({
                     <ClientBackgrounds />
                     <div className="relative z-10">
                       <Navigation />
+                      <HeroSection />
                       <main className="zion-shell min-h-screen">
                         {children}
                       </main>
