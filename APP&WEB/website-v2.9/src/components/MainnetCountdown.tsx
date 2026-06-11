@@ -185,7 +185,7 @@ export default function MainnetCountdown() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 md:gap-4">
+              <div className="flex items-center gap-2 sm:gap-3 md:gap-4">
                 {units.map((unit, i) => (
                   <motion.div
                     key={unit.label}
@@ -194,8 +194,8 @@ export default function MainnetCountdown() {
                     transition={{ duration: 0.4, delay: i * 0.08 }}
                     className="flex flex-col items-center"
                   >
-                    <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md flex items-center justify-center">
-                      <span className="text-2xl md:text-3xl font-bold text-gradient tabular-nums">
+                    <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md flex items-center justify-center">
+                      <span className="text-xl sm:text-2xl md:text-3xl font-bold text-gradient tabular-nums">
                         {pad(unit.value)}
                       </span>
                     </div>

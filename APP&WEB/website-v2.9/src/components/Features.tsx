@@ -103,7 +103,7 @@ export default function Features() {
             ))}
           </div>
 
-          <div className="rounded-3xl border border-white/10 bg-black/50 backdrop-blur-xl p-8 space-y-6">
+          <div className="rounded-3xl border border-white/10 bg-black/50 backdrop-blur-xl p-6 sm:p-8 space-y-6">
             <div className="flex items-center gap-3 text-sm text-gray-400">
               <Zap className="w-5 h-5 text-zion-gold" />
               {tr('features', 'upgrade_heading', lang)}

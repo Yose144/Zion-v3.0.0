@@ -60,7 +60,7 @@ export default function Hero() {
   ];
 
   return (
-    <section className="relative px-4 pt-32 pb-28 overflow-hidden">
+    <section className="relative px-4 pt-24 sm:pt-32 pb-16 sm:pb-28 overflow-hidden">
       {/* ── ambient gradients ── */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute -top-40 -left-40 w-[700px] h-[700px] rounded-full bg-violet-700/12 blur-3xl" />
@@ -77,7 +77,7 @@ export default function Hero() {
           initial={{ opacity: 0, y: -12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="flex flex-wrap items-center gap-3 mb-12 justify-center lg:justify-start"
+          className="flex flex-wrap items-center gap-3 mb-8 sm:mb-12 justify-center lg:justify-start"
         >
           <div className="zion-kicker border-zion-gold/25 bg-zion-gold/10 text-zion-gold">
             <Sparkles className="w-3.5 h-3.5 animate-pulse" />
@@ -99,19 +99,19 @@ export default function Hero() {
           >
             {/* headline */}
             <div>
-              <p className="text-lg md:text-xl text-zion-cyan font-semibold mb-3 tracking-wide">
+              <p className="text-base sm:text-lg md:text-xl text-zion-cyan font-semibold mb-2 sm:mb-3 tracking-wide">
                 {tr('hero', 'tagline', lang)}
               </p>
-              <h1 className="text-5xl md:text-6xl xl:text-7xl font-extrabold leading-[1.06] tracking-tight">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-extrabold leading-[1.06] tracking-tight">
                 <span className="bg-gradient-to-r from-emerald-400 via-yellow-300 to-rose-400 bg-clip-text text-transparent">ZION Terra Nova</span>
-                <span className="block text-2xl md:text-3xl xl:text-4xl font-semibold text-white/60 mt-2 tracking-normal">
+                <span className="block text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-semibold text-white/60 mt-1 sm:mt-2 tracking-normal">
                   {tr('hero', 'title_sub', lang)}
                 </span>
               </h1>
             </div>
 
             {/* paragraph */}
-            <p className="text-lg md:text-xl text-gray-300 max-w-xl leading-relaxed">
+            <p className="text-base sm:text-lg md:text-xl text-gray-300 max-w-xl leading-relaxed">
               {tr('hero', 'description', lang)}
             </p>
 
