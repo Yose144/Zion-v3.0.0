@@ -3,10 +3,16 @@
 
 const crypto = require('crypto');
 const bip39 = require('bip39');
+const ed = require('@noble/ed25519');
+const { sha512 } = require('@noble/hashes/sha512');
 const { sha256 } = require('@noble/hashes/sha2');
 const { ripemd160 } = require('@noble/hashes/legacy');
 
 const { randomBytes } = crypto;
+
+ed.hashes.sha512 = sha512;
+
+const ED25519_PKCS8_PREFIX = Buffer.from('302e020100300506032b657004220420', 'hex');
 
 const ZION_PREFIX = 'zion1';
 const ZION_BASE32 = '023456789acdefghjklmnpqrstuvwxyz';
@@ -68,34 +74,33 @@ function getAddressType(address) {
 class ZionWalletGenerator {
   /**
    * Generate new ZION wallet
+   * @param {number} [strength=128] - BIP39 entropy bits (128 = 12 words, 256 = 24 words)
    * @returns {Object} Wallet with address, privateKey, publicKey, mnemonic
    */
-  static generateWallet() {
-    // Generate BIP39 mnemonic (12 words)
-    const mnemonic = bip39.generateMnemonic(128);
-    
+  static generateWallet(strength = 128) {
+    // Generate BIP39 mnemonic (12 or 24 words)
+    const mnemonic = bip39.generateMnemonic(strength);
+
     // Derive seed from mnemonic
     const seed = bip39.mnemonicToSeedSync(mnemonic);
-    
-    // Generate Ed25519 keypair from seed (using first 32 bytes as private key seed)
-    // Note: In production, use SLIP-0010 or similar for proper HD derivation
-    const privateKeySeed = seed.slice(0, 32);
-    const { publicKey, privateKey } = crypto.generateKeyPairSync('ed25519', {
-      privateKeyEncoding: { type: 'pkcs8', format: 'der' },
-      publicKeyEncoding: { type: 'spki', format: 'der' },
-      seed: privateKeySeed
-    });
 
-    // Extract raw public key (last 32 bytes of DER encoding)
-    const pubKeyRaw = publicKey.slice(-32);
-    
+    // Generate deterministic Ed25519 keypair from seed (first 32 bytes)
+    // NOTE: Node.js crypto.generateKeyPairSync ignores the `seed` option for
+    // ed25519, producing random keys each call. We use @noble/ed25519 for
+    // deterministic derivation so the mnemonic actually works for recovery.
+    const privateKeySeed = seed.slice(0, 32);
+    const pubKeyRaw = Buffer.from(ed.getPublicKey(privateKeySeed));
+
+    // Reconstruct DER-encoded PKCS8 private key for compat with Node crypto
+    const privateKeyDer = Buffer.concat([ED25519_PKCS8_PREFIX, privateKeySeed]);
+
     // Derive canonical ZION address
     const address = this.deriveAddress(pubKeyRaw);
-    
+
     // Export keys as hex
-    const privateKeyHex = privateKey.toString('hex');
+    const privateKeyHex = privateKeyDer.toString('hex');
     const publicKeyHex = pubKeyRaw.toString('hex');
-    
+
     return {
       address,
       publicKey: publicKeyHex,
@@ -117,25 +122,21 @@ class ZionWalletGenerator {
 
     // Derive seed from mnemonic
     const seed = bip39.mnemonicToSeedSync(mnemonic);
-    
-    // Generate Ed25519 keypair from seed (using first 32 bytes as private key seed)
-    const privateKeySeed = seed.slice(0, 32);
-    const { publicKey, privateKey } = crypto.generateKeyPairSync('ed25519', {
-      privateKeyEncoding: { type: 'pkcs8', format: 'der' },
-      publicKeyEncoding: { type: 'spki', format: 'der' },
-      seed: privateKeySeed
-    });
 
-    // Extract raw public key (last 32 bytes of DER encoding)
-    const pubKeyRaw = publicKey.slice(-32);
-    
+    // Generate deterministic Ed25519 keypair from seed (first 32 bytes)
+    const privateKeySeed = seed.slice(0, 32);
+    const pubKeyRaw = Buffer.from(ed.getPublicKey(privateKeySeed));
+
+    // Reconstruct DER-encoded PKCS8 private key for compat with Node crypto
+    const privateKeyDer = Buffer.concat([ED25519_PKCS8_PREFIX, privateKeySeed]);
+
     // Derive canonical ZION address
     const address = this.deriveAddress(pubKeyRaw);
-    
+
     // Export keys as hex
-    const privateKeyHex = privateKey.toString('hex');
+    const privateKeyHex = privateKeyDer.toString('hex');
     const publicKeyHex = pubKeyRaw.toString('hex');
-    
+
     return {
       address,
       publicKey: publicKeyHex,
@@ -203,11 +204,12 @@ class ZionWalletGenerator {
   }
 
   /**
-   * Generate 12-word mnemonic seed phrase
+   * Generate mnemonic seed phrase
    * Uses standard BIP39 implementation
+   * @param {number} [strength=128] - BIP39 entropy bits (128 = 12 words, 256 = 24 words)
    */
-  static generateMnemonic() {
-    return bip39.generateMnemonic(128);
+  static generateMnemonic(strength = 128) {
+    return bip39.generateMnemonic(strength);
   }
 
   /**
