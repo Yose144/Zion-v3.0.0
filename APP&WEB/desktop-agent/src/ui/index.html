@@ -6843,6 +6843,20 @@ Click a button in any tab to run a command. Output appears here.
   <!-- Toast container -->
   <div id="toast-container" class="toast-container"></div>
 
+  <!-- Export Backup Password Modal -->
+  <div id="export-password-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:10000; justify-content:center; align-items:center; backdrop-filter:blur(4px);">
+    <div style="background:#0f0f1a; border:1px solid rgba(147,51,234,0.35); border-radius:16px; padding:28px; width:360px; box-shadow:0 20px 60px rgba(0,0,0,0.6);">
+      <h3 style="color:var(--zion-gold); margin:0 0 6px; font-size:18px;">Export Wallet Backup</h3>
+      <p style="color:rgba(255,255,255,0.55); font-size:12px; margin:0 0 16px; word-break:break-all;"><span id="export-modal-address" style="color:rgba(255,255,255,0.8);"></span></p>
+      <label style="display:block; color:rgba(255,255,255,0.6); font-size:12px; margin-bottom:6px;">Wallet Password</label>
+      <input type="password" id="export-modal-password" placeholder="Enter password to decrypt…" style="width:100%; padding:10px 12px; background:rgba(0,0,0,0.45); border:1px solid rgba(147,51,234,0.25); border-radius:8px; color:#fff; font-size:14px; outline:none; margin-bottom:20px; box-sizing:border-box;" />
+      <div style="display:flex; gap:10px;">
+        <button id="export-modal-cancel" class="btn btn-ghost" style="flex:1; padding:10px; font-size:13px;">Cancel</button>
+        <button id="export-modal-confirm" class="btn btn-primary" style="flex:1; padding:10px; font-size:13px;">Export</button>
+      </div>
+    </div>
+  </div>
+
   <script src="renderer.js"></script>
 </body>
 </html>

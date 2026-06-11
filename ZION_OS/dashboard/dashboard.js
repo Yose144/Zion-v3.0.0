@@ -2103,7 +2103,7 @@ async function loadBackups(){
       else { localBadge.className = 'text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400'; localBadge.textContent = 'No Data'; }
     }
     const lts = local.last_backup_timestamp || data.last_backup;
-    const ldt = lts ? (lts.includes('-') && lts.includes('T') ? new Date(lts).toLocaleString() : (lts.length===15 ? new Date(lts.slice(0,4)+'-'+lts.slice(4,6)+'-'+lts.slice(6,8)+' '+lts.slice(9,11)+':'+lts.slice(11,13)+':'+lts.slice(13,15)) : new Date(lts)).toLocaleString() : 'Never';
+    const ldt = lts ? (lts.includes('-') && lts.includes('T') ? new Date(lts).toLocaleString() : (lts.length===15 ? new Date(lts.slice(0,4)+'-'+lts.slice(4,6)+'-'+lts.slice(6,8)+' '+lts.slice(9,11)+':'+lts.slice(11,13)+':'+lts.slice(13,15)).toLocaleString() : new Date(lts).toLocaleString())) : 'Never';
     const lsz = local.last_backup_size_bytes ? (local.last_backup_size_bytes / 1024).toFixed(1) + ' KB' : (data.total_backup_mb ? data.total_backup_mb.toFixed(1) + ' MB' : '—');
     const lfi = local.last_backup_file || (data.auto_backups?.[0]?.name) || '—';
     const ldu = local.disk_usage_percent != null ? local.disk_usage_percent + '%' : '—';
@@ -2122,7 +2122,7 @@ async function loadBackups(){
       else { edgeBadge.className = 'text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400'; edgeBadge.textContent = 'No Data'; }
     }
     const ets = edge.last_backup_timestamp;
-    const edt = ets ? (ets.includes('-') && ets.includes('T') ? new Date(ets).toLocaleString() : (ets.length===15 ? new Date(ets.slice(0,4)+'-'+ets.slice(4,6)+'-'+ets.slice(6,8)+' '+ets.slice(9,11)+':'+ets.slice(11,13)+':'+ets.slice(13,15)) : new Date(ets)).toLocaleString() : 'Never';
+    const edt = ets ? (ets.includes('-') && ets.includes('T') ? new Date(ets).toLocaleString() : (ets.length===15 ? new Date(ets.slice(0,4)+'-'+ets.slice(4,6)+'-'+ets.slice(6,8)+' '+ets.slice(9,11)+':'+ets.slice(11,13)+':'+ets.slice(13,15)).toLocaleString() : new Date(ets).toLocaleString())) : 'Never';
     const esz = edge.last_backup_size_bytes ? (edge.last_backup_size_bytes / 1024).toFixed(1) + ' KB' : '—';
     const efi = edge.last_backup_file || '—';
     const edu = edge.disk_usage_percent != null ? edge.disk_usage_percent + '%' : '—';
