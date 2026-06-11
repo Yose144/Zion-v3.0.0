@@ -769,7 +769,39 @@ fn handle_client(
                 // computed_hash is used for audit/mismatch detection only.
                 let target_hash = &submitted_hash;
 
-                if !share_target.allows(target_hash) {
+                // ── Stale-job check ──────────────────────────────────────
+                // If the miner submits a share for an old job (different job_id or expired TTL),
+                // reject it as StaleJob so it doesn't count against RejectedLowDifficulty.
+                let is_stale = {
+                    let p = pool.lock().expect("pool lock poisoned");
+                    job_id != job.job_id || p.is_job_stale(job_id)
+                };
+                if is_stale {
+                    let reason = if job_id != job.job_id {
+                        "wrong-iteration"
+                    } else {
+                        "ttl-expired"
+                    };
+                    println!(
+                        "share_stale miner={} submitted_job={} current_job={} reason={}",
+                        worker_name, job_id, job.job_id, reason
+                    );
+                    pool.lock()
+                        .expect("pool lock poisoned")
+                        .record_stale_share();
+                    let decision = ShareDecision {
+                        status: ShareStatus::StaleJob,
+                        sealed_block: None,
+                    };
+                    JobCompletion::Submitted {
+                        decision,
+                        routed_source: RevenueSource::Zion,
+                        attempted_hashes: attempted_hashes
+                            .unwrap_or_else(|| nonce.saturating_sub(job.start_nonce) + 1),
+                        elapsed_ms: elapsed_ms
+                            .unwrap_or_else(|| job_issued_at.elapsed().as_millis() as u64),
+                    }
+                } else if !share_target.allows(target_hash) {
                     // Hash does not meet even the (easier) share target → reject.
                     println!(
                         "share_below_target miner={} job={} diff={}",
@@ -1406,6 +1438,7 @@ struct RoutingStats {
     log_every: u64,
     total_submits: u64,
     total_accepted: u64,
+    total_stale: u64,
     group_submits: [u64; 4],
     group_accepted: [u64; 4],
     source_submits: [u64; 14],
@@ -2030,11 +2063,16 @@ impl RoutingStats {
             log_every,
             total_submits: 0,
             total_accepted: 0,
+            total_stale: 0,
             group_submits: [0; 4],
             group_accepted: [0; 4],
             source_submits: [0; 14],
             source_accepted: [0; 14],
         }
+    }
+
+    fn record_stale(&mut self) {
+        self.total_stale = self.total_stale.saturating_add(1);
     }
 
     fn record(&mut self, group: SessionGroup, source: RevenueSource, accepted: bool) -> bool {
