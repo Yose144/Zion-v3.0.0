@@ -67,7 +67,7 @@ function Card({ children, className = '' }: { children: React.ReactNode; classNa
 }
 
 export default function NCLDashboard() {
-  const { cs } = useLang();
+  const { lang } = useLang();
   const [status, setStatus] = useState<NCLStatus | null>(null);
   const [workers, setWorkers] = useState<NCLWorker[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
@@ -134,7 +134,7 @@ export default function NCLDashboard() {
     return (
       <div className="flex items-center justify-center min-h-[50vh]">
         <div className="text-zion-gold text-xl animate-pulse flex items-center gap-3">
-          <Brain className="h-6 w-6" /> {cs ? 'Načítání NCL Dashboardu...' : 'Loading NCL Dashboard...'}
+          <Brain className="h-6 w-6" /> {lang === 'cs' ? 'Načítání NCL Dashboardu...' : 'Loading NCL Dashboard...'}
         </div>
       </div>
     );
@@ -151,13 +151,13 @@ export default function NCLDashboard() {
           <div>
             <h1 className="text-3xl font-bold text-white">NCL Dashboard</h1>
             <p className="text-sm text-gray-400">
-              {cs ? 'Neural Compute Layer — Správa AI Bonusů (5. Revenue Stream)' : 'Neural Compute Layer — AI Bonus Management (5th Revenue Stream)'}
+              {lang === 'cs' ? 'Neural Compute Layer — Správa AI Bonusů (5. Revenue Stream)' : 'Neural Compute Layer — AI Bonus Management (5th Revenue Stream)'}
             </p>
           </div>
         </div>
         {source === 'fallback' && (
           <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-4 py-1.5 text-xs text-amber-400">
-            <AlertTriangle className="h-3 w-3" /> {cs ? 'Hiranyagarbha offline — zobrazuji cache/prázdná data' : 'Hiranyagarbha offline — showing cached/empty data'}
+            <AlertTriangle className="h-3 w-3" /> {lang === 'cs' ? 'Hiranyagarbha offline — zobrazuji cache/prázdná data' : 'Hiranyagarbha offline — showing cached/empty data'}
           </div>
         )}
       </div>
@@ -167,49 +167,49 @@ export default function NCLDashboard() {
         <Card>
           <div className="flex items-center gap-2 mb-3">
             <Activity size={14} className="text-emerald-400" />
-            <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">{cs ? 'Aktivní Workery' : 'Active Workers'}</span>
+            <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">{lang === 'cs' ? 'Aktivní Workery' : 'Active Workers'}</span>
           </div>
           <div className="text-3xl font-bold font-mono text-white">
             {status?.workers.active ?? 0}
             <span className="text-lg text-gray-500 font-normal">/{status?.workers.total ?? 0}</span>
           </div>
           <div className="text-xs text-gray-500 mt-2">
-            {((status?.workers.active || 0) / (status?.workers.total || 1) * 100).toFixed(0)}% {cs ? 'online' : 'online'}
+            {((status?.workers.active || 0) / (status?.workers.total || 1) * 100).toFixed(0)}% {lang === 'cs' ? 'online' : 'online'}
           </div>
         </Card>
 
         <Card>
           <div className="flex items-center gap-2 mb-3">
             <Layers size={14} className="text-zion-cyan" />
-            <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">{cs ? 'Dokončené úkoly' : 'Tasks Completed'}</span>
+            <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">{lang === 'cs' ? 'Dokončené úkoly' : 'Tasks Completed'}</span>
           </div>
           <div className="text-3xl font-bold font-mono text-white">
             {(status?.tasks.completed ?? 0).toLocaleString()}
           </div>
           <div className="text-xs text-gray-500 mt-2">
-            {status?.tasks.pending ?? 0} {cs ? 'čekajících' : 'pending'} &bull; {status?.tasks.active ?? 0} {cs ? 'aktivních' : 'active'}
+            {status?.tasks.pending ?? 0} {lang === 'cs' ? 'čekajících' : 'pending'} &bull; {status?.tasks.active ?? 0} {lang === 'cs' ? 'aktivních' : 'active'}
           </div>
         </Card>
 
         <Card>
           <div className="flex items-center gap-2 mb-3">
             <Brain size={14} className="text-zion-gold" />
-            <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">{cs ? 'Celkové NCL odměny' : 'Total NCL Rewards'}</span>
+            <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">{lang === 'cs' ? 'Celkové NCL odměny' : 'Total NCL Rewards'}</span>
           </div>
           <div className="text-3xl font-bold font-mono text-zion-gold">
             {(status?.rewards.total_paid ?? 0).toFixed(2)} <span className="text-lg text-gray-500 font-normal">ZION</span>
           </div>
           <div className="text-xs text-gray-500 mt-2">
-            {cs ? 'Průměr' : 'Avg'}: {(status?.rewards.avg_per_task || 0).toFixed(4)} ZION/{cs ? 'úkol' : 'task'}
+            {lang === 'cs' ? 'Průměr' : 'Avg'}: {(status?.rewards.avg_per_task || 0).toFixed(4)} ZION/{lang === 'cs' ? 'úkol' : 'task'}
           </div>
         </Card>
 
         <Card className="relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-zion-gold/5 rounded-full blur-3xl pointer-events-none" />
-          <div className="text-xs text-zion-cyan font-medium uppercase tracking-wider mb-2">{cs ? 'Revenue Stream #5' : 'Revenue Stream #5'}</div>
+          <div className="text-xs text-zion-cyan font-medium uppercase tracking-wider mb-2">{lang === 'cs' ? 'Revenue Stream #5' : 'Revenue Stream #5'}</div>
           <div className="text-2xl font-bold text-white">NCL AI Bonus</div>
           <div className="text-sm text-zion-cyan mt-2">
-            {cs ? '~5% z celkových miner příjmů' : '~5% of total miner revenue'}
+            {lang === 'cs' ? '~5% z celkových miner příjmů' : '~5% of total miner revenue'}
           </div>
         </Card>
       </div>
@@ -220,12 +220,12 @@ export default function NCLDashboard() {
         <div className="lg:col-span-2 space-y-4">
           <Card>
             <h2 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
-              <Layers size={14} className="text-zion-cyan" /> {cs ? 'Vaše Workery' : 'Your Workers'}
+              <Layers size={14} className="text-zion-cyan" /> {lang === 'cs' ? 'Vaše Workery' : 'Your Workers'}
             </h2>
 
             {workers.length === 0 ? (
               <div className="text-gray-500 text-center py-8 text-sm">
-                {cs ? 'Žádní NCL workery registrováni. Připojte miner pro začátek.' : 'No NCL workers registered. Connect a miner to get started.'}
+                {lang === 'cs' ? 'Žádní NCL workery registrováni. Připojte miner pro začátek.' : 'No NCL workers registered. Connect a miner to get started.'}
               </div>
             ) : (
               <div className="space-y-3">
@@ -248,7 +248,7 @@ export default function NCLDashboard() {
                           {worker.total_earnings.toFixed(4)} ZION
                         </div>
                         <div className="text-gray-500 text-sm">
-                          {worker.tasks_completed} {cs ? 'úkolů' : 'tasks'}
+                          {worker.tasks_completed} {lang === 'cs' ? 'úkolů' : 'tasks'}
                         </div>
                       </div>
                     </div>
@@ -256,8 +256,8 @@ export default function NCLDashboard() {
                     {/* NPU Allocation Slider */}
                     <div className="mt-4">
                       <div className="flex justify-between text-sm text-gray-400 mb-2">
-                        <span>{cs ? 'NPU Alokace' : 'NPU Allocation'}</span>
-                        <span>{(worker.npu_allocation * 100).toFixed(0)}% AI / {((1 - worker.npu_allocation) * 100).toFixed(0)}% {cs ? 'Mining' : 'Mining'}</span>
+                        <span>{lang === 'cs' ? 'NPU Alokace' : 'NPU Allocation'}</span>
+                        <span>{(worker.npu_allocation * 100).toFixed(0)}% AI / {((1 - worker.npu_allocation) * 100).toFixed(0)}% {lang === 'cs' ? 'Mining' : 'Mining'}</span>
                       </div>
                       <input
                         type="range"
@@ -268,8 +268,8 @@ export default function NCLDashboard() {
                         className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-zion-gold"
                       />
                       <div className="flex justify-between text-xs text-gray-500 mt-1">
-                        <span>0% ({cs ? 'Pouze mining' : 'Mining only'})</span>
-                        <span>50% ({cs ? 'Max AI' : 'Max AI'})</span>
+                        <span>0% ({lang === 'cs' ? 'Pouze mining' : 'Mining only'})</span>
+                        <span>50% ({lang === 'cs' ? 'Max AI' : 'Max AI'})</span>
                       </div>
                     </div>
                   </div>
@@ -282,12 +282,12 @@ export default function NCLDashboard() {
         {/* Leaderboard */}
         <Card>
           <h2 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
-            <Brain size={14} className="text-zion-gold" /> {cs ? 'NCL Žebříček' : 'NCL Leaderboard'}
+            <Brain size={14} className="text-zion-gold" /> {lang === 'cs' ? 'NCL Žebříček' : 'NCL Leaderboard'}
           </h2>
 
           <div className="space-y-2">
             {leaderboard.length === 0 ? (
-              <div className="text-gray-500 text-center py-8 text-sm">{cs ? 'Žádná data žebříčku.' : 'No leaderboard data.'}</div>
+              <div className="text-gray-500 text-center py-8 text-sm">{lang === 'cs' ? 'Žádná data žebříčku.' : 'No leaderboard data.'}</div>
             ) : (
               leaderboard.map((entry) => (
                 <div
@@ -331,16 +331,16 @@ export default function NCLDashboard() {
       <Card className="mt-4 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-40 h-40 bg-zion-gold/5 rounded-full blur-3xl pointer-events-none" />
         <h2 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
-          <Activity size={14} className="text-zion-cyan" /> {cs ? 'CH v3 Revenue Streams' : 'CH v3 Revenue Streams'}
+          <Activity size={14} className="text-zion-cyan" /> {lang === 'cs' ? 'CH v3 Revenue Streams' : 'CH v3 Revenue Streams'}
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
           {[
-            { name: "ZION", desc: cs ? "Cosmic Fusion" : "Cosmic Fusion", percent: 50, color: "zion-gold" },
-            { name: "ETC", desc: cs ? "Keccak merged" : "Keccak merged", percent: 20, color: "emerald-400" },
-            { name: "NXS", desc: cs ? "SHA3 merged" : "SHA3 merged", percent: 5, color: "zion-cyan" },
-            { name: "Dynamic", desc: cs ? "ERG/RVN/KAS" : "ERG/RVN/KAS", percent: 20, color: "purple-400" },
-            { name: "NCL", desc: cs ? "AI Bonus" : "AI Bonus", percent: 5, color: "pink-400", highlight: true },
+            { name: "ZION", desc: lang === 'cs' ? "Cosmic Fusion" : "Cosmic Fusion", percent: 50, color: "zion-gold" },
+            { name: "ETC", desc: lang === 'cs' ? "Keccak merged" : "Keccak merged", percent: 20, color: "emerald-400" },
+            { name: "NXS", desc: lang === 'cs' ? "SHA3 merged" : "SHA3 merged", percent: 5, color: "zion-cyan" },
+            { name: "Dynamic", desc: lang === 'cs' ? "ERG/RVN/KAS" : "ERG/RVN/KAS", percent: 20, color: "purple-400" },
+            { name: "NCL", desc: lang === 'cs' ? "AI Bonus" : "AI Bonus", percent: 5, color: "pink-400", highlight: true },
           ].map((stream, i) => (
             <div
               key={i}
@@ -371,12 +371,12 @@ export default function NCLDashboard() {
       {/* Setup Instructions */}
       <Card className="mt-4">
         <h2 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
-          <Brain size={14} className="text-zion-gold" /> {cs ? 'Povolit NCL na vašem mineru' : 'Enable NCL on Your Miner'}
+          <Brain size={14} className="text-zion-gold" /> {lang === 'cs' ? 'Povolit NCL na vašem mineru' : 'Enable NCL on Your Miner'}
         </h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <h3 className="text-xs text-zion-gold font-medium uppercase tracking-wider mb-2">{cs ? 'Možnost 1: Miner Flag' : 'Option 1: Miner Flag'}</h3>
+            <h3 className="text-xs text-zion-gold font-medium uppercase tracking-wider mb-2">{lang === 'cs' ? 'Možnost 1: Miner Flag' : 'Option 1: Miner Flag'}</h3>
             <pre className="bg-black/60 border border-white/10 rounded-xl p-4 text-sm overflow-x-auto">
               <code className="text-emerald-400">
 {`./zion_miner \
@@ -389,7 +389,7 @@ export default function NCLDashboard() {
           </div>
 
           <div>
-            <h3 className="text-xs text-zion-cyan font-medium uppercase tracking-wider mb-2">{cs ? 'Možnost 2: Konfigurační soubor' : 'Option 2: Config File'}</h3>
+            <h3 className="text-xs text-zion-cyan font-medium uppercase tracking-wider mb-2">{lang === 'cs' ? 'Možnost 2: Konfigurační soubor' : 'Option 2: Config File'}</h3>
             <pre className="bg-black/60 border border-white/10 rounded-xl p-4 text-sm overflow-x-auto">
               <code className="text-emerald-400">
 {`# miner_config.json
@@ -406,7 +406,7 @@ export default function NCLDashboard() {
         </div>
 
         <div className="mt-4 text-gray-400 text-sm">
-          <span className="text-zion-gold">{cs ? 'Tip:' : 'Tip:'}</span> {cs ? 'Vyšší úrovně vědomí vydělávají více NCL odměn. Levelujte konzistentním miningem a komunitní účastí!' : 'Higher consciousness levels earn more NCL rewards. Level up by consistent mining and community participation!'}
+          <span className="text-zion-gold">{lang === 'cs' ? 'Tip:' : 'Tip:'}</span> {lang === 'cs' ? 'Vyšší úrovně vědomí vydělávají více NCL odměn. Levelujte konzistentním miningem a komunitní účastí!' : 'Higher consciousness levels earn more NCL rewards. Level up by consistent mining and community participation!'}
         </div>
       </Card>
     </div>
