@@ -123,7 +123,7 @@ export default function LiveDashboard() {
             <Activity className="w-5 h-5 text-zion-gold animate-pulse" />
             <span className="text-sm tracking-wide uppercase text-gray-300">{cs ? 'Mise console' : 'Mission Console'}</span>
           </div>
-          <div className="text-3xl font-semibold text-gradient">{SITE_RELEASE_LABEL} · runtime {SITE_RUNTIME_LABEL} · Mainnet Launch Countdown Telemetry</div>
+          <div className="text-xl sm:text-2xl md:text-3xl font-semibold text-gradient">{SITE_RELEASE_LABEL} · runtime {SITE_RUNTIME_LABEL} · Mainnet Launch Countdown Telemetry</div>
           {error && (
             <span className="text-xs text-amber-300 bg-amber-500/10 rounded-full px-3 py-1 border border-amber-500/30">
               ⚠️ {error}

@@ -194,7 +194,7 @@ export default function Navigation() {
                 })}
               </div>
               {activeGroup && (
-                <div className="absolute right-0 mt-3 w-72 rounded-3xl border border-white/10 bg-[rgba(4,7,16,0.92)] p-4 shadow-[0_18px_60px_rgba(0,0,0,0.55)] backdrop-blur-2xl">
+                <div className="absolute right-0 mt-3 w-[min(18rem,85vw)] rounded-3xl border border-white/10 bg-[rgba(4,7,16,0.92)] p-4 shadow-[0_18px_60px_rgba(0,0,0,0.55)] backdrop-blur-2xl z-50">
                   <p className="text-[10px] uppercase tracking-[0.4em] text-gray-500">{groupLabels[activeGroup.title] ?? activeGroup.title}</p>
                   <div className="mt-3 flex flex-col gap-1">
                     {activeGroup.items.map((item) => (
@@ -233,7 +233,7 @@ export default function Navigation() {
               className="p-2 rounded-xl border border-white/15 hover:border-zion-cyan/50 bg-white/5 backdrop-blur transition-colors inline-flex items-center justify-center group relative"
             >
               <SignalHigh className="w-4 h-4 text-zion-cyan" />
-              <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] bg-black/90 border border-white/10 rounded px-2 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">{tr('nav', 'network', lang)}</span>
+              <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] bg-black/90 border border-white/10 rounded px-2 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">{tr('nav', 'network', lang)}</span>
             </Link>
             <Link
               href="/explorer"
@@ -241,7 +241,7 @@ export default function Navigation() {
               className="p-2 rounded-xl border border-white/15 hover:border-zion-gold/50 bg-white/5 backdrop-blur transition-colors inline-flex items-center justify-center group relative"
             >
               <Orbit className="w-4 h-4 text-zion-gold" />
-              <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] bg-black/90 border border-white/10 rounded px-2 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">{tr('nav', 'explorer', lang)}</span>
+              <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] bg-black/90 border border-white/10 rounded px-2 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">{tr('nav', 'explorer', lang)}</span>
             </Link>
             <Link
               href="/pool"
@@ -249,7 +249,7 @@ export default function Navigation() {
               className="p-2 rounded-xl border border-white/15 hover:border-zion-purple/50 bg-white/5 backdrop-blur transition-colors inline-flex items-center justify-center group relative"
             >
               <Pickaxe className="w-4 h-4 text-zion-purple" />
-              <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] bg-black/90 border border-white/10 rounded px-2 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">{tr('nav', 'pool', lang)}</span>
+              <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] bg-black/90 border border-white/10 rounded px-2 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">{tr('nav', 'pool', lang)}</span>
             </Link>
             <Link
               href="/dashboard"
@@ -257,7 +257,7 @@ export default function Navigation() {
               className="p-2 rounded-2xl bg-linear-to-r from-zion-gold via-zion-purple to-zion-cyan inline-flex items-center justify-center shadow-[0_14px_38px_rgba(147,51,234,0.42)] transition-transform hover:-translate-y-0.5 group relative"
             >
               <LayoutDashboard className="w-4 h-4 text-white" />
-              <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] bg-black/90 border border-white/10 rounded px-2 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">{tr('nav', 'dashboard', lang)}</span>
+              <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] bg-black/90 border border-white/10 rounded px-2 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">{tr('nav', 'dashboard', lang)}</span>
             </Link>
             <button
               onClick={() => setLang(lang === 'cs' ? 'en' : 'cs')}
