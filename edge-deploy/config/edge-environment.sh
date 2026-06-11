@@ -1,5 +1,6 @@
 # ZION Edge Server — Common Environment
-# Updated: 2026-06-07 - Vardiff tuning + pool binary compat notes added
+# Updated: 2026-06-11 - Hard Genesis Reset #0 completed, fee split verified
+#                        Added ZION_SEED_PEERS, ZION_NETWORK for mainnet
 #
 # This file contains SHARED environment variables for ALL Edge services.
 # Service-specific overrides (node ID, bind ports, state paths) are set
@@ -23,6 +24,10 @@
 ZION_MINER_ADDRESS=zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604
 ZION_HUMANITARIAN_WALLET=zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4
 ZION_ISSOBELLA_WALLET=zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702
+# Network configuration
+ZION_NETWORK=Mainnet
+ZION_SEED_PEERS=100.86.102.5:8333
+
 # Burn model: 1% pool fee is burned (never minted). Set to 0 so the pool
 # does not double-deduct — the protocol burn happens in core coinbase.
 ZION_POOL_FEE_PCT=0
