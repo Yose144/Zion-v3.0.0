@@ -3727,8 +3727,6 @@ def get_backup_status() -> dict:
         "auto_backup_enabled": auto_dir.exists(),
         "local_health": local_health,
         "edge_health": edge_health,
-        "_health_debug": _health_debug,
-        "_version": "new-v2",
     }
 
 # ── Emission helpers (mirror V3/L1/core/src/emission.rs) ───────────────
