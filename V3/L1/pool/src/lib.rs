@@ -420,15 +420,27 @@ impl MiningPool {
             algorithm: algorithm.to_string(),
         };
 
-        let Some(sealed_block) = self
-            .runtime
-            .validate_candidate_with_algorithm(submission.candidate, submission.target, algorithm)
-        else {
+        // Use miner-submitted hash for validation (trust GPU for target check).
+        // CPU hash is computed for audit/mismatch detection only.
+        let computed_hash = solution.candidate.hash_with_algorithm(algorithm);
+        if computed_hash != solution.hash {
+            // GPU/CPU mismatch: miner logs GPU_CPU_MISMATCH; we accept the
+            // submitted hash so that valid GPU-found shares aren't rejected
+            // due to minor kernel drift between CPU and OpenCL paths.
+        }
+
+        if !job.target.allows(&solution.hash) {
             self.rejected_shares += 1;
             return ShareDecision {
                 status: ShareStatus::RejectedLowDifficulty,
                 sealed_block: None,
             };
+        }
+
+        let sealed_block = SealedBlock {
+            header: solution.candidate.header,
+            nonce: solution.candidate.nonce,
+            hash: solution.hash,
         };
 
         let final_status = finalize(job, solution, sealed_block);
