@@ -1,0 +1,5 @@
+Line 1
+Line 2 with 'quotes' and "double quotes"
+Line 3 with backslash \ path
+Line 4 with JSX className="foo"
+Line 5 {cs ? 'a' : 'b'}

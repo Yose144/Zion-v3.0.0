@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useLang } from "@/contexts/LanguageContext";
 
 interface StreamConfig {
   stream: number;
@@ -132,6 +133,7 @@ const DEFAULT_SETTINGS: CH3Settings = {
 };
 
 export default function CH3SettingsPage() {
+  const { cs } = useLang();
   const [settings, setSettings] = useState<CH3Settings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -229,7 +231,7 @@ export default function CH3SettingsPage() {
   if (loading || !settings) {
     return (
       <div className="flex items-center justify-center">
-        <div className="text-zion-gold text-2xl animate-pulse">Loading CH v3 Settings...</div>
+        <div className="text-zion-gold text-2xl animate-pulse">{cs ? 'Načítání CH v3 nastavení...' : 'Loading CH v3 Settings...'}</div>
       </div>
     );
   }
@@ -243,9 +245,9 @@ export default function CH3SettingsPage() {
             <span className="text-xl">⚡</span>
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-zion-gold">CH v3 Revenue Streams</h1>
+            <h1 className="text-3xl font-bold text-zion-gold">{cs ? 'CH v3 Revenue Streams' : 'CH v3 Revenue Streams'}</h1>
             <p className="text-sm text-gray-400">
-              Configure all 5 revenue streams for Cosmic Harmony v3
+              {cs ? 'Konfigurace všech 5 revenue streamů pro Cosmic Harmony v3' : 'Configure all 5 revenue streams for Cosmic Harmony v3'}
             </p>
           </div>
         </div>
@@ -307,10 +309,10 @@ export default function CH3SettingsPage() {
                 : "bg-black/40 text-gray-400 hover:bg-white/10"
             }`}
           >
-            {tab === "overview" && "📊 Overview"}
-            {tab === "merged" && "💎 Merged Mining"}
-            {tab === "dynamic" && "🎮 Dynamic GPU"}
-            {tab === "ncl" && "🧠 NCL AI"}
+            {tab === "overview" && (cs ? '📊 Přehled' : '📊 Overview')}
+            {tab === "merged" && (cs ? '💎 Merged Mining' : '💎 Merged Mining')}
+            {tab === "dynamic" && (cs ? '🎮 Dynamic GPU' : '🎮 Dynamic GPU')}
+            {tab === "ncl" && (cs ? '🧠 NCL AI' : '🧠 NCL AI')}
           </button>
         ))}
       </div>
@@ -320,7 +322,7 @@ export default function CH3SettingsPage() {
         {/* Overview Tab */}
         {activeTab === "overview" && (
           <div>
-            <h2 className="text-2xl font-bold mb-6">Revenue Distribution</h2>
+            <h2 className="text-2xl font-bold mb-6">{cs ? 'Rozdělení příjmů' : 'Revenue Distribution'}</h2>
             
             {/* Visual bar */}
             <div className="h-12 rounded-lg overflow-hidden flex mb-6">
@@ -345,12 +347,12 @@ export default function CH3SettingsPage() {
                     <span className="text-2xl">{STREAM_ICONS[key]}</span>
                     <div>
                       <div className="font-bold">{stream.name}</div>
-                      <div className="text-gray-400 text-sm">{stream.algorithm || stream.mode || "AI Tasks"}</div>
+                      <div className="text-gray-400 text-sm">{stream.algorithm || stream.mode || (cs ? 'AI úkoly' : 'AI Tasks')}</div>
                     </div>
                   </div>
                   <div className="text-sm text-gray-500">{stream.description}</div>
                   <div className={`mt-2 text-sm ${stream.enabled ? "text-emerald-400" : "text-red-400"}`}>
-                    {stream.enabled ? "✓ Active" : "✗ Disabled"}
+                    {stream.enabled ? (cs ? '✓ Aktivní' : '✓ Active') : (cs ? '✗ Vypnuto' : '✗ Disabled')}
                   </div>
                 </div>
               ))}
@@ -361,10 +363,9 @@ export default function CH3SettingsPage() {
         {/* Merged Mining Tab */}
         {activeTab === "merged" && (
           <div>
-            <h2 className="text-2xl font-bold mb-6">Merged Mining Configuration</h2>
+            <h2 className="text-2xl font-bold mb-6">{cs ? 'Merged Mining konfigurace' : 'Merged Mining Configuration'}</h2>
             <p className="text-gray-400 mb-6">
-              Intermediate hashes from Cosmic Harmony are exported to compatible blockchains.
-              No extra computation required - it&apos;s free revenue!
+              {cs ? 'Intermediate hashes z Cosmic Harmony se exportují do kompatibilních blockchainů. Žádný extra výpočet není potřeba — je to free revenue!' : 'Intermediate hashes from Cosmic Harmony are exported to compatible blockchains. No extra computation required — it\'s free revenue!'}
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -386,13 +387,13 @@ export default function CH3SettingsPage() {
                         : "bg-white/10 text-gray-400"
                     }`}
                   >
-                    {settings.streams.etc.enabled ? "Enabled" : "Disabled"}
+                    {settings.streams.etc.enabled ? (cs ? 'Zapnuto' : 'Enabled') : (cs ? 'Vypnuto' : 'Disabled')}
                   </button>
                 </div>
 
                 <div className="space-y-4">
                   <div>
-                    <label className="text-gray-400 text-sm">Pool Stratum</label>
+                    <label className="text-gray-400 text-sm">{cs ? 'Pool Stratum' : 'Pool Stratum'}</label>
                     <input
                       type="text"
                       defaultValue={settings.streams.etc.pool?.stratum}
@@ -401,7 +402,7 @@ export default function CH3SettingsPage() {
                     />
                   </div>
                   <div>
-                    <label className="text-gray-400 text-sm">Pool Wallet</label>
+                    <label className="text-gray-400 text-sm">{cs ? 'Pool Wallet' : 'Pool Wallet'}</label>
                     <input
                       type="text"
                       defaultValue={settings.streams.etc.pool?.wallet}
@@ -411,7 +412,7 @@ export default function CH3SettingsPage() {
                   </div>
                   <div className="flex items-center gap-2 text-sm text-gray-400">
                     <input type="checkbox" defaultChecked className="w-4 h-4" />
-                    Auto-convert to ZION
+                    {cs ? 'Auto-convert do ZION' : 'Auto-convert to ZION'}
                   </div>
                 </div>
               </div>
@@ -434,13 +435,13 @@ export default function CH3SettingsPage() {
                         : "bg-white/10 text-gray-400"
                     }`}
                   >
-                    {settings.streams.nxs.enabled ? "Enabled" : "Disabled"}
+                    {settings.streams.nxs.enabled ? (cs ? 'Zapnuto' : 'Enabled') : (cs ? 'Vypnuto' : 'Disabled')}
                   </button>
                 </div>
 
                 <div className="space-y-4">
                   <div>
-                    <label className="text-gray-400 text-sm">Pool Stratum</label>
+                    <label className="text-gray-400 text-sm">{cs ? 'Pool Stratum' : 'Pool Stratum'}</label>
                     <input
                       type="text"
                       defaultValue={settings.streams.nxs.pool?.stratum}
@@ -449,7 +450,7 @@ export default function CH3SettingsPage() {
                     />
                   </div>
                   <div>
-                    <label className="text-gray-400 text-sm">Pool Wallet</label>
+                    <label className="text-gray-400 text-sm">{cs ? 'Pool Wallet' : 'Pool Wallet'}</label>
                     <input
                       type="text"
                       defaultValue={settings.streams.nxs.pool?.wallet}
@@ -459,7 +460,7 @@ export default function CH3SettingsPage() {
                   </div>
                   <div className="flex items-center gap-2 text-sm text-gray-400">
                     <input type="checkbox" defaultChecked className="w-4 h-4" />
-                    Auto-convert to ZION
+                    {cs ? 'Auto-convert do ZION' : 'Auto-convert to ZION'}
                   </div>
                 </div>
               </div>
@@ -470,15 +471,14 @@ export default function CH3SettingsPage() {
         {/* Dynamic GPU Tab */}
         {activeTab === "dynamic" && (
           <div>
-            <h2 className="text-2xl font-bold mb-6">Dynamic GPU Mining</h2>
+            <h2 className="text-2xl font-bold mb-6">{cs ? 'Dynamic GPU Mining' : 'Dynamic GPU Mining'}</h2>
             <p className="text-gray-400 mb-6">
-              Automatically switch between GPU algorithms based on real-time profitability.
-              Pool selects the most profitable coin for all miners.
+              {cs ? 'Automatické přepínání mezi GPU algoritmy na základě real-time ziskovosti. Pool vybere nejziskovější coin pro všechny minery.' : 'Automatically switch between GPU algorithms based on real-time profitability. Pool selects the most profitable coin for all miners.'}
             </p>
 
             {/* Mode Selection */}
             <div className="mb-6">
-              <label className="text-gray-400 text-sm block mb-2">Switching Mode</label>
+              <label className="text-gray-400 text-sm block mb-2">{cs ? 'Režim přepínání' : 'Switching Mode'}</label>
               <div className="flex gap-4">
                 {["auto", "manual", "hybrid"].map((mode) => (
                   <button
@@ -493,7 +493,7 @@ export default function CH3SettingsPage() {
                     {mode === "auto" && "🤖 "}
                     {mode === "manual" && "👆 "}
                     {mode === "hybrid" && "🔀 "}
-                    {mode}
+                    {mode === "auto" ? (cs ? 'auto' : 'auto') : mode === "manual" ? (cs ? 'manuál' : 'manual') : (cs ? 'hybrid' : 'hybrid')}
                   </button>
                 ))}
               </div>
@@ -502,7 +502,7 @@ export default function CH3SettingsPage() {
             {/* Coin Selection */}
             <div className="mb-6">
               <label className="text-gray-400 text-sm block mb-2">
-                {settings.streams.dynamic_gpu.mode === "manual" ? "Select Coin" : "Preferred Coins"}
+                {settings.streams.dynamic_gpu.mode === "manual" ? (cs ? 'Vybrat Coin' : 'Select Coin') : (cs ? 'Preferované Coiny' : 'Preferred Coins')}
               </label>
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                 {GPU_COINS.map((coin) => {
@@ -537,7 +537,7 @@ export default function CH3SettingsPage() {
                       <div className="text-gray-400 text-sm">{coin.name}</div>
                       <div className="text-gray-500 text-xs mt-1">{coin.algo}</div>
                       {isCurrent && (
-                        <div className="text-zion-gold text-xs mt-2">⚡ Mining Now</div>
+                        <div className="text-zion-gold text-xs mt-2">⚡ {cs ? 'Těží nyní' : 'Mining Now'}</div>
                       )}
                     </button>
                   );
@@ -549,7 +549,7 @@ export default function CH3SettingsPage() {
             {settings.streams.dynamic_gpu.mode === "auto" && (
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="text-gray-400 text-sm">Min Profit (USD/day)</label>
+                  <label className="text-gray-400 text-sm">{cs ? 'Min zisk (USD/den)' : 'Min Profit (USD/day)'}</label>
                   <input
                     type="number"
                     defaultValue="0.10"
@@ -558,7 +558,7 @@ export default function CH3SettingsPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-gray-400 text-sm">Switch Interval (min)</label>
+                  <label className="text-gray-400 text-sm">{cs ? 'Interval přepnutí (min)' : 'Switch Interval (min)'}</label>
                   <input
                     type="number"
                     defaultValue="15"
@@ -566,7 +566,7 @@ export default function CH3SettingsPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-gray-400 text-sm">Hysteresis (%)</label>
+                  <label className="text-gray-400 text-sm">{cs ? 'Hystereze (%)' : 'Hysteresis (%)'}</label>
                   <input
                     type="number"
                     defaultValue="5"
@@ -581,18 +581,18 @@ export default function CH3SettingsPage() {
         {/* NCL Tab */}
         {activeTab === "ncl" && (
           <div>
-            <h2 className="text-2xl font-bold mb-6">NCL AI Bonus Configuration</h2>
+            <h2 className="text-2xl font-bold mb-6">{cs ? 'NCL AI Bonus konfigurace' : 'NCL AI Bonus Configuration'}</h2>
             <p className="text-gray-400 mb-6">
-              Allocate compute time for AI inference tasks. Higher consciousness = higher rewards!
+              {cs ? 'Alokujte výpočetní čas pro AI inference úkoly. Vyšší vědomí = vyšší odměny!' : 'Allocate compute time for AI inference tasks. Higher consciousness = higher rewards!'}
             </p>
 
             {/* Allocation Slider */}
             <div className="mb-8">
               <div className="flex justify-between text-sm text-gray-400 mb-2">
-                <span>Compute Allocation</span>
+                <span>{cs ? 'Výpočetní alokace' : 'Compute Allocation'}</span>
                 <span>
                   {((settings.streams.ncl.npu_allocation || 0) * 100).toFixed(0)}% AI / 
-                  {((settings.streams.ncl.mining_allocation || 0) * 100).toFixed(0)}% Mining
+                  {((settings.streams.ncl.mining_allocation || 0) * 100).toFixed(0)}% {cs ? 'Mining' : 'Mining'}
                 </span>
               </div>
               
@@ -613,8 +613,8 @@ export default function CH3SettingsPage() {
                   }}
                 />
                 <div className="flex justify-between text-xs text-gray-500 mt-1">
-                  <span>0% (Mining only)</span>
-                  <span>50% (Max AI)</span>
+                  <span>0% ({cs ? 'Pouze mining' : 'Mining only'})</span>
+                  <span>50% ({cs ? 'Max AI' : 'Max AI'})</span>
                 </div>
               </div>
 
@@ -624,7 +624,7 @@ export default function CH3SettingsPage() {
                   className="bg-gradient-to-r from-amber-500 to-zion-gold flex items-center justify-center"
                   style={{ width: `${(settings.streams.ncl.mining_allocation || 0) * 100}%` }}
                 >
-                  <span className="font-bold">⛏️ Mining</span>
+                  <span className="font-bold">⛏️ {cs ? 'Mining' : 'Mining'}</span>
                 </div>
                 <div 
                   className="bg-gradient-to-r from-pink-600 to-pink-500 flex items-center justify-center"
@@ -637,7 +637,7 @@ export default function CH3SettingsPage() {
 
             {/* Task Types */}
             <div>
-              <label className="text-gray-400 text-sm block mb-2">Supported AI Tasks</label>
+              <label className="text-gray-400 text-sm block mb-2">{cs ? 'Podporované AI úkoly' : 'Supported AI Tasks'}</label>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
                   { id: "embeddings", name: "Embeddings", reward: "0.001" },
@@ -651,7 +651,7 @@ export default function CH3SettingsPage() {
                       <span className="font-medium">{task.name}</span>
                     </div>
                     <div className="text-gray-500 text-sm">
-                      Base: {task.reward} ZION
+                      {cs ? 'Základ' : 'Base'}: {task.reward} ZION
                     </div>
                   </div>
                 ))}
@@ -679,7 +679,7 @@ export default function CH3SettingsPage() {
               : "bg-zion-gold text-black hover:bg-yellow-400"
           }`}
         >
-          {saving ? "Saving..." : "💾 Save Settings"}
+          {saving ? (cs ? 'Ukládání...' : 'Saving...') : (cs ? '💾 Uložit nastavení' : '💾 Save Settings')}
         </button>
       </div>
     </div>

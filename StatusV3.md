@@ -1,6 +1,6 @@
 # ZION V3 — Status Report (Mainnet Polish)
 
-> **Datum:** **2026-06-10** (GPU/CPU path oddělení + algorithm-aware share validace — viz sekce níže); **2026-06-09**; **2026-06-08** (Fire CPU/GPU sync + pool submitted_hash fix — viz sekce níže); 2026-06-07 (Chain reset + full stack cleanup); 2026-06-06 (HTTP JSON-RPC Transaction Relay Bug Fix); 2026-05-22 (Genesis + fee split KONFIGURACE DOKONČENA, ready for mainnet launch 31.12.2026); **2026-05-21** (Edge pool + L5/L6 + DAO governance + root docs sync); **2026-05-12** (Hiran v2.2 CLI integration); **2026-05-07** (security cleanup + agentická obsluha).
+> **Datum:** **2026-06-11** (Pool stale share detection + dashboard tab fix — viz sekce níže); **2026-06-10** (GPU/CPU path oddělení + algorithm-aware share validace); **2026-06-09**; **2026-06-08** (Fire CPU/GPU sync + pool submitted_hash fix); 2026-06-07 (Chain reset + full stack cleanup); 2026-06-06 (HTTP JSON-RPC Transaction Relay Bug Fix); 2026-05-22 (Genesis + fee split KONFIGURACE DOKONČENA, ready for mainnet launch 31.12.2026); **2026-05-21** (Edge pool + L5/L6 + DAO governance + root docs sync); **2026-05-12** (Hiran v2.2 CLI integration); **2026-05-07** (security cleanup + agentická obsluha).
 > (sjednocení `StatusV3.md` ↔ `StatusV3-Part2.md` — TL;DR, roadmap §6, §8, §5
 > pyramida, odkazy).
 > **Předchozí update:** 2026-05-03 (genesis konsensus — merged na `main`)
@@ -22,7 +22,49 @@
 
 ---
 
-## Co je nového 2026-06-11 (Genesis Reset + Edge CPU Miner + Backup Infra)
+## Co je nového 2026-06-11 (Pool Stale Share Detection + Dashboard Fix)
+
+> Verze: **3.0.1**
+> Klíčové commity: `15013271` (stale classification), `496aec6e` (telemetry fix), `a88a1d54` (PoolStats stale counter)
+
+### Pool Stale Share Detection
+
+**Problém:** Externí desktop-agent miner (IP 109.81.84.203) hlásil ~19 % rejectů. Logy ukazovaly, že pool klasifikoval **stale shares** (miner odeslal share pro starý job / expired TTL) jako `RejectedLowDifficulty`, což zkreslovalo statistiky.
+
+**Změny:**
+
+| Soubor | Změna |
+|--------|-------|
+| `V3/L1/pool/src/lib.rs` | Přidán `stale_shares: u64` do `PoolStats`, `MiningPool`, inicializace a `record_stale_share()` |
+| `V3/L1/pool/src/bin/server.rs` | Před target validací se kontroluje `job_id != current_job_id` nebo `is_job_stale()` → `ShareStatus::StaleJob` místo `RejectedLowDifficulty` |
+| `V3/L1/pool/src/bin/server.rs` | `RoutingStats` rozšířen o `total_stale`, `record_stale()` a nový Prometheus counter `zion_pool_stale_total` |
+| `V3/L1/pool/src/bin/server.rs` | Fix dvojího počítání: `rejected = total_submits - accepted - stale` (dříve se stale započítávaly i do rejected) |
+
+**Nové logy na Edge pool:**
+```
+share_stale miner=desktop-agent submitted_job=113 current_job=114 reason=wrong-iteration
+routing_snapshot submits=100 accepted=84 rejected=0 stale=2 accept_rate=84.00%
+```
+
+**Deployment:** Edge pool restartován s novým binary (commit `496aec6e`). Accept rate nyní správně reflektuje pouze skutečné `share_below_target` rejecty.
+
+### Dashboard Tab Fix
+
+**Problém:** Kliknutí na libovolnou záložku v dashboardu (kromě Overview) nefungovalo — stránka se neposunula na jinou kartu.
+
+**Příčina:** V JavaScript poli `TABS` byl navíc řetězec `'controls'`, který neměl odpovídající HTML elementy (`pane-controls`, `tab-controls`). `switchTab()` vyhodil chybu při pokusu o přístup k neexistujícím elementům a zastavil přepínání.
+
+**Oprava:** Odstraněn `'controls'` z pole `TABS` v `ZION_OS/dashboard/app.py`:
+```js
+// PŘED (broken):
+const TABS=['overview','controls','charts','events','env','launch-day','wizard','services','database','metrics','logs','hiran'];
+// PO (správně):
+const TABS=['overview','charts','events','env','launch-day','wizard','services','database','metrics','logs','hiran'];
+```
+
+---
+
+## Co je nového 2026-06-11 dopoledne (Genesis Reset + Edge CPU Miner + Backup Infra)
 
 > Verze: **3.0.1**
 > Operativní session: hard genesis reset, Edge CPU miner deployment, backup audit + dashboard integration.

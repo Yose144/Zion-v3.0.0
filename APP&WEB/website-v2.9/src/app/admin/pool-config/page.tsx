@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useLang } from '@/contexts/LanguageContext';
 
 interface PoolConfig {
   algo: string;
@@ -88,6 +89,7 @@ const INITIAL_CONFIGS: PoolConfig[] = [
 ];
 
 export default function PoolConfigPage() {
+  const { cs } = useLang();
   const [configs, setConfigs] = useState<PoolConfig[]>(INITIAL_CONFIGS);
   const [testing, setTesting] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -140,11 +142,12 @@ export default function PoolConfigPage() {
         <div className="rounded-[32px] border border-white/10 bg-black/60 p-10 backdrop-blur-xl">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">Routing</p>
-              <h1 className="text-5xl md:text-6xl font-semibold text-gradient">Pool konfigurace</h1>
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{cs ? 'Routing' : 'Routing'}</p>
+              <h1 className="text-5xl md:text-6xl font-semibold text-gradient">{cs ? 'Pool konfigurace' : 'Pool configuration'}</h1>
               <p className="mt-4 text-lg text-gray-300 max-w-2xl">
-                Nastavení pool endpointů, walletů a worker prefixu pro každý algoritmus. Zatím mock UI —
-                dokud se nepřipojí per-algo config endpointy.
+                {cs
+                  ? 'Nastavení pool endpointů, walletů a worker prefixu pro každý algoritmus. Zatím mock UI — dokud se nepřipojí per-algo config endpointy.'
+                  : 'Pool endpoint, wallet, and worker prefix settings for each algorithm. Currently mock UI — until per-algo config endpoints are connected.'}
               </p>
             </div>
 
@@ -153,7 +156,7 @@ export default function PoolConfigPage() {
                 onClick={testAllConnections}
                 className="inline-flex items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-6 py-3 text-sm font-semibold hover:border-white/30"
               >
-                Test connections
+                {cs ? 'Testovat spojení' : 'Test connections'}
               </button>
               <button
                 onClick={saveConfiguration}
@@ -161,13 +164,13 @@ export default function PoolConfigPage() {
                   saved ? 'border-emerald-500/50 bg-white/10 text-white' : 'border-zion-gold/50 bg-white/10 text-white hover:border-white/30'
                 }`}
               >
-                {saved ? 'Saved' : 'Save'}
+                {saved ? (cs ? 'Uloženo' : 'Saved') : (cs ? 'Uložit' : 'Save')}
               </button>
               <Link
                 href="/admin"
                 className="inline-flex items-center justify-center rounded-2xl border border-white/10 bg-black/40 px-6 py-3 text-sm font-semibold hover:border-white/30"
               >
-                Zpět
+                {cs ? 'Zpět' : 'Back'}
               </Link>
             </div>
           </div>
@@ -175,8 +178,8 @@ export default function PoolConfigPage() {
 
         <div className="rounded-[28px] border border-white/10 bg-black/50 p-6">
           <p className="text-xs uppercase tracking-[0.3em] text-gray-400">GPU</p>
-          <h2 className="mt-2 text-2xl font-semibold text-white">GPU mining routes</h2>
-          <p className="mt-2 text-sm text-gray-300">Multi-algo seznam (mock data)</p>
+          <h2 className="mt-2 text-2xl font-semibold text-white">{cs ? 'GPU mining trasy' : 'GPU mining routes'}</h2>
+          <p className="mt-2 text-sm text-gray-300">{cs ? 'Multi-algo seznam (mock data)' : 'Multi-algo list (mock data)'}</p>
 
           <div className="mt-6 space-y-4">
             {gpuConfigs.map((config) => (
@@ -206,16 +209,16 @@ export default function PoolConfigPage() {
                   </label>
 
                   <div className="flex items-center gap-3">
-                    <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Priority</p>
+                    <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{cs ? 'Priorita' : 'Priority'}</p>
                     <select
                       value={config.priority}
                       onChange={(e) => updateConfig(config.algo, 'priority', parseInt(e.target.value))}
                       className="rounded-2xl border border-white/10 bg-black/40 px-4 py-2 text-sm text-white"
                       disabled={!config.enabled}
                     >
-                      <option value={1}>High</option>
-                      <option value={2}>Medium</option>
-                      <option value={3}>Low</option>
+                      <option value={1}>{cs ? 'Vysoká' : 'High'}</option>
+                      <option value={2}>{cs ? 'Střední' : 'Medium'}</option>
+                      <option value={3}>{cs ? 'Nízká' : 'Low'}</option>
                     </select>
                   </div>
                 </div>
@@ -240,12 +243,12 @@ export default function PoolConfigPage() {
                       onChange={(e) => updateConfig(config.algo, 'wallet', e.target.value)}
                       disabled={!config.enabled}
                       className="mt-2 w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-sm text-white disabled:opacity-50"
-                      placeholder="Wallet address"
+                      placeholder={cs ? 'Wallet adresa' : 'Wallet address'}
                     />
                   </div>
                   <div className="flex items-end gap-3">
                     <div className="flex-1">
-                      <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Worker prefix</p>
+                      <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{cs ? 'Worker prefix' : 'Worker prefix'}</p>
                       <input
                         type="text"
                         value={config.workerPrefix}
@@ -260,7 +263,7 @@ export default function PoolConfigPage() {
                       disabled={!config.enabled || testing === config.algo}
                       className="inline-flex items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-white hover:border-white/30 disabled:opacity-50"
                     >
-                      {testing === config.algo ? '…' : 'Test'}
+                      {testing === config.algo ? '…' : (cs ? 'Test' : 'Test')}
                     </button>
                   </div>
                 </div>
@@ -271,8 +274,8 @@ export default function PoolConfigPage() {
 
         <div className="rounded-[28px] border border-white/10 bg-black/50 p-6">
           <p className="text-xs uppercase tracking-[0.3em] text-gray-400">CPU</p>
-          <h2 className="mt-2 text-2xl font-semibold text-white">CPU mining routes</h2>
-          <p className="mt-2 text-sm text-gray-300">RandomX / CPU miners (mock data)</p>
+          <h2 className="mt-2 text-2xl font-semibold text-white">{cs ? 'CPU mining trasy' : 'CPU mining routes'}</h2>
+          <p className="mt-2 text-sm text-gray-300">{cs ? 'RandomX / CPU mineři (mock data)' : 'RandomX / CPU miners (mock data)'}</p>
 
           <div className="mt-6 space-y-4">
             {cpuConfigs.map((config) => (
@@ -325,7 +328,7 @@ export default function PoolConfigPage() {
                   </div>
                   <div className="flex items-end gap-3">
                     <div className="flex-1">
-                      <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Worker prefix</p>
+                      <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{cs ? 'Worker prefix' : 'Worker prefix'}</p>
                       <input
                         type="text"
                         value={config.workerPrefix}
@@ -339,7 +342,7 @@ export default function PoolConfigPage() {
                       disabled={!config.enabled || testing === config.algo}
                       className="inline-flex items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-white hover:border-white/30 disabled:opacity-50"
                     >
-                      {testing === config.algo ? '…' : 'Test'}
+                      {testing === config.algo ? '…' : (cs ? 'Test' : 'Test')}
                     </button>
                   </div>
                 </div>
@@ -349,13 +352,13 @@ export default function PoolConfigPage() {
         </div>
 
         <div className="rounded-[28px] border border-white/10 bg-black/50 p-6">
-          <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Notes</p>
-          <h3 className="mt-2 text-2xl font-semibold text-white">Konfigurační poznámky</h3>
+          <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{cs ? 'Poznámky' : 'Notes'}</p>
+          <h3 className="mt-2 text-2xl font-semibold text-white">{cs ? 'Konfigurační poznámky' : 'Configuration notes'}</h3>
           <ul className="mt-4 space-y-2 text-sm text-gray-300">
-            <li>• Změny se projeví po uložení (a typicky po reconnectu pool klienta).</li>
-            <li>• Wallet adresy musí odpovídat síti konkrétní mince.</li>
-            <li>• Worker prefix pomáhá identifikovat ZION workery na externích poolech.</li>
-            <li>• Před produkcí vždy otestovat konektivitu.</li>
+            <li>• {cs ? 'Změny se projeví po uložení (a typicky po reconnectu pool klienta).' : 'Changes take effect after saving (and typically after pool client reconnect).'}</li>
+            <li>• {cs ? 'Wallet adresy musí odpovídat síti konkrétní mince.' : 'Wallet addresses must match the network of the specific coin.'}</li>
+            <li>• {cs ? 'Worker prefix pomáhá identifikovat ZION workery na externích poolech.' : 'Worker prefix helps identify ZION workers on external pools.'}</li>
+            <li>• {cs ? 'Před produkcí vždy otestovat konektivitu.' : 'Always test connectivity before production.'}</li>
           </ul>
         </div>
 
@@ -364,13 +367,13 @@ export default function PoolConfigPage() {
             href="/admin/algo-manager"
             className="inline-flex items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-6 py-3 text-sm font-semibold hover:border-white/30"
           >
-            Algorithm manager →
+            {cs ? 'Správce algoritmů →' : 'Algorithm manager →'}
           </Link>
           <Link
             href="/admin"
             className="inline-flex items-center justify-center rounded-2xl border border-white/10 bg-black/40 px-6 py-3 text-sm font-semibold hover:border-white/30"
           >
-            ← Admin
+            ← {cs ? 'Admin' : 'Admin'}
           </Link>
         </div>
       </div>
