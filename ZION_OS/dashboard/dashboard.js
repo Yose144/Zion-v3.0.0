@@ -884,7 +884,8 @@ async function refreshPayout(){
     if (minersTable) {
       if (data.miner_stats && data.miner_stats.length) {
         minersTable.innerHTML = data.miner_stats.map(m => {
-          const hr = (m.hashrate_1h || m.hashrate || 0).toFixed(2);
+          const hrRaw = m.hashrate_1h || m.hashrate || 0;
+          const hr = hrRaw >= 1000 ? (hrRaw/1000).toFixed(2)+' KH/s' : hrRaw.toFixed(2)+' H/s';
           const paid = m.total_paid != null ? _zionFmt(m.total_paid / 1e12) : '—';
           const onChain = m.on_chain_balance_zion != null ? _zionFmt(m.on_chain_balance_zion) : '—';
           const pending = m.pending_balance != null ? _zionFmt(m.pending_balance / 1e12) : '—';
@@ -898,7 +899,7 @@ async function refreshPayout(){
             <td class="py-2 px-2 text-blue-300">${algo}</td>
             <td class="py-2 px-2 text-gray-400">${be}</td>
             <td class="py-2 px-2 text-right text-gray-300">${m.valid_shares != null ? m.valid_shares : '—'}</td>
-            <td class="py-2 px-2 text-right text-amber-400">${hr} H/s</td>
+            <td class="py-2 px-2 text-right text-amber-400">${hr}</td>
             <td class="py-2 px-2 text-right text-emerald-400">${paid} Z</td>
             <td class="py-2 px-2 text-right text-cyan-400">${onChain} Z</td>
             <td class="py-2 px-2 text-right text-purple-400">${pending} Z</td>
@@ -3396,7 +3397,8 @@ async function populateL1(){
   if(el('l1-height')) el('l1-height').textContent = edgeHeight !== '—' ? fmtNum(edgeHeight) : fmtNum(localHeight);
 
   if(el('l1-hashrate')){
-    const hr = cPool.hashrate_khs ?? miner.hashrate ?? 0;
+    // Prefer local miner hashrate; pool aggregate is shown in pool section
+    const hr = miner.hashrate ?? cPool.hashrate_khs ?? 0;
     el('l1-hashrate').textContent = hr > 0 ? hr.toFixed(2)+' KH/s' : '—';
   }
   if(el('l1-peers')) el('l1-peers').textContent = cEdge.known_peers ?? en.known_peers ?? n1.known_peers ?? 0;
@@ -3423,8 +3425,8 @@ async function populateL1(){
   const rt = id => document.getElementById(id);
   if(rt('l1-rt-height')) rt('l1-rt-height').textContent = edgeHeight !== '—' ? fmtNum(edgeHeight) : fmtNum(localHeight);
   if(rt('l1-rt-peers'))  rt('l1-rt-peers').textContent  = cEdge.known_peers ?? en.known_peers ?? n1.known_peers ?? '—';
-  if(rt('l1-rt-hashrate')) rt('l1-rt-hashrate').textContent = cPool.hashrate_khs ? cPool.hashrate_khs.toFixed(2)+' KH/s' : (miner.hashrate ? fmtNum(miner.hashrate)+'H/s' : '—');
-  if(rt('l1-rt-shares'))   rt('l1-rt-shares').textContent   = fmtNum(cPool.total_shares ?? pool.shares_accepted ?? 0);
+  if(rt('l1-rt-hashrate')) rt('l1-rt-hashrate').textContent = miner.hashrate ? miner.hashrate.toFixed(2)+' KH/s' : (cPool.hashrate_khs ? cPool.hashrate_khs.toFixed(2)+' KH/s' : '—');
+  if(rt('l1-rt-shares'))   rt('l1-rt-shares').textContent   = fmtNum(miner.shares_accepted ?? cPool.total_shares ?? pool.shares_accepted ?? 0);
 
   const mkBadge = (alive) => alive ? '● LIVE' : '● DOWN';
   const mkCls   = (alive, el) => { if(el){ el.textContent = mkBadge(alive); el.className = 'text-lg font-bold ' + (alive?'text-emerald-400':'text-red-400'); } };
