@@ -156,7 +156,7 @@ export default function AddressDetailClient() {
             <ChevronRight className="w-3 h-3" />
             <span className="text-white/70">{cs ? 'Adresa' : 'Address'}</span>
           </nav>
-          <div className="zion-panel rounded-[28px] bg-black/60 border border-red-500/20 p-10 text-center">
+          <div className="zion-panel rounded-[28px] bg-black/60 border border-red-500/20 p-5 sm:p-8 md:p-10 text-center">
             <XCircle className="h-10 w-10 text-red-400/60 mx-auto mb-4" />
             <h1 className="text-xl font-bold text-white mb-2">{cs ? 'Adresa nenalezena' : 'Address Not Found'}</h1>
             <p className="text-white/40 text-sm mb-6 font-mono break-all">{error || addr}</p>

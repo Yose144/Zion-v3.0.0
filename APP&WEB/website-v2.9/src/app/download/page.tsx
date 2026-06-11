@@ -71,7 +71,7 @@ export default function DownloadPage() {
       <div className="zion-container max-w-5xl space-y-16">
 
         {/* ─── Hero ─── */}
-        <section className="rounded-4xl border border-white/10 bg-black/60 p-10 backdrop-blur-xl">
+        <section className="rounded-4xl border border-white/10 bg-black/60 p-5 sm:p-8 md:p-10 backdrop-blur-xl">
           <div className="flex flex-col gap-6">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1 text-xs font-semibold tracking-[0.3em] text-zion-gold uppercase">
               <ArrowDownToLine className="h-4 w-4" />
@@ -265,7 +265,7 @@ export default function DownloadPage() {
         <DownloadFaq cs={cs} />
 
         {/* ─── CTA ─── */}
-        <section className="rounded-4xl border border-zion-gold/30 bg-linear-to-r from-zion-purple/30 via-zion-gold/15 to-zion-purple/30 p-10 text-center">
+        <section className="rounded-4xl border border-zion-gold/30 bg-linear-to-r from-zion-purple/30 via-zion-gold/15 to-zion-purple/30 p-5 sm:p-8 md:p-10 text-center">
           <TerminalSquare className="mx-auto h-12 w-12 text-zion-gold" />
           <h2 className="mt-6 text-3xl font-semibold text-white">{cs ? 'Pripraven tezit?' : 'Ready to mine?'}</h2>
           <p className="mt-4 text-gray-100 max-w-3xl mx-auto">

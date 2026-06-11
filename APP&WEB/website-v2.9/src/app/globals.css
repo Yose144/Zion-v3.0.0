@@ -342,6 +342,18 @@
   background: linear-gradient(180deg, #9333EA, #06B6D4);
 }
 
+/* ═══ Mobile safety — force single column for grids without explicit mobile breakpoint ═══ */
+@media (max-width: 639px) {
+  /* Override any grid with 2+ columns that doesn't have an explicit grid-cols-1 */
+  .grid[class*="grid-cols-2"]:not([class*="grid-cols-1"]),
+  .grid[class*="grid-cols-3"]:not([class*="grid-cols-1"]),
+  .grid[class*="grid-cols-4"]:not([class*="grid-cols-1"]),
+  .grid[class*="grid-cols-5"]:not([class*="grid-cols-1"]),
+  .grid[class*="grid-cols-6"]:not([class*="grid-cols-1"]) {
+    grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+  }
+}
+
 /* ═══ Reduced Motion ═══ */
 @media (prefers-reduced-motion: reduce) {
   *,
