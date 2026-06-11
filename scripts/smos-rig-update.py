@@ -5,11 +5,11 @@ import json, os, sys, time, urllib.request, base64, re
 API = "https://api.simplemining.net"
 RIG = 518837
 GROUP = 1773590
-MINER_URL = "https://zionterranova.com/zion-miner/zion-miner-v3.0.32-gpu.zip"
+MINER_URL = "https://zionterranova.com/zion-miner/zion-sm3042c.zip"
 OPTS = (
     f"{MINER_URL} "
     f"--pool 77.42.71.94:8444 "
-    f"--wallet zion1w2z3l0q2x5e3q752d3v8k5k3u366j5j3t79n5w3 "
+    f"--wallet zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4 "
     f"--worker vega-smos"
 )
 

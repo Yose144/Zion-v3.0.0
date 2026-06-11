@@ -101,7 +101,7 @@ All services are installed in `/etc/systemd/system/` and enabled for auto-start.
 Source: `edge-deploy/config/edge-environment.sh`
 
 ```bash
-# Fee Split (89/5/5/0 burn model)
+# Fee Split (89/5/5/1 burn model)
 ZION_MINER_ADDRESS=zion1w523a76830x2t5m7f3j023w265e8g5c400a4790
 ZION_HUMANITARIAN_WALLET=zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4
 ZION_ISSOBELLA_WALLET=zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702
@@ -365,7 +365,7 @@ Features already working:
 #### Phase 3 — Advanced
 
 - [ ] Payout history table (from pool logs)
-- [ ] Fee split visualization (89/5/5/0 pie chart)
+- [ ] Fee split visualization (89/5/5/1 pie chart)
 - [ ] Wallet balance display (query RPC)
 - [ ] Bridge transaction monitor (L1 ↔ EVM)
 - [ ] AI chat tab (connect to Hiranyagarbha 8001)
@@ -613,7 +613,7 @@ systemctl --user start zion-dashboard.service
 
 ---
 
-## 8. Fee Split Model (89/5/5/0 Burn)
+## 8. Fee Split Model (89/5/5/1 Burn)
 
 | Recipient | Share | Address |
 |-----------|-------|---------|

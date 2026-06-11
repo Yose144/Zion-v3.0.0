@@ -47,7 +47,7 @@ Dynamic selection based on `TOPOLOGY` config variable.
   - Miner wallet: `zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3`
   - Humanitarian: `zion1m4v5z8z850u480c5c208z274e334369275n5y20`
   - Issobella: `zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702`
-- Fee split: `89/5/5/0` (burn model)
+- Fee split: `89/5/5/1` (burn model)
 - Payouts enabled: `true`
 
 **Local-dev mode**:
@@ -106,7 +106,7 @@ Dynamic selection based on `TOPOLOGY` config variable.
 - Follower node far behind genesis (warning, gap > 10 blocks)
 
 **Common alerts** (both topologies):
-- Wrong fee split (critical, must be 89/5/5/0)
+- Wrong fee split (critical, must be 89/5/5/1)
 - Payouts disabled (warning)
 - Low GPU nonce window (info)
 - Miner not hashing (warning)
@@ -139,7 +139,7 @@ Dynamic selection based on `TOPOLOGY` config variable.
 Tested with `config.json` set to `"topology": "edge-primary"`:
 
 - `/api/status` ✅ Shows topology: edge-primary, edge_node data, local backup node syncing
-- `/api/payout` ✅ Shows Edge wallet addresses, fee_split: 89/5/5/0, payouts enabled
+- `/api/payout` ✅ Shows Edge wallet addresses, fee_split: 89/5/5/1, payouts enabled
 - `/api/wallets` ✅ Shows premine wallets + operational wallets
 - `/api/explorer` ✅ Returns chain data (RPC reachable via local backup)
 - `/api/alerts` ✅ Shows "All systems nominal" when stack healthy
@@ -161,7 +161,7 @@ The Edge server (100.76.16.108) runs the primary node + pool with:
 
 - **Pool wallet**: `zion1a6z5a4m830w6s6k7r508n300n6z30022q6qt0n7`
 - **Payout execution**: enabled
-- **Fee split**: 89/5/5/0 (burn model)
+- **Fee split**: 89/5/5/1 (burn model)
 - **Public pool**: `77.42.71.94:8444`
 - **Public RPC**: `http://77.42.71.94:8443/jsonrpc`
 
