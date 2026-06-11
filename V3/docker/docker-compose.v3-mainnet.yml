@@ -12,7 +12,7 @@
 #   docker compose -f docker-compose.v3-mainnet.yml logs -f
 #   docker compose -f docker-compose.v3-mainnet.yml down
 #
-# 89/5/5/0 (burn model) subsidy split: set ZION_HUMANITARIAN_WALLET and
+# 89/5/5/1 (burn model) subsidy split: set ZION_HUMANITARIAN_WALLET and
 # ZION_ISSOBELLA_WALLET on the node. The 1% pool fee is burned (no wallet).
 # The canonical mainnet humanitarian recipient is the premine Children Future Fund.
 # For burn-model defaults (repo-pinned canonical `zion1` addresses + payout key), see

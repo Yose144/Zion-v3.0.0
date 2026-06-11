@@ -42,7 +42,28 @@ export default function PoolPanel({ pool, poolEdge }: Props) {
         </div>
       </div>
 
-      <div className="flex gap-2">
+      {/* Miner balances */}
+      {p.miner_balances && p.miner_balances.length > 0 && (
+        <div className="mt-3 space-y-1">
+          <div className="text-[10px] text-gray-400 font-semibold">Miner Balances</div>
+          {p.miner_balances.map((mb) => (
+            <div key={mb.miner_id} className="flex items-center justify-between bg-white/5 rounded-lg px-2 py-1.5">
+              <div className="flex flex-col min-w-0">
+                <span className="text-[10px] font-mono text-white truncate">{mb.miner_id.slice(0, 18)}…</span>
+                <span className="text-[9px] text-gray-500">{mb.worker_name}</span>
+              </div>
+              <div className="flex flex-col items-end">
+                <span className="text-[10px] text-gray-400">Pending: <span className="text-amber-400">{mb.balance_zion.toFixed(4)} Z</span></span>
+                {mb.on_chain_balance_zion != null && (
+                  <span className="text-[10px] text-gray-400">On-chain: <span className="text-emerald-400">{mb.on_chain_balance_zion.toFixed(4)} Z</span></span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="flex gap-2 mt-3">
         <button onClick={() => window.open('http://127.0.0.1:8766/#payout', '_self')} className="flex-1 py-2 rounded-lg bg-purple-700/40 hover:bg-purple-700/60 border border-purple-500/30 text-xs font-semibold transition">
           💰 Payouts
         </button>

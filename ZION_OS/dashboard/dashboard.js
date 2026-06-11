@@ -793,7 +793,7 @@ async function refreshPayout(){
     }
 
     // ── Fee Split Bar ───────────────────────────────────────────────
-    const fsText = data.fee_split || '89/5/5/0';
+    const fsText = data.fee_split || '89/5/5/1';
     set('fee-split-label', fsText);
     const fsParts = fsText.split('/').map(x => parseFloat(x) || 0);
     const [minerPct, charPct, devPct, poolPct] = fsParts.length >= 4 ? fsParts : [89,5,5,1];

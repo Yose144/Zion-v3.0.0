@@ -4001,7 +4001,7 @@ ipcMain.handle('get-network-metrics', async () => {
         try {
           const ctrl = new AbortController();
           const timer = setTimeout(() => ctrl.abort(), 5000);
-          const res = await fetch(`http://${server.host}:8080/stats`, { signal: ctrl.signal });
+          const res = await fetch(`http://${server.host}:8455/stats`, { signal: ctrl.signal });
           clearTimeout(timer);
           if (res.ok) {
             const pool = await res.json();
@@ -4594,7 +4594,7 @@ ipcMain.handle('wallet-get-balance', async (event, { rpcUrl, address }) => {
     const chainHeight = rpcOk ? (result?.chain_height ?? 0) : 0;
 
     // Fetch pool mined balance — try all V3 pool servers.
-    const POOL_SERVER_PRIORITY = ['zion2', 'zion3', 'zion4'];
+    const POOL_SERVER_PRIORITY = TESTNET_SERVERS.map(s => s.id);
     const POOL_API_SERVERS = POOL_SERVER_PRIORITY
       .map(id => TESTNET_SERVERS.find(s => s.id === id))
       .filter(Boolean);
@@ -4628,11 +4628,11 @@ ipcMain.handle('wallet-get-balance', async (event, { rpcUrl, address }) => {
     let poolSourceHost = '';
     try {
       for (const srv of POOL_API_SERVERS) {
-        const statsResp = await fetchPoolJson(`http://${srv.host}:8080/api/v1/miner/${addr}/stats`);
+        const statsResp = await fetchPoolJson(`http://${srv.host}:8455/api/v1/miner/${addr}/stats`);
         const stats = statsResp?.stats || statsResp;
         if (!stats) continue;
 
-        const payoutsResp = await fetchPoolJson(`http://${srv.host}:8080/api/v1/miner/${addr}/payouts`);
+        const payoutsResp = await fetchPoolJson(`http://${srv.host}:8455/api/v1/miner/${addr}/payouts`);
 
         poolSource = srv.id || '';
         poolSourceHost = srv.host || '';
