@@ -41,8 +41,8 @@ Edge (operational):
   Monitoring / metrics
 ```
 
-**Edge server:** `77.42.71.94`
-**Local dev:** `100.86.102.5` (Windows 11)
+**Edge server:** Public VPS (Hetzner Cloud)
+**Local dev:** Private backup node (Windows 11)
 
 ---
 
