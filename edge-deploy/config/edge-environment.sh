@@ -16,7 +16,7 @@
 #   - Miners — connect to Edge Pool via Tailscale
 #   - AI services (Hiran + Hiranyagarbha) — local GPU required
 
-# ── Canonical Fee Split Addresses (89/5/5/0 burn model — no pool fee wallet) ──
+# ── Canonical Fee Split Addresses (89/5/5/1 burn model — no pool fee wallet) ──
 # NOTE: On Edge-Primary topology, ZION_MINER_ADDRESS MUST equal the pool
 # wallet so the node credits block rewards directly to the pool payout wallet.
 # Local miners should set their own ZION_MINER_ADDRESS in launch scripts.

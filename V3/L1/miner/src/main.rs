@@ -955,6 +955,8 @@ fn run_local_session(
         }
         // GPU-first, CPU-fallback nonce scan
         let can_gpu = gpu_ref.is_some();
+        let mut gpu_nonces_tested = 0u64;
+        let mut cpu_nonces_tested = 0u64;
         let scan_result = if can_gpu {
             let g = gpu_ref.unwrap();
             if let Err(e) = g.update_epoch(job.height) {
@@ -962,15 +964,22 @@ fn run_local_session(
                     "gpu_epoch_fallback height={} reason=\"{e}\" using=cpu",
                     job.height
                 );
+                cpu_nonces_tested = job.nonce_count;
                 parallel::parallel_scan_nonce_range(job, threads, &current_algorithm)
             } else {
-                gpu_backend::gpu_scan_job(g, job, &current_algorithm).solution
+                let result = gpu_backend::gpu_scan_job(g, job, &current_algorithm);
+                gpu_nonces_tested = result.nonces_tested;
+                result.solution
             }
         } else {
+            cpu_nonces_tested = job.nonce_count;
             parallel::parallel_scan_nonce_range(job, threads, &current_algorithm)
         };
+        hashrate.record_gpu_hashes(gpu_nonces_tested);
+        hashrate.record_cpu_hashes(cpu_nonces_tested);
         let Some(solution) = scan_result else {
-            attempted_hashes = attempted_hashes.saturating_add(job.nonce_count);
+            let tested = if can_gpu { gpu_nonces_tested } else { job.nonce_count };
+            attempted_hashes = attempted_hashes.saturating_add(tested);
             rejected_iterations += 1;
             telemetry.record_attempted_hashes(attempted_hashes);
             telemetry.record_no_solution();
@@ -1027,8 +1036,9 @@ fn run_local_session(
             continue;
         };
 
-        attempted_hashes = attempted_hashes
-            .saturating_add(solution.candidate.nonce.saturating_sub(job.start_nonce) + 1);
+        let search_depth = solution.candidate.nonce.saturating_sub(job.start_nonce) + 1;
+        let tested = if can_gpu { gpu_nonces_tested } else { search_depth };
+        attempted_hashes = attempted_hashes.saturating_add(tested);
         telemetry.record_attempted_hashes(attempted_hashes);
 
         if config.sleep_ms > 0 {
@@ -1377,6 +1387,8 @@ fn run_remote_session(
         }
         // GPU-first, CPU-fallback nonce scan (respect interactive overrides)
         let can_gpu = gpu_ref.is_some() && gpu_on;
+        let mut gpu_nonces_tested = 0u64;
+        let mut cpu_nonces_tested = 0u64;
         let scan_result = if can_gpu {
             let g = gpu_ref.unwrap();
             if let Err(e) = g.update_epoch(job.height) {
@@ -1384,40 +1396,44 @@ fn run_remote_session(
                     "gpu_epoch_fallback height={} reason=\"{e}\" using=cpu",
                     job.height
                 );
-                hashrate.record_cpu_hashes(job.nonce_count);
+                cpu_nonces_tested = job.nonce_count;
                 parallel::parallel_scan_nonce_range(job, threads, &current_algorithm)
             } else {
                 let result = gpu_backend::gpu_scan_job(g, job, &current_algorithm);
-                hashrate.record_gpu_hashes(job.nonce_count);
+                gpu_nonces_tested = result.nonces_tested;
                 result.solution
             }
         } else if cpu_on {
-            hashrate.record_cpu_hashes(job.nonce_count);
+            cpu_nonces_tested = job.nonce_count;
             parallel::parallel_scan_nonce_range(job, threads, &current_algorithm)
         } else {
             // Both CPU and GPU disabled — skip
-            hashrate.record_cpu_hashes(0);
+            cpu_nonces_tested = 0;
             None
         };
+        hashrate.record_gpu_hashes(gpu_nonces_tested);
+        hashrate.record_cpu_hashes(cpu_nonces_tested);
         let batch_ms = job_started_at.elapsed().as_millis() as u64;
         if can_gpu {
-            telemetry.record_gpu_hashes(job.nonce_count);
+            telemetry.record_gpu_hashes(gpu_nonces_tested);
         }
         if telemetry.best_batch_ms == 0 || batch_ms < telemetry.best_batch_ms {
             telemetry.best_batch_ms = batch_ms;
         }
         let Some(solution) = scan_result else {
-            attempted_hashes = attempted_hashes.saturating_add(job.nonce_count);
+            let tested = if can_gpu { gpu_nonces_tested } else { job.nonce_count };
+            attempted_hashes = attempted_hashes.saturating_add(tested);
             telemetry.record_attempted_hashes(attempted_hashes);
             telemetry.record_no_solution();
             // Always log scan result for operational visibility
             println!(
-                "[{}] no_solution  iteration={}  height={}  nonces={}..{}  elapsed_ms={}",
+                "[{}] no_solution  iteration={}  height={}  nonces={}..{}  tested={}  elapsed_ms={}",
                 log_timestamp(),
                 iteration + 1,
                 job.height,
                 job.start_nonce,
                 job.start_nonce + job.nonce_count,
+                tested,
                 batch_ms,
             );
             if VERBOSE.load(Ordering::Relaxed) {
@@ -1427,7 +1443,7 @@ fn run_remote_session(
                 job_id: job.job_id,
                 miner_id: config.miner_id.clone(),
                 worker_name: config.worker_name.clone(),
-                attempted_hashes: Some(job.nonce_count),
+                attempted_hashes: Some(tested),
                 elapsed_ms: Some(job_started_at.elapsed().as_millis() as u64),
             };
             let no_solution_line = write_wire_message(&mut writer, &no_solution_message)?;
@@ -1475,20 +1491,25 @@ fn run_remote_session(
             );
             continue;
         };
-        attempted_hashes = attempted_hashes
-            .saturating_add(solution.candidate.nonce.saturating_sub(job.start_nonce) + 1);
+        let search_depth = solution.candidate.nonce.saturating_sub(job.start_nonce) + 1;
+        let tested = if can_gpu {
+            gpu_nonces_tested
+        } else {
+            search_depth
+        };
+        attempted_hashes = attempted_hashes.saturating_add(tested);
         telemetry.record_attempted_hashes(attempted_hashes);
 
         // Always log found nonce for operational visibility
-        let search_depth = solution.candidate.nonce.saturating_sub(job.start_nonce) + 1;
         let hash_prefix: String = solution.hash[..6].iter().map(|x| format!("{:02x}", x)).collect();
         println!(
-            "[{}] found_nonce={}  height={}  depth={}/{}  elapsed_ms={}  algo={}  hash_prefix={}",
+            "[{}] found_nonce={}  height={}  depth={}/{}  tested={}  elapsed_ms={}  algo={}  hash_prefix={}",
             log_timestamp(),
             solution.candidate.nonce,
             job.height,
             search_depth,
             job.nonce_count,
+            tested,
             batch_ms,
             current_algorithm,
             hash_prefix,
@@ -1514,7 +1535,7 @@ fn run_remote_session(
             worker_name: config.worker_name.clone(),
             nonce: solution.candidate.nonce,
             hash_hex: hex(&solution.hash),
-            attempted_hashes: Some(solution.candidate.nonce.saturating_sub(job.start_nonce) + 1),
+            attempted_hashes: Some(tested),
             elapsed_ms: Some(job_started_at.elapsed().as_millis() as u64),
         };
         let submit_line = write_wire_message(&mut writer, &submit_message)?;

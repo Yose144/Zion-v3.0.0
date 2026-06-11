@@ -89,7 +89,7 @@ The Edge server is running with a **different genesis hash** than the documented
 | **Pool Bind** | 0.0.0.0:8444 | ✅ Listening |
 | **Metrics Bind** | 0.0.0.0:8455 | ✅ Listening |
 | **Node RPC** | 127.0.0.1:8443 | ✅ Connected |
-| **Fee Split** | 89/5/5/0 | ✅ Configured |
+| **Fee Split** | 89/5/5/1 | ✅ Configured |
 | **Humanitarian Wallet** | `zion158h0z3s4a0y7j834q0t83558h3f0t7s5g6yd8a8` | ⚠️ **DIFFERENT** |
 | **ISSOBELLA Wallet** | `zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702` | ✅ Correct |
 
