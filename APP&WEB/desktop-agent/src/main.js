@@ -16,8 +16,9 @@ const crypto = require('crypto');
 const PRIMARY_MAINNET_HOST = '77.42.71.94';
 const PRIMARY_POOL_PORT = 8444;
 const PRIMARY_RPC_PORT = 8443;
-// Edge VPN IP (Tailscale) for RPC access
-const EDGE_VPN_HOST = '100.76.16.108';
+// Edge VPN IP (Tailscale) — removed to prevent auto-select from picking stale local pool
+// Use public Edge IP only; Tailscale IP may point to a local dev pool without current fixes.
+const EDGE_VPN_HOST = '77.42.71.94';
 // Legacy alias kept for internal fallback references
 const PRIMARY_TESTNET_HOST = PRIMARY_MAINNET_HOST;
 // Default to public Edge read-only RPC for public miners.
