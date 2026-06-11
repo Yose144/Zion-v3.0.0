@@ -153,7 +153,7 @@ export default function RevenueSettings() {
                     />
                 </div>
             </div>
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
                     <label className="block text-sm font-medium mb-1">{lang === 'cs' ? 'NPU Alokace (0.0 - 1.0)' : 'NPU Allocation (0.0 - 1.0)'}</label>
                     <input 
@@ -215,7 +215,7 @@ export default function RevenueSettings() {
                 </div>
             </div>
             <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                      <div>
                         <label className="block text-sm font-medium mb-1">{lang === 'cs' ? 'Pool Stratum URL' : 'Pool Stratum URL'}</label>
                         <input 
@@ -253,7 +253,7 @@ export default function RevenueSettings() {
                 </div>
             </div>
             <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                      <div>
                         <label className="block text-sm font-medium mb-1">{lang === 'cs' ? 'Pool Stratum URL' : 'Pool Stratum URL'}</label>
                         <input 

@@ -251,7 +251,7 @@ export default function L5FreeWorldPage() {
         </motion.section>
 
         {/* ── Links ── */}
-        <motion.section initial={{ opacity: 0, scale: 0.98 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} className="rounded-[32px] border border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-transparent to-emerald-500/10 p-10">
+        <motion.section initial={{ opacity: 0, scale: 0.98 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} className="rounded-[32px] border border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-transparent to-emerald-500/10 p-5 sm:p-8 md:p-10">
           <h2 className="text-2xl font-semibold text-white text-center mb-6">{cs ? 'Více o L5' : 'Learn more about L5'}</h2>
           <div className="flex flex-wrap justify-center gap-4">
             <Link href="/dao" className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/5 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10 transition-colors">

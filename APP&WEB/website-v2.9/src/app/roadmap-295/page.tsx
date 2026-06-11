@@ -277,7 +277,7 @@ export default function Roadmap295Page() {
 
                 <h3 className="text-xl font-bold text-white mb-4">{quarter.title}</h3>
 
-                <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                   <div className="bg-gray-900/50 rounded-lg p-3">
                     <div className="text-xs text-gray-400 mb-1">{lang === 'cs' ? 'Rozpočet' : 'Budget'}</div>
                     <div className={`text-lg font-bold text-zion-${quarter.color}`}>{quarter.budget}</div>

@@ -24,6 +24,13 @@ const jetbrains = JetBrains_Mono({
   weight: ['400', '500'],
 });
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  themeColor: '#000000',
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL('https://zionterranova.com'),
   title: {

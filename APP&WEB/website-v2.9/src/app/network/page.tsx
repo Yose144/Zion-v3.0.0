@@ -870,7 +870,7 @@ export default function NetworkPage() {
         </section>
 
         {/* ═══════ CTA ═══════ */}
-        <section className="rounded-4xl border border-emerald-400/30 bg-linear-to-r from-emerald-500/20 via-zion-cyan/10 to-emerald-500/20 p-10 text-center">
+        <section className="rounded-4xl border border-emerald-400/30 bg-linear-to-r from-emerald-500/20 via-zion-cyan/10 to-emerald-500/20 p-5 sm:p-8 md:p-10 text-center">
           <Radio className="mx-auto h-12 w-12 text-emerald-400" />
           <h2 className="mt-6 text-3xl font-semibold text-white">{cs ? 'Pripojte se k siti ZION' : 'Join the ZION Network'}</h2>
           <p className="mt-4 text-gray-100 max-w-3xl mx-auto">

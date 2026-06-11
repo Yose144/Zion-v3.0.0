@@ -607,7 +607,7 @@ export default function WalletPage() {
           initial={{ opacity: 0, scale: 0.98 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
-          className="rounded-[32px] border border-zion-gold/30 bg-gradient-to-r from-zion-gold/10 via-transparent to-cyan-500/10 p-10"
+          className="rounded-[32px] border border-zion-gold/30 bg-gradient-to-r from-zion-gold/10 via-transparent to-cyan-500/10 p-5 sm:p-8 md:p-10"
         >
           <h2 className="text-2xl font-semibold text-white text-center mb-6">
             {cs ? 'Více o ZION Wallet' : 'Learn more about ZION Wallet'}

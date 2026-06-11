@@ -479,7 +479,7 @@ export default function L3HiranPage() {
           initial={{ opacity: 0, scale: 0.98 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
-          className="rounded-[32px] border border-purple-500/30 bg-gradient-to-r from-purple-500/10 via-transparent to-cyan-500/10 p-10"
+          className="rounded-[32px] border border-purple-500/30 bg-gradient-to-r from-purple-500/10 via-transparent to-cyan-500/10 p-5 sm:p-8 md:p-10"
         >
           <h2 className="text-2xl font-semibold text-white text-center mb-6">
             {cs ? 'Více o L3 a ekosystému' : 'Learn more about L3 and the ecosystem'}
