@@ -161,6 +161,7 @@ pub struct ShareDecision {
 pub struct PoolStats {
     pub accepted_shares: u64,
     pub rejected_shares: u64,
+    pub stale_shares: u64,
     pub active_jobs: usize,
     pub revenue: RevenueSnapshot,
 }
@@ -175,6 +176,7 @@ pub struct MiningPool {
     runtime: CoreRuntime,
     accepted_shares: u64,
     rejected_shares: u64,
+    stale_shares: u64,
     next_job_id: u64,
     job_ttl_ms: u64,
     active_jobs: HashMap<u64, TrackedJob>,
@@ -196,6 +198,7 @@ impl MiningPool {
             runtime,
             accepted_shares: 0,
             rejected_shares: 0,
+            stale_shares: 0,
             next_job_id: 1,
             job_ttl_ms,
             active_jobs: HashMap::new(),
@@ -512,6 +515,7 @@ impl MiningPool {
         PoolStats {
             accepted_shares: self.accepted_shares,
             rejected_shares: self.rejected_shares,
+            stale_shares: self.stale_shares,
             active_jobs: self.active_jobs.len(),
             revenue: self.runtime.revenue_snapshot(),
         }
@@ -535,6 +539,11 @@ impl MiningPool {
     /// Increment the rejected-share counter.
     pub fn record_rejected_share(&mut self) {
         self.rejected_shares += 1;
+    }
+
+    /// Increment the stale-share counter.
+    pub fn record_stale_share(&mut self) {
+        self.stale_shares += 1;
     }
 }
 
