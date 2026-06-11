@@ -611,7 +611,7 @@ def append_alert(alert: dict):
 
 # ── Watchdog ────────────────────────────────────────────────────────────
 WATCHDOG_ENABLED = True
-WATCHDOG_RESTART_COOLDOWN_SEC = 300  # 5 min between auto-restarts per service
+WATCHDOG_RESTART_COOLDOWN_SEC = 60  # 1 min between auto-restarts per service (reduced for faster recovery)
 WATCHDOG_LAST_RESTART = {}  # sid -> ts
 
 def watchdog_check():
@@ -621,7 +621,7 @@ def watchdog_check():
     now = time.time()
     # Critical services depend on topology
     if TOPOLOGY == "edge-primary":
-        critical = ["edge-node", "pool-edge", "node1"]  # Edge primary + local backup
+        critical = ["edge-node1", "pool-edge", "node1"]  # Edge primary + local backup
     else:
         critical = ["node1", "pool"]  # Local genesis + local pool
     for sid in critical:
@@ -675,7 +675,7 @@ SID_TO_ACTION = {
     "node2": "start-node2",
     "pool": "start-pool",
     "pool-edge": None,  # Edge pool is remote, no local start action
-    "edge-node": None,  # Edge node is remote, no local start action
+    "edge-node1": None,  # Edge node is remote, no local start action
     "miner": "start-miner",
     "hiranyagarbha": "start-hiranyagarbha",
     "ai-native": "start-hiran-inference",
