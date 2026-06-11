@@ -2772,8 +2772,42 @@ window.copyWalletAddress = (address) => {
 };
 
 window.exportWalletToFile = async (address) => {
-  const password = prompt(`Export backup for:\n${address}\n\nEnter wallet password to decrypt:`);
+  const modal = document.getElementById('export-password-modal');
+  const addrEl = document.getElementById('export-modal-address');
+  const input = document.getElementById('export-modal-password');
+  const cancelBtn = document.getElementById('export-modal-cancel');
+  const confirmBtn = document.getElementById('export-modal-confirm');
+
+  if (!modal || !input || !cancelBtn || !confirmBtn) {
+    showToast('Export modal not found in DOM', 'error');
+    return;
+  }
+
+  addrEl.textContent = address;
+  input.value = '';
+  modal.style.display = 'flex';
+  input.focus();
+
+  const password = await new Promise((resolve) => {
+    const cleanup = () => {
+      modal.style.display = 'none';
+      cancelBtn.removeEventListener('click', onCancel);
+      confirmBtn.removeEventListener('click', onConfirm);
+      input.removeEventListener('keydown', onKey);
+    };
+    const onCancel = () => { cleanup(); resolve(null); };
+    const onConfirm = () => { cleanup(); resolve(input.value); };
+    const onKey = (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); onConfirm(); }
+      if (e.key === 'Escape') { e.preventDefault(); onCancel(); }
+    };
+    cancelBtn.addEventListener('click', onCancel);
+    confirmBtn.addEventListener('click', onConfirm);
+    input.addEventListener('keydown', onKey);
+  });
+
   if (!password) return;
+
   const result = await window.electronAPI.exportWalletToFile({ address, password });
   if (result?.success) {
     showToast(`Backup saved to Desktop: ${result.filePath}`, 'success', 5000);
