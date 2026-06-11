@@ -1021,6 +1021,7 @@ fn handle_client(
                 elapsed_ms,
             } => {
                 let accepted = matches!(decision.status, ShareStatus::Accepted);
+                let stale = matches!(decision.status, ShareStatus::StaleJob);
                 // PPLNS share was already recorded in the submit handler above
                 // (with difficulty weight).  Trigger payout only when a block
                 // was actually found (sealed_block is present).
@@ -1150,6 +1151,9 @@ fn handle_client(
                 }
                 {
                     let mut stats = routing_stats.lock().expect("routing stats lock poisoned");
+                    if stale {
+                        stats.record_stale();
+                    }
                     let should_log = stats.record(session_group, routed_source, accepted);
                     if should_log {
                         println!("routing_snapshot {}", stats.snapshot_line());
