@@ -22,6 +22,21 @@ export interface NewsArticle {
 
 export const NEWS_ARTICLES: NewsArticle[] = [
   {
+    slug: 'genesis-hard-reset',
+    date: '2026-06-11',
+    tag: { cs: 'Genesis', en: 'Genesis' },
+    tagColor: 'text-zion-gold',
+    title: {
+      cs: 'Genesis hard reset proveden — síť připravena na Genesis launch',
+      en: 'Genesis hard reset completed — network ready for Genesis launch',
+    },
+    summary: {
+      cs: 'Hard reset Genesis řetězce byl úspěšně proveden. Síť je nyní stabilní a připravená na oficiální Genesis launch. Další detaily o spuštění budou oznámeny později.',
+      en: 'The Genesis chain hard reset has been successfully completed. The network is now stable and ready for the official Genesis launch. Further launch details will be announced later.',
+    },
+    href: '/genesis',
+  },
+  {
     slug: 'terranova-mainnet-genesis',
     date: '2026-06-11',
     tag: { cs: 'TerraNova', en: 'TerraNova' },
