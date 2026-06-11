@@ -5814,7 +5814,7 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
 <script>
 let autoRefresh=true,refreshTimer=null,currentTab='overview';
 let charts={};
-const TABS=['overview','controls','charts','events','env','launch-day','wizard','services','database','metrics','logs','hiran'];
+const TABS=['overview','charts','events','env','launch-day','wizard','services','database','metrics','logs','hiran'];
 
 // ── Tab switching ──
 function switchTab(name){
