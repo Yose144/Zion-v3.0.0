@@ -74,8 +74,6 @@ yarn-error.log*
 
 # Electron build (rebuild with npm run dist)
 APP&WEB/desktop-agent/dist/
-APP&WEB/desktop-agent/resources/zion-universal-miner.exe
-APP&WEB/desktop-agent/resources/zion-miner.exe
 APP&WEB/desktop-agent/resources/native-libs/
 APP&WEB/desktop-agent/resources/*.dylib
 
@@ -225,6 +223,11 @@ dist/
 # Výjimky: nativní knihovny dodávané s agentem (one-click)
 !APP&WEB/desktop-agent/resources/mining/*.dylib
 !L1/native-libs/all/libcosmic_harmony_v42.dylib
+# Desktop agent resource binaries (distributed with app)
+!APP&WEB/desktop-agent/resources/node.exe
+!APP&WEB/desktop-agent/resources/zion.exe
+!APP&WEB/desktop-agent/resources/zion-miner.exe
+!APP&WEB/desktop-agent/resources/zion-universal-miner.exe
 
 # Build logs
 build-check.log

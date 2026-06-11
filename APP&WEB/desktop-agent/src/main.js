@@ -4109,15 +4109,15 @@ ipcMain.handle('get-peer-list', async () => {
 // ============================================================================
 
 // Wallet IPC handlers
-ipcMain.handle('generate-wallet', () => {
+ipcMain.handle('generate-wallet', (event, { strength } = {}) => {
   try {
     // Ensure wallets directory exists
     if (!fs.existsSync(WALLETS_PATH)) {
       fs.mkdirSync(WALLETS_PATH, { recursive: true });
     }
 
-    // Generate new wallet
-    const wallet = WalletGenerator.generateWallet();
+    // Generate new wallet (default 128 bits = 12 words)
+    const wallet = WalletGenerator.generateWallet(strength || 128);
     
     dbg('Generated wallet:', wallet.address);
     return { success: true, wallet };
@@ -4283,6 +4283,99 @@ ipcMain.handle('export-wallet', (event, { address, password }) => {
       }
     };
   } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('export-wallet-to-file', async (event, { address, password }) => {
+  try {
+    const files = fs.readdirSync(WALLETS_PATH).filter(f => f.endsWith('.json'));
+    let walletData = null;
+    let walletFile = null;
+    for (const f of files) {
+      try {
+        const d = JSON.parse(fs.readFileSync(path.join(WALLETS_PATH, f), 'utf8'));
+        if (d.address === address) { walletData = d; walletFile = f; break; }
+      } catch { /* skip invalid */ }
+    }
+    if (!walletData) throw new Error('Wallet not found');
+
+    let privateKey, mnemonic;
+    try {
+      privateKey = WalletGenerator.decryptPrivateKey(walletData.encryptedPrivateKey, password);
+    } catch {
+      throw new Error('Wrong password or corrupted wallet file');
+    }
+    if (walletData.encryptedMnemonic) {
+      try { mnemonic = WalletGenerator.decryptPrivateKey(walletData.encryptedMnemonic, password); }
+      catch { /* may be absent */ }
+    }
+
+    const backup = {
+      version: '2.9.6-backup',
+      name: walletData.name || 'Backup',
+      address: walletData.address,
+      publicKey: walletData.publicKey,
+      privateKey,
+      mnemonic: mnemonic || null,
+      createdAt: walletData.createdAt || new Date().toISOString()
+    };
+
+    const desktopPath = path.join(os.homedir(), 'Desktop');
+    const defaultName = `${walletData.name || 'wallet'}_zion_backup.json`.replace(/[^a-zA-Z0-9_.-]/g, '_');
+    const { filePath } = await dialog.showSaveDialog(mainWindow, {
+      defaultPath: path.join(desktopPath, defaultName),
+      filters: [{ name: 'JSON Backup', extensions: ['json'] }]
+    });
+    if (!filePath) return { success: false, error: 'Export cancelled' };
+
+    fs.writeFileSync(filePath, JSON.stringify(backup, null, 2));
+    return { success: true, filePath };
+  } catch (error) {
+    console.error('Export wallet to file failed:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('import-wallet-from-file', async (event, { password }) => {
+  try {
+    const { filePaths } = await dialog.showOpenDialog(mainWindow, {
+      properties: ['openFile'],
+      filters: [{ name: 'JSON Backup', extensions: ['json'] }]
+    });
+    if (!filePaths || filePaths.length === 0) return { success: false, error: 'Import cancelled' };
+
+    const raw = fs.readFileSync(filePaths[0], 'utf8');
+    let backup;
+    try { backup = JSON.parse(raw); } catch { throw new Error('Invalid JSON file'); }
+
+    if (!backup.address || !backup.publicKey || !backup.privateKey) {
+      throw new Error('Invalid backup file: missing address, publicKey, or privateKey');
+    }
+
+    const encrypted = WalletGenerator.encryptPrivateKey(backup.privateKey, password);
+    const encryptedMnemonic = backup.mnemonic
+      ? WalletGenerator.encryptPrivateKey(backup.mnemonic, password)
+      : null;
+
+    const walletData = {
+      version: '2.9.6',
+      name: backup.name || 'Imported Backup',
+      address: backup.address,
+      publicKey: backup.publicKey,
+      encryptedPrivateKey: encrypted,
+      encryptedMnemonic: encryptedMnemonic,
+      createdAt: backup.createdAt || new Date().toISOString(),
+      lastUsed: new Date().toISOString()
+    };
+
+    const filename = `${backup.address.substring(0, 15)}.json`;
+    const outPath = path.join(WALLETS_PATH, filename);
+    fs.writeFileSync(outPath, JSON.stringify(walletData, null, 2));
+
+    return { success: true, address: backup.address };
+  } catch (error) {
+    console.error('Import wallet from file failed:', error);
     return { success: false, error: error.message };
   }
 });
@@ -4663,30 +4756,86 @@ ipcMain.handle('wallet-send-transaction', async (event, { rpcUrl, from, to, amou
       return { success: false, error: `Cannot retrieve UTXOs: ${lastRpcError || 'no reachable endpoint'}` };
     }
 
+    let accountPath = false;
+    let accountNonce = 1;
+    const feeFlowers = Number(UtxoBuilder.MIN_FEE_FLOWERS);
+
     if (utxos.length === 0) {
-      return { success: false, error: 'No spendable UTXOs found for this address (balance is 0)' };
+      // ── Fallback: check account-model balance ──────────────────────
+      let accountBalanceFlowers = 0n;
+      for (const candidateUrl of uniqueRpcCandidates) {
+        try {
+          const balRes = await zionRpcCall(candidateUrl, 'getBalance', { address: fromAddr });
+          if (balRes && !balRes.error) {
+            const abf = balRes.account_balance_flowers || balRes.account_balance || '0';
+            accountBalanceFlowers = BigInt(typeof abf === 'string' ? abf : String(abf));
+            if (accountBalanceFlowers > 0n) {
+              // Determine next nonce from confirmed outgoing transactions
+              try {
+                const histRes = await zionRpcCall(candidateUrl, 'getTransactionHistory', { address: fromAddr, limit: 1000 });
+                if (histRes && !histRes.error && Array.isArray(histRes.transactions)) {
+                  let maxNonce = 0;
+                  for (const entry of histRes.transactions) {
+                    const tx = entry?.transaction;
+                    if (tx && tx.from === fromAddr && typeof tx.nonce === 'number') {
+                      maxNonce = Math.max(maxNonce, tx.nonce);
+                    }
+                  }
+                  accountNonce = maxNonce + 1;
+                }
+              } catch { /* ignore history failure, default to nonce 1 */ }
+              accountPath = true;
+              break;
+            }
+          }
+        } catch { /* try next candidate */ }
+      }
+      if (!accountPath) {
+        return { success: false, error: 'No spendable balance (UTXO or account) for this address' };
+      }
     }
 
-    // ── Step 3: Build and sign UTXO transaction ──────────────────────
     let signedTx;
-    try {
-      signedTx = UtxoBuilder.buildUtxoTransaction({
-        fromAddress: fromAddr,
-        toAddress: toAddr,
-        amountZion: amt,
-        utxos,
-        privateKeyDer,
-        memo: memo || undefined
-      });
-    } catch (buildErr) {
-      return { success: false, error: buildErr.message };
+    if (accountPath) {
+      // ── Step 3a: Build and sign account-model transaction ───────────
+      const required = BigInt(Math.round(amt * 1e12)) + BigInt(feeFlowers);
+      if (accountBalanceFlowers < required) {
+        return { success: false, error: `Insufficient account balance: need ${amt} + fee ZION, have ${Number(accountBalanceFlowers) / 1e12} ZION` };
+      }
+      try {
+        signedTx = UtxoBuilder.buildAccountTransaction({
+          fromAddress: fromAddr,
+          toAddress: toAddr,
+          amountZion: amt,
+          privateKeyDer,
+          nonce: accountNonce,
+          feeFlowers
+        });
+      } catch (buildErr) {
+        return { success: false, error: buildErr.message };
+      }
+    } else {
+      // ── Step 3b: Build and sign UTXO transaction ────────────────────
+      try {
+        signedTx = UtxoBuilder.buildUtxoTransaction({
+          fromAddress: fromAddr,
+          toAddress: toAddr,
+          amountZion: amt,
+          utxos,
+          privateKeyDer,
+          memo: memo || undefined
+        });
+      } catch (buildErr) {
+        return { success: false, error: buildErr.message };
+      }
     }
 
-    // ── Step 4: Submit via submitTransaction ─────────────────────────
+    // ── Step 4: Submit ────────────────────────────────────────────────
+    const submitMethod = accountPath ? 'submitAccountTransaction' : 'submitTransaction';
     let result = null;
     for (const candidateUrl of uniqueRpcCandidates) {
       try {
-        const rpcRes = await zionRpcCall(candidateUrl, 'submitTransaction', signedTx);
+        const rpcRes = await zionRpcCall(candidateUrl, submitMethod, signedTx);
         if (rpcRes && !rpcRes.error) {
           result = rpcRes;
           break;
@@ -4708,7 +4857,7 @@ ipcMain.handle('wallet-send-transaction', async (event, { rpcUrl, from, to, amou
 
     return {
       success: true,
-      txId: result?.tx_id || result?.txid || UtxoBuilder.bytesToHex(signedTx.id),
+      txId: result?.tx_id || result?.txid || (accountPath ? signedTx.tx_id : UtxoBuilder.bytesToHex(signedTx.id)),
       status: result?.status || 'submitted',
       amount_zion: amt
     };

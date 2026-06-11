@@ -221,8 +221,51 @@ function bytesToHex(bytes) {
   return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
+/**
+ * Build a signed account-model transaction for V3.
+ * Matches V3/L1/core/src/bin/fund-bridge-vault.rs logic.
+ *
+ * @param {Object} opts
+ * @param {string} opts.fromAddress - Sender zion1 address
+ * @param {string} opts.toAddress - Recipient zion1 address
+ * @param {number} opts.amountZion - Amount in ZION (float)
+ * @param {Buffer} opts.privateKeyDer - DER-encoded PKCS8 Ed25519 private key
+ * @param {number} [opts.nonce] - Transaction nonce (must be unique per sender)
+ * @param {number} [opts.feeFlowers] - Fee in flowers (default MIN_FEE_FLOWERS)
+ * @returns {Object} V3-compatible account Transaction for submitAccountTransaction
+ */
+function buildAccountTransaction({ fromAddress, toAddress, amountZion, privateKeyDer, nonce, feeFlowers }) {
+  const amountFlowers = BigInt(Math.round(amountZion * 1e12));
+  const fee = feeFlowers || Number(MIN_FEE_FLOWERS);
+  const txNonce = typeof nonce === 'number' && nonce >= 0 ? BigInt(nonce) : BigInt(Math.floor(Date.now() / 1000));
+
+  // Deterministic tx_id = hex(blake3_hash("account_tx:{from}:{to}:{amount}:{fee}:{nonce}"))
+  const preimage = `account_tx:${fromAddress}:${toAddress}:${amountFlowers}:${fee}:${txNonce}`;
+  const txIdBytes = blake3Hash(Buffer.from(preimage, 'utf8'));
+  const txId = bytesToHex(txIdBytes);
+
+  // Sign the hex string tx_id (as UTF-8 bytes) — matches verify_signature in core
+  const sig = ed25519Sign(privateKeyDer, Buffer.from(txId, 'utf8'));
+  const signature = bytesToHex(sig);
+
+  const pubKeyRaw = extractPublicKey(privateKeyDer);
+  const publicKey = bytesToHex(pubKeyRaw);
+
+  return {
+    tx_id: txId,
+    from: fromAddress,
+    to: toAddress,
+    amount_zion: amountFlowers.toString(), // u128 serialized as string for JSON
+    fee_zion: fee,
+    nonce: Number(txNonce),
+    signature,
+    public_key: publicKey
+  };
+}
+
 module.exports = {
   buildUtxoTransaction,
+  buildAccountTransaction,
   calculateTxHash,
   blake3Hash,
   bytesToHex,
