@@ -967,12 +967,10 @@ function findRustMiner() {
   const searchPaths = IS_PACKAGED
     ? [process.resourcesPath]
     : [
-        // Prefer explicit refreshed dev copies and alternate target dirs first.
-        path.join(APP_ROOT, 'resources'),
-        path.join(APP_ROOT, '..', '..', 'V3', 'target-vega-fix', 'release'),
-        // V3 miner build outputs
-        path.join(APP_ROOT, '..', '..', 'V3', 'L1', 'miner', 'target', 'release'),
+        // DEV MODE: prefer fresh V3 build output FIRST — never stale resources/
         path.join(APP_ROOT, '..', '..', 'V3', 'target', 'release'),
+        path.join(APP_ROOT, '..', '..', 'V3', 'target-vega-fix', 'release'),
+        path.join(APP_ROOT, '..', '..', 'V3', 'L1', 'miner', 'target', 'release'),
         path.join(APP_ROOT, '..', '..', 'target', 'release'),
         path.join(APP_ROOT, '..', '..', 'L1', 'miner', 'target', 'release'),
         path.join(APP_ROOT, '..', '..', 'miner', 'target', 'release'),
@@ -981,7 +979,9 @@ function findRustMiner() {
         path.join(APP_ROOT, '..', '..', '2.9.5OLD', 'target', 'release'),
         path.join(APP_ROOT, '..', '..', '2.9.5', 'zion-universal-miner', 'target', 'release'),
         path.join(APP_ROOT, '..', '..', '2.9.5', 'target', 'release'),
-        path.join(APP_ROOT, '..', 'builds')
+        path.join(APP_ROOT, '..', 'builds'),
+        // resources/ is last resort — may contain stale bundled copy
+        path.join(APP_ROOT, 'resources')
       ];
 
   for (const name of names) {
@@ -2165,7 +2165,8 @@ function startMiningV3(config, v3Path) {
   const env = {
     ...process.env,
     ZION_POOL_ADDR: pool,
-    ZION_MINER_ID: wallet,
+    ZION_MINER_ID: worker || 'desktop',
+    ZION_PAYOUT_ADDRESS: wallet,
     ZION_WORKER_NAME: worker || 'desktop',
     ZION_PROFILE: 'pool',
     // Loop count must be large — default of 1 causes pool to send Bye after every iteration
@@ -5681,8 +5682,8 @@ ipcMain.handle('cli-wallet-send', async (_event, { wallet, to, amount, memo }) =
 ipcMain.handle('cli-mine-start', async (_event, { pool, worker, wallet, threads, gpuBackend }) => {
   const args = ['mine', 'start'];
   if (pool) { process.env.ZION_POOL_ADDR = pool; }
-  if (worker) { process.env.ZION_WORKER_NAME = worker; }
-  if (wallet) { process.env.ZION_MINER_ID = wallet; }
+  if (worker) { process.env.ZION_WORKER_NAME = worker; process.env.ZION_MINER_ID = worker; }
+  if (wallet) { process.env.ZION_PAYOUT_ADDRESS = wallet; }
   if (threads) { process.env.ZION_THREADS = String(threads); }
   if (gpuBackend) { process.env.ZION_GPU_BACKEND = gpuBackend; }
   process.env.ZION_INTERACTIVE = 'false';

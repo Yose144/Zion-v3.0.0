@@ -181,6 +181,17 @@ function copyBinaries(workspaceRoot, resourcesDir) {
       continue;
     }
 
+    // Stale detection: warn if resources copy is newer than source (should never happen)
+    if (exists(mainDst) && exists(src)) {
+      try {
+        const srcStat = fs.statSync(src);
+        const dstStat = fs.statSync(mainDst);
+        if (dstStat.mtimeMs > srcStat.mtimeMs) {
+          console.warn(`[prepare-v3] WARNING: resources/${spec.bin}${ext} is NEWER than V3 build. Possible stale copy!`);
+        }
+      } catch { /* ignore */ }
+    }
+
     console.log(`[prepare-v3] Copying ${spec.bin}${ext} -> resources/`);
     copyIfExists(src, mainDst);
     copied++;
