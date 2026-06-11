@@ -1,7 +1,7 @@
 # ZION TerraNova — Veřejná dokumentace
 
 > *"In code we trust. 144B ZION. Not one satoshi more."*
-> **Genesis Launch 3.0.1 — 11. června 2026.** MainNet Core + Edge live. Pool aktivní. Mining provozní.
+> **Genesis Launch 3.0.1 — 11. června 2026.** MainNet Core live. Pool aktivní. Mining provozní.
 
 ---
 
@@ -9,17 +9,15 @@
 
 ZION MainNet byl spuštěn **11. června 2026** jako čistý Genesis #0. Verze **3.0.1** obsahuje:
 
-- ✅ MainNet Core node (Edge + lokální sync)
-- ✅ Pool server aktivní (`77.42.71.94:8444`)
-- ✅ CPU mining běží (Edge headless, 2 jádra)
+- ✅ MainNet Core node (Edge + backup sync)
+- ✅ Pool server aktivní (připojení přes ZION web nebo DNS)
+- ✅ CPU mining běží (headless, multi-core)
 - ✅ GPU mining podporováno (OpenCL/CUDA/Metal)
 - ✅ Dual-algo: `deeksha_lite_v1` / `deeksha_lite_fire` / `cosmic_harmony_ekam_deeksha_v2`
 - ✅ Fee split 89/5/5/1 (miners / humanitarian / Issobella / pool)
 - ✅ DAO governance + treasury
 - ✅ WARP bridge
-- ✅ Auto-backup (Edge 15min, Local W11)
-
-**Edge server:** `77.42.71.94` — P2P `:8333`, RPC `:8443`, Pool `:8444`
+- ✅ Auto-backup (Edge 15min, lokální backup)
 
 ---
 
