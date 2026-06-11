@@ -4547,7 +4547,7 @@ PREMINE_OUTPUTS = [
     {"address": "zion1h4w39686t8w376g0x0y426e775q6p2q0v698v43", "purpose": "Network Infrastructure — P2P Seed Nodes", "amount_zion": 1_000_000_000, "category": "infrastructure", "unlock_height": None},
     {"address": "zion1x638z5x6d2d0y6u3f7y8g7j56054a4a2a2c7l8f", "purpose": "Genesis Creator — Lifetime Rent", "amount_zion": 590_000_000, "category": "infrastructure", "unlock_height": None},
     # Humanitarian (1 slot = 1.44B)
-    {"address": "zion1m4v5z8z850u480c5c208z274e334369275n5y20", "purpose": "Children Future Fund — Humanitarian DAO", "amount_zion": 1_440_000_000, "category": "humanitarian", "unlock_height": None},
+    {"address": "zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4", "purpose": "Children Future Fund — Humanitarian DAO", "amount_zion": 1_440_000_000, "category": "humanitarian", "unlock_height": None},
 ]
 
 P0_BLOCKERS = [
@@ -8065,10 +8065,10 @@ class DashboardHandler(BaseHTTPRequestHandler):
             
             # Get canonical fee split addresses
             canonical_addresses = {
-                "miner": "zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3",
-                "humanitarian": "zion1m4v5z8z850u480c5c208z274e334369275n5y20",
-                "issobella": "zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702",
-                "pool_fee": "zion1p2a7a5q0t2z5z545y6m6j5e864n002v4z6w95w5"
+                "miner": "zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604",
+                "humanitarian": "zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4",
+                "issobella": "zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702",
+                "pool_fee": "zion196m4n8x764v7a0s406j40094a8z5j8m6z7nk342"
             }
             
             # Get node addresses from logs
