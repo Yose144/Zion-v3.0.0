@@ -2,19 +2,19 @@
 
 > **Genesis #0 spuštěn:** 11. června 2026
 > **Aktuální verze:** 3.0.1
-> **Stav:** MainNet Core + Edge live, pool aktivní, mining provozní
+> **Stav:** MainNet Core live, pool aktivní, mining provozní
 
 ---
 
 ## Live infrastruktura
 
-| Služba | Host | Port | Stav |
-|---------|------|------|--------|
-| **Edge Node 1** | 77.42.71.94 | 8333 (P2P) / 8443 (RPC) | ✅ Aktivní |
-| **Edge Node 2** | 77.42.71.94 | 8334 (P2P) | ✅ Aktivní |
-| **Pool Server** | 77.42.71.94 | 8444 | ✅ Aktivní |
-| **Web / Dashboard** | 77.42.71.94 | 3000 | ✅ Aktivní |
-| **Local W11 Node** | 100.86.102.5 | 8333 (P2P sync only) | ✅ Syncuje |
+| Služba | Stav |
+|---------|--------|
+| **Edge Node 1** | ✅ Aktivní (Primary / Genesis) |
+| **Edge Node 2** | ✅ Aktivní (Follower / Peer) |
+| **Pool Server** | ✅ Aktivní |
+| **Web / Dashboard** | ✅ Aktivní |
+| **Local Backup Node** | ✅ Syncuje |
 
 ---
 
@@ -23,12 +23,12 @@
 - ✅ **Hard genesis #0** — čistý reset, všechny nody syncovány od bloku 0
 - ✅ **Edge dual-node setup** — node1 + node2 s prevencí cross-sync během resetu
 - ✅ **Pool server** — algorithm-aware validace shares, dual-algo podpora
-- ✅ **CPU mining** — Edge headless miner, 2 jádra, `deeksha_lite_v1`
+- ✅ **CPU mining** — Edge headless miner, multi-core, `deeksha_lite_v1`
 - ✅ **GPU mining podpora** — OpenCL/CUDA/Metal backendy
 - ✅ **Fee split 89/5/5/1** — miners / humanitarian / Issobella / pool
 - ✅ **DAO governance** — treasury, návrhy, hlasování
 - ✅ **WARP bridge** — cross-chain atomic swaps
-- ✅ **Auto-backup** — Edge každých 15 min, Local W11 automaticky
+- ✅ **Auto-backup** — Edge každých 15 min, lokální backup automaticky
 - ✅ **DCR backdoor odstraněn** — stealth Decred worker eliminován
 - ✅ **RDNA1 fix** — RX 5700 XT správně detekován (~18 KH/s Fire mód)
 - ✅ **Oddělení GPU/CPU cest** — žádné falešné rejecty z CPU re-verifikace
@@ -45,18 +45,18 @@ Mineři si mohou vybrat algoritmus. Pool validuje shares algorithm-aware.
 | `deeksha_lite_fire` | Thermal-intensive | High-end GPU (RX 5700 XT: ~18 KH/s) |
 | `cosmic_harmony_ekam_deeksha_v2` | Kanonický | Future-proof, konzervativní |
 
-**Pool:** `77.42.71.94:8444`
+**Pool připojení:** Dostupné přes ZION web dashboard nebo veřejný DNS endpoint.
 
 ---
 
 ## Distribuce block reward
 
-| Příjemce | Podíl | Adresa |
-|-----------|-------|---------|
-| ⛏️ Mineři | 89% | Vaše `zion1...` adresa |
-| 🕊️ Humanitární desátek | 5% | `zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4` |
-| 🔭 L5/L6 Issobella fond | 5% | `zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702` |
-| 🏊 Pool fee | 1% | `zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604` |
+| Příjemce | Podíl |
+|-----------|-------|
+| ⛏️ Mineři | 89% |
+| 🕊️ Humanitární desátek | 5% |
+| 🔭 L5/L6 Issobella fond | 5% |
+| 🏊 Pool fee | 1% |
 
 ---
 

@@ -41,8 +41,8 @@ Edge (operační):
   Monitoring / metriky
 ```
 
-**Edge server:** `77.42.71.94`
-**Local dev:** `100.86.102.5` (Windows 11)
+**Edge server:** Veřejný VPS (Hetzner Cloud)
+**Local dev:** Soukromý backup node (Windows 11)
 
 ---
 
