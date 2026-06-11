@@ -1,0 +1,31 @@
+[package]
+name = "deeksha-fire-org"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "deeksha_fire_org"
+path = "src/lib.rs"
+
+[[bin]]
+name = "bench_fire_org"
+path = "src/bin/bench_fire_org.rs"
+
+[[bin]]
+name = "bench_fire_org_gpu"
+path = "src/bin/bench_fire_org_gpu.rs"
+
+[[bin]]
+name = "fire_org_benchmark"
+path = "src/bin/fire_org_benchmark.rs"
+
+[dependencies]
+sha3 = "0.10"
+ocl = { version = "0.19", optional = true }
+
+[features]
+default = []
+gpu = ["ocl"]
+
+# Allow standalone build when invoked directly; harmless when built via workspace.
+[workspace]
