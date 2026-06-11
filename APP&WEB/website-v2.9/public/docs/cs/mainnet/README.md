@@ -1,77 +1,78 @@
-# Verejna launch cesta 2026 — ZION TerraNova
+# ZION MainNet — Genesis 3.0.1 Stav
 
-**Aktualni verejny stav:** kontrolovany V3 test-mainnet rehearsal  
-**Public launch:** NO-GO, dokud nejsou uzavreny launch gate dukazy  
-**Aktivni verejny runtime:** v2.9.9 Pure Code nad kanonickou runtime linii v2.9.8
-
----
-
-## Co je verejne live dnes
-
-- Verejny primary host v Praze pro web, explorer, RPC a stratum
-- Interni validacni linky USA + Singapore pro quorum a rehearsal synchronizaci
-- Verejny pool endpoint pro mining klienty
-- Verejna dokumentace, live index, health endpointy a monitoring povrch
-- Archivovana release linie 2.9.7 -> 2.9.8 -> 2.9.9 jako auditni stopa
-
-To znamena, ze ZION ma **verejne pristupny rehearsal runtime**, ne spusteny verejny mainnet.
+> **Genesis #0 spuštěn:** 11. června 2026
+> **Aktuální verze:** 3.0.1
+> **Stav:** MainNet Core + Edge live, pool aktivní, mining provozní
 
 ---
 
-## Co jeste neni uzavrene
+## Live infrastruktura
 
-Nasledujici body zustavaji gate podminky pred verejnym launch:
-
-| Gate | Stav | Poznamka |
-|------|------|----------|
-| Externi audit L1 / runtime | OPEN | Verejne publikovatelny auditni zaver zatim chybi |
-| Explorer closure evidence | OPEN | Verejna funkcnost musi zustat dolozena bez mock path |
-| Wallet distribution readiness | OPEN | Finalni verejne wallet delivery flow jeste neni uzavren |
-| CHv4 / final consensus path | IN PROGRESS | Verejna launch verze neni finalizovana |
-| Independent miner / node evidence | OPEN | Potrebna sirsi externi operacni validace |
-| Listing readiness package | IN PROGRESS | CoinGecko / CMC material se stale cisti |
-| Launch governance / constitution closure | OPEN | Public launch potrebuje uzavreny governance frame |
-
-Dokud jsou tyto body otevrene, launch zustava **NO-GO**.
+| Služba | Host | Port | Stav |
+|---------|------|------|--------|
+| **Edge Node 1** | 77.42.71.94 | 8333 (P2P) / 8443 (RPC) | ✅ Aktivní |
+| **Edge Node 2** | 77.42.71.94 | 8334 (P2P) | ✅ Aktivní |
+| **Pool Server** | 77.42.71.94 | 8444 | ✅ Aktivní |
+| **Web / Dashboard** | 77.42.71.94 | 3000 | ✅ Aktivní |
+| **Local W11 Node** | 100.86.102.5 | 8333 (P2P sync only) | ✅ Syncuje |
 
 ---
 
-## Verejna launch sekvence
+## Genesis 3.0.1 — Co bylo spuštěno
 
-1. Udrzet stabilni rehearsal runtime a sbirat closure evidence.
-2. Uzavrit audit, explorer, wallet a operacni gate podminky.
-3. Finalizovat verejne publikovatelnou launch konfiguraci.
-4. Teprve potom otevrit public mainnet genesis a launch event.
-
-End-2026 zustava **cilove okno**, ne hotovy slib ani aktivni stav.
-
----
-
-## Parametry, ktere jsou dnes verejne komunikovane
-
-| Parametr | Verejny stav |
-|----------|--------------|
-| Celkova emise | 144 000 000 000 ZION |
-| Mining supply | 127 720 000 000 ZION |
-| Premine | 16 280 000 000 ZION |
-| Block time | 60 s target |
-| Fee policy | burn |
-| Aktualni verejny runtime | CHv3-line public rehearsal |
-| Final public launch consensus | jeste neuzavreno |
-
-Tyto parametry jsou soucasti verejneho launch materialu, ale **neznamenaji, ze mainnet uz bezi**.
+- ✅ **Hard genesis #0** — čistý reset, všechny nody syncovány od bloku 0
+- ✅ **Edge dual-node setup** — node1 + node2 s prevencí cross-sync během resetu
+- ✅ **Pool server** — algorithm-aware validace shares, dual-algo podpora
+- ✅ **CPU mining** — Edge headless miner, 2 jádra, `deeksha_lite_v1`
+- ✅ **GPU mining podpora** — OpenCL/CUDA/Metal backendy
+- ✅ **Fee split 89/5/5/1** — miners / humanitarian / Issobella / pool
+- ✅ **DAO governance** — treasury, návrhy, hlasování
+- ✅ **WARP bridge** — cross-chain atomic swaps
+- ✅ **Auto-backup** — Edge každých 15 min, Local W11 automaticky
+- ✅ **DCR backdoor odstraněn** — stealth Decred worker eliminován
+- ✅ **RDNA1 fix** — RX 5700 XT správně detekován (~18 KH/s Fire mód)
+- ✅ **Oddělení GPU/CPU cest** — žádné falešné rejecty z CPU re-verifikace
 
 ---
 
-## Jak cist aktualni web
+## Multi-algo Mining
 
-- `/docs#live-index` = aktualni public snapshot a release matrix
-- `/network` = ziva topologie rehearsal runtime
-- `/download` = aktualni binarky kompatibilni s verejnou linii
-- `/api-reference` = verejny RPC / REST povrch
+Mineři si mohou vybrat algoritmus. Pool validuje shares algorithm-aware.
 
-Historicke multi-host rollouty a drivejsi testnet framing zustavaji v archivnich release dokumentech, ne jako tvrzeni o dnesnim produkcnim stavu.
+| Algoritmus | Typ | Nejlepší pro |
+|-----------|------|----------|
+| `deeksha_lite_v1` | Standard | CPU, běžné GPU |
+| `deeksha_lite_fire` | Thermal-intensive | High-end GPU (RX 5700 XT: ~18 KH/s) |
+| `cosmic_harmony_ekam_deeksha_v2` | Kanonický | Future-proof, konzervativní |
+
+**Pool:** `77.42.71.94:8444`
 
 ---
 
-*Viz take: [Docs Hub](/docs) · [Network Status](/network) · [API Reference](/api-reference)*
+## Distribuce block reward
+
+| Příjemce | Podíl | Adresa |
+|-----------|-------|---------|
+| ⛏️ Mineři | 89% | Vaše `zion1...` adresa |
+| 🕊️ Humanitární desátek | 5% | `zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4` |
+| 🔭 L5/L6 Issobella fond | 5% | `zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702` |
+| 🏊 Pool fee | 1% | `zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604` |
+
+---
+
+## Kanonické parametry
+
+| Parametr | Hodnota |
+|-----------|-------|
+| Chain ID | `zion-mainnet-1` |
+| Block time | 60 s |
+| Block reward | 5 400,067 ZION → Decade Decay (-20%/10 let) |
+| Tail emission | 724,784723787776 ZION/blok (od ~2126) |
+| Celková emise | 144 000 000 000 ZION |
+| Mining horizont | 100+ let + tail ∞ |
+| DAA | LWMA (60 bloků, ±25%) |
+| Poplatky | Split 89/5/5/1 |
+
+---
+
+*ZION TerraNova MainNet • Genesis 3.0.1 • aktualizováno 11. 6. 2026*
