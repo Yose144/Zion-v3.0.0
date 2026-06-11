@@ -1,0 +1,2 @@
+Line 0 with className="foo" and href="/test" and cs text
+Line 1 with className="foo" and href="/test" and cs text
