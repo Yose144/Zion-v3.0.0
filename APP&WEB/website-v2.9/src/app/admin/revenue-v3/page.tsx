@@ -23,7 +23,7 @@ interface RevenueConfig {
 }
 
 export default function RevenueSettings() {
-  const { cs } = useLang();
+  const { lang } = useLang();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [config, setConfig] = useState<RevenueConfig | null>(null);
@@ -41,7 +41,7 @@ export default function RevenueSettings() {
       setConfig(data);
     } catch (err: any) {
       console.error(err);
-      setStatus(cs ? `Chyba při načítání konfigurace: ${err.message}` : `Error loading config: ${err.message}`);
+      setStatus(lang === 'cs' ? `Chyba při načítání konfigurace: ${err.message}` : `Error loading config: ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -50,7 +50,7 @@ export default function RevenueSettings() {
   const handleSave = async () => {
     if (!config) return;
     setSaving(true);
-    setStatus(cs ? 'Ukládání...' : 'Saving...');
+    setStatus(lang === 'cs' ? 'Ukládání...' : 'Saving...');
     try {
       const res = await fetch(REVENUE_CONFIG_API, {
         method: 'POST',
@@ -60,10 +60,10 @@ export default function RevenueSettings() {
         body: JSON.stringify(config),
       });
       if (!res.ok) throw new Error('Failed to save');
-      setStatus(cs ? '✅ Nastavení úspěšně uložena!' : '✅ Settings saved successfully!');
+      setStatus(lang === 'cs' ? '✅ Nastavení úspěšně uložena!' : '✅ Settings saved successfully!');
     } catch (err: any) {
       console.error(err);
-      setStatus(cs ? `Chyba při ukládání: ${err.message}` : `Error saving: ${err.message}`);
+      setStatus(lang === 'cs' ? `Chyba při ukládání: ${err.message}` : `Error saving: ${err.message}`);
     } finally {
       setSaving(false);
     }
@@ -103,15 +103,15 @@ export default function RevenueSettings() {
       });
   };
 
-  if (loading) return <div className="flex items-center justify-center"><div className="text-yellow-400 text-2xl animate-pulse">{cs ? 'Načítání nastavení...' : 'Loading Settings...'}</div></div>;
-  if (!config) return <div className="flex items-center justify-center"><div className="text-red-400 text-xl">{cs ? 'Nepodařilo se načíst konfiguraci.' : 'Failed to load configuration.'}</div></div>;
+  if (loading) return <div className="flex items-center justify-center"><div className="text-yellow-400 text-2xl animate-pulse">{lang === 'cs' ? 'Načítání nastavení...' : 'Loading Settings...'}</div></div>;
+  if (!config) return <div className="flex items-center justify-center"><div className="text-red-400 text-xl">{lang === 'cs' ? 'Nepodařilo se načíst konfiguraci.' : 'Failed to load configuration.'}</div></div>;
 
   return (
     <div className="pt-28 md:pt-32 pb-20 overflow-x-hidden">
       <div className="zion-container max-w-4xl space-y-8">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
-          {cs ? 'Cosmic Harmony v3 Nastavení Příjmů' : 'Cosmic Harmony v3 Revenue Settings'}
+          {lang === 'cs' ? 'Cosmic Harmony v3 Nastavení Příjmů' : 'Cosmic Harmony v3 Revenue Settings'}
         </h1>
         <div className="flex gap-4">
             <button 
@@ -119,20 +119,20 @@ export default function RevenueSettings() {
                 className="px-4 py-2 rounded bg-gray-700 hover:bg-gray-600 transition"
                 disabled={saving}
             >
-                {cs ? 'Obnovit' : 'Refresh'}
+                {lang === 'cs' ? 'Obnovit' : 'Refresh'}
             </button>
             <button 
                 onClick={handleSave}
                 className="px-6 py-2 rounded bg-green-600 hover:bg-green-500 font-bold transition shadow-lg shadow-green-900/20"
                 disabled={saving}
             >
-                {saving ? (cs ? 'Ukládání...' : 'Saving...') : (cs ? 'Uložit konfiguraci' : 'Save Configuration')}
+                {saving ? (lang === 'cs' ? 'Ukládání...' : 'Saving...') : (lang === 'cs' ? 'Uložit konfiguraci' : 'Save Configuration')}
             </button>
         </div>
       </div>
 
       {status && (
-        <div className={`p-4 rounded-lg border ${status.includes(cs ? 'Chyba' : 'Error') ? 'bg-red-900/20 border-red-500/50 text-red-200' : 'bg-green-900/20 border-green-500/50 text-green-200'}`}>
+        <div className={`p-4 rounded-lg border ${status.includes(lang === 'cs' ? 'Chyba' : 'Error') ? 'bg-red-900/20 border-red-500/50 text-red-200' : 'bg-green-900/20 border-green-500/50 text-green-200'}`}>
           {status}
         </div>
       )}
@@ -142,9 +142,9 @@ export default function RevenueSettings() {
         {/* NCL AI Section */}
         <section className="bg-gray-800/50 border border-purple-500/30 rounded-xl p-6">
             <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-purple-300">🤖 {cs ? 'NCL Umělá Inteligence' : 'NCL Artificial Intelligence'}</h2>
+                <h2 className="text-xl font-bold text-purple-300">🤖 {lang === 'cs' ? 'NCL Umělá Inteligence' : 'NCL Artificial Intelligence'}</h2>
                 <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-400">{cs ? 'Aktivní' : 'Enabled'}</span>
+                    <span className="text-sm text-gray-400">{lang === 'cs' ? 'Aktivní' : 'Enabled'}</span>
                     <input 
                         type="checkbox" 
                         checked={config.streams.ncl.enabled}
@@ -155,7 +155,7 @@ export default function RevenueSettings() {
             </div>
             <div className="grid grid-cols-2 gap-6">
                 <div>
-                    <label className="block text-sm font-medium mb-1">{cs ? 'NPU Alokace (0.0 - 1.0)' : 'NPU Allocation (0.0 - 1.0)'}</label>
+                    <label className="block text-sm font-medium mb-1">{lang === 'cs' ? 'NPU Alokace (0.0 - 1.0)' : 'NPU Allocation (0.0 - 1.0)'}</label>
                     <input 
                         type="number" 
                         step="0.05"
@@ -165,10 +165,10 @@ export default function RevenueSettings() {
                         onChange={(e) => updateStream('ncl', 'npu_allocation', parseFloat(e.target.value))}
                         className="w-full bg-gray-900 border border-gray-700 rounded p-2"
                     />
-                    <p className="text-xs text-gray-400 mt-1">{cs ? 'Procento NPU zdrojů věnovaných AI úkolům.' : 'Percentage of NPU resources dedicated to AI tasks.'}</p>
+                    <p className="text-xs text-gray-400 mt-1">{lang === 'cs' ? 'Procento NPU zdrojů věnovaných AI úkolům.' : 'Percentage of NPU resources dedicated to AI tasks.'}</p>
                 </div>
                 <div>
-                    <label className="block text-sm font-medium mb-1">{cs ? 'Cílový podíl příjmů' : 'Revenue Target Share'}</label>
+                    <label className="block text-sm font-medium mb-1">{lang === 'cs' ? 'Cílový podíl příjmů' : 'Revenue Target Share'}</label>
                     <input 
                         type="number"
                         step="0.01"
@@ -183,13 +183,13 @@ export default function RevenueSettings() {
         {/* ZION Native Section */}
         <section className="bg-gray-800/50 border border-blue-500/30 rounded-xl p-6">
             <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-blue-300">🌌 {cs ? 'ZION Nativní Chain' : 'ZION Native Chain'}</h2>
+                <h2 className="text-xl font-bold text-blue-300">🌌 {lang === 'cs' ? 'ZION Nativní Chain' : 'ZION Native Chain'}</h2>
                 <div className="flex items-center gap-2">
-                   <span className="text-gray-400">{cs ? 'Vždy aktivní' : 'Always Enabled'}</span>
+                   <span className="text-gray-400">{lang === 'cs' ? 'Vždy aktivní' : 'Always Enabled'}</span>
                 </div>
             </div>
             <div>
-                 <label className="block text-sm font-medium mb-1">{cs ? 'Cílový podíl' : 'Target Share'}</label>
+                 <label className="block text-sm font-medium mb-1">{lang === 'cs' ? 'Cílový podíl' : 'Target Share'}</label>
                  <input 
                      type="number"
                      step="0.01"
@@ -203,9 +203,9 @@ export default function RevenueSettings() {
         {/* ETC Stream */}
         <section className="bg-gray-800/50 border border-green-500/30 rounded-xl p-6">
              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-green-300">⛏️ {cs ? 'ETC (Externí)' : 'ETC (External)'}</h2>
+                <h2 className="text-xl font-bold text-green-300">⛏️ {lang === 'cs' ? 'ETC (Externí)' : 'ETC (External)'}</h2>
                 <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-400">{cs ? 'Aktivní' : 'Enabled'}</span>
+                    <span className="text-sm text-gray-400">{lang === 'cs' ? 'Aktivní' : 'Enabled'}</span>
                     <input 
                         type="checkbox" 
                         checked={config.streams.etc.enabled}
@@ -217,7 +217,7 @@ export default function RevenueSettings() {
             <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                      <div>
-                        <label className="block text-sm font-medium mb-1">{cs ? 'Pool Stratum URL' : 'Pool Stratum URL'}</label>
+                        <label className="block text-sm font-medium mb-1">{lang === 'cs' ? 'Pool Stratum URL' : 'Pool Stratum URL'}</label>
                         <input 
                             type="text" 
                             value={config.streams.etc.pool.stratum}
@@ -226,7 +226,7 @@ export default function RevenueSettings() {
                         />
                      </div>
                      <div>
-                        <label className="block text-sm font-medium mb-1">{cs ? 'Wallet Adresa' : 'Wallet Address'}</label>
+                        <label className="block text-sm font-medium mb-1">{lang === 'cs' ? 'Wallet Adresa' : 'Wallet Address'}</label>
                         <input 
                             type="text" 
                             value={config.streams.etc.pool.wallet}
@@ -241,9 +241,9 @@ export default function RevenueSettings() {
          {/* NXS Stream */}
          <section className="bg-gray-800/50 border border-orange-500/30 rounded-xl p-6">
              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-orange-300">💎 {cs ? 'NXS (Externí)' : 'NXS (External)'}</h2>
+                <h2 className="text-xl font-bold text-orange-300">💎 {lang === 'cs' ? 'NXS (Externí)' : 'NXS (External)'}</h2>
                 <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-400">{cs ? 'Aktivní' : 'Enabled'}</span>
+                    <span className="text-sm text-gray-400">{lang === 'cs' ? 'Aktivní' : 'Enabled'}</span>
                     <input 
                         type="checkbox" 
                         checked={config.streams.nxs.enabled}
@@ -255,7 +255,7 @@ export default function RevenueSettings() {
             <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                      <div>
-                        <label className="block text-sm font-medium mb-1">{cs ? 'Pool Stratum URL' : 'Pool Stratum URL'}</label>
+                        <label className="block text-sm font-medium mb-1">{lang === 'cs' ? 'Pool Stratum URL' : 'Pool Stratum URL'}</label>
                         <input 
                             type="text" 
                             value={config.streams.nxs.pool.stratum}
@@ -264,7 +264,7 @@ export default function RevenueSettings() {
                         />
                      </div>
                      <div>
-                        <label className="block text-sm font-medium mb-1">{cs ? 'Wallet Adresa' : 'Wallet Address'}</label>
+                        <label className="block text-sm font-medium mb-1">{lang === 'cs' ? 'Wallet Adresa' : 'Wallet Address'}</label>
                         <input 
                             type="text" 
                             value={config.streams.nxs.pool.wallet}
