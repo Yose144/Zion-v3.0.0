@@ -1,0 +1,15 @@
+#!/bin/bash
+# Zion Miner v3.0.42c wrapper for SMOS
+# Restored working Fire algorithm (256 KiB, 64 reads, 65536 iters, 8 chains)
+
+cd "$(dirname "$0")"
+
+# Ensure the miner finds its own directory for any bundled libs
+# but do NOT override LD_LIBRARY_PATH — the SMOS AMD OpenCL ICD
+# driver lives in /opt/amdgpu-pro/lib/x86_64-linux-gnu/ and must
+# remain visible.
+
+export ZION_MINER_ALGORITHM=deeksha_lite_fire
+export ZION_LOOP_COUNT=1000000
+
+exec ./zion-miner "$@"
