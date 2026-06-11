@@ -181,7 +181,7 @@ $env:ZION_MINER_ID="gpu-miner-local-01"
 | 8 | GPU miner connected & hashing | ✅ |
 | 9 | Chain height advancing | ✅ |
 | 10 | Payout mechanism ready (fee split active) | ✅ |
-| 11 | Fee split 89/5/5/0 (burn model) active | ✅ |
+| 11 | Fee split 89/5/5/1 (burn model) active | ✅ |
 | 12 | Log directory writable | ✅ |
 
 **Alerty:** None — `[success] All systems nominal`

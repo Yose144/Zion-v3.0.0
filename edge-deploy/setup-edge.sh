@@ -61,7 +61,7 @@ if [[ ! -f "$ENV_FILE" ]]; then
 # ZION Edge Server — Common Environment
 # Updated: 2026-06-02 - Multi-node Edge topology (2 nodes + pool + all non-AI services)
 
-# ── Canonical Fee Split Addresses (89/5/5/0 burn model — no pool fee wallet) ──
+# ── Canonical Fee Split Addresses (89/5/5/1 burn model — no pool fee wallet) ──
 # NOTE: On Edge-Primary topology, ZION_MINER_ADDRESS MUST equal the pool
 # wallet so the node credits block rewards directly to the pool payout wallet.
 ZION_MINER_ADDRESS=zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604

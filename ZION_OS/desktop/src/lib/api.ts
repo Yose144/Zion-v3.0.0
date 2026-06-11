@@ -52,6 +52,13 @@ export interface V3Status {
     fee_split?: string;
     pool_wallet?: string;
     recent_payouts?: string[];
+    miner_balances?: {
+      miner_id: string;
+      worker_name: string;
+      balance_atomic: number;
+      balance_zion: number;
+      on_chain_balance_zion?: number | null;
+    }[];
   };
   pool_edge: {
     running: boolean;

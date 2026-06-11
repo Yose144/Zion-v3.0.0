@@ -66,7 +66,7 @@ cat > /root/zion-2.9.6-main/edge-deploy/config/edge-environment.sh << 'EOF'
 # ZION Edge Server — Genesis #0 Environment
 # DO NOT COMMIT THIS FILE — contains secrets.
 
-# ── Fee Split (89/5/5/0 burn model) ──
+# ── Fee Split (89/5/5/1 burn model) ──
 ZION_MINER_ADDRESS=zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604
 ZION_HUMANITARIAN_WALLET=zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4
 ZION_ISSOBELLA_WALLET=zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702
