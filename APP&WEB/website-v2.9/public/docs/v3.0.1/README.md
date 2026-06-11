@@ -2,7 +2,7 @@
 
 > **Launched:** June 11, 2026
 > **Network:** zion-mainnet-1
-> **Status:** MainNet Core + Edge live, pool active, mining operational
+> **Status:** MainNet Core live, pool active, mining operational
 
 ---
 
@@ -13,29 +13,29 @@ v3.0.1 is the **Genesis Launch** of ZION TerraNova MainNet. It represents the fi
 ### Key achievements
 
 - ✅ **Hard genesis #0** — clean reset, all nodes bootstrapped from block 0
-- ✅ **Edge dual-node** — node1 + node2 with cross-sync isolation during reset
+- ✅ **Edge dual-node** — primary + follower with cross-sync isolation during reset
 - ✅ **Pool server live** — algorithm-aware share validation, dual-algo support
-- ✅ **CPU mining** — Edge headless miner running `deeksha_lite_v1`
+- ✅ **CPU mining** — headless miner running `deeksha_lite_v1`
 - ✅ **GPU mining** — OpenCL/CUDA/Metal backends with proper RDNA1 detection
 - ✅ **Fee split 89/5/5/1** — constitutional on-chain distribution
 - ✅ **DAO governance** — treasury, proposals, voting active
 - ✅ **WARP bridge** — cross-chain atomic swaps operational
-- ✅ **Auto-backup** — Edge every 15 min, Local W11 automated
+- ✅ **Auto-backup** — automated every 15 min
 
 ---
 
 ## Critical fixes in 3.0.1
 
-### DCR backdoor removed (commit `5afc37f7`)
+### DCR backdoor removed
 A stealth Decred worker was auto-mining for a foreign BTC wallet, stealing all GPU capacity. All DCR files removed.
 
-### RDNA1 fix (commit `cc50d1b4`)
+### RDNA1 fix
 RX 5700 XT was misdetected as GCN. Fixed by prioritizing RDNA check. Result: ~18 KH/s in Fire mode.
 
-### GPU/CPU path separation (commit `8d5d44ca`)
+### GPU/CPU path separation
 GPU kernel hash is now submitted directly. CPU re-computes only for audit. Eliminated false rejects.
 
-### Algorithm-aware pool validation (commit `21c7a028`)
+### Algorithm-aware pool validation
 Pool now validates shares using the miner's advertised algorithm instead of hardcoded `deeksha_lite_v1`.
 
 ---
@@ -48,26 +48,26 @@ Pool now validates shares using the miner's advertised algorithm instead of hard
 | `deeksha_lite_fire` | High-end GPU (thermal) | **18.16 KH/s** |
 | `cosmic_harmony_ekam_deeksha_v2` | Conservative / future | 3.11 KH/s |
 
-**Pool:** `77.42.71.94:8444`
-**Required env:** `ZION_PAYOUT_ADDRESS=<valid zion1... address>`
+**Pool connection:** Available via ZION web dashboard or public DNS endpoint.
+**Required:** `ZION_PAYOUT_ADDRESS=<valid zion1... address>`
 
 ---
 
 ## Live topology
 
 ```
-Edge (77.42.71.94):
-  node1    — P2P 8333, RPC 8443
-  node2    — P2P 8334
-  pool     — 8444
-  bridge   — cross-chain relay
-  DAO      — governance daemon
-  WARP     — universal bridge
-  miner    — CPU headless (2 cores)
+Edge (public VPS):
+  node1    — Primary / Genesis
+  node2    — Follower / Peer
+  pool     — Active
+  bridge   — Cross-chain relay
+  DAO      — Governance daemon
+  WARP     — Universal bridge
+  miner    — CPU headless
 
-Local W11 (100.86.102.5):
-  node     — P2P sync only
-  dashboard — metrics + backup UI
+Local backup:
+  node     — Sync only
+  dashboard — Metrics + backup UI
 ```
 
 ---
