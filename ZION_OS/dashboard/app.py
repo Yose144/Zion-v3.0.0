@@ -1600,10 +1600,13 @@ def parse_node_log(name: str) -> dict:
     peer_hosts = set()
     for line in recent:
         # Node 1 / rich-JSON format (p2p_out={"type":"status",...})
+        # Only parse chain_height from logs if RPC didn't provide it (avoid stale P2P status messages)
         if m := re.search(r'"chain_height":(\d+)', line):
-            status["chain_height"] = int(m.group(1))
+            if status["chain_height"] is None:
+                status["chain_height"] = int(m.group(1))
         if m := re.search(r'"tip_hash_hex":"([a-f0-9]+)"', line):
-            status["tip_hash"] = m.group(1)[:16] + "…"
+            if status["tip_hash"] is None:
+                status["tip_hash"] = m.group(1)[:16] + "…"
         if m := re.search(r'"known_peers":\[(.*?)\]', line):
             status["known_peers"] = len(re.findall(r'\{', m.group(1)))
         if m := re.search(r'"mempool_size":(\d+)', line):
