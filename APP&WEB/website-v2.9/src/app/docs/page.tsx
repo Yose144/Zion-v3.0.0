@@ -50,9 +50,17 @@ const docsPageCopy = {
 } as const satisfies Record<string, LocalizedText>;
 
 const versionText: Record<string, { tag?: LocalizedText; description?: LocalizedText }> = {
-  'v2.9.9': {
+  'v3.0.1': {
     tag: { cs: 'AKTUÁLNÍ', en: 'CURRENT' },
-    description: { cs: 'Pure Code linie — cleanup a migrační most směrem k V3', en: 'Pure Code line — cleanup + migration strategy toward V3' },
+    description: { cs: 'Genesis Launch — MainNet Core + Edge live, pool aktivní, mining běží', en: 'Genesis Launch — MainNet Core + Edge live, pool active, mining running' },
+  },
+  'v3.0.0': {
+    tag: { cs: 'MAINNET READY', en: 'MAINNET READY' },
+    description: { cs: 'V3 mainnet readiness — Docker, systemd, fee split, genesis freeze', en: 'V3 mainnet readiness — Docker, systemd, fee split, genesis freeze' },
+  },
+  'v2.9.9': {
+    tag: { cs: 'PURE CODE', en: 'PURE CODE' },
+    description: { cs: 'Pure Code linie — cleanup a migrační most směrem k V3', en: 'Pure Code line — cleanup + migration bridge toward V3' },
   },
   'v2.9.8': {
     tag: { cs: 'KANONICKÝ RUNTIME', en: 'CANONICAL RUNTIME' },
@@ -81,6 +89,8 @@ const versionText: Record<string, { tag?: LocalizedText; description?: Localized
 };
 
 const categoryTitles: Record<string, LocalizedText> = {
+  'v301-overview': { cs: 'Přehled', en: 'Overview' },
+  'v300-overview': { cs: 'Přehled', en: 'Overview' },
   'v299-overview': { cs: 'Přehled', en: 'Overview' },
   'v298-overview': { cs: 'Přehled', en: 'Overview' },
   'v297-overview': { cs: 'Přehled', en: 'Overview' },
@@ -112,6 +122,13 @@ const sectionTitles: Record<string, LocalizedText> = {
 };
 
 const docTitles: Record<string, LocalizedText> = {
+  'v301-readme': { cs: 'v3.0.1 Genesis — přehled', en: 'v3.0.1 Genesis Overview' },
+  'v301-launch-sequence': { cs: 'MainNet Launch sekvence', en: 'MainNet Launch Sequence' },
+  'v301-status': { cs: 'v3.0.1 Stav a KAT vektory', en: 'v3.0.1 Status & KAT Vectors' },
+  'v301-roadmap': { cs: 'v3.0.1 Roadmap', en: 'v3.0.1 Roadmap' },
+  'v300-readme': { cs: 'v3.0.0 MainNet Readiness', en: 'v3.0.0 MainNet Readiness' },
+  'v300-upgrade-plan': { cs: 'Plán upgradu na v3.0.1', en: 'Upgrade v3.0.1 Plan' },
+  'v300-edge-primary': { cs: 'Edge Primary topologie', en: 'Edge Primary Topology' },
   'v299-readme': { cs: 'Přehled v2.9.9 Pure Code', en: 'v2.9.9 Pure Code Overview' },
   'v299-changelog': { cs: 'Changelog v2.9.9', en: 'Changelog v2.9.9' },
   'v299-migration': { cs: 'Migrace v2.9.9 -> V3', en: 'Migration v2.9.9 -> V3' },
@@ -189,11 +206,50 @@ function resolveMappedLabel<T extends string>(mapping: Record<string, LocalizedT
 
 const versions: Version[] = [
   {
-    id: 'v2.9.9',
-    label: 'v2.9.9',
+    id: 'v3.0.1',
+    label: 'v3.0.1',
     tag: 'CURRENT',
     tagColor: 'text-zion-gold border-zion-gold/30 bg-zion-gold/10',
-    description: 'Pure Code line — cleanup + migration strategy toward V3',
+    description: 'Genesis Launch — MainNet Core + Edge live, pool active, mining running',
+    categories: [
+      {
+        id: 'v301-overview',
+        title: 'Overview',
+        icon: Rocket,
+        docs: [
+          { id: 'v301-readme', title: 'v3.0.1 Genesis Overview', file: 'v3.0.1/README.md' },
+          { id: 'v301-launch-sequence', title: 'MainNet Launch Sequence', file: 'v3.0.1/MAINNET_LAUNCH_SEQUENCE.md' },
+          { id: 'v301-status', title: 'v3.0.1 Status & KAT Vectors', file: 'v3.0.1/StatusV3.md' },
+          { id: 'v301-roadmap', title: 'v3.0.1 Roadmap', file: 'v3.0.1/ROADMAP.md' },
+        ]
+      },
+    ]
+  },
+  {
+    id: 'v3.0.0',
+    label: 'v3.0.0',
+    tag: 'MAINNET READY',
+    tagColor: 'text-emerald-400 border-emerald-400/30 bg-emerald-400/10',
+    description: 'V3 mainnet readiness — Docker, systemd, fee split, genesis freeze',
+    categories: [
+      {
+        id: 'v300-overview',
+        title: 'Overview',
+        icon: Rocket,
+        docs: [
+          { id: 'v300-readme', title: 'v3.0.0 MainNet Readiness', file: 'v3.0.0/README.md' },
+          { id: 'v300-upgrade-plan', title: 'Upgrade v3.0.1 Plan', file: 'v3.0.0/UPGRADE_3.0.1_PLAN.md' },
+          { id: 'v300-edge-primary', title: 'Edge Primary Topology', file: 'v3.0.0/EdgePrimary.md' },
+        ]
+      },
+    ]
+  },
+  {
+    id: 'v2.9.9',
+    label: 'v2.9.9',
+    tag: 'PURE CODE',
+    tagColor: 'text-zion-cyan border-zion-cyan/30 bg-zion-cyan/10',
+    description: 'Pure Code line — cleanup + migration bridge toward V3',
     categories: [
       {
         id: 'v299-overview',
@@ -395,14 +451,14 @@ interface Section {
 const sections: Section[] = [
   {
     id: 'live-ops',
-    title: 'Test-Mainnet Ops',
+    title: 'Mainnet Ops',
     icon: Globe,
     accentText: 'text-emerald-400',
     accentBorder: 'border-emerald-400/30',
     docs: [
       { id: 'live-index', title: 'Live Index: snapshot + verze', file: 'index.md' },
-      { id: 'live-p2p', title: 'P2P topologie', file: 'v2.9.6/p2p.md' },
-      { id: 'live-mainnet', title: 'Launch path', file: 'mainnet/README.md' },
+      { id: 'live-mainnet', title: 'Genesis 3.0.1 Status', file: 'mainnet/README.md' },
+      { id: 'v301-launch-sequence', title: 'MainNet Launch Sequence', file: 'v3.0.1/MAINNET_LAUNCH_SEQUENCE.md' },
     ],
   },
   {
@@ -412,9 +468,11 @@ const sections: Section[] = [
     accentText: 'text-zion-gold',
     accentBorder: 'border-zion-gold/30',
     docs: [
-      { id: 'v297-gate', title: 'v2.9.7 — Pre-MainNet Gate', file: 'v2.9.7/README.md' },
-      { id: 'v298-canonical', title: 'v2.9.8 — Ekam canonical runtime', file: 'v2.9.8/README.md' },
+      { id: 'v301-genesis', title: 'v3.0.1 — Genesis Launch', file: 'v3.0.1/README.md' },
+      { id: 'v300-readiness', title: 'v3.0.0 — MainNet Ready', file: 'v3.0.0/README.md' },
       { id: 'v299-purecode', title: 'v2.9.9 — Pure Code line', file: 'v2.9.9/README.md' },
+      { id: 'v298-canonical', title: 'v2.9.8 — Ekam canonical runtime', file: 'v2.9.8/README.md' },
+      { id: 'v297-gate', title: 'v2.9.7 — Pre-MainNet Gate', file: 'v2.9.7/README.md' },
     ],
   },
   {
@@ -448,7 +506,7 @@ const sections: Section[] = [
     docs: [
       { id: 'mainnet-plan', title: 'Public Launch Plan 2026', file: 'mainnet/README.md' },
       { id: 'mainnet-genesis-book', title: 'Genesis Book of Awakening', file: 'mainnet/genesis-book.md' },
-      { id: 'mainnet-checklist', title: 'Public Launch Gate Checklist (archive)', file: 'v2.9.7/mainnet-gate.md' },
+      { id: 'v301-status', title: 'v3.0.1 Status & KAT Vectors', file: 'v3.0.1/StatusV3.md' },
     ],
   },
   {
