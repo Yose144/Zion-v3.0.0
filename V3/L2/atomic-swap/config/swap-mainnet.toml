@@ -27,7 +27,7 @@ path = "/data/atomic-swap/swap.db"
 # ── HTTP API ─────────────────────────────────────────────────────────────────
 
 [api]
-bind = "0.0.0.0:8888"
+bind = "0.0.0.0:8452"
 # bearer_token = ""   # MUST be set for mainnet via env or secrets
 
 # ── Refund Automation ────────────────────────────────────────────────────────
