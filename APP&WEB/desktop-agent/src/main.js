@@ -4994,30 +4994,37 @@ function _initAutoUpdater() {
 }
 
 // IPC: Check for updates
+// Priority: 1) ZION OS Dashboard (local), 2) electron-updater, 3) GitHub API
 ipcMain.handle('check-for-updates', async () => {
   try {
+    // 1. Try local ZION OS Dashboard first (fastest, caches GitHub releases)
+    const dashResult = await _checkDashboardUpdate();
+    if (dashResult.success) {
+      return dashResult;
+    }
+    dbg('[update] Dashboard check failed:', dashResult.error);
+
+    // 2. Try electron-updater if available
     const updater = _initAutoUpdater();
-    if (!updater) {
-      // Fallback: check GitHub API directly
-      return await _checkGitHubRelease();
+    if (updater) {
+      const result = await updater.checkForUpdates();
+      return {
+        success: true,
+        updateAvailable: !!result?.updateInfo?.version &&
+          result.updateInfo.version !== app.getVersion(),
+        currentVersion: app.getVersion(),
+        latestVersion: result?.updateInfo?.version || app.getVersion(),
+        releaseNotes: result?.updateInfo?.releaseNotes || '',
+        releaseDate: result?.updateInfo?.releaseDate || '',
+        source: 'electron-updater',
+      };
     }
-    const result = await updater.checkForUpdates();
-    return {
-      success: true,
-      updateAvailable: !!result?.updateInfo?.version &&
-        result.updateInfo.version !== app.getVersion(),
-      currentVersion: app.getVersion(),
-      latestVersion: result?.updateInfo?.version || app.getVersion(),
-      releaseNotes: result?.updateInfo?.releaseNotes || '',
-      releaseDate: result?.updateInfo?.releaseDate || '',
-    };
+
+    // 3. Fallback: GitHub API directly
+    return await _checkGitHubRelease();
   } catch (err) {
-    // Fallback to GitHub API
-    try {
-      return await _checkGitHubRelease();
-    } catch {
-      return { success: false, error: err?.message || String(err) };
-    }
+    dbg('[update] All check methods failed:', err);
+    return { success: false, error: err?.message || String(err), currentVersion: app.getVersion() };
   }
 });
 
@@ -5066,6 +5073,47 @@ ipcMain.handle('set-update-auto-check', (event, enabled) => {
     return { success: false, error: err?.message || String(err) };
   }
 });
+
+// Check ZION OS Dashboard (local) for update info — preferred over GitHub
+async function _checkDashboardUpdate() {
+  try {
+    const http = require('http');
+    const data = await new Promise((resolve, reject) => {
+      const req = http.get('http://127.0.0.1:8766/api/update/desktop-agent', {
+        headers: { 'User-Agent': 'ZION-Desktop-Agent/' + app.getVersion() }
+      }, (res) => {
+        let body = '';
+        res.on('data', (chunk) => body += chunk);
+        res.on('end', () => {
+          try { resolve(JSON.parse(body)); }
+          catch { reject(new Error('Invalid JSON from dashboard')); }
+        });
+      });
+      req.on('error', reject);
+      req.setTimeout(5000, () => { req.destroy(); reject(new Error('Dashboard timeout')); });
+    });
+
+    if (!data.ok) {
+      return { success: false, error: data.error || 'Dashboard returned error', currentVersion: app.getVersion() };
+    }
+
+    const latestTag = (data.latest_version || '').replace(/^v/, '');
+    const currentVer = app.getVersion();
+    return {
+      success: true,
+      updateAvailable: latestTag && latestTag !== currentVer && _isNewerVersion(latestTag, currentVer),
+      currentVersion: currentVer,
+      latestVersion: latestTag || currentVer,
+      releaseNotes: data.release_notes || '',
+      releaseDate: data.release_date || '',
+      htmlUrl: data.html_url || '',
+      assets: data.assets || [],
+      source: 'dashboard',
+    };
+  } catch (err) {
+    return { success: false, error: err?.message || String(err), currentVersion: app.getVersion() };
+  }
+}
 
 // Fallback: Check GitHub releases directly (works without electron-updater)
 async function _checkGitHubRelease() {

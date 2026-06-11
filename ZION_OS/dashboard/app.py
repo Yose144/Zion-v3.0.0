@@ -95,6 +95,42 @@ TOPOLOGY = CONFIG["topology"]
 EDGE_HOST = "100.76.16.108"   # Tailscale IP (preferred — low latency)
 EDGE_PUBLIC_IP = "77.42.71.94"  # Public IP (fallback if Tailscale down)
 
+# ── Desktop Agent Update Cache ────────────────────────────────────────────
+# Fetches latest release info from GitHub and caches it for 5 minutes
+_UPDATE_CACHE = {"ts": 0, "data": None}
+_UPDATE_CACHE_TTL = 300
+
+def fetch_desktop_agent_update():
+    """Return latest desktop-agent release info from GitHub (cached)."""
+    global _UPDATE_CACHE
+    now = time.time()
+    if _UPDATE_CACHE["data"] and (now - _UPDATE_CACHE["ts"]) < _UPDATE_CACHE_TTL:
+        return _UPDATE_CACHE["data"]
+
+    try:
+        req = urllib.request.Request(
+            "https://api.github.com/repos/Yose144/Zion-v3.0.0/releases/latest",
+            headers={"User-Agent": "ZION-Dashboard/1.0"}
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+
+        result = {
+            "ok": True,
+            "latest_version": (data.get("tag_name") or "").replace("^v", ""),
+            "release_notes": data.get("body", ""),
+            "release_date": data.get("published_at", ""),
+            "html_url": data.get("html_url", ""),
+            "assets": [
+                {"name": a.get("name"), "url": a.get("browser_download_url"), "size": a.get("size")}
+                for a in data.get("assets", [])
+            ],
+        }
+        _UPDATE_CACHE = {"ts": now, "data": result}
+        return result
+    except Exception as e:
+        return {"ok": False, "error": str(e)[:120]}
+
 # ── Metrics history (in-memory ring buffer) ─────────────────────────────
 
 class MetricsHistory:
@@ -8697,6 +8733,15 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 "total": 5,
                 "note": "3/5 multisig not yet deployed — only deployer validator active",
             })
+        elif route == "/api/update/desktop-agent":
+            self._json(fetch_desktop_agent_update())
+        elif route == "/api/edge/update/desktop-agent":
+            try:
+                import urllib.request as _ur
+                with _ur.urlopen(f"{EDGE_AGENT_API_BASE}/api/update/desktop-agent", timeout=5.0) as r:
+                    self._json(json.loads(r.read()))
+            except Exception as ex:
+                self._json({"error": str(ex), "reachable": False})
         else:
             self.send_error(404)
 
