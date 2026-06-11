@@ -22,7 +22,7 @@ V3_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 REPO_ROOT="$(cd "$V3_ROOT/.." && pwd)"
 STATE_DIR="${TMPDIR:-/tmp}/zion-stress-pool"
 PID_FILE="$STATE_DIR/miner.pids"
-DEFAULT_WALLET="${STRESS_WALLET:-zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3}"
+DEFAULT_WALLET="${STRESS_WALLET:-zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604}"
 
 find_miner_bin() {
   if [[ -n "${ZION_MINER_BIN:-}" && -x "$ZION_MINER_BIN" ]]; then
