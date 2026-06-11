@@ -359,7 +359,7 @@ export default function ExplorerPage() {
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.26 }}
-          className="rounded-4xl border border-zion-cyan/30 bg-linear-to-r from-zion-cyan/20 via-zion-purple/10 to-zion-cyan/20 p-10 text-center"
+          className="rounded-4xl border border-zion-cyan/30 bg-linear-to-r from-zion-cyan/20 via-zion-purple/10 to-zion-cyan/20 p-5 sm:p-8 md:p-10 text-center"
         >
           <SearchCode className="mx-auto h-12 w-12 text-zion-cyan" />
           <h2 className="mt-6 text-3xl font-semibold text-white">ZION TerraNova Explorer</h2>

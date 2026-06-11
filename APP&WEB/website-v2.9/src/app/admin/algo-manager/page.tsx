@@ -100,7 +100,7 @@ export default function AlgoManagerPage() {
   return (
     <div className="pt-28 pb-20 overflow-x-hidden">
       <div className="zion-container max-w-7xl space-y-12">
-        <div className="rounded-[32px] border border-white/10 bg-black/60 p-10 backdrop-blur-xl">
+        <div className="rounded-[32px] border border-white/10 bg-black/60 p-5 sm:p-8 md:p-10 backdrop-blur-xl">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
             <div>
               <p className="text-sm uppercase tracking-[0.4em] text-gray-500">{lang === 'cs' ? 'Mining routing' : 'Mining routing'}</p>
