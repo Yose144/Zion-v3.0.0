@@ -103,8 +103,7 @@ export default function Hero() {
                 {tr('hero', 'tagline', lang)}
               </p>
               <h1 className="text-5xl md:text-6xl xl:text-7xl font-extrabold leading-[1.06] tracking-tight">
-                <span className="text-gradient-soft">ZION</span>
-                <span className="block text-white mt-1">Terra Nova</span>
+                <span className="bg-gradient-to-r from-emerald-400 via-yellow-300 to-rose-400 bg-clip-text text-transparent">ZION Terra Nova</span>
                 <span className="block text-2xl md:text-3xl xl:text-4xl font-semibold text-white/60 mt-2 tracking-normal">
                   {tr('hero', 'title_sub', lang)}
                 </span>
@@ -120,7 +119,7 @@ export default function Hero() {
             <div className="flex flex-col sm:flex-row flex-wrap gap-3">
               <Link
                 href="/network"
-                className="zion-button-primary group"
+                className="group inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-500 to-green-500 px-6 py-3.5 font-bold text-white shadow-[0_18px_45px_rgba(16,185,129,0.35)] transition-all hover:-translate-y-0.5 hover:shadow-[0_24px_60px_rgba(16,185,129,0.45)] hover:saturate-[1.08]"
               >
                 {tr('hero', 'btn_warp', lang)}
                 <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
