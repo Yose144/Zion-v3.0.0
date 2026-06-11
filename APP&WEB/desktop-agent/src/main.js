@@ -4391,13 +4391,12 @@ ipcMain.handle('validate-address', (event, address) => {
 });
 
 async function zionRpcCall(rpcUrl, method, params) {
-  const net = require('net');
   const url = (rpcUrl || '').toString().trim();
   if (!url) {
     throw new Error('RPC URL is missing');
   }
 
-  // V3 core uses raw TCP JSON-RPC (not HTTP). Parse host:port from URL.
+  // Parse host:port for fallback / retry logic
   let host, port;
   try {
     const parsed = new URL(url);
@@ -4415,8 +4414,50 @@ async function zionRpcCall(rpcUrl, method, params) {
     id: 'zion-desktop-agent',
     method,
     params
-  }) + '\n';
+  });
 
+  // ── HTTP path (V3 node speaks HTTP JSON-RPC) ──────────────────────────
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    const client = url.startsWith('https:') ? require('https') : require('http');
+    return new Promise((resolve, reject) => {
+      const parsed = new URL(url);
+      const req = client.request(
+        {
+          hostname: parsed.hostname,
+          port: parsed.port || (parsed.protocol === 'https:' ? 443 : 80),
+          path: parsed.pathname || '/jsonrpc',
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(payload),
+          },
+        },
+        (res) => {
+          let data = '';
+          res.on('data', (chunk) => { data += chunk; });
+          res.on('end', () => {
+            try {
+              const json = JSON.parse(data);
+              if (json.error) {
+                reject(new Error(json.error.message ?? JSON.stringify(json.error)));
+                return;
+              }
+              resolve(json.result ?? null);
+            } catch (err) {
+              reject(new Error(`RPC parse error: ${err.message}`));
+            }
+          });
+        }
+      );
+      req.on('error', (err) => reject(new Error(`RPC connect error (${host}:${port}): ${err.message}`)));
+      req.setTimeout(8000, () => { req.destroy(); reject(new Error(`RPC timeout calling ${method} on ${host}:${port}`)); });
+      req.write(payload);
+      req.end();
+    });
+  }
+
+  // ── Raw TCP fallback (legacy / local dev without HTTP layer) ─────────
+  const net = require('net');
   return new Promise((resolve, reject) => {
     const socket = new net.Socket();
     let data = '';
@@ -4455,7 +4496,7 @@ async function zionRpcCall(rpcUrl, method, params) {
     };
 
     socket.connect(port, host, () => {
-      socket.write(payload);
+      socket.write(payload + '\n');
     });
     socket.on('data', (chunk) => { data += chunk.toString(); });
     socket.on('end', finish);
