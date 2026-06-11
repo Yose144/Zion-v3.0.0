@@ -15,7 +15,7 @@ set ZION_LOOP_COUNT=1000000
 :: -- Identita ------------------------------------------------------------------
 set ZION_WORKER_NAME=worker1
 set ZION_MINER_ID=w11-amd-gpu-miner-01
-set ZION_PAYOUT_ADDRESS=zion1w523a76830x2t5m7f3j023w265e8g5c400a4790
+set ZION_PAYOUT_ADDRESS=zion1n0s6e756p7r360a0e47582n7r5t2e3t4e2wq5c8
 
 :: -- Algoritmus ----------------------------------------------------------------
 set ZION_MINER_ALGORITHM=deeksha_lite_fire
