@@ -244,195 +244,6 @@ const versions: Version[] = [
       },
     ]
   },
-  {
-    id: 'v2.9.9',
-    label: 'v2.9.9',
-    tag: 'PURE CODE',
-    tagColor: 'text-zion-cyan border-zion-cyan/30 bg-zion-cyan/10',
-    description: 'Pure Code line — cleanup + migration bridge toward V3',
-    categories: [
-      {
-        id: 'v299-overview',
-        title: 'Overview',
-        icon: Rocket,
-        docs: [
-          { id: 'v299-readme', title: 'v2.9.9 Pure Code Overview', file: 'v2.9.9/README.md' },
-          { id: 'v299-changelog', title: 'Changelog v2.9.9', file: 'v2.9.9/changelog.md' },
-          { id: 'v299-migration', title: 'Migration v2.9.9 → V3', file: 'v2.9.9/migration.md' },
-        ]
-      },
-    ]
-  },
-  {
-    id: 'v2.9.8',
-    label: 'v2.9.8',
-    tag: 'CANONICAL RUNTIME',
-    tagColor: 'text-zion-cyan border-zion-cyan/30 bg-zion-cyan/10',
-    description: 'Ekam Deeksha canonical runtime unification line',
-    categories: [
-      {
-        id: 'v298-overview',
-        title: 'Overview',
-        icon: Rocket,
-        docs: [
-          { id: 'v298-readme', title: 'v2.9.8 Ekam Overview', file: 'v2.9.8/README.md' },
-          { id: 'v298-changelog', title: 'Changelog v2.9.8', file: 'v2.9.8/changelog.md' },
-          { id: 'v298-runtime', title: 'Runtime Notes v2.9.8', file: 'v2.9.8/runtime.md' },
-        ]
-      },
-    ]
-  },
-  {
-    id: 'v2.9.7',
-    label: 'v2.9.7',
-    tag: 'PRE-MAINNET GATE',
-    tagColor: 'text-emerald-400 border-emerald-400/30 bg-emerald-400/10',
-    description: 'Stability and documentation gate before canonical runtime line',
-    categories: [
-      {
-        id: 'v297-overview',
-        title: 'Overview',
-        icon: Rocket,
-        docs: [
-          { id: 'v297-readme', title: 'v2.9.7 Pre-MainNet Gate', file: 'v2.9.7/README.md' },
-          { id: 'v297-changelog', title: 'Changelog v2.9.7', file: 'v2.9.7/changelog.md' },
-        ]
-      },
-    ]
-  },
-  {
-    id: 'v2.9.6',
-    label: 'v2.9.6',
-    tag: 'BASELINE',
-    tagColor: 'text-emerald-400 border-emerald-400/30 bg-emerald-400/5',
-    description: 'Protocol baseline — architecture, economics, migration, consensus',
-    categories: [
-      {
-        id: 'v296-overview',
-        title: 'Přehled',
-        icon: Rocket,
-        docs: [
-          { id: 'v296-readme', title: 'Přehled v2.9.6', file: 'v2.9.6/README.md' },
-          { id: 'v296-changelog', title: 'Co je nového', file: 'v2.9.6/changelog.md' },
-          { id: 'v296-migration', title: 'Migrace z v2.9.5', file: 'v2.9.6/migration.md' },
-        ]
-      },
-      {
-        id: 'v296-layers',
-        title: '6-Layer Architektura',
-        icon: Layers,
-        docs: [
-          { id: 'v296-layer-architecture', title: 'On the Star — 6 vrstev', file: 'v2.9.6/layer-architecture.md' },
-        ]
-      },
-      {
-        id: 'v296-economics',
-        title: 'Ekonomika',
-        icon: Coins,
-        docs: [
-          { id: 'v296-tokenomics', title: 'Tokenomics — Decade Decay (Model A)', file: 'v2.9.6/tokenomics.md' },
-        ]
-      },
-      {
-        id: 'v296-architecture',
-        title: 'Protokol',
-        icon: Code2,
-        docs: [
-          { id: 'v296-consensus', title: 'Konsenzus změny', file: 'v2.9.6/consensus.md' },
-          { id: 'v296-p2p', title: 'P2P síťový protokol', file: 'v2.9.6/p2p.md' },
-        ]
-      },
-      {
-        id: 'v296-mainnet',
-        title: 'Mainnet příprava',
-        icon: Shield,
-        docs: [
-          { id: 'v296-launch-plan', title: 'Launch plán', file: 'v2.9.6/launch-plan.md' },
-          { id: 'v296-audit', title: 'Bezpečnostní audit', file: 'v2.9.6/audit.md' },
-        ]
-      },
-    ]
-  },
-  {
-    id: 'v2.9.5',
-    label: 'v2.9.5',
-    tag: 'ARCHIVE',
-    tagColor: 'text-gray-500 border-gray-500/30 bg-gray-500/5',
-    description: 'Native Awakening — complete Rust rewrite, Fair Launch',
-    categories: [
-      {
-        id: 'v295-overview',
-        title: 'Overview',
-        icon: Rocket,
-        docs: [
-          { id: 'v295-readme', title: 'ZION v2.9.5 Overview', file: 'v2.9.5/README.md' },
-          { id: 'v295-changelog', title: 'Changelog from v2.9', file: 'v2.9.5/changelog.md' },
-        ]
-      },
-      {
-        id: 'v295-protocol',
-        title: 'Protokol',
-        icon: Code2,
-        docs: [
-          { id: 'v295-tokenomics', title: 'Tokenomics & Economic Model', file: 'v2.9.5/tokenomics.md' },
-          { id: 'v295-consensus', title: 'Cosmic Harmony v3', file: 'v2.9.5/consensus.md' },
-        ]
-      },
-      {
-        id: 'v295-whitepaper',
-        title: 'Whitepaper',
-        icon: FileText,
-        docs: [
-          { id: 'whitepaper-295-full', title: 'Whitepaper v2.9.5 (kompletní)', file: 'whitepaper/ZION_Whitepaper_v2.9.5_FULL.md' },
-          { id: 'whitepaper-lite', title: 'Whitepaper Lite', file: 'whitepaper-lite.md' },
-        ]
-      },
-    ]
-  },
-  {
-    id: 'v2.9',
-    label: 'v2.9',
-    tag: 'LEGACY',
-    tagColor: 'text-gray-600 border-gray-600/30 bg-gray-600/5',
-    description: 'Quantum Leap — first multi-node network, Python era',
-    categories: [
-      {
-        id: 'v29-overview',
-        title: 'Overview',
-        icon: Rocket,
-        docs: [
-          { id: 'v29-readme', title: 'ZION v2.9 — Quantum Leap', file: 'v2.9/README.md' },
-          { id: 'v29-origins', title: 'Origins — Sep 26, 2025', file: 'v2.9/origins.md' },
-        ]
-      },
-    ]
-  },
-  {
-    id: 'v2.8.x',
-    label: 'v2.8.x',
-    tag: 'LEGACY',
-    tagColor: 'text-gray-600 border-gray-600/30 bg-gray-600/5',
-    description: 'Python era — v2.8.5 genesis, v2.8.9 Polish Sprint',
-    categories: [
-      {
-        id: 'v28-overview',
-        title: 'Overview',
-        icon: Layers,
-        docs: [
-          { id: 'v28-readme', title: 'v2.8.x Legacy Era', file: 'v2.8.x/README.md' },
-        ]
-      },
-      {
-        id: 'v28-archive',
-        title: 'Archiv',
-        icon: FileText,
-        docs: [
-          { id: 'whitepaper-285', title: 'Whitepaper v2.8.5', file: 'whitepaper/ZION_Whitepaper_v2.8.5.md' },
-          { id: 'cosmic-map-public', title: 'Cosmic Map (veřejná edice)', file: 'whitepaper/COSMIC_MAP_2.8.5_PUBLIC_EDITION.md' },
-        ]
-      },
-    ]
-  },
 ];
 
 /* ═══════════════════════════════════════════
@@ -569,17 +380,17 @@ function findCategoryIdByDoc(docId: string): string | null {
 }
 
 export default function DocsPage() {
-  const [activeVersion, setActiveVersion] = useState('v2.9.9');
+  const [activeVersion, setActiveVersion] = useState('v3.0.1');
   const [selectedDoc, setSelectedDoc] = useState('live-index');
   const [activeCategory, setActiveCategory] = useState('live-ops');
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [expandedVersions, setExpandedVersions] = useState<Record<string, boolean>>({ 'v2.9.5': false, 'v2.9.6': true, 'v2.9': false, 'v2.8.x': false, 'live-ops': true, 'ai-native': true, 'whitepaper': false, 'architecture': false, 'mainnet': false, 'listing': false, 'legal': false, 'lumi-language': false });
+  const [expandedVersions, setExpandedVersions] = useState<Record<string, boolean>>({ 'v3.0.1': true, 'v3.0.0': false, 'v2.9.9': false, 'v2.9.8': false, 'v2.9.7': false, 'v2.9.6': false, 'v2.9.5': false, 'v2.9': false, 'v2.8.x': false, 'live-ops': true, 'ai-native': true, 'whitepaper': false, 'architecture': false, 'mainnet': false, 'listing': false, 'legal': false, 'lumi-language': false });
   const [sidebarTab, setSidebarTab] = useState<'resources' | 'history'>('resources');
   const { lang } = useLang();
   const currentLang = lang === 'cs' ? 'cs' : 'en';
-  const primaryVersions = versions.filter((version) => version.id === 'v2.9.9');
+  const primaryVersions = versions.filter((version) => version.id === 'v3.0.1');
 
   // Get current version data
   const currentVersion = versions.find(v => v.id === activeVersion) || versions[0];
@@ -917,7 +728,7 @@ export default function DocsPage() {
                                     if (doc.href) { window.location.href = doc.href; return; }
                                     setSelectedDoc(doc.id);
                                     setActiveCategory(section.id);
-                                    setActiveVersion('v2.9.9');
+                                    setActiveVersion('v3.0.1');
                                   }}
                                   className={`w-full text-left px-3 py-2 rounded-lg transition-all text-sm flex items-center gap-2 ${
                                     selectedDoc === doc.id
