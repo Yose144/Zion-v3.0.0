@@ -9,7 +9,7 @@
  *   1. Keccak256(header || nonce)  — host precomputed state (same as v1)
  *   2. Memory-hard scratchpad (256 KiB, 8192 blocks, 2 passes, 64 reads)
  *   3. AES-128 CTR mix (3 full rounds + 1 final)
- *   4. Thermal loop (65536 iters, 8 ulong chains) — extra heat, no float
+ *   4. Thermal loop (16384 iters, 8 ulong chains) — extra heat, no float
  *   5. Keccak256(s3_after_thermal) → final hash
  *
  * Compatible with: AMD GCN (Vega, Polaris), AMD RDNA, NVIDIA, Intel.
@@ -26,7 +26,7 @@
 #define BLOCK_COUNT      8192
 #define PASSES           2
 #define RANDOM_READS     64
-#define THERMAL_ITERS    65536
+#define THERMAL_ITERS    16384 // OPTIMIZED: reduced from 65536 (4x less) for better efficiency
 
 /* ========================================================================== */
 /* Keccak — identical to deeksha_lite.cl                                      */
@@ -274,7 +274,7 @@ void aes128_mix(__private const uchar seed[32], ulong nonce, __private uchar out
 /* ========================================================================== */
 /* Step 4: Thermal loop — the only addition over v1                           */
 /*                                                                             */
-/* 8 independent ulong chains, 65536 iters.                                   */
+/* 8 independent ulong chains, 16384 iters.                                   */
 /* Integer-only (no float) = deterministic on all GPU drivers.                */
 /* Results XORed back into data[0..16] to prevent dead-code elimination.      */
 /* Identical logic in deeksha_lite_fire.rs (CPU reference).                   */

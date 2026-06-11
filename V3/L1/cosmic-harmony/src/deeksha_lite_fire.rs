@@ -7,7 +7,7 @@
 //!   1. Keccak256(header[0..80] || nonce_le)  → s1[32]  — same as v1
 //!   2. Memory-hard scratchpad (256 KiB, 8192 × 32B, 2 passes, 64 reads)  — same as v1
 //!   3. AES-128 CTR mix (3 full rounds + 1 final)  — same as v1
-//!   4. Thermal loop (65536 iters, 8 ulong integer chains)  — extra vs v1
+//!   4. Thermal loop (16384 iters, 8 ulong integer chains)  — extra vs v1
 //!   5. Keccak256(s3_after_thermal)  → final hash[32]  — same as v1
 
 use sha3::{Digest, Keccak256, Sha3_512};
@@ -27,7 +27,7 @@ pub const BLOCK_COUNT:     usize = SCRATCHPAD_SIZE / BLOCK_SIZE; // 8192
 pub const PASSES:          usize = 2;    // same as v1
 pub const RANDOM_READS:    usize = 64;   // same as v1
 pub const AES_ROUNDS:      usize = 4;    // same as v1 (3 full + 1 final)
-pub const THERMAL_ITERS:   usize = 65536;
+pub const THERMAL_ITERS:   usize = 16384; // OPTIMIZED: reduced from 65536 (4x less) for better efficiency
 
 // ============================================================
 // AES-128 helpers — identical to deeksha_lite.rs
@@ -183,7 +183,7 @@ fn step3_aes_mix(seed: &[u8; 32], nonce: u64) -> [u8; 32] {
 // ============================================================
 // Step 4: Thermal loop — only addition over v1
 //
-// 8 independent ulong chains, 65536 iterations.
+// 8 independent ulong chains, 16384 iterations.
 // Integer-only (no float) = deterministic on all GPU drivers.
 // Identical logic in deeksha_lite_fire.cl thermal_loop().
 // ============================================================
@@ -504,9 +504,9 @@ mod tests {
 
     #[test]
     fn test_fire_thermal_iters_constant() {
-        // 65536 is the canonical value matching deeksha_lite_fire.cl
-        assert_eq!(THERMAL_ITERS, 65536,
-            "THERMAL_ITERS must be 65536 to match GPU kernel");
+        // 16384 is the optimized value matching deeksha_lite_fire.cl (reduced from 65536)
+        assert_eq!(THERMAL_ITERS, 16384,
+            "THERMAL_ITERS must be 16384 to match GPU kernel");
     }
 }
 
