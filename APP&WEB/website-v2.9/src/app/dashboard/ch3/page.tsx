@@ -254,7 +254,7 @@ export default function CH3SettingsPage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-5 gap-4 mb-8">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 mb-8">
         {Object.entries(settings.streams).map(([key, stream]) => (
           <div
             key={key}
@@ -547,7 +547,7 @@ export default function CH3SettingsPage() {
 
             {/* Switching Settings */}
             {settings.streams.dynamic_gpu.mode === "auto" && (
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <label className="text-gray-400 text-sm">{lang === 'cs' ? 'Min zisk (USD/den)' : 'Min Profit (USD/day)'}</label>
                   <input
