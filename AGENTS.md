@@ -388,6 +388,56 @@ The Edge server runs as the canonical primary node + pool. It must survive reboo
 - Bridge DB: `/root/zion-2.9.6-main/V3/data/bridge.db`
 - Logs: `/root/zion-2.9.6-main/V3/logs/`
 
+### Edge Miner Build via WSL (Linux binary for Edge)
+
+The Edge server does NOT have a Rust toolchain. To deploy an updated miner binary:
+
+1. **Build locally via WSL Ubuntu:**
+   ```bash
+   wsl -d Ubuntu -e bash -c "source ~/.cargo/env && cd /mnt/c/Users/yosef/Desktop/Zion/2.9.6-main && cargo build --release --manifest-path V3/Cargo.toml -p zion-miner"
+   ```
+
+2. **Deploy to Edge:**
+   ```bash
+   scp V3/target/release/zion-miner root@100.76.16.108:/usr/local/bin/zion-miner-new
+   ssh root@100.76.16.108 "chmod +x /usr/local/bin/zion-miner-new && mv /usr/local/bin/zion-miner /usr/local/bin/zion-miner-old && mv /usr/local/bin/zion-miner-new /usr/local/bin/zion-miner"
+   ```
+
+3. **Run headless CPU miner (required: `ZION_INTERACTIVE=false`):**
+   ```bash
+   export ZION_POOL_ADDR=127.0.0.1:8444
+   export ZION_WORKER_NAME=edge-cpu
+   export ZION_MINER_ID=edge-cpu-01
+   export ZION_LOOP_COUNT=1000000
+   export ZION_PAYOUT_ADDRESS=zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604
+   export ZION_MINER_ALGORITHM=deeksha_lite_v1
+   export ZION_THREADS=2
+   export ZION_INTERACTIVE=false
+   nohup /usr/local/bin/zion-miner >> /var/log/zion-edge-miner.log 2>&1 &
+   ```
+
+### Backup Infrastructure (Local + Edge)
+
+**Edge backup:**
+- Script: `/usr/local/bin/zion-edge-backup.sh` (v2.0)
+- Timer: `zion-edge-backup.timer` (every 15 min)
+- Destination: `/data/zion/backups/`
+- Includes: node state, DAO DB + WAL, service DBs, systemd units, pool logs, git ref, health.json + MANIFEST.txt
+
+**Local W11 backup:**
+- Script: `scripts/local-core-backup.ps1`
+- Launcher: `backup-local-core.bat`
+- Destination: `C:\ZION-AutoBackups\`
+- Includes: V3/data, all `.db` files, configs, git ref, health.json
+
+**Dashboard Backups tab:**
+- Endpoint: `/api/backup/status`
+- Shows: Local Core health + Edge health
+- Auto-refresh: 15 seconds
+
+**Known issue — Czech locale:**
+PowerShell `ConvertTo-Json` emits Czech decimal commas on Czech Windows. Fix: wrap generation in `[System.Globalization.CultureInfo]::InvariantCulture`.
+
 ### Genesis Configuration (v3.0.0 Mainnet)
 
 **Current Genesis Hash (post-regeneration 2026-06-07):**

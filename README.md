@@ -8,7 +8,7 @@
 
 **Status:** Mainnet Ready · Edge primary + Core miner · Chain live · Launch: 31 December 2026
 
-[StatusV3.md](StatusV3.md) · [ROOT_INDEX.md](ROOT_INDEX.md) · [AGENTS.md](AGENTS.md) · [docs/GENESIS_REGENERATION_RUNBOOK.md](docs/GENESIS_REGENERATION_RUNBOOK.md)
+[StatusV3.md](StatusV3.md) · [MAINNET_OPS_GUIDE.md](MAINNET_OPS_GUIDE.md) · [AGENTS.md](AGENTS.md) · [docs/GENESIS_REGENERATION_RUNBOOK.md](docs/GENESIS_REGENERATION_RUNBOOK.md)
 
 ---
 

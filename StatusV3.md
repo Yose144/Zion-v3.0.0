@@ -22,6 +22,37 @@
 
 ---
 
+## Co je nového 2026-06-11 (Genesis Reset + Edge CPU Miner + Backup Infra)
+
+> Verze: **3.0.1**
+> Operativní session: hard genesis reset, Edge CPU miner deployment, backup audit + dashboard integration.
+
+### Hard Genesis Reset (clean #0)
+- Edge node1 + node2 + local W11 node wiped and restarted to clean genesis #0 (`tip: 7543004c`, `accepted: 1`)
+- **Critical discovery:** Windows `node.exe` auto-restarts when killed via `taskkill`; process must be terminated with `Stop-Process -Force` in PowerShell before deleting DB
+- **Cross-sync prevention:** temporarily removed `ZION_SEED_PEERS` from Edge systemd before isolated restart, then restored
+
+### Edge CPU Miner (headless, 2 cores)
+- Built fresh Linux binary via **WSL Ubuntu** (Edge has no Rust toolchain)
+- Replaced old `/usr/local/bin/zion-miner` (pre-DCR-removal backdoor version) with clean v3.0.1 build
+- Running: `deeksha_lite_v1`, 2 CPU threads, pool `127.0.0.1:8444`, worker `edge-cpu`
+- **Required:** `ZION_INTERACTIVE=false` for headless/nohup operation (otherwise TUI initialization crashes without terminal)
+- Log: `/var/log/zion-edge-miner.log`
+
+### Backup Infrastructure (completed)
+- **Edge:** `zion-edge-backup.sh` v2.0 — backs up node state, DAO DB + WAL, service DBs, systemd units, pool logs, git ref, health.json + MANIFEST.txt. Timer every 15 min.
+- **Local W11:** `scripts/local-core-backup.ps1` + `backup-local-core.bat` — backs up V3/data, all `.db` files, configs, git ref. Destination `C:\ZION-AutoBackups\`.
+- **Dashboard:** New Backups tab (`💾 Backups`) with `/api/backup/status` endpoint, KPI cards for Local Core + Edge Server, "Backup Now" + "Refresh" buttons, 15s auto-refresh.
+- **Bug fix:** PowerShell `ConvertTo-Json` Czech decimal comma locale bug fixed with `[System.Globalization.CultureInfo]::InvariantCulture` wrapper.
+
+### Current Live Topology
+```
+Edge (77.42.71.94): node1 + node2 + pool + CPU miner + bridge + DAO + WARP + atomic-swap
+Local W11 (100.86.102.5): node (P2P sync only) + dashboard + auto-backup
+```
+
+---
+
 ## Co je nového 2026-06-10 (DCR Backdoor Removal + RDNA1 Fix)
 
 > Verze: **3.0.1**
