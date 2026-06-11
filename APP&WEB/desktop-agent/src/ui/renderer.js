@@ -2131,8 +2131,11 @@ function setupWalletControls() {
       return;
     }
 
+    const strengthSelect = document.getElementById('new-wallet-strength');
+    const strength = strengthSelect ? parseInt(strengthSelect.value, 10) : 128;
+
     if (generateBtn) { generateBtn.disabled = true; generateBtn.textContent = 'Generating…'; }
-    const result = await window.electronAPI.generateWallet();
+    const result = await window.electronAPI.generateWallet({ strength });
     if (generateBtn) { generateBtn.disabled = false; generateBtn.textContent = 'Generate'; }
 
     if (result.success) {
@@ -2202,7 +2205,7 @@ function setupWalletControls() {
     loadWalletsList();
   });
 
-  // Import wallet
+  // Import wallet from mnemonic
   importBtn?.addEventListener('click', async () => {
     const mnemonic = document.getElementById('import-mnemonic').value.trim();
     const name = document.getElementById('import-wallet-name').value;
@@ -2225,6 +2228,26 @@ function setupWalletControls() {
       loadWalletsList();
     } else {
       showToast(`Import failed: ${result.error}`, 'error');
+    }
+  });
+
+  // Import wallet from backup file
+  const importFileBtn = document.getElementById('import-file-btn');
+  importFileBtn?.addEventListener('click', async () => {
+    const password = document.getElementById('import-file-password').value;
+    if (!password) {
+      showToast('Please enter a password to encrypt the imported wallet', 'warn');
+      return;
+    }
+    if (importFileBtn) { importFileBtn.disabled = true; importFileBtn.textContent = 'Importing…'; }
+    const result = await window.electronAPI.importWalletFromFile({ password });
+    if (importFileBtn) { importFileBtn.disabled = false; importFileBtn.textContent = 'Choose Backup File & Import'; }
+    if (result?.success) {
+      showToast('Wallet imported from backup file', 'success');
+      document.getElementById('import-file-password').value = '';
+      loadWalletsList();
+    } else {
+      showToast(`Import failed: ${result?.error || 'Unknown error'}`, 'error');
     }
   });
 
@@ -2654,7 +2677,7 @@ async function loadWalletsList() {
         <span>•</span>
         <span>Last used: ${safeLastUsed}</span>
       </div>
-      <div style="margin-top: 16px; display: flex; gap: 8px;">
+      <div style="margin-top: 16px; display: flex; gap: 8px; flex-wrap: wrap;">
         <button class="btn btn-primary" onclick="useWallet('${safeAddr}')" style="width: auto; padding: 10px 16px; font-size: 13px;">
            <svg class="icon" aria-hidden="true"><use href="#i-check"></use></svg>
            <span>Use for Mining</span>
@@ -2662,6 +2685,10 @@ async function loadWalletsList() {
         <button class="btn" onclick="copyWalletAddress('${safeAddr}')" style="width: auto; padding: 10px 16px; font-size: 13px; background: rgba(147,51,234,0.2); border: 1px solid var(--zion-purple);">
            <svg class="icon" aria-hidden="true"><use href="#i-copy"></use></svg>
            <span>Copy Address</span>
+        </button>
+        <button class="btn btn-ghost" onclick="exportWalletToFile('${safeAddr}')" style="width: auto; padding: 10px 16px; font-size: 13px; background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.4); color: #22c55e;">
+           <svg class="icon" aria-hidden="true"><use href="#i-save"></use></svg>
+           <span>Export Backup</span>
         </button>
       </div>
     </div>
@@ -2742,6 +2769,17 @@ window.useWallet = async (address) => {
 window.copyWalletAddress = (address) => {
   navigator.clipboard.writeText(address);
   alert('Address copied to clipboard!');
+};
+
+window.exportWalletToFile = async (address) => {
+  const password = prompt(`Export backup for:\n${address}\n\nEnter wallet password to decrypt:`);
+  if (!password) return;
+  const result = await window.electronAPI.exportWalletToFile({ address, password });
+  if (result?.success) {
+    showToast(`Backup saved to Desktop: ${result.filePath}`, 'success', 5000);
+  } else {
+    showToast(`Export failed: ${result?.error || 'Unknown error'}`, 'error');
+  }
 };
 
 // ============================================================================

@@ -2,14 +2,14 @@ use rayon::prelude::*;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use zion_core::{BlockCandidate, MiningJob, MiningSolution};
-use zion_cosmic_harmony::{deeksha_lite, deeksha, deeksha_lite_fire};
+use zion_cosmic_harmony::{cosmic_harmony_with_height, deeksha_lite, deeksha_lite_fire};
 
 /// Hash function selector for dual-algo support.
 pub fn hash_candidate(candidate: &BlockCandidate, algorithm: &str) -> [u8; 32] {
     match algorithm {
         "deeksha_lite_v1" => deeksha_lite::deeksha_lite(&candidate.header.to_bytes(), candidate.nonce),
         "deeksha_lite_fire" => deeksha_lite_fire::deeksha_lite_fire(&candidate.header.to_bytes(), candidate.nonce),
-        _ => deeksha::cosmic_harmony_ekam_deeksha_v3(&candidate.header.to_bytes(), candidate.nonce, candidate.height).data,
+        _ => cosmic_harmony_with_height(&candidate.header.to_bytes(), candidate.nonce, candidate.height).data,
     }
 }
 
