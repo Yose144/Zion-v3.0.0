@@ -1696,7 +1696,7 @@ def parse_pool_log() -> dict:
         if pw:
             status["pool_wallet"] = pw
     # Fallback: detect payout readiness from fee_split + SK presence
-    if status["payout_enabled"] is None and status["fee_split"] == "89/5/5/0":
+    if status["payout_enabled"] is None and status["fee_split"] == "89/5/5/1":
         sk = os.environ.get("ZION_POOL_PAYOUT_SK_HEX", "")
         if sk and len(sk) >= 32:
             status["payout_enabled"] = True
@@ -2581,8 +2581,24 @@ def _build_status_edge_primary() -> dict:
     except Exception:
         pass
 
+    # Enrich miner balances with on-chain balances (RPC lookup for zion1 miner_ids)
+    rpc_host = pool_edge_svc.get("host", "100.76.16.108") if pool_edge_svc else "100.76.16.108"
+    for mb in edge_payout["miner_balances"]:
+        mid = mb.get("miner_id", "")
+        if mid.startswith("zion1"):
+            try:
+                bal = rpc_call(rpc_host, 8443, "getBalance", {"address": mid}, timeout=1.5)
+                if bal and not bal.get("_rpc_error"):
+                    atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
+                    mb["on_chain_balance_zion"] = bal.get("balance_zion") if isinstance(bal.get("balance_zion"), (int, float)) else atomic / 1_000_000_000_000
+                else:
+                    mb["on_chain_balance_zion"] = None
+            except Exception:
+                mb["on_chain_balance_zion"] = None
+        else:
+            mb["on_chain_balance_zion"] = None
     edge_pool_wallet = os.environ.get("ZION_POOL_WALLET", "") or "zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604"
-    edge_fee_split = "89/5/5/0"
+    edge_fee_split = "89/5/5/1"
     local_pool = parse_pool_log()
     pool_status = {
         "running": pool_edge_health["alive"],
@@ -2590,7 +2606,7 @@ def _build_status_edge_primary() -> dict:
         "loop_count": "1000000",
         "nonce_count": 4096,
         "pool_wallet": edge_pool_wallet,
-        "payout_enabled": pool_edge_health["alive"] and edge_fee_split == "89/5/5/0",
+        "payout_enabled": pool_edge_health["alive"] and edge_fee_split == "89/5/5/1",
         "blocks_found": edge_metrics["blocks_found"] if edge_metrics["blocks_found"] is not None else local_pool["blocks_found"],
         # Prefer live Edge Prometheus metrics over stale local pool log
         "shares_accepted": edge_metrics["shares_accepted"] if edge_metrics["shares_accepted"] is not None else local_pool["shares_accepted"],
@@ -2780,12 +2796,12 @@ def _build_status_local_dev() -> dict:
         "loop_count": "1000000",
         "nonce_count": 4096,
         "pool_wallet": os.environ.get("ZION_POOL_WALLET", ""),
-        "payout_enabled": pool_health["alive"] and local_pool.get("fee_split") == "89/5/5/0",
+        "payout_enabled": pool_health["alive"] and local_pool.get("fee_split") == "89/5/5/1",
         "blocks_found": pool_metrics["blocks_found"] or local_pool["blocks_found"],
         "shares_accepted": local_pool["shares_accepted"],
         "shares_rejected": local_pool["shares_rejected"],
         "active_sessions": pool_metrics["active_miners"] or local_pool["active_sessions"],
-        "fee_split": local_pool.get("fee_split", "89/5/5/0"),
+        "fee_split": local_pool.get("fee_split", "89/5/5/1"),
         "recent_payouts": local_pool["recent_payouts"],
         "recent_lines": local_pool["recent_lines"],
     }
@@ -2871,8 +2887,8 @@ def build_checklist(status: dict) -> dict:
             {"id": "oasis",      "label": "OASIS Avatar Hub",                        "ok": True},
             {"id": "free-world", "label": "Free World Humanitarian",                 "ok": True},
             {"id": "issobella",  "label": "Issobella Space Layer",                 "ok": True},
-            {"id": "payout",     "label": "Payout mechanism ready (fee split active)", "ok": status["pool"]["running"] and status["pool"]["fee_split"] == "89/5/5/0"},
-            {"id": "fee_split",  "label": "Fee split 89/5/5/0 (burn model) active",    "ok": status["pool"]["fee_split"] == "89/5/5/0"},
+            {"id": "payout",     "label": "Payout mechanism ready (fee split active)", "ok": status["pool"]["running"] and status["pool"]["fee_split"] == "89/5/5/1"},
+            {"id": "fee_split",  "label": "Fee split 89/5/5/1 (burn model) active",    "ok": status["pool"]["fee_split"] == "89/5/5/1"},
             {"id": "edge-backup","label": "Edge database auto-backup active",          "ok": edge_backup_ok},
             {"id": "logs",       "label": "Log directory writable",                   "ok": LOG_DIR.exists()},
         ]
@@ -2885,8 +2901,8 @@ def build_checklist(status: dict) -> dict:
             {"id": "pool",      "label": "Local Pool running & accepting miners",  "ok": status["pool"]["running"] and status["pool"]["active_sessions"] is not None},
             {"id": "miner",     "label": "GPU miner connected & hashing",         "ok": status["miner"]["running"] and status["miner"]["hashrate"] is not None},
             {"id": "chain",     "label": "Chain height advancing",                 "ok": status["node1"]["chain_height"] is not None and status["node1"]["chain_height"] > 0},
-            {"id": "payout",    "label": "Payout mechanism ready (fee split active)",  "ok": status["pool"]["running"] and status["pool"]["fee_split"] == "89/5/5/0"},
-            {"id": "fee_split", "label": "Fee split 89/5/5/0 (burn model) active",     "ok": status["pool"]["fee_split"] == "89/5/5/0"},
+            {"id": "payout",    "label": "Payout mechanism ready (fee split active)",  "ok": status["pool"]["running"] and status["pool"]["fee_split"] == "89/5/5/1"},
+            {"id": "fee_split", "label": "Fee split 89/5/5/1 (burn model) active",     "ok": status["pool"]["fee_split"] == "89/5/5/1"},
             {"id": "logs",      "label": "Log directory writable",                  "ok": LOG_DIR.exists()},
         ]
     
@@ -3038,9 +3054,9 @@ def build_alerts(status: dict) -> list:
                                "action": "restart-node2"})
 
     # Pool alerts (common to both topologies)
-    if pool["running"] and pool["fee_split"] and pool["fee_split"] != "89/5/5/0":
+    if pool["running"] and pool["fee_split"] and pool["fee_split"] != "89/5/5/1":
         alerts.append({"severity": _sev("pool", "critical"), "title": "Wrong fee split",
-                       "detail": f"Detected {pool['fee_split']}, mainnet must be 89/5/5/0 (burn model)",
+                       "detail": f"Detected {pool['fee_split']}, mainnet must be 89/5/5/1 (burn model)",
                        "action": None})
 
     if pool["running"] and pool["payout_enabled"] is False:
@@ -3848,24 +3864,41 @@ def get_pool_wallet_status() -> dict:
 
 def fetch_pool_stats() -> dict:
     """Fetch live pool stats from routing metrics endpoint (port 8455)."""
-    host = "100.76.16.108" if TOPOLOGY == "edge-primary" else "127.0.0.1"
-    try:
-        import urllib.request
-        with urllib.request.urlopen(f"http://{host}:8455/stats", timeout=3) as r:
-            return json.loads(r.read().decode())
-    except Exception:
-        return {}
+    # Prefer local, fallback to Edge (handles local-dev when local pool is down)
+    for host in ("127.0.0.1", EDGE_HOST):
+        try:
+            import urllib.request
+            with urllib.request.urlopen(f"http://{host}:8455/stats", timeout=3) as r:
+                return json.loads(r.read().decode())
+        except Exception:
+            continue
+    return {}
 
 def fetch_pool_miners() -> list:
     """Fetch active miners from routing metrics endpoint (port 8455)."""
-    host = "100.76.16.108" if TOPOLOGY == "edge-primary" else "127.0.0.1"
+    data = None
+    for host in ("127.0.0.1", EDGE_HOST):
+        try:
+            import urllib.request
+            with urllib.request.urlopen(f"http://{host}:8455/miners?limit=50", timeout=3) as r:
+                data = json.loads(r.read().decode())
+                break
+        except Exception:
+            continue
+    miners = data.get("miners", []) if data else []
+    # Enrich top miners with live on-chain balance from node RPC
     try:
-        import urllib.request
-        with urllib.request.urlopen(f"http://{host}:8455/miners?limit=50", timeout=3) as r:
-            data = json.loads(r.read().decode())
-            return data.get("miners", [])
+        rpc_host = "127.0.0.1" if check_port_open("127.0.0.1", 8443, timeout=1.0) else EDGE_HOST
+        for m in miners[:20]:
+            addr = m.get("payout_address") or m.get("address")
+            if addr and addr.startswith("zion1"):
+                bal = rpc_call(rpc_host, 8443, "getBalance", {"address": addr}, timeout=1.5)
+                if bal and not bal.get("_rpc_error"):
+                    atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
+                    m["on_chain_balance_zion"] = atomic / 1_000_000_000_000
     except Exception:
-        return []
+        pass
+    return miners
 
 def build_payout_status() -> dict:
     """Build comprehensive payout status for the Payout dashboard tab.
@@ -3921,7 +3954,7 @@ def build_payout_status() -> dict:
         # Canonical Edge pool wallets (AGENTS.md 2026-06-07)
         status["pool_wallet"] = os.environ.get("ZION_POOL_WALLET") or "zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604"
         status["payout_enabled"] = True
-        status["fee_split"] = "89/5/5/0"
+        status["fee_split"] = "89/5/5/1"
         status["humanitarian_wallet"] = os.environ.get("ZION_HUMANITARIAN_WALLET") or "zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4"
         status["issobella_wallet"] = os.environ.get("ZION_ISSOBELLA_WALLET") or "zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702"
         status["pool_fee_wallet"] = ""
@@ -4099,7 +4132,8 @@ def build_payout_status() -> dict:
     status["recent_payouts"] = recent_payouts[:20]
 
     # ── Wallet balances (RPC with Edge→local fallback) ────────────────
-    rpc_host = edge_host if (is_edge and edge_rpc_alive) else "127.0.0.1"
+    # Local-dev: if local node is down, fall back to Edge RPC so balances are never stale
+    rpc_host = edge_host if (is_edge and edge_rpc_alive) else ("127.0.0.1" if local_rpc_alive else EDGE_HOST)
     if status["pool_wallet"] and status["pool_wallet"].startswith("zion1"):
         bal = rpc_call(rpc_host, 8443, "getBalance", {"address": status["pool_wallet"]}, timeout=2.5)
         if bal and not bal.get("_rpc_error"):
@@ -4162,10 +4196,19 @@ def build_payout_status() -> dict:
     }
 
     # JS miner_stats compatibility
+    rpc_host_p = edge_host if (is_edge and edge_rpc_alive) else ("127.0.0.1" if local_rpc_alive else EDGE_HOST)
     miner_stats = []
     for m in miners:
+        addr = m.get("payout_address") or m.get("address") or ""
+        # Prefer on-chain balance already enriched by fetch_pool_miners(); fallback to RPC
+        on_chain = m.get("on_chain_balance_zion")
+        if on_chain is None and addr and addr.startswith("zion1"):
+            bal = rpc_call(rpc_host_p, 8443, "getBalance", {"address": addr}, timeout=1.5)
+            if bal and not bal.get("_rpc_error"):
+                atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
+                on_chain = bal.get("balance_zion") if isinstance(bal.get("balance_zion"), (int, float)) else atomic / 1_000_000_000_000
         miner_stats.append({
-            "address": m.get("payout_address") or m.get("address") or "—",
+            "address": addr or "—",
             "worker_name": m.get("worker_name") or m.get("id") or "—",
             "algorithm": m.get("algorithm") or "—",
             "backend": m.get("backend") or "cpu",
@@ -4173,7 +4216,7 @@ def build_payout_status() -> dict:
             "hashrate": m.get("hashrate", 0),
             "hashrate_1h": m.get("hashrate_1h", 0),
             "total_paid": m.get("total_paid", 0),
-            "on_chain_balance_zion": m.get("on_chain_balance_zion"),
+            "on_chain_balance_zion": on_chain,
             "pending_balance": m.get("pending_balance", 0),
             "blocks_found": m.get("blocks_found", 0),
             "connected_since": m.get("connected_since"),
@@ -4533,21 +4576,25 @@ MAINNET_CONSTANTS = {
 
 PREMINE_OUTPUTS = [
     # OASIS + Golden Egg (5 slots × 1.65B = 8.25B)
-    {"address": "zion166e6v3k204h8p5w4w3a7m0x790q5m7z5z6n252p", "purpose": "ZION OASIS + Winners Golden Egg/Xp (Slot 1)", "amount_zion": 1_650_000_000, "category": "oasis_golden_egg", "unlock_height": None},
-    {"address": "zion1l2h8h0e3h7m6p8e297m6n624c5m7r2k364v684a", "purpose": "ZION OASIS + Winners Golden Egg/Xp (Slot 2)", "amount_zion": 1_650_000_000, "category": "oasis_golden_egg", "unlock_height": None},
-    {"address": "zion1e6r0q3g6t0r0v5f6h7k7c5f3v562j0v7e5e5d0a", "purpose": "ZION OASIS + Winners Golden Egg/Xp (Slot 3)", "amount_zion": 1_650_000_000, "category": "oasis_golden_egg", "unlock_height": None},
-    {"address": "zion1l7e4c4c5x8l440t295a7m4k5p5x8v8z7r043s23", "purpose": "ZION OASIS + Winners Golden Egg/Xp (Slot 4)", "amount_zion": 1_650_000_000, "category": "oasis_golden_egg", "unlock_height": None},
-    {"address": "zion1n8h2a8p386z274859833h7v6c5n687f7a6k523u", "purpose": "ZION OASIS + Winners Golden Egg/Xp (Slot 5)", "amount_zion": 1_650_000_000, "category": "oasis_golden_egg", "unlock_height": None},
+    {"address": "zion153e378e4x0g6s380h2h8z4t506g5s323f5se8g5", "purpose": "ZION OASIS + Winners Golden Egg/Xp (Slot 1)", "amount_zion": 1_650_000_000, "category": "oasis_golden_egg", "unlock_height": None},
+    {"address": "zion1w548y2k3q802w885u7h0x2z8w7d675m0u3ya0l3", "purpose": "ZION OASIS + Winners Golden Egg/Xp (Slot 2)", "amount_zion": 1_650_000_000, "category": "oasis_golden_egg", "unlock_height": None},
+    {"address": "zion192v4c0k074u7c502q6x8e0t592s564s7l4pm607", "purpose": "ZION OASIS + Winners Golden Egg/Xp (Slot 3)", "amount_zion": 1_650_000_000, "category": "oasis_golden_egg", "unlock_height": None},
+    {"address": "zion1n690n062g668s8g0y4772830z8r450c0l06f295", "purpose": "ZION OASIS + Winners Golden Egg/Xp (Slot 4)", "amount_zion": 1_650_000_000, "category": "oasis_golden_egg", "unlock_height": None},
+    {"address": "zion17323k5e490t832f4d0m3w4x3s2e2z7a7600j3v7", "purpose": "ZION OASIS + Winners Golden Egg/Xp (Slot 5)", "amount_zion": 1_650_000_000, "category": "oasis_golden_egg", "unlock_height": None},
     # DAO Treasury (3 slots = 4.0B) — locked until block 525,600
-    {"address": "zion176u8r6w53768e2k04035d4d3c2z5g555n6l4r3s", "purpose": "DAO Treasury — Community Governance (main)", "amount_zion": 2_500_000_000, "category": "dao_treasury", "unlock_height": 525_600},
-    {"address": "zion12643n776r3m8f340484756q06485h5w4c2l405m", "purpose": "DAO Treasury — Grants & Bounties", "amount_zion": 1_000_000_000, "category": "dao_treasury", "unlock_height": 525_600},
-    {"address": "zion1k8w734x422f3t6t536r287k2c6n3z0e05257606", "purpose": "DAO Treasury — Ecosystem Bootstrap", "amount_zion": 500_000_000, "category": "dao_treasury", "unlock_height": 525_600},
+    {"address": "zion1t4l2f5j737989828v295n7z4r3v5j8k895m56n4", "purpose": "DAO Treasury — Community Governance (main)", "amount_zion": 2_500_000_000, "category": "dao_treasury", "unlock_height": 525_600},
+    {"address": "zion1r5j0j7y444a8j402n8t8u2n8y323u6x4r2aw7l6", "purpose": "DAO Treasury — Grants & Bounties", "amount_zion": 1_000_000_000, "category": "dao_treasury", "unlock_height": 525_600},
+    {"address": "zion1932843t398t095g4h3x2f3a5l0q40490k4fm2w8", "purpose": "DAO Treasury — Ecosystem Bootstrap", "amount_zion": 500_000_000, "category": "dao_treasury", "unlock_height": 525_600},
     # Infrastructure (3 slots = 2.59B)
-    {"address": "zion1q540v6y4f0s4v3n0f8t740t53494z56024u645c", "purpose": "Core Development Fund", "amount_zion": 1_000_000_000, "category": "infrastructure", "unlock_height": None},
-    {"address": "zion1h4w39686t8w376g0x0y426e775q6p2q0v698v43", "purpose": "Network Infrastructure — P2P Seed Nodes", "amount_zion": 1_000_000_000, "category": "infrastructure", "unlock_height": None},
-    {"address": "zion1x638z5x6d2d0y6u3f7y8g7j56054a4a2a2c7l8f", "purpose": "Genesis Creator — Lifetime Rent", "amount_zion": 590_000_000, "category": "infrastructure", "unlock_height": None},
+    {"address": "zion1d3p5x622m327r060w5z0q5r203v837m6l8pa8x5", "purpose": "Core Development Fund", "amount_zion": 1_000_000_000, "category": "infrastructure", "unlock_height": None},
+    {"address": "zion1r6r4s0u2e6u4t23767s05752d70660h2f29d2l7", "purpose": "Network Infrastructure — P2P Seed Nodes", "amount_zion": 1_000_000_000, "category": "infrastructure", "unlock_height": None},
+    {"address": "zion16542q4l853a2z0u5r5w8y4m8k4558847h503736", "purpose": "Genesis Creator — Lifetime Rent", "amount_zion": 590_000_000, "category": "infrastructure", "unlock_height": None},
     # Humanitarian (1 slot = 1.44B)
-    {"address": "zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4", "purpose": "Children Future Fund — Humanitarian DAO", "amount_zion": 1_440_000_000, "category": "humanitarian", "unlock_height": None},
+    {"address": "zion1z7g4u3s2w3c5z5u4a60864m2y7q8e5j304g46r7", "purpose": "Children Future Fund — Humanitarian DAO", "amount_zion": 1_440_000_000, "category": "humanitarian", "unlock_height": None},
+    # Bridge Seed Fund (1 slot = 0.4B) — immediate unlock for EVM bridge liquidity
+    {"address": "zion13794g7k3m0f84637l2x0t855h3l258k8p3xp5t3", "purpose": "Bridge Seed Fund — EVM Bridge Liquidity", "amount_zion": 400_000_000, "category": "bridge_seed", "unlock_height": None},
+    # Bridge Vault UTXO Seed (1 slot = 0.1B) — UTXO liquidity for bridge unlocks
+    {"address": "zion1r565v3k2u8p8t6n494p0n527c0m7a5s4s5ae0x7", "purpose": "Bridge Vault UTXO Seed — EVM Bridge Unlock Liquidity", "amount_zion": 100_000_000, "category": "bridge_vault_utxo", "unlock_height": None},
 ]
 
 P0_BLOCKERS = [
@@ -5810,6 +5857,25 @@ async function refreshPayout(){
     if(data.issobella_wallet)document.getElementById('payout-issobella-wallet').textContent=data.issobella_wallet;
     if(data.pool_fee_wallet)document.getElementById('payout-pool-fee-wallet').textContent=data.pool_fee_wallet;
 
+    // Miner stats table (pending + on-chain balance)
+    const minerStatsEl=document.getElementById('payout-miner-stats');
+    if(data.miner_stats&&data.miner_stats.length>0){
+      minerStatsEl.innerHTML=data.miner_stats.map(m=>{
+        const pending=(m.pending_balance||0).toFixed(4);
+        const onChain=m.on_chain_balance_zion!=null?m.on_chain_balance_zion.toFixed(4):'—';
+        return `<div class="flex items-center justify-between bg-white/5 rounded p-2 mb-1">
+          <div class="flex flex-col">
+            <span class="text-[10px] font-mono text-white">${m.address.slice(0,20)}…</span>
+            <span class="text-[9px] text-gray-500">${m.worker_name} · ${m.algorithm}</span>
+          </div>
+          <div class="text-right">
+            <div class="text-[10px] text-gray-400">Pending: <span class="text-amber-400">${pending} Z</span></div>
+            <div class="text-[10px] text-gray-400">On-chain: <span class="text-emerald-400">${onChain} Z</span></div>
+          </div>
+        </div>`;
+      }).join('');
+    }else{minerStatsEl.innerHTML='<div class="text-gray-500 italic">No active miners</div>';}
+
     // Miner payout log
     const minerLog=document.getElementById('payout-miner-log');
     if(data.miner_payouts&&data.miner_payouts.length>0){
@@ -6739,7 +6805,7 @@ async function renderWizard(){
     isEdge?{n:3,title:'Connect to Edge Pool',desc:'Edge (100.76.16.108) runs the primary pool. Verify VPN connectivity.',done:cl.checks.find(c=>c.id==='pool-edge')?.ok,actions:[{label:'Check Edge Pool',cb:`switchTab('overview')`}]}:{n:3,title:'Start Local Pool',desc:'Accepts miners, validates shares, distributes payouts (89/5/5 burn model).',done:cl.checks.find(c=>c.id==='pool')?.ok,actions:[{label:'▶ Start Pool',cb:`controlAction('start-pool')`}]},
     {n:4,title:'Start GPU Miner',desc:'Connects to pool, performs cosmic_harmony hashing on GPU.',done:cl.checks.find(c=>c.id==='miner')?.ok,actions:[{label:'▶ Start Miner',cb:`controlAction('start-miner')`}]},
     {n:5,title:'Verify chain progression',desc:'Confirm node syncs with network and chain height advances.',done:cl.checks.find(c=>c.id==='chain')?.ok,actions:[{label:'View events',cb:`switchTab('events')`}]},
-    {n:6,title:'Confirm fee split & payouts',desc:'Validate 89/5/5/0 burn-model distribution and payout wallet is funded.',done:cl.checks.find(c=>c.id==='fee_split')?.ok&&cl.checks.find(c=>c.id==='payout')?.ok,actions:[{label:'View payouts',cb:`switchTab('overview')`}]},
+    {n:6,title:'Confirm fee split & payouts',desc:'Validate 89/5/5/1 burn-model distribution and payout wallet is funded.',done:cl.checks.find(c=>c.id==='fee_split')?.ok&&cl.checks.find(c=>c.id==='payout')?.ok,actions:[{label:'View payouts',cb:`switchTab('overview')`}]},
   ];
   const cont=document.getElementById('wizard-steps');
   cont.innerHTML=steps.map((s,i)=>{

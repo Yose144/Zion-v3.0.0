@@ -946,7 +946,7 @@ Pool nyní správně redistribuuje 89% miner reward mezi připojené minery:
 | **Pool Health** | ✅ Healthy | Všechny checky procházejí |
 | **Mining Activity** | ✅ Active | 3 blocks found, 1 registered miner |
 | **Pool Hashrate** | ✅ Active | 1.07 KH/s |
-| **Fee Split** | ✅ Configured | 89/5/5/0 |
+| **Fee Split** | ✅ Configured | 89/5/5/1 |
 | **Uptime** | ✅ Stable | 390+ sekund |
 
 **Problém a řešení:**

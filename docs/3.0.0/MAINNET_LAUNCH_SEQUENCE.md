@@ -7,7 +7,7 @@
 ## ✅ PŘEDLAUNCE CHECKLIST (VŠECHNO HOTOVO)
 
 ### Konfigurace
-- [x] **Fee split adresy aktualizovány** (89/5/5/0 burn model)
+- [x] **Fee split adresy aktualizovány** (89/5/5/1 burn model)
   - Miner: `zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3`
   - Humanitarian: `zion1m4v5z8z850u480c5c208z274e334369275n5y20`
   - Issobella: `zion19242q4x0l3785003n8l0s873k3f5v8d4d8wz702`

@@ -68,7 +68,7 @@
 | Issobella | `zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702` |
 | Pool Fee | *(prázdná — 0%)* |
 
-**Fee split:** `89/5/5/0` (miner / humanitarian / issobella / pool_fee)
+**Fee split:** `89/5/5/1` (miner / humanitarian / issobella / pool_fee)
 
 ---
 

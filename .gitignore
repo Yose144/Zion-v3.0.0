@@ -1,6 +1,7 @@
 # Build artifacts
 /target/
 **/target/
+target-fire/
 *.obj
 *.o
 *.a
