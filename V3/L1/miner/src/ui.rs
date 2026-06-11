@@ -131,6 +131,32 @@ pub fn log_rejected(
     print_flush(&s);
 }
 
+/// Print a block found celebration with ASCII art flag
+pub fn log_block_found(height: u64, nonce: u64, hash_prefix: &str) {
+    let flag = r#"
+                                    ╔══════════════════════════════════════════════════════════════════╗
+                                    ║                    🐋 KEPORKAK BLOCK FOUND! 🐋                   ║
+                                    ║  ════════════════════════════════════════════════════════════════ ║
+                                    ║  ███╗   ██╗███████╗██╗  ██╗    ██████╗ ██████╗ ██████╗ ███████╗   ║
+                                    ║  ████╗  ██║██╔════╝██║ ██╔╝    ██╔══██╗██╔══██╗██╔══██╗██╔════╝   ║
+                                    ║  ██╔██╗ ██║█████╗  █████╔╝     ██████╔╝███████║███████║███████╗   ║
+                                    ║  ██║╚██╗██║██╔══╝  ██╔═██╗     ██╔══██╗██╔══██║██╔══██║╚════██║   ║
+                                    ║  ██║ ╚████║███████╗██║  ██╗    ██████╔╝██║  ██║██║  ██║███████║   ║
+                                    ║  ╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝    ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝   ║
+                                    ║  ════════════════════════════════════════════════════════════════ ║
+                                    ║  Height: {}  Nonce: {}  Hash: {}...                      ║
+                                    ╚══════════════════════════════════════════════════════════════════╝"#;
+    
+    let flag_formatted = flag.replace("{}", &format!("{}  {}  {}", height, nonce, hash_prefix));
+    
+    let mut s = String::new();
+    s.push_str(BRIGHT_YELLOW);
+    s.push_str(&flag_formatted);
+    s.push_str(RESET);
+    s.push('\n');
+    print_flush(&s);
+}
+
 /// Print a new-job notification (blue arrow)
 pub fn log_new_job(job_id: u64, height: u64, algorithm: &str, difficulty: u64) {
     let mut s = String::new();
