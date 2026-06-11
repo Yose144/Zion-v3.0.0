@@ -29,11 +29,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
   openLogs: () => ipcRenderer.invoke('open-logs'),
 
   // Wallet management
-  generateWallet: () => ipcRenderer.invoke('generate-wallet'),
+  generateWallet: (data) => ipcRenderer.invoke('generate-wallet', data),
   saveWallet: (data) => ipcRenderer.invoke('save-wallet', data),
   listWallets: () => ipcRenderer.invoke('list-wallets'),
   importWallet: (data) => ipcRenderer.invoke('import-wallet', data),
   exportWallet: (data) => ipcRenderer.invoke('export-wallet', data),
+  exportWalletToFile: (data) => ipcRenderer.invoke('export-wallet-to-file', data),
+  importWalletFromFile: (data) => ipcRenderer.invoke('import-wallet-from-file', data),
   validateAddress: (address) => ipcRenderer.invoke('validate-address', address),
 
   // Wallet RPC
