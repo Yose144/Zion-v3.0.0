@@ -3155,7 +3155,7 @@ mod tests {
                 miner_id: "test-miner".to_string(),
                 worker_name: "rig-test".to_string(),
                 algorithm: zion_core::consensus_profile().to_string(),
-                payout_address: "zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3".to_string(),
+                payout_address: "zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604".to_string(),
                 backend: "cpu".to_string(),
             },
         )?;

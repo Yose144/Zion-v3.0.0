@@ -355,8 +355,10 @@ pub fn draw_dashboard(
         Print(format!("  Hashrate  10s {:>9}{:<4}  60s {:>9}{:<4}  15m {:>9}{:<4}\n",
             v10, u10, v60, u60, v15m, u15m)),
     )?;
-    let (vcpu_tot, ucpu_tot) = ui::fmt_hashrate(rates.cpu_total as f64);
-    let (vgpu_tot, ugpu_tot) = ui::fmt_hashrate(rates.gpu_total as f64);
+    let cpu_hps = if uptime_secs > 0 { rates.cpu_total as f64 / uptime_secs as f64 } else { 0.0 };
+    let gpu_hps = if uptime_secs > 0 { rates.gpu_total as f64 / uptime_secs as f64 } else { 0.0 };
+    let (vcpu_tot, ucpu_tot) = ui::fmt_hashrate(cpu_hps);
+    let (vgpu_tot, ugpu_tot) = ui::fmt_hashrate(gpu_hps);
     queue!(out,
         Print(format!("  CPU total {:>9}{:<4}  GPU total {:>9}{:<4}\n",
             vcpu_tot, ucpu_tot, vgpu_tot, ugpu_tot)),

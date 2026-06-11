@@ -62,7 +62,7 @@ $env:ZION_RPC_BIND='0.0.0.0:8443'
 $env:ZION_METRICS_BIND='0.0.0.0:9115'
 $env:ZION_NODE_STATE_PATH="$DataDir\zion-node-state.db"
 $env:ZION_SEED_PEERS=$seedPeers
-$env:ZION_MINER_ADDRESS='zion1w523a76830x2t5m7f3j023w265e8g5c400a4790'
+$env:ZION_MINER_ADDRESS='zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604'
 $env:ZION_HUMANITARIAN_WALLET='zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4'
 $env:ZION_ISSOBELLA_WALLET='zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702'
 # Note: 89/5/5/0 burn model — no pool fee wallet (1% is burned, never minted)
@@ -78,7 +78,7 @@ $env:ZION_RPC_BIND='0.0.0.0:8446'
 $env:ZION_METRICS_BIND='0.0.0.0:9116'
 $env:ZION_NODE_STATE_PATH="$DataDir\zion-node2-state.db"
 $env:ZION_SEED_PEERS='127.0.0.1:8333'
-$env:ZION_MINER_ADDRESS='zion1w523a76830x2t5m7f3j023w265e8g5c400a4790'
+$env:ZION_MINER_ADDRESS='zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604'
 $env:ZION_HUMANITARIAN_WALLET='zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4'
 $env:ZION_ISSOBELLA_WALLET='zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702'
 # Note: 89/5/5/0 burn model — no pool fee wallet (1% is burned, never minted)
