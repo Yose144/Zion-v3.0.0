@@ -2060,6 +2060,32 @@ def get_miner_live_stats() -> dict:
     stats = parse_miner_log()
     agent_gpu = fetch_agent_gpu()
 
+    # Prefer desktop-agent miner_stats.json (live OpenCL/CPU miner) over stale logs
+    try:
+        agent_stats_path = Path.home() / "AppData" / "Roaming" / "zion-desktop-agent-dev" / "miner_stats.json"
+        if agent_stats_path.exists():
+            mtime = agent_stats_path.stat().st_mtime
+            if time.time() - mtime < 120:
+                with open(agent_stats_path, "r", encoding="utf-8") as f:
+                    js = json.load(f)
+                if js.get("status") == "running":
+                    stats = {
+                        "running": True,
+                        "miner_id": js.get("miner_id"),
+                        "worker_name": js.get("worker"),
+                        "pool_addr": js.get("pool_addr"),
+                        "hashrate": (js.get("hashrate_gpu") or 0) / 1000.0,  # H/s -> KH/s
+                        "gpu_backend": js.get("backend", "cpu"),
+                        "gpu_device": js.get("gpu_name"),
+                        "shares_accepted": js.get("shares_accepted", 0),
+                        "shares_rejected": js.get("shares_rejected", 0),
+                        "current_height": js.get("pool_height"),
+                        "current_diff": None,
+                        "current_algorithm": js.get("algorithm"),
+                    }
+    except Exception:
+        pass
+
     # Fallback to mock data if miner is running but log parsing fails
     if not stats.get("running") and is_process_running("zion-miner.exe"):
         stats["running"] = True
@@ -2420,12 +2446,8 @@ def _build_status_edge_primary() -> dict:
         return ("edge", None)
 
     def _edge_rpc_call_node2():
-        # Edge Node 2 follower — local bind 127.0.0.1:8446 (same host as dashboard on Edge)
-        r = rpc_call("127.0.0.1", 8446, "getChainInfo", {}, timeout=2.5)
-        if r and not r.get("_rpc_error"):
-            return ("edge2", r)
-        # Fallback via Tailscale (if somehow bound to 0.0.0.0)
-        r = rpc_call("100.76.16.108", 8446, "getChainInfo", {}, timeout=1.5)
+        # Edge Node 2 follower — try Tailscale VPN first (runs on Edge server)
+        r = rpc_call("100.76.16.108", 8446, "getChainInfo", {}, timeout=2.5)
         if r and not r.get("_rpc_error"):
             return ("edge2", r)
         return ("edge2", None)
@@ -2645,7 +2667,7 @@ def _build_status_edge_primary() -> dict:
     except Exception:
         pass
 
-    miner_status = parse_miner_log()
+    miner_status = get_miner_live_stats()
 
     # In edge-primary, prefer real Edge pool metrics over local (broken) miner logs
     if TOPOLOGY == "edge-primary" and edge_metrics.get("hashrate") is not None:
@@ -2846,7 +2868,7 @@ def _build_status_local_dev() -> dict:
             "sync_gap": None,
             "details": "Not applicable in local-dev topology",
         },
-        "miner": parse_miner_log(),
+        "miner": get_miner_live_stats(),
     }
 
 def build_checklist(status: dict) -> dict:
@@ -3757,15 +3779,8 @@ def get_backup_status() -> dict:
                 pass
 
     # Read Edge health.json via HTTP
-    edge_health = None
-    try:
-        import urllib.request as _ur
-        req = _ur.Request("http://100.76.16.108:8766/api/backup/status", headers={"Accept": "application/json"})
-        with _ur.urlopen(req, timeout=3) as r:
-            edge_resp = json.loads(r.read())
-            edge_health = edge_resp.get("local") or edge_resp.get("edge") or edge_resp
-    except Exception:
-        pass
+    # DISABLED: recursive self-call caused infinite thread leak on Edge server
+    edge_health = local_health
 
     return {
         "backups": all_backups[:10],
