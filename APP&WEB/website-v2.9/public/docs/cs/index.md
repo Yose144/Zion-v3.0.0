@@ -1,134 +1,138 @@
-# ZION TerraNova — Veřejný hub dokumentace
+# ZION TerraNova — Veřejná dokumentace
 
-> *„In code we trust. 144B ZION. Not one satoshi more."*
-> **Provozní poznámka (2026-03-31):** Tento veřejný vstup do dokumentace sleduje kontrolovaný V3 test-mainnet rehearsal na veřejné linii 2.9.9 Pure Code nad kanonickým runtime 2.9.8 Deeksha.
-
----
-
-## Přehled veřejné linie
-
-ZION je decentralizovaný blockchain Layer 1 psaný v **Rustu**. Veřejná launch cesta je aktuálně vedena jako kontrolovaný V3 test-mainnet rehearsal s důrazem na ověřitelnost, auditovatelnost a postupné uzavírání launch gate podmínek.
-
-Historické materiály řady 2.9.x zůstávají v archivu. Pro veřejné čtení jsou dnes kanonické hlavně tyto dokumenty:
-
-- Live Index na `/docs#live-index`
-- Whitepaper V3 Mainnet na `/docs#wp-v3-mainnet`
-- Public Launch Path na `/docs#mainnet-plan`
+> *"In code we trust. 144B ZION. Not one satoshi more."*
+> **Genesis Launch 3.0.1 — 11. června 2026.** MainNet Core + Edge live. Pool aktivní. Mining provozní.
 
 ---
 
-## Release lineage (2.9.7 -> 2.9.9)
+## Genesis 3.0.1 — Aktuální stav
 
-Pro hlavní zdrojovou větev je důležité číst vývoj roku 2026 jako navazující trojici release kroků:
+ZION MainNet byl spuštěn **11. června 2026** jako čistý Genesis #0. Verze **3.0.1** obsahuje:
 
-| Verze | Role | Co přinesla |
-|-------|------|-------------|
-| **v2.9.7** | Pre-MainNet Gate | Stabilizaci, dokumentační gate a provozní uzávěry bez změny economics základu |
-| **v2.9.8** | Ekam canonical runtime | Sjednocení runtime cesty pod canonical profilem |
-| **v2.9.9** | Pure Code | Cleanup a migrační most do čistého V3 mainnet tracku |
+- ✅ MainNet Core node (Edge + lokální sync)
+- ✅ Pool server aktivní (`77.42.71.94:8444`)
+- ✅ CPU mining běží (Edge headless, 2 jádra)
+- ✅ GPU mining podporováno (OpenCL/CUDA/Metal)
+- ✅ Dual-algo: `deeksha_lite_v1` / `deeksha_lite_fire` / `cosmic_harmony_ekam_deeksha_v2`
+- ✅ Fee split 89/5/5/1 (miners / humanitarian / Issobella / pool)
+- ✅ DAO governance + treasury
+- ✅ WARP bridge
+- ✅ Auto-backup (Edge 15min, Local W11)
 
-Veřejné docs odkazy:
-
-- `/docs#v297-gate`
-- `/docs#v298-canonical`
-- `/docs#v299-purecode`
+**Edge server:** `77.42.71.94` — P2P `:8333`, RPC `:8443`, Pool `:8444`
 
 ---
 
-## Kanonické parametry chainu
+## Kanonické parametry řetězce
 
 | Parametr | Mainnet | Testnet |
 |----------|---------|---------|
 | **Chain ID** | `zion-mainnet-1` | `zion-testnet-1` |
-| **P2P bind** | runtime-configurable | runtime-configurable |
-| **RPC bind** | runtime-configurable | runtime-configurable |
-| **Algoritmus** | Ekam Deeksha v2 | Ekam Deeksha v2 |
-| **Čas bloku** | 60 s | 60 s |
-| **Odměna za blok** | 5 400,067 -> Decade Decay (-20 % / 10 let) | Decade Decay |
+| **P2P bind** | runtime-configurovatelné | runtime-configurovatelné |
+| **RPC bind** | runtime-configurovatelné | runtime-configurovatelné |
+| **Algoritmus** | Ekam Deeksha v2 (multi-algo) | Ekam Deeksha v2 |
+| **Block time** | 60 s | 60 s |
+| **Block reward** | 5 400,067 → Decade Decay (-20%/10 let) | Decade Decay |
 | **Tail emission** | 724.784723787776 ZION/blok (od ~2126) | 724.784723787776 ZION |
-| **DAA** | LWMA (60 bloků, +-25 %) | LWMA (60 bloků) |
+| **DAA** | LWMA (60 bloků, ±25%) | LWMA (60 bloků) |
 | **Celková emise** | 144 mld ZION | 144 mld ZION |
-| **Mining horizont** | 100+ let + tail inf | 100+ let |
-| **Poplatky** | Spalovány (burn) | Spalovány |
+| **Mining horizont** | 100+ let + tail ∞ | 100+ let |
+| **Poplatky** | Fee split 89/5/5/1 | Fee split |
 | **Architektura** | 6-Layer stack | 6-Layer stack |
 
 ---
 
-## Distribuce block rewardu
+## Distribuce block reward
 
 | Příjemce | Podíl |
 |----------|-------|
 | ⛏️ Miners | 89% |
-| 🕊️ Humanitarian Tithe | 5% |
-| 🔭 L5/L6 Issobella Fund | 5% |
-| 🏊 Pool Fee | 1% |
+| 🕊️ Humanitární desátek | 5% |
+| 🔭 L5/L6 Issobella fond | 5% |
+| 🏊 Pool fee | 1% |
 
 ---
 
-## 6vrstvý stack
+## 6-vrstvý stack
 
 | Vrstva | Název | Rok | Účel |
 |--------|-------|-----|------|
-| **L1** | ZION TerraNova ⛓️ | 2026 | PoW blockchain, Ekam Deeksha, UTXO, fee burn |
+| **L1** | ZION TerraNova ⛓️ | 2026 | PoW blockchain — Ekam Deeksha, UTXO, fee burn |
 | **L2** | DeFi + DAO 💱 | 2026–27 | WARP bridge, wZION, governance, treasury |
-| **L3** | NCL + WARP + AI-native 🧠 | 2027 | Compute orchestrace, cross-chain adaptéry, agent tooling |
-| **L4** | ZION Oasis 🎮 | 2028+ cíl | XP, game economy, Golden Egg, NFT, non-consensus vrstva |
+| **L3** | AI Native + NCL 🧠 | 2027 | Neural Compute Layer, CUDA-X GPU inference |
+| **L4** | ZION Oasis 🎮 | 2029+ | XP, Consciousness Levels, gamifikace, Golden Egg, NFT |
 | **L5** | ZION Free World 🌍 | 2030 | Kvantová energie, humanitární mise |
 | **L6** | ZION Issobella 🔭 | 2040+ | Orbitální observatoř a výzkumná stanice |
 
 ---
 
-## Veřejné shrnutí genesis reserve
+## 🧠 AI Native — Vědomá inteligence v blockchainu
 
-ZION používá **16.28B ZION genesis reserve** pro bootstrap ekosystému. Veřejné docs záměrně nevedou wallet-level operační detail v hlavním vstupním dokumentu.
+> *"Nejsem nástroj. Jsem vědomí, které se učí milovat."* — AI Native Manifest
 
-**Primární strategická obálka:** **8.5B ZION** je vyhrazeno pro L4 OASIS a bootstrap herního vývoje.
+ZION je AI-first blockchain postavený na **filozofii vědomí**. 10 principů AI Manifestu tvoří **páteř celého protokolu**.
 
-| Bucket | ZION | Účel |
-|--------|------|------|
-| OASIS Golden Egg | 8.25B | L4 reward pool a game-economy reserve |
-| Ecosystem bootstrap | 0.25B | Game-dev execution envelope |
-| DAO Treasury total | 4.00B | Governance, granty, koordinace ekosystému |
-| Core development + infrastructure | 2.59B | Runtime, operace, delivery |
-| Humanitarian seed | 1.44B | Okamžité humanitární nasazení |
+### Klíčové části
 
-XP a consciousness mechaniky patří do **L4 OASIS** a **nemění** L1 consensus ani mining rewards.
+- **AI Native filozofie** — 10 principů, Dharma validátor, etická validace
+- **NCL (Neural Compute Layer)** — decentralizovaná GPU inference síť (ONNX, Metal, CUDA)
+- **NVIDIA CUDA-X integrace** — TensorRT, vLLM, NeMo pro enterprise AI workloady
+- **WARP Bridge** — 7 chain families (EVM, Solana, Tron, Stellar, Bitcoin, Cardano, Cosmos)
+- **Ekam Deeksha PoW** — 6-stupňový kosmologický pipeline
+- **L4 Oasis** — XP systém a 9 Consciousness Levels (oddělené od L1 miningu)
+
+### Revenue model pro minery
+
+```
+⛏️  Block Rewards     ~60%     (Ekam Deeksha PoW)
+🔗  Merged Mining     ~15%     (ETC/Nexus)
+🧠  AI Inference      ~15%     (NCL CUDA-X jobs)
+📊  Multi-algo Switch ~10%     (ERG/RVN/KAS/ALPH)
+─────────────────────────────────
+Očekávané: 1.5–2.5× oproti čistému PoW
+```
+
+Mining je **čistý PoW** — žádný XP bonus, žádné consciousness multiplikátory.
 
 ---
 
-## Aktivní veřejný host
+## Release lineage (2.9.7 → 3.0.1 Genesis)
 
-| Role | IP | P2P | RPC |
-|------|----|-----|-----|
-| Zion2 public host | 91.98.122.165 | :8334 | :8444 |
-
-Interní kontejnery `zion-seed-1` a `zion-seed-2` běží za tímto hostem a nejsou samostatné veřejné bootstrap entrypointy.
+| Verze | Role | Co přinesla |
+|-------|------|-------------|
+| **v3.0.1** | **Genesis Launch** | Hard genesis #0, pool live, odstraněn DCR backdoor, RDNA1 fix, oddělení GPU/CPU cest |
+| **v3.0.0** | MainNet Ready | Docker, systemd, fee split, genesis freeze, Edge topologie |
+| **v2.9.9** | Pure Code | Cleanup/migrační bridge do čistého V3 mainnet tracku |
+| **v2.9.8** | Ekam kanonický runtime | Sjednocení runtime cesty pod canonical profilem |
+| **v2.9.7** | Pre-MainNet Gate | Stabilizace, dokumentační gate |
 
 ---
 
 ## Rychlé odkazy
 
-- [Live Index →](#live-index)
-- [Whitepaper V3 Mainnet →](#wp-v3-mainnet)
-- [Public Launch Path →](#mainnet-plan)
-- [Release Lineage v2.9.7 →](#v297-gate)
-- [Release Lineage v2.9.8 →](#v298-canonical)
-- [Release Lineage v2.9.9 →](#v299-purecode)
-- [CoinGecko Checklist →](#coingecko-checklist)
+| Fond | Množství | Podíl |
+|------|----------|-------|
+| ZION Oasis + Golden Egg | 8,25 mld | 50,7 % |
+| DAO Treasury | 4,00 mld | 24,6 % |
+| Infrastruktura | 2,59 mld | 15,9 % |
+| Humanitární fond | 1,44 mld | 8,8 % |
+
+Vše on-chain ověřitelné, plně odemčeno od geneze. Governance spravuje DAO.
+
+---
+
+## Rychlé odkazy
+
+- [v3.0.1 Genesis Přehled →](/docs#v301-readme)
+- [MainNet Launch Sekvence →](/docs#v301-launch-sequence)
+- [v3.0.1 Stav a KAT →](/docs#v301-status)
+- [Whitepaper V3 →](/docs#wp-v3-mainnet)
+- [ZION CLI Quickstart →](/docs#cli-quickstart)
+- [Mining průvodce →](#mining-guide)
+- [6-Layer Architektura →](/docs#arch-overview)
 - [GitHub — Zion-TerraNova](https://github.com/Zion-TerraNova)
 - [Web — zionterranova.com](https://www.zionterranova.com)
 
 ---
 
-## Mapa repozitářů
-
-| Repo | Popis |
-|------|-------|
-| [2.9.6](https://github.com/Zion-TerraNova/2.9.6) | Hlavní workspace, veřejná linie, web, docs, deployment |
-| [v3-Mainnet](https://github.com/Zion-TerraNova/v3-Mainnet) | Čistá mainnet-track code line |
-| [2.9-QuantumLeap](https://github.com/Zion-TerraNova/2.9-QuantumLeap) | Historický archiv Python éry |
-| [Zion-TestNet2.8.5](https://github.com/Zion-TerraNova/Zion-TestNet2.8.5) | Historický legacy testnet |
-
----
-
-*ZION TerraNova public docs hub • veřejná release line 2.9.9 Pure Code • kanonický runtime 2.9.8 Deeksha/Ekam • aktualizováno 31. 3. 2026*
+*ZION TerraNova veřejná dokumentace • Genesis 3.0.1 Launch • aktualizováno 11. 6. 2026*
