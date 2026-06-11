@@ -896,8 +896,8 @@ fn run_local_session(
         metrics,
         &telemetry,
         0,
-        accepted_iterations,
-        rejected_iterations,
+        hashrate.accepted_shares.load(Ordering::Relaxed),
+        hashrate.rejected_shares.load(Ordering::Relaxed),
         attempted_hashes,
         None,
         last_job_id,
@@ -999,12 +999,14 @@ fn run_local_session(
                     );
                 }
             }
+            let total_accepted = hashrate.accepted_shares.load(Ordering::Relaxed);
+            let total_rejected = hashrate.rejected_shares.load(Ordering::Relaxed);
             sync_miner_metrics(
                 metrics,
                 &telemetry,
                 iteration + 1,
-                accepted_iterations,
-                rejected_iterations,
+                total_accepted,
+                total_rejected,
                 attempted_hashes,
                 None,
                 last_job_id,
@@ -1015,8 +1017,8 @@ fn run_local_session(
             telemetry.maybe_print_status(
                 iteration + 1,
                 config.loop_count,
-                accepted_iterations,
-                rejected_iterations,
+                total_accepted,
+                total_rejected,
                 attempted_hashes,
                 None,
                 config.stats_file.as_deref(),
@@ -1096,12 +1098,14 @@ fn run_local_session(
             }
         }
 
+        let total_accepted = hashrate.accepted_shares.load(Ordering::Relaxed);
+        let total_rejected = hashrate.rejected_shares.load(Ordering::Relaxed);
         sync_miner_metrics(
             metrics,
             &telemetry,
             iteration + 1,
-            accepted_iterations,
-            rejected_iterations,
+            total_accepted,
+            total_rejected,
             attempted_hashes,
             None,
             last_job_id,
@@ -1113,8 +1117,8 @@ fn run_local_session(
         telemetry.maybe_print_status(
             iteration + 1,
             config.loop_count,
-            accepted_iterations,
-            rejected_iterations,
+            total_accepted,
+            total_rejected,
             attempted_hashes,
             None,
             config.stats_file.as_deref(),
@@ -1136,8 +1140,8 @@ fn run_local_session(
         metrics,
         &telemetry,
         config.loop_count,
-        stats.accepted_shares,
-        stats.rejected_shares.saturating_add(rejected_iterations),
+        hashrate.accepted_shares.load(Ordering::Relaxed),
+        hashrate.rejected_shares.load(Ordering::Relaxed),
         attempted_hashes,
         None,
         last_job_id,
@@ -1234,8 +1238,8 @@ fn run_remote_session(
         metrics,
         &telemetry,
         0,
-        accepted_iterations,
-        rejected_iterations,
+        hashrate.accepted_shares.load(Ordering::Relaxed),
+        hashrate.rejected_shares.load(Ordering::Relaxed),
         attempted_hashes,
         None,
         last_job_id,
@@ -1284,8 +1288,8 @@ fn run_remote_session(
         metrics,
         &telemetry,
         0,
-        accepted_iterations,
-        rejected_iterations,
+        hashrate.accepted_shares.load(Ordering::Relaxed),
+        hashrate.rejected_shares.load(Ordering::Relaxed),
         attempted_hashes,
         Some(remote_job_ttl_ms),
         last_job_id,
@@ -1444,11 +1448,13 @@ fn run_remote_session(
                 }
                 other => return Err(anyhow!("expected result from pool, got {other:?}")),
             }
+            let total_accepted = hashrate.accepted_shares.load(Ordering::Relaxed);
+            let total_rejected = hashrate.rejected_shares.load(Ordering::Relaxed);
             telemetry.maybe_print_status(
                 iteration + 1,
                 config.loop_count,
-                accepted_iterations,
-                rejected_iterations,
+                total_accepted,
+                total_rejected,
                 attempted_hashes,
                 Some(remote_job_ttl_ms),
                 config.stats_file.as_deref(),
@@ -1458,8 +1464,8 @@ fn run_remote_session(
                 metrics,
                 &telemetry,
                 iteration + 1,
-                accepted_iterations,
-                rejected_iterations,
+                total_accepted,
+                total_rejected,
                 attempted_hashes,
                 Some(remote_job_ttl_ms),
                 last_job_id,
@@ -1556,12 +1562,14 @@ fn run_remote_session(
             println!("wire_submit={submit_line}");
             println!("wire_result={result_line_raw}");
         }
+        let total_accepted = hashrate.accepted_shares.load(Ordering::Relaxed);
+        let total_rejected = hashrate.rejected_shares.load(Ordering::Relaxed);
         sync_miner_metrics(
             metrics,
             &telemetry,
             iteration + 1,
-            accepted_iterations,
-            rejected_iterations,
+            total_accepted,
+            total_rejected,
             attempted_hashes,
             Some(remote_job_ttl_ms),
             last_job_id,
@@ -1572,8 +1580,8 @@ fn run_remote_session(
         telemetry.maybe_print_status(
             iteration + 1,
             config.loop_count,
-            accepted_iterations,
-            rejected_iterations,
+            total_accepted,
+            total_rejected,
             attempted_hashes,
             Some(remote_job_ttl_ms),
             config.stats_file.as_deref(),
@@ -1595,8 +1603,8 @@ fn run_remote_session(
         metrics,
         &telemetry,
         config.loop_count,
-        accepted_iterations,
-        rejected_iterations,
+        hashrate.accepted_shares.load(Ordering::Relaxed),
+        hashrate.rejected_shares.load(Ordering::Relaxed),
         attempted_hashes,
         Some(remote_job_ttl_ms),
         last_job_id,
@@ -1843,33 +1851,35 @@ impl SessionTelemetry {
         };
 
         // BUG #6 fix: suppress stdout status when interactive TUI is active (alternate screen)
-        if !TUI_ACTIVE.load(Ordering::Relaxed) {
-            // ── Machine-parseable status line (for desktop agent stdout parser) ──
-            println!(
-                "session_status iter={}/{} uptime_s={:.1} accepted={} rejected={} accept_pct={:.2} no_solution={} local_skip={} hps_overall={:.2} hps_10s={:.2} hps_60s={:.2} hps_15m={:.2} attempted_hashes={} submit_avg_ms={:.2} submit_max_ms={} remote_ttl_ms={} gpu_backend={} gpu_hps={:.2} epoch={} pool_height={} best_batch_ms={}",
-                iteration_done,
-                loop_count,
-                uptime,
-                accepted,
-                rejected,
-                accept_pct,
-                self.no_solution_iterations,
-                self.local_skip_likely_stale,
-                overall_hps,
-                hr_10s,
-                hr_60s,
-                hr_15m,
-                attempted_hashes,
-                submit_avg,
-                self.submit_max_latency_ms,
-                ttl_text,
-                if self.gpu_backend_name.is_empty() { "cpu" } else { &self.gpu_backend_name },
-                self.gpu_hashrate_hps(),
-                self.current_epoch,
-                self.pool_height,
-                self.best_batch_ms,
-            );
+        // Always print session_status for external parsers (SMOS, agents) even when TUI is active.
+        // print_speed_table is suppressed during TUI to avoid screen corruption.
+        // ── Machine-parseable status line (for desktop agent / SMOS stdout parser) ──
+        println!(
+            "session_status iter={}/{} uptime_s={:.1} accepted={} rejected={} accept_pct={:.2} no_solution={} local_skip={} hps_overall={:.2} hps_10s={:.2} hps_60s={:.2} hps_15m={:.2} attempted_hashes={} submit_avg_ms={:.2} submit_max_ms={} remote_ttl_ms={} gpu_backend={} gpu_hps={:.2} epoch={} pool_height={} best_batch_ms={}",
+            iteration_done,
+            loop_count,
+            uptime,
+            accepted,
+            rejected,
+            accept_pct,
+            self.no_solution_iterations,
+            self.local_skip_likely_stale,
+            overall_hps,
+            hr_10s,
+            hr_60s,
+            hr_15m,
+            attempted_hashes,
+            submit_avg,
+            self.submit_max_latency_ms,
+            ttl_text,
+            if self.gpu_backend_name.is_empty() { "cpu" } else { &self.gpu_backend_name },
+            self.gpu_hashrate_hps(),
+            self.current_epoch,
+            self.pool_height,
+            self.best_batch_ms,
+        );
 
+        if !TUI_ACTIVE.load(Ordering::Relaxed) {
             // ── Professional colored UI table ──
             let uptime_secs = uptime as u64;
             let gpu_ui: Vec<(String, u32, u64, u32, Option<u32>, Option<u32>)> = self
