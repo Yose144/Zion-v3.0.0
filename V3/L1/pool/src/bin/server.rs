@@ -2099,7 +2099,10 @@ impl RoutingStats {
 
     fn snapshot_line(&self) -> String {
         let total = self.total_submits.max(1);
-        let total_rejected = self.total_submits.saturating_sub(self.total_accepted);
+        let total_rejected = self
+            .total_submits
+            .saturating_sub(self.total_accepted)
+            .saturating_sub(self.total_stale);
         let total_accept_rate = self.total_accepted as f64 * 100.0 / total as f64;
 
         let mut out = String::new();
@@ -2161,7 +2164,10 @@ impl RoutingStats {
 
     #[allow(dead_code)]
     fn snapshot_json(&self) -> String {
-        let total_rejected = self.total_submits.saturating_sub(self.total_accepted);
+        let total_rejected = self
+            .total_submits
+            .saturating_sub(self.total_accepted)
+            .saturating_sub(self.total_stale);
         let accept_rate = if self.total_submits == 0 {
             0.0
         } else {
@@ -2169,10 +2175,11 @@ impl RoutingStats {
         };
 
         format!(
-            "{{\"submits\":{},\"accepted\":{},\"rejected\":{},\"accept_rate_pct\":{:.2},\"groups\":{{\"zion\":{{\"submits\":{},\"accepted\":{}}},\"revenue\":{{\"submits\":{},\"accepted\":{}}},\"ncl\":{{\"submits\":{},\"accepted\":{}}},\"auto\":{{\"submits\":{},\"accepted\":{}}}}},\"sources\":{{\"zion\":{{\"submits\":{},\"accepted\":{}}},\"blake3\":{{\"submits\":{},\"accepted\":{}}},\"ncl\":{{\"submits\":{},\"accepted\":{}}}}}}}",
+            "{{\"submits\":{},\"accepted\":{},\"rejected\":{},\"stale\":{},\"accept_rate_pct\":{:.2},\"groups\":{{\"zion\":{{\"submits\":{},\"accepted\":{}}},\"revenue\":{{\"submits\":{},\"accepted\":{}}},\"ncl\":{{\"submits\":{},\"accepted\":{}}},\"auto\":{{\"submits\":{},\"accepted\":{}}}}},\"sources\":{{\"zion\":{{\"submits\":{},\"accepted\":{}}},\"blake3\":{{\"submits\":{},\"accepted\":{}}},\"ncl\":{{\"submits\":{},\"accepted\":{}}}}}}}",
             self.total_submits,
             self.total_accepted,
             total_rejected,
+            self.total_stale,
             accept_rate,
             self.group_submits[group_index(SessionGroup::Zion)],
             self.group_accepted[group_index(SessionGroup::Zion)],
@@ -2207,7 +2214,9 @@ impl RoutingStats {
         let _ = writeln!(
             out,
             "zion_pool_rejected_total {}",
-            self.total_submits.saturating_sub(self.total_accepted)
+            self.total_submits
+                .saturating_sub(self.total_accepted)
+                .saturating_sub(self.total_stale)
         );
         let _ = writeln!(out, "# HELP zion_pool_stale_total Stale shares.");
         let _ = writeln!(out, "# TYPE zion_pool_stale_total counter");
@@ -2246,7 +2255,10 @@ impl RoutingStats {
 
     #[allow(dead_code)]
     fn snapshot_json_ext(&self, active_sessions: u64, uptime_s: u64) -> String {
-        let total_rejected = self.total_submits.saturating_sub(self.total_accepted);
+        let total_rejected = self
+            .total_submits
+            .saturating_sub(self.total_accepted)
+            .saturating_sub(self.total_stale);
         let accept_rate = if self.total_submits == 0 {
             0.0
         } else {
@@ -2254,10 +2266,11 @@ impl RoutingStats {
         };
 
         format!(
-            "{{\"submits\":{},\"accepted\":{},\"rejected\":{},\"accept_rate_pct\":{:.2},\"active_sessions\":{},\"uptime_s\":{},\"groups\":{{\"zion\":{{\"submits\":{},\"accepted\":{}}},\"revenue\":{{\"submits\":{},\"accepted\":{}}},\"ncl\":{{\"submits\":{},\"accepted\":{}}},\"auto\":{{\"submits\":{},\"accepted\":{}}}}},\"sources\":{{\"zion\":{{\"submits\":{},\"accepted\":{}}},\"blake3\":{{\"submits\":{},\"accepted\":{}}},\"ncl\":{{\"submits\":{},\"accepted\":{}}}}}}}",
+            "{{\"submits\":{},\"accepted\":{},\"rejected\":{},\"stale\":{},\"accept_rate_pct\":{:.2},\"active_sessions\":{},\"uptime_s\":{},\"groups\":{{\"zion\":{{\"submits\":{},\"accepted\":{}}},\"revenue\":{{\"submits\":{},\"accepted\":{}}},\"ncl\":{{\"submits\":{},\"accepted\":{}}},\"auto\":{{\"submits\":{},\"accepted\":{}}}}},\"sources\":{{\"zion\":{{\"submits\":{},\"accepted\":{}}},\"blake3\":{{\"submits\":{},\"accepted\":{}}},\"ncl\":{{\"submits\":{},\"accepted\":{}}}}}}}",
             self.total_submits,
             self.total_accepted,
             total_rejected,
+            self.total_stale,
             accept_rate,
             active_sessions,
             uptime_s,
@@ -2522,7 +2535,8 @@ fn build_stats_payload(
         },
         "shares": {
             "valid": stats.total_accepted,
-            "invalid": stats.total_submits.saturating_sub(stats.total_accepted),
+            "invalid": stats.total_submits.saturating_sub(stats.total_accepted).saturating_sub(stats.total_stale),
+            "stale": stats.total_stale,
             "total": stats.total_submits,
             "no_solution": telemetry.miners.values().map(|miner| miner.no_solution_jobs).sum::<u64>()
         },
@@ -2551,7 +2565,8 @@ fn build_stats_payload(
         "routing": {
             "submits": stats.total_submits,
             "accepted": stats.total_accepted,
-            "rejected": stats.total_submits.saturating_sub(stats.total_accepted),
+            "rejected": stats.total_submits.saturating_sub(stats.total_accepted).saturating_sub(stats.total_stale),
+            "stale": stats.total_stale,
             "accept_rate_pct": if stats.total_submits == 0 { 0.0 } else { stats.total_accepted as f64 * 100.0 / stats.total_submits as f64 },
             "groups": {
                 "zion": {
