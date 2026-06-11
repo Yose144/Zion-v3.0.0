@@ -439,11 +439,13 @@ pub mod opencl_deeksha {
             })
             .unwrap_or(2_000_000_000); // fallback 2 GB
 
-        // Use configurable % of VRAM for scratchpad (default 25%)
+        // Use configurable % of VRAM for scratchpad (default 65%)
+        // Mining-only rigs (SMOS) can safely use most VRAM; 65% leaves
+        // headroom for NPU buffers and driver overhead.
         let vram_pct: usize = std::env::var("ZION_OCL_VRAM_PCT")
             .ok()
             .and_then(|v| v.trim().parse().ok())
-            .unwrap_or(25)
+            .unwrap_or(65)
             .clamp(10, 90);
         let usable = (global_mem * vram_pct) / 100;
         let max_by_mem = usable / SCRATCHPAD_BYTES;
@@ -454,9 +456,10 @@ pub mod opencl_deeksha {
             .and_then(|v| v.trim().parse::<usize>().ok())
             .unwrap_or(usize::MAX);
 
-        // GCN devices (Vega, Polaris, gfx6-9) cap at 4096 work items.
-        // RDNA (gfx10+) scales better with larger work_size thanks to
-        // ulong-width volatile scratchpad accesses.
+        // GCN devices (Vega, Polaris, gfx6-9) cap at 16384 work items.
+        // Previous 4096 cap was overly conservative — GCN wave64 handles
+        // memory-bound scratchpad workloads well when VRAM allows.
+        // RDNA (gfx10+) can scale even higher via ulong-width accesses.
         let dev = device.name().unwrap_or_default().to_ascii_lowercase();
         let gcn_cap = if dev.contains("vega")
             || dev.contains("polaris")
@@ -467,7 +470,7 @@ pub mod opencl_deeksha {
             || dev.contains("gfx8")
             || dev.contains("gfx9")
         {
-            4096
+            16384
         } else {
             usize::MAX
         };
