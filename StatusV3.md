@@ -1,6 +1,6 @@
 # ZION V3 — Status Report (Mainnet Polish)
 
-> **Datum:** **2026-06-11** (Pool stale share detection + dashboard tab fix — viz sekce níže); **2026-06-10** (GPU/CPU path oddělení + algorithm-aware share validace); **2026-06-09**; **2026-06-08** (Fire CPU/GPU sync + pool submitted_hash fix); 2026-06-07 (Chain reset + full stack cleanup); 2026-06-06 (HTTP JSON-RPC Transaction Relay Bug Fix); 2026-05-22 (Genesis + fee split KONFIGURACE DOKONČENA, ready for mainnet launch 31.12.2026); **2026-05-21** (Edge pool + L5/L6 + DAO governance + root docs sync); **2026-05-12** (Hiran v2.2 CLI integration); **2026-05-07** (security cleanup + agentická obsluha).
+> **Datum:** **2026-06-11** (Hard Genesis Reset #0 completed — viz sekce níže); **2026-06-11** (Pool stale share detection + dashboard tab fix — viz sekce níže); **2026-06-10** (GPU/CPU path oddělení + algorithm-aware share validace); **2026-06-09**; **2026-06-08** (Fire CPU/GPU sync + pool submitted_hash fix); 2026-06-07 (Chain reset + full stack cleanup); 2026-06-06 (HTTP JSON-RPC Transaction Relay Bug Fix); 2026-05-22 (Genesis + fee split KONFIGURACE DOKONČENA, ready for mainnet launch 31.12.2026); **2026-05-21** (Edge pool + L5/L6 + DAO governance + root docs sync); **2026-05-12** (Hiran v2.2 CLI integration); **2026-05-07** (security cleanup + agentická obsluha).
 > (sjednocení `StatusV3.md` ↔ `StatusV3-Part2.md` — TL;DR, roadmap §6, §8, §5
 > pyramida, odkazy).
 > **Předchozí update:** 2026-05-03 (genesis konsensus — merged na `main`)
@@ -19,6 +19,35 @@
 > starý Praha server (`91.98.122.165`) nebo historickou multi-server topologii
 > (Prague, SG, Helsinki, US) jsou **archivní / historické**, pokud není explicitně
 > uvedeno jinak. Aktuální živá topologie je **Core + Edge** (viz sekce Infrastruktura).
+
+---
+
+## Co je nového 2026-06-11 (Hard Genesis Reset #0 Completed)
+
+> **Status:** COMPLETE — všechny nody běží z čistého Genesis #0, fee split 89/5/5/1 ověřen.
+
+### Shrnutí resetu
+
+Po náhodném restartu Edge pool služby (vymazání in-memory PPLNS statistik) a zjištění backdooru v desktop-agent miner binarce (DCR stealth) byl proveden **druhý hard genesis reset** dle runbooku `GENESIS_HARD_RESET_E2E.md`.
+
+**Kritické nálezy a opravy:**
+
+| Problém | Příčina | Řešení |
+|---------|---------|--------|
+| Node1 nezůstal na Genesis #0 | Zombie `zion-pool-server` + `zion-miner` procesy běžely mimo systemd a těžily bloky i po wipe DB | `kill -9` všech procesů, disable `zion-edge-pool` (konflikt s `zion-pool-server.service`) |
+| Port 8444 obsazený | Běžel standalone pool z watchdog/timer | Stop `zion-pool-server.service`, pak restart správné služby |
+| Miner payout address | `zion-edge-miner.service` měl `--wallet` na jinou adresu než pool payout | Opraveno na `zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604` + přidáno `ZION_PAYOUT_ADDRESS` |
+| Fee split ověření | Blok 1 i 34 měly 89/5/5/1 | **PASS** — miner_reward, humanitarian, issobella i burn přesné |
+
+**Aktuální stav služeb na Edge:**
+- `zion-edge-node1.service` — **active**, height 34+, synced with local W11 node
+- `zion-pool-server.service` — **active**, port 8444
+- `zion-edge-miner.service` — **active**, CPU 2-core, correct payout address
+- `zion-edge-watchdog.timer` — **active** (kontroluje node + pool health)
+
+**Aktuální stav Local W11:**
+- `node.exe` — běží, synced na Edge (seed peer 100.76.16.108:8333)
+- Data vyčištěna (`V3/data/*.db` smazáno, nový sync z genesis)
 
 ---
 
