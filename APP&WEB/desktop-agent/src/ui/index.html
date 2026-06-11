@@ -4267,6 +4267,10 @@
             <svg class="tab-icon icon" aria-hidden="true"><use href="#i-star"></use></svg>
             <span>Payouts</span>
           </div>
+          <div class="section-tab" data-section="wallet-recovery">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-key"></use></svg>
+            <span>Recovery</span>
+          </div>
           <div class="section-tab" data-section="wallet-manage">
             <svg class="tab-icon icon" aria-hidden="true"><use href="#i-settings"></use></svg>
             <span>Manage</span>
@@ -4556,6 +4560,37 @@
           </div>
         </div>
 
+        <!-- ═══ SECTION: Recovery ═══ -->
+        <div id="wallet-recovery" class="section-panel">
+          <div class="control-panel">
+            <h2 class="panel-title-row">
+              <svg class="icon" aria-hidden="true"><use href="#i-key"></use></svg>
+              <span>Recover Wallet</span>
+            </h2>
+            <p class="muted-note">Restore your wallet from a 12-word backup recovery phrase.</p>
+            <div class="form-group">
+              <label>Recovery Phrase (12 words)</label>
+              <textarea id="import-mnemonic" rows="2" placeholder="word1 word2 word3 ... word12" class="textarea-no-resize"></textarea>
+            </div>
+            <div class="form-two-col">
+              <div class="form-group form-group-no-margin">
+                <label>Wallet Name</label>
+                <input type="text" id="import-wallet-name" placeholder="Recovered Wallet" />
+              </div>
+              <div class="form-group form-group-no-margin">
+                <label>Password</label>
+                <input type="password" id="import-wallet-password" placeholder="Password to encrypt..." />
+              </div>
+            </div>
+            <div class="button-group button-group-mt-14">
+              <button class="btn btn-primary" id="import-wallet-btn">
+                <svg class="icon" aria-hidden="true"><use href="#i-key"></use></svg>
+                <span>Recover Wallet</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
         <!-- ═══ SECTION: Manage ═══ -->
         <div id="wallet-manage" class="section-panel">
 
@@ -4628,35 +4663,6 @@
             </div>
           </div>
 
-          <!-- Import Wallet -->
-          <div class="section-divider">Import</div>
-          <div class="control-panel">
-            <h2 class="panel-title-row">
-              <svg class="icon" aria-hidden="true"><use href="#i-import"></use></svg>
-              <span>Import Wallet</span>
-            </h2>
-            <p class="muted-note">Restore wallet from 12-word recovery phrase.</p>
-            <div class="form-group">
-              <label>Recovery Phrase (12 words)</label>
-              <textarea id="import-mnemonic" rows="2" placeholder="word1 word2 word3 ... word12" class="textarea-no-resize"></textarea>
-            </div>
-            <div class="form-two-col">
-              <div class="form-group form-group-no-margin">
-                <label>Wallet Name</label>
-                <input type="text" id="import-wallet-name" placeholder="Imported Wallet" />
-              </div>
-              <div class="form-group form-group-no-margin">
-                <label>Password</label>
-                <input type="password" id="import-wallet-password" placeholder="Password to encrypt..." />
-              </div>
-            </div>
-            <div class="button-group button-group-mt-14">
-              <button class="btn btn-primary" id="import-wallet-btn">
-                <svg class="icon" aria-hidden="true"><use href="#i-import"></use></svg>
-                <span>Import Wallet</span>
-              </button>
-            </div>
-          </div>
         </div>
       </div>
 
