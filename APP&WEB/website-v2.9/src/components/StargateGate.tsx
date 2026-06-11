@@ -144,7 +144,7 @@ export default function StargateGate() {
         initial={{ opacity: 0, scale: 0.85 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 1.2, ease: 'easeOut', delay: 0.6 }}
-        className="relative mx-auto w-full max-w-[420px] aspect-square"
+        className="relative mx-auto w-full max-w-[300px] sm:max-w-[380px] md:max-w-[420px] aspect-square"
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
       >
