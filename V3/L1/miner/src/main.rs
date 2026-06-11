@@ -1053,6 +1053,13 @@ fn run_local_session(
             config.revenue_value_usd,
             &current_algorithm,
         );
+        
+        // Celebrate block found with ASCII art flag
+        if decision.sealed_block.is_some() {
+            let hash_prefix: String = solution.hash[..6].iter().map(|x| format!("{:02x}", x)).collect();
+            crate::ui::log_block_found(job.height, solution.candidate.nonce, &hash_prefix);
+        }
+        
         if matches!(decision.status, ShareStatus::Accepted) {
             accepted_iterations += 1;
             hashrate.record_share(true);
