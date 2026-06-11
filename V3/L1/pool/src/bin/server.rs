@@ -2101,8 +2101,8 @@ impl RoutingStats {
         let mut out = String::new();
         let _ = write!(
             out,
-            "submits={} accepted={} rejected={} accept_rate={:.2}%",
-            self.total_submits, self.total_accepted, total_rejected, total_accept_rate
+            "submits={} accepted={} rejected={} stale={} accept_rate={:.2}%",
+            self.total_submits, self.total_accepted, total_rejected, self.total_stale, total_accept_rate
         );
 
         for group in [
@@ -2205,6 +2205,9 @@ impl RoutingStats {
             "zion_pool_rejected_total {}",
             self.total_submits.saturating_sub(self.total_accepted)
         );
+        let _ = writeln!(out, "# HELP zion_pool_stale_total Stale shares.");
+        let _ = writeln!(out, "# TYPE zion_pool_stale_total counter");
+        let _ = writeln!(out, "zion_pool_stale_total {}", self.total_stale);
         let accept_rate = if self.total_submits == 0 {
             0.0
         } else {
