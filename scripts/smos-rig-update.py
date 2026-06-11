@@ -10,7 +10,8 @@ OPTS = (
     f"{MINER_URL} "
     f"--pool 77.42.71.94:8444 "
     f"--wallet zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4 "
-    f"--worker vega-smos"
+    f"--worker vega-smos "
+    f"--algorithm deeksha_lite_fire"
 )
 
 def token():
