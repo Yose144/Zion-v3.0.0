@@ -8,7 +8,7 @@ host = "77.42.71.94"
 port = 8444
 
 [miner]
-wallet = "zion1f8m55606u500z8l7f8p7n85588s3x70048c66j3"
+wallet = "zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604"
 btc_wallet = ""
 threads = "auto"
 backend = "auto"
