@@ -9,7 +9,7 @@ cd /d "C:\Users\yosef\Desktop\Zion\2.9.6-main"
 if not exist "logs" mkdir logs
 
 :: -- Sit -----------------------------------------------------------------------
-set ZION_POOL_ADDR=77.42.71.94:8444
+set ZION_POOL_ADDR=100.76.16.108:8444
 set ZION_LOOP_COUNT=1000000
 
 :: -- Identita ------------------------------------------------------------------

@@ -1,61 +1,10 @@
 [package]
-name = "deeksha-debug"
+name = "deekshadebug"
 version = "0.1.0"
 edition = "2021"
 
-[[bin]]
-name = "deeksha-debug"
-path = "src/main.rs"
-
-[[bin]]
-name = "bench_gpu_overhead"
-path = "src/bench_gpu_overhead.rs"
-
-[[bin]]
-name = "bench_double_buffer"
-path = "src/bench_double_buffer.rs"
-
-[[bin]]
-name = "bench_alloc_overhead"
-path = "src/bench_alloc_overhead.rs"
-
-[[bin]]
-name = "bench_persistent_kernel"
-path = "src/bench_persistent_kernel.rs"
-
-[[bin]]
-name = "debug_stages"
-path = "src/bin/debug_stages.rs"
-
-[[bin]]
-name = "bench_lite_fire"
-path = "src/bin/bench_lite_fire.rs"
-
-[[bin]]
-name = "deeksha_lite_benchmark"
-path = "src/bin/deeksha_lite_benchmark.rs"
-
-[[bin]]
-name = "deeksha_lite_optimized_benchmark"
-path = "src/bin/deeksha_lite_optimized_benchmark.rs"
-
-[[bin]]
-name = "deeksha_lite_fire_optimized_benchmark"
-path = "src/bin/deeksha_lite_fire_optimized_benchmark.rs"
-
-[[bin]]
-name = "compare_all_algorithms"
-path = "src/bin/compare_all_algorithms.rs"
-
-[lib]
-name = "deeksha_debug"
-path = "src/lib.rs"
+[workspace]
 
 [dependencies]
-zion-cosmic-harmony = { path = "../V3/L1/cosmic-harmony" }
-rand = "0.8"
-rayon = "1"
-hex = "0.4"
-blake3 = "1.5"
 sha3 = "0.10"
-ocl = "0.19"
+hex = "0.4"
