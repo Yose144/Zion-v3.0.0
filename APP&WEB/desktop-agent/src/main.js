@@ -2156,7 +2156,10 @@ function startMiningV3(config, v3Path) {
   // ── 6. Build CLI args ──────────────────────────────────────────────────────
   const args = ['--pool', pool, '--wallet', wallet];
   if (worker) args.push('--worker', worker);
-  if (effectiveThreads > 0) args.push('--threads', String(effectiveThreads));
+  // ── CRITICAL: do NOT pass --threads when GPU mining.
+  // The V3 miner auto-detects CPU cores for command-buffer encoding;
+  // forcing --threads on CLI collapses GPU hashrate from ~3.8 KH/s to ~0.3 KH/s.
+  if (!wantsGpu && effectiveThreads > 0) args.push('--threads', String(effectiveThreads));
   if (wantsGpu) {
     args.push('--gpu', selectedGpuBackend);
   }
@@ -2294,7 +2297,6 @@ function startMiningV3(config, v3Path) {
     const skip = shouldSkipFileLogLine(output);
     if (!skip) safeMinerLogWriteV3(`[STDOUT] ${output}`);
     if (!skip) enqueueMinerOutputToRenderer('stdout', output);
-    maybeEmitBlockFound(output);
     parseMinerOutput(output);
   });
 
