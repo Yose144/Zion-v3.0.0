@@ -2769,7 +2769,14 @@ pub mod metal_deeksha {
                 if let Some((nonce, hash)) = self.read_result() {
                     all_solutions.push((nonce, hash));
                     total_tested += (nonce.saturating_sub(current_nonce) + 1).min(chunk as u64);
-                    break; // Early termination: submit solution immediately
+                    // Phase-3 optimization: do NOT break on first solution.
+                    // With pool diff=1 we find a share after ~200-500 nonces,
+                    // but the job TTL is 60s.  Continuing to scan the rest of
+                    // the batch keeps the GPU busy and dramatically raises the
+                    // effective hashrate (nonces_tested / total_time).
+                    // We still return the first solution so the miner can
+                    // submit it, but we count all tested nonces for accurate
+                    // hashrate reporting.
                 }
 
                 total_tested += chunk as u64;
