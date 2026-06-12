@@ -6,12 +6,11 @@ API = "https://api.simplemining.net"
 RIG = 518837
 GROUP = 1773590
 MINER_URL = "https://zionterranova.com/zion-miner/zion-sm3042c.zip"
-OPTS = (
-    f"{MINER_URL} "
+CUSTOM_MINER = MINER_URL  # Use customMiner field instead of options string
+MINER_OPTS = (
     f"--pool 77.42.71.94:8444 "
-    f"--wallet zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4 "
-    f"--worker vega-smos "
-    f"--algorithm deeksha_lite_fire"
+    f"--wallet zion1n0s6e756p7r360a0e47582n7r5t2e3t4e2wq5c8 "
+    f"--worker vega-smos"
 )
 
 def token():
@@ -63,8 +62,8 @@ if __name__ == "__main__":
     with urllib.request.urlopen(req, timeout=30) as r:
         print(f"   HTTP {r.status} len={r.headers.get('Content-Length')}")
 
-    print(f">> update group {GROUP}")
-    api("PUT", f"/rig-groups/{GROUP}", {"minerOptions": OPTS})
+    print(f">> update group {GROUP} with customMiner + minerOptions")
+    api("PUT", f"/rig-groups/{GROUP}", {"customMiner": CUSTOM_MINER, "minerOptions": MINER_OPTS})
 
     print(">> clear cached miner on rig")
     api("PATCH", "/rigs/execute-command", {
