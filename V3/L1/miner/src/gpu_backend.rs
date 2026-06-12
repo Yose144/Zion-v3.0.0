@@ -2491,17 +2491,17 @@ pub mod metal_deeksha {
                 .map_err(|e| anyhow::anyhow!("Metal pipeline creation failed: {:?}", e))?;
 
             let max_tpg = pipeline.max_total_threads_per_threadgroup() as usize;
-            // Memory-hard workloads (256 KiB scratchpad) benefit from smaller
-            // threadgroups to reduce L2 pressure.  Use 64 on M1 and let the
-            // GPU schedule many concurrent threadgroups across its cores.
-            // On M2+/Pro/Max larger threadgroups help hide latency.
-            let threads_per_tg = if device_name.contains("M1") {
-                64
-            } else if device_name.contains("Pro")
+            // Memory-hard workloads (256 KiB scratchpad) benefit from larger
+            // threadgroups on Apple Silicon to saturate GPU cores.
+            // M1 has 8 GPU cores; 128 or 256 threads per TG hides latency better
+            // than 64 when each thread touches 256 KiB scratchpad.
+            let threads_per_tg = if device_name.contains("Pro")
                 || device_name.contains("Max")
                 || device_name.contains("Ultra")
             {
                 256
+            } else if device_name.contains("M1") {
+                128
             } else {
                 128
             }
@@ -2509,13 +2509,15 @@ pub mod metal_deeksha {
 
             // Auto-cap batch_size based on device memory.
             // Each thread needs 256 KiB scratchpad.
-            // M1 (8 GB shared): ~58% optimal to avoid memory pressure.
-            // Pro/Max/Ultra (16-192 GB): can use more.
+            // Apple Silicon uses unified memory — we can be more aggressive than
+            // the old 58% limit, but must leave headroom for OS + other apps.
+            // Pro/Max/Ultra (16-192 GB): can use 75%+.
+            // M1/M2 base (8 GB): 65% is safe and still 2× the old default.
             let recommended = device.recommended_max_working_set_size();
             let pct = if recommended > 12_000_000_000 {
-                75 // Pro/Max/Ultra: plenty of GPU memory
+                75 // Pro/Max/Ultra: plenty of unified memory
             } else {
-                58 // M1/M2 base: avoid memory pressure on shared RAM
+                65 // M1/M2 base: unified memory, but stay safe
             };
             let max_scratch_bytes = (recommended / 100) * pct;
             let max_threads_by_mem = (max_scratch_bytes / 262_144) as usize;
@@ -2532,15 +2534,25 @@ pub mod metal_deeksha {
             let result_hash_buf = device.new_buffer(32, opts); // hash output
 
             // Scratchpad: batch_size × 256 KiB per thread
-            let scratch_bytes = (batch_size as u64) * 262_144u64;
-            let scratchpad_buf = device.new_buffer(scratch_bytes, opts);
-            if scratchpad_buf.length() < scratch_bytes {
-                anyhow::bail!(
-                    "scratchpad allocation failed: need {} MiB, got {} bytes (device recommended {} MiB)",
-                    scratch_bytes / (1024 * 1024),
-                    scratchpad_buf.length(),
-                    recommended / (1024 * 1024),
-                );
+            // Retry with progressively smaller batch_size if allocation fails.
+            let mut batch_size = batch_size;
+            let mut scratchpad_buf;
+            let mut scratch_bytes = 0u64;
+            loop {
+                scratch_bytes = (batch_size as u64) * 262_144u64;
+                scratchpad_buf = device.new_buffer(scratch_bytes, opts);
+                if scratchpad_buf.length() >= scratch_bytes {
+                    break;
+                }
+                if batch_size <= threads_per_tg {
+                    anyhow::bail!(
+                        "scratchpad allocation failed: need {} MiB, got {} bytes (device recommended {} MiB)",
+                        scratch_bytes / (1024 * 1024),
+                        scratchpad_buf.length(),
+                        recommended / (1024 * 1024),
+                    );
+                }
+                batch_size = (batch_size * 9 / 10).max(threads_per_tg);
             }
 
             // NPU weights — packed variable-topology format for all epochs
@@ -2597,7 +2609,7 @@ pub mod metal_deeksha {
             })
         }
 
-        fn dispatch_batch(&mut self, nonce_start: u64, count: usize) {
+        fn dispatch_batch_async(&mut self, nonce_start: u64, count: usize) -> std::sync::mpsc::Receiver<()> {
             // Write nonce base
             unsafe {
                 let ptr = self.nonce_base_buf.contents() as *mut u64;
@@ -2629,8 +2641,14 @@ pub mod metal_deeksha {
             enc.dispatch_threads(grid, tg);
             enc.end_encoding();
 
+            let (tx, rx) = std::sync::mpsc::channel();
+            let block = block::ConcreteBlock::new(move |_buffer: &metal::CommandBufferRef| {
+                let _ = tx.send(());
+            })
+            .copy();
+            cb.add_completed_handler(&block);
             cb.commit();
-            cb.wait_until_completed();
+            rx
         }
 
         fn read_result(&self) -> Option<(u64, [u8; 32])> {
@@ -2660,6 +2678,10 @@ pub mod metal_deeksha {
 
         fn backend_kind(&self) -> GpuBackendKind {
             GpuBackendKind::Metal
+        }
+
+        fn algorithm(&self) -> String {
+            "deeksha_lite_v1".to_string()
         }
 
         fn update_epoch(&mut self, height: u64) -> Result<()> {
@@ -2741,7 +2763,8 @@ pub mod metal_deeksha {
                     *ptr.add(2) = target_u32; // target
                 }
 
-                self.dispatch_batch(current_nonce, chunk);
+                let rx = self.dispatch_batch_async(current_nonce, chunk);
+                rx.recv().map_err(|_| anyhow::anyhow!("Metal async wait failed"))?;
 
                 if let Some((nonce, hash)) = self.read_result() {
                     all_solutions.push((nonce, hash));
@@ -2788,7 +2811,8 @@ pub mod metal_deeksha {
             let mut nonce = 0u64;
 
             while start.elapsed().as_secs_f64() < secs {
-                self.dispatch_batch(nonce, self.batch_size);
+                let rx = self.dispatch_batch_async(nonce, self.batch_size);
+                let _ = rx.recv();
                 total += self.batch_size as u64;
                 nonce = nonce.wrapping_add(self.batch_size as u64);
             }
