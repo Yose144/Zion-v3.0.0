@@ -397,19 +397,19 @@ export default function DharmaTemplePage() {
 
           <div className="rounded-2xl border border-white/10 overflow-hidden">
             {/* Header row */}
-            <div className="grid grid-cols-3 text-center text-[10px] uppercase tracking-[0.3em] font-semibold bg-white/5 border-b border-white/10">
+            <div className="grid grid-cols-1 sm:grid-cols-3 text-center text-[10px] uppercase tracking-[0.3em] font-semibold bg-white/5 border-b border-white/10">
               <div className="p-3 text-gray-500">{cs ? 'Dimenze' : 'Dimension'}</div>
-              <div className="p-3 text-gray-300 border-l border-white/10">🌿 Zahrada Genesis</div>
-              <div className="p-3 text-zion-gold border-l border-white/10">🕌 Dharma Temple</div>
+              <div className="p-3 text-gray-300 sm:border-l border-white/10">🌿 Zahrada Genesis</div>
+              <div className="p-3 text-zion-gold sm:border-l border-white/10">🕌 Dharma Temple</div>
             </div>
             {COMPARE.map((row, i) => (
               <div
                 key={i}
-                className="grid grid-cols-3 text-sm border-b border-white/5 last:border-0"
+                className="grid grid-cols-1 sm:grid-cols-3 text-sm border-b border-white/5 last:border-0"
               >
                 <div className="p-3 text-gray-500 text-xs">{cs ? row.dim.cs : row.dim.en}</div>
-                <div className="p-3 text-gray-300 text-xs border-l border-white/5">{cs ? row.genesis.cs : row.genesis.en}</div>
-                <div className="p-3 text-gray-300 text-xs border-l border-white/5">{cs ? row.dharma.cs : row.dharma.en}</div>
+                <div className="p-3 text-gray-300 text-xs sm:border-l border-white/5">{cs ? row.genesis.cs : row.genesis.en}</div>
+                <div className="p-3 text-gray-300 text-xs sm:border-l border-white/5">{cs ? row.dharma.cs : row.dharma.en}</div>
               </div>
             ))}
           </div>

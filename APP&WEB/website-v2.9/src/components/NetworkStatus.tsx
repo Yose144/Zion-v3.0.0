@@ -203,7 +203,7 @@ export default function NetworkStatus({ className }: { className?: string }) {
                   <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                   <span className="text-sm text-white">{node.name}</span>
                 </div>
-                <div className="flex-1 grid grid-cols-3 gap-4 text-xs">
+                <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
                   <div>
                     <span className="text-gray-500 block mb-0.5">RPC</span>
                     <span className="text-white font-mono">{node.rpcLatencyMs != null ? `${node.rpcLatencyMs}ms` : '—'}</span>

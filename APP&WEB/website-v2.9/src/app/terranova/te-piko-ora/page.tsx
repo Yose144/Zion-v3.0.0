@@ -353,10 +353,10 @@ export default function TePikoOraPage() {
           </div>
 
           <div className="rounded-2xl border border-white/10 overflow-hidden">
-            <div className="grid grid-cols-3 text-center text-[10px] uppercase tracking-[0.3em] font-semibold bg-white/5 border-b border-white/10">
+            <div className="grid grid-cols-1 sm:grid-cols-3 text-center text-[10px] uppercase tracking-[0.3em] font-semibold bg-white/5 border-b border-white/10">
               <div className="p-3 text-gray-500">{cs ? 'Polynésie' : 'Polynesia'}</div>
-              <div className="p-3 text-gray-300 border-l border-white/10">{cs ? 'Princip' : 'Principle'}</div>
-              <div className="p-3 text-gray-300 border-l border-white/10">ZION</div>
+              <div className="p-3 text-gray-300 sm:border-l border-white/10">{cs ? 'Princip' : 'Principle'}</div>
+              <div className="p-3 text-gray-300 sm:border-l border-white/10">ZION</div>
             </div>
             {[
               {
@@ -380,10 +380,10 @@ export default function TePikoOraPage() {
                 zion: { cs: 'Proof of Work + CL systém', en: 'Proof of Work + CL system' },
               },
             ].map((row, i) => (
-              <div key={i} className="grid grid-cols-3 text-sm border-b border-white/5 last:border-0">
+              <div key={i} className="grid grid-cols-1 sm:grid-cols-3 text-sm border-b border-white/5 last:border-0">
                 <div className="p-3 text-gray-300 text-xs">{cs ? row.poly.cs : row.poly.en}</div>
-                <div className="p-3 text-gray-400 text-xs border-l border-white/5">{cs ? row.principle.cs : row.principle.en}</div>
-                <div className="p-3 text-gray-300 text-xs border-l border-white/5">{cs ? row.zion.cs : row.zion.en}</div>
+                <div className="p-3 text-gray-400 text-xs sm:border-l border-white/5">{cs ? row.principle.cs : row.principle.en}</div>
+                <div className="p-3 text-gray-300 text-xs sm:border-l border-white/5">{cs ? row.zion.cs : row.zion.en}</div>
               </div>
             ))}
           </div>

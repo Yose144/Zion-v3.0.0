@@ -50,7 +50,7 @@ export default function ZionTicker() {
       <div className="pointer-events-none absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-black/80 to-transparent z-10" />
 
       <motion.div
-        className="flex gap-3"
+        className="flex gap-3 overflow-hidden"
         animate={{ x: paused ? undefined : [0, -50 * TICKER_ITEMS.length] }}
         transition={{
           x: {

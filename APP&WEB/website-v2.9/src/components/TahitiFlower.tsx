@@ -74,7 +74,7 @@ export default function TahitiFlower({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -4, scale: 0.95 }}
             transition={{ duration: 0.25 }}
-            className="absolute -bottom-16 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-xl border border-white/10 bg-black/80 px-3 py-2 backdrop-blur-md z-40"
+            className="absolute -bottom-16 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-xl border border-white/10 bg-black/80 px-3 py-2 backdrop-blur-md z-40 max-w-[90vw] overflow-hidden"
           >
             <p className="text-[10px] font-semibold text-cyan-200 tracking-wide">
               Tiare Tahiti — květina Francouzské Polynésie

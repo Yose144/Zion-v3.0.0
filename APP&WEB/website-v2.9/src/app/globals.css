@@ -39,6 +39,11 @@
     --color-fg: 230 255 240;
   }
   
+  html, body {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
   body {
     font-family: var(--font-inter);
     background:
@@ -344,13 +349,13 @@
 
 /* ═══ Mobile safety — force single column for grids without explicit mobile breakpoint ═══ */
 @media (max-width: 639px) {
-  /* Override any grid with 2+ columns that doesn't have an explicit grid-cols-1 */
-  .grid[class*="grid-cols-2"]:not([class*="grid-cols-1"]),
-  .grid[class*="grid-cols-3"]:not([class*="grid-cols-1"]),
-  .grid[class*="grid-cols-4"]:not([class*="grid-cols-1"]),
-  .grid[class*="grid-cols-5"]:not([class*="grid-cols-1"]),
-  .grid[class*="grid-cols-6"]:not([class*="grid-cols-1"]) {
-    grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+  /* Target only grids that use explicit numbered columns without ANY responsive prefix */
+  .grid.grid-cols-2:not(.grid-cols-1):not(.sm\:grid-cols-2):not(.sm\:grid-cols-1),
+  .grid.grid-cols-3:not(.grid-cols-1):not(.sm\:grid-cols-3):not(.sm\:grid-cols-1),
+  .grid.grid-cols-4:not(.grid-cols-1):not(.sm\:grid-cols-4):not(.sm\:grid-cols-1),
+  .grid.grid-cols-5:not(.grid-cols-1):not(.sm\:grid-cols-5):not(.sm\:grid-cols-1),
+  .grid.grid-cols-6:not(.grid-cols-1):not(.sm\:grid-cols-6):not(.sm\:grid-cols-1) {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
   }
 }
 
@@ -682,5 +687,13 @@ body.menu-open {
   .zion-docs-prose pre {
     padding: 1rem;
     border-radius: 8px;
+  }
+}
+
+/* ── MOBILE EMERGENCY: force single-column on all grids below 640px ── */
+@media (max-width: 639px) {
+  /* Any grid that doesn't have an explicit mobile override gets 1 column */
+  .grid:not([class*="grid-cols-1"]):not([class*="sm:grid-cols"]) {
+    grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
   }
 }

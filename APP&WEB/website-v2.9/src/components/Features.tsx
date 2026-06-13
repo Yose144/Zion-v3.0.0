@@ -81,8 +81,8 @@ export default function Features() {
           </p>
         </div>
 
-        <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-10">
-          <div className="grid sm:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {continuumTracks.map((track) => (
               <div
                 key={track.title}

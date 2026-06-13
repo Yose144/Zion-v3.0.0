@@ -7,6 +7,16 @@ import { useRouter } from 'next/navigation';
 import * as THREE from 'three';
 import clsx from 'clsx';
 
+function isWebGLAvailable() {
+  if (typeof window === 'undefined') return false;
+  try {
+    const canvas = document.createElement('canvas');
+    return !!(canvas.getContext('webgl') || canvas.getContext('experimental-webgl'));
+  } catch {
+    return false;
+  }
+}
+
 /* Real Earth texture + Moon orbit + Sun glow + starfield */
 
 const HOLO_VERT = /* glsl */ `
@@ -779,6 +789,12 @@ export type HolographicEarthProps = {
 };
 
 export default function HolographicEarth({ className }: HolographicEarthProps) {
+  const [webglOk, setWebglOk] = useState(false);
+
+  useEffect(() => {
+    setWebglOk(isWebGLAvailable());
+  }, []);
+
   return (
     <div
       className={clsx(
@@ -797,21 +813,32 @@ export default function HolographicEarth({ className }: HolographicEarthProps) {
         Holographic Earth · Solar System · Milky Way · Orion · Bright Stars · Terra Nova · drag orbit
       </p>
       <div className="absolute inset-x-0 bottom-0 top-9 sm:top-10">
-        <Canvas
-          className="h-full w-full !block"
-          dpr={[1, 2]}
-          gl={{
-            alpha: true,
-            antialias: true,
-            powerPreference: 'high-performance',
-          }}
-          onCreated={({ gl }) => {
-            gl.setClearColor(0x000000, 0);
-          }}
-          camera={{ position: [0, 0, 2.72], fov: 40 }}
-        >
-          <Scene />
-        </Canvas>
+        {webglOk ? (
+          <Canvas
+            className="h-full w-full !block"
+            dpr={[1, 2]}
+            gl={{
+              alpha: true,
+              antialias: true,
+              powerPreference: 'high-performance',
+            }}
+            onCreated={({ gl }) => {
+              gl.setClearColor(0x000000, 0);
+            }}
+            camera={{ position: [0, 0, 2.72], fov: 40 }}
+          >
+            <Scene />
+          </Canvas>
+        ) : (
+          <div className="flex h-full w-full items-center justify-center">
+            <div className="text-center">
+              <div className="mx-auto mb-2 h-12 w-12 rounded-full border border-cyan-200/20 bg-cyan-500/10 flex items-center justify-center">
+                <span className="text-lg">🌍</span>
+              </div>
+              <p className="text-[10px] text-cyan-100/40 uppercase tracking-widest">WebGL unavailable</p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

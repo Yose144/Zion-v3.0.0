@@ -300,7 +300,7 @@ export default function L3HiranPage() {
                     {model.status === 'live' ? 'Live' : 'WIP'}
                   </span>
                 </div>
-                <div className="grid grid-cols-2 gap-3 text-sm mb-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm mb-4">
                   <div><p className="text-xs text-gray-500">{cs ? 'Metoda' : 'Method'}</p><p className="text-gray-300 font-mono">{model.method}</p></div>
                   <div><p className="text-xs text-gray-500">{cs ? 'Velikost' : 'Size'}</p><p className="text-gray-300 font-mono">{model.size}</p></div>
                   <div><p className="text-xs text-gray-500">{cs ? 'Rychlost' : 'Speed'}</p><p className="text-gray-300 font-mono">{model.speed}</p></div>
