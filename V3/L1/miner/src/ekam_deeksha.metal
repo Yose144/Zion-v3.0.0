@@ -333,15 +333,23 @@ inline void b3_load_words(thread const uchar *buf, int len, thread uint *words) 
 
 inline void b3_load_words_global(device const uchar *buf, int len, thread uint *words) {
     device const uint *buf32 = (device const uint *)buf;
-    int wcount = len >> 2;
-    for (int i = 0; i < wcount; i++) words[i] = buf32[i];
-    for (int i = wcount; i < 16; i++) words[i] = 0;
-    int done = wcount << 2;
-    if (done < len) {
-        uint w = 0;
-        for (int i = done; i < len; i++)
-            w |= (uint)buf[i] << ((i - done) * 8);
-        words[wcount] = w;
+    if (len >= 64) {
+        // Fast path: 64 bytes = 16 words, no loop overhead.
+        words[0]  = buf32[0];  words[1]  = buf32[1];  words[2]  = buf32[2];  words[3]  = buf32[3];
+        words[4]  = buf32[4];  words[5]  = buf32[5];  words[6]  = buf32[6];  words[7]  = buf32[7];
+        words[8]  = buf32[8];  words[9]  = buf32[9];  words[10] = buf32[10]; words[11] = buf32[11];
+        words[12] = buf32[12]; words[13] = buf32[13]; words[14] = buf32[14]; words[15] = buf32[15];
+    } else {
+        int wcount = len >> 2;
+        for (int i = 0; i < wcount; i++) words[i] = buf32[i];
+        for (int i = wcount; i < 16; i++) words[i] = 0;
+        int done = wcount << 2;
+        if (done < len) {
+            uint w = 0;
+            for (int i = done; i < len; i++)
+                w |= (uint)buf[i] << ((i - done) * 8);
+            words[wcount] = w;
+        }
     }
 }
 
