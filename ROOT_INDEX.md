@@ -99,10 +99,12 @@
 │   ├── scripts/                       ← Training + merge scripts
 │   ├── checkpoints_vast/            ← Model checkpoints (gitignored)
 │   └── *.md                           ← Interview reports, GPU experiments
-├── HiranV2.3/                         ← AI model v2.3 (32B base, DeepSpeed, in progress)
+├── HiranV2.3/                         ← AI model v2.3 (32B base, DeepSpeed, ready for training)
 │   ├── data/                          ← Dataset generators
 │   ├── scripts/                       ← Training + benchmark scripts
-│   └── rag/                           ← Hybrid RAG (ChromaDB + vector search)
+│   ├── rag/                           ← Hybrid RAG (ChromaDB + vector search)
+│   ├── PRE_FLIGHT_CHECKLIST.md      ← Pre-training verification checklist
+│   └── benchmark_results/           ← Placeholder dry-run data (NOT real model results)
 │
 ├── docs/legal/                        ← Legal documents (licence, disclaimers, premine)
 ├── edge-deploy/                       ← Edge server deployment package
@@ -262,7 +264,7 @@ Historical docs, roadmaps, and analysis moved to [`archive/2.9.9/docs/`](archive
 |---------|------|--------|-----------|--------|
 | v2.1 | `HiranV2.1/` | ✅ Complete | Meta-Llama-3.1-8B | QLoRA |
 | v2.2 | `HiranV2.2/` | ✅ Complete | Meta-Llama-3.1-8B | QLoRA (5 stages) |
-| v2.3 | `HiranV2.3/` | 🟡 In Progress | OpenReasoning-Nemotron-32B | DeepSpeed ZeRO-3 |
+| v2.3 | `HiranV2.3/` | 🟡 Ready for Training | OpenReasoning-Nemotron-32B | DeepSpeed ZeRO-3 Full FT |
 
 ---
 

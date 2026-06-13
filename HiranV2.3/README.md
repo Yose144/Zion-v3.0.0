@@ -295,6 +295,8 @@ Hiran v2.3 is designed with deep respect for the spiritual dimensions of AI:
 
 ---
 
-**Status:** Ready for Training  
+**Status:** Ready for Training — GPU cluster provisioning pending  
 **Version:** 2.3-extended  
 **Maintainers:** ZION AI Team
+
+> **Important:** `benchmark_results/` contains placeholder dry-run data only (model `dry-run-dummy`). Real benchmark results will be generated after training completes. See `PRE_FLIGHT_CHECKLIST.md` before provisioning GPU cluster.
