@@ -334,16 +334,16 @@ bootstrap = [
           </h2>
 
           <div className="rounded-2xl border border-white/10 bg-black/40 backdrop-blur-sm overflow-hidden">
-            <div className="grid grid-cols-4 gap-2 px-6 py-3 border-b border-white/10 bg-white/[0.02]">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 px-6 py-3 border-b border-white/10 bg-white/[0.02]">
               <span className="text-[11px] text-white/30 uppercase tracking-wider">Port</span>
-              <span className="text-[11px] text-white/30 uppercase tracking-wider">Protocol</span>
-              <span className="text-[11px] text-white/30 uppercase tracking-wider">Purpose</span>
-              <span className="text-[11px] text-white/30 uppercase tracking-wider text-right">Required</span>
+              <span className="text-[11px] text-white/30 uppercase tracking-wider hidden sm:block">Protocol</span>
+              <span className="text-[11px] text-white/30 uppercase tracking-wider hidden sm:block">Purpose</span>
+              <span className="text-[11px] text-white/30 uppercase tracking-wider text-right hidden lg:block">Required</span>
             </div>
             {ports.map((p, i) => (
               <div
                 key={i}
-                className="grid grid-cols-4 gap-2 px-6 py-3 border-b border-white/[0.04] last:border-0"
+                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 px-6 py-3 border-b border-white/[0.04] last:border-0"
               >
                 <span className="font-mono text-sm text-zion-cyan/80">{p.port}</span>
                 <span className="text-sm text-white/50">{p.protocol}</span>
