@@ -4,7 +4,11 @@
 > **Base Model:** Qwen/Qwen3-32B (32.8B params, 128K context, Apache 2.0)  
 > **Training:** DeepSpeed ZeRO-3 Full Fine-Tuning  
 > **Hardware:** Vast.ai — 2x A100 SXM4 80GB  
-> **Instance ID:** 40781743  
+> **Instance ID:** 40791384 (2x A100 SXM4 80GB, 500GB disk)
+>
+> **⚠️ CRITICAL:** 500GB disk is INSUFFICIENT for default `save_total_limit=3` (needs ~1TB). 
+> The autostart script has been patched to `save_total_limit=1` and clears HF cache after model load.
+> If disk fills, training crashes on checkpoint save. Monitor with: `df -h /workspace`  
 > **Estimated Cost:** ~$50 (36-48h @ $1.04/hr)
 
 ---
@@ -25,22 +29,22 @@
 
 ### SSH Klíč
 ```
-~/.ssh/vast/hiran_v2.3_key          (private)
-~/.ssh/vast/hiran_v2.3_key.pub      (public)
-Fingerprint: SHA256:gO0g1mQJZoygHS3G99Dhg31FUrSs4pETbyJyDDQbNyU
+~/.ssh/vast/hiran_v2.4_key          (private)
+~/.ssh/vast/hiran_v2.4_key.pub      (public)
+Fingerprint: SHA256:nwasu/3QGBGgHklFguoqsr3+hS8+MmpWsv3ZEzvOFCQ
 ```
 
 ### Jak zjistit SSH port (instance se mění při restartu)
 ```bash
 API_KEY="4f86b4afa3f1219cc18708d6a6a2e6476793ae088d0e4e39d2a0baacacd592fd"
-INSTANCE_ID="40781743"
+INSTANCE_ID="40791384"
 
 curl -s "https://console.vast.ai/api/v0/instances/${INSTANCE_ID}/?api_key=${API_KEY}" | \
-  python3 -c "import json,sys; d=json.load(sys.stdin); print(f'ssh -p {d.get(\"ssh_port\")} -i ~/.ssh/vast/hiran_v2.3_key root@{d.get(\"ssh_host\")}')"
+  python3 -c "import json,sys; d=json.load(sys.stdin); print(f'ssh -p {d.get(\"ssh_port\")} -i ~/.ssh/vast/hiran_v2.4_key root@{d.get(\"ssh_host\")}')"
 ```
 
 ### Dashboard
-https://cloud.vast.ai/ — instance **40781743**
+https://cloud.vast.ai/ — instance **40791384**
 
 ### API Key (pro kontrolu stavu)
 ```
@@ -61,7 +65,7 @@ VASTAI_API_KEY="4f86b4afa3f1219cc18708d6a6a2e6476793ae088d0e4e39d2a0baacacd592fd
 ### Možnost B: Ruční připojení a spuštění
 ```bash
 # Zjisti port (viz sekce 1)
-ssh -p 21742 -i ~/.ssh/vast/hiran_v2.3_key root@ssh5.vast.ai
+ssh -p 31384 -i ~/.ssh/vast/hiran_v2.4_key root@ssh1.vast.ai
 
 # Na instanci:
 bash /workspace/hiran-v2.3/scripts/autostart.sh
@@ -84,15 +88,15 @@ bash /workspace/hiran-v2.3/scripts/autostart.sh
 ### Reálný čas (z lokálu)
 ```bash
 # Logy tréninku
-ssh -p 21742 -i ~/.ssh/vast/hiran_v2.3_key root@ssh5.vast.ai \
+ssh -p 31384 -i ~/.ssh/vast/hiran_v2.4_key root@ssh1.vast.ai \
   "tail -f /workspace/hiran-training.log"
 
 # GPU využití
-ssh -p 21742 -i ~/.ssh/vast/hiran_v2.3_key root@ssh5.vast.ai \
+ssh -p 31384 -i ~/.ssh/vast/hiran_v2.4_key root@ssh1.vast.ai \
   "watch -n 2 nvidia-smi"
 
 # Diskové místo
-ssh -p 21742 -i ~/.ssh/vast/hiran_v2.3_key root@ssh5.vast.ai \
+ssh -p 31384 -i ~/.ssh/vast/hiran_v2.4_key root@ssh1.vast.ai \
   "df -h / && du -sh /workspace/hiran-v2.3/checkpoints/ 2>/dev/null"
 ```
 
@@ -105,7 +109,7 @@ Instance běží na Vast.ai — monitoring je přes jejich dashboard. Lokální 
 
 ### Po úspěšném tréninku (na instanci)
 ```bash
-ssh -p 21742 -i ~/.ssh/vast/hiran_v2.3_key root@ssh5.vast.ai
+ssh -p 31384 -i ~/.ssh/vast/hiran_v2.4_key root@ssh1.vast.ai
 
 cd /workspace/hiran-v2.3
 source venv/bin/activate
@@ -158,41 +162,41 @@ python scripts/quantize.py \
 ```bash
 # 1. Zjisti aktuální SSH port
 API_KEY="4f86b4afa3f1219cc18708d6a6a2e6476793ae088d0e4e39d2a0baacacd592fd"
-PORT=$(curl -s "https://console.vast.ai/api/v0/instances/40781743/?api_key=${API_KEY}" | \
+PORT=$(curl -s "https://console.vast.ai/api/v0/instances/40791384/?api_key=${API_KEY}" | \
   python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('ssh_port',''))")
 
 # 2. Stažení celého checkpointu (BF16, ~65 GB)
 rsync -avz --progress \
-  -e "ssh -p ${PORT} -i ~/.ssh/vast/hiran_v2.3_key -o StrictHostKeyChecking=no" \
-  root@ssh5.vast.ai:/workspace/hiran-v2.3/checkpoints/stage1_factual/final/ \
+  -e "ssh -p ${PORT} -i ~/.ssh/vast/hiran_v2.4_key -o StrictHostKeyChecking=no" \
+  root@ssh1.vast.ai:/workspace/hiran-v2.3/checkpoints/stage1_factual/final/ \
   ~/HiranV2.3-Model/
 
 # 3. NEBO — stažení jen kvantizovaného modelu (GGUF, ~16-20 GB)
 rsync -avz --progress \
-  -e "ssh -p ${PORT} -i ~/.ssh/vast/hiran_v2.3_key -o StrictHostKeyChecking=no" \
-  root@ssh5.vast.ai:/workspace/hiran-v2.3/models/ \
+  -e "ssh -p ${PORT} -i ~/.ssh/vast/hiran_v2.4_key -o StrictHostKeyChecking=no" \
+  root@ssh1.vast.ai:/workspace/hiran-v2.3/models/ \
   ~/HiranV2.3-Model/
 
 # 4. NEBO — benchmark + eval results
 rsync -avz \
-  -e "ssh -p ${PORT} -i ~/.ssh/vast/hiran_v2.3_key -o StrictHostKeyChecking=no" \
-  root@ssh5.vast.ai:/workspace/hiran-v2.3/evaluation_results/ \
+  -e "ssh -p ${PORT} -i ~/.ssh/vast/hiran_v2.4_key -o StrictHostKeyChecking=no" \
+  root@ssh1.vast.ai:/workspace/hiran-v2.3/evaluation_results/ \
   ~/HiranV2.3-Results/
 ```
 
 ### Možnost B: scp (pro menší soubory)
 ```bash
 # Stažení eval reportů
-scp -P ${PORT} -i ~/.ssh/vast/hiran_v2.3_key \
+scp -P ${PORT} -i ~/.ssh/vast/hiran_v2.4_key \
   -o StrictHostKeyChecking=no \
-  root@ssh5.vast.ai:/workspace/hiran-v2.3/evaluation_results/*.json \
+  root@ssh1.vast.ai:/workspace/hiran-v2.3/evaluation_results/*.json \
   ~/Downloads/
 ```
 
 ### Možnost C: HuggingFace Hub upload (pokud chceš sdílet)
 ```bash
 # Na instanci, po tréninku:
-ssh -p 21742 -i ~/.ssh/vast/hiran_v2.3_key root@ssh5.vast.ai
+ssh -p 31384 -i ~/.ssh/vast/hiran_v2.4_key root@ssh1.vast.ai
 
 pip install huggingface_hub
 huggingface-cli login  # zadej svůj token
@@ -277,7 +281,7 @@ print(output['choices'][0]['text'])
 ```bash
 # Zrušení instance ušetří peníze
 API_KEY="4f86b4afa3f1219cc18708d6a6a2e6476793ae088d0e4e39d2a0baacacd592fd"
-INSTANCE_ID="40781743"
+INSTANCE_ID="40791384"
 
 curl -s -X DELETE \
   "https://console.vast.ai/api/v0/instances/${INSTANCE_ID}/?api_key=${API_KEY}"
@@ -327,4 +331,4 @@ curl -s -X DELETE \
 ---
 
 *Poslední update: 2026-06-13*  
-*Instance: 40781743 | Cost: ~$1.04/hr | GPU: A100 SXM4 x2*
+*Instance: 40791384 | Cost: ~$1.04/hr | GPU: A100 SXM4 x2*
