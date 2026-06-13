@@ -61,9 +61,9 @@ export default function NetworkLatencyPanel({ nodes, cs }: Props) {
               <span className="text-sm font-medium text-white">{node.name}</span>
             </div>
 
-            <div className="flex-1 grid grid-cols-3 gap-4">
-              <div className="flex flex-col gap-1">
-                <span className="text-[10px] uppercase tracking-wider text-gray-500">RPC</span>
+            <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="flex flex-row sm:flex-col items-center sm:items-start gap-2 sm:gap-1">
+                <span className="text-[10px] uppercase tracking-wider text-gray-500 w-12 sm:w-auto">RPC</span>
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-mono text-white w-12">
                     {node.rpcLatencyMs != null ? `${node.rpcLatencyMs}ms` : '—'}
@@ -71,8 +71,8 @@ export default function NetworkLatencyPanel({ nodes, cs }: Props) {
                   {latencyBar(node.rpcLatencyMs)}
                 </div>
               </div>
-              <div className="flex flex-col gap-1">
-                <span className="text-[10px] uppercase tracking-wider text-gray-500">Pool</span>
+              <div className="flex flex-row sm:flex-col items-center sm:items-start gap-2 sm:gap-1">
+                <span className="text-[10px] uppercase tracking-wider text-gray-500 w-12 sm:w-auto">Pool</span>
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-mono text-white w-12">
                     {node.poolLatencyMs != null ? `${node.poolLatencyMs}ms` : '—'}
@@ -80,8 +80,8 @@ export default function NetworkLatencyPanel({ nodes, cs }: Props) {
                   {latencyBar(node.poolLatencyMs)}
                 </div>
               </div>
-              <div className="flex flex-col gap-1">
-                <span className="text-[10px] uppercase tracking-wider text-gray-500">{cs ? 'Lag' : 'Lag'}</span>
+              <div className="flex flex-row sm:flex-col items-center sm:items-start gap-2 sm:gap-1">
+                <span className="text-[10px] uppercase tracking-wider text-gray-500 w-12 sm:w-auto">{cs ? 'Lag' : 'Lag'}</span>
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-mono text-white w-12">
                     {node.blockLag != null ? `${node.blockLag}` : '—'}
