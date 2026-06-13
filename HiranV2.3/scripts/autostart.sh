@@ -134,6 +134,16 @@ except Exception as e:
 "
 log "Model tokenizer ready"
 
+# --- CRITICAL: Clear HF cache to save disk space (500GB insufficient for 3 checkpoints) ---
+log "Clearing HuggingFace model cache to free disk..."
+rm -rf /workspace/.cache/huggingface/models--Qwen--Qwen3-32B 2>/dev/null || true
+log "Freed ~60GB disk space"
+
+# --- Patch training script: save_total_limit=3 -> 1 (500GB disk limit) ---
+log "Patching save_total_limit for 500GB disk..."
+sed -i 's/save_total_limit=3/save_total_limit=1/g' scripts/train_v2.3_fullft.py
+log "Patched save_total_limit=1"
+
 # --- 7. Resume Check ---
 log "[7/10] Checking for existing checkpoints..."
 RESUME_FROM=""
