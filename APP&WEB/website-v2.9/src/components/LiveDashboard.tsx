@@ -150,7 +150,7 @@ export default function LiveDashboard() {
               </div>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {highlightCards.map((card) => (
                 <div
                   key={card.label}
@@ -171,7 +171,7 @@ export default function LiveDashboard() {
               ))}
             </div>
 
-            <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {auxCards.map((card) => (
                 <div key={card.label} className="group relative rounded-2xl border border-white/10 bg-black/40 p-4">
                   <div className="flex items-center justify-between">

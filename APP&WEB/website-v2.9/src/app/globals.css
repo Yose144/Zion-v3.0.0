@@ -690,10 +690,9 @@ body.menu-open {
   }
 }
 
-/* ── MOBILE EMERGENCY: force single-column on all grids below 640px ── */
-@media (max-width: 639px) {
-  /* Any grid that doesn't have an explicit mobile override gets 1 column */
-  .grid:not([class*="grid-cols-1"]):not([class*="sm:grid-cols"]) {
-    grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+/* ── Responsive grid safety ── */
+@layer utilities {
+  .responsive-grid-1 {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
   }
 }
