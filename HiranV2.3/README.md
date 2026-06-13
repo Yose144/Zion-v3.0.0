@@ -11,7 +11,7 @@
 
 Hiran v2.3 is a **domain-specific fine-tuned model** with a **hybrid RAG architecture** for the ZION ecosystem. After v2.2 proved that QLoRA on 8B models cannot memorize precise facts (e.g. fee split 89/5/5/1), v2.3 uses:
 
-- **Full fine-tuning on Nemotron-32B** — all 32.8B parameters updated via DeepSpeed ZeRO-3
+- **Full fine-tuning on Qwen3-32B** — all 32.8B parameters updated via DeepSpeed ZeRO-3
 - **Hybrid FT + RAG** — Zion facts live in the fine-tuned weights; general knowledge (religion, history, science, cultures, languages) is retrieved from a curated vector DB
 - **Massive factual reinforcement** — 48,436 weighted instruction pairs with drill patterns, adversarial refusals, and multi-turn consistency
 
@@ -27,7 +27,7 @@ Hiran v2.3 is a **domain-specific fine-tuned model** with a **hybrid RAG archite
 ## Architecture
 
 ### Base Model
-- **Primary:** `nvidia/OpenReasoning-Nemotron-32B` (Qwen2.5-32B-Instruct derivative, 32K context, reasoning-optimized, CC-BY-4.0)
+- **Primary:** `Qwen/Qwen3-32B` (native Qwen3 architecture, 128K context, reasoning-optimized, Apache 2.0)
 - **Fallback DORA:** Same base model with rank 512 rsLoRA on 1x A100 80GB
 
 ### Training: 9-Stage Curriculum

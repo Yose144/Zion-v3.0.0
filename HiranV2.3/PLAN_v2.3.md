@@ -13,27 +13,27 @@ v2.3 addresses these root causes with **larger model capacity (32B+)**, **full f
 
 ## 1. Base Model Selection
 
-### Primary: `nvidia/OpenReasoning-Nemotron-32B`
+### Primary: `Qwen/Qwen3-32B`
 
 | Attribute | Detail |
 |-----------|--------|
-| Base | Qwen2.5-32B-Instruct |
+| Base | Native Qwen3 architecture |
 | Params | 32.8B |
-| License | CC-BY-4.0 (commercial OK) |
-| Strength | Already post-trained for reasoning/math/code |
-| Context | 32K native |
-| Why | Reasoning-optimized base = better at following technical Zion documentation |
+| License | Apache 2.0 (commercial OK, no restrictions) |
+| Strength | Post-trained for reasoning/math/code, 100+ languages |
+| Context | 128K native |
+| Why | Best balance of reasoning + multilingual + open license |
 
 ### Alternatives
 
 | Model | Params | License | Pros | Cons |
 |-------|--------|---------|------|------|
-| Qwen3-32B | 32B | Apache 2.0 | Native 128K context, strong multilingual | Less reasoning-optimized than Nemotron |
-| Qwen2.5-32B-Instruct | 32B | Apache 2.0 | Proven fine-tuning recipes | Older than Qwen3 |
+| Qwen3-32B | 32B | Apache 2.0 | Native 128K context, strong multilingual | Already post-trained for reasoning |
+| Native Qwen3 architecture | 32B | Apache 2.0 | Proven fine-tuning recipes | Older than Qwen3 |
 | Llama-3.3-70B | 70B | Llama 3.3 | Best quality, 128K context | Requires 2x A100 80GB minimum |
 | Mistral-Small-24B | 24B | Apache 2.0 | Fits on single A100 | Smaller capacity |
 
-**Decision: Nemotron-32B** — best reasoning base for our technical domain.
+**Decision: Qwen3-32B** — native architecture, 128K context, Apache 2.0, best multilingual support including Czech.
 
 ---
 

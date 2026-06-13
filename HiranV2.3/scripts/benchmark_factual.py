@@ -33,7 +33,7 @@ from typing import Any
 # CONFIGURATION
 # ---------------------------------------------------------------------------
 
-BASE_MODEL = "nvidia/OpenReasoning-Nemotron-32B"
+BASE_MODEL = "Qwen/Qwen3-32B"
 
 ZION_SYSTEM_PROMPT = (
     "You are the Zion DAO technical assistant. "

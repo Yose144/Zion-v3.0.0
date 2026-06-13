@@ -208,18 +208,21 @@ async def list_models() -> dict[str, Any]:
 
 
 def build_prompt(messages: list[dict[str, str]], system: str | None = None, rag_context: str = "") -> str:
-    """Build Llama 3.1 chat prompt from OpenAI-format messages."""
+    """Build Qwen3 chat prompt from OpenAI-format messages."""
     parts = []
-    if system:
-        parts.append(f"<|begin_of_text|>任职system\n\n{system}<|eot_id|>")
+    sys_content = system or ""
     if rag_context:
-        parts.append(f"<|begin_of_text|>任职system\n\nUse the following context to answer:\n{rag_context}<|eot_id|>")
+        sys_content += f"\n\nUse the following context to answer:\n{rag_context}"
+    if sys_content:
+        parts.append(f"<|im_start|>system\n{sys_content}<|im_end|>")
     for msg in messages:
         role = msg.get("role", "user")
         content = msg.get("content", "")
-        parts.append(f"<|begin_of_text|>任职{role}\n\n{content}<|eot_id|>")
-    parts.append("<|begin_of_text|>任职assistant\n\n")
-    return "".join(parts)
+        if role == "system":
+            continue  # already handled above
+        parts.append(f"<|im_start|>{role}\n{content}<|im_end|>")
+    parts.append("<|im_start|>assistant\n")
+    return "\n".join(parts)
 
 
 @app.post("/v1/chat/completions")
