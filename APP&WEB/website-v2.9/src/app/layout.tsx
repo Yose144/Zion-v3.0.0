@@ -56,8 +56,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="cs" className="dark">
-      <body className={`${inter.variable} ${jetbrains.variable} antialiased bg-black text-white overflow-x-hidden`}>
+    <html lang="cs" className="dark" style={{ maxWidth: '100%', overflowX: 'hidden' }}>
+      <body className={`${inter.variable} ${jetbrains.variable} antialiased bg-black text-white w-full`} style={{ maxWidth: '100%', overflowX: 'hidden' }}>
         <GlobalErrorBoundary>
           <ThemeProvider>
             <ObservatoryProvider>
@@ -65,7 +65,7 @@ export default function RootLayout({
                 <WalletProvider>
                   <ZionWalletProvider>
                     <ClientBackgrounds />
-                    <div className="relative z-10">
+                    <div className="relative z-10 overflow-x-clip w-full">
                       <Navigation />
                       <HeroSection />
                       <main className="zion-shell min-h-screen">
@@ -73,6 +73,30 @@ export default function RootLayout({
                       </main>
                       <Footer />
                     </div>
+                    <script dangerouslySetInnerHTML={{__html: `
+                      (function() {
+                        function findOverflow() {
+                          const docWidth = document.documentElement.clientWidth;
+                          const overflowing = [];
+                          document.querySelectorAll('*').forEach(function(el) {
+                            if (el.scrollWidth > docWidth) {
+                              overflowing.push({tag: el.tagName, class: el.className, id: el.id, scrollWidth: el.scrollWidth, docWidth: docWidth});
+                            }
+                          });
+                          if (overflowing.length > 0) {
+                            console.warn('[OVERFLOW DETECTOR] Elements wider than viewport:', overflowing);
+                          } else {
+                            console.log('[OVERFLOW DETECTOR] No overflow found');
+                          }
+                        }
+                        if (document.readyState === 'loading') {
+                          document.addEventListener('DOMContentLoaded', findOverflow);
+                        } else {
+                          findOverflow();
+                        }
+                        setTimeout(findOverflow, 3000);
+                      })();
+                    `}} />
                   </ZionWalletProvider>
                 </WalletProvider>
               </LanguageProvider>

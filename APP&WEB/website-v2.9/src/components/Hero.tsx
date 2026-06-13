@@ -62,10 +62,10 @@ export default function Hero() {
   return (
     <section className="relative px-4 pt-24 sm:pt-32 pb-16 sm:pb-28 overflow-hidden">
       {/* ── ambient gradients ── */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute -top-40 -left-40 w-[700px] h-[700px] rounded-full bg-violet-700/12 blur-3xl" />
-        <div className="absolute top-60 -right-32 w-[500px] h-[500px] rounded-full bg-cyan-500/10 blur-3xl" />
-        <div className="absolute bottom-0 left-1/3 w-[600px] h-[400px] rounded-full bg-zion-gold/6 blur-3xl" />
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute -top-20 -left-20 sm:-top-40 sm:-left-40 w-[350px] h-[350px] sm:w-[700px] sm:h-[700px] rounded-full bg-violet-700/12 blur-3xl" />
+        <div className="absolute top-40 -right-10 sm:top-60 sm:-right-32 w-[250px] h-[250px] sm:w-[500px] sm:h-[500px] rounded-full bg-cyan-500/10 blur-3xl" />
+        <div className="absolute -bottom-10 left-1/4 sm:bottom-0 sm:left-1/3 w-[300px] h-[200px] sm:w-[600px] sm:h-[400px] rounded-full bg-zion-gold/6 blur-3xl" />
       </div>
 
       {/* ── lightweight floral composition ── */}
@@ -148,12 +148,12 @@ export default function Hero() {
               className="zion-panel-soft zion-panel-hover relative overflow-hidden border-emerald-500/25 bg-gradient-to-br from-emerald-500/10 via-violet-500/8 to-transparent p-5"
             >
               <div className="absolute -inset-px rounded-2xl bg-gradient-to-br from-emerald-500/15 to-violet-600/10 blur-sm pointer-events-none" />
-              <div className="relative flex items-start gap-4">
+              <div className="relative flex flex-col sm:flex-row items-start gap-4">
                 <div className="flex-none w-10 h-10 rounded-xl bg-emerald-500/15 flex items-center justify-center">
                   <BrainCircuit className="w-5 h-5 text-emerald-300" />
                 </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2 mb-1">
                 <span className="text-sm font-bold text-white">Genesis 3.0.1 — 11 June 2026</span>
                 <span className="text-xs bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full font-semibold flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> LIVE
@@ -169,7 +169,7 @@ export default function Hero() {
                 </div>
                 <a
                   href="#tree-of-life"
-                  className="flex-none ml-auto text-xs text-emerald-300 hover:text-emerald-200 flex items-center gap-1 transition"
+                  className="flex-none sm:ml-auto text-xs text-emerald-300 hover:text-emerald-200 flex items-center gap-1 transition"
                 >
                   {tr('hero', 'teaser_cta', lang)} <ArrowRight className="w-3.5 h-3.5" />
                 </a>
@@ -177,7 +177,7 @@ export default function Hero() {
             </motion.div>
 
             {/* metrics strip */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {heroMetrics.map((metric, i) => (
                 <motion.div
                   key={metric.label}
@@ -230,7 +230,7 @@ export default function Hero() {
               <ZionTicker />
             </div>
 
-            <div className="zion-panel relative rounded-[28px] p-6 space-y-5">
+            <div className="zion-panel relative rounded-[28px] p-4 sm:p-6 space-y-5">
               {/* HUD header */}
               <header className="flex items-start justify-between gap-4">
                 <div>
