@@ -181,6 +181,7 @@ if [ "$SKIP_TRAIN" -eq 0 ]; then
     export HF_HOME=/workspace/.cache/huggingface
     export TRANSFORMERS_CACHE=/workspace/.cache/huggingface
     export DS_SKIP_CUDA_CHECK=1
+    export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 
     # Trap signals for graceful shutdown
     cleanup() {
