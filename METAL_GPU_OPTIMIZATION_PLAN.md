@@ -4,11 +4,13 @@
 
 | Metric | Before | After | Improvement |
 |--------|--------|-------|-------------|
-| Pool-mode hashrate | ~0.9 KH/s | **~3.9+ KH/s** | **4.3×** |
+| Pool-mode hashrate (ekam_v2) | ~0.9 KH/s | **~3.9+ KH/s** | **4.3×** |
+| Pool-mode hashrate (fire) | N/A (no Metal kernel) | **~6.8+ KH/s** | **NEW** |
 | Benchmark `ekam_v2` | ~2.92 KH/s | **~3.93 KH/s** | **1.34×** |
-| Benchmark best run | — | **4.65 KH/s** | (thermal-dependent) |
+| Benchmark `deeksha_lite_fire` | N/A | **~6.70 KH/s** | **NEW** |
+| Benchmark best run | — | **4.65 KH/s** (ekam) / **6.70 KH/s** (fire) | (thermal-dependent) |
 | Device | Apple M1 (8-core GPU) | | |
-| Algorithm | `cosmic_harmony_ekam_deeksha_v2` (was `deeksha_lite_v1`) | | |
+| Algorithm | `cosmic_harmony_ekam_deeksha_v2` (was `deeksha_lite_v1`) | `deeksha_lite_fire` (fastest) | |
 
 ---
 
@@ -81,6 +83,28 @@ No `block` crate, no `ConcreteBlock`, no async command buffer handling.
 
 **Conclusion:** M1 Metal kernel is already well-optimized by the compiler. Manual micro-optimizations hurt more than help due to register pressure on memory-bound workload.
 
+### Phase 4b: Fire Metal Kernel (NEW) 🔥
+
+**Problem:** `deeksha_lite_fire` had no Metal GPU kernel. The Metal backend always used `ekam_deeksha.metal` regardless of algorithm, causing `GPU_CPU_MISMATCH` because GPU computed `ekam_v2` hash while CPU computed `fire` hash.
+
+**Solution:** Created `deeksha_lite_fire.metal` — full OpenCL→Metal translation with:
+- Keccak-f1600 (identical to OpenCL)
+- SHA3-512 scratchpad fill (256 KiB, 8192 blocks, 2 passes, 64 reads)
+- AES-128 CTR mix (3 full + 1 final round)
+- Thermal loop (16384 iters, 8 ulong chains)
+- Final Keccak256
+
+**Critical fix:** Aligned all `thread` arrays to 8-byte boundaries (`ulong[]` instead of `uchar[]`) before casting to `ulong*` — unaligned access on Apple GPU caused silent hash corruption.
+
+**Files:**
+- `V3/L1/miner/src/deeksha_lite_fire.metal` — new Fire Metal kernel
+- `V3/L1/miner/src/gpu_backend.rs` — new `MetalDeekshaLiteFireMiner` module, algorithm dispatch fix
+
+**Result:**
+- Fire benchmark: **6.70 KH/s** (vs ekam_v2 3.93 KH/s)
+- Fire pool-mode: **~6.8+ KH/s**, 0 rejected, 0 `GPU_CPU_MISMATCH`
+- `MetalDeekshaMiner::algorithm()` fixed from `"deeksha_lite_v1"` → `"cosmic_harmony_ekam_deeksha_v2"` (was lying to pool)
+
 ### Phase 5: Pool Protocol 📋
 
 | Idea | Status | Reason |
@@ -95,12 +119,13 @@ No `block` crate, no `ConcreteBlock`, no async command buffer handling.
 
 ## What Actually Worked (ranked by impact)
 
-1. **Remove `break` in `mine_batch`** — 4× improvement (0.9→3.9 KH/s)
-2. **Raise memory budget 58%→65%** — +10% batch_size
-3. **Async command buffers** — eliminates CPU idle per dispatch
-4. **`threads_per_tg` 64→128** — better GPU core saturation
-5. **Switch to `ekam_v2` algorithm** — fastest on Metal (+35% vs v1)
-6. **`b3_load_words_global` fast path** — marginal kernel speedup
+1. **Create `deeksha_lite_fire.metal` kernel** — NEW: 6.8+ KH/s (was N/A)
+2. **Remove `break` in `mine_batch`** — 4× improvement (0.9→3.9 KH/s)
+3. **Raise memory budget 58%→65%** — +10% batch_size
+4. **Async command buffers** — eliminates CPU idle per dispatch
+5. **`threads_per_tg` 64→128** — better GPU core saturation
+6. **Switch to `ekam_v2` algorithm** — fastest on Metal (+35% vs v1)
+7. **`b3_load_words_global` fast path** — marginal kernel speedup
 
 ---
 
@@ -108,8 +133,9 @@ No `block` crate, no `ConcreteBlock`, no async command buffer handling.
 
 | File | Change |
 |------|--------|
-| `V3/L1/miner/src/gpu_backend.rs` | Async dispatch, no-break, memory budget, threads_per_tg |
+| `V3/L1/miner/src/gpu_backend.rs` | Async dispatch, no-break, memory budget, threads_per_tg, Fire miner module, algorithm dispatch |
 | `V3/L1/miner/src/ekam_deeksha.metal` | `b3_load_words_global` fast path |
+| `V3/L1/miner/src/deeksha_lite_fire.metal` | **NEW** Fire Metal kernel (OpenCL→Metal translation) |
 | `V3/L1/miner/Cargo.toml` | Added `block` crate for Metal async handlers |
 | `APP&WEB/desktop-agent/src/main.js` | No `--threads` when GPU mining (previous session) |
 
