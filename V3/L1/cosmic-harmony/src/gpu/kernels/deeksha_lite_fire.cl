@@ -195,19 +195,23 @@ void aes_final_round(__private uchar s[16], __private const uchar k[16])
 
 void fill_scratchpad(__private const uchar seed[32], __global uchar *pad)
 {
-    uchar state[64];
+    // 8-byte aligned state to prevent GPU_CPU_MISMATCH (Metal fix)
+    __private ulong state_aligned[8];  // 8 * 8 = 64 bytes, 8-byte aligned
+    __private uchar *state = (__private uchar*)state_aligned;
     for (int i=0;i<32;i++) state[i]=seed[i];
     for (int i=32;i<64;i++) state[i]=0;
     for (uint blk=0;blk<BLOCK_COUNT;blk++) {
         uchar inp[65];
         for (int i=0;i<64;i++) inp[i]=state[i];
         inp[64]=(uchar)(blk&0xFF);
-        uchar out64[64];
+        // 8-byte aligned output buffer
+        __private ulong out64_aligned[8];  // 8 * 8 = 64 bytes, 8-byte aligned
+        __private uchar *out64 = (__private uchar*)out64_aligned;
         sha3_512(inp, 65, out64);
         uint off=blk*BLOCK_SIZE;
-        ulong4 v=vload4(0,(__private ulong*)out64);
+        ulong4 v=vload4(0,out64_aligned);  // Use aligned pointer
         vstore4(v,0,(__global ulong*)(pad+off));
-        vstore4(v,0,(__private ulong*)state);
+        vstore4(v,0,state_aligned);  // Use aligned pointer
     }
 }
 
@@ -230,14 +234,16 @@ void sequential_passes(__global uchar *pad)
 
 void random_read_mix(__private const uchar seed[32], __global const uchar *pad, __private uchar out[32])
 {
-    uchar acc[32];
+    // 8-byte aligned accumulator to prevent GPU_CPU_MISMATCH (Metal fix)
+    __private ulong acc_aligned[4];  // 4 * 8 = 32 bytes, 8-byte aligned
+    __private uchar *acc = (__private uchar*)acc_aligned;
     for (int i=0;i<32;i++) acc[i]=seed[i];
     ulong pos=0;
     for (ulong r=0;r<RANDOM_READS;r++) {
         uint off=(uint)(pos*BLOCK_SIZE);
-        ulong4 av=vload4(0,(__private ulong*)acc);
+        ulong4 av=vload4(0,acc_aligned);  // Use aligned pointer
         ulong4 pv=vload4(0,(__global const ulong*)(pad+off));
-        av^=pv; vstore4(av,0,(__private ulong*)acc);
+        av^=pv; vstore4(av,0,acc_aligned);  // Use aligned pointer
         ulong idx_val=0;
         for (int i=0;i<8;i++) idx_val|=((ulong)acc[i])<<(i*8);
         pos=(idx_val^pos^r)%BLOCK_COUNT;
@@ -251,12 +257,21 @@ void random_read_mix(__private const uchar seed[32], __global const uchar *pad, 
 
 void aes128_mix(__private const uchar seed[32], ulong nonce, __private uchar out[32])
 {
-    uchar key[16];
+    // 8-byte aligned buffers to prevent GPU_CPU_MISMATCH (Metal fix)
+    __private ulong key_aligned[2];  // 2 * 8 = 16 bytes, 8-byte aligned
+    __private uchar *key = (__private uchar*)key_aligned;
     for (int i=0;i<16;i++) key[i]=seed[i];
-    uchar counter[16];
+    
+    __private ulong counter_aligned[2];  // 2 * 8 = 16 bytes, 8-byte aligned
+    __private uchar *counter = (__private uchar*)counter_aligned;
     for (int i=0;i<8;i++) counter[i]    =(uchar)(nonce>>(i*8));
     for (int i=0;i<8;i++) counter[8+i]  =seed[16+i];
-    uchar block0[16], block1[16];
+    
+    __private ulong block0_aligned[2];  // 2 * 8 = 16 bytes, 8-byte aligned
+    __private uchar *block0 = (__private uchar*)block0_aligned;
+    __private ulong block1_aligned[2];  // 2 * 8 = 16 bytes, 8-byte aligned
+    __private uchar *block1 = (__private uchar*)block1_aligned;
+    
     for (int i=0;i<16;i++) { block0[i]=counter[i]; block1[i]=counter[i]; }
     uint carry=1;
     for (int i=0;i<16;i++) {
@@ -280,7 +295,7 @@ void aes128_mix(__private const uchar seed[32], ulong nonce, __private uchar out
 /* Identical logic in deeksha_lite_fire.rs (CPU reference).                   */
 /* ========================================================================== */
 
-void thermal_loop(__private uchar data[32], ulong nonce)
+void thermal_loop(__private uchar data[32] __attribute__((aligned(8))), ulong nonce)
 {
     ulong a = nonce ^ 0x9E3779B97F4A7C15UL;
     ulong b = nonce ^ 0xBF58476D1CE4E5B9UL;
@@ -331,15 +346,17 @@ void thermal_loop(__private uchar data[32], ulong nonce)
 
 __kernel void deeksha_lite_fire_mine(
     __global const ulong *header_keccak_state,  /* same as v1: host precomputed */
-    ulong  nonce_base,
-    uint   nonce_count,
+    __global const ulong *nonce_base_buf,       /* Metal fix: buffer instead of scalar */
+    __global const uint *nonce_count_buf,        /* Metal fix: buffer instead of scalar */
     __global uchar *output_hashes,
     __global uchar *scratchpad_pool)
 {
     uint tid = get_global_id(0);
+    uint nonce_count = nonce_count_buf[0];  // Metal fix: read from buffer
     if (tid >= nonce_count) return;
 
     __global uchar *pad = scratchpad_pool + (ulong)tid * SCRATCHPAD_SIZE;
+    ulong nonce_base = nonce_base_buf[0];  // Metal fix: read from buffer
     ulong nonce = nonce_base + (ulong)tid;
 
     /* Step 1: Keccak256(header || nonce) — same as v1 */
