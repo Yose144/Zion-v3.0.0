@@ -278,10 +278,10 @@ impl GpuTuning {
         let (work_size, local_ws, build_opts, vram_pct, gcn_s4_mode) = match (algo, family) {
             // ── DeekshaLite v1 ──────────────────────────────────────────
             (GpuAlgorithm::DeekshaLiteV1, GpuDeviceFamily::AmdGcn) => {
-                // GCN: conservative, smaller work-groups, full GCN workarounds
-                let ws = (max_by_vram.min(4096).max(256)).next_power_of_two();
-                let opts = "-cl-std=CL1.2 -cl-mad-enable -DZION_GCN_WORKAROUNDS".to_string();
-                (ws, 256, opts, 70, true)
+                // GCN Vega 64: 8GB HBM2 → 16384 is VRAM-safe; wavefront=64
+                let ws = (max_by_vram.min(16384).max(256)).next_power_of_two();
+                let opts = "-cl-std=CL1.2 -cl-denorms-are-zero".to_string();
+                (ws, 64, opts, 92, false)
             }
             (GpuAlgorithm::DeekshaLiteV1, GpuDeviceFamily::AmdRdna) => {
                 // RDNA: fast ulong-width path, smaller local size for better occupancy
@@ -305,9 +305,9 @@ impl GpuTuning {
             // ── DeekshaLite Fire (thermal-intensive) ────────────────────
             // 256 KiB scratchpad (same as v1) + 65536-iter integer thermal loop.
             (GpuAlgorithm::DeekshaLiteFire, GpuDeviceFamily::AmdGcn) => {
-                let ws = (max_by_vram.min(2048).max(128)).next_power_of_two();
-                let opts = "-cl-std=CL1.2 -cl-mad-enable -DZION_GCN_WORKAROUNDS".to_string();
-                (ws, 256, opts, 65, true)
+                let ws = (max_by_vram.min(16384).max(128)).next_power_of_two();
+                let opts = "-cl-std=CL1.2 -cl-denorms-are-zero".to_string();
+                (ws, 64, opts, 92, false)
             }
             (GpuAlgorithm::DeekshaLiteFire, GpuDeviceFamily::AmdRdna) => {
                 let ws = (max_by_vram.min(8192).max(512)).next_power_of_two();
@@ -327,10 +327,9 @@ impl GpuTuning {
 
             // ── Cosmic Harmony ──────────────────────────────────────────
             (GpuAlgorithm::CosmicHarmony, GpuDeviceFamily::AmdGcn) => {
-                // GCN needs s4_mode due to compiler bugs in stages 5-6
-                let ws = (max_by_vram.min(2048).max(128)).next_power_of_two();
-                let opts = "-cl-std=CL1.2 -cl-mad-enable -DZION_GCN_WORKAROUNDS".to_string();
-                (ws, 256, opts, 65, true)
+                let ws = (max_by_vram.min(16384).max(128)).next_power_of_two();
+                let opts = "-cl-std=CL1.2 -cl-denorms-are-zero".to_string();
+                (ws, 64, opts, 92, false)
             }
             (GpuAlgorithm::CosmicHarmony, GpuDeviceFamily::AmdRdna) => {
                 let ws = (max_by_vram.min(8192).max(512)).next_power_of_two();

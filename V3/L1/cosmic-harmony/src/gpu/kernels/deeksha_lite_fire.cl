@@ -295,7 +295,7 @@ void aes128_mix(__private const uchar seed[32], ulong nonce, __private uchar out
 /* Identical logic in deeksha_lite_fire.rs (CPU reference).                   */
 /* ========================================================================== */
 
-void thermal_loop(__private uchar data[32] __attribute__((aligned(8))), ulong nonce)
+void thermal_loop(__private uchar data[32], ulong nonce)
 {
     ulong a = nonce ^ 0x9E3779B97F4A7C15UL;
     ulong b = nonce ^ 0xBF58476D1CE4E5B9UL;
