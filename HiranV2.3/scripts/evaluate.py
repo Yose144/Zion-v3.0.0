@@ -500,8 +500,8 @@ def evaluate_blueprints(model: ModelWrapper) -> dict[str, Any]:
 def evaluate_perplexity(model: ModelWrapper, test_file: Path | None = None) -> dict[str, Any]:
     if test_file is None:
         candidates = [
-            Path("HiranV2.3/data/curriculum/cross_domain_synthesis.jsonl"),
-            Path("HiranV2.3/data/curriculum/hiranyagarbha_consciousness.jsonl"),
+            Path("HiranV2.3/data/curriculum/v2.3_combined_dataset.jsonl"),
+            Path("HiranV2.3/data/curriculum/stage3_cross_domain.jsonl"),
             Path("HiranV2.2/data/curriculum/cross_domain.jsonl"),
         ]
         for c in candidates:

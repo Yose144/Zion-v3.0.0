@@ -40,50 +40,37 @@ With tool orchestration: +4-8GB RAM for tool runners
 
 ### Base Model Selection
 
-**Primary Candidates:**
+**Primary:** `nvidia/OpenReasoning-Nemotron-32B`
+- Base: Qwen2.5-32B-Instruct derivative
+- 32.8B parameters, 32K context
+- Reasoning-optimized, CC-BY-4.0 (commercial OK)
+- Best reasoning base for technical Zion domain
 
-1. **Llama 3.1 70B** (Recommended)
-   - Strong reasoning capabilities
-   - Excellent tool use performance
-   - Active community support
-   - Good for multilingual (Czech, English)
-
-2. **Qwen 2.5 72B** (Alternative)
-   - Superior code generation
-   - Better for Asian languages
-   - Strong mathematical reasoning
-
-3. **Mistral Large 123B** (If budget allows)
-   - State-of-the-art reasoning
-   - Excellent for complex tasks
-   - Requires more resources
+**Alternatives (for reference only):**
+- Qwen3-32B (128K context, Apache 2.0)
+- Llama-3.3-70B (would require 2x A100 80GB minimum)
 
 ### Training Strategy
 
-**Hybrid Approach:**
+**Primary: Full Fine-Tuning with DeepSpeed ZeRO-3**
 ```
-Phase 1: Foundation Training (Base model adaptation)
-  - Continue pre-training on domain-specific data
-  - 1-2 epochs on curated dataset
-  - Learning rate: 1e-5 to 5e-5
+Phase 1: Full Fine-Tuning (all 32.8B parameters updated)
+  - DeepSpeed ZeRO-3 with CPU/NVMe offload
+  - BF16 mixed precision
+  - Gradient checkpointing enabled
+  - 2-3 epochs on combined dataset
+  - Learning rate: 2e-5
 
-Phase 2: Specialized LoRA Stages (Similar to v2.2 but larger)
-  - Zion Gaming Domain (rank 64-128)
-  - Programming & Code Generation (rank 64-128)
-  - Web Browsing & Information Retrieval (rank 64-128)
-  - Tool Orchestration (rank 128)
-  - Cross-Domain Synthesis (rank 128)
-
-Phase 3: Full Fine-Tune on Agent Capabilities
-  - RAG-integrated training
-  - Tool use fine-tuning
-  - Multi-turn conversation optimization
-
-Phase 4: Quantization & Optimization
-  - INT8/INT4 quantization
-  - Knowledge distillation if needed
-  - Deployment optimization
+Phase 2: Quantization & Optimization
+  - GGUF quantization (Q4_K_M, Q5_K_M)
+  - vLLM inference optimization
+  - Deployment packaging
 ```
+
+**Fallback: DORA (if full FT hardware unavailable)**
+  - `scripts/train_v2.3.py` — rank-512 rsLoRA on 1x A100 80GB
+  - 8-bit quantized base model
+  - 3 curriculum stages (factual → domain → cross-domain)
 
 ## Data Pipeline Architecture
 
@@ -148,93 +135,33 @@ Phase 4: Quantization & Optimization
 
 ## Curriculum Structure (v2.3)
 
-### Curriculum Stages
+### Full Fine-Tuning Config
 
 ```python
-CURRICULUM_V2_3 = {
-    "foundation_domain_adaptation": {
-        "rank": 128,
-        "alpha": 256,
-        "dropout": 0.05,
-        "epochs": 2,
-        "learning_rate": 1e-5,
-        "batch_size": 2,
-        "gradient_accumulation_steps": 8,
-        "target_modules": ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
-        "dataset": "foundation_domain.jsonl"
-    },
+FULL_FT_CONFIG = {
+    "base_model": "nvidia/OpenReasoning-Nemotron-32B",
+    "method": "full_parameter_update",
+    "precision": "bf16",
+    "framework": "deepspeed_zero3",
+    "dataset": "data/curriculum/v2.3_combined_dataset.jsonl",
+    "epochs": 3,
+    "learning_rate": 2e-5,
+    "batch_size_per_gpu": 1,
+    "gradient_accumulation_steps": 32,
+    "warmup_steps": 500,
+    "weight_decay": 0.01,
+    "max_grad_norm": 1.0,
+    "lr_scheduler": "cosine_with_restarts",
+}
+```
 
-    "zion_gaming_mastery": {
-        "rank": 128,
-        "alpha": 256,
-        "dropout": 0.05,
-        "epochs": 3,
-        "learning_rate": 5e-5,
-        "batch_size": 2,
-        "gradient_accumulation_steps": 8,
-        "target_modules": ["all"],
-        "dataset": "zion_mastery.jsonl"
-    },
+### Fallback DORA Config (see `scripts/train_v2.3.py`)
 
-    "programming_excellence": {
-        "rank": 128,
-        "alpha": 256,
-        "dropout": 0.03,
-        "epochs": 2,
-        "learning_rate": 5e-5,
-        "batch_size": 2,
-        "gradient_accumulation_steps": 8,
-        "target_modules": ["all"],
-        "dataset": "programming_excellence.jsonl"
-    },
-
-    "web_browsing_agent": {
-        "rank": 128,
-        "alpha": 256,
-        "dropout": 0.03,
-        "epochs": 2,
-        "learning_rate": 3e-5,
-        "batch_size": 2,
-        "gradient_accumulation_steps": 8,
-        "target_modules": ["all"],
-        "dataset": "web_browsing.jsonl"
-    },
-
-    "tool_orchestration": {
-        "rank": 256,
-        "alpha": 512,
-        "dropout": 0.02,
-        "epochs": 2,
-        "learning_rate": 2e-5,
-        "batch_size": 1,
-        "gradient_accumulation_steps": 16,
-        "target_modules": ["all"],
-        "dataset": "tool_orchestration.jsonl"
-    },
-
-    "rag_integration": {
-        "rank": 256,
-        "alpha": 512,
-        "dropout": 0.02,
-        "epochs": 1,
-        "learning_rate": 1e-5,
-        "batch_size": 1,
-        "gradient_accumulation_steps": 16,
-        "target_modules": ["all"],
-        "dataset": "rag_integration.jsonl"
-    },
-
-    "cross_domain_synthesis": {
-        "rank": 256,
-        "alpha": 512,
-        "dropout": 0.01,
-        "epochs": 1,
-        "learning_rate": 5e-6,
-        "batch_size": 1,
-        "gradient_accumulation_steps: 16,
-        "target_modules": ["all"],
-        "dataset": "cross_domain.jsonl"
-    }
+```python
+DORA_CONFIG = {
+    "stage1_factual": {"rank": 512, "alpha": 362, "epochs": 5, "lr": 1e-4},
+    "stage2_domain": {"rank": 512, "alpha": 362, "epochs": 3, "lr": 5e-5},
+    "stage3_cross": {"rank": 512, "alpha": 362, "epochs": 2, "lr": 2e-5},
 }
 ```
 
@@ -397,24 +324,22 @@ RAG_PIPELINE = {
 - Mixed precision (FP16/BF16)
 - CPU offloading for optimizer states
 
-**Training Script Template:**
+**Training Script (Full FT):**
 ```bash
 #!/bin/bash
 
-# Hiran v2.3 Training on H100 Cluster
+# Hiran v2.3 Full Fine-Tuning on 4x A100 80GB
 
-deepspeed --num_gpus=8 train_v2.3.py \
-  --base_model meta-llama/Llama-3.1-70B \
-  --curriculum_config config/curriculum_v2.3.json \
-  --output_dir /data/hiran-v2.3/checkpoints \
-  --deepspeed config/deepspeed_config.json \
-  --gradient_checkpointing \
-  --bf16 \
-  --logging_steps 10 \
-  --save_steps 100 \
-  --eval_steps 500 \
-  --tensorboard \
-  --wandb
+deepspeed --num_gpus=4 HiranV2.3/scripts/train_v2.3_fullft.py \
+  --stage all \
+  --deepspeed_config HiranV2.3/config/deepspeed_zero3.json
+```
+
+**Training Script (DORA Fallback, 1x A100):**
+```bash
+python3 HiranV2.3/scripts/train_v2.3.py \
+  --stage all \
+  --dry_run  # Dry run first to verify config
 ```
 
 ## Production Deployment
