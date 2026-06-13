@@ -813,31 +813,32 @@ Build on Edge server (100.76.16.108) using `V3/Dockerfile.miner-smos`:
 | v4 | `zion-sm3042c-fire-v4.zip` | crossterm dep, missing sources fixed |
 | v5 | `zion-sm3042c-fire-v5.zip` | GPU manager permanent disable fix |
 | v6 | `zion-sm3042c-fire-v6.zip` | work_size up, `-cl-mad-enable` removed, pool nonce 262144→524288 |
-| **v7** | `zion-sm3042c-fire-v7.zip` | **local_ws 256→64 (wavefront), `-cl-denorms-are-zero`, remove `aligned(8)`** |
+| v7 | `zion-sm3042c-fire-v7.zip` | local_ws 256→64, `-cl-denorms-are-zero`, remove `aligned(8)` — **caused error, reverted** |
+| **v8** | `zion-sm3042c-fire-v8.zip` | **Reverted to stable v6 params: local_ws=256, aligned(8) restored** |
 
 ### SMOS Group Config (1773590 ZionLiteFire)
 ```
-http://77.42.71.94/zion-miner/zion-sm3042c-fire-v7.zip \
+http://77.42.71.94/zion-miner/zion-sm3042c-fire-v8.zip \
   --algorithm deeksha_lite_fire \
   --pool 77.42.71.94:8444 \
   --wallet zion1m883u5h7t8l2q6y44670c6q5l067v4u2a3ku332 \
   --worker vega-smos
 ```
 
-### Vega 64 Tuning Parameters (v7)
+### Vega 64 Tuning Parameters (v8)
 | Param | Value | Rationale |
 |-------|-------|-----------|
 | work_size (Fire) | 16384 | 2× v6; fills 8GB HBM2 efficiently |
 | work_size (Lite v1) | 16384 | Same for both algorithms |
-| local_ws | 64 | AMD GCN native wavefront (64 threads) |
-| vram_pct | 92% | Use almost all 8GB HBM2 |
-| build_opts | `-cl-std=CL1.2 -cl-denorms-are-zero` | Faster float subnormal handling |
+| local_ws | 256 | Stable work-group size for GCN memory coalescing |
+| vram_pct | 85% | Safe HBM2 utilization with headroom |
+| build_opts | `-cl-std=CL1.2` | Minimal flags, avoids driver regressions |
 | Pool nonce_count_gpu | 524288 | Bigger batches = less CPU-GPU sync overhead |
 
 ### Code Changes in This Session
 1. **`V3/L1/miner/src/main.rs`** — GPU no longer permanently disabled on init failure; retries every iteration
-2. **`V3/L1/miner/src/gpu_guard.rs`** — Vega 64 tuning: work_size ↑, local_ws=64, vram_pct=92%, `-cl-denorms-are-zero`
-3. **`V3/L1/cosmic-harmony/src/gpu/kernels/deeksha_lite_fire.cl`** — Removed `__attribute__((aligned(8)))` from thermal_loop param (slow on GCN private memory)
+2. **`V3/L1/miner/src/gpu_guard.rs`** — Vega 64 tuning: work_size ↑ to 16384, local_ws=256 (stable), vram_pct=85%
+3. **`V3/L1/cosmic-harmony/src/gpu/kernels/deeksha_lite_fire.cl`** — Kept `__attribute__((aligned(8)))` on thermal_loop (stable on GCN)
 4. **`V3/L1/miner/Cargo.toml`** (Edge only) — Added `crossterm = "0.28"` dependency
 5. **`V3/L1/miner/src/interactive.rs`** / **`ui.rs`** — Restored missing source files on Edge
 
@@ -847,8 +848,9 @@ http://77.42.71.94/zion-miner/zion-sm3042c-fire-v7.zip \
 | Initial (stale binary) | ~4.5 KH/s | Wrong algo (Lite v1), old binary |
 | v5 (GPU fix) | ~8.5 KH/s | Fire finally running, work_size=8192 |
 | v6 (tuning) | ~8.5 KH/s | work_size↑, pool nonce↑ |
-| v7 (wavefront) | **~9.5–11 KH/s** | local_ws=64, aligned(8) removed |
-| + 1450 MHz OC | **~11–12 KH/s** | Core clock from 1250→1450 MHz |
+| v7 (wavefront) | unstable | local_ws=64, `-cl-denorms-are-zero` — caused runtime error |
+| v8 (revert) | **~8.5 KH/s** | Reverted to stable v6 params |
+| + 1450 MHz OC | **~10 KH/s** | Core clock from 1250→1450 MHz |
 
 ### How to Update Miner on SMOS
 1. Build new Docker image on Edge: `docker build -f Dockerfile.miner-smos -t zion-miner-smos .`
