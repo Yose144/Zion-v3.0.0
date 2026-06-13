@@ -30,8 +30,8 @@
 
 | Soubor | Změna |
 |--------|-------|
-| `HiranV2.3/ARCHITECTURE_V2.3.md` | Sjednocení base modelu na Nemotron-32B, odstranění zastaralých LoRA fází, přidání Full FT configu |
-| `HiranV2.3/config/curriculum_v2.3.json` | Base model opraven z Llama-3.1-70B na Nemotron-32B |
+| `HiranV2.3/ARCHITECTURE_V2.3.md` | Sjednocení base modelu na Qwen3-32B, odstranění zastaralých LoRA fází, přidání Full FT configu |
+| `HiranV2.3/config/curriculum_v2.3.json` | Base model opraven z Llama-3.1-70B na Qwen3-32B |
 | `HiranV2.3/scripts/evaluate.py` | Perplexity dataset paths opraveny (nyní hledá existující `v2.3_combined_dataset.jsonl`) |
 | `HiranV2.3/inference/server.py` | Přidána kontrola existence modelu s instrukcemi pro trénink |
 | `HiranV2.3/docker/docker-compose.yml` | Přidána poznámka, že model path je placeholder |
@@ -1721,7 +1721,7 @@ top_p = 0.9
 
 ||| Komponenta | Stav |
 |---|---|---|
-| **Base model** | ✅ Připraveno | `nvidia/OpenReasoning-Nemotron-32B` (Qwen2.5-32B-Instruct derivative) |
+| **Base model** | ✅ Připraveno | `Qwen/Qwen3-32B` (Qwen2.5-32B-Instruct derivative) |
 | **Training method** | ✅ Připraveno | Full Fine-Tuning s DeepSpeed ZeRO-3 (CPU/NVMe offload, BF16) |
 | **Dataset** | ✅ Hotovo | 48,436 instruction pairs napříč 9 stagemi (factual reinforcement, drill patterns, domain expertise, cross-domain, preference alignment, conversation flow, bilingual CZ/EN, code generation, safety) |
 | **Hybrid RAG** | ✅ Hotovo | 33 knowledge documents + ChromaDB + `all-MiniLM-L6-v2` + query router |

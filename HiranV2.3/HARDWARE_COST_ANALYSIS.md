@@ -1,7 +1,7 @@
 # Hiran v2.3 Hardware Cost Analysis — Vast.ai
 
 > **Date:** 2026-06-13  
-> **Model:** nvidia/OpenReasoning-Nemotron-32B (32.8B params)  
+> **Model:** Qwen/Qwen3-32B (32.8B params)  
 > **Training options:** Full Fine-Tuning (preferred) vs DORA fallback
 
 ---

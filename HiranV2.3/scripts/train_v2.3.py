@@ -39,7 +39,7 @@ from datasets import load_dataset
 # CONFIGURATION
 # ---------------------------------------------------------------------------
 
-BASE_MODEL = "nvidia/OpenReasoning-Nemotron-32B"
+BASE_MODEL = "Qwen/Qwen3-32B"
 
 STAGE_CONFIGS = {
     "stage1_factual": {
