@@ -217,7 +217,7 @@ export default function LiveDashboard() {
               </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
               <div>
                 <p className="text-gray-400">Mempool</p>
                 <p className="text-xl font-semibold text-white">{(stats.mempool_size ?? 0).toLocaleString(locale)}</p>
