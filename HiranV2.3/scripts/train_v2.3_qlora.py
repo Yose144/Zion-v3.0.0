@@ -23,10 +23,9 @@ from transformers import (
     TrainingArguments,
     Trainer,
     DataCollatorForLanguageModeling,
-    BitsAndBytesConfig,
 )
 from datasets import load_dataset
-from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training, TaskType
+from peft import LoraConfig, get_peft_model, TaskType
 
 # ---------------------------------------------------------------------------
 # CONFIGURATION
@@ -46,7 +45,7 @@ STAGE_CONFIGS = {
         "weight_decay": 0.01,
         "max_grad_norm": 0.3,
         "lr_scheduler": "cosine",
-        "max_length": 2048,
+        "max_length": 1024,
     },
 }
 
@@ -152,25 +151,21 @@ def train_qlora(stage_name, stage_cfg):
     if not hasattr(tokenizer, "chat_template") or tokenizer.chat_template is None:
         tokenizer.chat_template = CHAT_TEMPLATE
 
-    # Quantization config (4-bit)
-    print("\nLoading model in 4-bit with QLoRA...")
-    bnb_config = BitsAndBytesConfig(
-        load_in_4bit=True,
-        bnb_4bit_quant_type="nf4",  # Normal Float 4 (better than FP4)
-        bnb_4bit_compute_dtype=torch.bfloat16,
-        bnb_4bit_use_double_quant=True,  # Nested quantization
-    )
-
+    # Load model (BF16, without 4-bit quantization for Qwen3 compatibility)
+    # Note: Qwen3 has compatibility issues with transformers+BNB integration.
+    # We use BF16 + LoRA instead, which still fits on 2x A100 80GB.
+    print("\nLoading model (BF16 + LoRA, no 4-bit quantization)...")
+    print("  Qwen3 has BNB compatibility issues; using BF16 + gradient checkpointing instead.")
     model = AutoModelForCausalLM.from_pretrained(
         BASE_MODEL,
-        quantization_config=bnb_config,
         trust_remote_code=True,
-        device_map="auto",  # Automatically shard across GPUs
         torch_dtype=torch.bfloat16,
     )
 
-    # Prepare model for k-bit training
-    model = prepare_model_for_kbit_training(model)
+    # DDP (torchrun) handles device placement automatically
+    # Do NOT call model.to() here
+
+    # No prepare_model_for_kbit_training needed without quantization
 
     # Add LoRA adapters
     print(f"  Adding LoRA adapters (r={LORA_CONFIG['r']}, alpha={LORA_CONFIG['lora_alpha']})...")
@@ -223,7 +218,7 @@ def train_qlora(stage_name, stage_cfg):
         greater_is_better=False,
         bf16=True,
         fp16=False,
-        optim="paged_adamw_8bit",  # 8-bit AdamW for memory savings
+        optim="adamw_torch",
         report_to="none",
         remove_unused_columns=False,
         dataloader_num_workers=4,
