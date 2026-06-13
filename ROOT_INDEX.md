@@ -102,8 +102,12 @@
 ├── HiranV2.3/                         ← AI model v2.3 (32B base, DeepSpeed, ready for training)
 │   ├── data/                          ← Dataset generators
 │   ├── scripts/                       ← Training + benchmark scripts
+│   │   ├── provision_vast.py          ← Vast.ai auto-provisioning
+│   │   ├── vast_price_compare.py      ← Hardware cost comparator
+│   │   └── ...
 │   ├── rag/                           ← Hybrid RAG (ChromaDB + vector search)
 │   ├── PRE_FLIGHT_CHECKLIST.md      ← Pre-training verification checklist
+│   ├── HARDWARE_COST_ANALYSIS.md    ← VRAM calculations + cost comparison
 │   └── benchmark_results/           ← Placeholder dry-run data (NOT real model results)
 │
 ├── docs/legal/                        ← Legal documents (licence, disclaimers, premine)
