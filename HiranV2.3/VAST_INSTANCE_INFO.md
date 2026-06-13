@@ -1,7 +1,7 @@
 # Hiran v2.3 Vast.ai Instance — Connection Info
 
 > **Created:** 2026-06-13  
-> **Instance API Key:** 5f271577d7930df73312697b429fa4800bbc8a2319513f89403c985143aad68c
+> **Instance API Key:** 68a8a213d27c1e4e5f59a4457721a0e81e15aa5900bd517a2c4cf3e3ae51a7b6
 
 ---
 
@@ -9,16 +9,18 @@
 
 | Field | Value |
 |---|---|
-| **Contract ID** | 40780492 |
+| **Contract ID** | 40781743 |
 | **GPU** | A100 SXM4 x2 |
 | **VRAM** | 80 GB per GPU (160 GB total) |
 | **CPU** | AMD EPYC 7513 32-Core |
 | **CPU RAM** | ~1.4 TB |
-| **Disk** | 500 GB (requested) |
+| **Disk** | 500 GB ✅ |
 | **Cost** | ~$1.04/hr |
 | **Location** | Massachusetts, US |
 | **CUDA** | 12.8 (driver 570.195.03) |
 | **Image** | nvidia/cuda:12.1.0-devel-ubuntu22.04 |
+| **SSH Port** | 21742 |
+| **Status** | 🟢 Training in progress |
 
 ---
 
