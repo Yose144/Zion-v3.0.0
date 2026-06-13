@@ -1,1 +1,0 @@
-C:\Users\yosef\Desktop\Zion\2.9.6-main\ZION_OS\dashboard\infra\target\release\zionos-dashboard.exe: C:\Users\yosef\Desktop\Zion\2.9.6-main\ZION_OS\dashboard\infra\src\handlers.rs C:\Users\yosef\Desktop\Zion\2.9.6-main\ZION_OS\dashboard\infra\src\main.rs C:\Users\yosef\Desktop\Zion\2.9.6-main\ZION_OS\dashboard\infra\src\state.rs
