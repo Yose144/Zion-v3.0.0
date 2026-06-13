@@ -939,9 +939,15 @@ fn run_local_session(
             .wrapping_add((iteration as u64).wrapping_mul(config.nonce_stride));
         let job = pool.issue_job(header, config.target, start_nonce, tuned_nonce_count);
         last_job_id = job.job_id;
+        if VERBOSE.load(Ordering::Relaxed) {
+            println!(
+                "job_issue id={} nonce_count={} start={} algo={}",
+                job.job_id, job.nonce_count, job.start_nonce, current_algorithm
+            );
+        }
         // Ensure GPU backend matches current algorithm (lazy create / switch)
         let mut gpu_ref: Option<&mut dyn gpu_backend::GpuMiner> = None;
-        if gpu_available {
+        if config.gpu_backend != gpu_backend::GpuBackendKind::Cpu {
             match gpu_manager.ensure_algorithm(&current_algorithm) {
                 Ok(g) => gpu_ref = Some(g),
                 Err(e) => {
@@ -949,7 +955,6 @@ fn run_local_session(
                         "gpu_algo_fallback job={} algorithm={} reason=\"{e}\" using=cpu",
                         job.job_id, current_algorithm
                     );
-                    gpu_available = false;
                 }
             }
         }
@@ -1380,7 +1385,7 @@ fn run_remote_session(
 
         // Ensure GPU backend matches current algorithm (lazy create / switch)
         let mut gpu_ref: Option<&mut dyn gpu_backend::GpuMiner> = None;
-        if gpu_available && gpu_on {
+        if config.gpu_backend != gpu_backend::GpuBackendKind::Cpu && gpu_on {
             match gpu_manager.ensure_algorithm(&current_algorithm) {
                 Ok(g) => gpu_ref = Some(g),
                 Err(e) => {
@@ -1388,7 +1393,6 @@ fn run_remote_session(
                         "gpu_algo_fallback job={} algorithm={} reason=\"{e}\" using=cpu",
                         job.job_id, current_algorithm
                     );
-                    gpu_available = false;
                 }
             }
         }
