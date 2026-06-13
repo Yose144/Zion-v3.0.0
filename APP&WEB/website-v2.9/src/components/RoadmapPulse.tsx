@@ -121,7 +121,7 @@ export default function RoadmapPulse() {
           </div>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {phaseCards.map((phase, idx) => (
             <div
               key={phase.name}
@@ -163,7 +163,7 @@ export default function RoadmapPulse() {
             </div>
           </div>
 
-          <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {timeline.map((entry) => (
               <div key={entry.title} className="rounded-2xl border border-white/10 bg-black/40 p-4">
                 <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{entry.title}</p>
