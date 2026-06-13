@@ -1806,10 +1806,6 @@ pub mod opencl_deeksha_lite_fire {
         /// Host-precomputed partial Keccak256 state (25 × u64) after absorbing
         /// the 80-byte header (nonce bytes left as 0). Identical to v1 approach.
         header_state_buf: Buffer<u64>,
-        /// Nonce base (u64) - explicit buffer for atomic operations (Metal fix)
-        nonce_base_buf: Buffer<u64>,
-        /// Nonce count (u32) - explicit buffer for batch size (Metal fix)
-        nonce_count_buf: Buffer<u32>,
         scratchpad_buf: Buffer<u8>,
         output_hashes_buf: Buffer<u8>,
         work_size: usize,
@@ -1943,8 +1939,6 @@ pub mod opencl_deeksha_lite_fire {
             };
             let q = pro_que.queue().clone();
             let header_state_buf = Buffer::<u64>::builder().queue(q.clone()).len(25).build()?;
-            let nonce_base_buf = Buffer::<u64>::builder().queue(q.clone()).len(1).build()?;
-            let nonce_count_buf = Buffer::<u32>::builder().queue(q.clone()).len(1).build()?;
             let scratchpad_buf = Buffer::<u8>::builder()
                 .queue(q.clone())
                 .len(actual_work_size * DLF_SCRATCHPAD_BYTES)
@@ -1962,8 +1956,8 @@ pub mod opencl_deeksha_lite_fire {
             let kernel = pro_que
                 .kernel_builder(opencl_kernel::DEEKSHA_LITE_FIRE_KERNEL_NAME)
                 .arg(&header_state_buf)
-                .arg(&nonce_base_buf)  // Use buffer instead of scalar (Metal fix)
-                .arg(&nonce_count_buf)  // Use buffer instead of scalar (Metal fix)
+                .arg(0u64)
+                .arg(0u32)
                 .arg(&output_hashes_buf)
                 .arg(&scratchpad_buf)
                 .build()
@@ -1979,8 +1973,6 @@ pub mod opencl_deeksha_lite_fire {
                 pro_que,
                 kernel,
                 header_state_buf,
-                nonce_base_buf,
-                nonce_count_buf,
                 scratchpad_buf,
                 output_hashes_buf,
                 work_size: actual_work_size,
@@ -2044,15 +2036,15 @@ pub mod opencl_deeksha_lite_fire {
                 let local_size = self.local_work_size.min(chunk);
                 let global_size = ((chunk + local_size - 1) / local_size) * local_size;
                 
-                // Write nonce parameters to buffers (Metal fix - use buffers instead of scalar args)
+                // Set nonce parameters via scalar args (same as Lite miner)
                 {
                     let guard = GpuGuard::new();
-                    self.nonce_base_buf.write(&[current_nonce as u64][..]).enq()?;
-                    self.nonce_count_buf.write(&[chunk as u32][..]).enq()?;
+                    self.kernel.set_arg(1, current_nonce)?;
+                    self.kernel.set_arg(2, chunk as u32)?;
                     if guard.was_caught() {
                         self.recovery_attempts += 1;
                         anyhow::bail!(
-                            "GPU access violation during nonce buffer write (attempt {}/{}).",
+                            "GPU access violation during nonce arg set (attempt {}/{}).",
                             self.recovery_attempts,
                             self.max_recovery_attempts
                         );
