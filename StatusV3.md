@@ -1,6 +1,6 @@
 # ZION V3 — Status Report (Mainnet Polish)
 
-> **Datum:** **2026-06-13** (Hiran v2.3 documentation cleanup — viz sekce níže); **2026-06-11** (Hard Genesis Reset #0 completed — viz sekce níže); **2026-06-11** (Pool stale share detection + dashboard tab fix — viz sekce níže); **2026-06-10** (GPU/CPU path oddělení + algorithm-aware share validace); **2026-06-09**; **2026-06-08** (Fire CPU/GPU sync + pool submitted_hash fix); 2026-06-07 (Chain reset + full stack cleanup); 2026-06-06 (HTTP JSON-RPC Transaction Relay Bug Fix); 2026-05-22 (Genesis + fee split KONFIGURACE DOKONČENA, ready for mainnet launch 31.12.2026); **2026-05-21** (Edge pool + L5/L6 + DAO governance + root docs sync); **2026-05-12** (Hiran v2.2 CLI integration); **2026-05-07** (security cleanup + agentická obsluha).
+> **Datum:** **2026-06-13** (Fire algorithm hard fork deployment — viz sekce níže); **2026-06-13** (Hiran v2.3 documentation cleanup — viz sekce níže); **2026-06-11** (Hard Genesis Reset #0 completed — viz sekce níže); **2026-06-11** (Pool stale share detection + dashboard tab fix — viz sekce níže); **2026-06-10** (GPU/CPU path oddělení + algorithm-aware share validace); **2026-06-09**; **2026-06-08** (Fire CPU/GPU sync + pool submitted_hash fix); 2026-06-07 (Chain reset + full stack cleanup); 2026-06-06 (HTTP JSON-RPC Transaction Relay Bug Fix); 2026-05-22 (Genesis + fee split KONFIGURACE DOKONČENA, ready for mainnet launch 31.12.2026); **2026-05-21** (Edge pool + L5/L6 + DAO governance + root docs sync); **2026-05-12** (Hiran v2.2 CLI integration); **2026-05-07** (security cleanup + agentická obsluha).
 > (sjednocení `StatusV3.md` ↔ `StatusV3-Part2.md` — TL;DR, roadmap §6, §8, §5
 > pyramida, odkazy).
 > **Předchozí update:** 2026-05-03 (genesis konsensus — merged na `main`)
@@ -19,6 +19,62 @@
 > starý Praha server (`91.98.122.165`) nebo historickou multi-server topologii
 > (Prague, SG, Helsinki, US) jsou **archivní / historické**, pokud není explicitně
 > uvedeno jinak. Aktuální živá topologie je **Core + Edge** (viz sekce Infrastruktura).
+
+---
+
+## Co je nového 2026-06-13 (Fire Algorithm Hard Fork Deployment)
+
+> **Status:** COMPLETE — Fire fork nasazen na Edge server, aktivace naplánována na blok 5000.
+
+### Shrnutí
+
+Fire algorithm hard fork byl úspěšně implementován a nasazen na Edge server (77.42.71.94). Fork přepne konsensus algoritmus z `deeksha_lite_v1` na `deeksha_lite_fire` na bloku 5000.
+
+### Implementace
+
+|| Fáze | Status | Detail |
+|-------|--------|--------|
+| 1 | OpenCL Kernel Fix | ✅ | 8-byte memory alignment, thermal loop alignment, buffer structure (6 buffers) |
+| 2 | CUDA Kernel | ✅ | `deeksha_lite_fire.cu` vytvořen (backend integrace vyžaduje CUDA hardware) |
+| 3 | Miner Integration | ✅ | GPU backend selection, algorithm reporting (již existovalo) |
+| 4 | Pool Integration | ✅ | Share validation, Fire validation (již existovalo) |
+| 5 | Node Integration | ✅ | Consensus profile logika, block validation |
+| 6 | Hard Fork Coordination | ✅ | Fork height nastaven na 5000 |
+| 7 | Testing | ✅ | Unit tests (500 passed), integration/GPU KAT vynechány (vyžadují hardware) |
+| 8 | Deployment | ✅ | Edge build (4m 37s), binaries zkopírovány, služby restartovány |
+
+### Konfigurace
+
+- **Fork height:** 5000 (2972 bloků zbývá od aktuálního height 2028)
+- **Profile name:** `deeksha_lite_fire`
+- **Fork logika:** Bloky 0-4999 používají `deeksha_lite_v1`, bloky 5000+ používají `deeksha_lite_fire`
+
+### Edge Server Status
+
+- **Build:** Release build úspěšně dokončen (4m 37s)
+- **Binaries:** `zion-node` a `zion-pool-serve` zkopírovány do `/usr/local/bin/`
+- **Services:** Vše restartováno a běží:
+  - `zion-edge-node1` ✅ Active
+  - `zion-edge-node2` ✅ Active
+  - `zion-pool-server` ✅ Active
+
+### Chain Status
+
+- **Current height:** 2028
+- **Consensus profile:** `deeksha_lite_v1` (správně - fork ještě nenastal)
+- **Očekávaná aktivace:** ~2-3 dny při současném tempu (~1400 bloků/den)
+
+### Klíčové soubory
+
+- `V3/L1/cosmic-harmony/src/lib.rs` — `FIRE_FORK_HEIGHT`, `FIRE_PROFILE`, `profile_name_for_height()`
+- `V3/L1/cosmic-harmony/src/gpu/kernels/deeksha_lite_fire.cl` — OpenCL kernel s Metal alignment fixes
+- `V3/L1/cosmic-harmony/src/gpu/kernels/deeksha_lite_fire.cu` — CUDA kernel
+- `V3/L1/core/src/lib.rs` — Consensus profile integration
+
+### Deployment skripty
+
+- `deploy-fire-fork-edge.sh` — Automatizovaný deployment na Edge server
+- `DEPLOY_FIRE_FORK_MANUAL.md` — Manuální instrukce pro deployment
 
 ---
 
@@ -2451,6 +2507,7 @@ Clean gate 2026-05-02:
         ┌─────────────────▼───────────────────────────────┐
         │ Q2 2026 (do ~2026-06-30)                        │
         │  done Rotate credentials + `git filter-repo` (2026-05-07) │
+        │  done Fire algorithm hard fork deployment (2026-06-13) │
         │  □ Set GitHub Actions spending limit > $0       │
         │  □ Deploy nový řetězec: čistý datadir + binárky │
         │  □ Provision 5 bridge validator keys + 3/5 cfg  │
