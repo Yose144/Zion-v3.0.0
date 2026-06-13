@@ -174,11 +174,11 @@ def train_full_ft(stage_name, stage_cfg, deepspeed_config="config/deepspeed_zero
         warmup_steps=stage_cfg["warmup_steps"],
         lr_scheduler_type=stage_cfg.get("lr_scheduler", "cosine"),
         max_grad_norm=stage_cfg["max_grad_norm"],
-        evaluation_strategy="steps",
-        eval_steps=200,
+        eval_strategy="steps",
+        eval_steps=250,
         save_strategy="steps",
         save_steps=500,
-        save_total_limit=3,
+        save_total_limit=1,
         logging_steps=10,
         logging_first_step=True,
         load_best_model_at_end=True,
@@ -188,8 +188,8 @@ def train_full_ft(stage_name, stage_cfg, deepspeed_config="config/deepspeed_zero
         fp16=False,
         deepspeed=str(deepspeed_config) if Path(deepspeed_config).exists() else None,
         optim="adamw_torch",
-        group_by_length=True,
-        report_to=["tensorboard"],
+        # group_by_length=True,  # Deprecated in transformers 4.45+
+        report_to="none",
         remove_unused_columns=False,
         dataloader_num_workers=4,
         dataloader_pin_memory=True,
@@ -214,7 +214,7 @@ def train_full_ft(stage_name, stage_cfg, deepspeed_config="config/deepspeed_zero
         train_dataset=tokenized_dataset["train"],
         eval_dataset=tokenized_dataset["test"],
         data_collator=data_collator,
-        tokenizer=tokenizer,
+        # tokenizer=tokenizer,  # Deprecated in transformers 4.45+
     )
 
     # Print memory info
