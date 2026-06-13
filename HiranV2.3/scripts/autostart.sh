@@ -57,7 +57,9 @@ fi
 
 # --- 3. Clone Repo ---
 log "[3/10] Cloning repository..."
-if [ ! -d "$HIRAN_DIR/.git" ]; then
+if [ ! -f "$HIRAN_DIR/scripts/train_v2.3_fullft.py" ]; then
+    # Save our autostart.sh before removing dir
+    cp "$HIRAN_DIR/scripts/autostart.sh" /tmp/autostart.sh.backup 2>/dev/null || true
     if [ -d "$HIRAN_DIR" ]; then
         rm -rf "$HIRAN_DIR"
     fi
@@ -65,6 +67,8 @@ if [ ! -d "$HIRAN_DIR/.git" ]; then
     mkdir -p "$HIRAN_DIR"
     cp -r /tmp/zion-repo/HiranV2.3/* "$HIRAN_DIR/"
     rm -rf /tmp/zion-repo
+    # Restore our autostart.sh
+    cp /tmp/autostart.sh.backup "$HIRAN_DIR/scripts/autostart.sh" 2>/dev/null || true
     log "Repository cloned"
 else
     log "Repository already exists"
