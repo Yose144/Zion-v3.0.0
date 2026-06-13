@@ -142,7 +142,7 @@ if [ -d "$FINAL_CHECKPOINT" ] && [ "$(ls -A "$FINAL_CHECKPOINT")" ]; then
     SKIP_TRAIN=1
 else
     # Find latest intermediate checkpoint
-    LATEST_CKPT=$(find checkpoints/stage1_factual -maxdepth 1 -name "checkpoint-*" -type d 2>/dev/null | sort -V | tail -1)
+    LATEST_CKPT=$(find checkpoints/stage1_factual -maxdepth 1 -name "checkpoint-*" -type d 2>/dev/null | sort -V | tail -1) || true
     if [ -n "$LATEST_CKPT" ]; then
         warn "  Found checkpoint: $(basename "$LATEST_CKPT")"
         warn "  DeepSpeed will auto-resume from this checkpoint."
