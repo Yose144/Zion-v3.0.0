@@ -1,56 +1,106 @@
 #!/bin/bash
-# Deploy autostart script to Vast.ai instance and launch training
-# Run locally after instance is running
+# Deploy autostart script to Vast.ai instance and launch training autonomously
+# Run locally: ./deploy-and-train.sh
 
 set -euo pipefail
 
-GREEN='\033[0;32m'; YELLOW='\033[1;33m'; NC='\033[0m'
+GREEN='\033[0;32m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; NC='\033[0m'
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SSH_KEY="${HOME}/.ssh/vast/hiran_v2.3_key"
-REMOTE_HOST="root@ssh5.vast.ai"
-REMOTE_DIR="/workspace/hiran-v2.3"
 INSTANCE_ID="40780492"
 API_KEY="${VASTAI_API_KEY:-}"
+MAX_WAIT=300  # 5 minutes
 
-# Get SSH port from API if not set
-if [ -z "${SSH_PORT:-}" ]; then
-    echo -e "${YELLOW}Fetching SSH port from Vast.ai API...${NC}"
-    SSH_PORT=$(curl -s "https://console.vast.ai/api/v0/instances/${INSTANCE_ID}/?api_key=${API_KEY}" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('ssh_port', ''))")
-    if [ -z "$SSH_PORT" ]; then
-        echo "ERROR: Instance not ready yet. SSH port unavailable."
-        echo "Check status at: https://cloud.vast.ai/"
-        exit 1
-    fi
-    echo "SSH port: $SSH_PORT"
+echo -e "${GREEN}========================================${NC}"
+echo -e "${GREEN}  Hiran v2.3 Deploy & Launch${NC}"
+echo -e "${GREEN}========================================${NC}"
+
+# Check SSH key exists
+if [ ! -f "$SSH_KEY" ]; then
+    echo -e "${RED}ERROR: SSH key not found: $SSH_KEY${NC}"
+    echo "Generate first or check VAST_INSTANCE_INFO.md"
+    exit 1
 fi
 
-echo -e "${GREEN}Deploying to ${REMOTE_HOST}:${SSH_PORT}...${NC}"
+# Get API key if not set
+if [ -z "$API_KEY" ]; then
+    read -p "Enter Vast.ai API key: " API_KEY
+fi
 
-# Wait for SSH to be ready
-echo -e "${YELLOW}Waiting for SSH...${NC}"
-for i in {1..30}; do
-    if ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=5 -p "$SSH_PORT" -i "$SSH_KEY" "$REMOTE_HOST" "echo 'OK'" 2>/dev/null; then
+# Get SSH port
+echo -e "${YELLOW}Fetching SSH port from Vast.ai API...${NC}"
+SSH_PORT=""
+for i in $(seq 1 $MAX_WAIT); do
+    SSH_PORT=$(curl -s "https://console.vast.ai/api/v0/instances/${INSTANCE_ID}/?api_key=${API_KEY}" | \
+        python3 -c "import json,sys; d=json.load(sys.stdin); p=d.get('ssh_port'); print(p if p else '')")
+    if [ -n "$SSH_PORT" ] && [ "$SSH_PORT" != "None" ]; then
         break
     fi
-    echo "  Attempt $i/30..."
-    sleep 10
+    if [ $((i % 10)) -eq 0 ]; then
+        echo "  Waiting for SSH... ($i/${MAX_WAIT}s)"
+    fi
+    sleep 1
 done
 
-# Create remote directory
+if [ -z "$SSH_PORT" ] || [ "$SSH_PORT" = "None" ]; then
+    echo -e "${RED}ERROR: Instance not ready after ${MAX_WAIT}s${NC}"
+    echo "Check status at: https://cloud.vast.ai/"
+    exit 1
+fi
+
+echo -e "${GREEN}SSH port: $SSH_PORT${NC}"
+
+# Wait for SSH to actually respond
+echo -e "${YELLOW}Waiting for SSH daemon...${NC}"
+for i in $(seq 1 60); do
+    if ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=3 -p "$SSH_PORT" -i "$SSH_KEY" root@ssh5.vast.ai "echo 'SSH_OK'" 2>/dev/null | grep -q "SSH_OK"; then
+        echo -e "${GREEN}SSH ready!${NC}"
+        break
+    fi
+    if [ $i -eq 60 ]; then
+        echo -e "${RED}ERROR: SSH not responding${NC}"
+        exit 1
+    fi
+    sleep 2
+done
+
+# Create remote workspace
 echo -e "${YELLOW}Creating remote workspace...${NC}"
-ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p "$SSH_PORT" -i "$SSH_KEY" "$REMOTE_HOST" "mkdir -p ${REMOTE_DIR}"
+ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p "$SSH_PORT" -i "$SSH_KEY" root@ssh5.vast.ai \
+    "mkdir -p /workspace/hiran-v2.3/scripts"
 
 # Copy autostart script
 echo -e "${YELLOW}Copying autostart script...${NC}"
 scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -P "$SSH_PORT" -i "$SSH_KEY" \
-    "$(dirname "$0")/autostart.sh" \
-    "${REMOTE_HOST}:${REMOTE_DIR}/"
+    "$SCRIPT_DIR/autostart.sh" \
+    "root@ssh5.vast.ai:/workspace/hiran-v2.3/scripts/"
 
-# Run it
-echo -e "${GREEN}Launching training!${NC}"
-ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p "$SSH_PORT" -i "$SSH_KEY" "$REMOTE_HOST" \
-    "bash ${REMOTE_DIR}/autostart.sh"
+# Make executable and add to .bashrc for auto-run on reconnect
+echo -e "${YELLOW}Setting up auto-run...${NC}"
+ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p "$SSH_PORT" -i "$SSH_KEY" root@ssh5.vast.ai \
+    "chmod +x /workspace/hiran-v2.3/scripts/autostart.sh && \
+     grep -q 'autostart.sh' ~/.bashrc || echo 'bash /workspace/hiran-v2.3/scripts/autostart.sh' >> ~/.bashrc && \
+     echo 'Auto-run configured. Will start on SSH login or now.'"
 
-echo -e "${GREEN}Done!${NC}"
+# Launch training NOW
+echo -e "${GREEN}Launching autonomous training!${NC}"
+ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p "$SSH_PORT" -i "$SSH_KEY" root@ssh5.vast.ai \
+    "nohup bash /workspace/hiran-v2.3/scripts/autostart.sh > /workspace/hiran-training.log 2>&1 &"
+
+echo ""
+echo -e "${GREEN}========================================${NC}"
+echo -e "${GREEN}  Training launched autonomously!${NC}"
+echo -e "${GREEN}========================================${NC}"
+echo ""
 echo "Monitor logs:"
-echo "  ssh -p ${SSH_PORT} -i ${SSH_KEY} ${REMOTE_HOST} 'tail -f /workspace/hiran-training.log'"
+echo "  ssh -p ${SSH_PORT} -i ${SSH_KEY} root@ssh5.vast.ai 'tail -f /workspace/hiran-training.log'"
+echo ""
+echo "Check GPU:"
+echo "  ssh -p ${SSH_PORT} -i ${SSH_KEY} root@ssh5.vast.ai 'nvidia-smi'"
+echo ""
+echo "Dashboard: https://cloud.vast.ai/"
+echo "Instance ID: ${INSTANCE_ID}"
+echo ""
+echo "Download model when ready:"
+echo "  rsync -avz -e 'ssh -p ${SSH_PORT} -i ${SSH_KEY}' root@ssh5.vast.ai:/workspace/hiran-v2.3-release/ ~/HiranV2.3-Release/"
