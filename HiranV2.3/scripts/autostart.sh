@@ -32,8 +32,9 @@ fi
 echo $$ > "$LOCK_FILE"
 
 log "========================================"
-log "  Hiran v2.3 Autonomous Training"
+log "  Hiran v2.3 Autonomous Training (QLoRA)"
 log "  Base: Qwen3-32B | GPUs: $(nvidia-smi -L 2>/dev/null | wc -l) | Disk: $(df -h / | awk 'NR==2{print $4}')"
+log "  Method: QLoRA (4-bit + LoRA adapters)"
 log "  Start: $(date)"
 log "========================================"
 
@@ -84,8 +85,11 @@ source venv/bin/activate
 pip install -q --upgrade pip 2>&1 | tail -1
 
 # Core training deps
-log "  Installing transformers, accelerate, datasets, deepspeed..."
-pip install -q transformers accelerate datasets deepspeed 2>&1 | tail -3
+log "  Installing transformers, accelerate, datasets, peft, bitsandbytes..."
+pip install -q transformers accelerate datasets peft bitsandbytes 2>&1 | tail -3
+
+# Install deepspeed (kept for compatibility, but not used in QLoRA)
+pip install -q deepspeed 2>&1 | tail -3 || warn "deepspeed install failed, continuing"
 
 # Optional: flash-attn for speedup
 echo "  Installing flash-attn (optional, may take 5-10 min)..."
@@ -134,16 +138,6 @@ except Exception as e:
 "
 log "Model tokenizer ready"
 
-# --- CRITICAL: Clear HF cache to save disk space (500GB insufficient for 3 checkpoints) ---
-log "Clearing HuggingFace model cache to free disk..."
-rm -rf /workspace/.cache/huggingface/models--Qwen--Qwen3-32B 2>/dev/null || true
-log "Freed ~60GB disk space"
-
-# --- Patch training script: save_total_limit=3 -> 1 (500GB disk limit) ---
-log "Patching save_total_limit for 500GB disk..."
-sed -i 's/save_total_limit=3/save_total_limit=1/g' scripts/train_v2.3_fullft.py
-log "Patched save_total_limit=1"
-
 # --- 7. Resume Check ---
 log "[7/10] Checking for existing checkpoints..."
 RESUME_FROM=""
@@ -166,7 +160,7 @@ fi
 # --- 8. Dry Run ---
 if [ "$SKIP_TRAIN" -eq 0 ]; then
     log "[8/10] Dry run to verify config..."
-    python3 scripts/train_v2.3_fullft.py --stage all --dry_run 2>&1 | tee -a "$LOG_FILE"
+    python3 scripts/train_v2.3_qlora.py --stage all --dry_run 2>&1 | tee -a "$LOG_FILE"
     log "Dry run OK"
 else
     log "[8/10] SKIPPED — Training already complete"
@@ -174,11 +168,11 @@ fi
 
 # --- 9. Training ---
 if [ "$SKIP_TRAIN" -eq 0 ]; then
-    log "[9/10] Starting FULL FINE-TUNING Qwen3-32B..."
-    log "  This will take ~36-48 hours"
+    log "[9/10] Starting QLoRA training Qwen3-32B..."
+    log "  This will take ~8-12 hours on 2x A100"
+    log "  Trainable params: ~0.5% (LoRA adapters only)"
     log "  Monitor: tail -f $LOG_FILE"
-    log "  DeepSpeed ZeRO-3 will auto-save every 500 steps"
-    log "  Crash recovery: DeepSpeed auto-resumes from latest checkpoint"
+    log "  Auto-save every 500 steps"
     echo ""
 
     mkdir -p checkpoints logs
@@ -186,18 +180,25 @@ if [ "$SKIP_TRAIN" -eq 0 ]; then
     export CUDA_VISIBLE_DEVICES=0,1
     export HF_HOME=/workspace/.cache/huggingface
     export TRANSFORMERS_CACHE=/workspace/.cache/huggingface
+    export DS_SKIP_CUDA_CHECK=1
 
     # Trap signals for graceful shutdown
     cleanup() {
-        log "Received shutdown signal. DeepSpeed will save checkpoint and exit."
+        log "Received shutdown signal. Saving checkpoint and exiting."
         exit 0
     }
     trap cleanup SIGTERM SIGINT
 
-    deepspeed --num_gpus=2 scripts/train_v2.3_fullft.py \
-      --stage all \
-      --deepspeed_config config/deepspeed_zero3.json \
-      2>&1 | tee -a "$LOG_FILE"
+    # QLoRA uses torchrun (DDP) or single GPU -- no DeepSpeed needed
+    if [ "$(nvidia-smi -L 2>/dev/null | wc -l)" -ge 2 ]; then
+        log "  Using 2 GPUs with DDP..."
+        torchrun --nproc_per_node=2 scripts/train_v2.3_qlora.py \
+          --stage all \
+          2>&1 | tee -a "$LOG_FILE"
+    else
+        log "  Using 1 GPU..."
+        python3 scripts/train_v2.3_qlora.py --stage all 2>&1 | tee -a "$LOG_FILE"
+    fi
 
     TRAIN_EXIT=${PIPESTATUS[0]}
     if [ "$TRAIN_EXIT" -ne 0 ]; then
@@ -265,14 +266,15 @@ cp requirements-train.txt "$PACKAGE_DIR/" 2>/dev/null || true
 
 # Create README
 cat > "$PACKAGE_DIR/README.txt" << 'EOF'
-Hiran v2.3 — Trained Model Release
-====================================
+Hiran v2.3 — Trained Model Release (QLoRA)
+=========================================
 Base: Qwen/Qwen3-32B (32.8B params)
-Method: DeepSpeed ZeRO-3 Full Fine-Tuning
+Method: QLoRA (4-bit base + LoRA adapters)
 Hardware: 2x NVIDIA A100 SXM4 80GB
 
 Contents:
-  model-bf16/      — Full precision model (BF16, ~65 GB)
+  final/           — LoRA adapters (~500 MB)
+  final_merged/    — Merged model (BF16, ~65 GB)
   models-gguf/     — Quantized models for inference
   evaluation_results/ — Benchmark scores
   benchmark_results/  — Factual recall tests
@@ -280,14 +282,15 @@ Contents:
 
 GGUF Models:
   hiran-v2.3-q4_k_m.gguf — ~16-20 GB, good balance
-  hiran-v2.3-q5_k_m.gguf — ~20-25 GB, higher quality
 
-Inference (llama.cpp):
-  ./main -m hiran-v2.3-q4_k_m.gguf --color -f prompt.txt
+Inference with adapters:
+  from peft import PeftModel
+  model = AutoModelForCausalLM.from_pretrained(BASE_MODEL, load_in_4bit=True)
+  model = PeftModel.from_pretrained(model, "final/")
 
-Inference (Transformers):
-  from transformers import AutoModelForCausalLM, AutoTokenizer
-  model = AutoModelForCausalLM.from_pretrained("model-bf16/", trust_remote_code=True)
+Inference with merged model:
+  from transformers import AutoModelForCausalLM
+  model = AutoModelForCausalLM.from_pretrained("final_merged/")
 EOF
 
 # Size report
@@ -300,15 +303,16 @@ echo "" >> "$LOG_FILE"
 log "========================================"
 log "  HIRAN V2.3 TRAINING COMPLETE!"
 log "========================================"
-log "  Model (BF16):   $PACKAGE_DIR/model-bf16/"
+log "  LoRA adapters:  $PACKAGE_DIR/final/"
+log "  Merged model:   $PACKAGE_DIR/final_merged/"
 log "  Model (GGUF):   $PACKAGE_DIR/models-gguf/"
 log "  Evaluations:    $PACKAGE_DIR/evaluation_results/"
 log "  Benchmarks:     $PACKAGE_DIR/benchmark_results/"
 log "  Full log:       $LOG_FILE"
 log ""
 log "  To download to your local PC:"
-log "    rsync -avz -e 'ssh -p <PORT> -i ~/.ssh/vast/hiran_v2.3_key' \\"
-log "      root@ssh5.vast.ai:/workspace/hiran-v2.3-release/ \\"
+log "    rsync -avz -e 'ssh -p <PORT> -i ~/.ssh/vast/hiran_v2.4_key' \\"
+log "      root@ssh1.vast.ai:/workspace/hiran-v2.3-release/ \\"
 log "      ~/HiranV2.3-Release/"
 log ""
 log "  To destroy instance (stop billing):"
