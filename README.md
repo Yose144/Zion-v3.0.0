@@ -190,6 +190,46 @@ cargo tauri build      # production build
 
 ---
 
+## ZION Agent CLI (Autonomous AI Operator)
+
+> `zion-agent` is a Devin.ai-style autonomous agent for the ZION ecosystem. It reads code, edits files, runs commands, plans tasks, and executes them with minimal human intervention — powered by Hiran v2.3+.
+
+**Location:** [`ZION_OS/agent-cli/`](ZION_OS/agent-cli/)
+
+```bash
+cd ZION_OS/agent-cli
+cargo check
+
+# Run an autonomous task
+zion-agent run "Refactor pool share validation to use algorithm-aware dispatch"
+
+# Interactive session
+zion-agent session
+
+# Check remote training status
+zion-agent train-status
+
+# Pull latest checkpoint from Vast AI
+zion-agent checkpoint-pull 4000
+
+# Start local inference server
+zion-agent serve --model hiran-v2.3-q5.gguf --auto
+```
+
+**Architecture:** Local Rust CLI (tools, memory, safety) + remote Hiran inference (A100) via OpenAI-compatible API.
+
+**Key features:**
+- ReAct agent loop with tool use (read/edit/search/shell/git)
+- L1 consensus protection — blocks edits to `V3/L1/core/src/` without `--l1-unsafe`
+- Destructive op confirmation + secret protection
+- Model ops: checkpoint sync, merge, convert (GGUF)
+- Infrastructure monitoring placeholder
+- Code review with git diff analysis
+
+**Docs:** [ZION_AGENT_CLI_PLAN.md](ZION_AGENT_CLI_PLAN.md) | [HIRAN_CLI_PLAN.md](HIRAN_CLI_PLAN.md)
+
+---
+
 ## Network Topology
 
 ```
