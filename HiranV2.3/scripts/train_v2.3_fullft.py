@@ -148,7 +148,6 @@ def train_full_ft(stage_name, stage_cfg, deepspeed_config="config/deepspeed_zero
         BASE_MODEL,
         torch_dtype=torch.bfloat16,
         trust_remote_code=True,
-        attn_implementation="flash_attention_2" if torch.cuda.is_available() else None,
     )
 
     # Enable gradient checkpointing for memory savings
