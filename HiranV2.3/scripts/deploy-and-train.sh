@@ -7,8 +7,9 @@ set -euo pipefail
 GREEN='\033[0;32m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; NC='\033[0m'
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SSH_KEY="${HOME}/.ssh/vast/hiran_v2.3_key"
-INSTANCE_ID="40780492"
+SSH_KEY="${HOME}/.ssh/vast/hiran_v2.4_key"
+SSH_HOST="ssh1.vast.ai"
+INSTANCE_ID="40791384"
 API_KEY="${VASTAI_API_KEY:-}"
 MAX_WAIT=300  # 5 minutes
 
@@ -54,7 +55,7 @@ echo -e "${GREEN}SSH port: $SSH_PORT${NC}"
 # Wait for SSH to actually respond
 echo -e "${YELLOW}Waiting for SSH daemon...${NC}"
 for i in $(seq 1 60); do
-    if ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=3 -p "$SSH_PORT" -i "$SSH_KEY" root@ssh5.vast.ai "echo 'SSH_OK'" 2>/dev/null | grep -q "SSH_OK"; then
+    if ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=3 -p "$SSH_PORT" -i "$SSH_KEY" root@${SSH_HOST} "echo 'SSH_OK'" 2>/dev/null | grep -q "SSH_OK"; then
         echo -e "${GREEN}SSH ready!${NC}"
         break
     fi
@@ -67,25 +68,25 @@ done
 
 # Create remote workspace
 echo -e "${YELLOW}Creating remote workspace...${NC}"
-ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p "$SSH_PORT" -i "$SSH_KEY" root@ssh5.vast.ai \
+ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p "$SSH_PORT" -i "$SSH_KEY" root@${SSH_HOST} \
     "mkdir -p /workspace/hiran-v2.3/scripts"
 
 # Copy autostart script
 echo -e "${YELLOW}Copying autostart script...${NC}"
 scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -P "$SSH_PORT" -i "$SSH_KEY" \
     "$SCRIPT_DIR/autostart.sh" \
-    "root@ssh5.vast.ai:/workspace/hiran-v2.3/scripts/"
+    "root@${SSH_HOST}:/workspace/hiran-v2.3/scripts/"
 
 # Make executable and add to .bashrc for auto-run on reconnect
 echo -e "${YELLOW}Setting up auto-run...${NC}"
-ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p "$SSH_PORT" -i "$SSH_KEY" root@ssh5.vast.ai \
+ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p "$SSH_PORT" -i "$SSH_KEY" root@${SSH_HOST} \
     "chmod +x /workspace/hiran-v2.3/scripts/autostart.sh && \
      grep -q 'autostart.sh' ~/.bashrc || echo 'bash /workspace/hiran-v2.3/scripts/autostart.sh' >> ~/.bashrc && \
      echo 'Auto-run configured. Will start on SSH login or now.'"
 
 # Launch training NOW
 echo -e "${GREEN}Launching autonomous training!${NC}"
-ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p "$SSH_PORT" -i "$SSH_KEY" root@ssh5.vast.ai \
+ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p "$SSH_PORT" -i "$SSH_KEY" root@${SSH_HOST} \
     "nohup bash /workspace/hiran-v2.3/scripts/autostart.sh > /workspace/hiran-training.log 2>&1 &"
 
 echo ""
@@ -94,13 +95,13 @@ echo -e "${GREEN}  Training launched autonomously!${NC}"
 echo -e "${GREEN}========================================${NC}"
 echo ""
 echo "Monitor logs:"
-echo "  ssh -p ${SSH_PORT} -i ${SSH_KEY} root@ssh5.vast.ai 'tail -f /workspace/hiran-training.log'"
+echo "  ssh -p ${SSH_PORT} -i ${SSH_KEY} root@${SSH_HOST} 'tail -f /workspace/hiran-training.log'"
 echo ""
 echo "Check GPU:"
-echo "  ssh -p ${SSH_PORT} -i ${SSH_KEY} root@ssh5.vast.ai 'nvidia-smi'"
+echo "  ssh -p ${SSH_PORT} -i ${SSH_KEY} root@${SSH_HOST} 'nvidia-smi'"
 echo ""
 echo "Dashboard: https://cloud.vast.ai/"
 echo "Instance ID: ${INSTANCE_ID}"
 echo ""
 echo "Download model when ready:"
-echo "  rsync -avz -e 'ssh -p ${SSH_PORT} -i ${SSH_KEY}' root@ssh5.vast.ai:/workspace/hiran-v2.3-release/ ~/HiranV2.3-Release/"
+echo "  rsync -avz -e 'ssh -p ${SSH_PORT} -i ${SSH_KEY}' root@${SSH_HOST}:/workspace/hiran-v2.3-release/ ~/HiranV2.3-Release/"
