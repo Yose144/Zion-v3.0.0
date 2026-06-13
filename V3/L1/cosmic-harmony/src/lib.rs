@@ -66,7 +66,7 @@ pub use stream_layers::{
 
 pub const POW_PROFILE: &str = "deeksha_lite_v1";
 pub const FIRE_PROFILE: &str = "deeksha_lite_fire";
-pub const FIRE_FORK_HEIGHT: u64 = 1000000; // TODO: Set actual fork height
+pub const FIRE_FORK_HEIGHT: u64 = 5000; // Fire algorithm hard fork at block 5000
 
 pub fn profile_name() -> &'static str {
     POW_PROFILE
