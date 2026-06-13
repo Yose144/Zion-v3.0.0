@@ -1,5 +1,5 @@
 /*
- * DeekshaLite Fire — OpenCL Kernel (GCN/RDNA compatible)
+ * DeekshaLite Fire — CUDA Kernel (NVIDIA compatible)
  *
  * Fire = DeekshaLite v1 (identical, verified working) + thermal_loop step.
  * The thermal loop burns ALU cycles after the AES mix to maximize GPU heat.
@@ -12,14 +12,12 @@
  *   4. Thermal loop (16384 iters, 8 ulong chains) — extra heat, no float
  *   5. Keccak256(s3_after_thermal) → final hash
  *
- * Compatible with: AMD GCN (Vega, Polaris), AMD RDNA, NVIDIA, Intel.
+ * Compatible with: NVIDIA Tesla, GeForce, RTX, Quadro.
+ * Includes Metal alignment fixes (8-byte alignment, buffer-based parameters).
  */
 
-#pragma OPENCL EXTENSION cl_khr_int64_base_atomics : enable
-
-/* ========================================================================== */
-/* Constants — identical to v1 for memory management                          */
-/* ========================================================================== */
+#include <cuda_runtime.h>
+#include <device_launch_parameters.h>
 
 #define SCRATCHPAD_SIZE  262144   /* 256 KiB = 8192 * 32 — same as v1 */
 #define BLOCK_SIZE       32
@@ -28,11 +26,7 @@
 #define RANDOM_READS     64
 #define THERMAL_ITERS    16384 // OPTIMIZED: reduced from 65536 (4x less) for better efficiency
 
-/* ========================================================================== */
-/* Keccak — identical to deeksha_lite.cl                                      */
-/* ========================================================================== */
-
-#define ROL64(x, n) rotate((long)((ulong)(x)), (long)((ulong)(n)))
+#define ROL64(x, n) (((x) << (n)) | ((x) >> (64 - (n))))
 
 #define CHI_ROW(b) \
 { ulong _a=st[(b)],_b=st[(b)+1],_c=st[(b)+2],_d=st[(b)+3],_e=st[(b)+4]; \
@@ -42,7 +36,7 @@
   st[(b)+3] = _d ^ ((~_e) & _a); \
   st[(b)+4] = _e ^ ((~_a) & _b); }
 
-__constant ulong KC_RC[24] = {
+__constant__ ulong KC_RC[24] = {
     0x0000000000000001UL, 0x0000000000008082UL,
     0x800000000000808AUL, 0x8000000080008000UL,
     0x000000000000808BUL, 0x0000000080000001UL,
@@ -57,7 +51,7 @@ __constant ulong KC_RC[24] = {
     0x0000000080000001UL, 0x8000000080008008UL,
 };
 
-void keccak_f1600(__private ulong *st)
+__device__ void keccak_f1600(ulong *st)
 {
     ulong bc0, bc1, bc2, bc3, bc4, t;
     for (int rnd = 0; rnd < 24; rnd++) {
@@ -101,25 +95,25 @@ void keccak_f1600(__private ulong *st)
     }
 }
 
-typedef union { ulong u[25]; uchar b[200]; } keccak_st_t;
+typedef union { ulong u[25]; unsigned char b[200]; } keccak_st_t;
 
 /* Same as v1: host precomputes keccak state after absorbing header[0..80] */
-void keccak256_from_state(
-    __global const ulong *pre_state,
+__device__ void keccak256_from_state(
+    const ulong *pre_state,
     ulong nonce,
-    __private uchar out[32])
+    unsigned char out[32])
 {
     keccak_st_t s;
     for (int i = 0; i < 25; i++) s.u[i] = pre_state[i];
     for (int i = 0; i < 8; i++)
-        s.b[80 + i] ^= (uchar)(nonce >> (i * 8));
+        s.b[80 + i] ^= (unsigned char)(nonce >> (i * 8));
     s.b[88]  ^= 0x01;
     s.b[135] ^= 0x80;
     keccak_f1600(s.u);
     for (int i = 0; i < 32; i++) out[i] = s.b[i];
 }
 
-void sha3_512(__private const uchar *in, uint inlen, __private uchar out[64])
+__device__ void sha3_512(const unsigned char *in, uint inlen, unsigned char out[64])
 {
     keccak_st_t s;
     for (int i = 0; i < 25; i++) s.u[i] = 0;
@@ -138,7 +132,7 @@ void sha3_512(__private const uchar *in, uint inlen, __private uchar out[64])
 /* AES-128 helpers — identical to v1                                          */
 /* ========================================================================== */
 
-__constant uchar AES_SBOX[256] = {
+__constant__ unsigned char AES_SBOX[256] = {
     0x63,0x7c,0x77,0x7b,0xf2,0x6b,0x6f,0xc5,0x30,0x01,0x67,0x2b,0xfe,0xd7,0xab,0x76,
     0xca,0x82,0xc9,0x7d,0xfa,0x59,0x47,0xf0,0xad,0xd4,0xa2,0xaf,0x9c,0xa4,0x72,0xc0,
     0xb7,0xfd,0x93,0x26,0x36,0x3f,0xf7,0xcc,0x34,0xa5,0xe5,0xf1,0x71,0xd8,0x31,0x15,
@@ -157,93 +151,94 @@ __constant uchar AES_SBOX[256] = {
     0x8c,0xa1,0x89,0x0d,0xbf,0xe6,0x42,0x68,0x41,0x99,0x2d,0x0f,0xb0,0x54,0xbb,0x16,
 };
 
-void aes_sub_bytes(__private uchar s[16])   { for (int i=0;i<16;i++) s[i]=AES_SBOX[s[i]]; }
+__device__ void aes_sub_bytes(unsigned char s[16])   { for (int i=0;i<16;i++) s[i]=AES_SBOX[s[i]]; }
 
-void aes_shift_rows(__private uchar s[16])
+__device__ void aes_shift_rows(unsigned char s[16])
 {
-    uchar t;
+    unsigned char t;
     t=s[1];  s[1] =s[5];  s[5] =s[9];  s[9] =s[13]; s[13]=t;
     t=s[2];  s[2] =s[10]; s[10]=t;
     t=s[6];  s[6] =s[14]; s[14]=t;
     t=s[15]; s[15]=s[11]; s[11]=s[7];  s[7] =s[3];  s[3] =t;
 }
 
-uchar aes_xtime(uchar a) { return (uchar)((a<<1)^(((a>>7)&1)*0x1b)); }
+__device__ unsigned char aes_xtime(unsigned char a) { return (unsigned char)((a<<1)^(((a>>7)&1)*0x1b)); }
 
-void aes_mix_columns(__private uchar s[16])
+__device__ void aes_mix_columns(unsigned char s[16])
 {
     for (int i=0;i<4;i++) {
-        uchar a=s[i*4],b=s[i*4+1],c=s[i*4+2],d=s[i*4+3];
-        uchar e=a^b^c^d;
+        unsigned char a=s[i*4],b=s[i*4+1],c=s[i*4+2],d=s[i*4+3];
+        unsigned char e=a^b^c^d;
         s[i*4]  ^=e^aes_xtime(a^b); s[i*4+1]^=e^aes_xtime(b^c);
         s[i*4+2]^=e^aes_xtime(c^d); s[i*4+3]^=e^aes_xtime(d^a);
     }
 }
 
-void aes_add_round_key(__private uchar s[16], __private const uchar k[16])
+__device__ void aes_add_round_key(unsigned char s[16], const unsigned char k[16])
 { for (int i=0;i<16;i++) s[i]^=k[i]; }
 
-void aes_round(__private uchar s[16], __private const uchar k[16])
+__device__ void aes_round(unsigned char s[16], const unsigned char k[16])
 { aes_sub_bytes(s); aes_shift_rows(s); aes_mix_columns(s); aes_add_round_key(s,k); }
 
-void aes_final_round(__private uchar s[16], __private const uchar k[16])
+__device__ void aes_final_round(unsigned char s[16], const unsigned char k[16])
 { aes_sub_bytes(s); aes_shift_rows(s); aes_add_round_key(s,k); }
 
 /* ========================================================================== */
-/* Steps 2A/2B/2C: scratchpad — identical to v1                               */
+/* Steps 2A/2B/2C: scratchpad — identical to v1 with Metal alignment fixes      */
 /* ========================================================================== */
 
-void fill_scratchpad(__private const uchar seed[32], __global uchar *pad)
+__device__ void fill_scratchpad(const unsigned char seed[32], unsigned char *pad)
 {
     // 8-byte aligned state to prevent GPU_CPU_MISMATCH (Metal fix)
-    __private ulong state_aligned[8];  // 8 * 8 = 64 bytes, 8-byte aligned
-    __private uchar *state = (__private uchar*)state_aligned;
+    ulong state_aligned[8];  // 8 * 8 = 64 bytes, 8-byte aligned
+    unsigned char *state = (unsigned char*)state_aligned;
     for (int i=0;i<32;i++) state[i]=seed[i];
     for (int i=32;i<64;i++) state[i]=0;
     for (uint blk=0;blk<BLOCK_COUNT;blk++) {
-        uchar inp[65];
+        unsigned char inp[65];
         for (int i=0;i<64;i++) inp[i]=state[i];
-        inp[64]=(uchar)(blk&0xFF);
+        inp[64]=(unsigned char)(blk&0xFF);
         // 8-byte aligned output buffer
-        __private ulong out64_aligned[8];  // 8 * 8 = 64 bytes, 8-byte aligned
-        __private uchar *out64 = (__private uchar*)out64_aligned;
+        ulong out64_aligned[8];  // 8 * 8 = 64 bytes, 8-byte aligned
+        unsigned char *out64 = (unsigned char*)out64_aligned;
         sha3_512(inp, 65, out64);
         uint off=blk*BLOCK_SIZE;
-        ulong4 v=vload4(0,out64_aligned);  // Use aligned pointer
-        vstore4(v,0,(__global ulong*)(pad+off));
-        vstore4(v,0,state_aligned);  // Use aligned pointer
+        ulong4 v = make_ulong4(out64_aligned[0], out64_aligned[1], out64_aligned[2], out64_aligned[3]);
+        *((ulong4*)(pad+off)) = v;
+        *((ulong4*)state_aligned) = v;
     }
 }
 
-void sequential_passes(__global uchar *pad)
+__device__ void sequential_passes(unsigned char *pad)
 {
     for (uint i=0;i<BLOCK_COUNT;i++) {
         uint prev=(i==0)?(BLOCK_COUNT-1):(i-1);
-        ulong4 cv=vload4(0,(__global ulong*)(pad+i*BLOCK_SIZE));
-        ulong4 pv=vload4(0,(__global ulong*)(pad+prev*BLOCK_SIZE));
-        cv^=pv; vstore4(cv,0,(__global ulong*)(pad+i*BLOCK_SIZE));
+        ulong4 cv = *((ulong4*)(pad+i*BLOCK_SIZE));
+        ulong4 pv = *((ulong4*)(pad+prev*BLOCK_SIZE));
+        cv ^= pv; *((ulong4*)(pad+i*BLOCK_SIZE)) = cv;
     }
     for (uint i=BLOCK_COUNT;i>0;i--) {
         uint idx=i-1;
         uint next=(idx+1==BLOCK_COUNT)?0:(idx+1);
-        ulong4 cv=vload4(0,(__global ulong*)(pad+idx*BLOCK_SIZE));
-        ulong4 nv=vload4(0,(__global ulong*)(pad+next*BLOCK_SIZE));
-        cv^=nv; vstore4(cv,0,(__global ulong*)(pad+idx*BLOCK_SIZE));
+        ulong4 cv = *((ulong4*)(pad+idx*BLOCK_SIZE));
+        ulong4 nv = *((ulong4*)(pad+next*BLOCK_SIZE));
+        cv ^= nv; *((ulong4*)(pad+idx*BLOCK_SIZE)) = cv;
     }
 }
 
-void random_read_mix(__private const uchar seed[32], __global const uchar *pad, __private uchar out[32])
+__device__ void random_read_mix(const unsigned char seed[32], const unsigned char *pad, unsigned char out[32])
 {
     // 8-byte aligned accumulator to prevent GPU_CPU_MISMATCH (Metal fix)
-    __private ulong acc_aligned[4];  // 4 * 8 = 32 bytes, 8-byte aligned
-    __private uchar *acc = (__private uchar*)acc_aligned;
+    ulong acc_aligned[4];  // 4 * 8 = 32 bytes, 8-byte aligned
+    unsigned char *acc = (unsigned char*)acc_aligned;
     for (int i=0;i<32;i++) acc[i]=seed[i];
     ulong pos=0;
     for (ulong r=0;r<RANDOM_READS;r++) {
         uint off=(uint)(pos*BLOCK_SIZE);
-        ulong4 av=vload4(0,acc_aligned);  // Use aligned pointer
-        ulong4 pv=vload4(0,(__global const ulong*)(pad+off));
-        av^=pv; vstore4(av,0,acc_aligned);  // Use aligned pointer
+        ulong4 av = make_ulong4(acc_aligned[0], acc_aligned[1], acc_aligned[2], acc_aligned[3]);
+        ulong4 pv = *((ulong4*)(pad+off));
+        av ^= pv; 
+        acc_aligned[0] = av.x; acc_aligned[1] = av.y; acc_aligned[2] = av.z; acc_aligned[3] = av.w;
         ulong idx_val=0;
         for (int i=0;i<8;i++) idx_val|=((ulong)acc[i])<<(i*8);
         pos=(idx_val^pos^r)%BLOCK_COUNT;
@@ -252,31 +247,31 @@ void random_read_mix(__private const uchar seed[32], __global const uchar *pad, 
 }
 
 /* ========================================================================== */
-/* Step 3: AES-128 CTR mix — identical to v1                                  */
+/* Step 3: AES-128 CTR mix — identical to v1 with Metal alignment fixes         */
 /* ========================================================================== */
 
-void aes128_mix(__private const uchar seed[32], ulong nonce, __private uchar out[32])
+__device__ void aes128_mix(const unsigned char seed[32], ulong nonce, unsigned char out[32])
 {
     // 8-byte aligned buffers to prevent GPU_CPU_MISMATCH (Metal fix)
-    __private ulong key_aligned[2];  // 2 * 8 = 16 bytes, 8-byte aligned
-    __private uchar *key = (__private uchar*)key_aligned;
+    ulong key_aligned[2];  // 2 * 8 = 16 bytes, 8-byte aligned
+    unsigned char *key = (unsigned char*)key_aligned;
     for (int i=0;i<16;i++) key[i]=seed[i];
     
-    __private ulong counter_aligned[2];  // 2 * 8 = 16 bytes, 8-byte aligned
-    __private uchar *counter = (__private uchar*)counter_aligned;
-    for (int i=0;i<8;i++) counter[i]    =(uchar)(nonce>>(i*8));
+    ulong counter_aligned[2];  // 2 * 8 = 16 bytes, 8-byte aligned
+    unsigned char *counter = (unsigned char*)counter_aligned;
+    for (int i=0;i<8;i++) counter[i]    =(unsigned char)(nonce>>(i*8));
     for (int i=0;i<8;i++) counter[8+i]  =seed[16+i];
     
-    __private ulong block0_aligned[2];  // 2 * 8 = 16 bytes, 8-byte aligned
-    __private uchar *block0 = (__private uchar*)block0_aligned;
-    __private ulong block1_aligned[2];  // 2 * 8 = 16 bytes, 8-byte aligned
-    __private uchar *block1 = (__private uchar*)block1_aligned;
+    ulong block0_aligned[2];  // 2 * 8 = 16 bytes, 8-byte aligned
+    unsigned char *block0 = (unsigned char*)block0_aligned;
+    ulong block1_aligned[2];  // 2 * 8 = 16 bytes, 8-byte aligned
+    unsigned char *block1 = (unsigned char*)block1_aligned;
     
     for (int i=0;i<16;i++) { block0[i]=counter[i]; block1[i]=counter[i]; }
     uint carry=1;
     for (int i=0;i<16;i++) {
         uint s=(uint)block1[i]+carry;
-        block1[i]=(uchar)(s&0xFF);
+        block1[i]=(unsigned char)(s&0xFF);
         carry=s>>8;
         if (carry==0) break;
     }
@@ -287,7 +282,7 @@ void aes128_mix(__private const uchar seed[32], ulong nonce, __private uchar out
 }
 
 /* ========================================================================== */
-/* Step 4: Thermal loop — the only addition over v1                           */
+/* Step 4: Thermal loop — the only addition over v1 with Metal alignment fixes  */
 /*                                                                             */
 /* 8 independent ulong chains, 16384 iters.                                   */
 /* Integer-only (no float) = deterministic on all GPU drivers.                */
@@ -295,7 +290,7 @@ void aes128_mix(__private const uchar seed[32], ulong nonce, __private uchar out
 /* Identical logic in deeksha_lite_fire.rs (CPU reference).                   */
 /* ========================================================================== */
 
-void thermal_loop(__private uchar data[32] __attribute__((aligned(8))), ulong nonce)
+__device__ void thermal_loop(unsigned char data[32], ulong nonce)
 {
     ulong a = nonce ^ 0x9E3779B97F4A7C15UL;
     ulong b = nonce ^ 0xBF58476D1CE4E5B9UL;
@@ -325,59 +320,59 @@ void thermal_loop(__private uchar data[32] __attribute__((aligned(8))), ulong no
         h ^= (ulong)data[(i + 6) & 0x1F];
     }
     /* Fold back — prevents compiler from eliminating the loop */
-    data[ 0] ^= (uchar)(a);       data[ 1] ^= (uchar)(a>>8);
-    data[ 2] ^= (uchar)(b);       data[ 3] ^= (uchar)(b>>8);
-    data[ 4] ^= (uchar)(c);       data[ 5] ^= (uchar)(c>>8);
-    data[ 6] ^= (uchar)(d);       data[ 7] ^= (uchar)(d>>8);
-    data[ 8] ^= (uchar)(e);       data[ 9] ^= (uchar)(e>>8);
-    data[10] ^= (uchar)(f);       data[11] ^= (uchar)(f>>8);
-    data[12] ^= (uchar)(g);       data[13] ^= (uchar)(g>>8);
-    data[14] ^= (uchar)(h);       data[15] ^= (uchar)(h>>8);
-    data[16] ^= (uchar)(a>>16);   data[17] ^= (uchar)(b>>16);
-    data[18] ^= (uchar)(c>>16);   data[19] ^= (uchar)(d>>16);
-    data[20] ^= (uchar)(e>>16);   data[21] ^= (uchar)(f>>16);
-    data[22] ^= (uchar)(g>>16);   data[23] ^= (uchar)(h>>16);
-    data[24] ^= (uchar)(a>>24);   data[25] ^= (uchar)(b>>24);
+    data[ 0] ^= (unsigned char)(a);       data[ 1] ^= (unsigned char)(a>>8);
+    data[ 2] ^= (unsigned char)(b);       data[ 3] ^= (unsigned char)(b>>8);
+    data[ 4] ^= (unsigned char)(c);       data[ 5] ^= (unsigned char)(c>>8);
+    data[ 6] ^= (unsigned char)(d);       data[ 7] ^= (unsigned char)(d>>8);
+    data[ 8] ^= (unsigned char)(e);       data[ 9] ^= (unsigned char)(e>>8);
+    data[10] ^= (unsigned char)(f);       data[11] ^= (unsigned char)(f>>8);
+    data[12] ^= (unsigned char)(g);       data[13] ^= (unsigned char)(g>>8);
+    data[14] ^= (unsigned char)(h);       data[15] ^= (unsigned char)(h>>8);
+    data[16] ^= (unsigned char)(a>>16);   data[17] ^= (unsigned char)(b>>16);
+    data[18] ^= (unsigned char)(c>>16);   data[19] ^= (unsigned char)(d>>16);
+    data[20] ^= (unsigned char)(e>>16);   data[21] ^= (unsigned char)(f>>16);
+    data[22] ^= (unsigned char)(g>>16);   data[23] ^= (unsigned char)(h>>16);
+    data[24] ^= (unsigned char)(a>>24);   data[25] ^= (unsigned char)(b>>24);
 }
 
 /* ========================================================================== */
 /* Main kernel                                                                  */
 /* ========================================================================== */
 
-__kernel void deeksha_lite_fire_mine(
-    __global const ulong *header_keccak_state,  /* same as v1: host precomputed */
-    __global const ulong *nonce_base_buf,       /* Metal fix: buffer instead of scalar */
-    __global const uint *nonce_count_buf,        /* Metal fix: buffer instead of scalar */
-    __global uchar *output_hashes,
-    __global uchar *scratchpad_pool)
+extern "C" __global__ void deeksha_lite_fire_mine(
+    const ulong *header_keccak_state,  /* same as v1: host precomputed */
+    const ulong *nonce_base_buf,       /* Metal fix: buffer instead of scalar */
+    const uint *nonce_count_buf,        /* Metal fix: buffer instead of scalar */
+    unsigned char *output_hashes,
+    unsigned char *scratchpad_pool)
 {
-    uint tid = get_global_id(0);
+    uint tid = blockIdx.x * blockDim.x + threadIdx.x;
     uint nonce_count = nonce_count_buf[0];  // Metal fix: read from buffer
     if (tid >= nonce_count) return;
 
-    __global uchar *pad = scratchpad_pool + (ulong)tid * SCRATCHPAD_SIZE;
+    unsigned char *pad = scratchpad_pool + (ulong)tid * SCRATCHPAD_SIZE;
     ulong nonce_base = nonce_base_buf[0];  // Metal fix: read from buffer
     ulong nonce = nonce_base + (ulong)tid;
 
     /* Step 1: Keccak256(header || nonce) — same as v1 */
-    uchar s1[32];
+    unsigned char s1[32];
     keccak256_from_state(header_keccak_state, nonce, s1);
 
     /* Step 2: Memory-hard scratchpad — same as v1 */
     fill_scratchpad(s1, pad);
     sequential_passes(pad);
-    uchar s2[32];
+    unsigned char s2[32];
     random_read_mix(s1, pad, s2);
 
     /* Step 3: AES-128 CTR mix — same as v1 */
-    uchar s3[32];
+    unsigned char s3[32];
     aes128_mix(s2, nonce, s3);
 
     /* Step 4: Thermal loop — extra heat, not in v1 */
     thermal_loop(s3, nonce);
 
     /* Step 5: Keccak256 final — same as v1 */
-    uchar hash[32];
+    unsigned char hash[32];
     keccak_st_t s;
     for (int i=0;i<25;i++) s.u[i]=0;
     for (int i=0;i<32;i++) s.b[i]^=s3[i];
@@ -386,7 +381,6 @@ __kernel void deeksha_lite_fire_mine(
     keccak_f1600(s.u);
     for (int i=0;i<32;i++) hash[i]=s.b[i];
 
-    __global uchar *slot = output_hashes + (ulong)tid * 32;
-    ulong4 hv = vload4(0, (__private ulong*)hash);
-    vstore4(hv, 0, (__global ulong*)slot);
+    unsigned char *slot = output_hashes + (ulong)tid * 32;
+    for (int i=0;i<32;i++) slot[i] = hash[i];
 }
