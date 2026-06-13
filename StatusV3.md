@@ -1,6 +1,6 @@
 # ZION V3 — Status Report (Mainnet Polish)
 
-> **Datum:** **2026-06-11** (Hard Genesis Reset #0 completed — viz sekce níže); **2026-06-11** (Pool stale share detection + dashboard tab fix — viz sekce níže); **2026-06-10** (GPU/CPU path oddělení + algorithm-aware share validace); **2026-06-09**; **2026-06-08** (Fire CPU/GPU sync + pool submitted_hash fix); 2026-06-07 (Chain reset + full stack cleanup); 2026-06-06 (HTTP JSON-RPC Transaction Relay Bug Fix); 2026-05-22 (Genesis + fee split KONFIGURACE DOKONČENA, ready for mainnet launch 31.12.2026); **2026-05-21** (Edge pool + L5/L6 + DAO governance + root docs sync); **2026-05-12** (Hiran v2.2 CLI integration); **2026-05-07** (security cleanup + agentická obsluha).
+> **Datum:** **2026-06-13** (Hiran v2.3 documentation cleanup — viz sekce níže); **2026-06-11** (Hard Genesis Reset #0 completed — viz sekce níže); **2026-06-11** (Pool stale share detection + dashboard tab fix — viz sekce níže); **2026-06-10** (GPU/CPU path oddělení + algorithm-aware share validace); **2026-06-09**; **2026-06-08** (Fire CPU/GPU sync + pool submitted_hash fix); 2026-06-07 (Chain reset + full stack cleanup); 2026-06-06 (HTTP JSON-RPC Transaction Relay Bug Fix); 2026-05-22 (Genesis + fee split KONFIGURACE DOKONČENA, ready for mainnet launch 31.12.2026); **2026-05-21** (Edge pool + L5/L6 + DAO governance + root docs sync); **2026-05-12** (Hiran v2.2 CLI integration); **2026-05-07** (security cleanup + agentická obsluha).
 > (sjednocení `StatusV3.md` ↔ `StatusV3-Part2.md` — TL;DR, roadmap §6, §8, §5
 > pyramida, odkazy).
 > **Předchozí update:** 2026-05-03 (genesis konsensus — merged na `main`)
@@ -19,6 +19,39 @@
 > starý Praha server (`91.98.122.165`) nebo historickou multi-server topologii
 > (Prague, SG, Helsinki, US) jsou **archivní / historické**, pokud není explicitně
 > uvedeno jinak. Aktuální živá topologie je **Core + Edge** (viz sekce Infrastruktura).
+
+---
+
+## Co je nového 2026-06-13 (Hiran v2.3 Documentation & Script Cleanup)
+
+> **Status:** Dokumentace a skripty sjednoceny, model stále čeká na GPU cluster.
+
+### Co bylo opraveno
+
+| Soubor | Změna |
+|--------|-------|
+| `HiranV2.3/ARCHITECTURE_V2.3.md` | Sjednocení base modelu na Nemotron-32B, odstranění zastaralých LoRA fází, přidání Full FT configu |
+| `HiranV2.3/config/curriculum_v2.3.json` | Base model opraven z Llama-3.1-70B na Nemotron-32B |
+| `HiranV2.3/scripts/evaluate.py` | Perplexity dataset paths opraveny (nyní hledá existující `v2.3_combined_dataset.jsonl`) |
+| `HiranV2.3/inference/server.py` | Přidána kontrola existence modelu s instrukcemi pro trénink |
+| `HiranV2.3/docker/docker-compose.yml` | Přidána poznámka, že model path je placeholder |
+| `ROOT_INDEX.md` | Hiran v2.3 status změněn z "In Progress" na "Ready for Training" |
+| `StatusV3.md` | Hiran v2.3 sekce aktualizována — benchmark odkaz opraven, přidány řádky pro pre-flight checklist, skutečný trénink a benchmark výsledky |
+
+### Nový soubor
+
+| Soubor | Účel |
+|--------|------|
+| `HiranV2.3/PRE_FLIGHT_CHECKLIST.md` | Kompletní checklist před Vast.ai tréninkem — dataset validace, dry-run, instance selection, environment setup, DeepSpeed config, cost estimate |
+
+### Aktuální stav Hiran v2.3
+
+- **Dataset:** 48,436 párů, 9 stagemí — ✅ validován
+- **Tréninkové skripty:** `train_v2.3_fullft.py` (Full FT) + `train_v2.3.py` (DORA fallback) — ✅ ready
+- **RAG pipeline:** ChromaDB + query router — ✅ ready
+- **Inference server:** FastAPI, OpenAI-compatible — ✅ ready
+- **Model:** ⏳ Neexistuje. Čeká se na provisioning 4x A100 80GB (~$300-500)
+- **Benchmarky:** ⚠️ Placeholder only (dry-run data, NE výsledky modelu)
 
 ---
 
@@ -1688,11 +1721,14 @@ top_p = 0.9
 
 ||| Komponenta | Stav |
 |---|---|---|
-| **Base model** | 🔄 Probíhá | `nvidia/OpenReasoning-Nemotron-32B` (Qwen2.5-32B-Instruct derivative) |
-| **Training method** | 🔄 Probíhá | Full Fine-Tuning s DeepSpeed ZeRO-3 (CPU/NVMe offload, BF16) |
+| **Base model** | ✅ Připraveno | `nvidia/OpenReasoning-Nemotron-32B` (Qwen2.5-32B-Instruct derivative) |
+| **Training method** | ✅ Připraveno | Full Fine-Tuning s DeepSpeed ZeRO-3 (CPU/NVMe offload, BF16) |
 | **Dataset** | ✅ Hotovo | 48,436 instruction pairs napříč 9 stagemi (factual reinforcement, drill patterns, domain expertise, cross-domain, preference alignment, conversation flow, bilingual CZ/EN, code generation, safety) |
 | **Hybrid RAG** | ✅ Hotovo | 33 knowledge documents + ChromaDB + `all-MiniLM-L6-v2` + query router |
-| **Benchmark + provisioning** | ✅ Hotovo | `HiranV2.3/scripts/benchmark_and_provision.py` — Vast.ai workflow |
+| **Benchmark + provisioning** | ✅ Připraveno | `scripts/benchmark_factual.py` + `scripts/provision_vast.py` — Vast.ai workflow |
+| **Pre-flight checklist** | ✅ Hotovo | `HiranV2.3/PRE_FLIGHT_CHECKLIST.md` — kroky před tréninkem |
+| **Skutečný trénink** | ⏳ Čeká na GPU | Model zatím neexistuje. Vše připraveno, čeká se na provisioning 4x A100 80GB |
+| **Benchmark výsledky** | ⚠️ Placeholder | `benchmark_results/` obsahuje dry-run data (model `dry-run-dummy`), NE výsledky trénovaného modelu |
 
 ---
 

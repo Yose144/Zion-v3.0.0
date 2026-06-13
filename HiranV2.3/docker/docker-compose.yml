@@ -15,6 +15,9 @@ services:
       - ../../HiranV2.3/rag:/app/rag
       - hiran_logs:/app/logs
     environment:
+      # NOTE: Model must be trained first. This path is a placeholder.
+      # Train: python scripts/train_v2.3_fullft.py --stage all
+      # Quantize: python scripts/quantize.py --checkpoint checkpoints/stage1_factual/final
       - HIRAN_MODEL_PATH=/models/hiran-v2.3-q5_k_m.gguf
       - HIRAN_BACKEND=llama.cpp
       - CUDA_VISIBLE_DEVICES=0

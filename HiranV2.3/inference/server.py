@@ -124,8 +124,14 @@ async def lifespan(app: FastAPI):
     model_path = os.environ.get("HIRAN_MODEL_PATH", "HiranV2.3/models/hiran-v2.3-q5_k_m.gguf")
     backend_type = os.environ.get("HIRAN_BACKEND", "auto")
 
-    # Try llama.cpp first for GGUF
-    if model_path.endswith(".gguf") or backend_type == "llama.cpp":
+    if not Path(model_path).exists():
+        print(f"WARNING: Model not found at {model_path}")
+        print("  Hiran v2.3 model has not been trained yet.")
+        print("  Train first: python scripts/train_v2.3_fullft.py --stage all")
+        print("  Then quantize: python scripts/quantize.py --checkpoint checkpoints/stage1_factual/final")
+        print("  Or set HIRAN_MODEL_PATH to an existing model.")
+        _model_backend = None
+    elif model_path.endswith(".gguf") or backend_type == "llama.cpp":
         try:
             from llama_cpp import Llama
             _model_backend = LlamaCppBackend(model_path)
