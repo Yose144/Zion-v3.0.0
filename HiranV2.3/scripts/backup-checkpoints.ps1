@@ -1,92 +1,91 @@
-# Hiran v2.3 Checkpoint Backup Script
-# Runs on LOCAL PC, downloads checkpoints from Vast.ai instance
-# Usage: PowerShell -File backup-checkpoints.ps1
-# Or: Start-Process PowerShell -ArgumentList "-File backup-checkpoints.ps1" -WindowStyle Hidden
+# Hiran v2.3 Checkpoint Backup (PowerShell)
+# Runs in loop, downloads new checkpoints every 10 minutes
+# Usage: Start-Job -FilePath .\backup-checkpoints.ps1
+# Or run directly: .\backup-checkpoints.ps1
 
-$ErrorActionPreference = "Continue"
+param(
+    [string]$SSHHost = "ssh1.vast.ai",
+    [int]$SSHPort = 31384,
+    [string]$SSHKey = "$env:USERPROFILE\.ssh\vast\hiran_v2.4_key",
+    [string]$RemoteDir = "/workspace/hiran-v2.3/checkpoints/stage1_factual",
+    [string]$RemoteLog = "/workspace/hiran-training.log",
+    [string]$LocalDir = "$env:USERPROFILE\HiranV2.3-Checkpoints",
+    [int]$SleepSeconds = 600
+)
 
-# Config
-$SSH_PORT = 31384
-$SSH_KEY = "$env:USERPROFILE\.ssh\vast\hiran_v2.4_key"
-$SSH_HOST = "ssh1.vast.ai"
-$REMOTE_CHECKPOINT_DIR = "/workspace/hiran-v2.3/checkpoints/stage1_factual"
-$LOCAL_BACKUP_DIR = "$env:USERPROFILE\HiranV2.3-Checkpoints"
-$LOG_FILE = "$LOCAL_BACKUP_DIR\backup.log"
-$SLEEP_MINUTES = 30
+$LogFile = "$LocalDir\backup.log"
+if (-not (Test-Path $LocalDir)) { New-Item -ItemType Directory -Path $LocalDir -Force | Out-Null }
 
-function Write-Log {
-    param([string]$msg)
+function Write-Log($msg) {
     $ts = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    "$ts  $msg" | Tee-Object -FilePath $LOG_FILE -Append | Write-Host
-}
-
-# Ensure directories exist
-if (!(Test-Path $LOCAL_BACKUP_DIR)) {
-    New-Item -ItemType Directory -Path $LOCAL_BACKUP_DIR -Force | Out-Null
-}
-if (!(Test-Path $SSH_KEY)) {
-    Write-Log "ERROR: SSH key not found: $SSH_KEY"
-    Write-Log "Please ensure the key exists."
-    exit 1
+    $line = "[$ts] $msg"
+    Write-Host $line
+    Add-Content -Path $LogFile -Value $line
 }
 
 Write-Log "========================================"
-Write-Log "  Hiran v2.3 Checkpoint Backup"
-Write-Log "  Remote: ${SSH_HOST}:${SSH_PORT}"
-Write-Log "  Local:  $LOCAL_BACKUP_DIR"
-Write-Log "  Interval: ${SLEEP_MINUTES} minutes"
+Write-Log "  Hiran v2.3 Checkpoint Backup (PS)"
+Write-Log "  Remote: ${SSHHost}:${SSHPort}"
+Write-Log "  Local:  $LocalDir"
+Write-Log "  Interval: ${SleepSeconds}s (10 min)"
 Write-Log "========================================"
 
-# Get initial checkpoint list
-Write-Log "Fetching initial checkpoint list..."
-try {
-    $initialList = ssh -p $SSH_PORT -i $SSH_KEY -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "root@${SSH_HOST}" "ls -1 $REMOTE_CHECKPOINT_DIR/ 2>/dev/null" 2>$null
-    Write-Log "Initial checkpoints found: $($initialList.Count)"
-} catch {
-    Write-Log "WARNING: Could not fetch initial list. Will retry."
-}
+$cycle = 0
+$sshBase = "ssh -p $SSHPort -i `"$SSHKey`" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=15 root@${SSHHost}"
 
-$iteration = 0
 while ($true) {
-    $iteration++
-    Write-Log "--- Backup cycle #$iteration ---"
+    $cycle++
+    Write-Log "--- Backup cycle #$cycle ---"
 
-    # Check remote checkpoints
-    try {
-        $remoteItems = ssh -p $SSH_PORT -i $SSH_KEY -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "root@${SSH_HOST}" "ls -1 $REMOTE_CHECKPOINT_DIR/ 2>/dev/null" 2>$null
-        if ($remoteItems) {
-            $remoteDirs = $remoteItems | Where-Object { $_ -match "checkpoint-" -or $_ -eq "final" }
-            Write-Log "Remote checkpoints: $($remoteDirs.Count)"
-
-            foreach ($dir in $remoteDirs) {
-                $localPath = Join-Path $LOCAL_BACKUP_DIR $dir
-                if (Test-Path $localPath) {
-                    Write-Log "  Already backed up: $dir"
-                } else {
-                    Write-Log "  DOWNLOADING: $dir ..."
-                    $remoteFullPath = "${REMOTE_CHECKPOINT_DIR}/${dir}"
-                    $scpCmd = "scp -r -P $SSH_PORT -i `"$SSH_KEY`" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null `"root@${SSH_HOST}:${remoteFullPath}`" `"$localPath`""
-                    Invoke-Expression $scpCmd
-                    if ($LASTEXITCODE -eq 0) {
-                        Write-Log "  SUCCESS: $dir downloaded"
-                    } else {
-                        Write-Log "  FAILED: $dir (exit code $LASTEXITCODE)"
-                    }
-                }
-            }
-        } else {
-            Write-Log "No checkpoints found on remote yet."
-        }
-    } catch {
-        Write-Log "ERROR: SSH/SCP failed: $_"
+    # Always download training log (small, fast)
+    $logDest = "$LocalDir\hiran-training.log"
+    $logTmp  = "$LocalDir\hiran-training.log.tmp"
+    & scp -P $SSHPort -i "$SSHKey" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=10 "root@${SSHHost}:${RemoteLog}" "$logTmp" 2>$null
+    if (Test-Path $logTmp) {
+        Move-Item -Path $logTmp -Destination $logDest -Force
+        Write-Log "Log downloaded (OK)"
+    } else {
+        Write-Log "WARNING: Failed to download log"
     }
 
-    # Also backup training log
-    try {
-        $logLocal = Join-Path $LOCAL_BACKUP_DIR "hiran-training.log"
-        scp -P $SSH_PORT -i "$SSH_KEY" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "root@${SSH_HOST}:/workspace/hiran-training.log" "$logLocal" 2>$null
-    } catch { }
+    # Get list of remote checkpoints
+    $remoteList = & cmd /c "$sshBase `"ls -1 $RemoteDir/ 2>nul`"" 2>$null
+    $remoteList = $remoteList | Where-Object { $_ -and $_.Trim() -ne "" }
 
-    Write-Log "Sleeping for $SLEEP_MINUTES minutes..."
-    Start-Sleep -Seconds ($SLEEP_MINUTES * 60)
+    $newCount = 0
+    if ($remoteList) {
+        foreach ($dir in $remoteList) {
+            $dir = $dir.Trim()
+            $localPath = "$LocalDir\$dir"
+            if (-not (Test-Path $localPath)) {
+                Write-Log "DOWNLOADING: $dir"
+                & scp -r -P $SSHPort -i "$SSHKey" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=120 "root@${SSHHost}:${RemoteDir}/${dir}" "$localPath" 2>&1 | ForEach-Object { Write-Log "  $_" }
+                if (Test-Path $localPath) {
+                    Write-Log "SUCCESS: $dir"
+                    $newCount++
+                } else {
+                    Write-Log "FAILED: $dir"
+                }
+            } else {
+                Write-Log "SKIP (already have): $dir"
+            }
+        }
+    } else {
+        Write-Log "No checkpoints on remote yet."
+    }
+
+    if ($newCount -gt 0) {
+        Write-Log "=== $newCount new checkpoint(s) backed up ==="
+    }
+
+    # Show current step from log
+    if (Test-Path $logDest) {
+        $step = Get-Content $logDest | Select-String -Pattern "[0-9]+/8901" | Select-Object -Last 1
+        if ($step) {
+            Write-Log "Training step: $($step.Matches[0].Value)"
+        }
+    }
+
+    Write-Log "Sleeping ${SleepSeconds}s..."
+    Start-Sleep -Seconds $SleepSeconds
 }
