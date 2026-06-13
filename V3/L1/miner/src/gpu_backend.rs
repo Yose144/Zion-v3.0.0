@@ -2047,8 +2047,8 @@ pub mod opencl_deeksha_lite_fire {
                 // Write nonce parameters to buffers (Metal fix - use buffers instead of scalar args)
                 {
                     let guard = GpuGuard::new();
-                    self.nonce_base_buf.write(&[current_nonce]).enq()?;
-                    self.nonce_count_buf.write(&[chunk as u32]).enq()?;
+                    self.nonce_base_buf.write(&[current_nonce as u64][..]).enq()?;
+                    self.nonce_count_buf.write(&[chunk as u32][..]).enq()?;
                     if guard.was_caught() {
                         self.recovery_attempts += 1;
                         anyhow::bail!(
