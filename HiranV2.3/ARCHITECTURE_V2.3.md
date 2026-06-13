@@ -40,14 +40,15 @@ With tool orchestration: +4-8GB RAM for tool runners
 
 ### Base Model Selection
 
-**Primary:** `nvidia/OpenReasoning-Nemotron-32B`
-- Base: Qwen2.5-32B-Instruct derivative
-- 32.8B parameters, 32K context
-- Reasoning-optimized, CC-BY-4.0 (commercial OK)
+**Primary:** `Qwen/Qwen3-32B`
+- Native Qwen3 architecture (not a derivative)
+- 32.8B parameters, **128K context**
+- Apache 2.0 license (commercial OK, no restrictions)
 - Best reasoning base for technical Zion domain
+- Multilingual: strong Czech, English, Chinese, and 100+ languages
 
 **Alternatives (for reference only):**
-- Qwen3-32B (128K context, Apache 2.0)
+- nvidia/OpenReasoning-Nemotron-32B (CC-BY-4.0, 32K context)
 - Llama-3.3-70B (would require 2x A100 80GB minimum)
 
 ### Training Strategy
@@ -139,7 +140,7 @@ Phase 2: Quantization & Optimization
 
 ```python
 FULL_FT_CONFIG = {
-    "base_model": "nvidia/OpenReasoning-Nemotron-32B",
+    "base_model": "Qwen/Qwen3-32B",
     "method": "full_parameter_update",
     "precision": "bf16",
     "framework": "deepspeed_zero3",

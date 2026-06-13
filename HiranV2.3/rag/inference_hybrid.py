@@ -50,7 +50,7 @@ def build_prompt(query: str, context: str = "", classification: str = "zion_only
         system = HYBRID_SYSTEM_PROMPT
         user_prompt = f"Context information:\n{context}\n\nQuestion: {query}\n\nAnswer:"
 
-    # Nemotron/Qwen2.5 chat format
+    # Qwen3 chat format
     prompt = f"<|im_start|>system\n{system}\n<|im_end|>\n"
     prompt += f"<|im_start|>user\n{user_prompt}\n<|im_end|>\n"
     prompt += "<|im_start|>assistant\n"

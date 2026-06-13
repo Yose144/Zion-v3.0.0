@@ -1,6 +1,6 @@
 {
   "description": "Curriculum configuration for Hiran v2.3 - Full Quantized AI Agent",
-  "base_model": "nvidia/OpenReasoning-Nemotron-32B",
+  "base_model": "Qwen/Qwen3-32B",
   "model_size": "32B",
   "training_strategy": "hybrid_lora_full_finetune",
   "quantization_target": ["int8", "int4"],

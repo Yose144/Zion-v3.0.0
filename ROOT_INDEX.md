@@ -268,7 +268,7 @@ Historical docs, roadmaps, and analysis moved to [`archive/2.9.9/docs/`](archive
 |---------|------|--------|-----------|--------|
 | v2.1 | `HiranV2.1/` | ✅ Complete | Meta-Llama-3.1-8B | QLoRA |
 | v2.2 | `HiranV2.2/` | ✅ Complete | Meta-Llama-3.1-8B | QLoRA (5 stages) |
-| v2.3 | `HiranV2.3/` | 🟡 Ready for Training | OpenReasoning-Nemotron-32B | DeepSpeed ZeRO-3 Full FT |
+| v2.3 | `HiranV2.3/` | 🟡 Ready for Training | Qwen3-32B | DeepSpeed ZeRO-3 Full FT |
 
 ---
 
