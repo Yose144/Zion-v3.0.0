@@ -1,7 +1,7 @@
 {
   "description": "Curriculum configuration for Hiran v2.3 - Full Quantized AI Agent",
-  "base_model": "meta-llama/Llama-3.1-70B-Instruct",
-  "model_size": "70B",
+  "base_model": "nvidia/OpenReasoning-Nemotron-32B",
+  "model_size": "32B",
   "training_strategy": "hybrid_lora_full_finetune",
   "quantization_target": ["int8", "int4"],
   "stages": [
