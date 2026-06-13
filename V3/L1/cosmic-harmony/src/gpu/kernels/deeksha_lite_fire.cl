@@ -346,17 +346,15 @@ void thermal_loop(__private uchar data[32] __attribute__((aligned(8))), ulong no
 
 __kernel void deeksha_lite_fire_mine(
     __global const ulong *header_keccak_state,  /* same as v1: host precomputed */
-    __global const ulong *nonce_base_buf,       /* Metal fix: buffer instead of scalar */
-    __global const uint *nonce_count_buf,        /* Metal fix: buffer instead of scalar */
+    ulong  nonce_base,
+    uint   nonce_count,
     __global uchar *output_hashes,
     __global uchar *scratchpad_pool)
 {
     uint tid = get_global_id(0);
-    uint nonce_count = nonce_count_buf[0];  // Metal fix: read from buffer
     if (tid >= nonce_count) return;
 
     __global uchar *pad = scratchpad_pool + (ulong)tid * SCRATCHPAD_SIZE;
-    ulong nonce_base = nonce_base_buf[0];  // Metal fix: read from buffer
     ulong nonce = nonce_base + (ulong)tid;
 
     /* Step 1: Keccak256(header || nonce) — same as v1 */
