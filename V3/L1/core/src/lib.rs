@@ -5,9 +5,9 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 use zion_cosmic_harmony::{
-    body_root_v2_active, cosmic_harmony_ekam_deeksha, cosmic_harmony_with_height, profile_name,
+    body_root_v2_active, cosmic_harmony_ekam_deeksha, cosmic_harmony_with_height, profile_name, profile_name_for_height,
     tx_hash_v2_active, NclStats, RevenueCollector, RevenueEvent, RevenueStats,
-    CHV_EKAM_FORK_HEIGHT, EKAM_FUSION_ROUNDS, TX_HASH_V2_ACTIVATION_HEIGHT,
+    CHV_EKAM_FORK_HEIGHT, EKAM_FUSION_ROUNDS, TX_HASH_V2_ACTIVATION_HEIGHT, FIRE_FORK_HEIGHT,
 };
 
 pub use zion_cosmic_harmony::ExternalCoin;
@@ -251,6 +251,7 @@ impl DifficultyTarget {
 pub struct ConsensusConfig {
     pub profile: &'static str,
     pub ekam_fork_height: u64,
+    pub fire_fork_height: u64,
     pub fusion_rounds: usize,
     pub default_target: DifficultyTarget,
 }
@@ -260,9 +261,16 @@ impl Default for ConsensusConfig {
         Self {
             profile: profile_name(),
             ekam_fork_height: CHV_EKAM_FORK_HEIGHT,
+            fire_fork_height: FIRE_FORK_HEIGHT,
             fusion_rounds: EKAM_FUSION_ROUNDS,
             default_target: DifficultyTarget::MAX,
         }
+    }
+}
+
+impl ConsensusConfig {
+    pub fn profile_for_height(&self, height: u64) -> &'static str {
+        profile_name_for_height(height)
     }
 }
 
@@ -741,6 +749,10 @@ impl CoreRuntime {
         self.consensus.profile
     }
 
+    pub fn consensus_profile_for_height(&self, height: u64) -> &'static str {
+        self.consensus.profile_for_height(height)
+    }
+
     pub fn hash_candidate(&self, candidate: BlockCandidate) -> [u8; 32] {
         candidate.hash()
     }
@@ -782,6 +794,16 @@ impl CoreRuntime {
         } else {
             None
         }
+    }
+
+    pub fn validate_candidate_for_height(
+        &self,
+        candidate: BlockCandidate,
+        target: DifficultyTarget,
+        height: u64,
+    ) -> Option<SealedBlock> {
+        let algorithm = self.consensus_profile_for_height(height);
+        self.validate_candidate_with_algorithm(candidate, target, algorithm)
     }
 
     pub fn scan_nonce_range(&self, job: MiningJob) -> Option<MiningSolution> {
