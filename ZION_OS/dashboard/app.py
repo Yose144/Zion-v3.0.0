@@ -3739,11 +3739,11 @@ def get_backup_status() -> dict:
                 "size_mb": size_mb,
                 "created": datetime.fromtimestamp(s.st_mtime).isoformat(),
             })
-    # Auto-backups
+    # Auto-backups (both zion-auto-*.zip and zion-local-*.zip)
     auto_backups = []
     auto_dir = Path("C:/ZION-AutoBackups")
     if auto_dir.exists():
-        for f in sorted(auto_dir.glob("zion-auto-*.zip"), key=lambda p: p.stat().st_mtime, reverse=True):
+        for f in sorted(auto_dir.glob("zion-*.zip"), key=lambda p: p.stat().st_mtime, reverse=True):
             s = f.stat()
             size_mb = round(s.st_size / (1024*1024), 2)
             total_backup_mb += size_mb
