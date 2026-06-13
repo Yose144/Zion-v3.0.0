@@ -779,4 +779,98 @@ journalctl -u zion-edge-node.service -f
 
 # After rebuild, restart pool:
 systemctl restart zion-edge-pool.service
+
+---
+
+## Vega 64 SMOS Deploy & Tuning (2026-06-13)
+
+### Overview
+Vega 64 (gfx900:xnack-, 64 CUs, 8GB HBM2) deployed on SMOS rig 518837 via custom miner ZIP.
+
+### SMOS ZIP Structure Requirement
+SMOS requires **exactly one folder** inside the ZIP; files must be inside `foldername/`, not loose in root:
+```
+zion-sm3042c-fire-vX.zip
+└── zion-sm3042c-fire-vX/
+    ├── miner          # wrapper script (sets ZION_MINER_ALGORITHM + execs binary)
+    └── zion-miner     # actual binary
+```
+**Critical:** Each new version must use a **different ZIP filename** to bypass SMOS local cache.
+
+### Docker Build (Ubuntu 20.04 → GLIBC 2.28 compatible)
+Build on Edge server (100.76.16.108) using `V3/Dockerfile.miner-smos`:
+- Ubuntu 20.04 builder + runner
+- Rust 1.85.0
+- Remove bundled `libOpenCL.so` (compiled for newer GLIBC)
+- Provide local `gettid()` syscall wrapper to avoid GLIBC_2.30 dependency
+- Binary max GLIBC: 2.28-2.29 (SMOS-compatible)
+
+### Deployed Versions
+| Version | ZIP URL | Changes |
+|---------|---------|---------|
+| v1 | `zion-sm3042c-fire-v1.zip` | Initial Fire ZIP, stale binary |
+| v3 | `zion-sm3042c-fire-v3.zip` | Fresh Docker build, GPU fallback fix |
+| v4 | `zion-sm3042c-fire-v4.zip` | crossterm dep, missing sources fixed |
+| v5 | `zion-sm3042c-fire-v5.zip` | GPU manager permanent disable fix |
+| v6 | `zion-sm3042c-fire-v6.zip` | work_size up, `-cl-mad-enable` removed, pool nonce 262144→524288 |
+| **v7** | `zion-sm3042c-fire-v7.zip` | **local_ws 256→64 (wavefront), `-cl-denorms-are-zero`, remove `aligned(8)`** |
+
+### SMOS Group Config (1773590 ZionLiteFire)
+```
+http://77.42.71.94/zion-miner/zion-sm3042c-fire-v7.zip \
+  --algorithm deeksha_lite_fire \
+  --pool 77.42.71.94:8444 \
+  --wallet zion1m883u5h7t8l2q6y44670c6q5l067v4u2a3ku332 \
+  --worker vega-smos
+```
+
+### Vega 64 Tuning Parameters (v7)
+| Param | Value | Rationale |
+|-------|-------|-----------|
+| work_size (Fire) | 16384 | 2× v6; fills 8GB HBM2 efficiently |
+| work_size (Lite v1) | 16384 | Same for both algorithms |
+| local_ws | 64 | AMD GCN native wavefront (64 threads) |
+| vram_pct | 92% | Use almost all 8GB HBM2 |
+| build_opts | `-cl-std=CL1.2 -cl-denorms-are-zero` | Faster float subnormal handling |
+| Pool nonce_count_gpu | 524288 | Bigger batches = less CPU-GPU sync overhead |
+
+### Code Changes in This Session
+1. **`V3/L1/miner/src/main.rs`** — GPU no longer permanently disabled on init failure; retries every iteration
+2. **`V3/L1/miner/src/gpu_guard.rs`** — Vega 64 tuning: work_size ↑, local_ws=64, vram_pct=92%, `-cl-denorms-are-zero`
+3. **`V3/L1/cosmic-harmony/src/gpu/kernels/deeksha_lite_fire.cl`** — Removed `__attribute__((aligned(8)))` from thermal_loop param (slow on GCN private memory)
+4. **`V3/L1/miner/Cargo.toml`** (Edge only) — Added `crossterm = "0.28"` dependency
+5. **`V3/L1/miner/src/interactive.rs`** / **`ui.rs`** — Restored missing source files on Edge
+
+### Performance Timeline
+| Stage | Fire Hashrate | Notes |
+|-------|---------------|-------|
+| Initial (stale binary) | ~4.5 KH/s | Wrong algo (Lite v1), old binary |
+| v5 (GPU fix) | ~8.5 KH/s | Fire finally running, work_size=8192 |
+| v6 (tuning) | ~8.5 KH/s | work_size↑, pool nonce↑ |
+| v7 (wavefront) | **~9.5–11 KH/s** | local_ws=64, aligned(8) removed |
+| + 1450 MHz OC | **~11–12 KH/s** | Core clock from 1250→1450 MHz |
+
+### How to Update Miner on SMOS
+1. Build new Docker image on Edge: `docker build -f Dockerfile.miner-smos -t zion-miner-smos .`
+2. Extract binary, create ZIP with **new filename**
+3. Upload to `/var/www/zion-miner/`
+4. Update SMOS group `minerOptions` via API or dashboard
+5. Restart rig via SMOS dashboard (Actions → Restart)
+
+### Operational Scripts (root repo)
+- `check_rig.py` — poll SMOS rig status
+- `check_group.py` — poll SMOS group config
+- `deploy_*.py` — various deploy scripts (SMOS API)
+- `explore_smos_api.py` — SMOS API exploration
+
+### Pool Environment (Edge)
+File: `/root/zion-2.9.6-main/edge-deploy/config/edge-environment.sh`
+```
+ZION_POOL_BIND=0.0.0.0:8444
+ZION_POOL_LOOP_COUNT=1000000
+ZION_NONCE_COUNT=1048576
+ZION_NONCE_COUNT_GPU=524288
+ZION_JOB_TTL_MS=60000
+```
+Restart after change: `systemctl restart zion-pool-server.service`
 ```
