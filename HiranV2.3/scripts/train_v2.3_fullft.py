@@ -284,6 +284,13 @@ def main():
         action="store_true",
         help="Print config without training",
     )
+    # DeepSpeed launcher injects --local_rank; accept but ignore it
+    parser.add_argument(
+        "--local_rank",
+        type=int,
+        default=-1,
+        help="Local rank (set automatically by DeepSpeed)",
+    )
     args = parser.parse_args()
 
     print("=" * 60)
