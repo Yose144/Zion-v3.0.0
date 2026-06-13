@@ -353,6 +353,18 @@ class ModelWrapper:
         )
         self.model.eval()
 
+    def build_chat_prompt(self, system: str, user: str) -> str:
+        """Build prompt using the model's native chat template."""
+        messages = [
+            {"role": "system", "content": system},
+            {"role": "user", "content": user},
+        ]
+        return self.tokenizer.apply_chat_template(
+            messages,
+            tokenize=False,
+            add_generation_prompt=True,
+        )
+
     def generate(self, prompt: str, max_new_tokens: int = 512, temperature: float = 0.3) -> str:
         inputs = self.tokenizer(prompt, return_tensors="pt", truncation=True, max_length=2048)
         inputs = {k: v.to(self.model.device) for k, v in inputs.items()}
@@ -377,8 +389,9 @@ def evaluate_with_keywords(model: ModelWrapper, questions: list[dict[str, Any]],
     results = []
     total_score = 0.0
     max_score = 0.0
+    system = "You are the Zion DAO technical assistant. Answer accurately and concisely."
     for q in questions:
-        prompt = f"<|begin_of_text|>在职user\n\n{q['question']}<|eot_id|>在职assistant\n\n"
+        prompt = model.build_chat_prompt(system, q["question"])
         answer = model.generate(prompt, max_new_tokens=500, temperature=0.3)
         hits = sum(1 for kw in q["expected_keywords"] if kw.lower() in answer.lower())
         ratio = hits / len(q["expected_keywords"])
@@ -406,8 +419,9 @@ def evaluate_code_generation(model: ModelWrapper) -> dict[str, Any]:
     results = []
     total_score = 0.0
     max_score = 0.0
+    system = "You are the Zion DAO technical assistant. Write clean, working code."
     for task in CODE_GENERATION_TASKS:
-        prompt = f"<|begin_of_text|>在职user\n\n{task['prompt']}<|eot_id|>在职assistant\n\n```\n"
+        prompt = model.build_chat_prompt(system, task["prompt"] + "\n\n```")
         code = model.generate(prompt, max_new_tokens=600, temperature=0.2)
         pattern_hits = sum(1 for pat in task["expected_patterns"] if re.search(pat, code))
         pattern_score = pattern_hits / len(task["expected_patterns"])
@@ -474,8 +488,9 @@ def evaluate_blueprints(model: ModelWrapper) -> dict[str, Any]:
     results = []
     total_score = 0.0
     max_score = 0.0
+    system = "You are the Zion DAO technical assistant. Design detailed Oasis blueprints."
     for task in OASIS_BLUEPRINT_TASKS:
-        prompt = f"<|begin_of_text|>在职user\n\n{task['prompt']}<|eot_id|>在职assistant\n\n"
+        prompt = model.build_chat_prompt(system, task["prompt"])
         answer = model.generate(prompt, max_new_tokens=800, temperature=0.4)
         hits = sum(1 for kw in task["expected_keywords"] if kw.lower() in answer.lower())
         ratio = hits / len(task["expected_keywords"])
