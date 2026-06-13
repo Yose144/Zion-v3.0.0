@@ -22,34 +22,34 @@ export interface NewsArticle {
 
 export const NEWS_ARTICLES: NewsArticle[] = [
   {
-    slug: 'genesis-hard-reset',
+    slug: 'terranova-genesis-3.0.1',
     date: '2026-06-11',
     tag: { cs: 'Genesis', en: 'Genesis' },
     tagColor: 'text-zion-gold',
     title: {
-      cs: 'Genesis hard reset proveden — síť připravena na Genesis launch',
-      en: 'Genesis hard reset completed — network ready for Genesis launch',
+      cs: 'TerraNova Genesis 3.0.1 — MainNet spuštěn 11. 6. 2026 · veřejný launch 31. 12. 2026',
+      en: 'TerraNova Genesis 3.0.1 — MainNet launched 11 Jun 2026 · public launch 31 Dec 2026',
     },
     summary: {
-      cs: 'Hard reset Genesis řetězce byl úspěšně proveden. Síť je nyní stabilní a připravená na oficiální Genesis launch. Další detaily o spuštění budou oznámeny později.',
-      en: 'The Genesis chain hard reset has been successfully completed. The network is now stable and ready for the official Genesis launch. Further launch details will be announced later.',
-    },
-    href: '/genesis',
-  },
-  {
-    slug: 'terranova-mainnet-genesis',
-    date: '2026-06-11',
-    tag: { cs: 'TerraNova', en: 'TerraNova' },
-    tagColor: 'text-sky-400',
-    title: {
-      cs: 'TerraNova — MainNet Genesis blok 11. 6. 2026 · veřejný launch 31. 12. 2026',
-      en: 'TerraNova — MainNet Genesis block 11 Jun 2026 · public launch 31 Dec 2026',
-    },
-    summary: {
-      cs: 'Blok Genesis z 4. 12. 2025 byl TestNet. Hlavní síť TerraNova MainNet se spouští zítra 11. 6. 2026. Veřejný přístup pro všechny zůstává na Silvestra 31. 12. 2026.',
-      en: 'The December 4 2025 genesis block was TestNet. TerraNova MainNet launches tomorrow 11 Jun 2026. Public access remains on New Year\'s Eve 31 Dec 2026.',
+      cs: 'Hard reset Genesis řetězce byl úspěšně proveden. Síť je stabilní, Core + Edge topologie běží, pool a mining jsou aktivní. Veřejný přístup pro všechny zůstává naplánován na Silvestra 31. 12. 2026.',
+      en: 'The Genesis chain hard reset was successfully completed. The network is stable, Core + Edge topology is running, pool and mining are active. Public access remains scheduled for New Year\'s Eve 31 Dec 2026.',
     },
     href: '/terranova',
+  },
+  {
+    slug: 'fire-hard-fork-5000',
+    date: '2026-06-13',
+    tag: { cs: 'Hard Fork', en: 'Hard Fork' },
+    tagColor: 'text-rose-400',
+    title: {
+      cs: 'Deeksha Lite Fire hard fork — aktivace na bloku 5000',
+      en: 'Deeksha Lite Fire hard fork — activation at block 5000',
+    },
+    summary: {
+      cs: 'ZION přepne konsensus algoritmus z deeksha_lite_v1 na deeksha_lite_fire na bloku 5000. OpenCL kernel s Metal alignment fixy, GPU/CPU path oddělení, algorithm-aware validace. Očekávaná aktivace ~2–3 dny.',
+      en: 'ZION will switch consensus algorithm from deeksha_lite_v1 to deeksha_lite_fire at block 5000. OpenCL kernel with Metal alignment fixes, GPU/CPU path separation, algorithm-aware validation. Expected activation in ~2–3 days.',
+    },
+    href: '/network',
   },
   {
     slug: 'deeksha-fire-announcement',
@@ -291,6 +291,7 @@ const CARD_ACCENT: Record<string, { from: string; to: string; glow: string }> = 
   Mining:    { from: 'from-cyan-500/20', to: 'to-sky-500/5', glow: 'shadow-cyan-500/10' },
   DeFi:      { from: 'from-gold-500/20', to: 'to-yellow-500/5', glow: 'shadow-yellow-500/10' },
   Listing:   { from: 'from-green-500/20', to: 'to-emerald-500/5', glow: 'shadow-green-500/10' },
+  'Hard Fork': { from: 'from-rose-500/20', to: 'to-red-500/5', glow: 'shadow-rose-500/10' },
 };
 
 function getAccent(tag: string) {
