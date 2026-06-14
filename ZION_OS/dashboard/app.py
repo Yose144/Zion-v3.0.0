@@ -560,11 +560,17 @@ def get_edge_pool_miners() -> dict:
         elif line.startswith("zion_pool_miner_blocks_found_total"):
             miners[key]["blocks_found"] = int(val)
         elif line.startswith("zion_pool_miner_pending_balance_atomic"):
-            miners[key]["pending_balance"] = val / 1e8  # atomic → ZION
+            miners[key]["pending_balance"] = val / 1_000_000_000_000  # atomic (flowers) → ZION
         elif line.startswith("zion_pool_miner_paid_total_atomic"):
-            miners[key]["paid_total"] = val / 1e8
+            miners[key]["paid_total"] = val / 1_000_000_000_000
         elif line.startswith("zion_pool_miner_last_seen_seconds"):
             miners[key]["last_seen"] = int(val)
+
+    # Compute last_seen_ago for each miner
+    now_ts = int(time.time())
+    for _mk in miners.values():
+        ls = _mk.get("last_seen", 0)
+        _mk["last_seen_ago"] = (now_ts - ls) if ls > 0 else None
 
     result = {
         "ok": True,
@@ -1588,6 +1594,27 @@ def parse_node_log(name: str) -> dict:
         "last_error": None,
         "recent_lines": recent[-10:],
     }
+    # Inline RPC probe to get live chain_height (faster & fresher than log parsing)
+    rpc_port_map = {"node1": 8443, "node2": 8446}
+    rpc_port = rpc_port_map.get(name)
+    if rpc_port:
+        try:
+            import urllib.request as _ur
+            req_data = json.dumps({"jsonrpc": "2.0", "id": 1, "method": "getChainInfo", "params": {}}).encode()
+            req = _ur.Request(f"http://127.0.0.1:{rpc_port}/jsonrpc", data=req_data,
+                              headers={"Content-Type": "application/json"}, method="POST")
+            with _ur.urlopen(req, timeout=0.8) as r:
+                rpc_data = json.loads(r.read().decode())
+                if "result" in rpc_data:
+                    res = rpc_data["result"]
+                    status["chain_height"] = res.get("chain_height", status["chain_height"])
+                    status["known_peers"] = res.get("known_peers", status["known_peers"])
+                    status["mempool_size"] = res.get("mempool_transactions", status["mempool_size"])
+                    status["tip_hash"] = res.get("tip_hash", status["tip_hash"])
+                    status["protocol_version"] = res.get("protocol_version")
+                    status["consensus_profile"] = res.get("consensus_profile")
+        except Exception:
+            pass
     # Static config from startup lines
     for line in startup:
         if m := re.search(r'node_id=(\S+)', line):
@@ -2096,17 +2123,17 @@ def get_miner_live_stats() -> dict:
     except Exception:
         pass
 
-    # Fallback to mock data if miner is running but log parsing fails
+    # Fallback if miner process is running but log/stats file is unavailable
     if not stats.get("running") and is_process_running("zion-miner.exe"):
         stats["running"] = True
-        stats["hashrate"] = 0.5  # Mock CPU hashrate KH/s
-        stats["shares_accepted"] = 100
+        stats["hashrate"] = None  # Unknown hashrate without log data
+        stats["shares_accepted"] = 0
         stats["shares_rejected"] = 0
-        stats["current_height"] = 313
-        stats["current_diff"] = 64
-        stats["gpu_backend"] = "cpu"
+        stats["current_height"] = None
+        stats["current_diff"] = None
+        stats["gpu_backend"] = "opencl"
         stats["worker_name"] = "worker1"
-        stats["pool_addr"] = "77.42.71.94:8444"
+        stats["pool_addr"] = "100.76.16.108:8444"
 
     return {
         "hashrate": stats.get("hashrate"),
@@ -2666,6 +2693,8 @@ def _build_status_edge_primary() -> dict:
     sync_gap = None
     if n1.get("chain_height") and edge_node1_status.get("chain_height"):
         sync_gap = abs(n1["chain_height"] - edge_node1_status["chain_height"])
+    n1["sync_gap"] = sync_gap
+    n1["synced_with_edge"] = (sync_gap is not None and sync_gap <= 5)
 
     # Tailscale connectivity check (skip if tailscale CLI not in PATH to avoid PATH search delay)
     tailscale_ok = False
@@ -4948,11 +4977,60 @@ def _manifest_dispatch(action: str, env_overrides: dict = None):
             return None
     return None
 
+def _run_edge_ssh_command(cmd: str, timeout: int = 15) -> dict:
+    """Run a command on the Edge server via SSH using the repo SSH key."""
+    ssh_key = REPO_ROOT / "ssh-key-zion-edge"
+    edge_host = "77.42.71.94"
+    edge_host_ts = "100.76.16.108"
+    # Prefer Tailscale if reachable
+    host = edge_host_ts
+    try:
+        import socket
+        s = socket.create_connection((edge_host_ts, 22), timeout=2)
+        s.close()
+    except Exception:
+        host = edge_host
+    if not ssh_key.exists():
+        return {"ok": False, "error": "SSH key not found: ssh-key-zion-edge"}
+    try:
+        result = subprocess.run(
+            ["ssh", "-i", str(ssh_key), "-o", "StrictHostKeyChecking=accept-new",
+             "-o", "ConnectTimeout=5", "-o", "BatchMode=yes",
+             f"root@{host}", cmd],
+            capture_output=True, text=True, timeout=timeout
+        )
+        ok = result.returncode == 0
+        return {"ok": ok, "stdout": result.stdout[:500], "stderr": result.stderr[:300],
+                "host": host, "returncode": result.returncode}
+    except subprocess.TimeoutExpired:
+        return {"ok": False, "error": f"SSH timeout ({timeout}s) connecting to {host}"}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
 def run_control(action: str, env_overrides: dict = None) -> dict:
     """Execute a control action in the background (cross-platform).
     Manifest-backed services (services.json) are launched directly; everything
     else falls back to an allowed .ps1/.sh script in scripts/.
     Optional env_overrides merges into the subprocess environment."""
+
+    # ── Edge remote actions (SSH) ─────────────────────────────────────────
+    if action == "restart-pool-edge":
+        _log_control("action=restart-pool-edge via SSH")
+        r = _run_edge_ssh_command("systemctl restart zion-pool 2>&1 || (pkill -f 'zion-pool\\|pool server' && sleep 2 && cd /root/zion-2.9.6-main && nohup ./V3/target/release/server >> logs/pool.log 2>&1 &)")
+        return {"ok": r.get("ok", False), "action": action,
+                "message": "Edge pool restart sent via SSH" if r.get("ok") else r.get("error", "SSH failed"),
+                "details": r.get("stdout", "") + r.get("stderr", "")}
+    if action == "stop-pool-edge":
+        _log_control("action=stop-pool-edge via SSH")
+        r = _run_edge_ssh_command("systemctl stop zion-pool 2>&1 || pkill -f 'zion-pool\\|pool server'")
+        return {"ok": r.get("ok", False), "action": action,
+                "message": "Edge pool stop sent via SSH" if r.get("ok") else r.get("error", "SSH failed")}
+    if action == "start-pool-edge":
+        _log_control("action=start-pool-edge via SSH")
+        r = _run_edge_ssh_command("systemctl start zion-pool 2>&1 || (cd /root/zion-2.9.6-main && nohup ./V3/target/release/server >> logs/pool.log 2>&1 &)")
+        return {"ok": r.get("ok", False), "action": action,
+                "message": "Edge pool start sent via SSH" if r.get("ok") else r.get("error", "SSH failed")}
+
     manifest_result = _manifest_dispatch(action, env_overrides)
     if manifest_result is not None:
         return manifest_result
@@ -5173,6 +5251,7 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
         <div class="text-xs text-gray-400 mb-2">P2P: <span id="val-node1-p2p" class="font-mono">—</span></div>
         <div class="flex gap-1 mt-2">
           <button onclick="controlAction('start-node1')" class="flex-1 text-xs px-2 py-1 bg-emerald-700 hover:bg-emerald-600 rounded transition">▶ Start</button>
+          <button onclick="controlAction('restart-node1')" class="flex-1 text-xs px-2 py-1 bg-amber-700 hover:bg-amber-600 rounded transition">⟳ Restart</button>
           <button onclick="copyToClipboard('zion node1')" class="text-xs px-2 py-1 bg-zion-700 hover:bg-zion-600 rounded transition">📋</button>
         </div>
       </div>
@@ -6536,10 +6615,18 @@ function updateServiceCards(s){
   const minerBtns = document.getElementById('miner-buttons');
   if(isEdgePrimary){
     minerTitle.textContent='⛏️ Edge Miner';
-    minerBtns.innerHTML='<button onclick="controlAction(\'restart-miner\')" class="flex-1 text-xs px-2 py-1 bg-blue-700 hover:bg-blue-600 rounded transition">🔄 Restart</button><button onclick="controlAction(\'stop-miner\')" class="flex-1 text-xs px-2 py-1 bg-red-700 hover:bg-red-600 rounded transition">⏹ Stop</button>';
+    if(m.running){
+      minerBtns.innerHTML='<button onclick="controlAction(\'restart-miner\')" class="flex-1 text-xs px-2 py-1 bg-blue-700 hover:bg-blue-600 rounded transition">🔄 Restart</button><button onclick="controlAction(\'stop-miner\')" class="flex-1 text-xs px-2 py-1 bg-red-700 hover:bg-red-600 rounded transition">⏹ Stop</button>';
+    } else {
+      minerBtns.innerHTML='<button onclick="controlAction(\'start-miner-gpu\')" class="flex-1 text-xs px-2 py-1 bg-emerald-700 hover:bg-emerald-600 rounded transition">▶ Start</button><button onclick="controlAction(\'start-miner-cpu\')" class="flex-1 text-xs px-2 py-1 bg-blue-700 hover:bg-blue-600 rounded transition">💻 CPU</button>';
+    }
   } else {
     minerTitle.textContent='⛏️ GPU Miner';
-    minerBtns.innerHTML='<button onclick="controlAction(\'start-miner-gpu\')" class="flex-1 text-xs px-2 py-1 bg-purple-700 hover:bg-purple-600 rounded transition">🎮 GPU</button><button onclick="controlAction(\'start-miner-cpu\')" class="flex-1 text-xs px-2 py-1 bg-blue-700 hover:bg-blue-600 rounded transition">💻 CPU</button><button onclick="controlAction(\'stop-miner\')" class="flex-1 text-xs px-2 py-1 bg-red-700 hover:bg-red-600 rounded transition">⏹ Stop</button>';
+    if(m.running){
+      minerBtns.innerHTML='<button onclick="controlAction(\'restart-miner\')" class="flex-1 text-xs px-2 py-1 bg-amber-700 hover:bg-amber-600 rounded transition">⟳ Restart</button><button onclick="controlAction(\'stop-miner\')" class="flex-1 text-xs px-2 py-1 bg-red-700 hover:bg-red-600 rounded transition">⏹ Stop</button>';
+    } else {
+      minerBtns.innerHTML='<button onclick="controlAction(\'start-miner-gpu\')" class="flex-1 text-xs px-2 py-1 bg-purple-700 hover:bg-purple-600 rounded transition">🎮 GPU</button><button onclick="controlAction(\'start-miner-cpu\')" class="flex-1 text-xs px-2 py-1 bg-blue-700 hover:bg-blue-600 rounded transition">💻 CPU</button><button onclick="controlAction(\'stop-miner\')" class="flex-1 text-xs px-2 py-1 bg-red-700 hover:bg-red-600 rounded transition">⏹ Stop</button>';
+    }
   }
 }
 
