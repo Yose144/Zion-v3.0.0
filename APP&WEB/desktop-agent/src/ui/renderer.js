@@ -4510,6 +4510,19 @@ function initCliView() {
   document.getElementById('cli-btn-dao-treasury')?.addEventListener('click', () => runCli('cliDaoTreasury', 'dao treasury'));
   document.getElementById('cli-btn-dao-params')?.addEventListener('click', () => runCli('cliDaoParams', 'dao params'));
 
+  // ── Swap ──────────────────────────────────────────────────────────
+  document.getElementById('cli-btn-swap-status')?.addEventListener('click', () => runCli('cliSwapStatus', 'swap status'));
+  document.getElementById('cli-btn-swap-quote')?.addEventListener('click', async () => {
+    const from = prompt('From token (default ZION):') || 'ZION';
+    const to = prompt('To token (default USDC):') || 'USDC';
+    const amount = prompt('Amount:') || '1';
+    await runCli('cliSwapQuote', `swap quote --from ${from} --to ${to} --amount ${amount}`, { from, to, amount: parseFloat(amount) || 1 });
+  });
+  document.getElementById('cli-btn-swap-history')?.addEventListener('click', async () => {
+    const n = prompt('Number of entries (default 10):') || '10';
+    await runCli('cliSwapHistory', `swap history ${n}`, { n: parseInt(n) || 10 });
+  });
+
   // ── Pool ──────────────────────────────────────────────────────────
   document.getElementById('cli-btn-pool-stats')?.addEventListener('click', () => runCli('cliPoolStats', 'pool stats edge', { target: 'edge' }));
   document.getElementById('cli-btn-pool-miners')?.addEventListener('click', () => runCli('cliPoolMiners', 'pool miners edge', { target: 'edge' }));
