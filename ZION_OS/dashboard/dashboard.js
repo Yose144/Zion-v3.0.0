@@ -415,6 +415,16 @@ function updateServiceCards(s){
   if(mwl) mwl.textContent = m.payout_address ?? m.wallet ?? '—';
   const mon = document.getElementById('val-miner-onchain');
   if(mon) mon.textContent = m.on_chain_balance_zion != null ? _zionFmt(m.on_chain_balance_zion) + ' Z' : '—';
+  const monts = document.getElementById('val-miner-onchain-ts');
+  if(monts) {
+    const ts = m.on_chain_balance_updated;
+    if(ts) {
+      const d = new Date(ts);
+      monts.textContent = d.toLocaleTimeString();
+    } else {
+      monts.textContent = '';
+    }
+  }
   const mnh = document.getElementById('val-miner-height');
   if(mnh) mnh.textContent = m.current_height ?? '—';
   const md = document.getElementById('val-miner-diff');
