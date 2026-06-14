@@ -179,8 +179,9 @@ pub async fn serve_remote(cfg: &AgentConfig) -> Result<()> {
     }
 
     let start_cmd = format!(
-        "nohup {} --model {} --host 0.0.0.0 --port {} --n-gpu-layers 99 --ctx-size 8192 \
-         --n-predict 2048 --threads 8 --parallel 4 \
+        "nohup {} --model {} --host 0.0.0.0 --port {} --n-gpu-layers 99 --ctx-size 32768 \
+         --n-predict 4096 --threads 8 --parallel 2 --flash-attn \
+         --batch-size 512 --ubatch-size 512 \
          > /tmp/llama-server.log 2>&1 &\necho \"STARTED PID=$!\"",
         llama_bin, gguf, remote_port
     );

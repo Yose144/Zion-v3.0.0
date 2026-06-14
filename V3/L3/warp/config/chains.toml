@@ -1,0 +1,207 @@
+# WARP Chain Registry Configuration
+# Loaded at runtime by ChainRegistry::from_config()
+# Each chain defines: RPC URLs, chain_id (EVM), finality_blocks, enabled status
+
+[ethereum]
+family = "evm"
+chain_id = 1
+finality_blocks = 12
+decimals = 18
+rpc_urls = [
+    "https://eth.llamarpc.com",
+    "https://rpc.ankr.com/eth",
+]
+enabled = true
+
+[base]
+family = "evm"
+chain_id = 8453
+finality_blocks = 3
+decimals = 18
+rpc_urls = [
+    "https://base.llamarpc.com",
+    "https://mainnet.base.org",
+]
+enabled = true
+
+[arbitrum]
+family = "evm"
+chain_id = 42161
+finality_blocks = 12
+decimals = 18
+rpc_urls = [
+    "https://arb1.arbitrum.io/rpc",
+    "https://arbitrum.llamarpc.com",
+]
+enabled = true
+
+[optimism]
+family = "evm"
+chain_id = 10
+finality_blocks = 3
+decimals = 18
+rpc_urls = [
+    "https://mainnet.optimism.io",
+    "https://optimism.llamarpc.com",
+]
+enabled = true
+
+[bsc]
+family = "evm"
+chain_id = 56
+finality_blocks = 15
+decimals = 18
+rpc_urls = [
+    "https://bsc-dataseed.binance.org",
+    "https://bsc-dataseed1.defibit.io",
+]
+enabled = true
+
+[polygon]
+family = "evm"
+chain_id = 137
+finality_blocks = 128
+decimals = 18
+rpc_urls = [
+    "https://polygon-rpc.com",
+    "https://polygon.llamarpc.com",
+]
+enabled = true
+
+[avalanche]
+family = "evm"
+chain_id = 43114
+finality_blocks = 20
+decimals = 18
+rpc_urls = [
+    "https://api.avax.network/ext/bc/C/rpc",
+    "https://avalanche-c-chain-rpc.publicnode.com",
+]
+enabled = true
+
+[zksync]
+family = "evm"
+chain_id = 324
+finality_blocks = 20
+decimals = 18
+rpc_urls = [
+    "https://mainnet.era.zksync.io",
+]
+enabled = true
+
+[linea]
+family = "evm"
+chain_id = 59144
+finality_blocks = 20
+decimals = 18
+rpc_urls = [
+    "https://rpc.linea.build",
+]
+enabled = true
+
+[solana]
+family = "solana"
+finality_blocks = 32
+decimals = 9
+rpc_urls = [
+    "https://api.mainnet-beta.solana.com",
+    "https://solana-mainnet.g.alchemy.com/v2/${ALCHEMY_KEY}",
+]
+enabled = true
+
+[tron]
+family = "tron"
+finality_blocks = 19
+decimals = 6
+rpc_urls = [
+    "https://api.trongrid.io",
+]
+enabled = true
+
+[stellar]
+family = "stellar"
+finality_blocks = 1
+decimals = 7
+rpc_urls = [
+    "https://horizon.stellar.org",
+]
+enabled = true
+
+[cardano]
+family = "cardano"
+finality_blocks = 10
+decimals = 6
+rpc_urls = [
+    "https://cardano-mainnet.blockfrost.io/api/v0",
+]
+enabled = true
+
+[cosmos]
+family = "cosmos"
+finality_blocks = 1
+decimals = 6
+rpc_urls = [
+    "https://rpc-cosmoshub-ia.cosmosia.notional.ventures",
+]
+enabled = true
+
+[bitcoin]
+family = "bitcoin"
+finality_blocks = 6
+decimals = 8
+rpc_urls = [
+    "https://bitcoin-rpc.publicnode.com",
+]
+enabled = true
+
+[sui]
+family = "sui"
+finality_blocks = 2
+decimals = 9
+rpc_urls = [
+    "https://rpc.mainnet.sui.io",
+]
+enabled = true
+
+[aptos]
+family = "aptos"
+finality_blocks = 2
+decimals = 8
+rpc_urls = [
+    "https://fullnode.mainnet.aptoslabs.com/v1",
+]
+enabled = true
+
+[near]
+family = "near"
+finality_blocks = 2
+decimals = 24
+rpc_urls = [
+    "https://rpc.mainnet.near.org",
+]
+enabled = true
+
+[ton]
+family = "ton"
+finality_blocks = 1
+decimals = 9
+rpc_urls = [
+    "https://toncenter.com/api/v2/jsonRPC",
+]
+enabled = true
+
+[lightning]
+family = "lightning"
+finality_blocks = 1
+decimals = 8
+# Lightning has no RPC; configured via env vars:
+# WARP_LN_NODE_URL=http://localhost:8080
+# WARP_LN_MACAROON=...
+enabled = true
+
+[zion_l1]
+family = "zion-l1"
+finality_blocks = 1
+decimals = 12
+# ZION L1 is internal — no external RPC
+enabled = true
