@@ -586,7 +586,7 @@ def get_edge_pool_miners() -> dict:
             if cp.exists():
                 with open(cp, "r", encoding="utf-8") as f:
                     cfg = json.load(f)
-                wid = cfg.get("worker_name") or cfg.get("miner_id")
+                wid = cfg.get("worker") or cfg.get("worker_name") or cfg.get("miner_id")
                 addr = cfg.get("wallet") or cfg.get("payout_address")
                 if wid and addr:
                     agent_configs[wid] = addr
