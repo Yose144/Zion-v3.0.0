@@ -7676,7 +7676,15 @@ class DashboardHandler(BaseHTTPRequestHandler):
             if v3_index.exists():
                 self._html(v3_index.read_text(encoding="utf-8"))
             else:
-                self.send_error(404, "Dashboard V3 not found. Run: mkdir -p dashboard/v3 && create index.html")
+                self.send_error(404)
+            return
+        # ── L3 Rainbow Protocol Dashboard ────────────────────────────────────
+        elif route == "/l3" or route == "/l3/index.html":
+            l3_index = SCRIPT_DIR / "l3.html"
+            if l3_index.exists():
+                self._html(l3_index.read_text(encoding="utf-8"))
+            else:
+                self.send_error(404, "L3 dashboard not found")
             return
         elif route.startswith("/v3/"):
             v3_file = SCRIPT_DIR / "v3" / route[4:].lstrip("/")
