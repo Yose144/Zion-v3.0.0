@@ -1,0 +1,29 @@
+# Large model files — DO NOT COMMIT
+models/**/*.safetensors
+models/**/*.bin
+models/**/*.gguf
+models/**/*.pt
+models/**/*.pth
+checkpoint-*/adapter_model.safetensors
+checkpoint-*/optimizer.pt
+checkpoint-*/pytorch_model.bin
+*.gguf
+*.safetensors
+*.pt
+*.pth
+
+# Training artifacts
+*.log
+checkpoint-*/training_args.bin
+
+# Large archives
+*.tar.gz
+*.zip
+*.7z
+
+# Keep configs and documentation
+!*.md
+!*.json
+!*.toml
+!*.py
+!*.sh
