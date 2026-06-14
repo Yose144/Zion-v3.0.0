@@ -2144,16 +2144,46 @@ def get_miner_live_stats() -> dict:
         stats["worker_name"] = "worker1"
         stats["pool_addr"] = "100.76.16.108:8444"
 
+    # Get payout address from agent config / env
+    payout_addr = stats.get("payout_address") or stats.get("wallet")
+    if not payout_addr:
+        for subdir in ("zion-desktop-agent", "zion-desktop-agent-dev"):
+            try:
+                cp = Path.home() / "AppData" / "Roaming" / subdir / "miner_config.json"
+                if cp.exists():
+                    with open(cp, "r", encoding="utf-8") as f:
+                        cfg = json.load(f)
+                    payout_addr = cfg.get("wallet") or cfg.get("payout_address")
+                    if payout_addr:
+                        break
+            except Exception:
+                pass
+    if not payout_addr:
+        payout_addr = find_env_value("ZION_PAYOUT_ADDRESS") or find_env_value("ZION_MINER_ADDRESS") or os.environ.get("ZION_PAYOUT_ADDRESS") or os.environ.get("ZION_MINER_ADDRESS")
+
+    # Fetch current difficulty from pool if not in stats
+    current_diff = stats.get("current_diff")
+    if current_diff is None:
+        try:
+            pd = fetch_pool_miners()
+            if pd and len(pd) > 0:
+                current_diff = pd[0].get("current_difficulty") or pd[0].get("difficulty")
+        except Exception:
+            pass
+
     return {
         "hashrate": stats.get("hashrate"),
         "shares_accepted": stats.get("shares_accepted", 0),
         "shares_rejected": stats.get("shares_rejected", 0),
         "current_height": stats.get("current_height"),
-        "current_diff": stats.get("current_diff"),
+        "current_diff": current_diff,
         "gpu_backend": stats.get("gpu_backend", "cpu"),
         "gpu_device": stats.get("gpu_device"),
         "worker_name": stats.get("worker_name"),
+        "miner_id": stats.get("miner_id"),
         "pool_addr": stats.get("pool_addr"),
+        "payout_address": payout_addr,
+        "wallet": payout_addr,
         "running": stats.get("running", False),
         "gpus": agent_gpu.get("gpus", []) if not agent_gpu.get("_error") else [],
         "timestamp": datetime.now().isoformat(),
