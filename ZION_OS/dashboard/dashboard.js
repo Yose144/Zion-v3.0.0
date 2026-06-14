@@ -557,6 +557,43 @@ function _renderEdgeServerCard(d) {
   }
 }
 
+// ── Edge action buttons ──────────────────────────────────────────────
+async function edgeAction(action) {
+  const ACTION_LABELS = {
+    'restart-node1': 'Restart Edge Node 1',
+    'restart-node2': 'Restart Edge Node 2',
+    'restart-pool': 'Restart Edge Pool',
+    'restart-dao': 'Restart Edge DAO',
+    'restart-warp': 'Restart Edge WARP',
+    'restart-dashboard': 'Restart Edge Dashboard',
+    'clean-docker': 'Clean Docker on Edge',
+    'backup-edge': 'Backup Edge Server',
+    'security-audit': 'Security Audit',
+    'full-health': 'Full Health Check',
+  };
+  const label = ACTION_LABELS[action] || action;
+  if(!confirm(`Run "${label}" on Edge server (77.42.71.94)?`)) return;
+
+  toast(`Running: ${label}…`, 'success');
+  try {
+    const res = await fetch('/api/edge-action', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({action}),
+    });
+    const d = await res.json();
+    if(d.ok){
+      toast(`${label}: ${d.result || 'OK'}`, 'success');
+      // Force refresh edge status after a few seconds
+      setTimeout(() => refreshEdgeServerCard(true), 3000);
+    } else {
+      toast(`${label} failed: ${d.error || 'unknown'}`, 'error');
+    }
+  } catch(e) {
+    toast(`${label} error: ${e.message}`, 'error');
+  }
+}
+
 // ── Service Telemetry Detail Cards (Overview panel) ──
 async function updateServiceTelemetryDetails(s){
   const container = document.getElementById('overview-telemetry-details');
