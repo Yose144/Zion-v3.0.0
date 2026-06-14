@@ -498,9 +498,34 @@ function _renderEdgeServerCard(d) {
   // Memory
   const memPct = document.getElementById('edge-mem-pct');
   const memDet = document.getElementById('edge-mem-detail');
+  const memTop = document.getElementById('edge-mem-top');
   if(memPct) memPct.textContent = d.mem_pct != null ? d.mem_pct + '%' : '—';
   if(memDet && d.mem_used_mb != null) memDet.textContent = (d.mem_used_mb/1024).toFixed(1) + ' / ' + (d.mem_total_mb/1024).toFixed(1) + ' GB';
   if(memPct && d.mem_pct != null) memPct.className = 'text-xl font-bold ' + (d.mem_pct > 85 ? 'text-red-400' : d.mem_pct > 65 ? 'text-amber-400' : 'text-blue-400');
+  if(memTop && d.mem_top) {
+    memTop.innerHTML = d.mem_top.slice(0, 5).map((p, i) => {
+      const name = p.cmd.replace(/^.*\//, '').replace(/^python3?\d*$/, 'python').slice(0, 18);
+      const color = i === 0 ? 'text-red-400' : i === 1 ? 'text-amber-400' : 'text-gray-500';
+      return `<div class="text-[9px] font-mono ${color} flex justify-between"><span>${escapeHtml(name)}</span><span>${p.mb.toFixed(0)}M</span></div>`;
+    }).join('');
+  } else if(memTop) {
+    memTop.innerHTML = '';
+  }
+
+  // Memory trend
+  const memTrend = document.getElementById('edge-mem-trend');
+  if(memTrend && d.mem_history && d.mem_history.length >= 2) {
+    const hist = d.mem_history;
+    const first = hist[0];
+    const last = hist[hist.length - 1];
+    const diff = last.mem_pct - first.mem_pct;
+    const arrow = diff > 1 ? '▲' : diff < -1 ? '▼' : '→';
+    const color = diff > 1 ? 'text-red-400' : diff < -1 ? 'text-emerald-400' : 'text-gray-500';
+    memTrend.textContent = `${arrow} ${diff > 0 ? '+' : ''}${diff.toFixed(1)}% / ${((last.mem_used_mb - first.mem_used_mb)/1024).toFixed(2)} GB`;
+    memTrend.className = `text-[9px] font-mono mt-1 ${color}`;
+  } else if(memTrend) {
+    memTrend.textContent = '';
+  }
 
   // Disk
   const diskPct = document.getElementById('edge-disk-pct');
