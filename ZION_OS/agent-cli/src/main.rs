@@ -14,6 +14,7 @@ mod safety;
 mod session;
 mod tools;
 mod tunnel;
+mod tui;
 mod ui;
 
 use config::AgentConfig;
@@ -250,7 +251,7 @@ async fn main() -> Result<()> {
             agent_loop::run_task(&cfg, &task_text, plan_only || cli.dry_run).await?;
         }
         Commands::Session => {
-            session::run_interactive(&cfg).await?;
+            session::interactive::run(&cfg).await?;
         }
         Commands::Review { branch, output } => {
             reviewer::run_review(&cfg, branch, output).await?;
