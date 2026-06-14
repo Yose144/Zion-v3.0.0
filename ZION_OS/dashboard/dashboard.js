@@ -1748,10 +1748,10 @@ async function loadWallets(){
 // ─── Online Miners (Wallets tab) ────────────────────────────────────
 async function refreshMinerBalances(){
   try {
-    const res = await fetch('/api/pool/miners');
-    if(!res.ok) throw new Error('HTTP ' + res.status);
-    const data = await res.json();
+    // Use /api/payout which has live on-chain balances enriched by node RPC
+    const data = await apiFetch('/api/payout');
     const miners = data.miners || [];
+    const poolStats = data.pool_stats || {};
     const tbody = document.getElementById('miner-balances-table');
     const summary = document.getElementById('miner-balances-summary');
 
@@ -1764,14 +1764,14 @@ async function refreshMinerBalances(){
 
     let totalHashrate = 0, totalPaid = 0, totalPending = 0, totalValid = 0;
     tbody.innerHTML = miners.map(m => {
-      const name = escapeHtml(m.worker_name || m.miner_id || '—');
-      const addr = escapeHtml((m.payout_address || m.miner_id || '').slice(0, 24) + ((m.payout_address || m.miner_id || '').length > 24 ? '…' : ''));
-      const hr = m.hashrate_hps != null ? m.hashrate_hps : (m.hashrate || 0);
+      const name = escapeHtml(m.worker_name || m.address || '—');
+      const addr = escapeHtml((m.payout_address || m.address || '').slice(0, 24) + ((m.payout_address || m.address || '').length > 24 ? '…' : ''));
+      const hr = m.hashrate ?? 0;
       const hrStr = hr >= 1000 ? (hr/1000).toFixed(2) + ' KH/s' : hr.toFixed(1) + ' H/s';
       const valid = m.valid_shares ?? 0;
       const invalid = m.invalid_shares ?? 0;
       const blocks = m.blocks_found ?? 0;
-      const pending = m.pending_balance ?? 0;
+      const pending = (m.pending_balance != null ? m.pending_balance / 1_000_000_000_000 : 0);
       const paid = m.paid_total ?? 0;
       const onChain = m.on_chain_balance_zion != null ? _zionFmt(m.on_chain_balance_zion) + ' Z' : '—';
 
@@ -1795,8 +1795,9 @@ async function refreshMinerBalances(){
     }).join('');
 
     if(summary){
-      const thr = totalHashrate >= 1000 ? (totalHashrate/1000).toFixed(2) + ' KH/s' : totalHashrate.toFixed(1) + ' H/s';
-      summary.innerHTML = `<span class="text-emerald-400 font-semibold">${miners.length} miners</span> · Total hashrate: <span class="text-amber-400">${thr}</span> · Valid shares: <span class="text-emerald-400">${fmtNum(totalValid)}</span> · Paid: <span class="text-cyan-400">${totalPaid.toFixed(4)} Z</span> · Pending: <span class="text-amber-400">${totalPending.toFixed(4)} Z</span>`;
+      const hr = poolStats.hashrate?.pool ?? poolStats.pool_hashrate ?? totalHashrate;
+      const thr = hr >= 1000 ? (hr/1000).toFixed(2) + ' KH/s' : hr.toFixed(1) + ' H/s';
+      summary.innerHTML = `<span class="text-emerald-400 font-semibold">${miners.length} miners</span> · Pool hashrate: <span class="text-amber-400">${thr}</span> · Valid shares: <span class="text-emerald-400">${fmtNum(totalValid)}</span> · Paid: <span class="text-cyan-400">${totalPaid.toFixed(4)} Z</span> · Pending: <span class="text-amber-400">${totalPending.toFixed(4)} Z</span>`;
     }
   } catch(e) {
     console.error('refreshMinerBalances error:', e);
