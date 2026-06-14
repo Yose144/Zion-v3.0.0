@@ -4,6 +4,7 @@ use tracing::{info, warn};
 
 mod agent_loop;
 mod config;
+mod l3;
 mod llm;
 mod memory;
 mod model_ops;
@@ -193,6 +194,24 @@ enum Commands {
         #[arg(long)]
         no_lint: bool,
     },
+
+    /// L3 WARP — cross-chain bridge operations
+    Warp {
+        #[command(subcommand)]
+        cmd: WarpCmd,
+    },
+
+    /// L3 AI — query AI-native orchestrator, RAG, consciousness
+    Ai {
+        #[command(subcommand)]
+        cmd: AiCmd,
+    },
+
+    /// L3 NCL — decentralized compute marketplace
+    Ncl {
+        #[command(subcommand)]
+        cmd: NclCmd,
+    },
 }
 
 #[derive(Subcommand)]
@@ -222,6 +241,65 @@ enum ConfigCmd {
     Path,
     Init,
     Set { key: String, value: String },
+}
+
+#[derive(Subcommand)]
+enum WarpCmd {
+    /// List enabled bridge chains
+    Chains,
+    /// List recent transfers
+    Transfers,
+    /// Show pending transfers
+    Pending,
+    /// Get transfer by ID
+    Get { id: String },
+    /// Initiate outbound transfer (ZION -> external)
+    Outbound {
+        #[arg(short, long)]
+        chain: String,
+        #[arg(short, long)]
+        amount: u64,
+        #[arg(short, long)]
+        recipient: String,
+    },
+}
+
+#[derive(Subcommand)]
+enum AiCmd {
+    /// List registered AI agents
+    Agents,
+    /// Get agent consciousness level
+    Consciousness { agent_id: String },
+    /// Query RAG knowledge base
+    Rag {
+        query: String,
+        #[arg(short, long, default_value = "5")]
+        top_k: usize,
+    },
+    /// Get live telemetry
+    Telemetry,
+    /// Run pool optimizer
+    Optimize {
+        #[arg(short, long, default_value = "pool")]
+        target: String,
+    },
+}
+
+#[derive(Subcommand)]
+enum NclCmd {
+    /// List compute jobs
+    Jobs,
+    /// Submit a compute job
+    Submit {
+        #[arg(short, long)]
+        job_type: String,
+        #[arg(short, long)]
+        payload: String,
+        #[arg(short, long, default_value = "0")]
+        reward: u64,
+    },
+    /// Get job status
+    Status { id: String },
 }
 
 #[tokio::main]
@@ -354,6 +432,82 @@ async fn main() -> Result<()> {
                 ui::print_info("Plan-only mode — agent will not execute.");
             }
             agent_loop::run_task(&cfg, &task_text, plan_only || cli.dry_run).await?;
+        }
+        Commands::Warp { cmd } => {
+            let warp = l3::WarpClient::new(&cfg.l3.warp_url);
+            match cmd {
+                WarpCmd::Chains => {
+                    let chains = warp.list_chains().await?;
+                    println!("{}", serde_json::to_string_pretty(&chains)?);
+                }
+                WarpCmd::Transfers => {
+                    let transfers = warp.list_transfers().await?;
+                    println!("{}", serde_json::to_string_pretty(&transfers)?);
+                }
+                WarpCmd::Pending => {
+                    let pending = warp.list_pending().await?;
+                    println!("{}", serde_json::to_string_pretty(&pending)?);
+                }
+                WarpCmd::Get { id } => {
+                    let transfer = warp.get_transfer(&id).await?;
+                    println!("{}", serde_json::to_string_pretty(&transfer)?);
+                }
+                WarpCmd::Outbound { chain, amount, recipient } => {
+                    let proof = l3::warp_client::DepositProof {
+                        tx_hash: "manual".into(),
+                        block_height: 0,
+                        block_hash: "manual".into(),
+                        sender: "zion1agent".into(),
+                        amount_flowers: amount,
+                        memo: format!("WARP:1:{}:{}", chain, recipient),
+                        confirmations: 0,
+                    };
+                    let resp = warp.initiate_outbound(&proof).await?;
+                    println!("Transfer initiated: {}", resp.transfer_id);
+                }
+            }
+        }
+        Commands::Ai { cmd } => {
+            let ai = l3::AiNativeClient::new(&cfg.l3.ai_native_url);
+            match cmd {
+                AiCmd::Agents => {
+                    let agents = ai.list_agents().await?;
+                    println!("{}", serde_json::to_string_pretty(&agents)?);
+                }
+                AiCmd::Consciousness { agent_id } => {
+                    let con = ai.get_consciousness(&agent_id).await?;
+                    println!("{}", serde_json::to_string_pretty(&con)?);
+                }
+                AiCmd::Rag { query, top_k } => {
+                    let results = ai.query_rag(&query, top_k).await?;
+                    println!("{}", serde_json::to_string_pretty(&results)?);
+                }
+                AiCmd::Telemetry => {
+                    let tel = ai.get_telemetry().await?;
+                    println!("{}", serde_json::to_string_pretty(&tel)?);
+                }
+                AiCmd::Optimize { target } => {
+                    let opt = ai.run_optimizer(&target).await?;
+                    println!("{}", serde_json::to_string_pretty(&opt)?);
+                }
+            }
+        }
+        Commands::Ncl { cmd } => {
+            let ncl = l3::NclClient::new(&cfg.l3.ncl_url);
+            match cmd {
+                NclCmd::Jobs => {
+                    let jobs = ncl.list_jobs().await?;
+                    println!("{}", serde_json::to_string_pretty(&jobs)?);
+                }
+                NclCmd::Submit { job_type, payload, reward } => {
+                    let resp = ncl.submit_job(&job_type, &payload, reward).await?;
+                    println!("Job submitted: {} (status: {})", resp.job_id, resp.status);
+                }
+                NclCmd::Status { id } => {
+                    let job = ncl.get_job(&id).await?;
+                    println!("{}", serde_json::to_string_pretty(&job)?);
+                }
+            }
         }
     }
 
