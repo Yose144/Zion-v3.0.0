@@ -4173,23 +4173,6 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
   </div>
 </div>
 
-<script src="/dashboard.js?v=26"></script>
-<script>
-// Debug: verify switchTab works after all scripts load
-window.addEventListener('DOMContentLoaded', function() {
-  console.log('[DEBUG] DOMContentLoaded — switchTab type:', typeof window.switchTab);
-  console.log('[DEBUG] TABS:', typeof TABS !== 'undefined' ? TABS.length + ' tabs' : 'UNDEFINED');
-  const paneNodes = document.getElementById('pane-nodes');
-  console.log('[DEBUG] pane-nodes exists:', !!paneNodes, 'hidden:', paneNodes ? paneNodes.classList.contains('hidden') : 'N/A');
-});
-window.addEventListener('load', function() {
-  console.log('[DEBUG] window.load — switchTab type:', typeof window.switchTab);
-  // Patch: ensure switchTab always works even if wrapper chain broke
-  const _tabFn = window.switchTab;
-  if (typeof _tabFn !== 'function') {
-    console.error('[DEBUG] switchTab is NOT a function! Restoring...');
-  }
-});
-</script>
+<script src="/dashboard.js?v=27"></script>
 </body>
 </html>
