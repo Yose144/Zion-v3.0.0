@@ -1,6 +1,6 @@
 'use strict';
 
-const TABS = ['overview','nodes','orchestrator','wallets','explorer','services','alerts','l1','l2','l3','l4','l5','l6','bridge','genesis','blockers','ops','charts','events','env','database','metrics','launch-day','wizard','logs','hiran','dao','payout','backups','topology','miner-live','settings','fleet','agent'];
+const TABS = ['overview','nodes','orchestrator','wallets','explorer','services','alerts','l1','l2','l3','l4','l5','l6','bridge','genesis','blockers','ops','charts','events','env','database','metrics','launch-day','wizard','logs','hiran','dao','payout','backups','topology','miner-live','settings','fleet','agent','warp','ai-agents','ncl-jobs'];
 let autoRefresh = true, refreshTimer = null, currentTab = 'overview';
 let charts = {};
 let _payoutSseSource = null;  // EventSource for real-time payout events
@@ -168,6 +168,9 @@ function switchTab(name){
   if(name === 'fleet'){ if(typeof refreshFleet==='function') try{refreshFleet();}catch(e){} }
   if(name === 'settings'){ if(typeof loadSettingsIntoForm==='function') try{loadSettingsIntoForm();}catch(e){} }
   if(name === 'nodes'){ if(typeof refreshAgentNodes==='function') try{refreshAgentNodes();}catch(e){} if(typeof refreshAgentRewards==='function') try{refreshAgentRewards();}catch(e){} }
+  if(name === 'warp'){ loadWarpPanel(); }
+  if(name === 'ai-agents'){ loadAiAgentsPanel(); }
+  if(name === 'ncl-jobs'){ loadNclJobsPanel(); }
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -7810,3 +7813,103 @@ async function triggerEdgeBackup() {
 }
 
 // Nodes hook merged into switchTab directly
+
+// ── L3 Native Panels ─────────────────────────────────────────────
+
+async function loadWarpPanel(){
+  try {
+    const [chains, transfers] = await Promise.allSettled([
+      fetch('/api/l3/warp/chains').then(r => r.json()),
+      fetch('/api/l3/warp/transfers').then(r => r.json())
+    ]);
+    const chainsData = chains.status === 'fulfilled' ? chains.value : [];
+    const transfersData = transfers.status === 'fulfilled' ? transfers.value : [];
+
+    const chainsBody = document.getElementById('warp-chains-body');
+    if(chainsBody){
+      if(Array.isArray(chainsData) && chainsData.length){
+        chainsBody.innerHTML = chainsData.map(c => `
+          <tr class="border-b border-white/5 hover:bg-white/5">
+            <td class="py-2 px-2 font-mono text-emerald-400">${escapeHtml(c.chain_id || c.id || '—')}</td>
+            <td class="py-2 px-2">${escapeHtml(c.name || '—')}</td>
+            <td class="py-2 px-2 text-right">${escapeHtml(c.status || '—')}</td>
+          </tr>`).join('');
+      } else {
+        chainsBody.innerHTML = '<tr><td colspan="3" class="py-4 text-gray-500 italic text-center">No chains connected.</td></tr>';
+      }
+    }
+
+    const transfersBody = document.getElementById('warp-transfers-body');
+    if(transfersBody){
+      if(Array.isArray(transfersData) && transfersData.length){
+        transfersBody.innerHTML = transfersData.map(t => `
+          <tr class="border-b border-white/5 hover:bg-white/5">
+            <td class="py-2 px-2 font-mono text-cyan-400">${escapeHtml(t.tx_id || t.id || '—')}</td>
+            <td class="py-2 px-2">${escapeHtml(t.from_chain || '—')}</td>
+            <td class="py-2 px-2">${escapeHtml(t.to_chain || '—')}</td>
+            <td class="py-2 px-2 text-right">${escapeHtml(t.amount !== undefined ? t.amount : '—')}</td>
+            <td class="py-2 px-2 text-center">${escapeHtml(t.status || '—')}</td>
+          </tr>`).join('');
+      } else {
+        transfersBody.innerHTML = '<tr><td colspan="5" class="py-4 text-gray-500 italic text-center">No transfers yet.</td></tr>';
+      }
+    }
+  } catch(e){
+    console.warn('WARP panel load failed:', e);
+  }
+}
+
+async function loadAiAgentsPanel(){
+  try {
+    const res = await fetch('/api/l3/ai/agents').then(r => r.json());
+    const data = Array.isArray(res) ? res : (res.agents || []);
+    const tbody = document.getElementById('ai-agents-body');
+    if(!tbody) return;
+    if(data.length){
+      tbody.innerHTML = data.map(a => {
+        const consciousness = Math.max(0, Math.min(100, a.consciousness || 0));
+        return `
+          <tr class="border-b border-white/5 hover:bg-white/5">
+            <td class="py-2 px-2 font-mono text-purple-400">${escapeHtml(a.id || a.agent_id || '—')}</td>
+            <td class="py-2 px-2">${escapeHtml(a.name || '—')}</td>
+            <td class="py-2 px-2">
+              <div class="w-full bg-white/10 rounded-full h-2 overflow-hidden">
+                <div class="h-full rounded-full bg-gradient-to-r from-purple-500 to-cyan-400" style="width:${consciousness}%"></div>
+              </div>
+              <div class="text-[10px] text-gray-400 mt-1 text-right">${consciousness}%</div>
+            </td>
+            <td class="py-2 px-2 text-right">${escapeHtml(a.status || '—')}</td>
+          </tr>`;
+      }).join('');
+    } else {
+      tbody.innerHTML = '<tr><td colspan="4" class="py-4 text-gray-500 italic text-center">No AI agents found.</td></tr>';
+    }
+  } catch(e){
+    console.warn('AI agents panel load failed:', e);
+  }
+}
+
+async function loadNclJobsPanel(){
+  try {
+    const res = await fetch('/api/l3/ncl/jobs').then(r => r.json());
+    const data = Array.isArray(res) ? res : (res.jobs || []);
+    const tbody = document.getElementById('ncl-jobs-body');
+    if(!tbody) return;
+    if(data.length){
+      tbody.innerHTML = data.map(j => `
+        <tr class="border-b border-white/5 hover:bg-white/5">
+          <td class="py-2 px-2 font-mono text-cyan-400">${escapeHtml(j.id || j.job_id || '—')}</td>
+          <td class="py-2 px-2">${escapeHtml(j.type || j.name || '—')}</td>
+          <td class="py-2 px-2">${escapeHtml(j.worker || j.worker_id || '—')}</td>
+          <td class="py-2 px-2 text-center">
+            <span class="ncl-status-pill ncl-st-${(j.status || 'queued').toLowerCase()}">${escapeHtml(j.status || 'queued')}</span>
+          </td>
+          <td class="py-2 px-2 text-right">${escapeHtml(j.progress !== undefined ? j.progress + '%' : '—')}</td>
+        </tr>`).join('');
+    } else {
+      tbody.innerHTML = '<tr><td colspan="5" class="py-4 text-gray-500 italic text-center">No NCL jobs found.</td></tr>';
+    }
+  } catch(e){
+    console.warn('NCL jobs panel load failed:', e);
+  }
+}

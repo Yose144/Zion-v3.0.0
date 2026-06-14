@@ -10,14 +10,17 @@ timeout_sec = 300
 auto_approve_safe = true
 
 [hiran]
-remote_host = "ssh1.vast.ai"
-remote_port = 31384
+# RTX 3090 - Alberta CA - $0.162/hr - aktivní instance pro inference + testing
+remote_host = "ssh7.vast.ai"
+remote_port = 12420
 ssh_key = "C:\\Users\\yosef\\.ssh\\vast\\hiran_v2.4_key"
 ssh_user = "root"
-remote_workspace = "/workspace/hiran-v2.3"
+remote_workspace = "/workspace"
 tunnel_local_port = 8080
 tunnel_remote_port = 8080
-llama_server_bin = "/workspace/llama.cpp/llama-server"
+llama_server_bin = "/workspace/llama.cpp/build/bin/llama-server"
+gguf_path = "/workspace/hiran-v2.3-8000-q5_k_m.gguf"
+
 
 [coding]
 enabled = true
