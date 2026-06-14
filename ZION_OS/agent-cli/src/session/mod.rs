@@ -1,3 +1,5 @@
+pub mod interactive;
+
 use crate::{
     agent_loop::run_task,
     config::AgentConfig,
