@@ -42,6 +42,39 @@
   html, body {
     max-width: 100%;
     overflow-x: hidden;
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+  }
+
+  /* iOS Safari specific fixes */
+  @supports (-webkit-appearance: none) {
+    html {
+      height: -webkit-fill-available;
+    }
+    
+    body {
+      min-height: -webkit-fill-available;
+      position: relative;
+    }
+  }
+
+  /* iPhone notch and safe area support */
+  @supports (padding: max(0px)) {
+    .safe-area-inset-top {
+      padding-top: max(env(safe-area-inset-top), 0.5rem);
+    }
+    
+    .safe-area-inset-bottom {
+      padding-bottom: max(env(safe-area-inset-bottom), 0.5rem);
+    }
+    
+    .safe-area-inset-left {
+      padding-left: max(env(safe-area-inset-left), 0.5rem);
+    }
+    
+    .safe-area-inset-right {
+      padding-right: max(env(safe-area-inset-right), 0.5rem);
+    }
   }
 
   body {
@@ -100,6 +133,20 @@
     max-width: 80rem;
     margin-inline: auto;
     padding-inline: clamp(0.75rem, 3.5vw, 2rem);
+    box-sizing: border-box;
+  }
+
+  /* iPhone specific container fixes */
+  @media (max-width: 430px) {
+    .zion-container {
+      padding-inline: clamp(0.5rem, 4vw, 1rem);
+    }
+  }
+
+  @media (max-width: 375px) {
+    .zion-container {
+      padding-inline: clamp(0.5rem, 4.5vw, 0.875rem);
+    }
   }
 
   .zion-panel {
@@ -110,6 +157,26 @@
       var(--zion-surface);
     backdrop-filter: blur(22px) saturate(140%);
     box-shadow: var(--zion-shadow-panel);
+    box-sizing: border-box;
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  /* iPhone panel fixes */
+  @media (max-width: 430px) {
+    .zion-panel {
+      border-radius: clamp(0.75rem, 3vw, 1.25rem);
+      margin-inline: 0;
+      width: 100%;
+    }
+  }
+
+  /* Prevent horizontal scroll on iOS */
+  @supports (-webkit-appearance: none) {
+    .zion-panel {
+      -webkit-box-sizing: border-box;
+      -moz-box-sizing: border-box;
+    }
   }
 
   .zion-panel-soft {
@@ -356,6 +423,87 @@
   .grid.grid-cols-5:not(.grid-cols-1):not(.sm\:grid-cols-5):not(.sm\:grid-cols-1),
   .grid.grid-cols-6:not(.grid-cols-1):not(.sm\:grid-cols-6):not(.sm\:grid-cols-1) {
     grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+}
+
+/* ═══ iPhone specific grid fixes ═══ */
+@media (max-width: 430px) {
+  /* Force single column for all grids on small iPhones */
+  .grid {
+    grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+    gap: clamp(0.5rem, 3vw, 1rem);
+  }
+  
+  /* Override any grid that might cause horizontal scroll */
+  .grid.grid-cols-2,
+  .grid.grid-cols-3,
+  .grid.grid-cols-4,
+  .grid.grid-cols-5,
+  .grid.grid-cols-6 {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ═══ iOS Safari scroll bounce prevention ═══ */
+@supports (-webkit-appearance: none) {
+  body {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Fix for iOS viewport height */
+  .min-h-screen {
+    min-height: -webkit-fill-available;
+  }
+  
+  /* Prevent horizontal scroll on iOS */
+  * {
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+  }
+  
+  /* Fix iOS input zoom */
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+}
+
+/* ═══ iPhone specific final fixes ═══ */
+@media screen and (max-width: 430px) and (-webkit-min-device-pixel-ratio: 2) {
+  /* Target iPhone specifically */
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  
+  body {
+    overflow-x: hidden !important;
+    position: relative !important;
+    width: 100% !important;
+  }
+  
+  /* Force all panels to fit */
+  .zion-panel,
+  .zion-panel-soft,
+  .zion-panel-hover {
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    border-radius: 0.75rem !important;
+  }
+  
+  /* Fix navigation */
+  nav {
+    padding-left: env(safe-area-inset-left, 0.5rem) !important;
+    padding-right: env(safe-area-inset-right, 0.5rem) !important;
+  }
+  
+  /* Fix all containers */
+  .zion-container {
+    padding-left: max(0.5rem, env(safe-area-inset-left)) !important;
+    padding-right: max(0.5rem, env(safe-area-inset-right)) !important;
   }
 }
 
