@@ -218,6 +218,7 @@ async function refreshAll(){
 
     updateServiceCards(statusData);
     await updateServiceTelemetryDetails(statusData);
+    refreshEdgeServerCard(); // non-blocking, cached 30s
     updateAlerts(alertsData.alerts);
     updateChecklist(checklistData.checks);
     updateLayerServices();
@@ -410,6 +411,131 @@ function updateServiceCards(s){
     } else {
       msgEl.classList.add('hidden');
     }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Edge Server System Health Card
+// ─────────────────────────────────────────────────────────────────────
+let _edgeServerLastFetch = 0;
+async function refreshEdgeServerCard(force = false) {
+  try {
+    const now = Date.now();
+    if (!force && (now - _edgeServerLastFetch) < 30000) return; // cache 30s
+    _edgeServerLastFetch = now;
+
+    const res = await fetch('/api/edge-status' + (force ? '?force=1' : ''), {
+      method: force ? 'POST' : 'GET',
+      headers: force ? {'Content-Type':'application/json'} : undefined,
+      body: force ? JSON.stringify({force: true}) : undefined,
+    });
+    const d = await res.json();
+    _renderEdgeServerCard(d);
+  } catch(e) {
+    const badge = document.getElementById('badge-edge-server');
+    if(badge){ badge.textContent = 'ERR'; badge.className = 'px-2 py-0.5 rounded-md text-[10px] font-bold bg-red-500/20 text-red-300'; }
+  }
+}
+
+function _renderEdgeServerCard(d) {
+  const badge = document.getElementById('badge-edge-server');
+
+  if (!d.ok) {
+    if(badge){ badge.textContent = 'SSH ERR'; badge.className = 'px-2 py-0.5 rounded-md text-[10px] font-bold bg-red-500/20 text-red-300'; }
+    const grid = document.getElementById('edge-services-grid');
+    if(grid) grid.innerHTML = `<div class="col-span-full text-xs text-red-400 py-2">SSH error: ${escapeHtml(d.error || 'unknown')}</div>`;
+    return;
+  }
+
+  // Badge
+  if(badge){ badge.textContent = 'LIVE'; badge.className = 'px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'; }
+
+  // CPU
+  const cpuEl = document.getElementById('edge-cpu');
+  const loadEl = document.getElementById('edge-load');
+  if(cpuEl) cpuEl.textContent = d.cpu_pct != null ? d.cpu_pct.toFixed(1) + '%' : '—';
+  if(loadEl) loadEl.textContent = d.load_1m != null ? 'load ' + d.load_1m.toFixed(2) : 'load —';
+  if(cpuEl && d.cpu_pct != null) cpuEl.className = 'text-xl font-bold ' + (d.cpu_pct > 80 ? 'text-red-400' : d.cpu_pct > 50 ? 'text-amber-400' : 'text-emerald-400');
+
+  // Memory
+  const memPct = document.getElementById('edge-mem-pct');
+  const memDet = document.getElementById('edge-mem-detail');
+  if(memPct) memPct.textContent = d.mem_pct != null ? d.mem_pct + '%' : '—';
+  if(memDet && d.mem_used_mb != null) memDet.textContent = (d.mem_used_mb/1024).toFixed(1) + ' / ' + (d.mem_total_mb/1024).toFixed(1) + ' GB';
+  if(memPct && d.mem_pct != null) memPct.className = 'text-xl font-bold ' + (d.mem_pct > 85 ? 'text-red-400' : d.mem_pct > 65 ? 'text-amber-400' : 'text-blue-400');
+
+  // Disk
+  const diskPct = document.getElementById('edge-disk-pct');
+  const diskDet = document.getElementById('edge-disk-detail');
+  if(diskPct) diskPct.textContent = d.disk_pct != null ? d.disk_pct + '%' : '—';
+  if(diskDet && d.disk_free_gb != null) diskDet.textContent = d.disk_free_gb + ' GB free';
+  if(diskPct && d.disk_pct != null) diskPct.className = 'text-xl font-bold ' + (d.disk_pct > 85 ? 'text-red-400' : d.disk_pct > 65 ? 'text-amber-400' : 'text-emerald-400');
+
+  // Services grid
+  const SVC_LABELS = {
+    'zion-edge-node1':   { icon: '🔷', label: 'Node 1', url: 'http://77.42.71.94:8443' },
+    'zion-edge-node2':   { icon: '🔶', label: 'Node 2', url: 'http://77.42.71.94:8446' },
+    'zion-pool-server':  { icon: '⚡', label: 'Pool',   url: 'http://77.42.71.94:8444' },
+    'zion-edge-dao':     { icon: '🏛️', label: 'DAO',    url: 'http://77.42.71.94:8450' },
+    'zion-edge-warp':    { icon: '🌀', label: 'WARP',   url: 'http://77.42.71.94:8453' },
+    'zion-edge-dashboard': { icon: '📊', label: 'Rust DB', url: 'http://77.42.71.94:8888' },
+    'hiran-inference':   { icon: '🤖', label: 'Hiran',  url: null },
+    'hiranyagarbha':     { icon: '🧠', label: 'Orch',   url: 'http://77.42.71.94:8001' },
+  };
+  // Also add PM2 processes (website)
+  const pm2Labels = { 'zion-website': { icon: '🌐', label: 'Website', url: 'https://zionterranova.com' } };
+
+  const svcs = d.services || {};
+  const pm2 = d.pm2 || {};
+  let okCount = 0;
+
+  const cards = [];
+  // systemd services
+  for(const [svc, meta] of Object.entries(SVC_LABELS)){
+    const st = svcs[svc] || 'unknown';
+    const ok = st === 'active';
+    if(ok) okCount++;
+    const color = ok ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300' : (st === 'unknown' ? 'bg-white/5 border-white/10 text-gray-500' : 'bg-red-500/10 border-red-500/30 text-red-400');
+    const dot = ok ? '🟢' : (st === 'unknown' ? '⚪' : '🔴');
+    const link = meta.url ? ` onclick="window.open('${meta.url}','_blank')" style="cursor:pointer"` : '';
+    cards.push(`<div class="rounded-lg border p-2 text-center ${color}"${link}>
+      <div class="text-base mb-0.5">${meta.icon}</div>
+      <div class="text-[10px] font-semibold">${meta.label}</div>
+      <div class="text-[9px] mt-0.5 opacity-70">${dot} ${st}</div>
+    </div>`);
+  }
+  // PM2 services
+  for(const [name, meta] of Object.entries(pm2Labels)){
+    const st = pm2[name] || 'unknown';
+    const ok = st === 'online';
+    if(ok) okCount++;
+    const color = ok ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300' : (st === 'unknown' ? 'bg-white/5 border-white/10 text-gray-500' : 'bg-red-500/10 border-red-500/30 text-red-400');
+    const dot = ok ? '🟢' : (st === 'unknown' ? '⚪' : '🔴');
+    const link = meta.url ? ` onclick="window.open('${meta.url}','_blank')" style="cursor:pointer"` : '';
+    cards.push(`<div class="rounded-lg border p-2 text-center ${color}"${link}>
+      <div class="text-base mb-0.5">${meta.icon}</div>
+      <div class="text-[10px] font-semibold">${meta.label}</div>
+      <div class="text-[9px] mt-0.5 opacity-70">${dot} ${st}</div>
+    </div>`);
+  }
+
+  const grid = document.getElementById('edge-services-grid');
+  if(grid) grid.innerHTML = cards.join('');
+
+  const okEl = document.getElementById('edge-svcs-ok');
+  if(okEl){ okEl.textContent = okCount; okEl.className = 'text-xl font-bold ' + (okCount >= 5 ? 'text-emerald-400' : okCount >= 3 ? 'text-amber-400' : 'text-red-400'); }
+
+  // Ports
+  const PORT_LABELS = {8333:'P2P1',8334:'P2P2',8443:'RPC1',8444:'Stratum',8450:'DAO',8453:'WARP',3000:'Web',3100:'Grafana',9090:'Prometheus'};
+  const ports = d.ports || {};
+  const portsRow = document.getElementById('edge-ports-row');
+  if(portsRow){
+    portsRow.innerHTML = Object.entries(PORT_LABELS).map(([port, label]) => {
+      const open = ports[parseInt(port)];
+      const cls = open === true ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : open === false ? 'bg-red-500/20 text-red-400 border-red-500/30' : 'bg-white/5 text-gray-500 border-white/10';
+      const sym = open === true ? '✓' : open === false ? '✗' : '?';
+      return `<span class="text-[10px] px-2 py-0.5 rounded border font-mono ${cls}">${sym} :${port} ${label}</span>`;
+    }).join('');
   }
 }
 
@@ -5395,6 +5521,7 @@ refreshTimer = setInterval(refreshAll, REFRESH_INTERVAL_OK);
 setTimeout(loadMinerConfig, 500);
 // Load overview widgets on startup
 setTimeout(() => { loadNclOverview(); loadHiranOverview(); }, 1500);
+setTimeout(() => { refreshEdgeServerCard(); }, 3000); // initial edge server load
 if(_overviewWidgetTimer) clearInterval(_overviewWidgetTimer);
 _overviewWidgetTimer = setInterval(() => { loadNclOverview(); loadHiranOverview(); }, 15000);
 // ─────────────────────────────────────────────────────────────────────

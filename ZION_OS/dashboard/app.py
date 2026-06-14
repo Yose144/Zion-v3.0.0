@@ -5007,6 +5007,116 @@ def _run_edge_ssh_command(cmd: str, timeout: int = 15) -> dict:
     except Exception as e:
         return {"ok": False, "error": str(e)}
 
+_edge_status_cache: dict = {}
+_edge_status_ts: float = 0.0
+
+def get_edge_system_status(force: bool = False) -> dict:
+    """Fetch Edge server system metrics + service health via SSH. Cached 30s."""
+    global _edge_status_cache, _edge_status_ts
+    import time as _time
+    if not force and _edge_status_ts and (_time.time() - _edge_status_ts) < 30:
+        return _edge_status_cache
+
+    cmd = (
+        "echo '===CPU==='; top -bn1 | grep 'Cpu(s)' | awk '{print $2}'; "
+        "echo '===LOAD==='; cat /proc/loadavg | awk '{print $1,$2,$3}'; "
+        "echo '===MEM==='; free -m | awk '/^Mem/{print $2,$3,$7}'; "
+        "echo '===DISK==='; df -m / | awk 'NR==2{print $2,$3,$4}'; "
+        "echo '===SVCS==='; "
+        "for svc in zion-edge-node1 zion-edge-node2 zion-pool-server zion-edge-dao zion-edge-warp zion-edge-dashboard hiran-inference hiranyagarbha; do "
+        "  st=$(systemctl is-active $svc 2>/dev/null); echo \"$svc=$st\"; "
+        "done; "
+        "echo '===PORTS==='; "
+        "for port in 8333 8334 8443 8444 8450 8453 3000 3100 9090; do "
+        "  ss -tlnp 2>/dev/null | grep -q \":$port \" && echo \"$port=open\" || echo \"$port=closed\"; "
+        "done; "
+        "echo '===PM2==='; pm2 jlist 2>/dev/null | python3 -c \""
+        "import sys,json; procs=json.load(sys.stdin); "
+        "[print(p['name']+'='+p['pm2_env']['status']) for p in procs]"
+        "\" 2>/dev/null || echo 'pm2=unavailable'"
+    )
+    r = _run_edge_ssh_command(cmd, timeout=20)
+    if not r.get("ok"):
+        result = {"ok": False, "error": r.get("error", "SSH failed"), "ssh_host": r.get("host", "?")}
+        _edge_status_cache = result
+        _edge_status_ts = _time.time()
+        return result
+
+    out = r.get("stdout", "")
+    data: dict = {"ok": True, "ssh_host": r.get("host", "?")}
+
+    def _section(name: str) -> str:
+        marker = f"==={name}==="
+        lines = out.split("\n")
+        try:
+            idx = next(i for i, l in enumerate(lines) if l.strip() == marker)
+            end = next((i for i in range(idx + 1, len(lines)) if lines[i].strip().startswith("===")), len(lines))
+            return "\n".join(lines[idx + 1:end]).strip()
+        except StopIteration:
+            return ""
+
+    # CPU
+    try:
+        cpu_str = _section("CPU").split("\n")[0].strip()
+        data["cpu_pct"] = float(cpu_str) if cpu_str else None
+    except Exception:
+        data["cpu_pct"] = None
+
+    # Load average
+    try:
+        parts = _section("LOAD").split()
+        data["load_1m"] = float(parts[0]) if parts else None
+        data["load_5m"] = float(parts[1]) if len(parts) > 1 else None
+    except Exception:
+        data["load_1m"] = None; data["load_5m"] = None
+
+    # Memory (MB)
+    try:
+        parts = _section("MEM").split()
+        data["mem_total_mb"] = int(parts[0]); data["mem_used_mb"] = int(parts[1]); data["mem_free_mb"] = int(parts[2])
+        data["mem_pct"] = round(data["mem_used_mb"] / data["mem_total_mb"] * 100, 1) if data["mem_total_mb"] else None
+    except Exception:
+        data["mem_total_mb"] = None; data["mem_used_mb"] = None; data["mem_free_mb"] = None; data["mem_pct"] = None
+
+    # Disk (MB)
+    try:
+        parts = _section("DISK").split()
+        data["disk_total_gb"] = round(int(parts[0]) / 1024, 1); data["disk_used_gb"] = round(int(parts[1]) / 1024, 1)
+        data["disk_free_gb"] = round(int(parts[2]) / 1024, 1)
+        data["disk_pct"] = round(data["disk_used_gb"] / data["disk_total_gb"] * 100, 1) if data["disk_total_gb"] else None
+    except Exception:
+        data["disk_total_gb"] = None; data["disk_used_gb"] = None; data["disk_free_gb"] = None; data["disk_pct"] = None
+
+    # Services (systemd)
+    svcs = {}
+    for line in _section("SVCS").split("\n"):
+        if "=" in line:
+            k, v = line.strip().split("=", 1)
+            svcs[k.strip()] = v.strip()
+    data["services"] = svcs
+
+    # Ports
+    ports = {}
+    for line in _section("PORTS").split("\n"):
+        if "=" in line:
+            k, v = line.strip().split("=", 1)
+            try: ports[int(k.strip())] = v.strip() == "open"
+            except Exception: pass
+    data["ports"] = ports
+
+    # PM2
+    pm2 = {}
+    for line in _section("PM2").split("\n"):
+        if "=" in line and "pm2=unavailable" not in line:
+            k, v = line.strip().split("=", 1)
+            pm2[k.strip()] = v.strip()
+    data["pm2"] = pm2
+
+    _edge_status_cache = data
+    _edge_status_ts = _time.time()
+    return data
+
+
 def run_control(action: str, env_overrides: dict = None) -> dict:
     """Execute a control action in the background (cross-platform).
     Manifest-backed services (services.json) are launched directly; everything
@@ -7565,6 +7675,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self.send_error(405)
         elif route == "/api/status":
             self._json(build_status())
+        elif route == "/api/edge-status":
+            self._json(get_edge_system_status())
         elif route == "/api/nodes":
             self._json(detect_nodes())
         elif route == "/api/agent/nodes":
@@ -9028,6 +9140,9 @@ class DashboardHandler(BaseHTTPRequestHandler):
         elif route == "/api/payout/trigger":
             # Attempt to trigger an immediate payout round
             self._json(trigger_payout_now())
+        elif route == "/api/edge-status":
+            force = payload.get("force", False)
+            self._json(get_edge_system_status(force=force))
         elif route == "/api/control":
             action = payload.get("action", "")
             env_overrides = payload.get("env")
