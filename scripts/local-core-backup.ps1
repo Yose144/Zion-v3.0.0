@@ -165,10 +165,11 @@ $allZips = Get-ChildItem -Path $BackupRoot -Filter "zion-local-*.zip" -File -Err
 $dailyKeep = 30
 $weeklyKeep = 4
 
-$sundays = $allZips | Where-Object { $_.LastWriteTime.DayOfWeek -eq 'Sunday' } | Select-Object -First $weeklyKeep
-$daily = $allZips | Select-Object -First $dailyKeep
-$protected = ($sundays + $daily | Sort-Object FullName -Unique)
-$toDelete = $allZips | Where-Object { $protected -notcontains $_ }
+$sundays = @($allZips | Where-Object { $_.LastWriteTime.DayOfWeek -eq 'Sunday' } | Select-Object -First $weeklyKeep)
+$daily = @($allZips | Select-Object -First $dailyKeep)
+$protected = @($sundays + $daily | Sort-Object FullName -Unique)
+$protectedNames = $protected | ForEach-Object { $_.FullName }
+$toDelete = $allZips | Where-Object { $protectedNames -notcontains $_.FullName }
 
 if ($toDelete) {
     foreach ($old in $toDelete) {
