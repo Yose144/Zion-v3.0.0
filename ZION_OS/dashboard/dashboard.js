@@ -1,6 +1,6 @@
 'use strict';
 
-const TABS = ['overview','nodes','orchestrator','wallets','explorer','services','alerts','l1','l2','l3','l4','l5','l6','bridge','genesis','blockers','controls','charts','events','env','database','metrics','launch-day','wizard','logs','hiran','dao','payout','backups'];
+const TABS = ['overview','nodes','orchestrator','wallets','explorer','services','alerts','l1','l2','l3','l4','l5','l6','bridge','genesis','blockers','ops','charts','events','env','database','metrics','launch-day','wizard','logs','hiran','dao','payout','backups','topology','miner-live','settings','fleet','agent'];
 let autoRefresh = true, refreshTimer = null, currentTab = 'overview';
 let charts = {};
 let _payoutSseSource = null;  // EventSource for real-time payout events
@@ -143,7 +143,7 @@ function switchTab(name){
   if(name === 'env') loadEnvFiles();
   if(name === 'wizard') renderWizard();
   if(name === 'logs'){ initLogPane(); }
-  if(name === 'controls'){ renderControls(); loadBackupList(); loadDepGraphControls(); loadProcessRegistry(); }
+  if(name === 'ops' || name === 'controls'){ renderControls(); loadBackupList(); loadDepGraphControls(); loadProcessRegistry(); }
   if(name === 'database') loadDatabases();
   if(name === 'metrics') renderMetricsButtons();
   if(name === 'wallets') loadWallets();
@@ -293,6 +293,26 @@ function updateServiceCards(s){
   if(n1m) n1m.textContent = n1.mempool_size ?? '—';
   const n1u = document.getElementById('val-node1-uptime');
   if(n1u) n1u.textContent = formatUptime(n1.uptime_seconds);
+  // Sync status for Local Backup Node (edge-primary) or Node1 (local-dev)
+  const n1syncEl = document.getElementById('val-node1-sync');
+  if(n1syncEl){
+    const refHeight = isEdgePrimary ? (en ? (en.chain_height ?? 0) : 0) : (n2 ? (n2.chain_height ?? 0) : 0);
+    const localH = n1.chain_height ?? 0;
+    const gap = refHeight > 0 && localH > 0 ? Math.abs(refHeight - localH) : null;
+    // Prefer server-computed sync_gap if available
+    const serverGap = n1.sync_gap ?? gap;
+    const synced = serverGap !== null && serverGap !== undefined && serverGap <= 5;
+    if(serverGap === null || serverGap === undefined){
+      n1syncEl.textContent = localH > 0 ? 'Syncing…' : 'No data';
+      n1syncEl.className = 'text-gray-400';
+    } else if(synced){
+      n1syncEl.textContent = '✓ Synced (gap: ' + serverGap + ')';
+      n1syncEl.className = 'text-emerald-400 font-bold text-xs';
+    } else {
+      n1syncEl.textContent = '⚠ Behind (gap: ' + serverGap + ')';
+      n1syncEl.className = 'text-amber-400 text-xs';
+    }
+  }
 
   // Node 2 (Dev / Optional)
   if(!isEdgePrimary){
@@ -880,34 +900,38 @@ async function refreshPayout(){
     // ── Active Miners table (robust 8-col) ──────────────────────────
     const minersTable = document.getElementById('payout-miners-table');
     const minersBadge = document.getElementById('miners-count-badge');
-    if(minersBadge) minersBadge.textContent = (data.miner_stats?.length || 0) + ' miners';
+    // API returns data.miners (not data.miner_stats)
+    const minersList = data.miners || data.miner_stats || [];
+    if(minersBadge) minersBadge.textContent = minersList.length + ' miners';
     if (minersTable) {
-      if (data.miner_stats && data.miner_stats.length) {
-        minersTable.innerHTML = data.miner_stats.map(m => {
+      if (minersList.length) {
+        minersTable.innerHTML = minersList.map(m => {
+          // /api/payout miners: hashrate(H/s), hashrate_1h(H/s), paid_total not present → use on_chain_balance_zion
           const hrRaw = m.hashrate_1h || m.hashrate || 0;
           const hr = hrRaw >= 1000 ? (hrRaw/1000).toFixed(2)+' KH/s' : hrRaw.toFixed(2)+' H/s';
-          const paid = m.total_paid != null ? _zionFmt(m.total_paid / 1e12) : '—';
+          // pending_balance = atomic flowers
+          const pending = m.pending_balance != null ? _zionFmt(m.pending_balance / 1_000_000_000_000) : '—';
           const onChain = m.on_chain_balance_zion != null ? _zionFmt(m.on_chain_balance_zion) : '—';
-          const pending = m.pending_balance != null ? _zionFmt(m.pending_balance / 1e12) : '—';
-          const addr = escapeHtml(m.address || '—');
+          const addr = escapeHtml(m.address || m.miner_id || '—');
+          const shortAddr = addr.length > 22 ? addr.slice(0,14)+'…'+addr.slice(-6) : addr;
           const worker = escapeHtml(m.worker_name || '—');
-          const algo = escapeHtml(m.algorithm || '—');
-          const be = escapeHtml(m.backend || 'cpu');
-          return `<tr class="border-b border-white/5 hover:bg-white/5 transition">
-            <td class="py-2 px-2 text-white truncate max-w-[180px]" title="${addr}">${addr}</td>
+          const algo = escapeHtml(m.algorithm || 'zion');
+          const be = escapeHtml(m.backend || 'opencl');
+          const isActive = hrRaw > 0;
+          return `<tr class="border-b border-white/5 hover:bg-white/5 transition ${isActive?'':'opacity-60'}">
+            <td class="py-2 px-2 text-white truncate max-w-[180px] font-mono text-xs" title="${addr}">${shortAddr}</td>
             <td class="py-2 px-2 text-gray-300">${worker}</td>
-            <td class="py-2 px-2 text-blue-300">${algo}</td>
-            <td class="py-2 px-2 text-gray-400">${be}</td>
-            <td class="py-2 px-2 text-right text-gray-300">${m.valid_shares != null ? m.valid_shares : '—'}</td>
-            <td class="py-2 px-2 text-right text-amber-400">${hr}</td>
-            <td class="py-2 px-2 text-right text-emerald-400">${paid} Z</td>
-            <td class="py-2 px-2 text-right text-cyan-400">${onChain} Z</td>
-            <td class="py-2 px-2 text-right text-purple-400">${pending} Z</td>
-            <td class="py-2 px-2 text-right text-gray-300">${m.blocks_found ?? '—'}</td>
+            <td class="py-2 px-2 text-blue-300 text-[10px]">${algo}</td>
+            <td class="py-2 px-2 text-gray-400 text-[10px]">${be}</td>
+            <td class="py-2 px-2 text-right text-emerald-400">${m.valid_shares != null ? fmtNum(m.valid_shares) : '—'}</td>
+            <td class="py-2 px-2 text-right text-amber-400 font-mono">${hr}</td>
+            <td class="py-2 px-2 text-right text-cyan-400 font-mono">${onChain} Z</td>
+            <td class="py-2 px-2 text-right text-purple-400 font-mono">${pending} Z</td>
+            <td class="py-2 px-2 text-right text-zion-gold">${m.blocks_found ?? '—'}</td>
           </tr>`;
         }).join('');
       } else {
-        minersTable.innerHTML = '<tr><td colspan="10" class="py-2 px-2 text-gray-500 italic">No miners connected</td></tr>';
+        minersTable.innerHTML = '<tr><td colspan="9" class="py-2 px-2 text-gray-500 italic">No miners connected</td></tr>';
       }
     }
 
@@ -1282,11 +1306,22 @@ async function updateConnectedMiners(){
 
     tbody.innerHTML = sorted.map(m => {
       const isActive = m.hashrate_hps > 0;
-      const statusDot = isActive ? '<span class="w-2 h-2 rounded-full bg-emerald-500 inline-block mr-1"></span>Hashing' : '<span class="w-2 h-2 rounded-full bg-gray-600 inline-block mr-1"></span>Idle';
+      const nowSec = Math.floor(Date.now() / 1000);
+      const lastSeenAgo = (m.last_seen > 0) ? (nowSec - m.last_seen) : null;
+      const isRecent = lastSeenAgo !== null && lastSeenAgo < 300;
+      const statusDot = isActive
+        ? '<span class="w-2 h-2 rounded-full bg-emerald-500 inline-block mr-1"></span>Hashing'
+        : isRecent
+          ? '<span class="w-2 h-2 rounded-full bg-amber-500 inline-block mr-1"></span>Idle'
+          : '<span class="w-2 h-2 rounded-full bg-gray-600 inline-block mr-1"></span>Stale';
+      const lastSeenStr = lastSeenAgo !== null
+        ? (lastSeenAgo < 60 ? lastSeenAgo + 's' : Math.floor(lastSeenAgo/60) + 'm') + ' ago'
+        : '—';
       const hashrate = m.hashrate_hps > 0 ? (m.hashrate_hps/1000).toFixed(2) + ' KH/s' : '—';
-      const paid = m.paid_total > 0 ? m.paid_total.toLocaleString('en-US',{maximumFractionDigits:2}) : '0';
+      const paid = m.paid_total > 0 ? m.paid_total.toLocaleString('en-US',{maximumFractionDigits:4}) : '0';
       const minerIdShort = m.miner_id.length > 28 ? m.miner_id.slice(0,14)+'…'+m.miner_id.slice(-12) : m.miner_id;
-      return `<tr class="border-b border-white/5 hover:bg-white/5 transition">
+      const rowCls = isActive ? '' : (isRecent ? 'opacity-75' : 'opacity-40');
+      return `<tr class="border-b border-white/5 hover:bg-white/5 transition ${rowCls}">
         <td class="py-2 px-2 font-mono text-[10px] text-gray-300" title="${escapeHtml(m.miner_id)}">${escapeHtml(minerIdShort)}</td>
         <td class="py-2 px-2 text-gray-300">${escapeHtml(m.worker_name || '—')}</td>
         <td class="py-2 px-2 text-right font-mono ${isActive?'text-amber-400':'text-gray-500'}">${hashrate}</td>
@@ -1294,7 +1329,7 @@ async function updateConnectedMiners(){
         <td class="py-2 px-2 text-right font-mono text-red-400">${m.invalid_shares.toLocaleString()}</td>
         <td class="py-2 px-2 text-right font-mono text-zion-gold">${m.blocks_found}</td>
         <td class="py-2 px-2 text-right font-mono text-gray-300">${paid}</td>
-        <td class="py-2 px-2 text-right text-[10px]">${statusDot}</td>
+        <td class="py-2 px-2 text-right text-[10px]">${statusDot}<br><span class="text-gray-500">${lastSeenStr}</span></td>
       </tr>`;
     }).join('');
   } catch(e) {
@@ -1393,17 +1428,25 @@ async function loadWallets(){
         const addr = escapeHtml(w.address || '');
         const shortAddr = addr.length > 36 ? addr.slice(0, 18) + '…' + addr.slice(-12) : addr;
         const label = escapeHtml(w.label || '');
-        const sourceBadge = w.source === 'premine'
-          ? '<span class="px-1.5 py-0.5 rounded bg-zion-gold/20 text-zion-gold text-[10px]">premine</span>'
-          : '<span class="px-1.5 py-0.5 rounded bg-zion-cyan/20 text-zion-cyan text-[10px]">' + escapeHtml(w.source || 'env') + '</span>';
-        const catBadge = w.category === 'premine'
+        // source: 'genesis' = premine, 'node' = operational/env
+        const isPremine = w.category === 'premine' || w.source === 'genesis' || w.source === 'premine';
+        const sourceBadge = isPremine
+          ? '<span class="px-1.5 py-0.5 rounded bg-zion-gold/20 text-zion-gold text-[10px]">genesis</span>'
+          : '<span class="px-1.5 py-0.5 rounded bg-zion-cyan/20 text-zion-cyan text-[10px]">' + escapeHtml(w.source || 'node') + '</span>';
+        const catBadge = isPremine
           ? '<span class="text-zion-gold">premine</span>'
           : '<span class="text-zion-cyan">operational</span>';
         const premineAmt = w.amount_zion ? fmtNum(w.amount_zion) + ' ZION' : '—';
-        const bal = w.balance_zion !== null && w.balance_zion !== undefined
-          ? (typeof w.balance_zion === 'number' ? w.balance_zion.toFixed(6) + ' ZION' : w.balance_zion)
+        const balV = w.balance_zion;
+        const bal = balV !== null && balV !== undefined
+          ? (typeof balV === 'number'
+              ? (balV >= 1e9 ? (balV/1e9).toFixed(3)+' BZION'
+                : balV >= 1e6 ? (balV/1e6).toFixed(2)+' MZION'
+                : balV >= 1e3 ? (balV/1e3).toFixed(2)+' KZION'
+                : balV.toFixed(4)+' ZION')
+              : balV)
           : (w.rpc_ok === false ? '<span class="text-gray-600">unavailable</span>' : '—');
-        const balClass = w.balance_zion !== null && w.balance_zion !== undefined ? 'text-emerald-400 font-bold' : 'text-gray-500';
+        const balClass = balV !== null && balV !== undefined ? 'text-emerald-400 font-bold' : 'text-gray-500';
         return `<tr class="border-b border-white/5 hover:bg-white/3 transition">
           <td class="py-2 px-3 text-gray-500">${idx}</td>
           <td class="py-2 px-3 font-semibold text-white">${label}</td>
@@ -1546,17 +1589,31 @@ async function loadPayoutTab(){
     const kpiStatus = document.getElementById('payout-kpi-status');
     if(kpiStatus){ kpiStatus.textContent = statusText; kpiStatus.className = 'text-xl font-bold '+statusColor; }
 
-    set('payout-kpi-blocks', d.blocks_found ?? 0);
+    // API: blocks_found top-level; pool_stats.blocks.found as fallback
+    const ps = d.pool_stats || {};
+    set('payout-kpi-blocks', d.blocks_found ?? ps.blocks?.found ?? 0);
+
+    // Hashrate: pool_stats.hashrate.pool (H/s) → KH/s; fallback miner_perf
+    const hrRaw = ps.hashrate?.pool ?? ps.pool_hashrate ?? d.miner_perf?.hashrate_hps ?? d.miner_perf?.hashrate ?? null;
+    const hrKhs = hrRaw != null ? (hrRaw >= 1000 ? (hrRaw/1000).toFixed(2)+' KH/s' : hrRaw.toFixed(1)+' H/s') : '—';
+    set('payout-kpi-hashrate', hrKhs);
+
     const ss = d.session_stats || {};
-    const hr = d.miner_perf?.hashrate;
-    set('payout-kpi-hashrate', hr != null ? hr.toFixed(2)+' KH/s' : '—');
-    set('payout-kpi-miners', ss.active_sessions ?? miners.length ?? 0);
+    // API: session_stats.active_sessions; fallback pool_stats.miners.active; fallback miners array
+    const activeCount = ss.active_sessions ?? ps.miners?.active ?? miners.length ?? 0;
+    set('payout-kpi-miners', activeCount);
 
-    let totalPaid = 0;
-    miners.forEach(m => { totalPaid += (m.total_paid || m.paid_total || 0); });
-    set('payout-kpi-total-paid', formatFlowers(totalPaid));
+    // Total paid: sum from miners array (paid_total field, already in ZION from our API)
+    let totalPaidZion = 0;
+    miners.forEach(m => { totalPaidZion += (m.paid_total ?? 0); });
+    // Also try pool_stats pplns total_paid_flowers
+    if(totalPaidZion === 0 && ps.pplns?.total_paid_flowers){
+      totalPaidZion = ps.pplns.total_paid_flowers / 1_000_000_000_000;
+    }
+    set('payout-kpi-total-paid', totalPaidZion > 0 ? _zionFmt(totalPaidZion) + ' ZION' : '—');
 
-    const ar = ss.accept_rate_pct;
+    // Accept rate: session_stats.accept_rate_pct; fallback pool_stats.routing.accept_rate_pct
+    const ar = ss.accept_rate_pct ?? ps.routing?.accept_rate_pct ?? null;
     const kpiAR = document.getElementById('payout-kpi-accept-rate');
     if(kpiAR){
       kpiAR.textContent = ar != null ? ar.toFixed(1)+'%' : '—';
@@ -1570,13 +1627,14 @@ async function loadPayoutTab(){
     set('payout-fee-pool-addr', d.pool_fee_wallet ? d.pool_fee_wallet : 'Burned (no address)');
 
     // ── PPLNS Status ─────────────────────────────────────────────────
-    const ps = d.pool_stats || {};
     const pplns = ps.pplns || {};
     set('payout-pplns-window', pplns.window_size ?? '—');
     set('payout-pplns-used', pplns.window_used ?? '—');
-    set('payout-pplns-registered', pplns.miners_registered ?? miners.length ?? 0);
-    set('payout-pplns-rounds', pplns.rounds_completed ?? '—');
-    set('payout-pplns-total', d.burned_total != null ? formatFlowers(Math.round(d.burned_total*1e12)) : '—');
+    set('payout-pplns-registered', pplns.registered_miners ?? pplns.miners_registered ?? miners.length ?? 0);
+    set('payout-pplns-rounds', pplns.payout_rounds ?? pplns.rounds_completed ?? '—');
+    // total paid: pplns.total_paid_flowers (atomic) → ZION
+    const pplnsTotalZion = pplns.total_paid_flowers ? pplns.total_paid_flowers / 1_000_000_000_000 : null;
+    set('payout-pplns-total', pplnsTotalZion != null ? _zionFmt(pplnsTotalZion) + ' ZION' : (d.burned_total != null ? _zionFmt(d.burned_total) + ' ZION' : '—'));
 
     const lastTime = d.last_payout_time;
     const lastTx = d.last_payout_tx;
@@ -1593,23 +1651,38 @@ async function loadPayoutTab(){
     set('payout-last-miners', lastPayoutMiners);
 
     // ── Miner Pending Balances ──────────────────────────────────────
+    // Use d.miners from /api/payout (richer data: on_chain_balance, payout_address)
+    // fallback to miners from /api/pool/miners (Prometheus)
     const balTbody = document.getElementById('payout-miner-balances');
     if(balTbody){
-      if(miners.length === 0){
-        balTbody.innerHTML = '<tr><td colspan="5" class="text-gray-500 text-center py-4">No miners connected</td></tr>';
+      const payoutMiners = (d.miners && d.miners.length > 0) ? d.miners : miners;
+      if(payoutMiners.length === 0){
+        balTbody.innerHTML = '<tr><td colspan="6" class="text-gray-500 text-center py-4">No miners connected</td></tr>';
       } else {
-        balTbody.innerHTML = miners.map(m => {
-          const name = m.worker_name || m.id || m.miner_id || '—';
+        balTbody.innerHTML = payoutMiners.map(m => {
+          // /api/payout miners: address, worker_name, valid_shares, blocks_found, pending_balance(atomic), paid_total(mined ZION), on_chain_balance_zion
+          // /api/pool/miners: miner_id, worker_name, valid_shares, invalid_shares, pending_balance(ZION), paid_total(ZION)
+          const isPayoutApi = m.address !== undefined;
+          const name = m.worker_name || m.id || m.miner_id || m.address || '—';
+          const addr = escapeHtml((m.address || m.miner_id || '').slice(0, 20) + (((m.address || m.miner_id || '').length > 20) ? '…' : ''));
           const valid = m.valid_shares ?? 0;
-          const invalid = m.invalid_shares ?? 0;
-          const pending = m.pending_balance ?? 0;
-          const paid = m.total_paid ?? m.paid_total ?? 0;
+          const invalid = m.invalid_shares ?? m.no_solution ?? 0;
+          const blocks = m.blocks_found ?? 0;
+          // pending_balance: payout API = atomic flowers, pool/miners API = already in ZION
+          const pendingZion = isPayoutApi
+            ? (m.pending_balance != null ? m.pending_balance / 1_000_000_000_000 : 0)
+            : (m.pending_balance ?? 0);
+          // paid_total: payout API = in ZION (total mined, not distributed), pool/miners = ZION
+          const paidZion = m.paid_total ?? m.total_paid ?? 0;
+          const onChain = m.on_chain_balance_zion != null ? _zionFmt(m.on_chain_balance_zion) + ' Z' : '—';
+          const hrStr = m.hashrate != null ? (m.hashrate >= 1000 ? (m.hashrate/1000).toFixed(2)+' KH/s' : m.hashrate.toFixed(1)+' H/s') : '—';
           return `<tr class="border-b border-white/5 hover:bg-white/5">
-            <td class="py-2 px-2 text-emerald-300 font-mono">${escapeHtml(name)}</td>
+            <td class="py-2 px-2 text-emerald-300 font-semibold">${escapeHtml(name)}</td>
+            <td class="py-2 px-2 text-gray-400 text-[10px] font-mono">${addr}</td>
             <td class="py-2 px-2 text-right text-emerald-400">${fmtNum(valid)}</td>
-            <td class="py-2 px-2 text-right ${invalid>0?'text-red-400':'text-gray-400'}">${fmtNum(invalid)}</td>
-            <td class="py-2 px-2 text-right text-cyan-400">${formatFlowers(pending)}</td>
-            <td class="py-2 px-2 text-right text-zion-gold">${formatFlowers(paid)}</td>
+            <td class="py-2 px-2 text-right ${invalid>0?'text-red-400':'text-gray-500'}">${fmtNum(invalid)}</td>
+            <td class="py-2 px-2 text-right text-amber-400">${hrStr}</td>
+            <td class="py-2 px-2 text-right text-zion-gold font-mono">${onChain}</td>
           </tr>`;
         }).join('');
       }
@@ -1767,6 +1840,31 @@ async function triggerPayoutNow(){
     if(d.ok) loadPayoutTab();
   } catch(e){
     toast('Payout trigger error: '+e.message, 'error');
+  }
+}
+
+async function restartEdgePool(){
+  if(!confirm('Restart Edge Pool server via SSH?\n\nThis will briefly disconnect all connected miners.')) return;
+  const btn = document.getElementById('btn-restart-pool-edge');
+  if(btn){ btn.disabled = true; btn.textContent = '⏳ Restarting…'; }
+  try {
+    const res = await fetch('/api/control',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({action:'restart-pool-edge'})
+    });
+    const d = await res.json();
+    if(d.ok){
+      toast('Edge Pool restart command sent via SSH. Miners will reconnect in ~10s.', 'success');
+      // Re-check pool health after 12s
+      setTimeout(loadPayoutTab, 12000);
+    } else {
+      toast('Edge Pool restart failed: ' + (d.message || d.error || 'unknown error'), 'error');
+    }
+  } catch(e){
+    toast('Edge Pool restart error: ' + e.message, 'error');
+  } finally {
+    if(btn){ btn.disabled = false; btn.textContent = '🔄 Restart Edge Pool'; }
   }
 }
 
@@ -4891,8 +4989,8 @@ function feedOverviewCharts(statusData){
   const miner = statusData.miner || {};
   pushOvData(now, {
     height: n1.chain_height || 0,
-    shares_ok: miner.shares_ok || pool.shares_accepted || 0,
-    shares_rej: miner.shares_rejected || pool.shares_rejected || 0,
+    shares_ok: miner.shares_accepted ?? miner.shares_ok ?? pool.shares_accepted ?? 0,
+    shares_rej: miner.shares_rejected ?? pool.shares_rejected ?? 0,
     sessions: pool.active_sessions || 0,
     cpu: statusData.system_cpu || 0,
     mem: statusData.system_mem || 0
