@@ -4916,14 +4916,16 @@ function initNclCharts() {
   const _origSwitchTab = window.switchTab;
   if (_origSwitchTab) {
     window.switchTab = function(t) {
-      _origSwitchTab(t);
-      if (t === 'hiran') {
-        loadNclFull();
-        if (!_nclAutoTimer) _nclAutoTimer = setInterval(loadNclFull, 10000);
-      } else {
-        clearInterval(_nclAutoTimer);
-        _nclAutoTimer = null;
-      }
+      try { _origSwitchTab(t); } catch(e) { console.error('switchTab(hiran wrap) orig err:', e); }
+      try {
+        if (t === 'hiran') {
+          loadNclFull();
+          if (!_nclAutoTimer) _nclAutoTimer = setInterval(loadNclFull, 10000);
+        } else {
+          clearInterval(_nclAutoTimer);
+          _nclAutoTimer = null;
+        }
+      } catch(e) { console.error('switchTab NCL hook err:', e); }
     };
   }
 })();
@@ -5086,8 +5088,8 @@ let _daoTotalProposals = 0;
   const _orig = window.switchTab;
   if(_orig) {
     window.switchTab = function(t) {
-      _orig(t);
-      if(t === 'dao') loadDaoAll();
+      try { _orig(t); } catch(e) { console.error('switchTab(dao wrap) orig err:', e); }
+      try { if(t === 'dao') loadDaoAll(); } catch(e) { console.error('switchTab DAO hook err:', e); }
     };
   }
 })();
@@ -6941,11 +6943,8 @@ async function genesisBackupAction(action){
   const _orig = window.switchTab;
   if (_orig) {
     window.switchTab = function(t) {
-      _orig(t);
-      if (t === 'bridge') {
-        loadBridgeStats();
-        refreshBridgeHistory();
-      }
+      try { _orig(t); } catch(e) { console.error('switchTab(bridge wrap) orig err:', e); }
+      try { if (t === 'bridge') { loadBridgeStats(); refreshBridgeHistory(); } } catch(e) { console.error('switchTab bridge hook err:', e); }
     };
   }
 })();
@@ -7388,11 +7387,13 @@ async function removeFleetRig(rigId){
   const _orig = window.switchTab;
   if (_orig) {
     window.switchTab = function(t) {
-      _orig(t);
-      if (t === 'agent') { refreshAgentPanel(); refreshAgentRewards(); }
-      if (t === 'miner-live') { refreshMinerLive(); }
-      if (t === 'settings') { loadSettingsIntoForm(); }
-      if (t === 'fleet') { refreshFleet(); }
+      try { _orig(t); } catch(e) { console.error('switchTab(agent wrap) orig err:', e); }
+      try {
+        if (t === 'agent') { refreshAgentPanel(); refreshAgentRewards(); }
+        if (t === 'miner-live') { refreshMinerLive(); }
+        if (t === 'settings') { loadSettingsIntoForm(); }
+        if (t === 'fleet') { refreshFleet(); }
+      } catch(e) { console.error('switchTab agent/fleet/settings hook err:', e); }
     };
   }
 })();
@@ -7557,11 +7558,8 @@ async function triggerEdgeBackup() {
   const _orig = window.switchTab;
   if (_orig) {
     window.switchTab = function(t) {
-      _orig(t);
-      if (t === 'nodes') {
-        refreshAgentNodes();
-        refreshAgentRewards();
-      }
+      try { _orig(t); } catch(e) { console.error('switchTab(nodes wrap) orig err:', e); }
+      try { if (t === 'nodes') { refreshAgentNodes(); refreshAgentRewards(); } } catch(e) { console.error('switchTab nodes hook err:', e); }
     };
   }
 })();
