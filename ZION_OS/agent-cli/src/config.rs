@@ -54,6 +54,18 @@ pub struct HiranConfig {
     pub remote_workspace: String,
     #[serde(default = "default_local_backup_dir")]
     pub local_backup_dir: PathBuf,
+    /// Remote path to the GGUF model file for inference
+    #[serde(default)]
+    pub gguf_path: String,
+    /// Local port for SSH tunnel to inference server (default: 8080)
+    #[serde(default = "default_tunnel_local_port")]
+    pub tunnel_local_port: u16,
+    /// Remote port where llama-server listens (default: 8080)
+    #[serde(default = "default_tunnel_remote_port")]
+    pub tunnel_remote_port: u16,
+    /// Remote path to llama-server binary
+    #[serde(default = "default_llama_server_bin")]
+    pub llama_server_bin: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -116,6 +128,15 @@ fn default_local_backup_dir() -> PathBuf {
         .unwrap_or_else(|| PathBuf::from("."))
         .join("HiranV2.3-Checkpoints")
 }
+fn default_tunnel_local_port() -> u16 {
+    8080
+}
+fn default_tunnel_remote_port() -> u16 {
+    8080
+}
+fn default_llama_server_bin() -> String {
+    "/workspace/llama.cpp/llama-server".into()
+}
 fn default_models_dir() -> PathBuf {
     dirs::home_dir()
         .unwrap_or_else(|| PathBuf::from("."))
@@ -162,6 +183,10 @@ impl Default for HiranConfig {
             ssh_user: default_ssh_user(),
             remote_workspace: default_remote_workspace(),
             local_backup_dir: default_local_backup_dir(),
+            gguf_path: String::new(),
+            tunnel_local_port: default_tunnel_local_port(),
+            tunnel_remote_port: default_tunnel_remote_port(),
+            llama_server_bin: default_llama_server_bin(),
         }
     }
 }
@@ -244,6 +269,10 @@ pub fn set_value(key: &str, value: &str) -> Result<()> {
         ["hiran", "remote_host"] => cfg.hiran.remote_host = value.into(),
         ["hiran", "remote_port"] => cfg.hiran.remote_port = value.parse()?,
         ["hiran", "ssh_user"] => cfg.hiran.ssh_user = value.into(),
+        ["hiran", "gguf_path"] => cfg.hiran.gguf_path = value.into(),
+        ["hiran", "tunnel_local_port"] => cfg.hiran.tunnel_local_port = value.parse()?,
+        ["hiran", "tunnel_remote_port"] => cfg.hiran.tunnel_remote_port = value.parse()?,
+        ["hiran", "llama_server_bin"] => cfg.hiran.llama_server_bin = value.into(),
         ["paths", "models_dir"] => cfg.paths.models_dir = PathBuf::from(value),
         ["paths", "checkpoints_dir"] => cfg.paths.checkpoints_dir = PathBuf::from(value),
         ["paths", "repo_root"] => cfg.paths.repo_root = PathBuf::from(value),
