@@ -501,7 +501,7 @@ function _renderEdgeServerCard(d) {
   const memTop = document.getElementById('edge-mem-top');
   if(memPct) memPct.textContent = d.mem_pct != null ? d.mem_pct + '%' : '—';
   if(memDet && d.mem_used_mb != null) memDet.textContent = (d.mem_used_mb/1024).toFixed(1) + ' / ' + (d.mem_total_mb/1024).toFixed(1) + ' GB';
-  if(memPct && d.mem_pct != null) memPct.className = 'text-xl font-bold ' + (d.mem_pct > 85 ? 'text-red-400' : d.mem_pct > 65 ? 'text-amber-400' : 'text-blue-400');
+  if(memPct && d.mem_pct != null) memPct.className = 'text-xl font-bold ' + (d.mem_pct > 85 ? 'text-red-400' : d.mem_pct > 70 ? 'text-amber-400' : 'text-blue-400');
   if(memTop && d.mem_top) {
     memTop.innerHTML = d.mem_top.slice(0, 5).map((p, i) => {
       const name = p.cmd.replace(/^.*\//, '').replace(/^python3?\d*$/, 'python').slice(0, 18);
@@ -525,6 +525,13 @@ function _renderEdgeServerCard(d) {
     memTrend.className = `text-[9px] font-mono mt-1 ${color}`;
   } else if(memTrend) {
     memTrend.textContent = '';
+  }
+
+  // Show memory limit button when RAM is high and rising
+  const memLimitBtn = document.getElementById('btn-edge-mem-limit');
+  if(memLimitBtn && d.mem_pct != null) {
+    const rising = d.mem_history && d.mem_history.length >= 2 && (d.mem_history[d.mem_history.length-1].mem_pct - d.mem_history[0].mem_pct) > 0.5;
+    memLimitBtn.classList.toggle('hidden', !(d.mem_pct > 75 || rising));
   }
 
   // Disk
@@ -7816,6 +7823,26 @@ async function loadEdgeBackupStatus() {
     const timerStatus = document.getElementById('edge-backup-timer-status');
     if (badge) { badge.textContent = 'Unavailable'; badge.className = 'text-[10px] px-2 py-0.5 rounded-full bg-red-600/20 text-red-300'; }
     if (timerStatus) timerStatus.textContent = 'Dashboard not reachable';
+  }
+}
+
+async function applyEdgeMemoryLimit(){
+  if(!confirm('🔒 Apply Memory Limit\n\nThis will add MemoryMax=3G to zion-edge-node1.service and reload systemd.\nNode will restart if it exceeds 3 GB RAM.\n\nContinue?')) return;
+  const btn = document.getElementById('btn-edge-mem-limit');
+  if(btn) { btn.disabled = true; btn.textContent = '⏳ Applying…'; }
+  try {
+    const res = await fetch('/api/edge-action', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({action: 'memory-limit'})
+    });
+    const data = await res.json();
+    toast(data.ok ? 'Memory limit applied. Node will restart if >3G.' : 'Failed: ' + (data.error || ''), data.ok ? 'success' : 'error');
+    setTimeout(() => refreshEdgeServerCard(true), 3000);
+  } catch(e) {
+    toast('Error: ' + e.message, 'error');
+  } finally {
+    if(btn) { btn.disabled = false; btn.textContent = '🔒 Limit RAM'; }
   }
 }
 
