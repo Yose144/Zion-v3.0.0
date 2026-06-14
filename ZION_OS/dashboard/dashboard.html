@@ -377,9 +377,11 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         <div class="text-xs text-gray-400 mb-1 relative z-10">Peers: <span id="val-node1-peers" class="text-white font-semibold">—</span></div>
         <div class="text-xs text-gray-400 mb-1 relative z-10">P2P: <span id="val-node1-p2p" class="font-mono">—</span></div>
         <div class="text-xs text-gray-400 mb-1 relative z-10">Mempool: <span id="val-node1-mempool" class="text-amber-400 font-semibold">—</span></div>
+        <div class="text-xs text-gray-400 mb-1 relative z-10">Sync: <span id="val-node1-sync" class="text-gray-400">—</span></div>
         <div class="text-xs text-gray-400 mb-3 relative z-10">Uptime: <span id="val-node1-uptime" class="text-emerald-400 font-mono">—</span></div>
         <div class="flex gap-1.5 relative z-10">
           <button onclick="controlAction('start-node1')" class="text-[10px] px-2.5 py-1 bg-emerald-700/50 hover:bg-emerald-600 rounded-md font-semibold transition">▶ Start</button>
+          <button onclick="controlAction('restart-node1')" class="text-[10px] px-2.5 py-1 bg-amber-700/50 hover:bg-amber-600 rounded-md font-semibold transition">⟳ Restart</button>
         </div>
       </div>
 
@@ -527,7 +529,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
               <th class="py-2 px-2 text-right">Invalid</th>
               <th class="py-2 px-2 text-right">Blocks</th>
               <th class="py-2 px-2 text-right">Paid (ZION)</th>
-              <th class="py-2 px-2 text-right">Status</th>
+              <th class="py-2 px-2 text-right">Status / Last Seen</th>
             </tr>
           </thead>
           <tbody id="connected-miners-tbody">
@@ -982,7 +984,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
     </div>
 
     <!-- KPI Row -->
-    <div class="flex items-center justify-end gap-2">
+    <div class="flex items-center justify-end gap-2 flex-wrap">
       <div id="payout-sse-indicator" class="hidden items-center gap-1.5 text-[10px] text-emerald-400 mr-2">
         <span class="relative flex h-2 w-2">
           <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -990,6 +992,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         </span>
         LIVE
       </div>
+      <button onclick="restartEdgePool()" id="btn-restart-pool-edge" class="text-xs px-3 py-1.5 bg-orange-700 hover:bg-orange-600 text-white border border-orange-500/50 rounded-lg transition font-semibold">🔄 Restart Edge Pool</button>
       <button onclick="triggerPayoutNow()" class="text-xs px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-500/50 rounded-lg transition font-semibold">💸 Trigger Payout Now</button>
       <button onclick="loadPayoutTab()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
     </div>
@@ -1134,15 +1137,16 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
           <table class="w-full text-xs text-left">
             <thead>
               <tr class="text-gray-500 border-b border-white/10">
-                <th class="py-2 px-2">Miner</th>
+                <th class="py-2 px-2">Worker</th>
+                <th class="py-2 px-2 text-gray-600">Address</th>
                 <th class="py-2 px-2 text-right">Valid</th>
                 <th class="py-2 px-2 text-right">Invalid</th>
-                <th class="py-2 px-2 text-right">Pending ZION</th>
-                <th class="py-2 px-2 text-right">Paid ZION</th>
+                <th class="py-2 px-2 text-right">Hashrate</th>
+                <th class="py-2 px-2 text-right">On-Chain ZION</th>
               </tr>
             </thead>
             <tbody id="payout-miner-balances">
-              <tr><td colspan="5" class="text-gray-500 text-center py-4">Loading…</td></tr>
+              <tr><td colspan="6" class="text-gray-500 text-center py-4">Loading…</td></tr>
             </tbody>
           </table>
         </div>
