@@ -3943,26 +3943,20 @@ def fetch_pool_miners() -> list:
         except Exception:
             continue
     miners = data.get("miners", []) if data else []
-    # Enrich ALL miners with live on-chain balance from node RPC (try local, edge, public)
-    rpc_hosts = ["127.0.0.1", EDGE_HOST, "77.42.71.94"]
-    working_rpc = None
-    for h in rpc_hosts:
-        # Test RPC with getBalance on a known address
-        test = rpc_call(h, 8443, "getBalance", {"address": "zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604"}, timeout=1.5)
-        if test and not test.get("_rpc_error") and (test.get("balance_flowers") or test.get("balance_zion")):
-            working_rpc = h
-            break
-    if working_rpc:
-        for m in miners:
-            addr = m.get("payout_address") or m.get("address")
-            if addr and addr.startswith("zion1"):
-                bal = rpc_call(working_rpc, 8443, "getBalance", {"address": addr}, timeout=1.5)
-                if bal and not bal.get("_rpc_error"):
-                    try:
-                        atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
-                        m["on_chain_balance_zion"] = atomic / 1_000_000_000_000
-                    except (ValueError, TypeError):
-                        pass
+    # Enrich ALL miners with live on-chain balance from node RPC
+    local_alive = check_port_open("127.0.0.1", 8443, timeout=1.0)
+    edge_alive = check_port_open(EDGE_HOST, 8443, timeout=1.5)
+    rpc_host = "127.0.0.1" if local_alive else (EDGE_HOST if edge_alive else "77.42.71.94")
+    for m in miners:
+        addr = m.get("payout_address") or m.get("address")
+        if addr and addr.startswith("zion1"):
+            bal = rpc_call(rpc_host, 8443, "getBalance", {"address": addr}, timeout=2.5)
+            if bal and not bal.get("_rpc_error"):
+                try:
+                    atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
+                    m["on_chain_balance_zion"] = atomic / 1_000_000_000_000
+                except (ValueError, TypeError):
+                    pass
     return miners
 
 def build_payout_status() -> dict:
