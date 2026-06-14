@@ -14,6 +14,8 @@ pub struct AgentConfig {
     pub safety: SafetyConfig,
     #[serde(default)]
     pub paths: PathConfig,
+    #[serde(default)]
+    pub coding: CodingConfig,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -88,10 +90,44 @@ pub struct PathConfig {
     pub repo_root: PathBuf,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CodingConfig {
+    /// Enable coding assistant mode (auto-build, test, lint)
+    #[serde(default = "default_false")]
+    pub enabled: bool,
+    /// Project type: rust, node, python, generic
+    #[serde(default = "default_project_type")]
+    pub project_type: String,
+    /// Build command (e.g. "cargo build --manifest-path V3/Cargo.toml")
+    #[serde(default = "default_build_cmd")]
+    pub build_cmd: String,
+    /// Test command (e.g. "cargo test --manifest-path V3/Cargo.toml")
+    #[serde(default = "default_test_cmd")]
+    pub test_cmd: String,
+    /// Lint command (e.g. "cargo clippy --manifest-path V3/Cargo.toml")
+    #[serde(default = "default_lint_cmd")]
+    pub lint_cmd: String,
+    /// Format command (e.g. "cargo fmt --manifest-path V3/Cargo.toml")
+    #[serde(default = "default_fmt_cmd")]
+    pub fmt_cmd: String,
+    /// Auto-run build after file edits
+    #[serde(default = "default_true")]
+    pub auto_build: bool,
+    /// Auto-run tests after build success
+    #[serde(default = "default_false")]
+    pub auto_test: bool,
+    /// Auto-run lint after edits
+    #[serde(default = "default_true")]
+    pub auto_lint: bool,
+}
+
 // -- defaults --
 
 fn default_true() -> bool {
     true
+}
+fn default_false() -> bool {
+    false
 }
 fn default_max_steps() -> u32 {
     50
@@ -101,6 +137,21 @@ fn default_timeout_sec() -> u64 {
 }
 fn default_auto_approve() -> bool {
     false
+}
+fn default_project_type() -> String {
+    "rust".into()
+}
+fn default_build_cmd() -> String {
+    "cargo build".into()
+}
+fn default_test_cmd() -> String {
+    "cargo test".into()
+}
+fn default_lint_cmd() -> String {
+    "cargo clippy".into()
+}
+fn default_fmt_cmd() -> String {
+    "cargo fmt".into()
 }
 fn default_api_url() -> String {
     "http://localhost:8000/v1".into()
@@ -211,6 +262,22 @@ impl Default for PathConfig {
     }
 }
 
+impl Default for CodingConfig {
+    fn default() -> Self {
+        Self {
+            enabled: default_false(),
+            project_type: default_project_type(),
+            build_cmd: default_build_cmd(),
+            test_cmd: default_test_cmd(),
+            lint_cmd: default_lint_cmd(),
+            fmt_cmd: default_fmt_cmd(),
+            auto_build: default_true(),
+            auto_test: default_false(),
+            auto_lint: default_true(),
+        }
+    }
+}
+
 impl Default for AgentConfig {
     fn default() -> Self {
         Self {
@@ -219,6 +286,7 @@ impl Default for AgentConfig {
             hiran: HiranConfig::default(),
             safety: SafetyConfig::default(),
             paths: PathConfig::default(),
+            coding: CodingConfig::default(),
         }
     }
 }
@@ -278,6 +346,15 @@ pub fn set_value(key: &str, value: &str) -> Result<()> {
         ["paths", "repo_root"] => cfg.paths.repo_root = PathBuf::from(value),
         ["safety", "l1_protection"] => cfg.safety.l1_protection = value.parse()?,
         ["safety", "destructive_confirmation"] => cfg.safety.destructive_confirmation = value.parse()?,
+        ["coding", "enabled"] => cfg.coding.enabled = value.parse()?,
+        ["coding", "project_type"] => cfg.coding.project_type = value.into(),
+        ["coding", "build_cmd"] => cfg.coding.build_cmd = value.into(),
+        ["coding", "test_cmd"] => cfg.coding.test_cmd = value.into(),
+        ["coding", "lint_cmd"] => cfg.coding.lint_cmd = value.into(),
+        ["coding", "fmt_cmd"] => cfg.coding.fmt_cmd = value.into(),
+        ["coding", "auto_build"] => cfg.coding.auto_build = value.parse()?,
+        ["coding", "auto_test"] => cfg.coding.auto_test = value.parse()?,
+        ["coding", "auto_lint"] => cfg.coding.auto_lint = value.parse()?,
         _ => anyhow::bail!("Unknown config key: {}", key),
     }
     save(&cfg)?;
@@ -345,6 +422,47 @@ pub async fn init_wizard() -> Result<()> {
     let s = buf.trim();
     if !s.is_empty() {
         cfg.paths.models_dir = PathBuf::from(s);
+    }
+
+    println!();
+    println!("🛠️  Coding Assistant Setup (optional)");
+    print!("Enable coding mode? [y/N]: ");
+    io::stdout().flush()?;
+    buf.clear();
+    io::stdin().read_line(&mut buf)?;
+    if buf.trim().to_lowercase().starts_with('y') {
+        cfg.coding.enabled = true;
+
+        print!("Project type [{}]: ", cfg.coding.project_type);
+        io::stdout().flush()?;
+        buf.clear();
+        io::stdin().read_line(&mut buf)?;
+        let s = buf.trim();
+        if !s.is_empty() { cfg.coding.project_type = s.into(); }
+
+        print!("Build command [{}]: ", cfg.coding.build_cmd);
+        io::stdout().flush()?;
+        buf.clear();
+        io::stdin().read_line(&mut buf)?;
+        let s = buf.trim();
+        if !s.is_empty() { cfg.coding.build_cmd = s.into(); }
+
+        print!("Test command [{}]: ", cfg.coding.test_cmd);
+        io::stdout().flush()?;
+        buf.clear();
+        io::stdin().read_line(&mut buf)?;
+        let s = buf.trim();
+        if !s.is_empty() { cfg.coding.test_cmd = s.into(); }
+
+        print!("Lint command [{}]: ", cfg.coding.lint_cmd);
+        io::stdout().flush()?;
+        buf.clear();
+        io::stdin().read_line(&mut buf)?;
+        let s = buf.trim();
+        if !s.is_empty() { cfg.coding.lint_cmd = s.into(); }
+
+        cfg.coding.auto_build = true;
+        cfg.coding.auto_lint = true;
     }
 
     save(&cfg)?;
