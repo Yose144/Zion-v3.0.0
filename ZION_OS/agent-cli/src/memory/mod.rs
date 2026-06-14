@@ -88,6 +88,16 @@ impl SessionContext {
     pub fn add_assistant_message(&mut self, msg: &str) {
         self.messages.push(crate::llm::Message::assistant(msg));
     }
+
+    pub fn set_system_prompt(&mut self, prompt: &str) {
+        if let Some(first) = self.messages.first_mut() {
+            if first.role == "system" {
+                first.content = prompt.to_string();
+                return;
+            }
+        }
+        self.messages.insert(0, crate::llm::Message::system(prompt));
+    }
 }
 
 pub async fn show(_cfg: &AgentConfig) -> Result<()> {

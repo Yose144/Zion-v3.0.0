@@ -166,6 +166,32 @@ enum Commands {
         #[command(subcommand)]
         cmd: ConfigCmd,
     },
+
+    /// Coding assistant mode — edit code with auto build/test/lint
+    Code {
+        /// Task description, e.g. "Refactor pool validation to use algorithm enum"
+        task: String,
+
+        /// Read task from a file
+        #[arg(short, long)]
+        file: Option<String>,
+
+        /// Show plan but do not execute
+        #[arg(long)]
+        plan_only: bool,
+
+        /// Skip auto-build after edits
+        #[arg(long)]
+        no_build: bool,
+
+        /// Skip auto-test after build
+        #[arg(long)]
+        no_test: bool,
+
+        /// Skip auto-lint after edits
+        #[arg(long)]
+        no_lint: bool,
+    },
 }
 
 #[derive(Subcommand)]
@@ -309,6 +335,24 @@ async fn main() -> Result<()> {
                     config::set_value(&key, &value)?;
                 }
             }
+        }
+        Commands::Code { task, file, plan_only, no_build, no_test, no_lint } => {
+            let mut cfg = cfg;
+            cfg.coding.enabled = true;
+            if no_build { cfg.coding.auto_build = false; }
+            if no_test { cfg.coding.auto_test = false; }
+            if no_lint { cfg.coding.auto_lint = false; }
+
+            let task_text = if let Some(path) = file {
+                std::fs::read_to_string(&path)?
+            } else {
+                task
+            };
+
+            if plan_only {
+                ui::print_info("Plan-only mode — agent will not execute.");
+            }
+            agent_loop::run_task(&cfg, &task_text, plan_only || cli.dry_run).await?;
         }
     }
 
