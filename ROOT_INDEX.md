@@ -142,6 +142,7 @@
 | `README.md` | Main project introduction, architecture, emission schedule |
 | `AGENTS.md` | Operating guidance for Devin, WARP, Copilot, future AI agents |
 | `StatusV3.md` | Current V3 status, launch blockers, audit results |
+| `L3bigupdate.md` | L3 expansion master plan (AI-native, WARP chains, NCL) |
 | `docs/Genesis.md` | Genesis block art + hash |
 | `Cargo.toml` | Root Rust workspace manifest |
 | `config/zion.toml` | ZION node configuration |
