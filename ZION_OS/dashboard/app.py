@@ -2194,6 +2194,7 @@ def get_miner_live_stats() -> dict:
 
     # Fetch live on-chain balance if we have a payout address
     on_chain_balance = None
+    on_chain_balance_updated = None
     if payout_addr and payout_addr.startswith("zion1"):
         try:
             # Try local node first, fallback to Edge
@@ -2202,6 +2203,7 @@ def get_miner_live_stats() -> dict:
                 if bal and not bal.get("_rpc_error"):
                     atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
                     on_chain_balance = atomic / 1_000_000_000_000
+                    on_chain_balance_updated = datetime.now().isoformat()
                     break
         except Exception:
             pass
@@ -2220,6 +2222,7 @@ def get_miner_live_stats() -> dict:
         "payout_address": payout_addr,
         "wallet": payout_addr,
         "on_chain_balance_zion": on_chain_balance,
+        "on_chain_balance_updated": on_chain_balance_updated,
         "running": stats.get("running", False),
         "gpus": agent_gpu.get("gpus", []) if not agent_gpu.get("_error") else [],
         "timestamp": datetime.now().isoformat(),
