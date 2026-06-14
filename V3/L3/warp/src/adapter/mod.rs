@@ -1,9 +1,13 @@
+pub mod aptos;
 pub mod bitcoin;
 pub mod cardano;
 pub mod cosmos;
 pub mod evm;
+pub mod near;
 pub mod solana;
 pub mod stellar;
+pub mod sui;
+pub mod ton;
 pub mod tron;
 
 use crate::error::WarpResult;
@@ -49,6 +53,10 @@ pub fn create_adapter(chain_name: &str) -> Option<Box<dyn ChainAdapter>> {
         "cardano" => Some(Box::new(cardano::CardanoAdapter::new())),
         "cosmos" => Some(Box::new(cosmos::CosmosAdapter::new())),
         "bitcoin" => Some(Box::new(bitcoin::BitcoinAdapter::new())),
+        "sui" => Some(Box::new(sui::SuiAdapter::new())),
+        "aptos" => Some(Box::new(aptos::AptosAdapter::new())),
+        "near" => Some(Box::new(near::NearAdapter::new())),
+        "ton" => Some(Box::new(ton::TonAdapter::new())),
         _ => None,
     }
 }
@@ -78,6 +86,10 @@ mod tests {
         assert!(create_adapter("cardano").is_some());
         assert!(create_adapter("cosmos").is_some());
         assert!(create_adapter("bitcoin").is_some());
+        assert!(create_adapter("sui").is_some());
+        assert!(create_adapter("aptos").is_some());
+        assert!(create_adapter("near").is_some());
+        assert!(create_adapter("ton").is_some());
     }
 
     #[test]
