@@ -3215,9 +3215,9 @@ def build_alerts(status: dict) -> list:
             alerts.append({"severity": "critical", "title": "Edge memory critically high",
                            "detail": f"Edge server RAM at {mem_pct}% — node may OOM. Consider restart-node1 or add MemoryMax to systemd.",
                            "action": "restart-node1"})
-        elif mem_pct > 75:
+        elif mem_pct > 80:
             alerts.append({"severity": "warning", "title": "Edge memory high",
-                           "detail": f"Edge server RAM at {mem_pct}% — possible memory leak in zion-node. Monitor trend.",
+                           "detail": f"Edge server RAM at {mem_pct}% — possible memory leak in zion-node. Click 'Limit RAM' in Edge panel or restart-node1.",
                            "action": None})
 
     if miner["running"] and miner["hashrate"] and miner["hashrate"] < 1.0:
@@ -5111,6 +5111,7 @@ def run_edge_action(action: str) -> dict:
         "backup-edge": "cd /root/zion-2.9.6-main && tar czf /root/backups/edge-$(date +%Y%m%d-%H%M%S).tar.gz --exclude=target --exclude=.git --exclude=logs . 2>&1 && echo 'Backup created'",
         "security-audit": "echo '=== SSH ==='; ls -la /root/.ssh/authorized_keys; echo '=== UFW ==='; ufw status; echo '=== Certs ==='; openssl x509 -in /etc/letsencrypt/live/zionterranova.com/cert.pem -noout -dates 2>/dev/null || echo 'No SSL cert found'; echo '=== Done ==='",
         "full-health": "echo '=== SYSTEM ==='; uptime; free -h; df -h /; echo '=== SERVICES ==='; systemctl is-active zion-edge-node1 zion-edge-node2 zion-edge-dao zion-edge-warp zion-edge-dashboard; echo '=== POOL ==='; ss -tlnp | grep 8444; echo '=== Done ==='",
+        "memory-limit": "mkdir -p /etc/systemd/system/zion-edge-node1.service.d && echo '[Service]\\nMemoryMax=3G\\nMemorySwapMax=0' > /etc/systemd/system/zion-edge-node1.service.d/memory.conf && systemctl daemon-reload && echo 'MemoryMax=3G applied. Node will restart if >3G.'",
     }
     cmd = SSH_CMDS.get(action)
     if not cmd:
