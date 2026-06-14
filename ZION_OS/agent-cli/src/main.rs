@@ -13,6 +13,7 @@ mod reviewer;
 mod safety;
 mod session;
 mod tools;
+mod tunnel;
 mod ui;
 
 use config::AgentConfig;
@@ -96,6 +97,27 @@ enum Commands {
         /// Also convert to GGUF quantization format (e.g. q5_k_m)
         #[arg(long)]
         quantize: Option<String>,
+
+        /// Tail the merge log until completion (blocking)
+        #[arg(long)]
+        wait: bool,
+    },
+
+    /// Download the built GGUF model from the remote server
+    ModelDownload {
+        /// Checkpoint step (e.g. 8901)
+        #[arg(short, long, default_value = "8901")]
+        checkpoint: u32,
+
+        /// Quantization type (q4_k_m, q5_k_m, q8_0)
+        #[arg(short, long, default_value = "q5_k_m")]
+        quantize: String,
+    },
+
+    /// SSH tunnel management for Hiran inference via Vast AI
+    Tunnel {
+        #[command(subcommand)]
+        cmd: TunnelCmd,
     },
 
     /// Start a local inference server with the specified model
@@ -144,6 +166,20 @@ enum Commands {
         #[command(subcommand)]
         cmd: ConfigCmd,
     },
+}
+
+#[derive(Subcommand)]
+enum TunnelCmd {
+    /// Start SSH tunnel to inference server
+    Start,
+    /// Stop SSH tunnel
+    Stop,
+    /// Show tunnel status
+    Status,
+    /// Start llama-server on the remote instance
+    Serve,
+    /// Stop llama-server on the remote instance
+    Kill,
 }
 
 #[derive(Subcommand)]
@@ -203,8 +239,38 @@ async fn main() -> Result<()> {
             checkpoint,
             output,
             quantize,
+            wait,
         } => {
             model_ops::merge_and_convert(&cfg, checkpoint, output, quantize).await?;
+            if wait {
+                model_ops::merge_wait(&cfg, checkpoint).await?;
+            }
+        }
+        Commands::ModelDownload { checkpoint, quantize } => {
+            model_ops::download_gguf(&cfg, checkpoint, Some(&quantize)).await?;
+        }
+        Commands::Tunnel { cmd } => {
+            match cmd {
+                TunnelCmd::Start => {
+                    let handle = tunnel::start(&cfg).await?;
+                    // Block until Ctrl+C
+                    ui::print_info("Tunnel running. Press Ctrl+C to stop.");
+                    tokio::signal::ctrl_c().await?;
+                    tunnel::stop(handle).await?;
+                }
+                TunnelCmd::Stop => {
+                    ui::print_info("(Use Ctrl+C on the running 'tunnel start' process to stop the tunnel)");
+                }
+                TunnelCmd::Status => {
+                    tunnel::status(&cfg).await?;
+                }
+                TunnelCmd::Serve => {
+                    tunnel::serve_remote(&cfg).await?;
+                }
+                TunnelCmd::Kill => {
+                    tunnel::stop_remote(&cfg).await?;
+                }
+            }
         }
         Commands::Serve { model, backend, port } => {
             tools::inference::serve(&cfg, &model, &backend, port).await?;
