@@ -6081,3 +6081,62 @@ setInterval(() => {
 
     scheduleStatsEmit();
 }, STATS_TICK_MS);
+
+// ── ZION Agent CLI Integration ─────────────────────────────────────────────
+
+function findZionAgentCli() {
+  const isWin = process.platform === 'win32';
+  const bin = isWin ? 'zion-agent-cli.exe' : 'zion-agent-cli';
+  const candidates = [
+    path.join(APP_ROOT, 'resources', bin),
+    path.join(process.resourcesPath, bin),
+    path.join(APP_ROOT, '..', '..', 'ZION_OS', 'agent-cli', 'target', 'release', bin),
+    path.join(APP_ROOT, '..', '..', 'target', 'release', bin),
+    path.join(APP_ROOT, '..', 'ZION_OS', 'agent-cli', 'target', 'release', bin),
+  ];
+  for (const p of candidates) {
+    if (fs.existsSync(p)) return p;
+  }
+  return null;
+}
+
+function runZionAgentCli(args) {
+  const cliPath = findZionAgentCli();
+  if (!cliPath) {
+    return { success: false, error: 'zion-agent-cli binary not found. Build with: cd ZION_OS/agent-cli && cargo build --release' };
+  }
+  const result = spawnSync(cliPath, args, {
+    encoding: 'utf-8',
+    timeout: 30000,
+    windowsHide: true,
+    cwd: path.dirname(cliPath),
+  });
+  if (result.error) {
+    return { success: false, error: result.error.message };
+  }
+  if (result.status !== 0) {
+    const stderr = result.stderr || '';
+    const stdout = result.stdout || '';
+    return { success: false, error: stderr || stdout || `Exit code ${result.status}` };
+  }
+  return { success: true, output: result.stdout || '' };
+}
+
+ipcMain.handle('agent-run', async (_event, { task, dryRun = false }) => {
+  const args = dryRun ? ['--dry-run', 'run', task] : ['run', task];
+  return runZionAgentCli(args);
+});
+
+ipcMain.handle('agent-monitor', async (_event, { watch = 'node,pool,miner' }) => {
+  return runZionAgentCli(['monitor', '--watch', watch]);
+});
+
+ipcMain.handle('agent-review', async (_event, { output } = {}) => {
+  const args = ['review'];
+  if (output) args.push('--output', output);
+  return runZionAgentCli(args);
+});
+
+ipcMain.handle('agent-config-show', async () => {
+  return runZionAgentCli(['config', 'show']);
+});

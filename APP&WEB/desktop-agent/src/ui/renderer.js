@@ -4254,6 +4254,59 @@ function initAiView() {
     });
   }
 
+  // ── ZION Agent CLI buttons ──────────────────────────────────────────
+  const agentMonitorBtn = document.getElementById('ai-agent-monitor');
+  const agentReviewBtn  = document.getElementById('ai-agent-review');
+  const agentConfigBtn  = document.getElementById('ai-agent-config');
+
+  if (agentMonitorBtn) {
+    agentMonitorBtn.addEventListener('click', async () => {
+      await appendMessage('user', '/monitor');
+      try {
+        const res = await window.electronAPI.agentMonitor({ watch: 'node,pool,miner' });
+        if (res?.success) {
+          await appendMessage('agent', res.output);
+        } else {
+          await appendMessage('system', 'Agent monitor failed: ' + (res?.error || 'unknown'));
+        }
+      } catch (e) {
+        await appendMessage('system', 'Error: ' + String(e));
+      }
+    });
+  }
+
+  if (agentReviewBtn) {
+    agentReviewBtn.addEventListener('click', async () => {
+      await appendMessage('user', '/review');
+      try {
+        const res = await window.electronAPI.agentReview({});
+        if (res?.success) {
+          await appendMessage('agent', res.output);
+        } else {
+          await appendMessage('system', 'Agent review failed: ' + (res?.error || 'unknown'));
+        }
+      } catch (e) {
+        await appendMessage('system', 'Error: ' + String(e));
+      }
+    });
+  }
+
+  if (agentConfigBtn) {
+    agentConfigBtn.addEventListener('click', async () => {
+      await appendMessage('user', '/config');
+      try {
+        const res = await window.electronAPI.agentConfigShow();
+        if (res?.success) {
+          await appendMessage('agent', res.output);
+        } else {
+          await appendMessage('system', 'Agent config failed: ' + (res?.error || 'unknown'));
+        }
+      } catch (e) {
+        await appendMessage('system', 'Error: ' + String(e));
+      }
+    });
+  }
+
   // Auto-check on view open
   checkAiStatus();
 }

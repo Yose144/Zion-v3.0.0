@@ -122,6 +122,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   aiChatAsk: (data) => ipcRenderer.invoke('ai-chat-ask', data),
   aiChatStatus: () => ipcRenderer.invoke('ai-chat-status'),
 
+  // ── ZION Agent CLI (autonomous AI operator) ───────────────────────────
+  agentRun: (data) => ipcRenderer.invoke('agent-run', data),
+  agentMonitor: (data) => ipcRenderer.invoke('agent-monitor', data),
+  agentReview: (data) => ipcRenderer.invoke('agent-review', data),
+  agentConfigShow: () => ipcRenderer.invoke('agent-config-show'),
+
   // ── Hiranyagarbha + NCL (Neural Compute Layer) ─────────────────────────
   aiNativeStatus: () => ipcRenderer.invoke('ai-native-status'),
   nclGetStatus: () => ipcRenderer.invoke('ncl-get-status'),
