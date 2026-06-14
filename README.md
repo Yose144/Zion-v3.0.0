@@ -220,6 +220,9 @@ zion-agent serve --model hiran-v2.3-q5.gguf --auto
 
 **Key features:**
 - ReAct agent loop with tool use (read/edit/search/shell/git)
+- Devin-style TUI with streaming output + slash commands (`/continue`, `/handoff`)
+- Autonomous agent mode with self-correction and persistent sessions
+- Coding assistant mode — auto build / test / lint on file changes
 - L1 consensus protection — blocks edits to `V3/L1/core/src/` without `--l1-unsafe`
 - Destructive op confirmation + secret protection
 - Model ops: checkpoint sync, merge, convert (GGUF)
@@ -280,5 +283,5 @@ MIT — see [LICENSE](LICENSE).
 
 ---
 
-*Last updated: 2026-06-07 · Genesis Hash: `7543004c76b11416ef32e2f1f5a4c72f0178f841d4559bf476e29e15a9602728` · Consensus: `deeksha_lite_v1` + `deeksha_lite_fire`*
+*Last updated: 2026-06-14 · Genesis Hash: `7543004c76b11416ef32e2f1f5a4c72f0178f841d4559bf476e29e15a9602728` · Consensus: `deeksha_lite_v1` + `deeksha_lite_fire`*
 *Repository: `Yose144/Zion-v3.0.0` · Branch: `main` · Version: v3.0.1*
