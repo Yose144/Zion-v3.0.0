@@ -131,7 +131,7 @@ function switchTab(name){
   else if(name === 'genesis'){ clearTabTimers('genesis'); loadGenesis(); if(!_genesisTimer) _genesisTimer = setInterval(loadGenesis, 10000); }
   else if(name === 'blockers'){ clearTabTimers('blockers'); loadBlockers(); if(!_blockersTimer) _blockersTimer = setInterval(loadBlockers, 10000); }
   else if(name === 'miner-live'){ clearTabTimers('minerLive'); refreshMinerLive(); if(!_minerLiveTimer) _minerLiveTimer = setInterval(refreshMinerLive, 5000); }
-  else if(name === 'bridge'){ clearTabTimers('bridge'); loadBridgeStatus(); if(!_bridgeTimer) _bridgeTimer = setInterval(loadBridgeStatus, 8000); }
+  else if(name === 'bridge'){ clearTabTimers('bridge'); loadBridgeStats(); refreshBridgeHistory(); if(!_bridgeTimer) _bridgeTimer = setInterval(loadBridgeStats, 8000); }
   else if(name === 'hiran'){ clearTabTimers('hiran'); loadAgentList(); checkAiStatus(); if(!_hiranTimer) _hiranTimer = setInterval(()=>{loadAgentList(); checkAiStatus();}, 10000); }
   else if(name === 'topology'){ clearTabTimers('topology'); loadTopology(); if(!_topologyTimer) _topologyTimer = setInterval(loadTopology, 10000); }
   else if(name === 'dao'){ clearTabTimers('dao'); loadDaoAll(); if(!_daoTimer) _daoTimer = setInterval(loadDaoAll, 10000); }
@@ -149,7 +149,7 @@ function switchTab(name){
   if(name === 'wallets') loadWallets();
   if(name === 'backups'){ clearTabTimers('backups'); loadBackups(); if(!_backupsTimer) _backupsTimer = setInterval(loadBackups, 15000); }
   if(['l1','l2','l3','l4','l5','l6'].includes(name)) loadLayerFull(name);
-  if(name === 'launch-day'){ loadLaunchDayStatus(); startLaunchCountdwn(); loadGenesisBackupList(); }
+  if(name === 'launch-day'){ loadLaunchDayStatus(); if(typeof startLaunchCountdown==='function') startLaunchCountdown(); loadGenesisBackupList(); }
 }
 
 // ─────────────────────────────────────────────────────────────────────
