@@ -452,3 +452,80 @@ fn parse_slot0(hex_str: &str) -> Result<PoolSlot0> {
         fee_tier: None,
     })
 }
+
+// ─── Unit tests ─────────────────────────────────────────────────────────────
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_slot0_zero() {
+        let result = parse_slot0("0x").unwrap();
+        assert_eq!(result.sqrt_price_x96, 0);
+        assert_eq!(result.tick, 0);
+    }
+
+    #[test]
+    fn test_parse_slot0_sample() {
+        // slot0 returns 2x 32-byte words: sqrtPriceX96 + tick
+        // sqrtPriceX96 = 0x0000000000000000000000000000000000000000000000000de0b6b3a7640000
+        // = 10^18 (1.0 in 18 decimals)
+        let sqrt_hex = "0000000000000000000000000000000000000000000000000de0b6b3a7640000";
+        let tick_hex = "0000000000000000000000000000000000000000000000000000000000000000";
+        let raw = format!("0x{}{}", sqrt_hex, tick_hex);
+        let result = parse_slot0(&raw).unwrap();
+        assert!(result.sqrt_price_x96 > 0);
+        assert_eq!(result.tick, 0);
+    }
+
+    #[test]
+    fn test_pool_slot0_default() {
+        let default = PoolSlot0::default();
+        assert_eq!(default.sqrt_price_x96, 0);
+        assert_eq!(default.tick, 0);
+        assert_eq!(default.fee_tier, None);
+    }
+
+    #[tokio::test]
+    async fn test_orchestrator_create_swap() {
+        let config = OrchestratorConfig::default();
+        let db = Arc::new(Mutex::new(SwapDb::open_in_memory().unwrap()));
+        let orchestrator = SwapOrchestrator::new(config, db);
+
+        let req = crate::types::SwapRequest {
+            direction: SwapDirection::ZionToEvm,
+            amount_in: "1000000000000".into(), // 1 ZION
+            output_token: crate::types::OutputToken::Usdc,
+            zion_address: "zion1test".into(),
+            evm_address: "0x1234".into(),
+            slippage_bps: Some(100),
+        };
+
+        let record = orchestrator.create_swap(req).await.unwrap();
+        assert!(!record.id.is_empty());
+        assert_eq!(record.amount_in, "1000000000000");
+        assert_eq!(record.status, SwapStatus::Pending);
+
+        let fetched = orchestrator.get_swap(&record.id).await.unwrap();
+        assert!(fetched.is_some());
+    }
+
+    #[tokio::test]
+    async fn test_orchestrator_quote_fallback() {
+        let config = OrchestratorConfig::default();
+        let db = Arc::new(Mutex::new(SwapDb::open_in_memory().unwrap()));
+        let orchestrator = SwapOrchestrator::new(config, db);
+
+        let req = crate::types::QuoteRequest {
+            direction: SwapDirection::ZionToEvm,
+            output_token: crate::types::OutputToken::Usdc,
+            amount_in: "1000000000000".into(),
+        };
+
+        let quote = orchestrator.quote(req).await.unwrap();
+        assert_eq!(quote.amount_in, "1000000000000");
+        assert!(!quote.amount_out.is_empty());
+        assert_eq!(quote.route, "wZION→WETH→USDC");
+    }
+}
