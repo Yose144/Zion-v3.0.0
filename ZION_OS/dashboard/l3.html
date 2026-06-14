@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZION L3 — Rainbow Protocol Dashboard</title>
+<style>
+:root{--bg:#0a0f1a;--card:#111827;--border:#1f2937;--text:#e5e7eb;--muted:#9ca3af;--accent:#22d3ee;--green:#34d399;--red:#f87171;--orange:#fbbf24;}
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',system-ui,sans-serif;}
+body{background:var(--bg);color:var(--text);padding:20px;}
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;}
+h1{font-size:1.5rem;color:var(--accent);}
+.status{display:flex;gap:12px;align-items:center;}
+.status-dot{width:10px;height:10px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;}
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;}
+.card h2{font-size:1rem;margin-bottom:10px;color:var(--accent);display:flex;justify-content:space-between;}
+.card h2 .badge{font-size:0.7rem;background:var(--border);padding:2px 8px;border-radius:12px;color:var(--muted);}
+table{width:100%;border-collapse:collapse;font-size:0.85rem;margin-top:8px;}
+th,td{padding:6px 8px;text-align:left;border-bottom:1px solid var(--border);}
+th{color:var(--muted);font-weight:500;}
+td{color:var(--text);}
+.row:hover td{background:rgba(255,255,255,0.03);}
+.muted{color:var(--muted);font-size:0.8rem;}
+.offline{color:var(--red);font-weight:bold;}
+.telemetry{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
+.metric{text-align:center;padding:12px;background:rgba(0,0,0,0.2);border-radius:8px;}
+.metric .value{font-size:1.5rem;color:var(--accent);font-weight:bold;}
+.metric .label{font-size:0.75rem;color:var(--muted);margin-top:4px;}
+input[type="text"]{width:100%;padding:8px 12px;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:6px;margin-bottom:8px;}
+button{padding:8px 16px;background:var(--accent);color:#000;border:none;border-radius:6px;cursor:pointer;font-weight:600;}
+button:hover{opacity:0.9;}
+.rag-results{max-height:200px;overflow-y:auto;margin-top:8px;}
+.rag-item{padding:8px;background:rgba(0,0,0,0.15);border-radius:6px;margin-bottom:6px;font-size:0.85rem;}
+.rag-item .score{color:var(--green);font-size:0.75rem;}
+.error{color:var(--red);font-size:0.85rem;padding:8px;}
+.refresh-btn{float:right;font-size:0.75rem;color:var(--accent);cursor:pointer;}
+</style>
+</head>
+<body>
+<header>
+<h1>ZION L3 Rainbow Protocol</h1>
+<div class="status">
+<span class="status-dot"></span>
+<span id="l3-status">Online</span>
+<span class="muted" id="last-update"></span>
+</div>
+</header>
+
+<div class="grid">
+<!-- Status Summary -->
+<div class="card">
+<h2>L3 Overview <span class="badge" id="chains-badge">...</span></h2>
+<div class="telemetry">
+<div class="metric"><div class="value" id="chains-count">-</div><div class="label">Chains</div></div>
+<div class="metric"><div class="value" id="transfers-count">-</div><div class="label">Transfers</div></div>
+<div class="metric"><div class="value" id="agents-count">-</div><div class="label">AI Agents</div></div>
+<div class="metric"><div class="value" id="jobs-count">-</div><div class="label">NCL Jobs</div></div>
+</div>
+</div>
+
+<!-- Telemetry -->
+<div class="card">
+<h2>Live Telemetry <span class="refresh-btn" onclick="fetchTelemetry()">Refresh</span></h2>
+<div class="telemetry">
+<div class="metric"><div class="value" id="node-height">-</div><div class="label">Node Height</div></div>
+<div class="metric"><div class="value" id="pool-hashrate">-</div><div class="label">Pool Hashrate</div></div>
+<div class="metric"><div class="value" id="active-miners">-</div><div class="label">Active Miners</div></div>
+<div class="metric"><div class="value" id="pending-tx">-</div><div class="label">Pending TX</div></div>
+</div>
+</div>
+
+<!-- WARP Chains -->
+<div class="card">
+<h2>WARP Bridge Chains <span class="refresh-btn" onclick="fetchChains()">Refresh</span></h2>
+<table id="chains-table"><thead><tr><th>Chain</th><th>Family</th><th>Finality</th></tr></thead><tbody><tr><td colspan="3" class="muted">Loading...</td></tr></tbody></table>
+</div>
+
+<!-- WARP Transfers -->
+<div class="card">
+<h2>Recent Transfers <span class="refresh-btn" onclick="fetchTransfers()">Refresh</span></h2>
+<table id="transfers-table"><thead><tr><th>ID</th><th>From</th><th>To</th><th>Amount</th><th>Status</th></tr></thead><tbody><tr><td colspan="5" class="muted">Loading...</td></tr></tbody></table>
+</div>
+
+<!-- AI Agents -->
+<div class="card">
+<h2>AI Agents <span class="refresh-btn" onclick="fetchAgents()">Refresh</span></h2>
+<table id="agents-table"><thead><tr><th>Name</th><th>Status</th><th>Capabilities</th></tr></thead><tbody><tr><td colspan="3" class="muted">Loading...</td></tr></tbody></table>
+</div>
+
+<!-- RAG Query -->
+<div class="card">
+<h2>RAG Knowledge Base</h2>
+<input type="text" id="rag-input" placeholder="Ask about ZION consensus, mining, bridge..." onkeydown="if(event.key==='Enter')fetchRag()">
+<button onclick="fetchRag()">Query</button>
+<div class="rag-results" id="rag-results"></div>
+</div>
+
+<!-- NCL Jobs -->
+<div class="card">
+<h2>NCL Compute Jobs <span class="refresh-btn" onclick="fetchJobs()">Refresh</span></h2>
+<table id="jobs-table"><thead><tr><th>ID</th><th>Type</th><th>Status</th><th>Reward</th></tr></thead><tbody><tr><td colspan="4" class="muted">Loading...</td></tr></tbody></table>
+</div>
+</div>
+
+<script>
+const API_BASE = window.location.origin;
+let offline = false;
+
+function setOffline(v){
+  offline = v;
+  document.getElementById('l3-status').textContent = v ? 'Offline' : 'Online';
+  document.getElementById('l3-status').className = v ? 'offline' : '';
+  document.querySelector('.status-dot').style.background = v ? 'var(--red)' : 'var(--green)';
+}
+
+function fmtError(e){return `<div class="error">${e.message||e}</div>`;}
+
+async function get(path){
+  try{
+    const r = await fetch(API_BASE + path, {headers:{'Accept':'application/json'}});
+    if(!r.ok) throw new Error(r.status + ' ' + r.statusText);
+    const d = await r.json();
+    setOffline(d.offline || false);
+    return d;
+  }catch(e){ setOffline(true); throw e; }
+}
+
+async function fetchChains(){
+  try{
+    const d = await get('/api/l3/warp/chains');
+    const tb = document.querySelector('#chains-table tbody');
+    if(d.offline||d.error){ tb.innerHTML=`<tr><td colspan="3" class="error">${d.error||'Offline'}</td></tr>`; return; }
+    const rows = (Array.isArray(d)?d:[]).map(c=>`<tr class="row"><td>${c.name}</td><td>${c.family}</td><td>${c.finality_blocks||'-'}</td></tr>`).join('');
+    tb.innerHTML = rows||'<tr><td colspan="3" class="muted">No chains</td></tr>';
+    document.getElementById('chains-count').textContent = (Array.isArray(d)?d.length:'-');
+    document.getElementById('chains-badge').textContent = (Array.isArray(d)?d.length+' active':'?');
+  }catch(e){ document.querySelector('#chains-table tbody').innerHTML = fmtError(e); }
+}
+
+async function fetchTransfers(){
+  try{
+    const d = await get('/api/l3/warp/transfers');
+    const tb = document.querySelector('#transfers-table tbody');
+    if(d.offline||d.error){ tb.innerHTML=`<tr><td colspan="5" class="error">${d.error||'Offline'}</td></tr>`; return; }
+    const list = Array.isArray(d)?d:[];
+    const rows = list.slice(0,10).map(t=>`<tr class="row"><td>${t.id?.slice(0,8)||'?'}</td><td>${t.source_chain||'?'}</td><td>${t.dest_chain||'?'}</td><td>${(t.amount_flowers/1e12).toFixed(4)}</td><td>${t.status||'?'}</td></tr>`).join('');
+    tb.innerHTML = rows||'<tr><td colspan="5" class="muted">No transfers</td></tr>';
+    document.getElementById('transfers-count').textContent = list.length;
+  }catch(e){ document.querySelector('#transfers-table tbody').innerHTML = fmtError(e); }
+}
+
+async function fetchAgents(){
+  try{
+    const d = await get('/api/l3/ai/agents');
+    const tb = document.querySelector('#agents-table tbody');
+    if(d.offline||d.error){ tb.innerHTML=`<tr><td colspan="3" class="error">${d.error||'Offline'}</td></tr>`; return; }
+    const list = Array.isArray(d)?d:[];
+    const rows = list.map(a=>`<tr class="row"><td>${a.name||'?'}</td><td>${a.status||'?'}</td><td>${(a.capabilities||[]).join(', ')||'-'}</td></tr>`).join('');
+    tb.innerHTML = rows||'<tr><td colspan="3" class="muted">No agents</td></tr>';
+    document.getElementById('agents-count').textContent = list.length;
+  }catch(e){ document.querySelector('#agents-table tbody').innerHTML = fmtError(e); }
+}
+
+async function fetchTelemetry(){
+  try{
+    const d = await get('/api/l3/ai/telemetry');
+    if(d.offline||d.error){ setOffline(true); return; }
+    document.getElementById('node-height').textContent = d.node_height?.toLocaleString()||'-';
+    document.getElementById('pool-hashrate').textContent = (d.pool_hashrate?.toFixed(2)||'-')+' H/s';
+    document.getElementById('active-miners').textContent = d.active_miners??'-';
+    document.getElementById('pending-tx').textContent = d.pending_transfers??'-';
+    setOffline(false);
+  }catch(e){ setOffline(true); }
+}
+
+async function fetchRag(){
+  const q = document.getElementById('rag-input').value.trim();
+  if(!q) return;
+  const out = document.getElementById('rag-results');
+  out.innerHTML = '<div class="muted">Querying...</div>';
+  try{
+    const d = await get('/api/l3/ai/rag?q='+encodeURIComponent(q));
+    if(d.offline||d.error){ out.innerHTML=`<div class="error">${d.error||'Offline'}</div>`; return; }
+    const list = Array.isArray(d)?d:[];
+    out.innerHTML = list.map(r=>`<div class="rag-item"><div class="score">score: ${(r.score||0).toFixed(3)}</div>${r.chunk||r.document||'?'}</div>`).join('') || '<div class="muted">No results</div>';
+  }catch(e){ out.innerHTML = fmtError(e); }
+}
+
+async function fetchJobs(){
+  try{
+    const d = await get('/api/l3/ncl/jobs');
+    const tb = document.querySelector('#jobs-table tbody');
+    if(d.offline||d.error){ tb.innerHTML=`<tr><td colspan="4" class="error">${d.error||'Offline'}</td></tr>`; return; }
+    const list = Array.isArray(d)?d:[];
+    const rows = list.map(j=>`<tr class="row"><td>${j.id?.slice(0,8)||'?'}</td><td>${j.job_type||'?'}</td><td>${j.status||'?'}</td><td>${(j.reward_flowers/1e12).toFixed(4)} ZION</td></tr>`).join('');
+    tb.innerHTML = rows||'<tr><td colspan="4" class="muted">No jobs</td></tr>';
+    document.getElementById('jobs-count').textContent = list.length;
+  }catch(e){ document.querySelector('#jobs-table tbody').innerHTML = fmtError(e); }
+}
+
+function tick(){ document.getElementById('last-update').textContent = new Date().toLocaleTimeString(); }
+
+function refreshAll(){ fetchChains(); fetchTransfers(); fetchAgents(); fetchTelemetry(); fetchJobs(); tick(); }
+
+refreshAll();
+setInterval(()=>{ fetchTelemetry(); tick(); }, 10000);
+</script>
+</body>
+</html>
