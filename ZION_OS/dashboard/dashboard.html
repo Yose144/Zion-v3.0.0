@@ -287,6 +287,9 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
         <button onclick="switchTab('l1')" id="tab-l1" class="sidebar-item">🔷 L1 Consensus</button>
         <button onclick="switchTab('l2')" id="tab-l2" class="sidebar-item">🌉 L2 Bridge / DAO</button>
         <button onclick="switchTab('l3')" id="tab-l3" class="sidebar-item">🌀 L3 Advanced</button>
+        <button onclick="switchTab('warp')" id="tab-warp" class="sidebar-item">🌉 WARP Bridge</button>
+        <button onclick="switchTab('ai-agents')" id="tab-ai-agents" class="sidebar-item">🧠 AI Agents</button>
+        <button onclick="switchTab('ncl-jobs')" id="tab-ncl-jobs" class="sidebar-item">🧬 NCL Jobs</button>
         <button onclick="switchTab('l4')" id="tab-l4" class="sidebar-item">🪷 L4 OASIS</button>
         <button onclick="switchTab('l5')" id="tab-l5" class="sidebar-item">🕊️ L5 Humanitarian</button>
         <button onclick="switchTab('l6')" id="tab-l6" class="sidebar-item">🚀 L6 Space</button>
@@ -4345,6 +4348,75 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
     </div>
   </div>
 </div>
+
+  <!-- ═════════ TAB: WARP Relay ═════════ -->
+  <div id="pane-warp" class="hidden space-y-4">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gradient">🌉 WARP Cross-Chain Relay</h1>
+        <p class="text-xs text-gray-400 mt-1">21 chains · Lightning · AI-secured bridge</p>
+      </div>
+      <button onclick="loadWarpPanel()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
+    </div>
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
+      <div class="zion-panel p-5">
+        <h2 class="text-base font-bold mb-3">Connected Chains</h2>
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs text-left">
+            <thead><tr class="text-gray-500 border-b border-white/10"><th class="py-2 px-2">Chain</th><th class="py-2 px-2">Family</th><th class="py-2 px-2 text-right">Status</th></tr></thead>
+            <tbody id="warp-chains-body"><tr><td colspan="3" class="py-4 text-gray-500 italic text-center">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="zion-panel p-5">
+        <h2 class="text-base font-bold mb-3">Recent Transfers</h2>
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs text-left">
+            <thead><tr class="text-gray-500 border-b border-white/10"><th class="py-2 px-2">TX</th><th class="py-2 px-2">From</th><th class="py-2 px-2">To</th><th class="py-2 px-2 text-right">Amount</th><th class="py-2 px-2 text-center">Status</th></tr></thead>
+            <tbody id="warp-transfers-body"><tr><td colspan="5" class="py-4 text-gray-500 italic text-center">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═════════ TAB: AI Agents ═════════ -->
+  <div id="pane-ai-agents" class="hidden space-y-4">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gradient">🧠 AI Agents</h1>
+        <p class="text-xs text-gray-400 mt-1">Agent registry and consciousness levels</p>
+      </div>
+      <button onclick="loadAiAgentsPanel()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
+    </div>
+    <div class="zion-panel p-5">
+      <div class="overflow-x-auto">
+        <table class="w-full text-xs text-left">
+          <thead><tr class="text-gray-500 border-b border-white/10"><th class="py-2 px-2">Agent</th><th class="py-2 px-2">Name</th><th class="py-2 px-2">Consciousness</th><th class="py-2 px-2 text-right">Status</th></tr></thead>
+          <tbody id="ai-agents-body"><tr><td colspan="4" class="py-4 text-gray-500 italic text-center">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═════════ TAB: NCL Jobs ═════════ -->
+  <div id="pane-ncl-jobs" class="hidden space-y-4">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gradient">🧬 NCL Compute Jobs</h1>
+        <p class="text-xs text-gray-400 mt-1">Neural Compute Layer job queue</p>
+      </div>
+      <button onclick="loadNclJobsPanel()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
+    </div>
+    <div class="zion-panel p-5">
+      <div class="overflow-x-auto">
+        <table class="w-full text-xs text-left">
+          <thead><tr class="text-gray-500 border-b border-white/10"><th class="py-2 px-2">Job</th><th class="py-2 px-2">Type</th><th class="py-2 px-2">Worker</th><th class="py-2 px-2 text-center">Status</th><th class="py-2 px-2 text-right">Progress</th></tr></thead>
+          <tbody id="ncl-jobs-body"><tr><td colspan="5" class="py-4 text-gray-500 italic text-center">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 
   <!-- ═════════ TAB: DAO Governance ═════════ --><!-- Block Detail Modal -->
 <div id="block-modal" class="fixed inset-0 bg-black/80 hidden items-center justify-center z-50 p-4" onclick="if(event.target===this)closeBlockModal()">
