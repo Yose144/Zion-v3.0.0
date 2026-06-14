@@ -22,6 +22,17 @@ pub enum BridgeOperation {
         amount_wzion: u64,
         l1_recipient: String,
     },
+    /// Submit a compute job to NCL marketplace
+    ComputeJob {
+        model_id: String,
+        backend: ComputeBackend,
+        input_hash: String,
+        reward_flowers: u64,
+        max_duration_secs: u64,
+        priority: u8,
+        min_consciousness: u8,
+        task_type: NclTaskType,
+    },
 }
 
 /// Central orchestrator managing all AI agents.
@@ -431,9 +442,87 @@ impl Orchestrator {
                     "AI agent initiated bridge burn operation"
                 );
             }
+            BridgeOperation::ComputeJob {
+                model_id,
+                backend,
+                input_hash: _,
+                reward_flowers,
+                max_duration_secs: _,
+                priority: _,
+                min_consciousness: _,
+                task_type: _,
+            } => {
+                tracing::info!(
+                    operation_id = %operation_id,
+                    agent = %agent.name,
+                    kind = "compute_job",
+                    model_id = %model_id,
+                    backend = ?backend,
+                    reward_flowers = reward_flowers,
+                    "AI agent initiated NCL compute job"
+                );
+            }
         }
 
         Ok(operation_id)
+    }
+
+    // ─── NCL Marketplace Integration ─────────────────────────────────────
+
+    /// Submit a compute job to the NCL marketplace.
+    /// Requires the agent to have `Compute` capability.
+    pub fn submit_ncl_job(
+        &mut self,
+        agent_id: Uuid,
+        model_id: String,
+        backend: ComputeBackend,
+        input_hash: String,
+        reward_flowers: u64,
+        max_duration_secs: u64,
+    ) -> AiResult<Uuid> {
+        let scheduler = self
+            .ncl_scheduler
+            .as_mut()
+            .ok_or_else(|| AiError::CapabilityNotAvailable("NCL marketplace".into()))?;
+
+        let agent = self
+            .agents
+            .get(&agent_id)
+            .ok_or_else(|| AiError::AgentNotFound(agent_id.to_string()))?;
+
+        if !agent.has_capability(&AgentCapability::Compute) {
+            return Err(AiError::CapabilityNotAvailable("Compute".into()));
+        }
+
+        let job = NclJob {
+            id: Uuid::new_v4(),
+            model_id,
+            backend,
+            task_type: NclTaskType::Custom,
+            input_hash,
+            output_hash: None,
+            status: zion_ncl::NclJobStatus::Queued,
+            submitter: agent.wallet_address.clone(),
+            worker_id: None,
+            reward_flowers,
+            priority: 5,
+            min_consciousness: agent.consciousness_level,
+            created_at: chrono::Utc::now(),
+            completed_at: None,
+            timeout_ms: max_duration_secs * 1000,
+        };
+
+        let job_id = job.id;
+        scheduler.submit_job(job).map_err(|e| AiError::MessageFailed(format!("NCL submit failed: {}", e)))?;
+
+        tracing::info!(
+            job_id = %job_id,
+            agent = %agent.name,
+            reward = reward_flowers,
+            "NCL compute job submitted by agent"
+        );
+
+        Ok(job_id)
     }
 }
 
