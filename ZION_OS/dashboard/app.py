@@ -5010,6 +5010,30 @@ def _run_edge_ssh_command(cmd: str, timeout: int = 15) -> dict:
 _edge_status_cache: dict = {}
 _edge_status_ts: float = 0.0
 
+def run_edge_action(action: str) -> dict:
+    """Execute a control action on the Edge server via SSH."""
+    SSH_CMDS = {
+        "restart-node1": "systemctl restart zion-edge-node1 && echo 'Node 1 restarted'",
+        "restart-node2": "systemctl restart zion-edge-node2 && echo 'Node 2 restarted'",
+        "restart-pool": "pkill -f 'zion-pool-server' || true; sleep 2; cd /root/zion-2.9.6-main && nohup ./V3/target/release/zion-pool-server >> logs/pool.log 2>&1 &",
+        "restart-dao": "systemctl restart zion-edge-dao && echo 'DAO restarted'",
+        "restart-warp": "systemctl restart zion-edge-warp && echo 'WARP restarted'",
+        "restart-dashboard": "systemctl restart zion-edge-dashboard && echo 'Dashboard restarted'",
+        "clean-docker": "docker system prune -af --volumes 2>&1 && ctr images prune --all 2>&1 && echo 'Docker cleaned'",
+        "backup-edge": "cd /root/zion-2.9.6-main && tar czf /root/backups/edge-$(date +%Y%m%d-%H%M%S).tar.gz --exclude=target --exclude=.git --exclude=logs . 2>&1 && echo 'Backup created'",
+        "security-audit": "echo '=== SSH ==='; ls -la /root/.ssh/authorized_keys; echo '=== UFW ==='; ufw status; echo '=== Certs ==='; openssl x509 -in /etc/letsencrypt/live/zionterranova.com/cert.pem -noout -dates 2>/dev/null || echo 'No SSL cert found'; echo '=== Done ==='",
+        "full-health": "echo '=== SYSTEM ==='; uptime; free -h; df -h /; echo '=== SERVICES ==='; systemctl is-active zion-edge-node1 zion-edge-node2 zion-edge-dao zion-edge-warp zion-edge-dashboard; echo '=== POOL ==='; ss -tlnp | grep 8444; echo '=== Done ==='",
+    }
+    cmd = SSH_CMDS.get(action)
+    if not cmd:
+        return {"ok": False, "error": f"Unknown edge action: {action}"}
+    r = _run_edge_ssh_command(cmd, timeout=30)
+    if r.get("ok"):
+        return {"ok": True, "result": r.get("stdout", "").strip(), "host": r.get("host", "?")}
+    else:
+        return {"ok": False, "error": r.get("error", "SSH failed"), "host": r.get("host", "?")}
+
+
 def get_edge_system_status(force: bool = False) -> dict:
     """Fetch Edge server system metrics + service health via SSH. Cached 30s."""
     global _edge_status_cache, _edge_status_ts
@@ -9146,6 +9170,9 @@ class DashboardHandler(BaseHTTPRequestHandler):
         elif route == "/api/edge-status":
             force = payload.get("force", False)
             self._json(get_edge_system_status(force=force))
+        elif route == "/api/edge-action":
+            action = payload.get("action", "")
+            self._json(run_edge_action(action))
         elif route == "/api/control":
             action = payload.get("action", "")
             env_overrides = payload.get("env")
