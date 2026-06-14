@@ -8,7 +8,7 @@ use clap::{Parser, Subcommand};
 use clap_complete::Shell;
 use commands::{
     agent, bridge, compose, dao, free_world, hiran,
-    issobella, mine, ncl, node, pool, topology, wallet, warp,
+    issobella, mine, ncl, node, pool, swap, topology, wallet, warp,
 };
 #[cfg(feature = "admin")]
 use commands::deploy;
@@ -134,6 +134,11 @@ pub enum Commands {
     Dao {
         #[command(subcommand)]
         cmd: dao::DaoCmd,
+    },
+    /// L2 DeFi swap aggregator
+    Swap {
+        #[command(subcommand)]
+        cmd: swap::SwapCmd,
     },
     /// Block explorer TUI
     Explorer,
