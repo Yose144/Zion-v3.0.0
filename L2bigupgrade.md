@@ -195,12 +195,41 @@ Each L2 component gets a tab or section:
 
 | Component | Backend | CLI | Desktop | Web | Dashboard | Tests |
 |-----------|---------|-----|---------|-----|-----------|-------|
-| Bridge | ✅ | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ |
-| DAO | ✅ API | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ |
-| Atomic Swap | 🟡 Stubs | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ |
-| Swap Aggregator | 🟡 Stubs | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ |
+| Bridge | ✅ Relayer + contracts | ✅ status/pending/history/chains/deploy | ✅ CLI tab | ✅ Network switcher Sepolia/Mainnet | ✅ Health + metrics | 🟡 Integration pending |
+| DAO | ✅ API (Axum) | ✅ status/proposals/vote/treasury/params | ✅ CLI tab | ✅ Dynamic fetch from API | ✅ Stats + proposals panel | 🟡 Integration pending |
+| Atomic Swap | ✅ HTLC + L1 executor | ✅ status/escrow/get/pending/claim/refund | ✅ CLI tab | 🟡 Form exists (static) | ✅ Health + HTLC list | ✅ Unit tests |
+| Swap Aggregator | ✅ EVM RPC + Bridge API | ✅ status/quote/execute/history/get | ✅ CLI tab | ✅ SwapWidget (Uni V3) | ✅ Health panel | ✅ 5 unit tests |
 
 **Legend:** ✅ Done 🟡 Partial ⏳ Not Started
+
+## 9. Completed Work Summary
+
+### CLI (`zion-cli`)
+- `zion bridge status|pending|history|chains|transfer|deploy`
+- `zion dao status|proposals|proposal|vote|treasury|params`
+- `zion swap status|quote|execute|history|get`
+- `zion atomic-swap status|escrow|get|pending|claim|refund`
+
+### Desktop Agent
+- Bridge CLI tab (status, pending, chains, history)
+- DAO CLI tab (status, proposals, treasury, params)
+- Swap CLI tab (status, quote, history)
+
+### Website
+- `/bridge` — network switcher (Sepolia/Mainnet), dynamic contract addresses
+- `/dao` — dynamic proposal list, voting, treasury (fetch from API)
+- `/defi` — SwapWidget with real Uni V3 Quoter/Router
+
+### Dashboard
+- L2 tab with Bridge, DAO, Atomic Swap panels
+- Real-time health checks for all 4 services
+- Bridge metrics (relays, volume), DAO stats (proposals, treasury), Swap stats (HTLCs)
+
+### Backend
+- Bridge relayer: L1 lock → EVM mint, EVM burn → L1 unlock
+- DAO API: proposals, voting, treasury, timelock
+- Atomic Swap: HTLC memo parser, L1 executor (sign + submit TX)
+- Swap Aggregator: Uni V3 slot0 price quotes, bridge API integration
 
 ---
 
