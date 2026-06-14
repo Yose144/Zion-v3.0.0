@@ -3937,7 +3937,7 @@ def fetch_pool_miners() -> list:
     # Enrich top miners with live on-chain balance from node RPC
     try:
         rpc_host = "127.0.0.1" if check_port_open("127.0.0.1", 8443, timeout=1.0) else EDGE_HOST
-        for m in miners[:20]:
+        for m in miners:
             addr = m.get("payout_address") or m.get("address")
             if addr and addr.startswith("zion1"):
                 bal = rpc_call(rpc_host, 8443, "getBalance", {"address": addr}, timeout=1.5)
