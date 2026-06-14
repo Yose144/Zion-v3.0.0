@@ -22,6 +22,56 @@
 
 ---
 
+## Co je nového 2026-06-14 (L3 Rainbow Protocol — Big Update)
+
+> **Status:** COMPLETE — L3 transformován z pasivního bridge layeru na aktivní AI-řízený multi-chain ekosystém. 21 chainů, AI Safety, Dashboard L3, NCL integration.
+
+### L3 Big Update — Shrnutí 6 fází
+
+| Fáze | Popis | Stav |
+|------|-------|------|
+| **F1** | Agent CLI ↔ L3 AI-Native | 6 nových ReAct tools, 3 CLI commandy (`warp`, `ai`, `ncl`) |
+| **F2** | WARP Tier 1 chainy | 21 chainů: 9 EVM + 11 non-EVM + ZION L1 |
+| **F3** | NCL Marketplace Integration | `submit_ncl_job()` — agenti s Compute capability mohou submitovat jobs |
+| **F4** | AI-Native Runtime Activation | Daemon API: `/telemetry`, `/optimizer/run`, `/agents/:id/consciousness` |
+| **F5** | Dashboard L3 | Standalone `/l3` dashboard: WARP, AI Agents, Telemetry, RAG, NCL Jobs |
+| **F6** | AI Safety (Security) | Transfer limit (1000 ZION), timelock (>100 ZION), kill switch, audit log |
+
+### WARP Bridge — 21 Chainů
+
+**EVM (9):** Ethereum, Base, Arbitrum, Optimism, BSC, Polygon, Avalanche, zkSync, Linea  
+**Non-EVM (11):** Solana, Tron, Stellar, Cardano, Cosmos, Bitcoin, Sui, Aptos, Near, Ton, **Lightning**  
+**Native:** ZION L1
+
+### AI Safety (L3bigupdate.md §8.2)
+
+- **Transfer limit:** Max 1000 ZION per AI-initiated transfer
+- **Timelock:** Všechny AI transfery > 100 ZION → 24h hold
+- **Kill switch:** `zion-agent ai-emergency-stop` okamžitě zastaví všechny AI operace
+- **Audit log:** Všechny AI akce logovány do `L3/audit/` (immutabilní append-only)
+
+### Dashboard — L3 Rainbow Protocol (`http://localhost:8766/l3`)
+
+- WARP Bridge: chain registry + recent transfers
+- AI Agents: seznam s consciousness levels
+- Live Telemetry: auto-refresh 10s (node height, pool hashrate, active miners)
+- RAG Query: search knowledge base
+- NCL Jobs: compute marketplace
+
+### Git Commity
+
+```
+00c36de5  feat(agent-cli): L3 AI-Native + WARP + NCL integration
+8a979a3e  feat(warp): add Ethereum, Optimism, Avalanche, zkSync, Linea
+527394c1  feat(warp): add Sui, Aptos, Near, Ton stub adapters
+450a7fd9  feat(warp): add Bitcoin Lightning Network adapter
+fa1c5c15  feat(ai-native): add agent-cli compatible endpoints
+c33aeaf0  feat(l3): NCL marketplace integration + dashboard API proxy
+f2e20e7a  feat(dashboard): L3 Rainbow Protocol standalone dashboard
+```
+
+---
+
 ## Co je nového 2026-06-14 (Dashboard — kompletní oprava)
 
 > **Status:** COMPLETE — všechny panely v menu se zobrazují, Payout/Wallets data jsou živá, Restart Edge Pool funguje přes SSH, port 8444 otevřen.
