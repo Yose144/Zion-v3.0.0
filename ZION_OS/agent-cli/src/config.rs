@@ -16,6 +16,8 @@ pub struct AgentConfig {
     pub paths: PathConfig,
     #[serde(default)]
     pub coding: CodingConfig,
+    #[serde(default)]
+    pub l3: L3Config,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -90,6 +92,22 @@ pub struct PathConfig {
     pub repo_root: PathBuf,
 }
 
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct L3Config {
+    /// WARP bridge HTTP API URL
+    #[serde(default = "default_warp_url")]
+    pub warp_url: String,
+    /// AI-Native daemon HTTP API URL
+    #[serde(default = "default_ai_native_url")]
+    pub ai_native_url: String,
+    /// NCL marketplace API URL
+    #[serde(default = "default_ncl_url")]
+    pub ncl_url: String,
+    /// Enable L3 tool use in agent loop
+    #[serde(default = "default_true")]
+    pub enabled: bool,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CodingConfig {
     /// Enable coding assistant mode (auto-build, test, lint)
@@ -155,6 +173,15 @@ fn default_fmt_cmd() -> String {
 }
 fn default_api_url() -> String {
     "http://localhost:8000/v1".into()
+}
+fn default_warp_url() -> String {
+    "http://localhost:8460".into()
+}
+fn default_ai_native_url() -> String {
+    "http://localhost:8460".into()
+}
+fn default_ncl_url() -> String {
+    "http://localhost:8460".into()
 }
 fn default_model() -> String {
     "hiran-v2.3-merged".into()
@@ -287,6 +314,7 @@ impl Default for AgentConfig {
             safety: SafetyConfig::default(),
             paths: PathConfig::default(),
             coding: CodingConfig::default(),
+            l3: L3Config::default(),
         }
     }
 }
