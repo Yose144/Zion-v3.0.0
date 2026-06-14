@@ -236,6 +236,18 @@ impl App {
                 }
                 self.add_system_message(&format!("Mode: {:?}", self.permission_mode));
             }
+            Some(&"/continue") => {
+                self.add_system_message("Continuing previous session... (load from DB not yet implemented)");
+            }
+            Some(&"/handoff") => {
+                let task = if parts.len() > 1 {
+                    parts[1..].join(" ")
+                } else {
+                    "Continue current task in cloud".to_string()
+                };
+                self.add_system_message(&format!("Handing off to cloud: {}", task));
+                std::env::set_var("ZION_AGENT_HANDOFF", &task);
+            }
             Some(&"/new") => {
                 self.messages.clear();
                 self.activity_log.clear();
@@ -266,10 +278,12 @@ impl App {
 
 const HELP_TEXT: &str = r#"Available commands:
   /mode [normal|accept-edits|bypass|plan|ask]  Switch permission mode
-  /new                                          Start new session
-  /clear                                        Clear chat history
-  /help                                         Show this help
-  Esc                                           Exit
+  /continue                                   Resume last session from DB
+  /handoff [task]                             Hand off to cloud agent
+  /new                                        Start new session
+  /clear                                      Clear chat history
+  /help                                       Show this help
+  Esc                                         Exit
 
 Permission modes:
   normal        — Ask before writes and shell commands
