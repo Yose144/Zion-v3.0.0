@@ -26,7 +26,11 @@ import {
   getBridgeStatus,
   formatUptime,
   bridgeEfficiency,
-  BRIDGE_CONTRACTS,
+  getBridgeContracts,
+  switchToBaseMainnet,
+  switchToBaseSepolia,
+  BASE_SEPOLIA_CHAIN_ID,
+  BASE_MAINNET_CHAIN_ID,
   type BridgeStatus,
 } from '@/lib/bridge-api';
 import { useLang } from '@/contexts/LanguageContext';
@@ -35,7 +39,7 @@ import { usePolling } from '@/hooks/usePolling';
 
 // ─── Steps data ───────────────────────────────────────────────────────────────
 
-const getLockMintSteps = (cs: boolean) => [
+const getLockMintSteps = (cs: boolean, networkLabel: string) => [
   {
     icon: Lock,
     title: cs ? 'Zamkni ZION na L1' : 'Lock ZION on L1',
@@ -54,8 +58,8 @@ const getLockMintSteps = (cs: boolean) => [
     icon: Zap,
     title: cs ? 'Přijmi wZION na Base' : 'Receive wZION on Base',
     desc: cs
-      ? 'ZIONBridge kontrakt mintne wZION ERC-20 do tvé peněženky na Base Mainnet. 1:1 peg, žádné poplatky.'
-      : 'ZIONBridge contract mints wZION ERC-20 to your wallet on Base Mainnet. 1:1 peg, no fees.',
+      ? `ZIONBridge kontrakt mintne wZION ERC-20 do tvé peněženky na ${networkLabel}. 1:1 peg, žádné poplatky.`
+      : `ZIONBridge contract mints wZION ERC-20 to your wallet on ${networkLabel}. 1:1 peg, no fees.`,
   },
 ];
 
@@ -85,7 +89,7 @@ const getBurnUnlockSteps = (cs: boolean) => [
 
 // ─── FAQ data ─────────────────────────────────────────────────────────────────
 
-const getFaqs = (cs: boolean) => [
+const getFaqs = (cs: boolean, networkLabel: string) => [
   {
     q: cs ? 'Jak dlouho bridge trvá?' : 'How long does bridging take?',
     a: cs
@@ -119,8 +123,8 @@ const getFaqs = (cs: boolean) => [
   {
     q: cs ? 'Je bridge bezpečný?' : 'Is the bridge safe?',
     a: cs
-      ? 'Bridge běží na Base Mainnet s replay-attack prevencí, ≥2 Guardian potvrzeními a 60-block finalitou.'
-      : 'The bridge runs on Base Mainnet with replay-attack prevention, ≥2 Guardian confirmations, and 60-block finality.',
+      ? `Bridge běží na ${networkLabel} s replay-attack prevencí, ≥2 Guardian potvrzeními a 60-block finalitou.`
+      : `The bridge runs on ${networkLabel} with replay-attack prevention, ≥2 Guardian confirmations, and 60-block finality.`,
   },
 ];
 
@@ -135,10 +139,12 @@ export default function BridgePage() {
   const [copied, setCopied] = useState<string | null>(null);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [memoAddr, setMemoAddr] = useState('0xYourEvmAddress');
+  const [network, setNetwork] = useState<'mainnet' | 'sepolia'>('sepolia');
 
-  const lockMintSteps = getLockMintSteps(cs);
+  const contracts = getBridgeContracts(network);
+  const lockMintSteps = getLockMintSteps(cs, contracts.network);
   const burnUnlockSteps = getBurnUnlockSteps(cs);
-  const faqs = getFaqs(cs);
+  const faqs = getFaqs(cs, contracts.network);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -177,12 +183,12 @@ export default function BridgePage() {
               </div>
               <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-400">
                 <Shield className="h-3 w-3" />
-                Base Mainnet · Replay-safe
+                {contracts.network} · Replay-safe
               </div>
             </div>
 
             <div>
-              <p className="text-sm uppercase tracking-[0.4em] text-gray-400">ZION ↔ wZION · Base Mainnet</p>
+              <p className="text-sm uppercase tracking-[0.4em] text-gray-400">ZION ↔ wZION · {contracts.network}</p>
               <h1 className="text-3xl sm:text-5xl md:text-6xl font-semibold text-gradient leading-tight">
                 {cs ? <>Bridge nativní ZION<br className="hidden sm:block" /> do EVM světa</> : <>Bridge native ZION<br className="hidden sm:block" /> to the EVM world</>}
               </h1>
@@ -193,6 +199,30 @@ export default function BridgePage() {
                 ? 'Zamkni ZION na L1 → přijmi wZION na Base. Rust relay s Guardian multi-sig, 60-block finalitou, Prometheus monitoringem a replay-attack prevencí.'
                 : 'Lock ZION on L1 → receive wZION on Base. Rust relay with Guardian multi-sig, 60-block finality, Prometheus monitoring, replay-attack prevention.'}
             </p>
+
+            {/* Network switcher */}
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                onClick={() => { setNetwork('sepolia'); switchToBaseSepolia().catch(() => {}); }}
+                className={`inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-semibold transition-colors ${network === 'sepolia' ? 'border-cyan-500/30 bg-cyan-500/10 text-cyan-400' : 'border-white/10 bg-white/5 text-gray-400 hover:bg-white/10'}`}
+              >
+                Base Sepolia Testnet
+              </button>
+              <button
+                onClick={() => { setNetwork('mainnet'); switchToBaseMainnet().catch(() => {}); }}
+                className={`inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-semibold transition-colors ${network === 'mainnet' ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400' : 'border-white/10 bg-white/5 text-gray-400 hover:bg-white/10'}`}
+              >
+                Base Mainnet
+              </button>
+            </div>
+
+            {network === 'mainnet' && (
+              <div className="rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-3 text-sm text-yellow-300">
+                {cs
+                  ? 'Varování: Mainnet kontrakty ještě nejsou nasazeny. Zobrazené adresy jsou placeholder.'
+                  : 'Warning: Mainnet contracts are not yet deployed. Addresses shown are placeholders.'}
+              </div>
+            )}
 
             {/* Live status */}
             <div className="flex flex-wrap items-center gap-4">
@@ -431,7 +461,7 @@ export default function BridgePage() {
               <p className="text-sm font-semibold text-white">Memo builder (L1 → Base)</p>
             </div>
             <div className="flex flex-col sm:flex-row gap-3 mb-4">
-              <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-gray-300 w-36">Base Mainnet</div>
+              <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-gray-300 w-36">{contracts.network}</div>
               <input type="text" value={memoAddr} onChange={(e) => setMemoAddr(e.target.value)} placeholder="0xYourEvmAddress" className="flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2 font-mono text-sm text-white placeholder:text-gray-600" />
             </div>
             <div className="flex items-center gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3">
@@ -482,7 +512,7 @@ export default function BridgePage() {
               { label: '→', arrow: true },
               { label: 'ZIONBridge.sol', sub: 'EVM contract', color: 'border-blue-500/40 bg-blue-500/10', text: 'text-blue-400' },
               { label: '→', arrow: true },
-              { label: 'wZION ERC-20', sub: 'Base Mainnet', color: 'border-emerald-500/40 bg-emerald-500/10', text: 'text-emerald-400' },
+              { label: 'wZION ERC-20', sub: contracts.network, color: 'border-emerald-500/40 bg-emerald-500/10', text: 'text-emerald-400' },
             ].map((node, i) =>
               'arrow' in node ? (
                 <div key={i} className="text-gray-600 text-3xl font-light">→</div>
@@ -512,11 +542,11 @@ export default function BridgePage() {
         {/* ── CONTRACTS ── */}
         <motion.section initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="rounded-[28px] border border-white/10 bg-white/5 p-6 md:p-8">
           <h2 className="text-xl font-semibold text-white mb-2">{cs ? 'Adresy kontraktů' : 'Contract addresses'}</h2>
-          <p className="text-sm text-gray-400 mb-6">{BRIDGE_CONTRACTS.network} · Chain ID {BRIDGE_CONTRACTS.chain_id}</p>
+          <p className="text-sm text-gray-400 mb-6">{contracts.network} · Chain ID {contracts.chain_id}</p>
           <div className="space-y-3">
             {[
-              { label: 'wZION (ERC-20)', key: 'wzion', addr: BRIDGE_CONTRACTS.wzion_address },
-              { label: 'ZIONBridge (relay escrow)', key: 'bridge', addr: BRIDGE_CONTRACTS.bridge_address },
+              { label: 'wZION (ERC-20)', key: 'wzion', addr: contracts.wzion_address },
+              { label: 'ZIONBridge (relay escrow)', key: 'bridge', addr: contracts.bridge_address },
             ].map(({ label, key, addr }) => (
               <div key={key} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-black/40 px-4 py-3">
                 <div>
@@ -527,7 +557,7 @@ export default function BridgePage() {
                   <button onClick={() => copyText(addr, key)} className="rounded-xl border border-white/10 bg-white/5 p-2 hover:bg-white/10 transition-colors">
                     <Copy className="h-4 w-4 text-gray-400" />
                   </button>
-                  <Link href={`${BRIDGE_CONTRACTS.explorer_base}${addr}`} target="_blank" rel="noreferrer" className="rounded-xl border border-white/10 bg-white/5 p-2 hover:bg-white/10 transition-colors">
+                  <Link href={`${contracts.explorer_base}${addr}`} target="_blank" rel="noreferrer" className="rounded-xl border border-white/10 bg-white/5 p-2 hover:bg-white/10 transition-colors">
                     <ExternalLink className="h-4 w-4 text-gray-400" />
                   </Link>
                 </div>
@@ -621,7 +651,7 @@ export default function BridgePage() {
           <div className="grid gap-4 md:grid-cols-3">
             {[
               { label: cs ? 'Dokumentace' : 'Architecture docs', href: '/docs', desc: cs ? 'Relay design, Guardian flow, bezpečnostní model.' : 'Relay design, Guardian flow, security model.' },
-              { label: 'wZION (BaseScan)', href: `${BRIDGE_CONTRACTS.explorer_base}${BRIDGE_CONTRACTS.wzion_address}`, desc: cs ? 'Kód wZION kontraktu na Base Mainnet.' : 'wZION contract source on Base Mainnet.', external: true },
+              { label: 'wZION (BaseScan)', href: `${contracts.explorer_base}${contracts.wzion_address}`, desc: cs ? `Kód wZION kontraktu na ${contracts.network}.` : `wZION contract source on ${contracts.network}.`, external: true },
               { label: 'DeFi Hub', href: '/defi', desc: cs ? 'Swap wZION/ETH, portfolio, pool cena.' : 'Swap wZION/ETH, portfolio, pool price.' },
             ].map((res) => (
               <Link key={res.label} href={res.href} target={'external' in res ? '_blank' : undefined} rel={'external' in res ? 'noreferrer' : undefined} className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-black/40 p-5 hover:bg-white/5 transition-colors group">
