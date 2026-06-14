@@ -1,11 +1,11 @@
 # Hiran v2.3 Agent — Master Plan
 
-> Cíl: Po dokončení tréninku mít Hiran v2.3 jako lokální AI interface,
-> s RTX 3090 zapůjčenou z Vast AI přes reverzní SSH tunel — **bez přenosu 20 GB GGUF.**
+> Cíl: Po dokončení tréninku mít Hiran v2.3 jako lokální AI interface
+> přes RTX 3090 z Vast AI — **bez zbytečného přenosu 20 GB.**
 
 ---
 
-## Přehled architektury
+## Přehled architektury (doporučená varianta)
 
 ```
 ┌────────────────────────────────────────────────────────────┐
@@ -15,10 +15,10 @@
 │       │                                   │                │
 │       │                          localhost:8080            │
 │       │                                   │                │
-│       └── SSH reverse tunnel ─────────────┘                │
+│       └── SSH local-forward tunnel ───────┘                │
 │                    │                                       │
 └────────────────────┼───────────────────────────────────────┘
-                     │ SSH port-forward
+                     │ SSH -L 8080:localhost:8080
                      │
 ┌────────────────────┼───────────────────────────────────────┐
 │  Vast AI — RTX 3090 instance                               │
@@ -26,13 +26,37 @@
 │  llama-server / llama.cpp ◄── GGUF model (20 GB on disk)  │
 │       (localhost:8080)                                     │
 │                                                            │
-│  GGUF soubor zůstává na serveru — žádný přenos!            │
+│  GGUF se přenese A100 → RTX 3090 přímo (Vast síť)        │
+│  Lokál se jen připojuje přes API — žádný download!        │
 └────────────────────────────────────────────────────────────┘
 ```
 
-**Klíčová myšlenka:** GGUF model (20 GB) zůstane na Vast AI serveru. Přes reverzní SSH
-tunel přesměrujeme `localhost:8080` z RTX 3090 instance na lokální port. `zion-agent`
-pak mluví s `http://localhost:8080/v1` jako by byl model lokální.
+**Klíčová myšlenka:** GGUF model (20 GB) se přenese **přímo mezi instancemi Vast AI**
+(A100 tréninková → RTX 3090 inference) — rychlé, protože obě jsou ve stejné síti.
+Lokální PC se pak připojuje jen přes SSH **local-forward** tunel (`-L`) na API
+endpoint (`http://localhost:8080/v1`). Žádný 20 GB download/upload na lokál!
+
+### Proč NE reverse tunel (čtení modelu z lokálu)
+
+> **Nápad:** "Stáhnu GGUF lokálně, půjčím RTX 3090, ať si ho načte z mého PC přes tunel."
+
+**Problém:** llama-server musí načíst celý 20 GB model do VRAM. Přes SSH tunel přes
+internet by to trvalo **hodiny** (propustnost ~10-50 MB/s) a každý token by šel přes
+síť s latencí 50-100 ms. Inference by byla pomalejší než na CPU lokálně.
+
+**Reverse tunel (`-R`) je vhodný jen pro:**
+- Exponování lokálního API na veřejný port (např. pro webhooky)
+- Krátké přenosy dat, ne 20 GB soubory
+
+**Správné řešení pro "bez přenosu 20 GB":**
+
+| Varianta | GGUF umístění | Přenos 20 GB? | Jak se lokál připojí |
+|----------|---------------|---------------|----------------------|
+| **A (doporučená)** | RTX 3090 (Vast) | **Ne** — A100→RTX přímo | SSH `-L` tunel na API |
+| **B (záloha)** | Lokál + lokální inference | Ano — jednou stáhnout | Přímo lokální port |
+| **C (nevhodná)** | Lokál, inference na RTX | Ne, ale... | SSH `-R` + čtení 20 GB přes síť ❌ |
+
+**Tento plán používá variantu A** — GGUF zůstává na cloudu, lokál mluví přes tunel.
 
 ---
 
@@ -118,47 +142,84 @@ md5sum /workspace/hiran-v2.3-final-q5.gguf
 
 ---
 
-## Fáze 2 — Nová RTX 3090 instance (inference server)
+## Fáze 2 — Přenos GGUF na RTX 3090 (server-to-server)
 
-### 2.1 Proč nová instance, ne ta tréninková?
+### 2.1 Proč ne stáhnout na lokál a pak uploadovat?
 
-- Tréninková A100 = drahá (~$2/h), není potřeba po tréninku
-- RTX 3090 = dostačuje pro inference 32B q5_k_m (~24 GB VRAM, ~$0.30/h)
-- Model přeneseme přes SSH `scp` **pouze jednou** z A100 → RTX 3090
+- **Download 20 GB na lokál** = 20-40 min (záleží na připojení)
+- **Upload 20 GB z lokálu na RTX 3090** = dalších 20-40 min
+- **Server-to-server** (A100 → RTX 3090 ve Vast síti) = **2-5 min** (1 Gbps+ backbone)
 
-### 2.2 Přenos GGUF z A100 na RTX 3090 (server-to-server)
+### 2.2 Spuštění RTX 3090 instance na Vast AI
 
-Na Vast AI lze spustit dvě instance a přenést soubor přímo bez downloadu:
+1. Vast dashboard → "Create Instance"
+2. Vyber RTX 3090 (24 GB VRAM)
+3. SSH port si poznamenej (např. `12345`)
+4. Spusť instanci, počkej na boot
 
+### 2.3 Přenos GGUF z A100 na RTX 3090 (přímo)
+
+**Metoda A: scp server-to-server (nejrychlejší)**
+
+Na A100 tréninkové instanci:
 ```bash
-# Na A100 serveru (zdrojová instance):
-# Zjistíme SSH přístup k RTX 3090 instanci z Vast dashboardu
-# Pak: server-to-server copy
+# Nejdřív ověř že GGUF existuje
+ls -lh /workspace/hiran-v2.3-final-q5.gguf
 
-scp -o StrictHostKeyChecking=no \
+# Přenos přímo na RTX 3090
+# Zjisti SSH host RTX 3090 z Vast dashboardu (např. ssh2.vast.ai:12345)
+scp -P 12345 -o StrictHostKeyChecking=no \
   /workspace/hiran-v2.3-final-q5.gguf \
-  root@<rtx3090-host>:/workspace/hiran-v2.3-final-q5.gguf
+  root@ssh2.vast.ai:/workspace/hiran-v2.3-final-q5.gguf
 ```
 
-Alternativně: wget/rsync přes HTTP server na A100:
+**Metoda B: HTTP server na A100 + wget na RTX**
 ```bash
-# A100: spustí jednoduchý HTTP server
-cd /workspace && python3 -m http.server 9999
+# Na A100:
+cd /workspace && nohup python3 -m http.server 9999 &
 
-# RTX 3090: stáhne
-wget http://<a100-ip>:9999/hiran-v2.3-final-q5.gguf
+# Na RTX 3090:
+wget http://<a100-internal-ip>:9999/hiran-v2.3-final-q5.gguf
 ```
 
-### 2.3 Nastavení llama-server na RTX 3090
+**Metoda C: rsync (pokud dostupné)**
+```bash
+rsync -avz --progress \
+  /workspace/hiran-v2.3-final-q5.gguf \
+  root@ssh2.vast.ai:/workspace/
+```
+
+> ⚠️ **Důležité:** Nezapomeň na A100 instanci ukončit HTTP server po přenosu:
+> `pkill -f "python3 -m http.server"`
+
+### 2.4 Ověření přenosu
+
+```bash
+# Na RTX 3090 instanci:
+ls -lh /workspace/hiran-v2.3-final-q5.gguf
+md5sum /workspace/hiran-v2.3-final-q5.gguf
+
+# Srovnej s A100:
+# ssh root@ssh1.vast.ai -p 31384 "md5sum /workspace/hiran-v2.3-final-q5.gguf"
+```
+
+### 2.5 A100 instance může být nyní bezpečně ukončena
+
+```bash
+# Na A100 — ověř že máme vše:
+# - Final checkpoint stažen lokálně ✅
+# - GGUF přenesen na RTX 3090 ✅
+# - MD5 souhlasí ✅
+
+# Pak ukonči z Vast dashboardu (nebo: shutdown -h now)
+```
+
+### 2.6 Nastavení llama-server na RTX 3090
 
 ```bash
 # Na RTX 3090 instanci (Vast AI)
-pip install llama-cpp-python --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cu121
-
-# Nebo kompilace z llama.cpp
-cd /workspace
-git clone --depth 1 https://github.com/ggerganov/llama.cpp
-cd llama.cpp && make LLAMA_CUDA=1 -j$(nproc)
+cd /workspace/llama.cpp && make LLAMA_CUDA=1 -j$(nproc) || \
+  (git clone --depth 1 https://github.com/ggerganov/llama.cpp && cd llama.cpp && make LLAMA_CUDA=1 -j$(nproc))
 
 # Spuštění inference serveru
 ./llama-server \
@@ -173,22 +234,23 @@ cd llama.cpp && make LLAMA_CUDA=1 -j$(nproc)
 
 ---
 
-## Fáze 3 — SSH Reverzní tunel
+## Fáze 3 — SSH Local-Forward Tunel
 
 ### 3.1 Topologie
 
 ```
-Lokál:8080 ←──SSH tunel──→ RTX3090:8080 (llama-server)
+Lokál:8080 ←──SSH -L──→ RTX3090:8080 (llama-server)
      ↑
 zion-agent (http://localhost:8080/v1)
 ```
 
-Lokální port `8080` se zobrazuje jako `RTX3090:8080` díky SSH reverse tunnel.
+Lokální port `8080` je přesměrován na `RTX3090:8080` díky SSH **local-forward** (`-L`).
+Lokál mluví s `localhost:8080`, provoz jde šifrovaně SSH tunelem na server.
 
 ### 3.2 Spuštění tunelu (Windows PowerShell)
 
 ```powershell
-# Jednorázově
+# Jednorázově (local-forward: lokál:8080 → server:8080)
 ssh -N -L 8080:localhost:8080 -p <vast-ssh-port> -i $env:USERPROFILE\.ssh\vast\hiran_v2.4_key root@<vast-rtx3090-host>
 
 # Na pozadí (PowerShell job)
@@ -196,7 +258,7 @@ $tunnel = Start-Job -ScriptBlock {
     ssh -N -L 8080:localhost:8080 -p 12345 -i "$env:USERPROFILE\.ssh\vast\hiran_v2.4_key" root@ssh2.vast.ai
 }
 
-# Ověření
+# Ověření — llama-server na RTX 3090 odpovídá přes tunel
 Invoke-RestMethod http://localhost:8080/health
 ```
 
