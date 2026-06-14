@@ -1,4 +1,5 @@
 pub mod agent;
+pub mod atomic_swap;
 pub mod bridge;
 pub mod completions;
 pub mod compose;

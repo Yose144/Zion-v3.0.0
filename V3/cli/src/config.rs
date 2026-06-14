@@ -34,6 +34,8 @@ pub struct Config {
     #[serde(default)]
     pub swap: SwapConfig,
     #[serde(default)]
+    pub atomic_swap: AtomicSwapConfig,
+    #[serde(default)]
     pub cli: CliConfig,
     #[serde(default)]
     pub topology: TopologyConfig,
@@ -122,6 +124,11 @@ pub struct DaoConfig {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SwapConfig {
+    pub port: u16,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AtomicSwapConfig {
     pub port: u16,
 }
 
@@ -265,6 +272,12 @@ impl Default for SwapConfig {
     }
 }
 
+impl Default for AtomicSwapConfig {
+    fn default() -> Self {
+        Self { port: 8452 }
+    }
+}
+
 impl Default for Config {
     fn default() -> Self {
         Self {
@@ -277,6 +290,7 @@ impl Default for Config {
             bridge: BridgeConfig::default(),
             dao: DaoConfig::default(),
             swap: SwapConfig::default(),
+            atomic_swap: AtomicSwapConfig::default(),
             cli: CliConfig::default(),
             topology: TopologyConfig::default(),
         }
