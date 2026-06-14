@@ -487,6 +487,103 @@ pub async fn watch(cfg: &AgentConfig, handle: TunnelHandle) -> Result<()>
 
 ---
 
+## Fáze 5 — Devin-style TUI Agent (nově implementováno)
+
+### 5.1 Přehled
+
+`zion-agent` nyní funguje jako **plně autonomní terminálový agent** podobný Devin CLI:
+
+- **Interaktivní TUI** (ratatui) — rozdělené okno: chat | aktivita | input | status bar
+- **Streaming LLM** — real-time SSE (Server-Sent Events) pro okamžitou zpětnou vazbu
+- **Slash commands** — `/mode`, `/continue`, `/handoff`, `/new`, `/clear`, `/help`
+- **Permission modes** — normal / accept-edits / bypass / plan / ask
+- **Persistent sessions** — SQLite DB (`~/.zion/agent-sessions.db`)
+- **Self-correction** — build selže → agent se pokusí opravit (max 3 retries)
+- **Coding assistant** — auto build/test/lint po každé editaci
+
+### 5.2 Spuštění
+
+```bash
+# Interaktivní TUI session (defaultní chování)
+zion-agent session
+
+# Nebo s custom config:
+cd ZION_OS/agent-cli
+cargo run --bin zion-agent-cli -- session
+
+# Připojení k lokálnímu Hiran v2.2 (před dokončením v2.3)
+# llama-server.exe běží na http://127.0.0.1:8002
+# stačí upravit api_url v ~/.zion/agent-cli.toml:
+#   api_url = "http://127.0.0.1:8002/v1"
+```
+
+### 5.3 TUI rozhraní
+
+```
+┌────────────────────────────────────────┐
+│ Chat                                   │
+│ You: Refactor pool validation          │
+│ Agent: Reading file...                 │
+│ Tool: read_file → OK                   │
+│ Agent: Editing...                      │
+│ Tool: edit_file → OK                   │
+│ Tool: build → Compiling... OK          │
+│                                        │
+├────────────────────────────────────────┤
+│ Activity: build successful             │
+├────────────────────────────────────────┤
+│ Prompt (Enter to send, Esc to exit)   │
+│ > refactor pool to use enum            │
+├────────────────────────────────────────┤
+│ Mode: Normal │ Status: Idle │ Model:  │
+└────────────────────────────────────────┘
+```
+
+### 5.4 Slash commands v session
+
+| Command | Účel |
+|---------|------|
+| `/mode [normal\|accept-edits\|bypass\|plan\|ask]` | Změna permission módu |
+| `/continue` | Pokračování poslední session z DB |
+| `/handoff [task]` | Předání na cloud agenta |
+| `/new` | Nová session |
+| `/clear` | Smazat chat historii |
+| `/help` | Nápověda |
+
+### 5.5 Permission módy
+
+| Mód | Co se auto-approve | Co vyžaduje schválení |
+|-----|-------------------|------------------------|
+| `normal` | read-only nástroje | file edits, shell commands |
+| `accept-edits` | file edits | shell commands, git push |
+| `bypass` | vše kromě Blocked | nic (pozor!) |
+| `plan` | nic (read-only) | všechny změny zakázány |
+| `ask` | nic (one-shot) | všechny změny zakázány |
+
+### 5.6 Architektura komponent
+
+```
+┌─────────────────────────────────────────────────────┐
+│  TUI App (ratatui)                                  │
+│  ├── Chat panel (messages)                          │
+│  ├── Activity panel (thinking / tool calls)          │
+│  ├── Input field (prompt)                           │
+│  └── Status bar (mode / model / steps)             │
+├─────────────────────────────────────────────────────┤
+│  Event Loop (tokio::select!)                        │
+│  ├── Keyboard events (crossterm)                    │
+│  ├── LLM SSE stream (futures::StreamExt)            │
+│  └── Tool execution (async)                        │
+├─────────────────────────────────────────────────────┤
+│  SessionContext + AgentMemory (SQLite)               │
+│  ├── Persistent messages                             │
+│  ├── Step / error / retry counters                   │
+│  └── Session resume (/continue)                      │
+└─────────────────────────────────────────────────────┘
+```
+
+---
+
 ## Soubory v repo
 
 | Soubor | Stav | Účel |
@@ -496,9 +593,17 @@ pub async fn watch(cfg: &AgentConfig, handle: TunnelHandle) -> Result<()>
 | `HiranV2.3/scripts/setup-lmstudio.ps1` | ✅ hotovo | Download + LM Studio |
 | `HiranV2.3/HIRAN_V23_LMSTUDIO_GUIDE.md` | ✅ hotovo | Detailní návod |
 | `HIRAN_CLI_PLAN.md` | ✅ hotovo | CLI design doc |
-| `ZION_OS/agent-cli/src/model_ops.rs` | 🔧 partial | Rust model operations |
-| `ZION_OS/agent-cli/src/config.rs` | 🔧 partial | Agent konfigurace |
-| `ZION_OS/agent-cli/src/tunnel.rs` | ⬜ TODO | SSH tunel management |
+| `ZION_OS/agent-cli/src/tui/app.rs` | ✅ hotovo | TUI app state + render |
+| `ZION_OS/agent-cli/src/tui/mod.rs` | ✅ hotovo | TUI wrapper (crossterm) |
+| `ZION_OS/agent-cli/src/session/interactive.rs` | ✅ hotovo | Devin-style event loop |
+| `ZION_OS/agent-cli/src/llm/stream.rs` | ✅ hotovo | SSE streaming client |
+| `ZION_OS/agent-cli/src/memory/store.rs` | ✅ hotovo | SQLite persistent sessions |
+| `ZION_OS/agent-cli/src/safety/mod.rs` | ✅ hotovo | Risk levels + auto-approve |
+| `ZION_OS/agent-cli/src/agent_loop.rs` | ✅ hotovo | Self-correction + coding checks |
+| `ZION_OS/agent-cli/src/config.rs` | ✅ hotovo | CodingConfig + defaults |
+| `ZION_OS/agent-cli/src/main.rs` | ✅ hotovo | Commands + TUI wiring |
+| `ZION_OS/agent-cli/ZION_AGENT_SETUP.md` | ✅ hotovo | Setup guide |
+| `.zion/agent-cli.toml` | ✅ hotovo | Repo konfigurace |
 
 ---
 
