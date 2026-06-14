@@ -666,30 +666,49 @@ function switchView(view) {
       const refreshBtn = document.getElementById('refresh-balance-btn');
       if (refreshBtn && (config?.wallet || '').trim()) refreshBtn.click();
     }, 300);
-    // Start periodic balance auto-refresh while wallet tab is open (every 30s)
-    _startBalanceAutoRefresh();
-  } else {
-    // Stop auto-refresh when leaving wallet tab
-    _stopBalanceAutoRefresh();
   }
 }
 
-// Periodic balance auto-refresh (runs while wallet tab is open)
+// Periodic balance auto-refresh (runs globally every 30s, not just on wallet tab)
 let _balanceAutoRefreshTimer = null;
 function _startBalanceAutoRefresh() {
   _stopBalanceAutoRefresh();
   _balanceAutoRefreshTimer = setInterval(() => {
-    if (currentView !== 'wallet') { _stopBalanceAutoRefresh(); return; }
-    if (document.hidden) return;
-    const refreshBtn = document.getElementById('refresh-balance-btn');
+    if (document.hidden) return; // Skip when browser tab is hidden
     const addr = (config?.wallet || '').trim();
-    if (refreshBtn && addr) refreshBtn.click();
-  }, 45000); // 45s interval
+    if (!addr) return;
+    // Trigger balance refresh via the refresh button if available, otherwise call directly
+    const refreshBtn = document.getElementById('refresh-balance-btn');
+    if (refreshBtn) {
+      refreshBtn.click();
+    } else {
+      // Fallback: call wallet-get-balance directly if button not in DOM yet
+      window.electronAPI.walletGetBalance({ address: addr }).then(r => {
+        if (r?.success) {
+          _lastBalanceResult = r;
+          const balEl = document.getElementById('wallet-balance');
+          if (balEl) balEl.textContent = (r.balance_zion || 0).toLocaleString('en-US', {maximumFractionDigits: 8}) + ' Z';
+        }
+      }).catch(() => {});
+    }
+  }, 30000); // 30s interval
 }
 function _stopBalanceAutoRefresh() {
   if (_balanceAutoRefreshTimer) { clearInterval(_balanceAutoRefreshTimer); _balanceAutoRefreshTimer = null; }
 }
 window.addEventListener('beforeunload', _stopBalanceAutoRefresh);
+// Start background refresh on app load (if wallet configured)
+let _balanceInitTimer = null;
+function _initBackgroundBalanceRefresh() {
+  const addr = (config?.wallet || '').trim();
+  if (addr) {
+    _startBalanceAutoRefresh();
+  }
+}
+window.addEventListener('DOMContentLoaded', () => {
+  // Delay to ensure config is loaded
+  setTimeout(_initBackgroundBalanceRefresh, 2000);
+});
 
 // Control setup
 function setupControls() {
