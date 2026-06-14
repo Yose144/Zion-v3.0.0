@@ -13,6 +13,9 @@ pub enum WarpError {
     #[error("Chain adapter error ({chain}): {reason}")]
     AdapterError { chain: String, reason: String },
 
+    #[error("Chain adapter not yet implemented: {0}")]
+    AdapterNotImplemented(String),
+
     #[error("Finality not reached for chain {chain}: {confirmations}/{required}")]
     FinalityNotReached {
         chain: String,
