@@ -193,6 +193,27 @@ impl SessionStore {
         )?;
         Ok(())
     }
+
+    pub fn get_last_session(&self) -> Result<Option<SessionSummary>> {
+        let mut stmt = self.conn.prepare(
+            "SELECT id, task, status, step_count, max_steps, error_count, updated_at
+             FROM sessions ORDER BY updated_at DESC LIMIT 1",
+        )?;
+        let mut rows = stmt.query([])?;
+        if let Some(row) = rows.next()? {
+            Ok(Some(SessionSummary {
+                id: row.get(0)?,
+                task: row.get(1)?,
+                status: row.get(2)?,
+                step_count: row.get(3)?,
+                max_steps: row.get(4)?,
+                error_count: row.get(5)?,
+                updated_at: row.get(6)?,
+            }))
+        } else {
+            Ok(None)
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
