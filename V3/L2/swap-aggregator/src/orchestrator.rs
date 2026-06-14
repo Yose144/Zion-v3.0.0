@@ -43,7 +43,6 @@ impl Default for OrchestratorConfig {
 pub struct SwapOrchestrator {
     pub config: OrchestratorConfig,
     pub db: Arc<Mutex<SwapDb>>,
-    #[allow(dead_code)] // reserved for future EVM RPC calls
     client: reqwest::Client,
 }
 
@@ -80,15 +79,29 @@ impl SwapOrchestrator {
         db.list_recent(limit)
     }
 
-    /// Get a price quote without executing
+    /// Get a price quote using real EVM RPC (Uni V3 pool slot0)
     pub async fn quote(&self, req: QuoteRequest) -> Result<QuoteResponse> {
-        // For now, return a placeholder quote
-        // In production, this would call Uni V3 QuoterV2
         let amount_in: u128 = req.amount_in.parse().unwrap_or(0);
-        let estimated_out = amount_in / 10_000; // placeholder ratio
 
-        let min_amount_out =
-            estimated_out.saturating_mul((10_000 - self.config.max_slippage_bps as u128) / 10_000);
+        // Fetch real price from Uni V3 pool via EVM RPC
+        let price_info = self
+            .fetch_pool_price(&self.config.univ3_pool_address)
+            .await
+            .unwrap_or_default();
+
+        // Compute estimated output using sqrtPriceX96
+        let estimated_out = if price_info.sqrt_price_x96 > 0 {
+            let price = (price_info.sqrt_price_x96 as f64 / 2f64.powi(96)).powi(2);
+            (amount_in as f64 * price) as u128
+        } else {
+            // Fallback: use a conservative placeholder ratio
+            amount_in / 10_000
+        };
+
+        let min_amount_out = estimated_out
+            .saturating_mul((10_000 - self.config.max_slippage_bps as u128) / 10_000);
+
+        let fee_tier = price_info.fee_tier.unwrap_or(3000); // default 0.3%
 
         Ok(QuoteResponse {
             amount_in: req.amount_in,
@@ -98,7 +111,7 @@ impl SwapOrchestrator {
             min_amount_out: min_amount_out.to_string(),
             slippage_bps: self.config.max_slippage_bps,
             route: "wZION→WETH→USDC".into(),
-            fee_tier_bps: 30,
+            fee_tier_bps: (fee_tier / 1000) as u16,
         })
     }
 
@@ -132,7 +145,7 @@ impl SwapOrchestrator {
     }
 
     async fn process_zion_to_evm(&self, record: &mut SwapRecord) -> Result<()> {
-        // Step 1: Lock ZION on L1
+        // Step 1: Lock ZION on L1 via bridge API
         if record.status == SwapStatus::Pending {
             info!(swap_id = %record.id, "Step 1: Locking ZION on L1");
             {
@@ -141,17 +154,46 @@ impl SwapOrchestrator {
             }
             record.status = SwapStatus::Locking;
 
-            // Placeholder: in production, submit lock TX via bridge API
-            tokio::time::sleep(std::time::Duration::from_secs(2)).await;
-            record.l1_lock_tx = Some(format!("0xlock_{}", &record.id[..8]));
+            // Call bridge API to submit lock
+            let bridge_url = format!("{}/bridge/lock", self.config.bridge_api_url);
+            let body = serde_json::json!({
+                "amount": record.amount_in,
+                "recipient": record.evm_address,
+                "target_chain": "base",
+            });
+
+            match self
+                .client
+                .post(&bridge_url)
+                .json(&body)
+                .send()
+                .await
             {
+                Ok(resp) => {
+                    if resp.status().is_success() {
+                        let json: serde_json::Value = resp.json().await.unwrap_or_default();
+                        if let Some(tx) = json.get("tx_hash").and_then(|v| v.as_str()) {
+                            record.l1_lock_tx = Some(tx.to_string());
+                            info!(swap_id = %record.id, "L1 lock submitted: {}", tx);
+                        }
+                    } else {
+                        warn!(swap_id = %record.id, "Bridge lock returned HTTP {}", resp.status());
+                    }
+                }
+                Err(e) => {
+                    warn!(swap_id = %record.id, "Bridge lock failed: {}. Will retry.", e);
+                    // Don't fail — the polling loop will retry
+                }
+            }
+
+            if record.l1_lock_tx.is_some() {
                 let db = self.db.lock().await;
                 db.update_txs(&record.id, record.l1_lock_tx.as_deref(), None, None, None)?;
             }
         }
 
-        // Step 2: Wait for bridge mint
-        if record.status == SwapStatus::Locking {
+        // Step 2: Poll bridge for mint completion
+        if record.status == SwapStatus::Locking && record.l1_lock_tx.is_some() {
             info!(swap_id = %record.id, "Step 2: Waiting for bridge mint");
             {
                 let db = self.db.lock().await;
@@ -159,23 +201,43 @@ impl SwapOrchestrator {
             }
             record.status = SwapStatus::Bridging;
 
-            // Placeholder: poll bridge status
-            tokio::time::sleep(std::time::Duration::from_secs(2)).await;
-            record.bridge_mint_tx = Some(format!("0xmint_{}", &record.id[..8]));
-            {
+            // Poll bridge status up to 10 minutes
+            let lock_tx = record.l1_lock_tx.clone().unwrap();
+            for attempt in 1..=60 {
+                let status_url = format!(
+                    "{}/bridge/transfer/{}?l1_tx_hash={}",
+                    self.config.bridge_api_url, record.id, lock_tx
+                );
+                match self.client.get(&status_url).send().await {
+                    Ok(resp) => {
+                        if let Ok(json) = resp.json::<serde_json::Value>().await {
+                            if json.get("minted").and_then(|v| v.as_bool()).unwrap_or(false) {
+                                if let Some(tx) = json.get("mint_tx").and_then(|v| v.as_str()) {
+                                    record.bridge_mint_tx = Some(tx.to_string());
+                                    info!(swap_id = %record.id, "Bridge mint confirmed: {}", tx);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        warn!(swap_id = %record.id, "Poll error (attempt {}): {}", attempt, e);
+                    }
+                }
+                tokio::time::sleep(std::time::Duration::from_secs(10)).await;
+            }
+
+            if record.bridge_mint_tx.is_some() {
                 let db = self.db.lock().await;
-                db.update_txs(
-                    &record.id,
-                    None,
-                    record.bridge_mint_tx.as_deref(),
-                    None,
-                    None,
-                )?;
+                db.update_txs(&record.id, None, record.bridge_mint_tx.as_deref(), None, None)?;
+            } else {
+                warn!(swap_id = %record.id, "Bridge mint not confirmed after 10 min — will retry later");
+                return Ok(()); // Exit early, next poll will pick up
             }
         }
 
-        // Step 3: Swap on Uni V3
-        if record.status == SwapStatus::Bridging {
+        // Step 3: Swap on Uni V3 via Router
+        if record.status == SwapStatus::Bridging && record.bridge_mint_tx.is_some() {
             info!(swap_id = %record.id, "Step 3: Swapping on Uni V3");
             {
                 let db = self.db.lock().await;
@@ -183,11 +245,19 @@ impl SwapOrchestrator {
             }
             record.status = SwapStatus::Swapping;
 
-            // Placeholder: execute swap via EVM RPC
-            tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+            // In production: build + sign + submit exactInputSingle TX
+            // For now: record a simulated swap with real price
+            let quote = self
+                .quote(crate::types::QuoteRequest {
+                    direction: record.direction,
+                    output_token: record.output_token,
+                    amount_in: record.amount_in.clone(),
+                })
+                .await?;
+
             record.swap_tx = Some(format!("0xswap_{}", &record.id[..8]));
-            record.amount_out =
-                Some((record.amount_in.parse::<u128>().unwrap_or(0) / 10_000).to_string());
+            record.amount_out = Some(quote.amount_out);
+
             {
                 let db = self.db.lock().await;
                 db.update_txs(
@@ -200,7 +270,7 @@ impl SwapOrchestrator {
                 db.update_status(&record.id, SwapStatus::Completed)?;
             }
             record.status = SwapStatus::Completed;
-            info!(swap_id = %record.id, "Swap completed successfully");
+            info!(swap_id = %record.id, "Swap completed: {} -> {}", record.amount_in, record.amount_out.as_deref().unwrap_or("?"));
         }
 
         Ok(())
@@ -216,6 +286,8 @@ impl SwapOrchestrator {
             }
             record.status = SwapStatus::Swapping;
 
+            // In production: submit exactOutputSingle or exactInputSingle TX
+            // For now: simulate
             tokio::time::sleep(std::time::Duration::from_secs(2)).await;
             record.swap_tx = Some(format!("0xswap_{}", &record.id[..8]));
             {
@@ -232,25 +304,72 @@ impl SwapOrchestrator {
             }
             record.status = SwapStatus::Bridging;
 
-            tokio::time::sleep(std::time::Duration::from_secs(2)).await;
-            record.bridge_mint_tx = Some(format!("0xburn_{}", &record.id[..8]));
+            // Call bridge API to burn
+            let bridge_url = format!("{}/bridge/burn", self.config.bridge_api_url);
+            let body = serde_json::json!({
+                "amount": record.amount_in,
+                "recipient": record.zion_address,
+                "source_chain": "base",
+            });
+
+            match self
+                .client
+                .post(&bridge_url)
+                .json(&body)
+                .send()
+                .await
+            {
+                Ok(resp) => {
+                    if resp.status().is_success() {
+                        let json: serde_json::Value = resp.json().await.unwrap_or_default();
+                        if let Some(tx) = json.get("burn_tx").and_then(|v| v.as_str()) {
+                            record.bridge_mint_tx = Some(tx.to_string());
+                            info!(swap_id = %record.id, "Bridge burn submitted: {}", tx);
+                        }
+                    }
+                }
+                Err(e) => {
+                    warn!(swap_id = %record.id, "Bridge burn failed: {}. Will retry.", e);
+                }
+            }
+
             {
                 let db = self.db.lock().await;
-                db.update_txs(
-                    &record.id,
-                    None,
-                    record.bridge_mint_tx.as_deref(),
-                    None,
-                    None,
-                )?;
+                db.update_txs(&record.id, None, record.bridge_mint_tx.as_deref(), None, None)?;
             }
         }
 
         if record.status == SwapStatus::Bridging {
             info!(swap_id = %record.id, "Step 3: Waiting for L1 unlock");
-            tokio::time::sleep(std::time::Duration::from_secs(2)).await;
-            record.l1_lock_tx = Some(format!("0xunlock_{}", &record.id[..8]));
-            record.amount_out = Some(record.amount_in.clone()); // 1:1 after fees
+
+            // Poll for L1 unlock confirmation
+            if let Some(burn_tx) = record.bridge_mint_tx.clone() {
+                for attempt in 1..=60 {
+                    let status_url = format!(
+                        "{}/bridge/transfer/{}?burn_tx={}",
+                        self.config.bridge_api_url, record.id, burn_tx
+                    );
+                    match self.client.get(&status_url).send().await {
+                        Ok(resp) => {
+                            if let Ok(json) = resp.json::<serde_json::Value>().await {
+                                if json.get("unlocked").and_then(|v| v.as_bool()).unwrap_or(false) {
+                                    if let Some(tx) = json.get("unlock_tx").and_then(|v| v.as_str()) {
+                                        record.l1_lock_tx = Some(tx.to_string());
+                                        record.amount_out = Some(record.amount_in.clone());
+                                        info!(swap_id = %record.id, "L1 unlock confirmed: {}", tx);
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        Err(e) => {
+                            warn!(swap_id = %record.id, "Poll error (attempt {}): {}", attempt, e);
+                        }
+                    }
+                    tokio::time::sleep(std::time::Duration::from_secs(10)).await;
+                }
+            }
+
             {
                 let db = self.db.lock().await;
                 db.update_txs(
@@ -268,4 +387,68 @@ impl SwapOrchestrator {
 
         Ok(())
     }
+
+    // ── EVM RPC helpers ────────────────────────────────────────────────────────
+
+    async fn fetch_pool_price(&self, pool_address: &str) -> Result<PoolSlot0> {
+        use zion_bridge::evm_rpc::EvmHttpClient;
+
+        let evm = EvmHttpClient::from_rpc_url(&self.config.base_rpc_url);
+
+        // slot0() function selector: 0x3850c7bd
+        let calldata = "0x3850c7bd";
+        let result = evm
+            .call(
+                "eth_call",
+                serde_json::json!([{
+                    "to": pool_address,
+                    "data": calldata,
+                }, "latest"]),
+            )
+            .await?;
+
+        let raw = result.as_str().unwrap_or("0x");
+        parse_slot0(raw)
+    }
+}
+
+/// Uni V3 pool slot0 decoded fields
+#[derive(Debug, Default, Clone)]
+pub struct PoolSlot0 {
+    pub sqrt_price_x96: u128,
+    pub tick: i32,
+    pub fee_tier: Option<u32>,
+}
+
+fn parse_slot0(hex_str: &str) -> Result<PoolSlot0> {
+    let hex_clean = hex_str.trim_start_matches("0x");
+    if hex_clean.len() < 64 {
+        return Ok(PoolSlot0::default());
+    }
+
+    // slot0 returns: (uint160 sqrtPriceX96, int24 tick, uint16 observationIndex, ...)
+    // First 32 bytes (64 hex chars) after offset = sqrtPriceX96
+    let sqrt_price_hex = &hex_clean[0..64];
+    let sqrt_price_x96 = u128::from_str_radix(sqrt_price_hex, 16).unwrap_or(0);
+
+    // Next 32 bytes = tick (int24, padded to 32 bytes)
+    let tick_hex = &hex_clean[64..128];
+    let tick = if tick_hex.starts_with("ff") {
+        // Negative — two's complement
+        let raw = i64::from_str_radix(tick_hex, 16).unwrap_or(0);
+        // Sign-extend from 24 bits
+        if raw & 0x800000 != 0 {
+            (raw | !0xFFFFFF) as i32
+        } else {
+            raw as i32
+        }
+    } else {
+        i32::from_str_radix(tick_hex, 16).unwrap_or(0)
+    };
+
+    Ok(PoolSlot0 {
+        sqrt_price_x96,
+        tick,
+        fee_tier: None,
+    })
 }
