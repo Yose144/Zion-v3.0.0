@@ -190,6 +190,7 @@ function setCardLive(id, ok){
 }
 
 async function refreshAll(){
+  console.log('[REFRESH] Starting refreshAll...');
   try {
     const [s, cl, al, blk, res] = await Promise.allSettled([
       apiFetch('/api/status'),
@@ -198,6 +199,7 @@ async function refreshAll(){
       apiFetch('/api/blockers'),
       apiFetch('/api/resources').catch(() => ({})),
     ]);
+    console.log('[REFRESH] APIs returned:', {status: s.status, checklist: cl.status, alerts: al.status, blockers: blk.status, resources: res.status});
     // Unwrap settled results
     const unwrap = (p) => p.status === 'fulfilled' ? p.value : {};
     const statusData = unwrap(s);
@@ -208,8 +210,10 @@ async function refreshAll(){
     
     // Store current status for topology-aware functions
     window.currentStatus = statusData;
+    console.log('[REFRESH] statusData topology:', statusData.topology, 'node1 height:', statusData.node1?.chain_height);
 
-    document.getElementById('timestamp').textContent = '⏱ ' + new Date(statusData.timestamp).toLocaleTimeString();
+    const tsEl = document.getElementById('timestamp');
+    if(tsEl) tsEl.textContent = '⏱ ' + new Date(statusData.timestamp).toLocaleTimeString();
     // Update topology badge
     const topoBadge = document.getElementById('topology-badge');
     if(topoBadge && statusData.topology){
@@ -264,8 +268,9 @@ async function refreshAll(){
     updateMainnetMetrics(statusData);
     updateConnectionStatus(true);
     loadEdgeBackupStatus();
+    console.log('[REFRESH] refreshAll completed successfully');
   } catch(e){
-    console.error('Refresh error:', e);
+    console.error('[REFRESH] refreshAll error:', e);
     updateConnectionStatus(false);
   }
 }
@@ -405,6 +410,8 @@ function updateServiceCards(s){
   if(mw) mw.textContent = (m.miner_id ? m.miner_id + ' / ' : '') + (m.worker_name ?? '—');
   const mwl = document.getElementById('val-miner-wallet');
   if(mwl) mwl.textContent = m.payout_address ?? m.wallet ?? '—';
+  const mon = document.getElementById('val-miner-onchain');
+  if(mon) mon.textContent = m.on_chain_balance_zion != null ? _zionFmt(m.on_chain_balance_zion) + ' Z' : '—';
   const mnh = document.getElementById('val-miner-height');
   if(mnh) mnh.textContent = m.current_height ?? '—';
   const md = document.getElementById('val-miner-diff');
@@ -1912,31 +1919,35 @@ async function loadPayoutTab(){
     set('payout-last-miners', lastPayoutMiners);
 
     // ── Miner Pending Balances ──────────────────────────────────────
-    // Use d.miners from /api/payout (richer data: on_chain_balance, payout_address)
-    // fallback to miners from /api/pool/miners (Prometheus)
+    // Merge /api/payout (on-chain balances) + /api/pool/miners (hashrate, paid_total)
     const balTbody = document.getElementById('payout-miner-balances');
     if(balTbody){
+      // Build pool metrics lookup by worker_name for hashrate enrichment
+      const poolMetrics = new Map();
+      miners.forEach(m => {
+        const key = m.worker_name || m.miner_id || '';
+        if(key) poolMetrics.set(key, m);
+      });
+      // Use payout miners (richer: on_chain_balance, payout_address)
       const payoutMiners = (d.miners && d.miners.length > 0) ? d.miners : miners;
       if(payoutMiners.length === 0){
         balTbody.innerHTML = '<tr><td colspan="6" class="text-gray-500 text-center py-4">No miners connected</td></tr>';
       } else {
         balTbody.innerHTML = payoutMiners.map(m => {
-          // /api/payout miners: address, worker_name, valid_shares, blocks_found, pending_balance(atomic), paid_total(mined ZION), on_chain_balance_zion
-          // /api/pool/miners: miner_id, worker_name, valid_shares, invalid_shares, pending_balance(ZION), paid_total(ZION)
-          const isPayoutApi = m.address !== undefined;
-          const name = m.worker_name || m.id || m.miner_id || m.address || '—';
-          const addr = escapeHtml((m.address || m.miner_id || '').slice(0, 20) + (((m.address || m.miner_id || '').length > 20) ? '…' : ''));
+          const name = m.worker_name || m.miner_id || m.address || '—';
+          const addr = escapeHtml((m.payout_address || m.address || m.miner_id || '').slice(0, 20) + (((m.payout_address || m.address || m.miner_id || '').length > 20) ? '…' : ''));
           const valid = m.valid_shares ?? 0;
           const invalid = m.invalid_shares ?? m.no_solution ?? 0;
-          const blocks = m.blocks_found ?? 0;
-          // pending_balance: payout API = atomic flowers, pool/miners API = already in ZION
-          const pendingZion = isPayoutApi
-            ? (m.pending_balance != null ? m.pending_balance / 1_000_000_000_000 : 0)
+          // pending_balance: payout API may be atomic flowers → convert to ZION
+          const pendingZion = (m.pending_balance != null && m.pending_balance > 1_000_000)
+            ? m.pending_balance / 1_000_000_000_000
             : (m.pending_balance ?? 0);
-          // paid_total: payout API = in ZION (total mined, not distributed), pool/miners = ZION
           const paidZion = m.paid_total ?? m.total_paid ?? 0;
           const onChain = m.on_chain_balance_zion != null ? _zionFmt(m.on_chain_balance_zion) + ' Z' : '—';
-          const hrStr = m.hashrate != null ? (m.hashrate >= 1000 ? (m.hashrate/1000).toFixed(2)+' KH/s' : m.hashrate.toFixed(1)+' H/s') : '—';
+          // Merge hashrate from pool metrics (payout API has null hashrate)
+          const poolM = poolMetrics.get(name);
+          const hr = poolM?.hashrate_hps ?? m.hashrate ?? 0;
+          const hrStr = hr >= 1000 ? (hr/1000).toFixed(2)+' KH/s' : hr > 0 ? hr.toFixed(1)+' H/s' : '—';
           return `<tr class="border-b border-white/5 hover:bg-white/5">
             <td class="py-2 px-2 text-emerald-300 font-semibold">${escapeHtml(name)}</td>
             <td class="py-2 px-2 text-gray-400 text-[10px] font-mono">${addr}</td>
