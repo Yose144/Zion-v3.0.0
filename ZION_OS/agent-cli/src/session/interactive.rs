@@ -21,6 +21,20 @@ pub async fn run(cfg: &AgentConfig) -> Result<()> {
     let mut app = App::new(cfg.clone(), prompt_tx.clone());
     let mut tui = Tui::new()?;
 
+    // Health check LLM API
+    let health = reqwest::get(format!("{}/models", cfg.llm.api_url.trim_end_matches("/v1"))).await;
+    match health {
+        Ok(resp) if resp.status().is_success() => {
+            app.activity_log.push(format!("Connected to {}", cfg.llm.api_url));
+        }
+        _ => {
+            app.add_error(&format!(
+                "LLM API not available at {}.\nPlease start LM Studio (Developer > Start Server) or Ollama.",
+                cfg.llm.api_url
+            ));
+        }
+    }
+
     // Spawn background task for keyboard events
     let event_tx_clone = event_tx.clone();
     tokio::spawn(async move {
