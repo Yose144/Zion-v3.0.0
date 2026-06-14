@@ -4097,7 +4097,7 @@
             <div class="web29-kicker"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-bridge"></use></svg>Cross-chain</div>
             <div class="web29-title-row">
               <h1 class="web29-title text-gradient">ZION Bridge</h1>
-              <div class="web29-chip" id="bridge-status-chip"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-star"></use></svg>Base Mainnet</div>
+              <div class="web29-chip" id="bridge-status-chip"><svg class="icon icon-inline" aria-hidden="true"><use href="#i-star"></use></svg>Base Sepolia Testnet</div>
             </div>
           </div>
         </div>
@@ -6569,6 +6569,10 @@
             <svg class="tab-icon icon" aria-hidden="true"><use href="#i-star"></use></svg>
             <span>DAO</span>
           </div>
+          <div class="section-tab" data-section="cli-swap">
+            <svg class="tab-icon icon" aria-hidden="true"><use href="#i-refresh"></use></svg>
+            <span>Swap</span>
+          </div>
           <div class="section-tab" data-section="cli-pool">
             <svg class="tab-icon icon" aria-hidden="true"><use href="#i-refresh"></use></svg>
             <span>Pool</span>
@@ -6662,6 +6666,21 @@
                 <button class="btn btn-primary btn-sm" id="cli-btn-dao-proposals">Proposals</button>
                 <button class="btn btn-primary btn-sm" id="cli-btn-dao-treasury">Treasury</button>
                 <button class="btn btn-ghost btn-sm" id="cli-btn-dao-params">Params</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="cli-swap" class="section-panel">
+          <div class="pool-grid panel-mt-20">
+            <div class="control-panel">
+              <h2 class="panel-header-row">
+                <span class="panel-header-title"><svg class="icon" aria-hidden="true"><use href="#i-refresh"></use></svg> Swap Aggregator (L2)</span>
+              </h2>
+              <div class="actions-row panel-mt-20">
+                <button class="btn btn-primary btn-sm" id="cli-btn-swap-status">Status</button>
+                <button class="btn btn-primary btn-sm" id="cli-btn-swap-quote">Quote</button>
+                <button class="btn btn-ghost btn-sm" id="cli-btn-swap-history">History</button>
               </div>
             </div>
           </div>
