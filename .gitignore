@@ -118,7 +118,16 @@ HiranV2.2/checkpoints/
 HiranV2.2/checkpoints_vast/
 HiranV2.2/eval_reports/
 HiranV2.2/models/
-nul
+HiranV2.2/data/curriculum/*.jsonl
+HiranV2.2/data/**/*.jsonl
+HiranV2.2/rag/chroma_db/
+*.sqlite3
+*.bin
+!HiranV2.2/README.md
+!HiranV2.2/scripts/
+!HiranV2.2/inference/
+!HiranV2.2/quantization/
+!HiranV2.2/evaluate/
 
 # Runtime / env secrets
 .env.*
@@ -243,7 +252,10 @@ TITHE_WALLETS_BACKUP.txt
 # Large ZIP files - use GitHub Releases or LFS if needed
 HiranV2.1/*.zip
 
-# Hiran v2.3 generated vector DB
+# Hiran v2.3 large artifacts
+HiranV2.3/HiranV2.3-Checkpoints/
+HiranV2.3/data/curriculum/*.jsonl
+HiranV2.3/data/**/*.jsonl
 HiranV2.3/knowledge/vector_db/
 *.tar.gz
 *.tar.gz
