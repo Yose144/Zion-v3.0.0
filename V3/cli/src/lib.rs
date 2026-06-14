@@ -7,7 +7,7 @@ pub mod ui;
 use clap::{Parser, Subcommand};
 use clap_complete::Shell;
 use commands::{
-    agent, bridge, compose, dao, free_world, hiran,
+    agent, atomic_swap, bridge, compose, dao, free_world, hiran,
     issobella, mine, ncl, node, pool, swap, topology, wallet, warp,
 };
 #[cfg(feature = "admin")]
@@ -139,6 +139,11 @@ pub enum Commands {
     Swap {
         #[command(subcommand)]
         cmd: swap::SwapCmd,
+    },
+    /// L2 Atomic Swap (HTLC cross-chain)
+    AtomicSwap {
+        #[command(subcommand)]
+        cmd: atomic_swap::AtomicSwapCmd,
     },
     /// Block explorer TUI
     Explorer,
