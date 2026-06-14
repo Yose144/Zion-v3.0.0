@@ -12,6 +12,10 @@ pub enum ChainFamily {
     Cardano,
     Cosmos,
     Bitcoin,
+    Sui,
+    Aptos,
+    Near,
+    Ton,
     ZionL1,
 }
 
@@ -25,6 +29,10 @@ impl std::fmt::Display for ChainFamily {
             ChainFamily::Cardano => write!(f, "cardano"),
             ChainFamily::Cosmos => write!(f, "cosmos"),
             ChainFamily::Bitcoin => write!(f, "bitcoin"),
+            ChainFamily::Sui => write!(f, "sui"),
+            ChainFamily::Aptos => write!(f, "aptos"),
+            ChainFamily::Near => write!(f, "near"),
+            ChainFamily::Ton => write!(f, "ton"),
             ChainFamily::ZionL1 => write!(f, "zion-l1"),
         }
     }
@@ -117,6 +125,46 @@ impl ChainId {
             name: "cosmos".to_string(),
             chain_id_numeric: None,
             decimals: 6,
+            finality_blocks: 1,
+        }
+    }
+
+    pub fn sui() -> Self {
+        Self {
+            family: ChainFamily::Sui,
+            name: "sui".to_string(),
+            chain_id_numeric: None,
+            decimals: 9,
+            finality_blocks: 1,
+        }
+    }
+
+    pub fn aptos() -> Self {
+        Self {
+            family: ChainFamily::Aptos,
+            name: "aptos".to_string(),
+            chain_id_numeric: None,
+            decimals: 8,
+            finality_blocks: 1,
+        }
+    }
+
+    pub fn near() -> Self {
+        Self {
+            family: ChainFamily::Near,
+            name: "near".to_string(),
+            chain_id_numeric: None,
+            decimals: 24,
+            finality_blocks: 2,
+        }
+    }
+
+    pub fn ton() -> Self {
+        Self {
+            family: ChainFamily::Ton,
+            name: "ton".to_string(),
+            chain_id_numeric: None,
+            decimals: 9,
             finality_blocks: 1,
         }
     }

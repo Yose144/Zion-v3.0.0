@@ -39,6 +39,10 @@ impl ChainRegistry {
         reg.register(ChainId::cardano());
         reg.register(ChainId::cosmos());
         reg.register(ChainId::bitcoin());
+        reg.register(ChainId::sui());
+        reg.register(ChainId::aptos());
+        reg.register(ChainId::near());
+        reg.register(ChainId::ton());
         // Always available
         reg.register(ChainId::zion_l1());
         reg
@@ -127,7 +131,7 @@ mod tests {
     #[test]
     fn test_registry_defaults() {
         let reg = ChainRegistry::with_defaults();
-        assert_eq!(reg.chain_count(), 16); // 9 EVM + 6 non-EVM + ZION L1
+        assert_eq!(reg.chain_count(), 20); // 9 EVM + 10 non-EVM + ZION L1
     }
 
     #[test]
@@ -189,7 +193,7 @@ mod tests {
     fn test_registry_list_all() {
         let reg = ChainRegistry::with_defaults();
         let all = reg.list_all();
-        assert_eq!(all.len(), 16);
+        assert_eq!(all.len(), 20);
         assert!(all.iter().all(|(_, enabled)| *enabled));
     }
 }
