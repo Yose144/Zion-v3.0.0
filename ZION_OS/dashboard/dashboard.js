@@ -5671,6 +5671,38 @@ async function loadL2Data() {
   } catch(e) {}
 }
 
+async function getAggregatorQuote() {
+  const from = document.getElementById('l2-agg-from')?.value || 'ZION';
+  const to   = document.getElementById('l2-agg-to')?.value || 'USDC';
+  const amt  = document.getElementById('l2-agg-amount')?.value || '1';
+  const resultEl = document.getElementById('l2-agg-quote-result');
+  const estOut = document.getElementById('l2-agg-est-out');
+  const impact = document.getElementById('l2-agg-impact');
+  const route  = document.getElementById('l2-agg-route');
+
+  if (!resultEl || !estOut || !impact || !route) return;
+
+  resultEl.classList.remove('hidden');
+  estOut.textContent = 'Loading…';
+  impact.textContent = '—';
+  route.textContent  = '—';
+
+  try {
+    const res = await fetch(`/api/swap-aggregator/quote?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&amount=${encodeURIComponent(amt)}`, {
+      signal: AbortSignal.timeout(5000)
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    estOut.textContent = data.amount_out ?? '—';
+    impact.textContent = data.price_impact_bps ? `${data.price_impact_bps} bps` : '—';
+    route.textContent  = data.route ?? `${from}→${to}`;
+  } catch (e) {
+    estOut.textContent = 'Unavailable';
+    impact.textContent = '—';
+    route.textContent  = '—';
+  }
+}
+
 async function initiateAtomicSwap() {
   const fromChain = document.getElementById('l2-swap-from-chain')?.value;
   const toChain   = document.getElementById('l2-swap-to-chain')?.value;

@@ -1978,6 +1978,74 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
     </div>
   </div>
 
+  <!-- Swap Aggregator Panel -->
+  <div class="zion-panel p-5">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-base font-bold flex items-center gap-2">💱 Swap Aggregator (Uni V3)</h2>
+      <span id="l2-agg-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-gray-700 text-gray-400">Offline</span>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+      <!-- Quote Form -->
+      <div class="md:col-span-2 space-y-3">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-[10px] text-gray-400 uppercase tracking-wider">From</label>
+            <select id="l2-agg-from" class="w-full mt-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-xs text-white focus:border-emerald-500 focus:outline-none transition">
+              <option value="ZION">ZION (L1)</option>
+              <option value="wZION">wZION (Base)</option>
+              <option value="ETH">ETH (Base)</option>
+              <option value="USDC">USDC (Base)</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-[10px] text-gray-400 uppercase tracking-wider">To</label>
+            <select id="l2-agg-to" class="w-full mt-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-xs text-white focus:border-emerald-500 focus:outline-none transition">
+              <option value="USDC">USDC (Base)</option>
+              <option value="ETH">ETH (Base)</option>
+              <option value="wZION">wZION (Base)</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-[10px] text-gray-400 uppercase tracking-wider">Amount</label>
+            <input type="number" id="l2-agg-amount" placeholder="100" min="1" class="w-full mt-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-xs text-white focus:border-emerald-500 focus:outline-none transition">
+          </div>
+          <div>
+            <label class="text-[10px] text-gray-400 uppercase tracking-wider">Slippage</label>
+            <select id="l2-agg-slippage" class="w-full mt-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-xs text-white focus:border-emerald-500 focus:outline-none transition">
+              <option value="50">0.5%</option>
+              <option value="100" selected>1.0%</option>
+              <option value="200">2.0%</option>
+              <option value="500">5.0%</option>
+            </select>
+          </div>
+        </div>
+        <div id="l2-agg-quote-result" class="hidden bg-black/30 rounded-lg p-3 text-xs">
+          <div class="flex justify-between"><span class="text-gray-400">Estimated out</span><span class="text-emerald-400 font-bold" id="l2-agg-est-out">—</span></div>
+          <div class="flex justify-between mt-1"><span class="text-gray-400">Price impact</span><span class="text-white" id="l2-agg-impact">—</span></div>
+          <div class="flex justify-between mt-1"><span class="text-gray-400">Route</span><span class="text-white font-mono" id="l2-agg-route">—</span></div>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="getAggregatorQuote()" class="flex-1 text-xs px-4 py-2 bg-emerald-700/50 hover:bg-emerald-600 rounded-lg font-semibold transition">📊 Get Quote</button>
+          <button onclick="controlAction('start-swap-aggregator')" class="text-xs px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg font-semibold transition">▶ Start</button>
+          <button onclick="controlAction('stop-swap-aggregator')" class="text-xs px-3 py-2 bg-red-700/50 hover:bg-red-600 rounded-lg font-semibold transition">⏹</button>
+        </div>
+      </div>
+      <!-- Aggregator Stats -->
+      <div class="space-y-3">
+        <div class="bg-black/30 rounded-xl p-4 text-center">
+          <div class="text-2xl font-bold text-emerald-400" id="l2-agg-pairs">—</div>
+          <div class="text-[10px] text-gray-400 mt-1">Supported Pairs</div>
+        </div>
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <div class="bg-black/30 rounded-lg p-2"><div class="text-gray-400 mb-0.5">24h Volume</div><div class="text-white font-bold" id="l2-agg-vol">—</div></div>
+          <div class="bg-black/30 rounded-lg p-2"><div class="text-gray-400 mb-0.5">Quotes</div><div class="text-white font-bold" id="l2-agg-quotes">—</div></div>
+          <div class="bg-black/30 rounded-lg p-2"><div class="text-gray-400 mb-0.5">API Port</div><div class="text-white font-mono">8889</div></div>
+          <div class="bg-black/30 rounded-lg p-2"><div class="text-gray-400 mb-0.5">Router</div><div class="text-white font-mono text-[9px] truncate">Uni V3</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- DeFi Primitives Info -->
   <div class="zion-panel p-5">
     <h2 class="text-base font-bold mb-4 flex items-center gap-2">💹 DeFi Primitives</h2>
