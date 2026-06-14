@@ -1741,6 +1741,68 @@ async function loadWallets(){
     const tbody = document.getElementById('wallets-table');
     if(tbody) tbody.innerHTML = `<tr><td colspan="7" class="py-4 text-red-400 text-center">Failed to load wallets: ${escapeHtml(e.message)}</td></tr>`;
   }
+  // Also refresh online miners table
+  refreshMinerBalances();
+}
+
+// ─── Online Miners (Wallets tab) ────────────────────────────────────
+async function refreshMinerBalances(){
+  try {
+    const res = await fetch('/api/pool/miners');
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    const miners = data.miners || [];
+    const tbody = document.getElementById('miner-balances-table');
+    const summary = document.getElementById('miner-balances-summary');
+
+    if(!tbody) return;
+    if(miners.length === 0){
+      tbody.innerHTML = '<tr><td colspan="9" class="py-4 text-gray-500 italic text-center">No miners connected</td></tr>';
+      if(summary) summary.textContent = '';
+      return;
+    }
+
+    let totalHashrate = 0, totalPaid = 0, totalPending = 0, totalValid = 0;
+    tbody.innerHTML = miners.map(m => {
+      const name = escapeHtml(m.worker_name || m.miner_id || '—');
+      const addr = escapeHtml((m.payout_address || m.miner_id || '').slice(0, 24) + ((m.payout_address || m.miner_id || '').length > 24 ? '…' : ''));
+      const hr = m.hashrate_hps != null ? m.hashrate_hps : (m.hashrate || 0);
+      const hrStr = hr >= 1000 ? (hr/1000).toFixed(2) + ' KH/s' : hr.toFixed(1) + ' H/s';
+      const valid = m.valid_shares ?? 0;
+      const invalid = m.invalid_shares ?? 0;
+      const blocks = m.blocks_found ?? 0;
+      const pending = m.pending_balance ?? 0;
+      const paid = m.paid_total ?? 0;
+      const onChain = m.on_chain_balance_zion != null ? _zionFmt(m.on_chain_balance_zion) + ' Z' : '—';
+
+      totalHashrate += hr;
+      totalPaid += paid;
+      totalPending += pending;
+      totalValid += valid;
+
+      const hrColor = hr >= 1000 ? 'text-amber-400' : hr > 0 ? 'text-emerald-400' : 'text-gray-500';
+      return `<tr class="border-b border-white/5 hover:bg-white/3 transition">
+        <td class="py-2 px-2 text-emerald-300 font-semibold">${name}</td>
+        <td class="py-2 px-2 text-gray-400 text-[10px]">${addr}</td>
+        <td class="py-2 px-2 text-right ${hrColor}">${hrStr}</td>
+        <td class="py-2 px-2 text-right text-emerald-400">${fmtNum(valid)}</td>
+        <td class="py-2 px-2 text-right ${invalid>0?'text-red-400':'text-gray-500'}">${fmtNum(invalid)}</td>
+        <td class="py-2 px-2 text-right text-zion-gold">${fmtNum(blocks)}</td>
+        <td class="py-2 px-2 text-right text-amber-400">${pending.toFixed(4)} Z</td>
+        <td class="py-2 px-2 text-right text-cyan-400">${paid.toFixed(4)} Z</td>
+        <td class="py-2 px-2 text-right text-purple-400">${onChain}</td>
+      </tr>`;
+    }).join('');
+
+    if(summary){
+      const thr = totalHashrate >= 1000 ? (totalHashrate/1000).toFixed(2) + ' KH/s' : totalHashrate.toFixed(1) + ' H/s';
+      summary.innerHTML = `<span class="text-emerald-400 font-semibold">${miners.length} miners</span> · Total hashrate: <span class="text-amber-400">${thr}</span> · Valid shares: <span class="text-emerald-400">${fmtNum(totalValid)}</span> · Paid: <span class="text-cyan-400">${totalPaid.toFixed(4)} Z</span> · Pending: <span class="text-amber-400">${totalPending.toFixed(4)} Z</span>`;
+    }
+  } catch(e) {
+    console.error('refreshMinerBalances error:', e);
+    const tbody = document.getElementById('miner-balances-table');
+    if(tbody) tbody.innerHTML = `<tr><td colspan="9" class="py-4 text-red-400 text-center">Failed to load miners: ${escapeHtml(e.message)}</td></tr>`;
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────
