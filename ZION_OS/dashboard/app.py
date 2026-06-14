@@ -100,6 +100,15 @@ EDGE_PUBLIC_IP = "77.42.71.94"  # Public IP (fallback if Tailscale down)
 _UPDATE_CACHE = {"ts": 0, "data": None}
 _UPDATE_CACHE_TTL = 300
 
+def l3_proxy(url: str, timeout: float = 3.0) -> dict:
+    """Proxy request to L3 AI-Native / WARP / NCL daemon on localhost:8460."""
+    try:
+        import urllib.request as _ur
+        with _ur.urlopen(url, timeout=timeout) as r:
+            return json.loads(r.read())
+    except Exception as ex:
+        return {"error": str(ex)[:120], "offline": True}
+
 def fetch_desktop_agent_update():
     """Return latest desktop-agent release info from GitHub (cached)."""
     global _UPDATE_CACHE
@@ -3934,18 +3943,26 @@ def fetch_pool_miners() -> list:
         except Exception:
             continue
     miners = data.get("miners", []) if data else []
-    # Enrich top miners with live on-chain balance from node RPC
-    try:
-        rpc_host = "127.0.0.1" if check_port_open("127.0.0.1", 8443, timeout=1.0) else EDGE_HOST
+    # Enrich ALL miners with live on-chain balance from node RPC (try local, edge, public)
+    rpc_hosts = ["127.0.0.1", EDGE_HOST, "77.42.71.94"]
+    working_rpc = None
+    for h in rpc_hosts:
+        # Test RPC with getBalance on a known address
+        test = rpc_call(h, 8443, "getBalance", {"address": "zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604"}, timeout=1.5)
+        if test and not test.get("_rpc_error") and (test.get("balance_flowers") or test.get("balance_zion")):
+            working_rpc = h
+            break
+    if working_rpc:
         for m in miners:
             addr = m.get("payout_address") or m.get("address")
             if addr and addr.startswith("zion1"):
-                bal = rpc_call(rpc_host, 8443, "getBalance", {"address": addr}, timeout=1.5)
+                bal = rpc_call(working_rpc, 8443, "getBalance", {"address": addr}, timeout=1.5)
                 if bal and not bal.get("_rpc_error"):
-                    atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
-                    m["on_chain_balance_zion"] = atomic / 1_000_000_000_000
-    except Exception:
-        pass
+                    try:
+                        atomic = int(bal.get("balance_flowers") or bal.get("balance_atomic") or 0)
+                        m["on_chain_balance_zion"] = atomic / 1_000_000_000_000
+                    except (ValueError, TypeError):
+                        pass
     return miners
 
 def build_payout_status() -> dict:
@@ -9059,6 +9076,20 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     self._json(json.loads(r.read()))
             except Exception as ex:
                 self._json({"error": str(ex), "reachable": False})
+        # ── L3 API proxy routes ─────────────────────────────────────────────
+        elif route == "/api/l3/warp/chains":
+            self._json(l3_proxy("http://localhost:8460/chains"))
+        elif route == "/api/l3/warp/transfers":
+            self._json(l3_proxy("http://localhost:8460/transfers"))
+        elif route == "/api/l3/ai/agents":
+            self._json(l3_proxy("http://localhost:8460/agents"))
+        elif route == "/api/l3/ai/telemetry":
+            self._json(l3_proxy("http://localhost:8460/telemetry"))
+        elif route == "/api/l3/ai/rag":
+            q = params.get("q", [""])[0]
+            self._json(l3_proxy(f"http://localhost:8460/rag/query?q={urllib.parse.quote(q)}"))
+        elif route == "/api/l3/ncl/jobs":
+            self._json(l3_proxy("http://localhost:8460/ncl/jobs"))
         else:
             self.send_error(404)
 
