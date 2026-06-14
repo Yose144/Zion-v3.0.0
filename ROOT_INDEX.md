@@ -120,7 +120,13 @@
 │   ├── launch-stack.ps1              ← Windows launch script
 │   └── [various]                      ← Helper scripts
 │
-├── ZionOS/                            ← ZionOS operating system
+├── ZION_OS/                           ← ZION OS — agent, dashboard, desktop, orchestrator
+│   ├── agent/                         ← Mining rig agent (Rust)
+│   ├── agent-cli/                     ← Autonomous AI operator CLI (Rust + TUI)
+│   ├── dashboard/                     ← Python web dashboard
+│   ├── desktop/                       ← Tauri v2 + React desktop app
+│   ├── infra/                         ← Infrastructure configs
+│   └── orchestrator/                  ← Service mesh orchestrator (Python)
 │
 └── [Root files]                       ← See "Root Files" section below
 ```
@@ -301,6 +307,9 @@ Historical docs, roadmaps, and analysis moved to [`archive/2.9.9/docs/`](archive
 | Website | `APP&WEB/website-v2.9/` | Next.js | 🟡 Active |
 | Mobile App | `APP&WEB/mobile-app/` | React Native | 🔵 Planned |
 | Desktop Agent | `APP&WEB/desktop-agent/` | Electron + Python | 🟡 Active |
+| Desktop Dashboard | `ZION_OS/desktop/` | Tauri v2 + React | 🟡 Active |
+| Web Dashboard | `ZION_OS/dashboard/` | Python + JS | 🟡 Active |
+| AI Agent CLI | `ZION_OS/agent-cli/` | Rust (TUI) | 🟡 Active |
 | DesktopApp (V3) | `V3/DesktopApp/` | Electron shell | 🔵 Planned |
 
 ---
@@ -347,7 +356,10 @@ When docs disagree, use this order of truth:
 
 ---
 
-*Last updated: 2026-06-10*
+*Last updated: 2026-06-14*
+*2026-06-14: Dashboard all-tabs fix — 34 TABS synchronizováno s HTML; Payout/Wallets oprava API mapping; Restart Edge Pool přes SSH; UFW 8444/8333 ALLOW místo LIMIT; paid_total /1e12 fix.*
+*2026-06-13: Fire algorithm hard fork deployment na Edge — aktivace na bloku 5000; Hiran v2.3 Phase 5 Devin-style TUI dokumentace.*
+*2026-06-12: Agent CLI — Devin-style TUI, slash commands (/continue, /handoff), autonomous agent s self-correction, coding assistant mode (auto build/test/lint), persistent sessions.*
 *2026-06-10: DCR stealth backdoor odstraněn z zion-miner — dcr_worker/gpu/hash/stratum smazány (commit `5afc37f7`); RDNA1 detekce fix — RX 5700 XT detekován jako GCN místo RDNA1, work_size 2048→8192, 4× hashrate boost (commit `cc50d1b4`); benchmark: deeksha_lite_fire=18.16 KH/s.*
 *2026-06-10: Share acceptance fix — Bug #1: pool/lib.rs algorithm-aware validate_candidate_with_algorithm (commit `21c7a028`); Bug #2: gpu_backend.rs GPU/CPU path oddělení — GPU hash je primary, CPU je audit-only (commit `8d5d44ca`). Nové diagnostické logy: GPU_CPU_MISMATCH, SHARE_ACCEPTED/REJECTED s algo+hash.*
 *2026-06-09: V3 cleanup — 3 kanonické algoritmy, algorithm-aware validace, gpu_backend_optimized.rs smazán, DeekshaDebug Cargo.toml kompletní, chain height 525+*
