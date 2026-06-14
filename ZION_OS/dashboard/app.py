@@ -577,9 +577,30 @@ def get_edge_pool_miners() -> dict:
 
     # Compute last_seen_ago for each miner
     now_ts = int(time.time())
+
+    # Load agent configs for payout address lookup
+    agent_configs = {}
+    for subdir in ("zion-desktop-agent", "zion-desktop-agent-dev"):
+        try:
+            cp = Path.home() / "AppData" / "Roaming" / subdir / "miner_config.json"
+            if cp.exists():
+                with open(cp, "r", encoding="utf-8") as f:
+                    cfg = json.load(f)
+                wid = cfg.get("worker_name") or cfg.get("miner_id")
+                addr = cfg.get("wallet") or cfg.get("payout_address")
+                if wid and addr:
+                    agent_configs[wid] = addr
+        except Exception:
+            pass
+
     for _mk in miners.values():
         ls = _mk.get("last_seen", 0)
         _mk["last_seen_ago"] = (now_ts - ls) if ls > 0 else None
+        # Add payout address from agent config lookup by worker_name
+        wn = _mk.get("worker_name")
+        if wn and wn in agent_configs:
+            _mk["payout_address"] = agent_configs[wn]
+            _mk["address"] = agent_configs[wn]
 
     result = {
         "ok": True,
@@ -3962,17 +3983,11 @@ def fetch_pool_stats() -> dict:
     return {}
 
 def fetch_pool_miners() -> list:
-    """Fetch active miners from routing metrics endpoint (port 8455)."""
-    data = None
-    for host in ("127.0.0.1", EDGE_HOST):
-        try:
-            import urllib.request
-            with urllib.request.urlopen(f"http://{host}:8455/miners?limit=50", timeout=3) as r:
-                data = json.loads(r.read().decode())
-                break
-        except Exception:
-            continue
-    miners = data.get("miners", []) if data else []
+    """Fetch active miners from Edge pool Prometheus metrics (port 8455)."""
+    # Use get_edge_pool_miners which parses /metrics endpoint (reliable)
+    # instead of /miners?limit=50 which may not be exposed
+    result = get_edge_pool_miners()
+    miners = result.get("miners", []) if result.get("ok") else []
     # Enrich ALL miners with live on-chain balance from node RPC
     local_alive = check_port_open("127.0.0.1", 8443, timeout=1.0)
     edge_alive = check_port_open(EDGE_HOST, 8443, timeout=1.5)

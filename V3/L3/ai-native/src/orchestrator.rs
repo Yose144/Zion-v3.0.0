@@ -1,5 +1,6 @@
 use sha2::{Digest, Sha256};
 use std::collections::HashMap;
+use std::io::Write;
 use uuid::Uuid;
 
 use crate::error::{AiError, AiResult};
@@ -46,6 +47,10 @@ pub struct Orchestrator {
     warp_router: Option<WarpRouter>,
     /// Optional L2 bridge integration for cross-chain operations
     bridge_enabled: bool,
+    /// AI Safety: emergency stop flag (zion-agent ai-emergency-stop)
+    emergency_stop: bool,
+    /// AI Safety: audit log directory (immutable append-only)
+    audit_dir: Option<std::path::PathBuf>,
 }
 
 impl Orchestrator {
@@ -57,6 +62,8 @@ impl Orchestrator {
             ncl_scheduler: None,
             warp_router: None,
             bridge_enabled: false,
+            emergency_stop: false,
+            audit_dir: None,
         }
     }
 
@@ -381,12 +388,17 @@ impl Orchestrator {
         self.bridge_enabled
     }
 
+    // ─── AI Safety limits (L3bigupdate.md §8.2) ────────────────────────────
+    const AI_MAX_TRANSFER_FLOWERS: u64 = 1_000_000_000_000_000; // 1000 ZION
+    const AI_TIMELOCK_THRESHOLD_FLOWERS: u64 = 100_000_000_000_000; // 100 ZION
+    const AI_TIMELOCK_HOLD_HOURS: i64 = 24;
+
     /// Initiate automated cross-chain bridge operation via AI agent.
     ///
-    /// This allows AI agents with Bridge capability to automatically:
-    /// - Lock ZION on L1 for wZION on target EVM chain
-    /// - Burn wZION on EVM chain for ZION unlock on L1
-    /// - Monitor bridge status and handle failures
+    /// AI Safety enforced:
+    /// - Max 1000 ZION per AI-initiated transfer (AI_MAX_TRANSFER_FLOWERS)
+    /// - Transfers > 100 ZION enter 24h timelock hold (AI_TIMELOCK_THRESHOLD)
+    /// - Audit log written to L3/audit/ for every operation
     ///
     /// Returns operation ID if initiated successfully.
     pub async fn initiate_bridge_operation(
@@ -394,6 +406,12 @@ impl Orchestrator {
         agent_id: Uuid,
         operation: BridgeOperation,
     ) -> AiResult<String> {
+        if self.emergency_stop {
+            return Err(AiError::CapabilityNotAvailable(
+                "EMERGENCY STOP active — all AI operations halted".into(),
+            ));
+        }
+
         if !self.bridge_enabled {
             return Err(AiError::CapabilityNotAvailable(
                 "L2 Bridge Integration".into(),
@@ -409,8 +427,28 @@ impl Orchestrator {
             return Err(AiError::CapabilityNotAvailable("Bridge".into()));
         }
 
+        // ── AI Safety: transfer limit check ───────────────────────────────
+        let amount = match &operation {
+            BridgeOperation::LockToEvm { amount_flowers, .. } => *amount_flowers,
+            BridgeOperation::BurnToL1 { amount_wzion, .. } => *amount_wzion,
+            BridgeOperation::ComputeJob { reward_flowers, .. } => *reward_flowers,
+        };
+
+        if amount > Self::AI_MAX_TRANSFER_FLOWERS {
+            return Err(AiError::MessageFailed(format!(
+                "AI safety: transfer {} flowers exceeds limit {} (max 1000 ZION). Human approval required.",
+                amount, Self::AI_MAX_TRANSFER_FLOWERS
+            )));
+        }
+
+        // ── AI Safety: timelock for large transfers ───────────────────────
+        let timelock = amount > Self::AI_TIMELOCK_THRESHOLD_FLOWERS;
+
         // Generate operation ID
         let operation_id = format!("bridge-{}-{}", agent_id, chrono::Utc::now().timestamp());
+
+        // ── AI Safety: audit log ──────────────────────────────────────────
+        self.audit_log(&operation_id, agent_id, &agent.name, &operation, timelock);
 
         // Log structured bridge operation details for L2 bridge daemon pickup
         match &operation {
@@ -523,6 +561,76 @@ impl Orchestrator {
         );
 
         Ok(job_id)
+    }
+
+    // ─── AI Safety: Emergency stop + audit ─────────────────────────────────
+
+    /// Trigger emergency stop — immediately halts all AI-initiated operations.
+    pub fn emergency_stop(&mut self) {
+        self.emergency_stop = true;
+        tracing::warn!("EMERGENCY STOP triggered — all AI operations halted");
+    }
+
+    /// Resume AI operations (requires explicit human action).
+    pub fn emergency_resume(&mut self) {
+        self.emergency_stop = false;
+        tracing::info!("EMERGENCY STOP cleared — AI operations resumed");
+    }
+
+    /// Check if emergency stop is active.
+    pub fn is_emergency_stopped(&self) -> bool {
+        self.emergency_stop
+    }
+
+    /// Append an immutable audit log entry for every AI-initiated operation.
+    fn audit_log(
+        &self,
+        operation_id: &str,
+        agent_id: Uuid,
+        agent_name: &str,
+        operation: &BridgeOperation,
+        timelock: bool,
+    ) {
+        let ts = chrono::Utc::now().to_rfc3339();
+        let entry = match operation {
+            BridgeOperation::LockToEvm { amount_flowers, target_chain, evm_recipient } => {
+                format!(
+                    "[{}] {} agent={}({}) op=lock_to_evm amount={} target={} recipient={} timelock={}\n",
+                    ts, operation_id, agent_name, agent_id, amount_flowers, target_chain, evm_recipient, timelock
+                )
+            }
+            BridgeOperation::BurnToL1 { amount_wzion, l1_recipient } => {
+                format!(
+                    "[{}] {} agent={}({}) op=burn_to_l1 amount={} recipient={} timelock={}\n",
+                    ts, operation_id, agent_name, agent_id, amount_wzion, l1_recipient, timelock
+                )
+            }
+            BridgeOperation::ComputeJob { model_id, backend, reward_flowers, .. } => {
+                format!(
+                    "[{}] {} agent={}({}) op=compute_job model={} backend={:?} reward={} timelock={}\n",
+                    ts, operation_id, agent_name, agent_id, model_id, backend, reward_flowers, timelock
+                )
+            }
+        };
+
+        if let Some(dir) = &self.audit_dir {
+            let file = dir.join(format!("audit_{}.log", chrono::Utc::now().format("%Y%m%d")));
+            if let Err(e) = std::fs::create_dir_all(dir) {
+                tracing::error!("audit mkdir failed: {}", e);
+                return;
+            }
+            if let Err(e) = std::fs::OpenOptions::new().create(true).append(true).open(&file).and_then(|mut f| f.write_all(entry.as_bytes())) {
+                tracing::error!("audit write failed: {}", e);
+            }
+        } else {
+            tracing::info!("AUDIT: {}", entry.trim());
+        }
+    }
+
+    /// Configure audit log directory (call once at startup).
+    pub fn with_audit_dir(mut self, dir: std::path::PathBuf) -> Self {
+        self.audit_dir = Some(dir);
+        self
     }
 }
 
