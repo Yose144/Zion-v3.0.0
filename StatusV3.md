@@ -1,6 +1,6 @@
 # ZION V3 — Status Report (Mainnet Polish)
 
-> **Datum:** **2026-06-13** (Fire algorithm hard fork deployment — viz sekce níže); **2026-06-13** (Hiran v2.3 documentation cleanup — viz sekce níže); **2026-06-11** (Hard Genesis Reset #0 completed — viz sekce níže); **2026-06-11** (Pool stale share detection + dashboard tab fix — viz sekce níže); **2026-06-10** (GPU/CPU path oddělení + algorithm-aware share validace); **2026-06-09**; **2026-06-08** (Fire CPU/GPU sync + pool submitted_hash fix); 2026-06-07 (Chain reset + full stack cleanup); 2026-06-06 (HTTP JSON-RPC Transaction Relay Bug Fix); 2026-05-22 (Genesis + fee split KONFIGURACE DOKONČENA, ready for mainnet launch 31.12.2026); **2026-05-21** (Edge pool + L5/L6 + DAO governance + root docs sync); **2026-05-12** (Hiran v2.2 CLI integration); **2026-05-07** (security cleanup + agentická obsluha).
+> **Datum:** **2026-06-14** (Dashboard all-tabs fix, Payout/Wallets sekce, Restart Edge Pool SSH, UFW 8444 oprava — viz sekce níže); **2026-06-13** (Fire algorithm hard fork deployment — viz sekce níže); **2026-06-13** (Hiran v2.3 documentation cleanup — viz sekce níže); **2026-06-11** (Hard Genesis Reset #0 completed — viz sekce níže); **2026-06-11** (Pool stale share detection + dashboard tab fix — viz sekce níže); **2026-06-10** (GPU/CPU path oddělení + algorithm-aware share validace); **2026-06-09**; **2026-06-08** (Fire CPU/GPU sync + pool submitted_hash fix); 2026-06-07 (Chain reset + full stack cleanup); 2026-06-06 (HTTP JSON-RPC Transaction Relay Bug Fix); 2026-05-22 (Genesis + fee split KONFIGURACE DOKONČENA, ready for mainnet launch 31.12.2026); **2026-05-21** (Edge pool + L5/L6 + DAO governance + root docs sync); **2026-05-12** (Hiran v2.2 CLI integration); **2026-05-07** (security cleanup + agentická obsluha).
 > (sjednocení `StatusV3.md` ↔ `StatusV3-Part2.md` — TL;DR, roadmap §6, §8, §5
 > pyramida, odkazy).
 > **Předchozí update:** 2026-05-03 (genesis konsensus — merged na `main`)
@@ -19,6 +19,43 @@
 > starý Praha server (`91.98.122.165`) nebo historickou multi-server topologii
 > (Prague, SG, Helsinki, US) jsou **archivní / historické**, pokud není explicitně
 > uvedeno jinak. Aktuální živá topologie je **Core + Edge** (viz sekce Infrastruktura).
+
+---
+
+## Co je nového 2026-06-14 (Dashboard — kompletní oprava)
+
+> **Status:** COMPLETE — všechny panely v menu se zobrazují, Payout/Wallets data jsou živá, Restart Edge Pool funguje přes SSH, port 8444 otevřen.
+
+### Opravené problémy
+
+| Oblast | Problém | Řešení |
+|--------|---------|--------|
+| **Dashboard — TABS** | `TABS` pole mělo 29 položek, HTML 34 `pane-*` divů — panely `topology`, `miner-live`, `settings`, `fleet`, `agent`, `ops` se nikdy nezobrazily | Synchronizace `TABS = [...]` s HTML; `controls` → `ops` přejmenování |
+| **Payout tab** | Prázdná data — JS četl `data.miner_stats` ale API vrací `data.miners`; hashrate z neexistujícího `miner_perf` | Opraveno mapování na `data.miners`, hashrate z `pool_stats.hashrate.pool`, PPLNS z `pplns.payout_rounds` |
+| **Wallets tab** | Source badge zobrazoval špatnou barvu (API vrací `source:'genesis'` ne `'premine'`); velká čísla jako `1650000000.000000 ZION` | Badge oprava `genesis`/`node`; formátování `1.65 BZION`, `804.88 KZION` |
+| **Pool port 8444** | UFW na edge měl `LIMIT` na 8444 (max 6 spojení/30s) — mineri se nemohli připojit z veřejné sítě | `ufw delete limit 8444/tcp && ufw allow 8444/tcp`; totéž pro 8333 |
+| **Restart Edge Pool** | Chybělo UI tlačítko pro restart vzdáleného poolu | Nové tlačítko + `restartEdgePool()` JS funkce + backend `restart-pool-edge` SSH akce |
+| **paid_total / pending_balance** | Dělení `1e8` místo `1e12` — zobrazovalo 10000× větší hodnoty | Opraveno na `/ 1_000_000_000_000` (flowers → ZION) |
+| **Pool miners last_seen_ago** | Pole chybělo — stale vs. aktivní miners nelze rozlišit | Přidáno `last_seen_ago = now - last_seen` v `get_edge_pool_miners()` |
+
+### Technické detaily
+
+- **`dashboard.js` řádek 3:** `TABS` rozšířeno na 34 položek pokrývající všechny existující `pane-*` divs
+- **`dashboard.js` `switchTab()`:** Handler pro `ops` (dříve `controls`), `topology`, `miner-live`, `agent`, `fleet`, `settings`
+- **`app.py` `_run_edge_ssh_command()`:** Nová SSH helper funkce; preferuje Tailscale (100.76.16.108), fallback na veřejné IP (77.42.71.94)
+- **`app.py` `run_control()`:** Nové akce `restart-pool-edge`, `stop-pool-edge`, `start-pool-edge` jako early-return před `ALLOWED_ACTIONS`
+
+### Aktuální stav systému (2026-06-14)
+
+```
+topology:      edge-primary
+node1:         height=2997, peers=1, sync_gap=0, synced=True
+edge_node:     running=True, height=2997
+pool:          running=True, active_sessions=1, accept_rate=99.77%
+miner:         running=True, hashrate=11.4 KH/s, backend=opencl
+port 8444:     ALLOW (veřejný internet) ✓
+port 8333:     ALLOW (veřejný internet) ✓
+```
 
 ---
 

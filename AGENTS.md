@@ -193,8 +193,11 @@ docker compose -f V3/docker/docker-compose.v3-mainnet.yml up -d
 - Web dashboard (Python):
   - `python ZION_OS/dashboard/app.py` → `http://127.0.0.1:8766`
   - `python ZION_OS/dashboard/metrics-collector/` — standalone Rust binary for native metrics polling
-  - **Dashboard Payout Section**: Enhanced error handling and fallback values for pool monitoring
   - **Pool Metrics Endpoint**: Running on Edge server port 8455 for real-time pool statistics
+  - **TABS sync (2026-06-14):** `dashboard.js` `TABS` array must match all `pane-*` IDs in `dashboard.html`. Currently 34 tabs. If you add a new `<div id="pane-foo">` in HTML, also add `'foo'` to `TABS` and optionally a handler in `switchTab()`.
+  - **Payout API mapping:** `/api/payout` returns `data.miners` (not `data.miner_stats`); hashrate from `data.pool_stats.hashrate.pool` (H/s); paid amounts in ZION (already converted from flowers/1e12).
+  - **Edge Pool remote control:** `POST /api/control {"action":"restart-pool-edge"}` — SSH via Tailscale (100.76.16.108) or public IP (77.42.71.94). Requires `ssh-key-zion-edge` in repo root.
+  - **UFW on Edge (2026-06-14):** Ports 8444 (stratum) and 8333 (P2P) changed from `LIMIT` to `ALLOW` — miners can now connect from public internet.
 
 ## High-level architecture (big picture)
 

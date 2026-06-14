@@ -22,9 +22,30 @@ Remove-Item -Path 'C:\Users\yosef\AppData\Local\Temp\peers.json' -ErrorAction Si
 Remove-Item -Path 'C:\Users\yosef\AppData\Local\Temp\zion-node-state.db*' -ErrorAction SilentlyContinue
 Remove-Item -Recurse -Path 'C:\Users\yosef\AppData\Local\Temp\zion-node-state.db' -ErrorAction SilentlyContinue
 
-$nodeExe = "$RepoRoot\V3\target\release\node.exe"
+$nodeExe     = "$RepoRoot\V3\target\release\node.exe"
+$nodeSource  = "$RepoRoot\APP&WEB\desktop-agent\resources\node.exe"
+
+# Auto-sync: zkopiruj kanonicky binary z resources, pokud je novejsi nebo chybi
+New-Item -ItemType Directory -Path "$RepoRoot\V3\target\release" -Force | Out-Null
+if (Test-Path $nodeSource) {
+    $srcInfo = Get-Item $nodeSource
+    $dstInfo = if (Test-Path $nodeExe) { Get-Item $nodeExe } else { $null }
+    if (-not $dstInfo -or $srcInfo.LastWriteTime -gt $dstInfo.LastWriteTime -or $srcInfo.Length -ne $dstInfo.Length) {
+        try {
+            Copy-Item -Path $nodeSource -Destination $nodeExe -Force
+            Write-Host "[sync] node.exe zkopirovan z resources ($($srcInfo.Length) B)"
+        } catch {
+            Write-Warning "[sync] Nelze zkopirovat node.exe: $_"
+        }
+    } else {
+        Write-Host "[sync] node.exe je aktualni (resources == release)"
+    }
+} else {
+    Write-Warning "[sync] Zdrojovy node.exe nenalezen v resources. Pouzivam existujici binary."
+}
+
 if (-not (Test-Path $nodeExe)) {
-    Write-Error "[ERROR] Binary not found: $nodeExe`n        Run: cargo build --release --manifest-path V3/Cargo.toml -p zion-core"
+    Write-Error "[ERROR] Binary not found: $nodeExe`n        Zkopiruj rucne z APP&WEB\desktop-agent\resources\node.exe"
     exit 1
 }
 
