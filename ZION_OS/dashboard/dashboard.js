@@ -116,7 +116,9 @@ function switchTab(name){
   TABS.forEach(t => {
     const pane = document.getElementById('pane-' + t);
     const btn = document.getElementById('tab-' + t);
-    if(pane) pane.classList.toggle('hidden', t !== name);
+    if(pane){
+      pane.style.setProperty('display', (t === name) ? 'block' : 'none', 'important');
+    }
     if(btn) btn.classList.toggle('tab-active', t === name);
   });
   // Close sidebar on mobile after tab selection

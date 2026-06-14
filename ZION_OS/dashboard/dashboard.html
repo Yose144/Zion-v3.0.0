@@ -274,9 +274,9 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-group">
         <div class="sidebar-title">Mission</div>
-        <button onclick="switchTab('overview')" id="tab-overview" class="sidebar-item tab-active">📊 Overview</button>
-        <button onclick="switchTab('nodes')" id="tab-nodes" class="sidebar-item">🖥️ Nodes</button>
-        <button onclick="switchTab('orchestrator')" id="tab-orchestrator" class="sidebar-item">🎛️ Orchestrator</button>
+        <button onclick="console.log('CLICK overview'); switchTab('overview')" id="tab-overview" class="sidebar-item tab-active">📊 Overview</button>
+        <button onclick="console.log('CLICK nodes'); switchTab('nodes')" id="tab-nodes" class="sidebar-item">🖥️ Nodes</button>
+        <button onclick="console.log('CLICK orchestrator'); switchTab('orchestrator')" id="tab-orchestrator" class="sidebar-item">🎛️ Orchestrator</button>
       </div>
       <div class="sidebar-group">
         <div class="sidebar-title">Governance</div>
@@ -967,6 +967,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
       </div>
     </div>
   </div>
+</div>
 
   <!-- ═════════ TAB: Nodes ═════════ -->
   <div id="pane-nodes" class="hidden space-y-4">
@@ -4226,6 +4227,6 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
   </div>
 </div>
 
-<script src="/dashboard.js?v=29"></script>
+<script src="/dashboard.js?v=40"></script>
 </body>
 </html>

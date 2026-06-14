@@ -7487,6 +7487,9 @@ class DashboardHandler(BaseHTTPRequestHandler):
             cors_origin = origin if origin in allowed else "*"
             self.send_response(status)
             self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
+            self.send_header("Pragma", "no-cache")
+            self.send_header("Expires", "0")
             self.send_header("Access-Control-Allow-Origin", cors_origin)
             self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
             self.send_header("Access-Control-Allow-Headers", "Content-Type")
