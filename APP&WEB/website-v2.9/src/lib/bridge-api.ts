@@ -48,8 +48,13 @@ export const BRIDGE_CONTRACTS_MAINNET: BridgeContractInfo = {
   explorer_base: 'https://basescan.org/address/',
 };
 
-/** Active contract set — change to BRIDGE_CONTRACTS_MAINNET after deploy */
-export const BRIDGE_CONTRACTS = BRIDGE_CONTRACTS_MAINNET;
+/** Active contract set — currently testnet; change to MAINNET after real deployment */
+export const BRIDGE_CONTRACTS = BRIDGE_CONTRACTS_SEPOLIA;
+
+/** Get contract set for a specific network */
+export function getBridgeContracts(network: 'mainnet' | 'sepolia'): BridgeContractInfo {
+  return network === 'mainnet' ? BRIDGE_CONTRACTS_MAINNET : BRIDGE_CONTRACTS_SEPOLIA;
+}
 
 const defaultStatus: BridgeStatus = {
   online: false,
