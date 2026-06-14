@@ -465,6 +465,7 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
           <div id="edge-mem-detail" class="text-[10px] text-gray-500 mt-0.5">— / — GB</div>
           <div id="edge-mem-trend" class="text-[9px] font-mono mt-1"></div>
           <div id="edge-mem-top" class="text-left mt-2 space-y-0.5"></div>
+          <button id="btn-edge-mem-limit" onclick="applyEdgeMemoryLimit()" class="mt-2 text-[9px] px-2 py-1 bg-amber-700/40 hover:bg-amber-600/60 rounded text-amber-300 font-semibold transition hidden" title="Add MemoryMax=3G to systemd">🔒 Limit RAM</button>
         </div>
         <div class="bg-black/30 rounded-xl p-3 text-center">
           <div class="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Disk</div>
@@ -4432,6 +4433,6 @@ input[type=range].ncl-slider::-webkit-slider-thumb{-webkit-appearance:none;width
   </div>
 </div>
 
-<script src="/dashboard.js?v=52"></script>
+<script src="/dashboard.js?v=53"></script>
 </body>
 </html>
