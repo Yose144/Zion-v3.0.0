@@ -4,6 +4,7 @@ const TABS = ['overview','nodes','orchestrator','wallets','explorer','services',
 let autoRefresh = true, refreshTimer = null, currentTab = 'overview';
 let charts = {};
 let _payoutSseSource = null;  // EventSource for real-time payout events
+let _payoutTimer = null;      // Fallback poll timer for payout tab
 let friendlyMode = false;
 let _overviewWidgetTimer = null;
 let _countdownTimer = null;
@@ -109,6 +110,7 @@ function clearTabTimers(except){
   if(except !== 'topology') _topologyTimer = null;
   if(except !== 'backups') _backupsTimer = null;
   if(except !== 'dao') _daoTimer = null;
+  if(except !== 'payout'){ clearInterval(_payoutTimer); _payoutTimer = null; }
 }
 
 function switchTab(name){
@@ -137,7 +139,7 @@ function switchTab(name){
   else if(name === 'hiran'){ clearTabTimers('hiran'); loadAgentList(); checkAiStatus(); if(!_hiranTimer) _hiranTimer = setInterval(()=>{loadAgentList(); checkAiStatus();}, 10000); }
   else if(name === 'topology'){ clearTabTimers('topology'); loadTopology(); if(!_topologyTimer) _topologyTimer = setInterval(loadTopology, 10000); }
   else if(name === 'dao'){ clearTabTimers('dao'); loadDaoAll(); if(!_daoTimer) _daoTimer = setInterval(loadDaoAll, 10000); }
-  else if(name === 'payout'){ clearTabTimers(null); loadPayoutTab(); connectPayoutSse(); }
+  else if(name === 'payout'){ clearTabTimers(null); loadPayoutTab(); connectPayoutSse(); if(!_payoutTimer) _payoutTimer = setInterval(loadPayoutTab, 10000); }
   else { clearTabTimers(null); disconnectPayoutSse(); }
 
   if(name === 'charts') renderCharts();
@@ -1717,7 +1719,11 @@ async function loadPayoutTab(){
     const d = payRes.status === 'fulfilled' ? payRes.value : {};
     const miners = minersRes.status === 'fulfilled' ? (minersRes.value.miners || minersRes.value || []) : [];
 
-    const set = (id, text) => { const el = document.getElementById(id); if(el) el.textContent = text; };
+    const set = (id, text) => {
+      const el = document.getElementById(id);
+      if(el) { el.textContent = text; }
+      else { console.warn('[PAYOUT] element not found:', id, 'value:', text); }
+    };
     const setHtml = (id, html) => { const el = document.getElementById(id); if(el) el.innerHTML = html; };
 
     // ── KPI Row ──────────────────────────────────────────────────────
