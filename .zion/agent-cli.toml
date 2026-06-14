@@ -1,0 +1,41 @@
+[llm]
+api_url = "http://localhost:1234/v1"
+model = "local-model"
+context_size = 32768
+temperature = 0.7
+
+[agent]
+max_steps = 100
+timeout_sec = 300
+auto_approve_safe = true
+
+[hiran]
+remote_host = "ssh1.vast.ai"
+remote_port = 31384
+ssh_key = "C:\\Users\\yosef\\.ssh\\vast\\hiran_v2.4_key"
+ssh_user = "root"
+remote_workspace = "/workspace/hiran-v2.3"
+tunnel_local_port = 8080
+tunnel_remote_port = 8080
+llama_server_bin = "/workspace/llama.cpp/llama-server"
+
+[coding]
+enabled = true
+project_type = "rust"
+build_cmd = "cargo build --manifest-path V3/Cargo.toml"
+test_cmd = "cargo test --manifest-path V3/Cargo.toml --workspace"
+lint_cmd = "cargo clippy --manifest-path V3/Cargo.toml --workspace"
+fmt_cmd = "cargo fmt --manifest-path V3/Cargo.toml --all"
+auto_build = true
+auto_test = true
+auto_lint = true
+
+[paths]
+repo_root = "C:\\Users\\yosef\\Desktop\\Zion\\2.9.6-main"
+models_dir = "C:\\Users\\yosef\\HiranModels"
+checkpoints_dir = "C:\\Users\\yosef\\HiranV2.3-Checkpoints"
+
+[safety]
+l1_protection = true
+destructive_confirmation = true
+secret_protection = true
