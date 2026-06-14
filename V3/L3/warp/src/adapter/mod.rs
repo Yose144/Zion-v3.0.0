@@ -3,6 +3,7 @@ pub mod bitcoin;
 pub mod cardano;
 pub mod cosmos;
 pub mod evm;
+pub mod lightning;
 pub mod near;
 pub mod solana;
 pub mod stellar;
@@ -57,6 +58,7 @@ pub fn create_adapter(chain_name: &str) -> Option<Box<dyn ChainAdapter>> {
         "aptos" => Some(Box::new(aptos::AptosAdapter::new())),
         "near" => Some(Box::new(near::NearAdapter::new())),
         "ton" => Some(Box::new(ton::TonAdapter::new())),
+        "lightning" => Some(Box::new(lightning::LightningAdapter::new())),
         _ => None,
     }
 }
@@ -90,6 +92,7 @@ mod tests {
         assert!(create_adapter("aptos").is_some());
         assert!(create_adapter("near").is_some());
         assert!(create_adapter("ton").is_some());
+        assert!(create_adapter("lightning").is_some());
     }
 
     #[test]

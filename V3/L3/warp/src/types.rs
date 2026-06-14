@@ -16,6 +16,7 @@ pub enum ChainFamily {
     Aptos,
     Near,
     Ton,
+    Lightning,
     ZionL1,
 }
 
@@ -33,6 +34,7 @@ impl std::fmt::Display for ChainFamily {
             ChainFamily::Aptos => write!(f, "aptos"),
             ChainFamily::Near => write!(f, "near"),
             ChainFamily::Ton => write!(f, "ton"),
+            ChainFamily::Lightning => write!(f, "lightning"),
             ChainFamily::ZionL1 => write!(f, "zion-l1"),
         }
     }
@@ -165,6 +167,16 @@ impl ChainId {
             name: "ton".to_string(),
             chain_id_numeric: None,
             decimals: 9,
+            finality_blocks: 1,
+        }
+    }
+
+    pub fn lightning() -> Self {
+        Self {
+            family: ChainFamily::Lightning,
+            name: "lightning".to_string(),
+            chain_id_numeric: None,
+            decimals: 8,
             finality_blocks: 1,
         }
     }
