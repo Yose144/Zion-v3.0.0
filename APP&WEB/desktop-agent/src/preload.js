@@ -166,6 +166,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   cliDaoTreasury: () => ipcRenderer.invoke('cli-dao-treasury'),
   cliDaoParams: () => ipcRenderer.invoke('cli-dao-params'),
 
+  // ── Swap CLI ───────────────────────────────────────────────────────
+  cliSwapStatus: () => ipcRenderer.invoke('cli-swap-status'),
+  cliSwapQuote: (data) => ipcRenderer.invoke('cli-swap-quote', data),
+  cliSwapHistory: (data) => ipcRenderer.invoke('cli-swap-history', data),
+
   // ── Pool CLI ─────────────────────────────────────────────────────
   cliPoolStats: (data) => ipcRenderer.invoke('cli-pool-stats', data),
   cliPoolMiners: (data) => ipcRenderer.invoke('cli-pool-miners', data),

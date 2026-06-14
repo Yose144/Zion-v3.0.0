@@ -5754,6 +5754,23 @@ ipcMain.handle('cli-dao-params', async () => {
   return runZionCli(['dao', 'params']);
 });
 
+// ── Swap CLI ───────────────────────────────────────────────────────
+ipcMain.handle('cli-swap-status', async () => {
+  return runZionCli(['swap', 'status']);
+});
+ipcMain.handle('cli-swap-quote', async (_event, { from, to, amount }) => {
+  const args = ['swap', 'quote'];
+  if (from) args.push('--from', from);
+  if (to) args.push('--to', to);
+  if (amount) args.push('--amount', String(amount));
+  return runZionCli(args);
+});
+ipcMain.handle('cli-swap-history', async (_event, { n }) => {
+  const args = ['swap', 'history'];
+  if (n) args.push(String(n));
+  return runZionCli(args);
+});
+
 // ── Pool CLI ───────────────────────────────────────────────────────
 ipcMain.handle('cli-pool-stats', async (_event, { target }) => {
   const args = ['pool', 'stats'];
