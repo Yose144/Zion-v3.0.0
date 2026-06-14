@@ -1,19 +1,30 @@
 use crate::{
     config::AgentConfig,
-    llm::{LlmClient, LlmResponse, ToolCall},
+    llm::{LlmClient, LlmResponse},
     memory::{AgentMemory, SessionContext},
+    planner::Planner,
     safety::SafetyChecker,
     tools::ToolRegistry,
     ui,
 };
 use anyhow::Result;
 use colored::Colorize;
-use tracing::{debug, info, warn};
+use tracing::{debug, warn};
 
 pub async fn run_task(cfg: &AgentConfig, task: &str, dry_run: bool) -> Result<()> {
     ui::print_header("ZION Agent Task");
     println!("  Task: {}", task.dimmed());
     println!();
+
+    let planner = Planner::new(cfg);
+    let plan = planner.plan(task)?;
+    if !plan.is_empty() {
+        ui::print_info("Plan:");
+        for (i, step) in plan.iter().enumerate() {
+            println!("  {} {}", format!("{}.", i + 1).dimmed(), step);
+        }
+        println!();
+    }
 
     if dry_run {
         ui::print_info("Dry-run mode: agent will plan but not execute.");
