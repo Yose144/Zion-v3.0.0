@@ -23,10 +23,15 @@ impl ChainRegistry {
     pub fn with_defaults() -> Self {
         let mut reg = Self::new();
         // EVM chains
+        reg.register(ChainId::evm("ethereum", 1, 12));
         reg.register(ChainId::evm("base", 8453, 12));
         reg.register(ChainId::evm("arbitrum", 42161, 20));
+        reg.register(ChainId::evm("optimism", 10, 20));
         reg.register(ChainId::evm("bsc", 56, 15));
         reg.register(ChainId::evm("polygon", 137, 128));
+        reg.register(ChainId::evm("avalanche", 43114, 20));
+        reg.register(ChainId::evm("zksync", 324, 20));
+        reg.register(ChainId::evm("linea", 59144, 20));
         // Non-EVM
         reg.register(ChainId::solana());
         reg.register(ChainId::tron());
@@ -122,7 +127,7 @@ mod tests {
     #[test]
     fn test_registry_defaults() {
         let reg = ChainRegistry::with_defaults();
-        assert_eq!(reg.chain_count(), 11); // 4 EVM + 6 non-EVM + ZION L1
+        assert_eq!(reg.chain_count(), 16); // 9 EVM + 6 non-EVM + ZION L1
     }
 
     #[test]
@@ -184,7 +189,7 @@ mod tests {
     fn test_registry_list_all() {
         let reg = ChainRegistry::with_defaults();
         let all = reg.list_all();
-        assert_eq!(all.len(), 11);
+        assert_eq!(all.len(), 16);
         assert!(all.iter().all(|(_, enabled)| *enabled));
     }
 }
