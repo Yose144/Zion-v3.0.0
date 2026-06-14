@@ -150,6 +150,20 @@ function switchTab(name){
   if(name === 'backups'){ clearTabTimers('backups'); loadBackups(); if(!_backupsTimer) _backupsTimer = setInterval(loadBackups, 15000); }
   if(['l1','l2','l3','l4','l5','l6'].includes(name)) loadLayerFull(name);
   if(name === 'launch-day'){ loadLaunchDayStatus(); if(typeof startLaunchCountdown==='function') startLaunchCountdown(); loadGenesisBackupList(); }
+
+  // ── NCL / Hiran auto-refresh ────────────────────────────────────────
+  if(name === 'hiran'){
+    if(typeof loadNclFull === 'function') try { loadNclFull(); } catch(e){}
+    if(!_nclAutoTimer) _nclAutoTimer = setInterval(function(){ if(typeof loadNclFull==='function') loadNclFull(); }, 10000);
+  } else {
+    clearInterval(_nclAutoTimer); _nclAutoTimer = null;
+  }
+
+  // ── Agent / Fleet / Settings / Miner-live extra hooks ──────────────
+  if(name === 'agent'){ if(typeof refreshAgentPanel==='function') try{refreshAgentPanel();}catch(e){} if(typeof refreshAgentRewards==='function') try{refreshAgentRewards();}catch(e){} }
+  if(name === 'fleet'){ if(typeof refreshFleet==='function') try{refreshFleet();}catch(e){} }
+  if(name === 'settings'){ if(typeof loadSettingsIntoForm==='function') try{loadSettingsIntoForm();}catch(e){} }
+  if(name === 'nodes'){ if(typeof refreshAgentNodes==='function') try{refreshAgentNodes();}catch(e){} if(typeof refreshAgentRewards==='function') try{refreshAgentRewards();}catch(e){} }
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -5037,24 +5051,7 @@ function initNclCharts() {
   }
 }
 
-// Hook NCL into tab switching — start auto-refresh when hiran tab is active
-(function() {
-  const _origSwitchTab = window.switchTab;
-  if (_origSwitchTab) {
-    window.switchTab = function(t) {
-      try { _origSwitchTab(t); } catch(e) { console.error('switchTab(hiran wrap) orig err:', e); }
-      try {
-        if (t === 'hiran') {
-          loadNclFull();
-          if (!_nclAutoTimer) _nclAutoTimer = setInterval(loadNclFull, 10000);
-        } else {
-          clearInterval(_nclAutoTimer);
-          _nclAutoTimer = null;
-        }
-      } catch(e) { console.error('switchTab NCL hook err:', e); }
-    };
-  }
-})();
+// NCL hook merged into switchTab directly
 
 // ─────────────────────────────────────────────────────────────────────
 // Overview Built-in Charts (Grafana Fallback)
@@ -5209,16 +5206,7 @@ const DAO_PAGE_SIZE = 10;
 let _daoPage = 0;
 let _daoTotalProposals = 0;
 
-// Hook into tab switch to auto-load DAO data
-(function() {
-  const _orig = window.switchTab;
-  if(_orig) {
-    window.switchTab = function(t) {
-      try { _orig(t); } catch(e) { console.error('switchTab(dao wrap) orig err:', e); }
-      try { if(t === 'dao') loadDaoAll(); } catch(e) { console.error('switchTab DAO hook err:', e); }
-    };
-  }
-})();
+// DAO hook merged into switchTab directly
 
 async function loadDaoAll() {
   await Promise.allSettled([loadDaoStats(), loadDaoProposals(), loadDaoTreasury(), loadDaoCoAdmins(), checkDaoDaemon()]);
@@ -7065,16 +7053,7 @@ async function genesisBackupAction(action){
   }
 }
 
-// Hook into tab switch to auto-load bridge data
-(function() {
-  const _orig = window.switchTab;
-  if (_orig) {
-    window.switchTab = function(t) {
-      try { _orig(t); } catch(e) { console.error('switchTab(bridge wrap) orig err:', e); }
-      try { if (t === 'bridge') { loadBridgeStats(); refreshBridgeHistory(); } } catch(e) { console.error('switchTab bridge hook err:', e); }
-    };
-  }
-})();
+// Bridge hook merged into switchTab directly
 
 // Keyboard shortcut: 'b' for bridge
 (function() {
@@ -7509,21 +7488,7 @@ async function removeFleetRig(rigId){
   }catch(e){ alert('Error: ' + e.message); }
 }
 
-// Auto-refresh new tabs when opened
-(function() {
-  const _orig = window.switchTab;
-  if (_orig) {
-    window.switchTab = function(t) {
-      try { _orig(t); } catch(e) { console.error('switchTab(agent wrap) orig err:', e); }
-      try {
-        if (t === 'agent') { refreshAgentPanel(); refreshAgentRewards(); }
-        if (t === 'miner-live') { refreshMinerLive(); }
-        if (t === 'settings') { loadSettingsIntoForm(); }
-        if (t === 'fleet') { refreshFleet(); }
-      } catch(e) { console.error('switchTab agent/fleet/settings hook err:', e); }
-    };
-  }
-})();
+// Agent/fleet/settings hooks merged into switchTab directly
 
 // ═════════ Agent Node Discovery & Rewards ═════════
 
@@ -7680,13 +7645,4 @@ async function triggerEdgeBackup() {
   }
 }
 
-// Auto-refresh agent data when Nodes tab is opened
-(function() {
-  const _orig = window.switchTab;
-  if (_orig) {
-    window.switchTab = function(t) {
-      try { _orig(t); } catch(e) { console.error('switchTab(nodes wrap) orig err:', e); }
-      try { if (t === 'nodes') { refreshAgentNodes(); refreshAgentRewards(); } } catch(e) { console.error('switchTab nodes hook err:', e); }
-    };
-  }
-})();
+// Nodes hook merged into switchTab directly
