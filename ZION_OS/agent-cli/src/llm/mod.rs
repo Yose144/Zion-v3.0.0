@@ -1,4 +1,5 @@
 pub mod remote;
+pub mod stream;
 
 use crate::config::LlmConfig;
 use anyhow::Result;
