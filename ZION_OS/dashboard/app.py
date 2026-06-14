@@ -3207,6 +3207,19 @@ def build_alerts(status: dict) -> list:
                        "detail": "Miner is connected but no hashrate samples in recent logs. Check GPU init.",
                        "action": "restart-miner"})
 
+    # Edge memory alert
+    edge_status = status.get("edge_status", {})
+    if edge_status.get("ok") and edge_status.get("mem_pct") is not None:
+        mem_pct = edge_status["mem_pct"]
+        if mem_pct > 90:
+            alerts.append({"severity": "critical", "title": "Edge memory critically high",
+                           "detail": f"Edge server RAM at {mem_pct}% — node may OOM. Consider restart-node1 or add MemoryMax to systemd.",
+                           "action": "restart-node1"})
+        elif mem_pct > 75:
+            alerts.append({"severity": "warning", "title": "Edge memory high",
+                           "detail": f"Edge server RAM at {mem_pct}% — possible memory leak in zion-node. Monitor trend.",
+                           "action": None})
+
     if miner["running"] and miner["hashrate"] and miner["hashrate"] < 1.0:
         alerts.append({"severity": "info", "title": "Low hashrate",
                        "detail": f"Hashrate {miner['hashrate']} KH/s seems low. Expected ~6-10 KH/s on RDNA1.",
@@ -5074,7 +5087,7 @@ def _run_edge_ssh_command(cmd: str, timeout: int = 15) -> dict:
             capture_output=True, text=True, timeout=timeout
         )
         ok = result.returncode == 0
-        return {"ok": ok, "stdout": result.stdout[:500], "stderr": result.stderr[:300],
+        return {"ok": ok, "stdout": result.stdout[:4000], "stderr": result.stderr[:300],
                 "host": host, "returncode": result.returncode}
     except subprocess.TimeoutExpired:
         return {"ok": False, "error": f"SSH timeout ({timeout}s) connecting to {host}"}
@@ -5083,6 +5096,7 @@ def _run_edge_ssh_command(cmd: str, timeout: int = 15) -> dict:
 
 _edge_status_cache: dict = {}
 _edge_status_ts: float = 0.0
+_edge_mem_history: list = []  # [(timestamp, mem_pct, mem_used_mb), ...] max 20 points
 
 def run_edge_action(action: str) -> dict:
     """Execute a control action on the Edge server via SSH."""
@@ -5110,7 +5124,7 @@ def run_edge_action(action: str) -> dict:
 
 def get_edge_system_status(force: bool = False) -> dict:
     """Fetch Edge server system metrics + service health via SSH. Cached 30s."""
-    global _edge_status_cache, _edge_status_ts
+    global _edge_status_cache, _edge_status_ts, _edge_mem_history
     import time as _time
     if not force and _edge_status_ts and (_time.time() - _edge_status_ts) < 30:
         return _edge_status_cache
@@ -5119,6 +5133,7 @@ def get_edge_system_status(force: bool = False) -> dict:
         "echo '===CPU==='; top -bn1 | grep 'Cpu(s)' | awk '{print $2}'; "
         "echo '===LOAD==='; cat /proc/loadavg | awk '{print $1,$2,$3}'; "
         "echo '===MEM==='; free -m | awk '/^Mem/{print $2,$3,$7}'; "
+        "echo '===MEMTOP==='; ps -eo rss,comm --sort=-rss | awk 'NR>1 && NR<=6{printf \"%.1f %s\n\", \$1/1024, \$2}'; "
         "echo '===DISK==='; df -m / | awk 'NR==2{print $2,$3,$4}'; "
         "echo '===SVCS==='; "
         "for svc in zion-edge-node1 zion-edge-node2 zion-pool-server zion-edge-dao zion-edge-warp zion-edge-dashboard hiran-inference hiranyagarbha; do "
@@ -5176,6 +5191,19 @@ def get_edge_system_status(force: bool = False) -> dict:
     except Exception:
         data["mem_total_mb"] = None; data["mem_used_mb"] = None; data["mem_free_mb"] = None; data["mem_pct"] = None
 
+    # Top memory consumers (MB, process name)
+    try:
+        memtop = []
+        for line in _section("MEMTOP").split("\n"):
+            line = line.strip()
+            if line:
+                p = line.split(None, 1)
+                if len(p) == 2:
+                    memtop.append({"mb": float(p[0]), "cmd": p[1]})
+        data["mem_top"] = memtop
+    except Exception:
+        data["mem_top"] = []
+
     # Disk (MB)
     try:
         parts = _section("DISK").split()
@@ -5209,6 +5237,18 @@ def get_edge_system_status(force: bool = False) -> dict:
             k, v = line.strip().split("=", 1)
             pm2[k.strip()] = v.strip()
     data["pm2"] = pm2
+
+    # Update memory history for trend tracking
+    if data.get("mem_pct") is not None:
+        _edge_mem_history.append({
+            "ts": _time.time(),
+            "mem_pct": data["mem_pct"],
+            "mem_used_mb": data.get("mem_used_mb", 0),
+        })
+        # Keep last 20 points (~10 min at 30s intervals)
+        if len(_edge_mem_history) > 20:
+            _edge_mem_history = _edge_mem_history[-20:]
+    data["mem_history"] = _edge_mem_history
 
     _edge_status_cache = data
     _edge_status_ts = _time.time()
