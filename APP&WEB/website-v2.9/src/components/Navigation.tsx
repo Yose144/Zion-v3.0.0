@@ -155,7 +155,7 @@ export default function Navigation() {
     <nav className="fixed top-0 left-0 right-0 z-50">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-linear-to-r from-zion-purple/24 via-black/40 to-zion-cyan/24 blur-3xl opacity-80" />
       <div className="zion-container py-4 relative">
-        <div className="zion-panel flex items-center justify-between px-4 py-3 ring-1 ring-white/5">
+        <div className="zion-panel overflow-visible flex items-center justify-between px-4 py-3 ring-1 ring-white/5">
           <Link href="/" className="flex items-center space-x-3 group">
             <div className="w-12 h-12 rounded-2xl flex items-center justify-center relative overflow-hidden border border-white/20 group-hover:border-zion-gold/50 transition-colors bg-black/40 shadow-[0_12px_34px_rgba(0,0,0,0.35)]">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(255,215,0,0.3),transparent_60%)]" />
