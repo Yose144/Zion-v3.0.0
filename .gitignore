@@ -254,6 +254,7 @@ HiranV2.1/*.zip
 
 # Hiran v2.3 large artifacts
 HiranV2.3/HiranV2.3-Checkpoints/
+HiranV2.3/models/checkpoint-*/
 HiranV2.3/data/curriculum/*.jsonl
 HiranV2.3/data/**/*.jsonl
 HiranV2.3/knowledge/vector_db/

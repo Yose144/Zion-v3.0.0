@@ -1,6 +1,6 @@
 # ZION V3 — Status Report (Mainnet Polish)
 
-> **Datum:** **2026-06-14** (Dashboard all-tabs fix, Payout/Wallets sekce, Restart Edge Pool SSH, UFW 8444 oprava — viz sekce níže); **2026-06-13** (Fire algorithm hard fork deployment — viz sekce níže); **2026-06-13** (Hiran v2.3 documentation cleanup — viz sekce níže); **2026-06-11** (Hard Genesis Reset #0 completed — viz sekce níže); **2026-06-11** (Pool stale share detection + dashboard tab fix — viz sekce níže); **2026-06-10** (GPU/CPU path oddělení + algorithm-aware share validace); **2026-06-09**; **2026-06-08** (Fire CPU/GPU sync + pool submitted_hash fix); 2026-06-07 (Chain reset + full stack cleanup); 2026-06-06 (HTTP JSON-RPC Transaction Relay Bug Fix); 2026-05-22 (Genesis + fee split KONFIGURACE DOKONČENA, ready for mainnet launch 31.12.2026); **2026-05-21** (Edge pool + L5/L6 + DAO governance + root docs sync); **2026-05-12** (Hiran v2.2 CLI integration); **2026-05-07** (security cleanup + agentická obsluha).
+> **Datum:** **2026-06-15** (Edge server full update — Rust + V3 rebuild + služby restart, bridge port fix, dashboard restart tlačítka fix); **2026-06-14** (Dashboard all-tabs fix, Payout/Wallets sekce, Restart Edge Pool SSH, UFW 8444 oprava — viz sekce níže); **2026-06-13** (Fire algorithm hard fork deployment — viz sekce níže); **2026-06-13** (Hiran v2.3 documentation cleanup — viz sekce níže); **2026-06-11** (Hard Genesis Reset #0 completed — viz sekce níže); **2026-06-11** (Pool stale share detection + dashboard tab fix — viz sekce níže); **2026-06-10** (GPU/CPU path oddělení + algorithm-aware share validace); **2026-06-09**; **2026-06-08** (Fire CPU/GPU sync + pool submitted_hash fix); 2026-06-07 (Chain reset + full stack cleanup); 2026-06-06 (HTTP JSON-RPC Transaction Relay Bug Fix); 2026-05-22 (Genesis + fee split KONFIGURACE DOKONČENA, ready for mainnet launch 31.12.2026); **2026-05-21** (Edge pool + L5/L6 + DAO governance + root docs sync); **2026-05-12** (Hiran v2.2 CLI integration); **2026-05-07** (security cleanup + agentická obsluha).
 > (sjednocení `StatusV3.md` ↔ `StatusV3-Part2.md` — TL;DR, roadmap §6, §8, §5
 > pyramida, odkazy).
 > **Předchozí update:** 2026-05-03 (genesis konsensus — merged na `main`)
@@ -19,6 +19,51 @@
 > starý Praha server (`91.98.122.165`) nebo historickou multi-server topologii
 > (Prague, SG, Helsinki, US) jsou **archivní / historické**, pokud není explicitně
 > uvedeno jinak. Aktuální živá topologie je **Core + Edge** (viz sekce Infrastruktura).
+
+---
+
+## Co je nového 2026-06-15 (Edge Server Full Update + Dashboard Fixes)
+
+> **Status:** COMPLETE — Edge server aktualizován na nejnovější kód, V3 binárky rebuildovány, všechny služby restartovány. Dashboard restart tlačítka opravena.
+
+### Edge Server Update
+
+| Krok | Popis | Výsledek |
+|------|-------|----------|
+| **Rust install** | Nainstalován Rust 1.96.0 (`rustup`) na Edge server | ✅ |
+| **Git sync** | Lokální kód (V3/ + dashboard/) synchronizován na Edge | ✅ |
+| **V3 rebuild** | `cargo build --release` — node, pool, DAO, WARP, bridge | ✅ |
+| **Binárky** | Nainstalovány do `/usr/local/bin/` (timestamp 2026-06-15) | ✅ |
+| **Služby** | Všechny 7 služeb restartovány v pořadí: node1 → node2 → pool → DAO+WARP+bridge | ✅ |
+
+### Aktuální stav Edge služeb (2026-06-15)
+
+```
+zion-edge-node1:    active  (ports 8333, 8443)
+zion-edge-node2:    active  (port 8334)
+zion-pool-server:   active  (port 8444, 2 mineři připojení)
+zion-edge-dao:      active  (port 8450)
+zion-edge-warp:     active  (port 8453)
+zion-edge-bridge:   active  (port 9101)
+zion-edge-dashboard: active  (port 8888)
+PM2 zion-website:   online  (port 3000)
+```
+
+### Dashboard Fixes
+
+| Problém | Příčina | Řešení |
+|---------|---------|--------|
+| **Bridge červený** | Manifest měl port **9102**, bridge běží na **9101** | Port změněn na 9101 v `SERVICE_REGISTRY` |
+| **Atomic Swap červený** | Služba vůbec neběží na Edge serveru | Odstraněn z `SERVICE_REGISTRY_EDGE_PRIMARY` |
+| **Restart tlačítka nefungují** | Windows OpenSSH nezpracuje `pkill -f` (rc=4294967295) | Všechny SSH příkazy bez `-f` flagu, použití přesných jmen |
+| **Dashboard deadlock** | Lokální dashboard se zasekl při SSH volání | Kill + restart, nyní stabilní |
+
+### Git Commity
+
+```
+02a9527a  fix(dashboard): fix Edge restart buttons - pkill -f fails on Windows SSH
+189fd901  fix(dashboard): correct bridge port 9102->9101, remove atomic-swap from edge manifest
+```
 
 ---
 
