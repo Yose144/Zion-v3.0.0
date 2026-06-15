@@ -51,6 +51,7 @@ export default function Navigation() {
             { href: '/wallet', label: tr('nav', 'wallet', lang) },
             { href: '/dao', label: tr('nav', 'dao', lang) },
             { href: '/bridge', label: tr('nav', 'bridge', lang) },
+            { href: '/swap', label: tr('nav', 'swap', lang) },
           ],
         },
         {
