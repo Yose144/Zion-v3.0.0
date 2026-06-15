@@ -67,21 +67,6 @@ export const NEWS_ARTICLES: NewsArticle[] = [
     href: '/network',
   },
   {
-    slug: 'v3-mainnet-ready-countdown',
-    date: '2026-05-23',
-    tag: { cs: 'Mainnet', en: 'Mainnet' },
-    tagColor: 'text-amber-400',
-    title: {
-      cs: 'ZION 3.0.1 Genesis Launch — MainNet Genesis 11. 6. 2026',
-      en: 'ZION 3.0.1 Genesis Launch — MainNet Genesis 11 Jun 2026',
-    },
-    summary: {
-      cs: 'Website přešel na countdown mód — mainnet launch se přesunul na Silvestr 2026. Core + Edge topologie je stabilní, pool a miner běží. Dokumentace a roadmapa synchronizována.',
-      en: 'Website switched to countdown mode — mainnet launch moved to New Year\'s Eve 2026. Core + Edge topology is stable, pool and miner running. Docs and roadmap synchronized.',
-    },
-    href: '/network',
-  },
-  {
     slug: 'l3-hiran-orchestration',
     date: '2026-05-23',
     tag: { cs: 'AI', en: 'AI' },
