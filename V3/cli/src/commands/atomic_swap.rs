@@ -1,5 +1,6 @@
 use anyhow::Result;
 use clap::Subcommand;
+use sha2::Digest;
 
 use crate::config::Config;
 use crate::rpc::agent_rpc;
@@ -17,6 +18,21 @@ pub enum AtomicSwapCmd {
     Escrow,
     /// Query HTLC status by hash
     Get { hash: String },
+    /// Create (initiate) a new HTLC lock on ZION L1
+    Create {
+        /// Amount in ZION
+        amount: f64,
+        /// Target chain (e.g. "base", "eth", "bsc", "polygon")
+        chain: String,
+        /// Recipient address on the target chain
+        recipient: String,
+        /// Optional custom preimage (64-char hex, otherwise auto-generated)
+        #[arg(long)]
+        preimage: Option<String>,
+        /// Timeout in minutes (default: 120)
+        #[arg(long, default_value_t = 120)]
+        timeout: u64,
+    },
     /// List pending HTLCs (admin/auth required)
     Pending,
     /// Claim ZION by revealing preimage
@@ -83,6 +99,65 @@ pub async fn run(cfg: &Config, cmd: AtomicSwapCmd) -> Result<()> {
             match resp {
                 Ok(v) => println!("{}", serde_json::to_string_pretty(&v)?),
                 Err(e) => ui::print_warn(&format!("HTLC not found: {}", e)),
+            }
+            println!();
+            Ok(())
+        }
+        AtomicSwapCmd::Create {
+            amount,
+            chain,
+            recipient,
+            preimage,
+            timeout,
+        } => {
+            ui::print_header("Create Atomic Swap");
+            
+            // Generate or use preimage
+            let (preimage_hex, hash_hex) = match preimage {
+                Some(p) => {
+                    if p.len() != 64 {
+                        ui::print_err("Preimage must be a 64-character hex string!");
+                        return Ok(());
+                    }
+                    let hash_bytes = sha2::Sha256::digest(hex::decode(&p)?);
+                    (p, hex::encode(hash_bytes))
+                }
+                None => {
+                    use rand::Rng;
+                    let mut bytes = [0u8; 32];
+                    rand::thread_rng().fill(&mut bytes);
+                    let preimage_hex = hex::encode(bytes);
+                    let hash_bytes = sha2::Sha256::digest(&bytes);
+                    let hash_hex = hex::encode(hash_bytes);
+                    (preimage_hex, hash_hex)
+                }
+            };
+
+            ui::print_row("Preimage (SAVE THIS!)", &preimage_hex);
+            ui::print_row("Hashlock (SHA-256)", &hash_hex);
+            ui::print_row("Amount", &format!("{} ZION", amount));
+            ui::print_row("Target Chain", &chain);
+            ui::print_row("Recipient", &recipient);
+            ui::print_row("Timeout", &format!("{} minutes", timeout));
+
+            // Fetch escrow address
+            let escrow_resp = agent_rpc::get(&url, "swap/escrow-address").await;
+            match escrow_resp {
+                Ok(v) => {
+                    if let Some(escrow_addr) = v["escrow_address"].as_str() {
+                        ui::print_row("Escrow Address", escrow_addr);
+                        
+                        let memo = format!("SWAP:LOCK:{}:{}:{}:{}", hash_hex, timeout, chain, recipient);
+                        println!();
+                        ui::print_info("To lock funds, send ZION on L1 to the escrow address with this exact memo:");
+                        println!("  Address: {}", escrow_addr);
+                        println!("  Amount:  {} ZION", amount);
+                        println!("  Memo:    {}", memo);
+                    }
+                }
+                Err(e) => {
+                    ui::print_warn(&format!("Failed to retrieve escrow address from daemon: {}", e));
+                }
             }
             println!();
             Ok(())
