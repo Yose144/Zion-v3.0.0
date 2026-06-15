@@ -5086,6 +5086,11 @@ def _run_edge_ssh_command(cmd: str, timeout: int = 15) -> dict:
              f"root@{host}", cmd],
             capture_output=True, text=True, timeout=timeout
         )
+        # rc 4294967295 == Windows SSH cmd.exe parsing failure (e.g. 'pkill -f')
+        if result.returncode == 4294967295:
+            return {"ok": False, "error": "SSH command rejected by Windows SSH wrapper (cmd.exe parse error). "
+                    "Avoid 'pkill -f', shell substitutions, or complex quoting.",
+                    "host": host, "returncode": result.returncode}
         ok = result.returncode == 0
         return {"ok": ok, "stdout": result.stdout[:4000], "stderr": result.stderr[:300],
                 "host": host, "returncode": result.returncode}
@@ -5099,23 +5104,30 @@ _edge_status_ts: float = 0.0
 _edge_mem_history: list = []  # [(timestamp, mem_pct, mem_used_mb), ...] max 20 points
 
 def run_edge_action(action: str) -> dict:
-    """Execute a control action on the Edge server via SSH."""
+    """Execute a control action on the Edge server via SSH.
+    NOTE: Windows OpenSSH passes commands through cmd.exe — avoid 'pkill -f' (the
+    -f flag is misinterpreted).  Use exact process names or systemctl instead."""
     SSH_CMDS = {
-        "restart-node1": "systemctl restart zion-edge-node1 && echo 'Node 1 restarted'",
-        "restart-node2": "systemctl restart zion-edge-node2 && echo 'Node 2 restarted'",
-        "restart-pool": "pkill -f 'zion-pool-server' || true; sleep 2; cd /root/zion-2.9.6-main && nohup ./V3/target/release/zion-pool-server >> logs/pool.log 2>&1 &",
-        "restart-dao": "systemctl restart zion-edge-dao && echo 'DAO restarted'",
-        "restart-warp": "systemctl restart zion-edge-warp && echo 'WARP restarted'",
-        "restart-dashboard": "systemctl restart zion-edge-dashboard && echo 'Dashboard restarted'",
-        "restart-hiran": "systemctl restart hiran-inference 2>/dev/null || (pkill -f 'hiran' || true; echo 'Hiran restarted')",
-        "restart-hiranyagarbha": "systemctl restart hiranyagarbha 2>/dev/null || (pkill -f 'hiranyagarbha' || true; echo 'Hiranyagarbha restarted')",
-        "restart-bridge": "systemctl restart zion-edge-bridge 2>/dev/null || echo 'Bridge not installed'",
-        "restart-website": "pm2 restart zion-website 2>/dev/null || echo 'Website not in PM2'",
-        "clean-docker": "docker system prune -af --volumes 2>&1 && ctr images prune --all 2>&1 && echo 'Docker cleaned'",
-        "backup-edge": "cd /root/zion-2.9.6-main && tar czf /root/backups/edge-$(date +%Y%m%d-%H%M%S).tar.gz --exclude=target --exclude=.git --exclude=logs . 2>&1 && echo 'Backup created'",
-        "security-audit": "echo '=== SSH ==='; ls -la /root/.ssh/authorized_keys; echo '=== UFW ==='; ufw status; echo '=== Certs ==='; openssl x509 -in /etc/letsencrypt/live/zionterranova.com/cert.pem -noout -dates 2>/dev/null || echo 'No SSL cert found'; echo '=== Done ==='",
-        "full-health": "echo '=== SYSTEM ==='; uptime; free -h; df -h /; echo '=== SERVICES ==='; systemctl is-active zion-edge-node1 zion-edge-node2 zion-edge-dao zion-edge-warp zion-edge-dashboard; echo '=== POOL ==='; ss -tlnp | grep 8444; echo '=== Done ==='",
-        "memory-limit": "mkdir -p /etc/systemd/system/zion-edge-node1.service.d && echo '[Service]\\nMemoryMax=3G\\nMemorySwapMax=0' > /etc/systemd/system/zion-edge-node1.service.d/memory.conf && systemctl daemon-reload && echo 'MemoryMax=3G applied. Node will restart if >3G.'",
+        # systemctl-managed services — straightforward restart
+        "restart-node1":        "systemctl restart zion-edge-node1; systemctl is-active zion-edge-node1",
+        "restart-node2":        "systemctl restart zion-edge-node2; systemctl is-active zion-edge-node2",
+        "restart-dao":          "systemctl restart zion-edge-dao; systemctl is-active zion-edge-dao",
+        "restart-warp":         "systemctl restart zion-edge-warp; systemctl is-active zion-edge-warp",
+        "restart-dashboard":    "systemctl restart zion-edge-dashboard; systemctl is-active zion-edge-dashboard",
+        # Pool: try systemctl first, fall back to pkill by exact name + nohup relaunch
+        "restart-pool":         "systemctl restart zion-pool-server 2>/dev/null; pkill zion-pool-server; sleep 2; cd /root/zion-2.9.6-main && nohup ./V3/target/release/zion-pool-server >> logs/pool.log 2>&1 & echo pool_restarted",
+        # Hiran / Hiranya: exact process name kill (no -f flag)
+        "restart-hiran":        "systemctl restart hiran-inference 2>/dev/null; pkill hiran-inference; sleep 1; systemctl is-active hiran-inference 2>/dev/null; echo hiran_restart_sent",
+        "restart-hiranyagarbha":"systemctl restart hiranyagarbha 2>/dev/null; pkill hiranyagarbha; sleep 1; systemctl is-active hiranyagarbha 2>/dev/null; echo hiranya_restart_sent",
+        # Bridge / Website
+        "restart-bridge":       "systemctl restart zion-edge-bridge 2>/dev/null; systemctl is-active zion-edge-bridge 2>/dev/null; echo bridge_restart_sent",
+        "restart-website":      "pm2 restart zion-website 2>/dev/null; echo website_restart_sent",
+        # Maintenance
+        "clean-docker":         "docker system prune -af --volumes 2>&1; echo docker_cleaned",
+        "backup-edge":          "mkdir -p /root/backups; cd /root/zion-2.9.6-main && tar czf /root/backups/edge-backup.tar.gz --exclude=target --exclude=.git --exclude=logs . 2>&1; echo backup_done",
+        "security-audit":       "ls -la /root/.ssh/authorized_keys; ufw status; echo audit_done",
+        "full-health":          "uptime; free -h; df -h /; systemctl is-active zion-edge-node1 zion-edge-node2 zion-edge-dao zion-edge-warp zion-edge-dashboard; ss -tlnp | grep 8444; echo health_done",
+        "memory-limit":         "mkdir -p /etc/systemd/system/zion-edge-node1.service.d; printf '[Service]\\nMemoryMax=3G\\nMemorySwapMax=0\\n' > /etc/systemd/system/zion-edge-node1.service.d/memory.conf; systemctl daemon-reload; echo memory_limit_applied",
     }
     cmd = SSH_CMDS.get(action)
     if not cmd:
@@ -5269,18 +5281,18 @@ def run_control(action: str, env_overrides: dict = None) -> dict:
     # ── Edge remote actions (SSH) ─────────────────────────────────────────
     if action == "restart-pool-edge":
         _log_control("action=restart-pool-edge via SSH")
-        r = _run_edge_ssh_command("systemctl restart zion-pool 2>&1 || (pkill -f 'zion-pool\\|pool server' && sleep 2 && cd /root/zion-2.9.6-main && nohup ./V3/target/release/server >> logs/pool.log 2>&1 &)")
+        r = _run_edge_ssh_command("systemctl restart zion-pool-server 2>/dev/null; pkill zion-pool-server; sleep 2; cd /root/zion-2.9.6-main && nohup ./V3/target/release/zion-pool-server >> logs/pool.log 2>&1 & echo pool_restarted")
         return {"ok": r.get("ok", False), "action": action,
                 "message": "Edge pool restart sent via SSH" if r.get("ok") else r.get("error", "SSH failed"),
                 "details": r.get("stdout", "") + r.get("stderr", "")}
     if action == "stop-pool-edge":
         _log_control("action=stop-pool-edge via SSH")
-        r = _run_edge_ssh_command("systemctl stop zion-pool 2>&1 || pkill -f 'zion-pool\\|pool server'")
+        r = _run_edge_ssh_command("systemctl stop zion-pool-server 2>/dev/null; pkill zion-pool-server; echo pool_stopped")
         return {"ok": r.get("ok", False), "action": action,
                 "message": "Edge pool stop sent via SSH" if r.get("ok") else r.get("error", "SSH failed")}
     if action == "start-pool-edge":
         _log_control("action=start-pool-edge via SSH")
-        r = _run_edge_ssh_command("systemctl start zion-pool 2>&1 || (cd /root/zion-2.9.6-main && nohup ./V3/target/release/server >> logs/pool.log 2>&1 &)")
+        r = _run_edge_ssh_command("systemctl start zion-pool-server 2>/dev/null; cd /root/zion-2.9.6-main && nohup ./V3/target/release/zion-pool-server >> logs/pool.log 2>&1 & echo pool_started")
         return {"ok": r.get("ok", False), "action": action,
                 "message": "Edge pool start sent via SSH" if r.get("ok") else r.get("error", "SSH failed")}
 
