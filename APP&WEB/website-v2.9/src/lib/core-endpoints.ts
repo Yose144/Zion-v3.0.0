@@ -19,6 +19,9 @@ export const CORE = {
   /** DAO API — runs locally on Edge (port 8450) */
   dao: `http://127.0.0.1:8450`,
 
+  /** Atomic Swap API — runs locally on Edge (port 8452) */
+  atomicSwap: `http://127.0.0.1:8452`,
+
   /** Prometheus metrics scraper — runs locally on Edge (port 9090) */
   prometheus: `http://127.0.0.1:9090`,
 
