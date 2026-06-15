@@ -31,6 +31,34 @@ pub struct SwapExecutor {
 }
 
 impl SwapExecutor {
+    /// Create dummy executor for tests (in-memory mode, fake address).
+    pub fn new_dummy() -> Self {
+        Self {
+            cfg: Arc::new(SwapConfig {
+                swap: crate::config::SwapIdentity {
+                    name: "Dummy Executor".into(),
+                    network: "testnet".into(),
+                    min_lock_flowers: 1_000,
+                    max_lock_atomic: 10_000_000_000_000,
+                    release_fee_atomic: 2_000,
+                },
+                l1: crate::config::L1Config {
+                    rpc_url: "dummy".into(),
+                    rpc_token: None,
+                    escrow_key_hex: None,
+                    scan_batch_size: 10,
+                    poll_interval_secs: 5,
+                },
+                database: Default::default(),
+                api: Default::default(),
+                refund: Default::default(),
+                evm_watcher: None,
+            }),
+            escrow_address: "zion1dummyescrowaddress000000000000000001".into(),
+            signing_key_bytes: [42u8; 32],
+        }
+    }
+
     /// Create executor — reads escrow key from config / env.
     pub fn new(cfg: Arc<SwapConfig>) -> SwapResult<Self> {
         let key_hex = cfg
@@ -258,6 +286,16 @@ impl SwapExecutor {
     // ── UTXO fetch ────────────────────────────────────────────────────────
 
     async fn fetch_utxos(&self, address: &str) -> SwapResult<Vec<L1SpendableUtxo>> {
+        if self.cfg.l1.rpc_url == "dummy" {
+            return Ok(vec![L1SpendableUtxo {
+                tx_hash: "0".repeat(64),
+                output_index: 0,
+                amount: 10_000_000_000_000, // 10 ZION
+                address: address.to_string(),
+                height: 100,
+            }]);
+        }
+
         #[derive(Deserialize)]
         struct UtxosResponse {
             utxos: Vec<L1SpendableUtxo>,
@@ -268,6 +306,10 @@ impl SwapExecutor {
     }
 
     async fn submit_transaction(&self, transaction: &L1UtxoTransaction) -> SwapResult<String> {
+        if self.cfg.l1.rpc_url == "dummy" {
+            return Ok(bytes_to_hex(&transaction.id));
+        }
+
         #[derive(Deserialize)]
         struct SubmitTransactionResponse {
             accepted: bool,
