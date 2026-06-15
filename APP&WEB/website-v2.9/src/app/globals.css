@@ -428,14 +428,7 @@
 
 /* ═══ iPhone specific grid fixes ═══ */
 @media (max-width: 430px) {
-  /* Force single column for all grids on small iPhones */
-  .grid {
-    grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
-    gap: clamp(0.5rem, 3vw, 1rem);
-  }
-  
-  /* Override any grid that might cause horizontal scroll */
-  .grid.grid-cols-2,
+  /* Prevent large multi-column grids from overflowing on small iPhones */
   .grid.grid-cols-3,
   .grid.grid-cols-4,
   .grid.grid-cols-5,
@@ -447,10 +440,8 @@
 /* ═══ iOS Safari scroll bounce prevention ═══ */
 @supports (-webkit-appearance: none) {
   body {
-    position: fixed;
+    position: relative;
     width: 100%;
-    height: 100%;
-    overflow: auto;
     -webkit-overflow-scrolling: touch;
   }
   
