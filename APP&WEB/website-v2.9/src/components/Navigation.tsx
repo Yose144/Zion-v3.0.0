@@ -145,7 +145,7 @@ export default function Navigation() {
   /* Close on resize from mobile to desktop */
   useEffect(() => {
     const onResize = () => {
-      if (window.innerWidth >= 768) setIsOpen(false);
+      if (window.innerWidth >= 1024) setIsOpen(false);
     };
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
@@ -173,7 +173,7 @@ export default function Navigation() {
             </span>
           </Link>
 
-          <div className="hidden md:flex items-center gap-6" data-nav-desktop>
+          <div className="hidden lg:flex items-center gap-6" data-nav-desktop>
             <div className="relative">
               <div className="flex items-center gap-2">
                 {navGroups.map((group) => {
@@ -262,7 +262,7 @@ export default function Navigation() {
             </Link>
             <button
               onClick={() => setLang(lang === 'cs' ? 'en' : 'cs')}
-              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/15 bg-white/5 text-xs font-semibold hover:border-white/30 hover:bg-white/8 transition-colors text-gray-300 hover:text-white"
+              className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/15 bg-white/5 text-xs font-semibold hover:border-white/30 hover:bg-white/8 transition-colors text-gray-300 hover:text-white"
               title={lang === 'cs' ? tr('nav', 'switch_to_en', lang) : tr('nav', 'switch_to_cs', lang)}
             >
               {lang === 'cs' ? tr('nav', 'language_toggle_desktop_cs', lang) : tr('nav', 'language_toggle_desktop_en', lang)}
@@ -271,7 +271,7 @@ export default function Navigation() {
 
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="md:hidden text-white p-3 rounded-xl border border-white/20 bg-white/5 hover:border-white/40 active:scale-95 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center"
+            className="lg:hidden text-white p-3 rounded-xl border border-white/20 bg-white/5 hover:border-white/40 active:scale-95 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center"
             aria-label={isOpen ? tr('nav', 'close_menu', lang) : tr('nav', 'open_menu', lang)}
             aria-expanded={isOpen}
           >
@@ -291,12 +291,12 @@ export default function Navigation() {
           <>
             {/* Backdrop */}
             <div
-              className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+              className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
               onClick={() => setIsOpen(false)}
               aria-hidden="true"
             />
             {/* Slide-in panel */}
-            <div className="md:hidden fixed top-0 right-0 bottom-0 w-[min(280px,85vw)] bg-black/95 backdrop-blur-xl border-l border-white/10 z-50 overflow-y-auto overscroll-contain animate-[slideIn_0.25s_ease-out] safe-area-inset-right">
+            <div className="lg:hidden fixed top-0 right-0 bottom-0 w-[min(280px,85vw)] bg-black/95 backdrop-blur-xl border-l border-white/10 z-50 overflow-y-auto overscroll-contain animate-[slideIn_0.25s_ease-out] safe-area-inset-right">
               <div className="flex items-center justify-between p-4 border-b border-white/10">
                 <span className="text-sm font-bold text-gradient">{tr('nav', 'menu_title', lang)}</span>
                 <button
