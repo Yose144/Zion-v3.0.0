@@ -73,12 +73,12 @@
 5. **Test-only:** All flows use `tokio::time::sleep()` instead of real blockchain calls
 
 ### Implementation Tasks
-- [ ] Implement real L1 executor (sign + submit release/refund TX)
-- [ ] Implement EVM HTLC watcher (watch for `Locked`/`Claimed` events)
-- [ ] Add `zion-cli swap` commands: `create`, `claim`, `refund`, `status`
-- [ ] Add desktop agent swap tab (create swap, monitor status)
-- [ ] Add website swap widget (minimal: create + track)
-- [ ] Add swap metrics to dashboard
+- [x] Implement real L1 executor (sign + submit release/refund TX)
+- [x] Implement EVM HTLC watcher (watch for `Locked`/`Claimed` events)
+- [x] Add `zion-cli swap` commands: `create`, `claim`, `refund`, `status`
+- [x] Add desktop agent swap tab (create swap, monitor status)
+- [x] Add website swap widget (minimal: create + track)
+- [x] Add swap metrics to dashboard
 
 ---
 
@@ -197,7 +197,7 @@ Each L2 component gets a tab or section:
 |-----------|---------|-----|---------|-----|-----------|-------|
 | Bridge | ✅ Relayer + contracts | ✅ status/pending/history/chains/deploy | ✅ CLI tab | ✅ Network switcher Sepolia/Mainnet | ✅ Health + metrics | 🟡 Integration pending |
 | DAO | ✅ API (Axum) | ✅ status/proposals/vote/treasury/params | ✅ CLI tab | ✅ Dynamic fetch from API | ✅ Stats + proposals panel | 🟡 Integration pending |
-| Atomic Swap | ✅ HTLC + L1 executor | ✅ status/escrow/get/pending/claim/refund | ✅ CLI tab | 🟡 Form exists (static) | ✅ Health + HTLC list | ✅ Unit tests |
+| Atomic Swap | ✅ HTLC + L1 executor | ✅ status/escrow/get/pending/claim/refund/create | ✅ CLI tab | ✅ Interaktivní /swap page | ✅ Health + HTLC list | ✅ 22 tests (18u + 4integ) |
 | Swap Aggregator | ✅ EVM RPC + Bridge API | ✅ status/quote/execute/history/get | ✅ CLI tab | ✅ SwapWidget (Uni V3) | ✅ Health panel | ✅ 5 unit tests |
 
 **Legend:** ✅ Done 🟡 Partial ⏳ Not Started
@@ -208,7 +208,7 @@ Each L2 component gets a tab or section:
 - `zion bridge status|pending|history|chains|transfer|deploy`
 - `zion dao status|proposals|proposal|vote|treasury|params`
 - `zion swap status|quote|execute|history|get`
-- `zion atomic-swap status|escrow|get|pending|claim|refund`
+- `zion atomic-swap status|escrow|get|pending|claim|refund|create`
 
 ### Desktop Agent
 - Bridge CLI tab (status, pending, chains, history)
@@ -218,18 +218,19 @@ Each L2 component gets a tab or section:
 ### Website
 - `/bridge` — network switcher (Sepolia/Mainnet), dynamic contract addresses
 - `/dao` — dynamic proposal list, voting, treasury (fetch from API)
+- `/swap` — interaktivní HTLC swap formulář, generování klíčů, claim/refund a monitorování zámků
 - `/defi` — SwapWidget with real Uni V3 Quoter/Router
 
 ### Dashboard
-- L2 tab with Bridge, DAO, Atomic Swap panels
-- Real-time health checks for all 4 services
-- Bridge metrics (relays, volume), DAO stats (proposals, treasury), Swap stats (HTLCs)
+- L2 tab s Bridge, DAO, Atomic Swap, Swap Aggregator panely
+- Real-time health checks pro všechny 4 služby
+- Bridge metrics (relays, volume), DAO stats (proposals, treasury), Swap stats (HTLCs, quote generator)
 
-### Backend
+### Backend & Tests
 - Bridge relayer: L1 lock → EVM mint, EVM burn → L1 unlock
 - DAO API: proposals, voting, treasury, timelock
-- Atomic Swap: HTLC memo parser, L1 executor (sign + submit TX)
-- Swap Aggregator: Uni V3 slot0 price quotes, bridge API integration
+- Atomic Swap: HTLC memo parser, L1 executor (sign + submit TX), 4 E2E integrační testy
+- Swap Aggregator: Uni V3 slot0 price quotes, bridge API integration, 5 unit testů
 
 ---
 
