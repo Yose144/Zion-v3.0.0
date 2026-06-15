@@ -145,7 +145,7 @@ export default function Navigation() {
   /* Close on resize from mobile to desktop */
   useEffect(() => {
     const onResize = () => {
-      if (window.innerWidth >= 1024) setIsOpen(false);
+      if (window.innerWidth >= 768) setIsOpen(false);
     };
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
@@ -173,9 +173,9 @@ export default function Navigation() {
             </span>
           </Link>
 
-          <div className="hidden lg:flex items-center gap-6" data-nav-desktop>
+          <div className="hidden md:flex items-center gap-2 lg:gap-4 xl:gap-6" data-nav-desktop>
             <div className="relative">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 lg:gap-2">
                 {navGroups.map((group) => {
                   const isActive = openGroup === group.title;
                   return (
@@ -183,7 +183,7 @@ export default function Navigation() {
                       key={group.title}
                       type="button"
                       onClick={() => setOpenGroup(isActive ? null : group.title)}
-                      className={`inline-flex items-center gap-1 rounded-2xl border px-3 py-2 text-xs font-semibold uppercase tracking-[0.28em] transition-all ${
+                      className={`inline-flex items-center gap-1 rounded-2xl border px-2 py-1.5 lg:px-3 lg:py-2 text-xs font-semibold uppercase tracking-[0.28em] transition-all ${
                         isActive ? 'border-white/18 bg-white/10 text-white shadow-[0_12px_30px_rgba(0,0,0,0.24)]' : 'border-white/8 text-gray-400 hover:border-white/18 hover:bg-white/5 hover:text-white'
                       }`}
                       aria-expanded={isActive}
@@ -231,7 +231,7 @@ export default function Navigation() {
             <Link
               href="/network"
               title={tr('nav', 'network', lang)}
-              className="p-2 rounded-xl border border-white/15 hover:border-zion-cyan/50 bg-white/5 backdrop-blur transition-colors inline-flex items-center justify-center group relative"
+              className="hidden lg:flex p-2 rounded-xl border border-white/15 hover:border-zion-cyan/50 bg-white/5 backdrop-blur transition-colors items-center justify-center group relative"
             >
               <SignalHigh className="w-4 h-4 text-zion-cyan" />
               <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] bg-black/90 border border-white/10 rounded px-2 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">{tr('nav', 'network', lang)}</span>
@@ -239,7 +239,7 @@ export default function Navigation() {
             <Link
               href="/explorer"
               title={tr('nav', 'explorer', lang)}
-              className="p-2 rounded-xl border border-white/15 hover:border-zion-gold/50 bg-white/5 backdrop-blur transition-colors inline-flex items-center justify-center group relative"
+              className="hidden lg:flex p-2 rounded-xl border border-white/15 hover:border-zion-gold/50 bg-white/5 backdrop-blur transition-colors items-center justify-center group relative"
             >
               <Orbit className="w-4 h-4 text-zion-gold" />
               <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] bg-black/90 border border-white/10 rounded px-2 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">{tr('nav', 'explorer', lang)}</span>
@@ -262,7 +262,7 @@ export default function Navigation() {
             </Link>
             <button
               onClick={() => setLang(lang === 'cs' ? 'en' : 'cs')}
-              className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/15 bg-white/5 text-xs font-semibold hover:border-white/30 hover:bg-white/8 transition-colors text-gray-300 hover:text-white"
+              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/15 bg-white/5 text-xs font-semibold hover:border-white/30 hover:bg-white/8 transition-colors text-gray-300 hover:text-white"
               title={lang === 'cs' ? tr('nav', 'switch_to_en', lang) : tr('nav', 'switch_to_cs', lang)}
             >
               {lang === 'cs' ? tr('nav', 'language_toggle_desktop_cs', lang) : tr('nav', 'language_toggle_desktop_en', lang)}
@@ -271,7 +271,7 @@ export default function Navigation() {
 
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="lg:hidden text-white p-3 rounded-xl border border-white/20 bg-white/5 hover:border-white/40 active:scale-95 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center"
+            className="md:hidden text-white p-3 rounded-xl border border-white/20 bg-white/5 hover:border-white/40 active:scale-95 transition-all min-w-[44px] min-h-[44px] flex items-center justify-center"
             aria-label={isOpen ? tr('nav', 'close_menu', lang) : tr('nav', 'open_menu', lang)}
             aria-expanded={isOpen}
           >
@@ -291,12 +291,12 @@ export default function Navigation() {
           <>
             {/* Backdrop */}
             <div
-              className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+              className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
               onClick={() => setIsOpen(false)}
               aria-hidden="true"
             />
             {/* Slide-in panel */}
-            <div className="lg:hidden fixed top-0 right-0 bottom-0 w-[min(280px,85vw)] bg-black/95 backdrop-blur-xl border-l border-white/10 z-50 overflow-y-auto overscroll-contain animate-[slideIn_0.25s_ease-out] safe-area-inset-right">
+            <div className="md:hidden fixed top-0 right-0 bottom-0 w-[min(280px,85vw)] bg-black/95 backdrop-blur-xl border-l border-white/10 z-50 overflow-y-auto overscroll-contain animate-[slideIn_0.25s_ease-out] safe-area-inset-right">
               <div className="flex items-center justify-between p-4 border-b border-white/10">
                 <span className="text-sm font-bold text-gradient">{tr('nav', 'menu_title', lang)}</span>
                 <button
