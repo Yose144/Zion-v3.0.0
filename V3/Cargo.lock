@@ -4642,6 +4642,7 @@ dependencies = [
  "crossterm",
  "dialoguer",
  "ed25519-dalek",
+ "hex",
  "indicatif",
  "pbkdf2",
  "rand 0.8.5",
