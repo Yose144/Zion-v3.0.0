@@ -1,0 +1,144 @@
+{
+    "number": "FV2025-AUTO_TEST_",
+    "date": "17.12.2025",
+    "dueDate": "31.12.2025",
+    "order": {
+        "orderId": "AUTO_TEST_001",
+        "items": [
+            {
+                "name": "Auto Test",
+                "price": 100,
+                "quantity": 1
+            }
+        ],
+        "customer": {
+            "name": "Auto Test",
+            "email": "admin@newearth.cz",
+            "phone": "+420999"
+        },
+        "shipping": {
+            "method": "zasilkovna",
+            "price": 50
+        },
+        "payment": "transfer",
+        "total": 150,
+        "zion": {
+            "tokens": {
+                "totalTokens": 1,
+                "items": [
+                    {
+                        "id": null,
+                        "name": "Auto Test",
+                        "quantity": 1,
+                        "perUnit": 1,
+                        "total": 1
+                    }
+                ]
+            },
+            "wallet": {
+                "id": "zw_d817df596fde",
+                "label": "ZION order AUTO_TEST_001",
+                "tokens": 1,
+                "orderId": "AUTO_TEST_001",
+                "createdAt": "2025-12-17T23:18:26+01:00",
+                "expiresAt": "2026-01-16T23:18:26+01:00",
+                "uri": "zion:\/\/wallet\/zw_d817df596fde?tokens=1&label=ZION+order+AUTO_TEST_001&orderId=AUTO_TEST_001"
+            },
+            "qr": {
+                "serviceUrl": null,
+                "imageFile": "zw_d817df596fde.png",
+                "dataUrl": "data:image\/png;base64,iVBORw0KGgoAAAANSUhEUgAAAUAAAAFACAIAAABC8jL9AAAACXBIWXMAAA7EAAAOxAGVKw4bAAAEAklEQVR4nO3dMW4CQRAAQY91\/\/\/yOHCOdRYraFEVg2aDbQ3JitndL6Dp+9UHAP5PwBAmYAgTMIQJGMIEDGEChjABQ5iAIUzAECZgCBMwhAkYwgQMYQKGsOvuF2bmxDmAX7ee6NvAECZgCBMwhAkYwgQMYQKGMAFDmIAhTMAQJmAIEzCECRjCBAxhAoYwAUPY7ffAd33g\/w97Mv2A+\/BcNjCECRjCBAxhAoYwAUOYgCFMwBAmYAgTMIQJGMIEDGEChjABQ5iAIUzAECZgCBMwhAkYwgQMYQKGMAFDmIAhTMAQJmAIEzCECRjCBAxhAoYwAUOYgCFMwBAmYAgTMIQJGMIEDGEChjABQ5iAIUzAECZgCBMwhAkYwgQMYQKGMAFDmIAhTMAQJmAIEzCECRjCBAxhAoYwAUOYgCFMwBAmYAgTMIQJGMIEDGEChjABQ5iAIUzAECZgCBMwhAkYwgQMYQKGMAFDmIAhTMAQJmAIEzCECRjCBAxhAoYwAUOYgCFMwBAmYAi7Tg+YmdMjCHEfnssGhjABQ5iAIUzAECZgCBMwhAkYwgQMYQKGMAFDmIAhTMAQJmAIEzCECRjCBAxvZHdvfV7AECZgCBMwhAkYwgQMYQKGMAFDmIAhTMAQJmAIEzCECRjCBAxhAoYwAUOYgCFMwBAmYAgTMIQJGMIEDGEChjABQ5iAIUzAECZgCBMwhAkYwgQMYQKGMAFDmIAhTMAQJmAIEzCECRjCBAxhAoYwAUOYgCFMwBAmYAgTMIQJGMIEDGEChjABQ5iAIUzAECZgCBMwhAkYwgQMYQKGMAFDmIAhTMAQJmAIEzCECRjCBAxhAoYwAUOYgCFMwBAmYAgTMIQJGMIEDGEChjABQ5iAIUzAECZgCBMwhAkYwgQMYQKGsOv0gN09PeLdzMyrj8CnsIEhTMAQJmAIEzCECRjCBAxhAoYwAUOYgCFMwBAmYAgTMIQJGMIEDGEChjABQ5iAIUzAECZgCBMwhAkYwgQMYQKGMAFDmIAhTMAQJmAIEzCECRjCBAxhAoYwAUOYgCFMwBAmYAgTMIQJGMIEDGEChjABQ5iAIUzAECZgCBMwhAkYwgQMYQKGMAFDmIAhTMAQJmAIEzCECRjCBAxhAoYwAUOYgCFMwBAmYAgTMIQJGMIEDGEChjABQ5iAIUzAECZgCBMwhAkYwgQMYQKGMAFDmIAhTMAQJmAIEzCECRjCBAxhAoYwAUPYdXrAzJweAR\/LBoYwAUOYgCFMwBAmYAgTMIQJGMIEDGEChjABQ5iAIUzAECZgCBMwhB1\/TsifdvfVR6Bq3B7o8hMawgQMYQKGMAFDmIAhTMAQJmAIEzCECRjCBAxhAoYwAUOYgCFMwBD2A\/hSGohm+TqQAAAAAElFTkSuQmCC"
+            },
+            "storage": {
+                "json": "zw_d817df596fde.json",
+                "image": "zw_d817df596fde.png"
+            },
+            "network": "testnet",
+            "ledger": {
+                "id": "ledger_06cac6ab",
+                "orderId": "AUTO_TEST_001",
+                "walletId": "zw_d817df596fde",
+                "tokens": 1,
+                "status": "pending",
+                "network": "testnet",
+                "source": "order",
+                "createdAt": "2025-12-17T23:18:26+01:00",
+                "updatedAt": "2025-12-17T23:18:26+01:00",
+                "walletUri": "zion:\/\/wallet\/zw_d817df596fde?tokens=1&label=ZION+order+AUTO_TEST_001&orderId=AUTO_TEST_001",
+                "qrImage": "zw_d817df596fde.png",
+                "note": null,
+                "txHash": null,
+                "details": {
+                    "totalTokens": 1,
+                    "items": [
+                        {
+                            "id": null,
+                            "name": "Auto Test",
+                            "quantity": 1,
+                            "perUnit": 1,
+                            "total": 1
+                        }
+                    ]
+                },
+                "history": [
+                    {
+                        "status": "pending",
+                        "timestamp": "2025-12-17T23:18:26+01:00",
+                        "note": "Created from order #AUTO_TEST_001"
+                    }
+                ]
+            }
+        }
+    },
+    "seller": {
+        "name": "Omnity.One s.r.o.",
+        "ico": "09120050",
+        "dic": "CZ09120050",
+        "address": "Horní Čermná, 56156",
+        "court": "Krajský soud v Hradci Králové",
+        "court_id": "00215716",
+        "bank_account": "2901809148 \/ 2010",
+        "iban": "CZ63 2010 0000 0029 0180 9148",
+        "swift": "FIOBCZPPXXX",
+        "bank_name": "Fio banka, a.s.",
+        "country": "Česká republika",
+        "email": "admin@newearth.cz",
+        "web": "www.newearth.cz"
+    },
+    "buyer": {
+        "name": "Auto Test",
+        "email": "admin@newearth.cz",
+        "phone": "+420999",
+        "address": ""
+    },
+    "items": [
+        {
+            "name": "Auto Test",
+            "quantity": 1,
+            "unit": "ks",
+            "unitPrice": 100,
+            "unitPriceWithoutVat": 82.640000000000001,
+            "vatRate": 21,
+            "vatAmount": 17.359999999999999,
+            "totalPrice": 100,
+            "priceWithoutVat": 82.640000000000001
+        },
+        {
+            "name": "Doprava - zasilkovna",
+            "quantity": 1,
+            "unit": "ks",
+            "unitPrice": 50,
+            "unitPriceWithoutVat": 41.32,
+            "vatRate": 21,
+            "vatAmount": 8.6799999999999997,
+            "totalPrice": 50,
+            "priceWithoutVat": 41.32
+        }
+    ],
+    "totals": {
+        "withoutVat": 123.95999999999999,
+        "vat": 26.039999999999999,
+        "withVat": 150,
+        "currency": "CZK"
+    }
+}

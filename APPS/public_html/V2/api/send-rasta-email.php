@@ -1,0 +1,494 @@
+<?php
+/**
+ * ZION eShop - Rasta Email Sender (PHP → Python Bridge)
+ * 
+ * Tento skript volá Python email manager pro odeslání Rasta-themed emailu.
+ * Používá se místo staré HTML šablony pro modernější design.
+ * 
+ * Usage:
+ *   require_once __DIR__ . '/send-rasta-email.php';
+ *   $result = sendRastaOrderEmail($orderData, $customerEmail);
+ */
+
+require_once __DIR__ . '/php-python-bridge.php';
+require_once __DIR__ . '/env-loader.php';
+require_once __DIR__ . '/url-helper.php';
+require_once __DIR__ . '/email-template-helper.php';
+if (file_exists(__DIR__ . '/config.php')) { require_once __DIR__ . '/config.php'; }
+
+/**
+ * Odešle Rasta-themed email zákazníkovi pomocí Python email manageru
+ * 
+ * @param array $orderData Pole s daty objednávky (stejná struktura jako v create-order.php)
+ * @param string $customerEmail Email zákazníka
+ * @param array|null $smtpConfig Volitelná SMTP konfigurace (jinak použije výchozí)
+ * @param string|null $invoicePath Cesta k PDF faktuře pro připojení k emailu
+ * @return array ['success' => bool, 'message' => string, 'output' => string]
+ */
+function sendRastaOrderEmail(array $orderData, string $customerEmail, ?array $smtpConfig = null, ?string $invoicePath = null): array
+{
+    // Cesta k Python skriptu - na serveru je struktura: public_html/V2/scripts/
+    $pythonScript = __DIR__ . '/../scripts/send_eshop_order_email.py';
+    
+    // Zkontrolovat, zda Python skript existuje
+    if (!file_exists($pythonScript)) {
+        return [
+            'success' => false,
+            'message' => 'Python email script not found',
+            'output' => "Script path: $pythonScript (absolute: " . realpath(dirname($pythonScript)) . ")"
+        ];
+    }
+    
+    // Připravit data pro Python (konverze PHP → JSON)
+    $emailData = prepareOrderDataForEmail($orderData);
+    
+    // Uložit dočasný JSON soubor s daty objednávky
+    $tempDir = sys_get_temp_dir();
+    $tempFile = $tempDir . '/zion_order_' . $orderData['orderId'] . '_' . uniqid() . '.json';
+    
+    $jsonData = json_encode($emailData, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+    if (file_put_contents($tempFile, $jsonData) === false) {
+        return [
+            'success' => false,
+            'message' => 'Failed to create temporary JSON file',
+            'output' => ''
+        ];
+    }
+    
+    // Sestavit CLI argumenty
+    $cliArgs = [
+        '--order-json' => $tempFile,
+        '--email' => $customerEmail
+    ];
+    
+    // Přidat invoice path pokud existuje
+    $invoiceAttached = false;
+    $invoiceExists = false;
+    if ($invoicePath) {
+        $resolvedInvoicePath = realpath($invoicePath) ?: $invoicePath;
+        $invoiceExists = file_exists($resolvedInvoicePath);
+        // Předat Pythonu vždy, pokud je zadaná cesta (Python si poradí)
+        $cliArgs['--invoice-path'] = $resolvedInvoicePath;
+        $invoiceAttached = $invoiceExists;
+    }
+    
+    // Přidat SMTP konfiguraci
+    if ($smtpConfig) {
+        if (!empty($smtpConfig['host'])) {
+            $cliArgs['--smtp-host'] = $smtpConfig['host'];
+        }
+        if (!empty($smtpConfig['port'])) {
+            $cliArgs['--smtp-port'] = $smtpConfig['port'];
+        }
+        if (!empty($smtpConfig['user'])) {
+            $cliArgs['--smtp-user'] = $smtpConfig['user'];
+        }
+        if (!empty($smtpConfig['password'])) {
+            $cliArgs['--smtp-password'] = $smtpConfig['password'];
+        }
+    } else {
+        // Použít výchozí SMTP konfiguraci
+        $cliArgs['--smtp-host'] = defined('SMTP_HOST') ? SMTP_HOST : 'mail.webglobe.cz';
+        $cliArgs['--smtp-port'] = '587';
+        $smtpUser = getenv('SMTP_USER');
+        if (!$smtpUser && defined('SMTP_USER')) $smtpUser = SMTP_USER;
+        if (!$smtpUser) $smtpUser = 'shop@newearth.cz';
+        $cliArgs['--smtp-user'] = $smtpUser;
+        $smtpPassword = getenv('SMTP_PASSWORD');
+        if (!$smtpPassword && defined('SMTP_PASS')) $smtpPassword = SMTP_PASS;
+        if (!$smtpPassword && defined('SMTP_PASSWORD')) $smtpPassword = SMTP_PASSWORD;
+        if (!$smtpPassword) $smtpPassword = getenv('SHOP_SMTP_PASSWORD') ?: '';
+        $cliArgs['--smtp-password'] = $smtpPassword;
+    }
+    
+    // Logování pokusu
+    logEmailAttempt($orderData['orderId'], $customerEmail, json_encode($cliArgs));
+    
+    // Spustit Python skript pomocí bridge (BEZ SHELL!)
+    $pythonPath = '/usr/bin/python3';
+    $result = runPythonScriptWithCLI($pythonPath, $pythonScript, $cliArgs);
+    
+    // Smazat dočasný soubor
+    @unlink($tempFile);
+    
+    // Logování výsledku
+    logEmailResult($orderData['orderId'], $customerEmail, $result['success'], $result['stdout'] . "\n" . $result['stderr']);
+    // Zapsat zákaznický stav do order-mail.log (stejný formát jako ADMIN)
+    $orderMailLog = __DIR__ . '/../logs/order-mail.log';
+    $timestamp = date('Y-m-d H:i:s');
+    $statusLine = sprintf(
+        "[%s] %s %s %s invoice_attached=%s\n",
+        $timestamp,
+        $result['success'] ? 'CUSTOMER_RASTA success' : 'CUSTOMER_RASTA failure',
+        $orderData['orderId'] ?? 'UNKNOWN',
+        $customerEmail,
+        $invoiceAttached ? 'yes' : 'no'
+    );
+    @file_put_contents($orderMailLog, $statusLine, FILE_APPEND | LOCK_EX);
+    
+    // DEBUG: Logovat všechno
+    file_put_contents(__DIR__ . '/../logs/python-debug.log',
+        sprintf("[%s] ORDER=%s EMAIL=%s\nINVOICE_PATH=%s EXISTS=%s\nARGS: %s\nEXIT_CODE: %d\nSTDOUT:\n%s\nSTDERR:\n%s\n\n",
+            date('Y-m-d H:i:s'), $orderData['orderId'], $customerEmail,
+            $invoicePath ?: '-', $invoiceExists ? 'yes' : 'no',
+            json_encode($cliArgs), $result['exit_code'], $result['stdout'], $result['stderr']),
+        FILE_APPEND);
+    
+    return [
+        'success' => $result['success'],
+        'message' => $result['success'] ? 'Rasta email sent successfully' : 'Failed to send Rasta email',
+        'output' => $result['stdout'],
+        'error' => $result['stderr'],
+        'exitCode' => $result['exit_code']
+    ];
+}
+
+/**
+ * Připraví data objednávky pro Python email manager
+ */
+function prepareOrderDataForEmail(array $order): array
+{
+    $customer = $order['customer'] ?? [];
+    $shipping = $order['shipping'] ?? [];
+    $payment = $order['payment'] ?? [];
+    $paymentRaw = is_array($payment) ? ($payment['method'] ?? '') : (string)$payment;
+    $zionData = $order['zion'] ?? [];
+    
+    // Převést položky objednávky
+    $items = [];
+    $subtotal = 0.0;
+    foreach ($order['items'] ?? [] as $item) {
+        $qty = (int)($item['quantity'] ?? 1);
+        $qty = $qty > 0 ? $qty : 1;
+        $unit = (float)($item['price'] ?? 0);
+        $lineTotal = $unit * $qty;
+        $subtotal += $lineTotal;
+
+        $items[] = [
+            'name' => $item['name'] ?? '',
+            'quantity' => $qty,
+            'price' => $unit,
+            'total' => $lineTotal,
+            'sku' => $item['id'] ?? '',
+            'image_url' => $item['image'] ?? ''
+        ];
+    }
+    
+    // Připravit adresu
+    $address = $customer['address'] ?? [];
+    $fullAddress = '';
+    if (is_array($address) && (!empty($address['street']) || !empty($address['city']) || !empty($address['zip']))) {
+        $fullAddress = sprintf(
+            '%s, %s %s, %s',
+            $address['street'] ?? '',
+            $address['zip'] ?? '',
+            $address['city'] ?? '',
+            $address['country'] ?? 'Česká republika'
+        );
+    }
+    
+    // Určit způsob dopravy (PHP 7.3 kompatibilně)
+    $shippingMethodRaw = isset($shipping['method']) ? $shipping['method'] : '';
+    if ($shippingMethodRaw === 'ppl') {
+        $shippingMethodName = 'PPL';
+    } elseif ($shippingMethodRaw === 'ceska-posta') {
+        $shippingMethodName = 'Česká pošta';
+    } elseif ($shippingMethodRaw === 'zasilkovna') {
+        $shippingMethodName = 'Zásilkovna';
+    } elseif ($shippingMethodRaw === 'zasilkovna-home') {
+        $shippingMethodName = 'Zásilkovna - doručení domů';
+    } elseif ($shippingMethodRaw === 'virtualni-nakup') {
+        $shippingMethodName = 'Virtuální nákup';
+    } elseif ($shippingMethodRaw === 'osobni-odber') {
+        $shippingMethodName = 'Osobní odběr';
+    } elseif ($shippingMethodRaw === 'osobni') {
+        $shippingMethodName = 'Osobní odběr';
+    } else {
+        $shippingMethodName = $shippingMethodRaw ?: 'Neurčeno';
+    }
+    
+    // Pickup point info
+    $pickupInfo = '';
+    if (!empty($shipping['pickupPoint'])) {
+        $pp = $shipping['pickupPoint'];
+        $pickupInfo = sprintf(
+            '%s, %s',
+            $pp['name'] ?? '',
+            $pp['address'] ?? trim(($pp['street'] ?? '') . ' ' . ($pp['city'] ?? ''))
+        );
+    }
+    
+    // Určit způsob platby (PHP 7.3 kompatibilně)
+    $paymentMethodRaw = strtolower(trim($paymentRaw));
+    if ($paymentMethodRaw === 'card') {
+        $paymentMethodName = 'Platební karta';
+    } elseif ($paymentMethodRaw === 'bank-transfer' || $paymentMethodRaw === 'transfer' || $paymentMethodRaw === 'bank') {
+        $paymentMethodName = 'Bankovní převod';
+    } elseif ($paymentMethodRaw === 'cash') {
+        $paymentMethodName = 'Hotově při převzetí';
+    } else {
+        $paymentMethodName = $paymentMethodRaw ?: 'Neurčeno';
+    }
+    
+    // ZION token bonus data
+    $zionTokens = 0;
+    $zionWalletId = '';
+    $zionWalletAddress = '';
+    $zionMnemonic = '';
+    
+    // Extract ZION data from order
+    if (!empty($zionData)) {
+        // Get total tokens
+        if (isset($zionData['tokens']['totalTokens'])) {
+            $zionTokens = (int)$zionData['tokens']['totalTokens'];
+        }
+        
+        // Get wallet ID
+        if (isset($zionData['wallet']['id'])) {
+            $zionWalletId = (string)$zionData['wallet']['id'];
+        }
+        
+        // Get wallet address
+        if (isset($zionData['wallet']['address'])) {
+            $zionWalletAddress = (string)$zionData['wallet']['address'];
+        }
+        
+        // Get mnemonic (12-word seed phrase)
+        if (isset($zionData['wallet']['mnemonic'])) {
+            $zionMnemonic = (string)$zionData['wallet']['mnemonic'];
+        }
+    }
+    
+    // Get QR code URL
+    $qrCodeUrl = '';
+    if (!empty($zionData['qr']['serviceUrl'])) {
+        $qrCodeUrl = (string)$zionData['qr']['serviceUrl'];
+    } elseif (!empty($zionData['qr']['imageFile'])) {
+        $qrImageFile = (string)$zionData['qr']['imageFile'];
+        $qrCodeUrl = zion_wallet_public_url(basename($qrImageFile));
+    }
+
+    // Fallback: locate QR on disk if service URL missing (important for mobile import)
+    if (!$qrCodeUrl && $zionWalletId) {
+        $foundQr = getWalletQRUrl($zionWalletId, $order['orderId'] ?? '');
+        if ($foundQr) {
+            $qrCodeUrl = $foundQr;
+        }
+    }
+    
+    // Sestavit data pro email
+    return [
+        'order_id' => $order['orderId'] ?? '',
+        'customer_name' => ($customer['name'] ?? '') ?: trim(($customer['firstName'] ?? '') . ' ' . ($customer['lastName'] ?? '')),
+        'customer_email' => $customer['email'] ?? '',
+        'customer_phone' => $customer['phone'] ?? '',
+        'shipping_address' => trim($fullAddress),
+        'shipping_method' => $shippingMethodName,
+        'shipping_price' => (float)($shipping['price'] ?? 0),
+        'pickup_point' => $pickupInfo,
+        'payment_method' => $paymentMethodName,
+        'payment_status' => (is_array($payment) ? ($payment['status'] ?? 'pending') : 'pending'),
+        'items' => $items,
+        'subtotal' => (float)($order['subtotal'] ?? $subtotal),
+        'total' => (float)($order['total'] ?? ($subtotal + (float)($shipping['price'] ?? 0))),
+        'currency' => 'Kč',
+        'notes' => $order['note'] ?? ($order['notes'] ?? ''),
+        'zion_tokens' => $zionTokens,
+        'zion_wallet_id' => $zionWalletId,
+        'zion_wallet_address' => $zionWalletAddress,
+        'zion_mnemonic' => $zionMnemonic,
+        'zion_qr_url' => $qrCodeUrl,
+        'download_token' => $order['downloadToken'] ?? ''
+    ];
+}
+
+/**
+ * Sestaví příkaz pro spuštění Python skriptu
+ */
+function buildPythonCommand(string $scriptPath, string $jsonFile, string $email, ?array $smtpConfig, ?string $invoicePath = null): string
+{
+    // Najít Python executable (preferovat python3)
+    $python = findPythonExecutable();
+    
+    // Základní příkaz
+    $cmd = sprintf(
+        '%s %s --order-json %s --email %s',
+        escapeshellcmd($python),
+        escapeshellarg($scriptPath),
+        escapeshellarg($jsonFile),
+        escapeshellarg($email)
+    );
+    
+    // Přidat invoice path pokud existuje
+    if ($invoicePath && file_exists($invoicePath)) {
+        $cmd .= ' --invoice-path ' . escapeshellarg($invoicePath);
+    }
+    
+    // Přidat SMTP konfiguraci (pokud je zadána)
+    if ($smtpConfig) {
+        if (!empty($smtpConfig['host'])) {
+            $cmd .= ' --smtp-host ' . escapeshellarg($smtpConfig['host']);
+        }
+        if (!empty($smtpConfig['port'])) {
+            $cmd .= ' --smtp-port ' . escapeshellarg($smtpConfig['port']);
+        }
+        if (!empty($smtpConfig['user'])) {
+            $cmd .= ' --smtp-user ' . escapeshellarg($smtpConfig['user']);
+        }
+        if (!empty($smtpConfig['password'])) {
+            $cmd .= ' --smtp-password ' . escapeshellarg($smtpConfig['password']);
+        }
+    } else {
+        // Použít výchozí SMTP konfiguraci z .env nebo hardcoded
+        $cmd .= ' --smtp-host ' . (defined('SMTP_HOST') ? SMTP_HOST : 'mail.webglobe.cz');
+        $cmd .= ' --smtp-port 587';
+        $cmd .= ' --smtp-user shop@newearth.cz';
+        // Heslo načíst z .env (pokud existuje)
+        // P1-31: Never fallback to hardcoded password
+        $envPassword = getenv('SMTP_PASSWORD') ?: '';
+        $cmd .= ' --smtp-password ' . escapeshellarg($envPassword);
+    }
+    
+    return $cmd;
+}
+
+/**
+ * Najde Python executable
+ */
+function findPythonExecutable(): string
+{
+    // Na tomto serveru je problém se shellem, použijeme absolutní cestu
+    // Test ukázal že /usr/bin/python3 existuje a je spustitelný
+    $pythonPath = '/usr/bin/python3';
+    
+    if (file_exists($pythonPath) && is_executable($pythonPath)) {
+        return $pythonPath;
+    }
+    
+    // Fallback - zkusit /bin/python3
+    if (file_exists('/bin/python3') && is_executable('/bin/python3')) {
+        return '/bin/python3';
+    }
+    
+    // Poslední fallback
+    return 'python3';
+}
+
+/**
+ * Logování pokusu o odeslání emailu
+ */
+function logEmailAttempt(string $orderId, string $email, string $command): void
+{
+    $logDir = __DIR__ . '/../logs';
+    if (!is_dir($logDir)) {
+        @mkdir($logDir, 0755, true);
+    }
+    
+    $logFile = $logDir . '/rasta-email.log';
+    $timestamp = date('Y-m-d H:i:s');
+    $line = sprintf(
+        "[%s] ATTEMPT order=%s email=%s\n",
+        $timestamp,
+        $orderId,
+        $email
+    );
+    
+    @file_put_contents($logFile, $line, FILE_APPEND | LOCK_EX);
+}
+
+/**
+ * Logování výsledku odeslání emailu
+ */
+function logEmailResult(string $orderId, string $email, bool $success, string $output): void
+{
+    $logDir = __DIR__ . '/../logs';
+    $logFile = $logDir . '/rasta-email.log';
+    $timestamp = date('Y-m-d H:i:s');
+    
+    $status = $success ? 'SUCCESS' : 'FAILED';
+    $outputPreview = substr(str_replace("\n", ' ', $output), 0, 200);
+    
+    $line = sprintf(
+        "[%s] %s order=%s email=%s output=%s\n",
+        $timestamp,
+        $status,
+        $orderId,
+        $email,
+        $outputPreview
+    );
+    
+    @file_put_contents($logFile, $line, FILE_APPEND | LOCK_EX);
+}
+
+/**
+ * Test funkce - odešle testovací Rasta email
+ * 
+ * Usage:
+ *   php send-rasta-email.php test your@email.com
+ */
+if (php_sapi_name() === 'cli' && isset($argv[1]) && $argv[1] === 'test') {
+    $testEmail = $argv[2] ?? 'admin@newearth.cz';
+    $testInvoicePath = $argv[3] ?? null; // volitelná cesta k PDF faktuře
+    
+    $testOrder = [
+        'orderId' => 'TEST_' . date('Ymd_His'),
+        'customer' => [
+            'firstName' => 'Test',
+            'lastName' => 'Zákazník',
+            'email' => $testEmail,
+            'phone' => '+420 777 888 999',
+            'address' => [
+                'street' => 'Testovací 123',
+                'city' => 'Praha 2',
+                'zip' => '120 00',
+                'country' => 'Česká republika'
+            ]
+        ],
+        'items' => [
+            [
+                'id' => 'TSHIRT_RASTA',
+                'name' => 'ZION T-Shirt Rasta',
+                'quantity' => 2,
+                'price' => 499,
+                'total' => 998
+            ],
+            [
+                'id' => 'CAP_LOGO',
+                'name' => 'ZION Logo Cap',
+                'quantity' => 1,
+                'price' => 299,
+                'total' => 299
+            ]
+        ],
+        'shipping' => [
+            'method' => 'ceska-posta',
+            'price' => 99
+        ],
+        'payment' => [
+            'method' => 'bank-transfer',
+            'status' => 'pending'
+        ],
+        'subtotal' => 1297,
+        'total' => 1396
+    ];
+    
+    echo "🧪 Testing Rasta Email System...\n";
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+    echo "Order ID: {$testOrder['orderId']}\n";
+    echo "Recipient: $testEmail\n";
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
+    
+    $result = sendRastaOrderEmail($testOrder, $testEmail, null, $testInvoicePath);
+    
+    if ($result['success']) {
+        echo "✅ SUCCESS! Email sent.\n\n";
+        echo "Output:\n{$result['output']}\n";
+        if ($testInvoicePath) {
+            echo "\nInvoice test:\nPath: {$testInvoicePath}\nExists: " . (file_exists($testInvoicePath) ? 'YES' : 'NO') . "\n";
+        }
+    } else {
+        echo "❌ FAILED to send email.\n\n";
+        echo "Error:\n{$result['output']}\n";
+        exit(1);
+    }
+}

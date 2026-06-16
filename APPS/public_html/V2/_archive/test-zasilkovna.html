@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Zásilkovna Widget</title>
+    <script src="https://widget.packeta.com/v6/www/js/library.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-box {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 { color: #00a651; }
+        button {
+            background: #00a651;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover { background: #009444; }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f0f9f4;
+            border-left: 4px solid #00a651;
+            border-radius: 5px;
+        }
+        .logo {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .logo img {
+            max-width: 200px;
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .status.ok { background: #4caf50; color: white; }
+        .status.error { background: #f44336; color: white; }
+    </style>
+</head>
+<body>
+    <div class="test-box">
+        <div class="logo">
+            <img src="img/zasilkovna-logo.svg" alt="Zásilkovna">
+        </div>
+        
+        <h1>🧪 Test Zásilkovna Widget</h1>
+        
+        <h3>1. Kontrola API konfigurace</h3>
+        <button onclick="testApiConfig()">Test API Config</button>
+        <div id="api-result"></div>
+        
+        <h3>2. Test Widget</h3>
+        <button onclick="testWidget()">Otevřít Widget (výběr pobočky)</button>
+        <div id="widget-result"></div>
+        
+        <h3>3. Test ikony SVG</h3>
+        <button onclick="testSvgIcon()">Test SVG ikona</button>
+        <div id="svg-result"></div>
+    </div>
+
+    <script>
+        // Test 1: API Config
+        async function testApiConfig() {
+            const resultDiv = document.getElementById('api-result');
+            resultDiv.innerHTML = '<p>⏳ Načítám konfiguraci...</p>';
+            
+            try {
+                const response = await fetch('./api/public-config.php');
+                const config = await response.json();
+                
+                const hasKey = config.zasilkovna?.apiKey;
+                const status = hasKey ? 
+                    '<span class="status ok">✓ OK</span>' : 
+                    '<span class="status error">✗ CHYBA</span>';
+                
+                resultDiv.innerHTML = `
+                    <div class="result">
+                        <h4>API Config ${status}</h4>
+                        <p><strong>API Key:</strong> ${hasKey || 'Chybí!'}</p>
+                        <p><strong>Country:</strong> ${config.zasilkovna?.country || 'N/A'}</p>
+                        <p><strong>Language:</strong> ${config.zasilkovna?.language || 'N/A'}</p>
+                        <p><strong>Locale:</strong> ${config.zasilkovna?.locale || 'N/A'}</p>
+                        <pre>${JSON.stringify(config, null, 2)}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="result">
+                        <span class="status error">✗ CHYBA</span>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // Test 2: Widget
+        async function testWidget() {
+            const resultDiv = document.getElementById('widget-result');
+            resultDiv.innerHTML = '<p>⏳ Načítám widget...</p>';
+            
+            try {
+                // Načíst API key
+                const response = await fetch('./api/public-config.php');
+                const config = await response.json();
+                const apiKey = config.zasilkovna?.apiKey;
+                
+                if (!apiKey) {
+                    throw new Error('API Key není nakonfigurován!');
+                }
+                
+                // Otevřít widget
+                if (typeof Packeta !== 'undefined' && Packeta.Widget) {
+                    Packeta.Widget.pick(apiKey, (point) => {
+                        if (point) {
+                            resultDiv.innerHTML = `
+                                <div class="result">
+                                    <span class="status ok">✓ Widget funguje!</span>
+                                    <h4>Vybrané výdejní místo:</h4>
+                                    <p><strong>Název:</strong> ${point.name}</p>
+                                    <p><strong>Adresa:</strong> ${point.street}, ${point.city}, ${point.zip}</p>
+                                    <p><strong>ID:</strong> ${point.id}</p>
+                                    <p><strong>Země:</strong> ${point.country}</p>
+                                </div>
+                            `;
+                        } else {
+                            resultDiv.innerHTML = '<div class="result"><p>Widget zavřen bez výběru.</p></div>';
+                        }
+                    }, {
+                        country: config.zasilkovna?.country || 'cz',
+                        language: config.zasilkovna?.language || 'cs'
+                    });
+                    
+                    resultDiv.innerHTML = '<p>✅ Widget otevřen! Vyberte pobočku...</p>';
+                } else {
+                    throw new Error('Packeta Widget není načten!');
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="result">
+                        <span class="status error">✗ CHYBA</span>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // Test 3: SVG Icon
+        function testSvgIcon() {
+            const resultDiv = document.getElementById('svg-result');
+            const img = new Image();
+            
+            img.onload = () => {
+                resultDiv.innerHTML = `
+                    <div class="result">
+                        <span class="status ok">✓ SVG ikona načtena</span>
+                        <p>Velikost: ${img.width}x${img.height}px</p>
+                        <img src="img/zasilkovna-logo.svg" style="max-width:200px;">
+                    </div>
+                `;
+            };
+            
+            img.onerror = () => {
+                resultDiv.innerHTML = `
+                    <div class="result">
+                        <span class="status error">✗ SVG ikona nenalezena</span>
+                        <p>Soubor img/zasilkovna-logo.svg není dostupný!</p>
+                    </div>
+                `;
+            };
+            
+            img.src = 'img/zasilkovna-logo.svg';
+        }
+        
+        // Auto-test při načtení stránky
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('🧪 Zásilkovna Test Page loaded');
+            testApiConfig(); // Spustit automaticky
+        });
+    </script>
+</body>
+</html>

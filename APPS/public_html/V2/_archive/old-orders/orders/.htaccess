@@ -1,0 +1,7 @@
+# Zakázat přímý přístup k souborům objednávek
+<FilesMatch "\.json$">
+    Deny from all
+</FilesMatch>
+
+# Zakázat výpis adresáře
+Options -Indexes

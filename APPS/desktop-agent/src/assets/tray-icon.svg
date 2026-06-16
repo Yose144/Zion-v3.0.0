@@ -1,0 +1,5 @@
+<!-- Simple SVG icon for tray - 16x16 gold circle -->
+<svg width="16" height="16" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="8" cy="8" r="7" fill="#FFD700" stroke="#FFA500" stroke-width="1"/>
+  <text x="8" y="11" font-family="Arial" font-size="10" fill="#0A0E27" text-anchor="middle" font-weight="bold">Z</text>
+</svg>

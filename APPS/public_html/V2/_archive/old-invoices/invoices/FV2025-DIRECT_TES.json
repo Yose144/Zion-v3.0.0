@@ -1,0 +1,151 @@
+{
+    "number": "FV2025-DIRECT_TES",
+    "date": "17.12.2025",
+    "dueDate": "31.12.2025",
+    "order": {
+        "orderId": "DIRECT_TEST_1766008630",
+        "items": [
+            {
+                "id": "t1",
+                "name": "Testovací produkt",
+                "price": 100,
+                "quantity": 1,
+                "tokens": 10
+            }
+        ],
+        "customer": {
+            "name": "Jan Novák",
+            "email": "admin@newearth.cz",
+            "phone": "+420123456789",
+            "address": {
+                "street": "Testovací 1",
+                "city": "Praha",
+                "zip": "11000"
+            }
+        },
+        "shipping": {
+            "method": "zasilkovna",
+            "price": 79
+        },
+        "payment": "transfer",
+        "total": 179,
+        "zion": {
+            "tokens": {
+                "totalTokens": 10,
+                "items": [
+                    {
+                        "id": "t1",
+                        "name": "Testovací produkt",
+                        "quantity": 1,
+                        "perUnit": 10,
+                        "total": 10
+                    }
+                ]
+            },
+            "wallet": {
+                "id": "zw_4aec1987e440",
+                "label": "ZION order DIRECT_TEST_1766008630",
+                "tokens": 10,
+                "orderId": "DIRECT_TEST_1766008630",
+                "createdAt": "2025-12-17T22:57:10+01:00",
+                "expiresAt": "2026-01-16T22:57:10+01:00",
+                "uri": "zion:\/\/wallet\/zw_4aec1987e440?tokens=10&label=ZION+order+DIRECT_TEST_1766008630&orderId=DIRECT_TEST_1766008630"
+            },
+            "qr": {
+                "serviceUrl": null,
+                "imageFile": "zw_4aec1987e440.png",
+                "dataUrl": "data:image\/png;base64,iVBORw0KGgoAAAANSUhEUgAAAUAAAAFACAIAAABC8jL9AAAACXBIWXMAAA7EAAAOxAGVKw4bAAAEAklEQVR4nO3dMW4CQRAAQY91\/\/\/yOHCOdRYraFEVg2aDbQ3JitndL6Dp+9UHAP5PwBAmYAgTMIQJGMIEDGEChjABQ5iAIUzAECZgCBMwhAkYwgQMYQKGsOvuF2bmxDmAX7ee6NvAECZgCBMwhAkYwgQMYQKGMAFDmIAhTMAQJmAIEzCECRjCBAxhAoYwAUPY7ffAd33g\/w97Mv2A+\/BcNjCECRjCBAxhAoYwAUOYgCFMwBAmYAgTMIQJGMIEDGEChjABQ5iAIUzAECZgCBMwhAkYwgQMYQKGMAFDmIAhTMAQJmAIEzCECRjCBAxhAoYwAUOYgCFMwBAmYAgTMIQJGMIEDGEChjABQ5iAIUzAECZgCBMwhAkYwgQMYQKGMAFDmIAhTMAQJmAIEzCECRjCBAxhAoYwAUOYgCFMwBAmYAgTMIQJGMIEDGEChjABQ5iAIUzAECZgCBMwhAkYwgQMYQKGMAFDmIAhTMAQJmAIEzCECRjCBAxhAoYwAUOYgCFMwBAmYAi7Tg+YmdMjCHEfnssGhjABQ5iAIUzAECZgCBMwhAkYwgQMYQKGMAFDmIAhTMAQJmAIEzCECRjCBAxvZHdvfV7AECZgCBMwhAkYwgQMYQKGMAFDmIAhTMAQJmAIEzCECRjCBAxhAoYwAUOYgCFMwBAmYAgTMIQJGMIEDGEChjABQ5iAIUzAECZgCBMwhAkYwgQMYQKGMAFDmIAhTMAQJmAIEzCECRjCBAxhAoYwAUOYgCFMwBAmYAgTMIQJGMIEDGEChjABQ5iAIUzAECZgCBMwhAkYwgQMYQKGMAFDmIAhTMAQJmAIEzCECRjCBAxhAoYwAUOYgCFMwBAmYAgTMIQJGMIEDGEChjABQ5iAIUzAECZgCBMwhAkYwgQMYQKGsOv0gN09PeLdzMyrj8CnsIEhTMAQJmAIEzCECRjCBAxhAoYwAUOYgCFMwBAmYAgTMIQJGMIEDGEChjABQ5iAIUzAECZgCBMwhAkYwgQMYQKGMAFDmIAhTMAQJmAIEzCECRjCBAxhAoYwAUOYgCFMwBAmYAgTMIQJGMIEDGEChjABQ5iAIUzAECZgCBMwhAkYwgQMYQKGMAFDmIAhTMAQJmAIEzCECRjCBAxhAoYwAUOYgCFMwBAmYAgTMIQJGMIEDGEChjABQ5iAIUzAECZgCBMwhAkYwgQMYQKGMAFDmIAhTMAQJmAIEzCECRjCBAxhAoYwAUPYdXrAzJweAR\/LBoYwAUOYgCFMwBAmYAgTMIQJGMIEDGEChjABQ5iAIUzAECZgCBMwhB1\/TsifdvfVR6Bq3B7o8hMawgQMYQKGMAFDmIAhTMAQJmAIEzCECRjCBAxhAoYwAUOYgCFMwBD2A\/hSGohm+TqQAAAAAElFTkSuQmCC"
+            },
+            "storage": {
+                "json": "zw_4aec1987e440.json",
+                "image": "zw_4aec1987e440.png"
+            },
+            "network": "testnet",
+            "ledger": {
+                "id": "ledger_80bd820c",
+                "orderId": "DIRECT_TEST_1766008630",
+                "walletId": "zw_4aec1987e440",
+                "tokens": 10,
+                "status": "pending",
+                "network": "testnet",
+                "source": "order",
+                "createdAt": "2025-12-17T22:57:10+01:00",
+                "updatedAt": "2025-12-17T22:57:10+01:00",
+                "walletUri": "zion:\/\/wallet\/zw_4aec1987e440?tokens=10&label=ZION+order+DIRECT_TEST_1766008630&orderId=DIRECT_TEST_1766008630",
+                "qrImage": "zw_4aec1987e440.png",
+                "note": null,
+                "txHash": null,
+                "details": {
+                    "totalTokens": 10,
+                    "items": [
+                        {
+                            "id": "t1",
+                            "name": "Testovací produkt",
+                            "quantity": 1,
+                            "perUnit": 10,
+                            "total": 10
+                        }
+                    ]
+                },
+                "history": [
+                    {
+                        "status": "pending",
+                        "timestamp": "2025-12-17T22:57:10+01:00",
+                        "note": "Created from order #DIRECT_TEST_1766008630"
+                    }
+                ]
+            }
+        }
+    },
+    "seller": {
+        "name": "Omnity.One s.r.o.",
+        "ico": "09120050",
+        "dic": "CZ09120050",
+        "address": "Horní Čermná, 56156",
+        "court": "Krajský soud v Hradci Králové",
+        "court_id": "00215716",
+        "bank_account": "2901809148 \/ 2010",
+        "iban": "CZ63 2010 0000 0029 0180 9148",
+        "swift": "FIOBCZPPXXX",
+        "bank_name": "Fio banka, a.s.",
+        "country": "Česká republika",
+        "email": "admin@newearth.cz",
+        "web": "www.newearth.cz"
+    },
+    "buyer": {
+        "name": "Jan Novák",
+        "email": "admin@newearth.cz",
+        "phone": "+420123456789",
+        "address": "Testovací 1, Praha, 11000"
+    },
+    "items": [
+        {
+            "name": "Testovací produkt",
+            "quantity": 1,
+            "unit": "ks",
+            "unitPrice": 100,
+            "unitPriceWithoutVat": 82.640000000000001,
+            "vatRate": 21,
+            "vatAmount": 17.359999999999999,
+            "totalPrice": 100,
+            "priceWithoutVat": 82.640000000000001
+        },
+        {
+            "name": "Doprava - zasilkovna",
+            "quantity": 1,
+            "unit": "ks",
+            "unitPrice": 79,
+            "unitPriceWithoutVat": 65.290000000000006,
+            "vatRate": 21,
+            "vatAmount": 13.710000000000001,
+            "totalPrice": 79,
+            "priceWithoutVat": 65.290000000000006
+        }
+    ],
+    "totals": {
+        "withoutVat": 147.93000000000001,
+        "vat": 31.07,
+        "withVat": 179,
+        "currency": "CZK"
+    }
+}
