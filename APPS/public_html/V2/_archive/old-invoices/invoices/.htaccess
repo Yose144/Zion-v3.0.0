@@ -1,0 +1,15 @@
+# Povolit přístup pouze k HTML souborům
+<FilesMatch "\.html$">
+    Allow from all
+</FilesMatch>
+
+# Zakázat přístup k JSON souborům (interní data)
+<FilesMatch "\.json$">
+    Deny from all
+</FilesMatch>
+
+# Povolit přístup z admin dashboard
+<FilesMatch "\.html$">
+    Satisfy any
+    Allow from all
+</FilesMatch>

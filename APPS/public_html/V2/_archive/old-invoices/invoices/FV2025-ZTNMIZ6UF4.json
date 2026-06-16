@@ -1,0 +1,144 @@
+{
+    "number": "FV2025-ZTNMIZ6UF4",
+    "date": "10.12.2025",
+    "dueDate": "24.12.2025",
+    "order": {
+        "orderId": "ZTNMIZ6UF4VNS42",
+        "items": [
+            {
+                "id": "digi-002",
+                "name": "Firemní\/Osobní web OnePage - komplet",
+                "price": 4900,
+                "image": ".\/img\/144Halls.jpg",
+                "category": "digital",
+                "quantity": 1
+            }
+        ],
+        "customer": {
+            "name": "mhbsdkf",
+            "email": "yosef.hubalek@gmail.com",
+            "phone": "98349587",
+            "address": null,
+            "newsletter": false
+        },
+        "shipping": {
+            "method": "osobni",
+            "price": 0,
+            "pickupPoint": null
+        },
+        "payment": "cash",
+        "note": "",
+        "total": 4900,
+        "zionTokens": 0,
+        "zionWalletId": "zw_ztnmiz6uf4v1cbw",
+        "termsAccepted": true,
+        "createdAt": "2025-12-09T23:05:05.311Z",
+        "zion": {
+            "tokens": {
+                "totalTokens": 49,
+                "items": [
+                    {
+                        "id": "digi-002",
+                        "name": "Firemní\/Osobní web OnePage - komplet",
+                        "quantity": 1,
+                        "perUnit": 49,
+                        "total": 49
+                    }
+                ]
+            },
+            "wallet": {
+                "id": "zw_8e62878b2bb9",
+                "label": "ZION order ZTNMIZ6UF4VNS42",
+                "tokens": 49,
+                "orderId": "ZTNMIZ6UF4VNS42",
+                "createdAt": "2025-12-10T00:05:05+01:00",
+                "expiresAt": "2026-01-09T00:05:05+01:00",
+                "uri": "zion:\/\/wallet\/zw_8e62878b2bb9?tokens=49&label=ZION+order+ZTNMIZ6UF4VNS42&orderId=ZTNMIZ6UF4VNS42"
+            },
+            "qr": {
+                "serviceUrl": "https:\/\/quickchart.io\/qr?size=320&margin=1&text=zion%3A%2F%2Fwallet%2Fzw_8e62878b2bb9%3Ftokens%3D49%26label%3DZION%2Border%2BZTNMIZ6UF4VNS42%26orderId%3DZTNMIZ6UF4VNS42",
+                "imageFile": "zw_8e62878b2bb9.png",
+                "dataUrl": "data:image\/png;base64,iVBORw0KGgoAAAANSUhEUgAAAUAAAAFACAYAAADNkKWqAAAAAklEQVR4AewaftIAAAwESURBVO3BUa4cSZIEQVNH3f\/KusTOd2QPoidZj3QTwV9SVbXQpKpqqUlV1VKTqqqlJlVVS02qqpaaVFUtNamqWuqTfwDkb6LmFpATNW8BcqLmCZAbam4BeaLmFpA3qLkF5A1qvgHI30TNyaSqaqlJVdVSk6qqpSZVVUtNqqqWmlRVLfXJv6DmJwLyBjW3gJyoeaLmBMgTNW8A8qdR8wY1J0BuAXmi5gTIEzU31PxEQG5MqqqWmlRVLTWpqlpqUlW11KSqaqlJVdVSk6qqpT55EZA3qHkDkCdqToC8BciJmidAbqh5ouYWkBM1T9ScAHkDkFtqngC5BeREzTcAeYOaN0yqqpaaVFUtNamqWmpSVbXUpKpqqUlV1VKf1FpqbgE5UfNEzQmQW2reoOYtak6APFFzAuSJmkomVVVLTaqqlppUVS01qapaalJVtdSkqmqpSVXVUp\/Ufw3IiZpbQG4BuQXklpoTIE\/U3FJzAuQb1JwAeaLmRM0TIPXvTKqqlppUVS01qapaalJVtdSkqmqpSVXVUp+8SM3fRM0b1DwBckvNG4CcqHkLkBM1T4C8AciJmltAnqj5adT8SSZVVUtNqqqWmlRVLTWpqlpqUlW11KSqaqlJVdVSn\/wLQOo\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\/w\/IJmreAOSJmltATtQ8AXKi5m8C5ImaNwA5UXMLyC01J5OqqqUmVVVLTaqqlppUVS01qapaalJVtdQn\/wDI30TNiZpbQJ6oOQHyRM0bgJyoeQLkpwHy0wB5ouYEyBM1bwByouYtQE7UvGFSVbXUpKpqqUlV1VKTqqqlJlVVS02qqpb65F9Q8xMBuQHklponQE7UvAXIiZpbak6AvEXN7wbklppbar5BzTeoOQFyS83JpKpqqUlV1VKTqqqlJlVVS02qqpaaVFUtNamqWuqTFwF5g5pvUPMGIE\/U3FJzAuREzRMgJ2puAbml5gmQEzUnap4AOQHyRM0JkCdqbgH5aYDcUnNjUlW11KSqaqlJVdVSk6qqpSZVVUtNqqqW+qT+a0DeoOZPo+YWkFtqToA8UXMDyBM1t4D8NGq+Qc0tICdqTiZVVUtNqqqWmlRVLTWpqlpqUlW11KSqaqlJVdVSn9T\/hJonQE6APFHzuwF5ouYNam6peQLkDUBO1DxRcwvIiZonQE6AvEHNEyC31NyYVFUtNamqWmpSVbXUpKpqqUlV1VKTqqqlPnmRmj+JmltA3gLkRM0TIDfUvEXNCZAnak6A3FJzAuQWkCdqToA8UXMC5BvU3FJzAuQNk6qqpSZVVUtNqqqWmlRVLTWpqlpqUlW11KSqaqlP\/gUgfxMgT9T8adS8Acgb1NxS89OoeQLkRM0TICdqbgF5A5Anak7UvGFSVbXUpKpqqUlV1VKTqqqlJlVVS02qqpbCX1JVtdCkqmqpSVXVUpOqqqUmVVVLTaqqlppUVS31f8nkuJgLhKThAAAAAElFTkSuQmCC"
+            },
+            "storage": {
+                "json": "zw_8e62878b2bb9.json",
+                "image": "zw_8e62878b2bb9.png"
+            },
+            "network": "testnet",
+            "ledger": {
+                "id": "ledger_f5ff4ca0",
+                "orderId": "ZTNMIZ6UF4VNS42",
+                "walletId": "zw_8e62878b2bb9",
+                "tokens": 49,
+                "status": "pending",
+                "network": "testnet",
+                "source": "order",
+                "createdAt": "2025-12-10T00:05:05+01:00",
+                "updatedAt": "2025-12-10T00:05:05+01:00",
+                "walletUri": "zion:\/\/wallet\/zw_8e62878b2bb9?tokens=49&label=ZION+order+ZTNMIZ6UF4VNS42&orderId=ZTNMIZ6UF4VNS42",
+                "qrImage": "zw_8e62878b2bb9.png",
+                "note": null,
+                "txHash": null,
+                "details": {
+                    "totalTokens": 49,
+                    "items": [
+                        {
+                            "id": "digi-002",
+                            "name": "Firemní\/Osobní web OnePage - komplet",
+                            "quantity": 1,
+                            "perUnit": 49,
+                            "total": 49
+                        }
+                    ]
+                },
+                "history": [
+                    {
+                        "status": "pending",
+                        "timestamp": "2025-12-10T00:05:05+01:00",
+                        "note": "Created from order #ZTNMIZ6UF4VNS42"
+                    }
+                ]
+            }
+        }
+    },
+    "seller": {
+        "name": "Omnity.One s.r.o.",
+        "ico": "09120050",
+        "dic": "CZ09120050",
+        "address": "Horní Čermná, 56156",
+        "court": "Krajský soud v Hradci Králové",
+        "court_id": "00215716",
+        "bank_account": "2901809148 \/ 2010",
+        "iban": "CZ63 2010 0000 0029 0180 9148",
+        "swift": "FIOBCZPPXXX",
+        "bank_name": "Fio banka, a.s.",
+        "country": "Česká republika",
+        "email": "admin@newearth.cz",
+        "web": "www.newearth.cz"
+    },
+    "buyer": {
+        "name": "mhbsdkf",
+        "email": "yosef.hubalek@gmail.com",
+        "phone": "98349587",
+        "address": ""
+    },
+    "items": [
+        {
+            "name": "Firemní\/Osobní web OnePage - komplet",
+            "quantity": 1,
+            "unit": "ks",
+            "unitPrice": 4900,
+            "unitPriceWithoutVat": 4049.5900000000001,
+            "vatRate": 21,
+            "vatAmount": 850.40999999999997,
+            "totalPrice": 4900,
+            "priceWithoutVat": 4049.5900000000001
+        }
+    ],
+    "totals": {
+        "withoutVat": 4049.5900000000001,
+        "vat": 850.40999999999997,
+        "withVat": 4900,
+        "currency": "CZK"
+    }
+}

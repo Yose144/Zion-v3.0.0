@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZION Debug Panel v3</title>
+    <style>
+        body { font-family: Arial; max-width: 1200px; margin: 20px auto; padding: 20px; background: #0a0a0a; color: #ccc; }
+        .section { background: #1a1a1a; border: 2px solid #ffc107; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+        h2 { color: #ffc107; }
+        button { background: linear-gradient(135deg, #ff4444, #ffc107, #44aa44); color: #000; padding: 12px 24px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin: 5px; }
+        button:hover { transform: scale(1.05); }
+        .result { background: #222; padding: 15px; border-radius: 5px; margin-top: 15px; font-family: monospace; white-space: pre-wrap; max-height: 400px; overflow-y: auto; }
+        .success { color: #44aa44; }
+        .error { color: #ff4444; }
+    </style>
+</head>
+<body>
+    <h1>🛠️ ZION Debug Panel v3</h1>
+
+    <div class="section">
+        <h2>📧 Email SMTP Test</h2>
+        <button onclick="testEmail()">Test SMTP Connection</button>
+        <div id="email-result" class="result" style="display: none;"></div>
+    </div>
+
+    <div class="section">
+        <h2>🪙 Token Calculation Test</h2>
+        <button onclick="testTokens()">Test Token Calculation</button>
+        <div id="tokens-result" class="result" style="display: none;"></div>
+    </div>
+
+    <div class="section">
+        <h2>💳 Bank QR Code Test</h2>
+        <input type="number" id="qr-amount" placeholder="Amount (CZK)" value="1234" style="padding: 8px; margin-right: 10px;">
+        <input type="text" id="qr-vs" placeholder="Variable Symbol" value="TEST123" style="padding: 8px; margin-right: 10px;">
+        <button onclick="testBankQR()">Generate QR Code</button>
+        <div id="qr-result" class="result" style="display: none;"></div>
+    </div>
+
+    <script>
+    function testEmail() {
+        const resultEl = document.getElementById('email-result');
+        resultEl.style.display = 'block';
+        resultEl.textContent = '⏳ Testing...';
+        
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', './api/email-test-v2.php', true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                try {
+                    const data = JSON.parse(xhr.responseText);
+                    if (data.success) {
+                        resultEl.innerHTML = '<span class="success">✅ SMTP OK!</span>\n\n' + 
+                            'Message: ' + data.message + '\n\n' +
+                            'Debug:\n' + data.debug.join('\n');
+                    } else {
+                        resultEl.innerHTML = '<span class="error">❌ Failed</span>\n\n' + 
+                            'Message: ' + data.message + '\n\n' +
+                            'Debug:\n' + data.debug.join('\n');
+                    }
+                } catch (e) {
+                    resultEl.innerHTML = '<span class="error">❌ Parse Error</span>\n\n' +
+                        'Error: ' + e.message + '\n\n' +
+                        'Response: ' + xhr.responseText;
+                }
+            } else {
+                resultEl.innerHTML = '<span class="error">❌ HTTP Error</span>\n\nStatus: ' + xhr.status;
+            }
+        };
+        
+        xhr.onerror = function() {
+            resultEl.innerHTML = '<span class="error">❌ Network Error</span>';
+        };
+        
+        xhr.send('{}');
+    }
+    
+    function testTokens() {
+        const resultEl = document.getElementById('tokens-result');
+        resultEl.style.display = 'block';
+        
+        const testCart = [
+            { id: 'wood-003', name: 'Pergola konzultace', price: 490, tokens: 490, quantity: 1 },
+            { id: 'star-001', name: 'A-Wing Starfighter', price: 890, tokens: 890, quantity: 2 }
+        ];
+        
+        const totalTokens = testCart.reduce((sum, item) => {
+            return sum + ((item.tokens || 0) * (item.quantity || 1));
+        }, 0);
+        
+        resultEl.innerHTML = '<span class="success">✅ Token calculation works!</span>\n\n' +
+            'Test cart:\n' +
+            testCart.map(item => `  - ${item.name}: ${item.tokens} × ${item.quantity} = ${item.tokens * item.quantity} ZION`).join('\n') +
+            '\n\n<span class="success">TOTAL: ' + totalTokens + ' ZION tokens</span>';
+    }
+    
+    function testBankQR() {
+        const resultEl = document.getElementById('qr-result');
+        const amount = document.getElementById('qr-amount').value;
+        const vs = document.getElementById('qr-vs').value;
+        
+        resultEl.style.display = 'block';
+        resultEl.textContent = '⏳ Generating QR code...';
+        
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', './api/bank-qr.php', true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                try {
+                    const data = JSON.parse(xhr.responseText);
+                    if (data.qrUrl) {
+                        resultEl.innerHTML = '<span class="success">✅ QR Code Generated!</span>\n\n' +
+                            'Amount: ' + amount + ' CZK\n' +
+                            'Variable Symbol: ' + vs + '\n\n' +
+                            '<img src="' + data.qrUrl + '" alt="QR Code" style="max-width: 300px; background: white; padding: 10px;">';
+                    } else {
+                        resultEl.innerHTML = '<span class="error">❌ Error: ' + (data.error || 'Unknown') + '</span>';
+                    }
+                } catch (e) {
+                    resultEl.innerHTML = '<span class="error">❌ Parse Error: ' + e.message + '</span>\n\n' + xhr.responseText;
+                }
+            } else {
+                resultEl.innerHTML = '<span class="error">❌ HTTP Error: ' + xhr.status + '</span>';
+            }
+        };
+        
+        xhr.onerror = function() {
+            resultEl.innerHTML = '<span class="error">❌ Network Error</span>';
+        };
+        
+        xhr.send(JSON.stringify({
+            amount: parseFloat(amount),
+            currency: 'CZK',
+            message: 'Test payment',
+            variableSymbol: vs,
+            qrSize: 300
+        }));
+    }
+    </script>
+</body>
+</html>
