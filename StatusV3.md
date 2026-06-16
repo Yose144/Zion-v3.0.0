@@ -65,6 +65,29 @@ PM2 zion-website:   online  (port 3000)
 189fd901  fix(dashboard): correct bridge port 9102->9101, remove atomic-swap from edge manifest
 ```
 
+### Autonomní Watchdog (24/7)
+
+Nový Python watchdog na Edge serveru — běží jako systemd timer každých 60 sekund:
+
+```
+/usr/local/bin/zion-watchdog.py          # monitor script
+/etc/systemd/system/zion-watchdog.timer  # systemd timer (60s)
+/etc/systemd/system/zion-watchdog.service
+/var/log/zion-edge-watchdog.log        # persistent log
+```
+
+**Co hlídá:**
+- Node 1 (systemctl + RPC height + TCP)
+- Node 2 (systemctl + TCP)
+- Pool (systemctl + TCP + HTTP metrics)
+- DAO (systemctl + TCP)
+- WARP (systemctl + HTTP health)
+- Bridge (systemctl + TCP)
+- Rust Dashboard (systemctl + TCP)
+
+**Auto-heal:** Pokud služba není healthy → automatický restart (cooldown 120s).
+**Logování:** Journal + `/var/log/zion-edge-watchdog.log`.
+
 ---
 
 ## Co je nového 2026-06-14 (L3 Rainbow Protocol — Big Update)
