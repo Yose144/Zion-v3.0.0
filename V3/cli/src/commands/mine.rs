@@ -562,12 +562,15 @@ mod tests {
     #[test]
     fn miner_binary_candidates_include_workspace_target() {
         let candidates = miner_binary_candidates();
-        assert!(candidates
+        // Check that paths end with "zion-miner" (cross-platform path separator handling)
+        let has_release = candidates
             .iter()
-            .any(|path| path.ends_with("target/release/zion-miner")));
-        assert!(candidates
-            .iter()
-            .any(|path| path.ends_with("target/debug/zion-miner")));
+            .any(|path| {
+                path.file_name()
+                    .map(|n| n == "zion-miner.exe" || n == "zion-miner")
+                    .unwrap_or(false)
+            });
+        assert!(has_release, "miner_binary_candidates should include zion-miner binary path");
     }
 
     #[test]

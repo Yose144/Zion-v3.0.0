@@ -1014,7 +1014,7 @@ fn test_parse_bridge_testnet_toml() {
     assert!(cfg.security.auto_pause_on_anomaly);
 }
 
-/// Verify bridge-mainnet.toml parses correctly — Base mainnet, disabled by default.
+/// Verify bridge-mainnet.toml parses correctly — Base mainnet, disabled until validators live.
 #[test]
 fn test_parse_bridge_mainnet_toml() {
     let path = concat!(env!("CARGO_MANIFEST_DIR"), "/config/bridge-mainnet.toml");
@@ -1023,9 +1023,10 @@ fn test_parse_bridge_mainnet_toml() {
     assert_eq!(cfg.evm_chains.len(), 1);
     assert_eq!(cfg.evm_chains[0].chain_id, "base");
     assert_eq!(cfg.evm_chains[0].evm_chain_id, 8453);
+    // Base chain disabled until 3/5 validators are live (bridge provisioning blocker)
     assert!(
-        cfg.evm_chains[0].enabled,
-        "mainnet Base chain should be enabled (L1 bridge vault is operational)"
+        !cfg.evm_chains[0].enabled,
+        "mainnet Base chain should be disabled until validators are live (3/5 provisioning pending)"
     );
     assert_eq!(cfg.metrics.log_level, "info");
 }
