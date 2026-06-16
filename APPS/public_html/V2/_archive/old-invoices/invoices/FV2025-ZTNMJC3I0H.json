@@ -1,0 +1,144 @@
+{
+    "number": "FV2025-ZTNMJC3I0H",
+    "date": "19.12.2025",
+    "dueDate": "02.01.2026",
+    "order": {
+        "orderId": "ZTNMJC3I0HHAMZK",
+        "items": [
+            {
+                "id": "digi-002",
+                "name": "Firemní\/Osobní web OnePage - komplet",
+                "price": 4900,
+                "image": ".\/img\/144Halls.jpg",
+                "category": "digital",
+                "quantity": 1
+            }
+        ],
+        "customer": {
+            "name": "sdfsf",
+            "email": "yosef.hubalek@gmail.com",
+            "phone": "34545",
+            "address": null,
+            "newsletter": false
+        },
+        "shipping": {
+            "method": "osobni",
+            "price": 0,
+            "pickupPoint": null
+        },
+        "payment": "cash",
+        "note": "",
+        "total": 4900,
+        "zionTokens": 0,
+        "zionWalletId": "zw_ztnmjc3i0h8d641",
+        "termsAccepted": true,
+        "createdAt": "2025-12-18T23:52:27.898Z",
+        "zion": {
+            "tokens": {
+                "totalTokens": 49,
+                "items": [
+                    {
+                        "id": "digi-002",
+                        "name": "Firemní\/Osobní web OnePage - komplet",
+                        "quantity": 1,
+                        "perUnit": 49,
+                        "total": 49
+                    }
+                ]
+            },
+            "wallet": {
+                "id": "zw_271ce133f002",
+                "label": "ZION order ZTNMJC3I0HHAMZK",
+                "tokens": 49,
+                "orderId": "ZTNMJC3I0HHAMZK",
+                "createdAt": "2025-12-19T00:52:28+01:00",
+                "expiresAt": "2026-01-18T00:52:28+01:00",
+                "uri": "zion:\/\/wallet\/zw_271ce133f002?tokens=49&label=ZION+order+ZTNMJC3I0HHAMZK&orderId=ZTNMJC3I0HHAMZK"
+            },
+            "qr": {
+                "serviceUrl": null,
+                "imageFile": "zw_271ce133f002.png",
+                "dataUrl": "data:image\/png;base64,iVBORw0KGgoAAAANSUhEUgAAAUAAAAFACAIAAABC8jL9AAAACXBIWXMAAA7EAAAOxAGVKw4bAAAEgElEQVR4nO3dS07EMBBAQYK4\/5WHLbvQ1ljOg6o1NJ\/Mk7Np+Xq9Xh9A0+fpXwBYJ2AIEzCECRjCBAxhAoYwAUOYgCFMwBAmYAgTMIQJGMIEDGEChjABQ9jX9Buu69rxe\/BL0\/3t6fPaPZ9bo0fgBIYwAUOYgCFMwBAmYAgTMIQJGMIEDGEChjABQ5iAIUzAECZgCBMwhAkYwsb7wFP\/8P7hrSu49f1en4f3cgJDmIAhTMAQJmAIEzCECRjCBAxhAoYwAUOYgCFMwBAmYAgTMIQJGMIEDGHb94G5NdoXdT8wPzmBIUzAECZgCBMwhAkYwgQMYQKGMAFDmIAhTMAQJmAIEzCECRjCBAxhAoYw+8Dn\/av7gXkvJzCECRjCBAxhAoYwAUOYgCFMwBAmYAgTMIQJGMIEDGEChjABQ5iAIUzAEGYf+Dz3A7PMCQxhAoYwAUOYgCFMwBAmYAgTMIQJGMIEDGEChjABQ5iAIUzAECZgCBMwhNkHPs\/9wCxzAkOYgCFMwBAmYAgTMIQJGMIEDGEChjABQ5iAIUzAECZgCBMwhAkYwgQMYfaBz3M\/MMu2B+wB85PPw3t5hYYwAUOYgCFMwBAmYAgTMIQJGMIEDGEChjABQ5iAIUzAECZgCBMwhNkHPs\/9wCzbHnB9Af1p85\/maf+f+vwpr9AQJmAIEzCECRjCBAxhAoYwAUOYgCFMwBAmYAgTMIQJGMIEDGEChrBr97pTfb3LfPOfPN8JDGEChjABQ5iAIUzAECZgCBMwhAkYwgQMYQKGMAFDmIAhTMAQJmAIEzCEja8Xre9Pmm\/+k+dPOYEhTMAQJmAIEzCECRjCBAxhAoYwAUOYgCFMwBAmYAgTMIQJGMIEDGEChjD3A5tvfni+ExjCBAxhAoYwAUOYgCFMwBAmYAgTMIQJGMIEDGEChjABQ5iAIUzAECZgCBvvA0\/3G7k1egT1\/VXz38sJDGEChjABQ5iAIUzAECZgCBMwhAkYwgQMYQKGMAFDmIAhTMAQJmAIEzCEfe3+Abv3IR9oujI6+vqn7a+af3a+ExjCBAxhAoYwAUOYgCFMwBAmYAgTMIQJGMIEDGEChjABQ5iAIUzAECZgCNu+D8wt9wObv8wJDGEChjABQ5iAIUzAECZgCBMwhAkYwgQMYQKGMAFDmIAhTMAQJmAIEzCE2Qc+z\/3A5i\/PdwJDmIAhTMAQJmAIEzCECRjCBAxhAoYwAUOYgCFMwBAmYAgTMIQJGMIEDGH2gc9zP7D5y5zAECZgCBMwhAkYwgQMYQKGMAFDmIAhTMAQJmAIEzCECRjCBAxhAoYwAUOYfeDz3A9s\/vJ8JzCECRjCBAxhAoYwAUOYgCFMwBAmYAgTMIQJGMIEDGEChjABQ5iAIUzAEGYf+Dz3A5u\/bHvA0z8Y+D2v0BAmYAgTMIQJGMIEDGEChjABQ5iAIUzAECZgCBMwhAkYwgQMYQKGsGv3PiS3dq+M8oeNAwaewys0hAkYwgQMYQKGMAFDmIAhTMAQJmAIEzCECRjCBAxhAoYwAUOYgCHsGz\/QOp+ibf0xAAAAAElFTkSuQmCC"
+            },
+            "storage": {
+                "json": "zw_271ce133f002.json",
+                "image": "zw_271ce133f002.png"
+            },
+            "network": "testnet",
+            "ledger": {
+                "id": "ledger_7e4decdf",
+                "orderId": "ZTNMJC3I0HHAMZK",
+                "walletId": "zw_271ce133f002",
+                "tokens": 49,
+                "status": "pending",
+                "network": "testnet",
+                "source": "order",
+                "createdAt": "2025-12-19T00:52:28+01:00",
+                "updatedAt": "2025-12-19T00:52:28+01:00",
+                "walletUri": "zion:\/\/wallet\/zw_271ce133f002?tokens=49&label=ZION+order+ZTNMJC3I0HHAMZK&orderId=ZTNMJC3I0HHAMZK",
+                "qrImage": "zw_271ce133f002.png",
+                "note": null,
+                "txHash": null,
+                "details": {
+                    "totalTokens": 49,
+                    "items": [
+                        {
+                            "id": "digi-002",
+                            "name": "Firemní\/Osobní web OnePage - komplet",
+                            "quantity": 1,
+                            "perUnit": 49,
+                            "total": 49
+                        }
+                    ]
+                },
+                "history": [
+                    {
+                        "status": "pending",
+                        "timestamp": "2025-12-19T00:52:28+01:00",
+                        "note": "Created from order #ZTNMJC3I0HHAMZK"
+                    }
+                ]
+            }
+        }
+    },
+    "seller": {
+        "name": "Omnity.One s.r.o.",
+        "ico": "09120050",
+        "dic": "CZ09120050",
+        "address": "Horní Čermná, 56156",
+        "court": "Krajský soud v Hradci Králové",
+        "court_id": "00215716",
+        "bank_account": "2901809148 \/ 2010",
+        "iban": "CZ63 2010 0000 0029 0180 9148",
+        "swift": "FIOBCZPPXXX",
+        "bank_name": "Fio banka, a.s.",
+        "country": "Česká republika",
+        "email": "admin@newearth.cz",
+        "web": "www.newearth.cz"
+    },
+    "buyer": {
+        "name": "sdfsf",
+        "email": "yosef.hubalek@gmail.com",
+        "phone": "34545",
+        "address": ""
+    },
+    "items": [
+        {
+            "name": "Firemní\/Osobní web OnePage - komplet",
+            "quantity": 1,
+            "unit": "ks",
+            "unitPrice": 4900,
+            "unitPriceWithoutVat": 4049.5900000000001,
+            "vatRate": 21,
+            "vatAmount": 850.40999999999997,
+            "totalPrice": 4900,
+            "priceWithoutVat": 4049.5900000000001
+        }
+    ],
+    "totals": {
+        "withoutVat": 4049.5900000000001,
+        "vat": 850.40999999999997,
+        "withVat": 4900,
+        "currency": "CZK"
+    }
+}

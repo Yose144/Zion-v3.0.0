@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="cs" data-lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intuitive Space Admin</title>
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Raleway:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="src/style.css">
+    <link rel="stylesheet" href="src/admin.css">
+</head>
+<body class="admin-page">
+    <main class="admin-layout">
+        <section class="admin-hero-card">
+            <div>
+                <p class="admin-eyebrow" data-cs="Chráněná správa" data-en="Protected Access">Chráněná správa</p>
+                <h1 class="admin-title" data-cs="Administrace Intuitive Space" data-en="Intuitive Space Admin">Administrace Intuitive Space</h1>
+                <p class="admin-lead" data-cs="Přidávej novinky, upravuj galerii a nahrávej nové obrázky do webu z jednoho místa." data-en="Add news, edit the gallery and upload new images to the website from one place.">
+                    Přidávej novinky, upravuj galerii a nahrávej nové obrázky do webu z jednoho místa.
+                </p>
+            </div>
+            <div class="admin-actions-row">
+                <a class="admin-secondary-link" href="/index.html" data-cs="Zpět na web" data-en="Back to website">Zpět na web</a>
+                <button class="lang-toggle admin-lang-toggle" id="langToggle" aria-label="Switch language">
+                    <span class="lang-cs active">CZ</span>
+                    <span class="lang-divider">/</span>
+                    <span class="lang-en">EN</span>
+                </button>
+            </div>
+        </section>
+
+        <section class="admin-login-card" id="loginCard">
+            <h2 data-cs="Přihlášení" data-en="Login">Přihlášení</h2>
+            <p class="admin-login-note" data-cs="Použij heslo nastavené v proměnné ADMIN_PASSWORD. Pokud není nastavené, výchozí je intuitive-space-admin." data-en="Use the password set in the ADMIN_PASSWORD environment variable. If it is not set, the default is intuitive-space-admin.">
+                Použij heslo nastavené v proměnné ADMIN_PASSWORD. Pokud není nastavené, výchozí je intuitive-space-admin.
+            </p>
+            <form id="loginForm" class="admin-form compact-form">
+                <label>
+                    <span data-cs="Heslo" data-en="Password">Heslo</span>
+                    <input type="password" name="password" autocomplete="current-password" required>
+                </label>
+                <button type="submit" class="btn admin-submit" data-cs="Přihlásit" data-en="Login">Přihlásit</button>
+            </form>
+            <p class="admin-message" id="loginMessage" aria-live="polite"></p>
+        </section>
+
+        <section class="admin-dashboard" id="adminDashboard" hidden>
+            <div class="admin-dashboard-bar">
+                <div>
+                    <h2 data-cs="Obsah webu" data-en="Website Content">Obsah webu</h2>
+                    <p data-cs="Všechny změny se ukládají do sdíleného JSON souboru na serveru." data-en="All changes are stored in a shared JSON file on the server.">
+                        Všechny změny se ukládají do sdíleného JSON souboru na serveru.
+                    </p>
+                </div>
+                <div class="admin-dashboard-actions">
+                    <button type="button" class="admin-toggle-btn" id="resetContentBtn" data-cs="Obnovit výchozí data" data-en="Reset default data">Obnovit výchozí data</button>
+                    <button type="button" class="admin-toggle-btn" id="logoutBtn" data-cs="Odhlásit" data-en="Logout">Odhlásit</button>
+                </div>
+            </div>
+
+            <div class="admin-grid two-columns">
+                <section class="admin-card">
+                    <h3 data-cs="Nová novinka" data-en="New News Item">Nová novinka</h3>
+                    <form class="admin-form" id="newsForm">
+                        <label>
+                            <span data-cs="Datum" data-en="Date">Datum</span>
+                            <input type="date" name="date" required>
+                        </label>
+                        <label>
+                            <span data-cs="Titulek CZ" data-en="Title CZ">Titulek CZ</span>
+                            <input type="text" name="titleCs" maxlength="120" required>
+                        </label>
+                        <label>
+                            <span data-cs="Titulek EN" data-en="Title EN">Titulek EN</span>
+                            <input type="text" name="titleEn" maxlength="120" required>
+                        </label>
+                        <label>
+                            <span data-cs="Text CZ" data-en="Text CZ">Text CZ</span>
+                            <textarea name="textCs" rows="4" maxlength="320" required></textarea>
+                        </label>
+                        <label>
+                            <span data-cs="Text EN" data-en="Text EN">Text EN</span>
+                            <textarea name="textEn" rows="4" maxlength="320" required></textarea>
+                        </label>
+                        <button class="btn admin-submit" type="submit" data-cs="Uložit novinku" data-en="Save news item">Uložit novinku</button>
+                    </form>
+                    <div class="admin-list" id="newsList"></div>
+                </section>
+
+                <section class="admin-card">
+                    <h3 data-cs="Galerie a upload" data-en="Gallery and Upload">Galerie a upload</h3>
+                    <form class="admin-form" id="galleryForm">
+                        <label>
+                            <span data-cs="Nahrát obrázek" data-en="Upload image">Nahrát obrázek</span>
+                            <input type="file" name="imageFile" accept="image/*">
+                        </label>
+                        <button type="button" class="admin-toggle-btn admin-upload-btn" id="uploadImageBtn" data-cs="Nahrát soubor" data-en="Upload file">Nahrát soubor</button>
+                        <p class="admin-inline-note" id="uploadStatus" aria-live="polite"></p>
+                        <label>
+                            <span data-cs="URL obrázku" data-en="Image URL">URL obrázku</span>
+                            <input type="text" name="image" id="galleryImageInput" required>
+                        </label>
+                        <label>
+                            <span data-cs="Alt text CZ" data-en="Alt text CZ">Alt text CZ</span>
+                            <input type="text" name="altCs" maxlength="120" required>
+                        </label>
+                        <label>
+                            <span data-cs="Alt text EN" data-en="Alt text EN">Alt text EN</span>
+                            <input type="text" name="altEn" maxlength="120" required>
+                        </label>
+                        <label>
+                            <span data-cs="Popisek CZ" data-en="Caption CZ">Popisek CZ</span>
+                            <input type="text" name="captionCs" maxlength="120">
+                        </label>
+                        <label>
+                            <span data-cs="Popisek EN" data-en="Caption EN">Popisek EN</span>
+                            <input type="text" name="captionEn" maxlength="120">
+                        </label>
+                        <button class="btn admin-submit" type="submit" data-cs="Uložit do galerie" data-en="Save to gallery">Uložit do galerie</button>
+                    </form>
+                    <div class="admin-list" id="galleryList"></div>
+                </section>
+            </div>
+        </section>
+    </main>
+
+    <script src="src/admin.js"></script>
+</body>
+</html>

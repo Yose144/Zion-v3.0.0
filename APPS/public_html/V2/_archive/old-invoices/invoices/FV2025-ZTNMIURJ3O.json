@@ -1,0 +1,339 @@
+{
+    "number": "FV2025-ZTNMIURJ3O",
+    "date": "06.12.2025",
+    "dueDate": "20.12.2025",
+    "order": {
+        "orderId": "ZTNMIURJ3O1KRC1",
+        "items": [
+            {
+                "id": "seed-003",
+                "name": "RAMAYANA",
+                "price": 390,
+                "image": ".\/img\/seeds\/ramayana.jpg",
+                "category": "seeds",
+                "quantity": 2
+            },
+            {
+                "id": "wood-003",
+                "name": "Pergola na míru - konzultace",
+                "price": 490,
+                "image": ".\/Folio\/assets\/img\/woodwork.jpg",
+                "category": "woodart",
+                "quantity": 1
+            }
+        ],
+        "customer": {
+            "name": "J",
+            "email": "yosef.hubalek@gmail.com",
+            "phone": "773669477",
+            "address": null,
+            "newsletter": false
+        },
+        "shipping": {
+            "method": "zasilkovna",
+            "price": 69,
+            "pickupPoint": {
+                "businessDaysOpenLunchtime": false,
+                "businessDaysOpenUpTo": 0,
+                "city": "Jablonné nad Orlicí",
+                "claimAssistant": true,
+                "country": "cz",
+                "creditCardPayment": true,
+                "currency": "CZK",
+                "directions": "<p>Výdejní místo se nachází na náměstí v býv.prodejně Wágner Sklo-porcelán. Nyní Galanterie. Vchod do prodejny je vlevo od bankomatu ČSOB.<\/p>",
+                "directionsCar": "<p>Parkování na náměstí v blízkosti prodejny.<\/p>",
+                "directionsPublic": "<p>V blízkosti výdejního místa se nenachází zastávka MHD. <\/p>",
+                "error": null,
+                "gps": {
+                    "lat": 50.030110000000001,
+                    "lon": 16.59986
+                },
+                "holidayStart": "2025-12-14T00:00:00",
+                "exceptionDays": [
+                    {
+                        "from": "2025-12-14T00:00:00",
+                        "times": [
+                            {
+                                "open": "08:00",
+                                "close": "11:00"
+                            }
+                        ]
+                    },
+                    {
+                        "from": "2025-12-21T00:00:00",
+                        "times": [
+                            {
+                                "open": "08:00",
+                                "close": "11:00"
+                            }
+                        ]
+                    },
+                    {
+                        "from": "2025-12-24T00:00:00",
+                        "times": [
+                            {
+                                "open": "08:00",
+                                "close": "11:00"
+                            }
+                        ]
+                    },
+                    {
+                        "from": "2025-12-25T00:00:00",
+                        "to": "2025-12-26T00:00:00",
+                        "times": []
+                    },
+                    {
+                        "from": "2025-12-31T00:00:00",
+                        "times": [
+                            {
+                                "open": "08:00",
+                                "close": "11:00"
+                            }
+                        ]
+                    },
+                    {
+                        "from": "2026-01-01T00:00:00",
+                        "times": []
+                    }
+                ],
+                "externalId": "I_35275",
+                "id": "35275",
+                "isNew": false,
+                "maxWeight": 15,
+                "name": "Jablonné nad Orlicí, Náměstí 5.května 23 (galanterie)",
+                "nameStreet": "Jablonné nad Orlicí, Náměstí 5.května 23 (galanterie)",
+                "openingHours": {
+                    "compactShort": "<strong>Po–Pá<\/strong> 08:00–12:00, 12:30–17:00<br \/><strong>So<\/strong> 08:00–11:00",
+                    "compactLong": "<strong>Po–Pá<\/strong> 08:00–12:00, 12:30–17:00<br \/><strong>So<\/strong> 08:00–11:00",
+                    "tableLong": "<table><tr><th>Po<\/th><td>08:00–12:00, 12:30–17:00<\/td><\/tr><tr><th>Út<\/th><td>08:00–12:00, 12:30–17:00<\/td><\/tr><tr><th>St<\/th><td>08:00–12:00, 12:30–17:00<\/td><\/tr><tr><th>Čt<\/th><td>08:00–12:00, 12:30–17:00<\/td><\/tr><tr><th>Pá<\/th><td>08:00–12:00, 12:30–17:00<\/td><\/tr><tr><th>So<\/th><td>08:00–11:00<\/td><\/tr><\/table>",
+                    "exceptions": [
+                        [
+                            {
+                                "date": "2025-12-14",
+                                "hours": "08:00–11:00"
+                            }
+                        ],
+                        [
+                            {
+                                "date": "2025-12-21",
+                                "hours": "08:00–11:00"
+                            }
+                        ],
+                        [
+                            {
+                                "date": "2025-12-24",
+                                "hours": "08:00–11:00"
+                            }
+                        ],
+                        [
+                            {
+                                "date": "2025-12-25",
+                                "hours": ""
+                            }
+                        ],
+                        [
+                            {
+                                "date": "2025-12-31",
+                                "hours": "08:00–11:00"
+                            }
+                        ],
+                        [
+                            {
+                                "date": "2026-01-01",
+                                "hours": ""
+                            }
+                        ]
+                    ],
+                    "regular": {
+                        "monday": "08:00–12:00, 12:30–17:00",
+                        "tuesday": "08:00–12:00, 12:30–17:00",
+                        "wednesday": "08:00–12:00, 12:30–17:00",
+                        "thursday": "08:00–12:00, 12:30–17:00",
+                        "friday": "08:00–12:00, 12:30–17:00",
+                        "saturday": "08:00–11:00"
+                    }
+                },
+                "packetConsignment": true,
+                "photos": [
+                    {
+                        "thumbnail": "https:\/\/files.packeta.com\/points\/thumb\/point_35275_8499f0a48102.jpg",
+                        "normal": "https:\/\/files.packeta.com\/points\/normal\/point_35275_8499f0a48102.jpg"
+                    }
+                ],
+                "photo": [
+                    {
+                        "thumbnail": "https:\/\/files.packeta.com\/points\/thumb\/point_35275_8499f0a48102.jpg",
+                        "normal": "https:\/\/files.packeta.com\/points\/normal\/point_35275_8499f0a48102.jpg"
+                    }
+                ],
+                "place": "Galanterie",
+                "recommended": "quick",
+                "saturdayOpenTo": 0,
+                "special": "",
+                "street": "Náměstí 5.května 23",
+                "sundayOpenTo": 0,
+                "url": "https:\/\/www.zasilkovna.cz\/pobocky\/jablonne-nad-orlici-namesti-5-kvetna-23-galanterie",
+                "branchCode": "jablonne-nad-orlici-namesti-5-kvetna-23-galanterie",
+                "warning": null,
+                "wheelchairAccessible": false,
+                "zip": "561 64",
+                "pickupPointType": "internal",
+                "carrierPickupPointId": null,
+                "carrierId": null,
+                "routingCode": "C78-145-35275",
+                "routingName": "Jablonné nad Orlicí, Náměstí 5.května 23 (galanterie)"
+            }
+        },
+        "payment": "transfer",
+        "note": "",
+        "total": 1339,
+        "zionTokens": 0,
+        "zionWalletId": "zw_ztnmiurj3o06nyz",
+        "termsAccepted": true,
+        "createdAt": "2025-12-06T20:45:18.289Z",
+        "status": "pending_payment",
+        "zion": {
+            "tokens": {
+                "totalTokens": 13,
+                "items": [
+                    {
+                        "id": "seed-003",
+                        "name": "RAMAYANA",
+                        "quantity": 2,
+                        "perUnit": 4,
+                        "total": 8
+                    },
+                    {
+                        "id": "wood-003",
+                        "name": "Pergola na míru - konzultace",
+                        "quantity": 1,
+                        "perUnit": 5,
+                        "total": 5
+                    }
+                ]
+            },
+            "wallet": {
+                "id": "zw_bfa65d02d30d",
+                "label": "ZION order ZTNMIURJ3O1KRC1",
+                "tokens": 13,
+                "orderId": "ZTNMIURJ3O1KRC1",
+                "createdAt": "2025-12-06T21:45:18+01:00",
+                "expiresAt": "2026-01-05T21:45:18+01:00",
+                "uri": "zion:\/\/wallet\/zw_bfa65d02d30d?tokens=13&label=ZION+order+ZTNMIURJ3O1KRC1&orderId=ZTNMIURJ3O1KRC1"
+            },
+            "qr": {
+                "serviceUrl": "https:\/\/quickchart.io\/qr?size=320&margin=1&text=zion%3A%2F%2Fwallet%2Fzw_bfa65d02d30d%3Ftokens%3D13%26label%3DZION%2Border%2BZTNMIURJ3O1KRC1%26orderId%3DZTNMIURJ3O1KRC1",
+                "imageFile": "zw_bfa65d02d30d.png",
+                "dataUrl": "data:image\/png;base64,iVBORw0KGgoAAAANSUhEUgAAAUAAAAFACAYAAADNkKWqAAAAAklEQVR4AewaftIAAAwdSURBVO3BQa4cS5IEQVPHu\/+VdQj0OpKD+EhWkW4i+EuqqhaaVFUtNamqWmpSVbXUpKpqqUlV1VKTqqqlJlVVS\/3kN4D8S9TcAnKi5gmQEzVPgNxS86cBeaLmFpA3qDkB8hY1t4CcqLkF5F+i5mRSVbXUpKpqqUlV1VKTqqqlJlVVS02qqpb6yX+g5hsBeYOaEyCfoOYWkBM1T4D8bdTcUHMLyC0g30bNNwJyY1JVtdSkqmqpSVXVUpOqqqUmVVVLTaqqlppUVS31kxcBeYOaNwC5peYJkBMgt4DcUnNLzS0gJ2qeqDkB8gYgT9TcAnKi5gmQbwPkDWreMKmqWmpSVbXUpKpqqUlV1VKTqqqlJlVVS\/2kvp6aW0BOgJyoeQLkRM0TNSdAbql5g5onQE7U3ALyRM0JkCdqKplUVS01qapaalJVtdSkqmqpSVXVUpOqqqUmVVVL\/aS+HpBbak6A3FJzAuSJmltqToB8gpoTIE\/UnKh5AqT+m0lV1VKTqqqlJlVVS02qqpaaVFUtNamqWuonL1JT\/6PmBMhbgLwByImaW2qeADlR8wTIG4CcqLkF5Imab6PmbzKpqlpqUlW11KSqaqlJVdVSk6qqpSZVVUtNqqqW+sl\/AGQTNSdAnqi5peYEyBM1J0A+AciJmk9QcwLkiZoTIE\/UvAHIEzU3gPxLJlVVS02qqpaaVFUtNamqWmpSVbXUpKpqqZ\/8hpr6PTVPgNwCcqLmCZATNW8AcgvIEzW31PxN1DwB8gY1W0yqqpaaVFUtNamqWmpSVbXUpKpqqUlV1VI\/+Q0gJ2qeAPk2ak7U3ALyjdTcAPIJap4A+TZATtQ8AXKi5paaW0C+jZo3TKqqlppUVS01qapaalJVtdSkqmqpSVXVUpOqqqV+8iI1J0CeqDkB8kTNCZBbaj5BzQmQW2puqTkB8kTNLTUnQJ6oOQFyS80tNSdAbgF5g5onQE7UPAFyAuSWmpNJVdVSk6qqpSZVVUtNqqqWmlRVLTWpqlrqJ7+h5tuoeQLkhponQN6g5hOA3AJyouYWkFtqngA5UXMC5AmQEzVPgNxScwLklpoTIE\/UfIKaG5OqqqUmVVVLTaqqlppUVS01qapaalJVtdSkqmqpn\/wGkE8AckvNCZC\/DZATNX8bIG8A8gY1T4CcAHmi5haQW2reAOSWmltATtScTKqqlppUVS01qapaalJVtdSkqmqpSVXVUj\/5DTWfAOQWkBM1b1DzCUBuqTkB8kTNLTUnQG6puQXkDWqeALml5haQEzUnat4C5ETNGyZVVUtNqqqWmlRVLTWpqlpqUlW11KSqaqlJVdVSP\/kNICdqngA5UfMWNW9QcwvIiZpvo+YJkBM1T4CcqHkC5BaQEzW3gJwAeaLmDUCeqDkB8gY1T9ScAHnDpKpqqUlV1VKTqqqlJlVVS02qqpaaVFUthb\/kAZATNU+AnKi5BeSWmk8A8glqToB8gpoTIE\/UbAHkiZpbQG6oeQLkRM23mVRVLTWpqlpqUlW11KSqaqlJVdVSk6qqpSZVVUvhL7kE5C1q\/iZA\/iVqngD5NmqeALmh5haQt6i5BeTbqDkB8kTNjUlV1VKTqqqlJlVVS02qqpaaVFUtNamqWgp\/yQMgt9R8ApBvo+YNQJ6oeQOQW2q+DZBbam4BeYOaJ0BO1JwAeaLmFpATNW+YVFUtNamqWmpSVbXUpKpqqUlV1VKTqqqlfvIfqHkC5ETNEyAnap6oOQFyouYWkLcA+dOAPFFzAuQWkG+j5haQW2puAbkF5ETNEyC31NwCcqLmZFJVtdSkqmqpSVXVUpOqqqUmVVVLTaqqlppUVS2Fv+QlQP4maj4ByBM1fxqQJ2puAbml5g1Abql5A5C3qDkBcqLmFpAnak6APFFzY1JVtdSkqmqpSVXVUpOqqqUmVVVLTaqqlsJf8gDIiZpbQN6i5gTIJ6i5BeREzRMgf5qaW0C+jZpvBOSWmhMgt9ScAHmi5haQEzUnk6qqpSZVVUtNqqqWmlRVLTWpqlpqUlW11KSqaqmf\/IaaW0BO1DwBcgvIG9ScAPmXqLkF5ImaW2puATlRcwLklponQE7U3FJzS80JkCdAbgG5pebGpKpqqUlV1VKTqqqlJlVVS02qqpaaVFUthb\/kEpAnav4lQD5BzQmQW2puATlR8wTIJ6g5AXKi5i1A\/iZqvhGQEzUnk6qqpSZVVUtNqqqWmlRVLTWpqlpqUlW11KSqaqmffAiQJ2puAXmDmltATtS8Rc0JkL+Nmm8D5JaaNwD52wA5UfNEzY1JVdVSk6qqpSZVVUtNqqqWmlRVLTWpqlrqJ78B5A1qngC5peYGkFtAnqg5AfJEzZ+m5gmQEyBvAXKi5paaW2reAOSJmltqToCcAHmLmhMgT9TcmFRVLTWpqlpqUlW11KSqaqlJVdVSk6qqpSZVVUv95DfUnAB5i5oTIE+AnKip3wPyRM0JkCdqPgHI30TNW4DcUPMEyImatwA5UXMyqapaalJVtdSkqmqpSVXVUpOqqqUmVVVL4S+5BOQtak6APFFzA8gtNbeAfIKaEyCfoOYJkFtqbgB5ouYEyL9EzVuAnKh5AuREzcmkqmqpSVXVUpOqqqUmVVVLTaqqlppUVS31k\/9AzRMgJ2qeALkF5ETNJwA5UfMEyLdRcwvILTV\/mponQG6peQOQJ2reAOSWmhMgT9TcmFRVLTWpqlpqUlW11KSqaqlJVdVSk6qqpSZVVUv95EOAvEXNDTVPgNxScwLklppbQE7UfAKQJ2pOgDxRcwPINwJyC8iJmi0mVVVLTaqqlppUVS01qapaalJVtdSkqmop\/CWXgDxRcwLklponQE7UfAKQW2puAXmDmltAtlDzBMi\/RM0tILfU3JhUVS01qapaalJVtdSkqmqpSVXVUpOqqqUmVVVL4S95AOQNam4BeaLmBMgb1DwBcqLmFpBPUPMGIE\/UvAHIiZonQE7UvAXIG9ScAHmLmhMgt9ScTKqqlppUVS01qapaalJVtdSkqmqpSVXVUj\/5D9Q8AXIC5ImaEzVPgLxBzQmQJ2reoOYNQN4C5ETNLSD1P2puAbml5g1q3jCpqlpqUlW11KSqaqlJVdVSk6qqpSZVVUtNqqqW+smXAnJLzQ0gT4CcqLkF5C1qToDcAnKi5omaEyBP1NxS822AnKh5ouYEyBM1fxMgt9ScTKqqlppUVS01qapaalJVtdSkqmqpSVXVUj\/5UmpuATlRc6LmCZA3qLkF5AmQG2qeALkF5ETNvwTILSBP1NwC8gYgn6DmxqSqaqlJVdVSk6qqpSZVVUtNqqqWmlRVLTWpqlrqJ7+h5paaT1BzA8gTNbeA3FLzbdScAHmi5haQEzVPgJyouaXmBMgTNSdA3qLmDUBO1LwFyImak0lV1VKTqqqlJlVVS02qqpaaVFUtNamqWuonvwHkX6LmRM0tIE\/UvEHNJwD5NkA+AciJmr8NkBM1bwFyS82NSVXVUpOqqqUmVVVLTaqqlppUVS01qapa6if\/gZpvBOQGkCdqTtTcAvJEzQmQW2puqTkB8hY1fxqQtwD5Nmo+Qc0JkDdMqqqWmlRVLTWpqlpqUlW11KSqaqlJVdVSk6qqpX7yIiBvUPO3AXKi5paaJ0BOgJyoeQLkRM0tILfUPAFyouZEzS0gT9ScAHkLkG8D5ETNGyZVVUtNqqqWmlRVLTWpqlpqUlW11KSqaqmf1P8bkBM1T9ScAHmi5gTIEzVvUHMLyC01J0CeqLkB5ImaEzVPgHwbNZ+g5haQEzUnk6qqpSZVVUtNqqqWmlRVLTWpqlpqUlW11KSqaqmf1B8B5ETNEyDfBsiJmltqngA5UfMEyBuA3FJzC8iJmidAToC8Qc0TILfU3JhUVS01qapaalJVtdSkqmqpSVXVUpOqqqV+8iI1fxM1t4A8UXMC5JaaNwB5i5oTIE\/UnAC5peYEyC01t4A8UXMC5BPU3FJzAuQNk6qqpSZVVUtNqqqWmlRVLTWpqlpqUlW11KSqaqmf\/AdA\/iVAnqi5BeQNQJ6ouaHmFpBbam6p+dsAOVHzBMiJmltA3gDkiZoTNW+YVFUtNamqWmpSVbXUpKpqqUlV1VKTqqql8JdUVS00qapaalJVtdSkqmqpSVXVUpOqqqUmVVVL\/R\/7cc+N6Lm\/ZQAAAABJRU5ErkJggg=="
+            },
+            "storage": {
+                "json": "zw_bfa65d02d30d.json",
+                "image": "zw_bfa65d02d30d.png"
+            },
+            "network": "testnet",
+            "ledger": {
+                "id": "ledger_aa52c80b",
+                "orderId": "ZTNMIURJ3O1KRC1",
+                "walletId": "zw_bfa65d02d30d",
+                "tokens": 13,
+                "status": "pending",
+                "network": "testnet",
+                "source": "order",
+                "createdAt": "2025-12-06T21:45:18+01:00",
+                "updatedAt": "2025-12-06T21:45:18+01:00",
+                "walletUri": "zion:\/\/wallet\/zw_bfa65d02d30d?tokens=13&label=ZION+order+ZTNMIURJ3O1KRC1&orderId=ZTNMIURJ3O1KRC1",
+                "qrImage": "zw_bfa65d02d30d.png",
+                "note": null,
+                "txHash": null,
+                "details": {
+                    "totalTokens": 13,
+                    "items": [
+                        {
+                            "id": "seed-003",
+                            "name": "RAMAYANA",
+                            "quantity": 2,
+                            "perUnit": 4,
+                            "total": 8
+                        },
+                        {
+                            "id": "wood-003",
+                            "name": "Pergola na míru - konzultace",
+                            "quantity": 1,
+                            "perUnit": 5,
+                            "total": 5
+                        }
+                    ]
+                },
+                "history": [
+                    {
+                        "status": "pending",
+                        "timestamp": "2025-12-06T21:45:18+01:00",
+                        "note": "Created from order #ZTNMIURJ3O1KRC1"
+                    }
+                ]
+            }
+        }
+    },
+    "seller": {
+        "name": "Omnity.One s.r.o.",
+        "ico": "09120050",
+        "dic": "CZ09120050",
+        "address": "Horní Čermná, 56156",
+        "court": "Krajský soud v Hradci Králové",
+        "court_id": "00215716",
+        "bank_account": "2901809148 \/ 2010",
+        "iban": "CZ63 2010 0000 0029 0180 9148",
+        "swift": "FIOBCZPPXXX",
+        "bank_name": "Fio banka, a.s.",
+        "country": "Česká republika",
+        "email": "admin@newearth.cz",
+        "web": "www.newearth.cz"
+    },
+    "buyer": {
+        "name": "J",
+        "email": "yosef.hubalek@gmail.com",
+        "phone": "773669477",
+        "address": "Výdejní místo: Jablonné nad Orlicí, Náměstí 5.května 23 (galanterie), Jablonné nad Orlicí"
+    },
+    "items": [
+        {
+            "name": "RAMAYANA",
+            "quantity": 2,
+            "unit": "ks",
+            "unitPrice": 390,
+            "unitPriceWithoutVat": 322.31,
+            "vatRate": 21,
+            "vatAmount": 135.37,
+            "totalPrice": 780,
+            "priceWithoutVat": 644.63
+        },
+        {
+            "name": "Pergola na míru - konzultace",
+            "quantity": 1,
+            "unit": "ks",
+            "unitPrice": 490,
+            "unitPriceWithoutVat": 404.95999999999998,
+            "vatRate": 21,
+            "vatAmount": 85.040000000000006,
+            "totalPrice": 490,
+            "priceWithoutVat": 404.95999999999998
+        },
+        {
+            "name": "Doprava - zasilkovna",
+            "quantity": 1,
+            "unit": "ks",
+            "unitPrice": 69,
+            "unitPriceWithoutVat": 57.020000000000003,
+            "vatRate": 21,
+            "vatAmount": 11.98,
+            "totalPrice": 69,
+            "priceWithoutVat": 57.020000000000003
+        }
+    ],
+    "totals": {
+        "withoutVat": 1106.6099999999999,
+        "vat": 232.38999999999999,
+        "withVat": 1339,
+        "currency": "CZK"
+    }
+}

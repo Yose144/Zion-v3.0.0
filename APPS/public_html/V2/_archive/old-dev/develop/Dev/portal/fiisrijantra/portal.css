@@ -1,0 +1,76 @@
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    background-color: #000000;
+    position: relative;
+}
+
+.container {
+    position: relative;
+    width: 500px; /* Nastavte šířku kontejneru podle potřeby */
+    height: 500px; /* Nastavte výšku kontejneru podle potřeby */
+}
+
+img {
+    width: 100%; /* Obrázky se nyní přizpůsobí velikosti kontejneru */
+    height: auto;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* Umožňuje centrování obrázků */
+    /* box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.5); /* stín */
+    filter: grayscale(100%) brightness(150%) blur(0.3px) sepia(50%) contrast(150%); /* filtry invert(100%) */
+
+}
+
+    /* transition: transform 0.3s;
+}
+
+img:hover {
+    transform: scale(1.1); /* zvětšení obrázku při najetí */
+
+.rotate1 {
+
+    opacity: 0.9;
+    animation: rotate-right 10s linear infinite;
+}
+
+.rotate2 {
+
+    opacity: 0.9;
+    animation: rotate-left 10s linear infinite;
+}
+
+.rotate3 {
+
+    opacity: 0.8;
+    animation: rotate-right 33s linear infinite;
+}
+
+.rotate4 {
+
+    opacity: 0.8;
+    animation: rotate-left 33s linear infinite;
+}
+
+
+@keyframes rotate-right {
+    from {
+        transform: translate(-50%, -50%) rotate(0deg);
+    }
+    to {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
+}
+
+@keyframes rotate-left {
+    from {
+        transform: translate(-50%, -50%) rotate(0deg);
+    }
+    to {
+        transform: translate(-50%, -50%) rotate(-360deg);
+    }
+}

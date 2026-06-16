@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60" width="200" height="60">
+  <!-- Zásilkovna logo - simplified version -->
+  <defs>
+    <linearGradient id="packeta-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#00a651;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#009444;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Box icon -->
+  <g transform="translate(10, 10)">
+    <rect x="0" y="12" width="36" height="24" fill="url(#packeta-gradient)" rx="2"/>
+    <path d="M 18 0 L 36 12 L 36 24 L 18 36 L 0 24 L 0 12 Z" fill="#00a651" opacity="0.3"/>
+    <path d="M 18 0 L 18 36 M 0 12 L 36 12 M 18 0 L 36 12 M 18 0 L 0 12" stroke="white" stroke-width="2" fill="none"/>
+  </g>
+  
+  <!-- Text: Zásilkovna -->
+  <text x="56" y="35" font-family="Arial, sans-serif" font-size="22" font-weight="bold" fill="#00a651">Zásilkovna</text>
+</svg>

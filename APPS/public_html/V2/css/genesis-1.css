@@ -1,0 +1,23 @@
+.genesis-nav { position: sticky; top: 80px; background: rgba(0,0,0,0.95); backdrop-filter: blur(10px); border-bottom: 2px solid var(--rasta-gold); padding: 15px 0; z-index: 100; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+.genesis-nav-inner { max-width: 1400px; margin: 0 auto; padding: 0 20px; display: flex; gap: 12px; overflow-x: auto; flex-wrap: wrap; justify-content: center; }
+.genesis-nav-link { color: var(--rasta-gold); text-decoration: none; white-space: nowrap; padding: 8px 15px; border-radius: 20px; transition: all 0.3s ease; font-size: 0.85rem; font-weight: 500; border: 1px solid transparent; }
+.genesis-nav-link:hover { background: rgba(255,215,0,0.1); border-color: var(--rasta-gold); transform: translateY(-2px); }
+.genesis-nav-link.next-part { background: rgba(0,255,170,0.15); border: 1px solid var(--rasta-green); color: var(--rasta-green); font-weight: 600; }
+.chapter-section { scroll-margin-top: 150px; padding: 60px 20px; max-width: 900px; margin: 0 auto; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.chapter-section:last-of-type { border-bottom: none; }
+.chapter-header { text-align: center; margin-bottom: 40px; }
+.chapter-number { color: var(--rasta-gold); font-size: 0.95rem; letter-spacing: 3px; margin-bottom: 12px; text-transform: uppercase; }
+.chapter-title { color: var(--rasta-cyan); font-size: 2.5rem; margin-bottom: 15px; line-height: 1.2; }
+.chapter-subtitle { color: var(--rasta-gold); font-style: italic; font-size: 1.1rem; }
+.chapter-content { line-height: 1.9; color: #ddd; }
+.chapter-content p { margin-bottom: 22px; }
+.chapter-content h3 { color: var(--rasta-cyan); margin: 45px 0 20px; font-size: 1.7rem; }
+.chapter-content h4 { color: var(--rasta-gold); margin: 30px 0 15px; font-size: 1.3rem; }
+.chapter-quote { background: rgba(255,215,0,0.05); border-left: 4px solid var(--rasta-gold); padding: 25px 30px; margin: 35px 0; font-style: italic; color: #fff; border-radius: 0 12px 12px 0; font-size: 1.1rem; }
+.chapter-list { list-style: none; padding: 0; margin: 25px auto; }
+.chapter-list li { padding: 10px 0 10px 35px; position: relative; color: #ddd; margin-bottom: 8px; }
+.chapter-list li:before { content: "✶"; position: absolute; left: 0; color: var(--rasta-cyan); font-size: 1.2rem; }
+.back-to-top { position: fixed; bottom: 30px; right: 30px; width: 50px; height: 50px; background: var(--rasta-gold); color: #000; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; opacity: 0; visibility: hidden; transition: all 0.3s ease; z-index: 1000; box-shadow: 0 4px 15px rgba(255,215,0,0.4); }
+.back-to-top.visible { opacity: 1; visibility: visible; }
+.back-to-top:hover { transform: translateY(-5px); box-shadow: 0 6px 20px rgba(255,215,0,0.6); }
+@media (max-width: 768px) { .chapter-title { font-size: 2rem; } .genesis-nav { top: 60px; } .chapter-section { padding: 40px 15px; } }

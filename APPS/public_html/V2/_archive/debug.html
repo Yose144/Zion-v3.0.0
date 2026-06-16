@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZION eShop - Test Debug</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #0a0a0a;
+            color: #ccc;
+        }
+        .section {
+            background: #1a1a1a;
+            border: 2px solid #ffc107;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        h2 {
+            color: #ffc107;
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+        }
+        .test-btn {
+            background: linear-gradient(135deg, #ff4444, #ffc107, #44aa44);
+            color: #000;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-btn:hover {
+            transform: scale(1.05);
+        }
+        .result {
+            background: #222;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success { color: #44aa44; }
+        .error { color: #ff4444; }
+        .info { color: #4499ff; }
+    </style>
+</head>
+<body>
+    <h1>🛠️ ZION eShop - Debug & Test Panel</h1>
+
+    <!-- Test 1: Email Sending -->
+    <div class="section">
+        <h2>📧 Test Email Odesílání</h2>
+        <p>Testuje zda funguje SMTP odesílání emailů přes PHPMailer.</p>
+        <button class="test-btn" onclick="testEmail()">Test odeslat email</button>
+        <div id="email-result" class="result" style="display: none;"></div>
+    </div>
+
+    <!-- Test 2: Token Calculation -->
+    <div class="section">
+        <h2>🪙 Test ZION Token Bonusů</h2>
+        <p>Ověřuje zda se správně počítají token bonusy z produktů.</p>
+        <button class="test-btn" onclick="testTokens()">Test token výpočet</button>
+        <div id="tokens-result" class="result" style="display: none;"></div>
+    </div>
+
+    <!-- Test 3: QR Code Generation -->
+    <div class="section">
+        <h2>💳 Test QR Kódu pro Bankovní Platbu</h2>
+        <p>Vygeneruje QR kód pro testovací bankovní převod.</p>
+        <input type="number" id="qr-amount" placeholder="Částka (Kč)" value="1234" style="padding: 8px; margin-right: 10px;">
+        <input type="text" id="qr-vs" placeholder="Variabilní symbol" value="TEST123" style="padding: 8px; margin-right: 10px;">
+        <button class="test-btn" onclick="testBankQR()">Generovat QR</button>
+        <div id="qr-result" class="result" style="display: none;"></div>
+    </div>
+
+    <!-- Test 4: Wallet Generation -->
+    <div class="section">
+        <h2>🔐 Test ZION Wallet Generování</h2>
+        <p>Zkouší vytvořit ZION wallet s QR kódem.</p>
+        <input type="number" id="wallet-tokens" placeholder="Počet tokenů" value="500" style="padding: 8px; margin-right: 10px;">
+        <button class="test-btn" onclick="testWallet()">Generovat wallet</button>
+        <div id="wallet-result" class="result" style="display: none;"></div>
+    </div>
+
+    <!-- Test 5: Complete Order Flow -->
+    <div class="section">
+        <h2>🛒 Test Kompletní Objednávka</h2>
+        <p>Simuluje vytvoření testovací objednávky včetně emailu a faktury.</p>
+        <button class="test-btn" onclick="testCompleteOrder()">Test objednávka</button>
+        <div id="order-result" class="result" style="display: none;"></div>
+    </div>
+
+    <script>
+        async function testEmail() {
+            const resultEl = document.getElementById('email-result');
+            resultEl.style.display = 'block';
+            resultEl.innerHTML = '<span class="info">⏳ Odesílám testovací email...</span>';
+            
+            try {
+                const response = await fetch('./api/test-mail.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        to: 'admin@newearth.cz',
+                        subject: 'Test ZION eShop Email',
+                        body: 'Testovací email z debug panelu. Čas: ' + new Date().toISOString()
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultEl.innerHTML = '<span class="success">✅ Email odeslán úspěšně!</span>\n' + JSON.stringify(data, null, 2);
+                } else {
+                    resultEl.innerHTML = '<span class="error">❌ Chyba: ' + (data.error || 'Unknown') + '</span>\n' + JSON.stringify(data, null, 2);
+                }
+            } catch (error) {
+                resultEl.innerHTML = '<span class="error">❌ Exception: ' + error.message + '</span>';
+            }
+        }
+
+        async function testTokens() {
+            const resultEl = document.getElementById('tokens-result');
+            resultEl.style.display = 'block';
+            
+            // Simulujeme košík
+            const testCart = [
+                { id: 'wood-003', name: 'Pergola konzultace', price: 490, tokens: 490, quantity: 1 },
+                { id: 'star-001', name: 'A-Wing Starfighter', price: 890, tokens: 890, quantity: 2 }
+            ];
+            
+            const totalTokens = testCart.reduce((sum, item) => {
+                return sum + ((item.tokens || 0) * (item.quantity || 1));
+            }, 0);
+            
+            resultEl.innerHTML = `<span class="success">✅ Token výpočet funguje!</span>
+
+Testovací košík:
+${testCart.map(item => `  - ${item.name}: ${item.tokens} × ${item.quantity} = ${item.tokens * item.quantity} ZION`).join('\n')}
+
+<span class="info">CELKEM: ${totalTokens} ZION tokens</span>`;
+        }
+
+        async function testBankQR() {
+            const resultEl = document.getElementById('qr-result');
+            const amount = document.getElementById('qr-amount').value;
+            const vs = document.getElementById('qr-vs').value;
+            
+            resultEl.style.display = 'block';
+            resultEl.innerHTML = '<span class="info">⏳ Generuji QR kód...</span>';
+            
+            try {
+                const response = await fetch('./api/bank-qr.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        amount: parseFloat(amount),
+                        currency: 'CZK',
+                        message: 'Test platba',
+                        variableSymbol: vs,
+                        qrSize: 300
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultEl.innerHTML = `<span class="success">✅ QR kód vygenerován!</span>
+
+<img src="${data.qr.url}" alt="Bank QR" style="max-width: 300px; background: white; padding: 10px; border-radius: 8px;">
+
+SPD String: ${data.qr.spdString}
+
+Platební údaje:
+  Částka: ${data.payment.amount} ${data.payment.currency}
+  IBAN: ${data.payment.iban}
+  VS: ${data.payment.variableSymbol}`;
+                } else {
+                    resultEl.innerHTML = '<span class="error">❌ Chyba: ' + (data.error || 'Unknown') + '</span>';
+                }
+            } catch (error) {
+                resultEl.innerHTML = '<span class="error">❌ Exception: ' + error.message + '</span>';
+            }
+        }
+
+        async function testWallet() {
+            const resultEl = document.getElementById('wallet-result');
+            const tokens = document.getElementById('wallet-tokens').value;
+            
+            resultEl.style.display = 'block';
+            resultEl.innerHTML = '<span class="info">⏳ Generuji ZION wallet...</span>';
+            
+            try {
+                const response = await fetch('./api/wallet-qr.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        label: 'Test Wallet',
+                        tokens: parseInt(tokens),
+                        orderId: 'TEST_' + Date.now(),
+                        expiresInHours: 720
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    const qrUrl = data.qr.dataUrl || data.qr.serviceUrl;
+                    resultEl.innerHTML = `<span class="success">✅ Wallet vygenerován!</span>
+
+<img src="${qrUrl}" alt="Wallet QR" style="max-width: 280px; background: white; padding: 10px; border-radius: 8px;">
+
+Wallet ID: ${data.wallet.id}
+Tokens: ${data.wallet.tokens} ZION
+Expires: ${data.wallet.expiresAt}
+URI: ${data.wallet.uri}`;
+                } else {
+                    resultEl.innerHTML = '<span class="error">❌ Chyba: ' + (data.error || 'Unknown') + '</span>';
+                }
+            } catch (error) {
+                resultEl.innerHTML = '<span class="error">❌ Exception: ' + error.message + '</span>';
+            }
+        }
+
+        async function testCompleteOrder() {
+            const resultEl = document.getElementById('order-result');
+            resultEl.style.display = 'block';
+            resultEl.innerHTML = '<span class="info">⏳ Vytvářím testovací objednávku...</span>';
+            
+            const testOrder = {
+                orderId: 'TEST_' + Date.now(),
+                items: [
+                    { id: 'wood-003', name: 'Pergola konzultace', price: 490, tokens: 490, quantity: 1, category: 'woodart' }
+                ],
+                customer: {
+                    name: 'Test Zákazník',
+                    email: 'test@newearth.cz',
+                    phone: '+420 777 888 999',
+                    newsletter: false
+                },
+                shipping: {
+                    method: 'zasilkovna',
+                    price: 69,
+                    pickupPoint: null
+                },
+                payment: 'transfer',
+                note: 'Testovací objednávka z debug panelu',
+                total: 559,
+                zionTokens: 490,
+                termsAccepted: true,
+                createdAt: new Date().toISOString()
+            };
+            
+            try {
+                const response = await fetch('./api/create-order.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(testOrder)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    resultEl.innerHTML = `<span class="success">✅ Objednávka vytvořena!</span>
+
+Order ID: ${data.orderId}
+Email admin: ${data.emailSent.admin ? '✅' : '❌'}
+Email zákazník: ${data.emailSent.customer ? '✅' : '❌'}
+ZION tokens: ${data.zion?.tokens?.totalTokens || 0}
+Wallet ID: ${data.zion?.wallet?.id || 'N/A'}
+Faktura: ${data.invoice?.number || 'N/A'}
+
+Kompletní response:
+${JSON.stringify(data, null, 2)}`;
+                } else {
+                    resultEl.innerHTML = '<span class="error">❌ Chyba: ' + (data.error || 'Unknown') + '</span>\n' + JSON.stringify(data, null, 2);
+                }
+            } catch (error) {
+                resultEl.innerHTML = '<span class="error">❌ Exception: ' + error.message + '</span>';
+            }
+        }
+    </script>
+</body>
+</html>
