@@ -70,12 +70,14 @@ function LivingTree() {
 
 // Consciousness Particles
 function ConsciousnessParticles() {
+  const positions = new Float32Array(Array.from({ length: 1000 }, () => (Math.random() - 0.5) * 20);
+  
   return (
     <points>
       <bufferGeometry>
         <bufferAttribute
           attach="attributes-position"
-          args={[new Float32Array(Array.from({ length: 1000 }, () => (Math.random() - 0.5) * 20), 3]}
+          args={[positions, 3]}
         />
       </bufferGeometry>
       <pointsMaterial size={0.05} color="#00ffcc" opacity={0.6} transparent />
