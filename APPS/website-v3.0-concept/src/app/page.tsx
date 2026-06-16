@@ -1,7 +1,7 @@
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Sphere, MeshDistortMaterial, Html } from '@react-three/drei';
 import { motion } from 'framer-motion';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 
 // Animated Neuron Node
@@ -70,7 +70,9 @@ function LivingTree() {
 
 // Consciousness Particles
 function ConsciousnessParticles() {
-  const positions = new Float32Array(Array.from({ length: 1000 }, () => (Math.random() - 0.5) * 20);
+  const positions = useMemo(() => 
+    new Float32Array(Array.from({ length: 1000 }, () => (Math.random() - 0.5) * 20), []
+  );
   
   return (
     <points>
