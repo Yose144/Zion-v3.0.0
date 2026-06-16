@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { motion } from 'framer-motion';
+
 import { Activity, Atom, Braces, Database, Gauge, HelpCircle, Shield } from 'lucide-react';
 import { useLang } from '@/contexts/LanguageContext';
 import { apiClient } from '@/lib/api';
@@ -132,11 +132,7 @@ export default function LiveDashboard() {
         </div>
 
         <div className="grid lg:grid-cols-[1.15fr_0.85fr] gap-8">
-          <motion.div
-            initial={{ opacity: 0, y: 25 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
+          <div
             className="rounded-[28px] border border-white/10 bg-white/5 backdrop-blur-xl p-6 space-y-6"
           >
             <div className="flex flex-wrap items-center justify-between gap-4">
@@ -193,13 +189,9 @@ export default function LiveDashboard() {
                 </div>
               ))}
             </div>
-          </motion.div>
+          </div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 25 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.1 }}
+          <div
             className="rounded-[28px] border border-white/10 bg-black/60 backdrop-blur-xl p-6 flex flex-col gap-6"
           >
             <div>
@@ -232,7 +224,7 @@ export default function LiveDashboard() {
               Blockchain telemetry pulled live from the {SITE_RELEASE_LABEL} V3 mainnet API every 30 s, on top of the {SITE_RUNTIME_LABEL} runtime.
               Current public runtime is a Core + Edge topology (Core PC + Hetzner Edge VPS).
             </div>
-          </motion.div>
+          </div>
         </div>
       </div>
     </section>
