@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
-  reactCompiler: true,
+  // reactCompiler: true, // Disabled due to hydration issues with client components
   transpilePackages: ['zion-wallet-sdk', '@noble/ed25519', '@noble/hashes'],
   turbopack: {
     root: rootDir,
