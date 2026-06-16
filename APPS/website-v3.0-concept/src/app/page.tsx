@@ -1,7 +1,7 @@
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Sphere, MeshDistortMaterial, Html } from '@react-three/drei';
 import { motion } from 'framer-motion';
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 // Animated Neuron Node
@@ -70,16 +70,23 @@ function LivingTree() {
 
 // Consciousness Particles
 function ConsciousnessParticles() {
-  const positions = useMemo(() => 
-    new Float32Array(Array.from({ length: 1000 }, () => (Math.random() - 0.5) * 20)
-  , []);
-  
+  // Generate positions once at module load time
+  const generatePositions = () => {
+    const arr = new Float32Array(1000 * 3);
+    for (let i = 0; i < 1000; i++) {
+      arr[i * 3] = (Math.random() - 0.5) * 20;
+      arr[i * 3 + 1] = (Math.random() - 0.5) * 20;
+      arr[i * 3 + 2] = (Math.random() - 0.5) * 20;
+    }
+    return arr;
+  };
+
   return (
     <points>
       <bufferGeometry>
         <bufferAttribute
           attach="attributes-position"
-          args={[positions, 3]}
+          args={[generatePositions(), 3]}
         />
       </bufferGeometry>
       <pointsMaterial size={0.05} color="#00ffcc" opacity={0.6} transparent />
