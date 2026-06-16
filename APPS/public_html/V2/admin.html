@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="./style.css"/>
+  <link rel="stylesheet" href="./rasta.css"/>
+  <script src="https://kit.fontawesome.com/16464afad1.js" crossorigin="anonymous"></script>
+  <title>Admin Panel | ZION TerraNova</title>
+  <style>
+    :root { --admin-bg: #0a0a0a; --admin-card: #111; --admin-border: #222; }
+    .admin-wrap { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    .admin-topbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
+    .admin-topbar-title { font-size: 1.5rem; font-weight: 800; background: linear-gradient(135deg, var(--rasta-green), var(--rasta-gold)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .admin-topbar-links { display: flex; gap: 12px; align-items: center; }
+    .admin-topbar-links a { color: rgba(255,255,255,0.5); text-decoration: none; font-size: 0.85rem; transition: color 0.3s; }
+    .admin-topbar-links a:hover { color: var(--rasta-gold); }
+    .section-tabs { display: flex; gap: 6px; margin-bottom: 25px; background: rgba(255,255,255,0.03); border-radius: 14px; padding: 5px; }
+    .section-tab { flex: 1; text-align: center; padding: 12px 20px; border-radius: 10px; cursor: pointer; color: rgba(255,255,255,0.5); font-size: 0.95rem; transition: all 0.3s; border: none; background: none; font-family: inherit; font-weight: 600; }
+    .section-tab.active { background: linear-gradient(135deg, var(--rasta-green), var(--rasta-gold)); color: #000; font-weight: 800; }
+    .section-tab:hover:not(.active) { color: #fff; background: rgba(255,255,255,0.06); }
+    .section-tab i { margin-right: 6px; }
+    .main-section { display: none; }
+    .main-section.active { display: block; }
+    .admin-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
+    .admin-header h1 { font-size: 1.4rem; color: var(--rasta-gold); }
+    .admin-actions { display: flex; gap: 10px; }
+    .admin-actions button, .admin-actions a { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); color: #ccc; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 0.85rem; text-decoration: none; transition: all 0.3s; font-family: inherit; }
+    .admin-actions button:hover, .admin-actions a:hover { border-color: var(--rasta-gold); color: var(--rasta-gold); }
+    .mainnet-panel { background: linear-gradient(135deg, rgba(0,30,0,0.5), rgba(50,50,0,0.3)); border: 1px solid rgba(255,215,0,0.15); border-radius: 16px; padding: 25px; margin-bottom: 25px; }
+    .mainnet-panel-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
+    .mainnet-panel-header h2 { color: var(--rasta-gold); font-size: 1.3rem; margin: 0; }
+    .mainnet-status { display: inline-flex; align-items: center; gap: 6px; padding: 4px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: 700; }
+    .mainnet-status.testnet { background: rgba(255,165,0,0.2); color: #ffa500; border: 1px solid #ffa500; }
+    .mainnet-status.mainnet { background: rgba(0,255,0,0.2); color: #0f0; border: 1px solid #0f0; }
+    .mainnet-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
+    .mainnet-stat { background: rgba(0,0,0,0.3); border-radius: 12px; padding: 15px; text-align: center; border: 1px solid rgba(255,255,255,0.05); }
+    .mainnet-stat .value { font-size: 1.8rem; font-weight: 800; color: var(--rasta-gold); }
+    .mainnet-stat .label { font-size: 0.75rem; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+    .mainnet-actions { display: flex; gap: 15px; flex-wrap: wrap; }
+    .mainnet-btn { flex: 1; min-width: 200px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 20px; cursor: pointer; transition: all 0.3s; text-align: left; font-family: inherit; }
+    .mainnet-btn:hover { border-color: var(--rasta-gold); transform: translateY(-2px); }
+    .mainnet-btn .icon { font-size: 1.5rem; margin-bottom: 8px; }
+    .mainnet-btn .title { color: #fff; font-weight: 700; font-size: 1rem; margin-bottom: 4px; }
+    .mainnet-btn .desc { color: rgba(255,255,255,0.5); font-size: 0.8rem; }
+    .mainnet-btn.presale .icon { color: var(--rasta-gold); }
+    .mainnet-btn.bonus .icon { color: var(--rasta-green); }
+    .mainnet-warning { display: none; align-items: center; gap: 10px; background: rgba(255,165,0,0.1); border: 1px solid rgba(255,165,0,0.3); border-radius: 10px; padding: 12px 18px; margin-top: 15px; color: #ffa500; font-size: 0.85rem; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 25px; }
+    .stat-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 20px; transition: all 0.3s; }
+    .stat-card:hover { border-color: rgba(255,255,255,0.15); transform: translateY(-2px); }
+    .stat-card .stat-icon { font-size: 1.5rem; margin-bottom: 10px; }
+    .stat-card.green .stat-icon { color: var(--rasta-green); }
+    .stat-card.gold .stat-icon { color: var(--rasta-gold); }
+    .stat-card.red .stat-icon { color: var(--rasta-red, #e74c3c); }
+    .stat-card .stat-value { font-size: 1.8rem; font-weight: 800; color: #fff; }
+    .stat-card .stat-label { font-size: 0.75rem; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+    .stat-card .stat-sub { font-size: 0.8rem; color: rgba(255,255,255,0.4); margin-top: 6px; }
+    .filter-bar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 20px; padding: 15px 20px; background: rgba(255,255,255,0.03); border-radius: 14px; }
+    .filter-bar select, .filter-bar input { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: #eee; padding: 10px 14px; border-radius: 8px; font-size: 0.9rem; font-family: inherit; }
+    .filter-bar select:focus, .filter-bar input:focus { outline: none; border-color: var(--rasta-gold); }
+    .filter-bar input { flex: 1; min-width: 150px; }
+    .filter-bar select option { background: #111; }
+    .export-buttons { display: flex; gap: 8px; margin-left: auto; }
+    .export-buttons button { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); color: #ccc; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 0.8rem; transition: all 0.3s; font-family: inherit; }
+    .export-buttons button:hover { border-color: var(--rasta-gold); color: var(--rasta-gold); }
+    .tabs-container { display: flex; gap: 0; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .tab-btn { padding: 12px 20px; cursor: pointer; color: rgba(255,255,255,0.5); font-size: 0.9rem; border: none; background: none; border-bottom: 2px solid transparent; transition: all 0.3s; font-family: inherit; font-weight: 600; }
+    .tab-btn.active { color: var(--rasta-gold); border-bottom-color: var(--rasta-gold); }
+    .tab-btn:hover:not(.active) { color: #fff; }
+    .tab-count { background: rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; margin-left: 6px; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .section-header { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; margin-bottom: 15px; padding: 12px 16px; background: rgba(255,255,255,0.02); border-radius: 10px; }
+    .section-stat { text-align: center; }
+    .section-stat .num { font-size: 1.3rem; font-weight: 800; color: var(--rasta-gold); }
+    .section-stat .lbl { font-size: 0.65rem; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 1px; }
+    .admin-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    .admin-table th { text-align: left; padding: 12px 10px; color: rgba(255,255,255,0.5); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .admin-table td { padding: 12px 10px; border-bottom: 1px solid rgba(255,255,255,0.05); color: #ccc; }
+    .admin-table tr:hover { background: rgba(255,255,255,0.02); }
+    .admin-table-wrap { overflow-x: auto; border-radius: 12px; background: rgba(0,0,0,0.2); }
+    .status-badge { display: inline-block; padding: 4px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+    .status-new { background: rgba(52,152,219,0.2); color: #3498db; }
+    .status-pending_payment { background: rgba(241,196,15,0.2); color: #f1c40f; }
+    .status-paid { background: rgba(46,204,113,0.2); color: #2ecc71; }
+    .status-shipped { background: rgba(155,89,182,0.2); color: #9b59b6; }
+    .status-completed { background: rgba(0,255,0,0.2); color: #0f0; }
+    .status-cancelled { background: rgba(231,76,60,0.2); color: #e74c3c; }
+    .type-badge { display: inline-block; padding: 3px 8px; border-radius: 8px; font-size: 0.75rem; font-weight: 600; }
+    .type-software, .type-presale { background: rgba(255,215,0,0.15); color: var(--rasta-gold); }
+    .type-eshop { background: rgba(102,126,234,0.15); color: #667eea; }
+    .order-type-badge { display: inline-block; padding: 6px 14px; border-radius: 10px; font-weight: 700; }
+    .order-type-badge.type-presale { background: rgba(255,215,0,0.15); color: var(--rasta-gold); border: 1px solid rgba(255,215,0,0.3); }
+    .order-type-badge.type-eshop { background: rgba(102,126,234,0.15); color: #667eea; border: 1px solid rgba(102,126,234,0.3); }
+    .action-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #ccc; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; transition: all 0.3s; font-family: inherit; }
+    .action-btn:hover { border-color: var(--rasta-gold); color: var(--rasta-gold); }
+    .action-btn.view:hover { background: rgba(255,215,0,0.1); }
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: flex-start; padding: 40px 20px; overflow-y: auto; }
+    .modal-overlay.active { display: flex; }
+    .modal-content { background: #111; border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; max-width: 800px; width: 100%; padding: 30px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .modal-header h2 { color: var(--rasta-gold); font-size: 1.2rem; margin: 0; }
+    .modal-close { background: none; border: none; color: rgba(255,255,255,0.5); font-size: 1.5rem; cursor: pointer; transition: color 0.3s; }
+    .modal-close:hover { color: #fff; }
+    .detail-section { margin-bottom: 20px; background: rgba(255,255,255,0.02); border-radius: 12px; padding: 20px; }
+    .detail-section h3 { color: var(--rasta-gold); font-size: 1rem; margin: 0 0 15px; }
+    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .detail-item label { display: block; color: rgba(255,255,255,0.4); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+    .detail-item span { color: #eee; font-size: 0.95rem; }
+    .loading { text-align: center; padding: 40px; color: rgba(255,255,255,0.3); }
+    .loading i { font-size: 2rem; animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .blog-admin-wrap { max-width: 960px; margin: 0 auto; }
+    .blog-tabs { display: flex; gap: 5px; margin-bottom: 25px; background: rgba(255,255,255,0.03); border-radius: 12px; padding: 5px; }
+    .blog-tab { flex: 1; text-align: center; padding: 10px; border-radius: 10px; cursor: pointer; color: rgba(255,255,255,0.5); font-size: 0.85rem; transition: all 0.3s; border: none; background: none; font-family: inherit; }
+    .blog-tab.active { background: linear-gradient(135deg, var(--rasta-green), var(--rasta-gold)); color: #000; font-weight: 700; }
+    .blog-tab:hover:not(.active) { color: #fff; background: rgba(255,255,255,0.05); }
+    .blog-panel { display: none; }
+    .blog-panel.active { display: block; }
+    .form-group { margin-bottom: 18px; }
+    .form-label { display: block; color: rgba(255,255,255,0.6); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+    .form-input, .form-select, .form-textarea { width: 100%; background: rgba(255,255,255,0.04); border: 1px solid var(--admin-border); color: #eee; padding: 12px 15px; border-radius: 10px; font-size: 0.95rem; font-family: inherit; transition: border-color 0.3s; box-sizing: border-box; }
+    .form-input:focus, .form-select:focus, .form-textarea:focus { outline: none; border-color: var(--rasta-gold); }
+    .form-textarea { min-height: 300px; resize: vertical; line-height: 1.7; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    .form-select option { background: #111; color: #eee; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px; background: rgba(255,255,255,0.03); border-radius: 10px; padding: 8px; }
+    .toolbar-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #ccc; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; transition: all 0.3s; font-family: inherit; }
+    .toolbar-btn:hover { background: var(--rasta-gold); color: #000; }
+    .preview-box { background: rgba(255,255,255,0.03); border: 1px solid var(--admin-border); border-radius: 16px; padding: 30px; min-height: 300px; line-height: 1.8; color: rgba(255,255,255,0.85); }
+    .preview-box h1 { font-size: 2rem; margin-bottom: 15px; background: linear-gradient(135deg, var(--rasta-green), var(--rasta-gold)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .preview-box h2 { font-size: 1.4rem; color: var(--rasta-gold); margin: 20px 0 10px; }
+    .preview-box h3 { font-size: 1.15rem; color: var(--rasta-green); margin: 15px 0 8px; }
+    .preview-box p { margin-bottom: 12px; }
+    .preview-box blockquote { border-left: 3px solid var(--rasta-gold); padding: 10px 20px; margin: 15px 0; color: rgba(255,255,255,0.6); font-style: italic; background: rgba(255,215,0,0.03); border-radius: 0 10px 10px 0; }
+    .preview-box img { max-width: 100%; border-radius: 12px; margin: 10px 0; }
+    .preview-box ul, .preview-box ol { padding-left: 25px; margin-bottom: 12px; }
+    .preview-box code { background: rgba(255,255,255,0.08); padding: 2px 8px; border-radius: 4px; font-family: 'Courier New', monospace; font-size: 0.9em; }
+    .preview-box pre { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 15px; overflow-x: auto; margin: 10px 0; }
+    .preview-box pre code { background: none; padding: 0; }
+    .preview-box a { color: var(--rasta-gold); }
+    .preview-box hr { border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 20px 0; }
+    .blog-action-bar { display: flex; gap: 10px; margin-top: 25px; flex-wrap: wrap; }
+    .btn-primary { background: linear-gradient(135deg, var(--rasta-green), var(--rasta-gold)); color: #000; font-weight: 700; border: none; padding: 14px 30px; border-radius: 12px; cursor: pointer; font-size: 1rem; transition: all 0.3s; font-family: inherit; }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(255,215,0,0.3); }
+    .btn-secondary { background: rgba(255,255,255,0.05); color: #ccc; border: 1px solid rgba(255,255,255,0.15); padding: 14px 25px; border-radius: 12px; cursor: pointer; font-size: 0.95rem; transition: all 0.3s; font-family: inherit; }
+    .btn-secondary:hover { border-color: var(--rasta-gold); color: var(--rasta-gold); }
+    .output-box { background: rgba(0,0,0,0.4); border: 1px solid var(--admin-border); border-radius: 12px; padding: 20px; margin-top: 20px; display: none; position: relative; }
+    .output-label { color: var(--rasta-gold); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+    .output-code { color: #8f8; font-family: 'Courier New', monospace; font-size: 0.8rem; white-space: pre-wrap; word-break: break-all; max-height: 300px; overflow-y: auto; }
+    .copy-btn { position: absolute; top: 12px; right: 12px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #ccc; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; transition: all 0.3s; }
+    .copy-btn:hover { background: var(--rasta-gold); color: #000; }
+    .copy-btn.copied { background: var(--rasta-green); color: #000; }
+    .saved-list { list-style: none; padding: 0; }
+    .saved-item { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 15px 20px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; transition: all 0.3s; }
+    .saved-item:hover { border-color: var(--rasta-gold); }
+    .saved-item-info { display: flex; align-items: center; gap: 12px; }
+    .saved-item-title { color: #fff; font-weight: 600; }
+    .saved-item-date { color: rgba(255,255,255,0.4); font-size: 0.8rem; }
+    .saved-item-actions { display: flex; gap: 8px; }
+    .saved-item-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #ccc; padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; transition: all 0.3s; }
+    .saved-item-btn:hover { color: var(--rasta-gold); border-color: var(--rasta-gold); }
+    .saved-item-btn.delete:hover { color: #ff4444; border-color: #ff4444; }
+    .help-section { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 25px 30px; margin-top: 15px; }
+    .help-section h3 { color: var(--rasta-gold); font-size: 1.1rem; margin-bottom: 15px; }
+    .help-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+    .help-item { background: rgba(0,0,0,0.3); border-radius: 8px; padding: 10px 14px; font-family: 'Courier New', monospace; font-size: 0.8rem; }
+    .help-item .syntax { color: #8f8; }
+    .help-item .desc { color: rgba(255,255,255,0.5); font-size: 0.7rem; margin-top: 4px; font-family: inherit; }
+    .empty-state { text-align: center; padding: 60px 20px; color: rgba(255,255,255,0.3); }
+    .empty-state i { font-size: 3rem; margin-bottom: 15px; opacity: 0.3; }
+    @media (max-width: 992px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } .mainnet-stats { grid-template-columns: repeat(2, 1fr); } .detail-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 768px) { .section-tabs { flex-direction: column; } .filter-bar { flex-direction: column; } .export-buttons { margin-left: 0; width: 100%; } .tabs-container { flex-wrap: wrap; } .modal-content { padding: 20px; } }
+    @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } .blog-tabs { flex-direction: column; } .help-grid { grid-template-columns: 1fr; } .stats-grid { grid-template-columns: 1fr; } .mainnet-stats { grid-template-columns: 1fr; } .admin-topbar { flex-direction: column; align-items: flex-start; } }
+    @media print { .section-tabs, .blog-tabs, .admin-topbar, .filter-bar, .mainnet-panel, .admin-actions, .export-buttons, .action-btn, .btn-primary, .btn-secondary, .toolbar, .modal-overlay { display: none !important; } .admin-table { font-size: 10px; } body { background: #fff; color: #000; } .admin-table th, .admin-table td { color: #000; border-color: #ccc; } }
+  </style>
+</head>
+<body>
+  <div class="admin-wrap">
+    <!-- Top Bar -->
+    <div class="admin-topbar">
+      <div class="admin-topbar-title"><i class="fa-solid fa-shield-halved"></i> ZION Admin Panel</div>
+      <div class="admin-topbar-links">
+        <a href="./shop.html"><i class="fa-solid fa-store"></i> Shop</a>
+        <a href="./blog.html"><i class="fa-solid fa-newspaper"></i> Blog</a>
+        <a href="./main.html"><i class="fa-solid fa-home"></i> Hlavní stránka</a>
+      </div>
+    </div>
+
+    <!-- Main Section Tabs -->
+    <div class="section-tabs">
+      <button class="section-tab active" onclick="switchMainSection('eshop')"><i class="fa-solid fa-store"></i> eShop &amp; Objednávky</button>
+      <button class="section-tab" onclick="switchMainSection('blog')"><i class="fa-solid fa-pen-to-square"></i> Blog Admin</button>
+    </div>
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- SECTION 1: ESHOP & OBJEDNÁVKY                -->
+    <!-- ══════════════════════════════════════════════ -->
+    <div class="main-section active" id="section-eshop">
+
+      <div class="admin-header">
+        <h1><i class="fa-solid fa-chart-line"></i> Dashboard Objednávek</h1>
+        <div class="admin-actions">
+          <button onclick="loadOrders()"><i class="fa-solid fa-rotate"></i> Obnovit</button>
+        </div>
+      </div>
+
+      <!-- MainNet Distribution Panel -->
+      <div class="mainnet-panel" id="mainnet-panel">
+        <div class="mainnet-panel-header">
+          <h2><i class="fa-solid fa-rocket"></i> MainNet Token Distribution</h2>
+          <span class="mainnet-status testnet" id="network-status"><i class="fa-solid fa-flask"></i> <span>TestNet</span></span>
+        </div>
+        <div class="mainnet-stats">
+          <div class="mainnet-stat"><div class="value" id="pending-presale-count">0</div><div class="label">Software objednávek k distribuci</div></div>
+          <div class="mainnet-stat"><div class="value" id="pending-presale-tokens">0</div><div class="label">Software ZION k odeslání</div></div>
+          <div class="mainnet-stat"><div class="value" id="pending-bonus-count">0</div><div class="label">eShop bonusů k distribuci</div></div>
+          <div class="mainnet-stat"><div class="value" id="pending-bonus-tokens">0</div><div class="label">Bonus ZION k odeslání</div></div>
+        </div>
+        <div class="mainnet-actions">
+          <button class="mainnet-btn presale" id="btn-presale-distribute" onclick="distributePresaleTokens()">
+            <div class="icon"><i class="fa-solid fa-coins"></i></div>
+            <div class="title">Distribuovat Software Bonusy</div>
+            <div class="desc"><span id="presale-amount">0 ZION</span> na wallety zákazníků</div>
+          </button>
+          <button class="mainnet-btn bonus" id="btn-bonus-distribute" onclick="distributeBonusTokens()">
+            <div class="icon"><i class="fa-solid fa-gift"></i></div>
+            <div class="title">Distribuovat eShop Bonusy</div>
+            <div class="desc"><span id="bonus-amount">0 ZION</span> na wallety zákazníků</div>
+          </button>
+        </div>
+        <div class="mainnet-warning" id="mainnet-warning"><i class="fa-solid fa-triangle-exclamation"></i> <span>MainNet není aktivní. Distribuce proběhne na TestNetu.</span></div>
+      </div>
+
+      <!-- Stats Grid -->
+      <div class="stats-grid" id="stats-grid">
+        <div class="stat-card green">
+          <div class="stat-icon"><i class="fa-solid fa-shopping-bag"></i></div>
+          <div class="stat-value" id="stat-orders">0</div>
+          <div class="stat-label">Celkem objednávek</div>
+          <div class="stat-sub"><span id="stat-eshop">0</span> eShop · <span id="stat-presale">0</span> software</div>
+        </div>
+        <div class="stat-card gold">
+          <div class="stat-icon"><i class="fa-solid fa-coins"></i></div>
+          <div class="stat-value" id="stat-revenue">0 Kč</div>
+          <div class="stat-label">Celková tržba</div>
+          <div class="stat-sub"><span id="stat-czk">0</span> Kč · <span id="stat-eur">€0</span></div>
+        </div>
+        <div class="stat-card red">
+          <div class="stat-icon"><i class="fa-solid fa-gem"></i></div>
+          <div class="stat-value" id="stat-tokens">0</div>
+          <div class="stat-label">ZION tokenů prodáno</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-icon"><i class="fa-solid fa-clock"></i></div>
+          <div class="stat-value" id="stat-pending">0</div>
+          <div class="stat-label">Čeká na platbu</div>
+        </div>
+      </div>
+
+      <!-- Filter Bar -->
+      <div class="filter-bar">
+        <select id="filter-status" onchange="filterOrders()">
+          <option value="">Všechny stavy</option>
+          <option value="new">🆕 Nová</option>
+          <option value="pending_payment">⏳ Čeká na platbu</option>
+          <option value="paid">✅ Zaplaceno</option>
+          <option value="shipped">📦 Odesláno</option>
+          <option value="completed">🎉 Dokončeno</option>
+          <option value="cancelled">❌ Zrušeno</option>
+        </select>
+        <input type="text" id="filter-search" placeholder="🔍 Hledat (ID, jméno, email...)" oninput="filterOrders()">
+        <div class="export-buttons">
+          <button onclick="exportCSV()"><i class="fa-solid fa-file-csv"></i> CSV</button>
+          <button onclick="exportJSON()"><i class="fa-solid fa-file-code"></i> JSON</button>
+          <button onclick="printOrders()"><i class="fa-solid fa-print"></i> Tisk</button>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs-container">
+        <button class="tab-btn active" id="tab-all" onclick="switchTab('all')"><i class="fa-solid fa-list"></i> Vše <span class="tab-count" id="count-all">0</span></button>
+        <button class="tab-btn" id="tab-presale" onclick="switchTab('presale')"><i class="fa-solid fa-desktop"></i> Software <span class="tab-count" id="count-presale">0</span></button>
+        <button class="tab-btn" id="tab-eshop" onclick="switchTab('eshop')"><i class="fa-solid fa-cart-shopping"></i> eShop <span class="tab-count" id="count-eshop">0</span></button>
+        <button class="tab-btn" id="tab-ledger" onclick="switchTab('ledger')"><i class="fa-solid fa-book"></i> Token Ledger <span class="tab-count" id="count-ledger">0</span></button>
+      </div>
+
+      <!-- Tab: All Orders -->
+      <div class="tab-content active" id="content-all">
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead><tr><th>ID</th><th>Typ</th><th>Datum</th><th>Zákazník</th><th>Celkem</th><th>ZION</th><th>Faktura</th><th>Stav</th><th>Akce</th></tr></thead>
+            <tbody id="orders-tbody-all"><tr><td colspan="9" class="loading"><i class="fa-solid fa-spinner"></i> Načítám...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tab: Software/Presale -->
+      <div class="tab-content" id="content-presale">
+        <div class="section-header">
+          <div class="section-stat"><div class="num" id="presale-count">0</div><div class="lbl">Objednávek</div></div>
+          <div class="section-stat"><div class="num" id="presale-tokens">0</div><div class="lbl">ZION tokenů</div></div>
+          <div class="section-stat"><div class="num" id="presale-revenue">0 Kč</div><div class="lbl">Tržba</div></div>
+        </div>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead><tr><th>ID</th><th>Datum</th><th>Zákazník</th><th>Balíček</th><th>Cena</th><th>ZION Tokeny</th><th>Faktura</th><th>Stav</th><th>Akce</th></tr></thead>
+            <tbody id="orders-tbody-presale"><tr><td colspan="9" class="loading"><i class="fa-solid fa-spinner"></i> Načítám...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tab: eShop -->
+      <div class="tab-content" id="content-eshop">
+        <div class="section-header">
+          <div class="section-stat"><div class="num" id="eshop-count">0</div><div class="lbl">Objednávek</div></div>
+          <div class="section-stat"><div class="num" id="eshop-tokens">0</div><div class="lbl">ZION tokenů</div></div>
+          <div class="section-stat"><div class="num" id="eshop-revenue">0 Kč</div><div class="lbl">Tržba</div></div>
+        </div>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead><tr><th>ID</th><th>Datum</th><th>Zákazník</th><th>Položky</th><th>Cena</th><th>ZION Tokeny</th><th>Faktura</th><th>Stav</th><th>Akce</th></tr></thead>
+            <tbody id="orders-tbody-eshop"><tr><td colspan="9" class="loading"><i class="fa-solid fa-spinner"></i> Načítám...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tab: Token Ledger -->
+      <div class="tab-content" id="content-ledger">
+        <div class="section-header">
+          <div class="section-stat"><div class="num" id="ledger-count">0</div><div class="lbl">Záznamů</div></div>
+          <div class="section-stat"><div class="num" id="ledger-tokens">0</div><div class="lbl">ZION tokenů</div></div>
+          <div class="section-stat"><div class="num" id="ledger-pending">0</div><div class="lbl">Čeká na distribuci</div></div>
+          <div style="margin-left:auto;display:flex;gap:8px;">
+            <button class="action-btn" onclick="exportLedgerJSON()"><i class="fa-solid fa-file-code"></i> JSON</button>
+            <button class="action-btn" onclick="exportLedgerCSV()"><i class="fa-solid fa-file-csv"></i> CSV</button>
+            <button class="action-btn" onclick="showAddLedgerModal()" style="color:var(--rasta-green);border-color:var(--rasta-green);"><i class="fa-solid fa-plus"></i> Přidat</button>
+            <button class="action-btn" onclick="refreshLedger()"><i class="fa-solid fa-rotate"></i></button>
+          </div>
+        </div>
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead><tr><th>ID</th><th>Order ID</th><th>Wallet ID</th><th>Tokeny</th><th>Status</th><th>Zdroj</th><th>Vytvořeno</th><th>TX Hash</th><th>Akce</th></tr></thead>
+            <tbody id="ledger-tbody"><tr><td colspan="9" class="loading"><i class="fa-solid fa-spinner"></i> Načítám...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div><!-- /section-eshop -->
+
+    <!-- ══════════════════════════════════════════════ -->
+    <!-- SECTION 2: BLOG ADMIN                        -->
+    <!-- ══════════════════════════════════════════════ -->
+    <div class="main-section" id="section-blog">
+      <div class="blog-admin-wrap">
+
+        <!-- Blog Tabs -->
+        <div class="blog-tabs">
+          <button class="blog-tab active" data-blog-panel="write"><i class="fa-solid fa-pen"></i> Psát článek</button>
+          <button class="blog-tab" data-blog-panel="preview"><i class="fa-solid fa-eye"></i> Náhled</button>
+          <button class="blog-tab" data-blog-panel="export"><i class="fa-solid fa-code"></i> Export</button>
+          <button class="blog-tab" data-blog-panel="drafts"><i class="fa-solid fa-bookmark"></i> Koncepty</button>
+          <button class="blog-tab" data-blog-panel="help"><i class="fa-solid fa-circle-question"></i> Nápověda</button>
+        </div>
+
+        <!-- Blog Panel: Write -->
+        <div class="blog-panel active" id="blog-panel-write">
+          <div class="form-group"><label class="form-label">Nadpis článku (CZ)</label><input class="form-input" id="postTitle" placeholder="Název článku..."></div>
+          <div class="form-group"><label class="form-label">Title (EN)</label><input class="form-input" id="postTitleEn" placeholder="Article title in English..."></div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Datum</label><input class="form-input" type="date" id="postDate"></div>
+            <div class="form-group"><label class="form-label">Kategorie</label>
+              <select class="form-select" id="postCategory">
+                <option value="tech">⛓️ ZION Tech</option>
+                <option value="journey">🌍 Cesta / Journey</option>
+                <option value="story">📖 Příběh / Story</option>
+                <option value="spiritual">🕉️ Duchovní / Spiritual</option>
+                <option value="announcement">📢 Oznámení / News</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Ikona (FontAwesome class)</label><input class="form-input" id="postIcon" placeholder="fa-solid fa-rocket" value="fa-solid fa-file-lines"></div>
+            <div class="form-group"><label class="form-label">Obrázek (cesta)</label><input class="form-input" id="postImage" placeholder="./img/image.jpg"></div>
+          </div>
+          <div class="form-group"><label class="form-label">Krátký popis (CZ)</label><input class="form-input" id="postExcerpt" placeholder="Stručný popis článku..."></div>
+          <div class="form-group"><label class="form-label">Short description (EN)</label><input class="form-input" id="postExcerptEn" placeholder="Brief article description..."></div>
+          <div class="form-group">
+            <label class="form-label">Obsah článku (Markdown)</label>
+            <div class="toolbar">
+              <button class="toolbar-btn" onclick="insertMD('## ','')">H2</button>
+              <button class="toolbar-btn" onclick="insertMD('### ','')">H3</button>
+              <button class="toolbar-btn" onclick="insertMD('**','**')">B</button>
+              <button class="toolbar-btn" onclick="insertMD('*','*')"><em>I</em></button>
+              <button class="toolbar-btn" onclick="insertMD('\n> ','')">Quote</button>
+              <button class="toolbar-btn" onclick="insertMD('\n- ','')">List</button>
+              <button class="toolbar-btn" onclick="insertMD('\n1. ','')">OL</button>
+              <button class="toolbar-btn" onclick="insertMD('[text](',')')">Link</button>
+              <button class="toolbar-btn" onclick="insertMD('![alt](',')')">Img</button>
+              <button class="toolbar-btn" onclick="insertMD('`','`')">Code</button>
+              <button class="toolbar-btn" onclick="insertMD('\n```\n','\n```')">Block</button>
+              <button class="toolbar-btn" onclick="insertMD('\n---\n','')">HR</button>
+              <button class="toolbar-btn" onclick="insertMD('\n🔥 ','')">🔥</button>
+              <button class="toolbar-btn" onclick="insertMD('\n✅ ','')">✅</button>
+              <button class="toolbar-btn" onclick="insertMD('\n⚡ ','')">⚡</button>
+            </div>
+            <textarea class="form-textarea" id="postContent" placeholder="Pište obsah článku v Markdown formátu..."></textarea>
+          </div>
+          <div class="blog-action-bar">
+            <button class="btn-primary" onclick="showBlogPanel('preview')"><i class="fa-solid fa-eye"></i> Zobrazit náhled</button>
+            <button class="btn-secondary" onclick="saveDraft()"><i class="fa-solid fa-bookmark"></i> Uložit koncept</button>
+          </div>
+        </div>
+
+        <!-- Blog Panel: Preview -->
+        <div class="blog-panel" id="blog-panel-preview">
+          <div id="previewMeta" style="margin-bottom:20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;"></div>
+          <div class="preview-box" id="previewContent"></div>
+          <div class="blog-action-bar">
+            <button class="btn-secondary" onclick="showBlogPanel('write')"><i class="fa-solid fa-pen"></i> Zpět na editaci</button>
+            <button class="btn-primary" onclick="showBlogPanel('export')"><i class="fa-solid fa-code"></i> Export HTML</button>
+          </div>
+        </div>
+
+        <!-- Blog Panel: Export -->
+        <div class="blog-panel" id="blog-panel-export">
+          <p style="color:rgba(255,255,255,0.6);margin-bottom:20px;font-size:0.9rem;">
+            <i class="fa-solid fa-circle-info" style="color:var(--rasta-gold);"></i>
+            Dva kroky k publikaci: <strong>1)</strong> Stáhněte HTML soubor a nahrajte do <code>blog/</code>.
+            <strong>2)</strong> Zkopírujte JSON záznam do <code>blog-posts.js</code>.
+          </p>
+          <div class="blog-action-bar" style="margin-bottom:20px;">
+            <button class="btn-primary" onclick="blogGenerateAndDownload()"><i class="fa-solid fa-download"></i> Stáhnout HTML</button>
+            <button class="btn-secondary" onclick="blogGenerateJSON()"><i class="fa-solid fa-copy"></i> Generovat JSON</button>
+          </div>
+          <div class="output-box" id="htmlOutput">
+            <button class="copy-btn" onclick="blogCopyOutput('htmlCode',this)">Kopírovat</button>
+            <div class="output-label">HTML soubor článku</div>
+            <div class="output-code" id="htmlCode"></div>
+          </div>
+          <div class="output-box" id="jsonOutput">
+            <button class="copy-btn" onclick="blogCopyOutput('jsonCode',this)">Kopírovat</button>
+            <div class="output-label">JSON záznam pro blog-posts.js</div>
+            <div class="output-code" id="jsonCode"></div>
+          </div>
+        </div>
+
+        <!-- Blog Panel: Drafts -->
+        <div class="blog-panel" id="blog-panel-drafts">
+          <div id="draftsList"></div>
+        </div>
+
+        <!-- Blog Panel: Help -->
+        <div class="blog-panel" id="blog-panel-help">
+          <div class="help-section">
+            <h3><i class="fa-solid fa-pen-to-square"></i> Markdown Syntaxe</h3>
+            <div class="help-grid">
+              <div class="help-item"><div class="syntax"># Hlavní nadpis</div><div class="desc">H1</div></div>
+              <div class="help-item"><div class="syntax">## Sekce</div><div class="desc">H2</div></div>
+              <div class="help-item"><div class="syntax">### Podsekce</div><div class="desc">H3</div></div>
+              <div class="help-item"><div class="syntax">**tučný text**</div><div class="desc">Tučné</div></div>
+              <div class="help-item"><div class="syntax">*kurzíva*</div><div class="desc">Kurzíva</div></div>
+              <div class="help-item"><div class="syntax">[text](url)</div><div class="desc">Odkaz</div></div>
+              <div class="help-item"><div class="syntax">![alt](img.jpg)</div><div class="desc">Obrázek</div></div>
+              <div class="help-item"><div class="syntax">&gt; citát</div><div class="desc">Citace</div></div>
+              <div class="help-item"><div class="syntax">- položka</div><div class="desc">Seznam</div></div>
+              <div class="help-item"><div class="syntax">1. položka</div><div class="desc">Číslovaný</div></div>
+              <div class="help-item"><div class="syntax">`kód`</div><div class="desc">Inline kód</div></div>
+              <div class="help-item"><div class="syntax">---</div><div class="desc">Čára</div></div>
+            </div>
+          </div>
+          <br>
+          <div class="help-section">
+            <h3><i class="fa-solid fa-folder-tree"></i> Jak publikovat článek</h3>
+            <ol style="color:rgba(255,255,255,0.7);line-height:2;padding-left:20px;font-size:0.9rem;">
+              <li>Vyplňte formulář — nadpis, popis, kategorii, obsah v Markdownu</li>
+              <li>Zkontrolujte v panelu <strong>Náhled</strong></li>
+              <li>V panelu <strong>Export</strong> stáhněte HTML soubor</li>
+              <li>Nahrajte HTML do složky <code>blog/</code> na serveru</li>
+              <li>Zkopírujte JSON záznam do <code>blog-posts.js</code></li>
+              <li>Hotovo! Článek se automaticky zobrazí na blogu.</li>
+            </ol>
+          </div>
+          <br>
+          <div class="help-section">
+            <h3><i class="fa-solid fa-palette"></i> Dostupné ikony</h3>
+            <p style="color:rgba(255,255,255,0.6);font-size:0.85rem;margin-bottom:12px;">Použijte jakoukoliv FontAwesome ikonu:</p>
+            <div class="help-grid">
+              <div class="help-item"><div class="syntax"><i class="fa-solid fa-rocket"></i> fa-solid fa-rocket</div></div>
+              <div class="help-item"><div class="syntax"><i class="fa-solid fa-cube"></i> fa-solid fa-cube</div></div>
+              <div class="help-item"><div class="syntax"><i class="fa-solid fa-code"></i> fa-solid fa-code</div></div>
+              <div class="help-item"><div class="syntax"><i class="fa-solid fa-earth-americas"></i> fa-solid fa-earth-americas</div></div>
+              <div class="help-item"><div class="syntax"><i class="fa-solid fa-om"></i> fa-solid fa-om</div></div>
+              <div class="help-item"><div class="syntax"><i class="fa-solid fa-heart"></i> fa-solid fa-heart</div></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div><!-- /section-blog -->
+
+  </div><!-- /admin-wrap -->
+
+  <!-- ══════ MODALS ══════ -->
+  <!-- Order Detail Modal -->
+  <div class="modal-overlay" id="order-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2><i class="fa-solid fa-receipt"></i> Objednávka #<span id="modal-order-id"></span></h2>
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+      </div>
+      <div id="modal-body"><div class="loading"><i class="fa-solid fa-spinner"></i></div></div>
+    </div>
+  </div>
+
+  <!-- Ledger Add Modal -->
+  <div class="modal-overlay" id="ledger-add-modal">
+    <div class="modal-content" style="max-width:500px;">
+      <div class="modal-header">
+        <h2><i class="fa-solid fa-plus-circle"></i> Přidat do Ledgeru</h2>
+        <button class="modal-close" onclick="closeLedgerModal()">&times;</button>
+      </div>
+      <form id="ledger-add-form" onsubmit="submitLedgerEntry(event)">
+        <div class="form-group"><label class="form-label">Order ID (volitelné)</label><input class="form-input" id="ledger-order-id" placeholder="PRESALE-xxx nebo ORD-xxx"></div>
+        <div class="form-group"><label class="form-label">Wallet Adresa *</label><input class="form-input" id="ledger-wallet" required placeholder="zion1..."></div>
+        <div class="form-group"><label class="form-label">Počet tokenů *</label><input class="form-input" type="number" id="ledger-tokens-input" required min="1" placeholder="1000"></div>
+        <div class="form-group"><label class="form-label">Zdroj</label>
+          <select class="form-select" id="ledger-source">
+            <option value="manual">Manuální</option>
+            <option value="eshop">eShop bonus</option>
+            <option value="presale">Presale</option>
+            <option value="airdrop">Airdrop</option>
+            <option value="bonus">Speciální bonus</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Poznámka</label><textarea class="form-textarea" id="ledger-note" style="min-height:80px;" placeholder="Volitelná poznámka..."></textarea></div>
+        <div class="blog-action-bar">
+          <button type="submit" class="btn-primary"><i class="fa-solid fa-save"></i> Uložit</button>
+          <button type="button" class="btn-secondary" onclick="closeLedgerModal()">Zrušit</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Ledger Detail Modal -->
+  <div class="modal-overlay" id="ledger-detail-modal">
+    <div class="modal-content" style="max-width:600px;">
+      <div class="modal-header">
+        <h2><i class="fa-solid fa-book-open"></i> Ledger Detail</h2>
+        <button class="modal-close" onclick="closeLedgerDetailModal()">&times;</button>
+      </div>
+      <div id="ledger-detail-body"></div>
+    </div>
+  </div>
+
+  <!-- ══════ SCRIPTS ══════ -->
+  <!-- eShop admin logic from external file -->
+  <script src="./js/admin.js?v=2.9.2" defer></script>
+
+  <!-- Blog admin logic (inline) -->
+  <script>
+  /* ─── Section Switcher ─── */
+  function switchMainSection(section) {
+    document.querySelectorAll('.main-section').forEach(function(s) { s.classList.remove('active'); });
+    document.querySelectorAll('.section-tab').forEach(function(t) { t.classList.remove('active'); });
+    document.getElementById('section-' + section).classList.add('active');
+    var tabs = document.querySelectorAll('.section-tab');
+    tabs.forEach(function(tab) {
+      if ((section === 'eshop' && tab.textContent.indexOf('eShop') !== -1) ||
+          (section === 'blog' && tab.textContent.indexOf('Blog') !== -1)) {
+        tab.classList.add('active');
+      }
+    });
+  }
+
+  /* ─── Blog Panel Switcher ─── */
+  function showBlogPanel(name) {
+    document.querySelectorAll('.blog-panel').forEach(function(p) { p.classList.remove('active'); });
+    document.querySelectorAll('.blog-tab').forEach(function(t) { t.classList.remove('active'); });
+    document.getElementById('blog-panel-' + name).classList.add('active');
+    document.querySelector('[data-blog-panel="' + name + '"]').classList.add('active');
+    if (name === 'preview') blogRenderPreview();
+    if (name === 'drafts') blogRenderDrafts();
+  }
+  document.querySelectorAll('.blog-tab').forEach(function(tab) {
+    tab.addEventListener('click', function() { showBlogPanel(tab.dataset.blogPanel); });
+  });
+
+  /* ─── Markdown Toolbar Insert ─── */
+  function insertMD(before, after) {
+    var ta = document.getElementById('postContent');
+    var start = ta.selectionStart, end = ta.selectionEnd;
+    var selected = ta.value.substring(start, end) || '';
+    ta.value = ta.value.substring(0, start) + before + selected + after + ta.value.substring(end);
+    ta.focus();
+    ta.selectionStart = start + before.length;
+    ta.selectionEnd = start + before.length + selected.length;
+  }
+
+  /* ─── Markdown to HTML converter ─── */
+  function mdToHtml(md) {
+    if (!md) return '';
+    var html = md;
+    html = html.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+    html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+    html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+    html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+    html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+    html = html.replace(/^---$/gm, '<hr>');
+    html = html.replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>');
+    html = html.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
+    html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+    html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1">');
+    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+    html = html.replace(/^[\-\*] (.+)$/gm, '<li>$1</li>');
+    html = html.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
+    html = html.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
+    var lines = html.split('\n'), result = [];
+    for (var i = 0; i < lines.length; i++) {
+      var l = lines[i].trim();
+      if (l === '') { result.push(''); continue; }
+      if (/^<(h[1-6]|ul|ol|li|pre|blockquote|hr|img|div)/.test(l)) { result.push(l); continue; }
+      if (/<\/(h[1-6]|ul|ol|li|pre|blockquote)>$/.test(l)) { result.push(l); continue; }
+      result.push('<p>' + l + '</p>');
+    }
+    return result.join('\n').replace(/<\/blockquote>\n<blockquote>/g, '<br>');
+  }
+
+  /* ─── Blog Preview ─── */
+  function blogRenderPreview() {
+    var title = document.getElementById('postTitle').value || 'Bez názvu';
+    var date = document.getElementById('postDate').value || new Date().toISOString().slice(0, 10);
+    var cat = document.getElementById('postCategory').value;
+    var content = document.getElementById('postContent').value;
+    var catLabels = { tech: '⛓️ ZION Tech', journey: '🌍 Cesta', story: '📖 Příběh', spiritual: '🕉️ Duchovní', announcement: '📢 Oznámení' };
+    var catColors = { tech: '#00d4ff', journey: '#4CAF50', story: '#FF9800', spiritual: '#E040FB', announcement: '#FFD700' };
+    document.getElementById('previewMeta').innerHTML =
+      '<span style="color:rgba(255,255,255,0.5);font-size:0.85rem;">' + date + '</span>' +
+      '<span style="background:rgba(255,255,255,0.08);color:' + catColors[cat] + ';padding:3px 12px;border-radius:12px;font-size:0.75rem;font-weight:600;">' + (catLabels[cat] || cat) + '</span>';
+    document.getElementById('previewContent').innerHTML = '<h1>' + title + '</h1>\n' + mdToHtml(content);
+  }
+
+  /* ─── Slugify ─── */
+  function slugify(str) {
+    return str.toLowerCase()
+      .replace(/[áàâä]/g, 'a').replace(/[čć]/g, 'c').replace(/[ďđ]/g, 'd')
+      .replace(/[éěèêë]/g, 'e').replace(/[íìîï]/g, 'i').replace(/[ňñ]/g, 'n')
+      .replace(/[óòôö]/g, 'o').replace(/[řŕ]/g, 'r').replace(/[šś]/g, 's')
+      .replace(/[ťþ]/g, 't').replace(/[úůùûü]/g, 'u').replace(/[ýÿ]/g, 'y')
+      .replace(/[žź]/g, 'z').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 50);
+  }
+
+  /* ─── Generate Article HTML ─── */
+  function blogGenerateArticleHtml() {
+    var title = document.getElementById('postTitle').value || 'Bez názvu';
+    var date = document.getElementById('postDate').value || new Date().toISOString().slice(0, 10);
+    var cat = document.getElementById('postCategory').value;
+    var icon = document.getElementById('postIcon').value;
+    var image = document.getElementById('postImage').value;
+    var content = document.getElementById('postContent').value;
+    var catLabels = { tech: 'ZION Tech', journey: 'Cesta / Journey', story: 'Příběh / Story', spiritual: 'Duchovní / Spiritual', announcement: 'Oznámení / News' };
+
+    var h = '<!DOCTYPE html>\n<html lang="cs">\n<head>\n';
+    h += '  <meta charset="UTF-8">\n  <meta name="viewport" content="width=device-width, initial-scale=1.0">\n';
+    h += '  <link rel="stylesheet" href="../style.css">\n  <link rel="stylesheet" href="../rasta.css">\n';
+    h += '  <script src="https://kit.fontawesome.com/16464afad1.js" crossorigin="anonymous"><\/script>\n';
+    h += '  <title>' + title + ' | ZION Blog</title>\n';
+    h += '  <style>\n';
+    h += '    .article-wrap{max-width:800px;margin:0 auto;padding:40px 25px;}\n';
+    h += '    .article-back{display:inline-flex;align-items:center;gap:8px;color:rgba(255,255,255,0.5);text-decoration:none;font-size:0.85rem;margin-bottom:30px;transition:color 0.3s;}\n';
+    h += '    .article-back:hover{color:var(--rasta-gold);}\n';
+    h += '    .article-meta{display:flex;align-items:center;gap:12px;margin-bottom:15px;flex-wrap:wrap;}\n';
+    h += '    .article-date{color:rgba(255,255,255,0.5);font-size:0.85rem;}\n';
+    h += '    .article-cat{font-size:0.7rem;padding:3px 10px;border-radius:12px;font-weight:600;text-transform:uppercase;background:rgba(255,215,0,0.1);color:var(--rasta-gold);}\n';
+    h += '    .article-title{font-size:2.2rem;font-weight:800;background:linear-gradient(135deg,var(--rasta-green),var(--rasta-gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:25px;line-height:1.3;}\n';
+    if (image) h += '    .article-hero{width:100%;max-height:400px;object-fit:cover;border-radius:16px;margin-bottom:30px;}\n';
+    h += '    .article-body{color:rgba(255,255,255,0.85);line-height:1.9;font-size:1.05rem;}\n';
+    h += '    .article-body h2{font-size:1.5rem;color:var(--rasta-gold);margin:30px 0 12px;}\n';
+    h += '    .article-body h3{font-size:1.2rem;color:var(--rasta-green);margin:22px 0 10px;}\n';
+    h += '    .article-body p{margin-bottom:14px;}\n';
+    h += '    .article-body blockquote{border-left:3px solid var(--rasta-gold);padding:12px 20px;margin:18px 0;color:rgba(255,255,255,0.6);font-style:italic;background:rgba(255,215,0,0.03);border-radius:0 10px 10px 0;}\n';
+    h += '    .article-body img{max-width:100%;border-radius:12px;margin:14px 0;}\n';
+    h += '    .article-body ul,.article-body ol{padding-left:25px;margin-bottom:14px;}\n';
+    h += '    .article-body a{color:var(--rasta-gold);}\n';
+    h += '    .article-body hr{border:none;border-top:1px solid rgba(255,255,255,0.1);margin:25px 0;}\n';
+    h += '    .article-body code{background:rgba(255,255,255,0.08);padding:2px 8px;border-radius:4px;font-family:monospace;font-size:0.9em;}\n';
+    h += '    .article-body pre{background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:15px;overflow-x:auto;margin:14px 0;}\n';
+    h += '    .article-body pre code{background:none;padding:0;}\n';
+    h += '    .article-footer{margin-top:50px;padding-top:25px;border-top:1px solid rgba(255,255,255,0.1);text-align:center;}\n';
+    h += '    @media(max-width:600px){.article-title{font-size:1.6rem;}.article-body{font-size:0.95rem;}}\n';
+    h += '  </style>\n';
+    h += '  <script async src="https://www.googletagmanager.com/gtag/js?id=G-NHF25ZZ97S"><\/script>\n';
+    h += '  <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag("js",new Date());gtag("config","G-NHF25ZZ97S");<\/script>\n';
+    h += '</head>\n<body>\n  <div class="article-wrap">\n';
+    h += '    <a href="../blog.html" class="article-back"><i class="fa-solid fa-arrow-left"></i> Zpět na blog</a>\n';
+    h += '    <div class="article-meta">\n';
+    h += '      <span class="article-date"><i class="fa-regular fa-calendar"></i> ' + date + '</span>\n';
+    h += '      <span class="article-cat">' + (catLabels[cat] || cat) + '</span>\n';
+    h += '    </div>\n';
+    h += '    <h1 class="article-title"><i class="' + icon + '" style="font-size:0.7em;opacity:0.5;"></i> ' + title + '</h1>\n';
+    if (image) h += '    <img src="' + image + '" alt="' + title + '" class="article-hero">\n';
+    h += '    <div class="article-body">\n      ' + mdToHtml(content).split('\n').join('\n      ') + '\n    </div>\n';
+    h += '    <div class="article-footer">\n';
+    h += '      <div class="rasta-divider" style="margin:20px 0"><div class="line"></div><span class="icon">🦁</span><div class="line"></div></div>\n';
+    h += '      <a href="../blog.html" class="rasta-btn"><i class="fa-solid fa-arrow-left"></i> Zpět na blog</a>\n';
+    h += '    </div>\n  </div>\n</body>\n</html>';
+    return h;
+  }
+
+  /* ─── Download HTML ─── */
+  function blogGenerateAndDownload() {
+    var title = document.getElementById('postTitle').value || 'bez-nazvu';
+    var slug = slugify(title);
+    var html = blogGenerateArticleHtml();
+    var blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = slug + '.html';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    document.getElementById('htmlOutput').style.display = 'block';
+    document.getElementById('htmlCode').textContent = html;
+  }
+
+  /* ─── Generate JSON entry ─── */
+  function blogGenerateJSON() {
+    var title = document.getElementById('postTitle').value || 'Bez názvu';
+    var titleEn = document.getElementById('postTitleEn').value || title;
+    var date = document.getElementById('postDate').value || new Date().toISOString().slice(0, 10);
+    var cat = document.getElementById('postCategory').value;
+    var icon = document.getElementById('postIcon').value;
+    var image = document.getElementById('postImage').value;
+    var excerpt = document.getElementById('postExcerpt').value;
+    var excerptEn = document.getElementById('postExcerptEn').value;
+    var slug = slugify(title);
+    var contentCz = document.getElementById('postContent').value || '';
+    var json = '{\n  id: ' + (Date.now() % 10000) + ',\n';
+    json += '  slug: "' + slug + '",\n';
+    json += '  title: "' + title.replace(/"/g, '\\"') + '",\n';
+    json += '  titleEn: "' + titleEn.replace(/"/g, '\\"') + '",\n';
+    json += '  date: "' + date + '",\n';
+    json += '  category: "' + cat + '",\n';
+    json += '  icon: "' + icon + '",\n';
+    json += '  excerpt: "' + excerpt.replace(/"/g, '\\"') + '",\n';
+    json += '  excerptEn: "' + excerptEn.replace(/"/g, '\\"') + '",\n';
+    json += '  image: "' + (image || '') + '",\n';
+    json += '  content: \'' + contentCz.replace(/'/g, "\\'") + '\',\n';
+    json += '  contentEn: \'\'\n}';
+    document.getElementById('jsonOutput').style.display = 'block';
+    document.getElementById('jsonCode').textContent = json;
+  }
+
+  /* ─── Copy output ─── */
+  function blogCopyOutput(elId, btn) {
+    var text = document.getElementById(elId).textContent;
+    navigator.clipboard.writeText(text).then(function() {
+      btn.textContent = '✓ Zkopírováno';
+      btn.classList.add('copied');
+      setTimeout(function() { btn.textContent = 'Kopírovat'; btn.classList.remove('copied'); }, 2000);
+    });
+  }
+
+  /* ─── Save Draft ─── */
+  function saveDraft() {
+    var title = document.getElementById('postTitle').value || 'Bez názvu';
+    var draft = {
+      title: title,
+      titleEn: document.getElementById('postTitleEn').value,
+      date: document.getElementById('postDate').value,
+      category: document.getElementById('postCategory').value,
+      icon: document.getElementById('postIcon').value,
+      image: document.getElementById('postImage').value,
+      excerpt: document.getElementById('postExcerpt').value,
+      excerptEn: document.getElementById('postExcerptEn').value,
+      content: document.getElementById('postContent').value,
+      savedAt: new Date().toISOString()
+    };
+    var drafts = JSON.parse(localStorage.getItem('blog_drafts') || '[]');
+    drafts.unshift(draft);
+    if (drafts.length > 50) drafts = drafts.slice(0, 50);
+    localStorage.setItem('blog_drafts', JSON.stringify(drafts));
+    alert('✅ Koncept "' + title + '" uložen!');
+  }
+
+  /* ─── Render Drafts ─── */
+  function blogRenderDrafts() {
+    var drafts = JSON.parse(localStorage.getItem('blog_drafts') || '[]');
+    var el = document.getElementById('draftsList');
+    if (drafts.length === 0) {
+      el.innerHTML = '<div class="empty-state"><i class="fa-solid fa-bookmark"></i><p>Žádné uložené koncepty</p></div>';
+      return;
+    }
+    var html = '<ul class="saved-list">';
+    drafts.forEach(function(d, i) {
+      html += '<li class="saved-item"><div class="saved-item-info"><span class="saved-item-title">' + d.title + '</span><span class="saved-item-date">' + (d.savedAt || '').slice(0, 10) + '</span></div><div class="saved-item-actions"><button class="saved-item-btn" onclick="blogLoadDraft(' + i + ')"><i class="fa-solid fa-pen"></i> Načíst</button><button class="saved-item-btn delete" onclick="blogDeleteDraft(' + i + ')"><i class="fa-solid fa-trash"></i></button></div></li>';
+    });
+    html += '</ul>';
+    el.innerHTML = html;
+  }
+
+  /* ─── Load Draft ─── */
+  function blogLoadDraft(index) {
+    var drafts = JSON.parse(localStorage.getItem('blog_drafts') || '[]');
+    var d = drafts[index];
+    if (!d) return;
+    document.getElementById('postTitle').value = d.title || '';
+    document.getElementById('postTitleEn').value = d.titleEn || '';
+    document.getElementById('postDate').value = d.date || '';
+    document.getElementById('postCategory').value = d.category || 'tech';
+    document.getElementById('postIcon').value = d.icon || 'fa-solid fa-file-lines';
+    document.getElementById('postImage').value = d.image || '';
+    document.getElementById('postExcerpt').value = d.excerpt || '';
+    document.getElementById('postExcerptEn').value = d.excerptEn || '';
+    document.getElementById('postContent').value = d.content || '';
+    showBlogPanel('write');
+  }
+
+  /* ─── Delete Draft ─── */
+  function blogDeleteDraft(index) {
+    if (!confirm('Smazat tento koncept?')) return;
+    var drafts = JSON.parse(localStorage.getItem('blog_drafts') || '[]');
+    drafts.splice(index, 1);
+    localStorage.setItem('blog_drafts', JSON.stringify(drafts));
+    blogRenderDrafts();
+  }
+
+  /* ─── Init date ─── */
+  document.getElementById('postDate').value = new Date().toISOString().slice(0, 10);
+  </script>
+</body>
+</html>

@@ -1,0 +1,842 @@
+@import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+
+@layer base {
+  :root {
+    --font-inter: 'Inter', system-ui, -apple-system, sans-serif;
+    --color-zion-gold: 255 215 0;
+    --color-zion-purple: 147 51 234;
+    --color-zion-cyan: 6 182 212;
+    --color-zion-blue: 30 58 138;
+    --color-bg: 0 0 0;
+    --color-fg: 255 255 255;
+    --zion-radius-sm: 0.85rem;
+    --zion-radius-md: 1.2rem;
+    --zion-radius-lg: 1.65rem;
+    --zion-radius-xl: 2rem;
+    --zion-border-subtle: rgba(255, 255, 255, 0.1);
+    --zion-border-strong: rgba(255, 255, 255, 0.18);
+    --zion-surface: rgba(7, 10, 20, 0.68);
+    --zion-surface-soft: rgba(255, 255, 255, 0.045);
+    --zion-surface-hover: rgba(255, 255, 255, 0.075);
+    --zion-shadow-panel: 0 24px 90px rgba(0, 0, 0, 0.42);
+    --zion-shadow-glow: 0 0 42px rgba(147, 51, 234, 0.28);
+  }
+
+  [data-theme="cyber"] {
+    --color-zion-gold: 255 0 128; /* neon magenta */
+    --color-zion-purple: 168 85 247; /* violet */
+    --color-zion-cyan: 34 211 238; /* cyan */
+    --color-bg: 6 8 20; /* deep navy */
+    --color-fg: 230 255 255;
+  }
+
+  [data-theme="matrix-light"] {
+    --color-zion-gold: 180 255 200; /* mint */
+    --color-zion-purple: 34 197 94; /* green */
+    --color-zion-cyan: 74 222 128; /* light green */
+    --color-bg: 5 8 5; /* very dark green */
+    --color-fg: 230 255 240;
+  }
+  
+  html, body {
+    max-width: 100%;
+    overflow-x: hidden;
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+  }
+
+  /* iOS Safari specific fixes */
+  @supports (-webkit-appearance: none) {
+    html {
+      height: -webkit-fill-available;
+    }
+    
+    body {
+      min-height: -webkit-fill-available;
+      position: relative;
+    }
+  }
+
+  /* iPhone notch and safe area support */
+  @supports (padding: max(0px)) {
+    .safe-area-inset-top {
+      padding-top: max(env(safe-area-inset-top), 0.5rem);
+    }
+    
+    .safe-area-inset-bottom {
+      padding-bottom: max(env(safe-area-inset-bottom), 0.5rem);
+    }
+    
+    .safe-area-inset-left {
+      padding-left: max(env(safe-area-inset-left), 0.5rem);
+    }
+    
+    .safe-area-inset-right {
+      padding-right: max(env(safe-area-inset-right), 0.5rem);
+    }
+  }
+
+  body {
+    font-family: var(--font-inter);
+    background:
+      radial-gradient(circle at 18% -8%, rgba(var(--color-zion-purple), 0.18), transparent 34rem),
+      radial-gradient(circle at 86% 8%, rgba(var(--color-zion-cyan), 0.12), transparent 30rem),
+      linear-gradient(180deg, rgb(2 4 12), rgb(var(--color-bg)) 36rem);
+    color: rgb(var(--color-fg));
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  ::selection {
+    background: rgba(var(--color-zion-gold), 0.28);
+    color: white;
+  }
+
+  a,
+  button {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  :focus-visible {
+    outline: 2px solid rgba(var(--color-zion-cyan), 0.85);
+    outline-offset: 3px;
+  }
+}
+
+@layer utilities {
+  .zion-shell {
+    min-height: 100vh;
+    position: relative;
+    background: transparent;
+    isolation: isolate;
+  }
+
+  .zion-shell::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: -1;
+    background:
+      linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.014) 1px, transparent 1px),
+      radial-gradient(circle at 12% 18%, rgba(var(--color-zion-purple), 0.12), transparent 48%),
+      radial-gradient(circle at 88% 74%, rgba(var(--color-zion-cyan), 0.08), transparent 44%);
+    background-size: 96px 96px, 96px 96px, auto, auto;
+    mask-image: linear-gradient(to bottom, black 0%, black 70%, transparent 100%);
+  }
+
+  .zion-container {
+    width: 100%;
+    max-width: 80rem;
+    margin-inline: auto;
+    padding-inline: clamp(0.75rem, 3.5vw, 2rem);
+    box-sizing: border-box;
+  }
+
+  /* iPhone specific container fixes */
+  @media (max-width: 430px) {
+    .zion-container {
+      padding-inline: clamp(0.5rem, 4vw, 1rem);
+    }
+  }
+
+  @media (max-width: 375px) {
+    .zion-container {
+      padding-inline: clamp(0.5rem, 4.5vw, 0.875rem);
+    }
+  }
+
+  .zion-panel {
+    border-radius: clamp(1rem, 2.5vw, 1.5rem);
+    border: 1px solid var(--zion-border-subtle);
+    background:
+      linear-gradient(135deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.028)),
+      var(--zion-surface);
+    backdrop-filter: blur(22px) saturate(140%);
+    box-shadow: var(--zion-shadow-panel);
+    box-sizing: border-box;
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  /* iPhone panel fixes */
+  @media (max-width: 430px) {
+    .zion-panel {
+      border-radius: clamp(0.75rem, 3vw, 1.25rem);
+      margin-inline: 0;
+      width: 100%;
+    }
+  }
+
+  /* Prevent horizontal scroll on iOS */
+  @supports (-webkit-appearance: none) {
+    .zion-panel {
+      -webkit-box-sizing: border-box;
+      -moz-box-sizing: border-box;
+    }
+  }
+
+  .zion-panel-soft {
+    border-radius: var(--zion-radius-lg);
+    border: 1px solid var(--zion-border-subtle);
+    background: var(--zion-surface-soft);
+    backdrop-filter: blur(18px);
+  }
+
+  .zion-panel-hover {
+    transition:
+      border-color 180ms ease,
+      background-color 180ms ease,
+      transform 180ms ease,
+      box-shadow 180ms ease;
+  }
+
+  .zion-panel-hover:hover {
+    transform: translateY(-2px);
+    border-color: var(--zion-border-strong);
+    background-color: var(--zion-surface-hover);
+    box-shadow: var(--zion-shadow-panel), var(--zion-shadow-glow);
+  }
+
+  .zion-glass {
+    border: 1px solid var(--zion-border-subtle);
+    background:
+      radial-gradient(circle at top left, rgba(var(--color-zion-gold), 0.12), transparent 28rem),
+      linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
+    backdrop-filter: blur(24px) saturate(150%);
+  }
+
+  .zion-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-radius: 9999px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.035));
+    padding: 0.3rem 0.8rem;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: rgb(209 213 219);
+  }
+
+  .zion-button-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem;
+    border-radius: var(--zion-radius-md);
+    background-image: linear-gradient(110deg, rgb(var(--color-zion-gold)), rgb(var(--color-zion-purple)) 52%, rgb(var(--color-zion-cyan)));
+    padding: 0.9rem 1.35rem;
+    font-weight: 700;
+    color: white;
+    box-shadow: 0 18px 45px rgba(147, 51, 234, 0.34);
+    transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
+  }
+
+  .zion-button-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 24px 60px rgba(147, 51, 234, 0.44);
+    filter: saturate(1.08);
+  }
+
+  .zion-button-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem;
+    border-radius: var(--zion-radius-md);
+    border: 1px solid var(--zion-border-subtle);
+    background: rgba(255, 255, 255, 0.055);
+    padding: 0.9rem 1.35rem;
+    font-weight: 650;
+    color: white;
+    backdrop-filter: blur(16px);
+    transition: border-color 180ms ease, background-color 180ms ease, transform 180ms ease;
+  }
+
+  .zion-button-secondary:hover {
+    transform: translateY(-1px);
+    border-color: var(--zion-border-strong);
+    background: rgba(255, 255, 255, 0.085);
+  }
+
+  .zion-divider {
+    height: 1px;
+    border: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.14), transparent);
+  }
+
+  .zion-section-title {
+    font-size: clamp(1.6rem, 4vw, 3rem);
+    line-height: 1.15;
+    font-weight: 700;
+    color: rgb(255 255 255);
+    letter-spacing: -0.02em;
+  }
+
+  .zion-section-sub {
+    margin-top: 0.75rem;
+    font-size: clamp(0.9rem, 1.5vw, 1.1rem);
+    line-height: 1.75;
+    color: rgb(156 163 175);
+    max-width: 65ch;
+  }
+
+  /* Fluid hero heading — used for page-level H1s */
+  .zion-page-heading {
+    font-size: clamp(2.2rem, 7vw, 5.5rem);
+    line-height: 1.05;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+  }
+
+  /* Stat card grid — responsive columns */
+  .zion-stat-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  }
+
+  .text-gradient {
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    background-image: linear-gradient(to right, rgb(var(--color-zion-gold)), rgb(var(--color-zion-purple)), rgb(var(--color-zion-cyan)));
+  }
+
+  .text-gradient-soft {
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    background-image: linear-gradient(110deg, #fff7c2, rgb(var(--color-zion-gold)), rgb(var(--color-zion-cyan)));
+  }
+  
+  .glow {
+    text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+  }
+  
+  .card-glow {
+    box-shadow: 0 0 30px rgba(147, 51, 234, 0.3);
+  }
+
+  .neon-border {
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 0 20px rgba(147,51,234,0.25);
+  }
+
+  @keyframes bubble-drift {
+    0% {
+      transform: translate3d(0, 0, 0) scale(0.95);
+    }
+    50% {
+      transform: translate3d(12px, -18px, 0) scale(1.05);
+    }
+    100% {
+      transform: translate3d(-10px, 22px, 0) scale(1);
+    }
+  }
+
+  .animate-bubble-drift {
+    animation: bubble-drift 28s ease-in-out infinite alternate;
+  }
+
+  .hud-grid {
+    background-image:
+      linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px),
+      linear-gradient(0deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+    background-size: 120px 120px;
+    border: 1px solid rgba(255,255,255,0.04);
+  }
+
+  .halo-ring {
+    position: relative;
+  }
+
+  .halo-ring::after {
+    content: "";
+    position: absolute;
+    inset: -2px;
+    border-radius: inherit;
+    background: radial-gradient(circle, rgba(249,217,118,0.25), transparent 70%);
+    filter: blur(20px);
+    z-index: -1;
+  }
+
+  /* 🌟 Consciousness Tree Animations */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fadeIn {
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% {
+      filter: drop-shadow(0 0 8px currentColor);
+    }
+    50% {
+      filter: drop-shadow(0 0 16px currentColor);
+    }
+  }
+
+  .animate-pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #FFD700, #9333EA);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #9333EA, #06B6D4);
+}
+
+/* ═══ Mobile safety — force single column for grids without explicit mobile breakpoint ═══ */
+@media (max-width: 639px) {
+  /* Target only grids that use explicit numbered columns without ANY responsive prefix */
+  .grid.grid-cols-2:not(.grid-cols-1):not(.sm\:grid-cols-2):not(.sm\:grid-cols-1),
+  .grid.grid-cols-3:not(.grid-cols-1):not(.sm\:grid-cols-3):not(.sm\:grid-cols-1),
+  .grid.grid-cols-4:not(.grid-cols-1):not(.sm\:grid-cols-4):not(.sm\:grid-cols-1),
+  .grid.grid-cols-5:not(.grid-cols-1):not(.sm\:grid-cols-5):not(.sm\:grid-cols-1),
+  .grid.grid-cols-6:not(.grid-cols-1):not(.sm\:grid-cols-6):not(.sm\:grid-cols-1) {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+}
+
+/* ═══ iPhone specific grid fixes ═══ */
+@media (max-width: 430px) {
+  /* Prevent large multi-column grids from overflowing on small iPhones */
+  .grid.grid-cols-3,
+  .grid.grid-cols-4,
+  .grid.grid-cols-5,
+  .grid.grid-cols-6 {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ═══ iOS Safari scroll bounce prevention ═══ */
+@supports (-webkit-appearance: none) {
+  body {
+    position: relative;
+    width: 100%;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Fix for iOS viewport height */
+  .min-h-screen {
+    min-height: -webkit-fill-available;
+  }
+  
+  /* Prevent horizontal scroll on iOS */
+  * {
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+  }
+  
+  /* Fix iOS input zoom */
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+}
+
+/* ═══ iPhone specific final fixes ═══ */
+@media screen and (max-width: 430px) and (-webkit-min-device-pixel-ratio: 2) {
+  /* Target iPhone specifically */
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  
+  body {
+    overflow-x: hidden !important;
+    position: relative !important;
+    width: 100% !important;
+  }
+  
+  /* Force all panels to fit */
+  .zion-panel,
+  .zion-panel-soft,
+  .zion-panel-hover {
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    border-radius: 0.75rem !important;
+  }
+  
+  /* Fix navigation */
+  nav {
+    padding-left: env(safe-area-inset-left, 0.5rem) !important;
+    padding-right: env(safe-area-inset-right, 0.5rem) !important;
+  }
+  
+  /* Fix all containers */
+  .zion-container {
+    padding-left: max(0.5rem, env(safe-area-inset-left)) !important;
+    padding-right: max(0.5rem, env(safe-area-inset-right)) !important;
+  }
+}
+
+/* ═══ Reduced Motion ═══ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ═══ GPU-accelerated fixed canvases ═══ */
+canvas.fixed {
+  will-change: transform;
+}
+
+/* ═══ Mobile scroll lock (for nav overlay) ═══ */
+body.menu-open {
+  overflow: hidden;
+}
+
+@media (max-width: 767px) {
+  body.menu-open {
+    position: fixed;
+    inset: 0;
+  }
+}
+
+/* ═══ Mobile menu slide-in animation ═══ */
+@keyframes slideIn {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ZION DOCS — Premium Documentation Typography
+   Inspired by: Stripe Docs, NEAR Protocol, Tailwind Docs
+   ═══════════════════════════════════════════════════════════════ */
+
+.zion-docs-prose {
+  --docs-gold: rgb(var(--color-zion-gold));
+  --docs-cyan: rgb(var(--color-zion-cyan));
+  --docs-purple: rgb(var(--color-zion-purple));
+}
+
+/* ── Headings — gradient like hero title ── */
+.zion-docs-prose h1 {
+  font-size: 2.75rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  text-align: center;
+  margin-top: 4rem;
+  margin-bottom: 2rem;
+  line-height: 1.15;
+  background: linear-gradient(to right, rgb(var(--color-zion-gold)), rgb(var(--color-zion-purple)), rgb(var(--color-zion-cyan)));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.zion-docs-prose h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-align: center;
+  margin-top: 4rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  line-height: 1.2;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.12);
+  background: linear-gradient(to right, rgb(var(--color-zion-gold)), rgb(var(--color-zion-purple)));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.zion-docs-prose h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin-top: 3rem;
+  margin-bottom: 1rem;
+  line-height: 1.3;
+  background: linear-gradient(to right, rgb(var(--color-zion-cyan)), rgb(var(--color-zion-purple)));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.zion-docs-prose h4 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-top: 2.5rem;
+  margin-bottom: 0.75rem;
+  color: rgb(var(--color-zion-cyan));
+}
+
+/* ── Body text — left-aligned for readability ── */
+.zion-docs-prose p {
+  color: #c8cfd8;
+  font-size: 1.075rem;
+  line-height: 1.9;
+  margin-top: 1.25rem;
+  margin-bottom: 1.25rem;
+  text-align: left;
+}
+
+/* ── Strong / Bold ── */
+.zion-docs-prose strong {
+  color: #f1f5f9;
+  font-weight: 600;
+}
+
+/* ── Links ── */
+.zion-docs-prose a {
+  color: var(--docs-cyan);
+  text-decoration: underline;
+  text-decoration-color: rgba(6, 182, 212, 0.3);
+  text-underline-offset: 3px;
+  transition: all 0.2s ease;
+}
+
+.zion-docs-prose a:hover {
+  color: var(--docs-gold);
+  text-decoration-color: rgba(255, 215, 0, 0.5);
+}
+
+/* ── Lists ── */
+.zion-docs-prose ul,
+.zion-docs-prose ol {
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+  padding-left: 1.75rem;
+  text-align: left;
+}
+
+.zion-docs-prose ul {
+  list-style-type: disc;
+}
+
+.zion-docs-prose ol {
+  list-style-type: decimal;
+}
+
+.zion-docs-prose li {
+  color: #c8cfd8;
+  font-size: 1.075rem;
+  line-height: 1.8;
+  margin-bottom: 0.6rem;
+  padding-left: 0.25rem;
+}
+
+.zion-docs-prose li::marker {
+  color: var(--docs-gold);
+}
+
+/* ── Blockquotes ── */
+.zion-docs-prose blockquote {
+  border-left: 4px solid var(--docs-gold);
+  margin: 2.5rem 0;
+  padding: 1.25rem 1.5rem;
+  background: rgba(255, 215, 0, 0.03);
+  border-radius: 0 12px 12px 0;
+}
+
+.zion-docs-prose blockquote p {
+  color: #a1aab5;
+  font-style: italic;
+  font-size: 1.1rem;
+  line-height: 1.8;
+  margin: 0;
+}
+
+/* ── Horizontal Rules ── */
+.zion-docs-prose hr {
+  border: none;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.2), rgba(6, 182, 212, 0.2), transparent);
+  margin: 3.5rem 0;
+}
+
+/* ── Inline code ── */
+.zion-docs-prose code:not(pre code) {
+  color: var(--docs-cyan);
+  background: rgba(6, 182, 212, 0.08);
+  border: 1px solid rgba(6, 182, 212, 0.15);
+  border-radius: 6px;
+  padding: 0.15em 0.45em;
+  font-size: 0.9em;
+  font-family: var(--font-mono), 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+  font-weight: 500;
+}
+
+/* ── Code blocks ── */
+.zion-docs-prose pre {
+  background: rgba(0, 0, 0, 0.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 2rem 0;
+  overflow-x: auto;
+  text-align: left;
+  position: relative;
+}
+
+.zion-docs-prose pre::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(6, 182, 212, 0.4), transparent);
+}
+
+.zion-docs-prose pre code {
+  color: #d4d4d8;
+  font-family: var(--font-mono), 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+  font-size: 0.875rem;
+  line-height: 1.7;
+  letter-spacing: 0;
+  background: none !important;
+  border: none !important;
+  padding: 0 !important;
+}
+
+/* ── Tables — Glass design ── */
+.zion-docs-prose table {
+  width: 100%;
+  margin: 2.5rem auto;
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.3);
+  text-align: left;
+  font-size: 0.95rem;
+}
+
+.zion-docs-prose thead {
+  background: linear-gradient(180deg, rgba(255, 215, 0, 0.08), rgba(255, 215, 0, 0.03));
+}
+
+.zion-docs-prose thead th {
+  color: var(--docs-gold);
+  font-weight: 600;
+  font-size: 0.85rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  padding: 0.9rem 1.1rem;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.15);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.zion-docs-prose tbody td {
+  color: #c8cfd8;
+  padding: 0.8rem 1.1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  line-height: 1.6;
+  vertical-align: top;
+}
+
+.zion-docs-prose tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.zion-docs-prose tbody tr:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* Table first column highlight */
+.zion-docs-prose tbody td:first-child {
+  color: #e2e8f0;
+  font-weight: 500;
+}
+
+/* ── Images ── */
+.zion-docs-prose img {
+  border-radius: 12px;
+  margin: 2.5rem auto;
+  display: block;
+  max-width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* ── First paragraph after h1 — slightly larger ── */
+.zion-docs-prose h1 + p {
+  font-size: 1.2rem;
+  color: #94a3b8;
+  text-align: center;
+  max-width: 42rem;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.8;
+}
+
+/* ── Emoji headings — tighter spacing ── */
+.zion-docs-prose h3:has(> *:first-child) {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .zion-docs-prose h1 {
+    font-size: 2rem;
+    margin-top: 2.5rem;
+  }
+  .zion-docs-prose h2 {
+    font-size: 1.6rem;
+    margin-top: 2.5rem;
+  }
+  .zion-docs-prose h3 {
+    font-size: 1.25rem;
+  }
+  .zion-docs-prose p,
+  .zion-docs-prose li {
+    font-size: 1rem;
+  }
+  .zion-docs-prose table {
+    font-size: 0.85rem;
+  }
+  .zion-docs-prose thead th,
+  .zion-docs-prose tbody td {
+    padding: 0.6rem 0.75rem;
+  }
+  .zion-docs-prose pre {
+    padding: 1rem;
+    border-radius: 8px;
+  }
+}
+
+/* ── Responsive grid safety ── */
+@layer utilities {
+  .responsive-grid-1 {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+}

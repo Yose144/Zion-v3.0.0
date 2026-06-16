@@ -1,0 +1,251 @@
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&display=swap");
+
+* {
+
+  color: azure;
+  text-align: center;
+  background-color: black;
+  padding: 0;
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+}
+
+
+body {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    width: 100%;
+    margin: 0 auto;
+    background-color: #000000;
+    position: relative;
+}
+
+.container {
+    position: relative;
+    width: 500px; /* Nastavte šířku kontejneru podle potřeby */
+    height: 500px; /* Nastavte výšku kontejneru podle potřeby */
+    display: flex;
+    flex-direction: row; /* nebo column */
+    justify-content: center; /* nebo flex-start, flex-end, space-between, space-around */
+    align-items: center; /* nebo flex-start, flex-end, baseline, stretch */
+    flex-wrap: wrap; /* umožňuje zalamování položek */
+}
+
+
+img {
+    width: 100%; /* Obrázky se nyní přizpůsobí velikosti kontejneru */
+    margin: 0 auto;
+    height: auto;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* Umožňuje centrování obrázků */
+    box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.5); /* stín */
+    filter: grayscale(10%) brightness(100%) blur(0.3px) sepia(0%) contrast(100%); /* filtry invert(100%) */
+
+     /* transition: transform 0.3s; // 
+}
+
+img:hover {
+    transform: scale(1.1); /* zvětšení obrázku při najetí */
+}
+
+
+
+.rotate1 {
+
+    width: 70%;
+    opacity: 0.8;
+    animation: rotate-right 33s linear infinite;
+}
+
+.rotate2 {
+    width: 60%;
+    opacity: 0.8;
+    animation: rotate-left 33792s linear infinite;
+}
+
+.rotate3 {
+    width: 70%;
+    opacity: 0.9;
+    animation: rotate-right 66s linear infinite;
+}
+
+.rotate4 {
+    width: 60%;
+    opacity: 0.9;
+    animation: rotate-left 16896s linear infinite;
+}
+
+.rotate5 {
+    width: 70%;
+    opacity: 1;
+    animation: rotate-right 132s linear infinite;
+}
+
+.rotate6 {
+    width: 60%;
+    opacity: 1;
+    animation: rotate-left 8448s linear infinite;
+}
+
+.rotate7 {
+    width: 70%;
+    opacity: 0.7;
+    animation: rotate-right 264s linear infinite;
+}
+
+.rotate8 {
+    width: 60%;
+    opacity: 0.7;
+    animation: rotate-left 4224s linear infinite;
+}
+
+.rotate9 {
+    width: 70%;
+    opacity: 0.6;
+    animation: rotate-right 528s linear infinite;
+}
+
+.rotate10 {
+    width: 60%;
+    opacity: 0.6;
+    animation: rotate-left 2112s linear infinite;
+}
+
+.rotate11 {
+    width: 60%;
+    opacity: 0.5;
+    animation: rotate-right 1056s linear infinite;
+}
+
+.rotate12 {
+    width: 60%;
+    opacity: 0.5;
+    animation: rotate-left 1056s linear infinite;
+}
+.rotate13 {
+    width: 60%;
+    opacity: 0.45;
+    animation: rotate-right 2112s linear infinite;
+}
+
+.rotate14 {
+    width: 70%;
+    opacity: 0.45;
+    animation: rotate-left 528s linear infinite;
+}
+.rotate15 {
+    width: 60%;
+    opacity: 0.7;
+    animation: rotate-right 4224s linear infinite;
+}
+
+.rotate16 {
+    width: 70%;
+    opacity: 0.7;
+    animation: rotate-left 264s linear infinite;
+}
+.rotate17 {
+    width: 60%;
+    opacity: 0.35;
+    animation: rotate-right 8448s linear infinite;
+}
+
+.rotate18 {
+    width: 70%;
+    opacity: 0.35;
+    animation: rotate-left 132s linear infinite;
+}
+.rotate19 {
+    width: 60%;
+    opacity: 0.3;
+    animation: rotate-right 16896s linear infinite;
+}
+
+.rotate20 {
+    width: 70%;
+    opacity: 0.3;
+    animation: rotate-left 66 linear infinite;
+}
+.rotate21 {
+    width: 60%;
+    opacity: 0.2;
+    animation: rotate-right 33792s linear infinite;
+}
+
+.rotate22 {
+    width: 70%;
+    opacity: 0.2;
+    animation: rotate-left 33s linear infinite;
+}
+.rotate21 {
+    width: 60%;
+    opacity: 0.2;
+    animation: rotate-right 33792s linear infinite;
+}
+
+/* 32768*/
+
+.rotate23 {
+    width: 100%;
+    opacity: 0.1;
+    animation: rotate-left 33s linear infinite;
+}
+.rotate24 {
+    width: 100%;
+    opacity: 0.1;
+    animation: rotate-right 128s linear infinite;
+}
+
+.rotate25 {
+    width: 100%;
+    opacity: 0.1;
+    animation: rotate-left 256s linear infinite;
+}
+.rotate26 {
+    width: 100%;
+    opacity: 0.1;
+    animation: rotate-right 256s linear infinite;
+}
+
+.rotate27 {
+    width: 100%;
+    opacity: 0.1;
+    animation: rotate-left 128s linear infinite;
+}
+.rotate28 {
+    width: 100%;
+    opacity: 0.1;
+    animation: rotate-rigth 33s linear infinite;
+}
+
+.logo {
+   opacity: 0.9;
+   top: 115%;
+    left: 50%;
+}
+
+
+
+@keyframes rotate-right {
+    from {
+        transform: translate(-50%, -50%) rotate(0deg);
+    }
+    to {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
+}
+
+@keyframes rotate-left {
+    from {
+        transform: translate(-50%, -50%) rotate(0deg);
+    }
+    to {
+        transform: translate(-50%, -50%) rotate(-360deg);
+    }
+}

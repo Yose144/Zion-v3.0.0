@@ -1,0 +1,262 @@
+{
+    "number": "FV2025-ZTNMIR7YW9",
+    "date": "04.12.2025",
+    "dueDate": "18.12.2025",
+    "order": {
+        "orderId": "ZTNMIR7YW947Q00",
+        "items": [
+            {
+                "id": "wood-003",
+                "name": "Pergola na míru - konzultace",
+                "price": 490,
+                "image": ".\/Folio\/assets\/img\/woodwork.jpg",
+                "category": "woodart",
+                "quantity": 1
+            }
+        ],
+        "customer": {
+            "name": "jos",
+            "email": "yosef.hubalek@gmail.com",
+            "phone": "773669477",
+            "address": null,
+            "newsletter": false
+        },
+        "shipping": {
+            "method": "zasilkovna",
+            "price": 69,
+            "pickupPoint": {
+                "businessDaysOpenLunchtime": false,
+                "businessDaysOpenUpTo": 0,
+                "city": "Čáslav",
+                "claimAssistant": true,
+                "country": "cz",
+                "creditCardPayment": true,
+                "currency": "CZK",
+                "directions": "<p>Výdejní místo se nachází na Starém Městě v rohovém domě u kostela sv. Petra a Pavla, na křižovatce ulic Na Kozinci a J. Mahena.<\/p>",
+                "directionsCar": "<p>Ano, parkování před prodejnou zdarma.<\/p>",
+                "directionsPublic": "",
+                "error": null,
+                "gps": {
+                    "lat": 49.911619999999999,
+                    "lon": 15.3895
+                },
+                "holidayEnd": "2025-12-28T00:00:00",
+                "holidayStart": "2025-12-24T00:00:00",
+                "exceptionDays": [
+                    {
+                        "from": "2025-12-24T00:00:00",
+                        "to": "2025-12-28T00:00:00",
+                        "times": []
+                    },
+                    {
+                        "from": "2025-12-31T00:00:00",
+                        "to": "2026-01-01T00:00:00",
+                        "times": []
+                    }
+                ],
+                "externalId": "I_3930",
+                "id": "3930",
+                "isNew": false,
+                "maxWeight": 15,
+                "name": "Čáslav, Na Kozinci 257 (Outdoorista)",
+                "nameStreet": "Čáslav, Na Kozinci 257 (Outdoorista)",
+                "openingHours": {
+                    "compactShort": "<strong>Po–Pá<\/strong> 09:00–11:30, 13:00–16:30",
+                    "compactLong": "<strong>Po–Pá<\/strong> 09:00–11:30, 13:00–16:30",
+                    "tableLong": "<table><tr><th>Po<\/th><td>09:00–11:30, 13:00–16:30<\/td><\/tr><tr><th>Út<\/th><td>09:00–11:30, 13:00–16:30<\/td><\/tr><tr><th>St<\/th><td>09:00–11:30, 13:00–16:30<\/td><\/tr><tr><th>Čt<\/th><td>09:00–11:30, 13:00–16:30<\/td><\/tr><tr><th>Pá<\/th><td>09:00–11:30, 13:00–16:30<\/td><\/tr><\/table>",
+                    "exceptions": [
+                        [
+                            {
+                                "date": "2025-12-24",
+                                "hours": ""
+                            }
+                        ],
+                        [
+                            {
+                                "date": "2025-12-31",
+                                "hours": ""
+                            }
+                        ]
+                    ],
+                    "regular": {
+                        "monday": "09:00–11:30, 13:00–16:30",
+                        "tuesday": "09:00–11:30, 13:00–16:30",
+                        "wednesday": "09:00–11:30, 13:00–16:30",
+                        "thursday": "09:00–11:30, 13:00–16:30",
+                        "friday": "09:00–11:30, 13:00–16:30"
+                    }
+                },
+                "packetConsignment": true,
+                "photos": [
+                    {
+                        "thumbnail": "https:\/\/files.packeta.com\/points\/thumb\/point_3930_fa962497e400.jpg",
+                        "normal": "https:\/\/files.packeta.com\/points\/normal\/point_3930_fa962497e400.jpg"
+                    },
+                    {
+                        "thumbnail": "https:\/\/files.packeta.com\/points\/thumb\/point_3930_35fc4be274bd.jpg",
+                        "normal": "https:\/\/files.packeta.com\/points\/normal\/point_3930_35fc4be274bd.jpg"
+                    },
+                    {
+                        "thumbnail": "https:\/\/files.packeta.com\/points\/thumb\/point_3930_efabac758140.jpg",
+                        "normal": "https:\/\/files.packeta.com\/points\/normal\/point_3930_efabac758140.jpg"
+                    }
+                ],
+                "photo": [
+                    {
+                        "thumbnail": "https:\/\/files.packeta.com\/points\/thumb\/point_3930_fa962497e400.jpg",
+                        "normal": "https:\/\/files.packeta.com\/points\/normal\/point_3930_fa962497e400.jpg"
+                    },
+                    {
+                        "thumbnail": "https:\/\/files.packeta.com\/points\/thumb\/point_3930_35fc4be274bd.jpg",
+                        "normal": "https:\/\/files.packeta.com\/points\/normal\/point_3930_35fc4be274bd.jpg"
+                    },
+                    {
+                        "thumbnail": "https:\/\/files.packeta.com\/points\/thumb\/point_3930_efabac758140.jpg",
+                        "normal": "https:\/\/files.packeta.com\/points\/normal\/point_3930_efabac758140.jpg"
+                    }
+                ],
+                "place": "OUTDOORISTA",
+                "recommended": "quick",
+                "saturdayOpenTo": 0,
+                "special": "",
+                "street": "Na Kozinci 257",
+                "sundayOpenTo": 0,
+                "url": "https:\/\/www.zasilkovna.cz\/pobocky\/caslav-na-kozinci-257-outdoorista",
+                "branchCode": "caslav-na-kozinci-257-outdoorista",
+                "warning": null,
+                "wheelchairAccessible": false,
+                "zip": "286 01",
+                "pickupPointType": "internal",
+                "carrierPickupPointId": null,
+                "carrierId": null,
+                "routingCode": "C50-269-3930",
+                "routingName": "Čáslav, Na Kozinci 257 (Outdoorista)"
+            }
+        },
+        "payment": "card",
+        "note": "",
+        "total": 559,
+        "zionTokens": 0,
+        "zionWalletId": "zw_ztnmir7yw941etm",
+        "termsAccepted": true,
+        "createdAt": "2025-12-04T09:14:24.328Z",
+        "zion": {
+            "tokens": {
+                "totalTokens": 5,
+                "items": [
+                    {
+                        "id": "wood-003",
+                        "name": "Pergola na míru - konzultace",
+                        "quantity": 1,
+                        "perUnit": 5,
+                        "total": 5
+                    }
+                ]
+            },
+            "wallet": {
+                "id": "zw_675c9ea0bd79",
+                "label": "ZION order ZTNMIR7YW947Q00",
+                "tokens": 5,
+                "orderId": "ZTNMIR7YW947Q00",
+                "createdAt": "2025-12-04T10:14:24+01:00",
+                "expiresAt": "2026-01-03T10:14:24+01:00",
+                "uri": "zion:\/\/wallet\/zw_675c9ea0bd79?tokens=5&label=ZION+order+ZTNMIR7YW947Q00&orderId=ZTNMIR7YW947Q00"
+            },
+            "qr": {
+                "serviceUrl": "https:\/\/quickchart.io\/qr?size=320&margin=1&text=zion%3A%2F%2Fwallet%2Fzw_675c9ea0bd79%3Ftokens%3D5%26label%3DZION%2Border%2BZTNMIR7YW947Q00%26orderId%3DZTNMIR7YW947Q00",
+                "imageFile": "zw_675c9ea0bd79.png",
+                "dataUrl": "data:image\/png;base64,iVBORw0KGgoAAAANSUhEUgAAAUAAAAFACAYAAADNkKWqAAAAAklEQVR4AewaftIAAAvxSURBVO3BUY4cOJYEwQii7n9lX2Hnm+wBe6hM6blZ+SWSNNCKJA21IklDrUjSUCuSNNSKJA21IklDrUjSUD\/5B23zNwHyp2mbW0ButM0JkBfa5tsAOWmbHSC32uYVIDtt8zcBsrMiSUOtSNJQK5I01IokDbUiSUOtSNJQP\/kXgHyjtvnd2uYEyC0gO21zq23+NEBeaJudtnmlbW4B2WmbF4B8o7a5sSJJQ61I0lArkjTUiiQNtSJJQ61I0lArkjTUTx5qmxeAvNA2t4DcapsTIC8A2Wmbk7a5BeRW2+wAOWmbG0BO2uYWkJ22OWmbHSCf0DYvAHlhRZKGWpGkoVYkaagVSRpqRZKGWpGkoX6i\/xqQF4DcAnLSNjeAfCMgO21zAuRG23wCkFttcwJEyYokDbUiSUOtSNJQK5I01IokDbUiSUOtSNJQP9H\/RNucANlpm1tAToDstM2ttvmEttkBcqttdoDcapsTIDtto7dWJGmoFUkaakWShlqRpKFWJGmoFUka6icPAZkCyC0gJ21zq21+NyAnbbMD5KRtfre2uQXkFSDfBsifZEWShlqRpKFWJGmoFUkaakWShlqRpKFWJGmon\/wLbaP\/aJsTIDttcwJkp21OgOy0zSRtswNkp21OgOy0zQmQF9rmBMiNtvmbrEjSUCuSNNSKJA21IklDrUjSUCuSNNRP\/gEQfVbb7AD5BCA7bXMCZKdtXgHyQtu8AOSkbV4AMsWKJA21IklDrUjSUCuSNNSKJA21IklDlV9y0DY7QE7a5tsAeaFtbgE5aZu\/CZAX2uYEyE7b3AJyq212gJy0zQ6QW23zbYC8sCJJQ61I0lArkjTUiiQNtSJJQ61I0lArkjRU+SWPtM0nAPmbtM0OkJO2eQHITtvcAnLSNi8A2WmbEyAvtM23AfJK29wCcmNFkoZakaShViRpqBVJGmpFkoZakaShfvIQkJ22uQXkpG12gNxqmxeAnADZaZtbQHba5haQk7a5BeRW29wActI2O0BO2uYWkJ22OQFyo21OgLwA5IUVSRpqRZKGWpGkoVYkaagVSRpqRZKGWpGkocovOWibHSB\/k7Y5AfJt2uYFIK+0zS0gO21zAuRG27wC5Fbb3AKy0zY7QG61zQmQnba5BWRnRZKGWpGkoVYkaagVSRpqRZKGWpGkocovudQ2J0B22uYEyE7bvADkVtvcAnLSNjtATtpmB8hO25wAudU2LwA5aZu\/CZCdtjkB8m3a5haQGyuSNNSKJA21IklDrUjSUCuSNNSKJA21IklD\/eRLtc0OkFtts9M2rwDZaZtbbXMC5NsA2WmbEyC3gLzQNjtAPgHISdt8GyC32mYHyM6KJA21IklDrUjSUCuSNNSKJA21IklD\/eQftM0LQE7a5lbb7ADZaZsTIDttcwvISdvcapsdIJ\/QNjtAbrXNC0Butc0JkJ22+TZATtrmVtvsADkBcmNFkoZakaShViRpqBVJGmpFkoZakaShViRpqPJLLrXNLSAnbXMLyAttswPkpG2mAHKrbU6A7LTNCZAX2mYHyEnb7AA5aZsdICdt87sB+TYrkjTUiiQNtSJJQ61I0lArkjTUiiQN9ZOHgNwCcqttfre2OQGy0zYnQHba5gUgJ21zq212gOg\/2uYTgOy0zQmQnba5BeSFFUkaakWShlqRpKFWJGmoFUkaakWShiq\/5KBtdoD8adpmB8grbbMD5FbbnADZaZsdILfa5gTIrbZ5AcittrkFZKdtvg2Qk7bZAfJK2+wA2VmRpKFWJGmoFUkaakWShlqRpKFWJGmoFUka6if\/AMgntM3v1jaf0Da3gHxC2\/xpgPxNgLzQNreA3GqbW0BurEjSUCuSNNSKJA21IklDrUjSUCuSNNRPPqRtToD8bm3zCpCdtjkBstM2t4DcAnKrbXaAnADZaZsX2uYbtc0OkBfa5gTILSA7bfPCiiQNtSJJQ61I0lArkjTUiiQNtSJJQ61I0lDllxy0zQ6Qk7Z5AchJ2+wAudU23wbIrbbZAXLSNjtAbrXNLSCf0DY7QG61zQmQ361tbgE5aZsdIC+sSNJQK5I01IokDbUiSUOtSNJQK5I01E8+BMhJ2+y0zQmQ3w3ISdvsAPkEILeA7LTNCZBbQHba5hOA7LTNK23zNwFyq212gOysSNJQK5I01IokDbUiSUOtSNJQK5I01IokDfWTf6FtToC8AOSkbW4AudU2n9A2LwA5aZsdIK+0zQ6Qk7a5AeSkbXaAfELbnAD5Nm2zA+QEyI0VSRpqRZKGWpGkoVYkaagVSRpqRZKGKr\/kkbbZAfJt2uYEyK22eQHIJ7TNtwHybdrmBMhO25wA2WmbF4B8o7bZAbKzIklDrUjSUCuSNNSKJA21IklDrUjSUCuSNFT5JQdtswPkpG1eAHLSNjeAnLTNLSA7bfMKkJ22uQVkp21OgNxqm1tAdtrm2wC51Ta3gLzQNidAfrcVSRpqRZKGWpGkoVYkaagVSRpqRZKGKr\/koG1uAXmhbU6A3GibV4B8QtvcAHLSNi8AudU2t4DstM0JkJ22+dMAudU2O0BO2uYFIDsrkjTUiiQNtSJJQ61I0lArkjTUiiQNVX7JI23zbYDcapsdICdtcwvIC23zApCTtrkF5IW22QFy0ja3gLzQNidAdtrmFpCdtjkBstM2J0BurEjSUCuSNNSKJA21IklDrUjSUCuSNNSKJA31k3+hbU6A7LTNCZAX2mYHyN+mbW4AOWmbW0B22uakbW4B2QHyp2mbF4DstM1J27wA5KRtdoDsrEjSUCuSNNSKJA21IklDrUjSUCuSNNRP\/kHb7AC5BeSkbf4kbXMCZKdtTtpmB8gtIDttcwJkp21OgHybtnkByEnb\/E2A3GqbHSAvrEjSUCuSNNSKJA21IklDrUjSUCuSNNSKJA1VfslB23wCkJ22OQFyo21uAXmlbXaAfELb7AA5aZtbQG61zQ6QW21zC8itttkBctI2O0B22uYWkJO2eQHIzookDbUiSUOtSNJQK5I01IokDbUiSUP95F8ActI2O0BO2uZW2+wAeaFtbgG51TYvALnVNidAPgHIjbY5AXKrbT4ByE7b3AKy0zYnQH63FUkaakWShlqRpKFWJGmoFUkaakWShlqRpKF+8hCQnbY5AbLTNidAdtpmB8grbbPTNreAnLTNt2mbHSCvtM0NILfa5gTIFEButc0JkBsrkjTUiiQNtSJJQ61I0lArkjTUiiQN9ZOH2uYT2mYHyK22eQHIK0B22manbV4B8glAvk3b\/E3a5gUgL6xI0lArkjTUiiQNtSJJQ61I0lArkjTUiiQNVX6J\/l\/b3AJy0jY7QG61zQmQG21zAmSnbU6A7LTNJEBeaJsTIC+0zQ6QW21zC8jOiiQNtSJJQ61I0lArkjTUiiQNtSJJQ\/3kH7TN3wTIDpBXgOy0zQmQHSDfBshJ29wC8kLbvADkVtucAHmhbXaAfAKQF1YkaagVSRpqRZKGWpGkoVYkaagVSRrqJ\/8CkG\/UNjfa5gTITtu80jY7QG61za222QFyAmSnbU7a5ncD8o3a5gUgn9A2LwDZWZGkoVYkaagVSRpqRZKGWpGkoVYkaagVSRrqJw+1zQtAPqFtbgH5hLbZAfJC25wAuQXkVtvsANlpm1tAvlHbfBsgO21zAuTGiiQNtSJJQ61I0lArkjTUiiQNtSJJQ\/1E\/zUgt9pmB8grQF5omx0gJ21zq21uAbkB5JW2+TZAXmibEyA7QE7aZgfIzookDbUiSUOtSNJQK5I01IokDbUiSUOtSNJQP9F\/rW1eaJsTIC+0zQ6QEyAvAPmEtvkEILfa5oW2eQHISdvcAnJjRZKGWpGkoVYkaagVSRpqRZKGWpGkoX7yEJA\/CZBbbXMC5IW2eaFtToDstM2ttrkF5BaQnbb5hLY5AbLTNp8A5E+yIklDrUjSUCuSNNSKJA21IklDrUjSUCuSNNRP\/oW2+Zu0zSttswPkE4DstM1J27wA5G8C5KRtdoCctM0OkFtt8wlAfrcVSRpqRZKGWpGkoVYkaagVSRpqRZKGKr9EkgZakaShViRpqBVJGmpFkoZakaShViRpqP8Do+yviVk\/f\/4AAAAASUVORK5CYII="
+            },
+            "storage": {
+                "json": "zw_675c9ea0bd79.json",
+                "image": "zw_675c9ea0bd79.png"
+            },
+            "network": "testnet",
+            "ledger": {
+                "id": "ledger_d77bfb03",
+                "orderId": "ZTNMIR7YW947Q00",
+                "walletId": "zw_675c9ea0bd79",
+                "tokens": 5,
+                "status": "pending",
+                "network": "testnet",
+                "source": "order",
+                "createdAt": "2025-12-04T10:14:24+01:00",
+                "updatedAt": "2025-12-04T10:14:24+01:00",
+                "walletUri": "zion:\/\/wallet\/zw_675c9ea0bd79?tokens=5&label=ZION+order+ZTNMIR7YW947Q00&orderId=ZTNMIR7YW947Q00",
+                "qrImage": "zw_675c9ea0bd79.png",
+                "note": null,
+                "txHash": null,
+                "details": {
+                    "totalTokens": 5,
+                    "items": [
+                        {
+                            "id": "wood-003",
+                            "name": "Pergola na míru - konzultace",
+                            "quantity": 1,
+                            "perUnit": 5,
+                            "total": 5
+                        }
+                    ]
+                },
+                "history": [
+                    {
+                        "status": "pending",
+                        "timestamp": "2025-12-04T10:14:24+01:00",
+                        "note": "Created from order #ZTNMIR7YW947Q00"
+                    }
+                ]
+            }
+        }
+    },
+    "seller": {
+        "name": "Omnity.One s.r.o.",
+        "ico": "09120050",
+        "dic": "CZ09120050",
+        "address": "Horní Čermná, 56156",
+        "court": "Krajský soud v Hradci Králové",
+        "court_id": "00215716",
+        "bank_account": "2901809148 \/ 2010",
+        "iban": "CZ63 2010 0000 0029 0180 9148",
+        "swift": "FIOBCZPPXXX",
+        "bank_name": "Fio banka, a.s.",
+        "country": "Česká republika",
+        "email": "admin@newearth.cz",
+        "web": "www.newearth.cz"
+    },
+    "buyer": {
+        "name": "jos",
+        "email": "yosef.hubalek@gmail.com",
+        "phone": "773669477",
+        "address": "Výdejní místo: Čáslav, Na Kozinci 257 (Outdoorista), Čáslav"
+    },
+    "items": [
+        {
+            "name": "Pergola na míru - konzultace",
+            "quantity": 1,
+            "unit": "ks",
+            "unitPrice": 490,
+            "unitPriceWithoutVat": 404.95999999999998,
+            "vatRate": 21,
+            "vatAmount": 85.040000000000006,
+            "totalPrice": 490,
+            "priceWithoutVat": 404.95999999999998
+        },
+        {
+            "name": "Doprava - zasilkovna",
+            "quantity": 1,
+            "unit": "ks",
+            "unitPrice": 69,
+            "unitPriceWithoutVat": 57.020000000000003,
+            "vatRate": 21,
+            "vatAmount": 11.98,
+            "totalPrice": 69,
+            "priceWithoutVat": 57.020000000000003
+        }
+    ],
+    "totals": {
+        "withoutVat": 461.98000000000002,
+        "vat": 97.019999999999996,
+        "withVat": 559,
+        "currency": "CZK"
+    }
+}

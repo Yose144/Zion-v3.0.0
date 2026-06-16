@@ -1,0 +1,94 @@
+{
+    "number": "FV2026-TEST_WALLE",
+    "date": "01.01.2026",
+    "dueDate": "15.01.2026",
+    "order": {
+        "orderId": "TEST_WALLET_001",
+        "items": [
+            {
+                "id": "test-001",
+                "name": "Test Product",
+                "price": 1000,
+                "quantity": 1
+            }
+        ],
+        "customer": {
+            "name": "Test User",
+            "email": "admin@newearth.cz",
+            "phone": "+420123456789"
+        },
+        "shipping": {
+            "method": "virtualni-odber",
+            "price": 0
+        },
+        "payment": "transfer",
+        "total": 1000,
+        "termsAccepted": true,
+        "zion": {
+            "tokens": {
+                "totalTokens": 1000,
+                "items": [
+                    {
+                        "id": "test-001",
+                        "name": "Test Product",
+                        "quantity": 1,
+                        "perUnit": 1000,
+                        "total": 1000
+                    }
+                ]
+            },
+            "wallet": {
+                "id": "zw_54b9e77fddc2",
+                "address": "zion1z872s4l3d5k8e3c784h6n4k3r2l4k648a7j0c5q",
+                "mnemonic": "busy check autumn orchard supply alley human bicycle insane blue fatal fortune",
+                "publicKey": "45318288aac7a65bd3a58a8c3ef93ceaf54e5c3556cd8fba863408f7505df9b0",
+                "uri": "zion1z872s4l3d5k8e3c784h6n4k3r2l4k648a7j0c5q",
+                "network": "mainnet"
+            },
+            "qr": {
+                "imageFile": "zw_54b9e77fddc2.png",
+                "serviceUrl": "https:\/\/newearth.cz\/V2\/wallets\/zw_54b9e77fddc2.png"
+            }
+        }
+    },
+    "seller": {
+        "name": "Omnity.One s.r.o.",
+        "ico": "09120050",
+        "dic": "CZ09120050",
+        "address": "Horní Čermná, 56156",
+        "court": "Krajský soud v Hradci Králové",
+        "court_id": "00215716",
+        "bank_account": "2901809148 \/ 2010",
+        "iban": "CZ63 2010 0000 0029 0180 9148",
+        "swift": "FIOBCZPPXXX",
+        "bank_name": "Fio banka, a.s.",
+        "country": "Česká republika",
+        "email": "admin@newearth.cz",
+        "web": "www.newearth.cz"
+    },
+    "buyer": {
+        "name": "Test User",
+        "email": "admin@newearth.cz",
+        "phone": "+420123456789",
+        "address": ""
+    },
+    "items": [
+        {
+            "name": "Test Product",
+            "quantity": 1,
+            "unit": "ks",
+            "unitPrice": 1000,
+            "unitPriceWithoutVat": 826.45000000000005,
+            "vatRate": 21,
+            "vatAmount": 173.55000000000001,
+            "totalPrice": 1000,
+            "priceWithoutVat": 826.45000000000005
+        }
+    ],
+    "totals": {
+        "withoutVat": 826.45000000000005,
+        "vat": 173.55000000000001,
+        "withVat": 1000,
+        "currency": "CZK"
+    }
+}

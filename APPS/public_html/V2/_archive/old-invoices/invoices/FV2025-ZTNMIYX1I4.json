@@ -1,0 +1,246 @@
+{
+    "number": "FV2025-ZTNMIYX1I4",
+    "date": "09.12.2025",
+    "dueDate": "23.12.2025",
+    "order": {
+        "orderId": "ZTNMIYX1I4C6MHC",
+        "items": [
+            {
+                "id": "star-001",
+                "name": "A-Wing Wooden Starfighter",
+                "price": 890,
+                "image": ".\/img\/starfighters\/awing.png",
+                "category": "starfighters",
+                "quantity": 1
+            }
+        ],
+        "customer": {
+            "name": "cfgg",
+            "email": "yosef.hubalek@gmail.com",
+            "phone": "4565",
+            "address": null,
+            "newsletter": false
+        },
+        "shipping": {
+            "method": "zasilkovna",
+            "price": 69,
+            "pickupPoint": {
+                "businessDaysOpenLunchtime": false,
+                "businessDaysOpenUpTo": 0,
+                "city": "Jablonné nad Orlicí",
+                "claimAssistant": false,
+                "country": "cz",
+                "creditCardPayment": false,
+                "currency": "CZK",
+                "directions": "<p>Z-box je umístěn zády k plotu k el. skříňce nalevo.<\/p>\n\n<p><strong>Dobré vědět:<\/strong><\/p>\n\n<p>Standardní úložní doba zásilek jsou 2 dny s možností prodloužení o další den.<\/p>\n\n<p><strong>Co potřebujete k vyzvednutí zásilky?<\/strong><\/p>\n\n<ul><li>mobilní aplikaci Zásilkovna<\/li><li>zapnutý Bluetooth a polohové služby (GPS)<\/li><li>uhrazenou dobírku předem<\/li><\/ul>\n\n<p>Dobírku lze uhradit předem přímo v mobilní aplikaci Zásilkovna.<\/p>",
+                "directionsCar": "",
+                "directionsPublic": "",
+                "error": null,
+                "gps": {
+                    "lat": 50.029820000000001,
+                    "lon": 16.603200000000001
+                },
+                "holidayEnd": "2025-12-26T00:00:00",
+                "holidayStart": "2025-12-24T00:00:00",
+                "exceptionDays": [
+                    {
+                        "from": "2025-12-24T00:00:00",
+                        "to": "2025-12-26T00:00:00",
+                        "times": [
+                            {
+                                "open": "00:00",
+                                "close": "23:59"
+                            }
+                        ]
+                    },
+                    {
+                        "from": "2026-01-01T00:00:00",
+                        "times": [
+                            {
+                                "open": "00:00",
+                                "close": "23:59"
+                            }
+                        ]
+                    }
+                ],
+                "externalId": "I_33041",
+                "id": "33041",
+                "isNew": false,
+                "maxWeight": 15,
+                "name": "Z-BOX Jablonné nad Orlicí, Hradisková 753",
+                "nameStreet": "Z-BOX Jablonné nad Orlicí, Hradisková 753",
+                "openingHours": {
+                    "compactShort": "<strong>Po–Ne<\/strong> Nonstop",
+                    "compactLong": "<strong>Po–Ne<\/strong> Nonstop",
+                    "tableLong": "<table><tr><th>Po<\/th><td>Nonstop<\/td><\/tr><tr><th>Út<\/th><td>Nonstop<\/td><\/tr><tr><th>St<\/th><td>Nonstop<\/td><\/tr><tr><th>Čt<\/th><td>Nonstop<\/td><\/tr><tr><th>Pá<\/th><td>Nonstop<\/td><\/tr><tr><th>So<\/th><td>Nonstop<\/td><\/tr><tr><th>Ne<\/th><td>Nonstop<\/td><\/tr><\/table>",
+                    "exceptions": [],
+                    "regular": {
+                        "monday": "Nonstop",
+                        "tuesday": "Nonstop",
+                        "wednesday": "Nonstop",
+                        "thursday": "Nonstop",
+                        "friday": "Nonstop",
+                        "saturday": "Nonstop",
+                        "sunday": "Nonstop"
+                    }
+                },
+                "packetConsignment": true,
+                "photos": [
+                    {
+                        "thumbnail": "https:\/\/files.packeta.com\/points\/thumb\/point_33041_efb8a4b31262.jpg",
+                        "normal": "https:\/\/files.packeta.com\/points\/normal\/point_33041_efb8a4b31262.jpg"
+                    }
+                ],
+                "photo": [
+                    {
+                        "thumbnail": "https:\/\/files.packeta.com\/points\/thumb\/point_33041_efb8a4b31262.jpg",
+                        "normal": "https:\/\/files.packeta.com\/points\/normal\/point_33041_efb8a4b31262.jpg"
+                    }
+                ],
+                "place": "Z-BOX",
+                "recommended": "quickBox",
+                "saturdayOpenTo": 0,
+                "special": "",
+                "street": "Hradisková 753",
+                "sundayOpenTo": 0,
+                "url": "https:\/\/www.zasilkovna.cz\/pobocky\/z-box-jablonne-nad-orlici-hradiskova-753",
+                "branchCode": "z-box-jablonne-nad-orlici-hradiskova-753",
+                "warning": "almostFullBox",
+                "wheelchairAccessible": false,
+                "zip": "561 64",
+                "pickupPointType": "internal",
+                "carrierPickupPointId": null,
+                "carrierId": null,
+                "routingCode": "C78-145-33041",
+                "routingName": "Z-BOX Jablonné nad Orlicí, Hradisková 753",
+                "group": "zbox"
+            }
+        },
+        "payment": "transfer",
+        "note": "",
+        "total": 959,
+        "zionTokens": 0,
+        "zionWalletId": "zw_ztnmiyx1i4c420n",
+        "termsAccepted": true,
+        "createdAt": "2025-12-09T18:30:39.614Z",
+        "status": "pending_payment",
+        "zion": {
+            "tokens": {
+                "totalTokens": 9,
+                "items": [
+                    {
+                        "id": "star-001",
+                        "name": "A-Wing Wooden Starfighter",
+                        "quantity": 1,
+                        "perUnit": 9,
+                        "total": 9
+                    }
+                ]
+            },
+            "wallet": {
+                "id": "zw_aa0f79dc7d8d",
+                "label": "ZION order ZTNMIYX1I4C6MHC",
+                "tokens": 9,
+                "orderId": "ZTNMIYX1I4C6MHC",
+                "createdAt": "2025-12-09T19:30:39+01:00",
+                "expiresAt": "2026-01-08T19:30:39+01:00",
+                "uri": "zion:\/\/wallet\/zw_aa0f79dc7d8d?tokens=9&label=ZION+order+ZTNMIYX1I4C6MHC&orderId=ZTNMIYX1I4C6MHC"
+            },
+            "qr": {
+                "serviceUrl": "https:\/\/quickchart.io\/qr?size=320&margin=1&text=zion%3A%2F%2Fwallet%2Fzw_aa0f79dc7d8d%3Ftokens%3D9%26label%3DZION%2Border%2BZTNMIYX1I4C6MHC%26orderId%3DZTNMIYX1I4C6MHC",
+                "imageFile": "zw_aa0f79dc7d8d.png",
+                "dataUrl": "data:image\/png;base64,iVBORw0KGgoAAAANSUhEUgAAAUAAAAFACAYAAADNkKWqAAAAAklEQVR4AewaftIAAAwVSURBVO3BUY4cy7IkQTNH7X\/LOgd435G8CE6ymnQVKf+JJC00kaSlJpK01ESSlppI0lITSVpqIklLTSRpqU9+oW3+JUDe0Da3gDxpmxMgT9rmDUDe0DY\/DZAnbfMNQN7QNv8SICcTSVpqIklLTSRpqYkkLTWRpKUmkrTUJ78ByE\/UNm9omxMgbwHyBiAnbfMTAXlD25y0zS0gb2mbW0BuAPmJ2ubGRJKWmkjSUhNJWmoiSUtNJGmpiSQtNZGkpT55Udu8Acgb2uZW2zwBcqttToA8AXLSNrfa5haQW21zAuRJ29wA8qRtbrXNCZAnQE7a5hva5g1A3jCRpKUmkrTURJKWmkjSUhNJWmoiSUt9ov8ZkFttcwLkCZBbbXMC5G8D5KRtngC50TZPgHxD2+j3TCRpqYkkLTWRpKUmkrTURJKWmkjSUhNJWuoT\/c\/a5gTIN7TNEyAnbXMC5EnbfEPbnAC51TYnQG61zRMgJ22jd00kaamJJC01kaSlJpK01ESSlppI0lKfvAjIFm3zBMhJ2zwBcgLkFpBbQG61zS0gf1rb3ALyFiA\/DZC\/yUSSlppI0lITSVpqIklLTSRpqYkkLTWRpKU++Q1tswmQk7b5hrZ5AuSkbU6APGmbEyC3gDxpmxMgT9rmBMhJ2zwBctI2T4C8oW2eALnRNv+SiSQtNZGkpSaStNREkpaaSNJSE0la6pNfAKL\/0zY\/DZAnbfOntc0TICdt8xYgb2ibNwB50jZvALLFRJKWmkjSUhNJWmoiSUtNJGmpiSQt9ckvtM0JkCdt89MAOQHypG3+NkBO2uakbZ4AOWmbW0Butc03ALnVNidAbgG51TY\/DZA3TCRpqYkkLTWRpKUmkrTURJKWmkjSUhNJWqr8Jw\/a5haQk7Z5C5A\/rW2eALnVNidA3tA23wDkSdvcAnKjbZ4AeUPb\/DRA3tI2t4DcmEjSUhNJWmoiSUtNJGmpiSQtNZGkpT75BSA\/DZAnbXMC5Fbb\/DRt8wTIG4DcaptbQP40IE\/a5gTIk7a5BeSkbW4BOWmbJ0DeAOQNE0laaiJJS00kaamJJC01kaSlJpK01ESSlir\/yaW2eQLkVtucALnVNreA3GqbEyBP2uYEyK22OQHyDW3zBMittjkBctI2bwFyq21uATlpmxMgt9rmCZCTtrkF5GQiSUtNJGmpiSQtNZGkpSaStNREkpb65Bfa5lbbnAB5S9vcAPKkbU6AfEPb3AJy0jZPgJy0zVva5gTIrbb5hra5BeSkbZ60zZ8G5Enb3AJyYyJJS00kaamJJC01kaSlJpK01ESSlppI0lKf\/AYgt9rmCZCTtnkC5A1A3tA2T4CctM1PA+RW2zwBcgvISducAHnSNidA3tI2t4DcaJtbQG4BedI2J0BOJpK01ESSlppI0lITSVpqIklLTSRpqU9+Q9vcAvKkbW61zQ0gT9rmBMgTILfa5gTI36ZtToDcapufpm3eAuRW29wA8qRtbgG5BeTGRJKWmkjSUhNJWmoiSUtNJGmpiSQtNZGkpT75DUCetM0bgNxqm5O2eQLkpG1uAXlL25wAudU2J0CeADlpmydAbgH504A8aZsTIE\/a5gTIG9rmVts8AfKnTSRpqYkkLTWRpKUmkrTURJKWmkjSUp\/8hrZ5AuQWkFttcwLkpG1uAXnSNreAnLTNEyA3gDxpm1ttcwLkX9I2bwHyBiAnbfMEyK22OQHyhokkLTWRpKUmkrTURJKWmkjSUhNJWqr8Jw\/a5haQn6Zt3gDkVts8AXKrbW4AudU2T4Dcaps3ALnVNidAfqK2uQHkSducAHlL25wAOZlI0lITSVpqIklLTSRpqYkkLTWRpKUmkrTUJ78A5KRtnrTNCZAnbfPTALnVNidAnrTNCZBbQG61zd8GyJ\/WNreA3GqbJ0BO2uYWkFttcwvIjYkkLTWRpKUmkrTURJKWmkjSUhNJWqr8Jw\/a5haQk7a5BeQNbfMEyEnbPAGi\/9M2J0Butc0TIDfa5haQW21zC8ittrkF5A1t8wTIjYkkLTWRpKUmkrTURJKWmkjSUhNJWmoiSUt98gtATtrmLUButc0JkFttcwLkVts8AXKrbU6A3GqbEyBPgJy0zS0gbwDyEwF5A5CTtnlL25wAecNEkpaaSNJSE0laaiJJS00kaamJJC31yS+0zQmQJ21zAuRJ29wCctI2J0CetM03tM1PA+SkbZ4AuQXkpG2+AchJ27ylbX6atjkB8gTIrbY5AXIykaSlJpK01ESSlppI0lITSVpqIklLTSRpqU9+AchJ2zwB8gYgT9rmBMhJ2\/xEQG61zY22uQXkG4A8aZsbQJ60zQmQb2ibJ0ButM1b2uYEyBMgNyaStNREkpaaSNJSE0laaiJJS00kaanynzxomxMgT9rmFpCTtnkC5EbbPAHyDW3zpwG51TZvAfI3aZsnQE7a5gmQk7Z5A5CfqG1OgJxMJGmpiSQtNZGkpSaStNREkpaaSNJSE0la6pPf0DZPgHxD2\/xpbXMLyBMgJ23zBMiNtvkGIE\/a5l\/SNidAvgHIG9rmCZBbQG5MJGmpiSQtNZGkpSaStNREkpaaSNJSn7yobU6AvAXIjbb5hrZ5AuQNbXMC5FbbPAFyC8hJ2zwBcqNtngA5aZtbbfO3aZsTIE\/a5g1ATiaStNREkpaaSNJSE0laaiJJS00kaalPXgTkpG2eADkB8qRtbgB50jb\/EiAnbXMLyJO2uQXkBMittjkB8qRtbgF5Q9vcaptbQE7a5gmQk7Z5AuTGRJKWmkjSUhNJWmoiSUtNJGmpiSQtNZGkpcp\/8qBt3gDkSdvcAvKGtrkF5KRtbgF50jYnQG61zd8GyBva5haQW21zC8iNtnkLkFttcwLkZCJJS00kaamJJC01kaSlJpK01ESSlvrkF4CctM0TILeAnLTNk7a5AeQbgNxqmydAbrTNEyBvaJtvaJs3AHnSNm8A8g1AbrXNCZA3TCRpqYkkLTWRpKUmkrTURJKWmkjSUhNJWuqTX2ibW21zAuRJ29wCcqNtvqFtngD504A8aZsTIE\/a5haQW21zAuRW25y0zRMgt9rmDW1zq21uATlpmzdMJGmpiSQtNZGkpSaStNREkpaaSNJSn\/wGILfa5gmQW21zA8hb2uYNQG61zQmQW23zBMg3ALnRNk+AvKFtngD5aYC8AcgbJpK01ESSlppI0lITSVpqIklLTSRpqYkkLfXJi9rmG4D8aW3zlrY5AfKkbX6atjkB8pa2uQHkVtvcAvKkbU6A\/Eva5gmQGxNJWmoiSUtNJGmpiSQtNZGkpSaStNQnP1TbvAHISdt8A5BbbXMLyEnbvAXINwD504DcapsnQE7a5hva5g1A3jCRpKUmkrTURJKWmkjSUhNJWmoiSUtNJGmpT34ByC0g+rW2+dsAOWmbW22zCZBvAPKGtjkBcqttbgE5mUjSUhNJWmoiSUtNJGmpiSQtNZGkpT75hbb5lwA5AfINbfMEyN8EyJO2uQXkDW3zBiB\/m7Y5AfINQN4wkaSlJpK01ESSlppI0lITSVpqIklLffIbgPxEbXOjbZ4AOWmbv03b3GqbEyBPgJy0zZO2+dOAPGmbb2ibNwD5hrY5AfKkbU6AnEwkaamJJC01kaSlJpK01ESSlppI0lITSVrqkxe1zRuA\/DRAbrXNrbZ5AuQEyBva5gmQW0Butc0JkJO2+de0zU8D5BaQGxNJWmoiSUtNJGmpiSQtNZGkpSaStNQn+p+1zQmQW0CetM2ttrkB5EnbnAB50ja32uYWkBtA3tI2Pw2QN7TNEyC32uYEyMlEkpaaSNJSE0laaiJJS00kaamJJC01kaSlPtH\/F21zC8gTIG9om58GyJO2OQFyq22+AcittnlD27wByJO2uQXkxkSSlppI0lITSVpqIklLTSRpqYkkLfXJi4D8TYDcapsnQE7a5huA3AJy0ja32uYJkDcAOWmbW0Butc0TICdt8w1A\/iYTSVpqIklLTSRpqYkkLTWRpKUmkrTURJKW+uQ3tM2\/pG2eAPnbADlpmxMg3wDkbwPkVtucAHnSNidAbrXNG9rmCZA\/bSJJS00kaamJJC01kaSlJpK01ESSlir\/iSQtNJGkpSaStNREkpaaSNJSE0laaiJJS\/0\/mOPJhIN8gk4AAAAASUVORK5CYII="
+            },
+            "storage": {
+                "json": "zw_aa0f79dc7d8d.json",
+                "image": "zw_aa0f79dc7d8d.png"
+            },
+            "network": "testnet",
+            "ledger": {
+                "id": "ledger_67a3b99e",
+                "orderId": "ZTNMIYX1I4C6MHC",
+                "walletId": "zw_aa0f79dc7d8d",
+                "tokens": 9,
+                "status": "pending",
+                "network": "testnet",
+                "source": "order",
+                "createdAt": "2025-12-09T19:30:40+01:00",
+                "updatedAt": "2025-12-09T19:30:40+01:00",
+                "walletUri": "zion:\/\/wallet\/zw_aa0f79dc7d8d?tokens=9&label=ZION+order+ZTNMIYX1I4C6MHC&orderId=ZTNMIYX1I4C6MHC",
+                "qrImage": "zw_aa0f79dc7d8d.png",
+                "note": null,
+                "txHash": null,
+                "details": {
+                    "totalTokens": 9,
+                    "items": [
+                        {
+                            "id": "star-001",
+                            "name": "A-Wing Wooden Starfighter",
+                            "quantity": 1,
+                            "perUnit": 9,
+                            "total": 9
+                        }
+                    ]
+                },
+                "history": [
+                    {
+                        "status": "pending",
+                        "timestamp": "2025-12-09T19:30:40+01:00",
+                        "note": "Created from order #ZTNMIYX1I4C6MHC"
+                    }
+                ]
+            }
+        }
+    },
+    "seller": {
+        "name": "Omnity.One s.r.o.",
+        "ico": "09120050",
+        "dic": "CZ09120050",
+        "address": "Horní Čermná, 56156",
+        "court": "Krajský soud v Hradci Králové",
+        "court_id": "00215716",
+        "bank_account": "2901809148 \/ 2010",
+        "iban": "CZ63 2010 0000 0029 0180 9148",
+        "swift": "FIOBCZPPXXX",
+        "bank_name": "Fio banka, a.s.",
+        "country": "Česká republika",
+        "email": "admin@newearth.cz",
+        "web": "www.newearth.cz"
+    },
+    "buyer": {
+        "name": "cfgg",
+        "email": "yosef.hubalek@gmail.com",
+        "phone": "4565",
+        "address": "Výdejní místo: Z-BOX Jablonné nad Orlicí, Hradisková 753, Jablonné nad Orlicí"
+    },
+    "items": [
+        {
+            "name": "A-Wing Wooden Starfighter",
+            "quantity": 1,
+            "unit": "ks",
+            "unitPrice": 890,
+            "unitPriceWithoutVat": 735.53999999999996,
+            "vatRate": 21,
+            "vatAmount": 154.46000000000001,
+            "totalPrice": 890,
+            "priceWithoutVat": 735.53999999999996
+        },
+        {
+            "name": "Doprava - zasilkovna",
+            "quantity": 1,
+            "unit": "ks",
+            "unitPrice": 69,
+            "unitPriceWithoutVat": 57.020000000000003,
+            "vatRate": 21,
+            "vatAmount": 11.98,
+            "totalPrice": 69,
+            "priceWithoutVat": 57.020000000000003
+        }
+    ],
+    "totals": {
+        "withoutVat": 792.55999999999995,
+        "vat": 166.44,
+        "withVat": 959,
+        "currency": "CZK"
+    }
+}
