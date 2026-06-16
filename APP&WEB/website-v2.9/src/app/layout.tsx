@@ -76,42 +76,7 @@ export default function RootLayout({
                       </main>
                       <Footer />
                     </div>
-                    <script dangerouslySetInnerHTML={{__html: `
-                      (function() {
-                        function findOverflow() {
-                          const docWidth = document.documentElement.clientWidth;
-                          const overflowing = [];
-                          document.querySelectorAll('*').forEach(function(el) {
-                            if (el.scrollWidth > docWidth) {
-                              overflowing.push({tag: el.tagName, class: el.className, id: el.id, scrollWidth: el.scrollWidth, docWidth: docWidth});
-                              // Auto-fix for iOS
-                              if (el.classList.contains('zion-panel') || el.classList.contains('grid')) {
-                                el.style.maxWidth = '100%';
-                                el.style.overflow = 'hidden';
-                                el.style.boxSizing = 'border-box';
-                              }
-                            }
-                          });
-                          if (overflowing.length > 0) {
-                            console.warn('[OVERFLOW DETECTOR] Elements wider than viewport:', overflowing);
-                            // Force iOS safe area check
-                            if (navigator.userAgent.includes('iPhone') || navigator.platform.includes('iPhone')) {
-                              document.body.style.overflowX = 'hidden';
-                              document.documentElement.style.overflowX = 'hidden';
-                            }
-                          } else {
-                            console.log('[OVERFLOW DETECTOR] No overflow found');
-                          }
-                        }
-                        if (document.readyState === 'loading') {
-                          document.addEventListener('DOMContentLoaded', findOverflow);
-                        } else {
-                          findOverflow();
-                        }
-                        setTimeout(findOverflow, 1000);
-                        setTimeout(findOverflow, 3000);
-                      })();
-                    `}} />
+
                   </ZionWalletProvider>
                 </WalletProvider>
               </LanguageProvider>
