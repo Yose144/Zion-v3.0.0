@@ -173,9 +173,9 @@ export default function Navigation() {
             </span>
           </Link>
 
-          <div className="hidden md:flex items-center gap-2 lg:gap-4 xl:gap-6" data-nav-desktop>
+          <div className="hidden md:flex items-center gap-1 lg:gap-3 xl:gap-5" data-nav-desktop>
             <div className="relative">
-              <div className="flex items-center gap-1 lg:gap-2">
+              <div className="flex items-center gap-1">
                 {navGroups.map((group) => {
                   const isActive = openGroup === group.title;
                   return (
@@ -183,7 +183,7 @@ export default function Navigation() {
                       key={group.title}
                       type="button"
                       onClick={() => setOpenGroup(isActive ? null : group.title)}
-                      className={`inline-flex items-center gap-1 rounded-2xl border px-2 py-1.5 lg:px-3 lg:py-2 text-xs font-semibold uppercase tracking-[0.28em] transition-all ${
+                      className={`inline-flex items-center gap-1 rounded-xl border px-2 py-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] transition-all ${
                         isActive ? 'border-white/18 bg-white/10 text-white shadow-[0_12px_30px_rgba(0,0,0,0.24)]' : 'border-white/8 text-gray-400 hover:border-white/18 hover:bg-white/5 hover:text-white'
                       }`}
                       aria-expanded={isActive}
@@ -229,40 +229,24 @@ export default function Navigation() {
               )}
             </div>
             <Link
-              href="/network"
-              title={tr('nav', 'network', lang)}
-              className="hidden lg:flex p-2 rounded-xl border border-white/15 hover:border-zion-cyan/50 bg-white/5 backdrop-blur transition-colors items-center justify-center group relative"
-            >
-              <SignalHigh className="w-4 h-4 text-zion-cyan" />
-              <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] bg-black/90 border border-white/10 rounded px-2 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">{tr('nav', 'network', lang)}</span>
-            </Link>
-            <Link
-              href="/explorer"
-              title={tr('nav', 'explorer', lang)}
-              className="hidden lg:flex p-2 rounded-xl border border-white/15 hover:border-zion-gold/50 bg-white/5 backdrop-blur transition-colors items-center justify-center group relative"
-            >
-              <Orbit className="w-4 h-4 text-zion-gold" />
-              <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] bg-black/90 border border-white/10 rounded px-2 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">{tr('nav', 'explorer', lang)}</span>
-            </Link>
-            <Link
               href="/pool"
               title={tr('nav', 'pool', lang)}
-              className="p-2 rounded-xl border border-white/15 hover:border-zion-purple/50 bg-white/5 backdrop-blur transition-colors inline-flex items-center justify-center group relative"
+              className="hidden lg:flex p-1.5 rounded-lg border border-white/15 hover:border-zion-purple/50 bg-white/5 backdrop-blur transition-colors items-center justify-center group relative"
             >
-              <Pickaxe className="w-4 h-4 text-zion-purple" />
+              <Pickaxe className="w-3.5 h-3.5 text-zion-purple" />
               <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] bg-black/90 border border-white/10 rounded px-2 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">{tr('nav', 'pool', lang)}</span>
             </Link>
             <Link
               href="/dashboard"
               title={tr('nav', 'dashboard', lang)}
-              className="p-2 rounded-2xl bg-linear-to-r from-zion-gold via-zion-purple to-zion-cyan inline-flex items-center justify-center shadow-[0_14px_38px_rgba(147,51,234,0.42)] transition-transform hover:-translate-y-0.5 group relative"
+              className="hidden lg:flex p-1.5 rounded-xl bg-linear-to-r from-zion-gold via-zion-purple to-zion-cyan items-center justify-center shadow-[0_14px_38px_rgba(147,51,234,0.42)] transition-transform hover:-translate-y-0.5 group relative"
             >
-              <LayoutDashboard className="w-4 h-4 text-white" />
+              <LayoutDashboard className="w-3.5 h-3.5 text-white" />
               <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-[10px] bg-black/90 border border-white/10 rounded px-2 py-0.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">{tr('nav', 'dashboard', lang)}</span>
             </Link>
             <button
               onClick={() => setLang(lang === 'cs' ? 'en' : 'cs')}
-              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/15 bg-white/5 text-xs font-semibold hover:border-white/30 hover:bg-white/8 transition-colors text-gray-300 hover:text-white"
+              className="hidden md:flex items-center gap-1.5 px-2 py-1 rounded-lg border border-white/15 bg-white/5 text-[11px] font-semibold hover:border-white/30 hover:bg-white/8 transition-colors text-gray-300 hover:text-white"
               title={lang === 'cs' ? tr('nav', 'switch_to_en', lang) : tr('nav', 'switch_to_cs', lang)}
             >
               {lang === 'cs' ? tr('nav', 'language_toggle_desktop_cs', lang) : tr('nav', 'language_toggle_desktop_en', lang)}
