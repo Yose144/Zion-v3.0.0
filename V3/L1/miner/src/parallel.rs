@@ -166,7 +166,7 @@ mod tests {
         let header = test_header();
         let nonce = 42u64;
 
-        let hash_ekam = deeksha::cosmic_harmony_ekam_deeksha_v3(&header.to_bytes(), nonce, 0).data;
+        let hash_ekam = zion_cosmic_harmony::cosmic_harmony_ekam_deeksha_v3(&header.to_bytes(), nonce, 0).data;
         let hash_lite = deeksha_lite::deeksha_lite(&header.to_bytes(), nonce);
 
         assert_ne!(hash_ekam, hash_lite, "DeekshaLite must produce different hashes than ekam_v3");
