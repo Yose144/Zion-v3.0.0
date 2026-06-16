@@ -2589,23 +2589,8 @@ def _build_status_edge_primary() -> dict:
         except TimeoutError:
             pass
 
-    # SSH fallback for node2 (runs outside thread pool to avoid Windows GIL issues)
-    if edge_rpc_info_node2 is None:
-        try:
-            ssh_key = REPO_ROOT / "ssh-key-zion-edge"
-            if ssh_key.exists():
-                result = subprocess.run(
-                    ["ssh", "-i", str(ssh_key), "-o", "StrictHostKeyChecking=accept-new",
-                     "-o", "ConnectTimeout=3", "root@77.42.71.94",
-                     "curl -s -X POST http://127.0.0.1:8446/ -H 'Content-Type: application/json' -d '{\"jsonrpc\":\"2.0\",\"method\":\"getChainInfo\",\"params\":[],\"id\":1}'"],
-                    capture_output=True, text=True, timeout=5
-                )
-                if result.returncode == 0 and result.stdout:
-                    resp = json.loads(result.stdout)
-                    if resp.get("result"):
-                        edge_rpc_info_node2 = resp["result"]
-        except Exception:
-            pass
+    # NOTE: Removed SSH fallback for node2 — it deadlocked the dashboard on Windows.
+    # Node 2 data comes from RPC via thread pool above (port 8446).
 
     # ── Edge Node status ─────────────────────────────────────────────────────
     edge_node1_status = {
