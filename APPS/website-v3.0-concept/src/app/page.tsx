@@ -68,25 +68,27 @@ function LivingTree() {
   );
 }
 
+// Pre-generated particle positions (generated once at module load)
+const generateParticlePositions = () => {
+  const arr = new Float32Array(3000);
+  for (let i = 0; i < 1000; i++) {
+    arr[i * 3] = (Math.random() - 0.5) * 20;
+    arr[i * 3 + 1] = (Math.random() - 0.5) * 20;
+    arr[i * 3 + 2] = (Math.random() - 0.5) * 20;
+  }
+  return arr;
+};
+
+const PARTICLE_POSITIONS = generateParticlePositions();
+
 // Consciousness Particles
 function ConsciousnessParticles() {
-  // Generate positions once at module load time
-  const generatePositions = () => {
-    const arr = new Float32Array(1000 * 3);
-    for (let i = 0; i < 1000; i++) {
-      arr[i * 3] = (Math.random() - 0.5) * 20;
-      arr[i * 3 + 1] = (Math.random() - 0.5) * 20;
-      arr[i * 3 + 2] = (Math.random() - 0.5) * 20;
-    }
-    return arr;
-  };
-
   return (
     <points>
       <bufferGeometry>
         <bufferAttribute
           attach="attributes-position"
-          args={[generatePositions(), 3]}
+          args={[PARTICLE_POSITIONS, 3]}
         />
       </bufferGeometry>
       <pointsMaterial size={0.05} color="#00ffcc" opacity={0.6} transparent />
