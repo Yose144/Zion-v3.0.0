@@ -71,8 +71,8 @@ function LivingTree() {
 // Consciousness Particles
 function ConsciousnessParticles() {
   const positions = useMemo(() => 
-    new Float32Array(Array.from({ length: 1000 }, () => (Math.random() - 0.5) * 20), []
-  );
+    new Float32Array(Array.from({ length: 1000 }, () => (Math.random() - 0.5) * 20)
+  , []);
   
   return (
     <points>
