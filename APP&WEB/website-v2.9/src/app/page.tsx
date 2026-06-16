@@ -4,9 +4,10 @@ import MainnetCountdown from '@/components/MainnetCountdown';
 import GenesisPreview from '@/components/GenesisPreview';
 import QuantumRevolution from '@/components/QuantumRevolution';
 import HomeQuickLinks from '@/components/HomeQuickLinks';
+import ConstructionBanner from '@/components/ConstructionBanner';
 
 const NewsFeed = dynamicImport(() => import('@/components/NewsFeed'));
-const LiveDashboard = dynamicImport(() => import('@/components/LiveDashboard'));
+import LiveDashboard from '@/components/LiveDashboard';
 const TerraNovaHomeMilestones = dynamicImport(() => import('@/components/TerraNovaHomeMilestones'));
 const GoldenEggHaraniagharba = dynamicImport(() => import('@/components/GoldenEggHaraniagharba'));
 const Features = dynamicImport(() => import('@/components/Features'));
@@ -20,6 +21,7 @@ export const dynamic = 'force-dynamic';
 export default function Home() {
   return (
     <>
+      <ConstructionBanner />
       <Hero />
       <MainnetCountdown />
       <HomeQuickLinks />
