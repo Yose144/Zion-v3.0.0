@@ -518,8 +518,13 @@ canvas.fixed {
 /* ═══ Mobile scroll lock (for nav overlay) ═══ */
 body.menu-open {
   overflow: hidden;
-  position: fixed;
-  inset: 0;
+}
+
+@media (max-width: 767px) {
+  body.menu-open {
+    position: fixed;
+    inset: 0;
+  }
 }
 
 /* ═══ Mobile menu slide-in animation ═══ */
