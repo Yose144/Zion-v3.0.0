@@ -6,7 +6,7 @@ import QuantumRevolution from '@/components/QuantumRevolution';
 import HomeQuickLinks from '@/components/HomeQuickLinks';
 
 const NewsFeed = dynamicImport(() => import('@/components/NewsFeed'));
-const LiveDashboard = dynamicImport(() => import('@/components/LiveDashboard'));
+import LiveDashboard from '@/components/LiveDashboard';
 const TerraNovaHomeMilestones = dynamicImport(() => import('@/components/TerraNovaHomeMilestones'));
 const GoldenEggHaraniagharba = dynamicImport(() => import('@/components/GoldenEggHaraniagharba'));
 const Features = dynamicImport(() => import('@/components/Features'));
