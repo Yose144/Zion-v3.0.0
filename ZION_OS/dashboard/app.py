@@ -4279,7 +4279,12 @@ def build_payout_status() -> dict:
 
     # ── Burned total ──────────────────────────────────────────────────
     total_blocks = status["blocks_found"]
-    status["burned_total"] = total_blocks * 5_400.067 * 0.01 if total_blocks > 0 else 0.0
+    last_height = status["last_block_height"] or 1
+    if total_blocks > 0:
+        per_block_burned_zion = block_subsidy(last_height) / 100 / 1_000_000_000_000
+        status["burned_total"] = total_blocks * per_block_burned_zion
+    else:
+        status["burned_total"] = 0.0
 
     # ── Pool stats / miners from Edge or local ──────────────────────────
     pool_stats = fetch_pool_stats()
@@ -6149,6 +6154,60 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
   </div>
 
 
+<<<<<<< HEAD
+=======
+    <!-- Fee Split Recipients -->
+    <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
+      <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300 mb-3">📋 Fee Split Recipients (89/5/5/1 burn model)</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3" id="payout-recipients">
+        <div class="bg-zion-900 rounded-lg p-3 border border-zion-700">
+          <div class="text-xs text-gray-400 mb-1">⛏️ Miner Share (89%)</div>
+          <div class="text-sm font-mono text-amber-400 truncate" id="payout-miner-wallet">—</div>
+          <div class="text-xs text-gray-500 mt-1">PPLNS redistribution</div>
+        </div>
+        <div class="bg-zion-900 rounded-lg p-3 border border-zion-700">
+          <div class="text-xs text-gray-400 mb-1">🌍 Humanitarian (5%)</div>
+          <div class="text-sm font-mono text-emerald-400 truncate" id="payout-humanitarian-wallet">—</div>
+          <div class="text-xs text-gray-500 mt-1">Children Future Fund</div>
+        </div>
+        <div class="bg-zion-900 rounded-lg p-3 border border-zion-700">
+          <div class="text-xs text-gray-400 mb-1">🚀 Issobella (5%)</div>
+          <div class="text-sm font-mono text-purple-400 truncate" id="payout-issobella-wallet">—</div>
+          <div class="text-xs text-gray-500 mt-1">L5/L6 Space Layer</div>
+        </div>
+        <div class="bg-zion-900 rounded-lg p-3 border border-zion-700">
+          <div class="text-xs text-gray-400 mb-1">⚡ Pool Fee (1%)</div>
+          <div class="text-sm font-mono text-blue-400 truncate" id="payout-pool-fee-wallet">—</div>
+          <div class="text-xs text-gray-500 mt-1">Operator fee</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Payout Log -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
+        <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300 mb-2">📝 Recent Miner Payouts</h2>
+        <div id="payout-miner-log" class="space-y-2 text-xs text-gray-300 max-h-64 overflow-y-auto">
+          <div class="text-gray-500 italic">Loading...</div>
+        </div>
+      </div>
+      <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
+        <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300 mb-2">📝 Recent Fee Payouts</h2>
+        <div id="payout-fee-log" class="space-y-2 text-xs text-gray-300 max-h-64 overflow-y-auto">
+          <div class="text-gray-500 italic">Loading...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Payout Error Log -->
+    <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
+      <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300 mb-2">⚠️ Payout Errors (if any)</h2>
+      <div id="payout-error-log" class="space-y-2 text-xs text-gray-300 max-h-48 overflow-y-auto">
+        <div class="text-gray-500 italic">No errors detected</div>
+      </div>
+    </div>
+  </div>
+>>>>>>> ba37f715 (fix(dashboard): correct fee split display to 89/5/5/1 burn model)
 
   <footer class="text-center text-xs text-gray-600 pt-6 pb-4 border-t border-zion-700 mt-6">
     ZION V3 Dashboard 2.0 — Zero-dependency Python stdlib server — Auto-refresh 3s
