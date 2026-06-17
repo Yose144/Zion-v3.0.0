@@ -1539,7 +1539,7 @@ def parse_pool_log() -> dict:
         if pw:
             status["pool_wallet"] = pw
     # Fallback: detect payout readiness from fee_split + SK presence
-    if status["payout_enabled"] is None and status["fee_split"] == "89/5/5/0":
+    if status["payout_enabled"] is None and status["fee_split"] == "89/5/5/1":
         sk = os.environ.get("ZION_POOL_PAYOUT_SK_HEX", "")
         if sk and len(sk) >= 32:
             status["payout_enabled"] = True
@@ -2365,7 +2365,7 @@ def _build_status_edge_primary() -> dict:
         pass
 
     edge_pool_wallet = os.environ.get("ZION_POOL_WALLET", "") or "zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604"
-    edge_fee_split = "89/5/5/0"
+    edge_fee_split = "89/5/5/1"
     local_pool = parse_pool_log()
     pool_status = {
         "running": pool_edge_health["alive"],
@@ -2373,7 +2373,7 @@ def _build_status_edge_primary() -> dict:
         "loop_count": "1000000",
         "nonce_count": 4096,
         "pool_wallet": edge_pool_wallet,
-        "payout_enabled": pool_edge_health["alive"] and edge_fee_split == "89/5/5/0",
+        "payout_enabled": pool_edge_health["alive"] and edge_fee_split == "89/5/5/1",
         "blocks_found": edge_metrics["blocks_found"] if edge_metrics["blocks_found"] is not None else local_pool["blocks_found"],
         # Prefer live Edge Prometheus metrics over stale local pool log
         "shares_accepted": edge_metrics["shares_accepted"] if edge_metrics["shares_accepted"] is not None else local_pool["shares_accepted"],
@@ -2553,12 +2553,12 @@ def _build_status_local_dev() -> dict:
         "loop_count": "1000000",
         "nonce_count": 4096,
         "pool_wallet": os.environ.get("ZION_POOL_WALLET", ""),
-        "payout_enabled": pool_health["alive"] and local_pool.get("fee_split") == "89/5/5/0",
+        "payout_enabled": pool_health["alive"] and local_pool.get("fee_split") == "89/5/5/1",
         "blocks_found": pool_metrics["blocks_found"] or local_pool["blocks_found"],
         "shares_accepted": local_pool["shares_accepted"],
         "shares_rejected": local_pool["shares_rejected"],
         "active_sessions": pool_metrics["active_miners"] or local_pool["active_sessions"],
-        "fee_split": local_pool.get("fee_split", "89/5/5/0"),
+        "fee_split": local_pool.get("fee_split", "89/5/5/1"),
         "recent_payouts": local_pool["recent_payouts"],
         "recent_lines": local_pool["recent_lines"],
     }
@@ -2636,8 +2636,8 @@ def build_checklist(status: dict) -> dict:
             {"id": "pool-edge",  "label": "Edge Pool TCP reachable",                  "ok": status.get("pool_edge", {}).get("running", False)},
             {"id": "miner",      "label": "GPU miner connected & hashing",            "ok": status["miner"]["running"] and status["miner"]["hashrate"] is not None},
             {"id": "chain",      "label": "Chain height advancing",                   "ok": status["edge_node"]["chain_height"] is not None and status["edge_node"]["chain_height"] > 0},
-            {"id": "payout",     "label": "Payout mechanism ready (fee split active)", "ok": status["pool"]["running"] and status["pool"]["fee_split"] == "89/5/5/0"},
-            {"id": "fee_split",  "label": "Fee split 89/5/5/0 (burn model) active",    "ok": status["pool"]["fee_split"] == "89/5/5/0"},
+            {"id": "payout",     "label": "Payout mechanism ready (fee split active)", "ok": status["pool"]["running"] and status["pool"]["fee_split"] == "89/5/5/1"},
+            {"id": "fee_split",  "label": "Fee split 89/5/5/1 (burn model) active",    "ok": status["pool"]["fee_split"] == "89/5/5/1"},
             {"id": "edge-backup","label": "Edge database auto-backup active",          "ok": edge_backup_ok},
             {"id": "logs",       "label": "Log directory writable",                   "ok": LOG_DIR.exists()},
         ]
@@ -2650,8 +2650,8 @@ def build_checklist(status: dict) -> dict:
             {"id": "pool",      "label": "Local Pool running & accepting miners",  "ok": status["pool"]["running"] and status["pool"]["active_sessions"] is not None},
             {"id": "miner",     "label": "GPU miner connected & hashing",         "ok": status["miner"]["running"] and status["miner"]["hashrate"] is not None},
             {"id": "chain",     "label": "Chain height advancing",                 "ok": status["node1"]["chain_height"] is not None and status["node1"]["chain_height"] > 0},
-            {"id": "payout",    "label": "Payout mechanism ready (fee split active)",  "ok": status["pool"]["running"] and status["pool"]["fee_split"] == "89/5/5/0"},
-            {"id": "fee_split", "label": "Fee split 89/5/5/0 (burn model) active",     "ok": status["pool"]["fee_split"] == "89/5/5/0"},
+            {"id": "payout",    "label": "Payout mechanism ready (fee split active)",  "ok": status["pool"]["running"] and status["pool"]["fee_split"] == "89/5/5/1"},
+            {"id": "fee_split", "label": "Fee split 89/5/5/1 (burn model) active",     "ok": status["pool"]["fee_split"] == "89/5/5/1"},
             {"id": "logs",      "label": "Log directory writable",                  "ok": LOG_DIR.exists()},
         ]
     
@@ -2803,9 +2803,9 @@ def build_alerts(status: dict) -> list:
                                "action": "restart-node2"})
 
     # Pool alerts (common to both topologies)
-    if pool["running"] and pool["fee_split"] and pool["fee_split"] != "89/5/5/0":
+    if pool["running"] and pool["fee_split"] and pool["fee_split"] != "89/5/5/1":
         alerts.append({"severity": _sev("pool", "critical"), "title": "Wrong fee split",
-                       "detail": f"Detected {pool['fee_split']}, mainnet must be 89/5/5/0 (burn model)",
+                       "detail": f"Detected {pool['fee_split']}, mainnet must be 89/5/5/1 (burn model)",
                        "action": None})
 
     if pool["running"] and pool["payout_enabled"] is False:
@@ -3656,7 +3656,7 @@ def build_payout_status() -> dict:
         # Canonical Edge pool wallets (AGENTS.md 2026-06-07)
         status["pool_wallet"] = os.environ.get("ZION_POOL_WALLET") or "zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604"
         status["payout_enabled"] = True
-        status["fee_split"] = "89/5/5/0"
+        status["fee_split"] = "89/5/5/1"
         status["humanitarian_wallet"] = os.environ.get("ZION_HUMANITARIAN_WALLET") or "zion1s29403j538w6p6n0p783l6w5v6t254c0380c2d4"
         status["issobella_wallet"] = os.environ.get("ZION_ISSOBELLA_WALLET") or "zion140n8a8t6f3083232r0g6c498r6c0d423f4h9702"
         status["pool_fee_wallet"] = ""
@@ -3860,7 +3860,12 @@ def build_payout_status() -> dict:
 
     # ── Burned total ──────────────────────────────────────────────────
     total_blocks = status["blocks_found"]
-    status["burned_total"] = total_blocks * 5_400.067 * 0.01 if total_blocks > 0 else 0.0
+    last_height = status["last_block_height"] or 1
+    if total_blocks > 0:
+        per_block_burned_zion = block_subsidy(last_height) / 100 / 1_000_000_000_000
+        status["burned_total"] = total_blocks * per_block_burned_zion
+    else:
+        status["burned_total"] = 0.0
 
     # ── Pool stats / miners from Edge or local ──────────────────────────
     pool_stats = fetch_pool_stats()
@@ -5528,7 +5533,7 @@ input[type=range]::-webkit-slider-thumb{appearance:none;width:16px;height:16px;b
 
     <!-- Fee Split Recipients -->
     <div class="bg-zion-800 rounded-xl p-4 border border-zion-700">
-      <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300 mb-3">📋 Fee Split Recipients (89/5/5/0 burn model)</h2>
+      <h2 class="text-sm font-bold uppercase tracking-wider text-gray-300 mb-3">📋 Fee Split Recipients (89/5/5/1 burn model)</h2>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3" id="payout-recipients">
         <div class="bg-zion-900 rounded-lg p-3 border border-zion-700">
           <div class="text-xs text-gray-400 mb-1">⛏️ Miner Share (89%)</div>
@@ -6564,7 +6569,7 @@ async function renderWizard(){
     isEdge?{n:3,title:'Connect to Edge Pool',desc:'Edge (100.76.16.108) runs the primary pool. Verify VPN connectivity.',done:cl.checks.find(c=>c.id==='pool-edge')?.ok,actions:[{label:'Check Edge Pool',cb:`switchTab('overview')`}]}:{n:3,title:'Start Local Pool',desc:'Accepts miners, validates shares, distributes payouts (89/5/5 burn model).',done:cl.checks.find(c=>c.id==='pool')?.ok,actions:[{label:'▶ Start Pool',cb:`controlAction('start-pool')`}]},
     {n:4,title:'Start GPU Miner',desc:'Connects to pool, performs cosmic_harmony hashing on GPU.',done:cl.checks.find(c=>c.id==='miner')?.ok,actions:[{label:'▶ Start Miner',cb:`controlAction('start-miner')`}]},
     {n:5,title:'Verify chain progression',desc:'Confirm node syncs with network and chain height advances.',done:cl.checks.find(c=>c.id==='chain')?.ok,actions:[{label:'View events',cb:`switchTab('events')`}]},
-    {n:6,title:'Confirm fee split & payouts',desc:'Validate 89/5/5/0 burn-model distribution and payout wallet is funded.',done:cl.checks.find(c=>c.id==='fee_split')?.ok&&cl.checks.find(c=>c.id==='payout')?.ok,actions:[{label:'View payouts',cb:`switchTab('overview')`}]},
+    {n:6,title:'Confirm fee split & payouts',desc:'Validate 89/5/5/1 burn-model distribution and payout wallet is funded.',done:cl.checks.find(c=>c.id==='fee_split')?.ok&&cl.checks.find(c=>c.id==='payout')?.ok,actions:[{label:'View payouts',cb:`switchTab('overview')`}]},
   ];
   const cont=document.getElementById('wizard-steps');
   cont.innerHTML=steps.map((s,i)=>{
