@@ -1591,10 +1591,13 @@ function applyCudaTuning(gpuInfo, tuningConfig) {
 // PRIMARY-HOST TESTNET MONITORING
 // ============================================================================
 
-const TESTNET_SERVERS = [
+const MAINNET_SERVERS = [
   { id: 'zion-edge', name: 'Prague (Mainnet Edge)', host: PRIMARY_MAINNET_HOST, flag: 'CZ', location: 'EU Primary', poolPort: PRIMARY_POOL_PORT },
   { id: 'zion-edge-vpn', name: 'Prague (Edge VPN)', host: EDGE_VPN_HOST, flag: 'CZ', location: 'EU VPN', poolPort: PRIMARY_POOL_PORT },
 ];
+
+// Legacy alias for compatibility
+const TESTNET_SERVERS = MAINNET_SERVERS;
 
 async function checkServerPort(host, port, timeout = 3000) {
   const net = require('net');
@@ -4370,12 +4373,12 @@ ipcMain.handle('wallet-get-balance', async (event, { rpcUrl, address }) => {
     const baseProtocol = parsedBase?.protocol || 'http:';
     const basePort = parsedBase?.port || '8443';
 
-    const canonicalRpcCandidates = TESTNET_SERVERS.map((s) => `http://${s.host}:${PRIMARY_RPC_PORT}/jsonrpc`);
+    const canonicalRpcCandidates = MAINNET_SERVERS.map((s) => `http://${s.host}:${PRIMARY_RPC_PORT}/jsonrpc`);
 
     const rpcCandidates = [
       baseRpcUrl,
       baseHost ? `${baseProtocol}//${baseHost}:${PRIMARY_RPC_PORT}/jsonrpc` : '',
-      ...TESTNET_SERVERS.map(s => `http://${s.host}:${basePort}/jsonrpc`),
+      ...MAINNET_SERVERS.map(s => `http://${s.host}:${basePort}/jsonrpc`),
       ...canonicalRpcCandidates
     ].filter(Boolean);
 
@@ -4594,8 +4597,8 @@ ipcMain.handle('wallet-send-transaction', async (event, { rpcUrl, from, to, amou
     const rpcCandidates = [
       baseRpcUrl,
       baseHost ? `${baseProtocol}//${baseHost}:${PRIMARY_RPC_PORT}/jsonrpc` : '',
-      ...TESTNET_SERVERS.map(s => `http://${s.host}:${basePort}/jsonrpc`),
-      ...TESTNET_SERVERS.map(s => `http://${s.host}:${PRIMARY_RPC_PORT}/jsonrpc`)
+      ...MAINNET_SERVERS.map(s => `http://${s.host}:${basePort}/jsonrpc`),
+      ...MAINNET_SERVERS.map(s => `http://${s.host}:${PRIMARY_RPC_PORT}/jsonrpc`)
     ].filter(Boolean);
 
     const seenRpc = new Set();
