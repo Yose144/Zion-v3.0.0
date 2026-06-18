@@ -72,6 +72,7 @@ pub enum PoolMessage {
     Result {
         accepted: bool,
         status: String,
+        block_found: bool,
     },
     Stale {
         job_id: u64,
@@ -481,6 +482,7 @@ impl MiningPool {
         PoolMessage::Result {
             accepted: matches!(decision.status, ShareStatus::Accepted),
             status: format!("{:?}", decision.status),
+            block_found: decision.sealed_block.is_some(),
         }
     }
 
@@ -941,6 +943,7 @@ mod tests {
             PoolMessage::Result {
                 accepted: true,
                 status: "Accepted".to_string(),
+                block_found: false,
             },
             PoolMessage::Stale { job_id: 1 },
             PoolMessage::Cancel {
