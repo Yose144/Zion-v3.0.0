@@ -292,7 +292,8 @@ class ZionWalletGenerator {
     if (a.startsWith('zion1')) {
       if (a.length !== 44) return 'invalid';
       const data = a.slice(5);
-      if (!/^[0-9a-z]{39}$/.test(data)) return 'invalid';
+      // ZION_BASE32: 023456789acdefghjklmnpqrstuvwxyz
+      if (!/^[0-3a-df-np-z]{39}$/.test(data)) return 'invalid';
       return 'zion1';
     }
 
