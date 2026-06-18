@@ -695,6 +695,7 @@ function setupControls() {
   const openLogsBtn = document.getElementById('open-logs-btn');
   const hashrateUnitEl = document.getElementById('hashrate-unit');
   const algoSelect = document.getElementById('algo-select');
+  const algoSelectDashboard = document.getElementById('algo-select-dashboard');
   const algoSaveBtn = document.getElementById('algo-save-btn');
   const algoStatusEl = document.getElementById('algo-status');
   const gpuCheckbox = document.getElementById('gpu-checkbox');
@@ -787,6 +788,22 @@ function setupControls() {
     // init from persisted config
     if (config.algorithm && algoSelect.querySelector(`option[value="${config.algorithm}"]`)) {
       algoSelect.value = config.algorithm;
+    }
+  }
+
+  // Dashboard algo select — sync with config and settings select
+  if (algoSelectDashboard) {
+    algoSelectDashboard.addEventListener('change', () => {
+      config.algorithm = algoSelectDashboard.value;
+      syncAlgoUi();
+      // Also sync with settings select if exists
+      if (algoSelect) {
+        algoSelect.value = algoSelectDashboard.value;
+      }
+    });
+    // init from persisted config
+    if (config.algorithm && algoSelectDashboard.querySelector(`option[value="${config.algorithm}"]`)) {
+      algoSelectDashboard.value = config.algorithm;
     }
   }
 
