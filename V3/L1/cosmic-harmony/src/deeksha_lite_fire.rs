@@ -292,16 +292,16 @@ pub fn deeksha_lite_fire_find_nonce(
 }
 
 /// Known-answer test vectors for DeekshaLite Fire.
-/// Generated from this CPU implementation on 2026-06-09 and locked.
+/// Generated from this CPU implementation on 2026-06-17 (THERMAL_ITERS=16384).
 /// If any of these change, the CPU↔GPU pipeline is broken — do NOT update
 /// these constants without regenerating and re-verifying deeksha_lite_fire.cl too.
 pub const FIRE_KAT_HEADER: &[u8] = b"ZION_FIRE_KAT_V1";
 pub const FIRE_KAT: &[(&str, u64)] = &[
-    ("4e52987a770e281570791ada44a1d797c312c31ded1389738c1bca46625e3a7f", 0),
-    ("7fafc9dd9870da82e0bb2f5f79cac580464ac1fd8838b4a619e4f9513f0a70a4", 1),
-    ("0c4427d4315055c04c1097fd923314e44602db789d15393955a79f2449b0467d", 42),
-    ("dc0200ecd39daaf491d49f06676de5982fb28493826f8ee8658236c9f94ddae3", 0xDEADBEEF),
-    ("632a7c01cee5e682da2b0007c5772fa1885f5a4a6f5ba11d494b3b9b63abbf40", u64::MAX),
+    ("c71feae825b4609f75a97fe70e01df3d5d7ca7b3d148188c9cc6259d5fbaf44d", 0),
+    ("ec48b909d8df962944cc2ffa3f745b8410c22800edc2c0937bbdb71f4444a1ae", 1),
+    ("e0e47d1df53aa6792fabf5fe6174f66eca619550bc546da66201b86c77d2e8e2", 42),
+    ("350f0a2ad5eead70a185c98276eddc925b7ed06c312febe3b82b897a688fddd2", 0xDEADBEEF),
+    ("3b820938f6988c11155526ab970621e094751b8cd4c0612151bfbfd741516629", u64::MAX),
 ];
 
 #[cfg(test)]
