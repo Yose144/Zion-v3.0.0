@@ -2372,76 +2372,94 @@ function setupWalletControls() {
   });
 
   sendTxBtn?.addEventListener('click', async () => {
+    console.log('[WALLET-SEND] Button clicked');
     if (sendStatusEl) sendStatusEl.textContent = '';
 
-    // Refresh config + from-address display before sending
-    await refreshSendFrom();
+    try {
+      // Refresh config + from-address display before sending
+      console.log('[WALLET-SEND] Refreshing from-address...');
+      await refreshSendFrom();
+      console.log('[WALLET-SEND] Refresh done');
 
-    const from = getActiveAddress();
-    const to = (sendToEl && 'value' in sendToEl ? sendToEl.value : '').toString().trim();
-    const amountRaw = (sendAmountEl && 'value' in sendAmountEl ? sendAmountEl.value : '').toString().trim();
-    const purpose = (sendPurposeEl && 'value' in sendPurposeEl ? sendPurposeEl.value : '').toString();
-    const memo = (sendMemoEl && 'value' in sendMemoEl ? sendMemoEl.value : '').toString().trim();
-    const password = (sendPasswordEl && 'value' in sendPasswordEl ? sendPasswordEl.value : '').toString();
+      const from = getActiveAddress();
+      const to = (sendToEl && 'value' in sendToEl ? sendToEl.value : '').toString().trim();
+      const amountRaw = (sendAmountEl && 'value' in sendAmountEl ? sendAmountEl.value : '').toString().trim();
+      const purpose = (sendPurposeEl && 'value' in sendPurposeEl ? sendPurposeEl.value : '').toString();
+      const memo = (sendMemoEl && 'value' in sendMemoEl ? sendMemoEl.value : '').toString().trim();
+      const password = (sendPasswordEl && 'value' in sendPasswordEl ? sendPasswordEl.value : '').toString();
+      console.log('[WALLET-SEND] from=', from.slice(0, 12) + '...', 'to=', to.slice(0, 12) + '...', 'amount=', amountRaw);
 
-    // Validate from
-    if (!from || !from.startsWith('zion1')) {
-      if (sendStatusEl) sendStatusEl.textContent = '⚠ No active wallet. Go to Overview tab → set your wallet address.';
-      if (sendNoWalletWarn) sendNoWalletWarn.style.display = 'block';
-      return;
+      // Validate from
+      if (!from || !from.startsWith('zion1')) {
+        console.warn('[WALLET-SEND] Validation failed: no active wallet');
+        if (sendStatusEl) sendStatusEl.textContent = '⚠ No active wallet. Go to Overview tab → set your wallet address.';
+        if (sendNoWalletWarn) sendNoWalletWarn.style.display = 'block';
+        return;
+      }
+
+      // Validate to
+      if (!to || !to.startsWith('zion1')) {
+        console.warn('[WALLET-SEND] Validation failed: invalid recipient');
+        if (sendStatusEl) sendStatusEl.textContent = '⚠ Recipient address must be a valid zion1... address.';
+        return;
+      }
+
+      // Validate amount
+      const parsedAmount = parseFloat(amountRaw.replace(',', '.'));
+      if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
+        console.warn('[WALLET-SEND] Validation failed: invalid amount');
+        if (sendStatusEl) sendStatusEl.textContent = '⚠ Enter a valid amount greater than 0.';
+        return;
+      }
+
+      if (from === to) {
+        console.warn('[WALLET-SEND] Validation failed: same address');
+        if (sendStatusEl) sendStatusEl.textContent = '⚠ Cannot send to yourself.';
+        return;
+      }
+
+      // Require password for UTXO signing
+      if (!password) {
+        console.warn('[WALLET-SEND] Validation failed: no password');
+        if (sendStatusEl) sendStatusEl.textContent = '⚠ Wallet password is required to sign the transaction.';
+        return;
+      }
+
+      console.log('[WALLET-SEND] All validations passed, calling walletSendTransaction...');
+      if (sendStatusEl) sendStatusEl.textContent = '⏳ Sending…';
+
+      const result = await window.electronAPI.walletSendTransaction({
+        rpcUrl: getRpcUrl(),
+        from,
+        to,
+        amount: parsedAmount,
+        purpose,
+        memo: memo || undefined,
+        password
+      });
+      console.log('[WALLET-SEND] Result:', result);
+
+      if (!result?.success) {
+        const err = result?.error || 'send failed';
+        console.error('[WALLET-SEND] Failed:', err);
+        const hint = err.includes('Insufficient') ? ' (check your balance)' : err.includes('RPC') ? ' (node unreachable — try again)' : '';
+        if (sendStatusEl) sendStatusEl.textContent = `❌ ${err}${hint}`;
+        return;
+      }
+
+      console.log('[WALLET-SEND] Success! txId=', result.txId);
+      if (sendStatusEl) sendStatusEl.textContent = `✅ Sent! Status: ${result.status || 'submitted'} · TX: ${result.txId || 'n/a'}`;
+      if (sendToEl) sendToEl.value = '';
+      if (sendAmountEl) sendAmountEl.value = '';
+      if (sendPurposeEl) sendPurposeEl.value = '';
+      if (sendMemoEl) sendMemoEl.value = '';
+      if (sendPasswordEl) sendPasswordEl.value = '';
+      // Refresh balance after successful send
+      setTimeout(refreshSendFrom, 1500);
+    } catch (err) {
+      console.error('[WALLET-SEND] Unexpected error:', err);
+      if (sendStatusEl) sendStatusEl.textContent = `❌ Unexpected error: ${err?.message || String(err)}`;
     }
-
-    // Validate to
-    if (!to || !to.startsWith('zion1')) {
-      if (sendStatusEl) sendStatusEl.textContent = '⚠ Recipient address must be a valid zion1... address.';
-      return;
-    }
-
-    // Validate amount
-    const parsedAmount = parseFloat(amountRaw.replace(',', '.'));
-    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) {
-      if (sendStatusEl) sendStatusEl.textContent = '⚠ Enter a valid amount greater than 0.';
-      return;
-    }
-
-    if (from === to) {
-      if (sendStatusEl) sendStatusEl.textContent = '⚠ Cannot send to yourself.';
-      return;
-    }
-
-    // Require password for UTXO signing
-    if (!password) {
-      if (sendStatusEl) sendStatusEl.textContent = '⚠ Wallet password is required to sign the transaction.';
-      return;
-    }
-
-    if (sendStatusEl) sendStatusEl.textContent = '⏳ Confirming…';
-
-    const result = await window.electronAPI.walletSendTransaction({
-      rpcUrl: getRpcUrl(),
-      from,
-      to,
-      amount: parsedAmount,
-      purpose,
-      memo: memo || undefined,
-      password
-    });
-
-    if (!result?.success) {
-      const err = result?.error || 'send failed';
-      const hint = err.includes('Insufficient') ? ' (check your balance)' : err.includes('RPC') ? ' (node unreachable — try again)' : '';
-      if (sendStatusEl) sendStatusEl.textContent = `❌ ${err}${hint}`;
-      return;
-    }
-
-    if (sendStatusEl) sendStatusEl.textContent = `✅ Sent! Status: ${result.status || 'submitted'} · TX: ${result.txId || 'n/a'}`;
-    if (sendToEl) sendToEl.value = '';
-    if (sendAmountEl) sendAmountEl.value = '';
-    if (sendPurposeEl) sendPurposeEl.value = '';
-    if (sendMemoEl) sendMemoEl.value = '';
-    if (sendPasswordEl) sendPasswordEl.value = '';
-    // Refresh balance after successful send
-    setTimeout(refreshSendFrom, 1500);
   });
 
   // Transaction lookup
