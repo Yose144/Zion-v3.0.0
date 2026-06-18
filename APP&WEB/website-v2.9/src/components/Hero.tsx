@@ -174,8 +174,8 @@ export default function Hero() {
             </div>
           </motion.div>
 
-            {/* metrics strip */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {/* metrics strip */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {heroMetrics.map((metric, i) => (
                 <motion.div
                   key={metric.label}
