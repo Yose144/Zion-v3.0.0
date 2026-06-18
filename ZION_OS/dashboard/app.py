@@ -3533,6 +3533,73 @@ def get_edge_server_status() -> dict:
     except Exception as e:
         return {"ok": False, "error": str(e)}
 
+def get_pool_miners() -> dict:
+    """Fetch active miners from Edge pool Prometheus metrics."""
+    try:
+        import urllib.request as _ur
+        with _ur.urlopen("http://100.76.16.108:8455/metrics", timeout=3.0) as r:
+            body = r.read().decode("utf-8", errors="ignore")
+    except Exception as e:
+        return {"ok": False, "miners": [], "active_sessions": 0, "total_hashrate_khs": 0, "error": str(e)}
+
+    miners = {}
+    active_sessions = 0
+    miners_tracked = 0
+    total_hashrate_hps = 0.0
+
+    for line in body.splitlines():
+        line = line.strip()
+        if line.startswith("zion_pool_active_sessions "):
+            active_sessions = int(float(line.split()[-1]))
+        elif line.startswith("zion_pool_miners_tracked "):
+            miners_tracked = int(float(line.split()[-1]))
+        elif line.startswith("zion_pool_miner_hashrate_hps{"):
+            # Parse labels: miner_id="...",worker_name="..."
+            m_id = re.search(r'miner_id="([^"]+)"', line)
+            w_name = re.search(r'worker_name="([^"]+)"', line)
+            val = float(line.split()[-1])
+            if m_id and w_name:
+                key = m_id.group(1)
+                miners[key] = {
+                    "miner_id": m_id.group(1),
+                    "worker_name": w_name.group(1),
+                    "hashrate_hps": val,
+                    "valid_shares": 0,
+                    "invalid_shares": 0,
+                    "paid_total": 0,
+                    "last_seen": 0,
+                }
+                total_hashrate_hps += val
+        elif line.startswith("zion_pool_miner_valid_shares_total{"):
+            m_id = re.search(r'miner_id="([^"]+)"', line)
+            val = int(float(line.split()[-1]))
+            if m_id and m_id.group(1) in miners:
+                miners[m_id.group(1)]["valid_shares"] = val
+        elif line.startswith("zion_pool_miner_invalid_shares_total{"):
+            m_id = re.search(r'miner_id="([^"]+)"', line)
+            val = int(float(line.split()[-1]))
+            if m_id and m_id.group(1) in miners:
+                miners[m_id.group(1)]["invalid_shares"] = val
+        elif line.startswith("zion_pool_miner_paid_total_atomic{"):
+            m_id = re.search(r'miner_id="([^"]+)"', line)
+            val = int(float(line.split()[-1]))
+            if m_id and m_id.group(1) in miners:
+                miners[m_id.group(1)]["paid_total"] = val / 1e8  # convert atomic to ZION
+        elif line.startswith("zion_pool_miner_last_seen_seconds{"):
+            m_id = re.search(r'miner_id="([^"]+)"', line)
+            val = int(float(line.split()[-1]))
+            if m_id and m_id.group(1) in miners:
+                miners[m_id.group(1)]["last_seen"] = val
+
+    miner_list = list(miners.values())
+    return {
+        "ok": True,
+        "miners": miner_list,
+        "active_sessions": active_sessions,
+        "miners_tracked": miners_tracked,
+        "total_hashrate_khs": total_hashrate_hps / 1000.0,
+    }
+
 # ── Backup status ────────────────────────────────────────────────────────
 
 def get_backup_status() -> dict:
@@ -7348,6 +7415,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 self._json({"error": str(ex), "reachable": False})
         elif route == "/api/edge-status":
             self._json(get_edge_server_status())
+        elif route == "/api/pool/miners":
+            self._json(get_pool_miners())
         elif route == "/api/miner/live":
             self._json(get_miner_live_stats())
         elif route == "/api/miner/log-tail":
