@@ -2194,7 +2194,7 @@ def build_status() -> dict:
 def _build_status_edge_primary() -> dict:
     """Build status for edge-primary topology: fast, parallel RPC with short timeouts."""
     t0 = time.time()
-    _tm = lambda label: print(f"[BUILD_STATUS] {label}: {time.time()-t0:.2f}s")
+
 
     # ── Parallel RPC probes ─────────────────────────────────────────────────
     edge_rpc_info = None
@@ -2235,8 +2235,6 @@ def _build_status_edge_primary() -> dict:
                     pass
         except TimeoutError:
             pass
-
-    _tm("rpc_done")
 
     # NOTE: SSH fallback for node2 removed — caused Windows SSH deadlock.
     # Edge Node 2 is probed via direct RPC (100.76.16.108:8446) in thread pool above.
@@ -2351,12 +2349,11 @@ def _build_status_edge_primary() -> dict:
                             })
     except Exception:
         pass
-    _tm("pool_metrics")
+
 
     edge_pool_wallet = os.environ.get("ZION_POOL_WALLET", "") or "zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604"
     edge_fee_split = "89/5/5/1"
     local_pool = parse_pool_log()
-    _tm("pool_log")
     pool_status = {
         "running": pool_edge_health["alive"],
         "bind_addr": f"{pool_edge_svc.get('host', '100.76.16.108')}:8444" if pool_edge_svc else None,
@@ -2403,7 +2400,6 @@ def _build_status_edge_primary() -> dict:
         pass
 
     miner_status = parse_miner_log()
-    _tm("miner_log")
 
     # ── L2/L3 Edge services health ───────────────────────────────────────────
     # Skip slow local service checks in edge-primary — they're optional and cause timeouts
@@ -2413,7 +2409,6 @@ def _build_status_edge_primary() -> dict:
     oasis_health = {"alive": False}
     free_world_health = {"alive": False}
     issobella_health = {"alive": False}
-    _tm("services_skip")
 
     elapsed = time.time() - t0
     return {
