@@ -733,6 +733,14 @@ SERVICE_REGISTRY_EDGE_PRIMARY = [
      "purpose": "HTLC-based atomic swaps on Edge between ZION and other chains (no middleman). API on 8452.",
      "child_says": "🔄 Trade coins safely with strangers without anyone cheating!",
      "depends_on": ["edge-node1"]},
+    {"id": "swap-aggregator", "name": "Swap Aggregator (Edge)", "icon": "💱", "level": "L2", "kind": "aggregator",
+     "ports": {"api": 8456},
+     "host": "100.76.16.108",
+     "log": None, "start": None, "stop": None,
+     "health_method": "tcp", "severity": "warning", "autoheal": False,
+     "purpose": "DeFi swap aggregator — Uni V3 price quotes + bridge + swap execution. API on 8456.",
+     "child_says": "💱 Finds the best price across all DeFi pools!",
+     "depends_on": ["bridge", "edge-node1"]},
 
     # ── L3: Advanced (running on Edge server) ──────────────────────────────
     {"id": "warp", "name": "WARP Relay (Edge)", "icon": "🌀", "level": "L3", "kind": "relay",
@@ -894,6 +902,13 @@ SERVICE_REGISTRY_LOCAL_DEV = [
      "purpose": "HTLC-based atomic swaps between ZION and other chains (no middleman). API on 8888.",
      "child_says": "🔄 Trade coins safely with strangers without anyone cheating!",
      "depends_on": ["node1"]},
+    {"id": "swap-aggregator", "name": "Swap Aggregator", "icon": "💱", "level": "L2", "kind": "aggregator",
+     "ports": {"api": 8456},
+     "log": "swap-aggregator.log", "start": "start-swap-aggregator", "stop": "stop-swap-aggregator",
+     "health_method": "tcp", "severity": "warning", "autoheal": False,
+     "purpose": "DeFi swap aggregator — Uni V3 price quotes + bridge + swap execution. API on 8456.",
+     "child_says": "💱 Finds the best price across all DeFi pools!",
+     "depends_on": ["bridge", "node1"]},
 
     # ── L3: Advanced ─────────────────────────────────────────────────────
     {"id": "warp", "name": "WARP Relay", "icon": "🌀", "level": "L3", "kind": "relay",
@@ -4699,6 +4714,10 @@ _ALLOW_BASE = {
     "start-atomic-swap":      "start-atomic-swap",
     "stop-atomic-swap":       "stop-atomic-swap",
     "restart-atomic-swap":    "start-atomic-swap",
+    # ── Swap Aggregator ──────────────────────────────────────────────────
+    "start-swap-aggregator":      "start-swap-aggregator",
+    "stop-swap-aggregator":       "stop-swap-aggregator",
+    "restart-swap-aggregator":    "start-swap-aggregator",
     # ── WARP ─────────────────────────────────────────────────────────────
     "start-warp":             "start-warp",
     "stop-warp":              "stop-warp",
@@ -7863,6 +7882,17 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json({"ok": h["alive"], "service": "atomic-swap",
                         "status": "online" if h["alive"] else "offline",
                         "details": h.get("details", "")})
+        elif route == "/api/swap-aggregator/health":
+            alive = check_port_open("127.0.0.1", 8456, timeout=1.5)
+            self._json({"ok": alive, "service": "swap-aggregator", "port": 8456,
+                        "status": "online" if alive else "offline"})
+        elif route == "/api/swap-aggregator/swaps":
+            try:
+                import urllib.request as _ur
+                with _ur.urlopen("http://127.0.0.1:8456/swaps", timeout=3.0) as r:
+                    self._json(json.loads(r.read()))
+            except Exception as e:
+                self._json({"ok": False, "offline": True, "error": str(e)[:120]})
         elif route == "/api/swap/initiate":
             self._json({"ok": False, "error": "Swap initiation requires POST — use POST /api/swap/initiate"})
         elif route == "/api/warp/health":
@@ -9031,6 +9061,28 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 import urllib.request as _ur
                 body_data = json.dumps(payload or {}).encode()
                 req = _ur.Request("http://127.0.0.1:8570/api/swap/initiate",
+                    data=body_data, headers={"Content-Type": "application/json"}, method="POST")
+                with _ur.urlopen(req, timeout=10) as r:
+                    self._json(json.loads(r.read()))
+            except Exception as e:
+                self._json({"ok": False, "offline": True, "error": str(e)[:120]})
+        elif route == "/api/swap-aggregator/quote":
+            # Proxy quote request to swap-aggregator daemon on port 8456
+            try:
+                import urllib.request as _ur
+                body_data = json.dumps(payload or {}).encode()
+                req = _ur.Request("http://127.0.0.1:8456/quote",
+                    data=body_data, headers={"Content-Type": "application/json"}, method="POST")
+                with _ur.urlopen(req, timeout=10) as r:
+                    self._json(json.loads(r.read()))
+            except Exception as e:
+                self._json({"ok": False, "offline": True, "error": str(e)[:120]})
+        elif route == "/api/swap-aggregator/swap":
+            # Proxy swap creation to swap-aggregator daemon on port 8456
+            try:
+                import urllib.request as _ur
+                body_data = json.dumps(payload or {}).encode()
+                req = _ur.Request("http://127.0.0.1:8456/swap",
                     data=body_data, headers={"Content-Type": "application/json"}, method="POST")
                 with _ur.urlopen(req, timeout=10) as r:
                     self._json(json.loads(r.read()))
