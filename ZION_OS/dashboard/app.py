@@ -3431,6 +3431,108 @@ def build_explorer() -> dict:
         "recent_blocks": recent_blocks,
     }
 
+# ── Edge server system status ───────────────────────────────────────────
+
+def get_edge_server_status() -> dict:
+    """Fetch Edge server system metrics via SSH. Fast timeout to avoid blocking."""
+    ssh_key = REPO_ROOT / "ssh-key-zion-edge"
+    if not ssh_key.exists():
+        return {"ok": False, "error": "SSH key not found"}
+
+    try:
+        # CPU + Load + Memory
+        result = subprocess.run(
+            ["ssh", "-i", str(ssh_key), "-o", "StrictHostKeyChecking=accept-new",
+             "-o", "ConnectTimeout=2", "-o", "BatchMode=yes",
+             "root@100.76.16.108",
+             "cat /proc/loadavg && free -m && df -h / | tail -1"],
+            capture_output=True, text=True, timeout=5
+        )
+        if result.returncode != 0:
+            return {"ok": False, "error": result.stderr.strip() or "SSH failed"}
+
+        lines = result.stdout.strip().splitlines()
+        if len(lines) < 3:
+            return {"ok": False, "error": "Incomplete output"}
+
+        # Parse loadavg: 0.12 0.08 0.03 1/123 45678
+        load_parts = lines[0].split()
+        load_1m = float(load_parts[0])
+
+        # Parse free -m: find line starting with Mem:
+        mem_line = None
+        for line in lines:
+            if line.strip().startswith("Mem:"):
+                mem_line = line
+                break
+        if mem_line is None:
+            return {"ok": False, "error": "Could not parse memory"}
+        mem_parts = mem_line.split()
+        mem_total_mb = float(mem_parts[1])
+        mem_used_mb = float(mem_parts[2])
+        mem_pct = int((mem_used_mb / mem_total_mb) * 100) if mem_total_mb > 0 else 0
+
+        # Parse df -h /: find line containing rootfs or /
+        disk_line = None
+        for line in lines:
+            if line.strip().endswith(" /") or " / " in line:
+                disk_line = line
+                break
+        if disk_line is None:
+            disk_line = lines[-1]
+        disk_parts = disk_line.split()
+        disk_pct = int(disk_parts[4].rstrip('%')) if len(disk_parts) > 4 else 0
+
+        # Top memory consumers
+        top_result = subprocess.run(
+            ["ssh", "-i", str(ssh_key), "-o", "StrictHostKeyChecking=accept-new",
+             "-o", "ConnectTimeout=2", "-o", "BatchMode=yes",
+             "root@100.76.16.108",
+             "ps -eo rss,comm --sort=-rss | head -6 | tail -5"],
+            capture_output=True, text=True, timeout=5
+        )
+        mem_top = []
+        if top_result.returncode == 0:
+            for line in top_result.stdout.strip().splitlines():
+                parts = line.split(None, 1)
+                if len(parts) == 2:
+                    mb = float(parts[0]) / 1024.0
+                    cmd = parts[1].strip()
+                    mem_top.append({"cmd": cmd, "mb": mb})
+
+        # Service status via systemctl
+        svc_result = subprocess.run(
+            ["ssh", "-i", str(ssh_key), "-o", "StrictHostKeyChecking=accept-new",
+             "-o", "ConnectTimeout=2", "-o", "BatchMode=yes",
+             "root@100.76.16.108",
+             "systemctl is-active zion-edge-node1 zion-edge-node2 zion-pool-server zion-edge-dao zion-edge-warp zion-edge-bridge 2>/dev/null"],
+            capture_output=True, text=True, timeout=5
+        )
+        services = []
+        svc_names = ["node", "node2", "pool", "dao", "warp", "bridge"]
+        if svc_result.returncode == 0:
+            states = svc_result.stdout.strip().splitlines()
+            for i, name in enumerate(svc_names):
+                if i < len(states):
+                    services.append({"name": name, "status": states[i]})
+
+        return {
+            "ok": True,
+            "cpu_pct": load_1m * 10,  # rough estimate: load*10 as %
+            "load_1m": load_1m,
+            "mem_pct": mem_pct,
+            "mem_used_mb": mem_used_mb,
+            "mem_total_mb": mem_total_mb,
+            "mem_top": mem_top,
+            "mem_history": [],  # could be cached later
+            "disk_pct": disk_pct,
+            "services": services,
+        }
+    except subprocess.TimeoutExpired:
+        return {"ok": False, "error": "SSH timeout"}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
 # ── Backup status ────────────────────────────────────────────────────────
 
 def get_backup_status() -> dict:
@@ -7244,6 +7346,8 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     self._json(json.loads(r.read()))
             except Exception as ex:
                 self._json({"error": str(ex), "reachable": False})
+        elif route == "/api/edge-status":
+            self._json(get_edge_server_status())
         elif route == "/api/miner/live":
             self._json(get_miner_live_stats())
         elif route == "/api/miner/log-tail":

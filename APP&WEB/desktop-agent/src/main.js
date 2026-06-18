@@ -3355,19 +3355,7 @@ function parseMinerOutput(output) {
     }
   }
 
-  // ─── V3 wire_result JSON: extract block_found flag ───
-  const v3BlockFoundMatch = output.match(/wire_result=\{[^}]*"block_found"\s*:\s*(true|false)/);
-  if (v3BlockFoundMatch && v3BlockFoundMatch[1] === 'true') {
-    minerStats.blocks_found = (Number(minerStats.blocks_found) || 0) + 1;
-    try { sendToRenderer('block-found', { height: minerStats.last_job_height }); } catch {}
-  }
 
-  // ─── V3 miner log: "BLOCK FOUND (pool confirmed)" ───
-  const v3BlockFoundLogMatch = output.match(/BLOCK FOUND \(pool confirmed\)/i);
-  if (v3BlockFoundLogMatch) {
-    minerStats.blocks_found = (Number(minerStats.blocks_found) || 0) + 1;
-    try { sendToRenderer('block-found', { height: minerStats.last_job_height }); } catch {}
-  }
 
   // ─── V3 mining progress: "mining job_id=N height=N nonces=A..B" ───
   const v3MiningMatch = output.match(/^mining\s+job_id=(\d+)\s+height=(\d+)\s+nonces=(\d+)\.\.(\d+)/m);
