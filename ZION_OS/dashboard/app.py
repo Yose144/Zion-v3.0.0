@@ -2169,7 +2169,7 @@ def parse_miner_log() -> dict:
 _STATUS_CACHE: dict = {}
 _STATUS_CACHE_TIME: float = 0.0
 _STATUS_CACHE_LOCK = threading.Lock()
-STATUS_CACHE_TTL_SEC: float = 3.0
+STATUS_CACHE_TTL_SEC: float = 15.0
 
 def build_status() -> dict:
     global _STATUS_CACHE, _STATUS_CACHE_TIME
@@ -2194,6 +2194,7 @@ def build_status() -> dict:
 def _build_status_edge_primary() -> dict:
     """Build status for edge-primary topology: fast, parallel RPC with short timeouts."""
     t0 = time.time()
+    _tm = lambda label: print(f"[BUILD_STATUS] {label}: {time.time()-t0:.2f}s")
 
     # ── Parallel RPC probes ─────────────────────────────────────────────────
     edge_rpc_info = None
@@ -2234,6 +2235,8 @@ def _build_status_edge_primary() -> dict:
                     pass
         except TimeoutError:
             pass
+
+    _tm("rpc_done")
 
     # NOTE: SSH fallback for node2 removed — caused Windows SSH deadlock.
     # Edge Node 2 is probed via direct RPC (100.76.16.108:8446) in thread pool above.
@@ -2348,10 +2351,12 @@ def _build_status_edge_primary() -> dict:
                             })
     except Exception:
         pass
+    _tm("pool_metrics")
 
     edge_pool_wallet = os.environ.get("ZION_POOL_WALLET", "") or "zion16825y2v5f3q507e5c2e0j8n666z43558l3zt604"
     edge_fee_split = "89/5/5/1"
     local_pool = parse_pool_log()
+    _tm("pool_log")
     pool_status = {
         "running": pool_edge_health["alive"],
         "bind_addr": f"{pool_edge_svc.get('host', '100.76.16.108')}:8444" if pool_edge_svc else None,
@@ -2398,20 +2403,17 @@ def _build_status_edge_primary() -> dict:
         pass
 
     miner_status = parse_miner_log()
+    _tm("miner_log")
 
     # ── L2/L3 Edge services health ───────────────────────────────────────────
-    bridge_svc = get_service("bridge")
-    dao_svc = get_service("dao")
-    warp_svc = get_service("warp")
-    bridge_health = check_service_health(bridge_svc) if bridge_svc else {"alive": False, "status": "unknown", "details": "", "ports_open": [], "ports_closed": [], "pid_alive": False, "pid": None}
-    dao_health = check_service_health(dao_svc) if dao_svc else {"alive": False, "status": "unknown", "details": "", "ports_open": [], "ports_closed": [], "pid_alive": False, "pid": None}
-    warp_health = check_service_health(warp_svc) if warp_svc else {"alive": False, "status": "unknown", "details": "", "ports_open": [], "ports_closed": [], "pid_alive": False, "pid": None}
-    oasis_svc = get_service("oasis")
-    free_world_svc = get_service("free-world")
-    issobella_svc = get_service("issobella")
-    oasis_health = check_service_health(oasis_svc) if oasis_svc else {"alive": False, "status": "unknown", "details": "", "ports_open": [], "ports_closed": [], "pid_alive": False, "pid": None}
-    free_world_health = check_service_health(free_world_svc) if free_world_svc else {"alive": False, "status": "unknown", "details": "", "ports_open": [], "ports_closed": [], "pid_alive": False, "pid": None}
-    issobella_health = check_service_health(issobella_svc) if issobella_svc else {"alive": False, "status": "unknown", "details": "", "ports_open": [], "ports_closed": [], "pid_alive": False, "pid": None}
+    # Skip slow local service checks in edge-primary — they're optional and cause timeouts
+    bridge_health = {"alive": False}
+    dao_health = {"alive": False}
+    warp_health = {"alive": False}
+    oasis_health = {"alive": False}
+    free_world_health = {"alive": False}
+    issobella_health = {"alive": False}
+    _tm("services_skip")
 
     elapsed = time.time() - t0
     return {
