@@ -44,9 +44,17 @@ max_gas_gwei            = 10
 [validator]
 private_key_file    = "/etc/zion/bridge-validator.key"
 validator_id        = "validator-1"
+# 3-of-5 for testnet (practical); 5-of-5 for mainnet (maximum security)
 threshold           = 3
 total_validators    = 5
-validator_addresses = []   # populate when validators are provisioned
+# Testnet validator addresses — REPLACE with real keys before mainnet
+validator_addresses = [
+    "0x36ff91fc3847d2de17f6f51e0e5c47469c5a2e93",  # validator-1
+    "0x9e7c0707f51d5fd49b9dc5b133187e2c10396edd",  # validator-2
+    "0xe28a502f9d5191faa2b565afedd37a2841b89102",  # validator-3
+    "0xa0488097fad69c824695532a52d8e3acb0db63b3",  # validator-4
+    "0xa98a38f8d664c6a2757e5079e97ae31291fc65d7",  # validator-5
+]
 
 # ── Security ─────────────────────────────────────────────────────────────────
 
