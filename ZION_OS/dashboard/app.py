@@ -3583,7 +3583,7 @@ def get_pool_miners() -> dict:
             m_id = re.search(r'miner_id="([^"]+)"', line)
             val = int(float(line.split()[-1]))
             if m_id and m_id.group(1) in miners:
-                miners[m_id.group(1)]["paid_total"] = val / 1e8  # convert atomic to ZION
+                miners[m_id.group(1)]["paid_total"] = val / 1e12  # convert atomic flowers to ZION
         elif line.startswith("zion_pool_miner_last_seen_seconds{"):
             m_id = re.search(r'miner_id="([^"]+)"', line)
             val = int(float(line.split()[-1]))
